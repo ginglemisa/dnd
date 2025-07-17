@@ -1,0 +1,201 @@
+// css.js
+const style = document.createElement("style");
+style.textContent = `
+#scrollToTopBtn {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: 999;
+  padding: 6px 10px;
+  font-size: 16px;
+  border-radius: 6px;
+  border: none;
+  background-color: #ccc;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.3s;
+}
+#scrollToTopBtn:hover {
+  opacity: 1;
+}
+`;
+style.innerHTML = `
+  body {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 80px 20px 20px;
+    font-family: sans-serif;
+    line-height: 1.5;
+    margin-bottom: 85px;
+    background: #fff;
+  }
+
+  .tabs {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: #ddd;
+    padding: 10px;
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: nowrap;
+    z-index: 1000;
+    border-bottom: 1px solid #aaa;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  .tab-button {
+    flex: 1;
+    padding: 8px 0;
+    background: #fff;
+    border: 1px solid #aaa;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    text-align: center;
+  }
+
+  .tab-button.active {
+    background: #bbb;
+  }
+
+  .tab-content {
+    display: none;
+    width: 100%;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
+  .form-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+    align-items: flex-start;
+  }
+
+  select, input[type="number"], input[type="text"] {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  textarea {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  label {
+    width: 100%;
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+
+  .section {
+    margin-bottom: 20px;
+  }
+
+  .output {
+    background: #f5f5f5;
+    padding: 10px;
+    border-radius: 5px;
+    white-space: pre-wrap;
+  }
+
+  .ability-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .ability {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .modifier {
+    margin-top: 5px;
+    font-weight: bold;
+  }
+
+  button {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px;
+    font-size: 0.95em;
+    margin-bottom: 8px;
+  }
+
+  .small-text {
+    font-size: 0.9em;
+    color: #444;
+    line-height: 1.4;
+  }
+
+  @media (min-width: 481px) {
+    html, body {
+      background-color: #eee;
+    }
+  }
+
+  .save-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px 8px;
+    margin-top: 10px;
+  }
+
+  .save-pair {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 5px;
+  }
+
+  .save-pair label {
+    font-weight: normal;
+    margin: 0;
+    flex-grow: 1;
+  }
+
+  .save-pair input[type="number"] {
+    width: 50px;
+  }
+
+  .skill-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .skill-cell {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .skill-cell label {
+    font-weight: normal;
+    margin-bottom: 4px;
+  }
+
+  .form-grid-3col {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: end;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .form-grid-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+`;
+document.head.appendChild(style);
