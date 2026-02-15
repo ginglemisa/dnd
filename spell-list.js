@@ -4105,5 +4105,3 @@ const spellList = {
     ]
   }
 };
-
-export default spellList;
