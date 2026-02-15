@@ -395,8 +395,7 @@ const classFeatures = {
 </table>
 
 祭司套組(30金幣)：背包、毯子、聖水、油燈、7 日份的口糧、長袍和火絨盒。
-牧師特性
-<table style="border-collapse:collapse; width:100%; font-size:0.98em;">
+<strong>牧師特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
     <tr>
       <th style="border:1px solid #aaa; padding:3px;">等級</th>
@@ -405,12 +404,13 @@ const classFeatures = {
       <th style="border:1px solid #aaa; padding:3px;">引導神力</th>
       <th style="border:1px solid #aaa; padding:3px;">戲法</th>
       <th style="border:1px solid #aaa; padding:3px;">準備法術</th>
-      <th style="border:1px solid #aaa; padding:3px;" colspan="2">每環法術位</th>
+      <th style="border:1px solid #aaa; padding:3px;" colspan="3">每環法術位</th>
     </tr>
     <tr>
       <th colspan="6" style="border:none;"></th>
       <th style="border:1px solid #aaa; padding:3px;">1</th>
       <th style="border:1px solid #aaa; padding:3px;">2</th>
+      <th style="border:1px solid #aaa; padding:3px;">3</th>
     </tr>
   </thead>
   <tbody>
@@ -423,6 +423,7 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
@@ -432,6 +433,7 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
     <tr>
@@ -443,6 +445,7 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">6</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
@@ -453,16 +456,18 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">7</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">+3</td>
-      <td style="border:1px solid #aaa; padding:3px;">Sear Undead</td>
+      <td style="border:1px solid #aaa; padding:3px;">焚燒不死生物</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">9</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">2</td>
     </tr>
   </tbody>
 </table>
@@ -526,7 +531,7 @@ const classFeatures = {
 等級 4：屬性值提升
 獲得“屬性值提升”專長或另一符合條件的自選專長。
 
-等級 5：Sear Undead
+等級 5：焚燒不死生物
 當你使用驅散不死生物時，你可以擲出數量等同於你的感知調整值的 d8（最少 1d8），並將擲骰結果加總。每個未能通過該次驅散不死生物豁免的不死生物都會受到等同於此總值的光耀傷害。此傷害不會終止驅散不死生物的效果。
   `,
   druid: `<table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
@@ -575,8 +580,7 @@ const classFeatures = {
 </table>
 
 探索套組(10金幣)：背包、床卷、2 瓶油、10 天的口糧、繩索、火絨盒、10 根火把、水袋。
-德魯伊特性
-<table style="border-collapse:collapse; width:100%; font-size:0.98em;">
+<strong>德魯伊特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
     <tr>
       <th style="border:1px solid #aaa; padding:3px;">等級</th>
@@ -585,12 +589,13 @@ const classFeatures = {
       <th style="border:1px solid #aaa; padding:3px;">荒野形態</th>
       <th style="border:1px solid #aaa; padding:3px;">戲法</th>
       <th style="border:1px solid #aaa; padding:3px;">準備法術</th>
-      <th style="border:1px solid #aaa; padding:3px;" colspan="2">每環法術位</th>
+      <th style="border:1px solid #aaa; padding:3px;" colspan="3">每環法術位</th>
     </tr>
     <tr>
       <th colspan="6" style="border:none;"></th>
       <th style="border:1px solid #aaa; padding:3px;">1</th>
       <th style="border:1px solid #aaa; padding:3px;">2</th>
+      <th style="border:1px solid #aaa; padding:3px;">3</th>
     </tr>
   </thead>
   <tbody>
@@ -603,6 +608,7 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
@@ -612,6 +618,7 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
     <tr>
@@ -623,6 +630,7 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">6</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
@@ -633,6 +641,18 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">7</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">5</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">野性復甦</td>
+      <td style="border:1px solid #aaa; padding:3px;">2</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">9</td>
+      <td style="border:1px solid #aaa; padding:3px;">4</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">2</td>
     </tr>
   </tbody>
 </table>
@@ -752,7 +772,10 @@ const classFeatures = {
 傷害與治療會在特定等級增加 1d6。當你達到德魯伊 10 級時 3d6，14 級時 4d6。
 
 等級 4：屬性值提升
-獲得“屬性值提升”專長或另一符合條件的自選專長。`,
+獲得“屬性值提升”專長或另一符合條件的自選專長。
+
+等級 5：野性復甦
+你恢復與自然的連結，重新喚起原初之力。`,
   fighter: `<table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
     <tr>
@@ -799,8 +822,7 @@ const classFeatures = {
 </table>
 
 地城套組(12金幣)：背包、鐵蒺藜、撬棍、2 瓶油、10 日份的口糧、繩索、火絨盒、10 根火把，水袋。
-戰士特性
-<table style="border-collapse:collapse; width:100%; font-size:0.98em;">
+<strong>戰士特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
     <tr>
       <th style="border:1px solid #aaa; padding:3px;">等級</th>
@@ -836,6 +858,13 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
       <td style="border:1px solid #aaa; padding:3px;">屬性值提升</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">4</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">5</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">額外攻擊，戰術轉移</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
     </tr>
@@ -878,7 +907,13 @@ const classFeatures = {
 此外，當你造成重擊後，你可以立即移動至多等同於速度一半的距離，且不會引發借機攻擊。
 
 等級 4：屬性值提升
-獲得“屬性值提升”專長或另一符合條件的自選專長。`,
+獲得“屬性值提升”專長或另一符合條件的自選專長。
+
+等級 5：額外攻擊
+你在自己回合執行攻擊動作時可以發動兩次攻擊。
+
+等級 5：戰術轉移
+你在戰場上能迅速轉換位置與節奏。`,
   monk: `<table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
     <tr>
@@ -925,8 +960,7 @@ const classFeatures = {
 </table>
 
 探索套組(10金幣)：背包、床卷、2 瓶油、10 天的口糧、繩索、火絨盒、10 根火把、水袋。
-武僧特性
-<table style="border-collapse:collapse; width:100%; font-size:0.98em;">
+<strong>武僧特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
     <tr>
       <th style="border:1px solid #aaa; padding:3px;">等級</th>
@@ -952,7 +986,7 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">武僧心神，無甲移動，吐故納新</td>
       <td style="border:1px solid #aaa; padding:3px;">1d6</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
-      <td style="border:1px solid #aaa; padding:3px;">+10尺</td>
+      <td style="border:1px solid #aaa; padding:3px;">+10呎</td>
     </tr>
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
@@ -960,7 +994,7 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">撥擋化勁，武僧子職業</td>
       <td style="border:1px solid #aaa; padding:3px;">1d6</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
-      <td style="border:1px solid #aaa; padding:3px;">+10尺</td>
+      <td style="border:1px solid #aaa; padding:3px;">+10呎</td>
     </tr>
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
@@ -968,7 +1002,15 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">屬性值提升，輕身墜</td>
       <td style="border:1px solid #aaa; padding:3px;">1d6</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
-      <td style="border:1px solid #aaa; padding:3px;">+10尺</td>
+      <td style="border:1px solid #aaa; padding:3px;">+10呎</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">5</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">額外攻擊，震懾擊</td>
+      <td style="border:1px solid #aaa; padding:3px;">1d8</td>
+      <td style="border:1px solid #aaa; padding:3px;">5</td>
+      <td style="border:1px solid #aaa; padding:3px;">+10呎</td>
     </tr>
   </tbody>
 </table>
@@ -1032,6 +1074,12 @@ const classFeatures = {
 
 等級 4：屬性值提升
 獲得“屬性值提升”專長或另一符合條件的自選專長。
+
+等級 5：額外攻擊
+你在自己回合執行攻擊動作時可以發動兩次攻擊。
+
+等級 5：震懾擊
+你以猛烈的打擊震懾對手，使其難以招架。
   `,
   paladin: `<table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
@@ -1079,8 +1127,7 @@ const classFeatures = {
 </table>
 
 祭司套組(33金幣)：背包、毯子、聖水、油燈、7 日份的口糧、長袍和火絨盒。
-聖武士特性
-<table style="border-collapse:collapse; width:100%; font-size:0.98em;">
+<strong>聖武士特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
     <tr>
       <th style="border:1px solid #aaa; padding:3px;">等級</th>
@@ -1089,6 +1136,7 @@ const classFeatures = {
       <th style="border:1px solid #aaa; padding:3px;">引導神力</th>
       <th style="border:1px solid #aaa; padding:3px;">準備法術</th>
       <th style="border:1px solid #aaa; padding:3px;">每環法術位<br>1</th>
+      <th style="border:1px solid #aaa; padding:3px;">每環法術位<br>2</th>
     </tr>
   </thead>
   <tbody>
@@ -1099,6 +1147,7 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">-</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
@@ -1107,6 +1156,7 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">-</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
@@ -1115,6 +1165,7 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
@@ -1123,6 +1174,16 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">5</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">額外攻擊，忠誠坐騎</td>
+      <td style="border:1px solid #aaa; padding:3px;">2</td>
+      <td style="border:1px solid #aaa; padding:3px;">6</td>
+      <td style="border:1px solid #aaa; padding:3px;">4</td>
+      <td style="border:1px solid #aaa; padding:3px;">2</td>
     </tr>
   </tbody>
 </table>
@@ -1198,7 +1259,13 @@ const classFeatures = {
 你可以提前終止該效應（無需動作）。當你不再攜帶該武器時效應也將終止。
 
 等級 4：屬性值提升
-獲得“屬性值提升”專長或另一符合條件的自選專長。`,
+獲得“屬性值提升”專長或另一符合條件的自選專長。
+
+等級 5：額外攻擊
+你在自己回合執行攻擊動作時可以發動兩次攻擊。
+
+等級 5：忠誠坐騎
+你獲得與你並肩作戰的神聖坐騎。`,
   ranger: `<table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
     <tr>
@@ -1245,8 +1312,7 @@ const classFeatures = {
 </table>
 
 探索套組(10金幣)：背包、床卷、2 瓶油、10 天的口糧、繩索、火絨盒、10 根火把、水袋。
-遊俠特性
-<table style="border-collapse:collapse; width:100%; font-size:0.98em;">
+<strong>遊俠特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
     <tr>
       <th style="border:1px solid #aaa; padding:3px;">等級</th>
@@ -1255,6 +1321,7 @@ const classFeatures = {
       <th style="border:1px solid #aaa; padding:3px;">宿敵</th>
       <th style="border:1px solid #aaa; padding:3px;">準備法術</th>
       <th style="border:1px solid #aaa; padding:3px;">每環法術位<br>1</th>
+      <th style="border:1px solid #aaa; padding:3px;">每環法術位<br>2</th>
     </tr>
   </thead>
   <tbody>
@@ -1265,6 +1332,7 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
@@ -1273,6 +1341,7 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
@@ -1281,6 +1350,7 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
@@ -1289,6 +1359,16 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">5</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">額外攻擊</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">6</td>
+      <td style="border:1px solid #aaa; padding:3px;">4</td>
+      <td style="border:1px solid #aaa; padding:3px;">2</td>
     </tr>
   </tbody>
 </table>
@@ -1345,7 +1425,10 @@ const classFeatures = {
 破陣者。每個你的回合一次，當你使用武器發動攻擊時，你可以用同一武器對武器範圍內位於原目標 5 尺內的另一個尚未被你攻擊過的不同生物發動一次攻擊。
 
 等級 4：屬性值提升
-獲得“屬性值提升”專長或另一符合條件的自選專長。`,
+獲得“屬性值提升”專長或另一符合條件的自選專長。
+
+等級 5：額外攻擊
+你在自己回合執行攻擊動作時可以發動兩次攻擊。`,
   rogue: `<table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
     <tr>
@@ -1392,8 +1475,7 @@ const classFeatures = {
 </table>
 
 竊賊套組(16金幣)：背包、滾珠、鈴鐺、10 根蠟燭、撬棍、附蓋提燈、7 瓶油、5 日份口糧、繩索、火絨盒、水袋。
-遊蕩者特性
-<table style="border-collapse:collapse; width:100%; font-size:0.98em;">
+<strong>遊蕩者特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
     <tr>
       <th style="border:1px solid #aaa; padding:3px;">等級</th>
@@ -1426,6 +1508,12 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
       <td style="border:1px solid #aaa; padding:3px;">屬性值提升</td>
       <td style="border:1px solid #aaa; padding:3px;">2d6</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">5</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">靈巧打擊，直覺閃避</td>
+      <td style="border:1px solid #aaa; padding:3px;">3d6</td>
     </tr>
   </tbody>
 </table>
@@ -1466,7 +1554,13 @@ const classFeatures = {
 作為附贈動作，你為當前回合你的下一次攻擊檢定提供優勢。你只有在該回合尚未移動過的情況下才能使用該特性，並且你的速度將在使用後變為 0，直到當前回合結束。
 
 等級 4：屬性值提升
-獲得“屬性值提升”專長或另一符合條件的自選專長。`,
+獲得“屬性值提升”專長或另一符合條件的自選專長。
+
+等級 5：靈巧打擊
+你以更精準的時機發動致命打擊。
+
+等級 5：直覺閃避
+你能在危急瞬間本能地閃過攻勢。`,
   sorcerer: `<table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
     <tr>
@@ -1513,8 +1607,7 @@ const classFeatures = {
 </table>
 
   地城套組(12金幣)：背包、鐵蒺藜、撬棍、2 瓶油、10 日份的口糧、繩索、火絨盒、10 根火把，水袋。
-  術士特性
-  <table style="border-collapse:collapse; width:100%; font-size:0.98em;">
+<strong>術士特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
     <tr>
       <th style="border:1px solid #aaa; padding:3px;">等級</th>
@@ -1523,12 +1616,13 @@ const classFeatures = {
       <th style="border:1px solid #aaa; padding:3px;">術法點</th>
       <th style="border:1px solid #aaa; padding:3px;">戲法</th>
       <th style="border:1px solid #aaa; padding:3px;">準備法術</th>
-      <th style="border:1px solid #aaa; padding:3px;" colspan="2">每環法術位</th>
+      <th style="border:1px solid #aaa; padding:3px;" colspan="3">每環法術位</th>
     </tr>
     <tr>
       <th colspan="6" style="border:none;"></th>
       <th style="border:1px solid #aaa; padding:3px;">1</th>
       <th style="border:1px solid #aaa; padding:3px;">2</th>
+      <th style="border:1px solid #aaa; padding:3px;">3</th>
     </tr>
   </thead>
   <tbody>
@@ -1541,6 +1635,7 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
@@ -1550,6 +1645,7 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
     <tr>
@@ -1561,6 +1657,7 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">6</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
@@ -1571,6 +1668,18 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">7</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">5</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">術法復甦</td>
+      <td style="border:1px solid #aaa; padding:3px;">5</td>
+      <td style="border:1px solid #aaa; padding:3px;">5</td>
+      <td style="border:1px solid #aaa; padding:3px;">9</td>
+      <td style="border:1px solid #aaa; padding:3px;">4</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">2</td>
     </tr>
   </tbody>
 </table>
@@ -1664,6 +1773,9 @@ const classFeatures = {
 等級 4：屬性值提升
 獲得“屬性值提升”專長或另一符合條件的自選專長。
 
+等級 5：術法復甦
+你能更快回收並重整體內的術法能量。
+
 超魔法選項
 以下是 超魔法 特性的可用選項。這些選項按英語原文字母順序展示。
 
@@ -1748,8 +1860,7 @@ const classFeatures = {
 </table>
 
 學者套組(40金幣)：背包、書籍、墨水、墨水筆、油燈、10 瓶油、10 張羊皮紙和火絨盒。
-契術師特性
-<table style="border-collapse:collapse; width:100%; font-size:0.98em;">
+<strong>契術師特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
     <tr>
       <th style="border:1px solid #aaa; padding:3px;">等級</th>
@@ -1803,6 +1914,16 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
     </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">5</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">無</td>
+      <td style="border:1px solid #aaa; padding:3px;">5</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">6</td>
+      <td style="border:1px solid #aaa; padding:3px;">2</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+    </tr>
   </tbody>
 </table>
 等級 1：魔能祈喚
@@ -1855,6 +1976,9 @@ const classFeatures = {
 
 等級 4：屬性值提升
 獲得“屬性值提升”專長或另一符合條件的自選專長。
+
+等級 5：無
+此等級在本表未提供新的契術師職業特性。
 
 魔能祈喚選項
 魔能祈喚選項按先決條件及功能關聯性順序展示。
@@ -1969,8 +2093,7 @@ const classFeatures = {
 </table>
 
 學者套組(40金幣)：背包、書籍、墨水、墨水筆、油燈、10 瓶油、10 張羊皮紙和火絨盒。
-法師特性
-<table style="border-collapse:collapse; width:100%; font-size:0.98em;">
+<strong>法師特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
     <tr>
       <th style="border:1px solid #aaa; padding:3px;">等级</th>
@@ -1978,12 +2101,13 @@ const classFeatures = {
       <th style="border:1px solid #aaa; padding:3px;">职业特性</th>
       <th style="border:1px solid #aaa; padding:3px;">戏法</th>
       <th style="border:1px solid #aaa; padding:3px;">准备法术</th>
-      <th style="border:1px solid #aaa; padding:3px;" colspan="2">每环法术位</th>
+      <th style="border:1px solid #aaa; padding:3px;" colspan="3">每环法术位</th>
     </tr>
     <tr>
       <th colspan="5" style="border:none;"></th>
       <th style="border:1px solid #aaa; padding:3px;">1</th>
       <th style="border:1px solid #aaa; padding:3px;">2</th>
+      <th style="border:1px solid #aaa; padding:3px;">3</th>
     </tr>
   </thead>
   <tbody>
@@ -1995,6 +2119,7 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
@@ -2003,6 +2128,7 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
     <tr>
@@ -2013,6 +2139,7 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">6</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
@@ -2022,6 +2149,17 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">7</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">5</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">記憶法術</td>
+      <td style="border:1px solid #aaa; padding:3px;">4</td>
+      <td style="border:1px solid #aaa; padding:3px;">9</td>
+      <td style="border:1px solid #aaa; padding:3px;">4</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">2</td>
     </tr>
   </tbody>
 </table>
@@ -2084,5 +2222,8 @@ const classFeatures = {
 那些僥幸避開的生物仍然會被你造成傷害的戲法影響。當你對生物施展戲法，而你在攻擊檢定中失手或目標在對抗戲法的豁免檢定中成功時，目標仍受到一半傷害（若法術有傷害），但不會被該戲法的其他效應影響。
 
 等級 4：屬性值提升
-獲得“屬性值提升”專長或另一符合條件的自選專長。`
+獲得“屬性值提升”專長或另一符合條件的自選專長。
+
+等級 5：記憶法術
+你能更高效地記憶與整理法術知識。`
 };
