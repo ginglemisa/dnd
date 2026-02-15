@@ -270,7 +270,7 @@ const classFeatures = {
         <tr>
           <td style="border:1px solid #aaa; padding:3px;">5</td>
           <td style="border:1px solid #aaa; padding:3px;">+3</td>
-          <td style="border:1px solid #aaa; padding:3px;">屬性值提升</td>
+          <td style="border:1px solid #aaa; padding:3px;">激勵之源</td>
           <td style="border:1px solid #aaa; padding:3px;">D8</td>
           <td style="border:1px solid #aaa; padding:3px;">3</td>
           <td style="border:1px solid #aaa; padding:3px;">9</td>
@@ -454,6 +454,16 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
     </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">5</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">Sear Undead</td>
+      <td style="border:1px solid #aaa; padding:3px;">2</td>
+      <td style="border:1px solid #aaa; padding:3px;">4</td>
+      <td style="border:1px solid #aaa; padding:3px;">9</td>
+      <td style="border:1px solid #aaa; padding:3px;">4</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+    </tr>
   </tbody>
 </table>
 等級 1：施法
@@ -515,6 +525,9 @@ const classFeatures = {
 
 等級 4：屬性值提升
 獲得“屬性值提升”專長或另一符合條件的自選專長。
+
+等級 5：Sear Undead
+當你使用驅散不死生物時，你可以擲出數量等同於你的感知調整值的 d8（最少 1d8），並將擲骰結果加總。每個未能通過該次驅散不死生物豁免的不死生物都會受到等同於此總值的光耀傷害。此傷害不會終止驅散不死生物的效果。
   `,
   druid: `<table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
