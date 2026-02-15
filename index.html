@@ -567,6 +567,11 @@
     <input type="checkbox" id="spellslot2-3">
   </div>
   <div class="form-row">
+    <label>三環法術位：</label>
+    <input type="checkbox" id="spellslot3-1">
+    <input type="checkbox" id="spellslot3-2">
+  </div>
+  <div class="form-row">
     <textarea id="spell-notes" rows="2" placeholder="筆記：可記錄每日準備、消耗情形、額外內容等"></textarea>
   </div>
 </div>
@@ -585,6 +590,11 @@
   <h3>二環法術</h3>
   <div id="level2spells-area"></div>
   <button type="button" onclick="createSingleSpellRow('level2spells-area', 2)">➕ 新增二環法術</button>
+</div>
+<div class="section">
+  <h3>三環法術</h3>
+  <div id="level3spells-area"></div>
+  <button type="button" onclick="createSingleSpellRow('level3spells-area', 3)">➕ 新增三環法術</button>
 </div>
 
   </div>
@@ -1369,7 +1379,7 @@ function saveAllFields() {
     }
   });
    // 額外記錄 spell 欄位數量
-  const spellAreas = ['cantrips-area', 'level1spells-area', 'level2spells-area'];
+  const spellAreas = ['cantrips-area', 'level1spells-area', 'level2spells-area', 'level3spells-area'];
   spellAreas.forEach(id => {
     data[`${id}-count`] = document.getElementById(id).childElementCount;
   });
@@ -1385,7 +1395,8 @@ function restoreAllFields() {
     const spellAreas = [
       { id: 'cantrips-area', level: 'cantrips' },
       { id: 'level1spells-area', level: 1 },
-      { id: 'level2spells-area', level: 2 }
+      { id: 'level2spells-area', level: 2 },
+      { id: 'level3spells-area', level: 3 }
     ];
 
     spellAreas.forEach(area => {
@@ -1399,7 +1410,7 @@ function restoreAllFields() {
 
     // 1. 先還原職業下拉選單並觸發 change
     for (const id in data) {
-      if (/cantrips-area-class-\d+|level1spells-area-class-\d+|level2spells-area-class-\d+/.test(id)) {
+      if (/cantrips-area-class-\d+|level1spells-area-class-\d+|level2spells-area-class-\d+|level3spells-area-class-\d+/.test(id)) {
         const el = document.getElementById(id);
         if (!el) continue;
         el.value = data[id];
@@ -1409,7 +1420,7 @@ function restoreAllFields() {
 
     // 2. 再還原其他欄位（法術名稱等），然後觸發 change 讓說明文字顯示
     for (const id in data) {
-      if (!/cantrips-area-class-\d+|level1spells-area-class-\d+|level2spells-area-class-\d+/.test(id)) {
+      if (!/cantrips-area-class-\d+|level1spells-area-class-\d+|level2spells-area-class-\d+|level3spells-area-class-\d+/.test(id)) {
         const el = document.getElementById(id);
         if (!el) continue;
         if (el.type === "checkbox") {
@@ -1455,6 +1466,7 @@ window.addEventListener("DOMContentLoaded", function() {
 for (let i = 0; i < 2; i++) createSingleSpellRow('cantrips-area', 'cantrips');
 for (let i = 0; i < 2; i++) createSingleSpellRow('level1spells-area', 1);
 for (let i = 0; i < 1; i++) createSingleSpellRow('level2spells-area', 2);
+for (let i = 0; i < 1; i++) createSingleSpellRow('level3spells-area', 3);
   // 3. 還原所有欄位狀態
   restoreAllFields();
   // ✅ 3.5 額外補充：手動觸發屬性欄位的 input 事件，以更新 modifier 顯示
