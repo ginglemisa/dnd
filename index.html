@@ -1012,17 +1012,30 @@ function getModifier(statId) {
   return Math.floor((value - 10) / 2);
 }
 
+/** 依等級回傳熟練加值（先做完整 1~20 規則，未來你擴充等級也不用再改） */
+function getProficiencyBonus() {
+  const lvl = parseInt(document.getElementById("level")?.value || "1", 10);
+
+  if (lvl >= 17) return 6;
+  if (lvl >= 13) return 5;
+  if (lvl >= 9)  return 4;
+  if (lvl >= 5)  return 3;
+  return 2; // 1~4
+}
+
 function fillSaves() {
+  const pb = getProficiencyBonus();
   const abilities = ["str", "dex", "con", "int", "wis", "cha"];
   abilities.forEach(ab => {
     const mod = getModifier(ab);
     const prof = document.getElementById("prof-" + ab).checked;
-    const total = mod + (prof ? 2 : 0);
+    const total = mod + (prof ? pb : 0);
     document.getElementById("save-" + ab).value = total;
   });
 }
 
 function fillSkills() {
+  const pb = getProficiencyBonus();
   const skillMap = {
     "運動": "str",
     "體操": "dex", "巧手": "dex", "隱匿": "dex",
@@ -1037,11 +1050,13 @@ function fillSkills() {
     const checkbox = document.getElementById("prof-" + skill);
     const input = document.getElementById("skill-" + skill);
     if (!input || !checkbox) continue;
-    const total = mod + (checkbox.checked ? 2 : 0);
+
+    const total = mod + (checkbox.checked ? pb : 0);
     input.value = total;
   }
 }
 </script>
+
 
 <script>
 // ====== 裝備、武器、法術相關工具 ======
@@ -1115,6 +1130,64 @@ function updateWeaponInfo(selectId, line1Id, line2Id) {
 }
 const allWeapons = getAllWeapons(false);
 const allWeaponsWithShield = getAllWeapons(true);
+// === 武器分類查表（用名稱判斷簡易/軍用）===
+const SIMPLE_WEAPON_NAMES = new Set([
+  ...weapons_simple_melee.map(w => w.名稱),
+  ...weapons_simple_ranged.map(w => w.名稱),
+]);
+
+const MARTIAL_WEAPON_NAMES = new Set([
+  ...weapons_martial_melee.map(w => w.名稱),
+  ...weapons_martial_ranged.map(w => w.名稱),
+]);
+function weaponHasProp(weapon, keyword) {
+  return [weapon.屬性1, weapon.屬性2, weapon.屬性3, weapon.屬性4].some(p => p?.includes(keyword));
+}
+
+function isWeaponProficient(weapon) {
+  if (!weapon || weapon.名稱 === "盾牌") return false;
+
+  const cls = document.getElementById("class")?.value || ""; // 你確認 id="class" 正確
+  const isSimple = SIMPLE_WEAPON_NAMES.has(weapon.名稱);
+  const isMartial = MARTIAL_WEAPON_NAMES.has(weapon.名稱);
+
+  const hasLight = weaponHasProp(weapon, "輕型");
+  const hasFinesse = weaponHasProp(weapon, "靈巧");
+
+  // 這些職業：簡易 + 軍用（你要求 warlock 也直接算在內）
+  const simpleAndMartial = ["barbarian", "fighter", "paladin", "ranger", "warlock"];
+  if (simpleAndMartial.includes(cls)) return true;
+
+  // 這些職業：只有簡易
+  const simpleOnly = ["bard", "sorcerer", "wizard"];
+  if (simpleOnly.includes(cls)) return isSimple;
+
+  // 牧師：簡易；若你未來要做守護者 -> 軍用，可以留這行（沒 checkbox 也不會報錯）
+  if (cls === "cleric") {
+    const guardian = document.getElementById("cleric-guardian")?.checked;
+    return isSimple || (guardian && isMartial);
+  }
+
+  // 德魯伊：簡易；若你未來要做哨衛 -> 軍用，可以留這行（沒 checkbox 也不會報錯）
+  if (cls === "druid") {
+    const sentinel = document.getElementById("druid-sentinel")?.checked;
+    return isSimple || (sentinel && isMartial);
+  }
+
+  // 武僧：簡易 + 具有「輕型」屬性的軍用武器（你的職業資料也有這條）:contentReference[oaicite:3]{index=3}
+  if (cls === "monk") {
+    return isSimple || (isMartial && hasLight);
+  }
+
+  // 遊蕩者：簡易 + 具有「靈巧或輕型」的軍用武器
+  if (cls === "rogue") {
+    return isSimple || (isMartial && (hasLight || hasFinesse));
+  }
+
+  // 其他：保守不熟練
+  return false;
+}
+
 
 // 動作命中傷害
 function populateHandAttacks() {
@@ -1136,15 +1209,21 @@ function populateHandAttacks() {
     const dexMod = getModifier("dex");
     const isRanged = [weapon.屬性1, weapon.屬性2, weapon.屬性3, weapon.屬性4].some(p => p?.includes("射程"));
     const isDexEligible = [weapon.屬性1, weapon.屬性2, weapon.屬性3, weapon.屬性4].some(p => p?.includes("靈巧"));
-    let hitBonus;
-    if (isRanged) {
-      hitBonus = dexMod + 2;
-    } else if (isDexEligible) {
-      hitBonus = Math.max(strMod, dexMod) + 2;
-    } else {
-      hitBonus = strMod + 2;
-    }
-    document.getElementById(`${hand.prefix}-hit`).value = `+${hitBonus}`;
+const pb = getProficiencyBonus();
+const proficient = isWeaponProficient(weapon);
+
+let hitBonus;
+if (isRanged) {
+  hitBonus = dexMod + (proficient ? pb : 0);
+} else if (isDexEligible) {
+  hitBonus = Math.max(strMod, dexMod) + (proficient ? pb : 0);
+} else {
+  hitBonus = strMod + (proficient ? pb : 0);
+}
+
+
+    const hitSign = hitBonus >= 0 ? "+" : "";
+    document.getElementById(`${hand.prefix}-hit`).value = `${hitSign}${hitBonus}`;
     // 傷害部分
     const abilityMod = isDexEligible ? Math.max(strMod, dexMod) : (isRanged ? dexMod : strMod);
     const sign = abilityMod >= 0 ? "+" : "";
