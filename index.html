@@ -80,6 +80,16 @@
   </div>
 </div>
 
+<div id="class-proficiency-options" style="margin-top: 8px; display: none;">
+  <strong>職業武器熟練選項：</strong>
+  <label id="cleric-guardian-wrap" style="display: none; margin-left: 8px;">
+    <input type="checkbox" id="cleric-guardian"> 牧師：守護者（軍用武器熟練）
+  </label>
+  <label id="druid-sentinel-wrap" style="display: none; margin-left: 8px;">
+    <input type="checkbox" id="druid-sentinel"> 德魯伊：哨衛（軍用武器熟練）
+  </label>
+</div>
+
 
   <div class="form-grid-2col">
   <!-- 左欄：HP 顯示與輸入 -->
@@ -906,7 +916,7 @@ document.addEventListener("DOMContentLoaded", () => {
   updateACDisplay(); // AC顯示
   updateArmorInfo();
   updateClassFeature();
-  
+  updateClassProficiencyOptions();
 
   // 加入監聽事件
   document.getElementById("race").addEventListener("change", updateRaceFeature);
@@ -917,8 +927,10 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("wis").addEventListener("input", updateACDisplay);
   document.getElementById("cha").addEventListener("input", updateACDisplay);
   document.getElementById("armor").addEventListener("change", updateArmorInfo);
-  document.getElementById("class").addEventListener("change", () => {updateClassFeature();updateACDisplay();updateHPDisplay();});
+  document.getElementById("class").addEventListener("change", () => {updateClassFeature();updateACDisplay();updateHPDisplay();updateClassProficiencyOptions();populateHandAttacks();});
   document.getElementById("level").addEventListener("change", () => {updateClassFeature();updateACDisplay();updateHPDisplay();});
+  document.getElementById("cleric-guardian")?.addEventListener("change", populateHandAttacks);
+  document.getElementById("druid-sentinel")?.addEventListener("change", populateHandAttacks);
 
 });
 
@@ -1144,47 +1156,61 @@ function weaponHasProp(weapon, keyword) {
   return [weapon.屬性1, weapon.屬性2, weapon.屬性3, weapon.屬性4].some(p => p?.includes(keyword));
 }
 
+function formatSigned(value) {
+  if (!Number.isFinite(value)) return "";
+  return value >= 0 ? `+${value}` : `${value}`;
+}
+
+function updateClassProficiencyOptions() {
+  const cls = document.getElementById("class")?.value || "";
+  const root = document.getElementById("class-proficiency-options");
+  const clericWrap = document.getElementById("cleric-guardian-wrap");
+  const druidWrap = document.getElementById("druid-sentinel-wrap");
+
+  if (!root || !clericWrap || !druidWrap) return;
+
+  const isCleric = cls === "cleric";
+  const isDruid = cls === "druid";
+
+  root.style.display = (isCleric || isDruid) ? "block" : "none";
+  clericWrap.style.display = isCleric ? "inline-block" : "none";
+  druidWrap.style.display = isDruid ? "inline-block" : "none";
+}
+
 function isWeaponProficient(weapon) {
   if (!weapon || weapon.名稱 === "盾牌") return false;
 
-  const cls = document.getElementById("class")?.value || ""; // 你確認 id="class" 正確
+  const cls = document.getElementById("class")?.value || "";
   const isSimple = SIMPLE_WEAPON_NAMES.has(weapon.名稱);
   const isMartial = MARTIAL_WEAPON_NAMES.has(weapon.名稱);
 
   const hasLight = weaponHasProp(weapon, "輕型");
   const hasFinesse = weaponHasProp(weapon, "靈巧");
 
-  // 這些職業：簡易 + 軍用（你要求 warlock 也直接算在內）
   const simpleAndMartial = ["barbarian", "fighter", "paladin", "ranger", "warlock"];
   if (simpleAndMartial.includes(cls)) return true;
 
-  // 這些職業：只有簡易
   const simpleOnly = ["bard", "sorcerer", "wizard"];
   if (simpleOnly.includes(cls)) return isSimple;
 
-  // 牧師：簡易；若你未來要做守護者 -> 軍用，可以留這行（沒 checkbox 也不會報錯）
   if (cls === "cleric") {
     const guardian = document.getElementById("cleric-guardian")?.checked;
     return isSimple || (guardian && isMartial);
   }
 
-  // 德魯伊：簡易；若你未來要做哨衛 -> 軍用，可以留這行（沒 checkbox 也不會報錯）
   if (cls === "druid") {
     const sentinel = document.getElementById("druid-sentinel")?.checked;
     return isSimple || (sentinel && isMartial);
   }
 
-  // 武僧：簡易 + 具有「輕型」屬性的軍用武器（你的職業資料也有這條）:contentReference[oaicite:3]{index=3}
   if (cls === "monk") {
     return isSimple || (isMartial && hasLight);
   }
 
-  // 遊蕩者：簡易 + 具有「靈巧或輕型」的軍用武器
   if (cls === "rogue") {
     return isSimple || (isMartial && (hasLight || hasFinesse));
   }
 
-  // 其他：保守不熟練
   return false;
 }
 
@@ -1207,27 +1233,24 @@ function populateHandAttacks() {
     }
     const strMod = getModifier("str");
     const dexMod = getModifier("dex");
-    const isRanged = [weapon.屬性1, weapon.屬性2, weapon.屬性3, weapon.屬性4].some(p => p?.includes("射程"));
-    const isDexEligible = [weapon.屬性1, weapon.屬性2, weapon.屬性3, weapon.屬性4].some(p => p?.includes("靈巧"));
-const pb = getProficiencyBonus();
-const proficient = isWeaponProficient(weapon);
+    const isRanged = weaponHasProp(weapon, "射程");
+    const isDexEligible = weaponHasProp(weapon, "靈巧");
+    const pb = getProficiencyBonus();
+    const proficient = isWeaponProficient(weapon);
 
-let hitBonus;
-if (isRanged) {
-  hitBonus = dexMod + (proficient ? pb : 0);
-} else if (isDexEligible) {
-  hitBonus = Math.max(strMod, dexMod) + (proficient ? pb : 0);
-} else {
-  hitBonus = strMod + (proficient ? pb : 0);
-}
+    let attackAbilityMod;
+    if (isRanged) {
+      attackAbilityMod = dexMod;
+    } else if (isDexEligible) {
+      attackAbilityMod = Math.max(strMod, dexMod);
+    } else {
+      attackAbilityMod = strMod;
+    }
 
-
-    const hitSign = hitBonus >= 0 ? "+" : "";
-    document.getElementById(`${hand.prefix}-hit`).value = `${hitSign}${hitBonus}`;
+    const hitBonus = attackAbilityMod + (proficient ? pb : 0);
+    document.getElementById(`${hand.prefix}-hit`).value = formatSigned(hitBonus);
     // 傷害部分
-    const abilityMod = isDexEligible ? Math.max(strMod, dexMod) : (isRanged ? dexMod : strMod);
-    const sign = abilityMod >= 0 ? "+" : "";
-    const damage = `${weapon.傷害} ${sign}${abilityMod}`;
+    const damage = `${weapon.傷害} ${formatSigned(attackAbilityMod)}`;
     document.getElementById(`${hand.prefix}-dmg`).value = damage;
     // 備註部分
     const traits = [weapon.精通, weapon.屬性1, weapon.屬性2, weapon.屬性3, weapon.屬性4]
