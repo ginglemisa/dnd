@@ -23,7 +23,11 @@ const classFeatures = {
       <td>簡易，軍用武器</td>
     </tr>
     <tr style="border-top: 3px solid #444;">
-      <td style="width: 5em;font-weight: bold;">護甲訓練</td>
+      <td style="font-weight: bold;">工具熟練項</td>
+      <td>無</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="width: 5em; font-weight: bold;">護甲訓練</td>
       <td>輕甲，中甲，盾牌</td>
     </tr>
     <tr>
@@ -180,7 +184,7 @@ const classFeatures = {
       <td>任選三種樂器</td>
     </tr>
     <tr style="border-top: 3px solid #444;">
-      <td style="width: 5em;font-weight: bold;">護甲訓練</td>
+      <td style="width: 5em; font-weight: bold;">護甲訓練</td>
       <td>輕甲</td>
     </tr>
     <tr>
@@ -189,7 +193,7 @@ const classFeatures = {
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>
-      <td>皮甲、2 把匕首、藝人套組和 19 金幣\n自選一個樂器(風笛，鼓，揚琴長笛，角號，魯特琴，里拉琴，排簫，蘆笛，提琴)</td>
+      <td>皮甲、2 把匕首、藝人套組和 19 金幣<br>自選一個樂器（風笛、鼓、揚琴、長笛、角號、魯特琴、里拉琴、排簫、蘆笛、提琴）</td>
     </tr>
     <tr>
       <td style="font-weight: bold;">（B）</td>
@@ -345,15 +349,50 @@ const classFeatures = {
 短休或長休皆可恢復已消耗的激勵骰。
 此外，也可用一個法術位換一顆激勵骰（不耗行動或附贈）`,
 
-  cleric: `牧師
-  關鍵屬性	感知
-  生命骰	每牧師等級 D8
-  豁免熟練項	感知與魅力
-  技能熟練項	從歷史、洞悉、醫藥、遊說或宗教中選擇兩項
-  武器熟練項	簡易武器
-  護甲訓練	輕甲、中甲和盾牌
-
-  初始裝備	選擇 A 或 B：（A）鏈甲衫、盾牌、硬頭錘、聖徽、祭司套組和 7 金幣；或（B）110 金幣
+  cleric: `<table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+  <tbody>
+    <tr>
+      <td style="width: 6em; font-weight: bold;">關鍵屬性</td>
+      <td>感知</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">生命骰</td>
+      <td>D8，每級多一顆</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">豁免熟練項</td>
+      <td>感知，魅力</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">技能熟練項</td>
+      <td>從歷史、洞悉、醫藥、遊說或宗教中選擇兩項</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">武器熟練項</td>
+      <td>簡易武器</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">工具熟練項</td>
+      <td>無</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="width: 5em; font-weight: bold;">護甲訓練</td>
+      <td>輕甲、中甲和盾牌</td>
+    </tr>
+    <tr>
+      <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td style="padding-top: 6px; font-weight: bold;">（A）</td>
+      <td>鏈甲衫、盾牌、硬頭錘、聖徽、祭司套組和 7 金幣</td>
+    </tr>
+    <tr>
+      <td style="font-weight: bold;">（B）</td>
+      <td>110 金幣</td>
+    </tr>
+  </tbody>
+</table>
 
 祭司套組(30金幣)：背包、毯子、聖水、油燈、7 日份的口糧、長袍和火絨盒。
 牧師特性
@@ -477,16 +516,50 @@ const classFeatures = {
 等級 4：屬性值提升
 獲得“屬性值提升”專長或另一符合條件的自選專長。
   `,
-  druid: `德魯伊
-關鍵屬性	感知
-生命骰	每德魯伊等級 D8
-豁免熟練項	智力與感知
-技能熟練項	從奧秘、馴獸、洞悉、醫藥、自然、察覺、宗教或求生中選擇兩項
-武器熟練項	簡易武器
-工具熟練項	草藥工具
-護甲訓練	輕甲和盾牌
-
-初始裝備	選擇 A 或 B：（A）皮甲、盾牌、鐮刀、德魯伊法器（長棍）、探索套組、草藥工具和 9 金幣；或（B）50 金幣
+  druid: `<table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+  <tbody>
+    <tr>
+      <td style="width: 6em; font-weight: bold;">關鍵屬性</td>
+      <td>感知</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">生命骰</td>
+      <td>D8，每級多一顆</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">豁免熟練項</td>
+      <td>智力，感知</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">技能熟練項</td>
+      <td>從奧秘、馴獸、洞悉、醫藥、自然、察覺、宗教或求生中選擇兩項</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">武器熟練項</td>
+      <td>簡易武器</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">工具熟練項</td>
+      <td>草藥工具</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="width: 5em; font-weight: bold;">護甲訓練</td>
+      <td>輕甲和盾牌</td>
+    </tr>
+    <tr>
+      <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td style="padding-top: 6px; font-weight: bold;">（A）</td>
+      <td>皮甲、盾牌、鐮刀、德魯伊法器（長棍）、探索套組、草藥工具和 9 金幣</td>
+    </tr>
+    <tr>
+      <td style="font-weight: bold;">（B）</td>
+      <td>50 金幣</td>
+    </tr>
+  </tbody>
+</table>
 
 探索套組(10金幣)：背包、床卷、2 瓶油、10 天的口糧、繩索、火絨盒、10 根火把、水袋。
 德魯伊特性
@@ -667,15 +740,50 @@ const classFeatures = {
 
 等級 4：屬性值提升
 獲得“屬性值提升”專長或另一符合條件的自選專長。`,
-  fighter: `戰士
-  關鍵屬性	力量或敏捷
-  生命骰	每戰士等級 D10
-  豁免熟練項	力量與體質
-  技能熟練項	從體操、馴獸、運動、歷史、洞悉、威嚇、遊說、察覺或求生中選擇兩項
-  武器熟練項	簡易武器和軍用武器
-  護甲訓練	輕甲、中甲、重甲和盾牌
-
-  初始裝備	選擇 A 、B 或 C：（A）鏈甲、巨劍、連枷、8 支標槍、地城套組和 4 金幣 ；（B）鑲釘皮甲、彎刀、短劍、長弓、20 支箭、箭袋、地城套組和 11 金幣 ；（C）155 金幣
+  fighter: `<table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+  <tbody>
+    <tr>
+      <td style="width: 6em; font-weight: bold;">關鍵屬性</td>
+      <td>力量或敏捷</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">生命骰</td>
+      <td>D10，每級多一顆</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">豁免熟練項</td>
+      <td>力量，體質</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">技能熟練項</td>
+      <td>從體操、馴獸、運動、歷史、洞悉、威嚇、遊說、察覺或求生中選擇兩項</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">武器熟練項</td>
+      <td>簡易武器和軍用武器</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">工具熟練項</td>
+      <td>無</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="width: 5em; font-weight: bold;">護甲訓練</td>
+      <td>輕甲、中甲、重甲和盾牌</td>
+    </tr>
+    <tr>
+      <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td style="padding-top: 6px; font-weight: bold;">（A）</td>
+      <td>鏈甲、巨劍、連枷、8 支標槍、地城套組和 4 金幣<br>或鑲釘皮甲、彎刀、短劍、長弓、20 支箭、箭袋、地城套組和 11 金幣</td>
+    </tr>
+    <tr>
+      <td style="font-weight: bold;">（B）</td>
+      <td>155 金幣</td>
+    </tr>
+  </tbody>
+</table>
 
 地城套組(12金幣)：背包、鐵蒺藜、撬棍、2 瓶油、10 日份的口糧、繩索、火絨盒、10 根火把，水袋。
 戰士特性
@@ -758,16 +866,50 @@ const classFeatures = {
 
 等級 4：屬性值提升
 獲得“屬性值提升”專長或另一符合條件的自選專長。`,
-  monk: `武僧
-  關鍵屬性	敏捷與感知
-  生命骰	每武僧等級 D8
-  豁免熟練項	力量與敏捷
-  技能熟練項	從體操、運動、歷史、洞悉、宗教或隱匿中選擇兩項
-  武器熟練項	簡易武器和具有輕型屬性的軍用武器
-  工具熟練項	任選一種工匠工具或樂器
-  護甲訓練	無
-
-  初始裝備	選擇 A 或 B：（A）短矛、 5 把匕首、所選熟練項對應的工匠工具或樂器、探索套組和 11 金幣；（B）50 金幣
+  monk: `<table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+  <tbody>
+    <tr>
+      <td style="width: 6em; font-weight: bold;">關鍵屬性</td>
+      <td>敏捷與感知</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">生命骰</td>
+      <td>D8，每級多一顆</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">豁免熟練項</td>
+      <td>力量，敏捷</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">技能熟練項</td>
+      <td>從體操、運動、歷史、洞悉、宗教或隱匿中選擇兩項</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">武器熟練項</td>
+      <td>簡易武器和具有輕型屬性的軍用武器</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">工具熟練項</td>
+      <td>任選一種工匠工具或樂器</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="width: 5em; font-weight: bold;">護甲訓練</td>
+      <td>無</td>
+    </tr>
+    <tr>
+      <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td style="padding-top: 6px; font-weight: bold;">（A）</td>
+      <td>短矛、5 把匕首、所選熟練項對應的工匠工具或樂器、探索套組和 11 金幣</td>
+    </tr>
+    <tr>
+      <td style="font-weight: bold;">（B）</td>
+      <td>50 金幣</td>
+    </tr>
+  </tbody>
+</table>
 
 探索套組(10金幣)：背包、床卷、2 瓶油、10 天的口糧、繩索、火絨盒、10 根火把、水袋。
 武僧特性
@@ -878,15 +1020,50 @@ const classFeatures = {
 等級 4：屬性值提升
 獲得“屬性值提升”專長或另一符合條件的自選專長。
   `,
-  paladin: `聖武士
-  關鍵屬性	力量與魅力
-  生命骰	每聖武士等級 D10
-  豁免熟練項	感知與魅力
-  技能熟練項	從運動、洞悉、威嚇、醫藥、遊說、宗教中選兩項
-  武器熟練項	簡易武器和軍用武器
-  護甲訓練	輕甲、中甲、重甲和盾牌
-
-  初始裝備	選擇 A 或 B ：（A）鏈甲、盾牌、長劍、6 支標槍、聖徽、祭司套組和 9 金幣；或（B）150 金幣
+  paladin: `<table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+  <tbody>
+    <tr>
+      <td style="width: 6em; font-weight: bold;">關鍵屬性</td>
+      <td>力量與魅力</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">生命骰</td>
+      <td>D10，每級多一顆</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">豁免熟練項</td>
+      <td>感知，魅力</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">技能熟練項</td>
+      <td>從運動、洞悉、威嚇、醫藥、遊說、宗教中選兩項</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">武器熟練項</td>
+      <td>簡易武器和軍用武器</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">工具熟練項</td>
+      <td>無</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="width: 5em; font-weight: bold;">護甲訓練</td>
+      <td>輕甲、中甲、重甲和盾牌</td>
+    </tr>
+    <tr>
+      <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td style="padding-top: 6px; font-weight: bold;">（A）</td>
+      <td>鏈甲、盾牌、長劍、6 支標槍、聖徽、祭司套組和 9 金幣</td>
+    </tr>
+    <tr>
+      <td style="font-weight: bold;">（B）</td>
+      <td>150 金幣</td>
+    </tr>
+  </tbody>
+</table>
 
 祭司套組(33金幣)：背包、毯子、聖水、油燈、7 日份的口糧、長袍和火絨盒。
 聖武士特性
@@ -1009,15 +1186,50 @@ const classFeatures = {
 
 等級 4：屬性值提升
 獲得“屬性值提升”專長或另一符合條件的自選專長。`,
-  ranger: `遊俠
-  關鍵屬性	敏捷與感知
-  生命骰	每遊俠等級 D10
-  豁免熟練項	力量與敏捷
-  技能熟練項	從馴獸、運動、洞悉、調查、自然、察覺、隱匿和求生中選擇三項
-  武器熟練項	簡易武器和軍用武器
-  護甲訓練	輕甲、中甲和盾牌
-
-  初始裝備	選擇 A 或 B ：（A）鑲釘皮甲、彎刀、短劍、長弓、20 支箭、箭袋、德魯伊法器（槲寄生枝條）、探索套組和 7 金幣；或（B）150 金幣
+  ranger: `<table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+  <tbody>
+    <tr>
+      <td style="width: 6em; font-weight: bold;">關鍵屬性</td>
+      <td>敏捷與感知</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">生命骰</td>
+      <td>D10，每級多一顆</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">豁免熟練項</td>
+      <td>力量，敏捷</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">技能熟練項</td>
+      <td>從馴獸、運動、洞悉、調查、自然、察覺、隱匿和求生中選擇三項</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">武器熟練項</td>
+      <td>簡易武器和軍用武器</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">工具熟練項</td>
+      <td>無</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="width: 5em; font-weight: bold;">護甲訓練</td>
+      <td>輕甲、中甲和盾牌</td>
+    </tr>
+    <tr>
+      <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td style="padding-top: 6px; font-weight: bold;">（A）</td>
+      <td>鑲釘皮甲、彎刀、短劍、長弓、20 支箭、箭袋、德魯伊法器（槲寄生枝條）、探索套組和 7 金幣</td>
+    </tr>
+    <tr>
+      <td style="font-weight: bold;">（B）</td>
+      <td>150 金幣</td>
+    </tr>
+  </tbody>
+</table>
 
 探索套組(10金幣)：背包、床卷、2 瓶油、10 天的口糧、繩索、火絨盒、10 根火把、水袋。
 遊俠特性
@@ -1121,16 +1333,50 @@ const classFeatures = {
 
 等級 4：屬性值提升
 獲得“屬性值提升”專長或另一符合條件的自選專長。`,
-  rogue: `遊蕩者
-  關鍵屬性	敏捷
-  生命骰	每遊蕩者等級 D8
-  豁免熟練項	智力與敏捷
-  技能熟練項	從體操、運動、欺瞞、洞悉、威嚇、調查、察覺、遊說、巧手、隱匿中選擇四項
-  武器熟練項	簡易武器和具有靈巧或輕型屬性的軍用武器
-  工具熟練項	盜賊工具
-  護甲訓練	輕甲
-
-  初始裝備	選擇 A 或 B：（A）皮甲、2 把匕首、短劍、短弓、20 支箭、箭袋、盜賊工具、竊賊套組和 8 金幣；或（B）100 金幣
+  rogue: `<table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+  <tbody>
+    <tr>
+      <td style="width: 6em; font-weight: bold;">關鍵屬性</td>
+      <td>敏捷</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">生命骰</td>
+      <td>D8，每級多一顆</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">豁免熟練項</td>
+      <td>智力，敏捷</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">技能熟練項</td>
+      <td>從體操、運動、欺瞞、洞悉、威嚇、調查、察覺、遊說、巧手、隱匿中選擇四項</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">武器熟練項</td>
+      <td>簡易武器和具有靈巧或輕型屬性的軍用武器</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">工具熟練項</td>
+      <td>盜賊工具</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="width: 5em; font-weight: bold;">護甲訓練</td>
+      <td>輕甲</td>
+    </tr>
+    <tr>
+      <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td style="padding-top: 6px; font-weight: bold;">（A）</td>
+      <td>皮甲、2 把匕首、短劍、短弓、20 支箭、箭袋、盜賊工具、竊賊套組和 8 金幣</td>
+    </tr>
+    <tr>
+      <td style="font-weight: bold;">（B）</td>
+      <td>100 金幣</td>
+    </tr>
+  </tbody>
+</table>
 
 竊賊套組(16金幣)：背包、滾珠、鈴鐺、10 根蠟燭、撬棍、附蓋提燈、7 瓶油、5 日份口糧、繩索、火絨盒、水袋。
 遊蕩者特性
@@ -1208,15 +1454,50 @@ const classFeatures = {
 
 等級 4：屬性值提升
 獲得“屬性值提升”專長或另一符合條件的自選專長。`,
-  sorcerer: `術士
-  關鍵屬性	魅力
-  生命骰	每術士等級 D6
-  豁免熟練項	體質與魅力
-  技能熟練項	從奧秘、欺瞞、洞悉、威嚇、遊說或宗教中選擇兩項
-  武器熟練項	簡易武器
-  護甲訓練	無
- 
-  初始裝備	選擇 A 或 B ：（A）短矛、2  把匕首、奧術法器（水晶）、地城套組和 28 金幣；或（B）50 金幣
+  sorcerer: `<table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+  <tbody>
+    <tr>
+      <td style="width: 6em; font-weight: bold;">關鍵屬性</td>
+      <td>魅力</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">生命骰</td>
+      <td>D6，每級多一顆</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">豁免熟練項</td>
+      <td>體質，魅力</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">技能熟練項</td>
+      <td>從奧秘、欺瞞、洞悉、威嚇、遊說或宗教中選擇兩項</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">武器熟練項</td>
+      <td>簡易武器</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">工具熟練項</td>
+      <td>無</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="width: 5em; font-weight: bold;">護甲訓練</td>
+      <td>無</td>
+    </tr>
+    <tr>
+      <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td style="padding-top: 6px; font-weight: bold;">（A）</td>
+      <td>短矛、2 把匕首、奧術法器（水晶）、地城套組和 28 金幣</td>
+    </tr>
+    <tr>
+      <td style="font-weight: bold;">（B）</td>
+      <td>50 金幣</td>
+    </tr>
+  </tbody>
+</table>
 
   地城套組(12金幣)：背包、鐵蒺藜、撬棍、2 瓶油、10 日份的口糧、繩索、火絨盒、10 根火把，水袋。
   術士特性
@@ -1408,15 +1689,50 @@ const classFeatures = {
 
 孿生法術─消耗：1 個術法點
 當你施展可以通過升環施法來指定額外生物作為目標的法術時（例如魅惑人類），你可以消耗 1 術法點將該法術的生效環階提升 1 環。`,
-  warlock: `契術師
-  關鍵屬性	魅力
-  生命骰	每契術師等級 D8
-  豁免熟練項	感知與魅力
-  技能熟練項	從奧秘、欺瞞、歷史、威嚇、調查、自然或宗教中選擇兩項
-  武器熟練項	簡易武器
-  護甲訓練	輕甲
-
-    初始裝備	選擇 A 或 B ：（A）皮甲、鐮刀、2 把匕首、奧術法器（寶珠）、書（玄秘學識）、學者套組和 15 金幣 或（B）100 金幣
+  warlock: `<table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+  <tbody>
+    <tr>
+      <td style="width: 6em; font-weight: bold;">關鍵屬性</td>
+      <td>魅力</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">生命骰</td>
+      <td>D8，每級多一顆</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">豁免熟練項</td>
+      <td>感知，魅力</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">技能熟練項</td>
+      <td>從奧秘、欺瞞、歷史、威嚇、調查、自然或宗教中選擇兩項</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">武器熟練項</td>
+      <td>簡易武器</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">工具熟練項</td>
+      <td>無</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="width: 5em; font-weight: bold;">護甲訓練</td>
+      <td>輕甲</td>
+    </tr>
+    <tr>
+      <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td style="padding-top: 6px; font-weight: bold;">（A）</td>
+      <td>皮甲、鐮刀、2 把匕首、奧術法器（寶珠）、書（玄秘學識）、學者套組和 15 金幣</td>
+    </tr>
+    <tr>
+      <td style="font-weight: bold;">（B）</td>
+      <td>100 金幣</td>
+    </tr>
+  </tbody>
+</table>
 
 學者套組(40金幣)：背包、書籍、墨水、墨水筆、油燈、10 瓶油、10 張羊皮紙和火絨盒。
 契術師特性
@@ -1594,15 +1910,50 @@ const classFeatures = {
 你選擇一個需要攻擊檢定的已知契術師戲法。當你以該戲法命中一個大型或更小體型的生物時，你可以將該生物向遠離你的方向推開10尺
 
 可重覆。你可以多次獲得此祈喚，但每次必須選擇不同的符合條件戲法。`,
-  wizard: `法師職業能力
-  關鍵屬性	智力
-  生命骰	每法師等級 D6
-  豁免熟練項	智力與感知
-  技能熟練項	從奧秘、歷史、洞悉、調查、醫學、自然或宗教中選擇兩項
-  武器熟練項	簡易武器
-  護甲訓練	無
-
-  初始裝備	選擇 A 或 B ：（A） 2 把匕首、奧術法器（長棍）、長袍、魔法書、學者套組和 5 金幣；或 （B）55 金幣
+  wizard: `<table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+  <tbody>
+    <tr>
+      <td style="width: 6em; font-weight: bold;">關鍵屬性</td>
+      <td>智力</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">生命骰</td>
+      <td>D6，每級多一顆</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">豁免熟練項</td>
+      <td>智力，感知</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">技能熟練項</td>
+      <td>從奧秘、歷史、洞悉、調查、醫學、自然或宗教中選擇兩項</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">武器熟練項</td>
+      <td>簡易武器</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="font-weight: bold;">工具熟練項</td>
+      <td>無</td>
+    </tr>
+    <tr style="border-top: 3px solid #444;">
+      <td style="width: 5em; font-weight: bold;">護甲訓練</td>
+      <td>無</td>
+    </tr>
+    <tr>
+      <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td style="padding-top: 6px; font-weight: bold;">（A）</td>
+      <td>2 把匕首、奧術法器（長棍）、長袍、魔法書、學者套組和 5 金幣</td>
+    </tr>
+    <tr>
+      <td style="font-weight: bold;">（B）</td>
+      <td>55 金幣</td>
+    </tr>
+  </tbody>
+</table>
 
 學者套組(40金幣)：背包、書籍、墨水、墨水筆、油燈、10 瓶油、10 張羊皮紙和火絨盒。
 法師特性
