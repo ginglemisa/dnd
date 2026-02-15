@@ -597,6 +597,39 @@
   <button type="button" onclick="createSingleSpellRow('level3spells-area', 3)">➕ 新增三環法術</button>
 </div>
 
+<div id="highlevel-spells" style="display:none;">
+  <div class="section">
+    <h3>四環法術</h3>
+    <div id="level4spells-area"></div>
+    <button type="button" onclick="createSingleSpellRow('level4spells-area', 4)">➕ 新增四環法術</button>
+  </div>
+  <div class="section">
+    <h3>五環法術</h3>
+    <div id="level5spells-area"></div>
+    <button type="button" onclick="createSingleSpellRow('level5spells-area', 5)">➕ 新增五環法術</button>
+  </div>
+  <div class="section">
+    <h3>六環法術</h3>
+    <div id="level6spells-area"></div>
+    <button type="button" onclick="createSingleSpellRow('level6spells-area', 6)">➕ 新增六環法術</button>
+  </div>
+  <div class="section">
+    <h3>七環法術</h3>
+    <div id="level7spells-area"></div>
+    <button type="button" onclick="createSingleSpellRow('level7spells-area', 7)">➕ 新增七環法術</button>
+  </div>
+  <div class="section">
+    <h3>八環法術</h3>
+    <div id="level8spells-area"></div>
+    <button type="button" onclick="createSingleSpellRow('level8spells-area', 8)">➕ 新增八環法術</button>
+  </div>
+  <div class="section">
+    <h3>九環法術</h3>
+    <div id="level9spells-area"></div>
+    <button type="button" onclick="createSingleSpellRow('level9spells-area', 9)">➕ 新增九環法術</button>
+  </div>
+</div>
+
   </div>
 
   
@@ -653,6 +686,13 @@ document.getElementById("class").addEventListener("change", updateHPDisplay);
 document.getElementById("level").addEventListener("change", updateHPDisplay);
 document.getElementById("race").addEventListener("change", updateHPDisplay);
 document.getElementById("con").addEventListener("input", updateHPDisplay);
+
+document.getElementById("spell-notes").addEventListener("input", function () {
+  if (!this.value.includes("/unlock9")) return;
+
+  document.getElementById("highlevel-spells").style.display = "block";
+  this.value = this.value.replace(/\/unlock9/g, "").trim();
+});
 
 
 // 計算AC頂部
