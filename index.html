@@ -853,8 +853,15 @@ function updateClassFeature() {
 
 function updateRaceFeature() {
   const value = document.getElementById("race").value;
-  document.getElementById("raceFeatures").innerText = raceFeatures[value] || "無資料";
+  const raw = raceFeatures[value] || "無資料";
+
+  const formatted = raw
+    .replace(/\n/g, "<br>")
+    .replace(/([^─<]+)─/g, "<strong>$1</strong>─");
+
+  document.getElementById("raceFeatures").innerHTML = formatted;
 }
+
 
 function updateBackgroundFeature() {
   const value = document.getElementById("background").value;
