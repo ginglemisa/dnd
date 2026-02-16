@@ -395,6 +395,7 @@ const classFeatures = {
 </table>
 
 祭司套組(30金幣)：背包、毯子、聖水、油燈、7 日份的口糧、長袍和火絨盒。
+
 <strong>牧師特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
     <tr>
@@ -580,6 +581,7 @@ const classFeatures = {
 </table>
 
 探索套組(10金幣)：背包、床卷、2 瓶油、10 天的口糧、繩索、火絨盒、10 根火把、水袋。
+
 <strong>德魯伊特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
     <tr>
@@ -822,6 +824,7 @@ const classFeatures = {
 </table>
 
 地城套組(12金幣)：背包、鐵蒺藜、撬棍、2 瓶油、10 日份的口糧、繩索、火絨盒、10 根火把，水袋。
+
 <strong>戰士特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
     <tr>
@@ -960,6 +963,7 @@ const classFeatures = {
 </table>
 
 探索套組(10金幣)：背包、床卷、2 瓶油、10 天的口糧、繩索、火絨盒、10 根火把、水袋。
+
 <strong>武僧特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
     <tr>
@@ -1127,6 +1131,7 @@ const classFeatures = {
 </table>
 
 祭司套組(33金幣)：背包、毯子、聖水、油燈、7 日份的口糧、長袍和火絨盒。
+
 <strong>聖武士特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
     <tr>
@@ -1312,6 +1317,7 @@ const classFeatures = {
 </table>
 
 探索套組(10金幣)：背包、床卷、2 瓶油、10 天的口糧、繩索、火絨盒、10 根火把、水袋。
+
 <strong>遊俠特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
     <tr>
@@ -1475,6 +1481,7 @@ const classFeatures = {
 </table>
 
 竊賊套組(16金幣)：背包、滾珠、鈴鐺、10 根蠟燭、撬棍、附蓋提燈、7 瓶油、5 日份口糧、繩索、火絨盒、水袋。
+
 <strong>遊蕩者特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
     <tr>
@@ -1607,6 +1614,7 @@ const classFeatures = {
 </table>
 
   地城套組(12金幣)：背包、鐵蒺藜、撬棍、2 瓶油、10 日份的口糧、繩索、火絨盒、10 根火把，水袋。
+  
 <strong>術士特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
     <tr>
@@ -1860,6 +1868,7 @@ const classFeatures = {
 </table>
 
 學者套組(40金幣)：背包、書籍、墨水、墨水筆、油燈、10 瓶油、10 張羊皮紙和火絨盒。
+
 <strong>契術師特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
     <tr>
@@ -2093,6 +2102,7 @@ const classFeatures = {
 </table>
 
 學者套組(40金幣)：背包、書籍、墨水、墨水筆、油燈、10 瓶油、10 張羊皮紙和火絨盒。
+
 <strong>法師特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
     <tr>
