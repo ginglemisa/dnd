@@ -856,11 +856,25 @@ function updateRaceFeature() {
   const raw = raceFeatures[value] || "無資料";
 
   const formatted = raw
-    .replace(/\n/g, "<br>")
-    .replace(/([^─<]+)─/g, "<strong>$1</strong>─");
+    .split("\n")
+    .map(line => {
+      const t = line.trim();
+      if (!t) return ""; // 保留空行（交給 pre-wrap 顯示）
+
+      // 只處理「行首特性名─內文」這種格式，避免把空白/換行吃進去
+      const idx = line.indexOf("─");
+      if (idx > 0) {
+        const head = line.slice(0, idx).trim();
+        const tail = line.slice(idx + 1);
+        return `<strong class="feat-title">${head}</strong>─${tail}`;
+      }
+      return line;
+    })
+    .join("\n");
 
   document.getElementById("raceFeatures").innerHTML = formatted;
 }
+
 
 
 function updateBackgroundFeature() {
