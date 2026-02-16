@@ -7,27 +7,19 @@ const raceFeatures = {
 作為龍裔，你有以下特質。
 
 龍族血統─你有巨龍的血統。在下表中擇一，並按照龍種決定吐息傷害類型、傷害抗性類型。
-
 <table border="1" style="border-collapse: collapse; text-align: center;">
   <tr>
     <td>黑龍-酸</td>
     <td>藍龍-電</td>
     <td>黃銅龍-火</td>
-  </tr>
-  <tr>
     <td>青銅龍-電</td>
     <td>赤銅龍-酸</td>
-    <td>金龍-火</td>
   </tr>
   <tr>
+    <td>金龍-火</td>
     <td>綠龍-毒</td>
     <td>紅龍-火</td>
     <td>銀龍-冰</td>
-  </tr>
-</table>
-
-<table border="1" style="border-collapse: collapse; text-align: center; margin-top: 4px;">
-  <tr>
     <td>白龍-冰</td>
   </tr>
 </table>
