@@ -690,7 +690,14 @@ document.getElementById("con").addEventListener("input", updateHPDisplay);
 document.getElementById("spell-notes").addEventListener("input", function () {
   if (!this.value.includes("/unlock9")) return;
 
+  // 顯示 4~9 環區塊
   document.getElementById("highlevel-spells").style.display = "block";
+
+  // 同步切換到 Full 模式（給自己查完整法術）
+  SPELL_MODE = "full";
+  refreshSpellDropdowns();
+
+  // 清掉密技字串
   this.value = this.value.replace(/\/unlock9/g, "").trim();
 });
 
@@ -1430,6 +1437,98 @@ function updateArmorInfo() {
 
 // ====== 法術下拉產生用 ======
 
+// ====== Spell Mode (Basic / Full) ======
+// 預設給玩家：Basic，只顯示 Basic Allow 清單內的法術
+let SPELL_MODE = "basic"; // "basic" | "full"
+
+// Basic Rule 允許清單：用「英文法術名」對照（例如 spell-list.js 裡的 "舞光術 Dancing Lights" -> "Dancing Lights"）
+const basicAllow = {
+  bard: {
+    cantrips: ["Dancing Lights","Light","Mage Hand","Mending","Message","Minor Illusion","Prestidigitation","Starry Wisp","Thunderclap","True Strike","Vicious Mockery"],
+    1: ["Animal Friendship","Bane","Charm Person","Color Spray","Command","Comprehend Languages","Cure Wounds","Detect Magic","Disguise Self","Dissonant Whispers","Faerie Fire","Feather Fall","Healing Word","Heroism","Identify","Illusory Script","Longstrider","Silent Image","Sleep","Speak with Animals","Tasha’s Hideous Laughter","Thunderwave","Unseen Servant"],
+    2: ["Aid","Animal Messenger","Blindness/Deafness","Calm Emotions","Detect Thoughts","Enhance Ability","Enlarge/Reduce","Enthrall","Heat Metal","Hold Person","Invisibility","Knock","Lesser Restoration","Locate Animals or Plants","Locate Object","Magic Mouth","Mirror Image","Phantasmal Force","See Invisibility","Shatter","Silence","Suggestion","Zone of Truth"],
+    3: ["Bestow Curse","Clairvoyance","Dispel Magic","Fear","Glyph of Warding","Hypnotic Pattern","Leomund’s Tiny Hut","Major Image","Mass Healing Word","Nondetection","Plant Growth","Sending","Slow","Speak with Dead","Speak with Plants","Stinking Cloud","Tongues"]
+  },
+  cleric: {
+    cantrips: ["Guidance","Light","Mending","Resistance","Sacred Flame","Spare the Dying","Thaumaturgy"],
+    1: ["Bane","Bless","Command","Create or Destroy Water","Cure Wounds","Detect Evil and Good","Detect Magic","Detect Poison and Disease","Guiding Bolt","Healing Word","Inflict Wounds","Protection from Evil and Good","Purify Food and Drink","Sanctuary","Shield of Faith"],
+    2: ["Aid","Augury","Blindness/Deafness","Calm Emotions","Continual Flame","Enhance Ability","Find Traps","Gentle Repose","Hold Person","Lesser Restoration","Locate Object","Prayer of Healing","Protection from Poison","Silence","Spiritual Weapon","Warding Bond","Zone of Truth"],
+    3: ["Animate Dead","Beacon of Hope","Bestow Curse","Clairvoyance","Create Food and Water","Daylight","Dispel Magic","Glyph of Warding","Magic Circle","Mass Healing Word","Meld into Stone","Protection from Energy","Remove Curse","Revivify","Sending","Speak with Dead","Spirit Guardians","Tongues","Water Walk"]
+  },
+  druid: {
+    cantrips: ["Druidcraft","Elementalism","Guidance","Mending","Message","Poison Spray","Produce Flame","Resistance","Shillelagh","Spare the Dying","Starry Wisp"],
+    1: ["Animal Friendship","Charm Person","Create or Destroy Water","Cure Wounds","Detect Magic","Detect Poison and Disease","Entangle","Faerie Fire","Fog Cloud","Goodberry","Healing Word","Ice Knife","Jump","Longstrider","Protection from Evil and Good","Purify Food and Drink","Speak with Animals","Thunderwave"],
+    2: ["Aid","Animal Messenger","Augury","Barkskin","Continual Flame","Darkvision","Enhance Ability","Enlarge/Reduce","Find Traps","Flame Blade","Flaming Sphere","Gust of Wind","Heat Metal","Hold Person","Lesser Restoration","Locate Animals or Plants","Locate Object","Moonbeam","Pass without Trace","Protection from Poison","Spike Growth"],
+    3: ["Call Lightning","Conjure Animals","Daylight","Dispel Magic","Meld into Stone","Plant Growth","Protection from Energy","Revivify","Sleet Storm","Speak with Plants","Water Breathing","Water Walk","Wind Wall"]
+  },
+  paladin: {
+    1: ["Bless","Command","Cure Wounds","Detect Evil and Good","Detect Magic","Detect Poison and Disease","Divine Favor","Divine Smite","Heroism","Protection from Evil and Good","Purify Food and Drink","Searing Smite","Shield of Faith"],
+    2: ["Aid","Find Steed","Gentle Repose","Lesser Restoration","Locate Object","Magic Weapon","Prayer of Healing","Protection from Poison","Shining Smite","Warding Bond","Zone of Truth"]
+  },
+  ranger: {
+    1: ["Alarm","Animal Friendship","Cure Wounds","Detect Magic","Detect Poison and Disease","Ensnaring Strike","Entangle","Fog Cloud","Goodberry","Hunter’s Mark","Jump","Longstrider","Speak with Animals"],
+    2: ["Aid","Animal Messenger","Barkskin","Darkvision","Enhance Ability","Find Traps","Gust of Wind","Lesser Restoration","Locate Animals or Plants","Locate Object","Magic Weapon","Pass without Trace","Protection from Poison","Silence","Spike Growth"]
+  },
+  sorcerer: {
+    cantrips: ["Acid Splash","Chill Touch","Dancing Lights","Elementalism","Fire Bolt","Light","Mage Hand","Mending","Message","Minor Illusion","Poison Spray","Prestidigitation","Ray of Frost","Shocking Grasp","Sorcerous Burst","True Strike"],
+    1: ["Burning Hands","Charm Person","Chromatic Orb","Color Spray","Comprehend Languages","Detect Magic","Disguise Self","Expeditious Retreat","False Life","Feather Fall","Fog Cloud","Grease","Ice Knife","Jump","Mage Armor","Magic Missile","Ray of Sickness","Shield","Silent Image","Sleep","Thunderwave"],
+    2: ["Alter Self","Blindness/Deafness","Blur","Darkness","Darkvision","Detect Thoughts","Dragon’s Breath","Enhance Ability","Enlarge/Reduce","Flame Blade","Flaming Sphere","Gust of Wind","Hold Person","Invisibility","Knock","Levitate","Magic Weapon","Mind Spike","Mirror Image","Misty Step","Phantasmal Force","Scorching Ray","See Invisibility","Shatter","Spider Climb","Suggestion","Web"],
+    3: ["Blink","Clairvoyance","Counterspell","Daylight","Dispel Magic","Fear","Fireball","Fly","Gaseous Form","Haste","Hypnotic Pattern","Lightning Bolt","Major Image","Protection from Energy","Sleet Storm","Slow","Stinking Cloud","Tongues","Vampiric Touch","Water Breathing","Water Walk"]
+  },
+  warlock: {
+    cantrips: ["Chill Touch","Eldritch Blast","Mage Hand","Minor Illusion","Poison Spray","Prestidigitation","True Strike"],
+    1: ["Bane","Charm Person","Comprehend Languages","Detect Magic","Expeditious Retreat","Hellish Rebuke","Hex","Illusory Script","Protection from Evil and Good","Speak with Animals","Tasha’s Hideous Laughter","Unseen Servant"],
+    2: ["Darkness","Enthrall","Hold Person","Invisibility","Mind Spike","Mirror Image","Misty Step","Ray of Enfeeblement","Spider Climb","Suggestion"],
+    3: ["Counterspell","Dispel Magic","Fear","Fly","Gaseous Form","Hypnotic Pattern","Magic Circle","Major Image","Remove Curse","Tongues","Vampiric Touch"]
+  },
+  wizard: {
+    cantrips: ["Acid Splash","Chill Touch","Dancing Lights","Fire Bolt","Light","Mage Hand","Mending","Message","Minor Illusion","Poison Spray","Prestidigitation","Ray of Frost","Shocking Grasp","True Strike"],
+    1: ["Alarm","Burning Hands","Charm Person","Color Spray","Comprehend Languages","Detect Magic","Disguise Self","Expeditious Retreat","False Life","Feather Fall","Find Familiar","Fog Cloud","Grease","Identify","Illusory Script","Jump","Longstrider","Mage Armor","Magic Missile","Protection from Evil and Good","Shield","Silent Image","Sleep","Thunderwave","Unseen Servant"],
+    2: ["Alter Self","Arcane Lock","Augury","Blindness/Deafness","Blur","Continual Flame","Darkness","Darkvision","Detect Thoughts","Enhance Ability","Enlarge/Reduce","Flaming Sphere","Gentle Repose","Gust of Wind","Hold Person","Invisibility","Knock","Levitate","Locate Object","Magic Mouth","Magic Weapon","Mirror Image","Misty Step","Ray of Enfeeblement","Rope Trick","Scorching Ray","See Invisibility","Shatter","Spider Climb","Suggestion","Web"],
+    3: ["Animate Dead","Bestow Curse","Blink","Clairvoyance","Counterspell","Dispel Magic","Fear","Fireball","Fly","Gaseous Form","Glyph of Warding","Haste","Hypnotic Pattern","Lightning Bolt","Magic Circle","Major Image","Nondetection","Phantom Steed","Protection from Energy","Remove Curse","Sending","Sleet Storm","Slow","Speak with Dead","Stinking Cloud","Tongues","Vampiric Touch","Water Breathing"]
+  }
+};
+
+// 從 spell-list.js 的 "中文 English" 抽出英文名 (從第一個英文字母開始一直到結尾)
+function getSpellEnglishName(fullName) {
+  if (!fullName) return "";
+  const m = String(fullName).match(/[A-Za-z].*/);
+  return m ? m[0].trim() : String(fullName).trim();
+}
+
+// 取得「目前模式」下某職業某環級可選的 spells（回傳 spellList 中的物件陣列）
+function getSpellsByMode(classVal, level) {
+  const key = (typeof level === "number") ? String(level) : level;
+  const full = (classVal && spellList?.[classVal]?.[key]) ? spellList[classVal][key] : [];
+  if (SPELL_MODE === "full") return full;
+
+  const allow = basicAllow?.[classVal]?.[key];
+  if (!allow || !Array.isArray(allow)) return [];
+  const allowSet = new Set(allow);
+  return full.filter(s => allowSet.has(getSpellEnglishName(s.name)));
+}
+
+// 切換模式後，用於「不破壞 UI 結構」地刷新所有現存列的下拉與描述
+function refreshSpellDropdowns() {
+  document.querySelectorAll('#tab-spells .form-row').forEach(row => {
+    const selects = row.querySelectorAll('select');
+    if (selects.length < 2) return;
+    const classSel = selects[0];
+    const spellSel = selects[1];
+    const prev = spellSel.value;
+    // 觸發 classSel 的 change 以重建 spell 選項
+    classSel.dispatchEvent(new Event('change'));
+    // 盡量保留原本選到的法術（若在新模式仍存在）
+    if (prev && Array.from(spellSel.options).some(o => o.value === prev)) {
+      spellSel.value = prev;
+    } else if (prev) {
+      spellSel.value = ""; // 避免 UI 崩潰：Basic 模式下曾選 Full 法術時，直接清空
+    }
+    spellSel.dispatchEvent(new Event('change'));
+  });
+}
+
+
 
 
 const classOptions = [
@@ -1489,11 +1588,18 @@ function createSingleSpellRow(areaId, level) {
 
   // 監聽職業變更
   classSel.addEventListener('change', function () {
-    let spells = [];
-    if (this.value && spellList[this.value] && spellList[this.value][level])
-      spells = spellList[this.value][level];
+    const prevSpell = spellSel.value;
+    const classVal = this.value;
+    const spells = classVal ? getSpellsByMode(classVal, level) : [];
     spellSel.innerHTML = `<option value="">--法術--</option>` + spells.map(s => `<option>${s.name}</option>`).join('');
-    descDiv.textContent = "—";
+    // 盡量保留原本選到的法術（若在新模式/新職業仍存在）
+    if (prevSpell && Array.from(spellSel.options).some(o => o.value === prevSpell)) {
+      spellSel.value = prevSpell;
+    } else {
+      spellSel.value = "";
+    }
+    // 同步更新描述（也會處理 Basic 模式下不允許的狀況）
+    spellSel.dispatchEvent(new Event('change'));
     saveAllFields();
   });
 
@@ -1501,11 +1607,21 @@ function createSingleSpellRow(areaId, level) {
   spellSel.addEventListener('change', function () {
     const classVal = classSel.value;
     const spellVal = spellSel.value;
+    const key = (typeof level === "number") ? String(level) : level;
     let desc = "—";
-    if (classVal && spellVal && spellList[classVal][level]) {
-      const found = spellList[classVal][level].find(s => s.name === spellVal);
-      desc = found ? found.desc : "—";
+
+    if (classVal && spellVal && spellList?.[classVal]?.[key]) {
+      const found = spellList[classVal][key].find(s => s.name === spellVal);
+      if (found) {
+        desc = found.desc || "—";
+      } else if (SPELL_MODE === "basic") {
+        // 理論上不會發生，但若 localStorage/舊資料殘留 Full 法術，避免 UI 崩潰
+        desc = "（此法術在 Basic 模式不可用）";
+      }
+    } else if (spellVal && SPELL_MODE === "basic") {
+      desc = "（此法術在 Basic 模式不可用）";
     }
+
     descDiv.textContent = desc;
     saveAllFields();
   });
