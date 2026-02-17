@@ -15,6 +15,7 @@ style.textContent = `
   opacity: 0.7;
   transition: opacity 0.3s;
 }
+
 #scrollToTopBtn:hover {
   opacity: 1;
 }
@@ -105,6 +106,8 @@ style.innerHTML = `
     border-radius: 5px;
     white-space: pre-wrap;
   }
+  /* 覆蓋背景能力 */
+  #backgroundFeatures { white-space: normal; }
 
   .ability-grid {
     display: grid;
