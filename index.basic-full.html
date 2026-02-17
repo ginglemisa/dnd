@@ -701,6 +701,21 @@ document.getElementById("spell-notes").addEventListener("input", function () {
   this.value = this.value.replace(/\/unlock9/g, "").trim();
 });
 
+(() => {
+  const spellNotesEl = document.getElementById("spell-notes");
+  if (!spellNotesEl) return;
+
+  spellNotesEl.addEventListener("change", function () {
+    if (!this.value.includes("/unlock9")) return;
+
+    document.getElementById("highlevel-spells").style.display = "block";
+    SPELL_MODE = "full";
+    refreshSpellDropdowns();
+
+    this.value = this.value.replace(/\/unlock9/g, "").trim();
+  });
+})();
+
 
 // 計算AC頂部
 function getDexModifier() {
