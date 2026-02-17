@@ -982,8 +982,75 @@ const featsDesc = {
 
 function updateFeatDesc(selectId, descId) {
   const v = document.getElementById(selectId).value;
-  document.getElementById(descId).textContent = featsDesc[v] || "—";
+  const raw = featsDesc[v] || "—";
+  const el = document.getElementById(descId);
+
+  // 保底：非字串就當純文字顯示
+  if (typeof raw !== "string") {
+    el.textContent = "—";
+    return;
+  }
+
+  // 依行切開（保留空行）
+  const lines = raw.replace(/\r\n/g, "\n").split("\n");
+
+  // 找到第一個非空行當標題
+  let title = "";
+  let startIdx = 0;
+  for (let i = 0; i < lines.length; i++) {
+    const t = lines[i].trim();
+    if (t) {
+      title = t;
+      startIdx = i + 1;
+      break;
+    }
+  }
+
+  // 第二個非空行（常見：起源專長 / 戰鬥風格專長…）當副標
+  let subtitle = "";
+  for (let i = startIdx; i < lines.length; i++) {
+    const t = lines[i].trim();
+    if (t) {
+      subtitle = t;
+      startIdx = i + 1;
+      break;
+    }
+  }
+
+  // 其餘內容：把空行變段落，把「小標─內容」做成小標粗體
+  const bodyHtml = lines
+    .slice(startIdx)
+    .map(line => {
+      const t = line.trim();
+      if (!t) return `<div style="height:10px;"></div>`; // 空行 = 段落距離
+
+      const idx = line.indexOf("─");
+      if (idx > 0) {
+        const head = line.slice(0, idx).trim();
+        const tail = line.slice(idx + 1).trim();
+        return `<div><strong>${escapeHtml(head)}</strong>─${escapeHtml(tail)}</div>`;
+      }
+
+      return `<div>${escapeHtml(t)}</div>`;
+    })
+    .join("");
+
+  el.innerHTML =
+    `<div style="font-weight:800; font-size:1.05em; margin-bottom:2px;">${escapeHtml(title || "—")}</div>` +
+    (subtitle ? `<div style="font-size:0.9em; color:#555; margin-bottom:10px;">${escapeHtml(subtitle)}</div>` : ``) +
+    `<div style="line-height:1.35;">${bodyHtml}</div>`;
 }
+
+// ✅ 簡單防 XSS：把純文字安全地放進 innerHTML
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 
 document.getElementById('feat1').addEventListener('change', () => updateFeatDesc('feat1', 'feat1-desc'));
 document.getElementById('feat2').addEventListener('change', () => updateFeatDesc('feat2', 'feat2-desc'));
