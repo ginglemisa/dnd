@@ -886,16 +886,28 @@ function updateBackgroundFeature() {
     return;
   }
 
-  document.getElementById("backgroundFeatures").innerHTML = `
-    <strong>屬性：</strong>${bg.屬性}<br>
-    <strong>專長：</strong>${bg.專長}<br>
-    <strong>技能熟練：</strong>${bg.技能熟練}<br>
-    <strong>工具熟練：</strong>${bg.工具熟練}<br>
-    <strong>裝備：</strong>${bg.裝備}<br>
-    <strong>(A) </strong>${bg.裝備A}<br>
-    <strong>(B) </strong>${bg.裝備B}<br>
-    ${bg.描述}
-  `;
+  function updateBackgroundFeature() {
+  const value = document.getElementById("background").value;
+  const bg = detailedBackgroundFeatures[value];
+
+  const el = document.getElementById("backgroundFeatures");
+
+  if (!bg) {
+    el.innerText = "無資料";
+    return;
+  }
+
+  el.innerHTML =
+    `<strong>屬性：</strong>${bg.屬性}<br>` +
+    `<strong>專長：</strong>${bg.專長}<br>` +
+    `<strong>技能熟練：</strong>${bg.技能熟練}<br>` +
+    `<strong>工具熟練：</strong>${bg.工具熟練}<br>` +
+    `<strong>裝備：</strong>${bg.裝備}<br>` +
+    `<strong>(A) </strong>${bg.裝備A}<br>` +
+    `<strong>(B) </strong>${bg.裝備B}<br>` +
+    `${bg.描述}`;
+}
+
 }
 
 // 角色專長對應說明，可再補充
