@@ -875,17 +875,6 @@ function updateRaceFeature() {
   document.getElementById("raceFeatures").innerHTML = formatted;
 }
 
-
-
-function updateBackgroundFeature() {
-  const value = document.getElementById("background").value;
-  const bg = detailedBackgroundFeatures[value];
-
-  if (!bg) {
-    document.getElementById("backgroundFeatures").innerText = "無資料";
-    return;
-  }
-
   function updateBackgroundFeature() {
   const value = document.getElementById("background").value;
   const bg = detailedBackgroundFeatures[value];
@@ -908,7 +897,7 @@ function updateBackgroundFeature() {
     `${bg.描述}`;
 }
 
-}
+
 
 // 角色專長對應說明，可再補充
 const featsDesc = {
