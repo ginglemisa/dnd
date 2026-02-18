@@ -308,6 +308,9 @@
 <button id="clear-storage-btn" style="margin-bottom:12px;">
   清除全部紀錄（回復預設）
 </button>
+<button type="button" onclick="copyShareUrl()" style="margin-bottom:12px; margin-left:8px;">
+  🔗 複製分享網址
+</button>
 
 
 </div>
@@ -1861,74 +1864,119 @@ function escapeHtml(str) {
 
 // ====== 通用 localStorage 儲存/還原 ======
 const AUTO_SAVE_KEY = "dndchar_autosave_v1";
-function saveAllFields() {
+const SHARE_MODE = location.hash.startsWith("#s=");
+window.SHARE_MODE = SHARE_MODE;
+
+function getSpellAreaConfigs() {
+  const ids = Array.from(document.querySelectorAll("#cantrips-area, div[id$='spells-area']"))
+    .map(el => el.id);
+  return ids.map(id => {
+    if (id === "cantrips-area") return { id, level: "cantrips" };
+    const m = id.match(/^level(\d+)spells-area$/);
+    return m ? { id, level: parseInt(m[1], 10) } : null;
+  }).filter(Boolean);
+}
+
+function collectStateObject() {
   const data = {};
   document.querySelectorAll("input, select, textarea").forEach(el => {
     if (!el.id) return;
-    if (el.type === "checkbox") {
-      data[el.id] = el.checked;
-    } else {
-      data[el.id] = el.value;
+    data[el.id] = el.type === "checkbox" ? el.checked : el.value;
+  });
+  getSpellAreaConfigs().forEach(area => {
+    data[`${area.id}-count`] = document.getElementById(area.id).childElementCount;
+  });
+  return data;
+}
+
+function encodeStateToHash(data) {
+  const json = JSON.stringify(data);
+  const bytes = new TextEncoder().encode(json);
+  let binary = "";
+  bytes.forEach(b => { binary += String.fromCharCode(b); });
+  return `#s=${btoa(binary)}`;
+}
+
+function decodeStateFromHash() {
+  if (!location.hash.startsWith("#s=")) return null;
+  try {
+    const b64 = location.hash.slice(3);
+    const binary = atob(b64);
+    const bytes = Uint8Array.from(binary, ch => ch.charCodeAt(0));
+    const json = new TextDecoder().decode(bytes);
+    return JSON.parse(json);
+  } catch (e) {
+    return null;
+  }
+}
+
+function applyStateObject(data) {
+  if (!data || typeof data !== "object") return;
+
+  const spellAreas = getSpellAreaConfigs();
+  spellAreas.forEach(area => {
+    const n = parseInt(data[`${area.id}-count`] || "0", 10);
+    const current = document.getElementById(area.id).childElementCount;
+    for (let i = current; i < n; i++) {
+      createSingleSpellRow(area.id, area.level);
     }
   });
-   // 額外記錄 spell 欄位數量
-  const spellAreas = ['cantrips-area', 'level1spells-area', 'level2spells-area', 'level3spells-area'];
-  spellAreas.forEach(id => {
-    data[`${id}-count`] = document.getElementById(id).childElementCount;
-  });
+  const highlevelCount = spellAreas
+    .filter(area => typeof area.level === "number" && area.level >= 4)
+    .reduce((sum, area) => sum + parseInt(data[`${area.id}-count`] || "0", 10), 0);
+  if (highlevelCount > 0) {
+    const highlevelSpells = document.getElementById("highlevel-spells");
+    if (highlevelSpells) highlevelSpells.style.display = "block";
+  }
+
+  for (const id in data) {
+    if (/cantrips-area-class-\d+|level\d+spells-area-class-\d+/.test(id)) {
+      const el = document.getElementById(id);
+      if (!el) continue;
+      el.value = data[id];
+      el.dispatchEvent(new Event('change'));
+    }
+  }
+
+  for (const id in data) {
+    if (/cantrips-area-class-\d+|level\d+spells-area-class-\d+/.test(id)) continue;
+    const el = document.getElementById(id);
+    if (!el) continue;
+    if (el.type === "checkbox") {
+      el.checked = !!data[id];
+    } else {
+      el.value = data[id];
+    }
+    el.dispatchEvent(new Event('change'));
+  }
+}
+
+async function copyShareUrl() {
+  const hash = encodeStateToHash(collectStateObject());
+  const shareUrl = `${location.origin}${location.pathname}${location.search}${hash}`;
+  try {
+    await navigator.clipboard.writeText(shareUrl);
+    alert("分享網址已複製");
+  } catch (e) {
+    window.prompt("請手動複製分享網址", shareUrl);
+  }
+}
+
+function saveAllFields() {
+  if (SHARE_MODE) return;
+  const data = collectStateObject();
   localStorage.setItem(AUTO_SAVE_KEY, JSON.stringify(data));
 }
 function restoreAllFields() {
+  if (SHARE_MODE) return;
   const raw = localStorage.getItem(AUTO_SAVE_KEY);
   if (!raw) return;
   try {
-    const data = JSON.parse(raw);
-
-        // 根據儲存的欄位數量，補上法術欄位
-    const spellAreas = [
-      { id: 'cantrips-area', level: 'cantrips' },
-      { id: 'level1spells-area', level: 1 },
-      { id: 'level2spells-area', level: 2 },
-      { id: 'level3spells-area', level: 3 }
-    ];
-
-    spellAreas.forEach(area => {
-      const n = parseInt(data[`${area.id}-count`] || "0");
-      const current = document.getElementById(area.id).childElementCount;
-      for (let i = current; i < n; i++) {
-        createSingleSpellRow(area.id, area.level);
-      }
-    });
-
-
-    // 1. 先還原職業下拉選單並觸發 change
-    for (const id in data) {
-      if (/cantrips-area-class-\d+|level1spells-area-class-\d+|level2spells-area-class-\d+|level3spells-area-class-\d+/.test(id)) {
-        const el = document.getElementById(id);
-        if (!el) continue;
-        el.value = data[id];
-        el.dispatchEvent(new Event('change')); // 觸發法術下拉選單重建
-      }
-    }
-
-    // 2. 再還原其他欄位（法術名稱等），然後觸發 change 讓說明文字顯示
-    for (const id in data) {
-      if (!/cantrips-area-class-\d+|level1spells-area-class-\d+|level2spells-area-class-\d+|level3spells-area-class-\d+/.test(id)) {
-        const el = document.getElementById(id);
-        if (!el) continue;
-        if (el.type === "checkbox") {
-          el.checked = data[id];
-        } else {
-          el.value = data[id];
-          if (el.tagName === "SELECT") {
-            el.dispatchEvent(new Event('change')); // 觸發說明區塊更新
-          }
-        }
-      }
-    }
+    applyStateObject(JSON.parse(raw));
   } catch (e) {}
 }
 function setupAutoSave() {
+  if (SHARE_MODE) return;
   document.querySelectorAll("input, select, textarea").forEach(el => {
     el.addEventListener("change", saveAllFields);
     el.addEventListener("input", saveAllFields);
@@ -1961,7 +2009,12 @@ for (let i = 0; i < 2; i++) createSingleSpellRow('level1spells-area', 1);
 for (let i = 0; i < 1; i++) createSingleSpellRow('level2spells-area', 2);
 for (let i = 0; i < 1; i++) createSingleSpellRow('level3spells-area', 3);
   // 3. 還原所有欄位狀態
-  restoreAllFields();
+  const sharedData = decodeStateFromHash();
+  if (sharedData) {
+    applyStateObject(sharedData);
+  } else {
+    restoreAllFields();
+  }
   // ✅ 3.5 額外補充：手動觸發屬性欄位的 input 事件，以更新 modifier 顯示
   ["str", "dex", "con", "int", "wis", "cha"].forEach(id => {
     const el = document.getElementById(id);
@@ -1973,6 +2026,10 @@ for (let i = 0; i < 1; i++) createSingleSpellRow('level3spells-area', 3);
   const clearBtn = document.getElementById('clear-storage-btn');
   if (clearBtn) {
     clearBtn.addEventListener('click', function() {
+      if (SHARE_MODE) {
+        alert('分享模式下不會操作本機儲存');
+        return;
+      }
       if(confirm('確定要清除所有角色欄位資料並回復預設嗎？')) {
         localStorage.removeItem(AUTO_SAVE_KEY);
         location.reload();
@@ -2003,6 +2060,7 @@ for (let i = 0; i < 1; i++) createSingleSpellRow('level3spells-area', 3);
 
 <script>
 window.addEventListener('DOMContentLoaded', function () {
+  if (window.SHARE_MODE) return;
   const modal = document.getElementById('legal-modal');
   const checkbox = document.getElementById('legal-dismiss');
 
