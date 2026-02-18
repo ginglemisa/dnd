@@ -1,0 +1,89 @@
+const CLASS_NAMES = {barbarian:'野蠻人',bard:'吟遊詩人',cleric:'牧師',druid:'德魯伊',fighter:'戰士',monk:'武僧',paladin:'聖武士',ranger:'遊俠',rogue:'遊蕩者',sorcerer:'術士',warlock:'契術師',wizard:'法師'};
+const BACKGROUNDS = {acolyte:'侍僧',soldier:'士兵',criminal:'罪犯',sage:'賢者'};
+const BACKGROUND_FEATURES = {acolyte:'你熟悉神殿生活與宗教禮儀，可快速與教會人士建立連結。',soldier:'你擅長軍伍生活，熟悉戰場紀律與行軍常識。',criminal:'你認識地下社會與黑市門路，能快速打聽灰色情報。',sage:'你專長研究與知識檢索，能辨識古文與學派資訊。'};
+const ACTION_HINTS = {attack:'攻擊：進行一次武器或徒手攻擊。',dash:'疾走：本回合再增加一次速度。',disengage:'脫離：本回合移動不會觸發借機攻擊。',dodge:'閃避：直到下回合開始前，對你攻擊有劣勢。',help:'協助：幫隊友下一次檢定或攻擊獲得優勢。',hide:'躲藏：嘗試隱匿，通常需遮蔽物。'};
+const CONDITIONS = ['倒地','中毒','恐慌','擒抱','束縛','隱形','失能','震懾'];
+const CASTERS = {bard:'cha',cleric:'wis',druid:'wis',paladin:'cha',ranger:'wis',sorcerer:'cha',warlock:'cha',wizard:'int'};
+const HD = {barbarian:12,fighter:10,paladin:10,ranger:10,cleric:8,druid:8,monk:8,rogue:8,bard:8,warlock:8,sorcerer:6,wizard:6};
+const SPELL_SLOTS = {1:[2],2:[3],3:[4,2],4:[4,3],5:[4,3,2]};
+const SKILLS = [['運動','str'],['體操','dex'],['巧手','dex'],['隱匿','dex'],['奧秘','int'],['歷史','int'],['調查','int'],['自然','int'],['宗教','int'],['馴獸','wis'],['洞悉','wis'],['醫藥','wis'],['察覺','wis'],['求生','wis'],['欺瞞','cha'],['威嚇','cha'],['表演','cha'],['遊說','cha']];
+const TABS = [['summary','摘要'],['build','建立'],['combat','戰鬥'],['skills','技能'],['actions','動作'],['equipment','裝備'],['spells','法術'],['rules','規則']];
+
+const allWeapons = [...weapons_simple_melee,...weapons_simple_ranged,...weapons_martial_melee,...weapons_martial_ranged];
+const abilityMod = (s)=>Math.floor(((Number(s)||10)-10)/2);
+const pbByLevel = (lv)=> lv>=5?3:2;
+const classOptions = Object.entries(CLASS_NAMES).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
+const raceOptions = Object.keys(raceFeatures).map((k)=>`<option value="${k}">${k}</option>`).join('');
+const bgOptions = Object.entries(BACKGROUNDS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
+
+let state = { beginnerMode:true,class:'',level:1,race:'',background:'',abilities:{str:10,dex:10,con:10,int:10,wis:10,cha:10},hpCurrent:10,hpMax:10,speed:30,initiative:0,passivePerception:10,armor:'',shield:false,mainHand:'',offHand:'',skillProf:{},conditions:[],spellFavorites:[],abilityFavorites:['攻擊','閃避','疾走','協助'],spellFilter:'',spellLevelFilter:'all',spellFavOnly:false,activeTab:'summary' };
+let undoStack=[];
+
+function snapshot(){ undoStack.push(JSON.parse(JSON.stringify(state))); if(undoStack.length>20)undoStack.shift(); }
+function updateState(mutator,{push=true}={}){ if(push) snapshot(); mutator(state); deriveState(); renderAll(); }
+function deriveState(){ const lv=Number(state.level)||1; state.pb=pbByLevel(lv); const con=abilityMod(state.abilities.con); const hd=HD[state.class]||8; state.hpMax=Math.max(lv, hd + (lv-1)*(Math.ceil(hd/2)+1) + lv*con); if(state.hpCurrent>state.hpMax) state.hpCurrent=state.hpMax; if(state.hpCurrent<0) state.hpCurrent=0; const dex=abilityMod(state.abilities.dex); state.initiative=dex; state.passivePerception=10+abilityMod(state.abilities.wis)+(state.skillProf['察覺']?state.pb:0); const armorObj=armors.find(a=>a.名稱===state.armor); const shieldBonus=state.shield?2:0; if(!armorObj){ state.ac=10+dex+shieldBonus; } else { const base=Number(armorObj.AC)||10; const medium=armorObj.分類==='中甲'; const heavy=armorObj.分類==='重甲'; state.ac=base + (heavy?0:(medium?Math.min(2,dex):dex)) + shieldBonus; } const main=allWeapons.find(w=>w.名稱===state.mainHand); const off=allWeapons.find(w=>w.名稱===state.offHand); state.mainAttack = computeAttack(main); state.offAttack = computeAttack(off); if(CASTERS[state.class]) { const mod=abilityMod(state.abilities[CASTERS[state.class]]); state.spellCasting={ability:CASTERS[state.class],dc:8+state.pb+mod,atk:state.pb+mod,slots:SPELL_SLOTS[lv]||[]}; } else { state.spellCasting=null; } }
+function computeAttack(w){ if(!w) return {name:'—',hit:'—',damage:'—'}; const finesse=(w.屬性1||'').includes('靈巧') || (w.屬性2||'').includes('靈巧'); const ranged=(w.屬性1||'').includes('彈藥') || (w.屬性1||'').includes('投擲') || (w.屬性2||'').includes('投擲'); const mod = ranged ? abilityMod(state.abilities.dex) : (finesse?Math.max(abilityMod(state.abilities.str),abilityMod(state.abilities.dex)):abilityMod(state.abilities.str)); const hit = mod+state.pb; const dice = (w.傷害.match(/\d+d\d+|\d+/)||['1'])[0]; return {name:w.名稱,hit:(hit>=0?`+${hit}`:`${hit}`),damage:`${dice}${mod>=0?`+${mod}`:mod}`}; }
+
+function renderTabs(){ document.getElementById('tabs').innerHTML=TABS.map(([id,name])=>`<button class="tab-btn ${state.activeTab===id?'active':''}" data-tab="${id}">${name}</button>`).join(''); document.querySelectorAll('.tab-btn').forEach(btn=>btn.onclick=()=>updateState(s=>{s.activeTab=btn.dataset.tab;},{push:false})); document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id===`tab-${state.activeTab}`)); }
+function renderSummary(){ const checklist=[['職業與等級',!!state.class&&!!state.level],['種族與背景',!!state.race&&!!state.background],['六維屬性',Object.values(state.abilities).every(v=>v>=1)],['AC/HP/攻擊',!!state.ac&&!!state.mainHand]]; const statusTags=state.conditions.length?state.conditions.map(c=>`<span class="tag">${c}</span>`).join(''):'<span class="muted">目前無狀態</span>';
+  document.getElementById('tab-summary').innerHTML=`
+  <div class="card">
+    <div class="muted">角色</div>
+    <div><strong>${state.level}級 ${CLASS_NAMES[state.class]||'未選職業'} / ${state.race||'未選種族'} / ${BACKGROUNDS[state.background]||'未選背景'}</strong></div>
+    <div class="grid-3" style="margin-top:8px"><div><div class="muted">AC</div><div class="stat-big">${state.ac}</div></div><div><div class="muted">HP</div><input id="summaryHP" type="number" value="${state.hpCurrent}" /></div><div><div class="muted">熟練</div><div class="stat-big">+${state.pb}</div></div></div>
+    <div class="grid-3"><div><div class="muted">速度</div><strong>${state.speed}</strong></div><div><div class="muted">先攻</div><strong>${state.initiative>=0?`+${state.initiative}`:state.initiative}</strong></div><div><div class="muted">被動感知</div><strong>${state.passivePerception}</strong></div></div>
+    <hr><div><div class="muted">主武器</div><strong>${state.mainAttack.name} ${state.mainAttack.hit} / ${state.mainAttack.damage}</strong></div>
+    ${state.spellCasting?`<hr><div class="muted">施法</div><div>${state.spellCasting.ability.toUpperCase()}，DC ${state.spellCasting.dc}，法術攻擊 ${state.spellCasting.atk>=0?`+${state.spellCasting.atk}`:state.spellCasting.atk}</div><div class="muted">法術位：${state.spellCasting.slots.map((v,i)=>`${i+1}環 ${v}`).join('、')||'—'}</div>`:''}
+    <hr><div><div class="muted">⚠ 目前狀態</div>${statusTags}</div>
+  </div>
+  <div class="card"><details class="long-rule"><summary>我不知道怎麼填？</summary><ol class="list"><li>先到建立頁選職業與等級。</li><li>接著選種族與背景，再填 6 能力值。</li><li>最後選裝備，檢查 AC/HP/攻擊是否有值。</li></ol></details><details class="long-rule"><summary>我漏了什麼？</summary><ul class="list">${checklist.map(([n,ok])=>`<li class="${ok?'ok':'warn'}">${ok?'✔':'✘'} ${n}</li>`).join('')}</ul></details></div>
+  <div class="card grid-2"><button id="saveBtn">儲存到本機</button><button id="loadBtn">讀取存檔</button><button id="clearBtn">清除存檔</button><button id="undoBtn">回復上一動</button></div>`;
+  document.getElementById('summaryHP').oninput=(e)=>updateState(s=>s.hpCurrent=Number(e.target.value)||0);
+  document.getElementById('saveBtn').onclick=()=>localStorage.setItem('dnd2024State',JSON.stringify(state));
+  document.getElementById('loadBtn').onclick=()=>{ const raw=localStorage.getItem('dnd2024State'); if(!raw)return; state=JSON.parse(raw); deriveState(); renderAll(); };
+  document.getElementById('clearBtn').onclick=()=>{ localStorage.removeItem('dnd2024State'); location.reload(); };
+  document.getElementById('undoBtn').onclick=()=>{ if(!undoStack.length) return; state=undoStack.pop(); deriveState(); renderAll(); };
+}
+function renderBuild(){ const classSummary=(classFeatures[state.class]||'請先選擇職業').split('\n')[0]; const raceSummary=(raceFeatures[state.race]||'請先選擇種族').split('\n')[0];
+  document.getElementById('tab-build').innerHTML=`<div class="card"><div class="step-title">Step 1：選職業 / 等級</div><div class="grid-2"><div><label>職業</label><select id="classInput"><option value="">--</option>${classOptions}</select></div><div><label>等級</label><select id="levelInput">${[1,2,3,4,5].map(v=>`<option value="${v}">${v}</option>`).join('')}</select></div></div><details class="long-rule beginner-hidden"><summary>展開進階</summary><div class="muted">職業摘要：${classSummary}</div><details class="long-rule"><summary>職業完整規則</summary><div>${classFeatures[state.class]||''}</div></details></details></div>
+  <div class="card"><div class="step-title">Step 2：選種族 / 背景</div><div class="grid-2"><div><label>種族</label><select id="raceInput"><option value="">--</option>${raceOptions}</select></div><div><label>背景</label><select id="bgInput"><option value="">--</option>${bgOptions}</select></div></div><div class="muted">背景摘要：${BACKGROUND_FEATURES[state.background]||'請選擇背景'}</div><details class="long-rule beginner-hidden"><summary>展開進階</summary><div class="muted">種族摘要：${raceSummary}</div><details class="long-rule"><summary>種族完整規則</summary><div>${raceFeatures[state.race]||''}</div></details></details></div>
+  <div class="card"><div class="step-title">Step 3：填屬性</div><div class="grid-3">${['str','dex','con','int','wis','cha'].map(a=>`<div><label>${a.toUpperCase()} (${abilityMod(state.abilities[a])>=0?`+${abilityMod(state.abilities[a])}`:abilityMod(state.abilities[a])})</label><input data-ability="${a}" type="number" min="1" max="20" value="${state.abilities[a]}"/></div>`).join('')}</div></div>
+  <div class="card"><div class="step-title">Step 4：確認 AC / HP / 攻擊與熟練</div><div class="grid-2"><div>AC：<strong>${state.ac}</strong></div><div>HP：<strong>${state.hpCurrent}/${state.hpMax}</strong></div><div>主攻擊命中：<strong>${state.mainAttack.hit}</strong></div><div>熟練加值：<strong>+${state.pb}</strong></div></div><details class="long-rule beginner-hidden"><summary>展開進階</summary><label>速度</label><input id="speedInput" type="number" value="${state.speed}" /></details></div>`;
+  document.getElementById('classInput').value=state.class;
+  document.getElementById('classInput').onchange=(e)=>updateState(s=>s.class=e.target.value);
+  document.getElementById('levelInput').value=String(state.level);
+  document.getElementById('levelInput').onchange=(e)=>updateState(s=>s.level=Number(e.target.value));
+  document.getElementById('raceInput').value=state.race;
+  document.getElementById('raceInput').onchange=(e)=>updateState(s=>s.race=e.target.value);
+  document.getElementById('bgInput').value=state.background;
+  document.getElementById('bgInput').onchange=(e)=>updateState(s=>s.background=e.target.value);
+  document.querySelectorAll('[data-ability]').forEach(inp=>inp.oninput=(e)=>updateState(s=>s.abilities[e.target.dataset.ability]=Number(e.target.value)||10));
+  const speedInput=document.getElementById('speedInput'); if(speedInput) speedInput.oninput=(e)=>updateState(s=>s.speed=Number(e.target.value)||30);
+}
+function renderCombat(){
+  document.getElementById('tab-combat').innerHTML=`<div class="card hud"><div class="grid-3"><div><div class="muted">AC</div><div class="stat-big">${state.ac}</div></div><div><div class="muted">當前 HP</div><div class="stat-big">${state.hpCurrent}</div></div><div><div class="muted">先攻</div><div class="stat-big">${state.initiative>=0?`+${state.initiative}`:state.initiative}</div></div></div><hr><div><strong>主攻擊</strong>：${state.mainAttack.name} ${state.mainAttack.hit} 命中，${state.mainAttack.damage} 傷害</div><div><strong>次攻擊</strong>：${state.offAttack.name} ${state.offAttack.hit} 命中，${state.offAttack.damage} 傷害</div><hr><div class="shortcut">${['攻擊','躲藏','疾走','閃避','幫助'].map(t=>`<span>${t}</span>`).join('')}</div></div>
+  <div class="card"><div class="warn">⚠ 目前狀態：${state.conditions.join('、')||'無'}</div><div class="grid-2" style="margin-top:8px">${CONDITIONS.map(c=>`<label><input type="checkbox" data-cond="${c}" ${state.conditions.includes(c)?'checked':''}/> ${c}</label>`).join('')}</div></div>
+  <div class="card"><h3>最愛法術 / 能力</h3>${state.spellFavorites.slice(0,6).map(n=>`<span class="tag">${n}</span>`).join('')||'<span class="muted">尚未收藏法術</span>'}<hr>${state.abilityFavorites.map(n=>`<span class="tag">${n}</span>`).join('')}</div>`;
+  document.querySelectorAll('[data-cond]').forEach(c=>c.onchange=(e)=>updateState(s=>{ if(e.target.checked){ if(!s.conditions.includes(e.target.dataset.cond)) s.conditions.push(e.target.dataset.cond);} else { s.conditions=s.conditions.filter(v=>v!==e.target.dataset.cond); } }));
+}
+function renderSkills(){ document.getElementById('tab-skills').innerHTML=`<div class="card"><h3>技能檢定（快速）</h3><div class="grid-2">${SKILLS.map(([n,a])=>{const v=abilityMod(state.abilities[a])+(state.skillProf[n]?state.pb:0); return `<div><label><input type="checkbox" data-skill="${n}" ${state.skillProf[n]?'checked':''}/> ${n}</label><input disabled value="${v>=0?`+${v}`:v}"/></div>`}).join('')}</div></div>`; document.querySelectorAll('[data-skill]').forEach(el=>el.onchange=(e)=>updateState(s=>s.skillProf[e.target.dataset.skill]=e.target.checked)); }
+function renderActions(){ document.getElementById('tab-actions').innerHTML=`<div class="card"><h3>常用動作</h3>${Object.entries(ACTION_HINTS).map(([k,v])=>`<details class="long-rule"><summary>${k}</summary><div>${v}</div></details>`).join('')}</div>`; }
+function renderEquipment(){ document.getElementById('tab-equipment').innerHTML=`<div class="card"><h3>裝備選擇</h3><div class="grid-2"><div><label>護甲</label><select id="armorInput"><option value="">無護甲</option>${armors.map(a=>`<option value="${a.名稱}">${a.名稱} (AC ${a.AC})</option>`).join('')}</select></div><div><label><input id="shieldInput" type="checkbox" ${state.shield?'checked':''}/> 盾牌 (+2 AC)</label></div><div><label>主手武器</label><select id="mainInput"><option value="">--</option>${allWeapons.map(w=>`<option value="${w.名稱}">${w.名稱}</option>`).join('')}</select></div><div><label>副手武器</label><select id="offInput"><option value="">--</option>${allWeapons.map(w=>`<option value="${w.名稱}">${w.名稱}</option>`).join('')}</select></div></div><hr><div>主手：${state.mainAttack.name} / 命中 ${state.mainAttack.hit} / 傷害 ${state.mainAttack.damage}</div><div>副手：${state.offAttack.name} / 命中 ${state.offAttack.hit} / 傷害 ${state.offAttack.damage}</div></div><div class="card" id="equipment-notes-section"></div>`;
+  document.getElementById('armorInput').value=state.armor; document.getElementById('mainInput').value=state.mainHand; document.getElementById('offInput').value=state.offHand;
+  document.getElementById('armorInput').onchange=(e)=>updateState(s=>s.armor=e.target.value); document.getElementById('shieldInput').onchange=(e)=>updateState(s=>s.shield=e.target.checked); document.getElementById('mainInput').onchange=(e)=>updateState(s=>s.mainHand=e.target.value); document.getElementById('offInput').onchange=(e)=>updateState(s=>s.offHand=e.target.value);
+  if(window.renderEquipmentNotes) window.renderEquipmentNotes();
+}
+function spellIndex(){ const cls=state.class; const groups=(spellList[cls]||{}); const out=[]; Object.entries(groups).forEach(([lvl,list])=>{(list||[]).forEach(sp=>out.push({...sp,level:lvl}));}); return out; }
+function renderSpells(){ const spells=spellIndex().filter(s=>s.name.toLowerCase().includes(state.spellFilter.toLowerCase())).filter(s=>state.spellLevelFilter==='all'||s.level===state.spellLevelFilter).filter(s=>!state.spellFavOnly||state.spellFavorites.includes(s.name));
+  const levels=['all',...new Set(spellIndex().map(s=>s.level))];
+  document.getElementById('tab-spells').innerHTML=`<div class="card"><div class="row"><input id="spellSearch" placeholder="搜尋法術" value="${state.spellFilter}"/><select id="spellLevel">${levels.map(l=>`<option value="${l}">${l==='all'?'全部環階':l}</option>`).join('')}</select></div><label><input id="spellFavOnly" type="checkbox" ${state.spellFavOnly?'checked':''}/> 只看收藏</label></div><div class="card">${spells.map(sp=>`<div class="spell-item"><div class="row"><div><strong>${sp.name}</strong><div class="muted">${sp.level}</div></div><button class="star" data-star="${sp.name}">${state.spellFavorites.includes(sp.name)?'⭐':'☆'}</button></div><details class="long-rule" ${state.beginnerMode?'':'open'}><summary>${(sp.desc||'').split('\n')[0]||'法術說明'}</summary><div style="white-space:pre-line">${sp.desc||''}</div></details></div>`).join('')||'<div class="muted">此條件沒有法術</div>'}</div>`;
+  document.getElementById('spellLevel').value=state.spellLevelFilter;
+  document.getElementById('spellSearch').oninput=(e)=>updateState(s=>s.spellFilter=e.target.value,{push:false});
+  document.getElementById('spellLevel').onchange=(e)=>updateState(s=>s.spellLevelFilter=e.target.value,{push:false});
+  document.getElementById('spellFavOnly').onchange=(e)=>updateState(s=>s.spellFavOnly=e.target.checked,{push:false});
+  document.querySelectorAll('[data-star]').forEach(btn=>btn.onclick=()=>updateState(s=>{ const n=btn.dataset.star; s.spellFavorites=s.spellFavorites.includes(n)?s.spellFavorites.filter(v=>v!==n):[...s.spellFavorites,n]; }));
+}
+function renderRules(){ document.getElementById('tab-rules').innerHTML=`<div class="card"><details class="long-rule" ${state.beginnerMode?'':'open'}><summary>狀態辭典（摘要/詳情）</summary><div id="condition-section"></div></details></div>`; if(window.renderConditionRules) window.renderConditionRules(); }
+function renderAll(){ document.body.classList.toggle('beginner-mode',state.beginnerMode); document.getElementById('beginnerToggle').checked=state.beginnerMode; renderTabs(); renderSummary(); renderBuild(); renderCombat(); renderSkills(); renderActions(); renderEquipment(); renderSpells(); renderRules(); }
+
+document.addEventListener('DOMContentLoaded',()=>{ deriveState(); renderAll(); document.getElementById('beginnerToggle').onchange=(e)=>updateState(s=>s.beginnerMode=e.target.checked,{push:false}); });
