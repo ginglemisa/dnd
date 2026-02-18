@@ -1866,8 +1866,38 @@ function escapeHtml(str) {
 
 // ====== 通用 localStorage 儲存/還原 ======
 const AUTO_SAVE_KEY = "dndchar_autosave_v1";
-const SHARE_MODE = location.hash.startsWith("#s=");
+let SHARE_MODE = false;
 window.SHARE_MODE = SHARE_MODE;
+
+function bytesToBase64Url(bytes) {
+  let binary = "";
+  bytes.forEach(b => { binary += String.fromCharCode(b); });
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function base64UrlToBytes(base64url) {
+  const b64 = base64url.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = b64 + "=".repeat((4 - (b64.length % 4 || 4)) % 4);
+  const binary = atob(padded);
+  return Uint8Array.from(binary, ch => ch.charCodeAt(0));
+}
+
+async function compressJson(json) {
+  if (typeof CompressionStream !== "function") return null;
+  const input = new TextEncoder().encode(json);
+  const stream = new Blob([input]).stream().pipeThrough(new CompressionStream("gzip"));
+  const buffer = await new Response(stream).arrayBuffer();
+  return new Uint8Array(buffer);
+}
+
+async function decompressJson(bytes) {
+  if (typeof DecompressionStream !== "function") {
+    throw new Error("此瀏覽器不支援壓縮分享還原");
+  }
+  const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
+  const buffer = await new Response(stream).arrayBuffer();
+  return new TextDecoder().decode(buffer);
+}
 
 function getSpellAreaConfigs() {
   const ids = Array.from(document.querySelectorAll("#cantrips-area, div[id$='spells-area']"))
@@ -1891,24 +1921,39 @@ function collectStateObject() {
   return data;
 }
 
-function encodeStateToHash(data) {
+async function encodeStateToHash(data) {
   const json = JSON.stringify(data);
+  const compressed = await compressJson(json);
+  if (compressed && compressed.length < json.length) {
+    return `#s2=${bytesToBase64Url(compressed)}`;
+  }
+
   const bytes = new TextEncoder().encode(json);
   let binary = "";
   bytes.forEach(b => { binary += String.fromCharCode(b); });
   return `#s=${btoa(binary)}`;
 }
 
-function decodeStateFromHash() {
-  if (!location.hash.startsWith("#s=")) return null;
+async function decodeStateFromHash() {
+  if (!location.hash.startsWith("#s=") && !location.hash.startsWith("#s2=")) {
+    return { data: null, error: null };
+  }
+
   try {
-    const b64 = location.hash.slice(3);
-    const binary = atob(b64);
-    const bytes = Uint8Array.from(binary, ch => ch.charCodeAt(0));
-    const json = new TextDecoder().decode(bytes);
-    return JSON.parse(json);
+    let json = "";
+    if (location.hash.startsWith("#s2=")) {
+      const payload = location.hash.slice(4);
+      const bytes = base64UrlToBytes(payload);
+      json = await decompressJson(bytes);
+    } else {
+      const b64 = location.hash.slice(3);
+      const binary = atob(b64);
+      const bytes = Uint8Array.from(binary, ch => ch.charCodeAt(0));
+      json = new TextDecoder().decode(bytes);
+    }
+    return { data: JSON.parse(json), error: null };
   } catch (e) {
-    return null;
+    return { data: null, error: e };
   }
 }
 
@@ -1954,11 +1999,15 @@ function applyStateObject(data) {
 }
 
 async function copyShareUrl() {
-  const hash = encodeStateToHash(collectStateObject());
+  const hash = await encodeStateToHash(collectStateObject());
   const shareUrl = `${location.origin}${location.pathname}${location.search}${hash}`;
   try {
     await navigator.clipboard.writeText(shareUrl);
-    alert("分享網址已複製");
+    if (shareUrl.length > 4000) {
+      alert(`分享網址已複製（長度 ${shareUrl.length}，部分瀏覽器可能不穩定）`);
+    } else {
+      alert("分享網址已複製");
+    }
   } catch (e) {
     window.prompt("請手動複製分享網址", shareUrl);
   }
@@ -1987,7 +2036,7 @@ function setupAutoSave() {
 
 
 // ====== 頁面載入時全自動初始化 ======
-window.addEventListener("DOMContentLoaded", function() {
+window.addEventListener("DOMContentLoaded", async function() {
   // 1. 初始化裝備下拉
   const mainHandSelect = document.getElementById("mainHand");
   const offHandSelect = document.getElementById("offHand");
@@ -2011,10 +2060,16 @@ for (let i = 0; i < 2; i++) createSingleSpellRow('level1spells-area', 1);
 for (let i = 0; i < 1; i++) createSingleSpellRow('level2spells-area', 2);
 for (let i = 0; i < 1; i++) createSingleSpellRow('level3spells-area', 3);
   // 3. 還原所有欄位狀態
-  const sharedData = decodeStateFromHash();
+  const { data: sharedData, error: sharedError } = await decodeStateFromHash();
   if (sharedData) {
+    SHARE_MODE = true;
+    window.SHARE_MODE = true;
     applyStateObject(sharedData);
   } else {
+    if (location.hash.startsWith("#s=") || location.hash.startsWith("#s2=")) {
+      alert("分享連結讀取失敗（可能因網址過長被截斷或資料損壞），已改為讀取本機暫存。");
+      if (sharedError) console.warn("分享還原失敗：", sharedError);
+    }
     restoreAllFields();
   }
   // ✅ 3.5 額外補充：手動觸發屬性欄位的 input 事件，以更新 modifier 顯示
