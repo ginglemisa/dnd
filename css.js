@@ -200,5 +200,50 @@ style.innerHTML = `
     gap: 10px;
     margin-bottom: 10px;
   }
+
+  .beast-tip {
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  }
+
+  #beastPopup {
+    position: fixed;
+    z-index: 9999;
+    max-width: 320px;
+    background: #111;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,.25);
+    border-radius: 10px;
+    padding: 10px 12px;
+    box-shadow: 0 6px 18px rgba(0,0,0,.35);
+    font-size: 14px;
+    line-height: 1.35;
+    display: none;
+  }
+
+  #beastPopup .title {
+    font-weight: 700;
+    margin-bottom: 6px;
+    font-size: 15px;
+  }
+
+  #beastPopup .row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  #beastPopup .muted {
+    opacity: .85;
+  }
+
+  #beastPopup .close {
+    float: right;
+    cursor: pointer;
+    opacity: .85;
+    margin-left: 10px;
+  }
+
 `;
 document.head.appendChild(style);

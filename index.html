@@ -484,9 +484,9 @@
 
 
       <h3>反應</h3>
-<div style="font-size: 1.05em; font-weight: bold; margin-top: 10px;">進行機會攻擊</div>
+<div style="font-size: 1.05em; font-weight: bold; margin-top: 10px;">進行藉機攻擊</div>
 <div class="small-text" style="margin-left: 10px; margin-top: 4px;">
-  當你能看見的生物離開你的觸及範圍時，你可以進行機會攻擊。使用"反應"來對該生物進行一次近戰攻擊。。
+  當你能看見的生物離開你的觸及範圍時，你可以進行藉機攻擊。使用"反應"來對該生物進行一次近戰攻擊。。
 </div>
 
 <div style="font-size: 1.05em; font-weight: bold; margin-top: 10px;">狀態</div>
@@ -1650,13 +1650,31 @@ function createSingleSpellRow(areaId, level) {
 
 // 依「玩家職業 + 等級」自動限制法術頁顯示到幾環（含法術位列）
 function getMaxSpellRing(cls, lvl) {
-  const level = parseInt(lvl || "0", 10);
+  const rawLvl = String(lvl ?? "").trim();
+
+  // ✅ 等級尚未選（"--" 或空白）時：用職業類型決定預設顯示到幾環
+  if (rawLvl === "" || rawLvl === "--") {
+    // 不會施法者：顯示到一環（你指定的）
+    if (["barbarian", "fighter", "monk", "rogue"].includes(cls)) return 1;
+
+    // 半施法者：顯示到二環（你提到的 paladin / ranger）
+    if (["paladin", "ranger"].includes(cls)) return 2;
+
+    // 全施法者：預設顯示到三環（方便玩家/你測試；也符合你法術頁目前到三環的設計）
+    if (["bard", "cleric", "druid", "sorcerer", "warlock", "wizard"].includes(cls)) return 3;
+
+    // 其他未列到的職業：保守一環
+    return 3;
+  }
+
+  // 下面開始沿用你原本規則（lvl 有數字時）
+  const level = parseInt(rawLvl, 10);
 
   // 無職業：最高三環（你說不用調整）
   if (!cls) return 3;
 
   // 野蠻人&戰士&武僧：最高一環
-  if (["barbarian", "fighter", "monk"].includes(cls)) return 1;
+  if (["barbarian", "fighter", "monk", "rogue"].includes(cls)) return 1;
 
   // 吟遊詩人&牧師&德魯伊&術士&契術師&法師
   if (["bard", "cleric", "druid", "sorcerer", "warlock", "wizard"].includes(cls)) {
@@ -1674,6 +1692,7 @@ function getMaxSpellRing(cls, lvl) {
   // 其他（例如 rogue）：你規則沒寫到，就保守不限制到 3
   return 3;
 }
+
 
 function updateSpellsByClassLevel() {
   const cls = document.getElementById("class")?.value || "";
@@ -1704,6 +1723,140 @@ function updateSpellsByClassLevel() {
   });
 }
 
+// ====== 德魯伊變身提示 =====
+// ✅ 四種動物（建議用「機制摘要」避免長篇敘述）
+const BEAST_STATS = {
+  rat: {
+    name: "老鼠 (Rat) CR:0",
+    size_type: "微型野獸",
+    ac: 10,
+    hp: "1 (1d4-1)",
+    speed: "20呎, 攀爬20呎",
+    ability: "力2(-4), 敏11(0), 體9(-1), 智2(-4), 感10(0), 魅4(-3)",
+    senses: "黑暗視覺30呎, 被動感知12",
+    skills: "感知 +2",
+    traits: "迅捷：離開敵人不會引發藉機攻擊",
+    attacks: "咬擊：命中+2, 範圍5呎, 刺傷1"
+  },
+  riding_horse: {
+    name: "馱用馬 (Riding Horse) CR:¼",
+    size_type: "大型野獸",
+    ac: 11,
+    hp: "13 (2d10+2)",
+    speed: "60 呎",
+    ability: "力16(+3), 敏13(+1), 體12(+1) 智2(-4), 感11(+0), 魅7(-2)",
+    senses: "被動感知10",
+    skills: "—",
+    traits: "—",
+    attacks: "蹄擊：命中+5, 範圍5呎, 鈍傷7(1d8+3)"
+  },
+  spider: {
+    name: "蜘蛛 (Spider) CR:0",
+    size_type: "微型野獸",
+    ac: 12,
+    hp: "1 (1d4-1)",
+    speed: "20呎, 攀爬20呎",
+    ability: "力2(-4), 敏14(+2), 體8(-1), 智1(-5), 感10(+0), 魅2(-4)",
+    senses: "黑暗視覺30呎, 被動感知10",
+    skills: "隱匿+4",
+    traits: "蛛爬：可攀險地(如天花板)且毋須檢定, 網主：不受蛛網限制，感知同網生物",
+    attacks: "咬擊：命中+4, 範圍5呎, 刺傷1 + 毒傷2(1d4)"
+  },
+  wolf: {
+    name: "狼 (Wolf) CR:¼",
+    size_type: "中型野獸",
+    ac: 12,
+    hp: "11 (2d8+2)",
+    speed: "40呎",
+    ability: "力14(+2), 敏15(+2), 體12(+1), 智3(-4), 感12(+1), 魅6(-2)",
+    senses: "黑暗視覺60呎, 被動感知15",
+    skills: "感知+5, 隱匿+4",
+    traits: "群攻：若攻擊目標5呎內有狼方盟友(未失能),D20擲二取一",
+    attacks: "咬擊：命中+4, 範圍5呎, 刺傷5(1d6+2), 使中小型目標獲得倒地狀態"
+  }
+};
+
+// 建立一次 popup（不算改 UI 結構；只是浮層）
+(function setupBeastPopup() {
+  if (document.getElementById("beastPopup")) return;
+
+  const popup = document.createElement("div");
+  popup.id = "beastPopup";
+  popup.innerHTML = `<span class="close" title="關閉">✕</span><div class="content"></div>`;
+  document.body.appendChild(popup);
+
+  popup.querySelector(".close").addEventListener("click", () => hideBeastPopup());
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") hideBeastPopup(); });
+
+  // 點空白處關閉（但點到 tooltip 自己不會立刻關掉）
+  document.addEventListener("click", (e) => {
+    const clickedTip = e.target.closest(".beast-tip");
+    const clickedPopup = e.target.closest("#beastPopup");
+    if (!clickedTip && !clickedPopup) hideBeastPopup();
+  }, true);
+})();
+
+function renderBeastPopupHtml(s) {
+  return `
+    <div class="title">${escapeHtml(s.name)} <span class="muted">${escapeHtml(s.size_type)}</span></div>
+    <div class="row">
+      <div><strong>AC</strong> ${escapeHtml(String(s.ac))}</div>
+      <div><strong>HP</strong> ${escapeHtml(String(s.hp))}</div>
+      <div><strong>速度</strong> ${escapeHtml(String(s.speed))}</div>
+    </div>
+    <div style="margin-top:8px;"><strong>能力值</strong> ${escapeHtml(String(s.ability))}</div>
+    <div style="margin-top:6px;"><strong>感官</strong> ${escapeHtml(String(s.senses))}</div>
+    <div style="margin-top:6px;"><strong>技能</strong> ${escapeHtml(String(s.skills))}</div>
+    <div style="margin-top:6px;"><strong>特性</strong> ${escapeHtml(String(s.traits))}</div>
+    <div style="margin-top:6px;"><strong>攻擊</strong> ${escapeHtml(String(s.attacks))}</div>
+  `;
+}
+
+function showBeastPopup(beastKey, anchorEl) {
+  const s = BEAST_STATS[beastKey];
+  if (!s) return;
+
+  const popup = document.getElementById("beastPopup");
+  const content = popup.querySelector(".content");
+  content.innerHTML = renderBeastPopupHtml(s);
+
+  // 定位：貼近點擊文字右下角
+  const r = anchorEl.getBoundingClientRect();
+  popup.style.display = "block";
+
+  // 先放在預設位置，再修正避免超出螢幕
+  let left = Math.min(r.left, window.innerWidth - popup.offsetWidth - 10);
+  let top  = Math.min(r.bottom + 8, window.innerHeight - popup.offsetHeight - 10);
+
+  left = Math.max(10, left);
+  top  = Math.max(10, top);
+
+  popup.style.left = `${left}px`;
+  popup.style.top  = `${top}px`;
+}
+
+function hideBeastPopup() {
+  const popup = document.getElementById("beastPopup");
+  if (popup) popup.style.display = "none";
+}
+
+// 事件委派：不用管 class-features 何時重繪
+document.addEventListener("click", (e) => {
+  const el = e.target.closest(".beast-tip");
+  if (!el) return;
+  const key = el.dataset.beast;
+  showBeastPopup(key, el);
+});
+
+// 簡單 escape，避免 class-features 其他字串造成 HTML 注入問題
+function escapeHtml(str) {
+  return String(str)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
 
 
 // ====== 通用 localStorage 儲存/還原 ======
