@@ -214,94 +214,8 @@
 
   <div class="section">
   <h3>專長</h3>
-
-  <div class="form-row">
-    <label for="feat1">專長一</label>
-    <select id="feat1">
-      <option value="">-- 請選擇 --</option>
-      <option value="警覺">警覺(起源)</option>
-      <option value="魔法學徒">魔法學徒(起源)</option>
-      <option value="兇蠻打手">兇蠻打手(起源)</option>
-      <option value="熟習">熟習(起源)</option>
-      <option value="屬性值提升">屬性值提升(通用)</option>
-      <option value="擒抱者">擒抱者(通用)</option>
-      <option value="箭術">箭術(戰鬥風格)</option>
-      <option value="防禦">防禦(戰鬥風格)</option>
-      <option value="巨武器戰鬥">巨武器戰鬥(戰鬥風格)</option>
-      <option value="雙武器戰鬥">雙武器戰鬥(戰鬥風格)</option>
-    </select>
-    <div class="output" id="feat1-desc">—</div>
-  </div>
-  <div class="form-row">
-    <label for="feat2">專長二</label>
-    <select id="feat2">
-      <option value="">-- 請選擇 --</option>
-      <option value="警覺">警覺(起源)</option>
-      <option value="魔法學徒">魔法學徒(起源)</option>
-      <option value="兇蠻打手">兇蠻打手(起源)</option>
-      <option value="熟習">熟習(起源)</option>
-      <option value="屬性值提升">屬性值提升(通用)</option>
-      <option value="擒抱者">擒抱者(通用)</option>
-      <option value="箭術">箭術(戰鬥風格)</option>
-      <option value="防禦">防禦(戰鬥風格)</option>
-      <option value="巨武器戰鬥">巨武器戰鬥(戰鬥風格)</option>
-      <option value="雙武器戰鬥">雙武器戰鬥(戰鬥風格)</option>
-    </select>
-    <div class="output" id="feat2-desc">—</div>
-  </div>
-  <div class="form-row">
-    <label for="feat3">專長三</label>
-    <select id="feat3">
-      <option value="">-- 請選擇 --</option>
-      <option value="警覺">警覺(起源)</option>
-      <option value="魔法學徒">魔法學徒(起源)</option>
-      <option value="兇蠻打手">兇蠻打手(起源)</option>
-      <option value="熟習">熟習(起源)</option>
-      <option value="屬性值提升">屬性值提升(通用)</option>
-      <option value="擒抱者">擒抱者(通用)</option>
-      <option value="箭術">箭術(戰鬥風格)</option>
-      <option value="防禦">防禦(戰鬥風格)</option>
-      <option value="巨武器戰鬥">巨武器戰鬥(戰鬥風格)</option>
-      <option value="雙武器戰鬥">雙武器戰鬥(戰鬥風格)</option>
-    </select>
-    <div class="output" id="feat3-desc">—</div>
-  </div>
-  <div class="form-row">
-    <label for="feat4">專長四
-    </label>
-    <select id="feat4">
-      <option value="">-- 請選擇 --</option>
-      <option value="警覺">警覺(起源)</option>
-      <option value="魔法學徒">魔法學徒(起源)</option>
-      <option value="兇蠻打手">兇蠻打手(起源)</option>
-      <option value="熟習">熟習(起源)</option>
-      <option value="屬性值提升">屬性值提升(通用)</option>
-      <option value="擒抱者">擒抱者(通用)</option>
-      <option value="箭術">箭術(戰鬥風格)</option>
-      <option value="防禦">防禦(戰鬥風格)</option>
-      <option value="巨武器戰鬥">巨武器戰鬥(戰鬥風格)</option>
-      <option value="雙武器戰鬥">雙武器戰鬥(戰鬥風格)</option>
-    </select>
-    <div class="output" id="feat4-desc">—</div>
-  </div>
-    <div class="form-row">
-    <label for="feat5">專長五
-    </label>
-    <select id="feat5">
-      <option value="">-- 請選擇 --</option>
-      <option value="警覺">警覺(起源)</option>
-      <option value="魔法學徒">魔法學徒(起源)</option>
-      <option value="兇蠻打手">兇蠻打手(起源)</option>
-      <option value="熟習">熟習(起源)</option>
-      <option value="屬性值提升">屬性值提升(通用)</option>
-      <option value="擒抱者">擒抱者(通用)</option>
-      <option value="箭術">箭術(戰鬥風格)</option>
-      <option value="防禦">防禦(戰鬥風格)</option>
-      <option value="巨武器戰鬥">巨武器戰鬥(戰鬥風格)</option>
-      <option value="雙武器戰鬥">雙武器戰鬥(戰鬥風格)</option>
-    </select>
-    <div class="output" id="feat5-desc">—</div>
-  </div>
+  <div id="feats-area"></div>
+  <button type="button" onclick="createSingleFeatRow()">➕ 新增專長</button>
 
 </div>
 
@@ -1011,6 +925,24 @@ const featsDesc = {
 幫撐十秒─使用「輕型」武器進行副手攻擊時，可用屬性加值提升傷害`
 };
 
+const FEAT_OPTIONS = [
+  { value: "警覺", label: "警覺(起源)" },
+  { value: "魔法學徒", label: "魔法學徒(起源)" },
+  { value: "兇蠻打手", label: "兇蠻打手(起源)" },
+  { value: "熟習", label: "熟習(起源)" },
+  { value: "屬性值提升", label: "屬性值提升(通用)" },
+  { value: "擒抱者", label: "擒抱者(通用)" },
+  { value: "箭術", label: "箭術(戰鬥風格)" },
+  { value: "防禦", label: "防禦(戰鬥風格)" },
+  { value: "巨武器戰鬥", label: "巨武器戰鬥(戰鬥風格)" },
+  { value: "雙武器戰鬥", label: "雙武器戰鬥(戰鬥風格)" }
+];
+
+function getFeatOptionsHtml() {
+  return `<option value="">-- 請選擇 --</option>` +
+    FEAT_OPTIONS.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join("");
+}
+
 function updateFeatDesc(selectId, descId) {
   const v = document.getElementById(selectId).value;
   const raw = featsDesc[v] || "—";
@@ -1072,6 +1004,50 @@ function updateFeatDesc(selectId, descId) {
     `<div style="line-height:1.35;">${bodyHtml}</div>`;
 }
 
+function createSingleFeatRow() {
+  const area = document.getElementById("feats-area");
+  if (!area) return;
+
+  const idx = area.childElementCount;
+  const rowDiv = document.createElement("div");
+  rowDiv.className = "form-row";
+
+  const label = document.createElement("label");
+  label.htmlFor = `feat-${idx}`;
+  label.textContent = `專長${idx + 1}`;
+
+  const featSel = document.createElement("select");
+  featSel.id = `feat-${idx}`;
+  featSel.innerHTML = getFeatOptionsHtml();
+
+  const descDiv = document.createElement("div");
+  descDiv.className = "output";
+  descDiv.id = `feat-${idx}-desc`;
+  descDiv.textContent = "—";
+
+  const delBtn = document.createElement("button");
+  delBtn.type = "button";
+  delBtn.textContent = "❌刪除上列專長";
+  delBtn.style.marginLeft = "8px";
+  delBtn.addEventListener("click", () => {
+    if (confirm("確定要刪除此列專長嗎？")) {
+      rowDiv.remove();
+      saveAllFields();
+    }
+  });
+
+  featSel.addEventListener("change", () => {
+    updateFeatDesc(featSel.id, descDiv.id);
+    saveAllFields();
+  });
+
+  rowDiv.appendChild(label);
+  rowDiv.appendChild(featSel);
+  rowDiv.appendChild(descDiv);
+  rowDiv.appendChild(delBtn);
+  area.appendChild(rowDiv);
+}
+
 // ✅ 簡單防 XSS：把純文字安全地放進 innerHTML
 function escapeHtml(s) {
   return String(s)
@@ -1082,11 +1058,6 @@ function escapeHtml(s) {
     .replace(/'/g, "&#39;");
 }
 
-
-document.getElementById('feat1').addEventListener('change', () => updateFeatDesc('feat1', 'feat1-desc'));
-document.getElementById('feat2').addEventListener('change', () => updateFeatDesc('feat2', 'feat2-desc'));
-document.getElementById('feat3').addEventListener('change', () => updateFeatDesc('feat3', 'feat3-desc'));
-document.getElementById('feat4').addEventListener('change', () => updateFeatDesc('feat4', 'feat4-desc'));
 
 document.addEventListener("DOMContentLoaded", () => {
   // 初始化顯示
@@ -1908,14 +1879,39 @@ function getSpellAreaConfigs() {
   }).filter(Boolean);
 }
 
+function getDynamicAreaConfigs() {
+  return [
+    ...getSpellAreaConfigs().map(area => ({
+      key: area.id,
+      getCount: () => document.getElementById(area.id)?.childElementCount || 0,
+      ensureCount: (count) => {
+        const current = document.getElementById(area.id)?.childElementCount || 0;
+        for (let i = current; i < count; i++) {
+          createSingleSpellRow(area.id, area.level);
+        }
+      }
+    })),
+    {
+      key: "feats-area",
+      getCount: () => document.getElementById("feats-area")?.childElementCount || 0,
+      ensureCount: (count) => {
+        const current = document.getElementById("feats-area")?.childElementCount || 0;
+        for (let i = current; i < count; i++) {
+          createSingleFeatRow();
+        }
+      }
+    }
+  ];
+}
+
 function collectStateObject() {
   const data = {};
   document.querySelectorAll("input, select, textarea").forEach(el => {
     if (!el.id) return;
     data[el.id] = el.type === "checkbox" ? el.checked : el.value;
   });
-  getSpellAreaConfigs().forEach(area => {
-    data[`${area.id}-count`] = document.getElementById(area.id).childElementCount;
+  getDynamicAreaConfigs().forEach(area => {
+    data[`${area.key}-count`] = area.getCount();
   });
   return data;
 }
@@ -1960,12 +1956,9 @@ function applyStateObject(data) {
   if (!data || typeof data !== "object") return;
 
   const spellAreas = getSpellAreaConfigs();
-  spellAreas.forEach(area => {
-    const n = parseInt(data[`${area.id}-count`] || "0", 10);
-    const current = document.getElementById(area.id).childElementCount;
-    for (let i = current; i < n; i++) {
-      createSingleSpellRow(area.id, area.level);
-    }
+  getDynamicAreaConfigs().forEach(area => {
+    const n = parseInt(data[`${area.key}-count`] || "0", 10);
+    area.ensureCount(n);
   });
   const highlevelCount = spellAreas
     .filter(area => typeof area.level === "number" && area.level >= 4)
@@ -2058,6 +2051,7 @@ for (let i = 0; i < 2; i++) createSingleSpellRow('cantrips-area', 'cantrips');
 for (let i = 0; i < 2; i++) createSingleSpellRow('level1spells-area', 1);
 for (let i = 0; i < 1; i++) createSingleSpellRow('level2spells-area', 2);
 for (let i = 0; i < 1; i++) createSingleSpellRow('level3spells-area', 3);
+for (let i = 0; i < 5; i++) createSingleFeatRow();
   // 3. 還原所有欄位狀態
   const { data: sharedData, error: sharedError } = await decodeStateFromHash();
   if (sharedData) {
