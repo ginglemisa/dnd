@@ -1,0 +1,2282 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>D&amp;D2024角色</title>
+  <script src="css.js" defer></script>
+  <script src="class-features.js" defer></script>
+  <script src="race.js" defer></script>
+  <script src="equipment-notes.js" defer></script>
+  <script src="spell-list.js" defer></script>
+  <script src="condition.js" defer></script>
+</head>
+<body>
+<div class="tabs">
+  <button class="tab-button active" onclick="showTab(&#39;basic&#39;, this)">數值</button>
+  <button class="tab-button" onclick="showTab(&#39;skills&#39;, this)">技能</button>
+  <button class="tab-button" onclick="showTab(&#39;actions&#39;, this)">動作</button>
+  <button class="tab-button" onclick="showTab(&#39;equipment&#39;, this)">裝備</button>
+  <button class="tab-button" onclick="showTab(&#39;spells&#39;, this)">法術</button>
+</div>
+
+<div id="tab-basic" class="tab-content active">
+  <!-- 職業 + 預設按鈕 + 等級 -->
+<div class="form-grid-2col">
+  <label for="class">職業</label>
+  <label for="level">等級</label>
+
+  <select id="class">
+    <option value="">-- 請選擇 --</option>
+    <option value="barbarian">野蠻人</option>      
+    <option value="bard">吟遊詩人</option>
+    <option value="cleric">牧師</option>
+    <option value="druid">德魯伊</option>
+    <option value="fighter">戰士</option>
+    <option value="monk">武僧</option>
+    <option value="paladin">聖武士</option>
+    <option value="ranger">遊俠</option>
+    <option value="rogue">遊蕩者</option>
+    <option value="sorcerer">術士</option>
+    <option value="warlock">契術師</option>
+    <option value="wizard">法師</option>
+  </select>
+  <select id="level">
+    <option value="">--</option>
+    <option value="1">1</option>
+    <option value="2">2</option>
+    <option value="3">3</option>
+    <option value="4">4</option>
+    <option value="5">5</option>
+  </select>
+</div>
+
+<!-- 背景與種族 -->
+<div class="form-grid-2col">
+  <div>
+    <label for="background">背景</label>
+    <select id="background">
+      <option value="">-- 請選擇 --</option>
+      <option value="acolyte">侍僧</option>
+      <option value="soldier">士兵</option>
+      <option value="criminal">罪犯</option>
+      <option value="sage">賢者</option>
+    </select>
+  </div>
+  <div>
+    <label for="race">種族</label>
+    <select id="race">
+      <option value="">-- 請選擇 --</option>
+      <option value="dragonborn">龍裔</option>
+      <option value="dwarf">矮人</option>
+      <option value="elf">精靈</option>
+      <option value="gnome">侏儒</option>
+      <option value="goliath">歌利亞</option>
+      <option value="halfling">半身人</option>
+      <option value="human">人類</option>
+      <option value="orc">獸人</option>
+      <option value="tiefling">提夫林</option>
+    </select>
+  </div>
+</div>
+
+<div id="class-proficiency-options" style="margin-top: 8px; display: none;">
+  <strong>職業武器熟練選項：</strong>
+  <label id="cleric-guardian-wrap" style="display: none; margin-left: 8px;">
+    <input type="checkbox" id="cleric-guardian"> 牧師：守護者（軍用武器熟練）
+  </label>
+  <label id="druid-sentinel-wrap" style="display: none; margin-left: 8px;">
+    <input type="checkbox" id="druid-sentinel"> 德魯伊：哨衛（軍用武器熟練）
+  </label>
+</div>
+
+
+  <div class="form-grid-2col">
+  <!-- 左欄：HP 顯示與輸入 -->
+  <div>
+    <div style="font-weight: bold;">最大生命值:<span id="hp-display">(0)</span></div>
+    <input type="number" id="hp" placeholder="ＨＰ">
+  </div>
+
+  <!-- 右欄：陣營選擇 -->
+  <div>
+    <label for="alignment">陣營</label>
+    <select id="alignment">
+      <option value="">-- 請選擇 --</option>
+      <option value="LG">守序善良</option>
+      <option value="NG">中立善良</option>
+      <option value="CG">混亂善良</option>
+      <option value="LN">守序中立</option>
+      <option value="TN">絕對中立</option>
+      <option value="CN">混亂中立</option>
+      <option value="LE">守序邪惡</option>
+      <option value="NE">中立邪惡</option>
+      <option value="CE">混亂邪惡</option>
+    </select>
+  </div>
+</div>
+
+
+
+<style>
+.form-grid-6col {
+  display: grid;
+  grid-template-columns: auto auto auto auto auto auto;
+  gap: 10px;
+  align-items: center;
+  font-size: 0.95em;
+}
+</style>
+
+<!-- 第一列：護甲等級、速度、先攻 -->
+<div class="form-grid-6col">
+  <label for="ac-display">護甲等級：</label>
+  <span id="ac-display" style="font-size: 1.2em;">10</span>
+
+  <label for="speed-input">速度：</label>
+  <input id="speed-input" type="number" class="tight-input" value="30">
+
+  <label for="initiative-input">先攻：</label>
+  <input id="initiative-input" type="number" class="tight-input" value="0">
+</div>
+
+
+<!-- 第二列：生命骰數量、被動感知、按鈕 -->
+<div class="form-grid-6col">
+  <label for="lifedicen">生命骰數量：</label>
+  <input id="lifedicen" type="number" class="tight-input" value="1" min="0" max="5">
+
+  <label for="passive-perception">被動感知：</label>
+  <input id="passive-perception" type="number" class="tight-input" value="10" min="-5" max="45">
+
+  <span></span> <!-- 占位格 -->
+  <button id="set-default-abilities" type="button" style="font-size:0.95em;">預設屬性</button>
+</div>
+
+
+
+
+
+
+  <div class="section">
+    <div class="ability-grid">
+      <div class="ability">
+        <div class="modifier" id="str-mod"></div>
+        <input type="number" id="str" min="1" max="20" placeholder="輸入力量">
+      </div>
+      <div class="ability">
+        <div class="modifier" id="dex-mod"></div>
+        <input type="number" id="dex" min="1" max="20" placeholder="輸入敏捷">
+      </div>
+      <div class="ability">
+        <div class="modifier" id="con-mod"></div>
+        <input type="number" id="con" min="1" max="20" placeholder="輸入體質">
+      </div>
+      <div class="ability">
+        <div class="modifier" id="int-mod"></div>
+	<input type="number" id="int" min="1" max="20" placeholder="輸入智力">
+      </div>
+      <div class="ability">
+        <div class="modifier" id="wis-mod"></div>
+        <input type="number" id="wis" min="1" max="20" placeholder="輸入感知">
+      </div>
+      <div class="ability">
+        <div class="modifier" id="cha-mod"></div>
+        <input type="number" id="cha" min="1" max="20" placeholder="輸入魅力">
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+      <h3>職業筆記區</h3>
+      <textarea id="class-extra" rows="4" style="width: 100%;" placeholder="職業選項、能力使用次數等等......"></textarea>
+  </div>
+  <div class="section">
+
+<div class="section">
+  <details open>
+    <summary><h3 style="display: inline;">職業能力</h3></summary>
+    <div class="output" id="classFeatures">無資料</div>
+  </details>
+</div>
+  
+    <details open><summary><h3 style="display: inline;">背景能力</h3></summary>
+    <div class="output" id="backgroundFeatures">無資料</div></details>
+  </div>
+  <div class="section">
+    <details open><summary><h3 style="display: inline;">種族能力</h3>
+    記錄格:<input type="checkbox" id="race-ab-check1">
+    <input type="checkbox" id="race-ab-check2">
+    <input type="checkbox" id="race-ab-check3"></summary>
+    <div class="output" id="raceFeatures">無資料</div></details>
+  </div>
+
+
+  <div class="section">
+  <h3>專長</h3>
+  <div id="feats-area"></div>
+  <button type="button" onclick="createSingleFeatRow()">➕ 新增專長</button>
+
+</div>
+
+<button id="clear-storage-btn" style="margin-bottom:12px;">
+  清除全部紀錄（回復預設）
+</button>
+<button type="button" onclick="copyShareUrl()" style="margin-bottom:12px; margin-left:8px;">
+  🔗 複製分享網址
+</button>
+
+
+</div>
+  
+
+<div id="tab-skills" class="tab-content">
+  <div class="section">
+  <button onclick="fillSaves()">屬性豁免</button>
+  <div class="save-grid">
+    <div class="save-pair"><label><input type="checkbox" id="prof-str"> STR 力量</label><input type="number" id="save-str"></div>
+    <div class="save-pair"><label><input type="checkbox" id="prof-int"> INT 智力</label><input type="number" id="save-int"></div>
+    <div class="save-pair"><label><input type="checkbox" id="prof-dex"> DEX 敏捷</label><input type="number" id="save-dex"></div>
+    <div class="save-pair"><label><input type="checkbox" id="prof-wis"> WIS 感知</label><input type="number" id="save-wis"></div>
+    <div class="save-pair"><label><input type="checkbox" id="prof-con"> CON 體質</label><input type="number" id="save-con"></div>
+    <div class="save-pair"><label><input type="checkbox" id="prof-cha"> CHA 魅力</label><input type="number" id="save-cha"></div>
+  </div>
+</div>
+
+
+<div class="section">
+  <button onclick="fillSkills()">技能檢定</button>
+  <div class="skill-grid">
+    <div class="skill-cell"><label for="prof-運動">運動(力)<input type="checkbox" id="prof-運動"></label><input type="number" id="skill-運動"></div>
+    <div class="skill-cell"><label for="prof-體操">體操(敏)<input type="checkbox" id="prof-體操"></label><input type="number" id="skill-體操"></div>
+    <div class="skill-cell"><label for="prof-巧手">巧手(敏)<input type="checkbox" id="prof-巧手"></label><input type="number" id="skill-巧手"></div>
+    <div class="skill-cell"><label for="prof-隱匿">隱匿(敏)<input type="checkbox" id="prof-隱匿"></label><input type="number" id="skill-隱匿"></div>
+    <div class="skill-cell"><label for="prof-奧秘">奧秘(智)<input type="checkbox" id="prof-奧秘"></label><input type="number" id="skill-奧秘"></div>
+    <div class="skill-cell"><label for="prof-歷史">歷史(智)<input type="checkbox" id="prof-歷史"></label><input type="number" id="skill-歷史"></div>
+    <div class="skill-cell"><label for="prof-調查">調查(智)<input type="checkbox" id="prof-調查"></label><input type="number" id="skill-調查"></div>
+    <div class="skill-cell"><label for="prof-自然">自然(智)<input type="checkbox" id="prof-自然"></label><input type="number" id="skill-自然"></div>
+    <div class="skill-cell"><label for="prof-宗教">宗教(智)<input type="checkbox" id="prof-宗教"></label><input type="number" id="skill-宗教"></div>
+    <div class="skill-cell"><label for="prof-馴獸">馴獸(感)<input type="checkbox" id="prof-馴獸"></label><input type="number" id="skill-馴獸"></div>
+    <div class="skill-cell"><label for="prof-洞悉">洞悉(感)<input type="checkbox" id="prof-洞悉"></label><input type="number" id="skill-洞悉"></div>
+    <div class="skill-cell"><label for="prof-醫藥">醫藥(感)<input type="checkbox" id="prof-醫藥"></label><input type="number" id="skill-醫藥"></div>
+    <div class="skill-cell"><label for="prof-察覺">察覺(感)<input type="checkbox" id="prof-察覺"></label><input type="number" id="skill-察覺"></div>
+    <div class="skill-cell"><label for="prof-求生">求生(感)<input type="checkbox" id="prof-求生"></label><input type="number" id="skill-求生"></div>
+    <div class="skill-cell"><label for="prof-欺瞞">欺瞞(魅)<input type="checkbox" id="prof-欺瞞"></label><input type="number" id="skill-欺瞞"></div>
+    <div class="skill-cell"><label for="prof-威嚇">威嚇(魅)<input type="checkbox" id="prof-威嚇"></label><input type="number" id="skill-威嚇"></div>
+    <div class="skill-cell"><label for="prof-表演">表演(魅)<input type="checkbox" id="prof-表演"></label><input type="number" id="skill-表演"></div>
+    <div class="skill-cell"><label for="prof-遊說">遊說(魅)<input type="checkbox" id="prof-遊說"></label><input type="number" id="skill-遊說"></div>
+  </div>
+
+  <div class="section">
+      <h3>備註 / 其他說明</h3>
+      <textarea id="skill-extra" rows="4" style="width: 100%;" placeholder="如果技能有其他規則，記在這裡。"></textarea>
+  </div>
+
+  <div style="margin-top: 24px;">
+  <label>你會說通用語及兩種語言：</label>
+  <select id="language1" style="margin-left: 8px;">
+    <option value="">-- 請選擇 --</option>
+    <option value="common-sign">通用手語</option>
+    <option value="draconic">龍語</option>
+    <option value="dwarvish">矮人語</option>
+    <option value="elvish">精靈語</option>
+    <option value="giant">巨人語</option>
+    <option value="gnomish">侏儒語</option>
+    <option value="goblin">哥布林語</option>
+    <option value="halfling">半身人語</option>
+    <option value="orc">獸人語</option>
+  </select>
+
+  <select id="language2" style="margin-left: 8px;">
+    <option value="">-- 請選擇 --</option>
+    <option value="common-sign">通用手語</option>
+    <option value="draconic">龍語</option>
+    <option value="dwarvish">矮人語</option>
+    <option value="elvish">精靈語</option>
+    <option value="giant">巨人語</option>
+    <option value="gnomish">侏儒語</option>
+    <option value="goblin">哥布林語</option>
+    <option value="halfling">半身人語</option>
+    <option value="orc">獸人語</option>
+  </select>
+</div>
+
+
+</div>
+
+
+</div>
+
+
+
+  <div id="tab-actions" class="tab-content">
+    <div class="section">
+      <div class="action-help" style="margin-bottom: 16px;">
+  <h3>戰鬥中的四種行動</h3>
+  <table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+    <thead>
+      <tr style="background-color: #f0f0f0;">
+        <th style="border: 1px solid #ccc; padding: 6px;">類型</th>
+        <th style="border: 1px solid #ccc; padding: 6px;">說明</th>
+        <th style="border: 1px solid #ccc; padding: 6px;">使用時機</th>
+        <th style="border: 1px solid #ccc; padding: 6px;">範例</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="border: 1px solid #ccc; padding: 6px;">移動</td>
+        <td style="border: 1px solid #ccc; padding: 6px;">改變你的位置</td>
+        <td style="border: 1px solid #ccc; padding: 6px;">自己的回合中</td>
+        <td style="border: 1px solid #ccc; padding: 6px;">步行、游泳</td>
+      </tr>
+      <tr>
+        <td style="border: 1px solid #ccc; padding: 6px;">動作</td>
+        <td style="border: 1px solid #ccc; padding: 6px;">主要行動</td>
+        <td style="border: 1px solid #ccc; padding: 6px;">每回合1次</td>
+        <td style="border: 1px solid #ccc; padding: 6px;">攻擊、閃避</td>
+      </tr>
+      <tr>
+        <td style="border: 1px solid #ccc; padding: 6px;">附贈動作</td>
+        <td style="border: 1px solid #ccc; padding: 6px;">有條件的額外動作</td>
+        <td style="border: 1px solid #ccc; padding: 6px;">每回合最多1次</td>
+        <td style="border: 1px solid #ccc; padding: 6px;">二次攻擊、喝水</td>
+      </tr>
+      <tr>
+        <td style="border: 1px solid #ccc; padding: 6px;">反應</td>
+        <td style="border: 1px solid #ccc; padding: 6px;">在別人回合觸發</td>
+        <td style="border: 1px solid #ccc; padding: 6px;">每回合最多1次</td>
+        <td style="border: 1px solid #ccc; padding: 6px;">藉機攻擊</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+      <h3>動作</h3>
+      <div id="action-description" class="output">請選擇一個動作查看說明。</div>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px;">
+        <button onclick="showAction(&#39;attack&#39;)">攻擊</button>
+        <button onclick="showAction(&#39;dash&#39;)">衝刺</button>
+        <button onclick="showAction(&#39;disengage&#39;)">撤離</button>
+        <button onclick="showAction(&#39;dodge&#39;)">閃避</button>
+        <button onclick="showAction(&#39;help&#39;)">協助</button>
+        <button onclick="showAction(&#39;hide&#39;)">躲藏</button>
+        <button onclick="showAction(&#39;influence&#39;)">影響</button>
+        <button onclick="showAction(&#39;magic&#39;)">魔法</button>
+        <button onclick="showAction(&#39;ready&#39;)">準備</button>
+        <button onclick="showAction(&#39;search&#39;)">搜索</button>
+        <button onclick="showAction(&#39;study&#39;)">研究</button>
+        <button onclick="showAction(&#39;utilize&#39;)">使用</button>
+      </div>
+    </div>
+
+<h3>攻擊動作</h3>
+<button onclick="populateHandAttacks()">獲取 主副手 武器資料</button>
+<div class="form-row small-text">
+  <input type="text" id="atk-main-name" placeholder="名稱">
+  <input type="text" id="atk-main-hit" placeholder="命中">
+  <input type="text" id="atk-main-dmg" placeholder="傷害">
+  <input type="text" id="atk-main-note" placeholder="備註">
+</div>
+<div>─ ─ ─</div>
+<div class="form-row small-text">
+  <input type="text" id="atk-off-name" placeholder="名稱">
+  <input type="text" id="atk-off-hit" placeholder="命中">
+  <input type="text" id="atk-off-dmg" placeholder="傷害">
+  <input type="text" id="atk-off-note" placeholder="備註">
+</div>
+
+
+      <h3>附贈</h3>
+
+<!-- 喝藥水 -->
+<div style="font-size: 1.05em; font-weight: bold; margin-top: 10px;">喝藥水</div>
+<div class="small-text" style="margin-left: 10px; margin-top: 4px;">
+  治療藥水：恢復 2d4+2 HP
+</div>
+
+<!-- 第二次攻擊 -->
+<div style="font-size: 1.05em; font-weight: bold; margin-top: 10px;">進行第二次攻擊</div>
+<div class="small-text" style="margin-left: 10px; margin-top: 4px;">
+  當你雙持"輕型"武器並進行主手攻擊後，可以用附贈動作進行一次副手攻擊。副手攻擊不加屬性調整值到傷害，除非其他規則允許。
+</div>
+
+
+      <h3>反應</h3>
+<div style="font-size: 1.05em; font-weight: bold; margin-top: 10px;">進行藉機攻擊</div>
+<div class="small-text" style="margin-left: 10px; margin-top: 4px;">
+  當你能看見的生物離開你的觸及範圍時，你可以進行藉機攻擊。使用"反應"來對該生物進行一次近戰攻擊。。
+</div>
+
+<div id="condition-section"></div>
+
+  </div>
+
+ <div id="tab-equipment" class="tab-content">
+  <div class="section">
+    <h3>裝備</h3>
+    <p>此處可列出角色裝備與物品。</p>
+
+    <div class="form-row">
+      <label for="mainHand">主手</label>
+      <select id="mainHand"><option value="">-- 請選擇 --</option><option value="短棒">短棒</option><option value="匕首">匕首</option><option value="巨棒">巨棒</option><option value="手斧">手斧</option><option value="標槍">標槍</option><option value="輕錘">輕錘</option><option value="硬頭錘">硬頭錘</option><option value="長棍">長棍</option><option value="鐮刀">鐮刀</option><option value="短矛">短矛</option><option value="飛鏢">飛鏢</option><option value="輕弩">輕弩</option><option value="短弓">短弓</option><option value="投石索">投石索</option><option value="戰斧">戰斧</option><option value="連枷">連枷</option><option value="長柄刀">長柄刀</option><option value="巨斧">巨斧</option><option value="巨劍">巨劍</option><option value="長戟">長戟</option><option value="騎槍">騎槍</option><option value="長劍">長劍</option><option value="巨錘">巨錘</option><option value="釘頭錘">釘頭錘</option><option value="長矛">長矛</option><option value="刺劍">刺劍</option><option value="彎刀">彎刀</option><option value="短劍">短劍</option><option value="三叉戟">三叉戟</option><option value="戰錘">戰錘</option><option value="戰鎬">戰鎬</option><option value="鞭">鞭</option><option value="吹箭筒">吹箭筒</option><option value="手弩">手弩</option><option value="重弩">重弩</option><option value="長弓">長弓</option><option value="長管火槍">長管火槍</option><option value="手槍">手槍</option></select>
+    </div>
+    <div class="form-row small-text">
+      <span id="main-hand-info-line1">--</span>
+    </div>
+    <div class="form-row small-text">
+      <span id="main-hand-info-line2">--</span>
+    </div>
+
+    <div class="form-row">
+      <label for="offHand">副手</label>
+      <select id="offHand" disabled=""><option disabled="">雙手武器無法使用副手</option></select>
+    </div>
+    <div class="form-row small-text">
+      <span id="off-hand-info-line1">—</span>
+    </div>
+    <div class="form-row small-text">
+      <span id="off-hand-info-line2">—</span>
+    </div>
+
+    <div class="form-row">
+      <label for="armor">護甲</label>
+      <select id="armor"><option value="">-- 請選擇 --</option><option value="布甲">布甲</option><option value="皮甲">皮甲</option><option value="鑲釘皮甲">鑲釘皮甲</option><option value="獸皮甲">獸皮甲</option><option value="鏈甲衫">鏈甲衫</option><option value="鱗甲">鱗甲</option><option value="胸甲">胸甲</option><option value="半身甲">半身甲</option><option value="環甲">環甲</option><option value="鏈甲">鏈甲</option><option value="板條甲">板條甲</option><option value="板甲">板甲</option></select>
+    </div>
+    <div class="form-row small-text">
+      <span id="armor-info-line1">—</span>
+    </div>
+    <div class="form-row small-text">
+      <span id="armor-info-line2">—</span>
+    </div>
+
+    <div class="section">
+      <h3>攜帶物品</h3>
+      <textarea id="gear-notes" rows="4" style="width: 100%;" placeholder="請輸入角色攜帶的其他裝備、補給品、雜物等..."></textarea>
+    </div>
+
+    <div class="section">
+      <h3>備註 / 其他說明</h3>
+      <textarea id="gear-extra" rows="4" style="width: 100%;" placeholder="任何額外想記下的內容，例如個人物品、魔法物品來源或特殊用途裝備..."></textarea>
+    </div>
+
+  </div> <!-- END OF section -->
+
+  <!-- 屬性、精通、工具、冒險用品 -->
+  <div id="equipment-notes-section"></div>
+
+</div> <!-- END OF tab-equipment -->
+
+
+<div id="tab-spells" class="tab-content">
+<div class="section spell-toolbar">
+  <div class="form-row" style="margin-bottom: 6px;">
+    <input type="text" id="spell-search" placeholder="🔎 搜尋已加入法術（名稱/描述）">
+  </div>
+  <div class="spell-toolbar-actions">
+    <button type="button" id="expand-spells">全部展開</button>
+    <button type="button" id="collapse-spells">全部收合</button>
+  </div>
+</div>
+
+    <div class="section">
+  <h3>法術位管理</h3>
+  <div class="spell-slot-grid" style="display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 12px; align-items: center;">
+    <div id="spellslot1-row" class="spell-slot-column">
+      <label style="display:block; margin-bottom:4px;">一環：</label>
+      <input type="checkbox" id="spellslot1-1">
+      <input type="checkbox" id="spellslot1-2">
+      <input type="checkbox" id="spellslot1-3">
+      <input type="checkbox" id="spellslot1-4">
+    </div>
+    <div id="spellslot2-row" class="spell-slot-column">
+      <label style="display:block; margin-bottom:4px;">二環：</label>
+      <input type="checkbox" id="spellslot2-1">
+      <input type="checkbox" id="spellslot2-2">
+      <input type="checkbox" id="spellslot2-3">
+    </div>
+    <div id="spellslot3-row" class="spell-slot-column">
+      <label style="display:block; margin-bottom:4px;">三環：</label>
+      <input type="checkbox" id="spellslot3-1">
+      <input type="checkbox" id="spellslot3-2">
+    </div>
+  </div>
+  <div class="form-row">
+    <textarea id="spell-notes" rows="2" placeholder="筆記：可記錄每日準備、消耗情形、額外內容等"></textarea>
+  </div>
+
+  <div class="spell-picked-grid">
+    <div class="output spell-picked-box"><div id="picked-cantrips" class="spell-picked-content">—</div></div>
+    <div class="output spell-picked-box"><div id="picked-level1" class="spell-picked-content">—</div></div>
+    <div class="output spell-picked-box"><div id="picked-level2" class="spell-picked-content">—</div></div>
+    <div class="output spell-picked-box"><div id="picked-level3" class="spell-picked-content">—</div></div>
+  </div>
+		<div style="font-size: 0.85em; color: #999; margin-top: 6px; line-height: 1.3;">
+本頁僅提供免費基本規則法術；部分 PHB 專屬內容未列入。
+		</div>
+</div>
+
+<details class="section spell-level-section" open>
+  <summary><h3 style="display:inline;">戲法</h3></summary>
+  <div id="cantrips-area"></div>
+  <button type="button" onclick="createSingleSpellRow('cantrips-area', 'cantrips')">➕ 新增戲法</button>
+</details>
+<details class="section spell-level-section" open>
+  <summary><h3 style="display:inline;">一環法術</h3></summary>
+  <div id="level1spells-area"></div>
+  <button type="button" onclick="createSingleSpellRow('level1spells-area', 1)">➕ 新增一環法術</button>
+</details>
+<details class="section spell-level-section" open>
+  <summary><h3 style="display:inline;">二環法術</h3></summary>
+  <div id="level2spells-area"></div>
+  <button type="button" onclick="createSingleSpellRow('level2spells-area', 2)">➕ 新增二環法術</button>
+</details>
+<details class="section spell-level-section" open>
+  <summary><h3 style="display:inline;">三環法術</h3></summary>
+  <div id="level3spells-area"></div>
+  <button type="button" onclick="createSingleSpellRow('level3spells-area', 3)">➕ 新增三環法術</button>
+</details>
+
+<div id="highlevel-spells" style="display:none;">
+  <details class="section spell-level-section" open>
+    <summary><h3 style="display:inline;">四環法術</h3></summary>
+    <div id="level4spells-area"></div>
+    <button type="button" onclick="createSingleSpellRow('level4spells-area', 4)">➕ 新增四環法術</button>
+  </details>
+  <details class="section spell-level-section" open>
+    <summary><h3 style="display:inline;">五環法術</h3></summary>
+    <div id="level5spells-area"></div>
+    <button type="button" onclick="createSingleSpellRow('level5spells-area', 5)">➕ 新增五環法術</button>
+  </details>
+  <details class="section spell-level-section" open>
+    <summary><h3 style="display:inline;">六環法術</h3></summary>
+    <div id="level6spells-area"></div>
+    <button type="button" onclick="createSingleSpellRow('level6spells-area', 6)">➕ 新增六環法術</button>
+  </details>
+  <details class="section spell-level-section" open>
+    <summary><h3 style="display:inline;">七環法術</h3></summary>
+    <div id="level7spells-area"></div>
+    <button type="button" onclick="createSingleSpellRow('level7spells-area', 7)">➕ 新增七環法術</button>
+  </details>
+  <details class="section spell-level-section" open>
+    <summary><h3 style="display:inline;">八環法術</h3></summary>
+    <div id="level8spells-area"></div>
+    <button type="button" onclick="createSingleSpellRow('level8spells-area', 8)">➕ 新增八環法術</button>
+  </details>
+  <details class="section spell-level-section" open>
+    <summary><h3 style="display:inline;">九環法術</h3></summary>
+    <div id="level9spells-area"></div>
+    <button type="button" onclick="createSingleSpellRow('level9spells-area', 9)">➕ 新增九環法術</button>
+  </details>
+</div>
+
+  </div>
+
+  
+
+  <script>
+function getHitDiceValues(className) {
+  switch (className) {
+    case "barbarian": return { Y: 12, Z: 7 };
+    case "fighter":
+    case "paladin":
+    case "ranger":
+      return { Y: 10, Z: 6 };
+    case "bard":
+    case "cleric":
+    case "druid":
+    case "monk":
+    case "rogue":
+    case "warlock":
+      return { Y: 8, Z: 5 };
+    case "sorcerer":
+    case "wizard":
+      return { Y: 6, Z: 4 };
+    default:
+      return { Y: 0, Z: 0 };
+  }
+}
+
+function calculateConModifier(score) {
+  if (!score || isNaN(score)) return 0;
+  return Math.floor((score - 10) / 2);
+}
+
+function updateHPDisplay() {
+  const classValue = document.getElementById("class").value;
+  const level = parseInt(document.getElementById("level").value || "1");
+  const conScore = parseInt(document.getElementById("con").value || "10");
+  const race = document.getElementById("race").value;
+  const isDwarf = race === "dwarf" ? 1 : 0;
+
+  const { Y, Z } = getHitDiceValues(classValue);
+  const conMod = calculateConModifier(conScore);
+
+  let maxHP = Y + conMod * level + Z * (level - 1) + isDwarf * level;
+
+if (classValue === "sorcerer" && level >= 3) {
+  maxHP += 3 + (level - 3);
+}
+
+document.getElementById("hp-display").textContent = ` ${maxHP}`;
+
+}
+
+document.getElementById("class").addEventListener("change", updateHPDisplay);
+document.getElementById("level").addEventListener("change", updateHPDisplay);
+document.getElementById("race").addEventListener("change", updateHPDisplay);
+document.getElementById("con").addEventListener("input", updateHPDisplay);
+
+document.getElementById("spell-notes").addEventListener("input", function () {
+  if (!this.value.includes("/unlock9")) return;
+
+  // 顯示 4~9 環區塊
+  document.getElementById("highlevel-spells").style.display = "block";
+
+  // 同步切換到 Full 模式（給自己查完整法術）
+  SPELL_MODE = "full";
+  refreshSpellDropdowns();
+
+  // 清掉密技字串
+  this.value = this.value.replace(/\/unlock9/g, "").trim();
+});
+
+(() => {
+  const spellNotesEl = document.getElementById("spell-notes");
+  if (!spellNotesEl) return;
+
+  spellNotesEl.addEventListener("change", function () {
+    if (!this.value.includes("/unlock9")) return;
+
+    document.getElementById("highlevel-spells").style.display = "block";
+    SPELL_MODE = "full";
+    refreshSpellDropdowns();
+
+    this.value = this.value.replace(/\/unlock9/g, "").trim();
+  });
+})();
+
+
+// 計算AC頂部
+function getDexModifier() {
+  const dex = parseInt(document.getElementById("dex").value || "10");
+  return Math.floor((dex - 10) / 2);
+}
+function getConModifier() {
+  const con = parseInt(document.getElementById("con").value || "10");
+  return Math.floor((con - 10) / 2);
+}
+function getWisModifier() {
+  const wis = parseInt(document.getElementById("wis").value || "10");
+  return Math.floor((wis - 10) / 2);
+}
+function getChaModifier() {
+  const cha = parseInt(document.getElementById("cha").value || "10");
+  return Math.floor((cha - 10) / 2);
+}
+
+function updateACDisplay() {
+  const armorName = document.getElementById("armor")?.value;
+  const hasArmor = Boolean(armorName) && !isShieldItem(armorName);
+  const hasArmorShield = isShieldItem(armorName);
+  const dexMod = getDexModifier();
+  const conMod = getConModifier();
+  const wisMod = getWisModifier();
+  const chaMod = getChaModifier();
+  const offHandName = document.getElementById("offHand")?.value;
+  const className = document.getElementById("class")?.value;
+  const level = parseInt(document.getElementById("level")?.value || "1");
+
+  let baseAC;
+
+  // 術士3級以上視為龍族體魄：沒穿護甲時
+  if (!hasArmor && className === "sorcerer" && level >= 3) {
+    baseAC = 10 + chaMod + dexMod;
+  }
+  // 武僧
+  else if (!hasArmor && !hasArmorShield && (!offHandName || offHandName !== "盾牌") && className === "monk") {
+    baseAC = 10 + dexMod + wisMod;
+  }
+  // 野蠻人
+  else if (!hasArmor && className === "barbarian") {
+    baseAC = 10 + dexMod + conMod;
+  }
+  // 一般沒穿護甲
+  else if (!hasArmor) {
+    baseAC = 10 + dexMod;
+  }
+  // 有穿護甲
+  else {
+    const armor = armors.find(a => a.名稱 === armorName);
+    if (!armor) {
+      document.getElementById("ac-display").textContent = "--";
+      return;
+    }
+    if (armor.分類 === "重甲") {
+      baseAC = parseInt(armor.AC);
+    } else if (armor.分類 === "中甲") {
+      const acBase = parseInt(armor.AC);
+      const dexCap = Math.min(2, dexMod);
+      baseAC = acBase + dexCap;
+    } else if (armor.分類 === "輕甲") {
+      const acBase = parseInt(armor.AC);
+      baseAC = acBase + dexMod;
+    } else {
+      baseAC = "--";
+    }
+  }
+
+// 只有「指定職業」才能從盾牌獲得 +2 AC
+const shieldProficientClasses = ["barbarian", "cleric", "druid", "fighter", "paladin", "ranger"];
+if (
+  (offHandName === "盾牌" || hasArmorShield) &&
+  !(offHandName === "盾牌" && hasArmorShield) &&
+  typeof baseAC === "number" &&
+  shieldProficientClasses.includes(className)
+) {
+  baseAC += 2;
+}
+
+  document.getElementById("ac-display").textContent = baseAC;
+}
+// 計算AC底部
+
+const detailedBackgroundFeatures = {
+  acolyte: {
+    名稱: "侍僧",
+    屬性: "智力、感知、魅力",
+    專長: "魔法學徒（牧師）",
+    技能熟練: "洞悉、宗教",
+    工具熟練: "書法家工具",
+    裝備: "A、B 擇一",
+    裝備A: "書法家工具、書本（禱文）、聖徽、羊皮紙（10 張）、祭袍、8 金幣",
+    裝備B: "50 金幣",
+    描述: "你年輕時待過神殿，可能在鎮上，或深山林裡。在神職人員底下幫忙，讓你學會供奉神明和祭祀儀式，你也能引導些微神力，用來幫助信眾。"
+  },
+  criminal: {
+    名稱: "罪犯",
+    屬性: "敏捷、體質、智力",
+    專長: "警覺",
+    技能熟練: "巧手、隱匿",
+    工具熟練: "盜賊工具",
+    裝備: "A、B 擇一",
+    裝備A: "2 把匕首、盜賊工具、撬棍、2 個小包、旅行者服裝、16 金幣",
+    裝備B: "50 金幣",
+    描述: "你在黑巷裡靠著偷錢包和闖空門度日。可能和幾個臭味相投的同伴組隊互相照應；也可能是匹單打獨鬥的孤狼，在地痞流氓跟盜賊公會之間求生。"
+  },
+  sage: {
+    名稱: "智者",
+    屬性: "體質、智力、感知",
+    專長: "魔法學徒",
+    技能熟練: "奧秘、歷史",
+    工具熟練: "書法工具",
+    裝備: "A、B 擇一",
+    裝備A: "長棍、書法工具、書本（歷史）、羊皮紙（8 張）、長袍、8 金幣",
+    裝備B: "50 金幣",
+    描述: "你從小就在莊園和修道院之間穿梭，幫人打雜換取圖書館的進出機會。你常在夜晚看書研究古卷，學到一些魔法入門知識。你腦子裝了不少東西，但還渴望更多。"
+  },
+  soldier: {
+    名稱: "士兵",
+    屬性: "力量、敏捷、體質",
+    專長: "兇蠻打手",
+    技能熟練: "運動、威嚇",
+    工具熟練: "擇一賭具：骰子、紙牌、龍棋、三龍牌",
+    裝備: "A、B 擇一",
+    裝備A: "短矛、短弓、20 支箭、賭具（同上）、醫療包、箭袋、旅行者服裝、14 金幣",
+    裝備B: "50 金幣",
+    描述: "你成年後就接受軍訓，戰場幾乎就是你的人生。你有基礎戰技的肌肉記憶，常常不自覺地做出來。你曾走上戰場，用這些技能保家衛國。"
+  }
+};
+
+function updateClassFeature() {
+  const selectedClass = document.getElementById("class").value;
+  const level = document.getElementById("level").value;
+  const output = document.getElementById("classFeatures");
+
+  if (!selectedClass || !classFeatures[selectedClass]) {
+    output.innerHTML = "無資料";
+    return;
+  }
+
+  let raw = classFeatures[selectedClass];
+
+  if (level && !isNaN(level)) {
+    const nextLevel = parseInt(level) + 1;
+    const regex = new RegExp(`等級 ${nextLevel}：`);
+    const match = raw.match(regex);
+    if (match) {
+      const cutoffIndex = raw.indexOf(match[0]);
+      output.innerHTML = raw.slice(0, cutoffIndex);
+    } else {
+      output.innerHTML = raw;
+    }
+  } else {
+    output.innerHTML = raw;
+  }
+}
+
+
+function updateRaceFeature() {
+  const value = document.getElementById("race").value;
+  const raw = raceFeatures[value] || "無資料";
+
+  const formatted = raw
+    .split("\n")
+    .map(line => {
+      const t = line.trim();
+      if (!t) return ""; // 保留空行（交給 pre-wrap 顯示）
+
+      // 只處理「行首特性名─內文」這種格式，避免把空白/換行吃進去
+      const idx = line.indexOf("─");
+      if (idx > 0) {
+        const head = line.slice(0, idx).trim();
+        const tail = line.slice(idx + 1);
+        return `<strong class="feat-title">${head}</strong>─${tail}`;
+      }
+      return line;
+    })
+    .join("\n");
+
+  document.getElementById("raceFeatures").innerHTML = formatted;
+}
+
+  function updateBackgroundFeature() {
+  const value = document.getElementById("background").value;
+  const bg = detailedBackgroundFeatures[value];
+
+  const el = document.getElementById("backgroundFeatures");
+
+  if (!bg) {
+    el.innerText = "無資料";
+    return;
+  }
+
+  el.innerHTML =
+  `<div style="line-height:1.25;">
+     <div><strong>屬性：</strong>${bg.屬性}</div>
+     <div><strong>專長：</strong>${bg.專長}</div>
+     <div><strong>技能熟練：</strong>${bg.技能熟練}</div>
+     <div><strong>工具熟練：</strong>${bg.工具熟練}</div>
+   </div>
+
+   <div style="margin-top:12px; line-height:1.25;"">
+     <div><strong>裝備：</strong>${bg.裝備}</div>
+     <div><strong>(A) </strong>${bg.裝備A}</div>
+     <div><strong>(B) </strong>${bg.裝備B}</div>
+   </div>
+
+   <div style="margin-top:16px;">
+     ${bg.描述}
+   </div>`;
+
+
+}
+
+
+
+// 角色專長對應說明，可再補充
+const featsDesc = {
+  "警覺": `警覺
+起源專長
+
+先攻熟練─先攻＝敏捷修正 + 熟練加值
+
+先攻互換─擲先攻後，可與一名自願盟友互換順序；雙方不可處於失能狀態`,
+
+  "魔法學徒": `魔法學徒
+起源專長
+
+兩個戲法─選牧師／德魯伊／法師列表 2 個戲法
+
+施法屬性─智力／感知／魅力擇一
+
+一環法術─同列表選 1 個
+🌟永遠準備
+🌟每長休可免費施放 1 次
+🌟也可消耗法術位施放
+
+升級更換─升級時可更換 1 個所選法術（同等級、同列表）
+
+可重複─每次須選不同法術列表`,
+
+  "兇蠻打手": `兇蠻打手
+起源專長
+
+受訓善戰─每回合 1 次，武器命中時傷害骰擲 2 次，取其一`,
+
+  "熟習": `熟習
+起源專長
+
+多才多藝─你獲得 3 項技能或工具熟練（任意組合）
+
+可重複─你可以多次選擇此專長。`,
+
+  "屬性值提升": `屬性值提升
+通用專長（4 級以上）
+
+屬性提升─+2 單一屬性，或 +1 兩項屬性
+
+最高上限─屬性不可超過 20
+
+可重複─你可以多次選擇此專長。`,
+
+  "擒抱者": `擒抱者
+通用專長（4 級以上；力量或敏捷 13+）
+你獲得以下增益：
+
+屬性提升─力量或敏捷 +1（最高 20）
+
+重拳擒抱─徒手命中時可同時造成傷害並擒抱（每回合 1 次）
+
+攻擊優勢─對被你擒抱的目標攻擊具有優勢
+
+迅捷摔技─移動體型不大於你的被擒抱目標時，不消耗額外速度。`,
+"箭術": `箭術
+戰鬥風格專長（職業有"戰鬥風格"才能選）
+
+百步穿楊─遠程武器命中獲得 +2 。`,
+"防禦": `防禦
+戰鬥風格專長（職業有"戰鬥風格"才能選）
+
+銅牆鐵壁─穿輕／中／重甲時 AC +1`,
+"巨武器戰鬥": `巨武器戰鬥
+戰鬥風格專長（職業有"戰鬥風格"才能選）
+
+寸長寸強─將「雙手」或「兩用」武器的傷害骰 1 或 2 視為 3`,
+"雙武器戰鬥": `雙武器戰鬥
+戰鬥風格專長（職業有"戰鬥風格"才能選）
+
+幫撐十秒─使用「輕型」武器進行副手攻擊時，可用屬性加值提升傷害`
+};
+
+const FEAT_OPTIONS = [
+  { value: "警覺", label: "警覺(起源)" },
+  { value: "魔法學徒", label: "魔法學徒(起源)" },
+  { value: "兇蠻打手", label: "兇蠻打手(起源)" },
+  { value: "熟習", label: "熟習(起源)" },
+  { value: "屬性值提升", label: "屬性值提升(通用)" },
+  { value: "擒抱者", label: "擒抱者(通用)" },
+  { value: "箭術", label: "箭術(戰鬥風格)" },
+  { value: "防禦", label: "防禦(戰鬥風格)" },
+  { value: "巨武器戰鬥", label: "巨武器戰鬥(戰鬥風格)" },
+  { value: "雙武器戰鬥", label: "雙武器戰鬥(戰鬥風格)" }
+];
+
+function getFeatOptionsHtml() {
+  return `<option value="">-- 請選擇 --</option>` +
+    FEAT_OPTIONS.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join("");
+}
+
+function updateFeatDesc(selectId, descId) {
+  const v = document.getElementById(selectId).value;
+  const raw = featsDesc[v] || "—";
+  const el = document.getElementById(descId);
+
+  // 保底：非字串就當純文字顯示
+  if (typeof raw !== "string") {
+    el.textContent = "—";
+    return;
+  }
+
+  // 依行切開（保留空行）
+  const lines = raw.replace(/\r\n/g, "\n").split("\n");
+
+  // 找到第一個非空行當標題
+  let title = "";
+  let startIdx = 0;
+  for (let i = 0; i < lines.length; i++) {
+    const t = lines[i].trim();
+    if (t) {
+      title = t;
+      startIdx = i + 1;
+      break;
+    }
+  }
+
+  // 第二個非空行（常見：起源專長 / 戰鬥風格專長…）當副標
+  let subtitle = "";
+  for (let i = startIdx; i < lines.length; i++) {
+    const t = lines[i].trim();
+    if (t) {
+      subtitle = t;
+      startIdx = i + 1;
+      break;
+    }
+  }
+
+  // 其餘內容：把空行變段落，把「小標─內容」做成小標粗體
+  const bodyHtml = lines
+    .slice(startIdx)
+    .map(line => {
+      const t = line.trim();
+      if (!t) return `<div style="height:10px;"></div>`; // 空行 = 段落距離
+
+      const idx = line.indexOf("─");
+      if (idx > 0) {
+        const head = line.slice(0, idx).trim();
+        const tail = line.slice(idx + 1).trim();
+        return `<div><strong>${escapeHtml(head)}</strong>─${escapeHtml(tail)}</div>`;
+      }
+
+      return `<div>${escapeHtml(t)}</div>`;
+    })
+    .join("");
+
+  el.innerHTML =
+    `<div style="font-weight:800; font-size:1.05em; margin-bottom:2px;">${escapeHtml(title || "—")}</div>` +
+    (subtitle ? `<div style="font-size:0.9em; color:#555; margin-bottom:10px;">${escapeHtml(subtitle)}</div>` : ``) +
+    `<div style="line-height:1.35;">${bodyHtml}</div>`;
+}
+
+function createSingleFeatRow() {
+  const area = document.getElementById("feats-area");
+  if (!area) return;
+
+  const idx = area.childElementCount;
+  const rowDiv = document.createElement("div");
+  rowDiv.className = "form-row";
+
+  const label = document.createElement("label");
+  label.htmlFor = `feat-${idx}`;
+  label.textContent = `專長${idx + 1}`;
+
+  const featSel = document.createElement("select");
+  featSel.id = `feat-${idx}`;
+  featSel.innerHTML = getFeatOptionsHtml();
+
+  const descDiv = document.createElement("div");
+  descDiv.className = "output";
+  descDiv.id = `feat-${idx}-desc`;
+  descDiv.textContent = "—";
+
+  const delBtn = document.createElement("button");
+  delBtn.type = "button";
+  delBtn.textContent = "❌刪除上列專長";
+  delBtn.style.marginLeft = "8px";
+  delBtn.addEventListener("click", () => {
+    if (confirm("確定要刪除此列專長嗎？")) {
+      rowDiv.remove();
+      saveAllFields();
+    }
+  });
+
+  featSel.addEventListener("change", () => {
+    updateFeatDesc(featSel.id, descDiv.id);
+    saveAllFields();
+  });
+
+  rowDiv.appendChild(label);
+  rowDiv.appendChild(featSel);
+  rowDiv.appendChild(descDiv);
+  rowDiv.appendChild(delBtn);
+  area.appendChild(rowDiv);
+}
+
+// ✅ 簡單防 XSS：把純文字安全地放進 innerHTML
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+
+document.addEventListener("DOMContentLoaded", () => {
+  // 初始化顯示
+  updateRaceFeature();
+  updateBackgroundFeature();
+  updateHPDisplay(); // ← HP加這行
+  updateACDisplay(); // AC顯示
+  updateArmorInfo();
+  updateClassFeature();
+  updateClassProficiencyOptions();
+  updateSpellsByClassLevel();
+
+  // 加入監聽事件
+  document.getElementById("race").addEventListener("change", updateRaceFeature);
+  document.getElementById("background").addEventListener("change", updateBackgroundFeature);
+  document.getElementById("armor").addEventListener("change", updateACDisplay);
+  document.getElementById("dex").addEventListener("input", updateACDisplay);
+  document.getElementById("con").addEventListener("input", updateACDisplay);
+  document.getElementById("wis").addEventListener("input", updateACDisplay);
+  document.getElementById("cha").addEventListener("input", updateACDisplay);
+  document.getElementById("armor").addEventListener("change", updateArmorInfo);
+  document.getElementById("class").addEventListener("change", () => {updateClassFeature();updateACDisplay();updateHPDisplay();updateClassProficiencyOptions();populateHandAttacks();updateSpellsByClassLevel();});
+  document.getElementById("level").addEventListener("change", () => {updateClassFeature();updateACDisplay();updateHPDisplay();updateSpellsByClassLevel();});
+  document.getElementById("cleric-guardian")?.addEventListener("change", populateHandAttacks);
+  document.getElementById("druid-sentinel")?.addEventListener("change", populateHandAttacks);
+
+});
+
+const defaultAbilityByClass = {
+  barbarian: [15, 13, 14, 10, 12, 8],
+  bard:      [8, 14, 12, 13, 10, 15],
+  cleric:    [14, 8, 13, 10, 15, 12],
+  druid:     [8, 12, 14, 13, 15, 10],
+  fighter:   [15, 14, 13, 8, 10, 12],
+  monk:      [12, 15, 13, 10, 14, 8],
+  paladin:   [15, 10, 13, 8, 12, 14],
+  ranger:    [12, 15, 13, 8, 14, 10],
+  rogue:     [12, 15, 13, 14, 10, 8],
+  sorcerer:  [10, 13, 14, 8, 12, 15],
+  warlock:   [8, 14, 13, 12, 10, 15],
+  wizard:    [8, 12, 13, 15, 14, 10]
+};
+
+document.getElementById("set-default-abilities").addEventListener("click", () => {
+  const selectedClass = document.getElementById("class").value;
+  const stats = defaultAbilityByClass[selectedClass];
+  if (!stats) {
+    alert("請先選擇職業！");
+    return;
+  }
+
+  const [str, dex, con, int_, wis, cha] = stats;
+  const fields = { str, dex, con, int: int_, wis, cha };
+
+  for (const id in fields) {
+    const el = document.getElementById(id);
+    if (!el) continue;
+    el.value = fields[id];
+    el.dispatchEvent(new Event('input')); // 🔄 觸發 modifier 更新
+  }
+
+  if (typeof saveAllFields === "function") saveAllFields();
+});
+
+
+    const actionDescriptions = {
+      attack: "用武器或徒手打擊進行攻擊。",
+      dash: "在該回合剩餘時間內，給予自己等同於你速度的額外移動。",
+      disengage: "在該回合剩餘時間內，你的移動不會引發攻擊藉機攻擊。",
+      dodge: "直到你下一回合開始，對你的攻擊擲骰有劣勢，而你的敏捷豁免擲骰有優勢。如果你處於失能狀態或你的速度為 0，你失去此增益。",
+      help: "幫助另一個生物的能力檢定或攻擊擲骰，或施予急救。",
+      hide: "進行敏捷（隱匿）檢定。",
+      influence: "進行魅力（欺騙、威嚇、表演或說服）或感知（馴獸）檢定以改變生物的態度。",
+      magic: "施放法術，使用魔法物品，或使用魔法特性。",
+      ready: "準備針對你定義的觸發條件採取行動。",
+      search: "進行感知（洞悉、醫藥、察覺或生存）檢定。",
+      study: "進行智力（奧秘、歷史、調查、自然或宗教）檢定。",
+      utilize: "使用非魔法物品。"
+    };
+
+    function showTab(tab, button) {
+      document.querySelectorAll('.tab-content').forEach(div => div.classList.remove('active'));
+      document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(`tab-${tab}`).classList.add('active');
+      if (button) button.classList.add('active');
+    }
+
+    function showAction(key) {
+      document.getElementById("action-description").innerText = actionDescriptions[key] || "無資料";
+    }
+
+    function calculateModifier(score) {
+      if (!score || isNaN(score)) return "";
+      const mod = Math.floor((score - 10) / 2);
+      return `(${mod >= 0 ? "+" : ""}${mod})`;
+    }
+
+    const abilities = ["str", "dex", "con", "int", "wis", "cha"];
+    const abilityNamesZh = {
+      str: "力量",
+      dex: "敏捷",
+      con: "體質",
+      int: "智力",
+      wis: "感知",
+      cha: "魅力"
+    };
+    abilities.forEach(ability => {
+      const input = document.getElementById(ability);
+      const modDisplay = document.getElementById(`${ability}-mod`);
+      input.addEventListener("input", () => {
+        const mod = calculateModifier(parseInt(input.value));
+        const label = `${ability.toUpperCase()} ${mod} ${abilityNamesZh[ability]}`;
+        modDisplay.textContent = mod ? label : "";
+    });
+
+
+    });
+  </script>
+
+<script src="equipment-data.js"></script>
+
+<script>
+function getModifier(statId) {
+  const value = parseInt(document.getElementById(statId).value || "10");
+  return Math.floor((value - 10) / 2);
+}
+
+/** 依等級回傳熟練加值（先做完整 1~20 規則，未來你擴充等級也不用再改） */
+function getProficiencyBonus() {
+  const lvl = parseInt(document.getElementById("level")?.value || "1", 10);
+
+  if (lvl >= 17) return 6;
+  if (lvl >= 13) return 5;
+  if (lvl >= 9)  return 4;
+  if (lvl >= 5)  return 3;
+  return 2; // 1~4
+}
+
+function fillSaves() {
+  const pb = getProficiencyBonus();
+  const abilities = ["str", "dex", "con", "int", "wis", "cha"];
+  abilities.forEach(ab => {
+    const mod = getModifier(ab);
+    const prof = document.getElementById("prof-" + ab).checked;
+    const total = mod + (prof ? pb : 0);
+    document.getElementById("save-" + ab).value = total;
+  });
+}
+
+function fillSkills() {
+  const pb = getProficiencyBonus();
+  const skillMap = {
+    "運動": "str",
+    "體操": "dex", "巧手": "dex", "隱匿": "dex",
+    "奧秘": "int", "歷史": "int", "調查": "int", "自然": "int", "宗教": "int",
+    "馴獸": "wis", "洞悉": "wis", "醫藥": "wis", "察覺": "wis", "求生": "wis",
+    "欺瞞": "cha", "威嚇": "cha", "表演": "cha", "遊說": "cha"
+  };
+
+  for (const skill in skillMap) {
+    const ab = skillMap[skill];
+    const mod = getModifier(ab);
+    const checkbox = document.getElementById("prof-" + skill);
+    const input = document.getElementById("skill-" + skill);
+    if (!input || !checkbox) continue;
+
+    const total = mod + (checkbox.checked ? pb : 0);
+    input.value = total;
+  }
+}
+</script>
+
+
+<script>
+// ====== 裝備、武器、法術相關工具 ======
+function getAllWeapons(includeShield = false) {
+  let list = [];
+  if (includeShield) {
+    list = list.concat(shield);
+  }
+  list = list
+    .concat(weapons_simple_melee)
+    .concat(weapons_simple_ranged)
+    .concat(weapons_martial_melee)
+    .concat(weapons_martial_ranged);
+  return list;
+}
+function hasTwoHandedProperty(weapon) {
+  return [weapon.屬性1, weapon.屬性2, weapon.屬性3, weapon.屬性4].some(p => p?.includes("雙手"));
+}
+function populateSelect(selectEl, items) {
+  selectEl.innerHTML = ""; // 清空選項
+  const emptyOption = document.createElement("option");
+  emptyOption.value = "";
+  emptyOption.textContent = "-- 請選擇 --";
+  selectEl.appendChild(emptyOption);
+  items.forEach(item => {
+    const option = document.createElement("option");
+    option.value = item.名稱;
+    option.textContent = item.名稱;
+    selectEl.appendChild(option);
+  });
+}
+function populateSelectWithSections(selectEl, sections) {
+  selectEl.innerHTML = "";
+  const emptyOption = document.createElement("option");
+  emptyOption.value = "";
+  emptyOption.textContent = "-- 請選擇 --";
+  selectEl.appendChild(emptyOption);
+
+  sections.forEach(section => {
+    const headingOption = document.createElement("option");
+    headingOption.value = "";
+    headingOption.textContent = `-- ${section.label} --`;
+    headingOption.disabled = true;
+    selectEl.appendChild(headingOption);
+
+    section.items.forEach(item => {
+      const option = document.createElement("option");
+      option.value = item.名稱;
+      option.textContent = item.名稱;
+      selectEl.appendChild(option);
+    });
+  });
+}
+
+function getWeaponSections(includeShield = false, excludeTwoHanded = false) {
+  const sections = [
+    { label: "簡易近戰", items: weapons_simple_melee },
+    { label: "簡易遠程", items: weapons_simple_ranged },
+    { label: "軍用近戰", items: weapons_martial_melee },
+    { label: "軍用遠程", items: weapons_martial_ranged }
+  ];
+
+  if (includeShield) {
+    sections.push({ label: "盾牌", items: shield });
+  }
+
+  if (!excludeTwoHanded) return sections;
+
+  return sections
+    .map(section => ({
+      ...section,
+      items: section.items.filter(item => !hasTwoHandedProperty(item))
+    }))
+    .filter(section => section.items.length > 0);
+}
+
+function getArmorSections(includeShield = false) {
+  const sections = [
+    { label: "輕甲", items: armors.filter(a => a.分類 === "輕甲") },
+    { label: "中甲", items: armors.filter(a => a.分類 === "中甲") },
+    { label: "重甲", items: armors.filter(a => a.分類 === "重甲") }
+  ];
+
+  if (includeShield) {
+    sections.push({ label: "盾牌", items: shield });
+  }
+  return sections;
+}
+
+function isShieldItem(name) {
+  return name === "盾牌";
+}
+function updateOffHandOptions(mainHandValue) {
+  const mainWeapon = allWeapons.find(w => w.名稱 === mainHandValue);
+  const offHandSelect = document.getElementById("offHand");
+  if (!mainWeapon) {
+    populateSelectWithSections(offHandSelect, getWeaponSections(true, true));
+    offHandSelect.disabled = false;
+    return;
+  }
+  if (hasTwoHandedProperty(mainWeapon)) {
+    offHandSelect.innerHTML = "";
+    const opt = document.createElement("option");
+    opt.textContent = "雙手武器無法使用副手";
+    opt.disabled = true;
+    opt.selected = true;
+    offHandSelect.appendChild(opt);
+    offHandSelect.disabled = true;
+  } else {
+    populateSelectWithSections(offHandSelect, getWeaponSections(true, true));
+    offHandSelect.disabled = false;
+  }
+}
+function updateWeaponInfo(selectId, line1Id, line2Id) {
+  const selectedName = document.getElementById(selectId).value;
+  const weapon = allWeaponsWithShield.find(w => w.名稱 === selectedName);
+  const line1 = document.getElementById(line1Id);
+  const line2 = document.getElementById(line2Id);
+  if (!weapon) {
+    line1.textContent = "—";
+    line2.textContent = "—";
+    return;
+  }
+  if (selectedName === "盾牌") {
+    line1.textContent = `AC+2｜重量: ${weapon.重量}｜價格: ${weapon.價格}`;
+    line2.textContent = "—";
+  } else {
+    line1.textContent = `傷害: ${weapon.傷害}｜精通: ${weapon.精通}｜重量: ${weapon.重量}｜價格: ${weapon.價格}`;
+    const props = [weapon.屬性1, weapon.屬性2, weapon.屬性3, weapon.屬性4].filter(Boolean);
+    line2.textContent = props.length > 0 ? props.join("、") : "—";
+  }
+}
+const allWeapons = getAllWeapons(false);
+const allWeaponsWithShield = getAllWeapons(true);
+// === 武器分類查表（用名稱判斷簡易/軍用）===
+const SIMPLE_WEAPON_NAMES = new Set([
+  ...weapons_simple_melee.map(w => w.名稱),
+  ...weapons_simple_ranged.map(w => w.名稱),
+]);
+
+const MARTIAL_WEAPON_NAMES = new Set([
+  ...weapons_martial_melee.map(w => w.名稱),
+  ...weapons_martial_ranged.map(w => w.名稱),
+]);
+function weaponHasProp(weapon, keyword) {
+  return [weapon.屬性1, weapon.屬性2, weapon.屬性3, weapon.屬性4].some(p => p?.includes(keyword));
+}
+
+function formatSigned(value) {
+  if (!Number.isFinite(value)) return "";
+  return value >= 0 ? `+${value}` : `${value}`;
+}
+
+function updateClassProficiencyOptions() {
+  const cls = document.getElementById("class")?.value || "";
+  const root = document.getElementById("class-proficiency-options");
+  const clericWrap = document.getElementById("cleric-guardian-wrap");
+  const druidWrap = document.getElementById("druid-sentinel-wrap");
+
+  if (!root || !clericWrap || !druidWrap) return;
+
+  const isCleric = cls === "cleric";
+  const isDruid = cls === "druid";
+
+  root.style.display = (isCleric || isDruid) ? "block" : "none";
+  clericWrap.style.display = isCleric ? "inline-block" : "none";
+  druidWrap.style.display = isDruid ? "inline-block" : "none";
+}
+
+function isWeaponProficient(weapon) {
+  if (!weapon || weapon.名稱 === "盾牌") return false;
+
+  const cls = document.getElementById("class")?.value || "";
+  const isSimple = SIMPLE_WEAPON_NAMES.has(weapon.名稱);
+  const isMartial = MARTIAL_WEAPON_NAMES.has(weapon.名稱);
+
+  const hasLight = weaponHasProp(weapon, "輕型");
+  const hasFinesse = weaponHasProp(weapon, "靈巧");
+
+  const simpleAndMartial = ["barbarian", "fighter", "paladin", "ranger", "warlock"];
+  if (simpleAndMartial.includes(cls)) return true;
+
+  const simpleOnly = ["bard", "sorcerer", "wizard"];
+  if (simpleOnly.includes(cls)) return isSimple;
+
+  if (cls === "cleric") {
+    const guardian = document.getElementById("cleric-guardian")?.checked;
+    return isSimple || (guardian && isMartial);
+  }
+
+  if (cls === "druid") {
+    const sentinel = document.getElementById("druid-sentinel")?.checked;
+    return isSimple || (sentinel && isMartial);
+  }
+
+  if (cls === "monk") {
+    return isSimple || (isMartial && hasLight);
+  }
+
+  if (cls === "rogue") {
+    return isSimple || (isMartial && (hasLight || hasFinesse));
+  }
+
+  return false;
+}
+
+
+// 動作命中傷害
+function populateHandAttacks() {
+  const hands = [
+    { selectId: "mainHand", prefix: "atk-main" },
+    { selectId: "offHand", prefix: "atk-off" }
+  ];
+  hands.forEach(hand => {
+    const weaponName = document.getElementById(hand.selectId).value;
+    const weapon = allWeaponsWithShield.find(w => w.名稱 === weaponName);
+    document.getElementById(`${hand.prefix}-name`).value = weaponName || "";
+    if (!weapon || weapon.名稱 === "盾牌") {
+      document.getElementById(`${hand.prefix}-hit`).value = "";
+      document.getElementById(`${hand.prefix}-dmg`).value = "";
+      document.getElementById(`${hand.prefix}-note`).value = "";
+      return;
+    }
+    const strMod = getModifier("str");
+    const dexMod = getModifier("dex");
+    const isRanged = weaponHasProp(weapon, "射程");
+    const isDexEligible = weaponHasProp(weapon, "靈巧");
+    const pb = getProficiencyBonus();
+    const proficient = isWeaponProficient(weapon);
+
+    let attackAbilityMod;
+    if (isRanged) {
+      attackAbilityMod = dexMod;
+    } else if (isDexEligible) {
+      attackAbilityMod = Math.max(strMod, dexMod);
+    } else {
+      attackAbilityMod = strMod;
+    }
+
+    const hitBonus = attackAbilityMod + (proficient ? pb : 0);
+    document.getElementById(`${hand.prefix}-hit`).value = formatSigned(hitBonus);
+    // 傷害部分
+    const damage = `${weapon.傷害} ${formatSigned(attackAbilityMod)}`;
+    document.getElementById(`${hand.prefix}-dmg`).value = damage;
+    // 備註部分
+    const traits = [weapon.精通, weapon.屬性1, weapon.屬性2, weapon.屬性3, weapon.屬性4]
+      .filter(p => p && p !== "--")
+      .join("、");
+    document.getElementById(`${hand.prefix}-note`).value = traits;
+  });
+}
+// 裝備護甲顯示
+function updateArmorInfo() {
+  const armorName = document.getElementById("armor").value;
+  const armor = armors.find(a => a.名稱 === armorName) || shield.find(s => s.名稱 === armorName);
+  const line1 = document.getElementById("armor-info-line1");
+  const line2 = document.getElementById("armor-info-line2");
+  if (!armor) {
+    line1.textContent = "—";
+    line2.textContent = "—";
+    return;
+  }
+  line1.textContent = `AC: ${armor.AC}｜分類: ${armor.分類}｜重量: ${armor.重量}｜價格: ${armor.價格}`;
+  line2.textContent = `力量需求: ${armor.力量需求}｜隱匿懲罰: ${armor.隱匿懲罰}`;
+}
+
+// ====== 法術下拉產生用 ======
+
+// ====== Spell Mode (Basic / Full) ======
+// 預設給玩家：Basic，只顯示 Basic Allow 清單內的法術
+let SPELL_MODE = "basic"; // "basic" | "full"
+
+// Basic Rule 允許清單：用「英文法術名」對照（例如 spell-list.js 裡的 "舞光術 Dancing Lights" -> "Dancing Lights"）
+const basicAllow = {
+  bard: {
+    cantrips: ["Dancing Lights","Light","Mage Hand","Mending","Message","Minor Illusion","Prestidigitation","Starry Wisp","Thunderclap","True Strike","Vicious Mockery"],
+    1: ["Animal Friendship","Bane","Charm Person","Color Spray","Command","Comprehend Languages","Cure Wounds","Detect Magic","Disguise Self","Dissonant Whispers","Faerie Fire","Feather Fall","Healing Word","Heroism","Identify","Illusory Script","Longstrider","Silent Image","Sleep","Speak with Animals","Tasha’s Hideous Laughter","Thunderwave","Unseen Servant"],
+    2: ["Aid","Animal Messenger","Blindness/Deafness","Calm Emotions","Detect Thoughts","Enhance Ability","Enlarge/Reduce","Enthrall","Heat Metal","Hold Person","Invisibility","Knock","Lesser Restoration","Locate Animals or Plants","Locate Object","Magic Mouth","Mirror Image","Phantasmal Force","See Invisibility","Shatter","Silence","Suggestion","Zone of Truth"],
+    3: ["Bestow Curse","Clairvoyance","Dispel Magic","Fear","Glyph of Warding","Hypnotic Pattern","Leomund’s Tiny Hut","Major Image","Mass Healing Word","Nondetection","Plant Growth","Sending","Slow","Speak with Dead","Speak with Plants","Stinking Cloud","Tongues"]
+  },
+  cleric: {
+    cantrips: ["Guidance","Light","Mending","Resistance","Sacred Flame","Spare the Dying","Thaumaturgy"],
+    1: ["Bane","Bless","Command","Create or Destroy Water","Cure Wounds","Detect Evil and Good","Detect Magic","Detect Poison and Disease","Guiding Bolt","Healing Word","Inflict Wounds","Protection from Evil and Good","Purify Food and Drink","Sanctuary","Shield of Faith"],
+    2: ["Aid","Augury","Blindness/Deafness","Calm Emotions","Continual Flame","Enhance Ability","Find Traps","Gentle Repose","Hold Person","Lesser Restoration","Locate Object","Prayer of Healing","Protection from Poison","Silence","Spiritual Weapon","Warding Bond","Zone of Truth"],
+    3: ["Animate Dead","Beacon of Hope","Bestow Curse","Clairvoyance","Create Food and Water","Daylight","Dispel Magic","Glyph of Warding","Magic Circle","Mass Healing Word","Meld into Stone","Protection from Energy","Remove Curse","Revivify","Sending","Speak with Dead","Spirit Guardians","Tongues","Water Walk"]
+  },
+  druid: {
+    cantrips: ["Druidcraft","Elementalism","Guidance","Mending","Message","Poison Spray","Produce Flame","Resistance","Shillelagh","Spare the Dying","Starry Wisp"],
+    1: ["Animal Friendship","Charm Person","Create or Destroy Water","Cure Wounds","Detect Magic","Detect Poison and Disease","Entangle","Faerie Fire","Fog Cloud","Goodberry","Healing Word","Ice Knife","Jump","Longstrider","Protection from Evil and Good","Purify Food and Drink","Speak with Animals","Thunderwave"],
+    2: ["Aid","Animal Messenger","Augury","Barkskin","Continual Flame","Darkvision","Enhance Ability","Enlarge/Reduce","Find Traps","Flame Blade","Flaming Sphere","Gust of Wind","Heat Metal","Hold Person","Lesser Restoration","Locate Animals or Plants","Locate Object","Moonbeam","Pass without Trace","Protection from Poison","Spike Growth"],
+    3: ["Call Lightning","Conjure Animals","Daylight","Dispel Magic","Meld into Stone","Plant Growth","Protection from Energy","Revivify","Sleet Storm","Speak with Plants","Water Breathing","Water Walk","Wind Wall"]
+  },
+  paladin: {
+    1: ["Bless","Command","Cure Wounds","Detect Evil and Good","Detect Magic","Detect Poison and Disease","Divine Favor","Divine Smite","Heroism","Protection from Evil and Good","Purify Food and Drink","Searing Smite","Shield of Faith"],
+    2: ["Aid","Find Steed","Gentle Repose","Lesser Restoration","Locate Object","Magic Weapon","Prayer of Healing","Protection from Poison","Shining Smite","Warding Bond","Zone of Truth"]
+  },
+  ranger: {
+    1: ["Alarm","Animal Friendship","Cure Wounds","Detect Magic","Detect Poison and Disease","Ensnaring Strike","Entangle","Fog Cloud","Goodberry","Hunter’s Mark","Jump","Longstrider","Speak with Animals"],
+    2: ["Aid","Animal Messenger","Barkskin","Darkvision","Enhance Ability","Find Traps","Gust of Wind","Lesser Restoration","Locate Animals or Plants","Locate Object","Magic Weapon","Pass without Trace","Protection from Poison","Silence","Spike Growth"]
+  },
+  sorcerer: {
+    cantrips: ["Acid Splash","Chill Touch","Dancing Lights","Elementalism","Fire Bolt","Light","Mage Hand","Mending","Message","Minor Illusion","Poison Spray","Prestidigitation","Ray of Frost","Shocking Grasp","Sorcerous Burst","True Strike"],
+    1: ["Burning Hands","Charm Person","Chromatic Orb","Color Spray","Comprehend Languages","Detect Magic","Disguise Self","Expeditious Retreat","False Life","Feather Fall","Fog Cloud","Grease","Ice Knife","Jump","Mage Armor","Magic Missile","Ray of Sickness","Shield","Silent Image","Sleep","Thunderwave"],
+    2: ["Alter Self","Blindness/Deafness","Blur","Darkness","Darkvision","Detect Thoughts","Dragon’s Breath","Enhance Ability","Enlarge/Reduce","Flame Blade","Flaming Sphere","Gust of Wind","Hold Person","Invisibility","Knock","Levitate","Magic Weapon","Mind Spike","Mirror Image","Misty Step","Phantasmal Force","Scorching Ray","See Invisibility","Shatter","Spider Climb","Suggestion","Web"],
+    3: ["Blink","Clairvoyance","Counterspell","Daylight","Dispel Magic","Fear","Fireball","Fly","Gaseous Form","Haste","Hypnotic Pattern","Lightning Bolt","Major Image","Protection from Energy","Sleet Storm","Slow","Stinking Cloud","Tongues","Vampiric Touch","Water Breathing","Water Walk"]
+  },
+  warlock: {
+    cantrips: ["Chill Touch","Eldritch Blast","Mage Hand","Minor Illusion","Poison Spray","Prestidigitation","True Strike"],
+    1: ["Bane","Charm Person","Comprehend Languages","Detect Magic","Expeditious Retreat","Hellish Rebuke","Hex","Illusory Script","Protection from Evil and Good","Speak with Animals","Tasha’s Hideous Laughter","Unseen Servant"],
+    2: ["Darkness","Enthrall","Hold Person","Invisibility","Mind Spike","Mirror Image","Misty Step","Ray of Enfeeblement","Spider Climb","Suggestion"],
+    3: ["Counterspell","Dispel Magic","Fear","Fly","Gaseous Form","Hypnotic Pattern","Magic Circle","Major Image","Remove Curse","Tongues","Vampiric Touch"]
+  },
+  wizard: {
+    cantrips: ["Acid Splash","Chill Touch","Dancing Lights","Fire Bolt","Light","Mage Hand","Mending","Message","Minor Illusion","Poison Spray","Prestidigitation","Ray of Frost","Shocking Grasp","True Strike"],
+    1: ["Alarm","Burning Hands","Charm Person","Color Spray","Comprehend Languages","Detect Magic","Disguise Self","Expeditious Retreat","False Life","Feather Fall","Find Familiar","Fog Cloud","Grease","Identify","Illusory Script","Jump","Longstrider","Mage Armor","Magic Missile","Protection from Evil and Good","Shield","Silent Image","Sleep","Thunderwave","Unseen Servant"],
+    2: ["Alter Self","Arcane Lock","Augury","Blindness/Deafness","Blur","Continual Flame","Darkness","Darkvision","Detect Thoughts","Enhance Ability","Enlarge/Reduce","Flaming Sphere","Gentle Repose","Gust of Wind","Hold Person","Invisibility","Knock","Levitate","Locate Object","Magic Mouth","Magic Weapon","Mirror Image","Misty Step","Ray of Enfeeblement","Rope Trick","Scorching Ray","See Invisibility","Shatter","Spider Climb","Suggestion","Web"],
+    3: ["Animate Dead","Bestow Curse","Blink","Clairvoyance","Counterspell","Dispel Magic","Fear","Fireball","Fly","Gaseous Form","Glyph of Warding","Haste","Hypnotic Pattern","Lightning Bolt","Magic Circle","Major Image","Nondetection","Phantom Steed","Protection from Energy","Remove Curse","Sending","Sleet Storm","Slow","Speak with Dead","Stinking Cloud","Tongues","Vampiric Touch","Water Breathing"]
+  }
+};
+
+// 從 spell-list.js 的 "中文 English" 抽出英文名 (從第一個英文字母開始一直到結尾)
+function getSpellEnglishName(fullName) {
+  if (!fullName) return "";
+  const m = String(fullName).match(/[A-Za-z].*/);
+  return m ? m[0].trim() : String(fullName).trim();
+}
+
+// 取得「目前模式」下某職業某環級可選的 spells（回傳 spellList 中的物件陣列）
+function getSpellsByMode(classVal, level) {
+  const key = (typeof level === "number") ? String(level) : level;
+  const full = (classVal && spellList?.[classVal]?.[key]) ? spellList[classVal][key] : [];
+  if (SPELL_MODE === "full") return full;
+
+  const allow = basicAllow?.[classVal]?.[key];
+  if (!allow || !Array.isArray(allow)) return [];
+  const allowSet = new Set(allow);
+  return full.filter(s => allowSet.has(getSpellEnglishName(s.name)));
+}
+
+// 切換模式後，用於「不破壞 UI 結構」地刷新所有現存列的下拉與描述
+function refreshSpellDropdowns() {
+  document.querySelectorAll('#tab-spells .form-row').forEach(row => {
+    const selects = row.querySelectorAll('select');
+    if (selects.length < 2) return;
+    const classSel = selects[0];
+    const spellSel = selects[1];
+    const prev = spellSel.value;
+    // 觸發 classSel 的 change 以重建 spell 選項
+    classSel.dispatchEvent(new Event('change'));
+    // 盡量保留原本選到的法術（若在新模式仍存在）
+    if (prev && Array.from(spellSel.options).some(o => o.value === prev)) {
+      spellSel.value = prev;
+    } else if (prev) {
+      spellSel.value = ""; // 避免 UI 崩潰：Basic 模式下曾選 Full 法術時，直接清空
+    }
+    spellSel.dispatchEvent(new Event('change'));
+  });
+}
+
+
+
+
+const classOptions = [
+  {value: "bard", text: "吟遊詩人"},
+  {value: "cleric", text: "牧師"},
+  {value: "druid", text: "德魯伊"},
+  {value: "paladin", text: "聖武士"},
+  {value: "ranger", text: "遊俠"},
+  {value: "sorcerer", text: "術士"},
+  {value: "warlock", text: "契術師"},
+  {value: "wizard", text: "法師"},
+  // ... 其他職業 ...
+];
+function createSingleSpellRow(areaId, level) {
+  const area = document.getElementById(areaId);
+  const idx = area.childElementCount;
+
+  // 整列容器
+  const rowDiv = document.createElement('div');
+  rowDiv.className = "form-row";
+  rowDiv.classList.add("spell-entry");
+  rowDiv.dataset.idx = idx;
+
+  // 職業選單
+  const classSel = document.createElement('select');
+
+  const cantripClassOptions = classOptions.filter(o => o.value !== "paladin" && o.value !== "ranger");
+  const optionsToUse = (level === "cantrips") ? cantripClassOptions : classOptions;
+
+  classSel.innerHTML =
+    `<option value="">--職業--</option>` +
+    optionsToUse.map(o => `<option value="${o.value}">${o.text}</option>`).join('');
+
+  classSel.id = `${areaId}-class-${idx}`;
+
+
+  // 法術選單
+  const spellSel = document.createElement('select');
+  spellSel.innerHTML = `<option value="">--法術--</option>`;
+  spellSel.id = `${areaId}-spell-${idx}`;
+
+  // 法術說明
+  const descDiv = document.createElement('div');
+  descDiv.className = "output small-text";
+  descDiv.textContent = "—";
+
+  // 刪除按鈕
+  const delBtn = document.createElement('button');
+  delBtn.type = "button";
+  delBtn.textContent = "❌刪除上列法術";
+  delBtn.style.marginLeft = "8px";
+  delBtn.addEventListener('click', () => {
+    if (confirm("確定要刪除此列嗎？")) {
+      rowDiv.remove();
+      updatePickedSpellBoxes();
+      saveAllFields(); // 刪完儲存
+    }
+  });
+
+  // 監聽職業變更
+  classSel.addEventListener('change', function () {
+    const prevSpell = spellSel.value;
+    const classVal = this.value;
+    const spells = classVal ? getSpellsByMode(classVal, level) : [];
+    spellSel.innerHTML = `<option value="">--法術--</option>` + spells.map(s => `<option>${s.name}</option>`).join('');
+    // 盡量保留原本選到的法術（若在新模式/新職業仍存在）
+    if (prevSpell && Array.from(spellSel.options).some(o => o.value === prevSpell)) {
+      spellSel.value = prevSpell;
+    } else {
+      spellSel.value = "";
+    }
+    // 同步更新描述（也會處理 Basic 模式下不允許的狀況）
+    spellSel.dispatchEvent(new Event('change'));
+    saveAllFields();
+  });
+
+  // 監聽法術變更
+  spellSel.addEventListener('change', function () {
+    const classVal = classSel.value;
+    const spellVal = spellSel.value;
+    const key = (typeof level === "number") ? String(level) : level;
+    let desc = "—";
+
+    if (classVal && spellVal && spellList?.[classVal]?.[key]) {
+      const found = spellList[classVal][key].find(s => s.name === spellVal);
+      if (found) {
+        desc = found.desc || "—";
+      } else if (SPELL_MODE === "basic") {
+        // 理論上不會發生，但若 localStorage/舊資料殘留 Full 法術，避免 UI 崩潰
+        desc = "（此法術在 Basic 模式不可用）";
+      }
+    } else if (spellVal && SPELL_MODE === "basic") {
+      desc = "（此法術在 Basic 模式不可用）";
+    }
+
+    descDiv.textContent = desc;
+    updatePickedSpellBoxes();
+    saveAllFields();
+  });
+
+  rowDiv.appendChild(classSel);
+  rowDiv.appendChild(spellSel);
+  rowDiv.appendChild(descDiv);
+  rowDiv.appendChild(delBtn);
+  area.appendChild(rowDiv);
+  applySpellFilter();
+}
+
+function extractChineseSpellName(spellName) {
+  if (!spellName) return "";
+  const firstEnglishChar = spellName.search(/[A-Za-z]/);
+  if (firstEnglishChar === -1) return spellName.trim();
+  return spellName.slice(0, firstEnglishChar).trim();
+}
+
+function updatePickedSpellBoxes() {
+  const areaToTarget = [
+    { areaId: "cantrips-area", targetId: "picked-cantrips" },
+    { areaId: "level1spells-area", targetId: "picked-level1" },
+    { areaId: "level2spells-area", targetId: "picked-level2" },
+    { areaId: "level3spells-area", targetId: "picked-level3" }
+  ];
+
+  areaToTarget.forEach(({ areaId, targetId }) => {
+    const target = document.getElementById(targetId);
+    if (!target) return;
+
+    const names = Array.from(document.querySelectorAll(`#${areaId} select[id*='-spell-']`))
+      .map(sel => extractChineseSpellName(sel.value))
+      .filter(Boolean);
+
+    target.textContent = names.length ? names.map(name => `[${name}]`).join("\n") : "—";
+  });
+}
+
+function applySpellFilter() {
+  const searchEl = document.getElementById("spell-search");
+  const keyword = (searchEl?.value || "").trim().toLowerCase();
+  const rows = document.querySelectorAll("#tab-spells .spell-entry");
+  rows.forEach(row => {
+    if (!keyword) {
+      row.style.display = "";
+      return;
+    }
+    const text = row.textContent.toLowerCase();
+    row.style.display = text.includes(keyword) ? "" : "none";
+  });
+}
+
+document.getElementById("spell-search")?.addEventListener("input", applySpellFilter);
+document.getElementById("expand-spells")?.addEventListener("click", () => {
+  document.querySelectorAll("#tab-spells .spell-level-section").forEach(sec => sec.open = true);
+});
+document.getElementById("collapse-spells")?.addEventListener("click", () => {
+  document.querySelectorAll("#tab-spells .spell-level-section").forEach(sec => sec.open = false);
+});
+
+// 依「玩家職業 + 等級 + 種族血統法術」自動限制法術頁顯示到幾環（含法術位列）
+function getMaxSpellRing(cls, lvl) {
+  const level = parseInt(lvl || "0", 10);
+
+  // ===== ① 種族血統法術需求（精靈/提夫林：3級=>1環，5級=>2環） =====
+  const raceKey = document.getElementById("race")?.value || "";
+  let raceCap = 0;
+  if (!Number.isNaN(level) && level > 0) {
+    if (raceKey === "elf" || raceKey === "tiefling") {
+      if (level >= 5) raceCap = 2;
+      else if (level >= 3) raceCap = 1;
+    }
+  }
+
+  // ===== ② 原本的職業上限（classCap） =====
+  let classCap;
+
+  // 無職業：最高三環（你說不用調整）
+  if (!cls) classCap = 3;
+
+  // 不會施法者：最高一環（把 rogue 也放進來，避免落到 fallback）
+  else if (["barbarian", "fighter", "monk", "rogue"].includes(cls)) classCap = 1;
+
+  // 全施法者
+  else if (["bard", "cleric", "druid", "sorcerer", "warlock", "wizard"].includes(cls)) {
+    if (level <= 2) classCap = 1;
+    else if (level <= 4) classCap = 2;
+    else classCap = 3; // 5級：最高三環
+  }
+
+  // 半施法者
+  else if (["paladin", "ranger"].includes(cls)) {
+    classCap = (level >= 5) ? 2 : 1;
+  }
+
+  // 其他
+  else {
+    classCap = 3;
+  }
+
+  // ✅ 最後取最大值：職業上限 vs 種族血統需求
+  return Math.max(classCap, raceCap);
+}
+
+
+function updateSpellsByClassLevel() {
+  const cls = document.getElementById("class")?.value || "";
+  const lvl = document.getElementById("level")?.value || "";
+  const maxRing = getMaxSpellRing(cls, lvl);
+
+  // 1) 隱藏/顯示 1~3環法術區塊（戲法永遠保留）
+  const ringAreas = [
+    { ring: 1, areaId: "level1spells-area" },
+    { ring: 2, areaId: "level2spells-area" },
+    { ring: 3, areaId: "level3spells-area" },
+  ];
+
+  ringAreas.forEach(({ ring, areaId }) => {
+    const area = document.getElementById(areaId);
+    const sec = area?.closest(".section");
+    if (!sec) return;
+    sec.style.display = (ring <= maxRing) ? "" : "none";
+  });
+
+  // 2) 隱藏/顯示「法術位管理」的二環/三環欄位
+  const slot2Row = document.getElementById("spellslot2-row");
+  const slot3Row = document.getElementById("spellslot3-row");
+  if (slot2Row) slot2Row.style.display = (maxRing >= 2) ? "" : "none";
+  if (slot3Row) slot3Row.style.display = (maxRing >= 3) ? "" : "none";
+}
+
+// ====== 德魯伊變身提示 =====
+// ✅ 四種動物（建議用「機制摘要」避免長篇敘述）
+const BEAST_STATS = {
+  rat: {
+    name: "老鼠 (Rat) CR:0",
+    size_type: "微型野獸",
+    ac: 10,
+    hp: "1 (1d4-1)",
+    speed: "20呎, 攀爬20呎",
+    ability: "力2(-4), 敏11(0), 體9(-1), 智2(-4), 感10(0), 魅4(-3)",
+    senses: "黑暗視覺30呎, 被動感知12",
+    skills: "感知 +2",
+    traits: "迅捷：離開敵人不會引發藉機攻擊",
+    attacks: "咬擊：命中+2, 範圍5呎, 刺傷1"
+  },
+  riding_horse: {
+    name: "馱用馬 (Riding Horse) CR:¼",
+    size_type: "大型野獸",
+    ac: 11,
+    hp: "13 (2d10+2)",
+    speed: "60 呎",
+    ability: "力16(+3), 敏13(+1), 體12(+1) 智2(-4), 感11(+0), 魅7(-2)",
+    senses: "被動感知10",
+    skills: "—",
+    traits: "—",
+    attacks: "蹄擊：命中+5, 範圍5呎, 鈍傷7(1d8+3)"
+  },
+  spider: {
+    name: "蜘蛛 (Spider) CR:0",
+    size_type: "微型野獸",
+    ac: 12,
+    hp: "1 (1d4-1)",
+    speed: "20呎, 攀爬20呎",
+    ability: "力2(-4), 敏14(+2), 體8(-1), 智1(-5), 感10(+0), 魅2(-4)",
+    senses: "黑暗視覺30呎, 被動感知10",
+    skills: "隱匿+4",
+    traits: "蛛爬：可攀險地(如天花板)且毋須檢定, 網主：不受蛛網限制，感知同網生物",
+    attacks: "咬擊：命中+4, 範圍5呎, 刺傷1 + 毒傷2(1d4)"
+  },
+  wolf: {
+    name: "狼 (Wolf) CR:¼",
+    size_type: "中型野獸",
+    ac: 12,
+    hp: "11 (2d8+2)",
+    speed: "40呎",
+    ability: "力14(+2), 敏15(+2), 體12(+1), 智3(-4), 感12(+1), 魅6(-2)",
+    senses: "黑暗視覺60呎, 被動感知15",
+    skills: "感知+5, 隱匿+4",
+    traits: "群攻：若攻擊目標5呎內有狼方盟友(未失能),D20擲二取一",
+    attacks: "咬擊：命中+4, 範圍5呎, 刺傷5(1d6+2), 使中小型目標獲得倒地狀態"
+  }
+};
+
+// 建立一次 popup（不算改 UI 結構；只是浮層）
+(function setupBeastPopup() {
+  if (document.getElementById("beastPopup")) return;
+
+  const popup = document.createElement("div");
+  popup.id = "beastPopup";
+  popup.innerHTML = `<span class="close" title="關閉">✕</span><div class="content"></div>`;
+  document.body.appendChild(popup);
+
+  popup.querySelector(".close").addEventListener("click", () => hideBeastPopup());
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") hideBeastPopup(); });
+
+  // 點空白處關閉（但點到 tooltip 自己不會立刻關掉）
+  document.addEventListener("click", (e) => {
+    const clickedTip = e.target.closest(".beast-tip");
+    const clickedPopup = e.target.closest("#beastPopup");
+    if (!clickedTip && !clickedPopup) hideBeastPopup();
+  }, true);
+})();
+
+function renderBeastPopupHtml(s) {
+  return `
+    <div class="title">${escapeHtml(s.name)} <span class="muted">${escapeHtml(s.size_type)}</span></div>
+    <div class="row">
+      <div><strong>AC</strong> ${escapeHtml(String(s.ac))}</div>
+      <div><strong>HP</strong> ${escapeHtml(String(s.hp))}</div>
+      <div><strong>速度</strong> ${escapeHtml(String(s.speed))}</div>
+    </div>
+    <div style="margin-top:8px;"><strong>能力值</strong> ${escapeHtml(String(s.ability))}</div>
+    <div style="margin-top:6px;"><strong>感官</strong> ${escapeHtml(String(s.senses))}</div>
+    <div style="margin-top:6px;"><strong>技能</strong> ${escapeHtml(String(s.skills))}</div>
+    <div style="margin-top:6px;"><strong>特性</strong> ${escapeHtml(String(s.traits))}</div>
+    <div style="margin-top:6px;"><strong>攻擊</strong> ${escapeHtml(String(s.attacks))}</div>
+  `;
+}
+
+function showBeastPopup(beastKey, anchorEl) {
+  const s = BEAST_STATS[beastKey];
+  if (!s) return;
+
+  const popup = document.getElementById("beastPopup");
+  const content = popup.querySelector(".content");
+  content.innerHTML = renderBeastPopupHtml(s);
+
+  // 定位：貼近點擊文字右下角
+  const r = anchorEl.getBoundingClientRect();
+  popup.style.display = "block";
+
+  // 先放在預設位置，再修正避免超出螢幕
+  let left = Math.min(r.left, window.innerWidth - popup.offsetWidth - 10);
+  let top  = Math.min(r.bottom + 8, window.innerHeight - popup.offsetHeight - 10);
+
+  left = Math.max(10, left);
+  top  = Math.max(10, top);
+
+  popup.style.left = `${left}px`;
+  popup.style.top  = `${top}px`;
+}
+
+function hideBeastPopup() {
+  const popup = document.getElementById("beastPopup");
+  if (popup) popup.style.display = "none";
+}
+
+// 事件委派：不用管 class-features 何時重繪
+document.addEventListener("click", (e) => {
+  const el = e.target.closest(".beast-tip");
+  if (!el) return;
+  const key = el.dataset.beast;
+  showBeastPopup(key, el);
+});
+
+// 簡單 escape，避免 class-features 其他字串造成 HTML 注入問題
+function escapeHtml(str) {
+  return String(str)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+
+// ====== 通用 localStorage 儲存/還原 ======
+const AUTO_SAVE_KEY = "dndchar_autosave_v1";
+let SHARE_MODE = false;
+window.SHARE_MODE = SHARE_MODE;
+
+function bytesToBase64Url(bytes) {
+  let binary = "";
+  bytes.forEach(b => { binary += String.fromCharCode(b); });
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function base64UrlToBytes(base64url) {
+  const b64 = base64url.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = b64 + "=".repeat((4 - (b64.length % 4 || 4)) % 4);
+  const binary = atob(padded);
+  return Uint8Array.from(binary, ch => ch.charCodeAt(0));
+}
+
+async function compressJson(json) {
+  if (typeof CompressionStream !== "function") return null;
+  const input = new TextEncoder().encode(json);
+  const stream = new Blob([input]).stream().pipeThrough(new CompressionStream("gzip"));
+  const buffer = await new Response(stream).arrayBuffer();
+  return new Uint8Array(buffer);
+}
+
+async function decompressJson(bytes) {
+  if (typeof DecompressionStream !== "function") {
+    throw new Error("此瀏覽器不支援壓縮分享還原");
+  }
+  const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
+  const buffer = await new Response(stream).arrayBuffer();
+  return new TextDecoder().decode(buffer);
+}
+
+function getSpellAreaConfigs() {
+  const ids = Array.from(document.querySelectorAll("#cantrips-area, div[id$='spells-area']"))
+    .map(el => el.id);
+  return ids.map(id => {
+    if (id === "cantrips-area") return { id, level: "cantrips" };
+    const m = id.match(/^level(\d+)spells-area$/);
+    return m ? { id, level: parseInt(m[1], 10) } : null;
+  }).filter(Boolean);
+}
+
+function getDynamicAreaConfigs() {
+  return [
+    ...getSpellAreaConfigs().map(area => ({
+      key: area.id,
+      getCount: () => document.getElementById(area.id)?.childElementCount || 0,
+      ensureCount: (count) => {
+        const current = document.getElementById(area.id)?.childElementCount || 0;
+        for (let i = current; i < count; i++) {
+          createSingleSpellRow(area.id, area.level);
+        }
+      }
+    })),
+    {
+      key: "feats-area",
+      getCount: () => document.getElementById("feats-area")?.childElementCount || 0,
+      ensureCount: (count) => {
+        const current = document.getElementById("feats-area")?.childElementCount || 0;
+        for (let i = current; i < count; i++) {
+          createSingleFeatRow();
+        }
+      }
+    }
+  ];
+}
+
+function collectStateObject() {
+  const data = {};
+  document.querySelectorAll("input, select, textarea").forEach(el => {
+    if (!el.id) return;
+    data[el.id] = el.type === "checkbox" ? el.checked : el.value;
+  });
+  getDynamicAreaConfigs().forEach(area => {
+    data[`${area.key}-count`] = area.getCount();
+  });
+  return data;
+}
+
+async function encodeStateToHash(data) {
+  const json = JSON.stringify(data);
+  const compressed = await compressJson(json);
+  if (compressed && compressed.length < json.length) {
+    return `#s2=${bytesToBase64Url(compressed)}`;
+  }
+
+  const bytes = new TextEncoder().encode(json);
+  let binary = "";
+  bytes.forEach(b => { binary += String.fromCharCode(b); });
+  return `#s=${btoa(binary)}`;
+}
+
+async function decodeStateFromHash() {
+  if (!location.hash.startsWith("#s=") && !location.hash.startsWith("#s2=")) {
+    return { data: null, error: null };
+  }
+
+  try {
+    let json = "";
+    if (location.hash.startsWith("#s2=")) {
+      const payload = location.hash.slice(4);
+      const bytes = base64UrlToBytes(payload);
+      json = await decompressJson(bytes);
+    } else {
+      const b64 = location.hash.slice(3);
+      const binary = atob(b64);
+      const bytes = Uint8Array.from(binary, ch => ch.charCodeAt(0));
+      json = new TextDecoder().decode(bytes);
+    }
+    return { data: JSON.parse(json), error: null };
+  } catch (e) {
+    return { data: null, error: e };
+  }
+}
+
+function applyStateObject(data) {
+  if (!data || typeof data !== "object") return;
+
+  const spellAreas = getSpellAreaConfigs();
+  getDynamicAreaConfigs().forEach(area => {
+    const n = parseInt(data[`${area.key}-count`] || "0", 10);
+    area.ensureCount(n);
+  });
+  const highlevelCount = spellAreas
+    .filter(area => typeof area.level === "number" && area.level >= 4)
+    .reduce((sum, area) => sum + parseInt(data[`${area.id}-count`] || "0", 10), 0);
+  if (highlevelCount > 0) {
+    const highlevelSpells = document.getElementById("highlevel-spells");
+    if (highlevelSpells) highlevelSpells.style.display = "block";
+  }
+
+  for (const id in data) {
+    if (/cantrips-area-class-\d+|level\d+spells-area-class-\d+/.test(id)) {
+      const el = document.getElementById(id);
+      if (!el) continue;
+      el.value = data[id];
+      el.dispatchEvent(new Event('change'));
+    }
+  }
+
+  for (const id in data) {
+    if (/cantrips-area-class-\d+|level\d+spells-area-class-\d+/.test(id)) continue;
+    const el = document.getElementById(id);
+    if (!el) continue;
+    if (el.type === "checkbox") {
+      el.checked = !!data[id];
+    } else {
+      el.value = data[id];
+    }
+    el.dispatchEvent(new Event('change'));
+  }
+}
+
+async function copyShareUrl() {
+  const hash = await encodeStateToHash(collectStateObject());
+  const shareUrl = `${location.origin}${location.pathname}${location.search}${hash}`;
+  try {
+    await navigator.clipboard.writeText(shareUrl);
+    if (shareUrl.length > 4000) {
+      alert(`分享網址已複製（長度 ${shareUrl.length}，部分瀏覽器可能不穩定）`);
+    } else {
+      alert("分享網址已複製");
+    }
+  } catch (e) {
+    window.prompt("請手動複製分享網址", shareUrl);
+  }
+}
+
+function saveAllFields() {
+  if (SHARE_MODE) return;
+  const data = collectStateObject();
+  localStorage.setItem(AUTO_SAVE_KEY, JSON.stringify(data));
+}
+function restoreAllFields() {
+  if (SHARE_MODE) return;
+  const raw = localStorage.getItem(AUTO_SAVE_KEY);
+  if (!raw) return;
+  try {
+    applyStateObject(JSON.parse(raw));
+  } catch (e) {}
+}
+function setupAutoSave() {
+  if (SHARE_MODE) return;
+  document.querySelectorAll("input, select, textarea").forEach(el => {
+    el.addEventListener("change", saveAllFields);
+    el.addEventListener("input", saveAllFields);
+  });
+}
+
+
+// ====== 頁面載入時全自動初始化 ======
+window.addEventListener("DOMContentLoaded", async function() {
+  // 1. 初始化裝備下拉
+  const mainHandSelect = document.getElementById("mainHand");
+  const offHandSelect = document.getElementById("offHand");
+  const armorSelect = document.getElementById("armor");
+  populateSelectWithSections(mainHandSelect, getWeaponSections(false, false));
+  populateSelectWithSections(offHandSelect, getWeaponSections(true, false));
+  populateSelectWithSections(armorSelect, getArmorSections(true));
+  mainHandSelect.addEventListener("change", () => {
+    updateOffHandOptions(mainHandSelect.value);
+    updateWeaponInfo("mainHand", "main-hand-info-line1", "main-hand-info-line2");
+  });
+  offHandSelect.addEventListener("change", () => {
+    updateWeaponInfo("offHand", "off-hand-info-line1", "off-hand-info-line2");
+    if (typeof updateACDisplay === "function") updateACDisplay();
+  });
+  updateWeaponInfo("mainHand", "main-hand-info-line1", "main-hand-info-line2");
+  updateWeaponInfo("offHand", "off-hand-info-line1", "off-hand-info-line2");
+  // 2. 產生所有法術下拉欄位
+for (let i = 0; i < 2; i++) createSingleSpellRow('cantrips-area', 'cantrips');
+for (let i = 0; i < 2; i++) createSingleSpellRow('level1spells-area', 1);
+for (let i = 0; i < 1; i++) createSingleSpellRow('level2spells-area', 2);
+for (let i = 0; i < 1; i++) createSingleSpellRow('level3spells-area', 3);
+for (let i = 0; i < 5; i++) createSingleFeatRow();
+  // 3. 還原所有欄位狀態
+  const { data: sharedData, error: sharedError } = await decodeStateFromHash();
+  if (sharedData) {
+    SHARE_MODE = true;
+    window.SHARE_MODE = true;
+    applyStateObject(sharedData);
+  } else {
+    if (location.hash.startsWith("#s=") || location.hash.startsWith("#s2=")) {
+      alert("分享連結讀取失敗（可能因網址過長被截斷或資料損壞），已改為讀取本機暫存。");
+      if (sharedError) console.warn("分享還原失敗：", sharedError);
+    }
+    restoreAllFields();
+  }
+  // ✅ 3.5 額外補充：手動觸發屬性欄位的 input 事件，以更新 modifier 顯示
+  ["str", "dex", "con", "int", "wis", "cha"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.dispatchEvent(new Event("input"));
+  });
+  updatePickedSpellBoxes();
+  // 4. 啟用自動儲存
+  setupAutoSave();
+  // 5. 綁定清除紀錄按鈕
+  const clearBtn = document.getElementById('clear-storage-btn');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', function() {
+      if (SHARE_MODE) {
+        alert('分享模式下不會操作本機儲存');
+        return;
+      }
+      if(confirm('確定要清除所有角色欄位資料並回復預設嗎？')) {
+        localStorage.removeItem(AUTO_SAVE_KEY);
+        location.reload();
+      }
+    });
+  }
+});
+</script>
+
+<div id="legal-modal" style="display:none;position:fixed;z-index:9999;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.45);">
+  <div style="background:#fff;padding:24px 16px;max-width:340px;margin:120px auto 0 auto;border-radius:12px;box-shadow:0 4px 24px #0003;">
+    <h3 style="margin:0 0 8px 0;">使用提醒</h3>
+    <div style="font-size:0.98em;line-height:1.7;color:#222;">
+      本網頁僅供玩家推廣時快速創建角色使用。<br>
+      遊戲過程仍請以正版規則書《玩家手冊》（Player’s Handbook, PHB）為準。<br>
+      <b>支持正版：</b><br>
+      D&D Beyond 數位板：<br>
+      <a href="https://marketplace.dndbeyond.com/rulebooks" target="_blank">https://www.dndbeyond.com/</a><br>
+      Amazon 購買 PHB 實體書：<br>
+      <a href="https://www.amazon.com/s?k=dnd+2024+players+handbook&ref=cs_503_search" target="_blank">https://www.amazon.com/</a>
+    </div>
+      <div style="margin-top:12px;font-size:0.9em;">
+  <label><input type="checkbox" id="legal-dismiss"> 不要再提醒我</label>
+</div>
+    <button onclick="document.getElementById('legal-modal').style.display='none';" style="margin-top:18px;width:100%;padding:7px 0;font-size:1.08em;border-radius:6px;border:1px solid #888;">我知道了</button>
+  </div>
+</div>
+
+<script>
+window.addEventListener('DOMContentLoaded', function () {
+  if (window.SHARE_MODE) return;
+  const modal = document.getElementById('legal-modal');
+  const checkbox = document.getElementById('legal-dismiss');
+
+  // 從 localStorage['dndchar_autosave_v1'] 中讀取是否已勾選「不要再提醒我」
+  try {
+    const raw = localStorage.getItem("dndchar_autosave_v1");
+    if (raw) {
+      const data = JSON.parse(raw);
+      if (data["legal-dismiss"] === true) {
+        return; // ✅ 已勾選，不再顯示 modal
+      }
+    }
+  } catch (e) {}
+
+  modal.style.display = 'block';
+
+  // 關閉按鈕邏輯（勾選狀態會由自動儲存機制處理）
+  const button = modal.querySelector('button');
+  button.addEventListener('click', () => {
+    modal.style.display = 'none';
+  });
+});
+</script>
+
+
+</body></html>
