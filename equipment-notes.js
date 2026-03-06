@@ -654,10 +654,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const picks = Array.from(document.querySelectorAll("#weapon-mastery-details input[type='checkbox'][data-mastery-name]"))
       .filter((el) => el.checked)
-      .map((el) => el.dataset.masteryName || "");
+      .map((el) => {
+        const name = el.dataset.masteryName || "";
+        const description = el.closest("div")?.querySelector("span")?.textContent?.trim() || "";
+        return { name, description };
+      });
 
     summaryEl.innerHTML = picks.length
-      ? `已勾選：${picks.map(name => `<span style="display:inline-block; margin:2px 6px 2px 0; padding:2px 6px; border:1px solid #ccc; border-radius:999px;">${escapeHtml(name)}</span>`).join("")}`
+      ? `已勾選：<div style="margin-top:6px; display:grid; gap:6px;">${picks.map(({ name, description }) => `
+          <div style="padding:6px 8px; border:1px solid #ccc; border-radius:8px; background:#fff;">
+            <strong>${escapeHtml(name)}</strong>${description ? `：${escapeHtml(description)}` : ""}
+          </div>`).join("")}
+        </div>`
       : "尚未勾選精通屬性";
   }
 
