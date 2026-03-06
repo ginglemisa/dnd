@@ -587,7 +587,7 @@ style.innerHTML = `
     }
   }
 
-  @media (max-width: 360px) {
+  @media (max-width: 359px) {
     .form-grid-2col,
     .save-grid,
     .skill-grid,
