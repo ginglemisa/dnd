@@ -412,6 +412,14 @@
   當你雙持"輕型"武器並進行主手攻擊後，可以用附贈動作進行一次副手攻擊。副手攻擊不加屬性調整值到傷害，除非其他規則允許。
 </div>
 
+<div style="font-size: 1.05em; font-weight: bold; margin-top: 10px;">徒手攻擊（Unarmed Strike）</div>
+<div class="small-text" style="margin-left: 10px; margin-top: 4px;">
+  你可以不用武器改用拳打、腳踢等方式進行近戰攻擊（5 呎內），並在每次徒手攻擊時擇一效果：<br>
+  1) 傷害：命中檢定 = 力量調整值 + 熟練加值；命中後造成 1 + 力量調整值 的鈍擊傷害。<br>
+  2) 擒抱：目標進行力量或敏捷豁免（自選）失敗則被擒抱；DC = 8 + 力量調整值 + 熟練加值（且你需有空手、目標體型最多大你一級）。<br>
+  3) 推撞：目標進行力量或敏捷豁免（自選）失敗則被你推開 5 呎或倒地；DC = 8 + 力量調整值 + 熟練加值（目標體型最多大你一級）。
+</div>
+
 
       <h3>反應</h3>
 <div style="font-size: 1.05em; font-weight: bold; margin-top: 10px;">進行藉機攻擊</div>
@@ -1603,9 +1611,15 @@ function isWeaponProficient(weapon) {
   return false;
 }
 
+function hasTwoWeaponFightingStyleFeat() {
+  const featSelects = document.querySelectorAll('#feats-area select[id^="feat-"]');
+  return Array.from(featSelects).some(select => select.value === "雙武器戰鬥");
+}
+
 
 // 動作命中傷害
 function populateHandAttacks() {
+  const hasTwoWeaponFighting = hasTwoWeaponFightingStyleFeat();
   const hands = [
     { selectId: "mainHand", prefix: "atk-main" },
     { selectId: "offHand", prefix: "atk-off" }
@@ -1639,7 +1653,10 @@ function populateHandAttacks() {
     const hitBonus = attackAbilityMod + (proficient ? pb : 0);
     document.getElementById(`${hand.prefix}-hit`).value = formatSigned(hitBonus);
     // 傷害部分
-    const damage = `${weapon.傷害} ${formatSigned(attackAbilityMod)}`;
+    const isOffHand = hand.prefix === "atk-off";
+    const shouldApplyDamageMod = !isOffHand || hasTwoWeaponFighting || attackAbilityMod < 0;
+    const damageBonusText = shouldApplyDamageMod ? ` ${formatSigned(attackAbilityMod)}` : "";
+    const damage = `${weapon.傷害}${damageBonusText}`;
     document.getElementById(`${hand.prefix}-dmg`).value = damage;
     // 備註部分
     const traits = [weapon.精通, weapon.屬性1, weapon.屬性2, weapon.屬性3, weapon.屬性4]
@@ -2298,7 +2315,7 @@ window.addEventListener("DOMContentLoaded", async function() {
   const armorSelect = document.getElementById("armor");
   populateSelectWithSections(mainHandSelect, getWeaponSections(false, false));
   populateSelectWithSections(offHandSelect, getWeaponSections(true, false));
-  populateSelectWithSections(armorSelect, getArmorSections(true));
+  populateSelectWithSections(armorSelect, getArmorSections(false));
   mainHandSelect.addEventListener("change", () => {
     updateOffHandOptions(mainHandSelect.value);
     updateWeaponInfo("mainHand", "main-hand-info-line1", "main-hand-info-line2");
