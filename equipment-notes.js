@@ -7,9 +7,9 @@ document.addEventListener("DOMContentLoaded", () => {
   container.innerHTML = `
 
 <div class="section" style="margin-top:36px;">
-  <h3 style="margin:0 0 8px 0;">武器屬性說明</h3>
-  <details style="margin:0 0 6px 0;">
-    <summary style="font-weight:bold;">→屬性</summary>
+  <h3>武器屬性說明</h3>
+  <details>
+    <summary style="font-weight:bold;">屬性</summary>
     <div class="small-text" style="margin:8px 0 0 0;white-space:pre-line;">
 彈藥
 你可以使用具有彈藥屬性的武器發動一次遠程攻擊，前提是你必須先擁有與該武器相對應的彈藥。所需彈藥的類型會標注在武器表的射程數據後。每次攻擊消耗一發彈藥。取出彈藥是攻擊的一部分（你需要一只空著的手來裝填單手武器）。戰鬥結束後，你可以花費 1 分鐘尋回你在戰鬥中使用的彈藥的一半（向下取整），其余的彈藥將丟失。
@@ -43,8 +43,8 @@ document.addEventListener("DOMContentLoaded", () => {
     </div>
   </details>
 
-  <details id="weapon-mastery-details" style="margin:0 0 6px 0;">
-    <summary style="font-weight:bold;">→精通屬性</summary>
+  <details id="weapon-mastery-details">
+    <summary style="font-weight:bold;">精通屬性</summary>
     <div class="small-text" style="margin:8px 0 0 0;">
 每種武器都有一個精通屬性，只有特定職業才能解鎖，定義如下：<br><br>
 
@@ -73,9 +73,9 @@ document.addEventListener("DOMContentLoaded", () => {
 <span style="display:block; margin-left:22px; white-space:pre-line;">如果你用該武器命中生物並對其造成傷害，直到你的下個回合結束前，你對該生物的下一次攻擊檢定具有優勢。</span></div>
     </div>
   </details>
-<h3 style="margin:28px 0 8px 0;">工具、道具、用品</h3>
-  <details style="margin:0 0 6px 0;">
-    <summary style="font-weight:bold;">→工匠工具</summary>
+<h3>工具、道具、用品</h3>
+  <details>
+    <summary style="font-weight:bold;">工匠工具</summary>
     <div class="small-text" style="margin:8px 0 0 0;white-space:pre-line;">
 工匠工具專注於制作物品和從事某種行業。每種工具需要單獨的熟練項。
 
@@ -188,8 +188,8 @@ document.addEventListener("DOMContentLoaded", () => {
 </div>
 </details>
 
-  <details style="margin:0 0 6px 0;">
-    <summary style="font-weight:bold;">→其他工具</summary>
+  <details>
+    <summary style="font-weight:bold;">其他工具</summary>
     <div class="small-text" style="margin:8px 0 0 0;white-space:pre-line;">
 這些工具為冒險和其他活動提供幫助。
 
@@ -238,8 +238,8 @@ document.addEventListener("DOMContentLoaded", () => {
 重量： 1 磅
 使用： 開鎖（DC 15），或解除陷阱（DC 15）</div></details>
 
-<details style="margin:0;">
-    <summary style="font-weight:bold;">→冒險用品</summary>
+<details>
+    <summary style="font-weight:bold;">冒險用品</summary>
     <div class="small-text" style="margin:8px 0 0 0;white-space:pre-line;">
 強酸（25 金幣）
 當你執行攻擊動作時，可以將其中一次攻擊替換為投擲一瓶強酸。 你選定 20 尺內能看見的一個生物或物體為目標。 目標必須成功通過敏捷豁免檢定（DC = 8 + 你的敏捷調整值 + 熟練加值），否則會受到 2d6 強酸傷害。
