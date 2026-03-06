@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>D&amp;D2024角色</title>
   <script src="css.js" defer></script>
+  <script src="monster.js" defer></script>
   <script src="class-features.js" defer></script>
   <script src="race.js" defer></script>
   <script src="equipment-notes.js" defer></script>
@@ -1707,7 +1708,7 @@ function createSingleSpellRow(areaId, level) {
       desc = "（此法術在 Basic 模式不可用）";
     }
 
-    descDiv.textContent = desc;
+    descDiv.innerHTML = renderSpellDescHtml(desc);
     updatePickedSpellBoxes();
     saveAllFields();
   });
@@ -1840,58 +1841,34 @@ function updateSpellsByClassLevel() {
   if (slot3Row) slot3Row.style.display = (maxRing >= 3) ? "" : "none";
 }
 
+
+function renderSpellDescHtml(raw) {
+  const desc = String(raw ?? "—");
+  const tipRe = /<span class="beast-tip" data-beast="([a-z0-9_]+)">([^<]+)<\/span>/g;
+  let last = 0;
+  const parts = [];
+  let m;
+
+  while ((m = tipRe.exec(desc)) !== null) {
+    const [full, key, label] = m;
+    parts.push(escapeHtml(desc.slice(last, m.index)));
+
+    if (Object.prototype.hasOwnProperty.call(BEAST_STATS, key)) {
+      parts.push(`<span class="beast-tip" data-beast="${escapeHtml(key)}">${escapeHtml(label)}</span>`);
+    } else {
+      parts.push(escapeHtml(full));
+    }
+
+    last = m.index + full.length;
+  }
+
+  parts.push(escapeHtml(desc.slice(last)));
+  return parts.join("").replaceAll("\n", "<br>");
+}
+
 // ====== 德魯伊變身提示 =====
 // ✅ 四種動物（建議用「機制摘要」避免長篇敘述）
-const BEAST_STATS = {
-  rat: {
-    name: "老鼠 (Rat) CR:0",
-    size_type: "微型野獸",
-    ac: 10,
-    hp: "1 (1d4-1)",
-    speed: "20呎, 攀爬20呎",
-    ability: "力2(-4), 敏11(0), 體9(-1), 智2(-4), 感10(0), 魅4(-3)",
-    senses: "黑暗視覺30呎, 被動感知12",
-    skills: "感知 +2",
-    traits: "迅捷：離開敵人不會引發藉機攻擊",
-    attacks: "咬擊：命中+2, 範圍5呎, 刺傷1"
-  },
-  riding_horse: {
-    name: "馱用馬 (Riding Horse) CR:¼",
-    size_type: "大型野獸",
-    ac: 11,
-    hp: "13 (2d10+2)",
-    speed: "60 呎",
-    ability: "力16(+3), 敏13(+1), 體12(+1) 智2(-4), 感11(+0), 魅7(-2)",
-    senses: "被動感知10",
-    skills: "—",
-    traits: "—",
-    attacks: "蹄擊：命中+5, 範圍5呎, 鈍傷7(1d8+3)"
-  },
-  spider: {
-    name: "蜘蛛 (Spider) CR:0",
-    size_type: "微型野獸",
-    ac: 12,
-    hp: "1 (1d4-1)",
-    speed: "20呎, 攀爬20呎",
-    ability: "力2(-4), 敏14(+2), 體8(-1), 智1(-5), 感10(+0), 魅2(-4)",
-    senses: "黑暗視覺30呎, 被動感知10",
-    skills: "隱匿+4",
-    traits: "蛛爬：可攀險地(如天花板)且毋須檢定, 網主：不受蛛網限制，感知同網生物",
-    attacks: "咬擊：命中+4, 範圍5呎, 刺傷1 + 毒傷2(1d4)"
-  },
-  wolf: {
-    name: "狼 (Wolf) CR:¼",
-    size_type: "中型野獸",
-    ac: 12,
-    hp: "11 (2d8+2)",
-    speed: "40呎",
-    ability: "力14(+2), 敏15(+2), 體12(+1), 智3(-4), 感12(+1), 魅6(-2)",
-    senses: "黑暗視覺60呎, 被動感知15",
-    skills: "感知+5, 隱匿+4",
-    traits: "群攻：若攻擊目標5呎內有狼方盟友(未失能),D20擲二取一",
-    attacks: "咬擊：命中+4, 範圍5呎, 刺傷5(1d6+2), 使中小型目標獲得倒地狀態"
-  }
-};
+// BEAST_STATS moved to monster.js
 
 // 建立一次 popup（不算改 UI 結構；只是浮層）
 (function setupBeastPopup() {
