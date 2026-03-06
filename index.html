@@ -648,39 +648,47 @@ document.getElementById("hp-display").textContent = ` ${maxHP}`;
 
 }
 
-document.getElementById("class").addEventListener("change", updateHPDisplay);
-document.getElementById("level").addEventListener("change", updateHPDisplay);
-document.getElementById("race").addEventListener("change", updateHPDisplay);
-document.getElementById("con").addEventListener("input", updateHPDisplay);
+function bindEventById(id, eventName, handler) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener(eventName, handler);
+}
 
-document.getElementById("spell-notes").addEventListener("input", function () {
+function bindHPDisplayEvents() {
+  bindEventById("class", "change", updateHPDisplay);
+  bindEventById("level", "change", updateHPDisplay);
+  bindEventById("race", "change", updateHPDisplay);
+  bindEventById("con", "input", updateHPDisplay);
+}
+
+function handleSpellNotesUnlock9() {
   if (!this.value.includes("/unlock9")) return;
 
-  // 顯示 4~9 環區塊
   document.getElementById("highlevel-spells").style.display = "block";
-
-  // 同步切換到 Full 模式（給自己查完整法術）
   SPELL_MODE = "full";
   refreshSpellDropdowns();
-
-  // 清掉密技字串
   this.value = this.value.replace(/\/unlock9/g, "").trim();
-});
+}
 
-(() => {
-  const spellNotesEl = document.getElementById("spell-notes");
-  if (!spellNotesEl) return;
+function bindSpellNotesEvents() {
+  bindEventById("spell-notes", "input", handleSpellNotesUnlock9);
+  bindEventById("spell-notes", "change", handleSpellNotesUnlock9);
+}
 
-  spellNotesEl.addEventListener("change", function () {
-    if (!this.value.includes("/unlock9")) return;
-
-    document.getElementById("highlevel-spells").style.display = "block";
-    SPELL_MODE = "full";
-    refreshSpellDropdowns();
-
-    this.value = this.value.replace(/\/unlock9/g, "").trim();
-  });
-})();
+function bindCoreCharacterEvents() {
+  bindEventById("race", "change", updateRaceFeature);
+  bindEventById("background", "change", updateBackgroundFeature);
+  bindEventById("armor", "change", updateACDisplay);
+  bindEventById("dex", "input", updateACDisplay);
+  bindEventById("con", "input", updateACDisplay);
+  bindEventById("wis", "input", updateACDisplay);
+  bindEventById("cha", "input", updateACDisplay);
+  bindEventById("armor", "change", updateArmorInfo);
+  bindEventById("class", "change", () => {updateClassFeature();updateACDisplay();updateHPDisplay();updateClassProficiencyOptions();updateEldritchInvocationSectionVisibility();populateHandAttacks();updateSpellsByClassLevel();});
+  bindEventById("level", "change", () => {updateClassFeature();updateACDisplay();updateHPDisplay();updateSpellsByClassLevel();});
+  bindEventById("cleric-guardian", "change", populateHandAttacks);
+  bindEventById("druid-sentinel", "change", populateHandAttacks);
+}
 
 
 // 計算AC頂部
@@ -1251,20 +1259,9 @@ document.addEventListener("DOMContentLoaded", () => {
   updateClassProficiencyOptions();
   updateEldritchInvocationSectionVisibility();
   updateSpellsByClassLevel();
-
-  // 加入監聽事件
-  document.getElementById("race").addEventListener("change", updateRaceFeature);
-  document.getElementById("background").addEventListener("change", updateBackgroundFeature);
-  document.getElementById("armor").addEventListener("change", updateACDisplay);
-  document.getElementById("dex").addEventListener("input", updateACDisplay);
-  document.getElementById("con").addEventListener("input", updateACDisplay);
-  document.getElementById("wis").addEventListener("input", updateACDisplay);
-  document.getElementById("cha").addEventListener("input", updateACDisplay);
-  document.getElementById("armor").addEventListener("change", updateArmorInfo);
-  document.getElementById("class").addEventListener("change", () => {updateClassFeature();updateACDisplay();updateHPDisplay();updateClassProficiencyOptions();updateEldritchInvocationSectionVisibility();populateHandAttacks();updateSpellsByClassLevel();});
-  document.getElementById("level").addEventListener("change", () => {updateClassFeature();updateACDisplay();updateHPDisplay();updateSpellsByClassLevel();});
-  document.getElementById("cleric-guardian")?.addEventListener("change", populateHandAttacks);
-  document.getElementById("druid-sentinel")?.addEventListener("change", populateHandAttacks);
+  bindHPDisplayEvents();
+  bindSpellNotesEvents();
+  bindCoreCharacterEvents();
 
 });
 
