@@ -1113,10 +1113,27 @@ function bindCoreCharacterEvents() {
   bindEventById("wis", "input", updateACDisplay);
   bindEventById("cha", "input", updateACDisplay);
   bindEventById("armor", "change", updateArmorInfo);
-  bindEventById("class", "change", () => {updateClassFeature();updateACDisplay();updateHPDisplay();updateClassProficiencyOptions();updateEldritchInvocationSectionVisibility();populateHandAttacks();updateSpellsByClassLevel();});
+  bindEventById("class", "change", () => {updateClassFeature();updateACDisplay();updateHPDisplay();updateClassProficiencyOptions();updateEldritchInvocationSectionVisibility();populateHandAttacks();updateSpellsByClassLevel();updateExpertiseVisibility();});
   bindEventById("level", "change", () => {updateClassFeature();updateACDisplay();updateHPDisplay();updateSpellsByClassLevel();});
   bindEventById("cleric-guardian", "change", populateHandAttacks);
   bindEventById("druid-sentinel", "change", populateHandAttacks);
+}
+
+const EXPERTISE_VISIBLE_CLASSES = new Set(["", "bard", "ranger", "rogue", "wizard"]);
+
+function updateExpertiseVisibility() {
+  const classValue = document.getElementById("class")?.value || "";
+  const shouldShowExpertise = EXPERTISE_VISIBLE_CLASSES.has(classValue);
+
+  const skillLegend = document.querySelector(".skill-legend");
+  if (skillLegend) {
+    skillLegend.style.display = shouldShowExpertise ? "flex" : "none";
+  }
+
+  document.querySelectorAll(".circle-checkbox").forEach(checkbox => {
+    checkbox.disabled = !shouldShowExpertise;
+    checkbox.style.display = shouldShowExpertise ? "" : "none";
+  });
 }
 
 
@@ -1687,6 +1704,7 @@ document.addEventListener("DOMContentLoaded", () => {
   updateClassFeature();
   updateClassProficiencyOptions();
   updateEldritchInvocationSectionVisibility();
+  updateExpertiseVisibility();
   updateSpellsByClassLevel();
   bindHPDisplayEvents();
   bindSpellNotesEvents();
