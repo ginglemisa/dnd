@@ -182,7 +182,14 @@ button:hover{filter:brightness(.99);}
   margin:0 !important;
   font-weight:800 !important;
 }
-.save-name span{white-space:nowrap;}
+.save-name .save-stack{
+  display:flex;
+  flex-direction:column;
+  gap:0;
+  line-height:1.05;
+}
+.save-name .save-abbr{font-weight:900;}
+.save-name .save-full{font-weight:800;}
 .save-pair input[type="number"]{
   width:68px !important;
   min-width:68px;
@@ -398,13 +405,14 @@ label[for="level"]{
   }
   #tab-basic .mini-stat-card #ac-display{min-width:34px;}
   .form-grid-6col{grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:8px !important;}
-  .action-grid-pretty{grid-template-columns:1fr 1fr !important;}
+  .action-grid-pretty{grid-template-columns:repeat(4,minmax(0,1fr)) !important;}
   .skill-label-row{align-items:flex-start; gap:8px; margin-bottom:6px;}
   .skill-name{font-size:.95rem !important; line-height:1.2;}
   .skill-rank-controls{gap:6px;}
   .save-pair{grid-template-columns:minmax(0,1fr) 54px !important; gap:8px !important; padding:8px 9px !important;}
   .save-name{gap:6px; align-items:flex-start !important;}
-  .save-name span{white-space:normal; line-height:1.15;}
+  .save-name .save-stack{line-height:1.08;}
+  .action-grid-pretty button{font-size:.9rem !important; min-height:38px !important; padding:6px 2px !important;}
   .save-pair input[type="number"]{width:54px !important; min-width:54px; font-size:1rem !important; min-height:38px !important; padding:6px 4px !important;}
   .skill-cell{padding:8px 9px !important;}
   .skill-cell input[type="number"], input[type="number"], select, input[type="text"], textarea{min-height:38px !important; font-size:1rem !important; padding:7px 9px !important;}
@@ -668,12 +676,12 @@ label[for="level"]{
   <div class="section">
   <button onclick="fillSaves()">屬性豁免</button>
   <div class="save-grid">
-    <div class="save-pair"><label class="save-name" for="prof-str"><input type="checkbox" id="prof-str"><span>STR 力量</span></label><input type="number" id="save-str"></div>
-    <div class="save-pair"><label class="save-name" for="prof-int"><input type="checkbox" id="prof-int"><span>INT 智力</span></label><input type="number" id="save-int"></div>
-    <div class="save-pair"><label class="save-name" for="prof-dex"><input type="checkbox" id="prof-dex"><span>DEX 敏捷</span></label><input type="number" id="save-dex"></div>
-    <div class="save-pair"><label class="save-name" for="prof-wis"><input type="checkbox" id="prof-wis"><span>WIS 感知</span></label><input type="number" id="save-wis"></div>
-    <div class="save-pair"><label class="save-name" for="prof-con"><input type="checkbox" id="prof-con"><span>CON 體質</span></label><input type="number" id="save-con"></div>
-    <div class="save-pair"><label class="save-name" for="prof-cha"><input type="checkbox" id="prof-cha"><span>CHA 魅力</span></label><input type="number" id="save-cha"></div>
+    <div class="save-pair"><label class="save-name" for="prof-str"><input type="checkbox" id="prof-str"><span class="save-stack"><span class="save-abbr">STR</span><span class="save-full">力量</span></span></label><input type="number" id="save-str"></div>
+    <div class="save-pair"><label class="save-name" for="prof-int"><input type="checkbox" id="prof-int"><span class="save-stack"><span class="save-abbr">INT</span><span class="save-full">智力</span></span></label><input type="number" id="save-int"></div>
+    <div class="save-pair"><label class="save-name" for="prof-dex"><input type="checkbox" id="prof-dex"><span class="save-stack"><span class="save-abbr">DEX</span><span class="save-full">敏捷</span></span></label><input type="number" id="save-dex"></div>
+    <div class="save-pair"><label class="save-name" for="prof-wis"><input type="checkbox" id="prof-wis"><span class="save-stack"><span class="save-abbr">WIS</span><span class="save-full">感知</span></span></label><input type="number" id="save-wis"></div>
+    <div class="save-pair"><label class="save-name" for="prof-con"><input type="checkbox" id="prof-con"><span class="save-stack"><span class="save-abbr">CON</span><span class="save-full">體質</span></span></label><input type="number" id="save-con"></div>
+    <div class="save-pair"><label class="save-name" for="prof-cha"><input type="checkbox" id="prof-cha"><span class="save-stack"><span class="save-abbr">CHA</span><span class="save-full">魅力</span></span></label><input type="number" id="save-cha"></div>
   </div>
 </div>
 
