@@ -665,7 +665,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const cls = document.getElementById("class")?.value || "";
     const masteryDetails = document.getElementById("weapon-mastery-details");
     const summaryWrap = document.getElementById("weapon-mastery-summary-wrap");
-    const showMastery = weaponMasteryAllowedClasses.has(cls);
+    const showMastery = !cls || weaponMasteryAllowedClasses.has(cls);
 
     if (masteryDetails) masteryDetails.style.display = showMastery ? "block" : "none";
     if (summaryWrap) summaryWrap.style.display = showMastery ? "block" : "none";
