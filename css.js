@@ -557,7 +557,7 @@ style.innerHTML = `
     .save-grid,
     .skill-grid,
     .spell-picked-grid {
-      grid-template-columns: 1fr;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .ability-grid {
@@ -584,6 +584,16 @@ style.innerHTML = `
     .save-pair input[type="number"] {
       width: 60px;
       min-width: 60px;
+    }
+  }
+
+  @media (max-width: 360px) {
+    .form-grid-2col,
+    .save-grid,
+    .skill-grid,
+    .spell-picked-grid,
+    .form-grid-6col {
+      grid-template-columns: 1fr;
     }
   }
 `;

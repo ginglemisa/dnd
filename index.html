@@ -383,11 +383,16 @@ label[for="level"]{
 @media (max-width:420px){
   body{padding-left:14px !important; padding-right:14px !important;}
   .tab-button{font-size:.98rem !important; padding:8px 0 !important;}
-  .form-grid-2col, .save-grid, .skill-grid, .spell-picked-grid, .stats-card-row{grid-template-columns:1fr !important;}
-  .form-grid-6col{grid-template-columns:1fr !important;}
+  .form-grid-2col, .save-grid, .skill-grid, .spell-picked-grid, .stats-card-row{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
+  .form-grid-6col{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
   .action-grid-pretty{grid-template-columns:1fr 1fr !important;}
   .skill-label-row{align-items:flex-start;}
   .save-pair input[type="number"]{width:62px !important; min-width:62px;}
+}
+
+@media (max-width:360px){
+  .form-grid-2col, .save-grid, .skill-grid, .spell-picked-grid, .stats-card-row{grid-template-columns:1fr !important;}
+  .form-grid-6col{grid-template-columns:1fr !important;}
 }
 </style>
 
