@@ -91,6 +91,11 @@
   </label>
 </div>
 
+<div id="warlock-invocation-summary-wrap" style="margin-top: 8px; display: none;">
+  <strong>契術師魔能祈喚：</strong>
+  <div id="warlock-invocation-summary" style="margin-top: 6px; padding: 8px; border: 1px solid #aaa; border-radius: 6px; background: #fafafa;">尚未勾選魔能祈喚</div>
+</div>
+
 
   <div class="form-grid-2col">
   <!-- 左欄：HP 顯示與輸入 -->
@@ -198,6 +203,13 @@
   <details open>
     <summary><h3 style="display: inline;">職業能力</h3></summary>
     <div class="output" id="classFeatures">無資料</div>
+  </details>
+</div>
+
+<div class="section" id="eldritch-invocations-section" style="display: none;">
+  <details open>
+    <summary><h3 style="display: inline;">魔能祈喚</h3></summary>
+    <div class="output" id="eldritch-invocations-output">無資料</div>
   </details>
 </div>
   
@@ -787,6 +799,92 @@ const detailedBackgroundFeatures = {
   }
 };
 
+const eldritchInvocations = [
+  { name: "刃之魔契", text: "作為附贈動作召喚契約武器，或與一把魔法武器建立聯結。" },
+  { name: "鏈之魔契", text: "你學會施展獲得魔寵，並可額外選擇異界魔寵型態。" },
+  { name: "書之魔契", text: "召喚一本暗影魔典，獲得額外戲法與儀式法術。" },
+  { name: "幽影護甲", text: "可隨意施展法師護甲，無需消耗法術位。" },
+  { name: "魔能意志", text: "你為維持專注進行的體質豁免具有優勢。" },
+  { name: "邪魔活力", text: "可隨意施展虛假生命，且臨時生命值骰自動取滿。" },
+  { name: "千面之臉", text: "可隨意施展易容術，無需消耗法術位。" },
+  { name: "幻象迷蹤", text: "可隨意施展無聲幻影，無需消耗法術位。" },
+  { name: "超凡跳躍", text: "可隨意施展跳躍術，無需消耗法術位。" },
+  { name: "魔鬼視界", text: "可在 120 尺內的黑暗與微光中正常視物。" },
+  { name: "原初之一教習", text: "獲得一項自選起源專長。可重複選擇。", repeatable: true, max: 3 },
+  { name: "苦痛魔爆", text: "選一個造成傷害的契術師戲法，將魅力調整值加到傷害骰。可重複選擇。", repeatable: true, max: 3 },
+  { name: "魔能長槍", text: "選一個射程 10+ 尺且造成傷害的戲法，射程大幅提升。可重複選擇。", repeatable: true, max: 3 },
+  { name: "斥力魔爆", text: "選一個需攻擊檢定的戲法，命中時可把目標推開 10 尺。可重複選擇。", repeatable: true, max: 3 },
+  { name: "星移步法", text: "可隨意為自身施展浮空術，無需消耗法術位。" },
+  { name: "萬形之主", text: "可隨意施展變造自身，無需消耗法術位。" },
+  { name: "融身入影", text: "在微光或黑暗中，可隨意為自身施展隱形術。" },
+  { name: "深海饋贈", text: "可在水下呼吸並獲得游泳速度，且可免費施展一次水下呼吸。" },
+  { name: "共視感官", text: "與自願生物建立感官連結並共享特殊感官。" },
+  { name: "魔能斬擊", text: "刃之魔契前提；契約武器命中可消耗法術位追加力場傷害。" },
+  { name: "饑渴魔刃", text: "刃之魔契前提；使用契約武器時可進行額外攻擊。" },
+  { name: "鏈主賦能", text: "鏈之魔契前提；強化魔寵速度、傷害與抗性等能力。" }
+];
+
+function getInvocationCheckboxId(index, slot = 1) {
+  return `eldritch-invocation-${index}-${slot}`;
+}
+
+function renderEldritchInvocations() {
+  const output = document.getElementById("eldritch-invocations-output");
+  if (!output) return;
+
+  output.innerHTML = eldritchInvocations.map((invocation, index) => {
+    const checkCount = invocation.repeatable ? (invocation.max || 3) : 1;
+    const checks = Array.from({ length: checkCount }, (_, slotIndex) => {
+      const checkboxId = getInvocationCheckboxId(index, slotIndex + 1);
+      return `<label style="margin-right: 6px;"><input type="checkbox" id="${checkboxId}" data-invocation-name="${escapeHtml(invocation.name)}">✔</label>`;
+    }).join("");
+
+    return `<div style="margin-bottom: 10px;">
+      <div>${checks}<strong>${invocation.name}</strong></div>
+      <div style="margin-left: 4px;">${invocation.text}</div>
+    </div>`;
+  }).join("");
+
+  output.querySelectorAll("input[type='checkbox']").forEach(el => {
+    el.addEventListener("change", () => {
+      updateWarlockInvocationSummary();
+      if (typeof saveAllFields === "function") saveAllFields();
+    });
+  });
+}
+
+function updateWarlockInvocationSummary() {
+  const summaryEl = document.getElementById("warlock-invocation-summary");
+  if (!summaryEl) return;
+
+  const picks = [];
+  eldritchInvocations.forEach((invocation, index) => {
+    const checkCount = invocation.repeatable ? (invocation.max || 3) : 1;
+    for (let slot = 1; slot <= checkCount; slot++) {
+      const input = document.getElementById(getInvocationCheckboxId(index, slot));
+      if (input?.checked) picks.push(invocation.name);
+    }
+  });
+
+  summaryEl.innerHTML = picks.length
+    ? `已勾選：${picks.map(name => `<span style="display:inline-block; margin:2px 6px 2px 0; padding:2px 6px; border:1px solid #ccc; border-radius:999px;">${escapeHtml(name)}</span>`).join("")}`
+    : "尚未勾選魔能祈喚";
+}
+
+function updateEldritchInvocationSectionVisibility() {
+  const cls = document.getElementById("class")?.value || "";
+  const section = document.getElementById("eldritch-invocations-section");
+  const summaryWrap = document.getElementById("warlock-invocation-summary-wrap");
+
+  if (!section || !summaryWrap) return;
+
+  const isWarlock = cls === "warlock";
+  section.style.display = isWarlock ? "block" : "none";
+  summaryWrap.style.display = isWarlock ? "block" : "none";
+
+  if (isWarlock) updateWarlockInvocationSummary();
+}
+
 function updateClassFeature() {
   const selectedClass = document.getElementById("class").value;
   const level = document.getElementById("level").value;
@@ -798,6 +896,10 @@ function updateClassFeature() {
   }
 
   let raw = classFeatures[selectedClass];
+  if (selectedClass === "warlock") {
+    const optionIndex = raw.indexOf("魔能祈喚選項");
+    if (optionIndex !== -1) raw = raw.slice(0, optionIndex).trim();
+  }
 
   if (level && !isNaN(level)) {
     const nextLevel = parseInt(level) + 1;
@@ -1083,6 +1185,8 @@ function escapeHtml(s) {
 
 
 document.addEventListener("DOMContentLoaded", () => {
+  renderEldritchInvocations();
+
   // 初始化顯示
   updateRaceFeature();
   updateBackgroundFeature();
@@ -1091,6 +1195,7 @@ document.addEventListener("DOMContentLoaded", () => {
   updateArmorInfo();
   updateClassFeature();
   updateClassProficiencyOptions();
+  updateEldritchInvocationSectionVisibility();
   updateSpellsByClassLevel();
 
   // 加入監聽事件
@@ -1102,7 +1207,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("wis").addEventListener("input", updateACDisplay);
   document.getElementById("cha").addEventListener("input", updateACDisplay);
   document.getElementById("armor").addEventListener("change", updateArmorInfo);
-  document.getElementById("class").addEventListener("change", () => {updateClassFeature();updateACDisplay();updateHPDisplay();updateClassProficiencyOptions();populateHandAttacks();updateSpellsByClassLevel();});
+  document.getElementById("class").addEventListener("change", () => {updateClassFeature();updateACDisplay();updateHPDisplay();updateClassProficiencyOptions();updateEldritchInvocationSectionVisibility();populateHandAttacks();updateSpellsByClassLevel();});
   document.getElementById("level").addEventListener("change", () => {updateClassFeature();updateACDisplay();updateHPDisplay();updateSpellsByClassLevel();});
   document.getElementById("cleric-guardian")?.addEventListener("change", populateHandAttacks);
   document.getElementById("druid-sentinel")?.addEventListener("change", populateHandAttacks);
