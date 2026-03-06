@@ -182,6 +182,40 @@ style.innerHTML = `
     line-height: 1.4;
   }
 
+
+  .condition-display-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .condition-display-card {
+    background: #f5f5f5;
+    border-radius: 5px;
+    padding: 10px;
+  }
+
+  .condition-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+    font-size: 0.95em;
+  }
+
+  .condition-title-row span {
+    color: #666;
+  }
+
+  .condition-display-card ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+
+  #condition-button-grid .active-condition {
+    background: #bbb;
+  }
+
   @media (min-width: 481px) {
     html, body {
       background-color: #eee;
