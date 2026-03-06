@@ -557,7 +557,8 @@ style.innerHTML = `
     .save-grid,
     .skill-grid,
     .spell-picked-grid {
-      grid-template-columns: 1fr;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
     }
 
     .ability-grid {
@@ -565,7 +566,7 @@ style.innerHTML = `
     }
 
     .form-grid-6col {
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 8px 10px;
     }
 
@@ -578,12 +579,39 @@ style.innerHTML = `
     }
 
     .save-pair {
-      grid-template-columns: minmax(0, 1fr) 60px;
+      grid-template-columns: minmax(0, 1fr) 54px;
+      padding: 8px;
     }
 
     .save-pair input[type="number"] {
-      width: 60px;
-      min-width: 60px;
+      width: 54px;
+      min-width: 54px;
+      min-height: 38px;
+      font-size: 1rem;
+    }
+
+    .save-pair label {
+      gap: 6px;
+      align-items: flex-start;
+    }
+
+    .spell-toolbar,
+    .section {
+      padding: 10px;
+    }
+
+    .spell-picked-grid {
+      gap: 6px;
+    }
+  }
+
+  @media (max-width: 339px) {
+    .form-grid-2col,
+    .save-grid,
+    .skill-grid,
+    .spell-picked-grid,
+    .form-grid-6col {
+      grid-template-columns: 1fr;
     }
   }
 `;
