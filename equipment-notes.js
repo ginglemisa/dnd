@@ -43,34 +43,34 @@ document.addEventListener("DOMContentLoaded", () => {
     </div>
   </details>
 
-  <details>
+  <details id="weapon-mastery-details">
     <summary style="font-weight:bold;">精通屬性</summary>
-    <div class="small-text" style="margin:8px 0 0 0;white-space:pre-line;">
-每種武器都有一個精通屬性，只有具有武器專長的角色（如武器掌握）才能解鎖該屬性。以下是這些屬性的定義。
+    <div class="small-text" style="margin:8px 0 0 0;">
+每種武器都有一個精通屬性，只有具有武器專長的角色（如武器掌握）才能解鎖該屬性。以下是這些屬性的定義。<br><br>
 
-順劈
-如果使用該武器的近戰攻擊檢定命中生物，你可以使用該武器對首要目標 5 尺內且同樣位於你觸及距離中的第二個生物發動一次近戰攻擊檢定。命中時，第二個生物受到武器的傷害，但不能在傷害中加上你的屬性調整值，除非該調整值為負數。你每回合只能發動一次這樣的額外攻擊。
+<div style="margin-bottom:10px;"><label><input type="checkbox" id="weapon-mastery-cleave" data-mastery-name="順劈"> <strong>順劈</strong></label><br>
+<span style="display:block; margin-left:22px; white-space:pre-line;">如果使用該武器的近戰攻擊檢定命中生物，你可以使用該武器對首要目標 5 尺內且同樣位於你觸及距離中的第二個生物發動一次近戰攻擊檢定。命中時，第二個生物受到武器的傷害，但不能在傷害中加上你的屬性調整值，除非該調整值為負數。你每回合只能發動一次這樣的額外攻擊。</span></div>
 
-劃傷
-即使你用該武器對生物的攻擊檢定失手，你仍可以對該生物造成等同於你所用屬性調整值的傷害。此傷害的類型與武器造成的傷害類型相同，且傷害只能通過增加屬性調整值來提高。
+<div style="margin-bottom:10px;"><label><input type="checkbox" id="weapon-mastery-graze" data-mastery-name="劃傷"> <strong>劃傷</strong></label><br>
+<span style="display:block; margin-left:22px; white-space:pre-line;">即使你用該武器對生物的攻擊檢定失手，你仍可以對該生物造成等同於你所用屬性調整值的傷害。此傷害的類型與武器造成的傷害類型相同，且傷害只能通過增加屬性調整值來提高。</span></div>
 
-迅切
-當你發動輕型屬性的額外攻擊時，你可以將其作為攻擊動作的一部分，而無需附贈動作。你每回合只能發動一次這樣的額外攻擊。
+<div style="margin-bottom:10px;"><label><input type="checkbox" id="weapon-mastery-nick" data-mastery-name="迅切"> <strong>迅切</strong></label><br>
+<span style="display:block; margin-left:22px; white-space:pre-line;">當你發動輕型屬性的額外攻擊時，你可以將其作為攻擊動作的一部分，而無需附贈動作。你每回合只能發動一次這樣的額外攻擊。</span></div>
 
-推離
-如果你用該武器命中大型或更小的生物，你可以將該生物向遠離你自身的方向沿直線推開至多 10 尺。
+<div style="margin-bottom:10px;"><label><input type="checkbox" id="weapon-mastery-push" data-mastery-name="推離"> <strong>推離</strong></label><br>
+<span style="display:block; margin-left:22px; white-space:pre-line;">如果你用該武器命中大型或更小的生物，你可以將該生物向遠離你自身的方向沿直線推開至多 10 尺。</span></div>
 
-削弱
-如果你用該武器命中生物，你令該生物直至你的下個回合開始前，發動的下一次攻擊檢定具有劣勢。
+<div style="margin-bottom:10px;"><label><input type="checkbox" id="weapon-mastery-sap" data-mastery-name="削弱"> <strong>削弱</strong></label><br>
+<span style="display:block; margin-left:22px; white-space:pre-line;">如果你用該武器命中生物，你令該生物直至你的下個回合開始前，發動的下一次攻擊檢定具有劣勢。</span></div>
 
-緩速
-如果你用該武器命中生物並對其造成傷害，你可以使其速度在你的下個回合開始前降低 10 尺。即使生物被具有該屬性的武器多次命中，降低的速度也不會超過 10 尺。
+<div style="margin-bottom:10px;"><label><input type="checkbox" id="weapon-mastery-slow" data-mastery-name="緩速"> <strong>緩速</strong></label><br>
+<span style="display:block; margin-left:22px; white-space:pre-line;">如果你用該武器命中生物並對其造成傷害，你可以使其速度在你的下個回合開始前降低 10 尺。即使生物被具有該屬性的武器多次命中，降低的速度也不會超過 10 尺。</span></div>
 
-失衡
-如果你用該武器命中生物，你可以迫使該生物進行體質豁免檢定（DC=8+你用於攻擊檢定的屬性調整值+你的熟練加值） 。豁免失敗時，該生物陷入倒地狀態。
+<div style="margin-bottom:10px;"><label><input type="checkbox" id="weapon-mastery-topple" data-mastery-name="失衡"> <strong>失衡</strong></label><br>
+<span style="display:block; margin-left:22px; white-space:pre-line;">如果你用該武器命中生物，你可以迫使該生物進行體質豁免檢定（DC=8+你用於攻擊檢定的屬性調整值+你的熟練加值） 。豁免失敗時，該生物陷入倒地狀態。</span></div>
 
-侵擾
-如果你用該武器命中生物並對其造成傷害，直到你的下個回合結束前，你對該生物的下一次攻擊檢定具有優勢。
+<div style="margin-bottom:4px;"><label><input type="checkbox" id="weapon-mastery-vex" data-mastery-name="侵擾"> <strong>侵擾</strong></label><br>
+<span style="display:block; margin-left:22px; white-space:pre-line;">如果你用該武器命中生物並對其造成傷害，直到你的下個回合結束前，你對該生物的下一次攻擊檢定具有優勢。</span></div>
     </div>
   </details>
 <h3>工具、道具、用品</h3>
@@ -645,4 +645,42 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 `;
+
+  const weaponMasteryAllowedClasses = new Set(["barbarian", "fighter", "paladin", "ranger", "rogue"]);
+
+  function updateWeaponMasterySummary() {
+    const summaryEl = document.getElementById("weapon-mastery-summary");
+    if (!summaryEl) return;
+
+    const picks = Array.from(document.querySelectorAll("#weapon-mastery-details input[type='checkbox'][data-mastery-name]"))
+      .filter((el) => el.checked)
+      .map((el) => el.dataset.masteryName || "");
+
+    summaryEl.innerHTML = picks.length
+      ? `已勾選：${picks.map(name => `<span style="display:inline-block; margin:2px 6px 2px 0; padding:2px 6px; border:1px solid #ccc; border-radius:999px;">${escapeHtml(name)}</span>`).join("")}`
+      : "尚未勾選精通屬性";
+  }
+
+  function updateWeaponMasteryVisibility() {
+    const cls = document.getElementById("class")?.value || "";
+    const masteryDetails = document.getElementById("weapon-mastery-details");
+    const summaryWrap = document.getElementById("weapon-mastery-summary-wrap");
+    const showMastery = weaponMasteryAllowedClasses.has(cls);
+
+    if (masteryDetails) masteryDetails.style.display = showMastery ? "block" : "none";
+    if (summaryWrap) summaryWrap.style.display = showMastery ? "block" : "none";
+
+    if (showMastery) updateWeaponMasterySummary();
+  }
+
+  document.querySelectorAll("#weapon-mastery-details input[type='checkbox'][data-mastery-name]").forEach((el) => {
+    el.addEventListener("change", () => {
+      updateWeaponMasterySummary();
+      if (typeof saveAllFields === "function") saveAllFields();
+    });
+  });
+
+  document.getElementById("class")?.addEventListener("change", updateWeaponMasteryVisibility);
+  updateWeaponMasteryVisibility();
+
 });
