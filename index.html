@@ -2331,11 +2331,25 @@ async function copyShareUrl() {
   }
 }
 
+const INPUT_AUTOSAVE_DEBOUNCE_MS = 1000;
+let saveAllFieldsDebounceTimer = null;
+
 function saveAllFields() {
   if (SHARE_MODE) return;
   const data = collectStateObject();
   localStorage.setItem(AUTO_SAVE_KEY, JSON.stringify(data));
 }
+
+function scheduleSaveAllFields() {
+  if (saveAllFieldsDebounceTimer) {
+    clearTimeout(saveAllFieldsDebounceTimer);
+  }
+  saveAllFieldsDebounceTimer = setTimeout(() => {
+    saveAllFieldsDebounceTimer = null;
+    saveAllFields();
+  }, INPUT_AUTOSAVE_DEBOUNCE_MS);
+}
+
 function restoreAllFields() {
   if (SHARE_MODE) return;
   const raw = localStorage.getItem(AUTO_SAVE_KEY);
@@ -2348,7 +2362,7 @@ function setupAutoSave() {
   if (SHARE_MODE) return;
   document.querySelectorAll("input, select, textarea").forEach(el => {
     el.addEventListener("change", saveAllFields);
-    el.addEventListener("input", saveAllFields);
+    el.addEventListener("input", scheduleSaveAllFields);
   });
 }
 
