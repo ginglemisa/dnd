@@ -11,6 +11,386 @@
   <script src="equipment-notes.js" defer></script>
   <script src="spell-list.js" defer></script>
   <script src="condition.js" defer></script>
+
+<style id="pretty-ui-overrides">
+:root{
+  --bg:#edf1f7;
+  --panel:#ffffff;
+  --panel-2:#f8faff;
+  --line:#d7deea;
+  --line-strong:#b9c5d8;
+  --text:#18212f;
+  --muted:#5f6b7c;
+  --brand:#5b7cfa;
+  --brand-soft:#e9eeff;
+  --shadow:0 10px 24px rgba(28,39,64,.08);
+  --radius:16px;
+}
+body{
+  background:linear-gradient(180deg,#edf1f7 0%,#e8edf5 100%) !important;
+  color:var(--text);
+}
+.tabs{
+  backdrop-filter:blur(10px);
+  background:rgba(237,241,247,.92) !important;
+  border-bottom:1px solid var(--line) !important;
+  box-shadow:0 6px 20px rgba(24,33,47,.06);
+  gap:8px;
+}
+.tab-button{
+  border-radius:14px !important;
+  border:1px solid var(--line) !important;
+  background:rgba(255,255,255,.9) !important;
+  color:var(--text);
+  font-weight:800 !important;
+  letter-spacing:.02em;
+  min-height:46px;
+  box-shadow:0 2px 8px rgba(24,33,47,.04);
+}
+.tab-button.active{
+  background:linear-gradient(180deg,#6c89ff 0%,#5674f2 100%) !important;
+  color:#fff !important;
+  border-color:#4f6eea !important;
+  box-shadow:0 10px 18px rgba(86,116,242,.24);
+}
+.section, details.section, .spell-toolbar, .action-help{
+  background:var(--panel) !important;
+  border:1px solid var(--line) !important;
+  border-radius:var(--radius) !important;
+  box-shadow:var(--shadow);
+  padding:14px !important;
+}
+details.section summary{
+  cursor:pointer;
+}
+.section h3, details.section h3{
+  margin:0 0 10px;
+  font-size:1.05rem;
+}
+.output{
+  background:linear-gradient(180deg,#fbfcff 0%,#f3f6fb 100%) !important;
+  border:1px solid var(--line) !important;
+  border-radius:14px !important;
+  padding:12px !important;
+  color:var(--text);
+}
+select,input[type="number"],input[type="text"],textarea{
+  border:1px solid var(--line-strong) !important;
+  border-radius:12px !important;
+  background:#fff !important;
+  color:var(--text);
+  min-height:44px;
+  padding:10px 12px !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7);
+}
+textarea{min-height:110px;}
+input[type="number"]{
+  font-size:1.05rem !important;
+  font-weight:800;
+  text-align:center;
+}
+button{
+  border:none;
+  border-radius:12px !important;
+  background:linear-gradient(180deg,#f7f9fd 0%,#edf2fb 100%);
+  color:var(--text);
+  font-weight:800;
+  min-height:44px;
+  box-shadow:0 4px 12px rgba(24,33,47,.08);
+}
+button:hover{filter:brightness(.99);}
+#clear-storage-btn{
+  background:linear-gradient(180deg,#fff2f2 0%,#ffe6e6 100%);
+}
+.hp-card, .mini-stat-card{
+  background:linear-gradient(180deg,#fbfcff 0%,#f3f6fb 100%);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:12px;
+  box-shadow:var(--shadow);
+}
+.hp-title, .mini-stat-label{
+  font-size:.84rem;
+  color:var(--muted);
+  font-weight:700;
+  margin-bottom:6px;
+}
+.hp-value{
+  font-size:1.5rem;
+  font-weight:900;
+  color:#1d2b52;
+  margin-left:6px;
+}
+.form-grid-2col{
+  gap:12px !important;
+}
+.form-grid-6col{
+  display:grid !important;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  gap:12px !important;
+  align-items:stretch !important;
+  margin-bottom:12px;
+}
+.form-grid-6col > label{
+  display:none;
+}
+.tight-input{width:100% !important;}
+.stats-card-row{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+  margin-bottom:12px;
+}
+.ability-grid{
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  gap:12px !important;
+}
+.ability{
+  background:linear-gradient(180deg,#ffffff 0%,#f6f8fc 100%);
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:12px;
+  box-shadow:var(--shadow);
+}
+.modifier{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:58px;
+  border-radius:14px;
+  background:var(--brand-soft);
+  color:#2743b5;
+  font-size:1.4rem;
+  font-weight:900;
+  margin:0 0 10px !important;
+}
+.save-grid{
+  grid-template-columns:1fr 1fr !important;
+  gap:10px !important;
+}
+.save-pair{
+  background:linear-gradient(180deg,#ffffff 0%,#f7f9fd 100%);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:10px 12px;
+  gap:12px !important;
+}
+.save-name{
+  display:flex !important;
+  align-items:center;
+  gap:10px;
+  margin:0 !important;
+  font-weight:800 !important;
+}
+.save-name span{white-space:nowrap;}
+.save-pair input[type="number"]{
+  width:68px !important;
+  min-width:68px;
+}
+input[type="checkbox"]{
+  width:20px;
+  height:20px;
+  margin:0;
+  accent-color:var(--brand);
+}
+.skill-legend{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  flex-wrap:wrap;
+  padding:10px 12px;
+  border-radius:14px;
+  background:linear-gradient(180deg,#fbfcff 0%,#f3f6fb 100%);
+  border:1px solid var(--line);
+  color:var(--muted);
+  font-size:.96rem !important;
+  font-weight:800;
+  margin-top:10px !important;
+}
+.legend-badge{display:inline-flex;align-items:center;gap:8px;}
+.legend-box, .legend-circle{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:20px; height:20px;
+  border:2px solid #667085;
+  background:#fff;
+}
+.legend-circle{border-radius:999px;}
+.skill-grid{
+  grid-template-columns:1fr 1fr !important;
+  gap:10px !important;
+}
+.skill-cell{
+  background:linear-gradient(180deg,#ffffff 0%,#f7f9fd 100%);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:10px 12px;
+  box-shadow:var(--shadow);
+}
+.skill-label-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:8px;
+}
+.skill-name{
+  font-weight:900 !important;
+  margin:0 !important;
+  font-size:1.02rem;
+  width:auto !important;
+}
+.skill-rank-controls{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-shrink:0;
+}
+.circle-checkbox{
+  appearance:none !important;
+  -webkit-appearance:none !important;
+  width:20px !important;
+  height:20px !important;
+  min-width:20px;
+  border:2px solid #667085 !important;
+  border-radius:999px !important;
+  background:#fff !important;
+  box-shadow:none !important;
+}
+.circle-checkbox:checked{
+  background:radial-gradient(circle at center,#5b7cfa 0 42%, #fff 45% 100%) !important;
+  border-color:#5b7cfa !important;
+}
+.action-grid-pretty{
+  display:grid !important;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  gap:10px !important;
+}
+.action-help table{
+  overflow:hidden;
+  border-radius:12px;
+}
+.action-help th, .action-help td{
+  padding:9px 8px !important;
+}
+.action-help th{background:#eef3ff !important;}
+#warlock-invocation-summary, #weapon-mastery-summary{
+  background:linear-gradient(180deg,#fbfcff 0%,#f3f6fb 100%) !important;
+  border:1px solid var(--line) !important;
+  border-radius:14px !important;
+}
+.spell-slot-grid{gap:10px 10px !important;}
+.spell-slot-column{
+  background:linear-gradient(180deg,#ffffff 0%,#f7f9fd 100%);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:10px 12px;
+}
+
+body{
+  max-width: 920px;
+  margin: 0 auto;
+  padding-bottom: 28px;
+}
+.tabs{
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  padding: 8px 0 10px;
+  margin-bottom: 14px;
+}
+.tab-content{
+  padding-bottom: 8px;
+}
+.section, details.section, .spell-toolbar, .action-help{
+  margin-bottom: 14px !important;
+}
+details.section summary,
+details summary{
+  list-style: none;
+}
+details.section summary::-webkit-details-marker,
+details summary::-webkit-details-marker{
+  display:none;
+}
+details.section summary{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+h3{
+  letter-spacing:.01em;
+}
+.bottom-buttons{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin:14px 0 16px;
+}
+.bottom-buttons button{
+  width:100%;
+  margin:0 !important;
+}
+#clear-storage-btn{
+  background:linear-gradient(180deg,#ffefef 0%,#ffdede 100%) !important;
+  color:#8d1f1f !important;
+  border:1px solid #efb0b0 !important;
+}
+.share-url-btn{
+  background:linear-gradient(180deg,#5f7cff 0%,#4765ea 100%) !important;
+  color:#fff !important;
+  border:1px solid #3f5add !important;
+  box-shadow:0 10px 18px rgba(71,101,234,.24) !important;
+}
+#clear-storage-btn:hover,
+.share-url-btn:hover{
+  transform:translateY(-1px);
+}
+.form-grid-2col label,
+label[for="alignment"],
+label[for="background"],
+label[for="race"],
+label[for="class"],
+label[for="level"]{
+  font-size:.92rem;
+  font-weight:800;
+  color:var(--muted);
+  margin-bottom:6px;
+  display:block;
+}
+.skill-cell input[type="number"],
+.save-pair input[type="number"]{
+  background:#fff !important;
+}
+.skill-cell:focus-within,
+.save-pair:focus-within,
+.ability:focus-within,
+.hp-card:focus-within,
+.mini-stat-card:focus-within,
+.spell-slot-column:focus-within{
+  border-color:#8ea7ff !important;
+  box-shadow:0 0 0 3px rgba(91,124,250,.12), var(--shadow) !important;
+}
+@media (max-width:420px){
+  .bottom-buttons{grid-template-columns:1fr !important;}
+  .tabs{
+    gap:6px;
+    padding-top:6px;
+  }
+}
+
+@media (max-width:420px){
+  body{padding-left:14px !important; padding-right:14px !important;}
+  .tab-button{font-size:.98rem !important; padding:8px 0 !important;}
+  .form-grid-2col, .save-grid, .skill-grid, .spell-picked-grid, .stats-card-row{grid-template-columns:1fr !important;}
+  .form-grid-6col{grid-template-columns:1fr !important;}
+  .action-grid-pretty{grid-template-columns:1fr 1fr !important;}
+  .skill-label-row{align-items:flex-start;}
+  .save-pair input[type="number"]{width:62px !important; min-width:62px;}
+}
+</style>
+
 </head>
 <body>
 <div class="tabs">
@@ -99,14 +479,14 @@
 
   <div class="form-grid-2col">
   <!-- 左欄：HP 顯示與輸入 -->
-  <div>
-    <div style="font-weight: bold;">最大生命值:<span id="hp-display">(0)</span></div>
-    <input type="number" id="hp" placeholder="ＨＰ">
+  <div class="hp-card">
+    <div class="hp-title">最大生命值<span id="hp-display" class="hp-value">(0)</span></div>
+    <input type="number" id="hp" placeholder="目前 HP">
   </div>
 
   <!-- 右欄：陣營選擇 -->
-  <div>
-    <label for="alignment">陣營</label>
+  <div class="mini-stat-card">
+    <div class="mini-stat-label">陣營</div>
     <select id="alignment">
       <option value="">-- 請選擇 --</option>
       <option value="LG">守序善良</option>
@@ -135,28 +515,36 @@
 </style>
 
 <!-- 第一列：護甲等級、速度、先攻 -->
-<div class="form-grid-6col">
-  <label for="ac-display">護甲等級：</label>
-  <span id="ac-display" style="font-size: 1.2em;">10</span>
-
-  <label for="speed-input">速度：</label>
-  <input id="speed-input" type="number" class="tight-input" value="30">
-
-  <label for="initiative-input">先攻：</label>
-  <input id="initiative-input" type="number" class="tight-input" value="0">
+<div class="stats-card-row">
+  <div class="mini-stat-card">
+    <div class="mini-stat-label">護甲等級</div>
+    <div class="hp-value" id="ac-display">10</div>
+  </div>
+  <div class="mini-stat-card">
+    <div class="mini-stat-label">速度</div>
+    <input id="speed-input" type="number" class="tight-input" value="30">
+  </div>
+  <div class="mini-stat-card">
+    <div class="mini-stat-label">先攻</div>
+    <input id="initiative-input" type="number" class="tight-input" value="0">
+  </div>
 </div>
 
 
 <!-- 第二列：生命骰數量、被動感知、按鈕 -->
-<div class="form-grid-6col">
-  <label for="lifedicen">生命骰數量：</label>
-  <input id="lifedicen" type="number" class="tight-input" value="1" min="0" max="5">
-
-  <label for="passive-perception">被動感知：</label>
-  <input id="passive-perception" type="number" class="tight-input" value="10" min="-5" max="45">
-
-  <span></span> <!-- 占位格 -->
-  <button id="set-default-abilities" type="button" style="font-size:0.95em;">預設屬性</button>
+<div class="stats-card-row">
+  <div class="mini-stat-card">
+    <div class="mini-stat-label">生命骰數量</div>
+    <input id="lifedicen" type="number" class="tight-input" value="1" min="0" max="5">
+  </div>
+  <div class="mini-stat-card">
+    <div class="mini-stat-label">被動感知</div>
+    <input id="passive-perception" type="number" class="tight-input" value="10" min="-5" max="45">
+  </div>
+  <div class="mini-stat-card">
+    <div class="mini-stat-label">快速設定</div>
+    <button id="set-default-abilities" type="button" style="font-size:0.95em; margin-bottom:0;">預設屬性</button>
+  </div>
 </div>
 
 
@@ -232,12 +620,14 @@
 
 </div>
 
-<button id="clear-storage-btn" style="margin-bottom:12px;">
-  清除全部紀錄（回復預設）
-</button>
-<button type="button" onclick="copyShareUrl()" style="margin-bottom:12px; margin-left:8px;">
-  🔗 複製分享網址
-</button>
+<div class="bottom-buttons">
+  <button id="clear-storage-btn">
+    清除全部紀錄（回復預設）
+  </button>
+  <button type="button" class="share-url-btn" onclick="copyShareUrl()">
+    🔗 複製分享網址
+  </button>
+</div>
 
 
 </div>
@@ -247,57 +637,38 @@
   <div class="section">
   <button onclick="fillSaves()">屬性豁免</button>
   <div class="save-grid">
-    <div class="save-pair"><label><input type="checkbox" id="prof-str"> STR 力量</label><input type="number" id="save-str"></div>
-    <div class="save-pair"><label><input type="checkbox" id="prof-int"> INT 智力</label><input type="number" id="save-int"></div>
-    <div class="save-pair"><label><input type="checkbox" id="prof-dex"> DEX 敏捷</label><input type="number" id="save-dex"></div>
-    <div class="save-pair"><label><input type="checkbox" id="prof-wis"> WIS 感知</label><input type="number" id="save-wis"></div>
-    <div class="save-pair"><label><input type="checkbox" id="prof-con"> CON 體質</label><input type="number" id="save-con"></div>
-    <div class="save-pair"><label><input type="checkbox" id="prof-cha"> CHA 魅力</label><input type="number" id="save-cha"></div>
+    <div class="save-pair"><label class="save-name" for="prof-str"><input type="checkbox" id="prof-str"><span>STR 力量</span></label><input type="number" id="save-str"></div>
+    <div class="save-pair"><label class="save-name" for="prof-int"><input type="checkbox" id="prof-int"><span>INT 智力</span></label><input type="number" id="save-int"></div>
+    <div class="save-pair"><label class="save-name" for="prof-dex"><input type="checkbox" id="prof-dex"><span>DEX 敏捷</span></label><input type="number" id="save-dex"></div>
+    <div class="save-pair"><label class="save-name" for="prof-wis"><input type="checkbox" id="prof-wis"><span>WIS 感知</span></label><input type="number" id="save-wis"></div>
+    <div class="save-pair"><label class="save-name" for="prof-con"><input type="checkbox" id="prof-con"><span>CON 體質</span></label><input type="number" id="save-con"></div>
+    <div class="save-pair"><label class="save-name" for="prof-cha"><input type="checkbox" id="prof-cha"><span>CHA 魅力</span></label><input type="number" id="save-cha"></div>
   </div>
 </div>
 
 
-<style>
-.circle-checkbox {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 14px;
-  height: 14px;
-  border: 2px solid #666;
-  border-radius: 50%;
-  background: #fff;
-  margin-left: 4px;
-  vertical-align: middle;
-  cursor: pointer;
-}
-.circle-checkbox:checked {
-  background: #666;
-  box-shadow: inset 0 0 0 3px #fff;
-}
-</style>
-
 <div class="section">
   <button onclick="fillSkills()">技能檢定</button>
-  <div style="margin-top: 6px; font-size: 0.92em; color: #444;">□=熟練（+2） 、○=專精（+4）</div>
+  <div class="skill-legend"><span class="legend-badge"><span class="legend-box"></span>熟練（+2）</span><span class="legend-badge"><span class="legend-circle"></span>專精（+4）</span></div>
   <div class="skill-grid">
-    <div class="skill-cell"><label for="prof-運動">運動(力)<input type="checkbox" id="prof-運動" data-skill-rank="運動"><input type="checkbox" id="exp-運動" class="circle-checkbox" data-skill-rank="運動"></label><input type="number" id="skill-運動"></div>
-    <div class="skill-cell"><label for="prof-體操">體操(敏)<input type="checkbox" id="prof-體操" data-skill-rank="體操"><input type="checkbox" id="exp-體操" class="circle-checkbox" data-skill-rank="體操"></label><input type="number" id="skill-體操"></div>
-    <div class="skill-cell"><label for="prof-巧手">巧手(敏)<input type="checkbox" id="prof-巧手" data-skill-rank="巧手"><input type="checkbox" id="exp-巧手" class="circle-checkbox" data-skill-rank="巧手"></label><input type="number" id="skill-巧手"></div>
-    <div class="skill-cell"><label for="prof-隱匿">隱匿(敏)<input type="checkbox" id="prof-隱匿" data-skill-rank="隱匿"><input type="checkbox" id="exp-隱匿" class="circle-checkbox" data-skill-rank="隱匿"></label><input type="number" id="skill-隱匿"></div>
-    <div class="skill-cell"><label for="prof-奧秘">奧秘(智)<input type="checkbox" id="prof-奧秘" data-skill-rank="奧秘"><input type="checkbox" id="exp-奧秘" class="circle-checkbox" data-skill-rank="奧秘"></label><input type="number" id="skill-奧秘"></div>
-    <div class="skill-cell"><label for="prof-歷史">歷史(智)<input type="checkbox" id="prof-歷史" data-skill-rank="歷史"><input type="checkbox" id="exp-歷史" class="circle-checkbox" data-skill-rank="歷史"></label><input type="number" id="skill-歷史"></div>
-    <div class="skill-cell"><label for="prof-調查">調查(智)<input type="checkbox" id="prof-調查" data-skill-rank="調查"><input type="checkbox" id="exp-調查" class="circle-checkbox" data-skill-rank="調查"></label><input type="number" id="skill-調查"></div>
-    <div class="skill-cell"><label for="prof-自然">自然(智)<input type="checkbox" id="prof-自然" data-skill-rank="自然"><input type="checkbox" id="exp-自然" class="circle-checkbox" data-skill-rank="自然"></label><input type="number" id="skill-自然"></div>
-    <div class="skill-cell"><label for="prof-宗教">宗教(智)<input type="checkbox" id="prof-宗教" data-skill-rank="宗教"><input type="checkbox" id="exp-宗教" class="circle-checkbox" data-skill-rank="宗教"></label><input type="number" id="skill-宗教"></div>
-    <div class="skill-cell"><label for="prof-馴獸">馴獸(感)<input type="checkbox" id="prof-馴獸" data-skill-rank="馴獸"><input type="checkbox" id="exp-馴獸" class="circle-checkbox" data-skill-rank="馴獸"></label><input type="number" id="skill-馴獸"></div>
-    <div class="skill-cell"><label for="prof-洞悉">洞悉(感)<input type="checkbox" id="prof-洞悉" data-skill-rank="洞悉"><input type="checkbox" id="exp-洞悉" class="circle-checkbox" data-skill-rank="洞悉"></label><input type="number" id="skill-洞悉"></div>
-    <div class="skill-cell"><label for="prof-醫藥">醫藥(感)<input type="checkbox" id="prof-醫藥" data-skill-rank="醫藥"><input type="checkbox" id="exp-醫藥" class="circle-checkbox" data-skill-rank="醫藥"></label><input type="number" id="skill-醫藥"></div>
-    <div class="skill-cell"><label for="prof-察覺">察覺(感)<input type="checkbox" id="prof-察覺" data-skill-rank="察覺"><input type="checkbox" id="exp-察覺" class="circle-checkbox" data-skill-rank="察覺"></label><input type="number" id="skill-察覺"></div>
-    <div class="skill-cell"><label for="prof-求生">求生(感)<input type="checkbox" id="prof-求生" data-skill-rank="求生"><input type="checkbox" id="exp-求生" class="circle-checkbox" data-skill-rank="求生"></label><input type="number" id="skill-求生"></div>
-    <div class="skill-cell"><label for="prof-欺瞞">欺瞞(魅)<input type="checkbox" id="prof-欺瞞" data-skill-rank="欺瞞"><input type="checkbox" id="exp-欺瞞" class="circle-checkbox" data-skill-rank="欺瞞"></label><input type="number" id="skill-欺瞞"></div>
-    <div class="skill-cell"><label for="prof-威嚇">威嚇(魅)<input type="checkbox" id="prof-威嚇" data-skill-rank="威嚇"><input type="checkbox" id="exp-威嚇" class="circle-checkbox" data-skill-rank="威嚇"></label><input type="number" id="skill-威嚇"></div>
-    <div class="skill-cell"><label for="prof-表演">表演(魅)<input type="checkbox" id="prof-表演" data-skill-rank="表演"><input type="checkbox" id="exp-表演" class="circle-checkbox" data-skill-rank="表演"></label><input type="number" id="skill-表演"></div>
-    <div class="skill-cell"><label for="prof-遊說">遊說(魅)<input type="checkbox" id="prof-遊說" data-skill-rank="遊說"><input type="checkbox" id="exp-遊說" class="circle-checkbox" data-skill-rank="遊說"></label><input type="number" id="skill-遊說"></div>
+    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">運動(力量)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-運動" data-skill-rank="運動" aria-label="運動 熟練"><input type="checkbox" id="exp-運動" class="circle-checkbox" data-skill-rank="運動" aria-label="運動 專精"></div></div><input type="number" id="skill-運動"></div>
+    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">體操(敏捷)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-體操" data-skill-rank="體操" aria-label="體操 熟練"><input type="checkbox" id="exp-體操" class="circle-checkbox" data-skill-rank="體操" aria-label="體操 專精"></div></div><input type="number" id="skill-體操"></div>
+    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">巧手(敏捷)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-巧手" data-skill-rank="巧手" aria-label="巧手 熟練"><input type="checkbox" id="exp-巧手" class="circle-checkbox" data-skill-rank="巧手" aria-label="巧手 專精"></div></div><input type="number" id="skill-巧手"></div>
+    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">隱匿(敏捷)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-隱匿" data-skill-rank="隱匿" aria-label="隱匿 熟練"><input type="checkbox" id="exp-隱匿" class="circle-checkbox" data-skill-rank="隱匿" aria-label="隱匿 專精"></div></div><input type="number" id="skill-隱匿"></div>
+    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">奧秘(智力)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-奧秘" data-skill-rank="奧秘" aria-label="奧秘 熟練"><input type="checkbox" id="exp-奧秘" class="circle-checkbox" data-skill-rank="奧秘" aria-label="奧秘 專精"></div></div><input type="number" id="skill-奧秘"></div>
+    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">歷史(智力)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-歷史" data-skill-rank="歷史" aria-label="歷史 熟練"><input type="checkbox" id="exp-歷史" class="circle-checkbox" data-skill-rank="歷史" aria-label="歷史 專精"></div></div><input type="number" id="skill-歷史"></div>
+    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">調查(智力)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-調查" data-skill-rank="調查" aria-label="調查 熟練"><input type="checkbox" id="exp-調查" class="circle-checkbox" data-skill-rank="調查" aria-label="調查 專精"></div></div><input type="number" id="skill-調查"></div>
+    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">自然(智力)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-自然" data-skill-rank="自然" aria-label="自然 熟練"><input type="checkbox" id="exp-自然" class="circle-checkbox" data-skill-rank="自然" aria-label="自然 專精"></div></div><input type="number" id="skill-自然"></div>
+    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">宗教(智力)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-宗教" data-skill-rank="宗教" aria-label="宗教 熟練"><input type="checkbox" id="exp-宗教" class="circle-checkbox" data-skill-rank="宗教" aria-label="宗教 專精"></div></div><input type="number" id="skill-宗教"></div>
+    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">馴獸(感知)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-馴獸" data-skill-rank="馴獸" aria-label="馴獸 熟練"><input type="checkbox" id="exp-馴獸" class="circle-checkbox" data-skill-rank="馴獸" aria-label="馴獸 專精"></div></div><input type="number" id="skill-馴獸"></div>
+    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">洞悉(感知)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-洞悉" data-skill-rank="洞悉" aria-label="洞悉 熟練"><input type="checkbox" id="exp-洞悉" class="circle-checkbox" data-skill-rank="洞悉" aria-label="洞悉 專精"></div></div><input type="number" id="skill-洞悉"></div>
+    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">醫藥(感知)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-醫藥" data-skill-rank="醫藥" aria-label="醫藥 熟練"><input type="checkbox" id="exp-醫藥" class="circle-checkbox" data-skill-rank="醫藥" aria-label="醫藥 專精"></div></div><input type="number" id="skill-醫藥"></div>
+    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">察覺(感知)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-察覺" data-skill-rank="察覺" aria-label="察覺 熟練"><input type="checkbox" id="exp-察覺" class="circle-checkbox" data-skill-rank="察覺" aria-label="察覺 專精"></div></div><input type="number" id="skill-察覺"></div>
+    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">求生(感知)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-求生" data-skill-rank="求生" aria-label="求生 熟練"><input type="checkbox" id="exp-求生" class="circle-checkbox" data-skill-rank="求生" aria-label="求生 專精"></div></div><input type="number" id="skill-求生"></div>
+    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">欺瞞(魅力)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-欺瞞" data-skill-rank="欺瞞" aria-label="欺瞞 熟練"><input type="checkbox" id="exp-欺瞞" class="circle-checkbox" data-skill-rank="欺瞞" aria-label="欺瞞 專精"></div></div><input type="number" id="skill-欺瞞"></div>
+    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">威嚇(魅力)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-威嚇" data-skill-rank="威嚇" aria-label="威嚇 熟練"><input type="checkbox" id="exp-威嚇" class="circle-checkbox" data-skill-rank="威嚇" aria-label="威嚇 專精"></div></div><input type="number" id="skill-威嚇"></div>
+    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">表演(魅力)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-表演" data-skill-rank="表演" aria-label="表演 熟練"><input type="checkbox" id="exp-表演" class="circle-checkbox" data-skill-rank="表演" aria-label="表演 專精"></div></div><input type="number" id="skill-表演"></div>
+    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">遊說(魅力)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-遊說" data-skill-rank="遊說" aria-label="遊說 熟練"><input type="checkbox" id="exp-遊說" class="circle-checkbox" data-skill-rank="遊說" aria-label="遊說 專精"></div></div><input type="number" id="skill-遊說"></div>
   </div>
 
   <div class="section">
@@ -385,7 +756,7 @@
 </div>
       <h3>動作</h3>
       <div id="action-description" class="output">請選擇一個動作查看說明。</div>
-      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px;">
+      <div class="action-grid-pretty" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px;">
         <button onclick="showAction(&#39;attack&#39;)">攻擊</button>
         <button onclick="showAction(&#39;dash&#39;)">衝刺</button>
         <button onclick="showAction(&#39;disengage&#39;)">撤離</button>
