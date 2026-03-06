@@ -649,7 +649,7 @@ label[for="level"]{
 
 <div class="section">
   <button onclick="fillSkills()">技能檢定</button>
-  <div class="skill-legend"><span class="legend-badge"><span class="legend-box"></span>熟練（+2）</span><span class="legend-badge"><span class="legend-circle"></span>專精（+4）</span></div>
+  <div class="skill-legend"><span class="legend-badge"><span class="legend-box"></span>熟練</span><span class="legend-badge"><span class="legend-circle"></span>專精</span></div>
   <div class="skill-grid">
     <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">運動(力量)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-運動" data-skill-rank="運動" aria-label="運動 熟練"><input type="checkbox" id="exp-運動" class="circle-checkbox" data-skill-rank="運動" aria-label="運動 專精"></div></div><input type="number" id="skill-運動"></div>
     <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">體操(敏捷)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-體操" data-skill-rank="體操" aria-label="體操 熟練"><input type="checkbox" id="exp-體操" class="circle-checkbox" data-skill-rank="體操" aria-label="體操 專精"></div></div><input type="number" id="skill-體操"></div>
@@ -1816,7 +1816,8 @@ function fillSkills() {
     const input = document.getElementById("skill-" + skill);
     if (!input || !profInput || !expInput) continue;
 
-    const bonus = expInput.checked ? 4 : (profInput.checked ? 2 : 0);
+    const pb = getProficiencyBonus();
+	const bonus = expInput.checked ? pb * 2 : (profInput.checked ? pb : 0);
     const total = mod + bonus;
     input.value = total;
   }
