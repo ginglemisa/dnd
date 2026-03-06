@@ -46,7 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
   <details id="weapon-mastery-details">
     <summary style="font-weight:bold;">精通屬性</summary>
     <div class="small-text" style="margin:8px 0 0 0;">
-每種武器都有一個精通屬性，只有具有武器專長的角色（如武器掌握）才能解鎖該屬性。以下是這些屬性的定義。<br><br>
+每種武器都有一個精通屬性，只有特定職業才能解鎖，定義如下：<br><br>
 
 <div style="margin-bottom:10px;"><label><input type="checkbox" id="weapon-mastery-cleave" data-mastery-name="順劈"> <strong>順劈</strong></label><br>
 <span style="display:block; margin-left:22px; white-space:pre-line;">如果使用該武器的近戰攻擊檢定命中生物，你可以使用該武器對首要目標 5 尺內且同樣位於你觸及距離中的第二個生物發動一次近戰攻擊檢定。命中時，第二個生物受到武器的傷害，但不能在傷害中加上你的屬性調整值，除非該調整值為負數。你每回合只能發動一次這樣的額外攻擊。</span></div>
