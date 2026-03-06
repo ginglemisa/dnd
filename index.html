@@ -386,6 +386,17 @@ label[for="level"]{
   .tab-button{font-size:.9rem !important; padding:6px 0 !important; min-height:38px;}
   .section, details.section, .spell-toolbar, .action-help{padding:10px !important; margin-bottom:10px !important;}
   .form-grid-2col, .save-grid, .skill-grid, .spell-picked-grid, .stats-card-row{grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:8px !important;}
+  #tab-basic .stats-card-row{grid-template-columns:repeat(3,minmax(0,1fr)) !important; gap:6px !important;}
+  #tab-basic .mini-stat-card{padding:8px !important; border-radius:12px;}
+  #tab-basic .mini-stat-label{font-size:.78rem !important; margin-bottom:4px !important; line-height:1.15;}
+  #tab-basic .mini-stat-card input[type="number"],
+  #tab-basic .mini-stat-card button,
+  #tab-basic .mini-stat-card #ac-display{
+    min-height:34px !important;
+    font-size:.95rem !important;
+    padding:5px 6px !important;
+  }
+  #tab-basic .mini-stat-card #ac-display{min-width:34px;}
   .form-grid-6col{grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:8px !important;}
   .action-grid-pretty{grid-template-columns:1fr 1fr !important;}
   .skill-label-row{align-items:flex-start; gap:8px; margin-bottom:6px;}
@@ -407,11 +418,7 @@ label[for="level"]{
   .form-grid-2col, .save-grid, .skill-grid, .spell-picked-grid, .stats-card-row{grid-template-columns:1fr !important;}
   .form-grid-6col{grid-template-columns:1fr !important;}
   .spell-slot-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
-}
-
-@media (max-width:359px){
-  .form-grid-2col, .save-grid, .skill-grid, .spell-picked-grid, .stats-card-row{grid-template-columns:1fr !important;}
-  .form-grid-6col{grid-template-columns:1fr !important;}
+  #tab-basic .stats-card-row{grid-template-columns:repeat(3,minmax(0,1fr)) !important;}
 }
 </style>
 
