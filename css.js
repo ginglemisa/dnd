@@ -614,5 +614,15 @@ style.innerHTML = `
       grid-template-columns: 1fr;
     }
   }
+
+  @media (max-width: 359px) {
+    .form-grid-2col,
+    .save-grid,
+    .skill-grid,
+    .spell-picked-grid,
+    .form-grid-6col {
+      grid-template-columns: 1fr;
+    }
+  }
 `;
 document.head.appendChild(style);
