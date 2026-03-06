@@ -879,7 +879,7 @@ function renderEldritchInvocations() {
 
     return `<div style="margin-bottom: 10px;">
       <div>${checks}<strong>${invocation.name}</strong></div>
-      <div style="margin-left: 4px; white-space: pre-wrap;">${escapeHtml(invocation.text || "")}</div>
+      <div style="margin-left: 4px; white-space: pre-wrap;">${invocation.text || ""}</div>
     </div>`;
   }).join("");
 
