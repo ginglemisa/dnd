@@ -366,6 +366,15 @@ input[type="checkbox"]{
 }
 .inline-note-wrap > strong{display:block; margin-bottom:6px;}
 
+.action-collapsible-wrap{
+  margin-bottom:12px;
+  padding:10px 12px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:linear-gradient(180deg,#ffffff 0%,#f7f9fd 100%);
+}
+.action-collapsible-wrap summary{cursor:pointer;}
+
 .spell-slot-grid{
   gap:10px 10px !important;
   grid-template-columns:max-content minmax(0,1fr) minmax(0,1fr) !important;
@@ -836,7 +845,7 @@ label[for="level"]{
 
   <div id="tab-actions" class="tab-content">
     <div class="section">
-      <details class="action-help" open style="margin-bottom: 16px;">
+      <details class="action-help action-collapsible-wrap" open>
   <summary><h3 style="display:inline; margin:0;">戰鬥中的四種行動</h3></summary>
   <table style="width: 100%; border-collapse: collapse; font-size: 0.95em; margin-top:10px;">
     <thead>
@@ -875,7 +884,7 @@ label[for="level"]{
     </tbody>
   </table>
 </details>
-      <details open>
+      <details class="action-collapsible-wrap" open>
         <summary><h3 style="display:inline; margin:0;">動作</h3></summary>
       <div id="action-description" class="output" style="margin-top:10px;">請選擇一個動作查看說明。</div>
       <div class="action-grid-pretty" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px;">
