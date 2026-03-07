@@ -99,6 +99,59 @@ button{
   box-shadow:0 4px 12px rgba(24,33,47,.08);
 }
 button:hover{filter:brightness(.99);}
+
+.feat-row-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  width:100%;
+  margin-bottom:6px;
+}
+.feat-row-head label{
+  margin:0;
+}
+.feat-row-controls{
+  display:flex;
+  gap:8px;
+  flex-shrink:0;
+}
+.spell-row-head{
+  display:flex;
+  justify-content:flex-end;
+  margin-bottom:6px;
+}
+
+.feat-icon-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:36px;
+  min-height:36px;
+  border-radius:999px !important;
+  border:1px solid var(--line) !important;
+  background:linear-gradient(180deg,#ffffff 0%,#f1f5fc 100%) !important;
+  box-shadow:0 2px 8px rgba(24,33,47,.08);
+  padding:0 !important;
+  font-size:1.05rem;
+  font-weight:900;
+  line-height:1;
+}
+.feat-icon-btn--add{
+  color:#2a55d4;
+}
+.feat-icon-btn--delete{
+  color:#c53a4a;
+}
+.feat-icon-btn:hover{
+  transform:translateY(-1px);
+  filter:brightness(.98);
+}
+.feat-icon-btn:disabled{
+  opacity:.45;
+  cursor:not-allowed;
+  transform:none;
+}
 #clear-storage-btn{
   background:linear-gradient(180deg,#fff2f2 0%,#ffe6e6 100%);
 }
@@ -653,8 +706,6 @@ label[for="level"]{
   <div class="section">
   <h3>專長</h3>
   <div id="feats-area"></div>
-  <button type="button" onclick="createSingleFeatRow()">➕ 新增專長</button>
-
 </div>
 
 <div class="bottom-buttons">
@@ -974,54 +1025,44 @@ label[for="level"]{
 <details class="section spell-level-section" open>
   <summary><h3 style="display:inline;">戲法</h3></summary>
   <div id="cantrips-area"></div>
-  <button type="button" onclick="createSingleSpellRow('cantrips-area', 'cantrips')">➕ 新增戲法</button>
 </details>
 <details class="section spell-level-section" open>
   <summary><h3 style="display:inline;">一環法術</h3></summary>
   <div id="level1spells-area"></div>
-  <button type="button" onclick="createSingleSpellRow('level1spells-area', 1)">➕ 新增一環法術</button>
 </details>
 <details class="section spell-level-section" open>
   <summary><h3 style="display:inline;">二環法術</h3></summary>
   <div id="level2spells-area"></div>
-  <button type="button" onclick="createSingleSpellRow('level2spells-area', 2)">➕ 新增二環法術</button>
 </details>
 <details class="section spell-level-section" open>
   <summary><h3 style="display:inline;">三環法術</h3></summary>
   <div id="level3spells-area"></div>
-  <button type="button" onclick="createSingleSpellRow('level3spells-area', 3)">➕ 新增三環法術</button>
 </details>
 
 <div id="highlevel-spells" style="display:none;">
   <details class="section spell-level-section" open>
     <summary><h3 style="display:inline;">四環法術</h3></summary>
     <div id="level4spells-area"></div>
-    <button type="button" onclick="createSingleSpellRow('level4spells-area', 4)">➕ 新增四環法術</button>
   </details>
   <details class="section spell-level-section" open>
     <summary><h3 style="display:inline;">五環法術</h3></summary>
     <div id="level5spells-area"></div>
-    <button type="button" onclick="createSingleSpellRow('level5spells-area', 5)">➕ 新增五環法術</button>
   </details>
   <details class="section spell-level-section" open>
     <summary><h3 style="display:inline;">六環法術</h3></summary>
     <div id="level6spells-area"></div>
-    <button type="button" onclick="createSingleSpellRow('level6spells-area', 6)">➕ 新增六環法術</button>
   </details>
   <details class="section spell-level-section" open>
     <summary><h3 style="display:inline;">七環法術</h3></summary>
     <div id="level7spells-area"></div>
-    <button type="button" onclick="createSingleSpellRow('level7spells-area', 7)">➕ 新增七環法術</button>
   </details>
   <details class="section spell-level-section" open>
     <summary><h3 style="display:inline;">八環法術</h3></summary>
     <div id="level8spells-area"></div>
-    <button type="button" onclick="createSingleSpellRow('level8spells-area', 8)">➕ 新增八環法術</button>
   </details>
   <details class="section spell-level-section" open>
     <summary><h3 style="display:inline;">九環法術</h3></summary>
     <div id="level9spells-area"></div>
-    <button type="button" onclick="createSingleSpellRow('level9spells-area', 9)">➕ 新增九環法術</button>
   </details>
 </div>
 
@@ -1636,7 +1677,42 @@ function updateFeatDesc(selectId, descId) {
     `<div style="line-height:1.35;">${bodyHtml}</div>`;
 }
 
-function createSingleFeatRow() {
+function updateFeatControlStates() {
+  const rows = Array.from(document.querySelectorAll("#feats-area .form-row"));
+  const disableDelete = rows.length <= 1;
+  const lastRow = rows[rows.length - 1] || null;
+
+  rows.forEach((row) => {
+    const delBtn = row.querySelector(".feat-icon-btn[data-feat-action='delete']");
+    const addBtn = row.querySelector(".feat-icon-btn[data-feat-action='add']");
+    if (delBtn) delBtn.disabled = disableDelete;
+    if (addBtn) {
+      const isLast = row === lastRow;
+      addBtn.style.display = isLast ? "inline-flex" : "none";
+      addBtn.tabIndex = isLast ? 0 : -1;
+      addBtn.setAttribute("aria-hidden", isLast ? "false" : "true");
+    }
+  });
+}
+
+function refreshFeatRows() {
+  const rows = document.querySelectorAll("#feats-area .form-row");
+  rows.forEach((row, idx) => {
+    const label = row.querySelector("label");
+    const select = row.querySelector("select");
+    const desc = row.querySelector(".output");
+    if (!label || !select || !desc) return;
+    const baseId = `feat-${idx}`;
+    label.htmlFor = baseId;
+    label.textContent = `專長${idx + 1}`;
+    select.id = baseId;
+    desc.id = `${baseId}-desc`;
+    updateFeatDesc(select.id, desc.id);
+  });
+  updateFeatControlStates();
+}
+
+function createSingleFeatRow(afterRow = null) {
   const area = document.getElementById("feats-area");
   if (!area) return;
 
@@ -1644,9 +1720,46 @@ function createSingleFeatRow() {
   const rowDiv = document.createElement("div");
   rowDiv.className = "form-row";
 
+  const rowHead = document.createElement("div");
+  rowHead.className = "feat-row-head";
+
   const label = document.createElement("label");
   label.htmlFor = `feat-${idx}`;
   label.textContent = `專長${idx + 1}`;
+
+  const controls = document.createElement("div");
+  controls.className = "feat-row-controls";
+
+  const addBtn = document.createElement("button");
+  addBtn.type = "button";
+  addBtn.className = "feat-icon-btn feat-icon-btn--add";
+  addBtn.textContent = "＋";
+  addBtn.setAttribute("aria-label", "在下方新增一列專長");
+  addBtn.title = "新增";
+  addBtn.dataset.featAction = "add";
+  addBtn.addEventListener("click", () => {
+    createSingleFeatRow(rowDiv);
+    saveAllFields();
+  });
+
+  const delBtn = document.createElement("button");
+  delBtn.type = "button";
+  delBtn.className = "feat-icon-btn feat-icon-btn--delete";
+  delBtn.textContent = "－";
+  delBtn.setAttribute("aria-label", "刪除此列專長");
+  delBtn.title = "刪除";
+  delBtn.dataset.featAction = "delete";
+  delBtn.addEventListener("click", () => {
+    if (area.childElementCount <= 1) return;
+    rowDiv.remove();
+    refreshFeatRows();
+    saveAllFields();
+  });
+
+  controls.appendChild(addBtn);
+  controls.appendChild(delBtn);
+  rowHead.appendChild(label);
+  rowHead.appendChild(controls);
 
   const featSel = document.createElement("select");
   featSel.id = `feat-${idx}`;
@@ -1657,27 +1770,22 @@ function createSingleFeatRow() {
   descDiv.id = `feat-${idx}-desc`;
   descDiv.textContent = "—";
 
-  const delBtn = document.createElement("button");
-  delBtn.type = "button";
-  delBtn.textContent = "❌刪除上列專長";
-  delBtn.style.marginLeft = "8px";
-  delBtn.addEventListener("click", () => {
-    if (confirm("確定要刪除此列專長嗎？")) {
-      rowDiv.remove();
-      saveAllFields();
-    }
-  });
-
   featSel.addEventListener("change", () => {
     updateFeatDesc(featSel.id, descDiv.id);
     saveAllFields();
   });
 
-  rowDiv.appendChild(label);
+  rowDiv.appendChild(rowHead);
   rowDiv.appendChild(featSel);
   rowDiv.appendChild(descDiv);
-  rowDiv.appendChild(delBtn);
-  area.appendChild(rowDiv);
+
+  if (afterRow && afterRow.parentNode === area) {
+    area.insertBefore(rowDiv, afterRow.nextSibling);
+  } else {
+    area.appendChild(rowDiv);
+  }
+
+  refreshFeatRows();
 }
 
 // ✅ 簡單防 XSS：把純文字安全地放進 innerHTML
@@ -2261,8 +2369,45 @@ const classOptions = [
   {value: "wizard", text: "法師"},
   // ... 其他職業 ...
 ];
-function createSingleSpellRow(areaId, level) {
+function getSpellLevelLabel(level) {
+  if (level === "cantrips") return "戲法";
+  const ringMap = ["零", "一", "二", "三", "四", "五", "六", "七", "八", "九"];
+  return `${ringMap[level] || level}環法術`;
+}
+
+function updateSpellControlStates(areaId) {
+  const rows = Array.from(document.querySelectorAll(`#${areaId} .spell-entry`));
+  const disableDelete = rows.length <= 1;
+  const lastRow = rows[rows.length - 1] || null;
+
+  rows.forEach((row) => {
+    const delBtn = row.querySelector(".feat-icon-btn[data-spell-action='delete']");
+    const addBtn = row.querySelector(".feat-icon-btn[data-spell-action='add']");
+    if (delBtn) delBtn.disabled = disableDelete;
+    if (addBtn) {
+      const isLast = row === lastRow;
+      addBtn.style.display = isLast ? "inline-flex" : "none";
+      addBtn.tabIndex = isLast ? 0 : -1;
+      addBtn.setAttribute("aria-hidden", isLast ? "false" : "true");
+    }
+  });
+}
+
+function refreshSpellRows(areaId) {
+  const rows = document.querySelectorAll(`#${areaId} .spell-entry`);
+  rows.forEach((row, idx) => {
+    row.dataset.idx = idx;
+    const classSel = row.querySelector("select[id*='-class-']");
+    const spellSel = row.querySelector("select[id*='-spell-']");
+    if (classSel) classSel.id = `${areaId}-class-${idx}`;
+    if (spellSel) spellSel.id = `${areaId}-spell-${idx}`;
+  });
+  updateSpellControlStates(areaId);
+}
+
+function createSingleSpellRow(areaId, level, afterRow = null) {
   const area = document.getElementById(areaId);
+  if (!area) return;
   const idx = area.childElementCount;
 
   // 整列容器
@@ -2270,6 +2415,43 @@ function createSingleSpellRow(areaId, level) {
   rowDiv.className = "form-row";
   rowDiv.classList.add("spell-entry");
   rowDiv.dataset.idx = idx;
+
+  const headDiv = document.createElement('div');
+  headDiv.className = 'spell-row-head';
+
+  const controls = document.createElement('div');
+  controls.className = 'feat-row-controls';
+
+  const addBtn = document.createElement('button');
+  addBtn.type = 'button';
+  addBtn.className = 'feat-icon-btn feat-icon-btn--add';
+  addBtn.textContent = '＋';
+  addBtn.dataset.spellAction = 'add';
+  addBtn.setAttribute('aria-label', `新增下一列${getSpellLevelLabel(level)}`);
+  addBtn.title = '新增';
+  addBtn.addEventListener('click', () => {
+    createSingleSpellRow(areaId, level, rowDiv);
+    saveAllFields();
+  });
+
+  const delBtn = document.createElement('button');
+  delBtn.type = 'button';
+  delBtn.className = 'feat-icon-btn feat-icon-btn--delete';
+  delBtn.textContent = '－';
+  delBtn.dataset.spellAction = 'delete';
+  delBtn.setAttribute('aria-label', `刪除此列${getSpellLevelLabel(level)}`);
+  delBtn.title = '刪除';
+  delBtn.addEventListener('click', () => {
+    if (area.childElementCount <= 1) return;
+    rowDiv.remove();
+    refreshSpellRows(areaId);
+    updatePickedSpellBoxes();
+    saveAllFields();
+  });
+
+  controls.appendChild(addBtn);
+  controls.appendChild(delBtn);
+  headDiv.appendChild(controls);
 
   // 職業選單
   const classSel = document.createElement('select');
@@ -2293,19 +2475,6 @@ function createSingleSpellRow(areaId, level) {
   const descDiv = document.createElement('div');
   descDiv.className = "output small-text";
   descDiv.textContent = "—";
-
-  // 刪除按鈕
-  const delBtn = document.createElement('button');
-  delBtn.type = "button";
-  delBtn.textContent = "❌刪除上列法術";
-  delBtn.style.marginLeft = "8px";
-  delBtn.addEventListener('click', () => {
-    if (confirm("確定要刪除此列嗎？")) {
-      rowDiv.remove();
-      updatePickedSpellBoxes();
-      saveAllFields(); // 刪完儲存
-    }
-  });
 
   // 監聽職業變更
   classSel.addEventListener('change', function () {
@@ -2348,11 +2517,18 @@ function createSingleSpellRow(areaId, level) {
     saveAllFields();
   });
 
+  rowDiv.appendChild(headDiv);
   rowDiv.appendChild(classSel);
   rowDiv.appendChild(spellSel);
   rowDiv.appendChild(descDiv);
-  rowDiv.appendChild(delBtn);
-  area.appendChild(rowDiv);
+
+  if (afterRow && afterRow.parentNode === area) {
+    area.insertBefore(rowDiv, afterRow.nextSibling);
+  } else {
+    area.appendChild(rowDiv);
+  }
+
+  refreshSpellRows(areaId);
   applySpellFilter();
 }
 
