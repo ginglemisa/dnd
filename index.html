@@ -357,6 +357,15 @@ input[type="checkbox"]{
   border:1px solid var(--line) !important;
   border-radius:14px !important;
 }
+.inline-note-wrap{
+  margin-top:8px;
+  padding:10px 12px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:linear-gradient(180deg,#ffffff 0%,#f7f9fd 100%);
+}
+.inline-note-wrap > strong{display:block; margin-bottom:6px;}
+
 .spell-slot-grid{
   gap:10px 10px !important;
   grid-template-columns:max-content minmax(0,1fr) minmax(0,1fr) !important;
@@ -587,7 +596,7 @@ label[for="level"]{
   </label>
 </div>
 
-<div id="warlock-invocation-summary-wrap" style="margin-top: 8px; display: none;">
+<div id="warlock-invocation-summary-wrap" class="inline-note-wrap" style="display: none;">
   <strong>契術師魔能祈喚：</strong>
   <div id="warlock-invocation-summary" style="margin-top: 6px; padding: 8px; border: 1px solid #aaa; border-radius: 6px; background: #fafafa;">尚未勾選魔能祈喚</div>
 </div>
@@ -827,9 +836,9 @@ label[for="level"]{
 
   <div id="tab-actions" class="tab-content">
     <div class="section">
-      <div class="action-help" style="margin-bottom: 16px;">
-  <h3>戰鬥中的四種行動</h3>
-  <table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+      <details class="action-help" open style="margin-bottom: 16px;">
+  <summary><h3 style="display:inline; margin:0;">戰鬥中的四種行動</h3></summary>
+  <table style="width: 100%; border-collapse: collapse; font-size: 0.95em; margin-top:10px;">
     <thead>
       <tr style="background-color: #f0f0f0;">
         <th style="border: 1px solid #ccc; padding: 6px;">類型</th>
@@ -865,9 +874,10 @@ label[for="level"]{
       </tr>
     </tbody>
   </table>
-</div>
-      <h3>動作</h3>
-      <div id="action-description" class="output">請選擇一個動作查看說明。</div>
+</details>
+      <details open>
+        <summary><h3 style="display:inline; margin:0;">動作</h3></summary>
+      <div id="action-description" class="output" style="margin-top:10px;">請選擇一個動作查看說明。</div>
       <div class="action-grid-pretty" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px;">
         <button onclick="showAction(&#39;attack&#39;)">攻擊</button>
         <button onclick="showAction(&#39;dash&#39;)">衝刺</button>
@@ -882,11 +892,12 @@ label[for="level"]{
         <button onclick="showAction(&#39;study&#39;)">研究</button>
         <button onclick="showAction(&#39;utilize&#39;)">使用</button>
       </div>
+      </details>
     </div>
 
 <h3>攻擊動作</h3>
 <button onclick="populateHandAttacks()">獲取 主副手 武器資料</button>
-<div id="weapon-mastery-summary-wrap" style="margin-top: 8px; display: none;">
+<div id="weapon-mastery-summary-wrap" class="inline-note-wrap" style="display: none;">
   <strong>精通註記：</strong>
   <div id="weapon-mastery-summary" style="margin-top: 6px; padding: 8px; border: 1px solid #aaa; border-radius: 6px; background: #fafafa;">尚未勾選精通屬性</div>
 </div>
