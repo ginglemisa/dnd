@@ -357,15 +357,6 @@ input[type="checkbox"]{
   border:1px solid var(--line) !important;
   border-radius:14px !important;
 }
-.inline-note-wrap{
-  margin-top:8px;
-  padding:10px 12px;
-  border:1px solid var(--line);
-  border-radius:14px;
-  background:linear-gradient(180deg,#ffffff 0%,#f7f9fd 100%);
-}
-.inline-note-wrap > strong{display:block; margin-bottom:6px;}
-
 .action-collapsible-wrap{
   margin-bottom:12px;
   padding:10px 12px;
@@ -605,7 +596,7 @@ label[for="level"]{
   </label>
 </div>
 
-<div id="warlock-invocation-summary-wrap" class="inline-note-wrap" style="display: none;">
+<div id="warlock-invocation-summary-wrap" class="section" style="display: none;">
   <strong>契術師魔能祈喚：</strong>
   <div id="warlock-invocation-summary" style="margin-top: 6px; padding: 8px; border: 1px solid #aaa; border-radius: 6px; background: #fafafa;">尚未勾選魔能祈喚</div>
 </div>
@@ -906,7 +897,7 @@ label[for="level"]{
 
 <h3>攻擊動作</h3>
 <button onclick="populateHandAttacks()">獲取 主副手 武器資料</button>
-<div id="weapon-mastery-summary-wrap" class="inline-note-wrap" style="display: none;">
+<div id="weapon-mastery-summary-wrap" class="section" style="display: none;">
   <strong>精通註記：</strong>
   <div id="weapon-mastery-summary" style="margin-top: 6px; padding: 8px; border: 1px solid #aaa; border-radius: 6px; background: #fafafa;">尚未勾選精通屬性</div>
 </div>
