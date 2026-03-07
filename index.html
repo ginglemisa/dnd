@@ -118,14 +118,17 @@ button:hover{filter:brightness(.99);}
 }
 .spell-row-top{
   display:grid;
-  grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;
+  grid-template-columns:118px minmax(0,1fr) auto;
   gap:8px;
   align-items:center;
   width:100%;
 }
+.spell-row-top select:first-child{
+  width:118px;
+}
 @media (max-width:520px){
-  .spell-row-top{grid-template-columns:minmax(0,1fr) auto;}
-  .spell-row-top select:nth-child(2){grid-column:1 / -1;}
+  .spell-row-top{grid-template-columns:102px minmax(0,1fr) auto;}
+  .spell-row-top select:first-child{width:102px;}
 }
 
 .feat-icon-btn{
