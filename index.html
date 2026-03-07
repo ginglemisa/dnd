@@ -2599,13 +2599,24 @@ function applySpellFilter() {
   const searchEl = document.getElementById("spell-search");
   const keyword = (searchEl?.value || "").trim().toLowerCase();
   const rows = document.querySelectorAll("#tab-spells .spell-entry");
+
+  const getRowSearchText = (row) => {
+    const selectedSpell = row.querySelector("select[id*='-spell-']")?.value?.trim() || "";
+    const descText = row.querySelector(".output")?.textContent?.trim() || "";
+    return {
+      hasPickedSpell: Boolean(selectedSpell),
+      text: `${selectedSpell}\n${descText}`.toLowerCase()
+    };
+  };
+
   rows.forEach(row => {
     if (!keyword) {
       row.style.display = "";
       return;
     }
-    const text = row.textContent.toLowerCase();
-    row.style.display = text.includes(keyword) ? "" : "none";
+
+    const { hasPickedSpell, text } = getRowSearchText(row);
+    row.style.display = (hasPickedSpell && text.includes(keyword)) ? "" : "none";
   });
 }
 
