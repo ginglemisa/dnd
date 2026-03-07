@@ -116,10 +116,16 @@ button:hover{filter:brightness(.99);}
   gap:8px;
   flex-shrink:0;
 }
-.spell-row-head{
-  display:flex;
-  justify-content:flex-end;
-  margin-bottom:6px;
+.spell-row-top{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;
+  gap:8px;
+  align-items:center;
+  width:100%;
+}
+@media (max-width:520px){
+  .spell-row-top{grid-template-columns:minmax(0,1fr) auto;}
+  .spell-row-top select:nth-child(2){grid-column:1 / -1;}
 }
 
 .feat-icon-btn{
@@ -2416,8 +2422,8 @@ function createSingleSpellRow(areaId, level, afterRow = null) {
   rowDiv.classList.add("spell-entry");
   rowDiv.dataset.idx = idx;
 
-  const headDiv = document.createElement('div');
-  headDiv.className = 'spell-row-head';
+  const topRow = document.createElement('div');
+  topRow.className = 'spell-row-top';
 
   const controls = document.createElement('div');
   controls.className = 'feat-row-controls';
@@ -2451,7 +2457,6 @@ function createSingleSpellRow(areaId, level, afterRow = null) {
 
   controls.appendChild(addBtn);
   controls.appendChild(delBtn);
-  headDiv.appendChild(controls);
 
   // 職業選單
   const classSel = document.createElement('select');
@@ -2517,9 +2522,11 @@ function createSingleSpellRow(areaId, level, afterRow = null) {
     saveAllFields();
   });
 
-  rowDiv.appendChild(headDiv);
-  rowDiv.appendChild(classSel);
-  rowDiv.appendChild(spellSel);
+  topRow.appendChild(classSel);
+  topRow.appendChild(spellSel);
+  topRow.appendChild(controls);
+
+  rowDiv.appendChild(topRow);
   rowDiv.appendChild(descDiv);
 
   if (afterRow && afterRow.parentNode === area) {
