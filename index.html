@@ -914,33 +914,27 @@ label[for="level"]{
   <input type="text" id="atk-off-dmg" placeholder="傷害">
   <input type="text" id="atk-off-note" placeholder="備註">
 </div>
-
-
-      <h3>附贈</h3>
-
-<!-- 喝藥水 -->
-<div style="font-size: 1.05em; font-weight: bold; margin-top: 10px;">喝藥水</div>
-<div class="small-text" style="margin-left: 10px; margin-top: 4px;">
-  治療藥水：恢復 2d4+2 HP
-</div>
-
-<!-- 第二次攻擊 -->
-<div style="font-size: 1.05em; font-weight: bold; margin-top: 10px;">進行第二次攻擊</div>
-<div class="small-text" style="margin-left: 10px; margin-top: 4px;">
-  當你雙持"輕型"武器並進行主手攻擊後，可以用附贈動作進行一次副手攻擊。副手攻擊不加屬性調整值到傷害，除非其他規則允許。
-</div>
-
-<div style="font-size: 1.05em; font-weight: bold; margin-top: 10px;">徒手攻擊</div>
+<h3>動作</h3>
+	  <div style="font-size: 1.05em; font-weight: bold; margin-top: 10px;">徒手攻擊補充說明</div>
 <div class="small-text" style="margin-left: 10px; margin-top: 4px;">
   你可拳打腳踢5呎內目標，以下效果擇一:<br>
   	1) 傷害：命中=力調整值+熟練加值；鈍擊傷害=力調整值+1。<br>
   	2) 擒抱：目標做力或敏豁免；DC=8+力調整值+熟練加值(需空一手)。<br>
   	3) 推撞：推目標5呎或倒地；力或敏豁免；DC=8+力調整值+熟練加值。<br>
 	<br>
-	備註：2)、3) 只能對體型最多大你一級的目標使用
+	備註：擒抱推撞只能對體型最多大你一級的目標使用
 </div>
 
-
+      <h3>附贈</h3>
+<div style="font-size: 1.05em; font-weight: bold; margin-top: 10px;">喝藥水</div>
+<div class="small-text" style="margin-left: 10px; margin-top: 4px;">
+  治療藥水：恢復 2d4+2 HP
+</div>
+	  
+<div style="font-size: 1.05em; font-weight: bold; margin-top: 10px;">進行二次攻擊</div>
+<div class="small-text" style="margin-left: 10px; margin-top: 4px;">
+  雙持輕型武器攻擊後，可用附贈進行副手攻擊。副手傷害不加屬性調整值，除非具備特定專長。
+</div>
       <h3>反應</h3>
 <div style="font-size: 1.05em; font-weight: bold; margin-top: 10px;">進行藉機攻擊</div>
 <div class="small-text" style="margin-left: 10px; margin-top: 4px;">
@@ -1894,15 +1888,15 @@ document.getElementById("set-default-abilities").addEventListener("click", () =>
 
 
     const actionDescriptions = {
-      attack: "用武器或徒手打擊進行攻擊。",
+      attack: "用武器或徒手攻擊，也可擒抱或推撞目標。",
       dash: "在該回合剩餘時間內，給予自己等同於你速度的額外移動。",
       disengage: "在該回合剩餘時間內，你的移動不會引發攻擊藉機攻擊。",
       dodge: "直到你下一回合開始，對你的攻擊擲骰有劣勢，而你的敏捷豁免擲骰有優勢。如果你處於失能狀態或你的速度為 0，你失去此增益。",
       help: "幫助另一個生物的能力檢定或攻擊擲骰，或施予急救。",
       hide: "進行敏捷（隱匿）檢定。",
-      influence: "進行魅力（欺騙、威嚇、表演或說服）或感知（馴獸）檢定以改變生物的態度。",
+      influence: "進行魅力（欺瞞、威嚇、表演或遊說）或感知（馴獸）檢定以改變生物的態度。",
       magic: "施放法術，使用魔法物品，或使用魔法特性。",
-      ready: "準備針對你定義的觸發條件採取行動。",
+      ready: "定義一個前提條件，觸發後執行動作。",
       search: "進行感知（洞悉、醫藥、察覺或生存）檢定。",
       study: "進行智力（奧秘、歷史、調查、自然或宗教）檢定。",
       utilize: "使用非魔法物品。"
