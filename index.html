@@ -3103,19 +3103,29 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
 <script>
 window.addEventListener('DOMContentLoaded', function () {
   if (window.SHARE_MODE) return;
+  const LEGAL_DISMISS_KEY = 'dndchar_legal_dismiss_v1';
   const modal = document.getElementById('legal-modal');
   const checkbox = document.getElementById('legal-dismiss');
+  if (!modal || !checkbox) return;
 
-  // 從 localStorage['dndchar_autosave_v1'] 中讀取是否已勾選「不要再提醒我」
+  // 優先讀取專用儲存鍵，並向下相容舊版 autosave 的 legal-dismiss 欄位。
+  let shouldDismiss = localStorage.getItem(LEGAL_DISMISS_KEY) === '1';
   try {
-    const raw = localStorage.getItem("dndchar_autosave_v1");
-    if (raw) {
+    if (!shouldDismiss) {
+      const raw = localStorage.getItem("dndchar_autosave_v1");
+      if (!raw) throw new Error('no autosave data');
       const data = JSON.parse(raw);
-      if (data["legal-dismiss"] === true) {
-        return; // ✅ 已勾選，不再顯示 modal
-      }
+      shouldDismiss = data["legal-dismiss"] === true || data["legal-dismiss"] === 'true' || data["legal-dismiss"] === 1;
     }
   } catch (e) {}
+
+  checkbox.checked = shouldDismiss;
+  checkbox.addEventListener('change', () => {
+    localStorage.setItem(LEGAL_DISMISS_KEY, checkbox.checked ? '1' : '0');
+    if (typeof saveAllFields === 'function') saveAllFields();
+  });
+
+  if (shouldDismiss) return; // ✅ 已勾選，不再顯示 modal
 
   modal.style.display = 'block';
 
