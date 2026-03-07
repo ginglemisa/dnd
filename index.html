@@ -357,7 +357,14 @@ input[type="checkbox"]{
   border:1px solid var(--line) !important;
   border-radius:14px !important;
 }
-.spell-slot-grid{gap:10px 10px !important;}
+.spell-slot-grid{
+  gap:10px 10px !important;
+  grid-template-columns:max-content minmax(0,1fr) minmax(0,1fr) !important;
+  align-items:start !important;
+}
+#spellslot1-row{
+  white-space:nowrap;
+}
 .spell-slot-column{
   background:linear-gradient(180deg,#ffffff 0%,#f7f9fd 100%);
   border:1px solid var(--line);
@@ -487,7 +494,7 @@ label[for="level"]{
   .skill-cell{padding:8px 9px !important;}
   .skill-cell input[type="number"], input[type="number"], select, input[type="text"], textarea{min-height:38px !important; font-size:1rem !important; padding:7px 9px !important;}
   .modifier{min-height:48px; font-size:1.2rem; margin-bottom:8px !important;}
-  .spell-slot-grid{grid-template-columns:repeat(3,minmax(0,1fr)) !important; gap:6px !important;}
+  .spell-slot-grid{grid-template-columns:max-content minmax(0,1fr) minmax(0,1fr) !important; gap:6px !important;}
   .spell-slot-column{padding:8px 7px !important;}
   .spell-slot-column h4{font-size:1rem !important; margin:0 0 6px !important;}
 }
@@ -495,7 +502,7 @@ label[for="level"]{
 @media (max-width:339px){
   .form-grid-2col, .save-grid, .skill-grid, .spell-picked-grid, .stats-card-row{grid-template-columns:1fr !important;}
   .form-grid-6col{grid-template-columns:1fr !important;}
-  .spell-slot-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
+  .spell-slot-grid{grid-template-columns:max-content minmax(0,1fr) minmax(0,1fr) !important;}
   #tab-basic .stats-card-row{grid-template-columns:repeat(3,minmax(0,1fr)) !important;}
 }
 </style>
@@ -1004,7 +1011,7 @@ label[for="level"]{
 
     <div class="section">
   <h3>法術位管理</h3>
-  <div class="spell-slot-grid" style="display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 12px; align-items: center;">
+  <div class="spell-slot-grid" style="display:grid; gap: 8px 12px; align-items: start;">
     <div id="spellslot1-row" class="spell-slot-column">
       <label style="display:block; margin-bottom:4px;">一環：</label>
       <input type="checkbox" id="spellslot1-1">
