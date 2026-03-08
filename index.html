@@ -3016,6 +3016,41 @@ function setupAutoSave() {
   });
 }
 
+function initLegalModal() {
+  if (window.SHARE_MODE) return;
+  const LEGAL_DISMISS_KEY = 'dndchar_legal_dismiss_v1';
+  const modal = document.getElementById('legal-modal');
+  const checkbox = document.getElementById('legal-dismiss');
+  if (!modal || !checkbox) return;
+
+  // 優先讀取專用儲存鍵，並向下相容舊版 autosave 的 legal-dismiss 欄位。
+  let shouldDismiss = localStorage.getItem(LEGAL_DISMISS_KEY) === '1';
+  try {
+    if (!shouldDismiss) {
+      const raw = localStorage.getItem("dndchar_autosave_v1");
+      if (!raw) throw new Error('no autosave data');
+      const data = JSON.parse(raw);
+      shouldDismiss = data["legal-dismiss"] === true || data["legal-dismiss"] === 'true' || data["legal-dismiss"] === 1;
+    }
+  } catch (e) {}
+
+  checkbox.checked = shouldDismiss;
+  checkbox.addEventListener('change', () => {
+    localStorage.setItem(LEGAL_DISMISS_KEY, checkbox.checked ? '1' : '0');
+    if (typeof saveAllFields === 'function') saveAllFields();
+  });
+
+  if (shouldDismiss) return; // ✅ 已勾選，不再顯示 modal
+
+  modal.style.display = 'block';
+
+  // 關閉按鈕邏輯（勾選狀態會由自動儲存機制處理）
+  const button = modal.querySelector('button');
+  button.addEventListener('click', () => {
+    modal.style.display = 'none';
+  });
+}
+
 
 // ====== 頁面載入時全自動初始化 ======
 window.addEventListener("DOMContentLoaded", async function() {
@@ -3077,6 +3112,9 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
       }
     });
   }
+
+  // 6. 分享模式判定完成後，才初始化版權提醒，避免時序競態
+  initLegalModal();
 });
 </script>
 
@@ -3098,43 +3136,5 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
     <button onclick="document.getElementById('legal-modal').style.display='none';" style="margin-top:18px;width:100%;padding:7px 0;font-size:1.08em;border-radius:6px;border:1px solid #888;">我知道了</button>
   </div>
 </div>
-
-<script>
-window.addEventListener('DOMContentLoaded', function () {
-  if (window.SHARE_MODE) return;
-  const LEGAL_DISMISS_KEY = 'dndchar_legal_dismiss_v1';
-  const modal = document.getElementById('legal-modal');
-  const checkbox = document.getElementById('legal-dismiss');
-  if (!modal || !checkbox) return;
-
-  // 優先讀取專用儲存鍵，並向下相容舊版 autosave 的 legal-dismiss 欄位。
-  let shouldDismiss = localStorage.getItem(LEGAL_DISMISS_KEY) === '1';
-  try {
-    if (!shouldDismiss) {
-      const raw = localStorage.getItem("dndchar_autosave_v1");
-      if (!raw) throw new Error('no autosave data');
-      const data = JSON.parse(raw);
-      shouldDismiss = data["legal-dismiss"] === true || data["legal-dismiss"] === 'true' || data["legal-dismiss"] === 1;
-    }
-  } catch (e) {}
-
-  checkbox.checked = shouldDismiss;
-  checkbox.addEventListener('change', () => {
-    localStorage.setItem(LEGAL_DISMISS_KEY, checkbox.checked ? '1' : '0');
-    if (typeof saveAllFields === 'function') saveAllFields();
-  });
-
-  if (shouldDismiss) return; // ✅ 已勾選，不再顯示 modal
-
-  modal.style.display = 'block';
-
-  // 關閉按鈕邏輯（勾選狀態會由自動儲存機制處理）
-  const button = modal.querySelector('button');
-  button.addEventListener('click', () => {
-    modal.style.display = 'none';
-  });
-});
-</script>
-
 
 </body></html>
