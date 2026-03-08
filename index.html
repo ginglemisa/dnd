@@ -425,6 +425,39 @@ h3{
   width:100%;
   margin:0 !important;
 }
+.share-mode-tip,
+.share-actions-wrap{
+  margin:-4px 0 16px;
+}
+.share-mode-tip{
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid #f3c76e;
+  background:linear-gradient(180deg,#fff9e8 0%,#fff2c8 100%);
+  color:#7a4b00;
+  font-weight:700;
+}
+.share-actions-wrap{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-top:-2px;
+}
+.share-export-btn,
+.share-import-btn{
+  width:100%;
+  max-width:none;
+}
+.share-export-btn{
+  background:linear-gradient(180deg,#ffffff 0%,#edf3ff 100%) !important;
+  color:#214cb8 !important;
+  border:1px solid #b8cbff !important;
+}
+.share-import-btn{
+  background:linear-gradient(180deg,#ffffff 0%,#eefcf2 100%) !important;
+  color:#1f7a3b !important;
+  border:1px solid #b7e4c4 !important;
+}
 #clear-storage-btn{
   background:linear-gradient(180deg,#ffefef 0%,#ffdede 100%) !important;
   color:#8d1f1f !important;
@@ -748,6 +781,14 @@ label[for="level"]{
   <button type="button" class="share-url-btn" onclick="copyShareUrl()">
     🔗 分享角卡
   </button>
+</div>
+<div id="share-mode-tip" class="share-mode-tip" style="display:none;">
+  目前為分享模式：你的修改不會自動寫入本機儲存。可使用下方「匯入紀錄／匯出紀錄」功能保存與還原。
+</div>
+<div id="share-actions-wrap" class="share-actions-wrap">
+  <button type="button" id="import-json-btn" class="share-import-btn">⬆️ 匯入紀錄</button>
+  <button type="button" id="export-json-btn" class="share-export-btn">⬇️ 匯出紀錄</button>
+  <input type="file" id="import-json-file" accept="application/json" style="display:none;">
 </div>
 
 
@@ -2972,12 +3013,50 @@ async function copyShareUrl() {
   try {
     await navigator.clipboard.writeText(shareUrl);
     if (shareUrl.length > 4000) {
-      alert(`分享網址已複製（長度 ${shareUrl.length}，部分瀏覽器可能不穩定）`);
+      alert(`分享網址已複製（長度 ${shareUrl.length}，部分瀏覽器可能不穩定）。\n建議改用下方「匯入紀錄／匯出紀錄」功能保存與還原。`);
     } else {
       alert("分享網址已複製");
     }
   } catch (e) {
     window.prompt("請手動複製分享網址", shareUrl);
+  }
+}
+
+function downloadStateAsJson() {
+  const data = collectStateObject();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const ts = new Date().toISOString().replace(/[:.]/g, "-");
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `dnd-character-${ts}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+async function importStateFromJsonFile(file) {
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    if (!data || typeof data !== "object" || Array.isArray(data)) {
+      throw new Error("invalid json shape");
+    }
+    applyStateObject(data);
+    SHARE_MODE = false;
+    window.SHARE_MODE = false;
+    const shareModeTip = document.getElementById("share-mode-tip");
+    if (shareModeTip) shareModeTip.style.display = "none";
+    if (location.hash.startsWith("#s=") || location.hash.startsWith("#s2=")) {
+      history.replaceState(null, "", `${location.pathname}${location.search}`);
+    }
+    saveAllFields();
+    alert("JSON 匯入成功，已套用角色資料並儲存到本機。");
+  } catch (e) {
+    alert("JSON 匯入失敗，請確認檔案內容格式正確。");
+    console.warn("JSON 匯入失敗：", e);
   }
 }
 
@@ -3083,6 +3162,8 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
     SHARE_MODE = true;
     window.SHARE_MODE = true;
     applyStateObject(sharedData);
+    const shareModeTip = document.getElementById("share-mode-tip");
+    if (shareModeTip) shareModeTip.style.display = "block";
   } else {
     if (location.hash.startsWith("#s=") || location.hash.startsWith("#s2=")) {
       alert("分享連結讀取失敗（可能因網址過長被截斷或資料損壞），已改為讀取本機暫存。");
@@ -3111,6 +3192,22 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
         localStorage.removeItem('dndchar_legal_dismiss_v1');
         location.reload();
       }
+    });
+  }
+
+  const exportJsonBtn = document.getElementById("export-json-btn");
+  if (exportJsonBtn) {
+    exportJsonBtn.addEventListener("click", downloadStateAsJson);
+  }
+
+  const importJsonBtn = document.getElementById("import-json-btn");
+  const importJsonFile = document.getElementById("import-json-file");
+  if (importJsonBtn && importJsonFile) {
+    importJsonBtn.addEventListener("click", () => importJsonFile.click());
+    importJsonFile.addEventListener("change", async (event) => {
+      const file = event.target.files && event.target.files[0];
+      await importStateFromJsonFile(file);
+      event.target.value = "";
     });
   }
 
