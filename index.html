@@ -672,10 +672,10 @@ label[for="level"]{
 }
 </style>
 
-<!-- 第一列：護甲等級、速度、先攻 -->
+<!-- 第一列：護甲、速度、先攻 -->
 <div class="stats-card-row">
   <div class="mini-stat-card">
-    <div class="mini-stat-label">護甲等級</div>
+    <div class="mini-stat-label">護甲</div>
     <div class="hp-value" id="ac-display">10</div>
   </div>
   <div class="mini-stat-card">
@@ -689,10 +689,10 @@ label[for="level"]{
 </div>
 
 
-<!-- 第二列：生命骰數量、被動感知、按鈕 -->
+<!-- 第二列：生命骰、被動感知、按鈕 -->
 <div class="stats-card-row">
   <div class="mini-stat-card">
-    <div class="mini-stat-label">生命骰數量</div>
+    <div class="mini-stat-label">生命骰</div>
     <input id="lifedicen" type="number" class="tight-input" value="1" min="0" max="5">
   </div>
   <div class="mini-stat-card">
@@ -700,7 +700,7 @@ label[for="level"]{
     <input id="passive-perception" type="number" class="tight-input" value="10" min="-5" max="45">
   </div>
   <div class="mini-stat-card">
-    <div class="mini-stat-label">快速設定</div>
+    <div class="mini-stat-label">快速創角</div>
     <button id="set-default-abilities" type="button" style="font-size:0.95em; margin-bottom:0;">預設屬性</button>
   </div>
 </div>
@@ -1229,8 +1229,8 @@ function bindCoreCharacterEvents() {
   bindEventById("wis", "input", updateACDisplay);
   bindEventById("cha", "input", updateACDisplay);
   bindEventById("armor", "change", updateArmorInfo);
-  bindEventById("class", "change", () => {updateClassFeature();updateACDisplay();updateHPDisplay();updateClassProficiencyOptions();updateEldritchInvocationSectionVisibility();populateHandAttacks();updateSpellsByClassLevel();updateExpertiseVisibility();});
-  bindEventById("level", "change", () => {updateClassFeature();updateACDisplay();updateHPDisplay();updateSpellsByClassLevel();});
+  bindEventById("class", "change", () => {updateClassFeature();updateACDisplay();updateClassProficiencyOptions();updateEldritchInvocationSectionVisibility();populateHandAttacks();updateSpellsByClassLevel();updateExpertiseVisibility();});
+  bindEventById("level", "change", () => {updateClassFeature();updateACDisplay();updateSpellsByClassLevel();});
   bindEventById("cleric-guardian", "change", populateHandAttacks);
   bindEventById("druid-sentinel", "change", populateHandAttacks);
 }
@@ -3096,7 +3096,7 @@ function setupAutoSave() {
 }
 
 function initLegalModal() {
-  if (window.SHARE_MODE) return;
+  const isShareMode = !!window.SHARE_MODE;
   const LEGAL_DISMISS_KEY = 'dndchar_legal_dismiss_v1';
   const modal = document.getElementById('legal-modal');
   const checkbox = document.getElementById('legal-dismiss');
@@ -3119,7 +3119,7 @@ function initLegalModal() {
     if (typeof saveAllFields === 'function') saveAllFields();
   });
 
-  if (shouldDismiss) return; // ✅ 已勾選，不再顯示 modal
+  if (!isShareMode && shouldDismiss) return; // ✅ 已勾選，不再顯示 modal
 
   modal.style.display = 'block';
 

@@ -778,7 +778,7 @@ const classFeatures = {
 （等級 5）：臭雲術
 
 等級 3：大地之援（大地子職）
-- 作為魔法動作，你可消耗 1 次荒野形態，在 60 尺內選一點，產生 10 尺球形花荊區域。
+- 作為魔法動作，你可消耗 1 次荒野形態，在 60 呎內選一點，產生 10 呎球形花荊區域。
 - 區域內你指定的每個生物需做體質豁免（對抗你的法術豁免 DC）：
   - 失敗：受 2d6 黯蝕傷害。
   - 成功：傷害減半。
@@ -1440,7 +1440,7 @@ const classFeatures = {
 等級 3：狩獵目標（獵人子職）
 從下列擇一；每次短休或長休後可改選：
 - 斬殺者：每回合 1 次，你用武器命中且目標先前已失去生命值時，額外造成 1d8 傷害。
-- 破陣者：每回合 1 次，當你用武器攻擊時，可用同一把武器再攻擊 5 尺內另一個你本回合尚未攻擊過的目標。
+- 破陣者：每回合 1 次，當你用武器攻擊時，可用同一把武器再攻擊 5 呎內另一個你本回合尚未攻擊過的目標。
 
 等級 4：屬性值提升
 獲得「屬性值提升」專長，或其他符合條件的專長。
@@ -1544,7 +1544,7 @@ const classFeatures = {
 你每回合可觸發 1 次偷襲。
 當你用靈巧武器或遠程武器命中時，若符合以下任一條件，就可多造成 1d6 傷害（同武器傷害類型）：
 - 這次攻擊有優勢，或
-- 目標 5 尺內有至少 1 名未失能的友方，且你的攻擊沒有劣勢。
+- 目標 5 呎內有至少 1 名未失能的友方，且你的攻擊沒有劣勢。
 
 偷襲傷害會隨等級提升（見遊蕩者特性表）。
 
@@ -1784,7 +1784,7 @@ const classFeatures = {
 等級 3：龍族法術（龍族子職）
 - 當你達到對應術士等級後，會始終準備下列法術。
 - 龍族法術（等級 3）：變造自身、繁彩球、命令術、龍息術。
-- （等級 5、7、9 法術不列出，詳閱 PHB）
+- （等級 5）：恐懼術，飛行術。
 
 等級 4：屬性值提升
 獲得「屬性值提升」專長，或改選其他符合條件的專長。
@@ -1797,12 +1797,13 @@ const classFeatures = {
 - 以下是你可選的超魔法選項。
 
 謹慎法術－消耗：1 術法點
+(讓你放大範圍法術時不會誤傷隊友)
 - 當你施放要求豁免的法術時，可指定最多等同魅力調整值（至少 1）名生物。
 - 這些目標對該法術豁免自動成功；若法術原本成功豁免為半傷，則改為不受傷害。
 
 遠程法術－消耗：1 術法點
-- 當你施放射程至少 5 尺的法術時，可使射程加倍。
-- 若法術射程為觸及，改為 30 尺。
+- 當你施放射程至少 5 呎的法術時，可使射程加倍。
+- 若法術射程為觸及，改為 30 呎。
 
 強效法術－消耗：1 術法點
 - 當你為法術擲傷害骰時，可重擲最多等同魅力調整值（至少 1）顆傷害骰，且必須採用重擲結果。
@@ -1982,8 +1983,8 @@ const classFeatures = {
 - 隨等級提升可獲得對應子職業特性。
 
 等級 3：黑暗之賜（邪魔子職）
-- 當你將 10 尺內敵對生物生命值降到 0 時，你獲得等同「魅力調整值＋術士等級」的臨時生命值（至少 1）。
-- 若是其他生物把你 10 尺內的敵對生物降到 0，你也會獲得此增益。
+- 當你將 10 呎內敵對生物生命值降到 0 時，你獲得等同「魅力調整值＋術士等級」的臨時生命值（至少 1）。
+- 若是其他生物把你 10 呎內的敵對生物降到 0，你也會獲得此增益。
 
 等級 3：邪魔法術（邪魔子職）
 - 你會始終準備下列法術（達到對應術士等級後生效）：
@@ -2012,7 +2013,7 @@ const classFeatures = {
 - 你也可把武器傷害改為黯蝕、心靈、光耀，或維持原本類型。
 - 聯結結束條件：
   - 你再次使用本特性的附贈動作。
-  - 武器離你超過 5 尺並持續 1 分鐘。
+  - 武器離你超過 5 呎並持續 1 分鐘。
   - 你死亡。
 - 若是召喚武器，聯結結束時武器會一併消失。
 
@@ -2050,7 +2051,7 @@ const classFeatures = {
 你可隨意施展「跳躍術」且不消耗法術位。
 
 魔鬼視界（先決條件：術士等級 2+）
-你可在 120 尺內的魔法黑暗、非魔法黑暗與微光中正常視物。
+你可在 120 呎內的魔法黑暗、非魔法黑暗與微光中正常視物。
 
 原初之一教習（先決條件：術士等級 2+）
 你獲得 1 個起源專長（見第 5 章）。
@@ -2063,12 +2064,12 @@ const classFeatures = {
 可重複：可多次選此祈喚，但每次要選不同戲法。
 
 魔能長槍（先決條件：術士等級 2+，已知可造成傷害的契術師戲法）
-選 1 個你已知、射程至少 10 尺且可造成傷害的契術師戲法。施放時，該法術射程額外增加「術士等級 × 30 尺」。
+選 1 個你已知、射程至少 10 呎且可造成傷害的契術師戲法。施放時，該法術射程額外增加「術士等級 × 30 呎」。
 
 可重複：可多次選此祈喚，但每次要選不同戲法。
 
 斥力魔爆（先決條件：術士等級 2+，通過攻擊檢定造成傷害的契術師戲法）
-選 1 個你已知、需要攻擊檢定的契術師戲法。當你用該戲法命中大型或更小生物時，可將其往遠離你的方向推開 10 尺。
+選 1 個你已知、需要攻擊檢定的契術師戲法。當你用該戲法命中大型或更小生物時，可將其往遠離你的方向推開 10 呎。
 
 可重複：可多次選此祈喚，但每次要選不同戲法。
 
@@ -2089,7 +2090,7 @@ const classFeatures = {
 共視感官（先決條件：術士等級 5+）
 你可用附贈動作觸碰 1 名自願生物，建立感官連結至你下回合結束。只要你們在同一位面，你可在後續回合再用附贈動作延長連結到下回合結束；未延長則連結終止。
 
-連結期間，你可獲得該生物所有特殊感官；若你們距離在 60 尺內，你可視同身在該生物位置施法。
+連結期間，你可獲得該生物所有特殊感官；若你們距離在 60 呎內，你可視同身在該生物位置施法。
 
 魔能斬擊（先決條件：術士等級 5+、刃之魔契祈喚）
 每回合一次，當你用契約武器命中生物時，可消耗 1 個術士法術位，造成額外力場傷害：1d8＋該法術位每環階再加 1d8，並可使大型或更小目標倒地。
@@ -2100,7 +2101,7 @@ const classFeatures = {
 鏈主賦能（先決條件：術士等級 5+、鏈之魔契祈喚）
 你施展「獲得魔寵」時，可對召喚出的魔寵灌注魔能，獲得以下增益：
 
-飛行或游泳：魔寵獲得 40 尺飛行或游泳速度（擇一）。
+飛行或游泳：魔寵獲得 40 呎飛行或游泳速度（擇一）。
 快速攻擊：你可用附贈動作命令魔寵執行攻擊動作。
 傷害轉換：魔寵造成鈍擊／穿刺／揮砍傷害時，你可改為黯蝕或光耀傷害。
 你的豁免 DC：若魔寵要求目標做豁免，使用你的法術豁免 DC。
@@ -2156,12 +2157,12 @@ const classFeatures = {
 <strong>法師特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
     <tr>
-      <th style="border:1px solid #aaa; padding:3px;">等级</th>
-      <th style="border:1px solid #aaa; padding:3px;">熟练加值</th>
-      <th style="border:1px solid #aaa; padding:3px;">职业特性</th>
-      <th style="border:1px solid #aaa; padding:3px;">戏法</th>
-      <th style="border:1px solid #aaa; padding:3px;">准备法术</th>
-      <th style="border:1px solid #aaa; padding:3px;" colspan="3">每环法术位</th>
+      <th style="border:1px solid #aaa; padding:3px;">等級</th>
+      <th style="border:1px solid #aaa; padding:3px;">熟練加值</th>
+      <th style="border:1px solid #aaa; padding:3px;">職業特性</th>
+      <th style="border:1px solid #aaa; padding:3px;">戲法</th>
+      <th style="border:1px solid #aaa; padding:3px;">準備法術</th>
+      <th style="border:1px solid #aaa; padding:3px;" colspan="3">每環法數位</th>
     </tr>
     <tr>
       <th colspan="5" style="border:none;"></th>
@@ -2174,7 +2175,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">1</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px;">施法，仪式精通，奥术回想</td>
+      <td style="border:1px solid #aaa; padding:3px;">施法，儀式精通，奧術回想</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
@@ -2184,7 +2185,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px;">学者</td>
+      <td style="border:1px solid #aaa; padding:3px;">學者</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
@@ -2194,7 +2195,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px;">法师子职业</td>
+      <td style="border:1px solid #aaa; padding:3px;">法師子職業</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">6</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
@@ -2204,7 +2205,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px;">属性值提升</td>
+      <td style="border:1px solid #aaa; padding:3px;">屬性值提升</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">7</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
