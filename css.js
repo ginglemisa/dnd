@@ -198,14 +198,56 @@ style.innerHTML = `
     background: rgba(255,255,255,0.96);
     border: 1px solid var(--border);
     border-radius: 14px;
-    padding: 10px;
+    padding: 8px;
     box-shadow: var(--shadow);
   }
 
-  .spell-toolbar-actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+  .spell-toolbar-row {
+    display: flex;
+    align-items: center;
     gap: 8px;
+    flex-wrap: nowrap;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .spell-toolbar #spell-search {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 38px;
+    padding: 8px 12px;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .spell-toolbar-actions {
+    display: flex;
+    gap: 8px;
+    flex: 0 0 auto;
+    margin-left: auto;
+    justify-content: flex-end;
+  }
+
+  .spell-toolbar-actions button {
+    height: 38px;
+    padding: 0 12px;
+    white-space: nowrap;
+    flex: 0 0 auto;
+    width: auto;
+    margin-bottom: 0;
+    font-weight: 600;
+    border-radius: 10px;
+    border: 1px solid #cfd8e6;
+    background: #f7f9fc;
+    color: #2a3447;
+    box-shadow: none;
+  }
+
+  .spell-toolbar-actions button:hover {
+    background: #eef3fa;
+    border-color: #bcc9dc;
   }
 
   .spell-picked-grid {
