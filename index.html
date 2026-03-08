@@ -3108,6 +3108,7 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
       }
       if(confirm('確定要清除所有角色欄位資料並回復預設嗎？')) {
         localStorage.removeItem(AUTO_SAVE_KEY);
+        localStorage.removeItem('dndchar_legal_dismiss_v1');
         location.reload();
       }
     });
