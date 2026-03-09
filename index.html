@@ -2047,11 +2047,36 @@ document.getElementById("set-default-abilities").addEventListener("click", () =>
       utilize: "使用非魔法物品。"
     };
 
+    const tabScrollPositions = {};
+    const savedTab = localStorage.getItem("activeTab");
+    const hasSavedTab = !!(savedTab && document.getElementById(`tab-${savedTab}`));
+    let activeTab = (hasSavedTab ? savedTab : null) || document.querySelector('.tab-content.active')?.id?.replace('tab-', '') || 'basic';
+
     function showTab(tab, button) {
+      if (activeTab) {
+        tabScrollPositions[activeTab] = window.scrollY;
+      }
+
       document.querySelectorAll('.tab-content').forEach(div => div.classList.remove('active'));
       document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
       document.getElementById(`tab-${tab}`).classList.add('active');
-      if (button) button.classList.add('active');
+      if (button) {
+        button.classList.add('active');
+      } else {
+        document.querySelector(`.tab-button[onclick*="'${tab}'"]`)?.classList.add('active');
+      }
+
+      activeTab = tab;
+      localStorage.setItem("activeTab", tab);
+      const nextScrollY = tabScrollPositions[tab] ?? 0;
+      requestAnimationFrame(() => {
+        const maxScroll = Math.max(0, document.body.scrollHeight - window.innerHeight);
+        window.scrollTo(0, Math.min(nextScrollY, maxScroll));
+      });
+    }
+
+    if (hasSavedTab) {
+      showTab(savedTab);
     }
 
     function showAction(key) {
