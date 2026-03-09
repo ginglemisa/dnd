@@ -1239,6 +1239,7 @@ const BASE_LANGUAGE_OPTIONS = [
   { value: "orc", label: "獸人語" }
 ];
 const EXTRA_LANGUAGE_OPTIONS = [
+  { value: "", label: "↓稀有語言↓", disabled: true },
   { value: "abyssal", label: "深淵語" },
   { value: "celestial", label: "天界語" },
   { value: "deep-speech", label: "深潛語" },
@@ -1251,7 +1252,10 @@ const EXTRA_LANGUAGE_OPTIONS = [
 ];
 
 function createLanguageOptionsHtml(options) {
-  return options.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join("");
+  return options.map(opt => {
+    const disabledAttr = opt.disabled ? " disabled" : "";
+    return `<option value="${opt.value}"${disabledAttr}>${opt.label}</option>`;
+  }).join("");
 }
 
 function updateExtraLanguageFields() {
