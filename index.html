@@ -621,9 +621,6 @@ label[for="level"]{
 
 <div id="class-proficiency-options" style="margin-top: 8px; display: none;">
   <strong>職業武器熟練選項：</strong>
-  <label id="cleric-guardian-wrap" style="display: none; margin-left: 8px;">
-    <input type="checkbox" id="cleric-guardian"> 牧師：守護者（軍用武器熟練）
-  </label>
   <label id="druid-sentinel-wrap" style="display: none; margin-left: 8px;">
     <input type="checkbox" id="druid-sentinel"> 德魯伊：哨衛（軍用武器熟練）
   </label>
@@ -1231,7 +1228,6 @@ function bindCoreCharacterEvents() {
   bindEventById("armor", "change", updateArmorInfo);
   bindEventById("class", "change", () => {updateClassFeature();updateACDisplay();updateClassProficiencyOptions();updateEldritchInvocationSectionVisibility();populateHandAttacks();updateSpellsByClassLevel();updateExpertiseVisibility();});
   bindEventById("level", "change", () => {updateClassFeature();updateACDisplay();updateSpellsByClassLevel();});
-  bindEventById("cleric-guardian", "change", populateHandAttacks);
   bindEventById("druid-sentinel", "change", populateHandAttacks);
 }
 
@@ -1252,6 +1248,20 @@ function updateExpertiseVisibility() {
   });
 }
 
+
+// 牧師神聖使命選項（守護者/奇術使）互斥
+function enforceClericMissionExclusivity(changedId) {
+  const guardian = document.getElementById("cleric-guardian");
+  const trickster = document.getElementById("cleric-trickster");
+  if (!guardian || !trickster) return;
+
+  if (changedId === "cleric-guardian" && guardian.checked) {
+    trickster.checked = false;
+  }
+  if (changedId === "cleric-trickster" && trickster.checked) {
+    guardian.checked = false;
+  }
+}
 
 // 計算AC頂部
 function getDexModifier() {
@@ -2218,16 +2228,13 @@ function formatSigned(value) {
 function updateClassProficiencyOptions() {
   const cls = document.getElementById("class")?.value || "";
   const root = document.getElementById("class-proficiency-options");
-  const clericWrap = document.getElementById("cleric-guardian-wrap");
   const druidWrap = document.getElementById("druid-sentinel-wrap");
 
-  if (!root || !clericWrap || !druidWrap) return;
+  if (!root || !druidWrap) return;
 
-  const isCleric = cls === "cleric";
   const isDruid = cls === "druid";
 
-  root.style.display = (isCleric || isDruid) ? "block" : "none";
-  clericWrap.style.display = isCleric ? "inline-block" : "none";
+  root.style.display = isDruid ? "block" : "none";
   druidWrap.style.display = isDruid ? "inline-block" : "none";
 }
 
@@ -2838,6 +2845,16 @@ document.addEventListener("click", (e) => {
   if (!el) return;
   const key = el.dataset.beast;
   showBeastPopup(key, el);
+});
+
+document.addEventListener("change", (e) => {
+  const target = e.target;
+  if (!(target instanceof HTMLInputElement)) return;
+
+  if (target.id === "cleric-guardian" || target.id === "cleric-trickster") {
+    enforceClericMissionExclusivity(target.id);
+    populateHandAttacks();
+  }
 });
 
 // 簡單 escape，避免 class-features 其他字串造成 HTML 注入問題

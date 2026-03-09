@@ -495,8 +495,8 @@ const classFeatures = {
 
 等級 1：神聖使命
 你擇一：
-- 守護者：獲得軍用武器熟練，並接受重甲訓練。
-- 奇術使：額外學 1 個牧師戲法；你的智力（奧秘／宗教）檢定再加上感知調整值（至少 +1）。
+- <label><input type="checkbox" id="cleric-guardian"> 守護者</label>：獲得軍用武器熟練，並接受重甲訓練。
+- <label><input type="checkbox" id="cleric-trickster"> 奇術使</label>：額外學 1 個牧師戲法；你的智力（奧秘／宗教）檢定再加上感知調整值（至少 +1）。
 
 等級 2：引導神力
 你可用引導神力產生神聖效果，起始有 2 種：
