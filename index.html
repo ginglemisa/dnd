@@ -619,12 +619,6 @@ label[for="level"]{
   </div>
 </div>
 
-<div id="class-proficiency-options" style="margin-top: 8px; display: none;">
-  <strong>職業武器熟練選項：</strong>
-  <label id="druid-sentinel-wrap" style="display: none; margin-left: 8px;">
-    <input type="checkbox" id="druid-sentinel"> 德魯伊：哨衛（軍用武器熟練）
-  </label>
-</div>
 
 <div id="warlock-invocation-summary-wrap" class="section" style="display: none;">
   <strong>契術師魔能祈喚：</strong>
@@ -1226,9 +1220,8 @@ function bindCoreCharacterEvents() {
   bindEventById("wis", "input", updateACDisplay);
   bindEventById("cha", "input", updateACDisplay);
   bindEventById("armor", "change", updateArmorInfo);
-  bindEventById("class", "change", () => {updateClassFeature();updateACDisplay();updateClassProficiencyOptions();updateEldritchInvocationSectionVisibility();populateHandAttacks();updateSpellsByClassLevel();updateExpertiseVisibility();});
+  bindEventById("class", "change", () => {updateClassFeature();updateACDisplay();updateEldritchInvocationSectionVisibility();populateHandAttacks();updateSpellsByClassLevel();updateExpertiseVisibility();});
   bindEventById("level", "change", () => {updateClassFeature();updateACDisplay();updateSpellsByClassLevel();});
-  bindEventById("druid-sentinel", "change", populateHandAttacks);
 }
 
 const EXPERTISE_VISIBLE_CLASSES = new Set(["", "bard", "ranger", "rogue", "wizard"]);
@@ -1260,6 +1253,19 @@ function enforceClericMissionExclusivity(changedId) {
   }
   if (changedId === "cleric-trickster" && trickster.checked) {
     guardian.checked = false;
+  }
+}
+
+function enforceDruidMissionExclusivity(changedId) {
+  const shaman = document.getElementById("druid-shaman");
+  const sentinel = document.getElementById("druid-sentinel");
+  if (!shaman || !sentinel) return;
+
+  if (changedId === "druid-shaman" && shaman.checked) {
+    sentinel.checked = false;
+  }
+  if (changedId === "druid-sentinel" && sentinel.checked) {
+    shaman.checked = false;
   }
 }
 
@@ -1895,7 +1901,6 @@ document.addEventListener("DOMContentLoaded", () => {
   updateACDisplay(); // AC顯示
   updateArmorInfo();
   updateClassFeature();
-  updateClassProficiencyOptions();
   updateEldritchInvocationSectionVisibility();
   updateExpertiseVisibility();
   updateSpellsByClassLevel();
@@ -2223,19 +2228,6 @@ function weaponHasProp(weapon, keyword) {
 function formatSigned(value) {
   if (!Number.isFinite(value)) return "";
   return value >= 0 ? `+${value}` : `${value}`;
-}
-
-function updateClassProficiencyOptions() {
-  const cls = document.getElementById("class")?.value || "";
-  const root = document.getElementById("class-proficiency-options");
-  const druidWrap = document.getElementById("druid-sentinel-wrap");
-
-  if (!root || !druidWrap) return;
-
-  const isDruid = cls === "druid";
-
-  root.style.display = isDruid ? "block" : "none";
-  druidWrap.style.display = isDruid ? "inline-block" : "none";
 }
 
 function isWeaponProficient(weapon) {
@@ -2853,6 +2845,11 @@ document.addEventListener("change", (e) => {
 
   if (target.id === "cleric-guardian" || target.id === "cleric-trickster") {
     enforceClericMissionExclusivity(target.id);
+    populateHandAttacks();
+  }
+
+  if (target.id === "druid-shaman" || target.id === "druid-sentinel") {
+    enforceDruidMissionExclusivity(target.id);
     populateHandAttacks();
   }
 });

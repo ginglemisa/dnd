@@ -677,10 +677,10 @@ const classFeatures = {
 
 等級 1：原初使命
 - 你在下列使命擇一：
-  - 巫祝：
+  - <label><input type="checkbox" id="druid-shaman"> 巫祝</label>：
     - 額外學會 1 個德魯伊戲法。
     - 你的智力（奧秘／自然）檢定可額外加上感知調整值（至少 +1）。
-  - 哨衛：獲得軍用武器熟練，並接受中甲訓練。
+  - <label><input type="checkbox" id="druid-sentinel"> 哨衛</label>：獲得軍用武器熟練，並接受中甲訓練。
 
 等級 1：施法
 - 你向自然借力施法，使用「德魯伊法術列表」。
