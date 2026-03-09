@@ -495,8 +495,8 @@ const classFeatures = {
 
 等級 1：神聖使命
 你擇一：
-- 守護者：獲得軍用武器熟練，並接受重甲訓練。
-- 奇術使：額外學 1 個牧師戲法；你的智力（奧秘／宗教）檢定再加上感知調整值（至少 +1）。
+- <label><input type="checkbox" id="cleric-guardian"> 守護者</label>：獲得軍用武器熟練，並接受重甲訓練。
+- <label><input type="checkbox" id="cleric-trickster"> 奇術使</label>：額外學 1 個牧師戲法；你的智力（奧秘／宗教）檢定再加上感知調整值（至少 +1）。
 
 等級 2：引導神力
 你可用引導神力產生神聖效果，起始有 2 種：
@@ -677,10 +677,10 @@ const classFeatures = {
 
 等級 1：原初使命
 - 你在下列使命擇一：
-  - 巫祝：
+  - <label><input type="checkbox" id="druid-shaman"> 巫祝</label>：
     - 額外學會 1 個德魯伊戲法。
     - 你的智力（奧秘／自然）檢定可額外加上感知調整值（至少 +1）。
-  - 哨衛：獲得軍用武器熟練，並接受中甲訓練。
+  - <label><input type="checkbox" id="druid-sentinel"> 哨衛</label>：獲得軍用武器熟練，並接受中甲訓練。
 
 等級 1：施法
 - 你向自然借力施法，使用「德魯伊法術列表」。
