@@ -829,7 +829,7 @@ label[for="level"]{
       <textarea id="skill-extra" rows="4" style="width: 100%;" placeholder="如果技能有其他規則，記在這裡。"></textarea>
   </div>
 
-  <div style="margin-top: 24px;">
+<div style="margin-top: 24px;">
   <label>你會說通用語及兩種語言：</label>
   <select id="language1" style="margin-left: 8px;">
     <option value="">-- 請選擇 --</option>
@@ -857,6 +857,8 @@ label[for="level"]{
     <option value="orc">獸人語</option>
   </select>
 </div>
+
+<div id="extra-language-container" style="margin-top: 12px;"></div>
 
 
 </div>
@@ -1220,11 +1222,82 @@ function bindCoreCharacterEvents() {
   bindEventById("wis", "input", updateACDisplay);
   bindEventById("cha", "input", updateACDisplay);
   bindEventById("armor", "change", updateArmorInfo);
-  bindEventById("class", "change", () => {updateClassFeature();updateACDisplay();updateEldritchInvocationSectionVisibility();populateHandAttacks();updateSpellsByClassLevel();updateExpertiseVisibility();});
-  bindEventById("level", "change", () => {updateClassFeature();updateACDisplay();updateSpellsByClassLevel();});
+  bindEventById("class", "change", () => {updateClassFeature();updateACDisplay();updateEldritchInvocationSectionVisibility();populateHandAttacks();updateSpellsByClassLevel();updateExpertiseVisibility();updateExtraLanguageFields();});
+  bindEventById("level", "change", () => {updateClassFeature();updateACDisplay();updateSpellsByClassLevel();updateExtraLanguageFields();});
 }
 
 const EXPERTISE_VISIBLE_CLASSES = new Set(["", "bard", "ranger", "rogue", "wizard"]);
+const BASE_LANGUAGE_OPTIONS = [
+  { value: "common-sign", label: "通用手語" },
+  { value: "draconic", label: "龍語" },
+  { value: "dwarvish", label: "矮人語" },
+  { value: "elvish", label: "精靈語" },
+  { value: "giant", label: "巨人語" },
+  { value: "gnomish", label: "侏儒語" },
+  { value: "goblin", label: "哥布林語" },
+  { value: "halfling", label: "半身人語" },
+  { value: "orc", label: "獸人語" }
+];
+const EXTRA_LANGUAGE_OPTIONS = [
+  { value: "", label: "↓稀有語言↓", disabled: true },
+  { value: "abyssal", label: "深淵語" },
+  { value: "celestial", label: "天界語" },
+  { value: "deep-speech", label: "深潛語" },
+  { value: "druidic", label: "德魯伊語" },
+  { value: "infernal", label: "煉獄語" },
+  { value: "primordial", label: "原初語" },
+  { value: "sylvan", label: "木族語" },
+  { value: "thieves-cant", label: "盜賊黑話" },
+  { value: "undercommon", label: "地底通用語" }
+];
+
+function createLanguageOptionsHtml(options) {
+  return options.map(opt => {
+    const disabledAttr = opt.disabled ? " disabled" : "";
+    return `<option value="${opt.value}"${disabledAttr}>${opt.label}</option>`;
+  }).join("");
+}
+
+function updateExtraLanguageFields() {
+  const container = document.getElementById("extra-language-container");
+  if (!container) return;
+
+  const classValue = document.getElementById("class")?.value || "";
+  const levelValue = parseInt(document.getElementById("level")?.value || "", 10);
+  const rangerUnlocked = Number.isNaN(levelValue) || levelValue >= 2;
+
+  let fields = [];
+  if (classValue === "druid") {
+    fields = [{ id: "language-extra-1", fixedValue: "druidic", fixedLabel: "德魯伊語" }];
+  } else if (classValue === "rogue") {
+    fields = [
+      { id: "language-extra-1", fixedValue: "thieves-cant", fixedLabel: "盜賊黑話" },
+      { id: "language-extra-2", fixedValue: "", fixedLabel: "" }
+    ];
+  } else if (classValue === "ranger" && rangerUnlocked) {
+    fields = [
+      { id: "language-extra-1", fixedValue: "", fixedLabel: "" },
+      { id: "language-extra-2", fixedValue: "", fixedLabel: "" }
+    ];
+  }
+
+  if (!fields.length) {
+    container.innerHTML = "";
+    return;
+  }
+
+  const extendedOptionsHtml = createLanguageOptionsHtml([...BASE_LANGUAGE_OPTIONS, ...EXTRA_LANGUAGE_OPTIONS]);
+  const extraFieldsHtml = fields.map((field, idx) => {
+    const label = `<label for="${field.id}" style="margin-right: 8px;">額外語言 ${idx + 1}：</label>`;
+    const disabledAttr = field.fixedValue ? "disabled" : "";
+    const optionsHtml = field.fixedValue
+      ? `<option value="${field.fixedValue}">${field.fixedLabel}</option>`
+      : `<option value="">-- 請選擇 --</option>${extendedOptionsHtml}`;
+    return `<div style="margin-top: 8px;">${label}<select id="${field.id}" ${disabledAttr}>${optionsHtml}</select></div>`;
+  }).join("");
+
+  container.innerHTML = `<div><label>職業額外語言：</label>${extraFieldsHtml}</div>`;
+}
 
 function updateExpertiseVisibility() {
   const classValue = document.getElementById("class")?.value || "";
@@ -3163,6 +3236,7 @@ function initLegalModal() {
 
 // ====== 頁面載入時全自動初始化 ======
 window.addEventListener("DOMContentLoaded", async function() {
+  updateExtraLanguageFields();
   // 1. 初始化裝備下拉
   const mainHandSelect = document.getElementById("mainHand");
   const offHandSelect = document.getElementById("offHand");
