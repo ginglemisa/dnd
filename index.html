@@ -1467,6 +1467,15 @@ function getInvocationCheckboxId(index, slot = 1) {
   return `eldritch-invocation-${index}-${slot}`;
 }
 
+function getNormalizedInvocationText(text) {
+  return (text || "").replace(/\n{3,}/g, "\n\n").trim();
+}
+
+function hasWarlockInvocation(invocationName) {
+  const picks = document.querySelectorAll("#eldritch-invocations-output input[data-invocation-name]");
+  return Array.from(picks).some(input => input.dataset.invocationName === invocationName && input.checked);
+}
+
 function renderEldritchInvocations() {
   const output = document.getElementById("eldritch-invocations-output");
   if (!output) return;
@@ -1478,15 +1487,17 @@ function renderEldritchInvocations() {
       return `<label style="margin-right: 6px;"><input type="checkbox" id="${checkboxId}" data-invocation-name="${escapeHtml(invocation.name)}">✔</label>`;
     }).join("");
 
-    return `<div style="margin-bottom: 10px;">
+    return `<div style="margin-bottom: 6px;">
       <div>${checks}<strong>${invocation.name}</strong></div>
-      <div style="margin-left: 4px; white-space: pre-wrap;">${invocation.text || ""}</div>
+      <div style="margin: 2px 0 0 4px; white-space: pre-wrap; line-height: 1.45;">${getNormalizedInvocationText(invocation.text)}</div>
     </div>`;
   }).join("");
 
   output.querySelectorAll("input[type='checkbox']").forEach(el => {
     el.addEventListener("change", () => {
       updateWarlockInvocationSummary();
+      updateACDisplay();
+      populateHandAttacks();
       if (typeof saveAllFields === "function") saveAllFields();
     });
   });
@@ -2243,7 +2254,12 @@ function isWeaponProficient(weapon) {
   const simpleAndMartial = ["barbarian", "fighter", "paladin", "ranger"];
   if (simpleAndMartial.includes(cls)) return true;
 
-  const simpleOnly = ["bard", "sorcerer", "warlock", "wizard"];
+  if (cls === "warlock") {
+    const hasPactBlade = hasWarlockInvocation("刃之魔契");
+    return isSimple || (hasPactBlade && isMartial);
+  }
+
+  const simpleOnly = ["bard", "sorcerer", "wizard"];
   if (simpleOnly.includes(cls)) return isSimple;
 
   if (cls === "cleric") {
