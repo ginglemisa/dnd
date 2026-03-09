@@ -2241,10 +2241,10 @@ function isWeaponProficient(weapon) {
   const hasLight = weaponHasProp(weapon, "輕型");
   const hasFinesse = weaponHasProp(weapon, "靈巧");
 
-  const simpleAndMartial = ["barbarian", "fighter", "paladin", "ranger", "warlock"];
+  const simpleAndMartial = ["barbarian", "fighter", "paladin", "ranger"];
   if (simpleAndMartial.includes(cls)) return true;
 
-  const simpleOnly = ["bard", "sorcerer", "wizard"];
+  const simpleOnly = ["bard", "sorcerer", "warlock", "wizard"];
   if (simpleOnly.includes(cls)) return isSimple;
 
   if (cls === "cleric") {
