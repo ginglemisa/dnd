@@ -1263,6 +1263,12 @@ function handleSpellNotesUnlock9() {
 
   document.getElementById("highlevel-spells").style.display = "block";
   SPELL_MODE = "full";
+  for (let ring = 4; ring <= 9; ring++) {
+    const areaId = `level${ring}spells-area`;
+    const area = document.getElementById(areaId);
+    if (!area || area.childElementCount > 0) continue;
+    createSingleSpellRow(areaId, ring);
+  }
   refreshSpellDropdowns();
   this.value = this.value.replace(/\/unlock9/g, "").trim();
 }
