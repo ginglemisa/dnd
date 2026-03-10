@@ -841,7 +841,7 @@ label[for="level"]{
 
 <div id="tab-skills" class="tab-content">
   <div class="section">
-  <button onclick="fillSaves()">屬性豁免</button>
+  <button onclick="fillSaves()">計算屬性豁免</button>
   <div class="save-grid">
     <div class="save-pair"><label class="save-name" for="prof-str"><input type="checkbox" id="prof-str"><span class="save-stack"><span class="save-abbr">STR</span><span class="save-full">力量</span></span></label><input type="text" inputmode="numeric" id="save-str"></div>
     <div class="save-pair"><label class="save-name" for="prof-int"><input type="checkbox" id="prof-int"><span class="save-stack"><span class="save-abbr">INT</span><span class="save-full">智力</span></span></label><input type="text" inputmode="numeric" id="save-int"></div>
@@ -854,7 +854,7 @@ label[for="level"]{
 
 
 <div class="section">
-  <button onclick="fillSkills()">技能檢定</button>
+  <button onclick="fillSkills()">計算技能加值（熟練選好再按）</button>
   <div class="skill-legend"><span class="legend-badge"><span class="legend-box"></span>熟練</span><span class="legend-badge"><span class="legend-circle"></span>專精</span></div>
   <div class="skill-grid">
     <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">運動(力量)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-運動" data-skill-rank="運動" aria-label="運動 熟練"><input type="checkbox" id="exp-運動" class="circle-checkbox" data-skill-rank="運動" aria-label="運動 專精"></div></div><input type="text" inputmode="numeric" id="skill-運動"></div>
@@ -1734,6 +1734,7 @@ function updateRaceFeature() {
      <div><strong>專長：</strong>${bg.專長}</div>
      <div><strong>技能熟練：</strong>${bg.技能熟練}</div>
      <div><strong>工具熟練：</strong>${bg.工具熟練}</div>
+     <div style="margin-top:8px;"><strong>★</strong> 屬性值可選擇：三項屬性各 +1，或一項屬性 +2 並另一項屬性 +1。</div>
    </div>
 
    <div style="margin-top:12px; line-height:1.25;"">
@@ -2193,13 +2194,36 @@ function formatSignedValue(value) {
   return String(value);
 }
 
+function getClassSaveProficiencies(classId) {
+  const saveMap = {
+    barbarian: ["str", "con"],
+    bard: ["dex", "cha"],
+    cleric: ["wis", "cha"],
+    druid: ["int", "wis"],
+    fighter: ["str", "con"],
+    monk: ["str", "dex"],
+    paladin: ["wis", "cha"],
+    ranger: ["str", "dex"],
+    rogue: ["dex", "int"],
+    sorcerer: ["con", "cha"],
+    warlock: ["wis", "cha"],
+    wizard: ["int", "wis"]
+  };
+  return saveMap[classId] || [];
+}
+
 function fillSaves() {
   const pb = getProficiencyBonus();
   const abilities = ["str", "dex", "con", "int", "wis", "cha"];
+  const selectedClass = document.getElementById("class")?.value || "";
+  const profSaves = new Set(getClassSaveProficiencies(selectedClass));
+
   abilities.forEach(ab => {
+    const profCheckbox = document.getElementById("prof-" + ab);
+    if (profCheckbox) profCheckbox.checked = profSaves.has(ab);
+
     const mod = getModifier(ab);
-    const prof = document.getElementById("prof-" + ab).checked;
-    const total = mod + (prof ? pb : 0);
+    const total = mod + (profSaves.has(ab) ? pb : 0);
     document.getElementById("save-" + ab).value = formatSignedValue(total);
   });
 }
