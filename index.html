@@ -224,6 +224,7 @@ button:hover{filter:brightness(.99);}
 }
 .modifier{
   display:flex;
+  flex-direction:column;
   align-items:center;
   justify-content:center;
   min-height:58px;
@@ -233,6 +234,12 @@ button:hover{filter:brightness(.99);}
   font-size:1.4rem;
   font-weight:900;
   margin:0 0 10px !important;
+}
+.modifier-main{
+  white-space:nowrap;
+}
+.modifier-zh{
+  line-height:1.1;
 }
 .save-grid{
   grid-template-columns:1fr 1fr !important;
@@ -302,7 +309,8 @@ button:hover{filter:brightness(.99);}
 }
 .save-name .save-abbr{font-weight:900;}
 .save-name .save-full{font-weight:800;}
-.save-pair input[type="number"]{
+.save-pair input[type="number"],
+.save-pair input[type="text"]{
   width:68px !important;
   min-width:68px;
 }
@@ -528,7 +536,9 @@ label[for="level"]{
   display:block;
 }
 .skill-cell input[type="number"],
-.save-pair input[type="number"]{
+.skill-cell input[type="text"],
+.save-pair input[type="number"],
+.save-pair input[type="text"]{
   background:#fff !important;
 }
 .skill-cell:focus-within,
@@ -574,9 +584,10 @@ label[for="level"]{
   .save-name{gap:6px; align-items:flex-start !important;}
   .save-name .save-stack{line-height:1.08;}
   .action-grid-pretty button{font-size:.9rem !important; min-height:38px !important; padding:6px 2px !important;}
-  .save-pair input[type="number"]{width:54px !important; min-width:54px; font-size:1rem !important; min-height:38px !important; padding:6px 4px !important;}
+  .save-pair input[type="number"],
+.save-pair input[type="text"]{width:54px !important; min-width:54px; font-size:1rem !important; min-height:38px !important; padding:6px 4px !important;}
   .skill-cell{padding:8px 9px !important;}
-  .skill-cell input[type="number"], input[type="number"], select, input[type="text"], textarea{min-height:38px !important; font-size:1rem !important; padding:7px 9px !important;}
+  .skill-cell input[type="number"], .skill-cell input[type="text"], input[type="number"], select, input[type="text"], textarea{min-height:38px !important; font-size:1rem !important; padding:7px 9px !important;}
   .modifier{min-height:48px; font-size:1.2rem; margin-bottom:8px !important;}
   .spell-slot-grid{grid-template-columns:max-content minmax(0,1fr) minmax(0,1fr) !important; gap:6px !important;}
   .spell-slot-column{padding:8px 7px !important;}
@@ -830,40 +841,40 @@ label[for="level"]{
 
 <div id="tab-skills" class="tab-content">
   <div class="section">
-  <button onclick="fillSaves()">屬性豁免</button>
+  <button onclick="fillSaves()">計算屬性豁免</button>
   <div class="save-grid">
-    <div class="save-pair"><label class="save-name" for="prof-str"><input type="checkbox" id="prof-str"><span class="save-stack"><span class="save-abbr">STR</span><span class="save-full">力量</span></span></label><input type="number" id="save-str"></div>
-    <div class="save-pair"><label class="save-name" for="prof-int"><input type="checkbox" id="prof-int"><span class="save-stack"><span class="save-abbr">INT</span><span class="save-full">智力</span></span></label><input type="number" id="save-int"></div>
-    <div class="save-pair"><label class="save-name" for="prof-dex"><input type="checkbox" id="prof-dex"><span class="save-stack"><span class="save-abbr">DEX</span><span class="save-full">敏捷</span></span></label><input type="number" id="save-dex"></div>
-    <div class="save-pair"><label class="save-name" for="prof-wis"><input type="checkbox" id="prof-wis"><span class="save-stack"><span class="save-abbr">WIS</span><span class="save-full">感知</span></span></label><input type="number" id="save-wis"></div>
-    <div class="save-pair"><label class="save-name" for="prof-con"><input type="checkbox" id="prof-con"><span class="save-stack"><span class="save-abbr">CON</span><span class="save-full">體質</span></span></label><input type="number" id="save-con"></div>
-    <div class="save-pair"><label class="save-name" for="prof-cha"><input type="checkbox" id="prof-cha"><span class="save-stack"><span class="save-abbr">CHA</span><span class="save-full">魅力</span></span></label><input type="number" id="save-cha"></div>
+    <div class="save-pair"><label class="save-name" for="prof-str"><input type="checkbox" id="prof-str"><span class="save-stack"><span class="save-abbr">STR</span><span class="save-full">力量</span></span></label><input type="text" inputmode="numeric" id="save-str"></div>
+    <div class="save-pair"><label class="save-name" for="prof-int"><input type="checkbox" id="prof-int"><span class="save-stack"><span class="save-abbr">INT</span><span class="save-full">智力</span></span></label><input type="text" inputmode="numeric" id="save-int"></div>
+    <div class="save-pair"><label class="save-name" for="prof-dex"><input type="checkbox" id="prof-dex"><span class="save-stack"><span class="save-abbr">DEX</span><span class="save-full">敏捷</span></span></label><input type="text" inputmode="numeric" id="save-dex"></div>
+    <div class="save-pair"><label class="save-name" for="prof-wis"><input type="checkbox" id="prof-wis"><span class="save-stack"><span class="save-abbr">WIS</span><span class="save-full">感知</span></span></label><input type="text" inputmode="numeric" id="save-wis"></div>
+    <div class="save-pair"><label class="save-name" for="prof-con"><input type="checkbox" id="prof-con"><span class="save-stack"><span class="save-abbr">CON</span><span class="save-full">體質</span></span></label><input type="text" inputmode="numeric" id="save-con"></div>
+    <div class="save-pair"><label class="save-name" for="prof-cha"><input type="checkbox" id="prof-cha"><span class="save-stack"><span class="save-abbr">CHA</span><span class="save-full">魅力</span></span></label><input type="text" inputmode="numeric" id="save-cha"></div>
   </div>
 </div>
 
 
 <div class="section">
-  <button onclick="fillSkills()">技能檢定</button>
+  <button onclick="fillSkills()">計算技能加值（熟練選好再按）</button>
   <div class="skill-legend"><span class="legend-badge"><span class="legend-box"></span>熟練</span><span class="legend-badge"><span class="legend-circle"></span>專精</span></div>
   <div class="skill-grid">
-    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">運動(力量)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-運動" data-skill-rank="運動" aria-label="運動 熟練"><input type="checkbox" id="exp-運動" class="circle-checkbox" data-skill-rank="運動" aria-label="運動 專精"></div></div><input type="number" id="skill-運動"></div>
-    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">體操(敏捷)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-體操" data-skill-rank="體操" aria-label="體操 熟練"><input type="checkbox" id="exp-體操" class="circle-checkbox" data-skill-rank="體操" aria-label="體操 專精"></div></div><input type="number" id="skill-體操"></div>
-    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">巧手(敏捷)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-巧手" data-skill-rank="巧手" aria-label="巧手 熟練"><input type="checkbox" id="exp-巧手" class="circle-checkbox" data-skill-rank="巧手" aria-label="巧手 專精"></div></div><input type="number" id="skill-巧手"></div>
-    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">隱匿(敏捷)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-隱匿" data-skill-rank="隱匿" aria-label="隱匿 熟練"><input type="checkbox" id="exp-隱匿" class="circle-checkbox" data-skill-rank="隱匿" aria-label="隱匿 專精"></div></div><input type="number" id="skill-隱匿"></div>
-    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">奧秘(智力)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-奧秘" data-skill-rank="奧秘" aria-label="奧秘 熟練"><input type="checkbox" id="exp-奧秘" class="circle-checkbox" data-skill-rank="奧秘" aria-label="奧秘 專精"></div></div><input type="number" id="skill-奧秘"></div>
-    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">歷史(智力)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-歷史" data-skill-rank="歷史" aria-label="歷史 熟練"><input type="checkbox" id="exp-歷史" class="circle-checkbox" data-skill-rank="歷史" aria-label="歷史 專精"></div></div><input type="number" id="skill-歷史"></div>
-    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">調查(智力)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-調查" data-skill-rank="調查" aria-label="調查 熟練"><input type="checkbox" id="exp-調查" class="circle-checkbox" data-skill-rank="調查" aria-label="調查 專精"></div></div><input type="number" id="skill-調查"></div>
-    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">自然(智力)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-自然" data-skill-rank="自然" aria-label="自然 熟練"><input type="checkbox" id="exp-自然" class="circle-checkbox" data-skill-rank="自然" aria-label="自然 專精"></div></div><input type="number" id="skill-自然"></div>
-    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">宗教(智力)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-宗教" data-skill-rank="宗教" aria-label="宗教 熟練"><input type="checkbox" id="exp-宗教" class="circle-checkbox" data-skill-rank="宗教" aria-label="宗教 專精"></div></div><input type="number" id="skill-宗教"></div>
-    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">馴獸(感知)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-馴獸" data-skill-rank="馴獸" aria-label="馴獸 熟練"><input type="checkbox" id="exp-馴獸" class="circle-checkbox" data-skill-rank="馴獸" aria-label="馴獸 專精"></div></div><input type="number" id="skill-馴獸"></div>
-    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">洞悉(感知)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-洞悉" data-skill-rank="洞悉" aria-label="洞悉 熟練"><input type="checkbox" id="exp-洞悉" class="circle-checkbox" data-skill-rank="洞悉" aria-label="洞悉 專精"></div></div><input type="number" id="skill-洞悉"></div>
-    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">醫藥(感知)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-醫藥" data-skill-rank="醫藥" aria-label="醫藥 熟練"><input type="checkbox" id="exp-醫藥" class="circle-checkbox" data-skill-rank="醫藥" aria-label="醫藥 專精"></div></div><input type="number" id="skill-醫藥"></div>
-    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">察覺(感知)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-察覺" data-skill-rank="察覺" aria-label="察覺 熟練"><input type="checkbox" id="exp-察覺" class="circle-checkbox" data-skill-rank="察覺" aria-label="察覺 專精"></div></div><input type="number" id="skill-察覺"></div>
-    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">求生(感知)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-求生" data-skill-rank="求生" aria-label="求生 熟練"><input type="checkbox" id="exp-求生" class="circle-checkbox" data-skill-rank="求生" aria-label="求生 專精"></div></div><input type="number" id="skill-求生"></div>
-    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">欺瞞(魅力)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-欺瞞" data-skill-rank="欺瞞" aria-label="欺瞞 熟練"><input type="checkbox" id="exp-欺瞞" class="circle-checkbox" data-skill-rank="欺瞞" aria-label="欺瞞 專精"></div></div><input type="number" id="skill-欺瞞"></div>
-    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">威嚇(魅力)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-威嚇" data-skill-rank="威嚇" aria-label="威嚇 熟練"><input type="checkbox" id="exp-威嚇" class="circle-checkbox" data-skill-rank="威嚇" aria-label="威嚇 專精"></div></div><input type="number" id="skill-威嚇"></div>
-    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">表演(魅力)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-表演" data-skill-rank="表演" aria-label="表演 熟練"><input type="checkbox" id="exp-表演" class="circle-checkbox" data-skill-rank="表演" aria-label="表演 專精"></div></div><input type="number" id="skill-表演"></div>
-    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">遊說(魅力)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-遊說" data-skill-rank="遊說" aria-label="遊說 熟練"><input type="checkbox" id="exp-遊說" class="circle-checkbox" data-skill-rank="遊說" aria-label="遊說 專精"></div></div><input type="number" id="skill-遊說"></div>
+    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">運動(力量)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-運動" data-skill-rank="運動" aria-label="運動 熟練"><input type="checkbox" id="exp-運動" class="circle-checkbox" data-skill-rank="運動" aria-label="運動 專精"></div></div><input type="text" inputmode="numeric" id="skill-運動"></div>
+    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">體操(敏捷)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-體操" data-skill-rank="體操" aria-label="體操 熟練"><input type="checkbox" id="exp-體操" class="circle-checkbox" data-skill-rank="體操" aria-label="體操 專精"></div></div><input type="text" inputmode="numeric" id="skill-體操"></div>
+    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">巧手(敏捷)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-巧手" data-skill-rank="巧手" aria-label="巧手 熟練"><input type="checkbox" id="exp-巧手" class="circle-checkbox" data-skill-rank="巧手" aria-label="巧手 專精"></div></div><input type="text" inputmode="numeric" id="skill-巧手"></div>
+    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">隱匿(敏捷)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-隱匿" data-skill-rank="隱匿" aria-label="隱匿 熟練"><input type="checkbox" id="exp-隱匿" class="circle-checkbox" data-skill-rank="隱匿" aria-label="隱匿 專精"></div></div><input type="text" inputmode="numeric" id="skill-隱匿"></div>
+    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">奧秘(智力)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-奧秘" data-skill-rank="奧秘" aria-label="奧秘 熟練"><input type="checkbox" id="exp-奧秘" class="circle-checkbox" data-skill-rank="奧秘" aria-label="奧秘 專精"></div></div><input type="text" inputmode="numeric" id="skill-奧秘"></div>
+    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">歷史(智力)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-歷史" data-skill-rank="歷史" aria-label="歷史 熟練"><input type="checkbox" id="exp-歷史" class="circle-checkbox" data-skill-rank="歷史" aria-label="歷史 專精"></div></div><input type="text" inputmode="numeric" id="skill-歷史"></div>
+    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">調查(智力)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-調查" data-skill-rank="調查" aria-label="調查 熟練"><input type="checkbox" id="exp-調查" class="circle-checkbox" data-skill-rank="調查" aria-label="調查 專精"></div></div><input type="text" inputmode="numeric" id="skill-調查"></div>
+    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">自然(智力)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-自然" data-skill-rank="自然" aria-label="自然 熟練"><input type="checkbox" id="exp-自然" class="circle-checkbox" data-skill-rank="自然" aria-label="自然 專精"></div></div><input type="text" inputmode="numeric" id="skill-自然"></div>
+    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">宗教(智力)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-宗教" data-skill-rank="宗教" aria-label="宗教 熟練"><input type="checkbox" id="exp-宗教" class="circle-checkbox" data-skill-rank="宗教" aria-label="宗教 專精"></div></div><input type="text" inputmode="numeric" id="skill-宗教"></div>
+    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">馴獸(感知)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-馴獸" data-skill-rank="馴獸" aria-label="馴獸 熟練"><input type="checkbox" id="exp-馴獸" class="circle-checkbox" data-skill-rank="馴獸" aria-label="馴獸 專精"></div></div><input type="text" inputmode="numeric" id="skill-馴獸"></div>
+    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">洞悉(感知)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-洞悉" data-skill-rank="洞悉" aria-label="洞悉 熟練"><input type="checkbox" id="exp-洞悉" class="circle-checkbox" data-skill-rank="洞悉" aria-label="洞悉 專精"></div></div><input type="text" inputmode="numeric" id="skill-洞悉"></div>
+    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">醫藥(感知)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-醫藥" data-skill-rank="醫藥" aria-label="醫藥 熟練"><input type="checkbox" id="exp-醫藥" class="circle-checkbox" data-skill-rank="醫藥" aria-label="醫藥 專精"></div></div><input type="text" inputmode="numeric" id="skill-醫藥"></div>
+    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">察覺(感知)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-察覺" data-skill-rank="察覺" aria-label="察覺 熟練"><input type="checkbox" id="exp-察覺" class="circle-checkbox" data-skill-rank="察覺" aria-label="察覺 專精"></div></div><input type="text" inputmode="numeric" id="skill-察覺"></div>
+    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">求生(感知)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-求生" data-skill-rank="求生" aria-label="求生 熟練"><input type="checkbox" id="exp-求生" class="circle-checkbox" data-skill-rank="求生" aria-label="求生 專精"></div></div><input type="text" inputmode="numeric" id="skill-求生"></div>
+    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">欺瞞(魅力)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-欺瞞" data-skill-rank="欺瞞" aria-label="欺瞞 熟練"><input type="checkbox" id="exp-欺瞞" class="circle-checkbox" data-skill-rank="欺瞞" aria-label="欺瞞 專精"></div></div><input type="text" inputmode="numeric" id="skill-欺瞞"></div>
+    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">威嚇(魅力)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-威嚇" data-skill-rank="威嚇" aria-label="威嚇 熟練"><input type="checkbox" id="exp-威嚇" class="circle-checkbox" data-skill-rank="威嚇" aria-label="威嚇 專精"></div></div><input type="text" inputmode="numeric" id="skill-威嚇"></div>
+    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">表演(魅力)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-表演" data-skill-rank="表演" aria-label="表演 熟練"><input type="checkbox" id="exp-表演" class="circle-checkbox" data-skill-rank="表演" aria-label="表演 專精"></div></div><input type="text" inputmode="numeric" id="skill-表演"></div>
+    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">遊說(魅力)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-遊說" data-skill-rank="遊說" aria-label="遊說 熟練"><input type="checkbox" id="exp-遊說" class="circle-checkbox" data-skill-rank="遊說" aria-label="遊說 專精"></div></div><input type="text" inputmode="numeric" id="skill-遊說"></div>
   </div>
 
   <div class="section">
@@ -1723,6 +1734,7 @@ function updateRaceFeature() {
      <div><strong>專長：</strong>${bg.專長}</div>
      <div><strong>技能熟練：</strong>${bg.技能熟練}</div>
      <div><strong>工具熟練：</strong>${bg.工具熟練}</div>
+     <div style="margin-top:8px;"><strong>★</strong> 屬性值可選擇：三項屬性各 +1，或一項屬性 +2 並另一項屬性 +1。</div>
    </div>
 
    <div style="margin-top:12px; line-height:1.25;"">
@@ -2128,7 +2140,8 @@ document.getElementById("set-default-abilities").addEventListener("click", () =>
     function calculateModifier(score) {
       if (!score || isNaN(score)) return "";
       const mod = Math.floor((score - 10) / 2);
-      return `(${mod >= 0 ? "+" : ""}${mod})`;
+      if (mod === 0) return "(0)";
+      return `(${mod > 0 ? "+" : ""}${mod})`;
     }
 
     const abilities = ["str", "dex", "con", "int", "wis", "cha"];
@@ -2145,8 +2158,11 @@ document.getElementById("set-default-abilities").addEventListener("click", () =>
       const modDisplay = document.getElementById(`${ability}-mod`);
       input.addEventListener("input", () => {
         const mod = calculateModifier(parseInt(input.value));
-        const label = `${ability.toUpperCase()} ${mod} ${abilityNamesZh[ability]}`;
-        modDisplay.textContent = mod ? label : "";
+        if (!mod) {
+          modDisplay.textContent = "";
+          return;
+        }
+        modDisplay.innerHTML = `<span class="modifier-main">${ability.toUpperCase()} ${mod}</span><span class="modifier-zh">${abilityNamesZh[ability]}</span>`;
     });
 
 
@@ -2172,14 +2188,43 @@ function getProficiencyBonus() {
   return 2; // 1~4
 }
 
+function formatSignedValue(value) {
+  if (!Number.isFinite(value)) return "";
+  if (value > 0) return `+${value}`;
+  return String(value);
+}
+
+function getClassSaveProficiencies(classId) {
+  const saveMap = {
+    barbarian: ["str", "con"],
+    bard: ["dex", "cha"],
+    cleric: ["wis", "cha"],
+    druid: ["int", "wis"],
+    fighter: ["str", "con"],
+    monk: ["str", "dex"],
+    paladin: ["wis", "cha"],
+    ranger: ["str", "dex"],
+    rogue: ["dex", "int"],
+    sorcerer: ["con", "cha"],
+    warlock: ["wis", "cha"],
+    wizard: ["int", "wis"]
+  };
+  return saveMap[classId] || [];
+}
+
 function fillSaves() {
   const pb = getProficiencyBonus();
   const abilities = ["str", "dex", "con", "int", "wis", "cha"];
+  const selectedClass = document.getElementById("class")?.value || "";
+  const profSaves = new Set(getClassSaveProficiencies(selectedClass));
+
   abilities.forEach(ab => {
+    const profCheckbox = document.getElementById("prof-" + ab);
+    if (profCheckbox) profCheckbox.checked = profSaves.has(ab);
+
     const mod = getModifier(ab);
-    const prof = document.getElementById("prof-" + ab).checked;
-    const total = mod + (prof ? pb : 0);
-    document.getElementById("save-" + ab).value = total;
+    const total = mod + (profSaves.has(ab) ? pb : 0);
+    document.getElementById("save-" + ab).value = formatSignedValue(total);
   });
 }
 
@@ -2223,7 +2268,7 @@ function fillSkills() {
     const pb = getProficiencyBonus();
 	const bonus = expInput.checked ? pb * 2 : (profInput.checked ? pb : 0);
     const total = mod + bonus;
-    input.value = total;
+    input.value = formatSignedValue(total);
   }
 }
 </script>
