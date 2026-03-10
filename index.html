@@ -2423,6 +2423,15 @@ const MARTIAL_WEAPON_NAMES = new Set([
   ...weapons_martial_melee.map(w => w.名稱),
   ...weapons_martial_ranged.map(w => w.名稱),
 ]);
+const RANGED_WEAPON_NAMES = new Set([
+  ...weapons_simple_ranged.map(w => w.名稱),
+  ...weapons_martial_ranged.map(w => w.名稱),
+]);
+
+function isRangedWeapon(weapon) {
+  return !!weapon && RANGED_WEAPON_NAMES.has(weapon.名稱);
+}
+
 function weaponHasProp(weapon, keyword) {
   return [weapon.屬性1, weapon.屬性2, weapon.屬性3, weapon.屬性4].some(p => p?.includes(keyword));
 }
@@ -2499,7 +2508,7 @@ function populateHandAttacks() {
     }
     const strMod = getModifier("str");
     const dexMod = getModifier("dex");
-    const isRanged = weaponHasProp(weapon, "射程");
+    const isRanged = isRangedWeapon(weapon);
     const isDexEligible = weaponHasProp(weapon, "靈巧");
     const pb = getProficiencyBonus();
     const proficient = isWeaponProficient(weapon);
