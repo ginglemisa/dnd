@@ -2956,7 +2956,7 @@ function updateSpellsByClassLevel() {
 
 
 function renderSpellDescHtml(raw) {
-  const desc = String(raw ?? "—");
+  const desc = addFamiliarBeastTips(String(raw ?? "—"));
   const tipRe = /<span class="beast-tip" data-beast="([a-z0-9_]+)">([^<]+)<\/span>/g;
   let last = 0;
   const parts = [];
@@ -2977,6 +2977,32 @@ function renderSpellDescHtml(raw) {
 
   parts.push(escapeHtml(desc.slice(last)));
   return parts.join("").replaceAll("\n", "<br>");
+}
+
+function addFamiliarBeastTips(desc) {
+  if (!desc.includes("召喚一隻魔寵")) return desc;
+
+  const familiarBeasts = [
+    ["蝙蝠", "bat"],
+    ["貓", "cat"],
+    ["青蛙", "frog"],
+    ["獵鷹", "hawk"],
+    ["蜥蜴", "lizard"],
+    ["章魚", "octopus"],
+    ["貓頭鷹", "owl"],
+    ["老鼠", "rat"],
+    ["渡鴉", "raven"],
+    ["蜘蛛", "spider"],
+    ["鼬", "weasel"]
+  ];
+
+  let withTips = desc;
+  familiarBeasts.forEach(([label, key]) => {
+    const tipHtml = `<span class="beast-tip" data-beast="${key}">${label}</span>`;
+    withTips = withTips.replaceAll(label, tipHtml);
+  });
+
+  return withTips;
 }
 
 // ====== 德魯伊變身提示 =====
