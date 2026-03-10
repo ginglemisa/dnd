@@ -258,6 +258,48 @@ button:hover{filter:brightness(.99);}
   gap:0;
   line-height:1.05;
 }
+
+#spell-qr-modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:10001;
+  background:rgba(0,0,0,.58);
+  align-items:center;
+  justify-content:center;
+  padding:16px;
+}
+#spell-qr-modal.open{
+  display:flex;
+}
+.spell-qr-modal-card{
+  position:relative;
+  width:min(92vw,320px);
+  border-radius:16px;
+  background:#fff;
+  padding:20px;
+  box-shadow:0 20px 48px rgba(0,0,0,.28);
+}
+.spell-qr-modal-close{
+  position:absolute;
+  right:10px;
+  top:10px;
+  width:32px;
+  min-height:32px;
+  border-radius:999px !important;
+  border:1px solid #d2d9e5 !important;
+  background:#fff !important;
+  box-shadow:none;
+  font-size:1.1rem;
+  line-height:1;
+}
+.spell-qr-modal-image{
+  width:100%;
+  height:auto;
+  display:block;
+  border-radius:10px;
+  border:1px solid #d9dfea;
+}
 .save-name .save-abbr{font-weight:900;}
 .save-name .save-full{font-weight:800;}
 .save-pair input[type="number"]{
@@ -556,7 +598,7 @@ label[for="level"]{
   <button class="tab-button" onclick="showTab(&#39;skills&#39;, this)">技能</button>
   <button class="tab-button" onclick="showTab(&#39;actions&#39;, this)">動作</button>
   <button class="tab-button" onclick="showTab(&#39;equipment&#39;, this)">裝備</button>
-  <button class="tab-button" onclick="showTab(&#39;spells&#39;, this)">法術</button>
+  <button id="spells-tab-button" class="tab-button" onclick="showTab(&#39;spells&#39;, this)">法術</button>
 </div>
 
 <div id="tab-basic" class="tab-content active">
@@ -2945,6 +2987,45 @@ function hideBeastPopup() {
   if (popup) popup.style.display = "none";
 }
 
+const SPELL_QR_IMAGE_SRC = "./qr.png";
+
+function setupSpellQrEasterEgg() {
+  const spellTabBtn = document.getElementById("spells-tab-button");
+  const modal = document.getElementById("spell-qr-modal");
+  if (!spellTabBtn || !modal) return;
+
+  const closeBtn = modal.querySelector(".spell-qr-modal-close");
+  const qrImage = modal.querySelector(".spell-qr-modal-image");
+  if (qrImage) qrImage.src = SPELL_QR_IMAGE_SRC;
+
+  let spellClickCount = 0;
+  const resetSpellClickCount = () => { spellClickCount = 0; };
+  const showSpellQrModal = () => modal.classList.add("open");
+  const hideSpellQrModal = () => modal.classList.remove("open");
+
+  spellTabBtn.addEventListener("click", () => {
+    spellClickCount += 1;
+    if (spellClickCount >= 5) {
+      showSpellQrModal();
+      resetSpellClickCount();
+    }
+  });
+
+  document.querySelectorAll(".tab-button").forEach((btn) => {
+    if (btn !== spellTabBtn) {
+      btn.addEventListener("click", resetSpellClickCount);
+    }
+  });
+
+  closeBtn?.addEventListener("click", hideSpellQrModal);
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal) hideSpellQrModal();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") hideSpellQrModal();
+  });
+}
+
 // 事件委派：不用管 class-features 何時重繪
 document.addEventListener("click", (e) => {
   const el = e.target.closest(".beast-tip");
@@ -3342,8 +3423,16 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
 
   // 6. 分享模式判定完成後，才初始化版權提醒，避免時序競態
   initLegalModal();
+  setupSpellQrEasterEgg();
 });
 </script>
+
+<div id="spell-qr-modal" aria-hidden="true">
+  <div class="spell-qr-modal-card" role="dialog" aria-modal="true" aria-label="法術彩蛋 QR Code">
+    <button type="button" class="spell-qr-modal-close" aria-label="關閉 QR Code">✕</button>
+    <img class="spell-qr-modal-image" alt="法術彩蛋 QR Code 圖片">
+  </div>
+</div>
 
 <div id="legal-modal" style="display:none;position:fixed;z-index:9999;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.45);">
   <div style="background:#fff;padding:24px 16px;max-width:340px;margin:120px auto 0 auto;border-radius:12px;box-shadow:0 4px 24px #0003;">
