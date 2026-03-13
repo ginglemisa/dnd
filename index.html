@@ -1138,7 +1138,7 @@ label[for="level"]{
 </div>
 
     <div class="section">
-  <div class="spell-casting-stats" aria-label="施法能力計算">
+  <div id="spell-casting-stats-wrap" class="spell-casting-stats" aria-label="施法能力計算">
     <div class="stat-label">施法屬性</div>
     <div class="stat-label">法術調整</div>
     <div class="stat-label">豁免</div>
@@ -1328,6 +1328,9 @@ function bindCoreCharacterEvents() {
   bindEventById("armor", "change", updateArmorInfo);
   bindEventById("class", "change", () => {updateClassFeature();updateACDisplay();updateEldritchInvocationSectionVisibility();populateHandAttacks();updateSpellsByClassLevel();updateExpertiseVisibility();updateExtraLanguageFields();});
   bindEventById("level", "change", () => {updateClassFeature();updateACDisplay();updateSpellsByClassLevel();updateExtraLanguageFields();});
+  bindEventById("class", "change", updateSpellCastingStatsVisibility);
+  bindEventById("background", "change", updateSpellCastingStatsVisibility);
+  bindEventById("race", "change", updateSpellCastingStatsVisibility);
 }
 
 const EXPERTISE_VISIBLE_CLASSES = new Set(["", "bard", "ranger", "rogue", "wizard"]);
@@ -2093,6 +2096,7 @@ document.addEventListener("DOMContentLoaded", () => {
   updateEldritchInvocationSectionVisibility();
   updateExpertiseVisibility();
   updateSpellsByClassLevel();
+  updateSpellCastingStatsVisibility();
   bindHPDisplayEvents();
   bindSpellNotesEvents();
   bindCoreCharacterEvents();
@@ -2265,6 +2269,34 @@ function bindSpellCastingStatsEvents() {
   ["int", "wis", "cha", "level"].forEach(id => {
     bindEventById(id, id === "level" ? "change" : "input", updateSpellCastingStats);
   });
+}
+
+const NON_SPELLCASTER_CLASSES = new Set(["barbarian", "fighter", "monk", "rogue"]);
+const SPELLCASTER_CLASSES = new Set(["bard", "cleric", "druid", "paladin", "ranger", "sorcerer", "warlock", "wizard"]);
+const NON_SPELLCASTER_BACKGROUNDS = new Set(["soldier", "criminal"]);
+const SPELLCASTER_BACKGROUNDS = new Set(["acolyte", "sage"]);
+const NON_SPELLCASTER_RACES = new Set(["dragonborn", "dwarf", "goliath", "halfling", "human", "orc"]);
+const SPELLCASTER_RACES = new Set(["elf", "gnome", "tiefling"]);
+
+function hasSpellcastingCapability() {
+  const classValue = document.getElementById("class")?.value || "";
+  const backgroundValue = document.getElementById("background")?.value || "";
+  const raceValue = document.getElementById("race")?.value || "";
+
+  if (SPELLCASTER_CLASSES.has(classValue)) return true;
+  if (SPELLCASTER_BACKGROUNDS.has(backgroundValue)) return true;
+  if (SPELLCASTER_RACES.has(raceValue)) return true;
+
+  const classNoCast = NON_SPELLCASTER_CLASSES.has(classValue);
+  const backgroundNoCast = NON_SPELLCASTER_BACKGROUNDS.has(backgroundValue);
+  const raceNoCast = NON_SPELLCASTER_RACES.has(raceValue);
+  return !(classNoCast && backgroundNoCast && raceNoCast);
+}
+
+function updateSpellCastingStatsVisibility() {
+  const wrap = document.getElementById("spell-casting-stats-wrap");
+  if (!wrap) return;
+  wrap.style.display = hasSpellcastingCapability() ? "grid" : "none";
 }
 
 function getClassSaveProficiencies(classId) {
@@ -3540,6 +3572,7 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
     const el = document.getElementById(id);
     if (el) el.dispatchEvent(new Event("input"));
   });
+  updateSpellCastingStatsVisibility();
   updateSpellCastingStats();
   updatePickedSpellBoxes();
   // 4. 啟用自動儲存
