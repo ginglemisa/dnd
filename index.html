@@ -1140,17 +1140,18 @@ label[for="level"]{
     <div class="section">
   <div id="spell-casting-stats-wrap" class="spell-casting-stats" aria-label="施法能力計算">
     <div class="stat-label">施法屬性</div>
-    <div class="stat-label">法術調整</div>
-    <div class="stat-label">豁免</div>
-    <div class="stat-label">命中</div>
+    <div class="stat-label">施法調整值</div>
+    <div class="stat-label">豁免難度</div>
+    <div class="stat-label">命中加值</div>
     <select id="spellcasting-ability">
+      <option value="">-待選-</option>
       <option value="int">智力</option>
       <option value="wis">感知</option>
       <option value="cha">魅力</option>
     </select>
-    <input type="text" id="spell-adjustment" inputmode="numeric" aria-label="法術調整" placeholder="+0">
-    <input type="number" id="spell-save-dc" inputmode="numeric" aria-label="法術豁免" placeholder="10">
-    <input type="text" id="spell-attack-bonus" inputmode="numeric" aria-label="法術命中" placeholder="+2">
+    <input type="number" id="spell-adjustment" inputmode="numeric" aria-label="施法調整值" min="-5" max="20" placeholder="">
+    <input type="number" id="spell-save-dc" inputmode="numeric" aria-label="豁免難度" min="0" max="20" placeholder="">
+    <input type="number" id="spell-attack-bonus" inputmode="numeric" aria-label="命中加值" min="-5" max="20" placeholder="">
   </div>
   <h3>法術位管理</h3>
   <div class="spell-slot-grid" style="display:grid; gap: 8px 12px; align-items: start;">
@@ -2249,19 +2250,31 @@ function formatSignedValue(value) {
   return String(value);
 }
 
+function formatSpellNumberValue(value) {
+  if (!Number.isFinite(value)) return "";
+  return String(value);
+}
+
 function updateSpellCastingStats() {
   const ability = document.getElementById("spellcasting-ability")?.value;
   const adjustmentInput = document.getElementById("spell-adjustment");
   const saveDcInput = document.getElementById("spell-save-dc");
   const attackInput = document.getElementById("spell-attack-bonus");
-  if (!ability || !adjustmentInput || !saveDcInput || !attackInput) return;
+  if (!adjustmentInput || !saveDcInput || !attackInput) return;
+
+  if (!ability) {
+    adjustmentInput.value = "";
+    saveDcInput.value = "";
+    attackInput.value = "";
+    return;
+  }
 
   const mod = getModifier(ability);
   const pb = getProficiencyBonus();
 
-  adjustmentInput.value = formatSignedValue(mod);
+  adjustmentInput.value = formatSpellNumberValue(mod);
   saveDcInput.value = String(8 + pb + mod);
-  attackInput.value = `+${mod + pb}`;
+  attackInput.value = formatSpellNumberValue(mod + pb);
 }
 
 function bindSpellCastingStatsEvents() {
