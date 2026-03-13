@@ -1732,11 +1732,18 @@ function escapeRegExp(text) {
 function highlightSpellNamesInClassFeature(html) {
   if (!Array.isArray(spellList)) return html;
 
-  const uniqueSpellNames = [...new Set(
-    spellList
-      .map(spell => spell?.name)
-      .filter(Boolean)
-  )].sort((a, b) => b.length - a.length);
+  const spellAliases = [];
+  spellList.forEach(spell => {
+    const rawName = String(spell?.name || "").trim();
+    if (!rawName) return;
+
+    spellAliases.push(rawName);
+
+    const localizedName = rawName.match(/^(.+?)\s+[A-Za-z]/)?.[1]?.trim();
+    if (localizedName) spellAliases.push(localizedName);
+  });
+
+  const uniqueSpellNames = [...new Set(spellAliases)].sort((a, b) => b.length - a.length);
 
   if (!uniqueSpellNames.length) return html;
 
