@@ -430,6 +430,27 @@ input[type="checkbox"]{
   border-radius:14px;
   padding:10px 12px;
 }
+.spell-casting-stats{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:8px 10px;
+  margin-bottom:12px;
+  align-items:end;
+}
+.spell-casting-stats .stat-label{
+  font-size:.9rem;
+  color:#475467;
+  font-weight:700;
+  text-align:center;
+}
+.spell-casting-stats select,
+.spell-casting-stats input{
+  text-align:center;
+  font-size:1.35rem;
+  font-weight:800;
+  min-height:48px;
+  padding:6px 8px;
+}
 
 body{
   max-width: 920px;
@@ -598,6 +619,10 @@ label[for="level"]{
   .spell-slot-grid{grid-template-columns:max-content minmax(0,1fr) minmax(0,1fr) !important; gap:6px !important;}
   .spell-slot-column{padding:8px 7px !important;}
   .spell-slot-column h4{font-size:1rem !important; margin:0 0 6px !important;}
+  .spell-casting-stats{gap:6px 6px !important;}
+  .spell-casting-stats .stat-label{font-size:.82rem !important;}
+  .spell-casting-stats select,
+  .spell-casting-stats input{font-size:1.15rem !important; min-height:40px !important; padding:6px 4px !important;}
 }
 
 @media (max-width:339px){
@@ -1113,6 +1138,20 @@ label[for="level"]{
 </div>
 
     <div class="section">
+  <div class="spell-casting-stats" aria-label="施法能力計算">
+    <div class="stat-label">施法屬性</div>
+    <div class="stat-label">法術調整</div>
+    <div class="stat-label">豁免</div>
+    <div class="stat-label">命中</div>
+    <select id="spellcasting-ability">
+      <option value="int">智力</option>
+      <option value="wis">感知</option>
+      <option value="cha">魅力</option>
+    </select>
+    <input type="text" id="spell-adjustment" inputmode="numeric" aria-label="法術調整" placeholder="+0">
+    <input type="number" id="spell-save-dc" inputmode="numeric" aria-label="法術豁免" placeholder="10">
+    <input type="text" id="spell-attack-bonus" inputmode="numeric" aria-label="法術命中" placeholder="+2">
+  </div>
   <h3>法術位管理</h3>
   <div class="spell-slot-grid" style="display:grid; gap: 8px 12px; align-items: start;">
     <div id="spellslot1-row" class="spell-slot-column">
@@ -2204,6 +2243,28 @@ function formatSignedValue(value) {
   if (!Number.isFinite(value)) return "";
   if (value > 0) return `+${value}`;
   return String(value);
+}
+
+function updateSpellCastingStats() {
+  const ability = document.getElementById("spellcasting-ability")?.value;
+  const adjustmentInput = document.getElementById("spell-adjustment");
+  const saveDcInput = document.getElementById("spell-save-dc");
+  const attackInput = document.getElementById("spell-attack-bonus");
+  if (!ability || !adjustmentInput || !saveDcInput || !attackInput) return;
+
+  const mod = getModifier(ability);
+  const pb = getProficiencyBonus();
+
+  adjustmentInput.value = formatSignedValue(mod);
+  saveDcInput.value = String(8 + pb + mod);
+  attackInput.value = `+${mod + pb}`;
+}
+
+function bindSpellCastingStatsEvents() {
+  bindEventById("spellcasting-ability", "change", updateSpellCastingStats);
+  ["int", "wis", "cha", "level"].forEach(id => {
+    bindEventById(id, id === "level" ? "change" : "input", updateSpellCastingStats);
+  });
 }
 
 function getClassSaveProficiencies(classId) {
@@ -3434,6 +3495,7 @@ function initLegalModal() {
 
 // ====== 頁面載入時全自動初始化 ======
 window.addEventListener("DOMContentLoaded", async function() {
+  bindSpellCastingStatsEvents();
   updateExtraLanguageFields();
   // 1. 初始化裝備下拉
   const mainHandSelect = document.getElementById("mainHand");
@@ -3478,6 +3540,7 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
     const el = document.getElementById(id);
     if (el) el.dispatchEvent(new Event("input"));
   });
+  updateSpellCastingStats();
   updatePickedSpellBoxes();
   // 4. 啟用自動儲存
   setupAutoSave();
