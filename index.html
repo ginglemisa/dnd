@@ -1729,14 +1729,33 @@ function escapeRegExp(text) {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+function getSpellNamesFromSpellList(root) {
+  const names = [];
+
+  function walk(node) {
+    if (!node) return;
+    if (Array.isArray(node)) {
+      node.forEach(walk);
+      return;
+    }
+    if (typeof node === "object") {
+      if (typeof node.name === "string" && node.name.trim()) {
+        names.push(node.name.trim());
+      }
+      Object.values(node).forEach(walk);
+    }
+  }
+
+  walk(root);
+  return names;
+}
+
 function highlightSpellNamesInClassFeature(html) {
-  if (!Array.isArray(spellList)) return html;
+  const spellNames = getSpellNamesFromSpellList(spellList);
+  if (!spellNames.length) return html;
 
   const spellAliases = [];
-  spellList.forEach(spell => {
-    const rawName = String(spell?.name || "").trim();
-    if (!rawName) return;
-
+  spellNames.forEach(rawName => {
     spellAliases.push(rawName);
 
     const localizedName = rawName.match(/^(.+?)\s+[A-Za-z]/)?.[1]?.trim();
@@ -1744,7 +1763,6 @@ function highlightSpellNamesInClassFeature(html) {
   });
 
   const uniqueSpellNames = [...new Set(spellAliases)].sort((a, b) => b.length - a.length);
-
   if (!uniqueSpellNames.length) return html;
 
   const spellRegex = new RegExp(`(${uniqueSpellNames.map(escapeRegExp).join("|")})`, "g");
