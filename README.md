@@ -1,5 +1,5 @@
 # D&D 新手快速創角工具
-
+https://ginglemisa.github.io/dnd/
 作者：蔡秉衡 Reggie 瑞基
 
 這個網站是送給所有 **D&D 入坑者** 的小禮物。
