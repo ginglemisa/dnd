@@ -1309,23 +1309,11 @@ function bindHPDisplayEvents() {
 }
 
 function handleSpellNotesUnlock9() {
-  if (!this.value.includes("/unlock9")) return;
-
-  document.getElementById("highlevel-spells").style.display = "block";
-  SPELL_MODE = "full";
-  for (let ring = 4; ring <= 9; ring++) {
-    const areaId = `level${ring}spells-area`;
-    const area = document.getElementById(areaId);
-    if (!area || area.childElementCount > 0) continue;
-    createSingleSpellRow(areaId, ring);
-  }
-  refreshSpellDropdowns();
-  this.value = this.value.replace(/\/unlock9/g, "").trim();
+  return;
 }
 
 function bindSpellNotesEvents() {
-  bindEventById("spell-notes", "input", handleSpellNotesUnlock9);
-  bindEventById("spell-notes", "change", handleSpellNotesUnlock9);
+  return;
 }
 
 function bindCoreCharacterEvents() {
