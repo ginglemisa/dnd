@@ -3,17 +3,23 @@ const style = document.createElement("style");
 style.innerHTML = `
   #scrollToTopBtn {
     position: fixed;
-    bottom: 20px;
-    left: 20px;
+    right: 12px;
+    bottom: 12px;
     z-index: 999;
-    padding: 10px 12px;
+    width: 1.85em;
+    height: 1.85em;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     font-size: 16px;
+    line-height: 1;
     border-radius: 999px;
     border: 1px solid #cfd5df;
     background: rgba(255,255,255,0.92);
     color: #2a3442;
     cursor: pointer;
-    opacity: 0.9;
+    opacity: 0.92;
     box-shadow: 0 8px 24px rgba(25, 35, 52, 0.12);
     transition: opacity 0.2s ease, transform 0.2s ease;
   }
@@ -657,3 +663,27 @@ style.innerHTML = `
   }
 `;
 document.head.appendChild(style);
+
+
+(function initScrollToTopButton() {
+  if (document.getElementById("scrollToTopBtn")) return;
+
+  const scrollToTopBtn = document.createElement("button");
+  scrollToTopBtn.id = "scrollToTopBtn";
+  scrollToTopBtn.type = "button";
+  scrollToTopBtn.textContent = "頂";
+  scrollToTopBtn.setAttribute("aria-label", "回到頁面頂端");
+  scrollToTopBtn.style.display = "none";
+
+  scrollToTopBtn.addEventListener("click", () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  const updateVisibility = () => {
+    scrollToTopBtn.style.display = window.scrollY > 220 ? "block" : "none";
+  };
+
+  document.body.appendChild(scrollToTopBtn);
+  window.addEventListener("scroll", updateVisibility, { passive: true });
+  updateVisibility();
+})();
