@@ -671,7 +671,7 @@ document.head.appendChild(style);
   const scrollToTopBtn = document.createElement("button");
   scrollToTopBtn.id = "scrollToTopBtn";
   scrollToTopBtn.type = "button";
-  scrollToTopBtn.textContent = "頂";
+  scrollToTopBtn.textContent = "▲";
   scrollToTopBtn.setAttribute("aria-label", "回到頁面頂端");
   scrollToTopBtn.style.display = "none";
 
