@@ -68,8 +68,7 @@ def inline_scripts(html_text: str, base_dir: Path) -> str:
 
         if has_defer(attrs) or has_defer(tail):
             defer_chunks.append(js_content)
-            passthrough_attrs = clean_attrs(attrs, tail, remove_defer=True)
-            return f"<script{passthrough_attrs}>window.__INLINE_DEFER_QUEUE__=window.__INLINE_DEFER_QUEUE__||[];</script>"
+            return ""
 
         passthrough_attrs = clean_attrs(attrs, tail, remove_defer=False)
         return f"<script{passthrough_attrs}>\n{js_content}\n</script>"
@@ -81,15 +80,12 @@ def inline_scripts(html_text: str, base_dir: Path) -> str:
         defer_runner = (
             "<script>\n"
             "(function(){\n"
-            "  var q = window.__INLINE_DEFER_QUEUE__ = window.__INLINE_DEFER_QUEUE__ || [];\n"
-            f"  q.push({queue_values});\n"
-            "  if (window.__INLINE_DEFER_READY__) return;\n"
-            "  window.__INLINE_DEFER_READY__ = true;\n"
-            "  document.addEventListener('DOMContentLoaded', function(){\n"
-            "    for (var i = 0; i < q.length; i++) {\n"
-            "      (0, eval)(q[i]);\n"
-            "    }\n"
-            "  });\n"
+            "  var q = [\n"
+            f"{queue_values}\n"
+            "  ];\n"
+            "  for (var i = 0; i < q.length; i++) {\n"
+            "    (0, eval)(q[i]);\n"
+            "  }\n"
             "})();\n"
             "</script>"
         )
