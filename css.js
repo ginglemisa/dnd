@@ -1,29 +1,28 @@
 // css.js
 const style = document.createElement("style");
-style.textContent = `
-#scrollToTopBtn {
-  position: fixed;
-  bottom: 20px;
-  left: 20px;
-  z-index: 999;
-  padding: 10px 12px;
-  font-size: 16px;
-  border-radius: 999px;
-  border: 1px solid #cfd5df;
-  background: rgba(255,255,255,0.92);
-  color: #2a3442;
-  cursor: pointer;
-  opacity: 0.9;
-  box-shadow: 0 8px 24px rgba(25, 35, 52, 0.12);
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
-
-#scrollToTopBtn:hover {
-  opacity: 1;
-  transform: translateY(-1px);
-}
-`;
 style.innerHTML = `
+  #scrollToTopBtn {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 999;
+    padding: 10px 12px;
+    font-size: 16px;
+    border-radius: 999px;
+    border: 1px solid #cfd5df;
+    background: rgba(255,255,255,0.92);
+    color: #2a3442;
+    cursor: pointer;
+    opacity: 0.9;
+    box-shadow: 0 8px 24px rgba(25, 35, 52, 0.12);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  #scrollToTopBtn:hover {
+    opacity: 1;
+    transform: translateY(-1px);
+  }
+
   :root {
     --bg: #f3f5f9;
     --panel: #ffffff;
