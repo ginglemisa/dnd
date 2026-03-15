@@ -73,7 +73,7 @@ style.innerHTML = `
     background: rgba(243, 245, 249, 0.96);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    padding: 10px 6px 12px;
+    padding: 10px 6px 4px;
     display: flex;
     justify-content: space-around;
     gap: 6px;
