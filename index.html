@@ -732,7 +732,7 @@ label[for="level"]{
   <!-- 左欄：HP 顯示與輸入 -->
   <div class="hp-card">
     <div class="hp-title">最大生命值<span id="hp-display" class="hp-value">(0)</span></div>
-    <input type="number" id="hp" placeholder="目前 HP">
+    <input type="number" id="hp" placeholder="目前 HP" min="0" max="200" step="1" inputmode="numeric">
   </div>
 
   <!-- 右欄：陣營選擇 -->
@@ -1291,6 +1291,23 @@ function bindHPDisplayEvents() {
   bindEventById("level", "change", updateHPDisplay);
   bindEventById("race", "change", updateHPDisplay);
   bindEventById("con", "input", updateHPDisplay);
+}
+
+function clampHpValue(rawValue) {
+  if (rawValue === "" || rawValue === null || rawValue === undefined) return "";
+  const numeric = Number(rawValue);
+  if (!Number.isFinite(numeric)) return "";
+  const rounded = Math.round(numeric);
+  return String(Math.min(200, Math.max(0, rounded)));
+}
+
+function enforceHpInputRange() {
+  const hpInput = document.getElementById("hp");
+  if (!hpInput) return;
+  const clamped = clampHpValue(hpInput.value);
+  if (hpInput.value !== clamped) {
+    hpInput.value = clamped;
+  }
 }
 
 function handleSpellNotesUnlock9() {
@@ -2133,6 +2150,8 @@ document.addEventListener("DOMContentLoaded", () => {
   updateSpellsByClassLevel();
   updateSpellCastingStatsVisibility();
   bindHPDisplayEvents();
+  bindEventById("hp", "input", enforceHpInputRange);
+  bindEventById("hp", "change", enforceHpInputRange);
   bindSpellNotesEvents();
   bindCoreCharacterEvents();
   bindSkillRankExclusiveEvents();
