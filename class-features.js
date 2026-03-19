@@ -209,7 +209,7 @@ const classFeatures = {
       <thead>
         <tr>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">等級</th>
-          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">熟練<br>加值</th>
+          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">熟練加值</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px;">職業特性</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px;">激勵骰</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">戲法</th>
@@ -398,7 +398,7 @@ const classFeatures = {
   <thead>
         <tr>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">等級</th>
-          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">熟練<br>加值</th>
+          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">熟練加值</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px;">職業特性</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px;">引導神力</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">戲法</th>
@@ -596,7 +596,7 @@ const classFeatures = {
   <thead>
         <tr>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">等級</th>
-          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">熟練<br>加值</th>
+          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">熟練加值</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px;">職業特性</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px;">荒野形態</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">戲法</th>
@@ -1147,8 +1147,8 @@ const classFeatures = {
       <th style="border:1px solid #aaa; padding:3px;">職業特性</th>
       <th style="border:1px solid #aaa; padding:3px;">引導神力</th>
       <th style="border:1px solid #aaa; padding:3px;">準備法術</th>
-      <th style="border:1px solid #aaa; padding:3px;">每環法術位<br>1</th>
-      <th style="border:1px solid #aaa; padding:3px;">每環法術位<br>2</th>
+      <th style="border:1px solid #aaa; padding:3px;">環法術位<br>1</th>
+      <th style="border:1px solid #aaa; padding:3px;">環法術位<br>2</th>
     </tr>
   </thead>
   <tbody>
@@ -1339,8 +1339,8 @@ const classFeatures = {
       <th style="border:1px solid #aaa; padding:3px;">職業特性</th>
       <th style="border:1px solid #aaa; padding:3px;">宿敵</th>
       <th style="border:1px solid #aaa; padding:3px;">準備法術</th>
-      <th style="border:1px solid #aaa; padding:3px;">每環法術位<br>1</th>
-      <th style="border:1px solid #aaa; padding:3px;">每環法術位<br>2</th>
+      <th style="border:1px solid #aaa; padding:3px;">環法術位<br>1</th>
+      <th style="border:1px solid #aaa; padding:3px;">環法術位<br>2</th>
     </tr>
   </thead>
   <tbody>
@@ -1635,7 +1635,7 @@ const classFeatures = {
   <thead>
         <tr>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">等級</th>
-          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">熟練<br>加值</th>
+          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">熟練加值</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px;">職業特性</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px;">術法點</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">戲法</th>
@@ -2140,7 +2140,7 @@ const classFeatures = {
   <thead>
     <tr>
       <th rowspan="2" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">等級</th>
-      <th rowspan="2" style="border:1px solid #aaa; padding:3px;">熟練<br>加值</th>
+      <th rowspan="2" style="border:1px solid #aaa; padding:3px;">熟練加值</th>
       <th rowspan="2" style="border:1px solid #aaa; padding:3px;">職業特性</th>
       <th rowspan="2" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">戲法</th>
       <th rowspan="2" style="border:1px solid #aaa; padding:3px;">準備<br>法術</th>
