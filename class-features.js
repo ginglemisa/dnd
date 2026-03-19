@@ -52,7 +52,7 @@ const classFeatures = {
       <tr>
       <th style="border:1px solid #aaa; padding:3px;">等級</th>
       <th style="border:1px solid #aaa; padding:3px;">熟練加值</th>
-      <th style="border:1px solid #aaa; padding:3px; width:16ch; white-space:normal;">職業特性</th>
+      <th style="border:1px solid #aaa; padding:3px;">職業特性</th>
       <th style="border:1px solid #aaa; padding:3px;">狂暴次數</th>
       <th style="border:1px solid #aaa; padding:3px;">狂暴傷害</th>
       <th style="border:1px solid #aaa; padding:3px;">武器精通</th>
@@ -62,7 +62,7 @@ const classFeatures = {
       <tr>
         <td style="border:1px solid #aaa; padding:3px;">1</td>
         <td style="border:1px solid #aaa; padding:3px;">+2</td>
-       <td style="border:1px solid #aaa; padding:3px; width:16ch; white-space:normal;">狂暴，無甲防禦，武器精通</td>
+       <td style="border:1px solid #aaa; padding:3px;">狂暴，無甲防禦，武器精通</td>
        <td style="border:1px solid #aaa; padding:3px;">2</td>
        <td style="border:1px solid #aaa; padding:3px;">+2</td>
        <td style="border:1px solid #aaa; padding:3px;">2</td>
@@ -70,7 +70,7 @@ const classFeatures = {
       <tr>
         <td style="border:1px solid #aaa; padding:3px;">2</td>
         <td style="border:1px solid #aaa; padding:3px;">+2</td>
-        <td style="border:1px solid #aaa; padding:3px; width:16ch; white-space:normal;">險境感知，魯莽攻擊</td>
+        <td style="border:1px solid #aaa; padding:3px;">險境感知，魯莽攻擊</td>
         <td style="border:1px solid #aaa; padding:3px;">2</td>
         <td style="border:1px solid #aaa; padding:3px;">+2</td>
         <td style="border:1px solid #aaa; padding:3px;">2</td>
@@ -78,7 +78,7 @@ const classFeatures = {
       <tr>
         <td style="border:1px solid #aaa; padding:3px;">3</td>
         <td style="border:1px solid #aaa; padding:3px;">+2</td>
-        <td style="border:1px solid #aaa; padding:3px; width:16ch; white-space:normal;">野蠻人子職業，先祖學識</td>
+        <td style="border:1px solid #aaa; padding:3px;">野蠻人子職業，先祖學識</td>
         <td style="border:1px solid #aaa; padding:3px;">3</td>
         <td style="border:1px solid #aaa; padding:3px;">+2</td>
         <td style="border:1px solid #aaa; padding:3px;">2</td>
@@ -86,7 +86,7 @@ const classFeatures = {
       <tr>
         <td style="border:1px solid #aaa; padding:3px;">4</td>
         <td style="border:1px solid #aaa; padding:3px;">+2</td>
-        <td style="border:1px solid #aaa; padding:3px; width:16ch; white-space:normal;">屬性值提升</td>
+        <td style="border:1px solid #aaa; padding:3px;">屬性值提升</td>
         <td style="border:1px solid #aaa; padding:3px;">3</td>
         <td style="border:1px solid #aaa; padding:3px;">+2</td>
         <td style="border:1px solid #aaa; padding:3px;">3</td>
@@ -94,7 +94,7 @@ const classFeatures = {
       <tr>
         <td style="border:1px solid #aaa; padding:3px;">5</td>
         <td style="border:1px solid #aaa; padding:3px;">+3</td>
-        <td style="border:1px solid #aaa; padding:3px; width:16ch; white-space:normal;">額外攻擊，快速移動</td>
+        <td style="border:1px solid #aaa; padding:3px;">額外攻擊，快速移動</td>
         <td style="border:1px solid #aaa; padding:3px;">3</td>
         <td style="border:1px solid #aaa; padding:3px;">+2</td>
         <td style="border:1px solid #aaa; padding:3px;">3</td>
@@ -210,7 +210,7 @@ const classFeatures = {
         <tr>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">等級</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px;">熟練加值</th>
-          <th rowspan="2" style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">職業特性</th>
+          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">職業特性</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px;">激勵骰</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">戲法</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px;">準備<br>法術</th>
@@ -226,7 +226,7 @@ const classFeatures = {
         <tr>
           <td style="border:1px solid #aaa; padding:3px;">1</td>
           <td style="border:1px solid #aaa; padding:3px;">+2</td>
-          <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">吟遊詩人激勵，施法</td>
+          <td style="border:1px solid #aaa; padding:3px;">吟遊詩人激勵，施法</td>
           <td style="border:1px solid #aaa; padding:3px;">D6</td>
           <td style="border:1px solid #aaa; padding:3px;">2</td>
           <td style="border:1px solid #aaa; padding:3px;">4</td>
@@ -237,7 +237,7 @@ const classFeatures = {
         <tr>
           <td style="border:1px solid #aaa; padding:3px;">2</td>
           <td style="border:1px solid #aaa; padding:3px;">+2</td>
-          <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">專精，萬事通</td>
+          <td style="border:1px solid #aaa; padding:3px;">專精，萬事通</td>
           <td style="border:1px solid #aaa; padding:3px;">D6</td>
           <td style="border:1px solid #aaa; padding:3px;">2</td>
           <td style="border:1px solid #aaa; padding:3px;">5</td>
@@ -248,7 +248,7 @@ const classFeatures = {
         <tr>
           <td style="border:1px solid #aaa; padding:3px;">3</td>
           <td style="border:1px solid #aaa; padding:3px;">+2</td>
-          <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">吟遊詩人子職業</td>
+          <td style="border:1px solid #aaa; padding:3px;">吟遊詩人子職業</td>
           <td style="border:1px solid #aaa; padding:3px;">D6</td>
           <td style="border:1px solid #aaa; padding:3px;">2</td>
           <td style="border:1px solid #aaa; padding:3px;">6</td>
@@ -259,7 +259,7 @@ const classFeatures = {
         <tr>
           <td style="border:1px solid #aaa; padding:3px;">4</td>
           <td style="border:1px solid #aaa; padding:3px;">+2</td>
-          <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">屬性值提升</td>
+          <td style="border:1px solid #aaa; padding:3px;">屬性值提升</td>
           <td style="border:1px solid #aaa; padding:3px;">D6</td>
           <td style="border:1px solid #aaa; padding:3px;">3</td>
           <td style="border:1px solid #aaa; padding:3px;">7</td>
@@ -270,7 +270,7 @@ const classFeatures = {
         <tr>
           <td style="border:1px solid #aaa; padding:3px;">5</td>
           <td style="border:1px solid #aaa; padding:3px;">+3</td>
-          <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">激勵之源</td>
+          <td style="border:1px solid #aaa; padding:3px;">激勵之源</td>
           <td style="border:1px solid #aaa; padding:3px;">D8</td>
           <td style="border:1px solid #aaa; padding:3px;">3</td>
           <td style="border:1px solid #aaa; padding:3px;">9</td>
@@ -399,7 +399,7 @@ const classFeatures = {
         <tr>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">等級</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px;">熟練加值</th>
-          <th rowspan="2" style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">職業特性</th>
+          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">職業特性</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px;">引導神力</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">戲法</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px;">準備<br>法術</th>
@@ -415,7 +415,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">1</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">施法，神聖使命</td>
+      <td style="border:1px solid #aaa; padding:3px;">施法，神聖使命</td>
       <td style="border:1px solid #aaa; padding:3px;">--</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
@@ -426,7 +426,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">引導神力</td>
+      <td style="border:1px solid #aaa; padding:3px;">引導神力</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
@@ -437,7 +437,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">牧師子職業</td>
+      <td style="border:1px solid #aaa; padding:3px;">牧師子職業</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">6</td>
@@ -448,7 +448,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">屬性值提升</td>
+      <td style="border:1px solid #aaa; padding:3px;">屬性值提升</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">7</td>
@@ -459,7 +459,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">+3</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">焚燒不死生物</td>
+      <td style="border:1px solid #aaa; padding:3px;">焚燒不死生物</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">9</td>
@@ -597,7 +597,7 @@ const classFeatures = {
         <tr>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">等級</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px;">熟練加值</th>
-          <th rowspan="2" style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">職業特性</th>
+          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">職業特性</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px;">荒野形態</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">戲法</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px;">準備<br>法術</th>
@@ -613,7 +613,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">1</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">施法，德魯伊語，原初使命</td>
+      <td style="border:1px solid #aaa; padding:3px;">施法，德魯伊語，原初使命</td>
       <td style="border:1px solid #aaa; padding:3px;">--</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
@@ -624,7 +624,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">荒野形態，荒野夥伴</td>
+      <td style="border:1px solid #aaa; padding:3px;">荒野形態，荒野夥伴</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
@@ -635,7 +635,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">德魯伊子職業</td>
+      <td style="border:1px solid #aaa; padding:3px;">德魯伊子職業</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">6</td>
@@ -646,7 +646,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">屬性值提升</td>
+      <td style="border:1px solid #aaa; padding:3px;">屬性值提升</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">7</td>
@@ -657,7 +657,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">+3</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">野性復甦</td>
+      <td style="border:1px solid #aaa; padding:3px;">野性復甦</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">9</td>
@@ -846,7 +846,7 @@ const classFeatures = {
     <tr>
       <th style="border:1px solid #aaa; padding:3px;">等級</th>
       <th style="border:1px solid #aaa; padding:3px;">熟練加值</th>
-      <th style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">職業特性</th>
+      <th style="border:1px solid #aaa; padding:3px;">職業特性</th>
       <th style="border:1px solid #aaa; padding:3px;">回氣</th>
       <th style="border:1px solid #aaa; padding:3px;">武器精通</th>
     </tr>
@@ -855,35 +855,35 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">1</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">戰鬥風格，回氣，武器精通</td>
+      <td style="border:1px solid #aaa; padding:3px;">戰鬥風格，回氣，武器精通</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
     </tr>
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">動作如潮（一次使用），戰術思維</td>
+      <td style="border:1px solid #aaa; padding:3px;">動作如潮（一次使用），戰術思維</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
     </tr>
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">戰士子職業</td>
+      <td style="border:1px solid #aaa; padding:3px;">戰士子職業</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
     </tr>
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">屬性值提升</td>
+      <td style="border:1px solid #aaa; padding:3px;">屬性值提升</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
     </tr>
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">+3</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">額外攻擊，戰術轉移</td>
+      <td style="border:1px solid #aaa; padding:3px;">額外攻擊，戰術轉移</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
     </tr>
@@ -985,7 +985,7 @@ const classFeatures = {
     <tr>
       <th style="border:1px solid #aaa; padding:3px;">等級</th>
       <th style="border:1px solid #aaa; padding:3px;">熟練加值</th>
-      <th style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">職業特性</th>
+      <th style="border:1px solid #aaa; padding:3px;">職業特性</th>
       <th style="border:1px solid #aaa; padding:3px;">武藝</th>
       <th style="border:1px solid #aaa; padding:3px;">專注點</th>
       <th style="border:1px solid #aaa; padding:3px;">無甲移動</th>
@@ -995,7 +995,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">1</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">武藝，無甲防禦</td>
+      <td style="border:1px solid #aaa; padding:3px;">武藝，無甲防禦</td>
       <td style="border:1px solid #aaa; padding:3px;">1d6</td>
       <td style="border:1px solid #aaa; padding:3px;">--</td>
       <td style="border:1px solid #aaa; padding:3px;">--</td>
@@ -1003,7 +1003,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">武僧心神，無甲移動，吐故納新</td>
+      <td style="border:1px solid #aaa; padding:3px;">武僧心神，無甲移動，吐故納新</td>
       <td style="border:1px solid #aaa; padding:3px;">1d6</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">+10呎</td>
@@ -1011,7 +1011,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">撥擋化勁，武僧子職業</td>
+      <td style="border:1px solid #aaa; padding:3px;">撥擋化勁，武僧子職業</td>
       <td style="border:1px solid #aaa; padding:3px;">1d6</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">+10呎</td>
@@ -1019,7 +1019,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">屬性值提升，輕身墜</td>
+      <td style="border:1px solid #aaa; padding:3px;">屬性值提升，輕身墜</td>
       <td style="border:1px solid #aaa; padding:3px;">1d6</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">+10呎</td>
@@ -1027,7 +1027,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">+3</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">額外攻擊，震懾擊</td>
+      <td style="border:1px solid #aaa; padding:3px;">額外攻擊，震懾擊</td>
       <td style="border:1px solid #aaa; padding:3px;">1d8</td>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">+10呎</td>
@@ -1144,7 +1144,7 @@ const classFeatures = {
     <tr>
       <th style="border:1px solid #aaa; padding:3px;">等級</th>
       <th style="border:1px solid #aaa; padding:3px;">熟練加值</th>
-      <th style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">職業特性</th>
+      <th style="border:1px solid #aaa; padding:3px;">職業特性</th>
       <th style="border:1px solid #aaa; padding:3px;">引導神力</th>
       <th style="border:1px solid #aaa; padding:3px;">準備法術</th>
       <th style="border:1px solid #aaa; padding:3px;">環法術位<br>1</th>
@@ -1155,7 +1155,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">1</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">聖療，施法，武器精通</td>
+      <td style="border:1px solid #aaa; padding:3px;">聖療，施法，武器精通</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
@@ -1164,7 +1164,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">戰鬥風格，聖武士斬技</td>
+      <td style="border:1px solid #aaa; padding:3px;">戰鬥風格，聖武士斬技</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
@@ -1173,7 +1173,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">引導神力，聖武士子職業</td>
+      <td style="border:1px solid #aaa; padding:3px;">引導神力，聖武士子職業</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
@@ -1182,7 +1182,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">屬性值提升</td>
+      <td style="border:1px solid #aaa; padding:3px;">屬性值提升</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
@@ -1191,7 +1191,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">+3</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">額外攻擊，忠誠坐騎</td>
+      <td style="border:1px solid #aaa; padding:3px;">額外攻擊，忠誠坐騎</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">6</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
@@ -1336,7 +1336,7 @@ const classFeatures = {
     <tr>
       <th style="border:1px solid #aaa; padding:3px;">等級</th>
       <th style="border:1px solid #aaa; padding:3px;">熟練加值</th>
-      <th style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">職業特性</th>
+      <th style="border:1px solid #aaa; padding:3px;">職業特性</th>
       <th style="border:1px solid #aaa; padding:3px;">宿敵</th>
       <th style="border:1px solid #aaa; padding:3px;">準備法術</th>
       <th style="border:1px solid #aaa; padding:3px;">環法術位<br>1</th>
@@ -1347,7 +1347,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">1</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">施法，宿敵，武器精通</td>
+      <td style="border:1px solid #aaa; padding:3px;">施法，宿敵，武器精通</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
@@ -1356,7 +1356,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">熟練探險家，戰鬥風格</td>
+      <td style="border:1px solid #aaa; padding:3px;">熟練探險家，戰鬥風格</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
@@ -1365,7 +1365,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">遊俠子職業</td>
+      <td style="border:1px solid #aaa; padding:3px;">遊俠子職業</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
@@ -1374,7 +1374,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">屬性值提升</td>
+      <td style="border:1px solid #aaa; padding:3px;">屬性值提升</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
@@ -1383,7 +1383,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">+3</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">額外攻擊</td>
+      <td style="border:1px solid #aaa; padding:3px;">額外攻擊</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">6</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
@@ -1499,7 +1499,7 @@ const classFeatures = {
     <tr>
       <th style="border:1px solid #aaa; padding:3px;">等級</th>
       <th style="border:1px solid #aaa; padding:3px;">熟練加值</th>
-      <th style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">職業特性</th>
+      <th style="border:1px solid #aaa; padding:3px;">職業特性</th>
       <th style="border:1px solid #aaa; padding:3px;">偷襲</th>
     </tr>
   </thead>
@@ -1507,31 +1507,31 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">1</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">專精，偷襲，盜賊黑話，武器精通</td>
+      <td style="border:1px solid #aaa; padding:3px;">專精，偷襲，盜賊黑話，武器精通</td>
       <td style="border:1px solid #aaa; padding:3px;">1d6</td>
     </tr>
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">靈巧動作</td>
+      <td style="border:1px solid #aaa; padding:3px;">靈巧動作</td>
       <td style="border:1px solid #aaa; padding:3px;">1d6</td>
     </tr>
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">遊蕩者子職業，手穩就準</td>
+      <td style="border:1px solid #aaa; padding:3px;">遊蕩者子職業，手穩就準</td>
       <td style="border:1px solid #aaa; padding:3px;">2d6</td>
     </tr>
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">屬性值提升</td>
+      <td style="border:1px solid #aaa; padding:3px;">屬性值提升</td>
       <td style="border:1px solid #aaa; padding:3px;">2d6</td>
     </tr>
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">+3</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">靈巧打擊，直覺閃避</td>
+      <td style="border:1px solid #aaa; padding:3px;">靈巧打擊，直覺閃避</td>
       <td style="border:1px solid #aaa; padding:3px;">3d6</td>
     </tr>
   </tbody>
@@ -1636,7 +1636,7 @@ const classFeatures = {
         <tr>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">等級</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px;">熟練加值</th>
-          <th rowspan="2" style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">職業特性</th>
+          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">職業特性</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px;">術法點</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">戲法</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px;">準備<br>法術</th>
@@ -1652,7 +1652,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">1</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">施法，天生術法</td>
+      <td style="border:1px solid #aaa; padding:3px;">施法，天生術法</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
@@ -1663,7 +1663,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">魔力泉湧，超魔法</td>
+      <td style="border:1px solid #aaa; padding:3px;">魔力泉湧，超魔法</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
@@ -1674,7 +1674,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">術士子職業</td>
+      <td style="border:1px solid #aaa; padding:3px;">術士子職業</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">6</td>
@@ -1685,7 +1685,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">屬性值提升</td>
+      <td style="border:1px solid #aaa; padding:3px;">屬性值提升</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">7</td>
@@ -1696,7 +1696,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">+3</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">術法復甦</td>
+      <td style="border:1px solid #aaa; padding:3px;">術法復甦</td>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">9</td>
@@ -1890,7 +1890,7 @@ const classFeatures = {
     <tr>
       <th style="border:1px solid #aaa; padding:3px;">等級</th>
       <th style="border:1px solid #aaa; padding:3px;">熟練加值</th>
-      <th style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">職業特性</th>
+      <th style="border:1px solid #aaa; padding:3px;">職業特性</th>
       <th style="border:1px solid #aaa; padding:3px;">魔能祈喚</th>
       <th style="border:1px solid #aaa; padding:3px;">戲法</th>
       <th style="border:1px solid #aaa; padding:3px;">準備法術</th>
@@ -1902,7 +1902,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">1</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">魔能祈喚，契約魔法</td>
+      <td style="border:1px solid #aaa; padding:3px;">魔能祈喚，契約魔法</td>
       <td style="border:1px solid #aaa; padding:3px;">1</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
@@ -1912,7 +1912,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">秘法回流</td>
+      <td style="border:1px solid #aaa; padding:3px;">秘法回流</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
@@ -1922,7 +1922,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">契術師子職業</td>
+      <td style="border:1px solid #aaa; padding:3px;">契術師子職業</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
@@ -1932,7 +1932,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">屬性值提升</td>
+      <td style="border:1px solid #aaa; padding:3px;">屬性值提升</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
@@ -1942,7 +1942,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">+3</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">無</td>
+      <td style="border:1px solid #aaa; padding:3px;">無</td>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">6</td>
@@ -2141,7 +2141,7 @@ const classFeatures = {
     <tr>
       <th rowspan="2" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">等級</th>
       <th rowspan="2" style="border:1px solid #aaa; padding:3px;">熟練加值</th>
-      <th rowspan="2" style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">職業特性</th>
+      <th rowspan="2" style="border:1px solid #aaa; padding:3px;">職業特性</th>
       <th rowspan="2" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">戲法</th>
       <th rowspan="2" style="border:1px solid #aaa; padding:3px;">準備<br>法術</th>
       <th colspan="3" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">環法術位</th>
@@ -2156,7 +2156,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">1</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">施法，儀式精通，奧術回想</td>
+      <td style="border:1px solid #aaa; padding:3px;">施法，儀式精通，奧術回想</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
@@ -2166,7 +2166,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">學者</td>
+      <td style="border:1px solid #aaa; padding:3px;">學者</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
@@ -2176,7 +2176,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">法師子職業</td>
+      <td style="border:1px solid #aaa; padding:3px;">法師子職業</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">6</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
@@ -2186,7 +2186,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">屬性值提升</td>
+      <td style="border:1px solid #aaa; padding:3px;">屬性值提升</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">7</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
@@ -2196,7 +2196,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">+3</td>
-      <td style="border:1px solid #aaa; padding:3px; width:10ch; white-space:normal;">記憶法術</td>
+      <td style="border:1px solid #aaa; padding:3px;">記憶法術</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">9</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
