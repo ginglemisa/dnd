@@ -318,6 +318,67 @@ button:hover{filter:brightness(.99);}
   border-radius:10px;
   border:1px solid #d9dfea;
 }
+#deity-info-modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:10002;
+  background:rgba(7,12,24,.62);
+  align-items:center;
+  justify-content:center;
+  padding:12px;
+}
+#deity-info-modal.open{display:flex;}
+.deity-info-card{
+  position:relative;
+  width:min(94vw,860px);
+  max-height:min(88vh,920px);
+  border-radius:18px;
+  border:1px solid #d5deef;
+  background:linear-gradient(180deg,#ffffff 0%,#f7faff 100%);
+  box-shadow:0 24px 56px rgba(20,35,74,.34);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+.deity-info-header{
+  padding:16px 54px 12px 16px;
+  border-bottom:1px solid #dbe3f2;
+  background:linear-gradient(180deg,#f4f8ff 0%,#eef3ff 100%);
+}
+.deity-info-header h3{margin:0;font-size:1.1rem;color:#1f315f;}
+.deity-info-header p{margin:6px 0 0;font-size:.92rem;color:#506080;font-weight:700;}
+.deity-info-close{
+  position:absolute;
+  right:10px;
+  top:10px;
+  width:34px;
+  min-height:34px;
+  border-radius:999px !important;
+  border:1px solid #cfdaee !important;
+  background:#fff !important;
+  box-shadow:none;
+  line-height:1;
+  font-weight:900;
+}
+.deity-info-content{padding:12px;overflow-y:auto;}
+.deity-group{
+  border:1px solid #d8e2f3;
+  border-radius:14px;
+  background:#fff;
+  margin-bottom:10px;
+  padding:10px;
+}
+.deity-group h4{margin:0 0 8px;font-size:1rem;color:#243968;}
+.deity-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px;}
+.deity-item{
+  border:1px solid #e2e9f5;
+  background:linear-gradient(180deg,#fcfdff 0%,#f5f8ff 100%);
+  border-radius:12px;
+  padding:8px 9px;
+}
+.deity-item-main{font-weight:900;color:#192645;margin-bottom:4px;}
+.deity-item-sub{font-size:.9rem;color:#33486d;line-height:1.4;}
 .save-name .save-abbr{font-weight:900;}
 .save-name .save-full{font-weight:800;}
 .save-pair input[type="number"],
@@ -654,7 +715,7 @@ label[for="level"]{
 </head>
 <body>
 <div class="tabs">
-  <button class="tab-button active" onclick="showTab(&#39;basic&#39;, this)">數值</button>
+  <button id="basic-tab-button" class="tab-button active" onclick="showTab(&#39;basic&#39;, this)">數值</button>
   <button class="tab-button" onclick="showTab(&#39;skills&#39;, this)">技能</button>
   <button class="tab-button" onclick="showTab(&#39;actions&#39;, this)">動作</button>
   <button class="tab-button" onclick="showTab(&#39;equipment&#39;, this)">裝備</button>
@@ -3246,6 +3307,51 @@ function hideBeastPopup() {
 }
 
 const SPELL_QR_IMAGE_SRC = "./qr.png";
+const ALIGNMENT_MAP_ZH = {
+  LG: "守序善良",
+  NG: "中立善良",
+  CG: "混亂善良",
+  LN: "守序中立",
+  N: "絕對中立",
+  CN: "混亂中立",
+  LE: "守序邪惡",
+  NE: "中立邪惡",
+  CE: "混亂邪惡"
+};
+const DOMAIN_MAP_ZH = {
+  Life: "生命",
+  Light: "光明",
+  War: "戰爭",
+  Nature: "自然",
+  Tempest: "風暴",
+  Knowledge: "知識",
+  Trickery: "詭術",
+  Death: "死亡"
+};
+const DEITY_INFO_GROUPS = [
+  { title: "❄️ 自然 / 災厄 / 生死", items: [["Auril（歐瑞爾）","NE","冬季、寒冷","Nature, Tempest","六角雪花"],["Talos（塔洛斯）","CE","風暴、毀滅","Tempest","三道閃電放射"],["Umberlee（安博里）","CE","海洋、狂潮","Tempest","左右翻捲的海浪"],["Silvanus（西凡納斯）","N","荒野、自然","Nature","橡樹葉"],["Mielikki（蜜莉琪）","NG","森林","Nature","獨角獸頭"],["Malar（馬拉）","CE","狩獵、野性","Nature","獸爪"]] },
+  { title: "⚖️ 秩序 / 正義 / 保護", items: [["Tyr（提爾）","LG","正義","War","戰錘上的天秤"],["Torm（托姆）","LG","勇氣、犧牲","War","白色右手護手"],["Ilmater（伊爾瑪特）","LG","忍耐、苦難","Life","綁著紅繩的雙手"],["Helm（海姆）","LN","守護、警戒","Life, Light","護手上的凝視之眼"],["Kelemvor（克藍沃）","LN","死亡、審判","Death","骷髏手持天秤"],["Azuth（阿祖斯）","LN","法師、奧術","Knowledge","火焰描邊的上舉左手"]] },
+  { title: "🌅 生命 / 希望 / 美善", items: [["Lathander（洛山達）","NG","新生、黎明","Life, Light","通往日出的道路"],["Chauntea（裳禔亞）","NG","農業","Life","穀束或穀上玫瑰"],["Eldath（艾達絲）","NG","和平","Life, Nature","瀑布落入靜池"],["Sune（蘇倫）","CG","愛與美","Life, Light","紅髮美女面容"],["Lliira（莉伊拉）","CG","歡樂","Life","三顆六角星三角排列"],["Tymora（泰摩拉）","CG","幸運","Trickery","正面朝上的硬幣"]] },
+  { title: "🧠 知識 / 魔法 / 命運", items: [["Mystra（密斯特拉）","NG","魔法","Knowledge","七星環或紅霧星環"],["Oghma（歐格瑪）","N","知識","Knowledge","空白卷軸"],["Deneir（迪奈爾）","NG","書寫","Knowledge","蠟燭與眼睛"],["Gond（貢德）","N","工藝、發明","Knowledge","四輻齒輪"],["Milil（米利爾）","NG","詩歌、音樂","Light","葉製豎琴"],["Savras（薩弗拉斯）","LN","預言、命運","Knowledge","多眼水晶球"],["Selûne（蘇倫）","CG","月亮","Knowledge, Life","七星環繞雙眼"]] },
+  { title: "🌑 黑暗 / 詭計 / 破壞", items: [["Shar（莎爾）","NE","黑暗、失落","Death, Trickery","黑色圓盤"],["Mask（馬斯克）","CN","盜賊","Trickery","黑面具"],["Leira（蕾拉）","CN","幻術","Trickery","倒三角霧旋"],["Cyric（希瑞克）","CE","謊言","Trickery","無下顎白骷髏"],["Beshaba（貝莎芭）","CE","厄運","Trickery","黑鹿角"]] },
+  { title: "☠️ 死亡 / 痛苦 / 毀滅", items: [["Bhaal（巴爾）","NE","謀殺","Death","血滴環繞骷髏"],["Myrkul（米爾寇）","NE","死亡","Death","白色人類骷髏"],["Loviatar（洛薇塔）","LE","痛苦","Death","九尾鞭"],["Talona（塔羅娜）","CE","疾病、毒","Death","三滴淚的三角形"]] },
+  { title: "⚔️ 戰爭 / 力量 / 統治", items: [["Tempus（坦帕斯）","N","戰爭","War","燃燒之劍"],["Bane（班恩）","LE","暴政","War","黑色直立右手"]] },
+  { title: "💰 財富 / 商業", items: [["Waukeen（沃金）","N","貿易","Knowledge, Trickery","側面人像硬幣"]] },
+  { title: "🐉 非人神祇（Nonhuman Deities）", items: [["Bahamut（巴哈姆特）","LG","善良、守護、正義","Life, War","龍頭側面"],["Tiamat（提亞瑪特）","LE","邪惡、毀滅、貪婪","Trickery","五爪痕龍頭"],["Corellon Larethian（科瑞隆）","CG","藝術、魔法、創造","Light","新月或星芒"],["Deep Sashelas（深海薩謝拉斯）","CG","海洋、知識","Nature, Tempest","海豚"],["Rillifane Rallathil（瑞里凡）","CG","森林、自然","Nature","橡樹"],["Sehanine Moonbow（莎罕妮）","CG","月亮、夢境","Knowledge","新月"],["Moradin（摩拉丁）","LG","創造、鍛造","Knowledge","鎚與砧"],["Kurtulmak（庫爾圖馬克）","LE","戰爭、採礦","War","侏儒頭骨"],["Garl Glittergold（加爾·閃金）","LG","詭計、智慧","Trickery","金塊"],["Gruumsh（格烏姆什）","CE","戰爭、風暴、征服","Tempest, War","獨眼"],["Maglubiyet（馬格魯比耶）","LE","戰爭、支配","War","染血戰斧"],["Hruggek（赫魯格克）","CE","暴力、破壞","War","釘頭錘"],["Blibdoolpoolp（布利布杜爾普）","NE","深海、瘋狂","Death","龍蝦頭或黑珍珠"],["Sekolah（塞寇拉）","LE","狩獵、掠食","Nature, Tempest","鯊魚"],["Eadro（伊卓）","N","海洋本質","Nature, Tempest","螺旋"],["Laogzed（勞格澤德）","CE","飢餓、吞噬","Death","蜥蜴／蟾蜍神像"],["Semuanya（瑟穆安雅）","N","生存、繁衍","Life","蛋"],["Skerrit（斯凱瑞特）","N","自然守護","Nature","長出橡樹的橡果"],["Grolantor（格羅蘭托）","CE","戰爭、破壞","War","木棒"],["Skoraeus Stonebones（斯科雷烏斯）","N","石頭、藝術","Knowledge","鐘乳石"],["Surtur（蘇爾特）","LE","火焰、鍛造","Knowledge, War","燃燒之劍"],["Thrym（瑟林）","CE","寒冷、力量","War","白色雙刃斧"],["Yondalla（約達拉）","LG","生育、守護","Life","盾牌"]] }
+];
+
+function toZhAlignment(code) {
+  return ALIGNMENT_MAP_ZH[code] || code;
+}
+
+function toZhDomains(domains) {
+  return String(domains)
+    .split(",")
+    .map(item => item.trim())
+    .filter(Boolean)
+    .map(item => DOMAIN_MAP_ZH[item] || item)
+    .join("、");
+}
 
 function setupSpellQrEasterEgg() {
   const spellTabBtn = document.getElementById("spells-tab-button");
@@ -3281,6 +3387,56 @@ function setupSpellQrEasterEgg() {
   });
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") hideSpellQrModal();
+  });
+}
+
+function setupDeityInfoEasterEgg() {
+  const basicTabBtn = document.getElementById("basic-tab-button");
+  const modal = document.getElementById("deity-info-modal");
+  if (!basicTabBtn || !modal) return;
+
+  const content = document.getElementById("deity-info-content");
+  if (content) {
+    content.innerHTML = DEITY_INFO_GROUPS.map(group => `
+      <section class="deity-group">
+        <h4>${group.title}</h4>
+        <div class="deity-grid">
+          ${group.items.map(([name, align, role, domains, symbol]) => `
+            <article class="deity-item">
+              <div class="deity-item-main">${name}｜${toZhAlignment(align)}</div>
+              <div class="deity-item-sub">職能：${role}</div>
+              <div class="deity-item-sub">領域：${toZhDomains(domains)}</div>
+              <div class="deity-item-sub">象徵：${symbol}</div>
+            </article>
+          `).join("")}
+        </div>
+      </section>
+    `).join("");
+  }
+
+  const closeBtn = modal.querySelector(".deity-info-close");
+  const hide = () => modal.classList.remove("open");
+  const show = () => modal.classList.add("open");
+  let clickCount = 0;
+  const reset = () => { clickCount = 0; };
+
+  basicTabBtn.addEventListener("click", () => {
+    clickCount += 1;
+    if (clickCount >= 5) {
+      show();
+      reset();
+    }
+  });
+
+  document.querySelectorAll(".tab-button").forEach(btn => {
+    if (btn !== basicTabBtn) btn.addEventListener("click", reset);
+  });
+  closeBtn?.addEventListener("click", hide);
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal) hide();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") hide();
   });
 }
 
@@ -3685,6 +3841,7 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
   // 6. 分享模式判定完成後，才初始化版權提醒，避免時序競態
   initLegalModal();
   setupSpellQrEasterEgg();
+  setupDeityInfoEasterEgg();
 });
 </script>
 
@@ -3692,6 +3849,16 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
   <div class="spell-qr-modal-card" role="dialog" aria-modal="true" aria-label="法術彩蛋 QR Code">
     <button type="button" class="spell-qr-modal-close" aria-label="關閉 QR Code">✕</button>
     <img class="spell-qr-modal-image" alt="法術彩蛋 QR Code 圖片">
+  </div>
+</div>
+
+<div id="deity-info-modal" aria-hidden="true">
+  <div class="deity-info-card" role="dialog" aria-modal="true" aria-label="神祉資訊">
+    <button type="button" class="deity-info-close" aria-label="關閉神祉資訊">✕</button>
+    <header class="deity-info-header">
+      <h3>📜 Forgotten Realms 神祉整理</h3>
+    </header>
+    <div id="deity-info-content" class="deity-info-content"></div>
   </div>
 </div>
 
