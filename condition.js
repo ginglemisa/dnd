@@ -158,10 +158,8 @@ document.addEventListener("DOMContentLoaded", () => {
     <div class="section" style="margin-top:36px;">
       <h3>狀態</h3>
       <div class="small-text" style="margin-top: 8px;">點擊下方按鈕切換狀態說明。</div>
-
-      <div id="condition-display-grid" class="condition-display-grid" style="margin-top: 10px;"></div>
-
       <div id="condition-button-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px;"></div>
+      <div id="condition-display-grid" class="condition-display-grid" style="margin-top: 10px;"></div>
     </div>
   `;
 
