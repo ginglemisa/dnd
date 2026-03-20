@@ -31,7 +31,7 @@ const classFeatures = {
       <td>輕甲，中甲，盾牌</td>
     </tr>
     <tr>
-      <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
+      <td style="padding-top: 6px; font-weight: bold;">初始裝備 (A、B 二擇一)</td>
       <td></td>
     </tr>
     <tr>
@@ -44,7 +44,7 @@ const classFeatures = {
     </tr>
   </tbody>
 </table>
-探索套組(10金幣)
+探索套組 (價值10金幣)
 背包、床卷、2 瓶油、10 天的口糧、繩索、火絨盒、10 根火把、水袋。
 
 <strong>野蠻人特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
@@ -189,7 +189,7 @@ const classFeatures = {
       <td>輕甲</td>
     </tr>
     <tr>
-      <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
+      <td style="padding-top: 6px; font-weight: bold;">初始裝備 (A、B 二擇一)</td>
       <td></td>
     </tr>
     <tr>
@@ -202,7 +202,7 @@ const classFeatures = {
     </tr>
   </tbody>
 </table>
-藝人套組(40金幣)
+藝人套組 (價值40金幣)
 背包、睡袋、鈴鐺、牛眼提燈、3 套戲服、鏡子、8 瓶油、9 日份的口糧、火絨盒、水袋。
 
 <strong>吟遊詩人特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.97em;">
@@ -378,7 +378,7 @@ const classFeatures = {
       <td>輕甲、中甲和盾牌</td>
     </tr>
     <tr>
-      <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
+      <td style="padding-top: 6px; font-weight: bold;">初始裝備 (A、B 二擇一)</td>
       <td></td>
     </tr>
     <tr>
@@ -392,7 +392,7 @@ const classFeatures = {
   </tbody>
 </table>
 
-祭司套組(30金幣)：背包、毯子、聖水、油燈、7 日份的口糧、長袍和火絨盒。
+祭司套組 (價值30金幣)：背包、毯子、聖水、油燈、7 日份的口糧、長袍和火絨盒。
 
 <strong>牧師特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
@@ -576,7 +576,7 @@ const classFeatures = {
       <td>輕甲和盾牌</td>
     </tr>
     <tr>
-      <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
+      <td style="padding-top: 6px; font-weight: bold;">初始裝備 (A、B 二擇一)</td>
       <td></td>
     </tr>
     <tr>
@@ -590,7 +590,8 @@ const classFeatures = {
   </tbody>
 </table>
 
-探索套組(10金幣)：背包、床卷、2 瓶油、10 天的口糧、繩索、火絨盒、10 根火把、水袋。
+探索套組 (價值10金幣)
+背包、床卷、2 瓶油、10 天的口糧、繩索、火絨盒、10 根火把、水袋。
 
 <strong>德魯伊特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
@@ -825,7 +826,7 @@ const classFeatures = {
       <td>輕甲、中甲、重甲和盾牌</td>
     </tr>
     <tr>
-      <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
+      <td style="padding-top: 6px; font-weight: bold;">初始裝備 (A、B 二擇一)</td>
       <td></td>
     </tr>
     <tr>
@@ -839,7 +840,8 @@ const classFeatures = {
   </tbody>
 </table>
 
-地城套組(12金幣)：背包、鐵蒺藜、撬棍、2 瓶油、10 日份的口糧、繩索、火絨盒、10 根火把，水袋。
+地城套組 (價值12金幣)
+背包、鐵蒺藜、撬棍、2 瓶油、10 日份的口糧、繩索、火絨盒、10 根火把，水袋。
 
 <strong>戰士特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
@@ -964,7 +966,7 @@ const classFeatures = {
       <td>無</td>
     </tr>
     <tr>
-      <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
+      <td style="padding-top: 6px; font-weight: bold;">初始裝備 (A、B 二擇一)</td>
       <td></td>
     </tr>
     <tr>
@@ -978,7 +980,8 @@ const classFeatures = {
   </tbody>
 </table>
 
-探索套組(10金幣)：背包、床卷、2 瓶油、10 天的口糧、繩索、火絨盒、10 根火把、水袋。
+探索套組 (價值10金幣)
+背包、床卷、2 瓶油、10 天的口糧、繩索、火絨盒、10 根火把、水袋。
 
 <strong>武僧特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
@@ -1123,7 +1126,7 @@ const classFeatures = {
       <td>輕甲、中甲、重甲和盾牌</td>
     </tr>
     <tr>
-      <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
+      <td style="padding-top: 6px; font-weight: bold;">初始裝備 (A、B 二擇一)</td>
       <td></td>
     </tr>
     <tr>
@@ -1137,7 +1140,8 @@ const classFeatures = {
   </tbody>
 </table>
 
-祭司套組(33金幣)：背包、毯子、聖水、油燈、7 日份的口糧、長袍和火絨盒。
+祭司套組 (價值33金幣)
+背包、毯子、聖水、油燈、7 日份的口糧、長袍和火絨盒。
 
 <strong>聖武士特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
@@ -1315,7 +1319,7 @@ const classFeatures = {
       <td>輕甲、中甲和盾牌</td>
     </tr>
     <tr>
-      <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
+      <td style="padding-top: 6px; font-weight: bold;">初始裝備 (A、B 二擇一)</td>
       <td></td>
     </tr>
     <tr>
@@ -1329,7 +1333,8 @@ const classFeatures = {
   </tbody>
 </table>
 
-探索套組(10金幣)：背包、床卷、2 瓶油、10 天的口糧、繩索、火絨盒、10 根火把、水袋。
+探索套組 (價值10金幣)
+背包、床卷、2 瓶油、10 天的口糧、繩索、火絨盒、10 根火把、水袋。
 
 <strong>遊俠特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
@@ -1478,7 +1483,7 @@ const classFeatures = {
       <td>輕甲</td>
     </tr>
     <tr>
-      <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
+      <td style="padding-top: 6px; font-weight: bold;">初始裝備 (A、B 二擇一)</td>
       <td></td>
     </tr>
     <tr>
@@ -1492,7 +1497,8 @@ const classFeatures = {
   </tbody>
 </table>
 
-竊賊套組(16金幣)：背包、滾珠、鈴鐺、10 根蠟燭、撬棍、附蓋提燈、7 瓶油、5 日份口糧、繩索、火絨盒、水袋。
+竊賊套組 (價值16金幣)
+背包、滾珠、鈴鐺、10 根蠟燭、撬棍、附蓋提燈、7 瓶油、5 日份口糧、繩索、火絨盒、水袋。
 
 <strong>遊蕩者特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
@@ -1615,7 +1621,7 @@ const classFeatures = {
       <td>無</td>
     </tr>
     <tr>
-      <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
+      <td style="padding-top: 6px; font-weight: bold;">初始裝備 (A、B 二擇一)</td>
       <td></td>
     </tr>
     <tr>
@@ -1629,7 +1635,8 @@ const classFeatures = {
   </tbody>
 </table>
 
-  地城套組(12金幣)：背包、鐵蒺藜、撬棍、2 瓶油、10 日份的口糧、繩索、火絨盒、10 根火把，水袋。
+地城套組 (價值12金幣)
+背包、鐵蒺藜、撬棍、2 瓶油、10 日份的口糧、繩索、火絨盒、10 根火把，水袋。
   
 <strong>術士特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
@@ -1869,7 +1876,7 @@ const classFeatures = {
       <td>輕甲</td>
     </tr>
     <tr>
-      <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
+      <td style="padding-top: 6px; font-weight: bold;">初始裝備 (A、B 二擇一)</td>
       <td></td>
     </tr>
     <tr>
@@ -1883,7 +1890,8 @@ const classFeatures = {
   </tbody>
 </table>
 
-學者套組(40金幣)：背包、書籍、墨水、墨水筆、油燈、10 瓶油、10 張羊皮紙和火絨盒。
+學者套組 (價值40金幣)
+背包、書籍、墨水、墨水筆、油燈、10 瓶油、10 張羊皮紙和火絨盒。
 
 <strong>契術師特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
@@ -2120,7 +2128,7 @@ const classFeatures = {
       <td>無</td>
     </tr>
     <tr>
-      <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
+      <td style="padding-top: 6px; font-weight: bold;">初始裝備 (A、B 二擇一)</td>
       <td></td>
     </tr>
     <tr>
@@ -2134,7 +2142,8 @@ const classFeatures = {
   </tbody>
 </table>
 
-學者套組(40金幣)：背包、書籍、墨水、墨水筆、油燈、10 瓶油、10 張羊皮紙和火絨盒。
+學者套組 (價值40金幣)
+背包、書籍、墨水、墨水筆、油燈、10 瓶油、10 張羊皮紙和火絨盒。
 
 <strong>法師特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
