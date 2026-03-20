@@ -31,8 +31,8 @@ const classFeatures = {
       <td>輕甲，中甲，盾牌</td>
     </tr>
     <tr>
-      <td style="padding-top: 6px; font-weight: bold;">初始裝備 (A、B 二擇一)</td>
-      <td></td>
+      <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
+      <td>(A)、(B) 二選一</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>
@@ -188,8 +188,8 @@ const classFeatures = {
       <td>輕甲</td>
     </tr>
     <tr>
-      <td style="padding-top: 6px; font-weight: bold;">初始裝備（以下二擇一）</td>
-      <td></td>
+      <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
+      <td>(A)、(B) 二選一</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>
@@ -376,8 +376,8 @@ const classFeatures = {
       <td>輕甲、中甲和盾牌</td>
     </tr>
     <tr>
-      <td style="padding-top: 6px; font-weight: bold;">初始裝備 (A、B 二擇一)</td>
-      <td></td>
+      <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
+      <td>(A)、(B) 二選一</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>
@@ -574,8 +574,8 @@ const classFeatures = {
       <td>輕甲和盾牌</td>
     </tr>
     <tr>
-      <td style="padding-top: 6px; font-weight: bold;">初始裝備 (A、B 二擇一)</td>
-      <td></td>
+      <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
+      <td>(A)、(B) 二選一</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>
@@ -823,8 +823,8 @@ const classFeatures = {
       <td>輕甲、中甲、重甲和盾牌</td>
     </tr>
     <tr>
-      <td style="padding-top: 6px; font-weight: bold;">初始裝備 (A、B 二擇一)</td>
-      <td></td>
+      <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
+      <td>(A)、(B) 二選一</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>
@@ -962,8 +962,8 @@ const classFeatures = {
       <td>無</td>
     </tr>
     <tr>
-      <td style="padding-top: 6px; font-weight: bold;">初始裝備 (A、B 二擇一)</td>
-      <td></td>
+      <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
+      <td>(A)、(B) 二選一</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>
@@ -1121,8 +1121,8 @@ const classFeatures = {
       <td>輕甲、中甲、重甲和盾牌</td>
     </tr>
     <tr>
-      <td style="padding-top: 6px; font-weight: bold;">初始裝備 (A、B 二擇一)</td>
-      <td></td>
+      <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
+      <td>(A)、(B) 二選一</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>
@@ -1313,8 +1313,8 @@ const classFeatures = {
       <td>輕甲、中甲和盾牌</td>
     </tr>
     <tr>
-      <td style="padding-top: 6px; font-weight: bold;">初始裝備 (A、B 二擇一)</td>
-      <td></td>
+      <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
+      <td>(A)、(B) 二選一</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>
@@ -1476,8 +1476,8 @@ const classFeatures = {
       <td>輕甲</td>
     </tr>
     <tr>
-      <td style="padding-top: 6px; font-weight: bold;">初始裝備 (A、B 二擇一)</td>
-      <td></td>
+      <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
+      <td>(A)、(B) 二選一</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>
@@ -1613,8 +1613,8 @@ const classFeatures = {
       <td>無</td>
     </tr>
     <tr>
-      <td style="padding-top: 6px; font-weight: bold;">初始裝備 (A、B 二擇一)</td>
-      <td></td>
+      <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
+      <td>(A)、(B) 二選一</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>
@@ -1867,8 +1867,8 @@ const classFeatures = {
       <td>輕甲</td>
     </tr>
     <tr>
-      <td style="padding-top: 6px; font-weight: bold;">初始裝備 (A、B 二擇一)</td>
-      <td></td>
+      <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
+      <td>(A)、(B) 二選一</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>
@@ -2118,8 +2118,8 @@ const classFeatures = {
       <td>無</td>
     </tr>
     <tr>
-      <td style="padding-top: 6px; font-weight: bold;">初始裝備 (A、B 二擇一)</td>
-      <td></td>
+      <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
+      <td>(A)、(B) 二選一</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>
