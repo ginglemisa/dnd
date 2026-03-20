@@ -3401,14 +3401,14 @@ function setupDeityInfoEasterEgg() {
       <section class="deity-group">
         <h4>${group.title}</h4>
         <div class="deity-grid">
-          ${group.items.map(([name, align, titl, role, domains, symbol, quot]) => `
+          ${group.items.map(([name, align, titl, role, domains, symbol, quo]) => `
             <article class="deity-item">
               <div class="deity-item-main">${name}｜${toZhAlignment(align)}</div>
               <div class="deity-item-sub">${titl}</div>
 			  <div class="deity-item-sub">職能：${role}</div>
               <div class="deity-item-sub">領域：${toZhDomains(domains)}</div>
               <div class="deity-item-sub">象徵：${symbol}</div>
-			  <div class="deity-item-sub">${quot}</div>
+			  <div class="deity-item-sub">${quo}</div>
             </article>
           `).join("")}
         </div>
