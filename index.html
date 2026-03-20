@@ -3307,6 +3307,27 @@ function hideBeastPopup() {
 }
 
 const SPELL_QR_IMAGE_SRC = "./qr.png";
+const ALIGNMENT_MAP_ZH = {
+  LG: "守序善良",
+  NG: "中立善良",
+  CG: "混亂善良",
+  LN: "守序中立",
+  N: "絕對中立",
+  CN: "混亂中立",
+  LE: "守序邪惡",
+  NE: "中立邪惡",
+  CE: "混亂邪惡"
+};
+const DOMAIN_MAP_ZH = {
+  Life: "生命",
+  Light: "光明",
+  War: "戰爭",
+  Nature: "自然",
+  Tempest: "風暴",
+  Knowledge: "知識",
+  Trickery: "詭術",
+  Death: "死亡"
+};
 const DEITY_INFO_GROUPS = [
   { title: "❄️ 自然 / 災厄 / 生死", items: [["Auril（歐瑞爾）","NE","冬季、寒冷","Nature, Tempest","六角雪花"],["Talos（塔洛斯）","CE","風暴、毀滅","Tempest","三道閃電放射"],["Umberlee（安博里）","CE","海洋、狂潮","Tempest","左右翻捲的海浪"],["Silvanus（西凡納斯）","N","荒野、自然","Nature","橡樹葉"],["Mielikki（蜜莉琪）","NG","森林","Nature","獨角獸頭"],["Malar（馬拉）","CE","狩獵、野性","Nature","獸爪"]] },
   { title: "⚖️ 秩序 / 正義 / 保護", items: [["Tyr（提爾）","LG","正義","War","戰錘上的天秤"],["Torm（托姆）","LG","勇氣、犧牲","War","白色右手護手"],["Ilmater（伊爾瑪特）","LG","忍耐、苦難","Life","綁著紅繩的雙手"],["Helm（海姆）","LN","守護、警戒","Life, Light","護手上的凝視之眼"],["Kelemvor（克藍沃）","LN","死亡、審判","Death","骷髏手持天秤"],["Azuth（阿祖斯）","LN","法師、奧術","Knowledge","火焰描邊的上舉左手"]] },
@@ -3318,6 +3339,19 @@ const DEITY_INFO_GROUPS = [
   { title: "💰 財富 / 商業", items: [["Waukeen（沃金）","N","貿易","Knowledge, Trickery","側面人像硬幣"]] },
   { title: "🐉 非人神祇（Nonhuman Deities）", items: [["Bahamut（巴哈姆特）","LG","善良、守護、正義","Life, War","龍頭側面"],["Tiamat（提亞瑪特）","LE","邪惡、毀滅、貪婪","Trickery","五爪痕龍頭"],["Corellon Larethian（科瑞隆）","CG","藝術、魔法、創造","Light","新月或星芒"],["Deep Sashelas（深海薩謝拉斯）","CG","海洋、知識","Nature, Tempest","海豚"],["Rillifane Rallathil（瑞里凡）","CG","森林、自然","Nature","橡樹"],["Sehanine Moonbow（莎罕妮）","CG","月亮、夢境","Knowledge","新月"],["Moradin（摩拉丁）","LG","創造、鍛造","Knowledge","鎚與砧"],["Kurtulmak（庫爾圖馬克）","LE","戰爭、採礦","War","侏儒頭骨"],["Garl Glittergold（加爾·閃金）","LG","詭計、智慧","Trickery","金塊"],["Gruumsh（格烏姆什）","CE","戰爭、風暴、征服","Tempest, War","獨眼"],["Maglubiyet（馬格魯比耶）","LE","戰爭、支配","War","染血戰斧"],["Hruggek（赫魯格克）","CE","暴力、破壞","War","釘頭錘"],["Blibdoolpoolp（布利布杜爾普）","NE","深海、瘋狂","Death","龍蝦頭或黑珍珠"],["Sekolah（塞寇拉）","LE","狩獵、掠食","Nature, Tempest","鯊魚"],["Eadro（伊卓）","N","海洋本質","Nature, Tempest","螺旋"],["Laogzed（勞格澤德）","CE","飢餓、吞噬","Death","蜥蜴／蟾蜍神像"],["Semuanya（瑟穆安雅）","N","生存、繁衍","Life","蛋"],["Skerrit（斯凱瑞特）","N","自然守護","Nature","長出橡樹的橡果"],["Grolantor（格羅蘭托）","CE","戰爭、破壞","War","木棒"],["Skoraeus Stonebones（斯科雷烏斯）","N","石頭、藝術","Knowledge","鐘乳石"],["Surtur（蘇爾特）","LE","火焰、鍛造","Knowledge, War","燃燒之劍"],["Thrym（瑟林）","CE","寒冷、力量","War","白色雙刃斧"],["Yondalla（約達拉）","LG","生育、守護","Life","盾牌"]] }
 ];
+
+function toZhAlignment(code) {
+  return ALIGNMENT_MAP_ZH[code] || code;
+}
+
+function toZhDomains(domains) {
+  return String(domains)
+    .split(",")
+    .map(item => item.trim())
+    .filter(Boolean)
+    .map(item => DOMAIN_MAP_ZH[item] || item)
+    .join("、");
+}
 
 function setupSpellQrEasterEgg() {
   const spellTabBtn = document.getElementById("spells-tab-button");
@@ -3369,9 +3403,9 @@ function setupDeityInfoEasterEgg() {
         <div class="deity-grid">
           ${group.items.map(([name, align, role, domains, symbol]) => `
             <article class="deity-item">
-              <div class="deity-item-main">${name}｜${align}</div>
+              <div class="deity-item-main">${name}｜${toZhAlignment(align)}</div>
               <div class="deity-item-sub">職能：${role}</div>
-              <div class="deity-item-sub">領域：${domains}</div>
+              <div class="deity-item-sub">領域：${toZhDomains(domains)}</div>
               <div class="deity-item-sub">象徵：${symbol}</div>
             </article>
           `).join("")}
@@ -3823,7 +3857,6 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
     <button type="button" class="deity-info-close" aria-label="關閉神祉資訊">✕</button>
     <header class="deity-info-header">
       <h3>📜 Forgotten Realms 神祉整理</h3>
-      <p>密技：在「數值」頁籤連按五下可開啟，支援上下滑動閱讀。</p>
     </header>
     <div id="deity-info-content" class="deity-info-content"></div>
   </div>
