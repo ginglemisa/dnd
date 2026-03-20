@@ -1,51 +1,70 @@
 
 <!DOCTYPE html>
-<html lang="zh-Hant"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<html lang="zh-Hant"><head>
+	 <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-M8L0F03EGD"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-M8L0F03EGD', {page_path: location.pathname});
+  </script>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>D&amp;D 5.5 基本創角</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎲%3C/text%3E%3C/svg%3E">
-<script>
+  <script>
+// css.js
 // css.js
 const style = document.createElement("style");
-style.textContent = `
-#scrollToTopBtn {
-  position: fixed;
-  bottom: 20px;
-  left: 20px;
-  z-index: 999;
-  padding: 10px 12px;
-  font-size: 16px;
-  border-radius: 999px;
-  border: 1px solid #cfd5df;
-  background: rgba(255,255,255,0.92);
-  color: #2a3442;
-  cursor: pointer;
-  opacity: 0.9;
-  box-shadow: 0 8px 24px rgba(25, 35, 52, 0.12);
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
-
-#scrollToTopBtn:hover {
-  opacity: 1;
-  transform: translateY(-1px);
-}
-`;
 style.innerHTML = `
+  #scrollToTopBtn {
+    position: fixed;
+    right: 12px;
+    bottom: 12px;
+    z-index: 999;
+    width: 1.85em;
+    height: 1.85em;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    line-height: 1;
+    border-radius: 999px;
+    border: 1px solid #cfd5df;
+    background: rgba(255,255,255,0.92);
+    color: #2a3442;
+    cursor: pointer;
+    opacity: 0.92;
+    box-shadow: 0 8px 24px rgba(25, 35, 52, 0.12);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  #scrollToTopBtn:hover {
+    opacity: 1;
+    transform: translateY(-1px);
+  }
+
   :root {
-    --bg: #f3f5f9;
-    --panel: #ffffff;
-    --panel-soft: #f8f9fc;
+    --bg: #f0f2f8;
+    --panel: rgba(255, 255, 255, 0.72);
+    --panel-soft: rgba(248, 250, 255, 0.6);
     --panel-muted: #eef2f7;
-    --border: #cfd5df;
-    --border-strong: #aeb7c5;
-    --text: #18212f;
-    --muted: #5f6b7a;
-    --accent: #4a6cf7;
-    --accent-soft: #e8eeff;
-    --shadow: 0 8px 24px rgba(25, 35, 52, 0.08);
-    --radius: 14px;
+    --border: rgba(180, 195, 225, 0.55);
+    --border-strong: rgba(140, 162, 205, 0.7);
+    --text: #1a2338;
+    --muted: #5a6880;
+    --accent: #5b7cfa;
+    --accent-2: #8b6ff5;
+    --accent-soft: rgba(91, 124, 250, 0.1);
+    --shadow: 0 8px 28px rgba(28, 45, 100, 0.07), 0 2px 8px rgba(28, 45, 100, 0.04);
+    --shadow-hover: 0 14px 36px rgba(28, 45, 100, 0.12), 0 4px 12px rgba(91, 124, 250, 0.1);
+    --radius: 18px;
     --radius-sm: 10px;
+    --glass: blur(16px) saturate(160%);
   }
 
   * {
@@ -63,9 +82,13 @@ style.innerHTML = `
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
     line-height: 1.5;
     margin-bottom: 92px;
-    background: var(--bg);
+    background:
+      radial-gradient(ellipse 75% 50% at 20% 0%, rgba(91, 124, 250, 0.1) 0%, transparent 65%),
+      radial-gradient(ellipse 55% 45% at 85% 90%, rgba(139, 111, 245, 0.09) 0%, transparent 60%),
+      linear-gradient(170deg, #eef1f9 0%, #e9edf8 55%, #eaeaf6 100%) !important;
     color: var(--text);
     font-size: 16px;
+    min-height: 100vh;
   }
 
   .tabs {
@@ -73,43 +96,53 @@ style.innerHTML = `
     top: 0;
     left: 0;
     right: 0;
-    background: rgba(243, 245, 249, 0.96);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: var(--glass);
+    -webkit-backdrop-filter: var(--glass);
+    background: rgba(238, 242, 251, 0.88) !important;
     padding: 10px 6px 4px;
     display: flex;
     justify-content: space-around;
     gap: 6px;
     flex-wrap: nowrap;
     z-index: 1000;
-    border-bottom: 1px solid rgba(174, 183, 197, 0.7);
+    border-bottom: 1px solid rgba(180, 195, 225, 0.45) !important;
     max-width: 480px;
     margin: 0 auto;
-    box-shadow: 0 4px 16px rgba(25, 35, 52, 0.06);
+    box-shadow: 0 8px 24px rgba(24, 40, 100, 0.06), 0 1px 0 rgba(255, 255, 255, 0.7) inset;
   }
 
   .tab-button {
     flex: 1;
     min-width: 0;
     padding: 11px 6px;
-    background: rgba(255,255,255,0.78);
-    border: 1px solid var(--border);
-    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.78) !important;
+    border: 1px solid rgba(180, 195, 225, 0.5) !important;
+    border-radius: 14px !important;
     cursor: pointer;
     font-size: 1rem;
     font-weight: 700;
     line-height: 1.2;
     text-align: center;
+    color: var(--muted);
+    min-height: 46px;
+    letter-spacing: 0.02em;
+    box-shadow: 0 1px 4px rgba(24, 33, 47, 0.04), 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+    transition: background 0.2s ease, color 0.2s ease, transform 0.18s ease, box-shadow 0.2s ease;
+  }
+
+  .tab-button:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.95) !important;
     color: var(--text);
-    box-shadow: 0 1px 0 rgba(255,255,255,0.8) inset;
-    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(24, 40, 100, 0.08), 0 1px 0 rgba(255, 255, 255, 0.9) inset;
   }
 
   .tab-button.active {
-    background: var(--accent);
-    color: #fff;
-    border-color: var(--accent);
-    box-shadow: 0 8px 18px rgba(74, 108, 247, 0.22);
+    background: linear-gradient(135deg, #6c8dff 0%, #8b6ff5 100%) !important;
+    color: #fff !important;
+    border-color: transparent !important;
+    box-shadow: 0 8px 22px rgba(91, 124, 250, 0.32), 0 1px 0 rgba(255, 255, 255, 0.25) inset;
+    transform: translateY(-1px);
   }
 
   .tab-content {
@@ -136,11 +169,22 @@ style.innerHTML = `
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    background: #fff;
+    border: 1px solid rgba(170, 188, 225, 0.65) !important;
+    border-radius: 12px !important;
+    background: rgba(255, 255, 255, 0.88) !important;
     color: var(--text);
-    box-shadow: 0 1px 0 rgba(255,255,255,0.8) inset;
+    box-shadow: inset 0 1px 3px rgba(28, 45, 100, 0.05), 0 1px 0 rgba(255, 255, 255, 0.9);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    outline: none;
+  }
+
+  select:focus,
+  input[type="number"]:focus,
+  input[type="text"]:focus,
+  textarea:focus {
+    border-color: rgba(91, 124, 250, 0.7) !important;
+    background: rgba(255, 255, 255, 0.98) !important;
+    box-shadow: 0 0 0 3px rgba(91, 124, 250, 0.14), inset 0 1px 3px rgba(28, 45, 100, 0.04) !important;
   }
 
   select,
@@ -181,11 +225,20 @@ style.innerHTML = `
 
   .section {
     margin-bottom: 14px;
-    background: var(--panel);
-    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.72) !important;
+    backdrop-filter: blur(14px) saturate(150%);
+    -webkit-backdrop-filter: blur(14px) saturate(150%);
+    border: 1px solid rgba(200, 215, 240, 0.6) !important;
     border-radius: var(--radius);
-    padding: 12px;
-    box-shadow: var(--shadow);
+    padding: 16px !important;
+    box-shadow: var(--shadow), 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+    transition: border-color 0.22s ease, box-shadow 0.22s ease;
+  }
+
+  .section:hover,
+  details.section:hover {
+    border-color: rgba(91, 124, 250, 0.28) !important;
+    box-shadow: var(--shadow-hover), 0 1px 0 rgba(255, 255, 255, 0.85) inset;
   }
 
   .section > h3,
@@ -331,11 +384,27 @@ style.innerHTML = `
     font-size: 1rem;
     font-weight: 700;
     margin-bottom: 8px;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-    background: linear-gradient(180deg, #ffffff 0%, #f2f5fa 100%);
+    border-radius: 12px !important;
+    border: 1px solid rgba(180, 200, 235, 0.55) !important;
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.92) 0%, rgba(235, 241, 255, 0.8) 100%);
     color: var(--text);
-    box-shadow: 0 1px 0 rgba(255,255,255,0.9) inset;
+    min-height: 44px;
+    box-shadow: 0 2px 8px rgba(24, 40, 100, 0.07), 0 1px 0 rgba(255, 255, 255, 0.95) inset;
+    transition: transform 0.18s ease, box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+    cursor: pointer;
+  }
+
+  button:hover {
+    transform: translateY(-1.5px);
+    background: linear-gradient(160deg, #ffffff 0%, rgba(225, 233, 255, 0.9) 100%);
+    box-shadow: 0 8px 20px rgba(24, 40, 100, 0.11), 0 0 0 1px rgba(91, 124, 250, 0.2), 0 1px 0 rgba(255, 255, 255, 0.95) inset;
+    border-color: rgba(91, 124, 250, 0.3) !important;
+  }
+
+  button:active {
+    transform: translateY(0) scale(0.975);
+    box-shadow: 0 2px 6px rgba(24, 40, 100, 0.08);
+    transition-duration: 0.08s;
   }
 
   .small-text {
@@ -384,7 +453,7 @@ style.innerHTML = `
 
   @media (min-width: 481px) {
     html, body {
-      background-color: #edf1f6;
+      background-color: transparent;
     }
   }
 
@@ -666,8 +735,34 @@ style.innerHTML = `
   }
 `;
 document.head.appendChild(style);
+
+
+(function initScrollToTopButton() {
+  if (document.getElementById("scrollToTopBtn")) return;
+
+  const scrollToTopBtn = document.createElement("button");
+  scrollToTopBtn.id = "scrollToTopBtn";
+  scrollToTopBtn.type = "button";
+  scrollToTopBtn.textContent = "▲";
+  scrollToTopBtn.setAttribute("aria-label", "回到頁面頂端");
+  scrollToTopBtn.style.display = "none";
+
+  scrollToTopBtn.addEventListener("click", () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  const updateVisibility = () => {
+    scrollToTopBtn.style.display = window.scrollY > 220 ? "block" : "none";
+  };
+
+  document.body.appendChild(scrollToTopBtn);
+  window.addEventListener("scroll", updateVisibility, { passive: true });
+  updateVisibility();
+})();
+
 </script>
-<script>
+  <script>
+// monster.js
 // monster.js
 // 共用怪物/野獸 tooltip 資料
 
@@ -925,8 +1020,10 @@ const BEAST_STATS = {
     attacks: "咬擊：近戰攻擊檢定+5, 觸及5呎；命中：刺傷1。"
   }
 };
+
 </script>
-<script>
+  <script>
+// class-features.js
 // class-features.js
 const classFeatures = {
   barbarian: `<table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
@@ -961,7 +1058,7 @@ const classFeatures = {
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
-      <td></td>
+      <td>(A)、(B) 二選一</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>
@@ -973,8 +1070,7 @@ const classFeatures = {
     </tr>
   </tbody>
 </table>
-探索套組(10金幣)
-背包、床卷、2 瓶油、10 天的口糧、繩索、火絨盒、10 根火把、水袋。
+<strong>探索套組：</strong>背包、床卷、2 瓶油、10 天的口糧、繩索、火絨盒、10 根火把、水袋。
 
 <strong>野蠻人特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
      <thead>
@@ -1119,7 +1215,7 @@ const classFeatures = {
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
-      <td></td>
+      <td>(A)、(B) 二選一</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>
@@ -1131,17 +1227,16 @@ const classFeatures = {
     </tr>
   </tbody>
 </table>
-藝人套組(40金幣)
-背包、睡袋、鈴鐺、牛眼提燈、3 套戲服、鏡子、8 瓶油、9 日份的口糧、火絨盒、水袋。
+<strong>藝人套組：</strong>背包、睡袋、鈴鐺、牛眼提燈、3 套戲服、鏡子、8 瓶油、9 日份的口糧、火絨盒、水袋。
 
 <strong>吟遊詩人特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.97em;">
       <thead>
         <tr>
-          <th rowspan="2" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">等級</th>
-          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">熟練<br>加值</th>
+          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">等級</th>
+          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">熟練加值</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px;">職業特性</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px;">激勵骰</th>
-          <th rowspan="2" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">戲法</th>
+          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">戲法</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px;">準備<br>法術</th>
           <th colspan="3" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">環法術位</th>
         </tr>
@@ -1308,7 +1403,7 @@ const classFeatures = {
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
-      <td></td>
+      <td>(A)、(B) 二選一</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>
@@ -1321,16 +1416,16 @@ const classFeatures = {
   </tbody>
 </table>
 
-祭司套組(30金幣)：背包、毯子、聖水、油燈、7 日份的口糧、長袍和火絨盒。
+<strong>祭司套組：</strong>背包、毯子、聖水、油燈、7 日份的口糧、長袍和火絨盒。
 
 <strong>牧師特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
         <tr>
-          <th rowspan="2" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">等級</th>
-          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">熟練<br>加值</th>
+          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">等級</th>
+          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">熟練加值</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px;">職業特性</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px;">引導神力</th>
-          <th rowspan="2" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">戲法</th>
+          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">戲法</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px;">準備<br>法術</th>
           <th colspan="3" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">環法術位</th>
         </tr>
@@ -1506,7 +1601,7 @@ const classFeatures = {
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
-      <td></td>
+      <td>(A)、(B) 二選一</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>
@@ -1519,16 +1614,16 @@ const classFeatures = {
   </tbody>
 </table>
 
-探索套組(10金幣)：背包、床卷、2 瓶油、10 天的口糧、繩索、火絨盒、10 根火把、水袋。
+<strong>探索套組：</strong>背包、床卷、2 瓶油、10 天的口糧、繩索、火絨盒、10 根火把、水袋。
 
 <strong>德魯伊特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
         <tr>
-          <th rowspan="2" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">等級</th>
-          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">熟練<br>加值</th>
+          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">等級</th>
+          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">熟練加值</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px;">職業特性</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px;">荒野形態</th>
-          <th rowspan="2" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">戲法</th>
+          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">戲法</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px;">準備<br>法術</th>
           <th colspan="3" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">環法術位</th>
         </tr>
@@ -1755,7 +1850,7 @@ const classFeatures = {
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
-      <td></td>
+      <td>(A)、(B) 二選一</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>
@@ -1768,7 +1863,7 @@ const classFeatures = {
   </tbody>
 </table>
 
-地城套組(12金幣)：背包、鐵蒺藜、撬棍、2 瓶油、10 日份的口糧、繩索、火絨盒、10 根火把，水袋。
+<strong>地城套組：</strong>背包、鐵蒺藜、撬棍、2 瓶油、10 日份的口糧、繩索、火絨盒、10 根火把，水袋。
 
 <strong>戰士特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
@@ -1894,7 +1989,7 @@ const classFeatures = {
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
-      <td></td>
+      <td>(A)、(B) 二選一</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>
@@ -1907,7 +2002,7 @@ const classFeatures = {
   </tbody>
 </table>
 
-探索套組(10金幣)：背包、床卷、2 瓶油、10 天的口糧、繩索、火絨盒、10 根火把、水袋。
+<strong>探索套組：</strong>背包、床卷、2 瓶油、10 天的口糧、繩索、火絨盒、10 根火把、水袋。
 
 <strong>武僧特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
@@ -2053,7 +2148,7 @@ const classFeatures = {
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
-      <td></td>
+      <td>(A)、(B) 二選一</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>
@@ -2066,7 +2161,7 @@ const classFeatures = {
   </tbody>
 </table>
 
-祭司套組(33金幣)：背包、毯子、聖水、油燈、7 日份的口糧、長袍和火絨盒。
+<strong>祭司套組：</strong>背包、毯子、聖水、油燈、7 日份的口糧、長袍和火絨盒。
 
 <strong>聖武士特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
@@ -2076,8 +2171,8 @@ const classFeatures = {
       <th style="border:1px solid #aaa; padding:3px;">職業特性</th>
       <th style="border:1px solid #aaa; padding:3px;">引導神力</th>
       <th style="border:1px solid #aaa; padding:3px;">準備法術</th>
-      <th style="border:1px solid #aaa; padding:3px;">每環法術位<br>1</th>
-      <th style="border:1px solid #aaa; padding:3px;">每環法術位<br>2</th>
+      <th style="border:1px solid #aaa; padding:3px;">環法術位<br>1</th>
+      <th style="border:1px solid #aaa; padding:3px;">環法術位<br>2</th>
     </tr>
   </thead>
   <tbody>
@@ -2245,7 +2340,7 @@ const classFeatures = {
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
-      <td></td>
+      <td>(A)、(B) 二選一</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>
@@ -2258,7 +2353,7 @@ const classFeatures = {
   </tbody>
 </table>
 
-探索套組(10金幣)：背包、床卷、2 瓶油、10 天的口糧、繩索、火絨盒、10 根火把、水袋。
+<strong>探索套組：</strong>背包、床卷、2 瓶油、10 天的口糧、繩索、火絨盒、10 根火把、水袋。
 
 <strong>遊俠特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
@@ -2268,8 +2363,8 @@ const classFeatures = {
       <th style="border:1px solid #aaa; padding:3px;">職業特性</th>
       <th style="border:1px solid #aaa; padding:3px;">宿敵</th>
       <th style="border:1px solid #aaa; padding:3px;">準備法術</th>
-      <th style="border:1px solid #aaa; padding:3px;">每環法術位<br>1</th>
-      <th style="border:1px solid #aaa; padding:3px;">每環法術位<br>2</th>
+      <th style="border:1px solid #aaa; padding:3px;">環法術位<br>1</th>
+      <th style="border:1px solid #aaa; padding:3px;">環法術位<br>2</th>
     </tr>
   </thead>
   <tbody>
@@ -2408,7 +2503,7 @@ const classFeatures = {
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
-      <td></td>
+      <td>(A)、(B) 二選一</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>
@@ -2421,7 +2516,7 @@ const classFeatures = {
   </tbody>
 </table>
 
-竊賊套組(16金幣)：背包、滾珠、鈴鐺、10 根蠟燭、撬棍、附蓋提燈、7 瓶油、5 日份口糧、繩索、火絨盒、水袋。
+<strong>竊賊套組：</strong>背包、滾珠、鈴鐺、10 根蠟燭、撬棍、附蓋提燈、7 瓶油、5 日份口糧、繩索、火絨盒、水袋。
 
 <strong>遊蕩者特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
@@ -2545,7 +2640,7 @@ const classFeatures = {
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
-      <td></td>
+      <td>(A)、(B) 二選一</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>
@@ -2558,16 +2653,16 @@ const classFeatures = {
   </tbody>
 </table>
 
-  地城套組(12金幣)：背包、鐵蒺藜、撬棍、2 瓶油、10 日份的口糧、繩索、火絨盒、10 根火把，水袋。
+<strong>地城套組：</strong>背包、鐵蒺藜、撬棍、2 瓶油、10 日份的口糧、繩索、火絨盒、10 根火把，水袋。
   
 <strong>術士特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
         <tr>
-          <th rowspan="2" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">等級</th>
-          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">熟練<br>加值</th>
+          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">等級</th>
+          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">熟練加值</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px;">職業特性</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px;">術法點</th>
-          <th rowspan="2" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">戲法</th>
+          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">戲法</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px;">準備<br>法術</th>
           <th colspan="3" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">環法術位</th>
         </tr>
@@ -2799,7 +2894,7 @@ const classFeatures = {
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
-      <td></td>
+      <td>(A)、(B) 二選一</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>
@@ -2812,7 +2907,7 @@ const classFeatures = {
   </tbody>
 </table>
 
-學者套組(40金幣)：背包、書籍、墨水、墨水筆、油燈、10 瓶油、10 張羊皮紙和火絨盒。
+<strong>學者套組：</strong>背包、書籍、墨水、墨水筆、油燈、10 瓶油、10 張羊皮紙和火絨盒。
 
 <strong>契術師特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
@@ -3050,7 +3145,7 @@ const classFeatures = {
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
-      <td></td>
+      <td>(A)、(B) 二選一</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>
@@ -3063,15 +3158,15 @@ const classFeatures = {
   </tbody>
 </table>
 
-學者套組(40金幣)：背包、書籍、墨水、墨水筆、油燈、10 瓶油、10 張羊皮紙和火絨盒。
+<strong>學者套組：</strong>背包、書籍、墨水、墨水筆、油燈、10 瓶油、10 張羊皮紙和火絨盒。
 
 <strong>法師特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
     <tr>
-      <th rowspan="2" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">等級</th>
-      <th rowspan="2" style="border:1px solid #aaa; padding:3px;">熟練<br>加值</th>
+      <th rowspan="2" style="border:1px solid #aaa; padding:3px;">等級</th>
+      <th rowspan="2" style="border:1px solid #aaa; padding:3px;">熟練加值</th>
       <th rowspan="2" style="border:1px solid #aaa; padding:3px;">職業特性</th>
-      <th rowspan="2" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">戲法</th>
+      <th rowspan="2" style="border:1px solid #aaa; padding:3px;">戲法</th>
       <th rowspan="2" style="border:1px solid #aaa; padding:3px;">準備<br>法術</th>
       <th colspan="3" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">環法術位</th>
     </tr>
@@ -3210,8 +3305,10 @@ const classFeatures = {
 - 你可把 1 個由「施法」特性準備中的 1+環法師法術，替換成法術書中的另一個 1+環法師法術。
 `
 };
+
 </script>
-<script>
+  <script>
+// race.js
 // race.js
 const raceFeatures = {
   dragonborn: `生物類型：類人生物
@@ -3421,8 +3518,10 @@ tiefling: `生物類型：類人生物
 你始終準備血統法術，可免費施展環位法術各一次，之後需消耗環位。長休後免費次數恢復。選擇智力、感知、魅力其一為施法屬性（選擇血統時決定）。
 `
 };
+
 </script>
-<script>
+  <script>
+// equipment-notes.js
 // equipment-notes.js
 document.addEventListener("DOMContentLoaded", () => {
   const container = document.querySelector("#equipment-notes-section");
@@ -4142,8 +4241,10 @@ DC 25 力量（運動）：掙斷鐐銬
   updateWeaponMasteryVisibility();
 
 });
+
 </script>
-<script>
+  <script>
+// spell-list.js
 const spellList={
 bard:{
 'cantrips':[
@@ -11568,8 +11669,10 @@ desc:`學派: 變化
 }
 ]
 }
-};</script>
-<script>
+};
+</script>
+  <script>
+// condition.js
 // condition.js
 document.addEventListener("DOMContentLoaded", () => {
   const container = document.querySelector("#condition-section");
@@ -11730,10 +11833,8 @@ document.addEventListener("DOMContentLoaded", () => {
     <div class="section" style="margin-top:36px;">
       <h3>狀態</h3>
       <div class="small-text" style="margin-top: 8px;">點擊下方按鈕切換狀態說明。</div>
-
-      <div id="condition-display-grid" class="condition-display-grid" style="margin-top: 10px;"></div>
-
       <div id="condition-button-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px;"></div>
+      <div id="condition-display-grid" class="condition-display-grid" style="margin-top: 10px;"></div>
     </div>
   `;
 
@@ -11772,6 +11873,7 @@ document.addEventListener("DOMContentLoaded", () => {
     buttonGrid.appendChild(btn);
   });
 });
+
 </script>
 
 <style id="pretty-ui-overrides">
@@ -11798,6 +11900,10 @@ body{
   border-bottom:1px solid var(--line) !important;
   box-shadow:0 6px 20px rgba(24,33,47,.06);
   gap:8px;
+}
+.quo-text {
+  color: #9aa3af;
+  font-size: 0.8em;
 }
 .tab-button{
   border-radius:14px !important;
@@ -12069,6 +12175,67 @@ button:hover{filter:brightness(.99);}
   border-radius:10px;
   border:1px solid #d9dfea;
 }
+#deity-info-modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:10002;
+  background:rgba(7,12,24,.62);
+  align-items:center;
+  justify-content:center;
+  padding:12px;
+}
+#deity-info-modal.open{display:flex;}
+.deity-info-card{
+  position:relative;
+  width:min(94vw,860px);
+  max-height:min(88vh,920px);
+  border-radius:18px;
+  border:1px solid #d5deef;
+  background:linear-gradient(180deg,#ffffff 0%,#f7faff 100%);
+  box-shadow:0 24px 56px rgba(20,35,74,.34);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+.deity-info-header{
+  padding:16px 54px 12px 16px;
+  border-bottom:1px solid #dbe3f2;
+  background:linear-gradient(180deg,#f4f8ff 0%,#eef3ff 100%);
+}
+.deity-info-header h3{margin:0;font-size:1.1rem;color:#1f315f;}
+.deity-info-header p{margin:6px 0 0;font-size:.92rem;color:#506080;font-weight:700;}
+.deity-info-close{
+  position:absolute;
+  right:10px;
+  top:10px;
+  width:34px;
+  min-height:34px;
+  border-radius:999px !important;
+  border:1px solid #cfdaee !important;
+  background:#fff !important;
+  box-shadow:none;
+  line-height:1;
+  font-weight:900;
+}
+.deity-info-content{padding:12px;overflow-y:auto;}
+.deity-group{
+  border:1px solid #d8e2f3;
+  border-radius:14px;
+  background:#fff;
+  margin-bottom:10px;
+  padding:10px;
+}
+.deity-group h4{margin:0 0 8px;font-size:1rem;color:#243968;}
+.deity-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px;}
+.deity-item{
+  border:1px solid #e2e9f5;
+  background:linear-gradient(180deg,#fcfdff 0%,#f5f8ff 100%);
+  border-radius:12px;
+  padding:8px 9px;
+}
+.deity-item-main{font-weight:900;color:#192645;margin-bottom:4px;}
+.deity-item-sub{font-size:.9rem;color:#33486d;line-height:1.4;}
 .save-name .save-abbr{font-weight:900;}
 .save-name .save-full{font-weight:800;}
 .save-pair input[type="number"],
@@ -12405,7 +12572,7 @@ label[for="level"]{
 </head>
 <body>
 <div class="tabs">
-  <button class="tab-button active" onclick="showTab(&#39;basic&#39;, this)">數值</button>
+  <button id="basic-tab-button" class="tab-button active" onclick="showTab(&#39;basic&#39;, this)">數值</button>
   <button class="tab-button" onclick="showTab(&#39;skills&#39;, this)">技能</button>
   <button class="tab-button" onclick="showTab(&#39;actions&#39;, this)">動作</button>
   <button class="tab-button" onclick="showTab(&#39;equipment&#39;, this)">裝備</button>
@@ -12483,7 +12650,7 @@ label[for="level"]{
   <!-- 左欄：HP 顯示與輸入 -->
   <div class="hp-card">
     <div class="hp-title">最大生命值<span id="hp-display" class="hp-value">(0)</span></div>
-    <input type="number" id="hp" placeholder="目前 HP">
+    <input type="number" id="hp" placeholder="目前 HP" min="0" max="200" step="1" inputmode="numeric">
   </div>
 
   <!-- 右欄：陣營選擇 -->
@@ -12803,14 +12970,14 @@ label[for="level"]{
 </div>
 <h3>動作</h3>
 	  <div class="section">
-	  <div style="font-size: 1.05em; font-weight: bold; margin-top: 10px;">徒手攻擊補充說明</div>
+	  <div style="font-size: 1.05em; font-weight: bold; margin-top: 10px;">徒手攻擊</div>
 <div class="small-text" style="margin-left: 10px; margin-top: 4px;">
-  你可拳打腳踢5呎內目標，以下效果擇一:<br>
-  	1) 傷害：命中=力調整值+熟練加值；鈍擊傷害=力調整值+1。<br>
-  	2) 擒抱：目標做力或敏豁免；DC=8+力調整值+熟練加值(需空一手)。<br>
-  	3) 推撞：推目標5呎或倒地；力或敏豁免；DC=8+力調整值+熟練加值。<br>
+  5呎內拳打腳踢或咬人，擇一效果:<br>
+  	1) 傷害：命中=力調+熟練；傷害=力調+1（鈍擊）<br>
+  	2) 擒抱：力/敏豁免（DC=8+力調+熟練，需空手）<br>
+  	3) 推撞：推5呎或倒地；力/敏豁免（DC同上）<br>
 	<br>
-	備註：擒抱推撞只能對體型最多大你一級的目標使用
+	備註：擒抱推撞限制目標體型≤你+1級
 </div></div>
 
       <h3>附贈</h3>
@@ -13042,6 +13209,23 @@ function bindHPDisplayEvents() {
   bindEventById("level", "change", updateHPDisplay);
   bindEventById("race", "change", updateHPDisplay);
   bindEventById("con", "input", updateHPDisplay);
+}
+
+function clampHpValue(rawValue) {
+  if (rawValue === "" || rawValue === null || rawValue === undefined) return "";
+  const numeric = Number(rawValue);
+  if (!Number.isFinite(numeric)) return "";
+  const rounded = Math.round(numeric);
+  return String(Math.min(200, Math.max(0, rounded)));
+}
+
+function enforceHpInputRange() {
+  const hpInput = document.getElementById("hp");
+  if (!hpInput) return;
+  const clamped = clampHpValue(hpInput.value);
+  if (hpInput.value !== clamped) {
+    hpInput.value = clamped;
+  }
 }
 
 function handleSpellNotesUnlock9() {
@@ -13597,7 +13781,7 @@ const featsDesc = {
   "警覺": `警覺
 起源專長
 
-先攻熟練：先攻＝敏捷修正 + 熟練加值
+先攻熟練：先攻＝敏捷調整 + 熟練加值
 
 先攻互換：擲先攻後，可與一名自願盟友互換順序；雙方不可處於失能狀態`,
 
@@ -13884,6 +14068,8 @@ document.addEventListener("DOMContentLoaded", () => {
   updateSpellsByClassLevel();
   updateSpellCastingStatsVisibility();
   bindHPDisplayEvents();
+  bindEventById("hp", "input", enforceHpInputRange);
+  bindEventById("hp", "change", enforceHpInputRange);
   bindSpellNotesEvents();
   bindCoreCharacterEvents();
   bindSkillRankExclusiveEvents();
@@ -14012,6 +14198,7 @@ document.getElementById("set-default-abilities").addEventListener("click", () =>
   </script>
 
 <script>
+// equipment-data.js
 // equipment-data.js
 
 const weapons_simple_melee = [{"名稱":"短棒","傷害":"1d4 鈍擊","精通":"緩速","重量":"2 磅","價格":"1 銀幣","屬性1":"輕型","屬性2":null,"屬性3":null,"屬性4":null},{"名稱":"匕首","傷害":"1d4 穿刺","精通":"迅切","重量":"1 磅","價格":"2 金幣","屬性1":"靈巧","屬性2":"輕型","屬性3":"投擲 (射程 20/60)","屬性4":null},{"名稱":"巨棒","傷害":"1d8 鈍擊","精通":"推離","重量":"10 磅","價格":"2 銀幣","屬性1":"雙手","屬性2":null,"屬性3":null,"屬性4":null},{"名稱":"手斧","傷害":"1d6 揮砍","精通":"侵擾","重量":"2 磅","價格":"5 金幣","屬性1":"輕型","屬性2":"投擲 (射程 20/60)","屬性3":null,"屬性4":null},{"名稱":"標槍","傷害":"1d6 穿刺","精通":"緩速","重量":"2 磅","價格":"5 銀幣","屬性1":"投擲 (射程 30/120)","屬性2":null,"屬性3":null,"屬性4":null},{"名稱":"輕錘","傷害":"1d4 鈍擊","精通":"迅切","重量":"2 磅","價格":"2 金幣","屬性1":"輕型","屬性2":"投擲 (射程 20/60)","屬性3":null,"屬性4":null},{"名稱":"硬頭錘","傷害":"1d6 鈍擊","精通":"削弱","重量":"4 磅","價格":"5 金幣","屬性1":"--","屬性2":null,"屬性3":null,"屬性4":null},{"名稱":"長棍","傷害":"1d6 鈍擊","精通":"失衡","重量":"4 磅","價格":"2 銀幣","屬性1":"兩用 (1d8)","屬性2":null,"屬性3":null,"屬性4":null},{"名稱":"鐮刀","傷害":"1d4 揮砍","精通":"迅切","重量":"2 磅","價格":"1 金幣","屬性1":"輕型","屬性2":null,"屬性3":null,"屬性4":null},{"名稱":"短矛","傷害":"1d6 穿刺","精通":"削弱","重量":"3 磅","價格":"1 金幣","屬性1":"投擲 (射程 20/60)","屬性2":"兩用 (1d8)","屬性3":null,"屬性4":null}];
@@ -14664,8 +14851,7 @@ function createSingleSpellRow(areaId, level, afterRow = null) {
   const classSel = document.createElement('select');
 
   const cantripClassOptions = classOptions.filter(o => o.value !== "paladin" && o.value !== "ranger");
-  const level3ClassOptions = classOptions.filter(o => o.value !== "paladin" && o.value !== "ranger");
-  const optionsToUse = (level === "cantrips" || level === 3) ? level3ClassOptions : classOptions;
+  const optionsToUse = (level === "cantrips") ? cantripClassOptions : classOptions;
 
   classSel.innerHTML =
     `<option value="">--職業--</option>` +
@@ -14993,6 +15179,51 @@ function hideBeastPopup() {
 }
 
 const SPELL_QR_IMAGE_SRC = "./qr.png";
+const ALIGNMENT_MAP_ZH = {
+  LG: "守序善良",
+  NG: "中立善良",
+  CG: "混亂善良",
+  LN: "守序中立",
+  N: "絕對中立",
+  CN: "混亂中立",
+  LE: "守序邪惡",
+  NE: "中立邪惡",
+  CE: "混亂邪惡"
+};
+const DOMAIN_MAP_ZH = {
+  Life: "生命",
+  Light: "光明",
+  War: "戰爭",
+  Nature: "自然",
+  Tempest: "風暴",
+  Knowledge: "知識",
+  Trickery: "詭術",
+  Death: "死亡"
+};
+const DEITY_INFO_GROUPS = [
+  { title: "❄️ 自然 / 災厄 / 生死", items: [["Auril（歐瑞爾）","NE","冬之女王","冬季、寒冷","Nature, Tempest","六角雪花","「凜冬本身就是她的殘酷意志。」"],["Talos（塔洛斯）","CE","風暴之主","風暴、毀滅","Tempest","三道閃電放射","「當他怒吼之時，雷雨交加。」"],["Umberlee（安博里）","CE","大海女王","海洋、狂潮","Tempest","左右翻捲的海浪","「汪洋並不仁慈，宛如潑婦。」"],["Silvanus（西凡納斯）","N","自然之神","荒野、自然","Nature","橡樹葉","「自然孕育一切，也帶來死亡。」"],["Mielikki（梅麗凱）","NG","森林聖母、超凡遊俠","森林","Nature","獨角獸頭","「吾乃森林守護者與旅人之友。」"],["Malar（馬拉）","CE","萬獸之主","狩獵、野性","Nature","獸爪","「狩獵並非為了生存，而是殺戮。」"]] },
+  { title: "⚖️ 秩序 / 正義 / 保護", items: [["Tyr（提爾）","LG","公正者、失明大君","正義","War","戰錘上的天秤","「法律與正義高於一切。」"],["Torm（托姆）","LG","勇氣與犧牲之神","勇敢、責任、無私","War","白色右手護手","「為正義而行，哪怕付出生命。」"],["Ilmater（伊爾瑪特）","LG","忍耐之神","救助、苦難","Life","綁著紅繩的雙手","「他承受傷痛，只為拯救世人。」"],["Helm（海姆）","LN","守望者","守護、警戒","Life, Light","護手上的凝視之眼","「守衛永不眨眼。」"],["Kelemvor（凱蘭沃）","LN","亡者之主、冥魂法官","死亡、審判","Death","骷髏手持天秤","「死亡不是詛咒，而是秩序的一部分。」"],["Azuth（阿祖斯）","LN","奧法之主、第一傳道者","法師、奧術","Knowledge","火焰描邊的上舉左手","「魔法應被理解、規範，而非濫用。」"]] },
+  { title: "🌅 生命 / 希望 / 美善", items: [["Lathander（洛山達）","NG","晨曦之主、田徑者","新生、黎明","Life, Light","通往日出的道路","「每個黎明都是新的開始。」"],["Chauntea（裳禔亞）","NG","大地之母、穀物女神","農業、豐收","Life","穀束或穀上玫瑰","「她使大地滋養萬物。」"],["Eldath（艾達絲）","NG","水歌女神","和平、寧靜","Life, Nature","瀑布落入靜池","「她的存在本身就是安寧。」"],["Sune（淑妮）","CG","火紅之髮、愛情女士","愛與美","Life, Light","紅髮美女面容","「美與愛是世界的救贖。」"],["Lliira（黎爾拉）","CG","喜悅之神","歡樂、慶典","Life","三顆六角星三角排列","「生命值得慶祝。」"],["Tymora（泰摩拉）","CG","幸運女神、金髮之女","好運、冒險","Trickery","正面朝上的硬幣","「幸運永遠眷顧勇者。」"]] },
+  { title: "🧠 知識 / 魔法 / 命運", items: [["Mystra（密斯特拉）","NG","魔網女神","魔法","Knowledge","七星環或紅霧星環","「所有魔法都源自她，她是魔網本身的意志。」"],["Oghma（歐格瑪）","N","知識之神","智識、靈感、思想","Knowledge","空白卷軸","「知識本身就是力量，而他守護所有尚未被書寫的真理。」"],["Deneir（迪奈爾）","NG","書記之神、符繪之主","書寫、紀錄","Knowledge","蠟燭與眼睛","「他讓思想成形，使語言成為永恆。」"],["Gond（貢德）","N","萬物造聖、鐵匠之神","工藝、建築、發明","Knowledge","四輻條齒輪","「創造是神聖的行為，每個齒輪都能改變世界。」"],["Milil（米利爾）","NG","詩歌之主、歐格瑪股肱","詩詞、歌曲、辯才","Light","葉製豎琴","「他的歌聲能治癒心靈，也能激起勇氣。」"],["Savras（薩弗拉斯）","LN","第三隻眼","預言、命運、真視","Knowledge","多眼水晶球","「他看見未來，但從不干涉，只揭示真相。」"],["Selûne（賽倫涅）","CG","月之女神","月亮、夜空、變化","Knowledge, Life","七星環繞雙眼","「她是黑夜中的柔光，指引迷途者前行。」"]] },
+  { title: "🌑 黑暗 / 詭計 / 破壞", items: [["Shar（莎爾）","NE","暗夜女神","黑暗、失落、遺忘","Death, Trickery","黑色圓盤","「她奪走光明，也奪走記憶。」"],["Mask（馬斯克）","CN","陰影之主、盜賊之神","盜竊；暗影、秘密","Trickery","黑面具","「每個影子都可能是他的面具。」"],["Leira（蕾拉）","CN","迷霧女士、幻術之母","幻象、迷霧、虛實不分","Trickery","倒三角霧旋","「真相只是她眾多幻象之一。」"],["Cyric（希瑞克）","CE","謊言之王","欺瞞、背叛、瘋狂","Trickery","無下顎白骷髏","「他以謊言為武器，也以謊言為真理。」"],["Beshaba（貝莎芭）","CE","厄運女士","不幸、災禍","Trickery","黑鹿角","「她不求信徒，只求讓你倒楣。」"]] },
+  { title: "☠️ 死亡 / 痛苦 / 毀滅", items: [["Bhaal（巴爾）","NE","謀殺之主","謀殺、暗殺、血腥","Death","血滴環繞骷髏","「每一場謀殺都是對他的獻祭。」"],["Myrkul（米爾寇）","NE","骸骨之主","死亡、腐朽、亡魂","Death","白色人類骷髏","「他是死亡的寒息，吹墓的冷風。」"],["Loviatar（洛薇塔）","LE","痛苦少女","痛苦；折磨、支配","Death","九尾鞭","「痛苦是她的語言，也是她的恩賜。」"],["Talona（塔羅娜）","CE","毒與病之母、瘟疫老嫗","疾病、毒素、腐敗","Death","三滴淚的三角形","「她的祝福會讓你慢慢枯萎。」"]] },
+  { title: "⚔️ 戰爭 / 力量 / 統治", items: [["Tempus（坦帕斯）","N","戰爭之主","戰爭、鬥爭、榮耀","War","燃燒之劍","「他不偏袒勝者，只尊重戰士的勇氣。」"],["Bane（班恩）","LE","暴政之主","暴政、征服、恐懼","War","黑色直立右手","「他以恐懼統治，以力量維持秩序。」"]] },
+  { title: "💰 財富 / 商業", items: [["Waukeen（沃金）","N","商業與財富女神、自由女士","貿易、財富、談判","Knowledge, Trickery","側面人像硬幣","「只要有交易，她就會在場。」"]] },
+  { title: "🐉 非人神祇（Nonhuman Deities）", items: [["Bahamut（巴哈姆特）","LG","白金龍王","善良、守護、正義","Life, War","龍頭側面","「他是正義的化身，守護弱者、懲戒邪惡。」"],["Tiamat（提亞瑪特）","LE","五首龍后","邪惡、毀滅、貪婪、支配","Trickery","五爪痕龍頭","「她以貪婪與恐懼統治，渴望吞噬一切。」"],["Corellon Larethian（科瑞隆）","CG","精靈之父","藝術、魔法、創造","Light","新月或星芒","「他是精靈的創造者，也是藝術與魔法的靈感源泉。」"],["Deep Sashelas（深海薩謝拉斯）","CG","海下之主、海豚親王、水手之友","海洋、知識","Nature, Tempest","海豚","「他是海精靈的守護者，掌管深海的智慧。」"],["Rillifane Rallathil（瑞里凡‧萊勒菲）","CG","木葉之主 、攸木長者","森林、自然","Nature","橡樹","「他是森林的靈魂，守護自然的純粹與野性。」"],["Sehanine Moonbow（莎罕妮‧月弓）","CG","精靈月神、夜空之女","月亮、夢境、幻象、引導死亡","Knowledge","新月","「她引導靈魂穿越夜幕，也是夢境與幻象的守護者。」"],["Moradin（摩拉丁）","LG","鍛魂者、造物主","創造、鍛造","Knowledge","鎚與砧","「他以火與鐵鍛造了矮人，也鍛造了他們的精神。」"],["Garl Glittergold（加爾·閃金）","LG","小丑、無價寶石、靈光一閃","詭計、智慧、幽默、創造力","Trickery","金塊","「他以智慧與幽默保護地侏，惡作劇是他的祝福。」"],["Gruumsh（格烏姆什）","CE","獨眼之主、不眠者","戰爭、風暴、征服、仇恨","Tempest, War","獨眼","「他命令獸人征服世界，直到所有土地都染上鮮血。」"],["Grolantor（格羅蘭托）","CE","愚蠢的破壞者、山丘巨人之神","戰爭、破壞","War","木棒","「他只懂暴力，巨人中的野蠻破壞者。」"],["Skoraeus Stonebones（斯科雷烏斯‧石骨）","N","石骨賢者、石巨人之神","石頭、藝術、雕刻","Knowledge","鐘乳石","「他是石巨人的沉默智者，藝術與石工的守護者。」"],["Surtur（蘇爾特）","LE","火焰之王","火焰、鍛造、征服","Knowledge, War","燃燒之劍","「他以火焰淬鍊力量，火巨人的暴君之王。」"],["Thrym（瑟林）","CE","寒霜之王","寒冷、力量、戰鬥","War","白色雙刃斧","「他是霜巨人的戰王，寒冬與蠻力的化身。」"],["Yondalla（悠達拉）","LG","半身人之母、蒙福者","生育、守護、繁榮","Life","盾牌","「她是半身人的保護者，象徵家庭、和平與豐盛。」"]] }
+];
+
+function toZhAlignment(code) {
+  return ALIGNMENT_MAP_ZH[code] || code;
+}
+
+function toZhDomains(domains) {
+  return String(domains)
+    .split(",")
+    .map(item => item.trim())
+    .filter(Boolean)
+    .map(item => DOMAIN_MAP_ZH[item] || item)
+    .join("、");
+}
 
 function setupSpellQrEasterEgg() {
   const spellTabBtn = document.getElementById("spells-tab-button");
@@ -15028,6 +15259,58 @@ function setupSpellQrEasterEgg() {
   });
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") hideSpellQrModal();
+  });
+}
+
+function setupDeityInfoEasterEgg() {
+  const basicTabBtn = document.getElementById("basic-tab-button");
+  const modal = document.getElementById("deity-info-modal");
+  if (!basicTabBtn || !modal) return;
+
+  const content = document.getElementById("deity-info-content");
+  if (content) {
+    content.innerHTML = DEITY_INFO_GROUPS.map(group => `
+      <section class="deity-group">
+        <h4>${group.title}</h4>
+        <div class="deity-grid">
+          ${group.items.map(([name, align, titl, role, domains, symbol, quo]) => `
+            <article class="deity-item">
+              <div class="deity-item-main">${name}｜${toZhAlignment(align)}</div>
+              <div class="deity-item-sub">稱號：${titl}</div>
+			  <div class="deity-item-sub">職能：${role}</div>
+              <div class="deity-item-sub">領域：${toZhDomains(domains)}</div>
+              <div class="deity-item-sub">象徵：${symbol}</div>
+			  <div class="deity-item-sub"><span class="quo-text">${quo}</span></div>
+            </article>
+          `).join("")}
+        </div>
+      </section>
+    `).join("");
+  }
+
+  const closeBtn = modal.querySelector(".deity-info-close");
+  const hide = () => modal.classList.remove("open");
+  const show = () => modal.classList.add("open");
+  let clickCount = 0;
+  const reset = () => { clickCount = 0; };
+
+  basicTabBtn.addEventListener("click", () => {
+    clickCount += 1;
+    if (clickCount >= 5) {
+      show();
+      reset();
+    }
+  });
+
+  document.querySelectorAll(".tab-button").forEach(btn => {
+    if (btn !== basicTabBtn) btn.addEventListener("click", reset);
+  });
+  closeBtn?.addEventListener("click", hide);
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal) hide();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") hide();
   });
 }
 
@@ -15194,6 +15477,10 @@ function applyStateObject(data) {
   const highlevelCount = spellAreas
     .filter(area => typeof area.level === "number" && area.level >= 4)
     .reduce((sum, area) => sum + parseInt(data[`${area.id}-count`] || "0", 10), 0);
+  if (highlevelCount > 0) {
+    const highlevelSpells = document.getElementById("highlevel-spells");
+    if (highlevelSpells) highlevelSpells.style.display = "block";
+  }
 
   for (const id in data) {
     if (/cantrips-area-class-\d+|level\d+spells-area-class-\d+/.test(id)) {
@@ -15219,9 +15506,7 @@ function applyStateObject(data) {
 
 async function copyShareUrl() {
   const hash = await encodeStateToHash(collectStateObject());
-  const shareBase = "https://ginglemisa.github.io/dnd/index.html";
-  const suffix = hash || `${location.search || ""}${location.hash || ""}`;
-  const shareUrl = `${shareBase}${suffix}`;
+  const shareUrl = `${location.origin}${location.pathname}${location.search}${hash}`;
   try {
     await navigator.clipboard.writeText(shareUrl);
     if (shareUrl.length > 4000) {
@@ -15430,6 +15715,7 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
   // 6. 分享模式判定完成後，才初始化版權提醒，避免時序競態
   initLegalModal();
   setupSpellQrEasterEgg();
+  setupDeityInfoEasterEgg();
 });
 </script>
 
@@ -15440,17 +15726,26 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
   </div>
 </div>
 
+<div id="deity-info-modal" aria-hidden="true">
+  <div class="deity-info-card" role="dialog" aria-modal="true" aria-label="神祉資訊">
+    <button type="button" class="deity-info-close" aria-label="關閉神祉資訊">✕</button>
+    <header class="deity-info-header">
+      <h3>📜 被遺忘國度 神祉整理</h3>
+    </header>
+    <div id="deity-info-content" class="deity-info-content"></div>
+  </div>
+</div>
+
 <div id="legal-modal" style="display:none;position:fixed;z-index:9999;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.45);">
   <div style="background:#fff;padding:18px 14px;max-width:332px;margin:72px auto 0 auto;border-radius:12px;box-shadow:0 4px 24px #0003;">
-    <h3 style="margin:0 0 6px 0;font-size:1.85em;line-height:1.15;">使用提醒</h3>
-    <div style="font-size:0.9em;line-height:1.55;color:#222;">
-      本網頁僅供玩家推廣時快速創建角色使用。<br>
-      遊戲過程仍請以正版規則書《玩家手冊》（Player’s Handbook, PHB）為準。<br>
-      <b>支持正版：</b><br>
-      D&D Beyond 數位板：<br>
-      <a href="https://marketplace.dndbeyond.com/rulebooks" target="_blank">https://www.dndbeyond.com/</a><br>
-      Amazon 購買 PHB 實體書：<br>
-      <a href="https://www.amazon.com/s?k=dnd+2024+players+handbook&ref=cs_503_search" target="_blank">https://www.amazon.com/</a>
+    <h3 style="margin:0 0 6px 0;font-size:1.1em;line-height:1.15;">使用提醒</h3>
+    <div style="font-size:0.8em;line-height:1.55;color:#222;">
+     本站僅提供免費規則，更多選項請參閱玩家手冊。</div>
+      <h3 style="margin:16px 0 6px 0;font-size:1.1em;line-height:1.15;">購買玩家手冊(PHB)</h3>
+      <div style="font-size:0.8em;line-height:1.55;color:#222;">D&D Beyond 數位版：
+      <a href="https://marketplace.dndbeyond.com/rulebooks" target="_blank">www.dndbeyond.com</a><br>
+      Amazon 實體書：
+      <a href="https://www.amazon.com/s?k=dnd+2024+players+handbook&ref=cs_503_search" target="_blank">www.amazon.com</a>
     </div>
     <div style="margin-top:10px;padding-top:8px;border-top:1px solid #e4e8f2;font-size:0.8em;line-height:1.45;color:#49566d;text-align:center;">
       <div style="font-weight:700;color:#2a3b56;">Unofficial D&amp;D Character Tool</div>
