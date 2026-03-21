@@ -767,7 +767,7 @@ body.tour-active{
     <h1 style="margin:0;font-size:1.32rem;">D&amp;D 新手快速創角工具</h1>
     <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
       <p style="margin:0;color:var(--muted);font-size:.95rem;">用手機學會填角色卡</p>
-      <button type="button" id="restart-tour-btn" aria-label="重新開啟新手教學" style="min-height:36px;padding:6px 10px;font-size:.88rem;">新手教學</button>
+      <button type="button" id="restart-tour-btn" aria-label="重新開啟新手教學" style="min-height:32px;width:5.2em;padding:4px 0;font-size:.86rem;">新手導覽</button>
     </div>
   </div>
 </header>
@@ -973,7 +973,7 @@ body.tour-active{
 </div>
 	<div class="section">
     <details open><summary><h3 style="display: inline;">背景能力</h3></summary>
-    <div id="background-ability-guide-target"><div class="output" id="backgroundFeatures">無資料</div></div></details>
+    <div id="background-ability-guide-target" style="display:block;min-height:44px;"><div class="output" id="backgroundFeatures">無資料</div></div></details>
 	</div>
   <div class="section">
     <details open><summary><h3 style="display: inline;">種族能力</h3>
@@ -3573,13 +3573,15 @@ const TOUR_STEPS = [
     text: "你可以手動輸入六大屬性；如果是第一次使用，也可以先按「預設屬性」快速開始。",
     tab: "basic",
     selectors: [".ability-grid", "#set-default-abilities"],
-    placement: "top"
+    placement: "top",
+    padTop: 24,
+    padBottom: 30
   },
   {
     title: "記得把背景提供的加值加上去",
     text: "背景會提供屬性加值與熟練技能。請先閱讀這裡，記得手動把屬性加上去，並記住等等要到技能頁勾選熟練。",
     tab: "basic",
-    selectors: ["#background-ability-guide-target"],
+    selectors: ["#background-ability-guide-target", "#backgroundFeatures"],
     placement: "top"
   },
   {
@@ -3600,14 +3602,14 @@ const TOUR_STEPS = [
     title: "產生攻擊資料",
     text: "按下這個按鈕，會把你在裝備頁選的主副手資料自動帶進來，方便你在戰鬥中查看。",
     tab: "actions",
-    selectors: ["#populate-hand-attacks-btn", "#atk-main-name", "#atk-off-name"],
+    selectors: ["#populate-hand-attacks-btn", "#atk-off-note"],
     placement: "top"
   },
   {
     title: "法術頁",
     text: "如果你的角色會施法，這裡可以設定施法屬性、法術位與已選法術。",
     tab: "spells",
-    selectors: ["#spell-casting-stats-wrap", "#cantrips-area", "#spell-slot-management-wrap"],
+    selectors: ["#spell-casting-stats-wrap", "#spell-notes"],
     placement: "top",
     condition: () => shouldShowSpellTour()
   }
@@ -3635,6 +3637,19 @@ function getUnionRect(selectors) {
   const top = Math.max(0, Math.min(...rects.map(r => r.top)) - 8);
   const right = Math.min(window.innerWidth, Math.max(...rects.map(r => r.right)) + 8);
   const bottom = Math.min(window.innerHeight, Math.max(...rects.map(r => r.bottom)) + 8);
+  return { left, top, right, bottom, width: right - left, height: bottom - top };
+}
+
+function expandRect(rect, step) {
+  if (!rect) return rect;
+  const padTop = step?.padTop || 0;
+  const padBottom = step?.padBottom || 0;
+  const padLeft = step?.padLeft || 0;
+  const padRight = step?.padRight || 0;
+  const left = Math.max(0, rect.left - padLeft);
+  const top = Math.max(0, rect.top - padTop);
+  const right = Math.min(window.innerWidth, rect.right + padRight);
+  const bottom = Math.min(window.innerHeight, rect.bottom + padBottom);
   return { left, top, right, bottom, width: right - left, height: bottom - top };
 }
 
@@ -3736,11 +3751,11 @@ function goToTourStep(index) {
 
   if (tourLayoutTimer) clearTimeout(tourLayoutTimer);
   tourLayoutTimer = setTimeout(() => {
-    const preRect = getUnionRect(step.selectors);
+    const preRect = expandRect(getUnionRect(step.selectors), step);
     if (!preRect) return;
     scrollRectIntoView(preRect);
     setTimeout(() => {
-      const rect = getUnionRect(step.selectors);
+      const rect = expandRect(getUnionRect(step.selectors), step);
       if (!rect) return;
       applySpotlight(rect);
       placeTooltip(rect, step.placement || "bottom");
