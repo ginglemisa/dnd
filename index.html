@@ -660,6 +660,30 @@ label[for="level"]{
   border-color:#8ea7ff !important;
   box-shadow:0 0 0 3px rgba(91,124,250,.12), var(--shadow) !important;
 }
+
+.invocation-block {
+  margin-bottom: 16px;
+  white-space: pre-wrap;
+  line-height: 1.45;
+}
+
+.invocation-block:last-child {
+  margin-bottom: 0;
+}
+
+.invocation-prereq {
+  display: inline-block;
+  margin: 2px 0 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.9em;
+  line-height: 1.35;
+  font-weight: 800;
+  color: #51627c;
+  background: #eef3fb;
+  border: 1px solid #d7deea;
+}
+
 @media (max-width:420px){
   .bottom-buttons{grid-template-columns:1fr 1fr !important;}
   .tabs{
@@ -1705,7 +1729,9 @@ function fillEldritchInvocationTextsFromClassFeatures() {
     }
 
     const end = endCandidates.length ? Math.min(...endCandidates) : invocationBlock.length;
-    invocation.text = invocationBlock.slice(start + invocation.name.length, end).trim();
+    invocation.text = getNormalizedInvocationText(
+      invocationBlock.slice(start + invocation.name.length, end)
+    );
   });
 }
 
@@ -1714,12 +1740,25 @@ function getInvocationCheckboxId(index, slot = 1) {
 }
 
 function getNormalizedInvocationText(text) {
-  return (text || "").replace(/\n{3,}/g, "\n\n").trim();
+  return (text || "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n[ \t]+/g, "\n")
+    .replace(/\n(?:[ \t]*\n)+/g, "\n\n")
+    .trim();
 }
 
 function hasWarlockInvocation(invocationName) {
   const picks = document.querySelectorAll("#eldritch-invocations-output input[data-invocation-name]");
   return Array.from(picks).some(input => input.dataset.invocationName === invocationName && input.checked);
+}
+
+function formatInvocationText(text) {
+  return getNormalizedInvocationText(text).replace(
+    /^（先決條件：([^）]+)）/m,
+    '<span class="invocation-prereq">先決條件：$1</span>'
+  );
 }
 
 function renderEldritchInvocations() {
@@ -1730,13 +1769,10 @@ function renderEldritchInvocations() {
     const checkCount = invocation.repeatable ? (invocation.max || 3) : 1;
     const checks = Array.from({ length: checkCount }, (_, slotIndex) => {
       const checkboxId = getInvocationCheckboxId(index, slotIndex + 1);
-      return `<label style="margin-right: 6px;"><input type="checkbox" id="${checkboxId}" data-invocation-name="${escapeHtml(invocation.name)}">✔</label>`;
+      return `<label style="margin-right: 6px;"><input type="checkbox" id="${checkboxId}" data-invocation-name="${escapeHtml(invocation.name)}"></label>`;
     }).join("");
 
-    return `<div style="margin-bottom: 6px;">
-      <div>${checks}<strong>${invocation.name}</strong></div>
-      <div style="margin: 2px 0 0 4px; white-space: pre-wrap; line-height: 1.45;">${getNormalizedInvocationText(invocation.text)}</div>
-    </div>`;
+    return `<div class="invocation-block">${checks}<strong>${escapeHtml(invocation.name)}</strong>${invocation.text ? `\n${formatInvocationText(invocation.text)}` : ""}</div>`;
   }).join("");
 
   output.querySelectorAll("input[type='checkbox']").forEach(el => {
