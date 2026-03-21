@@ -10,9 +10,16 @@
 
     gtag('config', 'G-M8L0F03EGD', {page_path: location.pathname});
   </script>
-	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="D&D 新手快速創角工具，適合 TRPG 推廣教學場合使用。用手機一步一步學習填寫角色卡，支援 2024 Basic Rules 1～5 級內容。">
+  <meta property="og:title" content="D&D 新手快速創角工具">
+  <meta property="og:description" content="用手機一步一步學會填寫角色卡，適合桌邊教學與 TRPG 推廣場合。支援 2024 Basic Rules 1～5 級。">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://ginglemisa.github.io/dnd/">
+  <meta property="og:image" content="/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
   <title>D&amp;D 5.5 基本創角</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎲%3C/text%3E%3C/svg%3E">
   <script src="css.js" defer></script>
@@ -660,6 +667,40 @@ label[for="level"]{
   border-color:#8ea7ff !important;
   box-shadow:0 0 0 3px rgba(91,124,250,.12), var(--shadow) !important;
 }
+body.tour-active{
+  overflow:hidden;
+}
+#tour-overlay{
+  position:fixed;
+  inset:0;
+  z-index:10050;
+  display:none;
+}
+#tour-overlay.active{display:block;}
+.tour-mask{
+  position:fixed;
+  background:rgba(15,20,30,.58);
+}
+#tour-focus-ring{
+  position:fixed;
+  border:2px solid #9eb5ff;
+  border-radius:12px;
+  box-shadow:0 0 0 9999px transparent, 0 0 0 4px rgba(91,124,250,.25);
+  pointer-events:none;
+}
+#tour-tooltip{
+  position:fixed;
+  max-width:min(320px,calc(100vw - 24px));
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:14px;
+  box-shadow:0 10px 24px rgba(24,33,47,.25);
+  padding:12px;
+}
+#tour-step-title{margin:0 0 6px;font-size:1rem;}
+#tour-step-text{margin:0 0 10px;font-size:.9rem;color:var(--muted);line-height:1.5;}
+.tour-actions{display:flex;gap:8px;justify-content:flex-end;}
+#tour-next-btn{background:linear-gradient(180deg,#5f7cff 0%,#4765ea 100%);color:#fff;}
 @media (max-width:420px){
   .bottom-buttons{grid-template-columns:1fr 1fr !important;}
   .tabs{
@@ -718,14 +759,24 @@ label[for="level"]{
 
 </head>
 <body>
-<div class="tabs">
-  <button id="basic-tab-button" class="tab-button active" onclick="showTab(&#39;basic&#39;, this)">數值</button>
-  <button class="tab-button" onclick="showTab(&#39;skills&#39;, this)">技能</button>
-  <button class="tab-button" onclick="showTab(&#39;actions&#39;, this)">動作</button>
-  <button class="tab-button" onclick="showTab(&#39;equipment&#39;, this)">裝備</button>
-  <button id="spells-tab-button" class="tab-button" onclick="showTab(&#39;spells&#39;, this)">法術</button>
-</div>
+<header class="page-header section" style="margin:12px;">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+    <div>
+      <h1 style="margin:0;font-size:1.32rem;">D&amp;D 新手快速創角工具</h1>
+      <p style="margin:8px 0 0;color:var(--muted);font-size:.95rem;">用手機學會填角色卡</p>
+    </div>
+    <button type="button" id="restart-tour-btn" aria-label="重新開啟新手教學" style="min-height:36px;padding:6px 10px;font-size:.88rem;">新手教學</button>
+  </div>
+</header>
 
+<main id="main-content">
+<div class="tabs" role="tablist" aria-label="角色卡頁籤">
+  <button id="basic-tab-button" class="tab-button active" role="tab" aria-controls="tab-basic" aria-selected="true" onclick="showTab(&#39;basic&#39;, this)">數值</button>
+  <button class="tab-button" role="tab" aria-controls="tab-skills" aria-selected="false" onclick="showTab(&#39;skills&#39;, this)">技能</button>
+  <button class="tab-button" role="tab" aria-controls="tab-actions" aria-selected="false" onclick="showTab(&#39;actions&#39;, this)">動作</button>
+  <button class="tab-button" role="tab" aria-controls="tab-equipment" aria-selected="false" onclick="showTab(&#39;equipment&#39;, this)">裝備</button>
+  <button id="spells-tab-button" class="tab-button" role="tab" aria-controls="tab-spells" aria-selected="false" onclick="showTab(&#39;spells&#39;, this)">法術</button>
+</div>
 <div id="tab-basic" class="tab-content active">
   <!-- 職業 + 預設按鈕 + 等級 -->
 <div class="form-grid-2col">
@@ -815,6 +866,7 @@ label[for="level"]{
       <option value="NE">中立邪惡</option>
       <option value="CE">混亂邪惡</option>
     </select>
+    <button type="button" id="open-deity-info-btn" style="margin-top:8px;font-size:.9rem;" aria-label="查看費倫神祇參考資料">查看費倫神祇</button>
   </div>
 </div>
 
@@ -916,7 +968,7 @@ label[for="level"]{
 </div>
 	<div class="section">
     <details open><summary><h3 style="display: inline;">背景能力</h3></summary>
-    <div class="output" id="backgroundFeatures">無資料</div></details>
+    <div id="background-ability-guide-target"><div class="output" id="backgroundFeatures">無資料</div></div></details>
 	</div>
   <div class="section">
     <details open><summary><h3 style="display: inline;">種族能力</h3>
@@ -925,7 +977,6 @@ label[for="level"]{
     <input type="checkbox" id="race-ab-check3"></summary>
     <div class="output" id="raceFeatures">無資料</div></details>
   </div>
-
 
   <div class="section">
   <h3>專長</h3>
@@ -936,7 +987,7 @@ label[for="level"]{
   <button id="clear-storage-btn">
     🗑️ 清除紀錄
   </button>
-  <button type="button" class="share-url-btn" onclick="copyShareUrl()">
+  <button type="button" class="share-url-btn" onclick="copyShareUrl()" aria-label="複製分享角卡網址">
     🔗 分享角卡
   </button>
 </div>
@@ -955,7 +1006,8 @@ label[for="level"]{
 
 <div id="tab-skills" class="tab-content">
   <div class="section">
-  <button onclick="fillSaves()">計算屬性豁免</button>
+  <p style="margin:0 0 8px;color:var(--muted);font-size:.9rem;">先確認熟練勾選，再按下計算按鈕，數值會自動填入。</p>
+  <button id="fill-saves-btn" onclick="fillSaves()">計算屬性豁免</button>
   <div class="save-grid">
     <div class="save-pair"><label class="save-name" for="prof-str"><input type="checkbox" id="prof-str"><span class="save-stack"><span class="save-abbr">STR</span><span class="save-full">力量</span></span></label><input type="text" inputmode="numeric" id="save-str"></div>
     <div class="save-pair"><label class="save-name" for="prof-int"><input type="checkbox" id="prof-int"><span class="save-stack"><span class="save-abbr">INT</span><span class="save-full">智力</span></span></label><input type="text" inputmode="numeric" id="save-int"></div>
@@ -968,7 +1020,8 @@ label[for="level"]{
 
 
 <div class="section">
-  <button onclick="fillSkills()">計算技能加值（熟練選好再按）</button>
+  <p style="margin:0 0 8px;color:var(--muted);font-size:.9rem;">技能熟練與專精勾好後，再按「計算技能加值」。</p>
+  <button id="fill-skills-btn" onclick="fillSkills()">計算技能加值（熟練選好再按）</button>
   <div class="skill-legend"><span class="legend-badge"><span class="legend-box"></span>熟練</span><span class="legend-badge"><span class="legend-circle"></span>專精</span></div>
   <div class="skill-grid">
     <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">運動(力量)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-運動" data-skill-rank="運動" aria-label="運動 熟練"><input type="checkbox" id="exp-運動" class="circle-checkbox" data-skill-rank="運動" aria-label="運動 專精"></div></div><input type="text" inputmode="numeric" id="skill-運動"></div>
@@ -1097,7 +1150,8 @@ label[for="level"]{
     </div>
 
 <h3>攻擊動作</h3>
-<button onclick="populateHandAttacks()">獲取 主副手 武器資料</button>
+<p style="margin:0 0 8px;color:var(--muted);font-size:.9rem;">選完主手、副手與護甲後，按下按鈕自動帶入動作頁攻擊資料。</p>
+<button id="populate-hand-attacks-btn" onclick="populateHandAttacks()">獲取 主副手 武器資料</button>
 <div id="weapon-mastery-summary-wrap" class="section" style="display: none;">
   <strong>精通註記：</strong>
   <div id="weapon-mastery-summary" style="margin-top: 6px; padding: 8px; border: 1px solid #aaa; border-radius: 6px; background: #fafafa;">尚未勾選精通屬性</div>
@@ -1151,7 +1205,7 @@ label[for="level"]{
 
   </div>
 
- <div id="tab-equipment" class="tab-content">
+<div id="tab-equipment" class="tab-content">
   <div class="section">
     <h3>裝備</h3>
     <p>此處可列出角色裝備與物品。</p>
@@ -1397,6 +1451,9 @@ function bindCoreCharacterEvents() {
   bindEventById("class", "change", updateSpellCastingStatsVisibility);
   bindEventById("background", "change", updateSpellCastingStatsVisibility);
   bindEventById("race", "change", updateSpellCastingStatsVisibility);
+  bindEventById("class", "change", updateSpellsTabVisibility);
+  bindEventById("background", "change", updateSpellsTabVisibility);
+  bindEventById("race", "change", updateSpellsTabVisibility);
 }
 
 const EXPERTISE_VISIBLE_CLASSES = new Set(["", "bard", "ranger", "rogue", "wizard"]);
@@ -2214,6 +2271,7 @@ document.addEventListener("DOMContentLoaded", () => {
   updateExpertiseVisibility();
   updateSpellsByClassLevel();
   updateSpellCastingStatsVisibility();
+  updateSpellsTabVisibility();
   bindHPDisplayEvents();
   bindEventById("hp", "input", enforceHpInputRange);
   bindEventById("hp", "change", enforceHpInputRange);
@@ -2287,12 +2345,18 @@ document.getElementById("set-default-abilities").addEventListener("click", () =>
       }
 
       document.querySelectorAll('.tab-content').forEach(div => div.classList.remove('active'));
-      document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active');
+        btn.setAttribute("aria-selected", "false");
+      });
       document.getElementById(`tab-${tab}`).classList.add('active');
       if (button) {
         button.classList.add('active');
+        button.setAttribute("aria-selected", "true");
       } else {
-        document.querySelector(`.tab-button[onclick*="'${tab}'"]`)?.classList.add('active');
+        const tabBtn = document.querySelector(`.tab-button[onclick*="'${tab}'"]`);
+        tabBtn?.classList.add('active');
+        tabBtn?.setAttribute("aria-selected", "true");
       }
 
       activeTab = tab;
@@ -2429,6 +2493,28 @@ function updateSpellCastingStatsVisibility() {
   if (statsWrap) statsWrap.style.display = canCast ? "grid" : "none";
   if (slotWrap) slotWrap.style.display = canCast ? "block" : "none";
   if (pickedWrap) pickedWrap.style.display = canCast ? "grid" : "none";
+}
+
+function updateSpellsTabVisibility() {
+  const classValue = document.getElementById("class")?.value || "";
+  const backgroundValue = document.getElementById("background")?.value || "";
+  const raceValue = document.getElementById("race")?.value || "";
+  const spellTabBtn = document.getElementById("spells-tab-button");
+  const spellTabContent = document.getElementById("tab-spells");
+  if (!spellTabBtn || !spellTabContent) return;
+
+  const explicitNoSpellCombo = NON_SPELLCASTER_CLASSES.has(classValue)
+    && NON_SPELLCASTER_BACKGROUNDS.has(backgroundValue)
+    && NON_SPELLCASTER_RACES.has(raceValue);
+
+  if (explicitNoSpellCombo) {
+    spellTabBtn.style.display = "none";
+    spellTabContent.style.display = "none";
+    if (activeTab === "spells") showTab("basic");
+    return;
+  }
+  spellTabBtn.style.display = "";
+  spellTabContent.style.display = "";
 }
 
 function getClassSaveProficiencies(classId) {
@@ -3365,12 +3451,21 @@ function setupSpellQrEasterEgg() {
   const closeBtn = modal.querySelector(".spell-qr-modal-close");
   const qrImage = modal.querySelector(".spell-qr-modal-image");
   if (qrImage) qrImage.src = SPELL_QR_IMAGE_SRC;
-
   let spellClickCount = 0;
-  const resetSpellClickCount = () => { spellClickCount = 0; };
-  const showSpellQrModal = () => modal.classList.add("open");
-  const hideSpellQrModal = () => modal.classList.remove("open");
+  let lastFocus = null;
+  const showSpellQrModal = () => {
+    lastFocus = document.activeElement;
+    modal.classList.add("open");
+    modal.setAttribute("aria-hidden", "false");
+    closeBtn?.focus();
+  };
+  const hideSpellQrModal = () => {
+    modal.classList.remove("open");
+    modal.setAttribute("aria-hidden", "true");
+    if (lastFocus instanceof HTMLElement) lastFocus.focus();
+  };
 
+  const resetSpellClickCount = () => { spellClickCount = 0; };
   spellTabBtn.addEventListener("click", () => {
     spellClickCount += 1;
     if (spellClickCount >= 5) {
@@ -3378,13 +3473,9 @@ function setupSpellQrEasterEgg() {
       resetSpellClickCount();
     }
   });
-
   document.querySelectorAll(".tab-button").forEach((btn) => {
-    if (btn !== spellTabBtn) {
-      btn.addEventListener("click", resetSpellClickCount);
-    }
+    if (btn !== spellTabBtn) btn.addEventListener("click", resetSpellClickCount);
   });
-
   closeBtn?.addEventListener("click", hideSpellQrModal);
   modal.addEventListener("click", (event) => {
     if (event.target === modal) hideSpellQrModal();
@@ -3394,10 +3485,10 @@ function setupSpellQrEasterEgg() {
   });
 }
 
-function setupDeityInfoEasterEgg() {
-  const basicTabBtn = document.getElementById("basic-tab-button");
+function setupDeityInfoModal() {
+  const triggerBtn = document.getElementById("open-deity-info-btn");
   const modal = document.getElementById("deity-info-modal");
-  if (!basicTabBtn || !modal) return;
+  if (!triggerBtn || !modal) return;
 
   const content = document.getElementById("deity-info-content");
   if (content) {
@@ -3421,28 +3512,248 @@ function setupDeityInfoEasterEgg() {
   }
 
   const closeBtn = modal.querySelector(".deity-info-close");
-  const hide = () => modal.classList.remove("open");
-  const show = () => modal.classList.add("open");
-  let clickCount = 0;
-  const reset = () => { clickCount = 0; };
+  let lastFocus = null;
+  const hide = () => {
+    modal.classList.remove("open");
+    modal.setAttribute("aria-hidden", "true");
+    if (lastFocus instanceof HTMLElement) lastFocus.focus();
+  };
+  const show = () => {
+    lastFocus = document.activeElement;
+    modal.classList.add("open");
+    modal.setAttribute("aria-hidden", "false");
+    closeBtn?.focus();
+  };
 
-  basicTabBtn.addEventListener("click", () => {
-    clickCount += 1;
-    if (clickCount >= 5) {
-      show();
-      reset();
-    }
-  });
-
-  document.querySelectorAll(".tab-button").forEach(btn => {
-    if (btn !== basicTabBtn) btn.addEventListener("click", reset);
-  });
+  triggerBtn.addEventListener("click", show);
   closeBtn?.addEventListener("click", hide);
   modal.addEventListener("click", (event) => {
     if (event.target === modal) hide();
   });
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") hide();
+  });
+}
+
+const TOUR_STEPS = [
+  {
+    title: "先選基本資料",
+    text: "先選職業、等級、背景、種族。這些選項會影響後面的角色能力與內容。",
+    tab: "basic",
+    selectors: ["#class", "#level", "#background", "#race"],
+    placement: "bottom",
+    scrollTop: true
+  },
+  {
+    title: "接著填六大屬性",
+    text: "你可以手動輸入六大屬性；如果是第一次使用，也可以先按「預設屬性」快速開始。",
+    tab: "basic",
+    selectors: [".ability-grid", "#set-default-abilities"],
+    placement: "top"
+  },
+  {
+    title: "記得把背景提供的加值加上去",
+    text: "背景會提供屬性加值與熟練技能。請先閱讀這裡，記得手動把屬性加上去，並記住等等要到技能頁勾選熟練。",
+    tab: "basic",
+    selectors: ["#background-ability-guide-target"],
+    placement: "top"
+  },
+  {
+    title: "設定熟練並按下計算",
+    text: "把背景、職業、種族給的熟練或專精先勾起來，再按下計算按鈕，自動填入豁免與技能加值。",
+    tab: "skills",
+    selectors: [".save-grid", ".skill-grid", "#fill-saves-btn", "#fill-skills-btn"],
+    placement: "top"
+  },
+  {
+    title: "選擇武器與護甲",
+    text: "先選主手、副手與護甲，系統才知道你的防禦與攻擊資料。",
+    tab: "equipment",
+    selectors: ["#mainHand", "#offHand", "#armor"],
+    placement: "bottom"
+  },
+  {
+    title: "產生攻擊資料",
+    text: "按下這個按鈕，會把你在裝備頁選的主副手資料自動帶進來，方便你在戰鬥中查看。",
+    tab: "actions",
+    selectors: ["#populate-hand-attacks-btn", "#atk-main-name", "#atk-off-name"],
+    placement: "top"
+  },
+  {
+    title: "法術頁",
+    text: "如果你的角色會施法，這裡可以設定施法屬性、法術位與已選法術。",
+    tab: "spells",
+    selectors: ["#spell-casting-stats-wrap", "#cantrips-area", "#spell-slot-management-wrap"],
+    placement: "top",
+    condition: () => shouldShowSpellTour()
+  }
+];
+
+let tourActive = false;
+let tourStepIndex = 0;
+let tourLayoutTimer = null;
+
+function shouldShowSpellTour() {
+  const classValue = document.getElementById("class")?.value || "";
+  return SPELLCASTER_CLASSES.has(classValue);
+}
+
+function getUnionRect(selectors) {
+  const rects = selectors.flatMap(selector =>
+    Array.from(document.querySelectorAll(selector))
+      .filter(el => el instanceof HTMLElement && el.offsetParent !== null)
+      .map(el => el.getBoundingClientRect())
+  );
+  if (rects.length === 0) return null;
+
+  const left = Math.max(0, Math.min(...rects.map(r => r.left)) - 8);
+  const top = Math.max(0, Math.min(...rects.map(r => r.top)) - 8);
+  const right = Math.min(window.innerWidth, Math.max(...rects.map(r => r.right)) + 8);
+  const bottom = Math.min(window.innerHeight, Math.max(...rects.map(r => r.bottom)) + 8);
+  return { left, top, right, bottom, width: right - left, height: bottom - top };
+}
+
+function scrollRectIntoView(rect) {
+  if (!rect) return;
+  const targetY = window.scrollY + rect.top - 80;
+  window.scrollTo({ top: Math.max(0, targetY), behavior: "smooth" });
+}
+
+function applySpotlight(rect) {
+  if (!rect) return;
+  const topMask = document.getElementById("tour-mask-top");
+  const leftMask = document.getElementById("tour-mask-left");
+  const rightMask = document.getElementById("tour-mask-right");
+  const bottomMask = document.getElementById("tour-mask-bottom");
+  const ring = document.getElementById("tour-focus-ring");
+  if (!topMask || !leftMask || !rightMask || !bottomMask || !ring) return;
+
+  topMask.style.left = "0px";
+  topMask.style.top = "0px";
+  topMask.style.width = "100vw";
+  topMask.style.height = `${rect.top}px`;
+
+  bottomMask.style.left = "0px";
+  bottomMask.style.top = `${rect.bottom}px`;
+  bottomMask.style.width = "100vw";
+  bottomMask.style.height = `${Math.max(0, window.innerHeight - rect.bottom)}px`;
+
+  leftMask.style.left = "0px";
+  leftMask.style.top = `${rect.top}px`;
+  leftMask.style.width = `${rect.left}px`;
+  leftMask.style.height = `${rect.height}px`;
+
+  rightMask.style.left = `${rect.right}px`;
+  rightMask.style.top = `${rect.top}px`;
+  rightMask.style.width = `${Math.max(0, window.innerWidth - rect.right)}px`;
+  rightMask.style.height = `${rect.height}px`;
+
+  ring.style.left = `${rect.left}px`;
+  ring.style.top = `${rect.top}px`;
+  ring.style.width = `${rect.width}px`;
+  ring.style.height = `${rect.height}px`;
+}
+
+function placeTooltip(rect, placement = "bottom") {
+  const tooltip = document.getElementById("tour-tooltip");
+  if (!tooltip || !rect) return;
+  const margin = 8;
+  const maxLeft = window.innerWidth - tooltip.offsetWidth - margin;
+  const centerLeft = rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2);
+  const left = Math.max(margin, Math.min(maxLeft, centerLeft));
+
+  let top = rect.bottom + 10;
+  if (placement === "top") top = rect.top - tooltip.offsetHeight - 10;
+  if (top < margin) top = rect.bottom + 10;
+  if (top + tooltip.offsetHeight > window.innerHeight - margin) {
+    top = Math.max(margin, window.innerHeight - tooltip.offsetHeight - margin);
+  }
+  tooltip.style.left = `${left}px`;
+  tooltip.style.top = `${top}px`;
+}
+
+function endTour() {
+  tourActive = false;
+  const overlay = document.getElementById("tour-overlay");
+  if (overlay) {
+    overlay.classList.remove("active");
+    overlay.setAttribute("aria-hidden", "true");
+  }
+  document.body.classList.remove("tour-active");
+}
+
+function getCurrentTourStep() {
+  let index = tourStepIndex;
+  while (index < TOUR_STEPS.length) {
+    const step = TOUR_STEPS[index];
+    if (!step.condition || step.condition()) return { step, index };
+    index += 1;
+  }
+  return { step: null, index };
+}
+
+function goToTourStep(index) {
+  if (!tourActive) return;
+  tourStepIndex = index;
+  const { step, index: effectiveIndex } = getCurrentTourStep();
+  if (!step) return endTour();
+  tourStepIndex = effectiveIndex;
+
+  const title = document.getElementById("tour-step-title");
+  const text = document.getElementById("tour-step-text");
+  const nextBtn = document.getElementById("tour-next-btn");
+  if (title) title.textContent = `Step ${effectiveIndex + 1}：${step.title}`;
+  if (text) text.textContent = step.text;
+  if (nextBtn) nextBtn.textContent = effectiveIndex === TOUR_STEPS.length - 1 ? "完成" : "下一步";
+
+  showTab(step.tab);
+  if (step.scrollTop) window.scrollTo({ top: 0, behavior: "smooth" });
+
+  if (tourLayoutTimer) clearTimeout(tourLayoutTimer);
+  tourLayoutTimer = setTimeout(() => {
+    const preRect = getUnionRect(step.selectors);
+    if (!preRect) return;
+    scrollRectIntoView(preRect);
+    setTimeout(() => {
+      const rect = getUnionRect(step.selectors);
+      if (!rect) return;
+      applySpotlight(rect);
+      placeTooltip(rect, step.placement || "bottom");
+    }, 260);
+  }, 120);
+}
+
+function startTour() {
+  const overlay = document.getElementById("tour-overlay");
+  if (!overlay) return;
+  tourActive = true;
+  tourStepIndex = 0;
+  overlay.classList.add("active");
+  overlay.setAttribute("aria-hidden", "false");
+  document.body.classList.add("tour-active");
+  goToTourStep(0);
+}
+
+function setupSpotlightTour() {
+  const nextBtn = document.getElementById("tour-next-btn");
+  const skipBtn = document.getElementById("tour-skip-btn");
+  const restartBtn = document.getElementById("restart-tour-btn");
+  const legalStartBtn = document.getElementById("legal-start-tour-btn");
+  nextBtn?.addEventListener("click", () => goToTourStep(tourStepIndex + 1));
+  skipBtn?.addEventListener("click", endTour);
+  restartBtn?.addEventListener("click", startTour);
+  legalStartBtn?.addEventListener("click", () => {
+    const legalModal = document.getElementById("legal-modal");
+    if (legalModal) legalModal.style.display = "none";
+    startTour();
+  });
+
+  window.addEventListener("resize", () => {
+    if (!tourActive) return;
+    goToTourStep(tourStepIndex);
+  });
+  document.addEventListener("keydown", (event) => {
+    if (tourActive && event.key === "Escape") endTour();
   });
 }
 
@@ -3808,6 +4119,7 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
     if (el) el.dispatchEvent(new Event("input"));
   });
   updateSpellCastingStatsVisibility();
+  updateSpellsTabVisibility();
   updateSpellCastingStats();
   updatePickedSpellBoxes();
   // 4. 啟用自動儲存
@@ -3847,32 +4159,62 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
   // 6. 分享模式判定完成後，才初始化版權提醒，避免時序競態
   initLegalModal();
   setupSpellQrEasterEgg();
-  setupDeityInfoEasterEgg();
+  setupDeityInfoModal();
+  setupSpotlightTour();
 });
 </script>
 
+</main>
+<footer class="section" style="margin:12px;text-align:center;font-size:.86rem;color:var(--muted);">
+  <div style="display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin-bottom:8px;">
+    <a href="./about.html">About</a>
+    <a href="./legal.html">Legal</a>
+    <a href="./privacy.html">Privacy</a>
+    <a href="https://github.com/ginglemisa/dnd" target="_blank" rel="noopener">GitHub</a>
+  </div>
+  <div>Unofficial fan-made D&amp;D beginner tool. Dungeons &amp; Dragons © Wizards of the Coast LLC.</div>
+</footer>
+
+<div id="tour-overlay" aria-hidden="true">
+  <div id="tour-mask-top" class="tour-mask"></div>
+  <div id="tour-mask-left" class="tour-mask"></div>
+  <div id="tour-mask-right" class="tour-mask"></div>
+  <div id="tour-mask-bottom" class="tour-mask"></div>
+  <div id="tour-focus-ring"></div>
+  <div id="tour-tooltip" role="dialog" aria-modal="true" aria-live="polite" aria-label="新手導覽">
+    <h3 id="tour-step-title">新手導覽</h3>
+    <p id="tour-step-text"></p>
+    <div class="tour-actions">
+      <button type="button" id="tour-skip-btn" aria-label="跳過新手教學">跳過</button>
+      <button type="button" id="tour-next-btn" aria-label="下一步">下一步</button>
+    </div>
+  </div>
+</div>
+
 <div id="spell-qr-modal" aria-hidden="true">
-  <div class="spell-qr-modal-card" role="dialog" aria-modal="true" aria-label="法術彩蛋 QR Code">
-    <button type="button" class="spell-qr-modal-close" aria-label="關閉 QR Code">✕</button>
-    <img class="spell-qr-modal-image" alt="法術彩蛋 QR Code 圖片">
+  <div class="spell-qr-modal-card" role="dialog" aria-modal="true" aria-label="快速分享 QR Code">
+    <button type="button" class="spell-qr-modal-close" aria-label="關閉 QR Code 視窗">✕</button>
+    <p style="margin:0 0 10px;color:#31476f;">讓玩家掃描後直接開啟本工具。</p>
+    <img class="spell-qr-modal-image" alt="快速分享 QR Code 圖片">
   </div>
 </div>
 
 <div id="deity-info-modal" aria-hidden="true">
-  <div class="deity-info-card" role="dialog" aria-modal="true" aria-label="神祉資訊">
-    <button type="button" class="deity-info-close" aria-label="關閉神祉資訊">✕</button>
+  <div class="deity-info-card" role="dialog" aria-modal="true" aria-label="費倫神祇參考資訊">
+    <button type="button" class="deity-info-close" aria-label="關閉費倫神祇參考資訊">✕</button>
     <header class="deity-info-header">
-      <h3>📜 被遺忘國度 神祉整理</h3>
+      <h3>📜 費倫神祇參考整理</h3>
+      <p>可依陣營與領域快速查閱，作為創角時的信仰設定參考。</p>
     </header>
     <div id="deity-info-content" class="deity-info-content"></div>
   </div>
 </div>
 
-<div id="legal-modal" style="display:none;position:fixed;z-index:9999;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.45);">
+<div id="legal-modal" role="dialog" aria-modal="true" aria-label="網站聲明提醒" style="display:none;position:fixed;z-index:9999;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.45);">
   <div style="background:#fff;padding:18px 14px;max-width:332px;margin:72px auto 0 auto;border-radius:12px;box-shadow:0 4px 24px #0003;">
     <h3 style="margin:0 0 6px 0;font-size:1.1em;line-height:1.15;">使用提醒</h3>
     <div style="font-size:0.8em;line-height:1.55;color:#222;">
-     本站僅提供免費規則，更多選項請參閱玩家手冊。</div>
+     本工具為非官方粉絲製作，內容以免費公開的基本規則為主。若需要完整規則，請參閱玩家手冊。</div>
       <h3 style="margin:16px 0 6px 0;font-size:1.1em;line-height:1.15;">購買玩家手冊(PHB)</h3>
       <div style="font-size:0.8em;line-height:1.55;color:#222;">D&D Beyond 數位版：
       <a href="https://marketplace.dndbeyond.com/rulebooks" target="_blank">www.dndbeyond.com</a><br>
@@ -3880,14 +4222,15 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
       <a href="https://www.amazon.com/s?k=dnd+2024+players+handbook&ref=cs_503_search" target="_blank">www.amazon.com</a>
     </div>
     <div style="margin-top:10px;padding-top:8px;border-top:1px solid #e4e8f2;font-size:0.8em;line-height:1.45;color:#49566d;text-align:center;">
-      <div style="font-weight:700;color:#2a3b56;">Unofficial D&amp;D Character Tool</div>
-      <div>Using content from D&amp;D Beyond Basic Rules</div>
+      <div style="font-weight:700;color:#2a3b56;">Unofficial fan-made D&amp;D beginner tool</div>
+      <div>僅整理公開可取得之 Basic Rules 內容</div>
       <div style="margin-top:2px;letter-spacing:0;">Dungeons &amp; Dragons © Wizards of the Coast LLC</div>
     </div>
       <div style="margin-top:9px;font-size:0.88em;line-height:1.2;">
   <label><input type="checkbox" id="legal-dismiss"> 不要再提醒我</label>
 </div>
-    <button onclick="document.getElementById('legal-modal').style.display='none';" style="margin-top:12px;width:100%;padding:6px 0;font-size:1em;border-radius:6px;border:1px solid #888;">我知道了</button>
+    <button type="button" aria-label="關閉網站聲明提醒" onclick="document.getElementById('legal-modal').style.display='none';" style="margin-top:12px;width:100%;padding:6px 0;font-size:1em;border-radius:6px;border:1px solid #888;">我知道了</button>
+    <button type="button" id="legal-start-tour-btn" aria-label="進入新手教學" style="margin-top:8px;width:100%;padding:8px 0;font-size:1em;border-radius:6px;border:1px solid #4f6eea;background:#eef2ff;color:#2743b5;">進入新手教學</button>
   </div>
 </div>
 
