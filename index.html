@@ -675,11 +675,13 @@ body.tour-active{
   inset:0;
   z-index:10050;
   display:none;
+  pointer-events:none;
 }
 #tour-overlay.active{display:block;}
 .tour-mask{
   position:fixed;
   background:rgba(15,20,30,.58);
+  pointer-events:auto;
 }
 #tour-focus-ring{
   position:fixed;
@@ -696,6 +698,7 @@ body.tour-active{
   border-radius:14px;
   box-shadow:0 10px 24px rgba(24,33,47,.25);
   padding:12px;
+  pointer-events:auto;
 }
 #tour-step-title{margin:0 0 6px;font-size:1rem;}
 #tour-step-text{margin:0 0 10px;font-size:.9rem;color:var(--muted);line-height:1.5;}
