@@ -3597,8 +3597,9 @@ let tourStepIndex = 0;
 let tourLayoutTimer = null;
 
 function shouldShowSpellTour() {
-  const classValue = document.getElementById("class")?.value || "";
-  return SPELLCASTER_CLASSES.has(classValue);
+  const spellsTabBtn = document.getElementById("spells-tab-button");
+  if (!spellsTabBtn) return false;
+  return spellsTabBtn.style.display !== "none";
 }
 
 function getUnionRect(selectors) {
