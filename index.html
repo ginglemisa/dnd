@@ -227,7 +227,7 @@ button:hover{filter:brightness(.99);}
   margin-bottom:12px;
 }
 .ability-grid{
-  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  grid-template-columns:repeat(6,minmax(0,1fr)) !important;
   gap:12px !important;
 }
 .ability{
@@ -725,12 +725,14 @@ label[for="level"]{
   #tab-basic .mini-stat-label{font-size:.78rem !important; margin-bottom:4px !important; line-height:1.15;}
   #tab-basic .mini-stat-card input[type="number"],
   #tab-basic .mini-stat-card button,
-  #tab-basic .mini-stat-card #ac-display{
+  #tab-basic .mini-stat-card #ac-display,
+  #tab-basic .hp-card #ac-display{
     min-height:34px !important;
     font-size:.95rem !important;
     padding:5px 6px !important;
   }
-  #tab-basic .mini-stat-card #ac-display{min-width:34px;}
+  #tab-basic .mini-stat-card #ac-display,
+  #tab-basic .hp-card #ac-display{min-width:34px;}
   .form-grid-6col{grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:8px !important;}
   .action-grid-pretty{grid-template-columns:repeat(4,minmax(0,1fr)) !important;}
   .skill-label-row{align-items:flex-start; gap:8px; margin-bottom:6px;}
@@ -846,10 +848,10 @@ label[for="level"]{
     <input type="number" id="hp" placeholder="目前 HP" min="0" max="200" step="1" inputmode="numeric">
   </div>
 
-  <!-- 右欄：護甲 -->
-  <div class="mini-stat-card">
-    <div class="mini-stat-label">護甲</div>
-    <div class="hp-value" id="ac-display">10</div>
+  <!-- 右欄：護甲（版型比照 HP） -->
+  <div class="hp-card">
+    <div class="hp-title">護甲等級 AC<span id="ac-display" class="hp-value">10</span></div>
+    <input type="number" id="temp-hp" placeholder="臨時生命" min="0" max="50" step="1" inputmode="numeric">
   </div>
 </div>
 
@@ -865,7 +867,7 @@ label[for="level"]{
 }
 </style>
 
-<!-- 第一列：護甲、速度、先攻 -->
+<!-- 第一列：陣營、速度、先攻 -->
 <div class="stats-card-row">
   <div class="mini-stat-card">
     <div class="mini-stat-label">陣營</div>
@@ -1424,6 +1426,23 @@ function enforceHpInputRange() {
   const clamped = clampHpValue(hpInput.value);
   if (hpInput.value !== clamped) {
     hpInput.value = clamped;
+  }
+}
+
+function clampTempHpValue(rawValue) {
+  if (rawValue === "" || rawValue === null || rawValue === undefined) return "";
+  const numeric = Number(rawValue);
+  if (!Number.isFinite(numeric)) return "";
+  const rounded = Math.round(numeric);
+  return String(Math.min(50, Math.max(0, rounded)));
+}
+
+function enforceTempHpInputRange() {
+  const tempHpInput = document.getElementById("temp-hp");
+  if (!tempHpInput) return;
+  const clamped = clampTempHpValue(tempHpInput.value);
+  if (tempHpInput.value !== clamped) {
+    tempHpInput.value = clamped;
   }
 }
 
@@ -2282,6 +2301,8 @@ document.addEventListener("DOMContentLoaded", () => {
   bindHPDisplayEvents();
   bindEventById("hp", "input", enforceHpInputRange);
   bindEventById("hp", "change", enforceHpInputRange);
+  bindEventById("temp-hp", "input", enforceTempHpInputRange);
+  bindEventById("temp-hp", "change", enforceTempHpInputRange);
   bindSpellNotesEvents();
   bindCoreCharacterEvents();
   bindSkillRankExclusiveEvents();
