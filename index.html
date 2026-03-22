@@ -4306,9 +4306,21 @@ class OnboardingTour {
     await this.goTo(0);
   }
 
+  isStepAvailable(step) {
+    if (!step) return false;
+    if (step.tab !== "spells") return true;
+    const spellTabButton = document.getElementById("spells-tab-button");
+    const spellTabVisible = isElementVisible(spellTabButton);
+    const canCast = typeof hasSpellcastingCapability === "function" ? hasSpellcastingCapability() : true;
+    return spellTabVisible && canCast;
+  }
+
   async next() {
     if (!this.active) return;
-    const nextIndex = this.currentIndex + 1;
+    let nextIndex = this.currentIndex + 1;
+    while (nextIndex < this.steps.length && !this.isStepAvailable(this.steps[nextIndex])) {
+      nextIndex += 1;
+    }
     if (nextIndex >= this.steps.length) return this.stop();
     await this.goTo(nextIndex);
   }
