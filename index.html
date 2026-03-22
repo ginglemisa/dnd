@@ -11,7 +11,7 @@
     gtag('config', 'G-M8L0F03EGD', {page_path: location.pathname});
   </script>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>D&amp;D 5.5 基本創角</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎲%3C/text%3E%3C/svg%3E">
@@ -227,34 +227,56 @@ button:hover{filter:brightness(.99);}
   margin-bottom:12px;
 }
 .ability-grid{
-  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
   gap:12px !important;
 }
 .ability{
-  background:linear-gradient(180deg,#ffffff 0%,#f6f8fc 100%);
-  border:1px solid var(--line);
-  border-radius:18px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  min-height:206px;
   padding:12px;
+  background:linear-gradient(180deg,#ffffff 0%,#f6f9ff 100%);
+  border:1px solid var(--line);
+  border-radius:16px;
   box-shadow:var(--shadow);
+}
+.ability-title{
+  text-align:center;
+  font-size:1.2rem;
+  font-weight:900;
+  letter-spacing:.08em;
+  color:#5f6b7c;
+  text-transform:uppercase;
 }
 .modifier{
   display:flex;
-  flex-direction:column;
   align-items:center;
   justify-content:center;
-  min-height:58px;
+  min-height:88px;
   border-radius:14px;
-  background:var(--brand-soft);
-  color:#2743b5;
-  font-size:1.4rem;
+  border:2px solid #c2cdd8;
+  background:#eef0f2;
+  color:#19212c;
+  font-size:3rem;
   font-weight:900;
-  margin:0 0 10px !important;
+  margin:0 !important;
 }
 .modifier-main{
   white-space:nowrap;
 }
-.modifier-zh{
-  line-height:1.1;
+.ability-score{
+  width:100% !important;
+  min-height:52px !important;
+  border-radius:14px !important;
+  border:2px solid var(--line-strong) !important;
+  background:#ffffff !important;
+  font-size:1.35rem !important;
+  font-weight:900 !important;
+  text-align:center;
+  color:#14181d;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9);
+  padding:10px 12px !important;
 }
 .save-grid{
   grid-template-columns:1fr 1fr !important;
@@ -702,13 +724,11 @@ label[for="level"]{
   #tab-basic .mini-stat-card{padding:8px !important; border-radius:12px;}
   #tab-basic .mini-stat-label{font-size:.78rem !important; margin-bottom:4px !important; line-height:1.15;}
   #tab-basic .mini-stat-card input[type="number"],
-  #tab-basic .mini-stat-card button,
-  #tab-basic .mini-stat-card #ac-display{
+  #tab-basic .mini-stat-card button{
     min-height:34px !important;
     font-size:.95rem !important;
     padding:5px 6px !important;
   }
-  #tab-basic .mini-stat-card #ac-display{min-width:34px;}
   .form-grid-6col{grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:8px !important;}
   .action-grid-pretty{grid-template-columns:repeat(4,minmax(0,1fr)) !important;}
   .skill-label-row{align-items:flex-start; gap:8px; margin-bottom:6px;}
@@ -722,7 +742,7 @@ label[for="level"]{
 .save-pair input[type="text"]{width:54px !important; min-width:54px; font-size:1rem !important; min-height:38px !important; padding:6px 4px !important;}
   .skill-cell{padding:8px 9px !important;}
   .skill-cell input[type="number"], .skill-cell input[type="text"], input[type="number"], select, input[type="text"], textarea{min-height:38px !important; font-size:1rem !important; padding:7px 9px !important;}
-  .modifier{min-height:48px; font-size:1.2rem; margin-bottom:8px !important;}
+  .modifier{min-height:72px; font-size:2rem; margin-bottom:0 !important;}
   .spell-slot-grid{grid-template-columns:max-content minmax(0,1fr) minmax(0,1fr) !important; gap:6px !important;}
   .spell-slot-column{padding:8px 7px !important;}
   .spell-slot-column h4{font-size:1rem !important; margin:0 0 6px !important;}
@@ -736,7 +756,17 @@ label[for="level"]{
   .form-grid-2col, .save-grid, .skill-grid, .spell-picked-grid, .stats-card-row{grid-template-columns:1fr !important;}
   .form-grid-6col{grid-template-columns:1fr !important;}
   .spell-slot-grid{grid-template-columns:max-content minmax(0,1fr) minmax(0,1fr) !important;}
-  #tab-basic .stats-card-row{grid-template-columns:repeat(3,minmax(0,1fr)) !important;}
+  #tab-basic .stats-card-stack{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px !important;
+    margin-bottom:12px;
+  }
+  #tab-basic .stats-card-stack .stats-card-row{
+    display:contents;
+  }
+  #tab-basic .ability-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
+  #tab-basic .form-grid-2col--class-level{grid-template-columns:1fr !important;}
 }
 </style>
 
@@ -752,33 +782,36 @@ label[for="level"]{
 
 <div id="tab-basic" class="tab-content active">
   <!-- 職業 + 預設按鈕 + 等級 -->
-<div class="form-grid-2col">
-  <label for="class">職業</label>
-  <label for="level">等級</label>
-
-  <select id="class">
-    <option value="">-- 請選擇 --</option>
-    <option value="barbarian">野蠻人</option>      
-    <option value="bard">吟遊詩人</option>
-    <option value="cleric">牧師</option>
-    <option value="druid">德魯伊</option>
-    <option value="fighter">戰士</option>
-    <option value="monk">武僧</option>
-    <option value="paladin">聖武士</option>
-    <option value="ranger">遊俠</option>
-    <option value="rogue">遊蕩者</option>
-    <option value="sorcerer">術士</option>
-    <option value="warlock">契術師</option>
-    <option value="wizard">法師</option>
-  </select>
-  <select id="level">
-    <option value="">--</option>
-    <option value="1">1</option>
-    <option value="2">2</option>
-    <option value="3">3</option>
-    <option value="4">4</option>
-    <option value="5">5</option>
-  </select>
+<div class="form-grid-2col form-grid-2col--class-level">
+  <div>
+    <label for="class">職業</label>
+    <select id="class">
+      <option value="">-- 請選擇 --</option>
+      <option value="barbarian">野蠻人</option>
+      <option value="bard">吟遊詩人</option>
+      <option value="cleric">牧師</option>
+      <option value="druid">德魯伊</option>
+      <option value="fighter">戰士</option>
+      <option value="monk">武僧</option>
+      <option value="paladin">聖武士</option>
+      <option value="ranger">遊俠</option>
+      <option value="rogue">遊蕩者</option>
+      <option value="sorcerer">術士</option>
+      <option value="warlock">契術師</option>
+      <option value="wizard">法師</option>
+    </select>
+  </div>
+  <div>
+    <label for="level">等級</label>
+    <select id="level">
+      <option value="">--</option>
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+      <option value="4">4</option>
+      <option value="5">5</option>
+    </select>
+  </div>
 </div>
 
 <!-- 背景與種族 -->
@@ -811,12 +844,6 @@ label[for="level"]{
 </div>
 
 
-<div id="warlock-invocation-summary-wrap" class="section" style="display: none;">
-  <strong>契術師魔能祈喚：</strong>
-  <div id="warlock-invocation-summary" style="margin-top: 6px; padding: 8px; border: 1px solid #aaa; border-radius: 6px; background: #fafafa;">尚未勾選魔能祈喚</div>
-</div>
-
-
   <div class="form-grid-2col">
   <!-- 左欄：HP 顯示與輸入 -->
   <div class="hp-card">
@@ -824,21 +851,10 @@ label[for="level"]{
     <input type="number" id="hp" placeholder="目前 HP" min="0" max="200" step="1" inputmode="numeric">
   </div>
 
-  <!-- 右欄：陣營選擇 -->
-  <div class="mini-stat-card">
-    <div class="mini-stat-label">陣營</div>
-    <select id="alignment">
-      <option value="">-- 請選擇 --</option>
-      <option value="LG">守序善良</option>
-      <option value="NG">中立善良</option>
-      <option value="CG">混亂善良</option>
-      <option value="LN">守序中立</option>
-      <option value="TN">絕對中立</option>
-      <option value="CN">混亂中立</option>
-      <option value="LE">守序邪惡</option>
-      <option value="NE">中立邪惡</option>
-      <option value="CE">混亂邪惡</option>
-    </select>
+  <!-- 右欄：護甲（版型比照 HP） -->
+  <div class="hp-card">
+    <div class="hp-title">護甲等級 AC<span id="ac-display" class="hp-value">10</span></div>
+    <input type="number" id="temp-hp" placeholder="臨時生命" min="0" max="50" step="1" inputmode="numeric">
   </div>
 </div>
 
@@ -854,36 +870,48 @@ label[for="level"]{
 }
 </style>
 
-<!-- 第一列：護甲、速度、先攻 -->
-<div class="stats-card-row">
-  <div class="mini-stat-card">
-    <div class="mini-stat-label">護甲</div>
-    <div class="hp-value" id="ac-display">10</div>
+<div class="stats-card-stack">
+  <!-- 第一列：陣營、速度、先攻 -->
+  <div class="stats-card-row">
+    <div class="mini-stat-card">
+      <div class="mini-stat-label">陣營</div>
+      <select id="alignment">
+        <option value="">-- 請選擇 --</option>
+        <option value="LG">守序善良</option>
+        <option value="NG">中立善良</option>
+        <option value="CG">混亂善良</option>
+        <option value="LN">守序中立</option>
+        <option value="TN">絕對中立</option>
+        <option value="CN">混亂中立</option>
+        <option value="LE">守序邪惡</option>
+        <option value="NE">中立邪惡</option>
+        <option value="CE">混亂邪惡</option>
+      </select>
+    </div>
+    <div class="mini-stat-card">
+      <div class="mini-stat-label">速度</div>
+      <input id="speed-input" type="number" class="tight-input" value="30">
+    </div>
+    <div class="mini-stat-card">
+      <div class="mini-stat-label">先攻</div>
+      <input id="initiative-input" type="number" class="tight-input" value="0">
+    </div>
   </div>
-  <div class="mini-stat-card">
-    <div class="mini-stat-label">速度</div>
-    <input id="speed-input" type="number" class="tight-input" value="30">
-  </div>
-  <div class="mini-stat-card">
-    <div class="mini-stat-label">先攻</div>
-    <input id="initiative-input" type="number" class="tight-input" value="0">
-  </div>
-</div>
 
-
-<!-- 第二列：生命骰、被動感知、按鈕 -->
-<div class="stats-card-row">
-  <div class="mini-stat-card">
-    <div class="mini-stat-label">生命骰</div>
-    <input id="lifedicen" type="number" class="tight-input" value="1" min="0" max="5">
-  </div>
-  <div class="mini-stat-card">
-    <div class="mini-stat-label">被動感知</div>
-    <input id="passive-perception" type="number" class="tight-input" value="10" min="-5" max="45">
-  </div>
-  <div class="mini-stat-card">
-    <div class="mini-stat-label">快速創角</div>
-    <button id="set-default-abilities" type="button" style="font-size:0.95em; margin-bottom:0;">預設屬性</button>
+  <!-- 第二列：生命骰、被動感知、按鈕 -->
+  <div class="stats-card-row">
+    <div class="mini-stat-card">
+      <div class="mini-stat-label">生命骰</div>
+      <input id="lifedicen" type="number" class="tight-input" value="1" min="0" max="5">
+    </div>
+    <div class="mini-stat-card">
+      <div class="mini-stat-label">被動感知</div>
+      <input id="passive-perception" type="number" class="tight-input" value="10" min="-5" max="45">
+    </div>
+    <div class="mini-stat-card">
+      <div class="mini-stat-label">快速創角</div>
+      <button id="set-default-abilities" type="button" style="font-size:0.95em; margin-bottom:0;">預設屬性</button>
+    </div>
   </div>
 </div>
 
@@ -895,36 +923,48 @@ label[for="level"]{
   <div class="section">
     <div class="ability-grid">
       <div class="ability">
+        <div class="ability-title">STR</div>
         <div class="modifier" id="str-mod"></div>
-        <input type="number" id="str" min="1" max="20" placeholder="輸入力量">
+        <input type="number" id="str" class="ability-score" min="1" max="20" placeholder="力量">
       </div>
       <div class="ability">
+        <div class="ability-title">DEX</div>
         <div class="modifier" id="dex-mod"></div>
-        <input type="number" id="dex" min="1" max="20" placeholder="輸入敏捷">
+        <input type="number" id="dex" class="ability-score" min="1" max="20" placeholder="敏捷">
       </div>
       <div class="ability">
+        <div class="ability-title">CON</div>
         <div class="modifier" id="con-mod"></div>
-        <input type="number" id="con" min="1" max="20" placeholder="輸入體質">
+        <input type="number" id="con" class="ability-score" min="1" max="20" placeholder="體質">
       </div>
       <div class="ability">
+        <div class="ability-title">INT</div>
         <div class="modifier" id="int-mod"></div>
-	<input type="number" id="int" min="1" max="20" placeholder="輸入智力">
+	<input type="number" id="int" class="ability-score" min="1" max="20" placeholder="智力">
       </div>
       <div class="ability">
+        <div class="ability-title">WIS</div>
         <div class="modifier" id="wis-mod"></div>
-        <input type="number" id="wis" min="1" max="20" placeholder="輸入感知">
+        <input type="number" id="wis" class="ability-score" min="1" max="20" placeholder="感知">
       </div>
       <div class="ability">
+        <div class="ability-title">CHA</div>
         <div class="modifier" id="cha-mod"></div>
-        <input type="number" id="cha" min="1" max="20" placeholder="輸入魅力">
+        <input type="number" id="cha" class="ability-score" min="1" max="20" placeholder="魅力">
       </div>
     </div>
   </div>
 
-  <div class="section">
+<div class="section">
       <h3>職業筆記區</h3>
       <textarea id="class-extra" rows="4" style="width: 100%;" placeholder="職業選項、能力使用次數等等......"></textarea>
   </div>
+
+<div id="warlock-invocation-summary-wrap" class="section" style="display: none;">
+  <strong>契術師魔能祈喚：</strong>
+  <div id="warlock-invocation-summary" style="margin-top: 6px; padding: 8px; border: 1px solid #aaa; border-radius: 6px; background: #fafafa;">尚未勾選魔能祈喚</div>
+</div>
+
 <div class="section">
   <details open>
     <summary><h3 style="display: inline;">職業能力</h3></summary>
@@ -975,7 +1015,7 @@ label[for="level"]{
 
 
 </div>
-  
+
 
 <div id="tab-skills" class="tab-content">
   <div class="section">
@@ -1157,7 +1197,7 @@ label[for="level"]{
 <div class="small-text" style="margin-left: 10px; margin-top: 4px;">
   治療藥水：恢復 2d4+2 HP
 </div>
-	  
+
 <div style="font-size: 1.05em; font-weight: bold; margin-top: 10px;">進行二次攻擊</div>
 <div class="small-text" style="margin-left: 10px; margin-top: 4px;">
   雙持輕型武器攻擊後，可用附贈進行副手攻擊。副手傷害不加屬性調整值，除非具備特定專長。
@@ -1319,7 +1359,7 @@ label[for="level"]{
 
   </div>
 
-  
+
 
   <script>
 function getHitDiceValues(className) {
@@ -1365,7 +1405,7 @@ if (classValue === "sorcerer" && level >= 3) {
   maxHP += 3 + (level - 3);
 }
 
-document.getElementById("hp-display").textContent = ` ${maxHP}`;
+document.getElementById("hp-display").textContent = String(maxHP);
 
 }
 
@@ -1396,6 +1436,23 @@ function enforceHpInputRange() {
   const clamped = clampHpValue(hpInput.value);
   if (hpInput.value !== clamped) {
     hpInput.value = clamped;
+  }
+}
+
+function clampTempHpValue(rawValue) {
+  if (rawValue === "" || rawValue === null || rawValue === undefined) return "";
+  const numeric = Number(rawValue);
+  if (!Number.isFinite(numeric)) return "";
+  const rounded = Math.round(numeric);
+  return String(Math.min(50, Math.max(0, rounded)));
+}
+
+function enforceTempHpInputRange() {
+  const tempHpInput = document.getElementById("temp-hp");
+  if (!tempHpInput) return;
+  const clamped = clampTempHpValue(tempHpInput.value);
+  if (tempHpInput.value !== clamped) {
+    tempHpInput.value = clamped;
   }
 }
 
@@ -2254,6 +2311,8 @@ document.addEventListener("DOMContentLoaded", () => {
   bindHPDisplayEvents();
   bindEventById("hp", "input", enforceHpInputRange);
   bindEventById("hp", "change", enforceHpInputRange);
+  bindEventById("temp-hp", "input", enforceTempHpInputRange);
+  bindEventById("temp-hp", "change", enforceTempHpInputRange);
   bindSpellNotesEvents();
   bindCoreCharacterEvents();
   bindSkillRankExclusiveEvents();
@@ -2352,19 +2411,10 @@ document.getElementById("set-default-abilities").addEventListener("click", () =>
     function calculateModifier(score) {
       if (!score || isNaN(score)) return "";
       const mod = Math.floor((score - 10) / 2);
-      if (mod === 0) return "(0)";
-      return `(${mod > 0 ? "+" : ""}${mod})`;
+      return `${mod > 0 ? "+" : ""}${mod}`;
     }
 
     const abilities = ["str", "dex", "con", "int", "wis", "cha"];
-    const abilityNamesZh = {
-      str: "力量",
-      dex: "敏捷",
-      con: "體質",
-      int: "智力",
-      wis: "感知",
-      cha: "魅力"
-    };
     abilities.forEach(ability => {
       const input = document.getElementById(ability);
       const modDisplay = document.getElementById(`${ability}-mod`);
@@ -2374,7 +2424,7 @@ document.getElementById("set-default-abilities").addEventListener("click", () =>
           modDisplay.textContent = "";
           return;
         }
-        modDisplay.innerHTML = `<span class="modifier-main">${ability.toUpperCase()} ${mod}</span><span class="modifier-zh">${abilityNamesZh[ability]}</span>`;
+        modDisplay.innerHTML = `<span class="modifier-main">${mod}</span>`;
     });
 
 

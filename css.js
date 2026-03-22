@@ -334,28 +334,57 @@ style.innerHTML = `
 
   .ability-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 10px;
   }
 
   .ability {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
+    min-height: 206px;
     padding: 12px;
-    background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
+    background: linear-gradient(180deg, #ffffff 0%, #f6f9ff 100%);
     border: 1px solid var(--border);
-    border-radius: 14px;
-    box-shadow: 0 4px 14px rgba(25, 35, 52, 0.05);
+    border-radius: 16px;
+    box-shadow: 0 6px 18px rgba(25, 35, 52, 0.08);
+  }
+
+  .ability-title {
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    color: #5f6b7c;
+    text-transform: uppercase;
   }
 
   .modifier {
-    min-height: 30px;
-    margin-top: 0;
-    font-weight: 800;
-    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 88px;
+    border-radius: 14px;
+    border: 2px solid #c2cdd8;
+    background: #eef0f2;
+    color: #19212c;
+    font-size: 3rem;
+    font-weight: 900;
+    margin: 0 !important;
+  }
+
+  .ability-score {
+    width: 100% !important;
+    min-height: 52px !important;
+    border-radius: 14px !important;
+    border: 2px solid var(--border-strong) !important;
+    background: #ffffff !important;
+    font-size: 1.35rem !important;
+    font-weight: 900 !important;
     text-align: center;
-    color: #1f3fb6;
+    color: #14181d;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    padding: 10px 12px !important;
   }
 
   button {
@@ -536,27 +565,13 @@ style.innerHTML = `
     color: var(--muted);
   }
 
-  #ac-display {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 44px;
-    min-height: 44px;
-    padding: 4px 10px;
-    border-radius: 999px;
-    background: var(--accent-soft);
-    color: #2547c8;
-    font-size: 1.25rem !important;
-    font-weight: 800;
-    border: 1px solid #bfd0ff;
-  }
-
+  #ac-display,
   #hp-display {
     display: inline-block;
     margin-left: 6px;
-    color: #2447c7;
-    font-size: 1.3rem;
-    font-weight: 800;
+    color: #1d2b52;
+    font-size: 1.5rem;
+    font-weight: 900;
   }
 
   #warlock-invocation-summary,
@@ -662,7 +677,7 @@ style.innerHTML = `
     }
 
     .ability-grid {
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(3, 1fr);
     }
 
     .form-grid-6col {
