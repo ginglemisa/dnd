@@ -793,6 +793,69 @@ label[for="level"]{
   #tab-basic .ability-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
   #tab-basic .form-grid-2col--class-level{grid-template-columns:1fr !important;}
 }
+
+#tour-overlay{
+  position:fixed;
+  inset:0;
+  z-index:12000;
+  display:none;
+  pointer-events:none;
+}
+.tour-mask{
+  position:fixed;
+  background:rgba(10,16,30,.72);
+  pointer-events:auto;
+}
+#tour-focus-ring{
+  position:fixed;
+  border:3px solid #7aa2ff;
+  border-radius:12px;
+  box-shadow:0 0 0 2px rgba(122,162,255,.38),0 0 26px rgba(122,162,255,.7);
+  pointer-events:none;
+}
+#tour-tooltip{
+  position:fixed;
+  width:min(360px,calc(100vw - 20px));
+  background:#fff;
+  border:1px solid #c7d2e9;
+  border-radius:12px;
+  box-shadow:0 12px 30px rgba(10,16,30,.24);
+  padding:12px;
+  pointer-events:auto;
+}
+#tour-step-title{
+  font-size:1.02rem;
+  font-weight:900;
+  margin:0 0 4px;
+}
+#tour-step-text{
+  font-size:.93rem;
+  line-height:1.5;
+  color:#34425b;
+}
+.tour-btn-row{
+  display:flex;
+  justify-content:flex-end;
+  gap:8px;
+  margin-top:10px;
+}
+#tour-next-btn{
+  background:linear-gradient(180deg,#6d89ff 0%,#5675f2 100%);
+  color:#fff;
+  min-height:38px;
+  padding:0 12px;
+}
+#tour-skip-btn{
+  min-height:38px;
+  padding:0 12px;
+}
+#restart-onboarding-btn{
+  margin:14px auto 22px;
+  width:min(460px,calc(100% - 20px));
+  display:block;
+  background:linear-gradient(180deg,#fff6e6 0%,#ffe8c0 100%);
+  border:1px solid #e8c27a !important;
+}
 </style>
 
 </head>
@@ -1302,7 +1365,7 @@ label[for="level"]{
 <div class="section spell-toolbar">
   <div class="spell-toolbar-row">
     <input type="text" id="spell-search" placeholder="🔍 搜尋">
-    <div class="spell-toolbar-actions">
+    <div id="spell-toolbar-actions" class="spell-toolbar-actions">
       <button type="button" id="expand-spells">全展</button>
       <button type="button" id="collapse-spells">收合</button>
     </div>
@@ -1384,6 +1447,7 @@ label[for="level"]{
 
   </div>
 
+  <button type="button" id="restart-onboarding-btn">🧭 重新開啟新手導覽</button>
 
 
   <script>
@@ -2019,7 +2083,7 @@ function updateRaceFeature() {
   }
 
   el.innerHTML =
-  `<div style="line-height:1.25;">
+  `<div id="background-ability-guide-target" style="line-height:1.25;">
      <div><strong>屬性：</strong>${bg.屬性}</div>
      <div><strong>專長：</strong>${bg.專長}</div>
      <div><strong>技能熟練：</strong>${bg.技能熟練}</div>
@@ -3821,9 +3885,11 @@ function initLegalModal() {
   const LEGAL_DISMISS_KEY = 'dndchar_legal_dismiss_v1';
   const modal = document.getElementById('legal-modal');
   const checkbox = document.getElementById('legal-dismiss');
+  const closeBtn = document.getElementById('legal-close-btn');
+  const ackBtn = document.getElementById('legal-ack-btn');
+  const startTourBtn = document.getElementById('legal-start-tour-btn');
   if (!modal || !checkbox) return;
 
-  // 優先讀取專用儲存鍵，並向下相容舊版 autosave 的 legal-dismiss 欄位。
   let shouldDismiss = localStorage.getItem(LEGAL_DISMISS_KEY) === '1';
   try {
     if (!shouldDismiss) {
@@ -3840,17 +3906,297 @@ function initLegalModal() {
     if (typeof saveAllFields === 'function') saveAllFields();
   });
 
-  if (!isShareMode && shouldDismiss) return; // ✅ 已勾選，不再顯示 modal
+  if (!isShareMode && shouldDismiss) return;
 
   modal.style.display = 'block';
-
-  // 關閉按鈕邏輯（勾選狀態會由自動儲存機制處理）
-  const button = modal.querySelector('button');
-  button.addEventListener('click', () => {
+  const closeModal = () => {
     modal.style.display = 'none';
+  };
+  closeBtn?.addEventListener('click', closeModal);
+  ackBtn?.addEventListener('click', closeModal);
+  startTourBtn?.addEventListener('click', () => {
+    closeModal();
+    window.onboardingTour?.start();
   });
 }
 
+function isElementVisible(el) {
+  if (!el) return false;
+  const style = window.getComputedStyle(el);
+  return style.display !== "none" && style.visibility !== "hidden" && style.opacity !== "0";
+}
+
+function waitForLayoutStability() {
+  return new Promise(resolve => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setTimeout(resolve, 60);
+      });
+    });
+  });
+}
+
+function animateWindowScrollTo(targetY, durationMs = 520) {
+  return new Promise(resolve => {
+    const startY = window.scrollY;
+    const maxScroll = Math.max(0, document.body.scrollHeight - window.innerHeight);
+    const finalY = Math.max(0, Math.min(targetY, maxScroll));
+    const diff = finalY - startY;
+    if (Math.abs(diff) < 1) {
+      window.scrollTo(0, finalY);
+      resolve();
+      return;
+    }
+    const start = performance.now();
+    const step = (now) => {
+      const elapsed = now - start;
+      const t = Math.min(1, elapsed / durationMs);
+      const eased = 1 - Math.pow(1 - t, 3);
+      window.scrollTo(0, startY + diff * eased);
+      if (t < 1) {
+        requestAnimationFrame(step);
+      } else {
+        resolve();
+      }
+    };
+    requestAnimationFrame(step);
+  });
+}
+
+function getUnionRect(elements) {
+  const rects = elements.filter(Boolean).map(el => el.getBoundingClientRect()).filter(r => r.width > 0 && r.height > 0);
+  if (!rects.length) return null;
+  return {
+    left: Math.min(...rects.map(r => r.left)),
+    top: Math.min(...rects.map(r => r.top)),
+    right: Math.max(...rects.map(r => r.right)),
+    bottom: Math.max(...rects.map(r => r.bottom))
+  };
+}
+
+function setActionHelpOpen(open) {
+  document.querySelectorAll("#tab-actions details.action-collapsible-wrap").forEach(detail => {
+    const title = detail.querySelector("summary h3")?.textContent?.trim();
+    if (title === "戰鬥中的四種行動" || title === "動作") detail.open = open;
+  });
+}
+
+class OnboardingTour {
+  constructor() {
+    this.overlay = document.getElementById("tour-overlay");
+    this.masks = {
+      top: document.getElementById("tour-mask-top"),
+      left: document.getElementById("tour-mask-left"),
+      right: document.getElementById("tour-mask-right"),
+      bottom: document.getElementById("tour-mask-bottom")
+    };
+    this.focusRing = document.getElementById("tour-focus-ring");
+    this.tooltip = document.getElementById("tour-tooltip");
+    this.title = document.getElementById("tour-step-title");
+    this.text = document.getElementById("tour-step-text");
+    this.nextBtn = document.getElementById("tour-next-btn");
+    this.skipBtn = document.getElementById("tour-skip-btn");
+    this.steps = [];
+    this.currentIndex = -1;
+    this.active = false;
+    this.isTransitioning = false;
+    this.handleResize = this.handleResize.bind(this);
+    this.handleKeydown = this.handleKeydown.bind(this);
+    this.preventScrollEvent = this.preventScrollEvent.bind(this);
+  }
+
+  init() {
+    if (!this.overlay || !this.nextBtn || !this.skipBtn) return;
+    this.nextBtn.addEventListener("click", () => this.next());
+    this.skipBtn.addEventListener("click", () => this.stop());
+    window.addEventListener("resize", this.handleResize);
+    document.addEventListener("keydown", this.handleKeydown);
+    document.getElementById("restart-onboarding-btn")?.addEventListener("click", () => this.start());
+  }
+
+  getSteps() {
+    const spellTabButton = document.getElementById("spells-tab-button");
+    const showSpells = isElementVisible(spellTabButton) && (typeof hasSpellcastingCapability === "function" ? hasSpellcastingCapability() : true);
+    const cantripSection = Array.from(document.querySelectorAll("#tab-spells .spell-level-section")).find(sec => sec.querySelector("summary h3")?.textContent?.trim() === "戲法");
+
+    const steps = [
+      { tab: "basic", selectors: [], getElements: () => {
+          const ids = ["class", "level", "background", "race"];
+          return ids.map(id => document.getElementById(id)).filter(Boolean).map(el => el.closest(".mini-stat-card, .form-grid-2col, .form-row") || el);
+        }, title: "先選基本資料", text: "先選職業、等級、背景、種族。這些選項會影響後面的角色能力與內容。", placement: "bottom", beforePosition: async () => window.scrollTo({ top: 0, behavior: "auto" }) },
+      { tab: "basic", selectors: [], getElements: () => {
+          const strAbility = document.getElementById("str")?.closest(".ability");
+          const quickCard = document.getElementById("set-default-abilities")?.closest(".mini-stat-card");
+          return [strAbility, quickCard].filter(Boolean);
+        }, title: "接著填六大屬性", text: "你可以手動輸入六大屬性；如果是第一次使用，也可以先按「預設屬性」快速開始。", placement: "bottom", beforePosition: async () => {
+          window.scrollTo({ top: 0, behavior: "auto" });
+          await waitForLayoutStability();
+          const quickCard = document.getElementById("set-default-abilities")?.closest(".mini-stat-card");
+          if (!quickCard) return;
+          const rect = quickCard.getBoundingClientRect();
+          const targetY = window.scrollY + rect.top - 120;
+          await animateWindowScrollTo(targetY, 620);
+        } },
+      { tab: "basic", selectors: ["#background-ability-guide-target"], title: "記得把背景提供的加值加上去", text: "背景會提供屬性加值與熟練技能。請先閱讀這裡，記得手動把屬性加上去，並記住等等要到技能頁勾選熟練。", placement: "top", fallbackSelector: "#backgroundFeatures", beforePosition: async () => {
+          const target = document.querySelector("#background-ability-guide-target");
+          const line = Array.from(document.querySelectorAll("#backgroundFeatures div")).find(el => el.textContent?.includes("★ 屬性可選擇：三項各 +1，或一項屬性 +2 另一項 +1。"));
+          if (line) {
+            const rect = line.getBoundingClientRect();
+            const y = window.scrollY + rect.bottom - window.innerHeight + 12;
+            window.scrollTo({ top: Math.max(0, y), behavior: "auto" });
+          } else if (target) {
+            target.scrollIntoView({ behavior: "auto", block: "center" });
+          }
+        } },
+      { tab: "skills", selectors: [".save-grid", ".skill-grid", "button[onclick='fillSaves()']", "button[onclick='fillSkills()']"], title: "設定熟練並按下計算", text: "把背景、職業、種族給的熟練或專精先勾起來，再按下計算按鈕，自動填入豁免與技能加值。", placement: "bottom", beforePosition: async () => window.scrollTo({ top: 0, behavior: "auto" }) },
+      { tab: "equipment", selectors: ["#mainHand", "#offHand", "#armor"], title: "選擇武器與護甲", text: "先選主手、副手與護甲，系統才知道你的防禦與攻擊資料。", placement: "bottom", beforePosition: async () => window.scrollTo({ top: 0, behavior: "auto" }) },
+      { tab: "actions", selectors: [".action-help", ".action-collapsible-wrap"], title: "戰鬥規則", text: "這兩個區域有基本的戰鬥動作規則，點開可查看，再次點擊可以收起。", placement: "bottom", beforePosition: async () => { setActionHelpOpen(true); window.scrollTo({ top: 0, behavior: "auto" }); } },
+      { tab: "actions", selectors: ["button[onclick='populateHandAttacks()']", "#atk-main-name", "#atk-off-name"], title: "產生攻擊資料", text: "按下這個按鈕，會把你在裝備頁選的主副手資料自動帶進來，方便你在戰鬥中查看。", placement: "bottom", beforePosition: async () => { setActionHelpOpen(false); window.scrollTo({ top: 0, behavior: "auto" }); } }
+    ];
+
+    if (showSpells) {
+      steps.push(
+        { tab: "spells", selectors: ["#spell-toolbar-actions", "#spell-casting-stats-wrap"], title: "法術頁", text: "如果你的角色會魔法，這裡可以設定施法屬性。法術設定太多的話，可使用上方的搜索工具列。", placement: "bottom", beforePosition: async () => window.scrollTo({ top: 0, behavior: "auto" }) },
+        { tab: "spells", selectors: [], getElements: () => {
+            const summary = cantripSection?.querySelector("summary");
+            return summary ? [summary] : (cantripSection ? [cantripSection] : []);
+          }, title: "選擇法術", text: "先選擇職業，再選擇法術，戲法可以無限使用，環位法術使用次數有限制。", placement: "bottom", beforePosition: async () => {
+            if (!cantripSection) return;
+            const rect = cantripSection.getBoundingClientRect();
+            const targetY = window.scrollY + rect.top - 120;
+            window.scrollTo({ top: Math.max(0, targetY), behavior: "auto" });
+          } }
+      );
+    }
+    return steps;
+  }
+
+  async start() {
+    this.steps = this.getSteps();
+    if (!this.steps.length) return;
+    this.active = true;
+    this.lockUserScroll();
+    this.overlay.style.display = "block";
+    await this.goTo(0);
+  }
+
+  async next() {
+    if (!this.active) return;
+    const nextIndex = this.currentIndex + 1;
+    if (nextIndex >= this.steps.length) return this.stop();
+    await this.goTo(nextIndex);
+  }
+
+  stop() {
+    this.active = false;
+    this.isTransitioning = false;
+    this.currentIndex = -1;
+    this.overlay.style.display = "none";
+    this.unlockUserScroll();
+  }
+
+  async goTo(index) {
+    if (this.isTransitioning) return;
+    this.isTransitioning = true;
+    this.currentIndex = index;
+    const step = this.steps[index];
+    const tabButton = document.querySelector(`.tab-button[onclick*="'${step.tab}'"]`);
+    showTab(step.tab, tabButton || undefined);
+    await waitForLayoutStability();
+    if (typeof step.beforePosition === "function") {
+      await step.beforePosition();
+      await waitForLayoutStability();
+    }
+    this.renderStep();
+    this.isTransitioning = false;
+  }
+
+  getStepElements(step) {
+    if (typeof step.getElements === "function") return step.getElements().filter(Boolean);
+    const elements = (step.selectors || []).flatMap(selector => Array.from(document.querySelectorAll(selector))).filter(el => isElementVisible(el));
+    if (!elements.length && step.fallbackSelector) {
+      return Array.from(document.querySelectorAll(step.fallbackSelector)).filter(el => isElementVisible(el));
+    }
+    return elements;
+  }
+
+  renderStep() {
+    if (!this.active) return;
+    const step = this.steps[this.currentIndex];
+    const rect = getUnionRect(this.getStepElements(step));
+    if (!rect) return;
+
+    const pad = 8;
+    const hole = {
+      left: Math.max(0, rect.left - pad),
+      top: Math.max(0, rect.top - pad),
+      right: Math.min(window.innerWidth, rect.right + pad),
+      bottom: Math.min(window.innerHeight, rect.bottom + pad)
+    };
+
+    this.masks.top.style.cssText = `left:0;top:0;width:${window.innerWidth}px;height:${hole.top}px;`;
+    this.masks.left.style.cssText = `left:0;top:${hole.top}px;width:${hole.left}px;height:${Math.max(0, hole.bottom - hole.top)}px;`;
+    this.masks.right.style.cssText = `left:${hole.right}px;top:${hole.top}px;width:${Math.max(0, window.innerWidth - hole.right)}px;height:${Math.max(0, hole.bottom - hole.top)}px;`;
+    this.masks.bottom.style.cssText = `left:0;top:${hole.bottom}px;width:${window.innerWidth}px;height:${Math.max(0, window.innerHeight - hole.bottom)}px;`;
+
+    this.focusRing.style.left = `${hole.left}px`;
+    this.focusRing.style.top = `${hole.top}px`;
+    this.focusRing.style.width = `${Math.max(0, hole.right - hole.left)}px`;
+    this.focusRing.style.height = `${Math.max(0, hole.bottom - hole.top)}px`;
+
+    this.title.textContent = step.title;
+    this.text.textContent = step.text;
+    this.nextBtn.textContent = this.currentIndex === this.steps.length - 1 ? "完成" : "下一步";
+    this.positionTooltip(hole, step.placement || "bottom");
+  }
+
+  positionTooltip(hole, placement) {
+    const margin = 10;
+    const tooltipWidth = Math.min(360, window.innerWidth - margin * 2);
+    this.tooltip.style.width = `${tooltipWidth}px`;
+    this.tooltip.style.left = `${Math.min(window.innerWidth - tooltipWidth - margin, Math.max(margin, hole.left))}px`;
+
+    const tooltipHeight = this.tooltip.offsetHeight || 160;
+    let top = placement === "top" ? hole.top - tooltipHeight - margin : hole.bottom + margin;
+    if (top + tooltipHeight > window.innerHeight - margin) top = hole.top - tooltipHeight - margin;
+    if (top < margin) top = Math.min(window.innerHeight - tooltipHeight - margin, hole.bottom + margin);
+    this.tooltip.style.top = `${Math.max(margin, top)}px`;
+  }
+
+  handleResize() {
+    if (!this.active) return;
+    requestAnimationFrame(() => this.renderStep());
+  }
+
+  handleKeydown(event) {
+    if (!this.active) return;
+    if (event.key === "Escape") {
+      this.stop();
+      return;
+    }
+    const blockedKeys = ["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " ", "Spacebar"];
+    if (blockedKeys.includes(event.key)) {
+      event.preventDefault();
+    }
+  }
+
+  preventScrollEvent(event) {
+    if (!this.active) return;
+    event.preventDefault();
+  }
+
+  lockUserScroll() {
+    document.body.style.overscrollBehavior = "none";
+    window.addEventListener("wheel", this.preventScrollEvent, { passive: false, capture: true });
+    window.addEventListener("touchmove", this.preventScrollEvent, { passive: false, capture: true });
+  }
+
+  unlockUserScroll() {
+    document.body.style.overscrollBehavior = "";
+    window.removeEventListener("wheel", this.preventScrollEvent, { capture: true });
+    window.removeEventListener("touchmove", this.preventScrollEvent, { capture: true });
+  }
+}
 
 // ====== 頁面載入時全自動初始化 ======
 window.addEventListener("DOMContentLoaded", async function() {
@@ -3937,6 +4283,8 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
   }
 
   // 6. 分享模式判定完成後，才初始化版權提醒，避免時序競態
+  window.onboardingTour = new OnboardingTour();
+  window.onboardingTour.init();
   initLegalModal();
   setupSpellQrModal();
   setupDeityInfoModal();
@@ -3962,7 +4310,8 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
 </div>
 
 <div id="legal-modal" style="display:none;position:fixed;z-index:9999;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.45);">
-  <div style="background:#fff;padding:18px 14px;max-width:332px;margin:72px auto 0 auto;border-radius:12px;box-shadow:0 4px 24px #0003;">
+  <div style="position:relative;background:#fff;padding:18px 14px;max-width:332px;margin:72px auto 0 auto;border-radius:12px;box-shadow:0 4px 24px #0003;">
+    <button type="button" id="legal-close-btn" aria-label="關閉提醒" style="position:absolute;top:8px;right:8px;min-height:30px;padding:0 10px;font-size:1.1em;">✕</button>
     <h3 style="margin:0 0 6px 0;font-size:1.1em;line-height:1.15;">使用提醒</h3>
     <div style="font-size:0.8em;line-height:1.55;color:#222;">
      本站僅提供免費規則，更多選項請參閱玩家手冊。</div>
@@ -3977,10 +4326,27 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
       <div>Using content from D&amp;D Beyond Basic Rules</div>
       <div style="margin-top:2px;letter-spacing:0;">Dungeons &amp; Dragons © Wizards of the Coast LLC</div>
     </div>
-      <div style="margin-top:9px;font-size:0.88em;line-height:1.2;">
+<div style="margin-top:9px;font-size:0.88em;line-height:1.2;">
   <label><input type="checkbox" id="legal-dismiss"> 不要再提醒我</label>
 </div>
-    <button onclick="document.getElementById('legal-modal').style.display='none';" style="margin-top:12px;width:100%;padding:6px 0;font-size:1em;border-radius:6px;border:1px solid #888;">我知道了</button>
+    <button type="button" id="legal-start-tour-btn" style="margin-top:12px;width:100%;padding:8px 0;font-size:1.05em;border-radius:8px;border:1px solid #3f65df;background:linear-gradient(180deg,#6d89ff 0%,#5675f2 100%);color:#fff;">新手導覽</button>
+    <button type="button" id="legal-ack-btn" style="margin-top:8px;width:100%;padding:6px 0;font-size:1em;border-radius:6px;border:1px solid #888;">我知道了</button>
+  </div>
+</div>
+
+<div id="tour-overlay" aria-hidden="true">
+  <div id="tour-mask-top" class="tour-mask"></div>
+  <div id="tour-mask-left" class="tour-mask"></div>
+  <div id="tour-mask-right" class="tour-mask"></div>
+  <div id="tour-mask-bottom" class="tour-mask"></div>
+  <div id="tour-focus-ring"></div>
+  <div id="tour-tooltip" role="dialog" aria-live="polite">
+    <h4 id="tour-step-title"></h4>
+    <div id="tour-step-text"></div>
+    <div class="tour-btn-row">
+      <button type="button" id="tour-skip-btn">跳過</button>
+      <button type="button" id="tour-next-btn">下一步</button>
+    </div>
   </div>
 </div>
 
