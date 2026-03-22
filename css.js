@@ -334,7 +334,7 @@ style.innerHTML = `
 
   .ability-grid {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 10px;
   }
 
@@ -566,18 +566,11 @@ style.innerHTML = `
   }
 
   #ac-display {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 44px;
-    min-height: 44px;
-    padding: 4px 10px;
-    border-radius: 999px;
-    background: var(--accent-soft);
-    color: #2547c8;
-    font-size: 1.25rem !important;
-    font-weight: 800;
-    border: 1px solid #bfd0ff;
+    display: inline-block;
+    margin-left: 6px;
+    color: #1d2b52;
+    font-size: 1.5rem;
+    font-weight: 900;
   }
 
   #hp-display {
@@ -691,7 +684,7 @@ style.innerHTML = `
     }
 
     .ability-grid {
-      grid-template-columns: repeat(6, 1fr);
+      grid-template-columns: repeat(3, 1fr);
     }
 
     .form-grid-6col {

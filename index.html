@@ -227,7 +227,7 @@ button:hover{filter:brightness(.99);}
   margin-bottom:12px;
 }
 .ability-grid{
-  grid-template-columns:repeat(6,minmax(0,1fr)) !important;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
   gap:12px !important;
 }
 .ability{
@@ -724,15 +724,11 @@ label[for="level"]{
   #tab-basic .mini-stat-card{padding:8px !important; border-radius:12px;}
   #tab-basic .mini-stat-label{font-size:.78rem !important; margin-bottom:4px !important; line-height:1.15;}
   #tab-basic .mini-stat-card input[type="number"],
-  #tab-basic .mini-stat-card button,
-  #tab-basic .mini-stat-card #ac-display,
-  #tab-basic .hp-card #ac-display{
+  #tab-basic .mini-stat-card button{
     min-height:34px !important;
     font-size:.95rem !important;
     padding:5px 6px !important;
   }
-  #tab-basic .mini-stat-card #ac-display,
-  #tab-basic .hp-card #ac-display{min-width:34px;}
   .form-grid-6col{grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:8px !important;}
   .action-grid-pretty{grid-template-columns:repeat(4,minmax(0,1fr)) !important;}
   .skill-label-row{align-items:flex-start; gap:8px; margin-bottom:6px;}
@@ -832,12 +828,6 @@ label[for="level"]{
       <option value="tiefling">提夫林</option>
     </select>
   </div>
-</div>
-
-
-<div id="warlock-invocation-summary-wrap" class="section" style="display: none;">
-  <strong>契術師魔能祈喚：</strong>
-  <div id="warlock-invocation-summary" style="margin-top: 6px; padding: 8px; border: 1px solid #aaa; border-radius: 6px; background: #fafafa;">尚未勾選魔能祈喚</div>
 </div>
 
 
@@ -951,10 +941,16 @@ label[for="level"]{
     </div>
   </div>
 
-  <div class="section">
+<div class="section">
       <h3>職業筆記區</h3>
       <textarea id="class-extra" rows="4" style="width: 100%;" placeholder="職業選項、能力使用次數等等......"></textarea>
   </div>
+
+<div id="warlock-invocation-summary-wrap" class="section" style="display: none;">
+  <strong>契術師魔能祈喚：</strong>
+  <div id="warlock-invocation-summary" style="margin-top: 6px; padding: 8px; border: 1px solid #aaa; border-radius: 6px; background: #fafafa;">尚未勾選魔能祈喚</div>
+</div>
+
 <div class="section">
   <details open>
     <summary><h3 style="display: inline;">職業能力</h3></summary>
