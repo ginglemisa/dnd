@@ -200,11 +200,19 @@ button:hover{filter:brightness(.99);}
   font-weight:700;
   margin-bottom:6px;
 }
+.hp-title{
+  display:flex;
+  align-items:baseline;
+  white-space:nowrap;
+}
 .hp-value{
   font-size:1.5rem;
   font-weight:900;
   color:#007AFF;
   margin-left:6px;
+}
+.hp-card input[type="number"]{
+  width:100%;
 }
 .form-grid-2col{
   gap:12px !important;
@@ -847,12 +855,14 @@ label[for="level"]{
   <div class="form-grid-2col">
   <!-- 左欄：HP 顯示與輸入 -->
   <div class="hp-card">
-    <div class="hp-title">最大HP<span id="hp-display" class="hp-value">(0)</span><input type="number" id="hp" placeholder="目前 HP" min="0" max="200" step="1" inputmode="numeric"></div>
+    <div class="hp-title">最大HP(maxHP)<span id="hp-display" class="hp-value">[0]</span></div>
+    <input type="number" id="hp" placeholder="目前 HP" min="0" max="200" step="1" inputmode="numeric">
   </div>
 
   <!-- 右欄：護甲（版型比照 HP） -->
   <div class="hp-card">
-    <div class="hp-title">護甲AC<span id="ac-display" class="hp-value">10</span><input type="number" id="temp-hp" placeholder="臨時生命" min="0" max="50" step="1" inputmode="numeric"></div>
+    <div class="hp-title">護甲AC<span id="ac-display" class="hp-value">10</span></div>
+    <input type="number" id="temp-hp" placeholder="臨時生命" min="0" max="50" step="1" inputmode="numeric">
   </div>
 </div>
 
@@ -1403,7 +1413,7 @@ if (classValue === "sorcerer" && level >= 3) {
   maxHP += 3 + (level - 3);
 }
 
-document.getElementById("hp-display").textContent = String(maxHP);
+document.getElementById("hp-display").textContent = `[${String(maxHP)}]`;
 
 }
 
