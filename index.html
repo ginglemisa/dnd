@@ -231,30 +231,78 @@ button:hover{filter:brightness(.99);}
   gap:12px !important;
 }
 .ability{
-  background:linear-gradient(180deg,#ffffff 0%,#f6f8fc 100%);
-  border:1px solid var(--line);
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  min-height:206px;
+  padding:14px 12px 56px;
+  background:linear-gradient(180deg,#ffffff 0%,#f7f8fb 100%);
+  border:3px solid #d81e34;
   border-radius:18px;
-  padding:12px;
-  box-shadow:var(--shadow);
+  box-shadow:0 12px 22px rgba(40,26,30,.12);
+  overflow:visible;
+}
+.ability::before,
+.ability::after{
+  content:"";
+  position:absolute;
+  left:10px;
+  right:10px;
+  height:10px;
+  border:2px solid #d81e34;
+  border-top:none;
+  border-radius:0 0 14px 14px;
+  pointer-events:none;
+}
+.ability::before{
+  bottom:22px;
+}
+.ability::after{
+  bottom:14px;
+  left:18px;
+  right:18px;
+}
+.ability-title{
+  text-align:center;
+  font-size:1.35rem;
+  font-weight:900;
+  letter-spacing:.06em;
+  color:#6a7882;
+  text-transform:uppercase;
 }
 .modifier{
   display:flex;
-  flex-direction:column;
   align-items:center;
   justify-content:center;
-  min-height:58px;
+  min-height:88px;
   border-radius:14px;
-  background:var(--brand-soft);
-  color:#2743b5;
-  font-size:1.4rem;
+  border:2px solid #c2cdd8;
+  background:#eef0f2;
+  color:#19212c;
+  font-size:3rem;
   font-weight:900;
-  margin:0 0 10px !important;
+  margin:0 !important;
 }
 .modifier-main{
   white-space:nowrap;
 }
-.modifier-zh{
-  line-height:1.1;
+.ability-score{
+  position:absolute;
+  left:50%;
+  bottom:-22px;
+  transform:translateX(-50%);
+  width:116px !important;
+  min-height:74px !important;
+  border-radius:999px !important;
+  border:5px solid #d81e34 !important;
+  background:#ffffff !important;
+  font-size:2.1rem !important;
+  font-weight:900 !important;
+  text-align:center;
+  color:#14181d;
+  box-shadow:0 8px 16px rgba(216,30,52,.16);
+  padding:10px 16px 8px !important;
 }
 .save-grid{
   grid-template-columns:1fr 1fr !important;
@@ -895,28 +943,34 @@ label[for="level"]{
   <div class="section">
     <div class="ability-grid">
       <div class="ability">
+        <div class="ability-title">Strength</div>
         <div class="modifier" id="str-mod"></div>
-        <input type="number" id="str" min="1" max="20" placeholder="輸入力量">
+        <input type="number" id="str" class="ability-score" min="1" max="20" placeholder="力量">
       </div>
       <div class="ability">
+        <div class="ability-title">Dexterity</div>
         <div class="modifier" id="dex-mod"></div>
-        <input type="number" id="dex" min="1" max="20" placeholder="輸入敏捷">
+        <input type="number" id="dex" class="ability-score" min="1" max="20" placeholder="敏捷">
       </div>
       <div class="ability">
+        <div class="ability-title">Constitution</div>
         <div class="modifier" id="con-mod"></div>
-        <input type="number" id="con" min="1" max="20" placeholder="輸入體質">
+        <input type="number" id="con" class="ability-score" min="1" max="20" placeholder="體質">
       </div>
       <div class="ability">
+        <div class="ability-title">Intelligence</div>
         <div class="modifier" id="int-mod"></div>
-	<input type="number" id="int" min="1" max="20" placeholder="輸入智力">
+	<input type="number" id="int" class="ability-score" min="1" max="20" placeholder="智力">
       </div>
       <div class="ability">
+        <div class="ability-title">Wisdom</div>
         <div class="modifier" id="wis-mod"></div>
-        <input type="number" id="wis" min="1" max="20" placeholder="輸入感知">
+        <input type="number" id="wis" class="ability-score" min="1" max="20" placeholder="感知">
       </div>
       <div class="ability">
+        <div class="ability-title">Charisma</div>
         <div class="modifier" id="cha-mod"></div>
-        <input type="number" id="cha" min="1" max="20" placeholder="輸入魅力">
+        <input type="number" id="cha" class="ability-score" min="1" max="20" placeholder="魅力">
       </div>
     </div>
   </div>
@@ -2352,19 +2406,10 @@ document.getElementById("set-default-abilities").addEventListener("click", () =>
     function calculateModifier(score) {
       if (!score || isNaN(score)) return "";
       const mod = Math.floor((score - 10) / 2);
-      if (mod === 0) return "(0)";
-      return `(${mod > 0 ? "+" : ""}${mod})`;
+      return `${mod > 0 ? "+" : ""}${mod}`;
     }
 
     const abilities = ["str", "dex", "con", "int", "wis", "cha"];
-    const abilityNamesZh = {
-      str: "力量",
-      dex: "敏捷",
-      con: "體質",
-      int: "智力",
-      wis: "感知",
-      cha: "魅力"
-    };
     abilities.forEach(ability => {
       const input = document.getElementById(ability);
       const modDisplay = document.getElementById(`${ability}-mod`);
@@ -2374,7 +2419,7 @@ document.getElementById("set-default-abilities").addEventListener("click", () =>
           modDisplay.textContent = "";
           return;
         }
-        modDisplay.innerHTML = `<span class="modifier-main">${ability.toUpperCase()} ${mod}</span><span class="modifier-zh">${abilityNamesZh[ability]}</span>`;
+        modDisplay.innerHTML = `<span class="modifier-main">${mod}</span>`;
     });
 
 

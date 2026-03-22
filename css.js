@@ -339,23 +339,81 @@ style.innerHTML = `
   }
 
   .ability {
+    position: relative;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding: 12px;
-    background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    box-shadow: 0 4px 14px rgba(25, 35, 52, 0.05);
+    gap: 10px;
+    min-height: 206px;
+    padding: 14px 12px 56px;
+    background: linear-gradient(180deg, #ffffff 0%, #f7f8fb 100%);
+    border: 3px solid #d81e34;
+    border-radius: 18px;
+    box-shadow: 0 12px 22px rgba(40, 26, 30, 0.12);
+    overflow: visible;
+  }
+
+  .ability::before,
+  .ability::after {
+    content: "";
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    height: 10px;
+    border: 2px solid #d81e34;
+    border-top: none;
+    border-radius: 0 0 14px 14px;
+    pointer-events: none;
+  }
+
+  .ability::before {
+    bottom: 22px;
+  }
+
+  .ability::after {
+    bottom: 14px;
+    left: 18px;
+    right: 18px;
+  }
+
+  .ability-title {
+    text-align: center;
+    font-size: 1.35rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    color: #6a7882;
+    text-transform: uppercase;
   }
 
   .modifier {
-    min-height: 30px;
-    margin-top: 0;
-    font-weight: 800;
-    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 88px;
+    border-radius: 14px;
+    border: 2px solid #c2cdd8;
+    background: #eef0f2;
+    color: #19212c;
+    font-size: 3rem;
+    font-weight: 900;
+    margin: 0 !important;
+  }
+
+  .ability-score {
+    position: absolute;
+    left: 50%;
+    bottom: -22px;
+    transform: translateX(-50%);
+    width: 116px !important;
+    min-height: 74px !important;
+    border-radius: 999px !important;
+    border: 5px solid #d81e34 !important;
+    background: #ffffff !important;
+    font-size: 2.1rem !important;
+    font-weight: 900 !important;
     text-align: center;
-    color: #1f3fb6;
+    color: #14181d;
+    box-shadow: 0 8px 16px rgba(216, 30, 52, 0.16);
+    padding: 10px 16px 8px !important;
   }
 
   button {
