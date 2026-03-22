@@ -2507,13 +2507,20 @@ function hasSpellcastingCapability() {
 
 function updateSpellCastingStatsVisibility() {
   const canCast = hasSpellcastingCapability();
-  const statsWrap = document.getElementById("spell-casting-stats-wrap");
-  const slotWrap = document.getElementById("spell-slot-management-wrap");
-  const pickedWrap = document.getElementById("spell-picked-grid-wrap");
+  const spellTab = document.getElementById("tab-spells");
+  const spellTabButton = document.getElementById("spells-tab-button");
 
-  if (statsWrap) statsWrap.style.display = canCast ? "grid" : "none";
-  if (slotWrap) slotWrap.style.display = canCast ? "block" : "none";
-  if (pickedWrap) pickedWrap.style.display = canCast ? "grid" : "none";
+  if (spellTab) {
+    spellTab.style.display = canCast ? "block" : "none";
+  }
+  if (spellTabButton) {
+    spellTabButton.style.display = canCast ? "" : "none";
+  }
+
+  if (!canCast && spellTab?.classList.contains("active")) {
+    const basicTabButton = document.getElementById("basic-tab-button");
+    showTab("basic", basicTabButton);
+  }
 }
 
 function getClassSaveProficiencies(classId) {
