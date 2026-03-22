@@ -4012,9 +4012,30 @@ class OnboardingTour {
     this.currentIndex = -1;
     this.active = false;
     this.isTransitioning = false;
+    this.stepRuntime = {};
     this.handleResize = this.handleResize.bind(this);
     this.handleKeydown = this.handleKeydown.bind(this);
     this.preventScrollEvent = this.preventScrollEvent.bind(this);
+  }
+
+  setSelectValue(id, value) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.value = value;
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+
+  setSpellRowCount(areaId, level, targetCount) {
+    const area = document.getElementById(areaId);
+    if (!area) return;
+    const safeCount = Math.max(1, Number(targetCount) || 1);
+    while (area.childElementCount > safeCount) {
+      area.lastElementChild?.remove();
+    }
+    while (area.childElementCount < safeCount) {
+      createSingleSpellRow(areaId, level);
+    }
+    refreshSpellRows(areaId);
   }
 
   init() {
@@ -4062,34 +4083,138 @@ class OnboardingTour {
           const targetY = window.scrollY + rect.top - 120;
           await animateWindowScrollTo(targetY, 620);
         } },
-      { tab: "basic", selectors: ["#background-ability-guide-target"], title: "記得把背景提供的加值加上去", text: "背景會提供屬性加值與熟練技能。請先閱讀這裡，記得手動把屬性加上去，並記住等等要到技能頁勾選熟練。", placement: "top", fallbackSelector: "#backgroundFeatures", beforePosition: async () => {
+      { id: "step3-background", tab: "basic", selectors: [], getElements: () => {
           const target = document.querySelector("#background-ability-guide-target");
           const line = Array.from(document.querySelectorAll("#backgroundFeatures div")).find(el => el.textContent?.includes("★ 屬性可選擇：三項各 +1，或一項屬性 +2 另一項 +1。"));
-          if (line) {
-            const rect = line.getBoundingClientRect();
-            const y = window.scrollY + rect.bottom - window.innerHeight + 12;
-            window.scrollTo({ top: Math.max(0, y), behavior: "auto" });
-          } else if (target) {
-            target.scrollIntoView({ behavior: "auto", block: "center" });
+          const nodes = [target, line].filter(Boolean);
+          if (nodes.length) return nodes;
+          const fallback = document.getElementById("backgroundFeatures");
+          return fallback ? [fallback] : [];
+        }, title: "背景能力", text: "背景提供屬性加值和技能熟練，記得手動把屬性加上去，等下至技能頁勾選熟練。", placement: "top", beforePosition: async () => {
+          const bgSelect = document.getElementById("background");
+          if (bgSelect && !bgSelect.value) {
+            this.stepRuntime.step3AutoBackground = true;
+            this.setSelectValue("background", "acolyte");
+            await waitForLayoutStability();
+          } else {
+            this.stepRuntime.step3AutoBackground = false;
           }
+          const title = Array.from(document.querySelectorAll("#tab-basic summary h3")).find(el => el.textContent?.trim() === "背景能力");
+          const target = title || document.querySelector("#background-ability-guide-target");
+          if (target) {
+            const rect = target.getBoundingClientRect();
+            const targetY = window.scrollY + rect.top - 120;
+            await animateWindowScrollTo(targetY, 620);
+          }
+        }, afterLeave: () => {
+          if (this.stepRuntime.step3AutoBackground) {
+            this.setSelectValue("background", "");
+          }
+          delete this.stepRuntime.step3AutoBackground;
         } },
-      { tab: "skills", selectors: [".save-grid", ".skill-grid", "button[onclick='fillSaves()']", "button[onclick='fillSkills()']"], title: "設定熟練並按下計算", text: "把背景、職業、種族給的熟練或專精先勾起來，再按下計算按鈕，自動填入豁免與技能加值。", placement: "bottom", beforePosition: async () => window.scrollTo({ top: 0, behavior: "auto" }) },
-      { tab: "equipment", selectors: ["#mainHand", "#offHand", "#armor"], title: "選擇武器與護甲", text: "先選主手、副手與護甲，系統才知道你的防禦與攻擊資料。", placement: "bottom", beforePosition: async () => window.scrollTo({ top: 0, behavior: "auto" }) },
-      { tab: "actions", selectors: [".action-help", ".action-collapsible-wrap"], title: "戰鬥規則", text: "這兩個區域有基本的戰鬥動作規則，點開可查看，再次點擊可以收起。", placement: "bottom", beforePosition: async () => { setActionHelpOpen(true); window.scrollTo({ top: 0, behavior: "auto" }); } },
-      { tab: "actions", selectors: ["button[onclick='populateHandAttacks()']", "#atk-main-name", "#atk-off-name"], title: "產生攻擊資料", text: "按下這個按鈕，會把你在裝備頁選的主副手資料自動帶進來，方便你在戰鬥中查看。", placement: "bottom", beforePosition: async () => { setActionHelpOpen(false); window.scrollTo({ top: 0, behavior: "auto" }); } }
+      { id: "step4-skills", tab: "skills", selectors: [], getHoles: () => {
+          const saveBtn = document.querySelector("button[onclick='fillSaves()']");
+          const skillBtn = document.querySelector("button[onclick='fillSkills()']");
+          const pad = 8;
+          return [saveBtn, skillBtn].filter(Boolean).map(el => {
+            const r = el.getBoundingClientRect();
+            return { left: Math.max(0, r.left - pad), top: Math.max(0, r.top - pad), right: Math.min(window.innerWidth, r.right + pad), bottom: Math.min(window.innerHeight, r.bottom + pad) };
+          });
+        }, title: "屬性豁免 與 技能", text: "先打勾選技能，再按下自動計算按鈕。", placement: "bottom", beforePosition: async () => window.scrollTo({ top: 0, behavior: "auto" }) },
+      { id: "step5-equipment", tab: "equipment", selectors: [], getElements: () => {
+          const main = document.getElementById("mainHand");
+          const off = document.getElementById("offHand");
+          const armor = document.getElementById("armor");
+          return [main, off, armor].map(el => el?.closest(".form-row") || el).filter(Boolean);
+        }, title: "選擇武器與護甲", text: "先選主手、副手與護甲，系統才知道你的防禦與攻擊資料。", placement: "bottom", beforePosition: async () => window.scrollTo({ top: 0, behavior: "auto" }) },
+      { id: "step6-actions-overview", tab: "actions", selectors: [], getElements: () => {
+          const details = Array.from(document.querySelectorAll("#tab-actions details.action-collapsible-wrap"));
+          return details.map(d => d.querySelector("summary")).filter(Boolean);
+        }, title: "進入戰鬥看這邊", text: "點開可查看，再次點擊可以收起。", placement: "bottom", beforePosition: async () => {
+          setActionHelpOpen(false);
+          await waitForLayoutStability();
+          window.scrollTo({ top: 0, behavior: "auto" });
+        } },
+      { id: "step7-populate-attacks", tab: "actions", selectors: [], getElements: () => {
+          const btn = document.querySelector("button[onclick='populateHandAttacks()']");
+          const mainRow = document.querySelector("#atk-main-name")?.closest(".form-row.small-text");
+          return [btn, mainRow].filter(Boolean);
+        }, title: "產生攻擊資料", text: "按下這個按鈕，會把你在裝備頁選的主副手資料自動帶進來，方便你在戰鬥中查看。", placement: "bottom", beforePosition: async () => {
+          const classEl = document.getElementById("class");
+          this.stepRuntime.step7PrevClass = classEl?.value || "";
+          if (classEl) this.setSelectValue("class", "cleric");
+          await waitForLayoutStability();
+          const btn = document.querySelector("button[onclick='populateHandAttacks()']");
+          if (btn) {
+            const rect = btn.getBoundingClientRect();
+            await animateWindowScrollTo(window.scrollY + rect.top - 120, 620);
+          }
+        }, afterLeave: () => {
+          if (typeof this.stepRuntime.step7PrevClass === "string") {
+            this.setSelectValue("class", this.stepRuntime.step7PrevClass);
+          }
+          delete this.stepRuntime.step7PrevClass;
+        } }
     ];
 
     if (showSpells) {
       steps.push(
         { tab: "spells", selectors: ["#spell-toolbar-actions", "#spell-casting-stats-wrap"], title: "法術頁", text: "如果你的角色會魔法，這裡可以設定施法屬性。法術設定太多的話，可使用上方的搜索工具列。", placement: "bottom", beforePosition: async () => window.scrollTo({ top: 0, behavior: "auto" }) },
-        { tab: "spells", selectors: [], getElements: () => {
-            const summary = cantripSection?.querySelector("summary");
-            return summary ? [summary] : (cantripSection ? [cantripSection] : []);
+        { id: "step9-cantrips", tab: "spells", selectors: [], getElements: () => {
+            const area = document.getElementById("cantrips-area");
+            return area ? [area] : [];
           }, title: "選擇法術", text: "先選擇職業，再選擇法術，戲法可以無限使用，環位法術使用次數有限制。", placement: "bottom", beforePosition: async () => {
-            if (!cantripSection) return;
-            const rect = cantripSection.getBoundingClientRect();
-            const targetY = window.scrollY + rect.top - 120;
-            window.scrollTo({ top: Math.max(0, targetY), behavior: "auto" });
+            const cantripArea = document.getElementById("cantrips-area");
+            if (!cantripArea) return;
+            const rows = Array.from(cantripArea.querySelectorAll(".spell-entry"));
+            this.stepRuntime.step9PrevClass = document.getElementById("class")?.value || "";
+            this.stepRuntime.step9CantripRows = rows.map(row => ({
+              classValue: row.querySelector("select[id*='-class-']")?.value || "",
+              spellValue: row.querySelector("select[id*='-spell-']")?.value || ""
+            }));
+            this.setSpellRowCount("cantrips-area", "cantrips", 1);
+            this.setSelectValue("class", "");
+            const firstClassSel = document.querySelector("#cantrips-area select[id*='-class-']");
+            if (firstClassSel) {
+              firstClassSel.value = "";
+              firstClassSel.dispatchEvent(new Event("change", { bubbles: true }));
+            }
+            const firstSpellSel = document.querySelector("#cantrips-area select[id*='-spell-']");
+            if (firstSpellSel) firstSpellSel.value = "";
+            updatePickedSpellBoxes();
+            window.scrollTo({ top: 0, behavior: "auto" });
+            await waitForLayoutStability();
+            const summary = cantripSection?.querySelector("summary h3");
+            if (summary) {
+              const rect = summary.getBoundingClientRect();
+              await animateWindowScrollTo(window.scrollY + rect.top - 280, 620);
+            }
+          }, afterLeave: () => {
+            if (typeof this.stepRuntime.step9PrevClass === "string") {
+              this.setSelectValue("class", this.stepRuntime.step9PrevClass);
+            }
+            const prevRows = Array.isArray(this.stepRuntime.step9CantripRows) ? this.stepRuntime.step9CantripRows : [];
+            if (prevRows.length) {
+              this.setSpellRowCount("cantrips-area", "cantrips", prevRows.length);
+              const rows = Array.from(document.querySelectorAll("#cantrips-area .spell-entry"));
+              rows.forEach((row, idx) => {
+                const snap = prevRows[idx];
+                if (!snap) return;
+                const classSel = row.querySelector("select[id*='-class-']");
+                const spellSel = row.querySelector("select[id*='-spell-']");
+                if (classSel) {
+                  classSel.value = snap.classValue || "";
+                  classSel.dispatchEvent(new Event("change", { bubbles: true }));
+                }
+                if (spellSel) {
+                  spellSel.value = snap.spellValue || "";
+                  spellSel.dispatchEvent(new Event("change", { bubbles: true }));
+                }
+              });
+              updatePickedSpellBoxes();
+            }
+            delete this.stepRuntime.step9PrevClass;
+            delete this.stepRuntime.step9CantripRows;
           } }
       );
     }
@@ -4113,6 +4238,8 @@ class OnboardingTour {
   }
 
   stop() {
+    const currentStep = this.steps[this.currentIndex];
+    if (currentStep && typeof currentStep.afterLeave === "function") currentStep.afterLeave();
     this.active = false;
     this.isTransitioning = false;
     this.currentIndex = -1;
@@ -4123,6 +4250,8 @@ class OnboardingTour {
   async goTo(index) {
     if (this.isTransitioning) return;
     this.isTransitioning = true;
+    const prevStep = this.steps[this.currentIndex];
+    if (prevStep && typeof prevStep.afterLeave === "function") prevStep.afterLeave();
     this.currentIndex = index;
     const step = this.steps[index];
     const tabButton = document.querySelector(`.tab-button[onclick*="'${step.tab}'"]`);
@@ -4370,7 +4499,7 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
   <div class="spell-qr-modal-card" role="dialog" aria-modal="true" aria-label="QR Code">
     <button type="button" class="spell-qr-modal-close" aria-label="關閉 QR Code">✕</button>
     <img class="spell-qr-modal-image" alt="QR Code 圖片">
-    <p class="spell-qr-modal-note">掃描 QR Code 可快速開啟法術整理頁面。</p>
+    <p class="spell-qr-modal-note">掃 QR CODE 開啟創角網站</p>
   </div>
 </div>
 
@@ -4386,7 +4515,7 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
 
 <div id="legal-modal" style="display:none;position:fixed;z-index:9999;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.45);">
   <div style="position:relative;background:#fff;padding:18px 14px;max-width:332px;margin:72px auto 0 auto;border-radius:12px;box-shadow:0 4px 24px #0003;">
-    <button type="button" id="legal-close-btn" aria-label="關閉提醒" style="position:absolute;top:8px;right:8px;min-height:30px;padding:0 10px;font-size:1.1em;">✕</button>
+    <button type="button" id="legal-close-btn" aria-label="關閉提醒" style="position:absolute;top:8px;right:8px;width:26px;height:26px;line-height:24px;padding:0;font-size:0.95em;border-radius:6px;">✕</button>
     <h3 style="margin:0 0 6px 0;font-size:1.1em;line-height:1.15;">使用提醒</h3>
     <div style="font-size:0.8em;line-height:1.55;color:#222;">
      本站僅提供免費規則，更多選項請參閱玩家手冊。</div>
