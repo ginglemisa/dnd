@@ -334,53 +334,28 @@ style.innerHTML = `
 
   .ability-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 10px;
   }
 
   .ability {
-    position: relative;
     display: flex;
     flex-direction: column;
     gap: 10px;
     min-height: 206px;
-    padding: 14px 12px 56px;
-    background: linear-gradient(180deg, #ffffff 0%, #f7f8fb 100%);
-    border: 3px solid #d81e34;
-    border-radius: 18px;
-    box-shadow: 0 12px 22px rgba(40, 26, 30, 0.12);
-    overflow: visible;
-  }
-
-  .ability::before,
-  .ability::after {
-    content: "";
-    position: absolute;
-    left: 10px;
-    right: 10px;
-    height: 10px;
-    border: 2px solid #d81e34;
-    border-top: none;
-    border-radius: 0 0 14px 14px;
-    pointer-events: none;
-  }
-
-  .ability::before {
-    bottom: 22px;
-  }
-
-  .ability::after {
-    bottom: 14px;
-    left: 18px;
-    right: 18px;
+    padding: 12px;
+    background: linear-gradient(180deg, #ffffff 0%, #f6f9ff 100%);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 6px 18px rgba(25, 35, 52, 0.08);
   }
 
   .ability-title {
     text-align: center;
-    font-size: 1.35rem;
+    font-size: 1.2rem;
     font-weight: 900;
-    letter-spacing: 0.06em;
-    color: #6a7882;
+    letter-spacing: 0.08em;
+    color: #5f6b7c;
     text-transform: uppercase;
   }
 
@@ -399,21 +374,17 @@ style.innerHTML = `
   }
 
   .ability-score {
-    position: absolute;
-    left: 50%;
-    bottom: -22px;
-    transform: translateX(-50%);
-    width: 116px !important;
+    width: 100% !important;
     min-height: 74px !important;
-    border-radius: 999px !important;
-    border: 5px solid #d81e34 !important;
+    border-radius: 14px !important;
+    border: 2px solid var(--border-strong) !important;
     background: #ffffff !important;
-    font-size: 2.1rem !important;
+    font-size: 2rem !important;
     font-weight: 900 !important;
     text-align: center;
     color: #14181d;
-    box-shadow: 0 8px 16px rgba(216, 30, 52, 0.16);
-    padding: 10px 16px 8px !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    padding: 10px 12px !important;
   }
 
   button {
@@ -720,7 +691,7 @@ style.innerHTML = `
     }
 
     .ability-grid {
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(3, 1fr);
     }
 
     .form-grid-6col {
