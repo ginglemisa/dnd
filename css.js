@@ -569,7 +569,7 @@ style.innerHTML = `
   #hp-display {
     display: inline-block;
     margin-left: 6px;
-    color: #1d2b52;
+    color: #007AFF;
     font-size: 1.5rem;
     font-weight: 900;
   }
