@@ -1102,6 +1102,7 @@ label[for="level"]{
   <input type="file" id="import-json-file" accept="application/json" style="display:none;">
 </div>
 
+  <button type="button" id="restart-onboarding-btn">🧭 重新開啟新手導覽</button>
 
 </div>
 
@@ -1447,9 +1448,6 @@ label[for="level"]{
 <div id="highlevel-spells" style="display:none;"></div>
 
   </div>
-
-  <button type="button" id="restart-onboarding-btn">🧭 重新開啟新手導覽</button>
-
 
   <script>
 function getHitDiceValues(className) {
@@ -4291,32 +4289,48 @@ class OnboardingTour {
     });
   }
 
-  placeMaskGroup(group, hole, regionLeft, regionRight) {
+  placeMaskGroup(group, hole, region = {}) {
     if (!group || !hole) return;
-    const leftBound = Math.max(0, regionLeft);
-    const rightBound = Math.min(window.innerWidth, regionRight);
+    const leftBound = Math.max(0, region.left ?? 0);
+    const rightBound = Math.min(window.innerWidth, region.right ?? window.innerWidth);
+    const topBound = Math.max(0, region.top ?? 0);
+    const bottomBound = Math.min(window.innerHeight, region.bottom ?? window.innerHeight);
     const width = Math.max(0, rightBound - leftBound);
     const holeLeft = Math.max(leftBound, Math.min(rightBound, hole.left));
     const holeRight = Math.max(leftBound, Math.min(rightBound, hole.right));
-    const holeTop = Math.max(0, Math.min(window.innerHeight, hole.top));
-    const holeBottom = Math.max(0, Math.min(window.innerHeight, hole.bottom));
+    const holeTop = Math.max(topBound, Math.min(bottomBound, hole.top));
+    const holeBottom = Math.max(topBound, Math.min(bottomBound, hole.bottom));
 
-    group.top.style.cssText = `left:${leftBound}px;top:0;width:${width}px;height:${holeTop}px;`;
+    group.top.style.cssText = `left:${leftBound}px;top:${topBound}px;width:${width}px;height:${Math.max(0, holeTop - topBound)}px;`;
     group.left.style.cssText = `left:${leftBound}px;top:${holeTop}px;width:${Math.max(0, holeLeft - leftBound)}px;height:${Math.max(0, holeBottom - holeTop)}px;`;
     group.right.style.cssText = `left:${holeRight}px;top:${holeTop}px;width:${Math.max(0, rightBound - holeRight)}px;height:${Math.max(0, holeBottom - holeTop)}px;`;
-    group.bottom.style.cssText = `left:${leftBound}px;top:${holeBottom}px;width:${width}px;height:${Math.max(0, window.innerHeight - holeBottom)}px;`;
+    group.bottom.style.cssText = `left:${leftBound}px;top:${holeBottom}px;width:${width}px;height:${Math.max(0, bottomBound - holeBottom)}px;`;
   }
 
   applyMasksForHoles(holes) {
     if (holes.length >= 2) {
-      const sorted = holes.slice(0, 2).sort((a, b) => a.left - b.left);
+      const pair = holes.slice(0, 2);
+      const [first, second] = pair;
+      const overlapX = Math.max(0, Math.min(first.right, second.right) - Math.max(first.left, second.left));
+      const minHoleWidth = Math.max(1, Math.min(first.right - first.left, second.right - second.left));
+      const mostlyVerticalStack = overlapX / minHoleWidth > 0.6;
+
+      if (mostlyVerticalStack) {
+        const sorted = pair.sort((a, b) => a.top - b.top);
+        const splitY = Math.max(0, Math.min(window.innerHeight, Math.floor((sorted[0].bottom + sorted[1].top) / 2)));
+        this.placeMaskGroup(this.maskGroups[0], sorted[0], { left: 0, right: window.innerWidth, top: 0, bottom: splitY });
+        this.placeMaskGroup(this.maskGroups[1], sorted[1], { left: 0, right: window.innerWidth, top: splitY, bottom: window.innerHeight });
+        return sorted;
+      }
+
+      const sorted = pair.sort((a, b) => a.left - b.left);
       const splitX = Math.max(0, Math.min(window.innerWidth, Math.floor((sorted[0].right + sorted[1].left) / 2)));
-      this.placeMaskGroup(this.maskGroups[0], sorted[0], 0, splitX);
-      this.placeMaskGroup(this.maskGroups[1], sorted[1], splitX, window.innerWidth);
+      this.placeMaskGroup(this.maskGroups[0], sorted[0], { left: 0, right: splitX, top: 0, bottom: window.innerHeight });
+      this.placeMaskGroup(this.maskGroups[1], sorted[1], { left: splitX, right: window.innerWidth, top: 0, bottom: window.innerHeight });
       return sorted;
     }
     if (holes.length === 1) {
-      this.placeMaskGroup(this.maskGroups[0], holes[0], 0, window.innerWidth);
+      this.placeMaskGroup(this.maskGroups[0], holes[0], { left: 0, right: window.innerWidth, top: 0, bottom: window.innerHeight });
       this.hideMaskGroup(this.maskGroups[1]);
       return holes;
     }
