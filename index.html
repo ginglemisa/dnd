@@ -846,21 +846,10 @@ label[for="level"]{
     <input type="number" id="hp" placeholder="目前 HP" min="0" max="200" step="1" inputmode="numeric">
   </div>
 
-  <!-- 右欄：陣營選擇 -->
+  <!-- 右欄：護甲 -->
   <div class="mini-stat-card">
-    <div class="mini-stat-label">陣營</div>
-    <select id="alignment">
-      <option value="">-- 請選擇 --</option>
-      <option value="LG">守序善良</option>
-      <option value="NG">中立善良</option>
-      <option value="CG">混亂善良</option>
-      <option value="LN">守序中立</option>
-      <option value="TN">絕對中立</option>
-      <option value="CN">混亂中立</option>
-      <option value="LE">守序邪惡</option>
-      <option value="NE">中立邪惡</option>
-      <option value="CE">混亂邪惡</option>
-    </select>
+    <div class="mini-stat-label">護甲</div>
+    <div class="hp-value" id="ac-display">10</div>
   </div>
 </div>
 
@@ -879,8 +868,19 @@ label[for="level"]{
 <!-- 第一列：護甲、速度、先攻 -->
 <div class="stats-card-row">
   <div class="mini-stat-card">
-    <div class="mini-stat-label">護甲</div>
-    <div class="hp-value" id="ac-display">10</div>
+    <div class="mini-stat-label">陣營</div>
+    <select id="alignment">
+      <option value="">-- 請選擇 --</option>
+      <option value="LG">守序善良</option>
+      <option value="NG">中立善良</option>
+      <option value="CG">混亂善良</option>
+      <option value="LN">守序中立</option>
+      <option value="TN">絕對中立</option>
+      <option value="CN">混亂中立</option>
+      <option value="LE">守序邪惡</option>
+      <option value="NE">中立邪惡</option>
+      <option value="CE">混亂邪惡</option>
+    </select>
   </div>
   <div class="mini-stat-card">
     <div class="mini-stat-label">速度</div>
