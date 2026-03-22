@@ -806,7 +806,8 @@ label[for="level"]{
   background:rgba(10,16,30,.72);
   pointer-events:auto;
 }
-#tour-focus-ring{
+#tour-focus-ring,
+#tour-focus-ring-secondary{
   position:fixed;
   border:3px solid #7aa2ff;
   border-radius:12px;
@@ -3984,13 +3985,24 @@ function setActionHelpOpen(open) {
 class OnboardingTour {
   constructor() {
     this.overlay = document.getElementById("tour-overlay");
-    this.masks = {
-      top: document.getElementById("tour-mask-top"),
-      left: document.getElementById("tour-mask-left"),
-      right: document.getElementById("tour-mask-right"),
-      bottom: document.getElementById("tour-mask-bottom")
-    };
-    this.focusRing = document.getElementById("tour-focus-ring");
+    this.maskGroups = [
+      {
+        top: document.getElementById("tour-mask-top-1"),
+        left: document.getElementById("tour-mask-left-1"),
+        right: document.getElementById("tour-mask-right-1"),
+        bottom: document.getElementById("tour-mask-bottom-1")
+      },
+      {
+        top: document.getElementById("tour-mask-top-2"),
+        left: document.getElementById("tour-mask-left-2"),
+        right: document.getElementById("tour-mask-right-2"),
+        bottom: document.getElementById("tour-mask-bottom-2")
+      }
+    ];
+    this.focusRings = [
+      document.getElementById("tour-focus-ring"),
+      document.getElementById("tour-focus-ring-secondary")
+    ];
     this.tooltip = document.getElementById("tour-tooltip");
     this.title = document.getElementById("tour-step-title");
     this.text = document.getElementById("tour-step-text");
@@ -4028,6 +4040,19 @@ class OnboardingTour {
           const strAbility = document.getElementById("str")?.closest(".ability");
           const quickCard = document.getElementById("set-default-abilities")?.closest(".mini-stat-card");
           return [strAbility, quickCard].filter(Boolean);
+        }, getHoles: () => {
+          const strAbility = document.getElementById("str")?.closest(".ability");
+          const quickCard = document.getElementById("set-default-abilities")?.closest(".mini-stat-card");
+          const pad = 8;
+          return [strAbility, quickCard].filter(Boolean).map(el => {
+            const r = el.getBoundingClientRect();
+            return {
+              left: Math.max(0, r.left - pad),
+              top: Math.max(0, r.top - pad),
+              right: Math.min(window.innerWidth, r.right + pad),
+              bottom: Math.min(window.innerHeight, r.bottom + pad)
+            };
+          });
         }, title: "接著填六大屬性", text: "你可以手動輸入六大屬性；如果是第一次使用，也可以先按「預設屬性」快速開始。", placement: "bottom", beforePosition: async () => {
           window.scrollTo({ top: 0, behavior: "auto" });
           await waitForLayoutStability();
@@ -4120,34 +4145,84 @@ class OnboardingTour {
     return elements;
   }
 
+  getStepHoles(step) {
+    if (typeof step.getHoles === "function") {
+      const holes = step.getHoles().filter(Boolean);
+      if (holes.length) return holes.slice(0, 2);
+    }
+    const rect = getUnionRect(this.getStepElements(step));
+    return rect ? [rect] : [];
+  }
+
+  hideMaskGroup(group) {
+    Object.values(group).forEach(mask => {
+      if (!mask) return;
+      mask.style.width = "0px";
+      mask.style.height = "0px";
+    });
+  }
+
+  placeMaskGroup(group, hole, regionLeft, regionRight) {
+    if (!group || !hole) return;
+    const leftBound = Math.max(0, regionLeft);
+    const rightBound = Math.min(window.innerWidth, regionRight);
+    const width = Math.max(0, rightBound - leftBound);
+    const holeLeft = Math.max(leftBound, Math.min(rightBound, hole.left));
+    const holeRight = Math.max(leftBound, Math.min(rightBound, hole.right));
+    const holeTop = Math.max(0, Math.min(window.innerHeight, hole.top));
+    const holeBottom = Math.max(0, Math.min(window.innerHeight, hole.bottom));
+
+    group.top.style.cssText = `left:${leftBound}px;top:0;width:${width}px;height:${holeTop}px;`;
+    group.left.style.cssText = `left:${leftBound}px;top:${holeTop}px;width:${Math.max(0, holeLeft - leftBound)}px;height:${Math.max(0, holeBottom - holeTop)}px;`;
+    group.right.style.cssText = `left:${holeRight}px;top:${holeTop}px;width:${Math.max(0, rightBound - holeRight)}px;height:${Math.max(0, holeBottom - holeTop)}px;`;
+    group.bottom.style.cssText = `left:${leftBound}px;top:${holeBottom}px;width:${width}px;height:${Math.max(0, window.innerHeight - holeBottom)}px;`;
+  }
+
+  applyMasksForHoles(holes) {
+    if (holes.length >= 2) {
+      const sorted = holes.slice(0, 2).sort((a, b) => a.left - b.left);
+      const splitX = Math.max(0, Math.min(window.innerWidth, Math.floor((sorted[0].right + sorted[1].left) / 2)));
+      this.placeMaskGroup(this.maskGroups[0], sorted[0], 0, splitX);
+      this.placeMaskGroup(this.maskGroups[1], sorted[1], splitX, window.innerWidth);
+      return sorted;
+    }
+    if (holes.length === 1) {
+      this.placeMaskGroup(this.maskGroups[0], holes[0], 0, window.innerWidth);
+      this.hideMaskGroup(this.maskGroups[1]);
+      return holes;
+    }
+    this.hideMaskGroup(this.maskGroups[0]);
+    this.hideMaskGroup(this.maskGroups[1]);
+    return [];
+  }
+
   renderStep() {
     if (!this.active) return;
     const step = this.steps[this.currentIndex];
-    const rect = getUnionRect(this.getStepElements(step));
-    if (!rect) return;
+    const holes = this.getStepHoles(step);
+    if (!holes.length) return;
+    const visibleHoles = this.applyMasksForHoles(holes);
+    const primaryHole = visibleHoles[0];
+    if (!primaryHole) return;
 
-    const pad = 8;
-    const hole = {
-      left: Math.max(0, rect.left - pad),
-      top: Math.max(0, rect.top - pad),
-      right: Math.min(window.innerWidth, rect.right + pad),
-      bottom: Math.min(window.innerHeight, rect.bottom + pad)
-    };
-
-    this.masks.top.style.cssText = `left:0;top:0;width:${window.innerWidth}px;height:${hole.top}px;`;
-    this.masks.left.style.cssText = `left:0;top:${hole.top}px;width:${hole.left}px;height:${Math.max(0, hole.bottom - hole.top)}px;`;
-    this.masks.right.style.cssText = `left:${hole.right}px;top:${hole.top}px;width:${Math.max(0, window.innerWidth - hole.right)}px;height:${Math.max(0, hole.bottom - hole.top)}px;`;
-    this.masks.bottom.style.cssText = `left:0;top:${hole.bottom}px;width:${window.innerWidth}px;height:${Math.max(0, window.innerHeight - hole.bottom)}px;`;
-
-    this.focusRing.style.left = `${hole.left}px`;
-    this.focusRing.style.top = `${hole.top}px`;
-    this.focusRing.style.width = `${Math.max(0, hole.right - hole.left)}px`;
-    this.focusRing.style.height = `${Math.max(0, hole.bottom - hole.top)}px`;
+    this.focusRings.forEach((ring, idx) => {
+      const hole = visibleHoles[idx];
+      if (!ring) return;
+      if (!hole) {
+        ring.style.width = "0px";
+        ring.style.height = "0px";
+        return;
+      }
+      ring.style.left = `${hole.left}px`;
+      ring.style.top = `${hole.top}px`;
+      ring.style.width = `${Math.max(0, hole.right - hole.left)}px`;
+      ring.style.height = `${Math.max(0, hole.bottom - hole.top)}px`;
+    });
 
     this.title.textContent = step.title;
     this.text.textContent = step.text;
     this.nextBtn.textContent = this.currentIndex === this.steps.length - 1 ? "完成" : "下一步";
-    this.positionTooltip(hole, step.placement || "bottom");
+    this.positionTooltip(primaryHole, step.placement || "bottom");
   }
 
   positionTooltip(hole, placement) {
@@ -4335,11 +4410,16 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
 </div>
 
 <div id="tour-overlay" aria-hidden="true">
-  <div id="tour-mask-top" class="tour-mask"></div>
-  <div id="tour-mask-left" class="tour-mask"></div>
-  <div id="tour-mask-right" class="tour-mask"></div>
-  <div id="tour-mask-bottom" class="tour-mask"></div>
+  <div id="tour-mask-top-1" class="tour-mask"></div>
+  <div id="tour-mask-left-1" class="tour-mask"></div>
+  <div id="tour-mask-right-1" class="tour-mask"></div>
+  <div id="tour-mask-bottom-1" class="tour-mask"></div>
+  <div id="tour-mask-top-2" class="tour-mask"></div>
+  <div id="tour-mask-left-2" class="tour-mask"></div>
+  <div id="tour-mask-right-2" class="tour-mask"></div>
+  <div id="tour-mask-bottom-2" class="tour-mask"></div>
   <div id="tour-focus-ring"></div>
+  <div id="tour-focus-ring-secondary"></div>
   <div id="tour-tooltip" role="dialog" aria-live="polite">
     <h4 id="tour-step-title"></h4>
     <div id="tour-step-text"></div>
