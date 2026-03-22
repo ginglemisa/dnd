@@ -3972,8 +3972,10 @@ class OnboardingTour {
     this.steps = [];
     this.currentIndex = -1;
     this.active = false;
+    this.isTransitioning = false;
     this.handleResize = this.handleResize.bind(this);
     this.handleKeydown = this.handleKeydown.bind(this);
+    this.preventScrollEvent = this.preventScrollEvent.bind(this);
   }
 
   init() {
@@ -3993,7 +3995,7 @@ class OnboardingTour {
     const steps = [
       { tab: "basic", selectors: ["#class", "#level", "#background", "#race"], title: "先選基本資料", text: "先選職業、等級、背景、種族。這些選項會影響後面的角色能力與內容。", placement: "bottom", beforePosition: async () => window.scrollTo({ top: 0, behavior: "auto" }) },
       { tab: "basic", selectors: [".ability-grid", "#set-default-abilities"], title: "接著填六大屬性", text: "你可以手動輸入六大屬性；如果是第一次使用，也可以先按「預設屬性」快速開始。", placement: "bottom", beforePosition: async () => { const btn = document.getElementById("set-default-abilities"); if (btn) btn.scrollIntoView({ behavior: "auto", block: "start" }); } },
-      { tab: "basic", selectors: ["#background-ability-guide-target"], title: "記得把背景提供的加值加上去", text: "背景會提供屬性加值與熟練技能。請先閱讀這裡，記得手動把屬性加上去，並記住等等要到技能頁勾選熟練。", placement: "top", beforePosition: async () => {
+      { tab: "basic", selectors: ["#background-ability-guide-target"], title: "記得把背景提供的加值加上去", text: "背景會提供屬性加值與熟練技能。請先閱讀這裡，記得手動把屬性加上去，並記住等等要到技能頁勾選熟練。", placement: "top", fallbackSelector: "#backgroundFeatures", beforePosition: async () => {
           const target = document.querySelector("#background-ability-guide-target");
           const line = Array.from(document.querySelectorAll("#backgroundFeatures div")).find(el => el.textContent?.includes("★ 屬性可選擇：三項各 +1，或一項屬性 +2 另一項 +1。"));
           if (line) {
@@ -4013,7 +4015,15 @@ class OnboardingTour {
     if (showSpells) {
       steps.push(
         { tab: "spells", selectors: ["#spell-toolbar-actions", "#spell-casting-stats-wrap"], title: "法術頁", text: "如果你的角色會魔法，這裡可以設定施法屬性。法術設定太多的話，可使用上方的搜索工具列。", placement: "bottom", beforePosition: async () => window.scrollTo({ top: 0, behavior: "auto" }) },
-        { tab: "spells", selectors: [], getElements: () => cantripSection ? [cantripSection] : [], title: "選擇法術", text: "先選擇職業，再選擇法術，戲法可以無限使用，環位法術使用次數有限制。", placement: "top", beforePosition: async () => { cantripSection?.scrollIntoView({ behavior: "auto", block: "start" }); window.scrollBy({ top: -54, behavior: "auto" }); } }
+        { tab: "spells", selectors: [], getElements: () => {
+            const summary = cantripSection?.querySelector("summary");
+            return summary ? [summary] : (cantripSection ? [cantripSection] : []);
+          }, title: "選擇法術", text: "先選擇職業，再選擇法術，戲法可以無限使用，環位法術使用次數有限制。", placement: "bottom", beforePosition: async () => {
+            if (!cantripSection) return;
+            const rect = cantripSection.getBoundingClientRect();
+            const targetY = window.scrollY + rect.top - 120;
+            window.scrollTo({ top: Math.max(0, targetY), behavior: "auto" });
+          } }
       );
     }
     return steps;
@@ -4023,6 +4033,7 @@ class OnboardingTour {
     this.steps = this.getSteps();
     if (!this.steps.length) return;
     this.active = true;
+    this.lockUserScroll();
     this.overlay.style.display = "block";
     await this.goTo(0);
   }
@@ -4036,11 +4047,15 @@ class OnboardingTour {
 
   stop() {
     this.active = false;
+    this.isTransitioning = false;
     this.currentIndex = -1;
     this.overlay.style.display = "none";
+    this.unlockUserScroll();
   }
 
   async goTo(index) {
+    if (this.isTransitioning) return;
+    this.isTransitioning = true;
     this.currentIndex = index;
     const step = this.steps[index];
     const tabButton = document.querySelector(`.tab-button[onclick*="'${step.tab}'"]`);
@@ -4051,11 +4066,16 @@ class OnboardingTour {
       await waitForLayoutStability();
     }
     this.renderStep();
+    this.isTransitioning = false;
   }
 
   getStepElements(step) {
     if (typeof step.getElements === "function") return step.getElements().filter(Boolean);
-    return (step.selectors || []).flatMap(selector => Array.from(document.querySelectorAll(selector))).filter(el => isElementVisible(el));
+    const elements = (step.selectors || []).flatMap(selector => Array.from(document.querySelectorAll(selector))).filter(el => isElementVisible(el));
+    if (!elements.length && step.fallbackSelector) {
+      return Array.from(document.querySelectorAll(step.fallbackSelector)).filter(el => isElementVisible(el));
+    }
+    return elements;
   }
 
   renderStep() {
@@ -4108,7 +4128,31 @@ class OnboardingTour {
 
   handleKeydown(event) {
     if (!this.active) return;
-    if (event.key === "Escape") this.stop();
+    if (event.key === "Escape") {
+      this.stop();
+      return;
+    }
+    const blockedKeys = ["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " ", "Spacebar"];
+    if (blockedKeys.includes(event.key)) {
+      event.preventDefault();
+    }
+  }
+
+  preventScrollEvent(event) {
+    if (!this.active) return;
+    event.preventDefault();
+  }
+
+  lockUserScroll() {
+    document.body.style.overscrollBehavior = "none";
+    window.addEventListener("wheel", this.preventScrollEvent, { passive: false, capture: true });
+    window.addEventListener("touchmove", this.preventScrollEvent, { passive: false, capture: true });
+  }
+
+  unlockUserScroll() {
+    document.body.style.overscrollBehavior = "";
+    window.removeEventListener("wheel", this.preventScrollEvent, { capture: true });
+    window.removeEventListener("touchmove", this.preventScrollEvent, { capture: true });
   }
 }
 
