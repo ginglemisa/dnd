@@ -344,6 +344,13 @@ button:hover{filter:brightness(.99);}
   border-radius:10px;
   border:1px solid #d9dfea;
 }
+.spell-qr-modal-note{
+  margin:10px 0 0;
+  font-size:.9rem;
+  line-height:1.45;
+  color:#4f5f78;
+  text-align:center;
+}
 #deity-info-modal{
   display:none;
   position:fixed;
@@ -588,13 +595,30 @@ h3{
 }
 .bottom-buttons{
   display:grid;
-  grid-template-columns:1fr 1fr;
+  grid-template-columns:1fr auto 1fr;
   gap:12px;
   margin:14px 0 16px;
 }
 .bottom-buttons button{
   width:100%;
   margin:0 !important;
+}
+.utility-emoji-btn{
+  width:56px !important;
+  min-width:56px;
+  min-height:56px;
+  padding:0 !important;
+  border-radius:16px !important;
+  font-size:1.75rem !important;
+  line-height:1;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  background:linear-gradient(180deg,#ffffff 0%,#eef2ff 100%) !important;
+  border:1px solid #c4d0f4 !important;
+}
+.utility-emoji-btn:hover{
+  transform:translateY(-1px);
 }
 .share-mode-tip,
 .share-actions-wrap{
@@ -610,7 +634,7 @@ h3{
 }
 .share-actions-wrap{
   display:grid;
-  grid-template-columns:1fr 1fr;
+  grid-template-columns:1fr auto 1fr;
   gap:12px;
   margin-top:-2px;
 }
@@ -707,7 +731,8 @@ label[for="level"]{
 }
 
 @media (max-width:420px){
-  .bottom-buttons{grid-template-columns:1fr 1fr !important;}
+  .bottom-buttons{grid-template-columns:1fr auto 1fr !important;}
+  .share-actions-wrap{grid-template-columns:1fr auto 1fr !important;}
   .tabs{
     gap:4px;
     padding-top:4px;
@@ -998,6 +1023,7 @@ label[for="level"]{
   <button id="clear-storage-btn">
     🗑️ 清除紀錄
   </button>
+  <button type="button" id="open-qr-btn" class="utility-emoji-btn" aria-label="開啟 QR Code">🔳</button>
   <button type="button" class="share-url-btn" onclick="copyShareUrl()">
     🔗 分享角卡
   </button>
@@ -1007,6 +1033,7 @@ label[for="level"]{
 </div>
 <div id="share-actions-wrap" class="share-actions-wrap">
   <button type="button" id="import-json-btn" class="share-import-btn">⬆️ 匯入紀錄</button>
+  <button type="button" id="open-deity-btn" class="utility-emoji-btn" aria-label="開啟神祉整理">🙏</button>
   <button type="button" id="export-json-btn" class="share-export-btn">⬇️ 匯出紀錄</button>
   <input type="file" id="import-json-file" accept="application/json" style="display:none;">
 </div>
@@ -3449,33 +3476,19 @@ function toZhDomains(domains) {
     .join("、");
 }
 
-function setupSpellQrEasterEgg() {
-  const spellTabBtn = document.getElementById("spells-tab-button");
+function setupSpellQrModal() {
+  const openBtn = document.getElementById("open-qr-btn");
   const modal = document.getElementById("spell-qr-modal");
-  if (!spellTabBtn || !modal) return;
+  if (!openBtn || !modal) return;
 
   const closeBtn = modal.querySelector(".spell-qr-modal-close");
   const qrImage = modal.querySelector(".spell-qr-modal-image");
   if (qrImage) qrImage.src = SPELL_QR_IMAGE_SRC;
 
-  let spellClickCount = 0;
-  const resetSpellClickCount = () => { spellClickCount = 0; };
   const showSpellQrModal = () => modal.classList.add("open");
   const hideSpellQrModal = () => modal.classList.remove("open");
 
-  spellTabBtn.addEventListener("click", () => {
-    spellClickCount += 1;
-    if (spellClickCount >= 5) {
-      showSpellQrModal();
-      resetSpellClickCount();
-    }
-  });
-
-  document.querySelectorAll(".tab-button").forEach((btn) => {
-    if (btn !== spellTabBtn) {
-      btn.addEventListener("click", resetSpellClickCount);
-    }
-  });
+  openBtn.addEventListener("click", showSpellQrModal);
 
   closeBtn?.addEventListener("click", hideSpellQrModal);
   modal.addEventListener("click", (event) => {
@@ -3486,10 +3499,10 @@ function setupSpellQrEasterEgg() {
   });
 }
 
-function setupDeityInfoEasterEgg() {
-  const basicTabBtn = document.getElementById("basic-tab-button");
+function setupDeityInfoModal() {
+  const openBtn = document.getElementById("open-deity-btn");
   const modal = document.getElementById("deity-info-modal");
-  if (!basicTabBtn || !modal) return;
+  if (!openBtn || !modal) return;
 
   const content = document.getElementById("deity-info-content");
   if (content) {
@@ -3515,20 +3528,7 @@ function setupDeityInfoEasterEgg() {
   const closeBtn = modal.querySelector(".deity-info-close");
   const hide = () => modal.classList.remove("open");
   const show = () => modal.classList.add("open");
-  let clickCount = 0;
-  const reset = () => { clickCount = 0; };
-
-  basicTabBtn.addEventListener("click", () => {
-    clickCount += 1;
-    if (clickCount >= 5) {
-      show();
-      reset();
-    }
-  });
-
-  document.querySelectorAll(".tab-button").forEach(btn => {
-    if (btn !== basicTabBtn) btn.addEventListener("click", reset);
-  });
+  openBtn.addEventListener("click", show);
   closeBtn?.addEventListener("click", hide);
   modal.addEventListener("click", (event) => {
     if (event.target === modal) hide();
@@ -3938,15 +3938,16 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
 
   // 6. 分享模式判定完成後，才初始化版權提醒，避免時序競態
   initLegalModal();
-  setupSpellQrEasterEgg();
-  setupDeityInfoEasterEgg();
+  setupSpellQrModal();
+  setupDeityInfoModal();
 });
 </script>
 
 <div id="spell-qr-modal" aria-hidden="true">
-  <div class="spell-qr-modal-card" role="dialog" aria-modal="true" aria-label="法術彩蛋 QR Code">
+  <div class="spell-qr-modal-card" role="dialog" aria-modal="true" aria-label="QR Code">
     <button type="button" class="spell-qr-modal-close" aria-label="關閉 QR Code">✕</button>
-    <img class="spell-qr-modal-image" alt="法術彩蛋 QR Code 圖片">
+    <img class="spell-qr-modal-image" alt="QR Code 圖片">
+    <p class="spell-qr-modal-note">掃描 QR Code 可快速開啟法術整理頁面。</p>
   </div>
 </div>
 
