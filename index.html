@@ -3936,6 +3936,33 @@ function waitForLayoutStability() {
   });
 }
 
+function animateWindowScrollTo(targetY, durationMs = 520) {
+  return new Promise(resolve => {
+    const startY = window.scrollY;
+    const maxScroll = Math.max(0, document.body.scrollHeight - window.innerHeight);
+    const finalY = Math.max(0, Math.min(targetY, maxScroll));
+    const diff = finalY - startY;
+    if (Math.abs(diff) < 1) {
+      window.scrollTo(0, finalY);
+      resolve();
+      return;
+    }
+    const start = performance.now();
+    const step = (now) => {
+      const elapsed = now - start;
+      const t = Math.min(1, elapsed / durationMs);
+      const eased = 1 - Math.pow(1 - t, 3);
+      window.scrollTo(0, startY + diff * eased);
+      if (t < 1) {
+        requestAnimationFrame(step);
+      } else {
+        resolve();
+      }
+    };
+    requestAnimationFrame(step);
+  });
+}
+
 function getUnionRect(elements) {
   const rects = elements.filter(Boolean).map(el => el.getBoundingClientRect()).filter(r => r.width > 0 && r.height > 0);
   if (!rects.length) return null;
@@ -3993,8 +4020,23 @@ class OnboardingTour {
     const cantripSection = Array.from(document.querySelectorAll("#tab-spells .spell-level-section")).find(sec => sec.querySelector("summary h3")?.textContent?.trim() === "戲法");
 
     const steps = [
-      { tab: "basic", selectors: ["#class", "#level", "#background", "#race"], title: "先選基本資料", text: "先選職業、等級、背景、種族。這些選項會影響後面的角色能力與內容。", placement: "bottom", beforePosition: async () => window.scrollTo({ top: 0, behavior: "auto" }) },
-      { tab: "basic", selectors: [".ability-grid", "#set-default-abilities"], title: "接著填六大屬性", text: "你可以手動輸入六大屬性；如果是第一次使用，也可以先按「預設屬性」快速開始。", placement: "bottom", beforePosition: async () => { const btn = document.getElementById("set-default-abilities"); if (btn) btn.scrollIntoView({ behavior: "auto", block: "start" }); } },
+      { tab: "basic", selectors: [], getElements: () => {
+          const ids = ["class", "level", "background", "race"];
+          return ids.map(id => document.getElementById(id)).filter(Boolean).map(el => el.closest(".mini-stat-card, .form-grid-2col, .form-row") || el);
+        }, title: "先選基本資料", text: "先選職業、等級、背景、種族。這些選項會影響後面的角色能力與內容。", placement: "bottom", beforePosition: async () => window.scrollTo({ top: 0, behavior: "auto" }) },
+      { tab: "basic", selectors: [], getElements: () => {
+          const strAbility = document.getElementById("str")?.closest(".ability");
+          const quickCard = document.getElementById("set-default-abilities")?.closest(".mini-stat-card");
+          return [strAbility, quickCard].filter(Boolean);
+        }, title: "接著填六大屬性", text: "你可以手動輸入六大屬性；如果是第一次使用，也可以先按「預設屬性」快速開始。", placement: "bottom", beforePosition: async () => {
+          window.scrollTo({ top: 0, behavior: "auto" });
+          await waitForLayoutStability();
+          const quickCard = document.getElementById("set-default-abilities")?.closest(".mini-stat-card");
+          if (!quickCard) return;
+          const rect = quickCard.getBoundingClientRect();
+          const targetY = window.scrollY + rect.top - 120;
+          await animateWindowScrollTo(targetY, 620);
+        } },
       { tab: "basic", selectors: ["#background-ability-guide-target"], title: "記得把背景提供的加值加上去", text: "背景會提供屬性加值與熟練技能。請先閱讀這裡，記得手動把屬性加上去，並記住等等要到技能頁勾選熟練。", placement: "top", fallbackSelector: "#backgroundFeatures", beforePosition: async () => {
           const target = document.querySelector("#background-ability-guide-target");
           const line = Array.from(document.querySelectorAll("#backgroundFeatures div")).find(el => el.textContent?.includes("★ 屬性可選擇：三項各 +1，或一項屬性 +2 另一項 +1。"));
