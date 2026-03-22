@@ -13,6 +13,13 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="D&D 新手快速創角工具，適合 TRPG 推廣與入門教學場合。用手機一步一步學會填寫角色卡，支援 2024 Basic Rules 1～5 級內容。">
+  <meta property="og:title" content="D&D 新手快速創角工具">
+  <meta property="og:description" content="適合 TRPG 推廣與現場教學的 D&D 新手創角工具，手機操作也好上手，支援 2024 Basic Rules 1～5 級。">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://ginglemisa.github.io/dnd/">
+  <meta property="og:image" content="/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
   <title>D&amp;D 5.5 基本創角</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎲%3C/text%3E%3C/svg%3E">
   <script src="css.js" defer></script>
@@ -857,19 +864,77 @@ label[for="level"]{
   background:linear-gradient(180deg,#fff6e6 0%,#ffe8c0 100%);
   border:1px solid #e8c27a !important;
 }
+
+.sr-only{
+  position:absolute !important;
+  width:1px;
+  height:1px;
+  padding:0;
+  margin:-1px;
+  overflow:hidden;
+  clip:rect(0,0,0,0);
+  white-space:nowrap;
+  border:0;
+}
+.site-hero{
+  padding:8px 14px 2px;
+}
+.site-hero h1{
+  margin:0;
+  font-size:1.02rem;
+  font-weight:900;
+}
+.site-hero p{
+  margin:2px 0 0;
+  font-size:.86rem;
+  color:var(--muted);
+}
+.site-footer{
+  margin:22px auto 18px;
+  width:min(980px,calc(100% - 20px));
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:12px;
+  box-shadow:var(--shadow);
+  font-size:.84rem;
+  color:#46536a;
+}
+.site-footer-links{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-bottom:8px;
+}
+.site-footer a{
+  color:#2d58dd;
+  font-weight:700;
+  text-decoration:none;
+}
+.site-footer a:focus-visible, .site-footer a:hover{
+  text-decoration:underline;
+}
+
 </style>
 
 </head>
 <body>
-<div class="tabs">
-  <button id="basic-tab-button" class="tab-button active" onclick="showTab(&#39;basic&#39;, this)">數值</button>
-  <button class="tab-button" onclick="showTab(&#39;skills&#39;, this)">技能</button>
-  <button class="tab-button" onclick="showTab(&#39;actions&#39;, this)">動作</button>
-  <button class="tab-button" onclick="showTab(&#39;equipment&#39;, this)">裝備</button>
-  <button id="spells-tab-button" class="tab-button" onclick="showTab(&#39;spells&#39;, this)">法術</button>
-</div>
+<header class="site-header">
+  <div class="site-hero sr-only">
+    <h1>D&D 新手快速創角工具</h1>
+    <p>用手機學會填寫角色卡</p>
+  </div>
+  <nav class="tabs" role="tablist" aria-label="角色卡功能分頁">
+  <button id="basic-tab-button" class="tab-button active" type="button" role="tab" aria-selected="true" aria-controls="tab-basic" onclick="showTab(&#39;basic&#39;, this)">數值</button>
+  <button class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="tab-skills" onclick="showTab(&#39;skills&#39;, this)">技能</button>
+  <button class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="tab-actions" onclick="showTab(&#39;actions&#39;, this)">動作</button>
+  <button class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="tab-equipment" onclick="showTab(&#39;equipment&#39;, this)">裝備</button>
+  <button id="spells-tab-button" class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="tab-spells" onclick="showTab(&#39;spells&#39;, this)">法術</button>
+</nav>
+</header>
 
-<div id="tab-basic" class="tab-content active">
+<main id="main-content">
+<div id="tab-basic" class="tab-content active" role="tabpanel" aria-label="數值頁">
   <!-- 職業 + 預設按鈕 + 等級 -->
 <div class="form-grid-2col form-grid-2col--class-level">
   <div>
@@ -936,12 +1001,12 @@ label[for="level"]{
   <div class="form-grid-2col">
   <!-- 左欄：HP 顯示與輸入 -->
   <div class="hp-card">
-    <div class="hp-title">最大HP<span id="hp-display" class="hp-value">(0)</span><input type="number" id="hp" placeholder="目前 HP" min="0" max="200" step="1" inputmode="numeric"></div>
+    <div class="hp-title">最大HP<span id="hp-display" class="hp-value">(0)</span><input type="number" id="hp" aria-label="目前生命值" placeholder="目前 HP" min="0" max="200" step="1" inputmode="numeric"></div>
   </div>
 
   <!-- 右欄：護甲（版型比照 HP） -->
   <div class="hp-card">
-    <div class="hp-title">護甲AC<span id="ac-display" class="hp-value">10</span><input type="number" id="temp-hp" placeholder="臨時生命" min="0" max="50" step="1" inputmode="numeric"></div>
+    <div class="hp-title">護甲AC<span id="ac-display" class="hp-value">10</span><input type="number" id="temp-hp" aria-label="臨時生命值" placeholder="臨時生命" min="0" max="50" step="1" inputmode="numeric"></div>
   </div>
 </div>
 
@@ -977,11 +1042,11 @@ label[for="level"]{
     </div>
     <div class="mini-stat-card">
       <div class="mini-stat-label">速度</div>
-      <input id="speed-input" type="number" class="tight-input" value="30">
+      <input id="speed-input" type="number" class="tight-input" value="30" aria-label="速度">
     </div>
     <div class="mini-stat-card">
       <div class="mini-stat-label">先攻</div>
-      <input id="initiative-input" type="number" class="tight-input" value="0">
+      <input id="initiative-input" type="number" class="tight-input" value="0" aria-label="先攻">
     </div>
   </div>
 
@@ -993,7 +1058,7 @@ label[for="level"]{
     </div>
     <div class="mini-stat-card">
       <div class="mini-stat-label">被動感知</div>
-      <input id="passive-perception" type="number" class="tight-input" value="10" min="-5" max="45">
+      <input id="passive-perception" type="number" class="tight-input" value="10" min="-5" max="45" aria-label="被動感知">
     </div>
     <div class="mini-stat-card">
       <div class="mini-stat-label">快速創角</div>
@@ -1088,7 +1153,7 @@ label[for="level"]{
     🗑️ 清除紀錄
   </button>
   <button type="button" id="open-qr-btn" class="utility-emoji-btn" aria-label="開啟 QR Code">🔳</button>
-  <button type="button" class="share-url-btn" onclick="copyShareUrl()">
+  <button type="button" class="share-url-btn" onclick="copyShareUrl()" aria-label="複製分享連結">
     🔗 分享角卡
   </button>
 </div>
@@ -1107,7 +1172,7 @@ label[for="level"]{
 </div>
 
 
-<div id="tab-skills" class="tab-content">
+<div id="tab-skills" class="tab-content" role="tabpanel" aria-label="技能頁" hidden>
   <div class="section">
   <button onclick="fillSaves()">計算屬性豁免</button>
   <div class="save-grid">
@@ -1189,7 +1254,7 @@ label[for="level"]{
 
 
 
-  <div id="tab-actions" class="tab-content">
+  <div id="tab-actions" class="tab-content" role="tabpanel" aria-label="動作頁" hidden>
     <div class="section">
       <details class="action-help action-collapsible-wrap" open>
   <summary><h3 style="display:inline; margin:0;">戰鬥中的四種行動</h3></summary>
@@ -1305,7 +1370,7 @@ label[for="level"]{
 
   </div>
 
- <div id="tab-equipment" class="tab-content">
+ <div id="tab-equipment" class="tab-content" role="tabpanel" aria-label="裝備頁" hidden>
   <div class="section">
     <h3>裝備</h3>
     <p>此處可列出角色裝備與物品。</p>
@@ -1363,7 +1428,7 @@ label[for="level"]{
 </div> <!-- END OF tab-equipment -->
 
 
-<div id="tab-spells" class="tab-content">
+<div id="tab-spells" class="tab-content" role="tabpanel" aria-label="法術頁" hidden>
 <div class="section spell-toolbar">
   <div class="spell-toolbar-row">
     <input type="text" id="spell-search" placeholder="🔍 搜尋">
@@ -2470,13 +2535,26 @@ document.getElementById("set-default-abilities").addEventListener("click", () =>
         tabScrollPositions[activeTab] = window.scrollY;
       }
 
-      document.querySelectorAll('.tab-content').forEach(div => div.classList.remove('active'));
-      document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-      document.getElementById(`tab-${tab}`).classList.add('active');
+      document.querySelectorAll('.tab-content').forEach(div => {
+        div.classList.remove('active');
+        div.setAttribute('hidden', 'hidden');
+      });
+      document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active');
+        btn.setAttribute('aria-selected', 'false');
+      });
+      const nextPanel = document.getElementById(`tab-${tab}`);
+      nextPanel.classList.add('active');
+      nextPanel.removeAttribute('hidden');
       if (button) {
         button.classList.add('active');
+        button.setAttribute('aria-selected', 'true');
       } else {
-        document.querySelector(`.tab-button[onclick*="'${tab}'"]`)?.classList.add('active');
+        const targetBtn = document.querySelector(`.tab-button[onclick*="'${tab}'"]`);
+        if (targetBtn) {
+          targetBtn.classList.add('active');
+          targetBtn.setAttribute('aria-selected', 'true');
+        }
       }
 
       activeTab = tab;
@@ -4500,6 +4578,14 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
     });
   }
 
+  const skillInputs = document.querySelectorAll('#skills-grid input[id^="skill-"]');
+  skillInputs.forEach((input) => {
+    if (!input.getAttribute('aria-label')) {
+      const skillName = input.id.replace('skill-', '');
+      input.setAttribute('aria-label', `${skillName} 技能加值`);
+    }
+  });
+
   // 6. 分享模式判定完成後，才初始化版權提醒，避免時序競態
   window.onboardingTour = new OnboardingTour();
   window.onboardingTour.init();
@@ -4508,6 +4594,19 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
   setupDeityInfoModal();
 });
 </script>
+
+</main>
+
+<footer class="site-footer">
+  <div class="site-footer-links" aria-label="網站資訊連結">
+    <a href="about.html">About</a>
+    <a href="legal.html">Legal</a>
+    <a href="privacy.html">Privacy</a>
+    <a href="https://github.com/ginglemisa/dnd" target="_blank" rel="noopener">GitHub Repo</a>
+  </div>
+  <div>Unofficial fan-made D&amp;D beginner tool. Dungeons &amp; Dragons © Wizards of the Coast LLC.</div>
+  <div style="margin-top:4px;">作者：蔡秉衡 Reggie 瑞基</div>
+</footer>
 
 <div id="spell-qr-modal" aria-hidden="true">
   <div class="spell-qr-modal-card" role="dialog" aria-modal="true" aria-label="QR Code">
@@ -4531,24 +4630,26 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
   <div style="position:relative;background:#fff;padding:18px 14px;max-width:332px;margin:72px auto 0 auto;border-radius:12px;box-shadow:0 4px 24px #0003;">
     <button type="button" id="legal-close-btn" aria-label="關閉提醒" style="position:absolute;top:8px;right:8px;width:26px;height:26px;line-height:24px;padding:0;font-size:0.95em;border-radius:6px;">✕</button>
     <h3 style="margin:0 0 6px 0;font-size:1.1em;line-height:1.15;">使用提醒</h3>
-    <div style="font-size:0.8em;line-height:1.55;color:#222;">
-     本站僅提供免費規則，更多選項請參閱玩家手冊。</div>
-      <h3 style="margin:16px 0 6px 0;font-size:1.1em;line-height:1.15;">購買玩家手冊(PHB)</h3>
-      <div style="font-size:0.8em;line-height:1.55;color:#222;">D&D Beyond 數位版：
-      <a href="https://marketplace.dndbeyond.com/rulebooks" target="_blank">www.dndbeyond.com</a><br>
-      Amazon 實體書：
-      <a href="https://www.amazon.com/s?k=dnd+2024+players+handbook&ref=cs_503_search" target="_blank">www.amazon.com</a>
+    <div style="font-size:0.82em;line-height:1.55;color:#222;">
+      本站為非官方粉絲製作工具，整理 2024 Basic Rules 免費公開範圍內容，方便新手快速完成 1～5 級角色。
+      如需完整規則與更多選項，建議購買 Player&apos;s Handbook。
+    </div>
+      <h3 style="margin:16px 0 6px 0;font-size:1.1em;line-height:1.15;">延伸參考</h3>
+      <div style="font-size:0.82em;line-height:1.55;color:#222;">D&amp;D Beyond 規則與書籍：
+      <a href="https://marketplace.dndbeyond.com/rulebooks" target="_blank" rel="noopener">www.dndbeyond.com</a><br>
+      Amazon 實體 Player&apos;s Handbook：
+      <a href="https://www.amazon.com/s?k=dnd+2024+players+handbook&ref=cs_503_search" target="_blank" rel="noopener">www.amazon.com</a>
     </div>
     <div style="margin-top:10px;padding-top:8px;border-top:1px solid #e4e8f2;font-size:0.8em;line-height:1.45;color:#49566d;text-align:center;">
-      <div style="font-weight:700;color:#2a3b56;">Unofficial D&amp;D Character Tool</div>
-      <div>Using content from D&amp;D Beyond Basic Rules</div>
-      <div style="margin-top:2px;letter-spacing:0;">Dungeons &amp; Dragons © Wizards of the Coast LLC</div>
+      <div style="font-weight:700;color:#2a3b56;">Unofficial fan-made D&amp;D beginner tool</div>
+      <div>Dungeons &amp; Dragons © Wizards of the Coast LLC</div>
+      <div style="margin-top:2px;letter-spacing:0;">本站不代表官方立場，亦不主張官方背書</div>
     </div>
 <div style="margin-top:9px;font-size:0.88em;line-height:1.2;">
   <label><input type="checkbox" id="legal-dismiss"> 不要再提醒我</label>
 </div>
-    <button type="button" id="legal-start-tour-btn" style="margin-top:12px;width:100%;padding:8px 0;font-size:1.05em;border-radius:8px;border:1px solid #3f65df;background:linear-gradient(180deg,#6d89ff 0%,#5675f2 100%);color:#fff;">新手導覽</button>
-    <button type="button" id="legal-ack-btn" style="margin-top:8px;width:100%;padding:6px 0;font-size:1em;border-radius:6px;border:1px solid #888;">我知道了</button>
+    <button type="button" id="legal-start-tour-btn" aria-label="開啟新手導覽" style="margin-top:12px;width:100%;padding:8px 0;font-size:1.05em;border-radius:8px;border:1px solid #3f65df;background:linear-gradient(180deg,#6d89ff 0%,#5675f2 100%);color:#fff;">新手導覽</button>
+    <button type="button" id="legal-ack-btn" aria-label="關閉提醒" style="margin-top:8px;width:100%;padding:6px 0;font-size:1em;border-radius:6px;border:1px solid #888;">我知道了</button>
   </div>
 </div>
 
