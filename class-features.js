@@ -2029,7 +2029,9 @@ const classFeatures = {
 若是召喚武器，聯結結束時武器會一併消失。
 鏈之魔契
 你學會獲得魔寵，施法不耗法術位。
-魔寵可選一般形態或以下特殊形態：<span class="beast-tip" data-beast="imp">小魔鬼</span>、<span class="beast-tip" data-beast="pseudodragon">偽龍</span>、<span class="beast-tip" data-beast="quasit">誇賽魔</span>、<span class="beast-tip" data-beast="skeleton">骷髏</span>、<span class="beast-tip" data-beast="slaad_tadpole">史拉蟾蝌蚪</span>、<span class="beast-tip" data-beast="sphinx_of_wonder">神奇斯芬克斯</span>、<span class="beast-tip" data-beast="sprite">小妖精</span> 或 <span class="beast-tip" data-beast="venomous_snake">毒蛇</span>。
+魔寵可選一般形態或以下特殊形態：
+<span class="beast-tip" data-beast="imp">小魔鬼</span>、<span class="beast-tip" data-beast="pseudodragon">偽龍</span>、<span class="beast-tip" data-beast="quasit">誇賽魔</span>、<span class="beast-tip" data-beast="skeleton">骷髏</span>、<span class="beast-tip" data-beast="slaad_tadpole">史拉蟾蝌蚪</span>、<span class="beast-tip" data-beast="sphinx_of_wonder">神奇斯芬克斯</span>、<span class="beast-tip" data-beast="sprite">小妖精</span> 或 <span class="beast-tip" data-beast="venomous_snake">毒蛇</span>。
+<hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;">
 當你攻擊，可放棄其中 1 次攻擊，改讓魔寵用反應發動 1 次攻擊。
 書之魔契
 你可在短休或長休結束時召喚一本「影之書」（外觀自定）。
