@@ -1046,7 +1046,7 @@ label[for="level"]{
     </div>
     <div class="mini-stat-card">
       <div class="mini-stat-label">先攻</div>
-      <input id="initiative-input" type="number" class="tight-input" value="0" aria-label="先攻">
+      <input id="initiative-input" type="text" inputmode="numeric" class="tight-input" value="+0" aria-label="先攻">
     </div>
   </div>
 
@@ -2135,7 +2135,7 @@ function updateRaceFeature() {
   document.getElementById("raceFeatures").innerHTML = formatted;
 }
 
-  function updateBackgroundFeature() {
+function updateBackgroundFeature() {
   const value = document.getElementById("background").value;
   const bg = detailedBackgroundFeatures[value];
 
@@ -2165,7 +2165,12 @@ function updateRaceFeature() {
      ${bg.描述}
    </div>`;
 
-
+  const featOneSelect = document.getElementById("feat-0");
+  if (featOneSelect) {
+    const matchedFeat = FEAT_OPTIONS.find(opt => bg.專長?.startsWith(opt.value));
+    featOneSelect.value = matchedFeat?.value || "";
+    updateFeatDesc("feat-0", "feat-0-desc");
+  }
 }
 
 
@@ -2622,6 +2627,13 @@ function formatSignedValue(value) {
   return String(value);
 }
 
+function parseSignedValue(value) {
+  const normalized = String(value ?? "").trim();
+  if (!normalized) return 0;
+  const parsed = Number.parseInt(normalized, 10);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 function updateSpellCastingStats() {
   const ability = document.getElementById("spellcasting-ability")?.value;
   const adjustmentInput = document.getElementById("spell-adjustment");
@@ -2772,6 +2784,21 @@ function fillSkills() {
 	const bonus = expInput.checked ? pb * 2 : (profInput.checked ? pb : 0);
     const total = mod + bonus;
     input.value = formatSignedValue(total);
+  }
+
+  const perceptionValue = parseSignedValue(document.getElementById("skill-察覺")?.value);
+  const passivePerceptionInput = document.getElementById("passive-perception");
+  if (passivePerceptionInput) {
+    passivePerceptionInput.value = String(10 + perceptionValue);
+  }
+
+  const initiativeInput = document.getElementById("initiative-input");
+  if (initiativeInput) {
+    const dexMod = getModifier("dex");
+    const hasAlertFeat = Array.from(document.querySelectorAll('#feats-area select[id^="feat-"]'))
+      .some(select => select.value === "警覺");
+    const initiativeValue = dexMod + (hasAlertFeat ? getProficiencyBonus() : 0);
+    initiativeInput.value = formatSignedValue(initiativeValue);
   }
 }
 </script>
