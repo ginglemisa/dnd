@@ -2031,8 +2031,7 @@ const classFeatures = {
 若是召喚武器，聯結結束時武器會一併消失。
 鏈之魔契
 你學會獲得魔寵，施法不耗法術位。
-魔寵可選一般形態或以下特殊形態：<hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;">
-<span class="beast-tip" data-beast="imp">小魔鬼</span>、<span class="beast-tip" data-beast="pseudodragon">偽龍</span>、<span class="beast-tip" data-beast="quasit">誇賽魔</span>、<span class="beast-tip" data-beast="skeleton">骷髏</span>、<span class="beast-tip" data-beast="slaad_tadpole">史拉蟾蝌蚪</span>、<span class="beast-tip" data-beast="sphinx_of_wonder">神奇斯芬克斯</span>、<span class="beast-tip" data-beast="sprite">小妖精</span> 或 <span class="beast-tip" data-beast="venomous_snake">毒蛇</span>。
+魔寵可選一般形態或以下特殊形態：<hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;"><span class="beast-tip" data-beast="imp">小魔鬼</span>、<span class="beast-tip" data-beast="pseudodragon">偽龍</span>、<span class="beast-tip" data-beast="quasit">誇賽魔</span>、<span class="beast-tip" data-beast="skeleton">骷髏</span>、<span class="beast-tip" data-beast="slaad_tadpole">史拉蟾蝌蚪</span>、<span class="beast-tip" data-beast="sphinx_of_wonder">神奇斯芬克斯</span>、<span class="beast-tip" data-beast="sprite">小妖精</span> 或 <span class="beast-tip" data-beast="venomous_snake">毒蛇</span>。
 <hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;">當你攻擊，可放棄其中 1 次攻擊，改讓魔寵用反應發動 1 次攻擊。
 書之魔契
 你短休或長休結束時可召喚<strong>影之書</strong>。
@@ -2050,8 +2049,8 @@ const classFeatures = {
 魔能意志
 你進行維持專注的體質豁免時具有優勢。
 邪魔活力（先決條件：術士等級 2+）
-你可隨意施展虛假生命且不耗法術位
-；不擲臨時生命骰，視為擲滿。
+你可隨意施展虛假生命且不耗法術位；
+不擲臨時生命骰，視為擲滿。
 千面之臉（先決條件：術士等級 2+）
 你可隨意施展易容術且不耗法術位。
 幻象迷蹤（先決條件：術士等級 2+）
@@ -2062,16 +2061,16 @@ const classFeatures = {
 可在 120 呎內的魔法黑暗、非魔法黑暗與微光中正常視物。
 原初之一教習（先決條件：術士等級 2+）
 你獲得 1 個起源專長。
-可重複：可多次選此祈喚，但每次必須選不同的起源專長。
+<hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;">可重複：可多次選此祈喚，但每次必須選不同的起源專長。
 苦痛魔爆（先決條件：術士等級 2+，已知可造成傷害的契術師戲法）
 選 1 個你已知、可造成傷害的契術師戲法；你可將魅力調整值加到該戲法的傷害骰。
-可重複：可多次選此祈喚，但每次要選不同戲法。
+<hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;">可重複：可多次選此祈喚，但每次要選不同戲法。
 魔能長槍（先決條件：術士等級 2+，已知可造成傷害的契術師戲法）
 選 1 個你已知、射程至少 10 呎且可造成傷害的契術師戲法。施放時，該法術射程額外增加「術士等級 × 30 呎」。
-可重複：可多次選此祈喚，但每次要選不同戲法。
+<hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;">可重複：可多次選此祈喚，但每次要選不同戲法。
 斥力魔爆（先決條件：術士等級 2+，通過攻擊檢定造成傷害的契術師戲法）
 選 1 個你已知、需要攻擊檢定的契術師戲法。當你用該戲法命中大型或更小生物時，可將其往遠離你的方向推開 10 呎。
-可重複：可多次選此祈喚，但每次要選不同戲法。
+<hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;">可重複：可多次選此祈喚，但每次要選不同戲法。
 星移步法（先決條件：術士等級 5+）
 你可隨意對自己施展浮空術，且不耗法術位。
 萬形之主（先決條件：術士等級 5+）
