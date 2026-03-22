@@ -375,11 +375,11 @@ style.innerHTML = `
 
   .ability-score {
     width: 100% !important;
-    min-height: 74px !important;
+    min-height: 52px !important;
     border-radius: 14px !important;
     border: 2px solid var(--border-strong) !important;
     background: #ffffff !important;
-    font-size: 2rem !important;
+    font-size: 1.35rem !important;
     font-weight: 900 !important;
     text-align: center;
     color: #14181d;
@@ -565,20 +565,13 @@ style.innerHTML = `
     color: var(--muted);
   }
 
-  #ac-display {
+  #ac-display,
+  #hp-display {
     display: inline-block;
     margin-left: 6px;
     color: #1d2b52;
     font-size: 1.5rem;
     font-weight: 900;
-  }
-
-  #hp-display {
-    display: inline-block;
-    margin-left: 6px;
-    color: #2447c7;
-    font-size: 1.3rem;
-    font-weight: 800;
   }
 
   #warlock-invocation-summary,

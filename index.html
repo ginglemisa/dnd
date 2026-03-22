@@ -11,7 +11,7 @@
     gtag('config', 'G-M8L0F03EGD', {page_path: location.pathname});
   </script>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>D&amp;D 5.5 基本創角</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎲%3C/text%3E%3C/svg%3E">
@@ -267,11 +267,11 @@ button:hover{filter:brightness(.99);}
 }
 .ability-score{
   width:100% !important;
-  min-height:74px !important;
+  min-height:52px !important;
   border-radius:14px !important;
   border:2px solid var(--line-strong) !important;
   background:#ffffff !important;
-  font-size:2rem !important;
+  font-size:1.35rem !important;
   font-weight:900 !important;
   text-align:center;
   color:#14181d;
@@ -756,7 +756,17 @@ label[for="level"]{
   .form-grid-2col, .save-grid, .skill-grid, .spell-picked-grid, .stats-card-row{grid-template-columns:1fr !important;}
   .form-grid-6col{grid-template-columns:1fr !important;}
   .spell-slot-grid{grid-template-columns:max-content minmax(0,1fr) minmax(0,1fr) !important;}
-  #tab-basic .stats-card-row{grid-template-columns:repeat(3,minmax(0,1fr)) !important;}
+  #tab-basic .stats-card-stack{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px !important;
+    margin-bottom:12px;
+  }
+  #tab-basic .stats-card-stack .stats-card-row{
+    display:contents;
+  }
+  #tab-basic .ability-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
+  #tab-basic .form-grid-2col--class-level{grid-template-columns:1fr !important;}
 }
 </style>
 
@@ -772,33 +782,36 @@ label[for="level"]{
 
 <div id="tab-basic" class="tab-content active">
   <!-- 職業 + 預設按鈕 + 等級 -->
-<div class="form-grid-2col">
-  <label for="class">職業</label>
-  <label for="level">等級</label>
-
-  <select id="class">
-    <option value="">-- 請選擇 --</option>
-    <option value="barbarian">野蠻人</option>      
-    <option value="bard">吟遊詩人</option>
-    <option value="cleric">牧師</option>
-    <option value="druid">德魯伊</option>
-    <option value="fighter">戰士</option>
-    <option value="monk">武僧</option>
-    <option value="paladin">聖武士</option>
-    <option value="ranger">遊俠</option>
-    <option value="rogue">遊蕩者</option>
-    <option value="sorcerer">術士</option>
-    <option value="warlock">契術師</option>
-    <option value="wizard">法師</option>
-  </select>
-  <select id="level">
-    <option value="">--</option>
-    <option value="1">1</option>
-    <option value="2">2</option>
-    <option value="3">3</option>
-    <option value="4">4</option>
-    <option value="5">5</option>
-  </select>
+<div class="form-grid-2col form-grid-2col--class-level">
+  <div>
+    <label for="class">職業</label>
+    <select id="class">
+      <option value="">-- 請選擇 --</option>
+      <option value="barbarian">野蠻人</option>
+      <option value="bard">吟遊詩人</option>
+      <option value="cleric">牧師</option>
+      <option value="druid">德魯伊</option>
+      <option value="fighter">戰士</option>
+      <option value="monk">武僧</option>
+      <option value="paladin">聖武士</option>
+      <option value="ranger">遊俠</option>
+      <option value="rogue">遊蕩者</option>
+      <option value="sorcerer">術士</option>
+      <option value="warlock">契術師</option>
+      <option value="wizard">法師</option>
+    </select>
+  </div>
+  <div>
+    <label for="level">等級</label>
+    <select id="level">
+      <option value="">--</option>
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+      <option value="4">4</option>
+      <option value="5">5</option>
+    </select>
+  </div>
 </div>
 
 <!-- 背景與種族 -->
@@ -857,47 +870,48 @@ label[for="level"]{
 }
 </style>
 
-<!-- 第一列：陣營、速度、先攻 -->
-<div class="stats-card-row">
-  <div class="mini-stat-card">
-    <div class="mini-stat-label">陣營</div>
-    <select id="alignment">
-      <option value="">-- 請選擇 --</option>
-      <option value="LG">守序善良</option>
-      <option value="NG">中立善良</option>
-      <option value="CG">混亂善良</option>
-      <option value="LN">守序中立</option>
-      <option value="TN">絕對中立</option>
-      <option value="CN">混亂中立</option>
-      <option value="LE">守序邪惡</option>
-      <option value="NE">中立邪惡</option>
-      <option value="CE">混亂邪惡</option>
-    </select>
+<div class="stats-card-stack">
+  <!-- 第一列：陣營、速度、先攻 -->
+  <div class="stats-card-row">
+    <div class="mini-stat-card">
+      <div class="mini-stat-label">陣營</div>
+      <select id="alignment">
+        <option value="">-- 請選擇 --</option>
+        <option value="LG">守序善良</option>
+        <option value="NG">中立善良</option>
+        <option value="CG">混亂善良</option>
+        <option value="LN">守序中立</option>
+        <option value="TN">絕對中立</option>
+        <option value="CN">混亂中立</option>
+        <option value="LE">守序邪惡</option>
+        <option value="NE">中立邪惡</option>
+        <option value="CE">混亂邪惡</option>
+      </select>
+    </div>
+    <div class="mini-stat-card">
+      <div class="mini-stat-label">速度</div>
+      <input id="speed-input" type="number" class="tight-input" value="30">
+    </div>
+    <div class="mini-stat-card">
+      <div class="mini-stat-label">先攻</div>
+      <input id="initiative-input" type="number" class="tight-input" value="0">
+    </div>
   </div>
-  <div class="mini-stat-card">
-    <div class="mini-stat-label">速度</div>
-    <input id="speed-input" type="number" class="tight-input" value="30">
-  </div>
-  <div class="mini-stat-card">
-    <div class="mini-stat-label">先攻</div>
-    <input id="initiative-input" type="number" class="tight-input" value="0">
-  </div>
-</div>
 
-
-<!-- 第二列：生命骰、被動感知、按鈕 -->
-<div class="stats-card-row">
-  <div class="mini-stat-card">
-    <div class="mini-stat-label">生命骰</div>
-    <input id="lifedicen" type="number" class="tight-input" value="1" min="0" max="5">
-  </div>
-  <div class="mini-stat-card">
-    <div class="mini-stat-label">被動感知</div>
-    <input id="passive-perception" type="number" class="tight-input" value="10" min="-5" max="45">
-  </div>
-  <div class="mini-stat-card">
-    <div class="mini-stat-label">快速創角</div>
-    <button id="set-default-abilities" type="button" style="font-size:0.95em; margin-bottom:0;">預設屬性</button>
+  <!-- 第二列：生命骰、被動感知、按鈕 -->
+  <div class="stats-card-row">
+    <div class="mini-stat-card">
+      <div class="mini-stat-label">生命骰</div>
+      <input id="lifedicen" type="number" class="tight-input" value="1" min="0" max="5">
+    </div>
+    <div class="mini-stat-card">
+      <div class="mini-stat-label">被動感知</div>
+      <input id="passive-perception" type="number" class="tight-input" value="10" min="-5" max="45">
+    </div>
+    <div class="mini-stat-card">
+      <div class="mini-stat-label">快速創角</div>
+      <button id="set-default-abilities" type="button" style="font-size:0.95em; margin-bottom:0;">預設屬性</button>
+    </div>
   </div>
 </div>
 
@@ -1001,7 +1015,7 @@ label[for="level"]{
 
 
 </div>
-  
+
 
 <div id="tab-skills" class="tab-content">
   <div class="section">
@@ -1183,7 +1197,7 @@ label[for="level"]{
 <div class="small-text" style="margin-left: 10px; margin-top: 4px;">
   治療藥水：恢復 2d4+2 HP
 </div>
-	  
+
 <div style="font-size: 1.05em; font-weight: bold; margin-top: 10px;">進行二次攻擊</div>
 <div class="small-text" style="margin-left: 10px; margin-top: 4px;">
   雙持輕型武器攻擊後，可用附贈進行副手攻擊。副手傷害不加屬性調整值，除非具備特定專長。
@@ -1345,7 +1359,7 @@ label[for="level"]{
 
   </div>
 
-  
+
 
   <script>
 function getHitDiceValues(className) {
@@ -1391,7 +1405,7 @@ if (classValue === "sorcerer" && level >= 3) {
   maxHP += 3 + (level - 3);
 }
 
-document.getElementById("hp-display").textContent = ` ${maxHP}`;
+document.getElementById("hp-display").textContent = String(maxHP);
 
 }
 
