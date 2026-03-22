@@ -1755,10 +1755,11 @@ function hasWarlockInvocation(invocationName) {
 }
 
 function formatInvocationText(text) {
-	return getNormalizedInvocationText(text).replace(
+	const normalized = getNormalizedInvocationText(text).replace(
 		/^（先決條件：([^）]+)）/m,
 		'<span class="invocation-prereq">先決條件：$1</span>'
 	);
+	return highlightSpellNamesInClassFeature(normalized);
 }
 
 function renderEldritchInvocations() {
