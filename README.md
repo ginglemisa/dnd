@@ -5,7 +5,7 @@ https://ginglemisa.github.io/dnd/
 作者：蔡秉衡 Reggie 瑞基
 
 ## 專案定位
-這是一個送給 D&D 新手玩家的民間工具。
+這是一個送給 D&D 新手玩家的小禮物。
 目標很單純：讓大家更快完成角色建立，順利開始第一場冒險。
 
 本工具以手機操作為主，並假設現場會有 DM 或教學者協助。
@@ -30,7 +30,7 @@ https://ginglemisa.github.io/dnd/
 - 本站僅整理與使用官方免費公開範圍內的基本規則內容。
 - **Dungeons & Dragons** 與相關名稱、商標、著作內容權利屬 **Wizards of the Coast LLC** 所有。
 - 本站不代表官方立場，也不主張官方背書。
-- 若想使用更完整內容，建議購買 **Player’s Handbook** 或使用官方服務。
+- 若想體驗更完整內容，建議購買 **Player’s Handbook** 或使用官方服務。
 
 
 ## 中文化角色紙下載（A4 雙面）
