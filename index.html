@@ -2109,7 +2109,7 @@ function updateClassFeature() {
   }
   if (selectedClass === "sorcerer") {
     const metamagicTitle = "超魔法選項";
-    const metamagicStartIndex = raw.indexOf(metamagicTitle);
+    const metamagicStartIndex = raw.lastIndexOf(metamagicTitle);
     if (metamagicStartIndex !== -1) {
       metamagicRaw = raw.slice(metamagicStartIndex).trim();
       raw = raw.slice(0, metamagicStartIndex).trim();
