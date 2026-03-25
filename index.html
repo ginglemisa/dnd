@@ -4188,6 +4188,21 @@ class OnboardingTour {
       { tab: "basic", selectors: [], getElements: () => {
           const ids = ["class", "level", "background", "race"];
           return ids.map(id => document.getElementById(id)).filter(Boolean).map(el => el.closest(".mini-stat-card, .form-grid-2col, .form-row") || el);
+        }, getHoles: () => {
+          const ids = ["class", "level", "background", "race"];
+          const controls = ids.map(id => document.getElementById(id)).filter(Boolean);
+          const rows = Array.from(new Set(controls.map(el => el.closest(".form-grid-2col, .form-row")).filter(Boolean)));
+          const baseRect = getUnionRect(rows.length ? rows : controls);
+          if (!baseRect) return [];
+          const narrow = window.innerWidth < 338;
+          const padX = narrow ? 8 : 12;
+          const padY = narrow ? 10 : 12;
+          return [{
+            left: Math.max(0, baseRect.left - padX),
+            top: Math.max(0, baseRect.top - padY),
+            right: Math.min(window.innerWidth, baseRect.right + padX),
+            bottom: Math.min(window.innerHeight, baseRect.bottom + padY)
+          }];
         }, title: "先選基本資料", text: "先選職業、等級、背景、種族。這些選項會影響後面的角色能力與內容。", placement: "bottom", beforePosition: async () => window.scrollTo({ top: 0, behavior: "auto" }) },
       { tab: "basic", selectors: [], getElements: () => {
           const strAbility = document.getElementById("str")?.closest(".ability");
@@ -4231,6 +4246,12 @@ class OnboardingTour {
           } else {
             this.stepRuntime.step3AutoBackground = false;
           }
+          const bgDetails = document.querySelector("#backgroundFeatures")?.closest("details");
+          this.stepRuntime.step3AutoExpandedDetails = Boolean(bgDetails && !bgDetails.open);
+          if (this.stepRuntime.step3AutoExpandedDetails && bgDetails) {
+            bgDetails.open = true;
+            await waitForLayoutStability();
+          }
           const title = Array.from(document.querySelectorAll("#tab-basic summary h3")).find(el => el.textContent?.trim() === "背景能力");
           const target = title || document.querySelector("#background-ability-guide-target");
           if (target) {
@@ -4239,9 +4260,14 @@ class OnboardingTour {
             await animateWindowScrollTo(targetY, 620);
           }
         }, afterLeave: () => {
+          if (this.stepRuntime.step3AutoExpandedDetails) {
+            const bgDetails = document.querySelector("#backgroundFeatures")?.closest("details");
+            if (bgDetails) bgDetails.open = false;
+          }
           if (this.stepRuntime.step3AutoBackground) {
             this.setSelectValue("background", "");
           }
+          delete this.stepRuntime.step3AutoExpandedDetails;
           delete this.stepRuntime.step3AutoBackground;
         } },
       { id: "step4-skills", tab: "skills", selectors: [], getHoles: () => {
@@ -4498,10 +4524,12 @@ class OnboardingTour {
       const hole = visibleHoles[idx];
       if (!ring) return;
       if (!hole) {
+        ring.style.display = "none";
         ring.style.width = "0px";
         ring.style.height = "0px";
         return;
       }
+      ring.style.display = "block";
       ring.style.left = `${hole.left}px`;
       ring.style.top = `${hole.top}px`;
       ring.style.width = `${Math.max(0, hole.right - hole.left)}px`;
