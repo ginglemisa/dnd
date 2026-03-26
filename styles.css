@@ -1452,11 +1452,9 @@ div[id$="spells-area"] .form-row {
 
 #spell-search-fab {
   position: fixed;
-<<<<<<< codex/add-floating-magnifying-glass-for-spell-search-rse1b0
   top: 4.2rem;
-=======
-  top: 0.95rem;
->>>>>>> main
+  right: max(0.95rem, calc((100vw - var(--app-max-width)) / 2 + 0.95rem));
+  top: 4.2rem;
   right: 0.95rem;
   z-index: 1200;
   width: 2.35rem;
