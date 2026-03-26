@@ -387,7 +387,7 @@ button:active {
 }
 
 #tab-basic .form-grid-identity {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: 8fr 1fr 4fr 6fr;
 }
 
 .form-grid-3col {
