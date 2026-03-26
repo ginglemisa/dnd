@@ -387,7 +387,7 @@ button:active {
 }
 
 #tab-basic .form-grid-identity {
-  grid-template-columns: minmax(0, 8fr) minmax(0, 1fr) minmax(0, 4fr) minmax(0, 6fr);
+  grid-template-columns: minmax(0, 1.25fr) minmax(5rem, 0.7fr);
 }
 
 .form-grid-3col {
@@ -1980,7 +1980,7 @@ div[id$="spells-area"] .form-row {
 
 @media (min-width: 396px) {
   #tab-basic .form-grid-identity {
-    grid-template-columns: minmax(0, 1.25fr) minmax(5rem, 0.7fr) minmax(0, 1.25fr) minmax(0, 1.25fr);
+    grid-template-columns: minmax(0, 8fr) minmax(0, 1fr) minmax(0, 4fr) minmax(0, 6fr);
   }
 }
 
