@@ -1540,13 +1540,10 @@ document.getElementById("set-default-abilities").addEventListener("click", () =>
     const savedTab = localStorage.getItem("activeTab");
     const hasSavedTab = !!(savedTab && document.getElementById(`tab-${savedTab}`));
     let activeTab = (hasSavedTab ? savedTab : null) || document.querySelector('.tab-content.active')?.id?.replace('tab-', '') || 'basic';
-
     function showTab(tab, button) {
       if (activeTab) {
         tabScrollPositions[activeTab] = window.scrollY;
       }
-
-      const spellToolbar = document.getElementById("spell-tab-toolbar");
 
       document.querySelectorAll('.tab-content').forEach(div => {
         div.classList.remove('active');
@@ -1570,11 +1567,8 @@ document.getElementById("set-default-abilities").addEventListener("click", () =>
         }
       }
 
-      if (spellToolbar) {
-        spellToolbar.classList.toggle('is-hidden', tab !== 'spells');
-      }
-
       activeTab = tab;
+      window.dispatchEvent(new CustomEvent("tabchange", { detail: { tab } }));
       localStorage.setItem("activeTab", tab);
       const nextScrollY = tabScrollPositions[tab] ?? 0;
       requestAnimationFrame(() => {
