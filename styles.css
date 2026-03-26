@@ -1472,6 +1472,10 @@ div[id$="spells-area"] .form-row {
   transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
+#spell-search-fab.is-hidden {
+  display: none;
+}
+
 #spell-search-fab.toolbar-open {
   transform: translateY(3.15rem);
 }
