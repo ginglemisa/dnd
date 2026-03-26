@@ -24,900 +24,18 @@
   <meta name="twitter:card" content="summary_large_image">
   <title>D&amp;D 5.5 基本創角</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎲%3C/text%3E%3C/svg%3E">
-  <script src="css.js" defer></script>
+  <link rel="stylesheet" href="styles.css">
+  <script src="scroll-to-top.js" defer></script>
   <script src="monster.js" defer></script>
   <script src="class-features.js" defer></script>
   <script src="race.js" defer></script>
+  <script src="backgrounds.js" defer></script>
+  <script src="feats.js" defer></script>
   <script src="equipment-notes.js" defer></script>
   <script src="spell-list.js" defer></script>
   <script src="condition.js" defer></script>
-
-<style id="pretty-ui-overrides">
-:root{
-  --bg:#edf1f7;
-  --panel:#ffffff;
-  --panel-2:#f8faff;
-  --line:#d7deea;
-  --line-strong:#b9c5d8;
-  --text:#18212f;
-  --muted:#5f6b7c;
-  --brand:#5b7cfa;
-  --brand-soft:#e9eeff;
-  --shadow:0 10px 24px rgba(28,39,64,.08);
-  --radius:16px;
-}
-body{
-  background:linear-gradient(180deg,#edf1f7 0%,#e8edf5 100%) !important;
-  color:var(--text);
-}
-.tabs{
-  backdrop-filter:blur(10px);
-  background:rgba(237,241,247,.92) !important;
-  border-bottom:1px solid var(--line) !important;
-  box-shadow:0 6px 20px rgba(24,33,47,.06);
-  gap:8px;
-}
-.quo-text {
-  color: #9aa3af;
-  font-size: 0.84em;
-}
-.tab-button{
-  border-radius:14px !important;
-  border:1px solid var(--line) !important;
-  background:rgba(255,255,255,.9) !important;
-  color:var(--text);
-  font-weight:800 !important;
-  letter-spacing:.02em;
-  min-height:46px;
-  box-shadow:0 2px 8px rgba(24,33,47,.04);
-}
-.tab-button.active{
-  background:linear-gradient(180deg,#6c89ff 0%,#5674f2 100%) !important;
-  color:#fff !important;
-  border-color:#4f6eea !important;
-  box-shadow:0 10px 18px rgba(86,116,242,.24);
-}
-.section, details.section, .spell-toolbar, .action-help{
-  background:var(--panel) !important;
-  border:1px solid var(--line) !important;
-  border-radius:var(--radius) !important;
-  box-shadow:var(--shadow);
-  padding:14px !important;
-}
-details.section summary{
-  cursor:pointer;
-}
-.section h3, details.section h3{
-  margin:0 0 10px;
-  font-size:1.05rem;
-}
-.output{
-  background:linear-gradient(180deg,#fbfcff 0%,#f3f6fb 100%) !important;
-  border:1px solid var(--line) !important;
-  border-radius:14px !important;
-  padding:12px !important;
-  color:var(--text);
-}
-select,input[type="number"],input[type="text"],textarea{
-  border:1px solid var(--line-strong) !important;
-  border-radius:12px !important;
-  background:#fff !important;
-  color:var(--text);
-  min-height:44px;
-  padding:10px 12px !important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.7);
-}
-textarea{min-height:110px;}
-input[type="number"]{
-  font-size:1.05rem !important;
-  font-weight:800;
-  text-align:center;
-}
-button{
-  border:none;
-  border-radius:12px !important;
-  background:linear-gradient(180deg,#f7f9fd 0%,#edf2fb 100%);
-  color:var(--text);
-  font-weight:800;
-  min-height:44px;
-  box-shadow:0 4px 12px rgba(24,33,47,.08);
-}
-button:hover{filter:brightness(.99);}
-
-.feat-row-head{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  width:100%;
-  margin-bottom:6px;
-}
-.feat-row-head label{
-  margin:0;
-}
-.feat-row-controls{
-  display:flex;
-  gap:8px;
-  flex-shrink:0;
-}
-.spell-row-top{
-  display:grid;
-  grid-template-columns:118px auto;
-  grid-template-rows:auto auto;
-  gap:8px;
-  align-items:center;
-  width:100%;
-}
-.spell-row-top select:first-child{
-  width:118px;
-  grid-column:1;
-  grid-row:1;
-}
-.spell-row-top .feat-row-controls{
-  grid-column:2;
-  grid-row:1;
-}
-.spell-row-top select:nth-child(2){
-  grid-column:1 / -1;
-  grid-row:2;
-  width:100%;
-}
-
-.feat-icon-btn{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  width:36px;
-  min-height:36px;
-  border-radius:999px !important;
-  border:1px solid var(--line) !important;
-  background:linear-gradient(180deg,#ffffff 0%,#f1f5fc 100%) !important;
-  box-shadow:0 2px 8px rgba(24,33,47,.08);
-  padding:0 !important;
-  font-size:1.05rem;
-  font-weight:900;
-  line-height:1;
-}
-.feat-icon-btn--add{
-  color:#2a55d4;
-}
-.feat-icon-btn--delete{
-  color:#c53a4a;
-}
-.feat-icon-btn:hover{
-  transform:translateY(-1px);
-  filter:brightness(.98);
-}
-.feat-icon-btn:disabled{
-  opacity:.45;
-  cursor:not-allowed;
-  transform:none;
-}
-#clear-storage-btn{
-  background:linear-gradient(180deg,#fff2f2 0%,#ffe6e6 100%);
-}
-.hp-card, .mini-stat-card{
-  background:linear-gradient(180deg,#fbfcff 0%,#f3f6fb 100%);
-  border:1px solid var(--line);
-  border-radius:16px;
-  padding:12px;
-  box-shadow:var(--shadow);
-}
-.hp-title, .mini-stat-label{
-  font-size:.84rem;
-  color:var(--muted);
-  font-weight:700;
-  margin-bottom:6px;
-}
-.hp-value{
-  font-size:1.5rem;
-  font-weight:900;
-  color:#007AFF;
-  margin-left:6px;
-}
-.form-grid-2col{
-  gap:12px !important;
-}
-.form-grid-6col{
-  display:grid !important;
-  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
-  gap:12px !important;
-  align-items:stretch !important;
-  margin-bottom:12px;
-}
-.form-grid-6col > label{
-  display:none;
-}
-.tight-input{width:100% !important;}
-.stats-card-row{
-  display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:12px;
-  margin-bottom:12px;
-}
-.ability-grid{
-  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
-  gap:12px !important;
-}
-.ability{
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-  min-height:206px;
-  padding:12px;
-  background:linear-gradient(180deg,#ffffff 0%,#f6f9ff 100%);
-  border:1px solid var(--line);
-  border-radius:16px;
-  box-shadow:var(--shadow);
-}
-.ability-title{
-  text-align:center;
-  font-size:1.2rem;
-  font-weight:900;
-  letter-spacing:.08em;
-  color:#5f6b7c;
-  text-transform:uppercase;
-}
-.modifier{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  min-height:88px;
-  border-radius:14px;
-  border:2px solid #c2cdd8;
-  background:#eef0f2;
-  color:#19212c;
-  font-size:3rem;
-  font-weight:900;
-  margin:0 !important;
-}
-.modifier-main{
-  white-space:nowrap;
-}
-.ability-score{
-  width:100% !important;
-  min-height:52px !important;
-  border-radius:14px !important;
-  border:2px solid var(--line-strong) !important;
-  background:#ffffff !important;
-  font-size:1.35rem !important;
-  font-weight:900 !important;
-  text-align:center;
-  color:#14181d;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.9);
-  padding:10px 12px !important;
-}
-.save-grid{
-  grid-template-columns:1fr 1fr !important;
-  gap:10px !important;
-}
-.save-pair{
-  background:linear-gradient(180deg,#ffffff 0%,#f7f9fd 100%);
-  border:1px solid var(--line);
-  border-radius:14px;
-  padding:10px 12px;
-  gap:12px !important;
-}
-.save-name{
-  display:flex !important;
-  align-items:center;
-  gap:10px;
-  margin:0 !important;
-  font-weight:800 !important;
-}
-.save-name .save-stack{
-  display:flex;
-  flex-direction:column;
-  gap:0;
-  line-height:1.05;
-}
-
-#spell-qr-modal{
-  display:none;
-  position:fixed;
-  inset:0;
-  z-index:10001;
-  background:rgba(0,0,0,.58);
-  align-items:center;
-  justify-content:center;
-  padding:16px;
-}
-#spell-qr-modal.open{
-  display:flex;
-}
-.spell-qr-modal-card{
-  position:relative;
-  width:min(92vw,320px);
-  border-radius:16px;
-  background:#fff;
-  padding:20px;
-  box-shadow:0 20px 48px rgba(0,0,0,.28);
-}
-.spell-qr-modal-close{
-  position:absolute;
-  right:10px;
-  top:10px;
-  width:32px;
-  min-height:32px;
-  border-radius:999px !important;
-  border:1px solid #d2d9e5 !important;
-  background:#fff !important;
-  box-shadow:none;
-  font-size:1.1rem;
-  line-height:1;
-}
-.spell-qr-modal-image{
-  width:100%;
-  height:auto;
-  display:block;
-  border-radius:10px;
-  border:1px solid #d9dfea;
-}
-.spell-qr-modal-note{
-  margin:10px 0 0;
-  font-size:.9rem;
-  line-height:1.45;
-  color:#4f5f78;
-  text-align:center;
-}
-#deity-info-modal{
-  display:none;
-  position:fixed;
-  inset:0;
-  z-index:10002;
-  background:rgba(7,12,24,.62);
-  align-items:center;
-  justify-content:center;
-  padding:12px;
-}
-#deity-info-modal.open{display:flex;}
-.deity-info-card{
-  position:relative;
-  width:min(94vw,860px);
-  max-height:min(88vh,920px);
-  border-radius:18px;
-  border:1px solid #d5deef;
-  background:linear-gradient(180deg,#ffffff 0%,#f7faff 100%);
-  box-shadow:0 24px 56px rgba(20,35,74,.34);
-  display:flex;
-  flex-direction:column;
-  overflow:hidden;
-}
-.deity-info-header{
-  padding:16px 54px 12px 16px;
-  border-bottom:1px solid #dbe3f2;
-  background:linear-gradient(180deg,#f4f8ff 0%,#eef3ff 100%);
-}
-.deity-info-header h3{margin:0;font-size:1.1rem;color:#1f315f;}
-.deity-info-header p{margin:6px 0 0;font-size:.92rem;color:#506080;font-weight:700;}
-.deity-info-close{
-  position:absolute;
-  right:10px;
-  top:10px;
-  width:34px;
-  min-height:34px;
-  border-radius:999px !important;
-  border:1px solid #cfdaee !important;
-  background:#fff !important;
-  box-shadow:none;
-  line-height:1;
-  font-weight:900;
-}
-.deity-info-content{padding:12px;overflow-y:auto;}
-.deity-group{
-  border:1px solid #d8e2f3;
-  border-radius:14px;
-  background:#fff;
-  margin-bottom:10px;
-  padding:10px;
-}
-.deity-group h4{margin:0 0 8px;font-size:1rem;color:#243968;}
-.deity-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px;}
-.deity-item{
-  border:1px solid #e2e9f5;
-  background:linear-gradient(180deg,#fcfdff 0%,#f5f8ff 100%);
-  border-radius:12px;
-  padding:8px 9px;
-}
-.deity-item-main{font-weight:900;color:#192645;margin-bottom:4px;}
-.deity-item-sub{font-size:.9rem;color:#33486d;line-height:1.4;}
-.save-name .save-abbr{font-weight:900;}
-.save-name .save-full{font-weight:800;}
-.save-pair input[type="number"],
-.save-pair input[type="text"]{
-  width:68px !important;
-  min-width:68px;
-}
-input[type="checkbox"]{
-  width:20px;
-  height:20px;
-  margin:0;
-  accent-color:var(--brand);
-}
-.skill-legend{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  text-align:center;
-  gap:14px;
-  flex-wrap:wrap;
-  padding:10px 12px;
-  border-radius:14px;
-  background:linear-gradient(180deg,#fbfcff 0%,#f3f6fb 100%);
-  border:1px solid var(--line);
-  color:var(--muted);
-  font-size:.96rem !important;
-  font-weight:800;
-  margin-top:10px !important;
-}
-.legend-badge{display:inline-flex;align-items:center;gap:8px;}
-.legend-box, .legend-circle{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  width:20px; height:20px;
-  border:2px solid #667085;
-  background:#fff;
-}
-.legend-circle{border-radius:999px;}
-.skill-grid{
-  grid-template-columns:1fr 1fr !important;
-  gap:10px !important;
-}
-.skill-cell{
-  background:linear-gradient(180deg,#ffffff 0%,#f7f9fd 100%);
-  border:1px solid var(--line);
-  border-radius:16px;
-  padding:10px 12px;
-  box-shadow:var(--shadow);
-}
-.skill-label-row{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
-  margin-bottom:8px;
-}
-.skill-name{
-  font-weight:900 !important;
-  margin:0 !important;
-  font-size:1.02rem;
-  width:auto !important;
-}
-.skill-rank-controls{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  flex-shrink:0;
-}
-.circle-checkbox{
-  appearance:none !important;
-  -webkit-appearance:none !important;
-  width:20px !important;
-  height:20px !important;
-  min-width:20px;
-  border:2px solid #667085 !important;
-  border-radius:999px !important;
-  background:#fff !important;
-  box-shadow:none !important;
-}
-.circle-checkbox:checked{
-  background:radial-gradient(circle at center,#5b7cfa 0 42%, #fff 45% 100%) !important;
-  border-color:#5b7cfa !important;
-}
-.action-grid-pretty{
-  display:grid !important;
-  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
-  gap:10px !important;
-}
-.action-help table{
-  overflow:hidden;
-  border-radius:12px;
-}
-.action-help th, .action-help td{
-  padding:9px 8px !important;
-}
-.action-help th{background:#eef3ff !important;}
-#warlock-invocation-summary, #weapon-mastery-summary{
-  background:linear-gradient(180deg,#fbfcff 0%,#f3f6fb 100%) !important;
-  border:1px solid var(--line) !important;
-  border-radius:14px !important;
-}
-.action-collapsible-wrap{
-  margin-bottom:12px;
-  padding:10px 12px;
-  border:1px solid var(--line);
-  border-radius:14px;
-  background:linear-gradient(180deg,#ffffff 0%,#f7f9fd 100%);
-}
-.action-collapsible-wrap summary{cursor:pointer;}
-
-.spell-slot-grid{
-  gap:10px 10px !important;
-  grid-template-columns:max-content minmax(0,1fr) minmax(0,1fr) !important;
-  align-items:start !important;
-}
-#spellslot1-row{
-  white-space:nowrap;
-}
-.spell-slot-column{
-  background:linear-gradient(180deg,#ffffff 0%,#f7f9fd 100%);
-  border:1px solid var(--line);
-  border-radius:14px;
-  padding:10px 12px;
-}
-.spell-casting-stats{
-  display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
-  gap:8px 10px;
-  margin-bottom:12px;
-  align-items:end;
-}
-.spell-casting-stats .stat-label{
-  font-size:.9rem;
-  color:#475467;
-  font-weight:700;
-  text-align:center;
-}
-.spell-casting-stats select,
-.spell-casting-stats input{
-  text-align:center;
-  font-size:1.35rem;
-  font-weight:800;
-  min-height:48px;
-  padding:6px 8px;
-}
-
-body{
-  max-width: 920px;
-  margin: 0 auto;
-  padding-bottom: 28px;
-}
-.tabs{
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  padding: 8px 0 10px;
-  margin-bottom: 14px;
-}
-.tab-content{
-  padding-bottom: 8px;
-}
-.section, details.section, .spell-toolbar, .action-help{
-  margin-bottom: 14px !important;
-}
-details.section summary,
-details summary{
-  list-style: none;
-}
-details.section summary::-webkit-details-marker,
-details summary::-webkit-details-marker{
-  display:none;
-}
-details.section summary{
-  display:flex;
-  align-items:center;
-  gap:10px;
-}
-h3{
-  letter-spacing:.01em;
-}
-.bottom-buttons{
-  display:grid;
-  grid-template-columns:1fr auto 1fr;
-  gap:12px;
-  margin:14px 0 16px;
-}
-.bottom-buttons button{
-  width:100%;
-  margin:0 !important;
-}
-.utility-emoji-btn{
-  width:56px !important;
-  min-width:56px;
-  min-height:56px;
-  padding:0 !important;
-  border-radius:16px !important;
-  font-size:1.75rem !important;
-  line-height:1;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  background:linear-gradient(180deg,#ffffff 0%,#eef2ff 100%) !important;
-  border:1px solid #c4d0f4 !important;
-}
-.utility-emoji-btn:hover{
-  transform:translateY(-1px);
-}
-.share-mode-tip,
-.share-actions-wrap{
-  margin:-4px 0 16px;
-}
-.share-mode-tip{
-  padding:10px 12px;
-  border-radius:12px;
-  border:1px solid #f3c76e;
-  background:linear-gradient(180deg,#fff9e8 0%,#fff2c8 100%);
-  color:#7a4b00;
-  font-weight:700;
-}
-.share-actions-wrap{
-  display:grid;
-  grid-template-columns:1fr auto 1fr;
-  gap:12px;
-  margin-top:-2px;
-}
-.share-export-btn,
-.share-import-btn{
-  width:100%;
-  max-width:none;
-}
-.share-export-btn{
-  background:linear-gradient(180deg,#ffffff 0%,#edf3ff 100%) !important;
-  color:#214cb8 !important;
-  border:1px solid #b8cbff !important;
-}
-.share-import-btn{
-  background:linear-gradient(180deg,#ffffff 0%,#eefcf2 100%) !important;
-  color:#1f7a3b !important;
-  border:1px solid #b7e4c4 !important;
-}
-#clear-storage-btn{
-  background:linear-gradient(180deg,#ffefef 0%,#ffdede 100%) !important;
-  color:#8d1f1f !important;
-  border:1px solid #efb0b0 !important;
-}
-.share-url-btn{
-  background:linear-gradient(180deg,#5f7cff 0%,#4765ea 100%) !important;
-  color:#fff !important;
-  border:1px solid #3f5add !important;
-  box-shadow:0 10px 18px rgba(71,101,234,.24) !important;
-}
-#clear-storage-btn:hover,
-.share-url-btn:hover{
-  transform:translateY(-1px);
-}
-.form-grid-2col label,
-label[for="alignment"],
-label[for="background"],
-label[for="race"],
-label[for="class"],
-label[for="level"]{
-  font-size:.92rem;
-  font-weight:800;
-  color:var(--muted);
-  margin-bottom:6px;
-  display:block;
-}
-.skill-cell input[type="number"],
-.skill-cell input[type="text"],
-.save-pair input[type="number"],
-.save-pair input[type="text"]{
-  background:#fff !important;
-}
-.skill-cell input[type="number"],
-.skill-cell input[type="text"],
-.save-pair input[type="number"],
-.save-pair input[type="text"]{
-  text-align:center;
-}
-
-.spell-slot-column{
-  text-align:center;
-}
-
-.skill-cell:focus-within,
-.save-pair:focus-within,
-.ability:focus-within,
-.hp-card:focus-within,
-.mini-stat-card:focus-within,
-.spell-slot-column:focus-within{
-  border-color:#8ea7ff !important;
-  box-shadow:0 0 0 3px rgba(91,124,250,.12), var(--shadow) !important;
-}
-
-.invocation-block {
-  margin-bottom: 16px;
-  white-space: pre-wrap;
-  line-height: 1.45;
-}
-
-.invocation-block:last-child {
-  margin-bottom: 0;
-}
-
-.invocation-prereq {
-  display: inline-block;
-  margin: 2px 0 6px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 0.9em;
-  line-height: 1.35;
-  font-weight: 800;
-  color: #51627c;
-  background: #eef3fb;
-  border: 1px solid #d7deea;
-}
-
-@media (max-width:420px){
-  .bottom-buttons{grid-template-columns:1fr auto 1fr !important;}
-  .share-actions-wrap{grid-template-columns:1fr auto 1fr !important;}
-  .tabs{
-    gap:4px;
-    padding-top:4px;
-    margin-bottom:10px;
-  }
-}
-
-@media (max-width:420px){
-  body{padding-left:10px !important; padding-right:10px !important;}
-  .tab-button{font-size:.9rem !important; padding:6px 0 !important; min-height:38px;}
-  .section, details.section, .spell-toolbar, .action-help{padding:10px !important; margin-bottom:10px !important;}
-  .form-grid-2col, .save-grid, .skill-grid, .spell-picked-grid, .stats-card-row{grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:8px !important;}
-  #tab-basic .stats-card-row{grid-template-columns:repeat(3,minmax(0,1fr)) !important; gap:6px !important;}
-  #tab-basic .mini-stat-card{padding:8px !important; border-radius:12px;}
-  #tab-basic .mini-stat-label{font-size:.78rem !important; margin-bottom:4px !important; line-height:1.15;}
-  #tab-basic .mini-stat-card input[type="number"],
-  #tab-basic .mini-stat-card button{
-    min-height:34px !important;
-    font-size:.95rem !important;
-    padding:5px 6px !important;
-  }
-  .form-grid-6col{grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:8px !important;}
-  .action-grid-pretty{grid-template-columns:repeat(4,minmax(0,1fr)) !important;}
-  .skill-label-row{align-items:flex-start; gap:8px; margin-bottom:6px;}
-  .skill-name{font-size:.95rem !important; line-height:1.2;}
-  .skill-rank-controls{gap:6px;}
-  .save-pair{grid-template-columns:minmax(0,1fr) 54px !important; gap:8px !important; padding:8px 9px !important;}
-  .save-name{gap:6px; align-items:flex-start !important;}
-  .save-name .save-stack{line-height:1.08;}
-  .action-grid-pretty button{font-size:.9rem !important; min-height:38px !important; padding:6px 2px !important;}
-  .save-pair input[type="number"],
-.save-pair input[type="text"]{width:54px !important; min-width:54px; font-size:1rem !important; min-height:38px !important; padding:6px 4px !important;}
-  .skill-cell{padding:8px 9px !important;}
-  .skill-cell input[type="number"], .skill-cell input[type="text"], input[type="number"], select, input[type="text"], textarea{min-height:38px !important; font-size:1rem !important; padding:7px 9px !important;}
-  .modifier{min-height:72px; font-size:2rem; margin-bottom:0 !important;}
-  .spell-slot-grid{grid-template-columns:max-content minmax(0,1fr) minmax(0,1fr) !important; gap:6px !important;}
-  .spell-slot-column{padding:8px 7px !important;}
-  .spell-slot-column h4{font-size:1rem !important; margin:0 0 6px !important;}
-  .spell-casting-stats{gap:6px 6px !important;}
-  .spell-casting-stats .stat-label{font-size:.82rem !important;}
-  .spell-casting-stats select,
-  .spell-casting-stats input{font-size:1.15rem !important; min-height:40px !important; padding:6px 4px !important;}
-}
-
-@media (max-width:339px){
-  .form-grid-2col, .save-grid, .skill-grid, .spell-picked-grid, .stats-card-row{grid-template-columns:1fr !important;}
-  .form-grid-6col{grid-template-columns:1fr !important;}
-  .spell-slot-grid{grid-template-columns:max-content minmax(0,1fr) minmax(0,1fr) !important;}
-  #tab-basic .stats-card-stack{
-    display:grid;
-    grid-template-columns:repeat(2,minmax(0,1fr));
-    gap:8px !important;
-    margin-bottom:12px;
-  }
-  #tab-basic .stats-card-stack .stats-card-row{
-    display:contents;
-  }
-  #tab-basic .ability-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
-  #tab-basic .form-grid-2col--class-level{grid-template-columns:1fr !important;}
-}
-
-#tour-overlay{
-  position:fixed;
-  inset:0;
-  z-index:12000;
-  display:none;
-  pointer-events:none;
-}
-.tour-mask{
-  position:fixed;
-  background:rgba(10,16,30,.72);
-  pointer-events:auto;
-}
-#tour-focus-ring,
-#tour-focus-ring-secondary{
-  position:fixed;
-  border:3px solid #7aa2ff;
-  border-radius:12px;
-  box-shadow:0 0 0 2px rgba(122,162,255,.38),0 0 26px rgba(122,162,255,.7);
-  pointer-events:none;
-}
-#tour-tooltip{
-  position:fixed;
-  width:min(360px,calc(100vw - 20px));
-  background:#fff;
-  border:1px solid #c7d2e9;
-  border-radius:12px;
-  box-shadow:0 12px 30px rgba(10,16,30,.24);
-  padding:12px;
-  pointer-events:auto;
-}
-#tour-step-title{
-  font-size:1.02rem;
-  font-weight:900;
-  margin:0 0 4px;
-}
-#tour-step-text{
-  font-size:.93rem;
-  line-height:1.5;
-  color:#34425b;
-}
-.tour-btn-row{
-  display:flex;
-  justify-content:flex-end;
-  gap:8px;
-  margin-top:10px;
-}
-#tour-next-btn{
-  background:linear-gradient(180deg,#6d89ff 0%,#5675f2 100%);
-  color:#fff;
-  min-height:38px;
-  padding:0 12px;
-}
-#tour-skip-btn{
-  min-height:38px;
-  padding:0 12px;
-}
-#restart-onboarding-btn{
-  margin:14px auto 22px;
-  width:min(460px,calc(100% - 20px));
-  display:block;
-  background:linear-gradient(180deg,#fff6e6 0%,#ffe8c0 100%);
-  border:1px solid #e8c27a !important;
-}
-
-.sr-only{
-  position:absolute !important;
-  width:1px;
-  height:1px;
-  padding:0;
-  margin:-1px;
-  overflow:hidden;
-  clip:rect(0,0,0,0);
-  white-space:nowrap;
-  border:0;
-}
-.site-hero{
-  padding:8px 14px 2px;
-}
-.site-hero h1{
-  margin:0;
-  font-size:1.02rem;
-  font-weight:900;
-}
-.site-hero p{
-  margin:2px 0 0;
-  font-size:.86rem;
-  color:var(--muted);
-}
-.site-footer{
-  margin:22px auto 18px;
-  width:min(980px,calc(100% - 20px));
-  background:var(--panel);
-  border:1px solid var(--line);
-  border-radius:12px;
-  padding:12px;
-  box-shadow:var(--shadow);
-  font-size:.84rem;
-  color:#46536a;
-}
-.site-footer-links{
-  display:flex;
-  gap:12px;
-  flex-wrap:wrap;
-  margin-bottom:8px;
-}
-.site-footer a{
-  color:#2d58dd;
-  font-weight:700;
-  text-decoration:none;
-}
-.site-footer a:focus-visible, .site-footer a:hover{
-  text-decoration:underline;
-}
-
-</style>
+  <script src="legal-modal.js" defer></script>
+  <script src="onboarding-tour.js" defer></script>
 
 </head>
 <body>
@@ -926,19 +44,30 @@ label[for="level"]{
     <h1>D&D 新手快速創角工具</h1>
     <p>用手機學會填寫角色卡</p>
   </div>
-  <nav class="tabs" role="tablist" aria-label="角色卡功能分頁">
-  <button id="basic-tab-button" class="tab-button active" type="button" role="tab" aria-selected="true" aria-controls="tab-basic" onclick="showTab(&#39;basic&#39;, this)">數值</button>
-  <button class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="tab-skills" onclick="showTab(&#39;skills&#39;, this)">技能</button>
-  <button class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="tab-actions" onclick="showTab(&#39;actions&#39;, this)">動作</button>
-  <button class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="tab-equipment" onclick="showTab(&#39;equipment&#39;, this)">裝備</button>
-  <button id="spells-tab-button" class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="tab-spells" onclick="showTab(&#39;spells&#39;, this)">法術</button>
-</nav>
+  <div class="tabs-shell">
+    <nav class="tabs" role="tablist" aria-label="角色卡功能分頁">
+      <button id="basic-tab-button" class="tab-button active" type="button" role="tab" aria-selected="true" aria-controls="tab-basic" onclick="showTab(&#39;basic&#39;, this)">數值</button>
+      <button class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="tab-skills" onclick="showTab(&#39;skills&#39;, this)">技能</button>
+      <button class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="tab-actions" onclick="showTab(&#39;actions&#39;, this)">動作</button>
+      <button class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="tab-equipment" onclick="showTab(&#39;equipment&#39;, this)">裝備</button>
+      <button id="spells-tab-button" class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="tab-spells" onclick="showTab(&#39;spells&#39;, this)">法術</button>
+    </nav>
+    <div id="spell-tab-toolbar" class="spell-toolbar is-hidden" aria-label="法術搜尋工具列">
+      <div class="spell-toolbar-row">
+        <input type="text" id="spell-search" placeholder="🔍 搜尋">
+        <div id="spell-toolbar-actions" class="spell-toolbar-actions">
+          <button type="button" id="expand-spells">全展</button>
+          <button type="button" id="collapse-spells">收合</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </header>
 
 <main id="main-content">
 <div id="tab-basic" class="tab-content active" role="tabpanel" aria-label="數值頁">
   <!-- 職業 + 預設按鈕 + 等級 -->
-<div class="form-grid-2col form-grid-2col--class-level">
+<div class="form-grid-2col form-grid-identity">
   <div>
     <label for="class">職業</label>
     <select id="class">
@@ -968,10 +97,6 @@ label[for="level"]{
       <option value="5">5</option>
     </select>
   </div>
-</div>
-
-<!-- 背景與種族 -->
-<div class="form-grid-2col">
   <div>
     <label for="background">背景</label>
     <select id="background">
@@ -1000,7 +125,7 @@ label[for="level"]{
 </div>
 
 
-  <div class="form-grid-2col">
+<div class="form-grid-2col form-grid-2col--class-level">
   <!-- 左欄：HP 顯示與輸入 -->
   <div class="hp-card">
     <div class="hp-title">最大HP<span id="hp-display" class="hp-value">(0)</span><input type="number" id="hp" aria-label="目前生命值" placeholder="目前 HP" min="0" max="200" step="1" inputmode="numeric"></div>
@@ -1014,20 +139,10 @@ label[for="level"]{
 
 
 
-<style>
-.form-grid-6col {
-  display: grid;
-  grid-template-columns: auto auto auto auto auto auto;
-  gap: 10px;
-  align-items: center;
-  font-size: 0.95em;
-}
-</style>
-
 <div class="stats-card-stack">
   <!-- 第一列：陣營、速度、先攻 -->
-  <div class="stats-card-row">
-    <div class="mini-stat-card">
+  <div class="stats-card-row stats-card-row--top">
+    <div class="mini-stat-card mini-stat-card--alignment mini-stat-card--identity-alignment">
       <div class="mini-stat-label">陣營</div>
       <select id="alignment">
         <option value="">-- 請選擇 --</option>
@@ -1042,29 +157,29 @@ label[for="level"]{
         <option value="CE">混亂邪惡</option>
       </select>
     </div>
-    <div class="mini-stat-card">
+    <div class="mini-stat-card mini-stat-card--speed">
       <div class="mini-stat-label">速度</div>
       <input id="speed-input" type="number" class="tight-input" value="30" aria-label="速度">
     </div>
-    <div class="mini-stat-card">
+    <div class="mini-stat-card mini-stat-card--initiative">
       <div class="mini-stat-label">先攻</div>
       <input id="initiative-input" type="text" inputmode="numeric" class="tight-input" value="+0" aria-label="先攻">
     </div>
   </div>
 
-  <!-- 第二列：生命骰、被動感知、按鈕 -->
-  <div class="stats-card-row">
-    <div class="mini-stat-card">
+<!-- 第二列：生命骰、被動感知、按鈕 -->
+  <div class="stats-card-row stats-card-row--bottom">
+    <div class="mini-stat-card mini-stat-card--quick mini-stat-card--quick-start">
+      <div class="mini-stat-label">快速創角</div>
+<button id="set-default-abilities" type="button" class="button-compact">預設屬性</button>
+    </div>
+    <div class="mini-stat-card mini-stat-card--lifedice">
       <div class="mini-stat-label">生命骰</div>
       <input id="lifedicen" type="number" class="tight-input" value="1" min="0" max="5">
     </div>
-    <div class="mini-stat-card">
+    <div class="mini-stat-card mini-stat-card--passive">
       <div class="mini-stat-label">被動感知</div>
       <input id="passive-perception" type="number" class="tight-input" value="10" min="-5" max="45" aria-label="被動感知">
-    </div>
-    <div class="mini-stat-card">
-      <div class="mini-stat-label">快速創角</div>
-      <button id="set-default-abilities" type="button" style="font-size:0.95em; margin-bottom:0;">預設屬性</button>
     </div>
   </div>
 </div>
@@ -1111,39 +226,39 @@ label[for="level"]{
 
 <div class="section">
       <h3>職業筆記區</h3>
-      <textarea id="class-extra" rows="4" style="width: 100%;" placeholder="職業選項、能力使用次數等等......"></textarea>
+<textarea id="class-extra" rows="4" placeholder="職業選項、能力使用次數等等......"></textarea>
   </div>
 
-<div id="warlock-invocation-summary-wrap" class="section" style="display: none;">
+<div id="warlock-invocation-summary-wrap" class="section is-hidden">
   <strong>契術師魔能祈喚：</strong>
-  <div id="warlock-invocation-summary" style="margin-top: 6px; padding: 8px; border: 1px solid #aaa; border-radius: 6px; background: #fafafa;">尚未勾選魔能祈喚</div>
+  <div id="warlock-invocation-summary" class="selection-summary">尚未勾選魔能祈喚</div>
 </div>
 
 <div class="section">
   <details open>
-    <summary><h3 style="display: inline;">職業能力</h3></summary>
+    <summary><h3 class="summary-title-inline">職業能力</h3></summary>
     <div class="output" id="classFeatures">無資料</div>
   </details>
 </div>
-<div class="section" id="metamagic-options-section" style="display: none;">
+<div class="section is-hidden" id="metamagic-options-section">
   <details open>
-    <summary><h3 style="display: inline;">超魔法選項</h3></summary>
+    <summary><h3 class="summary-title-inline">超魔法選項</h3></summary>
     <div class="output" id="metamagicOptions">無資料</div>
   </details>
 </div>
 
-<div class="section" id="eldritch-invocations-section" style="display: none;">
+<div class="section is-hidden" id="eldritch-invocations-section">
   <details open>
-    <summary><h3 style="display: inline;">魔能祈喚</h3></summary>
+    <summary><h3 class="summary-title-inline">魔能祈喚</h3></summary>
     <div class="output" id="eldritch-invocations-output">無資料</div>
   </details>
 </div>
 	<div class="section">
-    <details open><summary><h3 style="display: inline;">背景能力</h3></summary>
+    <details open><summary><h3 class="summary-title-inline">背景能力</h3></summary>
     <div class="output" id="backgroundFeatures">無資料</div></details>
 	</div>
   <div class="section">
-    <details open><summary><h3 style="display: inline;">種族能力</h3>
+    <details open><summary><h3 class="summary-title-inline">種族能力</h3>
     記錄格:<input type="checkbox" id="race-ab-check1">
     <input type="checkbox" id="race-ab-check2">
     <input type="checkbox" id="race-ab-check3"></summary>
@@ -1165,14 +280,14 @@ label[for="level"]{
     🔗 分享角卡
   </button>
 </div>
-<div id="share-mode-tip" class="share-mode-tip" style="display:none;">
+<div id="share-mode-tip" class="share-mode-tip is-hidden">
   目前為分享模式：你的修改不會自動寫入本機儲存。可使用下方「匯入紀錄／匯出紀錄」功能保存與還原。
 </div>
 <div id="share-actions-wrap" class="share-actions-wrap">
   <button type="button" id="import-json-btn" class="share-import-btn">⬆️ 匯入紀錄</button>
   <button type="button" id="open-deity-btn" class="utility-emoji-btn" aria-label="開啟神祉整理">🙏</button>
   <button type="button" id="export-json-btn" class="share-export-btn">⬇️ 匯出紀錄</button>
-  <input type="file" id="import-json-file" accept="application/json" style="display:none;">
+<input type="file" id="import-json-file" accept="application/json" class="is-hidden">
 </div>
 
   <button type="button" id="restart-onboarding-btn">🧭 重新開啟新手導覽</button>
@@ -1195,37 +310,38 @@ label[for="level"]{
 
 
 <div class="section">
-  <button onclick="fillSkills()">計算技能加值（熟練選好再按）</button>
+  <button onclick="fillSkills()">計算技能加值</button>
+  <div class="skill-action-hint">先把熟練或專精勾好，再按這個按鈕。</div>
   <div class="skill-legend"><span class="legend-badge"><span class="legend-box"></span>熟練</span><span class="legend-badge"><span class="legend-circle"></span>專精</span></div>
   <div class="skill-grid">
-    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">運動(力量)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-運動" data-skill-rank="運動" aria-label="運動 熟練"><input type="checkbox" id="exp-運動" class="circle-checkbox" data-skill-rank="運動" aria-label="運動 專精"></div></div><input type="text" inputmode="numeric" id="skill-運動"></div>
-    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">體操(敏捷)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-體操" data-skill-rank="體操" aria-label="體操 熟練"><input type="checkbox" id="exp-體操" class="circle-checkbox" data-skill-rank="體操" aria-label="體操 專精"></div></div><input type="text" inputmode="numeric" id="skill-體操"></div>
-    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">巧手(敏捷)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-巧手" data-skill-rank="巧手" aria-label="巧手 熟練"><input type="checkbox" id="exp-巧手" class="circle-checkbox" data-skill-rank="巧手" aria-label="巧手 專精"></div></div><input type="text" inputmode="numeric" id="skill-巧手"></div>
-    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">隱匿(敏捷)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-隱匿" data-skill-rank="隱匿" aria-label="隱匿 熟練"><input type="checkbox" id="exp-隱匿" class="circle-checkbox" data-skill-rank="隱匿" aria-label="隱匿 專精"></div></div><input type="text" inputmode="numeric" id="skill-隱匿"></div>
-    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">奧秘(智力)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-奧秘" data-skill-rank="奧秘" aria-label="奧秘 熟練"><input type="checkbox" id="exp-奧秘" class="circle-checkbox" data-skill-rank="奧秘" aria-label="奧秘 專精"></div></div><input type="text" inputmode="numeric" id="skill-奧秘"></div>
-    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">歷史(智力)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-歷史" data-skill-rank="歷史" aria-label="歷史 熟練"><input type="checkbox" id="exp-歷史" class="circle-checkbox" data-skill-rank="歷史" aria-label="歷史 專精"></div></div><input type="text" inputmode="numeric" id="skill-歷史"></div>
-    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">調查(智力)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-調查" data-skill-rank="調查" aria-label="調查 熟練"><input type="checkbox" id="exp-調查" class="circle-checkbox" data-skill-rank="調查" aria-label="調查 專精"></div></div><input type="text" inputmode="numeric" id="skill-調查"></div>
-    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">自然(智力)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-自然" data-skill-rank="自然" aria-label="自然 熟練"><input type="checkbox" id="exp-自然" class="circle-checkbox" data-skill-rank="自然" aria-label="自然 專精"></div></div><input type="text" inputmode="numeric" id="skill-自然"></div>
-    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">宗教(智力)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-宗教" data-skill-rank="宗教" aria-label="宗教 熟練"><input type="checkbox" id="exp-宗教" class="circle-checkbox" data-skill-rank="宗教" aria-label="宗教 專精"></div></div><input type="text" inputmode="numeric" id="skill-宗教"></div>
-    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">馴獸(感知)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-馴獸" data-skill-rank="馴獸" aria-label="馴獸 熟練"><input type="checkbox" id="exp-馴獸" class="circle-checkbox" data-skill-rank="馴獸" aria-label="馴獸 專精"></div></div><input type="text" inputmode="numeric" id="skill-馴獸"></div>
-    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">洞悉(感知)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-洞悉" data-skill-rank="洞悉" aria-label="洞悉 熟練"><input type="checkbox" id="exp-洞悉" class="circle-checkbox" data-skill-rank="洞悉" aria-label="洞悉 專精"></div></div><input type="text" inputmode="numeric" id="skill-洞悉"></div>
-    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">醫藥(感知)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-醫藥" data-skill-rank="醫藥" aria-label="醫藥 熟練"><input type="checkbox" id="exp-醫藥" class="circle-checkbox" data-skill-rank="醫藥" aria-label="醫藥 專精"></div></div><input type="text" inputmode="numeric" id="skill-醫藥"></div>
-    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">察覺(感知)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-察覺" data-skill-rank="察覺" aria-label="察覺 熟練"><input type="checkbox" id="exp-察覺" class="circle-checkbox" data-skill-rank="察覺" aria-label="察覺 專精"></div></div><input type="text" inputmode="numeric" id="skill-察覺"></div>
-    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">求生(感知)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-求生" data-skill-rank="求生" aria-label="求生 熟練"><input type="checkbox" id="exp-求生" class="circle-checkbox" data-skill-rank="求生" aria-label="求生 專精"></div></div><input type="text" inputmode="numeric" id="skill-求生"></div>
-    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">欺瞞(魅力)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-欺瞞" data-skill-rank="欺瞞" aria-label="欺瞞 熟練"><input type="checkbox" id="exp-欺瞞" class="circle-checkbox" data-skill-rank="欺瞞" aria-label="欺瞞 專精"></div></div><input type="text" inputmode="numeric" id="skill-欺瞞"></div>
-    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">威嚇(魅力)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-威嚇" data-skill-rank="威嚇" aria-label="威嚇 熟練"><input type="checkbox" id="exp-威嚇" class="circle-checkbox" data-skill-rank="威嚇" aria-label="威嚇 專精"></div></div><input type="text" inputmode="numeric" id="skill-威嚇"></div>
-    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">表演(魅力)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-表演" data-skill-rank="表演" aria-label="表演 熟練"><input type="checkbox" id="exp-表演" class="circle-checkbox" data-skill-rank="表演" aria-label="表演 專精"></div></div><input type="text" inputmode="numeric" id="skill-表演"></div>
-    <div class="skill-cell"><div class="skill-label-row"><div class="skill-name">遊說(魅力)</div><div class="skill-rank-controls"><input type="checkbox" id="prof-遊說" data-skill-rank="遊說" aria-label="遊說 熟練"><input type="checkbox" id="exp-遊說" class="circle-checkbox" data-skill-rank="遊說" aria-label="遊說 專精"></div></div><input type="text" inputmode="numeric" id="skill-遊說"></div>
+    <div class="skill-cell"><div class="skill-name">運動(力量)</div><div class="skill-control-row"><div class="skill-rank-controls"><input type="checkbox" id="prof-運動" data-skill-rank="運動" aria-label="運動 熟練"><input type="checkbox" id="exp-運動" class="circle-checkbox" data-skill-rank="運動" aria-label="運動 專精"></div><input type="text" inputmode="numeric" id="skill-運動"></div></div>
+    <div class="skill-cell"><div class="skill-name">體操(敏捷)</div><div class="skill-control-row"><div class="skill-rank-controls"><input type="checkbox" id="prof-體操" data-skill-rank="體操" aria-label="體操 熟練"><input type="checkbox" id="exp-體操" class="circle-checkbox" data-skill-rank="體操" aria-label="體操 專精"></div><input type="text" inputmode="numeric" id="skill-體操"></div></div>
+    <div class="skill-cell"><div class="skill-name">巧手(敏捷)</div><div class="skill-control-row"><div class="skill-rank-controls"><input type="checkbox" id="prof-巧手" data-skill-rank="巧手" aria-label="巧手 熟練"><input type="checkbox" id="exp-巧手" class="circle-checkbox" data-skill-rank="巧手" aria-label="巧手 專精"></div><input type="text" inputmode="numeric" id="skill-巧手"></div></div>
+    <div class="skill-cell"><div class="skill-name">隱匿(敏捷)</div><div class="skill-control-row"><div class="skill-rank-controls"><input type="checkbox" id="prof-隱匿" data-skill-rank="隱匿" aria-label="隱匿 熟練"><input type="checkbox" id="exp-隱匿" class="circle-checkbox" data-skill-rank="隱匿" aria-label="隱匿 專精"></div><input type="text" inputmode="numeric" id="skill-隱匿"></div></div>
+    <div class="skill-cell"><div class="skill-name">奧秘(智力)</div><div class="skill-control-row"><div class="skill-rank-controls"><input type="checkbox" id="prof-奧秘" data-skill-rank="奧秘" aria-label="奧秘 熟練"><input type="checkbox" id="exp-奧秘" class="circle-checkbox" data-skill-rank="奧秘" aria-label="奧秘 專精"></div><input type="text" inputmode="numeric" id="skill-奧秘"></div></div>
+    <div class="skill-cell"><div class="skill-name">歷史(智力)</div><div class="skill-control-row"><div class="skill-rank-controls"><input type="checkbox" id="prof-歷史" data-skill-rank="歷史" aria-label="歷史 熟練"><input type="checkbox" id="exp-歷史" class="circle-checkbox" data-skill-rank="歷史" aria-label="歷史 專精"></div><input type="text" inputmode="numeric" id="skill-歷史"></div></div>
+    <div class="skill-cell"><div class="skill-name">調查(智力)</div><div class="skill-control-row"><div class="skill-rank-controls"><input type="checkbox" id="prof-調查" data-skill-rank="調查" aria-label="調查 熟練"><input type="checkbox" id="exp-調查" class="circle-checkbox" data-skill-rank="調查" aria-label="調查 專精"></div><input type="text" inputmode="numeric" id="skill-調查"></div></div>
+    <div class="skill-cell"><div class="skill-name">自然(智力)</div><div class="skill-control-row"><div class="skill-rank-controls"><input type="checkbox" id="prof-自然" data-skill-rank="自然" aria-label="自然 熟練"><input type="checkbox" id="exp-自然" class="circle-checkbox" data-skill-rank="自然" aria-label="自然 專精"></div><input type="text" inputmode="numeric" id="skill-自然"></div></div>
+    <div class="skill-cell"><div class="skill-name">宗教(智力)</div><div class="skill-control-row"><div class="skill-rank-controls"><input type="checkbox" id="prof-宗教" data-skill-rank="宗教" aria-label="宗教 熟練"><input type="checkbox" id="exp-宗教" class="circle-checkbox" data-skill-rank="宗教" aria-label="宗教 專精"></div><input type="text" inputmode="numeric" id="skill-宗教"></div></div>
+    <div class="skill-cell"><div class="skill-name">馴獸(感知)</div><div class="skill-control-row"><div class="skill-rank-controls"><input type="checkbox" id="prof-馴獸" data-skill-rank="馴獸" aria-label="馴獸 熟練"><input type="checkbox" id="exp-馴獸" class="circle-checkbox" data-skill-rank="馴獸" aria-label="馴獸 專精"></div><input type="text" inputmode="numeric" id="skill-馴獸"></div></div>
+    <div class="skill-cell"><div class="skill-name">洞悉(感知)</div><div class="skill-control-row"><div class="skill-rank-controls"><input type="checkbox" id="prof-洞悉" data-skill-rank="洞悉" aria-label="洞悉 熟練"><input type="checkbox" id="exp-洞悉" class="circle-checkbox" data-skill-rank="洞悉" aria-label="洞悉 專精"></div><input type="text" inputmode="numeric" id="skill-洞悉"></div></div>
+    <div class="skill-cell"><div class="skill-name">醫藥(感知)</div><div class="skill-control-row"><div class="skill-rank-controls"><input type="checkbox" id="prof-醫藥" data-skill-rank="醫藥" aria-label="醫藥 熟練"><input type="checkbox" id="exp-醫藥" class="circle-checkbox" data-skill-rank="醫藥" aria-label="醫藥 專精"></div><input type="text" inputmode="numeric" id="skill-醫藥"></div></div>
+    <div class="skill-cell"><div class="skill-name">察覺(感知)</div><div class="skill-control-row"><div class="skill-rank-controls"><input type="checkbox" id="prof-察覺" data-skill-rank="察覺" aria-label="察覺 熟練"><input type="checkbox" id="exp-察覺" class="circle-checkbox" data-skill-rank="察覺" aria-label="察覺 專精"></div><input type="text" inputmode="numeric" id="skill-察覺"></div></div>
+    <div class="skill-cell"><div class="skill-name">求生(感知)</div><div class="skill-control-row"><div class="skill-rank-controls"><input type="checkbox" id="prof-求生" data-skill-rank="求生" aria-label="求生 熟練"><input type="checkbox" id="exp-求生" class="circle-checkbox" data-skill-rank="求生" aria-label="求生 專精"></div><input type="text" inputmode="numeric" id="skill-求生"></div></div>
+    <div class="skill-cell"><div class="skill-name">欺瞞(魅力)</div><div class="skill-control-row"><div class="skill-rank-controls"><input type="checkbox" id="prof-欺瞞" data-skill-rank="欺瞞" aria-label="欺瞞 熟練"><input type="checkbox" id="exp-欺瞞" class="circle-checkbox" data-skill-rank="欺瞞" aria-label="欺瞞 專精"></div><input type="text" inputmode="numeric" id="skill-欺瞞"></div></div>
+    <div class="skill-cell"><div class="skill-name">威嚇(魅力)</div><div class="skill-control-row"><div class="skill-rank-controls"><input type="checkbox" id="prof-威嚇" data-skill-rank="威嚇" aria-label="威嚇 熟練"><input type="checkbox" id="exp-威嚇" class="circle-checkbox" data-skill-rank="威嚇" aria-label="威嚇 專精"></div><input type="text" inputmode="numeric" id="skill-威嚇"></div></div>
+    <div class="skill-cell"><div class="skill-name">表演(魅力)</div><div class="skill-control-row"><div class="skill-rank-controls"><input type="checkbox" id="prof-表演" data-skill-rank="表演" aria-label="表演 熟練"><input type="checkbox" id="exp-表演" class="circle-checkbox" data-skill-rank="表演" aria-label="表演 專精"></div><input type="text" inputmode="numeric" id="skill-表演"></div></div>
+    <div class="skill-cell"><div class="skill-name">遊說(魅力)</div><div class="skill-control-row"><div class="skill-rank-controls"><input type="checkbox" id="prof-遊說" data-skill-rank="遊說" aria-label="遊說 熟練"><input type="checkbox" id="exp-遊說" class="circle-checkbox" data-skill-rank="遊說" aria-label="遊說 專精"></div><input type="text" inputmode="numeric" id="skill-遊說"></div></div>
   </div>
 
   <div class="section">
       <h3>備註 / 其他說明</h3>
-      <textarea id="skill-extra" rows="4" style="width: 100%;" placeholder="如果技能有其他規則，記在這裡。"></textarea>
+<textarea id="skill-extra" rows="4" placeholder="如果技能有其他規則，記在這裡。"></textarea>
   </div>
 
-<div style="margin-top: 24px;">
+<div class="language-section">
   <label>你會說通用語及兩種語言：</label>
-  <select id="language1" style="margin-left: 8px;">
+  <select id="language1" class="language-select">
     <option value="">-- 請選擇 --</option>
     <option value="common-sign">通用手語</option>
     <option value="draconic">龍語</option>
@@ -1238,7 +354,7 @@ label[for="level"]{
     <option value="orc">獸人語</option>
   </select>
 
-  <select id="language2" style="margin-left: 8px;">
+  <select id="language2" class="language-select">
     <option value="">-- 請選擇 --</option>
     <option value="common-sign">通用手語</option>
     <option value="draconic">龍語</option>
@@ -1252,7 +368,7 @@ label[for="level"]{
   </select>
 </div>
 
-<div id="extra-language-container" style="margin-top: 12px;"></div>
+<div id="extra-language-container" class="language-extra-container"></div>
 
 
 </div>
@@ -1265,48 +381,48 @@ label[for="level"]{
   <div id="tab-actions" class="tab-content" role="tabpanel" aria-label="動作頁" hidden>
     <div class="section">
       <details class="action-help action-collapsible-wrap" open>
-  <summary><h3 style="display:inline; margin:0;">戰鬥中的四種行動</h3></summary>
-  <table style="width: 100%; border-collapse: collapse; font-size: 0.95em; margin-top:10px;">
+  <summary><h3 class="summary-title-inline">戰鬥中的四種行動</h3></summary>
+  <table class="action-info-table">
     <thead>
-      <tr style="background-color: #f0f0f0;">
-        <th style="border: 1px solid #ccc; padding: 6px;">類型</th>
-        <th style="border: 1px solid #ccc; padding: 6px;">說明</th>
-        <th style="border: 1px solid #ccc; padding: 6px;">使用時機</th>
-        <th style="border: 1px solid #ccc; padding: 6px;">範例</th>
+      <tr>
+        <th>類型</th>
+        <th>說明</th>
+        <th>使用時機</th>
+        <th>範例</th>
       </tr>
     </thead>
     <tbody>
       <tr>
-        <td style="border: 1px solid #ccc; padding: 6px;">移動</td>
-        <td style="border: 1px solid #ccc; padding: 6px;">改變你的位置</td>
-        <td style="border: 1px solid #ccc; padding: 6px;">自己的回合中</td>
-        <td style="border: 1px solid #ccc; padding: 6px;">步行、游泳</td>
+        <td>移動</td>
+        <td>改變你的位置</td>
+        <td>自己的回合中</td>
+        <td>步行、游泳</td>
       </tr>
       <tr>
-        <td style="border: 1px solid #ccc; padding: 6px;">動作</td>
-        <td style="border: 1px solid #ccc; padding: 6px;">主要行動</td>
-        <td style="border: 1px solid #ccc; padding: 6px;">每回合1次</td>
-        <td style="border: 1px solid #ccc; padding: 6px;">攻擊、閃避</td>
+        <td>動作</td>
+        <td>主要行動</td>
+        <td>每回合1次</td>
+        <td>攻擊、閃避</td>
       </tr>
       <tr>
-        <td style="border: 1px solid #ccc; padding: 6px;">附贈動作</td>
-        <td style="border: 1px solid #ccc; padding: 6px;">有條件的額外動作</td>
-        <td style="border: 1px solid #ccc; padding: 6px;">每回合最多1次</td>
-        <td style="border: 1px solid #ccc; padding: 6px;">二次攻擊、喝水</td>
+        <td>附贈動作</td>
+        <td>有條件的額外動作</td>
+        <td>每回合最多1次</td>
+        <td>二次攻擊、喝水</td>
       </tr>
       <tr>
-        <td style="border: 1px solid #ccc; padding: 6px;">反應</td>
-        <td style="border: 1px solid #ccc; padding: 6px;">在別人回合觸發</td>
-        <td style="border: 1px solid #ccc; padding: 6px;">每回合最多1次</td>
-        <td style="border: 1px solid #ccc; padding: 6px;">藉機攻擊</td>
+        <td>反應</td>
+        <td>在別人回合觸發</td>
+        <td>每回合最多1次</td>
+        <td>藉機攻擊</td>
       </tr>
     </tbody>
   </table>
 </details>
       <details class="action-collapsible-wrap" open>
-        <summary><h3 style="display:inline; margin:0;">動作</h3></summary>
-      <div id="action-description" class="output" style="margin-top:10px;">請選擇一個動作查看說明。</div>
-      <div class="action-grid-pretty" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px;">
+        <summary><h3 class="summary-title-inline">動作</h3></summary>
+      <div id="action-description" class="output action-description">請選擇一個動作查看說明。</div>
+      <div class="action-grid-pretty action-grid-panel">
         <button onclick="showAction(&#39;attack&#39;)">攻擊</button>
         <button onclick="showAction(&#39;dash&#39;)">衝刺</button>
         <button onclick="showAction(&#39;disengage&#39;)">撤離</button>
@@ -1325,9 +441,9 @@ label[for="level"]{
 
 <h3>攻擊動作</h3>
 <button onclick="populateHandAttacks()">獲取 主副手 武器資料</button>
-<div id="weapon-mastery-summary-wrap" class="section" style="display: none;">
+<div id="weapon-mastery-summary-wrap" class="section is-hidden">
   <strong>精通註記：</strong>
-  <div id="weapon-mastery-summary" style="margin-top: 6px; padding: 8px; border: 1px solid #aaa; border-radius: 6px; background: #fafafa;">尚未勾選精通屬性</div>
+  <div id="weapon-mastery-summary" class="selection-summary">尚未勾選精通屬性</div>
 </div>
 <div class="form-row small-text">
   <input type="text" id="atk-main-name" placeholder="名稱">
@@ -1344,8 +460,8 @@ label[for="level"]{
 </div>
 <h3>動作</h3>
 	  <div class="section">
-	  <div style="font-size: 1.05em; font-weight: bold; margin-top: 10px;">徒手攻擊</div>
-<div class="small-text" style="margin-left: 10px; margin-top: 4px;">
+<div class="action-note-title">徒手攻擊</div>
+<div class="small-text action-note-copy">
   5呎內拳打腳踢或咬人，擇一效果:<br>
   	1) 傷害：命中=力調+熟練；傷害=力調+1（鈍擊）<br>
   	2) 擒抱：力/敏豁免（DC=8+力調+熟練，需空手）<br>
@@ -1356,20 +472,20 @@ label[for="level"]{
 
       <h3>附贈</h3>
 	  <div class="section">
-<div style="font-size: 1.05em; font-weight: bold; margin-top: 10px;">喝藥水</div>
-<div class="small-text" style="margin-left: 10px; margin-top: 4px;">
+<div class="action-note-title">喝藥水</div>
+<div class="small-text action-note-copy">
   治療藥水：恢復 2d4+2 HP
 </div>
 
-<div style="font-size: 1.05em; font-weight: bold; margin-top: 10px;">進行二次攻擊</div>
-<div class="small-text" style="margin-left: 10px; margin-top: 4px;">
+<div class="action-note-title">進行二次攻擊</div>
+<div class="small-text action-note-copy">
   雙持輕型武器攻擊後，可用附贈進行副手攻擊。副手傷害不加屬性調整值，除非具備特定專長。
 </div>
 	  </div>
       <h3>反應</h3>
 	  <div class="section">
-<div style="font-size: 1.05em; font-weight: bold; margin-top: 10px;">進行藉機攻擊</div>
-<div class="small-text" style="margin-left: 10px; margin-top: 4px;">
+<div class="action-note-title">進行藉機攻擊</div>
+<div class="small-text action-note-copy">
   當你能看見的生物離開你的觸及範圍時，你可以進行藉機攻擊。使用"反應"來對該生物進行一次近戰攻擊。。
 </div>
 	  </div>
@@ -1385,7 +501,7 @@ label[for="level"]{
 
     <div class="form-row">
       <label for="mainHand">主手</label>
-      <select id="mainHand"><option value="">-- 請選擇 --</option><option value="短棒">短棒</option><option value="匕首">匕首</option><option value="巨棒">巨棒</option><option value="手斧">手斧</option><option value="標槍">標槍</option><option value="輕錘">輕錘</option><option value="硬頭錘">硬頭錘</option><option value="長棍">長棍</option><option value="鐮刀">鐮刀</option><option value="短矛">短矛</option><option value="飛鏢">飛鏢</option><option value="輕弩">輕弩</option><option value="短弓">短弓</option><option value="投石索">投石索</option><option value="戰斧">戰斧</option><option value="連枷">連枷</option><option value="長柄刀">長柄刀</option><option value="巨斧">巨斧</option><option value="巨劍">巨劍</option><option value="長戟">長戟</option><option value="騎槍">騎槍</option><option value="長劍">長劍</option><option value="巨錘">巨錘</option><option value="釘頭錘">釘頭錘</option><option value="長矛">長矛</option><option value="刺劍">刺劍</option><option value="彎刀">彎刀</option><option value="短劍">短劍</option><option value="三叉戟">三叉戟</option><option value="戰錘">戰錘</option><option value="戰鎬">戰鎬</option><option value="鞭">鞭</option><option value="吹箭筒">吹箭筒</option><option value="手弩">手弩</option><option value="重弩">重弩</option><option value="長弓">長弓</option><option value="長管火槍">長管火槍</option><option value="手槍">手槍</option></select>
+<select id="mainHand"><option value="">-- 請選擇 --</option><option value="短棒">短棒</option><option value="匕首">匕首</option><option value="巨棒">巨棒</option><option value="手斧">手斧</option><option value="標槍">標槍</option><option value="輕錘">輕錘</option><option value="硬頭錘">硬頭錘</option><option value="長棍">長棍</option><option value="鐮刀">鐮刀</option><option value="短矛">短矛</option><option value="飛鏢">飛鏢</option><option value="輕弩">輕弩</option><option value="短弓">短弓</option><option value="投石索">投石索</option><option value="戰斧">戰斧</option><option value="連枷">連枷</option><option value="長柄刀">長柄刀</option><option value="巨斧">巨斧</option><option value="巨劍">巨劍</option><option value="長戟">長戟</option><option value="騎槍">騎槍</option><option value="長劍">長劍</option><option value="巨錘">巨錘</option><option value="釘頭錘">釘頭錘</option><option value="長矛">長矛</option><option value="刺劍">刺劍</option><option value="彎刀">彎刀</option><option value="短劍">短劍</option><option value="三叉戟">三叉戟</option><option value="戰錘">戰錘</option><option value="戰鎬">戰鎬</option><option value="鞭">鞭</option><option value="吹箭筒">吹箭筒</option><option value="手弩">手弩</option><option value="重弩">重弩</option><option value="長弓">長弓</option><option value="滑膛槍">滑膛槍</option><option value="手槍">手槍</option></select>
     </div>
     <div class="form-row small-text">
       <span id="main-hand-info-line1">--</span>
@@ -1420,12 +536,12 @@ label[for="level"]{
 
     <div class="section">
       <h3>攜帶物品</h3>
-      <textarea id="gear-notes" rows="4" style="width: 100%;" placeholder="請輸入角色攜帶的其他裝備、補給品、雜物等..."></textarea>
+<textarea id="gear-notes" rows="4" placeholder="請輸入角色攜帶的其他裝備、補給品、雜物等..."></textarea>
     </div>
 
     <div class="section">
       <h3>備註 / 其他說明</h3>
-      <textarea id="gear-extra" rows="4" style="width: 100%;" placeholder="任何額外想記下的內容，例如任務道具、魔法物品等..."></textarea>
+<textarea id="gear-extra" rows="4" placeholder="任何額外想記下的內容，例如任務道具、魔法物品等..."></textarea>
     </div>
 
   </div> <!-- END OF section -->
@@ -1437,50 +553,48 @@ label[for="level"]{
 
 
 <div id="tab-spells" class="tab-content" role="tabpanel" aria-label="法術頁" hidden>
-<div class="section spell-toolbar">
-  <div class="spell-toolbar-row">
-    <input type="text" id="spell-search" placeholder="🔍 搜尋">
-    <div id="spell-toolbar-actions" class="spell-toolbar-actions">
-      <button type="button" id="expand-spells">全展</button>
-      <button type="button" id="collapse-spells">收合</button>
-    </div>
-  </div>
-</div>
-
     <div class="section">
   <div id="spell-casting-stats-wrap" class="spell-casting-stats" aria-label="施法能力計算">
-    <div class="stat-label">施法屬性</div>
-    <div class="stat-label">施法調整值</div>
-    <div class="stat-label">豁免難度</div>
-    <div class="stat-label">命中加值</div>
-    <select id="spellcasting-ability">
-      <option value="">待選</option>
-      <option value="int">智力</option>
-      <option value="wis">感知</option>
-      <option value="cha">魅力</option>
-    </select>
-    <input type="text" id="spell-adjustment" inputmode="numeric" aria-label="施法調整值" maxlength="4" placeholder="">
-    <input type="number" id="spell-save-dc" inputmode="numeric" aria-label="豁免難度" min="0" max="20" placeholder="">
-    <input type="text" id="spell-attack-bonus" inputmode="numeric" aria-label="命中加值" maxlength="4" placeholder="">
+    <div class="spell-casting-field">
+      <div class="stat-label">施法屬性</div>
+      <select id="spellcasting-ability">
+        <option value="">待選</option>
+        <option value="int">智力</option>
+        <option value="wis">感知</option>
+        <option value="cha">魅力</option>
+      </select>
+    </div>
+    <div class="spell-casting-field">
+      <div class="stat-label">施法調整</div>
+      <input type="text" id="spell-adjustment" inputmode="numeric" aria-label="施法調整" maxlength="4" placeholder="">
+    </div>
+    <div class="spell-casting-field">
+      <div class="stat-label">豁免難度</div>
+      <input type="number" id="spell-save-dc" inputmode="numeric" aria-label="豁免難度" min="0" max="20" placeholder="">
+    </div>
+    <div class="spell-casting-field">
+      <div class="stat-label">命中加值</div>
+      <input type="text" id="spell-attack-bonus" inputmode="numeric" aria-label="命中加值" maxlength="4" placeholder="">
+    </div>
   </div>
   <div id="spell-slot-management-wrap">
   <h3>法術位管理</h3>
-  <div class="spell-slot-grid" style="display:grid; gap: 8px 12px; align-items: start;">
+  <div class="spell-slot-grid">
     <div id="spellslot1-row" class="spell-slot-column">
-      <label style="display:block; margin-bottom:4px;">一環：</label>
+      <label class="spell-slot-label">一環</label>
       <input type="checkbox" id="spellslot1-1">
       <input type="checkbox" id="spellslot1-2">
       <input type="checkbox" id="spellslot1-3">
       <input type="checkbox" id="spellslot1-4">
     </div>
     <div id="spellslot2-row" class="spell-slot-column">
-      <label style="display:block; margin-bottom:4px;">二環：</label>
+      <label class="spell-slot-label">二環</label>
       <input type="checkbox" id="spellslot2-1">
       <input type="checkbox" id="spellslot2-2">
       <input type="checkbox" id="spellslot2-3">
     </div>
     <div id="spellslot3-row" class="spell-slot-column">
-      <label style="display:block; margin-bottom:4px;">三環：</label>
+      <label class="spell-slot-label">三環</label>
       <input type="checkbox" id="spellslot3-1">
       <input type="checkbox" id="spellslot3-2">
     </div>
@@ -1496,29 +610,29 @@ label[for="level"]{
     <div class="output spell-picked-box"><div id="picked-level2" class="spell-picked-content">—</div></div>
     <div class="output spell-picked-box"><div id="picked-level3" class="spell-picked-content">—</div></div>
   </div>
-		<div style="font-size: 0.85em; color: #999; margin-top: 6px; line-height: 1.3;">
+		<div class="spell-note-muted">
 本頁僅提供免費基本規則法術；部分 PHB 專屬內容未列入。
 		</div>
 </div>
 
 <details class="section spell-level-section" open>
-  <summary><h3 style="display:inline;">戲法</h3></summary>
+  <summary><h3 class="summary-title-inline">戲法</h3></summary>
   <div id="cantrips-area"></div>
 </details>
 <details class="section spell-level-section" open>
-  <summary><h3 style="display:inline;">一環法術</h3></summary>
+  <summary><h3 class="summary-title-inline">一環法術</h3></summary>
   <div id="level1spells-area"></div>
 </details>
 <details class="section spell-level-section" open>
-  <summary><h3 style="display:inline;">二環法術</h3></summary>
+  <summary><h3 class="summary-title-inline">二環法術</h3></summary>
   <div id="level2spells-area"></div>
 </details>
 <details class="section spell-level-section" open>
-  <summary><h3 style="display:inline;">三環法術</h3></summary>
+  <summary><h3 class="summary-title-inline">三環法術</h3></summary>
   <div id="level3spells-area"></div>
 </details>
 
-<div id="highlevel-spells" style="display:none;"></div>
+<div id="highlevel-spells" class="is-hidden"></div>
 
   </div>
 
@@ -1703,12 +817,12 @@ function updateExtraLanguageFields() {
 
   const extendedOptionsHtml = createLanguageOptionsHtml([...BASE_LANGUAGE_OPTIONS, ...EXTRA_LANGUAGE_OPTIONS]);
   const extraFieldsHtml = fields.map((field, idx) => {
-    const label = `<label for="${field.id}" style="margin-right: 8px;">額外語言 ${idx + 1}：</label>`;
+    const label = `<label for="${field.id}" class="language-extra-label">額外語言 ${idx + 1}：</label>`;
     const disabledAttr = field.fixedValue ? "disabled" : "";
     const optionsHtml = field.fixedValue
       ? `<option value="${field.fixedValue}">${field.fixedLabel}</option>`
       : `<option value="">-- 請選擇 --</option>${extendedOptionsHtml}`;
-    return `<div style="margin-top: 8px;">${label}<select id="${field.id}" ${disabledAttr}>${optionsHtml}</select></div>`;
+    return `<div class="language-extra-row">${label}<select id="${field.id}" ${disabledAttr}>${optionsHtml}</select></div>`;
   }).join("");
 
   container.innerHTML = `<div><label>職業額外語言：</label>${extraFieldsHtml}</div>`;
@@ -1841,53 +955,6 @@ if (
 }
 // 計算AC底部
 
-const detailedBackgroundFeatures = {
-  acolyte: {
-    名稱: "侍僧",
-    屬性: "智力、感知、魅力",
-    專長: "魔法學徒（牧師）",
-    技能熟練: "洞悉、宗教",
-    工具熟練: "書法家工具",
-    裝備: "A、B 擇一",
-    裝備A: "書法家工具、書本（禱文）、聖徽、羊皮紙（10 張）、祭袍、8 金幣",
-    裝備B: "50 金幣",
-    描述: "你年輕時待過神殿，可能在鎮上，或深山林裡。在神職人員底下幫忙，讓你學會供奉神明和祭祀儀式，你也能引導些微神力，用來幫助信眾。"
-  },
-  criminal: {
-    名稱: "罪犯",
-    屬性: "敏捷、體質、智力",
-    專長: "警覺",
-    技能熟練: "巧手、隱匿",
-    工具熟練: "盜賊工具",
-    裝備: "A、B 擇一",
-    裝備A: "2 把匕首、盜賊工具、撬棍、2 個小包、旅行者服裝、16 金幣",
-    裝備B: "50 金幣",
-    描述: "你在黑巷裡靠著偷錢包和闖空門度日。可能和幾個臭味相投的同伴組隊互相照應；也可能是匹單打獨鬥的孤狼，在地痞流氓跟盜賊公會之間求生。"
-  },
-  sage: {
-    名稱: "智者",
-    屬性: "體質、智力、感知",
-    專長: "魔法學徒",
-    技能熟練: "奧秘、歷史",
-    工具熟練: "書法工具",
-    裝備: "A、B 擇一",
-    裝備A: "長棍、書法工具、書本（歷史）、羊皮紙（8 張）、長袍、8 金幣",
-    裝備B: "50 金幣",
-    描述: "你從小就在莊園和修道院之間穿梭，幫人打雜換取圖書館的進出機會。你常在夜晚看書研究古卷，學到一些魔法入門知識。你腦子裝了不少東西，但還渴望更多。"
-  },
-  soldier: {
-    名稱: "士兵",
-    屬性: "力量、敏捷、體質",
-    專長: "兇蠻打手",
-    技能熟練: "運動、威嚇",
-    工具熟練: "擇一賭具：骰子、紙牌、龍棋、三龍牌",
-    裝備: "A、B 擇一",
-    裝備A: "短矛、短弓、20 支箭、賭具（同上）、醫療包、箭袋、旅行者服裝、14 金幣",
-    裝備B: "50 金幣",
-    描述: "你成年後就接受軍訓，戰場幾乎就是你的人生。你有基礎戰技的肌肉記憶，常常不自覺地做出來。你曾走上戰場，用這些技能保家衛國。"
-  }
-};
-
 const eldritchInvocations = [
   { name: "刃之魔契" },
   { name: "鏈之魔契" },
@@ -1988,7 +1055,7 @@ function renderEldritchInvocations() {
     const checkCount = invocation.repeatable ? (invocation.max || 3) : 1;
     const checks = Array.from({ length: checkCount }, (_, slotIndex) => {
       const checkboxId = getInvocationCheckboxId(index, slotIndex + 1);
-      return `<label style="margin-right: 6px;"><input type="checkbox" id="${checkboxId}" data-invocation-name="${escapeHtml(invocation.name)}"></label>`;
+      return `<label class="inline-check-label"><input type="checkbox" id="${checkboxId}" data-invocation-name="${escapeHtml(invocation.name)}"></label>`;
     }).join("");
 
     return `<div class="invocation-block">${checks}<strong>${escapeHtml(invocation.name)}</strong>${invocation.text ? `\n${formatInvocationText(invocation.text)}` : ""}</div>`;
@@ -2018,7 +1085,7 @@ function updateWarlockInvocationSummary() {
   });
 
   summaryEl.innerHTML = picks.length
-    ? `已勾選：${picks.map(name => `<span style="display:inline-block; margin:2px 6px 2px 0; padding:2px 6px; border:1px solid #ccc; border-radius:999px;">${escapeHtml(name)}</span>`).join("")}`
+    ? `已勾選：${picks.map(name => `<span class="selection-pill">${escapeHtml(name)}</span>`).join("")}`
     : "尚未勾選魔能祈喚";
 }
 
@@ -2082,7 +1149,7 @@ function highlightSpellNamesInClassFeature(html) {
     .split(/(<[^>]+>)/g)
     .map(part => {
       if (part.startsWith("<") && part.endsWith(">")) return part;
-      return part.replace(spellRegex, '<strong style="color:#c40000;">$1</strong>');
+return part.replace(spellRegex, '<strong class="spell-highlight">$1</strong>');
     })
     .join("");
 }
@@ -2176,21 +1243,21 @@ function updateBackgroundFeature() {
   }
 
   el.innerHTML =
-  `<div id="background-ability-guide-target" style="line-height:1.25;">
+`<div id="background-ability-guide-target" class="background-guide-block">
      <div><strong>屬性：</strong>${bg.屬性}</div>
      <div><strong>專長：</strong>${bg.專長}</div>
      <div><strong>技能熟練：</strong>${bg.技能熟練}</div>
      <div><strong>工具熟練：</strong>${bg.工具熟練}</div>
-     <div style="margin-top:8px;"><strong>★</strong> 屬性可選擇：三項各 +1，或一項屬性 +2 另一項 +1。</div>
+     <div class="background-guide-note"><strong>★</strong> 屬性可選擇：三項各 +1，或一項屬性 +2 另一項 +1。</div>
    </div>
 
-   <div style="margin-top:12px; line-height:1.25;"">
+   <div class="background-guide-block background-guide-section">
      <div><strong>裝備：</strong>${bg.裝備}</div>
      <div><strong>(A) </strong>${bg.裝備A}</div>
      <div><strong>(B) </strong>${bg.裝備B}</div>
    </div>
 
-   <div style="margin-top:16px;">
+   <div class="background-guide-description">
      ${bg.描述}
    </div>`;
 
@@ -2201,96 +1268,6 @@ function updateBackgroundFeature() {
     updateFeatDesc("feat-0", "feat-0-desc");
   }
 }
-
-
-
-// 角色專長對應說明，可再補充
-const featsDesc = {
-  "警覺": `警覺
-起源專長
-
-先攻熟練：先攻＝敏捷調整 + 熟練加值
-
-先攻互換：擲先攻後，可與一名自願盟友互換順序；雙方不可處於失能狀態`,
-
-  "魔法學徒": `魔法學徒
-起源專長
-
-兩個戲法：選牧師／德魯伊／法師列表 2 個戲法
-
-施法屬性：智力／感知／魅力擇一
-
-一環法術：同列表選 1 個
-🌟永遠準備
-🌟每長休可免費施放 1 次
-🌟也可消耗法術位施放
-
-升級更換：升級時可更換 1 個所選法術（同等級、同列表）
-
-可重複：每次須選不同法術列表`,
-
-  "兇蠻打手": `兇蠻打手
-起源專長
-
-受訓善戰：每回合 1 次，武器命中時傷害骰擲 2 次，取其一`,
-
-  "熟習": `熟習
-起源專長
-
-多才多藝：你獲得 3 項技能或工具熟練（任意組合）
-
-可重複：你可以多次選擇此專長。`,
-
-  "屬性值提升": `屬性值提升
-通用專長（4 級以上）
-
-屬性提升：+2 單一屬性，或 +1 兩項屬性
-
-最高上限：屬性不可超過 20
-
-可重複：你可以多次選擇此專長。`,
-
-  "擒抱者": `擒抱者
-通用專長（4 級以上；力量或敏捷 13+）
-你獲得以下增益：
-
-屬性提升：力量或敏捷 +1（最高 20）
-
-重拳擒抱：徒手命中時可同時造成傷害並擒抱（每回合 1 次）
-
-攻擊優勢：對被你擒抱的目標攻擊具有優勢
-
-迅捷摔技：移動體型不大於你的被擒抱目標時，不消耗額外速度。`,
-"箭術": `箭術
-戰鬥風格專長（職業有"戰鬥風格"才能選）
-
-百步穿楊：遠程武器命中獲得 +2 。`,
-"防禦": `防禦
-戰鬥風格專長（職業有"戰鬥風格"才能選）
-
-銅牆鐵壁：穿輕／中／重甲時 AC +1`,
-"巨武器戰鬥": `巨武器戰鬥
-戰鬥風格專長（職業有"戰鬥風格"才能選）
-
-寸長寸強：將「雙手」或「兩用」武器的傷害骰 1 或 2 視為 3`,
-"雙武器戰鬥": `雙武器戰鬥
-戰鬥風格專長（職業有"戰鬥風格"才能選）
-
-幫撐十秒：使用「輕型」武器進行副手攻擊時，可用屬性加值提升傷害`
-};
-
-const FEAT_OPTIONS = [
-  { value: "警覺", label: "警覺(起源)" },
-  { value: "魔法學徒", label: "魔法學徒(起源)" },
-  { value: "兇蠻打手", label: "兇蠻打手(起源)" },
-  { value: "熟習", label: "熟習(起源)" },
-  { value: "屬性值提升", label: "屬性值提升(通用)" },
-  { value: "擒抱者", label: "擒抱者(通用)" },
-  { value: "箭術", label: "箭術(戰鬥風格)" },
-  { value: "防禦", label: "防禦(戰鬥風格)" },
-  { value: "巨武器戰鬥", label: "巨武器戰鬥(戰鬥風格)" },
-  { value: "雙武器戰鬥", label: "雙武器戰鬥(戰鬥風格)" }
-];
 
 function getFeatOptionsHtml() {
   return `<option value="">-- 請選擇 --</option>` +
@@ -2339,7 +1316,7 @@ function updateFeatDesc(selectId, descId) {
     .slice(startIdx)
     .map(line => {
       const t = line.trim();
-      if (!t) return `<div style="height:10px;"></div>`; // 空行 = 段落距離
+      if (!t) return `<div class="feat-desc-spacer"></div>`; // 空行 = 段落距離
 
       const idx = line.indexOf("：");
       if (idx > 0) {
@@ -2353,9 +1330,9 @@ function updateFeatDesc(selectId, descId) {
     .join("");
 
   el.innerHTML =
-    `<div style="font-weight:800; font-size:1.05em; margin-bottom:2px;">${escapeHtml(title || "—")}</div>` +
-    (subtitle ? `<div style="font-size:0.9em; color:#555; margin-bottom:10px;">${escapeHtml(subtitle)}</div>` : ``) +
-    `<div style="line-height:1.35;">${bodyHtml}</div>`;
+    `<div class="feat-desc-title">${escapeHtml(title || "—")}</div>` +
+    (subtitle ? `<div class="feat-desc-subtitle">${escapeHtml(subtitle)}</div>` : ``) +
+    `<div class="feat-desc-body">${bodyHtml}</div>`;
 }
 
 function updateFeatControlStates() {
@@ -2569,6 +1546,8 @@ document.getElementById("set-default-abilities").addEventListener("click", () =>
         tabScrollPositions[activeTab] = window.scrollY;
       }
 
+      const spellToolbar = document.getElementById("spell-tab-toolbar");
+
       document.querySelectorAll('.tab-content').forEach(div => {
         div.classList.remove('active');
         div.setAttribute('hidden', 'hidden');
@@ -2589,6 +1568,10 @@ document.getElementById("set-default-abilities").addEventListener("click", () =>
           targetBtn.classList.add('active');
           targetBtn.setAttribute('aria-selected', 'true');
         }
+      }
+
+      if (spellToolbar) {
+        spellToolbar.classList.toggle('is-hidden', tab !== 'spells');
       }
 
       activeTab = tab;
@@ -2631,7 +1614,15 @@ document.getElementById("set-default-abilities").addEventListener("click", () =>
     });
   </script>
 
-<script src="equipment-data.js"></script>
+<script>
+  globalThis.weapons_simple_melee = globalThis.weapons_simple_melee || [];
+  globalThis.weapons_simple_ranged = globalThis.weapons_simple_ranged || [];
+  globalThis.weapons_martial_melee = globalThis.weapons_martial_melee || [];
+  globalThis.weapons_martial_ranged = globalThis.weapons_martial_ranged || [];
+  globalThis.armors = globalThis.armors || [];
+  globalThis.shield = globalThis.shield || [];
+</script>
+<script src="equipment-data.js" defer></script>
 
 <script>
 function getModifier(statId) {
@@ -2835,16 +1826,21 @@ function fillSkills() {
 
 <script>
 // ====== 裝備、武器、法術相關工具 ======
+function getEquipmentList(key) {
+  const value = globalThis[key];
+  return Array.isArray(value) ? value : [];
+}
+
 function getAllWeapons(includeShield = false) {
   let list = [];
   if (includeShield) {
-    list = list.concat(shield);
+    list = list.concat(getEquipmentList("shield"));
   }
   list = list
-    .concat(weapons_simple_melee)
-    .concat(weapons_simple_ranged)
-    .concat(weapons_martial_melee)
-    .concat(weapons_martial_ranged);
+    .concat(getEquipmentList("weapons_simple_melee"))
+    .concat(getEquipmentList("weapons_simple_ranged"))
+    .concat(getEquipmentList("weapons_martial_melee"))
+    .concat(getEquipmentList("weapons_martial_ranged"));
   return list;
 }
 function hasTwoHandedProperty(weapon) {
@@ -2925,7 +1921,7 @@ function isShieldItem(name) {
   return name === "盾牌";
 }
 function updateOffHandOptions(mainHandValue) {
-  const mainWeapon = allWeapons.find(w => w.名稱 === mainHandValue);
+  const mainWeapon = getAllWeaponsWithoutShield().find(w => w.名稱 === mainHandValue);
   const offHandSelect = document.getElementById("offHand");
   if (!mainWeapon) {
     populateSelectWithSections(offHandSelect, getWeaponSections(true, true));
@@ -2947,7 +1943,7 @@ function updateOffHandOptions(mainHandValue) {
 }
 function updateWeaponInfo(selectId, line1Id, line2Id) {
   const selectedName = document.getElementById(selectId).value;
-  const weapon = allWeaponsWithShield.find(w => w.名稱 === selectedName);
+  const weapon = getAllWeaponsWithShield().find(w => w.名稱 === selectedName);
   const line1 = document.getElementById(line1Id);
   const line2 = document.getElementById(line2Id);
   if (!weapon) {
@@ -2964,8 +1960,12 @@ function updateWeaponInfo(selectId, line1Id, line2Id) {
     line2.textContent = props.length > 0 ? props.join("、") : "—";
   }
 }
-const allWeapons = getAllWeapons(false);
-const allWeaponsWithShield = getAllWeapons(true);
+function getAllWeaponsWithoutShield() {
+  return getAllWeapons(false);
+}
+function getAllWeaponsWithShield() {
+  return getAllWeapons(true);
+}
 // === 武器分類查表（用名稱判斷簡易/軍用）===
 const SIMPLE_WEAPON_NAMES = new Set([
   ...weapons_simple_melee.map(w => w.名稱),
@@ -2982,7 +1982,10 @@ const RANGED_WEAPON_NAMES = new Set([
 ]);
 
 function isRangedWeapon(weapon) {
-  return !!weapon && RANGED_WEAPON_NAMES.has(weapon.名稱);
+  return !!weapon && new Set([
+    ...weapons_simple_ranged.map(w => w.名稱),
+    ...weapons_martial_ranged.map(w => w.名稱),
+  ]).has(weapon.名稱);
 }
 
 function weaponHasProp(weapon, keyword) {
@@ -2998,8 +2001,14 @@ function isWeaponProficient(weapon) {
   if (!weapon || weapon.名稱 === "盾牌") return false;
 
   const cls = document.getElementById("class")?.value || "";
-  const isSimple = SIMPLE_WEAPON_NAMES.has(weapon.名稱);
-  const isMartial = MARTIAL_WEAPON_NAMES.has(weapon.名稱);
+  const isSimple = new Set([
+    ...weapons_simple_melee.map(w => w.名稱),
+    ...weapons_simple_ranged.map(w => w.名稱),
+  ]).has(weapon.名稱);
+  const isMartial = new Set([
+    ...weapons_martial_melee.map(w => w.名稱),
+    ...weapons_martial_ranged.map(w => w.名稱),
+  ]).has(weapon.名稱);
 
   const hasLight = weaponHasProp(weapon, "輕型");
   const hasFinesse = weaponHasProp(weapon, "靈巧");
@@ -3051,7 +2060,7 @@ function populateHandAttacks() {
   ];
   hands.forEach(hand => {
     const weaponName = document.getElementById(hand.selectId).value;
-    const weapon = allWeaponsWithShield.find(w => w.名稱 === weaponName);
+    const weapon = getAllWeaponsWithShield().find(w => w.名稱 === weaponName);
     document.getElementById(`${hand.prefix}-name`).value = weaponName || "";
     if (!weapon || weapon.名稱 === "盾牌") {
       document.getElementById(`${hand.prefix}-hit`).value = "";
@@ -3248,7 +2257,63 @@ function refreshSpellRows(areaId) {
   updateSpellControlStates(areaId);
 }
 
-function createSingleSpellRow(areaId, level, afterRow = null) {
+let deletedSpellRowCache = {};
+
+function cloneDeletedSpellRowCache(cache) {
+  if (!cache || typeof cache !== "object") return {};
+  const cloned = {};
+  for (const [areaId, entries] of Object.entries(cache)) {
+    if (!Array.isArray(entries)) continue;
+    cloned[areaId] = entries
+      .filter(entry => entry && typeof entry === "object")
+      .map(entry => ({
+        classValue: typeof entry.classValue === "string" ? entry.classValue : "",
+        spellValue: typeof entry.spellValue === "string" ? entry.spellValue : ""
+      }));
+  }
+  return cloned;
+}
+
+function captureSpellRowState(row) {
+  if (!row) return null;
+  const classSel = row.querySelector("select[id*='-class-']");
+  const spellSel = row.querySelector("select[id*='-spell-']");
+  return {
+    classValue: classSel?.value || "",
+    spellValue: spellSel?.value || ""
+  };
+}
+
+function cacheDeletedSpellRow(areaId, rowState) {
+  if (!areaId || !rowState) return;
+  if (!deletedSpellRowCache[areaId]) deletedSpellRowCache[areaId] = [];
+  deletedSpellRowCache[areaId].push({
+    classValue: rowState.classValue || "",
+    spellValue: rowState.spellValue || ""
+  });
+}
+
+function consumeDeletedSpellRow(areaId) {
+  const bucket = deletedSpellRowCache[areaId];
+  if (!Array.isArray(bucket) || bucket.length === 0) return null;
+  const restored = bucket.pop() || null;
+  if (bucket.length === 0) delete deletedSpellRowCache[areaId];
+  return restored;
+}
+
+function restoreSpellRowState(classSel, spellSel, rowState) {
+  if (!rowState || !classSel || !spellSel) return;
+  if (rowState.classValue) {
+    classSel.value = rowState.classValue;
+    classSel.dispatchEvent(new Event('change'));
+  }
+  if (rowState.spellValue && Array.from(spellSel.options).some(o => o.value === rowState.spellValue)) {
+    spellSel.value = rowState.spellValue;
+    spellSel.dispatchEvent(new Event('change'));
+  }
+}
+
+function createSingleSpellRow(areaId, level, afterRow = null, restoredRowState = null) {
   const area = document.getElementById(areaId);
   if (!area) return;
   const idx = area.childElementCount;
@@ -3273,7 +2338,7 @@ function createSingleSpellRow(areaId, level, afterRow = null) {
   addBtn.setAttribute('aria-label', `新增下一列${getSpellLevelLabel(level)}`);
   addBtn.title = '新增';
   addBtn.addEventListener('click', () => {
-    createSingleSpellRow(areaId, level, rowDiv);
+    createSingleSpellRow(areaId, level, rowDiv, consumeDeletedSpellRow(areaId));
     saveAllFields();
   });
 
@@ -3286,6 +2351,7 @@ function createSingleSpellRow(areaId, level, afterRow = null) {
   delBtn.title = '刪除';
   delBtn.addEventListener('click', () => {
     if (area.childElementCount <= 1) return;
+    cacheDeletedSpellRow(areaId, captureSpellRowState(rowDiv));
     rowDiv.remove();
     refreshSpellRows(areaId);
     updatePickedSpellBoxes();
@@ -3360,8 +2426,8 @@ function createSingleSpellRow(areaId, level, afterRow = null) {
   });
 
   topRow.appendChild(classSel);
-  topRow.appendChild(spellSel);
   topRow.appendChild(controls);
+  topRow.appendChild(spellSel);
 
   rowDiv.appendChild(topRow);
   rowDiv.appendChild(descDiv);
@@ -3373,6 +2439,7 @@ function createSingleSpellRow(areaId, level, afterRow = null) {
   }
 
   refreshSpellRows(areaId);
+  restoreSpellRowState(classSel, spellSel, restoredRowState);
   applySpellFilter();
 }
 
@@ -3590,11 +2657,11 @@ function renderBeastPopupHtml(s) {
       <div><strong>HP</strong> ${escapeHtml(String(s.hp))}</div>
       <div><strong>速度</strong> ${escapeHtml(String(s.speed))}</div>
     </div>
-    <div style="margin-top:8px;"><strong>能力值</strong> ${escapeHtml(String(s.ability))}</div>
-    <div style="margin-top:6px;"><strong>感官</strong> ${escapeHtml(String(s.senses))}</div>
-    <div style="margin-top:6px;"><strong>技能</strong> ${escapeHtml(String(s.skills))}</div>
-    <div style="margin-top:6px;"><strong>特性</strong> ${escapeHtml(String(s.traits))}</div>
-    <div style="margin-top:6px;"><strong>攻擊</strong> ${escapeHtml(String(s.attacks))}</div>
+<div class="monster-detail-line monster-detail-line--first"><strong>能力值</strong> ${escapeHtml(String(s.ability))}</div>
+<div class="monster-detail-line"><strong>感官</strong> ${escapeHtml(String(s.senses))}</div>
+<div class="monster-detail-line"><strong>技能</strong> ${escapeHtml(String(s.skills))}</div>
+<div class="monster-detail-line"><strong>特性</strong> ${escapeHtml(String(s.traits))}</div>
+<div class="monster-detail-line"><strong>攻擊</strong> ${escapeHtml(String(s.attacks))}</div>
   `;
 }
 
@@ -3848,6 +2915,7 @@ function collectStateObject() {
   getDynamicAreaConfigs().forEach(area => {
     data[`${area.key}-count`] = area.getCount();
   });
+  data.__deletedSpellRowCache = cloneDeletedSpellRowCache(deletedSpellRowCache);
   return data;
 }
 
@@ -3890,6 +2958,8 @@ async function decodeStateFromHash() {
 function applyStateObject(data) {
   if (!data || typeof data !== "object") return;
 
+  deletedSpellRowCache = cloneDeletedSpellRowCache(data.__deletedSpellRowCache);
+
   const spellAreas = getSpellAreaConfigs();
   getDynamicAreaConfigs().forEach(area => {
     const n = parseInt(data[`${area.key}-count`] || "0", 10);
@@ -3904,6 +2974,7 @@ function applyStateObject(data) {
   }
 
   for (const id in data) {
+    if (id === "__deletedSpellRowCache") continue;
     if (/cantrips-area-class-\d+|level\d+spells-area-class-\d+/.test(id)) {
       const el = document.getElementById(id);
       if (!el) continue;
@@ -3913,6 +2984,7 @@ function applyStateObject(data) {
   }
 
   for (const id in data) {
+    if (id === "__deletedSpellRowCache") continue;
     if (/cantrips-area-class-\d+|level\d+spells-area-class-\d+/.test(id)) continue;
     const el = document.getElementById(id);
     if (!el) continue;
@@ -4013,583 +3085,6 @@ function setupAutoSave() {
   });
 }
 
-function initLegalModal() {
-  const isShareMode = !!window.SHARE_MODE;
-  const LEGAL_DISMISS_KEY = 'dndchar_legal_dismiss_v1';
-  const modal = document.getElementById('legal-modal');
-  const checkbox = document.getElementById('legal-dismiss');
-  const closeBtn = document.getElementById('legal-close-btn');
-  const ackBtn = document.getElementById('legal-ack-btn');
-  const startTourBtn = document.getElementById('legal-start-tour-btn');
-  if (!modal || !checkbox) return;
-
-  let shouldDismiss = localStorage.getItem(LEGAL_DISMISS_KEY) === '1';
-  try {
-    if (!shouldDismiss) {
-      const raw = localStorage.getItem("dndchar_autosave_v1");
-      if (!raw) throw new Error('no autosave data');
-      const data = JSON.parse(raw);
-      shouldDismiss = data["legal-dismiss"] === true || data["legal-dismiss"] === 'true' || data["legal-dismiss"] === 1;
-    }
-  } catch (e) {}
-
-  checkbox.checked = shouldDismiss;
-  checkbox.addEventListener('change', () => {
-    localStorage.setItem(LEGAL_DISMISS_KEY, checkbox.checked ? '1' : '0');
-    if (typeof saveAllFields === 'function') saveAllFields();
-  });
-
-  if (!isShareMode && shouldDismiss) return;
-
-  modal.style.display = 'block';
-  const closeModal = () => {
-    modal.style.display = 'none';
-  };
-  closeBtn?.addEventListener('click', closeModal);
-  ackBtn?.addEventListener('click', closeModal);
-  startTourBtn?.addEventListener('click', () => {
-    closeModal();
-    window.onboardingTour?.start();
-  });
-}
-
-function isElementVisible(el) {
-  if (!el) return false;
-  const style = window.getComputedStyle(el);
-  return style.display !== "none" && style.visibility !== "hidden" && style.opacity !== "0";
-}
-
-function waitForLayoutStability() {
-  return new Promise(resolve => {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        setTimeout(resolve, 60);
-      });
-    });
-  });
-}
-
-function animateWindowScrollTo(targetY, durationMs = 520) {
-  return new Promise(resolve => {
-    const startY = window.scrollY;
-    const maxScroll = Math.max(0, document.body.scrollHeight - window.innerHeight);
-    const finalY = Math.max(0, Math.min(targetY, maxScroll));
-    const diff = finalY - startY;
-    if (Math.abs(diff) < 1) {
-      window.scrollTo(0, finalY);
-      resolve();
-      return;
-    }
-    const start = performance.now();
-    const step = (now) => {
-      const elapsed = now - start;
-      const t = Math.min(1, elapsed / durationMs);
-      const eased = 1 - Math.pow(1 - t, 3);
-      window.scrollTo(0, startY + diff * eased);
-      if (t < 1) {
-        requestAnimationFrame(step);
-      } else {
-        resolve();
-      }
-    };
-    requestAnimationFrame(step);
-  });
-}
-
-function getUnionRect(elements) {
-  const rects = elements.filter(Boolean).map(el => el.getBoundingClientRect()).filter(r => r.width > 0 && r.height > 0);
-  if (!rects.length) return null;
-  return {
-    left: Math.min(...rects.map(r => r.left)),
-    top: Math.min(...rects.map(r => r.top)),
-    right: Math.max(...rects.map(r => r.right)),
-    bottom: Math.max(...rects.map(r => r.bottom))
-  };
-}
-
-function setActionHelpOpen(open) {
-  document.querySelectorAll("#tab-actions details.action-collapsible-wrap").forEach(detail => {
-    const title = detail.querySelector("summary h3")?.textContent?.trim();
-    if (title === "戰鬥中的四種行動" || title === "動作") detail.open = open;
-  });
-}
-
-class OnboardingTour {
-  constructor() {
-    this.overlay = document.getElementById("tour-overlay");
-    this.maskGroups = [
-      {
-        top: document.getElementById("tour-mask-top-1"),
-        left: document.getElementById("tour-mask-left-1"),
-        right: document.getElementById("tour-mask-right-1"),
-        bottom: document.getElementById("tour-mask-bottom-1")
-      },
-      {
-        top: document.getElementById("tour-mask-top-2"),
-        left: document.getElementById("tour-mask-left-2"),
-        right: document.getElementById("tour-mask-right-2"),
-        bottom: document.getElementById("tour-mask-bottom-2")
-      }
-    ];
-    this.focusRings = [
-      document.getElementById("tour-focus-ring"),
-      document.getElementById("tour-focus-ring-secondary")
-    ];
-    this.tooltip = document.getElementById("tour-tooltip");
-    this.title = document.getElementById("tour-step-title");
-    this.text = document.getElementById("tour-step-text");
-    this.nextBtn = document.getElementById("tour-next-btn");
-    this.skipBtn = document.getElementById("tour-skip-btn");
-    this.steps = [];
-    this.currentIndex = -1;
-    this.active = false;
-    this.isTransitioning = false;
-    this.stepRuntime = {};
-    this.handleResize = this.handleResize.bind(this);
-    this.handleKeydown = this.handleKeydown.bind(this);
-    this.preventScrollEvent = this.preventScrollEvent.bind(this);
-  }
-
-  setSelectValue(id, value) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.value = value;
-    el.dispatchEvent(new Event("change", { bubbles: true }));
-  }
-
-  setSpellRowCount(areaId, level, targetCount) {
-    const area = document.getElementById(areaId);
-    if (!area) return;
-    const safeCount = Math.max(1, Number(targetCount) || 1);
-    while (area.childElementCount > safeCount) {
-      area.lastElementChild?.remove();
-    }
-    while (area.childElementCount < safeCount) {
-      createSingleSpellRow(areaId, level);
-    }
-    refreshSpellRows(areaId);
-  }
-
-  init() {
-    if (!this.overlay || !this.nextBtn || !this.skipBtn) return;
-    this.nextBtn.addEventListener("click", () => this.next());
-    this.skipBtn.addEventListener("click", () => this.stop());
-    window.addEventListener("resize", this.handleResize);
-    document.addEventListener("keydown", this.handleKeydown);
-    document.getElementById("restart-onboarding-btn")?.addEventListener("click", () => this.start());
-  }
-
-  getSteps() {
-    const spellTabButton = document.getElementById("spells-tab-button");
-    const showSpells = isElementVisible(spellTabButton) && (typeof hasSpellcastingCapability === "function" ? hasSpellcastingCapability() : true);
-    const cantripSection = Array.from(document.querySelectorAll("#tab-spells .spell-level-section")).find(sec => sec.querySelector("summary h3")?.textContent?.trim() === "戲法");
-
-    const steps = [
-      { tab: "basic", selectors: [], getElements: () => {
-          const ids = ["class", "level", "background", "race"];
-          return ids.map(id => document.getElementById(id)).filter(Boolean).map(el => el.closest(".mini-stat-card, .form-grid-2col, .form-row") || el);
-        }, getHoles: () => {
-          const ids = ["class", "level", "background", "race"];
-          const controls = ids.map(id => document.getElementById(id)).filter(Boolean);
-          const rows = Array.from(new Set(controls.map(el => el.closest(".form-grid-2col, .form-row")).filter(Boolean)));
-          const baseRect = getUnionRect(rows.length ? rows : controls);
-          if (!baseRect) return [];
-          const narrow = window.innerWidth < 338;
-          const padX = narrow ? 8 : 12;
-          const padY = narrow ? 10 : 12;
-          return [{
-            left: Math.max(0, baseRect.left - padX),
-            top: Math.max(0, baseRect.top - padY),
-            right: Math.min(window.innerWidth, baseRect.right + padX),
-            bottom: Math.min(window.innerHeight, baseRect.bottom + padY)
-          }];
-        }, title: "先選基本資料", text: "先選職業、等級、背景、種族。這些選項會影響後面的角色能力與內容。", placement: "bottom", beforePosition: async () => window.scrollTo({ top: 0, behavior: "auto" }) },
-      { tab: "basic", selectors: [], getElements: () => {
-          const strAbility = document.getElementById("str")?.closest(".ability");
-          const quickCard = document.getElementById("set-default-abilities")?.closest(".mini-stat-card");
-          return [strAbility, quickCard].filter(Boolean);
-        }, getHoles: () => {
-          const strAbility = document.getElementById("str")?.closest(".ability");
-          const quickCard = document.getElementById("set-default-abilities")?.closest(".mini-stat-card");
-          const pad = 8;
-          return [strAbility, quickCard].filter(Boolean).map(el => {
-            const r = el.getBoundingClientRect();
-            return {
-              left: Math.max(0, r.left - pad),
-              top: Math.max(0, r.top - pad),
-              right: Math.min(window.innerWidth, r.right + pad),
-              bottom: Math.min(window.innerHeight, r.bottom + pad)
-            };
-          });
-        }, title: "接著填六大屬性", text: "你可以手動輸入六大屬性；如果是第一次使用，也可以先按「預設屬性」快速開始。", placement: "bottom", beforePosition: async () => {
-          window.scrollTo({ top: 0, behavior: "auto" });
-          await waitForLayoutStability();
-          const quickCard = document.getElementById("set-default-abilities")?.closest(".mini-stat-card");
-          if (!quickCard) return;
-          const rect = quickCard.getBoundingClientRect();
-          const targetY = window.scrollY + rect.top - 120;
-          await animateWindowScrollTo(targetY, 620);
-        } },
-      { id: "step3-background", tab: "basic", selectors: [], getElements: () => {
-          const target = document.querySelector("#background-ability-guide-target");
-          const line = Array.from(document.querySelectorAll("#backgroundFeatures div")).find(el => el.textContent?.includes("★ 屬性可選擇：三項各 +1，或一項屬性 +2 另一項 +1。"));
-          const nodes = [target, line].filter(Boolean);
-          if (nodes.length) return nodes;
-          const fallback = document.getElementById("backgroundFeatures");
-          return fallback ? [fallback] : [];
-        }, title: "背景能力", text: "背景提供屬性加值和技能熟練，記得手動把屬性加上去，等下至技能頁勾選熟練。", placement: "top", beforePosition: async () => {
-          const bgSelect = document.getElementById("background");
-          if (bgSelect && !bgSelect.value) {
-            this.stepRuntime.step3AutoBackground = true;
-            this.setSelectValue("background", "acolyte");
-            await waitForLayoutStability();
-          } else {
-            this.stepRuntime.step3AutoBackground = false;
-          }
-          const bgDetails = document.querySelector("#backgroundFeatures")?.closest("details");
-          this.stepRuntime.step3AutoExpandedDetails = Boolean(bgDetails && !bgDetails.open);
-          if (this.stepRuntime.step3AutoExpandedDetails && bgDetails) {
-            bgDetails.open = true;
-            await waitForLayoutStability();
-          }
-          const title = Array.from(document.querySelectorAll("#tab-basic summary h3")).find(el => el.textContent?.trim() === "背景能力");
-          const target = title || document.querySelector("#background-ability-guide-target");
-          if (target) {
-            const rect = target.getBoundingClientRect();
-            const targetY = window.scrollY + rect.top - 120;
-            await animateWindowScrollTo(targetY, 620);
-          }
-        }, afterLeave: () => {
-          if (this.stepRuntime.step3AutoExpandedDetails) {
-            const bgDetails = document.querySelector("#backgroundFeatures")?.closest("details");
-            if (bgDetails) bgDetails.open = false;
-          }
-          if (this.stepRuntime.step3AutoBackground) {
-            this.setSelectValue("background", "");
-          }
-          delete this.stepRuntime.step3AutoExpandedDetails;
-          delete this.stepRuntime.step3AutoBackground;
-        } },
-      { id: "step4-skills", tab: "skills", selectors: [], getHoles: () => {
-          const saveBtn = document.querySelector("button[onclick='fillSaves()']");
-          const skillBtn = document.querySelector("button[onclick='fillSkills()']");
-          const pad = 8;
-          return [saveBtn, skillBtn].filter(Boolean).map(el => {
-            const r = el.getBoundingClientRect();
-            return { left: Math.max(0, r.left - pad), top: Math.max(0, r.top - pad), right: Math.min(window.innerWidth, r.right + pad), bottom: Math.min(window.innerHeight, r.bottom + pad) };
-          });
-        }, title: "屬性豁免 與 技能", text: "先打勾選技能，再按下自動計算按鈕。", placement: "bottom", beforePosition: async () => window.scrollTo({ top: 0, behavior: "auto" }) },
-      { id: "step5-equipment", tab: "equipment", selectors: [], getElements: () => {
-          const main = document.getElementById("mainHand");
-          const off = document.getElementById("offHand");
-          const armor = document.getElementById("armor");
-          return [main, off, armor].map(el => el?.closest(".form-row") || el).filter(Boolean);
-        }, title: "選擇武器與護甲", text: "先選主手、副手與護甲，系統才知道你的防禦與攻擊資料。", placement: "bottom", beforePosition: async () => window.scrollTo({ top: 0, behavior: "auto" }) },
-      { id: "step6-actions-overview", tab: "actions", selectors: [], getElements: () => {
-          const details = Array.from(document.querySelectorAll("#tab-actions details.action-collapsible-wrap"));
-          return details.map(d => d.querySelector("summary")).filter(Boolean);
-        }, title: "進入戰鬥看這邊", text: "點開可查看，再次點擊可以收起。", placement: "bottom", beforePosition: async () => {
-          setActionHelpOpen(false);
-          await waitForLayoutStability();
-          window.scrollTo({ top: 0, behavior: "auto" });
-        } },
-      { id: "step7-populate-attacks", tab: "actions", selectors: [], getElements: () => {
-          const btn = document.querySelector("button[onclick='populateHandAttacks()']");
-          const mainRow = document.querySelector("#atk-main-name")?.closest(".form-row.small-text");
-          return [btn, mainRow].filter(Boolean);
-        }, title: "產生攻擊資料", text: "按下這個按鈕，會把你在裝備頁選的主副手資料自動帶進來，方便你在戰鬥中查看。", placement: "bottom", beforePosition: async () => {
-          const classEl = document.getElementById("class");
-          this.stepRuntime.step7PrevClass = classEl?.value || "";
-          if (classEl) this.setSelectValue("class", "cleric");
-          await waitForLayoutStability();
-          const btn = document.querySelector("button[onclick='populateHandAttacks()']");
-          if (btn) {
-            const rect = btn.getBoundingClientRect();
-            await animateWindowScrollTo(window.scrollY + rect.top - 120, 620);
-          }
-        }, afterLeave: () => {
-          if (typeof this.stepRuntime.step7PrevClass === "string") {
-            this.setSelectValue("class", this.stepRuntime.step7PrevClass);
-          }
-          delete this.stepRuntime.step7PrevClass;
-        } }
-    ];
-
-    if (showSpells) {
-      steps.push(
-        { tab: "spells", selectors: ["#spell-toolbar-actions", "#spell-casting-stats-wrap"], title: "法術頁", text: "如果你的角色會魔法，這裡可以設定施法屬性。法術設定太多的話，可使用上方的搜索工具列。", placement: "bottom", beforePosition: async () => window.scrollTo({ top: 0, behavior: "auto" }) },
-        { id: "step9-cantrips", tab: "spells", selectors: [], getElements: () => {
-            const area = document.getElementById("cantrips-area");
-            return area ? [area] : [];
-          }, title: "選擇法術", text: "先選擇職業，再選擇法術，戲法可以無限使用，環位法術使用次數有限制。", placement: "bottom", beforePosition: async () => {
-            const cantripArea = document.getElementById("cantrips-area");
-            if (!cantripArea) return;
-            const rows = Array.from(cantripArea.querySelectorAll(".spell-entry"));
-            this.stepRuntime.step9PrevClass = document.getElementById("class")?.value || "";
-            this.stepRuntime.step9CantripRows = rows.map(row => ({
-              classValue: row.querySelector("select[id*='-class-']")?.value || "",
-              spellValue: row.querySelector("select[id*='-spell-']")?.value || ""
-            }));
-            this.setSpellRowCount("cantrips-area", "cantrips", 1);
-            this.setSelectValue("class", "");
-            const firstClassSel = document.querySelector("#cantrips-area select[id*='-class-']");
-            if (firstClassSel) {
-              firstClassSel.value = "";
-              firstClassSel.dispatchEvent(new Event("change", { bubbles: true }));
-            }
-            const firstSpellSel = document.querySelector("#cantrips-area select[id*='-spell-']");
-            if (firstSpellSel) firstSpellSel.value = "";
-            updatePickedSpellBoxes();
-            window.scrollTo({ top: 0, behavior: "auto" });
-            await waitForLayoutStability();
-            const summary = cantripSection?.querySelector("summary h3");
-            if (summary) {
-              const rect = summary.getBoundingClientRect();
-              await animateWindowScrollTo(window.scrollY + rect.top - 280, 620);
-            }
-          }, afterLeave: () => {
-            if (typeof this.stepRuntime.step9PrevClass === "string") {
-              this.setSelectValue("class", this.stepRuntime.step9PrevClass);
-            }
-            const prevRows = Array.isArray(this.stepRuntime.step9CantripRows) ? this.stepRuntime.step9CantripRows : [];
-            if (prevRows.length) {
-              this.setSpellRowCount("cantrips-area", "cantrips", prevRows.length);
-              const rows = Array.from(document.querySelectorAll("#cantrips-area .spell-entry"));
-              rows.forEach((row, idx) => {
-                const snap = prevRows[idx];
-                if (!snap) return;
-                const classSel = row.querySelector("select[id*='-class-']");
-                const spellSel = row.querySelector("select[id*='-spell-']");
-                if (classSel) {
-                  classSel.value = snap.classValue || "";
-                  classSel.dispatchEvent(new Event("change", { bubbles: true }));
-                }
-                if (spellSel) {
-                  spellSel.value = snap.spellValue || "";
-                  spellSel.dispatchEvent(new Event("change", { bubbles: true }));
-                }
-              });
-              updatePickedSpellBoxes();
-            }
-            delete this.stepRuntime.step9PrevClass;
-            delete this.stepRuntime.step9CantripRows;
-          } }
-      );
-    }
-    return steps;
-  }
-
-  async start() {
-    this.steps = this.getSteps();
-    if (!this.steps.length) return;
-    this.active = true;
-    this.lockUserScroll();
-    this.overlay.style.display = "block";
-    await this.goTo(0);
-  }
-
-  isStepAvailable(step) {
-    if (!step) return false;
-    if (step.tab !== "spells") return true;
-    const spellTabButton = document.getElementById("spells-tab-button");
-    const spellTabVisible = isElementVisible(spellTabButton);
-    const canCast = typeof hasSpellcastingCapability === "function" ? hasSpellcastingCapability() : true;
-    return spellTabVisible && canCast;
-  }
-
-  async next() {
-    if (!this.active) return;
-    let nextIndex = this.currentIndex + 1;
-    while (nextIndex < this.steps.length && !this.isStepAvailable(this.steps[nextIndex])) {
-      nextIndex += 1;
-    }
-    if (nextIndex >= this.steps.length) return this.stop();
-    await this.goTo(nextIndex);
-  }
-
-  stop() {
-    const currentStep = this.steps[this.currentIndex];
-    if (currentStep && typeof currentStep.afterLeave === "function") currentStep.afterLeave();
-    this.active = false;
-    this.isTransitioning = false;
-    this.currentIndex = -1;
-    this.overlay.style.display = "none";
-    this.unlockUserScroll();
-  }
-
-  async goTo(index) {
-    if (this.isTransitioning) return;
-    this.isTransitioning = true;
-    const prevStep = this.steps[this.currentIndex];
-    if (prevStep && typeof prevStep.afterLeave === "function") prevStep.afterLeave();
-    this.currentIndex = index;
-    const step = this.steps[index];
-    const tabButton = document.querySelector(`.tab-button[onclick*="'${step.tab}'"]`);
-    showTab(step.tab, tabButton || undefined);
-    await waitForLayoutStability();
-    if (typeof step.beforePosition === "function") {
-      await step.beforePosition();
-      await waitForLayoutStability();
-    }
-    this.renderStep();
-    this.isTransitioning = false;
-  }
-
-  getStepElements(step) {
-    if (typeof step.getElements === "function") return step.getElements().filter(Boolean);
-    const elements = (step.selectors || []).flatMap(selector => Array.from(document.querySelectorAll(selector))).filter(el => isElementVisible(el));
-    if (!elements.length && step.fallbackSelector) {
-      return Array.from(document.querySelectorAll(step.fallbackSelector)).filter(el => isElementVisible(el));
-    }
-    return elements;
-  }
-
-  getStepHoles(step) {
-    if (typeof step.getHoles === "function") {
-      const holes = step.getHoles().filter(Boolean);
-      if (holes.length) return holes.slice(0, 2);
-    }
-    const rect = getUnionRect(this.getStepElements(step));
-    return rect ? [rect] : [];
-  }
-
-  hideMaskGroup(group) {
-    Object.values(group).forEach(mask => {
-      if (!mask) return;
-      mask.style.width = "0px";
-      mask.style.height = "0px";
-    });
-  }
-
-  placeMaskGroup(group, hole, region = {}) {
-    if (!group || !hole) return;
-    const leftBound = Math.max(0, region.left ?? 0);
-    const rightBound = Math.min(window.innerWidth, region.right ?? window.innerWidth);
-    const topBound = Math.max(0, region.top ?? 0);
-    const bottomBound = Math.min(window.innerHeight, region.bottom ?? window.innerHeight);
-    const width = Math.max(0, rightBound - leftBound);
-    const holeLeft = Math.max(leftBound, Math.min(rightBound, hole.left));
-    const holeRight = Math.max(leftBound, Math.min(rightBound, hole.right));
-    const holeTop = Math.max(topBound, Math.min(bottomBound, hole.top));
-    const holeBottom = Math.max(topBound, Math.min(bottomBound, hole.bottom));
-
-    group.top.style.cssText = `left:${leftBound}px;top:${topBound}px;width:${width}px;height:${Math.max(0, holeTop - topBound)}px;`;
-    group.left.style.cssText = `left:${leftBound}px;top:${holeTop}px;width:${Math.max(0, holeLeft - leftBound)}px;height:${Math.max(0, holeBottom - holeTop)}px;`;
-    group.right.style.cssText = `left:${holeRight}px;top:${holeTop}px;width:${Math.max(0, rightBound - holeRight)}px;height:${Math.max(0, holeBottom - holeTop)}px;`;
-    group.bottom.style.cssText = `left:${leftBound}px;top:${holeBottom}px;width:${width}px;height:${Math.max(0, bottomBound - holeBottom)}px;`;
-  }
-
-  applyMasksForHoles(holes) {
-    if (holes.length >= 2) {
-      const pair = holes.slice(0, 2);
-      const [first, second] = pair;
-      const overlapX = Math.max(0, Math.min(first.right, second.right) - Math.max(first.left, second.left));
-      const minHoleWidth = Math.max(1, Math.min(first.right - first.left, second.right - second.left));
-      const mostlyVerticalStack = overlapX / minHoleWidth > 0.6;
-
-      if (mostlyVerticalStack) {
-        const sorted = pair.sort((a, b) => a.top - b.top);
-        const splitY = Math.max(0, Math.min(window.innerHeight, Math.floor((sorted[0].bottom + sorted[1].top) / 2)));
-        this.placeMaskGroup(this.maskGroups[0], sorted[0], { left: 0, right: window.innerWidth, top: 0, bottom: splitY });
-        this.placeMaskGroup(this.maskGroups[1], sorted[1], { left: 0, right: window.innerWidth, top: splitY, bottom: window.innerHeight });
-        return sorted;
-      }
-
-      const sorted = pair.sort((a, b) => a.left - b.left);
-      const splitX = Math.max(0, Math.min(window.innerWidth, Math.floor((sorted[0].right + sorted[1].left) / 2)));
-      this.placeMaskGroup(this.maskGroups[0], sorted[0], { left: 0, right: splitX, top: 0, bottom: window.innerHeight });
-      this.placeMaskGroup(this.maskGroups[1], sorted[1], { left: splitX, right: window.innerWidth, top: 0, bottom: window.innerHeight });
-      return sorted;
-    }
-    if (holes.length === 1) {
-      this.placeMaskGroup(this.maskGroups[0], holes[0], { left: 0, right: window.innerWidth, top: 0, bottom: window.innerHeight });
-      this.hideMaskGroup(this.maskGroups[1]);
-      return holes;
-    }
-    this.hideMaskGroup(this.maskGroups[0]);
-    this.hideMaskGroup(this.maskGroups[1]);
-    return [];
-  }
-
-  renderStep() {
-    if (!this.active) return;
-    const step = this.steps[this.currentIndex];
-    const holes = this.getStepHoles(step);
-    if (!holes.length) return;
-    const visibleHoles = this.applyMasksForHoles(holes);
-    const primaryHole = visibleHoles[0];
-    if (!primaryHole) return;
-
-    this.focusRings.forEach((ring, idx) => {
-      const hole = visibleHoles[idx];
-      if (!ring) return;
-      if (!hole) {
-        ring.style.display = "none";
-        ring.style.width = "0px";
-        ring.style.height = "0px";
-        return;
-      }
-      ring.style.display = "block";
-      ring.style.left = `${hole.left}px`;
-      ring.style.top = `${hole.top}px`;
-      ring.style.width = `${Math.max(0, hole.right - hole.left)}px`;
-      ring.style.height = `${Math.max(0, hole.bottom - hole.top)}px`;
-    });
-
-    this.title.textContent = step.title;
-    this.text.textContent = step.text;
-    this.nextBtn.textContent = this.currentIndex === this.steps.length - 1 ? "完成" : "下一步";
-    this.positionTooltip(primaryHole, step.placement || "bottom");
-  }
-
-  positionTooltip(hole, placement) {
-    const margin = 10;
-    const tooltipWidth = Math.min(360, window.innerWidth - margin * 2);
-    this.tooltip.style.width = `${tooltipWidth}px`;
-    this.tooltip.style.left = `${Math.min(window.innerWidth - tooltipWidth - margin, Math.max(margin, hole.left))}px`;
-
-    const tooltipHeight = this.tooltip.offsetHeight || 160;
-    let top = placement === "top" ? hole.top - tooltipHeight - margin : hole.bottom + margin;
-    if (top + tooltipHeight > window.innerHeight - margin) top = hole.top - tooltipHeight - margin;
-    if (top < margin) top = Math.min(window.innerHeight - tooltipHeight - margin, hole.bottom + margin);
-    this.tooltip.style.top = `${Math.max(margin, top)}px`;
-  }
-
-  handleResize() {
-    if (!this.active) return;
-    requestAnimationFrame(() => this.renderStep());
-  }
-
-  handleKeydown(event) {
-    if (!this.active) return;
-    if (event.key === "Escape") {
-      this.stop();
-      return;
-    }
-    const blockedKeys = ["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " ", "Spacebar"];
-    if (blockedKeys.includes(event.key)) {
-      event.preventDefault();
-    }
-  }
-
-  preventScrollEvent(event) {
-    if (!this.active) return;
-    event.preventDefault();
-  }
-
-  lockUserScroll() {
-    document.body.style.overscrollBehavior = "none";
-    window.addEventListener("wheel", this.preventScrollEvent, { passive: false, capture: true });
-    window.addEventListener("touchmove", this.preventScrollEvent, { passive: false, capture: true });
-  }
-
-  unlockUserScroll() {
-    document.body.style.overscrollBehavior = "";
-    window.removeEventListener("wheel", this.preventScrollEvent, { capture: true });
-    window.removeEventListener("touchmove", this.preventScrollEvent, { capture: true });
-  }
-}
-
 // ====== 頁面載入時全自動初始化 ======
 window.addEventListener("DOMContentLoaded", async function() {
   bindSpellCastingStatsEvents();
@@ -4612,7 +3107,7 @@ window.addEventListener("DOMContentLoaded", async function() {
   updateWeaponInfo("mainHand", "main-hand-info-line1", "main-hand-info-line2");
   updateWeaponInfo("offHand", "off-hand-info-line1", "off-hand-info-line2");
   // 2. 產生所有法術下拉欄位
-for (let i = 0; i < 2; i++) createSingleSpellRow('cantrips-area', 'cantrips');
+for (let i = 0; i < 1; i++) createSingleSpellRow('cantrips-area', 'cantrips');
 for (let i = 0; i < 2; i++) createSingleSpellRow('level1spells-area', 1);
 for (let i = 0; i < 1; i++) createSingleSpellRow('level2spells-area', 2);
 for (let i = 0; i < 1; i++) createSingleSpellRow('level3spells-area', 3);
@@ -4719,27 +3214,27 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
   </div>
 </div>
 
-<div id="legal-modal" style="display:none;position:fixed;z-index:9999;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.45);">
-  <div style="position:relative;background:#fff;padding:18px 14px;max-width:332px;margin:72px auto 0 auto;border-radius:12px;box-shadow:0 4px 24px #0003;">
-    <button type="button" id="legal-close-btn" aria-label="關閉提醒" style="position:absolute;top:8px;right:8px;width:26px;height:26px;line-height:24px;padding:0;font-size:0.95em;border-radius:6px;">✕</button>
-    <h3 style="margin:0 0 6px 0;font-size:1.1em;line-height:1.15;">使用提醒</h3>
-    <div style="font-size:0.82em;line-height:1.55;color:#222;">
+<div id="legal-modal">
+  <div class="legal-modal-card">
+    <button type="button" id="legal-close-btn" aria-label="關閉提醒">✕</button>
+    <h3 class="legal-modal-title">使用提醒</h3>
+    <div class="legal-modal-copy">
       本站僅整理 2024 Basic Rules 免費公開範圍內容，方便新手快速完成 1～5 級角色。
       如需完整規則與更多選項，建議購買玩家手冊。
     </div>
-      <h3 style="margin:16px 0 6px 0;font-size:1.1em;line-height:1.15;">延伸參考</h3>
-      <div style="font-size:0.82em;line-height:1.55;color:#222;">D&amp;D Beyond 數位板 <a href="https://marketplace.dndbeyond.com/rulebooks" target="_blank" rel="noopener">www.dndbeyond.com</a><br>
+      <h3 class="legal-modal-title legal-modal-section-title">延伸參考</h3>
+      <div class="legal-modal-copy">D&amp;D Beyond 數位板 <a href="https://marketplace.dndbeyond.com/rulebooks" target="_blank" rel="noopener">www.dndbeyond.com</a><br>
       Amazon 購書 <a href="https://www.amazon.com/s?k=dnd+2024+players+handbook&ref=cs_503_search" target="_blank" rel="noopener">www.amazon.com</a>
     </div>
-    <div style="margin-top:10px;padding-top:8px;border-top:1px solid #e4e8f2;font-size:0.8em;line-height:1.45;color:#49566d;text-align:center;">
-      <div style="font-weight:700;color:#2a3b56;">Unofficial fan-made D&amp;D beginner tool</div>
+    <div class="legal-modal-meta">
+      <div class="legal-modal-meta-title">Unofficial fan-made D&amp;D beginner tool</div>
       <div>Dungeons &amp; Dragons © Wizards of the Coast LLC</div>
     </div>
-<div style="margin-top:9px;font-size:0.88em;line-height:1.2;">
+<div class="legal-modal-dismiss">
   <label><input type="checkbox" id="legal-dismiss"> 不要再提醒我</label>
 </div>
-    <button type="button" id="legal-start-tour-btn" aria-label="開啟新手導覽" style="margin-top:12px;width:100%;padding:8px 0;font-size:1.05em;border-radius:8px;border:1px solid #3f65df;background:linear-gradient(180deg,#6d89ff 0%,#5675f2 100%);color:#fff;">新手導覽</button>
-    <button type="button" id="legal-ack-btn" aria-label="關閉提醒" style="margin-top:8px;width:100%;padding:6px 0;font-size:1em;border-radius:6px;border:1px solid #888;">我知道了</button>
+    <button type="button" id="legal-start-tour-btn" aria-label="開啟新手導覽">新手導覽</button>
+    <button type="button" id="legal-ack-btn" aria-label="關閉提醒">我知道了</button>
   </div>
 </div>
 
