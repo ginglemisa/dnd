@@ -1980,7 +1980,7 @@ div[id$="spells-area"] .form-row {
 
 @media (min-width: 396px) {
   #tab-basic .form-grid-identity {
-    grid-template-columns: minmax(0, 6.5fr) minmax(0, 2.5fr) minmax(0, 4.5fr) minmax(0, 5fr);
+    grid-template-columns: minmax(0, 6fr) minmax(0, 2.7fr) minmax(0, 4.5fr) minmax(0, 5fr);
   }
 }
 
