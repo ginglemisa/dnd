@@ -1,6 +1,6 @@
 /* ===== Tokens ===== */
 :root {
-  --app-max-width: 680px;
+  --app-max-width: 720px;
   --app-gutter: 0.875rem;
 
   --bg: #eef3ff;
@@ -262,6 +262,10 @@ details > summary::-webkit-details-marker,
   background: #fafafa;
 }
 
+#metamagic-summary {
+  margin-bottom: 12px;
+}
+
 #backgroundFeatures {
   white-space: normal;
 }
@@ -291,15 +295,6 @@ textarea {
 }
 
 /* 基本資料四個下拉改為一般方角樣式 */
-#class,
-#level,
-#background,
-#race {
-  border-radius: 0;
-  box-shadow: none;
-  background: #fff;
-}
-
 select,
 input[type="text"],
 textarea {
@@ -366,6 +361,7 @@ button:active {
 .button-compact {
   margin-bottom: 0;
   font-size: var(--fs-sm);
+  font-weight: 800;
 }
 
 .form-grid-2col,
@@ -390,14 +386,6 @@ button:active {
 
 .form-grid-2col {
   grid-template-columns: 1fr;
-}
-
-#tab-basic .form-grid-2col--class-level {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-#tab-basic .form-grid-identity {
-  grid-template-columns: minmax(0, 1.25fr) minmax(5rem, 0.7fr);
 }
 
 .form-grid-3col {
@@ -452,30 +440,6 @@ button:active {
 }
 
 /* ===== Basic Tab ===== */
-.stats-card-stack {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.stats-card-stack + .section {
-  margin-top: 1.15rem;
-}
-
-.stats-card-row {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.75rem;
-  margin-bottom: 0;
-}
-
-#tab-basic .stats-card-row--top {
-  grid-template-columns: 160px minmax(0, 1fr) minmax(0, 1fr);
-}
-
-#tab-basic .stats-card-row--bottom {
-  grid-template-columns: 160px minmax(0, 1fr) minmax(0, 1fr);
-}
-
 .hp-card,
 .mini-stat-card {
   padding: 0.95rem 1rem;
@@ -487,11 +451,6 @@ button:active {
 #tab-basic .mini-stat-card {
   padding: 0.85rem;
   border-radius: 1.1rem;
-}
-
-#tab-basic .mini-stat-card--alignment,
-#tab-basic .mini-stat-card--quick {
-  min-width: 0;
 }
 
 .hp-title,
@@ -507,6 +466,69 @@ button:active {
 .hp-title {
   display: grid;
   gap: 0.55rem;
+}
+
+.basic-overview {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.basic-row {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.basic-row--class-level {
+  grid-template-columns: 1fr;
+}
+
+.basic-row--origin {
+  grid-template-columns: minmax(0, 3.2fr) minmax(5.5rem, 0.9fr);
+}
+
+.basic-row--vitals,
+.basic-row--misc {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.basic-row--combat {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.basic-pair-card {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.basic-pair-card--class-level {
+  grid-template-columns: minmax(0, 2.6fr) minmax(4.75rem, 1fr);
+}
+
+.basic-pair-card--equal {
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+}
+
+.basic-pair-field,
+.basic-single-card {
+  min-width: 0;
+}
+
+.basic-metric-card {
+  min-width: 0;
+}
+
+.basic-metric-values {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  align-items: stretch;
+}
+
+.basic-metric-values > * {
+  min-width: 0;
 }
 
 .hp-value,
@@ -553,6 +575,19 @@ button:active {
 
 #tab-basic #initiative-input {
   text-align: center;
+}
+
+#class,
+#class option,
+#level,
+#level option,
+#background,
+#background option,
+#race,
+#race option,
+#alignment,
+#alignment option {
+  font-weight: 800;
 }
 
 .ability-grid {
@@ -1331,6 +1366,7 @@ div[id$="spells-area"] .form-row {
   margin: -4px 0 16px;
 }
 
+
 .share-mode-tip {
   padding: 10px 12px;
   border: 1px solid #f3c76e;
@@ -1908,15 +1944,6 @@ div[id$="spells-area"] .form-row {
     font-size: var(--fs-sm);
   }
 
-  #tab-basic .stats-card-stack {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.65rem;
-  }
-
-  #tab-basic .stats-card-row {
-    display: contents;
-  }
-
   #tab-actions .form-row.small-text {
     grid-template-columns: 1fr;
   }
@@ -1925,20 +1952,9 @@ div[id$="spells-area"] .form-row {
     grid-template-columns: 1fr;
   }
 
-  #tab-basic .form-grid-2col--class-level {
-    grid-template-columns: 1fr;
-  }
-
-  #tab-basic .form-grid-identity {
-    grid-template-columns: 1fr;
-  }
 }
 
 @media (min-width: 320px) {
-  #tab-basic .form-grid-identity {
-    grid-template-columns: minmax(0, 1.25fr) minmax(5rem, 0.7fr);
-  }
-
   #tab-basic .ability-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -1976,62 +1992,6 @@ div[id$="spells-area"] .form-row {
   }
 }
 
-@media (min-width: 320px) and (max-width: 373px) {
-  #tab-basic .stats-card-stack {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.65rem;
-  }
-
-  #tab-basic .stats-card-row {
-    display: contents;
-  }
-
-  #tab-basic .mini-stat-card--identity-alignment,
-  #tab-basic .mini-stat-card--quick-start {
-    grid-column: 1 / -1;
-  }
-
-  #tab-basic .mini-stat-card--identity-alignment {
-    grid-row: 1;
-  }
-
-  #tab-basic .mini-stat-card--speed,
-  #tab-basic .mini-stat-card--lifedice {
-    grid-column: 1;
-  }
-
-  #tab-basic .mini-stat-card--speed {
-    grid-row: 2;
-  }
-
-  #tab-basic .mini-stat-card--lifedice {
-    grid-row: 3;
-  }
-
-  #tab-basic .mini-stat-card--initiative,
-  #tab-basic .mini-stat-card--passive {
-    grid-column: 2;
-  }
-
-  #tab-basic .mini-stat-card--initiative {
-    grid-row: 2;
-  }
-
-  #tab-basic .mini-stat-card--passive {
-    grid-row: 3;
-  }
-
-  #tab-basic .mini-stat-card--quick-start {
-    grid-row: 4;
-  }
-}
-
-@media (min-width: 396px) {
-  #tab-basic .form-grid-identity {
-    grid-template-columns: minmax(0, 5.5fr) minmax(0, 3fr) minmax(0, 4.2fr) minmax(0, 4.7fr);
-  }
-}
-
 @media (min-width: 501px) {
   .spell-slot-column {
     display: flex;
@@ -2052,6 +2012,12 @@ div[id$="spells-area"] .form-row {
   #tab-skills .save-grid,
   #tab-skills .skill-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 360px) {
+  .action-grid-pretty {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -2079,11 +2045,6 @@ div[id$="spells-area"] .form-row {
   .form-grid-3col {
     grid-template-columns: 1fr auto 1fr;
   }
-
-  .action-grid-pretty {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
 }
 
 @media (min-width: 640px) {
@@ -2097,6 +2058,12 @@ div[id$="spells-area"] .form-row {
   }
 
   .spell-picked-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 720px) {
+  .action-grid-pretty {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
