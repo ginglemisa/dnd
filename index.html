@@ -3038,13 +3038,21 @@ function addFamiliarBeastTips(desc) {
     ["鼬", "weasel"]
   ];
 
-  let withTips = desc;
-  familiarBeasts.forEach(([label, key]) => {
-    const tipHtml = `<span class="beast-tip" data-beast="${key}">${label}</span>`;
-    withTips = withTips.replaceAll(label, tipHtml);
-  });
+  const beastMap = new Map(familiarBeasts);
+  const pattern = new RegExp(
+    familiarBeasts
+      .map(([label]) => escapeRegExp(label))
+      .sort((a, b) => b.length - a.length)
+      .join("|"),
+    "g"
+  );
 
-  return withTips;
+  return desc.replace(pattern, (label) => {
+    const key = beastMap.get(label);
+    return key
+      ? `<span class="beast-tip" data-beast="${key}">${label}</span>`
+      : label;
+  });
 }
 
 // ====== 德魯伊變身提示 =====
