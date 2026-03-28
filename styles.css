@@ -949,15 +949,26 @@ button:active {
 }
 
 .action-note-title {
-  margin-top: 10px;
-  font-size: var(--fs-base);
+  margin-top: 0.9rem;
+  font-size: var(--fs-sm);
   font-weight: 700;
-  color: var(--text);
+  letter-spacing: 0.01em;
+  color: var(--text-muted);
 }
 
 .action-note-copy {
   margin-top: 4px;
   margin-left: 10px;
+}
+
+.action-attack-block,
+.action-note-card {
+  margin-bottom: 0.95rem;
+}
+
+.action-attack-block > h3,
+.action-note-card > h3 {
+  margin-bottom: 0.8rem;
 }
 
 #tab-skills > .section > button,
@@ -1075,8 +1086,23 @@ button:active {
   letter-spacing: 0.18em;
 }
 
+#weapon-mastery-summary-wrap {
+  margin-top: 0.8rem;
+  margin-bottom: 1rem;
+  padding: 0.85rem 1rem;
+}
+
+#weapon-mastery-summary {
+  margin-top: 0.45rem;
+}
+
+#weapon-mastery-summary-wrap + h3 {
+  margin-top: 0.2rem;
+}
+
 /* ===== Spells / Feats ===== */
-.spell-toolbar {
+.spell-toolbar,
+.equipment-toolbar {
   width: 100%;
   margin-top: 0.32rem;
   padding: 0.45rem 0 0;
@@ -1085,7 +1111,8 @@ button:active {
   box-shadow: none;
 }
 
-.spell-toolbar-row {
+.spell-toolbar-row,
+.equipment-toolbar-row {
   display: flex;
   align-items: center;
   gap: 0.6rem;
@@ -1094,15 +1121,54 @@ button:active {
   min-width: 0;
 }
 
-.spell-toolbar #spell-search {
+.spell-toolbar #spell-search,
+.equipment-toolbar #equipment-search {
   flex: 1 1 auto;
   min-width: 0;
   height: 38px;
-  padding: 8px 12px;
+  padding: 8px 38px 8px 12px;
   line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.equipment-search-count {
+  flex: 0 0 auto;
+  min-width: 3.8rem;
+  color: var(--text-muted);
+  font-size: var(--fs-md);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.equipment-search-input-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.equipment-search-clear {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid #d7deea;
+  background: #fff;
+  color: #667085;
+  box-shadow: none;
+  line-height: 1;
+  margin-bottom: 0;
+}
+
+.equipment-search-clear.is-hidden {
+  display: none;
 }
 
 .spell-toolbar-actions {
@@ -1129,6 +1195,38 @@ button:active {
 
 #tab-spells.spell-toolbar-visible {
   padding-top: 3.85rem;
+}
+
+#tab-equipment {
+  padding-top: 0.55rem;
+}
+
+#tab-equipment.equipment-toolbar-visible {
+  padding-top: 3.85rem;
+}
+
+.equipment-search-block + .equipment-search-block {
+  margin-top: 0.7rem;
+}
+
+.equipment-search-block table {
+  margin-top: 0.35rem;
+  width: 100%;
+}
+
+.equipment-search-table-wrap {
+  overflow-x: auto;
+}
+
+.equipment-search-highlight {
+  background: #fff1a8;
+  color: inherit;
+  padding: 0 1px;
+  border-radius: 2px;
+}
+
+.equipment-search-results.is-hidden {
+  display: none;
 }
 
 .spell-picked-grid {
@@ -1192,7 +1290,7 @@ div[id$="spells-area"] .form-row {
 
 .spell-row-top {
   display: grid;
-  grid-template-columns: max-content 118px 1fr;
+  grid-template-columns: 118px max-content max-content 1fr;
   grid-template-rows: auto auto;
   gap: 8px;
   align-items: center;
@@ -1200,6 +1298,7 @@ div[id$="spells-area"] .form-row {
 }
 
 .spell-row-top select:first-child,
+.spell-row-index,
 .spell-row-top select:last-of-type,
 .spell-row-top .feat-row-controls,
 .feat-row-controls {
@@ -1207,13 +1306,24 @@ div[id$="spells-area"] .form-row {
 }
 
 .spell-row-top select:first-child {
-  width: 118px;
   grid-column: 1;
   grid-row: 1;
 }
 
-.spell-row-top .feat-row-controls {
+.spell-row-index {
   grid-column: 2;
+  grid-row: 1;
+  width: auto;
+  min-width: 2.5rem;
+  color: #98a2b3;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.spell-row-top .feat-row-controls {
+  grid-column: 3;
   grid-row: 1;
   align-self: center;
   width: auto;
@@ -1478,55 +1588,60 @@ div[id$="spells-area"] .form-row {
 /* ===== Floating UI ===== */
 #scrollToTopBtn {
   position: fixed;
-  right: 0.85rem;
+  right: max(0.95rem, calc((100vw - var(--app-max-width)) / 2 + 0.95rem));
   bottom: 0.85rem;
   z-index: 999;
-  width: 2.4rem;
-  height: 2.4rem;
+  width: auto;
+  height: auto;
   padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border: 0;
-  border-radius: 999px;
-  background: linear-gradient(180deg, #214ecf 0%, #1f64ff 100%);
-  color: #fff;
-  font-size: 16px;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 1.5rem;
   line-height: 1;
-  opacity: 0.95;
+  box-shadow: none;
+  opacity: 1;
 }
 
-#spell-search-fab {
+#spell-search-fab,
+#equipment-search-fab {
   position: fixed;
   top: 4.2rem;
   right: max(0.95rem, calc((100vw - var(--app-max-width)) / 2 + 0.95rem));
   z-index: 1200;
-  width: 2.35rem;
-  height: 2.35rem;
+  width: auto;
+  height: auto;
   padding: 0;
   border: 0;
-  border-radius: 999px;
+  border-radius: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(180deg, #214ecf 0%, #1f64ff 100%);
-  color: #fff;
-  font-size: 1.05rem;
+  background: transparent;
+  color: inherit;
+  font-size: 1.6rem;
   line-height: 1;
-  box-shadow: 0 6px 16px rgba(31, 100, 255, 0.28);
-  opacity: 0.95;
-  transition: transform 0.2s ease, opacity 0.2s ease;
+  box-shadow: none;
+  opacity: 1;
+  transition: transform 0.2s ease;
 }
 
-#spell-search-fab.is-hidden {
+#spell-search-fab.is-hidden,
+#equipment-search-fab.is-hidden {
   display: none;
 }
 
-#spell-search-fab.toolbar-open {
+#spell-search-fab.toolbar-open,
+#equipment-search-fab.toolbar-open {
   transform: translateY(3.15rem);
 }
 
-#spell-search-fab:hover {
+#spell-search-fab:hover,
+#equipment-search-fab:hover {
   opacity: 1;
 }
 
@@ -2047,7 +2162,7 @@ div[id$="spells-area"] .form-row {
   }
 }
 
-@media (min-width: 640px) {
+@media (min-width: 720px) {
   #tab-basic .ability-grid {
     grid-template-columns: repeat(6, minmax(0, 1fr));
   }

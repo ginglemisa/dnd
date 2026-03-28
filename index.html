@@ -61,6 +61,15 @@
         </div>
       </div>
     </div>
+    <div id="equipment-tab-toolbar" class="equipment-toolbar is-hidden" aria-label="裝備搜尋工具列">
+      <div class="equipment-toolbar-row">
+        <div class="equipment-search-input-wrap">
+          <input type="text" id="equipment-search" placeholder="🔍 搜尋">
+          <button type="button" id="equipment-search-clear" class="equipment-search-clear is-hidden" aria-label="清除裝備搜尋" style="transform:translateY(-50%); transition:none; animation:none;">×</button>
+        </div>
+        <span id="equipment-search-count" class="equipment-search-count"></span>
+      </div>
+    </div>
   </div>
 </header>
 
@@ -140,14 +149,14 @@
       <div class="mini-stat-label">最大HP</div>
       <div class="basic-metric-values">
         <span id="hp-display" class="hp-value">(0)</span>
-        <input type="number" id="hp" aria-label="目前生命值" placeholder="目前 HP" min="0" max="200" step="1" inputmode="numeric">
+        <input type="number" id="hp" aria-label="目前生命值" placeholder="HP" min="0" max="200" step="1" inputmode="numeric">
       </div>
     </div>
     <div class="mini-stat-card basic-metric-card">
       <div class="mini-stat-label">護甲AC</div>
       <div class="basic-metric-values">
         <span id="ac-display" class="hp-value">10</span>
-        <input type="number" id="temp-hp" aria-label="臨時生命值" placeholder="臨時生命" min="0" max="50" step="1" inputmode="numeric">
+        <input type="number" id="temp-hp" aria-label="臨時生命值" placeholder="" min="0" max="50" step="1" inputmode="numeric">
       </div>
     </div>
   </div>
@@ -446,27 +455,29 @@
       </details>
     </div>
 
+<div class="section action-attack-block">
 <h3>攻擊動作</h3>
 <button onclick="populateHandAttacks()">獲取 主副手 武器資料</button>
-<div id="weapon-mastery-summary-wrap" class="section is-hidden">
-  <strong>精通註記：</strong>
-  <div id="weapon-mastery-summary" class="selection-summary">尚未勾選精通屬性</div>
-</div>
 <div class="form-row small-text">
   <input type="text" id="atk-main-name" placeholder="名稱">
   <input type="text" id="atk-main-hit" placeholder="命中">
   <input type="text" id="atk-main-dmg" placeholder="傷害">
   <input type="text" id="atk-main-note" placeholder="備註">
 </div>
-<div>─ ─ ─</div>
+<hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;">
 <div class="form-row small-text">
   <input type="text" id="atk-off-name" placeholder="名稱">
   <input type="text" id="atk-off-hit" placeholder="命中">
   <input type="text" id="atk-off-dmg" placeholder="傷害">
   <input type="text" id="atk-off-note" placeholder="備註">
 </div>
+</div>
+<div id="weapon-mastery-summary-wrap" class="section is-hidden">
+  <strong>精通註記：</strong>
+  <div id="weapon-mastery-summary" class="selection-summary">尚未勾選精通屬性</div>
+</div>
+	  <div class="section action-note-card">
 <h3>動作</h3>
-	  <div class="section">
 <div class="action-note-title">徒手攻擊</div>
 <div class="small-text action-note-copy">
   5呎內拳打腳踢或咬人，擇一效果:<br>
@@ -477,8 +488,8 @@
 	備註：擒抱推撞限制目標體型≤你+1級
 </div></div>
 
+	  <div class="section action-note-card">
       <h3>附贈</h3>
-	  <div class="section">
 <div class="action-note-title">喝藥水</div>
 <div class="small-text action-note-copy">
   治療藥水：恢復 2d4+2 HP
@@ -489,8 +500,8 @@
   雙持輕型武器攻擊後，可用附贈進行副手攻擊。副手傷害不加屬性調整值，除非具備特定專長。
 </div>
 	  </div>
+	  <div class="section action-note-card">
       <h3>反應</h3>
-	  <div class="section">
 <div class="action-note-title">進行藉機攻擊</div>
 <div class="small-text action-note-copy">
   當你能看見的生物離開你的觸及範圍時，你可以進行藉機攻擊。使用"反應"來對該生物進行一次近戰攻擊。。
@@ -2336,6 +2347,15 @@ function refreshSpellRows(areaId) {
     if (spellSel) spellSel.id = `${areaId}-spell-${idx}`;
   });
   updateSpellControlStates(areaId);
+  updateGlobalSpellSequenceNumbers();
+}
+
+function updateGlobalSpellSequenceNumbers() {
+  const rows = document.querySelectorAll("#tab-spells .spell-entry");
+  rows.forEach((row, idx) => {
+    const marker = row.querySelector(".spell-row-index");
+    if (marker) marker.textContent = `#${idx + 1}`;
+  });
 }
 
 let deletedSpellRowCache = {};
@@ -2407,6 +2427,10 @@ function createSingleSpellRow(areaId, level, afterRow = null, restoredRowState =
 
   const topRow = document.createElement('div');
   topRow.className = 'spell-row-top';
+
+  const indexMarker = document.createElement('span');
+  indexMarker.className = 'spell-row-index';
+  indexMarker.textContent = '#1';
 
   const controls = document.createElement('div');
   controls.className = 'feat-row-controls';
@@ -2507,6 +2531,7 @@ function createSingleSpellRow(areaId, level, afterRow = null, restoredRowState =
   });
 
   topRow.appendChild(classSel);
+  topRow.appendChild(indexMarker);
   topRow.appendChild(controls);
   topRow.appendChild(spellSel);
 
@@ -2576,7 +2601,12 @@ function applySpellFilter() {
   });
 }
 
-document.getElementById("spell-search")?.addEventListener("input", applySpellFilter);
+let spellFilterDebounceTimer;
+
+document.getElementById("spell-search")?.addEventListener("input", () => {
+  window.clearTimeout(spellFilterDebounceTimer);
+  spellFilterDebounceTimer = window.setTimeout(applySpellFilter, 160);
+});
 document.getElementById("expand-spells")?.addEventListener("click", () => {
   document.querySelectorAll("#tab-spells .spell-level-section").forEach(sec => sec.open = true);
 });
@@ -2585,6 +2615,317 @@ document.getElementById("collapse-spells")?.addEventListener("click", () => {
 });
 
 // 依「玩家職業 + 等級 + 種族血統法術」自動限制法術頁顯示到幾環（含法術位列）
+function splitEquipmentSearchText(text) {
+  return String(text || "")
+    .split(/\n\s*\n+/)
+    .map(chunk => chunk.trim())
+    .filter(Boolean);
+}
+
+function escapeRegExp(text) {
+  return String(text || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function buildTextSegment(text) {
+  const normalized = String(text || "").trim();
+  return normalized ? { type: "text", text: normalized, matchText: normalized.toLowerCase() } : null;
+}
+
+function buildTableSegment(preamble, tableNode) {
+  const preambleText = String(preamble || "").trim();
+  const tableText = (tableNode?.innerText || tableNode?.textContent || "").trim();
+  const matchText = [preambleText, tableText].filter(Boolean).join("\n").toLowerCase();
+  if (!matchText) return null;
+  return {
+    type: "table-bundle",
+    text: preambleText,
+    tableHtml: tableNode?.outerHTML || "",
+    matchText
+  };
+}
+
+function createHighlightedFragment(text, keyword) {
+  const fragment = document.createDocumentFragment();
+  const source = String(text || "");
+  const needle = String(keyword || "").trim();
+  if (!needle) {
+    fragment.appendChild(document.createTextNode(source));
+    return fragment;
+  }
+
+  const pattern = new RegExp(`(${escapeRegExp(needle)})`, "gi");
+  let lastIndex = 0;
+
+  source.replace(pattern, (match, _group, offset) => {
+    if (offset > lastIndex) {
+      fragment.appendChild(document.createTextNode(source.slice(lastIndex, offset)));
+    }
+    const mark = document.createElement("mark");
+    mark.className = "equipment-search-highlight";
+    mark.textContent = match;
+    fragment.appendChild(mark);
+    lastIndex = offset + match.length;
+    return match;
+  });
+
+  if (lastIndex < source.length) {
+    fragment.appendChild(document.createTextNode(source.slice(lastIndex)));
+  }
+
+  return fragment;
+}
+
+function createEquipmentSearchBlock(segment, keyword = "") {
+  const block = document.createElement("div");
+  block.className = "equipment-search-block";
+  block.style.whiteSpace = "pre-line";
+
+  if (segment?.type === "table-bundle") {
+    if (segment.text) {
+      const textBlock = document.createElement("div");
+      textBlock.style.whiteSpace = "pre-line";
+      textBlock.appendChild(createHighlightedFragment(segment.text, keyword));
+      block.appendChild(textBlock);
+    }
+
+    if (segment.tableHtml) {
+      const tableWrap = document.createElement("div");
+      tableWrap.className = "equipment-search-table-wrap";
+      tableWrap.innerHTML = segment.tableHtml;
+      const table = tableWrap.querySelector("table");
+      if (table && keyword) {
+        Array.from(table.querySelectorAll("th, td")).forEach((cell) => {
+          const cellText = cell.textContent || "";
+          cell.textContent = "";
+          cell.appendChild(createHighlightedFragment(cellText, keyword));
+        });
+      }
+      block.appendChild(tableWrap);
+    }
+    return block;
+  }
+
+  block.appendChild(createHighlightedFragment(segment?.text || "", keyword));
+  return block;
+}
+
+function getEquipmentTableSegments(body) {
+  const segments = [];
+  let textBuffer = "";
+
+  const pushTextSegments = () => {
+    splitEquipmentSearchText(textBuffer).forEach((segment) => {
+      const textSegment = buildTextSegment(segment);
+      if (textSegment) segments.push(textSegment);
+    });
+    textBuffer = "";
+  };
+
+  Array.from(body?.childNodes || []).forEach((node) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      textBuffer += node.textContent || "";
+      return;
+    }
+
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
+
+    const tagName = node.tagName.toUpperCase();
+    if (tagName === "BR") {
+      textBuffer += "\n";
+      return;
+    }
+
+    if (tagName === "TABLE") {
+      const preambleSegments = splitEquipmentSearchText(textBuffer);
+      const standaloneSegments = preambleSegments.slice(0, -1);
+      standaloneSegments.forEach((segment) => {
+        const textSegment = buildTextSegment(segment);
+        if (textSegment) segments.push(textSegment);
+      });
+      const preamble = preambleSegments[preambleSegments.length - 1] || textBuffer.trim();
+      const tableSegment = buildTableSegment(preamble, node);
+      if (tableSegment) segments.push(tableSegment);
+      textBuffer = "";
+      return;
+    }
+
+    textBuffer += `${node.innerText || node.textContent || ""}\n`;
+  });
+
+  pushTextSegments();
+  return segments.filter(Boolean);
+}
+
+function getWeaponMasterySegments(body) {
+  return Array.from(body?.children || [])
+    .filter((item) => item.tagName === "DIV")
+    .map((item) => {
+      const title = item.querySelector("strong")?.textContent?.trim() || "";
+      const description = item.querySelector("span")?.textContent?.trim() || "";
+      return buildTextSegment([title, description].filter(Boolean).join("\n"));
+    })
+    .filter(Boolean);
+}
+
+const equipmentSegmentBuilders = [
+  {
+    key: "weapon-mastery",
+    match: (detail) => detail.id === "weapon-mastery-details",
+    build: (_detail, body) => getWeaponMasterySegments(body)
+  },
+  {
+    key: "table-bundle",
+    match: (_detail, body) => Boolean(body?.querySelector("table")),
+    build: (_detail, body) => getEquipmentTableSegments(body)
+  },
+  {
+    key: "blank-line",
+    match: () => true,
+    build: (_detail, _body, sourceText) => splitEquipmentSearchText(sourceText)
+      .map((segment) => buildTextSegment(segment))
+      .filter(Boolean)
+  }
+];
+
+function getEquipmentSegments(detail, body, sourceText) {
+  const builder = equipmentSegmentBuilders.find((candidate) => candidate.match(detail, body));
+  return builder ? builder.build(detail, body, sourceText) : [];
+}
+
+function prepareEquipmentSearch() {
+  const equipmentTab = document.getElementById("tab-equipment");
+  if (!equipmentTab || equipmentTab.dataset.searchPrepared === "true") return;
+
+  const primarySection = equipmentTab.querySelector(":scope > .section");
+  if (primarySection) primarySection.classList.add("equipment-search-panel");
+
+  const notesDetails = equipmentTab.querySelectorAll("#equipment-notes-section > .section > details");
+  notesDetails.forEach((detail) => {
+    if (detail.dataset.searchPrepared === "true") return;
+
+    const body = detail.querySelector(":scope > .small-text");
+    if (!body) {
+      detail.dataset.searchPrepared = "true";
+      return;
+    }
+    const sourceText = (body.innerText || body.textContent || "").trim();
+    if (sourceText) body.dataset.searchSourceText = sourceText;
+
+    let results = detail.querySelector(":scope > .equipment-search-results");
+    if (!results) {
+      results = document.createElement("div");
+      results.className = "small-text equipment-search-results is-hidden";
+      results.style.margin = "8px 0 0 0";
+      detail.appendChild(results);
+    }
+
+    detail.dataset.searchPrepared = "true";
+  });
+
+  equipmentTab.dataset.searchPrepared = "true";
+}
+
+function applyEquipmentFilter() {
+  prepareEquipmentSearch();
+
+  const equipmentTab = document.getElementById("tab-equipment");
+  const searchEl = document.getElementById("equipment-search");
+  const countEl = document.getElementById("equipment-search-count");
+  const clearBtn = document.getElementById("equipment-search-clear");
+  if (!equipmentTab || !searchEl) return;
+
+  const keyword = searchEl.value.trim().toLowerCase();
+  let matchCount = 0;
+  const primarySection = equipmentTab.querySelector(":scope > .section");
+  const topLevelDetails = equipmentTab.querySelectorAll("#equipment-notes-section > .section > details");
+
+  if (primarySection) {
+    if (!keyword) {
+      primarySection.style.display = "";
+    } else {
+      const panelText = [
+        primarySection.textContent || "",
+        document.getElementById("mainHand")?.value || "",
+        document.getElementById("offHand")?.value || "",
+        document.getElementById("armor")?.value || "",
+        document.getElementById("gear-notes")?.value || "",
+        document.getElementById("gear-extra")?.value || ""
+      ].join("\n").toLowerCase();
+      const matched = panelText.includes(keyword);
+      primarySection.style.display = matched ? "" : "none";
+      if (matched) matchCount += 1;
+    }
+  }
+
+  topLevelDetails.forEach((detail) => {
+    const summaryText = detail.querySelector("summary")?.textContent?.trim().toLowerCase() || "";
+    const body = detail.querySelector(":scope > .small-text");
+    const results = detail.querySelector(":scope > .equipment-search-results");
+    const sourceText = body?.dataset.searchSourceText || "";
+
+    if (!keyword) {
+      detail.style.display = "";
+      if (body) body.style.display = "";
+      if (results) {
+        results.innerHTML = "";
+        results.classList.add("is-hidden");
+      }
+      return;
+    }
+
+    const summaryMatched = summaryText.includes(keyword);
+    const segments = getEquipmentSegments(detail, body, sourceText);
+    const matchedSegments = summaryMatched
+      ? segments
+      : segments.filter((segment) => (segment.matchText || "").includes(keyword));
+
+    const hasVisibleBlock = matchedSegments.length > 0;
+    detail.style.display = hasVisibleBlock || summaryMatched ? "" : "none";
+
+    if (!hasVisibleBlock && !summaryMatched) {
+      if (body) body.style.display = "";
+      if (results) {
+        results.innerHTML = "";
+        results.classList.add("is-hidden");
+      }
+      return;
+    }
+
+    matchCount += matchedSegments.length || (summaryMatched ? 1 : 0);
+    if (body) body.style.display = "none";
+    if (results) {
+      results.innerHTML = "";
+      matchedSegments.forEach((segment) => {
+        results.appendChild(createEquipmentSearchBlock(segment, keyword));
+      });
+      results.classList.remove("is-hidden");
+    }
+    detail.open = true;
+  });
+
+  if (countEl) {
+    countEl.textContent = keyword ? `結果 ${matchCount}` : "";
+  }
+  if (clearBtn) {
+    clearBtn.classList.toggle("is-hidden", !searchEl.value);
+  }
+}
+
+let equipmentFilterDebounceTimer;
+
+document.getElementById("equipment-search")?.addEventListener("input", () => {
+  window.clearTimeout(equipmentFilterDebounceTimer);
+  equipmentFilterDebounceTimer = window.setTimeout(applyEquipmentFilter, 160);
+});
+
+document.getElementById("equipment-search-clear")?.addEventListener("click", () => {
+  const searchEl = document.getElementById("equipment-search");
+  if (!searchEl) return;
+  searchEl.value = "";
+  applyEquipmentFilter();
+  searchEl.focus();
+});
+
 function getMaxSpellRing(cls, lvl) {
   const level = parseInt(lvl || "0", 10);
 
@@ -3133,10 +3474,19 @@ async function importStateFromJsonFile(file) {
 
 const INPUT_AUTOSAVE_DEBOUNCE_MS = 1000;
 let saveAllFieldsDebounceTimer = null;
+const AUTOSAVE_EXCLUDED_IDS = new Set(["spell-search", "equipment-search"]);
+
+function getAutosaveElements() {
+  return Array.from(document.querySelectorAll("input, select, textarea"))
+    .filter((el) => !AUTOSAVE_EXCLUDED_IDS.has(el.id));
+}
 
 function saveAllFields() {
   if (SHARE_MODE) return;
   const data = collectStateObject();
+  AUTOSAVE_EXCLUDED_IDS.forEach((id) => {
+    delete data[id];
+  });
   localStorage.setItem(AUTO_SAVE_KEY, JSON.stringify(data));
 }
 
@@ -3160,7 +3510,7 @@ function restoreAllFields() {
 }
 function setupAutoSave() {
   if (SHARE_MODE) return;
-  document.querySelectorAll("input, select, textarea").forEach(el => {
+  getAutosaveElements().forEach(el => {
     el.addEventListener("change", saveAllFields);
     el.addEventListener("input", scheduleSaveAllFields);
   });

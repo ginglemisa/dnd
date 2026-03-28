@@ -37,6 +37,7 @@
   document.body.appendChild(spellSearchFab);
 
   let isSpellToolbarVisible = false;
+  const spellSearchInput = document.getElementById("spell-search");
 
   const setSpellToolbarVisibility = (visible) => {
     isSpellToolbarVisible = !!visible;
@@ -45,19 +46,93 @@
     spellTab.classList.toggle("spell-toolbar-visible", isSpellToolbarVisible);
   };
 
+  const closeSpellToolbar = () => {
+    if (spellSearchInput) spellSearchInput.value = "";
+    window.applySpellFilter?.();
+    setSpellToolbarVisibility(false);
+  };
+
   const syncWithActiveTab = (tab) => {
     const activeTab = tab || document.querySelector(".tab-content.active")?.id?.replace("tab-", "");
     if (activeTab === "spells") {
       spellSearchFab.classList.remove("is-hidden");
-      setSpellToolbarVisibility(false);
       return;
     }
     spellSearchFab.classList.add("is-hidden");
-    setSpellToolbarVisibility(false);
+    closeSpellToolbar();
   };
 
   spellSearchFab.addEventListener("click", () => {
-    setSpellToolbarVisibility(!isSpellToolbarVisible);
+    if (isSpellToolbarVisible) {
+      closeSpellToolbar();
+      return;
+    }
+    setSpellToolbarVisibility(true);
+  });
+
+  window.addEventListener("tabchange", (event) => {
+    syncWithActiveTab(event?.detail?.tab);
+  });
+
+  syncWithActiveTab();
+})();
+
+(function initEquipmentSearchFloatingButton() {
+  if (document.getElementById("equipment-search-fab")) return;
+
+  const equipmentToolbar = document.getElementById("equipment-tab-toolbar");
+  const equipmentTab = document.getElementById("tab-equipment");
+  if (!equipmentToolbar || !equipmentTab) return;
+
+  const equipmentSearchFab = document.createElement("button");
+  equipmentSearchFab.id = "equipment-search-fab";
+  equipmentSearchFab.type = "button";
+  equipmentSearchFab.textContent = "\uD83D\uDD0D";
+  equipmentSearchFab.classList.add("is-hidden");
+  equipmentSearchFab.setAttribute("aria-label", "開啟裝備搜尋");
+  document.body.appendChild(equipmentSearchFab);
+
+  let isEquipmentToolbarVisible = false;
+  const equipmentSearchInput = document.getElementById("equipment-search");
+
+  const setEquipmentToolbarVisibility = (visible) => {
+    isEquipmentToolbarVisible = !!visible;
+    equipmentToolbar.classList.toggle("is-hidden", !isEquipmentToolbarVisible);
+    equipmentSearchFab.classList.toggle("toolbar-open", isEquipmentToolbarVisible);
+    equipmentTab.classList.toggle("equipment-toolbar-visible", isEquipmentToolbarVisible);
+  };
+
+  const openEquipmentSearchSections = () => {
+    document.querySelectorAll("#equipment-notes-section > .section > details").forEach((detail) => {
+      detail.open = true;
+    });
+    window.prepareEquipmentSearch?.();
+  };
+
+  const closeEquipmentToolbar = () => {
+    if (equipmentSearchInput) equipmentSearchInput.value = "";
+    window.applyEquipmentFilter?.();
+    setEquipmentToolbarVisibility(false);
+  };
+
+  const syncWithActiveTab = (tab) => {
+    const activeTab = tab || document.querySelector(".tab-content.active")?.id?.replace("tab-", "");
+    if (activeTab === "equipment") {
+      equipmentSearchFab.classList.remove("is-hidden");
+      return;
+    }
+    equipmentSearchFab.classList.add("is-hidden");
+    closeEquipmentToolbar();
+  };
+
+  equipmentSearchFab.addEventListener("click", () => {
+    if (isEquipmentToolbarVisible) {
+      closeEquipmentToolbar();
+      return;
+    }
+    openEquipmentSearchSections();
+    setEquipmentToolbarVisibility(true);
+    equipmentSearchInput?.focus();
   });
 
   window.addEventListener("tabchange", (event) => {
