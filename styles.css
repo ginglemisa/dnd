@@ -321,6 +321,39 @@ details > summary::-webkit-details-marker,
   line-height: 1.5;
 }
 
+#raceFeatures {
+  white-space: normal;
+}
+
+#raceFeatures .race-feature-line {
+  line-height: 1.55;
+}
+
+#raceFeatures .race-feature-line + .race-feature-line {
+  margin-top: 0.2rem;
+}
+
+#raceFeatures .race-feature-spacer {
+  height: 0.8rem;
+}
+
+#raceFeatures .race-feature-table-wrap {
+  margin: 0.8rem 0;
+  overflow-x: auto;
+}
+
+#raceFeatures .race-feature-table-wrap table {
+  width: 100%;
+  min-width: 28rem;
+  border-collapse: collapse;
+}
+
+#raceFeatures .race-feature-table-wrap td,
+#raceFeatures .race-feature-table-wrap th {
+  padding: 0.45rem 0.55rem;
+  white-space: normal;
+}
+
 .selection-summary {
   margin-top: 6px;
   padding: 12px;
@@ -1727,7 +1760,7 @@ div[id$="spells-area"] .form-row {
   margin: 0.5rem 0 0;
   background: linear-gradient(180deg, #fff6e6 0%, #ffe8c0 100%);
   border-color: #e8c27a;
-  display: none;
+  display: block;
 }
 
 .invocation-block {
@@ -1886,8 +1919,8 @@ div[id$="spells-area"] .form-row {
 
 #tour-tooltip {
   position: fixed;
-  width: min(360px, calc(100vw - 20px));
-  padding: 12px;
+  width: min(252px, calc(100vw - 20px));
+  padding: 10px;
   border: 1px solid #c7d2e9;
   border-radius: 12px;
   background: #fff;
@@ -1897,27 +1930,39 @@ div[id$="spells-area"] .form-row {
 
 #tour-step-title {
   margin: 0 0 4px;
-  font-size: var(--fs-lg);
+  font-size: var(--fs-md);
   font-weight: 900;
 }
 
 #tour-step-text {
-  font-size: var(--fs-md);
-  line-height: 1.5;
+  font-size: var(--fs-sm);
+  line-height: 1.45;
   color: #34425b;
 }
 
 .tour-btn-row {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
-  margin-top: 10px;
+  gap: 6px;
+  margin-top: 8px;
 }
 
 #tour-next-btn,
-#tour-skip-btn {
-  min-height: 38px;
-  padding: 0 12px;
+#tour-skip-btn,
+#tour-prev-btn {
+  min-height: 32px;
+  padding: 0 10px;
+  font-size: var(--fs-xs);
+}
+
+#tour-prev-btn {
+  background: linear-gradient(180deg, #f7f9ff 0%, #edf2ff 100%);
+  color: #32415f;
+}
+
+#tour-prev-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 #tour-next-btn {
@@ -2185,7 +2230,7 @@ div[id$="spells-area"] .form-row {
   border: 1px solid #3f65df;
   border-radius: 8px;
   background: linear-gradient(180deg, #6d89ff 0%, #5675f2 100%);
-  display: none;
+  display: block;
   color: #fff;
   font-size: var(--fs-base);
 }

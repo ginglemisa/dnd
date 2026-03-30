@@ -301,7 +301,7 @@
 <input type="file" id="import-json-file" accept="application/json" class="is-hidden">
 </div>
 
-  <button type="button" id="restart-onboarding-btn">🧭 重新開啟新手導覽</button>
+  <button type="button" id="restart-onboarding-btn">🧭 開啟新手導覽</button>
 
 </div>
 
@@ -358,7 +358,7 @@
       <label>你會說通用語及兩種語言：</label>
       <div class="language-base-grid">
         <div class="language-field">
-          <label for="language1">額外語言 1：</label>
+          <label for="language1">語言 1：</label>
           <select id="language1" class="language-select">
             <option value="">-- 請選擇 --</option>
             <option value="common-sign">通用手語</option>
@@ -374,7 +374,7 @@
         </div>
 
         <div class="language-field">
-          <label for="language2">額外語言 2：</label>
+          <label for="language2">語言 2：</label>
           <select id="language2" class="language-select">
             <option value="">-- 請選擇 --</option>
             <option value="common-sign">通用手語</option>
@@ -1436,25 +1436,48 @@ function updateClassFeature() {
 function updateRaceFeature() {
   const value = document.getElementById("race").value;
   const raw = raceFeatures[value] || "無資料";
+  const normalized = String(raw).replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const tablePattern = /<table[\s\S]*?<\/table>/gi;
+  const chunks = [];
+  let lastIndex = 0;
+  let match;
 
-  const formatted = raw
-    .split("\n")
-    .map(line => {
-      const t = line.trim();
-      if (!t) return ""; // 保留空行（交給 pre-wrap 顯示）
+  while ((match = tablePattern.exec(normalized)) !== null) {
+    if (match.index > lastIndex) {
+      chunks.push({ type: "text", content: normalized.slice(lastIndex, match.index) });
+    }
+    chunks.push({ type: "table", content: match[0] });
+    lastIndex = match.index + match[0].length;
+  }
 
-      // 只處理「行首特性名：內文」這種格式，避免把空白/換行吃進去
-      const idx = line.indexOf("：");
-      if (idx > 0) {
-        const head = line.slice(0, idx).trim();
-        const tail = line.slice(idx + 1);
-        return `<strong class="feat-title">${head}</strong>：${tail}`;
-      }
-      return line;
-    })
-    .join("\n");
+  if (lastIndex < normalized.length) {
+    chunks.push({ type: "text", content: normalized.slice(lastIndex) });
+  }
 
-  document.getElementById("raceFeatures").innerHTML = formatted;
+  const formatted = chunks.map(chunk => {
+    if (chunk.type === "table") {
+      return `<div class="race-feature-table-wrap">${chunk.content}</div>`;
+    }
+
+    return chunk.content
+      .split("\n")
+      .map(line => {
+        const trimmed = line.trim();
+        if (!trimmed) return `<div class="race-feature-spacer"></div>`;
+
+        const idx = trimmed.indexOf("：");
+        if (idx > 0) {
+          const head = trimmed.slice(0, idx).trim();
+          const tail = trimmed.slice(idx + 1).trimStart();
+          return `<div class="race-feature-line"><strong class="feat-title">${head}</strong>：${tail}</div>`;
+        }
+
+        return `<div class="race-feature-line">${trimmed}</div>`;
+      })
+      .join("");
+  }).join("");
+
+  document.getElementById("raceFeatures").innerHTML = formatted || "無資料";
 }
 
 function updateBackgroundFeature() {
@@ -2927,12 +2950,14 @@ function prepareEquipmentSearch() {
   if (primarySection) primarySection.classList.add("equipment-search-panel");
 
   const notesDetails = equipmentTab.querySelectorAll("#equipment-notes-section > .section > details");
+  if (!notesDetails.length) return;
+
+  let preparedDetailsCount = 0;
   notesDetails.forEach((detail) => {
     if (detail.dataset.searchPrepared === "true") return;
 
     const body = detail.querySelector(":scope > .small-text");
     if (!body) {
-      detail.dataset.searchPrepared = "true";
       return;
     }
     const sourceText = (body.innerText || body.textContent || "").trim();
@@ -2947,9 +2972,12 @@ function prepareEquipmentSearch() {
     }
 
     detail.dataset.searchPrepared = "true";
+    preparedDetailsCount += 1;
   });
 
-  equipmentTab.dataset.searchPrepared = "true";
+  if (preparedDetailsCount === notesDetails.length) {
+    equipmentTab.dataset.searchPrepared = "true";
+  }
 }
 
 function applyEquipmentFilter() {
@@ -3881,6 +3909,7 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
     <h4 id="tour-step-title"></h4>
     <div id="tour-step-text"></div>
     <div class="tour-btn-row">
+      <button type="button" id="tour-prev-btn">上一步</button>
       <button type="button" id="tour-skip-btn">跳過</button>
       <button type="button" id="tour-next-btn">下一步</button>
     </div>
