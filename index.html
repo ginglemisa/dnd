@@ -1354,25 +1354,47 @@ function highlightSpellNamesInClassFeature(html) {
   if (!spellNames.length) return html;
 
   const spellAliases = [];
+  const aliasToEnglish = new Map();
   spellNames.forEach(rawName => {
     spellAliases.push(rawName);
+    aliasToEnglish.set(rawName, getSpellEnglishName(rawName));
 
     const localizedName = rawName.match(/^(.+?)\s+[A-Za-z]/)?.[1]?.trim();
-    if (localizedName) spellAliases.push(localizedName);
+    if (localizedName) {
+      spellAliases.push(localizedName);
+      aliasToEnglish.set(localizedName, getSpellEnglishName(rawName));
+    }
+
+    const englishName = getSpellEnglishName(rawName);
+    if (englishName) {
+      spellAliases.push(englishName);
+      aliasToEnglish.set(englishName, englishName);
+    }
   });
 
   const uniqueSpellNames = [...new Set(spellAliases)].sort((a, b) => b.length - a.length);
   if (!uniqueSpellNames.length) return html;
 
   const spellRegex = new RegExp(`(${uniqueSpellNames.map(escapeRegExp).join("|")})`, "g");
+  const decorateSpellMatch = (match) => {
+    const englishName = aliasToEnglish.get(match) || getSpellEnglishName(match);
+    return `<strong class="spell-highlight spell-highlight-action" role="button" tabindex="0" data-spell-name="${escapeHtml(englishName)}">${match}</strong>`;
+  };
 
-  return html
+  const highlightedHtml = html
     .split(/(<[^>]+>)/g)
     .map(part => {
       if (part.startsWith("<") && part.endsWith(">")) return part;
-return part.replace(spellRegex, '<strong class="spell-highlight">$1</strong>');
+      return part.replace(spellRegex, decorateSpellMatch);
     })
     .join("");
+
+  return highlightedHtml.replace(/<strong>([^<]+)<\/strong>/g, (full, innerText) => {
+    if (!aliasToEnglish.has(innerText) && !uniqueSpellNames.includes(innerText)) {
+      return full;
+    }
+    return decorateSpellMatch(innerText);
+  });
 }
 
 function updateClassFeature() {
@@ -1459,7 +1481,9 @@ function updateRaceFeature() {
       return `<div class="race-feature-table-wrap">${chunk.content}</div>`;
     }
 
-    return chunk.content
+    const highlightedContent = highlightSpellNamesInClassFeature(chunk.content);
+
+    return highlightedContent
       .split("\n")
       .map(line => {
         const trimmed = line.trim();
@@ -1728,6 +1752,8 @@ document.addEventListener("DOMContentLoaded", () => {
   bindSpellNotesEvents();
   bindCoreCharacterEvents();
   bindSkillRankExclusiveEvents();
+  bindSpellCastingStatsEvents();
+  bindFeatureSpellHighlightEvents();
   applyStatTextMaxLengthLimit();
 
 });
@@ -2429,6 +2455,293 @@ function getSpellsByMode(classVal, level) {
   return full.filter(s => allowSet.has(getSpellEnglishName(s.name)));
 }
 
+function getSpellListData() {
+  const aggregated = {};
+  if (!spellList || typeof spellList !== "object") return aggregated;
+
+  for (const classEntries of Object.values(spellList)) {
+    if (!classEntries || typeof classEntries !== "object") continue;
+
+    for (const [levelKey, entries] of Object.entries(classEntries)) {
+      if (!Array.isArray(entries)) continue;
+      if (!aggregated[levelKey]) aggregated[levelKey] = [];
+
+      entries.forEach((spell) => {
+        if (!spell?.name) return;
+        const englishName = getSpellEnglishName(spell.name);
+        const exists = aggregated[levelKey].some(
+          (entry) => getSpellEnglishName(entry?.name) === englishName
+        );
+        if (!exists) aggregated[levelKey].push(spell);
+      });
+    }
+  }
+
+  return aggregated;
+}
+
+const SPELLCASTING_CLASS_GROUPS = {
+  int: ["wizard"],
+  wis: ["cleric", "druid", "ranger"],
+  cha: ["bard", "paladin", "sorcerer", "warlock"]
+};
+
+const SPELL_PREPARE_FALLBACK_ORDER = [
+  "cleric",
+  "wizard",
+  "bard",
+  "druid",
+  "ranger",
+  "paladin",
+  "sorcerer",
+  "warlock"
+];
+
+function isSpellAutoPrepareInProgress() {
+  return Boolean(window.__spellAutoPrepareInProgress);
+}
+
+function getSpellAreaIdByLevelKey(levelKey) {
+  if (levelKey === "cantrips") return "cantrips-area";
+  return `level${levelKey}spells-area`;
+}
+
+function findSpellMetaByEnglishName(englishName) {
+  if (!englishName) return null;
+  const spellData = getSpellListData();
+  if (!spellData || typeof spellData !== "object") return null;
+
+  for (const [levelKey, entries] of Object.entries(spellData)) {
+    if (!Array.isArray(entries)) continue;
+    const found = entries.find((spell) => getSpellEnglishName(spell?.name) === englishName);
+    if (found) {
+      return {
+        englishName,
+        fullName: found.name,
+        levelKey,
+        areaId: getSpellAreaIdByLevelKey(levelKey),
+        levelValue: levelKey === "cantrips" ? "cantrips" : Number.parseInt(levelKey, 10)
+      };
+    }
+  }
+
+  return null;
+}
+
+function getAvailableClassesForSpell(englishName, levelKey) {
+  if (!englishName || !levelKey) return [];
+  return classOptions
+    .map((option) => option.value)
+    .filter((classId) => Array.isArray(basicAllow?.[classId]?.[levelKey]) && basicAllow[classId][levelKey].includes(englishName));
+}
+
+function getSpellClassSearchOrder(selectedAbility) {
+  const sameAbilityClasses = Array.isArray(SPELLCASTING_CLASS_GROUPS[selectedAbility])
+    ? SPELLCASTING_CLASS_GROUPS[selectedAbility]
+    : [];
+
+  if (!sameAbilityClasses.length) {
+    return [...SPELL_PREPARE_FALLBACK_ORDER];
+  }
+
+  const remaining = SPELL_PREPARE_FALLBACK_ORDER.filter((classId) => !sameAbilityClasses.includes(classId));
+  return [...sameAbilityClasses, ...remaining];
+}
+
+function getSpellClassSearchOrderWithPrimary(primaryClassId, selectedAbility) {
+  const ordered = [];
+  if (primaryClassId) {
+    ordered.push(primaryClassId);
+  }
+
+  const remainingOrdered = getSpellClassSearchOrder(selectedAbility)
+    .filter((classId) => classId !== primaryClassId);
+
+  ordered.push(...remainingOrdered);
+  return [...new Set(ordered)];
+}
+
+function findExistingSpellRow(areaId, englishName) {
+  return Array.from(document.querySelectorAll(`#${areaId} .spell-entry`)).find((row) => {
+    const spellValue = row.querySelector("select[id*='-spell-']")?.value || "";
+    return getSpellEnglishName(spellValue) === englishName;
+  }) || null;
+}
+
+function findEmptySpellRow(areaId) {
+  return Array.from(document.querySelectorAll(`#${areaId} .spell-entry`)).find((row) => {
+    const spellValue = row.querySelector("select[id*='-spell-']")?.value || "";
+    return !spellValue;
+  }) || null;
+}
+
+function closeSpellPreparePopover() {
+  const popover = document.getElementById("spell-prepare-popover");
+  if (popover) {
+    popover.remove();
+  }
+  if (typeof window.__spellPreparePopoverCleanup === "function") {
+    window.__spellPreparePopoverCleanup();
+    window.__spellPreparePopoverCleanup = null;
+  }
+}
+
+function showSpellPreparePopover(triggerEl) {
+  return new Promise((resolve) => {
+    closeSpellPreparePopover();
+
+    const rect = triggerEl?.getBoundingClientRect?.();
+    if (!rect) {
+      resolve(false);
+      return;
+    }
+
+    const popover = document.createElement("div");
+    popover.id = "spell-prepare-popover";
+    popover.className = "spell-prepare-popover";
+    popover.setAttribute("role", "dialog");
+    popover.setAttribute("aria-modal", "false");
+    popover.innerHTML = `
+      <div class="spell-prepare-popover__title">要準備此法術嗎？</div>
+      <div class="spell-prepare-popover__actions">
+        <button type="button" class="spell-prepare-popover__btn spell-prepare-popover__btn--confirm">是</button>
+        <button type="button" class="spell-prepare-popover__btn spell-prepare-popover__btn--cancel">否</button>
+      </div>
+    `;
+
+    document.body.appendChild(popover);
+
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const margin = 12;
+    const popRect = popover.getBoundingClientRect();
+    let left = rect.left;
+    let top = rect.bottom + 8;
+
+    if (left + popRect.width > viewportWidth - margin) {
+      left = viewportWidth - popRect.width - margin;
+    }
+    if (left < margin) {
+      left = margin;
+    }
+
+    if (top + popRect.height > viewportHeight - margin) {
+      top = rect.top - popRect.height - 8;
+    }
+    if (top < margin) {
+      top = Math.max(margin, Math.min(rect.bottom + 8, viewportHeight - popRect.height - margin));
+    }
+
+    popover.style.left = `${left}px`;
+    popover.style.top = `${top}px`;
+
+    const finalize = (result) => {
+      closeSpellPreparePopover();
+      resolve(result);
+    };
+
+    const onDocumentPointerDown = (event) => {
+      if (!popover.contains(event.target) && event.target !== triggerEl) {
+        finalize(false);
+      }
+    };
+
+    const onDocumentKeyDown = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        finalize(false);
+      }
+    };
+
+    window.__spellPreparePopoverCleanup = () => {
+      document.removeEventListener("mousedown", onDocumentPointerDown, true);
+      document.removeEventListener("keydown", onDocumentKeyDown, true);
+    };
+
+    document.addEventListener("mousedown", onDocumentPointerDown, true);
+    document.addEventListener("keydown", onDocumentKeyDown, true);
+
+    popover.querySelector(".spell-prepare-popover__btn--confirm")?.addEventListener("click", () => finalize(true));
+    popover.querySelector(".spell-prepare-popover__btn--cancel")?.addEventListener("click", () => finalize(false));
+  });
+}
+
+async function autoPrepareSpellFromFeature(englishName, triggerEl) {
+  if (!englishName) return;
+  const shouldPrepare = await showSpellPreparePopover(triggerEl);
+  if (!shouldPrepare) return;
+
+  const spellMeta = findSpellMetaByEnglishName(englishName);
+  if (!spellMeta) {
+    alert("找不到這個法術的資料。");
+    return;
+  }
+
+  if (findExistingSpellRow(spellMeta.areaId, englishName)) {
+    return;
+  }
+
+  const primaryClassId = document.getElementById("class")?.value || "";
+  const selectedAbility = document.getElementById("spellcasting-ability")?.value || "";
+  const availableClasses = new Set(getAvailableClassesForSpell(englishName, spellMeta.levelKey));
+  const targetClass = getSpellClassSearchOrderWithPrimary(primaryClassId, selectedAbility)
+    .find((classId) => availableClasses.has(classId)) || "";
+
+  if (!targetClass) {
+    alert("找不到可以加入這個法術的職業。");
+    return;
+  }
+
+  const row = findEmptySpellRow(spellMeta.areaId) || createSingleSpellRow(spellMeta.areaId, spellMeta.levelValue);
+  if (!row) return;
+
+  const classSel = row.querySelector("select[id*='-class-']");
+  const spellSel = row.querySelector("select[id*='-spell-']");
+  if (!classSel || !spellSel) return;
+
+  window.__spellAutoPrepareInProgress = true;
+  try {
+    classSel.value = targetClass;
+    classSel.dispatchEvent(new Event("change"));
+
+    const matchingOption = Array.from(spellSel.options).find((option) => getSpellEnglishName(option.value) === englishName);
+    if (!matchingOption) {
+      alert("已找到職業，但該法術未出現在對應下拉選單中。");
+      return;
+    }
+
+    spellSel.value = matchingOption.value;
+    spellSel.dispatchEvent(new Event("change"));
+  } finally {
+    window.__spellAutoPrepareInProgress = false;
+  }
+}
+
+function bindFeatureSpellHighlightEvents() {
+  if (window.__featureSpellHighlightEventsBound) return;
+  window.__featureSpellHighlightEventsBound = true;
+
+  const handler = (target) => {
+    const trigger = target?.closest?.(".spell-highlight-action[data-spell-name]");
+    if (!trigger) return false;
+    autoPrepareSpellFromFeature(trigger.dataset.spellName || "", trigger);
+    return true;
+  };
+
+  document.addEventListener("click", (event) => {
+    if (handler(event.target)) {
+      event.preventDefault();
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    if (handler(event.target)) {
+      event.preventDefault();
+    }
+  });
+}
+
 // 切換模式後，用於「不破壞 UI 結構」地刷新所有現存列的下拉與描述
 function refreshSpellDropdowns() {
   document.querySelectorAll('#tab-spells .form-row').forEach(row => {
@@ -2645,39 +2958,35 @@ function createSingleSpellRow(areaId, level, afterRow = null, restoredRowState =
     const classVal = this.value;
     const spells = classVal ? getSpellsByMode(classVal, level) : [];
     spellSel.innerHTML = `<option value="">--法術--</option>` + spells.map(s => `<option>${s.name}</option>`).join('');
-    // 盡量保留原本選到的法術（若在新模式/新職業仍存在）
     if (prevSpell && Array.from(spellSel.options).some(o => o.value === prevSpell)) {
       spellSel.value = prevSpell;
     } else {
       spellSel.value = "";
     }
-    // 同步更新描述（也會處理 Basic 模式下不允許的狀況）
     spellSel.dispatchEvent(new Event('change'));
-    saveAllFields();
+    if (!isSpellAutoPrepareInProgress()) {
+      saveAllFields();
+    }
   });
 
-  // 監聽法術變更
   spellSel.addEventListener('change', function () {
-    const classVal = classSel.value;
     const spellVal = spellSel.value;
     const key = (typeof level === "number") ? String(level) : level;
+    const spellData = getSpellListData();
     let desc = "—";
 
-    if (classVal && spellVal && spellList?.[classVal]?.[key]) {
-      const found = spellList[classVal][key].find(s => s.name === spellVal);
+    if (spellVal && spellData?.[key]) {
+      const found = spellData[key].find(s => s.name === spellVal);
       if (found) {
         desc = found.desc || "—";
-      } else if (SPELL_MODE === "basic") {
-        // 理論上不會發生，但若 localStorage/舊資料殘留 Full 法術，避免 UI 崩潰
-        desc = "（此法術在 Basic 模式不可用）";
       }
-    } else if (spellVal && SPELL_MODE === "basic") {
-      desc = "（此法術在 Basic 模式不可用）";
     }
 
     descDiv.innerHTML = renderSpellDescHtml(desc);
     updatePickedSpellBoxes();
-    saveAllFields();
+    if (!isSpellAutoPrepareInProgress()) {
+      saveAllFields();
+    }
   });
 
   topRow.appendChild(classSel);
@@ -2697,6 +3006,7 @@ function createSingleSpellRow(areaId, level, afterRow = null, restoredRowState =
   refreshSpellRows(areaId);
   restoreSpellRowState(classSel, spellSel, restoredRowState);
   applySpellFilter();
+  return rowDiv;
 }
 
 function extractChineseSpellName(spellName) {
@@ -3744,7 +4054,6 @@ function setupAutoSave() {
 
 // ====== 頁面載入時全自動初始化 ======
 window.addEventListener("DOMContentLoaded", async function() {
-  bindSpellCastingStatsEvents();
   updateExtraLanguageFields();
   // 1. 初始化裝備下拉
   const mainHandSelect = document.getElementById("mainHand");
