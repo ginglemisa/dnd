@@ -1478,7 +1478,7 @@ function updateRaceFeature() {
 
   const formatted = chunks.map(chunk => {
     if (chunk.type === "table") {
-      return `<div class="race-feature-table-wrap">${chunk.content}</div>`;
+      return `<div class="race-feature-table-wrap">${highlightSpellNamesInClassFeature(chunk.content)}</div>`;
     }
 
     const highlightedContent = highlightSpellNamesInClassFeature(chunk.content);
