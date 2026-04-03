@@ -2333,10 +2333,6 @@ div[id$="spells-area"] .form-row {
 }
 
 @media (min-width: 320px) {
-  #tab-basic .ability-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
   .bottom-buttons,
   .share-actions-wrap {
     grid-template-columns: 1fr auto 1fr;
@@ -2395,6 +2391,12 @@ div[id$="spells-area"] .form-row {
 
 @media (min-width: 360px) {
   .action-grid-pretty {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 360px) {
+  #tab-basic .ability-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
