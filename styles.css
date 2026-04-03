@@ -354,6 +354,24 @@ details > summary::-webkit-details-marker,
   white-space: normal;
 }
 
+#tab-basic .output {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+#tab-basic .output table {
+  width: 100%;
+  max-width: 100%;
+  table-layout: fixed;
+}
+
+#tab-basic .output th,
+#tab-basic .output td {
+  white-space: normal !important;
+  word-break: break-word;
+}
+
 .selection-summary {
   margin-top: 6px;
   padding: 12px;
@@ -2333,10 +2351,6 @@ div[id$="spells-area"] .form-row {
 }
 
 @media (min-width: 320px) {
-  #tab-basic .ability-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
   .bottom-buttons,
   .share-actions-wrap {
     grid-template-columns: 1fr auto 1fr;
@@ -2395,6 +2409,12 @@ div[id$="spells-area"] .form-row {
 
 @media (min-width: 360px) {
   .action-grid-pretty {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 360px) {
+  #tab-basic .ability-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
