@@ -354,6 +354,24 @@ details > summary::-webkit-details-marker,
   white-space: normal;
 }
 
+#tab-basic .output {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+#tab-basic .output table {
+  width: 100%;
+  max-width: 100%;
+  table-layout: fixed;
+}
+
+#tab-basic .output th,
+#tab-basic .output td {
+  white-space: normal !important;
+  word-break: break-word;
+}
+
 .selection-summary {
   margin-top: 6px;
   padding: 12px;
