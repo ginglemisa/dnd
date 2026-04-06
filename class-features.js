@@ -77,7 +77,7 @@ const classFeatures = {
       <tr>
         <td style="border:1px solid #aaa; padding:3px;">3</td>
         <td style="border:1px solid #aaa; padding:3px;">+2</td>
-        <td style="border:1px solid #aaa; padding:3px;">野蠻人子職業，先祖學識</td>
+        <td style="border:1px solid #aaa; padding:3px;">野蠻人職業分支，先祖學識</td>
         <td style="border:1px solid #aaa; padding:3px;">3</td>
         <td style="border:1px solid #aaa; padding:3px;">+2</td>
         <td style="border:1px solid #aaa; padding:3px;">2</td>
@@ -134,8 +134,8 @@ const classFeatures = {
 - 你本回合用力量的近戰攻擊有優勢。
 - 直到你下回合開始前，攻擊你的人也有優勢。
 
-等級 3：野蠻人子職業
-你獲得野蠻人子職業。基本規則提供：狂戰士道途。
+等級 3：野蠻人職業分支
+你可選擇一個野蠻人職業分支；基本規則僅提供狂戰士道途。
 
 等級 3：狂怒（狂戰子職）
 當你在狂暴中使用魯莽攻擊，且用力量攻擊命中本回合第一個目標時，
@@ -246,7 +246,7 @@ ${skillTip("體操")}、${skillTip("威嚇")}、${skillTip("察覺")}、${skillT
         <tr>
           <td style="border:1px solid #aaa; padding:3px;">3</td>
           <td style="border:1px solid #aaa; padding:3px;">+2</td>
-          <td style="border:1px solid #aaa; padding:3px;">吟遊詩人子職業</td>
+          <td style="border:1px solid #aaa; padding:3px;">吟遊詩人職業分支</td>
           <td style="border:1px solid #aaa; padding:3px;">D6</td>
           <td style="border:1px solid #aaa; padding:3px;">2</td>
           <td style="border:1px solid #aaa; padding:3px;">6</td>
@@ -327,8 +327,8 @@ ${skillTip("體操")}、${skillTip("威嚇")}、${skillTip("察覺")}、${skillT
 等級 2：萬事通
 你對所有「未熟練」能力檢定，額外加上一半熟練加值（向下取整）。
 
-等級 3：吟遊詩人子職業
-你獲得吟遊詩人子職業。基本規則提供：逸聞學院。
+等級 3：吟遊詩人職業分支
+你可選擇一個吟遊詩人職業分支；基本規則僅提供逸聞學院。
 
 等級 3：附贈熟練項（逸聞子職）
 你獲得任意三個自選技能的熟練項。
@@ -435,7 +435,7 @@ ${skillTip("體操")}、${skillTip("威嚇")}、${skillTip("察覺")}、${skillT
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px;">牧師子職業</td>
+      <td style="border:1px solid #aaa; padding:3px;">牧師職業分支</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">6</td>
@@ -520,8 +520,8 @@ ${skillTip("體操")}、${skillTip("威嚇")}、${skillTip("察覺")}、${skillT
 - 失敗者在 1 分鐘內陷入恐慌與失能，並會在回合中盡量遠離你。
 - 若其受傷、你失能或死亡，效果提前結束。
 
-等級 3：牧師子職業
-你獲得牧師子職業。基本規則提供：生命領域。
+等級 3：牧師職業分支
+你可選擇一個牧師職業分支；基本規則僅提供生命領域。
 
 等級 3：生命領域法術（生命子職）
 你會自動準備以下法術：
@@ -633,7 +633,7 @@ ${skillTip("體操")}、${skillTip("威嚇")}、${skillTip("察覺")}、${skillT
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px;">德魯伊子職業</td>
+      <td style="border:1px solid #aaa; padding:3px;">德魯伊職業分支</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">6</td>
@@ -754,9 +754,9 @@ ${skillTip("體操")}、${skillTip("威嚇")}、${skillTip("察覺")}、${skillT
 - 作為魔法動作，消耗 1 個法術位或 1 次荒野形態使用次數，可施放一次不需材料成分的「獲得魔寵」。
 - 以此方式召喚的魔寵類型為精類，並在你完成長休後消失。
 
-等級 3：德魯伊子職業
-- 你獲得德魯伊子職業。基本規則提供：大地結社。
-- 隨等級提升，你會陸續取得子職業特性。
+等級 3：德魯伊職業分支
+- 你可選擇一個德魯伊職業分支；基本規則僅提供大地結社。
+- 隨等級提升，你會陸續取得職業分支特性。
 
 等級 3：大地結社法術（大地子職）
 - 每次長休後，從旱地、極地、溫帶、熱帶擇一地貌。
@@ -769,7 +769,7 @@ ${skillTip("體操")}、${skillTip("威嚇")}、${skillTip("察覺")}、${skillT
 （等級 5）：雪雨暴
 
 溫帶法術（等級 3）：迷蹤步、電爪、睡眠術
-（等級 5）：閃電術
+（等級 5）：閃電束
 
 熱帶法術（等級 3）：酸液飛濺、致病射線、蛛網術
 （等級 5）：臭雲術
@@ -867,7 +867,7 @@ ${skillTip("體操")}、${skillTip("威嚇")}、${skillTip("察覺")}、${skillT
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px;">戰士子職業</td>
+      <td style="border:1px solid #aaa; padding:3px;">戰士職業分支</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
     </tr>
@@ -912,8 +912,8 @@ ${skillTip("體操")}、${skillTip("威嚇")}、${skillTip("察覺")}、${skillT
 等級 2：戰術思維
 無論在戰場內外，你都具有卓越的戰術思維。當你屬性檢定失敗時，你可以消耗一次 回氣 使用次數讓自己更接近成功。你擲 1d10 並將結果加入屬性檢定中而非恢復生命值，從而可能使結果變為成功。如果檢定依舊失敗，回氣 的使用次數將不會被消耗。
 
-等級 3：戰士子職業
-獲得戰士子職業選項，但基本規則限定：勇士。子職業是戰士的特化分支，隨著戰士等級的提升，你將獲得相應特性。
+等級 3：戰士職業分支
+你可選擇一個戰士職業分支；基本規則僅提供勇士。
 
 等級 3：精通重擊(勇士子職)
 你使用武器和徒手打擊的攻擊檢定在擲出 19 或 20 時即可造成重擊。
@@ -1009,7 +1009,7 @@ ${skillTip("體操")}、${skillTip("威嚇")}、${skillTip("察覺")}、${skillT
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px;">撥擋化勁，武僧子職業</td>
+      <td style="border:1px solid #aaa; padding:3px;">撥擋化勁，武僧職業分支</td>
       <td style="border:1px solid #aaa; padding:3px;">1d6</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">+10呎</td>
@@ -1069,8 +1069,8 @@ ${skillTip("體操")}、${skillTip("威嚇")}、${skillTip("察覺")}、${skillT
 - 擋遠程：選 60 呎內、你看得到且不在全身掩護後的生物。
 目標需過敏捷豁免，失敗則受到 2 枚武藝骰 + 你的敏捷調整值傷害（同原攻擊類型）。
 
-等級 3：武僧子職業
-你獲得武僧子職業。基本規則提供：散打鬥士。
+等級 3：武僧職業分支
+你可選擇一個武僧職業分支；基本規則僅提供散打鬥士。
 
 等級 3：散打技巧（散打子職）
 當你用「疾風連擊」命中時，可讓目標承受 1 種效果：
@@ -1171,7 +1171,7 @@ ${skillTip("體操")}、${skillTip("威嚇")}、${skillTip("察覺")}、${skillT
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px;">引導神力，聖武士子職業</td>
+      <td style="border:1px solid #aaa; padding:3px;">引導神力，聖武士職業分支</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
@@ -1249,8 +1249,8 @@ ${skillTip("體操")}、${skillTip("威嚇")}、${skillTip("察覺")}、${skillT
 神聖感知：附贈動作啟動後，持續 10 分鐘（或你失能前）。
 期間你可感知 60 呎內天界生物、邪魔、不死生物的位置與類型，並可偵測同範圍內受「聖居」祝福或褻瀆的地點／物件。
 
-等級 3：聖武士子職業
-你獲得聖武士子職業。基本規則提供：奉獻之誓。
+等級 3：聖武士職業分支
+你可選擇一個聖武士職業分支；基本規則僅提供奉獻之誓。
 
 奉獻之誓重視正義、秩序與榮譽，常見信條包括：
 - 不誑語不欺騙，言出必行。
@@ -1363,7 +1363,7 @@ ${skillTip("體操")}、${skillTip("威嚇")}、${skillTip("察覺")}、${skillT
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px;">遊俠子職業</td>
+      <td style="border:1px solid #aaa; padding:3px;">遊俠職業分支</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
@@ -1429,8 +1429,8 @@ ${skillTip("體操")}、${skillTip("威嚇")}、${skillTip("察覺")}、${skillT
   - 這些戲法視為你的遊俠法術，施法屬性是感知。
   - 每升 1 級可替換其中 1 個戲法。
 
-等級 3：遊俠子職業
-你獲得遊俠子職業。基本規則提供：獵人。
+等級 3：遊俠職業分支
+你可選擇一個遊俠職業分支；基本規則僅提供獵人。
 
 等級 3：獵人學識（獵人子職）
 目標被你的「獵人印記」標記時，你會知道它的傷害免疫、抗性與易傷。
@@ -1517,7 +1517,7 @@ ${skillTip("體操")}、${skillTip("威嚇")}、${skillTip("察覺")}、${skillT
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px;">遊蕩者子職業，手穩就準</td>
+      <td style="border:1px solid #aaa; padding:3px;">遊蕩者職業分支，手穩就準</td>
       <td style="border:1px solid #aaa; padding:3px;">2d6</td>
     </tr>
     <tr>
@@ -1556,8 +1556,8 @@ ${skillTip("體操")}、${skillTip("威嚇")}、${skillTip("察覺")}、${skillT
 等級 2：靈巧動作
 你的回合中，可把以下其中一項當附贈動作使用：疾走、撤離、躲藏。
 
-等級 3：遊蕩者子職業
-你獲得遊蕩者子職業。基本規則提供：盜賊。
+等級 3：遊蕩者職業分支
+你可選擇一個遊蕩者職業分支；基本規則僅提供盜賊。
 
 等級 3：快手（盜賊子職）
 你可用附贈動作進行以下其中一項：
@@ -1672,7 +1672,7 @@ ${skillTip("體操")}、${skillTip("威嚇")}、${skillTip("察覺")}、${skillT
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px;">術士子職業</td>
+      <td style="border:1px solid #aaa; padding:3px;">術士職業分支</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">6</td>
@@ -1775,9 +1775,9 @@ ${skillTip("體操")}、${skillTip("威嚇")}、${skillTip("察覺")}、${skillT
 - 除非選項另有註明，單次施法只能套用 1 個超魔法。
 - 每次升術士等級時，可把 1 個已知超魔法換成另一個未習得選項。
 
-等級 3：術士子職業
-- 你獲得術士子職業。基本規則提供：龍族術法。
-- 隨等級提升，你會陸續獲得子職業特性。
+等級 3：術士職業分支
+- 你可選擇一個術士職業分支；基本規則僅提供龍族術法。
+- 隨等級提升，你會陸續獲得職業分支特性。
 
 等級 3：龍族體魄（龍族子職）
 - 生命值上限提高 3，且此後每升 1 級術士再提高 1。
@@ -1918,7 +1918,7 @@ ${skillTip("體操")}、${skillTip("威嚇")}、${skillTip("察覺")}、${skillT
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px;">契術師子職業</td>
+      <td style="border:1px solid #aaa; padding:3px;">契術師職業分支</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
@@ -1985,9 +1985,9 @@ ${skillTip("體操")}、${skillTip("威嚇")}、${skillTip("察覺")}、${skillT
 - 回復上限為「法術位最大值的一半（向上取整）」。
 - 使用後需完成長休才能再用。
 
-等級 3：契術師子職業
-- 你獲得契術師子職業。基本規則提供：邪魔。
-- 隨等級提升可獲得對應子職業特性。
+等級 3：契術師職業分支
+- 你可選擇一個契術師職業分支；基本規則僅提供邪魔。
+- 隨等級提升可獲得對應職業分支特性。
 
 等級 3：黑暗之賜（邪魔子職）
 - 當你將 10 呎內敵對生物生命值降到 0 時，你獲得等同「魅力調整值＋術士等級」的臨時生命值（至少 1）。
@@ -2202,7 +2202,7 @@ ${skillTip("體操")}、${skillTip("威嚇")}、${skillTip("察覺")}、${skillT
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px;">法師子職業</td>
+      <td style="border:1px solid #aaa; padding:3px;">法師職業分支</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">6</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
@@ -2285,9 +2285,9 @@ ${skillTip("體操")}、${skillTip("威嚇")}、${skillTip("察覺")}、${skillT
 - 在${skillTip("奧秘")}、${skillTip("歷史")}、${skillTip("自然")}、${skillTip("宗教")}中，選 1 個你已熟練的技能。
 - 你對該技能獲得專精。
 
-等級 3：法師子職業
-- 你獲得法師子職業。基本規則提供：塑能師。
-- 隨等級提升，你會陸續獲得子職業特性。
+等級 3：法師職業分支
+- 你可選擇一個法師職業分支；基本規則僅提供塑能師。
+- 隨等級提升，你會陸續獲得職業分支特性。
 
 等級 3：塑能學者（塑能子職）
 - 你可選 2 個不高於 2 環的塑能學派法師法術，免費抄入法術書。
