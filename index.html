@@ -3040,6 +3040,7 @@ function applySpellFilter() {
   const searchEl = document.getElementById("spell-search");
   const keyword = (searchEl?.value || "").trim().toLowerCase();
   const rows = document.querySelectorAll("#tab-spells .spell-entry");
+  const sections = document.querySelectorAll("#tab-spells .spell-level-section");
 
   const getRowSearchText = (row) => {
     const selectedSpell = row.querySelector("select[id*='-spell-']")?.value?.trim() || "";
@@ -3058,6 +3059,17 @@ function applySpellFilter() {
 
     const { hasPickedSpell, text } = getRowSearchText(row);
     row.style.display = (hasPickedSpell && text.includes(keyword)) ? "" : "none";
+  });
+
+  sections.forEach((section) => {
+    if (!keyword) {
+      section.style.display = "";
+      return;
+    }
+
+    const hasVisibleRows = Array.from(section.querySelectorAll(".spell-entry"))
+      .some((row) => row.style.display !== "none");
+    section.style.display = hasVisibleRows ? "" : "none";
   });
 }
 
