@@ -141,3 +141,55 @@
 
   syncWithActiveTab();
 })();
+
+(function initSpellSlotQuickJump() {
+  const spellTab = document.getElementById("tab-spells");
+  if (!spellTab) return;
+
+  const headerOffset = 92;
+  const jumpConfig = [
+    { rowId: "spellslot1-row", level: 1, label: "一環" },
+    { rowId: "spellslot2-row", level: 2, label: "二環" },
+    { rowId: "spellslot3-row", level: 3, label: "三環" }
+  ];
+
+  const smoothScrollToElement = (element) => {
+    if (!element) return;
+    const targetY = element.getBoundingClientRect().top + window.scrollY - headerOffset;
+    window.scrollTo({ top: Math.max(targetY, 0), behavior: "smooth" });
+  };
+
+  const getFirstSpellTarget = (level) => {
+    const levelSection = document.querySelector(`#tab-spells details.spell-level-section:nth-of-type(${level + 1})`);
+    if (levelSection) levelSection.open = true;
+
+    const spellArea = document.getElementById(`level${level}spells-area`);
+    const firstSpell = spellArea?.querySelector(".spell-entry");
+    return firstSpell || spellArea || levelSection || null;
+  };
+
+  const handleJump = (level) => {
+    const target = getFirstSpellTarget(level);
+    if (target) smoothScrollToElement(target);
+  };
+
+  jumpConfig.forEach(({ rowId, level, label }) => {
+    const row = document.getElementById(rowId);
+    const slotLabel = row?.querySelector(".spell-slot-label");
+    if (!slotLabel) return;
+
+    slotLabel.classList.add("spell-slot-label--jump");
+    slotLabel.setAttribute("role", "button");
+    slotLabel.setAttribute("tabindex", "0");
+    slotLabel.setAttribute("aria-label", `跳到${label}法術`);
+    slotLabel.title = `跳到${label}法術`;
+
+    slotLabel.addEventListener("click", () => handleJump(level));
+    slotLabel.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        handleJump(level);
+      }
+    });
+  });
+})();
