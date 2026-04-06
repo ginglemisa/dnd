@@ -1208,12 +1208,12 @@ function renderMetamagicOptions() {
         );
         if (!allowed) {
           updateMetamagicSummary();
-          if (typeof saveAllFields === "function") saveAllFields();
+          if (typeof scheduleSaveAllFields === "function") scheduleSaveAllFields();
           return;
         }
       }
       updateMetamagicSummary();
-      if (typeof saveAllFields === "function") saveAllFields();
+      if (typeof scheduleSaveAllFields === "function") scheduleSaveAllFields();
     });
   });
 }
@@ -1270,14 +1270,14 @@ function renderEldritchInvocations() {
           updateWarlockInvocationSummary();
           updateACDisplay();
           populateHandAttacks();
-          if (typeof saveAllFields === "function") saveAllFields();
+          if (typeof scheduleSaveAllFields === "function") scheduleSaveAllFields();
           return;
         }
       }
       updateWarlockInvocationSummary();
       updateACDisplay();
       populateHandAttacks();
-      if (typeof saveAllFields === "function") saveAllFields();
+      if (typeof scheduleSaveAllFields === "function") scheduleSaveAllFields();
     });
   });
 }
@@ -1670,7 +1670,7 @@ function createSingleFeatRow(afterRow = null) {
   addBtn.dataset.featAction = "add";
   addBtn.addEventListener("click", () => {
     createSingleFeatRow(rowDiv);
-    saveAllFields();
+    scheduleStructuralSaveAllFields();
   });
 
   const delBtn = document.createElement("button");
@@ -1684,7 +1684,7 @@ function createSingleFeatRow(afterRow = null) {
     if (area.childElementCount <= 1) return;
     rowDiv.remove();
     refreshFeatRows();
-    saveAllFields();
+    scheduleStructuralSaveAllFields();
   });
 
   controls.appendChild(delBtn);
@@ -1703,7 +1703,7 @@ function createSingleFeatRow(afterRow = null) {
 
   featSel.addEventListener("change", () => {
     updateFeatDesc(featSel.id, descDiv.id);
-    saveAllFields();
+    scheduleSaveAllFields();
   });
 
   rowDiv.appendChild(rowHead);
@@ -1791,7 +1791,7 @@ document.getElementById("set-default-abilities").addEventListener("click", () =>
     el.dispatchEvent(new Event('input')); // 🔄 觸發 modifier 更新
   }
 
-  if (typeof saveAllFields === "function") saveAllFields();
+  if (typeof scheduleSaveAllFields === "function") scheduleSaveAllFields();
 });
 
 
@@ -2907,7 +2907,7 @@ function createSingleSpellRow(areaId, level, afterRow = null, restoredRowState =
   addBtn.title = '新增';
   addBtn.addEventListener('click', () => {
     createSingleSpellRow(areaId, level, rowDiv, consumeDeletedSpellRow(areaId));
-    saveAllFields();
+    scheduleStructuralSaveAllFields();
   });
 
   const delBtn = document.createElement('button');
@@ -2923,7 +2923,7 @@ function createSingleSpellRow(areaId, level, afterRow = null, restoredRowState =
     rowDiv.remove();
     refreshSpellRows(areaId);
     updatePickedSpellBoxes();
-    saveAllFields();
+    scheduleStructuralSaveAllFields();
   });
 
   controls.appendChild(delBtn);
@@ -2965,7 +2965,7 @@ function createSingleSpellRow(areaId, level, afterRow = null, restoredRowState =
     }
     spellSel.dispatchEvent(new Event('change'));
     if (!isSpellAutoPrepareInProgress()) {
-      saveAllFields();
+      scheduleSaveAllFields();
     }
   });
 
@@ -2985,7 +2985,7 @@ function createSingleSpellRow(areaId, level, afterRow = null, restoredRowState =
     descDiv.innerHTML = renderSpellDescHtml(desc);
     updatePickedSpellBoxes();
     if (!isSpellAutoPrepareInProgress()) {
-      saveAllFields();
+      scheduleSaveAllFields();
     }
   });
 
@@ -3928,42 +3928,49 @@ async function decodeStateFromHash() {
 function applyStateObject(data) {
   if (!data || typeof data !== "object") return;
 
-  deletedSpellRowCache = cloneDeletedSpellRowCache(data.__deletedSpellRowCache);
+  const prevAutosaveSuspended = autosaveSuspended;
+  autosaveSuspended = true;
 
-  const spellAreas = getSpellAreaConfigs();
-  getDynamicAreaConfigs().forEach(area => {
-    const n = parseInt(data[`${area.key}-count`] || "0", 10);
-    area.ensureCount(n);
-  });
-  const highlevelCount = spellAreas
-    .filter(area => typeof area.level === "number" && area.level >= 4)
-    .reduce((sum, area) => sum + parseInt(data[`${area.id}-count`] || "0", 10), 0);
-  if (highlevelCount > 0) {
-    const highlevelSpells = document.getElementById("highlevel-spells");
-    if (highlevelSpells) highlevelSpells.style.display = "block";
-  }
+  try {
+    deletedSpellRowCache = cloneDeletedSpellRowCache(data.__deletedSpellRowCache);
 
-  for (const id in data) {
-    if (id === "__deletedSpellRowCache") continue;
-    if (/cantrips-area-class-\d+|level\d+spells-area-class-\d+/.test(id)) {
+    const spellAreas = getSpellAreaConfigs();
+    getDynamicAreaConfigs().forEach(area => {
+      const n = parseInt(data[`${area.key}-count`] || "0", 10);
+      area.ensureCount(n);
+    });
+    const highlevelCount = spellAreas
+      .filter(area => typeof area.level === "number" && area.level >= 4)
+      .reduce((sum, area) => sum + parseInt(data[`${area.id}-count`] || "0", 10), 0);
+    if (highlevelCount > 0) {
+      const highlevelSpells = document.getElementById("highlevel-spells");
+      if (highlevelSpells) highlevelSpells.style.display = "block";
+    }
+
+    for (const id in data) {
+      if (id === "__deletedSpellRowCache") continue;
+      if (/cantrips-area-class-\d+|level\d+spells-area-class-\d+/.test(id)) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        el.value = data[id];
+        el.dispatchEvent(new Event('change'));
+      }
+    }
+
+    for (const id in data) {
+      if (id === "__deletedSpellRowCache") continue;
+      if (/cantrips-area-class-\d+|level\d+spells-area-class-\d+/.test(id)) continue;
       const el = document.getElementById(id);
       if (!el) continue;
-      el.value = data[id];
+      if (el.type === "checkbox") {
+        el.checked = !!data[id];
+      } else {
+        el.value = data[id];
+      }
       el.dispatchEvent(new Event('change'));
     }
-  }
-
-  for (const id in data) {
-    if (id === "__deletedSpellRowCache") continue;
-    if (/cantrips-area-class-\d+|level\d+spells-area-class-\d+/.test(id)) continue;
-    const el = document.getElementById(id);
-    if (!el) continue;
-    if (el.type === "checkbox") {
-      el.checked = !!data[id];
-    } else {
-      el.value = data[id];
-    }
-    el.dispatchEvent(new Event('change'));
+  } finally {
+    autosaveSuspended = prevAutosaveSuspended;
   }
 }
 
@@ -4020,32 +4027,61 @@ async function importStateFromJsonFile(file) {
   }
 }
 
-const INPUT_AUTOSAVE_DEBOUNCE_MS = 1000;
+const INPUT_AUTOSAVE_DEBOUNCE_MS = 10000;
+const STRUCTURE_AUTOSAVE_DEBOUNCE_MS = 3000;
 let saveAllFieldsDebounceTimer = null;
+let structureSaveDebounceTimer = null;
+let autosaveDirty = false;
+let autosaveSuspended = false;
 const AUTOSAVE_EXCLUDED_IDS = new Set(["spell-search", "equipment-search"]);
 
-function getAutosaveElements() {
-  return Array.from(document.querySelectorAll("input, select, textarea"))
+function getAutosaveElements(root = document) {
+  return Array.from(root.querySelectorAll("input, select, textarea"))
     .filter((el) => !AUTOSAVE_EXCLUDED_IDS.has(el.id));
 }
 
 function saveAllFields() {
   if (SHARE_MODE) return;
+  window.clearTimeout(saveAllFieldsDebounceTimer);
+  saveAllFieldsDebounceTimer = null;
+  window.clearTimeout(structureSaveDebounceTimer);
+  structureSaveDebounceTimer = null;
   const data = collectStateObject();
   AUTOSAVE_EXCLUDED_IDS.forEach((id) => {
     delete data[id];
   });
   localStorage.setItem(AUTO_SAVE_KEY, JSON.stringify(data));
+  autosaveDirty = false;
 }
 
 function scheduleSaveAllFields() {
-  if (saveAllFieldsDebounceTimer) {
-    clearTimeout(saveAllFieldsDebounceTimer);
-  }
-  saveAllFieldsDebounceTimer = setTimeout(() => {
+  if (autosaveSuspended || SHARE_MODE) return;
+  autosaveDirty = true;
+  window.clearTimeout(saveAllFieldsDebounceTimer);
+  saveAllFieldsDebounceTimer = window.setTimeout(() => {
     saveAllFieldsDebounceTimer = null;
-    saveAllFields();
+    if (autosaveDirty) {
+      saveAllFields();
+    }
   }, INPUT_AUTOSAVE_DEBOUNCE_MS);
+}
+
+function scheduleStructuralSaveAllFields() {
+  if (autosaveSuspended || SHARE_MODE) return;
+  autosaveDirty = true;
+  window.clearTimeout(structureSaveDebounceTimer);
+  structureSaveDebounceTimer = window.setTimeout(() => {
+    structureSaveDebounceTimer = null;
+    if (autosaveDirty) {
+      saveAllFields();
+    }
+  }, STRUCTURE_AUTOSAVE_DEBOUNCE_MS);
+}
+
+function flushPendingAutosave() {
+  if (!autosaveDirty) return false;
+  saveAllFields();
+  return true;
 }
 
 function restoreAllFields() {
@@ -4056,11 +4092,30 @@ function restoreAllFields() {
     applyStateObject(JSON.parse(raw));
   } catch (e) {}
 }
-function setupAutoSave() {
+function setupAutoSave(root = document) {
   if (SHARE_MODE) return;
-  getAutosaveElements().forEach(el => {
-    el.addEventListener("change", saveAllFields);
-    el.addEventListener("input", scheduleSaveAllFields);
+  getAutosaveElements(root).forEach(el => {
+    if (el.dataset.autosaveBound === "true") return;
+    el.dataset.autosaveBound = "true";
+    const eventName = el.tagName === "SELECT" || el.type === "checkbox" ? "change" : "input";
+    el.addEventListener(eventName, scheduleSaveAllFields);
+    if (eventName !== "change") {
+      el.addEventListener("change", scheduleSaveAllFields);
+    }
+  });
+}
+
+function setupVisibilityAutoSave() {
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") {
+      flushPendingAutosave();
+    }
+  });
+}
+
+function setupClosePageAutoSave() {
+  window.addEventListener("pagehide", () => {
+    flushPendingAutosave();
   });
 }
 
@@ -4114,6 +4169,8 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
   updateSpellCastingStats();
   updatePickedSpellBoxes();
   // 4. 啟用自動儲存
+  setupVisibilityAutoSave();
+  setupClosePageAutoSave();
   setupAutoSave();
   // 5. 綁定清除紀錄按鈕
   const clearBtn = document.getElementById('clear-storage-btn');

@@ -704,7 +704,7 @@ DC 25 力量（運動）：掙斷鐐銬
   document.querySelectorAll("#weapon-mastery-details input[type='checkbox'][data-mastery-name]").forEach((el) => {
     el.addEventListener("change", () => {
       updateWeaponMasterySummary();
-      if (typeof saveAllFields === "function") saveAllFields();
+      if (typeof scheduleSaveAllFields === "function") scheduleSaveAllFields();
     });
   });
 

@@ -29,7 +29,7 @@
     checkbox.checked = shouldDismiss;
     checkbox.addEventListener("change", () => {
       localStorage.setItem(LEGAL_DISMISS_KEY, checkbox.checked ? "1" : "0");
-      if (typeof saveAllFields === "function") saveAllFields();
+      if (typeof scheduleSaveAllFields === "function") scheduleSaveAllFields();
     });
 
     if (!isShareMode && shouldDismiss) return;
