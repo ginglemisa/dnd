@@ -96,6 +96,58 @@
     { name: '遊說', profId: 'prof-遊說', expId: 'exp-遊說', modId: 'skill-遊說', chkField: 'persuasionChk', modField: 'persuasionMod' }
   ]);
 
+  const CLASS_LABELS = Object.freeze({
+    barbarian: '野蠻人',
+    bard: '吟遊詩人',
+    cleric: '牧師',
+    druid: '德魯伊',
+    fighter: '戰士',
+    monk: '武僧',
+    paladin: '聖武士',
+    ranger: '遊俠',
+    rogue: '遊蕩者',
+    sorcerer: '術士',
+    warlock: '契術師',
+    wizard: '法師'
+  });
+
+  const BACKGROUND_LABELS = Object.freeze({
+    acolyte: '侍僧',
+    soldier: '士兵',
+    criminal: '罪犯',
+    sage: '賢者'
+  });
+
+  const RACE_LABELS = Object.freeze({
+    dragonborn: '龍裔',
+    dwarf: '矮人',
+    elf: '精靈',
+    gnome: '侏儒',
+    goliath: '歌利亞',
+    halfling: '半身人',
+    human: '人類',
+    orc: '獸人',
+    tiefling: '提夫林'
+  });
+
+  const ALIGNMENT_LABELS = Object.freeze({
+    LG: '守序善良',
+    NG: '中立善良',
+    CG: '混亂善良',
+    LN: '守序中立',
+    TN: '絕對中立',
+    CN: '混亂中立',
+    LE: '守序邪惡',
+    NE: '中立邪惡',
+    CE: '混亂邪惡'
+  });
+
+  const SPELL_CAST_ABILITY_LABELS = Object.freeze({
+    int: '智力',
+    wis: '感知',
+    cha: '魅力'
+  });
+
   function normalizeText(value) {
     if (value === undefined || value === null) return '';
     return String(value).trim();
@@ -103,6 +155,61 @@
 
   function normalizeCommaList(values) {
     return values.map(normalizeText).filter(Boolean).join('、');
+  }
+
+  function getSignedAbilityModifier(score) {
+    const parsed = Number.parseInt(score, 10);
+    if (!Number.isFinite(parsed)) return '';
+    const mod = Math.floor((parsed - 10) / 2);
+    return mod > 0 ? `+${mod}` : String(mod);
+  }
+
+  function getProficiencyBonusByLevel(level) {
+    const lv = Number.parseInt(level, 10);
+    if (!Number.isFinite(lv) || lv <= 0) return '';
+    if (lv >= 17) return '+6';
+    if (lv >= 13) return '+5';
+    if (lv >= 9) return '+4';
+    if (lv >= 5) return '+3';
+    return '+2';
+  }
+
+  function getHitDieByClass(classKey) {
+    const map = {
+      barbarian: 'd12',
+      fighter: 'd10',
+      paladin: 'd10',
+      ranger: 'd10',
+      artificer: 'd8',
+      bard: 'd8',
+      cleric: 'd8',
+      druid: 'd8',
+      monk: 'd8',
+      rogue: 'd8',
+      warlock: 'd8',
+      sorcerer: 'd6',
+      wizard: 'd6'
+    };
+    return map[classKey] || '';
+  }
+
+  function getToolsProficiencyText(backgroundKey, classKey) {
+    const backgroundToolsMap = {
+      acolyte: '書法家工具',
+      soldier: '擇一賭具：骰子、紙牌、龍棋、三龍牌',
+      criminal: '盜賊工具',
+      sage: '書法工具'
+    };
+    const tools = [];
+    const base = backgroundToolsMap[backgroundKey];
+    if (base) tools.push(base);
+
+    if (classKey === 'bard') tools.push('任選三種樂器');
+    if (classKey === 'druid') tools.push('草藥工具');
+    if (classKey === 'monk') tools.push('任選一種工匠工具或樂器');
+    if (classKey === 'rogue') tools.push('盜賊工具');
+
+    return normalizeCommaList(tools);
   }
 
   function countDisplayUnits(text) {
@@ -257,35 +364,33 @@
 
   function parseSpellSlotsFromClassFeature(classKey, level) {
     const classLevel = Number.parseInt(level, 10);
-    if (classKey === 'ranger') {
-      const rangerSlotMap = {
-        1: { slot1: '2', slot2: '', slot3: '' },
-        2: { slot1: '2', slot2: '', slot3: '' },
-        3: { slot1: '3', slot2: '', slot3: '' },
-        4: { slot1: '3', slot2: '', slot3: '' },
-        5: { slot1: '4', slot2: '2', slot3: '' }
-      };
-      if (rangerSlotMap[classLevel]) return rangerSlotMap[classLevel];
+    if (!Number.isFinite(classLevel)) return { slot1: '', slot2: '', slot3: '' };
+
+    const fullCasterSlotMap = {
+      1: { slot1: '2', slot2: '', slot3: '' },
+      2: { slot1: '3', slot2: '', slot3: '' },
+      3: { slot1: '4', slot2: '2', slot3: '' },
+      4: { slot1: '4', slot2: '3', slot3: '' },
+      5: { slot1: '4', slot2: '3', slot3: '2' }
+    };
+
+    const halfCasterSlotMap = {
+      1: { slot1: '2', slot2: '', slot3: '' },
+      2: { slot1: '2', slot2: '', slot3: '' },
+      3: { slot1: '3', slot2: '', slot3: '' },
+      4: { slot1: '3', slot2: '', slot3: '' },
+      5: { slot1: '4', slot2: '2', slot3: '' }
+    };
+
+    const fullCasterClasses = new Set(['bard', 'cleric', 'druid', 'sorcerer', 'warlock']);
+    const halfCasterClasses = new Set(['paladin', 'ranger', 'wizard']);
+
+    if (fullCasterClasses.has(classKey)) {
+      return fullCasterSlotMap[classLevel] || { slot1: '', slot2: '', slot3: '' };
     }
 
-    const raw = getClassFeaturesMap()[classKey] || '';
-    if (!raw) return { slot1: '', slot2: '', slot3: '' };
-
-    const normalized = raw.replace(/\r/g, '');
-    const rows = normalized.match(/<tr[\s\S]*?<\/tr>/g) || [];
-    const wantedLevel = String(level);
-
-    for (const row of rows) {
-      const cells = Array.from(row.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g))
-        .map((match) => normalizeText(match[1].replace(/<[^>]+>/g, '')));
-      if (!cells.length) continue;
-      if (cells[0] !== wantedLevel) continue;
-      const tail = cells.slice(-3).map((cell) => (cell === '-' || cell === '--' ? '' : cell));
-      return {
-        slot1: tail[0] || '',
-        slot2: tail[1] || '',
-        slot3: tail[2] || ''
-      };
+    if (halfCasterClasses.has(classKey)) {
+      return halfCasterSlotMap[classLevel] || { slot1: '', slot2: '', slot3: '' };
     }
 
     return { slot1: '', slot2: '', slot3: '' };
@@ -335,6 +440,7 @@
   function buildPdfFieldPayload(state, options = {}) {
     const payload = {};
     const classKey = normalizeText(state.class);
+    const backgroundKey = normalizeText(state.background);
     const level = normalizeText(state.level);
 
     Object.entries(DIRECT_FIELD_MAP).forEach(([stateKey, pdfFieldName]) => {
@@ -343,13 +449,33 @@
 
     const levelNumber = Number.parseInt(level, 10);
     if (Number.isFinite(levelNumber) && levelNumber > 0) {
-      payload.hp_dice_max = String(levelNumber);
-      if (payload.hp_dice_used) {
-        const used = Number.parseInt(payload.hp_dice_used, 10);
-        if (Number.isFinite(used)) {
-          payload.hp_dice_used = String(Math.max(0, Math.min(levelNumber, used)));
-        }
-      }
+      const hitDie = getHitDieByClass(classKey);
+      payload.hp_dice_max = hitDie ? `${levelNumber}${hitDie}` : String(levelNumber);
+    }
+    payload.hp_dice_used = '';
+
+    payload.Class = CLASS_LABELS[classKey] || payload.Class;
+    payload.Background = BACKGROUND_LABELS[backgroundKey] || payload.Background;
+    payload.Specie = RACE_LABELS[normalizeText(state.race)] || payload.Specie;
+    payload.alignment = ALIGNMENT_LABELS[normalizeText(state.alignment)] || payload.alignment;
+    payload.spell_cast_attri = SPELL_CAST_ABILITY_LABELS[normalizeText(state['spellcasting-ability'])] || payload.spell_cast_attri;
+
+    payload.strMod = getSignedAbilityModifier(state.str);
+    payload.dexMod = getSignedAbilityModifier(state.dex);
+    payload.conMod = getSignedAbilityModifier(state.con);
+    payload.intMod = getSignedAbilityModifier(state.int);
+    payload.wisMod = getSignedAbilityModifier(state.wis);
+    payload.chaMod = getSignedAbilityModifier(state.cha);
+
+    const profBonus = getProficiencyBonusByLevel(level);
+    payload.proficiencyBonus = profBonus;
+    payload.prof_bonus = profBonus;
+    payload.PB = profBonus;
+
+    payload.toolsProficiency = getToolsProficiencyText(backgroundKey, classKey);
+
+    if (options.size) {
+      payload.size = options.size;
     }
 
     Object.entries(CHECKBOX_FIELD_MAP).forEach(([stateKey, pdfFieldName]) => {
@@ -425,7 +551,7 @@
 
     if (options.includeDefaultEquipment) {
       const classEq = parseClassDefaultEquipment(classKey);
-      const bgEq = normalizeText(getBackgroundMap()[state.background]?.裝備A);
+      const bgEq = normalizeText(getBackgroundMap()[backgroundKey]?.裝備A);
       payload.equipment = wrapTextForPdf([classEq, bgEq, payload.equipment].filter(Boolean).join('\n'), {
         maxUnitsPerLine: 52,
         maxLines: 12

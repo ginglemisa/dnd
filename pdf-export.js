@@ -88,6 +88,17 @@
     return window.confirm('是否輸入職業與背景的預設裝備？\n按「確定」= 是；按「取消」= 否');
   }
 
+  function promptCharacterSize() {
+    while (true) {
+      const input = window.prompt('請輸入體型（中 / 小）', '中');
+      if (input === null) return '';
+      const trimmed = input.trim();
+      if (!trimmed) return '';
+      if (trimmed === '中' || trimmed === '小') return trimmed;
+      window.alert('體型僅支援「中」或「小」。');
+    }
+  }
+
   function applyPayloadToForm(form, payload) {
     const missingFields = [];
 
@@ -174,8 +185,9 @@
     const pdfDoc = await globalScope.PDFLib.PDFDocument.load(sourceBytes);
     const form = pdfDoc.getForm();
     const characterName = promptCharacterName();
+    const size = promptCharacterSize();
     const includeDefaultEquipment = promptIncludeDefaultEquipment();
-    const payload = globalScope.buildPdfFieldPayload(state, { characterName, includeDefaultEquipment });
+    const payload = globalScope.buildPdfFieldPayload(state, { characterName, size, includeDefaultEquipment });
     const missingFields = applyPayloadToForm(form, payload);
 
     if (missingFields.length > 0) {
