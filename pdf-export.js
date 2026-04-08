@@ -106,7 +106,7 @@
       console.info('以下欄位未成功寫入 PDF（可能不存在或型別不符）：', missingFields);
     }
 
-    const outputBytes = await pdfDoc.save();
+    const outputBytes = await pdfDoc.save({ updateFieldAppearances: false });
     triggerDownload(outputBytes, `dnd-character-${timestampString()}.pdf`);
 
     return { missingFields, filledFieldCount: Object.keys(payload).length };
