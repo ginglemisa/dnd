@@ -34,6 +34,9 @@
   <script src="equipment-notes.js" defer></script>
   <script src="spell-list.js" defer></script>
   <script src="condition.js" defer></script>
+  <script src="pdf-lib.min.js" defer></script>
+  <script src="pdf-field-map.js" defer></script>
+  <script src="pdf-export.js" defer></script>
   <script src="legal-modal.js" defer></script>
   <script src="onboarding-tour.js" defer></script>
 
@@ -297,6 +300,7 @@
 <div id="share-actions-wrap" class="share-actions-wrap">
   <button type="button" id="import-json-btn" class="share-import-btn">⬆️ 匯入紀錄</button>
   <button type="button" id="open-deity-btn" class="utility-emoji-btn" aria-label="開啟神祉整理">🙏</button>
+  <button type="button" id="export-pdf-btn" class="share-export-btn">📄 匯出PDF</button>
   <button type="button" id="export-json-btn" class="share-export-btn">⬇️ 匯出紀錄</button>
 <input type="file" id="import-json-file" accept="application/json" class="is-hidden">
 </div>
@@ -4191,6 +4195,18 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
   const exportJsonBtn = document.getElementById("export-json-btn");
   if (exportJsonBtn) {
     exportJsonBtn.addEventListener("click", downloadStateAsJson);
+  }
+
+  const exportPdfBtn = document.getElementById("export-pdf-btn");
+  if (exportPdfBtn && typeof window.exportCharacterPdfFromState === "function") {
+    exportPdfBtn.addEventListener("click", async () => {
+      try {
+        await window.exportCharacterPdfFromState(collectStateObject());
+      } catch (error) {
+        console.warn("PDF 匯出失敗：", error);
+        alert("PDF 匯出失敗，請稍後重試。");
+      }
+    });
   }
 
   const importJsonBtn = document.getElementById("import-json-btn");
