@@ -1,7 +1,9 @@
 (function attachPdfExport(globalScope) {
   const SOURCE_PDF_PATH = 'character-sheet_Cht.pdf';
-  const CJK_FONT_PATH = 'NotoSansTC-VF.ttf';
+  const CJK_FONT_PATH = 'NotoSansTC-Regular.ttf';
   const MAX_NAME_UNITS = 20;
+  let sourcePdfBytesPromise = null;
+  let cjkFontBytesPromise = null;
 
   function timestampString() {
     return new Date().toISOString().replace(/[:.]/g, '-');
@@ -16,7 +18,29 @@
     document.body.appendChild(anchor);
     anchor.click();
     document.body.removeChild(anchor);
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  async function getSourcePdfBytes() {
+    if (!sourcePdfBytesPromise) {
+      sourcePdfBytesPromise = fetch(SOURCE_PDF_PATH).then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`讀取 PDF 失敗：${response.status}`);
+        }
+        return response.arrayBuffer();
+      });
+    }
+    return sourcePdfBytesPromise;
+  }
+
+  async function getCjkFontBytes() {
+    if (!cjkFontBytesPromise) {
+      cjkFontBytesPromise = fetch(CJK_FONT_PATH).then(async (response) => {
+        if (!response.ok) return null;
+        return response.arrayBuffer();
+      }).catch(() => null);
+    }
+    return cjkFontBytesPromise;
   }
 
   function setCheckboxField(form, fieldName, checked) {
@@ -91,17 +115,33 @@
 
   function normalizeProblematicFieldDA(pdfLib, form) {
     const { PDFName, PDFString, PDFBool } = pdfLib;
+
+    const normalizeDaFontAlias = (daText) => {
+      if (!daText || !daText.includes('Tf')) return daText;
+      return daText
+        .replace(/\/NotoS\b/g, '/Noto')
+        .replace(/\/([^\s/]+)\s+(-?\d+(?:\.\d+)?)\s+Tf/g, '/Noto $2 Tf');
+    };
+
     form.getFields().forEach((field) => {
       const acroField = field?.acroField;
       const dict = acroField?.dict;
       if (!dict) return;
       const daObject = dict.get(PDFName.of('DA'));
       const daText = decodeDefaultAppearance(daObject);
-      if (!daText.includes('/NotoS')) return;
-      dict.set(PDFName.of('DA'), PDFString.of(daText.replaceAll('/NotoS', '/Noto')));
+      const normalizedDa = normalizeDaFontAlias(daText);
+      if (normalizedDa !== daText) {
+        dict.set(PDFName.of('DA'), PDFString.of(normalizedDa));
+      }
     });
 
     if (form?.acroForm?.dict) {
+      const formDaObject = form.acroForm.dict.get(PDFName.of('DA'));
+      const formDaText = decodeDefaultAppearance(formDaObject);
+      const normalizedFormDa = normalizeDaFontAlias(formDaText);
+      if (normalizedFormDa && normalizedFormDa !== formDaText) {
+        form.acroForm.dict.set(PDFName.of('DA'), PDFString.of(normalizedFormDa));
+      }
       form.acroForm.dict.set(PDFName.of('NeedAppearances'), PDFBool.True);
     }
   }
@@ -111,9 +151,8 @@
 
     try {
       pdfDoc.registerFontkit(globalScope.fontkit);
-      const fontResponse = await fetch(CJK_FONT_PATH);
-      if (!fontResponse.ok) return false;
-      const fontBytes = await fontResponse.arrayBuffer();
+      const fontBytes = await getCjkFontBytes();
+      if (!fontBytes) return false;
       const cjkFont = await pdfDoc.embedFont(fontBytes, { subset: true });
       form.updateFieldAppearances(cjkFont);
       return true;
@@ -131,12 +170,7 @@
       throw new Error('PDF 欄位映射函式不存在');
     }
 
-    const response = await fetch(SOURCE_PDF_PATH);
-    if (!response.ok) {
-      throw new Error(`讀取 PDF 失敗：${response.status}`);
-    }
-
-    const sourceBytes = await response.arrayBuffer();
+    const sourceBytes = await getSourcePdfBytes();
     const pdfDoc = await globalScope.PDFLib.PDFDocument.load(sourceBytes);
     const form = pdfDoc.getForm();
     const characterName = promptCharacterName();
@@ -149,9 +183,7 @@
     }
 
     const rebuilt = await tryEmbedCjkFontAndRebuildAppearances(pdfDoc, form);
-    if (!rebuilt) {
-      normalizeProblematicFieldDA(globalScope.PDFLib, form);
-    }
+    normalizeProblematicFieldDA(globalScope.PDFLib, form);
 
     const outputBytes = await pdfDoc.save({ updateFieldAppearances: rebuilt });
     triggerDownload(outputBytes, `dnd-character-${timestampString()}.pdf`);
