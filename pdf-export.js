@@ -1,5 +1,6 @@
 (function attachPdfExport(globalScope) {
   const SOURCE_PDF_PATH = 'character-sheet_Cht.pdf';
+  const CJK_FONT_PATH = 'NotoSansTC-VF.ttf';
   const MAX_NAME_UNITS = 20;
 
   function timestampString() {
@@ -81,6 +82,47 @@
     return missingFields;
   }
 
+  function decodeDefaultAppearance(daObject) {
+    if (!daObject) return '';
+    if (typeof daObject.decodeText === 'function') return daObject.decodeText();
+    if (typeof daObject.asString === 'function') return daObject.asString();
+    return String(daObject);
+  }
+
+  function normalizeProblematicFieldDA(pdfLib, form) {
+    const { PDFName, PDFString, PDFBool } = pdfLib;
+    form.getFields().forEach((field) => {
+      const acroField = field?.acroField;
+      const dict = acroField?.dict;
+      if (!dict) return;
+      const daObject = dict.get(PDFName.of('DA'));
+      const daText = decodeDefaultAppearance(daObject);
+      if (!daText.includes('/NotoS')) return;
+      dict.set(PDFName.of('DA'), PDFString.of(daText.replaceAll('/NotoS', '/Noto')));
+    });
+
+    if (form?.acroForm?.dict) {
+      form.acroForm.dict.set(PDFName.of('NeedAppearances'), PDFBool.True);
+    }
+  }
+
+  async function tryEmbedCjkFontAndRebuildAppearances(pdfDoc, form) {
+    if (!globalScope.fontkit) return false;
+
+    try {
+      pdfDoc.registerFontkit(globalScope.fontkit);
+      const fontResponse = await fetch(CJK_FONT_PATH);
+      if (!fontResponse.ok) return false;
+      const fontBytes = await fontResponse.arrayBuffer();
+      const cjkFont = await pdfDoc.embedFont(fontBytes, { subset: true });
+      form.updateFieldAppearances(cjkFont);
+      return true;
+    } catch (error) {
+      console.warn('字型嵌入/外觀重建失敗，改走 DA fallback：', error);
+      return false;
+    }
+  }
+
   async function exportCharacterPdfFromState(state) {
     if (!globalScope.PDFLib || !globalScope.PDFLib.PDFDocument) {
       throw new Error('pdf-lib 尚未載入');
@@ -106,7 +148,12 @@
       console.info('以下欄位未成功寫入 PDF（可能不存在或型別不符）：', missingFields);
     }
 
-    const outputBytes = await pdfDoc.save({ updateFieldAppearances: false });
+    const rebuilt = await tryEmbedCjkFontAndRebuildAppearances(pdfDoc, form);
+    if (!rebuilt) {
+      normalizeProblematicFieldDA(globalScope.PDFLib, form);
+    }
+
+    const outputBytes = await pdfDoc.save({ updateFieldAppearances: rebuilt });
     triggerDownload(outputBytes, `dnd-character-${timestampString()}.pdf`);
 
     return { missingFields, filledFieldCount: Object.keys(payload).length };
