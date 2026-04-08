@@ -47,6 +47,9 @@
     'speed-input': 'speed',
     'passive-perception': 'passivePerception',
     hp: 'hp_now',
+    'ac-display': 'AC',
+    'hp-display': 'hp_max',
+    lifedicen: 'hp_dice_used',
     'spellcasting-ability': 'spell_cast_attri',
     'spell-adjustment': 'spell_cast_Mod',
     'spell-save-dc': 'spell_cast_DC',
@@ -99,7 +102,38 @@
   }
 
   function normalizeCommaList(values) {
-    return values.map(normalizeText).filter(Boolean).join(',');
+    return values.map(normalizeText).filter(Boolean).join('、');
+  }
+
+  function countDisplayUnits(text) {
+    return Array.from(normalizeText(text)).reduce((sum, ch) => {
+      return sum + (/[\u3400-\u9FFF\uF900-\uFAFF]/.test(ch) ? 2 : 1);
+    }, 0);
+  }
+
+  function wrapTextForPdf(rawText, options = {}) {
+    const text = normalizeText(rawText).replace(/\r/g, '').replace(/\t/g, ' ');
+    if (!text) return '';
+    const maxUnitsPerLine = options.maxUnitsPerLine || 40;
+    const maxLines = options.maxLines || 3;
+    const sourceLines = text.split(/\n+/).map((line) => line.trim()).filter(Boolean);
+    const wrapped = [];
+
+    sourceLines.forEach((line) => {
+      let chunk = '';
+      for (const ch of Array.from(line)) {
+        const next = chunk + ch;
+        if (countDisplayUnits(next) > maxUnitsPerLine && chunk) {
+          wrapped.push(chunk);
+          chunk = ch;
+        } else {
+          chunk = next;
+        }
+      }
+      if (chunk) wrapped.push(chunk);
+    });
+
+    return wrapped.slice(0, maxLines).join('\n');
   }
 
   function extractClassFeatureHeadings(rawText, levelLimit) {
@@ -307,6 +341,17 @@
       payload[pdfFieldName] = normalizeText(state[stateKey]);
     });
 
+    const levelNumber = Number.parseInt(level, 10);
+    if (Number.isFinite(levelNumber) && levelNumber > 0) {
+      payload.hp_dice_max = String(levelNumber);
+      if (payload.hp_dice_used) {
+        const used = Number.parseInt(payload.hp_dice_used, 10);
+        if (Number.isFinite(used)) {
+          payload.hp_dice_used = String(Math.max(0, Math.min(levelNumber, used)));
+        }
+      }
+    }
+
     Object.entries(CHECKBOX_FIELD_MAP).forEach(([stateKey, pdfFieldName]) => {
       payload[pdfFieldName] = Boolean(state[stateKey]);
     });
@@ -336,7 +381,7 @@
     }
 
     const raceHeadings = extractRaceFeatureHeadings(getRaceFeaturesMap()[state.race] || '');
-    payload.specie_features = raceHeadings.join('\n');
+    payload.specie_features = wrapTextForPdf(raceHeadings.join('\n'), { maxUnitsPerLine: 34, maxLines: 8 });
 
     payload.weaponsProficiency = parseClassTableValue(classKey, '武器熟練項');
     const armorTraining = parseClassTableValue(classKey, '護甲訓練');
@@ -346,7 +391,7 @@
     payload.chk_shld = /盾牌/.test(armorTraining);
 
     const featNames = getSelectedFeatNames(state);
-    payload.feats = featNames.join('\n');
+    payload.feats = wrapTextForPdf(featNames.join('\n'), { maxUnitsPerLine: 34, maxLines: 8 });
 
     const spellRows = buildSpellRows(state);
     if (spellRows.length <= 30) {
@@ -359,13 +404,13 @@
         const rangeRaw = getSpellLine(desc, '射程');
 
         payload[`sp-level-${xx}`] = String(row.level);
-        payload[`sp-name-${xx}`] = extractChineseSpellName(row.spellName);
+        payload[`sp-name-${xx}`] = wrapTextForPdf(extractChineseSpellName(row.spellName), { maxUnitsPerLine: 14, maxLines: 2 });
         payload[`sp-cast-time-${xx}`] = convertCastTimeText(castTimeRaw);
         payload[`sp-range-${xx}`] = rangeRaw;
         payload[`sp-c-${xx}`] = /專注/.test(durationRaw);
         payload[`sp-r-${xx}`] = /儀式/.test(castTimeRaw);
         payload[`sp-m-${xx}`] = /材料|成分\s*:\s*.*M/i.test(desc);
-        payload[`note${xx}`] = [school, durationRaw].filter(Boolean).join(' ');
+        payload[`note${xx}`] = wrapTextForPdf([school, durationRaw].filter(Boolean).join(' '), { maxUnitsPerLine: 22, maxLines: 2 });
       });
     }
 
@@ -381,7 +426,12 @@
     if (options.includeDefaultEquipment) {
       const classEq = parseClassDefaultEquipment(classKey);
       const bgEq = normalizeText(getBackgroundMap()[state.background]?.裝備A);
-      payload.equipment = [classEq, bgEq, payload.equipment].filter(Boolean).join('；');
+      payload.equipment = wrapTextForPdf([classEq, bgEq, payload.equipment].filter(Boolean).join('\n'), {
+        maxUnitsPerLine: 52,
+        maxLines: 12
+      });
+    } else {
+      payload.equipment = wrapTextForPdf(payload.equipment, { maxUnitsPerLine: 52, maxLines: 12 });
     }
 
     return payload;

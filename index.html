@@ -35,7 +35,7 @@
   <script src="spell-list.js" defer></script>
   <script src="condition.js" defer></script>
   <script src="pdf-lib.min.js" defer></script>
-  <script src="https://unpkg.com/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js" defer></script>
+  <script src="fontkit.umd.min.js" defer></script>
   <script src="pdf-field-map.js" defer></script>
   <script src="pdf-export.js" defer></script>
   <script src="legal-modal.js" defer></script>
@@ -3887,6 +3887,14 @@ function collectStateObject() {
     if (!el.id) return;
     data[el.id] = el.type === "checkbox" ? el.checked : el.value;
   });
+  const acDisplay = document.getElementById("ac-display");
+  if (acDisplay) {
+    data["ac-display"] = (acDisplay.textContent || "").trim();
+  }
+  const hpDisplay = document.getElementById("hp-display");
+  if (hpDisplay) {
+    data["hp-display"] = (hpDisplay.textContent || "").trim();
+  }
   getDynamicAreaConfigs().forEach(area => {
     data[`${area.key}-count`] = area.getCount();
   });
