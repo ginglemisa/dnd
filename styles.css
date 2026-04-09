@@ -323,10 +323,13 @@ details > summary::-webkit-details-marker,
 
 #raceFeatures {
   white-space: normal;
+  max-width: 100%;
 }
 
 #raceFeatures .race-feature-line {
   line-height: 1.55;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 #raceFeatures .race-feature-line + .race-feature-line {
@@ -339,19 +342,25 @@ details > summary::-webkit-details-marker,
 
 #raceFeatures .race-feature-table-wrap {
   margin: 0.8rem 0;
+  max-width: 100%;
   overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 #raceFeatures .race-feature-table-wrap table {
   width: 100%;
-  min-width: 28rem;
+  min-width: 0;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 #raceFeatures .race-feature-table-wrap td,
 #raceFeatures .race-feature-table-wrap th {
   padding: 0.45rem 0.55rem;
   white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 #tab-basic .output {
