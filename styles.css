@@ -1738,7 +1738,7 @@ div[id$="spells-area"] .form-row {
 }
 
 .share-action-row--triple {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
 }
 
 .share-action-row--double {
@@ -1746,16 +1746,21 @@ div[id$="spells-area"] .form-row {
 }
 
 .utility-emoji-btn {
-  width: 100%;
+  width: auto;
   min-width: 0;
   min-height: 2.9rem;
-  padding: 0;
+  padding: 0 0.6rem;
   border-radius: 14px;
   font-size: 1.45rem;
   line-height: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  justify-self: center;
+}
+
+.share-action-row--triple .utility-emoji-btn {
+  min-width: 2.9rem;
 }
 
 .share-mode-tip {
