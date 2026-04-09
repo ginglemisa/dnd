@@ -2022,6 +2022,28 @@ div[id$="spells-area"] .form-row {
   opacity: 1;
 }
 
+#scrollToBottomBtn {
+  position: fixed;
+  top: var(--floating-top-offset, 4.2rem);
+  left: max(0.95rem, calc((100vw - var(--app-max-width)) / 2 + 0.95rem));
+  z-index: 1100;
+  width: auto;
+  height: auto;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 1.5rem;
+  line-height: 1;
+  box-shadow: none;
+  opacity: 1;
+  transition: top 0.2s ease;
+}
+
 #spell-search-fab,
 #equipment-search-fab {
   position: fixed;
@@ -2061,6 +2083,10 @@ div[id$="spells-area"] .form-row {
 }
 
 #scrollToTopBtn:hover {
+  opacity: 1;
+}
+
+#scrollToBottomBtn:hover {
   opacity: 1;
 }
 
