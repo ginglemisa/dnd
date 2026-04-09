@@ -111,6 +111,21 @@
     wizard: '法師'
   });
 
+  const SUBCLASS_LABELS = Object.freeze({
+    barbarian: '狂戰士道途',
+    bard: '逸聞學院',
+    cleric: '生命領域',
+    druid: '大地結社',
+    fighter: '勇士',
+    monk: '散打鬥士',
+    paladin: '奉獻之誓',
+    ranger: '獵人',
+    rogue: '盜賊',
+    sorcerer: '龍族術法',
+    warlock: '邪魔宗主',
+    wizard: '塑能師'
+  });
+
   const BACKGROUND_LABELS = Object.freeze({
     acolyte: '侍僧',
     soldier: '士兵',
@@ -536,6 +551,9 @@
     payload.hp_dice_used = '';
 
     payload.Class = CLASS_LABELS[classKey] || payload.Class;
+    payload.Subclass = (Number.isFinite(levelNumber) && levelNumber >= 3)
+      ? (SUBCLASS_LABELS[classKey] || '')
+      : '';
     payload.Background = BACKGROUND_LABELS[backgroundKey] || payload.Background;
     payload.Specie = RACE_LABELS[normalizeText(state.race)] || payload.Specie;
     payload.alignment = ALIGNMENT_LABELS[normalizeText(state.alignment)] || payload.alignment;
