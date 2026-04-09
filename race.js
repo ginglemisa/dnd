@@ -75,7 +75,7 @@ dwarf: `生物類型：類人生物
   <tr>
     <td>1</td>
     <td>黑暗視覺120呎<br><strong>舞光術</strong></td>
-    <td><strong>魔法伎倆</strong>(長休可換)<br>(限換法師戲法)</td>
+    <td><strong>魔法伎倆</strong><br>(長休可替換)<br>限換法師戲法</td>
     <td>速度35呎<br><strong>德魯伊伎倆</strong></td>
   </tr>
   <tr>
