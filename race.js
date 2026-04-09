@@ -8,7 +8,7 @@ const raceFeatures = {
 
 作為龍裔，你有以下特質。
 
-龍族血統：你有巨龍血統。下表中擇一，按照龍種決定吐息傷害類型、傷害抗性類型。
+龍族血統：你有巨龍血統。下表擇一，按照龍種決定吐息傷害類型、傷害抗性類型。
 <table border="1" style="border-collapse: collapse; text-align: center;">
   <tr>
     <td>黑龍-酸</td>
@@ -26,7 +26,13 @@ const raceFeatures = {
   </tr>
 </table>
 
-吐息武器：你可用吐息魔法替代一次<strong>攻擊</strong>，範圍二選一： 15 英呎錐形 或 5×30 英呎線形（吐息前決定）。區域內生物進行<strong>敏捷豁免</strong>（豁免難度=8+熟練加值+體質調整值）。失敗受 1d10 點傷害，成功減半。使用次數＝熟練加值，長休後恢復。等級５時，吐息傷害改為 2d10。
+吐息元素：你可用吐息魔法替代一次<strong>攻擊</strong>，吐息前決定範圍：
+  1️⃣15 英呎錐形 | 2️⃣5×30 英呎直線
+  範圍內的生物進行<strong>敏捷豁免</strong>
+  （豁免難度=8+熟練加值+體質調整值）
+  失敗受 1d10 點傷害，成功半傷。
+  使用次數＝熟練加值，長休後恢復。
+  等級５時，吐息傷害改為 2d10。
 
 傷害抗性：<strong>龍族血統</strong>特性對應的屬性傷害減半。
 
@@ -46,7 +52,7 @@ dwarf: `生物類型：類人生物
 
 矮人剛毅： HP 上限 +1，每次升級 +1。
 
-石中精妙：使用<strong>附贈動作</strong>獲得持續 10 分鐘的 60 英呎<strong>震顫感知</strong>，但需腳踏或接觸石質表面。使用次數＝熟練加值，長休後恢復。
+石中精妙：使用<strong>附贈</strong>獲得持續 10 分鐘的 60 英呎<strong>震顫感知</strong>，但需腳踏或接觸石質表面。使用次數＝熟練加值，長休後恢復。
 `,
   elf: `生物類型： 類人生物
 體型：中型（約 5-6 英呎高）
@@ -68,21 +74,21 @@ dwarf: `生物類型：類人生物
   </tr>
   <tr>
     <td>1</td>
-    <td>黑暗視覺120呎<br><strong>舞光術(0)</strong></td>
-    <td><strong>魔法伎倆(0)</strong>(長休可換)<br>(限換法師戲法)</td>
-    <td>速度35呎<br><strong>德魯伊伎倆(0)</strong></td>
+    <td>黑暗視覺120呎<br><strong>舞光術</strong></td>
+    <td><strong>魔法伎倆</strong>(長休可換)<br>(限換法師戲法)</td>
+    <td>速度35呎<br><strong>德魯伊伎倆</strong></td>
   </tr>
   <tr>
     <td>3</td>
-    <td><strong>妖火(1)</strong></td>
-    <td><strong>偵測魔法(1)</strong></td>
-    <td><strong>大步奔行(1)</strong></td>
+    <td><strong>妖火</strong></td>
+    <td><strong>偵測魔法</strong></td>
+    <td><strong>大步奔行</strong></td>
   </tr>
   <tr>
     <td>5</td>
-    <td><strong>黑暗術(2)</strong></td>
-    <td><strong>迷蹤步(2)</strong></td>
-    <td><strong>行動無蹤(2)</strong></td>
+    <td><strong>黑暗術</strong></td>
+    <td><strong>迷蹤步</strong></td>
+    <td><strong>行動無蹤</strong></td>
   </tr>
 </table>
 你始終準備血統法術，可免費施展環位法術各一次，之後需消耗環位，長休後免費次數恢復。選擇智力、感知、魅力其一為施法屬性（選擇血統時決定）。
@@ -103,13 +109,13 @@ dwarf: `生物類型：類人生物
 
 黑暗視覺： 60 英呎黑暗視覺。
  
-侏儒狡黠：智力、感知、魅力三屬性豁免時丟二取高。
+侏儒狡黠：智力、感知、魅力三屬性豁免時具有優勢。
  
 侏儒血統：血統賦予你超自然的能力。以下選項二擇一; 智力、感知或魅力是你的施法屬性（選血統時決定）：
 
-🧒森林侏儒：你學會<strong>次級幻影(0)</strong>、始終準備<strong>動物交談(1)</strong>。免費施展次數＝熟練加值（長休恢復），亦可用法術位施展。
+🧒森林侏儒：你學會<strong>次級幻影</strong>、始終準備<strong>動物交談</strong>。免費施展次數＝熟練加值（長休恢復），亦可用法術位施展。
 
-🧒🏽岩石侏儒：你學會<strong>修復術(0)</strong>和<strong>魔法伎倆(0)</strong>。可花10分鐘製造<strong>微型發條裝置</strong>（AC5，HP1），如玩具、打火機或音樂盒。效果選自魔法伎倆；任何生物都可用<strong>附贈動作</strong>觸碰並啟動; 最多３個，８小時後解體，可用<strong>動作</strong>拆除。
+🧒🏽岩石侏儒：你學會<strong>修復術</strong>和<strong>魔法伎倆</strong>。可花10分鐘製造<strong>微型發條裝置</strong>（AC5，HP1），如玩具、打火機或音樂盒。效果選自魔法伎倆；任何生物都可用<strong>附贈</strong>觸碰並啟動; 最多３個，８小時後解體，可用<strong>動作</strong>拆除。
 `,
   goliath: `生物類型：類人生物
 體型：中型（約 7-8 英呎高）
@@ -121,7 +127,7 @@ dwarf: `生物類型：類人生物
 
 巨人血統：你是巨人後裔，以下先祖恩賜選擇一項增益; 使用次數＝熟練加值（長休恢復）。
 
-雲遊四方（雲巨人）：使用<strong>附贈動作</strong>魔法傳送 30 英呎內你能看見的未佔據空間。
+雲遊四方（雲巨人）：使用<strong>附贈</strong>魔法傳送 30 英呎內你能看見的未佔據空間。
 
 星火燎原（火巨人）：攻擊命中目標時增加 1d10 火焰傷害。
  
@@ -129,13 +135,13 @@ dwarf: `生物類型：類人生物
 
 地動山搖（山丘巨人）：攻擊命中大型以下的生物可令其陷入<strong>倒地狀態</strong>。
 
-堅若磐石（石巨人）：受傷時可用<strong>反應動作</strong>扣除傷害，擲 1d12 + 體質調整值。
+堅若磐石（石巨人）：受傷時可用<strong>反應</strong>扣除傷害，擲 1d12 + 體質調整值。
 
-轟雷掣電（風暴巨人）：使用<strong>反應動作</strong>對 60 英呎內傷害你的生物造成 1d8 雷鳴傷害。
+轟雷掣電（風暴巨人）：使用<strong>反應</strong>對 60 英呎內傷害你的生物造成 1d8 雷鳴傷害。
 
 身強力壯：掙脫<strong>擒抱狀態</strong>的屬性檢定具有優勢。計算可攜重量時視為大型體型。
 
-巨化形體：等級５能力：空間足夠時，使用<strong>附贈動作</strong>變成大體型(2*2格)，速度增加 10 英呎，力量檢定具有優勢，持續 10 分鐘直到你主動結束（無需動作），長休前不能再次使用。
+巨化形體：等級５能力，空間足夠時，使用<strong>附贈</strong>變成大體型(2*2格)，速度增加 10 英呎，力量檢定具有優勢，持續 10 分鐘直到你主動結束（無需動作），長休前不能再次使用。
 `,
   halfling: `生物類型：類人生物
 體型：小型（約 2-3 英呎高）
@@ -151,7 +157,7 @@ dwarf: `生物類型：類人生物
 
 吉運： D20 檢定中擲出 1 時，可以重擲一次。
 
-天生善匿：你可以躲在體型比你大的生物後方使用<strong>躲藏動作</strong>。
+天生善匿：你可以在體型比你大的生物後方使用<strong>躲藏動作</strong>。
 `,
   human: `生物類型：類人生物
 體型：中型（4-7呎）或小型（2-4呎）
@@ -175,11 +181,11 @@ orc: `生物類型：類人生物
 
 作為獸人，你有以下特質。
 
-熱血湧動：使用<strong>附贈動作</strong>讓速度×2，同時獲得臨時 HP ，數值＝熟練加值。使用次數＝熟練加值（短休或長休恢復）。
+熱血湧動：使用<strong>附贈</strong>讓速度×2，同時獲得臨時 HP ，數值＝熟練加值。使用次數＝熟練加值（短休或長休恢復）。
 
 黑暗視覺： 120 英呎黑暗視覺。
 
-堅韌不屈：若 HP 被傷害至 0 且沒有即死，可強制 HP=1 ，此能力在長休後才能再次使用。
+堅韌不屈：若 HP 被傷害至 0 且沒有即死，可強制 HP=1 ，此能力長休後才能再次使用。
 `,
 tiefling: `生物類型：類人生物
 體型：中型（4-7呎）或小型（3-4呎）
@@ -199,10 +205,10 @@ tiefling: `生物類型：類人生物
 
 黑暗視覺： 60 英呎黑暗視覺。
 
-異界姿態：你學會戲法<strong>奇術(0)</strong>。
+異界姿態：你學會戲法<strong>奇術</strong>。
 
 邪魔遺贈：血統賦予你超自然的能力，下表擇一。  
-<table border="1" style="border-collapse: collapse; text-align: center;"> <tr> <td>等級</td> <td>深淵血統</td> <td>冥界血統</td> <td>煉獄血統</td> </tr> <tr> <td>1</td> <td>毒素傷害抗性<br><strong>毒氣噴濺(0)</strong></td> <td>黯蝕傷害抗性<br><strong>凍寒之觸(0)</strong></td> <td>火焰傷害抗性<br><strong>火焰箭(0)</strong></td> </tr> <tr> <td>3</td> <td><strong>致病射線(1)</strong></td> <td><strong>虛假生命(1)</strong></td> <td><strong>煉獄叱喝(1)</strong></td> </tr> <tr> <td>5</td> <td><strong>人類定身術(2)</strong></td> <td><strong>衰弱射線(2)</strong></td> <td><strong>黑暗術(2)</strong></td> </tr> </table>
+<table border="1" style="border-collapse: collapse; text-align: center;"> <tr> <td>等級</td> <td>深淵血統</td> <td>冥界血統</td> <td>煉獄血統</td> </tr> <tr> <td>1</td> <td>毒素傷害抗性<br><strong>毒氣噴濺</strong></td> <td>黯蝕傷害抗性<br><strong>凍寒之觸</strong></td> <td>火焰傷害抗性<br><strong>火焰箭</strong></td> </tr> <tr> <td>3</td> <td><strong>致病射線</strong></td> <td><strong>虛假生命</strong></td> <td><strong>煉獄叱喝</strong></td> </tr> <tr> <td>5</td> <td><strong>人類定身術</strong></td> <td><strong>衰弱射線</strong></td> <td><strong>黑暗術</strong></td> </tr> </table>
 
 你始終準備血統法術，可免費施展環位法術各一次，之後需消耗環位。長休後免費次數恢復。選擇智力、感知、魅力其一為施法屬性（選擇血統時決定）。
 `
