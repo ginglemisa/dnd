@@ -549,7 +549,16 @@
     <h3>攜帶物品</h3>
 <textarea id="gear-notes" rows="4" placeholder="請輸入角色攜帶的其他裝備、補給品、雜物等..."></textarea>
     <div class="money-section" aria-label="錢財管理">
-      <h4 class="money-title">錢財</h4>
+      <div class="money-header">
+        <button type="button" id="money-log-toggle" class="money-log-toggle" aria-label="查看交易紀錄">交易紀錄</button>
+        <button type="button" id="money-undo-btn" class="money-undo-btn" aria-label="Undo 交易">↩️</button>
+      </div>
+      <div id="money-log-tooltip" class="money-log-tooltip is-hidden" role="dialog" aria-label="交易紀錄視窗">
+        <div class="money-log-title">最近交易</div>
+        <ul id="money-log-list" class="money-log-list">
+          <li>尚無紀錄</li>
+        </ul>
+      </div>
       <div class="money-grid">
         <label for="money-cp">銅幣</label>
         <label for="money-sp">銀幣</label>
@@ -575,6 +584,8 @@
       <input type="hidden" id="money-balance-gp" value="0">
       <input type="hidden" id="money-balance-ep" value="0">
       <input type="hidden" id="money-balance-pp" value="0">
+      <input type="hidden" id="money-log-data" value="[]">
+      <input type="hidden" id="money-history-data" value="[]">
     </div>
   </div>
 
@@ -4141,7 +4152,13 @@ function setupMoneyTracker() {
   const summaryEl = document.getElementById("money-summary");
   const addBtn = document.getElementById("money-add-btn");
   const subtractBtn = document.getElementById("money-subtract-btn");
-  if (!summaryEl || !addBtn || !subtractBtn) return;
+  const undoBtn = document.getElementById("money-undo-btn");
+  const logToggleBtn = document.getElementById("money-log-toggle");
+  const logTooltip = document.getElementById("money-log-tooltip");
+  const logListEl = document.getElementById("money-log-list");
+  const logDataInput = document.getElementById("money-log-data");
+  const historyDataInput = document.getElementById("money-history-data");
+  if (!summaryEl || !addBtn || !subtractBtn || !undoBtn || !logToggleBtn || !logTooltip || !logListEl || !logDataInput || !historyDataInput) return;
 
   const toSafeInt = (raw, max = null) => {
     const parsed = parseInt(String(raw ?? "0").trim(), 10);
@@ -4156,6 +4173,54 @@ function setupMoneyTracker() {
       result[id] = toSafeInt(balanceById(id)?.value || "0");
     });
     return result;
+  };
+
+  const parseJsonArray = (raw) => {
+    try {
+      const parsed = JSON.parse(String(raw || "[]"));
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (_error) {
+      return [];
+    }
+  };
+
+  const renderLogList = () => {
+    const logs = parseJsonArray(logDataInput.value);
+    logListEl.innerHTML = "";
+    if (!logs.length) {
+      const emptyItem = document.createElement("li");
+      emptyItem.textContent = "尚無紀錄";
+      logListEl.appendChild(emptyItem);
+      return;
+    }
+    logs.forEach((entry) => {
+      const item = document.createElement("li");
+      item.textContent = entry;
+      logListEl.appendChild(item);
+    });
+  };
+
+  const appendLog = (entry) => {
+    const logs = parseJsonArray(logDataInput.value);
+    logs.unshift(entry);
+    logDataInput.value = JSON.stringify(logs.slice(0, 20));
+    logDataInput.dispatchEvent(new Event("change"));
+    renderLogList();
+  };
+
+  const pushHistory = (snapshot) => {
+    const history = parseJsonArray(historyDataInput.value);
+    history.unshift(snapshot);
+    historyDataInput.value = JSON.stringify(history.slice(0, 20));
+    historyDataInput.dispatchEvent(new Event("change"));
+  };
+
+  const popHistory = () => {
+    const history = parseJsonArray(historyDataInput.value);
+    const latest = history.shift();
+    historyDataInput.value = JSON.stringify(history);
+    historyDataInput.dispatchEvent(new Event("change"));
+    return latest || null;
   };
 
   const writeBalances = (next) => {
@@ -4217,7 +4282,9 @@ function setupMoneyTracker() {
   };
 
   const updateSummary = () => {
-    summaryEl.textContent = formatConvertedSummary(toCopperValue(readBalances()));
+    const totalCopper = toCopperValue(readBalances());
+    summaryEl.textContent = formatConvertedSummary(totalCopper);
+    summaryEl.classList.toggle("is-negative", totalCopper < 0);
   };
 
   const applyDelta = (sign = 1) => {
@@ -4227,6 +4294,7 @@ function setupMoneyTracker() {
       deltas[id] = toSafeInt(valueById(id)?.value || "0", 999);
     });
     const current = readBalances();
+    pushHistory(current);
     const next = {};
     ids.forEach((id) => {
       next[id] = current[id] + (sign * deltas[id]);
@@ -4237,6 +4305,8 @@ function setupMoneyTracker() {
       if (input) input.value = "0";
     });
     updateSummary();
+    const actionLabel = sign > 0 ? "+" : "-";
+    appendLog(`${actionLabel} 銅${deltas.cp} 銀${deltas.sp} 金${deltas.gp} 琥珀金${deltas.ep} 白金${deltas.pp}`);
   };
 
   ids.forEach((id) => {
@@ -4248,7 +4318,30 @@ function setupMoneyTracker() {
 
   addBtn.addEventListener("click", () => applyDelta(1));
   subtractBtn.addEventListener("click", () => applyDelta(-1));
+  undoBtn.addEventListener("click", () => {
+    const previous = popHistory();
+    if (!previous) return;
+    writeBalances(fromCopperValue(toCopperValue(previous)));
+    updateSummary();
+    appendLog("↩️ Undo");
+  });
+  logToggleBtn.addEventListener("click", () => {
+    logTooltip.classList.toggle("is-hidden");
+  });
+  document.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    if (!target.closest(".money-section")) {
+      logTooltip.classList.add("is-hidden");
+    }
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      logTooltip.classList.add("is-hidden");
+    }
+  });
   writeBalances(fromCopperValue(toCopperValue(readBalances())));
+  renderLogList();
   updateSummary();
 }
 
