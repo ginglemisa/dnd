@@ -1395,7 +1395,8 @@ function getSpellNamesFromSpellList(root) {
   return names;
 }
 
-function highlightSpellNamesInClassFeature(html) {
+function highlightSpellNamesInClassFeature(html, options = {}) {
+  const skipClickableNames = new Set(Array.isArray(options.skipClickableNames) ? options.skipClickableNames : []);
   const spellNames = getSpellNamesFromSpellList(spellList);
   if (!spellNames.length) return html;
 
@@ -1423,6 +1424,9 @@ function highlightSpellNamesInClassFeature(html) {
 
   const spellRegex = new RegExp(`(${uniqueSpellNames.map(escapeRegExp).join("|")})`, "g");
   const decorateSpellMatch = (match) => {
+    if (skipClickableNames.has(match)) {
+      return match;
+    }
     const englishName = aliasToEnglish.get(match) || getSpellEnglishName(match);
     return `<strong class="spell-highlight spell-highlight-action" role="button" tabindex="0" data-spell-name="${escapeHtml(englishName)}">${match}</strong>`;
   };
@@ -1524,10 +1528,10 @@ function updateRaceFeature() {
 
   const formatted = chunks.map(chunk => {
     if (chunk.type === "table") {
-      return `<div class="race-feature-table-wrap">${highlightSpellNamesInClassFeature(chunk.content)}</div>`;
+      return `<div class="race-feature-table-wrap">${highlightSpellNamesInClassFeature(chunk.content, { skipClickableNames: ["黑暗視覺"] })}</div>`;
     }
 
-    const highlightedContent = highlightSpellNamesInClassFeature(chunk.content);
+    const highlightedContent = highlightSpellNamesInClassFeature(chunk.content, { skipClickableNames: ["黑暗視覺"] });
 
     return highlightedContent
       .split("\n")
