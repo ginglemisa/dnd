@@ -1729,7 +1729,7 @@ div[id$="spells-area"] .form-row {
 .share-actions-wrap {
   display: grid;
   gap: 0.55rem;
-  margin: -4px 0 16px;
+  margin: 10px 0 16px;
 }
 
 .share-action-row {
