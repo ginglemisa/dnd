@@ -565,6 +565,52 @@
   <div class="section">
     <h3>攜帶物品</h3>
 <textarea id="gear-notes" rows="4" placeholder="請輸入角色攜帶的其他裝備、補給品、雜物等..."></textarea>
+    <div class="money-section" aria-label="錢財管理">
+      <div class="money-header">
+        <button type="button" id="money-log-toggle" class="money-log-toggle" aria-label="查看交易紀錄">交易紀錄</button>
+        <button type="button" id="money-undo-btn" class="money-undo-btn" aria-label="Undo 交易">↩️</button>
+      </div>
+      <div id="money-log-tooltip" class="money-log-tooltip is-hidden" role="dialog" aria-label="交易紀錄視窗">
+        <div class="money-log-title">最近交易</div>
+        <ul id="money-log-list" class="money-log-list">
+          <li>尚無紀錄</li>
+        </ul>
+      </div>
+      <div class="money-grid">
+        <div class="money-cell money-cell-cp">
+          <label for="money-cp">銅幣</label>
+          <input type="number" id="money-cp" min="0" max="999" step="1" inputmode="numeric" value="0">
+        </div>
+        <div class="money-cell money-cell-sp">
+          <label for="money-sp">銀幣</label>
+          <input type="number" id="money-sp" min="0" max="999" step="1" inputmode="numeric" value="0">
+        </div>
+        <div class="money-cell money-cell-gp">
+          <label for="money-gp">金幣</label>
+          <input type="number" id="money-gp" min="0" max="999" step="1" inputmode="numeric" value="0">
+        </div>
+        <div class="money-cell money-cell-ep">
+          <label for="money-ep">琥珀金幣</label>
+          <input type="number" id="money-ep" min="0" max="999" step="1" inputmode="numeric" value="0">
+        </div>
+        <div class="money-cell money-cell-pp">
+          <label for="money-pp">白金幣</label>
+          <input type="number" id="money-pp" min="0" max="999" step="1" inputmode="numeric" value="0">
+        </div>
+        <div class="money-action-stack money-cell-actions" aria-label="加減金額">
+          <button type="button" id="money-add-btn" class="money-action-btn" aria-label="增加">+</button>
+          <button type="button" id="money-subtract-btn" class="money-action-btn" aria-label="減少">-</button>
+        </div>
+      </div>
+      <p id="money-summary" class="money-summary">目前財產：0銅0銀0金0白金</p>
+      <input type="hidden" id="money-balance-cp" value="0">
+      <input type="hidden" id="money-balance-sp" value="0">
+      <input type="hidden" id="money-balance-gp" value="0">
+      <input type="hidden" id="money-balance-ep" value="0">
+      <input type="hidden" id="money-balance-pp" value="0">
+      <input type="hidden" id="money-log-data" value="[]">
+      <input type="hidden" id="money-history-data" value="[]">
+    </div>
   </div>
 
   <div class="section">
@@ -4131,6 +4177,206 @@ function setupClosePageAutoSave() {
   });
 }
 
+function setupMoneyTracker() {
+  const ids = ["cp", "sp", "gp", "ep", "pp"];
+  const valueById = (id) => document.getElementById(`money-${id}`);
+  const balanceById = (id) => document.getElementById(`money-balance-${id}`);
+  const summaryEl = document.getElementById("money-summary");
+  const addBtn = document.getElementById("money-add-btn");
+  const subtractBtn = document.getElementById("money-subtract-btn");
+  const undoBtn = document.getElementById("money-undo-btn");
+  const logToggleBtn = document.getElementById("money-log-toggle");
+  const logTooltip = document.getElementById("money-log-tooltip");
+  const logListEl = document.getElementById("money-log-list");
+  const logDataInput = document.getElementById("money-log-data");
+  const historyDataInput = document.getElementById("money-history-data");
+  if (!summaryEl || !addBtn || !subtractBtn || !undoBtn || !logToggleBtn || !logTooltip || !logListEl || !logDataInput || !historyDataInput) return;
+
+  const toSafeInt = (raw, max = null) => {
+    const parsed = parseInt(String(raw ?? "0").trim(), 10);
+    if (!Number.isFinite(parsed)) return 0;
+    if (max == null) return parsed;
+    return Math.min(Math.max(parsed, 0), max);
+  };
+
+  const readBalances = () => {
+    const result = {};
+    ids.forEach((id) => {
+      result[id] = toSafeInt(balanceById(id)?.value || "0");
+    });
+    return result;
+  };
+
+  const parseJsonArray = (raw) => {
+    try {
+      const parsed = JSON.parse(String(raw || "[]"));
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (_error) {
+      return [];
+    }
+  };
+
+  const renderLogList = () => {
+    const logs = parseJsonArray(logDataInput.value);
+    logListEl.innerHTML = "";
+    if (!logs.length) {
+      const emptyItem = document.createElement("li");
+      emptyItem.textContent = "尚無紀錄";
+      logListEl.appendChild(emptyItem);
+      return;
+    }
+    logs.forEach((entry) => {
+      const item = document.createElement("li");
+      item.textContent = entry;
+      logListEl.appendChild(item);
+    });
+  };
+
+  const appendLog = (entry) => {
+    const logs = parseJsonArray(logDataInput.value);
+    logs.unshift(entry);
+    logDataInput.value = JSON.stringify(logs.slice(0, 20));
+    logDataInput.dispatchEvent(new Event("change"));
+    renderLogList();
+  };
+
+  const pushHistory = (snapshot) => {
+    const history = parseJsonArray(historyDataInput.value);
+    history.unshift(snapshot);
+    historyDataInput.value = JSON.stringify(history.slice(0, 20));
+    historyDataInput.dispatchEvent(new Event("change"));
+  };
+
+  const popHistory = () => {
+    const history = parseJsonArray(historyDataInput.value);
+    const latest = history.shift();
+    historyDataInput.value = JSON.stringify(history);
+    historyDataInput.dispatchEvent(new Event("change"));
+    return latest || null;
+  };
+
+  const writeBalances = (next) => {
+    ids.forEach((id) => {
+      const el = balanceById(id);
+      if (!el) return;
+      el.value = String(toSafeInt(next[id]));
+      el.dispatchEvent(new Event("change"));
+    });
+  };
+
+  const normalizeAdjustInputs = () => {
+    ids.forEach((id) => {
+      const input = valueById(id);
+      if (!input) return;
+      input.value = String(toSafeInt(input.value, 999));
+    });
+  };
+
+  const toCopperValue = (values) =>
+    (values.cp * 1) +
+    (values.sp * 10) +
+    (values.ep * 50) +
+    (values.gp * 100) +
+    (values.pp * 1000);
+
+  const fromCopperValue = (copperTotal) => {
+    const sign = copperTotal < 0 ? -1 : 1;
+    let remain = Math.abs(copperTotal);
+    const pp = Math.floor(remain / 1000);
+    remain %= 1000;
+    const gp = Math.floor(remain / 100);
+    remain %= 100;
+    const ep = Math.floor(remain / 50); // 1 琥珀金幣 = 5 銀幣 = 50 銅幣
+    remain %= 50;
+    const sp = Math.floor(remain / 10);
+    remain %= 10;
+    const cp = remain;
+    return {
+      cp: cp * sign,
+      sp: sp * sign,
+      ep: ep * sign,
+      gp: gp * sign,
+      pp: pp * sign
+    };
+  };
+
+  const formatConvertedSummary = (copperTotal) => {
+    const sign = copperTotal < 0 ? "-" : "";
+    let remain = Math.abs(copperTotal);
+    const pp = Math.floor(remain / 1000);
+    remain %= 1000;
+    const gp = Math.floor(remain / 100);
+    remain %= 100;
+    const sp = Math.floor(remain / 10);
+    remain %= 10;
+    const cp = remain;
+    return `目前財產：${sign}${cp}銅${sp}銀${gp}金${pp}白金`;
+  };
+
+  const updateSummary = () => {
+    const totalCopper = toCopperValue(readBalances());
+    summaryEl.textContent = formatConvertedSummary(totalCopper);
+    summaryEl.classList.toggle("is-negative", totalCopper < 0);
+  };
+
+  const applyDelta = (sign = 1) => {
+    normalizeAdjustInputs();
+    const deltas = {};
+    ids.forEach((id) => {
+      deltas[id] = toSafeInt(valueById(id)?.value || "0", 999);
+    });
+    const current = readBalances();
+    pushHistory(current);
+    const next = {};
+    ids.forEach((id) => {
+      next[id] = current[id] + (sign * deltas[id]);
+    });
+    writeBalances(fromCopperValue(toCopperValue(next)));
+    ids.forEach((id) => {
+      const input = valueById(id);
+      if (input) input.value = "0";
+    });
+    updateSummary();
+    const actionLabel = sign > 0 ? "+" : "-";
+    appendLog(`${actionLabel} 銅${deltas.cp} 銀${deltas.sp} 金${deltas.gp} 琥珀金${deltas.ep} 白金${deltas.pp}`);
+  };
+
+  ids.forEach((id) => {
+    const input = valueById(id);
+    if (!input) return;
+    input.addEventListener("input", normalizeAdjustInputs);
+    input.addEventListener("change", normalizeAdjustInputs);
+  });
+
+  addBtn.addEventListener("click", () => applyDelta(1));
+  subtractBtn.addEventListener("click", () => applyDelta(-1));
+  undoBtn.addEventListener("click", () => {
+    const previous = popHistory();
+    if (!previous) return;
+    writeBalances(fromCopperValue(toCopperValue(previous)));
+    updateSummary();
+    appendLog("↩️ Undo");
+  });
+  logToggleBtn.addEventListener("click", () => {
+    logTooltip.classList.toggle("is-hidden");
+  });
+  document.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    if (!target.closest(".money-section")) {
+      logTooltip.classList.add("is-hidden");
+    }
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      logTooltip.classList.add("is-hidden");
+    }
+  });
+  writeBalances(fromCopperValue(toCopperValue(readBalances())));
+  renderLogList();
+  updateSummary();
+}
+
 // ====== 頁面載入時全自動初始化 ======
 window.addEventListener("DOMContentLoaded", async function() {
   updateExtraLanguageFields();
@@ -4184,6 +4430,7 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
   setupVisibilityAutoSave();
   setupClosePageAutoSave();
   setupAutoSave();
+  setupMoneyTracker();
   // 5. 綁定清除紀錄按鈕
   const clearBtn = document.getElementById('clear-storage-btn');
   if (clearBtn) {
