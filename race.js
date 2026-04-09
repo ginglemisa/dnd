@@ -202,7 +202,7 @@ tiefling: `生物類型：類人生物
 異界姿態：你學會戲法<strong>奇術(0)</strong>。
 
 邪魔遺贈：血統賦予你超自然的能力，下表擇一。  
-<table border="1" style="border-collapse: collapse; text-align: center;"> <tr> <td>等級</td> <td>深淵血統</td> <td>冥界血統</td> <td>煉獄血統</td> </tr> <tr> <td>1</td> <td>毒素傷害抗性<br><strong>毒氣噴濺(0)</strong></td> <td>黯蝕傷害抗性<br><strong>凍寒之觸(0)</strong></td> <td>火焰傷害抗性<br><strong>火焰箭(0)</strong></td> </tr> <tr> <td>3</td> <td><strong>致病射線(1)</strong></td> <td><strong>虛假生命(1)</strong></td> <td><strong>煉獄叱喝(1)</strong></td> </tr> <tr> <td>5</td> <td><strong>定身術(2)</strong></td> <td><strong>衰弱射線(2)</strong></td> <td><strong>黑暗術(2)</strong></td> </tr> </table>
+<table border="1" style="border-collapse: collapse; text-align: center;"> <tr> <td>等級</td> <td>深淵血統</td> <td>冥界血統</td> <td>煉獄血統</td> </tr> <tr> <td>1</td> <td>毒素傷害抗性<br><strong>毒氣噴濺(0)</strong></td> <td>黯蝕傷害抗性<br><strong>凍寒之觸(0)</strong></td> <td>火焰傷害抗性<br><strong>火焰箭(0)</strong></td> </tr> <tr> <td>3</td> <td><strong>致病射線(1)</strong></td> <td><strong>虛假生命(1)</strong></td> <td><strong>煉獄叱喝(1)</strong></td> </tr> <tr> <td>5</td> <td><strong>人類定身術(2)</strong></td> <td><strong>衰弱射線(2)</strong></td> <td><strong>黑暗術(2)</strong></td> </tr> </table>
 
 你始終準備血統法術，可免費施展環位法術各一次，之後需消耗環位。長休後免費次數恢復。選擇智力、感知、魅力其一為施法屬性（選擇血統時決定）。
 `
