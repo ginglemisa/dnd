@@ -210,6 +210,36 @@
     storm: '風暴巨人'
   });
 
+  const DRAGONBORN_ANCESTRY_LABELS = Object.freeze({
+    black_acid: '黑龍-酸',
+    blue_lightning: '藍龍-電',
+    brass_fire: '黃銅龍-火',
+    bronze_lightning: '青銅龍-電',
+    copper_acid: '赤銅龍-酸',
+    gold_fire: '金龍-火',
+    green_poison: '綠龍-毒',
+    red_fire: '紅龍-火',
+    silver_cold: '銀龍-冰',
+    white_cold: '白龍-冰'
+  });
+
+  const ELF_LINEAGE_LABELS = Object.freeze({
+    drow: '卓爾',
+    high_elf: '高等精靈',
+    wood_elf: '木精靈'
+  });
+
+  const GNOME_LINEAGE_LABELS = Object.freeze({
+    forest_gnome: '森林侏儒',
+    rock_gnome: '岩石侏儒'
+  });
+
+  const TIEFLING_LEGACY_LABELS = Object.freeze({
+    abyssal: '深淵',
+    chthonic: '冥界',
+    infernal: '煉獄'
+  });
+
   function normalizeText(value) {
     if (value === undefined || value === null) return '';
     return String(value).trim();
@@ -533,6 +563,11 @@
     return wrapTextForPdf(lines.join('\n'), { maxUnitsPerLine: 34, maxLines: 8 });
   }
 
+  function appendChoiceToHeading(lines, heading, choiceLabel) {
+    if (!choiceLabel) return lines;
+    return lines.map((line) => (line === heading ? `${heading}：${choiceLabel}` : line));
+  }
+
   function buildPdfFieldPayload(state, options = {}) {
     const payload = {};
     const classKey = normalizeText(state.class);
@@ -638,7 +673,32 @@
     if (state.race === 'goliath') {
       payload.specie_features = buildGoliathRaceFeatureText(level, options.goliathAncestry);
     } else {
-      const raceHeadings = extractRaceFeatureHeadings(getRaceFeaturesMap()[state.race] || '');
+      let raceHeadings = extractRaceFeatureHeadings(getRaceFeaturesMap()[state.race] || '');
+      if (state.race === 'dragonborn') {
+        raceHeadings = appendChoiceToHeading(
+          raceHeadings,
+          '龍族血統',
+          DRAGONBORN_ANCESTRY_LABELS[options.dragonbornAncestry]
+        );
+      } else if (state.race === 'elf') {
+        raceHeadings = appendChoiceToHeading(
+          raceHeadings,
+          '精靈傳承',
+          ELF_LINEAGE_LABELS[options.elfLineage]
+        );
+      } else if (state.race === 'gnome') {
+        raceHeadings = appendChoiceToHeading(
+          raceHeadings,
+          '侏儒血統',
+          GNOME_LINEAGE_LABELS[options.gnomeLineage]
+        );
+      } else if (state.race === 'tiefling') {
+        raceHeadings = appendChoiceToHeading(
+          raceHeadings,
+          '邪魔遺贈',
+          TIEFLING_LEGACY_LABELS[options.tieflingLegacy]
+        );
+      }
       payload.specie_features = wrapTextForPdf(raceHeadings.join('\n'), { maxUnitsPerLine: 34, maxLines: 8 });
     }
 

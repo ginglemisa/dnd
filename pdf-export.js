@@ -99,15 +99,7 @@
     }
   }
 
-  function promptGoliathAncestry() {
-    const options = [
-      { key: 'cloud', label: '雲巨人' },
-      { key: 'fire', label: '火巨人' },
-      { key: 'frost', label: '霜巨人' },
-      { key: 'hill', label: '山丘巨人' },
-      { key: 'stone', label: '石巨人' },
-      { key: 'storm', label: '風暴巨人' }
-    ];
+  function promptChoiceDialog(titleText, hintText, options, columns = 2) {
     return new Promise((resolve) => {
       const overlay = document.createElement('div');
       overlay.style.cssText = [
@@ -133,17 +125,17 @@
       ].join(';');
 
       const title = document.createElement('h3');
-      title.textContent = '選擇歌利亞巨人血統';
+      title.textContent = titleText;
       title.style.cssText = 'margin:0;font-size:1.08rem;';
       dialog.appendChild(title);
 
       const hint = document.createElement('p');
-      hint.textContent = '請點選一個巨人類型。';
+      hint.textContent = hintText;
       hint.style.cssText = 'margin:0;color:#475467;font-size:0.94rem;';
       dialog.appendChild(hint);
 
       const grid = document.createElement('div');
-      grid.style.cssText = 'display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;';
+      grid.style.cssText = `display:grid;grid-template-columns:repeat(${columns},minmax(0,1fr));gap:10px;`;
       options.forEach((option) => {
         const button = document.createElement('button');
         button.type = 'button';
@@ -177,6 +169,80 @@
       overlay.appendChild(dialog);
       document.body.appendChild(overlay);
     });
+  }
+
+  function promptGoliathAncestry() {
+    return promptChoiceDialog(
+      '選擇歌利亞巨人血統',
+      '請點選一個巨人類型。',
+      [
+        { key: 'cloud', label: '雲巨人' },
+        { key: 'fire', label: '火巨人' },
+        { key: 'frost', label: '霜巨人' },
+        { key: 'hill', label: '山丘巨人' },
+        { key: 'stone', label: '石巨人' },
+        { key: 'storm', label: '風暴巨人' }
+      ],
+      2
+    );
+  }
+
+  function promptDragonbornAncestry() {
+    return promptChoiceDialog(
+      '選擇龍族血統',
+      '請點選一個龍族血統。',
+      [
+        { key: 'black_acid', label: '黑龍-酸' },
+        { key: 'blue_lightning', label: '藍龍-電' },
+        { key: 'brass_fire', label: '黃銅龍-火' },
+        { key: 'bronze_lightning', label: '青銅龍-電' },
+        { key: 'copper_acid', label: '赤銅龍-酸' },
+        { key: 'gold_fire', label: '金龍-火' },
+        { key: 'green_poison', label: '綠龍-毒' },
+        { key: 'red_fire', label: '紅龍-火' },
+        { key: 'silver_cold', label: '銀龍-冰' },
+        { key: 'white_cold', label: '白龍-冰' }
+      ],
+      2
+    );
+  }
+
+  function promptElfLineage() {
+    return promptChoiceDialog(
+      '選擇精靈傳承',
+      '請點選一個精靈傳承。',
+      [
+        { key: 'drow', label: '卓爾' },
+        { key: 'high_elf', label: '高等精靈' },
+        { key: 'wood_elf', label: '木精靈' }
+      ],
+      3
+    );
+  }
+
+  function promptGnomeLineage() {
+    return promptChoiceDialog(
+      '選擇侏儒血統',
+      '請點選一個侏儒血統。',
+      [
+        { key: 'forest_gnome', label: '森林侏儒' },
+        { key: 'rock_gnome', label: '岩石侏儒' }
+      ],
+      2
+    );
+  }
+
+  function promptTieflingLegacy() {
+    return promptChoiceDialog(
+      '選擇邪魔遺贈',
+      '請點選一個邪魔遺贈。',
+      [
+        { key: 'abyssal', label: '深淵' },
+        { key: 'chthonic', label: '冥界' },
+        { key: 'infernal', label: '煉獄' }
+      ],
+      3
+    );
   }
 
   function applyPayloadToForm(form, payload) {
@@ -266,11 +332,19 @@
     const form = pdfDoc.getForm();
     const characterName = promptCharacterName();
     const goliathAncestry = state?.race === 'goliath' ? await promptGoliathAncestry() : '';
+    const dragonbornAncestry = state?.race === 'dragonborn' ? await promptDragonbornAncestry() : '';
+    const elfLineage = state?.race === 'elf' ? await promptElfLineage() : '';
+    const gnomeLineage = state?.race === 'gnome' ? await promptGnomeLineage() : '';
+    const tieflingLegacy = state?.race === 'tiefling' ? await promptTieflingLegacy() : '';
     const size = promptCharacterSize();
     const includeDefaultEquipment = promptIncludeDefaultEquipment();
     const payload = globalScope.buildPdfFieldPayload(state, {
       characterName,
       goliathAncestry,
+      dragonbornAncestry,
+      elfLineage,
+      gnomeLineage,
+      tieflingLegacy,
       size,
       includeDefaultEquipment
     });
