@@ -4182,6 +4182,27 @@ function setupMoneyTracker() {
     (values.gp * 100) +
     (values.pp * 1000);
 
+  const fromCopperValue = (copperTotal) => {
+    const sign = copperTotal < 0 ? -1 : 1;
+    let remain = Math.abs(copperTotal);
+    const pp = Math.floor(remain / 1000);
+    remain %= 1000;
+    const gp = Math.floor(remain / 100);
+    remain %= 100;
+    const ep = Math.floor(remain / 50); // 1 琥珀金幣 = 5 銀幣 = 50 銅幣
+    remain %= 50;
+    const sp = Math.floor(remain / 10);
+    remain %= 10;
+    const cp = remain;
+    return {
+      cp: cp * sign,
+      sp: sp * sign,
+      ep: ep * sign,
+      gp: gp * sign,
+      pp: pp * sign
+    };
+  };
+
   const formatConvertedSummary = (copperTotal) => {
     const sign = copperTotal < 0 ? "-" : "";
     let remain = Math.abs(copperTotal);
@@ -4210,7 +4231,7 @@ function setupMoneyTracker() {
     ids.forEach((id) => {
       next[id] = current[id] + (sign * deltas[id]);
     });
-    writeBalances(next);
+    writeBalances(fromCopperValue(toCopperValue(next)));
     ids.forEach((id) => {
       const input = valueById(id);
       if (input) input.value = "0";
@@ -4227,6 +4248,7 @@ function setupMoneyTracker() {
 
   addBtn.addEventListener("click", () => applyDelta(1));
   subtractBtn.addEventListener("click", () => applyDelta(-1));
+  writeBalances(fromCopperValue(toCopperValue(readBalances())));
   updateSummary();
 }
 
