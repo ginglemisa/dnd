@@ -548,6 +548,36 @@
   <div class="section">
     <h3>攜帶物品</h3>
 <textarea id="gear-notes" rows="4" placeholder="請輸入角色攜帶的其他裝備、補給品、雜物等..."></textarea>
+    <div class="money-section" aria-label="錢財管理">
+      <h4 class="money-title">錢財</h4>
+      <div class="money-grid">
+        <label for="money-cp">銅幣</label>
+        <label for="money-sp">銀幣</label>
+        <label for="money-gp">金幣</label>
+        <button type="button" id="money-add-btn" class="money-action-btn">增加</button>
+
+        <input type="number" id="money-cp" min="0" max="999" step="1" inputmode="numeric" value="0">
+        <input type="number" id="money-sp" min="0" max="999" step="1" inputmode="numeric" value="0">
+        <input type="number" id="money-gp" min="0" max="999" step="1" inputmode="numeric" value="0">
+        <div class="money-action-placeholder"></div>
+
+        <label for="money-ep">琥珀金幣</label>
+        <label for="money-pp">白金幣</label>
+        <div class="money-empty-cell" aria-hidden="true"></div>
+        <button type="button" id="money-subtract-btn" class="money-action-btn">減少</button>
+
+        <input type="number" id="money-ep" min="0" max="999" step="1" inputmode="numeric" value="0">
+        <input type="number" id="money-pp" min="0" max="999" step="1" inputmode="numeric" value="0">
+        <div class="money-empty-cell" aria-hidden="true"></div>
+        <div class="money-action-placeholder"></div>
+      </div>
+      <p id="money-summary" class="money-summary">目前財產：0銅 0銀 0金 0琥珀金 0白金（總值 0 銅幣）</p>
+      <input type="hidden" id="money-balance-cp" value="0">
+      <input type="hidden" id="money-balance-sp" value="0">
+      <input type="hidden" id="money-balance-gp" value="0">
+      <input type="hidden" id="money-balance-ep" value="0">
+      <input type="hidden" id="money-balance-pp" value="0">
+    </div>
   </div>
 
   <div class="section">
@@ -4106,6 +4136,86 @@ function setupClosePageAutoSave() {
   });
 }
 
+function setupMoneyTracker() {
+  const ids = ["cp", "sp", "gp", "ep", "pp"];
+  const valueById = (id) => document.getElementById(`money-${id}`);
+  const balanceById = (id) => document.getElementById(`money-balance-${id}`);
+  const summaryEl = document.getElementById("money-summary");
+  const addBtn = document.getElementById("money-add-btn");
+  const subtractBtn = document.getElementById("money-subtract-btn");
+  if (!summaryEl || !addBtn || !subtractBtn) return;
+
+  const toSafeInt = (raw, max = null) => {
+    const parsed = parseInt(String(raw ?? "0").trim(), 10);
+    if (!Number.isFinite(parsed) || parsed < 0) return 0;
+    return max == null ? parsed : Math.min(parsed, max);
+  };
+
+  const readBalances = () => {
+    const result = {};
+    ids.forEach((id) => {
+      result[id] = toSafeInt(balanceById(id)?.value || "0");
+    });
+    return result;
+  };
+
+  const writeBalances = (next) => {
+    ids.forEach((id) => {
+      const el = balanceById(id);
+      if (!el) return;
+      el.value = String(toSafeInt(next[id]));
+      el.dispatchEvent(new Event("change"));
+    });
+  };
+
+  const normalizeAdjustInputs = () => {
+    ids.forEach((id) => {
+      const input = valueById(id);
+      if (!input) return;
+      input.value = String(toSafeInt(input.value, 999));
+    });
+  };
+
+  const toCopperValue = (values) =>
+    (values.cp * 1) +
+    (values.sp * 10) +
+    (values.ep * 50) +
+    (values.gp * 100) +
+    (values.pp * 1000);
+
+  const updateSummary = () => {
+    const balances = readBalances();
+    summaryEl.textContent =
+      `目前財產：${balances.cp}銅 ${balances.sp}銀 ${balances.gp}金 ${balances.ep}琥珀金 ${balances.pp}白金（總值 ${toCopperValue(balances)} 銅幣）`;
+  };
+
+  const applyDelta = (sign = 1) => {
+    normalizeAdjustInputs();
+    const deltas = {};
+    ids.forEach((id) => {
+      deltas[id] = toSafeInt(valueById(id)?.value || "0", 999);
+    });
+    const current = readBalances();
+    const next = {};
+    ids.forEach((id) => {
+      next[id] = Math.max(0, current[id] + (sign * deltas[id]));
+    });
+    writeBalances(next);
+    updateSummary();
+  };
+
+  ids.forEach((id) => {
+    const input = valueById(id);
+    if (!input) return;
+    input.addEventListener("input", normalizeAdjustInputs);
+    input.addEventListener("change", normalizeAdjustInputs);
+  });
+
+  addBtn.addEventListener("click", () => applyDelta(1));
+  subtractBtn.addEventListener("click", () => applyDelta(-1));
+  updateSummary();
+}
+
 // ====== 頁面載入時全自動初始化 ======
 window.addEventListener("DOMContentLoaded", async function() {
   updateExtraLanguageFields();
@@ -4159,6 +4269,7 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
   setupVisibilityAutoSave();
   setupClosePageAutoSave();
   setupAutoSave();
+  setupMoneyTracker();
   // 5. 綁定清除紀錄按鈕
   const clearBtn = document.getElementById('clear-storage-btn');
   if (clearBtn) {
