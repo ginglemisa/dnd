@@ -571,7 +571,7 @@
         <div class="money-empty-cell" aria-hidden="true"></div>
         <div class="money-action-placeholder"></div>
       </div>
-      <p id="money-summary" class="money-summary">目前財產：0銅 0銀 0金 0琥珀金 0白金（總值 0 銅幣）</p>
+      <p id="money-summary" class="money-summary">目前財產：0銅0銀0金0白金</p>
       <input type="hidden" id="money-balance-cp" value="0">
       <input type="hidden" id="money-balance-sp" value="0">
       <input type="hidden" id="money-balance-gp" value="0">
@@ -4147,8 +4147,9 @@ function setupMoneyTracker() {
 
   const toSafeInt = (raw, max = null) => {
     const parsed = parseInt(String(raw ?? "0").trim(), 10);
-    if (!Number.isFinite(parsed) || parsed < 0) return 0;
-    return max == null ? parsed : Math.min(parsed, max);
+    if (!Number.isFinite(parsed)) return 0;
+    if (max == null) return parsed;
+    return Math.min(Math.max(parsed, 0), max);
   };
 
   const readBalances = () => {
@@ -4183,10 +4184,21 @@ function setupMoneyTracker() {
     (values.gp * 100) +
     (values.pp * 1000);
 
+  const formatConvertedSummary = (copperTotal) => {
+    const sign = copperTotal < 0 ? "-" : "";
+    let remain = Math.abs(copperTotal);
+    const pp = Math.floor(remain / 1000);
+    remain %= 1000;
+    const gp = Math.floor(remain / 100);
+    remain %= 100;
+    const sp = Math.floor(remain / 10);
+    remain %= 10;
+    const cp = remain;
+    return `目前財產：${sign}${cp}銅${sp}銀${gp}金${pp}白金`;
+  };
+
   const updateSummary = () => {
-    const balances = readBalances();
-    summaryEl.textContent =
-      `目前財產：${balances.cp}銅 ${balances.sp}銀 ${balances.gp}金 ${balances.ep}琥珀金 ${balances.pp}白金（總值 ${toCopperValue(balances)} 銅幣）`;
+    summaryEl.textContent = formatConvertedSummary(toCopperValue(readBalances()));
   };
 
   const applyDelta = (sign = 1) => {
@@ -4198,7 +4210,7 @@ function setupMoneyTracker() {
     const current = readBalances();
     const next = {};
     ids.forEach((id) => {
-      next[id] = Math.max(0, current[id] + (sign * deltas[id]));
+      next[id] = current[id] + (sign * deltas[id]);
     });
     writeBalances(next);
     updateSummary();
