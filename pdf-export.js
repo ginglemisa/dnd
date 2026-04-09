@@ -99,6 +99,86 @@
     }
   }
 
+  function promptGoliathAncestry() {
+    const options = [
+      { key: 'cloud', label: '雲巨人' },
+      { key: 'fire', label: '火巨人' },
+      { key: 'frost', label: '霜巨人' },
+      { key: 'hill', label: '山丘巨人' },
+      { key: 'stone', label: '石巨人' },
+      { key: 'storm', label: '風暴巨人' }
+    ];
+    return new Promise((resolve) => {
+      const overlay = document.createElement('div');
+      overlay.style.cssText = [
+        'position:fixed',
+        'inset:0',
+        'background:rgba(15,23,42,0.48)',
+        'display:flex',
+        'align-items:center',
+        'justify-content:center',
+        'z-index:9999',
+        'padding:16px'
+      ].join(';');
+
+      const dialog = document.createElement('div');
+      dialog.style.cssText = [
+        'width:min(480px,100%)',
+        'background:#fff',
+        'border-radius:14px',
+        'padding:16px',
+        'box-shadow:0 18px 46px rgba(15,23,42,0.25)',
+        'display:grid',
+        'gap:12px'
+      ].join(';');
+
+      const title = document.createElement('h3');
+      title.textContent = '選擇歌利亞巨人血統';
+      title.style.cssText = 'margin:0;font-size:1.08rem;';
+      dialog.appendChild(title);
+
+      const hint = document.createElement('p');
+      hint.textContent = '請點選一個巨人類型。';
+      hint.style.cssText = 'margin:0;color:#475467;font-size:0.94rem;';
+      dialog.appendChild(hint);
+
+      const grid = document.createElement('div');
+      grid.style.cssText = 'display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;';
+      options.forEach((option) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = option.label;
+        button.style.minHeight = '42px';
+        button.addEventListener('click', () => {
+          overlay.remove();
+          resolve(option.key);
+        });
+        grid.appendChild(button);
+      });
+      dialog.appendChild(grid);
+
+      const cancelBtn = document.createElement('button');
+      cancelBtn.type = 'button';
+      cancelBtn.textContent = '取消';
+      cancelBtn.style.cssText = 'min-height:38px;background:#f8fafc;border-color:#d0d5dd;color:#344054;';
+      cancelBtn.addEventListener('click', () => {
+        overlay.remove();
+        resolve('');
+      });
+      dialog.appendChild(cancelBtn);
+
+      overlay.addEventListener('click', (event) => {
+        if (event.target === overlay) {
+          overlay.remove();
+          resolve('');
+        }
+      });
+
+      overlay.appendChild(dialog);
+      document.body.appendChild(overlay);
+    });
+  }
+
   function applyPayloadToForm(form, payload) {
     const missingFields = [];
 
@@ -185,9 +265,15 @@
     const pdfDoc = await globalScope.PDFLib.PDFDocument.load(sourceBytes);
     const form = pdfDoc.getForm();
     const characterName = promptCharacterName();
+    const goliathAncestry = state?.race === 'goliath' ? await promptGoliathAncestry() : '';
     const size = promptCharacterSize();
     const includeDefaultEquipment = promptIncludeDefaultEquipment();
-    const payload = globalScope.buildPdfFieldPayload(state, { characterName, size, includeDefaultEquipment });
+    const payload = globalScope.buildPdfFieldPayload(state, {
+      characterName,
+      goliathAncestry,
+      size,
+      includeDefaultEquipment
+    });
     const missingFields = applyPayloadToForm(form, payload);
 
     if (missingFields.length > 0) {

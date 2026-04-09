@@ -148,6 +148,53 @@
     cha: '魅力'
   });
 
+  const METAMAGIC_OPTION_NAMES = Object.freeze([
+    '謹慎法術',
+    '遠程法術',
+    '強效法術',
+    '延效法術',
+    '升階法術',
+    '瞬發法術',
+    '追蹤法術',
+    '精妙法術',
+    '轉化法術',
+    '孿生法術'
+  ]);
+
+  const ELDRITCH_INVOCATION_OPTIONS = Object.freeze([
+    { name: '刃之魔契', max: 1 },
+    { name: '鏈之魔契', max: 1 },
+    { name: '書之魔契', max: 1 },
+    { name: '幽影護甲', max: 1 },
+    { name: '魔能意志', max: 1 },
+    { name: '邪魔活力', max: 1 },
+    { name: '千面之臉', max: 1 },
+    { name: '幻象迷蹤', max: 1 },
+    { name: '超凡跳躍', max: 1 },
+    { name: '魔鬼視界', max: 1 },
+    { name: '原初之一教習', max: 3 },
+    { name: '苦痛魔爆', max: 3 },
+    { name: '魔能長槍', max: 3 },
+    { name: '斥力魔爆', max: 3 },
+    { name: '星移步法', max: 1 },
+    { name: '萬形之主', max: 1 },
+    { name: '融身入影', max: 1 },
+    { name: '深海饋贈', max: 1 },
+    { name: '共視感官', max: 1 },
+    { name: '魔能斬擊', max: 1 },
+    { name: '饑渴魔刃', max: 1 },
+    { name: '鏈主賦能', max: 1 }
+  ]);
+
+  const GOLIATH_ANCESTRY_LABELS = Object.freeze({
+    cloud: '雲巨人',
+    fire: '火巨人',
+    frost: '霜巨人',
+    hill: '山丘巨人',
+    stone: '石巨人',
+    storm: '風暴巨人'
+  });
+
   function normalizeText(value) {
     if (value === undefined || value === null) return '';
     return String(value).trim();
@@ -437,6 +484,40 @@
       .filter(Boolean);
   }
 
+  function getSelectedMetamagicNames(state) {
+    return METAMAGIC_OPTION_NAMES
+      .map((name, index) => ({ name, checked: Boolean(state[`metamagic-option-${index + 1}`]) }))
+      .filter((item) => item.checked)
+      .map((item) => item.name);
+  }
+
+  function getSelectedEldritchInvocationNames(state) {
+    const picks = [];
+    ELDRITCH_INVOCATION_OPTIONS.forEach((option, index) => {
+      for (let slot = 1; slot <= option.max; slot++) {
+        if (state[`eldritch-invocation-${index}-${slot}`]) {
+          picks.push(option.name);
+        }
+      }
+    });
+    return picks;
+  }
+
+  function buildGoliathRaceFeatureText(level, selectedAncestry) {
+    const lines = ['巨人血統', '身強力壯'];
+    const ancestryLabel = GOLIATH_ANCESTRY_LABELS[selectedAncestry];
+    if (ancestryLabel) {
+      lines.push(`${ancestryLabel}特性`);
+    }
+
+    const parsedLevel = Number.parseInt(level, 10);
+    if (Number.isFinite(parsedLevel) && parsedLevel >= 5) {
+      lines.push('巨化形體');
+    }
+
+    return wrapTextForPdf(lines.join('\n'), { maxUnitsPerLine: 34, maxLines: 8 });
+  }
+
   function buildPdfFieldPayload(state, options = {}) {
     const payload = {};
     const classKey = normalizeText(state.class);
@@ -499,15 +580,36 @@
     payload.classFeatures1 = classFeatureText.classFeatures1;
     payload.classFeatures2 = classFeatureText.classFeatures2;
 
-    const classExtraText = normalizeText(state['class-extra']);
-    if (classExtraText) {
-      payload.classFeatures2 = payload.classFeatures2
-        ? `${payload.classFeatures2}\n\n${classExtraText}`
-        : classExtraText;
+    const extraClassLines = [];
+    if (classKey === 'sorcerer') {
+      const metamagicNames = getSelectedMetamagicNames(state);
+      if (metamagicNames.length) {
+        extraClassLines.push(`超魔法：${metamagicNames.join('、')}`);
+      }
+    }
+    if (classKey === 'warlock') {
+      const invocationNames = getSelectedEldritchInvocationNames(state);
+      if (invocationNames.length) {
+        extraClassLines.push(`魔能祈喚：${invocationNames.join('、')}`);
+      }
     }
 
-    const raceHeadings = extractRaceFeatureHeadings(getRaceFeaturesMap()[state.race] || '');
-    payload.specie_features = wrapTextForPdf(raceHeadings.join('\n'), { maxUnitsPerLine: 34, maxLines: 8 });
+    const classExtraText = normalizeText(state['class-extra']);
+    if (classExtraText) {
+      extraClassLines.push(classExtraText);
+    }
+    if (extraClassLines.length) {
+      payload.classFeatures2 = payload.classFeatures2
+        ? `${payload.classFeatures2}\n${extraClassLines.join('\n')}`
+        : extraClassLines.join('\n');
+    }
+
+    if (state.race === 'goliath') {
+      payload.specie_features = buildGoliathRaceFeatureText(level, options.goliathAncestry);
+    } else {
+      const raceHeadings = extractRaceFeatureHeadings(getRaceFeaturesMap()[state.race] || '');
+      payload.specie_features = wrapTextForPdf(raceHeadings.join('\n'), { maxUnitsPerLine: 34, maxLines: 8 });
+    }
 
     payload.weaponsProficiency = parseClassTableValue(classKey, '武器熟練項');
     const armorTraining = parseClassTableValue(classKey, '護甲訓練');
