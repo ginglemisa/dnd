@@ -560,23 +560,30 @@
         </ul>
       </div>
       <div class="money-grid">
-        <label for="money-cp">銅幣</label>
-        <label for="money-sp">銀幣</label>
-        <label for="money-gp">金幣</label>
-
-        <input type="number" id="money-cp" min="0" max="999" step="1" inputmode="numeric" value="0">
-        <input type="number" id="money-sp" min="0" max="999" step="1" inputmode="numeric" value="0">
-        <input type="number" id="money-gp" min="0" max="999" step="1" inputmode="numeric" value="0">
-
-        <label for="money-ep">琥珀金幣</label>
-        <label for="money-pp">白金幣</label>
-        <div class="money-action-stack" aria-label="加減金額">
+        <div class="money-cell money-cell-cp">
+          <label for="money-cp">銅幣</label>
+          <input type="number" id="money-cp" min="0" max="999" step="1" inputmode="numeric" value="0">
+        </div>
+        <div class="money-cell money-cell-sp">
+          <label for="money-sp">銀幣</label>
+          <input type="number" id="money-sp" min="0" max="999" step="1" inputmode="numeric" value="0">
+        </div>
+        <div class="money-cell money-cell-gp">
+          <label for="money-gp">金幣</label>
+          <input type="number" id="money-gp" min="0" max="999" step="1" inputmode="numeric" value="0">
+        </div>
+        <div class="money-cell money-cell-ep">
+          <label for="money-ep">琥珀金幣</label>
+          <input type="number" id="money-ep" min="0" max="999" step="1" inputmode="numeric" value="0">
+        </div>
+        <div class="money-cell money-cell-pp">
+          <label for="money-pp">白金幣</label>
+          <input type="number" id="money-pp" min="0" max="999" step="1" inputmode="numeric" value="0">
+        </div>
+        <div class="money-action-stack money-cell-actions" aria-label="加減金額">
           <button type="button" id="money-add-btn" class="money-action-btn" aria-label="增加">+</button>
           <button type="button" id="money-subtract-btn" class="money-action-btn" aria-label="減少">-</button>
         </div>
-
-        <input type="number" id="money-ep" min="0" max="999" step="1" inputmode="numeric" value="0">
-        <input type="number" id="money-pp" min="0" max="999" step="1" inputmode="numeric" value="0">
       </div>
       <p id="money-summary" class="money-summary">目前財產：0銅0銀0金0白金</p>
       <input type="hidden" id="money-balance-cp" value="0">
