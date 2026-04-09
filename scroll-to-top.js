@@ -1,3 +1,32 @@
+(function initFloatingTopOffset() {
+  const tabsShell = document.querySelector(".tabs-shell");
+  if (!tabsShell) return;
+
+  const updateFloatingTopOffset = () => {
+    const shellRect = tabsShell.getBoundingClientRect();
+    const safeOffset = Math.max(Math.round(shellRect.bottom + 8), 56);
+    document.documentElement.style.setProperty("--floating-top-offset", `${safeOffset}px`);
+  };
+
+  const rafUpdateFloatingTopOffset = () => window.requestAnimationFrame(updateFloatingTopOffset);
+
+  const resizeObserver = window.ResizeObserver ? new ResizeObserver(rafUpdateFloatingTopOffset) : null;
+  resizeObserver?.observe(tabsShell);
+
+  const mutationObserver = window.MutationObserver ? new MutationObserver(rafUpdateFloatingTopOffset) : null;
+  mutationObserver?.observe(tabsShell, {
+    attributes: true,
+    attributeFilter: ["class", "style"],
+    childList: true,
+    subtree: true
+  });
+
+  window.addEventListener("resize", rafUpdateFloatingTopOffset, { passive: true });
+  window.addEventListener("orientationchange", rafUpdateFloatingTopOffset, { passive: true });
+  window.addEventListener("tabchange", rafUpdateFloatingTopOffset);
+  updateFloatingTopOffset();
+})();
+
 (function initScrollToTopButton() {
   if (document.getElementById("scrollToTopBtn")) return;
 
@@ -17,6 +46,32 @@
   };
 
   document.body.appendChild(scrollToTopBtn);
+  window.addEventListener("scroll", updateVisibility, { passive: true });
+  updateVisibility();
+})();
+
+(function initScrollToBottomButton() {
+  if (document.getElementById("scrollToBottomBtn")) return;
+
+  const scrollToBottomBtn = document.createElement("button");
+  scrollToBottomBtn.id = "scrollToBottomBtn";
+  scrollToBottomBtn.type = "button";
+  scrollToBottomBtn.textContent = "▼";
+  scrollToBottomBtn.setAttribute("aria-label", "移至當前頁面底部");
+  scrollToBottomBtn.style.display = "none";
+
+  scrollToBottomBtn.addEventListener("click", () => {
+    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
+  });
+
+  const updateVisibility = () => {
+    const scrollBottom = window.scrollY + window.innerHeight;
+    const pageBottom = document.documentElement.scrollHeight;
+    const isAtBottom = scrollBottom >= pageBottom - 1;
+    scrollToBottomBtn.style.display = isAtBottom ? "none" : "block";
+  };
+
+  document.body.appendChild(scrollToBottomBtn);
   window.addEventListener("scroll", updateVisibility, { passive: true });
   updateVisibility();
 })();
