@@ -34,10 +34,6 @@
   <script src="equipment-notes.js" defer></script>
   <script src="spell-list.js" defer></script>
   <script src="condition.js" defer></script>
-  <script src="pdf-lib.min.js" defer></script>
-  <script src="fontkit.umd.min.js" defer></script>
-  <script src="pdf-field-map.js" defer></script>
-  <script src="pdf-export.js" defer></script>
   <script src="legal-modal.js" defer></script>
   <script src="onboarding-tour.js" defer></script>
 
@@ -4085,6 +4081,50 @@ async function importStateFromJsonFile(file) {
   }
 }
 
+let pdfExportLoaderPromise = null;
+function loadScriptOnce(src) {
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector(`script[data-dynamic-src="${src}"]`);
+    if (existing?.dataset.loaded === "true") {
+      resolve();
+      return;
+    }
+    if (existing) {
+      existing.addEventListener("load", () => resolve(), { once: true });
+      existing.addEventListener("error", () => reject(new Error(`載入失敗：${src}`)), { once: true });
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = src;
+    script.defer = true;
+    script.async = false;
+    script.dataset.dynamicSrc = src;
+    script.addEventListener("load", () => {
+      script.dataset.loaded = "true";
+      resolve();
+    }, { once: true });
+    script.addEventListener("error", () => reject(new Error(`載入失敗：${src}`)), { once: true });
+    document.head.appendChild(script);
+  });
+}
+
+async function ensurePdfExportReady() {
+  if (typeof window.exportCharacterPdfFromState === "function") return;
+  if (!pdfExportLoaderPromise) {
+    pdfExportLoaderPromise = (async () => {
+      await loadScriptOnce("pdf-lib.min.js");
+      await loadScriptOnce("fontkit.umd.min.js");
+      await loadScriptOnce("pdf-field-map.js");
+      await loadScriptOnce("pdf-export.js");
+    })().catch((error) => {
+      pdfExportLoaderPromise = null;
+      throw error;
+    });
+  }
+  await pdfExportLoaderPromise;
+}
+
 const INPUT_AUTOSAVE_DEBOUNCE_MS = 10000;
 const STRUCTURE_AUTOSAVE_DEBOUNCE_MS = 3000;
 let saveAllFieldsDebounceTimer = null;
@@ -4453,13 +4493,17 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
   }
 
   const exportPdfBtn = document.getElementById("export-pdf-btn");
-  if (exportPdfBtn && typeof window.exportCharacterPdfFromState === "function") {
+  if (exportPdfBtn) {
     exportPdfBtn.addEventListener("click", async () => {
+      exportPdfBtn.disabled = true;
       try {
+        await ensurePdfExportReady();
         await window.exportCharacterPdfFromState(collectStateObject());
       } catch (error) {
         console.warn("PDF 匯出失敗：", error);
         alert("PDF 匯出失敗，請稍後重試。");
+      } finally {
+        exportPdfBtn.disabled = false;
       }
     });
   }
