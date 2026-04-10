@@ -474,8 +474,8 @@
       5: { slot1: '4', slot2: '2', slot3: '' }
     };
 
-    const fullCasterClasses = new Set(['bard', 'cleric', 'druid', 'sorcerer', 'warlock']);
-    const halfCasterClasses = new Set(['paladin', 'ranger', 'wizard']);
+    const fullCasterClasses = new Set(['bard', 'cleric', 'druid', 'sorcerer', 'warlock', 'wizard']);
+    const halfCasterClasses = new Set(['paladin', 'ranger']);
 
     if (fullCasterClasses.has(classKey)) {
       return fullCasterSlotMap[classLevel] || { slot1: '', slot2: '', slot3: '' };
