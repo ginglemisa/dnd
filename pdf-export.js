@@ -51,9 +51,30 @@
       } else {
         field.uncheck();
       }
+      syncCheckboxWidgetStates(field, checked);
       return true;
     } catch (error) {
       return false;
+    }
+  }
+
+  function syncCheckboxWidgetStates(field, checked) {
+    try {
+      const PDFName = globalScope?.PDFLib?.PDFName;
+      if (!PDFName) return;
+      const widgets = field?.acroField?.getWidgets?.();
+      if (!Array.isArray(widgets) || widgets.length === 0) return;
+
+      widgets.forEach((widget) => {
+        const appearanceState = checked
+          ? (widget?.getOnValue?.() || field?.acroField?.getOnValue?.() || PDFName.of('Yes'))
+          : PDFName.of('Off');
+
+        widget?.setAppearanceState?.(appearanceState);
+        widget?.dict?.set?.(PDFName.of('AS'), appearanceState);
+      });
+    } catch (error) {
+      console.warn('同步 checkbox 外觀狀態失敗：', error);
     }
   }
 
