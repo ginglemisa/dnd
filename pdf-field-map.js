@@ -634,11 +634,19 @@
       payload[skill.modField] = normalizeText(state[skill.modId]);
     });
 
-    const baseLang = normalizeCommaList(['通用', getLanguageLabelByValue(state.language1), getLanguageLabelByValue(state.language2)]);
-    payload.language = baseLang;
+    const baseLangLabels = ['通用', getLanguageLabelByValue(state.language1), getLanguageLabelByValue(state.language2)];
+    const extraLanguageLabels = collectExtraLanguageLabels(state);
+    const languageLabels = [...baseLangLabels];
+    extraLanguageLabels.forEach((label) => {
+      if (!label) return;
+      if (!languageLabels.includes(label)) {
+        languageLabels.push(label);
+      }
+    });
+    payload.language = normalizeCommaList(languageLabels);
 
     const classFeatureLines = extractClassFeatureHeadings(getClassFeaturesMap()[classKey] || '', level);
-    const extraLanguages = collectExtraLanguageLabels(state);
+    const extraLanguages = extraLanguageLabels;
     if (classKey === 'ranger' || classKey === 'rogue') {
       extraLanguages.forEach((label) => classFeatureLines.push(`額外語言：${label}`));
     }
