@@ -2376,6 +2376,11 @@ div[id$="spells-area"] .form-row {
   color: #4d5f84;
 }
 
+.ability-choice-tip {
+  font-weight: 700;
+  color: #2e4b85;
+}
+
 .ability-choice-actions {
   margin-top: 12px;
   display: grid;

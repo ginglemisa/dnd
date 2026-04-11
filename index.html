@@ -2040,6 +2040,17 @@ function applyDefaultAbilitiesByClass() {
     pointBuyModal.setAttribute("aria-hidden", "true");
   }
 
+  function handleEscClose(event) {
+    if (event.key !== "Escape") return;
+    if (pointBuyModal?.classList.contains("open")) {
+      closePointBuyModal();
+      return;
+    }
+    if (abilityChoiceModal?.classList.contains("open")) {
+      closeAbilityChoiceModal();
+    }
+  }
+
   triggerButton.addEventListener("click", openAbilityChoiceModal);
 
   pointBuyRows?.addEventListener("click", (event) => {
@@ -2072,8 +2083,8 @@ function applyDefaultAbilitiesByClass() {
     closePointBuyModal();
   });
   abilityChoiceDefaultBtn?.addEventListener("click", () => {
-    applyDefaultAbilitiesByClass();
-    closeAbilityChoiceModal();
+    const applied = applyDefaultAbilitiesByClass();
+    if (applied) closeAbilityChoiceModal();
   });
   abilityChoicePointBuyBtn?.addEventListener("click", () => {
     closeAbilityChoiceModal();
@@ -2093,6 +2104,7 @@ function applyDefaultAbilitiesByClass() {
     enforceBackgroundBonusRules();
     renderPointBuyRows();
   });
+  document.addEventListener("keydown", handleEscClose);
 })();
 
 
@@ -4823,6 +4835,7 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
     <button type="button" id="ability-choice-close" class="ability-choice-close" aria-label="關閉屬性選單">✕</button>
     <h3>決定屬性</h3>
     <p>請選擇要使用的方式：</p>
+    <p class="ability-choice-tip">預設屬性適合快速創角；２７購點適合自訂分配。</p>
     <div class="ability-choice-actions">
       <button type="button" id="ability-choice-default">預設屬性</button>
       <button type="button" id="ability-choice-point-buy">２７購點</button>
@@ -4834,7 +4847,7 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
   <div class="point-buy-modal-card" role="dialog" aria-modal="true" aria-label="27 點購買屬性">
     <button type="button" id="point-buy-close" class="point-buy-close" aria-label="關閉點購視窗">✕</button>
     <header class="point-buy-header">
-      <h3>🎲 27 Point Buy 彩蛋視窗</h3>
+      <h3>🎲 27購點</h3>
       <p>基礎值 8～15，總點數上限 27。背景額外加值最多 3 點（單項 +2）。</p>
       <p class="point-buy-background">目前背景：<span id="point-buy-background-label">未選擇</span></p>
       <p id="point-buy-hint" class="point-buy-hint">尚未選擇背景：背景加值欄位已鎖定</p>
