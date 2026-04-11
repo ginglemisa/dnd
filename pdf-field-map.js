@@ -75,6 +75,17 @@
     'prof-cha': 'chaSaveChk'
   });
 
+  // PDF 欄位尺寸限制（依實測校正）：
+  // - character-sheet_Cht.pdf 中 classFeatures1 / classFeatures2 / equipment 的欄位寬度都約 175pt，
+  //   且 DA 字型大小為 10（/Noto 10 Tf）。以 1 unit ≈ 半形字寬（約 5pt）估算，可容納約 35 units；
+  //   實務上取保守值 34，避免欄位右側截字。
+  // - classFeatures1 維持 8 行；classFeatures2 / equipment 不限制行數，僅限制總輸入量（最多約 1000 個中文字 = 2000 units）。
+  const PDF_TEXT_LIMITS = Object.freeze({
+    classFeatures1: Object.freeze({ maxUnitsPerLine: 34, maxLines: 8 }),
+    classFeatures2: Object.freeze({ maxUnitsPerLine: 34, maxLines: Number.MAX_SAFE_INTEGER, maxTotalUnits: 2000 }),
+    equipment: Object.freeze({ maxUnitsPerLine: 34, maxLines: Number.MAX_SAFE_INTEGER, maxTotalUnits: 2000 })
+  });
+
   const SKILL_ROWS = Object.freeze([
     { name: '運動', profId: 'prof-運動', expId: 'exp-運動', modId: 'skill-運動', chkField: 'athleticsChk', modField: 'athleticsMod' },
     { name: '體操', profId: 'prof-體操', expId: 'exp-體操', modId: 'skill-體操', chkField: 'acrobaticsChk', modField: 'acrobaticsMod' },
@@ -315,12 +326,21 @@
     if (!text) return '';
     const maxUnitsPerLine = options.maxUnitsPerLine || 40;
     const maxLines = options.maxLines || 3;
+    const maxTotalUnits = Number.isFinite(options.maxTotalUnits) ? options.maxTotalUnits : Number.POSITIVE_INFINITY;
     const sourceLines = text.split(/\n+/).map((line) => line.trim()).filter(Boolean);
     const wrapped = [];
+    let consumedUnits = 0;
+    let reachedTotalLimit = false;
 
     sourceLines.forEach((line) => {
+      if (reachedTotalLimit) return;
       let chunk = '';
       for (const ch of Array.from(line)) {
+        const charUnits = countDisplayUnits(ch);
+        if ((consumedUnits + charUnits) > maxTotalUnits) {
+          reachedTotalLimit = true;
+          break;
+        }
         const next = chunk + ch;
         if (countDisplayUnits(next) > maxUnitsPerLine && chunk) {
           wrapped.push(chunk);
@@ -328,6 +348,7 @@
         } else {
           chunk = next;
         }
+        consumedUnits += charUnits;
       }
       if (chunk) wrapped.push(chunk);
     });
@@ -672,8 +693,8 @@
       extraLanguages.forEach((label) => classFeatureLines.push(`額外語言：${label}`));
     }
     const classFeatureText = splitLinesForPdf(classFeatureLines, 140);
-    payload.classFeatures1 = classFeatureText.classFeatures1;
-    payload.classFeatures2 = classFeatureText.classFeatures2;
+    payload.classFeatures1 = wrapTextForPdf(classFeatureText.classFeatures1, PDF_TEXT_LIMITS.classFeatures1);
+    payload.classFeatures2 = wrapTextForPdf(classFeatureText.classFeatures2, PDF_TEXT_LIMITS.classFeatures2);
 
     const extraClassLines = [];
     if (classKey === 'sorcerer') {
@@ -693,10 +714,19 @@
     if (classExtraText) {
       extraClassLines.push(classExtraText);
     }
+    const skillExtraText = normalizeText(state['skill-extra']);
+    if (skillExtraText) {
+      extraClassLines.push(`技能備註：${skillExtraText}`);
+    }
+    const spellNotesText = normalizeText(state['spell-notes']);
+    if (spellNotesText) {
+      extraClassLines.push(`法術筆記：${spellNotesText}`);
+    }
     if (extraClassLines.length) {
       payload.classFeatures2 = payload.classFeatures2
         ? `${payload.classFeatures2}\n${extraClassLines.join('\n')}`
         : extraClassLines.join('\n');
+      payload.classFeatures2 = wrapTextForPdf(payload.classFeatures2, PDF_TEXT_LIMITS.classFeatures2);
     }
 
     if (state.race === 'goliath') {
@@ -774,15 +804,19 @@
       payload.Name = normalizeText(options.characterName);
     }
 
+    const gearExtraText = normalizeText(state['gear-extra']);
+    if (gearExtraText) {
+      payload.equipment = [payload.equipment, `其他裝備備註：${gearExtraText}`]
+        .filter(Boolean)
+        .join('\n');
+    }
+
     if (options.includeDefaultEquipment) {
       const classEq = parseClassDefaultEquipment(classKey);
       const bgEq = normalizeText(getBackgroundMap()[backgroundKey]?.裝備A);
-      payload.equipment = wrapTextForPdf([classEq, bgEq, payload.equipment].filter(Boolean).join('\n'), {
-        maxUnitsPerLine: 52,
-        maxLines: 12
-      });
+      payload.equipment = wrapTextForPdf([classEq, bgEq, payload.equipment].filter(Boolean).join('\n'), PDF_TEXT_LIMITS.equipment);
     } else {
-      payload.equipment = wrapTextForPdf(payload.equipment, { maxUnitsPerLine: 52, maxLines: 12 });
+      payload.equipment = wrapTextForPdf(payload.equipment, PDF_TEXT_LIMITS.equipment);
     }
 
     return payload;
