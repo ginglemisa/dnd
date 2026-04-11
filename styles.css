@@ -2352,8 +2352,23 @@ div[id$="spells-area"] .form-row {
   position: absolute;
   top: 10px;
   right: 10px;
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0;
+  margin: 0;
   border: 1px solid #cfd9ee;
   background: #fff;
+  border-radius: 10px;
+  box-shadow: none;
+  font-size: 1.2rem;
+  font-weight: 800;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
 }
 
 .point-buy-header {
@@ -2416,15 +2431,35 @@ div[id$="spells-area"] .form-row {
 .point-buy-control-group {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
 }
 
 .point-buy-step {
-  width: 30px;
-  height: 30px;
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0;
+  margin: 0;
   border: 1px solid #c9d5ea;
   background: #fff;
+  border-radius: 999px;
+  box-shadow: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.08rem;
+  font-weight: 900;
   line-height: 1;
+}
+
+.point-buy-step:hover,
+.point-buy-step:active,
+.point-buy-close:hover,
+.point-buy-close:active {
+  transform: none;
+  box-shadow: none;
 }
 
 .point-buy-step:disabled {
