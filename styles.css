@@ -2217,7 +2217,8 @@ div[id$="spells-area"] .form-row {
 }
 
 #spell-qr-modal,
-#deity-info-modal {
+#deity-info-modal,
+#point-buy-modal {
   position: fixed;
   inset: 0;
   display: none;
@@ -2237,8 +2238,15 @@ div[id$="spells-area"] .form-row {
   background: rgba(7, 12, 24, 0.62);
 }
 
+#point-buy-modal {
+  z-index: 10003;
+  padding: 14px;
+  background: rgba(10, 14, 28, 0.66);
+}
+
 #spell-qr-modal.open,
-#deity-info-modal.open {
+#deity-info-modal.open,
+#point-buy-modal.open {
   display: flex;
 }
 
@@ -2326,6 +2334,134 @@ div[id$="spells-area"] .form-row {
   margin: 0 0 8px;
   font-size: var(--fs-base);
   color: #243968;
+}
+
+.point-buy-modal-card {
+  position: relative;
+  width: min(96vw, 680px);
+  max-height: min(88vh, 920px);
+  overflow-y: auto;
+  border: 1px solid #d3deef;
+  border-radius: 18px;
+  padding: 14px 14px 16px;
+  background: linear-gradient(180deg, #ffffff 0%, #f5f8ff 100%);
+  box-shadow: 0 20px 56px rgba(14, 24, 52, 0.36);
+}
+
+.point-buy-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid #cfd9ee;
+  background: #fff;
+}
+
+.point-buy-header {
+  margin-bottom: 10px;
+  padding-right: 36px;
+}
+
+.point-buy-header h3 {
+  margin: 0;
+  color: #223664;
+}
+
+.point-buy-header p {
+  margin: 6px 0 0;
+  color: #4b5c7f;
+  font-size: var(--fs-sm);
+}
+
+.point-buy-hint {
+  font-weight: 700;
+  color: #395489;
+}
+
+.point-buy-table-head,
+.point-buy-row {
+  display: grid;
+  grid-template-columns: 88px 1fr 1fr 52px;
+  align-items: center;
+  gap: 8px;
+}
+
+.point-buy-table-head {
+  padding: 6px 10px;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: #1f315f;
+}
+
+.point-buy-rows {
+  display: grid;
+  gap: 6px;
+}
+
+.point-buy-row {
+  padding: 8px 10px;
+  border: 1px solid #d8e2f2;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.point-buy-row--bonus-locked {
+  background: #f3f5f9;
+}
+
+.point-buy-ability {
+  font-weight: 700;
+  color: #223664;
+}
+
+.point-buy-control-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.point-buy-step {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #c9d5ea;
+  background: #fff;
+  line-height: 1;
+}
+
+.point-buy-step:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.point-buy-value {
+  min-width: 26px;
+  text-align: center;
+  font-weight: 700;
+  color: #1d315f;
+}
+
+.point-buy-value--bonus {
+  color: #2d4f8f;
+}
+
+.point-buy-total {
+  text-align: center;
+  font-weight: 800;
+  color: #132a56;
+}
+
+.point-buy-summary {
+  margin-top: 10px;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  color: #2a3f6f;
+}
+
+.point-buy-actions {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .deity-grid {

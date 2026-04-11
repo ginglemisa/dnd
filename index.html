@@ -1823,12 +1823,12 @@ const defaultAbilityByClass = {
   wizard:    [8, 12, 13, 15, 14, 10]
 };
 
-document.getElementById("set-default-abilities").addEventListener("click", () => {
+function applyDefaultAbilitiesByClass() {
   const selectedClass = document.getElementById("class").value;
   const stats = defaultAbilityByClass[selectedClass];
   if (!stats) {
     alert("請先選擇職業！");
-    return;
+    return false;
   }
 
   const [str, dex, con, int_, wis, cha] = stats;
@@ -1842,7 +1842,259 @@ document.getElementById("set-default-abilities").addEventListener("click", () =>
   }
 
   if (typeof scheduleSaveAllFields === "function") scheduleSaveAllFields();
-});
+  return true;
+}
+
+(() => {
+  const triggerButton = document.getElementById("set-default-abilities");
+  const pointBuyModal = document.getElementById("point-buy-modal");
+  if (!triggerButton) return;
+
+  triggerButton.addEventListener("click", () => {
+    applyDefaultAbilitiesByClass();
+  });
+
+  const HOLD_MS = 6000;
+  let holdTimer = null;
+  let easterEggShown = false;
+  const BASE_MIN = 8;
+  const BASE_MAX = 15;
+  const POINT_BUDGET = 27;
+  const abilities = ["str", "dex", "con", "int", "wis", "cha"];
+  const abilityLabels = {
+    str: "力量",
+    dex: "敏捷",
+    con: "體質",
+    int: "智力",
+    wis: "感知",
+    cha: "魅力"
+  };
+  const backgroundAbilityMap = {
+    acolyte: ["int", "wis", "cha"],
+    criminal: ["dex", "con", "int"],
+    sage: ["con", "int", "wis"],
+    soldier: ["str", "dex", "con"]
+  };
+  const pointCostTable = {
+    8: 0,
+    9: 1,
+    10: 2,
+    11: 3,
+    12: 4,
+    13: 5,
+    14: 7,
+    15: 9
+  };
+  const pointBuyState = {
+    base: { str: 8, dex: 8, con: 8, int: 8, wis: 8, cha: 8 },
+    bonus: { str: 0, dex: 0, con: 0, int: 0, wis: 0, cha: 0 }
+  };
+
+  const pointBuyRows = document.getElementById("point-buy-rows");
+  const pointBuyUsed = document.getElementById("point-buy-used");
+  const pointBuyRemain = document.getElementById("point-buy-remain");
+  const pointBuyHint = document.getElementById("point-buy-hint");
+  const pointBuyBackgroundLabel = document.getElementById("point-buy-background-label");
+  const pointBuyApplyBtn = document.getElementById("point-buy-apply");
+  const pointBuyResetBtn = document.getElementById("point-buy-reset");
+  const pointBuyCloseBtn = document.getElementById("point-buy-close");
+  const backgroundSelect = document.getElementById("background");
+
+  function getBackgroundBonusAbilities() {
+    if (!backgroundSelect) return [];
+    return backgroundAbilityMap[backgroundSelect.value] || [];
+  }
+
+  function getSpentPoints() {
+    return abilities.reduce((total, key) => total + (pointCostTable[pointBuyState.base[key]] || 0), 0);
+  }
+
+  function getRemainingPoints() {
+    return POINT_BUDGET - getSpentPoints();
+  }
+
+  function resetBonusByBackground() {
+    const allowed = new Set(getBackgroundBonusAbilities());
+    for (const key of abilities) {
+      if (!allowed.has(key)) pointBuyState.bonus[key] = 0;
+    }
+  }
+
+  function enforceBackgroundBonusRules() {
+    const allowed = new Set(getBackgroundBonusAbilities());
+    let bonusTotal = abilities.reduce((sum, key) => sum + (allowed.has(key) ? pointBuyState.bonus[key] : 0), 0);
+    if (bonusTotal <= 3) return;
+
+    for (const key of abilities) {
+      if (!allowed.has(key)) continue;
+      while (pointBuyState.bonus[key] > 0 && bonusTotal > 3) {
+        pointBuyState.bonus[key] -= 1;
+        bonusTotal -= 1;
+      }
+      if (bonusTotal <= 3) break;
+    }
+  }
+
+  function syncPointBuyHeader() {
+    if (!pointBuyBackgroundLabel || !pointBuyHint) return;
+    const allowed = getBackgroundBonusAbilities();
+    const selectedBackgroundName = backgroundSelect?.selectedOptions?.[0]?.textContent || "未選擇";
+    const hasBackground = allowed.length === 3;
+    pointBuyBackgroundLabel.textContent = hasBackground ? selectedBackgroundName : "未選擇";
+    pointBuyHint.textContent = hasBackground
+      ? `背景加值可分配在：${allowed.map((key) => abilityLabels[key]).join("、")}（共 3 點，單項上限 +2）`
+      : "尚未選擇背景：背景加值欄位已鎖定";
+  }
+
+  function renderPointBuyRows() {
+    if (!pointBuyRows) return;
+    const allowed = new Set(getBackgroundBonusAbilities());
+    const bonusTotal = abilities.reduce((sum, key) => sum + pointBuyState.bonus[key], 0);
+    const remaining = getRemainingPoints();
+
+    pointBuyRows.innerHTML = abilities.map((key) => {
+      const baseValue = pointBuyState.base[key];
+      const bonusValue = pointBuyState.bonus[key];
+      const totalValue = baseValue + bonusValue;
+      const canMinusBase = baseValue > BASE_MIN;
+      const canPlusBase = baseValue < BASE_MAX && remaining >= ((pointCostTable[baseValue + 1] || 0) - (pointCostTable[baseValue] || 0));
+      const bonusEnabled = allowed.has(key);
+      const canMinusBonus = bonusEnabled && bonusValue > 0;
+      const canPlusBonus = bonusEnabled && bonusValue < 2 && bonusTotal < 3;
+      return `
+        <div class="point-buy-row ${bonusEnabled ? "" : "point-buy-row--bonus-locked"}" data-ability="${key}">
+          <div class="point-buy-ability">${abilityLabels[key]}</div>
+          <div class="point-buy-control-group">
+            <button type="button" class="point-buy-step" data-action="base-dec" data-ability="${key}" ${canMinusBase ? "" : "disabled"}>▼</button>
+            <span class="point-buy-value">${baseValue}</span>
+            <button type="button" class="point-buy-step" data-action="base-inc" data-ability="${key}" ${canPlusBase ? "" : "disabled"}>▲</button>
+          </div>
+          <div class="point-buy-control-group point-buy-control-group--bonus">
+            <button type="button" class="point-buy-step" data-action="bonus-dec" data-ability="${key}" ${canMinusBonus ? "" : "disabled"}>▼</button>
+            <span class="point-buy-value point-buy-value--bonus">${bonusEnabled ? `+${bonusValue}` : "—"}</span>
+            <button type="button" class="point-buy-step" data-action="bonus-inc" data-ability="${key}" ${canPlusBonus ? "" : "disabled"}>▲</button>
+          </div>
+          <div class="point-buy-total">${totalValue}</div>
+        </div>
+      `;
+    }).join("");
+
+    if (pointBuyUsed) pointBuyUsed.textContent = String(getSpentPoints());
+    if (pointBuyRemain) pointBuyRemain.textContent = String(POINT_BUDGET - getSpentPoints());
+    if (pointBuyApplyBtn) pointBuyApplyBtn.disabled = getSpentPoints() > POINT_BUDGET;
+    syncPointBuyHeader();
+  }
+
+  function resetPointBuyState() {
+    for (const key of abilities) {
+      pointBuyState.base[key] = 8;
+      pointBuyState.bonus[key] = 0;
+    }
+    resetBonusByBackground();
+    renderPointBuyRows();
+  }
+
+  function initializePointBuyFromCurrentStats() {
+    for (const key of abilities) {
+      const raw = Number(document.getElementById(key)?.value || 8);
+      pointBuyState.base[key] = Math.min(BASE_MAX, Math.max(BASE_MIN, Number.isFinite(raw) ? raw : 8));
+      pointBuyState.bonus[key] = 0;
+    }
+    if (getSpentPoints() > POINT_BUDGET) {
+      for (const key of abilities) pointBuyState.base[key] = 8;
+    }
+    resetBonusByBackground();
+    renderPointBuyRows();
+  }
+
+  function applyPointBuyToSheet() {
+    for (const key of abilities) {
+      const finalValue = pointBuyState.base[key] + pointBuyState.bonus[key];
+      const field = document.getElementById(key);
+      if (!field) continue;
+      field.value = finalValue;
+      field.dispatchEvent(new Event("input"));
+    }
+    if (typeof scheduleSaveAllFields === "function") scheduleSaveAllFields();
+  }
+
+  function openPointBuyModal() {
+    if (!pointBuyModal) return;
+    initializePointBuyFromCurrentStats();
+    pointBuyModal.classList.add("open");
+    pointBuyModal.setAttribute("aria-hidden", "false");
+  }
+
+  function closePointBuyModal() {
+    if (!pointBuyModal) return;
+    pointBuyModal.classList.remove("open");
+    pointBuyModal.setAttribute("aria-hidden", "true");
+  }
+
+  pointBuyRows?.addEventListener("click", (event) => {
+    const btn = event.target.closest("button[data-action][data-ability]");
+    if (!btn) return;
+    const action = btn.dataset.action;
+    const key = btn.dataset.ability;
+    if (!abilities.includes(key)) return;
+
+    if (action === "base-dec" && pointBuyState.base[key] > BASE_MIN) pointBuyState.base[key] -= 1;
+    if (action === "base-inc" && pointBuyState.base[key] < BASE_MAX) {
+      const currentCost = pointCostTable[pointBuyState.base[key]] || 0;
+      const nextCost = pointCostTable[pointBuyState.base[key] + 1] || 0;
+      if (getRemainingPoints() >= (nextCost - currentCost)) {
+        pointBuyState.base[key] += 1;
+      }
+    }
+
+    const allowed = new Set(getBackgroundBonusAbilities());
+    const bonusTotal = abilities.reduce((sum, ability) => sum + pointBuyState.bonus[ability], 0);
+    if (action === "bonus-dec" && allowed.has(key) && pointBuyState.bonus[key] > 0) pointBuyState.bonus[key] -= 1;
+    if (action === "bonus-inc" && allowed.has(key) && pointBuyState.bonus[key] < 2 && bonusTotal < 3) pointBuyState.bonus[key] += 1;
+
+    enforceBackgroundBonusRules();
+    renderPointBuyRows();
+  });
+
+  pointBuyApplyBtn?.addEventListener("click", () => {
+    applyPointBuyToSheet();
+    closePointBuyModal();
+  });
+  pointBuyResetBtn?.addEventListener("click", resetPointBuyState);
+  pointBuyCloseBtn?.addEventListener("click", closePointBuyModal);
+  pointBuyModal?.addEventListener("click", (event) => {
+    if (event.target === pointBuyModal) closePointBuyModal();
+  });
+  backgroundSelect?.addEventListener("change", () => {
+    resetBonusByBackground();
+    enforceBackgroundBonusRules();
+    renderPointBuyRows();
+  });
+
+  function startHoldTimer() {
+    clearTimeout(holdTimer);
+    easterEggShown = false;
+
+    holdTimer = setTimeout(() => {
+      easterEggShown = true;
+      openPointBuyModal();
+    }, HOLD_MS);
+  }
+
+  function stopHoldTimer() {
+    if (!easterEggShown) {
+      clearTimeout(holdTimer);
+    }
+    holdTimer = null;
+  }
+
+  triggerButton.addEventListener("mousedown", startHoldTimer);
+  triggerButton.addEventListener("touchstart", startHoldTimer, { passive: true });
+  triggerButton.addEventListener("mouseup", stopHoldTimer);
+  triggerButton.addEventListener("mouseleave", stopHoldTimer);
+  triggerButton.addEventListener("touchend", stopHoldTimer);
+  triggerButton.addEventListener("touchcancel", stopHoldTimer);
+})();
 
 
     const actionDescriptions = {
@@ -4564,6 +4816,36 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
       <h3>📜 被遺忘國度 神祉整理</h3>
     </header>
     <div id="deity-info-content" class="deity-info-content"></div>
+  </div>
+</div>
+
+<div id="point-buy-modal" aria-hidden="true">
+  <div class="point-buy-modal-card" role="dialog" aria-modal="true" aria-label="27 點購買屬性">
+    <button type="button" id="point-buy-close" class="point-buy-close" aria-label="關閉點購視窗">✕</button>
+    <header class="point-buy-header">
+      <h3>🎲 27 Point Buy 彩蛋視窗</h3>
+      <p>基礎值 8～15，總點數上限 27。背景額外加值最多 3 點（單項 +2）。</p>
+      <p class="point-buy-background">目前背景：<span id="point-buy-background-label">未選擇</span></p>
+      <p id="point-buy-hint" class="point-buy-hint">尚未選擇背景：背景加值欄位已鎖定</p>
+    </header>
+
+    <div class="point-buy-table-head">
+      <span>屬性</span>
+      <span>基礎值</span>
+      <span>背景加值</span>
+      <span>總值</span>
+    </div>
+    <div id="point-buy-rows" class="point-buy-rows"></div>
+
+    <div class="point-buy-summary">
+      <span>已用點數：<strong id="point-buy-used">0</strong> / 27</span>
+      <span>剩餘點數：<strong id="point-buy-remain">27</strong></span>
+    </div>
+
+    <div class="point-buy-actions">
+      <button type="button" id="point-buy-reset">重設</button>
+      <button type="button" id="point-buy-apply">套用到角色</button>
+    </div>
   </div>
 </div>
 
