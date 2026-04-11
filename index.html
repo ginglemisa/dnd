@@ -1846,6 +1846,7 @@ function applyDefaultAbilitiesByClass() {
 }
 
 (() => {
+  document.addEventListener("DOMContentLoaded", () => {
   const triggerButton = document.getElementById("set-default-abilities");
   const abilityChoiceModal = document.getElementById("ability-choice-modal");
   const pointBuyModal = document.getElementById("point-buy-modal");
@@ -2105,6 +2106,7 @@ function applyDefaultAbilitiesByClass() {
     renderPointBuyRows();
   });
   document.addEventListener("keydown", handleEscClose);
+  });
 })();
 
 
