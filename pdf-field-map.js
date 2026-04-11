@@ -435,8 +435,8 @@
   function convertDurationForNote(raw) {
     const text = normalizeText(raw);
     if (!text) return '';
-    if (/立即[，,]?/.test(text)) return '';
-    if (/專注[，,]?/.test(text)) return '';
+    if (/立即[，]?/.test(text)) return '';
+    if (/專注[，]?/.test(text)) return '';
 
     let converted = text;
     converted = converted.replace(/(\d+)\s*分鐘/g, '$1M');
