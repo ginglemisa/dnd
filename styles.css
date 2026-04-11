@@ -2218,6 +2218,7 @@ div[id$="spells-area"] .form-row {
 
 #spell-qr-modal,
 #deity-info-modal,
+#ability-choice-modal,
 #point-buy-modal {
   position: fixed;
   inset: 0;
@@ -2244,8 +2245,15 @@ div[id$="spells-area"] .form-row {
   background: rgba(10, 14, 28, 0.66);
 }
 
+#ability-choice-modal {
+  z-index: 10003;
+  padding: 14px;
+  background: rgba(10, 14, 28, 0.58);
+}
+
 #spell-qr-modal.open,
 #deity-info-modal.open,
+#ability-choice-modal.open,
 #point-buy-modal.open {
   display: flex;
 }
@@ -2346,6 +2354,53 @@ div[id$="spells-area"] .form-row {
   padding: 14px 14px 16px;
   background: linear-gradient(180deg, #ffffff 0%, #f5f8ff 100%);
   box-shadow: 0 20px 56px rgba(14, 24, 52, 0.36);
+}
+
+.ability-choice-card {
+  position: relative;
+  width: min(92vw, 360px);
+  border: 1px solid #d3deef;
+  border-radius: 16px;
+  padding: 16px 14px 14px;
+  background: linear-gradient(180deg, #ffffff 0%, #f5f8ff 100%);
+  box-shadow: 0 18px 44px rgba(15, 26, 58, 0.3);
+}
+
+.ability-choice-card h3 {
+  margin: 0;
+  color: #223664;
+}
+
+.ability-choice-card p {
+  margin: 8px 0 0;
+  color: #4d5f84;
+}
+
+.ability-choice-actions {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.ability-choice-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  min-height: 30px;
+  padding: 0;
+  margin: 0;
+  border: 1px solid #cfd9ee;
+  background: #fff;
+  border-radius: 9px;
+  box-shadow: none;
+  font-size: 1.05rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .point-buy-close {
@@ -2456,6 +2511,8 @@ div[id$="spells-area"] .form-row {
 
 .point-buy-step:hover,
 .point-buy-step:active,
+.ability-choice-close:hover,
+.ability-choice-close:active,
 .point-buy-close:hover,
 .point-buy-close:active {
   transform: none;

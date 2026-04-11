@@ -194,7 +194,7 @@
     </div>
     <div class="mini-stat-card">
       <div class="mini-stat-label">快速創角</div>
-      <button id="set-default-abilities" type="button" class="button-compact">預設屬性</button>
+      <button id="set-default-abilities" type="button" class="button-compact">決定屬性</button>
     </div>
   </div>
 </div>
@@ -1847,16 +1847,10 @@ function applyDefaultAbilitiesByClass() {
 
 (() => {
   const triggerButton = document.getElementById("set-default-abilities");
+  const abilityChoiceModal = document.getElementById("ability-choice-modal");
   const pointBuyModal = document.getElementById("point-buy-modal");
   if (!triggerButton) return;
 
-  triggerButton.addEventListener("click", () => {
-    applyDefaultAbilitiesByClass();
-  });
-
-  const HOLD_MS = 6000;
-  let holdTimer = null;
-  let easterEggShown = false;
   const BASE_MIN = 8;
   const BASE_MAX = 15;
   const POINT_BUDGET = 27;
@@ -1898,7 +1892,22 @@ function applyDefaultAbilitiesByClass() {
   const pointBuyApplyBtn = document.getElementById("point-buy-apply");
   const pointBuyResetBtn = document.getElementById("point-buy-reset");
   const pointBuyCloseBtn = document.getElementById("point-buy-close");
+  const abilityChoiceCloseBtn = document.getElementById("ability-choice-close");
+  const abilityChoiceDefaultBtn = document.getElementById("ability-choice-default");
+  const abilityChoicePointBuyBtn = document.getElementById("ability-choice-point-buy");
   const backgroundSelect = document.getElementById("background");
+
+  function openAbilityChoiceModal() {
+    if (!abilityChoiceModal) return;
+    abilityChoiceModal.classList.add("open");
+    abilityChoiceModal.setAttribute("aria-hidden", "false");
+  }
+
+  function closeAbilityChoiceModal() {
+    if (!abilityChoiceModal) return;
+    abilityChoiceModal.classList.remove("open");
+    abilityChoiceModal.setAttribute("aria-hidden", "true");
+  }
 
   function getBackgroundBonusAbilities() {
     if (!backgroundSelect) return [];
@@ -2031,6 +2040,8 @@ function applyDefaultAbilitiesByClass() {
     pointBuyModal.setAttribute("aria-hidden", "true");
   }
 
+  triggerButton.addEventListener("click", openAbilityChoiceModal);
+
   pointBuyRows?.addEventListener("click", (event) => {
     const btn = event.target.closest("button[data-action][data-ability]");
     if (!btn) return;
@@ -2060,6 +2071,18 @@ function applyDefaultAbilitiesByClass() {
     applyPointBuyToSheet();
     closePointBuyModal();
   });
+  abilityChoiceDefaultBtn?.addEventListener("click", () => {
+    applyDefaultAbilitiesByClass();
+    closeAbilityChoiceModal();
+  });
+  abilityChoicePointBuyBtn?.addEventListener("click", () => {
+    closeAbilityChoiceModal();
+    openPointBuyModal();
+  });
+  abilityChoiceCloseBtn?.addEventListener("click", closeAbilityChoiceModal);
+  abilityChoiceModal?.addEventListener("click", (event) => {
+    if (event.target === abilityChoiceModal) closeAbilityChoiceModal();
+  });
   pointBuyResetBtn?.addEventListener("click", resetPointBuyState);
   pointBuyCloseBtn?.addEventListener("click", closePointBuyModal);
   pointBuyModal?.addEventListener("click", (event) => {
@@ -2070,30 +2093,6 @@ function applyDefaultAbilitiesByClass() {
     enforceBackgroundBonusRules();
     renderPointBuyRows();
   });
-
-  function startHoldTimer() {
-    clearTimeout(holdTimer);
-    easterEggShown = false;
-
-    holdTimer = setTimeout(() => {
-      easterEggShown = true;
-      openPointBuyModal();
-    }, HOLD_MS);
-  }
-
-  function stopHoldTimer() {
-    if (!easterEggShown) {
-      clearTimeout(holdTimer);
-    }
-    holdTimer = null;
-  }
-
-  triggerButton.addEventListener("mousedown", startHoldTimer);
-  triggerButton.addEventListener("touchstart", startHoldTimer, { passive: true });
-  triggerButton.addEventListener("mouseup", stopHoldTimer);
-  triggerButton.addEventListener("mouseleave", stopHoldTimer);
-  triggerButton.addEventListener("touchend", stopHoldTimer);
-  triggerButton.addEventListener("touchcancel", stopHoldTimer);
 })();
 
 
@@ -4816,6 +4815,18 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
       <h3>📜 被遺忘國度 神祉整理</h3>
     </header>
     <div id="deity-info-content" class="deity-info-content"></div>
+  </div>
+</div>
+
+<div id="ability-choice-modal" aria-hidden="true">
+  <div class="ability-choice-card" role="dialog" aria-modal="true" aria-label="決定屬性方式">
+    <button type="button" id="ability-choice-close" class="ability-choice-close" aria-label="關閉屬性選單">✕</button>
+    <h3>決定屬性</h3>
+    <p>請選擇要使用的方式：</p>
+    <div class="ability-choice-actions">
+      <button type="button" id="ability-choice-default">預設屬性</button>
+      <button type="button" id="ability-choice-point-buy">２７購點</button>
+    </div>
   </div>
 </div>
 
