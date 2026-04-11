@@ -425,6 +425,27 @@
     return text.includes('動作') ? '動作' : text;
   }
 
+  function convertSpellSchoolForNote(raw) {
+    const text = normalizeText(raw);
+    if (!text) return '';
+    const firstHan = text.match(/[\u4e00-\u9fff]/);
+    return firstHan ? firstHan[0] : text;
+  }
+
+  function convertDurationForNote(raw) {
+    const text = normalizeText(raw);
+    if (!text) return '';
+    if (/立即[，,]?/.test(text)) return '';
+    if (/專注[，,]?/.test(text)) return '';
+
+    let converted = text;
+    converted = converted.replace(/(\d+)\s*分鐘/g, '$1M');
+    converted = converted.replace(/(\d+)\s*小時/g, '$1H');
+    converted = converted.replace(/(\d+)\s*日/g, '$1D');
+
+    return converted;
+  }
+
   function buildSpellRows(state) {
     const rows = [];
     const areaConfig = [
@@ -737,7 +758,10 @@
         payload[`sp-c-${xx}`] = /專注/.test(durationRaw);
         payload[`sp-r-${xx}`] = /儀式/.test(castTimeRaw);
         payload[`sp-m-${xx}`] = /材料|成分\s*:\s*.*M/i.test(desc);
-        payload[`note${xx}`] = wrapTextForPdf([school, durationRaw].filter(Boolean).join(' '), { maxUnitsPerLine: 22, maxLines: 2 });
+        payload[`note${xx}`] = wrapTextForPdf(
+          [convertSpellSchoolForNote(school), convertDurationForNote(durationRaw)].filter(Boolean).join(' '),
+          { maxUnitsPerLine: 22, maxLines: 2 }
+        );
       });
     }
 
