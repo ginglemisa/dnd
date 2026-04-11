@@ -586,10 +586,10 @@
     };
 
     // PDF 金錢欄位支援（琥珀金幣依需求不寫入 PDF）
-    mapMoneyField(state['money-balance-cp'] ?? state['money-cp'], ['cp', 'CP', 'copper']);
-    mapMoneyField(state['money-balance-sp'] ?? state['money-sp'], ['sp', 'SP', 'silver']);
-    mapMoneyField(state['money-balance-gp'] ?? state['money-gp'], ['gp', 'GP', 'gold']);
-    mapMoneyField(state['money-balance-pp'] ?? state['money-pp'], ['pp', 'PP', 'platinum']);
+    mapMoneyField(state['money-balance-cp'] ?? state['money-cp'], ['cp-coin', 'cp', 'CP', 'copper']);
+    mapMoneyField(state['money-balance-sp'] ?? state['money-sp'], ['sp-coin', 'sp', 'SP', 'silver']);
+    mapMoneyField(state['money-balance-gp'] ?? state['money-gp'], ['gp-coin', 'gp', 'GP', 'gold']);
+    mapMoneyField(state['money-balance-pp'] ?? state['money-pp'], ['pp-coin', 'pp', 'PP', 'platinum']);
 
     const levelNumber = Number.parseInt(level, 10);
     if (Number.isFinite(levelNumber) && levelNumber > 0) {
