@@ -2193,6 +2193,9 @@ function applyDefaultAbilitiesByClass() {
     });
 
 
+      if (input.value) {
+        input.dispatchEvent(new Event("input"));
+      }
     });
   </script>
 
