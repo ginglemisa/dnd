@@ -96,7 +96,7 @@ document.addEventListener("DOMContentLoaded", () => {
 使用： 檢測下毒飲品（DC 15），或識別酒精（DC 10）
 制作： 抗毒劑
 
-書法家工具（10 金幣）
+書法工具（10 金幣）
 屬性： 敏捷 
 重量： 5 磅
 使用： 書寫具有防偽效果的華麗文本（DC 15） 

@@ -292,7 +292,7 @@
   }
 
   function normalizeProblematicFieldDA(pdfLib, form) {
-    const { PDFName, PDFString, PDFBool } = pdfLib;
+    const { PDFName, PDFString } = pdfLib;
 
     const normalizeDaFontAlias = (daText) => {
       if (!daText || !daText.includes('Tf')) return daText;
@@ -320,18 +320,18 @@
       if (normalizedFormDa && normalizedFormDa !== formDaText) {
         form.acroForm.dict.set(PDFName.of('DA'), PDFString.of(normalizedFormDa));
       }
-      form.acroForm.dict.set(PDFName.of('NeedAppearances'), PDFBool.True);
     }
   }
 
-  async function tryEmbedCjkFontAndRebuildAppearances(pdfDoc, form) {
+  async function tryEmbedCjkFontAndRebuildAppearances(pdfDoc, form, options = {}) {
     if (!globalScope.fontkit) return false;
+    const { subset = true } = options;
 
     try {
       pdfDoc.registerFontkit(globalScope.fontkit);
       const fontBytes = await getCjkFontBytes();
       if (!fontBytes) return false;
-      const cjkFont = await pdfDoc.embedFont(fontBytes, { subset: true });
+      const cjkFont = await pdfDoc.embedFont(fontBytes, { subset });
       form.updateFieldAppearances(cjkFont);
       return true;
     } catch (error) {
@@ -340,13 +340,17 @@
     }
   }
 
-  async function exportCharacterPdfFromState(state) {
+  async function exportCharacterPdfFromState(state, options = {}) {
     if (!globalScope.PDFLib || !globalScope.PDFLib.PDFDocument) {
       throw new Error('pdf-lib 尚未載入');
     }
     if (typeof globalScope.buildPdfFieldPayload !== 'function') {
       throw new Error('PDF 欄位映射函式不存在');
     }
+
+    const exportMode = options?.mode === 'flat' ? 'flat' : 'form';
+    const shouldFlatten = exportMode === 'flat';
+    const shouldSubsetFont = exportMode !== 'form';
 
     const sourceBytes = await getSourcePdfBytes();
     const pdfDoc = await globalScope.PDFLib.PDFDocument.load(sourceBytes);
@@ -375,10 +379,21 @@
       console.info('以下欄位未成功寫入 PDF（可能不存在或型別不符）：', missingFields);
     }
 
-    const rebuilt = await tryEmbedCjkFontAndRebuildAppearances(pdfDoc, form);
+    const rebuilt = await tryEmbedCjkFontAndRebuildAppearances(pdfDoc, form, {
+      subset: shouldSubsetFont
+    });
     normalizeProblematicFieldDA(globalScope.PDFLib, form);
 
-    const outputBytes = await pdfDoc.save({ updateFieldAppearances: rebuilt });
+    if (shouldFlatten) {
+      if (!rebuilt) {
+        throw new Error('平面 PDF 匯出失敗：無法重建欄位字型外觀。');
+      }
+      form.flatten({ updateFieldAppearances: false });
+    }
+
+    const outputBytes = await pdfDoc.save({
+      updateFieldAppearances: shouldFlatten ? false : rebuilt
+    });
     triggerDownload(outputBytes, `dnd-character-${timestampString()}.pdf`);
 
     return { missingFields, filledFieldCount: Object.keys(payload).length };

@@ -1,39 +1,24 @@
 # Content Notice
 
-This repository uses a split-rights approach:
+This repository contains two main content layers:
 
-- The source code, interface structure, and implementation logic of this project may be licensed separately under the MIT License.
-- Game-content material is not included in that code license.
+- original source code, interface structure, and implementation logic
+- game-content material adapted from SRD 5.2.1
 
-## What Is Not Covered By The Code License
+## SRD Attribution
 
-Unless a specific file states otherwise, the MIT License does **not** apply to:
+This work includes material from the System Reference Document 5.2.1 (“SRD 5.2.1”) by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode.
 
-- rules text
-- spell, class, subclass, feat, race, background, equipment, monster, and similar game-content data
-- translated text
-- adapted or reformatted game rules
-- setting or product names, logos, and trademarks
-- other expressive game-content material derived from or based on Dungeons & Dragons content
+## How To Reuse This Repository
 
-These materials are excluded even when they appear inside source files such as `.js`, `.html`, `.md`, or other repository assets.
+- Reuse of the project code may be offered separately under the MIT License.
+- Material copied or adapted from SRD 5.2.1 remains subject to CC BY 4.0 attribution requirements.
+- If you publish a derivative, commercial version, app listing, or ad-supported site using SRD-derived material, keep the attribution statement above in your work.
 
-## Rights Status Of Game Content
+## Compatibility Language
 
-The Dungeons & Dragons name and related game-content rights remain the property of Wizards of the Coast LLC and other respective rights holders where applicable.
+You may describe derivative works as `fifth edition compatible` or `5E compatible`.
 
-This repository does not claim ownership over third-party intellectual property. Inclusion of such material, if any, is for use within the scope intended by the project author and does not grant downstream users any independent right to copy, redistribute, sublicense, commercially exploit, or republish that material.
+## Important Note
 
-## Your Reuse Responsibilities
-
-If you reuse code from this repository, you are responsible for ensuring that any non-code content is removed, replaced, or separately authorized before redistribution, publication, commercial use, or relicensing.
-
-In practical terms:
-
-- you may be able to reuse the code architecture and implementation
-- you should not assume you can reuse bundled game-content data or text
-- you must evaluate third-party rights before publishing derivatives
-
-## No Additional Grant
-
-Nothing in this repository should be interpreted as granting permission to use any third-party copyrighted content, trademark, trade dress, or other protected material beyond whatever rights may separately exist from the original rights holders.
+This repository should not be described as an official product, official rules compendium, or official storefront listing.

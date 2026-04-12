@@ -3,7 +3,8 @@
 
   function initLegalModal() {
     const isShareMode = !!window.SHARE_MODE;
-    const LEGAL_DISMISS_KEY = "dndchar_legal_dismiss_v1";
+    const LEGACY_LEGAL_DISMISS_KEY = "dndchar_legal_dismiss_v2";
+    const AUTO_SAVE_KEY = "dndchar_autosave_v1";
     const modal = document.getElementById("legal-modal");
     const checkbox = document.getElementById("legal-dismiss");
     const closeBtn = document.getElementById("legal-close-btn");
@@ -11,10 +12,10 @@
     const startTourBtn = document.getElementById("legal-start-tour-btn");
     if (!modal || !checkbox) return;
 
-    let shouldDismiss = localStorage.getItem(LEGAL_DISMISS_KEY) === "1";
+    let shouldDismiss = checkbox.checked === true;
     try {
       if (!shouldDismiss) {
-        const raw = localStorage.getItem("dndchar_autosave_v1");
+        const raw = localStorage.getItem(AUTO_SAVE_KEY);
         if (!raw) throw new Error("no autosave data");
         const data = JSON.parse(raw);
         shouldDismiss =
@@ -26,9 +27,15 @@
       void error;
     }
 
+    if (!shouldDismiss && localStorage.getItem(LEGACY_LEGAL_DISMISS_KEY) === "1") {
+      shouldDismiss = true;
+      checkbox.checked = true;
+      if (typeof scheduleSaveAllFields === "function") scheduleSaveAllFields();
+    }
+
+    localStorage.removeItem(LEGACY_LEGAL_DISMISS_KEY);
     checkbox.checked = shouldDismiss;
     checkbox.addEventListener("change", () => {
-      localStorage.setItem(LEGAL_DISMISS_KEY, checkbox.checked ? "1" : "0");
       if (typeof scheduleSaveAllFields === "function") scheduleSaveAllFields();
     });
 

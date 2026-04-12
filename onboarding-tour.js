@@ -262,7 +262,7 @@
       return [
         {
           tab: "basic",
-          title: "歡迎進入D&D的世界",
+          title: "歡迎進入五版奇幻冒險世界",
           text: "本網站工具專為新手設計，簡單易懂，推薦在城主教學下使用。",
           placement: "center",
           beforePosition: async () => {
