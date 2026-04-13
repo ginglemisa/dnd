@@ -46,6 +46,8 @@ const classFeatures = {
 </table>
 <strong>探索套組：</strong>背包、床卷、2 瓶油、10 天的口糧、繩索、火絨盒、10 根火把、水袋。
 
+靠怒氣和強壯身體正面硬上，最擅長衝進前線扛打又砍人。
+
 <strong>野蠻人特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
      <thead>
       <tr>
@@ -202,6 +204,8 @@ ${skillTip("體操")}、${skillTip("威嚇")}、${skillTip("察覺")}、${skillT
   </tbody>
 </table>
 <strong>藝人套組：</strong>背包、睡袋、鈴鐺、牛眼提燈、3 套戲服、鏡子、8 瓶油、9 日份的口糧、火絨盒、水袋。
+
+用音樂、口才與魔法幫助隊友、干擾敵人，是很會支援也很會交涉的萬用角色。
 
 <strong>吟遊詩人特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.97em;">
       <thead>
@@ -391,6 +395,8 @@ ${skillTip("體操")}、${skillTip("威嚇")}、${skillTip("察覺")}、${skillT
 </table>
 
 <strong>祭司套組：</strong>背包、毯子、聖水、油燈、7 日份的口糧、長袍和火絨盒。
+
+侍奉神明並使用神聖力量，能治療、保護隊友，也能懲戒敵人。
 
 <strong>牧師特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
@@ -589,6 +595,8 @@ ${skillTip("體操")}、${skillTip("威嚇")}、${skillTip("察覺")}、${skillT
 </table>
 
 <strong>探索套組：</strong>背包、床卷、2 瓶油、10 天的口糧、繩索、火絨盒、10 根火把、水袋。
+
+操控自然之力，能施法、治療，還能變成動物適應各種狀況。
 
 <strong>德魯伊特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
@@ -839,6 +847,8 @@ ${skillTip("體操")}、${skillTip("威嚇")}、${skillTip("察覺")}、${skillT
 
 <strong>地城套組：</strong>背包、鐵蒺藜、撬棍、2 瓶油、10 日份的口糧、繩索、火絨盒、10 根火把，水袋。
 
+最純粹的武器專家，擅長穩定輸出、承受攻擊，戰鬥能力全面又直接。
+
 <strong>戰士特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
     <tr>
@@ -977,6 +987,8 @@ ${skillTip("體操")}、${skillTip("威嚇")}、${skillTip("察覺")}、${skillT
 </table>
 
 <strong>探索套組：</strong>背包、床卷、2 瓶油、10 天的口糧、繩索、火絨盒、10 根火把、水袋。
+
+以肉身與氣進行高速戰鬥，擅長近身連擊、靈活移動與特殊控制。
 
 <strong>武僧特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
@@ -1136,6 +1148,8 @@ ${skillTip("體操")}、${skillTip("威嚇")}、${skillTip("察覺")}、${skillT
 </table>
 
 <strong>祭司套組：</strong>背包、毯子、聖水、油燈、7 日份的口糧、長袍和火絨盒。
+
+立下誓言的神聖戰士，兼具近戰、防護、治療與爆發傷害。
 
 <strong>聖武士特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
@@ -1329,6 +1343,8 @@ ${skillTip("體操")}、${skillTip("威嚇")}、${skillTip("察覺")}、${skillT
 
 <strong>探索套組：</strong>背包、床卷、2 瓶油、10 天的口糧、繩索、火絨盒、10 根火把、水袋。
 
+擅長追蹤、探索與精準戰鬥，能在荒野求生，也能用武器和法術對付敵人。
+
 <strong>遊俠特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
     <tr>
@@ -1492,6 +1508,8 @@ ${skillTip("體操")}、${skillTip("威嚇")}、${skillTip("察覺")}、${skillT
 
 <strong>竊賊套組：</strong>背包、滾珠、鈴鐺、10 根蠟燭、撬棍、附蓋提燈、7 瓶油、5 日份口糧、繩索、火絨盒、水袋。
 
+擅長潛行、開鎖、解除陷阱與抓準時機重擊，是靈巧又實用的專家型角色。
+
 <strong>遊蕩者特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
     <tr>
@@ -1629,6 +1647,8 @@ ${skillTip("體操")}、${skillTip("威嚇")}、${skillTip("察覺")}、${skillT
 
 <strong>地城套組：</strong>背包、鐵蒺藜、撬棍、2 瓶油、10 日份的口糧、繩索、火絨盒、10 根火把，水袋。
   
+天生就擁有魔法力量，擅長直接而強大的法術輸出，也能靈活改變施法方式。
+
 <strong>術士特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
         <tr>
@@ -1880,6 +1900,8 @@ ${skillTip("體操")}、${skillTip("威嚇")}、${skillTip("察覺")}、${skillT
 </table>
 
 <strong>學者套組：</strong>背包、書籍、墨水、墨水筆、油燈、10 瓶油、10 張羊皮紙和火絨盒。
+
+從神秘存在那裡獲得力量，擁有獨特魔法與穩定遠程攻擊，風格鮮明又帶點危險感。
 
 <strong>契術師特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
@@ -2162,6 +2184,8 @@ ${skillTip("體操")}、${skillTip("威嚇")}、${skillTip("察覺")}、${skillT
 
 <strong>學者套組：</strong>背包、書籍、墨水、墨水筆、油燈、10 瓶油、10 張羊皮紙和火絨盒。
 
+透過學習掌握各種法術，最擅長用豐富的魔法工具解決戰鬥與冒險中的問題。
+
 <strong>法師特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
     <tr>
@@ -2307,3 +2331,40 @@ ${skillTip("體操")}、${skillTip("威嚇")}、${skillTip("察覺")}、${skillT
 - 你可把 1 個由「施法」特性準備中的 1+環法師法術，替換成法術書中的另一個 1+環法師法術。
 `
 };
+
+function styleClassTagline(classHtml, classFeatureHeading) {
+  const lines = classHtml.split('\n');
+  const headingIndex = lines.findIndex((line) => line.includes(`<strong>${classFeatureHeading}</strong>`));
+
+  if (headingIndex <= 0) return classHtml;
+
+  for (let i = headingIndex - 1; i >= 0; i -= 1) {
+    const textLine = lines[i].trim();
+    if (!textLine) continue;
+
+    lines[i] = `<div style="margin: 8px 0; font-size: 1.08em; color: #6f3f1e; font-style: italic; font-weight: 600;">${textLine}</div>`;
+    break;
+  }
+
+  return lines.join('\n');
+}
+
+const classFeatureHeadingMap = {
+  barbarian: '野蠻人特性',
+  bard: '吟遊詩人特性',
+  cleric: '牧師特性',
+  druid: '德魯伊特性',
+  fighter: '戰士特性',
+  monk: '武僧特性',
+  paladin: '聖武士特性',
+  ranger: '遊俠特性',
+  rogue: '遊蕩者特性',
+  sorcerer: '術士特性',
+  warlock: '契術師特性',
+  wizard: '法師特性'
+};
+
+Object.entries(classFeatureHeadingMap).forEach(([className, classFeatureHeading]) => {
+  classFeatures[className] = styleClassTagline(classFeatures[className], classFeatureHeading);
+});
+
