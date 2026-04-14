@@ -361,7 +361,7 @@
     const elfLineage = state?.race === 'elf' ? await promptElfLineage() : '';
     const gnomeLineage = state?.race === 'gnome' ? await promptGnomeLineage() : '';
     const tieflingLegacy = state?.race === 'tiefling' ? await promptTieflingLegacy() : '';
-    const size = promptCharacterSize();
+    const size = await promptCharacterSize();
     const includeDefaultEquipment = promptIncludeDefaultEquipment();
     const payload = globalScope.buildPdfFieldPayload(state, {
       characterName,
