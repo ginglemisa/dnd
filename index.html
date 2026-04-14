@@ -2610,6 +2610,42 @@ function formatSigned(value) {
   return value >= 0 ? `+${value}` : `${value}`;
 }
 
+function parseDiceExpression(raw) {
+  if (!raw) return null;
+  const normalized = String(raw).trim();
+  const match = normalized.match(/(\d+)d(\d+)/i);
+  if (!match) return null;
+  return {
+    text: `${match[1]}d${match[2]}`,
+    count: Number(match[1]),
+    sides: Number(match[2]),
+    score: Number(match[1]) * Number(match[2])
+  };
+}
+
+function getHighestDiceExpression(diceExpressions) {
+  const parsed = diceExpressions
+    .map(parseDiceExpression)
+    .filter(Boolean);
+  if (!parsed.length) return null;
+  parsed.sort((a, b) => b.score - a.score || b.sides - a.sides || b.count - a.count);
+  return parsed[0].text;
+}
+
+function getWeaponBaseDamageDie(weapon) {
+  return parseDiceExpression(weapon?.傷害)?.text || null;
+}
+
+function getWeaponVersatileDie(weapon) {
+  const props = [weapon?.屬性1, weapon?.屬性2, weapon?.屬性3, weapon?.屬性4].filter(Boolean);
+  for (const prop of props) {
+    if (!String(prop).includes("兩用")) continue;
+    const die = parseDiceExpression(prop)?.text;
+    if (die) return die;
+  }
+  return null;
+}
+
 function isWeaponProficient(weapon) {
   if (!weapon || weapon.名稱 === "盾牌") return false;
 
@@ -2686,13 +2722,15 @@ function populateHandAttacks() {
     const dexMod = getModifier("dex");
     const monkMartialArtsMod = Math.max(strMod, dexMod);
     const isMonkMartialArts = weapon.名稱 === "武藝";
+    const cls = document.getElementById("class")?.value || "";
     const isRanged = isRangedWeapon(weapon);
     const isDexEligible = weaponHasProp(weapon, "靈巧");
     const pb = getProficiencyBonus();
     const proficient = isMonkMartialArts ? true : isWeaponProficient(weapon);
+    const useMonkProficientFormula = cls === "monk" && proficient;
 
     let attackAbilityMod;
-    if (isMonkMartialArts) {
+    if (useMonkProficientFormula) {
       attackAbilityMod = monkMartialArtsMod;
     } else if (isRanged) {
       attackAbilityMod = dexMod;
@@ -2707,8 +2745,13 @@ function populateHandAttacks() {
     // 傷害部分
     const isOffHand = hand.prefix === "atk-off";
     let damage = "";
-    if (isMonkMartialArts) {
-      damage = `${getMonkMartialArtsDie()} ${formatSigned(monkMartialArtsMod)}`;
+    if (useMonkProficientFormula) {
+      const selectedDie = getHighestDiceExpression([
+        getMonkMartialArtsDie(),
+        getWeaponBaseDamageDie(weapon),
+        getWeaponVersatileDie(weapon)
+      ]) || getMonkMartialArtsDie();
+      damage = `${selectedDie} ${formatSigned(monkMartialArtsMod)}`;
     } else {
       const shouldApplyDamageMod = !isOffHand || hasTwoWeaponFighting || attackAbilityMod < 0;
       const damageBonusText = shouldApplyDamageMod ? ` ${formatSigned(attackAbilityMod)}` : "";
