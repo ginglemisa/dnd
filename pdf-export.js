@@ -390,6 +390,8 @@
       normalizeProblematicFieldDA(globalScope.PDFLib, form);
     }
 
+    let docToSave = pdfDoc;
+
     if (shouldFlatten) {
       if (!rebuilt) {
         throw new Error('平面 PDF 匯出失敗：無法重建欄位字型外觀。');
@@ -398,12 +400,18 @@
         throw new Error(`平面 PDF 匯出失敗：實際字型為 ${fontEmbedResult.fontName || '未知'}，預期 NotoSansTC-Regular。`);
       }
       form.flatten({ updateFieldAppearances: false });
+
+      // 將平面化結果重建到新 PDF，移除殘留表單結構，改善 Adobe 相容性。
+      const flatDoc = await globalScope.PDFLib.PDFDocument.create();
+      const copiedPages = await flatDoc.copyPages(pdfDoc, pdfDoc.getPageIndices());
+      copiedPages.forEach((page) => flatDoc.addPage(page));
+      docToSave = flatDoc;
     }
 
-    const outputBytes = await pdfDoc.save({
-      updateFieldAppearances: shouldFlatten ? false : rebuilt,
-      // 部分 Adobe Reader 對 object streams 較敏感，平面 PDF 改用傳統物件以提升相容性。
-      useObjectStreams: !shouldFlatten
+    const outputBytes = await docToSave.save({
+      ...(shouldFlatten ? {} : { updateFieldAppearances: rebuilt }),
+      // 改用 object streams 以縮小平面 PDF 體積；平面重建後不再保留表單結構。
+      useObjectStreams: true
     });
     triggerDownload(outputBytes, `dnd-character-${timestampString()}.pdf`);
 
