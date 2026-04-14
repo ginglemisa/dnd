@@ -2641,7 +2641,7 @@ function getWeaponVersatileDie(weapon) {
   for (const prop of props) {
     if (!String(prop).includes("兩用")) continue;
     const die = parseDiceExpression(prop)?.text;
-    if (die) return die;
+    if (die === "1d8") return die;
   }
   return null;
 }
