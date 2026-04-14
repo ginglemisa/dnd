@@ -382,7 +382,11 @@
     const rebuilt = await tryEmbedCjkFontAndRebuildAppearances(pdfDoc, form, {
       subset: shouldSubsetFont
     });
-    normalizeProblematicFieldDA(globalScope.PDFLib, form);
+
+    // DA fallback 僅保留在表單模式，避免影響平面化後的 Adobe 相容性。
+    if (!shouldFlatten) {
+      normalizeProblematicFieldDA(globalScope.PDFLib, form);
+    }
 
     if (shouldFlatten) {
       if (!rebuilt) {
@@ -392,7 +396,9 @@
     }
 
     const outputBytes = await pdfDoc.save({
-      updateFieldAppearances: shouldFlatten ? false : rebuilt
+      updateFieldAppearances: shouldFlatten ? false : rebuilt,
+      // 部分 Adobe Reader 對 object streams 較敏感，平面 PDF 改用傳統物件以提升相容性。
+      useObjectStreams: !shouldFlatten
     });
     triggerDownload(outputBytes, `dnd-character-${timestampString()}.pdf`);
 
