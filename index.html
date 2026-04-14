@@ -2646,6 +2646,33 @@ function getWeaponVersatileDie(weapon) {
   return null;
 }
 
+function isMonkWeapon(weapon) {
+  if (!weapon || weapon.名稱 === "盾牌") return false;
+  if (weapon.名稱 === "武藝") return true;
+  const isSimpleMelee = weapons_simple_melee.some(w => w.名稱 === weapon.名稱);
+  const isLightMartialMelee = weapons_martial_melee.some(w => w.名稱 === weapon.名稱) && weaponHasProp(weapon, "輕型");
+  return isSimpleMelee || isLightMartialMelee;
+}
+
+function isMonkMartialArtsActive() {
+  const cls = document.getElementById("class")?.value || "";
+  if (cls !== "monk") return false;
+
+  const armorName = document.getElementById("armor")?.value || "";
+  const mainHandName = document.getElementById("mainHand")?.value || "";
+  const offHandName = document.getElementById("offHand")?.value || "";
+
+  const hasArmor = Boolean(armorName);
+  const hasShield = mainHandName === "盾牌" || offHandName === "盾牌";
+  if (hasArmor || hasShield) return false;
+
+  const mainWeapon = getAllWeaponsWithShield().find(w => w.名稱 === mainHandName);
+  const offWeapon = getAllWeaponsWithShield().find(w => w.名稱 === offHandName);
+  const mainIsValid = !mainHandName || isMonkWeapon(mainWeapon);
+  const offIsValid = !offHandName || isMonkWeapon(offWeapon);
+  return mainIsValid && offIsValid;
+}
+
 function isWeaponProficient(weapon) {
   if (!weapon || weapon.名稱 === "盾牌") return false;
 
@@ -2727,7 +2754,7 @@ function populateHandAttacks() {
     const isDexEligible = weaponHasProp(weapon, "靈巧");
     const pb = getProficiencyBonus();
     const proficient = isMonkMartialArts ? true : isWeaponProficient(weapon);
-    const useMonkProficientFormula = cls === "monk" && proficient;
+    const useMonkProficientFormula = cls === "monk" && proficient && isMonkMartialArtsActive() && isMonkWeapon(weapon);
 
     let attackAbilityMod;
     if (useMonkProficientFormula) {
