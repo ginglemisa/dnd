@@ -109,17 +109,6 @@
     return window.confirm('是否輸入職業與背景的預設裝備？\n按「確定」= 是；按「取消」= 否');
   }
 
-  function promptCharacterSize() {
-    while (true) {
-      const input = window.prompt('請輸入體型（中 / 小）', '中');
-      if (input === null) return '';
-      const trimmed = input.trim();
-      if (!trimmed) return '';
-      if (trimmed === '中' || trimmed === '小') return trimmed;
-      window.alert('體型僅支援「中」或「小」。');
-    }
-  }
-
   function promptChoiceDialog(titleText, hintText, options, columns = 2) {
     return new Promise((resolve) => {
       const overlay = document.createElement('div');
@@ -223,6 +212,18 @@
         { key: 'red_fire', label: '紅龍-火' },
         { key: 'silver_cold', label: '銀龍-冰' },
         { key: 'white_cold', label: '白龍-冰' }
+      ],
+      2
+    );
+  }
+
+  function promptCharacterSize() {
+    return promptChoiceDialog(
+      '選擇角色體型',
+      '請點選體型：中型或小型。',
+      [
+        { key: '中', label: '中型' },
+        { key: '小', label: '小型' }
       ],
       2
     );
@@ -340,7 +341,7 @@
     }
   }
 
-  async function exportCharacterPdfFromState(state, options = {}) {
+  async function exportCharacterPdfFromState(state) {
     if (!globalScope.PDFLib || !globalScope.PDFLib.PDFDocument) {
       throw new Error('pdf-lib 尚未載入');
     }
@@ -348,9 +349,7 @@
       throw new Error('PDF 欄位映射函式不存在');
     }
 
-    const exportMode = options?.mode === 'flat' ? 'flat' : 'form';
-    const shouldFlatten = exportMode === 'flat';
-    // flat / form 都使用完整 NotoSansTC-Regular.ttf，避免 CJK subset 導致漏字。
+    // 使用完整 NotoSansTC-Regular.ttf，避免 CJK subset 導致漏字。
     const shouldSubsetFont = false;
 
     const sourceBytes = await getSourcePdfBytes();
@@ -385,32 +384,10 @@
     });
     const rebuilt = fontEmbedResult.ok;
 
-    // DA fallback 僅保留在表單模式，避免影響平面化後的 Adobe 相容性。
-    if (!shouldFlatten) {
-      normalizeProblematicFieldDA(globalScope.PDFLib, form);
-    }
+    normalizeProblematicFieldDA(globalScope.PDFLib, form);
 
-    let docToSave = pdfDoc;
-
-    if (shouldFlatten) {
-      if (!rebuilt) {
-        throw new Error('平面 PDF 匯出失敗：無法重建欄位字型外觀。');
-      }
-      if (fontEmbedResult.fontName !== 'NotoSansTC-Regular') {
-        throw new Error(`平面 PDF 匯出失敗：實際字型為 ${fontEmbedResult.fontName || '未知'}，預期 NotoSansTC-Regular。`);
-      }
-      form.flatten({ updateFieldAppearances: false });
-
-      // 將平面化結果重建到新 PDF，移除殘留表單結構，改善 Adobe 相容性。
-      const flatDoc = await globalScope.PDFLib.PDFDocument.create();
-      const copiedPages = await flatDoc.copyPages(pdfDoc, pdfDoc.getPageIndices());
-      copiedPages.forEach((page) => flatDoc.addPage(page));
-      docToSave = flatDoc;
-    }
-
-    const outputBytes = await docToSave.save({
-      ...(shouldFlatten ? {} : { updateFieldAppearances: rebuilt }),
-      // 改用 object streams 以縮小平面 PDF 體積；平面重建後不再保留表單結構。
+    const outputBytes = await pdfDoc.save({
+      updateFieldAppearances: rebuilt,
       useObjectStreams: true
     });
     triggerDownload(outputBytes, `dnd-character-${timestampString()}.pdf`);

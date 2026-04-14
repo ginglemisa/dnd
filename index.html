@@ -4702,68 +4702,13 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
     exportJsonBtn.addEventListener("click", downloadStateAsJson);
   }
 
-  const pdfExportModal = document.getElementById("pdf-export-modal");
-  const pdfExportModalCloseBtn = document.getElementById("pdf-export-modal-close");
-  const pdfExportFlatBtn = document.getElementById("pdf-export-flat");
-  const pdfExportFormBtn = document.getElementById("pdf-export-form");
-  let pdfExportChoiceResolver = null;
-
-  function openPdfExportModal() {
-    if (!pdfExportModal) return;
-    pdfExportModal.classList.add("open");
-    pdfExportModal.setAttribute("aria-hidden", "false");
-  }
-
-  function closePdfExportModal() {
-    if (!pdfExportModal) return;
-    pdfExportModal.classList.remove("open");
-    pdfExportModal.setAttribute("aria-hidden", "true");
-  }
-
-  function resolvePdfExportChoice(choice) {
-    const resolve = pdfExportChoiceResolver;
-    pdfExportChoiceResolver = null;
-    closePdfExportModal();
-    if (typeof resolve === "function") resolve(choice);
-  }
-
-  function choosePdfExportMode() {
-    if (!pdfExportModal || !pdfExportFlatBtn || !pdfExportFormBtn) {
-      return Promise.resolve("form");
-    }
-    if (typeof pdfExportChoiceResolver === "function") {
-      pdfExportChoiceResolver("");
-      pdfExportChoiceResolver = null;
-    }
-    openPdfExportModal();
-    return new Promise((resolve) => {
-      pdfExportChoiceResolver = resolve;
-    });
-  }
-
-  pdfExportModalCloseBtn?.addEventListener("click", () => resolvePdfExportChoice(""));
-  pdfExportFlatBtn?.addEventListener("click", () => resolvePdfExportChoice("flat"));
-  pdfExportFormBtn?.addEventListener("click", () => resolvePdfExportChoice("form"));
-  pdfExportModal?.addEventListener("click", (event) => {
-    if (event.target === pdfExportModal) resolvePdfExportChoice("");
-  });
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && pdfExportModal?.classList.contains("open")) {
-      resolvePdfExportChoice("");
-    }
-  });
-
   const exportPdfBtn = document.getElementById("export-pdf-btn");
   if (exportPdfBtn) {
     exportPdfBtn.addEventListener("click", async () => {
-      const exportMode = await choosePdfExportMode();
-      if (!exportMode) return;
       exportPdfBtn.disabled = true;
       try {
         await ensurePdfExportReady();
-        await window.exportCharacterPdfFromState(collectStateObject(), {
-          mode: exportMode
-        });
+        await window.exportCharacterPdfFromState(collectStateObject());
       } catch (error) {
         console.warn("PDF 匯出失敗：", error);
         alert("PDF 匯出失敗，請稍後重試。");
@@ -4826,19 +4771,6 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
     <div class="ability-choice-actions">
       <button type="button" id="ability-choice-default">預設屬性</button>
       <button type="button" id="ability-choice-point-buy">２７購點</button>
-    </div>
-  </div>
-</div>
-
-<div id="pdf-export-modal" aria-hidden="true">
-  <div class="pdf-export-choice-card" role="dialog" aria-modal="true" aria-label="匯出 PDF 格式">
-    <button type="button" id="pdf-export-modal-close" class="pdf-export-choice-close" aria-label="關閉匯出 PDF 選單">✕</button>
-    <h3>匯出 PDF</h3>
-    <p>匯出 PDF 可能需要一些時間，請稍候。</p>
-    <p class="pdf-export-choice-tip">請選擇輸出格式。平面 PDF 檔案較小、匯出較快，但無法再編輯欄位內容；表單 PDF 檔案較大（約 10 MB），但可於 PDF 閱讀器中繼續填寫或修改內容。</p>
-    <div class="pdf-export-choice-actions">
-      <button type="button" id="pdf-export-flat">平面 PDF（不可編輯）</button>
-      <button type="button" id="pdf-export-form">表單 PDF（可編輯）</button>
     </div>
   </div>
 </div>
