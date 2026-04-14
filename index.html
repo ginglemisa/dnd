@@ -801,8 +801,8 @@ function bindCoreCharacterEvents() {
   bindEventById("wis", "input", updateACDisplay);
   bindEventById("cha", "input", updateACDisplay);
   bindEventById("armor", "change", updateArmorInfo);
-  bindEventById("class", "change", () => {updateClassFeature();updateACDisplay();updateEldritchInvocationSectionVisibility();populateHandAttacks();updateSpellsByClassLevel();updateExpertiseVisibility();updateExtraLanguageFields();});
-  bindEventById("level", "change", () => {updateClassFeature();updateACDisplay();updateEldritchInvocationSectionVisibility();updateSpellsByClassLevel();updateExtraLanguageFields();});
+  bindEventById("class", "change", () => {refreshWeaponSelections();updateClassFeature();updateACDisplay();updateEldritchInvocationSectionVisibility();populateHandAttacks();updateSpellsByClassLevel();updateExpertiseVisibility();updateExtraLanguageFields();});
+  bindEventById("level", "change", () => {refreshWeaponSelections();updateClassFeature();updateACDisplay();updateEldritchInvocationSectionVisibility();populateHandAttacks();updateSpellsByClassLevel();updateExtraLanguageFields();});
   bindEventById("class", "change", updateSpellCastingStatsVisibility);
   bindEventById("background", "change", updateSpellCastingStatsVisibility);
   bindEventById("race", "change", updateSpellCastingStatsVisibility);
@@ -2421,12 +2421,35 @@ function getAllWeapons(includeShield = false) {
   if (includeShield) {
     list = list.concat(getEquipmentList("shield"));
   }
+  if (isMonkClassSelected()) {
+    list = list.concat([getMonkMartialArtsWeapon()]);
+  }
   list = list
     .concat(getEquipmentList("weapons_simple_melee"))
     .concat(getEquipmentList("weapons_simple_ranged"))
     .concat(getEquipmentList("weapons_martial_melee"))
     .concat(getEquipmentList("weapons_martial_ranged"));
   return list;
+}
+function isMonkClassSelected() {
+  return (document.getElementById("class")?.value || "") === "monk";
+}
+function getMonkMartialArtsDie() {
+  const level = Number(document.getElementById("level")?.value || 1);
+  return level >= 5 ? "1d8" : "1d6";
+}
+function getMonkMartialArtsWeapon() {
+  return {
+    名稱: "武藝",
+    傷害: `${getMonkMartialArtsDie()} 鈍擊`,
+    精通: "無",
+    重量: "無",
+    價格: "無",
+    屬性1: "未穿甲未持盾，只用徒手或武僧武器才能用武藝",
+    屬性2: null,
+    屬性3: null,
+    屬性4: null
+  };
 }
 function hasTwoHandedProperty(weapon) {
   return [weapon.屬性1, weapon.屬性2, weapon.屬性3, weapon.屬性4].some(p => p?.includes("雙手"));
@@ -2452,11 +2475,13 @@ function populateSelectWithSections(selectEl, sections) {
   selectEl.appendChild(emptyOption);
 
   sections.forEach(section => {
-    const headingOption = document.createElement("option");
-    headingOption.value = "";
-    headingOption.textContent = `-- ${section.label} --`;
-    headingOption.disabled = true;
-    selectEl.appendChild(headingOption);
+    if (section.label) {
+      const headingOption = document.createElement("option");
+      headingOption.value = "";
+      headingOption.textContent = `-- ${section.label} --`;
+      headingOption.disabled = true;
+      selectEl.appendChild(headingOption);
+    }
 
     section.items.forEach(item => {
       const option = document.createElement("option");
@@ -2474,6 +2499,9 @@ function getWeaponSections(includeShield = false, excludeTwoHanded = false) {
     { label: "軍用近戰", items: weapons_martial_melee },
     { label: "軍用遠程", items: weapons_martial_ranged }
   ];
+  if (isMonkClassSelected()) {
+    sections.unshift({ label: "", items: [getMonkMartialArtsWeapon()] });
+  }
 
   if (includeShield) {
     sections.push({ label: "盾牌", items: shield });
@@ -2582,6 +2610,69 @@ function formatSigned(value) {
   return value >= 0 ? `+${value}` : `${value}`;
 }
 
+function parseDiceExpression(raw) {
+  if (!raw) return null;
+  const normalized = String(raw).trim();
+  const match = normalized.match(/(\d+)d(\d+)/i);
+  if (!match) return null;
+  return {
+    text: `${match[1]}d${match[2]}`,
+    count: Number(match[1]),
+    sides: Number(match[2]),
+    score: Number(match[1]) * Number(match[2])
+  };
+}
+
+function getHighestDiceExpression(diceExpressions) {
+  const parsed = diceExpressions
+    .map(parseDiceExpression)
+    .filter(Boolean);
+  if (!parsed.length) return null;
+  parsed.sort((a, b) => b.score - a.score || b.sides - a.sides || b.count - a.count);
+  return parsed[0].text;
+}
+
+function getWeaponBaseDamageDie(weapon) {
+  return parseDiceExpression(weapon?.傷害)?.text || null;
+}
+
+function getWeaponVersatileDie(weapon) {
+  const props = [weapon?.屬性1, weapon?.屬性2, weapon?.屬性3, weapon?.屬性4].filter(Boolean);
+  for (const prop of props) {
+    if (!String(prop).includes("兩用")) continue;
+    const die = parseDiceExpression(prop)?.text;
+    if (die === "1d8") return die;
+  }
+  return null;
+}
+
+function isMonkWeapon(weapon) {
+  if (!weapon || weapon.名稱 === "盾牌") return false;
+  if (weapon.名稱 === "武藝") return true;
+  const isSimpleMelee = weapons_simple_melee.some(w => w.名稱 === weapon.名稱);
+  const isLightMartialMelee = weapons_martial_melee.some(w => w.名稱 === weapon.名稱) && weaponHasProp(weapon, "輕型");
+  return isSimpleMelee || isLightMartialMelee;
+}
+
+function isMonkMartialArtsActive() {
+  const cls = document.getElementById("class")?.value || "";
+  if (cls !== "monk") return false;
+
+  const armorName = document.getElementById("armor")?.value || "";
+  const mainHandName = document.getElementById("mainHand")?.value || "";
+  const offHandName = document.getElementById("offHand")?.value || "";
+
+  const hasArmor = Boolean(armorName);
+  const hasShield = mainHandName === "盾牌" || offHandName === "盾牌";
+  if (hasArmor || hasShield) return false;
+
+  const mainWeapon = getAllWeaponsWithShield().find(w => w.名稱 === mainHandName);
+  const offWeapon = getAllWeaponsWithShield().find(w => w.名稱 === offHandName);
+  const mainIsValid = !mainHandName || isMonkWeapon(mainWeapon);
+  const offIsValid = !offHandName || isMonkWeapon(offWeapon);
+  return mainIsValid && offIsValid;
+}
+
 function isWeaponProficient(weapon) {
   if (!weapon || weapon.名稱 === "盾牌") return false;
 
@@ -2597,6 +2688,7 @@ function isWeaponProficient(weapon) {
 
   const hasLight = weaponHasProp(weapon, "輕型");
   const hasFinesse = weaponHasProp(weapon, "靈巧");
+  const isLightMartial = isMartial && hasLight;
 
   const simpleAndMartial = ["barbarian", "fighter", "paladin", "ranger"];
   if (simpleAndMartial.includes(cls)) return true;
@@ -2620,7 +2712,7 @@ function isWeaponProficient(weapon) {
   }
 
   if (cls === "monk") {
-    return isSimple || (isMartial && hasLight);
+    return weapon.名稱 === "武藝" || isSimple || isLightMartial;
   }
 
   if (cls === "rogue") {
@@ -2655,13 +2747,19 @@ function populateHandAttacks() {
     }
     const strMod = getModifier("str");
     const dexMod = getModifier("dex");
+    const monkMartialArtsMod = Math.max(strMod, dexMod);
+    const isMonkMartialArts = weapon.名稱 === "武藝";
+    const cls = document.getElementById("class")?.value || "";
     const isRanged = isRangedWeapon(weapon);
     const isDexEligible = weaponHasProp(weapon, "靈巧");
     const pb = getProficiencyBonus();
-    const proficient = isWeaponProficient(weapon);
+    const proficient = isMonkMartialArts ? true : isWeaponProficient(weapon);
+    const useMonkProficientFormula = cls === "monk" && proficient && isMonkMartialArtsActive() && isMonkWeapon(weapon);
 
     let attackAbilityMod;
-    if (isRanged) {
+    if (useMonkProficientFormula) {
+      attackAbilityMod = monkMartialArtsMod;
+    } else if (isRanged) {
       attackAbilityMod = dexMod;
     } else if (isDexEligible) {
       attackAbilityMod = Math.max(strMod, dexMod);
@@ -2673,9 +2771,19 @@ function populateHandAttacks() {
     document.getElementById(`${hand.prefix}-hit`).value = formatSigned(hitBonus);
     // 傷害部分
     const isOffHand = hand.prefix === "atk-off";
-    const shouldApplyDamageMod = !isOffHand || hasTwoWeaponFighting || attackAbilityMod < 0;
-    const damageBonusText = shouldApplyDamageMod ? ` ${formatSigned(attackAbilityMod)}` : "";
-    const damage = `${weapon.傷害}${damageBonusText}`;
+    let damage = "";
+    if (useMonkProficientFormula) {
+      const selectedDie = getHighestDiceExpression([
+        getMonkMartialArtsDie(),
+        getWeaponBaseDamageDie(weapon),
+        getWeaponVersatileDie(weapon)
+      ]) || getMonkMartialArtsDie();
+      damage = `${selectedDie} ${formatSigned(monkMartialArtsMod)}`;
+    } else {
+      const shouldApplyDamageMod = !isOffHand || hasTwoWeaponFighting || attackAbilityMod < 0;
+      const damageBonusText = shouldApplyDamageMod ? ` ${formatSigned(attackAbilityMod)}` : "";
+      damage = `${weapon.傷害}${damageBonusText}`;
+    }
     document.getElementById(`${hand.prefix}-dmg`).value = damage;
     // 備註部分
     const traits = [weapon.精通, weapon.屬性1, weapon.屬性2, weapon.屬性3, weapon.屬性4]
@@ -2683,6 +2791,27 @@ function populateHandAttacks() {
       .join("、");
     document.getElementById(`${hand.prefix}-note`).value = traits;
   });
+}
+
+function refreshWeaponSelections() {
+  const mainHandSelect = document.getElementById("mainHand");
+  const offHandSelect = document.getElementById("offHand");
+  if (!mainHandSelect || !offHandSelect) return;
+
+  const previousMain = mainHandSelect.value;
+  const previousOff = offHandSelect.value;
+  populateSelectWithSections(mainHandSelect, getWeaponSections(false, false));
+  mainHandSelect.value = previousMain;
+  if (mainHandSelect.value !== previousMain) mainHandSelect.value = "";
+
+  updateOffHandOptions(mainHandSelect.value);
+  if (!offHandSelect.disabled) {
+    offHandSelect.value = previousOff;
+    if (offHandSelect.value !== previousOff) offHandSelect.value = "";
+  }
+
+  updateWeaponInfo("mainHand", "main-hand-info-line1", "main-hand-info-line2");
+  updateWeaponInfo("offHand", "off-hand-info-line1", "off-hand-info-line2");
 }
 // 裝備護甲顯示
 function updateArmorInfo() {
@@ -4636,8 +4765,7 @@ window.addEventListener("DOMContentLoaded", async function() {
   const mainHandSelect = document.getElementById("mainHand");
   const offHandSelect = document.getElementById("offHand");
   const armorSelect = document.getElementById("armor");
-  populateSelectWithSections(mainHandSelect, getWeaponSections(false, false));
-  populateSelectWithSections(offHandSelect, getWeaponSections(true, false));
+  refreshWeaponSelections();
   populateSelectWithSections(armorSelect, getArmorSections(false));
   mainHandSelect.addEventListener("change", () => {
     updateOffHandOptions(mainHandSelect.value);
