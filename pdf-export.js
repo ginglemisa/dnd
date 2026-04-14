@@ -324,19 +324,19 @@
   }
 
   async function tryEmbedCjkFontAndRebuildAppearances(pdfDoc, form, options = {}) {
-    if (!globalScope.fontkit) return false;
+    if (!globalScope.fontkit) return { ok: false, fontName: '', fontPath: CJK_FONT_PATH };
     const { subset = true } = options;
 
     try {
       pdfDoc.registerFontkit(globalScope.fontkit);
       const fontBytes = await getCjkFontBytes();
-      if (!fontBytes) return false;
+      if (!fontBytes) return { ok: false, fontName: '', fontPath: CJK_FONT_PATH };
       const cjkFont = await pdfDoc.embedFont(fontBytes, { subset });
       form.updateFieldAppearances(cjkFont);
-      return true;
+      return { ok: true, fontName: cjkFont?.name || '', fontPath: CJK_FONT_PATH };
     } catch (error) {
       console.warn('字型嵌入/外觀重建失敗，改走 DA fallback：', error);
-      return false;
+      return { ok: false, fontName: '', fontPath: CJK_FONT_PATH };
     }
   }
 
@@ -350,7 +350,8 @@
 
     const exportMode = options?.mode === 'flat' ? 'flat' : 'form';
     const shouldFlatten = exportMode === 'flat';
-    const shouldSubsetFont = exportMode !== 'form';
+    // flat / form 都使用完整 NotoSansTC-Regular.ttf，避免 CJK subset 導致漏字。
+    const shouldSubsetFont = false;
 
     const sourceBytes = await getSourcePdfBytes();
     const pdfDoc = await globalScope.PDFLib.PDFDocument.load(sourceBytes);
@@ -379,9 +380,10 @@
       console.info('以下欄位未成功寫入 PDF（可能不存在或型別不符）：', missingFields);
     }
 
-    const rebuilt = await tryEmbedCjkFontAndRebuildAppearances(pdfDoc, form, {
+    const fontEmbedResult = await tryEmbedCjkFontAndRebuildAppearances(pdfDoc, form, {
       subset: shouldSubsetFont
     });
+    const rebuilt = fontEmbedResult.ok;
 
     // DA fallback 僅保留在表單模式，避免影響平面化後的 Adobe 相容性。
     if (!shouldFlatten) {
@@ -391,6 +393,9 @@
     if (shouldFlatten) {
       if (!rebuilt) {
         throw new Error('平面 PDF 匯出失敗：無法重建欄位字型外觀。');
+      }
+      if (fontEmbedResult.fontName !== 'NotoSansTC-Regular') {
+        throw new Error(`平面 PDF 匯出失敗：實際字型為 ${fontEmbedResult.fontName || '未知'}，預期 NotoSansTC-Regular。`);
       }
       form.flatten({ updateFieldAppearances: false });
     }
