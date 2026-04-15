@@ -60,6 +60,22 @@ function Replace-Regex {
   return $regex.Replace($Content, $Replacement, 1)
 }
 
+function Replace-RegexIfExists {
+  param(
+    [Parameter(Mandatory = $true)][string]$Content,
+    [Parameter(Mandatory = $true)][string]$Pattern,
+    [Parameter(Mandatory = $true)][string]$Replacement,
+    [System.Text.RegularExpressions.RegexOptions]$Options = [System.Text.RegularExpressions.RegexOptions]::None
+  )
+
+  $regex = [System.Text.RegularExpressions.Regex]::new($Pattern, $Options)
+  if (-not $regex.IsMatch($Content)) {
+    return $Content
+  }
+
+  return $regex.Replace($Content, $Replacement, 1)
+}
+
 $html = [System.IO.File]::ReadAllText($sourceHtmlPath, [System.Text.Encoding]::UTF8)
 
 $html = $html.Replace(
@@ -135,9 +151,9 @@ const INPUT_AUTOSAVE_DEBOUNCE_MS = 10000;
   -Label "ensurePdfExportReady block" `
   -Options ([System.Text.RegularExpressions.RegexOptions]::None)
 
-$html = Replace-Regex `
+$html = Replace-RegexIfExists `
   -Content $html `
-  -Pattern '  const pdfExportModal = document\.getElementById\("pdf-export-modal"\);[\s\S]*?  const importJsonBtn = document\.getElementById\("import-json-btn"\);' `
+  -Pattern '  const exportPdfBtn = document\.getElementById\("export-pdf-btn"\);\s*  if \(exportPdfBtn\) \{[\s\S]*?\n  \}\s*\n\s*  const importJsonBtn = document\.getElementById\("import-json-btn"\);' `
   -Replacement @'
   const exportPdfBtn = document.getElementById("export-pdf-btn");
   if (exportPdfBtn) {
@@ -148,14 +164,12 @@ $html = Replace-Regex `
 
   const importJsonBtn = document.getElementById("import-json-btn");
 '@ `
-  -Label "pdf export ui logic" `
   -Options ([System.Text.RegularExpressions.RegexOptions]::None)
 
-$html = Replace-Regex `
+$html = Replace-RegexIfExists `
   -Content $html `
   -Pattern '<div id="pdf-export-modal" aria-hidden="true">[\s\S]*?</div>\s*</div>\s*<div id="point-buy-modal"' `
   -Replacement '<div id="point-buy-modal"' `
-  -Label "pdf export modal" `
   -Options ([System.Text.RegularExpressions.RegexOptions]::None)
 
 if ($html.Contains('const SPELL_QR_IMAGE_SRC = "./qr.png";')) {
