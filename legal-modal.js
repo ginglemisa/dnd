@@ -9,7 +9,6 @@
     const checkbox = document.getElementById("legal-dismiss");
     const closeBtn = document.getElementById("legal-close-btn");
     const ackBtn = document.getElementById("legal-ack-btn");
-    const startTourBtn = document.getElementById("legal-start-tour-btn");
     if (!modal || !checkbox) return;
 
     let shouldDismiss = checkbox.checked === true;
@@ -48,10 +47,6 @@
 
     closeBtn?.addEventListener("click", closeModal);
     ackBtn?.addEventListener("click", closeModal);
-    startTourBtn?.addEventListener("click", () => {
-      closeModal();
-      window.onboardingTour?.start();
-    });
   }
 
   window.initLegalModal = initLegalModal;
