@@ -2559,24 +2559,9 @@ div[id$="spells-area"] .form-row {
   line-height: 1.2;
 }
 
-#legal-start-tour-btn,
 #legal-ack-btn {
   width: 100%;
-}
-
-#legal-start-tour-btn {
   margin-top: 12px;
-  padding: 8px 0;
-  border: 1px solid #3f65df;
-  border-radius: 8px;
-  background: linear-gradient(180deg, #6d89ff 0%, #5675f2 100%);
-  display: block;
-  color: #fff;
-  font-size: var(--fs-base);
-}
-
-#legal-ack-btn {
-  margin-top: 8px;
   padding: 6px 0;
   border: 1px solid #888;
   border-radius: 6px;
