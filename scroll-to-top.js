@@ -1,0 +1,285 @@
+(function initFloatingTopOffset() {
+  const tabsShell = document.querySelector(".tabs-shell");
+  if (!tabsShell) return;
+
+  const updateFloatingTopOffset = () => {
+    const shellRect = tabsShell.getBoundingClientRect();
+    const safeOffset = Math.max(Math.round(shellRect.bottom - 4), 56);
+    document.documentElement.style.setProperty("--floating-top-offset", `${safeOffset}px`);
+  };
+
+  const rafUpdateFloatingTopOffset = () => window.requestAnimationFrame(updateFloatingTopOffset);
+
+  const resizeObserver = window.ResizeObserver ? new ResizeObserver(rafUpdateFloatingTopOffset) : null;
+  resizeObserver?.observe(tabsShell);
+
+  const mutationObserver = window.MutationObserver ? new MutationObserver(rafUpdateFloatingTopOffset) : null;
+  mutationObserver?.observe(tabsShell, {
+    attributes: true,
+    attributeFilter: ["class", "style"],
+    childList: true,
+    subtree: true
+  });
+
+  window.addEventListener("resize", rafUpdateFloatingTopOffset, { passive: true });
+  window.addEventListener("orientationchange", rafUpdateFloatingTopOffset, { passive: true });
+  window.addEventListener("tabchange", rafUpdateFloatingTopOffset);
+  updateFloatingTopOffset();
+})();
+
+(function initScrollToTopButton() {
+  if (document.getElementById("scrollToTopBtn")) return;
+
+  const scrollToTopBtn = document.createElement("button");
+  scrollToTopBtn.id = "scrollToTopBtn";
+  scrollToTopBtn.type = "button";
+  scrollToTopBtn.textContent = "▲";
+  scrollToTopBtn.setAttribute("aria-label", "回到頁面頂端");
+  scrollToTopBtn.style.display = "none";
+
+  scrollToTopBtn.addEventListener("click", () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  const updateVisibility = () => {
+    scrollToTopBtn.style.display = window.scrollY > 220 ? "block" : "none";
+  };
+
+  document.body.appendChild(scrollToTopBtn);
+  window.addEventListener("scroll", updateVisibility, { passive: true });
+  updateVisibility();
+})();
+
+(function initScrollToBottomButton() {
+  if (document.getElementById("scrollToBottomBtn")) return;
+
+  const scrollToBottomBtn = document.createElement("button");
+  scrollToBottomBtn.id = "scrollToBottomBtn";
+  scrollToBottomBtn.type = "button";
+  scrollToBottomBtn.textContent = "▼";
+  scrollToBottomBtn.setAttribute("aria-label", "移至當前頁面底部");
+  scrollToBottomBtn.style.display = "none";
+
+  scrollToBottomBtn.addEventListener("click", () => {
+    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
+  });
+
+  const updateVisibility = () => {
+    const scrollBottom = window.scrollY + window.innerHeight;
+    const pageBottom = document.documentElement.scrollHeight;
+    const isAtBottom = scrollBottom >= pageBottom - 1;
+    scrollToBottomBtn.style.display = isAtBottom ? "none" : "block";
+  };
+
+  document.body.appendChild(scrollToBottomBtn);
+  window.addEventListener("scroll", updateVisibility, { passive: true });
+  updateVisibility();
+})();
+
+(function initSpellSearchFloatingButton() {
+  if (document.getElementById("spell-search-fab")) return;
+
+  const spellToolbar = document.getElementById("spell-tab-toolbar");
+  const spellTab = document.getElementById("tab-spells");
+  if (!spellToolbar || !spellTab) return;
+
+  const spellSearchFab = document.createElement("button");
+  spellSearchFab.id = "spell-search-fab";
+  spellSearchFab.type = "button";
+  spellSearchFab.textContent = "🔍";
+  spellSearchFab.classList.add("is-hidden");
+  spellSearchFab.setAttribute("aria-label", "切換法術搜尋列");
+  document.body.appendChild(spellSearchFab);
+
+  let isSpellToolbarVisible = false;
+  const spellSearchInput = document.getElementById("spell-search");
+
+  const setSpellToolbarVisibility = (visible) => {
+    isSpellToolbarVisible = !!visible;
+    spellToolbar.classList.toggle("is-hidden", !isSpellToolbarVisible);
+    spellSearchFab.classList.toggle("toolbar-open", isSpellToolbarVisible);
+    spellTab.classList.toggle("spell-toolbar-visible", isSpellToolbarVisible);
+  };
+
+  const closeSpellToolbar = () => {
+    if (spellSearchInput) spellSearchInput.value = "";
+    window.clearSpellSearchResults?.();
+    setSpellToolbarVisibility(false);
+  };
+
+  const syncWithActiveTab = (tab) => {
+    const activeTab = tab || document.querySelector(".tab-content.active")?.id?.replace("tab-", "");
+    if (activeTab === "spells") {
+      spellSearchFab.classList.remove("is-hidden");
+      return;
+    }
+    spellSearchFab.classList.add("is-hidden");
+    closeSpellToolbar();
+  };
+
+  spellSearchFab.addEventListener("click", () => {
+    if (isSpellToolbarVisible) {
+      closeSpellToolbar();
+      return;
+    }
+    setSpellToolbarVisibility(true);
+  });
+
+  window.addEventListener("tabchange", (event) => {
+    syncWithActiveTab(event?.detail?.tab);
+  });
+
+  syncWithActiveTab();
+})();
+
+(function initEquipmentSearchFloatingButton() {
+  if (document.getElementById("equipment-search-fab")) return;
+
+  const equipmentToolbar = document.getElementById("equipment-tab-toolbar");
+  const equipmentTab = document.getElementById("tab-equipment");
+  if (!equipmentToolbar || !equipmentTab) return;
+
+  const equipmentSearchFab = document.createElement("button");
+  equipmentSearchFab.id = "equipment-search-fab";
+  equipmentSearchFab.type = "button";
+  equipmentSearchFab.textContent = "\uD83D\uDD0D";
+  equipmentSearchFab.classList.add("is-hidden");
+  equipmentSearchFab.setAttribute("aria-label", "開啟裝備搜尋");
+  document.body.appendChild(equipmentSearchFab);
+
+  let isEquipmentToolbarVisible = false;
+  const equipmentSearchInput = document.getElementById("equipment-search");
+
+  const setEquipmentToolbarVisibility = (visible) => {
+    isEquipmentToolbarVisible = !!visible;
+    equipmentToolbar.classList.toggle("is-hidden", !isEquipmentToolbarVisible);
+    equipmentSearchFab.classList.toggle("toolbar-open", isEquipmentToolbarVisible);
+    equipmentTab.classList.toggle("equipment-toolbar-visible", isEquipmentToolbarVisible);
+  };
+
+  const openEquipmentSearchSections = () => {
+    document.querySelectorAll("#equipment-notes-section > .section > details").forEach((detail) => {
+      detail.open = true;
+    });
+    window.prepareEquipmentSearch?.();
+  };
+
+  const closeEquipmentToolbar = () => {
+    if (equipmentSearchInput) equipmentSearchInput.value = "";
+    window.applyEquipmentFilter?.();
+    setEquipmentToolbarVisibility(false);
+  };
+
+  const syncWithActiveTab = (tab) => {
+    const activeTab = tab || document.querySelector(".tab-content.active")?.id?.replace("tab-", "");
+    if (activeTab === "equipment") {
+      equipmentSearchFab.classList.remove("is-hidden");
+      return;
+    }
+    equipmentSearchFab.classList.add("is-hidden");
+    closeEquipmentToolbar();
+  };
+
+  equipmentSearchFab.addEventListener("click", () => {
+    if (isEquipmentToolbarVisible) {
+      closeEquipmentToolbar();
+      return;
+    }
+    openEquipmentSearchSections();
+    setEquipmentToolbarVisibility(true);
+    equipmentSearchInput?.focus();
+  });
+
+  window.addEventListener("tabchange", (event) => {
+    syncWithActiveTab(event?.detail?.tab);
+  });
+
+  syncWithActiveTab();
+})();
+
+(function initSpellSlotQuickJump() {
+  const spellTab = document.getElementById("tab-spells");
+  if (!spellTab) return;
+
+  const headerOffset = 92;
+  const jumpConfig = [
+    { rowId: "spellslot1-row", level: 1, label: "一環" },
+    { rowId: "spellslot2-row", level: 2, label: "二環" },
+    { rowId: "spellslot3-row", level: 3, label: "三環" }
+  ];
+
+  const smoothScrollToElement = (element) => {
+    if (!element) return;
+    const targetY = element.getBoundingClientRect().top + window.scrollY - headerOffset;
+    window.scrollTo({ top: Math.max(targetY, 0), behavior: "smooth" });
+  };
+
+  const getFirstSpellTarget = (level) => {
+    const levelSection = document.querySelector(`#tab-spells details.spell-level-section:nth-of-type(${level + 1})`);
+    if (levelSection) levelSection.open = true;
+
+    const spellArea = document.getElementById(`level${level}spells-area`);
+    const firstSpell = spellArea?.querySelector(".spell-entry");
+    return firstSpell || spellArea || levelSection || null;
+  };
+
+  const handleJump = (level) => {
+    const target = getFirstSpellTarget(level);
+    if (target) smoothScrollToElement(target);
+  };
+
+  jumpConfig.forEach(({ rowId, level, label }) => {
+    const row = document.getElementById(rowId);
+    const slotLabel = row?.querySelector(".spell-slot-label");
+    if (!slotLabel) return;
+
+    slotLabel.classList.add("spell-slot-label--jump");
+    slotLabel.setAttribute("role", "button");
+    slotLabel.setAttribute("tabindex", "0");
+    slotLabel.setAttribute("aria-label", `跳到${label}法術`);
+    slotLabel.title = `跳到${label}法術`;
+
+    slotLabel.addEventListener("click", () => handleJump(level));
+    slotLabel.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        handleJump(level);
+      }
+    });
+  });
+})();
+
+(function initBasicOverviewQuickJump() {
+  const headerOffset = 92;
+  const smoothScrollToElement = (element) => {
+    if (!element) return;
+    const targetY = element.getBoundingClientRect().top + window.scrollY - headerOffset;
+    window.scrollTo({ top: Math.max(targetY, 0), behavior: "smooth" });
+  };
+
+  const jumpLabels = document.querySelectorAll(".mini-stat-label--jump[data-jump-target]");
+  jumpLabels.forEach((label) => {
+    const targetId = label.getAttribute("data-jump-target");
+    if (!targetId) return;
+
+    label.setAttribute("role", "button");
+    label.setAttribute("tabindex", "0");
+    label.setAttribute("aria-label", `跳到${label.textContent?.trim() || ""}區塊`);
+    label.title = `跳到${label.textContent?.trim() || ""}區塊`;
+
+    const handleJump = () => {
+      const target = document.getElementById(targetId);
+      const details = target?.querySelector("details");
+      if (details) details.open = true;
+      if (target) smoothScrollToElement(target);
+    };
+
+    label.addEventListener("click", handleJump);
+    label.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        handleJump();
+      }
+    });
+  });
+})();
