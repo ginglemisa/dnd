@@ -872,51 +872,15 @@
   </div>
 
   <script>
-function getHitDiceValues(className) {
-  switch (className) {
-    case "barbarian": return { Y: 12, Z: 7 };
-    case "fighter":
-    case "paladin":
-    case "ranger":
-      return { Y: 10, Z: 6 };
-    case "bard":
-    case "cleric":
-    case "druid":
-    case "monk":
-    case "rogue":
-    case "warlock":
-      return { Y: 8, Z: 5 };
-    case "sorcerer":
-    case "wizard":
-      return { Y: 6, Z: 4 };
-    default:
-      return { Y: 0, Z: 0 };
-  }
-}
-
-function calculateConModifier(score) {
-  if (!score || isNaN(score)) return 0;
-  return Math.floor((score - 10) / 2);
-}
-
 function updateHPDisplay() {
   const classValue = document.getElementById("class").value;
-  const level = parseInt(document.getElementById("level").value || "1");
-  const conScore = parseInt(document.getElementById("con").value || "10");
-  const race = document.getElementById("race").value;
-  const isDwarf = race === "dwarf" ? 1 : 0;
-
-  const { Y, Z } = getHitDiceValues(classValue);
-  const conMod = calculateConModifier(conScore);
-
-  let maxHP = Y + conMod * level + Z * (level - 1) + isDwarf * level;
-
-if (classValue === "sorcerer" && level >= 3) {
-  maxHP += 3 + (level - 3);
-}
-
-document.getElementById("hp-display").textContent = String(maxHP);
-
+  const maxHp = calculateCharacterMaxHp({
+    className: classValue,
+    level: document.getElementById("level").value || "1",
+    constitutionScore: document.getElementById("con").value || "10",
+    race: document.getElementById("race").value
+  });
+  document.getElementById("hp-display").textContent = String(maxHp);
 }
 
 function bindEventById(id, eventName, handler) {
@@ -930,14 +894,6 @@ function bindHPDisplayEvents() {
   bindEventById("level", "change", updateHPDisplay);
   bindEventById("race", "change", updateHPDisplay);
   bindEventById("con", "input", updateHPDisplay);
-}
-
-function clampHpValue(rawValue) {
-  if (rawValue === "" || rawValue === null || rawValue === undefined) return "";
-  const numeric = Number(rawValue);
-  if (!Number.isFinite(numeric)) return "";
-  const rounded = Math.round(numeric);
-  return String(Math.min(200, Math.max(0, rounded)));
 }
 
 function enforceHpInputRange() {
@@ -958,20 +914,7 @@ function bindSpellNotesEvents() {
 }
 
 const CHARACTER_SIZE_STATE_KEY = "character-size";
-const FIXED_CHARACTER_SIZE_BY_RACE = Object.freeze({
-  dragonborn: "中型",
-  dwarf: "中型",
-  elf: "中型",
-  gnome: "小型",
-  goliath: "中型",
-  halfling: "小型",
-  orc: "中型"
-});
 let characterSize = "";
-
-function normalizeCharacterSize(value) {
-  return value === "小型" || value === "中型" ? value : "";
-}
 
 function setCharacterSize(value) {
   characterSize = normalizeCharacterSize(value);
@@ -980,7 +923,7 @@ function setCharacterSize(value) {
 
 function syncCharacterSizeFromRace(savedSize = "") {
   const race = document.getElementById("race")?.value || "";
-  return setCharacterSize(FIXED_CHARACTER_SIZE_BY_RACE[race] || savedSize);
+  return setCharacterSize(getCharacterSizeForRace(race, savedSize));
 }
 
 window.setCharacterSize = setCharacterSize;
@@ -1232,92 +1175,31 @@ function enforceDruidMissionExclusivity(changedId) {
 }
 
 // 計算AC頂部
-function getDexModifier() {
-  const dex = parseInt(document.getElementById("dex").value || "10");
-  return Math.floor((dex - 10) / 2);
-}
-function getConModifier() {
-  const con = parseInt(document.getElementById("con").value || "10");
-  return Math.floor((con - 10) / 2);
-}
-function getWisModifier() {
-  const wis = parseInt(document.getElementById("wis").value || "10");
-  return Math.floor((wis - 10) / 2);
-}
-function getChaModifier() {
-  const cha = parseInt(document.getElementById("cha").value || "10");
-  return Math.floor((cha - 10) / 2);
-}
-
 function updateACDisplay() {
   const armorName = document.getElementById("armor")?.value;
   const hasArmor = Boolean(armorName) && !isShieldItem(armorName);
   const hasArmorShield = isShieldItem(armorName);
-  const dexMod = getDexModifier();
-  const conMod = getConModifier();
-  const wisMod = getWisModifier();
-  const chaMod = getChaModifier();
   const offHandName = document.getElementById("offHand")?.value;
   const className = document.getElementById("class")?.value;
-  const level = parseInt(document.getElementById("level")?.value || "1");
+  const armor = hasArmor ? armors.find(item => item.名稱 === armorName) : null;
+  const hasOffHandShield = offHandName === "盾牌";
+  const hasShield = (hasOffHandShield || hasArmorShield)
+    && !(hasOffHandShield && hasArmorShield);
+  const armorClass = calculateArmorClass({
+    armor,
+    hasArmor,
+    className,
+    level: document.getElementById("level")?.value || "1",
+    dexterityScore: document.getElementById("dex")?.value || "10",
+    constitutionScore: document.getElementById("con")?.value || "10",
+    wisdomScore: document.getElementById("wis")?.value || "10",
+    charismaScore: document.getElementById("cha")?.value || "10",
+    hasAnyShield: hasOffHandShield || hasArmorShield,
+    hasShield,
+    hasDefenseFightingStyle: hasDefenseFightingStyleFeat()
+  });
 
-  let baseAC;
-
-  // 術士3級以上視為龍族體魄：沒穿護甲時
-  if (!hasArmor && className === "sorcerer" && level >= 3) {
-    baseAC = 10 + chaMod + dexMod;
-  }
-  // 武僧
-  else if (!hasArmor && !hasArmorShield && (!offHandName || offHandName !== "盾牌") && className === "monk") {
-    baseAC = 10 + dexMod + wisMod;
-  }
-  // 野蠻人
-  else if (!hasArmor && className === "barbarian") {
-    baseAC = 10 + dexMod + conMod;
-  }
-  // 一般沒穿護甲
-  else if (!hasArmor) {
-    baseAC = 10 + dexMod;
-  }
-  // 有穿護甲
-  else {
-    const armor = armors.find(a => a.名稱 === armorName);
-    if (!armor) {
-      document.getElementById("ac-display").textContent = "--";
-      updateEquipmentLoadoutSummary();
-      return;
-    }
-    if (armor.分類 === "重甲") {
-      baseAC = parseInt(armor.AC);
-    } else if (armor.分類 === "中甲") {
-      const acBase = parseInt(armor.AC);
-      const dexCap = Math.min(2, dexMod);
-      baseAC = acBase + dexCap;
-    } else if (armor.分類 === "輕甲") {
-      const acBase = parseInt(armor.AC);
-      baseAC = acBase + dexMod;
-    } else {
-      baseAC = "--";
-    }
-  }
-
-// 只有「指定職業」才能從盾牌獲得 +2 AC
-const shieldProficientClasses = ["barbarian", "cleric", "druid", "fighter", "paladin", "ranger"];
-  if (
-  (offHandName === "盾牌" || hasArmorShield) &&
-  !(offHandName === "盾牌" && hasArmorShield) &&
-  typeof baseAC === "number" &&
-  shieldProficientClasses.includes(className)
-) {
-  baseAC += 2;
-}
-
-// 戰鬥風格：防禦（穿著輕/中/重甲時 AC +1）
-if (typeof baseAC === "number" && hasArmor && hasDefenseFightingStyleFeat()) {
-  baseAC += 1;
-}
-
-  document.getElementById("ac-display").textContent = baseAC;
+  document.getElementById("ac-display").textContent = armorClass ?? "--";
   updateEquipmentLoadoutSummary();
 }
 // 計算AC底部
@@ -1443,18 +1325,10 @@ function renderSelectedFeatureSummary(summaryEl, items, emptyText, formatText = 
   }).join("")}</div>`;
 }
 
-function getMetamagicSelectionLimit() {
-  return 2;
-}
-
 function getWarlockInvocationSelectionLimit() {
   const cls = document.getElementById("class")?.value || "";
-  if (cls !== "warlock") return 0;
-
-  const level = parseInt(document.getElementById("level")?.value || "1", 10);
-  if (level <= 1) return 1;
-  if (level <= 4) return 3;
-  return 5;
+  const level = document.getElementById("level")?.value || "1";
+  return calculateWarlockInvocationSelectionLimit(cls, level);
 }
 
 function enforceCheckboxSelectionLimit(inputs, limit, changedInput, alertMessage, shouldAlert = true) {
@@ -3123,7 +2997,7 @@ function applyDefaultAbilitiesByClass() {
 
     function calculateModifier(score) {
       if (!score || isNaN(score)) return "";
-      const mod = Math.floor((score - 10) / 2);
+      const mod = calculateAbilityModifier(score);
       return `${mod > 0 ? "+" : ""}${mod}`;
     }
 
@@ -3159,19 +3033,13 @@ function applyDefaultAbilitiesByClass() {
 
 <script>
 function getModifier(statId) {
-  const value = parseInt(document.getElementById(statId).value || "10");
-  return Math.floor((value - 10) / 2);
+  return calculateAbilityModifier(document.getElementById(statId).value || "10");
 }
 
 /** 依等級回傳熟練加值（先做完整 1~20 規則，未來你擴充等級也不用再改） */
 function getProficiencyBonus() {
   const lvl = parseInt(document.getElementById("level")?.value || "1", 10);
-
-  if (lvl >= 17) return 6;
-  if (lvl >= 13) return 5;
-  if (lvl >= 9)  return 4;
-  if (lvl >= 5)  return 3;
-  return 2; // 1~4
+  return calculateProficiencyBonus(lvl);
 }
 
 function syncProficiencyUseChecks() {
@@ -3188,19 +3056,6 @@ function syncProficiencyUseChecks() {
 function updateForestGnomeUseVisibility() {
   const isForestGnome = document.getElementById("gnome-lineage")?.value === "forest_gnome";
   document.getElementById("forest-gnome-animal-speech-uses")?.classList.toggle("is-hidden", !isForestGnome);
-}
-
-function formatSignedValue(value) {
-  if (!Number.isFinite(value)) return "";
-  if (value > 0) return `+${value}`;
-  return String(value);
-}
-
-function parseSignedValue(value) {
-  const normalized = String(value ?? "").trim();
-  if (!normalized) return 0;
-  const parsed = Number.parseInt(normalized, 10);
-  return Number.isFinite(parsed) ? parsed : 0;
 }
 
 function updateSpellCastingStats() {
@@ -3232,27 +3087,16 @@ function bindSpellCastingStatsEvents() {
   });
 }
 
-const NON_SPELLCASTER_CLASSES = new Set(["barbarian", "fighter", "monk", "rogue"]);
-const SPELLCASTER_CLASSES = new Set(["bard", "cleric", "druid", "paladin", "ranger", "sorcerer", "warlock", "wizard"]);
-const NON_SPELLCASTER_BACKGROUNDS = new Set(["soldier", "criminal"]);
-const SPELLCASTER_BACKGROUNDS = new Set(["acolyte", "sage"]);
-const NON_SPELLCASTER_RACES = new Set(["dragonborn", "dwarf", "goliath", "halfling", "human", "orc"]);
-const SPELLCASTER_RACES = new Set(["elf", "gnome", "tiefling"]);
-
 function hasSpellcastingCapability() {
   const classValue = document.getElementById("class")?.value || "";
   const backgroundValue = document.getElementById("background")?.value || "";
   const raceValue = document.getElementById("race")?.value || "";
-
-  if (SPELLCASTER_CLASSES.has(classValue)) return true;
-  if (SPELLCASTER_BACKGROUNDS.has(backgroundValue)) return true;
-  if (SPELLCASTER_RACES.has(raceValue)) return true;
-  if (hasMagicInitiateFeatSelected()) return true;
-
-  const classNoCast = NON_SPELLCASTER_CLASSES.has(classValue);
-  const backgroundNoCast = NON_SPELLCASTER_BACKGROUNDS.has(backgroundValue);
-  const raceNoCast = NON_SPELLCASTER_RACES.has(raceValue);
-  return !(classNoCast && backgroundNoCast && raceNoCast);
+  return hasSpellcastingCapabilityForSelections({
+    className: classValue,
+    background: backgroundValue,
+    race: raceValue,
+    hasMagicInitiate: hasMagicInitiateFeatSelected()
+  });
 }
 
 function updateSpellCastingStatsVisibility() {
@@ -3271,24 +3115,6 @@ function updateSpellCastingStatsVisibility() {
     const basicTabButton = document.getElementById("basic-tab-button");
     showTab("basic", basicTabButton);
   }
-}
-
-function getClassSaveProficiencies(classId) {
-  const saveMap = {
-    barbarian: ["str", "con"],
-    bard: ["dex", "cha"],
-    cleric: ["wis", "cha"],
-    druid: ["int", "wis"],
-    fighter: ["str", "con"],
-    monk: ["str", "dex"],
-    paladin: ["wis", "cha"],
-    ranger: ["str", "dex"],
-    rogue: ["dex", "int"],
-    sorcerer: ["con", "cha"],
-    warlock: ["wis", "cha"],
-    wizard: ["int", "wis"]
-  };
-  return saveMap[classId] || [];
 }
 
 function fillSaves() {
@@ -3357,7 +3183,7 @@ function updateAutomaticInitiative() {
     initiative.value = "";
     return;
   }
-  const dexMod = Math.floor((dexScore - 10) / 2);
+  const dexMod = calculateAbilityModifier(dexScore);
   const hasAlertFeat = getFeatSelects().some(select => select.value === ALERT_FEAT_NAME);
   initiative.value = formatSignedValue(dexMod + (hasAlertFeat ? getProficiencyBonus() : 0));
 }
@@ -3437,7 +3263,7 @@ function isMonkClassSelected() {
 }
 function getMonkMartialArtsDie() {
   const level = Number(document.getElementById("level")?.value || 1);
-  return level >= 5 ? "1d8" : "1d6";
+  return getMonkMartialArtsDieByLevel(level);
 }
 function getMonkMartialArtsWeapon() {
   return {
@@ -4622,8 +4448,8 @@ function createSingleSpellRow(areaId, level, afterRow = null, restoredRowState =
   // 職業選單
   const classSel = document.createElement('select');
 
-  const cantripClassOptions = classOptions.filter(o => o.value !== "paladin" && o.value !== "ranger");
-  const optionsToUse = (level === "cantrips") ? cantripClassOptions : classOptions;
+  const classOptionsWithoutHalfCasters = classOptions.filter(o => o.value !== "paladin" && o.value !== "ranger");
+  const optionsToUse = (level === "cantrips" || level === 3) ? classOptionsWithoutHalfCasters : classOptions;
 
   classSel.innerHTML =
     `<option value="">--職業--</option>` +
@@ -5383,35 +5209,6 @@ document.getElementById("equipment-search-clear")?.addEventListener("click", () 
   searchEl.focus();
 });
 
-const STANDARD_SPELL_SLOTS = Object.freeze({
-  1: Object.freeze([2, 0, 0]),
-  2: Object.freeze([3, 0, 0]),
-  3: Object.freeze([4, 2, 0]),
-  4: Object.freeze([4, 3, 0]),
-  5: Object.freeze([4, 3, 2])
-});
-const HALF_CASTER_SPELL_SLOTS = Object.freeze({
-  1: Object.freeze([2, 0, 0]),
-  2: Object.freeze([2, 0, 0]),
-  3: Object.freeze([3, 0, 0]),
-  4: Object.freeze([3, 0, 0]),
-  5: Object.freeze([4, 2, 0])
-});
-const WARLOCK_SPELL_SLOTS = Object.freeze({
-  1: Object.freeze([1, 0, 0]),
-  2: Object.freeze([2, 0, 0]),
-  3: Object.freeze([0, 2, 0]),
-  4: Object.freeze([0, 2, 0]),
-  5: Object.freeze([0, 0, 2])
-});
-
-function getSpellSlotCounts(classValue, level) {
-  if (["bard", "cleric", "druid", "sorcerer", "wizard"].includes(classValue)) return STANDARD_SPELL_SLOTS[level] || [0, 0, 0];
-  if (["paladin", "ranger"].includes(classValue)) return HALF_CASTER_SPELL_SLOTS[level] || [0, 0, 0];
-  if (classValue === "warlock") return WARLOCK_SPELL_SLOTS[level] || [0, 0, 0];
-  return [0, 0, 0];
-}
-
 function hasCompletePrimaryCharacterSelections() {
   return ["class", "level", "background", "race"].every(id => Boolean(document.getElementById(id)?.value));
 }
@@ -6119,7 +5916,11 @@ function buildPdfPrecheckMessages() {
 
   requiredSelectIds.forEach(({ id, label }) => {
     const value = (document.getElementById(id)?.value || "").trim();
-    if (!value) reminders.push(`${label}尚未選擇。`);
+    if (!value) reminders.push({
+      message: `${label}尚未選擇。`,
+      tab: "basic",
+      selector: `#${id}`
+    });
   });
 
   const selectedRace = (document.getElementById("race")?.value || "").trim();
@@ -6133,30 +5934,58 @@ function buildPdfPrecheckMessages() {
   const raceOptionRequirement = raceOptionRequirements[selectedRace];
   if (raceOptionRequirement) {
     const value = (document.getElementById(raceOptionRequirement.id)?.value || "").trim();
-    if (!value) reminders.push(`${raceOptionRequirement.label}尚未選擇。`);
+    if (!value) reminders.push({
+      message: `${raceOptionRequirement.label}尚未選擇。`,
+      tab: "basic",
+      selector: `#${raceOptionRequirement.id}`
+    });
   }
 
   const abilityIds = ["str", "dex", "con", "int", "wis", "cha"];
-  const hasAllAbilities = abilityIds.every((id) => {
+  const firstMissingAbilityId = abilityIds.find((id) => {
     const raw = (document.getElementById(id)?.value || "").trim();
-    return raw !== "" && Number.isFinite(Number(raw));
+    return raw === "" || !Number.isFinite(Number(raw));
   });
-  if (!hasAllAbilities) reminders.push("屬性數值未填");
+  if (firstMissingAbilityId) reminders.push({
+    message: "屬性數值未填",
+    tab: "basic",
+    selector: ".ability-grid",
+    focusSelector: `#${firstMissingAbilityId}`
+  });
 
   const saveCheckedCount = document.querySelectorAll('#tab-skills .save-pair input[type="checkbox"]:checked').length;
-  if (saveCheckedCount < 2) reminders.push("豁免未勾兩項");
+  if (saveCheckedCount < 2) reminders.push({
+    message: "豁免未勾兩項",
+    tab: "skills",
+    selector: "#tab-skills .save-grid",
+    focusSelector: '#tab-skills .save-pair input[type="checkbox"]:not(:checked)'
+  });
 
-  const hasEmptySkillValue = Array.from(document.querySelectorAll('#tab-skills .skill-grid input[id^="skill-"]'))
-    .some((input) => (input.value || "").trim() === "");
-  if (hasEmptySkillValue) reminders.push("技能加值有空白");
+  const firstEmptySkillInput = Array.from(document.querySelectorAll('#tab-skills .skill-grid input[id^="skill-"]'))
+    .find((input) => (input.value || "").trim() === "");
+  if (firstEmptySkillInput) reminders.push({
+    message: "技能加值有空白",
+    tab: "skills",
+    selector: "#tab-skills .skill-grid",
+    focusSelector: `#${CSS.escape(firstEmptySkillInput.id)}`
+  });
 
   if (hasSpellcastingCapability()) {
     const spellcastingAbility = (document.getElementById("spellcasting-ability")?.value || "").trim();
-    if (!spellcastingAbility) reminders.push("施法屬性未選擇");
+    if (!spellcastingAbility) reminders.push({
+      message: "施法屬性未選擇",
+      tab: "spells",
+      selector: "#spellcasting-ability"
+    });
 
     const hasSelectedSpell = Array.from(document.querySelectorAll('#tab-spells select[id*="-spell-"]'))
       .some((select) => (select.value || "").trim() !== "");
-    if (!hasSelectedSpell) reminders.push("施法者未選法術");
+    if (!hasSelectedSpell) reminders.push({
+      message: "施法者未選法術",
+      tab: "spells",
+      selector: "#tab-spells details.spell-level-section",
+      focusSelector: '#tab-spells select[id*="-spell-"]'
+    });
   }
 
   return reminders;
@@ -6207,7 +6036,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
     if (raceChoice && !result[raceChoice.key]) steps.push("race");
     let idx=0, busy=false, lastMode=null;
 
-    function close(v){ document.removeEventListener('keydown', onKeyDown, true); overlay.remove(); (exportPdfBtn||prevFocus)?.focus?.(); resolve(v); }
+    function close(v, restoreFocus=true){ document.removeEventListener('keydown', onKeyDown, true); overlay.remove(); if(restoreFocus)(exportPdfBtn||prevFocus)?.focus?.(); resolve(v); }
     function getFocusable(){ return Array.from(card.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')).filter(el=>!el.disabled); }
     function trapTab(e){ if(e.key!== 'Tab') return; const f=getFocusable(); if(!f.length)return; const first=f[0],last=f[f.length-1]; if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();} else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
     function onKeyDown(e){ if(e.key==='Escape' && !busy){e.preventDefault(); close(null);} trapTab(e);}    
@@ -6237,11 +6066,35 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
       if(type==='error'){ d.innerHTML=`<p class="pdf-export-flow-modal__error">${message}</p>`; const retry=document.createElement('button'); retry.textContent='重試'; retry.onclick=()=>startExport(lastMode); const closeBtn=document.createElement('button'); closeBtn.textContent='關閉'; closeBtn.onclick=()=>close(null); a.append(retry,closeBtn); retry.focus(); return; }
 
       const step=steps[idx];
-      if(step==='precheck'){ d.innerHTML=reminders.length?`<p>匯出前提醒：</p><ol>${reminders.map(x=>`<li>${x}</li>`).join('')}</ol>`:'<p>已通過匯出前檢查。</p>'; const n=document.createElement('button'); n.textContent='繼續'; n.onclick=()=>{idx++; render();}; a.append(n); n.focus(); }
+      if(step==='precheck'){
+        if(reminders.length){
+          const intro=document.createElement('p'); intro.textContent='匯出前提醒（點擊可前往補填）：';
+          const list=document.createElement('ol'); list.className='pdf-export-precheck-list';
+          reminders.forEach((reminder)=>{
+            const item=document.createElement('li');
+            const jump=document.createElement('button'); jump.type='button'; jump.className='pdf-export-precheck-list__jump';
+            const label=document.createElement('span'); label.textContent=reminder.message;
+            const action=document.createElement('span'); action.className='pdf-export-precheck-list__action'; action.textContent='前往'; action.setAttribute('aria-hidden','true');
+            jump.setAttribute('aria-label',`${reminder.message}，前往補填`);
+            jump.append(label,action);
+            jump.onclick=()=>{
+              close(null,false);
+              Promise.resolve(window.onboardingTour?.jumpToTarget?.(reminder)).catch((error)=>{
+                console.warn('無法前往 PDF 匯出提醒欄位：', error);
+              });
+            };
+            item.appendChild(jump); list.appendChild(item);
+          });
+          d.append(intro,list);
+        } else {
+          d.innerHTML='<p>已通過匯出前檢查。</p>';
+        }
+        const n=document.createElement('button'); n.textContent='繼續'; n.onclick=()=>{idx++; render();}; a.append(n); n.focus();
+      }
       else if(step==='name'){ const i=document.createElement('input'); i.placeholder='角色名稱'; i.value=result.characterName; const err=document.createElement('p'); err.className='pdf-export-flow-modal__error'; d.append(i,err); const n=document.createElement('button'); n.textContent='下一步'; n.onclick=()=>{const v=i.value.trim(); if(countPdfNameUnits(v)>PDF_EXPORT_MAX_NAME_UNITS){err.textContent='名稱過長，請控制在字數限制內。'; return;} result.characterName=v; idx++; render();}; a.append(n); i.focus(); }
       else if(step==='equipment'){ d.innerHTML='<p>是否將職業與背景提供的預設裝備也一起寫入 PDF？</p>'; const n1=document.createElement('button'); n1.textContent='不包含'; n1.onclick=()=>{result.includeDefaultEquipment=false; idx++; render();}; const n2=document.createElement('button'); n2.textContent='包含'; n2.onclick=()=>{result.includeDefaultEquipment=true; idx++; render();}; a.append(n1,n2); n1.focus(); }
       else if(step==='race'){ d.innerHTML=`<p>${raceChoice.title}</p>`; raceChoice.options.forEach(([key,label])=>{const b=document.createElement('button'); b.textContent=label; b.onclick=()=>{result[raceChoice.key]=key; idx++; render();}; d.appendChild(b);}); d.querySelector('button')?.focus(); }
-      else { startExport(false); return; }
+      else { startExport(result.subsetFont); return; }
     }
 
     overlay.addEventListener('click',(e)=>{ if(e.target===overlay && !busy) close(null); });

@@ -4272,6 +4272,62 @@ div[id$="spells-area"] .form-row {
   padding-left: 1.35rem;
 }
 
+.pdf-export-precheck-list {
+  display: grid;
+  gap: 6px;
+}
+
+.pdf-export-flow-modal__card .pdf-export-precheck-list__jump {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 9px 11px;
+  border-color: rgba(76, 100, 154, 0.28);
+  background: rgba(255, 255, 255, 0.72);
+  color: #24324f;
+  text-align: left;
+}
+
+.pdf-export-flow-modal__card .pdf-export-precheck-list__jump:hover,
+.pdf-export-flow-modal__card .pdf-export-precheck-list__jump:focus-visible {
+  border-color: #526fae;
+  background: #fff;
+}
+
+.pdf-export-precheck-list__action {
+  flex: 0 0 auto;
+  color: #46639f;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.onboarding-jump-target {
+  animation: onboarding-jump-highlight 1.8s ease-out;
+}
+
+@keyframes onboarding-jump-highlight {
+  0%, 35% {
+    outline: 3px solid rgba(82, 111, 174, 0.88);
+    outline-offset: 5px;
+    box-shadow: 0 0 0 8px rgba(82, 111, 174, 0.16);
+  }
+  100% {
+    outline-color: transparent;
+    outline-offset: 9px;
+    box-shadow: 0 0 0 14px transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onboarding-jump-target {
+    animation-duration: 0.01ms;
+    outline: 3px solid #526fae;
+    outline-offset: 5px;
+  }
+}
+
 .pdf-export-flow-modal__card button {
   width: auto;
   margin: 0;

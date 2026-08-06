@@ -346,6 +346,42 @@
       document.getElementById("restart-onboarding-btn")?.addEventListener("click", () => this.start());
     }
 
+    async jumpToTarget({ tab = "basic", selector, focusSelector = selector } = {}) {
+      if (!selector) return false;
+      if (this.active) this.stop();
+
+      const tabButton = document.querySelector(`.tab-button[onclick*="'${tab}'"]`);
+      if (typeof showTab === "function") {
+        showTab(tab, tabButton || undefined);
+      }
+      await waitForLayoutStability();
+
+      const target = Array.from(document.querySelectorAll(selector)).find((element) => {
+        return element.getClientRects().length > 0;
+      }) || document.querySelector(selector);
+      if (!target) return false;
+
+      const details = target.closest("details");
+      if (details && !details.open) {
+        details.open = true;
+        await waitForLayoutStability();
+      }
+
+      const targetY = window.scrollY + target.getBoundingClientRect().top - 120;
+      await animateWindowScrollTo(targetY, 560);
+
+      const focusTarget = Array.from(document.querySelectorAll(focusSelector)).find((element) => {
+        return element.getClientRects().length > 0 && !element.disabled;
+      });
+      focusTarget?.focus?.({ preventScroll: true });
+
+      target.classList.remove("onboarding-jump-target");
+      void target.offsetWidth;
+      target.classList.add("onboarding-jump-target");
+      window.setTimeout(() => target.classList.remove("onboarding-jump-target"), 1800);
+      return true;
+    }
+
     getSteps() {
       return [
         {

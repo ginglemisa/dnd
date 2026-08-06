@@ -337,8 +337,16 @@
     fitPayloadTextFields(form, payload, fontEmbedResult.font);
     form.updateFieldAppearances(fontEmbedResult.font);
 
+    // ========================================================================
+    // 【已停用：pdf-lib 表單平面化】
+    // 此範本含有大量 checkbox；pdf-lib 平面化會產生缺少 /Subtype 的
+    // FlatWidget XObject，導致 Adobe Acrobat 無法開啟輸出的 PDF。
+    // 若要再次研究或測試，請先確認輸出結構合法後再取消下一行註解。
+    // form.flatten({ updateFieldAppearances: false });
+    // ========================================================================
+
     const outputBytes = await pdfDoc.save({
-      updateFieldAppearances: true,
+      updateFieldAppearances: false,
       useObjectStreams: true
     });
     triggerDownload(outputBytes, `dnd-character-${timestampString()}.pdf`);

@@ -805,11 +805,24 @@
 
   function findSpellDesc(classKey, level, spellName) {
     const allSpells = getSpellListMap();
-    if (!classKey || !spellName || !allSpells?.[classKey]) return '';
+    if (!spellName || !allSpells) return '';
     const levelKey = String(level);
-    const spells = allSpells[classKey][levelKey] || [];
-    const found = spells.find((spell) => spell.name === spellName);
-    return found?.desc || '';
+    const classSpells = allSpells?.[classKey]?.[levelKey] || [];
+    const exactMatch = classSpells.find((spell) => spell.name === spellName);
+    if (exactMatch) return exactMatch.desc || '';
+
+    // 子職、種族與其他自動準備法術會以來源類型（例如 subclass）
+    // 取代實際職業值；若原職業查找失敗，改用環位與中文名稱跨職業查找。
+    const localizedName = extractChineseSpellName(spellName);
+    for (const classSpellLevels of Object.values(allSpells)) {
+      const sameLevelSpells = classSpellLevels?.[levelKey] || [];
+      const fallbackMatch = sameLevelSpells.find((spell) => {
+        return extractChineseSpellName(spell.name) === localizedName;
+      });
+      if (fallbackMatch) return fallbackMatch.desc || '';
+    }
+
+    return '';
   }
 
   function getSpellLine(desc, label) {
@@ -1231,12 +1244,14 @@
     payload.chk_light1 = /輕甲/.test(armorTraining);
     payload.chk_medium1 = /中甲/.test(armorTraining);
     payload.chk_heavy1 = /重甲/.test(armorTraining);
-    payload.chk_shld1 = /盾牌/.test(armorTraining);
 
     payload.feats1 = buildFeatPdfText(state);
 
-    // The replacement character sheet supplies rows 1-19 only.
-    const spellRows = buildSpellRows(state).slice(0, MAX_PDF_SPELL_ROWS);
+    // The replacement character sheet supplies rows 1-19 only. Preserve any
+    // remaining prepared spells as a compact summary in the notes field.
+    const allSpellRows = buildSpellRows(state);
+    const spellRows = allSpellRows.slice(0, MAX_PDF_SPELL_ROWS);
+    const remainingSpellRows = allSpellRows.slice(MAX_PDF_SPELL_ROWS);
     fillDamageCantripsToWeaponRows(payload, spellRows, state);
     if (spellRows.length > 0) {
       spellRows.forEach((row, index) => {
@@ -1267,6 +1282,13 @@
     payload['spell-level-3'] = slots.slot3;
 
     const extraNotes = [];
+    if (remainingSpellRows.length > 0) {
+      const remainingSpellText = remainingSpellRows
+        .map((row) => `${extractChineseSpellName(row.spellName)}(${row.level})`)
+        .join('、');
+      extraNotes.push(`其餘已準備法術：${remainingSpellText}。`);
+    }
+
     const spellNotesText = normalizeText(state['spell-notes']);
     if (spellNotesText) {
       extraNotes.push(`法術筆記：${spellNotesText}`);
