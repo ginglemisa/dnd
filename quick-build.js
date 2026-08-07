@@ -34,17 +34,17 @@
   };
   const CLASS_CARD_DESCRIPTIONS = {
     barbarian: "高血量、狂暴抗打、強力近戰",
-    bard: "激勵隊友、交涉、技能專家、魅惑控場法術",
-    cleric: "治療、祝福、輔助坦克、信仰神祇",
-    druid: "自然法術、地形與元素控場、變形、治療",
-    fighter: "武器與護甲專家、戰鬥風格多樣",
+    bard: "激勵隊友、交涉、技能專家、魅惑控場",
+    cleric: "治療、輔助、神祇代行、可兼近戰",
+    druid: "自然法術、控場、變形、治療",
+    fighter: "多種武器專家、戰鬥風格多變",
     monk: "高機動、徒手連擊、閃避反擊、干擾敵人",
-    paladin: "重甲、治療與保護隊友、高近戰神聖傷害",
+    paladin: "重甲、有限治療、守護、強力近戰",
     ranger: "鎖定獵物、武器戰鬥、自然魔法、追蹤探索",
     rogue: "潛行開鎖、技能專家、精準偷襲、靈活脫身",
-    sorcerer: "天生施法者、超魔法可強化並改變法術",
-    warlock: "與宗主契約獲得能力、法術位少短休恢復",
-    wizard: "研習與抄錄法術、最多樣的法術工具箱"
+    sorcerer: "天生施法者、超魔法強化改造法術",
+    warlock: "契約賦能祕術施法、近戰遠攻視特性發展",
+    wizard: "最廣泛的法術選擇、知識導向、萬用百寶箱"
   };
   const ABILITY_ORDER = ["str", "dex", "con", "int", "wis", "cha"];
   const ABILITY_LABELS = { str: "力量", dex: "敏捷", con: "體質", int: "智力", wis: "感知", cha: "魅力" };
@@ -53,7 +53,7 @@
   const CLASS_TYPE_OPTIONS = {
     cleric: [
       { id: "guardian", label: "守護者", description: "熟練軍用武器與重甲，提供更強的傷害與防禦。" },
-      { id: "thaumaturge", label: "魔術使", description: "多會一種牧師戲法，博學多聞，對於宗教與魔法所知更多。" }
+      { id: "thaumaturge", label: "魔術使", description: "多學一種牧師戲法，博聞強記，對宗教與魔法所知更多。" }
     ],
     fighter: [
       { id: "strength", label: "力量型", description: "身穿重甲，擅長運動，以巨力奮勇殺敵。" },
@@ -165,7 +165,7 @@
   const RACE_CARD_DESCRIPTIONS = {
     dragonborn: "中型；吐息；元素抗性；黑暗視覺；5級能短暫飛行",
     dwarf: "中型；黑暗視覺；耐毒；高HP；地震感知",
-    elf: "中型；黑暗視覺；自帶魔法；感官敏銳",
+    elf: "中型；黑暗視覺；感官敏銳；自帶魔法",
     gnome: "小型；黑暗視覺；抗魔體質；生活魔法",
     goliath: "中型；速度較快；血統異能；5級巨大化",
     halfling: "小型；利於躲藏；性格勇敢；移動靈活；天生幸運",
