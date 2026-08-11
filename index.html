@@ -3922,13 +3922,13 @@ const basicAllow = {
   },
   warlock: {
     cantrips: ["Chill Touch","Eldritch Blast","Mage Hand","Minor Illusion","Poison Spray","Prestidigitation","True Strike"],
-    1: ["Bane","Charm Person","Comprehend Languages","Detect Magic","Expeditious Retreat","Hellish Rebuke","Hex","Illusory Script","Protection from Evil and Good","Speak with Animals","Hideous Laughter","Unseen Servant"],
+    1: ["Bane","Charm Person","Comprehend Languages","Detect Magic","Expeditious Retreat","Hellish Rebuke","Hex","Illusory Script","Protection from Evil and Good","Speak with Animals","Tasha’s Hideous Laughter","Unseen Servant"],
     2: ["Darkness","Enthrall","Hold Person","Invisibility","Mind Spike","Mirror Image","Misty Step","Ray of Enfeeblement","Spider Climb","Suggestion"],
     3: ["Counterspell","Dispel Magic","Fear","Fly","Gaseous Form","Hypnotic Pattern","Magic Circle","Major Image","Remove Curse","Tongues","Vampiric Touch"]
   },
   wizard: {
     cantrips: ["Acid Splash","Chill Touch","Dancing Lights","Fire Bolt","Light","Mage Hand","Mending","Message","Minor Illusion","Poison Spray","Prestidigitation","Ray of Frost","Shocking Grasp","True Strike"],
-    1: ["Alarm","Burning Hands","Charm Person","Chromatic Orb","Color Spray","Comprehend Languages","Detect Magic","Disguise Self","Expeditious Retreat","False Life","Feather Fall","Find Familiar","Fog Cloud","Grease","Identify","Illusory Script","Jump","Longstrider","Mage Armor","Magic Missile","Protection from Evil and Good","Shield","Silent Image","Sleep","Thunderwave","Unseen Servant"],
+    1: ["Alarm","Burning Hands","Charm Person","Color Spray","Comprehend Languages","Detect Magic","Disguise Self","Expeditious Retreat","False Life","Feather Fall","Find Familiar","Fog Cloud","Grease","Identify","Illusory Script","Jump","Longstrider","Mage Armor","Magic Missile","Protection from Evil and Good","Shield","Silent Image","Sleep","Thunderwave","Unseen Servant"],
     2: ["Alter Self","Arcane Lock","Augury","Blindness/Deafness","Blur","Continual Flame","Darkness","Darkvision","Detect Thoughts","Enhance Ability","Enlarge/Reduce","Flaming Sphere","Gentle Repose","Gust of Wind","Hold Person","Invisibility","Knock","Levitate","Locate Object","Magic Mouth","Magic Weapon","Mirror Image","Misty Step","Ray of Enfeeblement","Rope Trick","Scorching Ray","See Invisibility","Shatter","Spider Climb","Suggestion","Web"],
     3: ["Animate Dead","Bestow Curse","Blink","Clairvoyance","Counterspell","Dispel Magic","Fear","Fireball","Fly","Gaseous Form","Glyph of Warding","Haste","Hypnotic Pattern","Lightning Bolt","Magic Circle","Major Image","Nondetection","Phantom Steed","Protection from Energy","Remove Curse","Sending","Sleet Storm","Slow","Speak with Dead","Stinking Cloud","Tongues","Vampiric Touch","Water Breathing"]
   }
@@ -5892,8 +5892,8 @@ async function ensurePdfExportReady() {
   if (typeof window.exportCharacterPdfFromState === "function") return;
   if (!pdfExportLoaderPromise) {
     pdfExportLoaderPromise = (async () => {
-      await loadScriptOnce("pdf-lib.min.js");
-      await loadScriptOnce("fontkit.umd.min.js");
+      await loadScriptOnce("pdf-lib.custom.min.js");
+      await loadScriptOnce("fontkit.custom.min.js");
       await loadScriptOnce("pdf-field-map.js");
       await loadScriptOnce("pdf-export.js");
     })().catch((error) => {
@@ -6025,7 +6025,6 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
     const result={
       characterName:"",
       includeDefaultEquipment:false,
-      subsetFont:false,
       dragonbornAncestry:(state?.["dragonborn-ancestry"] || "").trim(),
       elfLineage:(state?.["elf-lineage"] || "").trim(),
       gnomeLineage:(state?.["gnome-lineage"] || "").trim(),
@@ -6034,6 +6033,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
     };
     const raceChoice = raceChoices[race];
     if (raceChoice && !result[raceChoice.key]) steps.push("race");
+    steps.push("format");
     let idx=0, busy=false, lastMode=null;
 
     function close(v, restoreFocus=true){ document.removeEventListener('keydown', onKeyDown, true); overlay.remove(); if(restoreFocus)(exportPdfBtn||prevFocus)?.focus?.(); resolve(v); }
@@ -6041,15 +6041,16 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
     function trapTab(e){ if(e.key!== 'Tab') return; const f=getFocusable(); if(!f.length)return; const first=f[0],last=f[f.length-1]; if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();} else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
     function onKeyDown(e){ if(e.key==='Escape' && !busy){e.preventDefault(); close(null);} trapTab(e);}    
 
-    async function startExport(modeSubset){
-      busy=true; lastMode=modeSubset;
+    async function startExport(outputMode){
+      busy=true; lastMode=outputMode;
       render('progress','準備中，正在載入匯出資源…');
       try {
         await ensurePdfExportReady();
-        await window.preloadPdfExportAssets?.();
+        const exportOptions={...result,outputMode};
+        await window.preloadPdfExportAssets?.(exportOptions);
         render('progress','匯出中，請稍候…');
-        await window.exportCharacterPdfFromState(state,{...result,subsetFont:modeSubset});
-        close({ ...result, subsetFont: modeSubset, skipExport:true });
+        await window.exportCharacterPdfFromState(state,exportOptions);
+        close({ ...exportOptions, skipExport:true });
       } catch (error) {
         console.warn('PDF 匯出失敗：', error);
         busy=false;
@@ -6059,13 +6060,13 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
 
     function render(type, message=''){
       card.innerHTML='';
-      const t=document.createElement('h3'); t.id='pdf-export-title'; t.textContent='PDF 匯出'; card.appendChild(t);
+      const step=type ? '' : steps[idx];
+      const t=document.createElement('h3'); t.id='pdf-export-title'; t.textContent=step==='format' ? '選擇 PDF 格式' : 'PDF 匯出'; card.appendChild(t);
       const d=document.createElement('div'); d.id='pdf-export-desc'; card.appendChild(d);
       const a=document.createElement('div'); a.className='pdf-export-flow-modal__actions'; card.appendChild(a);
       if(type==='progress'){ d.innerHTML=`<p>${message}</p>`; const c=document.createElement('button'); c.disabled=true; c.textContent='處理中...'; a.appendChild(c); return; }
       if(type==='error'){ d.innerHTML=`<p class="pdf-export-flow-modal__error">${message}</p>`; const retry=document.createElement('button'); retry.textContent='重試'; retry.onclick=()=>startExport(lastMode); const closeBtn=document.createElement('button'); closeBtn.textContent='關閉'; closeBtn.onclick=()=>close(null); a.append(retry,closeBtn); retry.focus(); return; }
 
-      const step=steps[idx];
       if(step==='precheck'){
         if(reminders.length){
           const intro=document.createElement('p'); intro.textContent='匯出前提醒（點擊可前往補填）：';
@@ -6094,7 +6095,26 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
       else if(step==='name'){ const i=document.createElement('input'); i.placeholder='角色名稱'; i.value=result.characterName; const err=document.createElement('p'); err.className='pdf-export-flow-modal__error'; d.append(i,err); const n=document.createElement('button'); n.textContent='下一步'; n.onclick=()=>{const v=i.value.trim(); if(countPdfNameUnits(v)>PDF_EXPORT_MAX_NAME_UNITS){err.textContent='名稱過長，請控制在字數限制內。'; return;} result.characterName=v; idx++; render();}; a.append(n); i.focus(); }
       else if(step==='equipment'){ d.innerHTML='<p>是否將職業與背景提供的預設裝備也一起寫入 PDF？</p>'; const n1=document.createElement('button'); n1.textContent='不包含'; n1.onclick=()=>{result.includeDefaultEquipment=false; idx++; render();}; const n2=document.createElement('button'); n2.textContent='包含'; n2.onclick=()=>{result.includeDefaultEquipment=true; idx++; render();}; a.append(n1,n2); n1.focus(); }
       else if(step==='race'){ d.innerHTML=`<p>${raceChoice.title}</p>`; raceChoice.options.forEach(([key,label])=>{const b=document.createElement('button'); b.textContent=label; b.onclick=()=>{result[raceChoice.key]=key; idx++; render();}; d.appendChild(b);}); d.querySelector('button')?.focus(); }
-      else { startExport(result.subsetFont); return; }
+      else if(step==='format'){
+        const intro=document.createElement('p'); intro.className='pdf-export-format-intro'; intro.textContent='最後一步：選擇最適合你使用方式的版本。';
+        const options=document.createElement('div'); options.className='pdf-export-format-options';
+        const createOption=(mode,title,badge,description)=>{
+          const button=document.createElement('button'); button.type='button'; button.className='pdf-export-format-option';
+          const heading=document.createElement('span'); heading.className='pdf-export-format-option__heading';
+          const name=document.createElement('strong'); name.textContent=title;
+          const tag=document.createElement('span'); tag.className='pdf-export-format-option__badge'; tag.textContent=badge;
+          const detail=document.createElement('span'); detail.className='pdf-export-format-option__detail'; detail.textContent=description;
+          heading.append(name,tag); button.append(heading,detail); button.onclick=()=>startExport(mode);
+          return button;
+        };
+        options.append(
+          createOption('editable','可編輯表單版','約 15 MB','保留 PDF 表單，下載後仍可繼續填寫與修改。檔案較大。'),
+          createOption('compact','精緻易讀版','約 2 MB','檔案較小，採用較美觀的字體與較易閱讀的字級；內容會固定，下載後無法編輯。')
+        );
+        const note=document.createElement('p'); note.className='pdf-export-format-note';
+        note.append('想下載「可填寫、檔案也較小」的空白 PDF？請到 ',Object.assign(document.createElement('a'),{href:'about.html#character-sheet-download',target:'_blank',rel:'noopener',textContent:'About 的中文化角色紙下載'}),' 取得下載點。');
+        d.append(intro,options,note); a.hidden=true; options.querySelector('button')?.focus();
+      }
     }
 
     overlay.addEventListener('click',(e)=>{ if(e.target===overlay && !busy) close(null); });
@@ -6650,7 +6670,7 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
 </main>
 <footer class="site-footer">
   <div class="site-footer-links" aria-label="網站資訊連結">
-    <a href="legal.html">Legal</a>
+    <a href="about.html#legal">Legal</a>
     <a href="about.html">About</a>
     <a href="https://github.com/ginglemisa/dnd" target="_blank" rel="noopener">GitHub Repo</a>
   </div>
@@ -6716,11 +6736,11 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
     <h3 class="legal-modal-title">瑞基手機角卡使用提醒</h3>
     <div class="legal-modal-copy">
       瑞基手機角卡是獨立製作的五版相容新手創角工具，使用與改編的規則內容以 SRD 5.2.1 為基礎。
-      詳細授權與 attribution 請見 Legal 頁面。
+      詳細授權與 attribution 請見 About 頁面的「授權與法律聲明」。
     </div>
       <h3 class="legal-modal-title legal-modal-section-title">更多資訊</h3>
       <div class="legal-modal-copy">
-      授權聲明：<a href="legal.html" target="_blank" rel="noopener">Legal</a><br>
+      授權聲明：<a href="about.html#legal" target="_blank" rel="noopener">Legal</a><br>
       資料與使用說明：<a href="about.html" target="_blank" rel="noopener">About</a>
     </div>
     <div class="legal-modal-meta">

@@ -397,7 +397,7 @@
         '黑暗視覺：60呎',
         '智力感知魅力豁免優勢',
         `血統=${lineage}`,
-        '施法屬性：智/感/魅擇一',
+        '施法屬性：智感魅擇一',
         '獲得以下法術',
         lineageSpellLine,
         lineageSpellLine2
@@ -501,8 +501,8 @@
     return [
       '體型：中型',
       '速度：30呎',
-      '種族特性：未提供（預設備援）',
-      '請重新選擇種族並匯出'
+      '種族特性：未提供',
+      '請重新選擇種族'
     ];
   }
 
@@ -533,6 +533,14 @@
   function normalizeText(value) {
     if (value === undefined || value === null) return '';
     return String(value).trim();
+  }
+
+  function formatDamageTypeForPdf(value) {
+    return normalizeText(value)
+      .replace(/\s+/g, '')
+      .replace(/[!-~]/g, (character) =>
+        String.fromCharCode(character.charCodeAt(0) + 0xFEE0)
+      );
   }
 
   function getSelectedLevelNumber(level) {
@@ -1316,6 +1324,13 @@
       );
     } else {
       payload.equipment1 = wrapTextForPdf(payload.equipment1, PDF_TEXT_SPECS.equipment1);
+    }
+
+    for (let slot = 1; slot <= 6; slot++) {
+      const fieldName = `dmg_type_${slot}`;
+      if (Object.prototype.hasOwnProperty.call(payload, fieldName)) {
+        payload[fieldName] = formatDamageTypeForPdf(payload[fieldName]);
+      }
     }
 
     return payload;

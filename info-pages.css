@@ -88,6 +88,18 @@ h2:first-child {
   border-top: 0;
 }
 
+h3 {
+  margin: 1rem 0 0.25rem;
+  color: var(--info-text);
+  font-size: 0.98rem;
+  font-weight: 820;
+  line-height: 1.4;
+}
+
+section[id] {
+  scroll-margin-top: 1rem;
+}
+
 p {
   margin: 0.45rem 0 0;
   color: var(--info-body);

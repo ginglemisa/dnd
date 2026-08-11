@@ -4303,6 +4303,72 @@ div[id$="spells-area"] .form-row {
   font-weight: 700;
 }
 
+.pdf-export-format-intro {
+  color: #4a5875;
+  font-size: 0.94rem;
+}
+
+.pdf-export-format-options {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.pdf-export-flow-modal__card .pdf-export-format-option {
+  display: grid;
+  gap: 7px;
+  width: 100%;
+  padding: 14px 15px;
+  border: 1px solid rgba(76, 100, 154, 0.28);
+  border-radius: 0.9rem;
+  background: rgba(255, 255, 255, 0.78);
+  color: #24324f;
+  text-align: left;
+  transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease;
+}
+
+.pdf-export-flow-modal__card .pdf-export-format-option:hover,
+.pdf-export-flow-modal__card .pdf-export-format-option:focus-visible {
+  border-color: #526fae;
+  background: #fff;
+  transform: translateY(-1px);
+}
+
+.pdf-export-format-option__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 1rem;
+}
+
+.pdf-export-format-option__badge {
+  flex: 0 0 auto;
+  color: #46639f;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.pdf-export-format-option__detail {
+  color: #56627b;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.pdf-export-flow-modal__card .pdf-export-format-note {
+  margin-top: 13px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(114, 133, 176, 0.2);
+  color: #5b6680;
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+.pdf-export-format-note a {
+  color: #3f5f9f;
+  font-weight: 750;
+}
+
 .onboarding-jump-target {
   animation: onboarding-jump-highlight 1.8s ease-out;
 }

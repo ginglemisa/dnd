@@ -1,6 +1,19 @@
-﻿(function attachPdfExport(globalScope) {
-  const SOURCE_PDF_PATH = '5e_char_sheet_new.pdf';
-  const CJK_FONT_PATH = 'NotoSansMonoCJKtc-Regular.otf';
+(function attachPdfExport(globalScope) {
+  const PDF_EXPORT_PROFILES = Object.freeze({
+    editable: Object.freeze({
+      sourcePdfPath: '5e_char_sheet.pdf',
+      fontPath: 'NotoSansMonoCJKtc-Regular.otf',
+      subsetFont: false,
+      flattenForm: false
+    }),
+    compact: Object.freeze({
+      sourcePdfPath: '5e_char_sheet_subset.pdf',
+      fontPath: 'SourceHanSerifTC-Bold.otf',
+      subsetFont: true,
+      flattenForm: true
+    })
+  });
+  const DEFAULT_PDF_EXPORT_MODE = 'editable';
   const MAX_NAME_UNITS = 18;
   const MIN_PDF_FONT_SIZE = 4;
   // The new sheet keeps the original field names but has several substantially
@@ -34,8 +47,8 @@
     'spell-level-8': 14,
     'spell-level-9': 14
   });
-  let sourcePdfBytesPromise = null;
-  let cjkFontBytesPromise = null;
+  const sourcePdfBytesPromises = new Map();
+  const cjkFontBytesPromises = new Map();
 
   function timestampString() {
     return new Date().toISOString().replace(/[:.]/g, '-');
@@ -53,32 +66,49 @@
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
-  async function getSourcePdfBytes() {
-    if (!sourcePdfBytesPromise) {
-      sourcePdfBytesPromise = fetch(SOURCE_PDF_PATH).then(async (response) => {
+  function getPdfExportProfile(exportOptions = {}) {
+    const outputMode = exportOptions.outputMode || DEFAULT_PDF_EXPORT_MODE;
+    return PDF_EXPORT_PROFILES[outputMode] || PDF_EXPORT_PROFILES[DEFAULT_PDF_EXPORT_MODE];
+  }
+
+  async function getSourcePdfBytes(sourcePdfPath) {
+    if (!sourcePdfBytesPromises.has(sourcePdfPath)) {
+      const sourcePdfBytesPromise = fetch(sourcePdfPath).then(async (response) => {
         if (!response.ok) {
           throw new Error(`載入 PDF 範本失敗：${response.status}`);
         }
         return response.arrayBuffer();
+      }).catch((error) => {
+        sourcePdfBytesPromises.delete(sourcePdfPath);
+        throw error;
       });
+      sourcePdfBytesPromises.set(sourcePdfPath, sourcePdfBytesPromise);
     }
-    return sourcePdfBytesPromise;
+    return sourcePdfBytesPromises.get(sourcePdfPath);
   }
 
-  async function getCjkFontBytes() {
-    if (!cjkFontBytesPromise) {
-      cjkFontBytesPromise = fetch(CJK_FONT_PATH).then(async (response) => {
+  async function getCjkFontBytes(fontPath) {
+    if (!cjkFontBytesPromises.has(fontPath)) {
+      const cjkFontBytesPromise = fetch(fontPath).then(async (response) => {
         if (!response.ok) {
           throw new Error(`載入字型失敗：${response.status}`);
         }
         return response.arrayBuffer();
+      }).catch((error) => {
+        cjkFontBytesPromises.delete(fontPath);
+        throw error;
       });
+      cjkFontBytesPromises.set(fontPath, cjkFontBytesPromise);
     }
-    return cjkFontBytesPromise;
+    return cjkFontBytesPromises.get(fontPath);
   }
 
-  async function preloadPdfExportAssets() {
-    await Promise.all([getSourcePdfBytes(), getCjkFontBytes()]);
+  async function preloadPdfExportAssets(exportOptions = {}) {
+    const profile = getPdfExportProfile(exportOptions);
+    await Promise.all([
+      getSourcePdfBytes(profile.sourcePdfPath),
+      getCjkFontBytes(profile.fontPath)
+    ]);
   }
 
   function setCheckboxField(form, fieldName, checked) {
@@ -190,15 +220,14 @@
     }
   }
 
-  async function embedCjkFont(pdfDoc, options = {}) {
+  async function embedCjkFont(pdfDoc, profile) {
     if (!globalScope.fontkit) throw new Error('fontkit 尚未載入');
-    const { subset = true } = options;
 
     pdfDoc.registerFontkit(globalScope.fontkit);
-    const fontBytes = await getCjkFontBytes();
+    const fontBytes = await getCjkFontBytes(profile.fontPath);
     if (!fontBytes) throw new Error('字型載入失敗');
-    const cjkFont = await pdfDoc.embedFont(fontBytes, { subset });
-    return { font: cjkFont, fontName: cjkFont?.name || '', fontPath: CJK_FONT_PATH };
+    const cjkFont = await pdfDoc.embedFont(fontBytes, { subset: profile.subsetFont });
+    return { font: cjkFont, fontName: cjkFont?.name || '', fontPath: profile.fontPath };
   }
 
   function getFieldDefaultFontSize(field, fallback = 10) {
@@ -301,9 +330,9 @@
       throw new Error('PDF 欄位映射函式不存在');
     }
 
-    const shouldSubsetFont = exportOptions.subsetFont !== false;
+    const profile = getPdfExportProfile(exportOptions);
 
-    const sourceBytes = await getSourcePdfBytes();
+    const sourceBytes = await getSourcePdfBytes(profile.sourcePdfPath);
     const pdfDoc = await globalScope.PDFLib.PDFDocument.load(sourceBytes);
     const form = pdfDoc.getForm();
     const characterName = (exportOptions.characterName || '').trim();
@@ -331,19 +360,13 @@
     normalizeProblematicFieldDA(globalScope.PDFLib, form);
     applyNewTemplateFieldSettings(form);
 
-    const fontEmbedResult = await embedCjkFont(pdfDoc, {
-      subset: shouldSubsetFont
-    });
+    const fontEmbedResult = await embedCjkFont(pdfDoc, profile);
     fitPayloadTextFields(form, payload, fontEmbedResult.font);
     form.updateFieldAppearances(fontEmbedResult.font);
 
-    // ========================================================================
-    // 【已停用：pdf-lib 表單平面化】
-    // 此範本含有大量 checkbox；pdf-lib 平面化會產生缺少 /Subtype 的
-    // FlatWidget XObject，導致 Adobe Acrobat 無法開啟輸出的 PDF。
-    // 若要再次研究或測試，請先確認輸出結構合法後再取消下一行註解。
-    // form.flatten({ updateFieldAppearances: false });
-    // ========================================================================
+    if (profile.flattenForm) {
+      form.flatten({ updateFieldAppearances: false });
+    }
 
     const outputBytes = await pdfDoc.save({
       updateFieldAppearances: false,
@@ -351,7 +374,11 @@
     });
     triggerDownload(outputBytes, `dnd-character-${timestampString()}.pdf`);
 
-    return { missingFields, filledFieldCount: Object.keys(payload).length };
+    return {
+      missingFields,
+      filledFieldCount: Object.keys(payload).length,
+      outputMode: exportOptions.outputMode || DEFAULT_PDF_EXPORT_MODE
+    };
   }
 
   globalScope.exportCharacterPdfFromState = exportCharacterPdfFromState;
