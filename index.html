@@ -964,31 +964,8 @@ function updateRaceOptionVisibility() {
   updateHighElfCantripVisibility();
 }
 
-function populateHighElfCantripOptions() {
-  const select = document.getElementById("high-elf-cantrip");
-  if (!select || select.options.length > 1) return;
-  (spellList?.wizard?.cantrips || []).forEach(spell => {
-    const option = document.createElement("option");
-    option.value = spell.name;
-    option.textContent = spell.name;
-    select.appendChild(option);
-  });
-  const defaultOption = Array.from(select.options).find(option => extractChineseSpellName(option.value) === "魔法伎倆");
-  if (defaultOption) select.value = defaultOption.value;
-}
-
-function updateHighElfCantripVisibility() {
-  const select = document.getElementById("high-elf-cantrip");
-  if (!select) return;
-  populateHighElfCantripOptions();
-  const visible = document.getElementById("race")?.value === "elf" && document.getElementById("elf-lineage")?.value === "high_elf";
-  select.classList.toggle("is-hidden", !visible);
-  document.getElementById("elf-lineage-row")?.classList.toggle("has-cantrip", visible);
-  if (visible && !select.value) {
-    const defaultOption = Array.from(select.options).find(option => extractChineseSpellName(option.value) === "魔法伎倆");
-    if (defaultOption) select.value = defaultOption.value;
-  }
-}
+function populateHighElfCantripOptions() { const select=document.getElementById("high-elf-cantrip");if(!select||select.options.length>1)return;SpellCatalog.getSpells("wizard","cantrips",SPELL_MODE).forEach(spell=>{const option=document.createElement("option");option.value=spell.spellId;option.textContent=SpellCatalog.getDisplayName(spell.spellId);select.appendChild(option);});if(select.querySelector('option[value="prestidigitation"]'))select.value="prestidigitation"; }
+function updateHighElfCantripVisibility() { const select=document.getElementById("high-elf-cantrip");if(!select)return;populateHighElfCantripOptions();const visible=document.getElementById("race")?.value==="elf"&&document.getElementById("elf-lineage")?.value==="high_elf";select.classList.toggle("is-hidden",!visible);document.getElementById("elf-lineage-row")?.classList.toggle("has-cantrip",visible);if(visible&&!select.value&&select.querySelector('option[value="prestidigitation"]'))select.value="prestidigitation"; }
 
 function updateHitDieLabel() {
   const classValue = document.getElementById("class")?.value || "";
@@ -1562,78 +1539,8 @@ function escapeRegExp(text) {
   return String(text || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function getSpellNamesFromSpellList(root) {
-  const names = [];
-
-  function walk(node) {
-    if (!node) return;
-    if (Array.isArray(node)) {
-      node.forEach(walk);
-      return;
-    }
-    if (typeof node === "object") {
-      if (typeof node.name === "string" && node.name.trim()) {
-        names.push(node.name.trim());
-      }
-      Object.values(node).forEach(walk);
-    }
-  }
-
-  walk(root);
-  return names;
-}
-
-function highlightSpellNamesInClassFeature(html, options = {}) {
-  const skipClickableNames = new Set(Array.isArray(options.skipClickableNames) ? options.skipClickableNames : []);
-  const spellNames = getSpellNamesFromSpellList(spellList);
-  if (!spellNames.length) return html;
-
-  const spellAliases = [];
-  const aliasToEnglish = new Map();
-  spellNames.forEach(rawName => {
-    spellAliases.push(rawName);
-    aliasToEnglish.set(rawName, getSpellEnglishName(rawName));
-
-    const localizedName = rawName.match(/^(.+?)\s+[A-Za-z]/)?.[1]?.trim();
-    if (localizedName) {
-      spellAliases.push(localizedName);
-      aliasToEnglish.set(localizedName, getSpellEnglishName(rawName));
-    }
-
-    const englishName = getSpellEnglishName(rawName);
-    if (englishName) {
-      spellAliases.push(englishName);
-      aliasToEnglish.set(englishName, englishName);
-    }
-  });
-
-  const uniqueSpellNames = [...new Set(spellAliases)].sort((a, b) => b.length - a.length);
-  if (!uniqueSpellNames.length) return html;
-
-  const spellRegex = new RegExp(`(${uniqueSpellNames.map(escapeRegExp).join("|")})`, "g");
-  const decorateSpellMatch = (match) => {
-    if (skipClickableNames.has(match)) {
-      return match;
-    }
-    const englishName = aliasToEnglish.get(match) || getSpellEnglishName(match);
-    return `<strong class="spell-highlight spell-highlight-action" role="button" tabindex="0" data-spell-name="${escapeHtml(englishName)}">${match}</strong>`;
-  };
-
-  const highlightedHtml = html
-    .split(/(<[^>]+>)/g)
-    .map(part => {
-      if (part.startsWith("<") && part.endsWith(">")) return part;
-      return part.replace(spellRegex, decorateSpellMatch);
-    })
-    .join("");
-
-  return highlightedHtml.replace(/<strong>([^<]+)<\/strong>/g, (full, innerText) => {
-    if (!aliasToEnglish.has(innerText) && !uniqueSpellNames.includes(innerText)) {
-      return full;
-    }
-    return decorateSpellMatch(innerText);
-  });
-}
+function getSpellAliasToId() { const aliases=new Map();SpellCatalog.getAllSpells().forEach(spell=>[spell.nameZh,spell.nameEn,SpellCatalog.getDisplayName(spell.spellId)].forEach(alias=>{if(alias&&!aliases.has(alias))aliases.set(alias,spell.spellId);}));return aliases; }
+function highlightSpellNamesInClassFeature(html, options = {}) { const aliases=getSpellAliasToId(),skip=new Set(options.skipClickableNames||[]),names=[...aliases.keys()].sort((a,b)=>b.length-a.length);if(!names.length)return html;const regex=new RegExp('('+names.map(escapeRegExp).join('|')+')','g'),decorate=match=>skip.has(match)?match:'<strong class="spell-highlight spell-highlight-action" role="button" tabindex="0" data-spell-id="'+escapeHtml(aliases.get(match))+'">'+match+'</strong>';return html.split(/(<[^>]+>)/g).map(part=>part.startsWith('<')&&part.endsWith('>')?part:part.replace(regex,decorate)).join('').replace(/<strong>([^<]+)<\/strong>/g,(all,text)=>aliases.has(text)?decorate(text):all); }
 
 const CLASS_FEATURE_TABLE_STATE_KEY = "dndchar_class_feature_table_state_v1";
 
@@ -2011,15 +1918,7 @@ function getMagicInitiateSpellPlaceholder(field) {
   return "--法術--";
 }
 
-function renderSpellOptionsForMagicInitiate(classValue, level, placeholder, previousValue = "") {
-  const spells = classValue ? getSpellsByMode(classValue, level) : [];
-  const optionsHtml = spells
-    .map(spell => `<option value="${escapeHtml(spell.name)}">${escapeHtml(spell.name)}</option>`)
-    .join("");
-  const html = `<option value="">${escapeHtml(placeholder)}</option>${optionsHtml}`;
-  const canKeepPrevious = previousValue && spells.some(spell => spell.name === previousValue);
-  return { html, value: canKeepPrevious ? previousValue : "" };
-}
+function renderSpellOptionsForMagicInitiate(classValue, level, placeholder, previousValue = "") { const spells=classValue?getSpellsByMode(classValue,level):[];return {html:'<option value="">'+escapeHtml(placeholder)+'</option>'+spells.map(spell=>'<option value="'+escapeHtml(spell.spellId)+'">'+escapeHtml(SpellCatalog.getDisplayName(spell.spellId))+'</option>').join(''),value:spells.some(spell=>spell.spellId===previousValue)?previousValue:""}; }
 
 function updateMagicInitiateSpellOptions(row) {
   const classValue = getMagicInitiateSelect(row, "class")?.value || "";
@@ -2255,48 +2154,48 @@ function syncMagicInitiateDerivedSpellRows() {
 
 const RACE_DERIVED_SPELLS = Object.freeze({
   elf: Object.freeze({
-    drow: Object.freeze([{ level: 1, ring: "cantrips", name: "舞光術" }, { level: 3, ring: 1, name: "妖火", freeUses: 1 }, { level: 5, ring: 2, name: "黑暗術", freeUses: 1 }]),
-    high_elf: Object.freeze([{ level: 3, ring: 1, name: "偵測魔法", freeUses: 1 }, { level: 5, ring: 2, name: "迷蹤步", freeUses: 1 }]),
-    wood_elf: Object.freeze([{ level: 1, ring: "cantrips", name: "德魯伊伎倆" }, { level: 3, ring: 1, name: "大步奔行", freeUses: 1 }, { level: 5, ring: 2, name: "行動無蹤", freeUses: 1 }])
+    drow: Object.freeze([{ level: 1, ring: "cantrips", spellId: "dancing-lights" }, { level: 3, ring: 1, spellId: "faerie-fire", freeUses: 1 }, { level: 5, ring: 2, spellId: "darkness", freeUses: 1 }]),
+    high_elf: Object.freeze([{ level: 3, ring: 1, spellId: "detect-magic", freeUses: 1 }, { level: 5, ring: 2, spellId: "misty-step", freeUses: 1 }]),
+    wood_elf: Object.freeze([{ level: 1, ring: "cantrips", spellId: "druidcraft" }, { level: 3, ring: 1, spellId: "longstrider", freeUses: 1 }, { level: 5, ring: 2, spellId: "pass-without-trace", freeUses: 1 }])
   }),
   gnome: Object.freeze({
-    forest_gnome: Object.freeze([{ level: 1, ring: "cantrips", name: "次級幻影" }, { level: 1, ring: 1, name: "動物交談" }]),
-    rock_gnome: Object.freeze([{ level: 1, ring: "cantrips", name: "修復術" }, { level: 1, ring: "cantrips", name: "魔法伎倆" }])
+    forest_gnome: Object.freeze([{ level: 1, ring: "cantrips", spellId: "minor-illusion" }, { level: 1, ring: 1, spellId: "speak-with-animals" }]),
+    rock_gnome: Object.freeze([{ level: 1, ring: "cantrips", spellId: "mending" }, { level: 1, ring: "cantrips", spellId: "prestidigitation" }])
   }),
   tiefling: Object.freeze({
-    abyssal: Object.freeze([{ level: 1, ring: "cantrips", name: "毒氣噴濺" }, { level: 3, ring: 1, name: "致病射線", freeUses: 1 }, { level: 5, ring: 2, name: "人類定身術", freeUses: 1 }]),
-    chthonic: Object.freeze([{ level: 1, ring: "cantrips", name: "凍寒之觸" }, { level: 3, ring: 1, name: "虛假生命", freeUses: 1 }, { level: 5, ring: 2, name: "衰弱射線", freeUses: 1 }]),
-    infernal: Object.freeze([{ level: 1, ring: "cantrips", name: "火焰箭" }, { level: 3, ring: 1, name: "煉獄叱喝", freeUses: 1 }, { level: 5, ring: 2, name: "黑暗術", freeUses: 1 }])
+    abyssal: Object.freeze([{ level: 1, ring: "cantrips", spellId: "poison-spray" }, { level: 3, ring: 1, spellId: "ray-of-sickness", freeUses: 1 }, { level: 5, ring: 2, spellId: "hold-person", freeUses: 1 }]),
+    chthonic: Object.freeze([{ level: 1, ring: "cantrips", spellId: "chill-touch" }, { level: 3, ring: 1, spellId: "false-life", freeUses: 1 }, { level: 5, ring: 2, spellId: "ray-of-enfeeblement", freeUses: 1 }]),
+    infernal: Object.freeze([{ level: 1, ring: "cantrips", spellId: "fire-bolt" }, { level: 3, ring: 1, spellId: "hellish-rebuke", freeUses: 1 }, { level: 5, ring: 2, spellId: "darkness", freeUses: 1 }])
   })
 });
 
 const SUBCLASS_DERIVED_SPELLS = Object.freeze({
   cleric: Object.freeze({ name: "生命領域", spells: Object.freeze([
-    { level: 3, ring: 1, name: "祝福術" }, { level: 3, ring: 1, name: "療傷術" },
-    { level: 3, ring: 2, name: "援助術" }, { level: 3, ring: 2, name: "次級復原術" },
-    { level: 5, ring: 3, name: "群體治癒真言" }, { level: 5, ring: 3, name: "回生術" }
+    { level: 3, ring: 1, spellId: "bless" }, { level: 3, ring: 1, spellId: "cure-wounds" },
+    { level: 3, ring: 2, spellId: "aid" }, { level: 3, ring: 2, spellId: "lesser-restoration" },
+    { level: 5, ring: 3, spellId: "mass-healing-word" }, { level: 5, ring: 3, spellId: "revivify" }
   ]) }),
   paladin: Object.freeze({ name: "奉獻之誓", spells: Object.freeze([
-    { level: 3, ring: 1, name: "防護善惡" }, { level: 3, ring: 1, name: "虔誠護盾" },
-    { level: 5, ring: 2, name: "援助術" }, { level: 5, ring: 2, name: "誠實之域" }
+    { level: 3, ring: 1, spellId: "protection-from-evil-and-good" }, { level: 3, ring: 1, spellId: "shield-of-faith" },
+    { level: 5, ring: 2, spellId: "aid" }, { level: 5, ring: 2, spellId: "zone-of-truth" }
   ]) }),
   sorcerer: Object.freeze({ name: "龍族術法", spells: Object.freeze([
-    { level: 3, ring: 1, name: "繁彩球" }, { level: 3, ring: 1, name: "命令術" },
-    { level: 3, ring: 2, name: "變造自身" }, { level: 3, ring: 2, name: "龍息術" },
-    { level: 5, ring: 3, name: "恐懼術" }, { level: 5, ring: 3, name: "飛行術" }
+    { level: 3, ring: 1, spellId: "chromatic-orb" }, { level: 3, ring: 1, spellId: "command" },
+    { level: 3, ring: 2, spellId: "alter-self" }, { level: 3, ring: 2, spellId: "dragons-breath" },
+    { level: 5, ring: 3, spellId: "fear" }, { level: 5, ring: 3, spellId: "fly" }
   ]) }),
   warlock: Object.freeze({ name: "邪魔", spells: Object.freeze([
-    { level: 3, ring: 1, name: "燃燒之手" }, { level: 3, ring: 1, name: "命令術" },
-    { level: 3, ring: 2, name: "灼熱射線" }, { level: 3, ring: 2, name: "暗示術" },
-    { level: 5, ring: 3, name: "火球術" }, { level: 5, ring: 3, name: "臭雲術" }
+    { level: 3, ring: 1, spellId: "burning-hands" }, { level: 3, ring: 1, spellId: "command" },
+    { level: 3, ring: 2, spellId: "scorching-ray" }, { level: 3, ring: 2, spellId: "suggestion" },
+    { level: 5, ring: 3, spellId: "fireball" }, { level: 5, ring: 3, spellId: "stinking-cloud" }
   ]) })
 });
 
 const DRUID_LAND_SPELLS = Object.freeze({
-  arid: Object.freeze({ name: "旱地", spells: Object.freeze([{ level: 3, ring: "cantrips", name: "火焰箭" }, { level: 3, ring: 1, name: "燃燒之手" }, { level: 3, ring: 2, name: "朦朧術" }, { level: 5, ring: 3, name: "火球術" }]) }),
-  polar: Object.freeze({ name: "極地", spells: Object.freeze([{ level: 3, ring: "cantrips", name: "冷凍射線" }, { level: 3, ring: 1, name: "雲霧術" }, { level: 3, ring: 2, name: "人類定身術" }, { level: 5, ring: 3, name: "雪雨暴" }]) }),
-  temperate: Object.freeze({ name: "溫帶", spells: Object.freeze([{ level: 3, ring: "cantrips", name: "電爪" }, { level: 3, ring: 1, name: "睡眠術" }, { level: 3, ring: 2, name: "迷蹤步" }, { level: 5, ring: 3, name: "閃電束" }]) }),
-  tropical: Object.freeze({ name: "熱帶", spells: Object.freeze([{ level: 3, ring: "cantrips", name: "酸液飛濺" }, { level: 3, ring: 1, name: "致病射線" }, { level: 3, ring: 2, name: "蛛網術" }, { level: 5, ring: 3, name: "臭雲術" }]) })
+  arid: Object.freeze({ name: "旱地", spells: Object.freeze([{ level: 3, ring: "cantrips", spellId: "fire-bolt" }, { level: 3, ring: 1, spellId: "burning-hands" }, { level: 3, ring: 2, spellId: "blur" }, { level: 5, ring: 3, spellId: "fireball" }]) }),
+  polar: Object.freeze({ name: "極地", spells: Object.freeze([{ level: 3, ring: "cantrips", spellId: "ray-of-frost" }, { level: 3, ring: 1, spellId: "fog-cloud" }, { level: 3, ring: 2, spellId: "hold-person" }, { level: 5, ring: 3, spellId: "sleet-storm" }]) }),
+  temperate: Object.freeze({ name: "溫帶", spells: Object.freeze([{ level: 3, ring: "cantrips", spellId: "shocking-grasp" }, { level: 3, ring: 1, spellId: "sleep" }, { level: 3, ring: 2, spellId: "misty-step" }, { level: 5, ring: 3, spellId: "lightning-bolt" }]) }),
+  tropical: Object.freeze({ name: "熱帶", spells: Object.freeze([{ level: 3, ring: "cantrips", spellId: "acid-splash" }, { level: 3, ring: 1, spellId: "ray-of-sickness" }, { level: 3, ring: 2, spellId: "web" }, { level: 5, ring: 3, spellId: "stinking-cloud" }]) })
 });
 
 function getAreaIdForSpellRing(ring) {
@@ -2317,13 +2216,13 @@ function getRacialDerivedSpellSpecs() {
   const lineageName = document.querySelector(`#${{ elf: "elf-lineage", gnome: "gnome-lineage", tiefling: "tiefling-legacy" }[race]} option[value="${lineage}"]`)?.textContent?.trim() || "";
   const spells = [...(RACE_DERIVED_SPELLS[race]?.[lineage] || [])];
   if (race === "elf" && lineage === "high_elf") {
-    const cantrip = extractChineseSpellName(document.getElementById("high-elf-cantrip")?.value || "");
-    if (cantrip) spells.unshift({ level: 1, ring: "cantrips", name: cantrip });
+    const cantrip = document.getElementById("high-elf-cantrip")?.value || "";
+    if (cantrip) spells.unshift({ level: 1, ring: "cantrips", spellId: cantrip });
   }
-  if (race === "tiefling") spells.unshift({ level: 1, ring: "cantrips", name: "奇術" });
+  if (race === "tiefling") spells.unshift({ level: 1, ring: "cantrips", spellId: "thaumaturgy" });
   return spells.filter(spell => level >= spell.level).map((spell, index) => ({
     ...spell,
-    key: `race-${race}-${lineage}-${spell.ring}-${spell.name}-${index}`,
+    key: `race-${race}-${lineage}-${spell.ring}-${spell.spellId}-${index}`,
     source: RACE_SPELL_SOURCE,
     sourceName: raceName,
     sourceLabel: `來源：${raceName}（${lineageName}）`,
@@ -2340,7 +2239,7 @@ function getClassAlwaysPreparedSpellSpecs() {
     return [{
       level: 1,
       ring: 1,
-      name: "動物交談",
+      spellId: "speak-with-animals",
       key: "class-druid-druidic-spells-speak-with-animals",
       source: CLASS_SPELL_SOURCE,
       sourceName: "德魯伊",
@@ -2354,7 +2253,7 @@ function getClassAlwaysPreparedSpellSpecs() {
   return [{
     level: 1,
     ring: 1,
-    name: "獵人印記",
+    spellId: "hunters-mark",
     key: "class-ranger-favored-enemy-hunters-mark",
     source: CLASS_SPELL_SOURCE,
     sourceName: "遊俠",
@@ -2380,7 +2279,7 @@ function getSubclassDerivedSpellSpecs() {
   const className = document.querySelector(`#class option[value="${classValue}"]`)?.textContent?.trim() || "職業";
   return subclass.spells.filter(spell => level >= spell.level).map((spell, index) => ({
     ...spell,
-    key: `subclass-${classValue}-${subclass.name}-${spell.ring}-${spell.name}-${index}`,
+    key: `subclass-${classValue}-${subclass.name}-${spell.ring}-${spell.spellId}-${index}`,
     source: SUBCLASS_SPELL_SOURCE,
     sourceName: className,
     sourceLabel: `來源：${className}（${subclass.name}）`,
@@ -2389,23 +2288,20 @@ function getSubclassDerivedSpellSpecs() {
   }));
 }
 
-function findFullSpellName(ring, localizedName) {
-  const key = ring === "cantrips" ? "cantrips" : String(ring);
-  return getSpellListData()?.[key]?.find(spell => extractChineseSpellName(spell.name) === localizedName)?.name || localizedName;
-}
+function findFullSpellName(_ring, spellId) { return SpellCatalog.getDisplayName(spellId) || ""; }
 
 function setGenericDerivedRowValues(row, spec) {
   const classSel = row.querySelector("select[id*='-class-']");
   const spellSel = row.querySelector("select[id*='-spell-']");
   const badge = row.querySelector(".magic-initiate-source-badge");
   if (!classSel || !spellSel) return;
-  const fullName = findFullSpellName(spec.ring, spec.name);
+  const fullName = SpellCatalog.getDisplayName(spec.spellId) || "";
   classSel.disabled = false;
   spellSel.disabled = false;
   classSel.innerHTML = `<option value="${escapeHtml(spec.source)}">${escapeHtml(spec.sourceName)}</option>`;
-  spellSel.innerHTML = `<option value="${escapeHtml(fullName)}">${escapeHtml(fullName)}</option>`;
+  spellSel.innerHTML = `<option value="${escapeHtml(spec.spellId)}">${escapeHtml(fullName)}</option>`;
   classSel.value = spec.source;
-  spellSel.value = fullName;
+  spellSel.value = spec.spellId;
   if (badge) badge.textContent = spec.sourceLabel;
   row.dataset.sourceKey = spec.key;
   row.dataset.sourcePriority = String(spec.sourcePriority);
@@ -3886,97 +3782,7 @@ function updateArmorInfo() {
 // 預設給玩家：Basic，只顯示 Basic Allow 清單內的法術
 let SPELL_MODE = "basic"; // "basic" | "full"
 
-// Basic Rule 允許清單：用「英文法術名」對照（例如 spell-list.js 裡的 "舞光術 Dancing Lights" -> "Dancing Lights"）
-const basicAllow = {
-  bard: {
-    cantrips: ["Dancing Lights","Light","Mage Hand","Mending","Message","Minor Illusion","Prestidigitation","Starry Wisp","Thunderclap","True Strike","Vicious Mockery"],
-    1: ["Animal Friendship","Bane","Charm Person","Color Spray","Command","Comprehend Languages","Cure Wounds","Detect Magic","Disguise Self","Dissonant Whispers","Faerie Fire","Feather Fall","Healing Word","Heroism","Identify","Illusory Script","Longstrider","Silent Image","Sleep","Speak with Animals","Hideous Laughter","Thunderwave","Unseen Servant"],
-    2: ["Aid","Animal Messenger","Blindness/Deafness","Calm Emotions","Detect Thoughts","Enhance Ability","Enlarge/Reduce","Enthrall","Heat Metal","Hold Person","Invisibility","Knock","Lesser Restoration","Locate Animals or Plants","Locate Object","Magic Mouth","Mirror Image","Phantasmal Force","See Invisibility","Shatter","Silence","Suggestion","Zone of Truth"],
-    3: ["Bestow Curse","Clairvoyance","Dispel Magic","Fear","Glyph of Warding","Hypnotic Pattern","Tiny Hut","Major Image","Mass Healing Word","Nondetection","Plant Growth","Sending","Slow","Speak with Dead","Speak with Plants","Stinking Cloud","Tongues"]
-  },
-  cleric: {
-    cantrips: ["Guidance","Light","Mending","Resistance","Sacred Flame","Spare the Dying","Thaumaturgy"],
-    1: ["Bane","Bless","Command","Create or Destroy Water","Cure Wounds","Detect Evil and Good","Detect Magic","Detect Poison and Disease","Guiding Bolt","Healing Word","Inflict Wounds","Protection from Evil and Good","Purify Food and Drink","Sanctuary","Shield of Faith"],
-    2: ["Aid","Augury","Blindness/Deafness","Calm Emotions","Continual Flame","Enhance Ability","Find Traps","Gentle Repose","Hold Person","Lesser Restoration","Locate Object","Prayer of Healing","Protection from Poison","Silence","Spiritual Weapon","Warding Bond","Zone of Truth"],
-    3: ["Animate Dead","Beacon of Hope","Bestow Curse","Clairvoyance","Create Food and Water","Daylight","Dispel Magic","Glyph of Warding","Magic Circle","Mass Healing Word","Meld into Stone","Protection from Energy","Remove Curse","Revivify","Sending","Speak with Dead","Spirit Guardians","Tongues","Water Walk"]
-  },
-  druid: {
-    cantrips: ["Druidcraft","Elementalism","Guidance","Mending","Message","Poison Spray","Produce Flame","Resistance","Shillelagh","Spare the Dying","Starry Wisp"],
-    1: ["Animal Friendship","Charm Person","Create or Destroy Water","Cure Wounds","Detect Magic","Detect Poison and Disease","Entangle","Faerie Fire","Fog Cloud","Goodberry","Healing Word","Ice Knife","Jump","Longstrider","Protection from Evil and Good","Purify Food and Drink","Speak with Animals","Thunderwave"],
-    2: ["Aid","Animal Messenger","Augury","Barkskin","Continual Flame","Darkvision","Enhance Ability","Enlarge/Reduce","Find Traps","Flame Blade","Flaming Sphere","Gust of Wind","Heat Metal","Hold Person","Lesser Restoration","Locate Animals or Plants","Locate Object","Moonbeam","Pass without Trace","Protection from Poison","Spike Growth"],
-    3: ["Call Lightning","Conjure Animals","Daylight","Dispel Magic","Meld into Stone","Plant Growth","Protection from Energy","Revivify","Sleet Storm","Speak with Plants","Water Breathing","Water Walk","Wind Wall"]
-  },
-  paladin: {
-    1: ["Bless","Command","Cure Wounds","Detect Evil and Good","Detect Magic","Detect Poison and Disease","Divine Favor","Divine Smite","Heroism","Protection from Evil and Good","Purify Food and Drink","Searing Smite","Shield of Faith"],
-    2: ["Aid","Find Steed","Gentle Repose","Lesser Restoration","Locate Object","Magic Weapon","Prayer of Healing","Protection from Poison","Shining Smite","Warding Bond","Zone of Truth"]
-  },
-  ranger: {
-    1: ["Alarm","Animal Friendship","Cure Wounds","Detect Magic","Detect Poison and Disease","Ensnaring Strike","Entangle","Fog Cloud","Goodberry","Hunter’s Mark","Jump","Longstrider","Speak with Animals"],
-    2: ["Aid","Animal Messenger","Barkskin","Darkvision","Enhance Ability","Find Traps","Gust of Wind","Lesser Restoration","Locate Animals or Plants","Locate Object","Magic Weapon","Pass without Trace","Protection from Poison","Silence","Spike Growth"]
-  },
-  sorcerer: {
-    cantrips: ["Acid Splash","Chill Touch","Dancing Lights","Elementalism","Fire Bolt","Light","Mage Hand","Mending","Message","Minor Illusion","Poison Spray","Prestidigitation","Ray of Frost","Shocking Grasp","Sorcerous Burst","True Strike"],
-    1: ["Burning Hands","Charm Person","Chromatic Orb","Color Spray","Comprehend Languages","Detect Magic","Disguise Self","Expeditious Retreat","False Life","Feather Fall","Fog Cloud","Grease","Ice Knife","Jump","Mage Armor","Magic Missile","Ray of Sickness","Shield","Silent Image","Sleep","Thunderwave"],
-    2: ["Alter Self","Blindness/Deafness","Blur","Darkness","Darkvision","Detect Thoughts","Dragon’s Breath","Enhance Ability","Enlarge/Reduce","Flame Blade","Flaming Sphere","Gust of Wind","Hold Person","Invisibility","Knock","Levitate","Magic Weapon","Mind Spike","Mirror Image","Misty Step","Phantasmal Force","Scorching Ray","See Invisibility","Shatter","Spider Climb","Suggestion","Web"],
-    3: ["Blink","Clairvoyance","Counterspell","Daylight","Dispel Magic","Fear","Fireball","Fly","Gaseous Form","Haste","Hypnotic Pattern","Lightning Bolt","Major Image","Protection from Energy","Sleet Storm","Slow","Stinking Cloud","Tongues","Vampiric Touch","Water Breathing","Water Walk"]
-  },
-  warlock: {
-    cantrips: ["Chill Touch","Eldritch Blast","Mage Hand","Minor Illusion","Poison Spray","Prestidigitation","True Strike"],
-    1: ["Bane","Charm Person","Comprehend Languages","Detect Magic","Expeditious Retreat","Hellish Rebuke","Hex","Illusory Script","Protection from Evil and Good","Speak with Animals","Tasha’s Hideous Laughter","Unseen Servant"],
-    2: ["Darkness","Enthrall","Hold Person","Invisibility","Mind Spike","Mirror Image","Misty Step","Ray of Enfeeblement","Spider Climb","Suggestion"],
-    3: ["Counterspell","Dispel Magic","Fear","Fly","Gaseous Form","Hypnotic Pattern","Magic Circle","Major Image","Remove Curse","Tongues","Vampiric Touch"]
-  },
-  wizard: {
-    cantrips: ["Acid Splash","Chill Touch","Dancing Lights","Fire Bolt","Light","Mage Hand","Mending","Message","Minor Illusion","Poison Spray","Prestidigitation","Ray of Frost","Shocking Grasp","True Strike"],
-    1: ["Alarm","Burning Hands","Charm Person","Color Spray","Comprehend Languages","Detect Magic","Disguise Self","Expeditious Retreat","False Life","Feather Fall","Find Familiar","Fog Cloud","Grease","Identify","Illusory Script","Jump","Longstrider","Mage Armor","Magic Missile","Protection from Evil and Good","Shield","Silent Image","Sleep","Thunderwave","Unseen Servant"],
-    2: ["Alter Self","Arcane Lock","Augury","Blindness/Deafness","Blur","Continual Flame","Darkness","Darkvision","Detect Thoughts","Enhance Ability","Enlarge/Reduce","Flaming Sphere","Gentle Repose","Gust of Wind","Hold Person","Invisibility","Knock","Levitate","Locate Object","Magic Mouth","Magic Weapon","Mirror Image","Misty Step","Ray of Enfeeblement","Rope Trick","Scorching Ray","See Invisibility","Shatter","Spider Climb","Suggestion","Web"],
-    3: ["Animate Dead","Bestow Curse","Blink","Clairvoyance","Counterspell","Dispel Magic","Fear","Fireball","Fly","Gaseous Form","Glyph of Warding","Haste","Hypnotic Pattern","Lightning Bolt","Magic Circle","Major Image","Nondetection","Phantom Steed","Protection from Energy","Remove Curse","Sending","Sleet Storm","Slow","Speak with Dead","Stinking Cloud","Tongues","Vampiric Touch","Water Breathing"]
-  }
-};
-
-// 從 spell-list.js 的 "中文 English" 抽出英文名 (從第一個英文字母開始一直到結尾)
-function getSpellEnglishName(fullName) {
-  if (!fullName) return "";
-  const m = String(fullName).match(/[A-Za-z].*/);
-  return m ? m[0].trim() : String(fullName).trim();
-}
-
-// 取得「目前模式」下某職業某環級可選的 spells（回傳 spellList 中的物件陣列）
-function getSpellsByMode(classVal, level) {
-  const key = (typeof level === "number") ? String(level) : level;
-  const full = (classVal && spellList?.[classVal]?.[key]) ? spellList[classVal][key] : [];
-  if (SPELL_MODE === "full") return full;
-
-  const allow = basicAllow?.[classVal]?.[key];
-  if (!allow || !Array.isArray(allow)) return [];
-  const allowSet = new Set(allow);
-  return full.filter(s => allowSet.has(getSpellEnglishName(s.name)));
-}
-
-function getSpellListData() {
-  const aggregated = {};
-  if (!spellList || typeof spellList !== "object") return aggregated;
-
-  for (const classEntries of Object.values(spellList)) {
-    if (!classEntries || typeof classEntries !== "object") continue;
-
-    for (const [levelKey, entries] of Object.entries(classEntries)) {
-      if (!Array.isArray(entries)) continue;
-      if (!aggregated[levelKey]) aggregated[levelKey] = [];
-
-      entries.forEach((spell) => {
-        if (!spell?.name) return;
-        const englishName = getSpellEnglishName(spell.name);
-        const exists = aggregated[levelKey].some(
-          (entry) => getSpellEnglishName(entry?.name) === englishName
-        );
-        if (!exists) aggregated[levelKey].push(spell);
-      });
-    }
-  }
-
-  return aggregated;
-}
+function getSpellsByMode(classVal, level) { return classVal ? SpellCatalog.getSpells(classVal, level, SPELL_MODE) : []; }
 
 const SPELLCASTING_CLASS_GROUPS = {
   int: ["wizard"],
@@ -4004,34 +3810,8 @@ function getSpellAreaIdByLevelKey(levelKey) {
   return `level${levelKey}spells-area`;
 }
 
-function findSpellMetaByEnglishName(englishName) {
-  if (!englishName) return null;
-  const spellData = getSpellListData();
-  if (!spellData || typeof spellData !== "object") return null;
-
-  for (const [levelKey, entries] of Object.entries(spellData)) {
-    if (!Array.isArray(entries)) continue;
-    const found = entries.find((spell) => getSpellEnglishName(spell?.name) === englishName);
-    if (found) {
-      return {
-        englishName,
-        fullName: found.name,
-        levelKey,
-        areaId: getSpellAreaIdByLevelKey(levelKey),
-        levelValue: levelKey === "cantrips" ? "cantrips" : Number.parseInt(levelKey, 10)
-      };
-    }
-  }
-
-  return null;
-}
-
-function getAvailableClassesForSpell(englishName, levelKey) {
-  if (!englishName || !levelKey) return [];
-  return classOptions
-    .map((option) => option.value)
-    .filter((classId) => Array.isArray(basicAllow?.[classId]?.[levelKey]) && basicAllow[classId][levelKey].includes(englishName));
-}
+function findSpellMetaById(spellId) { const spell=SpellCatalog.getSpell(spellId);if(!spell)return null;const levelKey=spell.level===0?"cantrips":String(spell.level);return {spellId,levelKey,areaId:getSpellAreaIdByLevelKey(levelKey),levelValue:spell.level===0?"cantrips":spell.level}; }
+function getAvailableClassesForSpell(spellId) { return SpellCatalog.getClassIds(spellId,SPELL_MODE); }
 
 function getSpellClassSearchOrder(selectedAbility) {
   const sameAbilityClasses = Array.isArray(SPELLCASTING_CLASS_GROUPS[selectedAbility])
@@ -4059,12 +3839,7 @@ function getSpellClassSearchOrderWithPrimary(primaryClassId, selectedAbility) {
   return [...new Set(ordered)];
 }
 
-function findExistingSpellRow(areaId, englishName) {
-  return Array.from(document.querySelectorAll(`#${areaId} .spell-entry`)).find((row) => {
-    const spellValue = row.querySelector("select[id*='-spell-']")?.value || "";
-    return getSpellEnglishName(spellValue) === englishName;
-  }) || null;
-}
+function findExistingSpellRow(areaId, spellId) { return Array.from(document.querySelectorAll("#"+areaId+" .spell-entry")).find(row=>row.querySelector("select[id*='-spell-']")?.value===spellId)||null; }
 
 function findEmptySpellRow(areaId) {
   return Array.from(document.querySelectorAll(`#${areaId} .spell-entry`)).find((row) => {
@@ -4165,81 +3940,8 @@ function showSpellPreparePopover(triggerEl) {
   });
 }
 
-async function autoPrepareSpellFromFeature(englishName, triggerEl) {
-  if (!englishName) return;
-  const shouldPrepare = await showSpellPreparePopover(triggerEl);
-  if (!shouldPrepare) return;
-
-  const spellMeta = findSpellMetaByEnglishName(englishName);
-  if (!spellMeta) {
-    alert("找不到這個法術的資料。");
-    return;
-  }
-
-  if (findExistingSpellRow(spellMeta.areaId, englishName)) {
-    return;
-  }
-
-  const primaryClassId = document.getElementById("class")?.value || "";
-  const selectedAbility = document.getElementById("spellcasting-ability")?.value || "";
-  const availableClasses = new Set(getAvailableClassesForSpell(englishName, spellMeta.levelKey));
-  const targetClass = getSpellClassSearchOrderWithPrimary(primaryClassId, selectedAbility)
-    .find((classId) => availableClasses.has(classId)) || "";
-
-  if (!targetClass) {
-    alert("找不到可以加入這個法術的職業。");
-    return;
-  }
-
-  const row = findEmptySpellRow(spellMeta.areaId) || createSingleSpellRow(spellMeta.areaId, spellMeta.levelValue);
-  if (!row) return;
-
-  const classSel = row.querySelector("select[id*='-class-']");
-  const spellSel = row.querySelector("select[id*='-spell-']");
-  if (!classSel || !spellSel) return;
-
-  window.__spellAutoPrepareInProgress = true;
-  try {
-    classSel.value = targetClass;
-    classSel.dispatchEvent(new Event("change"));
-
-    const matchingOption = Array.from(spellSel.options).find((option) => getSpellEnglishName(option.value) === englishName);
-    if (!matchingOption) {
-      alert("已找到職業，但該法術未出現在對應下拉選單中。");
-      return;
-    }
-
-    spellSel.value = matchingOption.value;
-    spellSel.dispatchEvent(new Event("change"));
-  } finally {
-    window.__spellAutoPrepareInProgress = false;
-  }
-}
-
-function bindFeatureSpellHighlightEvents() {
-  if (window.__featureSpellHighlightEventsBound) return;
-  window.__featureSpellHighlightEventsBound = true;
-
-  const handler = (target) => {
-    const trigger = target?.closest?.(".spell-highlight-action[data-spell-name]");
-    if (!trigger) return false;
-    autoPrepareSpellFromFeature(trigger.dataset.spellName || "", trigger);
-    return true;
-  };
-
-  document.addEventListener("click", (event) => {
-    if (handler(event.target)) {
-      event.preventDefault();
-    }
-  });
-
-  document.addEventListener("keydown", (event) => {
-    if (event.key !== "Enter" && event.key !== " ") return;
-    if (handler(event.target)) {
-      event.preventDefault();
-    }
-  });
-}
+async function autoPrepareSpellFromFeature(spellId, triggerEl) { if(!spellId||!(await showSpellPreparePopover(triggerEl)))return;const meta=findSpellMetaById(spellId);if(!meta){alert("找不到這個法術的資料。");return;}if(findExistingSpellRow(meta.areaId,spellId))return;const primary=document.getElementById("class")?.value||"",ability=document.getElementById("spellcasting-ability")?.value||"",target=getSpellClassSearchOrderWithPrimary(primary,ability).find(id=>SpellCatalog.getClassIds(spellId,SPELL_MODE).includes(id));if(!target){alert("找不到可以加入這個法術的職業。");return;}const row=findEmptySpellRow(meta.areaId)||createSingleSpellRow(meta.areaId,meta.levelValue),classSel=row?.querySelector("select[id*='-class-']"),spellSel=row?.querySelector("select[id*='-spell-']");if(!classSel||!spellSel)return;window.__spellAutoPrepareInProgress=true;try{classSel.value=target;classSel.dispatchEvent(new Event("change"));if(!Array.from(spellSel.options).some(option=>option.value===spellId)){alert("已找到職業，但該法術未出現在對應下拉選單中。");return;}spellSel.value=spellId;spellSel.dispatchEvent(new Event("change"));}finally{window.__spellAutoPrepareInProgress=false;} }
+function bindFeatureSpellHighlightEvents() { if(window.__featureSpellHighlightEventsBound)return;window.__featureSpellHighlightEventsBound=true;const handler=target=>{const trigger=target?.closest?.(".spell-highlight-action[data-spell-id]");if(!trigger)return false;autoPrepareSpellFromFeature(trigger.dataset.spellId||"",trigger);return true;};document.addEventListener("click",event=>{if(handler(event.target))event.preventDefault();});document.addEventListener("keydown",event=>{if((event.key==="Enter"||event.key===" ")&&handler(event.target))event.preventDefault();}); }
 
 // 切換模式後，用於「不破壞 UI 結構」地刷新所有現存列的下拉與描述
 function refreshSpellDropdowns() {
@@ -4479,7 +4181,7 @@ function createSingleSpellRow(areaId, level, afterRow = null, restoredRowState =
     const prevSpell = spellSel.value;
     const classVal = this.value;
     const spells = classVal ? getSpellsByMode(classVal, level) : [];
-    spellSel.innerHTML = `<option value="">--法術--</option>` + spells.map(s => `<option>${s.name}</option>`).join('');
+    spellSel.innerHTML = `<option value="">--法術--</option>` + spells.map(s => `<option value="${escapeHtml(s.spellId)}">${escapeHtml(SpellCatalog.getDisplayName(s.spellId))}</option>`).join('');
     if (prevSpell && Array.from(spellSel.options).some(o => o.value === prevSpell)) {
       spellSel.value = prevSpell;
     } else {
@@ -4493,17 +4195,7 @@ function createSingleSpellRow(areaId, level, afterRow = null, restoredRowState =
 
   spellSel.addEventListener('change', function () {
     const spellVal = spellSel.value;
-    const key = (typeof level === "number") ? String(level) : level;
-    const spellData = getSpellListData();
-    let desc = "—";
-
-    if (spellVal && spellData?.[key]) {
-      const found = spellData[key].find(s => s.name === spellVal);
-      if (found) {
-        desc = found.desc || "—";
-      }
-    }
-
+    const desc = SpellCatalog.getSpell(spellVal)?.desc || "—";
     descDiv.innerHTML = renderSpellDescHtml(desc);
     updatePickedSpellBoxes();
     if (!isSpellAutoPrepareInProgress()) {
@@ -4538,14 +4230,7 @@ function createSingleSpellRow(areaId, level, afterRow = null, restoredRowState =
   return rowDiv;
 }
 
-function extractChineseSpellName(spellName) {
-  if (!spellName) return "";
-  const firstEnglishChar = spellName.search(/[A-Za-z]/);
-  if (firstEnglishChar === -1) return spellName.trim();
-  return spellName.slice(0, firstEnglishChar).trim();
-}
-
-function getFreeSpellUseSpec(spellSelect, spellName) {
+function getFreeSpellUseSpec(spellSelect) {
   const row = spellSelect.closest(".spell-entry");
   const magicInitiateKey = row?.dataset.magicInitiateKey || "";
   if (row?.dataset.spellSource === MAGIC_INITIATE_SOURCE && magicInitiateKey.endsWith("-level-1")) {
@@ -4589,25 +4274,22 @@ function updatePickedSpellBoxes() {
   areaToTarget.forEach(({ areaId, targetId }) => {
     const target = document.getElementById(targetId);
     if (!target) return;
-
     const checkedState = new Map(Array.from(document.querySelectorAll(".free-spell-use-check"), box => [box.id, box.checked]));
     const spells = Array.from(document.querySelectorAll(`#${areaId} select[id*='-spell-']`))
-      .map(sel => ({ select: sel, name: extractChineseSpellName(sel.value) }))
-      .filter(spell => spell.name);
-
-    if (!spells.length) {
-      target.textContent = "—";
-      return;
-    }
-
-    target.innerHTML = spells.map(({ select, name }) => {
-      const escapedName = escapeHtml(name);
-      const useSpec = getFreeSpellUseSpec(select, name);
+      .map(select => {
+        const spellId = select.value;
+        const spell = SpellCatalog.getSpell(spellId);
+        return spell ? { select, spellId, nameZh: spell.nameZh } : null;
+      })
+      .filter(Boolean);
+    if (!spells.length) { target.textContent = "—"; return; }
+    target.innerHTML = spells.map(({ select, spellId, nameZh }) => {
+      const useSpec = getFreeSpellUseSpec(select);
       const useChecks = useSpec ? renderFreeSpellUseChecks(useSpec, checkedState) : "";
       const row = select.closest(".spell-entry");
       const sourceKey = row?.dataset.sourceKey || "";
       const sourceTag = getPickedSpellSourceTag(row);
-      return `<span class="spell-picked-jump" role="button" tabindex="0" data-spell-jump="picked" data-area-id="${areaId}" data-spell-name="${escapedName}" data-source-key="${escapeHtml(sourceKey)}">[${escapedName}]</span>${sourceTag ? `<span class="spell-picked-source-tag">[${sourceTag}]</span>` : ""}${useChecks}`;
+      return `<span class="spell-picked-jump" role="button" tabindex="0" data-spell-jump="picked" data-area-id="${areaId}" data-spell-id="${escapeHtml(spellId)}" data-source-key="${escapeHtml(sourceKey)}">[${escapeHtml(nameZh)}]</span>${sourceTag ? `<span class="spell-picked-source-tag">[${sourceTag}]</span>` : ""}${useChecks}`;
     }).join("\n");
     setupAutoSave(target);
   });
@@ -4631,24 +4313,17 @@ function scrollSpellSelectIntoView(spellSelect) {
   window.setTimeout(() => spellSelect.classList.remove("spell-select-jump-highlight"), 1200);
 }
 
-function jumpToPickedSpell(areaId, spellName, sourceKey = "") {
-  if (!areaId || !spellName) return;
+function jumpToPickedSpell(areaId, spellId, sourceKey = "") {
+  if (!areaId || !spellId) return;
   const area = document.getElementById(areaId);
   if (!area) return;
-
   const section = area.closest("details.spell-level-section");
   if (section && !section.open) section.open = true;
-
-  const rows = Array.from(area.querySelectorAll(".spell-entry"));
-  const targetRow = rows.find((row) => {
+  const targetRow = Array.from(area.querySelectorAll(".spell-entry")).find(row => {
     if (sourceKey && row.dataset.sourceKey !== sourceKey) return false;
-    const selectedName = extractChineseSpellName(row.querySelector("select[id*='-spell-']")?.value || "");
-    return selectedName === spellName;
+    return row.querySelector("select[id*='-spell-']")?.value === spellId;
   });
-  if (!targetRow) return;
-
-  const spellSelect = targetRow.querySelector("select[id*='-spell-']");
-  scrollSpellSelectIntoView(spellSelect);
+  if (targetRow) scrollSpellSelectIntoView(targetRow.querySelector("select[id*='-spell-']"));
 }
 
 const SPELL_SEARCH_CLASS_LABELS = {
@@ -4686,31 +4361,7 @@ const SPELL_SEARCH_LEVEL_LABELS = {
 const SPELL_SEARCH_LEVEL_ORDER = ["cantrips", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
 let spellSearchIndex = null;
 
-function initializeSpellSearchIndex() {
-  if (spellSearchIndex) return;
-  if (typeof spellList !== "object" || !spellList) return;
-  spellSearchIndex = [];
-
-  Object.entries(spellList).forEach(([classKey, levels]) => {
-    const knownLevelKeys = SPELL_SEARCH_LEVEL_ORDER.filter(levelKey =>
-      Object.prototype.hasOwnProperty.call(levels, levelKey)
-    );
-    const otherLevelKeys = Object.keys(levels).filter(levelKey => !SPELL_SEARCH_LEVEL_ORDER.includes(levelKey));
-    [...knownLevelKeys, ...otherLevelKeys].forEach((levelKey) => {
-      const spells = Array.isArray(levels[levelKey]) ? levels[levelKey] : [];
-      spells.forEach((spell) => {
-        const name = String(spell?.name || "");
-        const desc = String(spell?.desc || "");
-        spellSearchIndex.push({
-          classKey,
-          levelKey,
-          spell,
-          searchText: `${name}\n${desc}`.toLowerCase()
-        });
-      });
-    });
-  });
-}
+function initializeSpellSearchIndex() { if(spellSearchIndex)return;spellSearchIndex=SpellCatalog.getAllSpells().map(spell=>({spellId:spell.spellId,spell,levelKey:spell.level===0?"cantrips":String(spell.level),classKeys:SpellCatalog.getClassIds(spell.spellId,SPELL_MODE),searchText:(spell.nameZh+"\n"+spell.nameEn+"\n"+SpellCatalog.getDisplayName(spell.spellId)+"\n"+spell.desc).toLowerCase()})); }
 
 function clearSpellSearchResults() {
   const results = document.getElementById("spell-search-results");
@@ -4727,54 +4378,23 @@ function searchAllSpells() {
   const summary = document.getElementById("spell-search-summary");
   const list = document.getElementById("spell-search-result-list");
   const keyword = (searchInput?.value || "").trim();
-  if (!keyword || !results || !summary || !list) {
-    clearSpellSearchResults();
-    return;
-  }
-
+  if (!keyword || !results || !summary || !list) { clearSpellSearchResults(); return; }
   initializeSpellSearchIndex();
-  const normalizedKeyword = keyword.toLowerCase();
-  const matches = (spellSearchIndex || []).filter(item => item.searchText.includes(normalizedKeyword));
   const groupedMatches = new Map();
-  matches.forEach((match) => {
-    const name = String(match.spell?.name || "");
-    const groupKey = `${match.levelKey}\u0000${name}`;
+  (spellSearchIndex || []).filter(match => match.searchText.includes(keyword.toLowerCase())).forEach(match => {
+    const groupKey = `${match.levelKey}\u0000${match.spellId}`;
     const group = groupedMatches.get(groupKey);
-    if (group) {
-      group.classKeys.push(match.classKey);
-      return;
-    }
-    groupedMatches.set(groupKey, {
-      levelKey: match.levelKey,
-      spell: match.spell,
-      classKeys: [match.classKey]
-    });
+    if (group) group.classKeys.push(...match.classKeys);
+    else groupedMatches.set(groupKey, { spellId: match.spellId, spell: match.spell, levelKey: match.levelKey, classKeys: [...match.classKeys] });
   });
   const fragment = document.createDocumentFragment();
-  groupedMatches.forEach(({ classKeys, levelKey, spell }) => {
-    const row = document.createElement("div");
-    row.className = "spell-search-result-item";
-    row.setAttribute("role", "listitem");
-    const classLabels = [...new Set(classKeys)]
-      .map(classKey => SPELL_SEARCH_CLASS_SHORT_LABELS[classKey] || SPELL_SEARCH_CLASS_LABELS[classKey] || classKey)
-      .join("");
-    const levelLabel = SPELL_SEARCH_LEVEL_LABELS[levelKey] || levelKey;
-    row.append(`(${classLabels})${levelLabel}-`);
-    const spellButton = document.createElement("button");
-    spellButton.type = "button";
-    spellButton.className = "spell-search-result-name";
-    spellButton.textContent = String(spell?.name || "");
-    spellButton.setAttribute("aria-label", `查看${spellButton.textContent}的法術詳情`);
-    spellButton.addEventListener("click", () => window.quickBuild?.openSpellDetail?.(spell, spellButton));
-    row.appendChild(spellButton);
-    fragment.appendChild(row);
+  groupedMatches.forEach(({ spellId, spell, levelKey, classKeys }) => {
+    const row = document.createElement("div"); row.className = "spell-search-result-item"; row.setAttribute("role", "listitem");
+    const labels = [...new Set(classKeys)].map(classId => SPELL_SEARCH_CLASS_SHORT_LABELS[classId] || SPELL_SEARCH_CLASS_LABELS[classId] || classId).join("");
+    row.append(`(${labels})${SPELL_SEARCH_LEVEL_LABELS[levelKey] || levelKey}-`);
+    const button = document.createElement("button"); button.type = "button"; button.className = "spell-search-result-name"; button.textContent = SpellCatalog.getDisplayName(spellId) || ""; button.setAttribute("aria-label", `查看${button.textContent}的法術詳情`); button.addEventListener("click", () => window.quickBuild?.openSpellDetail?.(spell, button)); row.appendChild(button); fragment.appendChild(row);
   });
-
-  list.replaceChildren(fragment);
-  summary.textContent = groupedMatches.size
-    ? `找到 ${groupedMatches.size} 筆結果`
-    : `找不到包含「${keyword}」的法術`;
-  results.classList.remove("is-hidden");
+  list.replaceChildren(fragment); summary.textContent = groupedMatches.size ? `找到 ${groupedMatches.size} 筆結果` : `找不到包含「${keyword}」的法術`; results.classList.remove("is-hidden");
 }
 
 document.getElementById("spell-search-button")?.addEventListener("click", searchAllSpells);
@@ -4791,17 +4411,17 @@ document.getElementById("collapse-spells")?.addEventListener("click", () => {
 });
 
 document.getElementById("spell-picked-grid-wrap")?.addEventListener("click", (event) => {
-  const trigger = event.target?.closest?.("[data-spell-jump='picked'][data-area-id][data-spell-name]");
+  const trigger = event.target?.closest?.("[data-spell-jump='picked'][data-area-id][data-spell-id]");
   if (!trigger) return;
-  jumpToPickedSpell(trigger.dataset.areaId || "", trigger.dataset.spellName || "", trigger.dataset.sourceKey || "");
+  jumpToPickedSpell(trigger.dataset.areaId || "", trigger.dataset.spellId || "", trigger.dataset.sourceKey || "");
 });
 
 document.getElementById("spell-picked-grid-wrap")?.addEventListener("keydown", (event) => {
-  const trigger = event.target?.closest?.("[data-spell-jump='picked'][data-area-id][data-spell-name]");
+  const trigger = event.target?.closest?.("[data-spell-jump='picked'][data-area-id][data-spell-id]");
   if (!trigger) return;
   if (event.key !== "Enter" && event.key !== " ") return;
   event.preventDefault();
-  jumpToPickedSpell(trigger.dataset.areaId || "", trigger.dataset.spellName || "", trigger.dataset.sourceKey || "");
+  jumpToPickedSpell(trigger.dataset.areaId || "", trigger.dataset.spellId || "", trigger.dataset.sourceKey || "");
 });
 
 // 依「玩家職業 + 等級 + 種族血統法術」自動限制法術頁顯示到幾環（含法術位列）

@@ -2,7 +2,7 @@
   "use strict";
 
   const STORAGE_KEY = "dnd.quickBuildDraft.v1";
-  const DRAFT_VERSION = 7;
+  const DRAFT_VERSION = 8;
   const MOBILE_INITIAL_EQUIPMENT_PREFIX = "初始裝備：";
   const STEPS = [
     { id: "background", title: "背景" },
@@ -138,17 +138,17 @@
   };
   const LEVEL_ONE_DEFINITIONS = {
     barbarian: { fixed: ["狂暴", "無甲防禦"], summaryFixed: ["狂暴", "無甲防禦"], languages: 2, weaponMastery: 2, prefillMasteryFromDefaultWeapon: true },
-    bard: { fixed: ["吟遊詩人激勵"], summaryFixed: ["吟遊詩人激勵"], languages: 2, cantrips: 2, preparedSpells: 4, defaultCantrips: ["舞光術", "惡言相加"], defaultPreparedSpells: ["魅惑人類", "七彩噴射", "不諧低語", "治癒真言"] },
-    cleric: { summaryFixed: ["神聖使命"], languages: 2, cantrips: 3, preparedSpells: 4, extraCantripClassType: "thaumaturge", defaultCantrips: ["神導術", "聖火術", "奇術"], defaultPreparedSpells: ["祝福術", "療傷術", "光導箭", "虔誠護盾"] },
-    druid: { fixed: ["德魯伊語", "動物交談（始終準備）"], summaryFixed: ["德魯伊語"], languages: 2, classOption: { key: "primalOrder", label: "原初使命", options: [{ id: "magician", label: "巫祝" }, { id: "warden", label: "哨衛" }] }, cantrips: 2, preparedSpells: 4, extraCantripOption: "magician", alwaysPrepared: ["動物交談"], defaultCantrips: ["德魯伊伎倆", "燃火術"], defaultPreparedSpells: ["化獸為友", "療傷術", "妖火", "雷鳴波"] },
+    bard: { fixed: ["吟遊詩人激勵"], summaryFixed: ["吟遊詩人激勵"], languages: 2, cantrips: 2, preparedSpells: 4, defaultCantrips: ["dancing-lights", "vicious-mockery"], defaultPreparedSpells: ["charm-person", "color-spray", "dissonant-whispers", "healing-word"] },
+    cleric: { summaryFixed: ["神聖使命"], languages: 2, cantrips: 3, preparedSpells: 4, extraCantripClassType: "thaumaturge", defaultCantrips: ["guidance", "sacred-flame", "thaumaturgy"], defaultPreparedSpells: ["bless", "cure-wounds", "guiding-bolt", "shield-of-faith"] },
+    druid: { fixed: ["德魯伊語", "動物交談（始終準備）"], summaryFixed: ["德魯伊語"], languages: 2, classOption: { key: "primalOrder", label: "原初使命", options: [{ id: "magician", label: "巫祝" }, { id: "warden", label: "哨衛" }] }, cantrips: 2, preparedSpells: 4, extraCantripOption: "magician", alwaysPrepared: ["speak-with-animals"], defaultCantrips: ["druidcraft", "produce-flame"], defaultPreparedSpells: ["animal-friendship", "cure-wounds", "faerie-fire", "thunderwave"] },
     fighter: { fixed: ["回氣"], summaryFixed: ["回氣"], languages: 2, fightingStyle: true, weaponMastery: 3, prefillMasteryFromDefaultWeapon: true },
     monk: { fixed: ["武藝", "無甲防禦"], summaryFixed: ["武藝", "無甲防禦"], languages: 2 },
-    paladin: { fixed: ["聖療"], summaryFixed: ["聖療"], languages: 2, preparedSpells: 2, weaponMastery: 2, defaultWeaponMasteries: ["長劍", "標槍"], defaultPreparedSpells: ["英雄氣概", "熾焰斬"] },
-    ranger: { fixed: ["宿敵：獵人印記始終準備，可免費施放 2 次"], summaryFixed: ["宿敵"], languages: 2, preparedSpells: 2, weaponMastery: 2, defaultWeaponMasteries: ["長弓", "短劍"], alwaysPrepared: ["獵人印記"], alwaysPreparedFeature: "遊俠等級 1：宿敵", alwaysPreparedFreeUses: { 1: 2 }, defaultPreparedSpells: ["療傷術", "誘捕打擊"] },
+    paladin: { fixed: ["聖療"], summaryFixed: ["聖療"], languages: 2, preparedSpells: 2, weaponMastery: 2, defaultWeaponMasteries: ["長劍", "標槍"], defaultPreparedSpells: ["heroism", "searing-smite"] },
+    ranger: { fixed: ["宿敵：獵人印記始終準備，可免費施放 2 次"], summaryFixed: ["宿敵"], languages: 2, preparedSpells: 2, weaponMastery: 2, defaultWeaponMasteries: ["長弓", "短劍"], alwaysPrepared: ["hunters-mark"], alwaysPreparedFeature: "遊俠等級 1：宿敵", alwaysPreparedFreeUses: { 1: 2 }, defaultPreparedSpells: ["cure-wounds", "ensnaring-strike"] },
     rogue: { fixed: ["偷襲", "盜賊黑話"], summaryFixed: ["偷襲", "盜賊黑話"], languages: 3, expertise: 2, weaponMastery: 2, defaultWeaponMasteries: ["匕首", "短弓"] },
-    sorcerer: { fixed: ["天生術法"], summaryFixed: ["天生術法"], languages: 2, cantrips: 4, preparedSpells: 2, defaultCantrips: ["光亮術", "魔法伎倆", "電爪", "術法衝擊"], defaultPreparedSpells: ["燃燒之手", "偵測魔法"] },
-    warlock: { summaryFixed: ["契約魔法"], languages: 2, cantrips: 2, preparedSpells: 2, invocations: 1, defaultInvocations: ["pact-of-the-tome"], defaultCantrips: ["魔能爆", "魔法伎倆"], defaultPreparedSpells: ["魅惑人類", "脆弱詛咒"] },
-    wizard: { fixed: ["儀式精通", "奧術回想"], summaryFixed: ["儀式精通", "奧術回想"], languages: 2, cantrips: 3, spellbookSpells: 6, preparedSpells: 4, defaultCantrips: ["光亮術", "法師之手", "冷凍射線"], defaultSpellbookSpells: ["偵測魔法", "羽落術", "法師護甲", "魔法飛彈", "睡眠術", "雷鳴波"], defaultPreparedSpells: ["法師護甲", "羽落術", "睡眠術", "魔法飛彈"] }
+    sorcerer: { fixed: ["天生術法"], summaryFixed: ["天生術法"], languages: 2, cantrips: 4, preparedSpells: 2, defaultCantrips: ["light", "prestidigitation", "shocking-grasp", "sorcerous-burst"], defaultPreparedSpells: ["burning-hands", "detect-magic"] },
+    warlock: { summaryFixed: ["契約魔法"], languages: 2, cantrips: 2, preparedSpells: 2, invocations: 1, defaultInvocations: ["pact-of-the-tome"], defaultCantrips: ["eldritch-blast", "prestidigitation"], defaultPreparedSpells: ["charm-person", "hex"] },
+    wizard: { fixed: ["儀式精通", "奧術回想"], summaryFixed: ["儀式精通", "奧術回想"], languages: 2, cantrips: 3, spellbookSpells: 6, preparedSpells: 4, defaultCantrips: ["light", "mage-hand", "ray-of-frost"], defaultSpellbookSpells: ["detect-magic", "feather-fall", "mage-armor", "magic-missile", "sleep", "thunderwave"], defaultPreparedSpells: ["mage-armor", "feather-fall", "sleep", "magic-missile"] }
   };
   const ELDRITCH_INVOCATION_OPTIONS = [
     { id: "armor-of-shadows", label: "幽影護甲", description: "你可隨意施展法師護甲，不耗法術位。" },
@@ -184,18 +184,18 @@
   };
   const RACE_LINEAGE_SPELLS = {
     elf: {
-      "卓爾血統": [["舞光術", "cantrip", 1], ["妖火", 1, 3], ["黑暗術", 2, 5]],
-      "高等精靈血統": [["偵測魔法", 1, 3], ["迷蹤步", 2, 5]],
-      "木精靈血統": [["德魯伊伎倆", "cantrip", 1], ["大步奔行", 1, 3], ["行動無蹤", 2, 5]]
+      "卓爾血統": [["dancing-lights", "cantrip", 1], ["faerie-fire", 1, 3], ["darkness", 2, 5]],
+      "高等精靈血統": [["detect-magic", 1, 3], ["misty-step", 2, 5]],
+      "木精靈血統": [["druidcraft", "cantrip", 1], ["longstrider", 1, 3], ["pass-without-trace", 2, 5]]
     },
     gnome: {
-      "森林侏儒": [["次級幻影", "cantrip", 1], ["動物交談", 1, 1]],
-      "岩石侏儒": [["修復術", "cantrip", 1], ["魔法伎倆", "cantrip", 1]]
+      "森林侏儒": [["minor-illusion", "cantrip", 1], ["speak-with-animals", 1, 1]],
+      "岩石侏儒": [["mending", "cantrip", 1], ["prestidigitation", "cantrip", 1]]
     },
     tiefling: {
-      "深淵血統": [["毒氣噴濺", "cantrip", 1], ["致病射線", 1, 3], ["人類定身術", 2, 5]],
-      "冥界血統": [["凍寒之觸", "cantrip", 1], ["虛假生命", 1, 3], ["衰弱射線", 2, 5]],
-      "煉獄血統": [["火焰箭", "cantrip", 1], ["煉獄叱喝", 1, 3], ["黑暗術", 2, 5]]
+      "深淵血統": [["poison-spray", "cantrip", 1], ["ray-of-sickness", 1, 3], ["hold-person", 2, 5]],
+      "冥界血統": [["chill-touch", "cantrip", 1], ["false-life", 1, 3], ["ray-of-enfeeblement", 2, 5]],
+      "煉獄血統": [["fire-bolt", "cantrip", 1], ["hellish-rebuke", 1, 3], ["darkness", 2, 5]]
     }
   };
   const DRAGONBORN_SUMMARY = {
@@ -277,32 +277,57 @@
     return Boolean(value) && typeof value === "object" && !Array.isArray(value);
   }
 
+  function migrateStoredSpellIds(saved) {
+    const migrated = structuredClone(saved);
+    const choices = migrated.choices || (migrated.choices = {});
+    const ids = values => (Array.isArray(values) ? values : []).map(resolveStoredSpellId).filter(Boolean);
+    const normalizeSpellChoices = (values, predicate, limit) => { const raw = Array.isArray(values) ? values : []; const resolved = raw.map(resolveStoredSpellId); const valid = resolved.filter((id, index) => id && predicate(id) && resolved.indexOf(id) === index).slice(0, limit); return { valid, changed: raw.length !== valid.length || resolved.some((id, index) => id !== valid[index] && raw[index] === id) || resolved.some((id, index) => !id || !predicate(id) || resolved.indexOf(id) !== index) }; };
+    const background = choices.background;
+    const sourceClass = background === "acolyte" ? "cleric" : "wizard";
+    const magic = choices.backgroundMagic || (choices.backgroundMagic = {});
+    const cantripResult = normalizeSpellChoices(magic.cantrips, id => SpellCatalog.getClassIds(id, spellMode()).includes(sourceClass) && canonicalSpell(id)?.level === 0, 2);
+    const levelOneResult = normalizeSpellChoices(magic.levelOneSpells, id => SpellCatalog.getClassIds(id, spellMode()).includes(sourceClass) && canonicalSpell(id)?.level === 1, 1);
+    if (cantripResult.changed || levelOneResult.changed) choices.backgroundMagicConfirmed = false;
+    choices.backgroundMagic = { cantrips: cantripResult.valid, levelOneSpells: levelOneResult.valid };
+    const race = choices.raceOptions || (choices.raceOptions = {});
+    if (race.cantrip) { const id = resolveStoredSpellId(race.cantrip); const valid = id && canonicalSpell(id)?.level === 0 && SpellCatalog.getSpells("wizard", "cantrips", spellMode()).some(spell => spell.spellId === id); race.cantrip = valid ? id : ""; if (!race.cantrip) race.cantripConfirmed = false; }
+    if (race.featOptions) { race.featOptions.cantrips = ids(race.featOptions.cantrips); race.featOptions.levelOneSpells = ids(race.featOptions.levelOneSpells); }
+    const levelOne = choices.levelOne || (choices.levelOne = {});
+    ["cantrips", "spellbookSpells", "preparedSpells"].forEach(key => { if (key in levelOne) levelOne[key] = ids(levelOne[key]); });
+    if (levelOne.tome) { levelOne.tome.cantrips = ids(levelOne.tome.cantrips); levelOne.tome.rituals = ids(levelOne.tome.rituals); }
+    const resolutions = {};
+    Object.entries(choices.spellConflictResolutions || {}).forEach(([key, value]) => { const match = /^spell:(.*):background-race$/u.exec(key); const id = match && resolveStoredSpellId(match[1]); if (id) resolutions["spell:" + id + ":background-race"] = value; });
+    choices.spellConflictResolutions = resolutions;
+    return migrated;
+  }
+
   function loadDraft() {
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-      if (!isPlainObject(saved) || saved.version !== DRAFT_VERSION) return createDraft();
+      if (!isPlainObject(saved) || ![7, DRAFT_VERSION].includes(saved.version)) return createDraft();
+      const source = migrateStoredSpellIds(saved);
       const blank = createDraft();
       return normalizeDraft({
         ...blank,
-        ...saved,
+        ...source,
         version: DRAFT_VERSION,
         choices: {
           ...blank.choices,
-          ...(isPlainObject(saved.choices) ? saved.choices : {}),
+          ...(isPlainObject(source.choices) ? source.choices : {}),
           backgroundMagic: {
             ...blank.choices.backgroundMagic,
-            ...(isPlainObject(saved.choices?.backgroundMagic) ? saved.choices.backgroundMagic : {})
+            ...(isPlainObject(source.choices?.backgroundMagic) ? source.choices.backgroundMagic : {})
           },
           backgroundCurrency: {
             ...blank.choices.backgroundCurrency,
-            ...(isPlainObject(saved.choices?.backgroundCurrency) ? saved.choices.backgroundCurrency : {})
+            ...(isPlainObject(source.choices?.backgroundCurrency) ? source.choices.backgroundCurrency : {})
           },
-          spellConflictResolutions: isPlainObject(saved.choices?.spellConflictResolutions) ? saved.choices.spellConflictResolutions : {},
-          levelOne: isPlainObject(saved.choices?.levelOne) ? saved.choices.levelOne : {}
+          spellConflictResolutions: isPlainObject(source.choices?.spellConflictResolutions) ? source.choices.spellConflictResolutions : {},
+          levelOne: isPlainObject(source.choices?.levelOne) ? source.choices.levelOne : {}
         },
-        selections: { ...blank.selections, ...(isPlainObject(saved.selections) ? saved.selections : {}) },
-        acquisitions: { ...blank.acquisitions, ...(isPlainObject(saved.acquisitions) ? saved.acquisitions : {}) },
-        currentStep: Math.min(Math.max(Number(saved.currentStep) || 0, 0), STEPS.length - 1)
+        selections: { ...blank.selections, ...(isPlainObject(source.selections) ? source.selections : {}) },
+        acquisitions: { ...blank.acquisitions, ...(isPlainObject(source.acquisitions) ? source.acquisitions : {}) },
+        currentStep: Math.min(Math.max(Number(source.currentStep) || 0, 0), STEPS.length - 1)
       });
     } catch (_error) {
       return createDraft();
@@ -499,51 +524,6 @@
     return { type: "race", id: key, label: RACE_LABELS[key], dataFile: "race.js" };
   }
 
-  function spellChineseName(name) {
-    const value = String(name || "").trim();
-    const englishStart = value.search(/[A-Za-z]/u);
-    return (englishStart < 0 ? value : value.slice(0, englishStart)).trim();
-  }
-
-  function acquisitionAppliesAtLevel(acquisition, characterLevel = QUICK_BUILD_LEVEL) {
-    const gainedAt = Number(acquisition?.content?.gainedAt);
-    return !Number.isFinite(gainedAt) || gainedAt <= characterLevel;
-  }
-
-  function acquisitionConflicts(target, type, name, sourceType) {
-    return (target.acquisitions?.[type] || []).filter(item =>
-      item.name === name && item.sourceType !== sourceType && (type !== "spells" || acquisitionAppliesAtLevel(item))
-    );
-  }
-
-  function crossSourceDuplicateGroups(target, type, sourceTypes = null) {
-    const allowed = sourceTypes ? new Set(sourceTypes) : null;
-    const groups = new Map();
-    (target.acquisitions?.[type] || []).forEach(item => {
-      if (!item?.name || (allowed && !allowed.has(item.sourceType)) || (type === "spells" && !acquisitionAppliesAtLevel(item))) return;
-      if (!groups.has(item.name)) groups.set(item.name, []);
-      groups.get(item.name).push(item);
-    });
-    return [...groups.entries()].flatMap(([name, items]) => {
-      const sourceTypeCount = new Set(items.map(item => item.sourceType)).size;
-      return sourceTypeCount > 1 ? [{ type, name, items }] : [];
-    });
-  }
-
-  function duplicateGroupText(group) {
-    const sources = [...new Set(group.items.map(item => item.source?.label || item.sourceType || "其他來源"))];
-    return `${group.name}（${sources.join("／")}）`;
-  }
-
-  function addRaceSpell(target, key, shortName, level, gainedAt, sourceDetail) {
-    const name = spellChineseName(shortName);
-    const source = { ...raceSource(key), feature: sourceDetail };
-    const content = { name, level, gainedAt };
-    const id = `race:${key}:spell:${sourceDetail}:${shortName}:${gainedAt}`;
-    target.selections.raceSpells.push({ id, source, content });
-    addDerivedAcquisition(target, "spells", { id, name, sourceType: "race", sourceId: key, source, content });
-  }
-
   function reconcileRaceDraft(target) {
     const blank = createDraft();
     if (!isPlainObject(target.choices)) target.choices = { ...blank.choices };
@@ -572,8 +552,8 @@
       const spellClass = MAGIC_INITIATE_SPELL_CLASSES.has(savedFeatOptions.spellClass) && savedFeatOptions.spellClass !== blockedSpellClass
         ? savedFeatOptions.spellClass
         : "";
-      const cantrips = spellClass ? validSpellNames(spellList?.[spellClass]?.cantrips, savedFeatOptions.cantrips, 2) : [];
-      const levelOneSpells = spellClass ? validSpellNames(spellList?.[spellClass]?.[1], savedFeatOptions.levelOneSpells, 1) : [];
+      const cantrips = spellClass ? validSpellIds(SpellCatalog.getSpells(spellClass, "cantrips", spellMode()), savedFeatOptions.cantrips, 2) : [];
+      const levelOneSpells = spellClass ? validSpellIds(SpellCatalog.getSpells(spellClass, "1", spellMode()), savedFeatOptions.levelOneSpells, 1) : [];
       const featOptions = { spellClass, cantrips, levelOneSpells };
       const changed = spellClass !== (savedFeatOptions.spellClass || "") ||
         cantrips.length !== (savedFeatOptions.cantrips || []).length ||
@@ -581,6 +561,11 @@
         levelOneSpells.length !== (savedFeatOptions.levelOneSpells || []).length ||
         levelOneSpells.some((name, index) => name !== savedFeatOptions.levelOneSpells[index]);
       options = { ...options, featOptions, ...(changed ? { confirmed: false } : {}) };
+      target.choices.raceOptions = options;
+    }
+    if (key === "elf" && options.lineage === "高等精靈血統") {
+      const validCantrip = canonicalSpell(options.cantrip)?.level === 0 && SpellCatalog.getSpells("wizard", "cantrips", spellMode()).some(spell => spell.spellId === options.cantrip);
+      if (!validCantrip) options = { ...options, cantrip: "", cantripConfirmed: false };
       target.choices.raceOptions = options;
     }
     const source = raceSource(key);
@@ -613,71 +598,91 @@
     const lineage = options.lineage || options.legacy;
     (RACE_LINEAGE_SPELLS[key]?.[lineage] || []).forEach(([name, level, gainedAt]) => addRaceSpell(target, key, name, level, gainedAt, lineage));
     if (key === "elf" && options.lineage === "高等精靈血統" && options.cantrip) addRaceSpell(target, key, options.cantrip, "cantrip", 1, "高等精靈血統");
-    if (key === "tiefling") addRaceSpell(target, key, "奇術", "cantrip", 1, "異界姿態");
+    if (key === "tiefling") addRaceSpell(target, key, "thaumaturgy", "cantrip", 1, "異界姿態");
     const spellConflicts = target.acquisitions.spells.filter(item => item.sourceType === "race" && acquisitionAppliesAtLevel(item)).flatMap(item =>
-      acquisitionConflicts(target, "spells", item.name, "race")
+      acquisitionConflicts(target, "spells", item.spellId, "race")
         .filter(conflict => conflict.sourceType === "background")
         .map(conflict => {
-          const conflictId = `spell:${item.name}:background-race`;
+          const conflictId = `spell:${item.spellId}:background-race`;
           const resolution = target.choices.spellConflictResolutions[conflictId] || null;
-          return { type: "spell", id: conflictId, name: item.name, sources: [conflict.source, item.source], resolution, blocking: false, requiresFinalAcknowledgment: resolution !== "acknowledged-final" };
+          return { type: "spell", id: conflictId, spellId: item.spellId, name: spellNameZh(item.spellId), sources: [conflict.source, item.source], resolution, blocking: false, requiresFinalAcknowledgment: resolution !== "acknowledged-final" };
         })
     );
-    const conflictNames = new Set(spellConflicts.map(conflict => conflict.name));
-    target.selections.raceSpells.forEach(item => { item.content.crossSourceDuplicate = conflictNames.has(item.content.name); });
-    target.acquisitions.spells.filter(item => item.sourceType === "race").forEach(item => { item.content.crossSourceDuplicate = conflictNames.has(item.name); });
+    const conflictNames = new Set(spellConflicts.map(conflict => conflict.spellId));
+    target.selections.raceSpells.forEach(item => { item.content.crossSourceDuplicate = conflictNames.has(item.spellId); });
+    target.acquisitions.spells.filter(item => item.sourceType === "race").forEach(item => { item.content.crossSourceDuplicate = conflictNames.has(item.spellId); });
     target.selections.race.content.conflicts = spellConflicts;
     return target;
   }
 
   function backgroundEquipmentDetails(key, method, toolChoice = null) {
-    const data = backgroundData(key) || {};
-    const raw = method === "gold" ? data.裝備B : data.裝備A;
-    const currency = { cp: 0, sp: 0, gp: 0, pp: 0 };
-    const items = String(raw || "").split(/[、,，]/u).map(item => item.trim()).filter(Boolean).map(item => {
-      if (key === "soldier" && method === "default" && item === "賭具擇一" && GAME_TOOL_OPTIONS.includes(toolChoice)) {
-        return toolChoice;
-      }
-      return item;
-    }).filter(item => {
-      const match = item.match(/^(\d+)\s*金幣$/u);
-      if (!match) return true;
-      currency.gp += Number(match[1]);
-      return false;
-    });
+    const data = backgroundData(key) || {}; const raw = method === "gold" ? data.裝備B : data.裝備A; const currency = { cp: 0, sp: 0, gp: 0, pp: 0 };
+    const items = String(raw || "").split(/[、,，]/u).map(item => item.trim()).filter(Boolean).map(item => key === "soldier" && method === "default" && item === "賭具擇一" && GAME_TOOL_OPTIONS.includes(toolChoice) ? toolChoice : item).filter(item => { const match = item.match(/^(\d+)\s*金幣$/u); if (!match) return true; currency.gp += Number(match[1]); return false; });
     return { items, currency };
   }
+  function displayList(value) { return plainText(value).replace(/[，,]/gu, "、"); }
+  function backgroundSource(key) { return { type: "background", id: key, label: BACKGROUND_LABELS[key], dataFile: "backgrounds.js" }; }
+  function spellSourceForBackground(key) { return key === "acolyte" ? "cleric" : "wizard"; }
 
-  function displayList(value) {
-    return plainText(value).replace(/[，,]/gu, "、");
+  function spellMode() {
+    return typeof SPELL_MODE === "string" && ["basic", "full"].includes(SPELL_MODE) ? SPELL_MODE : "basic";
   }
 
-  function backgroundSource(key) {
-    return { type: "background", id: key, label: BACKGROUND_LABELS[key], dataFile: "backgrounds.js" };
+  function canonicalSpell(spellId) {
+    return typeof SpellCatalog === "object" ? SpellCatalog.getSpell(spellId) || null : null;
   }
 
-  function spellSourceForBackground(key) {
-    return key === "acolyte" ? "cleric" : "wizard";
+  function resolveStoredSpellId(value) {
+    if (typeof value !== "string" || value !== value.trim()) return null;
+    return canonicalSpell(value)?.spellId || SpellCatalog.resolveSpellId(value) || null;
   }
 
-  function spellOptionsForBackground(key, level) {
-    const source = spellSourceForBackground(key);
-    const entries = typeof spellList === "object" ? spellList?.[source]?.[level] : [];
-    return Array.isArray(entries) ? entries : [];
+  function spellNameZh(spellId) { return canonicalSpell(spellId)?.nameZh || ""; }
+  function spellDisplayName(spellId) { return SpellCatalog.getDisplayName(spellId) || spellNameZh(spellId); }
+
+  function acquisitionAppliesAtLevel(acquisition, characterLevel = QUICK_BUILD_LEVEL) {
+    const gainedAt = Number(acquisition?.content?.gainedAt);
+    return !Number.isFinite(gainedAt) || gainedAt <= characterLevel;
   }
 
-  function selectedSpellForBackground(key, name, level) {
-    return spellOptionsForBackground(key, level).find(spell => spellChineseName(spell.name) === spellChineseName(name)) || null;
+  function acquisitionConflicts(target, type, identity, sourceType) {
+    return (target.acquisitions?.[type] || []).filter(item =>
+      (type === "spells" ? item.spellId === identity : item.name === identity) && item.sourceType !== sourceType && (type !== "spells" || acquisitionAppliesAtLevel(item))
+    );
   }
 
-  function validSpellNames(entries, names, limit) {
-    const selected = [];
-    (Array.isArray(names) ? names : []).forEach(name => {
-      const spell = (Array.isArray(entries) ? entries : []).find(entry => spellChineseName(entry.name) === spellChineseName(name));
-      const canonicalName = spell ? spellChineseName(spell.name) : "";
-      if (canonicalName && !selected.includes(canonicalName) && selected.length < limit) selected.push(canonicalName);
+  function crossSourceDuplicateGroups(target, type, sourceTypes = null) {
+    const allowed = sourceTypes ? new Set(sourceTypes) : null;
+    const groups = new Map();
+    (target.acquisitions?.[type] || []).forEach(item => {
+      const identity = type === "spells" ? item?.spellId : item?.name;
+      if (!identity || (allowed && !allowed.has(item.sourceType)) || (type === "spells" && !acquisitionAppliesAtLevel(item))) return;
+      if (!groups.has(identity)) groups.set(identity, []);
+      groups.get(identity).push(item);
     });
-    return selected;
+    return [...groups.entries()].flatMap(([identity, items]) => new Set(items.map(item => item.sourceType)).size > 1 ? [{ type, spellId: type === "spells" ? identity : null, name: type === "spells" ? spellNameZh(identity) : identity, items }] : []);
+  }
+
+  function duplicateGroupText(group) {
+    const sources = [...new Set(group.items.map(item => item.source?.label || item.sourceType || "其他來源"))];
+    return group.name + "（" + sources.join("／") + "）";
+  }
+
+  function addRaceSpell(target, key, spellId, level, gainedAt, sourceDetail) {
+    const record = canonicalSpell(spellId);
+    if (!record) return;
+    const source = { ...raceSource(key), feature: sourceDetail };
+    const content = { spellId, name: record.nameZh, level, gainedAt };
+    const id = "race:" + key + ":spell:" + sourceDetail + ":" + spellId + ":" + gainedAt;
+    target.selections.raceSpells.push({ id, spellId, source, content });
+    addDerivedAcquisition(target, "spells", { id, spellId, name: record.nameZh, sourceType: "race", sourceId: key, source, content: { ...content, spellId } });
+  }
+
+  function spellOptionsForBackground(key, level) { return SpellCatalog.getSpells(spellSourceForBackground(key), level, spellMode()); }
+  function selectedSpellForBackground(key, spellId, level) { return spellOptionsForBackground(key, level).find(spell => spell.spellId === spellId) || null; }
+  function validSpellIds(entries, spellIds, limit) {
+    const allowed = new Set((Array.isArray(entries) ? entries : []).map(spell => spell.spellId));
+    return (Array.isArray(spellIds) ? spellIds : []).filter(spellId => allowed.has(spellId)).filter((spellId, index, all) => all.indexOf(spellId) === index).slice(0, limit);
   }
 
   function addDerivedAcquisition(target, type, acquisition) {
@@ -768,9 +773,9 @@
     }
 
     const savedMagic = target.choices.backgroundMagic;
-    const cantrips = validSpellNames(spellOptionsForBackground(key, "cantrips"), savedMagic.cantrips, 2);
+    const cantrips = validSpellIds(spellOptionsForBackground(key, "cantrips"), savedMagic.cantrips, 2);
     while (cantrips.length < 2) cantrips.push("");
-    const levelOneSpells = validSpellNames(spellOptionsForBackground(key, "1"), savedMagic.levelOneSpells, 1);
+    const levelOneSpells = validSpellIds(spellOptionsForBackground(key, "1"), savedMagic.levelOneSpells, 1);
     const magicChanged = cantrips.some((name, index) => name !== (savedMagic.cantrips || [])[index]) ||
       levelOneSpells.some((name, index) => name !== (savedMagic.levelOneSpells || [])[index]) ||
       (savedMagic.levelOneSpells || []).length !== levelOneSpells.length;
@@ -778,14 +783,14 @@
     if (magicChanged) target.choices.backgroundMagicConfirmed = false;
     const magic = target.choices.backgroundMagic;
     [["cantrips", magic.cantrips], ["1", magic.levelOneSpells]].forEach(([level, names]) => {
-      (Array.isArray(names) ? names : []).filter(Boolean).forEach(name => {
-        const chineseName = spellChineseName(name);
-        const content = { name: chineseName, level: level === "cantrips" ? "cantrip" : Number(level), gainedAt: 1 };
+      (Array.isArray(names) ? names : []).filter(Boolean).forEach(spellId => {
+        const chineseName = spellNameZh(spellId);
+        const content = { spellId, name: chineseName, level: level === "cantrips" ? "cantrip" : Number(level), gainedAt: 1 };
         const spellSource = spellSourceForBackground(key);
         const spellSourceRecord = { ...source, feature: "魔法學徒", optionList: spellSource };
-        target.selections.backgroundSpells.push({ id: `background:${key}:spell:${level}:${chineseName}`, source: spellSourceRecord, content });
+        target.selections.backgroundSpells.push({ id: `background:${key}:spell:${level}:${spellId}`, spellId, source: spellSourceRecord, content });
         addDerivedAcquisition(target, "spells", {
-          id: `background:${key}:spell:${chineseName}`, name: chineseName, sourceType: "background", sourceId: key, source: spellSourceRecord, content
+          id: `background:${key}:spell:${spellId}`, spellId, name: chineseName, sourceType: "background", sourceId: key, source: spellSourceRecord, content
         });
       });
     });
@@ -981,52 +986,26 @@
     return [];
   }
 
-  function levelOneSpellOptions(classId, level) {
-    const entries = typeof spellList === "object" ? spellList?.[classId]?.[level] : [];
-    return Array.isArray(entries) ? entries : [];
-  }
-
-  function spellOptionByChineseName(classId, level, name) {
-    return levelOneSpellOptions(classId, level).find(spell => spellChineseName(spell.name) === spellChineseName(name)) || null;
-  }
-
+  function levelOneSpellOptions(classId, level) { return SpellCatalog.getSpells(classId, level, spellMode()); }
+  function spellOptionById(classId, level, spellId) { return levelOneSpellOptions(classId, level).find(spell => spell.spellId === spellId) || null; }
   function allSpellOptions(level, predicate = null) {
-    const seen = new Map();
-    Object.values(typeof spellList === "object" ? spellList : {}).forEach(levels => {
-      (Array.isArray(levels?.[level]) ? levels[level] : []).forEach(spell => {
-        const name = spellChineseName(spell.name);
-        if (name && (!predicate || predicate(spell)) && !seen.has(name)) seen.set(name, spell);
-      });
-    });
-    return [...seen.values()].sort((a, b) => spellChineseName(a.name).localeCompare(spellChineseName(b.name), "zh-Hant"));
+    return SpellCatalog.getAllSpells().filter(spell => spell.level === (level === "cantrips" ? 0 : Number(level)) && SpellCatalog.getClassIds(spell.spellId, spellMode()).length && (!predicate || predicate(spell))).sort((a, b) => a.nameZh.localeCompare(b.nameZh, "zh-Hant"));
   }
-
-  function levelOneInvocationOptions() {
-    return ELDRITCH_INVOCATION_OPTIONS.filter(option => !option.minWarlockLevel || option.minWarlockLevel <= 1);
-  }
-
-  function isRitualSpell(spell) {
-    return /儀式/u.test(`${spell?.name || ""}\n${spell?.desc || ""}`);
-  }
-
+  function levelOneInvocationOptions() { return ELDRITCH_INVOCATION_OPTIONS.filter(option => !option.minWarlockLevel || option.minWarlockLevel <= 1); }
+  function isRitualSpell(spell) { return Boolean(spell) && /儀式/u.test(spell.desc || ""); }
   function knownSpellSources(target, excludeSourceType = "level-one") {
     const map = new Map();
     (target.acquisitions.spells || []).forEach(item => {
-      if (item.sourceType === excludeSourceType || !acquisitionAppliesAtLevel(item)) return;
-      const name = spellChineseName(item.name);
-      if (!name) return;
-      if (!map.has(name)) map.set(name, []);
-      map.get(name).push(item.source?.label || item.sourceType || "其他來源");
+      if (item.sourceType === excludeSourceType || !acquisitionAppliesAtLevel(item) || !item.spellId) return;
+      if (!map.has(item.spellId)) map.set(item.spellId, []);
+      map.get(item.spellId).push(item.source?.label || item.sourceType || "其他來源");
     });
     return map;
   }
-
-  function validDefaultSpellNames(classId, level, names, knownNames = new Set()) {
-    const options = level === "all-cantrips" ? allSpellOptions("cantrips")
-      : level === "all-rituals-1" ? allSpellOptions("1", isRitualSpell)
-      : levelOneSpellOptions(classId, level);
-    const valid = new Set(options.map(spell => spellChineseName(spell.name)));
-    return (Array.isArray(names) ? names : []).filter(name => valid.has(name) && !knownNames.has(name));
+  function validDefaultSpellIds(classId, level, spellIds, knownSpellIds = new Set()) {
+    const options = level === "all-cantrips" ? allSpellOptions("cantrips") : level === "all-rituals-1" ? allSpellOptions("1", isRitualSpell) : levelOneSpellOptions(classId, level);
+    const valid = new Set(options.map(spell => spell.spellId));
+    return (Array.isArray(spellIds) ? spellIds : []).filter(spellId => valid.has(spellId) && !knownSpellIds.has(spellId));
   }
 
   function firstLevelOneStageForDefinition(definition) {
@@ -1095,13 +1074,10 @@
     const choices = normalizeLevelOneChoices(target);
     const pendingChoices = [];
     const fixed = [...(definition.fixed || [])];
-    const knownSpellNames = new Set((target.acquisitions.spells || [])
-      .filter(item => acquisitionAppliesAtLevel(item))
-      .map(item => spellChineseName(item.name))
-      .filter(Boolean));
-    if (!Array.isArray(choices.cantrips) || choices.cantrips.filter(Boolean).length === 0) choices.cantrips = validDefaultSpellNames(key, "cantrips", definition.defaultCantrips, knownSpellNames);
-    if (!Array.isArray(choices.spellbookSpells) || choices.spellbookSpells.filter(Boolean).length === 0) choices.spellbookSpells = validDefaultSpellNames("wizard", "1", definition.defaultSpellbookSpells, knownSpellNames);
-    if (!Array.isArray(choices.preparedSpells) || choices.preparedSpells.filter(Boolean).length === 0) choices.preparedSpells = validDefaultSpellNames(definition.spellbookSpells ? "wizard" : key, "1", definition.defaultPreparedSpells, knownSpellNames);
+    const knownSpellIds = new Set((target.acquisitions.spells || []).filter(item => acquisitionAppliesAtLevel(item)).map(item => item.spellId).filter(Boolean));
+    if (!Array.isArray(choices.cantrips) || choices.cantrips.filter(Boolean).length === 0) choices.cantrips = validDefaultSpellIds(key, "cantrips", definition.defaultCantrips, knownSpellIds);
+    if (!Array.isArray(choices.spellbookSpells) || choices.spellbookSpells.filter(Boolean).length === 0) choices.spellbookSpells = validDefaultSpellIds("wizard", "1", definition.defaultSpellbookSpells, knownSpellIds);
+    if (!Array.isArray(choices.preparedSpells) || choices.preparedSpells.filter(Boolean).length === 0) choices.preparedSpells = validDefaultSpellIds(definition.spellbookSpells ? "wizard" : key, "1", definition.defaultPreparedSpells, knownSpellIds);
     if (!Array.isArray(choices.invocations) || choices.invocations.filter(Boolean).length === 0) choices.invocations = (Array.isArray(definition.defaultInvocations) ? definition.defaultInvocations : []).filter(id => levelOneInvocationOptions().some(option => option.id === id));
     if (definition.classOption) {
       const valid = definition.classOption.options.some(option => option.id === choices.classOption);
@@ -1109,13 +1085,13 @@
       if (!choices.classOption) pendingChoices.push(definition.classOption.label);
     }
     const cantripCount = levelOneCantripCount(target, definition);
-    const cantrips = [...new Set((Array.isArray(choices.cantrips) ? choices.cantrips : []).filter(name => name && !knownSpellNames.has(name)))].slice(0, cantripCount);
+    const cantrips = [...new Set((Array.isArray(choices.cantrips) ? choices.cantrips : []).filter(spellId => levelOneSpellOptions(key, "cantrips").some(spell => spell.spellId === spellId) && !knownSpellIds.has(spellId)))].slice(0, cantripCount);
     if (cantrips.length !== cantripCount) pendingChoices.push(`戲法 ${cantripCount} 個`);
-    const spellbookSpells = [...new Set((Array.isArray(choices.spellbookSpells) ? choices.spellbookSpells : []).filter(name => name && !knownSpellNames.has(name)))].slice(0, definition.spellbookSpells || 0);
+    const spellbookSpells = [...new Set((Array.isArray(choices.spellbookSpells) ? choices.spellbookSpells : []).filter(spellId => levelOneSpellOptions("wizard", "1").some(spell => spell.spellId === spellId) && !knownSpellIds.has(spellId)))].slice(0, definition.spellbookSpells || 0);
     if (spellbookSpells.length !== (definition.spellbookSpells || 0)) pendingChoices.push(`法術書一環法術 ${definition.spellbookSpells} 個`);
     let preparedCandidates = definition.spellbookSpells ? spellbookSpells : null;
     const alwaysPrepared = new Set(definition.alwaysPrepared || []);
-    const preparedSpells = [...new Set((Array.isArray(choices.preparedSpells) ? choices.preparedSpells : []).filter(name => name && !knownSpellNames.has(name) && !alwaysPrepared.has(name) && (!preparedCandidates || preparedCandidates.includes(name))))].slice(0, definition.preparedSpells || 0);
+    const preparedSpells = [...new Set((Array.isArray(choices.preparedSpells) ? choices.preparedSpells : []).filter(spellId => !knownSpellIds.has(spellId) && !alwaysPrepared.has(spellId) && (preparedCandidates ? preparedCandidates.includes(spellId) : levelOneSpellOptions(key, "1").some(spell => spell.spellId === spellId))))].slice(0, definition.preparedSpells || 0);
     if (preparedSpells.length !== (definition.preparedSpells || 0)) pendingChoices.push(`準備法術 ${definition.preparedSpells} 個`);
     const weaponOptions = allWeaponMasteryOptionsForClass(key).map(([name]) => name);
     let weaponMasteries = Array.isArray(choices.weaponMasteries) ? choices.weaponMasteries.filter(name => weaponOptions.includes(name)) : [];
@@ -1150,8 +1126,8 @@
     if (invocations.length !== (definition.invocations || 0)) pendingChoices.push(`魔能祈喚 ${definition.invocations} 個`);
     const tome = isPlainObject(choices.tome) ? choices.tome : {};
     const hasTome = invocations.includes("pact-of-the-tome");
-    const tomeCantrips = hasTome ? [...new Set((Array.isArray(tome.cantrips) ? tome.cantrips : []).filter(name => name && !knownSpellNames.has(name)))].slice(0, 3) : [];
-    const tomeRituals = hasTome ? [...new Set((Array.isArray(tome.rituals) ? tome.rituals : []).filter(name => name && !knownSpellNames.has(name)))].slice(0, 2) : [];
+    const tomeCantrips = hasTome ? [...new Set((Array.isArray(tome.cantrips) ? tome.cantrips : []).filter(spellId => canonicalSpell(spellId)?.level === 0 && SpellCatalog.getClassIds(spellId, spellMode()).length && !knownSpellIds.has(spellId)))].slice(0, 3) : [];
+    const tomeRituals = hasTome ? [...new Set((Array.isArray(tome.rituals) ? tome.rituals : []).filter(spellId => canonicalSpell(spellId)?.level === 1 && isRitualSpell(canonicalSpell(spellId)) && SpellCatalog.getClassIds(spellId, spellMode()).length && !knownSpellIds.has(spellId)))].slice(0, 2) : [];
     if (hasTome && tomeCantrips.length !== 3) pendingChoices.push("書之魔契戲法 3 個");
     if (hasTome && tomeRituals.length !== 2) pendingChoices.push("書之魔契儀式一環法術 2 個");
     const summaryConfirmed = pendingChoices.length === 0;
@@ -1171,13 +1147,13 @@
     weaponMasteries.forEach(name => addDerivedAcquisition(target, "other", { id: `level-one:${key}:weapon-mastery:${name}`, name: `${name}精通`, sourceType: "level-one", sourceId: key, source: { ...source, feature: "武器精通" }, content: { type: "weaponMastery", weapon: name } }));
     expertise.forEach(name => addDerivedAcquisition(target, "expertise", { id: `level-one:${key}:expertise:${name}`, name, sourceType: "level-one", sourceId: key, source: { ...source, feature: key === "rogue" ? "遊蕩者 1 級專精" : "1 級專精" }, content: { type: "expertise", skill: name } }));
     languageDetails.forEach(item => addDerivedAcquisition(target, "languages", { id: `level-one:${key}:language:${item.slot}:${item.value}`, name: item.label, sourceType: "level-one", sourceId: key, source: { ...source, feature: item.category === "class-extra" ? "盜賊黑話：額外語言" : "初始語言" }, content: { type: "language", value: item.value, category: item.category, fieldId: item.fieldId, slot: item.slot } }));
-    cantrips.forEach(name => addDerivedAcquisition(target, "spells", { id: `level-one:${key}:cantrip:${name}`, name, sourceType: "level-one", sourceId: key, source: { ...source, feature: "1 級戲法" }, content: { name, level: "cantrip", prepared: true } }));
-    if (!definition.spellbookSpells) preparedSpells.forEach(name => addDerivedAcquisition(target, "spells", { id: `level-one:${key}:prepared:${name}`, name, sourceType: "level-one", sourceId: key, source: { ...source, feature: "1 級準備法術" }, content: { name, level: 1, prepared: true } }));
-    spellbookSpells.forEach(name => addDerivedAcquisition(target, "spells", { id: `level-one:${key}:spellbook:${name}`, name, sourceType: "level-one", sourceId: key, source: { ...source, feature: "法術書" }, content: { name, level: 1, spellbook: true, prepared: preparedSpells.includes(name), ritual: isRitualSpell(spellOptionByChineseName("wizard", "1", name)) } }));
-    (definition.alwaysPrepared || []).forEach(name => addDerivedAcquisition(target, "spells", { id: `level-one:${key}:always:${name}`, name, sourceType: "level-one", sourceId: key, source: { ...source, feature: definition.alwaysPreparedFeature || "始終準備" }, content: { name, level: 1, prepared: true, alwaysPrepared: true, countsAgainstPrepared: false, freeUses: definition.alwaysPreparedFreeUses?.[1] || null } }));
+    cantrips.forEach(name => addDerivedAcquisition(target, "spells", { id: `level-one:${key}:cantrip:${name}`, spellId: name, name: spellNameZh(name), sourceType: "level-one", sourceId: key, source: { ...source, feature: "1 級戲法" }, content: { spellId: name, name: spellNameZh(name), level: "cantrip", prepared: true } }));
+    if (!definition.spellbookSpells) preparedSpells.forEach(name => addDerivedAcquisition(target, "spells", { id: `level-one:${key}:prepared:${name}`, spellId: name, name: spellNameZh(name), sourceType: "level-one", sourceId: key, source: { ...source, feature: "1 級準備法術" }, content: { spellId: name, name: spellNameZh(name), level: 1, prepared: true } }));
+    spellbookSpells.forEach(name => addDerivedAcquisition(target, "spells", { id: `level-one:${key}:spellbook:${name}`, spellId: name, name: spellNameZh(name), sourceType: "level-one", sourceId: key, source: { ...source, feature: "法術書" }, content: { spellId: name, name: spellNameZh(name), level: 1, spellbook: true, prepared: preparedSpells.includes(name), ritual: isRitualSpell(canonicalSpell(name)) } }));
+    (definition.alwaysPrepared || []).forEach(name => addDerivedAcquisition(target, "spells", { id: `level-one:${key}:always:${name}`, spellId: name, name: spellNameZh(name), sourceType: "level-one", sourceId: key, source: { ...source, feature: definition.alwaysPreparedFeature || "始終準備" }, content: { spellId: name, name: spellNameZh(name), level: 1, prepared: true, alwaysPrepared: true, countsAgainstPrepared: false, freeUses: definition.alwaysPreparedFreeUses?.[1] || null } }));
     invocations.forEach(id => addDerivedAcquisition(target, "other", { id: `level-one:${key}:invocation:${id}`, name: ELDRITCH_INVOCATION_OPTIONS.find(option => option.id === id)?.label || id, sourceType: "level-one", sourceId: key, source: { ...source, feature: "魔能祈喚" }, content: { type: "eldritchInvocation", invocation: id } }));
-    tomeCantrips.forEach(name => addDerivedAcquisition(target, "spells", { id: `level-one:${key}:tome-cantrip:${name}`, name, sourceType: "level-one", sourceId: key, source: { ...source, feature: "書之魔契" }, content: { name, level: "cantrip", prepared: true, pactTome: true } }));
-    tomeRituals.forEach(name => addDerivedAcquisition(target, "spells", { id: `level-one:${key}:tome-ritual:${name}`, name, sourceType: "level-one", sourceId: key, source: { ...source, feature: "書之魔契" }, content: { name, level: 1, prepared: true, ritual: true, pactTome: true } }));
+    tomeCantrips.forEach(name => addDerivedAcquisition(target, "spells", { id: `level-one:${key}:tome-cantrip:${name}`, spellId: name, name: spellNameZh(name), sourceType: "level-one", sourceId: key, source: { ...source, feature: "書之魔契" }, content: { spellId: name, name: spellNameZh(name), level: "cantrip", prepared: true, pactTome: true } }));
+    tomeRituals.forEach(name => addDerivedAcquisition(target, "spells", { id: `level-one:${key}:tome-ritual:${name}`, spellId: name, name: spellNameZh(name), sourceType: "level-one", sourceId: key, source: { ...source, feature: "書之魔契" }, content: { spellId: name, name: spellNameZh(name), level: 1, prepared: true, ritual: true, pactTome: true } }));
     return target;
   }
 
@@ -1364,13 +1340,10 @@
     return draft.choices.background === "acolyte" ? "cleric" : "wizard";
   }
 
-  function spellOptions(level) {
-    const entries = typeof spellList === "object" ? spellList?.[spellSource()]?.[level] : [];
-    return Array.isArray(entries) ? entries : [];
-  }
+  function spellOptions(level) { return SpellCatalog.getSpells(spellSource(), level, spellMode()); }
 
   function selectedSpell(name, level) {
-    return spellOptions(level).find(spell => spellChineseName(spell.name) === spellChineseName(name)) || null;
+    return spellOptions(level).find(spell => spell.spellId === name) || null;
   }
 
   function ensureStyles() {
@@ -1481,8 +1454,8 @@
 
   function spellSelect(id, label, entries, value, excluded = "") {
     return `<div class="quick-build-field"><label for="${id}">${label}</label><div class="quick-build-field-control"><select id="${id}" data-spell-field><option value="">請選擇</option>${entries.map(spell => {
-      const name = spellChineseName(spell.name);
-      return `<option value="${escapeHtml(name)}"${name === value ? " selected" : ""}${name === excluded ? " disabled" : ""}>${escapeHtml(name)}</option>`;
+      const spellId = spell.spellId;
+       return `<option value="${escapeHtml(spellId)}"${spellId === value ? " selected" : ""}${spellId === excluded ? " disabled" : ""}>${escapeHtml(spell.nameZh)}</option>`;
     }).join("")}</select><button type="button" class="quick-build-spell-view" data-spell-view="${id}"${value ? "" : " disabled"}>查看</button></div></div>`;
   }
 
@@ -1517,7 +1490,7 @@
     const duplicateWarnings = crossSourceDuplicateGroups(draft, "skills", ["background", "race", "class", "level-one"])
       .concat(crossSourceDuplicateGroups(draft, "spells", ["background", "race", "class", "level-one"]));
     const duplicateWarning = duplicateWarnings.length ? `<div class="quick-build-warning"><strong>跨步驟同能力提醒</strong><br>${duplicateWarnings.map(group => escapeHtml(duplicateGroupText(group))).join("、")}。後續步驟的同名選項也會列入檢查；來源紀錄都會保留。</div>` : "";
-    body.innerHTML = `<button type="button" class="quick-build-change">← 修改背景選擇</button><h3>背景選擇完成</h3><div class="quick-build-complete"><strong>${BACKGROUND_LABELS[draft.choices.background]}</strong><br>技能：${escapeHtml(displayList(data.技能熟練))}<br>起源專長：${escapeHtml(data.專長)}<br>工具：${escapeHtml(tool)}<br>裝備：${escapeHtml(wealth)}<br>可調整屬性：${escapeHtml(displayList(data.屬性))}${spells.length ? `<br>法術：${spells.map(escapeHtml).join("、")}` : ""}</div>${classBonusWarning}${duplicateWarning}`;
+    body.innerHTML = `<button type="button" class="quick-build-change">← 修改背景選擇</button><h3>背景選擇完成</h3><div class="quick-build-complete"><strong>${BACKGROUND_LABELS[draft.choices.background]}</strong><br>技能：${escapeHtml(displayList(data.技能熟練))}<br>起源專長：${escapeHtml(data.專長)}<br>工具：${escapeHtml(tool)}<br>裝備：${escapeHtml(wealth)}<br>可調整屬性：${escapeHtml(displayList(data.屬性))}${spells.length ? `<br>法術：${spells.map(spellNameZh).map(escapeHtml).join("、")}` : ""}</div>${classBonusWarning}${duplicateWarning}`;
     body.querySelector(".quick-build-change").addEventListener("click", returnToBackgroundEquipment);
   }
 
@@ -1535,9 +1508,9 @@
     return `<div class="quick-build-field"><label for="quick-build-race-${field}">${label}</label><select id="quick-build-race-${field}" data-race-option="${field}"><option value="">請選擇</option>${values.map(value => `<option value="${escapeHtml(value)}"${value === selected ? " selected" : ""}${disabled.includes(value) ? " disabled" : ""}>${escapeHtml(value)}${disabled.includes(value) ? "（已由其他來源取得）" : ""}</option>`).join("")}</select>${note ? `<p class="quick-build-option-note">${escapeHtml(note)}</p>` : ""}</div>`;
   }
 
-  function raceConfirmedSelect(field, label, values, { showSpellView = false, confirmed = false } = {}) {
+  function raceConfirmedSelect(field, label, values, { showSpellView = false, confirmed = false, formatOption = value => value } = {}) {
     const selected = draft.choices.raceOptions[field] || "";
-    return `<div class="quick-build-field"><label for="quick-build-race-${field}">${label}</label><div class="quick-build-field-control has-confirm"><select id="quick-build-race-${field}" data-race-option="${field}"><option value="">請選擇</option>${values.map(value => `<option value="${escapeHtml(value)}"${value === selected ? " selected" : ""}>${escapeHtml(value)}</option>`).join("")}</select>${showSpellView ? `<button type="button" class="quick-build-spell-view" data-race-spell-view="${field}"${selected ? "" : " disabled"}>查看</button>` : ""}<button type="button" class="quick-build-option-confirm" data-race-option-confirm="${field}"${selected && !confirmed ? "" : " disabled"}>${confirmed ? "已確定" : "確定"}</button></div></div>`;
+    return `<div class="quick-build-field"><label for="quick-build-race-${field}">${label}</label><div class="quick-build-field-control has-confirm"><select id="quick-build-race-${field}" data-race-option="${field}"><option value="">請選擇</option>${values.map(value => `<option value="${escapeHtml(value)}"${value === selected ? " selected" : ""}>${escapeHtml(formatOption(value))}</option>`).join("")}</select>${showSpellView ? `<button type="button" class="quick-build-spell-view" data-race-spell-view="${field}"${selected ? "" : " disabled"}>查看</button>` : ""}<button type="button" class="quick-build-option-confirm" data-race-option-confirm="${field}"${selected && !confirmed ? "" : " disabled"}>${confirmed ? "已確定" : "確定"}</button></div></div>`;
   }
 
   function raceFeatSelect(label, values, { disabled = [], note = "" } = {}) {
@@ -1558,8 +1531,8 @@
     const featOptions = isPlainObject(draft.choices.raceOptions.featOptions) ? draft.choices.raceOptions.featOptions : {};
     const spellClass = featOptions.spellClass || "";
     const blockedSpellClass = HUMAN_MAGIC_INITIATE_BLOCKED_CLASS_BY_BACKGROUND[draft.choices.background];
-    const cantrips = MAGIC_INITIATE_SPELL_CLASSES.has(spellClass) ? spellList?.[spellClass]?.cantrips || [] : [];
-    const levelOne = MAGIC_INITIATE_SPELL_CLASSES.has(spellClass) ? spellList?.[spellClass]?.[1] || [] : [];
+    const cantrips = MAGIC_INITIATE_SPELL_CLASSES.has(spellClass) ? SpellCatalog.getSpells(spellClass, "cantrips", spellMode()) : [];
+    const levelOne = MAGIC_INITIATE_SPELL_CLASSES.has(spellClass) ? SpellCatalog.getSpells(spellClass, "1", spellMode()) : [];
     const selectedCantrips = Array.isArray(featOptions.cantrips) ? featOptions.cantrips : ["", ""];
     return `<section class="quick-build-choice-panel"><h4>魔法學徒選項</h4><p class="quick-build-option-note">按「查看」可在法術詳情視窗中閱讀完整敘述。</p><div class="quick-build-spell-fields"><div class="quick-build-field"><label for="quick-build-human-spell-class">--職業--</label><select id="quick-build-human-spell-class" data-human-spell-class><option value="">--職業--</option><option value="cleric"${spellClass === "cleric" ? " selected" : ""}${blockedSpellClass === "cleric" ? " disabled" : ""}>牧師</option><option value="druid"${spellClass === "druid" ? " selected" : ""}>德魯伊</option><option value="wizard"${spellClass === "wizard" ? " selected" : ""}${blockedSpellClass === "wizard" ? " disabled" : ""}>法師</option></select></div>${humanMagicSpellSelect("quick-build-human-cantrip-1", "戲法 1", cantrips, selectedCantrips[0], selectedCantrips[1])}${humanMagicSpellSelect("quick-build-human-cantrip-2", "戲法 2", cantrips, selectedCantrips[1], selectedCantrips[0])}${humanMagicSpellSelect("quick-build-human-level-one", "一環法術", levelOne, featOptions.levelOneSpells?.[0] || "")}</div></section>`;
   }
@@ -1594,7 +1567,7 @@
     if (key === "elf") {
       fields.push(raceSelect("lineage", "精靈傳承", RACE_OPTION_DEFINITIONS.elf.lineage));
       fields.push(raceSelect("skill", "敏銳感官技能熟練", RACE_OPTION_DEFINITIONS.elf.skill, { disabled: backgroundSkills, note: "背景的固定技能不可重複；已由背景取得的項目會停用。" }));
-      if (options.lineage === "高等精靈血統") fields.push(raceConfirmedSelect("cantrip", "法師戲法", spellOptionsForBackground("sage", "cantrips").map(spell => spellChineseName(spell.name)), { showSpellView: true, confirmed: Boolean(options.cantripConfirmed) }));
+      if (options.lineage === "高等精靈血統") fields.push(raceConfirmedSelect("cantrip", "法師戲法", SpellCatalog.getSpells("wizard", "cantrips", spellMode()).map(spell => spell.spellId), { showSpellView: true, confirmed: Boolean(options.cantripConfirmed), formatOption: spellNameZh }));
     }
     if (key === "gnome") {
       fields.push(raceSelect("lineage", "侏儒血統", RACE_OPTION_DEFINITIONS.gnome.lineage));
@@ -1633,18 +1606,19 @@
 
   function raceSpellConflicts() {
     return (draft.acquisitions.spells || []).filter(item => item.sourceType === "race" && acquisitionAppliesAtLevel(item)).flatMap(item =>
-      acquisitionConflicts(draft, "spells", item.name, "race")
+      acquisitionConflicts(draft, "spells", item.spellId, "race")
         .filter(conflict => conflict.sourceType === "background")
         .map(conflict => {
-          const id = `spell:${item.name}:background-race`;
-          return { id, name: item.name, resolution: draft.choices.spellConflictResolutions[id] || null };
+          const spellId = item.spellId;
+          const id = `spell:${spellId}:background-race`;
+          return { id, spellId, name: spellNameZh(spellId), resolution: draft.choices.spellConflictResolutions[id] || null };
         })
     );
   }
 
   function elfSummarySpells(options) {
     if (options.lineage === "卓爾血統") return "舞光術、妖火（3 級）、黑暗術（5 級）";
-    if (options.lineage === "高等精靈血統") return `${options.cantrip}、偵測魔法（3 級）、迷蹤步（5 級）`;
+    if (options.lineage === "高等精靈血統") return `${spellNameZh(options.cantrip)}、偵測魔法（3 級）、迷蹤步（5 級）`;
     return "德魯伊伎倆、大步奔行（3 級）、行動無蹤跡（5 級）";
   }
 
@@ -1672,8 +1646,8 @@
       const lines = [`體型：${options.size || ""}`, "速度：30 呎", `技能：${options.skill || ""}`, "長休後獲得英雄激勵骰", `起始專長：${featName}`];
       if (options.feat === "魔法學徒") {
         lines.push("專長選項：");
-        lines.push(`戲法：${(featOptions.cantrips || []).filter(Boolean).join("、")}`);
-        lines.push(`一環法術：${(featOptions.levelOneSpells || []).filter(Boolean).join("、")}`);
+        lines.push(`戲法：${(featOptions.cantrips || []).map(spellNameZh).filter(Boolean).join("、")}`);
+        lines.push(`一環法術：${(featOptions.levelOneSpells || []).map(spellNameZh).filter(Boolean).join("、")}`);
       }
       if (options.feat === "熟習") {
         const groups = { skill: [], tool: [] };
@@ -2030,12 +2004,12 @@
 
   function spellSelectControl(id, label, spells, selected, selectedPeerNames = [], knownSources = new Map(), dataAttr = "data-level-one-spell", allowKnownDuplicates = false) {
     return `<div class="quick-build-field"><label for="${id}">${escapeHtml(label)}</label><div class="quick-build-field-control"><select id="${id}" ${dataAttr}><option value="">-- 選擇法術 --</option>${spells.map(spell => {
-      const short = spellChineseName(spell.name);
-      const peerDuplicate = selectedPeerNames.includes(short) && short !== selected;
-      const known = knownSources.get(short) || [];
-      const disabled = peerDuplicate || (!allowKnownDuplicates && known.length && short !== selected);
-      const suffix = peerDuplicate ? "（本組已選）" : known.length && short !== selected ? `（${escapeHtml(known.join("、"))}已學會）` : "";
-      return `<option value="${escapeHtml(short)}"${short === selected ? " selected" : ""}${disabled ? " disabled" : ""}>${escapeHtml(spell.name)}${suffix}</option>`;
+      const spellId = spell.spellId;
+       const peerDuplicate = selectedPeerNames.includes(spellId) && spellId !== selected;
+       const known = knownSources.get(spellId) || [];
+       const disabled = peerDuplicate || (!allowKnownDuplicates && known.length && spellId !== selected);
+       const suffix = peerDuplicate ? "（本組已選）" : known.length && spellId !== selected ? `（${escapeHtml(known.join("、"))}已學會）` : "";
+       return `<option value="${escapeHtml(spellId)}"${spellId === selected ? " selected" : ""}${disabled ? " disabled" : ""}>${escapeHtml(spellDisplayName(spellId))}${suffix}</option>`;
     }).join("")}</select><button type="button" class="quick-build-spell-view" data-spell-view="${escapeHtml(id)}"${selected ? "" : " disabled"}>查看</button></div></div>`;
   }
 
@@ -2106,7 +2080,7 @@
     if (cantripCount) sections.push(`<section class="quick-build-choice-panel"><h4>戲法</h4><div class="quick-build-spell-fields">${Array.from({ length: cantripCount }, (_, index) => spellSelectControl(`quick-build-cantrip-${index}`, `戲法 ${index + 1}`, levelOneSpellOptions(key, "cantrips"), cantrips[index] || "", cantrips, known, "data-level-one-cantrip")).join("")}</div></section>`);
     if (definition.spellbookSpells) sections.push(`<section class="quick-build-choice-panel"><h4>法術書法術</h4><div class="quick-build-spell-fields">${Array.from({ length: definition.spellbookSpells }, (_, index) => spellSelectControl(`quick-build-spellbook-${index}`, `法術書 ${index + 1}`, levelOneSpellOptions("wizard", "1"), spellbook[index] || "", spellbook, known, "data-level-one-spellbook")).join("")}</div></section>`);
     if (definition.preparedSpells) {
-      const spells = definition.spellbookSpells ? spellbook.map(name => spellOptionByChineseName("wizard", "1", name)).filter(Boolean) : levelOneSpellOptions(key, "1");
+      const spells = definition.spellbookSpells ? spellbook.map(name => canonicalSpell(name)).filter(Boolean) : levelOneSpellOptions(key, "1");
       sections.push(`<section class="quick-build-choice-panel"><h4>準備法術</h4><div class="quick-build-spell-fields">${Array.from({ length: definition.preparedSpells }, (_, index) => spellSelectControl(`quick-build-prepared-${index}`, `準備法術 ${index + 1}`, spells, prepared[index] || "", prepared, known, "data-level-one-prepared", Boolean(definition.spellbookSpells))).join("")}</div></section>`);
     }
     if ((choices.invocations || []).includes("pact-of-the-tome")) {
@@ -2123,7 +2097,7 @@
     body.querySelectorAll("[data-spell-view]").forEach(button => button.addEventListener("click", event => {
       const select = body.querySelector(`#${CSS.escape(button.dataset.spellView)}`);
       const value = select?.value || "";
-      const spell = value ? allSpellOptions("cantrips").concat(allSpellOptions("1")).find(item => spellChineseName(item.name) === value) : null;
+      const spell = value ? canonicalSpell(value) : null;
       openSpellDetail(spell, event.currentTarget);
     }));
   }
@@ -2162,8 +2136,8 @@
     const duplicateWarnings = crossSourceDuplicateGroups(draft, "skills", ["background", "race", "class", "level-one"])
       .concat(crossSourceDuplicateGroups(draft, "spells", ["background", "race", "class", "level-one"]));
     const duplicateWarning = duplicateWarnings.length ? `<div class="quick-build-warning"><strong>跨來源同名提醒</strong><br>${duplicateWarnings.map(group => escapeHtml(duplicateGroupText(group))).join("、")}。完成 1 級的預設選項若已由前面步驟取得，會維持為「尚未選擇」等待改選。</div>` : "";
-    const spellbookNote = content.spellbookSpells?.length ? `<dt>法術書筆記</dt><dd>${escapeHtml(`法術書：一環-${content.spellbookSpells.map(name => `${name}${content.spellbookSpells.includes(name) && isRitualSpell(spellOptionByChineseName("wizard", "1", name)) ? "（儀式）" : ""}`).join("、")}`)}</dd>` : "";
-    body.innerHTML = `<button type="button" class="quick-build-change" data-level-one-stage-back="${previousLevelOneStage("summary")}">← 返回修改</button><h3>${CLASS_LABELS[draft.choices.class]}：完成 1 級摘要</h3>${pending.length ? `<div class="quick-build-warning"><strong>尚未完成</strong><br>${pending.map(escapeHtml).join("<br>")}</div>` : `<section class="quick-build-complete"><strong>完成 1 級選擇已齊全，可前往 1 級總覽。</strong></section>`}<section class="quick-build-complete"><dl class="quick-build-summary-list"><dt>固定能力</dt><dd>${escapeHtml((content.fixed || []).join("、") || "無")}</dd><dt>職業選項</dt><dd>${escapeHtml(optionSummary)}</dd><dt>技能額外加值</dt><dd>${escapeHtml(sourceAwareAcquisitions("skillBonuses"))}</dd><dt>戲法</dt><dd>${escapeHtml((content.cantrips || []).concat(content.tome?.cantrips || []).join("、") || "無")}</dd><dt>準備法術</dt><dd>${escapeHtml((content.preparedSpells || []).concat(content.tome?.rituals || []).join("、") || "無")}</dd>${spellbookNote}<dt>武器精通</dt><dd>${escapeHtml((content.weaponMasteries || []).join("、") || "無")}</dd><dt>專精</dt><dd>${escapeHtml((content.expertise || []).join("、") || "無")}</dd><dt>語言</dt><dd>${escapeHtml((content.languages || []).map(value => LANGUAGE_OPTIONS.find(option => option.value === value)?.label || value).join("、") || "無")}</dd></dl></section>${duplicateWarning}<div class="quick-build-substep-actions quick-build-inline-actions"><button type="button" data-level-one-stage-back="${previousLevelOneStage("summary")}">返回修改</button></div>`;
+    const spellbookNote = content.spellbookSpells?.length ? `<dt>法術書筆記</dt><dd>${escapeHtml(`法術書：一環-${content.spellbookSpells.map(spellId => `${spellNameZh(spellId)}${isRitualSpell(canonicalSpell(spellId)) ? "（儀式）" : ""}`).join("、")}`)}</dd>` : "";
+    body.innerHTML = `<button type="button" class="quick-build-change" data-level-one-stage-back="${previousLevelOneStage("summary")}">← 返回修改</button><h3>${CLASS_LABELS[draft.choices.class]}：完成 1 級摘要</h3>${pending.length ? `<div class="quick-build-warning"><strong>尚未完成</strong><br>${pending.map(escapeHtml).join("<br>")}</div>` : `<section class="quick-build-complete"><strong>完成 1 級選擇已齊全，可前往 1 級總覽。</strong></section>`}<section class="quick-build-complete"><dl class="quick-build-summary-list"><dt>固定能力</dt><dd>${escapeHtml((content.fixed || []).join("、") || "無")}</dd><dt>職業選項</dt><dd>${escapeHtml(optionSummary)}</dd><dt>技能額外加值</dt><dd>${escapeHtml(sourceAwareAcquisitions("skillBonuses"))}</dd><dt>戲法</dt><dd>${escapeHtml((content.cantrips || []).concat(content.tome?.cantrips || []).map(spellNameZh).join("、") || "無")}</dd><dt>準備法術</dt><dd>${escapeHtml((content.preparedSpells || []).concat(content.tome?.rituals || []).map(spellNameZh).join("、") || "無")}</dd>${spellbookNote}<dt>武器精通</dt><dd>${escapeHtml((content.weaponMasteries || []).join("、") || "無")}</dd><dt>專精</dt><dd>${escapeHtml((content.expertise || []).join("、") || "無")}</dd><dt>語言</dt><dd>${escapeHtml((content.languages || []).map(value => LANGUAGE_OPTIONS.find(option => option.value === value)?.label || value).join("、") || "無")}</dd></dl></section>${duplicateWarning}<div class="quick-build-substep-actions quick-build-inline-actions"><button type="button" data-level-one-stage-back="${previousLevelOneStage("summary")}">返回修改</button></div>`;
     body.querySelectorAll("[data-level-one-stage-back]").forEach(button => button.addEventListener("click", () => setLevelOneStage(button.dataset.levelOneStageBack)));
   }
 
@@ -2214,11 +2188,11 @@
     const labels = { ancestry: "血統／恩賜", lineage: "傳承／血統", legacy: "邪魔遺贈", size: "體型", skill: "技能", cantrip: "戲法", feat: "起源專長" };
     const details = Object.entries(options)
       .filter(([key, value]) => labels[key] && typeof value === "string" && value)
-      .map(([key, value]) => `${labels[key]}：${value}`);
+      .map(([key, value]) => `${labels[key]}：${key === "cantrip" ? spellNameZh(value) : value}`);
     const featOptions = isPlainObject(options.featOptions) ? options.featOptions : {};
     if (featOptions.spellClass) details.push(`魔法學徒職業：${CLASS_LABELS[featOptions.spellClass] || featOptions.spellClass}`);
-    if (Array.isArray(featOptions.cantrips) && featOptions.cantrips.some(Boolean)) details.push(`魔法學徒戲法：${featOptions.cantrips.filter(Boolean).join("、")}`);
-    if (Array.isArray(featOptions.levelOneSpells) && featOptions.levelOneSpells.some(Boolean)) details.push(`魔法學徒一環法術：${featOptions.levelOneSpells.filter(Boolean).join("、")}`);
+    if (Array.isArray(featOptions.cantrips) && featOptions.cantrips.some(Boolean)) details.push(`魔法學徒戲法：${featOptions.cantrips.filter(Boolean).map(spellNameZh).join("、")}`);
+    if (Array.isArray(featOptions.levelOneSpells) && featOptions.levelOneSpells.some(Boolean)) details.push(`魔法學徒一環法術：${featOptions.levelOneSpells.filter(Boolean).map(spellNameZh).join("、")}`);
     if (Array.isArray(featOptions.proficiencies) && featOptions.proficiencies.some(Boolean)) details.push(`熟習：${featOptions.proficiencies.filter(Boolean).map(value => value.replace(/^skill:/u, "技能：").replace(/^tool:/u, "工具：")).join("、")}`);
     return details.join("；") || "無額外選項";
   }
@@ -2395,22 +2369,18 @@
     return true;
   }
 
-  function fullMobileSpellName(classId, level, name) {
-    const list = spellList?.[classId]?.[level];
-    return (Array.isArray(list) ? list : []).find(spell => spellChineseName(spell.name) === spellChineseName(name))?.name || "";
-  }
-
-  function chooseMobileSpellClass(level, name, preferredClass = "") {
+  function fullMobileSpellName(classId, level, spellId) { return SpellCatalog.getSpells(classId, level, spellMode()).some(spell => spell.spellId === spellId) ? spellDisplayName(spellId) : ""; }
+  function chooseMobileSpellClass(level, spellId, preferredClass = "") {
     const allowed = level === "cantrips" ? CLASS_ORDER.filter(id => !["barbarian", "fighter", "monk", "paladin", "ranger", "rogue"].includes(id)) : [...SPELLCASTER_CLASS_IDS];
-    return [preferredClass, ...allowed].find((classId, index, values) => classId && values.indexOf(classId) === index && fullMobileSpellName(classId, level, name)) || "";
+    return [preferredClass, ...allowed].find((classId, index, values) => classId && values.indexOf(classId) === index && fullMobileSpellName(classId, level, spellId)) || "";
   }
 
-  function addManualMobileSpell({ name, level, classId }, warnings) {
+  function addManualMobileSpell({ spellId, level, classId }, warnings) {
     const areaId = level === "cantrips" ? "cantrips-area" : `level${level}spells-area`;
     const area = document.getElementById(areaId);
-    const sourceClass = chooseMobileSpellClass(level, name, classId);
+    const sourceClass = chooseMobileSpellClass(level, spellId, classId);
     if (!area || !sourceClass) {
-      mobileImportWarning(`法術「${name}」：找不到可匯入的職業或環位選項`, warnings);
+      mobileImportWarning(`法術「${spellNameZh(spellId)}」：找不到可匯入的職業或環位選項`, warnings);
       return false;
     }
     let row = [...area.querySelectorAll(":scope > .spell-entry")].find(candidate => {
@@ -2421,14 +2391,14 @@
     const classSelect = row?.querySelector("select[id*='-class-']");
     const spellSelect = row?.querySelector("select[id*='-spell-']");
     if (!classSelect || !spellSelect) {
-      mobileImportWarning(`法術「${name}」：無法建立法術列`, warnings);
+      mobileImportWarning(`法術「${spellNameZh(spellId)}」：無法建立法術列`, warnings);
       return false;
     }
     classSelect.value = sourceClass;
     dispatchMobileField(classSelect);
-    const option = [...spellSelect.options].find(item => spellChineseName(item.value) === spellChineseName(name));
+    const option = [...spellSelect.options].find(item => item.value === spellId);
     if (!option) {
-      mobileImportWarning(`法術「${name}」：手機角卡目前的法術清單沒有這個選項`, warnings);
+      mobileImportWarning(`法術「${spellNameZh(spellId)}」：手機角卡目前的法術清單沒有這個選項`, warnings);
       classSelect.value = "";
       dispatchMobileField(classSelect);
       return false;
@@ -2467,11 +2437,11 @@
     dispatchMobileField(classSelect);
     [
       ["cantrip1", cantrips?.[0]], ["cantrip2", cantrips?.[1]], ["level1", levelOneSpells?.[0]]
-    ].forEach(([field, name]) => {
-      if (!name) return;
+    ].forEach(([field, spellId]) => {
+      if (!spellId) return;
       const select = getMagicInitiateSelect(row, field);
-      const option = [...(select?.options || [])].find(item => spellChineseName(item.value) === spellChineseName(name));
-      if (!select || !option) mobileImportWarning(`${sourceLabel}法術「${name}」：找不到角色卡選項`, warnings);
+      const option = [...(select?.options || [])].find(item => item.value === spellId);
+      if (!select || !option) mobileImportWarning(`${sourceLabel}法術「${spellNameZh(spellId)}」：找不到角色卡選項`, warnings);
       else {
         select.value = option.value;
         dispatchMobileField(select);
@@ -2525,7 +2495,7 @@
     }
     if (raceId === "elf" && draft.choices.raceOptions?.lineage === "高等精靈血統" && draft.choices.raceOptions?.cantrip) {
       const select = document.getElementById("high-elf-cantrip");
-      const option = [...(select?.options || [])].find(item => spellChineseName(item.value) === spellChineseName(draft.choices.raceOptions.cantrip));
+      const option = [...(select?.options || [])].find(item => item.value === draft.choices.raceOptions.cantrip);
       if (!select || !option) mobileImportWarning(`高等精靈戲法「${draft.choices.raceOptions.cantrip}」：找不到角色卡選項`, warnings);
       else { select.value = option.value; dispatchMobileField(select); }
     }
@@ -2597,14 +2567,14 @@
 
   function importMobileSpells(warnings) {
     const content = draft.selections.levelOne?.content || {};
-    (content.cantrips || []).forEach(name => addManualMobileSpell({ name, level: "cantrips", classId: draft.choices.class }, warnings));
-    (content.preparedSpells || []).forEach(name => addManualMobileSpell({ name, level: 1, classId: draft.choices.class }, warnings));
-    (content.tome?.cantrips || []).forEach(name => addManualMobileSpell({ name, level: "cantrips", classId: "warlock" }, warnings));
-    (content.tome?.rituals || []).forEach(name => addManualMobileSpell({ name, level: 1, classId: "warlock" }, warnings));
+    (content.cantrips || []).forEach(spellId => addManualMobileSpell({ spellId, level: "cantrips", classId: draft.choices.class }, warnings));
+    (content.preparedSpells || []).forEach(spellId => addManualMobileSpell({ spellId, level: 1, classId: draft.choices.class }, warnings));
+    (content.tome?.cantrips || []).forEach(spellId => addManualMobileSpell({ spellId, level: "cantrips", classId: "warlock" }, warnings));
+    (content.tome?.rituals || []).forEach(spellId => addManualMobileSpell({ spellId, level: 1, classId: "warlock" }, warnings));
     if (content.spellbookSpells?.length) {
-      const note = `法術書（一環）：${content.spellbookSpells.map(name => {
-        const acquisition = (draft.acquisitions.spells || []).find(item => item.content?.spellbook && item.name === name);
-        return `${name}${acquisition?.content?.ritual ? "（儀式）" : ""}`;
+      const note = `法術書（一環）：${content.spellbookSpells.map(spellId => {
+        const acquisition = (draft.acquisitions.spells || []).find(item => item.content?.spellbook && item.spellId === spellId);
+        return `${spellNameZh(spellId)}${acquisition?.content?.ritual ? "（儀式）" : ""}`;
       }).join("、")}`;
       setMobileField("spell-notes", note, warnings, "法術筆記", "input");
     }
@@ -2689,26 +2659,12 @@
   }
 
   function resolveFinalSpellList(target = draft) {
-    const index = new Map();
-    Object.entries(typeof spellList === "object" ? spellList : {}).forEach(([collection, levels]) => {
-      Object.entries(levels || {}).forEach(([level, entries]) => {
-        (Array.isArray(entries) ? entries : []).forEach(spell => {
-          const chineseName = spellChineseName(spell.name);
-          if (!index.has(chineseName)) index.set(chineseName, new Map());
-          const matches = index.get(chineseName);
-          if (!matches.has(spell.name)) matches.set(spell.name, { fullName: spell.name, locations: [] });
-          matches.get(spell.name).locations.push({ dataFile: "spell-list.js", collection, level });
-        });
-      });
-    });
     const resolutions = {};
     const finalSpells = (target.acquisitions.spells || []).map(acquisition => {
-      const chineseName = spellChineseName(acquisition.name);
-      const candidates = [...(index.get(chineseName)?.values() || [])];
-      const status = candidates.length === 1 ? "resolved" : candidates.length ? "ambiguous" : "missing";
-      resolutions[chineseName] = { status, chineseName, candidates };
-      const finalName = status === "resolved" ? candidates[0].fullName : chineseName;
-      return { ...acquisition, name: finalName, content: { ...acquisition.content, name: finalName }, resolutionStatus: status };
+      const record = canonicalSpell(acquisition.spellId);
+      const status = record ? "resolved" : "missing";
+      resolutions[acquisition.spellId || acquisition.id] = { status, spellId: acquisition.spellId || null, name: record?.nameZh || acquisition.name || "" };
+      return { ...acquisition, name: record?.nameZh || acquisition.name, content: { ...acquisition.content, spellId: acquisition.spellId, name: record?.nameZh || acquisition.name }, resolutionStatus: status, displayName: record ? spellDisplayName(record.spellId) : acquisition.name };
     });
     return { finalSpells, resolutions, pending: Object.values(resolutions).filter(item => item.status !== "resolved") };
   }
@@ -2718,7 +2674,7 @@
     const conflicts = raceSpellConflicts();
     const classConflicts = draft.selections.class?.content?.conflicts || [];
     const conflictsAcknowledged = conflicts.every(conflict => conflict.resolution === "acknowledged-final");
-    body.innerHTML = `<h3>最終確認</h3><p class="quick-build-lead">此處才以中文名稱查詢專案法術資料並建立完整名稱對照；解析結果不會寫回中間 draft。</p><section class="quick-build-choice-panel"><strong>最終法術列表</strong><div class="quick-build-equipment-list">${result.finalSpells.length ? result.finalSpells.map(item => `${escapeHtml(item.name)}｜來源：${escapeHtml(item.source?.label || item.sourceType)}`).join("<br>") : "尚無法術"}</div>${result.pending.length ? `<div class="quick-build-warning"><strong>待確認</strong><br>${result.pending.map(item => `${escapeHtml(item.chineseName)}：${item.status === "missing" ? "找不到專案資料" : "無法唯一對應"}`).join("<br>")}</div>` : ""}</section>${classConflicts.length ? `<section class="quick-build-warning"><strong>技能／工具跨來源同名</strong><br>${classConflicts.map(item => `${escapeHtml(item.name)}：${escapeHtml(item.existingSource?.label || "其他來源")}、${escapeHtml(item.classSource?.label || "職業")}`).join("<br>")}<br>所有來源紀錄均已保留。</section>` : ""}${conflicts.length ? `<section class="quick-build-warning"><strong>法術跨來源同名</strong><br>${conflicts.map(item => escapeHtml(item.name)).join("、")} 同時來自背景與種族。確認後仍會保留每一筆來源紀錄。<div class="quick-build-choice-actions">${conflictsAcknowledged ? "<strong>已確認保留所有重複來源</strong>" : '<button type="button" data-final-spell-conflict-ack>我知道仍有重複，保留所有來源</button>'}</div></section>` : ""}`;
+    body.innerHTML = `<h3>最終確認</h3><p class="quick-build-lead">此處直接以 spellId 解析 canonical 法術資料；草稿中的法術 identity 不依賴名稱。</p><section class="quick-build-choice-panel"><strong>最終法術列表</strong><div class="quick-build-equipment-list">${result.finalSpells.length ? result.finalSpells.map(item => `${escapeHtml(item.displayName || item.name)}｜來源：${escapeHtml(item.source?.label || item.sourceType)}`).join("<br>") : "尚無法術"}</div>${result.pending.length ? `<div class="quick-build-warning"><strong>待確認</strong><br>${result.pending.map(item => `${escapeHtml(item.name || item.spellId || "未命名法術")}：${"找不到專案資料"}`).join("<br>")}</div>` : ""}</section>${classConflicts.length ? `<section class="quick-build-warning"><strong>技能／工具跨來源同名</strong><br>${classConflicts.map(item => `${escapeHtml(item.name)}：${escapeHtml(item.existingSource?.label || "其他來源")}、${escapeHtml(item.classSource?.label || "職業")}`).join("<br>")}<br>所有來源紀錄均已保留。</section>` : ""}${conflicts.length ? `<section class="quick-build-warning"><strong>法術跨來源同名</strong><br>${conflicts.map(item => escapeHtml(item.name)).join("、")} 同時來自背景與種族。確認後仍會保留每一筆來源紀錄。<div class="quick-build-choice-actions">${conflictsAcknowledged ? "<strong>已確認保留所有重複來源</strong>" : '<button type="button" data-final-spell-conflict-ack>我知道仍有重複，保留所有來源</button>'}</div></section>` : ""}`;
     body.querySelector("[data-final-spell-conflict-ack]")?.addEventListener("click", acknowledgeFinalSpellConflicts);
   }
 
@@ -3050,7 +3006,7 @@
       return;
     }
     const level = fieldId === "quick-build-human-level-one" ? "1" : "cantrips";
-    const spell = spellList?.[spellClass]?.[level]?.find(entry => spellChineseName(entry.name) === spellChineseName(select.value)) || null;
+    const spell = SpellCatalog.getSpell(select.value) || null;
     openSpellDetail(spell, trigger);
   }
 
@@ -3177,7 +3133,7 @@
     example.choices.backgroundAbilities = displayList(data.屬性).split("、");
     example.choices.backgroundWealth = "default";
     example.choices.backgroundCurrency = currency;
-    example.choices.backgroundMagic = { cantrips: ["火焰箭", "修復術"], levelOneSpells: ["偵測魔法"] };
+    example.choices.backgroundMagic = { cantrips: ["fire-bolt", "mending"], levelOneSpells: ["detect-magic"] };
     example.choices.backgroundMagicConfirmed = true;
     reconcileBackgroundDraft(example);
     return example;
@@ -3221,7 +3177,8 @@
     const content = modal.querySelector("#quick-build-spell-detail-content");
     modal.querySelector("#quick-build-spell-detail-title").textContent = "法術詳情";
     spellDetailTrigger = trigger || document.activeElement;
-    content.innerHTML = spell ? `<strong>${escapeHtml(spell.name)}</strong>${escapeHtml(spell.desc)}` : "<span>你還沒有選擇法術喔！</span>";
+    const record = typeof spell === "string" ? canonicalSpell(spell) : spell;
+    content.innerHTML = record ? `<strong>${escapeHtml(spellDisplayName(record.spellId))}</strong>${escapeHtml(record.desc)}` : "<span>你還沒有選擇法術喔！</span>";
     content.scrollTop = 0;
     spellDetailOpenedOutsideWizard = !wizardIsOpen;
     if (wizardIsOpen) {

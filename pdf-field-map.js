@@ -14,9 +14,10 @@
     return globalScope.detailedBackgroundFeatures || {};
   }
 
-  function getSpellListMap() {
-    if (typeof spellList !== 'undefined') return spellList;
-    return globalScope.spellList || {};
+  function getSpellCatalog() {
+    const root = typeof globalThis !== 'undefined' ? globalThis : globalScope;
+    const catalog = root?.SpellCatalog || globalScope?.SpellCatalog;
+    return catalog && typeof catalog.getSpell === 'function' ? catalog : null;
   }
 
   function getLanguageOptions() {
@@ -811,26 +812,34 @@
       });
   }
 
-  function findSpellDesc(classKey, level, spellName) {
-    const allSpells = getSpellListMap();
-    if (!spellName || !allSpells) return '';
-    const levelKey = String(level);
-    const classSpells = allSpells?.[classKey]?.[levelKey] || [];
-    const exactMatch = classSpells.find((spell) => spell.name === spellName);
-    if (exactMatch) return exactMatch.desc || '';
-
-    // 子職、種族與其他自動準備法術會以來源類型（例如 subclass）
-    // 取代實際職業值；若原職業查找失敗，改用環位與中文名稱跨職業查找。
-    const localizedName = extractChineseSpellName(spellName);
-    for (const classSpellLevels of Object.values(allSpells)) {
-      const sameLevelSpells = classSpellLevels?.[levelKey] || [];
-      const fallbackMatch = sameLevelSpells.find((spell) => {
-        return extractChineseSpellName(spell.name) === localizedName;
-      });
-      if (fallbackMatch) return fallbackMatch.desc || '';
+  function getCanonicalSpell(spellId) {
+    const catalog = getSpellCatalog();
+    if (!catalog || typeof spellId !== 'string') return null;
+    try {
+      return catalog.getSpell(spellId) || null;
+    } catch (_) {
+      return null;
     }
+  }
 
-    return '';
+  function resolveStateSpellId(value) {
+    const rawValue = typeof value === 'string' ? value : '';
+    const catalog = getSpellCatalog();
+    if (!rawValue || !catalog) return '';
+
+    const directSpell = getCanonicalSpell(rawValue);
+    if (directSpell) return rawValue;
+    if (typeof catalog.resolveSpellId !== 'function') return '';
+    try {
+      const legacySpellId = catalog.resolveSpellId(rawValue);
+      return getCanonicalSpell(legacySpellId) ? legacySpellId : '';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  function findSpellDesc(spellId) {
+    return getCanonicalSpell(spellId)?.desc || '';
   }
 
   function getSpellLine(desc, label) {
@@ -839,11 +848,12 @@
     return matched ? matched[1].trim() : '';
   }
 
-  function extractChineseSpellName(name) {
-    if (!name) return '';
-    const englishIndex = name.search(/[A-Za-z]/);
-    if (englishIndex === -1) return name.trim();
-    return name.slice(0, englishIndex).trim();
+
+  // Non-spell display fallback for legacy feat class labels only; never use for spell identity.
+  function extractChineseDisplayLabel(value) {
+    const text = normalizeText(value);
+    const englishIndex = text.search(/[A-Za-z]/);
+    return englishIndex === -1 ? text : text.slice(0, englishIndex).trim();
   }
 
   function convertCastTimeText(raw) {
@@ -885,9 +895,10 @@
           if (!matched) return null;
           const idx = matched[1];
           const classKey = state[key];
-          const spellName = state[`${area}-spell-${idx}`];
-          if (!classKey || !spellName) return null;
-          return { idx: Number.parseInt(idx, 10), level, classKey, spellName };
+          const spellId = resolveStateSpellId(state[`${area}-spell-${idx}`]);
+          const spell = getCanonicalSpell(spellId);
+          if (!classKey || !spell || spell.level !== level) return null;
+          return { idx: Number.parseInt(idx, 10), level, classKey, spellId };
         })
         .filter(Boolean)
         .sort((a, b) => a.idx - b.idx)
@@ -898,21 +909,21 @@
   }
 
   const DAMAGE_CANTRIP_EXPORT_MAP = Object.freeze({
-    '火焰箭 Fire Bolt': Object.freeze({ name: '火焰箭', mode: 'attack', dmg: '1d10 火焰', note: '120呎' }),
-    '克敵機先 True Strike': Object.freeze({ name: '克敵機先', mode: 'attack', dmg: '武器傷害（可改光耀）', note: '法屬武器攻擊' }),
-    '冷凍射線 Ray of Frost': Object.freeze({ name: '冷凍射線', mode: 'attack', dmg: '1d8 冷凍', note: '60呎' }),
-    '毒氣噴濺 Poison Spray': Object.freeze({ name: '毒氣噴濺', mode: 'attack', dmg: '1d12 毒素', note: '30呎' }),
-    '流光閃靈 Starry Wisp': Object.freeze({ name: '流光閃靈', mode: 'attack', dmg: '1d8 光耀', note: '60呎/發微光消隱形' }),
-    '凍寒之觸 Chill Touch': Object.freeze({ name: '凍寒之觸', mode: 'attack', dmg: '1d10 黯蝕', note: '觸及/不能回復HP' }),
-    '術法衝擊 Sorcerous Burst': Object.freeze({ name: '術法衝擊', mode: 'attack', dmg: '1d8（酸/冷/火/電/毒/心靈/雷鳴）', note: '120呎/傷害8可再丟' }),
-    '惡言相加 Vicious Mockery': Object.freeze({ name: '惡言相加', mode: 'save', dmg: '1d6 精神', note: '60呎/感知豁免/攻擊劣勢' }),
-    '聖火術 Sacred Flame': Object.freeze({ name: '聖火術', mode: 'save', dmg: '1d8 光耀', note: '60呎/敏捷豁免' }),
-    '電爪 Shocking Grasp': Object.freeze({ name: '電爪', mode: 'attack', dmg: '1d8 閃電', note: '觸及/不能藉機' }),
-    '酸液飛濺 Acid Splash': Object.freeze({ name: '酸液飛濺', mode: 'save', dmg: '1d6 強酸', note: '60呎/敏捷豁免' }),
-    '鳴雷破 Thunderclap': Object.freeze({ name: '鳴雷破', mode: 'save', dmg: '1d6 雷鳴', note: '自身5呎內體質豁免' }),
-    '橡棍術 Shillelagh': Object.freeze({ name: '橡棍術', mode: 'attack', dmg: '1d8（力場或武器原傷害）', note: '法屬強化木棍/法杖' }),
-    '燃火術 Produce Flame': Object.freeze({ name: '燃火術', mode: 'attack', dmg: '1d8 火焰', note: '60呎/附贈/可照明' }),
-    '魔能爆 Eldritch Blast': Object.freeze({ name: '魔能爆', mode: 'attack', dmg: '1d10 力場', note: '120呎' })
+    'fire-bolt': Object.freeze({ name: '火焰箭', mode: 'attack', dmg: '1d10 火焰', note: '120呎' }),
+    'true-strike': Object.freeze({ name: '克敵機先', mode: 'attack', dmg: '武器傷害（可改光耀）', note: '法屬武器攻擊' }),
+    'ray-of-frost': Object.freeze({ name: '冷凍射線', mode: 'attack', dmg: '1d8 冷凍', note: '60呎' }),
+    'poison-spray': Object.freeze({ name: '毒氣噴濺', mode: 'attack', dmg: '1d12 毒素', note: '30呎' }),
+    'starry-wisp': Object.freeze({ name: '流光閃靈', mode: 'attack', dmg: '1d8 光耀', note: '60呎/發微光消隱形' }),
+    'chill-touch': Object.freeze({ name: '凍寒之觸', mode: 'attack', dmg: '1d10 黯蝕', note: '觸及/不能回復HP' }),
+    'sorcerous-burst': Object.freeze({ name: '術法衝擊', mode: 'attack', dmg: '1d8（酸/冷/火/電/毒/心靈/雷鳴）', note: '120呎/傷害8可再丟' }),
+    'vicious-mockery': Object.freeze({ name: '惡言相加', mode: 'save', dmg: '1d6 精神', note: '60呎/感知豁免/攻擊劣勢' }),
+    'sacred-flame': Object.freeze({ name: '聖火術', mode: 'save', dmg: '1d8 光耀', note: '60呎/敏捷豁免' }),
+    'shocking-grasp': Object.freeze({ name: '電爪', mode: 'attack', dmg: '1d8 閃電', note: '觸及/不能藉機' }),
+    'acid-splash': Object.freeze({ name: '酸液飛濺', mode: 'save', dmg: '1d6 強酸', note: '60呎/敏捷豁免' }),
+    'thunderclap': Object.freeze({ name: '鳴雷破', mode: 'save', dmg: '1d6 雷鳴', note: '自身5呎內體質豁免' }),
+    'shillelagh': Object.freeze({ name: '橡棍術', mode: 'attack', dmg: '1d8（力場或武器原傷害）', note: '法屬強化木棍/法杖' }),
+    'produce-flame': Object.freeze({ name: '燃火術', mode: 'attack', dmg: '1d8 火焰', note: '60呎/附贈/可照明' }),
+    'eldritch-blast': Object.freeze({ name: '魔能爆', mode: 'attack', dmg: '1d10 力場', note: '120呎' })
   });
 
   function fillDamageCantripsToWeaponRows(payload, spellRows, state) {
@@ -925,7 +936,7 @@
 
     for (const row of cantripRows) {
       if (slot > 6) break;
-      const config = DAMAGE_CANTRIP_EXPORT_MAP[row.spellName];
+      const config = DAMAGE_CANTRIP_EXPORT_MAP[row.spellId];
       if (!config) continue;
 
       payload[`attack-weap-name-${slot}`] = config.name;
@@ -1057,7 +1068,10 @@
     const cantrip2 = normalizeText(state[`feat-${featIndex}-magic-initiate-cantrip-2`]);
     const level1 = normalizeText(state[`feat-${featIndex}-magic-initiate-level-1`]);
 
-    if (!classValue || !cantrip1 || !cantrip2 || !level1) {
+    const cantrip1Spell = getCanonicalSpell(resolveStateSpellId(cantrip1));
+    const cantrip2Spell = getCanonicalSpell(resolveStateSpellId(cantrip2));
+    const level1Spell = getCanonicalSpell(resolveStateSpellId(level1));
+    if (!classValue || !cantrip1Spell || !cantrip2Spell || !level1Spell) {
       return [
         '魔法學徒(起源)',
         '選1職業法表',
@@ -1065,11 +1079,11 @@
       ];
     }
 
-    const classLabel = MAGIC_INITIATE_CLASS_LABELS[classValue] || extractChineseSpellName(classValue);
+    const classLabel = MAGIC_INITIATE_CLASS_LABELS[classValue] || extractChineseDisplayLabel(classValue);
     return [
-      `魔法學徒(起源)=${classLabel}`,
-      `${extractChineseSpellName(cantrip1)},${extractChineseSpellName(cantrip2)}`,
-      `${extractChineseSpellName(level1)} ◇`
+      `魔法學徒=${classLabel}`,
+      `${cantrip1Spell.nameZh},${cantrip2Spell.nameZh}`,
+      `${level1Spell.nameZh} ◇`
     ];
   }
 
@@ -1276,14 +1290,14 @@
     if (spellRows.length > 0) {
       spellRows.forEach((row, index) => {
         const xx = String(index + 1);
-        const desc = findSpellDesc(row.classKey, row.level === 0 ? 'cantrips' : row.level, row.spellName);
+        const desc = findSpellDesc(row.spellId);
         const school = getSpellLine(desc, '學派');
         const castTimeRaw = getSpellLine(desc, '施法時間');
         const durationRaw = getSpellLine(desc, '持續時間');
         const rangeRaw = getSpellLine(desc, '射程');
 
         payload[`sp-level-${xx}`] = String(row.level);
-        payload[`sp-name-${xx}`] = wrapTextForPdf(extractChineseSpellName(row.spellName), { maxUnitsPerLine: 14, maxLines: 2 });
+        payload[`sp-name-${xx}`] = wrapTextForPdf(getCanonicalSpell(row.spellId)?.nameZh || '', { maxUnitsPerLine: 14, maxLines: 2 });
         payload[`sp-cast-time-${xx}`] = convertCastTimeText(castTimeRaw);
         payload[`sp-range-${xx}`] = rangeRaw;
         payload[`sp-c-${xx}`] = /專注/.test(durationRaw);
@@ -1304,7 +1318,7 @@
     const extraNotes = [];
     if (remainingSpellRows.length > 0) {
       const remainingSpellText = remainingSpellRows
-        .map((row) => `${extractChineseSpellName(row.spellName)}(${row.level})`)
+        .map((row) => `${getCanonicalSpell(row.spellId)?.nameZh || ''}(${row.level})`)
         .join('、');
       extraNotes.push(`其餘已準備法術：${remainingSpellText}。`);
     }
