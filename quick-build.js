@@ -3,6 +3,7 @@
 
   const STORAGE_KEY = "dnd.quickBuildDraft.v1";
   const DRAFT_VERSION = 7;
+  const MOBILE_INITIAL_EQUIPMENT_PREFIX = "初始裝備：";
   const STEPS = [
     { id: "background", title: "背景" },
     { id: "race", title: "種族" },
@@ -2483,10 +2484,18 @@
     return (selection?.content?.items || []).map(item => typeof item === "string" ? item : `${item.name}${Number(item.quantity) > 1 ? ` ×${item.quantity}` : ""}`);
   }
 
+  function hasImportedInitialEquipment(value) {
+    return String(value || "").split(/\r?\n/u).some(line => {
+      const text = line.trimStart();
+      return text.startsWith(MOBILE_INITIAL_EQUIPMENT_PREFIX)
+        && text.slice(MOBILE_INITIAL_EQUIPMENT_PREFIX.length).trim().length > 0;
+    });
+  }
+
   function importMobileEquipment(warnings) {
     const equipmentSelections = [draft.selections.backgroundEquipment, draft.selections.classEquipment].filter(Boolean);
     const items = equipmentSelections.flatMap(mobileEquipmentItems);
-    setMobileField("gear-notes", items.length ? `初始裝備：${items.join("、")}` : "", warnings, "攜帶物品", "input");
+    setMobileField("gear-notes", items.length ? `${MOBILE_INITIAL_EQUIPMENT_PREFIX}${items.join("、")}` : "", warnings, "攜帶物品", "input");
     const currency = { cp: 0, sp: 0, gp: 0, pp: 0 };
     equipmentSelections.forEach(selection => Object.keys(currency).forEach(key => { currency[key] += Number(selection.content?.currency?.[key]) || 0; }));
     Object.entries(currency).forEach(([key, amount]) => setMobileField(`money-balance-${key}`, amount, warnings, `${key} 財產`));
@@ -3402,6 +3411,7 @@
     openSpellDetail,
     getDraft: () => structuredClone(draft), saveDraft, addAcquisition,
     createSageExampleDraft, loadSageExampleDraft, auditDraft, reconcileRaceDraft, reconcileClassDraft, reconcileEquipmentDraft, resolveFinalSpellList,
+    hasImportedInitialEquipment,
     storageKey: STORAGE_KEY
   };
 })();

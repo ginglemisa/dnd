@@ -6032,6 +6032,13 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
       tieflingLegacy:(state?.["tiefling-legacy"] || "").trim()
     };
     const raceChoice = raceChoices[race];
+    const quickBuildEquipmentIncluded = (()=>{
+      const gearNotes=state?.['gear-notes'];
+      try {
+        if(typeof window.quickBuild?.hasImportedInitialEquipment==='function') return window.quickBuild.hasImportedInitialEquipment(gearNotes);
+      } catch(error) { void error; }
+      return /^\s*初始裝備：\s*\S/um.test(String(gearNotes||''));
+    })();
     if (raceChoice && !result[raceChoice.key]) steps.push("race");
     steps.push("format");
     let idx=0, busy=false, lastMode=null;
@@ -6064,7 +6071,9 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
       const stepTitles={
         precheck:['匯出前檢查','確認角色資料是否還有需要補填的地方。'],
         name:['角色名稱','名稱會寫入角色卡中；不需要時也可以留空。'],
-        equipment:['加入預設裝備','決定是否把職業與背景提供的起始裝備一併寫入。'],
+        equipment:quickBuildEquipmentIncluded
+          ? ['預設裝備已加入','創角精靈已將實際選擇寫入「攜帶物品」。']
+          : ['加入預設裝備','決定是否把職業與背景提供的起始裝備一併寫入。'],
         race:[raceChoice?.title || '選擇種族特性','這項選擇會影響角色能力與 PDF 內容。'],
         format:['選擇 PDF 格式','最後一步：依照是否需要後續編輯來選擇。']
       };
@@ -6137,6 +6146,13 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
         const n=document.createElement('button'); n.type='button'; n.className='pdf-export-flow-modal__button pdf-export-flow-modal__button--primary'; n.textContent='下一步'; n.onclick=submitName; a.append(n); i.focus();
       }
       else if(step==='equipment'){
+        if(quickBuildEquipmentIncluded){
+          const success=document.createElement('div'); success.className='pdf-export-check-success';
+          const icon=document.createElement('span'); icon.setAttribute('aria-hidden','true'); icon.textContent='✓';
+          const copy=document.createElement('div'); const strong=document.createElement('strong'); strong.textContent='已從創角精靈匯入初始裝備'; const hint=document.createElement('p'); hint.textContent='「攜帶物品」已包含創角精靈選擇的裝備，PDF 不會再次加入，以免內容重複。'; copy.append(strong,hint); success.append(icon,copy); d.appendChild(success);
+          const n=document.createElement('button'); n.type='button'; n.className='pdf-export-flow-modal__button pdf-export-flow-modal__button--primary'; n.textContent='使用目前裝備繼續'; n.onclick=()=>{result.includeDefaultEquipment=false;idx++;render();}; a.append(n); n.focus();
+          return;
+        }
         const choices=document.createElement('div'); choices.className='pdf-export-choice-options';
         const createChoice=(title,description,value)=>{const button=document.createElement('button');button.type='button';button.className='pdf-export-choice-option';const strong=document.createElement('strong');strong.textContent=title;const detail=document.createElement('span');detail.textContent=description;button.append(strong,detail);button.onclick=()=>{result.includeDefaultEquipment=value;idx++;render();};return button;};
         choices.append(

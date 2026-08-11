@@ -1013,6 +1013,18 @@
     return normalizeText(raw['裝備A']);
   }
 
+  function hasQuickBuildInitialEquipment(state) {
+    const gearNotes = state?.['gear-notes'];
+    try {
+      if (typeof globalScope.quickBuild?.hasImportedInitialEquipment === 'function') {
+        return globalScope.quickBuild.hasImportedInitialEquipment(gearNotes);
+      }
+    } catch (error) {
+      void error;
+    }
+    return /^\s*初始裝備：\s*\S/um.test(String(gearNotes || ''));
+  }
+
   function getLanguageLabelByValue(value) {
     if (!value) return '';
     const lookup = getLanguageOptions();
@@ -1315,7 +1327,7 @@
       payload.extra1 = wrapTextForPdf(extraNotes.join('\n'), PDF_TEXT_SPECS.extra1);
     }
 
-    if (options.includeDefaultEquipment) {
+    if (options.includeDefaultEquipment && !hasQuickBuildInitialEquipment(state)) {
       const classEq = parseClassDefaultEquipment(classKey);
       const bgEq = parseBackgroundDefaultEquipment(backgroundKey);
       payload.equipment1 = wrapTextForPdf(
