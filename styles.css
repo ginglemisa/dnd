@@ -4242,39 +4242,116 @@ div[id$="spells-area"] .form-row {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
-  background: rgba(15, 23, 42, 0.54);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  padding: 14px;
+  background: rgba(12, 20, 38, 0.62);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: pdf-export-overlay-in 160ms ease-out both;
 }
 
 .pdf-export-flow-modal__card {
   display: grid;
-  gap: 12px;
+  gap: 0;
   width: min(560px, 100%);
-  max-height: 90vh;
-  padding: 1.05rem;
+  max-height: min(90vh, 760px);
+  max-height: min(90dvh, 760px);
+  padding: clamp(1.1rem, 3vw, 1.45rem);
   overflow: auto;
   overscroll-behavior: contain;
-  border: 1px solid rgba(151, 168, 201, 0.34);
-  border-radius: 1.25rem;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.99) 0%, rgba(245, 248, 255, 0.98) 100%);
-  box-shadow: 0 24px 64px rgba(15, 26, 58, 0.32);
+  scrollbar-gutter: stable;
+  border: 1px solid rgba(151, 168, 201, 0.38);
+  border-radius: 1.35rem;
+  background: #f8faff;
+  box-shadow: 0 28px 80px rgba(9, 18, 39, 0.36);
+  animation: pdf-export-card-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
-.pdf-export-flow-modal__card h3,
+.pdf-export-flow-modal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(114, 133, 176, 0.2);
+}
+
+.pdf-export-flow-modal__heading {
+  display: grid;
+  gap: 4px;
+}
+
+.pdf-export-flow-modal__eyebrow {
+  color: #5870a3;
+  font-size: 0.75rem;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+}
+
+.pdf-export-flow-modal__card h3 {
+  margin: 0;
+  color: #172541;
+  font-size: clamp(1.2rem, 4vw, 1.4rem);
+  font-weight: 900;
+  letter-spacing: -0.025em;
+  line-height: 1.3;
+}
+
 .pdf-export-flow-modal__card p {
   margin: 0;
 }
 
+.pdf-export-flow-modal__subtitle {
+  max-width: 42rem;
+  color: #64708a;
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.pdf-export-flow-modal__card .pdf-export-flow-modal__close {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin: -0.2rem -0.2rem 0 0;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: #66718a;
+  font-size: 1.55rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.pdf-export-flow-modal__card .pdf-export-flow-modal__close:hover,
+.pdf-export-flow-modal__card .pdf-export-flow-modal__close:focus-visible {
+  border-color: rgba(82, 111, 174, 0.24);
+  background: #eef3fc;
+  color: #243b69;
+}
+
+#pdf-export-desc {
+  padding-top: 18px;
+  animation: pdf-export-step-in 180ms ease-out both;
+}
+
 .pdf-export-flow-modal__card ol {
-  margin: 0.65rem 0 0;
-  padding-left: 1.35rem;
+  margin: 0;
+  padding: 0;
+}
+
+.pdf-export-step-copy {
+  color: #56627b;
+  font-size: 0.9rem;
+  line-height: 1.55;
 }
 
 .pdf-export-precheck-list {
   display: grid;
-  gap: 6px;
+  gap: 8px;
+  margin-top: 12px !important;
+  list-style: none;
 }
 
 .pdf-export-flow-modal__card .pdf-export-precheck-list__jump {
@@ -4283,17 +4360,23 @@ div[id$="spells-area"] .form-row {
   justify-content: space-between;
   gap: 12px;
   width: 100%;
-  padding: 9px 11px;
-  border-color: rgba(76, 100, 154, 0.28);
-  background: rgba(255, 255, 255, 0.72);
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid rgba(76, 100, 154, 0.22);
+  border-radius: 0.75rem;
+  background: #fff;
   color: #24324f;
+  font-size: 0.9rem;
+  font-weight: 700;
   text-align: left;
+  transition: border-color 150ms ease, background-color 150ms ease, transform 150ms ease;
 }
 
 .pdf-export-flow-modal__card .pdf-export-precheck-list__jump:hover,
 .pdf-export-flow-modal__card .pdf-export-precheck-list__jump:focus-visible {
   border-color: #526fae;
-  background: #fff;
+  background: #fdfefe;
+  transform: translateY(-1px);
 }
 
 .pdf-export-precheck-list__action {
@@ -4303,15 +4386,194 @@ div[id$="spells-area"] .form-row {
   font-weight: 700;
 }
 
-.pdf-export-format-intro {
-  color: #4a5875;
-  font-size: 0.94rem;
+.pdf-export-check-success,
+.pdf-export-status,
+.pdf-export-wait-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 0.9rem;
+}
+
+.pdf-export-check-success {
+  border: 1px solid rgba(49, 126, 88, 0.2);
+  background: #f0f8f4;
+  color: #235e43;
+}
+
+.pdf-export-check-success > span,
+.pdf-export-status__icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 1.65rem;
+  height: 1.65rem;
+  border-radius: 999px;
+  background: #dcefe5;
+  font-weight: 900;
+}
+
+.pdf-export-check-success strong,
+.pdf-export-status strong,
+.pdf-export-wait-note strong {
+  display: block;
+  color: #24324f;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.pdf-export-check-success p,
+.pdf-export-status p,
+.pdf-export-wait-note span {
+  display: block;
+  margin-top: 2px;
+  color: #64708a;
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.pdf-export-name-field {
+  display: grid;
+  gap: 8px;
+}
+
+.pdf-export-name-field label {
+  color: #263754;
+  font-size: 0.88rem;
+  font-weight: 850;
+}
+
+.pdf-export-name-field__input {
+  width: 100%;
+  min-height: 50px;
+  margin: 0;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid rgba(76, 100, 154, 0.32);
+  border-radius: 0.85rem;
+  background: #fff;
+  box-shadow: 0 1px 0 rgba(15, 26, 58, 0.03);
+  color: #172541;
+  font-size: 1rem;
+  font-weight: 700;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.pdf-export-name-field__input::placeholder {
+  color: #9aa5b9;
+  font-weight: 500;
+}
+
+.pdf-export-name-field__input:hover {
+  border-color: rgba(62, 88, 148, 0.52);
+}
+
+.pdf-export-name-field__input:focus {
+  border-color: #4569bb;
+  outline: 0;
+  box-shadow: 0 0 0 4px rgba(69, 105, 187, 0.14);
+}
+
+.pdf-export-name-field__input[aria-invalid="true"] {
+  border-color: #c94a42;
+  box-shadow: 0 0 0 4px rgba(201, 74, 66, 0.1);
+}
+
+.pdf-export-name-field__meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: #77839a;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.pdf-export-name-field__counter {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+}
+
+.pdf-export-name-field__counter.is-over {
+  color: #b42318;
+}
+
+.pdf-export-choice-options,
+.pdf-export-race-options {
+  display: grid;
+  gap: 9px;
+}
+
+.pdf-export-choice-options {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.pdf-export-race-options {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.pdf-export-flow-modal__card .pdf-export-choice-option,
+.pdf-export-flow-modal__card .pdf-export-race-option {
+  width: 100%;
+  min-height: 48px;
+  margin: 0;
+  border: 1px solid rgba(76, 100, 154, 0.24);
+  border-radius: 0.8rem;
+  background: #fff;
+  color: #24324f;
+  text-align: left;
+  transition: border-color 150ms ease, background-color 150ms ease, transform 150ms ease;
+}
+
+.pdf-export-flow-modal__card .pdf-export-choice-option {
+  display: grid;
+  gap: 4px;
+  padding: 13px 14px;
+}
+
+.pdf-export-choice-option strong {
+  font-size: 0.92rem;
+}
+
+.pdf-export-choice-option span {
+  color: #68758e;
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.pdf-export-flow-modal__card .pdf-export-race-option {
+  padding: 11px 12px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.pdf-export-flow-modal__card .pdf-export-choice-option:hover,
+.pdf-export-flow-modal__card .pdf-export-choice-option:focus-visible,
+.pdf-export-flow-modal__card .pdf-export-race-option:hover,
+.pdf-export-flow-modal__card .pdf-export-race-option:focus-visible {
+  border-color: #526fae;
+  background: #fdfefe;
+  transform: translateY(-1px);
+}
+
+.pdf-export-wait-note {
+  border: 1px solid rgba(69, 105, 187, 0.18);
+  background: #edf3ff;
+}
+
+.pdf-export-wait-note > span {
+  flex: 0 0 auto;
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.5;
 }
 
 .pdf-export-format-options {
   display: grid;
   gap: 10px;
-  margin-top: 12px;
+  margin-top: 14px;
 }
 
 .pdf-export-flow-modal__card .pdf-export-format-option {
@@ -4319,9 +4581,9 @@ div[id$="spells-area"] .form-row {
   gap: 7px;
   width: 100%;
   padding: 14px 15px;
-  border: 1px solid rgba(76, 100, 154, 0.28);
+  border: 1px solid rgba(76, 100, 154, 0.24);
   border-radius: 0.9rem;
-  background: rgba(255, 255, 255, 0.78);
+  background: #fff;
   color: #24324f;
   text-align: left;
   transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease;
@@ -4330,7 +4592,7 @@ div[id$="spells-area"] .form-row {
 .pdf-export-flow-modal__card .pdf-export-format-option:hover,
 .pdf-export-flow-modal__card .pdf-export-format-option:focus-visible {
   border-color: #526fae;
-  background: #fff;
+  background: #fdfefe;
   transform: translateY(-1px);
 }
 
@@ -4369,6 +4631,54 @@ div[id$="spells-area"] .form-row {
   font-weight: 750;
 }
 
+.pdf-export-status--progress {
+  border: 1px solid rgba(69, 105, 187, 0.18);
+  background: #edf3ff;
+}
+
+.pdf-export-status--error {
+  border: 1px solid rgba(180, 35, 24, 0.18);
+  background: #fff3f1;
+}
+
+.pdf-export-status--error .pdf-export-status__icon {
+  background: #fbded9;
+  color: #a82a21;
+}
+
+.pdf-export-status--error .pdf-export-flow-modal__error {
+  color: #a82a21;
+}
+
+.pdf-export-status__spinner {
+  flex: 0 0 auto;
+  width: 1.65rem;
+  height: 1.65rem;
+  border: 3px solid rgba(69, 105, 187, 0.2);
+  border-top-color: #4569bb;
+  border-radius: 999px;
+  animation: pdf-export-spin 800ms linear infinite;
+}
+
+@keyframes pdf-export-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pdf-export-card-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes pdf-export-step-in {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pdf-export-spin {
+  to { transform: rotate(360deg); }
+}
+
 .onboarding-jump-target {
   animation: onboarding-jump-highlight 1.8s ease-out;
 }
@@ -4397,7 +4707,8 @@ div[id$="spells-area"] .form-row {
 .pdf-export-flow-modal__card button {
   width: auto;
   margin: 0;
-  padding: 8px 12px;
+  font: inherit;
+  cursor: pointer;
 }
 
 .pdf-export-flow-modal__actions {
@@ -4405,12 +4716,90 @@ div[id$="spells-area"] .form-row {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(114, 133, 176, 0.18);
+}
+
+.pdf-export-flow-modal__actions[hidden] {
+  display: none;
+}
+
+.pdf-export-flow-modal__card .pdf-export-flow-modal__button {
+  min-height: 42px;
+  padding: 9px 16px;
+  border-radius: 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 850;
+  transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+
+.pdf-export-flow-modal__card .pdf-export-flow-modal__button:hover,
+.pdf-export-flow-modal__card .pdf-export-flow-modal__button:focus-visible {
+  transform: translateY(-1px);
+}
+
+.pdf-export-flow-modal__button--primary {
+  border: 1px solid #365dac;
+  background: #3e67bc;
+  box-shadow: 0 7px 16px rgba(42, 78, 157, 0.2);
+  color: #fff;
+}
+
+.pdf-export-flow-modal__button--primary:hover,
+.pdf-export-flow-modal__button--primary:focus-visible {
+  background: #3459a7;
+  box-shadow: 0 9px 20px rgba(42, 78, 157, 0.25);
+}
+
+.pdf-export-flow-modal__button--secondary {
+  border: 1px solid rgba(76, 100, 154, 0.28);
+  background: #fff;
+  color: #405170;
+}
+
+.pdf-export-flow-modal__button--secondary:hover,
+.pdf-export-flow-modal__button--secondary:focus-visible {
+  border-color: #6c83b5;
+  background: #f5f7fc;
 }
 
 .pdf-export-flow-modal__error {
   margin: 0;
   color: #b42318;
   font-size: 0.9rem;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.pdf-export-flow-modal__error:empty {
+  display: none;
+}
+
+@media (max-width: 520px) {
+  .pdf-export-flow-modal {
+    align-items: flex-end;
+    padding: 8px;
+  }
+
+  .pdf-export-flow-modal__card {
+    width: 100%;
+    max-height: 92vh;
+    max-height: 92dvh;
+    border-radius: 1.25rem;
+  }
+
+  .pdf-export-choice-options {
+    grid-template-columns: 1fr;
+  }
+
+  .pdf-export-format-option__heading {
+    align-items: flex-start;
+  }
+
+  .pdf-export-flow-modal__actions .pdf-export-flow-modal__button {
+    flex: 1 1 0;
+  }
 }
 
 /* 暫停啟用：搭配 index.html 中暫時註解的創角草稿刪除選項。

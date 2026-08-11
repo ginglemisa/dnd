@@ -6061,15 +6061,42 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
     function render(type, message=''){
       card.innerHTML='';
       const step=type ? '' : steps[idx];
-      const t=document.createElement('h3'); t.id='pdf-export-title'; t.textContent=step==='format' ? '選擇 PDF 格式' : 'PDF 匯出'; card.appendChild(t);
+      const stepTitles={
+        precheck:['匯出前檢查','確認角色資料是否還有需要補填的地方。'],
+        name:['角色名稱','名稱會寫入角色卡中；不需要時也可以留空。'],
+        equipment:['加入預設裝備','決定是否把職業與背景提供的起始裝備一併寫入。'],
+        race:[raceChoice?.title || '選擇種族特性','這項選擇會影響角色能力與 PDF 內容。'],
+        format:['選擇 PDF 格式','最後一步：依照是否需要後續編輯來選擇。']
+      };
+      const viewTitle=type==='error' ? 'PDF 匯出失敗' : type==='progress' ? '正在製作 PDF' : stepTitles[step]?.[0] || 'PDF 匯出';
+      const viewSubtitle=type ? '' : stepTitles[step]?.[1] || '';
+      const header=document.createElement('header'); header.className='pdf-export-flow-modal__header';
+      const heading=document.createElement('div'); heading.className='pdf-export-flow-modal__heading';
+      const eyebrow=document.createElement('span'); eyebrow.className='pdf-export-flow-modal__eyebrow'; eyebrow.textContent=type ? 'PDF 匯出' : `PDF 匯出 · 步驟 ${idx+1} / ${steps.length}`;
+      const t=document.createElement('h3'); t.id='pdf-export-title'; t.textContent=viewTitle;
+      heading.append(eyebrow,t);
+      if(viewSubtitle){ const subtitle=document.createElement('p'); subtitle.className='pdf-export-flow-modal__subtitle'; subtitle.textContent=viewSubtitle; heading.appendChild(subtitle); }
+      header.appendChild(heading);
+      if(!busy){ const closeBtn=document.createElement('button'); closeBtn.type='button'; closeBtn.className='pdf-export-flow-modal__close'; closeBtn.setAttribute('aria-label','關閉 PDF 匯出'); closeBtn.textContent='×'; closeBtn.onclick=()=>close(null); header.appendChild(closeBtn); }
+      card.appendChild(header);
       const d=document.createElement('div'); d.id='pdf-export-desc'; card.appendChild(d);
       const a=document.createElement('div'); a.className='pdf-export-flow-modal__actions'; card.appendChild(a);
-      if(type==='progress'){ d.innerHTML=`<p>${message}</p>`; const c=document.createElement('button'); c.disabled=true; c.textContent='處理中...'; a.appendChild(c); return; }
-      if(type==='error'){ d.innerHTML=`<p class="pdf-export-flow-modal__error">${message}</p>`; const retry=document.createElement('button'); retry.textContent='重試'; retry.onclick=()=>startExport(lastMode); const closeBtn=document.createElement('button'); closeBtn.textContent='關閉'; closeBtn.onclick=()=>close(null); a.append(retry,closeBtn); retry.focus(); return; }
+      if(type==='progress'){
+        const status=document.createElement('div'); status.className='pdf-export-status pdf-export-status--progress'; status.setAttribute('role','status'); status.setAttribute('aria-live','polite');
+        const spinner=document.createElement('span'); spinner.className='pdf-export-status__spinner'; spinner.setAttribute('aria-hidden','true');
+        const copy=document.createElement('div'); const strong=document.createElement('strong'); strong.textContent=message; const hint=document.createElement('p'); hint.textContent='製作 PDF 需要一些時間，請耐心等候並保持頁面開啟。'; copy.append(strong,hint); status.append(spinner,copy); d.appendChild(status); a.hidden=true; return;
+      }
+      if(type==='error'){
+        const status=document.createElement('div'); status.className='pdf-export-status pdf-export-status--error';
+        const icon=document.createElement('span'); icon.className='pdf-export-status__icon'; icon.setAttribute('aria-hidden','true'); icon.textContent='!';
+        const copy=document.createElement('div'); const errorText=document.createElement('p'); errorText.className='pdf-export-flow-modal__error'; errorText.textContent=message; const hint=document.createElement('p'); hint.textContent='請確認網路連線後重試，或先關閉視窗稍後再試。'; copy.append(errorText,hint); status.append(icon,copy); d.appendChild(status);
+        const closeBtn=document.createElement('button'); closeBtn.type='button'; closeBtn.className='pdf-export-flow-modal__button pdf-export-flow-modal__button--secondary'; closeBtn.textContent='關閉'; closeBtn.onclick=()=>close(null);
+        const retry=document.createElement('button'); retry.type='button'; retry.className='pdf-export-flow-modal__button pdf-export-flow-modal__button--primary'; retry.textContent='重新製作'; retry.onclick=()=>startExport(lastMode); a.append(closeBtn,retry); retry.focus(); return;
+      }
 
       if(step==='precheck'){
         if(reminders.length){
-          const intro=document.createElement('p'); intro.textContent='匯出前提醒（點擊可前往補填）：';
+          const intro=document.createElement('p'); intro.className='pdf-export-step-copy'; intro.textContent='以下項目尚未完成。你仍可繼續匯出，或點擊項目前往補填。';
           const list=document.createElement('ol'); list.className='pdf-export-precheck-list';
           reminders.forEach((reminder)=>{
             const item=document.createElement('li');
@@ -6088,15 +6115,45 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
           });
           d.append(intro,list);
         } else {
-          d.innerHTML='<p>已通過匯出前檢查。</p>';
+          const success=document.createElement('div'); success.className='pdf-export-check-success';
+          const icon=document.createElement('span'); icon.setAttribute('aria-hidden','true'); icon.textContent='✓';
+          const copy=document.createElement('div'); const strong=document.createElement('strong'); strong.textContent='資料檢查完成'; const hint=document.createElement('p'); hint.textContent='沒有發現需要提醒的空白欄位。'; copy.append(strong,hint); success.append(icon,copy); d.appendChild(success);
         }
-        const n=document.createElement('button'); n.textContent='繼續'; n.onclick=()=>{idx++; render();}; a.append(n); n.focus();
+        const n=document.createElement('button'); n.type='button'; n.className='pdf-export-flow-modal__button pdf-export-flow-modal__button--primary'; n.textContent='繼續'; n.onclick=()=>{idx++; render();}; a.append(n); n.focus();
       }
-      else if(step==='name'){ const i=document.createElement('input'); i.placeholder='角色名稱'; i.value=result.characterName; const err=document.createElement('p'); err.className='pdf-export-flow-modal__error'; d.append(i,err); const n=document.createElement('button'); n.textContent='下一步'; n.onclick=()=>{const v=i.value.trim(); if(countPdfNameUnits(v)>PDF_EXPORT_MAX_NAME_UNITS){err.textContent='名稱過長，請控制在字數限制內。'; return;} result.characterName=v; idx++; render();}; a.append(n); i.focus(); }
-      else if(step==='equipment'){ d.innerHTML='<p>是否將職業與背景提供的預設裝備也一起寫入 PDF？</p>'; const n1=document.createElement('button'); n1.textContent='不包含'; n1.onclick=()=>{result.includeDefaultEquipment=false; idx++; render();}; const n2=document.createElement('button'); n2.textContent='包含'; n2.onclick=()=>{result.includeDefaultEquipment=true; idx++; render();}; a.append(n1,n2); n1.focus(); }
-      else if(step==='race'){ d.innerHTML=`<p>${raceChoice.title}</p>`; raceChoice.options.forEach(([key,label])=>{const b=document.createElement('button'); b.textContent=label; b.onclick=()=>{result[raceChoice.key]=key; idx++; render();}; d.appendChild(b);}); d.querySelector('button')?.focus(); }
+      else if(step==='name'){
+        const field=document.createElement('div'); field.className='pdf-export-name-field';
+        const label=document.createElement('label'); label.htmlFor='pdf-export-character-name'; label.textContent='角色名稱';
+        const i=document.createElement('input'); i.id='pdf-export-character-name'; i.className='pdf-export-name-field__input'; i.placeholder='例如：艾拉・銀葉'; i.value=result.characterName; i.autocomplete='off'; i.spellcheck=false; i.enterKeyHint='next';
+        const meta=document.createElement('div'); meta.className='pdf-export-name-field__meta'; meta.id='pdf-export-name-hint';
+        const hint=document.createElement('span'); hint.textContent='最多 18 個英數字元或 9 個中文字';
+        const counter=document.createElement('span'); counter.className='pdf-export-name-field__counter';
+        const err=document.createElement('p'); err.id='pdf-export-name-error'; err.className='pdf-export-flow-modal__error'; err.setAttribute('aria-live','polite');
+        i.setAttribute('aria-describedby','pdf-export-name-hint pdf-export-name-error');
+        const updateCounter=()=>{ const units=countPdfNameUnits(i.value.trim()); counter.textContent=`${units} / ${PDF_EXPORT_MAX_NAME_UNITS}`; counter.classList.toggle('is-over',units>PDF_EXPORT_MAX_NAME_UNITS); if(err.textContent){err.textContent='';i.removeAttribute('aria-invalid');} };
+        updateCounter(); i.addEventListener('input',updateCounter); meta.append(hint,counter); field.append(label,i,meta,err); d.appendChild(field);
+        const submitName=()=>{const v=i.value.trim(); if(countPdfNameUnits(v)>PDF_EXPORT_MAX_NAME_UNITS){err.textContent='名稱過長，請縮短後再繼續。';i.setAttribute('aria-invalid','true');i.focus();return;} result.characterName=v;idx++;render();};
+        i.addEventListener('keydown',(event)=>{if(event.key==='Enter'){event.preventDefault();submitName();}});
+        const n=document.createElement('button'); n.type='button'; n.className='pdf-export-flow-modal__button pdf-export-flow-modal__button--primary'; n.textContent='下一步'; n.onclick=submitName; a.append(n); i.focus();
+      }
+      else if(step==='equipment'){
+        const choices=document.createElement('div'); choices.className='pdf-export-choice-options';
+        const createChoice=(title,description,value)=>{const button=document.createElement('button');button.type='button';button.className='pdf-export-choice-option';const strong=document.createElement('strong');strong.textContent=title;const detail=document.createElement('span');detail.textContent=description;button.append(strong,detail);button.onclick=()=>{result.includeDefaultEquipment=value;idx++;render();};return button;};
+        choices.append(
+          createChoice('只使用目前裝備','不加入職業與背景提供的預設裝備。',false),
+          createChoice('包含預設裝備','一併加入職業與背景提供的起始裝備。',true)
+        );
+        d.appendChild(choices); choices.querySelector('button')?.focus(); a.hidden=true;
+      }
+      else if(step==='race'){
+        const choices=document.createElement('div'); choices.className='pdf-export-race-options';
+        raceChoice.options.forEach(([key,label])=>{const b=document.createElement('button');b.type='button';b.className='pdf-export-race-option';b.textContent=label;b.onclick=()=>{result[raceChoice.key]=key;idx++;render();};choices.appendChild(b);});
+        d.appendChild(choices); choices.querySelector('button')?.focus(); a.hidden=true;
+      }
       else if(step==='format'){
-        const intro=document.createElement('p'); intro.className='pdf-export-format-intro'; intro.textContent='最後一步：選擇最適合你使用方式的版本。';
+        const wait=document.createElement('div'); wait.className='pdf-export-wait-note';
+        const waitIcon=document.createElement('span'); waitIcon.setAttribute('aria-hidden','true'); waitIcon.textContent='⌛';
+        const waitCopy=document.createElement('div'); const waitTitle=document.createElement('strong'); waitTitle.textContent='製作 PDF 需要一些時間'; const waitText=document.createElement('span'); waitText.textContent='選擇版本後，請保持頁面開啟並耐心等候下載開始。'; waitCopy.append(waitTitle,waitText); wait.append(waitIcon,waitCopy);
         const options=document.createElement('div'); options.className='pdf-export-format-options';
         const createOption=(mode,title,badge,description)=>{
           const button=document.createElement('button'); button.type='button'; button.className='pdf-export-format-option';
@@ -6113,7 +6170,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
         );
         const note=document.createElement('p'); note.className='pdf-export-format-note';
         note.append('想下載「可填寫、檔案也較小」的空白 PDF？請到 ',Object.assign(document.createElement('a'),{href:'about.html#character-sheet-download',target:'_blank',rel:'noopener',textContent:'About 的中文化角色紙下載'}),' 取得下載點。');
-        d.append(intro,options,note); a.hidden=true; options.querySelector('button')?.focus();
+        d.append(wait,options,note); a.hidden=true; options.querySelector('button')?.focus();
       }
     }
 
