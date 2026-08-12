@@ -16,6 +16,33 @@
   --accent-strong: #2147b2;
   --accent-soft: rgba(40, 82, 214, 0.12);
 
+  --page-gradient-a: rgba(83, 106, 176, 0.18);
+  --page-gradient-b: rgba(55, 145, 179, 0.1);
+  --page-gradient-start: #eef3ff;
+  --page-gradient-middle: #e8eef8;
+  --page-gradient-end: #eef2f8;
+  --overlay: rgba(15, 23, 42, 0.54);
+  --input-bg: var(--surface-strong);
+  --control-bg: #ffffff;
+  --control-bg-soft: #eef4ff;
+  --table-heading: #e8efff;
+  --table-stripe: rgba(232, 240, 255, 0.42);
+  --focus-ring: rgba(36, 93, 255, 0.24);
+
+  /* Quick build aliases keep its UI on the same theme contract. */
+  --qb-overlay: var(--overlay);
+  --qb-surface: var(--surface-strong);
+  --qb-surface-raised: var(--surface);
+  --qb-surface-inset: var(--surface-soft);
+  --qb-border: var(--border-strong);
+  --qb-border-soft: var(--border);
+  --qb-text: var(--text);
+  --qb-text-body: var(--text-body);
+  --qb-text-muted: var(--text-muted);
+  --qb-accent: var(--accent);
+  --qb-accent-hover: var(--accent-strong);
+  --qb-accent-text: var(--accent-strong);
+
   --border: rgba(114, 133, 176, 0.24);
   --border-strong: rgba(76, 104, 168, 0.32);
   --shadow-soft: 0 14px 30px rgba(18, 33, 68, 0.09);
@@ -46,6 +73,48 @@
   --app-accent: var(--accent);
 }
 
+html[data-theme="dark"] {
+  --bg: #0b1220;
+  --surface: rgba(17, 24, 39, 0.94);
+  --surface-strong: #111827;
+  --surface-soft: #172033;
+  --surface-muted: #1e293b;
+  --text: #f8fafc;
+  --text-body: #e2e8f0;
+  --text-muted: #94a3b8;
+  --accent: #38bdf8;
+  --accent-strong: #0284c7;
+  --accent-soft: rgba(56, 189, 248, 0.14);
+  --border: rgba(100, 116, 139, 0.46);
+  --border-strong: rgba(125, 211, 252, 0.48);
+  --shadow-soft: 0 14px 30px rgba(0, 0, 0, 0.28);
+  --shadow-strong: 0 18px 44px rgba(0, 0, 0, 0.42);
+  --page-gradient-a: rgba(14, 116, 144, 0.2);
+  --page-gradient-b: rgba(30, 64, 175, 0.14);
+  --page-gradient-start: #0b1220;
+  --page-gradient-middle: #0f172a;
+  --page-gradient-end: #111827;
+  --overlay: rgba(2, 6, 23, 0.82);
+  --input-bg: #0f172a;
+  --control-bg: #1e293b;
+  --control-bg-soft: #172033;
+  --table-heading: #1e293b;
+  --table-stripe: rgba(51, 65, 85, 0.38);
+  --focus-ring: rgba(56, 189, 248, 0.42);
+  --qb-overlay: rgba(8, 12, 20, 0.76);
+  --qb-surface: #111827;
+  --qb-surface-raised: #1e293b;
+  --qb-surface-inset: #0f172a;
+  --qb-border: #64748b;
+  --qb-border-soft: #334155;
+  --qb-text: #f8fafc;
+  --qb-text-body: #e2e8f0;
+  --qb-text-muted: #94a3b8;
+  --qb-accent: #38bdf8;
+  --qb-accent-hover: #075985;
+  --qb-accent-text: #7dd3fc;
+}
+
 /* ===== Base ===== */
 * {
   box-sizing: border-box;
@@ -61,9 +130,9 @@ html {
   overflow-x: hidden;
   overscroll-behavior-x: none;
   background:
-    radial-gradient(circle at top left, rgba(83, 106, 176, 0.18), transparent 31%),
-    radial-gradient(circle at top right, rgba(55, 145, 179, 0.1), transparent 24%),
-    linear-gradient(180deg, #eef3ff 0%, #e8eef8 44%, #eef2f8 100%);
+    radial-gradient(circle at top left, var(--page-gradient-a), transparent 31%),
+    radial-gradient(circle at top right, var(--page-gradient-b), transparent 24%),
+    linear-gradient(180deg, var(--page-gradient-start) 0%, var(--page-gradient-middle) 44%, var(--page-gradient-end) 100%);
 }
 
 body {
@@ -4838,3 +4907,158 @@ div[id$="spells-area"] .form-row {
 
 .clear-records-modal__actions .danger { border-color: #b91c1c; background: #b91c1c; color: #fff; }
 */
+
+/* ===== Theme integration ===== */
+.theme-toggle {
+  flex: 0 0 3.4rem;
+  border-left: 1px solid var(--border);
+  border-radius: 0.85rem;
+  font-size: var(--fs-xs);
+}
+
+html[data-theme="dark"] .tabs-shell {
+  border-color: var(--border);
+  background: rgba(15, 23, 42, 0.9);
+  box-shadow: var(--shadow-soft), inset 0 1px 0 rgba(148, 163, 184, 0.1);
+}
+
+html[data-theme="dark"] .tab-button:hover:not(.active),
+html[data-theme="dark"] button:not(.active):not(.primary):not(.danger):hover {
+  border-color: var(--border-strong);
+  background: var(--surface-muted);
+  color: var(--text);
+}
+
+html[data-theme="dark"] .tab-button.active,
+html[data-theme="dark"] .tabs-shell .tab-button.active:hover {
+  background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%);
+  color: #fff;
+  box-shadow: 0 7px 16px rgba(14, 165, 233, 0.24);
+}
+
+html[data-theme="dark"] .section,
+html[data-theme="dark"] .mini-stat-card,
+html[data-theme="dark"] .basic-pair-card,
+html[data-theme="dark"] .ability-card,
+html[data-theme="dark"] .save-pair,
+html[data-theme="dark"] .skill-cell,
+html[data-theme="dark"] .condition-display,
+html[data-theme="dark"] .action-card,
+html[data-theme="dark"] .weapon-card,
+html[data-theme="dark"] .money-card,
+html[data-theme="dark"] .spell-entry,
+html[data-theme="dark"] .selection-summary,
+html[data-theme="dark"] .selection-summary-card,
+html[data-theme="dark"] .spell-search-result-item,
+html[data-theme="dark"] .equipment-search-result-item {
+  border-color: var(--border);
+  background: var(--surface);
+  color: var(--text-body);
+  box-shadow: var(--shadow-soft);
+}
+
+html[data-theme="dark"] select,
+html[data-theme="dark"] input[type="number"],
+html[data-theme="dark"] input[type="text"],
+html[data-theme="dark"] input[type="search"],
+html[data-theme="dark"] textarea {
+  border-color: var(--border);
+  background: var(--input-bg);
+  color: var(--text);
+  box-shadow: inset 0 1px 0 rgba(148, 163, 184, 0.08);
+}
+
+html[data-theme="dark"] select:focus,
+html[data-theme="dark"] input:focus,
+html[data-theme="dark"] textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--focus-ring);
+}
+
+html[data-theme="dark"] button:not(.tab-button):not(.primary):not(.danger),
+html[data-theme="dark"] .button-secondary {
+  border-color: var(--border);
+  background: linear-gradient(180deg, var(--surface-muted) 0%, var(--surface-soft) 100%);
+  color: var(--text);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+}
+
+html[data-theme="dark"] button:disabled,
+html[data-theme="dark"] input:disabled,
+html[data-theme="dark"] select:disabled,
+html[data-theme="dark"] textarea:disabled {
+  color: #64748b;
+  opacity: 0.72;
+}
+
+html[data-theme="dark"] button:focus-visible,
+html[data-theme="dark"] summary:focus-visible,
+html[data-theme="dark"] a:focus-visible,
+html[data-theme="dark"] [role="button"]:focus-visible {
+  outline-color: var(--focus-ring);
+}
+
+html[data-theme="dark"] .equipment-catalog-table th,
+html[data-theme="dark"] .class-feature-table th,
+html[data-theme="dark"] .action-info-table thead tr,
+html[data-theme="dark"] table th {
+  background: var(--table-heading);
+  color: var(--text);
+}
+
+html[data-theme="dark"] .equipment-catalog-table tbody tr:nth-child(even),
+html[data-theme="dark"] .class-feature-table tbody tr:nth-child(even),
+html[data-theme="dark"] table tbody tr:nth-child(even) {
+  background: var(--table-stripe);
+}
+
+html[data-theme="dark"] table td,
+html[data-theme="dark"] .action-info-table td {
+  border-color: var(--border);
+  background-color: transparent;
+  color: var(--text-body);
+}
+
+html[data-theme="dark"] #equipment-notes-section details,
+html[data-theme="dark"] details details,
+html[data-theme="dark"] .output,
+html[data-theme="dark"] .spell-picked-area,
+html[data-theme="dark"] .equipment-search-table-wrap {
+  border-color: var(--border);
+  background: var(--surface-soft);
+  color: var(--text-body);
+}
+
+html[data-theme="dark"] .money-modal,
+html[data-theme="dark"] #equipment-detail-modal,
+html[data-theme="dark"] #spell-qr-modal,
+html[data-theme="dark"] #ability-choice-modal,
+html[data-theme="dark"] #point-buy-modal,
+html[data-theme="dark"] #legal-modal,
+html[data-theme="dark"] .pdf-export-flow-modal {
+  background: var(--overlay);
+}
+
+html[data-theme="dark"] .money-modal-card,
+html[data-theme="dark"] .equipment-detail-modal__card,
+html[data-theme="dark"] .spell-qr-modal-card,
+html[data-theme="dark"] .ability-choice-modal-card,
+html[data-theme="dark"] .point-buy-modal-card,
+html[data-theme="dark"] .legal-modal-card,
+html[data-theme="dark"] .pdf-export-flow-modal__card {
+  border-color: var(--border-strong);
+  background: var(--surface-strong);
+  color: var(--text-body);
+  box-shadow: var(--shadow-strong);
+}
+
+html[data-theme="dark"] mark {
+  background: #854d0e;
+  color: #fef3c7;
+}
+
+@media (max-width: 390px) {
+  .tabs { gap: 0.18rem; }
+  .tab-button { padding-right: 0.12rem; padding-left: 0.12rem; font-size: 0.8rem; }
+  .theme-toggle { flex-basis: 2.9rem; font-size: 0.7rem; }
+}
