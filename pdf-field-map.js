@@ -367,10 +367,10 @@
         firstLevelBonusLine,
       ];
       const leveledSpellLines = [];
-      if (shouldShowAtOrAboveLevel(context.level, 3)) {
+      if (shouldShowAtOrAboveSelectedLevel(context.level, 3)) {
         leveledSpellLines.push(thirdLevelSpellLine);
       }
-      if (shouldShowAtOrAboveLevel(context.level, 5)) {
+      if (shouldShowAtOrAboveSelectedLevel(context.level, 5)) {
         leveledSpellLines.push(fifthLevelSpellLine);
       }
       if (leveledSpellLines.length) {
@@ -407,20 +407,21 @@
     }),
     goliath: Object.freeze((context = {}) => {
       const ancestry = normalizeText(context.goliathAncestryLabel) || '未選祖源（預設備援）';
+      const parsedLevel = getSelectedLevelNumber(context.level);
       const lines = [
         '體型=中型/速度=35',
         '掙脫擒抱狀態具有優勢',
         '計算攜帶重量視為大型',
         '--',
         `巨人血統：${ancestry}`,
-        '--',
-        '巨化形體：5後級可用',
-        '附贈啟動,STR檢定優勢',
-        '變為大型,速度+10呎'
       ];
-      const parsedLevel = getSelectedLevelNumber(context.level);
-      if (parsedLevel !== null && parsedLevel < 5) {
-        lines[6] = '巨化形體：未達5級';
+      if (parsedLevel === null || parsedLevel >= 5) {
+        lines.push(
+          '--',
+          '巨化形體：5後級可用',
+          '附贈啟動,STR檢定優勢',
+          '變為大型,速度+10呎'
+        );
       }
       return lines;
     }),
@@ -483,10 +484,10 @@
         firstLevelLine1,
         firstLevelLine2
       ];
-      if (shouldShowOnlyAtLevelOrUnselected(context.level, 3)) {
+      if (shouldShowAtOrAboveSelectedLevel(context.level, 3)) {
         lines.push(thirdLevelLine);
       }
-      if (shouldShowOnlyAtLevelOrUnselected(context.level, 5)) {
+      if (shouldShowAtOrAboveSelectedLevel(context.level, 5)) {
         lines.push(fifthLevelLine);
       }
       lines.push(
@@ -551,14 +552,9 @@
     return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
   }
 
-  function shouldShowAtOrAboveLevel(level, minLevel) {
+  function shouldShowAtOrAboveSelectedLevel(level, targetLevel) {
     const parsedLevel = getSelectedLevelNumber(level);
-    return parsedLevel === null || parsedLevel >= minLevel;
-  }
-
-  function shouldShowOnlyAtLevelOrUnselected(level, targetLevel) {
-    const parsedLevel = getSelectedLevelNumber(level);
-    return parsedLevel === null || parsedLevel === targetLevel;
+    return parsedLevel === null || parsedLevel >= targetLevel;
   }
 
   function normalizeCommaList(values) {
@@ -642,23 +638,17 @@
     return map[classKey] || '';
   }
 
-  function getToolsProficiencyText(backgroundKey, classKey) {
-    const backgroundToolsMap = {
-      acolyte: '書法工具',
-      soldier: '骰子,紙牌,龍棋,三龍牌擇一',
-      criminal: '盜賊工具',
-      sage: '書法工具'
-    };
-    const tools = [];
-    const base = backgroundToolsMap[backgroundKey];
-    if (base) tools.push(base);
-
-    if (classKey === 'bard') tools.push('任選三種樂器');
-    if (classKey === 'druid') tools.push('草藥工具');
-    if (classKey === 'monk') tools.push('任選一種工匠工具或樂器');
-    if (classKey === 'rogue') tools.push('盜賊工具');
-
-    return normalizeCommaList(tools);
+  function collectToolProficiencyNames(state) {
+    const seen = new Set();
+    return Object.keys(state)
+      .filter((key) => /^tool-proficiency-\d+$/.test(key))
+      .sort((a, b) => Number.parseInt(a.split('-').at(-1), 10) - Number.parseInt(b.split('-').at(-1), 10))
+      .map((key) => normalizeText(state[key]))
+      .filter((value) => {
+        if (!value || seen.has(value)) return false;
+        seen.add(value);
+        return true;
+      });
   }
 
   function countDisplayUnits(text) {
@@ -861,21 +851,26 @@
     // Trigger conditions belong in the spell description and can overflow the
     // character sheet's compact casting-time field. Keep the full Chinese
     // action name while omitting the clause that follows it.
-    return text.replace(/^((?:附贈|反應)動作)\s*[,，].*$/, '$1');
+    return text
+      .replace(/\s*或儀式\s*$/u, '')
+      .replace(/^((?:附贈|反應)動作)\s*[,，].*$/, '$1')
+      .replaceAll('附贈動作', '附贈')
+      .replaceAll('反應動作', '反應');
   }
 
   function convertSpellSchoolForNote(raw) {
-    return normalizeText(raw);
+    const school = normalizeText(raw);
+    return school ? `學派:${school}` : '';
   }
 
   function convertDurationForNote(raw) {
     const text = normalizeText(raw);
-    if (!text) return '';
-    if (/直到解除|瞬間/.test(text)) return '';
-    return text
-      .replace(/專注/g, '')
-      .replace(/^\s*[,，、;；:：]\s*/, '')
+    if (!text || text === '立即') return '';
+    const duration = text
+      .replace(/專注\s*[,，、;；:：]?\s*/gu, '')
+      .replace(/\s+/gu, '')
       .trim();
+    return duration ? `持續:${duration}` : '';
   }
 
   function buildSpellRows(state) {
@@ -915,7 +910,7 @@
     'poison-spray': Object.freeze({ name: '毒氣噴濺', mode: 'attack', dmg: '1d12 毒素', note: '30呎' }),
     'starry-wisp': Object.freeze({ name: '流光閃靈', mode: 'attack', dmg: '1d8 光耀', note: '60呎/發微光消隱形' }),
     'chill-touch': Object.freeze({ name: '凍寒之觸', mode: 'attack', dmg: '1d10 黯蝕', note: '觸及/不能回復HP' }),
-    'sorcerous-burst': Object.freeze({ name: '術法衝擊', mode: 'attack', dmg: '1d8（酸/冷/火/電/毒/心靈/雷鳴）', note: '120呎/傷害8可再丟' }),
+    'sorcerous-burst': Object.freeze({ name: '術法衝擊', mode: 'attack', dmg: '1d8自選', note: '120呎/傷害8可再丟' }),
     'vicious-mockery': Object.freeze({ name: '惡言相加', mode: 'save', dmg: '1d6 精神', note: '60呎/感知豁免/攻擊劣勢' }),
     'sacred-flame': Object.freeze({ name: '聖火術', mode: 'save', dmg: '1d8 光耀', note: '60呎/敏捷豁免' }),
     'shocking-grasp': Object.freeze({ name: '電爪', mode: 'attack', dmg: '1d8 閃電', note: '觸及/不能藉機' }),
@@ -1203,7 +1198,8 @@
     const profBonus = getProficiencyBonusByLevel(level);
     payload.proficiencyBonus1 = profBonus;
 
-    payload.toolsProficiency1 = getToolsProficiencyText(backgroundKey, classKey);
+    const selectedToolNames = collectToolProficiencyNames(state);
+    payload.toolsProficiency1 = selectedToolNames.slice(0, 2).join('、');
 
     Object.entries(CHECKBOX_FIELD_MAP).forEach(([stateKey, pdfFieldName]) => {
       payload[pdfFieldName] = Boolean(state[stateKey]);
@@ -1218,7 +1214,7 @@
       payload[skill.modField] = normalizeText(state[skill.modId]);
     });
 
-    const baseLangLabels = ['通用', getLanguageLabelByValue(state.language1), getLanguageLabelByValue(state.language2)];
+    const baseLangLabels = ['通用語', getLanguageLabelByValue(state.language1), getLanguageLabelByValue(state.language2)];
     const extraLanguageLabels = collectExtraLanguageLabels(state);
     const languageLabels = [...baseLangLabels];
     extraLanguageLabels.forEach((label) => {
@@ -1230,10 +1226,6 @@
     payload.language1 = buildTwoLineLanguageText(languageLabels);
 
     const classFeatureLines = extractClassFeatureHeadings(getClassFeaturesMap()[classKey] || '', level);
-    const extraLanguages = extraLanguageLabels;
-    if (classKey === 'ranger' || classKey === 'rogue') {
-      extraLanguages.forEach((label) => classFeatureLines.push(`額外語言：${label}`));
-    }
     const classFeatureResult1 = wrapTextForPdfWithOverflow(
       classFeatureLines.join('\n'),
       PDF_TEXT_SPECS.classFeatures1
@@ -1304,7 +1296,7 @@
         payload[`sp-r-${xx}`] = /儀式/.test(castTimeRaw);
         payload[`sp-m-${xx}`] = /材料|成分\s*:\s*.*M/i.test(desc);
         payload[`note${xx}`] = wrapTextForPdf(
-          [convertSpellSchoolForNote(school), convertDurationForNote(durationRaw)].filter(Boolean).join(' '),
+          [convertSpellSchoolForNote(school), convertDurationForNote(durationRaw)].filter(Boolean).join(' | '),
           { maxUnitsPerLine: 22, maxLines: 2 }
         );
       });
@@ -1316,6 +1308,10 @@
     payload['spell-level-3'] = slots.slot3;
 
     const extraNotes = [];
+    const overflowToolNames = selectedToolNames.slice(2);
+    if (overflowToolNames.length > 0) {
+      extraNotes.push(`其他工具熟練：${overflowToolNames.join('、')}`);
+    }
     if (remainingSpellRows.length > 0) {
       const remainingSpellText = remainingSpellRows
         .map((row) => `${getCanonicalSpell(row.spellId)?.nameZh || ''}(${row.level})`)

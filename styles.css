@@ -238,6 +238,10 @@ body {
 .language-extra-container > *,
 .language-extra-container > div > *,
 .language-extra-row > *,
+.tool-section > *,
+.tool-proficiency-list > *,
+.tool-proficiency-row > *,
+.tool-proficiency-control > *,
 .hp-title > *,
 .basic-overview > *,
 .basic-row > *,
@@ -438,7 +442,7 @@ label {
   top: calc(100% + 0.4rem);
   right: -1px;
   z-index: 4;
-  width: calc(50% + 1px);
+  width: min(22rem, calc(100% + 2px));
   padding: 0.65rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -465,6 +469,20 @@ label {
   gap: 0.55rem;
 }
 
+.utility-menu__row {
+  display: grid;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.utility-menu__row--split {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.utility-menu__row--footer {
+  grid-template-columns: minmax(0, 1fr) 44px;
+}
+
 .theme-picker {
   min-width: 0;
   margin: 0;
@@ -483,7 +501,7 @@ label {
 
 .theme-picker__options {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.5rem;
 }
 
@@ -511,13 +529,13 @@ label {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 2.65rem;
+  min-height: 3rem;
   padding: 0.55rem 0.75rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--control-bg);
   color: var(--text-body);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-base);
   font-weight: 800;
   white-space: nowrap;
 }
@@ -536,12 +554,34 @@ label {
 
 .utility-menu__button {
   width: 100%;
-  min-height: 2.9rem;
+  min-height: 3rem;
   border-color: var(--border);
   background: linear-gradient(180deg, var(--surface-strong) 0%, var(--surface-soft) 100%);
   color: var(--text);
+  font-size: var(--fs-base);
+  font-weight: 800;
   box-shadow: none;
   white-space: nowrap;
+}
+
+.utility-menu__qr-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  align-self: center;
+  justify-self: end;
+}
+
+.utility-menu__qr-icon {
+  display: block;
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
 }
 
 .utility-menu__button--primary,
@@ -1285,7 +1325,8 @@ input[type="checkbox"]:focus-visible {
   display: none;
 }
 
-.language-card > h3 {
+.language-card > h3,
+.tool-card > h3 {
   margin-bottom: 0.8rem;
 }
 
@@ -1330,6 +1371,55 @@ input[type="checkbox"]:focus-visible {
 
 .language-extra-label {
   margin-right: 0;
+}
+
+.tool-section,
+.tool-proficiency-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.tool-proficiency-row {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.tool-proficiency-row > label {
+  margin-bottom: 0;
+}
+
+.tool-proficiency-row--background {
+  padding: 0.75rem;
+  border: 1px solid rgba(151, 168, 201, 0.28);
+  border-radius: 0.85rem;
+  background: rgba(151, 168, 201, 0.12);
+}
+
+.tool-proficiency-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.tool-proficiency-row--background .tool-proficiency-control {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.tool-proficiency-select {
+  width: 100%;
+  margin-left: 0;
+}
+
+.tool-proficiency-add,
+.tool-proficiency-remove {
+  width: auto;
+}
+
+.tool-proficiency-hint {
+  margin: -0.2rem 0 0;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
 }
 
 .inline-check-label {
@@ -3795,6 +3885,7 @@ div[id$="spells-area"] .form-row {
 }
 
 #spell-qr-modal,
+#deity-info-modal,
 #ability-choice-modal,
 #point-buy-modal {
   position: fixed;
@@ -3807,6 +3898,12 @@ div[id$="spells-area"] .form-row {
 #spell-qr-modal {
   z-index: 10001;
   padding: 16px;
+  background: var(--overlay-strong);
+}
+
+#deity-info-modal {
+  z-index: 10002;
+  padding: 12px;
   background: var(--overlay-strong);
 }
 
@@ -3823,6 +3920,7 @@ div[id$="spells-area"] .form-row {
 }
 
 #spell-qr-modal.open,
+#deity-info-modal.open,
 #ability-choice-modal.open,
 #point-buy-modal.open {
   display: flex;
@@ -3872,6 +3970,112 @@ div[id$="spells-area"] .form-row {
   margin: 0.75rem 0 0;
   color: var(--text-muted);
   text-align: center;
+}
+
+.deity-info-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(94vw, 860px);
+  max-height: min(88vh, 920px);
+  overflow: hidden;
+  border: 1px solid var(--border-strong);
+  border-radius: 18px;
+  background: linear-gradient(180deg, var(--surface-strong) 0%, var(--surface-soft) 100%);
+  color: var(--text-body);
+  box-shadow: var(--shadow-strong);
+}
+
+.deity-info-header {
+  padding: 16px 54px 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--surface-soft) 0%, var(--surface-muted) 100%);
+}
+
+.deity-info-header h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--fs-lg);
+}
+
+.deity-info-disclaimer {
+  margin: 6px 0 0;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  line-height: 1.55;
+}
+
+.deity-info-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  min-width: 36px;
+  max-width: 36px;
+  min-height: 36px;
+  max-height: 36px;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--control-bg);
+  color: var(--text);
+  box-shadow: none;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.deity-info-content {
+  padding: 12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.deity-group {
+  margin-bottom: 10px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.deity-group:last-child {
+  margin-bottom: 0;
+}
+
+.deity-group h4 {
+  margin: 0 0 8px;
+  color: var(--text);
+  font-size: var(--fs-base);
+}
+
+.deity-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 0 12px;
+}
+
+.deity-item {
+  padding: 9px 2px;
+  border-bottom: 1px solid var(--border);
+}
+
+.deity-item-main {
+  margin-bottom: 4px;
+  color: var(--text);
+  font-weight: 900;
+}
+
+.deity-item-sub {
+  color: var(--text-muted);
+}
+
+.deity-impression {
+  color: var(--text-body);
 }
 
 
@@ -4221,6 +4425,20 @@ div[id$="spells-area"] .form-row {
 
 .feat-desc-body {
   line-height: 1.35;
+}
+
+.feat-expansion-notice {
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(128, 148, 184, 0.22);
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.feat-combat-note .selection-summary-body {
+  font-size: var(--fs-sm);
 }
 
 .monster-detail-line + .monster-detail-line {

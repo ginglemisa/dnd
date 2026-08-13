@@ -51,6 +51,7 @@
   <script src="class-features.js" defer></script>
   <script src="race.js" defer></script>
   <script src="backgrounds.js" defer></script>
+  <script src="tool-data.js" defer></script>
   <script src="feats.js" defer></script>
   <script src="equipment-notes.js?v=20260813-mastery-item-theme-fix" defer></script>
   <script src="spell-list.js" defer></script>
@@ -59,6 +60,7 @@
   <script src="legal-modal.js" defer></script>
   <script src="onboarding-tour.js" defer></script>
   <script src="quick-build.js" defer></script>
+  <script src="deity-info.js" defer></script>
 
 </head>
 <body>
@@ -85,25 +87,33 @@
         <div class="theme-picker__options">
           <label class="theme-picker__option">
             <input type="radio" name="site-theme" value="light">
-            <span>藍白外觀</span>
+            <span>淺色</span>
           </label>
           <label class="theme-picker__option">
             <input type="radio" name="site-theme" value="dark">
-            <span>深色外觀</span>
+            <span>深色</span>
           </label>
         </div>
       </fieldset>
       <div class="utility-menu__divider" role="separator"></div>
       <div class="utility-menu__grid">
-        <button type="button" id="import-json-btn" class="utility-menu__button">⬆️ 匯入紀錄</button>
-        <button type="button" id="export-json-btn" class="utility-menu__button">⬇️ 匯出紀錄</button>
-        <button type="button" id="open-qr-btn" class="utility-menu__button" aria-label="開啟 QR Code">🔳 QRCODE</button>
-        <button type="button" id="export-pdf-btn" class="utility-menu__button">📄 匯出PDF</button>
+        <div class="utility-menu__row utility-menu__row--split">
+          <button type="button" id="import-json-btn" class="utility-menu__button">⬆️ 匯入</button>
+          <button type="button" id="export-json-btn" class="utility-menu__button">匯出 ⬇️</button>
+        </div>
+        <button type="button" id="reference-deities-btn" class="utility-menu__button">🙏參考神祇</button>
+        <button type="button" id="export-pdf-btn" class="utility-menu__button">📄 輸出PDF</button>
         <button id="clear-storage-btn" class="utility-menu__button utility-menu__button--danger">🗑️ 清除紀錄</button>
         <button type="button" class="utility-menu__button utility-menu__button--primary share-url-btn" onclick="copyShareUrl()" aria-label="複製分享連結">🔗 分享角卡</button>
+        <div class="utility-menu__row utility-menu__row--footer">
+          <button type="button" id="restart-onboarding-btn" class="utility-menu__button">🧭 新手導覽</button>
+          <button type="button" id="open-qr-btn" class="utility-menu__button utility-menu__qr-button" aria-label="開啟 QR Code" title="QR Code">
+            <svg class="utility-menu__qr-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 3h7v7H3V3Zm2 2v3h3V5H5Zm9-2h7v7h-7V3Zm2 2v3h3V5h-3ZM3 14h7v7H3v-7Zm2 2v3h3v-3H5Zm9-2h3v3h-3v-3Zm4 0h3v3h-3v-3Zm-4 4h3v3h-3v-3Zm4 0h3v3h-3v-3Z"/>
+            </svg>
+          </button>
+        </div>
       </div>
-      <div class="utility-menu__divider" role="separator"></div>
-      <button type="button" id="restart-onboarding-btn" class="utility-menu__button">🧭 新手導覽</button>
       <input type="file" id="import-json-file" accept="application/json" class="is-hidden">
     </div>
     <div id="spell-tab-toolbar" class="spell-toolbar is-hidden" aria-label="法術搜尋工具列">
@@ -552,6 +562,24 @@
     </div>
   </div>
 
+  <div class="section tool-card">
+    <h3>工具熟練</h3>
+    <div class="tool-section">
+      <div id="tool-proficiency-list" class="tool-proficiency-list">
+        <div class="tool-proficiency-row tool-proficiency-row--background">
+          <label for="tool-proficiency-0">背景工具：</label>
+          <div class="tool-proficiency-control">
+            <select id="tool-proficiency-0" class="tool-proficiency-select" disabled>
+              <option value="">-- 請先選擇背景 --</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <button type="button" id="add-tool-proficiency" class="tool-proficiency-add">＋ 新增工具</button>
+      <p class="tool-proficiency-hint">新增角色熟練的工匠工具、其他工具、樂器或賭具。</p>
+    </div>
+  </div>
+
 </div>
 
 
@@ -583,6 +611,10 @@
     </div>
   </section>
 </div>
+</div>
+<div id="feat-combat-notes-wrap" class="section is-hidden">
+  <strong>專長戰鬥註記：</strong>
+  <div id="feat-combat-notes" class="selection-summary"></div>
 </div>
 <div id="weapon-mastery-summary-wrap" class="section is-hidden">
   <strong>精通註記：</strong>
@@ -914,7 +946,8 @@ function updateHPDisplay() {
     className: classValue,
     level: document.getElementById("level").value || "1",
     constitutionScore: document.getElementById("con").value || "10",
-    race: document.getElementById("race").value
+    race: document.getElementById("race").value,
+    hasToughFeat: hasSelectedFeat("強韌體魄")
   });
   document.getElementById("hp-display").textContent = String(maxHp);
 }
@@ -967,7 +1000,7 @@ window.getCharacterSize = () => characterSize;
 
 function bindCoreCharacterEvents() {
   bindEventById("race", "change", () => { syncCharacterSizeFromRace(); updateRaceFeature(); updateRaceOptionVisibility(); updateSpeedDisplay(); syncOriginAndSubclassDerivedSpellRows(); updateSpellsByClassLevel(); updateBaseLanguageOptions(); });
-  bindEventById("background", "change", () => { updateBackgroundFeature(); updateSpellsByClassLevel(); });
+  bindEventById("background", "change", () => { updateBackgroundFeature(); updateSpellsByClassLevel(); updateBackgroundToolRow(); });
   bindEventById("armor", "change", () => { updateACDisplay(); updateSpeedDisplay(); populateHandAttacks(); });
   bindEventById("str", "input", populateHandAttacks);
   bindEventById("dex", "input", () => { updateACDisplay(); updateAutomaticInitiative(); populateHandAttacks(); });
@@ -1040,7 +1073,8 @@ function updateSpeedDisplay() {
     level: document.getElementById("level")?.value,
     isWearingArmor: Boolean(armorName) && !isShieldItem(armorName),
     isWearingHeavyArmor: armor?.分類 === "重甲",
-    hasShield
+    hasShield,
+    hasSpeedyFeat: hasSelectedFeat("迅捷步法")
   }) || "--";
 }
 
@@ -1144,6 +1178,169 @@ function updateExtraLanguageFields() {
   });
 }
 
+function getToolProficiencyCatalog() {
+  return globalThis.ToolProficiencyCatalog || {
+    groups: [],
+    gamingSets: [],
+    allTools: [],
+    isTool: () => false
+  };
+}
+
+function createToolOptionsHtml(allowedValues = null) {
+  const catalog = getToolProficiencyCatalog();
+  const allowed = allowedValues ? new Set(allowedValues) : null;
+  const groupHtml = catalog.groups.map(group => {
+    const options = group.options.filter(value => !allowed || allowed.has(value));
+    if (!options.length) return "";
+    return `<option value="" disabled data-tool-group-header="true">-- ${group.label} --</option>${options.map(value => `<option value="${value}">${value}</option>`).join("")}`;
+  }).join("");
+  return `<option value="">-- 請選擇 --</option>${groupHtml}`;
+}
+
+function getToolProficiencyRows() {
+  const list = document.getElementById("tool-proficiency-list");
+  return list ? [...list.querySelectorAll(":scope > .tool-proficiency-row")] : [];
+}
+
+function refreshToolProficiencyRows() {
+  getToolProficiencyRows().forEach((row, index) => {
+    const select = row.querySelector("select");
+    const label = row.querySelector("label");
+    if (!select || !label) return;
+    select.id = `tool-proficiency-${index}`;
+    label.htmlFor = select.id;
+    label.textContent = index === 0 ? "背景工具：" : `工具 ${index + 1}：`;
+  });
+}
+
+function syncToolProficiencyOptions() {
+  const selects = getToolProficiencyRows().map(row => row.querySelector("select")).filter(Boolean);
+  const selectedValues = new Set(selects.map(select => select.value).filter(Boolean));
+  selects.forEach(select => {
+    select.querySelectorAll("option").forEach(option => {
+      if (option.dataset.toolGroupHeader === "true") {
+        option.disabled = true;
+        return;
+      }
+      option.disabled = Boolean(option.value && option.value !== select.value && selectedValues.has(option.value));
+    });
+  });
+}
+
+function removeDuplicateToolProficiencies() {
+  const seen = new Set();
+  getToolProficiencyRows().forEach((row, index) => {
+    const select = row.querySelector("select");
+    if (!select?.value) return;
+    if (seen.has(select.value) && index > 0) {
+      select.value = "";
+      return;
+    }
+    seen.add(select.value);
+  });
+}
+
+function createToolProficiencyRow(value = "") {
+  const list = document.getElementById("tool-proficiency-list");
+  if (!list) return null;
+  const row = document.createElement("div");
+  row.className = "tool-proficiency-row";
+  row.innerHTML = `<label></label><div class="tool-proficiency-control"><select class="tool-proficiency-select">${createToolOptionsHtml()}</select><button type="button" class="tool-proficiency-remove" aria-label="刪除此工具">刪除</button></div>`;
+  const select = row.querySelector("select");
+  if (getToolProficiencyCatalog().isTool(value)) select.value = value;
+  select.addEventListener("change", () => {
+    removeDuplicateToolProficiencies();
+    syncToolProficiencyOptions();
+  });
+  row.querySelector(".tool-proficiency-remove").addEventListener("click", () => {
+    row.remove();
+    refreshToolProficiencyRows();
+    syncToolProficiencyOptions();
+    if (typeof scheduleStructuralSaveAllFields === "function") scheduleStructuralSaveAllFields();
+  });
+  list.appendChild(row);
+  refreshToolProficiencyRows();
+  if (typeof setupAutoSave === "function") setupAutoSave(row);
+  return row;
+}
+
+function setToolProficiencyRowCount(requestedCount) {
+  const targetCount = Math.max(1, Number.parseInt(requestedCount, 10) || 1);
+  let rows = getToolProficiencyRows();
+  while (rows.length > targetCount && rows.length > 1) {
+    rows[rows.length - 1].remove();
+    rows = getToolProficiencyRows();
+  }
+  while (rows.length < targetCount) {
+    createToolProficiencyRow();
+    rows = getToolProficiencyRows();
+  }
+  refreshToolProficiencyRows();
+  syncToolProficiencyOptions();
+}
+
+function updateBackgroundToolRow(preferredValue = "") {
+  const select = document.getElementById("tool-proficiency-0");
+  if (!select) return;
+  const background = document.getElementById("background")?.value || "";
+  const backgroundData = (typeof detailedBackgroundFeatures !== "undefined" ? detailedBackgroundFeatures : globalThis.detailedBackgroundFeatures)?.[background];
+  const backgroundToolText = String(backgroundData?.工具熟練 || "").trim();
+  const fixedTool = backgroundToolText && !/[：:,，]/u.test(backgroundToolText) && !/(?:擇一|任選|自選)/u.test(backgroundToolText)
+    ? backgroundToolText
+    : "";
+  const currentValue = preferredValue || select.value;
+
+  if (!background) {
+    select.innerHTML = '<option value="">-- 請先選擇背景 --</option>';
+    select.value = "";
+    select.disabled = true;
+  } else if (background === "soldier") {
+    const gamingSets = getToolProficiencyCatalog().gamingSets;
+    select.innerHTML = createToolOptionsHtml(gamingSets);
+    select.value = gamingSets.includes(currentValue) ? currentValue : "";
+    select.disabled = false;
+  } else {
+    select.innerHTML = fixedTool ? `<option value="${fixedTool}">${fixedTool}</option>` : '<option value="">-- 無背景工具 --</option>';
+    select.value = fixedTool;
+    select.disabled = true;
+  }
+
+  removeDuplicateToolProficiencies();
+  syncToolProficiencyOptions();
+}
+
+function replaceToolProficiencies(values, options = {}) {
+  const catalog = getToolProficiencyCatalog();
+  const uniqueValues = [...new Set((Array.isArray(values) ? values : []).filter(value => catalog.isTool(value)))];
+  updateBackgroundToolRow(options.backgroundTool || "");
+  const backgroundValue = document.getElementById("tool-proficiency-0")?.value || "";
+  const additionalValues = uniqueValues.filter(value => value !== backgroundValue);
+  setToolProficiencyRowCount(1 + additionalValues.length);
+  getToolProficiencyRows().slice(1).forEach((row, index) => {
+    row.querySelector("select").value = additionalValues[index] || "";
+  });
+  removeDuplicateToolProficiencies();
+  syncToolProficiencyOptions();
+  if (typeof setupAutoSave === "function") setupAutoSave(document.querySelector(".tool-card"));
+}
+
+function initializeToolProficiencyCard() {
+  const backgroundSelect = document.getElementById("tool-proficiency-0");
+  const addButton = document.getElementById("add-tool-proficiency");
+  if (!backgroundSelect || !addButton) return;
+  backgroundSelect.addEventListener("change", syncToolProficiencyOptions);
+  addButton.addEventListener("click", () => {
+    const row = createToolProficiencyRow();
+    row?.querySelector("select")?.focus();
+    syncToolProficiencyOptions();
+    if (typeof scheduleStructuralSaveAllFields === "function") scheduleStructuralSaveAllFields();
+  });
+  updateBackgroundToolRow();
+}
+
+window.replaceToolProficiencies = replaceToolProficiencies;
+
 function updateExpertiseVisibility() {
   const classValue = document.getElementById("class")?.value || "";
   const shouldShowExpertise = EXPERTISE_VISIBLE_CLASSES.has(classValue);
@@ -1209,7 +1406,8 @@ function updateACDisplay() {
     charismaScore: document.getElementById("cha")?.value || "10",
     hasAnyShield: hasOffHandShield || hasArmorShield,
     hasShield,
-    hasDefenseFightingStyle: hasDefenseFightingStyleFeat()
+    hasDefenseFightingStyle: hasDefenseFightingStyleFeat(),
+    hasMediumArmorAgility: hasSelectedFeat("中甲靈巧")
   });
 
   document.getElementById("ac-display").textContent = armorClass ?? "--";
@@ -1754,6 +1952,7 @@ function updateBackgroundFeature() {
     updateFeatDesc("feat-0", "feat-0-desc");
     applyMagicInitiateBackgroundDefault(featOneSelect, bg);
     syncInitiativeAfterFeatSelectionChange(featOneSelect, previousFeatValue);
+    refreshFeatDerivedEffects();
   }
 }
 
@@ -1766,6 +1965,19 @@ const ALERT_FEAT_NAME = "警覺";
 
 function getFeatSelects() {
   return Array.from(document.querySelectorAll('#feats-area select[id^="feat-"]:not([id*="magic-initiate"])'));
+}
+
+function hasSelectedFeat(featName) {
+  return getFeatSelects().some(select => select.value === featName);
+}
+
+function refreshFeatDerivedEffects() {
+  if (typeof updateHPDisplay === "function") updateHPDisplay();
+  if (typeof updateACDisplay === "function") updateACDisplay();
+  if (typeof updateSpeedDisplay === "function") updateSpeedDisplay();
+  if (typeof populateHandAttacks === "function") populateHandAttacks();
+  if (typeof updateFeatCombatNotes === "function") updateFeatCombatNotes();
+  if (typeof updateEquipmentLoadoutSummary === "function") updateEquipmentLoadoutSummary();
 }
 
 function hasAlertFeatSelectedWithOverride(changedSelect = null, overrideValue = "") {
@@ -1837,6 +2049,10 @@ function updateFeatDesc(selectId, descId) {
     .map(line => {
       const t = line.trim();
       if (!t) return `<div class="feat-desc-spacer"></div>`; // 空行 = 段落距離
+
+      if (t.startsWith("「擴充」為本站")) {
+        return `<div class="feat-expansion-notice">${escapeHtml(t)}</div>`;
+      }
 
       const idx = line.indexOf("：");
       if (idx > 0) {
@@ -2468,6 +2684,7 @@ function createSingleFeatRow(afterRow = null) {
     rowDiv.remove();
     refreshFeatRows();
     syncInitiativeForAlertFeatPresenceChange(hadAlertFeat, hasAlertFeatSelectedWithOverride());
+    refreshFeatDerivedEffects();
     scheduleStructuralSaveAllFields();
   });
 
@@ -2495,6 +2712,7 @@ function createSingleFeatRow(afterRow = null) {
     if (typeof updateACDisplay === "function") updateACDisplay();
     if (typeof populateHandAttacks === "function") populateHandAttacks();
     syncInitiativeAfterFeatSelectionChange(featSel, previousFeatValue);
+    refreshFeatDerivedEffects();
     scheduleSaveAllFields();
   });
 
@@ -2546,6 +2764,7 @@ document.addEventListener("DOMContentLoaded", () => {
   updateExpertiseVisibility();
   updateSpellsByClassLevel();
   updateSpellCastingStatsVisibility();
+  initializeToolProficiencyCard();
   bindHPDisplayEvents();
   bindEventById("hp", "input", enforceHpInputRange);
   bindEventById("hp", "change", enforceHpInputRange);
@@ -3524,6 +3743,86 @@ function hasMeaningfulEquipmentValue(value) {
   return Boolean(normalized) && normalized !== "--" && normalized !== "-";
 }
 
+function updateFeatCombatNotes() {
+  const wrap = document.getElementById("feat-combat-notes-wrap");
+  const content = document.getElementById("feat-combat-notes");
+  if (!wrap || !content) return;
+
+  const mainName = document.getElementById("mainHand")?.value || "";
+  const offName = document.getElementById("offHand")?.value || "";
+  const armorName = document.getElementById("armor")?.value || "";
+  const equippedWeapons = [mainName, offName]
+    .map(name => getAllWeaponsWithoutShield().find(weapon => weapon.名稱 === name))
+    .filter(Boolean);
+  const heavyWeapons = equippedWeapons.filter(weapon => weaponHasProp(weapon, "重型"));
+  const armor = armors.find(item => item.名稱 === armorName);
+  const proficiencyBonus = getProficiencyBonus();
+  const notes = [];
+  const addNote = (title, body) => notes.push({ title, body });
+
+  if (hasSelectedFeat("兇蠻打手")) {
+    addNote("兇蠻打手", "每回合一次，武器命中後可將該次傷害骰擲兩次，選擇其中一個結果。");
+  }
+  if (hasSelectedFeat("擒抱者")) {
+    addNote("擒抱者", "每回合一次，徒手攻擊命中時可同時造成傷害並嘗試擒抱。攻擊被你擒抱的目標時丟二取高。");
+  }
+  if (hasSelectedFeat("巨武器戰鬥")) {
+    addNote("巨武器戰鬥", "使用雙手或兩用武器時，傷害骰的 1 或 2 視為 3。");
+  }
+  if (hasSelectedFeat("衝鋒猛擊")) {
+    addNote("衝鋒猛擊", "以攻擊動作進行近戰攻擊，且命中前立即朝目標直線移動至少 10 尺：傷害 +1d8，或推離符合體型限制的目標最多 10 尺。每個你的回合一次。");
+  }
+  if (hasSelectedFeat("雙持追擊")) {
+    addNote("雙持追擊", "攻擊動作中使用輕型武器攻擊後，可於同一回合稍後以附贈動作用另一把非雙手近戰武器攻擊一次。正值的屬性調整不加入傷害。");
+  }
+  if (hasSelectedFeat("重武猛攻")) {
+    const weaponState = heavyWeapons.length
+      ? `目前適用：${heavyWeapons.map(weapon => weapon.名稱).join("、")}；額外傷害 +${proficiencyBonus}。`
+      : "目前沒有持用重型武器。";
+    addNote("重武猛攻", `${weaponState}須在你的回合以攻擊動作命中。近戰武器造成致命一擊或將生物打至 0 HP 後，也可用附贈動作以同一把武器攻擊一次。`);
+  }
+  if (hasSelectedFeat("重甲減傷")) {
+    const armorState = armor?.分類 === "重甲"
+      ? `目前減傷 ${proficiencyBonus}。`
+      : "目前未穿著重甲，減傷不生效。";
+    addNote("重甲減傷", `${armorState}被攻擊命中時，該次攻擊造成的鈍擊、穿刺與揮砍傷害適用此減免。`);
+  }
+  if (hasSelectedFeat("破法者")) {
+    addNote("破法者", "傷害正在專注的生物時，其維持專注豁免丟二取低。智力、感知或魅力豁免失敗時，可改為成功；使用後須完成短休或長休才能再次使用。");
+  }
+  if (hasSelectedFeat("封鎖者")) {
+    addNote("封鎖者", "你 5 尺內的生物執行撤離，或攻擊命中你以外的目標後，可立即對它進行藉機攻擊。命中後，其速度在目前回合剩餘期間變為 0。");
+  }
+  if (hasSelectedFeat("迅捷步法")) {
+    addNote("迅捷步法", "你的常駐速度已自動 +10 尺。你在自己的回合疾走後，該回合剩餘期間忽略困難地形的額外移動消耗。針對你的藉機攻擊丟二取低。");
+  }
+  if (hasSelectedFeat("臨陣施法")) {
+    addNote("臨陣施法", "維持專注的體質豁免丟二取高。生物離開你的觸及範圍而引發藉機攻擊時，可改用反應施放一個施法時間為動作、且只以該生物為目標的法術。");
+  }
+
+  wrap.classList.toggle("is-hidden", notes.length === 0);
+  if (!notes.length) {
+    content.replaceChildren();
+    return;
+  }
+
+  const list = document.createElement("div");
+  list.className = "selection-summary-list";
+  notes.forEach(note => {
+    const card = document.createElement("div");
+    card.className = "selection-summary-card feat-combat-note";
+    const title = document.createElement("div");
+    title.className = "selection-summary-title";
+    title.textContent = note.title;
+    const body = document.createElement("div");
+    body.className = "selection-summary-body";
+    body.textContent = note.body;
+    card.append(title, body);
+    list.appendChild(card);
+  });
+  content.replaceChildren(list);
+}
+
 function buildEquipmentSummaryRow(label, name, details = []) {
   const row = document.createElement("div");
   row.className = "equipment-summary-row";
@@ -3574,6 +3873,7 @@ function updateEquipmentLoadoutSummary() {
   );
   const acValue = document.getElementById("equipment-current-ac-value");
   if (acValue) acValue.textContent = document.getElementById("ac-display")?.textContent?.trim() || "—";
+  updateFeatCombatNotes();
 }
 
 
@@ -5362,6 +5662,17 @@ function collectSpellRowsIntoState(data, includeDerivedSpellRows = false) {
   });
 }
 
+function setFeatRowCount(requestedCount) {
+  const area = document.getElementById("feats-area");
+  const parsedCount = Number.parseInt(requestedCount, 10);
+  const count = Number.isFinite(parsedCount) && parsedCount >= 1 ? parsedCount : 1;
+  if (!area) return;
+
+  while (area.childElementCount < count) createSingleFeatRow();
+  while (area.childElementCount > count) area.lastElementChild?.remove();
+  refreshFeatRows();
+}
+
 function getDynamicAreaConfigs() {
   return [
     ...getSpellAreaConfigs().map(area => ({
@@ -5377,12 +5688,12 @@ function getDynamicAreaConfigs() {
     {
       key: "feats-area",
       getCount: () => document.getElementById("feats-area")?.childElementCount || 0,
-      ensureCount: (count) => {
-        const current = document.getElementById("feats-area")?.childElementCount || 0;
-        for (let i = current; i < count; i++) {
-          createSingleFeatRow();
-        }
-      }
+      ensureCount: setFeatRowCount
+    },
+    {
+      key: "tool-proficiency-list",
+      getCount: () => getToolProficiencyRows().length,
+      ensureCount: setToolProficiencyRowCount
     }
   ];
 }
@@ -5522,9 +5833,12 @@ function applyStateObject(data) {
     updateHighElfCantripVisibility();
     updateBaseLanguageOptions();
     updateExtraLanguageFields();
+    updateBackgroundToolRow(data["tool-proficiency-0"] || "");
     updateSpellCastingStatsVisibility();
     updateSpellsByClassLevel();
     updatePickedSpellBoxes();
+    refreshFeatDerivedEffects();
+    updateAutomaticInitiative();
   } finally {
     autosaveSuspended = prevAutosaveSuspended;
   }
@@ -6481,6 +6795,17 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
   </div>
 </div>
 
+<div id="deity-info-modal" aria-hidden="true">
+  <div class="deity-info-card" role="dialog" aria-modal="true" aria-labelledby="deity-info-title" aria-describedby="deity-info-disclaimer">
+    <button type="button" class="deity-info-close" aria-label="關閉神祇資訊">✕</button>
+    <header class="deity-info-header">
+      <h3 id="deity-info-title">📜 被遺忘國度神祇整理</h3>
+      <p id="deity-info-disclaimer" class="deity-info-disclaimer">本站為非官方 D&amp;D 玩家輔助工具，與 Wizards of the Coast 無任何關係。Dungeons &amp; Dragons、Forgotten Realms 及相關名稱與設定之權利屬其各自權利人所有。此頁面文字資料僅供玩家遊戲時參考；所有文字為本站重新整理與撰寫，非官方原文。</p>
+    </header>
+    <div id="deity-info-content" class="deity-info-content"></div>
+  </div>
+</div>
+
 <div id="ability-choice-modal" aria-hidden="true">
   <div class="ability-choice-card" role="dialog" aria-modal="true" aria-label="決定屬性方式">
     <button type="button" id="ability-choice-close" class="ability-choice-close" aria-label="關閉屬性選單">✕</button>
@@ -6491,7 +6816,7 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
       <button type="button" id="ability-choice-default">預設屬性</button>
       <button type="button" id="ability-choice-point-buy">２７購點</button>
       <hr class="ability-choice-divider">
-      <button type="button" id="quick-card-builder">創角精靈(β版|有bug請回報)</button>
+      <button type="button" id="quick-card-builder">創角精靈(β版)</button>
     </div>
   </div>
 </div>
@@ -6529,7 +6854,7 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
 <div id="legal-modal">
   <div class="legal-modal-card">
     <button type="button" id="legal-close-btn" aria-label="關閉提醒">✕</button>
-    <img class="legal-modal-logo" src="twd20.jpg" alt="TWD20 標誌">
+    <img class="legal-modal-logo" src="logo.png" alt="TWD20 標誌">
     <h3 class="legal-modal-title">TWD20.com | 5.5版手機角卡</h3>
     <div class="legal-modal-copy">
       TWD20 是新手專用的5.5版創角工具，以 SRD 5.2.1 為基礎改編。

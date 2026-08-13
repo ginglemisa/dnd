@@ -97,6 +97,7 @@
 
     if (options.race === "dwarf") maxHp += normalizedLevel;
     if (className === "sorcerer" && normalizedLevel >= 3) maxHp += normalizedLevel;
+    if (options.hasToughFeat) maxHp += normalizedLevel * 2;
     return maxHp;
   }
 
@@ -207,7 +208,11 @@
       const armorBase = Number.parseInt(armor.AC, 10);
       if (!Number.isFinite(armorBase)) return null;
       if (armor.分類 === "重甲") armorClass = armorBase;
-      else if (armor.分類 === "中甲") armorClass = armorBase + Math.min(2, dexModifier);
+      else if (armor.分類 === "中甲") {
+        const mediumArmorDexterityCap = options.hasMediumArmorAgility
+          && Number(options.dexterityScore) >= 16 ? 3 : 2;
+        armorClass = armorBase + Math.min(mediumArmorDexterityCap, dexModifier);
+      }
       else if (armor.分類 === "輕甲") armorClass = armorBase + dexModifier;
       else return null;
     }
@@ -255,7 +260,9 @@
       && level >= 5
       && !options.isWearingHeavyArmor;
 
-    return String(baseSpeed + ((monkBonusApplies || barbarianBonusApplies) ? 10 : 0));
+    const classSpeedBonus = (monkBonusApplies || barbarianBonusApplies) ? 10 : 0;
+    const featSpeedBonus = options.hasSpeedyFeat ? 10 : 0;
+    return String(baseSpeed + classSpeedBonus + featSpeedBonus);
   }
 
   // 將純規則函式提供給 index.html 的傳統 script 呼叫。

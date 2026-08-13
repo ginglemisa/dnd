@@ -3277,7 +3277,7 @@ globalThis.SpellCatalog = (() => {
       "nameEn": "Counterspell",
       get name() { return `${this.nameZh} ${this.nameEn}`; },
       "desc": `學派: 防護  
-施法時間: 反應  
+施法時間: 反應動作  
 - 觸發: 當你看到60呎範圍內的生物使用言語、姿勢或材料成分施放法術時  
 射程: 60呎  
 成分: S  
@@ -3441,7 +3441,7 @@ globalThis.SpellCatalog = (() => {
       "nameEn": "Hellish Rebuke",
       get name() { return `${this.nameZh} ${this.nameEn}`; },
       "desc": `學派: 塑能
-施法時間: 反應
+施法時間: 反應動作
 射程: 60呎
 成分: V、S
 持續時間: 立即

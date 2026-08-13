@@ -22,10 +22,18 @@
   const RACE_ORDER = ["dragonborn", "dwarf", "elf", "gnome", "goliath", "halfling", "human", "orc", "tiefling"];
   const RACE_LABELS = { dragonborn: "龍裔", dwarf: "矮人", elf: "精靈", gnome: "侏儒", goliath: "歌利亞", halfling: "半身人", human: "人類", orc: "獸人", tiefling: "提夫林" };
   const SKILL_OPTIONS = ["體操", "馴獸", "奧秘", "運動", "欺瞞", "歷史", "洞悉", "威嚇", "調查", "醫藥", "自然", "察覺", "表演", "遊說", "宗教", "巧手", "隱匿", "求生"];
-  const TOOL_OPTIONS = ["煉金師工具", "釀酒師工具", "書法工具", "木匠工具", "制圖師工具", "鞋匠工具", "廚師工具", "玻璃匠工具", "珠寶匠工具", "皮匠工具", "石匠工具", "畫家工具", "陶匠工具", "鐵匠工具", "修補匠工具", "裁縫工具", "木雕師工具", "易容工具", "文書偽造工具", "草藥工具", "領航員工具", "制毒師工具", "盜賊工具"];
-  const GAME_TOOL_OPTIONS = ["骰子", "龍棋", "紙牌", "三龍牌"];
-  const INSTRUMENT_TOOL_OPTIONS = ["風笛", "鼓", "揚琴", "長笛", "角號", "魯特琴", "里拉琴", "排簫", "蘆笛", "提琴"];
-  const ARTISAN_TOOL_OPTIONS = TOOL_OPTIONS.slice(0, 17);
+  const TOOL_CATALOG = globalThis.ToolProficiencyCatalog;
+  const TOOL_CATALOG_AVAILABLE = Boolean(
+    TOOL_CATALOG &&
+    Array.isArray(TOOL_CATALOG.artisanTools) &&
+    Array.isArray(TOOL_CATALOG.otherTools) &&
+    Array.isArray(TOOL_CATALOG.gamingSets) &&
+    Array.isArray(TOOL_CATALOG.instruments)
+  );
+  const ARTISAN_TOOL_OPTIONS = TOOL_CATALOG_AVAILABLE ? [...TOOL_CATALOG.artisanTools] : [];
+  const TOOL_OPTIONS = TOOL_CATALOG_AVAILABLE ? [...TOOL_CATALOG.artisanTools, ...TOOL_CATALOG.otherTools] : [];
+  const GAME_TOOL_OPTIONS = TOOL_CATALOG_AVAILABLE ? [...TOOL_CATALOG.gamingSets] : [];
+  const INSTRUMENT_TOOL_OPTIONS = TOOL_CATALOG_AVAILABLE ? [...TOOL_CATALOG.instruments] : [];
   const CLASS_ORDER = ["barbarian", "bard", "cleric", "druid", "fighter", "monk", "paladin", "ranger", "rogue", "sorcerer", "warlock", "wizard"];
   const QUICK_BUILD_LEVEL = 1;
   const SPELLCASTER_CLASS_IDS = new Set(["bard", "cleric", "druid", "paladin", "ranger", "sorcerer", "warlock", "wizard"]);
@@ -581,7 +589,7 @@
     if (key === "human" && SKILL_OPTIONS.includes(options.skill)) {
       addDerivedAcquisition(target, "skills", { id: `race:human:skill:${options.skill}`, name: options.skill, sourceType: "race", sourceId: key, source: { ...source, feature: "技藝嫻熟" }, content: { proficiency: "skill" } });
     }
-    if (key === "human" && ["警覺", "魔法學徒", "兇蠻打手", "熟習"].includes(options.feat)) {
+    if (key === "human" && ["警覺", "魔法學徒", "兇蠻打手", "熟習", "戰地醫者", "強韌體魄"].includes(options.feat)) {
       addDerivedAcquisition(target, "feats", { id: `race:human:feat:${options.feat}`, name: options.feat, sourceType: "race", sourceId: key, source: { ...source, feature: "靈活人才", dataFile: "feats.js" }, content: { type: "origin feat", description: typeof featsDesc === "object" ? featsDesc[options.feat] : null } });
     }
     const humanFeatOptions = isPlainObject(options.featOptions) ? options.featOptions : {};
@@ -1309,7 +1317,7 @@
     if (key === "human") {
       if (!RACE_OPTION_DEFINITIONS.human.size.includes(options.size)) pending.push("體型");
       if (!SKILL_OPTIONS.includes(options.skill)) pending.push("技能熟練");
-      if (!["警覺", "魔法學徒", "兇蠻打手", "熟習"].includes(options.feat)) pending.push("起源專長");
+      if (!["警覺", "魔法學徒", "兇蠻打手", "熟習", "戰地醫者", "強韌體魄"].includes(options.feat)) pending.push("起源專長");
       const featOptions = isPlainObject(options.featOptions) ? options.featOptions : {};
       if (options.feat === "魔法學徒") {
         const blockedSpellClass = HUMAN_MAGIC_INITIATE_BLOCKED_CLASS_BY_BACKGROUND[draft.choices.background];
@@ -1377,7 +1385,7 @@
       #quick-build-spell-detail.open{display:flex}#quick-build-spell-detail .quick-build-spell-detail-shell{display:flex;flex-direction:column;width:680px;max-width:calc(100% - 32px);max-height:calc(100dvh - 80px);overflow:hidden;border:1px solid var(--qb-border-strong);border-radius:14px;background:var(--qb-surface);color:var(--qb-text);box-shadow:var(--qb-shadow)}
       #quick-build-spell-detail .quick-build-spell-detail-header{display:flex;flex:0 0 auto;align-items:center;justify-content:space-between;gap:16px;padding:16px 18px;border-bottom:1px solid var(--qb-border)}#quick-build-spell-detail-title{margin:0;color:var(--qb-text);font-size:1.2rem}
       #quick-build-spell-detail .quick-build-spell-detail-close{display:grid;flex:0 0 44px;place-items:center;width:44px;min-width:44px;height:44px;min-height:44px;margin:0;padding:0;border:1px solid transparent;border-radius:9px;background:var(--qb-surface-elevated);color:var(--qb-text);font-size:1.5rem;line-height:1;cursor:pointer;touch-action:manipulation}#quick-build-spell-detail .quick-build-spell-detail-close:hover,#quick-build-spell-detail .quick-build-spell-detail-close:focus-visible{border-color:var(--qb-accent);background:var(--qb-accent-soft);outline:2px solid transparent}
-      #quick-build-spell-detail-content{min-height:120px;padding:20px;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;white-space:pre-wrap;color:var(--qb-text-body);line-height:1.65}#quick-build-spell-detail-content strong{display:block;margin-bottom:12px;color:var(--qb-accent-text);font-size:1.08rem}
+      #quick-build-spell-detail-content{min-height:120px;padding:20px;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;white-space:pre-wrap;color:var(--qb-text-body);line-height:1.65}#quick-build-spell-detail-content strong{display:block;margin-bottom:12px;color:var(--qb-accent-text);font-size:1.08rem}.quick-build-expansion-notice{margin-top:12px;padding-top:8px;border-top:1px solid var(--qb-border);color:var(--qb-text-muted);font-size:.78rem;line-height:1.45}
       .quick-build-ability-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin:0 0 16px}.quick-build-ability-heading h3{margin:0!important}.quick-build-ability-status{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px}.quick-build-status-pill{padding:6px 10px;border:1px solid var(--qb-border);border-radius:999px;background:var(--qb-surface-soft);color:var(--qb-text-muted);font-size:.82rem;line-height:1.2}.quick-build-status-pill strong{color:var(--qb-text)}.quick-build-status-pill.is-complete{border-color:var(--qb-success-border);background:var(--qb-success-bg);color:var(--qb-success-text)}.quick-build-ability-confirm{display:block;width:12em;max-width:100%;min-height:46px;margin:0 auto 18px;padding:9px 16px;border:1px solid var(--qb-accent);border-radius:8px;background:var(--qb-accent-hover);color:#fff;cursor:pointer}.quick-build-ability-confirm:disabled{border-color:var(--qb-border-strong);background:var(--qb-disabled);color:var(--qb-disabled-text);cursor:not-allowed}.quick-build-ability-grid{display:grid;gap:12px;padding:14px}.quick-build-ability-row{display:grid;grid-template-columns:minmax(92px,.7fr) minmax(0,2fr) minmax(74px,.55fr);gap:16px;align-items:center;padding:14px 16px;border:1px solid var(--qb-border);border-radius:10px;background:var(--qb-surface-muted)}.quick-build-ability-name{display:flex;flex-direction:column;gap:3px}.quick-build-ability-name strong{font-size:1.05rem;color:var(--qb-text)}.quick-build-ability-name small{color:var(--qb-text-muted);font-size:.76rem}.quick-build-ability-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.quick-build-ability-field{display:grid;gap:6px;min-width:0;color:var(--qb-text-muted);font-size:.82rem}.quick-build-ability-field select{width:100%;min-width:0;min-height:44px;margin:0;padding:8px 34px 8px 12px;border:1px solid var(--qb-border-strong);border-radius:8px;background:var(--qb-input);color:var(--qb-text);font:inherit;font-size:1rem}.quick-build-ability-field select:focus-visible{border-color:var(--qb-accent);outline:2px solid var(--qb-accent);outline-offset:1px}.quick-build-ability-field select:disabled{border-color:var(--qb-border);background:var(--qb-disabled);color:var(--qb-disabled-text);opacity:1}.quick-build-ability-total{display:grid;gap:2px;justify-items:end}.quick-build-ability-total span{color:var(--qb-text-muted);font-size:.75rem}.quick-build-ability-total strong{color:var(--qb-accent-text);font-size:1.45rem;line-height:1}.quick-build-ability-help{display:flex;flex-wrap:wrap;gap:6px 16px;margin:0 0 18px;color:var(--qb-text-muted);font-size:.88rem}.quick-build-ability-help strong{color:var(--qb-text-body)}.quick-build-complete{padding:18px;border-left:4px solid var(--qb-success-border);border-radius:8px;background:var(--qb-success-bg);color:var(--qb-success-text)}.quick-build-plan{margin:20px 0 0;padding-left:1.4rem;line-height:1.8;color:var(--qb-text-body)}.quick-build-plan li.current{color:var(--qb-accent-text);font-weight:700}
       .quick-build-class-card{min-height:128px!important}.quick-build-class-card p{margin:0;color:var(--qb-text-body);line-height:1.55}.quick-build-substep-actions{display:flex;justify-content:space-between;gap:12px;margin-top:18px}.quick-build-substep-actions button{min-height:46px;padding:9px 16px;border:1px solid var(--qb-border-strong);border-radius:8px;background:var(--qb-surface-elevated);color:var(--qb-text);cursor:pointer}.quick-build-substep-actions button.primary{border-color:var(--qb-accent);background:var(--qb-accent-hover);color:#fff}.quick-build-substep-actions button:disabled{cursor:not-allowed;opacity:.55}.quick-build-proficiency-grid{display:grid;gap:14px}.quick-build-fixed-list{margin:12px 0 0;padding:12px;border-radius:8px;background:var(--qb-surface-muted);color:var(--qb-text-body);line-height:1.6}.quick-build-summary-list{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;margin:0}.quick-build-summary-list dt{color:var(--qb-text-muted)}.quick-build-summary-list dd{margin:0;color:var(--qb-text)}.quick-build-ability-summary{display:grid;gap:6px}.quick-build-ability-summary-row{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline}.quick-build-ability-modifier{font-weight:800;color:var(--qb-accent-text)}.quick-build-ability-modifier-sign{color:var(--qb-warning-text)}.quick-build-ability-modifier-value{color:var(--qb-accent)}.quick-build-complete .quick-build-summary-list dt,.quick-build-complete .quick-build-summary-list dd{color:var(--qb-success-text)}.quick-build-source-warning{margin-top:10px;color:var(--qb-warning-text);font-size:.9rem}
       #quick-build-wizard .quick-build-footer{display:flex;flex:0 0 auto;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-top:1px solid var(--qb-border)}#quick-build-wizard .quick-build-footer[hidden]{display:none}#quick-build-wizard .quick-build-footer-group{display:flex;gap:10px}
@@ -1565,7 +1573,7 @@
     const options = draft.choices.raceOptions;
     const backgroundSkills = (draft.acquisitions.skills || []).filter(item => item.sourceType === "background").map(item => item.name);
     const backgroundFeats = (draft.acquisitions.feats || []).filter(item => item.sourceType === "background").map(item => item.name);
-    const originFeats = ["警覺", "魔法學徒", "兇蠻打手", "熟習"];
+    const originFeats = ["警覺", "魔法學徒", "兇蠻打手", "熟習", "戰地醫者", "強韌體魄"];
     const fields = [];
     if (key === "dragonborn") fields.push(raceSelect("ancestry", "龍族血統", RACE_OPTION_DEFINITIONS.dragonborn.ancestry));
     if (key === "elf") {
@@ -2366,6 +2374,8 @@
       });
     }
     blankState["feats-area-count"] = 2;
+    blankState["tool-proficiency-list-count"] = 1;
+    blankState["tool-proficiency-0"] = "";
     blankState.__deletedSpellRowCache = {};
     applyStateObject(blankState);
     const highLevelSpells = document.getElementById("highlevel-spells");
@@ -2543,7 +2553,13 @@
     });
     const toolNames = [...new Set((draft.acquisitions.tools || []).map(item => item.name).filter(Boolean))];
     const skillBonuses = (draft.acquisitions.skillBonuses || []).map(item => `${item.name}（${item.source?.feature || item.source?.label || "職業能力"}）`);
-    const skillNotes = [toolNames.length ? `工具／賭具／樂器熟練：${toolNames.join("、")}` : "", skillBonuses.length ? `技能額外加值：${skillBonuses.join("、")}` : ""].filter(Boolean);
+    const backgroundTool = draft.selections.background?.content?.tool || draft.choices.backgroundToolChoice || "";
+    if (typeof window.replaceToolProficiencies === "function") {
+      window.replaceToolProficiencies(toolNames, { backgroundTool });
+    } else {
+      mobileImportWarning("找不到工具熟練匯入介面", warnings);
+    }
+    const skillNotes = [skillBonuses.length ? `技能額外加值：${skillBonuses.join("、")}` : ""].filter(Boolean);
     setMobileField("skill-extra", skillNotes.join("；"), warnings, "技能筆記", "input");
 
     const languageDetails = draft.selections.levelOne?.content?.languageDetails || [];
@@ -2708,6 +2724,12 @@
     else if (step.id === "level-one") renderLevelOne(body);
     else if (step.id === "level-one-review") renderLevelOneReview(body);
     else renderPlaceholder(body, step);
+    if (!TOOL_CATALOG_AVAILABLE) {
+      body.insertAdjacentHTML(
+        "afterbegin",
+        '<div class="quick-build-warning" role="alert"><strong>工具資料載入失敗</strong><br>創角精靈仍可使用，但士兵賭具、吟遊詩人與武僧的工具選擇，以及「熟習」的工具選項目前不可用。請重新載入頁面；若問題持續，請確認 tool-data.js 可正常載入。</div>'
+      );
+    }
     body.scrollTop = preserveBodyScroll ? previousScrollTop : 0;
     if (focusedFieldId) {
       const field = body.querySelector(`#${CSS.escape(focusedFieldId)}`);
@@ -3239,7 +3261,18 @@
     const content = modal.querySelector("#quick-build-spell-detail-content");
     spellDetailTrigger = trigger || document.activeElement;
     modal.querySelector("#quick-build-spell-detail-title").textContent = title;
-    content.innerHTML = description ? escapeHtml(description) : "<span>你還沒有選擇專長喔！</span>";
+    if (description) {
+      const lines = String(description).replace(/\r\n/g, "\n").split("\n");
+      const noticeIndex = lines.findIndex(line => line.trim().startsWith("「擴充」為本站"));
+      if (noticeIndex >= 0) {
+        const notice = lines.splice(noticeIndex, 1)[0].trim();
+        content.innerHTML = `${escapeHtml(lines.join("\n").trimEnd())}<div class="quick-build-expansion-notice">${escapeHtml(notice)}</div>`;
+      } else {
+        content.textContent = description;
+      }
+    } else {
+      content.innerHTML = "<span>你還沒有選擇專長喔！</span>";
+    }
     content.scrollTop = 0;
     spellDetailOpenedOutsideWizard = false;
     modal.inert = false;
