@@ -146,7 +146,7 @@
     soldier: '士兵',
     criminal: '罪犯',
     sage: '賢者',
-    seeker: '孤方',
+    seeker: '孤芳',
     fieldhand: '耕者'
   });
 

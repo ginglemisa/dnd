@@ -215,11 +215,11 @@
         <select id="background">
           <option value="">待選</option>
           <option value="acolyte">侍僧</option>
-          <option value="soldier">士兵</option>
           <option value="criminal">罪犯</option>
-          <option value="fieldhand">耕者(擴充)</option>
           <option value="sage">賢者</option>
-          <option value="seeker">孤方(擴充)</option>
+          <option value="soldier">士兵</option>
+          <option value="fieldhand">耕者(擴充)</option>
+          <option value="seeker">孤芳(擴充)</option>
         </select>
       </div>
       <div class="basic-pair-field">
@@ -1938,6 +1938,7 @@ function updateBackgroundFeature() {
 
   el.innerHTML =
 `<div id="background-ability-guide-target" class="background-guide-block">
+     <div><strong>背景：</strong>${bg.名稱}${bg.擴充 ? "（擴充）" : ""}</div>
      <div><strong>屬性：</strong>${bg.屬性}</div>
      <div><strong>專長：</strong>${bg.專長}</div>
      <div><strong>技能熟練：</strong>${bg.技能熟練}</div>
@@ -1953,7 +1954,9 @@ function updateBackgroundFeature() {
 
    <div class="background-guide-description">
      ${bg.描述}
-   </div>`;
+   </div>
+
+   ${bg.擴充 ? `<div class="feat-expansion-notice">${EXPANSION_NOTICE}</div>` : ""}`;
 
   const featOneSelect = document.getElementById("feat-0");
   if (featOneSelect) {
