@@ -1,52 +1,126 @@
 (function attachPdfExport(globalScope) {
+  function createPdfLayoutSettings(settings) {
+    return Object.freeze({
+      minFontSize: settings.minFontSize,
+      horizontalPadding: settings.horizontalPadding,
+      verticalPadding: settings.verticalPadding,
+      lineHeightFactor: settings.lineHeightFactor,
+      namedFontSizes: Object.freeze({ ...settings.namedFontSizes }),
+      fixedFontSizes: Object.freeze({ ...settings.fixedFontSizes }),
+      patternFontSizes: Object.freeze(settings.patternFontSizes.map((rule) => Object.freeze({ ...rule }))),
+      spellRows: Object.freeze({ ...settings.spellRows })
+    });
+  }
+
+  // Keep field mapping and payload generation shared. Only visual presentation
+  // belongs here, with one independent block for each export mode.
+  const PDF_LAYOUT_SETTINGS = Object.freeze({
+    editable: createPdfLayoutSettings({
+      minFontSize: 4,
+      horizontalPadding: 4,
+      verticalPadding: 3,
+      lineHeightFactor: 1.15,
+      namedFontSizes: {
+        Name1: 12,
+        Class1: 9,
+        Subclass1: 9,
+        Background2: 9,
+        Specie1: 9,
+        alignment1: 9,
+        language1: 8,
+        classFeatures1: 7,
+        classFeatures2: 7,
+        specie_features1: 7,
+        feats1: 7,
+        extra1: 8,
+        equipment1: 8,
+        toolsProficiency1: 8,
+        weaponsProficiency1: 8
+      },
+      fixedFontSizes: {
+        'spell-level-1': 14,
+        'spell-level-2': 14,
+        'spell-level-3': 14,
+        'spell-level-4': 14,
+        'spell-level-5': 14,
+        'spell-level-6': 14,
+        'spell-level-7': 14,
+        'spell-level-8': 14,
+        'spell-level-9': 14
+      },
+      patternFontSizes: [
+        { pattern: /^(str|dex|con|int|wis|cha)1$/, fontSize: 10 },
+        { pattern: /^attack-weap-name-\d+$/, fontSize: 8 },
+        { pattern: /^(?:dmg_type_|toHit|wp-note-)\d+$/, fontSize: 8 },
+        { pattern: /^sp-name-\d+$/, fontSize: 9 },
+        { pattern: /^(?:sp-level-|sp-cast-time-|sp-range-)\d+$/, fontSize: 10 },
+        { pattern: /^note\d+$/, fontSize: 8 }
+      ],
+      spellRows: { count: 19, fontSize: 10, alignment: 'right' }
+    }),
+    compact: createPdfLayoutSettings({
+      minFontSize: 4,
+      horizontalPadding: 4,
+      verticalPadding: 3,
+      lineHeightFactor: 1.15,
+      namedFontSizes: {
+        Name1: 12,
+        Class1: 9,
+        Subclass1: 9,
+        Background2: 9,
+        Specie1: 9,
+        alignment1: 9,
+        language1: 8,
+        classFeatures1: 7,
+        classFeatures2: 7,
+        specie_features1: 7,
+        feats1: 7,
+        extra1: 8,
+        equipment1: 8,
+        toolsProficiency1: 8,
+        weaponsProficiency1: 8
+      },
+      fixedFontSizes: {
+        'spell-level-1': 14,
+        'spell-level-2': 14,
+        'spell-level-3': 14,
+        'spell-level-4': 14,
+        'spell-level-5': 14,
+        'spell-level-6': 14,
+        'spell-level-7': 14,
+        'spell-level-8': 14,
+        'spell-level-9': 14
+      },
+      patternFontSizes: [
+        { pattern: /^(str|dex|con|int|wis|cha)1$/, fontSize: 10 },
+        { pattern: /^attack-weap-name-\d+$/, fontSize: 8 },
+        { pattern: /^(?:dmg_type_|toHit|wp-note-)\d+$/, fontSize: 8 },
+        { pattern: /^sp-name-\d+$/, fontSize: 9 },
+        { pattern: /^(?:sp-level-|sp-cast-time-|sp-range-)\d+$/, fontSize: 10 },
+        { pattern: /^note\d+$/, fontSize: 8 }
+      ],
+      spellRows: { count: 19, fontSize: 10, alignment: 'right' }
+    })
+  });
+
   const PDF_EXPORT_PROFILES = Object.freeze({
     editable: Object.freeze({
       sourcePdfPath: '5e_char_sheet.pdf',
       fontPath: 'NotoSansMonoCJKtc-Regular.otf',
       subsetFont: false,
-      flattenForm: false
+      flattenForm: false,
+      layoutId: 'editable'
     }),
     compact: Object.freeze({
       sourcePdfPath: '5e_char_sheet_subset.pdf',
       fontPath: 'SourceHanSerifTC-Bold.otf',
       subsetFont: true,
-      flattenForm: true
+      flattenForm: true,
+      layoutId: 'compact'
     })
   });
   const DEFAULT_PDF_EXPORT_MODE = 'editable';
   const MAX_NAME_UNITS = 18;
-  const MIN_PDF_FONT_SIZE = 4;
-  // The new sheet keeps the original field names but has several substantially
-  // narrower boxes. These values retain a readable default before the content
-  // aware fitting below makes any additional reductions that are required.
-  const NEW_TEMPLATE_FONT_SIZES = Object.freeze({
-    Name1: 12,
-    Class1: 9,
-    Subclass1: 9,
-    Background2: 9,
-    Specie1: 9,
-    alignment1: 9,
-    language1: 8,
-    classFeatures1: 7,
-    classFeatures2: 7,
-    specie_features1: 7,
-    feats1: 7,
-    extra1: 8,
-    equipment1: 8,
-    toolsProficiency1: 8,
-    weaponsProficiency1: 8
-  });
-  const FIXED_FONT_SIZES = Object.freeze({
-    'spell-level-1': 14,
-    'spell-level-2': 14,
-    'spell-level-3': 14,
-    'spell-level-4': 14,
-    'spell-level-5': 14,
-    'spell-level-6': 14,
-    'spell-level-7': 14,
-    'spell-level-8': 14,
-    'spell-level-9': 14
-  });
   const sourcePdfBytesPromises = new Map();
   const cjkFontBytesPromises = new Map();
 
@@ -69,6 +143,10 @@
   function getPdfExportProfile(exportOptions = {}) {
     const outputMode = exportOptions.outputMode || DEFAULT_PDF_EXPORT_MODE;
     return PDF_EXPORT_PROFILES[outputMode] || PDF_EXPORT_PROFILES[DEFAULT_PDF_EXPORT_MODE];
+  }
+
+  function getPdfLayoutSettings(profile) {
+    return PDF_LAYOUT_SETTINGS[profile.layoutId] || PDF_LAYOUT_SETTINGS[DEFAULT_PDF_EXPORT_MODE];
   }
 
   async function getSourcePdfBytes(sourcePdfPath) {
@@ -241,15 +319,11 @@
     }
   }
 
-  function getPreferredFontSize(fieldName, field) {
-    if (FIXED_FONT_SIZES[fieldName]) return FIXED_FONT_SIZES[fieldName];
-    if (NEW_TEMPLATE_FONT_SIZES[fieldName]) return NEW_TEMPLATE_FONT_SIZES[fieldName];
-    if (/^(str|dex|con|int|wis|cha)1$/.test(fieldName)) return 10;
-    if (/^attack-weap-name-\d+$/.test(fieldName)) return 8;
-    if (/^(?:dmg_type_|toHit|wp-note-)\d+$/.test(fieldName)) return 8;
-    if (/^sp-name-\d+$/.test(fieldName)) return 9;
-    if (/^(?:sp-level-|sp-cast-time-|sp-range-)\d+$/.test(fieldName)) return 10;
-    if (/^note\d+$/.test(fieldName)) return 8;
+  function getPreferredFontSize(fieldName, field, layoutSettings) {
+    if (layoutSettings.fixedFontSizes[fieldName]) return layoutSettings.fixedFontSizes[fieldName];
+    if (layoutSettings.namedFontSizes[fieldName]) return layoutSettings.namedFontSizes[fieldName];
+    const matchingRule = layoutSettings.patternFontSizes.find((rule) => rule.pattern.test(fieldName));
+    if (matchingRule) return matchingRule.fontSize;
     return getFieldDefaultFontSize(field);
   }
 
@@ -264,7 +338,7 @@
     }
   }
 
-  function getFittedFontSize(field, cjkFont, preferredSize) {
+  function getFittedFontSize(field, cjkFont, preferredSize, layoutSettings) {
     const text = field.getText?.() || '';
     const rectangle = getTextFieldRectangle(field);
     if (!text || !rectangle) return preferredSize;
@@ -273,18 +347,18 @@
     const widestLine = lines.reduce((widest, line) => {
       return Math.max(widest, cjkFont.widthOfTextAtSize(line || ' ', preferredSize));
     }, 0);
-    const usableWidth = Math.max(1, rectangle.width - 4);
+    const usableWidth = Math.max(1, rectangle.width - layoutSettings.horizontalPadding);
     const fontHeightAtOnePoint = cjkFont.heightAtSize(1);
-    const usableHeight = Math.max(1, rectangle.height - 3);
+    const usableHeight = Math.max(1, rectangle.height - layoutSettings.verticalPadding);
     const maxByWidth = widestLine > 0 ? preferredSize * (usableWidth / widestLine) : preferredSize;
-    const maxByHeight = usableHeight / Math.max(1, lines.length * fontHeightAtOnePoint * 1.15);
+    const maxByHeight = usableHeight / Math.max(1, lines.length * fontHeightAtOnePoint * layoutSettings.lineHeightFactor);
     const fittedSize = Math.min(preferredSize, maxByWidth, maxByHeight);
 
-    return Math.max(MIN_PDF_FONT_SIZE, Math.floor(fittedSize * 10) / 10);
+    return Math.max(layoutSettings.minFontSize, Math.floor(fittedSize * 10) / 10);
   }
 
-  function applyNewTemplateFieldSettings(form) {
-    Object.entries(FIXED_FONT_SIZES).forEach(([fieldName, fontSize]) => {
+  function applyTemplateFieldSettings(form, layoutSettings) {
+    Object.entries(layoutSettings.fixedFontSizes).forEach(([fieldName, fontSize]) => {
       try {
         form.getTextField(fieldName).setFontSize(fontSize);
       } catch (error) {
@@ -292,28 +366,30 @@
       }
     });
 
-    for (let row = 1; row <= 19; row += 1) {
+    for (let row = 1; row <= layoutSettings.spellRows.count; row += 1) {
       try {
         const field = form.getTextField(`sp-level-${row}`);
-        field.setFontSize(10);
-        field.setAlignment(globalScope.PDFLib.TextAlignment.Right);
+        field.setFontSize(layoutSettings.spellRows.fontSize);
+        if (layoutSettings.spellRows.alignment === 'right') {
+          field.setAlignment(globalScope.PDFLib.TextAlignment.Right);
+        }
       } catch (error) {
         // The row is optional for compatibility with alternative templates.
       }
     }
   }
 
-  function fitPayloadTextFields(form, payload, cjkFont) {
+  function fitPayloadTextFields(form, payload, cjkFont, layoutSettings) {
     Object.entries(payload).forEach(([fieldName, value]) => {
       if (typeof value === 'boolean') return;
       try {
         const field = form.getTextField(fieldName);
-        const preferredSize = getPreferredFontSize(fieldName, field);
-        const fontSize = FIXED_FONT_SIZES[fieldName]
+        const preferredSize = getPreferredFontSize(fieldName, field, layoutSettings);
+        const fontSize = layoutSettings.fixedFontSizes[fieldName]
           ? preferredSize
-          : getFittedFontSize(field, cjkFont, preferredSize);
+          : getFittedFontSize(field, cjkFont, preferredSize, layoutSettings);
         field.setFontSize(fontSize);
-        if (/^sp-level-\d+$/.test(fieldName)) {
+        if (/^sp-level-\d+$/.test(fieldName) && layoutSettings.spellRows.alignment === 'right') {
           field.setAlignment(globalScope.PDFLib.TextAlignment.Right);
         }
       } catch (error) {
@@ -331,6 +407,7 @@
     }
 
     const profile = getPdfExportProfile(exportOptions);
+    const layoutSettings = getPdfLayoutSettings(profile);
 
     const sourceBytes = await getSourcePdfBytes(profile.sourcePdfPath);
     const pdfDoc = await globalScope.PDFLib.PDFDocument.load(sourceBytes);
@@ -358,10 +435,10 @@
     }
 
     normalizeProblematicFieldDA(globalScope.PDFLib, form);
-    applyNewTemplateFieldSettings(form);
+    applyTemplateFieldSettings(form, layoutSettings);
 
     const fontEmbedResult = await embedCjkFont(pdfDoc, profile);
-    fitPayloadTextFields(form, payload, fontEmbedResult.font);
+    fitPayloadTextFields(form, payload, fontEmbedResult.font, layoutSettings);
     form.updateFieldAppearances(fontEmbedResult.font);
 
     if (profile.flattenForm) {

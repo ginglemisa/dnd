@@ -45,7 +45,7 @@
   <title>TWD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twd20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎲%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20260813-mastery-item-theme-fix">
+  <link rel="stylesheet" href="styles.css?v=20260814-tour-progress">
   <script src="scroll-to-top.js" defer></script>
   <script src="monster.js" defer></script>
   <script src="class-features.js" defer></script>
@@ -53,12 +53,12 @@
   <script src="backgrounds.js" defer></script>
   <script src="tool-data.js" defer></script>
   <script src="feats.js" defer></script>
-  <script src="equipment-notes.js?v=20260813-mastery-item-theme-fix" defer></script>
+  <script src="equipment-notes.js?v=20260813-weapon-rule-popups-2" defer></script>
   <script src="spell-list.js" defer></script>
   <script src="condition.js" defer></script>
   <script src="character-rules.js" defer></script>
   <script src="legal-modal.js" defer></script>
-  <script src="onboarding-tour.js" defer></script>
+  <script src="onboarding-tour.js?v=20260814-tour-progress" defer></script>
   <script src="quick-build.js" defer></script>
   <script src="deity-info.js" defer></script>
 
@@ -217,7 +217,9 @@
           <option value="acolyte">侍僧</option>
           <option value="soldier">士兵</option>
           <option value="criminal">罪犯</option>
+          <option value="fieldhand">耕者(擴充)</option>
           <option value="sage">賢者</option>
+          <option value="seeker">孤方(擴充)</option>
         </select>
       </div>
       <div class="basic-pair-field">
@@ -593,7 +595,7 @@
 </label>
 <div class="weapon-attack-grid" aria-label="武器攻擊資料">
   <section class="weapon-attack-card" aria-labelledby="atk-main-title">
-    <h4 id="atk-main-title">主手攻擊</h4>
+    <h4 id="atk-main-title">主手攻擊<button type="button" id="atk-main-mastery" class="weapon-mastery-badge" data-weapon-rule-kind="mastery" hidden></button></h4>
     <div class="weapon-attack-fields" role="group" aria-label="主手攻擊欄位">
       <label class="weapon-attack-name">名稱<input type="text" id="atk-main-name" placeholder="尚未裝備"></label>
       <label>命中<input type="text" id="atk-main-hit" class="attack-calculation-trigger" placeholder="—" readonly aria-haspopup="dialog" data-attack-hand="main" data-attack-calculation="hit"></label>
@@ -602,7 +604,7 @@
     </div>
   </section>
   <section class="weapon-attack-card" aria-labelledby="atk-off-title">
-    <h4 id="atk-off-title">副手攻擊</h4>
+    <h4 id="atk-off-title">副手攻擊<button type="button" id="atk-off-mastery" class="weapon-mastery-badge" data-weapon-rule-kind="mastery" hidden></button></h4>
     <div class="weapon-attack-fields" role="group" aria-label="副手攻擊欄位">
       <label class="weapon-attack-name">名稱<input type="text" id="atk-off-name" placeholder="尚未裝備"></label>
       <label>命中<input type="text" id="atk-off-hit" class="attack-calculation-trigger" placeholder="—" readonly aria-haspopup="dialog" data-attack-hand="off" data-attack-calculation="hit"></label>
@@ -615,10 +617,6 @@
 <div id="feat-combat-notes-wrap" class="section is-hidden">
   <strong>專長戰鬥註記：</strong>
   <div id="feat-combat-notes" class="selection-summary"></div>
-</div>
-<div id="weapon-mastery-summary-wrap" class="section is-hidden">
-  <strong>精通註記：</strong>
-  <div id="weapon-mastery-summary" class="selection-summary">尚未勾選精通屬性</div>
 </div>
 	  <div class="section action-note-card">
 <h3>動作</h3>
@@ -719,7 +717,7 @@
  <div id="tab-equipment" class="tab-content" role="tabpanel" aria-label="裝備頁" hidden>
   <div class="section">
     <h3>裝備</h3>
-    <p class="equipment-loadout-intro">選擇目前持用的武器與護甲。若職業有<strong>武器精通</strong>，可至頁底設定。</p>
+    <p class="equipment-loadout-intro">選擇目前持用的武器與護甲。具備<strong>武器精通</strong>的職業可在動作頁點擊精通名稱查看說明。</p>
 
     <div class="equipment-loadout-controls">
     <div class="form-row equipment-loadout-field">
@@ -1417,23 +1415,23 @@ function updateACDisplay() {
 
 const eldritchInvocations = [
   { name: "刃之魔契" },
-  { name: "鏈之魔契" },
+  { name: "鏈之魔契", spellId: "find-familiar", spellUse: "at-will" },
   { name: "書之魔契" },
-  { name: "幽影護甲" },
+  { name: "幽影護甲", spellId: "mage-armor", spellUse: "at-will" },
   { name: "魔能意志" },
-  { name: "邪魔活力" },
-  { name: "千面之臉" },
-  { name: "幻象迷蹤" },
-  { name: "超凡跳躍" },
+  { name: "邪魔活力", spellId: "false-life", spellUse: "at-will" },
+  { name: "千面之臉", spellId: "disguise-self", spellUse: "at-will" },
+  { name: "幻象迷蹤", spellId: "silent-image", spellUse: "at-will" },
+  { name: "超凡跳躍", spellId: "jump", spellUse: "at-will" },
   { name: "魔鬼視界" },
   { name: "原初之一教習", repeatable: true, max: 3 },
   { name: "苦痛魔爆", repeatable: true, max: 3 },
   { name: "魔能長槍", repeatable: true, max: 3 },
   { name: "斥力魔爆", repeatable: true, max: 3 },
-  { name: "星移步法" },
-  { name: "萬形之主" },
-  { name: "融身入影" },
-  { name: "深海饋贈" },
+  { name: "星移步法", spellId: "levitate", spellUse: "at-will" },
+  { name: "萬形之主", spellId: "alter-self", spellUse: "at-will" },
+  { name: "融身入影", spellId: "invisibility", spellUse: "at-will" },
+  { name: "深海饋贈", spellId: "water-breathing", spellUse: "once" },
   { name: "共視感官" },
   { name: "魔能斬擊" },
   { name: "饑渴魔刃" },
@@ -1686,6 +1684,40 @@ function updateMetamagicSummary() {
   );
 }
 
+async function handleEldritchInvocationChange(el, event, output) {
+  if (el.checked) {
+    const allowed = enforceCheckboxSelectionLimit(
+      Array.from(output.querySelectorAll("input[data-invocation-name]")),
+      getWarlockInvocationSelectionLimit(),
+      el,
+      "目前等級的魔能祈喚數量已達上限。",
+      event.isTrusted
+    );
+    if (!allowed) {
+      updateWarlockInvocationSummary();
+      updateACDisplay();
+      populateHandAttacks();
+      if (typeof scheduleSaveAllFields === "function") scheduleSaveAllFields();
+      return;
+    }
+  }
+
+  if (el.checked && el.dataset.invocationName === "書之魔契" && event.isTrusted) {
+    const selection = await window.quickBuild?.openPactTomeModal?.({
+      initial: getPactTomeSpellSelection(),
+      knownSpellIds: getNonPactTomeSelectedSpellIds()
+    });
+    if (!selection) el.checked = false;
+    else setPactTomeSpellSelection(selection, { sync: false });
+  }
+
+  updateWarlockInvocationSummary();
+  updateACDisplay();
+  populateHandAttacks();
+  syncOriginAndSubclassDerivedSpellRows();
+  if (typeof scheduleSaveAllFields === "function") scheduleSaveAllFields();
+}
+
 function renderEldritchInvocations() {
   const output = document.getElementById("eldritch-invocations-output");
   if (!output) return;
@@ -1701,28 +1733,7 @@ function renderEldritchInvocations() {
   }).join("");
 
   output.querySelectorAll("input[type='checkbox']").forEach(el => {
-    el.addEventListener("change", event => {
-      if (el.checked) {
-        const allowed = enforceCheckboxSelectionLimit(
-          Array.from(output.querySelectorAll("input[data-invocation-name]")),
-          getWarlockInvocationSelectionLimit(),
-          el,
-          "目前等級的魔能祈喚數量已達上限。",
-          event.isTrusted
-        );
-        if (!allowed) {
-          updateWarlockInvocationSummary();
-          updateACDisplay();
-          populateHandAttacks();
-          if (typeof scheduleSaveAllFields === "function") scheduleSaveAllFields();
-          return;
-        }
-      }
-      updateWarlockInvocationSummary();
-      updateACDisplay();
-      populateHandAttacks();
-      if (typeof scheduleSaveAllFields === "function") scheduleSaveAllFields();
-    });
+    el.addEventListener("change", event => { void handleEldritchInvocationChange(el, event, output); });
   });
 }
 
@@ -1852,7 +1863,7 @@ function updateClassFeature() {
 
   restoreClassFeatureTableState(selectedClass, output);
 
-  if (selectedClass === "sorcerer" && metamagicRaw) {
+  if (selectedClass === "sorcerer" && level !== "1" && metamagicRaw) {
     metamagicSection.style.display = "block";
     renderMetamagicOptions();
     syncMetamagicSelectionLimit();
@@ -2076,10 +2087,46 @@ const MAGIC_INITIATE_SOURCE = "magic-initiate";
 const RACE_SPELL_SOURCE = "race";
 const SUBCLASS_SPELL_SOURCE = "subclass";
 const CLASS_SPELL_SOURCE = "class";
+const ELDRITCH_INVOCATION_SPELL_SOURCE = "eldritch-invocation";
+const PACT_TOME_SPELL_SOURCE = "pact-tome";
+let pactTomeSpellSelection = { cantrips: [], rituals: [] };
 
 function isDerivedSpellRow(row) {
   return Boolean(row?.dataset?.spellSource);
 }
+
+function normalizePactTomeSpellSelection(selection) {
+  const cantrips = Array.isArray(selection?.cantrips) ? selection.cantrips.filter(spellId => SpellCatalog.getSpell(spellId)?.level === 0).slice(0, 3) : [];
+  const rituals = Array.isArray(selection?.rituals) ? selection.rituals.filter(spellId => {
+    const spell = SpellCatalog.getSpell(spellId);
+    return spell?.level === 1 && /儀式/u.test(spell.desc || "");
+  }).slice(0, 2) : [];
+  return { cantrips: [...new Set(cantrips)], rituals: [...new Set(rituals)] };
+}
+
+function getPactTomeSpellSelection() {
+  return { cantrips: [...pactTomeSpellSelection.cantrips], rituals: [...pactTomeSpellSelection.rituals] };
+}
+
+function hasCompletePactTomeSpellSelection(selection = pactTomeSpellSelection) {
+  return selection.cantrips.length === 3 && selection.rituals.length === 2;
+}
+
+function setPactTomeSpellSelection(selection, options = {}) {
+  pactTomeSpellSelection = normalizePactTomeSpellSelection(selection);
+  if (options.sync !== false && typeof syncOriginAndSubclassDerivedSpellRows === "function") {
+    syncOriginAndSubclassDerivedSpellRows();
+  }
+}
+
+function getNonPactTomeSelectedSpellIds() {
+  return Array.from(document.querySelectorAll("#tab-spells .spell-entry"))
+    .filter(row => row.dataset.spellSource !== PACT_TOME_SPELL_SOURCE)
+    .map(row => row.querySelector("select[id*='-spell-']")?.value || "")
+    .filter(Boolean);
+}
+
+window.setPactTomeSpellSelection = setPactTomeSpellSelection;
 const MAGIC_INITIATE_CLASS_OPTIONS = [
   { value: "cleric", text: "牧師" },
   { value: "druid", text: "德魯伊" },
@@ -2540,6 +2587,44 @@ function getSubclassDerivedSpellSpecs() {
   }));
 }
 
+function getEldritchInvocationDerivedSpellSpecs() {
+  if (document.getElementById("class")?.value !== "warlock") return [];
+  const specs = eldritchInvocations.flatMap((invocation, index) => {
+    if (!invocation.spellId || !document.getElementById(getInvocationCheckboxId(index, 1))?.checked) return [];
+    const spell = SpellCatalog.getSpell(invocation.spellId);
+    if (!spell) return [];
+    const ring = spell.level === 0 ? "cantrips" : spell.level;
+    return [{
+      ring,
+      spellId: invocation.spellId,
+      key: `invocation-${invocation.name}-${invocation.spellId}`,
+      source: ELDRITCH_INVOCATION_SPELL_SOURCE,
+      sourceName: "契術師",
+      sourceLabel: `來源：魔能祈喚（${invocation.name}）`,
+      sourcePriority: 35,
+      sourceTag: invocation.spellUse === "at-will" ? "隨意" : "職業",
+      freeUses: invocation.spellUse === "once" ? 1 : "",
+      areaId: getAreaIdForSpellRing(ring)
+    }];
+  });
+
+  if (!hasWarlockInvocation("書之魔契") || !hasCompletePactTomeSpellSelection()) return specs;
+  const tomeSpells = [
+    ...pactTomeSpellSelection.cantrips.map(spellId => ({ ring: "cantrips", spellId })),
+    ...pactTomeSpellSelection.rituals.map(spellId => ({ ring: 1, spellId }))
+  ];
+  return specs.concat(tomeSpells.map((spell, index) => ({
+    ...spell,
+    key: `pact-tome-${spell.ring}-${index}`,
+    source: PACT_TOME_SPELL_SOURCE,
+    sourceName: "契術師",
+    sourceLabel: "來源：書之魔契",
+    sourcePriority: 36,
+    sourceTag: "書契",
+    areaId: getAreaIdForSpellRing(spell.ring)
+  })));
+}
+
 function findFullSpellName(_ring, spellId) { return SpellCatalog.getDisplayName(spellId) || ""; }
 
 function setGenericDerivedRowValues(row, spec) {
@@ -2558,12 +2643,62 @@ function setGenericDerivedRowValues(row, spec) {
   row.dataset.sourceKey = spec.key;
   row.dataset.sourcePriority = String(spec.sourcePriority);
   row.dataset.sourceLabel = spec.sourceLabel;
+  row.dataset.sourceTag = spec.sourceTag || "";
   row.dataset.freeUses = spec.freeUses || "";
   spellSel.dispatchEvent(new Event("change"));
   classSel.disabled = true;
   spellSel.disabled = true;
   classSel.setAttribute("aria-disabled", "true");
   spellSel.setAttribute("aria-disabled", "true");
+}
+
+function getPactTomeSpellOptions(ring) {
+  return SpellCatalog.getAllSpells().filter(spell => {
+    if (!SpellCatalog.getClassIds(spell.spellId, SPELL_MODE).length) return false;
+    if (ring === "cantrips") return spell.level === 0;
+    return spell.level === 1 && /儀式/u.test(spell.desc || "");
+  }).sort((a, b) => a.nameZh.localeCompare(b.nameZh, "zh-Hant"));
+}
+
+function setPactTomeDerivedRowValues(row, spec) {
+  const classSel = row.querySelector("select[id*='-class-']");
+  const spellSel = row.querySelector("select[id*='-spell-']");
+  const badge = row.querySelector(".magic-initiate-source-badge");
+  if (!classSel || !spellSel) return;
+  const peerValues = new Set([...pactTomeSpellSelection.cantrips, ...pactTomeSpellSelection.rituals].filter(spellId => spellId !== spec.spellId));
+  classSel.innerHTML = '<option value="warlock">契術師</option>';
+  classSel.value = "warlock";
+  spellSel.innerHTML = getPactTomeSpellOptions(spec.ring).map(spell => {
+    const disabled = peerValues.has(spell.spellId) ? " disabled" : "";
+    return `<option value="${escapeHtml(spell.spellId)}"${spell.spellId === spec.spellId ? " selected" : ""}${disabled}>${escapeHtml(SpellCatalog.getDisplayName(spell.spellId))}</option>`;
+  }).join("");
+  spellSel.value = spec.spellId;
+  if (badge) badge.textContent = spec.sourceLabel;
+  row.dataset.sourceKey = spec.key;
+  row.dataset.sourcePriority = String(spec.sourcePriority);
+  row.dataset.sourceLabel = spec.sourceLabel;
+  row.dataset.sourceTag = spec.sourceTag || "書契";
+  classSel.disabled = true;
+  classSel.setAttribute("aria-disabled", "true");
+  spellSel.disabled = false;
+  spellSel.removeAttribute("aria-disabled");
+  spellSel.dispatchEvent(new Event("change"));
+}
+
+function updatePactTomeSelectionFromRows() {
+  if (window.__originSpellSyncInProgress) return;
+  const rows = Array.from(document.querySelectorAll(`.spell-entry[data-spell-source="${PACT_TOME_SPELL_SOURCE}"]`));
+  if (rows.length !== 5) return;
+  const next = { cantrips: [], rituals: [] };
+  rows.forEach(row => {
+    const spellId = row.querySelector("select[id*='-spell-']")?.value || "";
+    if (!spellId) return;
+    if (row.parentElement?.id === "cantrips-area") next.cantrips.push(spellId);
+    else if (row.parentElement?.id === "level1spells-area") next.rituals.push(spellId);
+  });
+  if (!hasCompletePactTomeSpellSelection(next)) return;
+  setPactTomeSpellSelection(next);
+  if (typeof scheduleSaveAllFields === "function") scheduleSaveAllFields();
 }
 
 function sortSpellRows(areaId) {
@@ -2581,15 +2716,18 @@ function syncOriginAndSubclassDerivedSpellRows() {
   if (window.__originSpellSyncInProgress) return;
   window.__originSpellSyncInProgress = true;
   try {
-    const specs = [...getRacialDerivedSpellSpecs(), ...getClassAlwaysPreparedSpellSpecs(), ...getSubclassDerivedSpellSpecs()];
+    const specs = [...getRacialDerivedSpellSpecs(), ...getClassAlwaysPreparedSpellSpecs(), ...getSubclassDerivedSpellSpecs(), ...getEldritchInvocationDerivedSpellSpecs()];
     const desiredKeys = new Set(specs.map(spec => spec.key));
-    document.querySelectorAll(`.spell-entry[data-spell-source="${RACE_SPELL_SOURCE}"], .spell-entry[data-spell-source="${CLASS_SPELL_SOURCE}"], .spell-entry[data-spell-source="${SUBCLASS_SPELL_SOURCE}"]`).forEach(row => {
+    document.querySelectorAll(`.spell-entry[data-spell-source="${RACE_SPELL_SOURCE}"], .spell-entry[data-spell-source="${CLASS_SPELL_SOURCE}"], .spell-entry[data-spell-source="${SUBCLASS_SPELL_SOURCE}"], .spell-entry[data-spell-source="${ELDRITCH_INVOCATION_SPELL_SOURCE}"], .spell-entry[data-spell-source="${PACT_TOME_SPELL_SOURCE}"]`).forEach(row => {
       if (!desiredKeys.has(row.dataset.sourceKey)) row.remove();
     });
     specs.forEach(spec => {
       let row = Array.from(document.querySelectorAll(`.spell-entry[data-spell-source="${spec.source}"]`)).find(candidate => candidate.dataset.sourceKey === spec.key);
       if (!row) row = createSingleSpellRow(spec.areaId, spec.ring, null, null, spec);
-      if (row) setGenericDerivedRowValues(row, spec);
+      if (row) {
+        if (spec.source === PACT_TOME_SPELL_SOURCE) setPactTomeDerivedRowValues(row, spec);
+        else setGenericDerivedRowValues(row, spec);
+      }
     });
     getSpellAreaConfigs().forEach(({ id }) => {
       sortSpellRows(id);
@@ -3711,8 +3849,31 @@ const attackCalculationDetails = { main: null, off: null };
 
 function hasWeaponMasteryFeature() {
   const cls = document.getElementById("class")?.value || "";
-  const level = Number(document.getElementById("level")?.value || 0);
-  return level >= 1 && WEAPON_MASTERY_CLASSES.has(cls);
+  return WEAPON_MASTERY_CLASSES.has(cls);
+}
+
+function normalizeWeaponRuleName(value) {
+  return String(value || "").trim().replace(/\s*[（(].*$/u, "");
+}
+
+function updateWeaponMasteryBadges() {
+  const canUseMastery = hasWeaponMasteryFeature();
+  [
+    { hand: "main", selectId: "mainHand" },
+    { hand: "off", selectId: "offHand" }
+  ].forEach(({ hand, selectId }) => {
+    const badge = document.getElementById(`atk-${hand}-mastery`);
+    if (!badge) return;
+    const weaponName = document.getElementById(selectId)?.value || "";
+    const weapon = getAllWeaponsWithShield().find(item => item.名稱 === weaponName);
+    const mastery = canUseMastery && weapon?.名稱 !== "盾牌" && hasMeaningfulEquipmentValue(weapon?.精通)
+      ? String(weapon.精通).trim()
+      : "";
+    badge.hidden = !mastery;
+    badge.textContent = mastery;
+    badge.dataset.weaponRule = mastery;
+    badge.setAttribute("aria-label", mastery ? `${weaponName}的${mastery}精通，點擊查看說明` : "");
+  });
 }
 
 function shortenDamageType(value) {
@@ -3831,7 +3992,20 @@ function buildEquipmentSummaryRow(label, name, details = []) {
   row.appendChild(nameEl);
   if (details.length) {
     const detailEl = document.createElement("small");
-    detailEl.textContent = details.join("、");
+    details.forEach((detail, index) => {
+      if (index) detailEl.append("、");
+      if (detail?.ruleKind && detail?.ruleName) {
+        const link = document.createElement("button");
+        link.type = "button";
+        link.className = `weapon-rule-link weapon-rule-link--${detail.ruleKind}`;
+        link.textContent = detail.text;
+        link.dataset.weaponRuleKind = detail.ruleKind;
+        link.dataset.weaponRule = detail.ruleName;
+        detailEl.appendChild(link);
+      } else {
+        detailEl.append(detail?.text ?? detail);
+      }
+    });
     row.appendChild(detailEl);
   } else {
     const emptyEl = document.createElement("small");
@@ -3854,7 +4028,14 @@ function updateEquipmentLoadoutSummary() {
   const weaponDetails = weapon => {
     if (!weapon) return [];
     if (weapon.名稱 === "盾牌") return ["AC+2 (裝備/卸除需 1 個動作)"];
-    const details = [shortenDamageType(weapon.傷害), ...getSummaryWeaponProperties(weapon)];
+    const details = [
+      shortenDamageType(weapon.傷害),
+      ...getSummaryWeaponProperties(weapon).map(property => ({
+        text: property,
+        ruleKind: "property",
+        ruleName: normalizeWeaponRuleName(property)
+      }))
+    ];
     if (hasWeaponMasteryFeature() && hasMeaningfulEquipmentValue(weapon.精通)) {
       details.push(`精通：${weapon.精通}`);
     }
@@ -3873,6 +4054,7 @@ function updateEquipmentLoadoutSummary() {
   );
   const acValue = document.getElementById("equipment-current-ac-value");
   if (acValue) acValue.textContent = document.getElementById("ac-display")?.textContent?.trim() || "—";
+  updateWeaponMasteryBadges();
   updateFeatCombatNotes();
 }
 
@@ -3968,6 +4150,7 @@ function isWeaponAttackAutomationEnabled() {
 }
 
 function populateHandAttacks(options = {}) {
+  updateWeaponMasteryBadges();
   if (!isWeaponAttackAutomationEnabled() && !options.force) return;
   calculateHandAttacks().forEach(result => {
     document.getElementById(`${result.prefix}-name`).value = result.name;
@@ -4534,6 +4717,9 @@ function createSingleSpellRow(areaId, level, afterRow = null, restoredRowState =
     const desc = SpellCatalog.getSpell(spellVal)?.desc || "—";
     descDiv.innerHTML = renderSpellDescHtml(desc);
     updatePickedSpellBoxes();
+    if (rowDiv.dataset.spellSource === PACT_TOME_SPELL_SOURCE) {
+      updatePactTomeSelectionFromRows();
+    }
     if (!isSpellAutoPrepareInProgress()) {
       scheduleSaveAllFields();
     }
@@ -4590,6 +4776,7 @@ function renderFreeSpellUseChecks(spec, checkedState) {
 
 function getPickedSpellSourceTag(row) {
   if (!row) return "";
+  if (row.dataset.sourceTag) return row.dataset.sourceTag;
   if (row.dataset.spellSource === RACE_SPELL_SOURCE) return "種族";
   if (row.dataset.spellSource === SUBCLASS_SPELL_SOURCE) return "子職";
   if (row.dataset.spellSource === CLASS_SPELL_SOURCE) return "職業";
@@ -4900,23 +5087,7 @@ function getEquipmentTableSegments(body) {
   return segments.filter(Boolean);
 }
 
-function getWeaponMasterySegments(body) {
-  return Array.from(body?.children || [])
-    .filter((item) => item.tagName === "DIV")
-    .map((item) => {
-      const title = item.querySelector("strong")?.textContent?.trim() || "";
-      const description = item.querySelector("span")?.textContent?.trim() || "";
-      return buildTextSegment([title, description].filter(Boolean).join("\n"));
-    })
-    .filter(Boolean);
-}
-
 const equipmentSegmentBuilders = [
-  {
-    key: "weapon-mastery",
-    match: (detail) => detail.id === "weapon-mastery-details",
-    build: (_detail, body) => getWeaponMasterySegments(body)
-  },
   {
     key: "table-bundle",
     match: (_detail, body) => Boolean(body?.querySelector("table")),
@@ -5002,8 +5173,6 @@ function initializeEquipmentSearchIndex() {
   });
 
   equipmentSearchIndex.push(
-    ...getEquipmentNoteEntries("武器精通", "武器精通", "mastery"),
-    ...getEquipmentNoteEntries("武器屬性說明", "武器屬性", "property"),
     ...getEquipmentNoteEntries("工匠工具", "工具", "tool"),
     ...getEquipmentNoteEntries("其他工具", "工具", "tool"),
     ...getEquipmentNoteEntries("冒險用品", "冒險用品", "adventuring-gear")
@@ -5728,6 +5897,7 @@ function collectStateObject(options = {}) {
     data[`${area.key}-count`] = area.getCount();
   });
   data.__deletedSpellRowCache = cloneDeletedSpellRowCache(deletedSpellRowCache);
+  data.__pactTomeSpellSelection = getPactTomeSpellSelection();
   return data;
 }
 
@@ -5799,6 +5969,7 @@ function applyStateObject(data) {
   try {
     removeMagicInitiateDerivedSpellRows();
     deletedSpellRowCache = cloneDeletedSpellRowCache(data.__deletedSpellRowCache);
+    setPactTomeSpellSelection(data.__pactTomeSpellSelection, { sync: false });
 
     const spellAreas = getSpellAreaConfigs();
     getDynamicAreaConfigs().forEach(area => {
@@ -5814,7 +5985,7 @@ function applyStateObject(data) {
     }
 
     for (const id in data) {
-      if (id === "__deletedSpellRowCache") continue;
+      if (id === "__deletedSpellRowCache" || id === "__pactTomeSpellSelection") continue;
       if (isSpellRowStateKey(id)) continue;
       const el = document.getElementById(id);
       if (!el) continue;
@@ -6800,7 +6971,7 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
     <button type="button" class="deity-info-close" aria-label="關閉神祇資訊">✕</button>
     <header class="deity-info-header">
       <h3 id="deity-info-title">📜 被遺忘國度神祇整理</h3>
-      <p id="deity-info-disclaimer" class="deity-info-disclaimer">本站為非官方 D&amp;D 玩家輔助工具，與 Wizards of the Coast 無任何關係。Dungeons &amp; Dragons、Forgotten Realms 及相關名稱與設定之權利屬其各自權利人所有。此頁面文字資料僅供玩家遊戲時參考；所有文字為本站重新整理與撰寫，非官方原文。</p>
+      <p id="deity-info-disclaimer" class="deity-info-disclaimer">本站為非官方 D&D 玩家輔助工具，與 WotC 無關。相關名稱與設定權利歸原權利人所有；本站表格皆為愛好者整理與撰寫，僅供遊戲參考。</p>
     </header>
     <div id="deity-info-content" class="deity-info-content"></div>
   </div>
@@ -6887,7 +7058,10 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
   <div id="tour-focus-ring"></div>
   <div id="tour-focus-ring-secondary"></div>
   <div id="tour-tooltip" role="dialog" aria-live="polite">
-    <h4 id="tour-step-title"></h4>
+    <div class="tour-heading-row">
+      <h4 id="tour-step-title"></h4>
+      <span id="tour-step-progress" aria-label="導覽進度"></span>
+    </div>
     <div id="tour-step-text"></div>
     <div class="tour-btn-row">
       <button type="button" id="tour-prev-btn">上一步</button>

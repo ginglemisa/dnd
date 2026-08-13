@@ -1,4 +1,29 @@
 // equipment-notes.js
+globalThis.WEAPON_RULE_DESCRIPTIONS = Object.freeze({
+  property: Object.freeze({
+    "彈藥": "以此武器進行遠程攻擊時，每次消耗 1 發對應彈藥。取出與裝填彈藥視為攻擊的一部分；裝填單手武器需要一隻空手。戰鬥後花 1 分鐘，可找回一半已使用的彈藥（向下取整）。",
+    "靈巧": "使用此武器攻擊時，選擇力量或敏捷調整值，套用於命中檢定與傷害加值。",
+    "重型": "使用重型武器時：若為近戰武器且力量未達 13，或為遠程武器且敏捷未達 13，則你的攻擊檢定具有劣勢。",
+    "輕型": "在自己的回合以輕型武器執行攻擊動作後，可使用附贈動作，以另一把輕型武器額外攻擊一次。這次攻擊的傷害不加屬性調整值（負值仍須計入）。",
+    "裝填": "每次使用動作、附贈動作或反應以此武器射擊時，最多只能射擊一次，不受額外攻擊次數影響。",
+    "射程": "射程的兩個數值依序為常規射程與最大射程。超出常規射程時，命中檢定具有劣勢；超出最大射程則無法攻擊。",
+    "觸及": "使用此武器攻擊時，觸及距離增加 5 呎，藉機攻擊也適用。",
+    "投擲": "此武器可投擲進行遠程攻擊，並可在攻擊時一併拔出。若為近戰武器，命中檢定與傷害加值仍使用近戰攻擊的屬性調整值。",
+    "雙手": "使用此武器攻擊時，必須雙手持用。",
+    "兩用": "此武器可單手或雙手使用；括號內為雙手進行近戰攻擊時的傷害。"
+  }),
+  mastery: Object.freeze({
+    "順劈": "近戰命中後，可再攻擊目標 5 呎內、且在你觸及範圍內的另一個生物。命中照常造成武器傷害，但不加屬性調整值（負值仍須計入）。每回合一次。",
+    "劃傷": "攻擊未命中時，仍造成等同本次攻擊屬性調整值的傷害，類型與武器相同。此傷害只能藉由提高該屬性調整值增加。",
+    "迅切": "輕型武器的額外攻擊可併入攻擊動作，不需使用附贈動作。每回合一次。",
+    "推離": "命中大型或更小的生物時，可將其直線推離你至多 10 呎。",
+    "削弱": "命中後，目標在你下回合開始前進行的下一次攻擊檢定具有劣勢。",
+    "緩速": "命中並造成傷害時，可使目標的速度降低 10 呎，持續至你下回合開始。同一目標不會因此降低超過 10 呎。",
+    "失衡": "命中後，可迫使目標進行體質豁免；DC 為「8＋攻擊屬性調整值＋熟練加值」。失敗則倒地。",
+    "侵擾": "命中並造成傷害後，你在下回合結束前對該目標進行的下一次攻擊檢定具有優勢。"
+  })
+});
+
 document.addEventListener("DOMContentLoaded", () => {
   const container = document.querySelector("#equipment-notes-section");
 
@@ -18,71 +43,6 @@ document.addEventListener("DOMContentLoaded", () => {
     <div class="small-text equipment-note-body equipment-catalog-body" data-weapon-catalog="martial"></div>
   </details>
 
-  <details>
-    <summary class="equipment-note-summary">武器屬性說明</summary>
-    <div class="small-text equipment-note-body" style="white-space:pre-line;">
-彈藥
-以此武器進行遠程攻擊時，每次消耗 1 發對應彈藥。取出與裝填彈藥視為攻擊的一部分；裝填單手武器需要一隻空手。戰鬥後花 1 分鐘，可找回一半已使用的彈藥（向下取整）。
-
-靈巧
-使用此武器攻擊時，選擇力量或敏捷調整值，套用於命中檢定與傷害加值。
-
-重型
-使用重型武器時：若為近戰武器且力量未達 13，或為遠程武器且敏捷未達 13，則你的攻擊檢定具有劣勢。
-
-輕型
-在自己的回合以輕型武器執行攻擊動作後，可使用附贈動作，以另一把輕型武器額外攻擊一次。這次攻擊的傷害不加屬性調整值（負值仍須計入）。
-
-裝填
-每次使用動作、附贈動作或反應以此武器射擊時，最多只能射擊一次，不受額外攻擊次數影響。
-
-射程
-射程的兩個數值依序為常規射程與最大射程。超出常規射程時，命中檢定具有劣勢；超出最大射程則無法攻擊。
-
-觸及
-使用此武器攻擊時，觸及距離增加 5 呎，藉機攻擊也適用。
-
-投擲
-此武器可投擲進行遠程攻擊，並可在攻擊時一併拔出。若為近戰武器，命中檢定與傷害加值仍使用近戰攻擊的屬性調整值。
-
-雙手
-使用此武器攻擊時，必須雙手持用。
-
-兩用
-此武器可單手或雙手使用；括號內為雙手進行近戰攻擊時的傷害。
-    </div>
-  </details>
-
-  <details id="weapon-mastery-details">
-    <summary class="equipment-note-summary">武器精通</summary>
-    <div class="small-text equipment-note-body">
-每種武器都有一個精通屬性，只有特定職業才能解鎖，定義如下：<br><br>
-
-<div style="margin-bottom:10px;"><label><input type="checkbox" id="weapon-mastery-cleave" data-mastery-name="順劈"> <strong>順劈</strong></label><br>
-<span style="display:block; margin-left:22px; white-space:pre-line;">近戰命中後，可再攻擊目標 5 呎內、且在你觸及範圍內的另一個生物。命中照常造成武器傷害，但不加屬性調整值（負值仍須計入）。每回合一次。</span></div>
-
-<div style="margin-bottom:10px;"><label><input type="checkbox" id="weapon-mastery-graze" data-mastery-name="劃傷"> <strong>劃傷</strong></label><br>
-<span style="display:block; margin-left:22px; white-space:pre-line;">攻擊未命中時，仍造成等同本次攻擊屬性調整值的傷害，類型與武器相同。此傷害只能藉由提高該屬性調整值增加。</span></div>
-
-<div style="margin-bottom:10px;"><label><input type="checkbox" id="weapon-mastery-nick" data-mastery-name="迅切"> <strong>迅切</strong></label><br>
-<span style="display:block; margin-left:22px; white-space:pre-line;">輕型武器的額外攻擊可併入攻擊動作，不需使用附贈動作。每回合一次。</span></div>
-
-<div style="margin-bottom:10px;"><label><input type="checkbox" id="weapon-mastery-push" data-mastery-name="推離"> <strong>推離</strong></label><br>
-<span style="display:block; margin-left:22px; white-space:pre-line;">命中大型或更小的生物時，可將其直線推離你至多 10 呎。</span></div>
-
-<div style="margin-bottom:10px;"><label><input type="checkbox" id="weapon-mastery-sap" data-mastery-name="削弱"> <strong>削弱</strong></label><br>
-<span style="display:block; margin-left:22px; white-space:pre-line;">命中後，目標在你下回合開始前進行的下一次攻擊檢定具有劣勢。</span></div>
-
-<div style="margin-bottom:10px;"><label><input type="checkbox" id="weapon-mastery-slow" data-mastery-name="緩速"> <strong>緩速</strong></label><br>
-<span style="display:block; margin-left:22px; white-space:pre-line;">命中並造成傷害時，可使目標的速度降低 10 呎，持續至你下回合開始。同一目標不會因此降低超過 10 呎。</span></div>
-
-<div style="margin-bottom:10px;"><label><input type="checkbox" id="weapon-mastery-topple" data-mastery-name="失衡"> <strong>失衡</strong></label><br>
-<span style="display:block; margin-left:22px; white-space:pre-line;">命中後，可迫使目標進行體質豁免；DC 為「8＋攻擊屬性調整值＋熟練加值」。失敗則倒地。</span></div>
-
-<div style="margin-bottom:4px;"><label><input type="checkbox" id="weapon-mastery-vex" data-mastery-name="侵擾"> <strong>侵擾</strong></label><br>
-<span style="display:block; margin-left:22px; white-space:pre-line;">命中並造成傷害後，你在下回合結束前對該目標進行的下一次攻擊檢定具有優勢。</span></div>
-    </div>
-  </details>
 <h3>防具</h3>
   <details class="equipment-catalog-details">
     <summary class="equipment-note-summary">輕甲列表</summary>
@@ -96,7 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
     <summary class="equipment-note-summary">重甲列表</summary>
     <div class="small-text equipment-note-body equipment-catalog-body" data-armor-catalog="重甲"></div>
   </details>
-<h3>各種工具|冒險用品</h3>
+<h3 id="equipment-tools-heading">各種工具|冒險用品</h3>
   <details>
     <summary class="equipment-note-summary">工匠工具</summary>
     <div class="small-text equipment-note-body" style="white-space:pre-line;">
@@ -696,11 +656,25 @@ DC 25 力量（運動）：掙斷鐐銬
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
 
+  const normalizeRuleName = (value) => String(value || "")
+    .trim()
+    .replace(/\s*[（(].*$/u, "");
+
+  const makeRuleLinkHtml = (label, kind) => {
+    const ruleName = normalizeRuleName(label);
+    if (!WEAPON_RULE_DESCRIPTIONS[kind]?.[ruleName]) return escapeCatalogText(label);
+    return `<button type="button" class="weapon-rule-link weapon-rule-link--${kind}" data-weapon-rule-kind="${kind}" data-weapon-rule="${escapeCatalogText(ruleName)}">${escapeCatalogText(label)}</button>`;
+  };
+
+  const joinRuleLinks = (values, kind) => values.length
+    ? { html: values.map((value) => makeRuleLinkHtml(value, kind)).join("、") }
+    : "--";
+
   const renderCatalogTable = (headers, rows) => `
     <div class="equipment-catalog-table-wrap">
       <table class="equipment-catalog-table">
         <thead><tr>${headers.map((header) => `<th scope="col">${header}</th>`).join("")}</tr></thead>
-        <tbody>${rows.map((row) => `<tr>${row.map((cell) => `<td>${escapeCatalogText(cell)}</td>`).join("")}</tr>`).join("")}</tbody>
+        <tbody>${rows.map((row) => `<tr>${row.map((cell) => `<td>${cell?.html ?? escapeCatalogText(cell)}</td>`).join("")}</tr>`).join("")}</tbody>
       </table>
     </div>`;
 
@@ -719,8 +693,8 @@ DC 25 力量（運動）：掙斷鐐銬
       weapon.名稱,
       type,
       weapon.傷害,
-      [weapon.屬性1, weapon.屬性2, weapon.屬性3, weapon.屬性4].filter((property) => property && property !== "--").join("、") || "--",
-      weapon.精通,
+      joinRuleLinks([weapon.屬性1, weapon.屬性2, weapon.屬性3, weapon.屬性4].filter((property) => property && property !== "--"), "property"),
+      joinRuleLinks(weapon.精通 && weapon.精通 !== "--" ? [weapon.精通] : [], "mastery"),
       weapon.重量,
       weapon.價格
     ]);
@@ -804,7 +778,7 @@ DC 25 力量（運動）：掙斷鐐銬
 
   // Each priced heading is plain text in the reference content. Replace only its
   // item-name portion so all descriptions and prices remain exactly as authored.
-  container.querySelectorAll("details:not(#weapon-mastery-details) .equipment-note-body").forEach((body) => {
+  container.querySelectorAll("details .equipment-note-body").forEach((body) => {
     const walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT);
     const textNodes = [];
     while (walker.nextNode()) textNodes.push(walker.currentNode);
@@ -865,49 +839,45 @@ DC 25 力量（運動）：掙斷鐐銬
     if (event.key === "Escape" && purchaseModal.classList.contains("open")) closePurchaseModal();
   });
 
-  const weaponMasteryAllowedClasses = new Set(["barbarian", "fighter", "paladin", "ranger", "rogue"]);
+  const rulePopup = document.createElement("div");
+  rulePopup.id = "weaponRulePopup";
+  rulePopup.setAttribute("role", "dialog");
+  rulePopup.setAttribute("aria-live", "polite");
+  rulePopup.innerHTML = `<button type="button" class="close" aria-label="關閉武器規則說明">✕</button><div class="content"></div>`;
+  document.body.appendChild(rulePopup);
 
-  function updateWeaponMasterySummary() {
-    const summaryEl = document.getElementById("weapon-mastery-summary");
-    if (!summaryEl) return;
+  const hideRulePopup = () => {
+    rulePopup.style.display = "none";
+  };
 
-    const picks = Array.from(document.querySelectorAll("#weapon-mastery-details input[type='checkbox'][data-mastery-name]"))
-      .filter((el) => el.checked)
-      .map((el) => {
-        const name = el.dataset.masteryName || "";
-        const description = el.closest("div")?.querySelector("span")?.textContent?.trim() || "";
-        return { name, description };
-      });
+  const showRulePopup = (trigger) => {
+    const kind = trigger.dataset.weaponRuleKind;
+    const name = trigger.dataset.weaponRule;
+    const description = WEAPON_RULE_DESCRIPTIONS[kind]?.[name];
+    if (!description) return;
+    const category = kind === "mastery" ? "精通" : "武器屬性";
+    rulePopup.querySelector(".content").innerHTML = `<div class="title">${escapeCatalogText(name)}</div><div class="weapon-rule-popup-category">${category}</div><div class="monster-detail-line monster-detail-line--first">${escapeCatalogText(description)}</div>`;
+    const rect = trigger.getBoundingClientRect();
+    rulePopup.style.display = "block";
+    let left = Math.min(rect.left, window.innerWidth - rulePopup.offsetWidth - 10);
+    let top = Math.min(rect.bottom + 8, window.innerHeight - rulePopup.offsetHeight - 10);
+    rulePopup.style.left = `${Math.max(10, left)}px`;
+    rulePopup.style.top = `${Math.max(10, top)}px`;
+  };
 
-    summaryEl.innerHTML = picks.length
-      ? `已勾選：<div class="weapon-mastery-summary-list">${picks.map(({ name, description }) => `
-          <div class="weapon-mastery-summary-item">
-            <strong>${escapeHtml(name)}</strong>${description ? `：${escapeHtml(description)}` : ""}
-          </div>`).join("")}
-        </div>`
-      : "尚未勾選精通屬性";
-  }
-
-  function updateWeaponMasteryVisibility() {
-    const cls = document.getElementById("class")?.value || "";
-    const masteryDetails = document.getElementById("weapon-mastery-details");
-    const summaryWrap = document.getElementById("weapon-mastery-summary-wrap");
-    const showMastery = !cls || weaponMasteryAllowedClasses.has(cls);
-
-    if (masteryDetails) masteryDetails.style.display = showMastery ? "block" : "none";
-    if (summaryWrap) summaryWrap.style.display = showMastery ? "block" : "none";
-
-    if (showMastery) updateWeaponMasterySummary();
-  }
-
-  document.querySelectorAll("#weapon-mastery-details input[type='checkbox'][data-mastery-name]").forEach((el) => {
-    el.addEventListener("change", () => {
-      updateWeaponMasterySummary();
-      if (typeof scheduleSaveAllFields === "function") scheduleSaveAllFields();
-    });
+  rulePopup.querySelector(".close").addEventListener("click", hideRulePopup);
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") hideRulePopup();
   });
-
-  document.getElementById("class")?.addEventListener("change", updateWeaponMasteryVisibility);
-  updateWeaponMasteryVisibility();
+  document.addEventListener("click", (event) => {
+    const trigger = event.target.closest?.("[data-weapon-rule-kind][data-weapon-rule]");
+    if (trigger) {
+      event.preventDefault();
+      event.stopPropagation();
+      showRulePopup(trigger);
+      return;
+    }
+    if (!event.target.closest?.("#weaponRulePopup")) hideRulePopup();
+  }, true);
 
 });

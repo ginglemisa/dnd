@@ -123,6 +123,7 @@
       this.tooltip = document.getElementById("tour-tooltip");
       this.title = document.getElementById("tour-step-title");
       this.text = document.getElementById("tour-step-text");
+      this.progress = document.getElementById("tour-step-progress");
       this.prevBtn = document.getElementById("tour-prev-btn");
       this.nextBtn = document.getElementById("tour-next-btn");
       this.skipBtn = document.getElementById("tour-skip-btn");
@@ -167,13 +168,6 @@
       });
     }
 
-    setWeaponMasteryVisibilityOverride(show) {
-      const masteryDetails = document.getElementById("weapon-mastery-details");
-      const summaryWrap = document.getElementById("weapon-mastery-summary-wrap");
-      if (masteryDetails) masteryDetails.style.display = show ? "block" : "none";
-      if (summaryWrap) summaryWrap.style.display = show ? "block" : "none";
-    }
-
     ensureStep14ExpertiseOverride() {
       const classValue = document.getElementById("class")?.value || "";
       const shouldShowExpertise = typeof EXPERTISE_VISIBLE_CLASSES !== "undefined"
@@ -183,11 +177,6 @@
       if (this.stepRuntime.step14ForceExpertise) {
         this.setExpertiseVisibilityOverride(true);
       }
-    }
-
-    ensureStep16WeaponMasteryOverride() {
-      this.stepRuntime.step16WeaponMasteryForced = true;
-      this.setWeaponMasteryVisibilityOverride(true);
     }
 
     restoreStep7State() {
@@ -230,16 +219,6 @@
         this.setExpertiseVisibilityOverride(false);
       }
       delete this.stepRuntime.step14ForceExpertise;
-    }
-
-    restoreWeaponMasteryOverride() {
-      if (!this.stepRuntime.step16WeaponMasteryForced) return;
-      if (typeof updateWeaponMasteryVisibility === "function") {
-        updateWeaponMasteryVisibility();
-      } else {
-        this.setWeaponMasteryVisibilityOverride(false);
-      }
-      delete this.stepRuntime.step16WeaponMasteryForced;
     }
 
     disableQuickAbilityButton() {
@@ -330,7 +309,6 @@
     cleanupTransientState() {
       this.restoreStep7State();
       this.restoreExpertiseOverride();
-      this.restoreWeaponMasteryOverride();
       this.restoreQuickAbilityButton();
       this.restoreActionDetailsState();
       this.restoreSpellTourVisibility();
@@ -983,8 +961,6 @@
           skipAutoTabSwitch: true,
           beforePosition: async () => {
             this.restoreExpertiseOverride();
-            this.ensureStep16WeaponMasteryOverride();
-
             if (this.tooltip) this.tooltip.style.display = "none";
             const tabsHole = this.getHoleForSelector(".tabs-shell", 6);
             if (tabsHole && this.lastRenderedHoles?.length === 1) {
@@ -1021,62 +997,8 @@
           tab: "equipment",
           selectors: [],
           getHoles: () => {
-            const cleaveWrap = document.getElementById("weapon-mastery-cleave")?.closest("div");
-            const hole = this.getHoleFromElements(cleaveWrap ? [cleaveWrap] : [], 8);
-            return hole ? [hole] : [];
-          },
-          title: "精通屬性",
-          text: "如果職業精通某種武器，勾選項目（如順劈），攻擊時會獲得額外效果。",
-          placement: "top",
-          hideTooltipDuringTransition: true,
-          skipAutoTabSwitch: true,
-          beforePosition: async () => {
-            this.ensureStep16WeaponMasteryOverride();
-
-            if (this.tooltip) this.tooltip.style.display = "none";
-
-            const masterySummary = document.querySelector("#weapon-mastery-details > summary");
-            const masteryHole = this.getHoleFromElements(masterySummary ? [masterySummary] : [], 8);
-            if (masteryHole && this.lastRenderedHoles?.length === 1) {
-              await this.animatePrimaryHoleTransition(this.lastRenderedHoles[0], masteryHole, 420);
-              this.lastRenderedHoles = [{ ...masteryHole }];
-            }
-
-            const masteryDetails = document.getElementById("weapon-mastery-details");
-            if (masteryDetails && !masteryDetails.open) {
-              await simulateButtonPress(masterySummary, () => {
-                masterySummary?.click();
-              });
-              await waitForLayoutStability();
-            }
-
-            if (masteryDetails) {
-              const cleaveWrap = document.getElementById("weapon-mastery-cleave")?.closest("div");
-              const targetRect = cleaveWrap?.getBoundingClientRect() || masteryDetails.getBoundingClientRect();
-              const targetY = window.scrollY + targetRect.top - 120;
-              await animateWindowScrollTo(targetY, 820);
-              await waitForLayoutStability();
-            }
-
-            const cleaveHole = this.getStepHoles(this.steps[this.currentIndex]);
-            if (masteryHole) {
-              this.applyMasksForHoles([masteryHole]);
-              this.setFocusRing(this.focusRings[0], masteryHole);
-              this.setFocusRing(this.focusRings[1], null);
-            }
-            if (masteryHole && cleaveHole.length) {
-              await this.animatePrimaryHoleTransition(masteryHole, cleaveHole[0], 420);
-            }
-          }
-        },
-        {
-          tab: "equipment",
-          selectors: [],
-          getHoles: () => {
             const container = document.getElementById("equipment-notes-section");
-            const heading = Array.from(container?.querySelectorAll("h3") || []).find((el) =>
-              el.textContent?.trim() === "工具,道具,用品"
-            );
+            const heading = document.getElementById("equipment-tools-heading");
             const summaries = Array.from(container?.querySelectorAll(".equipment-note-summary") || []).filter((el) => {
               const label = el.textContent?.trim() || "";
               return label === "工匠工具" || label === "其他工具" || label === "冒險用品";
@@ -1092,40 +1014,13 @@
           beforePosition: async () => {
             if (this.tooltip) this.tooltip.style.display = "none";
 
-            const masterySummary = document.querySelector("#weapon-mastery-details > summary");
-            const cleaveWrap = document.getElementById("weapon-mastery-cleave")?.closest("div");
-            const cleaveHole = this.getHoleFromElements(cleaveWrap ? [cleaveWrap] : [], 8);
-            if (cleaveHole && this.lastRenderedHoles?.length === 1) {
-              await this.animatePrimaryHoleTransition(this.lastRenderedHoles[0], cleaveHole, 420);
-              this.lastRenderedHoles = [{ ...cleaveHole }];
-            }
-
-            const masteryDetails = document.getElementById("weapon-mastery-details");
-            if (masteryDetails?.open) {
-              await simulateButtonPress(masterySummary, () => {
-                masterySummary?.click();
-              });
-              await waitForLayoutStability();
-            }
-
-            if (this.stepRuntime.step16WeaponMasteryForced) {
-              if (typeof updateWeaponMasteryVisibility === "function") {
-                updateWeaponMasteryVisibility();
-              } else {
-                this.setWeaponMasteryVisibilityOverride(false);
-              }
-              delete this.stepRuntime.step16WeaponMasteryForced;
-            }
-
             const container = document.getElementById("equipment-notes-section");
             Array.from(container?.querySelectorAll(":scope > .section > details") || []).forEach((detail) => {
               detail.open = false;
             });
             await waitForLayoutStability();
 
-            const toolsHeading = Array.from(container?.querySelectorAll("h3") || []).find((el) =>
-              el.textContent?.trim() === "工具,道具,用品"
-            );
+            const toolsHeading = document.getElementById("equipment-tools-heading");
             if (toolsHeading) {
               const rect = toolsHeading.getBoundingClientRect();
               const targetY = window.scrollY + rect.top - 100;
@@ -1133,15 +1028,6 @@
               await waitForLayoutStability();
             }
 
-            const toolsHole = this.getStepHoles(this.steps[this.currentIndex]);
-            if (cleaveHole) {
-              this.applyMasksForHoles([cleaveHole]);
-              this.setFocusRing(this.focusRings[0], cleaveHole);
-              this.setFocusRing(this.focusRings[1], null);
-            }
-            if (cleaveHole && toolsHole.length) {
-              await this.animatePrimaryHoleTransition(cleaveHole, toolsHole[0], 420);
-            }
           }
         },
         {
@@ -1426,6 +1312,18 @@
       return spellTabVisible && canCast;
     }
 
+    updateStepProgress() {
+      if (!this.progress) return;
+      const availableIndices = this.steps
+        .map((step, index) => this.isStepAvailable(step) ? index : -1)
+        .filter((index) => index >= 0);
+      const currentPosition = availableIndices.indexOf(this.currentIndex);
+      const current = currentPosition >= 0 ? currentPosition + 1 : 1;
+      const total = Math.max(availableIndices.length, 1);
+      this.progress.textContent = `${current}/${total}`;
+      this.progress.setAttribute("aria-label", `導覽進度：第 ${current} 步，共 ${total} 步`);
+    }
+
     async next() {
       if (!this.active) return;
       let nextIndex = this.currentIndex + 1;
@@ -1472,9 +1370,6 @@
         }
         if (nextStep?.tab !== "skills") {
           this.restoreExpertiseOverride();
-        }
-        if (nextStep?.tab !== "equipment") {
-          this.restoreWeaponMasteryOverride();
         }
         if (nextStep?.tab !== "spells") {
           this.restoreSpellTourVisibility();
@@ -1822,6 +1717,7 @@
         }
         this.title.textContent = step.title;
         this.text.textContent = step.text;
+        this.updateStepProgress();
         this.prevBtn.disabled = this.currentIndex <= 0;
         this.nextBtn.textContent = this.currentIndex === this.steps.length - 1 ? "完成" : "下一步";
         this.positionTooltipWithoutHighlight(step.placement || "center");
@@ -1834,13 +1730,15 @@
       const holes = this.getStepHoles(step);
       if (!holes.length) {
         this.showFullOverlayMask();
-      this.title.textContent = step.title;
-      this.text.textContent = step.text;
-      this.prevBtn.disabled = this.currentIndex <= 0;
-      this.nextBtn.textContent = this.currentIndex === this.steps.length - 1 ? "完成" : "下一步";
-      this.positionTooltipWithoutHighlight(step.placement || "center");
-      this.lastRenderedHoles = [];
-      return;
+        this.title.textContent = step.title;
+        this.text.textContent = step.text;
+        this.updateStepProgress();
+        this.prevBtn.disabled = this.currentIndex <= 0;
+        this.nextBtn.textContent = this.currentIndex === this.steps.length - 1 ? "完成" : "下一步";
+        if (this.tooltip) this.tooltip.style.display = "";
+        this.positionTooltipWithoutHighlight(step.placement || "center");
+        this.lastRenderedHoles = [];
+        return;
       }
       if (step.hideTooltipDuringTransition && this.tooltip) {
         this.tooltip.style.display = "none";
@@ -1856,6 +1754,7 @@
 
       this.title.textContent = step.title;
       this.text.textContent = step.text;
+      this.updateStepProgress();
       this.prevBtn.disabled = this.currentIndex <= 0;
       this.nextBtn.textContent = this.currentIndex === this.steps.length - 1 ? "完成" : "下一步";
       if (this.tooltip) this.tooltip.style.display = "";

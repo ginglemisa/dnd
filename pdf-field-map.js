@@ -145,7 +145,9 @@
     acolyte: '侍僧',
     soldier: '士兵',
     criminal: '罪犯',
-    sage: '賢者'
+    sage: '賢者',
+    seeker: '孤方',
+    fieldhand: '耕者'
   });
 
   const RACE_LABELS = Object.freeze({

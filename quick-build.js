@@ -589,7 +589,7 @@
     if (key === "human" && SKILL_OPTIONS.includes(options.skill)) {
       addDerivedAcquisition(target, "skills", { id: `race:human:skill:${options.skill}`, name: options.skill, sourceType: "race", sourceId: key, source: { ...source, feature: "技藝嫻熟" }, content: { proficiency: "skill" } });
     }
-    if (key === "human" && ["警覺", "魔法學徒", "兇蠻打手", "熟習", "戰地醫者", "強韌體魄"].includes(options.feat)) {
+    if (key === "human" && ["警覺", "魔法學徒", "兇蠻打手", "熟習"].includes(options.feat)) {
       addDerivedAcquisition(target, "feats", { id: `race:human:feat:${options.feat}`, name: options.feat, sourceType: "race", sourceId: key, source: { ...source, feature: "靈活人才", dataFile: "feats.js" }, content: { type: "origin feat", description: typeof featsDesc === "object" ? featsDesc[options.feat] : null } });
     }
     const humanFeatOptions = isPlainObject(options.featOptions) ? options.featOptions : {};
@@ -1317,7 +1317,7 @@
     if (key === "human") {
       if (!RACE_OPTION_DEFINITIONS.human.size.includes(options.size)) pending.push("體型");
       if (!SKILL_OPTIONS.includes(options.skill)) pending.push("技能熟練");
-      if (!["警覺", "魔法學徒", "兇蠻打手", "熟習", "戰地醫者", "強韌體魄"].includes(options.feat)) pending.push("起源專長");
+      if (!["警覺", "魔法學徒", "兇蠻打手", "熟習"].includes(options.feat)) pending.push("起源專長");
       const featOptions = isPlainObject(options.featOptions) ? options.featOptions : {};
       if (options.feat === "魔法學徒") {
         const blockedSpellClass = HUMAN_MAGIC_INITIATE_BLOCKED_CLASS_BY_BACKGROUND[draft.choices.background];
@@ -1365,6 +1365,13 @@
     style.textContent = `
       #quick-build-wizard{position:fixed;inset:0;z-index:10020;display:none;align-items:center;justify-content:center;width:100%;max-width:none;padding:16px;overflow:hidden;overscroll-behavior:contain;background:var(--qb-overlay)}
       #quick-build-wizard.open{display:flex}
+      #quick-build-pact-tome{position:fixed;inset:0;z-index:10020;display:none;align-items:center;justify-content:center;width:100%;max-width:none;padding:16px;overflow:hidden;overscroll-behavior:contain;background:var(--qb-overlay)}
+      #quick-build-pact-tome.open{display:flex}
+      #quick-build-pact-tome .quick-build-pact-tome-shell{display:flex;flex-direction:column;width:680px;max-width:100%;max-height:calc(100dvh - 32px);overflow:hidden;border:1px solid var(--qb-border-strong);border-radius:16px;background:var(--qb-surface);color:var(--qb-text);box-shadow:var(--qb-shadow)}
+      #quick-build-pact-tome .quick-build-header{display:flex;flex:0 0 auto;gap:16px;align-items:flex-start;justify-content:space-between;padding:20px;border-bottom:1px solid var(--qb-border)}
+      #quick-build-pact-tome .quick-build-header h2{margin:0;color:var(--qb-text);font-size:1.35rem}#quick-build-pact-tome .quick-build-close{display:grid;flex:0 0 40px;place-items:center;width:40px;min-width:40px;height:40px;min-height:40px;margin:0;padding:0;border:0;border-radius:8px;background:transparent;color:var(--qb-text);font-size:1.25rem;cursor:pointer}
+      #quick-build-pact-tome .quick-build-pact-tome-body{padding:20px;overflow-x:hidden;overflow-y:auto}#quick-build-pact-tome .quick-build-pact-tome-body h3{margin:0 0 8px;color:var(--qb-text)}
+      #quick-build-pact-tome .quick-build-pact-tome-actions{display:flex;justify-content:flex-end;gap:12px;padding:16px 20px;border-top:1px solid var(--qb-border)}#quick-build-pact-tome .quick-build-pact-tome-actions button{min-height:42px;padding:8px 16px;border:1px solid var(--qb-border-strong);border-radius:8px;background:var(--qb-surface-elevated);color:var(--qb-text);cursor:pointer}#quick-build-pact-tome .quick-build-pact-tome-actions button.primary{border-color:var(--qb-accent);background:var(--qb-accent-hover);color:#fff}#quick-build-pact-tome .quick-build-pact-tome-actions button:disabled{cursor:not-allowed;opacity:.55}
       #quick-build-wizard .quick-build-shell{display:flex;flex-direction:column;width:780px;max-width:100%;max-height:calc(100dvh - 32px);overflow:hidden;border:1px solid var(--qb-border-strong);border-radius:16px;background:var(--qb-surface);color:var(--qb-text);box-shadow:var(--qb-shadow)}
       #quick-build-wizard .quick-build-header{display:flex;flex:0 0 auto;gap:16px;align-items:flex-start;justify-content:space-between;min-width:0;padding:20px 20px 12px;border-bottom:1px solid var(--qb-border)}
       #quick-build-wizard .quick-build-header>div{flex:1 1 auto;min-width:0}#quick-build-wizard .quick-build-header h2{margin:0;color:var(--qb-text);font-size:1.35rem;line-height:1.3}
@@ -1573,7 +1580,7 @@
     const options = draft.choices.raceOptions;
     const backgroundSkills = (draft.acquisitions.skills || []).filter(item => item.sourceType === "background").map(item => item.name);
     const backgroundFeats = (draft.acquisitions.feats || []).filter(item => item.sourceType === "background").map(item => item.name);
-    const originFeats = ["警覺", "魔法學徒", "兇蠻打手", "熟習", "戰地醫者", "強韌體魄"];
+    const originFeats = ["警覺", "魔法學徒", "兇蠻打手", "熟習"];
     const fields = [];
     if (key === "dragonborn") fields.push(raceSelect("ancestry", "龍族血統", RACE_OPTION_DEFINITIONS.dragonborn.ancestry));
     if (key === "elf") {
@@ -2025,6 +2032,87 @@
     }).join("")}</select><button type="button" class="quick-build-spell-view" data-spell-view="${escapeHtml(id)}"${selected ? "" : " disabled"}>查看</button></div></div>`;
   }
 
+  function pactTomeSelectionComplete(selection) {
+    const cantrips = Array.isArray(selection?.cantrips) ? selection.cantrips.filter(Boolean) : [];
+    const rituals = Array.isArray(selection?.rituals) ? selection.rituals.filter(Boolean) : [];
+    return cantrips.length === 3 && new Set(cantrips).size === 3
+      && rituals.length === 2 && new Set(rituals).size === 2;
+  }
+
+  function ensurePactTomeModal() {
+    ensureStyles();
+    let modal = document.getElementById("quick-build-pact-tome");
+    if (modal) return modal;
+    modal = document.createElement("div");
+    modal.id = "quick-build-pact-tome";
+    modal.setAttribute("aria-hidden", "true");
+    modal.innerHTML = `
+      <section class="quick-build-pact-tome-shell" role="dialog" aria-modal="true" aria-labelledby="quick-build-pact-tome-title">
+        <header class="quick-build-header"><div><h2 id="quick-build-pact-tome-title">書之魔契法術</h2></div><button type="button" class="quick-build-close" data-pact-tome-cancel aria-label="取消書之魔契選擇">✕</button></header>
+        <main class="quick-build-pact-tome-body"></main>
+        <footer class="quick-build-pact-tome-actions"><button type="button" data-pact-tome-cancel>取消</button><button type="button" class="primary" data-pact-tome-confirm>確認選擇</button></footer>
+      </section>`;
+    document.body.appendChild(modal);
+    return modal;
+  }
+
+  function openPactTomeModal(options = {}) {
+    const modal = ensurePactTomeModal();
+    const body = modal.querySelector(".quick-build-pact-tome-body");
+    const knownSources = new Map((options.knownSpellIds || []).map(spellId => [spellId, ["角色卡"]]));
+    const initial = options.initial || {};
+    const selection = {
+      cantrips: Array.from({ length: 3 }, (_, index) => initial.cantrips?.[index] || ""),
+      rituals: Array.from({ length: 2 }, (_, index) => initial.rituals?.[index] || "")
+    };
+    const trigger = document.activeElement;
+
+    return new Promise(resolve => {
+      let settled = false;
+      const finish = value => {
+        if (settled) return;
+        settled = true;
+        modal.classList.remove("open");
+        modal.setAttribute("aria-hidden", "true");
+        modal.removeEventListener("click", onBackdrop);
+        modal.removeEventListener("keydown", onKeydown);
+        unlockPage();
+        modal.remove();
+        trigger?.focus?.();
+        resolve(value);
+      };
+      const onBackdrop = event => { if (event.target === modal) finish(null); };
+      const onKeydown = event => {
+        if (event.key === "Escape") { event.preventDefault(); finish(null); return; }
+        if (event.key !== "Tab") return;
+        const focusable = [...modal.querySelectorAll("button:not(:disabled),select:not(:disabled)")].filter(element => element.offsetParent !== null);
+        if (!focusable.length) return;
+        const first = focusable[0], last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+      };
+      const renderSelection = focusId => {
+        const cantripFields = Array.from({ length: 3 }, (_, index) => spellSelectControl(`pact-tome-cantrip-${index}`, `魔契書戲法 ${index + 1}`, allSpellOptions("cantrips"), selection.cantrips[index], selection.cantrips, knownSources, "data-pact-tome-cantrip")).join("");
+        const ritualFields = Array.from({ length: 2 }, (_, index) => spellSelectControl(`pact-tome-ritual-${index}`, `魔契書儀式 ${index + 1}`, allSpellOptions("1", isRitualSpell), selection.rituals[index], selection.rituals, knownSources, "data-pact-tome-ritual")).join("");
+        body.innerHTML = `<h3>選擇魔契書法術</h3><p class="quick-build-lead">選擇 3 個任一職業戲法與 2 個任一職業的一環儀式法術；五個法術都選好後才能確認。</p><section class="quick-build-choice-panel"><div class="quick-build-spell-fields">${cantripFields}${ritualFields}</div></section>`;
+        body.querySelectorAll(".quick-build-spell-view").forEach(button => button.remove());
+        body.querySelectorAll("[data-pact-tome-cantrip]").forEach((select, index) => select.addEventListener("change", () => { selection.cantrips[index] = select.value || ""; renderSelection(select.id); }));
+        body.querySelectorAll("[data-pact-tome-ritual]").forEach((select, index) => select.addEventListener("change", () => { selection.rituals[index] = select.value || ""; renderSelection(select.id); }));
+        modal.querySelector("[data-pact-tome-confirm]").disabled = !pactTomeSelectionComplete(selection);
+        if (focusId) body.querySelector(`#${CSS.escape(focusId)}`)?.focus();
+      };
+      modal.querySelectorAll("[data-pact-tome-cancel]").forEach(button => button.onclick = () => finish(null));
+      modal.querySelector("[data-pact-tome-confirm]").onclick = () => finish(pactTomeSelectionComplete(selection) ? structuredClone(selection) : null);
+      modal.addEventListener("click", onBackdrop);
+      modal.addEventListener("keydown", onKeydown);
+      renderSelection();
+      modal.classList.add("open");
+      modal.setAttribute("aria-hidden", "false");
+      lockPage(modal);
+      modal.querySelector("select")?.focus();
+    });
+  }
+
   function renderLevelOneOptions(body) {
     const key = draft.choices.class;
     const definition = LEVEL_ONE_DEFINITIONS[key] || {};
@@ -2101,7 +2189,15 @@
       const tomeRituals = tome.rituals || [];
       sections.push(`<section class="quick-build-choice-panel"><h4>書之魔契</h4><p class="quick-build-option-note">選 3 個任一職業戲法與 2 個任一職業儀式一環法術。</p><div class="quick-build-spell-fields">${Array.from({ length: 3 }, (_, index) => spellSelectControl(`quick-build-tome-cantrip-${index}`, `魔契書戲法 ${index + 1}`, allSpellOptions("cantrips"), tomeCantrips[index] || "", tomeCantrips, known, "data-level-one-tome-cantrip")).join("")}${Array.from({ length: 2 }, (_, index) => spellSelectControl(`quick-build-tome-ritual-${index}`, `魔契書儀式 ${index + 1}`, allSpellOptions("1", isRitualSpell), tomeRituals[index] || "", tomeRituals, known, "data-level-one-tome-ritual")).join("")}</div></section>`);
     }
-    body.innerHTML = `<button type="button" class="quick-build-change" data-level-one-stage-back="${previousLevelOneStage("spells")}">← 返回</button><h3>${CLASS_LABELS[key]}：法術選擇</h3>${sections.join("")}<div class="quick-build-substep-actions quick-build-inline-actions"><button type="button" data-level-one-stage-back="${previousLevelOneStage("spells")}">返回</button><button type="button" class="primary" data-level-one-stage-next="${nextLevelOneStage("spells")}">下一步</button></div>`;
+    const hasRequiredUniqueSpells = (values, count) => {
+      const selected = (Array.isArray(values) ? values : []).filter(Boolean);
+      return selected.length === count && new Set(selected).size === count;
+    };
+    const spellChoicesComplete = hasRequiredUniqueSpells(choices.cantrips, levelOneCantripCount(draft, definition))
+      && hasRequiredUniqueSpells(choices.spellbookSpells, definition.spellbookSpells || 0)
+      && hasRequiredUniqueSpells(choices.preparedSpells, definition.preparedSpells || 0)
+      && (!(choices.invocations || []).includes("pact-of-the-tome") || pactTomeSelectionComplete(choices.tome));
+    body.innerHTML = `<button type="button" class="quick-build-change" data-level-one-stage-back="${previousLevelOneStage("spells")}">← 返回</button><h3>${CLASS_LABELS[key]}：法術選擇</h3>${sections.join("")}<div class="quick-build-substep-actions quick-build-inline-actions"><button type="button" data-level-one-stage-back="${previousLevelOneStage("spells")}">返回</button><button type="button" class="primary" data-level-one-stage-next="${nextLevelOneStage("spells")}"${spellChoicesComplete ? "" : " disabled"}>下一步</button></div>`;
     body.querySelectorAll("[data-level-one-stage-back]").forEach(button => button.addEventListener("click", () => setLevelOneStage(button.dataset.levelOneStageBack)));
     body.querySelector("[data-level-one-stage-next]")?.addEventListener("click", event => setLevelOneStage(event.currentTarget.dataset.levelOneStageNext));
     const collect = selector => [...body.querySelectorAll(selector)].map(item => item.value || "");
@@ -2529,7 +2625,11 @@
       if (!checkbox) mobileImportWarning(`職業選項：找不到「${classTypeKey}」對應欄位`, warnings);
       else { checkbox.checked = true; dispatchMobileField(checkbox); }
     }
-    (draft.selections.levelOne?.content?.invocations || []).forEach(id => {
+    const levelOneContent = draft.selections.levelOne?.content || {};
+    if ((levelOneContent.invocations || []).includes("pact-of-the-tome") && typeof window.setPactTomeSpellSelection === "function") {
+      window.setPactTomeSpellSelection(levelOneContent.tome, { sync: false });
+    }
+    (levelOneContent.invocations || []).forEach(id => {
       const label = ELDRITCH_INVOCATION_OPTIONS.find(option => option.id === id)?.label || id;
       const checkbox = [...document.querySelectorAll("#eldritch-invocations-output input[data-invocation-name]")]
         .find(input => input.dataset.invocationName === label);
@@ -2589,8 +2689,6 @@
     const content = draft.selections.levelOne?.content || {};
     (content.cantrips || []).forEach(spellId => addManualMobileSpell({ spellId, level: "cantrips", classId: draft.choices.class }, warnings));
     (content.preparedSpells || []).forEach(spellId => addManualMobileSpell({ spellId, level: 1, classId: draft.choices.class }, warnings));
-    (content.tome?.cantrips || []).forEach(spellId => addManualMobileSpell({ spellId, level: "cantrips", classId: "warlock" }, warnings));
-    (content.tome?.rituals || []).forEach(spellId => addManualMobileSpell({ spellId, level: 1, classId: "warlock" }, warnings));
     if (content.spellbookSpells?.length) {
       const note = `法術書（一環）：${content.spellbookSpells.map(spellId => {
         const acquisition = (draft.acquisitions.spells || []).find(item => item.content?.spellbook && item.spellId === spellId);
@@ -2600,17 +2698,6 @@
     }
     if (typeof syncOriginAndSubclassDerivedSpellRows === "function") syncOriginAndSubclassDerivedSpellRows();
     if (typeof updatePickedSpellBoxes === "function") updatePickedSpellBoxes();
-  }
-
-  function importMobileWeaponMasteries(warnings) {
-    const masteryLookup = new Map(WEAPON_MASTERY_OPTIONS.simple.concat(WEAPON_MASTERY_OPTIONS.martial));
-    const masteryNames = [...new Set((draft.selections.levelOne?.content?.weaponMasteries || []).map(weapon => masteryLookup.get(weapon)).filter(Boolean))];
-    masteryNames.forEach(name => {
-      const checkbox = [...document.querySelectorAll("#weapon-mastery-details input[data-mastery-name]")]
-        .find(input => input.dataset.masteryName === name);
-      if (!checkbox) mobileImportWarning(`武器精通屬性「${name}」：找不到角色卡選項`, warnings);
-      else if (!checkbox.checked) { checkbox.checked = true; dispatchMobileField(checkbox); }
-    });
   }
 
   function finishMobileImport(warnings) {
@@ -2663,7 +2750,6 @@
       importMobileSkillsAndLanguages(warnings);
       importMobileEquipment(warnings);
       importMobileSpells(warnings);
-      importMobileWeaponMasteries(warnings);
       finishMobileImport(warnings);
       completed = true;
     } catch (error) {
@@ -3422,7 +3508,7 @@
 
   window.quickBuild = {
     open: openWizard, close: closeWizard, createDraft,
-    openSpellDetail,
+    openSpellDetail, openPactTomeModal,
     getDraft: () => structuredClone(draft), saveDraft, addAcquisition,
     createSageExampleDraft, loadSageExampleDraft, auditDraft, reconcileRaceDraft, reconcileClassDraft, reconcileEquipmentDraft, resolveFinalSpellList,
     hasImportedInitialEquipment,

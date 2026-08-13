@@ -816,7 +816,8 @@ details > summary::-webkit-details-marker,
 
 /* 職業特性表：沿用裝備清單的獨立橫向捲動容器，避免擠壓下方內容。 */
 .class-feature-table-wrap {
-  width: 100%;
+  width: fit-content;
+  max-width: 100%;
   overflow-x: auto;
   margin: 0.45rem 0 0.85rem;
   border: 1px solid var(--border);
@@ -826,11 +827,11 @@ details > summary::-webkit-details-marker,
 }
 
 .class-feature-table {
-  width: 100%;
-  min-width: 42rem;
+  width: max-content;
+  max-width: none;
   border-collapse: collapse;
-  table-layout: fixed;
-  white-space: normal;
+  table-layout: auto;
+  white-space: nowrap;
   font-size: clamp(0.76rem, 1.7vw, 0.9rem) !important;
   line-height: 1.42;
 }
@@ -876,29 +877,10 @@ details > summary::-webkit-details-marker,
   word-break: normal !important;
 }
 
-/* 以實際欄數調整最小表格寬度，避免少欄表有過多空白、多欄表又過度擁擠。 */
-[data-class-feature-table="rogue"] .class-feature-table {
-  min-width: 34rem;
-}
-
-[data-class-feature-table="fighter"] .class-feature-table,
-[data-class-feature-table="barbarian"] .class-feature-table,
-[data-class-feature-table="monk"] .class-feature-table {
-  min-width: 40rem;
-}
-
-[data-class-feature-table="paladin"] .class-feature-table,
-[data-class-feature-table="ranger"] .class-feature-table,
-[data-class-feature-table="warlock"] .class-feature-table,
-[data-class-feature-table="wizard"] .class-feature-table {
-  min-width: 48rem;
-}
-
 [data-class-feature-table="bard"] .class-feature-table,
 [data-class-feature-table="cleric"] .class-feature-table,
 [data-class-feature-table="druid"] .class-feature-table,
 [data-class-feature-table="sorcerer"] .class-feature-table {
-  min-width: 54rem;
   font-size: clamp(0.72rem, 1.55vw, 0.84rem) !important;
 }
 
@@ -920,7 +902,6 @@ details > summary::-webkit-details-marker,
 
 .output,
 #warlock-invocation-summary,
-#weapon-mastery-summary,
 .condition-display-card,
 .save-pair,
 .skill-cell,
@@ -1068,7 +1049,7 @@ details > summary::-webkit-details-marker,
   overscroll-behavior-x: contain;
 }
 
-#tab-basic .output table {
+#tab-basic .output table:not(.class-feature-table) {
   width: 100%;
   max-width: 100%;
   table-layout: fixed;
@@ -2162,6 +2143,43 @@ input[type="checkbox"]:focus-visible {
   letter-spacing: 0.04em;
 }
 
+.weapon-attack-card h4 {
+  position: relative;
+  min-height: 1.35rem;
+}
+
+.weapon-mastery-badge {
+  position: absolute;
+  top: 50%;
+  left: 5.3rem;
+  width: auto;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0.18rem 0.55rem;
+  transform: translateY(-50%);
+  border: 1px solid rgba(255, 128, 42, 0.58);
+  border-radius: 999px;
+  background: rgba(255, 128, 42, 0.12);
+  color: #b84f08;
+  box-shadow: none;
+  font-size: var(--fs-xs);
+  font-weight: 900;
+  line-height: 1.15;
+  letter-spacing: 0;
+  cursor: pointer;
+}
+
+.weapon-mastery-badge[hidden] {
+  display: none;
+}
+
+.weapon-mastery-badge:hover,
+.weapon-mastery-badge:focus-visible,
+.weapon-mastery-badge:active {
+  transform: translateY(-50%);
+}
+
 .weapon-attack-fields {
   display: grid;
   grid-template-columns: minmax(7rem, 1.4fr) minmax(4.75rem, 0.7fr) minmax(6.5rem, 1fr);
@@ -2281,6 +2299,33 @@ input[type="checkbox"]:focus-visible {
   color: var(--text-body);
   font-size: var(--fs-sm);
   font-weight: 700;
+}
+
+.weapon-rule-link {
+  display: inline;
+  width: auto;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  box-shadow: none;
+  font: inherit;
+  line-height: inherit;
+  text-align: inherit;
+  text-decoration: underline dotted currentColor;
+  text-underline-offset: 0.16em;
+  cursor: pointer;
+}
+
+.weapon-rule-link:hover,
+.weapon-rule-link:focus-visible {
+  background: transparent;
+  color: var(--accent-strong);
+  outline-offset: 2px;
 }
 
 .equipment-summary-row small:empty {
@@ -2768,34 +2813,6 @@ input[type="checkbox"]:focus-visible {
   font-weight: 750;
   text-align: left;
   box-shadow: none;
-}
-
-#weapon-mastery-summary-wrap {
-  margin-top: 0.8rem;
-  margin-bottom: 1rem;
-  padding: 0.85rem 1rem;
-}
-
-#weapon-mastery-summary {
-  margin-top: 0.45rem;
-}
-
-.weapon-mastery-summary-list {
-  display: grid;
-  gap: 6px;
-  margin-top: 6px;
-}
-
-.weapon-mastery-summary-item {
-  padding: 6px 8px;
-  border: 1px solid var(--border-strong);
-  border-radius: 8px;
-  background: var(--control-bg);
-  color: var(--text-body);
-}
-
-#weapon-mastery-summary-wrap + h3 {
-  margin-top: 0.2rem;
 }
 
 /* ===== Spells / Feats ===== */
@@ -3790,10 +3807,31 @@ div[id$="spells-area"] .form-row {
   pointer-events: auto;
 }
 
+.tour-heading-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
 #tour-step-title {
-  margin: 0 0 4px;
+  margin: 0;
   font-size: var(--fs-md);
   font-weight: 900;
+}
+
+#tour-step-progress {
+  flex: 0 0 auto;
+  padding: 0.18rem 0.48rem;
+  border: 1px solid rgba(86, 117, 242, 0.28);
+  border-radius: 999px;
+  background: rgba(86, 117, 242, 0.1);
+  color: #4562ca;
+  font-size: var(--fs-xs);
+  font-weight: 900;
+  line-height: 1.25;
+  white-space: nowrap;
 }
 
 #tour-step-text {
@@ -3834,7 +3872,8 @@ div[id$="spells-area"] .form-row {
 
 /* ===== Modals / Popups ===== */
 #beastPopup,
-#skillPopup {
+#skillPopup,
+#weaponRulePopup {
   position: fixed;
   z-index: 9999;
   max-width: 320px;
@@ -3850,7 +3889,8 @@ div[id$="spells-area"] .form-row {
 }
 
 #beastPopup .title,
-#skillPopup .title {
+#skillPopup .title,
+#weaponRulePopup .title {
   margin-bottom: 6px;
   color: var(--context-popup-text);
   font-size: var(--fs-md);
@@ -3865,16 +3905,37 @@ div[id$="spells-area"] .form-row {
 
 #beastPopup .muted,
 #beastPopup .close,
-#skillPopup .close {
+#skillPopup .close,
+#weaponRulePopup .close {
   color: var(--context-popup-muted);
   opacity: 0.85;
 }
 
 #beastPopup .close,
-#skillPopup .close {
+#skillPopup .close,
+#weaponRulePopup .close {
   float: right;
   margin-left: 10px;
   cursor: pointer;
+}
+
+#weaponRulePopup .close {
+  width: auto;
+  min-width: 0;
+  min-height: 0;
+  margin-top: -2px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  font-size: var(--fs-sm);
+}
+
+.weapon-rule-popup-category {
+  margin: -2px 0 6px;
+  color: var(--context-popup-muted);
+  font-size: var(--fs-xs);
+  font-weight: 800;
 }
 
 .beast-tip,
@@ -5596,6 +5657,12 @@ html[data-theme="dark"] #tour-tooltip {
   background: var(--surface-strong);
   color: var(--text-body);
   box-shadow: var(--shadow-strong);
+}
+
+html[data-theme="dark"] #tour-step-progress {
+  border-color: rgba(122, 162, 255, 0.42);
+  background: rgba(122, 162, 255, 0.16);
+  color: #a9c1ff;
 }
 
 html[data-theme="dark"] #tour-step-text,

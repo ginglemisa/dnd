@@ -2408,29 +2408,9 @@ function wrapClassFeatureTable(classHtml, classFeatureHeading, className) {
 
   const openingTable = classHtml.slice(tableStart, openingTableEnd);
   const styledOpeningTable = openingTable.replace('<table', '<table class="class-feature-table"');
-  const columnWidths = CLASS_FEATURE_TABLE_COLUMN_WIDTHS[className];
-  const columnGroup = columnWidths
-    ? `<colgroup>${columnWidths.map((width) => `<col style="width:${width}">`).join('')}</colgroup>`
-    : '';
 
-  return `${classHtml.slice(0, featureHeadingIndex)}<details class="class-feature-table-details" data-class-feature-table="${className}" open><summary><strong>${classFeatureHeading}表格</strong></summary>${classHtml.slice(featureHeadingIndex + featureHeading.length, tableStart)}<div class="class-feature-table-wrap">${styledOpeningTable}>${columnGroup}${classHtml.slice(openingTableEnd + 1, tableEnd)}</table></div></details>${classHtml.slice(tableEnd + '</table>'.length)}`;
+  return `${classHtml.slice(0, featureHeadingIndex)}<details class="class-feature-table-details" data-class-feature-table="${className}" open><summary><strong>${classFeatureHeading}表格</strong></summary>${classHtml.slice(featureHeadingIndex + featureHeading.length, tableStart)}<div class="class-feature-table-wrap">${styledOpeningTable}>${classHtml.slice(openingTableEnd + 1, tableEnd)}</table></div></details>${classHtml.slice(tableEnd + '</table>'.length)}`;
 }
-
-// 依各職業表的實際欄數配置：特性欄保留閱讀空間，其餘數值欄保持一致且緊湊。
-const CLASS_FEATURE_TABLE_COLUMN_WIDTHS = {
-  barbarian: ['8%', '12%', '44%', '12%', '12%', '12%'],
-  bard: ['7%', '9%', '37%', '9%', '8%', '10%', '7%', '7%', '6%'],
-  cleric: ['7%', '9%', '37%', '9%', '8%', '10%', '7%', '7%', '6%'],
-  druid: ['7%', '9%', '37%', '9%', '8%', '10%', '7%', '7%', '6%'],
-  fighter: ['8%', '12%', '54%', '13%', '13%'],
-  monk: ['8%', '12%', '47%', '11%', '11%', '11%'],
-  paladin: ['7%', '10%', '43%', '10%', '12%', '9%', '9%'],
-  ranger: ['7%', '10%', '43%', '10%', '12%', '9%', '9%'],
-  rogue: ['8%', '15%', '57%', '20%'],
-  sorcerer: ['7%', '9%', '37%', '9%', '8%', '10%', '7%', '7%', '6%'],
-  warlock: ['7%', '10%', '34%', '10%', '8%', '10%', '8%', '13%'],
-  wizard: ['7%', '10%', '42%', '9%', '11%', '7%', '7%', '7%']
-};
 
 const classFeatureHeadingMap = {
   barbarian: '野蠻人特性',
