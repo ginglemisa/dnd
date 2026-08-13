@@ -1,122 +1,94 @@
-# 瑞基手機角卡｜5.5/5R新手創角工具
+# TWD20 | 5.5版手機角卡
 
-🔗 https://ginglemisa.github.io/dnd/
+給 TRPG 新手、帶團者與教學活動使用的手機創角網站。以較低的規則負擔協助玩家建立 1～5 級角色，快速開始第一場冒險。
 
----
+- 正式網站：[https://twd20.com](https://twd20.com)
+- Legal & About：[https://twd20.com/about.html](https://twd20.com/about.html)
+- GitHub：[https://github.com/ginglemisa/dnd](https://github.com/ginglemisa/dnd)
 
-## 專案定位
+> TWD20 是獨立製作的第三方 5.5 版相容工具，與任何官方品牌無關。
 
-這是一份送給 TRPG 新手玩家的小禮物。
+## 適用情境
 
-目標很單純：  
-👉 **讓玩家用最短時間內完成角色建立，開始第一場冒險。**
+- 第一次接觸 5.5 版奇幻 TRPG 的玩家
+- DM／教學者在桌邊帶領新手創角
+- TRPG 推廣活動、體驗場與收費團
+- 希望減少準備時間的快速開團
 
-本工具以手機操作為主，並預設有主持人或教學者在場引導使用。
+本工具以手機操作為主，並預設現場有主持人或教學者協助說明規則。
 
----
+## 目前功能
 
-## 使用情境
+- 五個角色卡分頁：數值、技能、動作、裝備、法術
+- 支援 1～5 級角色資料與相關選項
+- 本機自動儲存角色資料
+- JSON 角色紀錄匯入與匯出
+- 分享角卡網址
+- 指向 `https://twd20.com` 的 QR Code
+- PDF 角色卡匯出
+- 藍白外觀與深色外觀
+- 新手導覽
+- 創角精靈（β 版）
+- 可獨立開啟的離線版本
 
-本工具適用於：
+右上角工具選單集中提供外觀切換、紀錄管理、QR Code、PDF 匯出、分享角卡與新手導覽。
 
-- TRPG 新手教學
-- 商業帶團 / 收費體驗
-- 大型專場 / TRPG 推廣活動
-- 私桌快速開團（減少創角時間）
+## 資料保存與分享
 
----
+一般模式下，角色資料會自動儲存在目前瀏覽器的 LocalStorage。清除瀏覽器資料或更換裝置後，資料不會自動保留；建議定期使用「匯出紀錄」備份 JSON 檔案，需要時再以「匯入紀錄」還原。
 
-## 功能簡介
+透過分享網址開啟角色時會進入分享模式。在分享模式中的修改不會自動寫入本機儲存，請使用匯入／匯出功能保存需要的內容。
 
-- 💾 本機自動儲存（LocalStorage）
-- 📤 角色資料匯入 / 匯出
-- 🧾 一鍵下載 PDF 角色卡
-- 📱 手機操作介面
+## 離線版本
 
----
+專案提供單檔離線角卡：[`TWD20-offline.html`](TWD20-offline.html)。下載後可直接以瀏覽器開啟，不必安裝應用程式。
 
-## 版權說明
+離線檔案由來源檔案產生；一般功能修改應先更新 `index.html`、JavaScript 與 CSS 等來源，不要直接編輯產出檔。
 
-本工具基於「第五版（2024 修訂）」的開放內容（SRD 5.2.1）製作。
+## 專案結構
 
-為避免版權爭議，本專案不使用「D 開頭的三個英文字母」縮寫，
-也不採用「龍開頭的五個中文字」作為名稱。
+- `index.html`：主角卡介面與主要流程
+- `styles.css`：主介面、主題與各功能樣式
+- `quick-build.js`：創角精靈
+- `onboarding-tour.js`：新手導覽
+- `character-rules.js`、`class-features.js`、`race.js`：角色規則與選項資料
+- `equipment-data.js`、`equipment-notes.js`、`spell-list.js`：裝備與法術資料
+- `pdf-export.js`、`pdf-field-map.js`：PDF 匯出
+- `about.html`、`info-pages.css`：Legal & About 頁面
+- `twd20.jpg`：TWD20 品牌標誌
+- `TWD20-offline.html`：已產生的單檔離線版本
 
-你一定能理解，這是針對某一款桌上奇幻遊戲所設計的手機輔助工具。
+這是以原生 HTML、CSS 與 JavaScript 為主的靜態網頁專案，不需要前端框架或套件管理器即可開啟主要介面。
 
-公開散布本專案，或在公開活動與收費帶團中使用，皆屬合法，請安心。
+## 中文角色紙
 
----
-
-## 為什麼只做到 1～5 級？
-
-這個專案的目標是：
-
-👉 **先讓玩家開始玩，剩下以後再說。**
-
-如果玩家已經從 1 級玩到 5 級，  
-那代表你們已經準備好進入更完整的官方規則世界了。
-
----
-
-## 中文角色紙下載
-
-提供可搭配使用的 SRD 中文角色紙：
-
-- 連結：[https://tinyurl.com/srd5etw](https://tinyurl.com/srd5etw)
-- 備註：PDF 具備表單功能，可先填寫再列印
+- [SRD 中文角色紙](https://tinyurl.com/srd5etw)：具備表單功能，可先填寫再列印
 - 角色卡排版作者：[赤赤@AkaA](https://x.com/AkaAAkaAka)
-- [無輸入欄位 PDF / 原PNG檔下載連結](https://drive.google.com/drive/folders/1brrzdbRcxMvxHcYYjyzs2N_8aPaQewW6?usp=sharing)
+- [無表單 PDF／原 PNG 檔](https://drive.google.com/drive/folders/1brrzdbRcxMvxHcYYjyzs2N_8aPaQewW6?usp=sharing)
+- PDF 使用字型：[Noto CJK](https://github.com/notofonts/noto-cjk/releases)
 
----
-
-## 授權與聲明
+## 授權與法律聲明
 
 ### 規則內容
 
-本專案使用並改編以下內容：
+本專案使用並改編 System Reference Document 5.2.1（SRD 5.2.1）的內容。SRD 5.2.1 採 [Creative Commons Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/legalcode) 授權。
 
-- System Reference Document 5.2.1（SRD 5.2.1）
-- 採用 CC-BY-4.0 授權
-- 與任何官方品牌無關
+### 專案內容
 
-### 程式碼
+專案原始程式碼、原創說明文字、介面結構與功能可依 MIT License 使用；引用或改編自 SRD 5.2.1 的內容仍依 CC BY 4.0 使用。重製、改作或商用時，請保留必要 attribution，並自行確認所在地與使用平台的規範。
 
-- 本專案程式碼採用 **MIT License**
+完整說明請見網站的 [Legal & About](https://twd20.com/about.html)。
 
-
----
-
-## SRD Attribution
+### SRD Attribution
 
 This work includes material from the System Reference Document 5.2.1 (“SRD 5.2.1”) by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode.
 
----
+## 問題回報與參與
 
-## 回報問題
+如果發現 Bug 或有改善建議，可透過以下方式聯絡：
 
-如果你發現 Bug 或有改善建議，歡迎：
+- Email：ginglemisa@gmail.com
+- 巴哈姆特站內信：`reggietsai`
+- GitHub repository：[ginglemisa/dnd](https://github.com/ginglemisa/dnd)
 
-- 寄信至 ginglemisa@gmail.com
-- 巴哈姆特站內信：reggietsai
-
----
-
-## 自行修改
-
-歡迎 fork 本專案，依你的團務需求進行擴充，例如：
-
-- 增加職業 / 法術
-- 調整 UI
-- 加入 house rules
-
----
-
-## 支持專案
-
-如果這個工具有幫助到你或你的玩家：
-
-👉 歡迎分享給更多人  
-👉 或幫忙點個 ⭐ Star  
-
-希望幫助更多新手踏進 TRPG 的世界。
+歡迎 fork 專案並依團務需求調整介面或功能。若這個工具對你或玩家有幫助，也歡迎分享網站或替專案加上 Star。

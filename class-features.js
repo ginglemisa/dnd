@@ -2376,7 +2376,7 @@ function styleClassTagline(classHtml, classFeatureHeading) {
     const textLine = lines[i].trim();
     if (!textLine) continue;
 
-    lines[i] = `<div style="margin: 8px 0; font-size: 1.08em; color: #6f3f1e; font-style: italic; font-weight: 600;">${textLine}</div>`;
+    lines[i] = `<div class="class-feature-tagline">${textLine}</div>`;
     break;
   }
 

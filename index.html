@@ -1,6 +1,26 @@
 
 <!DOCTYPE html>
 <html lang="zh-Hant"><head>
+	<script>
+	  (function () {
+	    const themeKey = "dnd.theme.v1";
+	    const storage = Object.freeze({
+	      getItem(key) {
+	        try { return localStorage.getItem(key); } catch (_error) { return null; }
+	      },
+	      setItem(key, value) {
+	        try { localStorage.setItem(key, value); return true; } catch (_error) { return false; }
+	      },
+	      removeItem(key) {
+	        try { localStorage.removeItem(key); return true; } catch (_error) { return false; }
+	      }
+	    });
+	    window.dndStorage = storage;
+	    const savedTheme = storage.getItem(themeKey);
+	    const theme = savedTheme === "light" || savedTheme === "dark" ? savedTheme : "light";
+	    document.documentElement.dataset.theme = theme;
+	  })();
+	</script>
 	 <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-M8L0F03EGD"></script>
   <script>
@@ -13,16 +33,16 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="瑞基手機角卡｜5.5E新手創角工具，適合 TRPG 推廣與入門教學場合。用手機一步一步學會填寫角色卡。">
-  <meta property="og:title" content="瑞基手機角卡｜5.5E新手創角工具">
-  <meta property="og:description" content="瑞基手機角卡｜5.5E新手創角工具，適合 TRPG 推廣與現場教學，手機操作也好上手。">
+  <meta name="description" content="TWD20 | 5.5版手機角卡，適合 TRPG 推廣與入門教學場合。">
+  <meta property="og:title" content="TWD20 | 5.5版手機角卡">
+  <meta property="og:description" content="TWD20 | 5.5版手機角卡，適合 TRPG 推廣與現場教學，手機操作也好上手。">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://ginglemisa.github.io/dnd/">
   <meta property="og:image" content="https://ginglemisa.github.io/dnd/og-image.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
-  <title>瑞基手機角卡｜5.5E新手創角工具</title>
+  <title>TWD20 | 5.5版手機角卡</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎲%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="styles.css?v=20260806-class-level-layout-v2">
   <script src="scroll-to-top.js" defer></script>
@@ -43,17 +63,48 @@
 <body>
 <header class="site-header">
   <div class="site-hero sr-only">
-    <h1>瑞基手機角卡｜5.5E新手創角工具</h1>
+    <h1>TWD20 | 5.5版手機角卡</h1>
     <p>用手機學會填寫角色卡</p>
   </div>
   <div class="tabs-shell">
-    <nav class="tabs" role="tablist" aria-label="角色卡功能分頁">
-      <button id="basic-tab-button" class="tab-button active" type="button" role="tab" aria-selected="true" aria-controls="tab-basic" onclick="showTab(&#39;basic&#39;, this)">數值</button>
-      <button class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="tab-skills" onclick="showTab(&#39;skills&#39;, this)">技能</button>
-      <button class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="tab-actions" onclick="showTab(&#39;actions&#39;, this)">動作</button>
-      <button class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="tab-equipment" onclick="showTab(&#39;equipment&#39;, this)">裝備</button>
-      <button id="spells-tab-button" class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="tab-spells" onclick="showTab(&#39;spells&#39;, this)">法術</button>
-    </nav>
+    <div class="tabs-row">
+      <nav class="tabs" role="tablist" aria-label="角色卡功能分頁">
+        <button id="basic-tab-button" class="tab-button active" type="button" role="tab" aria-selected="true" aria-controls="tab-basic" onclick="showTab(&#39;basic&#39;, this)">數值</button>
+        <button class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="tab-skills" onclick="showTab(&#39;skills&#39;, this)">技能</button>
+        <button class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="tab-actions" onclick="showTab(&#39;actions&#39;, this)">動作</button>
+        <button class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="tab-equipment" onclick="showTab(&#39;equipment&#39;, this)">裝備</button>
+        <button id="spells-tab-button" class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="tab-spells" onclick="showTab(&#39;spells&#39;, this)">法術</button>
+      </nav>
+      <button type="button" id="utility-menu-toggle" class="utility-menu-toggle" aria-label="開啟工具選單" aria-expanded="false" aria-controls="utility-menu">
+        <span class="utility-menu-toggle__icon" aria-hidden="true"><span></span><span></span><span></span></span>
+      </button>
+    </div>
+    <div id="utility-menu" class="utility-menu" aria-hidden="true" inert>
+      <fieldset class="theme-picker" aria-label="外觀主題">
+        <div class="theme-picker__options">
+          <label class="theme-picker__option">
+            <input type="radio" name="site-theme" value="light">
+            <span>藍白外觀</span>
+          </label>
+          <label class="theme-picker__option">
+            <input type="radio" name="site-theme" value="dark">
+            <span>深色外觀</span>
+          </label>
+        </div>
+      </fieldset>
+      <div class="utility-menu__divider" role="separator"></div>
+      <div class="utility-menu__grid">
+        <button type="button" id="import-json-btn" class="utility-menu__button">⬆️ 匯入紀錄</button>
+        <button type="button" id="export-json-btn" class="utility-menu__button">⬇️ 匯出紀錄</button>
+        <button type="button" id="open-qr-btn" class="utility-menu__button" aria-label="開啟 QR Code">🔳 QRCODE</button>
+        <button type="button" id="export-pdf-btn" class="utility-menu__button">📄 匯出PDF</button>
+        <button id="clear-storage-btn" class="utility-menu__button utility-menu__button--danger">🗑️ 清除紀錄</button>
+        <button type="button" class="utility-menu__button utility-menu__button--primary share-url-btn" onclick="copyShareUrl()" aria-label="複製分享連結">🔗 分享角卡</button>
+      </div>
+      <div class="utility-menu__divider" role="separator"></div>
+      <button type="button" id="restart-onboarding-btn" class="utility-menu__button">🧭 新手導覽</button>
+      <input type="file" id="import-json-file" accept="application/json" class="is-hidden">
+    </div>
     <div id="spell-tab-toolbar" class="spell-toolbar is-hidden" aria-label="法術搜尋工具列">
       <div class="spell-toolbar-row">
         <div class="spell-search-controls">
@@ -394,23 +445,7 @@
 </div>
 
 <div id="share-mode-tip" class="share-mode-tip is-hidden">
-  目前為分享模式：你的修改不會自動寫入本機儲存。可使用下方「匯入紀錄／匯出紀錄」功能保存與還原。
-</div>
-<div id="share-actions-wrap" class="share-actions-wrap">
-  <div class="share-action-row share-action-row--double">
-    <button id="clear-storage-btn">🗑️ 清除紀錄</button>
-    <button type="button" class="share-url-btn" onclick="copyShareUrl()" aria-label="複製分享連結">🔗 分享角卡</button>
-  </div>
-  <div class="share-action-row share-action-row--triple">
-    <button type="button" id="import-json-btn" class="share-import-btn">⬆️ 匯入紀錄</button>
-    <button type="button" id="open-qr-btn" class="utility-emoji-btn" aria-label="開啟 QR Code">🔳</button>
-    <button type="button" id="export-json-btn" class="share-export-btn">⬇️ 匯出紀錄</button>
-  </div>
-  <div class="share-action-row share-action-row--double">
-    <button type="button" id="export-pdf-btn" class="share-export-btn">📄 匯出PDF</button>
-    <button type="button" id="restart-onboarding-btn">🧭新手導覽</button>
-  </div>
-  <input type="file" id="import-json-file" accept="application/json" class="is-hidden">
+  目前為分享模式：你的修改不會自動寫入本機儲存。可從右上角選單使用「匯入紀錄／匯出紀錄」功能保存與還原。
 </div>
 <!-- 暫停啟用：待創角精靈功能完成後，再恢復「清除紀錄時一併刪除草稿」選項。
 <div id="clear-records-modal" class="clear-records-modal" aria-hidden="true">
@@ -1546,7 +1581,7 @@ const CLASS_FEATURE_TABLE_STATE_KEY = "dndchar_class_feature_table_state_v1";
 
 function getClassFeatureTableStates() {
   try {
-    const savedStates = JSON.parse(localStorage.getItem(CLASS_FEATURE_TABLE_STATE_KEY));
+    const savedStates = JSON.parse(window.dndStorage.getItem(CLASS_FEATURE_TABLE_STATE_KEY));
     return savedStates && typeof savedStates === "object" && !Array.isArray(savedStates) ? savedStates : {};
   } catch (_error) {
     return {};
@@ -1564,7 +1599,7 @@ function restoreClassFeatureTableState(className, output) {
     try {
       const nextStates = getClassFeatureTableStates();
       nextStates[className] = featureTable.open;
-      localStorage.setItem(CLASS_FEATURE_TABLE_STATE_KEY, JSON.stringify(nextStates));
+      window.dndStorage.setItem(CLASS_FEATURE_TABLE_STATE_KEY, JSON.stringify(nextStates));
     } catch (_error) {
       // 私密瀏覽或儲存空間不可用時，仍保留本次頁面中的收闔操作。
     }
@@ -2843,7 +2878,7 @@ function applyDefaultAbilitiesByClass() {
 
     const ACTIVE_TAB_KEY = "activeTab";
     const tabScrollPositions = {};
-    const savedTab = localStorage.getItem(ACTIVE_TAB_KEY);
+    const savedTab = window.dndStorage.getItem(ACTIVE_TAB_KEY);
     const hasSavedTab = !!(savedTab && document.getElementById(`tab-${savedTab}`));
     let activeTab = (hasSavedTab ? savedTab : null) || document.querySelector('.tab-content.active')?.id?.replace('tab-', '') || 'basic';
     function showTab(tab, button) {
@@ -2875,7 +2910,7 @@ function applyDefaultAbilitiesByClass() {
 
       activeTab = tab;
       window.dispatchEvent(new CustomEvent("tabchange", { detail: { tab } }));
-      localStorage.setItem(ACTIVE_TAB_KEY, tab);
+      window.dndStorage.setItem(ACTIVE_TAB_KEY, tab);
       const nextScrollY = tabScrollPositions[tab] ?? 0;
       requestAnimationFrame(() => {
         const maxScroll = Math.max(0, document.body.scrollHeight - window.innerHeight);
@@ -5092,7 +5127,8 @@ function hideSkillPopup() {
   if (popup) popup.style.display = "none";
 }
 
-const SPELL_QR_IMAGE_SRC = "data:image/png;base64,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";
+const SPELL_QR_IMAGE_SRC = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPAAAADwAQMAAAAEm3vRAAAABlBMVEX///8AAABVwtN+AAAACXBIWXMAAA7EAAAOxAGVKw4bAAABD0lEQVRYhe2YMQ6DMAxFXTFk5EgcjR6NIzEyINLYDk6ahpSiiun/BeHH9GXHPxBB96v3UXN4GZayAlzHq7o3zp2nIRSfqQLcwKG26Qu5ragAf8FdeC4PMRX4X5j2+QY+g9N8k2uOP7Bh2xx8Kkor1lcN8Hmcy0/UErBJLQzTzI/JbXFTs7vAh1gVVwibOu6dmLUicIHlDGQv/UriJUuPRwK+iEUcEVmCg9XSuwR8iHsZa3bSTOVYs2QLGvgDJ3GEtixtNxXgCziPNXovoS4ff+AqzvJ0bNBOvwduYutA2yXyHQGfwjEMcpZ2FVOBr2GyWLMvaOADLEqd+h5rgKs4DrTXVvTy56C87AH/hqG79QLS1jgHWvai8gAAAABJRU5ErkJggg==";
+
 function setupSpellQrModal() {
   const openBtn = document.getElementById("open-qr-btn");
   const modal = document.getElementById("spell-qr-modal");
@@ -5102,20 +5138,86 @@ function setupSpellQrModal() {
   const qrImage = modal.querySelector(".spell-qr-modal-image");
   if (qrImage) qrImage.src = SPELL_QR_IMAGE_SRC;
 
-  const showSpellQrModal = () => modal.classList.add("open");
-  const hideSpellQrModal = () => modal.classList.remove("open");
+  const setOpen = (open) => {
+    modal.classList.toggle("open", open);
+    modal.setAttribute("aria-hidden", String(!open));
+    if (open) closeBtn?.focus();
+    else openBtn.focus();
+  };
 
-  openBtn.addEventListener("click", showSpellQrModal);
-
-  closeBtn?.addEventListener("click", hideSpellQrModal);
+  openBtn.addEventListener("click", () => setOpen(true));
+  closeBtn?.addEventListener("click", () => setOpen(false));
   modal.addEventListener("click", (event) => {
-    if (event.target === modal) hideSpellQrModal();
+    if (event.target === modal) setOpen(false);
   });
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") hideSpellQrModal();
+    if (event.key === "Escape" && modal.classList.contains("open")) {
+      event.preventDefault();
+      setOpen(false);
+    }
   });
 }
 
+function setupUtilityMenu() {
+  const shell = document.querySelector(".tabs-shell");
+  const toggle = document.getElementById("utility-menu-toggle");
+  const menu = document.getElementById("utility-menu");
+  if (!shell || !toggle || !menu) return;
+
+  let isOpen = false;
+  const themeKey = "dnd.theme.v1";
+  const themeInputs = [...menu.querySelectorAll('input[name="site-theme"]')];
+
+  const applyTheme = (theme, { persist = true } = {}) => {
+    const nextTheme = theme === "dark" ? "dark" : "light";
+    document.documentElement.dataset.theme = nextTheme;
+    themeInputs.forEach((input) => {
+      input.checked = input.value === nextTheme;
+    });
+    if (persist) {
+      try {
+        window.dndStorage.setItem(themeKey, nextTheme);
+      } catch (error) {
+        // The visual change still applies when storage is unavailable.
+      }
+    }
+  };
+
+  applyTheme(document.documentElement.dataset.theme, { persist: false });
+  themeInputs.forEach((input) => {
+    input.addEventListener("change", () => {
+      if (input.checked) applyTheme(input.value);
+    });
+  });
+
+  const setOpen = (open, { restoreFocus = false } = {}) => {
+    isOpen = !!open;
+    shell.classList.toggle("utility-menu-open", isOpen);
+    document.body.classList.toggle("utility-menu-open", isOpen);
+    menu.classList.toggle("open", isOpen);
+    menu.setAttribute("aria-hidden", String(!isOpen));
+    menu.inert = !isOpen;
+    toggle.setAttribute("aria-expanded", String(isOpen));
+    toggle.setAttribute("aria-label", isOpen ? "關閉工具選單" : "開啟工具選單");
+    if (!isOpen && restoreFocus) toggle.focus();
+  };
+
+  toggle.addEventListener("click", () => setOpen(!isOpen));
+  menu.addEventListener("click", (event) => {
+    if (event.target.closest("button")) setOpen(false);
+  }, true);
+
+  document.addEventListener("pointerdown", (event) => {
+    if (!isOpen || shell.contains(event.target)) return;
+    setOpen(false);
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && isOpen) setOpen(false, { restoreFocus: true });
+  });
+
+  window.addEventListener("tabchange", () => setOpen(false));
+}
 // 事件委派：不用管 class-features 何時重繪
 document.addEventListener("click", (e) => {
   const el = e.target.closest(".beast-tip");
@@ -5156,7 +5258,7 @@ window.SHARE_MODE = SHARE_MODE;
 
 function clearAppStateAndReload() {
   cancelPendingAutosaveForClear();
-  APP_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
+  APP_STORAGE_KEYS.forEach((key) => window.dndStorage.removeItem(key));
   location.replace(`${location.pathname}${location.search}`);
 }
 
@@ -5841,8 +5943,7 @@ function saveAllFields() {
   AUTOSAVE_EXCLUDED_IDS.forEach((id) => {
     delete data[id];
   });
-  localStorage.setItem(AUTO_SAVE_KEY, JSON.stringify(data));
-  autosaveDirty = false;
+  if (window.dndStorage.setItem(AUTO_SAVE_KEY, JSON.stringify(data))) autosaveDirty = false;
 }
 
 function scheduleSaveAllFields() {
@@ -5886,7 +5987,7 @@ function cancelPendingAutosaveForClear() {
 
 function restoreAllFields() {
   if (SHARE_MODE) return;
-  const raw = localStorage.getItem(AUTO_SAVE_KEY);
+  const raw = window.dndStorage.getItem(AUTO_SAVE_KEY);
   if (!raw) return;
   try {
     applyStateObject(JSON.parse(raw));
@@ -6357,24 +6458,24 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
   window.onboardingTour = new OnboardingTour();
   window.onboardingTour.init();
   initLegalModal();
+  setupUtilityMenu();
   setupSpellQrModal();
 });
 </script>
 </main>
 <footer class="site-footer">
   <div class="site-footer-links" aria-label="網站資訊連結">
-    <a href="about.html#legal">Legal</a>
-    <a href="about.html">About</a>
+    <a href="about.html">Legal &amp; About</a>
     <a href="https://github.com/ginglemisa/dnd" target="_blank" rel="noopener">GitHub Repo</a>
   </div>
-  <div>瑞基手機角卡｜五版相容新手創角工具 · Independent fifth-edition-compatible character builder.</div>
+  <div>TWD20 | 5.5版手機角卡 · 3rd-Party 5.5e Character Builder.</div>
 </footer>
 
 <div id="spell-qr-modal" aria-hidden="true">
   <div class="spell-qr-modal-card" role="dialog" aria-modal="true" aria-label="QR Code">
     <button type="button" class="spell-qr-modal-close" aria-label="關閉 QR Code">✕</button>
     <img class="spell-qr-modal-image" alt="QR Code 圖片">
-    <p class="spell-qr-modal-note">掃 QR CODE 開啟創角網站</p>
+    <p class="spell-qr-modal-note" style="text-align: center; font-weight: bold;">掃 QR CODE 快速分享桌友</p>
   </div>
 </div>
 
@@ -6426,18 +6527,18 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
 <div id="legal-modal">
   <div class="legal-modal-card">
     <button type="button" id="legal-close-btn" aria-label="關閉提醒">✕</button>
-    <h3 class="legal-modal-title">瑞基手機角卡使用提醒</h3>
+    <img class="legal-modal-logo" src="twd20.jpg" alt="TWD20 標誌">
+    <h3 class="legal-modal-title">TWD20 | 5.5版手機角卡</h3>
     <div class="legal-modal-copy">
-      瑞基手機角卡是獨立製作的五版相容新手創角工具，使用與改編的規則內容以 SRD 5.2.1 為基礎。
-      詳細授權與 attribution 請見 About 頁面的「授權與法律聲明」。
+      TWD20 是獨立製作的5.5版新手創角工具，使用與改編的規則內容以 SRD 5.2.1 為基礎。
+      詳細授權、資料與使用說明請見 Legal &amp; About。
     </div>
       <h3 class="legal-modal-title legal-modal-section-title">更多資訊</h3>
       <div class="legal-modal-copy">
-      授權聲明：<a href="about.html#legal" target="_blank" rel="noopener">Legal</a><br>
-      資料與使用說明：<a href="about.html" target="_blank" rel="noopener">About</a>
+      <a href="about.html" target="_blank" rel="noopener">Legal &amp; About</a>
     </div>
     <div class="legal-modal-meta">
-      <div class="legal-modal-meta-title">5e-compatible character builder</div>
+      <div class="legal-modal-meta-title">5.5e compatible character builder</div>
       <div>SRD 5.2.1 material under CC BY 4.0.</div>
     </div>
 <div class="legal-modal-dismiss">

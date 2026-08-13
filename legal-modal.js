@@ -9,12 +9,16 @@
     const checkbox = document.getElementById("legal-dismiss");
     const closeBtn = document.getElementById("legal-close-btn");
     const ackBtn = document.getElementById("legal-ack-btn");
+    const storage = window.dndStorage || {
+      getItem(key) { try { return localStorage.getItem(key); } catch (_error) { return null; } },
+      removeItem(key) { try { localStorage.removeItem(key); return true; } catch (_error) { return false; } }
+    };
     if (!modal || !checkbox) return;
 
     let shouldDismiss = checkbox.checked === true;
     try {
       if (!shouldDismiss) {
-        const raw = localStorage.getItem(AUTO_SAVE_KEY);
+        const raw = storage.getItem(AUTO_SAVE_KEY);
         if (!raw) throw new Error("no autosave data");
         const data = JSON.parse(raw);
         shouldDismiss =
@@ -26,13 +30,13 @@
       void error;
     }
 
-    if (!shouldDismiss && localStorage.getItem(LEGACY_LEGAL_DISMISS_KEY) === "1") {
+    if (!shouldDismiss && storage.getItem(LEGACY_LEGAL_DISMISS_KEY) === "1") {
       shouldDismiss = true;
       checkbox.checked = true;
       if (typeof scheduleSaveAllFields === "function") scheduleSaveAllFields();
     }
 
-    localStorage.removeItem(LEGACY_LEGAL_DISMISS_KEY);
+    storage.removeItem(LEGACY_LEGAL_DISMISS_KEY);
     checkbox.checked = shouldDismiss;
     checkbox.addEventListener("change", () => {
       if (typeof scheduleSaveAllFields === "function") scheduleSaveAllFields();

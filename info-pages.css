@@ -96,6 +96,18 @@ h3 {
   line-height: 1.4;
 }
 
+.legal-divider {
+  margin: 1.6rem 0 0;
+  border: 0;
+  border-top: 2px solid rgba(40, 82, 214, 0.42);
+}
+
+.legal-section > h2:first-child {
+  margin-top: 0.8rem;
+  padding-top: 0;
+  border-top: 0;
+}
+
 section[id] {
   scroll-margin-top: 1rem;
 }
@@ -156,6 +168,35 @@ a:focus-visible {
 .links a:hover,
 .links a:focus-visible {
   text-decoration: underline;
+}
+
+.back-to-card {
+  position: fixed;
+  right: max(1rem, env(safe-area-inset-right, 0px));
+  bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.9rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid rgba(33, 71, 178, 0.34);
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--info-accent) 0%, var(--info-accent-strong) 100%);
+  color: #fff;
+  box-shadow: 0 10px 26px rgba(33, 71, 178, 0.28);
+  text-decoration: none;
+}
+
+.back-to-card:hover {
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 13px 30px rgba(33, 71, 178, 0.34);
+}
+
+.back-to-card:focus-visible {
+  border-radius: 999px;
+  outline-color: rgba(33, 71, 178, 0.32);
 }
 
 @media (min-width: 620px) {
