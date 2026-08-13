@@ -880,8 +880,8 @@ DC 25 力量（運動）：掙斷鐐銬
       });
 
     summaryEl.innerHTML = picks.length
-      ? `已勾選：<div style="margin-top:6px; display:grid; gap:6px;">${picks.map(({ name, description }) => `
-          <div style="padding:6px 8px; border:1px solid #ccc; border-radius:8px; background:#fff;">
+      ? `已勾選：<div class="weapon-mastery-summary-list">${picks.map(({ name, description }) => `
+          <div class="weapon-mastery-summary-item">
             <strong>${escapeHtml(name)}</strong>${description ? `：${escapeHtml(description)}` : ""}
           </div>`).join("")}
         </div>`

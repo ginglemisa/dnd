@@ -2690,6 +2690,20 @@ input[type="checkbox"]:focus-visible {
   margin-top: 0.45rem;
 }
 
+.weapon-mastery-summary-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.weapon-mastery-summary-item {
+  padding: 6px 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--control-bg);
+  color: var(--text-body);
+}
+
 #weapon-mastery-summary-wrap + h3 {
   margin-top: 0.2rem;
 }
