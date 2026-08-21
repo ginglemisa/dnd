@@ -502,10 +502,10 @@
       const modal = document.getElementById("point-buy-modal");
       const card = modal?.querySelector(".point-buy-modal-card");
       if (card && this.pointBuyCardStateCaptured) card.inert = this.pointBuyCardWasInert;
-      modal?.classList.remove("onboarding-tour-preview");
       if (this.pointBuyPreviewOpened && modal?.classList.contains("open")) {
         this.runWithBackgroundElementUnlocked(document.getElementById("point-buy-close"), (button) => button.click());
       }
+      modal?.classList.remove("onboarding-tour-preview");
       const abilityChoiceModal = document.getElementById("ability-choice-modal");
       if (abilityChoiceModal?.contains(document.activeElement)) document.activeElement.blur();
       if (abilityChoiceModal) {

@@ -3252,6 +3252,10 @@ const defaultAbilityByClass = {
   }
 
   function requestClosePointBuyModal() {
+    if (pointBuyModal?.classList.contains("onboarding-tour-preview")) {
+      closePointBuyModal();
+      return;
+    }
     if (isBackgroundBonusComplete()) {
       closePointBuyModal();
       return;
