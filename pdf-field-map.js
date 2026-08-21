@@ -85,8 +85,9 @@
     // content. These PDF fields are multiline, scrollable, and have no MaxLen,
     // so we preserve the full text instead of truncating it during export.
     classFeatures2: Object.freeze({ maxUnitsPerLine: 28, maxLines: Number.MAX_SAFE_INTEGER }),
-    specie_features1: Object.freeze({ maxUnitsPerLine: 18, maxLines: 12, maxTotalUnits: 240 }),
-    feats1: Object.freeze({ maxUnitsPerLine: 18, maxLines: 12, maxTotalUnits: 240 }),
+    // 21 display units fit ten CJK glyphs plus one half-width character.
+    specie_features1: Object.freeze({ maxUnitsPerLine: 21, maxLines: 12, maxTotalUnits: 240 }),
+    feats1: Object.freeze({ maxUnitsPerLine: 21, maxLines: 12, maxTotalUnits: 240 }),
     extra1: Object.freeze({ maxUnitsPerLine: 52, maxLines: Number.MAX_SAFE_INTEGER }),
     equipment1: Object.freeze({ maxUnitsPerLine: 52, maxLines: Number.MAX_SAFE_INTEGER })
   });
