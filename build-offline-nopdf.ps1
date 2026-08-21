@@ -136,25 +136,6 @@ foreach ($match in $imageTags) {
   $html = $html.Replace($match.Value, $replacementTag)
 }
 
-# Keep Legal & About available without shipping a second file.
-$aboutPath = Join-Path $root "about.html"
-if ($html.Contains('about.html')) {
-  if (-not (Test-Path -LiteralPath $aboutPath -PathType Leaf)) {
-    throw "build-offline-nopdf.ps1: index.html references missing about.html."
-  }
-  $aboutHtml = Get-Content -Raw -Encoding UTF8 -LiteralPath $aboutPath
-  $aboutCssPath = Join-Path $root "info-pages.css"
-  if (-not (Test-Path -LiteralPath $aboutCssPath -PathType Leaf)) {
-    throw "build-offline-nopdf.ps1: about.html references missing info-pages.css."
-  }
-  $aboutCssDataUrl = Get-Base64TextDataUrl -Path $aboutCssPath -MimeType "text/css;charset=utf-8"
-  $aboutHtml = $aboutHtml.Replace('<link rel="stylesheet" href="info-pages.css">', "<link rel=`"stylesheet`" href=`"$aboutCssDataUrl`">")
-  $aboutHtml = [System.Text.RegularExpressions.Regex]::Replace($aboutHtml, '<a\b[^>]*href="index\.html"[^>]*>([\s\S]*?)</a>', '$1', [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
-  $aboutDataUrl = "data:text/html;charset=utf-8;base64," + [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($aboutHtml))
-  $html = $html.Replace('about.html#character-sheet-download', "$aboutDataUrl#character-sheet-download")
-  $html = $html.Replace('href="about.html"', "href=`"$aboutDataUrl`"")
-}
-
 $html = [System.Text.RegularExpressions.Regex]::Replace(
   $html,
   'let\s+pdfExportLoaderPromise\s*=\s*null;[\s\S]*?function\s+buildPdfPrecheckMessages\(\)\s*\{',
