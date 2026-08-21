@@ -639,9 +639,9 @@
     }
 
     getNextButtonText() {
-      if (this.currentIndex === 1 && this.stepPhase === 0) return "查看 27 購點";
-      if (this.currentIndex === 4 && this.stepPhase === 0) return "查看工具選單";
-      if (this.currentIndex === this.steps.length - 1) return "開始使用角色卡";
+      if (this.currentIndex === 1 && this.stepPhase === 0) return "27購點";
+      if (this.currentIndex === 4 && this.stepPhase === 0) return "查看選單";
+      if (this.currentIndex === this.steps.length - 1) return "導覽完成";
       return "下一步";
     }
 
