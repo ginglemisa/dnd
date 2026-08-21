@@ -77,10 +77,11 @@ function setupDeityInfoModal() {
   }
 
   const setOpen = (open) => {
+    if (!open && modal.contains(document.activeElement)) openBtn.focus();
+    modal.inert = !open;
     modal.classList.toggle("open", open);
     modal.setAttribute("aria-hidden", String(!open));
     if (open) closeBtn?.focus();
-    else openBtn.focus();
   };
 
   openBtn.addEventListener("click", () => setOpen(true));
