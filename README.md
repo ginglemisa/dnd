@@ -3,7 +3,7 @@
 給 TRPG 新手、帶團者與教學活動使用的手機創角網站。以較低的規則負擔協助玩家建立 1～5 級角色，快速開始第一場冒險。
 
 - 正式網站：[https://twd20.com](https://twd20.com)
-- Legal & About：[https://twd20.com/about.html](https://twd20.com/about.html)
+- Legal & About：請從[https://twd20.com](https://twd20.com) 頁尾開啟
 - GitHub：[https://github.com/ginglemisa/dnd](https://github.com/ginglemisa/dnd)
 
 > TWD20 是獨立製作的第三方 5.5 版相容工具，與任何官方品牌無關。
@@ -78,7 +78,7 @@
 
 專案原始程式碼、原創說明文字、介面結構與功能可依 MIT License 使用；引用或改編自 SRD 5.2.1 的內容仍依 CC BY 4.0 使用。重製、改作或商用時，請保留必要 attribution，並自行確認所在地與使用平台的規範。
 
-完整說明請見網站的 [Legal & About](https://twd20.com/about.html)。
+完整說明請從網站頁尾開啟 Legal & About。
 
 ### SRD Attribution
 

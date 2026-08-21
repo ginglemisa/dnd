@@ -9,11 +9,49 @@
     const checkbox = document.getElementById("legal-dismiss");
     const closeBtn = document.getElementById("legal-close-btn");
     const ackBtn = document.getElementById("legal-ack-btn");
+    const aboutModal = document.getElementById("legal-about-modal");
+    const aboutCard = aboutModal?.querySelector(".legal-about-card");
+    const aboutCloseBtn = aboutModal?.querySelector(".legal-about-close");
     const storage = window.dndStorage || {
       getItem(key) { try { return localStorage.getItem(key); } catch (_error) { return null; } },
       removeItem(key) { try { localStorage.removeItem(key); return true; } catch (_error) { return false; } }
     };
     if (!modal || !checkbox) return;
+
+    let aboutTrigger = null;
+    const closeAboutModal = () => {
+      if (!aboutModal) return;
+      aboutModal.setAttribute("aria-hidden", "true");
+      aboutModal.setAttribute("inert", "");
+      aboutTrigger?.focus();
+    };
+    const openAboutModal = (trigger) => {
+      if (!aboutModal) return;
+      aboutTrigger = trigger;
+      modal.style.display = "none";
+      aboutModal.removeAttribute("inert");
+      aboutModal.setAttribute("aria-hidden", "false");
+      aboutCard?.scrollTo(0, 0);
+      if (trigger.getAttribute("href") === "#character-sheet-download") {
+        document.getElementById("character-sheet-download")?.scrollIntoView({ block: "start" });
+      }
+      aboutCloseBtn?.focus();
+    };
+
+    document.addEventListener("click", (event) => {
+      const trigger = event.target.closest?.(".legal-about-trigger");
+      if (trigger) {
+        event.preventDefault();
+        openAboutModal(trigger);
+      } else if (event.target === aboutModal || event.target === aboutCloseBtn) {
+        closeAboutModal();
+      }
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && aboutModal?.getAttribute("aria-hidden") === "false") {
+        closeAboutModal();
+      }
+    });
 
     let shouldDismiss = checkbox.checked === true;
     try {
