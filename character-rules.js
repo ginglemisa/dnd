@@ -45,8 +45,6 @@
   const SPELLCASTER_BACKGROUNDS = new Set(["acolyte", "sage"]);
   const NON_SPELLCASTER_RACES = new Set(["dragonborn", "dwarf", "goliath", "halfling", "human", "orc"]);
   const SPELLCASTER_RACES = new Set(["elf", "gnome", "tiefling"]);
-  const SHIELD_PROFICIENT_CLASSES = new Set(["barbarian", "cleric", "druid", "fighter", "paladin", "ranger"]);
-
   const STANDARD_SPELL_SLOTS = Object.freeze({
     1: Object.freeze([2, 0, 0]),
     2: Object.freeze([3, 0, 0]),
@@ -217,7 +215,7 @@
       else return null;
     }
 
-    if (options.hasShield && SHIELD_PROFICIENT_CLASSES.has(className)) armorClass += 2;
+    if (options.hasShield) armorClass += 2;
     if (armor && options.hasDefenseFightingStyle) armorClass += 1;
     return armorClass;
   }

@@ -1,82 +1,54 @@
 (function() {
   "use strict";
 
-  function isElementVisible(el) {
-    if (!el) return false;
-    const style = window.getComputedStyle(el);
-    return style.display !== "none" && style.visibility !== "hidden" && style.opacity !== "0";
+  const TAB_HEADER_OFFSET = 96;
+  const SCROLL_DURATION = 480;
+
+  function isElementVisible(element) {
+    if (!element) return false;
+    const style = window.getComputedStyle(element);
+    return style.display !== "none"
+      && style.visibility !== "hidden"
+      && style.opacity !== "0"
+      && element.getClientRects().length > 0;
   }
 
   function waitForLayoutStability() {
     return new Promise((resolve) => {
       requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setTimeout(resolve, 60);
-        });
+        requestAnimationFrame(() => window.setTimeout(resolve, 60));
       });
     });
   }
 
-  function animateWindowScrollTo(targetY, durationMs = 520) {
+  function animateWindowScrollTo(targetY, durationMs = SCROLL_DURATION) {
     return new Promise((resolve) => {
       const startY = window.scrollY;
       const maxScroll = Math.max(0, document.body.scrollHeight - window.innerHeight);
       const finalY = Math.max(0, Math.min(targetY, maxScroll));
-      const diff = finalY - startY;
-      if (Math.abs(diff) < 1) {
+      const distance = finalY - startY;
+      if (Math.abs(distance) < 1) {
         window.scrollTo(0, finalY);
         resolve();
         return;
       }
 
-      const start = performance.now();
-      const step = (now) => {
-        const elapsed = now - start;
-        const t = Math.min(1, elapsed / durationMs);
-        const eased = 1 - Math.pow(1 - t, 3);
-        window.scrollTo(0, startY + diff * eased);
-        if (t < 1) {
-          requestAnimationFrame(step);
-        } else {
-          resolve();
-        }
+      const startedAt = performance.now();
+      const tick = (now) => {
+        const progress = Math.min(1, (now - startedAt) / durationMs);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        window.scrollTo(0, startY + distance * eased);
+        if (progress < 1) requestAnimationFrame(tick);
+        else resolve();
       };
-
-      requestAnimationFrame(step);
-    });
-  }
-
-  function simulateButtonPress(button, onPress) {
-    return new Promise((resolve) => {
-      if (!button) {
-        if (typeof onPress === "function") onPress();
-        resolve();
-        return;
-      }
-
-      const prevTransition = button.style.transition;
-      const prevTransform = button.style.transform;
-      const prevFilter = button.style.filter;
-      button.style.transition = "transform 180ms ease, filter 180ms ease";
-      button.style.transform = "translateY(1px) scale(0.97)";
-      button.style.filter = "brightness(0.96)";
-
-      window.setTimeout(() => {
-        if (typeof onPress === "function") onPress();
-        button.style.transform = prevTransform;
-        button.style.filter = prevFilter;
-        window.setTimeout(() => {
-          button.style.transition = prevTransition;
-          resolve();
-        }, 180);
-      }, 180);
+      requestAnimationFrame(tick);
     });
   }
 
   function getUnionRect(elements) {
     const rects = elements
-      .filter(Boolean)
-      .map((el) => el.getBoundingClientRect())
+      .filter(isElementVisible)
+      .map((element) => element.getBoundingClientRect())
       .filter((rect) => rect.width > 0 && rect.height > 0);
     if (!rects.length) return null;
     return {
@@ -87,35 +59,15 @@
     };
   }
 
-  function findTextLine(container, labelText) {
-    if (!container) return null;
-    return Array.from(container.querySelectorAll("div")).find((el) => el.textContent?.includes(labelText)) || null;
-  }
-
-  function findTextLines(container, labelTexts) {
-    if (!container) return [];
-    return labelTexts
-      .map((labelText) => findTextLine(container, labelText))
-      .filter(Boolean);
-  }
-
   class OnboardingTour {
     constructor() {
       this.overlay = document.getElementById("tour-overlay");
-      this.maskGroups = [
-        {
-          top: document.getElementById("tour-mask-top-1"),
-          left: document.getElementById("tour-mask-left-1"),
-          right: document.getElementById("tour-mask-right-1"),
-          bottom: document.getElementById("tour-mask-bottom-1")
-        },
-        {
-          top: document.getElementById("tour-mask-top-2"),
-          left: document.getElementById("tour-mask-left-2"),
-          right: document.getElementById("tour-mask-right-2"),
-          bottom: document.getElementById("tour-mask-bottom-2")
-        }
-      ];
+      this.maskGroups = [1, 2].map((index) => ({
+        top: document.getElementById(`tour-mask-top-${index}`),
+        left: document.getElementById(`tour-mask-left-${index}`),
+        right: document.getElementById(`tour-mask-right-${index}`),
+        bottom: document.getElementById(`tour-mask-bottom-${index}`)
+      }));
       this.focusRings = [
         document.getElementById("tour-focus-ring"),
         document.getElementById("tour-focus-ring-secondary")
@@ -129,189 +81,20 @@
       this.skipBtn = document.getElementById("tour-skip-btn");
       this.steps = [];
       this.currentIndex = -1;
+      this.stepPhase = 0;
       this.active = false;
       this.isTransitioning = false;
-      this.stepRuntime = {};
+      this.spellPreviewSnapshot = null;
+      this.searchStateSnapshot = null;
+      this.backgroundInertSnapshot = null;
+      this.pointBuyPreviewOpened = false;
+      this.pointBuyCardWasInert = false;
+      this.pointBuyCardStateCaptured = false;
+      this.utilityMenuPreviewOpened = false;
       this.handleResize = this.handleResize.bind(this);
       this.handleKeydown = this.handleKeydown.bind(this);
+      this.handleFocusIn = this.handleFocusIn.bind(this);
       this.preventScrollEvent = this.preventScrollEvent.bind(this);
-    }
-
-    setSelectValue(id, value) {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.value = value;
-      el.dispatchEvent(new Event("change", { bubbles: true }));
-    }
-
-    setSpellRowCount(areaId, level, targetCount) {
-      const area = document.getElementById(areaId);
-      if (!area) return;
-      const safeCount = Math.max(1, Number(targetCount) || 1);
-      while (area.childElementCount > safeCount) {
-        area.lastElementChild?.remove();
-      }
-      while (area.childElementCount < safeCount) {
-        createSingleSpellRow(areaId, level);
-      }
-      refreshSpellRows(areaId);
-    }
-
-    setExpertiseVisibilityOverride(show) {
-      const skillLegend = document.querySelector(".skill-legend");
-      if (skillLegend) {
-        skillLegend.style.display = show ? "" : "none";
-      }
-      document.querySelectorAll(".circle-checkbox").forEach((checkbox) => {
-        checkbox.disabled = !show;
-        checkbox.style.display = show ? "" : "none";
-      });
-    }
-
-    ensureStep14ExpertiseOverride() {
-      const classValue = document.getElementById("class")?.value || "";
-      const shouldShowExpertise = typeof EXPERTISE_VISIBLE_CLASSES !== "undefined"
-        ? EXPERTISE_VISIBLE_CLASSES.has(classValue)
-        : true;
-      this.stepRuntime.step14ForceExpertise = !shouldShowExpertise;
-      if (this.stepRuntime.step14ForceExpertise) {
-        this.setExpertiseVisibilityOverride(true);
-      }
-    }
-
-    restoreStep7State() {
-      const backgroundSelect = document.getElementById("background");
-      const raceSelect = document.getElementById("race");
-      if (this.stepRuntime.step7AutoBackground && backgroundSelect) {
-        this.setSelectValue("background", "");
-      } else if (typeof this.stepRuntime.step7PrevBackground === "string" && backgroundSelect) {
-        this.setSelectValue("background", this.stepRuntime.step7PrevBackground);
-      }
-      if (this.stepRuntime.step7AutoRace && raceSelect) {
-        this.setSelectValue("race", "");
-      } else if (typeof this.stepRuntime.step7PrevRace === "string" && raceSelect) {
-        this.setSelectValue("race", this.stepRuntime.step7PrevRace);
-      }
-
-      const bgDetails = document.querySelector("#backgroundFeatures")?.closest("details");
-      if (bgDetails && this.stepRuntime.step7AutoOpenedBackground) {
-        bgDetails.open = false;
-      }
-
-      const raceDetails = document.querySelector("#raceFeatures")?.closest("details");
-      if (raceDetails && this.stepRuntime.step9AutoOpenedRace) {
-        raceDetails.open = false;
-      }
-
-      delete this.stepRuntime.step7PrevBackground;
-      delete this.stepRuntime.step7PrevRace;
-      delete this.stepRuntime.step7AutoBackground;
-      delete this.stepRuntime.step7AutoRace;
-      delete this.stepRuntime.step7AutoOpenedBackground;
-      delete this.stepRuntime.step9AutoOpenedRace;
-    }
-
-    restoreExpertiseOverride() {
-      if (!this.stepRuntime.step14ForceExpertise) return;
-      if (typeof updateExpertiseVisibility === "function") {
-        updateExpertiseVisibility();
-      } else {
-        this.setExpertiseVisibilityOverride(false);
-      }
-      delete this.stepRuntime.step14ForceExpertise;
-    }
-
-    disableQuickAbilityButton() {
-      if (this.stepRuntime.quickAbilityButtonStateCaptured) return;
-      const button = document.getElementById("set-default-abilities");
-      if (!button) return;
-      this.stepRuntime.quickAbilityButtonStateCaptured = true;
-      this.stepRuntime.quickAbilityButtonWasDisabled = button.disabled;
-      button.disabled = true;
-    }
-
-    restoreQuickAbilityButton() {
-      if (!this.stepRuntime.quickAbilityButtonStateCaptured) return;
-      const button = document.getElementById("set-default-abilities");
-      if (button) button.disabled = Boolean(this.stepRuntime.quickAbilityButtonWasDisabled);
-      delete this.stepRuntime.quickAbilityButtonStateCaptured;
-      delete this.stepRuntime.quickAbilityButtonWasDisabled;
-    }
-
-    restoreActionDetailsState() {
-      if (!this.stepRuntime.actionsDetailsStateCaptured) return;
-      const actionDetailsMap = {
-        actionHelpDetails: "戰鬥中的四種行動",
-        actionMainDetails: "動作"
-      };
-      Object.entries(actionDetailsMap).forEach(([runtimeKey, title]) => {
-        const detail = Array.from(document.querySelectorAll("#tab-actions details.action-collapsible-wrap")).find(
-          (item) => item.querySelector("summary h3")?.textContent?.trim() === title
-        );
-        if (!detail || typeof this.stepRuntime[runtimeKey] !== "boolean") return;
-        detail.open = this.stepRuntime[runtimeKey];
-        delete this.stepRuntime[runtimeKey];
-      });
-      delete this.stepRuntime.actionsDetailsStateCaptured;
-    }
-
-    ensureSpellTourVisibility() {
-      if (!this.stepRuntime.spellTourStateCaptured) {
-        this.stepRuntime.spellTourStateCaptured = true;
-        this.stepRuntime.spellTourDetailsOpen = Array.from(
-          document.querySelectorAll("#tab-spells details.spell-level-section")
-        ).map((detail) => detail.open);
-      }
-
-      const spellTab = document.getElementById("tab-spells");
-      const spellTabButton = document.getElementById("spells-tab-button");
-      if (spellTab) spellTab.style.display = "";
-      if (spellTabButton) spellTabButton.style.display = "";
-
-      const management = document.getElementById("spell-slot-management-wrap");
-      const noSlotsMessage = document.getElementById("no-spell-slots-message");
-      management?.classList.remove("is-hidden");
-      noSlotsMessage?.classList.add("is-hidden");
-
-      [1, 2, 3].forEach((ring) => {
-        const slotRow = document.getElementById(`spellslot${ring}-row`);
-        if (slotRow) slotRow.style.display = "";
-        slotRow?.querySelectorAll("input[type='checkbox']:not(.spell-slot-placeholder)").forEach((box) => {
-          box.style.display = "";
-          box.disabled = false;
-        });
-
-        const spellArea = document.getElementById(`level${ring}spells-area`);
-        const section = spellArea?.closest("details.spell-level-section");
-        if (section) {
-          section.style.display = "";
-          section.open = true;
-        }
-      });
-    }
-
-    restoreSpellTourVisibility() {
-      if (!this.stepRuntime.spellTourStateCaptured) return;
-      if (typeof updateSpellCastingStatsVisibility === "function") {
-        updateSpellCastingStatsVisibility();
-      }
-      if (typeof updateSpellsByClassLevel === "function") {
-        updateSpellsByClassLevel();
-      }
-      Array.from(document.querySelectorAll("#tab-spells details.spell-level-section")).forEach((detail, index) => {
-        const wasOpen = this.stepRuntime.spellTourDetailsOpen?.[index];
-        if (typeof wasOpen === "boolean") detail.open = wasOpen;
-      });
-      delete this.stepRuntime.spellTourDetailsOpen;
-      delete this.stepRuntime.spellTourStateCaptured;
-    }
-
-    cleanupTransientState() {
-      this.restoreStep7State();
-      this.restoreExpertiseOverride();
-      this.restoreQuickAbilityButton();
-      this.restoreActionDetailsState();
-      this.restoreSpellTourVisibility();
     }
 
     init() {
@@ -321,1070 +104,202 @@
       this.skipBtn.addEventListener("click", () => this.stop());
       window.addEventListener("resize", this.handleResize);
       document.addEventListener("keydown", this.handleKeydown);
+      document.addEventListener("focusin", this.handleFocusIn);
       document.getElementById("restart-onboarding-btn")?.addEventListener("click", () => this.start());
-    }
-
-    async jumpToTarget({ tab = "basic", selector, focusSelector = selector } = {}) {
-      if (!selector) return false;
-      if (this.active) this.stop();
-
-      const tabButton = document.querySelector(`.tab-button[onclick*="'${tab}'"]`);
-      if (typeof showTab === "function") {
-        showTab(tab, tabButton || undefined);
-      }
-      await waitForLayoutStability();
-
-      const target = Array.from(document.querySelectorAll(selector)).find((element) => {
-        return element.getClientRects().length > 0;
-      }) || document.querySelector(selector);
-      if (!target) return false;
-
-      const details = target.closest("details");
-      if (details && !details.open) {
-        details.open = true;
-        await waitForLayoutStability();
-      }
-
-      const targetY = window.scrollY + target.getBoundingClientRect().top - 120;
-      await animateWindowScrollTo(targetY, 560);
-
-      const focusTarget = Array.from(document.querySelectorAll(focusSelector)).find((element) => {
-        return element.getClientRects().length > 0 && !element.disabled;
-      });
-      focusTarget?.focus?.({ preventScroll: true });
-
-      target.classList.remove("onboarding-jump-target");
-      void target.offsetWidth;
-      target.classList.add("onboarding-jump-target");
-      window.setTimeout(() => target.classList.remove("onboarding-jump-target"), 1800);
-      return true;
     }
 
     getSteps() {
       return [
         {
           tab: "basic",
-          title: "歡迎進入5.5E奇幻冒險世界",
-          text: "本網站工具專為新手設計，推薦在城主教學下使用。",
-          placement: "center",
+          title: "⚔️ 1. 決定你的冒險者方向",
+          text: "背景代表角色過去，種族帶來天生特性，職業則決定冒險方式。選擇後，生命值、能力與相關資料會跟著更新。",
+          placement: "bottom",
+          getHoles: () => {
+            const identity = this.getHoleFromElements([
+              document.querySelector(".basic-row--class-level"),
+              document.querySelector(".basic-row--origin")
+            ], 8);
+            const derived = this.getHoleFromElements([
+              document.querySelector(".basic-row--vitals"),
+              document.querySelector(".basic-row--combat")
+            ], 8);
+            return [identity, derived].filter(Boolean);
+          },
           beforePosition: async () => {
-            await waitForLayoutStability();
+            await animateWindowScrollTo(0);
           }
         },
         {
           tab: "basic",
-          selectors: ["#scrollToTopBtn"],
-          title: "頁頂按鈕",
-          text: "點擊這個箭頭可以快速把畫面拉到最上方。",
-          placement: "top",
+          title: () => this.stepPhase === 0
+            ? "🎲 2. 屬性與快速創角"
+            : "🎲 2. 使用 27 購點",
+          text: () => this.stepPhase === 0
+            ? "六項屬性決定角色擅長什麼；上方是檢定常用的修正值。點擊「決定屬性」可以快速套用或自行配點。"
+            : "27 購點可自由配置六項屬性，背景加值會另外計算。第一次創角則推薦從「決定屬性」裡開啟創角精靈，由它帶你完成一名 1 級角色。",
+          placement: () => this.stepPhase === 0 ? "top" : "overlay-bottom",
+          getHoles: () => {
+            if (this.stepPhase === 1) {
+              return [this.getHoleForSelector("#point-buy-modal .point-buy-modal-card", 6)].filter(Boolean);
+            }
+            return [
+              this.getHoleForSelector("#set-default-abilities", 8),
+              this.getHoleForSelector("#tab-basic .ability-grid", 8)
+            ].filter(Boolean);
+          },
           beforePosition: async () => {
-            const scrollBtn = document.getElementById("scrollToTopBtn");
-            this.stepRuntime.step2PrevScrollBtnDisplay = scrollBtn?.style.display || "";
-            if (scrollBtn && !isElementVisible(scrollBtn)) {
-              scrollBtn.style.display = "block";
+            if (this.stepPhase === 1) {
+              await this.openPointBuyPreview();
+              return;
             }
-            if (scrollBtn) {
-              this.stepRuntime.step2Advancing = false;
-              this.stepRuntime.step2ClickHandler = async () => {
-                if (this.stepRuntime.step2Advancing) return;
-                this.stepRuntime.step2Advancing = true;
-                await waitForLayoutStability();
-                await this.next();
-              };
-              scrollBtn.addEventListener("click", this.stepRuntime.step2ClickHandler);
+            this.closePointBuyPreview();
+            await this.scrollElementIntoView(document.querySelector("#set-default-abilities"), 150);
+          },
+          afterLeave: () => this.closePointBuyPreview()
+        },
+        {
+          tab: "equipment",
+          title: "🛡️ 3. 確認武器、護甲與 AC",
+          text: "選擇目前使用的武器與護甲，下方會整理傷害、射程、武器精通與 AC。點擊摘要中的名稱還能查看詳細規則。",
+          placement: "bottom",
+          getHoles: () => [this.getHoleFromElements([
+            document.querySelector("#tab-equipment .equipment-loadout-controls"),
+            document.querySelector("#tab-equipment .equipment-loadout-summary")
+          ], 8)].filter(Boolean),
+          beforePosition: async () => {
+            await this.scrollElementIntoView(document.querySelector("#tab-equipment > .section"));
+          }
+        },
+        {
+          tab: "spells",
+          title: "✨ 4. 選擇與查看法術",
+          text: "有施法能力時，可以在這裡管理戲法與法術。選擇法術後，可查看完整說明與施法資料。",
+          placement: "top",
+          getHoles: () => [this.getHoleFromElements([
+            document.querySelector("#tab-spells details.spell-level-section")
+          ], 8)].filter(Boolean),
+          beforeTab: () => this.ensureSpellPreview(),
+          beforePosition: async () => {
+            const firstSpellSection = document.querySelector("#tab-spells details.spell-level-section");
+            if (firstSpellSection) firstSpellSection.open = true;
+            await this.scrollElementIntoView(firstSpellSection);
+          }
+        },
+        {
+          tab: "spells",
+          title: () => this.stepPhase === 0
+            ? "🔎 5. 搜尋角色資料"
+            : "☰ 5. 保存、輸出與分享",
+          text: () => this.stepPhase === 0
+            ? "法術與裝備分頁都有搜尋功能，可快速查找名稱與規則資料。"
+            : "右上角選單可以保存紀錄、輸出 PDF、分享角色卡，或再次開啟本導覽。",
+          placement: "bottom",
+          getHoles: () => [this.stepPhase === 0
+            ? this.getHoleForSelector("#spell-tab-toolbar .spell-search-controls", 7)
+            : this.getHoleForSelector("#utility-menu", 7)
+          ].filter(Boolean),
+          beforeTab: () => this.ensureSpellPreview(),
+          beforePosition: async () => {
+            await animateWindowScrollTo(0);
+            if (this.stepPhase === 0) {
+              this.closeUtilityMenuPreview();
+              await this.openSpellSearchPreview();
+            } else {
+              await this.openUtilityMenuPreview();
             }
-            await waitForLayoutStability();
           },
           afterLeave: () => {
-            const scrollBtn = document.getElementById("scrollToTopBtn");
-            if (scrollBtn && this.stepRuntime.step2ClickHandler) {
-              scrollBtn.removeEventListener("click", this.stepRuntime.step2ClickHandler);
-            }
-            if (scrollBtn && typeof this.stepRuntime.step2PrevScrollBtnDisplay === "string") {
-              scrollBtn.style.display = this.stepRuntime.step2PrevScrollBtnDisplay;
-            }
-            delete this.stepRuntime.step2Advancing;
-            delete this.stepRuntime.step2ClickHandler;
-            delete this.stepRuntime.step2PrevScrollBtnDisplay;
-          }
-        },
-        {
-          tab: "basic",
-          selectors: [".tabs-shell"],
-          title: "這是切換分頁列",
-          text: "你可以依照需求點選要使用的分頁。",
-          placement: "bottom",
-          hideTooltipDuringTransition: true,
-          animatePrimaryHole: true,
-          beforePosition: async () => {
-            if (window.scrollY > 0) {
-              await animateWindowScrollTo(0, 620);
-            }
-            await waitForLayoutStability();
-          }
-        },
-        {
-          tab: "basic",
-          selectors: [],
-          getHoles: () => {
-            const classField = document.querySelector(".basic-pair-field--class");
-            const hole = this.getHoleFromElements(classField ? [classField] : [], 8);
-            return hole ? [hole] : [];
-          },
-          title: "選擇你的職業",
-          text: "這會決定角色解決問題的方式與擅長的戰鬥風格。",
-          placement: "bottom",
-          hideTooltipDuringTransition: true,
-          animatePrimaryHole: true,
-          beforePosition: async () => {
-            const activeTab = document.querySelector(".tab-content.active")?.id?.replace("tab-", "");
-            if (activeTab !== "basic") {
-              const basicTabButton = document.getElementById("basic-tab-button");
-              await simulateButtonPress(basicTabButton, () => {
-                basicTabButton?.click();
-              });
-            }
-            window.scrollTo({ top: 0, behavior: "auto" });
-            await waitForLayoutStability();
-          }
-        },
-        {
-          tab: "basic",
-          selectors: [".mini-stat-card.basic-pair-card.basic-pair-card--equal"],
-          title: "確定出身",
-          text: "出身由背景，種族和兩種語言決定。背景是角色過去的人生；種族除了外觀以外，也帶有特性。",
-          placement: "bottom",
-          hideTooltipDuringTransition: true,
-          animatePrimaryHole: true,
-          beforePosition: async () => {
-            window.scrollTo({ top: 0, behavior: "auto" });
-            await waitForLayoutStability();
-          }
-        },
-        {
-          tab: "skills",
-          selectors: [".section.language-card"],
-          getHoles: () => {
-            const card = document.querySelector(".section.language-card");
-            const language2 = document.getElementById("language2");
-            if (!card || !language2 || !isElementVisible(card) || !isElementVisible(language2)) return [];
-            const cardRect = card.getBoundingClientRect();
-            const language2Rect = language2.getBoundingClientRect();
-            const padX = 8;
-            const padTop = 8;
-            const padBottom = 8;
-            return [
-              {
-                left: Math.max(0, cardRect.left - padX),
-                top: Math.max(0, cardRect.top - padTop),
-                right: Math.min(window.innerWidth, cardRect.right + padX),
-                bottom: Math.min(window.innerHeight, language2Rect.bottom + padBottom)
-              }
-            ];
-          },
-          title: "選兩種語言",
-          text: "語言承載著文化與記憶，冒險中和不同對象溝通時會用到。",
-          placement: "top",
-          hideTooltipDuringTransition: true,
-          skipAutoTabSwitch: true,
-          beforePosition: async () => {
-            if (this.tooltip) this.tooltip.style.display = "none";
-
-            const tabsHole = this.getHoleForSelector(".tabs-shell", 6);
-            if (tabsHole && this.lastRenderedHoles?.length === 1) {
-              await this.animatePrimaryHoleTransition(this.lastRenderedHoles[0], tabsHole, 420);
-              this.lastRenderedHoles = [{ ...tabsHole }];
-            }
-
-            const skillsTabButton = document.querySelector(".tab-button[onclick*=\"'skills'\"]");
-            await simulateButtonPress(skillsTabButton, () => {
-              skillsTabButton?.click();
-            });
-            await waitForLayoutStability();
-
-            const languageCard = document.querySelector(".section.language-card");
-            if (languageCard) {
-              const rect = languageCard.getBoundingClientRect();
-              const targetY = window.scrollY + rect.top - 160;
-              await animateWindowScrollTo(targetY, 720);
-              await waitForLayoutStability();
-            }
-            const languageHole = this.getStepHoles(this.steps[this.currentIndex]);
-            if (tabsHole) {
-              this.applyMasksForHoles([tabsHole]);
-              this.setFocusRing(this.focusRings[0], tabsHole);
-              this.setFocusRing(this.focusRings[1], null);
-            }
-            if (tabsHole && languageHole.length) {
-              await this.animatePrimaryHoleTransition(tabsHole, languageHole[0], 420);
-            }
-          }
-        },
-        {
-          tab: "basic",
-          selectors: [],
-          getHoles: () => {
-            const target = document.getElementById("background-ability-guide-target");
-            const lines = Array.from(target?.children || []).filter((el) => {
-              const text = el.textContent?.trim() || "";
-              return (
-                text.startsWith("屬性") ||
-                text.startsWith("專長") ||
-                text.startsWith("技能熟練") ||
-                text.startsWith("工具熟練")
-              );
-            });
-            const summary = document.querySelector("#backgroundFeatures")?.closest("details")?.querySelector("summary h3");
-            const hole = this.getHoleFromRects(
-              [summary?.getBoundingClientRect(), ...lines.flatMap((line) => this.getTextContentRects(line))],
-              { top: 12, right: 12, bottom: 10, left: 12 }
-            );
-            return hole ? [hole] : [];
-          },
-          title: "背景能力",
-          text: "提供屬性加值、專長、技能與工具熟練，代表你成為冒險者前累積的能力。",
-          placement: "top",
-          hideTooltipDuringTransition: true,
-          skipAutoTabSwitch: true,
-          beforePosition: async () => {
-            if (this.tooltip) this.tooltip.style.display = "none";
-
-            const tabsHole = this.getHoleForSelector(".tabs-shell", 6);
-            if (tabsHole && this.lastRenderedHoles?.length === 1) {
-              await this.animatePrimaryHoleTransition(this.lastRenderedHoles[0], tabsHole, 420);
-              this.lastRenderedHoles = [{ ...tabsHole }];
-            }
-
-            const basicTabButton = document.getElementById("basic-tab-button");
-            await simulateButtonPress(basicTabButton, () => {
-              basicTabButton?.click();
-            });
-            await waitForLayoutStability();
-
-            const backgroundSelect = document.getElementById("background");
-            const raceSelect = document.getElementById("race");
-            this.stepRuntime.step7PrevBackground = backgroundSelect?.value || "";
-            this.stepRuntime.step7PrevRace = raceSelect?.value || "";
-            this.stepRuntime.step7AutoBackground = Boolean(backgroundSelect && !backgroundSelect.value);
-            this.stepRuntime.step7AutoRace = Boolean(raceSelect && !raceSelect.value);
-
-            if (this.stepRuntime.step7AutoBackground && backgroundSelect) {
-              this.setSelectValue("background", "acolyte");
-              await waitForLayoutStability();
-            }
-            if (this.stepRuntime.step7AutoRace && raceSelect) {
-              this.setSelectValue("race", "human");
-              await waitForLayoutStability();
-            }
-
-            const bgDetails = document.querySelector("#backgroundFeatures")?.closest("details");
-            this.stepRuntime.step7AutoOpenedBackground = Boolean(bgDetails && !bgDetails.open);
-            if (this.stepRuntime.step7AutoOpenedBackground && bgDetails) {
-              bgDetails.open = true;
-              await waitForLayoutStability();
-            }
-
-            const output = document.getElementById("backgroundFeatures");
-            if (output) {
-              const rect = output.getBoundingClientRect();
-              const targetY = window.scrollY + rect.top - 120;
-              await animateWindowScrollTo(targetY, 720);
-              await waitForLayoutStability();
-            }
-
-            const backgroundHole = this.getStepHoles(this.steps[this.currentIndex]);
-            if (tabsHole) {
-              this.applyMasksForHoles([tabsHole]);
-              this.setFocusRing(this.focusRings[0], tabsHole);
-              this.setFocusRing(this.focusRings[1], null);
-            }
-            if (tabsHole && backgroundHole.length) {
-              await this.animatePrimaryHoleTransition(tabsHole, backgroundHole[0], 420);
-            }
-          }
-        },
-        {
-          tab: "basic",
-          selectors: [],
-          getHoles: () => {
-            const target = document.getElementById("background-ability-guide-target");
-            const abilityLine = Array.from(target?.children || []).find((el) =>
-              (el.textContent?.trim() || "").startsWith("屬性")
-            );
-            const hole = this.getHoleFromRects(
-              abilityLine ? this.getTextContentRects(abilityLine) : [],
-              { top: 10, right: 12, bottom: 10, left: 12 }
-            );
-            return hole ? [hole] : [];
-          },
-          title: "屬性加值",
-          text: "選擇加值方式：三項各 +1，或一項 +2、另一項 +1，打造你的強項。",
-          placement: "top",
-          hideTooltipDuringTransition: true,
-          animatePrimaryHole: true,
-          beforePosition: async () => {
-            await waitForLayoutStability();
-          }
-        },
-        {
-          tab: "basic",
-          selectors: [],
-          getHoles: () => {
-            const raceSummary = Array.from(document.querySelectorAll("#tab-basic summary h3")).find(
-              (el) => el.textContent?.trim() === "種族能力"
-            );
-            const raceOutput = document.getElementById("raceFeatures");
-            const raceLines = Array.from(raceOutput?.querySelectorAll(".race-feature-line") || []).filter((el) => {
-              const label = el.textContent?.trim() || "";
-              return label.startsWith("生物類型") || label.startsWith("體型") || label.startsWith("速度");
-            });
-            const hole = this.getHoleFromRects(
-              [raceSummary?.getBoundingClientRect(), ...raceLines.flatMap((line) => this.getTextContentRects(line))],
-              { top: 10, right: 12, bottom: 10, left: 12 }
-            );
-            return hole ? [hole] : [];
-          },
-          title: "種族能力",
-          text: "種族會影響體型、外觀、移動速度，還有專屬能力。",
-          placement: "top",
-          hideTooltipDuringTransition: true,
-          skipAutoTabSwitch: true,
-          beforePosition: async () => {
-            if (this.tooltip) this.tooltip.style.display = "none";
-
-            const bgSummary = Array.from(document.querySelectorAll("#tab-basic summary h3")).find(
-              (el) => el.textContent?.trim() === "背景能力"
-            );
-            const bgHole = bgSummary
-              ? {
-                  left: Math.max(0, bgSummary.getBoundingClientRect().left - 8),
-                  top: Math.max(0, bgSummary.getBoundingClientRect().top - 8),
-                  right: Math.min(window.innerWidth, bgSummary.getBoundingClientRect().right + 8),
-                  bottom: Math.min(window.innerHeight, bgSummary.getBoundingClientRect().bottom + 8)
-                }
-              : null;
-            if (bgHole && this.lastRenderedHoles?.length === 1) {
-              await this.animatePrimaryHoleTransition(this.lastRenderedHoles[0], bgHole, 420);
-              this.lastRenderedHoles = [{ ...bgHole }];
-            }
-
-            const bgDetails = document.querySelector("#backgroundFeatures")?.closest("details");
-            if (bgDetails?.open) {
-              const bgSummaryEl = bgDetails.querySelector("summary");
-              await simulateButtonPress(bgSummaryEl, () => {
-                bgSummaryEl?.click();
-              });
-              await waitForLayoutStability();
-            }
-
-            if (this.stepRuntime.step7AutoBackground) {
-              this.setSelectValue("background", "");
-              await waitForLayoutStability();
-            } else if (typeof this.stepRuntime.step7PrevBackground === "string") {
-              this.setSelectValue("background", this.stepRuntime.step7PrevBackground);
-              await waitForLayoutStability();
-            }
-
-            const raceSelect = document.getElementById("race");
-            if (this.stepRuntime.step7AutoRace && raceSelect && !raceSelect.value) {
-              this.setSelectValue("race", "human");
-              await waitForLayoutStability();
-            } else if (!this.stepRuntime.step7AutoRace && typeof this.stepRuntime.step7PrevRace === "string" && raceSelect) {
-              this.setSelectValue("race", this.stepRuntime.step7PrevRace);
-              await waitForLayoutStability();
-            }
-
-            const raceDetails = document.querySelector("#raceFeatures")?.closest("details");
-            this.stepRuntime.step9AutoOpenedRace = Boolean(raceDetails && !raceDetails.open);
-            if (this.stepRuntime.step9AutoOpenedRace && raceDetails) {
-              raceDetails.open = true;
-              await waitForLayoutStability();
-            }
-
-            const raceHole = this.getStepHoles(this.steps[this.currentIndex]);
-            if (bgHole) {
-              this.applyMasksForHoles([bgHole]);
-              this.setFocusRing(this.focusRings[0], bgHole);
-              this.setFocusRing(this.focusRings[1], null);
-            }
-            if (bgHole && raceHole.length) {
-              await this.animatePrimaryHoleTransition(bgHole, raceHole[0], 420);
-            }
-          }
-        },
-        {
-          tab: "basic",
-          selectors: [],
-          getHoles: () => {
-            const strCard = document.getElementById("str")?.closest(".ability");
-            const hole = this.getHoleFromElements(strCard ? [strCard] : [], 8);
-            return hole ? [hole] : [];
-          },
-          title: "屬性數值與調整值",
-          text: "屬性數值代表能力強弱，調整值會影響擲骰判定。力量、敏捷、體質屬於肉體能力；智力、感知、魅力則分別代表知識、感受力與社交氣場。",
-          placement: "bottom",
-          hideTooltipDuringTransition: true,
-          skipAutoTabSwitch: true,
-          beforePosition: async () => {
-            if (this.tooltip) this.tooltip.style.display = "none";
-
-            const raceSummary = Array.from(document.querySelectorAll("#tab-basic summary h3")).find(
-              (el) => el.textContent?.trim() === "種族能力"
-            );
-            const raceHole = raceSummary
-              ? {
-                  left: Math.max(0, raceSummary.getBoundingClientRect().left - 8),
-                  top: Math.max(0, raceSummary.getBoundingClientRect().top - 8),
-                  right: Math.min(window.innerWidth, raceSummary.getBoundingClientRect().right + 8),
-                  bottom: Math.min(window.innerHeight, raceSummary.getBoundingClientRect().bottom + 8)
-                }
-              : null;
-            if (raceHole && this.lastRenderedHoles?.length === 1) {
-              await this.animatePrimaryHoleTransition(this.lastRenderedHoles[0], raceHole, 420);
-            }
-
-            const raceDetails = document.querySelector("#raceFeatures")?.closest("details");
-            if (raceDetails?.open) {
-              const raceSummaryEl = raceDetails.querySelector("summary");
-              await simulateButtonPress(raceSummaryEl, () => {
-                raceSummaryEl?.click();
-              });
-              await waitForLayoutStability();
-            }
-
-            if (this.stepRuntime.step7AutoRace) {
-              this.setSelectValue("race", "");
-              await waitForLayoutStability();
-            } else if (typeof this.stepRuntime.step7PrevRace === "string") {
-              this.setSelectValue("race", this.stepRuntime.step7PrevRace);
-              await waitForLayoutStability();
-            }
-
-            const strCard = document.getElementById("str")?.closest(".ability");
-            if (strCard) {
-              const rect = strCard.getBoundingClientRect();
-              const targetY = window.scrollY + rect.top - 120;
-              await animateWindowScrollTo(targetY, 720);
-              await waitForLayoutStability();
-            }
-
-            const strHole = this.getStepHoles(this.steps[this.currentIndex]);
-            if (raceHole) {
-              this.applyMasksForHoles([raceHole]);
-              this.setFocusRing(this.focusRings[0], raceHole);
-              this.setFocusRing(this.focusRings[1], null);
-            }
-            if (raceHole && strHole.length) {
-              await this.animatePrimaryHoleTransition(raceHole, strHole[0], 420);
-            }
-          }
-        },
-        {
-          tab: "basic",
-          selectors: [],
-          getHoles: () => {
-            const strInput = document.getElementById("str");
-            const hole = this.getHoleFromElements(strInput ? [strInput] : [], 8);
-            return hole ? [hole] : [];
-          },
-          title: "輸入屬性值",
-          text: "輸入六項能力數值，可使用固定數值（15,14,13,12,10,8）或自行分配，也可採用隨機擲骰或點數購買的方式。",
-          placement: "bottom",
-          hideTooltipDuringTransition: true,
-          animatePrimaryHole: true,
-          beforePosition: async () => {
-            await waitForLayoutStability();
-          }
-        },
-        {
-          tab: "basic",
-          selectors: [],
-          getHoles: () => {
-            const quickCard = document.getElementById("set-default-abilities")?.closest(".mini-stat-card");
-            const hole = this.getHoleFromElements(quickCard ? [quickCard] : [], 8);
-            return hole ? [hole] : [];
-          },
-          title: "快速創角",
-          text: "使用預設配置快速完成角色，適合新手或想節省時間時使用。",
-          placement: "bottom",
-          hideTooltipDuringTransition: true,
-          skipAutoTabSwitch: true,
-          beforePosition: async () => {
-            this.disableQuickAbilityButton();
-            if (this.tooltip) this.tooltip.style.display = "none";
-
-            const strInput = document.getElementById("str");
-            const strHole = this.getHoleFromElements(strInput ? [strInput] : [], 8);
-            if (strHole && this.lastRenderedHoles?.length === 1) {
-              await this.animatePrimaryHoleTransition(this.lastRenderedHoles[0], strHole, 420);
-              this.lastRenderedHoles = [{ ...strHole }];
-            }
-
-            const quickCard = document.getElementById("set-default-abilities")?.closest(".mini-stat-card");
-            if (quickCard) {
-              const rect = quickCard.getBoundingClientRect();
-              const targetY = window.scrollY + rect.top - 140;
-              await animateWindowScrollTo(targetY, 720);
-              await waitForLayoutStability();
-            }
-
-            const quickHole = this.getStepHoles(this.steps[this.currentIndex]);
-            if (strHole) {
-              this.applyMasksForHoles([strHole]);
-              this.setFocusRing(this.focusRings[0], strHole);
-              this.setFocusRing(this.focusRings[1], null);
-            }
-            if (strHole && quickHole.length) {
-              await this.animatePrimaryHoleTransition(strHole, quickHole[0], 420);
-            }
-          },
-          afterLeave: () => this.restoreQuickAbilityButton()
-        },
-        {
-          tab: "skills",
-          selectors: [],
-          getHoles: () => {
-            const button = document.querySelector("button[onclick='fillSaves()']");
-            const hole = this.getHoleFromElements(button ? [button] : [], 8);
-            return hole ? [hole] : [];
-          },
-          title: "計算屬性豁免",
-          text: "選好職業後，按下這個按鈕可自動整理六項屬性豁免，幫你快速完成常用戰鬥數值。",
-          placement: "bottom",
-          hideTooltipDuringTransition: true,
-          skipAutoTabSwitch: true,
-          beforePosition: async () => {
-            if (this.tooltip) this.tooltip.style.display = "none";
-
-            const tabsHole = this.getHoleForSelector(".tabs-shell", 6);
-            if (tabsHole && this.lastRenderedHoles?.length === 1) {
-              await this.animatePrimaryHoleTransition(this.lastRenderedHoles[0], tabsHole, 420);
-              this.lastRenderedHoles = [{ ...tabsHole }];
-            }
-
-            const skillsTabButton = document.querySelector(".tab-button[onclick*=\"'skills'\"]");
-            await simulateButtonPress(skillsTabButton, () => {
-              skillsTabButton?.click();
-            });
-            await waitForLayoutStability();
-
-            const fillSavesButton = document.querySelector("button[onclick='fillSaves()']");
-            if (fillSavesButton) {
-              const rect = fillSavesButton.getBoundingClientRect();
-              const targetY = window.scrollY + rect.top - 140;
-              await animateWindowScrollTo(targetY, 720);
-              await waitForLayoutStability();
-            }
-
-            const buttonHole = this.getStepHoles(this.steps[this.currentIndex]);
-            if (tabsHole) {
-              this.applyMasksForHoles([tabsHole]);
-              this.setFocusRing(this.focusRings[0], tabsHole);
-              this.setFocusRing(this.focusRings[1], null);
-            }
-            if (tabsHole && buttonHole.length) {
-              await this.animatePrimaryHoleTransition(tabsHole, buttonHole[0], 420);
-            }
-          }
-        },
-        {
-          tab: "skills",
-          selectors: [],
-          getHoles: () => {
-            const skillCard = document.getElementById("prof-運動")?.closest(".skill-cell");
-            const hole = this.getHoleFromElements(skillCard ? [skillCard] : [], 8);
-            return hole ? [hole] : [];
-          },
-          title: "技能",
-          text: "技能代表角色在特定行動上的能力。",
-          placement: "bottom",
-          hideTooltipDuringTransition: true,
-          skipAutoTabSwitch: true,
-          beforePosition: async () => {
-            this.ensureStep14ExpertiseOverride();
-            if (this.tooltip) this.tooltip.style.display = "none";
-            const previousHole = this.lastRenderedHoles?.[0];
-            const startScrollY = window.scrollY;
-            await waitForLayoutStability();
-
-            const skillCard = document.getElementById("prof-運動")?.closest(".skill-cell");
-            const fillSkillsButton = document.querySelector("button[onclick='fillSkills()']");
-            const anchorRect = skillCard?.getBoundingClientRect() || fillSkillsButton?.getBoundingClientRect();
-            if (anchorRect) {
-              const targetY = window.scrollY + anchorRect.top - 180;
-              await animateWindowScrollTo(targetY, 720);
-              await waitForLayoutStability();
-            }
-            await this.animateScrolledStepTransition(previousHole, startScrollY, this.steps[this.currentIndex]);
-          }
-        },
-        {
-          tab: "skills",
-          selectors: [],
-          getHoles: () => {
-            const button = document.querySelector("button[onclick='fillSkills()']");
-            const hole = this.getHoleFromElements(button ? [button] : [], 8);
-            return hole ? [hole] : [];
-          },
-          title: "計算技能加值",
-          text: "勾選技能熟練或專精後，再按下按鈕，系統會依照屬性與熟練自動填入技能數值。",
-          placement: "bottom",
-          hideTooltipDuringTransition: true,
-          animatePrimaryHole: true,
-          beforePosition: async () => {
-            this.ensureStep14ExpertiseOverride();
-
-            const fillSkillsButton = document.querySelector("button[onclick='fillSkills()']");
-            if (fillSkillsButton) {
-              const rect = fillSkillsButton.getBoundingClientRect();
-              const targetY = window.scrollY + rect.top - 140;
-              await animateWindowScrollTo(targetY, 720);
-              await waitForLayoutStability();
-            }
-          }
-        },
-        {
-          tab: "equipment",
-          selectors: [],
-          getHoles: () => {
-            const section = document.querySelector("#tab-equipment > .section");
-            const heading = section?.querySelector("h3");
-            const intro = section?.querySelector("p");
-            const mainHandRow = document.getElementById("mainHand")?.closest(".form-row");
-            const hole = this.getHoleFromElements([heading, intro, mainHandRow].filter(Boolean), 8);
-            return hole ? [hole] : [];
-          },
-          title: "裝備",
-          text: "選擇角色的武器與盔甲，這會影響攻擊力與防護能力。",
-          placement: "bottom",
-          hideTooltipDuringTransition: true,
-          skipAutoTabSwitch: true,
-          beforePosition: async () => {
-            this.restoreExpertiseOverride();
-            if (this.tooltip) this.tooltip.style.display = "none";
-            const tabsHole = this.getHoleForSelector(".tabs-shell", 6);
-            if (tabsHole && this.lastRenderedHoles?.length === 1) {
-              await this.animatePrimaryHoleTransition(this.lastRenderedHoles[0], tabsHole, 420);
-              this.lastRenderedHoles = [{ ...tabsHole }];
-            }
-
-            const equipmentTabButton = document.querySelector(".tab-button[onclick*=\"'equipment'\"]");
-            await simulateButtonPress(equipmentTabButton, () => {
-              equipmentTabButton?.click();
-            });
-            await waitForLayoutStability();
-
-            const equipmentSection = document.querySelector("#tab-equipment > .section");
-            if (equipmentSection) {
-              const rect = equipmentSection.getBoundingClientRect();
-              const targetY = window.scrollY + rect.top - 100;
-              await animateWindowScrollTo(targetY, 720);
-              await waitForLayoutStability();
-            }
-
-            const sectionHole = this.getStepHoles(this.steps[this.currentIndex]);
-            if (tabsHole) {
-              this.applyMasksForHoles([tabsHole]);
-              this.setFocusRing(this.focusRings[0], tabsHole);
-              this.setFocusRing(this.focusRings[1], null);
-            }
-            if (tabsHole && sectionHole.length) {
-              await this.animatePrimaryHoleTransition(tabsHole, sectionHole[0], 420);
-            }
-          }
-        },
-        {
-          tab: "equipment",
-          selectors: [],
-          getHoles: () => {
-            const container = document.getElementById("equipment-notes-section");
-            const heading = document.getElementById("equipment-tools-heading");
-            const summaries = Array.from(container?.querySelectorAll(".equipment-note-summary") || []).filter((el) => {
-              const label = el.textContent?.trim() || "";
-              return label === "工匠工具" || label === "其他工具" || label === "冒險用品";
-            });
-            const hole = this.getHoleFromElements([heading, ...summaries].filter(Boolean), 8);
-            return hole ? [hole] : [];
-          },
-          title: "工具,物品",
-          text: "這裡整理了工具與冒險用品。需要時可以展開查看用途、對應屬性、重量和特殊效果，方便你在遊戲中查找與記錄。",
-          placement: "top",
-          hideTooltipDuringTransition: true,
-          skipAutoTabSwitch: true,
-          beforePosition: async () => {
-            if (this.tooltip) this.tooltip.style.display = "none";
-
-            const container = document.getElementById("equipment-notes-section");
-            Array.from(container?.querySelectorAll(":scope > .section > details") || []).forEach((detail) => {
-              detail.open = false;
-            });
-            await waitForLayoutStability();
-
-            const toolsHeading = document.getElementById("equipment-tools-heading");
-            if (toolsHeading) {
-              const rect = toolsHeading.getBoundingClientRect();
-              const targetY = window.scrollY + rect.top - 100;
-              await animateWindowScrollTo(targetY, 820);
-              await waitForLayoutStability();
-            }
-
-          }
-        },
-        {
-          tab: "actions",
-          selectors: [],
-          getHoles: () => {
-            const detail = Array.from(document.querySelectorAll("#tab-actions details.action-collapsible-wrap")).find(
-              (item) => item.querySelector("summary h3")?.textContent?.trim() === "戰鬥中的四種行動"
-            );
-            const hole = this.getHoleFromElements(detail ? [detail] : [], 8);
-            return hole ? [hole] : [];
-          },
-          title: "戰鬥中的四種行動",
-          text: "戰鬥中常用的有動作、附贈、移動和反應。先知道在回合中能做什麼，戰鬥會更順。",
-          placement: "top",
-          hideTooltipDuringTransition: true,
-          skipAutoTabSwitch: true,
-          beforePosition: async () => {
-            if (this.tooltip) this.tooltip.style.display = "none";
-
-            const actionHelpDetails = Array.from(
-              document.querySelectorAll("#tab-actions details.action-collapsible-wrap")
-            ).find((item) => item.querySelector("summary h3")?.textContent?.trim() === "戰鬥中的四種行動");
-            const actionDetails = Array.from(
-              document.querySelectorAll("#tab-actions details.action-collapsible-wrap")
-            ).find((item) => item.querySelector("summary h3")?.textContent?.trim() === "動作");
-            if (!this.stepRuntime.actionsDetailsStateCaptured) {
-              this.stepRuntime.actionHelpDetails = !!actionHelpDetails?.open;
-              this.stepRuntime.actionMainDetails = !!actionDetails?.open;
-              this.stepRuntime.actionsDetailsStateCaptured = true;
-            }
-            if (actionHelpDetails) actionHelpDetails.open = true;
-            if (actionDetails) actionDetails.open = true;
-
-            const tabsHole = this.getHoleForSelector(".tabs-shell", 6);
-            if (tabsHole && this.lastRenderedHoles?.length === 1) {
-              await this.animatePrimaryHoleTransition(this.lastRenderedHoles[0], tabsHole, 420);
-              this.lastRenderedHoles = [{ ...tabsHole }];
-            }
-
-            const actionsTabButton = document.querySelector(".tab-button[onclick*=\"'actions'\"]");
-            await simulateButtonPress(actionsTabButton, () => {
-              actionsTabButton?.click();
-            });
-            await waitForLayoutStability();
-
-            if (actionHelpDetails) {
-              const rect = actionHelpDetails.getBoundingClientRect();
-              const targetY = window.scrollY + rect.top - 100;
-              await animateWindowScrollTo(targetY, 720);
-              await waitForLayoutStability();
-            }
-
-            const actionHole = this.getStepHoles(this.steps[this.currentIndex]);
-            if (tabsHole) {
-              this.applyMasksForHoles([tabsHole]);
-              this.setFocusRing(this.focusRings[0], tabsHole);
-              this.setFocusRing(this.focusRings[1], null);
-            }
-            if (tabsHole && actionHole.length) {
-              await this.animatePrimaryHoleTransition(tabsHole, actionHole[0], 420);
-            }
-          }
-        },
-        {
-          tab: "actions",
-          selectors: [],
-          getHoles: () => {
-            const detail = Array.from(document.querySelectorAll("#tab-actions details.action-collapsible-wrap")).find(
-              (item) => item.querySelector("summary h3")?.textContent?.trim() === "動作"
-            );
-            const hole = this.getHoleFromElements(detail ? [detail] : [], 8);
-            return hole ? [hole] : [];
-          },
-          title: "動作",
-          text: "這裡整理常見的主要動作。不確定要做什麼時，可以參考這裡。",
-          placement: "top",
-          hideTooltipDuringTransition: true,
-          skipAutoTabSwitch: true,
-          beforePosition: async () => {
-            if (this.tooltip) this.tooltip.style.display = "none";
-
-            const actionSummary = Array.from(document.querySelectorAll("#tab-actions summary h3")).find(
-              (el) => el.textContent?.trim() === "動作"
-            );
-            const actionSummaryHole = this.getHoleFromElements(actionSummary ? [actionSummary] : [], 8);
-            if (actionSummaryHole && this.lastRenderedHoles?.length === 1) {
-              await this.animatePrimaryHoleTransition(this.lastRenderedHoles[0], actionSummaryHole, 420);
-              this.lastRenderedHoles = [{ ...actionSummaryHole }];
-            }
-
-            const actionDetails = Array.from(document.querySelectorAll("#tab-actions details.action-collapsible-wrap")).find(
-              (item) => item.querySelector("summary h3")?.textContent?.trim() === "動作"
-            );
-            if (actionDetails && !actionDetails.open) {
-              const actionSummaryEl = actionDetails.querySelector("summary");
-              await simulateButtonPress(actionSummaryEl, () => {
-                actionSummaryEl?.click();
-              });
-              await waitForLayoutStability();
-            }
-
-            if (actionDetails) {
-              const rect = actionDetails.getBoundingClientRect();
-              const targetY = window.scrollY + rect.top - 100;
-              await animateWindowScrollTo(targetY, 720);
-              await waitForLayoutStability();
-            }
-
-            const actionDetailHole = this.getStepHoles(this.steps[this.currentIndex]);
-            if (actionSummaryHole) {
-              this.applyMasksForHoles([actionSummaryHole]);
-              this.setFocusRing(this.focusRings[0], actionSummaryHole);
-              this.setFocusRing(this.focusRings[1], null);
-            }
-            if (actionSummaryHole && actionDetailHole.length) {
-              await this.animatePrimaryHoleTransition(actionSummaryHole, actionDetailHole[0], 420);
-            }
-          }
-        },
-        {
-          tab: "actions",
-          selectors: [],
-          getHoles: () => {
-            const attackBlock = document.querySelector(".action-attack-block");
-            const attackTitle = Array.from(document.querySelectorAll("#tab-actions h3")).find(
-              (el) => el.textContent?.trim() === "攻擊動作"
-            );
-            const automationToggle = document.getElementById("weapon-attack-automation");
-            const mainName = document.getElementById("atk-main-name");
-            const mainHit = document.getElementById("atk-main-hit");
-            const mainDmg = document.getElementById("atk-main-dmg");
-            const mainNote = document.getElementById("atk-main-note");
-            const hole = this.getHoleFromElements(
-              [attackBlock, attackTitle, automationToggle, mainName, mainHit, mainDmg, mainNote].filter(Boolean),
-              8
-            );
-            return hole ? [hole] : [];
-          },
-          title: "攻擊動作",
-          text: "主手與副手攻擊會依目前裝備、屬性、熟練與戰鬥風格，自動更新名稱、命中與傷害；若要自行填寫，可以關閉「武器攻擊自動化」。",
-          placement: "top",
-          hideTooltipDuringTransition: true,
-          skipAutoTabSwitch: true,
-          beforePosition: async () => {
-            const attackBlock = document.querySelector(".action-attack-block");
-            if (attackBlock) {
-              const rect = attackBlock.getBoundingClientRect();
-              const targetY = window.scrollY + rect.top - 100;
-              await animateWindowScrollTo(targetY, 720);
-              await waitForLayoutStability();
-            }
-          }
-        },
-        {
-          id: "step22-spellcasting-stats",
-          tab: "spells",
-          selectors: ["#spell-casting-stats-wrap"],
-          title: "施法數值",
-          text: "先選擇施法屬性，介面會自動計算。法術命中用於法術攻擊；豁免難度則是目標抵抗法術時需要達到的數值。",
-          placement: "bottom",
-          allowWithoutSpellcasting: true,
-          forceSpellTourVisibility: true,
-          hideTooltipDuringTransition: true,
-          skipAutoTabSwitch: true,
-          beforePosition: async () => {
-            this.ensureSpellTourVisibility();
-
-            if (this.tooltip) this.tooltip.style.display = "none";
-            const tabsHole = this.getHoleForSelector(".tabs-shell", 6);
-            if (tabsHole && this.lastRenderedHoles?.length === 1) {
-              await this.animatePrimaryHoleTransition(this.lastRenderedHoles[0], tabsHole, 420);
-              this.lastRenderedHoles = [{ ...tabsHole }];
-            }
-
-            const spellsTabButton = document.getElementById("spells-tab-button");
-            await simulateButtonPress(spellsTabButton, () => {
-              spellsTabButton?.click();
-            });
-            await waitForLayoutStability();
-
-            const stats = document.getElementById("spell-casting-stats-wrap");
-            if (stats) await animateWindowScrollTo(window.scrollY + stats.getBoundingClientRect().top - 100, 620);
-            await waitForLayoutStability();
-
-            const statsHole = this.getStepHoles(this.steps[this.currentIndex]);
-            if (tabsHole) {
-              this.applyMasksForHoles([tabsHole]);
-              this.setFocusRing(this.focusRings[0], tabsHole);
-              this.setFocusRing(this.focusRings[1], null);
-            }
-            if (tabsHole && statsHole.length) {
-              await this.animatePrimaryHoleTransition(tabsHole, statsHole[0], 420);
-            }
-          }
-        },
-        {
-          id: "step23-spell-slots",
-          tab: "spells",
-          selectors: ["#spell-slot-management-wrap"],
-          title: "一至三環法術格",
-          text: "法術格是施放「環法」時消耗的資源；勾選代表該格已消耗，可透過休息恢復。高環法術格也能用來施放低環法術，但反過來不行。",
-          placement: "bottom",
-          allowWithoutSpellcasting: true,
-          forceSpellTourVisibility: true,
-          hideTooltipDuringTransition: true,
-          beforePosition: async () => {
-            this.ensureSpellTourVisibility();
-            if (this.tooltip) this.tooltip.style.display = "none";
-            const previousHole = this.lastRenderedHoles?.[0];
-            const startScrollY = window.scrollY;
-            const slots = document.getElementById("spell-slot-management-wrap");
-            if (slots) await animateWindowScrollTo(window.scrollY + slots.getBoundingClientRect().top - 100, 620);
-            await waitForLayoutStability();
-            await this.animateScrolledStepTransition(previousHole, startScrollY, this.steps[this.currentIndex]);
-          }
-        },
-        {
-          id: "step24-spell-row",
-          tab: "spells",
-          getElements: () => {
-            const area = document.getElementById("level1spells-area");
-            return [area?.querySelector(".spell-entry:not(.spell-entry--derived)") || area?.querySelector(".spell-entry")].filter(Boolean);
-          },
-          title: "選擇與管理法術",
-          text: "這是一個完整的法術框。先選擇職業，再選擇法術；「＋」「－」可新增或刪除準備法術。",
-          placement: "top",
-          allowWithoutSpellcasting: true,
-          forceSpellTourVisibility: true,
-          hideTooltipDuringTransition: true,
-          beforePosition: async () => {
-            this.ensureSpellTourVisibility();
-            if (this.tooltip) this.tooltip.style.display = "none";
-            const previousHole = this.lastRenderedHoles?.[0];
-            const startScrollY = window.scrollY;
-            const area = document.getElementById("level1spells-area");
-            if (area && !area.querySelector(".spell-entry") && typeof createSingleSpellRow === "function") {
-              createSingleSpellRow("level1spells-area", 1);
-            }
-            const section = area?.closest("details.spell-level-section");
-            if (section) section.open = true;
-            const row = area?.querySelector(".spell-entry:not(.spell-entry--derived)") || area?.querySelector(".spell-entry");
-            if (row) await animateWindowScrollTo(window.scrollY + row.getBoundingClientRect().top - 100, 720);
-            await waitForLayoutStability();
-            await this.animateScrolledStepTransition(previousHole, startScrollY, this.steps[this.currentIndex]);
-          }
-        },
-        {
-          id: "step25-finish",
-          tab: "spells",
-          title: "新手導覽結束",
-          text: "祝福遊戲愉快！",
-          placement: "center",
-          noMask: true,
-          allowWithoutSpellcasting: true,
-          forceSpellTourVisibility: true,
-          revealOnEnter: true,
-          beforePosition: async () => {
-            await waitForLayoutStability();
+            this.closeUtilityMenuPreview();
+            this.closeSpellSearchPreview();
           }
         }
       ];
     }
 
     async start() {
-      this.resetHighlightState();
+      if (this.active) this.stop({ resetView: false });
       this.steps = this.getSteps();
       if (!this.steps.length) return;
+      this.currentIndex = -1;
+      this.stepPhase = 0;
       this.active = true;
+      this.isTransitioning = false;
+      this.captureSpellPreviewState();
+      this.captureSearchState();
+      this.lockBackgroundInteraction();
       this.lockUserScroll();
+      this.overlay.inert = false;
       this.overlay.style.display = "block";
+      this.overlay.setAttribute("aria-hidden", "false");
       await this.goTo(0);
     }
 
-    isStepAvailable(step) {
-      if (!step) return false;
-      if (step.allowWithoutSpellcasting) return true;
-      if (step.tab !== "spells") return true;
-      const spellTabButton = document.getElementById("spells-tab-button");
-      const spellTabVisible = isElementVisible(spellTabButton);
-      const canCast = typeof hasSpellcastingCapability === "function" ? hasSpellcastingCapability() : true;
-      return spellTabVisible && canCast;
-    }
-
-    updateStepProgress() {
-      if (!this.progress) return;
-      const availableIndices = this.steps
-        .map((step, index) => this.isStepAvailable(step) ? index : -1)
-        .filter((index) => index >= 0);
-      const currentPosition = availableIndices.indexOf(this.currentIndex);
-      const current = currentPosition >= 0 ? currentPosition + 1 : 1;
-      const total = Math.max(availableIndices.length, 1);
-      this.progress.textContent = `${current}/${total}`;
-      this.progress.setAttribute("aria-label", `導覽進度：第 ${current} 步，共 ${total} 步`);
-    }
-
     async next() {
-      if (!this.active) return;
-      let nextIndex = this.currentIndex + 1;
-      while (nextIndex < this.steps.length && !this.isStepAvailable(this.steps[nextIndex])) {
-        nextIndex += 1;
+      if (!this.active || this.isTransitioning) return;
+      if (this.currentIndex === 1 && this.stepPhase === 0) {
+        this.isTransitioning = true;
+        this.stepPhase = 1;
+        await this.steps[1].beforePosition();
+        await waitForLayoutStability();
+        await this.renderStep();
+        this.isTransitioning = false;
+        return;
       }
-      if (nextIndex >= this.steps.length) return this.stop();
-      await this.goTo(nextIndex);
+      if (this.currentIndex === 4 && this.stepPhase === 0) {
+        this.isTransitioning = true;
+        this.stepPhase = 1;
+        await this.steps[4].beforePosition();
+        await waitForLayoutStability();
+        await this.renderStep();
+        this.isTransitioning = false;
+        return;
+      }
+      if (this.currentIndex >= this.steps.length - 1) {
+        this.stop();
+        return;
+      }
+      await this.goTo(this.currentIndex + 1);
     }
 
     async prev() {
-      if (!this.active) return;
-      let prevIndex = this.currentIndex - 1;
-      while (prevIndex >= 0 && !this.isStepAvailable(this.steps[prevIndex])) {
-        prevIndex -= 1;
+      if (!this.active || this.isTransitioning) return;
+      if (this.currentIndex === 1 && this.stepPhase === 1) {
+        this.isTransitioning = true;
+        this.closePointBuyPreview();
+        this.stepPhase = 0;
+        await waitForLayoutStability();
+        await this.steps[1].beforePosition();
+        await this.renderStep();
+        this.isTransitioning = false;
+        return;
       }
-      if (prevIndex < 0) return;
-      await this.goTo(prevIndex);
-    }
-
-    stop() {
-      const currentStep = this.steps[this.currentIndex];
-      if (currentStep && typeof currentStep.afterLeave === "function") currentStep.afterLeave();
-      this.cleanupTransientState();
-      this.resetHighlightState();
-      this.active = false;
-      this.isTransitioning = false;
-      this.currentIndex = -1;
-      this.overlay.style.display = "none";
-      this.unlockUserScroll();
+      if (this.currentIndex === 4 && this.stepPhase === 1) {
+        this.isTransitioning = true;
+        this.closeUtilityMenuPreview();
+        this.stepPhase = 0;
+        await this.steps[4].beforePosition();
+        await waitForLayoutStability();
+        await this.renderStep();
+        this.isTransitioning = false;
+        return;
+      }
+      if (this.currentIndex <= 0) return;
+      await this.goTo(this.currentIndex - 1);
     }
 
     async goTo(index) {
-      if (this.isTransitioning) return;
+      if (!this.active || this.isTransitioning) return;
       this.isTransitioning = true;
-      const prevStep = this.steps[this.currentIndex];
-      if (prevStep && typeof prevStep.afterLeave === "function") prevStep.afterLeave();
-      const nextStep = this.steps[index];
-      const movingBackward = index < this.currentIndex;
-      if (movingBackward) {
-        const nextTitle = nextStep?.title || "";
-        if (!["背景能力", "屬性加值", "種族能力", "屬性數值與調整值"].includes(nextTitle)) {
-          this.restoreStep7State();
-        }
-        if (nextStep?.tab !== "skills") {
-          this.restoreExpertiseOverride();
-        }
-        if (nextStep?.tab !== "spells") {
-          this.restoreSpellTourVisibility();
-        }
-      }
+      const previousStep = this.steps[this.currentIndex];
+      if (previousStep && typeof previousStep.afterLeave === "function") previousStep.afterLeave();
+
       this.currentIndex = index;
-      const step = nextStep;
-      if (step.forceSpellTourVisibility) {
-        this.ensureSpellTourVisibility();
-      }
-      const tabButton = document.querySelector(`.tab-button[onclick*="'${step.tab}'"]`);
-      if (!step.skipAutoTabSwitch) {
-        showTab(step.tab, tabButton || undefined);
-        await waitForLayoutStability();
-      }
+      this.stepPhase = 0;
+      const step = this.steps[index];
+      if (typeof step.beforeTab === "function") step.beforeTab();
+      this.showTab(step.tab);
+      await waitForLayoutStability();
       if (typeof step.beforePosition === "function") {
         await step.beforePosition();
         await waitForLayoutStability();
@@ -1393,40 +308,298 @@
       this.isTransitioning = false;
     }
 
-    getStepElements(step) {
-      if (typeof step.getElements === "function") return step.getElements().filter(Boolean);
-      const elements = (step.selectors || [])
-        .flatMap((selector) => Array.from(document.querySelectorAll(selector)))
-        .filter((el) => isElementVisible(el));
-      if (!elements.length && step.fallbackSelector) {
-        return Array.from(document.querySelectorAll(step.fallbackSelector)).filter((el) => isElementVisible(el));
+    stop({ resetView = true } = {}) {
+      const currentStep = this.steps[this.currentIndex];
+      if (currentStep && typeof currentStep.afterLeave === "function") currentStep.afterLeave();
+      this.closePointBuyPreview();
+      this.closeUtilityMenuPreview();
+      this.restoreSpellPreviewState();
+      this.resetHighlightState();
+      this.active = false;
+      this.isTransitioning = false;
+      this.currentIndex = -1;
+      this.stepPhase = 0;
+      this.unlockUserScroll();
+      this.unlockBackgroundInteraction();
+      if (this.overlay) {
+        if (this.overlay.contains(document.activeElement)) document.activeElement.blur();
+        this.overlay.inert = true;
+        this.overlay.style.display = "none";
+        this.overlay.setAttribute("aria-hidden", "true");
       }
-      return elements;
+
+      if (resetView) {
+        this.showTab("basic");
+        requestAnimationFrame(() => {
+          window.scrollTo(0, 0);
+          this.restoreSearchState();
+          document.getElementById("basic-tab-button")?.focus({ preventScroll: true });
+        });
+      } else {
+        this.restoreSearchState();
+      }
     }
 
-    getStepHoles(step) {
-      if (typeof step.getHoles === "function") {
-        const holes = step.getHoles().filter(Boolean);
-        if (holes.length) return holes.slice(0, 2);
+    showTab(tab) {
+      const tabButton = document.querySelector(`.tab-button[onclick*="'${tab}'"]`);
+      if (typeof window.showTab === "function") window.showTab(tab, tabButton || undefined);
+    }
+
+    async scrollElementIntoView(element, extraOffset = TAB_HEADER_OFFSET) {
+      if (!element) return;
+      const targetY = window.scrollY + element.getBoundingClientRect().top - extraOffset;
+      await animateWindowScrollTo(targetY);
+    }
+
+    captureSpellPreviewState() {
+      if (this.spellPreviewSnapshot) return;
+      const spellTabButton = document.getElementById("spells-tab-button");
+      const spellTab = document.getElementById("tab-spells");
+      const toolbar = document.getElementById("spell-tab-toolbar");
+      const management = document.getElementById("spell-slot-management-wrap");
+      const noSlots = document.getElementById("no-spell-slots-message");
+      this.spellPreviewSnapshot = {
+        spellTabButtonDisplay: spellTabButton?.style.display || "",
+        spellTabDisplay: spellTab?.style.display || "",
+        toolbarClassName: toolbar?.className || "",
+        managementClassName: management?.className || "",
+        noSlotsClassName: noSlots?.className || "",
+        sections: Array.from(document.querySelectorAll("#tab-spells details.spell-level-section")).map((section) => ({
+          element: section,
+          open: section.open,
+          display: section.style.display
+        })),
+        slotRows: [1, 2, 3].map((ring) => {
+          const row = document.getElementById(`spellslot${ring}-row`);
+          return {
+            element: row,
+            display: row?.style.display || "",
+            boxes: Array.from(row?.querySelectorAll("input[type='checkbox']") || []).map((box) => ({
+              element: box,
+              display: box.style.display,
+              disabled: box.disabled
+            }))
+          };
+        })
+      };
+    }
+
+    captureSearchState() {
+      if (this.searchStateSnapshot) return;
+      this.searchStateSnapshot = [
+        {
+          type: "spell",
+          inputId: "spell-search",
+          resultsId: "spell-search-results",
+          value: document.getElementById("spell-search")?.value || "",
+          resultsVisible: !document.getElementById("spell-search-results")?.classList.contains("is-hidden")
+        },
+        {
+          type: "equipment",
+          inputId: "equipment-search",
+          resultsId: "equipment-search-results",
+          value: document.getElementById("equipment-search")?.value || "",
+          resultsVisible: !document.getElementById("equipment-search-results")?.classList.contains("is-hidden")
+        }
+      ];
+    }
+
+    restoreSearchState() {
+      if (!this.searchStateSnapshot) return;
+      this.searchStateSnapshot.forEach(({ type, inputId, resultsId, value, resultsVisible }) => {
+        const input = document.getElementById(inputId);
+        const results = document.getElementById(resultsId);
+        if (input) input.value = value;
+        if (type === "spell") {
+          if (resultsVisible && value.trim() && typeof window.searchAllSpells === "function") {
+            window.searchAllSpells();
+          } else {
+            window.clearSpellSearchResults?.();
+          }
+          return;
+        }
+        if (resultsVisible && value.trim() && typeof window.applyEquipmentFilter === "function") {
+          window.prepareEquipmentSearch?.();
+          window.applyEquipmentFilter();
+        } else {
+          document.getElementById("equipment-search-clear")?.classList.toggle("is-hidden", !value);
+          document.getElementById("equipment-search-count")?.replaceChildren();
+          results?.classList.add("is-hidden");
+          document.getElementById("equipment-search-summary")?.replaceChildren();
+          document.getElementById("equipment-search-result-list")?.replaceChildren();
+        }
+      });
+      this.searchStateSnapshot = null;
+    }
+
+    ensureSpellPreview() {
+      this.captureSpellPreviewState();
+      const spellTabButton = document.getElementById("spells-tab-button");
+      const spellTab = document.getElementById("tab-spells");
+      if (spellTabButton) spellTabButton.style.display = "";
+      if (spellTab) spellTab.style.display = "";
+      document.getElementById("spell-slot-management-wrap")?.classList.remove("is-hidden");
+      document.getElementById("no-spell-slots-message")?.classList.add("is-hidden");
+      document.querySelectorAll("#tab-spells details.spell-level-section").forEach((section) => {
+        section.style.display = "";
+        section.open = true;
+      });
+      [1, 2, 3].forEach((ring) => {
+        const row = document.getElementById(`spellslot${ring}-row`);
+        if (row) row.style.display = "";
+        row?.querySelectorAll("input[type='checkbox']:not(.spell-slot-placeholder)").forEach((box) => {
+          box.style.display = "";
+          box.disabled = false;
+        });
+      });
+    }
+
+    restoreSpellPreviewState() {
+      const snapshot = this.spellPreviewSnapshot;
+      if (!snapshot) return;
+      const spellTabButton = document.getElementById("spells-tab-button");
+      const spellTab = document.getElementById("tab-spells");
+      const toolbar = document.getElementById("spell-tab-toolbar");
+      const management = document.getElementById("spell-slot-management-wrap");
+      const noSlots = document.getElementById("no-spell-slots-message");
+      if (spellTabButton) spellTabButton.style.display = snapshot.spellTabButtonDisplay;
+      if (spellTab) spellTab.style.display = snapshot.spellTabDisplay;
+      if (toolbar) toolbar.className = snapshot.toolbarClassName;
+      if (management) management.className = snapshot.managementClassName;
+      if (noSlots) noSlots.className = snapshot.noSlotsClassName;
+      snapshot.sections.forEach(({ element, open, display }) => {
+        element.open = open;
+        element.style.display = display;
+      });
+      snapshot.slotRows.forEach(({ element, display, boxes }) => {
+        if (element) element.style.display = display;
+        boxes.forEach(({ element: box, display: boxDisplay, disabled }) => {
+          box.style.display = boxDisplay;
+          box.disabled = disabled;
+        });
+      });
+      this.spellPreviewSnapshot = null;
+    }
+
+    async openPointBuyPreview() {
+      if (!this.pointBuyPreviewOpened) {
+        this.runWithBackgroundElementUnlocked(document.getElementById("set-default-abilities"), (button) => button.click());
+        await waitForLayoutStability();
+        this.runWithBackgroundElementUnlocked(document.getElementById("ability-choice-point-buy"), (button) => button.click());
+        this.pointBuyPreviewOpened = true;
       }
-      const rect = getUnionRect(this.getStepElements(step));
-      return rect ? [rect] : [];
+      document.getElementById("point-buy-modal")?.classList.add("onboarding-tour-preview");
+      const card = document.querySelector("#point-buy-modal .point-buy-modal-card");
+      if (card && !this.pointBuyCardStateCaptured) {
+        this.pointBuyCardWasInert = card.inert;
+        this.pointBuyCardStateCaptured = true;
+        card.inert = true;
+      }
+      await waitForLayoutStability();
+    }
+
+    closePointBuyPreview() {
+      const modal = document.getElementById("point-buy-modal");
+      const card = modal?.querySelector(".point-buy-modal-card");
+      if (card && this.pointBuyCardStateCaptured) card.inert = this.pointBuyCardWasInert;
+      modal?.classList.remove("onboarding-tour-preview");
+      if (this.pointBuyPreviewOpened && modal?.classList.contains("open")) {
+        this.runWithBackgroundElementUnlocked(document.getElementById("point-buy-close"), (button) => button.click());
+      }
+      const abilityChoiceModal = document.getElementById("ability-choice-modal");
+      if (abilityChoiceModal?.contains(document.activeElement)) document.activeElement.blur();
+      if (abilityChoiceModal) {
+        abilityChoiceModal.inert = true;
+        abilityChoiceModal.classList.remove("open");
+        abilityChoiceModal.setAttribute("aria-hidden", "true");
+      }
+      this.pointBuyPreviewOpened = false;
+      this.pointBuyCardWasInert = false;
+      this.pointBuyCardStateCaptured = false;
+    }
+
+    async openSpellSearchPreview() {
+      const toolbar = document.getElementById("spell-tab-toolbar");
+      if (toolbar?.classList.contains("is-hidden")) {
+        this.runWithBackgroundElementUnlocked(document.getElementById("spell-search-fab"), (button) => button.click());
+      }
+      await waitForLayoutStability();
+    }
+
+    closeSpellSearchPreview() {
+      const toolbar = document.getElementById("spell-tab-toolbar");
+      if (toolbar && !toolbar.classList.contains("is-hidden")) {
+        this.runWithBackgroundElementUnlocked(document.getElementById("spell-search-fab"), (button) => button.click());
+      }
+    }
+
+    async openUtilityMenuPreview() {
+      const toggle = document.getElementById("utility-menu-toggle");
+      if (toggle?.getAttribute("aria-expanded") !== "true") {
+        this.runWithBackgroundElementUnlocked(toggle, (button) => button.click());
+        this.utilityMenuPreviewOpened = true;
+      }
+      await waitForLayoutStability();
+    }
+
+    closeUtilityMenuPreview() {
+      const toggle = document.getElementById("utility-menu-toggle");
+      if (this.utilityMenuPreviewOpened && toggle?.getAttribute("aria-expanded") === "true") {
+        this.runWithBackgroundElementUnlocked(toggle, (button) => button.click());
+      }
+      this.utilityMenuPreviewOpened = false;
+    }
+
+    getBodyChildForElement(element) {
+      let current = element;
+      while (current?.parentElement && current.parentElement !== document.body) current = current.parentElement;
+      return current?.parentElement === document.body ? current : null;
+    }
+
+    runWithBackgroundElementUnlocked(element, action) {
+      if (!element || typeof action !== "function") return;
+      const bodyChild = this.getBodyChildForElement(element);
+      if (!bodyChild) {
+        action(element);
+        return;
+      }
+      const wasInert = bodyChild.inert;
+      bodyChild.inert = false;
+      try {
+        action(element);
+      } finally {
+        bodyChild.inert = wasInert;
+      }
+    }
+
+    lockBackgroundInteraction() {
+      if (this.backgroundInertSnapshot) return;
+      this.backgroundInertSnapshot = Array.from(document.body.children)
+        .filter((element) => element !== this.overlay)
+        .map((element) => ({ element, inert: element.inert }));
+      this.backgroundInertSnapshot.forEach(({ element }) => {
+        element.inert = true;
+      });
+      if (this.tooltip) {
+        this.tooltip.setAttribute("aria-modal", "true");
+        this.tooltip.setAttribute("aria-labelledby", "tour-step-title");
+        this.tooltip.setAttribute("aria-describedby", "tour-step-text");
+      }
+    }
+
+    unlockBackgroundInteraction() {
+      this.backgroundInertSnapshot?.forEach(({ element, inert }) => {
+        element.inert = inert;
+      });
+      this.backgroundInertSnapshot = null;
     }
 
     getHoleForSelector(selector, padding = 8) {
-      const elements = Array.from(document.querySelectorAll(selector)).filter((el) => isElementVisible(el));
-      const rect = getUnionRect(elements);
-      if (!rect) return null;
-      return {
-        left: Math.max(0, rect.left - padding),
-        top: Math.max(0, rect.top - padding),
-        right: Math.min(window.innerWidth, rect.right + padding),
-        bottom: Math.min(window.innerHeight, rect.bottom + padding)
-      };
+      return this.getHoleFromElements(Array.from(document.querySelectorAll(selector)), padding);
     }
 
     getHoleFromElements(elements, padding = 8) {
-      const rect = getUnionRect(elements.filter((el) => isElementVisible(el)));
+      const rect = getUnionRect(elements.filter(Boolean));
       if (!rect) return null;
       return {
         left: Math.max(0, rect.left - padding),
@@ -1436,274 +609,10 @@
       };
     }
 
-    getTextContentRects(element) {
-      if (!element || !isElementVisible(element)) return [];
-      const range = document.createRange();
-      range.selectNodeContents(element);
-      return Array.from(range.getClientRects()).filter((rect) => rect.width > 0 && rect.height > 0);
-    }
-
-    getHoleFromRects(rects, padding = {}) {
-      const validRects = rects.filter((rect) => rect && rect.width > 0 && rect.height > 0);
-      if (!validRects.length) return null;
-      const topPadding = padding.top ?? 8;
-      const rightPadding = padding.right ?? 8;
-      const bottomPadding = padding.bottom ?? 8;
-      const leftPadding = padding.left ?? 8;
-      return {
-        left: Math.max(0, Math.min(...validRects.map((rect) => rect.left)) - leftPadding),
-        top: Math.max(0, Math.min(...validRects.map((rect) => rect.top)) - topPadding),
-        right: Math.min(window.innerWidth, Math.max(...validRects.map((rect) => rect.right)) + rightPadding),
-        bottom: Math.min(window.innerHeight, Math.max(...validRects.map((rect) => rect.bottom)) + bottomPadding)
-      };
-    }
-
-    hideMaskGroup(group) {
-      Object.values(group).forEach((mask) => {
-        if (!mask) return;
-        mask.style.display = "none";
-        mask.style.opacity = "";
-        mask.style.left = "0px";
-        mask.style.top = "0px";
-        mask.style.width = "0px";
-        mask.style.height = "0px";
-      });
-    }
-
-    showFullOverlayMask() {
-      const primaryGroup = this.maskGroups[0];
-      if (!primaryGroup) return;
-      this.hideMaskGroup(this.maskGroups[1]);
-      if (primaryGroup.top) {
-        primaryGroup.top.style.display = "block";
-        primaryGroup.top.style.opacity = "1";
-        primaryGroup.top.style.left = "0px";
-        primaryGroup.top.style.top = "0px";
-        primaryGroup.top.style.width = `${window.innerWidth}px`;
-        primaryGroup.top.style.height = `${window.innerHeight}px`;
-      }
-      ["left", "right", "bottom"].forEach((key) => {
-        const mask = primaryGroup[key];
-        if (!mask) return;
-        mask.style.left = "0px";
-        mask.style.top = "0px";
-        mask.style.width = "0px";
-        mask.style.height = "0px";
-      });
-    }
-
-    resetHighlightState() {
-      this.maskGroups.forEach((group) => this.hideMaskGroup(group));
-      this.focusRings.forEach((ring) => {
-        if (!ring) return;
-        ring.style.display = "none";
-        ring.style.left = "0px";
-        ring.style.top = "0px";
-        ring.style.width = "0px";
-        ring.style.height = "0px";
-      });
-      if (this.tooltip) {
-        this.tooltip.style.display = "";
-        this.tooltip.style.left = "0px";
-        this.tooltip.style.top = "0px";
-      }
-    }
-
-    animateOverlayFadeOut(durationMs = 700) {
-      return new Promise((resolve) => {
-        const masks = this.maskGroups.flatMap((group) => Object.values(group)).filter(Boolean);
-        if (!masks.length) {
-          resolve();
-          return;
-        }
-
-        const start = performance.now();
-        const step = (now) => {
-          const elapsed = now - start;
-          const t = Math.min(1, elapsed / durationMs);
-          const eased = 1 - Math.pow(1 - t, 3);
-          const opacity = `${1 - eased}`;
-
-          masks.forEach((mask) => {
-            if (mask.style.display !== "none") {
-              mask.style.opacity = opacity;
-            }
-          });
-
-          if (t < 1) {
-            requestAnimationFrame(step);
-            return;
-          }
-
-          this.maskGroups.forEach((group) => this.hideMaskGroup(group));
-          resolve();
-        };
-
-        requestAnimationFrame(step);
-      });
-    }
-
-    setFocusRing(ring, hole) {
-      if (!ring) return;
-      if (!hole) {
-        ring.style.display = "none";
-        ring.style.left = "0px";
-        ring.style.top = "0px";
-        ring.style.width = "0px";
-        ring.style.height = "0px";
-        return;
-      }
-      ring.style.display = "block";
-      ring.style.left = `${hole.left}px`;
-      ring.style.top = `${hole.top}px`;
-      ring.style.width = `${Math.max(0, hole.right - hole.left)}px`;
-      ring.style.height = `${Math.max(0, hole.bottom - hole.top)}px`;
-    }
-
-    animatePrimaryHoleTransition(fromHole, toHole, durationMs = 360) {
-      return new Promise((resolve) => {
-        if (!fromHole || !toHole) {
-          resolve();
-          return;
-        }
-
-        const start = performance.now();
-        const step = (now) => {
-          const elapsed = now - start;
-          const t = Math.min(1, elapsed / durationMs);
-          const eased = 1 - Math.pow(1 - t, 3);
-          const currentHole = {
-            left: fromHole.left + (toHole.left - fromHole.left) * eased,
-            top: fromHole.top + (toHole.top - fromHole.top) * eased,
-            right: fromHole.right + (toHole.right - fromHole.right) * eased,
-            bottom: fromHole.bottom + (toHole.bottom - fromHole.bottom) * eased
-          };
-
-          this.applyMasksForHoles([currentHole]);
-          this.setFocusRing(this.focusRings[0], currentHole);
-          this.setFocusRing(this.focusRings[1], null);
-
-          if (t < 1) {
-            requestAnimationFrame(step);
-            return;
-          }
-          resolve();
-        };
-
-        requestAnimationFrame(step);
-      });
-    }
-
-    async animateScrolledStepTransition(previousHole, startScrollY, step) {
-      const targetHole = this.getStepHoles(step)[0];
-      if (!previousHole || !targetHole) return;
-
-      const scrollDelta = startScrollY - window.scrollY;
-      const shiftedPreviousHole = {
-        left: previousHole.left,
-        top: previousHole.top + scrollDelta,
-        right: previousHole.right,
-        bottom: previousHole.bottom + scrollDelta
-      };
-      await this.animatePrimaryHoleTransition(shiftedPreviousHole, targetHole, 420);
-    }
-
-    placeMaskGroup(group, hole, region = {}) {
-      if (!group || !hole) return;
-      const leftBound = Math.max(0, region.left ?? 0);
-      const rightBound = Math.min(window.innerWidth, region.right ?? window.innerWidth);
-      const topBound = Math.max(0, region.top ?? 0);
-      const bottomBound = Math.min(window.innerHeight, region.bottom ?? window.innerHeight);
-      const width = Math.max(0, rightBound - leftBound);
-      const holeLeft = Math.max(leftBound, Math.min(rightBound, hole.left));
-      const holeRight = Math.max(leftBound, Math.min(rightBound, hole.right));
-      const holeTop = Math.max(topBound, Math.min(bottomBound, hole.top));
-      const holeBottom = Math.max(topBound, Math.min(bottomBound, hole.bottom));
-
-      this.setMaskRect(group.top, leftBound, topBound, width, Math.max(0, holeTop - topBound));
-      this.setMaskRect(group.left, leftBound, holeTop, Math.max(0, holeLeft - leftBound), Math.max(0, holeBottom - holeTop));
-      this.setMaskRect(group.right, holeRight, holeTop, Math.max(0, rightBound - holeRight), Math.max(0, holeBottom - holeTop));
-      this.setMaskRect(group.bottom, leftBound, holeBottom, width, Math.max(0, bottomBound - holeBottom));
-    }
-
-    setMaskRect(mask, left, top, width, height) {
-      if (!mask) return;
-      if (width <= 0 || height <= 0) {
-        mask.style.display = "none";
-        mask.style.opacity = "";
-        mask.style.left = "0px";
-        mask.style.top = "0px";
-        mask.style.width = "0px";
-        mask.style.height = "0px";
-        return;
-      }
-      mask.style.cssText = `display:block;left:${left}px;top:${top}px;width:${width}px;height:${height}px;`;
-      mask.style.opacity = "1";
-    }
-
-    applyMasksForHoles(holes) {
-      if (holes.length >= 2) {
-        const pair = holes.slice(0, 2);
-        const [first, second] = pair;
-        const overlapX = Math.max(0, Math.min(first.right, second.right) - Math.max(first.left, second.left));
-        const minHoleWidth = Math.max(1, Math.min(first.right - first.left, second.right - second.left));
-        const mostlyVerticalStack = overlapX / minHoleWidth > 0.6;
-
-        if (mostlyVerticalStack) {
-          const sorted = pair.sort((a, b) => a.top - b.top);
-          const splitY = Math.max(
-            0,
-            Math.min(window.innerHeight, Math.floor((sorted[0].bottom + sorted[1].top) / 2))
-          );
-          this.placeMaskGroup(this.maskGroups[0], sorted[0], {
-            left: 0,
-            right: window.innerWidth,
-            top: 0,
-            bottom: splitY
-          });
-          this.placeMaskGroup(this.maskGroups[1], sorted[1], {
-            left: 0,
-            right: window.innerWidth,
-            top: splitY,
-            bottom: window.innerHeight
-          });
-          return sorted;
-        }
-
-        const sorted = pair.sort((a, b) => a.left - b.left);
-        const splitX = Math.max(
-          0,
-          Math.min(window.innerWidth, Math.floor((sorted[0].right + sorted[1].left) / 2))
-        );
-        this.placeMaskGroup(this.maskGroups[0], sorted[0], {
-          left: 0,
-          right: splitX,
-          top: 0,
-          bottom: window.innerHeight
-        });
-        this.placeMaskGroup(this.maskGroups[1], sorted[1], {
-          left: splitX,
-          right: window.innerWidth,
-          top: 0,
-          bottom: window.innerHeight
-        });
-        return sorted;
-      }
-
-      if (holes.length === 1) {
-        this.placeMaskGroup(this.maskGroups[0], holes[0], {
-          left: 0,
-          right: window.innerWidth,
-          top: 0,
-          bottom: window.innerHeight
-        });
-        this.hideMaskGroup(this.maskGroups[1]);
-        return holes;
-      }
-
-      this.hideMaskGroup(this.maskGroups[0]);
-      this.hideMaskGroup(this.maskGroups[1]);
-      return [];
+    getStepValue(step, key, fallback) {
+      const value = step?.[key];
+      if (typeof value === "function") return value();
+      return value ?? fallback;
     }
 
     async renderStep() {
@@ -1711,86 +620,145 @@
       this.resetHighlightState();
       const step = this.steps[this.currentIndex];
       if (!step) return;
-      if (step.noMask) {
-        if (step.revealOnEnter) {
-          this.showFullOverlayMask();
-        }
-        this.title.textContent = step.title;
-        this.text.textContent = step.text;
-        this.updateStepProgress();
-        this.prevBtn.disabled = this.currentIndex <= 0;
-        this.nextBtn.textContent = this.currentIndex === this.steps.length - 1 ? "完成" : "下一步";
-        this.positionTooltipWithoutHighlight(step.placement || "center");
-        if (step.revealOnEnter) {
-          await this.animateOverlayFadeOut();
-        }
-        this.lastRenderedHoles = [];
-        return;
-      }
-      const holes = this.getStepHoles(step);
-      if (!holes.length) {
-        this.showFullOverlayMask();
-        this.title.textContent = step.title;
-        this.text.textContent = step.text;
-        this.updateStepProgress();
-        this.prevBtn.disabled = this.currentIndex <= 0;
-        this.nextBtn.textContent = this.currentIndex === this.steps.length - 1 ? "完成" : "下一步";
-        if (this.tooltip) this.tooltip.style.display = "";
-        this.positionTooltipWithoutHighlight(step.placement || "center");
-        this.lastRenderedHoles = [];
-        return;
-      }
-      if (step.hideTooltipDuringTransition && this.tooltip) {
-        this.tooltip.style.display = "none";
-      }
-      if (step.animatePrimaryHole && holes.length === 1 && this.lastRenderedHoles?.length === 1) {
-        await this.animatePrimaryHoleTransition(this.lastRenderedHoles[0], holes[0]);
-      }
+      const holes = (typeof step.getHoles === "function" ? step.getHoles() : []).filter(Boolean).slice(0, 2);
       const visibleHoles = this.applyMasksForHoles(holes);
-      const primaryHole = visibleHoles[0];
-      if (!primaryHole) return;
+      this.focusRings.forEach((ring, index) => this.setFocusRing(ring, visibleHoles[index]));
 
-      this.focusRings.forEach((ring, idx) => this.setFocusRing(ring, visibleHoles[idx]));
+      this.title.textContent = this.getStepValue(step, "title", "");
+      this.text.textContent = this.getStepValue(step, "text", "");
+      this.progress.textContent = `${this.currentIndex + 1}/${this.steps.length}`;
+      this.progress.setAttribute("aria-label", `導覽進度：第 ${this.currentIndex + 1} 步，共 ${this.steps.length} 步`);
+      this.prevBtn.disabled = this.currentIndex === 0;
+      this.nextBtn.textContent = this.getNextButtonText();
+      this.tooltip.style.display = "";
 
-      this.title.textContent = step.title;
-      this.text.textContent = step.text;
-      this.updateStepProgress();
-      this.prevBtn.disabled = this.currentIndex <= 0;
-      this.nextBtn.textContent = this.currentIndex === this.steps.length - 1 ? "完成" : "下一步";
-      if (this.tooltip) this.tooltip.style.display = "";
-      this.positionTooltip(primaryHole, step.placement || "bottom");
-      this.lastRenderedHoles = visibleHoles.map((hole) => ({ ...hole }));
+      const placement = this.getStepValue(step, "placement", "bottom");
+      if (visibleHoles[0]) this.positionTooltip(visibleHoles[0], placement);
+      else this.positionTooltipWithoutHighlight();
+      this.ensureTourFocus();
     }
 
-    positionTooltipWithoutHighlight(placement = "center") {
-      const margin = 10;
-      const tooltipWidth = Math.min(252, window.innerWidth - margin * 2);
-      const tooltipHeight = this.tooltip.offsetHeight || 160;
-      this.tooltip.style.width = `${tooltipWidth}px`;
-      this.tooltip.style.left = `${Math.max(margin, Math.floor((window.innerWidth - tooltipWidth) / 2))}px`;
+    getNextButtonText() {
+      if (this.currentIndex === 1 && this.stepPhase === 0) return "查看 27 購點";
+      if (this.currentIndex === 4 && this.stepPhase === 0) return "查看工具選單";
+      if (this.currentIndex === this.steps.length - 1) return "開始使用角色卡";
+      return "下一步";
+    }
 
-      if (placement === "center") {
-        const centeredTop = Math.max(margin, Math.floor((window.innerHeight - tooltipHeight) / 2));
-        this.tooltip.style.top = `${centeredTop}px`;
+    hideMaskGroup(group) {
+      Object.values(group || {}).forEach((mask) => {
+        if (!mask) return;
+        mask.style.cssText = "display:none;left:0;top:0;width:0;height:0;";
+      });
+    }
+
+    resetHighlightState() {
+      this.maskGroups.forEach((group) => this.hideMaskGroup(group));
+      this.focusRings.forEach((ring) => {
+        if (!ring) return;
+        ring.style.cssText = "display:none;left:0;top:0;width:0;height:0;";
+      });
+      if (this.tooltip) {
+        this.tooltip.style.left = "0px";
+        this.tooltip.style.top = "0px";
+      }
+    }
+
+    setMaskRect(mask, left, top, width, height) {
+      if (!mask || width <= 0 || height <= 0) {
+        if (mask) mask.style.display = "none";
         return;
       }
+      mask.style.cssText = `display:block;left:${left}px;top:${top}px;width:${width}px;height:${height}px;`;
+    }
 
-      this.tooltip.style.top = `${margin}px`;
+    placeMaskGroup(group, hole, region) {
+      const leftBound = region.left;
+      const rightBound = region.right;
+      const topBound = region.top;
+      const bottomBound = region.bottom;
+      const holeLeft = Math.max(leftBound, Math.min(rightBound, hole.left));
+      const holeRight = Math.max(leftBound, Math.min(rightBound, hole.right));
+      const holeTop = Math.max(topBound, Math.min(bottomBound, hole.top));
+      const holeBottom = Math.max(topBound, Math.min(bottomBound, hole.bottom));
+      this.setMaskRect(group.top, leftBound, topBound, rightBound - leftBound, holeTop - topBound);
+      this.setMaskRect(group.left, leftBound, holeTop, holeLeft - leftBound, holeBottom - holeTop);
+      this.setMaskRect(group.right, holeRight, holeTop, rightBound - holeRight, holeBottom - holeTop);
+      this.setMaskRect(group.bottom, leftBound, holeBottom, rightBound - leftBound, bottomBound - holeBottom);
+    }
+
+    applyMasksForHoles(holes) {
+      if (!holes.length) {
+        this.setMaskRect(this.maskGroups[0].top, 0, 0, window.innerWidth, window.innerHeight);
+        this.hideMaskGroup(this.maskGroups[1]);
+        return [];
+      }
+      if (holes.length === 1) {
+        this.placeMaskGroup(this.maskGroups[0], holes[0], {
+          left: 0, right: window.innerWidth, top: 0, bottom: window.innerHeight
+        });
+        this.hideMaskGroup(this.maskGroups[1]);
+        return holes;
+      }
+
+      const [first, second] = holes;
+      const overlapX = Math.max(0, Math.min(first.right, second.right) - Math.max(first.left, second.left));
+      const minWidth = Math.max(1, Math.min(first.right - first.left, second.right - second.left));
+      if (overlapX / minWidth > 0.6) {
+        const sorted = [...holes].sort((a, b) => a.top - b.top);
+        const splitY = Math.max(0, Math.min(window.innerHeight, Math.floor((sorted[0].bottom + sorted[1].top) / 2)));
+        this.placeMaskGroup(this.maskGroups[0], sorted[0], {
+          left: 0, right: window.innerWidth, top: 0, bottom: splitY
+        });
+        this.placeMaskGroup(this.maskGroups[1], sorted[1], {
+          left: 0, right: window.innerWidth, top: splitY, bottom: window.innerHeight
+        });
+        return sorted;
+      }
+
+      const sorted = [...holes].sort((a, b) => a.left - b.left);
+      const splitX = Math.max(0, Math.min(window.innerWidth, Math.floor((sorted[0].right + sorted[1].left) / 2)));
+      this.placeMaskGroup(this.maskGroups[0], sorted[0], {
+        left: 0, right: splitX, top: 0, bottom: window.innerHeight
+      });
+      this.placeMaskGroup(this.maskGroups[1], sorted[1], {
+        left: splitX, right: window.innerWidth, top: 0, bottom: window.innerHeight
+      });
+      return sorted;
+    }
+
+    setFocusRing(ring, hole) {
+      if (!ring || !hole) {
+        if (ring) ring.style.display = "none";
+        return;
+      }
+      ring.style.cssText = `display:block;left:${hole.left}px;top:${hole.top}px;width:${Math.max(0, hole.right - hole.left)}px;height:${Math.max(0, hole.bottom - hole.top)}px;`;
+    }
+
+    positionTooltipWithoutHighlight() {
+      const margin = 10;
+      const width = Math.min(360, window.innerWidth - margin * 2);
+      this.tooltip.style.width = `${width}px`;
+      this.tooltip.style.left = `${Math.max(margin, Math.floor((window.innerWidth - width) / 2))}px`;
+      const height = this.tooltip.offsetHeight || 170;
+      this.tooltip.style.top = `${Math.max(margin, Math.floor((window.innerHeight - height) / 2))}px`;
     }
 
     positionTooltip(hole, placement) {
       const margin = 10;
-      const tooltipWidth = Math.min(360, window.innerWidth - margin * 2);
-      this.tooltip.style.width = `${tooltipWidth}px`;
-      this.tooltip.style.left = `${Math.min(
-        window.innerWidth - tooltipWidth - margin,
-        Math.max(margin, hole.left)
-      )}px`;
+      const width = Math.min(360, window.innerWidth - margin * 2);
+      const height = this.tooltip.offsetHeight || 170;
+      this.tooltip.style.width = `${width}px`;
+      this.tooltip.style.left = `${Math.min(window.innerWidth - width - margin, Math.max(margin, hole.left))}px`;
 
-      const tooltipHeight = this.tooltip.offsetHeight || 160;
-      let top = placement === "top" ? hole.top - tooltipHeight - margin : hole.bottom + margin;
-      if (top + tooltipHeight > window.innerHeight - margin) top = hole.top - tooltipHeight - margin;
-      if (top < margin) top = Math.min(window.innerHeight - tooltipHeight - margin, hole.bottom + margin);
+      if (placement === "overlay-bottom") {
+        this.tooltip.style.top = `${Math.max(margin, window.innerHeight - height - margin)}px`;
+        return;
+      }
+
+      let top = placement === "top" ? hole.top - height - margin : hole.bottom + margin;
+      if (top + height > window.innerHeight - margin) top = hole.top - height - margin;
+      if (top < margin) top = Math.min(window.innerHeight - height - margin, hole.bottom + margin);
       this.tooltip.style.top = `${Math.max(margin, top)}px`;
     }
 
@@ -1802,18 +770,50 @@
     handleKeydown(event) {
       if (!this.active) return;
       if (event.key === "Escape") {
+        event.preventDefault();
         this.stop();
         return;
       }
-      const blockedKeys = ["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " ", "Spacebar"];
-      if (blockedKeys.includes(event.key)) {
-        event.preventDefault();
+      if (event.key === "Tab") {
+        this.trapTourTab(event);
+        return;
       }
+      if (this.tooltip?.contains(event.target)) return;
+      const blockedKeys = ["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " ", "Spacebar"];
+      if (blockedKeys.includes(event.key)) event.preventDefault();
+    }
+
+    handleFocusIn(event) {
+      if (!this.active || this.tooltip?.contains(event.target)) return;
+      this.nextBtn?.focus({ preventScroll: true });
+    }
+
+    getTourFocusableButtons() {
+      return [this.prevBtn, this.skipBtn, this.nextBtn].filter((button) => button && !button.disabled);
+    }
+
+    ensureTourFocus() {
+      if (this.getTourFocusableButtons().includes(document.activeElement)) return;
+      this.nextBtn?.focus({ preventScroll: true });
+    }
+
+    trapTourTab(event) {
+      const buttons = this.getTourFocusableButtons();
+      if (!buttons.length) {
+        event.preventDefault();
+        return;
+      }
+      const currentIndex = buttons.indexOf(document.activeElement);
+      const direction = event.shiftKey ? -1 : 1;
+      const nextIndex = currentIndex < 0
+        ? (event.shiftKey ? buttons.length - 1 : 0)
+        : (currentIndex + direction + buttons.length) % buttons.length;
+      event.preventDefault();
+      buttons[nextIndex].focus({ preventScroll: true });
     }
 
     preventScrollEvent(event) {
-      if (!this.active) return;
-      event.preventDefault();
+      if (this.active) event.preventDefault();
     }
 
     lockUserScroll() {
@@ -1826,6 +826,31 @@
       document.body.style.overscrollBehavior = "";
       window.removeEventListener("wheel", this.preventScrollEvent, { capture: true });
       window.removeEventListener("touchmove", this.preventScrollEvent, { capture: true });
+    }
+
+    async jumpToTarget({ tab = "basic", selector, focusSelector = selector } = {}) {
+      if (!selector) return false;
+      if (this.active) this.stop({ resetView: false });
+      this.showTab(tab);
+      await waitForLayoutStability();
+      const candidates = Array.from(document.querySelectorAll(selector));
+      const target = candidates.find(isElementVisible) || candidates[0];
+      if (!target) return false;
+      const details = target.closest("details");
+      if (details && !details.open) {
+        details.open = true;
+        await waitForLayoutStability();
+      }
+      await this.scrollElementIntoView(target, 120);
+      const focusTarget = Array.from(document.querySelectorAll(focusSelector)).find((element) => {
+        return isElementVisible(element) && !element.disabled;
+      });
+      focusTarget?.focus?.({ preventScroll: true });
+      target.classList.remove("onboarding-jump-target");
+      void target.offsetWidth;
+      target.classList.add("onboarding-jump-target");
+      window.setTimeout(() => target.classList.remove("onboarding-jump-target"), 1800);
+      return true;
     }
   }
 

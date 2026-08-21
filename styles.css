@@ -2244,6 +2244,13 @@ input[type="checkbox"]:focus-visible {
   line-height: 1.55;
 }
 
+.armor-proficiency-note {
+  margin: -0.4rem 0 0.75rem;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  line-height: 1.55;
+}
+
 #tab-equipment .equipment-loadout-field {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -2301,6 +2308,10 @@ input[type="checkbox"]:focus-visible {
   font-weight: 700;
 }
 
+.equipment-summary-row .equipment-proficiency-warning {
+  color: #c62828;
+}
+
 .weapon-rule-link {
   display: inline;
   width: auto;
@@ -2340,6 +2351,7 @@ input[type="checkbox"]:focus-visible {
   margin-top: 0.75rem;
   padding-top: 0.75rem;
   border-top: 1px solid rgba(151, 168, 201, 0.26);
+  position: relative;
 }
 
 .equipment-current-ac span {
@@ -2354,6 +2366,19 @@ input[type="checkbox"]:focus-visible {
   font-size: var(--fs-2xl);
   font-weight: 900;
   text-align: center;
+}
+
+.equipment-untrained-consequence {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  max-width: calc(100% - 8.5rem);
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: left;
 }
 
 #attack-calculation-popup {
@@ -2450,13 +2475,14 @@ input[type="checkbox"]:focus-visible {
 .money-detail-toggle {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.35rem;
-  margin: 0.65rem 0 0;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  margin: 0;
   font-size: var(--fs-xs);
-  font-weight: 700;
+  font-weight: 750;
   color: var(--text-muted);
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .money-detail-toggle input {
@@ -2499,7 +2525,16 @@ input[type="checkbox"]:focus-visible {
   white-space: nowrap;
 }
 
-#money-adjust-toggle { flex: 0 0 auto; }
+#money-adjust-toggle,
+#money-log-toggle { flex: 0 0 auto; }
+
+.money-quick-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  margin-top: 0.65rem;
+}
 
 .money-balance-grid {
   display: grid;
@@ -2558,24 +2593,25 @@ input[type="checkbox"]:focus-visible {
   color: var(--text);
 }
 
-.money-transaction {
-  margin-top: 0.85rem;
-  padding-top: 0.85rem;
-  border-top: 1px solid rgba(126, 148, 198, 0.25);
-}
-
 .money-modal-card h4 { margin: 0 3rem 0.75rem 0; color: var(--text); }
 .money-adjust-grid { margin-bottom: 0.65rem; }
 .money-panel-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.65rem; }
 
 .money-type-toggle {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.5rem;
-  margin: 0 0 0.65rem;
+  display: flex;
+  gap: 0.4rem;
+  margin: 0;
 }
 
-.money-type-toggle button { margin: 0; }
+.money-type-toggle button {
+  width: auto;
+  min-height: 2.2rem;
+  margin: 0;
+  padding: 0.42rem 0.72rem;
+  font-size: var(--fs-sm);
+  font-weight: 800;
+  white-space: nowrap;
+}
 .money-type-toggle button.is-active {
   border-color: var(--accent);
   background: var(--accent);
@@ -2630,10 +2666,6 @@ input[type="checkbox"]:focus-visible {
   font-weight: 700;
 }
 
-.money-log-button-row { display: flex; justify-content: flex-end; }
-
-#money-log-toggle { width: max-content; white-space: nowrap; }
-
 .money-modal {
   position: fixed;
   z-index: 1200;
@@ -2683,6 +2715,13 @@ input[type="checkbox"]:focus-visible {
 
 #money-log-modal .money-log-list { max-height: 60vh; overflow-y: auto; }
 #money-log-modal .money-balance-header { padding-right: 3.25rem; }
+
+.money-log-limit-note {
+  margin: -0.2rem 0 0.75rem;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
 
 .money-summary {
   margin: 0;
@@ -3781,6 +3820,11 @@ div[id$="spells-area"] .form-row {
   pointer-events: none;
 }
 
+#point-buy-modal.onboarding-tour-preview .point-buy-modal-card {
+  pointer-events: none;
+  user-select: none;
+}
+
 .tour-mask {
   position: fixed;
   background: rgba(10, 16, 30, 0.72);
@@ -3793,7 +3837,9 @@ div[id$="spells-area"] .form-row {
   border: 3px solid #7aa2ff;
   border-radius: 12px;
   box-shadow: 0 0 0 2px rgba(122, 162, 255, 0.38), 0 0 26px rgba(122, 162, 255, 0.7);
-  pointer-events: none;
+  pointer-events: auto;
+  touch-action: none;
+  cursor: default;
 }
 
 #tour-tooltip {
@@ -3948,7 +3994,9 @@ div[id$="spells-area"] .form-row {
 #spell-qr-modal,
 #deity-info-modal,
 #ability-choice-modal,
-#point-buy-modal {
+#point-buy-modal,
+#default-ability-class-modal,
+#point-buy-exit-modal {
   position: fixed;
   inset: 0;
   display: none;
@@ -3980,10 +4028,24 @@ div[id$="spells-area"] .form-row {
   background: rgba(10, 14, 28, 0.58);
 }
 
+#default-ability-class-modal {
+  z-index: 10004;
+  padding: 14px;
+  background: rgba(10, 14, 28, 0.68);
+}
+
+#point-buy-exit-modal {
+  z-index: 10005;
+  padding: 14px;
+  background: rgba(10, 14, 28, 0.74);
+}
+
 #spell-qr-modal.open,
 #deity-info-modal.open,
 #ability-choice-modal.open,
-#point-buy-modal.open {
+#point-buy-modal.open,
+#default-ability-class-modal.open,
+#point-buy-exit-modal.open {
   display: flex;
 }
 
@@ -4163,6 +4225,135 @@ div[id$="spells-area"] .form-row {
   box-shadow: 0 18px 44px rgba(15, 26, 58, 0.3);
 }
 
+.default-ability-class-card {
+  position: relative;
+  width: min(94vw, 460px);
+  max-height: min(88vh, 760px);
+  overflow-y: auto;
+  border: 1px solid #d3deef;
+  border-radius: 16px;
+  padding: 16px 14px 14px;
+  background: linear-gradient(180deg, #ffffff 0%, #f5f8ff 100%);
+  box-shadow: 0 18px 44px rgba(15, 26, 58, 0.34);
+  animation: default-ability-class-enter 160ms ease-out;
+}
+
+@keyframes default-ability-class-enter {
+  from { opacity: 0; transform: translateY(6px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.default-ability-class-card h3 {
+  margin: 0 40px 6px 0;
+  color: #223664;
+}
+
+.default-ability-class-note {
+  margin: 0 36px 14px 0;
+  color: #526587;
+  font-size: var(--fs-sm);
+  line-height: 1.55;
+}
+
+.default-ability-class-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.default-ability-class-group h4 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 6px;
+  color: #526587;
+  font-size: var(--fs-xs);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.default-ability-class-group h4::before,
+.default-ability-class-group h4::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  background: #cfd9ee;
+}
+
+.default-ability-class-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.default-ability-class-grid button {
+  min-width: 0;
+  min-height: 42px;
+  margin: 0;
+  padding: 8px 5px;
+  border: 1px solid #c9d5ea;
+  border-radius: 10px;
+  background: #fff;
+  color: #223664;
+  box-shadow: none;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.default-ability-class-grid button:hover,
+.default-ability-class-grid button:focus-visible {
+  border-color: #7892c4;
+  background: #edf3ff;
+  transform: translateY(-1px);
+}
+
+.default-ability-class-grid button:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.default-ability-class-grid button.is-current-class {
+  border-color: #718dc4;
+  box-shadow: inset 0 0 0 1px #718dc4;
+}
+
+.point-buy-exit-card {
+  width: min(92vw, 390px);
+  border: 1px solid #d3deef;
+  border-radius: 16px;
+  padding: 18px 16px 16px;
+  background: linear-gradient(180deg, #ffffff 0%, #f5f8ff 100%);
+  color: #34496f;
+  box-shadow: 0 18px 44px rgba(15, 26, 58, 0.36);
+  animation: default-ability-class-enter 160ms ease-out;
+}
+
+.point-buy-exit-card h3 {
+  margin: 0;
+  color: #8b3b32;
+  font-size: var(--fs-lg);
+}
+
+.point-buy-exit-card p {
+  margin: 8px 0 16px;
+  line-height: 1.6;
+}
+
+.point-buy-exit-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.point-buy-exit-actions button {
+  margin: 0;
+}
+
+#point-buy-exit-confirm {
+  border-color: #c88a82;
+  background: #fff5f3;
+  color: #8b3b32;
+}
+
 .ability-choice-card h3 {
   margin: 0;
   color: #223664;
@@ -4192,7 +4383,8 @@ div[id$="spells-area"] .form-row {
   border-top: 1px solid #cfd9ee;
 }
 
-.ability-choice-close {
+.ability-choice-close,
+.default-ability-class-close {
   position: absolute;
   top: 10px;
   right: 10px;
@@ -4249,6 +4441,71 @@ div[id$="spells-area"] .form-row {
   margin: 6px 0 0;
   color: #4b5c7f;
   font-size: var(--fs-sm);
+}
+
+.point-buy-background {
+  display: grid;
+  grid-template-columns: auto minmax(130px, 220px);
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  margin-top: 8px;
+  color: #2e4678;
+  font-size: var(--fs-sm);
+  font-weight: 800;
+}
+
+.point-buy-background select {
+  width: 100%;
+  min-height: 34px;
+  margin: 0;
+  padding: 5px 30px 5px 10px;
+  border-color: #c9d5ea;
+  border-radius: 9px;
+  background-color: #fff;
+  color: #223664;
+  font-weight: 700;
+}
+
+.point-buy-preset {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 10px 0;
+  padding: 10px 0;
+  border-top: 1px solid #d8e2f2;
+  border-bottom: 1px solid #d8e2f2;
+}
+
+.point-buy-preset-copy {
+  display: grid;
+  gap: 2px;
+}
+
+.point-buy-preset-copy strong {
+  color: #223664;
+}
+
+.point-buy-preset-copy span,
+.point-buy-preset-status {
+  color: #607090;
+  font-size: var(--fs-xs);
+}
+
+#ability-choice-default {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.point-buy-preset-status {
+  grid-column: 1 / -1;
+  min-height: 1.4em;
+  font-weight: 700;
+}
+
+.point-buy-preset-status.is-applied {
+  color: #2c6a4c;
 }
 
 .point-buy-hint {
@@ -4322,6 +4579,8 @@ div[id$="spells-area"] .form-row {
 .point-buy-step:active,
 .ability-choice-close:hover,
 .ability-choice-close:active,
+.default-ability-class-close:hover,
+.default-ability-class-close:active,
 .point-buy-close:hover,
 .point-buy-close:active {
   transform: none;
@@ -4365,6 +4624,102 @@ div[id$="spells-area"] .form-row {
   gap: 8px;
 }
 
+@media (max-width: 500px) {
+  .point-buy-preset {
+    grid-template-columns: 1fr;
+  }
+
+  .point-buy-preset-status {
+    grid-column: 1;
+  }
+
+  .point-buy-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  #point-buy-modal {
+    padding: 8px;
+  }
+
+  .point-buy-modal-card {
+    width: 100%;
+    padding-inline: 8px;
+  }
+
+  .point-buy-header {
+    padding-right: 32px;
+  }
+
+  .point-buy-table-head,
+  .point-buy-row {
+    grid-template-columns: 52px minmax(0, 1fr) minmax(0, 1fr) 30px;
+    gap: 2px;
+  }
+
+  .point-buy-table-head {
+    padding-inline: 5px;
+    font-size: var(--fs-xs);
+  }
+
+  .point-buy-row {
+    padding: 7px 5px;
+  }
+
+  .point-buy-ability,
+  .point-buy-total {
+    font-size: var(--fs-sm);
+  }
+
+  .point-buy-control-group {
+    min-width: 0;
+    gap: 3px;
+  }
+
+  .point-buy-step {
+    flex: 0 0 32px;
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    min-height: 32px;
+    font-size: 1rem;
+  }
+
+  .point-buy-value {
+    flex: 0 0 22px;
+    min-width: 22px;
+    font-size: var(--fs-sm);
+  }
+}
+
+@media (max-width: 340px) {
+  .point-buy-table-head,
+  .point-buy-row {
+    grid-template-columns: 48px minmax(0, 1fr) minmax(0, 1fr) 28px;
+  }
+
+  .point-buy-row {
+    padding-inline: 3px;
+  }
+
+  .point-buy-control-group {
+    gap: 2px;
+  }
+
+  .point-buy-step {
+    flex-basis: 30px;
+    width: 30px;
+    min-width: 30px;
+  }
+
+  .point-buy-value {
+    flex-basis: 20px;
+    min-width: 20px;
+  }
+}
+
 #legal-modal {
   position: fixed;
   inset: 0;
@@ -4405,6 +4760,7 @@ div[id$="spells-area"] .form-row {
   margin: 0 0 6px;
   font-size: var(--fs-lg);
   line-height: 1.15;
+  text-align: center;
 }
 
 .legal-modal-logo {
@@ -5500,6 +5856,10 @@ html[data-theme="dark"] .spell-prepare-popover__btn {
   box-shadow: none;
 }
 
+html[data-theme="dark"] .equipment-summary-row .equipment-proficiency-warning {
+  color: #ff9b9b;
+}
+
 html[data-theme="dark"] .selection-summary-card,
 html[data-theme="dark"] .ability-score,
 html[data-theme="dark"] .skill-control-row input[type="text"],
@@ -5517,6 +5877,7 @@ html[data-theme="dark"] .feat-icon-btn,
 html[data-theme="dark"] .point-buy-row,
 html[data-theme="dark"] .point-buy-step,
 html[data-theme="dark"] .ability-choice-close,
+html[data-theme="dark"] .default-ability-class-close,
 html[data-theme="dark"] .point-buy-close,
 html[data-theme="dark"] #legal-close-btn,
 html[data-theme="dark"] .pdf-export-flow-modal__card .pdf-export-precheck-list__jump,
@@ -5589,6 +5950,8 @@ html[data-theme="dark"] .equipment-purchase-modal,
 html[data-theme="dark"] #equipment-detail-modal,
 html[data-theme="dark"] #ability-choice-modal,
 html[data-theme="dark"] #point-buy-modal,
+html[data-theme="dark"] #default-ability-class-modal,
+html[data-theme="dark"] #point-buy-exit-modal,
 html[data-theme="dark"] #legal-modal,
 html[data-theme="dark"] .pdf-export-flow-modal,
 html[data-theme="dark"] .clear-records-modal {
@@ -5597,6 +5960,8 @@ html[data-theme="dark"] .clear-records-modal {
 
 html[data-theme="dark"] .point-buy-modal-card,
 html[data-theme="dark"] .ability-choice-card,
+html[data-theme="dark"] .default-ability-class-card,
+html[data-theme="dark"] .point-buy-exit-card,
 html[data-theme="dark"] .legal-modal-card,
 html[data-theme="dark"] .pdf-export-flow-modal__card {
   border-color: var(--border-strong);
@@ -5606,6 +5971,8 @@ html[data-theme="dark"] .pdf-export-flow-modal__card {
 }
 
 html[data-theme="dark"] .ability-choice-card h3,
+html[data-theme="dark"] .default-ability-class-card h3,
+html[data-theme="dark"] .point-buy-preset-copy strong,
 html[data-theme="dark"] .point-buy-header h3,
 html[data-theme="dark"] .point-buy-ability,
 html[data-theme="dark"] .point-buy-value,
@@ -5624,6 +5991,11 @@ html[data-theme="dark"] .point-buy-hint,
 html[data-theme="dark"] .point-buy-table-head,
 html[data-theme="dark"] .point-buy-value--bonus,
 html[data-theme="dark"] .point-buy-summary,
+html[data-theme="dark"] .point-buy-background,
+html[data-theme="dark"] .default-ability-class-note,
+html[data-theme="dark"] .default-ability-class-group h4,
+html[data-theme="dark"] .point-buy-preset-copy span,
+html[data-theme="dark"] .point-buy-preset-status,
 html[data-theme="dark"] .legal-modal-meta,
 html[data-theme="dark"] .pdf-export-flow-modal__eyebrow,
 html[data-theme="dark"] .pdf-export-flow-modal__subtitle,
@@ -5633,6 +6005,45 @@ html[data-theme="dark"] .pdf-export-choice-option span,
 html[data-theme="dark"] .pdf-export-format-option__detail,
 html[data-theme="dark"] .pdf-export-flow-modal__card .pdf-export-format-note {
   color: var(--text-muted);
+}
+
+html[data-theme="dark"] .point-buy-background select,
+html[data-theme="dark"] .default-ability-class-grid button {
+  border-color: var(--border-strong);
+  background: var(--control-bg);
+  color: var(--text);
+}
+
+html[data-theme="dark"] .default-ability-class-grid button:hover,
+html[data-theme="dark"] .default-ability-class-grid button:focus-visible {
+  background: var(--surface-muted);
+}
+
+html[data-theme="dark"] .default-ability-class-group h4::before,
+html[data-theme="dark"] .default-ability-class-group h4::after {
+  background: var(--border);
+}
+
+html[data-theme="dark"] .point-buy-preset {
+  border-color: var(--border);
+}
+
+html[data-theme="dark"] .point-buy-preset-status.is-applied {
+  color: var(--success);
+}
+
+html[data-theme="dark"] .point-buy-exit-card {
+  color: var(--text-body);
+}
+
+html[data-theme="dark"] .point-buy-exit-card h3 {
+  color: var(--danger);
+}
+
+html[data-theme="dark"] #point-buy-exit-confirm {
+  border-color: rgba(248, 113, 113, 0.45);
+  background: var(--danger-soft);
+  color: var(--danger);
 }
 
 html[data-theme="dark"] .ability-choice-divider,

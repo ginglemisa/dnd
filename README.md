@@ -17,6 +17,8 @@
 
 本工具以手機操作為主，並預設現場有主持人或教學者協助說明規則。
 
+本工具不附帶朋友和地下城主，找團請洽詢 TRPG 網路或在地社群。
+
 ## 目前功能
 
 - 五個角色卡分頁：數值、技能、動作、裝備、法術
@@ -43,7 +45,7 @@
 
 專案提供單檔離線角卡：[`TWD20-offline.html`](TWD20-offline.html)。下載後可直接以瀏覽器開啟，不必安裝應用程式。
 
-離線檔案由來源檔案產生；一般功能修改應先更新 `index.html`、JavaScript 與 CSS 等來源，不要直接編輯產出檔。
+離線版本無法輸出 PDF 文件，請注意。
 
 ## 專案結構
 
@@ -54,9 +56,8 @@
 - `character-rules.js`、`class-features.js`、`race.js`：角色規則與選項資料
 - `equipment-data.js`、`equipment-notes.js`、`spell-list.js`：裝備與法術資料
 - `pdf-export.js`、`pdf-field-map.js`：PDF 匯出
-- `about.html`、`info-pages.css`：Legal & About 頁面
-- `twd20.jpg`：TWD20 品牌標誌
-- `TWD20-offline.html`：已產生的單檔離線版本
+- `deity-info.js`：神祉資料頁
+- `TWD20-offline.html`：單檔離線版本
 
 這是以原生 HTML、CSS 與 JavaScript 為主的靜態網頁專案，不需要前端框架或套件管理器即可開啟主要介面。
 

@@ -21,6 +21,10 @@ globalThis.WEAPON_RULE_DESCRIPTIONS = Object.freeze({
     "緩速": "命中並造成傷害時，可使目標的速度降低 10 呎，持續至你下回合開始。同一目標不會因此降低超過 10 呎。",
     "失衡": "命中後，可迫使目標進行體質豁免；DC 為「8＋攻擊屬性調整值＋熟練加值」。失敗則倒地。",
     "侵擾": "命中並造成傷害後，你在下回合結束前對該目標進行的下一次攻擊檢定具有優勢。"
+  }),
+  armor: Object.freeze({
+    "隱匿劣勢": "穿著這件盔甲時，所有敏捷（隱匿）檢定具丟二取低。",
+    "力量需求": "若力量未達盔甲需求，穿著時速度降低 10 呎。"
   })
 });
 
@@ -44,6 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
   </details>
 
 <h3>防具</h3>
+<p class="armor-proficiency-note">若裝備不熟練防具，力敏相關 D20 檢定劣勢，且不能施法。</p>
   <details class="equipment-catalog-details">
     <summary class="equipment-note-summary">輕甲列表</summary>
     <div class="small-text equipment-note-body equipment-catalog-body" data-armor-catalog="輕甲"></div>
@@ -660,8 +665,8 @@ DC 25 力量（運動）：掙斷鐐銬
     .trim()
     .replace(/\s*[（(].*$/u, "");
 
-  const makeRuleLinkHtml = (label, kind) => {
-    const ruleName = normalizeRuleName(label);
+  const makeRuleLinkHtml = (label, kind, specifiedRuleName) => {
+    const ruleName = specifiedRuleName || normalizeRuleName(label);
     if (!WEAPON_RULE_DESCRIPTIONS[kind]?.[ruleName]) return escapeCatalogText(label);
     return `<button type="button" class="weapon-rule-link weapon-rule-link--${kind}" data-weapon-rule-kind="${kind}" data-weapon-rule="${escapeCatalogText(ruleName)}">${escapeCatalogText(label)}</button>`;
   };
@@ -710,8 +715,12 @@ DC 25 力量（運動）：掙斷鐐銬
     const rows = armorItems.map((armor) => [
       armor.名稱,
       armor.名稱 === "盾牌" ? "+2" : armor.AC,
-      armor.力量需求,
-      armor.隱匿懲罰,
+      armor.力量需求 && armor.力量需求 !== "--" && armor.力量需求 !== "-"
+        ? { html: makeRuleLinkHtml(armor.力量需求, "armor", "力量需求") }
+        : armor.力量需求,
+      armor.隱匿懲罰 === "劣勢"
+        ? { html: makeRuleLinkHtml(armor.隱匿懲罰, "armor", "隱匿劣勢") }
+        : armor.隱匿懲罰,
       armor.重量,
       armor.價格
     ]);
@@ -720,6 +729,7 @@ DC 25 力量（運動）：掙斷鐐銬
 
   const purchaseModal = document.createElement("div");
   purchaseModal.className = "equipment-purchase-modal";
+  purchaseModal.inert = true;
   purchaseModal.setAttribute("aria-hidden", "true");
   purchaseModal.innerHTML = `
     <div class="equipment-purchase-card" role="dialog" aria-modal="true" aria-labelledby="equipment-purchase-title">
@@ -745,18 +755,26 @@ DC 25 力量（運動）：掙斷鐐銬
   const purchaseQuantityInput = purchaseModal.querySelector(".equipment-purchase-quantity");
   const purchaseBalance = purchaseModal.querySelector(".equipment-purchase-balance");
   let pendingPurchase = null;
+  let purchaseModalOpener = null;
 
   const closePurchaseModal = () => {
+    if (purchaseModal.contains(document.activeElement)) {
+      purchaseModalOpener?.isConnected ? purchaseModalOpener.focus() : document.activeElement.blur();
+    }
+    purchaseModal.inert = true;
     purchaseModal.classList.remove("open");
     purchaseModal.setAttribute("aria-hidden", "true");
     pendingPurchase = null;
+    purchaseModalOpener = null;
   };
 
   const openPurchaseModal = (item) => {
+    purchaseModalOpener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     pendingPurchase = item;
     purchaseQuantityInput.value = "1";
     purchaseDescription.textContent = `${item.name}（${item.amount} ${item.currency}）`;
     purchaseBalance.textContent = document.getElementById("money-summary")?.textContent || "目前財產：尚未載入";
+    purchaseModal.inert = false;
     purchaseModal.classList.add("open");
     purchaseModal.setAttribute("aria-hidden", "false");
     confirmPurchaseButton.focus();
@@ -855,7 +873,7 @@ DC 25 力量（運動）：掙斷鐐銬
     const name = trigger.dataset.weaponRule;
     const description = WEAPON_RULE_DESCRIPTIONS[kind]?.[name];
     if (!description) return;
-    const category = kind === "mastery" ? "精通" : "武器屬性";
+    const category = kind === "mastery" ? "精通" : kind === "armor" ? "防具規則" : "武器屬性";
     rulePopup.querySelector(".content").innerHTML = `<div class="title">${escapeCatalogText(name)}</div><div class="weapon-rule-popup-category">${category}</div><div class="monster-detail-line monster-detail-line--first">${escapeCatalogText(description)}</div>`;
     const rect = trigger.getBoundingClientRect();
     rulePopup.style.display = "block";
@@ -868,6 +886,14 @@ DC 25 力量（運動）：掙斷鐐銬
   rulePopup.querySelector(".close").addEventListener("click", hideRulePopup);
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") hideRulePopup();
+  });
+  document.addEventListener("mouseover", (event) => {
+    const trigger = event.target.closest?.("#equipment-loadout-summary-content [data-weapon-rule-kind='mastery'][data-weapon-rule]");
+    if (trigger) showRulePopup(trigger);
+  });
+  document.addEventListener("mouseout", (event) => {
+    const trigger = event.target.closest?.("#equipment-loadout-summary-content [data-weapon-rule-kind='mastery'][data-weapon-rule]");
+    if (trigger && !event.relatedTarget?.closest?.("#weaponRulePopup")) hideRulePopup();
   });
   document.addEventListener("click", (event) => {
     const trigger = event.target.closest?.("[data-weapon-rule-kind][data-weapon-rule]");

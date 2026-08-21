@@ -8,9 +8,12 @@
       namedFontSizes: Object.freeze({ ...settings.namedFontSizes }),
       fixedFontSizes: Object.freeze({ ...settings.fixedFontSizes }),
       patternFontSizes: Object.freeze(settings.patternFontSizes.map((rule) => Object.freeze({ ...rule }))),
-      spellRows: Object.freeze({ ...settings.spellRows })
+      spellRows: Object.freeze({ ...settings.spellRows }),
+      spellNotes: Object.freeze({ ...settings.spellNotes })
     });
   }
+
+  const SKILL_MODIFIER_FIELD_PATTERN = /^(?:athleticsMod1|acrobaticsMod1|sleightOfHandMod1|stealthMod1|arcanaMod1|historyMod1|investigationMod1|natureMod1|religionMod1|animalHandlingMod2|insightMod1|medicineMod1|perceptionMod1|survivalMod1|deceptionMod1|intimidationMod1|performanceMod1|persuasionMod1)$/;
 
   // Keep field mapping and payload generation shared. Only visual presentation
   // belongs here, with one independent block for each export mode.
@@ -49,6 +52,7 @@
         'spell-level-9': 14
       },
       patternFontSizes: [
+        { pattern: SKILL_MODIFIER_FIELD_PATTERN, fontSize: 10.5, fixed: true },
         { pattern: /^(str|dex|con|int|wis|cha)1$/, fontSize: 10 },
         { pattern: /^attack-weap-name-\d+$/, fontSize: 8 },
         { pattern: /^(?:dmg_type_|toHit|wp-note-)\d+$/, fontSize: 8 },
@@ -56,25 +60,28 @@
         { pattern: /^(?:sp-level-|sp-cast-time-|sp-range-)\d+$/, fontSize: 10 },
         { pattern: /^note\d+$/, fontSize: 8 }
       ],
-      spellRows: { count: 19, fontSize: 10, alignment: 'right' }
+      spellRows: { count: 19, fontSize: 10, alignment: 'right' },
+      spellNotes: { singleLineFontSize: 8, overflowFontSize: 6.5 }
     }),
     compact: createPdfLayoutSettings({
       minFontSize: 4,
-      horizontalPadding: 4,
-      verticalPadding: 3,
-      lineHeightFactor: 1.15,
+      horizontalPadding: 3,
+      verticalPadding: 2,
+      lineHeightFactor: 1.1,
       namedFontSizes: {
-        Name1: 12,
-        Class1: 9,
-        Subclass1: 9,
-        Background2: 9,
-        Specie1: 9,
-        alignment1: 9,
-        language1: 8,
-        classFeatures1: 7,
+        Name1: 14,
+        Level1: 16,
+        proficiencyBonus1: 16,
+        Class1: 10,
+        Subclass1: 10,
+        Background2: 10,
+        Specie1: 10,
+        alignment1: 10,
+        language1: 9,
+        classFeatures1: 8,
         classFeatures2: 7,
-        specie_features1: 7,
-        feats1: 7,
+        specie_features1: 8,
+        feats1: 8,
         extra1: 8,
         equipment1: 8,
         toolsProficiency1: 8,
@@ -92,23 +99,27 @@
         'spell-level-9': 14
       },
       patternFontSizes: [
+        { pattern: SKILL_MODIFIER_FIELD_PATTERN, fontSize: 9.5, fixed: true },
         { pattern: /^(str|dex|con|int|wis|cha)1$/, fontSize: 10 },
         { pattern: /^attack-weap-name-\d+$/, fontSize: 8 },
         { pattern: /^(?:dmg_type_|toHit|wp-note-)\d+$/, fontSize: 8 },
-        { pattern: /^sp-name-\d+$/, fontSize: 9 },
-        { pattern: /^(?:sp-level-|sp-cast-time-|sp-range-)\d+$/, fontSize: 10 },
+        { pattern: /^sp-name-\d+$/, fontSize: 10 },
+        { pattern: /^sp-level-\d+$/, fontSize: 11 },
+        { pattern: /^(?:sp-cast-time-|sp-range-)\d+$/, fontSize: 10 },
         { pattern: /^note\d+$/, fontSize: 8 }
       ],
-      spellRows: { count: 19, fontSize: 10, alignment: 'right' }
+      spellRows: { count: 19, fontSize: 11, alignment: 'right' },
+      spellNotes: { singleLineFontSize: 8, overflowFontSize: 6.5 }
     })
   });
 
   const PDF_EXPORT_PROFILES = Object.freeze({
     editable: Object.freeze({
       sourcePdfPath: '5e_char_sheet.pdf',
-      fontPath: 'NotoSansMonoCJKtc-Regular.otf',
+      fontPath: 'NotoSansTC-Regular-IdentityCID.otf',
       subsetFont: false,
       flattenForm: false,
+      writeValuesOnly: false,
       layoutId: 'editable'
     }),
     compact: Object.freeze({
@@ -116,16 +127,66 @@
       fontPath: 'SourceHanSerifTC-Bold.otf',
       subsetFont: true,
       flattenForm: true,
+      writeValuesOnly: false,
       layoutId: 'compact'
+    }),
+    editable_no_font: Object.freeze({
+      sourcePdfPath: '5e_char_sheet_clean_final.pdf',
+      fontPath: null,
+      subsetFont: false,
+      flattenForm: false,
+      writeValuesOnly: true,
+      layoutId: 'editable'
     })
   });
   const DEFAULT_PDF_EXPORT_MODE = 'editable';
   const MAX_NAME_UNITS = 18;
+  const PDF_FILENAME_CLASS_LABELS = Object.freeze({
+    barbarian: '野蠻人',
+    bard: '吟遊詩人',
+    cleric: '牧師',
+    druid: '德魯伊',
+    fighter: '戰士',
+    monk: '武僧',
+    paladin: '聖騎士',
+    ranger: '遊俠',
+    rogue: '遊蕩者',
+    sorcerer: '術士',
+    warlock: '契術師',
+    wizard: '法師'
+  });
   const sourcePdfBytesPromises = new Map();
   const cjkFontBytesPromises = new Map();
 
-  function timestampString() {
-    return new Date().toISOString().replace(/[:.]/g, '-');
+  function getUtc8Timestamp(date = new Date()) {
+    const utc8Date = new Date(date.getTime() + (8 * 60 * 60 * 1000));
+    const pad = (value) => String(value).padStart(2, '0');
+    return [
+      utc8Date.getUTCFullYear(),
+      pad(utc8Date.getUTCMonth() + 1),
+      pad(utc8Date.getUTCDate()),
+      pad(utc8Date.getUTCHours()),
+      pad(utc8Date.getUTCMinutes())
+    ].join('-');
+  }
+
+  function sanitizePdfFilenamePart(value) {
+    return String(value || '')
+      .trim()
+      .replace(/[<>:"/\\|?*\u0000-\u001F]/g, '')
+      .replace(/[. ]+$/g, '');
+  }
+
+  function buildPdfFilename(state, characterName, date = new Date()) {
+    const classKey = String(state?.class || '').trim();
+    const level = String(state?.level || '').trim();
+    const filenameParts = [
+      characterName,
+      PDF_FILENAME_CLASS_LABELS[classKey] || classKey,
+      level ? `等級${level}` : '',
+      getUtc8Timestamp(date)
+    ].map(sanitizePdfFilenamePart).filter(Boolean);
+    return `${filenameParts.join('-')}.pdf`;
   }
 
   function triggerDownload(bytes, filename) {
@@ -147,6 +208,40 @@
 
   function getPdfLayoutSettings(profile) {
     return PDF_LAYOUT_SETTINGS[profile.layoutId] || PDF_LAYOUT_SETTINGS[DEFAULT_PDF_EXPORT_MODE];
+  }
+
+  function removeSupersededObjectGenerations(pdfDoc) {
+    const context = pdfDoc?.context;
+    if (!context?.enumerateIndirectObjects || !context?.delete) return 0;
+
+    const refsByObjectNumber = new Map();
+    context.enumerateIndirectObjects().forEach(([ref]) => {
+      const refs = refsByObjectNumber.get(ref.objectNumber) || [];
+      refs.push(ref);
+      refsByObjectNumber.set(ref.objectNumber, refs);
+    });
+
+    const trailerRefs = Object.values(context.trailerInfo || {}).filter((value) => (
+      Number.isInteger(value?.objectNumber) && Number.isInteger(value?.generationNumber)
+    ));
+    let removedCount = 0;
+
+    refsByObjectNumber.forEach((refs, objectNumber) => {
+      if (refs.length < 2) return;
+
+      const trailerRef = trailerRefs.find((ref) => ref.objectNumber === objectNumber);
+      const activeRef = refs.find((ref) => (
+        trailerRef && ref.generationNumber === trailerRef.generationNumber
+      )) || refs.reduce((latest, ref) => (
+        ref.generationNumber > latest.generationNumber ? ref : latest
+      ));
+
+      refs.forEach((ref) => {
+        if (ref !== activeRef && context.delete(ref)) removedCount += 1;
+      });
+    });
+
+    return removedCount;
   }
 
   async function getSourcePdfBytes(sourcePdfPath) {
@@ -183,10 +278,9 @@
 
   async function preloadPdfExportAssets(exportOptions = {}) {
     const profile = getPdfExportProfile(exportOptions);
-    await Promise.all([
-      getSourcePdfBytes(profile.sourcePdfPath),
-      getCjkFontBytes(profile.fontPath)
-    ]);
+    const assetPromises = [getSourcePdfBytes(profile.sourcePdfPath)];
+    if (profile.fontPath) assetPromises.push(getCjkFontBytes(profile.fontPath));
+    await Promise.all(assetPromises);
   }
 
   function setCheckboxField(form, fieldName, checked) {
@@ -259,6 +353,30 @@
     return missingFields;
   }
 
+  function prepareValueOnlyAcroForm(pdfLib, form, payload) {
+    const { PDFBool, PDFName } = pdfLib;
+    const appearanceKey = PDFName.of('AP');
+
+    // 只移除文字欄位的舊外觀。Checkbox 仍需保留範本提供的
+    // on/off 外觀，否則即使 /V 正確，勾選記號也可能無法顯示。
+    Object.entries(payload).forEach(([fieldName, value]) => {
+      if (typeof value === 'boolean') return;
+      try {
+        const field = form.getTextField(fieldName);
+        field.acroField?.dict?.delete?.(appearanceKey);
+        field.acroField?.getWidgets?.().forEach((widget) => {
+          widget?.dict?.delete?.(appearanceKey);
+        });
+      } catch (error) {
+        // 非文字欄位與不存在的欄位已由 applyPayloadToForm 回報。
+      }
+    });
+
+    // 告訴閱讀器：欄位已有 /V，但沒有網站產生的 /AP，請依範本
+    // 的 /DA 與 /DR 自行建立外觀。各閱讀器的支援程度可能不同。
+    form.acroForm?.dict?.set?.(PDFName.of('NeedAppearances'), PDFBool.True);
+  }
+
   function decodeDefaultAppearance(daObject) {
     if (!daObject) return '';
     if (typeof daObject.decodeText === 'function') return daObject.decodeText();
@@ -266,14 +384,34 @@
     return String(daObject);
   }
 
-  function normalizeProblematicFieldDA(pdfLib, form) {
-    const { PDFName, PDFString } = pdfLib;
+  function normalizeProblematicFieldDA(pdfLib, pdfDoc, form, fontRef, fontResourceAlias = 'Noto') {
+    const { PDFDict, PDFName, PDFString } = pdfLib;
+    const acroFormDict = form?.acroForm?.dict;
+    const fontAlias = PDFName.of(fontResourceAlias);
+    const fontAliasToken = `/${fontResourceAlias}`;
+
+    if (!acroFormDict) return;
+
+    if (fontRef) {
+      let defaultResources = acroFormDict.lookupMaybe(PDFName.of('DR'), PDFDict);
+      if (!defaultResources) {
+        defaultResources = pdfDoc.context.obj({});
+        acroFormDict.set(PDFName.of('DR'), defaultResources);
+      }
+
+      let defaultFonts = defaultResources.lookupMaybe(PDFName.of('Font'), PDFDict);
+      if (!defaultFonts) {
+        defaultFonts = pdfDoc.context.obj({});
+        defaultResources.set(PDFName.of('Font'), defaultFonts);
+      }
+      defaultFonts.set(fontAlias, fontRef);
+    }
 
     const normalizeDaFontAlias = (daText) => {
       if (!daText || !daText.includes('Tf')) return daText;
       return daText
-        .replace(/\/NotoS\b/g, '/Noto')
-        .replace(/\/([^\s/]+)\s+(-?\d+(?:\.\d+)?)\s+Tf/g, '/Noto $2 Tf');
+        .replace(/\/NotoS\b/g, fontAliasToken)
+        .replace(/\/([^\s/]+)\s+(-?\d+(?:\.\d+)?)\s+Tf/g, `${fontAliasToken} $2 Tf`);
     };
 
     form.getFields().forEach((field) => {
@@ -283,17 +421,17 @@
       const daObject = dict.get(PDFName.of('DA'));
       const daText = decodeDefaultAppearance(daObject);
       const normalizedDa = normalizeDaFontAlias(daText);
-      if (normalizedDa !== daText) {
+      if (normalizedDa && normalizedDa.includes('Tf')) {
         dict.set(PDFName.of('DA'), PDFString.of(normalizedDa));
       }
     });
 
-    if (form?.acroForm?.dict) {
-      const formDaObject = form.acroForm.dict.get(PDFName.of('DA'));
+    if (acroFormDict) {
+      const formDaObject = acroFormDict.get(PDFName.of('DA'));
       const formDaText = decodeDefaultAppearance(formDaObject);
       const normalizedFormDa = normalizeDaFontAlias(formDaText);
-      if (normalizedFormDa && normalizedFormDa !== formDaText) {
-        form.acroForm.dict.set(PDFName.of('DA'), PDFString.of(normalizedFormDa));
+      if (normalizedFormDa && normalizedFormDa.includes('Tf')) {
+        acroFormDict.set(PDFName.of('DA'), PDFString.of(normalizedFormDa));
       }
     }
   }
@@ -319,10 +457,14 @@
     }
   }
 
+  function getMatchingPatternFontRule(fieldName, layoutSettings) {
+    return layoutSettings.patternFontSizes.find((rule) => rule.pattern.test(fieldName));
+  }
+
   function getPreferredFontSize(fieldName, field, layoutSettings) {
     if (layoutSettings.fixedFontSizes[fieldName]) return layoutSettings.fixedFontSizes[fieldName];
     if (layoutSettings.namedFontSizes[fieldName]) return layoutSettings.namedFontSizes[fieldName];
-    const matchingRule = layoutSettings.patternFontSizes.find((rule) => rule.pattern.test(fieldName));
+    const matchingRule = getMatchingPatternFontRule(fieldName, layoutSettings);
     if (matchingRule) return matchingRule.fontSize;
     return getFieldDefaultFontSize(field);
   }
@@ -357,6 +499,32 @@
     return Math.max(layoutSettings.minFontSize, Math.floor(fittedSize * 10) / 10);
   }
 
+  function fitSpellNoteField(field, cjkFont, layoutSettings) {
+    const text = (field.getText?.() || '').replace(/\r?\n/g, ' ').trim();
+    const rectangle = getTextFieldRectangle(field);
+    if (!text || !rectangle) return false;
+
+    const settings = layoutSettings.spellNotes;
+    const usableWidth = Math.max(1, rectangle.width - layoutSettings.horizontalPadding);
+    if (cjkFont.widthOfTextAtSize(text, settings.singleLineFontSize) <= usableWidth) {
+      field.disableMultiline();
+      field.setText(text);
+      field.setFontSize(settings.singleLineFontSize);
+      return true;
+    }
+
+    // AcroForm multiline appearances can clip the lower line even when the
+    // geometric height calculation says it fits. Keep notes on one centered
+    // line and use one readable fallback size instead.
+    field.disableMultiline();
+    field.setText(text);
+    field.setFontSize(settings.overflowFontSize);
+    if (cjkFont.widthOfTextAtSize(text, settings.overflowFontSize) > usableWidth) {
+      console.warn(`PDF 法術備註超過可讀單行容量：`, text);
+    }
+    return true;
+  }
+
   function applyTemplateFieldSettings(form, layoutSettings) {
     Object.entries(layoutSettings.fixedFontSizes).forEach(([fieldName, fontSize]) => {
       try {
@@ -384,8 +552,12 @@
       if (typeof value === 'boolean') return;
       try {
         const field = form.getTextField(fieldName);
+        if (/^note\d+$/.test(fieldName) && fitSpellNoteField(field, cjkFont, layoutSettings)) {
+          return;
+        }
         const preferredSize = getPreferredFontSize(fieldName, field, layoutSettings);
-        const fontSize = layoutSettings.fixedFontSizes[fieldName]
+        const matchingRule = getMatchingPatternFontRule(fieldName, layoutSettings);
+        const fontSize = layoutSettings.fixedFontSizes[fieldName] || matchingRule?.fixed
           ? preferredSize
           : getFittedFontSize(field, cjkFont, preferredSize, layoutSettings);
         field.setFontSize(fontSize);
@@ -407,7 +579,6 @@
     }
 
     const profile = getPdfExportProfile(exportOptions);
-    const layoutSettings = getPdfLayoutSettings(profile);
 
     const sourceBytes = await getSourcePdfBytes(profile.sourcePdfPath);
     const pdfDoc = await globalScope.PDFLib.PDFDocument.load(sourceBytes);
@@ -434,22 +605,41 @@
       console.info('以下欄位未成功寫入 PDF（可能不存在或型別不符）：', missingFields);
     }
 
-    normalizeProblematicFieldDA(globalScope.PDFLib, form);
-    applyTemplateFieldSettings(form, layoutSettings);
+    if (profile.writeValuesOnly) {
+      prepareValueOnlyAcroForm(globalScope.PDFLib, form, payload);
+    } else {
+      const layoutSettings = getPdfLayoutSettings(profile);
+      const defaultAppearanceFontAlias = profile.flattenForm ? 'Noto' : 'NotoMono';
+      normalizeProblematicFieldDA(globalScope.PDFLib, pdfDoc, form, undefined, defaultAppearanceFontAlias);
+      applyTemplateFieldSettings(form, layoutSettings);
 
-    const fontEmbedResult = await embedCjkFont(pdfDoc, profile);
-    fitPayloadTextFields(form, payload, fontEmbedResult.font, layoutSettings);
-    form.updateFieldAppearances(fontEmbedResult.font);
+      const fontEmbedResult = await embedCjkFont(pdfDoc, profile);
+      fitPayloadTextFields(form, payload, fontEmbedResult.font, layoutSettings);
+      form.updateFieldAppearances(fontEmbedResult.font);
+      normalizeProblematicFieldDA(
+        globalScope.PDFLib,
+        pdfDoc,
+        form,
+        profile.flattenForm ? fontEmbedResult.font.ref : undefined,
+        defaultAppearanceFontAlias
+      );
 
-    if (profile.flattenForm) {
-      form.flatten({ updateFieldAppearances: false });
+      if (profile.flattenForm) {
+        form.flatten({ updateFieldAppearances: false });
+        pdfDoc.catalog.delete(globalScope.PDFLib.PDFName.of('AcroForm'));
+      }
+    }
+
+    const removedObjectGenerations = removeSupersededObjectGenerations(pdfDoc);
+    if (removedObjectGenerations > 0) {
+      console.info(`PDF 匯出已移除 ${removedObjectGenerations} 個被取代的間接物件 generation。`);
     }
 
     const outputBytes = await pdfDoc.save({
       updateFieldAppearances: false,
-      useObjectStreams: true
+      useObjectStreams: false
     });
-    triggerDownload(outputBytes, `dnd-character-${timestampString()}.pdf`);
+    triggerDownload(outputBytes, buildPdfFilename(state, characterName));
 
     return {
       missingFields,

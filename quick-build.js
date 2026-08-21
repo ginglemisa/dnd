@@ -21,7 +21,13 @@
   const BACKGROUND_LABELS = { acolyte: "侍僧", criminal: "罪犯", sage: "賢者", soldier: "士兵" };
   const RACE_ORDER = ["dragonborn", "dwarf", "elf", "gnome", "goliath", "halfling", "human", "orc", "tiefling"];
   const RACE_LABELS = { dragonborn: "龍裔", dwarf: "矮人", elf: "精靈", gnome: "侏儒", goliath: "歌利亞", halfling: "半身人", human: "人類", orc: "獸人", tiefling: "提夫林" };
-  const SKILL_OPTIONS = ["體操", "馴獸", "奧秘", "運動", "欺瞞", "歷史", "洞悉", "威嚇", "調查", "醫藥", "自然", "察覺", "表演", "遊說", "宗教", "巧手", "隱匿", "求生"];
+  const SKILL_OPTIONS = ["運動", "體操", "巧手", "隱匿", "奧秘", "歷史", "調查", "自然", "宗教", "馴獸", "洞悉", "醫藥", "察覺", "求生", "欺瞞", "威嚇", "表演", "遊說"];
+  const SKILL_ABILITY_LABELS = {
+    "運動": "力量", "體操": "敏捷", "巧手": "敏捷", "隱匿": "敏捷",
+    "奧秘": "智力", "歷史": "智力", "調查": "智力", "自然": "智力", "宗教": "智力",
+    "馴獸": "感知", "洞悉": "感知", "醫藥": "感知", "察覺": "感知", "求生": "感知",
+    "欺瞞": "魅力", "威嚇": "魅力", "表演": "魅力", "遊說": "魅力"
+  };
   const TOOL_CATALOG = globalThis.ToolProficiencyCatalog;
   const TOOL_CATALOG_AVAILABLE = Boolean(
     TOOL_CATALOG &&
@@ -34,6 +40,30 @@
   const TOOL_OPTIONS = TOOL_CATALOG_AVAILABLE ? [...TOOL_CATALOG.artisanTools, ...TOOL_CATALOG.otherTools] : [];
   const GAME_TOOL_OPTIONS = TOOL_CATALOG_AVAILABLE ? [...TOOL_CATALOG.gamingSets] : [];
   const INSTRUMENT_TOOL_OPTIONS = TOOL_CATALOG_AVAILABLE ? [...TOOL_CATALOG.instruments] : [];
+
+  function skillOptionLabel(name) {
+    return SKILL_ABILITY_LABELS[name] ? `${name}(${SKILL_ABILITY_LABELS[name]})` : name;
+  }
+
+  function raceOptionLabel(value) {
+    return SKILL_ABILITY_LABELS[value] ? skillOptionLabel(value) : value;
+  }
+
+  function orderedSkillOptions(values) {
+    const allowed = new Set(Array.isArray(values) ? values : []);
+    return SKILL_OPTIONS.filter(name => allowed.has(name));
+  }
+
+  function uniqueValidSlots(values, count, isValid) {
+    const source = Array.isArray(values) ? values : [];
+    const seen = new Set();
+    return Array.from({ length: count }, (_, index) => {
+      const value = source[index] || "";
+      if (!value || !isValid(value) || seen.has(value)) return "";
+      seen.add(value);
+      return value;
+    });
+  }
   const CLASS_ORDER = ["barbarian", "bard", "cleric", "druid", "fighter", "monk", "paladin", "ranger", "rogue", "sorcerer", "warlock", "wizard"];
   const QUICK_BUILD_LEVEL = 1;
   const SPELLCASTER_CLASS_IDS = new Set(["bard", "cleric", "druid", "paladin", "ranger", "sorcerer", "warlock", "wizard"]);
@@ -293,8 +323,8 @@
   function migrateStoredSpellIds(saved) {
     const migrated = structuredClone(saved);
     const choices = migrated.choices || (migrated.choices = {});
-    const ids = values => (Array.isArray(values) ? values : []).map(resolveStoredSpellId).filter(Boolean);
-    const normalizeSpellChoices = (values, predicate, limit) => { const raw = Array.isArray(values) ? values : []; const resolved = raw.map(resolveStoredSpellId); const valid = resolved.filter((id, index) => id && predicate(id) && resolved.indexOf(id) === index).slice(0, limit); return { valid, changed: raw.length !== valid.length || resolved.some((id, index) => id !== valid[index] && raw[index] === id) || resolved.some((id, index) => !id || !predicate(id) || resolved.indexOf(id) !== index) }; };
+    const ids = values => (Array.isArray(values) ? values : []).map(resolveStoredSpellId);
+    const normalizeSpellChoices = (values, predicate, limit) => { const raw = Array.isArray(values) ? values : []; const resolved = raw.map(resolveStoredSpellId); const valid = uniqueValidSlots(resolved, limit, predicate); return { valid, changed: raw.length !== valid.length || resolved.some((id, index) => id !== valid[index]) }; };
     const background = choices.background;
     const sourceClass = background === "acolyte" ? "cleric" : "wizard";
     const magic = choices.backgroundMagic || (choices.backgroundMagic = {});
@@ -694,7 +724,7 @@
   function selectedSpellForBackground(key, spellId, level) { return spellOptionsForBackground(key, level).find(spell => spell.spellId === spellId) || null; }
   function validSpellIds(entries, spellIds, limit) {
     const allowed = new Set((Array.isArray(entries) ? entries : []).map(spell => spell.spellId));
-    return (Array.isArray(spellIds) ? spellIds : []).filter(spellId => allowed.has(spellId)).filter((spellId, index, all) => all.indexOf(spellId) === index).slice(0, limit);
+    return uniqueValidSlots(spellIds, limit, spellId => allowed.has(spellId));
   }
 
   function addDerivedAcquisition(target, type, acquisition) {
@@ -882,10 +912,12 @@
     target.choices.abilityMethod = "class-default-customized";
 
     const backgroundSkills = new Set((target.acquisitions.skills || []).filter(item => item.sourceType === "background").map(item => item.name));
-    const skillChoices = [...new Set((Array.isArray(options.skills) ? options.skills : [])
-      .filter(name => effectiveDefinition.skillOptions.includes(name) && !backgroundSkills.has(name)))].slice(0, effectiveDefinition.skillCount);
-    const toolChoices = [...new Set((Array.isArray(options.tools) ? options.tools : [])
-      .filter(name => (effectiveDefinition.toolOptions || []).includes(name)))].slice(0, effectiveDefinition.toolCount || 0);
+    const skillSlots = uniqueValidSlots(options.skills, effectiveDefinition.skillCount,
+      name => effectiveDefinition.skillOptions.includes(name) && !backgroundSkills.has(name));
+    const toolSlots = uniqueValidSlots(options.tools, effectiveDefinition.toolCount || 0,
+      name => (effectiveDefinition.toolOptions || []).includes(name));
+    const skillChoices = skillSlots.filter(Boolean);
+    const toolChoices = toolSlots.filter(Boolean);
     const spellcastingSource = spellcastingSourceForDraft(target);
     const spellcastingSourceKey = spellcastingSource ? `${spellcastingSource.type}:${spellcastingSource.id}` : null;
     const fixedSpellcastingAbility = spellcastingSource?.type === "class" ? spellcastingSource.fixedAbility : null;
@@ -901,8 +933,8 @@
       target.choices.spellcastingAbility = preferredMentalAbility(target);
       options.spellcastingAbilityManual = false;
     }
-    options.skills = skillChoices;
-    options.tools = toolChoices;
+    options.skills = skillSlots;
+    options.tools = toolSlots;
     options.stage = ["classType", "abilities", "spellcasting", "proficiencies", "summary"].includes(options.stage) ? options.stage : (typeOptions.length && !options.classType ? "classType" : "abilities");
     if (typeOptions.length && !options.classType) options.stage = "classType";
     if (!spellcastingSource && options.stage === "spellcasting") options.stage = "proficiencies";
@@ -1097,25 +1129,32 @@
       if (!choices.classOption) pendingChoices.push(definition.classOption.label);
     }
     const cantripCount = levelOneCantripCount(target, definition);
-    const cantrips = [...new Set((Array.isArray(choices.cantrips) ? choices.cantrips : []).filter(spellId => levelOneSpellOptions(key, "cantrips").some(spell => spell.spellId === spellId) && !knownSpellIds.has(spellId)))].slice(0, cantripCount);
+    const cantripSlots = uniqueValidSlots(choices.cantrips, cantripCount,
+      spellId => levelOneSpellOptions(key, "cantrips").some(spell => spell.spellId === spellId) && !knownSpellIds.has(spellId));
+    const cantrips = cantripSlots.filter(Boolean);
     if (cantrips.length !== cantripCount) pendingChoices.push(`戲法 ${cantripCount} 個`);
-    const spellbookSpells = [...new Set((Array.isArray(choices.spellbookSpells) ? choices.spellbookSpells : []).filter(spellId => levelOneSpellOptions("wizard", "1").some(spell => spell.spellId === spellId) && !knownSpellIds.has(spellId)))].slice(0, definition.spellbookSpells || 0);
+    const spellbookSlots = uniqueValidSlots(choices.spellbookSpells, definition.spellbookSpells || 0,
+      spellId => levelOneSpellOptions("wizard", "1").some(spell => spell.spellId === spellId) && !knownSpellIds.has(spellId));
+    const spellbookSpells = spellbookSlots.filter(Boolean);
     if (spellbookSpells.length !== (definition.spellbookSpells || 0)) pendingChoices.push(`法術書一環法術 ${definition.spellbookSpells} 個`);
     let preparedCandidates = definition.spellbookSpells ? spellbookSpells : null;
     const alwaysPrepared = new Set(definition.alwaysPrepared || []);
-    const preparedSpells = [...new Set((Array.isArray(choices.preparedSpells) ? choices.preparedSpells : []).filter(spellId => !knownSpellIds.has(spellId) && !alwaysPrepared.has(spellId) && (preparedCandidates ? preparedCandidates.includes(spellId) : levelOneSpellOptions(key, "1").some(spell => spell.spellId === spellId))))].slice(0, definition.preparedSpells || 0);
+    const preparedSlots = uniqueValidSlots(choices.preparedSpells, definition.preparedSpells || 0,
+      spellId => !knownSpellIds.has(spellId) && !alwaysPrepared.has(spellId) && (preparedCandidates ? preparedCandidates.includes(spellId) : levelOneSpellOptions(key, "1").some(spell => spell.spellId === spellId)));
+    const preparedSpells = preparedSlots.filter(Boolean);
     if (preparedSpells.length !== (definition.preparedSpells || 0)) pendingChoices.push(`準備法術 ${definition.preparedSpells} 個`);
     const weaponOptions = allWeaponMasteryOptionsForClass(key).map(([name]) => name);
-    let weaponMasteries = Array.isArray(choices.weaponMasteries) ? choices.weaponMasteries.filter(name => weaponOptions.includes(name)) : [];
-    if (!weaponMasteries.length) weaponMasteries = (Array.isArray(definition.defaultWeaponMasteries) ? definition.defaultWeaponMasteries : []).filter(name => weaponOptions.includes(name));
-    if (!weaponMasteries.length && definition.prefillMasteryFromDefaultWeapon && target.choices.defaultWeapon && weaponOptions.includes(target.choices.defaultWeapon)) weaponMasteries = [target.choices.defaultWeapon];
-    weaponMasteries = [...new Set(weaponMasteries)].slice(0, definition.weaponMastery || 0);
+    let weaponMasterySlots = uniqueValidSlots(choices.weaponMasteries, definition.weaponMastery || 0, name => weaponOptions.includes(name));
+    if (!weaponMasterySlots.some(Boolean)) weaponMasterySlots = uniqueValidSlots(definition.defaultWeaponMasteries, definition.weaponMastery || 0, name => weaponOptions.includes(name));
+    if (!weaponMasterySlots.some(Boolean) && definition.prefillMasteryFromDefaultWeapon && target.choices.defaultWeapon && weaponOptions.includes(target.choices.defaultWeapon)) weaponMasterySlots = [target.choices.defaultWeapon];
+    const weaponMasteries = weaponMasterySlots.filter(Boolean);
     if (weaponMasteries.length !== (definition.weaponMastery || 0)) pendingChoices.push(`武器精通 ${definition.weaponMastery} 種`);
     const fightingStyles = (typeof FEAT_OPTIONS === "object" ? FEAT_OPTIONS : []).filter(option => /戰鬥風格/u.test(option.label || "")).map(option => option.value);
     const fightingStyle = definition.fightingStyle && fightingStyles.includes(choices.fightingStyle) ? choices.fightingStyle : null;
     if (definition.fightingStyle && !fightingStyle) pendingChoices.push("戰鬥風格");
     const expertiseOptions = expertiseSkillOptions(target);
-    const expertise = [...new Set((Array.isArray(choices.expertise) ? choices.expertise : []).filter(name => expertiseOptions.includes(name)))].slice(0, definition.expertise || 0);
+    const expertiseSlots = uniqueValidSlots(choices.expertise, definition.expertise || 0, name => expertiseOptions.includes(name));
+    const expertise = expertiseSlots.filter(Boolean);
     if (expertise.length !== (definition.expertise || 0)) pendingChoices.push(`專精 ${definition.expertise} 項`);
     const knownLanguages = usedLanguageLabels(target);
     const rawLanguages = Array.isArray(choices.languages) ? choices.languages : [];
@@ -1138,12 +1177,14 @@
     if (invocations.length !== (definition.invocations || 0)) pendingChoices.push(`魔能祈喚 ${definition.invocations} 個`);
     const tome = isPlainObject(choices.tome) ? choices.tome : {};
     const hasTome = invocations.includes("pact-of-the-tome");
-    const tomeCantrips = hasTome ? [...new Set((Array.isArray(tome.cantrips) ? tome.cantrips : []).filter(spellId => canonicalSpell(spellId)?.level === 0 && SpellCatalog.getClassIds(spellId, spellMode()).length && !knownSpellIds.has(spellId)))].slice(0, 3) : [];
-    const tomeRituals = hasTome ? [...new Set((Array.isArray(tome.rituals) ? tome.rituals : []).filter(spellId => canonicalSpell(spellId)?.level === 1 && isRitualSpell(canonicalSpell(spellId)) && SpellCatalog.getClassIds(spellId, spellMode()).length && !knownSpellIds.has(spellId)))].slice(0, 2) : [];
+    const tomeCantripSlots = hasTome ? uniqueValidSlots(tome.cantrips, 3, spellId => canonicalSpell(spellId)?.level === 0 && SpellCatalog.getClassIds(spellId, spellMode()).length && !knownSpellIds.has(spellId)) : [];
+    const tomeRitualSlots = hasTome ? uniqueValidSlots(tome.rituals, 2, spellId => canonicalSpell(spellId)?.level === 1 && isRitualSpell(canonicalSpell(spellId)) && SpellCatalog.getClassIds(spellId, spellMode()).length && !knownSpellIds.has(spellId)) : [];
+    const tomeCantrips = tomeCantripSlots.filter(Boolean);
+    const tomeRituals = tomeRitualSlots.filter(Boolean);
     if (hasTome && tomeCantrips.length !== 3) pendingChoices.push("書之魔契戲法 3 個");
     if (hasTome && tomeRituals.length !== 2) pendingChoices.push("書之魔契儀式一環法術 2 個");
     const summaryConfirmed = pendingChoices.length === 0;
-    target.choices.levelOne = { ...choices, cantrips, spellbookSpells, preparedSpells, weaponMasteries, fightingStyle, expertise, languages: languageSlots, invocations, tome: { cantrips: tomeCantrips, rituals: tomeRituals }, summaryConfirmed };
+    target.choices.levelOne = { ...choices, cantrips: cantripSlots, spellbookSpells: spellbookSlots, preparedSpells: preparedSlots, weaponMasteries: weaponMasterySlots, fightingStyle, expertise: expertiseSlots, languages: languageSlots, invocations, tome: { cantrips: tomeCantripSlots, rituals: tomeRitualSlots }, summaryConfirmed };
     target.selections.levelOne = { id: key, label: `${CLASS_LABELS[key]}完成 1 級`, source, content: { fixed, classOption: choices.classOption, cantrips, spellbookSpells, preparedSpells, weaponMasteries, fightingStyle, expertise, languages, languageDetails, invocations, tome: { cantrips: tomeCantrips, rituals: tomeRituals }, pendingChoices, summaryConfirmed } };
     fixed.forEach((name, index) => addDerivedAcquisition(target, "other", { id: `level-one:${key}:fixed:${index}:${name}`, name, sourceType: "level-one", sourceId: key, source: { ...source, feature: "1 級固定能力" }, content: { type: "classFeature" } }));
     if (choices.classOption) addDerivedAcquisition(target, "other", { id: `level-one:${key}:option:${choices.classOption}`, name: definition.classOption?.options.find(option => option.id === choices.classOption)?.label || choices.classOption, sourceType: "level-one", sourceId: key, source: { ...source, feature: definition.classOption?.label || "職業選項" }, content: { type: "classOption", option: choices.classOption } });
@@ -1410,6 +1451,7 @@
     ensureStyles();
     modal = document.createElement("div");
     modal.id = "quick-build-wizard";
+    modal.inert = true;
     modal.setAttribute("aria-hidden", "true");
     modal.innerHTML = `
       <section class="quick-build-shell" role="dialog" aria-modal="true" aria-labelledby="quick-build-title">
@@ -1434,6 +1476,7 @@
     if (modal) return modal;
     modal = document.createElement("div");
     modal.id = "quick-build-spell-detail";
+    modal.inert = true;
     modal.setAttribute("aria-hidden", "true");
     modal.innerHTML = `
       <section class="quick-build-spell-detail-shell" role="dialog" aria-modal="true" aria-labelledby="quick-build-spell-detail-title" aria-describedby="quick-build-spell-detail-content">
@@ -1524,12 +1567,13 @@
 
   function raceSelect(field, label, values, { disabled = [], note = "" } = {}) {
     const selected = draft.choices.raceOptions[field] || "";
-    return `<div class="quick-build-field"><label for="quick-build-race-${field}">${label}</label><select id="quick-build-race-${field}" data-race-option="${field}"><option value="">請選擇</option>${values.map(value => `<option value="${escapeHtml(value)}"${value === selected ? " selected" : ""}${disabled.includes(value) ? " disabled" : ""}>${escapeHtml(value)}${disabled.includes(value) ? "（已由其他來源取得）" : ""}</option>`).join("")}</select>${note ? `<p class="quick-build-option-note">${escapeHtml(note)}</p>` : ""}</div>`;
+    const options = field === "skill" ? orderedSkillOptions(values) : values;
+    return `<div class="quick-build-field"><label for="quick-build-race-${field}">${label}</label><select id="quick-build-race-${field}" data-race-option="${field}"><option value="">請選擇</option>${options.map(value => `<option value="${escapeHtml(value)}"${value === selected ? " selected" : ""}${disabled.includes(value) ? " disabled" : ""}>${escapeHtml(raceOptionLabel(value))}${disabled.includes(value) ? "（已由其他來源取得）" : ""}</option>`).join("")}</select>${note ? `<p class="quick-build-option-note">${escapeHtml(note)}</p>` : ""}</div>`;
   }
 
   function raceConfirmedSelect(field, label, values, { showSpellView = false, confirmed = false, formatOption = value => value } = {}) {
     const selected = draft.choices.raceOptions[field] || "";
-    return `<div class="quick-build-field"><label for="quick-build-race-${field}">${label}</label><div class="quick-build-field-control has-confirm"><select id="quick-build-race-${field}" data-race-option="${field}"><option value="">請選擇</option>${values.map(value => `<option value="${escapeHtml(value)}"${value === selected ? " selected" : ""}>${escapeHtml(formatOption(value))}</option>`).join("")}</select>${showSpellView ? `<button type="button" class="quick-build-spell-view" data-race-spell-view="${field}"${selected ? "" : " disabled"}>查看</button>` : ""}<button type="button" class="quick-build-option-confirm" data-race-option-confirm="${field}"${selected && !confirmed ? "" : " disabled"}>${confirmed ? "已確定" : "確定"}</button></div></div>`;
+    return `<div class="quick-build-field"><label for="quick-build-race-${field}">${label}</label><div class="quick-build-field-control has-confirm"><select id="quick-build-race-${field}" data-race-option="${field}"><option value="">請選擇</option>${values.map(value => `<option value="${escapeHtml(value)}"${value === selected ? " selected" : ""}>${escapeHtml(raceOptionLabel(formatOption(value)))}</option>`).join("")}</select>${showSpellView ? `<button type="button" class="quick-build-spell-view" data-race-spell-view="${field}"${selected ? "" : " disabled"}>查看</button>` : ""}<button type="button" class="quick-build-option-confirm" data-race-option-confirm="${field}"${selected && !confirmed ? "" : " disabled"}>${confirmed ? "已確定" : "確定"}</button></div></div>`;
   }
 
   function raceFeatSelect(label, values, { disabled = [], note = "" } = {}) {
@@ -1558,7 +1602,7 @@
 
   function mixedProficiencySelect(index, selected, excluded, acquiredSkills, acquiredTools) {
     const options = [`<option value="">請選擇</option>`, `<option disabled>--------- 技能 ---------</option>`]
-      .concat(SKILL_OPTIONS.map(name => `<option value="skill:${escapeHtml(name)}"${selected === `skill:${name}` ? " selected" : ""}${excluded.includes(`skill:${name}`) || acquiredSkills.has(name) ? " disabled" : ""}>技能：${escapeHtml(name)}</option>`))
+      .concat(SKILL_OPTIONS.map(name => `<option value="skill:${escapeHtml(name)}"${selected === `skill:${name}` ? " selected" : ""}${excluded.includes(`skill:${name}`) || acquiredSkills.has(name) ? " disabled" : ""}>技能：${escapeHtml(skillOptionLabel(name))}</option>`))
       .concat(`<option disabled>--------- 工具 ---------</option>`)
       .concat(TOOL_OPTIONS.map(name => `<option value="tool:${escapeHtml(name)}"${selected === `tool:${name}` ? " selected" : ""}${excluded.includes(`tool:${name}`) || acquiredTools.has(name) ? " disabled" : ""}>工具：${escapeHtml(name)}</option>`))
       .concat(`<option disabled>--------- 賭具與樂器 ---------</option>`)
@@ -1718,8 +1762,10 @@
     const definition = CLASS_BUILD_DEFINITIONS[target.choices.class];
     const options = target.choices.classOptions || {};
     if (!definition) return false;
-    return Array.isArray(options.skills) && options.skills.length === definition.skillCount && new Set(options.skills).size === definition.skillCount &&
-      Array.isArray(options.tools) && options.tools.length === (definition.toolCount || 0) && new Set(options.tools).size === (definition.toolCount || 0);
+    const skills = Array.isArray(options.skills) ? options.skills.filter(Boolean) : [];
+    const tools = Array.isArray(options.tools) ? options.tools.filter(Boolean) : [];
+    return skills.length === definition.skillCount && new Set(skills).size === definition.skillCount &&
+      tools.length === (definition.toolCount || 0) && new Set(tools).size === (definition.toolCount || 0);
   }
 
   function classComplete(target = draft) {
@@ -1797,10 +1843,12 @@
     const selected = selectedValues[index] || "";
     const otherSelections = new Set(selectedValues.filter((_, otherIndex) => otherIndex !== index));
     const label = type === "skill" ? `技能 ${index + 1}` : `工具 ${index + 1}`;
-    return `<div class="quick-build-field"><label for="quick-build-class-${type}-${index}">${label}</label><select id="quick-build-class-${type}-${index}" data-class-${type}><option value="">請選擇</option>${values.map(name => {
+    const options = type === "skill" ? orderedSkillOptions(values) : values;
+    return `<div class="quick-build-field"><label for="quick-build-class-${type}-${index}">${label}</label><select id="quick-build-class-${type}-${index}" data-class-${type}><option value="">請選擇</option>${options.map(name => {
       const sourceDisabled = disabledBySource.has(name);
       const disabled = otherSelections.has(name) || sourceDisabled;
-      return `<option value="${escapeHtml(name)}"${name === selected ? " selected" : ""}${disabled ? " disabled" : ""}>${escapeHtml(name)}${sourceDisabled ? "（背景已取得）" : otherSelections.has(name) ? "（已選）" : ""}</option>`;
+      const displayName = type === "skill" ? skillOptionLabel(name) : name;
+      return `<option value="${escapeHtml(name)}"${name === selected ? " selected" : ""}${disabled ? " disabled" : ""}>${escapeHtml(displayName)}${sourceDisabled ? "（背景已取得）" : otherSelections.has(name) ? "（已選）" : ""}</option>`;
     }).join("")}</select></div>`;
   }
 
@@ -2045,6 +2093,7 @@
     if (modal) return modal;
     modal = document.createElement("div");
     modal.id = "quick-build-pact-tome";
+    modal.inert = true;
     modal.setAttribute("aria-hidden", "true");
     modal.innerHTML = `
       <section class="quick-build-pact-tome-shell" role="dialog" aria-modal="true" aria-labelledby="quick-build-pact-tome-title">
@@ -2072,13 +2121,15 @@
       const finish = value => {
         if (settled) return;
         settled = true;
+        unlockPage();
+        trigger?.focus?.();
+        if (modal.contains(document.activeElement)) document.activeElement.blur();
+        modal.inert = true;
         modal.classList.remove("open");
         modal.setAttribute("aria-hidden", "true");
         modal.removeEventListener("click", onBackdrop);
         modal.removeEventListener("keydown", onKeydown);
-        unlockPage();
         modal.remove();
-        trigger?.focus?.();
         resolve(value);
       };
       const onBackdrop = event => { if (event.target === modal) finish(null); };
@@ -2106,6 +2157,7 @@
       modal.addEventListener("click", onBackdrop);
       modal.addEventListener("keydown", onKeydown);
       renderSelection();
+      modal.inert = false;
       modal.classList.add("open");
       modal.setAttribute("aria-hidden", "false");
       lockPage(modal);
@@ -2224,10 +2276,10 @@
 
   function renderLevelOneExpertise(body) {
     const selected = draft.choices.levelOne?.expertise || [];
-    const options = expertiseSkillOptions(draft);
+    const options = orderedSkillOptions(expertiseSkillOptions(draft));
     const requiredCount = LEVEL_ONE_DEFINITIONS[draft.choices.class].expertise;
     const complete = [...new Set(selected.filter(name => options.includes(name)))].length === requiredCount;
-    const select = index => `<div class="quick-build-field"><label for="quick-build-expertise-${index}">專精 ${index + 1}</label><select id="quick-build-expertise-${index}" data-level-one-expertise><option value="">請選擇</option>${options.map(name => `<option value="${escapeHtml(name)}"${selected[index] === name ? " selected" : ""}${selected.includes(name) && selected[index] !== name ? " disabled" : ""}>${escapeHtml(name)}</option>`).join("")}</select></div>`;
+    const select = index => `<div class="quick-build-field"><label for="quick-build-expertise-${index}">專精 ${index + 1}</label><select id="quick-build-expertise-${index}" data-level-one-expertise><option value="">請選擇</option>${options.map(name => `<option value="${escapeHtml(name)}"${selected[index] === name ? " selected" : ""}${selected.includes(name) && selected[index] !== name ? " disabled" : ""}>${escapeHtml(skillOptionLabel(name))}</option>`).join("")}</select></div>`;
     body.innerHTML = `<button type="button" class="quick-build-change" data-level-one-stage-back="${previousLevelOneStage("expertise")}">← 返回</button><h3>${CLASS_LABELS[draft.choices.class]}：專精</h3><section class="quick-build-choice-panel"><p class="quick-build-option-note">只能選擇已從背景、種族或職業取得熟練的技能。</p><div class="quick-build-spell-fields">${Array.from({ length: requiredCount }, (_, index) => select(index)).join("")}</div></section><div class="quick-build-substep-actions quick-build-inline-actions"><button type="button" data-level-one-stage-back="${previousLevelOneStage("expertise")}">返回</button><button type="button" class="primary" data-level-one-stage-next="${nextLevelOneStage("expertise")}"${complete ? "" : " disabled"}>下一步</button></div>`;
     body.querySelectorAll("[data-level-one-stage-back]").forEach(button => button.addEventListener("click", () => setLevelOneStage(button.dataset.levelOneStageBack)));
     body.querySelector("[data-level-one-stage-next]")?.addEventListener("click", event => setLevelOneStage(event.currentTarget.dataset.levelOneStageNext));
@@ -2983,8 +3035,8 @@
 
   function updateClassProficiencies() {
     const body = ensureWizard().querySelector(".quick-build-body");
-    const skills = [...body.querySelectorAll("[data-class-skill]")].map(select => select.value || "").filter(Boolean);
-    const tools = [...body.querySelectorAll("[data-class-tool]")].map(select => select.value || "").filter(Boolean);
+    const skills = [...body.querySelectorAll("[data-class-skill]")].map(select => select.value || "");
+    const tools = [...body.querySelectorAll("[data-class-tool]")].map(select => select.value || "");
     draft.choices.classOptions = { ...draft.choices.classOptions, skills, tools, summaryConfirmed: false };
     draft.choices.levelOne = { ...(draft.choices.levelOne || {}), summaryConfirmed: false, expertise: [] };
     saveDraft();
@@ -3295,15 +3347,15 @@
     spellDetailOpenedOutsideWizard = !wizardIsOpen;
     modal.inert = false;
     modal.removeAttribute("inert");
+    modal.classList.add("open");
+    modal.setAttribute("aria-hidden", "false");
+    modal.querySelector(".quick-build-spell-detail-close")?.focus();
     if (wizardIsOpen) {
       wizardShell?.setAttribute("inert", "");
       wizardShell?.setAttribute("aria-hidden", "true");
     } else {
       lockPage(modal);
     }
-    modal.classList.add("open");
-    modal.setAttribute("aria-hidden", "false");
-    modal.querySelector(".quick-build-spell-detail-close")?.focus();
   }
 
   function classFeaturePlainText(html) {
@@ -3363,31 +3415,32 @@
     spellDetailOpenedOutsideWizard = false;
     modal.inert = false;
     modal.removeAttribute("inert");
-    wizardShell?.setAttribute("inert", "");
-    wizardShell?.setAttribute("aria-hidden", "true");
     modal.classList.add("open");
     modal.setAttribute("aria-hidden", "false");
     modal.querySelector(".quick-build-spell-detail-close")?.focus();
+    wizardShell?.setAttribute("inert", "");
+    wizardShell?.setAttribute("aria-hidden", "true");
   }
 
   function closeSpellDetail() {
     const modal = document.getElementById("quick-build-spell-detail");
     const wizardShell = document.querySelector("#quick-build-wizard .quick-build-shell");
     if (!modal?.classList.contains("open")) {
-      modal?.removeAttribute("inert");
+      if (modal) modal.inert = true;
       wizardShell?.removeAttribute("inert");
       wizardShell?.removeAttribute("aria-hidden");
       return;
     }
-    modal.classList.remove("open");
-    modal.setAttribute("aria-hidden", "true");
-    modal.removeAttribute("inert");
     wizardShell?.removeAttribute("inert");
     wizardShell?.removeAttribute("aria-hidden");
     if (spellDetailOpenedOutsideWizard) unlockPage();
     spellDetailOpenedOutsideWizard = false;
     spellDetailTrigger?.focus?.();
     spellDetailTrigger = null;
+    if (modal.contains(document.activeElement)) document.activeElement.blur();
+    modal.inert = true;
+    modal.classList.remove("open");
+    modal.setAttribute("aria-hidden", "true");
   }
 
   function trapSpellDetailKeyboard(event) {
@@ -3470,14 +3523,24 @@
     const spellDetail = document.getElementById("quick-build-spell-detail");
     wizardShell?.removeAttribute("inert");
     wizardShell?.removeAttribute("aria-hidden");
+    if (spellDetail?.contains(document.activeElement)) document.activeElement.blur();
+    if (spellDetail) spellDetail.inert = true;
     spellDetail?.classList.remove("open");
     spellDetail?.setAttribute("aria-hidden", "true");
-    spellDetail?.removeAttribute("inert");
-    previouslyFocused = document.activeElement;
-    document.getElementById("ability-choice-modal")?.classList.remove("open");
-    document.getElementById("ability-choice-modal")?.setAttribute("aria-hidden", "true");
+    const abilityChoiceModal = document.getElementById("ability-choice-modal");
+    const focusBeforeOpening = document.activeElement;
+    previouslyFocused = abilityChoiceModal?.contains(focusBeforeOpening)
+      ? document.getElementById("set-default-abilities")
+      : focusBeforeOpening;
+    if (abilityChoiceModal?.contains(document.activeElement)) document.activeElement.blur();
+    if (abilityChoiceModal) {
+      abilityChoiceModal.inert = true;
+      abilityChoiceModal.classList.remove("open");
+      abilityChoiceModal.setAttribute("aria-hidden", "true");
+    }
     draft = loadDraft();
     render();
+    modal.inert = false;
     modal.classList.add("open");
     modal.setAttribute("aria-hidden", "false");
     lockPage();
@@ -3496,10 +3559,12 @@
     if (!modal?.classList.contains("open")) return;
     closeSpellDetail();
     if (save) saveDraft();
-    modal.classList.remove("open");
-    modal.setAttribute("aria-hidden", "true");
     unlockPage();
     previouslyFocused?.focus?.();
+    if (modal.contains(document.activeElement)) document.activeElement.blur();
+    modal.inert = true;
+    modal.classList.remove("open");
+    modal.setAttribute("aria-hidden", "true");
   }
 
   document.addEventListener("DOMContentLoaded", () => {

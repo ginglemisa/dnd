@@ -45,7 +45,7 @@
   <title>TWD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twd20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎲%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20260814-tour-progress">
+  <link rel="stylesheet" href="styles.css?v=20260814-tour-five-step-a11y">
   <script src="scroll-to-top.js" defer></script>
   <script src="monster.js" defer></script>
   <script src="class-features.js" defer></script>
@@ -58,7 +58,7 @@
   <script src="condition.js" defer></script>
   <script src="character-rules.js" defer></script>
   <script src="legal-modal.js" defer></script>
-  <script src="onboarding-tour.js?v=20260814-tour-progress" defer></script>
+  <script src="onboarding-tour.js?v=20260814-tour-five-step-a11y" defer></script>
   <script src="quick-build.js" defer></script>
   <script src="deity-info.js" defer></script>
 
@@ -717,7 +717,7 @@
  <div id="tab-equipment" class="tab-content" role="tabpanel" aria-label="裝備頁" hidden>
   <div class="section">
     <h3>裝備</h3>
-    <p class="equipment-loadout-intro">選擇目前持用的武器與護甲。具備<strong>武器精通</strong>的職業可在動作頁點擊精通名稱查看說明。</p>
+    <p class="equipment-loadout-intro">選擇目前持用的武器與護甲。可在動作頁或目前裝備摘要點擊精通名稱查看說明。</p>
 
     <div class="equipment-loadout-controls">
     <div class="form-row equipment-loadout-field">
@@ -726,7 +726,7 @@
     </div>
     <div class="form-row equipment-loadout-field">
       <label for="offHand">副手</label>
-      <select id="offHand" disabled=""><option disabled="">雙手武器無法使用副手</option></select>
+      <select id="offHand" disabled=""><option disabled="">(雙手佔用)</option></select>
     </div>
     <div class="form-row equipment-loadout-field">
       <label for="armor">護甲</label>
@@ -736,7 +736,12 @@
     <section class="equipment-loadout-summary" aria-labelledby="equipment-loadout-summary-title">
       <h4 id="equipment-loadout-summary-title">目前裝備摘要</h4>
       <div id="equipment-loadout-summary-content" class="equipment-loadout-summary-content" aria-live="polite"></div>
-      <div class="equipment-current-ac"><span>目前 AC</span><strong id="equipment-current-ac-value">10</strong></div>
+      <div class="equipment-current-ac">
+        <div id="equipment-untrained-consequence" class="equipment-untrained-consequence" role="status" hidden>
+          裝備不熟練防具時力敏擲骰劣勢且不能施法。
+        </div>
+        <span>目前 AC</span><strong id="equipment-current-ac-value">10</strong>
+      </div>
     </section>
 
   </div> <!-- END OF section -->
@@ -749,13 +754,20 @@
         <h4 class="money-title">總財產</h4>
         <div class="money-header-actions">
           <button type="button" id="money-adjust-toggle" class="money-secondary-btn">調整餘額</button>
+          <button type="button" id="money-log-toggle" class="money-secondary-btn">最近交易</button>
         </div>
       </div>
       <p id="money-summary" class="money-summary" aria-live="polite">0 銅幣</p>
-      <label class="money-detail-toggle">
-        <span>顯示貨幣明細與重量</span>
-        <input type="checkbox" id="money-count-weight" role="switch" aria-controls="money-balance-details" aria-expanded="false">
-      </label>
+      <div class="money-quick-actions">
+        <div class="money-type-toggle" aria-label="新增交易">
+          <button type="button" id="money-type-expense">支出</button>
+          <button type="button" id="money-type-income" class="primary">收入</button>
+        </div>
+        <label class="money-detail-toggle">
+          <span>貨幣數量</span>
+          <input type="checkbox" id="money-count-weight" role="switch" aria-controls="money-balance-details" aria-expanded="false">
+        </label>
+      </div>
       <div id="money-balance-details" class="money-balance-details is-hidden" hidden>
         <div id="money-balance-grid" class="money-balance-grid">
           <div><span>白金幣</span><strong id="money-display-pp">0</strong></div>
@@ -765,18 +777,7 @@
         </div>
         <p id="money-weight-summary" class="money-weight-summary">共 0 枚硬幣・0 磅</p>
       </div>
-
-      <div class="money-transaction">
-        <div class="money-type-toggle" aria-label="新增交易">
-          <button type="button" id="money-type-expense">記錄支出</button>
-          <button type="button" id="money-type-income" class="primary">記錄收入</button>
-        </div>
-        <div class="money-log-button-row">
-          <button type="button" id="money-log-toggle" class="money-secondary-btn">最近交易</button>
-        </div>
-      </div>
-
-      <div id="money-adjust-modal" class="money-modal is-hidden" role="dialog" aria-modal="true" aria-labelledby="money-adjust-title" aria-hidden="true" hidden>
+      <div id="money-adjust-modal" class="money-modal is-hidden" role="dialog" aria-modal="true" aria-labelledby="money-adjust-title" aria-hidden="true" inert hidden>
         <div class="money-modal-card">
           <button type="button" class="money-modal-close" aria-label="關閉">×</button>
           <h4 id="money-adjust-title">調整目前財產</h4>
@@ -792,7 +793,7 @@
         </div>
       </div>
 
-      <div id="money-transaction-modal" class="money-modal is-hidden" role="dialog" aria-modal="true" aria-labelledby="money-transaction-title" aria-hidden="true" hidden>
+      <div id="money-transaction-modal" class="money-modal is-hidden" role="dialog" aria-modal="true" aria-labelledby="money-transaction-title" aria-hidden="true" inert hidden>
         <div class="money-modal-card">
           <button type="button" class="money-modal-close" aria-label="關閉">×</button>
           <h4 id="money-transaction-title">記錄支出</h4>
@@ -817,10 +818,11 @@
         </div>
       </div>
 
-      <div id="money-log-modal" class="money-modal is-hidden" role="dialog" aria-modal="true" aria-labelledby="money-log-title" aria-hidden="true" hidden>
+      <div id="money-log-modal" class="money-modal is-hidden" role="dialog" aria-modal="true" aria-labelledby="money-log-title" aria-hidden="true" inert hidden>
         <div class="money-modal-card">
           <button type="button" class="money-modal-close" aria-label="關閉">×</button>
           <div class="money-balance-header"><h4 id="money-log-title" class="money-title">最近交易</h4><button type="button" id="money-undo-btn" class="money-secondary-btn">復原上一筆</button></div>
+          <p class="money-log-limit-note">最多保留最近 100 筆交易紀錄。</p>
           <ul id="money-log-list" class="money-log-list"><li>尚無紀錄</li></ul>
         </div>
       </div>
@@ -2933,33 +2935,13 @@ const defaultAbilityByClass = {
   wizard:    [8, 12, 13, 15, 14, 10]
 };
 
-function applyDefaultAbilitiesByClass() {
-  const selectedClass = document.getElementById("class").value;
-  const stats = defaultAbilityByClass[selectedClass];
-  if (!stats) {
-    alert("請先選擇職業！");
-    return false;
-  }
-
-  const [str, dex, con, int_, wis, cha] = stats;
-  const fields = { str, dex, con, int: int_, wis, cha };
-
-  for (const id in fields) {
-    const el = document.getElementById(id);
-    if (!el) continue;
-    el.value = fields[id];
-    el.dispatchEvent(new Event('input')); // 🔄 觸發 modifier 更新
-  }
-
-  if (typeof scheduleSaveAllFields === "function") scheduleSaveAllFields();
-  return true;
-}
-
 (() => {
   document.addEventListener("DOMContentLoaded", () => {
   const triggerButton = document.getElementById("set-default-abilities");
   const abilityChoiceModal = document.getElementById("ability-choice-modal");
   const pointBuyModal = document.getElementById("point-buy-modal");
+  const defaultAbilityClassModal = document.getElementById("default-ability-class-modal");
+  const pointBuyExitModal = document.getElementById("point-buy-exit-modal");
   if (!triggerButton) return;
 
   const BASE_MIN = 8;
@@ -2978,6 +2960,8 @@ function applyDefaultAbilitiesByClass() {
     acolyte: ["int", "wis", "cha"],
     criminal: ["dex", "con", "int"],
     sage: ["con", "int", "wis"],
+    seeker: ["con", "wis", "cha"],
+    fieldhand: ["str", "con", "wis"],
     soldier: ["str", "dex", "con"]
   };
   const pointCostTable = {
@@ -2999,7 +2983,8 @@ function applyDefaultAbilitiesByClass() {
   const pointBuyUsed = document.getElementById("point-buy-used");
   const pointBuyRemain = document.getElementById("point-buy-remain");
   const pointBuyHint = document.getElementById("point-buy-hint");
-  const pointBuyBackgroundLabel = document.getElementById("point-buy-background-label");
+  const pointBuyBackgroundSelect = document.getElementById("point-buy-background");
+  const pointBuyPresetStatus = document.getElementById("point-buy-preset-status");
   const pointBuyApplyBtn = document.getElementById("point-buy-apply");
   const pointBuyResetBtn = document.getElementById("point-buy-reset");
   const pointBuyCloseBtn = document.getElementById("point-buy-close");
@@ -3008,17 +2993,124 @@ function applyDefaultAbilitiesByClass() {
   const abilityChoicePointBuyBtn = document.getElementById("ability-choice-point-buy");
   const quickCardBuilderBtn = document.getElementById("quick-card-builder");
   const backgroundSelect = document.getElementById("background");
+  const classSelect = document.getElementById("class");
+  const defaultAbilityClassCloseBtn = document.getElementById("default-ability-class-close");
+  const defaultAbilityClassGrid = document.querySelector(".default-ability-class-grid");
+  const pointBuyExitMessage = document.getElementById("point-buy-exit-message");
+  const pointBuyExitContinueBtn = document.getElementById("point-buy-exit-continue");
+  const pointBuyExitConfirmBtn = document.getElementById("point-buy-exit-confirm");
+  let pendingPointBuyExitAction = null;
 
   function openAbilityChoiceModal() {
     if (!abilityChoiceModal) return;
+    abilityChoiceModal.inert = false;
     abilityChoiceModal.classList.add("open");
     abilityChoiceModal.setAttribute("aria-hidden", "false");
+    abilityChoiceCloseBtn?.focus();
   }
 
-  function closeAbilityChoiceModal() {
+  function closeAbilityChoiceModal({ restoreFocus = true } = {}) {
     if (!abilityChoiceModal) return;
+    if (restoreFocus && abilityChoiceModal.contains(document.activeElement)) triggerButton.focus();
+    abilityChoiceModal.inert = true;
     abilityChoiceModal.classList.remove("open");
     abilityChoiceModal.setAttribute("aria-hidden", "true");
+  }
+
+  function openDefaultAbilityClassModal() {
+    if (!defaultAbilityClassModal) return;
+    defaultAbilityClassGrid?.querySelectorAll("button[data-default-ability-class]").forEach((button) => {
+      const isCurrentClass = button.dataset.defaultAbilityClass === classSelect?.value;
+      button.classList.toggle("is-current-class", isCurrentClass);
+      button.title = isCurrentClass ? "目前角色職業" : "";
+    });
+    defaultAbilityClassModal.inert = false;
+    defaultAbilityClassModal.classList.add("open");
+    defaultAbilityClassModal.setAttribute("aria-hidden", "false");
+    defaultAbilityClassGrid?.querySelector("button")?.focus();
+    pointBuyModal.inert = true;
+  }
+
+  function closeDefaultAbilityClassModal({ restoreFocus = true } = {}) {
+    if (!defaultAbilityClassModal) return;
+    if (restoreFocus && defaultAbilityClassModal.contains(document.activeElement)) abilityChoiceDefaultBtn?.focus();
+    defaultAbilityClassModal.inert = true;
+    defaultAbilityClassModal.classList.remove("open");
+    defaultAbilityClassModal.setAttribute("aria-hidden", "true");
+    pointBuyModal.inert = false;
+  }
+
+  function syncPointBuyBackgroundSelect() {
+    if (!backgroundSelect || !pointBuyBackgroundSelect) return;
+    const optionSignature = (select) => Array.from(select.options)
+      .map((option) => `${option.value}:${option.textContent}`)
+      .join("|");
+    if (optionSignature(pointBuyBackgroundSelect) !== optionSignature(backgroundSelect)) {
+      pointBuyBackgroundSelect.replaceChildren(
+        ...Array.from(backgroundSelect.options, (option) => option.cloneNode(true))
+      );
+    }
+    pointBuyBackgroundSelect.value = backgroundSelect.value;
+  }
+
+  function getBackgroundBonusTotal() {
+    return abilities.reduce((sum, key) => sum + pointBuyState.bonus[key], 0);
+  }
+
+  function isBackgroundBonusComplete() {
+    return getBackgroundBonusAbilities().length === 3 && getBackgroundBonusTotal() === 3;
+  }
+
+  function resetPointBuyPresetStatus() {
+    if (!pointBuyPresetStatus) return;
+    pointBuyPresetStatus.textContent = "尚未套用職業範本";
+    pointBuyPresetStatus.classList.remove("is-applied");
+  }
+
+  function applyDefaultAbilityPresetToPointBuy(classKey, classLabel) {
+    const stats = defaultAbilityByClass[classKey];
+    if (!stats) return false;
+    abilities.forEach((key, index) => {
+      pointBuyState.base[key] = stats[index];
+    });
+    renderPointBuyRows();
+    if (pointBuyPresetStatus) {
+      pointBuyPresetStatus.textContent = `已套用：${classLabel}範本，可繼續調整`;
+      pointBuyPresetStatus.classList.add("is-applied");
+    }
+    return true;
+  }
+
+  function closePointBuyExitModal({ restoreFocus = true } = {}) {
+    if (!pointBuyExitModal) return;
+    const action = pendingPointBuyExitAction;
+    if (restoreFocus && pointBuyExitModal.contains(document.activeElement)) {
+      (action === "apply" ? pointBuyApplyBtn : pointBuyCloseBtn)?.focus();
+    }
+    pointBuyExitModal.inert = true;
+    pointBuyExitModal.classList.remove("open");
+    pointBuyExitModal.setAttribute("aria-hidden", "true");
+    pendingPointBuyExitAction = null;
+    pointBuyModal.inert = false;
+  }
+
+  function openPointBuyExitModal(action) {
+    if (!pointBuyExitModal || !pointBuyExitMessage || !pointBuyExitConfirmBtn) return;
+    pendingPointBuyExitAction = action;
+    const selectedBackground = getBackgroundBonusAbilities().length === 3;
+    const bonusTotal = getBackgroundBonusTotal();
+    const actionQuestion = action === "apply"
+      ? "仍要套用目前的屬性嗎？"
+      : "確定要離開 27 購點嗎？";
+    pointBuyExitMessage.textContent = selectedBackground
+      ? `目前只分配了 ${bonusTotal}/3 點背景加值。${actionQuestion}`
+      : `尚未選擇背景，因此無法分配背景加值。${actionQuestion}`;
+    pointBuyExitConfirmBtn.textContent = action === "apply" ? "仍要套用" : "仍要離開";
+    pointBuyExitModal.inert = false;
+    pointBuyExitModal.classList.add("open");
+    pointBuyExitModal.setAttribute("aria-hidden", "false");
+    pointBuyExitContinueBtn?.focus();
+    pointBuyModal.inert = true;
   }
 
   function getBackgroundBonusAbilities() {
@@ -3057,11 +3149,9 @@ function applyDefaultAbilitiesByClass() {
   }
 
   function syncPointBuyHeader() {
-    if (!pointBuyBackgroundLabel || !pointBuyHint) return;
+    if (!pointBuyHint) return;
     const allowed = getBackgroundBonusAbilities();
-    const selectedBackgroundName = backgroundSelect?.selectedOptions?.[0]?.textContent || "未選擇";
     const hasBackground = allowed.length === 3;
-    pointBuyBackgroundLabel.textContent = hasBackground ? selectedBackgroundName : "未選擇";
     pointBuyHint.textContent = hasBackground
       ? `背景加值可分配在：${allowed.map((key) => abilityLabels[key]).join(",")}（共 3 點，單項上限 +2）`
       : "尚未選擇背景：背景加值欄位已鎖定";
@@ -3112,6 +3202,7 @@ function applyDefaultAbilitiesByClass() {
       pointBuyState.bonus[key] = 0;
     }
     resetBonusByBackground();
+    resetPointBuyPresetStatus();
     renderPointBuyRows();
   }
 
@@ -3125,6 +3216,7 @@ function applyDefaultAbilitiesByClass() {
       for (const key of abilities) pointBuyState.base[key] = 8;
     }
     resetBonusByBackground();
+    resetPointBuyPresetStatus();
     renderPointBuyRows();
   }
 
@@ -3141,21 +3233,53 @@ function applyDefaultAbilitiesByClass() {
 
   function openPointBuyModal() {
     if (!pointBuyModal) return;
+    syncPointBuyBackgroundSelect();
     initializePointBuyFromCurrentStats();
+    pointBuyModal.inert = false;
     pointBuyModal.classList.add("open");
     pointBuyModal.setAttribute("aria-hidden", "false");
+    pointBuyCloseBtn?.focus();
   }
 
   function closePointBuyModal() {
     if (!pointBuyModal) return;
+    closeDefaultAbilityClassModal({ restoreFocus: false });
+    closePointBuyExitModal({ restoreFocus: false });
+    if (pointBuyModal.contains(document.activeElement)) triggerButton.focus();
+    pointBuyModal.inert = true;
     pointBuyModal.classList.remove("open");
     pointBuyModal.setAttribute("aria-hidden", "true");
   }
 
+  function requestClosePointBuyModal() {
+    if (isBackgroundBonusComplete()) {
+      closePointBuyModal();
+      return;
+    }
+    openPointBuyExitModal("close");
+  }
+
+  function requestApplyPointBuyToSheet() {
+    if (isBackgroundBonusComplete()) {
+      applyPointBuyToSheet();
+      closePointBuyModal();
+      return;
+    }
+    openPointBuyExitModal("apply");
+  }
+
   function handleEscClose(event) {
     if (event.key !== "Escape") return;
+    if (pointBuyExitModal?.classList.contains("open")) {
+      closePointBuyExitModal();
+      return;
+    }
+    if (defaultAbilityClassModal?.classList.contains("open")) {
+      closeDefaultAbilityClassModal();
+      return;
+    }
     if (pointBuyModal?.classList.contains("open")) {
-      closePointBuyModal();
+      requestClosePointBuyModal();
       return;
     }
     if (abilityChoiceModal?.classList.contains("open")) {
@@ -3190,33 +3314,54 @@ function applyDefaultAbilitiesByClass() {
     renderPointBuyRows();
   });
 
-  pointBuyApplyBtn?.addEventListener("click", () => {
-    applyPointBuyToSheet();
-    closePointBuyModal();
-  });
-  abilityChoiceDefaultBtn?.addEventListener("click", () => {
-    const applied = applyDefaultAbilitiesByClass();
-    if (applied) closeAbilityChoiceModal();
-  });
+  pointBuyApplyBtn?.addEventListener("click", requestApplyPointBuyToSheet);
+  abilityChoiceDefaultBtn?.addEventListener("click", openDefaultAbilityClassModal);
   abilityChoicePointBuyBtn?.addEventListener("click", () => {
-    closeAbilityChoiceModal();
+    closeAbilityChoiceModal({ restoreFocus: false });
     openPointBuyModal();
   });
-  quickCardBuilderBtn?.addEventListener("click", closeAbilityChoiceModal);
+  quickCardBuilderBtn?.addEventListener("click", () => closeAbilityChoiceModal({ restoreFocus: false }));
   abilityChoiceCloseBtn?.addEventListener("click", closeAbilityChoiceModal);
   abilityChoiceModal?.addEventListener("click", (event) => {
     if (event.target === abilityChoiceModal) closeAbilityChoiceModal();
   });
   pointBuyResetBtn?.addEventListener("click", resetPointBuyState);
-  pointBuyCloseBtn?.addEventListener("click", closePointBuyModal);
+  pointBuyCloseBtn?.addEventListener("click", requestClosePointBuyModal);
   pointBuyModal?.addEventListener("click", (event) => {
-    if (event.target === pointBuyModal) closePointBuyModal();
+    if (event.target === pointBuyModal) requestClosePointBuyModal();
+  });
+  pointBuyBackgroundSelect?.addEventListener("change", () => {
+    if (!backgroundSelect) return;
+    backgroundSelect.value = pointBuyBackgroundSelect.value;
+    backgroundSelect.dispatchEvent(new Event("change", { bubbles: true }));
   });
   backgroundSelect?.addEventListener("change", () => {
+    syncPointBuyBackgroundSelect();
     resetBonusByBackground();
     enforceBackgroundBonusRules();
     renderPointBuyRows();
   });
+  defaultAbilityClassGrid?.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-default-ability-class]");
+    if (!button || !classSelect) return;
+    const classKey = button.dataset.defaultAbilityClass;
+    if (!defaultAbilityByClass[classKey]) return;
+    if (applyDefaultAbilityPresetToPointBuy(classKey, button.textContent.trim())) closeDefaultAbilityClassModal();
+  });
+  defaultAbilityClassCloseBtn?.addEventListener("click", closeDefaultAbilityClassModal);
+  defaultAbilityClassModal?.addEventListener("click", (event) => {
+    if (event.target === defaultAbilityClassModal) closeDefaultAbilityClassModal();
+  });
+  pointBuyExitContinueBtn?.addEventListener("click", closePointBuyExitModal);
+  pointBuyExitConfirmBtn?.addEventListener("click", () => {
+    const action = pendingPointBuyExitAction;
+    if (action === "apply") applyPointBuyToSheet();
+    closePointBuyModal();
+  });
+  pointBuyExitModal?.addEventListener("click", (event) => {
+    if (event.target === pointBuyExitModal) closePointBuyExitModal();
+  });
+  syncPointBuyBackgroundSelect();
   document.addEventListener("keydown", handleEscClose);
   });
 })();
@@ -3663,7 +3808,7 @@ function updateOffHandOptions(mainHandValue) {
   if (hasTwoHandedProperty(mainWeapon)) {
     offHandSelect.innerHTML = "";
     const opt = document.createElement("option");
-    opt.textContent = "雙手武器無法使用副手";
+    opt.textContent = "(雙手佔用)";
     opt.disabled = true;
     opt.selected = true;
     offHandSelect.appendChild(opt);
@@ -3783,6 +3928,41 @@ function isMonkMartialArtsActive() {
   return mainIsValid && offIsValid;
 }
 
+const ARMOR_TRAINING_BY_CLASS = Object.freeze({
+  barbarian: Object.freeze(["輕甲", "中甲", "盾牌"]),
+  bard: Object.freeze(["輕甲"]),
+  cleric: Object.freeze(["輕甲", "中甲", "盾牌"]),
+  druid: Object.freeze(["輕甲", "盾牌"]),
+  fighter: Object.freeze(["輕甲", "中甲", "重甲", "盾牌"]),
+  monk: Object.freeze([]),
+  paladin: Object.freeze(["輕甲", "中甲", "重甲", "盾牌"]),
+  ranger: Object.freeze(["輕甲", "中甲", "盾牌"]),
+  rogue: Object.freeze(["輕甲"]),
+  sorcerer: Object.freeze([]),
+  warlock: Object.freeze(["輕甲"]),
+  wizard: Object.freeze([])
+});
+
+function getArmorTrainingProficiencies() {
+  const cls = document.getElementById("class")?.value || "";
+  const proficiencies = new Set(ARMOR_TRAINING_BY_CLASS[cls] || []);
+  if (cls === "cleric" && document.getElementById("cleric-guardian")?.checked) {
+    proficiencies.add("重甲");
+  }
+  if (cls === "druid" && document.getElementById("druid-sentinel")?.checked) {
+    proficiencies.add("中甲");
+  }
+  return proficiencies;
+}
+
+function isArmorProficient(armor) {
+  return Boolean(armor?.分類) && getArmorTrainingProficiencies().has(armor.分類);
+}
+
+function isShieldProficient() {
+  return getArmorTrainingProficiencies().has("盾牌");
+}
+
 function isWeaponProficient(weapon) {
   if (!weapon || weapon.名稱 === "盾牌") return false;
 
@@ -3862,12 +4042,14 @@ function normalizeWeaponRuleName(value) {
 function updateWeaponMasteryBadges() {
   const canUseMastery = hasWeaponMasteryFeature();
   [
-    { hand: "main", selectId: "mainHand" },
-    { hand: "off", selectId: "offHand" }
-  ].forEach(({ hand, selectId }) => {
+    { hand: "main", selectId: "mainHand", attackNameId: "atk-main-name" },
+    { hand: "off", selectId: "offHand", attackNameId: "atk-off-name" }
+  ].forEach(({ hand, selectId, attackNameId }) => {
     const badge = document.getElementById(`atk-${hand}-mastery`);
     if (!badge) return;
-    const weaponName = document.getElementById(selectId)?.value || "";
+    const weaponName = isWeaponAttackAutomationEnabled()
+      ? document.getElementById(selectId)?.value || ""
+      : document.getElementById(attackNameId)?.value.trim() || "";
     const weapon = getAllWeaponsWithShield().find(item => item.名稱 === weaponName);
     const mastery = canUseMastery && weapon?.名稱 !== "盾牌" && hasMeaningfulEquipmentValue(weapon?.精通)
       ? String(weapon.精通).trim()
@@ -3879,27 +4061,20 @@ function updateWeaponMasteryBadges() {
   });
 }
 
-function shortenDamageType(value) {
-  return String(value || "")
-    .replaceAll("揮砍", "砍")
-    .replaceAll("穿刺", "刺")
-    .replaceAll("鈍擊", "鈍");
+function getSummaryWeaponProperties(weapon) {
+  return [weapon?.屬性1, weapon?.屬性2, weapon?.屬性3, weapon?.屬性4]
+    .filter(Boolean)
+    .map(value => String(value))
+    .map(value => value.replace(/^(彈藥\s*[（(][^；;）)]*)[；;][^）)]*([）)])/u, "$1$2"))
+    .filter(hasMeaningfulEquipmentValue);
 }
 
-function getSummaryWeaponProperties(weapon) {
-  const allowed = ["兩用", "觸及", "靈巧", "輕型", "裝填"];
-  const properties = [weapon?.屬性1, weapon?.屬性2, weapon?.屬性3, weapon?.屬性4]
-    .filter(Boolean)
-    .map(value => String(value));
-  const summary = [];
-  allowed.forEach(keyword => {
-    const match = properties.find(value => value.includes(keyword));
-    if (match) summary.push(match);
-  });
-  const rangeProperty = properties.find(value => value.includes("射程"));
-  const range = rangeProperty?.match(/射程\s*(\d+\/\d+)/u)?.[1];
-  if (range) summary.push(`射程 (${range})`);
-  return summary;
+function getSummaryWeaponType(weapon) {
+  const rangedWeaponNames = new Set([
+    ...getEquipmentList("weapons_simple_ranged").map(item => item.名稱),
+    ...getEquipmentList("weapons_martial_ranged").map(item => item.名稱)
+  ]);
+  return rangedWeaponNames.has(weapon?.名稱) ? "遠程" : "近戰";
 }
 
 function hasMeaningfulEquipmentValue(value) {
@@ -3912,56 +4087,41 @@ function updateFeatCombatNotes() {
   const content = document.getElementById("feat-combat-notes");
   if (!wrap || !content) return;
 
-  const mainName = document.getElementById("mainHand")?.value || "";
-  const offName = document.getElementById("offHand")?.value || "";
-  const armorName = document.getElementById("armor")?.value || "";
-  const equippedWeapons = [mainName, offName]
-    .map(name => getAllWeaponsWithoutShield().find(weapon => weapon.名稱 === name))
-    .filter(Boolean);
-  const heavyWeapons = equippedWeapons.filter(weapon => weaponHasProp(weapon, "重型"));
-  const armor = armors.find(item => item.名稱 === armorName);
-  const proficiencyBonus = getProficiencyBonus();
   const notes = [];
   const addNote = (title, body) => notes.push({ title, body });
 
   if (hasSelectedFeat("兇蠻打手")) {
-    addNote("兇蠻打手", "每回合一次，武器命中後可將該次傷害骰擲兩次，選擇其中一個結果。");
+    addNote("兇蠻打手", "每回合 1 次，武器命中時傷害骰擲 2 次，取其一。");
   }
   if (hasSelectedFeat("擒抱者")) {
-    addNote("擒抱者", "每回合一次，徒手攻擊命中時可同時造成傷害並嘗試擒抱。攻擊被你擒抱的目標時丟二取高。");
+    addNote("擒抱者", "徒手命中時可同時造成傷害並擒抱（每回合 1 次）。對被你擒抱的目標攻擊具有優勢。移動體型不大於你的被擒抱目標時，不消耗額外速度。");
   }
   if (hasSelectedFeat("巨武器戰鬥")) {
-    addNote("巨武器戰鬥", "使用雙手或兩用武器時，傷害骰的 1 或 2 視為 3。");
+    addNote("巨武器戰鬥", "將「雙手」或「兩用」武器的傷害骰 1 或 2 視為 3。");
   }
   if (hasSelectedFeat("衝鋒猛擊")) {
-    addNote("衝鋒猛擊", "以攻擊動作進行近戰攻擊，且命中前立即朝目標直線移動至少 10 尺：傷害 +1d8，或推離符合體型限制的目標最多 10 尺。每個你的回合一次。");
+    addNote("衝鋒猛擊", "「衝刺」比平常再多 10 呎。朝目標直線移動 10 呎再以近戰攻擊命中，可擇一（每回合一次）： +1d8 傷害；或將體型至多大你一級的目標推開最多 10 呎。");
   }
   if (hasSelectedFeat("雙持追擊")) {
-    addNote("雙持追擊", "攻擊動作中使用輕型武器攻擊後，可於同一回合稍後以附贈動作用另一把非雙手近戰武器攻擊一次。正值的屬性調整不加入傷害。");
+    addNote("雙持追擊", "使用輕型武器攻擊後，可消耗「附贈」以另一把非雙手近戰武器再攻擊 1 次；可與「迅切」並用。若無「雙武器戰鬥」，這次額外攻擊不加正值屬性調整。每次原本可拔出或收納 1 把武器時，可改為同時處理 2 把非雙手武器。");
   }
   if (hasSelectedFeat("重武猛攻")) {
-    const weaponState = heavyWeapons.length
-      ? `目前適用：${heavyWeapons.map(weapon => weapon.名稱).join("、")}；額外傷害 +${proficiencyBonus}。`
-      : "目前沒有持用重型武器。";
-    addNote("重武猛攻", `${weaponState}須在你的回合以攻擊動作命中。近戰武器造成致命一擊或將生物打至 0 HP 後，也可用附贈動作以同一把武器攻擊一次。`);
+    addNote("重武猛攻", "自身回合以「攻擊」動作用重型武器命中，傷害額外+熟練加值。近戰武器致命一擊或將敵人打至 0 HP 後，可立即消耗附贈以同一把武器再打 1 次。");
   }
   if (hasSelectedFeat("重甲減傷")) {
-    const armorState = armor?.分類 === "重甲"
-      ? `目前減傷 ${proficiencyBonus}。`
-      : "目前未穿著重甲，減傷不生效。";
-    addNote("重甲減傷", `${armorState}被攻擊命中時，該次攻擊造成的鈍擊、穿刺與揮砍傷害適用此減免。`);
+    addNote("重甲減傷", "穿重甲被攻擊命中時，可減少揮砍、穿刺、鈍擊「熟練加值」傷害。");
   }
   if (hasSelectedFeat("破法者")) {
-    addNote("破法者", "傷害正在專注的生物時，其維持專注豁免丟二取低。智力、感知或魅力豁免失敗時，可改為成功；使用後須完成短休或長休才能再次使用。");
+    addNote("破法者", "你傷害正在專注的生物時，該生物維持專注的豁免丟二取低。智力、感知或魅力豁免失敗時可改為成功；長、短休後才能再次使用。");
   }
   if (hasSelectedFeat("封鎖者")) {
-    addNote("封鎖者", "你 5 尺內的生物執行撤離，或攻擊命中你以外的目標後，可立即對它進行藉機攻擊。命中後，其速度在目前回合剩餘期間變為 0。");
+    addNote("封鎖者", "你可以藉機攻擊 5 呎內做出以下任一行為的生物：「撤離」；攻擊命中他人。藉機攻擊命中後，目標速度在目前回合變為 0。");
   }
   if (hasSelectedFeat("迅捷步法")) {
-    addNote("迅捷步法", "你的常駐速度已自動 +10 尺。你在自己的回合疾走後，該回合剩餘期間忽略困難地形的額外移動消耗。針對你的藉機攻擊丟二取低。");
+    addNote("迅捷步法", "速度增加 10 呎。自身回合使用「衝刺」後，本回合移動可無視困難地形。針對你的藉機攻擊丟二取低。");
   }
   if (hasSelectedFeat("臨陣施法")) {
-    addNote("臨陣施法", "維持專注的體質豁免丟二取高。生物離開你的觸及範圍而引發藉機攻擊時，可改用反應施放一個施法時間為動作、且只以該生物為目標的法術。");
+    addNote("臨陣施法", "維持專注的體質豁免丟二取高。當生物因離開你觸發藉機攻擊時，你可改用反應施放目標為單體且施法時間為「動作」的法術。施放需要成分「S」的法術時，不必為了完成施法動作放開手中的武器或盾牌。");
   }
 
   wrap.classList.toggle("is-hidden", notes.length === 0);
@@ -3987,7 +4147,7 @@ function updateFeatCombatNotes() {
   content.replaceChildren(list);
 }
 
-function buildEquipmentSummaryRow(label, name, details = []) {
+function buildEquipmentSummaryRow(label, name, details = [], options = {}) {
   const row = document.createElement("div");
   row.className = "equipment-summary-row";
   const nameEl = document.createElement("strong");
@@ -4009,6 +4169,13 @@ function buildEquipmentSummaryRow(label, name, details = []) {
         detailEl.append(detail?.text ?? detail);
       }
     });
+    if (options.warning) {
+      detailEl.append("、");
+      const warningEl = document.createElement("span");
+      warningEl.className = "equipment-proficiency-warning";
+      warningEl.textContent = options.warning;
+      detailEl.appendChild(warningEl);
+    }
     row.appendChild(detailEl);
   } else {
     const emptyEl = document.createElement("small");
@@ -4032,15 +4199,20 @@ function updateEquipmentLoadoutSummary() {
     if (!weapon) return [];
     if (weapon.名稱 === "盾牌") return ["AC+2 (裝備/卸除需 1 個動作)"];
     const details = [
-      shortenDamageType(weapon.傷害),
+      getSummaryWeaponType(weapon),
+      weapon.傷害,
       ...getSummaryWeaponProperties(weapon).map(property => ({
         text: property,
         ruleKind: "property",
         ruleName: normalizeWeaponRuleName(property)
       }))
-    ];
-    if (hasWeaponMasteryFeature() && hasMeaningfulEquipmentValue(weapon.精通)) {
-      details.push(`精通：${weapon.精通}`);
+    ].filter(Boolean);
+    if (hasMeaningfulEquipmentValue(weapon.精通)) {
+      details.push({
+        text: `精通：${weapon.精通}`,
+        ruleKind: "mastery",
+        ruleName: String(weapon.精通).trim()
+      });
     }
     return details;
   };
@@ -4049,14 +4221,29 @@ function updateEquipmentLoadoutSummary() {
     hasMeaningfulEquipmentValue(armor.力量需求) ? `力量需求 ${String(armor.力量需求).replace(/^力量\s*/u, "")}` : "",
     hasMeaningfulEquipmentValue(armor.隱匿懲罰) ? `隱匿懲罰：${armor.隱匿懲罰}` : ""
   ].filter(Boolean) : [];
-
-  content.replaceChildren(
-    buildEquipmentSummaryRow("主手", mainName, weaponDetails(mainWeapon)),
-    buildEquipmentSummaryRow("副手", offName, weaponDetails(offWeapon)),
-    buildEquipmentSummaryRow("護甲", armorName, armorDetails)
+  const untrainedWarning = "警告：未熟練";
+  const weaponWarning = weapon => {
+    if (!weapon) return "";
+    if (weapon.名稱 === "盾牌") return isShieldProficient() ? "" : untrainedWarning;
+    return isWeaponProficient(weapon) ? "" : untrainedWarning;
+  };
+  const mainWeaponWarning = weaponWarning(mainWeapon);
+  const offWeaponWarning = weaponWarning(offWeapon);
+  const armorWarning = armor && !isArmorProficient(armor) ? untrainedWarning : "";
+  const hasUntrainedShield = [mainWeapon, offWeapon].some(weapon =>
+    weapon?.名稱 === "盾牌" && !isShieldProficient()
   );
+
+  const summaryRows = [
+    mainName && buildEquipmentSummaryRow("主手", mainName, weaponDetails(mainWeapon), { warning: mainWeaponWarning }),
+    offName && buildEquipmentSummaryRow("副手", offName, weaponDetails(offWeapon), { warning: offWeaponWarning }),
+    armorName && buildEquipmentSummaryRow("護甲", armorName, armorDetails, { warning: armorWarning })
+  ].filter(Boolean);
+  content.replaceChildren(...summaryRows);
   const acValue = document.getElementById("equipment-current-ac-value");
   if (acValue) acValue.textContent = document.getElementById("ac-display")?.textContent?.trim() || "—";
+  const untrainedConsequence = document.getElementById("equipment-untrained-consequence");
+  if (untrainedConsequence) untrainedConsequence.hidden = !(hasUntrainedShield || armorWarning);
   updateWeaponMasteryBadges();
   updateFeatCombatNotes();
 }
@@ -4182,6 +4369,7 @@ function updateWeaponAutomationUI() {
     field.classList.toggle("is-calculation-enabled", automated && Boolean(field.value));
   });
   if (!automated) hideAttackCalculationPopup();
+  updateWeaponMasteryBadges();
 }
 
 function attackFieldsDifferFromCalculation(results) {
@@ -4258,6 +4446,13 @@ function setupWeaponAttackAutomation() {
       return;
     }
     populateHandAttacks({ force: true });
+  });
+  ["atk-main-name", "atk-off-name"].forEach(id => {
+    const updateManualMasteryBadge = () => {
+      if (!isWeaponAttackAutomationEnabled()) updateWeaponMasteryBadges();
+    };
+    document.getElementById(id)?.addEventListener("input", updateManualMasteryBadge);
+    document.getElementById(id)?.addEventListener("change", updateManualMasteryBadge);
   });
   document.addEventListener("click", event => {
     const trigger = event.target.closest?.(".attack-calculation-trigger");
@@ -5187,6 +5382,7 @@ function ensureEquipmentDetailModal() {
   if (modal) return modal;
   modal = document.createElement("div");
   modal.id = "equipment-detail-modal";
+  modal.inert = true;
   modal.setAttribute("aria-hidden", "true");
   modal.innerHTML = `
     <section class="equipment-detail-modal__card" role="dialog" aria-modal="true" aria-labelledby="equipment-detail-title">
@@ -5248,6 +5444,7 @@ function openEquipmentDetail(entry, trigger) {
   const content = modal.querySelector("#equipment-detail-content");
   content.innerHTML = entry.data ? renderEquipmentDataDetail(entry) : renderEquipmentTextDetail(entry);
   content.scrollTop = 0;
+  modal.inert = false;
   modal.classList.add("open");
   modal.setAttribute("aria-hidden", "false");
   document.documentElement.classList.add("equipment-detail-open");
@@ -5257,10 +5454,11 @@ function openEquipmentDetail(entry, trigger) {
 function closeEquipmentDetail() {
   const modal = document.getElementById("equipment-detail-modal");
   if (!modal?.classList.contains("open")) return;
+  if (modal.contains(document.activeElement)) equipmentDetailTrigger?.focus?.();
+  modal.inert = true;
   modal.classList.remove("open");
   modal.setAttribute("aria-hidden", "true");
   document.documentElement.classList.remove("equipment-detail-open");
-  equipmentDetailTrigger?.focus?.();
   equipmentDetailTrigger = null;
 }
 
@@ -5612,10 +5810,11 @@ function setupSpellQrModal() {
   if (qrImage) qrImage.src = SPELL_QR_IMAGE_SRC;
 
   const setOpen = (open) => {
+    if (!open && modal.contains(document.activeElement)) openBtn.focus();
+    modal.inert = !open;
     modal.classList.toggle("open", open);
     modal.setAttribute("aria-hidden", String(!open));
     if (open) closeBtn?.focus();
-    else openBtn.focus();
   };
 
   openBtn.addEventListener("click", () => setOpen(true));
@@ -5667,6 +5866,7 @@ function setupUtilityMenu() {
     isOpen = !!open;
     shell.classList.toggle("utility-menu-open", isOpen);
     document.body.classList.toggle("utility-menu-open", isOpen);
+    if (!isOpen && menu.contains(document.activeElement)) toggle.focus();
     menu.classList.toggle("open", isOpen);
     menu.setAttribute("aria-hidden", String(!isOpen));
     menu.inert = !isOpen;
@@ -5706,11 +5906,13 @@ document.addEventListener("change", (e) => {
   if (target.id === "cleric-guardian" || target.id === "cleric-trickster") {
     enforceClericMissionExclusivity(target.id);
     populateHandAttacks();
+    updateEquipmentLoadoutSummary();
   }
 
   if (target.id === "druid-shaman" || target.id === "druid-sentinel") {
     enforceDruidMissionExclusivity(target.id);
     populateHandAttacks();
+    updateEquipmentLoadoutSummary();
   }
 });
 
@@ -6206,6 +6408,12 @@ function buildPdfPrecheckMessages() {
 
 
 const PDF_EXPORT_MAX_NAME_UNITS = 18;
+
+// 第三種「可編輯表單版(精簡版)」預設關閉。
+// 如要開啟，請把下面兩行交換註解；不需要改其他 PDF 匯出程式。
+const ENABLE_EDITABLE_NO_FONT_PDF_EXPORT = false;
+// const ENABLE_EDITABLE_NO_FONT_PDF_EXPORT = true;
+
 function countPdfNameUnits(text) {
   return Array.from(text).reduce((sum, ch) => sum + (/[㐀-鿿豈-﫿]/.test(ch) ? 2 : 1), 0);
 }
@@ -6392,9 +6600,19 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
           return button;
         };
         options.append(
-          createOption('editable','可編輯表單版','約 15 MB','保留 PDF 表單，下載後仍可繼續填寫與修改。檔案較大。'),
+          createOption('editable','可編輯表單版','約 6 MB','保留 PDF 表單，下載後仍可繼續填寫與修改。檔案較大。'),
           createOption('compact','精緻易讀版','約 2 MB','檔案較小，採用較美觀的字體與較易閱讀的字級；內容會固定，下載後無法編輯。')
         );
+        if(ENABLE_EDITABLE_NO_FONT_PDF_EXPORT){
+          options.append(
+            createOption(
+              'editable_no_font',
+              '可編輯表單版(精簡版)',
+              '約 2 MB',
+              '保留 PDF 表單且不嵌入字型，檔案較小；顯示效果由 PDF 閱讀器決定，不保證支援所有 PDF 閱讀器。建議使用 Adobe Reader、Chrome 或 Firefox。'
+            )
+          );
+        }
         const note=document.createElement('p'); note.className='pdf-export-format-note';
         note.append('想下載「可填寫、檔案也較小」的空白 PDF？請到 ',Object.assign(document.createElement('a'),{href:'about.html#character-sheet-download',target:'_blank',rel:'noopener',textContent:'About 的中文化角色紙下載'}),' 取得下載點。');
         d.append(wait,options,note); a.hidden=true; options.querySelector('button')?.focus();
@@ -6513,6 +6731,7 @@ function setupMoneyTracker() {
   const ids = ["cp", "sp", "gp", "pp"];
   const rates = { cp: 1, sp: 10, gp: 100, pp: 1000 };
   const labels = { cp: "銅幣", sp: "銀幣", gp: "金幣", pp: "白金幣" };
+  const maxLogEntries = 100;
   const byId = (id) => document.getElementById(id);
   const balanceById = (id) => byId(`money-balance-${id}`);
   const logDataInput = byId("money-log-data");
@@ -6614,7 +6833,7 @@ function setupMoneyTracker() {
   const appendLog = (entry) => {
     const logs = parseJsonArray(logDataInput.value);
     logs.unshift(entry);
-    logDataInput.value = JSON.stringify(logs.slice(0, 20));
+    logDataInput.value = JSON.stringify(logs.slice(0, maxLogEntries));
     logDataInput.dispatchEvent(new Event("change"));
     renderLogList();
   };
@@ -6683,15 +6902,32 @@ function setupMoneyTracker() {
   writeBalances(migratedBalances);
 
   let transactionType = "expense";
+  const modalOpeners = new WeakMap();
   const openModal = (modal) => {
     if (!modal) return;
+    const activeElement = document.activeElement;
+    if (activeElement instanceof HTMLElement && !modal.contains(activeElement)) {
+      modalOpeners.set(modal, activeElement);
+    }
+    modal.inert = false;
     modal.hidden = false;
     modal.setAttribute("aria-hidden", "false");
-    modal?.classList.remove("is-hidden");
-    modal?.querySelector(".money-modal-close")?.focus();
+    modal.classList.remove("is-hidden");
+    modal.querySelector(".money-modal-close")?.focus();
   };
   const closeModal = (modal) => {
     if (!modal) return;
+    const activeElement = document.activeElement;
+    const opener = modalOpeners.get(modal);
+    if (activeElement instanceof HTMLElement && modal.contains(activeElement)) {
+      if (opener?.isConnected && !opener.closest("[inert]")) {
+        opener.focus({ preventScroll: true });
+      } else {
+        activeElement.blur();
+      }
+    }
+    modalOpeners.delete(modal);
+    modal.inert = true;
     modal.classList.add("is-hidden");
     modal.hidden = true;
     modal.setAttribute("aria-hidden", "true");
@@ -6702,8 +6938,10 @@ function setupMoneyTracker() {
     if (submit) submit.textContent = type === "expense" ? "記錄支出" : "記錄收入";
     const title = byId("money-transaction-title");
     if (title) title.textContent = type === "expense" ? "記錄支出" : "記錄收入";
+    const noteInput = byId("money-note");
+    if (noteInput) noteInput.placeholder = type === "expense" ? "例如：旅店住宿" : "例如：任務報酬";
     openModal(byId("money-transaction-modal"));
-    byId("money-note")?.focus();
+    noteInput?.focus();
   };
   byId("money-type-expense")?.addEventListener("click", () => setTransactionType("expense"));
   byId("money-type-income")?.addEventListener("click", () => setTransactionType("income"));
@@ -6954,14 +7192,13 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
 </main>
 <footer class="site-footer">
   <div class="site-footer-links" aria-label="網站資訊連結">
-    <a href="https://twd20.com/">twd20.com</a>
     <a href="about.html">Legal &amp; About</a>
     <a href="https://github.com/ginglemisa/dnd" target="_blank" rel="noopener">GitHub Repo</a>
   </div>
-  <div>TWD20 | 5.5版手機角卡 · 3rd-Party 5.5e Character Builder.</div>
+  <div><a href="https://twd20.com/">twD20.com</a> | 5.5版手機角卡</div>
 </footer>
 
-<div id="spell-qr-modal" aria-hidden="true">
+<div id="spell-qr-modal" aria-hidden="true" inert>
   <div class="spell-qr-modal-card" role="dialog" aria-modal="true" aria-label="QR Code">
     <button type="button" class="spell-qr-modal-close" aria-label="關閉 QR Code">✕</button>
     <img class="spell-qr-modal-image" alt="QR Code 圖片">
@@ -6969,7 +7206,7 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
   </div>
 </div>
 
-<div id="deity-info-modal" aria-hidden="true">
+<div id="deity-info-modal" aria-hidden="true" inert>
   <div class="deity-info-card" role="dialog" aria-modal="true" aria-labelledby="deity-info-title" aria-describedby="deity-info-disclaimer">
     <button type="button" class="deity-info-close" aria-label="關閉神祇資訊">✕</button>
     <header class="deity-info-header">
@@ -6980,14 +7217,12 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
   </div>
 </div>
 
-<div id="ability-choice-modal" aria-hidden="true">
+<div id="ability-choice-modal" aria-hidden="true" inert>
   <div class="ability-choice-card" role="dialog" aria-modal="true" aria-label="決定屬性方式">
     <button type="button" id="ability-choice-close" class="ability-choice-close" aria-label="關閉屬性選單">✕</button>
     <h3>決定屬性</h3>
-    <p class="ability-choice-tip">預設屬性適合快速創角</p>
-	<p class="ability-choice-tip">２７購點適合自訂分配。</p>
+    <p class="ability-choice-tip">２７購點可自訂分配，也能快速套用職業預設。</p>
     <div class="ability-choice-actions">
-      <button type="button" id="ability-choice-default">預設屬性</button>
       <button type="button" id="ability-choice-point-buy">２７購點</button>
       <hr class="ability-choice-divider">
       <button type="button" id="quick-card-builder">創角精靈(β版)</button>
@@ -6995,15 +7230,27 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
   </div>
 </div>
 
-<div id="point-buy-modal" aria-hidden="true">
+<div id="point-buy-modal" aria-hidden="true" inert>
   <div class="point-buy-modal-card" role="dialog" aria-modal="true" aria-label="27 點購買屬性">
     <button type="button" id="point-buy-close" class="point-buy-close" aria-label="關閉點購視窗">✕</button>
     <header class="point-buy-header">
       <h3>🎲 27購點</h3>
       <p>基礎值 8～15，總點數上限 27。背景額外加值最多 3 點（單項 +2）。</p>
-      <p class="point-buy-background">目前背景：<span id="point-buy-background-label">未選擇</span></p>
+      <label class="point-buy-background" for="point-buy-background">
+        <span>背景</span>
+        <select id="point-buy-background" aria-label="選擇背景"></select>
+      </label>
       <p id="point-buy-hint" class="point-buy-hint">尚未選擇背景：背景加值欄位已鎖定</p>
     </header>
+
+    <section class="point-buy-preset" aria-labelledby="point-buy-preset-title">
+      <div class="point-buy-preset-copy">
+        <strong id="point-buy-preset-title">職業屬性範本</strong>
+        <span>快速填入六項基礎值，不會改變角色職業。</span>
+      </div>
+      <button type="button" id="ability-choice-default">選擇職業範本</button>
+      <output id="point-buy-preset-status" class="point-buy-preset-status" aria-live="polite">尚未套用職業範本</output>
+    </section>
 
     <div class="point-buy-table-head">
       <span>屬性</span>
@@ -7025,18 +7272,66 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
   </div>
 </div>
 
+<div id="default-ability-class-modal" aria-hidden="true" inert>
+  <div class="default-ability-class-card" role="dialog" aria-modal="true" aria-labelledby="default-ability-class-title">
+    <button type="button" id="default-ability-class-close" class="default-ability-class-close" aria-label="關閉職業選擇">✕</button>
+    <h3 id="default-ability-class-title">選擇職業屬性範本</h3>
+    <p class="default-ability-class-note">只會填入 27 購點的基礎值，不會改變角色職業；套用後仍可繼續調整。</p>
+    <div class="default-ability-class-grid">
+      <section class="default-ability-class-group" aria-labelledby="default-class-group-combat">
+        <h4 id="default-class-group-combat"><span>物理戰鬥</span></h4>
+        <div class="default-ability-class-row">
+          <button type="button" data-default-ability-class="barbarian">野蠻人</button>
+          <button type="button" data-default-ability-class="fighter">戰士</button>
+          <button type="button" data-default-ability-class="monk">武僧</button>
+        </div>
+      </section>
+      <section class="default-ability-class-group" aria-labelledby="default-class-group-skill">
+        <h4 id="default-class-group-skill"><span>技能專家</span></h4>
+        <div class="default-ability-class-row">
+          <button type="button" data-default-ability-class="rogue">遊蕩者</button>
+          <button type="button" data-default-ability-class="bard">吟遊詩人</button>
+          <button type="button" data-default-ability-class="ranger">遊俠</button>
+        </div>
+      </section>
+      <section class="default-ability-class-group" aria-labelledby="default-class-group-support">
+        <h4 id="default-class-group-support"><span>複合支援</span></h4>
+        <div class="default-ability-class-row">
+          <button type="button" data-default-ability-class="paladin">聖騎士</button>
+          <button type="button" data-default-ability-class="cleric">牧師</button>
+          <button type="button" data-default-ability-class="druid">德魯伊</button>
+        </div>
+      </section>
+      <section class="default-ability-class-group" aria-labelledby="default-class-group-magic">
+        <h4 id="default-class-group-magic"><span>魔法專門</span></h4>
+        <div class="default-ability-class-row">
+          <button type="button" data-default-ability-class="warlock">契術師</button>
+          <button type="button" data-default-ability-class="sorcerer">術士</button>
+          <button type="button" data-default-ability-class="wizard">法師</button>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<div id="point-buy-exit-modal" aria-hidden="true" inert>
+  <div class="point-buy-exit-card" role="alertdialog" aria-modal="true" aria-labelledby="point-buy-exit-title" aria-describedby="point-buy-exit-message">
+    <h3 id="point-buy-exit-title">背景加值尚未完成</h3>
+    <p id="point-buy-exit-message"></p>
+    <div class="point-buy-exit-actions">
+      <button type="button" id="point-buy-exit-continue">繼續分配</button>
+      <button type="button" id="point-buy-exit-confirm">仍要離開</button>
+    </div>
+  </div>
+</div>
+
 <div id="legal-modal">
   <div class="legal-modal-card">
     <button type="button" id="legal-close-btn" aria-label="關閉提醒">✕</button>
     <img class="legal-modal-logo" src="logo.png" alt="TWD20 標誌">
     <h3 class="legal-modal-title">TWD20.com | 5.5版手機角卡</h3>
     <div class="legal-modal-copy">
-      TWD20 是新手專用的5.5版創角工具，以 SRD 5.2.1 為基礎改編。
-      詳細授權、資料與使用說明請見 Legal &amp; About。
-    </div>
-      <h3 class="legal-modal-title legal-modal-section-title">更多資訊</h3>
-      <div class="legal-modal-copy">
-      <a href="about.html" target="_blank" rel="noopener">Legal &amp; About</a>
+      TWD20 是新手專用的5.5版創角工具，以 SRD 5.2.1 為基礎改編。詳細授權、資料與使用說明請見 <a href="about.html" target="_blank" rel="noopener">Legal &amp; About</a>。
     </div>
     <div class="legal-modal-meta">
       <div class="legal-modal-meta-title">5.5e compatible character builder</div>
@@ -7049,7 +7344,7 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
   </div>
 </div>
 
-<div id="tour-overlay" aria-hidden="true">
+<div id="tour-overlay" aria-hidden="true" inert>
   <div id="tour-mask-top-1" class="tour-mask"></div>
   <div id="tour-mask-left-1" class="tour-mask"></div>
   <div id="tour-mask-right-1" class="tour-mask"></div>
@@ -7060,7 +7355,7 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
   <div id="tour-mask-bottom-2" class="tour-mask"></div>
   <div id="tour-focus-ring"></div>
   <div id="tour-focus-ring-secondary"></div>
-  <div id="tour-tooltip" role="dialog" aria-live="polite">
+  <div id="tour-tooltip" role="dialog" aria-modal="true" aria-live="polite" aria-labelledby="tour-step-title" aria-describedby="tour-step-text">
     <div class="tour-heading-row">
       <h4 id="tour-step-title"></h4>
       <span id="tour-step-progress" aria-label="導覽進度"></span>

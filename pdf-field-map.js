@@ -32,12 +32,14 @@
     background: 'Background2',
     race: 'Specie1',
     alignment: 'alignment1',
-    str: 'str1',
-    dex: 'dex1',
-    con: 'con1',
-    int: 'int1',
-    wis: 'wis1',
-    cha: 'cha1',
+    // The template's internal ability-score and modifier field names are
+    // opposite to their visible labels.
+    str: 'strMod1',
+    dex: 'dexMod1',
+    con: 'conMod1',
+    int: 'intMod1',
+    wis: 'wisMod1',
+    cha: 'chaMod1',
     'save-str': 'strSaveMod1',
     'save-dex': 'dexSaveMod1',
     'save-con': 'conSaveMod1',
@@ -83,8 +85,8 @@
     // content. These PDF fields are multiline, scrollable, and have no MaxLen,
     // so we preserve the full text instead of truncating it during export.
     classFeatures2: Object.freeze({ maxUnitsPerLine: 28, maxLines: Number.MAX_SAFE_INTEGER }),
-    specie_features1: Object.freeze({ maxUnitsPerLine: 20, maxLines: 12, maxTotalUnits: 240 }),
-    feats1: Object.freeze({ maxUnitsPerLine: 20, maxLines: 12, maxTotalUnits: 240 }),
+    specie_features1: Object.freeze({ maxUnitsPerLine: 18, maxLines: 12, maxTotalUnits: 240 }),
+    feats1: Object.freeze({ maxUnitsPerLine: 18, maxLines: 12, maxTotalUnits: 240 }),
     extra1: Object.freeze({ maxUnitsPerLine: 52, maxLines: Number.MAX_SAFE_INTEGER }),
     equipment1: Object.freeze({ maxUnitsPerLine: 52, maxLines: Number.MAX_SAFE_INTEGER })
   });
@@ -120,7 +122,7 @@
     monk: '武僧',
     paladin: '聖騎士',
     ranger: '遊俠',
-    rogue: '盜賊',
+    rogue: '遊蕩者',
     sorcerer: '術士',
     warlock: '契術師',
     wizard: '法師'
@@ -539,6 +541,17 @@
     return String(value).trim();
   }
 
+  function formatSkillModifierForPdf(value) {
+    const text = normalizeText(value).replace(/\s+/g, '');
+    if (!/^[+-]?\d+$/.test(text)) return text;
+
+    const modifier = Number.parseInt(text, 10);
+    if (!Number.isSafeInteger(modifier)) return text;
+    if (modifier >= 10) return String(modifier);
+    if (modifier >= 0) return `+${modifier}`;
+    return String(modifier);
+  }
+
   function formatDamageTypeForPdf(value) {
     return normalizeText(value)
       .replace(/\s+/g, '')
@@ -694,24 +707,25 @@
     return wrapped.slice(0, maxLines).join('\n');
   }
 
-  function buildTwoLineLanguageText(labels, maxUnitsPerFirstLine = 13) {
+  function buildTwoLineLanguageText(labels) {
     const normalizedLabels = labels.map(normalizeText).filter(Boolean);
     if (!normalizedLabels.length) return '';
 
-    const firstLine = [];
-    const secondLine = [];
-    normalizedLabels.forEach((label) => {
-      const candidate = [...firstLine, label].join(', ');
-      if (secondLine.length === 0 && countDisplayUnits(candidate) <= maxUnitsPerFirstLine) {
-        firstLine.push(label);
-      } else {
-        secondLine.push(label);
-      }
-    });
+    const firstLine = normalizedLabels.slice(0, 2);
+    const secondLine = normalizedLabels.slice(2);
 
-    // Keep every selected language. If the second line is long, pdf-export.js
-    // reduces this field's font size after measuring both lines.
+    // The field holds two languages on its first line; every third and fourth
+    // language begins on the second line.
     return [firstLine.join(', '), secondLine.join(', ')].filter(Boolean).join('\n');
+  }
+
+  function getSpareTheDyingRangeForPdf(level) {
+    const parsedLevel = getSelectedLevelNumber(level);
+    if (parsedLevel === null) return '變動';
+    if (parsedLevel <= 4) return '15呎';
+    if (parsedLevel <= 10) return '30呎';
+    if (parsedLevel <= 16) return '60呎';
+    return '120呎';
   }
 
   function wrapTextForPdfWithOverflow(rawText, options = {}) {
@@ -932,7 +946,7 @@
     let slot = 3;
 
     for (const row of cantripRows) {
-      if (slot > 6) break;
+      if (slot > 7) break;
       const config = DAMAGE_CANTRIP_EXPORT_MAP[row.spellId];
       if (!config) continue;
 
@@ -1190,12 +1204,12 @@
     payload.alignment1 = ALIGNMENT_LABELS[normalizeText(state.alignment)] || payload.alignment1;
     payload.spell_cast_attri1 = SPELL_CAST_ABILITY_LABELS[normalizeText(state['spellcasting-ability'])] || payload.spell_cast_attri1;
 
-    payload.strMod1 = getSignedAbilityModifier(state.str);
-    payload.dexMod1 = getSignedAbilityModifier(state.dex);
-    payload.conMod1 = getSignedAbilityModifier(state.con);
-    payload.intMod1 = getSignedAbilityModifier(state.int);
-    payload.wisMod1 = getSignedAbilityModifier(state.wis);
-    payload.chaMod1 = getSignedAbilityModifier(state.cha);
+    payload.str1 = getSignedAbilityModifier(state.str);
+    payload.dex1 = getSignedAbilityModifier(state.dex);
+    payload.con1 = getSignedAbilityModifier(state.con);
+    payload.int1 = getSignedAbilityModifier(state.int);
+    payload.wis1 = getSignedAbilityModifier(state.wis);
+    payload.cha1 = getSignedAbilityModifier(state.cha);
 
     const profBonus = getProficiencyBonusByLevel(level);
     payload.proficiencyBonus1 = profBonus;
@@ -1213,7 +1227,7 @@
 
     SKILL_ROWS.forEach((skill) => {
       payload[skill.chkField] = Boolean(state[skill.profId] || state[skill.expId]);
-      payload[skill.modField] = normalizeText(state[skill.modId]);
+      payload[skill.modField] = formatSkillModifierForPdf(state[skill.modId]);
     });
 
     const baseLangLabels = ['通用語', getLanguageLabelByValue(state.language1), getLanguageLabelByValue(state.language2)];
@@ -1293,14 +1307,20 @@
         payload[`sp-level-${xx}`] = String(row.level);
         payload[`sp-name-${xx}`] = wrapTextForPdf(getCanonicalSpell(row.spellId)?.nameZh || '', { maxUnitsPerLine: 14, maxLines: 2 });
         payload[`sp-cast-time-${xx}`] = convertCastTimeText(castTimeRaw);
-        payload[`sp-range-${xx}`] = rangeRaw;
+        payload[`sp-range-${xx}`] = row.spellId === 'spare-the-dying'
+          ? getSpareTheDyingRangeForPdf(level)
+          : rangeRaw;
         payload[`sp-c-${xx}`] = /專注/.test(durationRaw);
         payload[`sp-r-${xx}`] = /儀式/.test(castTimeRaw);
         payload[`sp-m-${xx}`] = /材料|成分\s*:\s*.*M/i.test(desc);
-        payload[`note${xx}`] = wrapTextForPdf(
-          [convertSpellSchoolForNote(school), convertDurationForNote(durationRaw)].filter(Boolean).join(' | '),
-          { maxUnitsPerLine: 22, maxLines: 2 }
-        );
+        // Keep spell notes unwrapped here. The two PDF modes use different
+        // fonts and field heights, so pdf-export.js measures the real glyph
+        // widths and chooses either the comfortable or smaller single-line
+        // style for the selected template.
+        payload[`note${xx}`] = [
+          convertSpellSchoolForNote(school),
+          convertDurationForNote(durationRaw)
+        ].filter(Boolean).join(' | ');
       });
     }
 
@@ -1350,7 +1370,7 @@
       payload.equipment1 = wrapTextForPdf(payload.equipment1, PDF_TEXT_SPECS.equipment1);
     }
 
-    for (let slot = 1; slot <= 6; slot++) {
+    for (let slot = 1; slot <= 7; slot++) {
       const fieldName = `dmg_type_${slot}`;
       if (Object.prototype.hasOwnProperty.call(payload, fieldName)) {
         payload[fieldName] = formatDamageTypeForPdf(payload[fieldName]);
