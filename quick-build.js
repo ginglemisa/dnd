@@ -74,7 +74,7 @@
   const CLASS_LABELS = {
     barbarian: "野蠻人", bard: "吟遊詩人", cleric: "牧師", druid: "德魯伊",
     fighter: "戰士", monk: "武僧", paladin: "聖騎士", ranger: "遊俠",
-    rogue: "遊蕩者", sorcerer: "術士", warlock: "契術師", wizard: "法師"
+    rogue: "盜賊", sorcerer: "術士", warlock: "契術師", wizard: "法師"
   };
   const CLASS_CARD_DESCRIPTIONS = {
     barbarian: "高血量、狂暴抗打、強力近戰",
@@ -1198,7 +1198,7 @@
     }
     if (fightingStyle) addDerivedAcquisition(target, "feats", { id: `level-one:${key}:fighting-style:${fightingStyle}`, name: fightingStyle, sourceType: "level-one", sourceId: key, source: { ...source, feature: "戰鬥風格", dataFile: "feats.js" }, content: { type: "fightingStyle" } });
     weaponMasteries.forEach(name => addDerivedAcquisition(target, "other", { id: `level-one:${key}:weapon-mastery:${name}`, name: `${name}精通`, sourceType: "level-one", sourceId: key, source: { ...source, feature: "武器精通" }, content: { type: "weaponMastery", weapon: name } }));
-    expertise.forEach(name => addDerivedAcquisition(target, "expertise", { id: `level-one:${key}:expertise:${name}`, name, sourceType: "level-one", sourceId: key, source: { ...source, feature: key === "rogue" ? "遊蕩者 1 級專精" : "1 級專精" }, content: { type: "expertise", skill: name } }));
+    expertise.forEach(name => addDerivedAcquisition(target, "expertise", { id: `level-one:${key}:expertise:${name}`, name, sourceType: "level-one", sourceId: key, source: { ...source, feature: key === "rogue" ? "盜賊 1 級專精" : "1 級專精" }, content: { type: "expertise", skill: name } }));
     languageDetails.forEach(item => addDerivedAcquisition(target, "languages", { id: `level-one:${key}:language:${item.slot}:${item.value}`, name: item.label, sourceType: "level-one", sourceId: key, source: { ...source, feature: item.category === "class-extra" ? "盜賊黑話：額外語言" : "初始語言" }, content: { type: "language", value: item.value, category: item.category, fieldId: item.fieldId, slot: item.slot } }));
     cantrips.forEach(name => addDerivedAcquisition(target, "spells", { id: `level-one:${key}:cantrip:${name}`, spellId: name, name: spellNameZh(name), sourceType: "level-one", sourceId: key, source: { ...source, feature: "1 級戲法" }, content: { spellId: name, name: spellNameZh(name), level: "cantrip", prepared: true } }));
     if (!definition.spellbookSpells) preparedSpells.forEach(name => addDerivedAcquisition(target, "spells", { id: `level-one:${key}:prepared:${name}`, spellId: name, name: spellNameZh(name), sourceType: "level-one", sourceId: key, source: { ...source, feature: "1 級準備法術" }, content: { spellId: name, name: spellNameZh(name), level: 1, prepared: true } }));
@@ -2577,7 +2577,8 @@
 
   function ensureMobileFeatRows(count) {
     const area = document.getElementById("feats-area");
-    while (area && area.childElementCount < count && typeof createSingleFeatRow === "function") createSingleFeatRow();
+    const getCount = () => typeof getManualFeatRows === "function" ? getManualFeatRows().length : (area?.childElementCount || 0);
+    while (area && getCount() < count && typeof createSingleFeatRow === "function") createSingleFeatRow();
     if (typeof refreshFeatRows === "function") refreshFeatRows();
   }
 
@@ -2724,10 +2725,10 @@
   }
 
   function importMobileFeats(warnings) {
-    let nextFeatIndex = 1;
+    let nextFeatIndex = 0;
     const backgroundMagic = draft.choices.backgroundMagic || {};
     if (["acolyte", "sage"].includes(draft.choices.background)) {
-      const row = document.getElementById("feat-0")?.closest(".form-row");
+      const row = document.getElementById("derived-feat-background")?.closest(".form-row");
       setMobileMagicInitiate(row, spellSourceForBackground(draft.choices.background), backgroundMagic.cantrips, backgroundMagic.levelOneSpells, warnings, "背景魔法學徒");
     }
     if (draft.choices.race === "human" && draft.choices.raceOptions?.feat) {
@@ -2739,7 +2740,15 @@
       }
     }
     const fightingStyle = draft.selections.levelOne?.content?.fightingStyle;
-    if (fightingStyle) setMobileFeat(nextFeatIndex++, fightingStyle, warnings, "戰鬥風格");
+    if (fightingStyle) {
+      const select = document.getElementById(`derived-feat-fighting-style-${draft.choices.class}`);
+      if (!select || ![...select.options].some(option => option.value === fightingStyle)) {
+        mobileImportWarning(`戰鬥風格「${fightingStyle}」：找不到角色卡選項`, warnings);
+      } else {
+        select.value = fightingStyle;
+        dispatchMobileField(select);
+      }
+    }
   }
 
   function importMobileSpells(warnings) {

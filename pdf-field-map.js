@@ -80,7 +80,7 @@
   // calibration overlay. Values are intentionally conservative so form
   // rendering has some headroom for punctuation and mixed-width text.
   const PDF_TEXT_SPECS = Object.freeze({
-    classFeatures1: Object.freeze({ maxUnitsPerLine: 28, maxLines: 12, maxTotalUnits: 336 }),
+    classFeatures1: Object.freeze({ maxUnitsPerLine: 28, maxLines: 12 }),
     // classFeatures2 / extra1 / equipment1 map to player-authored textarea
     // content. These PDF fields are multiline, scrollable, and have no MaxLen,
     // so we preserve the full text instead of truncating it during export.
@@ -123,7 +123,7 @@
     monk: '武僧',
     paladin: '聖騎士',
     ranger: '遊俠',
-    rogue: '遊蕩者',
+    rogue: '盜賊',
     sorcerer: '術士',
     warlock: '契術師',
     wizard: '法師'
@@ -138,7 +138,7 @@
     monk: '散打鬥士',
     paladin: '奉獻誓言',
     ranger: '獵人',
-    rogue: '盜賊',
+    rogue: '妙手',
     sorcerer: '龍族術法',
     warlock: '邪魔宗主',
     wizard: '塑能學派'
@@ -657,8 +657,12 @@
   function collectToolProficiencyNames(state) {
     const seen = new Set();
     return Object.keys(state)
-      .filter((key) => /^tool-proficiency-\d+$/.test(key))
-      .sort((a, b) => Number.parseInt(a.split('-').at(-1), 10) - Number.parseInt(b.split('-').at(-1), 10))
+      .filter((key) => /^tool-proficiency-\d+$/.test(key) || /^bard-instrument-\d+$/.test(key))
+      .sort((a, b) => {
+        const aGroup = a.startsWith('tool-proficiency-') ? 0 : 1;
+        const bGroup = b.startsWith('tool-proficiency-') ? 0 : 1;
+        return aGroup - bGroup || Number.parseInt(a.split('-').at(-1), 10) - Number.parseInt(b.split('-').at(-1), 10);
+      })
       .map((key) => normalizeText(state[key]))
       .filter((value) => {
         if (!value || seen.has(value)) return false;
@@ -708,16 +712,21 @@
     return wrapped.slice(0, maxLines).join('\n');
   }
 
-  function buildTwoLineLanguageText(labels) {
-    const normalizedLabels = labels.map(normalizeText).filter(Boolean);
-    if (!normalizedLabels.length) return '';
+  const PDF_BASE_LANGUAGE_LABELS = Object.freeze({
+    'common-sign': '手語',
+    draconic: '龍',
+    dwarvish: '矮人',
+    elvish: '精靈',
+    giant: '巨人',
+    gnomish: '侏儒',
+    goblin: '哥布林',
+    halfling: '半身人',
+    orc: '獸人'
+  });
 
-    const firstLine = normalizedLabels.slice(0, 2);
-    const secondLine = normalizedLabels.slice(2);
-
-    // The field holds two languages on its first line; every third and fourth
-    // language begins on the second line.
-    return [firstLine.join(', '), secondLine.join(', ')].filter(Boolean).join('\n');
+  function getBaseLanguageLabelForPdf(value) {
+    const normalizedValue = normalizeText(value);
+    return PDF_BASE_LANGUAGE_LABELS[normalizedValue] || getLanguageLabelByValue(normalizedValue);
   }
 
   function getSpareTheDyingRangeForPdf(level) {
@@ -921,22 +930,44 @@
   }
 
   const DAMAGE_CANTRIP_EXPORT_MAP = Object.freeze({
-    'fire-bolt': Object.freeze({ name: '火焰箭', mode: 'attack', dmg: '1d10 火焰', note: '120呎' }),
-    'true-strike': Object.freeze({ name: '克敵機先', mode: 'attack', dmg: '武器傷害（可改光耀）', note: '法屬武器攻擊' }),
-    'ray-of-frost': Object.freeze({ name: '冷凍射線', mode: 'attack', dmg: '1d8 冷凍', note: '60呎' }),
-    'poison-spray': Object.freeze({ name: '毒氣噴濺', mode: 'attack', dmg: '1d12 毒素', note: '30呎' }),
-    'starry-wisp': Object.freeze({ name: '流光閃靈', mode: 'attack', dmg: '1d8 光耀', note: '60呎/發微光消隱形' }),
-    'chill-touch': Object.freeze({ name: '凍寒之觸', mode: 'attack', dmg: '1d10 黯蝕', note: '觸及/不能回復HP' }),
-    'sorcerous-burst': Object.freeze({ name: '術法衝擊', mode: 'attack', dmg: '1d8自選', note: '120呎/傷害8可再丟' }),
-    'vicious-mockery': Object.freeze({ name: '惡言相加', mode: 'save', dmg: '1d6 精神', note: '60呎/感知豁免/攻擊劣勢' }),
-    'sacred-flame': Object.freeze({ name: '聖火術', mode: 'save', dmg: '1d8 光耀', note: '60呎/敏捷豁免' }),
-    'shocking-grasp': Object.freeze({ name: '電爪', mode: 'attack', dmg: '1d8 閃電', note: '觸及/不能藉機' }),
-    'acid-splash': Object.freeze({ name: '酸液飛濺', mode: 'save', dmg: '1d6 強酸', note: '60呎/敏捷豁免' }),
-    'thunderclap': Object.freeze({ name: '鳴雷破', mode: 'save', dmg: '1d6 雷鳴', note: '自身5呎內體質豁免' }),
-    'shillelagh': Object.freeze({ name: '橡棍術', mode: 'attack', dmg: '1d8（力場或武器原傷害）', note: '法屬強化木棍/法杖' }),
-    'produce-flame': Object.freeze({ name: '燃火術', mode: 'attack', dmg: '1d8 火焰', note: '60呎/附贈/可照明' }),
-    'eldritch-blast': Object.freeze({ name: '魔能爆', mode: 'attack', dmg: '1d10 力場', note: '120呎' })
+    'fire-bolt': Object.freeze({ name: '火焰箭', mode: 'attack', dmg: '1d10 火焰', dmg5: '2d10 火焰', note: '120呎' }),
+    'true-strike': Object.freeze({ name: '克敵機先', mode: 'attack', dmg: '武器骰', dmg5: '武骰+1d6', note: '基礎傷害可改光耀', usesSpellAdjustment: true }),
+    'ray-of-frost': Object.freeze({ name: '冷凍射線', mode: 'attack', dmg: '1d8 冷凍', dmg5: '2d8 冷凍', note: '60呎' }),
+    'poison-spray': Object.freeze({ name: '毒氣噴濺', mode: 'attack', dmg: '1d12 毒素', dmg5: '2d12 毒素', note: '30呎' }),
+    'starry-wisp': Object.freeze({ name: '流光閃靈', mode: 'attack', dmg: '1d8 光耀', dmg5: '2d8 光耀', note: '60呎/發微光消隱形' }),
+    'chill-touch': Object.freeze({ name: '凍寒之觸', mode: 'attack', dmg: '1d10 黯蝕', dmg5: '2d10 黯蝕', note: '觸及/不能回復HP' }),
+    'sorcerous-burst': Object.freeze({ name: '術法衝擊', mode: 'attack', dmg: '1d8自選', dmg5: '2d8自選', note: '120呎/傷害8可再丟' }),
+    'vicious-mockery': Object.freeze({ name: '惡言相加', mode: 'save', dmg: '1d6 精神', dmg5: '2d6 精神', note: '60呎/感知豁免/攻擊劣勢' }),
+    'sacred-flame': Object.freeze({ name: '聖火術', mode: 'save', dmg: '1d8 光耀', dmg5: '2d8 光耀', note: '60呎/敏捷豁免' }),
+    'shocking-grasp': Object.freeze({ name: '電爪', mode: 'attack', dmg: '1d8 閃電', dmg5: '2d8 閃電', note: '觸及/不能藉機' }),
+    'acid-splash': Object.freeze({ name: '酸液飛濺', mode: 'save', dmg: '1d6 強酸', dmg5: '2d6 強酸', note: '60呎/敏捷豁免' }),
+    'thunderclap': Object.freeze({ name: '鳴雷破', mode: 'save', dmg: '1d6 雷鳴', dmg5: '2d6 雷鳴', note: '自身5呎內體質豁免' }),
+    'shillelagh': Object.freeze({ name: '橡棍術', mode: 'attack', dmg: '1d8 自選', dmg5: '1d10 自選', note: '力場or原類型/附贈/1分', usesSpellAdjustment: true }),
+    'produce-flame': Object.freeze({ name: '燃火術', mode: 'attack', dmg: '1d8 火焰', dmg5: '2d8 火焰', note: '60呎/附贈/可照明' }),
+    'eldritch-blast': Object.freeze({ name: '魔能爆', mode: 'attack', dmg: '1d10 力場', note: '120呎', note5: '120呎/2束分別攻擊' })
   });
+
+  function getDamageCantripExportValues(config, state) {
+    const level = getSelectedLevelNumber(state.level);
+    const isLevel5 = level !== null && level >= 5;
+    const baseDamage = isLevel5 && config.dmg5 ? config.dmg5 : config.dmg;
+    let damage = baseDamage;
+
+    if (config.usesSpellAdjustment) {
+      const rawAdjustment = normalizeText(state['spell-adjustment']).replace(/\s+/g, '');
+      const adjustment = /^[+-]?\d+$/.test(rawAdjustment)
+        ? formatSkillModifierForPdf(rawAdjustment)
+        : '';
+      if (adjustment) {
+        damage = baseDamage.replace(/^(武器骰|武骰|1d\d+)/, `$1${adjustment}`);
+      }
+    }
+
+    return {
+      damage,
+      note: isLevel5 && config.note5 ? config.note5 : config.note
+    };
+  }
 
   function fillDamageCantripsToWeaponRows(payload, spellRows, state) {
     const cantripRows = spellRows.filter((row) => row.level === 0);
@@ -950,13 +981,14 @@
       if (slot > 7) break;
       const config = DAMAGE_CANTRIP_EXPORT_MAP[row.spellId];
       if (!config) continue;
+      const exportValues = getDamageCantripExportValues(config, state);
 
       payload[`attack-weap-name-${slot}`] = config.name;
       payload[`toHit${slot}`] = config.mode === 'save'
         ? (saveDc ? `DC${saveDc}` : 'DC')
         : attackBonus;
-      payload[`dmg_type_${slot}`] = config.dmg;
-      payload[`wp-note-${slot}`] = config.note;
+      payload[`dmg_type_${slot}`] = exportValues.damage;
+      payload[`wp-note-${slot}`] = exportValues.note;
       slot += 1;
     }
   }
@@ -1055,30 +1087,51 @@
     return found?.label || '';
   }
 
-  function collectExtraLanguageLabels(state) {
-    return Object.keys(state)
-      .filter((key) => /^language-extra-\d+$/.test(key))
-      .sort()
-      .map((key) => getLanguageLabelByValue(state[key]))
-      .filter(Boolean);
+  function insertClassLanguageLines(classFeatureLines, classKey, state) {
+    const lines = [...classFeatureLines];
+    let heading = '';
+    let languageText = '';
+
+    if (classKey === 'ranger') {
+      heading = '等級 2：熟練探險家';
+      languageText = [state['language-extra-1'], state['language-extra-2']]
+        .map(getLanguageLabelByValue)
+        .filter(Boolean)
+        .join('、');
+    } else if (classKey === 'rogue') {
+      heading = '等級 1：盜賊黑話';
+      languageText = getLanguageLabelByValue(state['language-extra-2']);
+    }
+
+    if (!languageText) return lines;
+    const headingIndex = lines.indexOf(heading);
+    if (headingIndex < 0) return lines;
+    lines.splice(headingIndex + 1, 0, languageText);
+    return lines;
   }
 
   function getSelectedFeatEntries(state) {
     return Object.keys(state)
-      .filter((key) => /^feat-\d+$/.test(key))
-      .sort((a, b) => Number.parseInt(a.split('-')[1], 10) - Number.parseInt(b.split('-')[1], 10))
+      .filter((key) => /^feat-\d+$/.test(key) || /^derived-feat-(?:background|fighting-style-[a-z]+)$/.test(key))
+      .sort((a, b) => {
+        const aDerived = a.startsWith('derived-feat-') ? 0 : 1;
+        const bDerived = b.startsWith('derived-feat-') ? 0 : 1;
+        if (aDerived !== bDerived) return aDerived - bDerived;
+        if (!aDerived) return a.localeCompare(b, 'zh-Hant');
+        return Number.parseInt(a.split('-')[1], 10) - Number.parseInt(b.split('-')[1], 10);
+      })
       .map((key) => ({
-        index: Number.parseInt(key.split('-')[1], 10),
+        key,
         name: normalizeText(state[key])
       }))
       .filter((entry) => entry.name);
   }
 
-  function getMagicInitiateFeatLines(state, featIndex) {
-    const classValue = normalizeText(state[`feat-${featIndex}-magic-initiate-class`]);
-    const cantrip1 = normalizeText(state[`feat-${featIndex}-magic-initiate-cantrip-1`]);
-    const cantrip2 = normalizeText(state[`feat-${featIndex}-magic-initiate-cantrip-2`]);
-    const level1 = normalizeText(state[`feat-${featIndex}-magic-initiate-level-1`]);
+  function getMagicInitiateFeatLines(state, featKey) {
+    const classValue = normalizeText(state[`${featKey}-magic-initiate-class`]);
+    const cantrip1 = normalizeText(state[`${featKey}-magic-initiate-cantrip-1`]);
+    const cantrip2 = normalizeText(state[`${featKey}-magic-initiate-cantrip-2`]);
+    const level1 = normalizeText(state[`${featKey}-magic-initiate-level-1`]);
 
     const cantrip1Spell = getCanonicalSpell(resolveStateSpellId(cantrip1));
     const cantrip2Spell = getCanonicalSpell(resolveStateSpellId(cantrip2));
@@ -1099,11 +1152,23 @@
     ];
   }
 
+  function getFeatPdfDisplayLabel(featName) {
+    const normalizedName = normalizeText(featName);
+    const featOption = typeof FEAT_OPTIONS !== 'undefined'
+      ? FEAT_OPTIONS.find((option) => option.value === normalizedName)
+      : null;
+    return normalizeText(featOption?.label || normalizedName)
+      .replace(/[・·]\s*擴充/gu, '')
+      .replace(/擴充/gu, '')
+      .replace(/\(\s*\)/gu, '')
+      .trim();
+  }
+
   function getFeatPdfLineGroup(state, entry) {
     if (entry.name === '魔法學徒') {
-      return getMagicInitiateFeatLines(state, entry.index);
+      return getMagicInitiateFeatLines(state, entry.key);
     }
-    return FEAT_PDF_LINES[entry.name] || [entry.name];
+    return FEAT_PDF_LINES[entry.name] || [getFeatPdfDisplayLabel(entry.name)];
   }
 
   function applyFeatPdfLineLimit(lineGroups, maxLines) {
@@ -1231,21 +1296,23 @@
       payload[skill.modField] = formatSkillModifierForPdf(state[skill.modId]);
     });
 
-    const baseLangLabels = ['通用語', getLanguageLabelByValue(state.language1), getLanguageLabelByValue(state.language2)];
-    const extraLanguageLabels = collectExtraLanguageLabels(state);
-    const languageLabels = [...baseLangLabels];
-    extraLanguageLabels.forEach((label) => {
-      if (!label) return;
-      if (!languageLabels.includes(label)) {
-        languageLabels.push(label);
-      }
-    });
-    payload.language1 = buildTwoLineLanguageText(languageLabels);
+    payload.language1 = [state.language1, state.language2]
+      .map(getBaseLanguageLabelForPdf)
+      .filter(Boolean)
+      .join(', ');
 
-    const classFeatureLines = extractClassFeatureHeadings(getClassFeaturesMap()[classKey] || '', level);
+    const classFeatureLines = insertClassLanguageLines(
+      extractClassFeatureHeadings(getClassFeaturesMap()[classKey] || '', level),
+      classKey,
+      state
+    );
+    const classFeatures1Spec = {
+      ...PDF_TEXT_SPECS.classFeatures1,
+      maxLines: options.outputMode === 'compact' ? 11 : PDF_TEXT_SPECS.classFeatures1.maxLines
+    };
     const classFeatureResult1 = wrapTextForPdfWithOverflow(
       classFeatureLines.join('\n'),
-      PDF_TEXT_SPECS.classFeatures1
+      classFeatures1Spec
     );
     payload.classFeatures1 = classFeatureResult1.text;
     payload.classFeatures2 = classFeatureResult1.overflow;

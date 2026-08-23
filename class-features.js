@@ -1281,8 +1281,8 @@ ${DRUID_WILD_SHAPE_BEAST_LIST_HTML}
 
 等級 2：戰鬥風格
 以下二選一：
-- 選 1 個「戰鬥風格」專長
-- 選「受祝福的勇士」：學 2 個牧師戲法（建議：神導術,聖火術）。
+- <label><input type="checkbox" id="paladin-fighting-style"> 選 1 個「戰鬥風格」專長</label>
+- <label><input type="checkbox" id="paladin-blessed-warrior"> 選「受祝福的勇士」</label>：學 2 個牧師戲法（建議：神導術,聖火術）。
   這些戲法視為你的聖騎士法術，施法屬性是魅力；每升 1 級可替換其中 1 個戲法。
 
 等級 2：聖騎士斬技
@@ -1479,8 +1479,8 @@ ${DRUID_WILD_SHAPE_BEAST_LIST_HTML}
 
 等級 2：戰鬥風格
 你可以：
-- 選 1 個「戰鬥風格」專長，或
-- 選「德魯伊教戰士」：
+- <label><input type="checkbox" id="ranger-fighting-style"> 選 1 個「戰鬥風格」專長</label>，或
+- <label><input type="checkbox" id="ranger-druidic-warrior"> 選「德魯伊教戰士」</label>：
   - 學 2 個德魯伊戲法（建議：神導術,流光閃靈）。
   - 這些戲法視為你的遊俠法術，施法屬性是感知。
   - 每升 1 級可替換其中 1 個戲法。
@@ -1550,7 +1550,7 @@ ${DRUID_WILD_SHAPE_BEAST_LIST_HTML}
 「夜色籠罩城市屋頂，她在瓦片間無聲移動。下方的守衛正交談著，她早已記住巡邏節奏。從貧民窟長大的她，學會用影子隱藏自己。當她輕巧落地，鎖扣發出微不可聞的聲響，寶箱緩緩開啟。遠方鐘聲響起，她已消失在巷弄深處。」
 
 盜賊擅長潛行,偷襲與解除陷阱，能在危險環境中迅速行動並精準打擊要害。
-<strong>遊蕩者特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
+<strong>盜賊特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
     <tr>
       <th style="border:1px solid #aaa; padding:3px;">等級</th>
@@ -1575,7 +1575,7 @@ ${DRUID_WILD_SHAPE_BEAST_LIST_HTML}
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px;">遊蕩者子職，手穩就準</td>
+      <td style="border:1px solid #aaa; padding:3px;">盜賊子職，手穩就準</td>
       <td style="border:1px solid #aaa; padding:3px;">2d6</td>
     </tr>
     <tr>
@@ -1602,7 +1602,7 @@ ${DRUID_WILD_SHAPE_BEAST_LIST_HTML}
 - 這次攻擊有優勢，或
 - 目標 5 呎內有至少 1 名未失能的友方，且你的攻擊沒有劣勢。
 
-偷襲傷害會隨等級提升（見遊蕩者特性表）。
+偷襲傷害會隨等級提升（見盜賊特性表）。
 
 等級 1：盜賊黑話
 你學會盜賊黑話，並再學 1 種語言。
@@ -1614,10 +1614,10 @@ ${DRUID_WILD_SHAPE_BEAST_LIST_HTML}
 等級 2：靈巧動作
 你的回合中，可把以下其中一項當附贈動作使用：疾走,撤離,躲藏。
 
-等級 3：遊蕩者子職
-你可選擇一個遊蕩者子職；基本規則僅提供盜賊。
+等級 3：盜賊子職
+你可選擇一個盜賊子職；基本規則僅提供妙手。
 
-等級 3：快手（盜賊子職）
+等級 3：快手（妙手子職）
 你可用附贈動作進行以下其中一項：
 - ${skillTip("巧手")}：做敏捷（${skillTip("巧手")}）檢定來開鎖,解除陷阱或扒竊。
 - 使用物品：執行使用動作，或用魔法動作啟動需要該動作的魔法物品。
@@ -2421,7 +2421,7 @@ const classFeatureHeadingMap = {
   monk: '武僧特性',
   paladin: '聖騎士特性',
   ranger: '遊俠特性',
-  rogue: '遊蕩者特性',
+  rogue: '盜賊特性',
   sorcerer: '術士特性',
   warlock: '契術師特性',
   wizard: '法師特性'

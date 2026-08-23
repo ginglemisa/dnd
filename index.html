@@ -33,17 +33,17 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="TWD20 | 5.5版手機角卡，適合 TRPG 推廣與入門教學場合。">
-  <meta property="og:title" content="TWD20 | 5.5版手機角卡">
-  <meta property="og:description" content="TWD20 | 5.5版手機角卡，適合 TRPG 推廣與現場教學，手機操作也好上手。">
+  <meta name="description" content="twD20 | 5.5版手機角卡，適合 TRPG 推廣與入門教學場合。">
+  <meta property="og:title" content="twD20 | 5.5版手機角卡">
+  <meta property="og:description" content="twD20 | 5.5版手機角卡，適合 TRPG 推廣與現場教學，手機操作也好上手。">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://twd20.com/">
-  <meta property="og:image" content="https://twd20.com/og-image.jpg">
+  <meta property="og:url" content="https://twD20.com/">
+  <meta property="og:image" content="https://twD20.com/og-image.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
-  <title>TWD20 | 5.5版手機角卡</title>
-  <link rel="canonical" href="https://twd20.com/">
+  <title>twD20 | 5.5版手機角卡</title>
+  <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎲%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="styles.css?v=20260814-tour-five-step-a11y">
   <script src="scroll-to-top.js" defer></script>
@@ -66,7 +66,7 @@
 <body>
 <header class="site-header">
   <div class="site-hero sr-only">
-    <h1>TWD20 | 5.5版手機角卡</h1>
+    <h1>twD20 | 5.5版手機角卡</h1>
     <p>用手機學會填寫角色卡</p>
   </div>
   <div class="tabs-shell">
@@ -168,7 +168,7 @@
           <option value="monk">武僧</option>
           <option value="paladin">聖騎士</option>
           <option value="ranger">遊俠</option>
-          <option value="rogue">遊蕩者</option>
+          <option value="rogue">盜賊</option>
           <option value="sorcerer">術士</option>
           <option value="warlock">契術師</option>
           <option value="wizard">法師</option>
@@ -1008,8 +1008,8 @@ function bindCoreCharacterEvents() {
   bindEventById("wis", "input", updateACDisplay);
   bindEventById("cha", "input", updateACDisplay);
   bindEventById("armor", "change", updateArmorInfo);
-  bindEventById("class", "change", () => {updateHitDieLabel();resetSpellSlotsAfterCharacterChange();refreshWeaponSelections();updateClassFeature();updateClassFeatureOptionVisibility();updateACDisplay();updateSpeedDisplay();updateEldritchInvocationSectionVisibility();populateHandAttacks();syncOriginAndSubclassDerivedSpellRows();updateSpellsByClassLevel();updateExpertiseVisibility();updateExtraLanguageFields();});
-  bindEventById("level", "change", () => {syncHitDiceCountToLevel();syncProficiencyUseChecks();updateAutomaticInitiative();resetSpellSlotsAfterCharacterChange();refreshWeaponSelections();updateClassFeature();updateClassFeatureOptionVisibility();updateACDisplay();updateSpeedDisplay();updateEldritchInvocationSectionVisibility();populateHandAttacks();syncOriginAndSubclassDerivedSpellRows();updateSpellsByClassLevel();updateExtraLanguageFields();});
+  bindEventById("class", "change", () => {updateHitDieLabel();resetSpellSlotsAfterCharacterChange();refreshWeaponSelections();updateClassFeature();updateClassFeatureOptionVisibility();syncDerivedFeatRows();syncBardInstrumentRows();updateACDisplay();updateSpeedDisplay();updateEldritchInvocationSectionVisibility();populateHandAttacks();syncOriginAndSubclassDerivedSpellRows();updateSpellsByClassLevel();updateExpertiseVisibility();updateExtraLanguageFields();});
+  bindEventById("level", "change", () => {syncHitDiceCountToLevel();syncProficiencyUseChecks();updateAutomaticInitiative();resetSpellSlotsAfterCharacterChange();refreshWeaponSelections();updateClassFeature();updateClassFeatureOptionVisibility();syncDerivedFeatRows();updateACDisplay();updateSpeedDisplay();updateEldritchInvocationSectionVisibility();populateHandAttacks();syncOriginAndSubclassDerivedSpellRows();updateSpellsByClassLevel();updateExtraLanguageFields();});
   bindEventById("speed-input", "input", updateSpeedDisplay);
   bindEventById("elf-lineage", "change", () => { updateSpeedDisplay(); updateHighElfCantripVisibility(); });
   ["gnome-lineage", "elf-lineage", "tiefling-legacy", "high-elf-cantrip", "druid-land"].forEach(id => {
@@ -1182,6 +1182,7 @@ function getToolProficiencyCatalog() {
   return globalThis.ToolProficiencyCatalog || {
     groups: [],
     gamingSets: [],
+    instruments: [],
     allTools: [],
     isTool: () => false
   };
@@ -1203,14 +1204,30 @@ function getToolProficiencyRows() {
   return list ? [...list.querySelectorAll(":scope > .tool-proficiency-row")] : [];
 }
 
+function isDerivedToolProficiencyRow(row) {
+  return Boolean(row?.dataset?.toolSource);
+}
+
+function getManualToolProficiencyRows() {
+  return getToolProficiencyRows().filter(row => !isDerivedToolProficiencyRow(row));
+}
+
 function refreshToolProficiencyRows() {
-  getToolProficiencyRows().forEach((row, index) => {
+  let manualIndex = 0;
+  getToolProficiencyRows().forEach((row) => {
     const select = row.querySelector("select");
     const label = row.querySelector("label");
     if (!select || !label) return;
-    select.id = `tool-proficiency-${index}`;
+    if (isDerivedToolProficiencyRow(row)) {
+      const slot = row.dataset.toolSlot;
+      select.id = `bard-instrument-${slot}`;
+      label.textContent = `職業工具熟練 ${slot}：`;
+    } else {
+      select.id = `tool-proficiency-${manualIndex}`;
+      label.textContent = manualIndex === 0 ? "背景工具：" : `工具 ${manualIndex + 1}：`;
+      manualIndex += 1;
+    }
     label.htmlFor = select.id;
-    label.textContent = index === 0 ? "背景工具：" : `工具 ${index + 1}：`;
   });
 }
 
@@ -1230,15 +1247,59 @@ function syncToolProficiencyOptions() {
 
 function removeDuplicateToolProficiencies() {
   const seen = new Set();
-  getToolProficiencyRows().forEach((row, index) => {
+  getToolProficiencyRows().forEach((row) => {
     const select = row.querySelector("select");
     if (!select?.value) return;
-    if (seen.has(select.value) && index > 0) {
+    if (seen.has(select.value) && select.id !== "tool-proficiency-0") {
       select.value = "";
       return;
     }
     seen.add(select.value);
   });
+}
+
+function createBardInstrumentRow(slot) {
+  const list = document.getElementById("tool-proficiency-list");
+  if (!list) return null;
+  const row = document.createElement("div");
+  row.className = "tool-proficiency-row tool-proficiency-row--derived";
+  row.dataset.toolSource = "class";
+  row.dataset.toolSlot = String(slot);
+  const instruments = getToolProficiencyCatalog().instruments || [];
+  row.innerHTML = `<label></label><div class="tool-proficiency-control"><select class="tool-proficiency-select">${createToolOptionsHtml(instruments)}</select></div>`;
+  row.querySelector("select")?.addEventListener("change", () => {
+    removeDuplicateToolProficiencies();
+    syncToolProficiencyOptions();
+    scheduleSaveAllFields();
+  });
+  list.appendChild(row);
+  refreshToolProficiencyRows();
+  if (typeof setupAutoSave === "function") setupAutoSave(row);
+  return row;
+}
+
+function syncBardInstrumentRows() {
+  const list = document.getElementById("tool-proficiency-list");
+  if (!list) return;
+  const shouldExist = document.getElementById("class")?.value === "bard";
+  const existing = new Map(getToolProficiencyRows()
+    .filter(isDerivedToolProficiencyRow)
+    .map(row => [Number(row.dataset.toolSlot), row]));
+  if (!shouldExist) {
+    existing.forEach(row => row.remove());
+  } else {
+    for (let slot = 1; slot <= 3; slot += 1) {
+      if (!existing.has(slot)) createBardInstrumentRow(slot);
+    }
+    const firstManualExtra = getManualToolProficiencyRows()[1] || null;
+    for (let slot = 1; slot <= 3; slot += 1) {
+      const row = getToolProficiencyRows().find(candidate => Number(candidate.dataset.toolSlot) === slot);
+      if (row) list.insertBefore(row, firstManualExtra);
+    }
+  }
+  refreshToolProficiencyRows();
+  removeDuplicateToolProficiencies();
+  syncToolProficiencyOptions();
 }
 
 function createToolProficiencyRow(value = "") {
@@ -1267,14 +1328,14 @@ function createToolProficiencyRow(value = "") {
 
 function setToolProficiencyRowCount(requestedCount) {
   const targetCount = Math.max(1, Number.parseInt(requestedCount, 10) || 1);
-  let rows = getToolProficiencyRows();
+  let rows = getManualToolProficiencyRows();
   while (rows.length > targetCount && rows.length > 1) {
     rows[rows.length - 1].remove();
-    rows = getToolProficiencyRows();
+    rows = getManualToolProficiencyRows();
   }
   while (rows.length < targetCount) {
     createToolProficiencyRow();
-    rows = getToolProficiencyRows();
+    rows = getManualToolProficiencyRows();
   }
   refreshToolProficiencyRows();
   syncToolProficiencyOptions();
@@ -1314,10 +1375,17 @@ function replaceToolProficiencies(values, options = {}) {
   const catalog = getToolProficiencyCatalog();
   const uniqueValues = [...new Set((Array.isArray(values) ? values : []).filter(value => catalog.isTool(value)))];
   updateBackgroundToolRow(options.backgroundTool || "");
+  syncBardInstrumentRows();
   const backgroundValue = document.getElementById("tool-proficiency-0")?.value || "";
-  const additionalValues = uniqueValues.filter(value => value !== backgroundValue);
+  const bardInstrumentValues = document.getElementById("class")?.value === "bard"
+    ? uniqueValues.filter(value => (catalog.instruments || []).includes(value)).slice(0, 3)
+    : [];
+  getToolProficiencyRows().filter(isDerivedToolProficiencyRow).forEach((row, index) => {
+    row.querySelector("select").value = bardInstrumentValues[index] || "";
+  });
+  const additionalValues = uniqueValues.filter(value => value !== backgroundValue && !bardInstrumentValues.includes(value));
   setToolProficiencyRowCount(1 + additionalValues.length);
-  getToolProficiencyRows().slice(1).forEach((row, index) => {
+  getManualToolProficiencyRows().slice(1).forEach((row, index) => {
     row.querySelector("select").value = additionalValues[index] || "";
   });
   removeDuplicateToolProficiencies();
@@ -1825,6 +1893,7 @@ function updateClassFeature() {
   const metamagicSection = document.getElementById("metamagic-options-section");
   const metamagicOutput = document.getElementById("metamagicOptions");
   const metamagicSummary = document.getElementById("metamagic-summary");
+  const preservedCheckboxStates = new Map(Array.from(output.querySelectorAll('input[type="checkbox"][id]')).map(checkbox => [checkbox.id, checkbox.checked]));
 
   if (!selectedClass || !classFeatures[selectedClass]) {
     output.innerHTML = "無資料";
@@ -1864,6 +1933,10 @@ function updateClassFeature() {
   }
 
   restoreClassFeatureTableState(selectedClass, output);
+  preservedCheckboxStates.forEach((checked, id) => {
+    const checkbox = document.getElementById(id);
+    if (checkbox) checkbox.checked = checked;
+  });
 
   if (selectedClass === "sorcerer" && level !== "1" && metamagicRaw) {
     metamagicSection.style.display = "block";
@@ -1935,6 +2008,7 @@ function updateBackgroundFeature() {
 
   if (!bg) {
     el.innerText = "無資料";
+    syncDerivedFeatRows();
     return;
   }
 
@@ -1960,16 +2034,28 @@ function updateBackgroundFeature() {
 
    ${bg.擴充 ? `<div class="feat-expansion-notice">${EXPANSION_NOTICE}</div>` : ""}`;
 
-  const featOneSelect = document.getElementById("feat-0");
-  if (featOneSelect) {
-    const matchedFeat = FEAT_OPTIONS.find(opt => bg.專長?.startsWith(opt.value));
-    const previousFeatValue = featOneSelect.value || "";
-    featOneSelect.value = matchedFeat?.value || "";
-    updateFeatDesc("feat-0", "feat-0-desc");
-    applyMagicInitiateBackgroundDefault(featOneSelect, bg);
-    syncInitiativeAfterFeatSelectionChange(featOneSelect, previousFeatValue);
-    refreshFeatDerivedEffects();
-  }
+  syncDerivedFeatRows();
+}
+
+function enforceFightingStyleChoiceExclusivity(changedId) {
+  const pairs = [
+    ["paladin-fighting-style", "paladin-blessed-warrior"],
+    ["ranger-fighting-style", "ranger-druidic-warrior"]
+  ];
+  const pair = pairs.find(ids => ids.includes(changedId));
+  if (!pair) return;
+  const changed = document.getElementById(changedId);
+  if (!changed?.checked) return;
+  pair.filter(id => id !== changedId).forEach(id => {
+    const checkbox = document.getElementById(id);
+    if (checkbox) checkbox.checked = false;
+  });
+}
+
+function syncClassFeatureDerivedChoices() {
+  syncDerivedFeatRows();
+  syncOriginAndSubclassDerivedSpellRows();
+  updateSpellsByClassLevel();
 }
 
 function getFeatOptionsHtml() {
@@ -1977,10 +2063,119 @@ function getFeatOptionsHtml() {
     FEAT_OPTIONS.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join("");
 }
 
+function isDerivedFeatRow(row) {
+  return Boolean(row?.dataset?.featSource);
+}
+
+function getManualFeatRows() {
+  return Array.from(document.querySelectorAll("#feats-area .form-row")).filter(row => !isDerivedFeatRow(row));
+}
+
+function getFightingStyleOptionsHtml() {
+  const styles = FEAT_OPTIONS.filter(option => /戰鬥風格/u.test(option.label || ""));
+  return `<option value="">-- 請選擇戰鬥風格 --</option>${styles.map(option => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`).join("")}`;
+}
+
+function getDerivedFeatSpecs() {
+  const specs = [];
+  const background = document.getElementById("background")?.value || "";
+  const backgroundData = (typeof detailedBackgroundFeatures !== "undefined" ? detailedBackgroundFeatures : globalThis.detailedBackgroundFeatures)?.[background];
+  const backgroundFeat = FEAT_OPTIONS.find(option => backgroundData?.專長?.startsWith(option.value));
+  if (backgroundFeat) specs.push({
+    key: "background",
+    source: "background",
+    label: "背景專長：",
+    value: backgroundFeat.value,
+    fixed: true,
+    backgroundData
+  });
+
+  const classValue = document.getElementById("class")?.value || "";
+  const level = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
+  const hasClassStyle = (classValue === "fighter" && level >= 1)
+    || (classValue === "paladin" && level >= 2 && document.getElementById("paladin-fighting-style")?.checked)
+    || (classValue === "ranger" && level >= 2 && document.getElementById("ranger-fighting-style")?.checked);
+  if (hasClassStyle) specs.push({
+    key: `fighting-style-${classValue}`,
+    source: "class",
+    label: "職業專長：",
+    fixed: false,
+    optionsHtml: getFightingStyleOptionsHtml()
+  });
+  return specs;
+}
+
+function createDerivedFeatRow(spec) {
+  const area = document.getElementById("feats-area");
+  if (!area) return null;
+  const row = document.createElement("div");
+  row.className = "form-row feat-entry--derived";
+  row.dataset.featSource = spec.source;
+  row.dataset.sourceKey = spec.key;
+  const rowHead = document.createElement("div");
+  rowHead.className = "feat-row-head";
+  const label = document.createElement("label");
+  rowHead.appendChild(label);
+  const select = document.createElement("select");
+  const desc = document.createElement("div");
+  desc.className = "output";
+  const magicControls = createMagicInitiateControls(row);
+  select.addEventListener("change", () => {
+    updateFeatDesc(select.id, desc.id);
+    updateMagicInitiateControlsForRow(row);
+    refreshFeatDerivedEffects();
+    scheduleSaveAllFields();
+  });
+  row.append(rowHead, select, desc, magicControls);
+  area.insertBefore(row, getManualFeatRows()[0] || null);
+  return row;
+}
+
+function setDerivedFeatRowValues(row, spec) {
+  const select = getFeatSelectFromRow(row);
+  const label = row.querySelector(".feat-row-head label");
+  const desc = row.querySelector(".output");
+  if (!select || !label || !desc) return;
+  const previousValue = select.value || "";
+  select.id = `derived-feat-${spec.key}`;
+  label.htmlFor = select.id;
+  label.textContent = spec.label;
+  desc.id = `${select.id}-desc`;
+  select.innerHTML = spec.fixed ? getFeatOptionsHtml() : spec.optionsHtml;
+  select.value = spec.fixed ? spec.value : (Array.from(select.options).some(option => option.value === previousValue) ? previousValue : "");
+  select.disabled = Boolean(spec.fixed);
+  updateFeatDesc(select.id, desc.id);
+  updateMagicInitiateControlIds(row, select.id);
+  updateMagicInitiateControlsForRow(row, { sync: false });
+  if (spec.fixed && spec.backgroundData) applyMagicInitiateBackgroundDefault(select, spec.backgroundData);
+}
+
+function syncDerivedFeatRows() {
+  const area = document.getElementById("feats-area");
+  if (!area) return;
+  const specs = getDerivedFeatSpecs();
+  const desiredKeys = new Set(specs.map(spec => spec.key));
+  Array.from(area.querySelectorAll(":scope > .feat-entry--derived")).forEach(row => {
+    if (!desiredKeys.has(row.dataset.sourceKey)) row.remove();
+  });
+  specs.forEach(spec => {
+    let row = Array.from(area.querySelectorAll(":scope > .feat-entry--derived")).find(candidate => candidate.dataset.sourceKey === spec.key);
+    if (!row) row = createDerivedFeatRow(spec);
+    if (row) setDerivedFeatRowValues(row, spec);
+  });
+  const firstManual = getManualFeatRows()[0] || null;
+  specs.forEach(spec => {
+    const row = Array.from(area.querySelectorAll(":scope > .feat-entry--derived")).find(candidate => candidate.dataset.sourceKey === spec.key);
+    if (row) area.insertBefore(row, firstManual);
+  });
+  refreshFeatRows();
+  refreshFeatDerivedEffects();
+}
+
 const ALERT_FEAT_NAME = "警覺";
 
 function getFeatSelects() {
-  return Array.from(document.querySelectorAll('#feats-area select[id^="feat-"]:not([id*="magic-initiate"])'));
+  return Array.from(document.querySelectorAll("#feats-area .form-row")).map(getFeatSelectFromRow).filter(Boolean);
 }
 
 function hasSelectedFeat(featName) {
@@ -2144,7 +2339,7 @@ const MAGIC_INITIATE_CLASS_BY_LABEL = {
 };
 
 function getFeatSelectFromRow(row) {
-  return row?.querySelector?.("select[id^='feat-']:not([id*='magic-initiate'])") || null;
+  return row?.querySelector?.("select:not([id*='magic-initiate'])") || null;
 }
 
 function isMagicInitiateFeatSelectedInRow(row) {
@@ -2263,7 +2458,8 @@ function updateMagicInitiateControlIds(row, featIndex) {
   ].forEach(({ field, suffix }) => {
     const select = getMagicInitiateSelect(row, field);
     if (!select) return;
-    const id = `feat-${featIndex}-magic-initiate-${suffix}`;
+    const baseId = typeof featIndex === "number" ? `feat-${featIndex}` : String(featIndex || "feat-0");
+    const id = `${baseId}-magic-initiate-${suffix}`;
     select.id = id;
   });
 }
@@ -2299,6 +2495,7 @@ function applyMagicInitiateBackgroundDefault(featSelect, backgroundData) {
   if (isMagicInitiateFeatSelectedInRow(row) && classSelect && defaultClass) {
     classSelect.value = defaultClass;
     updateMagicInitiateSpellOptions(row);
+    classSelect.disabled = isDerivedFeatRow(row);
   }
 
   syncMagicInitiateDerivedSpellRows();
@@ -2310,9 +2507,10 @@ function getMagicInitiateConfigs() {
   return Array.from(document.querySelectorAll("#feats-area .form-row"))
     .map((row, rowIndex) => {
       if (!isMagicInitiateFeatSelectedInRow(row)) return null;
-      const featIndex = Number.parseInt((getFeatSelectFromRow(row)?.id || "").replace("feat-", ""), 10);
+      const featId = getFeatSelectFromRow(row)?.id || `feat-${rowIndex}`;
       return {
-        featIndex: Number.isFinite(featIndex) ? featIndex : rowIndex,
+        featKey: featId,
+        sourcePriority: row.dataset.featSource === "background" ? 10 : 40,
         classValue: getMagicInitiateSelect(row, "class")?.value || "",
         cantrip1: getMagicInitiateSelect(row, "cantrip1")?.value || "",
         cantrip2: getMagicInitiateSelect(row, "cantrip2")?.value || "",
@@ -2326,27 +2524,27 @@ function getMagicInitiateDerivedSpellSpecs() {
   const specs = [];
   getMagicInitiateConfigs().forEach((config) => {
     specs.push({
-      key: `feat-${config.featIndex}-cantrip-1`,
+      key: `${config.featKey}-cantrip-1`,
       areaId: "cantrips-area",
       level: "cantrips",
       classValue: config.classValue,
-      sourcePriority: config.featIndex === 0 ? 10 : 40,
+      sourcePriority: config.sourcePriority,
       spellValue: config.cantrip1
     });
     specs.push({
-      key: `feat-${config.featIndex}-cantrip-2`,
+      key: `${config.featKey}-cantrip-2`,
       areaId: "cantrips-area",
       level: "cantrips",
       classValue: config.classValue,
-      sourcePriority: config.featIndex === 0 ? 10 : 40,
+      sourcePriority: config.sourcePriority,
       spellValue: config.cantrip2
     });
     specs.push({
-      key: `feat-${config.featIndex}-level-1`,
+      key: `${config.featKey}-level-1`,
       areaId: "level1spells-area",
       level: 1,
       classValue: config.classValue,
-      sourcePriority: config.featIndex === 0 ? 10 : 40,
+      sourcePriority: config.sourcePriority,
       spellValue: config.level1
     });
   });
@@ -2552,9 +2750,58 @@ function getClassAlwaysPreparedSpellSpecs() {
       areaId: "level1spells-area"
     }];
   }
+  if (classValue === "paladin") {
+    const specs = [];
+    if (level >= 2) specs.push({
+      level: 2,
+      ring: 1,
+      spellId: "divine-smite",
+      key: "class-paladin-divine-smite",
+      source: CLASS_SPELL_SOURCE,
+      sourceName: "聖騎士",
+      sourceLabel: "職業",
+      sourcePriority: 25,
+      sourceTag: "職業",
+      freeUses: 1,
+      areaId: "level1spells-area"
+    });
+    if (level >= 5) specs.push({
+      level: 5,
+      ring: 2,
+      spellId: "find-steed",
+      key: "class-paladin-find-steed",
+      source: CLASS_SPELL_SOURCE,
+      sourceName: "聖騎士",
+      sourceLabel: "職業",
+      sourcePriority: 25,
+      sourceTag: "職業",
+      freeUses: 1,
+      areaId: "level2spells-area"
+    });
+    if (level >= 2 && document.getElementById("paladin-blessed-warrior")?.checked) {
+      for (let slot = 1; slot <= 2; slot += 1) {
+        const key = `class-paladin-blessed-warrior-cantrip-${slot}`;
+        const row = Array.from(document.querySelectorAll(`.spell-entry[data-spell-source="${CLASS_SPELL_SOURCE}"]`)).find(candidate => candidate.dataset.sourceKey === key);
+        specs.push({
+          level: 2,
+          ring: "cantrips",
+          spellId: row?.querySelector("select[id*='-spell-']")?.value || "",
+          key,
+          source: CLASS_SPELL_SOURCE,
+          sourceName: "牧師",
+          sourceLabel: "聖騎2等:祝福勇士",
+          sourcePriority: 25,
+          sourceTag: "職業",
+          selectableSpellClass: "cleric",
+          areaId: "cantrips-area"
+        });
+      }
+    }
+    return specs;
+  }
   if (classValue !== "ranger") return [];
   const freeUses = !level ? "" : level >= 5 ? 3 : 2;
-  return [{
+  const specs = [{
     level: 1,
     ring: 1,
     spellId: "hunters-mark",
@@ -2566,6 +2813,26 @@ function getClassAlwaysPreparedSpellSpecs() {
     areaId: "level1spells-area",
     freeUses
   }];
+  if (level >= 2 && document.getElementById("ranger-druidic-warrior")?.checked) {
+    for (let slot = 1; slot <= 2; slot += 1) {
+      const key = `class-ranger-druidic-warrior-cantrip-${slot}`;
+      const row = Array.from(document.querySelectorAll(`.spell-entry[data-spell-source="${CLASS_SPELL_SOURCE}"]`)).find(candidate => candidate.dataset.sourceKey === key);
+      specs.push({
+        level: 2,
+        ring: "cantrips",
+        spellId: row?.querySelector("select[id*='-spell-']")?.value || "",
+        key,
+        source: CLASS_SPELL_SOURCE,
+        sourceName: "德魯伊",
+        sourceLabel: "遊俠2等:德魯伊教",
+        sourcePriority: 25,
+        sourceTag: "職業",
+        selectableSpellClass: "druid",
+        areaId: "cantrips-area"
+      });
+    }
+  }
+  return specs;
 }
 
 function getSubclassDerivedSpellSpecs() {
@@ -2657,6 +2924,36 @@ function setGenericDerivedRowValues(row, spec) {
   spellSel.setAttribute("aria-disabled", "true");
 }
 
+function setClassFeatureCantripRowValues(row, spec) {
+  const classSel = row.querySelector("select[id*='-class-']");
+  const spellSel = row.querySelector("select[id*='-spell-']");
+  const badge = row.querySelector(".magic-initiate-source-badge");
+  if (!classSel || !spellSel) return;
+  const peerValues = new Set(Array.from(document.querySelectorAll(`.spell-entry[data-spell-source="${CLASS_SPELL_SOURCE}"]`))
+    .filter(candidate => candidate !== row && candidate.dataset.sourceLabel === spec.sourceLabel)
+    .map(candidate => candidate.querySelector("select[id*='-spell-']")?.value || "")
+    .filter(Boolean));
+  classSel.innerHTML = `<option value="${escapeHtml(spec.selectableSpellClass)}">${escapeHtml(spec.sourceName)}</option>`;
+  classSel.value = spec.selectableSpellClass;
+  const options = getSpellsByMode(spec.selectableSpellClass, "cantrips");
+  spellSel.innerHTML = `<option value="">-- 請選擇戲法 --</option>${options.map(spell => {
+    const disabled = peerValues.has(spell.spellId) ? " disabled" : "";
+    return `<option value="${escapeHtml(spell.spellId)}"${disabled}>${escapeHtml(SpellCatalog.getDisplayName(spell.spellId))}</option>`;
+  }).join("")}`;
+  if (spec.spellId && Array.from(spellSel.options).some(option => option.value === spec.spellId && !option.disabled)) spellSel.value = spec.spellId;
+  if (badge) badge.textContent = spec.sourceLabel;
+  row.dataset.sourceKey = spec.key;
+  row.dataset.sourcePriority = String(spec.sourcePriority);
+  row.dataset.sourceLabel = spec.sourceLabel;
+  row.dataset.sourceTag = spec.sourceTag || "職業";
+  classSel.disabled = true;
+  classSel.setAttribute("aria-disabled", "true");
+  spellSel.disabled = false;
+  spellSel.removeAttribute("aria-disabled");
+  row.classList.toggle("spell-entry--placeholder", !spellSel.value);
+  spellSel.dispatchEvent(new Event("change"));
+}
+
 function getPactTomeSpellOptions(ring) {
   return SpellCatalog.getAllSpells().filter(spell => {
     if (!SpellCatalog.getClassIds(spell.spellId, SPELL_MODE).length) return false;
@@ -2730,7 +3027,8 @@ function syncOriginAndSubclassDerivedSpellRows() {
       let row = Array.from(document.querySelectorAll(`.spell-entry[data-spell-source="${spec.source}"]`)).find(candidate => candidate.dataset.sourceKey === spec.key);
       if (!row) row = createSingleSpellRow(spec.areaId, spec.ring, null, null, spec);
       if (row) {
-        if (spec.source === PACT_TOME_SPELL_SOURCE) setPactTomeDerivedRowValues(row, spec);
+        if (spec.selectableSpellClass) setClassFeatureCantripRowValues(row, spec);
+        else if (spec.source === PACT_TOME_SPELL_SOURCE) setPactTomeDerivedRowValues(row, spec);
         else setGenericDerivedRowValues(row, spec);
       }
     });
@@ -2746,13 +3044,14 @@ function syncOriginAndSubclassDerivedSpellRows() {
 
 function updateFeatControlStates() {
   const rows = Array.from(document.querySelectorAll("#feats-area .form-row"));
-  const disableDelete = rows.length <= 1;
-  const lastRow = rows[rows.length - 1] || null;
+  const manualRows = rows.filter(row => !isDerivedFeatRow(row));
+  const disableDelete = manualRows.length <= 1;
+  const lastRow = manualRows[manualRows.length - 1] || null;
 
   rows.forEach((row) => {
     const delBtn = row.querySelector(".feat-icon-btn[data-feat-action='delete']");
     const addBtn = row.querySelector(".feat-icon-btn[data-feat-action='add']");
-    if (delBtn) delBtn.disabled = disableDelete;
+    if (delBtn) delBtn.disabled = isDerivedFeatRow(row) || disableDelete;
     if (addBtn) {
       const isLast = row === lastRow;
       addBtn.style.display = isLast ? "inline-flex" : "none";
@@ -2764,19 +3063,21 @@ function updateFeatControlStates() {
 
 function refreshFeatRows() {
   const rows = document.querySelectorAll("#feats-area .form-row");
-  rows.forEach((row, idx) => {
+  let manualIndex = 0;
+  rows.forEach((row) => {
     const label = row.querySelector("label");
     const select = getFeatSelectFromRow(row);
     const desc = row.querySelector(".output");
     if (!label || !select || !desc) return;
-    const baseId = `feat-${idx}`;
+    const baseId = isDerivedFeatRow(row) ? `derived-feat-${row.dataset.sourceKey}` : `feat-${manualIndex}`;
     label.htmlFor = baseId;
-    label.textContent = `專長${idx + 1}`;
+    if (!isDerivedFeatRow(row)) label.textContent = `專長${manualIndex + 1}`;
     select.id = baseId;
     desc.id = `${baseId}-desc`;
     updateFeatDesc(select.id, desc.id);
-    updateMagicInitiateControlIds(row, idx);
+    updateMagicInitiateControlIds(row, isDerivedFeatRow(row) ? baseId : manualIndex);
     updateMagicInitiateControlsForRow(row, { sync: false });
+    if (!isDerivedFeatRow(row)) manualIndex += 1;
   });
   updateFeatControlStates();
   syncMagicInitiateDerivedSpellRows();
@@ -2788,7 +3089,7 @@ function createSingleFeatRow(afterRow = null) {
   const area = document.getElementById("feats-area");
   if (!area) return;
 
-  const idx = area.childElementCount;
+  const idx = getManualFeatRows().length;
   const rowDiv = document.createElement("div");
   rowDiv.className = "form-row";
 
@@ -2822,7 +3123,7 @@ function createSingleFeatRow(afterRow = null) {
   delBtn.title = "刪除";
   delBtn.dataset.featAction = "delete";
   delBtn.addEventListener("click", () => {
-    if (area.childElementCount <= 1) return;
+    if (getManualFeatRows().length <= 1) return;
     const hadAlertFeat = hasAlertFeatSelectedWithOverride();
     rowDiv.remove();
     refreshFeatRows();
@@ -3442,18 +3743,31 @@ const defaultAbilityByClass = {
       return `${mod > 0 ? "+" : ""}${mod}`;
     }
 
+    function updateAbilityScore(input, modDisplay) {
+      if (input.value !== "") {
+        const value = input.valueAsNumber;
+        if (Number.isFinite(value)) {
+          const min = Number(input.min);
+          const max = Number(input.max);
+          input.value = String(Math.min(max, Math.max(min, Math.round(value))));
+        }
+      }
+
+      const mod = calculateModifier(input.valueAsNumber);
+      if (!mod) {
+        modDisplay.textContent = "";
+        return;
+      }
+      modDisplay.innerHTML = `<span class="modifier-main">${mod}</span>`;
+    }
+
     const abilities = ["str", "dex", "con", "int", "wis", "cha"];
     abilities.forEach(ability => {
       const input = document.getElementById(ability);
       const modDisplay = document.getElementById(`${ability}-mod`);
-      input.addEventListener("input", () => {
-        const mod = calculateModifier(parseInt(input.value));
-        if (!mod) {
-          modDisplay.textContent = "";
-          return;
-        }
-        modDisplay.innerHTML = `<span class="modifier-main">${mod}</span>`;
-    });
+      const update = () => updateAbilityScore(input, modDisplay);
+      input.addEventListener("input", update);
+      input.addEventListener("change", update);
 
 
       if (input.value) {
@@ -4017,18 +4331,15 @@ function isWeaponProficient(weapon) {
 }
 
 function hasTwoWeaponFightingStyleFeat() {
-  const featSelects = document.querySelectorAll('#feats-area select[id^="feat-"]');
-  return Array.from(featSelects).some(select => select.value === "雙武器戰鬥");
+  return hasSelectedFeat("雙武器戰鬥");
 }
 
 function hasArcheryFightingStyleFeat() {
-  const featSelects = document.querySelectorAll('#feats-area select[id^="feat-"]');
-  return Array.from(featSelects).some(select => select.value === "箭術");
+  return hasSelectedFeat("箭術");
 }
 
 function hasDefenseFightingStyleFeat() {
-  const featSelects = document.querySelectorAll('#feats-area select[id^="feat-"]');
-  return Array.from(featSelects).some(select => select.value === "防禦");
+  return hasSelectedFeat("防禦");
 }
 
 const WEAPON_MASTERY_CLASSES = new Set(["barbarian", "fighter", "paladin", "ranger", "rogue"]);
@@ -4921,6 +5232,9 @@ function createSingleSpellRow(areaId, level, afterRow = null, restoredRowState =
     updatePickedSpellBoxes();
     if (rowDiv.dataset.spellSource === PACT_TOME_SPELL_SOURCE) {
       updatePactTomeSelectionFromRows();
+    }
+    if (rowDiv.dataset.spellSource === CLASS_SPELL_SOURCE && rowDiv.dataset.sourceKey.includes("-warrior-cantrip-")) {
+      syncOriginAndSubclassDerivedSpellRows();
     }
     if (!isSpellAutoPrepareInProgress()) {
       scheduleSaveAllFields();
@@ -5918,6 +6232,12 @@ document.addEventListener("change", (e) => {
     populateHandAttacks();
     updateEquipmentLoadoutSummary();
   }
+
+  if (["paladin-fighting-style", "paladin-blessed-warrior", "ranger-fighting-style", "ranger-druidic-warrior"].includes(target.id)) {
+    enforceFightingStyleChoiceExclusivity(target.id);
+    syncClassFeatureDerivedChoices();
+    scheduleSaveAllFields();
+  }
 });
 
 // ====== 通用 localStorage 儲存/還原 ======
@@ -6046,8 +6366,15 @@ function setFeatRowCount(requestedCount) {
   const count = Number.isFinite(parsedCount) && parsedCount >= 1 ? parsedCount : 1;
   if (!area) return;
 
-  while (area.childElementCount < count) createSingleFeatRow();
-  while (area.childElementCount > count) area.lastElementChild?.remove();
+  let rows = getManualFeatRows();
+  while (rows.length < count) {
+    createSingleFeatRow();
+    rows = getManualFeatRows();
+  }
+  while (rows.length > count) {
+    rows[rows.length - 1]?.remove();
+    rows = getManualFeatRows();
+  }
   refreshFeatRows();
 }
 
@@ -6065,12 +6392,12 @@ function getDynamicAreaConfigs() {
     })),
     {
       key: "feats-area",
-      getCount: () => document.getElementById("feats-area")?.childElementCount || 0,
+      getCount: () => getManualFeatRows().length,
       ensureCount: setFeatRowCount
     },
     {
       key: "tool-proficiency-list",
-      getCount: () => getToolProficiencyRows().length,
+      getCount: () => getManualToolProficiencyRows().length,
       ensureCount: setToolProficiencyRowCount
     }
   ];
@@ -6107,6 +6434,9 @@ function collectStateObject(options = {}) {
   });
   data.__deletedSpellRowCache = cloneDeletedSpellRowCache(deletedSpellRowCache);
   data.__pactTomeSpellSelection = getPactTomeSpellSelection();
+  data.__classFeatureCantrips = Object.fromEntries(Array.from(document.querySelectorAll(`.spell-entry[data-spell-source="${CLASS_SPELL_SOURCE}"]`))
+    .filter(row => row.dataset.sourceKey?.includes("-warrior-cantrip-"))
+    .map(row => [row.dataset.sourceKey, row.querySelector("select[id*='-spell-']")?.value || ""]));
   return data;
 }
 
@@ -6194,7 +6524,7 @@ function applyStateObject(data) {
     }
 
     for (const id in data) {
-      if (id === "__deletedSpellRowCache" || id === "__pactTomeSpellSelection") continue;
+      if (id === "__deletedSpellRowCache" || id === "__pactTomeSpellSelection" || id === "__classFeatureCantrips") continue;
       if (isSpellRowStateKey(id)) continue;
       const el = document.getElementById(id);
       if (!el) continue;
@@ -6207,7 +6537,18 @@ function applyStateObject(data) {
     }
     syncCharacterSizeFromRace(data[CHARACTER_SIZE_STATE_KEY]);
     applySpellRowsState(data);
+    syncDerivedFeatRows();
+    syncBardInstrumentRows();
     syncMagicInitiateDerivedSpellRows();
+    syncOriginAndSubclassDerivedSpellRows();
+    Object.entries(data.__classFeatureCantrips || {}).forEach(([key, spellId]) => {
+      const row = Array.from(document.querySelectorAll(`.spell-entry[data-spell-source="${CLASS_SPELL_SOURCE}"]`)).find(candidate => candidate.dataset.sourceKey === key);
+      const select = row?.querySelector("select[id*='-spell-']");
+      if (select && Array.from(select.options).some(option => option.value === spellId && !option.disabled)) {
+        select.value = spellId;
+        select.dispatchEvent(new Event("change"));
+      }
+    });
     syncOriginAndSubclassDerivedSpellRows();
     updateClassFeatureOptionVisibility();
     updateHighElfCantripVisibility();
@@ -6339,6 +6680,79 @@ function buildPdfPrecheckMessages() {
       selector: `#${id}`
     });
   });
+
+  const firstMissingBaseLanguage = ["language1", "language2"].find(id => !(document.getElementById(id)?.value || "").trim());
+  if (firstMissingBaseLanguage) reminders.push({
+    message: "基本語言尚未選完。",
+    tab: "skills",
+    selector: ".language-card",
+    focusSelector: `#${firstMissingBaseLanguage}`
+  });
+
+  const selectedClass = (document.getElementById("class")?.value || "").trim();
+  const selectedLevel = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
+  if (selectedClass === "ranger" && selectedLevel >= 2) {
+    const missing = ["language-extra-1", "language-extra-2"].find(id => !(document.getElementById(id)?.value || "").trim());
+    if (missing) reminders.push({ message: "遊俠額外語言尚未選完。", tab: "skills", selector: "#extra-language-container", focusSelector: `#${missing}` });
+  }
+  if (selectedClass === "rogue" && !(document.getElementById("language-extra-2")?.value || "").trim()) {
+    reminders.push({ message: "盜賊額外語言尚未選擇。", tab: "skills", selector: "#extra-language-container", focusSelector: "#language-extra-2" });
+  }
+
+  if (selectedClass === "bard") {
+    const missingInstruments = [1, 2, 3].filter(slot => !(document.getElementById(`bard-instrument-${slot}`)?.value || "").trim());
+    if (missingInstruments.length) reminders.push({
+      message: missingInstruments.length === 3 ? "吟遊詩人樂器尚未選擇。" : `吟遊詩人樂器尚有 ${missingInstruments.length} 項未選擇。`,
+      tab: "skills",
+      selector: "#tool-proficiency-list",
+      focusSelector: `#bard-instrument-${missingInstruments[0]}`
+    });
+  }
+
+  const fightingStyleSelect = selectedClass ? document.getElementById(`derived-feat-fighting-style-${selectedClass}`) : null;
+  if (selectedClass === "fighter" && selectedLevel >= 1 && !fightingStyleSelect?.value) {
+    reminders.push({ message: "戰士戰鬥風格尚未選擇。", tab: "basic", selector: "#feats-area", focusSelector: "#derived-feat-fighting-style-fighter" });
+  }
+  if (["paladin", "ranger"].includes(selectedClass) && selectedLevel >= 2) {
+    const styleId = `${selectedClass}-fighting-style`;
+    const magicId = selectedClass === "paladin" ? "paladin-blessed-warrior" : "ranger-druidic-warrior";
+    const styleChecked = Boolean(document.getElementById(styleId)?.checked);
+    const magicChecked = Boolean(document.getElementById(magicId)?.checked);
+    if (!styleChecked && !magicChecked) reminders.push({
+      message: `${selectedClass === "paladin" ? "聖騎士" : "遊俠"}戰鬥風格類型尚未選擇。`,
+      tab: "basic",
+      selector: "#class-features-section",
+      focusSelector: `#${styleId}`
+    });
+    if (styleChecked && !fightingStyleSelect?.value) reminders.push({
+      message: `${selectedClass === "paladin" ? "聖騎士" : "遊俠"}戰鬥風格尚未選擇。`,
+      tab: "basic",
+      selector: "#feats-area",
+      focusSelector: `#derived-feat-fighting-style-${selectedClass}`
+    });
+    if (magicChecked) {
+      const sourceFragment = selectedClass === "paladin" ? "blessed-warrior" : "druidic-warrior";
+      const rows = Array.from(document.querySelectorAll(`.spell-entry[data-source-key*="${sourceFragment}-cantrip-"]`));
+      const missingRow = rows.find(row => !(row.querySelector("select[id*='-spell-']")?.value || "").trim());
+      if (rows.length < 2 || missingRow) reminders.push({
+        message: `${selectedClass === "paladin" ? "受祝福的勇士" : "德魯伊教戰士"}戲法尚未選完。`,
+        tab: "spells",
+        selector: "#cantrips-area",
+        focusSelector: missingRow ? `#${missingRow.querySelector("select[id*='-spell-']")?.id}` : "#cantrips-area select[id*='-spell-']"
+      });
+    }
+  }
+
+  const backgroundMagicRow = document.querySelector('#feats-area .feat-entry--derived[data-source-key="background"]');
+  if (backgroundMagicRow && getFeatSelectFromRow(backgroundMagicRow)?.value === MAGIC_INITIATE_FEAT_NAME) {
+    const missingControl = ["class", "cantrip1", "cantrip2", "level1"].map(field => getMagicInitiateSelect(backgroundMagicRow, field)).find(select => !(select?.value || "").trim());
+    if (missingControl) reminders.push({
+      message: "背景魔法學徒的法術尚未選完。",
+      tab: "basic",
+      selector: "#feats-area",
+      focusSelector: `#${missingControl.id}`
+    });
+  }
 
   const selectedRace = (document.getElementById("race")?.value || "").trim();
   const raceOptionRequirements = {
@@ -7091,7 +7505,7 @@ for (let i = 0; i < 1; i++) createSingleSpellRow('cantrips-area', 'cantrips');
 for (let i = 0; i < 1; i++) createSingleSpellRow('level1spells-area', 1);
 for (let i = 0; i < 1; i++) createSingleSpellRow('level2spells-area', 2);
 for (let i = 0; i < 1; i++) createSingleSpellRow('level3spells-area', 3);
-for (let i = 0; i < 2; i++) createSingleFeatRow();
+for (let i = 0; i < 1; i++) createSingleFeatRow();
   // 3. 還原所有欄位狀態
   const { data: sharedData, error: sharedError } = await decodeStateFromHash();
   if (sharedData) {
@@ -7110,6 +7524,8 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
   updateRaceOptionVisibility();
   updateClassFeatureOptionVisibility();
   updateHitDieLabel();
+  syncDerivedFeatRows();
+  syncBardInstrumentRows();
   syncOriginAndSubclassDerivedSpellRows();
   updateSpeedDisplay();
   updateAutomaticInitiative();
@@ -7199,7 +7615,7 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
     <a href="#legal-about-modal" class="legal-about-trigger">Legal &amp; About</a>
     <a href="https://github.com/ginglemisa/dnd" target="_blank" rel="noopener">GitHub Repo</a>
   </div>
-  <div><a href="https://twd20.com/">twD20.com</a> | 5.5版手機角卡</div>
+  <div><a href="https://twD20.com/">twD20.com</a> | 5.5版手機角卡</div>
 </footer>
 
 <div id="spell-qr-modal" aria-hidden="true" inert>
@@ -7215,7 +7631,7 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
     <button type="button" class="deity-info-close" aria-label="關閉神祇資訊">✕</button>
     <header class="deity-info-header">
       <h3 id="deity-info-title">📜 被遺忘國度神祇整理</h3>
-      <p id="deity-info-disclaimer" class="deity-info-disclaimer">本站為非官方 D&D 玩家輔助工具，與 WotC 無關。相關名稱與設定權利歸原權利人所有；本站表格皆為愛好者整理與撰寫，僅供遊戲參考。</p>
+      <p id="deity-info-disclaimer" class="deity-info-disclaimer">本站為 SRD 創角工具，與官方無任何關係。以下姓名設定皆歸原權利人所有；由愛好者整理撰寫，僅供遊戲中參考，並遵守 WotC FCP 條款。</p>
     </header>
     <div id="deity-info-content" class="deity-info-content"></div>
   </div>
@@ -7293,7 +7709,7 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
       <section class="default-ability-class-group" aria-labelledby="default-class-group-skill">
         <h4 id="default-class-group-skill"><span>技能專家</span></h4>
         <div class="default-ability-class-row">
-          <button type="button" data-default-ability-class="rogue">遊蕩者</button>
+          <button type="button" data-default-ability-class="rogue">盜賊</button>
           <button type="button" data-default-ability-class="bard">吟遊詩人</button>
           <button type="button" data-default-ability-class="ranger">遊俠</button>
         </div>
@@ -7332,10 +7748,10 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
 <div id="legal-modal">
   <div class="legal-modal-card">
     <button type="button" id="legal-close-btn" aria-label="關閉提醒">✕</button>
-    <img class="legal-modal-logo" src="logo.png" alt="TWD20 標誌">
-    <h3 class="legal-modal-title">TWD20.com | 5.5版手機角卡</h3>
+    <img class="legal-modal-logo" src="logo.png" alt="twD20 標誌">
+    <h3 class="legal-modal-title">twD20.com | 5.5版手機角卡</h3>
     <div class="legal-modal-copy">
-      TWD20 是新手專用的5.5版創角工具，以 SRD 5.2.1 為基礎改編。詳細授權、資料與使用說明請見 <a href="#legal-about-modal" class="legal-about-trigger">Legal &amp; About</a>。
+      twD20 是新手專用的5.5版創角工具，以 SRD 5.2.1 為基礎改編。詳細授權、資料與使用說明請見 <a href="#legal-about-modal" class="legal-about-trigger">Legal &amp; About</a>。
     </div>
     <div class="legal-modal-meta">
       <div class="legal-modal-meta-title">5.5e compatible character builder</div>
@@ -7352,11 +7768,11 @@ for (let i = 0; i < 2; i++) createSingleFeatRow();
   <article class="legal-about-card" role="dialog" aria-modal="true" aria-labelledby="legal-about-title">
     <button type="button" class="legal-about-close" aria-label="關閉 Legal &amp; About">✕</button>
     <header class="legal-about-header">
-      <h2 id="legal-about-title">TWD20｜Legal &amp; About</h2>
+      <h2 id="legal-about-title">twD20｜Legal &amp; About</h2>
     </header>
     <div class="legal-about-content">
       <h3>這是什麼？</h3>
-      <p>「TWD20」是一個給 TRPG 新手使用的手機創角網站，讓玩家在教學現場或開團前，在較低的規則負擔下快速創造上桌角色。</p>
+      <p>「twD20」是一個給 TRPG 新手使用的手機創角網站，讓玩家在教學現場或開團前，在較低的規則負擔下快速創造上桌角色。</p>
       <h3>適合誰？</h3>
       <ul><li>第一次接觸5.5版奇幻 TRPG 的玩家</li><li>需要在桌邊快速帶新手創角的 DM／教學者</li></ul>
       <h3>使用方式</h3>

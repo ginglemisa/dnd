@@ -866,7 +866,7 @@ details > summary::-webkit-details-marker,
   white-space: nowrap;
 }
 
-/* 基本頁的通用表格規則會強制允許換行；遊蕩者的熟練加值欄需覆寫它。 */
+/* 基本頁的通用表格規則會強制允許換行；盜賊的熟練加值欄需覆寫它。 */
 [data-class-feature-table="rogue"] .class-feature-table th:nth-child(2) {
   white-space: nowrap !important;
   word-break: normal !important;
@@ -1376,6 +1376,24 @@ input[type="checkbox"]:focus-visible {
   background: rgba(151, 168, 201, 0.12);
 }
 
+.tool-proficiency-row--derived,
+.feat-entry--derived {
+  padding: 0.75rem;
+  border: 1px solid rgba(151, 168, 201, 0.28);
+  border-radius: 0.85rem;
+  background: rgba(151, 168, 201, 0.12);
+}
+
+.tool-proficiency-row--derived .tool-proficiency-control {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.feat-entry--derived > select:disabled {
+  opacity: 0.78;
+  color: #667085;
+  cursor: not-allowed;
+}
+
 .tool-proficiency-control {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -1707,6 +1725,8 @@ input[type="checkbox"]:focus-visible {
 }
 
 .ability-score {
+  appearance: textfield;
+  -moz-appearance: textfield;
   min-height: 3rem;
   padding: 0.7rem 0.85rem;
   border: 1px solid rgba(151, 168, 201, 0.34);
@@ -1716,6 +1736,13 @@ input[type="checkbox"]:focus-visible {
   font-size: var(--fs-xl);
   font-weight: 900;
   text-align: center;
+}
+
+.ability-score::-webkit-inner-spin-button,
+.ability-score::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
 }
 
 /* ===== Skills ===== */
@@ -5931,6 +5958,8 @@ html[data-theme="dark"] .money-section,
 html[data-theme="dark"] .money-balance-grid > div,
 html[data-theme="dark"] .money-summary,
 html[data-theme="dark"] .spell-entry--derived,
+html[data-theme="dark"] .feat-entry--derived,
+html[data-theme="dark"] .tool-proficiency-row--derived,
 html[data-theme="dark"] .spell-slot-column,
 html[data-theme="dark"] .invocation-prereq,
 html[data-theme="dark"] .spell-prepare-popover,

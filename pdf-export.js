@@ -30,9 +30,7 @@
         Background2: 9,
         Specie1: 9,
         alignment1: 9,
-        language1: 8,
         classFeatures1: 7,
-        classFeatures2: 7,
         specie_features1: 6.8,
         feats1: 6.8,
         extra1: 8,
@@ -41,6 +39,7 @@
         weaponsProficiency1: 8
       },
       fixedFontSizes: {
+        classFeatures2: 7,
         'spell-level-1': 14,
         'spell-level-2': 14,
         'spell-level-3': 14,
@@ -77,9 +76,7 @@
         Background2: 10,
         Specie1: 10,
         alignment1: 10,
-        language1: 9,
         classFeatures1: 8,
-        classFeatures2: 7,
         specie_features1: 6.9,
         feats1: 6.9,
         extra1: 8,
@@ -88,6 +85,7 @@
         weaponsProficiency1: 8
       },
       fixedFontSizes: {
+        classFeatures2: 8,
         'spell-level-1': 14,
         'spell-level-2': 14,
         'spell-level-3': 14,
@@ -150,7 +148,7 @@
     monk: '武僧',
     paladin: '聖騎士',
     ranger: '遊俠',
-    rogue: '遊蕩者',
+    rogue: '盜賊',
     sorcerer: '術士',
     warlock: '契術師',
     wizard: '法師'
@@ -321,7 +319,6 @@
   function setTextField(form, fieldName, value) {
     try {
       const field = form.getTextField(fieldName);
-      if (fieldName === 'language1') field.enableMultiline();
       field.setText(value);
       return true;
     } catch (error) {
@@ -457,12 +454,25 @@
     }
   }
 
+  function matchLanguageFontSizeToAlignment(form) {
+    try {
+      const alignmentField = form.getTextField('alignment1');
+      const languageField = form.getTextField('language1');
+      languageField.setFontSize(getFieldDefaultFontSize(alignmentField));
+    } catch (error) {
+      // Both fields are optional for compatibility with alternative templates.
+    }
+  }
+
   function getMatchingPatternFontRule(fieldName, layoutSettings) {
     return layoutSettings.patternFontSizes.find((rule) => rule.pattern.test(fieldName));
   }
 
   function getPreferredFontSize(fieldName, field, layoutSettings) {
     if (layoutSettings.fixedFontSizes[fieldName]) return layoutSettings.fixedFontSizes[fieldName];
+    if (fieldName === 'language1' && layoutSettings.namedFontSizes.alignment1) {
+      return layoutSettings.namedFontSizes.alignment1;
+    }
     if (layoutSettings.namedFontSizes[fieldName]) return layoutSettings.namedFontSizes[fieldName];
     const matchingRule = getMatchingPatternFontRule(fieldName, layoutSettings);
     if (matchingRule) return matchingRule.fontSize;
@@ -597,7 +607,8 @@
       elfLineage,
       gnomeLineage,
       tieflingLegacy,
-      includeDefaultEquipment
+      includeDefaultEquipment,
+      outputMode: exportOptions.outputMode || DEFAULT_PDF_EXPORT_MODE
     });
     const missingFields = applyPayloadToForm(form, payload);
 
@@ -606,12 +617,23 @@
     }
 
     if (profile.writeValuesOnly) {
+      matchLanguageFontSizeToAlignment(form);
       prepareValueOnlyAcroForm(globalScope.PDFLib, form, payload);
     } else {
       const layoutSettings = getPdfLayoutSettings(profile);
       const defaultAppearanceFontAlias = profile.flattenForm ? 'Noto' : 'NotoMono';
       normalizeProblematicFieldDA(globalScope.PDFLib, pdfDoc, form, undefined, defaultAppearanceFontAlias);
       applyTemplateFieldSettings(form, layoutSettings);
+
+      if (!profile.flattenForm) {
+        try {
+          const classFeaturesOverflowField = form.getTextField('classFeatures2');
+          classFeaturesOverflowField.enableMultiline();
+          classFeaturesOverflowField.enableScrolling();
+        } catch (error) {
+          // The field is optional for compatibility with alternative templates.
+        }
+      }
 
       const fontEmbedResult = await embedCjkFont(pdfDoc, profile);
       fitPayloadTextFields(form, payload, fontEmbedResult.font, layoutSettings);
