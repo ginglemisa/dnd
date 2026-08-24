@@ -2,7 +2,7 @@
   "use strict";
 
   const STORAGE_KEY = "dnd.quickBuildDraft.v1";
-  const DRAFT_VERSION = 10;
+  const DRAFT_VERSION = 12;
   const storage = window.dndStorage || {
     getItem(key) { try { return localStorage.getItem(key); } catch (_error) { return null; } },
     setItem(key, value) { try { localStorage.setItem(key, value); return true; } catch (_error) { return false; } },
@@ -66,6 +66,24 @@
   function orderedSkillOptions(values) {
     const allowed = new Set(Array.isArray(values) ? values : []);
     return SKILL_OPTIONS.filter(name => allowed.has(name));
+  }
+
+  function humanOriginFeatOptions() {
+    const featOptions = typeof FEAT_OPTIONS === "object" && Array.isArray(FEAT_OPTIONS) ? FEAT_OPTIONS : [];
+    return featOptions
+      .filter(option => /[（(]起源(?:・擴充)?[）)]/u.test(option.label || ""))
+      .map(option => ({
+        value: option.value,
+        label: `${option.value}${/起源・擴充/u.test(option.label || "") ? "（擴充）" : ""}`
+      }));
+  }
+
+  function humanOriginFeatValues() {
+    return humanOriginFeatOptions().map(option => option.value);
+  }
+
+  function humanOriginFeatLabel(value) {
+    return humanOriginFeatOptions().find(option => option.value === value)?.label || value;
   }
 
   function uniqueValidSlots(values, count, isValid) {
@@ -286,10 +304,9 @@
       version: DRAFT_VERSION,
       ui: {
         currentStepId: "background",
-        view: "edit"
+        view: "edit",
+        confirmedStepSignatures: {}
       },
-      // currentStep 僅保留給 v8 草稿與外部除錯工具相容；正式導覽以 ui.currentStepId 為準。
-      currentStep: 0,
       choices: {
         background: null,
         backgroundAbilities: [],
@@ -297,9 +314,6 @@
         backgroundCurrency: { cp: 0, sp: 0, gp: 0, pp: 0 },
         backgroundToolChoice: null,
         backgroundMagic: { cantrips: [], levelOneSpells: [] },
-        backgroundMagicLastSelected: null,
-        backgroundMagicConfirmed: false,
-        spellConflictResolutions: {},
         race: null,
         raceOptions: {},
         class: null,
@@ -312,7 +326,6 @@
         classEquipment: [],
         defaultWeapon: null,
         classEquipmentOptions: {},
-        classEquipmentInvalidatedByBackground: false,
         levelOne: {},
         alignment: "",
         targetLevel: 1,
@@ -341,74 +354,45 @@
     return Boolean(value) && typeof value === "object" && !Array.isArray(value);
   }
 
-  function migrateStoredSpellIds(saved) {
-    const migrated = structuredClone(saved);
-    const choices = migrated.choices || (migrated.choices = {});
-    const ids = values => (Array.isArray(values) ? values : []).map(resolveStoredSpellId);
-    const normalizeSpellChoices = (values, predicate, limit) => { const raw = Array.isArray(values) ? values : []; const resolved = raw.map(resolveStoredSpellId); const valid = uniqueValidSlots(resolved, limit, predicate); return { valid, changed: raw.length !== valid.length || resolved.some((id, index) => id !== valid[index]) }; };
-    const background = choices.background;
-    const sourceClass = background === "acolyte" ? "cleric" : "wizard";
-    const magic = choices.backgroundMagic || (choices.backgroundMagic = {});
-    const cantripResult = normalizeSpellChoices(magic.cantrips, id => SpellCatalog.getClassIds(id, spellMode()).includes(sourceClass) && canonicalSpell(id)?.level === 0, 2);
-    const levelOneResult = normalizeSpellChoices(magic.levelOneSpells, id => SpellCatalog.getClassIds(id, spellMode()).includes(sourceClass) && canonicalSpell(id)?.level === 1, 1);
-    if (cantripResult.changed || levelOneResult.changed) choices.backgroundMagicConfirmed = false;
-    choices.backgroundMagic = { cantrips: cantripResult.valid, levelOneSpells: levelOneResult.valid };
-    const race = choices.raceOptions || (choices.raceOptions = {});
-    if (race.cantrip) { const id = resolveStoredSpellId(race.cantrip); const valid = id && canonicalSpell(id)?.level === 0 && SpellCatalog.getSpells("wizard", "cantrips", spellMode()).some(spell => spell.spellId === id); race.cantrip = valid ? id : ""; if (!race.cantrip) race.cantripConfirmed = false; }
-    if (race.featOptions) { race.featOptions.cantrips = ids(race.featOptions.cantrips); race.featOptions.levelOneSpells = ids(race.featOptions.levelOneSpells); }
-    const levelOne = choices.levelOne || (choices.levelOne = {});
-    ["cantrips", "spellbookSpells", "preparedSpells"].forEach(key => { if (key in levelOne) levelOne[key] = ids(levelOne[key]); });
-    if (levelOne.tome) { levelOne.tome.cantrips = ids(levelOne.tome.cantrips); levelOne.tome.rituals = ids(levelOne.tome.rituals); }
-    const resolutions = {};
-    Object.entries(choices.spellConflictResolutions || {}).forEach(([key, value]) => { const match = /^spell:(.*):background-race$/u.exec(key); const id = match && resolveStoredSpellId(match[1]); if (id) resolutions["spell:" + id + ":background-race"] = value; });
-    choices.spellConflictResolutions = resolutions;
-    return migrated;
-  }
-
   function loadDraft() {
     try {
-      const saved = JSON.parse(storage.getItem(STORAGE_KEY));
-      if (!isPlainObject(saved) || ![7, 8, 9, DRAFT_VERSION].includes(saved.version)) return createDraft();
-      const source = migrateStoredSpellIds(saved);
+      const serialized = storage.getItem(STORAGE_KEY);
+      if (!serialized) return createDraft();
+      const saved = JSON.parse(serialized);
+      if (!isPlainObject(saved) || saved.version !== DRAFT_VERSION) throw new Error("Unsupported quick-build draft");
       const blank = createDraft();
-      return normalizeDraft({
+      return reconcileDraft({
         ...blank,
-        ...source,
+        ...saved,
         version: DRAFT_VERSION,
         choices: {
           ...blank.choices,
-          ...(isPlainObject(source.choices) ? source.choices : {}),
+          ...(isPlainObject(saved.choices) ? saved.choices : {}),
           backgroundMagic: {
             ...blank.choices.backgroundMagic,
-            ...(isPlainObject(source.choices?.backgroundMagic) ? source.choices.backgroundMagic : {})
+            ...(isPlainObject(saved.choices?.backgroundMagic) ? saved.choices.backgroundMagic : {})
           },
           backgroundCurrency: {
             ...blank.choices.backgroundCurrency,
-            ...(isPlainObject(source.choices?.backgroundCurrency) ? source.choices.backgroundCurrency : {})
+            ...(isPlainObject(saved.choices?.backgroundCurrency) ? saved.choices.backgroundCurrency : {})
           },
-          spellConflictResolutions: isPlainObject(source.choices?.spellConflictResolutions) ? source.choices.spellConflictResolutions : {},
-          levelOne: isPlainObject(source.choices?.levelOne) ? source.choices.levelOne : {}
+          levelOne: isPlainObject(saved.choices?.levelOne) ? saved.choices.levelOne : {}
         },
-        selections: { ...blank.selections, ...(isPlainObject(source.selections) ? source.selections : {}) },
-        acquisitions: { ...blank.acquisitions, ...(isPlainObject(source.acquisitions) ? source.acquisitions : {}) },
-        ui: isPlainObject(source.ui) ? { ...blank.ui, ...source.ui } : {
+        selections: { ...blank.selections, ...(isPlainObject(saved.selections) ? saved.selections : {}) },
+        acquisitions: { ...blank.acquisitions, ...(isPlainObject(saved.acquisitions) ? saved.acquisitions : {}) },
+        ui: isPlainObject(saved.ui) ? {
           ...blank.ui,
-          currentStepId: BASE_STEPS[Math.min(Math.max(Number(source.currentStep) || 0, 0), BASE_STEPS.length - 1)]?.id || "background",
-          view: source.currentStep > 4 ? "review" : "edit"
-        },
-        currentStep: Math.min(Math.max(Number(source.currentStep) || 0, 0), BASE_STEPS.length - 1)
+          ...saved.ui,
+          confirmedStepSignatures: isPlainObject(saved.ui.confirmedStepSignatures) ? saved.ui.confirmedStepSignatures : {}
+        } : { ...blank.ui }
       });
     } catch (_error) {
+      storage.removeItem(STORAGE_KEY);
       return createDraft();
     }
   }
 
   let draft = loadDraft();
-  reconcileBackgroundDraft(draft);
-  reconcileRaceDraft(draft);
-  reconcileClassDraft(draft);
-  reconcileEquipmentDraft(draft);
-  reconcileLevelOneDraft(draft);
   let previouslyFocused = null;
   let spellDetailTrigger = null;
   let spellDetailOpenedOutsideWizard = false;
@@ -416,33 +400,24 @@
   const expandedChoiceGroups = new Set();
   let pendingChoiceCardScrollGroup = null;
 
+  function reconcileDraft(target) {
+    normalizeDraft(target);
+    reconcileBackgroundDraft(target);
+    reconcileRaceDraft(target);
+    reconcileClassDraft(target);
+    reconcileEquipmentDraft(target);
+    reconcileLevelOneDraft(target);
+    return normalizeDraft(target);
+  }
+
   function saveDraft() {
-    normalizeDraft(draft);
-    reconcileBackgroundDraft(draft);
-    reconcileRaceDraft(draft);
-    reconcileClassDraft(draft);
-    reconcileEquipmentDraft(draft);
-    reconcileLevelOneDraft(draft);
-    normalizeDraft(draft);
+    reconcileDraft(draft);
     draft.updatedAt = new Date().toISOString();
     try {
       return storage.setItem(STORAGE_KEY, JSON.stringify(draft));
     } catch (_error) {
       return false;
     }
-  }
-
-  function addAcquisition(type, acquisition) {
-    if (!Object.prototype.hasOwnProperty.call(draft.acquisitions, type) || !Array.isArray(draft.acquisitions[type])) {
-      throw new Error(`Unknown acquisition type: ${type}`);
-    }
-    if (!isPlainObject(acquisition) || !acquisition.id || !acquisition.sourceType || !acquisition.sourceId) {
-      throw new Error("Acquisitions require id, sourceType, and sourceId.");
-    }
-    const duplicate = draft.acquisitions[type].some(item => item.id === acquisition.id);
-    if (!duplicate) draft.acquisitions[type].push({ ...acquisition });
-    saveDraft();
-    return !duplicate;
   }
 
   function escapeHtml(value) {
@@ -585,16 +560,14 @@
     target.choices.backgroundAbilityBonuses = isPlainObject(target.choices.backgroundAbilityBonuses) ? target.choices.backgroundAbilityBonuses : emptyAbilityMap();
     target.choices.classOptions = isPlainObject(target.choices.classOptions) ? target.choices.classOptions : {};
     target.choices.classEquipmentOptions = isPlainObject(target.choices.classEquipmentOptions) ? target.choices.classEquipmentOptions : {};
-    target.choices.classEquipmentInvalidatedByBackground = Boolean(target.choices.classEquipmentInvalidatedByBackground);
     target.choices.levelOne = isPlainObject(target.choices.levelOne) ? target.choices.levelOne : {};
     target.choices.alignment = ALIGNMENT_OPTIONS.some(([value]) => value === target.choices.alignment) ? target.choices.alignment : "";
     target.choices.spellcastingAbility = ["int", "wis", "cha"].includes(target.choices.spellcastingAbility) ? target.choices.spellcastingAbility : null;
-    target.choices.spellConflictResolutions = isPlainObject(target.choices.spellConflictResolutions) ? target.choices.spellConflictResolutions : {};
     target.ui = isPlainObject(target.ui) ? target.ui : { ...blank.ui };
+    target.ui.confirmedStepSignatures = isPlainObject(target.ui.confirmedStepSignatures) ? target.ui.confirmedStepSignatures : {};
     const steps = activeSteps(target);
     if (!steps.some(step => step.id === target.ui.currentStepId)) target.ui.currentStepId = steps[0]?.id || "background";
     target.ui.view = target.ui.view === "review" ? "review" : "edit";
-    target.currentStep = Math.max(0, steps.findIndex(step => step.id === target.ui.currentStepId));
     const selectionIds = new Set();
     target.selections.backgroundSpells = (Array.isArray(target.selections.backgroundSpells) ? target.selections.backgroundSpells : []).filter(selection => {
       if (!isPlainObject(selection) || !selection.id || selectionIds.has(selection.id)) return false;
@@ -643,21 +616,16 @@
       const cantrips = spellClass ? validSpellIds(SpellCatalog.getSpells(spellClass, "cantrips", spellMode()), savedFeatOptions.cantrips, 2) : [];
       const levelOneSpells = spellClass ? validSpellIds(SpellCatalog.getSpells(spellClass, "1", spellMode()), savedFeatOptions.levelOneSpells, 1) : [];
       const featOptions = { spellClass, cantrips, levelOneSpells };
-      const changed = spellClass !== (savedFeatOptions.spellClass || "") ||
-        cantrips.length !== (savedFeatOptions.cantrips || []).length ||
-        cantrips.some((name, index) => name !== savedFeatOptions.cantrips[index]) ||
-        levelOneSpells.length !== (savedFeatOptions.levelOneSpells || []).length ||
-        levelOneSpells.some((name, index) => name !== savedFeatOptions.levelOneSpells[index]);
-      options = { ...options, featOptions, ...(changed ? { confirmed: false } : {}) };
+      options = { ...options, featOptions };
       target.choices.raceOptions = options;
     }
     if (key === "elf" && options.lineage === "高等精靈血統") {
       const validCantrip = canonicalSpell(options.cantrip)?.level === 0 && SpellCatalog.getSpells("wizard", "cantrips", spellMode()).some(spell => spell.spellId === options.cantrip);
-      if (!validCantrip) options = { ...options, cantrip: "", cantripConfirmed: false };
+      if (!validCantrip) options = { ...options, cantrip: "" };
       target.choices.raceOptions = options;
     }
     const source = raceSource(key);
-    target.selections.race = { id: key, label: RACE_LABELS[key], source, content: { text: raceData(key), options: structuredClone(options), pendingChoices: racePendingChoices(key, options) } };
+    target.selections.race = { id: key, label: RACE_LABELS[key], source, content: { text: raceData(key), options: structuredClone(options), pendingChoices: racePendingChoices(key, options, target) } };
 
     if (key === "elf" && RACE_OPTION_DEFINITIONS.elf.skill.includes(options.skill)) {
       addDerivedAcquisition(target, "skills", { id: `race:elf:skill:${options.skill}`, name: options.skill, sourceType: "race", sourceId: key, source: { ...source, feature: "敏銳感官" }, content: { proficiency: "skill" } });
@@ -665,7 +633,7 @@
     if (key === "human" && SKILL_OPTIONS.includes(options.skill)) {
       addDerivedAcquisition(target, "skills", { id: `race:human:skill:${options.skill}`, name: options.skill, sourceType: "race", sourceId: key, source: { ...source, feature: "技藝嫻熟" }, content: { proficiency: "skill" } });
     }
-    if (key === "human" && ["警覺", "魔法學徒", "兇蠻打手", "熟習"].includes(options.feat)) {
+    if (key === "human" && humanOriginFeatValues().includes(options.feat)) {
       addDerivedAcquisition(target, "feats", { id: `race:human:feat:${options.feat}`, name: options.feat, sourceType: "race", sourceId: key, source: { ...source, feature: "靈活人才", dataFile: "feats.js" }, content: { type: "origin feat", description: typeof featsDesc === "object" ? featsDesc[options.feat] : null } });
     }
     const humanFeatOptions = isPlainObject(options.featOptions) ? options.featOptions : {};
@@ -692,8 +660,7 @@
         .filter(conflict => conflict.sourceType === "background")
         .map(conflict => {
           const conflictId = `spell:${item.spellId}:background-race`;
-          const resolution = target.choices.spellConflictResolutions[conflictId] || null;
-          return { type: "spell", id: conflictId, spellId: item.spellId, name: spellNameZh(item.spellId), sources: [conflict.source, item.source], resolution, blocking: false, requiresFinalAcknowledgment: resolution !== "acknowledged-final" };
+          return { type: "spell", id: conflictId, spellId: item.spellId, name: spellNameZh(item.spellId), sources: [conflict.source, item.source], blocking: false };
         })
     );
     const conflictNames = new Set(spellConflicts.map(conflict => conflict.spellId));
@@ -718,11 +685,6 @@
 
   function canonicalSpell(spellId) {
     return typeof SpellCatalog === "object" ? SpellCatalog.getSpell(spellId) || null : null;
-  }
-
-  function resolveStoredSpellId(value) {
-    if (typeof value !== "string" || value !== value.trim()) return null;
-    return canonicalSpell(value)?.spellId || SpellCatalog.resolveSpellId(value) || null;
   }
 
   function spellNameZh(spellId) { return canonicalSpell(spellId)?.nameZh || ""; }
@@ -830,8 +792,6 @@
       target.choices.backgroundToolChoice = null;
       target.choices.backgroundCurrency = { cp: 0, sp: 0, gp: 0, pp: 0 };
       target.choices.backgroundMagic = { cantrips: ["", ""], levelOneSpells: [] };
-      target.choices.backgroundMagicLastSelected = null;
-      target.choices.backgroundMagicConfirmed = false;
       target.choices.backgroundAbilityBonuses = emptyAbilityMap();
       return target;
     }
@@ -884,8 +844,6 @@
 
     if (!["acolyte", "sage"].includes(key)) {
       target.choices.backgroundMagic = { cantrips: ["", ""], levelOneSpells: [] };
-      target.choices.backgroundMagicLastSelected = null;
-      target.choices.backgroundMagicConfirmed = false;
       return target;
     }
 
@@ -893,11 +851,7 @@
     const cantrips = validSpellIds(spellOptionsForBackground(key, "cantrips"), savedMagic.cantrips, 2);
     while (cantrips.length < 2) cantrips.push("");
     const levelOneSpells = validSpellIds(spellOptionsForBackground(key, "1"), savedMagic.levelOneSpells, 1);
-    const magicChanged = cantrips.some((name, index) => name !== (savedMagic.cantrips || [])[index]) ||
-      levelOneSpells.some((name, index) => name !== (savedMagic.levelOneSpells || [])[index]) ||
-      (savedMagic.levelOneSpells || []).length !== levelOneSpells.length;
     target.choices.backgroundMagic = { cantrips, levelOneSpells };
-    if (magicChanged) target.choices.backgroundMagicConfirmed = false;
     const magic = target.choices.backgroundMagic;
     [["cantrips", magic.cantrips], ["1", magic.levelOneSpells]].forEach(([level, names]) => {
       (Array.isArray(names) ? names : []).filter(Boolean).forEach(spellId => {
@@ -973,7 +927,6 @@
     }
     if (typeOptions.length && !typeOptions.some(option => option.id === options.classType)) {
       options.classType = null;
-      options.stage = "classType";
     }
     const presetKey = `${classBuildKey(target)}:${target.choices.background || "none"}`;
     const normalizedAbilities = normalizeAbilityScores(target.choices.abilities);
@@ -1009,9 +962,6 @@
     }
     options.skills = skillSlots;
     options.tools = toolSlots;
-    options.stage = ["classType", "abilities", "spellcasting", "proficiencies", "summary"].includes(options.stage) ? options.stage : (typeOptions.length && !options.classType ? "classType" : "abilities");
-    if (typeOptions.length && !options.classType) options.stage = "classType";
-    if (!spellcastingSource && options.stage === "spellcasting") options.stage = "proficiencies";
 
     const abilityCost = abilityPointCost(target.choices.abilities);
     const bonusTotal = backgroundBonusTotal(target.choices.backgroundAbilityBonuses);
@@ -1022,7 +972,6 @@
     if (spellcastingSource && !target.choices.spellcastingAbility) pendingChoices.push("施法屬性");
     if (skillChoices.length !== effectiveDefinition.skillCount) pendingChoices.push(`職業技能 ${effectiveDefinition.skillCount} 項`);
     if (toolChoices.length !== (effectiveDefinition.toolCount || 0)) pendingChoices.push(`職業工具 ${effectiveDefinition.toolCount} 項`);
-    if (pendingChoices.length) options.summaryConfirmed = false;
     target.choices.classOptions = options;
 
     const selectedTools = (effectiveDefinition.fixedTools || []).concat(toolChoices);
@@ -1043,7 +992,7 @@
         spellcastingAbilitySource: !spellcastingSource ? "none" : fixedSpellcastingAbility ? "class" : options.spellcastingAbilityManual ? "player-override" : "highest-mental-ability",
         saves: [...effectiveDefinition.saves], skills: [...skillChoices], tools: [...selectedTools],
         weaponProficiencies: effectiveDefinition.weaponProficiencies, armorTraining: effectiveDefinition.armorTraining,
-        pendingChoices, conflicts, summaryConfirmed: Boolean(options.summaryConfirmed)
+        pendingChoices, conflicts
       }
     };
 
@@ -1105,7 +1054,6 @@
   }
 
   function levelOneSpellOptions(classId, level) { return SpellCatalog.getSpells(classId, level, spellMode()); }
-  function spellOptionById(classId, level, spellId) { return levelOneSpellOptions(classId, level).find(spell => spell.spellId === spellId) || null; }
   function allSpellOptions(level, predicate = null) {
     return SpellCatalog.getAllSpells().filter(spell => spell.level === (level === "cantrips" ? 0 : Number(level)) && SpellCatalog.getClassIds(spell.spellId, spellMode()).length && (!predicate || predicate(spell))).sort((a, b) => a.nameZh.localeCompare(b.nameZh, "zh-Hant"));
   }
@@ -1124,16 +1072,6 @@
     const options = level === "all-cantrips" ? allSpellOptions("cantrips") : level === "all-rituals-1" ? allSpellOptions("1", isRitualSpell) : levelOneSpellOptions(classId, level);
     const valid = new Set(options.map(spell => spell.spellId));
     return (Array.isArray(spellIds) ? spellIds : []).filter(spellId => valid.has(spellId) && !knownSpellIds.has(spellId));
-  }
-
-  function firstLevelOneStageForDefinition(definition) {
-    if (definition.classOption || definition.fightingStyle || definition.invocations) return "options";
-    if (definition.languages) return "languages";
-    return "spells";
-  }
-
-  function usedLanguageLabels(target) {
-    return new Set((target.acquisitions.languages || []).map(item => item.name));
   }
 
   function languageOptionsForDraft(target, index = 0) {
@@ -1157,8 +1095,8 @@
     const definition = LEVEL_ONE_DEFINITIONS[key];
     const previous = isPlainObject(target.choices.levelOne) ? target.choices.levelOne : {};
     if (!definition) return {};
-    if (previous.classId && previous.classId !== key) return { classId: key, stage: firstLevelOneStageForDefinition(definition) };
-    return { ...previous, classId: key, stage: previous.stage || firstLevelOneStageForDefinition(definition) };
+    if (previous.classId && previous.classId !== key) return { classId: key };
+    return { ...previous, classId: key };
   }
 
   function levelOneCantripCount(target, definition) {
@@ -1265,9 +1203,8 @@
     const alignment = ALIGNMENT_OPTIONS.some(([value]) => value === target.choices.alignment) ? target.choices.alignment : "";
     target.choices.alignment = alignment;
     if (!alignment) pendingChoices.push("陣營");
-    const summaryConfirmed = pendingChoices.length === 0;
-    target.choices.levelOne = { ...choices, cantrips: cantripSlots, spellbookSpells: spellbookSlots, preparedSpells: preparedSlots, weaponMasteries: weaponMasterySlots, fightingStyle, expertise: expertiseSlots, languages: languageSlots, invocations, tome: { cantrips: tomeCantripSlots, rituals: tomeRitualSlots }, summaryConfirmed };
-    target.selections.levelOne = { id: key, label: `${CLASS_LABELS[key]}完成 1 級`, source, content: { fixed, classOption: choices.classOption, cantrips, spellbookSpells, preparedSpells, weaponMasteries, fightingStyle, expertise, languages, languageDetails, invocations, tome: { cantrips: tomeCantrips, rituals: tomeRituals }, alignment, pendingChoices, summaryConfirmed } };
+    target.choices.levelOne = { ...choices, cantrips: cantripSlots, spellbookSpells: spellbookSlots, preparedSpells: preparedSlots, weaponMasteries: weaponMasterySlots, fightingStyle, expertise: expertiseSlots, languages: languageSlots, invocations, tome: { cantrips: tomeCantripSlots, rituals: tomeRitualSlots } };
+    target.selections.levelOne = { id: key, label: `${CLASS_LABELS[key]}完成 1 級`, source, content: { fixed, classOption: choices.classOption, cantrips, spellbookSpells, preparedSpells, weaponMasteries, fightingStyle, expertise, languages, languageDetails, invocations, tome: { cantrips: tomeCantrips, rituals: tomeRituals }, alignment, pendingChoices } };
     fixed.forEach((name, index) => addDerivedAcquisition(target, "other", { id: `level-one:${key}:fixed:${index}:${name}`, name, sourceType: "level-one", sourceId: key, source: { ...source, feature: "1 級固定能力" }, content: { type: "classFeature" } }));
     if (choices.classOption) addDerivedAcquisition(target, "other", { id: `level-one:${key}:option:${choices.classOption}`, name: definition.classOption?.options.find(option => option.id === choices.classOption)?.label || choices.classOption, sourceType: "level-one", sourceId: key, source: { ...source, feature: definition.classOption?.label || "職業選項" }, content: { type: "classOption", option: choices.classOption } });
     if (key === "druid" && choices.classOption === "magician") {
@@ -1344,11 +1281,11 @@
     if (method === "gold") {
       target.choices.classEquipment = [];
       target.choices.defaultWeapon = null;
-      target.choices.classEquipmentOptions = { confirmed: true };
+      target.choices.classEquipmentOptions = {};
       const currency = { cp: 0, sp: 0, gp: definition.gold, pp: 0 };
       target.selections.classEquipment = {
         id: `${key}:gold`, label: `${definition.gold} 金幣`, source,
-        content: { method, items: [], currency, loadout: { mainHand: null, offHand: null, armor: null }, operationOrder: [], confirmed: true }
+        content: { method, items: [], currency, loadout: { mainHand: null, offHand: null, armor: null }, operationOrder: [] }
       };
       addDerivedAcquisition(target, "equipment", {
         id: `class-equipment:${key}:gold`, name: `${definition.gold} 金幣`, sourceType: "class-equipment", sourceId: key,
@@ -1365,7 +1302,6 @@
     const instrumentOptions = classEquipmentInstrumentOptions(target);
     const instrument = equipmentPackage.instrument && instrumentOptions.includes(options.instrument) ? options.instrument : null;
     const completeChoices = Boolean(mainHand) && (!offCandidates.length || Boolean(offHand)) && (!equipmentPackage.instrument || Boolean(instrument));
-    const confirmed = completeChoices;
     const specialWrites = [...(equipmentPackage.specialWrites || [])];
     const operationOrder = [
       { order: 1, action: "writeEquipmentFields", mainHand, offHand, armor: equipmentPackage.armor || null },
@@ -1379,11 +1315,11 @@
     if (instrument) items.push({ name: instrument, quantity: 1 });
     target.choices.classEquipment = items.map(item => ({ ...item }));
     target.choices.defaultWeapon = mainHand;
-    target.choices.classEquipmentOptions = { mainHand, offHand, instrument, confirmed };
+    target.choices.classEquipmentOptions = { mainHand, offHand, instrument };
     const currency = { cp: 0, sp: 0, gp: equipmentPackage.gp, pp: 0 };
     target.selections.classEquipment = {
       id: `${key}:${method}`, label: equipmentPackage.label, source,
-      content: { method, items, currency, loadout: { mainHand, offHand, armor: equipmentPackage.armor || null }, specialWrites, operationOrder, pendingChoices: [!mainHand && "主手武器", offCandidates.length && !offHand && "副手", equipmentPackage.instrument && !instrument && "樂器"].filter(Boolean), confirmed }
+      content: { method, items, currency, loadout: { mainHand, offHand, armor: equipmentPackage.armor || null }, specialWrites, operationOrder, pendingChoices: [!mainHand && "主手武器", offCandidates.length && !offHand && "副手", equipmentPackage.instrument && !instrument && "樂器"].filter(Boolean) }
     };
     items.forEach((item, index) => addDerivedAcquisition(target, "equipment", {
       id: `class-equipment:${key}:${method}:item:${index}:${item.name}`, name: item.name, sourceType: "class-equipment", sourceId: key,
@@ -1401,13 +1337,6 @@
    * 根據 choices 重建；事件處理器不得直接修改這些衍生資料。
    * class selections 與 acquisitions 同理由 reconcileClassDraft() 完整重建。
    */
-  function getBackgroundStage() {
-    if (!draft.choices.background) return "cards";
-    if (draft.choices.background === "soldier" && !GAME_TOOL_OPTIONS.includes(draft.choices.backgroundToolChoice)) return "tool";
-    if (["acolyte", "sage"].includes(draft.choices.background) && !backgroundSpellsComplete()) return "spells";
-    return "complete";
-  }
-
   function backgroundSpellsComplete() {
     const magic = draft.choices.backgroundMagic;
     return Array.isArray(magic?.cantrips) && magic.cantrips.length === 2 && magic.cantrips.every(Boolean) &&
@@ -1416,10 +1345,12 @@
   }
 
   function backgroundComplete() {
-    return getBackgroundStage() === "complete";
+    if (!draft.choices.background) return false;
+    if (draft.choices.background === "soldier" && !GAME_TOOL_OPTIONS.includes(draft.choices.backgroundToolChoice)) return false;
+    return !["acolyte", "sage"].includes(draft.choices.background) || backgroundSpellsComplete();
   }
 
-  function racePendingChoices(key = draft.choices.race, options = draft.choices.raceOptions) {
+  function racePendingChoices(key = draft.choices.race, options = draft.choices.raceOptions, target = draft) {
     if (!key) return ["種族"];
     const pending = [];
     if (key === "dragonborn" && !RACE_OPTION_DEFINITIONS.dragonborn.ancestry.includes(options.ancestry)) pending.push("龍族血統");
@@ -1437,10 +1368,11 @@
     if (key === "human") {
       if (!RACE_OPTION_DEFINITIONS.human.size.includes(options.size)) pending.push("體型");
       if (!SKILL_OPTIONS.includes(options.skill)) pending.push("技能熟練");
-      if (!["警覺", "魔法學徒", "兇蠻打手", "熟習"].includes(options.feat)) pending.push("起源專長");
+      if (!humanOriginFeatValues().includes(options.feat)) pending.push("起源專長");
+      if ((target.acquisitions.feats || []).some(item => item.sourceType === "background" && item.name === options.feat)) pending.push("起源專長已由背景取得");
       const featOptions = isPlainObject(options.featOptions) ? options.featOptions : {};
       if (options.feat === "魔法學徒") {
-        const blockedSpellClass = HUMAN_MAGIC_INITIATE_BLOCKED_CLASS_BY_BACKGROUND[draft.choices.background];
+        const blockedSpellClass = HUMAN_MAGIC_INITIATE_BLOCKED_CLASS_BY_BACKGROUND[target.choices.background];
         if (!MAGIC_INITIATE_SPELL_CLASSES.has(featOptions.spellClass) || featOptions.spellClass === blockedSpellClass) pending.push("魔法學徒職業法術表");
         if (!Array.isArray(featOptions.cantrips) || featOptions.cantrips.length !== 2 || featOptions.cantrips.some(name => !name) || new Set(featOptions.cantrips).size !== 2) pending.push("魔法學徒的 2 個不同戲法");
         if (!Array.isArray(featOptions.levelOneSpells) || featOptions.levelOneSpells.length !== 1 || !featOptions.levelOneSpells[0]) pending.push("魔法學徒的 1 個一環法術");
@@ -1498,16 +1430,15 @@
       .quick-build-choice-panel{padding:18px;border:1px solid var(--qb-border);border-radius:12px;background:var(--qb-surface-soft)}.quick-build-review-panel+ .quick-build-review-panel{margin-top:14px}.quick-build-review-panel>h4{margin:0 0 14px;color:var(--qb-text)}.quick-build-equipment-list{margin:12px 0 20px;padding:14px;border-radius:8px;background:var(--qb-surface-muted);line-height:1.7;color:var(--qb-text-body)}
       .quick-build-race-options{display:grid;gap:16px}.quick-build-option-note{margin:6px 0 0;color:var(--qb-text-muted);font-size:.9rem}.quick-build-ancestry-detail{margin:0;padding:14px;border:1px solid var(--qb-border);border-radius:9px;background:var(--qb-surface-muted);color:var(--qb-text-body);line-height:1.65}.quick-build-ancestry-detail strong{display:block;margin-bottom:5px;color:var(--qb-accent-text)}.quick-build-warning{margin:14px 0;padding:12px;border-left:4px solid var(--qb-warning-border);border-radius:7px;background:var(--qb-warning-bg);color:var(--qb-warning-text)}.quick-build-pending{margin-top:14px;padding:12px;border-radius:7px;background:var(--qb-pending-bg);color:var(--qb-pending-text)}
       .quick-build-choice-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px}.quick-build-choice-actions button{min-height:48px;padding:10px;border:1px solid var(--qb-border-strong);border-radius:8px;background:var(--qb-surface-elevated);color:var(--qb-text);cursor:pointer}.quick-build-choice-actions button.primary{border-color:var(--qb-accent);background:var(--qb-accent-hover);color:#fff}.quick-build-choice-actions .quick-build-choice-action-full{grid-column:1/-1}
-      .quick-build-change{margin:0 0 14px;padding:0;border:0;background:transparent;color:var(--qb-accent-text);text-decoration:underline;cursor:pointer}.quick-build-spell-layout{display:grid;gap:16px}
-      .quick-build-spell-finish{width:100%;min-height:52px;margin:0;padding:12px 18px;border:1px solid var(--qb-accent);border-radius:9px;background:var(--qb-accent-hover);color:#fff;font-size:1rem;font-weight:700;cursor:pointer}.quick-build-spell-finish:hover{background:var(--qb-accent)}.quick-build-spell-finish:disabled{border-color:var(--qb-border-strong);background:var(--qb-disabled);color:var(--qb-disabled-text);cursor:not-allowed}.quick-build-human-race-finish{display:block;width:12em;max-width:100%;min-height:46px;margin-right:auto;margin-left:auto;padding:9px 16px;border-color:var(--qb-accent);border-radius:8px;font-size:inherit}.quick-build-human-race-finish-top{margin-bottom:18px}.quick-build-human-race-finish-bottom{margin-top:18px}
-      .quick-build-spell-fields{display:flex;flex-direction:column;gap:14px}.quick-build-field label{display:block;margin-bottom:6px;color:var(--qb-text-muted)}.quick-build-field-control{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}.quick-build-field-control.has-confirm{grid-template-columns:minmax(0,1fr) auto auto}.quick-build-field select{width:100%;min-height:44px;padding:8px;border:1px solid var(--qb-border-strong);border-radius:7px;background:var(--qb-input);color:var(--qb-text)}.quick-build-spell-view,.quick-build-option-confirm{min-width:64px;margin:0;padding:8px 12px;border:1px solid var(--qb-border-strong);border-radius:7px;background:var(--qb-surface-elevated);color:var(--qb-text);cursor:pointer}.quick-build-option-confirm{border-color:var(--qb-accent);background:var(--qb-accent-hover);color:#fff}.quick-build-spell-view:disabled,.quick-build-option-confirm:disabled{color:var(--qb-disabled-text);cursor:not-allowed;opacity:.65}
+      .quick-build-spell-layout{display:grid;gap:16px}
+      .quick-build-spell-fields{display:flex;flex-direction:column;gap:14px}.quick-build-field label{display:block;margin-bottom:6px;color:var(--qb-text-muted)}.quick-build-field-control{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}.quick-build-field select{width:100%;min-height:44px;padding:8px;border:1px solid var(--qb-border-strong);border-radius:7px;background:var(--qb-input);color:var(--qb-text)}.quick-build-spell-view{min-width:64px;margin:0;padding:8px 12px;border:1px solid var(--qb-border-strong);border-radius:7px;background:var(--qb-surface-elevated);color:var(--qb-text);cursor:pointer}.quick-build-spell-view:disabled{color:var(--qb-disabled-text);cursor:not-allowed;opacity:.65}
       #quick-build-wizard option.quick-build-known-option{color:var(--qb-text-muted)}
       #quick-build-spell-detail{position:fixed;inset:0;z-index:10030;display:none;align-items:center;justify-content:center;width:100%;max-width:none;padding:32px;overflow:hidden;overscroll-behavior:contain;background:var(--qb-overlay-nested)}
       #quick-build-spell-detail.open{display:flex}#quick-build-spell-detail .quick-build-spell-detail-shell{display:flex;flex-direction:column;width:680px;max-width:calc(100% - 32px);max-height:calc(100dvh - 80px);overflow:hidden;border:1px solid var(--qb-border-strong);border-radius:14px;background:var(--qb-surface);color:var(--qb-text);box-shadow:var(--qb-shadow)}
       #quick-build-spell-detail .quick-build-spell-detail-header{display:flex;flex:0 0 auto;align-items:center;justify-content:space-between;gap:16px;padding:16px 18px;border-bottom:1px solid var(--qb-border)}#quick-build-spell-detail-title{margin:0;color:var(--qb-text);font-size:1.2rem}
       #quick-build-spell-detail .quick-build-spell-detail-close{display:grid;flex:0 0 44px;place-items:center;width:44px;min-width:44px;height:44px;min-height:44px;margin:0;padding:0;border:1px solid transparent;border-radius:9px;background:var(--qb-surface-elevated);color:var(--qb-text);font-size:1.5rem;line-height:1;cursor:pointer;touch-action:manipulation}#quick-build-spell-detail .quick-build-spell-detail-close:hover,#quick-build-spell-detail .quick-build-spell-detail-close:focus-visible{border-color:var(--qb-accent);background:var(--qb-accent-soft);outline:2px solid transparent}
       #quick-build-spell-detail-content{min-height:120px;padding:20px;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;white-space:pre-wrap;color:var(--qb-text-body);line-height:1.65}#quick-build-spell-detail-content strong{display:block;margin-bottom:12px;color:var(--qb-accent-text);font-size:1.08rem}.quick-build-expansion-notice{margin-top:12px;padding-top:8px;border-top:1px solid var(--qb-border);color:var(--qb-text-muted);font-size:.78rem;line-height:1.45}
-      .quick-build-ability-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin:0 0 16px}.quick-build-ability-heading h3{margin:0!important}.quick-build-ability-status{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px}.quick-build-status-pill{padding:6px 10px;border:1px solid var(--qb-border);border-radius:999px;background:var(--qb-surface-soft);color:var(--qb-text-muted);font-size:.82rem;line-height:1.2}.quick-build-status-pill strong{color:var(--qb-text)}.quick-build-status-pill.is-complete{border-color:var(--qb-success-border);background:var(--qb-success-bg);color:var(--qb-success-text)}.quick-build-ability-confirm{display:block;width:12em;max-width:100%;min-height:46px;margin:0 auto 18px;padding:9px 16px;border:1px solid var(--qb-accent);border-radius:8px;background:var(--qb-accent-hover);color:#fff;cursor:pointer}.quick-build-ability-confirm:disabled{border-color:var(--qb-border-strong);background:var(--qb-disabled);color:var(--qb-disabled-text);cursor:not-allowed}.quick-build-ability-grid{display:grid;gap:12px;padding:14px}.quick-build-ability-row{display:grid;grid-template-columns:minmax(92px,.7fr) minmax(0,2fr) minmax(74px,.55fr);gap:16px;align-items:center;padding:14px 16px;border:1px solid var(--qb-border);border-radius:10px;background:var(--qb-surface-muted)}.quick-build-ability-name{display:flex;flex-direction:column;gap:3px}.quick-build-ability-name strong{font-size:1.05rem;color:var(--qb-text)}.quick-build-ability-name small{color:var(--qb-text-muted);font-size:.76rem}.quick-build-ability-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.quick-build-ability-field{display:grid;gap:6px;min-width:0;color:var(--qb-text-muted);font-size:.82rem}.quick-build-ability-field select{width:100%;min-width:0;min-height:44px;margin:0;padding:8px 34px 8px 12px;border:1px solid var(--qb-border-strong);border-radius:8px;background:var(--qb-input);color:var(--qb-text);font:inherit;font-size:1rem}.quick-build-ability-field select:focus-visible{border-color:var(--qb-accent);outline:2px solid var(--qb-accent);outline-offset:1px}.quick-build-ability-field select:disabled{border-color:var(--qb-border);background:var(--qb-disabled);color:var(--qb-disabled-text);opacity:1}.quick-build-ability-total{display:grid;gap:2px;justify-items:end}.quick-build-ability-total span{color:var(--qb-text-muted);font-size:.75rem}.quick-build-ability-total strong{color:var(--qb-accent-text);font-size:1.45rem;line-height:1}.quick-build-ability-help{display:flex;flex-wrap:wrap;gap:6px 16px;margin:0 0 18px;color:var(--qb-text-muted);font-size:.88rem}.quick-build-ability-help strong{color:var(--qb-text-body)}.quick-build-complete{padding:18px;border-left:4px solid var(--qb-success-border);border-radius:8px;background:var(--qb-success-bg);color:var(--qb-success-text)}.quick-build-plan{margin:20px 0 0;padding-left:1.4rem;line-height:1.8;color:var(--qb-text-body)}.quick-build-plan li.current{color:var(--qb-accent-text);font-weight:700}
+      .quick-build-ability-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin:0 0 16px}.quick-build-ability-heading h3{margin:0!important}.quick-build-ability-status{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px}.quick-build-status-pill{padding:6px 10px;border:1px solid var(--qb-border);border-radius:999px;background:var(--qb-surface-soft);color:var(--qb-text-muted);font-size:.82rem;line-height:1.2}.quick-build-status-pill strong{color:var(--qb-text)}.quick-build-status-pill.is-complete{border-color:var(--qb-success-border);background:var(--qb-success-bg);color:var(--qb-success-text)}.quick-build-ability-grid{display:grid;gap:12px;padding:14px}.quick-build-ability-row{display:grid;grid-template-columns:minmax(92px,.7fr) minmax(0,2fr) minmax(74px,.55fr);gap:16px;align-items:center;padding:14px 16px;border:1px solid var(--qb-border);border-radius:10px;background:var(--qb-surface-muted)}.quick-build-ability-name{display:flex;flex-direction:column;gap:3px}.quick-build-ability-name strong{font-size:1.05rem;color:var(--qb-text)}.quick-build-ability-name small{color:var(--qb-text-muted);font-size:.76rem}.quick-build-ability-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.quick-build-ability-field{display:grid;gap:6px;min-width:0;color:var(--qb-text-muted);font-size:.82rem}.quick-build-ability-field select{width:100%;min-width:0;min-height:44px;margin:0;padding:8px 34px 8px 12px;border:1px solid var(--qb-border-strong);border-radius:8px;background:var(--qb-input);color:var(--qb-text);font:inherit;font-size:1rem}.quick-build-ability-field select:focus-visible{border-color:var(--qb-accent);outline:2px solid var(--qb-accent);outline-offset:1px}.quick-build-ability-field select:disabled{border-color:var(--qb-border);background:var(--qb-disabled);color:var(--qb-disabled-text);opacity:1}.quick-build-ability-total{display:grid;gap:2px;justify-items:end}.quick-build-ability-total span{color:var(--qb-text-muted);font-size:.75rem}.quick-build-ability-total strong{color:var(--qb-accent-text);font-size:1.45rem;line-height:1}.quick-build-ability-help{display:flex;flex-wrap:wrap;gap:6px 16px;margin:0 0 18px;color:var(--qb-text-muted);font-size:.88rem}.quick-build-ability-help strong{color:var(--qb-text-body)}.quick-build-complete{padding:18px;border-left:4px solid var(--qb-success-border);border-radius:8px;background:var(--qb-success-bg);color:var(--qb-success-text)}.quick-build-plan{margin:20px 0 0;padding-left:1.4rem;line-height:1.8;color:var(--qb-text-body)}.quick-build-plan li.current{color:var(--qb-accent-text);font-weight:700}
       .quick-build-ability-table-head,.quick-build-ability-row{display:grid;grid-template-columns:72px minmax(0,1fr) minmax(0,1fr) 48px;align-items:center;gap:6px}.quick-build-ability-table-head{padding:4px 10px;color:var(--qb-text-muted);font-size:.8rem;font-weight:700;text-align:center}.quick-build-ability-table-head span:first-child{text-align:left}.quick-build-ability-grid{gap:6px}.quick-build-ability-row{padding:8px 10px;background:var(--qb-surface-elevated)}.quick-build-ability-row.is-bonus-locked{background:var(--qb-surface-muted)}.quick-build-ability-control{display:flex;align-items:center;justify-content:center;gap:6px}.quick-build-ability-step{display:inline-flex;align-items:center;justify-content:center;width:34px;min-width:34px;height:34px;min-height:34px;margin:0;padding:0;border:1px solid var(--qb-border-strong);border-radius:999px;background:var(--qb-surface-elevated);color:var(--qb-text);font-size:1rem;font-weight:900;line-height:1;cursor:pointer}.quick-build-ability-step:disabled{cursor:not-allowed;opacity:.4}.quick-build-ability-value{min-width:28px;color:var(--qb-text);font-weight:700;text-align:center}.quick-build-ability-value.is-bonus{color:var(--qb-accent-text)}.quick-build-ability-total{display:block;text-align:center}.quick-build-ability-total strong{font-size:1.15rem}
       .quick-build-class-card{min-height:128px!important}.quick-build-class-card p{margin:0;color:var(--qb-text-body);line-height:1.55}.quick-build-substep-actions{display:flex;justify-content:space-between;gap:12px;margin-top:18px}.quick-build-substep-actions button{min-height:46px;padding:9px 16px;border:1px solid var(--qb-border-strong);border-radius:8px;background:var(--qb-surface-elevated);color:var(--qb-text);cursor:pointer}.quick-build-substep-actions button.primary{border-color:var(--qb-accent);background:var(--qb-accent-hover);color:#fff}.quick-build-substep-actions button:disabled{cursor:not-allowed;opacity:.55}.quick-build-proficiency-grid{display:grid;gap:14px}.quick-build-fixed-list{margin:12px 0 0;padding:12px;border-radius:8px;background:var(--qb-surface-muted);color:var(--qb-text-body);line-height:1.6}.quick-build-summary-list{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;margin:0}.quick-build-summary-list dt{color:var(--qb-text-muted)}.quick-build-summary-list dd{margin:0;color:var(--qb-text)}.quick-build-ability-summary{display:grid;gap:6px}.quick-build-ability-summary-row{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline}.quick-build-ability-summary-row>span{white-space:nowrap}.quick-build-ability-summary.wrap-all .quick-build-ability-summary-row{display:grid;grid-template-columns:1fr;gap:2px}.quick-build-ability-summary.wrap-all .quick-build-ability-modifier{padding-inline-start:1em}.quick-build-ability-modifier{font-weight:800;color:var(--qb-accent-text)}.quick-build-ability-modifier-sign{color:var(--qb-warning-text)}.quick-build-ability-modifier-value{color:var(--qb-accent)}.quick-build-complete .quick-build-summary-list dt,.quick-build-complete .quick-build-summary-list dd{color:var(--qb-success-text)}.quick-build-source-warning{margin-top:10px;color:var(--qb-warning-text);font-size:.9rem}
       #quick-build-wizard .quick-build-body.is-review{background:var(--qb-success-bg)}
@@ -1521,7 +1452,7 @@
       #quick-build-wizard .quick-build-equipment-actions button.is-selected{border-color:var(--qb-accent);background:var(--qb-accent-hover);color:#fff;box-shadow:inset 0 0 0 1px var(--qb-accent)}
       @keyframes quick-build-flow-in{from{opacity:0;transform:translateY(-14px)}to{opacity:1;transform:translateY(0)}}@keyframes quick-build-next-ready{0%{transform:scale(.96);box-shadow:0 0 0 0 var(--qb-accent-soft)}55%{transform:scale(1.04);box-shadow:0 0 0 7px var(--qb-accent-soft)}100%{transform:scale(1);box-shadow:0 0 0 3px var(--qb-accent-soft)}}
       @media(max-width:760px){.quick-build-class-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-      @media(max-width:620px){.quick-build-ability-grid{padding:8px}.quick-build-ability-table-head,.quick-build-ability-row{grid-template-columns:58px minmax(88px,1fr) minmax(88px,1fr) 36px;gap:2px;padding-right:5px;padding-left:5px}.quick-build-ability-step{width:30px;min-width:30px;height:30px;min-height:30px}.quick-build-ability-control{gap:2px}.quick-build-ability-value{min-width:22px}#quick-build-wizard .quick-build-body{padding:20px 16px}.quick-build-ability-heading{display:grid;gap:12px}.quick-build-ability-status{justify-content:flex-start}.quick-build-field-control.has-confirm{grid-template-columns:minmax(0,1fr) auto}.quick-build-field-control.has-confirm .quick-build-option-confirm{grid-column:1/-1}.quick-build-background-grid,.quick-build-class-grid{grid-template-columns:1fr}.quick-build-choice-actions{grid-template-columns:1fr}.quick-build-substep-actions:not(.quick-build-inline-actions){display:grid;grid-template-columns:1fr}.quick-build-substep-actions button{width:100%}.quick-build-inline-actions button{flex:1 1 0;width:auto;min-width:0}#quick-build-wizard .quick-build-footer{gap:8px;padding:12px}#quick-build-wizard .quick-build-footer button{min-height:48px;padding-right:8px;padding-left:8px}#quick-build-spell-detail{padding:16px}#quick-build-spell-detail .quick-build-spell-detail-shell{max-width:100%;max-height:calc(100dvh - 32px)}#quick-build-spell-detail-content{padding:18px 16px}}
+      @media(max-width:620px){.quick-build-ability-grid{padding:8px}.quick-build-ability-table-head,.quick-build-ability-row{grid-template-columns:58px minmax(88px,1fr) minmax(88px,1fr) 36px;gap:2px;padding-right:5px;padding-left:5px}.quick-build-ability-step{width:30px;min-width:30px;height:30px;min-height:30px}.quick-build-ability-control{gap:2px}.quick-build-ability-value{min-width:22px}#quick-build-wizard .quick-build-body{padding:20px 16px}.quick-build-ability-heading{display:grid;gap:12px}.quick-build-ability-status{justify-content:flex-start}.quick-build-background-grid,.quick-build-class-grid{grid-template-columns:1fr}.quick-build-choice-actions{grid-template-columns:1fr}.quick-build-substep-actions:not(.quick-build-inline-actions){display:grid;grid-template-columns:1fr}.quick-build-substep-actions button{width:100%}.quick-build-inline-actions button{flex:1 1 0;width:auto;min-width:0}#quick-build-wizard .quick-build-footer{gap:8px;padding:12px}#quick-build-wizard .quick-build-footer button{min-height:48px;padding-right:8px;padding-left:8px}#quick-build-spell-detail{padding:16px}#quick-build-spell-detail .quick-build-spell-detail-shell{max-width:100%;max-height:calc(100dvh - 32px)}#quick-build-spell-detail-content{padding:18px 16px}}
       @media(max-width:380px){#quick-build-wizard{padding:8px}#quick-build-wizard .quick-build-shell{max-height:calc(100dvh - 16px)}#quick-build-wizard .quick-build-header{padding:14px 12px 10px}#quick-build-wizard .quick-build-body{padding:16px 10px}.quick-build-choice-panel.quick-build-ability-grid{padding:4px}.quick-build-ability-table-head,.quick-build-ability-row{grid-template-columns:44px minmax(70px,1fr) minmax(70px,1fr) 30px;gap:2px;padding:5px 4px}.quick-build-ability-step{width:26px;min-width:26px;height:28px;min-height:28px;font-size:.88rem}.quick-build-ability-value{min-width:18px;font-size:.9rem}.quick-build-ability-name strong{font-size:.92rem}.quick-build-ability-name small{font-size:.65rem}.quick-build-ability-table-head{font-size:.72rem}#quick-build-wizard .quick-build-footer{gap:6px;padding:10px 8px}#quick-build-wizard .quick-build-footer button{padding-right:4px;padding-left:4px;font-size:.9rem}}
       @media(prefers-reduced-motion:reduce){#quick-build-wizard .quick-build-flow-section.is-newly-revealed,#quick-build-wizard .quick-build-footer button.is-ready{animation:none}#quick-build-wizard .quick-build-footer button{transition:none}}
     `;
@@ -1586,15 +1517,13 @@
   function renderBackgroundEquipment(body) {
     const key = draft.choices.background;
     const data = backgroundData(key) || {};
-    body.innerHTML = `<button type="button" class="quick-build-change">← 重新選擇背景</button><h3>${BACKGROUND_LABELS[key]}：背景裝備</h3><p class="quick-build-lead">是否取得背景提供的預設裝備？若選否，改為獲得 50 金幣。</p><section class="quick-build-choice-panel"><strong>預設裝備 A</strong><div class="quick-build-equipment-list">${escapeHtml(data.裝備A)}</div><div class="quick-build-choice-actions quick-build-equipment-actions"><button type="button" data-wealth="default">取得預設裝備</button><button type="button" data-wealth="gold">否，取得 50 金幣</button></div></section>`;
-    body.querySelector(".quick-build-change").addEventListener("click", resetBackground);
+    body.innerHTML = `<h3>${BACKGROUND_LABELS[key]}：背景裝備</h3><p class="quick-build-lead">是否取得背景提供的預設裝備？若選否，改為獲得 50 金幣。</p><section class="quick-build-choice-panel"><strong>預設裝備 A</strong><div class="quick-build-equipment-list">${escapeHtml(data.裝備A)}</div><div class="quick-build-choice-actions quick-build-equipment-actions"><button type="button" data-wealth="default">取得預設裝備</button><button type="button" data-wealth="gold">否，取得 50 金幣</button></div></section>`;
     body.querySelectorAll("[data-wealth]").forEach(button => button.addEventListener("click", () => chooseBackgroundWealth(button.dataset.wealth)));
   }
 
   function renderBackgroundToolChoice(body) {
     const selected = draft.choices.backgroundToolChoice || "";
-    body.innerHTML = `<button type="button" class="quick-build-change">← 返回裝備選擇</button><h3>士兵：熟練賭具選擇</h3><p class="quick-build-lead">選擇士兵背景提供的賭具熟練項。</p><section class="quick-build-choice-panel"><div class="quick-build-field"><label for="quick-build-background-game-tool">熟練賭具</label><select id="quick-build-background-game-tool"><option value="">請選擇</option>${GAME_TOOL_OPTIONS.map(name => `<option value="${escapeHtml(name)}"${name === selected ? " selected" : ""}>${escapeHtml(name)}</option>`).join("")}</select></div></section>`;
-    body.querySelector(".quick-build-change").addEventListener("click", returnToBackgroundEquipment);
+    body.innerHTML = `<h3>士兵：熟練賭具選擇</h3><p class="quick-build-lead">選擇士兵背景提供的賭具熟練項。</p><section class="quick-build-choice-panel"><div class="quick-build-field"><label for="quick-build-background-game-tool">熟練賭具</label><select id="quick-build-background-game-tool"><option value="">請選擇</option>${GAME_TOOL_OPTIONS.map(name => `<option value="${escapeHtml(name)}"${name === selected ? " selected" : ""}>${escapeHtml(name)}</option>`).join("")}</select></div></section>`;
     body.querySelector("#quick-build-background-game-tool").addEventListener("change", chooseBackgroundTool);
   }
 
@@ -1612,8 +1541,7 @@
     const magic = draft.choices.backgroundMagic;
     const cantrips = spellOptions("cantrips");
     const levelOne = spellOptions("1");
-    body.innerHTML = `<button type="button" class="quick-build-change">← 返回裝備選擇</button><h3>${BACKGROUND_LABELS[draft.choices.background]}：選擇法術</h3><p class="quick-build-lead">選擇2個不同的戲法與1個一環法術；按「查看」可在法術詳情視窗中閱讀完整敘述。</p><div class="quick-build-spell-layout"><div class="quick-build-spell-fields">${spellSelect("quick-build-cantrip-1", "戲法 1", cantrips, magic.cantrips[0], magic.cantrips[1])}${spellSelect("quick-build-cantrip-2", "戲法 2", cantrips, magic.cantrips[1], magic.cantrips[0])}${spellSelect("quick-build-level-one", "一環法術", levelOne, magic.levelOneSpells[0])}</div></div>`;
-    body.querySelector(".quick-build-change").addEventListener("click", returnToBackgroundEquipment);
+    body.innerHTML = `<h3>${BACKGROUND_LABELS[draft.choices.background]}：選擇法術</h3><p class="quick-build-lead">選擇2個不同的戲法與1個一環法術；按「查看」可在法術詳情視窗中閱讀完整敘述。</p><div class="quick-build-spell-layout"><div class="quick-build-spell-fields">${spellSelect("quick-build-cantrip-1", "戲法 1", cantrips, magic.cantrips[0], magic.cantrips[1])}${spellSelect("quick-build-cantrip-2", "戲法 2", cantrips, magic.cantrips[1], magic.cantrips[0])}${spellSelect("quick-build-level-one", "一環法術", levelOne, magic.levelOneSpells[0])}</div></div>`;
     body.querySelectorAll("[data-spell-field]").forEach(select => {
       select.addEventListener("change", event => updateBackgroundSpells(event.currentTarget));
     });
@@ -1637,17 +1565,7 @@
     const tool = toolName ? annotatedDuplicateName("tools", toolName, "background", "已熟練") : "無";
     const annotatedSpells = spells.map(spellId => annotatedDuplicateName("spells", spellId, "background", "已學會"));
     const classBonusWarning = draft.choices.classOptions?.backgroundBonusInvalidated ? `<div class="quick-build-warning"><strong>改變背景需要重新設定屬性加值</strong><br>你的 27 點基礎屬性已保留，但背景加值已重設為 0/3；按下一步後會前往「職業：屬性與背景加值」重新分配。</div>` : "";
-    body.innerHTML = `<button type="button" class="quick-build-change">← 修改背景選擇</button><h3>背景選擇完成</h3><div class="quick-build-complete"><strong>${BACKGROUND_LABELS[draft.choices.background]}</strong><br>技能：${skills.map(escapeHtml).join("、")}<br>起源專長：${escapeHtml(data.專長)}<br>工具：${escapeHtml(tool)}<br>可調整屬性：${escapeHtml(displayList(data.屬性))}${annotatedSpells.length ? `<br>法術：${annotatedSpells.map(escapeHtml).join("、")}` : ""}</div>${classBonusWarning}${duplicateReviewWarning()}`;
-    body.querySelector(".quick-build-change").addEventListener("click", returnToBackgroundEquipment);
-  }
-
-  function renderBackground(body) {
-    const stage = getBackgroundStage();
-    if (stage === "cards") renderBackgroundCards(body);
-    else if (stage === "equipment") renderBackgroundEquipment(body);
-    else if (stage === "tool") renderBackgroundToolChoice(body);
-    else if (stage === "spells") renderBackgroundSpells(body);
-    else renderBackgroundComplete(body);
+    body.innerHTML = `<h3>背景選擇完成</h3><div class="quick-build-complete"><strong>${BACKGROUND_LABELS[draft.choices.background]}</strong><br>技能：${skills.map(escapeHtml).join("、")}<br>起源專長：${escapeHtml(data.專長)}<br>工具：${escapeHtml(tool)}<br>可調整屬性：${escapeHtml(displayList(data.屬性))}${annotatedSpells.length ? `<br>法術：${annotatedSpells.map(escapeHtml).join("、")}` : ""}</div>${classBonusWarning}${duplicateReviewWarning()}`;
   }
 
   function raceSelect(field, label, values, { disabled = [], note = "" } = {}) {
@@ -1659,14 +1577,15 @@
     }).join("")}</select>${note ? `<p class="quick-build-option-note">${escapeHtml(note)}</p>` : ""}</div>`;
   }
 
-  function raceConfirmedSelect(field, label, values, { showSpellView = false, confirmed = false, formatOption = value => value } = {}) {
+  function raceSelectWithDetail(field, label, values, { showSpellView = false, formatOption = value => value } = {}) {
     const selected = draft.choices.raceOptions[field] || "";
     return `<div class="quick-build-field"><label for="quick-build-race-${field}">${label}</label><div class="quick-build-field-control"><select id="quick-build-race-${field}" data-race-option="${field}"><option value="">請選擇</option>${values.map(value => `<option value="${escapeHtml(value)}"${value === selected ? " selected" : ""}>${escapeHtml(raceOptionLabel(formatOption(value)))}</option>`).join("")}</select>${showSpellView ? `<button type="button" class="quick-build-spell-view" data-race-spell-view="${field}"${selected ? "" : " disabled"}>查看</button>` : ""}</div></div>`;
   }
 
   function raceFeatSelect(label, values, { disabled = [], note = "" } = {}) {
     const selected = draft.choices.raceOptions.feat || "";
-    return `<div class="quick-build-field"><label for="quick-build-race-feat">${label}</label><div class="quick-build-field-control"><select id="quick-build-race-feat" data-race-option="feat"><option value="">請選擇</option>${values.map(value => `<option value="${escapeHtml(value)}"${value === selected ? " selected" : ""}${disabled.includes(value) ? " disabled" : ""}>${escapeHtml(value)}${disabled.includes(value) ? "（已由其他來源取得）" : ""}</option>`).join("")}</select><button type="button" class="quick-build-spell-view" data-race-feat-view${selected ? "" : " disabled"}>查看</button></div>${note ? `<p class="quick-build-option-note">${escapeHtml(note)}</p>` : ""}</div>`;
+    const options = values.map(value => isPlainObject(value) ? value : { value, label: value });
+    return `<div class="quick-build-field"><label for="quick-build-race-feat">${label}</label><div class="quick-build-field-control"><select id="quick-build-race-feat" data-race-option="feat"><option value="">請選擇</option>${options.map(option => `<option value="${escapeHtml(option.value)}"${option.value === selected ? " selected" : ""}${disabled.includes(option.value) ? " disabled" : ""}>${escapeHtml(option.label)}${disabled.includes(option.value) ? "（已由其他來源取得）" : ""}</option>`).join("")}</select><button type="button" class="quick-build-spell-view" data-race-feat-view${selected ? "" : " disabled"}>查看</button></div>${note ? `<p class="quick-build-option-note">${escapeHtml(note)}</p>` : ""}</div>`;
   }
 
   function renderRaceCards(body) {
@@ -1730,18 +1649,18 @@
     const options = draft.choices.raceOptions;
     const backgroundSkills = (draft.acquisitions.skills || []).filter(item => item.sourceType === "background").map(item => item.name);
     const backgroundFeats = (draft.acquisitions.feats || []).filter(item => item.sourceType === "background").map(item => item.name);
-    const originFeats = ["警覺", "魔法學徒", "兇蠻打手", "熟習"];
+    const originFeats = humanOriginFeatOptions();
     const fields = [];
     if (key === "dragonborn") fields.push(raceSelect("ancestry", "龍族血統", RACE_OPTION_DEFINITIONS.dragonborn.ancestry));
     if (key === "elf") {
       fields.push(raceSelect("lineage", "精靈傳承", RACE_OPTION_DEFINITIONS.elf.lineage));
       fields.push(raceSelect("skill", "敏銳感官技能熟練", RACE_OPTION_DEFINITIONS.elf.skill, { disabled: backgroundSkills, note: "其他來源已熟練的技能會標示來源，但仍可選擇。" }));
-      if (options.lineage === "高等精靈血統") fields.push(raceConfirmedSelect("cantrip", "法師戲法", SpellCatalog.getSpells("wizard", "cantrips", spellMode()).map(spell => spell.spellId), { showSpellView: true, confirmed: Boolean(options.cantripConfirmed), formatOption: spellNameZh }));
+      if (options.lineage === "高等精靈血統") fields.push(raceSelectWithDetail("cantrip", "法師戲法", SpellCatalog.getSpells("wizard", "cantrips", spellMode()).map(spell => spell.spellId), { showSpellView: true, formatOption: spellNameZh }));
     }
     if (key === "gnome") {
       fields.push(raceSelect("lineage", "侏儒血統", RACE_OPTION_DEFINITIONS.gnome.lineage));
     }
-    if (key === "goliath") fields.push(raceConfirmedSelect("ancestry", "巨人血統恩賜", RACE_OPTION_DEFINITIONS.goliath.ancestry, { confirmed: Boolean(options.confirmed) }));
+    if (key === "goliath") fields.push(raceSelectWithDetail("ancestry", "巨人血統恩賜", RACE_OPTION_DEFINITIONS.goliath.ancestry));
     if (key === "human") {
       fields.push(raceSelect("size", "體型", RACE_OPTION_DEFINITIONS.human.size));
       fields.push(raceSelect("skill", "技藝嫻熟：技能熟練", SKILL_OPTIONS, { disabled: backgroundSkills, note: "其他來源已熟練的技能會標示來源，但仍可選擇。" }));
@@ -1752,37 +1671,17 @@
       fields.push(raceSelect("legacy", "邪魔遺贈", RACE_OPTION_DEFINITIONS.tiefling.legacy));
     }
     const humanFeatPanel = key === "human" && options.feat === "魔法學徒" ? renderHumanMagicFeatOptions() : key === "human" && options.feat === "熟習" ? renderHumanSkilledFeatOptions() : "";
-    const humanFinish = () => "";
     const goliathDetail = key === "goliath" && GOLIATH_ANCESTRY_DETAILS[options.ancestry]
       ? `<div class="quick-build-ancestry-detail"><strong>${escapeHtml(options.ancestry)}</strong>${escapeHtml(GOLIATH_ANCESTRY_DETAILS[options.ancestry])}</div>`
       : "";
-    body.innerHTML = `<button type="button" class="quick-build-change">← 重新選擇種族</button><h3>${RACE_LABELS[key]}種族選項</h3><p class="quick-build-lead">請選擇下列種族細節</p>${humanFinish("top")}<section class="quick-build-choice-panel quick-build-race-options">${fields.join("")}${goliathDetail}</section>${humanFeatPanel}${humanFinish("bottom")}`;
-    body.querySelector(".quick-build-change").addEventListener("click", resetRace);
+    body.innerHTML = `<h3>${RACE_LABELS[key]}種族選項</h3><p class="quick-build-lead">請選擇下列種族細節</p><section class="quick-build-choice-panel quick-build-race-options">${fields.join("")}${goliathDetail}</section>${humanFeatPanel}`;
     body.querySelectorAll("[data-race-option]").forEach(select => select.addEventListener("change", updateRaceOption));
-    body.querySelectorAll("[data-race-option-confirm]").forEach(button => button.addEventListener("click", confirmRaceOption));
     body.querySelectorAll("[data-race-spell-view]").forEach(button => button.addEventListener("click", () => showRaceSpellDescription(button.dataset.raceSpellView, button)));
     body.querySelector("[data-race-feat-view]")?.addEventListener("click", event => showHumanFeatDescription(event.currentTarget));
     body.querySelector("[data-human-spell-class]")?.addEventListener("change", updateHumanMagicFeat);
     body.querySelectorAll("[data-human-magic-spell]").forEach(select => select.addEventListener("change", updateHumanMagicFeat));
     body.querySelectorAll("[data-spell-view]").forEach(button => button.addEventListener("click", () => showHumanFeatSpellDescription(button.dataset.spellView, button)));
     body.querySelectorAll("[data-human-skilled]").forEach(select => select.addEventListener("change", updateHumanSkilledFeat));
-    body.querySelectorAll("[data-human-race-confirm]").forEach(button => button.addEventListener("click", confirmHumanRaceOptions));
-  }
-
-  function humanRaceOptionsComplete(options = draft.choices.raceOptions) {
-    return racePendingChoices("human", { ...options, confirmed: true }).length === 0;
-  }
-
-  function raceSpellConflicts() {
-    return (draft.acquisitions.spells || []).filter(item => item.sourceType === "race" && acquisitionAppliesAtLevel(item)).flatMap(item =>
-      acquisitionConflicts(draft, "spells", item.spellId, "race")
-        .filter(conflict => conflict.sourceType === "background")
-        .map(conflict => {
-          const spellId = item.spellId;
-          const id = `spell:${spellId}:background-race`;
-          return { id, spellId, name: spellNameZh(spellId), resolution: draft.choices.spellConflictResolutions[id] || null };
-        })
-    );
   }
 
   function elfSummarySpells(options) {
@@ -1811,7 +1710,7 @@
       const featOptions = isPlainObject(options.featOptions) ? options.featOptions : {};
       const featName = options.feat === "魔法學徒" && MAGIC_INITIATE_SPELL_CLASSES.has(featOptions.spellClass)
         ? `魔法學徒（${CLASS_LABELS[featOptions.spellClass]}）`
-        : options.feat || "";
+        : humanOriginFeatLabel(options.feat || "");
       const lines = [`體型：${options.size || ""}`, "速度：30 呎", `技能：${options.skill || ""}`, "長休後獲得英雄激勵骰", `起始專長：${featName}`];
       if (options.feat === "魔法學徒") {
         lines.push("專長選項：");
@@ -1849,17 +1748,7 @@
       return name ? text.replaceAll(name, annotatedDuplicateName(item.type, item.id, "race", item.verb)) : text;
     }, line));
     const pending = racePendingChoices().filter(item => item.includes("後續步驟選擇"));
-    body.innerHTML = `<button type="button" class="quick-build-change">← 修改種族選擇</button><h3>種族選擇完成</h3><div class="quick-build-complete"><strong>${RACE_LABELS[key]}</strong>${completionLines.map(line => `<br>${escapeHtml(line)}`).join("")}</div>${duplicateReviewWarning()}${pending.length ? `<div class="quick-build-pending"><strong>尚未完成的後續必要選擇</strong><br>${pending.map(escapeHtml).join("、")}。</div>` : ""}`;
-    body.querySelector(".quick-build-change").addEventListener("click", () => {
-      if (["dwarf", "halfling", "orc"].includes(key)) resetRace();
-      else { draft.choices.raceOptions.editing = true; saveDraft(); render(); }
-    });
-  }
-
-  function renderRace(body) {
-    if (!draft.choices.race) renderRaceCards(body);
-    else if (draft.choices.raceOptions.editing || racePendingChoices().filter(item => !item.includes("後續步驟選擇")).length) renderRaceOptions(body);
-    else renderRaceComplete(body);
+    body.innerHTML = `<h3>種族選擇完成</h3><div class="quick-build-complete"><strong>${RACE_LABELS[key]}</strong>${completionLines.map(line => `<br>${escapeHtml(line)}`).join("")}</div>${duplicateReviewWarning()}${pending.length ? `<div class="quick-build-pending"><strong>尚未完成的後續必要選擇</strong><br>${pending.map(escapeHtml).join("、")}。</div>` : ""}`;
   }
 
   function classAbilitiesComplete(target = draft) {
@@ -1888,31 +1777,10 @@
     body.querySelectorAll("[data-class-choice]").forEach(card => card.addEventListener("click", () => handleChoiceCardSelection("class", card.dataset.classChoice, chooseClass)));
   }
 
-  function abilityBaseOptions(key) {
-    const current = draft.choices.abilities[key];
-    const currentCost = POINT_BUY_COSTS[current] || 0;
-    const spent = abilityPointCost(draft.choices.abilities);
-    return Object.keys(POINT_BUY_COSTS).map(value => {
-      const score = Number(value);
-      const disabled = spent - currentCost + POINT_BUY_COSTS[score] > 27;
-      return `<option value="${score}"${score === current ? " selected" : ""}${disabled ? " disabled" : ""}>${score}</option>`;
-    }).join("");
-  }
-
-  function abilityBonusOptions(key, enabled) {
-    const current = draft.choices.backgroundAbilityBonuses[key] || 0;
-    const total = backgroundBonusTotal(draft.choices.backgroundAbilityBonuses);
-    return [0, 1, 2].map(value => {
-      const disabled = !enabled || total - current + value > 3;
-      return `<option value="${value}"${value === current ? " selected" : ""}${disabled ? " disabled" : ""}>+${value}</option>`;
-    }).join("");
-  }
-
   function renderClassType(body) {
     const key = draft.choices.class;
     const typeOptions = CLASS_TYPE_OPTIONS[key] || [];
-    body.innerHTML = `<button type="button" class="quick-build-change" data-reset-class>← 重新選擇職業</button><h3>${CLASS_LABELS[key]}：選擇職業類型</h3><p class="quick-build-lead">選擇此職業的快速建立方向；下一步會依職業類型與背景預填屬性。</p><div class="quick-build-class-grid">${typeOptions.map(option => `<button type="button" class="quick-build-card quick-build-class-card" data-class-type-choice="${option.id}"><h4>${escapeHtml(option.label)}</h4><p>${escapeHtml(option.description)}</p></button>`).join("")}</div>`;
-    body.querySelector("[data-reset-class]").addEventListener("click", resetClass);
+    body.innerHTML = `<h3>${CLASS_LABELS[key]}：選擇職業類型</h3><p class="quick-build-lead">選擇此職業的快速建立方向；下一步會依職業類型與背景預填屬性。</p><div class="quick-build-class-grid">${typeOptions.map(option => `<button type="button" class="quick-build-card quick-build-class-card" data-class-type-choice="${option.id}"><h4>${escapeHtml(option.label)}</h4><p>${escapeHtml(option.description)}</p></button>`).join("")}</div>`;
     body.querySelectorAll("[data-class-type-choice]").forEach(card => card.addEventListener("click", () => chooseClassType(card.dataset.classTypeChoice)));
   }
 
@@ -1922,7 +1790,7 @@
     const spent = abilityPointCost(draft.choices.abilities);
     const bonusTotal = backgroundBonusTotal(draft.choices.backgroundAbilityBonuses);
     const backgroundBonusWarning = draft.choices.classOptions?.backgroundBonusInvalidated ? `<div class="quick-build-warning"><strong>改變背景需要重新設定屬性加值</strong><br>已保留你上次的 27 點基礎屬性；請重新分配背景加值 3 點後再確認。</div>` : "";
-    body.innerHTML = `<button type="button" class="quick-build-change" data-reset-class>← 重新選擇職業</button><div class="quick-build-ability-heading"><h3>${CLASS_LABELS[key]}${draft.choices.classOptions.classType ? `（${CLASS_TYPE_OPTIONS[key]?.find(option => option.id === draft.choices.classOptions.classType)?.label || ""}）` : ""}：屬性與背景加值</h3><div class="quick-build-ability-status"><span class="quick-build-status-pill${spent === 27 ? " is-complete" : ""}">購點 <strong>${spent}</strong> / 27</span><span class="quick-build-status-pill${bonusTotal === 3 ? " is-complete" : ""}">背景加值 <strong>${bonusTotal}</strong> / 3</span></div></div>${backgroundBonusWarning}<p class="quick-build-lead">使用 ▲／▼ 調整起始屬性與背景加值；起始屬性必須剛好分配 27 點，背景加值必須分配 3 點且單項最多 +2。</p><div class="quick-build-ability-help"><span>目前背景：<strong>${escapeHtml(BACKGROUND_LABELS[draft.choices.background] || "未選擇")}</strong></span><span>可加值：<strong>${escapeHtml((draft.choices.backgroundAbilities || []).join("、") || "無")}</strong></span></div><button type="button" class="quick-build-ability-confirm" data-class-ability-confirm${classAbilitiesComplete() ? "" : " disabled"}>屬性確認</button><section class="quick-build-choice-panel quick-build-ability-grid"><div class="quick-build-ability-table-head"><span>屬性</span><span>基礎值</span><span>背景加值</span><span>總值</span></div>${ABILITY_ORDER.map(ability => {
+    body.innerHTML = `<div class="quick-build-ability-heading"><h3>${CLASS_LABELS[key]}${draft.choices.classOptions.classType ? `（${CLASS_TYPE_OPTIONS[key]?.find(option => option.id === draft.choices.classOptions.classType)?.label || ""}）` : ""}：屬性與背景加值</h3><div class="quick-build-ability-status"><span class="quick-build-status-pill${spent === 27 ? " is-complete" : ""}">購點 <strong>${spent}</strong> / 27</span><span class="quick-build-status-pill${bonusTotal === 3 ? " is-complete" : ""}">背景加值 <strong>${bonusTotal}</strong> / 3</span></div></div>${backgroundBonusWarning}<p class="quick-build-lead">使用 ▲／▼ 調整起始屬性與背景加值；起始屬性必須剛好分配 27 點，背景加值必須分配 3 點且單項最多 +2。</p><div class="quick-build-ability-help"><span>目前背景：<strong>${escapeHtml(BACKGROUND_LABELS[draft.choices.background] || "未選擇")}</strong></span><span>可加值：<strong>${escapeHtml((draft.choices.backgroundAbilities || []).join("、") || "無")}</strong></span></div><section class="quick-build-choice-panel quick-build-ability-grid"><div class="quick-build-ability-table-head"><span>屬性</span><span>基礎值</span><span>背景加值</span><span>總值</span></div>${ABILITY_ORDER.map(ability => {
       const bonusEnabled = allowedBonuses.has(ability);
       const baseValue = draft.choices.abilities[ability];
       const bonusValue = draft.choices.backgroundAbilityBonuses[ability] || 0;
@@ -1931,9 +1799,7 @@
       const canIncreaseBonus = bonusEnabled && bonusValue < 2 && bonusTotal < 3;
       return `<div class="quick-build-ability-row${bonusEnabled ? "" : " is-bonus-locked"}"><div class="quick-build-ability-name"><strong>${ABILITY_LABELS[ability]}</strong><small>${ability.toUpperCase()}</small></div><div class="quick-build-ability-control"><button type="button" class="quick-build-ability-step" data-class-ability-base="${ability}" data-ability-adjustment="-1" aria-label="降低${ABILITY_LABELS[ability]}基礎值"${baseValue > 8 ? "" : " disabled"}>▼</button><span class="quick-build-ability-value">${baseValue}</span><button type="button" class="quick-build-ability-step" data-class-ability-base="${ability}" data-ability-adjustment="1" aria-label="提高${ABILITY_LABELS[ability]}基礎值"${canIncreaseBase ? "" : " disabled"}>▲</button></div><div class="quick-build-ability-control"><button type="button" class="quick-build-ability-step" data-class-ability-bonus="${ability}" data-ability-adjustment="-1" aria-label="降低${ABILITY_LABELS[ability]}背景加值"${bonusEnabled && bonusValue > 0 ? "" : " disabled"}>▼</button><span class="quick-build-ability-value is-bonus">${bonusEnabled ? `+${bonusValue}` : "—"}</span><button type="button" class="quick-build-ability-step" data-class-ability-bonus="${ability}" data-ability-adjustment="1" aria-label="提高${ABILITY_LABELS[ability]}背景加值"${canIncreaseBonus ? "" : " disabled"}>▲</button></div><div class="quick-build-ability-total"><strong>${abilityTotal(draft, ability)}</strong></div></div>`;
     }).join("")}</section>${spent !== 27 ? '<div class="quick-build-warning">基礎值必須剛好滿足 27 購點後才能繼續。</div>' : ""}${bonusTotal !== 3 ? '<div class="quick-build-warning">背景加值必須剛好分配 3 點後才能繼續。</div>' : ""}`;
-    body.querySelector("[data-reset-class]").addEventListener("click", resetClass);
     body.querySelectorAll("[data-class-ability-base],[data-class-ability-bonus]").forEach(button => button.addEventListener("click", updateClassAbility));
-    body.querySelector("[data-class-ability-confirm]")?.addEventListener("click", advanceAfterClassAbilities);
   }
 
   function renderClassSpellcasting(body) {
@@ -1946,10 +1812,8 @@
     const selected = draft.choices.spellcastingAbility || preferredMentalAbility(draft);
     const mentalTotals = ["int", "wis", "cha"].map(key => `${ABILITY_LABELS[key]} ${abilityTotal(draft, key)}`).join("、");
     const choiceLead = fixed ? "" : '<p class="quick-build-lead">請選擇智力、感知或魅力作為施法屬性</p>';
-    body.innerHTML = `<button type="button" class="quick-build-change" data-class-stage-back="abilities">← 修改屬性</button><h3>${escapeHtml(castingSource.label)}：決定施法屬性</h3>${choiceLead}<section class="quick-build-choice-panel"><div class="quick-build-field"><label for="quick-build-class-spellcasting">施法屬性</label><select id="quick-build-class-spellcasting" data-class-spellcasting${fixed ? " disabled" : ""}>${["int", "wis", "cha"].map(ability => `<option value="${ability}"${ability === selected ? " selected" : ""}>${ABILITY_LABELS[ability]}</option>`).join("")}</select></div><div class="quick-build-fixed-list">目前${escapeHtml(mentalTotals)}</div></section><div class="quick-build-substep-actions quick-build-inline-actions"><button type="button" data-class-stage-back="abilities">返回屬性</button><button type="button" class="primary" data-class-stage-next="proficiencies">選擇技能與工具</button></div>`;
-    body.querySelectorAll("[data-class-stage-back]").forEach(button => button.addEventListener("click", () => setClassStage(button.dataset.classStageBack)));
+    body.innerHTML = `<h3>${escapeHtml(castingSource.label)}：決定施法屬性</h3>${choiceLead}<section class="quick-build-choice-panel"><div class="quick-build-field"><label for="quick-build-class-spellcasting">施法屬性</label><select id="quick-build-class-spellcasting" data-class-spellcasting${fixed ? " disabled" : ""}>${["int", "wis", "cha"].map(ability => `<option value="${ability}"${ability === selected ? " selected" : ""}>${ABILITY_LABELS[ability]}</option>`).join("")}</select></div><div class="quick-build-fixed-list">目前${escapeHtml(mentalTotals)}</div></section>`;
     body.querySelector("[data-class-spellcasting]")?.addEventListener("change", updateClassSpellcasting);
-    body.querySelector("[data-class-stage-next]")?.addEventListener("click", () => setClassStage("proficiencies"));
   }
 
   function classProficiencySelect(type, index, values, selectedValues, disabledBySource = new Set()) {
@@ -1971,14 +1835,8 @@
     const skills = Array.isArray(options.skills) ? options.skills : [];
     const tools = Array.isArray(options.tools) ? options.tools : [];
     const backgroundSkills = new Set((draft.acquisitions.skills || []).filter(item => item.sourceType === "background").map(item => item.name));
-    const conflicts = draft.selections.class?.content?.conflicts || [];
-    const conflictText = conflicts.map(conflict => `${conflict.name}（已由${conflict.existingSource?.label || conflict.existingSource?.type || "其他來源"}取得）`);
-    const previousStage = hasDraftSpellcasting() ? "spellcasting" : "abilities";
-    const previousLabel = hasDraftSpellcasting() ? "施法屬性" : "屬性";
-    body.innerHTML = `<button type="button" class="quick-build-change" data-class-stage-back="${previousStage}">← 修改${previousLabel}</button><h3>${CLASS_LABELS[draft.choices.class]}：技能與工具</h3><p class="quick-build-lead">其他來源已熟練的技能或工具會標示來源，但仍可選擇。</p><div class="quick-build-proficiency-grid"><section class="quick-build-choice-panel"><h4>技能熟練：選擇 ${definition.skillCount} 項</h4><div class="quick-build-spell-fields">${Array.from({ length: definition.skillCount }, (_, index) => classProficiencySelect("skill", index, definition.skillOptions, skills, backgroundSkills)).join("")}</div></section>${definition.toolCount ? `<section class="quick-build-choice-panel"><h4>工具熟練：選擇 ${definition.toolCount} 項${definition.toolLabel ? `（${escapeHtml(definition.toolLabel)}）` : ""}</h4><div class="quick-build-spell-fields">${Array.from({ length: definition.toolCount }, (_, index) => classProficiencySelect("tool", index, definition.toolOptions, tools)).join("")}</div></section>` : ""}${(definition.fixedTools || []).length ? `<section class="quick-build-choice-panel"><h4>固定工具熟練</h4><div class="quick-build-fixed-list">${definition.fixedTools.map(escapeHtml).join("、")}</div></section>` : ""}</div><div class="quick-build-substep-actions quick-build-inline-actions"><button type="button" data-class-stage-back="${previousStage}">返回${previousLabel}</button><button type="button" class="primary" data-class-stage-next="summary"${classProficienciesComplete() ? "" : " disabled"}>查看摘要</button></div>`;
-    body.querySelectorAll("[data-class-stage-back]").forEach(button => button.addEventListener("click", () => setClassStage(button.dataset.classStageBack)));
+    body.innerHTML = `<h3>${CLASS_LABELS[draft.choices.class]}：技能與工具</h3><p class="quick-build-lead">其他來源已熟練的技能或工具會標示來源，但仍可選擇。</p><div class="quick-build-proficiency-grid"><section class="quick-build-choice-panel"><h4>技能熟練：選擇 ${definition.skillCount} 項</h4><div class="quick-build-spell-fields">${Array.from({ length: definition.skillCount }, (_, index) => classProficiencySelect("skill", index, definition.skillOptions, skills, backgroundSkills)).join("")}</div></section>${definition.toolCount ? `<section class="quick-build-choice-panel"><h4>工具熟練：選擇 ${definition.toolCount} 項${definition.toolLabel ? `（${escapeHtml(definition.toolLabel)}）` : ""}</h4><div class="quick-build-spell-fields">${Array.from({ length: definition.toolCount }, (_, index) => classProficiencySelect("tool", index, definition.toolOptions, tools)).join("")}</div></section>` : ""}${(definition.fixedTools || []).length ? `<section class="quick-build-choice-panel"><h4>固定工具熟練</h4><div class="quick-build-fixed-list">${definition.fixedTools.map(escapeHtml).join("、")}</div></section>` : ""}</div>`;
     body.querySelectorAll("[data-class-skill],[data-class-tool]").forEach(select => select.addEventListener("change", updateClassProficiencies));
-    body.querySelector("[data-class-stage-next]")?.addEventListener("click", () => setClassStage("summary"));
   }
 
   function renderClassSummary(body) {
@@ -1996,25 +1854,7 @@
     const spellcastingSummary = content.spellcastingSource ? `<dt>施法屬性</dt><dd>${escapeHtml(ABILITY_LABELS[content.spellcastingAbility] || "")}（${escapeHtml(spellcastingSourceLabel)}）</dd>` : "";
     const skillBonusSummary = sourceAwareAcquisitions("skillBonuses", item => item.sourceType === "class");
     const optionalRow = (label, value) => !value || value === "無" ? "" : `<dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd>`;
-    body.innerHTML = `<button type="button" class="quick-build-change" data-class-stage-back="proficiencies">← 修改技能與工具</button><h3>職業與屬性摘要確認</h3><section class="quick-build-complete"><dl class="quick-build-summary-list"><dt>職業</dt><dd>${escapeHtml(selection?.label || "")}${content.classTypeLabel ? `（${escapeHtml(content.classTypeLabel)}）` : ""}</dd><dt>關鍵屬性</dt><dd>${escapeHtml(content.keyAbilityText || "")}</dd><dt>生命骰</dt><dd>${escapeHtml(hitDieSummary)}</dd><dt class="quick-build-summary-full-label">屬性總值</dt><dd class="quick-build-summary-full-value"><div class="quick-build-ability-summary">${abilitySummary}</div></dd>${spellcastingSummary}<dt>豁免熟練</dt><dd>${escapeHtml((content.saves || []).join("、"))}</dd><dt>技能熟練</dt><dd>${escapeHtml(skillSummary)}</dd>${optionalRow("技能額外加值", skillBonusSummary)}${optionalRow("工具熟練", toolSummary)}${optionalRow("武器熟練", content.weaponProficiencies)}${optionalRow("護甲訓練", content.armorTraining)}</dl></section>${duplicateReviewWarning()}<div class="quick-build-substep-actions quick-build-inline-actions"><button type="button" data-class-stage-back="proficiencies">返回修改</button></div>`;
-    body.querySelectorAll("[data-class-stage-back]").forEach(button => button.addEventListener("click", () => setClassStage(button.dataset.classStageBack)));
-  }
-
-  function optionsConfirmedAttribute(confirmed) {
-    return confirmed ? " disabled" : "";
-  }
-
-  function renderClass(body) {
-    if (!draft.choices.class) {
-      renderClassCards(body);
-      return;
-    }
-    const stage = draft.choices.classOptions.stage || (CLASS_TYPE_OPTIONS[draft.choices.class]?.length ? "classType" : "abilities");
-    if (stage === "classType") renderClassType(body);
-    else if (stage === "abilities") renderClassAbilities(body);
-    else if (stage === "spellcasting") renderClassSpellcasting(body);
-    else if (stage === "proficiencies") renderClassProficiencies(body);
-    else renderClassSummary(body);
+    body.innerHTML = `<h3>職業與屬性摘要確認</h3><section class="quick-build-complete"><dl class="quick-build-summary-list"><dt>職業</dt><dd>${escapeHtml(selection?.label || "")}${content.classTypeLabel ? `（${escapeHtml(content.classTypeLabel)}）` : ""}</dd><dt>關鍵屬性</dt><dd>${escapeHtml(content.keyAbilityText || "")}</dd><dt>生命骰</dt><dd>${escapeHtml(hitDieSummary)}</dd><dt class="quick-build-summary-full-label">屬性總值</dt><dd class="quick-build-summary-full-value"><div class="quick-build-ability-summary">${abilitySummary}</div></dd>${spellcastingSummary}<dt>豁免熟練</dt><dd>${escapeHtml((content.saves || []).join("、"))}</dd><dt>技能熟練</dt><dd>${escapeHtml(skillSummary)}</dd>${optionalRow("技能額外加值", skillBonusSummary)}${optionalRow("工具熟練", toolSummary)}${optionalRow("武器熟練", content.weaponProficiencies)}${optionalRow("護甲訓練", content.armorTraining)}</dl></section>${duplicateReviewWarning()}`;
   }
 
   function classEquipmentComplete(target = draft) {
@@ -2085,8 +1925,7 @@
       return;
     }
     const fighterWarning = key === "fighter" ? `<div class="quick-build-warning"><strong>先確認戰士屬性路線</strong><br>力量型套裝適合力量戰士，敏捷型套裝適合敏捷戰士。若你沿用職業預填屬性且沒有調整，建議選擇力量型預設裝備。<div class="quick-build-option-note">目前 力量=${abilityTotal(draft, "str")} 敏捷=${abilityTotal(draft, "dex")}</div></div>` : "";
-    const invalidatedWarning = draft.choices.classEquipmentInvalidatedByBackground ? `<div class="quick-build-warning"><strong>背景已變更</strong><br>為避免沿用不相符的舊結果，請重新選擇一次職業初始裝備。</div>` : "";
-    body.innerHTML = `<h3>${CLASS_LABELS[key]}：選擇初始裝備</h3><p class="quick-build-lead">是否取得職業提供的預設裝備？若選否，改為取得金幣並由玩家自行購買。</p>${invalidatedWarning}${fighterWarning}<section class="quick-build-choice-panel">${definition.defaults.map(option => `<strong>${escapeHtml(option.label)}</strong><div class="quick-build-equipment-list">${escapeHtml(equipmentItemText(option))}</div>`).join("")}<div class="quick-build-choice-actions quick-build-equipment-actions">${definition.defaults.map(option => `<button type="button" data-class-equipment-method="${option.id}">${definition.defaults.length === 1 ? "取得預設裝備" : `取得${escapeHtml(option.label)}`}</button>`).join("")}<button type="button"${key === "fighter" ? " class=\"quick-build-choice-action-full\"" : ""} data-class-equipment-method="gold">否，取得 ${definition.gold} 金幣</button></div></section>`;
+    body.innerHTML = `<h3>${CLASS_LABELS[key]}：選擇初始裝備</h3><p class="quick-build-lead">是否取得職業提供的預設裝備？若選否，改為取得金幣並由玩家自行購買。</p>${fighterWarning}<section class="quick-build-choice-panel">${definition.defaults.map(option => `<strong>${escapeHtml(option.label)}</strong><div class="quick-build-equipment-list">${escapeHtml(equipmentItemText(option))}</div>`).join("")}<div class="quick-build-choice-actions quick-build-equipment-actions">${definition.defaults.map(option => `<button type="button" data-class-equipment-method="${option.id}">${definition.defaults.length === 1 ? "取得預設裝備" : `取得${escapeHtml(option.label)}`}</button>`).join("")}<button type="button"${key === "fighter" ? " class=\"quick-build-choice-action-full\"" : ""} data-class-equipment-method="gold">否，取得 ${definition.gold} 金幣</button></div></section>`;
     body.querySelectorAll("[data-class-equipment-method]").forEach(button => button.addEventListener("click", () => chooseClassEquipmentMethod(button.dataset.classEquipmentMethod)));
   }
 
@@ -2097,8 +1936,7 @@
   function renderEquipmentComplete(body) {
     const key = draft.choices.class;
     const selection = draft.selections.classEquipment;
-    body.innerHTML = `<button type="button" class="quick-build-change" data-equipment-reset>← 重新選擇裝備取得方式</button><h3>${CLASS_LABELS[key]}：裝備選擇完成</h3><div class="quick-build-complete"><strong>職業裝備</strong><br>${classEquipmentCompleteSummary(selection)}<br><br><strong>背景裝備</strong><br>${escapeHtml(formatEquipmentSelection(draft.selections.backgroundEquipment))}</div>`;
-    body.querySelector("[data-equipment-reset]").addEventListener("click", resetClassEquipment);
+    body.innerHTML = `<h3>${CLASS_LABELS[key]}：裝備選擇完成</h3><div class="quick-build-complete"><strong>職業裝備</strong><br>${classEquipmentCompleteSummary(selection)}<br><br><strong>背景裝備</strong><br>${escapeHtml(formatEquipmentSelection(draft.selections.backgroundEquipment))}</div>`;
   }
 
   function renderEquipmentConfiguration(body) {
@@ -2119,15 +1957,9 @@
     const fixedArmor = equipmentPackage.armor ? `<div class="quick-build-fixed-list"><strong>身著護甲：</strong>${escapeHtml(equipmentPackage.armor)}</div>` : "";
     const mainControl = configurationFields.includes("mainHand") ? equipmentSelect("quick-build-equipment-main", "主手", equipmentPackage.main, mainHand, "data-equipment-main") : `<div class="quick-build-fixed-list"><strong>主手：</strong>${escapeHtml(options.mainHand || equipmentPackage.main[0] || "空著")}</div>`;
     const instrumentControl = configurationFields.includes("instrument") ? equipmentSelect("quick-build-equipment-instrument", "預設裝備提供的樂器", classEquipmentInstrumentOptions(draft), options.instrument || "", "data-equipment-instrument") : "";
-    body.innerHTML = `<button type="button" class="quick-build-change" data-equipment-reset>← 重新選擇預設裝備</button><h3>${CLASS_LABELS[key]}：${escapeHtml(equipmentPackage.label)}</h3><div class="quick-build-equipment-list">${escapeHtml(equipmentCombatItemText(equipmentPackage))}</div><section class="quick-build-choice-panel"><div class="quick-build-spell-fields">${mainControl}${offControl}${fixedArmor}${instrumentControl}</div></section>`;
-    body.querySelector("[data-equipment-reset]").addEventListener("click", resetClassEquipment);
+    body.innerHTML = `<h3>${CLASS_LABELS[key]}：${escapeHtml(equipmentPackage.label)}</h3><div class="quick-build-equipment-list">${escapeHtml(equipmentCombatItemText(equipmentPackage))}</div><section class="quick-build-choice-panel"><div class="quick-build-spell-fields">${mainControl}${offControl}${fixedArmor}${instrumentControl}</div></section>`;
     body.querySelector("[data-equipment-main]")?.addEventListener("change", updateClassEquipmentOptions);
     body.querySelector("[data-equipment-instrument]")?.addEventListener("change", updateClassEquipmentOptions);
-  }
-
-  function renderEquipment(body) {
-    if (!draft.choices.classEquipmentMethod) renderEquipmentMethod(body);
-    else renderEquipmentConfiguration(body);
   }
 
 
@@ -2151,32 +1983,9 @@
     ].filter(Boolean);
   }
 
-  function setLevelOneStage(stage) {
-    if (stage === "equipment") {
-      goToStep(draft.currentStep - 1);
-      return;
-    }
-    if (!levelOneStages().includes(stage)) return;
-    draft.choices.levelOne = { ...draft.choices.levelOne, stage, summaryConfirmed: false };
-    saveDraft();
-    render();
-  }
-
-  function nextLevelOneStage(current) {
-    const stages = levelOneStages();
-    return stages[Math.min(stages.indexOf(current) + 1, stages.length - 1)] || "summary";
-  }
-
-  function previousLevelOneStage(current) {
-    const stages = levelOneStages();
-    const index = stages.indexOf(current);
-    return index <= 0 ? "equipment" : stages[index - 1];
-  }
-
   function updateLevelOneField(updater, preserve = true) {
     const next = { ...(draft.choices.levelOne || {}) };
     updater(next);
-    next.summaryConfirmed = false;
     draft.choices.levelOne = next;
     saveDraft();
     render(preserve);
@@ -2297,9 +2106,7 @@
       const option = invocationOptions.find(item => item.id === selected);
       panels.push(`<section class="quick-build-choice-panel"><h4>魔能祈喚</h4><div class="quick-build-field-control"><select id="quick-build-invocation" data-level-one-invocation><option value="">請選擇</option>${invocationOptions.map(item => `<option value="${item.id}"${selected === item.id ? " selected" : ""}>${escapeHtml(item.label)}</option>`).join("")}</select><button type="button" class="quick-build-spell-view" data-invocation-view${selected ? "" : " disabled"}>查看</button></div>${option ? `<p class="quick-build-option-note">${escapeHtml(option.description)}</p>` : ""}</section>`);
     }
-    body.innerHTML = `<button type="button" class="quick-build-change" data-level-one-stage-back="${previousLevelOneStage("options")}">← 返回</button><h3>${CLASS_LABELS[key]}：職業選項</h3>${panels.join("")}<div class="quick-build-substep-actions quick-build-inline-actions"><button type="button" data-level-one-stage-back="${previousLevelOneStage("options")}">返回</button><button type="button" class="primary" data-level-one-stage-next="${nextLevelOneStage("options")}">下一步</button></div>`;
-    body.querySelectorAll("[data-level-one-stage-back]").forEach(button => button.addEventListener("click", () => setLevelOneStage(button.dataset.levelOneStageBack)));
-    body.querySelector("[data-level-one-stage-next]")?.addEventListener("click", event => setLevelOneStage(event.currentTarget.dataset.levelOneStageNext));
+    body.innerHTML = `<h3>${CLASS_LABELS[key]}：職業選項</h3>${panels.join("")}`;
     body.querySelector("[data-level-one-class-option]")?.addEventListener("change", event => updateLevelOneField(next => { next.classOption = event.currentTarget.value || null; next.cantrips = []; }));
     body.querySelector("[data-level-one-fighting-style]")?.addEventListener("change", event => updateLevelOneField(next => { next.fightingStyle = event.currentTarget.value || null; }));
     body.querySelector("[data-level-one-invocation]")?.addEventListener("change", event => updateLevelOneField(next => { next.invocations = event.currentTarget.value ? [event.currentTarget.value] : []; next.tome = {}; }));
@@ -2318,9 +2125,7 @@
       const peerDuplicate = selected.includes(option.value) && selected[index] !== option.value;
       return `<option value="${option.value}"${selected[index] === option.value ? " selected" : ""}${peerDuplicate ? " disabled" : ""}>${escapeHtml(option.label)}${peerDuplicate ? "（本頁已選）" : ""}</option>`;
     }).join("")}</select></div>`;
-    body.innerHTML = `<button type="button" class="quick-build-change" data-level-one-stage-back="${previousLevelOneStage("languages")}">← 返回</button><h3>${CLASS_LABELS[draft.choices.class]}：初始語言</h3><section class="quick-build-choice-panel"><div class="quick-build-spell-fields">${Array.from({ length: LEVEL_ONE_DEFINITIONS[draft.choices.class].languages }, (_, index) => select(index)).join("")}</div></section><div class="quick-build-substep-actions quick-build-inline-actions"><button type="button" data-level-one-stage-back="${previousLevelOneStage("languages")}">返回</button><button type="button" class="primary" data-level-one-stage-next="${nextLevelOneStage("languages")}">下一步</button></div>`;
-    body.querySelectorAll("[data-level-one-stage-back]").forEach(button => button.addEventListener("click", () => setLevelOneStage(button.dataset.levelOneStageBack)));
-    body.querySelector("[data-level-one-stage-next]")?.addEventListener("click", event => setLevelOneStage(event.currentTarget.dataset.levelOneStageNext));
+    body.innerHTML = `<h3>${CLASS_LABELS[draft.choices.class]}：初始語言</h3><section class="quick-build-choice-panel"><div class="quick-build-spell-fields">${Array.from({ length: LEVEL_ONE_DEFINITIONS[draft.choices.class].languages }, (_, index) => select(index)).join("")}</div></section>`;
     body.querySelectorAll("[data-level-one-language]").forEach((selectEl, index) => selectEl.addEventListener("change", () => updateLevelOneField(next => { const values = [...body.querySelectorAll("[data-level-one-language]")].map(item => item.value || ""); next.languages = values; })));
   }
 
@@ -2346,17 +2151,7 @@
       const tomeRituals = tome.rituals || [];
       sections.push(`<section class="quick-build-choice-panel"><h4>書之魔契</h4><p class="quick-build-option-note">選 3 個任一職業戲法與 2 個任一職業儀式一環法術。</p><div class="quick-build-spell-fields">${Array.from({ length: 3 }, (_, index) => spellSelectControl(`quick-build-tome-cantrip-${index}`, `魔契書戲法 ${index + 1}`, allSpellOptions("cantrips"), tomeCantrips[index] || "", tomeCantrips, knownFor("書之魔契"), "data-level-one-tome-cantrip")).join("")}${Array.from({ length: 2 }, (_, index) => spellSelectControl(`quick-build-tome-ritual-${index}`, `魔契書儀式 ${index + 1}`, allSpellOptions("1", isRitualSpell), tomeRituals[index] || "", tomeRituals, knownFor("書之魔契"), "data-level-one-tome-ritual")).join("")}</div></section>`);
     }
-    const hasRequiredUniqueSpells = (values, count) => {
-      const selected = (Array.isArray(values) ? values : []).filter(Boolean);
-      return selected.length === count && new Set(selected).size === count;
-    };
-    const spellChoicesComplete = hasRequiredUniqueSpells(choices.cantrips, levelOneCantripCount(draft, definition))
-      && hasRequiredUniqueSpells(choices.spellbookSpells, definition.spellbookSpells || 0)
-      && hasRequiredUniqueSpells(choices.preparedSpells, definition.preparedSpells || 0)
-      && (!(choices.invocations || []).includes("pact-of-the-tome") || pactTomeSelectionComplete(choices.tome));
-    body.innerHTML = `<button type="button" class="quick-build-change" data-level-one-stage-back="${previousLevelOneStage("spells")}">← 返回</button><h3>${CLASS_LABELS[key]}：法術選擇</h3>${sections.join("")}<div class="quick-build-substep-actions quick-build-inline-actions"><button type="button" data-level-one-stage-back="${previousLevelOneStage("spells")}">返回</button><button type="button" class="primary" data-level-one-stage-next="${nextLevelOneStage("spells")}"${spellChoicesComplete ? "" : " disabled"}>下一步</button></div>`;
-    body.querySelectorAll("[data-level-one-stage-back]").forEach(button => button.addEventListener("click", () => setLevelOneStage(button.dataset.levelOneStageBack)));
-    body.querySelector("[data-level-one-stage-next]")?.addEventListener("click", event => setLevelOneStage(event.currentTarget.dataset.levelOneStageNext));
+    body.innerHTML = `<h3>${CLASS_LABELS[key]}：法術選擇</h3>${sections.join("")}`;
     const collect = selector => [...body.querySelectorAll(selector)].map(item => item.value || "");
     body.querySelectorAll("[data-level-one-cantrip],[data-level-one-spellbook],[data-level-one-prepared],[data-level-one-tome-cantrip],[data-level-one-tome-ritual]").forEach(select => select.addEventListener("change", () => updateLevelOneField(next => { next.cantrips = collect("[data-level-one-cantrip]"); next.spellbookSpells = collect("[data-level-one-spellbook]"); next.preparedSpells = collect("[data-level-one-prepared]"); next.tome = { cantrips: collect("[data-level-one-tome-cantrip]"), rituals: collect("[data-level-one-tome-ritual]") }; })));
     body.querySelectorAll("[data-spell-view]").forEach(button => button.addEventListener("click", event => {
@@ -2376,9 +2171,7 @@
       const peerDuplicate = selected.includes(name) && selected[index] !== name;
       return `<option value="${escapeHtml(name)}"${selected[index] === name ? " selected" : ""}${peerDuplicate ? " disabled" : ""}>${escapeHtml(name)}（${escapeHtml(mastery)}）${peerDuplicate ? "（本頁已選）" : ""}</option>`;
     }).join("")}</select></div>`;
-    body.innerHTML = `<button type="button" class="quick-build-change" data-level-one-stage-back="${previousLevelOneStage("mastery")}">← 返回</button><h3>武器精通選擇</h3><section class="quick-build-choice-panel"><div class="quick-build-spell-fields">${Array.from({ length: count }, (_, index) => select(index)).join("")}</div></section><div class="quick-build-substep-actions quick-build-inline-actions"><button type="button" data-level-one-stage-back="${previousLevelOneStage("mastery")}">返回</button><button type="button" class="primary" data-level-one-stage-next="${nextLevelOneStage("mastery")}">下一步</button></div>`;
-    body.querySelectorAll("[data-level-one-stage-back]").forEach(button => button.addEventListener("click", () => setLevelOneStage(button.dataset.levelOneStageBack)));
-    body.querySelector("[data-level-one-stage-next]")?.addEventListener("click", event => setLevelOneStage(event.currentTarget.dataset.levelOneStageNext));
+    body.innerHTML = `<h3>武器精通選擇</h3><section class="quick-build-choice-panel"><div class="quick-build-spell-fields">${Array.from({ length: count }, (_, index) => select(index)).join("")}</div></section>`;
     body.querySelectorAll("[data-level-one-mastery]").forEach(selectEl => selectEl.addEventListener("change", () => updateLevelOneField(next => { next.weaponMasteries = [...body.querySelectorAll("[data-level-one-mastery]")].map(item => item.value || ""); })));
   }
 
@@ -2386,7 +2179,6 @@
     const selected = draft.choices.levelOne?.expertise || [];
     const options = orderedSkillOptions(expertiseSkillOptions(draft));
     const requiredCount = LEVEL_ONE_DEFINITIONS[draft.choices.class].expertise;
-    const complete = [...new Set(selected.filter(name => options.includes(name)))].length === requiredCount;
     const select = index => {
       const current = selected[index] || "";
       const stale = current && !options.includes(current) ? `<option value="${escapeHtml(current)}" selected>${escapeHtml(skillOptionLabel(current))}（目前未熟練）</option>` : "";
@@ -2395,9 +2187,7 @@
         return `<option value="${escapeHtml(name)}"${current === name ? " selected" : ""}${peerDuplicate ? " disabled" : ""}>${escapeHtml(skillOptionLabel(name))}${peerDuplicate ? "（本頁已選）" : ""}</option>`;
       }).join("")}</select></div>`;
     };
-    body.innerHTML = `<button type="button" class="quick-build-change" data-level-one-stage-back="${previousLevelOneStage("expertise")}">← 返回</button><h3>${CLASS_LABELS[draft.choices.class]}：專精</h3><section class="quick-build-choice-panel"><p class="quick-build-option-note">只能選擇已從背景、種族或職業取得熟練的技能。</p><div class="quick-build-spell-fields">${Array.from({ length: requiredCount }, (_, index) => select(index)).join("")}</div></section><div class="quick-build-substep-actions quick-build-inline-actions"><button type="button" data-level-one-stage-back="${previousLevelOneStage("expertise")}">返回</button><button type="button" class="primary" data-level-one-stage-next="${nextLevelOneStage("expertise")}"${complete ? "" : " disabled"}>下一步</button></div>`;
-    body.querySelectorAll("[data-level-one-stage-back]").forEach(button => button.addEventListener("click", () => setLevelOneStage(button.dataset.levelOneStageBack)));
-    body.querySelector("[data-level-one-stage-next]")?.addEventListener("click", event => setLevelOneStage(event.currentTarget.dataset.levelOneStageNext));
+    body.innerHTML = `<h3>${CLASS_LABELS[draft.choices.class]}：專精</h3><section class="quick-build-choice-panel"><p class="quick-build-option-note">只能選擇已從背景、種族或職業取得熟練的技能。</p><div class="quick-build-spell-fields">${Array.from({ length: requiredCount }, (_, index) => select(index)).join("")}</div></section>`;
     body.querySelectorAll("[data-level-one-expertise]").forEach(selectEl => selectEl.addEventListener("change", () => updateLevelOneField(next => { next.expertise = [...body.querySelectorAll("[data-level-one-expertise]")].map(item => item.value || ""); })));
   }
 
@@ -2441,19 +2231,7 @@
       summaryRow("陣營", alignmentLabel())
     ].join("");
     const summarySection = summaryRows ? `<section class="quick-build-complete"><dl class="quick-build-summary-list">${summaryRows}</dl></section>` : "";
-    body.innerHTML = `<button type="button" class="quick-build-change" data-level-one-stage-back="${previousLevelOneStage("summary")}">← 返回修改</button><h3>${CLASS_LABELS[draft.choices.class]}：完成 1 級摘要</h3>${pending.length ? `<div class="quick-build-warning"><strong>尚未完成</strong><br>${pending.map(escapeHtml).join("<br>")}</div>` : `<section class="quick-build-complete"><strong>完成 1 級選擇已齊全，可前往 1 級總覽。</strong></section>`}${summarySection}${duplicateReviewWarning()}<div class="quick-build-substep-actions quick-build-inline-actions"><button type="button" data-level-one-stage-back="${previousLevelOneStage("summary")}">返回修改</button></div>`;
-    body.querySelectorAll("[data-level-one-stage-back]").forEach(button => button.addEventListener("click", () => setLevelOneStage(button.dataset.levelOneStageBack)));
-  }
-
-  function renderLevelOne(body) {
-    const stages = levelOneStages();
-    const stage = stages.includes(draft.choices.levelOne?.stage) ? draft.choices.levelOne.stage : (stages[0] || "summary");
-    if (stage === "options") renderLevelOneOptions(body);
-    else if (stage === "languages") renderLevelOneLanguages(body);
-    else if (stage === "spells") renderLevelOneSpells(body);
-    else if (stage === "mastery") renderLevelOneMastery(body);
-    else if (stage === "expertise") renderLevelOneExpertise(body);
-    else renderLevelOneSummary(body);
+    body.innerHTML = `<h3>${CLASS_LABELS[draft.choices.class]}：完成 1 級摘要</h3>${pending.length ? `<div class="quick-build-warning"><strong>尚未完成</strong><br>${pending.map(escapeHtml).join("<br>")}</div>` : `<section class="quick-build-complete"><strong>完成 1 級選擇已齊全，可前往 1 級總覽。</strong></section>`}${summarySection}${duplicateReviewWarning()}`;
   }
 
   function formatCurrency(currency) {
@@ -2492,7 +2270,7 @@
     const labels = { ancestry: "血統／恩賜", lineage: "傳承／血統", legacy: "邪魔遺贈", size: "體型", skill: "技能", cantrip: "戲法", feat: "起源專長" };
     const details = Object.entries(options)
       .filter(([key, value]) => labels[key] && typeof value === "string" && value)
-      .map(([key, value]) => `${labels[key]}：${key === "cantrip" ? spellNameZh(value) : value}`);
+      .map(([key, value]) => `${labels[key]}：${key === "cantrip" ? spellNameZh(value) : key === "feat" ? humanOriginFeatLabel(value) : value}`);
     const featOptions = isPlainObject(options.featOptions) ? options.featOptions : {};
     if (featOptions.spellClass) details.push(`魔法學徒職業：${CLASS_LABELS[featOptions.spellClass] || featOptions.spellClass}`);
     if (Array.isArray(featOptions.cantrips) && featOptions.cantrips.some(Boolean)) details.push(`魔法學徒戲法：${featOptions.cantrips.filter(Boolean).map(spellNameZh).join("、")}`);
@@ -2561,7 +2339,7 @@
       </dl></section>
       <div class="quick-build-substep-actions quick-build-inline-actions"><button type="button" data-review-return>返回修改</button><button type="button" class="primary" data-import-mobile-card>匯入手機角卡</button></div>`;
     body.querySelector("[data-review-return]")?.addEventListener("click", () => {
-      draft.ui = { ...draft.ui, currentStepId: "level-one", view: "review" };
+      draft.ui = { ...draft.ui, currentStepId: "level-one", view: viewForStep("level-one") };
       saveDraft();
       render();
     });
@@ -2968,34 +2746,6 @@
     window.alert(`${resultText}${warningText}`);
   }
 
-  function resolveFinalSpellList(target = draft) {
-    const resolutions = {};
-    const finalSpells = (target.acquisitions.spells || []).map(acquisition => {
-      const record = canonicalSpell(acquisition.spellId);
-      const status = record ? "resolved" : "missing";
-      resolutions[acquisition.spellId || acquisition.id] = { status, spellId: acquisition.spellId || null, name: record?.nameZh || acquisition.name || "" };
-      return { ...acquisition, name: record?.nameZh || acquisition.name, content: { ...acquisition.content, spellId: acquisition.spellId, name: record?.nameZh || acquisition.name }, resolutionStatus: status, displayName: record ? spellDisplayName(record.spellId) : acquisition.name };
-    });
-    return { finalSpells, resolutions, pending: Object.values(resolutions).filter(item => item.status !== "resolved") };
-  }
-
-  function renderFinalReview(body) {
-    const result = resolveFinalSpellList();
-    const conflicts = raceSpellConflicts();
-    const classConflicts = draft.selections.class?.content?.conflicts || [];
-    const conflictsAcknowledged = conflicts.every(conflict => conflict.resolution === "acknowledged-final");
-    body.innerHTML = `<h3>最終確認</h3><p class="quick-build-lead">此處直接以 spellId 解析 canonical 法術資料；已選法術的識別不依賴名稱。</p><section class="quick-build-choice-panel"><strong>最終法術列表</strong><div class="quick-build-equipment-list">${result.finalSpells.length ? result.finalSpells.map(item => `${escapeHtml(item.displayName || item.name)}｜來源：${escapeHtml(item.source?.label || item.sourceType)}`).join("<br>") : "尚無法術"}</div>${result.pending.length ? `<div class="quick-build-warning"><strong>待確認</strong><br>${result.pending.map(item => `${escapeHtml(item.name || item.spellId || "未命名法術")}：${"找不到專案資料"}`).join("<br>")}</div>` : ""}</section>${classConflicts.length ? `<section class="quick-build-warning"><strong>技能／工具跨來源同名</strong><br>${classConflicts.map(item => `${escapeHtml(item.name)}：${escapeHtml(item.existingSource?.label || "其他來源")}、${escapeHtml(item.classSource?.label || "職業")}`).join("<br>")}<br>所有來源紀錄均已保留。</section>` : ""}${conflicts.length ? `<section class="quick-build-warning"><strong>法術跨來源同名</strong><br>${conflicts.map(item => escapeHtml(item.name)).join("、")} 同時來自背景與種族。確認後仍會保留每一筆來源紀錄。<div class="quick-build-choice-actions">${conflictsAcknowledged ? "<strong>已確認保留所有重複來源</strong>" : '<button type="button" data-final-spell-conflict-ack>我知道仍有重複，保留所有來源</button>'}</div></section>` : ""}`;
-    body.querySelector("[data-final-spell-conflict-ack]")?.addEventListener("click", acknowledgeFinalSpellConflicts);
-  }
-
-  function acknowledgeFinalSpellConflicts() {
-    const resolutions = { ...draft.choices.spellConflictResolutions };
-    raceSpellConflicts().forEach(conflict => { resolutions[conflict.id] = "acknowledged-final"; });
-    draft.choices.spellConflictResolutions = resolutions;
-    saveDraft();
-    render();
-  }
-
   function selectedChoiceForGroup(group) {
     if (group === "background") return draft.choices.background;
     if (group === "race") return draft.choices.race;
@@ -3023,15 +2773,6 @@
   }
 
   function cleanFlowSection(section) {
-    section.querySelectorAll([
-      ".quick-build-change",
-      ".quick-build-substep-actions",
-      ".quick-build-spell-finish",
-      ".quick-build-ability-confirm",
-      ".quick-build-option-confirm",
-      "[data-human-race-confirm]"
-    ].join(",")).forEach(element => element.remove());
-    section.querySelectorAll(".quick-build-field-control.has-confirm").forEach(element => element.classList.remove("has-confirm"));
     section.querySelectorAll(".quick-build-card").forEach(card => {
       const selected = card.hasAttribute("data-background") && card.dataset.background === draft.choices.background ||
         card.hasAttribute("data-race") && card.dataset.race === draft.choices.race ||
@@ -3192,6 +2933,142 @@
     ["level-one-review", { id: "level-one-review", title: "1 級總覽", renderReview: renderLevelOneReview, isComplete: () => true }]
   ]);
 
+  function stableSignature(value) {
+    const normalize = item => {
+      if (Array.isArray(item)) return item.map(normalize);
+      if (!isPlainObject(item)) return item;
+      return Object.fromEntries(Object.keys(item).sort().map(key => [key, normalize(item[key])]));
+    };
+    return JSON.stringify(normalize(value));
+  }
+
+  function sortedStrings(values) {
+    return (Array.isArray(values) ? values : []).filter(Boolean).map(String).sort((left, right) => left.localeCompare(right, "zh-Hant"));
+  }
+
+  function semanticChoiceValue(value, excludedKeys = new Set()) {
+    if (Array.isArray(value)) return value.map(item => semanticChoiceValue(item, excludedKeys));
+    if (!isPlainObject(value)) return value;
+    return Object.fromEntries(Object.entries(value)
+      .filter(([key]) => !excludedKeys.has(key))
+      .map(([key, item]) => [key, semanticChoiceValue(item, excludedKeys)]));
+  }
+
+  function normalizedCurrency(currency) {
+    return Object.fromEntries(["cp", "sp", "gp", "pp"].map(key => [key, Number(currency?.[key]) || 0]));
+  }
+
+  function normalizedEquipmentItems(items) {
+    return (Array.isArray(items) ? items : []).map(item => typeof item === "string"
+      ? { name: item, quantity: 1 }
+      : { name: String(item?.name || ""), quantity: Number(item?.quantity) || 1 })
+      .filter(item => item.name)
+      .sort((left, right) => left.name.localeCompare(right.name, "zh-Hant") || left.quantity - right.quantity);
+  }
+
+  function equipmentSelectionSignature(selection) {
+    const content = selection?.content;
+    if (!content) return null;
+    return {
+      method: content.method || null,
+      items: normalizedEquipmentItems(content.items),
+      currency: normalizedCurrency(content.currency),
+      loadout: semanticChoiceValue(content.loadout || {}),
+      specialWrites: semanticChoiceValue(content.specialWrites || []),
+      operationOrder: semanticChoiceValue(content.operationOrder || [])
+    };
+  }
+
+  function acquisitionEffectSignature(type, sourceTypes, target = draft) {
+    const allowedSources = new Set(sourceTypes);
+    return (target.acquisitions?.[type] || [])
+      .filter(item => allowedSources.has(item.sourceType))
+      .map(item => ({
+        name: item.name || "",
+        content: semanticChoiceValue(item.content || {}, new Set(["crossSourceDuplicate", "fieldId"]))
+      }))
+      .sort((left, right) => stableSignature(left).localeCompare(stableSignature(right), "zh-Hant"));
+  }
+
+  // 綠背確認只追蹤會改變角色結果的內容；來源名稱與重複提示會即時更新，但不會使步驟失效。
+  function stepEffectiveSignature(stepId, target = draft) {
+    if (stepId === "background") {
+      return stableSignature({
+        background: target.choices.background || null,
+        tool: target.choices.backgroundToolChoice || null,
+        cantrips: sortedStrings(target.choices.backgroundMagic?.cantrips),
+        levelOneSpells: sortedStrings(target.choices.backgroundMagic?.levelOneSpells)
+      });
+    }
+    if (stepId === "race") {
+      return stableSignature({
+        race: target.choices.race || null,
+        options: semanticChoiceValue(target.choices.raceOptions || {})
+      });
+    }
+    if (stepId === "class") {
+      const content = target.selections.class?.content || {};
+      return stableSignature({
+        class: target.choices.class || null,
+        classType: content.classType || null,
+        abilities: semanticChoiceValue(content.abilities || {}),
+        backgroundAbilityBonuses: semanticChoiceValue(content.backgroundAbilityBonuses || {}),
+        spellcastingAbility: content.spellcastingAbility || null,
+        saves: sortedStrings(content.saves),
+        skills: sortedStrings(content.skills),
+        tools: sortedStrings(content.tools),
+        weaponProficiencies: content.weaponProficiencies || null,
+        armorTraining: content.armorTraining || null,
+        skillBonuses: acquisitionEffectSignature("skillBonuses", ["class"], target)
+      });
+    }
+    if (stepId === "equipment") {
+      return stableSignature({
+        classEquipment: equipmentSelectionSignature(target.selections.classEquipment),
+        backgroundEquipment: equipmentSelectionSignature(target.selections.backgroundEquipment)
+      });
+    }
+    if (stepId === "level-one") {
+      const content = target.selections.levelOne?.content || {};
+      return stableSignature({
+        class: target.choices.class || null,
+        fixed: sortedStrings(content.fixed),
+        classOption: content.classOption || null,
+        cantrips: sortedStrings(content.cantrips),
+        spellbookSpells: sortedStrings(content.spellbookSpells),
+        preparedSpells: sortedStrings(content.preparedSpells),
+        weaponMasteries: sortedStrings(content.weaponMasteries),
+        fightingStyle: content.fightingStyle || null,
+        expertise: sortedStrings(content.expertise),
+        languages: sortedStrings(content.languages),
+        invocations: sortedStrings(content.invocations),
+        tome: {
+          cantrips: sortedStrings(content.tome?.cantrips),
+          rituals: sortedStrings(content.tome?.rituals)
+        },
+        alignment: content.alignment || null,
+        skillBonuses: acquisitionEffectSignature("skillBonuses", ["class", "level-one"], target)
+      });
+    }
+    return null;
+  }
+
+  function stepHasValidConfirmation(stepId, target = draft) {
+    const step = STEP_REGISTRY.get(stepId);
+    const savedSignature = target.ui?.confirmedStepSignatures?.[stepId];
+    return Boolean(step && stepId !== "level-one-review" && savedSignature && step.isComplete?.(target) && savedSignature === stepEffectiveSignature(stepId, target));
+  }
+
+  function viewForStep(stepId, target = draft) {
+    return stepId === "level-one-review" || stepHasValidConfirmation(stepId, target) ? "review" : "edit";
+  }
+
+  function confirmStep(stepId, target = draft) {
+    const signature = stepEffectiveSignature(stepId, target);
+    if (!signature) return;
+    target.ui.confirmedStepSignatures = { ...target.ui.confirmedStepSignatures, [stepId]: signature };
+  }
+
   function currentStepDefinition() {
     return STEP_REGISTRY.get(draft.ui.currentStepId) || null;
   }
@@ -3214,6 +3091,9 @@
     const stepIndex = Math.max(0, steps.findIndex(item => item.id === draft.ui.currentStepId));
     const stepMeta = steps[stepIndex] || steps[0];
     const step = STEP_REGISTRY.get(stepMeta.id);
+    if (stepMeta.id !== "level-one-review" && draft.ui.view === "review" && !stepHasValidConfirmation(stepMeta.id)) {
+      draft.ui = { ...draft.ui, view: "edit" };
+    }
     const workflowSteps = steps.filter(item => item.id !== "level-one-review");
     const workflowIndex = workflowSteps.findIndex(item => item.id === stepMeta.id);
     modal.querySelector(".quick-build-progress").textContent = stepMeta.id === "level-one-review"
@@ -3288,31 +3168,25 @@
     if (!BACKGROUND_ORDER.includes(key) || !backgroundData(key)) return;
     if (draft.choices.background === key) return;
     const backgroundChanged = Boolean(draft.choices.background && draft.choices.background !== key);
-    const backgroundChangedAfterClassComplete = Boolean(draft.choices.background && draft.choices.background !== key && classComplete(draft));
+    const backgroundChangedAfterClassComplete = Boolean(backgroundChanged && classComplete(draft));
+    const nextBackgroundAbilities = displayList(backgroundData(key).屬性).split("、").filter(Boolean);
+    const preservedBonuses = normalizeBackgroundBonuses(draft.choices.backgroundAbilityBonuses, nextBackgroundAbilities);
+    const bonusesRemainComplete = backgroundBonusTotal(preservedBonuses) === 3;
     draft.choices.background = key;
-    draft.choices.backgroundWealth = null;
-    draft.choices.backgroundToolChoice = null;
-    draft.choices.backgroundMagic = { cantrips: [], levelOneSpells: [] };
-    draft.choices.backgroundMagicLastSelected = null;
-    draft.choices.backgroundMagicConfirmed = false;
-    draft.choices.backgroundAbilityBonuses = emptyAbilityMap();
-    draft.choices.spellConflictResolutions = {};
-    if (backgroundChanged) invalidateClassEquipmentAfterBackgroundChange();
+    // 保留裝備取得方式與仍合法的下游選擇；後續由有效內容簽章判斷哪些綠背需要重看。
+    draft.choices.backgroundAbilityBonuses = preservedBonuses;
     const blockedSpellClass = HUMAN_MAGIC_INITIATE_BLOCKED_CLASS_BY_BACKGROUND[key];
     if (draft.choices.raceOptions?.feat === "魔法學徒" && draft.choices.raceOptions.featOptions?.spellClass === blockedSpellClass) {
-      draft.choices.raceOptions = { ...draft.choices.raceOptions, confirmed: false, featOptions: {} };
+      draft.choices.raceOptions = { ...draft.choices.raceOptions, featOptions: {} };
     }
     if (backgroundChangedAfterClassComplete) {
       draft.choices.classOptions = {
         ...draft.choices.classOptions,
-        stage: "abilities",
-        summaryConfirmed: false,
         abilitiesCustomized: true,
-        backgroundBonusInvalidated: true
+        backgroundBonusInvalidated: !bonusesRemainComplete
       };
-    } else {
-      invalidateClassAfterUpstreamChange("abilities");
     }
+    clearFutureLevelChoices();
     saveDraft();
     render(true);
   }
@@ -3322,32 +3196,14 @@
     if (draft.choices.race === key) return;
     draft.choices.race = key;
     draft.choices.raceOptions = {};
-    draft.choices.spellConflictResolutions = {};
-    invalidateClassAfterUpstreamChange();
+    clearFutureLevelChoices();
     saveDraft();
     render(true);
   }
 
-  function invalidateClassAfterUpstreamChange(stage = null) {
-    if (!draft.choices.class || !isPlainObject(draft.choices.classOptions)) return;
-    draft.choices.classOptions = {
-      ...draft.choices.classOptions,
-      ...(stage ? { stage } : {}),
-      summaryConfirmed: false
-    };
-    draft.choices.levelOne = { ...(draft.choices.levelOne || {}), summaryConfirmed: false };
+  function clearFutureLevelChoices() {
     draft.choices.targetLevel = 1;
     draft.choices.levelUps = [];
-  }
-
-  function invalidateClassEquipmentAfterBackgroundChange() {
-    const hadEquipmentSelection = Boolean(draft.choices.classEquipmentMethod || draft.selections.classEquipment);
-    draft.choices.classEquipmentMethod = null;
-    draft.choices.classEquipment = [];
-    draft.choices.defaultWeapon = null;
-    draft.choices.classEquipmentOptions = {};
-    draft.choices.classEquipmentInvalidatedByBackground = hadEquipmentSelection;
-    draft.choices.levelOne = { ...(draft.choices.levelOne || {}), summaryConfirmed: false, weaponMasteries: [] };
   }
 
   function chooseClass(key) {
@@ -3357,13 +3213,12 @@
     draft.choices.abilityMethod = "class-default-customized";
     draft.choices.abilities = { ...DEFAULT_ABILITIES_BY_CLASS[key] };
     draft.choices.backgroundAbilityBonuses = normalizeBackgroundBonuses(draft.choices.backgroundAbilityBonuses, draft.choices.backgroundAbilities);
-    draft.choices.classOptions = { stage: CLASS_TYPE_OPTIONS[key]?.length ? "classType" : "abilities", classType: null, skills: [], tools: [], spellcastingAbilityManual: false, summaryConfirmed: false };
+    draft.choices.classOptions = { classType: null, skills: [], tools: [], spellcastingAbilityManual: false };
     if (!CLASS_TYPE_OPTIONS[key]?.length) applyDefaultClassAbilityPreset(draft);
     draft.choices.classEquipmentMethod = null;
     draft.choices.classEquipment = [];
     draft.choices.defaultWeapon = null;
     draft.choices.classEquipmentOptions = {};
-    draft.choices.classEquipmentInvalidatedByBackground = false;
     draft.choices.levelOne = {};
     draft.choices.targetLevel = 1;
     draft.choices.levelUps = [];
@@ -3377,7 +3232,7 @@
     const key = draft.choices.class;
     if (!CLASS_TYPE_OPTIONS[key]?.some(option => option.id === type)) return;
     if (draft.choices.classOptions?.classType === type) return;
-    draft.choices.classOptions = { ...draft.choices.classOptions, classType: type, stage: "abilities", skills: [], tools: [], abilitiesCustomized: false, summaryConfirmed: false };
+    draft.choices.classOptions = { ...draft.choices.classOptions, classType: type, skills: [], tools: [], abilitiesCustomized: false };
     draft.choices.levelOne = {};
     draft.choices.targetLevel = 1;
     draft.choices.levelUps = [];
@@ -3386,43 +3241,6 @@
     draft.choices.spellcastingAbility = castingSource ? castingSource.fixedAbility || preferredMentalAbility(draft) : null;
     saveDraft();
     render(true);
-  }
-
-  function resetClass() {
-    expandedChoiceGroups.delete("class");
-    draft.choices.class = null;
-    draft.choices.abilityMethod = null;
-    draft.choices.abilities = emptyAbilityMap(null);
-    draft.choices.spellcastingAbility = null;
-    draft.choices.classOptions = {};
-    draft.choices.classEquipmentMethod = null;
-    draft.choices.classEquipment = [];
-    draft.choices.defaultWeapon = null;
-    draft.choices.classEquipmentOptions = {};
-    draft.choices.classEquipmentInvalidatedByBackground = false;
-    draft.choices.levelOne = {};
-    draft.choices.targetLevel = 1;
-    draft.choices.levelUps = [];
-    saveDraft();
-    render();
-  }
-
-  function setClassStage(stage) {
-    if (!["classType", "abilities", "spellcasting", "proficiencies", "summary"].includes(stage)) return;
-    if (stage === "abilities" && CLASS_TYPE_OPTIONS[draft.choices.class]?.length && !draft.choices.classOptions?.classType) return;
-    if (["spellcasting", "proficiencies", "summary"].includes(stage) && !classAbilitiesComplete()) return;
-    if (stage === "spellcasting" && !hasDraftSpellcasting()) stage = "proficiencies";
-    if (stage === "summary" && !classProficienciesComplete()) return;
-    draft.choices.classOptions = { ...draft.choices.classOptions, stage, summaryConfirmed: false };
-    saveDraft();
-    render();
-  }
-
-
-  function advanceAfterClassAbilities() {
-    if (!classAbilitiesComplete()) return;
-    draft.choices.classOptions = { ...draft.choices.classOptions, backgroundBonusInvalidated: false };
-    setClassStage(hasDraftSpellcasting() ? "spellcasting" : "proficiencies");
   }
 
   function updateClassAbility(event) {
@@ -3441,8 +3259,11 @@
       const next = { ...draft.choices.backgroundAbilityBonuses, [bonusKey]: value };
       if (allowed.has(bonusKey) && backgroundBonusTotal(next) <= 3) draft.choices.backgroundAbilityBonuses = next;
     }
-    draft.choices.classOptions = { ...draft.choices.classOptions, abilitiesCustomized: true, summaryConfirmed: false };
-    draft.choices.levelOne = { ...(draft.choices.levelOne || {}), summaryConfirmed: false };
+    draft.choices.classOptions = {
+      ...draft.choices.classOptions,
+      abilitiesCustomized: true,
+      backgroundBonusInvalidated: classAbilitiesComplete() ? false : draft.choices.classOptions.backgroundBonusInvalidated
+    };
     saveDraft();
     render(true);
   }
@@ -3452,8 +3273,7 @@
     const castingSource = spellcastingSourceForDraft(draft);
     if (!castingSource || castingSource.type === "class" || !["int", "wis", "cha"].includes(ability)) return;
     draft.choices.spellcastingAbility = ability;
-    draft.choices.classOptions = { ...draft.choices.classOptions, spellcastingAbilityManual: true, summaryConfirmed: false };
-    draft.choices.levelOne = { ...(draft.choices.levelOne || {}), summaryConfirmed: false };
+    draft.choices.classOptions = { ...draft.choices.classOptions, spellcastingAbilityManual: true };
     saveDraft();
     render(true);
   }
@@ -3462,18 +3282,9 @@
     const body = ensureWizard().querySelector(".quick-build-body");
     const skills = [...body.querySelectorAll("[data-class-skill]")].map(select => select.value || "");
     const tools = [...body.querySelectorAll("[data-class-tool]")].map(select => select.value || "");
-    draft.choices.classOptions = { ...draft.choices.classOptions, skills, tools, summaryConfirmed: false };
-    draft.choices.levelOne = { ...(draft.choices.levelOne || {}), summaryConfirmed: false };
+    draft.choices.classOptions = { ...draft.choices.classOptions, skills, tools };
     saveDraft();
     render(true);
-  }
-
-  function confirmClassSummary() {
-    const spellcastingComplete = !hasDraftSpellcasting() || Boolean(draft.choices.spellcastingAbility);
-    if (!classAbilitiesComplete() || !spellcastingComplete || !classProficienciesComplete()) return;
-    draft.choices.classOptions = { ...draft.choices.classOptions, stage: "summary", summaryConfirmed: true };
-    saveDraft();
-    render();
   }
 
   function chooseClassEquipmentMethod(method) {
@@ -3484,21 +3295,9 @@
     draft.choices.classEquipment = [];
     draft.choices.defaultWeapon = null;
     draft.choices.classEquipmentOptions = {};
-    draft.choices.classEquipmentInvalidatedByBackground = false;
-    draft.choices.levelOne = { ...(draft.choices.levelOne || {}), summaryConfirmed: false, weaponMasteries: [] };
+    draft.choices.levelOne = { ...(draft.choices.levelOne || {}), weaponMasteries: [] };
     saveDraft();
     render(true);
-  }
-
-  function resetClassEquipment() {
-    draft.choices.classEquipmentMethod = null;
-    draft.choices.classEquipment = [];
-    draft.choices.defaultWeapon = null;
-    draft.choices.classEquipmentOptions = {};
-    draft.choices.classEquipmentInvalidatedByBackground = false;
-    draft.choices.levelOne = { ...(draft.choices.levelOne || {}), summaryConfirmed: false, weaponMasteries: [] };
-    saveDraft();
-    render();
   }
 
   function updateClassEquipmentOptions() {
@@ -3511,58 +3310,23 @@
     const offHand = offCandidates.includes(selectedOff) ? selectedOff : offCandidates.length === 1 ? offCandidates[0] : null;
     const instrument = body.querySelector("[data-equipment-instrument]")?.value || previous.instrument || null;
     draft.choices.classEquipmentOptions = { mainHand, offHand, instrument };
-    draft.choices.levelOne = { ...(draft.choices.levelOne || {}), summaryConfirmed: false };
     saveDraft();
     render(true);
-  }
-
-  function confirmClassEquipment() {
-    const selection = draft.selections.classEquipment;
-    if (!selection || selection.content.pendingChoices?.some(item => item !== "確認裝備")) return;
-    draft.choices.classEquipmentOptions = { ...draft.choices.classEquipmentOptions, confirmed: true };
-    saveDraft();
-    render();
-  }
-
-  function resetRace() {
-    expandedChoiceGroups.delete("race");
-    draft.choices.race = null;
-    draft.choices.raceOptions = {};
-    draft.choices.spellConflictResolutions = {};
-    invalidateClassAfterUpstreamChange();
-    saveDraft();
-    render();
   }
 
   function updateRaceOption(event) {
     const field = event.currentTarget.dataset.raceOption;
     const value = event.currentTarget.value;
-    const options = { ...draft.choices.raceOptions, editing: false };
+    const options = { ...draft.choices.raceOptions };
     if (value) options[field] = value; else delete options[field];
     if (field === "lineage") {
-      options.cantripConfirmed = false;
       if (value !== "高等精靈血統") delete options.cantrip;
     }
-    if (field === "cantrip") options.cantripConfirmed = false;
-    if (draft.choices.race === "goliath" && field === "ancestry") options.confirmed = false;
     if (field === "feat") options.featOptions = {};
-    if (draft.choices.race === "human") options.confirmed = false;
     draft.choices.raceOptions = options;
-    draft.choices.spellConflictResolutions = {};
-    invalidateClassAfterUpstreamChange();
+    clearFutureLevelChoices();
     saveDraft();
     render(true);
-  }
-
-  function confirmRaceOption(event) {
-    const field = event.currentTarget.dataset.raceOptionConfirm;
-    const options = { ...draft.choices.raceOptions, editing: false };
-    if (field === "cantrip" && options.cantrip) options.cantripConfirmed = true;
-    else if (field === "ancestry" && draft.choices.race === "goliath" && RACE_OPTION_DEFINITIONS.goliath.ancestry.includes(options.ancestry)) options.confirmed = true;
-    else return;
-    draft.choices.raceOptions = options;
-    saveDraft();
-    render();
   }
 
   function showRaceSpellDescription(field, trigger) {
@@ -3584,8 +3348,8 @@
     const classChanged = event.currentTarget.matches("[data-human-spell-class]") && spellClass !== previous.spellClass;
     const cantrips = classChanged ? ["", ""] : [body.querySelector("#quick-build-human-cantrip-1")?.value || "", body.querySelector("#quick-build-human-cantrip-2")?.value || ""];
     const levelOne = classChanged ? "" : body.querySelector("#quick-build-human-level-one")?.value || "";
-    draft.choices.raceOptions = { ...draft.choices.raceOptions, confirmed: false, featOptions: { spellClass, cantrips, levelOneSpells: levelOne ? [levelOne] : [] } };
-    draft.choices.spellConflictResolutions = {};
+    draft.choices.raceOptions = { ...draft.choices.raceOptions, featOptions: { spellClass, cantrips, levelOneSpells: levelOne ? [levelOne] : [] } };
+    clearFutureLevelChoices();
     saveDraft();
     render(true);
   }
@@ -3605,54 +3369,15 @@
 
   function updateHumanSkilledFeat() {
     const values = [...ensureWizard().querySelectorAll("[data-human-skilled]")].map(select => select.value || "");
-    draft.choices.raceOptions = { ...draft.choices.raceOptions, confirmed: false, featOptions: { proficiencies: values } };
-    invalidateClassAfterUpstreamChange();
+    draft.choices.raceOptions = { ...draft.choices.raceOptions, featOptions: { proficiencies: values } };
+    clearFutureLevelChoices();
     saveDraft();
     render(true);
-  }
-
-  function confirmHumanRaceOptions() {
-    if (!humanRaceOptionsComplete()) return;
-    draft.choices.raceOptions = { ...draft.choices.raceOptions, editing: false, confirmed: true };
-    saveDraft();
-    render();
-  }
-
-  function resolveRaceSpellConflicts(decision) {
-    if (decision === "edit-background") {
-      draft.ui = { ...draft.ui, currentStepId: "background", view: "edit" };
-      saveDraft();
-      render();
-    }
-  }
-
-  function resetBackground() {
-    expandedChoiceGroups.delete("background");
-    draft.choices.background = null;
-    draft.choices.backgroundWealth = null;
-    draft.choices.backgroundToolChoice = null;
-    draft.choices.backgroundMagic = { cantrips: [], levelOneSpells: [] };
-    draft.choices.backgroundMagicLastSelected = null;
-    draft.choices.backgroundMagicConfirmed = false;
-    draft.choices.backgroundAbilityBonuses = emptyAbilityMap();
-    draft.choices.spellConflictResolutions = {};
-    invalidateClassAfterUpstreamChange("abilities");
-    saveDraft();
-    render();
-  }
-
-  function returnToBackgroundEquipment() {
-    draft.choices.backgroundWealth = null;
-    draft.choices.backgroundMagicConfirmed = false;
-    draft.choices.spellConflictResolutions = {};
-    saveDraft();
-    render();
   }
 
   function chooseBackgroundWealth(method) {
     if (!["default", "gold"].includes(method)) return;
     draft.choices.backgroundWealth = method;
-    draft.choices.levelOne = { ...(draft.choices.levelOne || {}), summaryConfirmed: false };
     saveDraft();
     render(true);
   }
@@ -3660,7 +3385,7 @@
   function chooseBackgroundTool(event) {
     const value = event.currentTarget.value;
     draft.choices.backgroundToolChoice = GAME_TOOL_OPTIONS.includes(value) ? value : null;
-    invalidateClassAfterUpstreamChange();
+    clearFutureLevelChoices();
     saveDraft();
     render();
   }
@@ -3670,10 +3395,7 @@
     let first = body.querySelector("#quick-build-cantrip-1")?.value || "";
     let second = body.querySelector("#quick-build-cantrip-2")?.value || "";
     const levelOne = body.querySelector("#quick-build-level-one")?.value || "";
-    const previousLastSelected = draft.choices.backgroundMagicLastSelected;
-    let duplicateRejected = false;
     if (first && first === second) {
-      duplicateRejected = true;
       if (changedSelect?.id === "quick-build-cantrip-1") first = "";
       else second = "";
       if (changedSelect) changedSelect.value = "";
@@ -3682,12 +3404,7 @@
       cantrips: [first, second],
       levelOneSpells: [levelOne].filter(Boolean)
     };
-    draft.choices.backgroundMagicLastSelected = duplicateRejected ? previousLastSelected : changedSelect?.value ? {
-      name: changedSelect.value,
-      level: changedSelect.id === "quick-build-level-one" ? "1" : "cantrips"
-    } : null;
-    draft.choices.backgroundMagicConfirmed = false;
-    draft.choices.spellConflictResolutions = {};
+    clearFutureLevelChoices();
     saveDraft();
     refreshBackgroundSpellControls(body);
     render(true);
@@ -3696,14 +3413,11 @@
   function refreshBackgroundSpellControls(body) {
     const first = body.querySelector("#quick-build-cantrip-1")?.value || "";
     const second = body.querySelector("#quick-build-cantrip-2")?.value || "";
-    const levelOne = body.querySelector("#quick-build-level-one")?.value || "";
     syncCantripOptionAvailability(body, first, second);
     body.querySelectorAll("[data-spell-view]").forEach(button => {
       const select = body.querySelector(`#${CSS.escape(button.dataset.spellView)}`);
       button.disabled = !select?.value;
     });
-    const finish = body.querySelector(".quick-build-spell-finish");
-    if (finish) finish.disabled = !(first && second && first !== second && levelOne);
   }
 
   function syncCantripOptionAvailability(body, first, second) {
@@ -3711,48 +3425,6 @@
     const secondSelect = body.querySelector("#quick-build-cantrip-2");
     firstSelect?.querySelectorAll("option").forEach(option => { option.disabled = Boolean(second && option.value === second && option.value !== first); });
     secondSelect?.querySelectorAll("option").forEach(option => { option.disabled = Boolean(first && option.value === first && option.value !== second); });
-  }
-
-  function finishBackgroundSpells() {
-    if (!backgroundSpellsComplete()) return;
-    draft.choices.backgroundMagicConfirmed = true;
-    saveDraft();
-    render();
-  }
-
-  function createSageExampleDraft() {
-    const example = createDraft();
-    const key = "sage";
-    const data = backgroundData(key) || {};
-    const { currency } = backgroundEquipmentDetails(key, "default");
-    example.choices.background = key;
-    example.choices.backgroundAbilities = displayList(data.屬性).split("、");
-    example.choices.backgroundWealth = "default";
-    example.choices.backgroundCurrency = currency;
-    example.choices.backgroundMagic = { cantrips: ["fire-bolt", "mending"], levelOneSpells: ["detect-magic"] };
-    example.choices.backgroundMagicConfirmed = true;
-    reconcileBackgroundDraft(example);
-    return example;
-  }
-
-  function loadSageExampleDraft() {
-    draft = createSageExampleDraft();
-    saveDraft();
-    if (document.getElementById("quick-build-wizard")?.classList.contains("open")) render();
-    return structuredClone(draft);
-  }
-
-  function auditDraft(target = draft) {
-    const duplicateIds = [];
-    Object.entries(target.acquisitions || {}).forEach(([type, entries]) => {
-      const seen = new Set();
-      (Array.isArray(entries) ? entries : []).forEach(item => {
-        const identity = item?.id || `${item?.sourceType || ""}:${item?.sourceId || ""}:${item?.name || ""}`;
-        if (seen.has(identity)) duplicateIds.push(`${type}:${identity}`);
-        seen.add(identity);
-      });
-    });
-    return { clean: duplicateIds.length === 0, duplicateIds };
   }
 
   function showSpellDescription(select, trigger) {
@@ -3886,21 +3558,12 @@
     else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
   }
 
-  function goToStep(index) {
-    const steps = activeSteps(draft);
-    const target = steps[Math.min(Math.max(index, 0), steps.length - 1)];
-    if (!target) return;
-    draft.ui = { ...draft.ui, currentStepId: target.id, view: target.id === "level-one-review" ? "review" : "edit" };
-    saveDraft();
-    render();
-  }
-
   function goPreviousStep() {
     const steps = activeSteps(draft);
     const index = steps.findIndex(step => step.id === draft.ui.currentStepId);
     if (index <= 0) return;
     const target = steps[index - 1];
-    draft.ui = { ...draft.ui, currentStepId: target.id, view: "review" };
+    draft.ui = { ...draft.ui, currentStepId: target.id, view: viewForStep(target.id) };
     saveDraft();
     render();
   }
@@ -3916,6 +3579,7 @@
     const step = currentStepDefinition();
     if (draft.ui.view === "edit") {
       if (!stepIsComplete(step)) return;
+      confirmStep(step.id);
       draft.ui = { ...draft.ui, view: "review" };
       saveDraft();
       render();
@@ -3925,7 +3589,7 @@
     const index = steps.findIndex(item => item.id === draft.ui.currentStepId);
     const target = steps[index + 1];
     if (!target) return;
-    draft.ui = { ...draft.ui, currentStepId: target.id, view: target.id === "level-one-review" ? "review" : "edit" };
+    draft.ui = { ...draft.ui, currentStepId: target.id, view: viewForStep(target.id) };
     saveDraft();
     render();
   }
@@ -4038,8 +3702,7 @@
   window.quickBuild = {
     open: openWizard, close: closeWizard, createDraft,
     openSpellDetail, openPactTomeModal,
-    getDraft: () => structuredClone(draft), saveDraft, addAcquisition,
-    createSageExampleDraft, loadSageExampleDraft, auditDraft, reconcileRaceDraft, reconcileClassDraft, reconcileEquipmentDraft, resolveFinalSpellList,
+    getDraft: () => structuredClone(draft), saveDraft,
     hasImportedInitialEquipment,
     storageKey: STORAGE_KEY
   };

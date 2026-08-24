@@ -250,16 +250,22 @@
         {
           tab: "spells",
           title: () => this.stepPhase === 0
-            ? "🔎 5. 搜尋角色資料"
+            ? "🔎 5. 搜尋法術/裝備/道具"
             : "☰ 5. 保存、輸出與分享",
           text: () => this.stepPhase === 0
             ? "法術與裝備分頁都有搜尋功能，可快速查找名稱與規則資料。"
             : "右上角選單可以保存紀錄、輸出 PDF、分享角色卡，或再次開啟本導覽。",
           placement: "bottom",
-          getHoles: () => [this.stepPhase === 0
-            ? this.getHoleForSelector("#spell-tab-toolbar .spell-search-controls", 7)
-            : this.getHoleForSelector("#utility-menu", 7)
-          ].filter(Boolean),
+          getHoles: () => (this.stepPhase === 0
+            ? [
+                this.getHoleForSelector("#spell-tab-toolbar .spell-search-controls", 7),
+                this.getHoleForSelector("#spell-search-fab", 7)
+              ]
+            : [
+                this.getHoleForSelector("#utility-menu", 7),
+                this.getHoleForSelector("#utility-menu-toggle", 7)
+              ]
+          ).filter(Boolean),
           beforeTab: () => this.ensureSpellPreview(),
           beforePosition: async () => {
             await animateWindowScrollTo(0);
@@ -1533,26 +1539,30 @@
       const overlapX = Math.max(0, Math.min(first.right, second.right) - Math.max(first.left, second.left));
       const minWidth = Math.max(1, Math.min(first.right - first.left, second.right - second.left));
       if (overlapX / minWidth > 0.6) {
-        const sorted = [...holes].sort((a, b) => a.top - b.top);
-        const splitY = Math.max(0, Math.min(window.innerHeight, Math.floor((sorted[0].bottom + sorted[1].top) / 2)));
-        this.placeMaskGroup(this.maskGroups[0], sorted[0], {
-          left: 0, right: window.innerWidth, top: 0, bottom: splitY
-        });
-        this.placeMaskGroup(this.maskGroups[1], sorted[1], {
-          left: 0, right: window.innerWidth, top: splitY, bottom: window.innerHeight
-        });
-        return sorted;
+        const firstIsUpper = first.top <= second.top;
+        const upper = firstIsUpper ? first : second;
+        const lower = firstIsUpper ? second : first;
+        const splitY = Math.max(0, Math.min(window.innerHeight, Math.floor((upper.bottom + lower.top) / 2)));
+        this.placeMaskGroup(this.maskGroups[0], first, firstIsUpper
+          ? { left: 0, right: window.innerWidth, top: 0, bottom: splitY }
+          : { left: 0, right: window.innerWidth, top: splitY, bottom: window.innerHeight });
+        this.placeMaskGroup(this.maskGroups[1], second, firstIsUpper
+          ? { left: 0, right: window.innerWidth, top: splitY, bottom: window.innerHeight }
+          : { left: 0, right: window.innerWidth, top: 0, bottom: splitY });
+        return holes;
       }
 
-      const sorted = [...holes].sort((a, b) => a.left - b.left);
-      const splitX = Math.max(0, Math.min(window.innerWidth, Math.floor((sorted[0].right + sorted[1].left) / 2)));
-      this.placeMaskGroup(this.maskGroups[0], sorted[0], {
-        left: 0, right: splitX, top: 0, bottom: window.innerHeight
-      });
-      this.placeMaskGroup(this.maskGroups[1], sorted[1], {
-        left: splitX, right: window.innerWidth, top: 0, bottom: window.innerHeight
-      });
-      return sorted;
+      const firstIsLeft = first.left <= second.left;
+      const leftHole = firstIsLeft ? first : second;
+      const rightHole = firstIsLeft ? second : first;
+      const splitX = Math.max(0, Math.min(window.innerWidth, Math.floor((leftHole.right + rightHole.left) / 2)));
+      this.placeMaskGroup(this.maskGroups[0], first, firstIsLeft
+        ? { left: 0, right: splitX, top: 0, bottom: window.innerHeight }
+        : { left: splitX, right: window.innerWidth, top: 0, bottom: window.innerHeight });
+      this.placeMaskGroup(this.maskGroups[1], second, firstIsLeft
+        ? { left: splitX, right: window.innerWidth, top: 0, bottom: window.innerHeight }
+        : { left: 0, right: splitX, top: 0, bottom: window.innerHeight });
+      return holes;
     }
 
     setFocusRing(ring, hole) {

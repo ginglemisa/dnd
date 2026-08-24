@@ -719,14 +719,14 @@
 
   const PDF_BASE_LANGUAGE_LABELS = Object.freeze({
     'common-sign': '手語',
-    draconic: '龍',
-    dwarvish: '矮人',
-    elvish: '精靈',
-    giant: '巨人',
-    gnomish: '侏儒',
-    goblin: '哥布林',
-    halfling: '半身人',
-    orc: '獸人'
+    draconic: '龍語',
+    dwarvish: '矮人語',
+    elvish: '精靈語',
+    giant: '巨人語',
+    gnomish: '侏儒語',
+    goblin: '哥布林語',
+    halfling: '半身人語',
+    orc: '獸人語'
   });
 
   function getBaseLanguageLabelForPdf(value) {
@@ -1243,6 +1243,14 @@
     const classKey = normalizeText(state.class);
     const backgroundKey = normalizeText(state.background);
     const level = normalizeText(state.level);
+    // The compact profile renders these two multiline areas at 12 pt rather
+    // than the editable profile's 8 pt. Reflow before exporting so old,
+    // 8-pt-wide lines do not force the entire field to shrink.
+    const compactLongTextSpec = (fieldName) => (
+      options.outputMode === 'compact'
+        ? { ...PDF_TEXT_SPECS[fieldName], maxUnitsPerLine: 34 }
+        : PDF_TEXT_SPECS[fieldName]
+    );
 
     Object.entries(DIRECT_FIELD_MAP).forEach(([stateKey, pdfFieldName]) => {
       payload[pdfFieldName] = normalizeText(state[stateKey]);
@@ -1436,7 +1444,7 @@
     }
 
     if (extraNotes.length) {
-      payload.extra1 = wrapTextForPdf(extraNotes.join('\n'), PDF_TEXT_SPECS.extra1);
+      payload.extra1 = wrapTextForPdf(extraNotes.join('\n'), compactLongTextSpec('extra1'));
     }
 
     if (options.includeDefaultEquipment && !hasQuickBuildInitialEquipment(state)) {
@@ -1444,10 +1452,10 @@
       const bgEq = parseBackgroundDefaultEquipment(backgroundKey);
       payload.equipment1 = wrapTextForPdf(
         [classEq, bgEq, payload.equipment1].filter(Boolean).join('\n'),
-        PDF_TEXT_SPECS.equipment1
+        compactLongTextSpec('equipment1')
       );
     } else {
-      payload.equipment1 = wrapTextForPdf(payload.equipment1, PDF_TEXT_SPECS.equipment1);
+      payload.equipment1 = wrapTextForPdf(payload.equipment1, compactLongTextSpec('equipment1'));
     }
 
     for (let slot = 1; slot <= 7; slot++) {

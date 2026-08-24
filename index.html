@@ -58,7 +58,7 @@
   <script src="condition.js" defer></script>
   <script src="character-rules.js" defer></script>
   <script src="legal-modal.js?v=20260824-onboarding-entry" defer></script>
-  <script src="onboarding-tour.js?v=20260824-onboarding-cleric-spells" defer></script>
+  <script src="onboarding-tour.js?v=20260825-onboarding-step5-highlights" defer></script>
   <script src="quick-build.js" defer></script>
   <script src="deity-info.js" defer></script>
 
@@ -466,6 +466,7 @@
 <div id="tab-skills" class="tab-content" role="tabpanel" aria-label="技能頁" hidden>
   <div class="section">
   <button onclick="fillSaves()">計算屬性豁免</button>
+  <div class="skill-action-hint">先把職業和等級選好，再按這個按鈕。</div>
   <div class="save-grid">
     <div class="save-pair"><label class="save-name" for="prof-str"><input type="checkbox" id="prof-str"><span class="save-stack"><span class="save-abbr">STR</span><span class="save-full">力量</span></span></label><input type="text" inputmode="numeric" id="save-str"></div>
     <div class="save-pair"><label class="save-name" for="prof-int"><input type="checkbox" id="prof-int"><span class="save-stack"><span class="save-abbr">INT</span><span class="save-full">智力</span></span></label><input type="text" inputmode="numeric" id="save-int"></div>
@@ -577,7 +578,7 @@
 
   <div id="tab-actions" class="tab-content" role="tabpanel" aria-label="動作頁" hidden>
 <div class="section action-attack-block">
-<h3>攻擊動作</h3>
+<!--<h3>攻擊動作</h3>-->
 <label class="weapon-automation-toggle">
   <span><strong>武器攻擊自動化</strong><small id="weapon-automation-status">依目前裝備、屬性、熟練與戰鬥風格自動更新。</small></span>
   <input type="checkbox" id="weapon-attack-automation" role="switch" checked>
@@ -7668,7 +7669,7 @@ for (let i = 0; i < 1; i++) createSingleFeatRow();
     <button type="button" class="deity-info-close" aria-label="關閉神祇資訊">✕</button>
     <header class="deity-info-header">
       <h3 id="deity-info-title">📜 被遺忘國度神祇整理</h3>
-      <p id="deity-info-disclaimer" class="deity-info-disclaimer">本站為 SRD 創角工具，與官方無任何關係。以下神明設定皆歸原權利人所有；由愛好者整理撰寫，僅供遊戲中參考，並遵守 WotC FCP 條款。</p>
+      <p id="deity-info-disclaimer" class="deity-info-disclaimer">本站為 SRD 創角工具，與官方無任何關係。以下神名與設定皆歸原權利人所有；由愛好者整理撰寫，僅供遊戲中參考，並遵守 <a href="https://company.wizards.com/en/legal/fancontentpolicy" target="_blank" rel="noopener noreferrer">WotC FCP 條款</a>。</p>
     </header>
     <div id="deity-info-content" class="deity-info-content"></div>
   </div>

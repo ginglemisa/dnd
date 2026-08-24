@@ -2,9 +2,14 @@
   function createPdfLayoutSettings(settings) {
     return Object.freeze({
       minFontSize: settings.minFontSize,
+      fieldMinFontSizes: Object.freeze({ ...(settings.fieldMinFontSizes || {}) }),
       horizontalPadding: settings.horizontalPadding,
       verticalPadding: settings.verticalPadding,
       lineHeightFactor: settings.lineHeightFactor,
+      fieldLineHeightFactors: Object.freeze({ ...(settings.fieldLineHeightFactors || {}) }),
+      widthOnlyFitFields: Object.freeze([...(settings.widthOnlyFitFields || [])]),
+      truncateAtMinimumFields: Object.freeze({ ...(settings.truncateAtMinimumFields || {}) }),
+      centeredFields: Object.freeze([...(settings.centeredFields || [])]),
       namedFontSizes: Object.freeze({ ...settings.namedFontSizes }),
       fixedFontSizes: Object.freeze({ ...settings.fixedFontSizes }),
       patternFontSizes: Object.freeze(settings.patternFontSizes.map((rule) => Object.freeze({ ...rule }))),
@@ -73,54 +78,124 @@
     }),
     compact: createPdfLayoutSettings({
       minFontSize: 4,
+      fieldMinFontSizes: { classFeatures1: 10, equipment1: 9, extra1: 9 },
       horizontalPadding: 3,
       verticalPadding: 2,
       lineHeightFactor: 1.1,
+      // PDF appearance streams use more leading than a glyph's visible height.
+      // Reserve it for this dense multiline field so 11 long lines cannot clip.
+      fieldLineHeightFactors: { classFeatures1: 2.5 },
       namedFontSizes: {
         Name1: 14,
-        Level1: 16,
-        proficiencyBonus1: 16,
-        Class1: 10,
-        Subclass1: 10,
-        Background2: 10,
-        Specie1: 10,
-        alignment1: 10,
-        classFeatures1: 8,
+        Level1: 20,
+        proficiencyBonus1: 18,
+        Class1: 9.7,
+        Subclass1: 9.7,
+        Background2: 9.7,
+        Specie1: 9.7,
+        alignment1: 9.7,
+        classFeatures1: 14,
         specie_features1: 6.9,
         feats1: 6.9,
-        extra1: 8,
-        equipment1: 8,
-        toolsProficiency1: 8,
-        weaponsProficiency1: 8
+        extra1: 12,
+        equipment1: 12,
+        toolsProficiency1: 14,
+        weaponsProficiency1: 14
       },
       fixedFontSizes: {
         classFeatures2: 8,
-        'spell-level-1': 14,
-        'spell-level-2': 14,
-        'spell-level-3': 14,
-        'spell-level-4': 14,
-        'spell-level-5': 14,
-        'spell-level-6': 14,
-        'spell-level-7': 14,
-        'spell-level-8': 14,
-        'spell-level-9': 14
+        hp_max1: 24,
+        AC1: 24,
+        speed1: 24,
+        passivePerception1: 24,
+        initiative1: 24,
+        spell_cast_attri1: 14,
+        spell_cast_Mod1: 21,
+        spell_cast_DC1: 21,
+        spell_cast_toHit1: 21,
+        hp_dice_max1: 9,
+        'spell-level-1': 13,
+        'spell-level-2': 13,
+        'spell-level-3': 13,
+        'spell-level-4': 13,
+        'spell-level-5': 13,
+        'spell-level-6': 13,
+        'spell-level-7': 13,
+        'spell-level-8': 13,
+        'spell-level-9': 13,
       },
       patternFontSizes: [
         { pattern: SKILL_MODIFIER_FIELD_PATTERN, fontSize: 9.5, fixed: true },
         { pattern: ABILITY_SCORE_FIELD_PATTERN, fontSize: 22, fixed: true },
         { pattern: ABILITY_MODIFIER_FIELD_PATTERN, fontSize: 7.8, fixed: true },
         { pattern: ABILITY_SAVE_FIELD_PATTERN, fontSize: 9, fixed: true },
-        { pattern: /^attack-weap-name-\d+$/, fontSize: 8 },
-        { pattern: /^(?:dmg_type_|toHit|wp-note-)\d+$/, fontSize: 8 },
-        { pattern: /^sp-name-\d+$/, fontSize: 10 },
-        { pattern: /^sp-level-\d+$/, fontSize: 11 },
-        { pattern: /^(?:sp-cast-time-|sp-range-)\d+$/, fontSize: 10 },
+        { pattern: /^attack-weap-name-\d+$/, fontSize: 14 },
+        { pattern: /^(?:dmg_type_|toHit|wp-note-)\d+$/, fontSize: 14 },
+        { pattern: /^sp-name-\d+$/, fontSize: 16 },
+        { pattern: /^sp-level-\d+$/, fontSize: 16 },
+        { pattern: /^(?:sp-cast-time-|sp-range-)\d+$/, fontSize: 16 },
         { pattern: /^note\d+$/, fontSize: 8 }
       ],
+      // Every spell row favours a 16 pt appearance. Unlike ordinary fields,
+      // only each field's original usable width can reduce it.
+      widthOnlyFitFields: Array.from({ length: 19 }, (_, index) => index + 1).flatMap((row) => [
+        `sp-level-${row}`,
+        `sp-name-${row}`,
+        `sp-cast-time-${row}`,
+        `sp-range-${row}`
+      ]).concat(Array.from({ length: 7 }, (_, index) => index + 1).flatMap((slot) => [
+        `attack-weap-name-${slot}`,
+        `toHit${slot}`,
+        `dmg_type_${slot}`,
+        `wp-note-${slot}`
+      ])),
+      // Attack columns have no safe spare horizontal space. Preserve full text
+      // down to 10 pt, then truncate only an exceptionally long value.
+      truncateAtMinimumFields: Object.fromEntries(Array.from({ length: 7 }, (_, index) => index + 1).flatMap((slot) => [
+        [`attack-weap-name-${slot}`, 10],
+        [`toHit${slot}`, 10],
+        [`dmg_type_${slot}`, 10],
+        [`wp-note-${slot}`, 10]
+      ])),
+      centeredFields: ['spell_cast_attri1', 'spell_cast_Mod1', 'spell_cast_DC1', 'spell_cast_toHit1'],
       textColorRules: [
         { pattern: ABILITY_SAVE_FIELD_PATTERN, rgb: Object.freeze([0.72, 0.72, 0.72]) }
       ],
       fieldAdjustments: {
+        // Align the compact values with the printed rules rather than the
+        // vertically centered source widgets.
+        // Compact is flattened after appearance generation, so these widgets
+        // may safely use presentation rectangles sized for their final text.
+        Name1: { x: 112.61, y: 524, width: 141.27, height: 28 },
+        Level1: { x: 18.65, y: 512, width: 33, height: 28 },
+        proficiencyBonus1: { x: 18.59, y: 371.5, width: 35, height: 27 },
+        weaponsProficiency1: { x: 104.22, y: 71.66, width: 133.41, height: 20 },
+        toolsProficiency1: { x: 104.22, y: 51.37, width: 133.41, height: 20 },
+        AC1: { x: 645.5, y: 273.5, width: 34, height: 34.5 },
+        speed1: { x: 686.5, y: 273.5, width: 34.5, height: 34.5 },
+        passivePerception1: { x: 727.5, y: 273.5, width: 34, height: 34.5 },
+        initiative1: { x: 768.5, y: 273.5, width: 34, height: 34.5 },
+        spell_cast_attri1: { x: 569.26, y: 507.38, width: 62.17, height: 30 },
+        spell_cast_Mod1: { x: 633.96, y: 509.63, width: 33.66, height: 30 },
+        spell_cast_DC1: { x: 699.48, y: 509.19, width: 39.22, height: 30 },
+        spell_cast_toHit1: { x: 765.98, y: 509, width: 34.35, height: 30 },
+        hp_dice_max1: { x: 535.42, y: 509, width: 25.23, height: 15 },
+        // Match each filled value to its printed gray-label anchor. Right
+        // widgets expand leftward while retaining the template's right edge.
+        Subclass1: { dy: -6 },
+        Class1: { dy: -5.75, expandLeft: 2 },
+        Specie1: { dy: -4 },
+        Background2: { dy: -5, expandLeft: 1 },
+        alignment1: { dy: -3.25 },
+        language1: { dy: -3.5, expandLeft: 2 },
+
+        'sp-level-1': { x: 11, y: 517.8, width: 23, height: 23 },
+        'sp-name-1': { x: 34, y: 517.7, width: 91, height: 23 },
+        note1: { x: 280, y: 518, width: 270, height: 23 },
+        'sp-level-2': { x: 11, y: 491, width: 23, height: 23 },
+        'sp-name-2': { x: 34, y: 490.9, width: 91, height: 23 },
+        note2: { x: 280, y: 491.2, width: 270, height: 23 },
+
         strMod1: { dx: -5.75 },
         dexMod1: { dx: -6.31 },
         conMod1: { dx: -6.71 },
@@ -144,7 +219,12 @@
         chaSaveMod1: { x: 411.68, dy: 0.43, width: 15, alignment: 'right' }
       },
       spellRows: { count: 19, fontSize: 11, alignment: 'right' },
-      spellNotes: { singleLineFontSize: 8, overflowFontSize: 6.5 }
+      spellNotes: {
+        singleLineFontSize: 16,
+        overflowFontSize: 16,
+        previewSingleLineFontSize: 16,
+        previewOverflowFontSize: 16
+      }
     })
   });
 
@@ -559,10 +639,50 @@
     const fontHeightAtOnePoint = cjkFont.heightAtSize(1);
     const usableHeight = Math.max(1, rectangle.height - layoutSettings.verticalPadding);
     const maxByWidth = widestLine > 0 ? preferredSize * (usableWidth / widestLine) : preferredSize;
-    const maxByHeight = usableHeight / Math.max(1, lines.length * fontHeightAtOnePoint * layoutSettings.lineHeightFactor);
+    const lineHeightFactor = layoutSettings.fieldLineHeightFactors[field.getName()] || layoutSettings.lineHeightFactor;
+    const maxByHeight = usableHeight / Math.max(1, lines.length * fontHeightAtOnePoint * lineHeightFactor);
     const fittedSize = Math.min(preferredSize, maxByWidth, maxByHeight);
 
-    return Math.max(layoutSettings.minFontSize, Math.floor(fittedSize * 10) / 10);
+    const minFontSize = layoutSettings.fieldMinFontSizes[field.getName()] || layoutSettings.minFontSize;
+    return Math.max(minFontSize, Math.floor(fittedSize * 10) / 10);
+  }
+
+  function getWidthFittedFontSize(field, cjkFont, preferredSize, layoutSettings) {
+    const text = field.getText?.() || '';
+    const rectangle = getTextFieldRectangle(field);
+    if (!text || !rectangle) return preferredSize;
+
+    const widestLine = text.replace(/\r/g, '').split('\n').reduce((widest, line) => (
+      Math.max(widest, cjkFont.widthOfTextAtSize(line || ' ', preferredSize))
+    ), 0);
+    const usableWidth = Math.max(1, rectangle.width - layoutSettings.horizontalPadding);
+    const fittedSize = widestLine > 0 ? preferredSize * (usableWidth / widestLine) : preferredSize;
+    return Math.max(layoutSettings.minFontSize, Math.floor(Math.min(preferredSize, fittedSize) * 10) / 10);
+  }
+
+  function truncateTextToWidth(text, cjkFont, fontSize, usableWidth) {
+    const normalizedText = String(text || '').replace(/\r?\n/g, ' ').trim();
+    if (cjkFont.widthOfTextAtSize(normalizedText, fontSize) <= usableWidth) return normalizedText;
+
+    const suffix = '…';
+    let shortened = '';
+    for (const character of normalizedText) {
+      if (cjkFont.widthOfTextAtSize(`${shortened}${character}${suffix}`, fontSize) > usableWidth) break;
+      shortened += character;
+    }
+    return shortened ? `${shortened}${suffix}` : suffix;
+  }
+
+  function fitWidthOnlyField(field, cjkFont, preferredSize, layoutSettings) {
+    const fittedSize = getWidthFittedFontSize(field, cjkFont, preferredSize, layoutSettings);
+    const truncationMinimum = layoutSettings.truncateAtMinimumFields[field.getName()];
+    if (!truncationMinimum || fittedSize >= truncationMinimum) return fittedSize;
+
+    const rectangle = getTextFieldRectangle(field);
+    if (!rectangle) return truncationMinimum;
+    const usableWidth = Math.max(1, rectangle.width - layoutSettings.horizontalPadding);
+    field.setText(truncateTextToWidth(field.getText(), cjkFont, truncationMinimum, usableWidth));
+    return truncationMinimum;
   }
 
   function fitSpellNoteField(field, cjkFont, layoutSettings) {
@@ -571,11 +691,18 @@
     if (!text || !rectangle) return false;
 
     const settings = layoutSettings.spellNotes;
+    const isPreviewRow = /^note[12]$/.test(field.getName());
+    const singleLineFontSize = isPreviewRow
+      ? settings.previewSingleLineFontSize
+      : settings.singleLineFontSize;
+    const overflowFontSize = isPreviewRow
+      ? settings.previewOverflowFontSize
+      : settings.overflowFontSize;
     const usableWidth = Math.max(1, rectangle.width - layoutSettings.horizontalPadding);
-    if (cjkFont.widthOfTextAtSize(text, settings.singleLineFontSize) <= usableWidth) {
+    if (cjkFont.widthOfTextAtSize(text, singleLineFontSize) <= usableWidth) {
       field.disableMultiline();
       field.setText(text);
-      field.setFontSize(settings.singleLineFontSize);
+      field.setFontSize(singleLineFontSize);
       return true;
     }
 
@@ -584,14 +711,26 @@
     // line and use one readable fallback size instead.
     field.disableMultiline();
     field.setText(text);
-    field.setFontSize(settings.overflowFontSize);
-    if (cjkFont.widthOfTextAtSize(text, settings.overflowFontSize) > usableWidth) {
+    field.setFontSize(overflowFontSize);
+    if (cjkFont.widthOfTextAtSize(text, overflowFontSize) > usableWidth) {
       console.warn(`PDF 法術備註超過可讀單行容量：`, text);
     }
     return true;
   }
 
   function applyTemplateFieldSettings(form, layoutSettings) {
+    // Named sizes are preferred sizes for populated fields, but also form the
+    // editable baseline when a conditional field has no exported value. This
+    // prevents the template's 0 Tf auto-size from taking over when a player
+    // later fills a blank field such as extra1.
+    Object.entries(layoutSettings.namedFontSizes).forEach(([fieldName, fontSize]) => {
+      try {
+        form.getTextField(fieldName).setFontSize(fontSize);
+      } catch (error) {
+        // The field is optional for compatibility with alternative templates.
+      }
+    });
+
     Object.entries(layoutSettings.fixedFontSizes).forEach(([fieldName, fontSize]) => {
       try {
         form.getTextField(fieldName).setFontSize(fontSize);
@@ -624,14 +763,15 @@
         }
         field.acroField?.getWidgets?.().forEach((widget) => {
           const rectangle = widget.getRectangle();
+          const expandLeft = adjustment.expandLeft || 0;
           widget.setRectangle({
             x: adjustment.x ?? (
               referenceRectangle
                 ? referenceRectangle.x + (adjustment.referenceXOffset || 0)
-                : rectangle.x + (adjustment.dx || 0)
-            ),
+                : rectangle.x + (adjustment.dx || 0) - expandLeft
+            ) - (referenceRectangle ? expandLeft : 0),
             y: adjustment.y ?? (rectangle.y + (adjustment.dy || 0)),
-            width: adjustment.width ?? rectangle.width,
+            width: adjustment.width ?? (rectangle.width + expandLeft),
             height: adjustment.height ?? rectangle.height
           });
         });
@@ -656,10 +796,15 @@
         const matchingRule = getMatchingPatternFontRule(fieldName, layoutSettings);
         const fontSize = layoutSettings.fixedFontSizes[fieldName] || matchingRule?.fixed
           ? preferredSize
-          : getFittedFontSize(field, cjkFont, preferredSize, layoutSettings);
+          : layoutSettings.widthOnlyFitFields.includes(fieldName)
+            ? fitWidthOnlyField(field, cjkFont, preferredSize, layoutSettings)
+            : getFittedFontSize(field, cjkFont, preferredSize, layoutSettings);
         field.setFontSize(fontSize);
         const textColorRule = getMatchingTextColorRule(fieldName, layoutSettings);
         if (textColorRule?.rgb) setTextFieldDefaultRgbColor(field, textColorRule.rgb);
+        if (layoutSettings.centeredFields.includes(fieldName)) {
+          field.setAlignment(globalScope.PDFLib.TextAlignment.Center);
+        }
         if (/^sp-level-\d+$/.test(fieldName) && layoutSettings.spellRows.alignment === 'right') {
           field.setAlignment(globalScope.PDFLib.TextAlignment.Right);
         }
