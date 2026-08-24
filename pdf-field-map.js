@@ -589,6 +589,11 @@
     return mod > 0 ? `+${mod}` : String(mod);
   }
 
+  function formatCompactSavingThrowModifier(value) {
+    const text = normalizeText(value);
+    return /^\+\d{2}$/.test(text) ? text.slice(1) : text;
+  }
+
   function getProficiencyBonusByLevel(level) {
     const lv = Number.parseInt(level, 10);
     if (!Number.isFinite(lv) || lv <= 0) return '';
@@ -1243,6 +1248,13 @@
       payload[pdfFieldName] = normalizeText(state[stateKey]);
     });
 
+    if (options.outputMode === 'compact') {
+      ['str', 'dex', 'con', 'int', 'wis', 'cha'].forEach((ability) => {
+        const fieldName = `${ability}SaveMod1`;
+        payload[fieldName] = formatCompactSavingThrowModifier(payload[fieldName]);
+      });
+    }
+
     const mapMoneyField = (value, candidates) => {
       const text = normalizeText(value);
       candidates.forEach((name) => {
@@ -1258,7 +1270,7 @@
 
     const levelNumber = Number.parseInt(level, 10);
     const hitDie = getHitDieByClass(classKey);
-    if (hitDie) payload.hp_dice_max1 = `D${hitDie}`;
+    if (hitDie) payload.hp_dice_max1 = String(hitDie);
 
     // The template's internal field names are opposite to their visible labels.
     payload.Subclass1 = CLASS_LABELS[classKey] || payload.Class1;

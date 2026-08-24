@@ -8,12 +8,21 @@
       namedFontSizes: Object.freeze({ ...settings.namedFontSizes }),
       fixedFontSizes: Object.freeze({ ...settings.fixedFontSizes }),
       patternFontSizes: Object.freeze(settings.patternFontSizes.map((rule) => Object.freeze({ ...rule }))),
+      textColorRules: Object.freeze((settings.textColorRules || []).map((rule) => Object.freeze({ ...rule }))),
+      fieldAdjustments: Object.freeze(Object.fromEntries(
+        Object.entries(settings.fieldAdjustments || {}).map(([fieldName, adjustment]) => (
+          [fieldName, Object.freeze({ ...adjustment })]
+        ))
+      )),
       spellRows: Object.freeze({ ...settings.spellRows }),
       spellNotes: Object.freeze({ ...settings.spellNotes })
     });
   }
 
   const SKILL_MODIFIER_FIELD_PATTERN = /^(?:athleticsMod1|acrobaticsMod1|sleightOfHandMod1|stealthMod1|arcanaMod1|historyMod1|investigationMod1|natureMod1|religionMod1|animalHandlingMod2|insightMod1|medicineMod1|perceptionMod1|survivalMod1|deceptionMod1|intimidationMod1|performanceMod1|persuasionMod1)$/;
+  const ABILITY_SCORE_FIELD_PATTERN = /^(?:str|dex|con|int|wis|cha)Mod1$/;
+  const ABILITY_MODIFIER_FIELD_PATTERN = /^(?:str|dex|con|int|wis|cha)1$/;
+  const ABILITY_SAVE_FIELD_PATTERN = /^(?:str|dex|con|int|wis|cha)SaveMod1$/;
 
   // Keep field mapping and payload generation shared. Only visual presentation
   // belongs here, with one independent block for each export mode.
@@ -52,7 +61,7 @@
       },
       patternFontSizes: [
         { pattern: SKILL_MODIFIER_FIELD_PATTERN, fontSize: 10.5, fixed: true },
-        { pattern: /^(str|dex|con|int|wis|cha)1$/, fontSize: 10 },
+        { pattern: ABILITY_MODIFIER_FIELD_PATTERN, fontSize: 10 },
         { pattern: /^attack-weap-name-\d+$/, fontSize: 8 },
         { pattern: /^(?:dmg_type_|toHit|wp-note-)\d+$/, fontSize: 8 },
         { pattern: /^sp-name-\d+$/, fontSize: 9 },
@@ -98,7 +107,9 @@
       },
       patternFontSizes: [
         { pattern: SKILL_MODIFIER_FIELD_PATTERN, fontSize: 9.5, fixed: true },
-        { pattern: /^(str|dex|con|int|wis|cha)1$/, fontSize: 10 },
+        { pattern: ABILITY_SCORE_FIELD_PATTERN, fontSize: 22, fixed: true },
+        { pattern: ABILITY_MODIFIER_FIELD_PATTERN, fontSize: 7.8, fixed: true },
+        { pattern: ABILITY_SAVE_FIELD_PATTERN, fontSize: 9, fixed: true },
         { pattern: /^attack-weap-name-\d+$/, fontSize: 8 },
         { pattern: /^(?:dmg_type_|toHit|wp-note-)\d+$/, fontSize: 8 },
         { pattern: /^sp-name-\d+$/, fontSize: 10 },
@@ -106,14 +117,41 @@
         { pattern: /^(?:sp-cast-time-|sp-range-)\d+$/, fontSize: 10 },
         { pattern: /^note\d+$/, fontSize: 8 }
       ],
+      textColorRules: [
+        { pattern: ABILITY_SAVE_FIELD_PATTERN, rgb: Object.freeze([0.72, 0.72, 0.72]) }
+      ],
+      fieldAdjustments: {
+        strMod1: { dx: -5.75 },
+        dexMod1: { dx: -6.31 },
+        conMod1: { dx: -6.71 },
+        intMod1: { dx: -6.31 },
+        wisMod1: { dx: -6.42 },
+        chaMod1: { dx: -6.55 },
+
+        // str1 is the bracket-relative baseline. The other five offsets keep
+        // the same optical center inside their own template parentheses.
+        str1: { dx: 0.16, dy: 0.1081 },
+        dex1: { relativeTo: 'str1', referenceXOffset: 91 },
+        con1: { relativeTo: 'str1', referenceXOffset: 0, dy: -0.4308 },
+        int1: { relativeTo: 'str1', referenceXOffset: 91, dy: -0.01 },
+        wis1: { relativeTo: 'str1', referenceXOffset: -0.25, dy: 0.0686 },
+        cha1: { relativeTo: 'str1', referenceXOffset: 90.0625, dy: 0.1621 },
+        strSaveMod1: { x: 321.63, dy: 1.11, width: 15, alignment: 'right' },
+        dexSaveMod1: { x: 412.68, dy: 0.93, width: 15, alignment: 'right' },
+        conSaveMod1: { x: 321.75, dy: 1.86, width: 15, alignment: 'right' },
+        intSaveMod1: { x: 412.55, dy: 1.93, width: 15, alignment: 'right' },
+        wisSaveMod1: { x: 321.5, dy: 0.49, width: 15, alignment: 'right' },
+        chaSaveMod1: { x: 411.68, dy: 0.43, width: 15, alignment: 'right' }
+      },
       spellRows: { count: 19, fontSize: 11, alignment: 'right' },
       spellNotes: { singleLineFontSize: 8, overflowFontSize: 6.5 }
     })
   });
 
+  const SHARED_PDF_SOURCE_PATH = '5e_char_sheet.pdf';
   const PDF_EXPORT_PROFILES = Object.freeze({
     editable: Object.freeze({
-      sourcePdfPath: '5e_char_sheet.pdf',
+      sourcePdfPath: SHARED_PDF_SOURCE_PATH,
       fontPath: 'NotoSansTC-Regular-IdentityCID.otf',
       subsetFont: false,
       flattenForm: false,
@@ -121,7 +159,7 @@
       layoutId: 'editable'
     }),
     compact: Object.freeze({
-      sourcePdfPath: '5e_char_sheet_subset.pdf',
+      sourcePdfPath: SHARED_PDF_SOURCE_PATH,
       fontPath: 'SourceHanSerifTC-Bold.otf',
       subsetFont: true,
       flattenForm: true,
@@ -129,7 +167,7 @@
       layoutId: 'compact'
     }),
     editable_no_font: Object.freeze({
-      sourcePdfPath: '5e_char_sheet_clean_final.pdf',
+      sourcePdfPath: SHARED_PDF_SOURCE_PATH,
       fontPath: null,
       subsetFont: false,
       flattenForm: false,
@@ -468,6 +506,24 @@
     return layoutSettings.patternFontSizes.find((rule) => rule.pattern.test(fieldName));
   }
 
+  function getMatchingTextColorRule(fieldName, layoutSettings) {
+    return layoutSettings.textColorRules.find((rule) => rule.pattern.test(fieldName));
+  }
+
+  function setTextFieldDefaultRgbColor(field, rgbValues) {
+    const numberPattern = '[-+]?(?:\\d*\\.)?\\d+';
+    const colorOperatorPattern = new RegExp(
+      `(?:${numberPattern}\\s+){3}${numberPattern}\\s+k\\b|` +
+      `(?:${numberPattern}\\s+){2}${numberPattern}\\s+rg\\b|` +
+      `${numberPattern}\\s+g\\b`,
+      'g'
+    );
+    const defaultAppearance = decodeDefaultAppearance(field?.acroField?.getDefaultAppearance?.());
+    const normalizedAppearance = defaultAppearance.replace(colorOperatorPattern, ' ').replace(/\s+/g, ' ').trim();
+    const colorOperator = rgbValues.map((value) => String(Number(value))).join(' ');
+    field.acroField.setDefaultAppearance(`${normalizedAppearance} ${colorOperator} rg`.trim());
+  }
+
   function getPreferredFontSize(fieldName, field, layoutSettings) {
     if (layoutSettings.fixedFontSizes[fieldName]) return layoutSettings.fixedFontSizes[fieldName];
     if (fieldName === 'language1' && layoutSettings.namedFontSizes.alignment1) {
@@ -557,6 +613,37 @@
     }
   }
 
+  function applyFieldAdjustments(form, layoutSettings) {
+    Object.entries(layoutSettings.fieldAdjustments).forEach(([fieldName, adjustment]) => {
+      try {
+        const field = form.getField(fieldName);
+        let referenceRectangle = null;
+        if (adjustment.relativeTo) {
+          referenceRectangle = form.getField(adjustment.relativeTo)
+            .acroField?.getWidgets?.()[0]?.getRectangle?.() || null;
+        }
+        field.acroField?.getWidgets?.().forEach((widget) => {
+          const rectangle = widget.getRectangle();
+          widget.setRectangle({
+            x: adjustment.x ?? (
+              referenceRectangle
+                ? referenceRectangle.x + (adjustment.referenceXOffset || 0)
+                : rectangle.x + (adjustment.dx || 0)
+            ),
+            y: adjustment.y ?? (rectangle.y + (adjustment.dy || 0)),
+            width: adjustment.width ?? rectangle.width,
+            height: adjustment.height ?? rectangle.height
+          });
+        });
+        if (adjustment.alignment === 'right' && typeof field.setAlignment === 'function') {
+          field.setAlignment(globalScope.PDFLib.TextAlignment.Right);
+        }
+      } catch (error) {
+        // The field is optional for compatibility with alternative templates.
+      }
+    });
+  }
+
   function fitPayloadTextFields(form, payload, cjkFont, layoutSettings) {
     Object.entries(payload).forEach(([fieldName, value]) => {
       if (typeof value === 'boolean') return;
@@ -571,6 +658,8 @@
           ? preferredSize
           : getFittedFontSize(field, cjkFont, preferredSize, layoutSettings);
         field.setFontSize(fontSize);
+        const textColorRule = getMatchingTextColorRule(fieldName, layoutSettings);
+        if (textColorRule?.rgb) setTextFieldDefaultRgbColor(field, textColorRule.rgb);
         if (/^sp-level-\d+$/.test(fieldName) && layoutSettings.spellRows.alignment === 'right') {
           field.setAlignment(globalScope.PDFLib.TextAlignment.Right);
         }
@@ -624,6 +713,7 @@
       const defaultAppearanceFontAlias = profile.flattenForm ? 'Noto' : 'NotoMono';
       normalizeProblematicFieldDA(globalScope.PDFLib, pdfDoc, form, undefined, defaultAppearanceFontAlias);
       applyTemplateFieldSettings(form, layoutSettings);
+      applyFieldAdjustments(form, layoutSettings);
 
       if (!profile.flattenForm) {
         try {

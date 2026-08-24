@@ -91,10 +91,27 @@
       this.pointBuyCardWasInert = false;
       this.pointBuyCardStateCaptured = false;
       this.utilityMenuPreviewOpened = false;
+      this.identityPreviewSnapshot = null;
+      this.spellControlSnapshot = null;
+      this.pointBuySelectSnapshot = null;
+      this.pointBuyControlSnapshot = null;
+      this.tourPointBuyState = null;
+      this.tooltipDragPosition = null;
+      this.tooltipDragPointerId = null;
+      this.tooltipDragOffset = { x: 0, y: 0 };
+      this.isInternalTourAction = false;
+      this.autosaveSuspendedSnapshot = null;
+      this.activeTabStorageSnapshot = null;
       this.handleResize = this.handleResize.bind(this);
       this.handleKeydown = this.handleKeydown.bind(this);
       this.handleFocusIn = this.handleFocusIn.bind(this);
       this.preventScrollEvent = this.preventScrollEvent.bind(this);
+      this.handleTourPointerDownCapture = this.handleTourPointerDownCapture.bind(this);
+      this.handleTourClickCapture = this.handleTourClickCapture.bind(this);
+      this.handleTourFormEventCapture = this.handleTourFormEventCapture.bind(this);
+      this.handleTooltipPointerDown = this.handleTooltipPointerDown.bind(this);
+      this.handleTooltipPointerMove = this.handleTooltipPointerMove.bind(this);
+      this.handleTooltipPointerUp = this.handleTooltipPointerUp.bind(this);
     }
 
     init() {
@@ -105,6 +122,21 @@
       window.addEventListener("resize", this.handleResize);
       document.addEventListener("keydown", this.handleKeydown);
       document.addEventListener("focusin", this.handleFocusIn);
+      document.addEventListener("pointerdown", this.handleTourPointerDownCapture, true);
+      document.addEventListener("click", this.handleTourClickCapture, true);
+      document.addEventListener("input", this.handleTourFormEventCapture, true);
+      document.addEventListener("change", this.handleTourFormEventCapture, true);
+      this.tooltip?.addEventListener("pointerdown", this.handleTooltipPointerDown);
+      window.addEventListener("pointermove", this.handleTooltipPointerMove);
+      window.addEventListener("pointerup", this.handleTooltipPointerUp);
+      window.addEventListener("pointercancel", this.handleTooltipPointerUp);
+      if (this.tooltip) {
+        this.tooltip.style.touchAction = "none";
+        this.tooltip.style.cursor = "grab";
+      }
+      this.focusRings.forEach((ring) => {
+        if (ring) ring.style.pointerEvents = "none";
+      });
       document.getElementById("restart-onboarding-btn")?.addEventListener("click", () => this.start());
     }
 
@@ -113,7 +145,7 @@
         {
           tab: "basic",
           title: "⚔️ 1. 決定你的冒險者方向",
-          text: "背景代表角色過去，種族帶來天生特性，職業則決定冒險方式。選擇後，生命值、能力與相關資料會跟著更新。",
+          text: "試著選擇職業、1～3 級、四種背景與矮人／人類／半身人。這些示範選擇只改變目前畫面，離開本步驟就會還原。",
           placement: "bottom",
           getHoles: () => {
             const identity = this.getHoleFromElements([
@@ -127,8 +159,10 @@
             return [identity, derived].filter(Boolean);
           },
           beforePosition: async () => {
+            this.prepareIdentityPreview();
             await animateWindowScrollTo(0);
-          }
+          },
+          afterLeave: () => this.restoreIdentityPreview()
         },
         {
           tab: "basic",
@@ -136,12 +170,15 @@
             ? "🎲 2. 屬性與快速創角"
             : "🎲 2. 使用 27 購點",
           text: () => this.stepPhase === 0
-            ? "六項屬性決定角色擅長什麼；上方是檢定常用的修正值。點擊「決定屬性」可以快速套用或自行配點。"
-            : "27 購點可自由配置六項屬性，背景加值會另外計算。第一次創角則推薦從「決定屬性」裡開啟創角精靈，由它帶你完成一名 1 級角色。",
+            ? "點擊「決定屬性」查看選擇方式；導覽中的「創角小幫手」不會啟動，選擇「27購點」則繼續示範。"
+            : "背景固定為士兵。可用 ▲／▼ 試配 27 購點與背景加值；所有變更都不會套用或儲存到角色卡。",
           placement: () => this.stepPhase === 0 ? "top" : "overlay-bottom",
           getHoles: () => {
             if (this.stepPhase === 1) {
               return [this.getHoleForSelector("#point-buy-modal .point-buy-modal-card", 6)].filter(Boolean);
+            }
+            if (document.getElementById("ability-choice-modal")?.classList.contains("open")) {
+              return [this.getHoleForSelector("#ability-choice-modal .ability-choice-card", 6)].filter(Boolean);
             }
             return [
               this.getHoleForSelector("#set-default-abilities", 8),
@@ -174,17 +211,20 @@
         {
           tab: "spells",
           title: "✨ 4. 選擇與查看法術",
-          text: "有施法能力時，可以在這裡管理戲法與法術。選擇法術後，可查看完整說明與施法資料。",
+          text: "展開的 #1 戲法可選牧師或法師；牧師提供光亮術、神導術，法師提供火焰箭、修復術。選擇只在本步驟顯示。",
           placement: "top",
           getHoles: () => [this.getHoleFromElements([
-            document.querySelector("#tab-spells details.spell-level-section")
+            document.querySelector("#tab-spells details.spell-level-section:first-of-type > summary"),
+            document.querySelector("#cantrips-area .spell-entry:first-child")
           ], 8)].filter(Boolean),
           beforeTab: () => this.ensureSpellPreview(),
           beforePosition: async () => {
             const firstSpellSection = document.querySelector("#tab-spells details.spell-level-section");
             if (firstSpellSection) firstSpellSection.open = true;
+            this.prepareSpellControlPreview();
             await this.scrollElementIntoView(firstSpellSection);
-          }
+          },
+          afterLeave: () => this.restoreSpellControlPreview()
         },
         {
           tab: "spells",
@@ -223,6 +263,13 @@
       if (!this.steps.length) return;
       this.currentIndex = -1;
       this.stepPhase = 0;
+      this.tooltipDragPosition = null;
+      this.autosaveSuspendedSnapshot = typeof autosaveSuspended === "boolean" ? autosaveSuspended : null;
+      if (this.autosaveSuspendedSnapshot === false) window.flushPendingAutosave?.();
+      if (this.autosaveSuspendedSnapshot !== null) autosaveSuspended = true;
+      this.activeTabStorageSnapshot = {
+        value: window.dndStorage?.getItem?.("activeTab") ?? null
+      };
       this.active = true;
       this.isTransitioning = false;
       this.captureSpellPreviewState();
@@ -240,6 +287,7 @@
       if (this.currentIndex === 1 && this.stepPhase === 0) {
         this.isTransitioning = true;
         this.stepPhase = 1;
+        this.tooltipDragPosition = null;
         await this.steps[1].beforePosition();
         await waitForLayoutStability();
         await this.renderStep();
@@ -249,6 +297,7 @@
       if (this.currentIndex === 4 && this.stepPhase === 0) {
         this.isTransitioning = true;
         this.stepPhase = 1;
+        this.tooltipDragPosition = null;
         await this.steps[4].beforePosition();
         await waitForLayoutStability();
         await this.renderStep();
@@ -268,6 +317,7 @@
         this.isTransitioning = true;
         this.closePointBuyPreview();
         this.stepPhase = 0;
+        this.tooltipDragPosition = null;
         await waitForLayoutStability();
         await this.steps[1].beforePosition();
         await this.renderStep();
@@ -278,6 +328,7 @@
         this.isTransitioning = true;
         this.closeUtilityMenuPreview();
         this.stepPhase = 0;
+        this.tooltipDragPosition = null;
         await this.steps[4].beforePosition();
         await waitForLayoutStability();
         await this.renderStep();
@@ -296,6 +347,7 @@
 
       this.currentIndex = index;
       this.stepPhase = 0;
+      this.tooltipDragPosition = null;
       const step = this.steps[index];
       if (typeof step.beforeTab === "function") step.beforeTab();
       this.showTab(step.tab);
@@ -313,12 +365,22 @@
       if (currentStep && typeof currentStep.afterLeave === "function") currentStep.afterLeave();
       this.closePointBuyPreview();
       this.closeUtilityMenuPreview();
+      this.restoreIdentityPreview();
+      this.restoreSpellControlPreview();
       this.restoreSpellPreviewState();
       this.resetHighlightState();
       this.active = false;
       this.isTransitioning = false;
       this.currentIndex = -1;
       this.stepPhase = 0;
+      this.tooltipDragPosition = null;
+      if (this.tooltipDragPointerId !== null && this.tooltip?.hasPointerCapture?.(this.tooltipDragPointerId)) {
+        this.tooltip.releasePointerCapture(this.tooltipDragPointerId);
+      }
+      this.tooltipDragPointerId = null;
+      if (this.tooltip) this.tooltip.style.cursor = "grab";
+      if (this.autosaveSuspendedSnapshot !== null) autosaveSuspended = this.autosaveSuspendedSnapshot;
+      this.autosaveSuspendedSnapshot = null;
       this.unlockUserScroll();
       this.unlockBackgroundInteraction();
       if (this.overlay) {
@@ -338,6 +400,11 @@
       } else {
         this.restoreSearchState();
       }
+      if (this.activeTabStorageSnapshot) {
+        if (this.activeTabStorageSnapshot.value === null) window.dndStorage?.removeItem?.("activeTab");
+        else window.dndStorage?.setItem?.("activeTab", this.activeTabStorageSnapshot.value);
+      }
+      this.activeTabStorageSnapshot = null;
     }
 
     showTab(tab) {
@@ -349,6 +416,133 @@
       if (!element) return;
       const targetY = window.scrollY + element.getBoundingClientRect().top - extraOffset;
       await animateWindowScrollTo(targetY);
+    }
+
+    captureRestrictedSelect(select, allowedValues) {
+      if (!select) return null;
+      const allowed = new Set(["", ...allowedValues]);
+      const snapshot = {
+        element: select,
+        value: select.value,
+        disabled: select.disabled,
+        options: Array.from(select.options).map((option) => ({
+          option,
+          hidden: option.hidden,
+          disabled: option.disabled
+        }))
+      };
+      snapshot.options.forEach(({ option }) => {
+        const permitted = allowed.has(option.value);
+        option.hidden = !permitted;
+        option.disabled = !permitted;
+      });
+      select.disabled = false;
+      if (!allowed.has(select.value)) select.value = "";
+      return snapshot;
+    }
+
+    restoreRestrictedSelect(snapshot) {
+      if (!snapshot?.element) return;
+      snapshot.options.forEach(({ option, hidden, disabled }) => {
+        option.hidden = hidden;
+        option.disabled = disabled;
+      });
+      snapshot.element.disabled = snapshot.disabled;
+      snapshot.element.value = snapshot.value;
+    }
+
+    prepareIdentityPreview() {
+      if (this.identityPreviewSnapshot) return;
+      this.identityPreviewSnapshot = [
+        this.captureRestrictedSelect(document.getElementById("class"), ["barbarian", "bard", "cleric"]),
+        this.captureRestrictedSelect(document.getElementById("level"), ["1", "2", "3"]),
+        this.captureRestrictedSelect(document.getElementById("background"), ["acolyte", "criminal", "sage", "soldier"]),
+        this.captureRestrictedSelect(document.getElementById("race"), ["dwarf", "human", "halfling"])
+      ].filter(Boolean);
+    }
+
+    restoreIdentityPreview() {
+      this.identityPreviewSnapshot?.forEach((snapshot) => this.restoreRestrictedSelect(snapshot));
+      this.identityPreviewSnapshot = null;
+    }
+
+    prepareSpellControlPreview() {
+      if (this.spellControlSnapshot) return;
+      const area = document.getElementById("cantrips-area");
+      const row = area?.querySelector(".spell-entry:first-child");
+      const classSelect = row?.querySelector("select[id*='-class-']");
+      const spellSelect = row?.querySelector("select[id*='-spell-']");
+      if (!row || !classSelect || !spellSelect) return;
+      const description = row.querySelector(".output.small-text");
+      this.spellControlSnapshot = {
+        classSelect,
+        spellSelect,
+        classHtml: classSelect.innerHTML,
+        classValue: classSelect.value,
+        spellHtml: spellSelect.innerHTML,
+        spellValue: spellSelect.value,
+        description,
+        descriptionHtml: description?.innerHTML || "",
+        rowDisplays: Array.from(area.children).map((element) => ({
+          element,
+          display: element.style.display
+        }))
+      };
+      classSelect.innerHTML = [
+        '<option value="">--職業--</option>',
+        '<option value="cleric">牧師</option>',
+        '<option value="wizard">法師</option>'
+      ].join("");
+      classSelect.value = "";
+      this.populateTourSpellOptions("");
+      this.spellControlSnapshot.rowDisplays.forEach(({ element }, index) => {
+        element.style.display = index === 0 ? "" : "none";
+      });
+    }
+
+    populateTourSpellOptions(classValue) {
+      const snapshot = this.spellControlSnapshot;
+      if (!snapshot?.spellSelect) return;
+      const spellIds = classValue === "cleric"
+        ? ["light", "guidance"]
+        : classValue === "wizard"
+          ? ["fire-bolt", "mending"]
+          : [];
+      snapshot.spellSelect.replaceChildren();
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = "--法術--";
+      snapshot.spellSelect.appendChild(placeholder);
+      spellIds.forEach((spellId) => {
+        const option = document.createElement("option");
+        option.value = spellId;
+        option.textContent = window.SpellCatalog?.getDisplayName?.(spellId)
+          || ({ light: "光亮術", guidance: "神導術", "fire-bolt": "火焰箭", mending: "修復術" })[spellId];
+        snapshot.spellSelect.appendChild(option);
+      });
+      snapshot.spellSelect.value = "";
+      if (snapshot.description) snapshot.description.textContent = "—";
+    }
+
+    updateTourSpellDescription() {
+      const snapshot = this.spellControlSnapshot;
+      if (!snapshot?.description || !snapshot.spellSelect) return;
+      const spell = window.SpellCatalog?.getSpell?.(snapshot.spellSelect.value);
+      snapshot.description.textContent = spell?.desc || "—";
+    }
+
+    restoreSpellControlPreview() {
+      const snapshot = this.spellControlSnapshot;
+      if (!snapshot) return;
+      snapshot.classSelect.innerHTML = snapshot.classHtml;
+      snapshot.classSelect.value = snapshot.classValue;
+      snapshot.spellSelect.innerHTML = snapshot.spellHtml;
+      snapshot.spellSelect.value = snapshot.spellValue;
+      if (snapshot.description) snapshot.description.innerHTML = snapshot.descriptionHtml;
+      snapshot.rowDisplays.forEach(({ element, display }) => {
+        element.style.display = display;
+      });
+      this.spellControlSnapshot = null;
     }
 
     captureSpellPreviewState() {
@@ -483,27 +677,154 @@
 
     async openPointBuyPreview() {
       if (!this.pointBuyPreviewOpened) {
-        this.runWithBackgroundElementUnlocked(document.getElementById("set-default-abilities"), (button) => button.click());
-        await waitForLayoutStability();
-        this.runWithBackgroundElementUnlocked(document.getElementById("ability-choice-point-buy"), (button) => button.click());
+        this.isInternalTourAction = true;
+        try {
+          const choiceModal = document.getElementById("ability-choice-modal");
+          if (!choiceModal?.classList.contains("open")) {
+            this.runWithBackgroundElementUnlocked(document.getElementById("set-default-abilities"), (button) => button.click());
+            await waitForLayoutStability();
+          }
+          this.runWithBackgroundElementUnlocked(document.getElementById("ability-choice-point-buy"), (button) => button.click());
+        } finally {
+          this.isInternalTourAction = false;
+        }
         this.pointBuyPreviewOpened = true;
       }
-      document.getElementById("point-buy-modal")?.classList.add("onboarding-tour-preview");
+      const modal = document.getElementById("point-buy-modal");
+      modal?.classList.add("onboarding-tour-preview");
       const card = document.querySelector("#point-buy-modal .point-buy-modal-card");
       if (card && !this.pointBuyCardStateCaptured) {
         this.pointBuyCardWasInert = card.inert;
         this.pointBuyCardStateCaptured = true;
-        card.inert = true;
+        card.inert = false;
+        card.style.pointerEvents = "auto";
       }
+      this.prepareTourPointBuyState();
+      this.refreshTourInteractionRoots();
       await waitForLayoutStability();
+    }
+
+    prepareTourPointBuyState() {
+      const backgroundSelect = document.getElementById("point-buy-background");
+      if (backgroundSelect && !this.pointBuySelectSnapshot) {
+        this.pointBuySelectSnapshot = {
+          element: backgroundSelect,
+          value: backgroundSelect.value,
+          disabled: backgroundSelect.disabled
+        };
+      }
+      if (backgroundSelect) {
+        backgroundSelect.value = "soldier";
+        backgroundSelect.disabled = true;
+      }
+      if (!this.pointBuyControlSnapshot) {
+        this.pointBuyControlSnapshot = [
+          "point-buy-close",
+          "ability-choice-default",
+          "point-buy-reset",
+          "point-buy-apply"
+        ].map((id) => document.getElementById(id)).filter(Boolean).map((element) => ({
+          element,
+          disabled: element.disabled
+        }));
+      }
+      this.pointBuyControlSnapshot.forEach(({ element }) => {
+        element.disabled = true;
+      });
+      if (!this.tourPointBuyState) {
+        this.tourPointBuyState = {
+          base: { str: 8, dex: 8, con: 8, int: 8, wis: 8, cha: 8 },
+          bonus: { str: 0, dex: 0, con: 0, int: 0, wis: 0, cha: 0 }
+        };
+      }
+      this.renderTourPointBuyRows();
+    }
+
+    getTourPointBuySpent() {
+      const costs = { 8: 0, 9: 1, 10: 2, 11: 3, 12: 4, 13: 5, 14: 7, 15: 9 };
+      return Object.values(this.tourPointBuyState?.base || {}).reduce((sum, value) => sum + costs[value], 0);
+    }
+
+    renderTourPointBuyRows() {
+      if (!this.tourPointBuyState) return;
+      const rows = document.getElementById("point-buy-rows");
+      if (!rows) return;
+      const labels = { str: "力量", dex: "敏捷", con: "體質", int: "智力", wis: "感知", cha: "魅力" };
+      const costs = { 8: 0, 9: 1, 10: 2, 11: 3, 12: 4, 13: 5, 14: 7, 15: 9 };
+      const soldierAbilities = new Set(["str", "dex", "con"]);
+      const spent = this.getTourPointBuySpent();
+      const bonusTotal = Object.values(this.tourPointBuyState.bonus).reduce((sum, value) => sum + value, 0);
+      rows.innerHTML = Object.keys(labels).map((key) => {
+        const baseValue = this.tourPointBuyState.base[key];
+        const bonusValue = this.tourPointBuyState.bonus[key];
+        const nextCost = baseValue < 15 ? costs[baseValue + 1] - costs[baseValue] : Infinity;
+        const canIncreaseBase = baseValue < 15 && spent + nextCost <= 27;
+        const bonusEnabled = soldierAbilities.has(key);
+        const canIncreaseBonus = bonusEnabled && bonusValue < 2 && bonusTotal < 3;
+        return `
+          <div class="point-buy-row ${bonusEnabled ? "" : "point-buy-row--bonus-locked"}" data-ability="${key}">
+            <div class="point-buy-ability">${labels[key]}</div>
+            <div class="point-buy-control-group">
+              <button type="button" class="point-buy-step" data-action="base-dec" data-ability="${key}" ${baseValue > 8 ? "" : "disabled"}>▼</button>
+              <span class="point-buy-value">${baseValue}</span>
+              <button type="button" class="point-buy-step" data-action="base-inc" data-ability="${key}" ${canIncreaseBase ? "" : "disabled"}>▲</button>
+            </div>
+            <div class="point-buy-control-group point-buy-control-group--bonus">
+              <button type="button" class="point-buy-step" data-action="bonus-dec" data-ability="${key}" ${bonusEnabled && bonusValue > 0 ? "" : "disabled"}>▼</button>
+              <span class="point-buy-value point-buy-value--bonus">${bonusEnabled ? `+${bonusValue}` : "—"}</span>
+              <button type="button" class="point-buy-step" data-action="bonus-inc" data-ability="${key}" ${canIncreaseBonus ? "" : "disabled"}>▲</button>
+            </div>
+            <div class="point-buy-total">${baseValue + bonusValue}</div>
+          </div>`;
+      }).join("");
+      const used = document.getElementById("point-buy-used");
+      const remain = document.getElementById("point-buy-remain");
+      const hint = document.getElementById("point-buy-hint");
+      if (used) used.textContent = String(spent);
+      if (remain) remain.textContent = String(27 - spent);
+      if (hint) hint.textContent = "士兵背景加值可分配在：力量、敏捷、體質（共 3 點，單項上限 +2）";
+    }
+
+    adjustTourPointBuy(action, key) {
+      const state = this.tourPointBuyState;
+      if (!state || !Object.prototype.hasOwnProperty.call(state.base, key)) return;
+      const costs = { 8: 0, 9: 1, 10: 2, 11: 3, 12: 4, 13: 5, 14: 7, 15: 9 };
+      if (action === "base-dec" && state.base[key] > 8) state.base[key] -= 1;
+      if (action === "base-inc" && state.base[key] < 15) {
+        const increase = costs[state.base[key] + 1] - costs[state.base[key]];
+        if (this.getTourPointBuySpent() + increase <= 27) state.base[key] += 1;
+      }
+      const soldierAbilities = new Set(["str", "dex", "con"]);
+      const bonusTotal = Object.values(state.bonus).reduce((sum, value) => sum + value, 0);
+      if (action === "bonus-dec" && soldierAbilities.has(key) && state.bonus[key] > 0) state.bonus[key] -= 1;
+      if (action === "bonus-inc" && soldierAbilities.has(key) && state.bonus[key] < 2 && bonusTotal < 3) state.bonus[key] += 1;
+      this.renderTourPointBuyRows();
     }
 
     closePointBuyPreview() {
       const modal = document.getElementById("point-buy-modal");
       const card = modal?.querySelector(".point-buy-modal-card");
-      if (card && this.pointBuyCardStateCaptured) card.inert = this.pointBuyCardWasInert;
+      if (this.pointBuySelectSnapshot?.element) {
+        this.pointBuySelectSnapshot.element.value = this.pointBuySelectSnapshot.value;
+        this.pointBuySelectSnapshot.element.disabled = this.pointBuySelectSnapshot.disabled;
+      }
+      this.pointBuySelectSnapshot = null;
+      this.tourPointBuyState = null;
+      this.pointBuyControlSnapshot?.forEach(({ element, disabled }) => {
+        element.disabled = disabled;
+      });
+      this.pointBuyControlSnapshot = null;
+      if (card && this.pointBuyCardStateCaptured) {
+        card.inert = this.pointBuyCardWasInert;
+        card.style.pointerEvents = "";
+      }
       if (this.pointBuyPreviewOpened && modal?.classList.contains("open")) {
-        this.runWithBackgroundElementUnlocked(document.getElementById("point-buy-close"), (button) => button.click());
+        this.isInternalTourAction = true;
+        try {
+          this.runWithBackgroundElementUnlocked(document.getElementById("point-buy-close"), (button) => button.click());
+        } finally {
+          this.isInternalTourAction = false;
+        }
       }
       modal?.classList.remove("onboarding-tour-preview");
       const abilityChoiceModal = document.getElementById("ability-choice-modal");
@@ -572,6 +893,128 @@
       }
     }
 
+    getAllowedTourElements() {
+      if (!this.active) return [];
+      if (this.currentIndex === 0) {
+        return ["class", "level", "background", "race"]
+          .map((id) => document.getElementById(id))
+          .filter(Boolean);
+      }
+      if (this.currentIndex === 1 && this.stepPhase === 0) {
+        return [
+          document.getElementById("set-default-abilities"),
+          document.getElementById("ability-choice-point-buy"),
+          document.getElementById("quick-card-builder")
+        ].filter((element) => element && isElementVisible(element));
+      }
+      if (this.currentIndex === 1 && this.stepPhase === 1) {
+        return Array.from(document.querySelectorAll("#point-buy-modal .point-buy-step:not(:disabled)"));
+      }
+      if (this.currentIndex === 3 && this.spellControlSnapshot) {
+        return [this.spellControlSnapshot.classSelect, this.spellControlSnapshot.spellSelect];
+      }
+      return [];
+    }
+
+    isAllowedTourInteraction(target) {
+      if (!(target instanceof Element)) return false;
+      if (this.tooltip?.contains(target)) return true;
+      return this.getAllowedTourElements().some((element) => element === target || element.contains(target));
+    }
+
+    refreshTourInteractionRoots() {
+      if (!this.backgroundInertSnapshot) return;
+      this.backgroundInertSnapshot.forEach(({ element }) => {
+        element.inert = true;
+      });
+      const roots = new Set(this.getAllowedTourElements()
+        .map((element) => this.getBodyChildForElement(element))
+        .filter(Boolean));
+      roots.forEach((element) => {
+        element.inert = false;
+      });
+    }
+
+    handleTourPointerDownCapture(event) {
+      if (!this.active || this.isInternalTourAction) return;
+      if (this.isAllowedTourInteraction(event.target)) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
+
+    handleTourClickCapture(event) {
+      if (!this.active || this.isInternalTourAction) return;
+      const target = event.target instanceof Element ? event.target : null;
+      if (!target) return;
+      if (this.tooltip?.contains(target)) return;
+
+      if (this.currentIndex === 1 && this.stepPhase === 0) {
+        if (target.closest("#quick-card-builder")) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          return;
+        }
+        if (target.closest("#ability-choice-point-buy")) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          this.advanceToPointBuyPreview();
+          return;
+        }
+        if (target.closest("#set-default-abilities")) {
+          window.setTimeout(async () => {
+            if (!this.active || this.currentIndex !== 1 || this.stepPhase !== 0) return;
+            this.tooltipDragPosition = null;
+            await waitForLayoutStability();
+            this.refreshTourInteractionRoots();
+            await this.renderStep();
+          }, 0);
+          return;
+        }
+      }
+
+      if (this.currentIndex === 1 && this.stepPhase === 1) {
+        const button = target.closest(".point-buy-step[data-action][data-ability]");
+        if (button && !button.disabled) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          const { action, ability } = button.dataset;
+          this.adjustTourPointBuy(action, ability);
+          this.refreshTourInteractionRoots();
+          document.querySelector(`#point-buy-modal .point-buy-step[data-action="${action}"][data-ability="${ability}"]:not(:disabled)`)
+            ?.focus({ preventScroll: true });
+          return;
+        }
+      }
+
+      if (!this.isAllowedTourInteraction(target)) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }
+    }
+
+    async advanceToPointBuyPreview() {
+      if (!this.active || this.isTransitioning || this.currentIndex !== 1 || this.stepPhase !== 0) return;
+      this.isTransitioning = true;
+      this.stepPhase = 1;
+      this.tooltipDragPosition = null;
+      await this.openPointBuyPreview();
+      await waitForLayoutStability();
+      await this.renderStep();
+      this.isTransitioning = false;
+    }
+
+    handleTourFormEventCapture(event) {
+      if (!this.active || this.isInternalTourAction) return;
+      const target = event.target;
+      if (!(target instanceof HTMLSelectElement) || !this.isAllowedTourInteraction(target)) return;
+      event.stopImmediatePropagation();
+      if (event.type !== "change") return;
+      if (this.currentIndex === 3 && this.spellControlSnapshot) {
+        if (target === this.spellControlSnapshot.classSelect) this.populateTourSpellOptions(target.value);
+        if (target === this.spellControlSnapshot.spellSelect) this.updateTourSpellDescription();
+      }
+    }
+
     lockBackgroundInteraction() {
       if (this.backgroundInertSnapshot) return;
       this.backgroundInertSnapshot = Array.from(document.body.children)
@@ -580,6 +1023,7 @@
       this.backgroundInertSnapshot.forEach(({ element }) => {
         element.inert = true;
       });
+      this.refreshTourInteractionRoots();
       if (this.tooltip) {
         this.tooltip.setAttribute("aria-modal", "true");
         this.tooltip.setAttribute("aria-labelledby", "tour-step-title");
@@ -635,6 +1079,8 @@
       const placement = this.getStepValue(step, "placement", "bottom");
       if (visibleHoles[0]) this.positionTooltip(visibleHoles[0], placement);
       else this.positionTooltipWithoutHighlight();
+      this.applyTooltipDragPosition();
+      this.refreshTourInteractionRoots();
       this.ensureTourFocus();
     }
 
@@ -656,7 +1102,7 @@
       this.maskGroups.forEach((group) => this.hideMaskGroup(group));
       this.focusRings.forEach((ring) => {
         if (!ring) return;
-        ring.style.cssText = "display:none;left:0;top:0;width:0;height:0;";
+        ring.style.cssText = "display:none;left:0;top:0;width:0;height:0;pointer-events:none;";
       });
       if (this.tooltip) {
         this.tooltip.style.left = "0px";
@@ -732,7 +1178,7 @@
         if (ring) ring.style.display = "none";
         return;
       }
-      ring.style.cssText = `display:block;left:${hole.left}px;top:${hole.top}px;width:${Math.max(0, hole.right - hole.left)}px;height:${Math.max(0, hole.bottom - hole.top)}px;`;
+      ring.style.cssText = `display:block;left:${hole.left}px;top:${hole.top}px;width:${Math.max(0, hole.right - hole.left)}px;height:${Math.max(0, hole.bottom - hole.top)}px;pointer-events:none;`;
     }
 
     positionTooltipWithoutHighlight() {
@@ -762,6 +1208,54 @@
       this.tooltip.style.top = `${Math.max(margin, top)}px`;
     }
 
+    clampTooltipPosition(left, top) {
+      const margin = 10;
+      const width = this.tooltip?.offsetWidth || 0;
+      const height = this.tooltip?.offsetHeight || 0;
+      return {
+        left: Math.min(Math.max(margin, left), Math.max(margin, window.innerWidth - width - margin)),
+        top: Math.min(Math.max(margin, top), Math.max(margin, window.innerHeight - height - margin))
+      };
+    }
+
+    applyTooltipDragPosition() {
+      if (!this.tooltipDragPosition || !this.tooltip) return;
+      const position = this.clampTooltipPosition(this.tooltipDragPosition.left, this.tooltipDragPosition.top);
+      this.tooltipDragPosition = position;
+      this.tooltip.style.left = `${position.left}px`;
+      this.tooltip.style.top = `${position.top}px`;
+    }
+
+    handleTooltipPointerDown(event) {
+      if (!this.active || !this.tooltip || event.button !== 0) return;
+      if (event.target instanceof Element && event.target.closest(".tour-btn-row button")) return;
+      const rect = this.tooltip.getBoundingClientRect();
+      this.tooltipDragPointerId = event.pointerId;
+      this.tooltipDragOffset = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+      this.tooltip.setPointerCapture?.(event.pointerId);
+      this.tooltip.style.cursor = "grabbing";
+      event.preventDefault();
+    }
+
+    handleTooltipPointerMove(event) {
+      if (!this.active || this.tooltipDragPointerId !== event.pointerId || !this.tooltip) return;
+      const position = this.clampTooltipPosition(
+        event.clientX - this.tooltipDragOffset.x,
+        event.clientY - this.tooltipDragOffset.y
+      );
+      this.tooltipDragPosition = position;
+      this.tooltip.style.left = `${position.left}px`;
+      this.tooltip.style.top = `${position.top}px`;
+      event.preventDefault();
+    }
+
+    handleTooltipPointerUp(event) {
+      if (this.tooltipDragPointerId !== event.pointerId) return;
+      if (this.tooltip?.hasPointerCapture?.(event.pointerId)) this.tooltip.releasePointerCapture(event.pointerId);
+      this.tooltipDragPointerId = null;
+      if (this.tooltip) this.tooltip.style.cursor = "grab";
+    }
+
     handleResize() {
       if (!this.active) return;
       requestAnimationFrame(() => this.renderStep());
@@ -778,18 +1272,25 @@
         this.trapTourTab(event);
         return;
       }
-      if (this.tooltip?.contains(event.target)) return;
+      if (this.tooltip?.contains(event.target) || this.isAllowedTourInteraction(event.target)) return;
       const blockedKeys = ["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " ", "Spacebar"];
       if (blockedKeys.includes(event.key)) event.preventDefault();
     }
 
     handleFocusIn(event) {
-      if (!this.active || this.tooltip?.contains(event.target)) return;
+      if (!this.active || this.isAllowedTourInteraction(event.target)) return;
       this.nextBtn?.focus({ preventScroll: true });
     }
 
     getTourFocusableButtons() {
-      return [this.prevBtn, this.skipBtn, this.nextBtn].filter((button) => button && !button.disabled);
+      return [
+        ...this.getAllowedTourElements(),
+        this.prevBtn,
+        this.skipBtn,
+        this.nextBtn
+      ].filter((element, index, elements) => {
+        return element && !element.disabled && isElementVisible(element) && elements.indexOf(element) === index;
+      });
     }
 
     ensureTourFocus() {

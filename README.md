@@ -30,7 +30,7 @@
 - PDF 角色卡匯出
 - 藍白外觀與深色外觀
 - 新手導覽
-- 創角精靈（β 版）
+- 創角小幫手
 - 可獨立開啟的離線版本
 
 右上角工具選單集中提供外觀切換、紀錄管理、QR Code、PDF 匯出、分享角卡與新手導覽。
@@ -51,7 +51,7 @@
 
 - `index.html`：主角卡介面與主要流程
 - `styles.css`：主介面、主題與各功能樣式
-- `quick-build.js`：創角精靈
+- `quick-build.js`：創角小幫手
 - `onboarding-tour.js`：新手導覽
 - `character-rules.js`、`class-features.js`、`race.js`：角色規則與選項資料
 - `equipment-data.js`、`equipment-notes.js`、`spell-list.js`：裝備與法術資料

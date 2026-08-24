@@ -118,10 +118,10 @@
     </div>
     <div id="spell-tab-toolbar" class="spell-toolbar is-hidden" aria-label="法術搜尋工具列">
       <div class="spell-toolbar-row">
-        <div class="spell-search-controls">
-          <input type="text" id="spell-search" placeholder="搜尋全部法術" aria-label="搜尋全部法術資料">
-          <button type="button" id="spell-search-button" class="spell-search-button" aria-label="執行法術搜尋">搜尋</button>
-        </div>
+        <form id="spell-search-form" class="spell-search-controls" role="search">
+          <input type="text" id="spell-search" inputmode="search" enterkeyhint="search" placeholder="搜尋全部法術" aria-label="搜尋全部法術資料">
+          <button type="submit" id="spell-search-button" class="spell-search-button" aria-label="執行法術搜尋">搜尋</button>
+        </form>
         <div id="spell-toolbar-actions" class="spell-toolbar-actions">
           <button type="button" id="expand-spells">全展</button>
           <button type="button" id="collapse-spells">收合</button>
@@ -134,13 +134,13 @@
     </div>
     <div id="equipment-tab-toolbar" class="equipment-toolbar is-hidden" aria-label="裝備搜尋工具列">
       <div class="equipment-toolbar-row">
-        <div class="spell-search-controls">
+        <form id="equipment-search-form" class="spell-search-controls" role="search">
           <div class="equipment-search-input-wrap">
-            <input type="text" id="equipment-search" placeholder="搜尋全部裝備" aria-label="搜尋全部裝備資料">
+            <input type="text" id="equipment-search" inputmode="search" enterkeyhint="search" placeholder="搜尋全部裝備" aria-label="搜尋全部裝備資料">
             <button type="button" id="equipment-search-clear" class="equipment-search-clear is-hidden" aria-label="清除裝備搜尋" style="transform:translateY(-50%); transition:none; animation:none;">×</button>
           </div>
-          <button type="button" id="equipment-search-button" class="spell-search-button" aria-label="執行裝備搜尋">搜尋</button>
-        </div>
+          <button type="submit" id="equipment-search-button" class="spell-search-button" aria-label="執行裝備搜尋">搜尋</button>
+        </form>
         <span id="equipment-search-count" class="equipment-search-count"></span>
       </div>
       <section id="equipment-search-results" class="equipment-search-results is-hidden" aria-label="裝備搜尋結果" aria-live="polite">
@@ -460,17 +460,6 @@
 <div id="share-mode-tip" class="share-mode-tip is-hidden">
   目前為分享模式：你的修改不會自動寫入本機儲存。可從右上角選單使用「匯入紀錄／匯出紀錄」功能保存與還原。
 </div>
-<!-- 暫停啟用：待創角精靈功能完成後，再恢復「清除紀錄時一併刪除草稿」選項。
-<div id="clear-records-modal" class="clear-records-modal" aria-hidden="true">
-  <section class="clear-records-modal__card" role="dialog" aria-modal="true" aria-labelledby="clear-records-title">
-    <h3 id="clear-records-title">清除本機紀錄</h3>
-    <p>這會清除角色欄位、版權提醒與分頁狀態。</p>
-    <label class="clear-records-modal__option"><input type="checkbox" id="clear-quick-build-draft"> 同時刪除創角精靈草稿</label>
-    <div class="clear-records-modal__actions"><button type="button" data-clear-records-cancel>取消</button><button type="button" class="danger" data-clear-records-confirm>清除紀錄</button></div>
-  </section>
-</div>
--->
-
 </div>
 
 
@@ -5436,9 +5425,7 @@ function searchAllSpells() {
   list.replaceChildren(fragment); summary.textContent = groupedMatches.size ? `找到 ${groupedMatches.size} 筆結果` : `找不到包含「${keyword}」的法術`; results.classList.remove("is-hidden");
 }
 
-document.getElementById("spell-search-button")?.addEventListener("click", searchAllSpells);
-document.getElementById("spell-search")?.addEventListener("keydown", (event) => {
-  if (event.key !== "Enter") return;
+document.getElementById("spell-search-form")?.addEventListener("submit", (event) => {
   event.preventDefault();
   searchAllSpells();
 });
@@ -5838,9 +5825,7 @@ document.getElementById("equipment-search")?.addEventListener("input", () => {
   );
 });
 
-document.getElementById("equipment-search-button")?.addEventListener("click", applyEquipmentFilter);
-document.getElementById("equipment-search")?.addEventListener("keydown", (event) => {
-  if (event.key !== "Enter") return;
+document.getElementById("equipment-search-form")?.addEventListener("submit", (event) => {
   event.preventDefault();
   applyEquipmentFilter();
 });
@@ -6010,6 +5995,13 @@ function addFamiliarBeastTips(desc) {
 })();
 
 function renderBeastPopupHtml(s) {
+  const renderDetailLine = (label, value, className = "") => {
+    const text = String(value ?? "").trim();
+    if (!text || text === "—") return "";
+    const content = escapeHtml(text).replaceAll("\n", "<br>");
+    return `<div class="monster-detail-line${className ? ` ${className}` : ""}"><strong>${label}</strong> ${content}</div>`;
+  };
+
   return `
     <div class="title">${escapeHtml(s.name)} <span class="muted">${escapeHtml(s.size_type)}</span></div>
     <div class="row">
@@ -6017,11 +6009,11 @@ function renderBeastPopupHtml(s) {
       <div><strong>HP</strong> ${escapeHtml(String(s.hp))}</div>
       <div><strong>速度</strong> ${escapeHtml(String(s.speed))}</div>
     </div>
-<div class="monster-detail-line monster-detail-line--first"><strong>能力值</strong> ${escapeHtml(String(s.ability))}</div>
-<div class="monster-detail-line"><strong>感官</strong> ${escapeHtml(String(s.senses))}</div>
-<div class="monster-detail-line"><strong>技能</strong> ${escapeHtml(String(s.skills))}</div>
-<div class="monster-detail-line"><strong>特性</strong> ${escapeHtml(String(s.traits))}</div>
-<div class="monster-detail-line"><strong>攻擊</strong> ${escapeHtml(String(s.attacks))}</div>
+${renderDetailLine("能力值", s.ability, "monster-detail-line--first")}
+${renderDetailLine("感官", s.senses)}
+${renderDetailLine("技能", s.skills)}
+${renderDetailLine("特性", s.traits)}
+${renderDetailLine("攻擊", s.attacks)}
   `;
 }
 
@@ -6250,6 +6242,7 @@ const APP_STORAGE_KEYS = Object.freeze([
   AUTO_SAVE_KEY,
   ACTIVE_TAB_KEY,
   CLASS_FEATURE_TABLE_STATE_KEY,
+  "dnd.quickBuildDraft.v1",
   ...LEGACY_LEGAL_DISMISS_KEYS
 ]);
 let SHARE_MODE = false;
@@ -6260,35 +6253,6 @@ function clearAppStateAndReload() {
   APP_STORAGE_KEYS.forEach((key) => window.dndStorage.removeItem(key));
   location.replace(`${location.pathname}${location.search}`);
 }
-
-/* 暫停啟用：待創角精靈功能完成後，再恢復此確認視窗與核取方塊。
-function confirmClearAppState() {
-  const modal = document.getElementById("clear-records-modal");
-  const checkbox = document.getElementById("clear-quick-build-draft");
-  if (!modal || !checkbox) return Promise.resolve({ confirmed: false, includeQuickBuildDraft: false });
-  return new Promise(resolve => {
-    const finish = confirmed => {
-      const includeQuickBuildDraft = checkbox.checked;
-      modal.classList.remove("open");
-      modal.setAttribute("aria-hidden", "true");
-      modal.removeEventListener("click", onClick);
-      document.removeEventListener("keydown", onKeydown);
-      resolve({ confirmed, includeQuickBuildDraft });
-    };
-    const onClick = event => {
-      if (event.target === modal || event.target.matches("[data-clear-records-cancel]")) finish(false);
-      if (event.target.matches("[data-clear-records-confirm]")) finish(true);
-    };
-    const onKeydown = event => { if (event.key === "Escape") finish(false); };
-    checkbox.checked = false;
-    modal.classList.add("open");
-    modal.setAttribute("aria-hidden", "false");
-    modal.addEventListener("click", onClick);
-    document.addEventListener("keydown", onKeydown);
-    modal.querySelector("[data-clear-records-cancel]")?.focus();
-  });
-}
-*/
 
 function bytesToBase64Url(bytes) {
   let binary = "";
@@ -6709,6 +6673,38 @@ function buildPdfPrecheckMessages() {
     });
   }
 
+  const classFeatureChoiceRequirements = {
+    cleric: {
+      minimumLevel: 1,
+      ids: ["cleric-guardian", "cleric-trickster"],
+      message: "牧師神聖使命尚未選擇。"
+    },
+    druid: {
+      minimumLevel: 1,
+      ids: ["druid-shaman", "druid-sentinel"],
+      message: "德魯伊原初使命尚未選擇。"
+    }
+  };
+  const classFeatureChoice = classFeatureChoiceRequirements[selectedClass];
+  if (classFeatureChoice && selectedLevel >= classFeatureChoice.minimumLevel) {
+    const hasChoice = classFeatureChoice.ids.some(id => document.getElementById(id)?.checked);
+    if (!hasChoice) reminders.push({
+      message: classFeatureChoice.message,
+      tab: "basic",
+      selector: classFeatureChoice.ids.map(id => `#${id}`).join(", "),
+      focusSelector: `#${classFeatureChoice.ids[0]}`
+    });
+  }
+
+  if (selectedClass === "druid" && selectedLevel >= 3 && !(document.getElementById("druid-land")?.value || "").trim()) {
+    reminders.push({
+      message: "大地結社地貌尚未選擇。",
+      tab: "basic",
+      selector: "#druid-land",
+      focusSelector: "#druid-land"
+    });
+  }
+
   const fightingStyleSelect = selectedClass ? document.getElementById(`derived-feat-fighting-style-${selectedClass}`) : null;
   if (selectedClass === "fighter" && selectedLevel >= 1 && !fightingStyleSelect?.value) {
     reminders.push({ message: "戰士戰鬥風格尚未選擇。", tab: "basic", selector: "#feats-area", focusSelector: "#derived-feat-fighting-style-fighter" });
@@ -6721,7 +6717,7 @@ function buildPdfPrecheckMessages() {
     if (!styleChecked && !magicChecked) reminders.push({
       message: `${selectedClass === "paladin" ? "聖騎士" : "遊俠"}戰鬥風格類型尚未選擇。`,
       tab: "basic",
-      selector: "#class-features-section",
+      selector: `#${styleId}, #${magicId}`,
       focusSelector: `#${styleId}`
     });
     if (styleChecked && !fightingStyleSelect?.value) reminders.push({
@@ -6741,6 +6737,30 @@ function buildPdfPrecheckMessages() {
         focusSelector: missingRow ? `#${missingRow.querySelector("select[id*='-spell-']")?.id}` : "#cantrips-area select[id*='-spell-']"
       });
     }
+  }
+
+  if (selectedClass === "sorcerer" && selectedLevel >= 2) {
+    const metamagicInputs = Array.from(document.querySelectorAll("#metamagicOptions input[data-metamagic-name]"));
+    const metamagicCount = metamagicInputs.filter(input => input.checked).length;
+    const metamagicLimit = getMetamagicSelectionLimit();
+    if (metamagicCount < metamagicLimit) reminders.push({
+      message: `術士超魔法尚未選完（${metamagicCount}/${metamagicLimit}）。`,
+      tab: "basic",
+      selector: "#metamagicOptions input[data-metamagic-name]:not(:checked)",
+      focusSelector: "#metamagicOptions input[data-metamagic-name]:not(:checked)"
+    });
+  }
+
+  if (selectedClass === "warlock" && selectedLevel >= 1) {
+    const invocationInputs = Array.from(document.querySelectorAll("#eldritch-invocations-output input[data-invocation-name]"));
+    const invocationCount = invocationInputs.filter(input => input.checked).length;
+    const invocationLimit = getWarlockInvocationSelectionLimit();
+    if (invocationCount < invocationLimit) reminders.push({
+      message: `契術師魔能祈喚尚未選完（${invocationCount}/${invocationLimit}）。`,
+      tab: "basic",
+      selector: "#eldritch-invocations-output input[data-invocation-name]:not(:checked)",
+      focusSelector: "#eldritch-invocations-output input[data-invocation-name]:not(:checked)"
+    });
   }
 
   const backgroundMagicRow = document.querySelector('#feats-area .feat-entry--derived[data-source-key="background"]');
@@ -6909,7 +6929,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
         precheck:['匯出前檢查','確認角色資料是否還有需要補填的地方。'],
         name:['角色名稱','名稱會寫入角色卡中；不需要時也可以留空。'],
         equipment:quickBuildEquipmentIncluded
-          ? ['預設裝備已加入','創角精靈已將實際選擇寫入「攜帶物品」。']
+          ? ['預設裝備已加入','創角小幫手已將實際選擇寫入「攜帶物品」。']
           : ['加入預設裝備','決定是否把職業與背景提供的起始裝備一併寫入。'],
         race:[raceChoice?.title || '選擇種族特性','這項選擇會影響角色能力與 PDF 內容。'],
         format:['選擇 PDF 格式','最後一步：依照是否需要後續編輯來選擇。']
@@ -6986,7 +7006,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
         if(quickBuildEquipmentIncluded){
           const success=document.createElement('div'); success.className='pdf-export-check-success';
           const icon=document.createElement('span'); icon.setAttribute('aria-hidden','true'); icon.textContent='✓';
-          const copy=document.createElement('div'); const strong=document.createElement('strong'); strong.textContent='已從創角精靈匯入初始裝備'; const hint=document.createElement('p'); hint.textContent='「攜帶物品」已包含創角精靈選擇的裝備，PDF 不會再次加入，以免內容重複。'; copy.append(strong,hint); success.append(icon,copy); d.appendChild(success);
+          const copy=document.createElement('div'); const strong=document.createElement('strong'); strong.textContent='已從創角小幫手匯入初始裝備'; const hint=document.createElement('p'); hint.textContent='「攜帶物品」已包含創角小幫手選擇的裝備，PDF 不會再次加入，以免內容重複。'; copy.append(strong,hint); success.append(icon,copy); d.appendChild(success);
           const n=document.createElement('button'); n.type='button'; n.className='pdf-export-flow-modal__button pdf-export-flow-modal__button--primary'; n.textContent='使用目前裝備繼續'; n.onclick=()=>{result.includeDefaultEquipment=false;idx++;render();}; a.append(n); n.focus();
           return;
         }
@@ -7631,7 +7651,7 @@ for (let i = 0; i < 1; i++) createSingleFeatRow();
     <button type="button" class="deity-info-close" aria-label="關閉神祇資訊">✕</button>
     <header class="deity-info-header">
       <h3 id="deity-info-title">📜 被遺忘國度神祇整理</h3>
-      <p id="deity-info-disclaimer" class="deity-info-disclaimer">本站為 SRD 創角工具，與官方無任何關係。以下姓名設定皆歸原權利人所有；由愛好者整理撰寫，僅供遊戲中參考，並遵守 WotC FCP 條款。</p>
+      <p id="deity-info-disclaimer" class="deity-info-disclaimer">本站為 SRD 創角工具，與官方無任何關係。以下神明設定皆歸原權利人所有；由愛好者整理撰寫，僅供遊戲中參考，並遵守 WotC FCP 條款。</p>
     </header>
     <div id="deity-info-content" class="deity-info-content"></div>
   </div>
@@ -7645,7 +7665,7 @@ for (let i = 0; i < 1; i++) createSingleFeatRow();
     <div class="ability-choice-actions">
       <button type="button" id="ability-choice-point-buy">２７購點</button>
       <hr class="ability-choice-divider">
-      <button type="button" id="quick-card-builder">創角幫手(β版)</button>
+      <button type="button" id="quick-card-builder">創角小幫手</button>
     </div>
   </div>
 </div>
