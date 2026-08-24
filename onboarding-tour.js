@@ -91,18 +91,30 @@
       this.pointBuyCardWasInert = false;
       this.pointBuyCardStateCaptured = false;
       this.utilityMenuPreviewOpened = false;
+      this.utilityMenuControlSnapshot = null;
       this.identityPreviewSnapshot = null;
+      this.abilityPreviewSnapshot = null;
+      this.equipmentPreviewSnapshot = null;
       this.spellControlSnapshot = null;
+      this.spellSearchControlSnapshot = null;
+      this.spellSearchPreviewOpened = false;
       this.pointBuySelectSnapshot = null;
       this.pointBuyControlSnapshot = null;
       this.tourPointBuyState = null;
       this.tooltipDragPosition = null;
       this.tooltipDragPointerId = null;
+      this.highlightDragState = null;
+      this.suppressNextHighlightClick = false;
       this.tooltipDragOffset = { x: 0, y: 0 };
       this.isInternalTourAction = false;
       this.autosaveSuspendedSnapshot = null;
       this.activeTabStorageSnapshot = null;
+      this.activeHoles = [];
+      this.scrollRenderPending = false;
+      this.lastTourScrollY = window.scrollY;
+      this.bodyTouchActionSnapshot = null;
       this.handleResize = this.handleResize.bind(this);
+      this.handleScroll = this.handleScroll.bind(this);
       this.handleKeydown = this.handleKeydown.bind(this);
       this.handleFocusIn = this.handleFocusIn.bind(this);
       this.preventScrollEvent = this.preventScrollEvent.bind(this);
@@ -120,6 +132,7 @@
       this.nextBtn.addEventListener("click", () => this.next());
       this.skipBtn.addEventListener("click", () => this.stop());
       window.addEventListener("resize", this.handleResize);
+      window.addEventListener("scroll", this.handleScroll, { passive: true });
       document.addEventListener("keydown", this.handleKeydown);
       document.addEventListener("focusin", this.handleFocusIn);
       document.addEventListener("pointerdown", this.handleTourPointerDownCapture, true);
@@ -145,7 +158,7 @@
         {
           tab: "basic",
           title: "⚔️ 1. 決定你的冒險者方向",
-          text: "試著選擇職業、1～3 級、四種背景與矮人／人類／半身人。這些示範選擇只改變目前畫面，離開本步驟就會還原。",
+          text: "背景代表角色過去，種族帶來天生特性，職業則決定冒險方式。選擇後，生命值、能力與相關資料會跟著更新。",
           placement: "bottom",
           getHoles: () => {
             const identity = this.getHoleFromElements([
@@ -170,8 +183,8 @@
             ? "🎲 2. 屬性與快速創角"
             : "🎲 2. 使用 27 購點",
           text: () => this.stepPhase === 0
-            ? "點擊「決定屬性」查看選擇方式；導覽中的「創角小幫手」不會啟動，選擇「27購點」則繼續示範。"
-            : "背景固定為士兵。可用 ▲／▼ 試配 27 購點與背景加值；所有變更都不會套用或儲存到角色卡。",
+            ? "六項屬性決定角色擅長什麼；上方是檢定常用的修正值。點擊「決定屬性」可以快速套用或自行配點。"
+            : "27 購點可自由配置六項屬性，背景加值會另外計算。第一次創角則推薦從「決定屬性」裡開啟創角小幫手，由它帶你完成一名 1 級角色。",
           placement: () => this.stepPhase === 0 ? "top" : "overlay-bottom",
           getHoles: () => {
             if (this.stepPhase === 1) {
@@ -191,9 +204,13 @@
               return;
             }
             this.closePointBuyPreview();
+            this.prepareAbilityPreview();
             await this.scrollElementIntoView(document.querySelector("#set-default-abilities"), 150);
           },
-          afterLeave: () => this.closePointBuyPreview()
+          afterLeave: () => {
+            this.restoreAbilityPreview();
+            this.closePointBuyPreview();
+          }
         },
         {
           tab: "equipment",
@@ -205,17 +222,21 @@
             document.querySelector("#tab-equipment .equipment-loadout-summary")
           ], 8)].filter(Boolean),
           beforePosition: async () => {
+            this.prepareEquipmentPreview();
             await this.scrollElementIntoView(document.querySelector("#tab-equipment > .section"));
-          }
+          },
+          afterLeave: () => this.restoreEquipmentPreview()
         },
         {
           tab: "spells",
           title: "✨ 4. 選擇與查看法術",
-          text: "展開的 #1 戲法可選牧師或法師；牧師提供光亮術、神導術，法師提供火焰箭、修復術。選擇只在本步驟顯示。",
+          text: "有施法能力時，可以在這裡管理戲法與法術。選擇法術後，可查看完整說明與施法資料。",
           placement: "top",
           getHoles: () => [this.getHoleFromElements([
             document.querySelector("#tab-spells details.spell-level-section:first-of-type > summary"),
-            document.querySelector("#cantrips-area .spell-entry:first-child")
+            this.spellControlSnapshot?.row
+              || document.querySelector("#cantrips-area .spell-entry:not(.spell-entry--derived)"),
+            this.spellControlSnapshot?.description
           ], 8)].filter(Boolean),
           beforeTab: () => this.ensureSpellPreview(),
           beforePosition: async () => {
@@ -264,6 +285,8 @@
       this.currentIndex = -1;
       this.stepPhase = 0;
       this.tooltipDragPosition = null;
+      this.activeHoles = [];
+      this.lastTourScrollY = window.scrollY;
       this.autosaveSuspendedSnapshot = typeof autosaveSuspended === "boolean" ? autosaveSuspended : null;
       if (this.autosaveSuspendedSnapshot === false) window.flushPendingAutosave?.();
       if (this.autosaveSuspendedSnapshot !== null) autosaveSuspended = true;
@@ -286,6 +309,7 @@
       if (!this.active || this.isTransitioning) return;
       if (this.currentIndex === 1 && this.stepPhase === 0) {
         this.isTransitioning = true;
+        this.restoreAbilityPreview();
         this.stepPhase = 1;
         this.tooltipDragPosition = null;
         await this.steps[1].beforePosition();
@@ -348,6 +372,8 @@
       this.currentIndex = index;
       this.stepPhase = 0;
       this.tooltipDragPosition = null;
+      this.activeHoles = [];
+      this.lastTourScrollY = window.scrollY;
       const step = this.steps[index];
       if (typeof step.beforeTab === "function") step.beforeTab();
       this.showTab(step.tab);
@@ -366,6 +392,8 @@
       this.closePointBuyPreview();
       this.closeUtilityMenuPreview();
       this.restoreIdentityPreview();
+      this.restoreAbilityPreview();
+      this.restoreEquipmentPreview();
       this.restoreSpellControlPreview();
       this.restoreSpellPreviewState();
       this.resetHighlightState();
@@ -374,10 +402,14 @@
       this.currentIndex = -1;
       this.stepPhase = 0;
       this.tooltipDragPosition = null;
+      this.activeHoles = [];
+      this.lastTourScrollY = window.scrollY;
       if (this.tooltipDragPointerId !== null && this.tooltip?.hasPointerCapture?.(this.tooltipDragPointerId)) {
         this.tooltip.releasePointerCapture(this.tooltipDragPointerId);
       }
       this.tooltipDragPointerId = null;
+      this.highlightDragState = null;
+      this.suppressNextHighlightClick = false;
       if (this.tooltip) this.tooltip.style.cursor = "grab";
       if (this.autosaveSuspendedSnapshot !== null) autosaveSuspended = this.autosaveSuspendedSnapshot;
       this.autosaveSuspendedSnapshot = null;
@@ -466,23 +498,134 @@
       this.identityPreviewSnapshot = null;
     }
 
+    prepareAbilityPreview() {
+      if (this.abilityPreviewSnapshot) return;
+      this.abilityPreviewSnapshot = ["str", "dex", "con", "int", "wis", "cha"]
+        .map((id) => document.getElementById(id))
+        .filter(Boolean)
+        .map((element) => ({
+          element,
+          value: element.value,
+          disabled: element.disabled,
+          readOnly: element.readOnly
+        }));
+      this.abilityPreviewSnapshot.forEach(({ element }) => {
+        element.disabled = false;
+        element.readOnly = false;
+      });
+    }
+
+    restoreAbilityPreview() {
+      const snapshot = this.abilityPreviewSnapshot;
+      if (!snapshot) return;
+      snapshot.forEach(({ element, value, disabled, readOnly }) => {
+        const changed = element.value !== value;
+        element.value = value;
+        element.disabled = disabled;
+        element.readOnly = readOnly;
+        if (changed) element.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+      this.abilityPreviewSnapshot = null;
+    }
+
+    setTourSelectGroups(select, groups) {
+      if (!select) return;
+      select.replaceChildren();
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = "-- 請選擇 --";
+      select.appendChild(placeholder);
+      groups.forEach(({ label, values }) => {
+        const parent = label ? document.createElement("optgroup") : select;
+        if (label) parent.label = label;
+        values.forEach((value) => {
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = value;
+          parent.appendChild(option);
+        });
+        if (label) select.appendChild(parent);
+      });
+      select.value = "";
+      select.disabled = false;
+    }
+
+    prepareEquipmentPreview() {
+      if (this.equipmentPreviewSnapshot) return;
+      const selects = ["mainHand", "offHand", "armor"]
+        .map((id) => document.getElementById(id))
+        .filter(Boolean);
+      this.equipmentPreviewSnapshot = {
+        selects: selects.map((element) => ({
+          element,
+          html: element.innerHTML,
+          value: element.value,
+          disabled: element.disabled
+        })),
+        summary: document.querySelector("#tab-equipment .equipment-loadout-summary"),
+        summaryHtml: document.querySelector("#tab-equipment .equipment-loadout-summary")?.innerHTML || ""
+      };
+      this.setTourSelectGroups(document.getElementById("mainHand"), [
+        { label: "單手軍用近戰武器", values: ["戰斧", "連枷", "長劍"] }
+      ]);
+      this.setTourSelectGroups(document.getElementById("offHand"), [
+        { label: "單手簡易近戰武器", values: ["短棒", "匕首", "手斧"] }
+      ]);
+      this.setTourSelectGroups(document.getElementById("armor"), [
+        { label: "輕甲", values: ["布甲"] },
+        { label: "中甲", values: ["獸皮甲"] },
+        { label: "重甲", values: ["環甲"] }
+      ]);
+      this.refreshEquipmentPreviewOutputs();
+    }
+
+    refreshEquipmentPreviewOutputs() {
+      window.updateEquipmentLoadoutSummary?.();
+      window.updateACDisplay?.();
+      window.updateSpeedDisplay?.();
+      window.populateHandAttacks?.();
+    }
+
+    restoreEquipmentPreview() {
+      const snapshot = this.equipmentPreviewSnapshot;
+      if (!snapshot) return;
+      snapshot.selects.forEach(({ element, html, value, disabled }) => {
+        element.innerHTML = html;
+        element.value = value;
+        element.disabled = disabled;
+      });
+      this.refreshEquipmentPreviewOutputs();
+      if (snapshot.summary && typeof window.updateEquipmentLoadoutSummary !== "function") {
+        snapshot.summary.innerHTML = snapshot.summaryHtml;
+      }
+      this.equipmentPreviewSnapshot = null;
+    }
+
     prepareSpellControlPreview() {
       if (this.spellControlSnapshot) return;
       const area = document.getElementById("cantrips-area");
-      const row = area?.querySelector(".spell-entry:first-child");
+      const row = area?.querySelector(".spell-entry:not(.spell-entry--derived)");
       const classSelect = row?.querySelector("select[id*='-class-']");
       const spellSelect = row?.querySelector("select[id*='-spell-']");
       if (!row || !classSelect || !spellSelect) return;
       const description = row.querySelector(".output.small-text");
+      const marker = row.querySelector(".spell-row-index");
       this.spellControlSnapshot = {
+        row,
         classSelect,
         spellSelect,
         classHtml: classSelect.innerHTML,
         classValue: classSelect.value,
+        classDisabled: classSelect.disabled,
+        classAriaDisabled: classSelect.getAttribute("aria-disabled"),
         spellHtml: spellSelect.innerHTML,
         spellValue: spellSelect.value,
+        spellDisabled: spellSelect.disabled,
+        spellAriaDisabled: spellSelect.getAttribute("aria-disabled"),
         description,
         descriptionHtml: description?.innerHTML || "",
+        marker,
+        markerText: marker?.textContent || "",
         rowDisplays: Array.from(area.children).map((element) => ({
           element,
           display: element.style.display
@@ -493,21 +636,26 @@
         '<option value="cleric">牧師</option>',
         '<option value="wizard">法師</option>'
       ].join("");
+      classSelect.disabled = false;
+      classSelect.removeAttribute("aria-disabled");
+      spellSelect.disabled = false;
+      spellSelect.removeAttribute("aria-disabled");
+      if (marker) marker.textContent = "#1";
       classSelect.value = "";
       this.populateTourSpellOptions("");
-      this.spellControlSnapshot.rowDisplays.forEach(({ element }, index) => {
-        element.style.display = index === 0 ? "" : "none";
+      this.spellControlSnapshot.rowDisplays.forEach(({ element }) => {
+        element.style.display = element === row ? "" : "none";
       });
     }
 
     populateTourSpellOptions(classValue) {
       const snapshot = this.spellControlSnapshot;
       if (!snapshot?.spellSelect) return;
-      const spellIds = classValue === "cleric"
-        ? ["light", "guidance"]
-        : classValue === "wizard"
-          ? ["fire-bolt", "mending"]
-          : [];
+      const spellIdsByClass = {
+        cleric: ["spare-the-dying", "guidance"],
+        wizard: ["fire-bolt", "mending"]
+      };
+      const spellIds = spellIdsByClass[classValue] || [];
       snapshot.spellSelect.replaceChildren();
       const placeholder = document.createElement("option");
       placeholder.value = "";
@@ -517,7 +665,7 @@
         const option = document.createElement("option");
         option.value = spellId;
         option.textContent = window.SpellCatalog?.getDisplayName?.(spellId)
-          || ({ light: "光亮術", guidance: "神導術", "fire-bolt": "火焰箭", mending: "修復術" })[spellId];
+          || ({ guidance: "神導術", "spare-the-dying": "維生術", "fire-bolt": "火焰箭", mending: "修復術" })[spellId];
         snapshot.spellSelect.appendChild(option);
       });
       snapshot.spellSelect.value = "";
@@ -536,9 +684,16 @@
       if (!snapshot) return;
       snapshot.classSelect.innerHTML = snapshot.classHtml;
       snapshot.classSelect.value = snapshot.classValue;
+      snapshot.classSelect.disabled = snapshot.classDisabled;
+      if (snapshot.classAriaDisabled === null) snapshot.classSelect.removeAttribute("aria-disabled");
+      else snapshot.classSelect.setAttribute("aria-disabled", snapshot.classAriaDisabled);
       snapshot.spellSelect.innerHTML = snapshot.spellHtml;
       snapshot.spellSelect.value = snapshot.spellValue;
+      snapshot.spellSelect.disabled = snapshot.spellDisabled;
+      if (snapshot.spellAriaDisabled === null) snapshot.spellSelect.removeAttribute("aria-disabled");
+      else snapshot.spellSelect.setAttribute("aria-disabled", snapshot.spellAriaDisabled);
       if (snapshot.description) snapshot.description.innerHTML = snapshot.descriptionHtml;
+      if (snapshot.marker) snapshot.marker.textContent = snapshot.markerText;
       snapshot.rowDisplays.forEach(({ element, display }) => {
         element.style.display = display;
       });
@@ -842,31 +997,108 @@
     async openSpellSearchPreview() {
       const toolbar = document.getElementById("spell-tab-toolbar");
       if (toolbar?.classList.contains("is-hidden")) {
-        this.runWithBackgroundElementUnlocked(document.getElementById("spell-search-fab"), (button) => button.click());
+        this.isInternalTourAction = true;
+        try {
+          this.runWithBackgroundElementUnlocked(document.getElementById("spell-search-fab"), (button) => button.click());
+          this.spellSearchPreviewOpened = true;
+        } finally {
+          this.isInternalTourAction = false;
+        }
       }
+      this.prepareSpellSearchControls();
       await waitForLayoutStability();
+    }
+
+    prepareSpellSearchControls() {
+      if (this.spellSearchControlSnapshot) return;
+      const controls = Array.from(document.querySelectorAll(
+        "#spell-tab-toolbar input, #spell-tab-toolbar button"
+      ));
+      this.spellSearchControlSnapshot = controls.map((element) => ({
+        element,
+        disabled: element.disabled,
+        readOnly: "readOnly" in element ? element.readOnly : undefined
+      }));
+      this.spellSearchControlSnapshot.forEach(({ element }) => {
+        if (element instanceof HTMLInputElement) element.readOnly = true;
+        if (element instanceof HTMLButtonElement) element.disabled = true;
+      });
+    }
+
+    restoreSpellSearchControls() {
+      this.spellSearchControlSnapshot?.forEach(({ element, disabled, readOnly }) => {
+        element.disabled = disabled;
+        if (readOnly !== undefined) element.readOnly = readOnly;
+      });
+      this.spellSearchControlSnapshot = null;
     }
 
     closeSpellSearchPreview() {
       const toolbar = document.getElementById("spell-tab-toolbar");
-      if (toolbar && !toolbar.classList.contains("is-hidden")) {
-        this.runWithBackgroundElementUnlocked(document.getElementById("spell-search-fab"), (button) => button.click());
+      this.restoreSpellSearchControls();
+      if (this.spellSearchPreviewOpened && toolbar && !toolbar.classList.contains("is-hidden")) {
+        this.isInternalTourAction = true;
+        try {
+          this.runWithBackgroundElementUnlocked(document.getElementById("spell-search-fab"), (button) => button.click());
+        } finally {
+          this.isInternalTourAction = false;
+        }
       }
+      this.spellSearchPreviewOpened = false;
     }
 
     async openUtilityMenuPreview() {
       const toggle = document.getElementById("utility-menu-toggle");
       if (toggle?.getAttribute("aria-expanded") !== "true") {
-        this.runWithBackgroundElementUnlocked(toggle, (button) => button.click());
-        this.utilityMenuPreviewOpened = true;
+        this.isInternalTourAction = true;
+        try {
+          this.runWithBackgroundElementUnlocked(toggle, (button) => button.click());
+          this.utilityMenuPreviewOpened = true;
+        } finally {
+          this.isInternalTourAction = false;
+        }
       }
+      this.prepareUtilityMenuControls();
       await waitForLayoutStability();
+    }
+
+    prepareUtilityMenuControls() {
+      if (this.utilityMenuControlSnapshot) return;
+      const controls = Array.from(document.querySelectorAll("#utility-menu button, #utility-menu input, #utility-menu select"));
+      this.utilityMenuControlSnapshot = controls.map((element) => ({
+        element,
+        disabled: element.disabled
+      }));
+      this.utilityMenuControlSnapshot.forEach(({ element }) => {
+        if (!element.matches('input[name="site-theme"]')) element.disabled = true;
+      });
+    }
+
+    restoreUtilityMenuControls() {
+      this.utilityMenuControlSnapshot?.forEach(({ element, disabled }) => {
+        element.disabled = disabled;
+      });
+      this.utilityMenuControlSnapshot = null;
+    }
+
+    isUtilityMenuPreviewLocked() {
+      return this.active
+        && this.currentIndex === 4
+        && this.stepPhase === 1
+        && this.utilityMenuPreviewOpened
+        && !this.isInternalTourAction;
     }
 
     closeUtilityMenuPreview() {
       const toggle = document.getElementById("utility-menu-toggle");
+      this.restoreUtilityMenuControls();
       if (this.utilityMenuPreviewOpened && toggle?.getAttribute("aria-expanded") === "true") {
-        this.runWithBackgroundElementUnlocked(toggle, (button) => button.click());
+        this.isInternalTourAction = true;
+        try {
+          this.runWithBackgroundElementUnlocked(toggle, (button) => button.click());
+        } finally {
+          this.isInternalTourAction = false;
+        }
       }
       this.utilityMenuPreviewOpened = false;
     }
@@ -901,8 +1133,14 @@
           .filter(Boolean);
       }
       if (this.currentIndex === 1 && this.stepPhase === 0) {
+        const choiceModalOpen = document.getElementById("ability-choice-modal")?.classList.contains("open");
+        if (!choiceModalOpen) {
+          return [
+            document.getElementById("set-default-abilities"),
+            ...["str", "dex", "con", "int", "wis", "cha"].map((id) => document.getElementById(id))
+          ].filter((element) => element && isElementVisible(element));
+        }
         return [
-          document.getElementById("set-default-abilities"),
           document.getElementById("ability-choice-point-buy"),
           document.getElementById("quick-card-builder")
         ].filter((element) => element && isElementVisible(element));
@@ -910,8 +1148,16 @@
       if (this.currentIndex === 1 && this.stepPhase === 1) {
         return Array.from(document.querySelectorAll("#point-buy-modal .point-buy-step:not(:disabled)"));
       }
+      if (this.currentIndex === 2 && this.equipmentPreviewSnapshot) {
+        return ["mainHand", "offHand", "armor"]
+          .map((id) => document.getElementById(id))
+          .filter(Boolean);
+      }
       if (this.currentIndex === 3 && this.spellControlSnapshot) {
         return [this.spellControlSnapshot.classSelect, this.spellControlSnapshot.spellSelect];
+      }
+      if (this.currentIndex === 4 && this.stepPhase === 1 && this.utilityMenuPreviewOpened) {
+        return Array.from(document.querySelectorAll('#utility-menu input[name="site-theme"]:not(:disabled)'));
       }
       return [];
     }
@@ -919,7 +1165,97 @@
     isAllowedTourInteraction(target) {
       if (!(target instanceof Element)) return false;
       if (this.tooltip?.contains(target)) return true;
+      if (this.currentIndex === 4 && this.stepPhase === 1 && target.closest(".theme-picker__option")) return true;
       return this.getAllowedTourElements().some((element) => element === target || element.contains(target));
+    }
+
+    getEventViewportPoint(event) {
+      const touch = event.touches?.[0] || event.changedTouches?.[0];
+      const clientX = touch?.clientX ?? event.clientX;
+      const clientY = touch?.clientY ?? event.clientY;
+      if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) return null;
+      return { x: clientX, y: clientY };
+    }
+
+    isEventInsideActiveHole(event) {
+      if (this.tooltip?.contains(event.target)) return false;
+      const point = this.getEventViewportPoint(event);
+      if (!point) return false;
+      return this.activeHoles.some((hole) => (
+        point.x >= hole.left
+        && point.x <= hole.right
+        && point.y >= hole.top
+        && point.y <= hole.bottom
+      ));
+    }
+
+    getHighlightScrollTarget(eventTarget, clientX, clientY) {
+      const candidates = [];
+      if (eventTarget instanceof Element) candidates.push(eventTarget);
+      document.elementsFromPoint(clientX, clientY).forEach((element) => {
+        if (!candidates.includes(element)) candidates.push(element);
+      });
+      for (const candidate of candidates) {
+        if (this.overlay?.contains(candidate)) continue;
+        let current = candidate;
+        while (current && current !== document.body && current !== document.documentElement) {
+          const style = getComputedStyle(current);
+          if (/(auto|scroll)/.test(style.overflowY) && current.scrollHeight > current.clientHeight + 1) {
+            return current;
+          }
+          current = current.parentElement;
+        }
+      }
+      return window;
+    }
+
+    moveHighlightDrag(clientY) {
+      const state = this.highlightDragState;
+      if (!state || !Number.isFinite(clientY)) return false;
+      const totalDistance = Math.abs(clientY - state.startY);
+      if (!state.moved && totalDistance < 6) return false;
+      state.moved = true;
+      const scrollDelta = state.lastY - clientY;
+      state.lastY = clientY;
+      if (!scrollDelta) return true;
+      if (state.scrollTarget === window) {
+        window.scrollBy(0, scrollDelta);
+      } else {
+        state.scrollTarget.scrollTop += scrollDelta;
+      }
+      return true;
+    }
+
+    getHighlightInteractionRoots() {
+      const roots = new Set();
+      this.backgroundInertSnapshot?.forEach(({ element }) => {
+        const rect = element.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) return;
+        const intersectsHighlight = this.activeHoles.some((hole) => (
+          rect.right > hole.left
+          && rect.left < hole.right
+          && rect.bottom > hole.top
+          && rect.top < hole.bottom
+        ));
+        if (intersectsHighlight) roots.add(element);
+      });
+      this.activeHoles.forEach((hole) => {
+        const insetX = Math.min(4, Math.max(0, (hole.right - hole.left) / 2));
+        const insetY = Math.min(4, Math.max(0, (hole.bottom - hole.top) / 2));
+        const points = [
+          [(hole.left + hole.right) / 2, (hole.top + hole.bottom) / 2],
+          [hole.left + insetX, hole.top + insetY],
+          [hole.right - insetX, hole.bottom - insetY]
+        ];
+        points.forEach(([x, y]) => {
+          document.elementsFromPoint(x, y).forEach((element) => {
+            if (this.overlay?.contains(element)) return;
+            const root = this.getBodyChildForElement(element);
+            if (root) roots.add(root);
+          });
+        });
+      });
+      return roots;
     }
 
     refreshTourInteractionRoots() {
@@ -930,6 +1266,7 @@
       const roots = new Set(this.getAllowedTourElements()
         .map((element) => this.getBodyChildForElement(element))
         .filter(Boolean));
+      this.getHighlightInteractionRoots().forEach((element) => roots.add(element));
       roots.forEach((element) => {
         element.inert = false;
       });
@@ -937,6 +1274,16 @@
 
     handleTourPointerDownCapture(event) {
       if (!this.active || this.isInternalTourAction) return;
+      if (event.pointerType !== "mouse" && this.isEventInsideActiveHole(event)) {
+        this.highlightDragState = {
+          pointerId: event.pointerId,
+          startY: event.clientY,
+          lastY: event.clientY,
+          moved: false,
+          scrollTarget: this.getHighlightScrollTarget(event.target, event.clientX, event.clientY)
+        };
+        return;
+      }
       if (this.isAllowedTourInteraction(event.target)) return;
       event.preventDefault();
       event.stopImmediatePropagation();
@@ -946,6 +1293,12 @@
       if (!this.active || this.isInternalTourAction) return;
       const target = event.target instanceof Element ? event.target : null;
       if (!target) return;
+      if (this.suppressNextHighlightClick) {
+        this.suppressNextHighlightClick = false;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+      }
       if (this.tooltip?.contains(target)) return;
 
       if (this.currentIndex === 1 && this.stepPhase === 0) {
@@ -995,6 +1348,7 @@
     async advanceToPointBuyPreview() {
       if (!this.active || this.isTransitioning || this.currentIndex !== 1 || this.stepPhase !== 0) return;
       this.isTransitioning = true;
+      this.restoreAbilityPreview();
       this.stepPhase = 1;
       this.tooltipDragPosition = null;
       await this.openPointBuyPreview();
@@ -1009,9 +1363,20 @@
       if (!(target instanceof HTMLSelectElement) || !this.isAllowedTourInteraction(target)) return;
       event.stopImmediatePropagation();
       if (event.type !== "change") return;
+      if (this.currentIndex === 2 && this.equipmentPreviewSnapshot) {
+        this.refreshEquipmentPreviewOutputs();
+        this.renderStep();
+        return;
+      }
       if (this.currentIndex === 3 && this.spellControlSnapshot) {
-        if (target === this.spellControlSnapshot.classSelect) this.populateTourSpellOptions(target.value);
-        if (target === this.spellControlSnapshot.spellSelect) this.updateTourSpellDescription();
+        if (target === this.spellControlSnapshot.classSelect) {
+          this.populateTourSpellOptions(target.value);
+          this.renderStep();
+        }
+        if (target === this.spellControlSnapshot.spellSelect) {
+          this.updateTourSpellDescription();
+          this.renderStep();
+        }
       }
     }
 
@@ -1046,11 +1411,23 @@
       const rect = getUnionRect(elements.filter(Boolean));
       if (!rect) return null;
       return {
-        left: Math.max(0, rect.left - padding),
-        top: Math.max(0, rect.top - padding),
-        right: Math.min(window.innerWidth, rect.right + padding),
-        bottom: Math.min(window.innerHeight, rect.bottom + padding)
+        left: rect.left - padding,
+        top: rect.top - padding,
+        right: rect.right + padding,
+        bottom: rect.bottom + padding
       };
+    }
+
+    getVisibleHole(hole) {
+      if (!hole) return null;
+      const visibleHole = {
+        left: Math.max(0, hole.left),
+        top: Math.max(0, hole.top),
+        right: Math.min(window.innerWidth, hole.right),
+        bottom: Math.min(window.innerHeight, hole.bottom)
+      };
+      if (visibleHole.right <= visibleHole.left || visibleHole.bottom <= visibleHole.top) return null;
+      return visibleHole;
     }
 
     getStepValue(step, key, fallback) {
@@ -1064,8 +1441,12 @@
       this.resetHighlightState();
       const step = this.steps[this.currentIndex];
       if (!step) return;
-      const holes = (typeof step.getHoles === "function" ? step.getHoles() : []).filter(Boolean).slice(0, 2);
+      const holes = (typeof step.getHoles === "function" ? step.getHoles() : [])
+        .map((hole) => this.getVisibleHole(hole))
+        .filter(Boolean)
+        .slice(0, 2);
       const visibleHoles = this.applyMasksForHoles(holes);
+      this.activeHoles = visibleHoles;
       this.focusRings.forEach((ring, index) => this.setFocusRing(ring, visibleHoles[index]));
 
       this.title.textContent = this.getStepValue(step, "title", "");
@@ -1082,6 +1463,7 @@
       this.applyTooltipDragPosition();
       this.refreshTourInteractionRoots();
       this.ensureTourFocus();
+      this.lastTourScrollY = window.scrollY;
     }
 
     getNextButtonText() {
@@ -1250,6 +1632,15 @@
     }
 
     handleTooltipPointerUp(event) {
+      if (this.highlightDragState?.pointerId === event.pointerId) {
+        if (this.highlightDragState.moved) {
+          this.suppressNextHighlightClick = true;
+          window.setTimeout(() => {
+            this.suppressNextHighlightClick = false;
+          }, 120);
+        }
+        this.highlightDragState = null;
+      }
       if (this.tooltipDragPointerId !== event.pointerId) return;
       if (this.tooltip?.hasPointerCapture?.(event.pointerId)) this.tooltip.releasePointerCapture(event.pointerId);
       this.tooltipDragPointerId = null;
@@ -1259,6 +1650,37 @@
     handleResize() {
       if (!this.active) return;
       requestAnimationFrame(() => this.renderStep());
+    }
+
+    handleScroll() {
+      if (!this.active || this.isTransitioning || this.scrollRenderPending) return;
+      this.scrollRenderPending = true;
+      requestAnimationFrame(() => {
+        this.scrollRenderPending = false;
+        if (!this.active || this.isTransitioning) return;
+        const scrollDelta = window.scrollY - this.lastTourScrollY;
+        this.lastTourScrollY = window.scrollY;
+        this.keepHighlightedTargetsReachable(scrollDelta);
+        this.lastTourScrollY = window.scrollY;
+        this.renderStep();
+      });
+    }
+
+    keepHighlightedTargetsReachable(scrollDelta) {
+      if (!scrollDelta) return;
+      const step = this.steps[this.currentIndex];
+      const holes = (typeof step?.getHoles === "function" ? step.getHoles() : []).filter(Boolean).slice(0, 2);
+      if (!holes.length) return;
+      const targetTop = Math.min(...holes.map((hole) => hole.top));
+      const targetBottom = Math.max(...holes.map((hole) => hole.bottom));
+      const minimumVisible = Math.min(120, Math.max(72, window.innerHeight * 0.25));
+      let correction = 0;
+      if (scrollDelta > 0 && targetBottom < minimumVisible) {
+        correction = targetBottom - minimumVisible;
+      } else if (scrollDelta < 0 && targetTop > window.innerHeight - minimumVisible) {
+        correction = targetTop - (window.innerHeight - minimumVisible);
+      }
+      if (correction) window.scrollTo(window.scrollX, window.scrollY + correction);
     }
 
     handleKeydown(event) {
@@ -1314,17 +1736,32 @@
     }
 
     preventScrollEvent(event) {
-      if (this.active) event.preventDefault();
+      if (!this.active) return;
+      if (event.type === "touchmove" && this.highlightDragState) {
+        const point = this.getEventViewportPoint(event);
+        if (point && this.moveHighlightDrag(point.y)) event.preventDefault();
+        return;
+      }
+      if (event.type === "touchmove") {
+        event.preventDefault();
+        return;
+      }
+      if (this.isEventInsideActiveHole(event)) return;
+      event.preventDefault();
     }
 
     lockUserScroll() {
       document.body.style.overscrollBehavior = "none";
+      if (this.bodyTouchActionSnapshot === null) this.bodyTouchActionSnapshot = document.body.style.touchAction;
+      document.body.style.touchAction = "none";
       window.addEventListener("wheel", this.preventScrollEvent, { passive: false, capture: true });
       window.addEventListener("touchmove", this.preventScrollEvent, { passive: false, capture: true });
     }
 
     unlockUserScroll() {
       document.body.style.overscrollBehavior = "";
+      if (this.bodyTouchActionSnapshot !== null) document.body.style.touchAction = this.bodyTouchActionSnapshot;
+      this.bodyTouchActionSnapshot = null;
       window.removeEventListener("wheel", this.preventScrollEvent, { capture: true });
       window.removeEventListener("touchmove", this.preventScrollEvent, { capture: true });
     }

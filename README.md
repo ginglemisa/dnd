@@ -3,7 +3,7 @@
 給 TRPG 新手、帶團者與教學活動使用的手機創角網站。以較低的規則負擔協助玩家建立 1～5 級角色，快速開始第一場冒險。
 
 - 正式網站：[https://twd20.com](https://twd20.com)
-- Legal & About：請從[https://twd20.com](https://twd20.com) 頁尾開啟
+- Legal & About：[版權宣告](https://twd20.com/about.html)
 - GitHub：[https://github.com/ginglemisa/dnd](https://github.com/ginglemisa/dnd)
 
 > TWD20 是獨立製作的第三方 5.5 版相容工具，與任何官方品牌無關。
@@ -49,24 +49,23 @@
 
 ## 專案結構
 
-- `index.html`：主角卡介面與主要流程
-- `styles.css`：主介面、主題與各功能樣式
-- `quick-build.js`：創角小幫手
-- `onboarding-tour.js`：新手導覽
-- `character-rules.js`、`class-features.js`、`race.js`：角色規則與選項資料
-- `equipment-data.js`、`equipment-notes.js`、`spell-list.js`：裝備與法術資料
-- `pdf-export.js`、`pdf-field-map.js`：PDF 匯出
-- `deity-info.js`：神祉資料頁
-- `TWD20-offline.html`：單檔離線版本
+這是原生 HTML、CSS 與 JavaScript 的靜態網頁專案；PDF 匯出功能需要以伺服器啟動 `index.html` 方能生效。
 
-這是以原生 HTML、CSS 與 JavaScript 為主的靜態網頁專案，不需要前端框架或套件管理器即可開啟主要介面。
+- 入口與樣式：`index.html`、`styles.css`
+- Legal & About：`about.html`、`info-pages.css`、`legal-modal.js`（首頁 iframe modal）
+- 主要功能與資料：`scroll-to-top.js`、`monster.js`、`class-features.js`、`race.js`、`backgrounds.js`、`tool-data.js`、`feats.js`、`equipment-notes.js`、`equipment-data.js`、`spell-list.js`、`condition.js`、`character-rules.js`、`onboarding-tour.js`、`quick-build.js`、`deity-info.js`
+- PDF 匯出程式：`pdf-lib.custom.min.js`、`fontkit.custom.min.js`、`pdf-field-map.js`、`pdf-export.js`
+- PDF 匯出素材：`5e_char_sheet.pdf`、`NotoSansTC-Regular-IdentityCID.otf`、`SourceHanSerifTC-Bold.otf`
+- Legal & About 視窗圖像：`logo.png`
+
+`pdf-export.js` 與其相依檔案只會在使用 PDF 匯出時動態載入；若不需要該功能，可省略「PDF 匯出程式」與「PDF 匯出素材」兩類。`TWD20-offline.html` 是另行產生的單檔離線版本，並非 `index.html` 的相依檔案。
 
 ## 中文角色紙
 
 - [SRD 中文角色紙](https://tinyurl.com/srd5etw)：具備表單功能，可先填寫再列印
 - 角色卡排版作者：[赤赤@AkaA](https://x.com/AkaAAkaAka)
 - [無表單 PDF／原 PNG 檔](https://drive.google.com/drive/folders/1brrzdbRcxMvxHcYYjyzs2N_8aPaQewW6?usp=sharing)
-- PDF 使用字型：[Noto CJK](https://github.com/notofonts/noto-cjk/releases)
+- PDF 使用字型：[Noto Sans TC](https://fonts.google.com/download?family=Noto%20Sans%20TC)、[思源宋體 SourceHanSerifTC-Bold.otf](https://github.com/adobe-fonts/source-han-serif/tree/release/OTF/TraditionalChinese)
 
 ## 授權與法律聲明
 
@@ -78,7 +77,7 @@
 
 專案原始程式碼、原創說明文字、介面結構與功能可依 MIT License 使用；引用或改編自 SRD 5.2.1 的內容仍依 CC BY 4.0 使用。重製、改作或商用時，請保留必要 attribution，並自行確認所在地與使用平台的規範。
 
-完整說明請從網站頁尾開啟 Legal & About。
+完整說明請見 [Legal & About](https://twd20.com/about.html)。
 
 ### SRD Attribution
 

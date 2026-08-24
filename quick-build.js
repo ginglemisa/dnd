@@ -26,8 +26,8 @@
       .map(entry => ({ id: `level-up:${Number(entry.level)}`, title: `完成 ${Number(entry.level)} 級`, level: Number(entry.level), future: true }));
     return [...BASE_STEPS.slice(0, -1), ...futureLevelSteps, BASE_STEPS[BASE_STEPS.length - 1]];
   }
-  const BACKGROUND_ORDER = ["acolyte", "criminal", "sage", "soldier"];
-  const BACKGROUND_LABELS = { acolyte: "侍僧", criminal: "罪犯", sage: "賢者", soldier: "士兵" };
+  const BACKGROUND_ORDER = ["acolyte", "criminal", "sage", "seeker", "fieldhand", "soldier"];
+  const BACKGROUND_LABELS = { acolyte: "侍僧", criminal: "罪犯", sage: "賢者", seeker: "孤芳", fieldhand: "耕者", soldier: "士兵" };
   const RACE_ORDER = ["dragonborn", "dwarf", "elf", "gnome", "goliath", "halfling", "human", "orc", "tiefling"];
   const RACE_LABELS = { dragonborn: "龍裔", dwarf: "矮人", elf: "精靈", gnome: "侏儒", goliath: "歌利亞", halfling: "半身人", human: "人類", orc: "獸人", tiefling: "提夫林" };
   const ALIGNMENT_OPTIONS = [
@@ -413,6 +413,8 @@
   let spellDetailTrigger = null;
   let spellDetailOpenedOutsideWizard = false;
   let pageLock = null;
+  const expandedChoiceGroups = new Set();
+  let pendingChoiceCardScrollGroup = null;
 
   function saveDraft() {
     normalizeDraft(draft);
@@ -495,8 +497,20 @@
   function defaultAbilityPreset(target = draft) {
     const buildKey = classBuildKey(target);
     const backgroundKey = BACKGROUND_ORDER.includes(target.choices?.background) ? target.choices.background : "acolyte";
-    const preset = DEFAULT_ABILITIES_BY_BUILD_AND_BACKGROUND[buildKey]?.[backgroundKey] || DEFAULT_ABILITIES_BY_BUILD_AND_BACKGROUND[target.choices?.class]?.[backgroundKey];
-    return preset ? { abilities: abilityMapFromArray(preset[0]), bonuses: { ...emptyAbilityMap(0), ...preset[1] } } : null;
+    const buildPresets = DEFAULT_ABILITIES_BY_BUILD_AND_BACKGROUND[buildKey] || DEFAULT_ABILITIES_BY_BUILD_AND_BACKGROUND[target.choices?.class];
+    const preset = buildPresets?.[backgroundKey];
+    if (preset) return { abilities: abilityMapFromArray(preset[0]), bonuses: { ...emptyAbilityMap(0), ...preset[1] } };
+
+    // 擴充背景沿用同職業既有的合法 27 購點，再依背景可調整屬性與職業關鍵屬性安排 +2/+1。
+    const fallback = buildPresets?.acolyte || Object.values(buildPresets || {})[0];
+    const data = backgroundData(backgroundKey);
+    if (!fallback || !data) return null;
+    const abilities = abilityMapFromArray(fallback[0]);
+    const keyAbilities = new Set((CLASS_BUILD_DEFINITIONS[target.choices?.class]?.keyAbilities || []).map(label => ABILITY_KEYS_BY_LABEL[label]));
+    const allowed = displayList(data.屬性).split("、").map(label => ABILITY_KEYS_BY_LABEL[label]).filter(Boolean)
+      .sort((left, right) => Number(keyAbilities.has(right)) - Number(keyAbilities.has(left)) || abilities[right] - abilities[left] || ABILITY_ORDER.indexOf(left) - ABILITY_ORDER.indexOf(right));
+    if (allowed.length < 2) return null;
+    return { abilities, bonuses: { ...emptyAbilityMap(0), [allowed[0]]: 2, [allowed[1]]: 1 } };
   }
 
   function abilityPointCost(abilities) {
@@ -1473,14 +1487,14 @@
       #quick-build-pact-tome .quick-build-pact-tome-actions{display:flex;justify-content:flex-end;gap:12px;padding:16px 20px;border-top:1px solid var(--qb-border)}#quick-build-pact-tome .quick-build-pact-tome-actions button{min-height:42px;padding:8px 16px;border:1px solid var(--qb-border-strong);border-radius:8px;background:var(--qb-surface-elevated);color:var(--qb-text);cursor:pointer}#quick-build-pact-tome .quick-build-pact-tome-actions button.primary{border-color:var(--qb-accent);background:var(--qb-accent-hover);color:#fff}#quick-build-pact-tome .quick-build-pact-tome-actions button:disabled{cursor:not-allowed;opacity:.55}
       #quick-build-wizard .quick-build-shell{display:flex;flex-direction:column;width:780px;max-width:100%;max-height:calc(100dvh - 32px);overflow:hidden;border:1px solid var(--qb-border-strong);border-radius:16px;background:var(--qb-surface);color:var(--qb-text);box-shadow:var(--qb-shadow)}
       #quick-build-wizard .quick-build-header{display:flex;flex:0 0 auto;gap:16px;align-items:flex-start;justify-content:space-between;min-width:0;padding:20px 20px 12px;border-bottom:1px solid var(--qb-border)}
-      #quick-build-wizard .quick-build-header>div{flex:1 1 auto;min-width:0}#quick-build-wizard .quick-build-header h2{margin:0;color:var(--qb-text);font-size:1.35rem;line-height:1.3}
+      #quick-build-wizard .quick-build-header>div{flex:1 1 auto;min-width:0}#quick-build-wizard .quick-build-title-row{display:flex;flex-wrap:nowrap;align-items:center;gap:8px}#quick-build-wizard .quick-build-header h2{margin:0;color:var(--qb-text);font-size:1.35rem;line-height:1.3}#quick-build-wizard .quick-build-reset{display:inline-flex;flex:0 0 auto;align-items:center;justify-content:center;width:auto;min-width:0;min-height:24px;margin:0;padding:3px 8px;border:1px solid var(--qb-border-strong);border-radius:999px;background:var(--qb-surface-soft);color:var(--qb-text-muted);font-size:.72rem;font-weight:700;line-height:1;white-space:nowrap;cursor:pointer}#quick-build-wizard .quick-build-reset:hover,#quick-build-wizard .quick-build-reset:focus-visible{border-color:var(--qb-danger);color:var(--qb-danger-text);outline:2px solid transparent}
       #quick-build-wizard .quick-build-progress{margin:5px 0 0;color:var(--qb-text-muted);font-size:.9rem;line-height:1.45}
       #quick-build-wizard button.quick-build-close{display:grid;flex:0 0 40px;place-items:center;width:40px;min-width:40px;height:40px;min-height:40px;margin:0;padding:0;border:0;border-radius:8px;background:transparent;color:var(--qb-text);font-size:1.25rem;line-height:1;box-shadow:none;cursor:pointer}
       #quick-build-wizard .quick-build-body{min-height:250px;padding:24px 20px;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain}#quick-build-wizard .quick-build-body h3{margin:0 0 8px;color:var(--qb-text)}
-      #quick-build-wizard .quick-build-lead{margin:0 0 18px;color:var(--qb-text-muted)}.quick-build-background-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.quick-build-class-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
-      #quick-build-wizard .quick-build-card{width:100%;min-height:0;padding:16px;border:1px solid var(--qb-border);border-radius:12px;background:var(--qb-surface-elevated);color:var(--qb-text);text-align:left;cursor:pointer}
+      #quick-build-wizard .quick-build-lead{margin:0 0 18px;color:var(--qb-text-muted)}.quick-build-background-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.quick-build-class-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.quick-build-background-grid.is-choice-collapsed,.quick-build-class-grid.is-choice-collapsed{grid-template-columns:1fr}
+      #quick-build-wizard .quick-build-card{width:100%;min-height:0;padding:16px;border:1px solid var(--qb-border);border-radius:12px;background:var(--qb-surface-elevated);color:var(--qb-text);text-align:left;cursor:pointer;transition:border-color .18s ease,background-color .18s ease,box-shadow .18s ease,opacity .18s ease}
       #quick-build-wizard .quick-build-card:hover,#quick-build-wizard .quick-build-card:focus-visible{border-color:var(--qb-accent);background:var(--qb-accent-soft);outline:2px solid transparent}.quick-build-card h4{margin:0 0 10px;font-size:1.12rem;color:var(--qb-accent-text)}
-      .quick-build-summary{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;margin:0;font-size:.9rem;line-height:1.45}.quick-build-summary dt{color:var(--qb-text-muted)}.quick-build-summary dd{margin:0;color:var(--qb-text-body)}
+      .quick-build-summary{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;margin:0;font-size:.9rem;line-height:1.45}.quick-build-summary dt{color:var(--qb-text-muted)}.quick-build-summary dd{margin:0;color:var(--qb-text-body)}.quick-build-expansion-tag{display:inline-flex;align-items:center;min-height:24px;margin-left:8px;padding:2px 8px;border:1px solid var(--qb-border-strong);border-radius:999px;color:var(--qb-text-muted);font-size:.7rem;vertical-align:middle}.quick-build-card-toggle-hint{display:block;margin-top:12px;color:var(--qb-accent-text);font-size:.78rem;font-weight:700}
       .quick-build-choice-panel{padding:18px;border:1px solid var(--qb-border);border-radius:12px;background:var(--qb-surface-soft)}.quick-build-review-panel+ .quick-build-review-panel{margin-top:14px}.quick-build-review-panel>h4{margin:0 0 14px;color:var(--qb-text)}.quick-build-equipment-list{margin:12px 0 20px;padding:14px;border-radius:8px;background:var(--qb-surface-muted);line-height:1.7;color:var(--qb-text-body)}
       .quick-build-race-options{display:grid;gap:16px}.quick-build-option-note{margin:6px 0 0;color:var(--qb-text-muted);font-size:.9rem}.quick-build-ancestry-detail{margin:0;padding:14px;border:1px solid var(--qb-border);border-radius:9px;background:var(--qb-surface-muted);color:var(--qb-text-body);line-height:1.65}.quick-build-ancestry-detail strong{display:block;margin-bottom:5px;color:var(--qb-accent-text)}.quick-build-warning{margin:14px 0;padding:12px;border-left:4px solid var(--qb-warning-border);border-radius:7px;background:var(--qb-warning-bg);color:var(--qb-warning-text)}.quick-build-pending{margin-top:14px;padding:12px;border-radius:7px;background:var(--qb-pending-bg);color:var(--qb-pending-text)}
       .quick-build-choice-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px}.quick-build-choice-actions button{min-height:48px;padding:10px;border:1px solid var(--qb-border-strong);border-radius:8px;background:var(--qb-surface-elevated);color:var(--qb-text);cursor:pointer}.quick-build-choice-actions button.primary{border-color:var(--qb-accent);background:var(--qb-accent-hover);color:#fff}.quick-build-choice-actions .quick-build-choice-action-full{grid-column:1/-1}
@@ -1495,19 +1509,20 @@
       #quick-build-spell-detail-content{min-height:120px;padding:20px;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;white-space:pre-wrap;color:var(--qb-text-body);line-height:1.65}#quick-build-spell-detail-content strong{display:block;margin-bottom:12px;color:var(--qb-accent-text);font-size:1.08rem}.quick-build-expansion-notice{margin-top:12px;padding-top:8px;border-top:1px solid var(--qb-border);color:var(--qb-text-muted);font-size:.78rem;line-height:1.45}
       .quick-build-ability-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin:0 0 16px}.quick-build-ability-heading h3{margin:0!important}.quick-build-ability-status{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px}.quick-build-status-pill{padding:6px 10px;border:1px solid var(--qb-border);border-radius:999px;background:var(--qb-surface-soft);color:var(--qb-text-muted);font-size:.82rem;line-height:1.2}.quick-build-status-pill strong{color:var(--qb-text)}.quick-build-status-pill.is-complete{border-color:var(--qb-success-border);background:var(--qb-success-bg);color:var(--qb-success-text)}.quick-build-ability-confirm{display:block;width:12em;max-width:100%;min-height:46px;margin:0 auto 18px;padding:9px 16px;border:1px solid var(--qb-accent);border-radius:8px;background:var(--qb-accent-hover);color:#fff;cursor:pointer}.quick-build-ability-confirm:disabled{border-color:var(--qb-border-strong);background:var(--qb-disabled);color:var(--qb-disabled-text);cursor:not-allowed}.quick-build-ability-grid{display:grid;gap:12px;padding:14px}.quick-build-ability-row{display:grid;grid-template-columns:minmax(92px,.7fr) minmax(0,2fr) minmax(74px,.55fr);gap:16px;align-items:center;padding:14px 16px;border:1px solid var(--qb-border);border-radius:10px;background:var(--qb-surface-muted)}.quick-build-ability-name{display:flex;flex-direction:column;gap:3px}.quick-build-ability-name strong{font-size:1.05rem;color:var(--qb-text)}.quick-build-ability-name small{color:var(--qb-text-muted);font-size:.76rem}.quick-build-ability-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.quick-build-ability-field{display:grid;gap:6px;min-width:0;color:var(--qb-text-muted);font-size:.82rem}.quick-build-ability-field select{width:100%;min-width:0;min-height:44px;margin:0;padding:8px 34px 8px 12px;border:1px solid var(--qb-border-strong);border-radius:8px;background:var(--qb-input);color:var(--qb-text);font:inherit;font-size:1rem}.quick-build-ability-field select:focus-visible{border-color:var(--qb-accent);outline:2px solid var(--qb-accent);outline-offset:1px}.quick-build-ability-field select:disabled{border-color:var(--qb-border);background:var(--qb-disabled);color:var(--qb-disabled-text);opacity:1}.quick-build-ability-total{display:grid;gap:2px;justify-items:end}.quick-build-ability-total span{color:var(--qb-text-muted);font-size:.75rem}.quick-build-ability-total strong{color:var(--qb-accent-text);font-size:1.45rem;line-height:1}.quick-build-ability-help{display:flex;flex-wrap:wrap;gap:6px 16px;margin:0 0 18px;color:var(--qb-text-muted);font-size:.88rem}.quick-build-ability-help strong{color:var(--qb-text-body)}.quick-build-complete{padding:18px;border-left:4px solid var(--qb-success-border);border-radius:8px;background:var(--qb-success-bg);color:var(--qb-success-text)}.quick-build-plan{margin:20px 0 0;padding-left:1.4rem;line-height:1.8;color:var(--qb-text-body)}.quick-build-plan li.current{color:var(--qb-accent-text);font-weight:700}
       .quick-build-ability-table-head,.quick-build-ability-row{display:grid;grid-template-columns:72px minmax(0,1fr) minmax(0,1fr) 48px;align-items:center;gap:6px}.quick-build-ability-table-head{padding:4px 10px;color:var(--qb-text-muted);font-size:.8rem;font-weight:700;text-align:center}.quick-build-ability-table-head span:first-child{text-align:left}.quick-build-ability-grid{gap:6px}.quick-build-ability-row{padding:8px 10px;background:var(--qb-surface-elevated)}.quick-build-ability-row.is-bonus-locked{background:var(--qb-surface-muted)}.quick-build-ability-control{display:flex;align-items:center;justify-content:center;gap:6px}.quick-build-ability-step{display:inline-flex;align-items:center;justify-content:center;width:34px;min-width:34px;height:34px;min-height:34px;margin:0;padding:0;border:1px solid var(--qb-border-strong);border-radius:999px;background:var(--qb-surface-elevated);color:var(--qb-text);font-size:1rem;font-weight:900;line-height:1;cursor:pointer}.quick-build-ability-step:disabled{cursor:not-allowed;opacity:.4}.quick-build-ability-value{min-width:28px;color:var(--qb-text);font-weight:700;text-align:center}.quick-build-ability-value.is-bonus{color:var(--qb-accent-text)}.quick-build-ability-total{display:block;text-align:center}.quick-build-ability-total strong{font-size:1.15rem}
-      .quick-build-class-card{min-height:128px!important}.quick-build-class-card p{margin:0;color:var(--qb-text-body);line-height:1.55}.quick-build-substep-actions{display:flex;justify-content:space-between;gap:12px;margin-top:18px}.quick-build-substep-actions button{min-height:46px;padding:9px 16px;border:1px solid var(--qb-border-strong);border-radius:8px;background:var(--qb-surface-elevated);color:var(--qb-text);cursor:pointer}.quick-build-substep-actions button.primary{border-color:var(--qb-accent);background:var(--qb-accent-hover);color:#fff}.quick-build-substep-actions button:disabled{cursor:not-allowed;opacity:.55}.quick-build-proficiency-grid{display:grid;gap:14px}.quick-build-fixed-list{margin:12px 0 0;padding:12px;border-radius:8px;background:var(--qb-surface-muted);color:var(--qb-text-body);line-height:1.6}.quick-build-summary-list{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;margin:0}.quick-build-summary-list dt{color:var(--qb-text-muted)}.quick-build-summary-list dd{margin:0;color:var(--qb-text)}.quick-build-ability-summary{display:grid;gap:6px}.quick-build-ability-summary-row{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline}.quick-build-ability-modifier{font-weight:800;color:var(--qb-accent-text)}.quick-build-ability-modifier-sign{color:var(--qb-warning-text)}.quick-build-ability-modifier-value{color:var(--qb-accent)}.quick-build-complete .quick-build-summary-list dt,.quick-build-complete .quick-build-summary-list dd{color:var(--qb-success-text)}.quick-build-source-warning{margin-top:10px;color:var(--qb-warning-text);font-size:.9rem}
+      .quick-build-class-card{min-height:128px!important}.quick-build-class-card p{margin:0;color:var(--qb-text-body);line-height:1.55}.quick-build-substep-actions{display:flex;justify-content:space-between;gap:12px;margin-top:18px}.quick-build-substep-actions button{min-height:46px;padding:9px 16px;border:1px solid var(--qb-border-strong);border-radius:8px;background:var(--qb-surface-elevated);color:var(--qb-text);cursor:pointer}.quick-build-substep-actions button.primary{border-color:var(--qb-accent);background:var(--qb-accent-hover);color:#fff}.quick-build-substep-actions button:disabled{cursor:not-allowed;opacity:.55}.quick-build-proficiency-grid{display:grid;gap:14px}.quick-build-fixed-list{margin:12px 0 0;padding:12px;border-radius:8px;background:var(--qb-surface-muted);color:var(--qb-text-body);line-height:1.6}.quick-build-summary-list{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;margin:0}.quick-build-summary-list dt{color:var(--qb-text-muted)}.quick-build-summary-list dd{margin:0;color:var(--qb-text)}.quick-build-ability-summary{display:grid;gap:6px}.quick-build-ability-summary-row{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline}.quick-build-ability-summary-row>span{white-space:nowrap}.quick-build-ability-summary.wrap-all .quick-build-ability-summary-row{display:grid;grid-template-columns:1fr;gap:2px}.quick-build-ability-summary.wrap-all .quick-build-ability-modifier{padding-inline-start:1em}.quick-build-ability-modifier{font-weight:800;color:var(--qb-accent-text)}.quick-build-ability-modifier-sign{color:var(--qb-warning-text)}.quick-build-ability-modifier-value{color:var(--qb-accent)}.quick-build-complete .quick-build-summary-list dt,.quick-build-complete .quick-build-summary-list dd{color:var(--qb-success-text)}.quick-build-source-warning{margin-top:10px;color:var(--qb-warning-text);font-size:.9rem}
       #quick-build-wizard .quick-build-body.is-review{background:var(--qb-success-bg)}
       #quick-build-wizard .quick-build-flow-section{padding:0 0 24px}#quick-build-wizard .quick-build-flow-section.is-newly-revealed{animation:quick-build-flow-in .34s cubic-bezier(.22,1,.36,1) both}#quick-build-wizard .quick-build-flow-section+ .quick-build-flow-section{padding-top:24px;border-top:1px solid var(--qb-border)}
-      #quick-build-wizard .quick-build-card.is-selected{border-color:var(--qb-accent);background:var(--qb-accent-soft);box-shadow:inset 0 0 0 1px var(--qb-accent)}
+      #quick-build-wizard .quick-build-card.is-selected{border-color:var(--qb-accent);background:var(--qb-accent-soft);box-shadow:inset 0 0 0 2px var(--qb-accent),0 2px 6px color-mix(in srgb,var(--qb-accent) 16%,transparent)}#quick-build-wizard .quick-build-card.is-choice-hidden{display:none}
       #quick-build-wizard .quick-build-duplicate-warning{border-left-color:var(--qb-danger);background:color-mix(in srgb,var(--qb-danger) 14%,var(--qb-surface));color:var(--qb-danger-text)}
       #quick-build-wizard .quick-build-footer{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));flex:0 0 auto;align-items:center;gap:12px;padding:16px 20px;border-top:1px solid var(--qb-border)}#quick-build-wizard .quick-build-footer[hidden]{display:none}
       #quick-build-wizard .quick-build-footer button{width:100%;min-width:0;min-height:50px;padding:10px clamp(10px,2vw,20px);border:1px solid var(--qb-border-strong);border-radius:8px;background:var(--qb-surface-elevated);color:var(--qb-text);font-size:clamp(.95rem,2.4vw,1.05rem);font-weight:700;cursor:pointer;transition:border-color .18s ease,background-color .18s ease,color .18s ease,box-shadow .18s ease,transform .18s ease}#quick-build-wizard .quick-build-footer button.primary{border-color:var(--qb-accent);background:var(--qb-accent-hover);color:#fff;box-shadow:0 0 0 3px var(--qb-accent-soft)}#quick-build-wizard .quick-build-footer button.is-ready{animation:quick-build-next-ready .52s cubic-bezier(.22,1,.36,1)}#quick-build-wizard .quick-build-footer button:disabled{cursor:not-allowed;opacity:.55;box-shadow:none}
       #quick-build-wizard .quick-build-previous{grid-column:1}#quick-build-wizard .quick-build-modify{grid-column:2;border-color:var(--qb-accent);color:var(--qb-accent-text);font-weight:800}#quick-build-wizard .quick-build-next{grid-column:3}
       .quick-build-summary-list .quick-build-summary-full-label{grid-column:1/-1}.quick-build-summary-list .quick-build-summary-full-value{grid-column:1/-1;padding-inline-start:1em;text-align:left}
-      #quick-build-wizard .quick-build-choice-actions button.is-selected{border-color:var(--qb-accent);background:var(--qb-accent-soft);color:var(--qb-accent-text);box-shadow:inset 0 0 0 1px var(--qb-accent)}
+      #quick-build-wizard .quick-build-equipment-actions button.is-selected{border-color:var(--qb-accent);background:var(--qb-accent-hover);color:#fff;box-shadow:inset 0 0 0 1px var(--qb-accent)}
       @keyframes quick-build-flow-in{from{opacity:0;transform:translateY(-14px)}to{opacity:1;transform:translateY(0)}}@keyframes quick-build-next-ready{0%{transform:scale(.96);box-shadow:0 0 0 0 var(--qb-accent-soft)}55%{transform:scale(1.04);box-shadow:0 0 0 7px var(--qb-accent-soft)}100%{transform:scale(1);box-shadow:0 0 0 3px var(--qb-accent-soft)}}
       @media(max-width:760px){.quick-build-class-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
       @media(max-width:620px){.quick-build-ability-grid{padding:8px}.quick-build-ability-table-head,.quick-build-ability-row{grid-template-columns:58px minmax(88px,1fr) minmax(88px,1fr) 36px;gap:2px;padding-right:5px;padding-left:5px}.quick-build-ability-step{width:30px;min-width:30px;height:30px;min-height:30px}.quick-build-ability-control{gap:2px}.quick-build-ability-value{min-width:22px}#quick-build-wizard .quick-build-body{padding:20px 16px}.quick-build-ability-heading{display:grid;gap:12px}.quick-build-ability-status{justify-content:flex-start}.quick-build-field-control.has-confirm{grid-template-columns:minmax(0,1fr) auto}.quick-build-field-control.has-confirm .quick-build-option-confirm{grid-column:1/-1}.quick-build-background-grid,.quick-build-class-grid{grid-template-columns:1fr}.quick-build-choice-actions{grid-template-columns:1fr}.quick-build-substep-actions:not(.quick-build-inline-actions){display:grid;grid-template-columns:1fr}.quick-build-substep-actions button{width:100%}.quick-build-inline-actions button{flex:1 1 0;width:auto;min-width:0}#quick-build-wizard .quick-build-footer{gap:8px;padding:12px}#quick-build-wizard .quick-build-footer button{min-height:48px;padding-right:8px;padding-left:8px}#quick-build-spell-detail{padding:16px}#quick-build-spell-detail .quick-build-spell-detail-shell{max-width:100%;max-height:calc(100dvh - 32px)}#quick-build-spell-detail-content{padding:18px 16px}}
+      @media(max-width:380px){#quick-build-wizard{padding:8px}#quick-build-wizard .quick-build-shell{max-height:calc(100dvh - 16px)}#quick-build-wizard .quick-build-header{padding:14px 12px 10px}#quick-build-wizard .quick-build-body{padding:16px 10px}.quick-build-choice-panel.quick-build-ability-grid{padding:4px}.quick-build-ability-table-head,.quick-build-ability-row{grid-template-columns:44px minmax(70px,1fr) minmax(70px,1fr) 30px;gap:2px;padding:5px 4px}.quick-build-ability-step{width:26px;min-width:26px;height:28px;min-height:28px;font-size:.88rem}.quick-build-ability-value{min-width:18px;font-size:.9rem}.quick-build-ability-name strong{font-size:.92rem}.quick-build-ability-name small{font-size:.65rem}.quick-build-ability-table-head{font-size:.72rem}#quick-build-wizard .quick-build-footer{gap:6px;padding:10px 8px}#quick-build-wizard .quick-build-footer button{padding-right:4px;padding-left:4px;font-size:.9rem}}
       @media(prefers-reduced-motion:reduce){#quick-build-wizard .quick-build-flow-section.is-newly-revealed,#quick-build-wizard .quick-build-footer button.is-ready{animation:none}#quick-build-wizard .quick-build-footer button{transition:none}}
     `;
     document.head.appendChild(style);
@@ -1523,17 +1538,19 @@
     modal.setAttribute("aria-hidden", "true");
     modal.innerHTML = `
       <section class="quick-build-shell" role="dialog" aria-modal="true" aria-labelledby="quick-build-title">
-        <header class="quick-build-header"><div><h2 id="quick-build-title">創角小幫手</h2><p class="quick-build-progress" aria-live="polite"></p></div><button type="button" class="quick-build-close" aria-label="關閉創角小幫手">✕</button></header>
+        <header class="quick-build-header"><div><div class="quick-build-title-row"><h2 id="quick-build-title">創角小幫手</h2><button type="button" class="quick-build-reset" aria-label="重置小幫手">重置</button></div><p class="quick-build-progress" aria-live="polite"></p></div><button type="button" class="quick-build-close" aria-label="關閉創角小幫手">✕</button></header>
         <main class="quick-build-body"></main>
         <footer class="quick-build-footer"><button type="button" class="quick-build-previous">上一步</button><button type="button" class="quick-build-modify" hidden>↑修改↑</button><button type="button" class="quick-build-next">下一步</button></footer>
       </section>`;
     document.body.appendChild(modal);
+    modal.querySelector(".quick-build-reset").addEventListener("click", discardDraft);
     modal.querySelector(".quick-build-close").addEventListener("click", closeWizard);
     modal.querySelector(".quick-build-previous").addEventListener("click", goPreviousStep);
     modal.querySelector(".quick-build-modify").addEventListener("click", editCurrentStep);
     modal.querySelector(".quick-build-next").addEventListener("click", goNextStep);
     modal.addEventListener("click", event => { if (event.target === modal) closeWizard(); });
     modal.addEventListener("keydown", trapWizardKeyboard);
+    window.addEventListener("resize", () => syncAbilitySummaryWrapping(modal));
     return modal;
   }
 
@@ -1561,15 +1578,15 @@
     body.innerHTML = `<h3>選擇背景</h3><p class="quick-build-lead">背景是玩家角色成為冒險者之前的身分</p><div class="quick-build-background-grid">${BACKGROUND_ORDER.map(key => {
       const data = backgroundData(key) || {};
       const tool = key === "soldier" ? "賭具" : plainText(data.工具熟練);
-      return `<button type="button" class="quick-build-card" data-background="${key}"><h4>${BACKGROUND_LABELS[key]}</h4><dl class="quick-build-summary"><dt>技能熟練</dt><dd>${escapeHtml(plainText(data.技能熟練))}</dd><dt>起源專長</dt><dd>${escapeHtml(data.專長)}</dd><dt>工具</dt><dd>${escapeHtml(tool)}</dd><dt>可調整屬性</dt><dd>${escapeHtml(data.屬性)}</dd></dl></button>`;
+      return `<button type="button" class="quick-build-card" data-background="${key}"><h4>${BACKGROUND_LABELS[key]}${data.擴充 ? '<span class="quick-build-expansion-tag">擴充</span>' : ""}</h4><dl class="quick-build-summary"><dt>技能熟練</dt><dd>${escapeHtml(plainText(data.技能熟練))}</dd><dt>起源專長</dt><dd>${escapeHtml(data.專長)}</dd><dt>工具</dt><dd>${escapeHtml(tool)}</dd><dt>可調整屬性</dt><dd>${escapeHtml(data.屬性)}</dd></dl></button>`;
     }).join("")}</div>`;
-    body.querySelectorAll("[data-background]").forEach(card => card.addEventListener("click", () => chooseBackground(card.dataset.background)));
+    body.querySelectorAll("[data-background]").forEach(card => card.addEventListener("click", () => handleChoiceCardSelection("background", card.dataset.background, chooseBackground)));
   }
 
   function renderBackgroundEquipment(body) {
     const key = draft.choices.background;
     const data = backgroundData(key) || {};
-    body.innerHTML = `<button type="button" class="quick-build-change">← 重新選擇背景</button><h3>${BACKGROUND_LABELS[key]}：背景裝備</h3><p class="quick-build-lead">是否取得背景提供的預設裝備？若選否，改為獲得 50 金幣。</p><section class="quick-build-choice-panel"><strong>預設裝備 A</strong><div class="quick-build-equipment-list">${escapeHtml(data.裝備A)}</div><div class="quick-build-choice-actions"><button type="button" class="primary" data-wealth="default">取得預設裝備</button><button type="button" data-wealth="gold">否，取得 50 金幣</button></div></section>`;
+    body.innerHTML = `<button type="button" class="quick-build-change">← 重新選擇背景</button><h3>${BACKGROUND_LABELS[key]}：背景裝備</h3><p class="quick-build-lead">是否取得背景提供的預設裝備？若選否，改為獲得 50 金幣。</p><section class="quick-build-choice-panel"><strong>預設裝備 A</strong><div class="quick-build-equipment-list">${escapeHtml(data.裝備A)}</div><div class="quick-build-choice-actions quick-build-equipment-actions"><button type="button" data-wealth="default">取得預設裝備</button><button type="button" data-wealth="gold">否，取得 50 金幣</button></div></section>`;
     body.querySelector(".quick-build-change").addEventListener("click", resetBackground);
     body.querySelectorAll("[data-wealth]").forEach(button => button.addEventListener("click", () => chooseBackgroundWealth(button.dataset.wealth)));
   }
@@ -1654,7 +1671,7 @@
 
   function renderRaceCards(body) {
     body.innerHTML = `<h3>選擇種族</h3><p class="quick-build-lead">種族決定角色的外觀、體型、速度以及特殊能力。</p><div class="quick-build-background-grid">${RACE_ORDER.map(key => `<button type="button" class="quick-build-card" data-race="${key}"><h4>${RACE_LABELS[key]}</h4><p>${escapeHtml(RACE_CARD_DESCRIPTIONS[key])}</p></button>`).join("")}</div>`;
-    body.querySelectorAll("[data-race]").forEach(card => card.addEventListener("click", () => chooseRace(card.dataset.race)));
+    body.querySelectorAll("[data-race]").forEach(card => card.addEventListener("click", () => handleChoiceCardSelection("race", card.dataset.race, chooseRace)));
   }
 
   function humanMagicSpellSelect(id, label, entries, value, excluded = "") {
@@ -1868,7 +1885,7 @@
 
   function renderClassCards(body) {
     body.innerHTML = `<h3>選擇職業</h3><p class="quick-build-lead">選擇角色的 1 級職業；裝備與其他 1 級必要選擇會在後續獨立步驟處理。</p><div class="quick-build-class-grid">${CLASS_ORDER.map(key => `<button type="button" class="quick-build-card quick-build-class-card" data-class-choice="${key}"><h4>${CLASS_LABELS[key]}</h4><p>${escapeHtml(CLASS_CARD_DESCRIPTIONS[key])}</p></button>`).join("")}</div>`;
-    body.querySelectorAll("[data-class-choice]").forEach(card => card.addEventListener("click", () => chooseClass(card.dataset.classChoice)));
+    body.querySelectorAll("[data-class-choice]").forEach(card => card.addEventListener("click", () => handleChoiceCardSelection("class", card.dataset.classChoice, chooseClass)));
   }
 
   function abilityBaseOptions(key) {
@@ -2069,7 +2086,7 @@
     }
     const fighterWarning = key === "fighter" ? `<div class="quick-build-warning"><strong>先確認戰士屬性路線</strong><br>力量型套裝適合力量戰士，敏捷型套裝適合敏捷戰士。若你沿用職業預填屬性且沒有調整，建議選擇力量型預設裝備。<div class="quick-build-option-note">目前 力量=${abilityTotal(draft, "str")} 敏捷=${abilityTotal(draft, "dex")}</div></div>` : "";
     const invalidatedWarning = draft.choices.classEquipmentInvalidatedByBackground ? `<div class="quick-build-warning"><strong>背景已變更</strong><br>為避免沿用不相符的舊結果，請重新選擇一次職業初始裝備。</div>` : "";
-    body.innerHTML = `<h3>${CLASS_LABELS[key]}：選擇初始裝備</h3><p class="quick-build-lead">是否取得職業提供的預設裝備？若選否，改為取得金幣並由玩家自行購買。</p>${invalidatedWarning}${fighterWarning}<section class="quick-build-choice-panel">${definition.defaults.map(option => `<strong>${escapeHtml(option.label)}</strong><div class="quick-build-equipment-list">${escapeHtml(equipmentItemText(option))}</div>`).join("")}<div class="quick-build-choice-actions">${definition.defaults.map(option => `<button type="button" class="primary" data-class-equipment-method="${option.id}">${definition.defaults.length === 1 ? "取得預設裝備" : `取得${escapeHtml(option.label)}`}</button>`).join("")}<button type="button"${key === "fighter" ? " class=\"quick-build-choice-action-full\"" : ""} data-class-equipment-method="gold">否，取得 ${definition.gold} 金幣</button></div></section>`;
+    body.innerHTML = `<h3>${CLASS_LABELS[key]}：選擇初始裝備</h3><p class="quick-build-lead">是否取得職業提供的預設裝備？若選否，改為取得金幣並由玩家自行購買。</p>${invalidatedWarning}${fighterWarning}<section class="quick-build-choice-panel">${definition.defaults.map(option => `<strong>${escapeHtml(option.label)}</strong><div class="quick-build-equipment-list">${escapeHtml(equipmentItemText(option))}</div>`).join("")}<div class="quick-build-choice-actions quick-build-equipment-actions">${definition.defaults.map(option => `<button type="button" data-class-equipment-method="${option.id}">${definition.defaults.length === 1 ? "取得預設裝備" : `取得${escapeHtml(option.label)}`}</button>`).join("")}<button type="button"${key === "fighter" ? " class=\"quick-build-choice-action-full\"" : ""} data-class-equipment-method="gold">否，取得 ${definition.gold} 金幣</button></div></section>`;
     body.querySelectorAll("[data-class-equipment-method]").forEach(button => button.addEventListener("click", () => chooseClassEquipmentMethod(button.dataset.classEquipmentMethod)));
   }
 
@@ -2403,9 +2420,28 @@
     const classOptionLabel = LEVEL_ONE_DEFINITIONS[draft.choices.class]?.classOption?.options
       ?.find(option => option.id === content.classOption)?.label;
     const optionSummary = [classOptionLabel, content.fightingStyle, ...(content.invocations || []).map(id => ELDRITCH_INVOCATION_OPTIONS.find(option => option.id === id)?.label || id)]
-      .filter(Boolean).join("、") || "無";
-    const spellbookNote = content.spellbookSpells?.length ? `<dt>法術書筆記</dt><dd>${escapeHtml(`法術書：一環-${content.spellbookSpells.map(spellId => `${spellNameZh(spellId)}${isRitualSpell(canonicalSpell(spellId)) ? "（儀式）" : ""}`).join("、")}`)}</dd>` : "";
-    body.innerHTML = `<button type="button" class="quick-build-change" data-level-one-stage-back="${previousLevelOneStage("summary")}">← 返回修改</button><h3>${CLASS_LABELS[draft.choices.class]}：完成 1 級摘要</h3>${pending.length ? `<div class="quick-build-warning"><strong>尚未完成</strong><br>${pending.map(escapeHtml).join("<br>")}</div>` : `<section class="quick-build-complete"><strong>完成 1 級選擇已齊全，可前往 1 級總覽。</strong></section>`}<section class="quick-build-complete"><dl class="quick-build-summary-list"><dt>固定能力</dt><dd>${escapeHtml((content.fixed || []).join("、") || "無")}</dd><dt>職業選項</dt><dd>${escapeHtml(optionSummary)}</dd><dt>技能額外加值</dt><dd>${escapeHtml(sourceAwareAcquisitions("skillBonuses"))}</dd><dt>戲法</dt><dd>${escapeHtml((content.cantrips || []).concat(content.tome?.cantrips || []).map(spellNameZh).join("、") || "無")}</dd><dt>準備法術</dt><dd>${escapeHtml((content.preparedSpells || []).concat(content.tome?.rituals || []).map(spellNameZh).join("、") || "無")}</dd>${spellbookNote}<dt>武器精通</dt><dd>${escapeHtml((content.weaponMasteries || []).join("、") || "無")}</dd><dt>專精</dt><dd>${escapeHtml((content.expertise || []).join("、") || "無")}</dd><dt>語言</dt><dd>${escapeHtml((content.languages || []).map(value => LANGUAGE_OPTIONS.find(option => option.value === value)?.label || value).join("、") || "無")}</dd><dt>陣營</dt><dd>${escapeHtml(alignmentLabel() || "無")}</dd></dl></section>${duplicateReviewWarning()}<div class="quick-build-substep-actions quick-build-inline-actions"><button type="button" data-level-one-stage-back="${previousLevelOneStage("summary")}">返回修改</button></div>`;
+      .filter(Boolean).join("、");
+    const summaryRow = (label, value) => {
+      const text = String(value ?? "").trim();
+      return !text || text === "無" || text === "—" ? "" : `<dt>${escapeHtml(label)}</dt><dd>${escapeHtml(text)}</dd>`;
+    };
+    const spellbookSummary = content.spellbookSpells?.length
+      ? `法術書：一環-${content.spellbookSpells.map(spellId => `${spellNameZh(spellId)}${isRitualSpell(canonicalSpell(spellId)) ? "（儀式）" : ""}`).join("、")}`
+      : "";
+    const summaryRows = [
+      summaryRow("固定能力", (content.fixed || []).join("、")),
+      summaryRow("職業選項", optionSummary),
+      summaryRow("技能額外加值", sourceAwareAcquisitions("skillBonuses")),
+      summaryRow("戲法", (content.cantrips || []).concat(content.tome?.cantrips || []).map(spellNameZh).join("、")),
+      summaryRow("準備法術", (content.preparedSpells || []).concat(content.tome?.rituals || []).map(spellNameZh).join("、")),
+      summaryRow("法術書筆記", spellbookSummary),
+      summaryRow("武器精通", (content.weaponMasteries || []).join("、")),
+      summaryRow("專精", (content.expertise || []).join("、")),
+      summaryRow("語言", (content.languages || []).map(value => LANGUAGE_OPTIONS.find(option => option.value === value)?.label || value).join("、")),
+      summaryRow("陣營", alignmentLabel())
+    ].join("");
+    const summarySection = summaryRows ? `<section class="quick-build-complete"><dl class="quick-build-summary-list">${summaryRows}</dl></section>` : "";
+    body.innerHTML = `<button type="button" class="quick-build-change" data-level-one-stage-back="${previousLevelOneStage("summary")}">← 返回修改</button><h3>${CLASS_LABELS[draft.choices.class]}：完成 1 級摘要</h3>${pending.length ? `<div class="quick-build-warning"><strong>尚未完成</strong><br>${pending.map(escapeHtml).join("<br>")}</div>` : `<section class="quick-build-complete"><strong>完成 1 級選擇已齊全，可前往 1 級總覽。</strong></section>`}${summarySection}${duplicateReviewWarning()}<div class="quick-build-substep-actions quick-build-inline-actions"><button type="button" data-level-one-stage-back="${previousLevelOneStage("summary")}">返回修改</button></div>`;
     body.querySelectorAll("[data-level-one-stage-back]").forEach(button => button.addEventListener("click", () => setLevelOneStage(button.dataset.levelOneStageBack)));
   }
 
@@ -2960,6 +2996,32 @@
     render();
   }
 
+  function selectedChoiceForGroup(group) {
+    if (group === "background") return draft.choices.background;
+    if (group === "race") return draft.choices.race;
+    if (group === "class") return draft.choices.class;
+    return null;
+  }
+
+  function choiceGroupForCard(card) {
+    if (card.dataset.background) return "background";
+    if (card.dataset.race) return "race";
+    if (card.dataset.classChoice) return "class";
+    return null;
+  }
+
+  function handleChoiceCardSelection(group, value, choose) {
+    pendingChoiceCardScrollGroup = group;
+    if (selectedChoiceForGroup(group) === value) {
+      if (expandedChoiceGroups.has(group)) expandedChoiceGroups.delete(group);
+      else expandedChoiceGroups.add(group);
+      render(true);
+      return;
+    }
+    expandedChoiceGroups.delete(group);
+    choose(value);
+  }
+
   function cleanFlowSection(section) {
     section.querySelectorAll([
       ".quick-build-change",
@@ -2971,13 +3033,33 @@
     ].join(",")).forEach(element => element.remove());
     section.querySelectorAll(".quick-build-field-control.has-confirm").forEach(element => element.classList.remove("has-confirm"));
     section.querySelectorAll(".quick-build-card").forEach(card => {
-      const selected = card.dataset.background === draft.choices.background ||
-        card.dataset.race === draft.choices.race ||
-        card.dataset.classChoice === draft.choices.class ||
-        card.dataset.classTypeChoice === draft.choices.classOptions?.classType ||
-        card.dataset.classEquipmentMethod === draft.choices.classEquipmentMethod;
+      const selected = card.hasAttribute("data-background") && card.dataset.background === draft.choices.background ||
+        card.hasAttribute("data-race") && card.dataset.race === draft.choices.race ||
+        card.hasAttribute("data-class-choice") && card.dataset.classChoice === draft.choices.class ||
+        card.hasAttribute("data-class-type-choice") && card.dataset.classTypeChoice === draft.choices.classOptions?.classType ||
+        card.hasAttribute("data-class-equipment-method") && card.dataset.classEquipmentMethod === draft.choices.classEquipmentMethod;
       card.classList.toggle("is-selected", selected);
       card.setAttribute("aria-pressed", String(selected));
+      const group = choiceGroupForCard(card);
+      if (group && selectedChoiceForGroup(group)) {
+        const expanded = expandedChoiceGroups.has(group);
+        card.classList.toggle("is-choice-hidden", !selected && !expanded);
+        if (selected) {
+          card.setAttribute("aria-expanded", String(expanded));
+          card.insertAdjacentHTML("beforeend", `<span class="quick-build-card-toggle-hint">${expanded ? "再次點擊可收合其他選項" : "再次點擊可展開其他選項"}</span>`);
+        }
+      }
+    });
+    section.querySelectorAll("[data-class-equipment-method]").forEach(button => {
+      const selected = button.dataset.classEquipmentMethod === draft.choices.classEquipmentMethod;
+      button.classList.toggle("is-selected", selected);
+      button.setAttribute("aria-pressed", String(selected));
+    });
+    section.querySelectorAll(".quick-build-background-grid,.quick-build-class-grid").forEach(grid => {
+      const selected = grid.querySelector(".quick-build-card.is-selected");
+      const group = selected && choiceGroupForCard(selected);
+      if (selected && group && expandedChoiceGroups.has(group)) grid.prepend(selected);
+      grid.classList.toggle("is-choice-collapsed", Boolean(grid.querySelector(".is-choice-hidden")));
     });
     section.querySelectorAll("[data-wealth]").forEach(button => {
       const selected = button.dataset.wealth === draft.choices.backgroundWealth;
@@ -3160,10 +3242,17 @@
     }
     const newlyRevealed = [...body.querySelectorAll("[data-flow-section]")]
       .find(section => !previousFlowSections.has(section.dataset.flowSection));
-    if (preserveBodyScroll && previousFlowSections.size && newlyRevealed) {
+    if (newlyRevealed) {
       newlyRevealed.classList.add("is-newly-revealed");
+    }
+    const cardScrollTarget = pendingChoiceCardScrollGroup
+      ? body.querySelector(`.quick-build-card.is-selected[data-${pendingChoiceCardScrollGroup === "class" ? "class-choice" : pendingChoiceCardScrollGroup}]`)
+      : null;
+    const scrollTarget = cardScrollTarget || newlyRevealed;
+    pendingChoiceCardScrollGroup = null;
+    if (preserveBodyScroll && previousFlowSections.size && scrollTarget) {
       const reveal = () => {
-        const targetTop = body.scrollTop + newlyRevealed.getBoundingClientRect().top - body.getBoundingClientRect().top - 16;
+        const targetTop = body.scrollTop + scrollTarget.getBoundingClientRect().top - body.getBoundingClientRect().top - 16;
         const reducedMotion = typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
         body.scrollTo({ top: Math.max(0, targetTop), behavior: reducedMotion ? "auto" : "smooth" });
       };
@@ -3180,6 +3269,19 @@
     next.classList.toggle("primary", !next.disabled);
     next.classList.toggle("is-ready", nextWasDisabled && !next.disabled);
     next.textContent = "下一步";
+    if (typeof requestAnimationFrame === "function") requestAnimationFrame(() => syncAbilitySummaryWrapping(modal));
+    else syncAbilitySummaryWrapping(modal);
+  }
+
+  function syncAbilitySummaryWrapping(root = document) {
+    root.querySelectorAll(".quick-build-ability-summary").forEach(summary => {
+      summary.classList.remove("wrap-all");
+      const wrapped = [...summary.querySelectorAll(".quick-build-ability-summary-row")].some(row => {
+        const [value, modifier] = row.children;
+        return value && modifier && modifier.offsetTop >= value.offsetTop + value.offsetHeight;
+      });
+      summary.classList.toggle("wrap-all", wrapped);
+    });
   }
 
   function chooseBackground(key) {
@@ -3287,6 +3389,7 @@
   }
 
   function resetClass() {
+    expandedChoiceGroups.delete("class");
     draft.choices.class = null;
     draft.choices.abilityMethod = null;
     draft.choices.abilities = emptyAbilityMap(null);
@@ -3422,6 +3525,7 @@
   }
 
   function resetRace() {
+    expandedChoiceGroups.delete("race");
     draft.choices.race = null;
     draft.choices.raceOptions = {};
     draft.choices.spellConflictResolutions = {};
@@ -3523,6 +3627,7 @@
   }
 
   function resetBackground() {
+    expandedChoiceGroups.delete("background");
     draft.choices.background = null;
     draft.choices.backgroundWealth = null;
     draft.choices.backgroundToolChoice = null;
@@ -3547,9 +3652,7 @@
   function chooseBackgroundWealth(method) {
     if (!["default", "gold"].includes(method)) return;
     draft.choices.backgroundWealth = method;
-    draft.choices.backgroundMagicConfirmed = false;
-    draft.choices.spellConflictResolutions = {};
-    invalidateClassEquipmentAfterBackgroundChange();
+    draft.choices.levelOne = { ...(draft.choices.levelOne || {}), summaryConfirmed: false };
     saveDraft();
     render(true);
   }
@@ -3896,12 +3999,23 @@
       abilityChoiceModal.setAttribute("aria-hidden", "true");
     }
     draft = loadDraft();
+    expandedChoiceGroups.clear();
+    pendingChoiceCardScrollGroup = null;
     render();
     modal.inert = false;
     modal.classList.add("open");
     modal.setAttribute("aria-hidden", "false");
     lockPage();
     modal.querySelector(".quick-build-close")?.focus();
+  }
+
+  function discardDraft() {
+    if (!window.confirm("確定要重置創角小幫手嗎？背景、種族、職業、裝備與其他選擇將無法復原。")) return;
+    storage.removeItem(STORAGE_KEY);
+    draft = createDraft();
+    expandedChoiceGroups.clear();
+    pendingChoiceCardScrollGroup = null;
+    closeWizard(false);
   }
 
   function closeWizard(save = true) {

@@ -45,7 +45,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎲%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20260814-tour-five-step-a11y">
+  <link rel="stylesheet" href="styles.css?v=20260824-onboarding-scroll-fix">
   <script src="scroll-to-top.js" defer></script>
   <script src="monster.js" defer></script>
   <script src="class-features.js" defer></script>
@@ -57,8 +57,8 @@
   <script src="spell-list.js" defer></script>
   <script src="condition.js" defer></script>
   <script src="character-rules.js" defer></script>
-  <script src="legal-modal.js" defer></script>
-  <script src="onboarding-tour.js?v=20260821-tour-point-buy-preview-close" defer></script>
+  <script src="legal-modal.js?v=20260824-onboarding-entry" defer></script>
+  <script src="onboarding-tour.js?v=20260824-onboarding-cleric-spells" defer></script>
   <script src="quick-build.js" defer></script>
   <script src="deity-info.js" defer></script>
 
@@ -6147,6 +6147,7 @@ function setupUtilityMenu() {
   if (!shell || !toggle || !menu) return;
 
   let isOpen = false;
+  const isTourPreviewLocked = () => window.onboardingTour?.isUtilityMenuPreviewLocked?.() === true;
   const themeKey = "dnd.theme.v1";
   const themeInputs = [...menu.querySelectorAll('input[name="site-theme"]')];
 
@@ -6185,21 +6186,35 @@ function setupUtilityMenu() {
     if (!isOpen && restoreFocus) toggle.focus();
   };
 
-  toggle.addEventListener("click", () => setOpen(!isOpen));
+  toggle.addEventListener("click", (event) => {
+    if (isTourPreviewLocked()) {
+      event.preventDefault();
+      return;
+    }
+    setOpen(!isOpen);
+  });
   menu.addEventListener("click", (event) => {
+    if (isTourPreviewLocked()) {
+      if (event.target.closest(".theme-picker__option")) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      return;
+    }
     if (event.target.closest("button")) setOpen(false);
   }, true);
 
   document.addEventListener("pointerdown", (event) => {
-    if (!isOpen || shell.contains(event.target)) return;
+    if (!isOpen || shell.contains(event.target) || isTourPreviewLocked()) return;
     setOpen(false);
   });
 
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && isOpen) setOpen(false, { restoreFocus: true });
+    if (event.key === "Escape" && isOpen && !isTourPreviewLocked()) setOpen(false, { restoreFocus: true });
   });
 
-  window.addEventListener("tabchange", () => setOpen(false));
+  window.addEventListener("tabchange", () => {
+    if (!isTourPreviewLocked()) setOpen(false);
+  });
 }
 // 事件委派：不用管 class-features 何時重繪
 document.addEventListener("click", (e) => {
@@ -7038,8 +7053,8 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
           return button;
         };
         options.append(
-          createOption('editable','可編輯表單版','約 6 MB','保留 PDF 表單，下載後仍可繼續填寫與修改。檔案較大。'),
-          createOption('compact','精緻易讀版','約 2 MB','檔案較小，採用較美觀的字體與較易閱讀的字級；內容會固定，下載後無法編輯。')
+          createOption('editable','可編輯表單版','約 6 MB','使用 Noto Sans TC；保留 PDF 表單，下載後仍可繼續填寫與修改。檔案較大。'),
+          createOption('compact','精緻易讀版','約 2 MB','使用思源宋體；檔案較小且字級較易閱讀。內容會固定，下載後無法編輯。')
         );
         if(ENABLE_EDITABLE_NO_FONT_PDF_EXPORT){
           options.append(
@@ -7052,7 +7067,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
           );
         }
         const note=document.createElement('p'); note.className='pdf-export-format-note';
-        note.append('想下載「可填寫、檔案也較小」的空白 PDF？請到 ',Object.assign(document.createElement('a'),{href:'#character-sheet-download',className:'legal-about-trigger',textContent:'About 的中文化角色紙下載'}),' 取得下載點。');
+        note.append('想下載「可填寫、檔案也較小」的空白 PDF？請 ',Object.assign(document.createElement('a'),{href:'https://drive.google.com/file/d/1Tu7rAyjfKBl6wagkuRiSNgpQW5LCBP6J/view',target:'_blank',rel:'noopener noreferrer',textContent:'點此下載'}));
         d.append(wait,options,note); a.hidden=true; options.querySelector('button')?.focus();
       }
     }
@@ -7634,6 +7649,8 @@ for (let i = 0; i < 1; i++) createSingleFeatRow();
   <div class="site-footer-links" aria-label="網站資訊連結">
     <a href="#legal-about-modal" class="legal-about-trigger">Legal &amp; About</a>
     <a href="https://github.com/ginglemisa/dnd" target="_blank" rel="noopener">GitHub Repo</a>
+    <a href="https://kh-calendar.vercel.app/" target="_blank" rel="noopener">高雄跑團月曆</a>
+    <a href="https://linktr.ee/trpg.kh" target="_blank" rel="noopener">TRPG在高雄</a>
   </div>
   <div><a href="https://twD20.com/">twD20.com</a> | 5.5版手機角卡</div>
 </footer>
@@ -7780,6 +7797,7 @@ for (let i = 0; i < 1; i++) createSingleFeatRow();
 <div class="legal-modal-dismiss">
   <label><input type="checkbox" id="legal-dismiss"> 不要再提醒我</label>
 </div>
+    <button type="button" id="legal-onboarding-btn">新手導覽</button>
     <button type="button" id="legal-ack-btn" aria-label="關閉提醒">我知道了</button>
   </div>
 </div>
@@ -7790,32 +7808,7 @@ for (let i = 0; i < 1; i++) createSingleFeatRow();
     <header class="legal-about-header">
       <h2 id="legal-about-title">twD20｜Legal &amp; About</h2>
     </header>
-    <div class="legal-about-content">
-      <h3>這是什麼？</h3>
-      <p>「twD20」是一個給 TRPG 新手使用的手機創角網站，讓玩家在教學現場或開團前，在較低的規則負擔下快速創造上桌角色。</p>
-      <h3>適合誰？</h3>
-      <ul><li>第一次接觸5.5版奇幻 TRPG 的玩家</li><li>需要在桌邊快速帶新手創角的 DM／教學者</li></ul>
-      <h3>使用方式</h3>
-      <p>本工具設計給推廣場，收費團與桌邊教學使用，支援人手一機快速創角。透過 QR Code 可快速分享網址，讓玩家即開即用。</p>
-      <h3>為什麼只支援 1～5 級？</h3>
-      <p>這是新手常見的起步區間。本工具的目標是讓第一場冒險順利開始，而非提供完整規則。若想進一步深入，建議使用更完整的官方資源。</p>
-      <h3>資料怎麼保存？</h3>
-      <p>資料儲存在你的裝置上，若清除瀏覽器資料或更換裝置，這些內容將不會保留。</p>
-      <p>你可以用站內功能清除資料，也可以自行匯出或匯入角色檔。</p>
-      <h3>流量統計</h3>
-      <p>本站使用 Google Analytics 觀察整體使用情況，例如使用人數,使用時間與常用頁面，作為後續優化參考。</p>
-      <h3 id="character-sheet-download">中文化角色紙下載</h3>
-      <p>可填寫表格版本 <a href="https://tinyurl.com/srd5etw" target="_blank" rel="noopener">SRD 中文角色紙</a>。</p>
-      <ul><li>角色卡排版作者：<a href="https://x.com/AkaAAkaAka" target="_blank" rel="noopener">赤赤@AkaA</a></li><li><a href="https://drive.google.com/drive/folders/1brrzdbRcxMvxHcYYjyzs2N_8aPaQewW6?usp=sharing" target="_blank" rel="noopener">無表格 PDF／原 PNG 檔下載</a></li></ul>
-      <h3>作者</h3><p>Reggie Tsai / 瑞基</p>
-      <hr>
-      <h3>授權與法律聲明</h3>
-      <h4>內容來源</h4><p>SRD 5.2.1 依 Creative Commons Attribution 4.0 International License 授權，可供引用與改編。</p>
-      <ul><li><a href="https://www.dndbeyond.com/srd" target="_blank" rel="noopener">SRD 5.2.1</a></li><li><a href="https://creativecommons.org/licenses/by/4.0/legalcode" target="_blank" rel="noopener">CC BY 4.0 Legal Code</a></li></ul>
-      <h4>必要 Attribution</h4><p>This work includes material from the System Reference Document 5.2.1 (“SRD 5.2.1”) by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode.</p>
-      <h4>本站授權結構</h4><p>本站原始程式碼、原創說明文字、介面結構與功能可另依 MIT License 使用；引用或改編自 SRD 5.2.1 的內容則依 CC BY 4.0 使用。若你要重製、改作或商用，請保留 attribution。</p>
-      <h4>補充提醒</h4><p>CC BY 4.0 第 5 節包含免責保證與責任限制條款。若你打算把本站內容再散布到其他平台或商業情境，請自行確認所在地與平台規範。</p>
-    </div>
+    <iframe class="legal-about-frame" src="about.html?embed=1" title="Legal &amp; About"></iframe>
   </article>
 </div>
 

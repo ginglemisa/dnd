@@ -9,9 +9,10 @@
     const checkbox = document.getElementById("legal-dismiss");
     const closeBtn = document.getElementById("legal-close-btn");
     const ackBtn = document.getElementById("legal-ack-btn");
+    const onboardingBtn = document.getElementById("legal-onboarding-btn");
     const aboutModal = document.getElementById("legal-about-modal");
-    const aboutCard = aboutModal?.querySelector(".legal-about-card");
     const aboutCloseBtn = aboutModal?.querySelector(".legal-about-close");
+    const aboutFrame = aboutModal?.querySelector(".legal-about-frame");
     const storage = window.dndStorage || {
       getItem(key) { try { return localStorage.getItem(key); } catch (_error) { return null; } },
       removeItem(key) { try { localStorage.removeItem(key); return true; } catch (_error) { return false; } }
@@ -31,10 +32,10 @@
       modal.style.display = "none";
       aboutModal.removeAttribute("inert");
       aboutModal.setAttribute("aria-hidden", "false");
-      aboutCard?.scrollTo(0, 0);
-      if (trigger.getAttribute("href") === "#character-sheet-download") {
-        document.getElementById("character-sheet-download")?.scrollIntoView({ block: "start" });
-      }
+      const fragment = trigger.getAttribute("href") === "#character-sheet-download"
+        ? "#character-sheet-download"
+        : "";
+      if (aboutFrame) aboutFrame.src = `about.html?embed=1${fragment}`;
       aboutCloseBtn?.focus();
     };
 
@@ -89,6 +90,12 @@
 
     closeBtn?.addEventListener("click", closeModal);
     ackBtn?.addEventListener("click", closeModal);
+    onboardingBtn?.addEventListener("click", () => {
+      closeModal();
+      Promise.resolve(window.onboardingTour?.start?.()).catch((error) => {
+        console.error("無法啟動新手導覽：", error);
+      });
+    });
   }
 
   window.initLegalModal = initLegalModal;
