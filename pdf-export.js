@@ -83,7 +83,7 @@
       verticalPadding: 2,
       lineHeightFactor: 1.1,
       // PDF appearance streams use more leading than a glyph's visible height.
-      // Reserve it for this dense multiline field so 11 long lines cannot clip.
+      // Reserve it for this dense multiline field so 10 long lines cannot clip.
       fieldLineHeightFactors: { classFeatures1: 2.5 },
       namedFontSizes: {
         Name1: 14,
