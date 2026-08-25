@@ -685,6 +685,47 @@
     return truncationMinimum;
   }
 
+  function expandCompactDamageFields(form, cjkFont, layoutSettings) {
+    const minimumFontSize = 10;
+
+    for (let slot = 1; slot <= 7; slot += 1) {
+      try {
+        const damageField = form.getTextField(`dmg_type_${slot}`);
+        const noteField = form.getTextField(`wp-note-${slot}`);
+        const damageText = damageField.getText?.() || '';
+        const damageWidgets = damageField.acroField?.getWidgets?.() || [];
+        const noteWidgets = noteField.acroField?.getWidgets?.() || [];
+        if (!damageText || damageWidgets.length === 0 || noteWidgets.length === 0) continue;
+
+        const requiredWidth = cjkFont.widthOfTextAtSize(damageText, minimumFontSize)
+          + layoutSettings.horizontalPadding;
+        damageWidgets.forEach((damageWidget, widgetIndex) => {
+          const damageRectangle = damageWidget.getRectangle();
+          if (requiredWidth <= damageRectangle.width) return;
+
+          const noteWidget = noteWidgets[widgetIndex] || noteWidgets[0];
+          const noteRectangle = noteWidget.getRectangle();
+          const originalGap = Math.max(0, noteRectangle.x - (damageRectangle.x + damageRectangle.width));
+          const expandedDamageRight = damageRectangle.x + requiredWidth;
+          const noteRight = noteRectangle.x + noteRectangle.width;
+          const shiftedNoteLeft = expandedDamageRight + originalGap;
+
+          damageWidget.setRectangle({
+            ...damageRectangle,
+            width: requiredWidth
+          });
+          noteWidget.setRectangle({
+            ...noteRectangle,
+            x: shiftedNoteLeft,
+            width: Math.max(1, noteRight - shiftedNoteLeft)
+          });
+        });
+      } catch (error) {
+        // Both fields are optional for compatibility with alternative templates.
+      }
+    }
+  }
+
   function fitSpellNoteField(field, cjkFont, layoutSettings) {
     const text = (field.getText?.() || '').replace(/\r?\n/g, ' ').trim();
     const rectangle = getTextFieldRectangle(field);
@@ -871,6 +912,12 @@
       }
 
       const fontEmbedResult = await embedCjkFont(pdfDoc, profile);
+      if (profile.layoutId === 'compact') {
+        // Damage type is rules-significant, so preserve it at the compact
+        // attack-row minimum instead of replacing its tail with an ellipsis.
+        // Borrow only the required space from the adjacent note widget.
+        expandCompactDamageFields(form, fontEmbedResult.font, layoutSettings);
+      }
       fitPayloadTextFields(form, payload, fontEmbedResult.font, layoutSettings);
       form.updateFieldAppearances(fontEmbedResult.font);
       normalizeProblematicFieldDA(
