@@ -45,7 +45,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎲%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20260824-onboarding-scroll-fix">
+  <link rel="stylesheet" href="styles.css?v=20260825-action-tabs-spell-primer-2">
   <script src="scroll-to-top.js" defer></script>
   <script src="monster.js" defer></script>
   <script src="class-features.js" defer></script>
@@ -56,6 +56,7 @@
   <script src="equipment-notes.js?v=20260813-weapon-rule-popups-2" defer></script>
   <script src="spell-list.js" defer></script>
   <script src="condition.js" defer></script>
+  <script src="action-panel.js?v=20260825-action-tabs" defer></script>
   <script src="character-rules.js" defer></script>
   <script src="legal-modal.js?v=20260824-onboarding-entry" defer></script>
   <script src="onboarding-tour.js?v=20260825-onboarding-step5-highlights" defer></script>
@@ -608,38 +609,6 @@
   <strong>專長戰鬥註記：</strong>
   <div id="feat-combat-notes" class="selection-summary"></div>
 </div>
-	  <div class="section action-note-card">
-<h3>動作</h3>
-<div class="action-note-title">徒手攻擊</div>
-<div class="small-text action-note-copy">
-  5呎內拳打腳踢或咬人，擇一效果:<br>
-  	1) 傷害：命中=力調+熟練；傷害=力調+1（鈍擊）<br>
-  	2) 擒抱：力/敏豁免（DC=8+力調+熟練，需空手）<br>
-  	3) 推撞：推5呎或倒地；力/敏豁免（DC同上）<br>
-	<br>
-	備註：擒抱推撞限制目標體型≤你+1級
-</div></div>
-
-	  <div class="section action-note-card">
-      <h3>附贈</h3>
-<div class="action-note-title">喝藥水</div>
-<div class="small-text action-note-copy">
-  治療藥水：恢復 2d4+2 HP
-</div>
-
-<div class="action-note-title">進行二次攻擊</div>
-<div class="small-text action-note-copy">
-  雙持輕型武器攻擊後，可用附贈進行副手攻擊。副手傷害不加屬性調整值，除非具備特定專長。
-</div>
-	  </div>
-	  <div class="section action-note-card">
-      <h3>反應</h3>
-<div class="action-note-title">進行藉機攻擊</div>
-<div class="small-text action-note-copy">
-  當你能看見的生物離開你的觸及範圍時，你可以進行藉機攻擊。使用"反應"來對該生物進行一次近戰攻擊。。
-</div>
-	  </div>
-
     <div class="section">
       <details class="action-help action-collapsible-wrap">
   <summary><h3 class="summary-title-inline">戰鬥中的四種行動</h3></summary>
@@ -657,48 +626,58 @@
         <td>移動</td>
         <td>改變你的位置</td>
         <td>自己的回合中</td>
-        <td>步行,游泳</td>
+        <td>步行、游泳</td>
       </tr>
       <tr>
         <td>動作</td>
         <td>主要行動</td>
-        <td>每回合1次</td>
-        <td>攻擊,閃避</td>
+        <td>每回合 1 次</td>
+        <td>攻擊、閃避</td>
       </tr>
       <tr>
         <td>附贈</td>
-        <td>有條件的額外行動</td>
-        <td>每回合最多1次</td>
-        <td>二次攻擊,喝水</td>
+        <td>有條件的額外動作</td>
+        <td>每回合最多 1 次</td>
+        <td>二次攻擊、喝藥水</td>
       </tr>
       <tr>
         <td>反應</td>
         <td>在別人回合觸發</td>
-        <td>每回合最多1次</td>
+        <td>每回合最多 1 次</td>
         <td>藉機攻擊</td>
       </tr>
     </tbody>
   </table>
 </details>
-      <details class="action-collapsible-wrap">
-        <summary><h3 class="summary-title-inline">動作</h3></summary>
-      <div id="action-description" class="output action-description">請選擇一個動作查看說明。</div>
-      <div class="action-grid-pretty action-grid-panel">
-        <button onclick="showAction(&#39;attack&#39;)">攻擊</button>
-        <button onclick="showAction(&#39;dash&#39;)">衝刺</button>
-        <button onclick="showAction(&#39;disengage&#39;)">撤離</button>
-        <button onclick="showAction(&#39;dodge&#39;)">閃避</button>
-        <button onclick="showAction(&#39;help&#39;)">協助</button>
-        <button onclick="showAction(&#39;hide&#39;)">躲藏</button>
-        <button onclick="showAction(&#39;influence&#39;)">影響</button>
-        <button onclick="showAction(&#39;magic&#39;)">魔法</button>
-        <button onclick="showAction(&#39;ready&#39;)">準備</button>
-        <button onclick="showAction(&#39;search&#39;)">搜索</button>
-        <button onclick="showAction(&#39;study&#39;)">研究</button>
-        <button onclick="showAction(&#39;utilize&#39;)">使用</button>
-      </div>
-      </details>
     </div>
+
+    <section class="section action-command-card" aria-labelledby="action-command-title">
+      <div class="action-command-heading">
+        <div>
+          <span class="action-command-eyebrow">回合操作</span>
+          <h3 id="action-command-title">選擇可用行動</h3>
+        </div>
+        <span id="action-option-count" class="action-option-count" aria-live="polite"></span>
+      </div>
+
+      <div class="action-mode-tabs" role="tablist" aria-label="行動類型">
+        <button id="action-mode-action" class="action-mode-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="action-mode-panel" data-action-mode="action">動作</button>
+        <button id="action-mode-bonus" class="action-mode-tab" type="button" role="tab" aria-selected="false" aria-controls="action-mode-panel" data-action-mode="bonus" tabindex="-1">附贈</button>
+        <button id="action-mode-reaction" class="action-mode-tab" type="button" role="tab" aria-selected="false" aria-controls="action-mode-panel" data-action-mode="reaction" tabindex="-1">反應</button>
+        <button id="action-mode-movement" class="action-mode-tab" type="button" role="tab" aria-selected="false" aria-controls="action-mode-panel" data-action-mode="movement" tabindex="-1">移動</button>
+      </div>
+
+      <div id="action-mode-panel" class="action-mode-panel" role="tabpanel" aria-labelledby="action-mode-action">
+        <div class="action-mode-context">
+          <strong id="action-mode-timing">每回合一次</strong>
+          <span id="action-mode-summary">執行主要行動。</span>
+        </div>
+        <div id="action-description" class="action-description" role="status" aria-live="polite">
+          請選擇一個動作查看說明。
+        </div>
+        <div id="action-option-grid" class="action-option-grid" aria-label="動作選項"></div>
+      </div>
+    </section>
 
 <div id="condition-section"></div>
 
@@ -839,7 +818,7 @@
 
 
 <div id="tab-spells" class="tab-content" role="tabpanel" aria-label="法術頁" hidden>
-    <div class="section">
+    <div class="section spell-overview-section">
   <div id="spell-casting-stats-wrap" class="spell-casting-stats" aria-label="施法能力計算">
     <div class="spell-casting-field">
       <div class="stat-label">施法屬性</div>
@@ -903,9 +882,23 @@
     <div class="output spell-picked-box"><div id="picked-level2" class="spell-picked-content">—</div></div>
     <div class="output spell-picked-box"><div id="picked-level3" class="spell-picked-content">—</div></div>
   </div>
-		<div class="spell-note-muted">
-本頁僅提供免費基本規則法術；部分 PHB 專屬內容未列入。
-		</div>
+  <div class="spell-meta-row">
+    <div class="spell-note-muted">本頁僅提供免費基本規則法術；部分 PHB 專屬內容未列入。</div>
+    <details class="spell-primer">
+      <summary id="spell-primer-trigger">
+        <span class="spell-primer__info" aria-hidden="true">i</span>
+        <span>法術入門</span>
+        <span class="spell-primer__chevron" aria-hidden="true">⌄</span>
+      </summary>
+      <div class="spell-primer__popover" role="note" aria-labelledby="spell-primer-trigger">
+        <div class="spell-primer__heading">
+          <span class="spell-primer__eyebrow">快速指南</span>
+          <h3>法術入門</h3>
+        </div>
+        <p>D&amp;D 的魔法分為戲法與 1～9 環法術：戲法不消耗法術位，可反覆施放；環位法術通常需消耗相應的法術位，也可能用更高環法術位施放以增強效果。法術標示的 <strong>V、S、M</strong> 分別代表言語、姿勢、材料成分，表示施法時需要說出咒語、做出手勢或使用指定材料。部分帶有儀式標籤的法術，若已準備，可以多花 10 分鐘以儀式方式施放，且不消耗法術位。除此之外，法術還有施法時間、距離、持續時間與專注等限制；專注法術通常同一時間只能維持一個。</p>
+      </div>
+    </details>
+  </div>
 </div>
 
 <details class="section spell-level-section" open>
@@ -3662,21 +3655,6 @@ const defaultAbilityByClass = {
 })();
 
 
-    const actionDescriptions = {
-      attack: "用武器或徒手攻擊，也可擒抱或推撞目標。",
-      dash: "在該回合剩餘時間內，給予自己等同於你速度的額外移動。",
-      disengage: "在該回合剩餘時間內，你的移動不會引發攻擊藉機攻擊。",
-      dodge: "直到你下一回合開始，對你的攻擊擲骰有劣勢，而你的敏捷豁免擲骰有優勢。如果你處於失能狀態或你的速度為 0，你失去此增益。",
-      help: "幫助另一個生物的能力檢定或攻擊擲骰，或施予急救。",
-      hide: "進行敏捷（隱匿）檢定。",
-      influence: "進行魅力（欺瞞,威嚇,表演或遊說）或感知（馴獸）檢定以改變生物的態度。",
-      magic: "施放法術，使用魔法物品，或使用魔法特性。",
-      ready: "定義一個前提條件，觸發後執行動作。",
-      search: "進行感知（洞悉,醫藥,察覺或生存）檢定。",
-      study: "進行智力（奧秘,歷史,調查,自然或宗教）檢定。",
-      utilize: "使用非魔法物品。"
-    };
-
     const ACTIVE_TAB_KEY = "activeTab";
     const tabScrollPositions = {};
     const savedTab = window.dndStorage.getItem(ACTIVE_TAB_KEY);
@@ -3721,10 +3699,6 @@ const defaultAbilityByClass = {
 
     if (hasSavedTab) {
       showTab(savedTab);
-    }
-
-    function showAction(key) {
-      document.getElementById("action-description").innerText = actionDescriptions[key] || "無資料";
     }
 
     function calculateModifier(score) {

@@ -1443,18 +1443,20 @@
       .quick-build-class-card{min-height:128px!important}.quick-build-class-card p{margin:0;color:var(--qb-text-body);line-height:1.55}.quick-build-substep-actions{display:flex;justify-content:space-between;gap:12px;margin-top:18px}.quick-build-substep-actions button{min-height:46px;padding:9px 16px;border:1px solid var(--qb-border-strong);border-radius:8px;background:var(--qb-surface-elevated);color:var(--qb-text);cursor:pointer}.quick-build-substep-actions button.primary{border-color:var(--qb-accent);background:var(--qb-accent-hover);color:#fff}.quick-build-substep-actions button:disabled{cursor:not-allowed;opacity:.55}.quick-build-proficiency-grid{display:grid;gap:14px}.quick-build-fixed-list{margin:12px 0 0;padding:12px;border-radius:8px;background:var(--qb-surface-muted);color:var(--qb-text-body);line-height:1.6}.quick-build-summary-list{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;margin:0}.quick-build-summary-list dt{color:var(--qb-text-muted)}.quick-build-summary-list dd{margin:0;color:var(--qb-text)}.quick-build-ability-summary{display:grid;gap:6px}.quick-build-ability-summary-row{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline}.quick-build-ability-summary-row>span{white-space:nowrap}.quick-build-ability-summary.wrap-all .quick-build-ability-summary-row{display:grid;grid-template-columns:1fr;gap:2px}.quick-build-ability-summary.wrap-all .quick-build-ability-modifier{padding-inline-start:1em}.quick-build-ability-modifier{font-weight:800;color:var(--qb-accent-text)}.quick-build-ability-modifier-sign{color:var(--qb-warning-text)}.quick-build-ability-modifier-value{color:var(--qb-accent)}.quick-build-complete .quick-build-summary-list dt,.quick-build-complete .quick-build-summary-list dd{color:var(--qb-success-text)}.quick-build-source-warning{margin-top:10px;color:var(--qb-warning-text);font-size:.9rem}
       #quick-build-wizard .quick-build-body.is-review{background:var(--qb-success-bg)}
       #quick-build-wizard .quick-build-flow-section{padding:0 0 24px}#quick-build-wizard .quick-build-flow-section.is-newly-revealed{animation:quick-build-flow-in .34s cubic-bezier(.22,1,.36,1) both}#quick-build-wizard .quick-build-flow-section+ .quick-build-flow-section{padding-top:24px;border-top:1px solid var(--qb-border)}
+      #quick-build-wizard .quick-build-validation-message{display:flex;align-items:center;gap:8px;margin:0 0 12px;padding:10px 12px;border-left:3px solid var(--qb-warning-border);border-radius:7px;background:var(--qb-warning-bg);color:var(--qb-warning-text);font-size:.9rem;font-weight:700;line-height:1.45}#quick-build-wizard .quick-build-validation-message::before{content:"!";display:grid;flex:0 0 22px;place-items:center;width:22px;height:22px;border:1px solid var(--qb-warning-border);border-radius:999px;color:var(--qb-warning-text);font-size:.8rem;font-weight:900}
+      #quick-build-wizard .quick-build-needs-attention{position:relative;border-color:var(--qb-warning-border)!important;background:var(--qb-warning-bg)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--qb-warning-border) 24%,transparent);animation:quick-build-attention .48s cubic-bezier(.22,1,.36,1)}
       #quick-build-wizard .quick-build-card.is-selected{border-color:var(--qb-accent);background:var(--qb-accent-soft);box-shadow:inset 0 0 0 2px var(--qb-accent),0 2px 6px color-mix(in srgb,var(--qb-accent) 16%,transparent)}#quick-build-wizard .quick-build-card.is-choice-hidden{display:none}
       #quick-build-wizard .quick-build-duplicate-warning{border-left-color:var(--qb-danger);background:color-mix(in srgb,var(--qb-danger) 14%,var(--qb-surface));color:var(--qb-danger-text)}
       #quick-build-wizard .quick-build-footer{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));flex:0 0 auto;align-items:center;gap:12px;padding:16px 20px;border-top:1px solid var(--qb-border)}#quick-build-wizard .quick-build-footer[hidden]{display:none}
-      #quick-build-wizard .quick-build-footer button{width:100%;min-width:0;min-height:50px;padding:10px clamp(10px,2vw,20px);border:1px solid var(--qb-border-strong);border-radius:8px;background:var(--qb-surface-elevated);color:var(--qb-text);font-size:clamp(.95rem,2.4vw,1.05rem);font-weight:700;cursor:pointer;transition:border-color .18s ease,background-color .18s ease,color .18s ease,box-shadow .18s ease,transform .18s ease}#quick-build-wizard .quick-build-footer button.primary{border-color:var(--qb-accent);background:var(--qb-accent-hover);color:#fff;box-shadow:0 0 0 3px var(--qb-accent-soft)}#quick-build-wizard .quick-build-footer button.is-ready{animation:quick-build-next-ready .52s cubic-bezier(.22,1,.36,1)}#quick-build-wizard .quick-build-footer button:disabled{cursor:not-allowed;opacity:.55;box-shadow:none}
+      #quick-build-wizard .quick-build-footer button{width:100%;min-width:0;min-height:50px;padding:10px clamp(10px,2vw,20px);border:1px solid var(--qb-border-strong);border-radius:8px;background:var(--qb-surface-elevated);color:var(--qb-text);font-size:clamp(.95rem,2.4vw,1.05rem);font-weight:700;cursor:pointer;transition:border-color .18s ease,background-color .18s ease,color .18s ease,box-shadow .18s ease,transform .18s ease}#quick-build-wizard .quick-build-footer button.primary{border-color:var(--qb-accent);background:var(--qb-accent-hover);color:#fff;box-shadow:0 0 0 3px var(--qb-accent-soft)}#quick-build-wizard .quick-build-footer button.is-incomplete{box-shadow:none}#quick-build-wizard .quick-build-footer button.is-incomplete:hover,#quick-build-wizard .quick-build-footer button.is-incomplete:focus-visible{box-shadow:0 0 0 3px var(--qb-accent-soft)}#quick-build-wizard .quick-build-footer button.is-ready{animation:quick-build-next-ready .52s cubic-bezier(.22,1,.36,1)}#quick-build-wizard .quick-build-footer button:disabled{cursor:not-allowed;opacity:.55;box-shadow:none}
       #quick-build-wizard .quick-build-previous{grid-column:1}#quick-build-wizard .quick-build-modify{grid-column:2;border-color:var(--qb-accent);color:var(--qb-accent-text);font-weight:800}#quick-build-wizard .quick-build-next{grid-column:3}
       .quick-build-summary-list .quick-build-summary-full-label{grid-column:1/-1}.quick-build-summary-list .quick-build-summary-full-value{grid-column:1/-1;padding-inline-start:1em;text-align:left}
       #quick-build-wizard .quick-build-equipment-actions button.is-selected{border-color:var(--qb-accent);background:var(--qb-accent-hover);color:#fff;box-shadow:inset 0 0 0 1px var(--qb-accent)}
-      @keyframes quick-build-flow-in{from{opacity:0;transform:translateY(-14px)}to{opacity:1;transform:translateY(0)}}@keyframes quick-build-next-ready{0%{transform:scale(.96);box-shadow:0 0 0 0 var(--qb-accent-soft)}55%{transform:scale(1.04);box-shadow:0 0 0 7px var(--qb-accent-soft)}100%{transform:scale(1);box-shadow:0 0 0 3px var(--qb-accent-soft)}}
+      @keyframes quick-build-flow-in{from{opacity:0;transform:translateY(-14px)}to{opacity:1;transform:translateY(0)}}@keyframes quick-build-next-ready{0%{transform:scale(.96);box-shadow:0 0 0 0 var(--qb-accent-soft)}55%{transform:scale(1.04);box-shadow:0 0 0 7px var(--qb-accent-soft)}100%{transform:scale(1);box-shadow:0 0 0 3px var(--qb-accent-soft)}}@keyframes quick-build-attention{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--qb-warning-border) 0%,transparent)}55%{box-shadow:0 0 0 7px color-mix(in srgb,var(--qb-warning-border) 28%,transparent)}100%{box-shadow:0 0 0 3px color-mix(in srgb,var(--qb-warning-border) 24%,transparent)}}
       @media(max-width:760px){.quick-build-class-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
       @media(max-width:620px){.quick-build-ability-grid{padding:8px}.quick-build-ability-table-head,.quick-build-ability-row{grid-template-columns:58px minmax(88px,1fr) minmax(88px,1fr) 36px;gap:2px;padding-right:5px;padding-left:5px}.quick-build-ability-step{width:30px;min-width:30px;height:30px;min-height:30px}.quick-build-ability-control{gap:2px}.quick-build-ability-value{min-width:22px}#quick-build-wizard .quick-build-body{padding:20px 16px}.quick-build-ability-heading{display:grid;gap:12px}.quick-build-ability-status{justify-content:flex-start}.quick-build-background-grid,.quick-build-class-grid{grid-template-columns:1fr}.quick-build-choice-actions{grid-template-columns:1fr}.quick-build-substep-actions:not(.quick-build-inline-actions){display:grid;grid-template-columns:1fr}.quick-build-substep-actions button{width:100%}.quick-build-inline-actions button{flex:1 1 0;width:auto;min-width:0}#quick-build-wizard .quick-build-footer{gap:8px;padding:12px}#quick-build-wizard .quick-build-footer button{min-height:48px;padding-right:8px;padding-left:8px}#quick-build-spell-detail{padding:16px}#quick-build-spell-detail .quick-build-spell-detail-shell{max-width:100%;max-height:calc(100dvh - 32px)}#quick-build-spell-detail-content{padding:18px 16px}}
       @media(max-width:380px){#quick-build-wizard{padding:8px}#quick-build-wizard .quick-build-shell{max-height:calc(100dvh - 16px)}#quick-build-wizard .quick-build-header{padding:14px 12px 10px}#quick-build-wizard .quick-build-body{padding:16px 10px}.quick-build-choice-panel.quick-build-ability-grid{padding:4px}.quick-build-ability-table-head,.quick-build-ability-row{grid-template-columns:44px minmax(70px,1fr) minmax(70px,1fr) 30px;gap:2px;padding:5px 4px}.quick-build-ability-step{width:26px;min-width:26px;height:28px;min-height:28px;font-size:.88rem}.quick-build-ability-value{min-width:18px;font-size:.9rem}.quick-build-ability-name strong{font-size:.92rem}.quick-build-ability-name small{font-size:.65rem}.quick-build-ability-table-head{font-size:.72rem}#quick-build-wizard .quick-build-footer{gap:6px;padding:10px 8px}#quick-build-wizard .quick-build-footer button{padding-right:4px;padding-left:4px;font-size:.9rem}}
-      @media(prefers-reduced-motion:reduce){#quick-build-wizard .quick-build-flow-section.is-newly-revealed,#quick-build-wizard .quick-build-footer button.is-ready{animation:none}#quick-build-wizard .quick-build-footer button{transition:none}}
+      @media(prefers-reduced-motion:reduce){#quick-build-wizard .quick-build-flow-section.is-newly-revealed,#quick-build-wizard .quick-build-footer button.is-ready,#quick-build-wizard .quick-build-needs-attention{animation:none}#quick-build-wizard .quick-build-footer button{transition:none}}
     `;
     document.head.appendChild(style);
   }
@@ -3086,7 +3088,7 @@
   function render(preserveBodyScroll = false) {
     const modal = ensureWizard();
     const nextButton = modal.querySelector(".quick-build-next");
-    const nextWasDisabled = nextButton.disabled;
+    const nextWasIncomplete = nextButton.classList.contains("is-incomplete");
     const steps = activeSteps(draft);
     const stepIndex = Math.max(0, steps.findIndex(item => item.id === draft.ui.currentStepId));
     const stepMeta = steps[stepIndex] || steps[0];
@@ -3145,9 +3147,12 @@
     modal.querySelector(".quick-build-footer").hidden = stepMeta.id === "level-one-review";
     previous.disabled = stepIndex === 0;
     modify.hidden = draft.ui.view !== "review";
-    next.disabled = draft.ui.view === "edit" && !stepIsComplete(step);
-    next.classList.toggle("primary", !next.disabled);
-    next.classList.toggle("is-ready", nextWasDisabled && !next.disabled);
+    const nextIsIncomplete = draft.ui.view === "edit" && !stepIsComplete(step);
+    next.disabled = false;
+    next.classList.add("primary");
+    next.classList.toggle("is-incomplete", nextIsIncomplete);
+    next.classList.toggle("is-ready", nextWasIncomplete && !nextIsIncomplete);
+    next.setAttribute("aria-label", nextIsIncomplete ? "下一步，目前尚有選項未完成" : "下一步");
     next.textContent = "下一步";
     if (typeof requestAnimationFrame === "function") requestAnimationFrame(() => syncAbilitySummaryWrapping(modal));
     else syncAbilitySummaryWrapping(modal);
@@ -3575,10 +3580,85 @@
     render();
   }
 
+  function firstIncompleteChoiceArea(body) {
+    const candidates = body.querySelectorAll([
+      "select:not(:disabled)",
+      ".quick-build-background-grid",
+      ".quick-build-class-grid",
+      ".quick-build-equipment-actions"
+    ].join(","));
+    for (const candidate of candidates) {
+      if (candidate.matches("select")) {
+        if (candidate.value) continue;
+        return {
+          target: candidate.closest(".quick-build-choice-panel") || candidate.closest(".quick-build-field") || candidate,
+          control: candidate
+        };
+      }
+      const choiceButtons = [...candidate.querySelectorAll("button")];
+      if (!choiceButtons.length || choiceButtons.some(button => button.classList.contains("is-selected") || button.getAttribute("aria-pressed") === "true")) continue;
+      return {
+        target: candidate.closest(".quick-build-choice-panel") || candidate,
+        control: choiceButtons.find(button => !button.disabled) || null
+      };
+    }
+    const sections = [...body.querySelectorAll(".quick-build-flow-section")];
+    const section = sections[sections.length - 1];
+    if (!section) return null;
+    return {
+      target: section.querySelector(".quick-build-choice-panel") || section,
+      control: section.querySelector("select:not(:disabled),button:not(:disabled)")
+    };
+  }
+
+  function clearIncompleteChoicePrompt(body) {
+    body.querySelector(".quick-build-validation-message")?.remove();
+    body.querySelectorAll(".quick-build-needs-attention").forEach(element => element.classList.remove("quick-build-needs-attention"));
+    body.querySelectorAll("[data-quick-build-validation-control]").forEach(control => {
+      const describedBy = (control.getAttribute("aria-describedby") || "").split(/\s+/u).filter(id => id && id !== "quick-build-validation-message");
+      if (describedBy.length) control.setAttribute("aria-describedby", describedBy.join(" "));
+      else control.removeAttribute("aria-describedby");
+      control.removeAttribute("aria-invalid");
+      control.removeAttribute("data-quick-build-validation-control");
+    });
+  }
+
+  function revealFirstIncompleteChoice() {
+    const body = ensureWizard().querySelector(".quick-build-body");
+    clearIncompleteChoicePrompt(body);
+    const incomplete = firstIncompleteChoiceArea(body);
+    if (!incomplete?.target?.parentNode) return;
+    const message = document.createElement("div");
+    message.id = "quick-build-validation-message";
+    message.className = "quick-build-validation-message";
+    message.setAttribute("role", "alert");
+    message.textContent = "請先完成此區域的選擇，再進行下一步。";
+    incomplete.target.parentNode.insertBefore(message, incomplete.target);
+    incomplete.target.classList.add("quick-build-needs-attention");
+    if (incomplete.control) {
+      const describedBy = new Set((incomplete.control.getAttribute("aria-describedby") || "").split(/\s+/u).filter(Boolean));
+      describedBy.add(message.id);
+      incomplete.control.setAttribute("aria-describedby", [...describedBy].join(" "));
+      if (incomplete.control.matches("select,input,textarea")) incomplete.control.setAttribute("aria-invalid", "true");
+      incomplete.control.setAttribute("data-quick-build-validation-control", "");
+    }
+    const reveal = () => {
+      const targetTop = body.scrollTop + message.getBoundingClientRect().top - body.getBoundingClientRect().top - 16;
+      const reducedMotion = typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      body.scrollTo({ top: Math.max(0, targetTop), behavior: reducedMotion ? "auto" : "smooth" });
+      incomplete.control?.focus?.({ preventScroll: true });
+    };
+    if (typeof requestAnimationFrame === "function") requestAnimationFrame(reveal);
+    else reveal();
+  }
+
   function goNextStep() {
     const step = currentStepDefinition();
     if (draft.ui.view === "edit") {
-      if (!stepIsComplete(step)) return;
+      if (!stepIsComplete(step)) {
+        revealFirstIncompleteChoice();
+        return;
+      }
       confirmStep(step.id);
       draft.ui = { ...draft.ui, view: "review" };
       saveDraft();
@@ -3608,12 +3688,16 @@
       bodyOverflow: document.body.style.overflow,
       bodyPosition: document.body.style.position,
       bodyTop: document.body.style.top,
+      bodyRight: document.body.style.right,
+      bodyLeft: document.body.style.left,
       bodyWidth: document.body.style.width
     };
     document.documentElement.style.overflow = "hidden";
     document.body.style.overflow = "hidden";
     document.body.style.position = "fixed";
     document.body.style.top = `-${scrollY}px`;
+    document.body.style.right = "0";
+    document.body.style.left = "0";
     document.body.style.width = "100%";
   }
 
@@ -3625,6 +3709,8 @@
     document.body.style.overflow = saved.bodyOverflow;
     document.body.style.position = saved.bodyPosition;
     document.body.style.top = saved.bodyTop;
+    document.body.style.right = saved.bodyRight;
+    document.body.style.left = saved.bodyLeft;
     document.body.style.width = saved.bodyWidth;
     pageLock = null;
     window.scrollTo(0, saved.scrollY);
