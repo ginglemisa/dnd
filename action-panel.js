@@ -85,12 +85,12 @@
   });
 
   const GOLIATH_ANCESTRY_FEATURES = Object.freeze({
-    cloud: "雲遊四方（雲巨人）",
-    fire: "星火燎原（火巨人）",
-    frost: "凜若冰霜（霜巨人）",
-    hill: "地動山搖（山丘巨人）",
-    stone: "堅若磐石（石巨人）",
-    storm: "轟雷掣電（風暴巨人）"
+    cloud: "雲遊四方",
+    fire: "星火燎原",
+    frost: "凜若冰霜",
+    hill: "地動山搖",
+    stone: "堅若磐石",
+    storm: "轟雷掣電"
   });
   const GOLIATH_ANCESTRY_FEATURE_NAMES = new Set(Object.values(GOLIATH_ANCESTRY_FEATURES));
 
