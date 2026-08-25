@@ -136,6 +136,48 @@ foreach ($match in $imageTags) {
   $html = $html.Replace($match.Value, $replacementTag)
 }
 
+$iframeTags = [System.Text.RegularExpressions.Regex]::Matches(
+  $html,
+  '<iframe\b(?=[^>]*\bsrc="([^"]+)")[^>]*>\s*</iframe>',
+  [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
+)
+foreach ($match in $iframeTags) {
+  $reference = $match.Groups[1].Value
+  if ($reference -match '^(?:data:|https?:|//)' -or $reference.Contains('${')) { continue }
+
+  $assetPath = Get-LocalAssetPath -Reference $reference
+  if ([System.IO.Path]::GetExtension($assetPath).ToLowerInvariant() -ne ".html") {
+    throw "build-offline-nopdf.ps1: unsupported local iframe asset: $reference"
+  }
+
+  $embeddedHtml = Get-Content -Raw -Encoding UTF8 $assetPath
+  $embeddedStylesheetTags = [System.Text.RegularExpressions.Regex]::Matches(
+    $embeddedHtml,
+    '<link\b(?=[^>]*\brel="stylesheet")(?=[^>]*\bhref="([^"]+)")[^>]*>',
+    [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
+  )
+  foreach ($stylesheetMatch in $embeddedStylesheetTags) {
+    $stylesheetReference = $stylesheetMatch.Groups[1].Value
+    if ($stylesheetReference -match '^(?:data:|https?:|//)') { continue }
+    $stylesheetPath = Get-LocalAssetPath -Reference $stylesheetReference
+    $stylesheetDataUrl = Get-Base64TextDataUrl -Path $stylesheetPath -MimeType "text/css;charset=utf-8"
+    $embeddedHtml = $embeddedHtml.Replace($stylesheetMatch.Value, "<link rel=`"stylesheet`" href=`"$stylesheetDataUrl`" data-offline-source=`"$stylesheetReference`">")
+  }
+
+  if ($reference -match '(?:[?&])embed(?:=|&|$)') {
+    $embeddedHtml = [System.Text.RegularExpressions.Regex]::Replace(
+      $embeddedHtml,
+      '<html\b([^>]*)>',
+      '<html$1 class="embed-mode">',
+      [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
+    )
+  }
+
+  $iframeDataUrl = "data:text/html;charset=utf-8;base64,$([Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($embeddedHtml)))"
+  $replacementTag = $match.Value.Replace("src=`"$reference`"", "src=`"$iframeDataUrl`" data-offline-source=`"$reference`"")
+  $html = $html.Replace($match.Value, $replacementTag)
+}
+
 $html = [System.Text.RegularExpressions.Regex]::Replace(
   $html,
   'let\s+pdfExportLoaderPromise\s*=\s*null;[\s\S]*?function\s+buildPdfPrecheckMessages\(\)\s*\{',

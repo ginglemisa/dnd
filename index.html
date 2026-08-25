@@ -1020,6 +1020,7 @@ function updateSpeedDisplay() {
 }
 
 const EXPERTISE_VISIBLE_CLASSES = new Set(["", "bard", "ranger", "rogue", "wizard"]);
+const SEARCH_EXPERT_SKILLS = new Set(["洞悉", "調查", "察覺"]);
 const BASE_LANGUAGE_OPTIONS = [
   { value: "common-sign", label: "通用手語" },
   { value: "draconic", label: "龍語" },
@@ -1352,7 +1353,10 @@ window.replaceToolProficiencies = replaceToolProficiencies;
 
 function updateExpertiseVisibility() {
   const classValue = document.getElementById("class")?.value || "";
-  const shouldShowExpertise = EXPERTISE_VISIBLE_CLASSES.has(classValue);
+  const classGrantsExpertise = EXPERTISE_VISIBLE_CLASSES.has(classValue);
+  const hasSearchExpertFeat = hasSelectedFeat("尋物好手");
+  const shouldShowExpertise = classGrantsExpertise || hasSearchExpertFeat;
+  let clearedUnavailableExpertise = false;
 
   const skillLegend = document.querySelector(".skill-legend");
   if (skillLegend) {
@@ -1360,9 +1364,17 @@ function updateExpertiseVisibility() {
   }
 
   document.querySelectorAll(".circle-checkbox").forEach(checkbox => {
-    checkbox.disabled = !shouldShowExpertise;
-    checkbox.style.display = shouldShowExpertise ? "" : "none";
+    const canUseExpertise = classGrantsExpertise
+      || (hasSearchExpertFeat && SEARCH_EXPERT_SKILLS.has(checkbox.dataset.skillRank));
+    if (!canUseExpertise && checkbox.checked) {
+      checkbox.checked = false;
+      clearedUnavailableExpertise = true;
+    }
+    checkbox.disabled = !canUseExpertise;
+    checkbox.style.display = canUseExpertise ? "" : "none";
   });
+
+  if (clearedUnavailableExpertise && typeof fillSkills === "function") fillSkills();
 }
 
 
@@ -1415,8 +1427,7 @@ function updateACDisplay() {
     charismaScore: document.getElementById("cha")?.value || "10",
     hasAnyShield: hasOffHandShield || hasArmorShield,
     hasShield,
-    hasDefenseFightingStyle: hasDefenseFightingStyleFeat(),
-    hasMediumArmorAgility: hasSelectedFeat("中甲靈巧")
+    hasDefenseFightingStyle: hasDefenseFightingStyleFeat()
   });
 
   document.getElementById("ac-display").textContent = armorClass ?? "--";
@@ -2127,6 +2138,7 @@ function refreshFeatDerivedEffects() {
   if (typeof updateHPDisplay === "function") updateHPDisplay();
   if (typeof updateACDisplay === "function") updateACDisplay();
   if (typeof updateSpeedDisplay === "function") updateSpeedDisplay();
+  if (typeof updateExpertiseVisibility === "function") updateExpertiseVisibility();
   if (typeof populateHandAttacks === "function") populateHandAttacks();
   if (typeof updateFeatCombatNotes === "function") updateFeatCombatNotes();
   if (typeof updateEquipmentLoadoutSummary === "function") updateEquipmentLoadoutSummary();
@@ -4342,14 +4354,8 @@ function updateFeatCombatNotes() {
   if (hasSelectedFeat("雙持追擊")) {
     addNote("雙持追擊", "使用輕型武器攻擊後，可消耗「附贈」以另一把非雙手近戰武器再攻擊 1 次；可與「迅切」並用。若無「雙武器戰鬥」，這次額外攻擊不加正值屬性調整。每次原本可拔出或收納 1 把武器時，可改為同時處理 2 把非雙手武器。");
   }
-  if (hasSelectedFeat("重武猛攻")) {
-    addNote("重武猛攻", "自身回合以「攻擊」動作用重型武器命中，傷害額外+熟練加值。近戰武器致命一擊或將敵人打至 0 HP 後，可立即消耗附贈以同一把武器再打 1 次。");
-  }
   if (hasSelectedFeat("重甲減傷")) {
     addNote("重甲減傷", "穿重甲被攻擊命中時，可減少揮砍、穿刺、鈍擊「熟練加值」傷害。");
-  }
-  if (hasSelectedFeat("破法者")) {
-    addNote("破法者", "你傷害正在專注的生物時，該生物維持專注的豁免丟二取低。智力、感知或魅力豁免失敗時可改為成功；長、短休後才能再次使用。");
   }
   if (hasSelectedFeat("封鎖者")) {
     addNote("封鎖者", "你可以藉機攻擊 5 呎內做出以下任一行為的生物：「撤離」；攻擊命中他人。藉機攻擊命中後，目標速度在目前回合變為 0。");

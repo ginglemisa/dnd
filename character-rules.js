@@ -206,11 +206,7 @@
       const armorBase = Number.parseInt(armor.AC, 10);
       if (!Number.isFinite(armorBase)) return null;
       if (armor.分類 === "重甲") armorClass = armorBase;
-      else if (armor.分類 === "中甲") {
-        const mediumArmorDexterityCap = options.hasMediumArmorAgility
-          && Number(options.dexterityScore) >= 16 ? 3 : 2;
-        armorClass = armorBase + Math.min(mediumArmorDexterityCap, dexModifier);
-      }
+      else if (armor.分類 === "中甲") armorClass = armorBase + Math.min(2, dexModifier);
       else if (armor.分類 === "輕甲") armorClass = armorBase + dexModifier;
       else return null;
     }

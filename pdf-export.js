@@ -20,7 +20,10 @@
         ))
       )),
       spellRows: Object.freeze({ ...settings.spellRows }),
-      spellNotes: Object.freeze({ ...settings.spellNotes })
+      spellNotes: Object.freeze({
+        ...settings.spellNotes,
+        fontSizes: Object.freeze([...(settings.spellNotes?.fontSizes || [])])
+      })
     });
   }
 
@@ -33,10 +36,21 @@
   // belongs here, with one independent block for each export mode.
   const PDF_LAYOUT_SETTINGS = Object.freeze({
     editable: createPdfLayoutSettings({
-      minFontSize: 4,
+      minFontSize: 6.5,
+      fieldMinFontSizes: {
+        Name1: 7,
+        Class1: 7,
+        Subclass1: 7,
+        Background2: 7,
+        Specie1: 7,
+        alignment1: 7,
+        language1: 7,
+        extra1: 9,
+        equipment1: 9
+      },
       horizontalPadding: 4,
       verticalPadding: 3,
-      lineHeightFactor: 1.15,
+      lineHeightFactor: 1.2,
       namedFontSizes: {
         Name1: 12,
         Class1: 9,
@@ -44,16 +58,16 @@
         Background2: 9,
         Specie1: 9,
         alignment1: 9,
-        classFeatures1: 7,
-        specie_features1: 6.8,
-        feats1: 6.8,
-        extra1: 8,
-        equipment1: 8,
-        toolsProficiency1: 8,
-        weaponsProficiency1: 8
+        extra1: 9,
+        equipment1: 9
       },
       fixedFontSizes: {
-        classFeatures2: 7,
+        classFeatures1: 9,
+        classFeatures2: 9,
+        specie_features1: 8.5,
+        feats1: 8.5,
+        toolsProficiency1: 10,
+        weaponsProficiency1: 10,
         'spell-level-1': 14,
         'spell-level-2': 14,
         'spell-level-3': 14,
@@ -73,18 +87,19 @@
         { pattern: /^(?:sp-level-|sp-cast-time-|sp-range-)\d+$/, fontSize: 10 },
         { pattern: /^note\d+$/, fontSize: 8 }
       ],
+      fieldAdjustments: {
+        specie_features1: { dy: 3.5 },
+        feats1: { dy: 3.5 }
+      },
       spellRows: { count: 19, fontSize: 10, alignment: 'right' },
-      spellNotes: { singleLineFontSize: 8, overflowFontSize: 6.5 }
+      spellNotes: { fontSizes: [9, 7.5, 6.5], truncateAtMinimum: false }
     }),
     compact: createPdfLayoutSettings({
       minFontSize: 4,
-      fieldMinFontSizes: { classFeatures1: 10, equipment1: 9, extra1: 9 },
+      fieldMinFontSizes: { equipment1: 9, extra1: 9 },
       horizontalPadding: 3,
       verticalPadding: 2,
-      lineHeightFactor: 1.1,
-      // PDF appearance streams use more leading than a glyph's visible height.
-      // Reserve it for this dense multiline field so 10 long lines cannot clip.
-      fieldLineHeightFactors: { classFeatures1: 2.5 },
+      lineHeightFactor: 1.2,
       namedFontSizes: {
         Name1: 14,
         Level1: 20,
@@ -94,16 +109,16 @@
         Background2: 9.7,
         Specie1: 9.7,
         alignment1: 9.7,
-        classFeatures1: 14,
-        specie_features1: 6.9,
-        feats1: 6.9,
-        extra1: 12,
-        equipment1: 12,
-        toolsProficiency1: 14,
-        weaponsProficiency1: 14
+        extra1: 11,
+        equipment1: 11,
+        toolsProficiency1: 12,
+        weaponsProficiency1: 12
       },
       fixedFontSizes: {
-        classFeatures2: 8,
+        classFeatures1: 9.2,
+        classFeatures2: 9.2,
+        specie_features1: 8.8,
+        feats1: 8.8,
         hp_max1: 24,
         AC1: 24,
         speed1: 24,
@@ -148,24 +163,36 @@
         `toHit${slot}`,
         `dmg_type_${slot}`,
         `wp-note-${slot}`
-      ])),
+      ]), ['toolsProficiency1', 'weaponsProficiency1']),
       // Attack columns have no safe spare horizontal space. Preserve full text
       // down to 10 pt, then truncate only an exceptionally long value.
-      truncateAtMinimumFields: Object.fromEntries(Array.from({ length: 7 }, (_, index) => index + 1).flatMap((slot) => [
-        [`attack-weap-name-${slot}`, 10],
-        [`toHit${slot}`, 10],
-        [`dmg_type_${slot}`, 10],
-        [`wp-note-${slot}`, 10]
-      ])),
+      truncateAtMinimumFields: Object.fromEntries([
+        ...Array.from({ length: 7 }, (_, index) => index + 1).flatMap((slot) => [
+          [`attack-weap-name-${slot}`, 10],
+          [`toHit${slot}`, 10],
+          [`dmg_type_${slot}`, 10],
+          [`wp-note-${slot}`, 10]
+        ]),
+        ...Array.from({ length: 19 }, (_, index) => index + 1).flatMap((row) => [
+          [`sp-level-${row}`, 10],
+          [`sp-name-${row}`, 10],
+          [`sp-cast-time-${row}`, 10],
+          [`sp-range-${row}`, 10]
+        ]),
+        ['toolsProficiency1', 10],
+        ['weaponsProficiency1', 10]
+      ]),
       centeredFields: ['spell_cast_attri1', 'spell_cast_Mod1', 'spell_cast_DC1', 'spell_cast_toHit1'],
       textColorRules: [
-        { pattern: ABILITY_SAVE_FIELD_PATTERN, rgb: Object.freeze([0.72, 0.72, 0.72]) }
+        { pattern: ABILITY_SAVE_FIELD_PATTERN, rgb: Object.freeze([0.55, 0.55, 0.55]) }
       ],
       fieldAdjustments: {
         // Align the compact values with the printed rules rather than the
         // vertically centered source widgets.
         // Compact is flattened after appearance generation, so these widgets
         // may safely use presentation rectangles sized for their final text.
+        specie_features1: { dy: 3.5 },
+        feats1: { dy: 3.5 },
         Name1: { x: 112.61, y: 524, width: 141.27, height: 28 },
         Level1: { x: 18.65, y: 512, width: 33, height: 28 },
         proficiencyBonus1: { x: 18.59, y: 371.5, width: 35, height: 27 },
@@ -219,12 +246,7 @@
         chaSaveMod1: { x: 411.68, dy: 0.43, width: 15, alignment: 'right' }
       },
       spellRows: { count: 19, fontSize: 11, alignment: 'right' },
-      spellNotes: {
-        singleLineFontSize: 16,
-        overflowFontSize: 16,
-        previewSingleLineFontSize: 16,
-        previewOverflowFontSize: 16
-      }
+      spellNotes: { fontSizes: [16, 13, 10], truncateAtMinimum: true }
     })
   });
 
@@ -732,31 +754,53 @@
     if (!text || !rectangle) return false;
 
     const settings = layoutSettings.spellNotes;
-    const isPreviewRow = /^note[12]$/.test(field.getName());
-    const singleLineFontSize = isPreviewRow
-      ? settings.previewSingleLineFontSize
-      : settings.singleLineFontSize;
-    const overflowFontSize = isPreviewRow
-      ? settings.previewOverflowFontSize
-      : settings.overflowFontSize;
+    const fontSizes = settings.fontSizes.length ? settings.fontSizes : [8];
     const usableWidth = Math.max(1, rectangle.width - layoutSettings.horizontalPadding);
-    if (cjkFont.widthOfTextAtSize(text, singleLineFontSize) <= usableWidth) {
-      field.disableMultiline();
+    const fittedFontSize = fontSizes.find((fontSize) => (
+      cjkFont.widthOfTextAtSize(text, fontSize) <= usableWidth
+    ));
+
+    field.disableMultiline();
+    if (fittedFontSize) {
       field.setText(text);
-      field.setFontSize(singleLineFontSize);
+      field.setFontSize(fittedFontSize);
       return true;
     }
 
-    // AcroForm multiline appearances can clip the lower line even when the
-    // geometric height calculation says it fits. Keep notes on one centered
-    // line and use one readable fallback size instead.
-    field.disableMultiline();
-    field.setText(text);
-    field.setFontSize(overflowFontSize);
-    if (cjkFont.widthOfTextAtSize(text, overflowFontSize) > usableWidth) {
+    const minimumFontSize = fontSizes.at(-1);
+    field.setText(settings.truncateAtMinimum
+      ? truncateTextToWidth(text, cjkFont, minimumFontSize, usableWidth)
+      : text);
+    field.setFontSize(minimumFontSize);
+    if (!settings.truncateAtMinimum) {
       console.warn(`PDF 法術備註超過可讀單行容量：`, text);
     }
     return true;
+  }
+
+  function configureEditableMultilineFields(form) {
+    const fixedVisibleFields = ['classFeatures1', 'specie_features1', 'feats1'];
+    const scrollableFields = ['classFeatures2', 'extra1', 'equipment1'];
+
+    fixedVisibleFields.forEach((fieldName) => {
+      try {
+        const field = form.getTextField(fieldName);
+        field.enableMultiline();
+        field.disableScrolling();
+      } catch (error) {
+        // The field is optional for compatibility with alternative templates.
+      }
+    });
+
+    scrollableFields.forEach((fieldName) => {
+      try {
+        const field = form.getTextField(fieldName);
+        field.enableMultiline();
+        field.enableScrolling();
+      } catch (error) {
+        // The field is optional for compatibility with alternative templates.
+      }
+    });
   }
 
   function applyTemplateFieldSettings(form, layoutSettings) {
@@ -902,13 +946,7 @@
       applyFieldAdjustments(form, layoutSettings);
 
       if (!profile.flattenForm) {
-        try {
-          const classFeaturesOverflowField = form.getTextField('classFeatures2');
-          classFeaturesOverflowField.enableMultiline();
-          classFeaturesOverflowField.enableScrolling();
-        } catch (error) {
-          // The field is optional for compatibility with alternative templates.
-        }
+        configureEditableMultilineFields(form);
       }
 
       const fontEmbedResult = await embedCjkFont(pdfDoc, profile);

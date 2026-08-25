@@ -180,20 +180,20 @@
   };
   const CLASS_EQUIPMENT_DEFINITIONS = {
     barbarian: { gold: 75, defaults: [{ id: "default", label: "預設裝備", items: [["巨斧", 1], ["手斧", 4], ["探索套組", 1]], gp: 15, main: ["巨斧", "手斧"], off: { 巨斧: [], 手斧: ["手斧"] } }] },
-    bard: { gold: 90, defaults: [{ id: "default", label: "預設裝備", items: [["皮甲", 1], ["匕首", 2], ["藝人套組", 1]], gp: 19, main: ["匕首"], off: { 匕首: [] }, armor: "皮甲", instrument: true, specialWrites: [{ field: "offHandAttack", name: "樂器", note: "施法用" }] }] },
-    cleric: { gold: 110, defaults: [{ id: "default", label: "預設裝備", items: [["半身鎖甲", 1], ["盾牌", 1], ["硬頭錘", 1], ["聖徽", 1], ["祭司套組", 1]], gp: 7, main: ["硬頭錘"], off: { 硬頭錘: ["盾牌"] }, armor: "半身鎖甲", specialWrites: [{ field: "offHandAttackNote", note: "施法聖徽畫在盾牌上" }] }] },
+    bard: { gold: 90, defaults: [{ id: "default", label: "預設裝備", items: [["皮甲", 1], ["匕首", 2], ["藝人套組", 1]], gp: 19, main: ["匕首"], off: { 匕首: [] }, armor: "皮甲", instrument: true }] },
+    cleric: { gold: 110, defaults: [{ id: "default", label: "預設裝備", items: [["半身鎖甲", 1], ["盾牌", 1], ["硬頭錘", 1], ["聖徽", 1], ["祭司套組", 1]], gp: 7, main: ["硬頭錘"], off: { 硬頭錘: ["盾牌"] }, armor: "半身鎖甲", specialWrites: [{ field: "offHandAttackNote", note: "盾面繪有聖徽" }] }] },
     druid: { gold: 50, defaults: [{ id: "default", label: "預設裝備", items: [["皮甲", 1], ["盾牌", 1], ["鐮刀", 1], ["德魯伊法器（長棍）", 1], ["探索套組", 1], ["草藥工具", 1]], gp: 9, main: ["鐮刀"], off: { 鐮刀: ["盾牌"] }, armor: "皮甲" }] },
     fighter: { gold: 155, defaults: [
       { id: "strength-default", label: "力量型預設裝備", items: [["鎖子甲", 1], ["巨劍", 1], ["連枷", 1], ["標槍", 8], ["地城套組", 1]], gp: 4, main: ["巨劍"], off: { 巨劍: [] }, armor: "鎖子甲" },
       { id: "dexterity-default", label: "敏捷型預設裝備", items: [["鑲釘皮甲", 1], ["彎刀", 1], ["短劍", 1], ["長弓", 1], ["箭矢", 20], ["箭袋", 1], ["地城套組", 1]], gp: 11, main: ["長弓", "彎刀", "短劍"], off: { 長弓: [], 彎刀: ["短劍"], 短劍: ["彎刀"] }, armor: "鑲釘皮甲" }
     ] },
     monk: { gold: 50, defaults: [{ id: "default", label: "預設裝備", items: [["短矛", 1], ["匕首", 5], ["所選熟練項對應的工匠工具或樂器", 1], ["探索套組", 1]], gp: 11, main: ["短矛", "匕首"], off: { 短矛: ["武藝"], 匕首: ["武藝"] } }] },
-    paladin: { gold: 150, defaults: [{ id: "default", label: "預設裝備", items: [["鎖子甲", 1], ["盾牌", 1], ["長劍", 1], ["標槍", 6], ["聖徽", 1], ["祭司套組", 1]], gp: 9, main: ["長劍", "標槍"], off: { 長劍: ["盾牌"], 標槍: ["盾牌"] }, armor: "鎖子甲", specialWrites: [{ field: "offHandAttackNote", note: "施法聖徽畫在盾牌上" }] }] },
+    paladin: { gold: 150, defaults: [{ id: "default", label: "預設裝備", items: [["鎖子甲", 1], ["盾牌", 1], ["長劍", 1], ["標槍", 6], ["聖徽", 1], ["祭司套組", 1]], gp: 9, main: ["長劍", "標槍"], off: { 長劍: ["盾牌"], 標槍: ["盾牌"] }, armor: "鎖子甲", specialWrites: [{ field: "offHandAttackNote", note: "盾面繪有聖徽" }] }] },
     ranger: { gold: 150, defaults: [{ id: "default", label: "預設裝備", items: [["鑲釘皮甲", 1], ["彎刀", 1], ["短劍", 1], ["長弓", 1], ["箭矢", 20], ["箭袋", 1], ["德魯伊法器（槲寄生枝條）", 1], ["探索套組", 1]], gp: 7, main: ["長弓", "彎刀", "短劍"], off: { 長弓: [], 彎刀: ["短劍"], 短劍: ["彎刀"] }, armor: "鑲釘皮甲" }] },
     rogue: { gold: 100, defaults: [{ id: "default", label: "預設裝備", items: [["皮甲", 1], ["匕首", 2], ["短劍", 1], ["短弓", 1], ["箭矢", 20], ["箭袋", 1], ["盜賊工具", 1], ["竊賊套組", 1]], gp: 8, main: ["短弓", "短劍", "匕首"], off: { 短弓: [], 短劍: [], 匕首: [] }, armor: "皮甲" }] },
-    sorcerer: { gold: 50, defaults: [{ id: "default", label: "預設裝備", items: [["短矛", 1], ["匕首", 2], ["奧術法器（水晶）", 1], ["地城套組", 1]], gp: 28, main: ["匕首"], off: { 匕首: [] }, specialWrites: [{ field: "offHandAttackNote", note: "奧術法器（水晶），施法用。" }] }] },
-    warlock: { gold: 100, defaults: [{ id: "default", label: "預設裝備", items: [["皮甲", 1], ["鐮刀", 1], ["匕首", 2], ["奧術法器（寶珠）", 1], ["書（玄秘學識）", 1], ["學者套組", 1]], gp: 15, main: ["匕首"], off: { 匕首: [] }, armor: "皮甲", specialWrites: [{ field: "offHandAttackNote", note: "奧術法器（寶珠），施法用。" }] }] },
-    wizard: { gold: 55, defaults: [{ id: "default", label: "預設裝備", items: [["匕首", 2], ["奧術法器（長棍）", 1], ["長袍", 1], ["法術書", 1], ["學者套組", 1]], gp: 5, main: ["匕首"], off: { 匕首: [] }, specialWrites: [{ field: "offHandAttackNote", note: "奧術法器（長棍），施法用。" }] }] }
+    sorcerer: { gold: 50, defaults: [{ id: "default", label: "預設裝備", items: [["短矛", 1], ["匕首", 2], ["奧術法器（水晶）", 1], ["地城套組", 1]], gp: 28, main: ["匕首"], off: { 匕首: [] } }] },
+    warlock: { gold: 100, defaults: [{ id: "default", label: "預設裝備", items: [["皮甲", 1], ["鐮刀", 1], ["匕首", 2], ["奧術法器（寶珠）", 1], ["書（玄秘學識）", 1], ["學者套組", 1]], gp: 15, main: ["匕首"], off: { 匕首: [] }, armor: "皮甲" }] },
+    wizard: { gold: 55, defaults: [{ id: "default", label: "預設裝備", items: [["匕首", 2], ["奧術法器（長棍）", 1], ["長袍", 1], ["法術書", 1], ["學者套組", 1]], gp: 5, main: ["匕首"], off: { 匕首: ["長棍"] }, specialWrites: [{ field: "offHandAttackNote", note: "奧術法器，施法用。" }] }] }
   };
 
   const BASE_LANGUAGE_OPTIONS = [
@@ -2562,10 +2562,6 @@
     setMobileField("armor", loadout.armor || "", warnings, "護甲");
     (draft.selections.classEquipment?.content?.specialWrites || []).forEach(operation => {
       if (operation.field === "offHandAttackNote" && operation.note) setMobileField("atk-off-note", operation.note, warnings, "副手備註", "input");
-      if (operation.field === "offHandAttack") {
-        const note = [operation.name, operation.note].filter(Boolean).join("：");
-        if (note) setMobileField("atk-off-note", note, warnings, "副手備註", "input");
-      }
     });
   }
 

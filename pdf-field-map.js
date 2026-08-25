@@ -80,14 +80,15 @@
   // calibration overlay. Values are intentionally conservative so form
   // rendering has some headroom for punctuation and mixed-width text.
   const PDF_TEXT_SPECS = Object.freeze({
-    classFeatures1: Object.freeze({ maxUnitsPerLine: 28, maxLines: 12 }),
+    classFeatures1: Object.freeze({ maxUnitsPerLine: 28, maxLines: 10 }),
     // classFeatures2 / extra1 / equipment1 map to player-authored textarea
     // content. These PDF fields are multiline, scrollable, and have no MaxLen,
     // so we preserve the full text instead of truncating it during export.
     classFeatures2: Object.freeze({ maxUnitsPerLine: 28, maxLines: Number.MAX_SAFE_INTEGER }),
-    // 20 display units fit ten CJK glyphs per line.
-    specie_features1: Object.freeze({ maxUnitsPerLine: 20, maxLines: 12, maxTotalUnits: 240 }),
-    feats1: Object.freeze({ maxUnitsPerLine: 20, maxLines: 12, maxTotalUnits: 240 }),
+    // 14 display units fit seven CJK glyphs per line. Ten lines keep these
+    // narrow columns readable when printed on A4 paper.
+    specie_features1: Object.freeze({ maxUnitsPerLine: 14, maxLines: 10, maxTotalUnits: 140 }),
+    feats1: Object.freeze({ maxUnitsPerLine: 14, maxLines: 10, maxTotalUnits: 140 }),
     extra1: Object.freeze({ maxUnitsPerLine: 52, maxLines: Number.MAX_SAFE_INTEGER }),
     equipment1: Object.freeze({ maxUnitsPerLine: 52, maxLines: Number.MAX_SAFE_INTEGER })
   });
@@ -222,12 +223,21 @@
   ]);
 
   const GOLIATH_ANCESTRY_LABELS = Object.freeze({
-    cloud: '雲巨人後裔瞬移到30呎內可見空位',
-    fire: '火巨人後裔命中時+1d10火焰傷害',
-    frost: '霜巨人後裔命中時 +1d6 冰冷傷害目標速度 -10 呎',
-    hill: '丘陵巨人裔命中大型以下生物時可擊倒',
-    stone: '石巨人後裔用反應可減1d12+C傷害',
-    storm: '風暴巨人裔受傷可反擊60呎內敵人造成 1d8 雷鳴傷害'
+    cloud: '雲巨人',
+    fire: '火巨人',
+    frost: '霜巨人',
+    hill: '丘陵巨人',
+    stone: '石巨人',
+    storm: '風暴巨人'
+  });
+
+  const GOLIATH_ANCESTRY_ABILITY_LINES = Object.freeze({
+    cloud: Object.freeze(['附贈傳送30呎', '可見未佔空位']),
+    fire: Object.freeze(['命中+1d10火傷']),
+    frost: Object.freeze(['命中+1d6冰傷', '目標速度-10呎']),
+    hill: Object.freeze(['大型以下可擊倒']),
+    stone: Object.freeze(['反應減1d12+C傷']),
+    storm: Object.freeze(['受傷可反應反擊', '60呎內1d8雷鳴'])
   });
 
   const DRAGONBORN_ANCESTRY_LABELS = Object.freeze({
@@ -266,30 +276,47 @@
     wizard: '法師'
   });
 
+  const MAGIC_INITIATE_PDF_SPELL_LABELS = Object.freeze({
+    'create-or-destroy-water': '造水/枯水',
+    'detect-poison-and-disease': '偵測毒與病'
+  });
+
   const FEAT_PDF_LINES = Object.freeze({
     警覺: Object.freeze([
       '警覺(起源)',
-      '先攻+熟練',
-      '擲先攻後可與盟友換位'
+      '先攻可加熟練',
+      '可與盟友換先攻'
     ]),
     兇蠻打手: Object.freeze([
       '兇蠻打手(起源)',
-      '每回合1次',
-      '武器傷害骰擲2取高'
+      '每回合 1 次',
+      '武器傷擲二取高'
     ]),
     熟習: Object.freeze([
       '熟習(起源)',
-      '獲得3項熟練',
+      '獲得 3 項熟練',
       '可選技能或工具'
     ]),
+    醫療兵: Object.freeze([
+      '醫療兵(起源)',
+      '動作使用醫護包',
+      '5呎內骰+熟練',
+      '恢復骰1可重擲'
+    ]),
+    強韌體魄: Object.freeze([
+      '強韌體魄(起源)',
+      'HP上限+等級×2'
+    ]),
     屬性值提升: Object.freeze([
-      '屬性值提升(通用)',
+      '屬性提升(通用)',
       '屬性+2或兩項+1'
     ]),
     擒抱者: Object.freeze([
       '擒抱者(通用)',
-      '力或敏+1,命中可擒抱',
-      '擒抱目標攻擊優勢'
+      '力量or敏捷+1',
+      '徒手命中可擒抱',
+      '打擒抱目標優勢',
+      '擒抱同型不減速'
     ]),
     箭術: Object.freeze([
       '箭術(戰鬥風格)',
@@ -300,76 +327,74 @@
       '穿護甲時AC+1'
     ]),
     巨武器戰鬥: Object.freeze([
-      '巨武器戰鬥(戰鬥風格)',
-      '雙手(兩用)傷害1,2改3'
+      '巨武(戰鬥風格)',
+      '雙手(兩用)武器',
+      '傷害骰1/2可改3'
     ]),
     雙武器戰鬥: Object.freeze([
-      '雙武器戰鬥(戰鬥風格)',
-      '輕型副手傷害加調整值'
+      '雙武(戰鬥風格)',
+      '副手輕武器傷害',
+      '可加屬性調整值'
     ])
   });
 
   const RACE_PDF_TEMPLATES = Object.freeze({
     dragonborn: Object.freeze((context = {}) => {
-      const ancestry = normalizeText(context.dragonbornAncestryLabel) || '未選祖源（預設備援）';
+      const ancestry = normalizeText(context.dragonbornAncestryLabel) || '未選祖源（預備）';
       const proficiencyValue = context.proficiencyValue || 'P';
       const breathSaveDc = getDragonbornBreathSaveDc(context.level, context.constitutionModifier);
       const breathDamageDice = getDragonbornBreathDamageDice(context.level);
       const lines = [
-        '體型=中型/速度=30',
         '黑暗視覺：60呎',
-        `血統:${ancestry}(抗性)`,
-        '使用「攻擊動作」時',
-        '可將1次攻擊改為吐息',
-        `吐息限用${proficiencyValue}次,長休恢復`,
-        '範圍：15呎錐/30呎直',
-        `目標敏捷豁免,難度${breathSaveDc}`,
+        `${ancestry}抗性`,
+        '使用攻擊動作時',
+        '單次攻擊可吐息',
+        `限用${proficiencyValue}次,長休回`,
+        '15呎錐/30呎直',
+        `目標敏豁DC${breathSaveDc}`,
         `傷害：${breathDamageDice}d10`,
-        '5級後可附贈展翼飛行',
-        '展翼限1次,長休後恢復',
-        '"失能"狀態光翼會消失'
+        '５等附贈可飛行',
+        '限10分長休恢復'
       ];
       return lines;
     }),
     dwarf: Object.freeze((context = {}) => {
       const proficiencyValue = context.proficiencyValue || 'P';
       return [
-      '體型=中型/速度=30',
-      '黑暗視覺：120呎',
-      '抵抗毒傷/豁免毒優勢',
+      '黑暗視覺120呎',
+      '毒素抗性',
+      '中毒豁免優勢',
       '每等級額外+1HP',
-      '--',
-      '可耗附贈開啟石之感應',
-      '10分鐘內獲得震動感知',
+      '附贈開石之感應',
+      '10分內震動感知',
       '範圍60呎',
       `限用${proficiencyValue}次`,
-      '長休後恢復使用次數'
+      '長休後恢復次數'
       ];
     }),
     elf: Object.freeze((context = {}) => {
-      const lineage = normalizeText(context.elfLineageLabel) || '未選亞種（預設備援）';
+      const lineage = normalizeText(context.elfLineageLabel) || '未選亞種（預備）';
       const lineageKey = normalizeText(context.elfLineageKey);
       const firstLevelSpellLine = lineageKey === 'drow'
-        ? '戲法-舞光術'
-        : (lineageKey === 'high_elf' ? '戲法-魔法伎倆' : (lineageKey === 'wood_elf' ? '戲法-德魯伊伎倆' : '血統戲法'));
+        ? '舞光術戲法'
+        : (lineageKey === 'high_elf' ? '魔法伎倆' : (lineageKey === 'wood_elf' ? '德魯伊伎倆戲法' : '血統戲法'));
       const firstLevelBonusLine = lineageKey === 'drow'
-        ? '120呎黑暗視覺'
-        : (lineageKey === 'high_elf' ? '長休可換法師戲法' : (lineageKey === 'wood_elf' ? '速度加5呎' : '血統特性'));
+        ? '二倍黑暗視覺'
+        : (lineageKey === 'high_elf' ? '長休後可換戲法' : (lineageKey === 'wood_elf' ? '速度加５呎' : '血統特性'));
       const thirdLevelSpellLine = lineageKey === 'drow'
-        ? '環法-妖火'
-        : (lineageKey === 'high_elf' ? '環法-偵測魔法' : (lineageKey === 'wood_elf' ? '環法-大步奔行' : '血統一環'));
+        ? '妖火 ◇'
+        : (lineageKey === 'high_elf' ? '偵測魔法 ◇' : (lineageKey === 'wood_elf' ? '大步奔行 ◇' : '血統一環'));
       const fifthLevelSpellLine = lineageKey === 'drow'
-        ? '黑暗術'
-        : (lineageKey === 'high_elf' ? '迷蹤步' : (lineageKey === 'wood_elf' ? '行無蹤' : '血統二環'));
+        ? '黑暗術 ◇'
+        : (lineageKey === 'high_elf' ? '迷蹤步 ◇' : (lineageKey === 'wood_elf' ? '行動無蹤 ◇' : '血統二環'));
       const lines = [
-        '體型=中型/黑視=60呎',
-        '速度30呎或35呎',
+        '黑暗視覺60呎',
         '抵抗魅惑優勢',
-        '洞悉察覺求生擇1熟練',
+        '敏銳感官',
         '長休=冥想4小時',
-        `精靈傳承：${lineage}`,
+        `${lineage}傳承`,
         firstLevelSpellLine,
-        firstLevelBonusLine,
+        firstLevelBonusLine
       ];
       const leveledSpellLines = [];
       if (shouldShowAtOrAboveSelectedLevel(context.level, 3)) {
@@ -379,12 +404,10 @@
         leveledSpellLines.push(fifthLevelSpellLine);
       }
       if (leveledSpellLines.length) {
-        lines.push(leveledSpellLines.join('/'));
+        lines.push(...leveledSpellLines);
       }
       lines.push(
-        '環法可免費施展各1次',
-        '也可消耗自身環位施展',
-        '長休後,免費次數回復'
+        '長休後環法恢復'
       );
       return lines;
     }),
@@ -392,100 +415,112 @@
       const lineage = normalizeText(context.gnomeLineageLabel) || '未選';
       const lineageKey = normalizeText(context.gnomeLineageKey);
       const proficiencyValue = context.proficiencyValue || 'P';
-      const lineageSpellLine = lineageKey === 'forest_gnome'
-        ? '次級幻影+動物交談'
-        : (lineageKey === 'rock_gnome' ? '修復術+魔法伎倆' : '血統戲法：依血統');
-      const lineageSpellLine2 = lineageKey === 'forest_gnome'
-        ? `動物交談免費施展${proficiencyValue}次也可消耗自身環位施放長休之後免費次數恢復`
-        : (lineageKey === 'rock_gnome' ? '可花10分作發條小裝置如玩具打火機或音樂盒AC=5,HP=1 最多做三個可用附贈動作啟動' : '血統戲法：依血統');
       const lines = [
-        '體型=小型/速度=30',
-        '黑暗視覺：60呎',
-        '智力感知魅力豁免優勢',
-        `血統=${lineage}`,
-        '施法屬性：智感魅擇一',
-        '獲得以下法術',
-        lineageSpellLine,
-        lineageSpellLine2
+        '黑暗視覺60呎',
+        '智感魅豁免優勢',
+        `${lineage}血統`,
+        '施法屬性：自選'
       ];
+      if (lineageKey === 'forest_gnome') {
+        lines.push(
+          '次級幻影戲法',
+          '動物交談法術',
+          `可免費施展${proficiencyValue}次`,
+          '長休後恢復'
+        );
+      } else if (lineageKey === 'rock_gnome') {
+        lines.push(
+          '修復術戲法',
+          '魔法伎倆戲法',
+          '花10分製作玩具',
+          'AC=5,HP=1',
+          '可附贈啟動',
+          '效果同魔法伎倆'
+        );
+      } else {
+        lines.push('血統戲法：依血統');
+      }
       return lines;
     }),
     goliath: Object.freeze((context = {}) => {
-      const ancestry = normalizeText(context.goliathAncestryLabel) || '未選祖源（預設備援）';
+      const ancestry = normalizeText(context.goliathAncestryLabel) || '未選巨人';
+      const ancestryKey = normalizeText(context.goliathAncestryKey);
+      const ancestryAbilityLines = getGoliathAncestryAbilityLines(
+        ancestryKey,
+        context.constitutionModifier
+      );
+      const proficiencyValue = context.proficiencyValue || 'P';
       const parsedLevel = getSelectedLevelNumber(context.level);
       const lines = [
-        '體型=中型/速度=35',
-        '掙脫擒抱狀態具有優勢',
-        '計算攜帶重量視為大型',
-        '--',
-        `巨人血統：${ancestry}`,
+        '掙脫擒抱有優勢',
+        '攜帶重量×2',
+        `${ancestry}血統`,
+        `能力${proficiencyValue}次/長休`,
+        ...ancestryAbilityLines
       ];
       if (parsedLevel === null || parsedLevel >= 5) {
         lines.push(
-          '--',
-          '巨化形體：5後級可用',
-          '附贈啟動,STR檢定優勢',
-          '變為大型,速度+10呎'
+          '巨化形體(LV5)◇',
+          '附贈巨化10分',
+          '速度+10',
+          '力量檢定優勢'
         );
       }
       return lines;
     }),
     halfling: Object.freeze(() => ([
-      '體型=小型/速度=30',
-      '勇氣：抗恐慌豁免優勢',
-      '--',
-      '靈巧：可穿越大型目標',
+      '半身人勇氣',
+      '抗恐慌豁免優勢',
+      '半身人靈巧',
+      '可穿越大型目標',
       '但不可停留同格',
-      '--',
-      '吉運：d20擲1可重擲',
-      '善匿：可躲大體型後方'
+      '可躲大型生物後',
+      '半身人吉運',
+      'D20出1可重擲'
     ])),
     human: Object.freeze(() => ([
-      '體型：中型或小型',
-      '速度：30呎',
-      '--',
-      '長休後獲得英雄激勵',
-      '英雄激勵=重骰D20',
-      '--',
+      '人類足智多謀',
+      '長休獲英雄激勵',
+      '人類技藝嫻熟',
       '自選1技能熟練',
+      '人類靈活人才',
       '自選1起源專長'
     ])),
     orc: Object.freeze((context = {}) => {
       const proficiencyValue = context.proficiencyValue || 'P';
       return [
-        '體型=中型/速度=30',
-        '黑暗視覺：120呎',
-        '--',
-        '以附贈開啟"熱湧"',
-        `限用${proficiencyValue}次,效果如下:`,
-        `速度x2,臨時HP+${proficiencyValue}`,
-        '休息後可用次數恢復',
-        '--',
-        '堅韌鎖血,限用1次',
-        'HP=0時可強制改為1',
-        '長休後可用次數恢復'
+        '黑暗視覺120呎',
+        '獸人熱血湧動',
+        '附贈/速度×2',
+        `臨時HP=${proficiencyValue}`,
+        `限${proficiencyValue}次`,
+        '短休/長休恢復',
+        '獸人堅韌不屈',
+        '非即死HP歸零時',
+        '強制HP=1',
+        '限1次/長休回'
       ];
     }),
     tiefling: Object.freeze((context = {}) => {
-      const legacy = normalizeText(context.tieflingLegacyLabel) || '未選遺贈（預設備援）';
+      const legacy = normalizeText(context.tieflingLegacyLabel) || '未選血統';
       const legacyKey = normalizeText(context.tieflingLegacyKey);
       const firstLevelLine1 = legacyKey === 'abyssal'
         ? '毒素傷害抗性'
-        : (legacyKey === 'chthonic' ? '黯蝕傷害抗性' : (legacyKey === 'infernal' ? '火焰傷害抗性' : '傷害抗性：依血統'));
+        : (legacyKey === 'chthonic' ? '黯蝕傷害抗性' : (legacyKey === 'infernal' ? '火焰傷害抗性' : '傷害抗性未選'));
       const firstLevelLine2 = legacyKey === 'abyssal'
-        ? '戲法-毒氣噴濺'
-        : (legacyKey === 'chthonic' ? '戲法-凍寒之觸' : (legacyKey === 'infernal' ? '戲法-火焰箭' : '戲法-血統戲法'));
+        ? '毒氣噴濺戲法'
+        : (legacyKey === 'chthonic' ? '凍寒之觸戲法' : (legacyKey === 'infernal' ? '火焰箭戲法' : '血統戲法'));
       const thirdLevelLine = legacyKey === 'abyssal'
-        ? '環法-致病射線'
-        : (legacyKey === 'chthonic' ? '環法-虛假生命' : (legacyKey === 'infernal' ? '環法-煉獄叱喝' : '環法-血統法術'));
+        ? '致病射線 ◇'
+        : (legacyKey === 'chthonic' ? '虛假生命 ◇' : (legacyKey === 'infernal' ? '煉獄叱喝 ◇' : '血統一環'));
       const fifthLevelLine = legacyKey === 'abyssal'
-        ? '環法-人類定身術'
-        : (legacyKey === 'chthonic' ? '環法-衰弱射線' : (legacyKey === 'infernal' ? '環法-黑暗術' : '環法-血統法術'));
+        ? '人類定身術 ◇'
+        : (legacyKey === 'chthonic' ? '衰弱射線 ◇' : (legacyKey === 'infernal' ? '黑暗術 ◇' : '血統二環'));
       const lines = [
-        '體型：中型或小型',
-        '速度=30/黑視=60',
-        '異界姿態：學會奇術',
-        `邪魔遺贈：${legacy}`,
+        '黑暗視覺60呎',
+        '異界姿態',
+        '奇術戲法',
+        `${legacy}遺贈`,
         firstLevelLine1,
         firstLevelLine2
       ];
@@ -496,9 +531,7 @@
         lines.push(fifthLevelLine);
       }
       lines.push(
-        '環法可免費施展各1次',
-        '也可消耗自身環位施展',
-        '長休後,免費次數回復'
+        '長休後環法恢復'
       );
       return lines;
     })
@@ -506,8 +539,6 @@
 
   function buildFallbackRacePdfText() {
     return [
-      '體型：中型',
-      '速度：30呎',
       '種族特性：未提供',
       '請重新選擇種族'
     ];
@@ -523,6 +554,7 @@
       proficiencyValue: pdfProficiencyValue,
       constitutionModifier,
       goliathAncestryLabel: getGoliathAncestryLabel(options.goliathAncestry, constitutionModifier),
+      goliathAncestryKey: options.goliathAncestry,
       dragonbornAncestryLabel: DRAGONBORN_ANCESTRY_LABELS[options.dragonbornAncestry],
       elfLineageLabel: ELF_LINEAGE_LABELS[options.elfLineage],
       elfLineageKey: options.elfLineage,
@@ -636,9 +668,16 @@
   }
 
   function getGoliathAncestryLabel(ancestryKey, constitutionModifier) {
-    const label = GOLIATH_ANCESTRY_LABELS[ancestryKey];
-    if (ancestryKey !== 'stone' || !label) return label;
-    return label.replace('1d12+C', `1d12${formatFormulaModifier(constitutionModifier)}`);
+    return GOLIATH_ANCESTRY_LABELS[ancestryKey];
+  }
+
+  function getGoliathAncestryAbilityLines(ancestryKey, constitutionModifier) {
+    const lines = GOLIATH_ANCESTRY_ABILITY_LINES[ancestryKey];
+    if (!lines) return ['血統能力未選'];
+    if (ancestryKey !== 'stone') return [...lines];
+    return lines.map((line) => (
+      line.replace('1d12+C', `1d12${formatFormulaModifier(constitutionModifier)}`)
+    ));
   }
 
   function getHitDieByClass(classKey) {
@@ -717,6 +756,109 @@
     return wrapped.slice(0, maxLines).join('\n');
   }
 
+  function splitPdfTokenToLines(token, maxUnitsPerLine) {
+    const lines = [];
+    let chunk = '';
+    Array.from(token).forEach((character) => {
+      const next = `${chunk}${character}`;
+      if (chunk && countDisplayUnits(next) > maxUnitsPerLine) {
+        lines.push(chunk);
+        chunk = character;
+      } else {
+        chunk = next;
+      }
+    });
+    if (chunk) lines.push(chunk);
+    return lines;
+  }
+
+  function getUserTextWrapTokens(line) {
+    const Segmenter = globalScope.Intl?.Segmenter;
+    const segments = Segmenter
+      ? Array.from(new Segmenter('zh-Hant', { granularity: 'word' }).segment(line), ({ segment }) => segment)
+      : Array.from(line);
+    const tokens = [];
+    const closingPunctuationPattern = /^[、，。；：！？,.;:!?]+$/u;
+
+    segments.forEach((segment) => {
+      if (closingPunctuationPattern.test(segment) && tokens.length > 0) {
+        tokens[tokens.length - 1] += segment;
+      } else {
+        tokens.push(segment);
+      }
+    });
+    return tokens;
+  }
+
+  function wrapUserTextLineForPdf(line, maxUnitsPerLine) {
+    const wrapped = [];
+    let chunk = '';
+
+    getUserTextWrapTokens(line).forEach((rawToken) => {
+      const token = chunk ? rawToken : rawToken.trimStart();
+      if (!token) return;
+      const next = `${chunk}${token}`;
+      if (countDisplayUnits(next) <= maxUnitsPerLine) {
+        chunk = next;
+        return;
+      }
+
+      if (chunk.trim()) wrapped.push(chunk.trimEnd());
+      const tokenLines = splitPdfTokenToLines(token.trimStart(), maxUnitsPerLine);
+      if (tokenLines.length > 1) wrapped.push(...tokenLines.slice(0, -1));
+      chunk = tokenLines.at(-1) || '';
+    });
+
+    if (chunk.trim()) wrapped.push(chunk.trimEnd());
+    return wrapped;
+  }
+
+  function wrapUserTextForPdf(rawText, options = {}) {
+    const text = normalizeText(rawText).replace(/\r/g, '').replace(/\t/g, ' ');
+    if (!text) return '';
+    const maxUnitsPerLine = options.maxUnitsPerLine || 40;
+    const maxLines = options.maxLines || 3;
+    const wrapped = [];
+
+    text.split('\n').forEach((line) => {
+      const trimmedLine = line.trim();
+      if (!trimmedLine) {
+        if (wrapped.length > 0 && wrapped.at(-1) !== '') wrapped.push('');
+        return;
+      }
+      wrapped.push(...wrapUserTextLineForPdf(trimmedLine, maxUnitsPerLine));
+    });
+
+    return wrapped.slice(0, maxLines).join('\n');
+  }
+
+  function wrapEquipmentListForPdf(rawText, options = {}) {
+    const text = normalizeText(rawText).replace(/\r/g, '').replace(/\t/g, ' ');
+    if (!text) return '';
+    const maxUnitsPerLine = options.maxUnitsPerLine || 40;
+    const maxLines = options.maxLines || 3;
+    const wrapped = [];
+
+    text.split(/\n+/).forEach((sourceLine) => {
+      let chunk = '';
+      sourceLine.split('、').map((item) => item.trim()).filter(Boolean).forEach((item) => {
+        const next = chunk ? `${chunk}、${item}` : item;
+        if (countDisplayUnits(next) <= maxUnitsPerLine) {
+          chunk = next;
+          return;
+        }
+
+        if (chunk) wrapped.push(chunk);
+        const itemLines = wrapUserTextLineForPdf(item, maxUnitsPerLine);
+        if (itemLines.length > 1) wrapped.push(...itemLines.slice(0, -1));
+        chunk = itemLines.at(-1) || '';
+      });
+      if (chunk) wrapped.push(chunk);
+    });
+
+    return wrapped.slice(0, maxLines).join('\n');
+  }
+
   const PDF_BASE_LANGUAGE_LABELS = Object.freeze({
     'common-sign': '手語',
     draconic: '龍語',
@@ -789,6 +931,20 @@
       overflow: overflowLines.join('\n'),
       truncated: reachedTotalLimit || overflowLines.length > 0
     };
+  }
+
+  function wrapTextForPdfWithEllipsis(rawText, options = {}) {
+    const result = wrapTextForPdfWithOverflow(rawText, options);
+    if (!result.truncated || !result.text) return result.text;
+
+    const maxUnitsPerLine = options.maxUnitsPerLine || 40;
+    const lines = result.text.split('\n');
+    let finalLine = lines.at(-1) || '';
+    while (finalLine && countDisplayUnits(`${finalLine}…`) > maxUnitsPerLine) {
+      finalLine = Array.from(finalLine).slice(0, -1).join('');
+    }
+    lines[lines.length - 1] = `${finalLine}…`;
+    return lines.join('\n');
   }
 
   function extractClassFeatureHeadings(rawText, levelLimit) {
@@ -936,18 +1092,18 @@
 
   const DAMAGE_CANTRIP_EXPORT_MAP = Object.freeze({
     'fire-bolt': Object.freeze({ name: '火焰箭', mode: 'attack', dmg: '1d10 火焰', dmg5: '2d10 火焰', note: '120呎' }),
-    'true-strike': Object.freeze({ name: '克敵機先', mode: 'attack', dmg: '武器骰', dmg5: '武骰+1d6', note: '基礎傷害可改光耀', usesSpellAdjustment: true }),
+    'true-strike': Object.freeze({ name: '克敵機先', mode: 'attack', dmg: '武器骰', dmg5: '武骰+1d6', note: '傷害可改光耀', usesSpellAdjustment: true }),
     'ray-of-frost': Object.freeze({ name: '冷凍射線', mode: 'attack', dmg: '1d8 冷凍', dmg5: '2d8 冷凍', note: '60呎' }),
     'poison-spray': Object.freeze({ name: '毒氣噴濺', mode: 'attack', dmg: '1d12 毒素', dmg5: '2d12 毒素', note: '30呎' }),
     'starry-wisp': Object.freeze({ name: '流光閃靈', mode: 'attack', dmg: '1d8 光耀', dmg5: '2d8 光耀', note: '60呎/發微光消隱形' }),
     'chill-touch': Object.freeze({ name: '凍寒之觸', mode: 'attack', dmg: '1d10 黯蝕', dmg5: '2d10 黯蝕', note: '觸及/不能回復HP' }),
-    'sorcerous-burst': Object.freeze({ name: '術法衝擊', mode: 'attack', dmg: '1d8自選', dmg5: '2d8自選', note: '120呎/傷害8可再丟' }),
+    'sorcerous-burst': Object.freeze({ name: '術法衝擊', mode: 'attack', dmg: '1d8自選', dmg5: '2d8自選', note: '120呎/傷害出8可再丟' }),
     'vicious-mockery': Object.freeze({ name: '惡言相加', mode: 'save', dmg: '1d6 精神', dmg5: '2d6 精神', note: '60呎/感知豁免/攻擊劣勢' }),
     'sacred-flame': Object.freeze({ name: '聖火術', mode: 'save', dmg: '1d8 光耀', dmg5: '2d8 光耀', note: '60呎/敏捷豁免' }),
     'shocking-grasp': Object.freeze({ name: '電爪', mode: 'attack', dmg: '1d8 閃電', dmg5: '2d8 閃電', note: '觸及/不能藉機' }),
     'acid-splash': Object.freeze({ name: '酸液飛濺', mode: 'save', dmg: '1d6 強酸', dmg5: '2d6 強酸', note: '60呎/敏捷豁免' }),
     'thunderclap': Object.freeze({ name: '鳴雷破', mode: 'save', dmg: '1d6 雷鳴', dmg5: '2d6 雷鳴', note: '自身5呎內體質豁免' }),
-    'shillelagh': Object.freeze({ name: '橡棍術', mode: 'attack', dmg: '1d8 自選', dmg5: '1d10 自選', note: '力場or原類型/附贈/1分', usesSpellAdjustment: true }),
+    'shillelagh': Object.freeze({ name: '橡棍術', mode: 'attack', dmg: '1d8 自選', dmg5: '1d10 自選', note: '力場or鈍擊/附贈/1分', usesSpellAdjustment: true }),
     'produce-flame': Object.freeze({ name: '燃火術', mode: 'attack', dmg: '1d8 火焰', dmg5: '2d8 火焰', note: '60呎/附贈/可照明' }),
     'eldritch-blast': Object.freeze({ name: '魔能爆', mode: 'attack', dmg: '1d10 力場', note: '120呎', note5: '120呎/2束分別攻擊' })
   });
@@ -974,13 +1130,21 @@
     };
   }
 
+  function canDamageCantripsUseFirstWeaponRows(state) {
+    const equippedHands = [state.mainHand, state.offHand].map(normalizeText);
+    const hasEquippedWeapon = equippedHands.some((name) => name && name !== '盾牌');
+    const hasWeaponNote = [state['atk-main-note'], state['atk-off-note']]
+      .some((note) => Boolean(normalizeText(note)));
+    return !hasEquippedWeapon && !hasWeaponNote;
+  }
+
   function fillDamageCantripsToWeaponRows(payload, spellRows, state) {
     const cantripRows = spellRows.filter((row) => row.level === 0);
     if (!cantripRows.length) return;
 
     const attackBonus = normalizeText(state['spell-attack-bonus']);
     const saveDc = normalizeText(state['spell-save-dc']);
-    let slot = 3;
+    let slot = canDamageCantripsUseFirstWeaponRows(state) ? 1 : 3;
 
     for (const row of cantripRows) {
       if (slot > 7) break;
@@ -1150,10 +1314,12 @@
     }
 
     const classLabel = MAGIC_INITIATE_CLASS_LABELS[classValue] || extractChineseDisplayLabel(classValue);
+    const level1Label = MAGIC_INITIATE_PDF_SPELL_LABELS[level1Spell.spellId] || level1Spell.nameZh;
     return [
-      `魔法學徒=${classLabel}`,
-      `${cantrip1Spell.nameZh},${cantrip2Spell.nameZh}`,
-      `${level1Spell.nameZh} ◇`
+      `${classLabel}魔法學徒`,
+      `${cantrip1Spell.nameZh}`,
+      `${cantrip2Spell.nameZh}`,
+      `${level1Label} ◇`
     ];
   }
 
@@ -1243,9 +1409,9 @@
     const classKey = normalizeText(state.class);
     const backgroundKey = normalizeText(state.background);
     const level = normalizeText(state.level);
-    // The compact profile renders these two multiline areas at 12 pt rather
-    // than the editable profile's 8 pt. Reflow before exporting so old,
-    // 8-pt-wide lines do not force the entire field to shrink.
+    // Compact gives these wide author-entered fields a larger preferred size.
+    // Reflow before exporting so editable-width lines do not force the entire
+    // compact field to shrink.
     const compactLongTextSpec = (fieldName) => (
       options.outputMode === 'compact'
         ? { ...PDF_TEXT_SPECS[fieldName], maxUnitsPerLine: 34 }
@@ -1326,13 +1492,9 @@
       classKey,
       state
     );
-    const classFeatures1Spec = {
-      ...PDF_TEXT_SPECS.classFeatures1,
-      maxLines: options.outputMode === 'compact' ? 10 : PDF_TEXT_SPECS.classFeatures1.maxLines
-    };
     const classFeatureResult1 = wrapTextForPdfWithOverflow(
       classFeatureLines.join('\n'),
-      classFeatures1Spec
+      PDF_TEXT_SPECS.classFeatures1
     );
     payload.classFeatures1 = classFeatureResult1.text;
     payload.classFeatures2 = classFeatureResult1.overflow;
@@ -1364,7 +1526,12 @@
         ? `${payload.classFeatures2}\n${extraClassLines.join('\n')}`
         : extraClassLines.join('\n');
     }
-    payload.classFeatures2 = wrapTextForPdf(payload.classFeatures2, PDF_TEXT_SPECS.classFeatures2);
+    payload.classFeatures2 = options.outputMode === 'compact'
+      ? wrapTextForPdfWithEllipsis(payload.classFeatures2, {
+        ...PDF_TEXT_SPECS.classFeatures2,
+        maxLines: 10
+      })
+      : wrapTextForPdf(payload.classFeatures2, PDF_TEXT_SPECS.classFeatures2);
 
     payload.specie_features1 = buildRaceTemplateText(state, options);
     payload.speed1 = resolveSpeedForPdf(state, options);
@@ -1444,18 +1611,18 @@
     }
 
     if (extraNotes.length) {
-      payload.extra1 = wrapTextForPdf(extraNotes.join('\n'), compactLongTextSpec('extra1'));
+      payload.extra1 = wrapUserTextForPdf(extraNotes.join('\n'), compactLongTextSpec('extra1'));
     }
 
     if (options.includeDefaultEquipment && !hasQuickBuildInitialEquipment(state)) {
       const classEq = parseClassDefaultEquipment(classKey);
       const bgEq = parseBackgroundDefaultEquipment(backgroundKey);
-      payload.equipment1 = wrapTextForPdf(
+      payload.equipment1 = wrapEquipmentListForPdf(
         [classEq, bgEq, payload.equipment1].filter(Boolean).join('\n'),
         compactLongTextSpec('equipment1')
       );
     } else {
-      payload.equipment1 = wrapTextForPdf(payload.equipment1, compactLongTextSpec('equipment1'));
+      payload.equipment1 = wrapEquipmentListForPdf(payload.equipment1, compactLongTextSpec('equipment1'));
     }
 
     for (let slot = 1; slot <= 7; slot++) {
