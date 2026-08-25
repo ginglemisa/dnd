@@ -81,7 +81,8 @@
     class: "職業",
     race: "種族",
     feat: "專長",
-    spell: "法術"
+    spell: "法術",
+    invocation: "魔能祈喚"
   });
 
   const GOLIATH_ANCESTRY_FEATURES = Object.freeze({
@@ -93,6 +94,12 @@
     storm: "轟雷掣電"
   });
   const GOLIATH_ANCESTRY_FEATURE_NAMES = new Set(Object.values(GOLIATH_ANCESTRY_FEATURES));
+
+  const INVOCATION_OPTIONS_BY_MODE = Object.freeze({
+    action: new Set(["鏈之魔契"]),
+    bonus: new Set(["刃之魔契", "共視感官", "鏈主賦能"]),
+    reaction: new Set(["鏈主賦能"])
+  });
 
   let currentMode = "action";
   let selectedOptionKey = "";
@@ -194,7 +201,7 @@
       : /(?:反應(?:動作)?|[藉借]機攻擊)/u;
     const unavailablePattern = mode === "bonus"
       ? /(?:無法|不能)[^。；\n]{0,14}(?:附贈|動作)|附贈動作[^。；\n]{0,10}(?:被浪費|無法使用)/u
-      : /(?:無法|不能)[^。；\n]{0,14}反應|反應[^。；\n]{0,10}(?:被浪費|無法使用)|(?:不會引發|不能發動|無法發動|針對你的)[^。；\n]{0,12}[藉借]機攻擊/u;
+      : /(?:無法|不能)[^。；\n]{0,14}反應|反應[^。；\n]{0,10}(?:被浪費|無法使用)|(?:不(?:會)?引發|不能發動|無法發動|針對你的)[^。；\n]{0,12}[藉借]機攻擊/u;
     const sourceLabel = FEATURE_SOURCE_LABELS[source] || "角色";
     const entriesByLabel = new Map();
     const seen = new Set();
@@ -236,7 +243,11 @@
   }
 
   function getFeatureEntries(mode) {
-    const classText = document.getElementById("classFeatures")?.innerHTML || "";
+    let classText = document.getElementById("classFeatures")?.innerHTML || "";
+    const invocationOptionsIndex = classText.lastIndexOf("魔能祈喚選項");
+    if (invocationOptionsIndex !== -1) {
+      classText = classText.slice(0, invocationOptionsIndex);
+    }
     const raceText = document.getElementById("raceFeatures")?.innerHTML || "";
     const raceEntries = extractTimedFeatureEntries(raceText, mode, "race");
     const selectedRace = document.getElementById("race")?.value || "";
@@ -269,9 +280,36 @@
     });
   }
 
+  function getSelectedInvocationEntries(mode) {
+    if (typeof eldritchInvocations === "undefined") return [];
+    const availableNames = INVOCATION_OPTIONS_BY_MODE[mode];
+    if (!availableNames) return [];
+    const selectedNames = new Set(Array.from(
+      document.querySelectorAll("#eldritch-invocations-output input[data-invocation-name]:checked"),
+      input => input.dataset.invocationName
+    ).filter(Boolean));
+
+    return eldritchInvocations.flatMap(invocation => {
+      if (!selectedNames.has(invocation.name) || !availableNames.has(invocation.name)) return [];
+      const invocationText = sourceToPlainText(invocation.text || "");
+
+      return [{
+        key: `dynamic-${mode}-invocation-${stableKeyHash(invocation.name)}`,
+        label: invocation.name,
+        source: FEATURE_SOURCE_LABELS.invocation,
+        description: invocationText,
+        dynamic: true
+      }];
+    });
+  }
+
   function getDynamicOptions(mode) {
-    if (mode !== "bonus" && mode !== "reaction") return [];
-    const entries = [...getFeatureEntries(mode), ...getSelectedSpellEntries(mode)];
+    if (mode !== "action" && mode !== "bonus" && mode !== "reaction") return [];
+    const entries = [
+      ...(mode === "action" ? [] : getFeatureEntries(mode)),
+      ...getSelectedInvocationEntries(mode),
+      ...(mode === "action" ? [] : getSelectedSpellEntries(mode))
+    ];
     const seen = new Set();
     return entries.filter(entry => {
       const fingerprint = `${entry.source}|${entry.label}|${entry.description}`.replace(/\s+/g, " ");
@@ -374,7 +412,7 @@
     if (scheduledRefresh) cancelAnimationFrame(scheduledRefresh);
     scheduledRefresh = requestAnimationFrame(() => {
       scheduledRefresh = 0;
-      if (currentMode === "bonus" || currentMode === "reaction") renderMode(currentMode, true);
+      if (currentMode === "action" || currentMode === "bonus" || currentMode === "reaction") renderMode(currentMode, true);
     });
   }
 
