@@ -84,6 +84,16 @@
     spell: "法術"
   });
 
+  const GOLIATH_ANCESTRY_FEATURES = Object.freeze({
+    cloud: "雲遊四方（雲巨人）",
+    fire: "星火燎原（火巨人）",
+    frost: "凜若冰霜（霜巨人）",
+    hill: "地動山搖（山丘巨人）",
+    stone: "堅若磐石（石巨人）",
+    storm: "轟雷掣電（風暴巨人）"
+  });
+  const GOLIATH_ANCESTRY_FEATURE_NAMES = new Set(Object.values(GOLIATH_ANCESTRY_FEATURES));
+
   let currentMode = "action";
   let selectedOptionKey = "";
   let scheduledRefresh = 0;
@@ -219,12 +229,22 @@
     return Array.from(values).flatMap(value => extractTimedFeatureEntries(featsDesc[value], mode, "feat"));
   }
 
+  function filterRaceEntriesForSelections(entries, selectedRace, selectedGoliathAncestry) {
+    if (selectedRace !== "goliath") return entries;
+    const selectedFeature = GOLIATH_ANCESTRY_FEATURES[selectedGoliathAncestry];
+    return entries.filter(entry => !GOLIATH_ANCESTRY_FEATURE_NAMES.has(entry.label) || entry.label === selectedFeature);
+  }
+
   function getFeatureEntries(mode) {
     const classText = document.getElementById("classFeatures")?.innerHTML || "";
     const raceText = document.getElementById("raceFeatures")?.innerHTML || "";
+    const raceEntries = extractTimedFeatureEntries(raceText, mode, "race");
+    const selectedRace = document.getElementById("race")?.value || "";
+    const selectedGoliathAncestry = document.getElementById("goliath-ancestry")?.value || "";
+    const availableRaceEntries = filterRaceEntriesForSelections(raceEntries, selectedRace, selectedGoliathAncestry);
     return [
       ...extractTimedFeatureEntries(classText, mode, "class"),
-      ...extractTimedFeatureEntries(raceText, mode, "race"),
+      ...availableRaceEntries,
       ...getSelectedFeatEntries(mode)
     ];
   }
