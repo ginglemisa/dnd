@@ -487,20 +487,27 @@ label {
   grid-template-columns: minmax(0, 1fr) 44px;
 }
 
-.theme-picker {
+.theme-picker,
+.utility-menu__settings {
   min-width: 0;
   margin: 0;
   padding: 0;
   border: 0;
 }
 
-.theme-picker legend {
+.theme-picker legend,
+.utility-menu__settings legend,
+.utility-menu__section-title {
   margin-bottom: 0.4rem;
   padding: 0;
   color: var(--text-muted);
   font-size: var(--fs-xs);
   font-weight: 800;
   letter-spacing: 0.04em;
+}
+
+.utility-menu__section-title {
+  margin-top: 0;
 }
 
 .theme-picker__options {
@@ -513,6 +520,63 @@ label {
   height: 1px;
   margin: 0.65rem 0;
   background: var(--border);
+}
+
+.utility-menu__setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 2.75rem;
+  color: var(--text-body);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.utility-menu__setting input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.utility-menu__switch {
+  position: relative;
+  flex: 0 0 2.5rem;
+  width: 2.5rem;
+  height: 1.4rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface-muted);
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.utility-menu__switch::after {
+  content: "";
+  position: absolute;
+  top: 0.16rem;
+  left: 0.16rem;
+  width: 0.95rem;
+  height: 0.95rem;
+  border-radius: 50%;
+  background: var(--surface-strong);
+  box-shadow: 0 1px 4px rgba(17, 31, 63, 0.25);
+  transition: transform 160ms ease;
+}
+
+.utility-menu__setting input:checked + .utility-menu__switch {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.utility-menu__setting input:checked + .utility-menu__switch::after {
+  transform: translateX(1.08rem);
+}
+
+.utility-menu__setting input:focus-visible + .utility-menu__switch {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 
 .theme-picker__option {
@@ -6230,6 +6294,10 @@ div[id$="spells-area"] .form-row {
 
 /* ===== Dark theme component coverage ===== */
 html[data-theme="dark"] body {
+  color: var(--text-body);
+}
+
+html[data-theme="dark"] .feat-desc-subtitle {
   color: var(--text-body);
 }
 

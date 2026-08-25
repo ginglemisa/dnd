@@ -84,7 +84,8 @@
       </button>
     </div>
     <div id="utility-menu" class="utility-menu" aria-hidden="true" inert>
-      <fieldset class="theme-picker" aria-label="外觀主題">
+      <fieldset class="theme-picker">
+        <legend>主題</legend>
         <div class="theme-picker__options">
           <label class="theme-picker__option">
             <input type="radio" name="site-theme" value="light">
@@ -96,25 +97,55 @@
           </label>
         </div>
       </fieldset>
+
+      <!-- 預留操作設定：功能完成後連同此前方分隔線解除註解。
       <div class="utility-menu__divider" role="separator"></div>
-      <div class="utility-menu__grid">
+      <fieldset class="utility-menu__settings">
+        <legend>操作設定</legend>
+        <label class="utility-menu__setting" title="開啟時自動計算最大 HP、AC、先攻、速度與被動察覺；關閉後可自行輸入。">
+          <span>自動計算關鍵數值</span>
+          <input id="auto-calculate-key-stats-toggle" type="checkbox" role="switch" checked>
+          <span class="utility-menu__switch" aria-hidden="true"></span>
+        </label>
+        <label class="utility-menu__setting" title="開啟後，點擊屬性調整值即可進行擲骰。">
+          <span>點擊屬性擲骰</span>
+          <input id="click-ability-roll-toggle" type="checkbox" role="switch">
+          <span class="utility-menu__switch" aria-hidden="true"></span>
+        </label>
+      </fieldset>
+      -->
+
+      <div class="utility-menu__divider" role="separator"></div>
+      <section class="utility-menu__section" aria-labelledby="utility-menu-data-title">
+        <h2 id="utility-menu-data-title" class="utility-menu__section-title">角色資料</h2>
+        <div class="utility-menu__grid">
+          <div class="utility-menu__row utility-menu__row--split">
+            <button type="button" id="import-json-btn" class="utility-menu__button">⬆️ 匯入</button>
+            <button type="button" id="export-json-btn" class="utility-menu__button">匯出 ⬇️</button>
+          </div>
+          <button type="button" id="export-pdf-btn" class="utility-menu__button">📄 輸出 PDF</button>
+          <div class="utility-menu__row utility-menu__row--footer">
+            <button type="button" class="utility-menu__button utility-menu__button--primary share-url-btn" onclick="copyShareUrl()" aria-label="複製分享連結">🔗 分享角卡</button>
+            <button type="button" id="open-qr-btn" class="utility-menu__button utility-menu__qr-button" aria-label="開啟 QR Code" title="QR Code">
+              <svg class="utility-menu__qr-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 3h7v7H3V3Zm2 2v3h3V5H5Zm9-2h7v7h-7V3Zm2 2v3h3V5h-3ZM3 14h7v7H3v-7Zm2 2v3h3v-3H5Zm9-2h3v3h-3v-3Zm4 0h3v3h-3v-3Zm-4 4h3v3h-3v-3Zm4 0h3v3h-3v-3Z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <div class="utility-menu__divider" role="separator"></div>
+      <section class="utility-menu__section" aria-labelledby="utility-menu-help-title">
+        <h2 id="utility-menu-help-title" class="utility-menu__section-title">參考與協助</h2>
         <div class="utility-menu__row utility-menu__row--split">
-          <button type="button" id="import-json-btn" class="utility-menu__button">⬆️ 匯入</button>
-          <button type="button" id="export-json-btn" class="utility-menu__button">匯出 ⬇️</button>
-        </div>
-        <button type="button" id="reference-deities-btn" class="utility-menu__button">🙏參考神祇</button>
-        <button type="button" id="export-pdf-btn" class="utility-menu__button">📄 輸出PDF</button>
-        <button id="clear-storage-btn" class="utility-menu__button utility-menu__button--danger">🗑️ 清除紀錄</button>
-        <button type="button" class="utility-menu__button utility-menu__button--primary share-url-btn" onclick="copyShareUrl()" aria-label="複製分享連結">🔗 分享角卡</button>
-        <div class="utility-menu__row utility-menu__row--footer">
+          <button type="button" id="reference-deities-btn" class="utility-menu__button">🙏 參考神祇</button>
           <button type="button" id="restart-onboarding-btn" class="utility-menu__button">🧭 新手導覽</button>
-          <button type="button" id="open-qr-btn" class="utility-menu__button utility-menu__qr-button" aria-label="開啟 QR Code" title="QR Code">
-            <svg class="utility-menu__qr-icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M3 3h7v7H3V3Zm2 2v3h3V5H5Zm9-2h7v7h-7V3Zm2 2v3h3V5h-3ZM3 14h7v7H3v-7Zm2 2v3h3v-3H5Zm9-2h3v3h-3v-3Zm4 0h3v3h-3v-3Zm-4 4h3v3h-3v-3Zm4 0h3v3h-3v-3Z"/>
-            </svg>
-          </button>
         </div>
-      </div>
+      </section>
+
+      <div class="utility-menu__divider" role="separator"></div>
+      <button id="clear-storage-btn" class="utility-menu__button utility-menu__button--danger">🗑️ 清除紀錄</button>
       <input type="file" id="import-json-file" accept="application/json" class="is-hidden">
     </div>
     <div id="spell-tab-toolbar" class="spell-toolbar is-hidden" aria-label="法術搜尋工具列">
