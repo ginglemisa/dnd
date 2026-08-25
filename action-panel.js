@@ -71,10 +71,10 @@
   });
 
   const MODE_META = Object.freeze({
-    action: { timing: "每回合一次", summary: "執行主要行動。", prompt: "請選擇一個動作查看說明。" },
-    bonus: { timing: "每回合最多一次", summary: "只有規則或能力允許時才能使用。", prompt: "請選擇一個附贈動作查看說明。" },
-    reaction: { timing: "每輪最多一次", summary: "在符合觸發條件時使用。", prompt: "請選擇一個反應查看說明。" },
-    movement: { timing: "自己的回合中", summary: "移動可分段穿插在動作前後。", prompt: "請選擇一項移動規則查看說明。" }
+    action: { timing: "每回合一次", summary: "執行主要行動，例如攻擊或閃避。", prompt: "請選擇一個動作查看說明。" },
+    bonus: { timing: "每回合最多一次", summary: "執行有條件的額外動作，只有規則或能力允許時才能使用。", prompt: "請選擇一個附贈動作查看說明。" },
+    reaction: { timing: "每輪最多一次", summary: "在自己或別人的回合符合觸發條件時使用。", prompt: "請選擇一個反應查看說明。" },
+    movement: { timing: "自己的回合中", summary: "改變你的位置，移動可分段穿插在動作前後。", prompt: "請選擇一項移動規則查看說明。" }
   });
 
   const FEATURE_SOURCE_LABELS = Object.freeze({
@@ -83,6 +83,16 @@
     feat: "專長",
     spell: "法術"
   });
+
+  const GOLIATH_ANCESTRY_FEATURES = Object.freeze({
+    cloud: "雲遊四方（雲巨人）",
+    fire: "星火燎原（火巨人）",
+    frost: "凜若冰霜（霜巨人）",
+    hill: "地動山搖（山丘巨人）",
+    stone: "堅若磐石（石巨人）",
+    storm: "轟雷掣電（風暴巨人）"
+  });
+  const GOLIATH_ANCESTRY_FEATURE_NAMES = new Set(Object.values(GOLIATH_ANCESTRY_FEATURES));
 
   let currentMode = "action";
   let selectedOptionKey = "";
@@ -219,12 +229,22 @@
     return Array.from(values).flatMap(value => extractTimedFeatureEntries(featsDesc[value], mode, "feat"));
   }
 
+  function filterRaceEntriesForSelections(entries, selectedRace, selectedGoliathAncestry) {
+    if (selectedRace !== "goliath") return entries;
+    const selectedFeature = GOLIATH_ANCESTRY_FEATURES[selectedGoliathAncestry];
+    return entries.filter(entry => !GOLIATH_ANCESTRY_FEATURE_NAMES.has(entry.label) || entry.label === selectedFeature);
+  }
+
   function getFeatureEntries(mode) {
     const classText = document.getElementById("classFeatures")?.innerHTML || "";
     const raceText = document.getElementById("raceFeatures")?.innerHTML || "";
+    const raceEntries = extractTimedFeatureEntries(raceText, mode, "race");
+    const selectedRace = document.getElementById("race")?.value || "";
+    const selectedGoliathAncestry = document.getElementById("goliath-ancestry")?.value || "";
+    const availableRaceEntries = filterRaceEntriesForSelections(raceEntries, selectedRace, selectedGoliathAncestry);
     return [
       ...extractTimedFeatureEntries(classText, mode, "class"),
-      ...extractTimedFeatureEntries(raceText, mode, "race"),
+      ...availableRaceEntries,
       ...getSelectedFeatEntries(mode)
     ];
   }
