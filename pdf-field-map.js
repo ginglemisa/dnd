@@ -1328,7 +1328,7 @@
     );
     const classFeatures1Spec = {
       ...PDF_TEXT_SPECS.classFeatures1,
-      maxLines: options.outputMode === 'compact' ? 11 : PDF_TEXT_SPECS.classFeatures1.maxLines
+      maxLines: options.outputMode === 'compact' ? 10 : PDF_TEXT_SPECS.classFeatures1.maxLines
     };
     const classFeatureResult1 = wrapTextForPdfWithOverflow(
       classFeatureLines.join('\n'),
