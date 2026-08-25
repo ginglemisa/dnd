@@ -71,10 +71,10 @@
   });
 
   const MODE_META = Object.freeze({
-    action: { timing: "每回合一次", summary: "執行主要行動。", prompt: "請選擇一個動作查看說明。" },
-    bonus: { timing: "每回合最多一次", summary: "只有規則或能力允許時才能使用。", prompt: "請選擇一個附贈動作查看說明。" },
-    reaction: { timing: "每輪最多一次", summary: "在符合觸發條件時使用。", prompt: "請選擇一個反應查看說明。" },
-    movement: { timing: "自己的回合中", summary: "移動可分段穿插在動作前後。", prompt: "請選擇一項移動規則查看說明。" }
+    action: { timing: "每回合一次", summary: "執行主要行動，例如攻擊或閃避。", prompt: "請選擇一個動作查看說明。" },
+    bonus: { timing: "每回合最多一次", summary: "執行有條件的額外動作，只有規則或能力允許時才能使用。", prompt: "請選擇一個附贈動作查看說明。" },
+    reaction: { timing: "每輪最多一次", summary: "在自己或別人的回合符合觸發條件時使用。", prompt: "請選擇一個反應查看說明。" },
+    movement: { timing: "自己的回合中", summary: "改變你的位置，移動可分段穿插在動作前後。", prompt: "請選擇一項移動規則查看說明。" }
   });
 
   const FEATURE_SOURCE_LABELS = Object.freeze({

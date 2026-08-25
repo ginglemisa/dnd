@@ -45,7 +45,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎲%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20260825-action-tabs-spell-primer-2">
+  <link rel="stylesheet" href="styles.css?v=20260825-turn-actions">
   <script src="scroll-to-top.js" defer></script>
   <script src="monster.js" defer></script>
   <script src="class-features.js" defer></script>
@@ -56,7 +56,7 @@
   <script src="equipment-notes.js?v=20260813-weapon-rule-popups-2" defer></script>
   <script src="spell-list.js" defer></script>
   <script src="condition.js" defer></script>
-  <script src="action-panel.js?v=20260825-action-tabs" defer></script>
+  <script src="action-panel.js?v=20260825-turn-actions" defer></script>
   <script src="character-rules.js" defer></script>
   <script src="legal-modal.js?v=20260824-onboarding-entry" defer></script>
   <script src="onboarding-tour.js?v=20260825-onboarding-step5-highlights" defer></script>
@@ -609,48 +609,6 @@
   <strong>專長戰鬥註記：</strong>
   <div id="feat-combat-notes" class="selection-summary"></div>
 </div>
-    <div class="section">
-      <details class="action-help action-collapsible-wrap">
-  <summary><h3 class="summary-title-inline">戰鬥中的四種行動</h3></summary>
-  <table class="action-info-table">
-    <thead>
-      <tr>
-        <th>類型</th>
-        <th>說明</th>
-        <th>使用時機</th>
-        <th>範例</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>移動</td>
-        <td>改變你的位置</td>
-        <td>自己的回合中</td>
-        <td>步行、游泳</td>
-      </tr>
-      <tr>
-        <td>動作</td>
-        <td>主要行動</td>
-        <td>每回合 1 次</td>
-        <td>攻擊、閃避</td>
-      </tr>
-      <tr>
-        <td>附贈</td>
-        <td>有條件的額外動作</td>
-        <td>每回合最多 1 次</td>
-        <td>二次攻擊、喝藥水</td>
-      </tr>
-      <tr>
-        <td>反應</td>
-        <td>在別人回合觸發</td>
-        <td>每回合最多 1 次</td>
-        <td>藉機攻擊</td>
-      </tr>
-    </tbody>
-  </table>
-</details>
-    </div>
-
     <section class="section action-command-card" aria-labelledby="action-command-title">
       <div class="action-command-heading">
         <div>
@@ -670,7 +628,7 @@
       <div id="action-mode-panel" class="action-mode-panel" role="tabpanel" aria-labelledby="action-mode-action">
         <div class="action-mode-context">
           <strong id="action-mode-timing">每回合一次</strong>
-          <span id="action-mode-summary">執行主要行動。</span>
+          <span id="action-mode-summary">執行主要行動，例如攻擊或閃避。</span>
         </div>
         <div id="action-description" class="action-description" role="status" aria-live="polite">
           請選擇一個動作查看說明。
