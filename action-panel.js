@@ -192,6 +192,69 @@
     return (hash >>> 0).toString(36);
   }
 
+  // These are deliberate one-to-one presentation rules for features whose action
+  // wording does not map cleanly to the source-text extractor.
+  const SPECIAL_FEATURE_RULES = Object.freeze({
+    "等級 1：狂暴": { stripHeading: true },
+    "等級 1：吟遊詩人激勵": { label: "等級 1：激勵" },
+    "等級 2：荒野形態": { stripHeading: true },
+    "等級 1：回氣": { stripHeading: true },
+    "等級 5：戰術轉移": { stripHeading: true },
+    "等級 1：武藝": { stripHeading: true },
+    "等級 3：撥擋化勁": { stripHeading: true },
+    "等級 2：靈巧動作": { stripHeading: true },
+    "等級 3：快手": { stripHeading: true },
+    "等級 3：手穩就準": { stripHeading: true },
+    "等級 5：直覺閃避": { stripHeading: true },
+    "等級 1：天生術法": { stripHeading: true },
+    "龍翔天際": { label: "等級 5：龍翔天際", stripPrefix: "龍翔天際：５級後可用，", requiredLevel: 5 },
+    "石中精妙": { stripPrefix: "石中精妙：" },
+    "岩石侏儒": { stripPrefix: "🧒🏽岩石侏儒：", gnomeLineage: "rock_gnome" },
+    "巨化形體": { label: "等級 5：巨化形體", stripPrefix: "巨化形體：等級５能力，", requiredLevel: 5 },
+    "熱血湧動": { stripPrefix: "熱血湧動：" }
+  });
+
+  const MONK_REMOVED_LABELS = new Set(["疾風連擊", "閃轉騰挪", "疾步如風"]);
+  const MONK_CUSTOM_OPTIONS = Object.freeze([
+    {
+      mode: "bonus", level: 2, label: "等級 2：聚氣凝神",
+      description: "你可使用「專注點」施展武僧技巧。專注點上限見武僧特性表，短休或長休後全回復。\n\n你一開始有 3 種用法：\n\n- 疾風連擊（1 點）：附贈動作打 2 次徒手。\n- 閃轉騰挪：附贈動作可撤離；再花 1 點可同時撤離 + 回避。\n- 疾步如風：附贈動作可疾走；再花 1 點可同時撤離 + 疾走，且本回合跳躍距離加倍。\n\n若特性要求豁免，DC = 8 + 熟練加值 + 感知調整值。"
+    },
+    {
+      mode: "bonus", level: 3, label: "等級 3：散打技巧",
+      description: "當你用「疾風連擊」命中時，可讓目標承受 1 種效果：\n\n- 截擊：到你下回合結束前，目標不能發動借機攻擊。\n- 擊退：目標力量豁免失敗則被推離你最多 15 呎。\n- 擊倒：目標敏捷豁免失敗則倒地。"
+    },
+    {
+      mode: "action", level: 5, label: "等級 5：震懾擊",
+      description: "每回合 1 次，當你用武僧武器或徒手命中時，可花 1 點專注點發動震懾打擊。 目標需做體質豁免：\n  - 失敗：震懾到你下回合開始。\n  - 成功：速度減半，且到你下回合開始前，下一次對它的攻擊有優勢。"
+    }
+  ]);
+
+  function getCharacterLevel() {
+    return Number(document.getElementById("level")?.value) || 1;
+  }
+
+  function getRequiredLevel(entry) {
+    return entry.requiredLevel || Number(String(entry.label).match(/^等級\s*(\d+)\s*[：:]/u)?.[1]) || 1;
+  }
+
+  function applySpecialFeatureRule(entry) {
+    const rule = SPECIAL_FEATURE_RULES[entry.label];
+    if (!rule) return entry;
+    let description = entry.description;
+    if (rule.stripHeading) description = description.replace(/^等級\s*\d+\s*[：:]\s*[^\n]*\n*/u, "");
+    if (rule.stripPrefix) description = description.replace(rule.stripPrefix, "").trimStart();
+    return { ...entry, label: rule.label || entry.label, description, requiredLevel: rule.requiredLevel, gnomeLineage: rule.gnomeLineage };
+  }
+
+  function getMonkCustomEntries(mode) {
+    if (document.getElementById("class")?.value !== "monk") return [];
+    const level = getCharacterLevel();
+    return MONK_CUSTOM_OPTIONS
+      .filter(option => option.mode === mode && level >= option.level)
+      .map(option => ({ ...option, key: `dynamic-${mode}-class-${stableKeyHash(option.label)}`, source: FEATURE_SOURCE_LABELS.class, dynamic: true }));
+  }
+
   function extractTimedFeatureEntries(raw, mode, source) {
     const plainText = sourceToPlainText(raw);
     if (!plainText) return [];
@@ -227,19 +290,25 @@
       }
     });
 
-    return Array.from(entriesByLabel.values());
+    return Array.from(entriesByLabel.values()).map(applySpecialFeatureRule);
   }
 
   function getSelectedFeatEntries(mode) {
     if (typeof featsDesc === "undefined") return [];
     const values = new Set(Array.from(document.querySelectorAll("#feats-area select"), select => select.value).filter(Boolean));
-    return Array.from(values).flatMap(value => extractTimedFeatureEntries(featsDesc[value], mode, "feat"));
+    return Array.from(values)
+      .flatMap(value => extractTimedFeatureEntries(featsDesc[value], mode, "feat"))
+      .filter(entry => getCharacterLevel() >= getRequiredLevel(entry));
   }
 
   function filterRaceEntriesForSelections(entries, selectedRace, selectedGoliathAncestry) {
-    if (selectedRace !== "goliath") return entries;
     const selectedFeature = GOLIATH_ANCESTRY_FEATURES[selectedGoliathAncestry];
-    return entries.filter(entry => !GOLIATH_ANCESTRY_FEATURE_NAMES.has(entry.label) || entry.label === selectedFeature);
+    const selectedGnomeLineage = document.getElementById("gnome-lineage")?.value || "";
+    return entries.filter(entry => {
+      if (selectedRace === "goliath" && GOLIATH_ANCESTRY_FEATURE_NAMES.has(entry.label) && entry.label !== selectedFeature) return false;
+      if (entry.gnomeLineage && entry.gnomeLineage !== selectedGnomeLineage) return false;
+      return getCharacterLevel() >= getRequiredLevel(entry);
+    });
   }
 
   function getFeatureEntries(mode) {
@@ -253,8 +322,12 @@
     const selectedRace = document.getElementById("race")?.value || "";
     const selectedGoliathAncestry = document.getElementById("goliath-ancestry")?.value || "";
     const availableRaceEntries = filterRaceEntriesForSelections(raceEntries, selectedRace, selectedGoliathAncestry);
+    const selectedClass = document.getElementById("class")?.value || "";
+    const classEntries = extractTimedFeatureEntries(classText, mode, "class")
+      .filter(entry => getCharacterLevel() >= getRequiredLevel(entry))
+      .filter(entry => selectedClass !== "monk" || !MONK_REMOVED_LABELS.has(entry.label));
     return [
-      ...extractTimedFeatureEntries(classText, mode, "class"),
+      ...classEntries,
       ...availableRaceEntries,
       ...getSelectedFeatEntries(mode)
     ];
@@ -306,7 +379,7 @@
   function getDynamicOptions(mode) {
     if (mode !== "action" && mode !== "bonus" && mode !== "reaction") return [];
     const entries = [
-      ...(mode === "action" ? [] : getFeatureEntries(mode)),
+      ...(mode === "action" ? getMonkCustomEntries(mode) : [...getFeatureEntries(mode), ...getMonkCustomEntries(mode)]),
       ...getSelectedInvocationEntries(mode),
       ...(mode === "action" ? [] : getSelectedSpellEntries(mode))
     ];
