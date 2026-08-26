@@ -2623,14 +2623,18 @@
       mobileImportWarning(`專精「${name}」：draft 沒有對應的技能熟練來源`, warnings);
     });
     const toolNames = [...new Set((draft.acquisitions.tools || []).map(item => item.name).filter(Boolean))];
-    const skillBonuses = (draft.acquisitions.skillBonuses || []).map(item => `${item.name}（${item.source?.feature || item.source?.label || "職業能力"}）`);
+    const skillBonuses = (draft.acquisitions.skillBonuses || []).map(item => {
+      const feature = item.source?.feature || item.source?.label || "職業能力";
+      const source = feature.includes("：") ? feature.split("：").at(-1) : feature;
+      return `${item.name}（${source}）`;
+    });
     const backgroundTool = draft.selections.background?.content?.tool || draft.choices.backgroundToolChoice || "";
     if (typeof window.replaceToolProficiencies === "function") {
       window.replaceToolProficiencies(toolNames, { backgroundTool });
     } else {
       mobileImportWarning("找不到工具熟練匯入介面", warnings);
     }
-    const skillNotes = [skillBonuses.length ? `技能額外加值：${skillBonuses.join("、")}` : ""].filter(Boolean);
+    const skillNotes = [skillBonuses.length ? `技能額外加值：\n${skillBonuses.join("\n")}` : ""].filter(Boolean);
     setMobileField("skill-extra", skillNotes.join("；"), warnings, "技能筆記", "input");
 
     const languageDetails = draft.selections.levelOne?.content?.languageDetails || [];

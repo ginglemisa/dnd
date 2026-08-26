@@ -45,10 +45,10 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎲%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20260826-shared-class-layout-trailing-space">
+  <link rel="stylesheet" href="styles.css?v=20260826-class-options-spacing">
   <script src="scroll-to-top.js" defer></script>
   <script src="monster.js" defer></script>
-    <script src="class-features.js?v=20260826-bard-semantic-layout" defer></script>
+    <script src="class-features.js?v=20260826-class-options-spacing" defer></script>
   <script src="race.js?v=20260826-lineage-tables" defer></script>
   <script src="backgrounds.js" defer></script>
   <script src="tool-data.js" defer></script>
@@ -102,7 +102,7 @@
       <fieldset class="utility-menu__settings">
         <legend>操作設定</legend>
         <label class="utility-menu__setting" title="開啟時自動計算最大 HP、AC、先攻、速度與被動察覺；關閉後可自行輸入。">
-          <span>自動計算數值</span>
+          <span>自動計算HP/AC/先攻等數值</span>
           <input id="auto-calculate-key-stats-toggle" type="checkbox" role="switch" checked>
           <span class="utility-menu__switch" aria-hidden="true"></span>
         </label>
@@ -116,14 +116,14 @@
             <button type="button" id="import-json-btn" class="utility-menu__button">⬆️ 匯入</button>
             <button type="button" id="export-json-btn" class="utility-menu__button">匯出 ⬇️</button>
           </div>
-          <button type="button" id="export-pdf-btn" class="utility-menu__button">📄 輸出 PDF</button>
           <div class="utility-menu__row utility-menu__row--footer">
-            <button type="button" class="utility-menu__button utility-menu__button--primary share-url-btn" onclick="copyShareUrl()" aria-label="複製分享連結">🔗 分享角卡</button>
+            <button type="button" id="export-pdf-btn" class="utility-menu__button">📄 輸出 PDF</button>
             <button type="button" id="open-qr-btn" class="utility-menu__button utility-menu__qr-button" aria-label="開啟 QR Code" title="QR Code">
               <svg class="utility-menu__qr-icon" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M3 3h7v7H3V3Zm2 2v3h3V5H5Zm9-2h7v7h-7V3Zm2 2v3h3V5h-3ZM3 14h7v7H3v-7Zm2 2v3h3v-3H5Zm9-2h3v3h-3v-3Zm4 0h3v3h-3v-3Zm-4 4h3v3h-3v-3Zm4 0h3v3h-3v-3Z"/>
               </svg>
             </button>
+            <button type="button" class="utility-menu__button share-url-btn" onclick="copyShareUrl()" aria-label="複製分享連結">分享角卡 🔗</button>
           </div>
         </div>
       </section>
@@ -133,7 +133,7 @@
         <h2 id="utility-menu-help-title" class="utility-menu__section-title">參考與協助</h2>
         <div class="utility-menu__row utility-menu__row--split">
           <button type="button" id="reference-deities-btn" class="utility-menu__button">🙏 參考神祇</button>
-          <button type="button" id="restart-onboarding-btn" class="utility-menu__button">🧭 新手導覽</button>
+          <button type="button" id="restart-onboarding-btn" class="utility-menu__button">新手導覽 🧭</button>
         </div>
       </section>
 
@@ -1584,17 +1584,41 @@ function getNormalizedInvocationText(text) {
     .trim();
 }
 
+function splitFeatureChoiceText(text) {
+  let normalized = getNormalizedInvocationText(text)
+    // 每個選項是從前一個 <h4> 的名稱之後切出，且在下一個 <h4> 前截斷；
+    // 移除切片兩端遺留的容器，避免卡片內出現不完整的 HTML 結構。
+    .replace(/<\/div>\s*<div\b[^>]*>\s*<h4\b[^>]*>\s*$/, "")
+    .replace(/<\/div>\s*$/, "");
+
+  const headingDetail = normalized.match(/^([^<\n]+)<\/h4>\s*/);
+  if (headingDetail) {
+    return {
+      detail: headingDetail[1].trim(),
+      body: normalized.slice(headingDetail[0].length).trim()
+    };
+  }
+
+  normalized = normalized.replace(/^<\/h4>\s*/, "");
+  return { detail: "", body: normalized.trim() };
+}
+
+function formatFeatureChoiceText(text, formatDetail = detail => detail) {
+  const { detail, body } = splitFeatureChoiceText(text);
+  const detailHtml = detail ? `<div class="feature-choice-card__meta">${formatDetail(detail)}</div>` : "";
+  return `${detailHtml}${body ? highlightSpellNamesInClassFeature(body) : ""}`;
+}
+
 function hasWarlockInvocation(invocationName) {
   const picks = document.querySelectorAll("#eldritch-invocations-output input[data-invocation-name]");
   return Array.from(picks).some(input => input.dataset.invocationName === invocationName && input.checked);
 }
 
 function formatInvocationText(text) {
-	const normalized = getNormalizedInvocationText(text).replace(
-		/^（先決條件：([^）]+)）/m,
-		'<span class="invocation-prereq">先決條件：$1</span>'
-	);
-return highlightSpellNamesInClassFeature(normalized);
+  return formatFeatureChoiceText(text, detail => detail.replace(
+    /^（先決條件：([^）]+)）$/,
+    '<span class="invocation-prereq">先決條件：$1</span>'
+  ));
 }
 
 function renderSelectedFeatureSummary(summaryEl, items, emptyText, formatText = text => text) {
@@ -1727,7 +1751,13 @@ function renderMetamagicOptions() {
     const checkboxId = getMetamagicCheckboxId(index);
     const checked = previouslyChecked.has(option.name) ? " checked" : "";
 
-    return `<div class="invocation-block"><label class="inline-check-label"><input type="checkbox" id="${checkboxId}" data-metamagic-name="${escapeHtml(option.name)}"${checked}></label>${escapeHtml(option.name)}${option.text ? `\n${highlightSpellNamesInClassFeature(option.text)}` : ""}</div>`;
+    return `<article class="feature-choice-card feature-choice-card--metamagic">
+      <label class="feature-choice-card__heading" for="${checkboxId}">
+        <input type="checkbox" id="${checkboxId}" data-metamagic-name="${escapeHtml(option.name)}"${checked}>
+        <strong>${escapeHtml(option.name)}</strong>
+      </label>
+      ${option.text ? `<div class="feature-choice-card__body">${formatFeatureChoiceText(option.text)}</div>` : ""}
+    </article>`;
   }).join("");
 
   output.querySelectorAll("input[type='checkbox']").forEach(el => {
@@ -1772,7 +1802,7 @@ function updateMetamagicSummary() {
     summaryEl,
     picks,
     "尚未勾選超魔法",
-    text => highlightSpellNamesInClassFeature(text)
+    text => formatFeatureChoiceText(text)
   );
 }
 
@@ -1818,10 +1848,17 @@ function renderEldritchInvocations() {
     const checkCount = invocation.repeatable ? (invocation.max || 3) : 1;
     const checks = Array.from({ length: checkCount }, (_, slotIndex) => {
       const checkboxId = getInvocationCheckboxId(index, slotIndex + 1);
-      return `<label class="inline-check-label"><input type="checkbox" id="${checkboxId}" data-invocation-name="${escapeHtml(invocation.name)}"></label>`;
+      const slotLabel = checkCount > 1 ? `選擇 ${invocation.name}（第 ${slotIndex + 1} 次）` : `選擇 ${invocation.name}`;
+      return `<label class="inline-check-label"><input type="checkbox" id="${checkboxId}" data-invocation-name="${escapeHtml(invocation.name)}" aria-label="${escapeHtml(slotLabel)}"></label>`;
     }).join("");
 
-    return `<div class="invocation-block">${checks}<strong>${escapeHtml(invocation.name)}</strong>${invocation.text ? `\n${formatInvocationText(invocation.text)}` : ""}</div>`;
+    return `<article class="feature-choice-card feature-choice-card--invocation">
+      <div class="feature-choice-card__heading">
+        <span class="feature-choice-card__checks">${checks}</span>
+        <strong>${escapeHtml(invocation.name)}</strong>
+      </div>
+      ${invocation.text ? `<div class="feature-choice-card__body">${formatInvocationText(invocation.text)}</div>` : ""}
+    </article>`;
   }).join("");
 
   output.querySelectorAll("input[type='checkbox']").forEach(el => {
@@ -7956,11 +7993,13 @@ for (let i = 0; i < 1; i++) createSingleFeatRow();
       <div class="legal-modal-meta-title">5.5e compatible character builder</div>
       <div>SRD 5.2.1 material under CC BY 4.0.</div>
     </div>
-<div class="legal-modal-dismiss">
-  <label><input type="checkbox" id="legal-dismiss"> 不要再提醒我</label>
-</div>
-    <button type="button" id="legal-onboarding-btn">新手導覽</button>
-    <button type="button" id="legal-ack-btn" aria-label="關閉提醒">我知道了</button>
+    <div class="legal-modal-actions">
+      <button type="button" id="legal-onboarding-btn">🧭 新手導覽</button>
+      <button type="button" id="legal-ack-btn" aria-label="關閉提醒">我知道了</button>
+    </div>
+    <div class="legal-modal-dismiss">
+      <label><input type="checkbox" id="legal-dismiss"> 不要再提醒我</label>
+    </div>
   </div>
 </div>
 
