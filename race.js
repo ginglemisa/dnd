@@ -9,21 +9,23 @@ const raceFeatures = {
 作為龍裔，你有以下特質。
 
 龍族血統：你有巨龍血統。下表擇一，按照龍種決定吐息傷害類型,傷害抗性類型。
-<table border="1" style="border-collapse: collapse; text-align: center;">
-  <tr>
-    <td>黑龍-酸</td>
-    <td>藍龍-電</td>
-    <td>黃銅龍-火</td>
-    <td>青銅龍-電</td>
-    <td>赤銅龍-酸</td>
-  </tr>
-  <tr>
-    <td>金龍-火</td>
-    <td>綠龍-毒</td>
-    <td>紅龍-火</td>
-    <td>銀龍-冰</td>
-    <td>白龍-冰</td>
-  </tr>
+<table class="dragon-ancestry-table" aria-label="龍裔龍族血統選項">
+  <tbody>
+    <tr>
+      <td><span class="dragon-ancestry-name">黑龍</span><span class="dragon-ancestry-damage">酸</span></td>
+      <td><span class="dragon-ancestry-name">藍龍</span><span class="dragon-ancestry-damage">電</span></td>
+      <td><span class="dragon-ancestry-name">黃銅龍</span><span class="dragon-ancestry-damage">火</span></td>
+      <td><span class="dragon-ancestry-name">青銅龍</span><span class="dragon-ancestry-damage">電</span></td>
+      <td><span class="dragon-ancestry-name">赤銅龍</span><span class="dragon-ancestry-damage">酸</span></td>
+    </tr>
+    <tr>
+      <td><span class="dragon-ancestry-name">金龍</span><span class="dragon-ancestry-damage">火</span></td>
+      <td><span class="dragon-ancestry-name">綠龍</span><span class="dragon-ancestry-damage">毒</span></td>
+      <td><span class="dragon-ancestry-name">紅龍</span><span class="dragon-ancestry-damage">火</span></td>
+      <td><span class="dragon-ancestry-name">銀龍</span><span class="dragon-ancestry-damage">冰</span></td>
+      <td><span class="dragon-ancestry-name">白龍</span><span class="dragon-ancestry-damage">冰</span></td>
+    </tr>
+  </tbody>
 </table>
 
 吐息元素：你可用吐息魔法替代一次<strong>攻擊</strong>，吐息前決定範圍：1️⃣15 英呎錐形 | 2️⃣5×30 英呎直線。
@@ -70,31 +72,35 @@ dwarf: `生物類型：類人生物
 黑暗視覺： 60 英呎黑暗視覺。
 
 精靈傳承：血統賦予你超自然的能力，下表擇一。
-<table border="1" style="border-collapse: collapse; text-align: center;">
-  <tr>
-    <td>等級</td>
-    <td>卓爾血統</td>
-    <td>高等精靈血統</td>
-    <td>木精靈血統</td>
-  </tr>
-  <tr>
-    <td>1</td>
-    <td>黑暗視覺120呎<br><strong>舞光術</strong></td>
-    <td><strong>魔法伎倆</strong><br>(長休可替換)<br>限換法師戲法</td>
-    <td>速度35呎<br><strong>德魯伊伎倆</strong></td>
-  </tr>
-  <tr>
-    <td>3</td>
-    <td><strong>妖火</strong></td>
-    <td><strong>偵測魔法</strong></td>
-    <td><strong>大步奔行</strong></td>
-  </tr>
-  <tr>
-    <td>5</td>
-    <td><strong>黑暗術</strong></td>
-    <td><strong>迷蹤步</strong></td>
-    <td><strong>行動無蹤</strong></td>
-  </tr>
+<table class="race-lineage-table" aria-label="精靈傳承等級能力">
+  <thead>
+    <tr>
+      <th scope="col">等級</th>
+      <th scope="col">卓爾血統</th>
+      <th scope="col">高等精靈血統</th>
+      <th scope="col">木精靈血統</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th scope="row">1</th>
+      <td>黑暗視覺120呎<br><strong>舞光術</strong></td>
+      <td><strong>魔法伎倆</strong><br><span class="lineage-detail">(長休可替換)<br>限換法師戲法</span></td>
+      <td>速度35呎<br><strong>德魯伊伎倆</strong></td>
+    </tr>
+    <tr>
+      <th scope="row">3</th>
+      <td><strong>妖火</strong></td>
+      <td><strong>偵測魔法</strong></td>
+      <td><strong>大步奔行</strong></td>
+    </tr>
+    <tr>
+      <th scope="row">5</th>
+      <td><strong>黑暗術</strong></td>
+      <td><strong>迷蹤步</strong></td>
+      <td><strong>行動無蹤</strong></td>
+    </tr>
+  </tbody>
 </table>
 你始終準備血統法術，可免費施展環位法術各一次，之後需消耗環位，長休後免費次數恢復。選擇智力,感知,魅力其一為施法屬性（選擇血統時決定）。
 
@@ -118,9 +124,9 @@ dwarf: `生物類型：類人生物
  
 侏儒血統：血統賦予你超自然的能力。以下選項二擇一; 智力,感知或魅力是你的施法屬性（選血統時決定）：
 
-🧒森林侏儒：你學會<strong>次級幻影</strong>,始終準備<strong>動物交談</strong>。免費施展次數＝熟練加值（長休恢復），亦可用法術位施展。
+森林侏儒：你學會<strong>次級幻影</strong>,始終準備<strong>動物交談</strong>。免費施展次數＝熟練加值（長休恢復），亦可用法術位施展。
 
-🧒🏽岩石侏儒：你學會<strong>修復術</strong>和<strong>魔法伎倆</strong>。可花10分鐘製造<strong>微型發條裝置</strong>（AC5，HP1），如玩具,打火機或音樂盒。效果選自魔法伎倆；任何生物都可用<strong>附贈</strong>觸碰並啟動; 最多３個，８小時後解體，可用<strong>動作</strong>拆除。
+岩石侏儒：你學會<strong>修復術</strong>和<strong>魔法伎倆</strong>。可花10分鐘製造<strong>微型發條裝置</strong>（AC5，HP1），如玩具,打火機或音樂盒。效果選自魔法伎倆；任何生物都可用<strong>附贈</strong>觸碰並啟動; 最多３個，８小時後解體，可用<strong>動作</strong>拆除。
 `,
   goliath: `生物類型：類人生物
 體型：中型（約 7-8 英呎高）
@@ -211,7 +217,36 @@ tiefling: `生物類型：類人生物
 異界姿態：你學會戲法<strong>奇術</strong>。
 
 邪魔遺贈：血統賦予你超自然的能力，下表擇一。  
-<table border="1" style="border-collapse: collapse; text-align: center;"> <tr> <td>等級</td> <td>深淵血統</td> <td>冥界血統</td> <td>煉獄血統</td> </tr> <tr> <td>1</td> <td>毒素傷害抗性<br><strong>毒氣噴濺</strong></td> <td>黯蝕傷害抗性<br><strong>凍寒之觸</strong></td> <td>火焰傷害抗性<br><strong>火焰箭</strong></td> </tr> <tr> <td>3</td> <td><strong>致病射線</strong></td> <td><strong>虛假生命</strong></td> <td><strong>煉獄叱喝</strong></td> </tr> <tr> <td>5</td> <td><strong>人類定身術</strong></td> <td><strong>衰弱射線</strong></td> <td><strong>黑暗術</strong></td> </tr> </table>
+<table class="race-lineage-table" aria-label="提夫林邪魔遺贈等級能力">
+  <thead>
+    <tr>
+      <th scope="col">等級</th>
+      <th scope="col">深淵血統</th>
+      <th scope="col">冥界血統</th>
+      <th scope="col">煉獄血統</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th scope="row">1</th>
+      <td>毒素傷害抗性<br><strong>毒氣噴濺</strong></td>
+      <td>黯蝕傷害抗性<br><strong>凍寒之觸</strong></td>
+      <td>火焰傷害抗性<br><strong>火焰箭</strong></td>
+    </tr>
+    <tr>
+      <th scope="row">3</th>
+      <td><strong>致病射線</strong></td>
+      <td><strong>虛假生命</strong></td>
+      <td><strong>煉獄叱喝</strong></td>
+    </tr>
+    <tr>
+      <th scope="row">5</th>
+      <td><strong>人類定身術</strong></td>
+      <td><strong>衰弱射線</strong></td>
+      <td><strong>黑暗術</strong></td>
+    </tr>
+  </tbody>
+</table>
 
 你始終準備血統法術，可免費施展環位法術各一次，之後需消耗環位。長休後免費次數恢復。選擇智力,感知,魅力其一為施法屬性（選擇血統時決定）。
 `

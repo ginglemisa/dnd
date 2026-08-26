@@ -192,41 +192,27 @@
     return (hash >>> 0).toString(36);
   }
 
-  // These are deliberate one-to-one presentation rules for features whose action
-  // wording does not map cleanly to the source-text extractor.
+  // These are deliberate one-to-one metadata rules for features whose source
+  // wording does not expose its level or selection requirement to the extractor.
   const SPECIAL_FEATURE_RULES = Object.freeze({
-    "等級 1：狂暴": { stripHeading: true },
-    "等級 1：吟遊詩人激勵": { label: "等級 1：激勵" },
-    "等級 2：荒野形態": { stripHeading: true },
-    "等級 1：回氣": { stripHeading: true },
-    "等級 5：戰術轉移": { stripHeading: true },
-    "等級 1：武藝": { stripHeading: true },
-    "等級 3：撥擋化勁": { stripHeading: true },
-    "等級 2：靈巧動作": { stripHeading: true },
-    "等級 3：快手": { stripHeading: true },
-    "等級 3：手穩就準": { stripHeading: true },
-    "等級 5：直覺閃避": { stripHeading: true },
-    "等級 1：天生術法": { stripHeading: true },
-    "龍翔天際": { label: "等級 5：龍翔天際", stripPrefix: "龍翔天際：５級後可用，", requiredLevel: 5 },
-    "石中精妙": { stripPrefix: "石中精妙：" },
-    "岩石侏儒": { stripPrefix: "🧒🏽岩石侏儒：", gnomeLineage: "rock_gnome" },
-    "巨化形體": { label: "等級 5：巨化形體", stripPrefix: "巨化形體：等級５能力，", requiredLevel: 5 },
-    "熱血湧動": { stripPrefix: "熱血湧動：" }
+    "龍翔天際": { label: "等級 5：龍翔天際", requiredLevel: 5 },
+    "岩石侏儒": { gnomeLineage: "rock_gnome" },
+    "巨化形體": { label: "等級 5：巨化形體", requiredLevel: 5 }
   });
 
   const MONK_REMOVED_LABELS = new Set(["疾風連擊", "閃轉騰挪", "疾步如風"]);
   const MONK_CUSTOM_OPTIONS = Object.freeze([
     {
       mode: "bonus", level: 2, label: "等級 2：聚氣凝神",
-      description: "你可使用「專注點」施展武僧技巧。專注點上限見武僧特性表，短休或長休後全回復。\n\n你一開始有 3 種用法：\n\n- 疾風連擊（1 點）：附贈動作打 2 次徒手。\n- 閃轉騰挪：附贈動作可撤離；再花 1 點可同時撤離 + 回避。\n- 疾步如風：附贈動作可疾走；再花 1 點可同時撤離 + 疾走，且本回合跳躍距離加倍。\n\n若特性要求豁免，DC = 8 + 熟練加值 + 感知調整值。"
+      description: "等級 2：聚氣凝神\n你可使用「專注點」施展武僧技巧。專注點上限見武僧特性表，短休或長休後全回復。\n\n你一開始有 3 種用法：\n\n- 疾風連擊（1 點）：附贈動作打 2 次徒手。\n- 閃轉騰挪：附贈動作可撤離；再花 1 點可同時撤離 + 回避。\n- 疾步如風：附贈動作可疾走；再花 1 點可同時撤離 + 疾走，且本回合跳躍距離加倍。\n\n若特性要求豁免，DC = 8 + 熟練加值 + 感知調整值。"
     },
     {
       mode: "bonus", level: 3, label: "等級 3：散打技巧",
-      description: "當你用「疾風連擊」命中時，可讓目標承受 1 種效果：\n\n- 截擊：到你下回合結束前，目標不能發動借機攻擊。\n- 擊退：目標力量豁免失敗則被推離你最多 15 呎。\n- 擊倒：目標敏捷豁免失敗則倒地。"
+      description: "等級 3：散打技巧\n當你用「疾風連擊」命中時，可讓目標承受 1 種效果：\n\n- 截擊：到你下回合結束前，目標不能發動借機攻擊。\n- 擊退：目標力量豁免失敗則被推離你最多 15 呎。\n- 擊倒：目標敏捷豁免失敗則倒地。"
     },
     {
       mode: "action", level: 5, label: "等級 5：震懾擊",
-      description: "每回合 1 次，當你用武僧武器或徒手命中時，可花 1 點專注點發動震懾打擊。 目標需做體質豁免：\n  - 失敗：震懾到你下回合開始。\n  - 成功：速度減半，且到你下回合開始前，下一次對它的攻擊有優勢。"
+      description: "等級 5：震懾擊\n每回合 1 次，當你用武僧武器或徒手命中時，可花 1 點專注點發動震懾打擊。 目標需做體質豁免：\n  - 失敗：震懾到你下回合開始。\n  - 成功：速度減半，且到你下回合開始前，下一次對它的攻擊有優勢。"
     }
   ]);
 
@@ -241,10 +227,7 @@
   function applySpecialFeatureRule(entry) {
     const rule = SPECIAL_FEATURE_RULES[entry.label];
     if (!rule) return entry;
-    let description = entry.description;
-    if (rule.stripHeading) description = description.replace(/^等級\s*\d+\s*[：:]\s*[^\n]*\n*/u, "");
-    if (rule.stripPrefix) description = description.replace(rule.stripPrefix, "").trimStart();
-    return { ...entry, label: rule.label || entry.label, description, requiredLevel: rule.requiredLevel, gnomeLineage: rule.gnomeLineage };
+    return { ...entry, label: rule.label || entry.label, requiredLevel: rule.requiredLevel, gnomeLineage: rule.gnomeLineage };
   }
 
   function getMonkCustomEntries(mode) {
@@ -256,9 +239,6 @@
   }
 
   function extractTimedFeatureEntries(raw, mode, source) {
-    const plainText = sourceToPlainText(raw);
-    if (!plainText) return [];
-    const lines = plainText.split("\n");
     const timingPattern = mode === "bonus"
       ? /(?:附贈動作|(?:使用|用|消耗|以)[^。；\n]{0,6}「?附贈」?)/u
       : /(?:反應(?:動作)?|[藉借]機攻擊)/u;
@@ -269,10 +249,7 @@
     const entriesByLabel = new Map();
     const seen = new Set();
 
-    lines.forEach((line, index) => {
-      if (!timingPattern.test(line) || unavailablePattern.test(line)) return;
-      const description = relevantParagraph(lines, index);
-      const label = findFeatureTitle(lines, index, sourceLabel);
+    function addEntry(label, description, requiredLevel) {
       const fingerprint = `${label}|${description}`.replace(/\s+/g, " ");
       if (seen.has(fingerprint)) return;
       seen.add(fingerprint);
@@ -280,14 +257,43 @@
       if (existing) {
         existing.description = `${existing.description}\n\n${description}`;
       } else {
-        entriesByLabel.set(label, {
+        const entry = {
           key: `dynamic-${mode}-${source}-${stableKeyHash(`${source}|${label}`)}`,
           label,
           source: sourceLabel,
           description,
           dynamic: true
-        });
+        };
+        if (requiredLevel) entry.requiredLevel = requiredLevel;
+        entriesByLabel.set(label, entry);
       }
+    }
+
+    let remainingRaw = String(raw ?? "");
+    if (remainingRaw.includes("data-action-description")) {
+      const holder = document.createElement("div");
+      holder.innerHTML = remainingRaw;
+      holder.querySelectorAll("[data-action-description]").forEach(block => {
+        const description = sourceToPlainText(block.innerHTML).replace(/\n{2,}/g, "\n");
+        if (!timingPattern.test(description) || unavailablePattern.test(description)) return;
+        const featureSection = block.closest("section[data-feature-level]");
+        const heading = featureSection?.querySelector("h3")?.textContent || "";
+        const label = cleanFeatureTitle(heading, `${sourceLabel}能力`);
+        addEntry(label, description, Number(featureSection?.dataset.featureLevel) || undefined);
+        block.remove();
+      });
+      remainingRaw = holder.innerHTML;
+    }
+
+    const plainText = sourceToPlainText(remainingRaw);
+    if (!plainText) return Array.from(entriesByLabel.values()).map(applySpecialFeatureRule);
+    const lines = plainText.split("\n");
+
+    lines.forEach((line, index) => {
+      if (!timingPattern.test(line) || unavailablePattern.test(line)) return;
+      const description = relevantParagraph(lines, index);
+      const label = findFeatureTitle(lines, index, sourceLabel);
+      addEntry(label, description);
     });
 
     return Array.from(entriesByLabel.values()).map(applySpecialFeatureRule);
@@ -417,6 +423,10 @@
     description.append(heading, copy);
   }
 
+  function getButtonLabel(option) {
+    return String(option.label).replace(/^等級\s*\d+\s*[：:]\s*/u, "");
+  }
+
   function createOptionButton(option) {
     const button = document.createElement("button");
     button.type = "button";
@@ -426,7 +436,7 @@
 
     const label = document.createElement("span");
     label.className = "action-option-label";
-    label.textContent = option.label;
+    label.textContent = getButtonLabel(option);
     button.appendChild(label);
     if (option.source) {
       const source = document.createElement("span");

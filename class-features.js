@@ -1,5 +1,9 @@
 // class-features.js
 const DRUID_WILD_SHAPE_BEASTS = [
+  { key: "rat", label: "老鼠", cr: "0" },
+  { key: "riding_horse", label: "馱用馬", cr: "1/4" },
+  { key: "spider", label: "蜘蛛", cr: "0" },
+  { key: "wolf", label: "狼", cr: "1/4" },
   { key: "ape", label: "猿猴", cr: "1/2" },
   { key: "black_bear", label: "黑熊", cr: "1/2" },
   { key: "crocodile", label: "鱷魚", cr: "1/2" },
@@ -40,10 +44,26 @@ const DRUID_WILD_SHAPE_BEASTS = [
   { key: "weasel", label: "鼬", cr: "0" }
 ];
 
-const DRUID_WILD_SHAPE_BEAST_LIST_HTML = `- <span role="button" tabindex="0" aria-expanded="false" style="cursor: pointer; text-decoration: underline; text-underline-offset: 2px; font-weight: 600;" onclick="const expanded = this.getAttribute('aria-expanded') === 'true'; this.setAttribute('aria-expanded', String(!expanded)); if (this.nextElementSibling) this.nextElementSibling.hidden = expanded;" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); this.click(); }">其他動物列表</span><span hidden>：${DRUID_WILD_SHAPE_BEASTS.map(({ key, label, cr }) => `<span class="beast-tip" data-beast="${key}">${label}</span>(CR ${cr})`).join("、")}。</span>`;
+const DRUID_WILD_SHAPE_CR_ORDER = ["0", "1/8", "1/4", "1/2"];
+
+const DRUID_WILD_SHAPE_BEAST_LIST_HTML = `<details class="wild-shape-beast-disclosure">
+  <summary>
+    <span class="wild-shape-beast-disclosure__show">查看其他動物</span>
+    <span class="wild-shape-beast-disclosure__hide">收起其他動物</span>
+  </summary>
+  <div class="wild-shape-beast-groups">
+    ${DRUID_WILD_SHAPE_CR_ORDER.map((cr) => {
+      const beasts = DRUID_WILD_SHAPE_BEASTS.filter((beast) => beast.cr === cr);
+      return `<section class="wild-shape-beast-group" aria-labelledby="wild-shape-cr-${cr.replace("/", "-")}">
+        <h4 id="wild-shape-cr-${cr.replace("/", "-")}">CR ${cr}</h4>
+        <div class="wild-shape-beast-grid">${beasts.map(({ key, label }) => `<span class="beast-tip" data-beast="${key}">${label}</span>`).join("")}</div>
+      </section>`;
+    }).join("")}
+  </div>
+</details>`;
 
 const classFeatures = {
-  barbarian: `<table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+  barbarian: `<table class="class-core-profile-table class-core-profile-table--barbarian" aria-label="野蠻人核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
     <tr>
       <td style="width: 6em; font-weight: bold;">關鍵屬性</td>
@@ -86,10 +106,8 @@ const classFeatures = {
       <td>75 金幣</td>
     </tr>
   </tbody>
-</table><strong>探索套組：</strong>背包、床卷、油瓶 ×2、單日口糧 ×10、繩索、火絨盒、火把 ×10、水袋。
-
-「戰場邊緣的風帶著血腥味，他赤著上身踏入泥濘，胸口刻著古老圖紋。敵軍的長矛手還來不及列陣，他已怒吼著衝入人群，像暴風撕裂隊形。曾在部族被焚毀的夜裡失去一切的他，如今只信任手中的巨斧與心中翻騰的怒火。遠處的弓手艾琳顫聲呼喊他的名字，他卻已聽不見，只剩戰鬥的鼓動在血液裡轟鳴。」
-
+</table><p class="class-core-equipment-note"><strong>探索套組：</strong>背包、床卷、油瓶 ×2、單日口糧 ×10、繩索、火絨盒、火把 ×10、水袋。</p>
+<blockquote class="class-flavor-quote">「戰場邊緣的風帶著血腥味，他赤著上身踏入泥濘，胸口刻著古老圖紋。敵軍的長矛手還來不及列陣，他已怒吼著衝入人群，像暴風撕裂隊形。曾在部族被焚毀的夜裡失去一切的他，如今只信任手中的巨斧與心中翻騰的怒火。遠處的弓手艾琳顫聲呼喊他的名字，他卻已聽不見，只剩戰鬥的鼓動在血液裡轟鳴。」</blockquote>
 野蠻人以強悍體魄與爆發力著稱，擅長正面衝鋒與承受傷害，常作為隊伍的前線壓制者，以純粹力量撕開敵人防線。
 <strong>野蠻人特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
      <thead>
@@ -145,64 +163,93 @@ const classFeatures = {
       </tr>
      </tbody>
     </table>
-等級 1：狂暴
-你可以用附贈動作進入狂暴（未穿重甲時）。
+<div class="class-feature-content">
+<section class="barbarian-feature class-feature-section" data-feature-level="1">
+  <h3>等級 1：狂暴</h3>
+  <p>你可以用附贈動作進入狂暴（未穿重甲時）。</p>
+  <div class="class-rule-subsection barbarian-rule-subsection">
+    <h4>狂暴期間：</h4>
+    <ul class="class-rule-list">
+      <li>你對鈍擊,穿刺,揮砍傷害有抗性。</li>
+      <li>你用力量造成的傷害可加上狂暴傷害（數值見特性表）。</li>
+      <li>你的力量檢定與力量豁免有優勢。</li>
+      <li>你不能施法，也不能維持專注。</li>
+    </ul>
+  </div>
+  <div class="class-rule-subsection barbarian-rule-subsection">
+    <h4>持續時間：到你下個回合結束。若要延長，每回合至少做一項：</h4>
+    <ul class="class-rule-list">
+      <li>對敵人做攻擊檢定，或</li>
+      <li>讓敵人做豁免檢定，或</li>
+      <li>再用一次附贈動作延長狂暴。</li>
+    </ul>
+  </div>
+  <p>若你穿上重甲,陷入失能，或超過 10 分鐘，狂暴會結束。</p>
+  <p>使用次數見特性表：短休回 1 次,長休全回。</p>
+</section>
 
-狂暴期間：
-- 你對鈍擊,穿刺,揮砍傷害有抗性。
-- 你用力量造成的傷害可加上狂暴傷害（數值見特性表）。
-- 你的力量檢定與力量豁免有優勢。
-- 你不能施法，也不能維持專注。
+<section class="barbarian-feature class-feature-section" data-feature-level="1">
+  <h3>等級 1：無甲防禦</h3>
+  <p>你沒穿護甲時，AC = 10 + 敏捷調整值 + 體質調整值。</p>
+  <p>你仍可持盾。</p>
+</section>
 
-持續時間：到你下個回合結束。若要延長，每回合至少做一項：
-- 對敵人做攻擊檢定，或
-- 讓敵人做豁免檢定，或
-- 再用一次附贈動作延長狂暴。
+<section class="barbarian-feature class-feature-section" data-feature-level="1">
+  <h3>等級 1：武器精通</h3>
+  <p>從你熟練的武器中選 2 種，獲得其精通屬性（例如巨斧,手斧）。</p>
+  <p>每次長休後可改其中 1 種。</p>
+</section>
 
-若你穿上重甲,陷入失能，或超過 10 分鐘，狂暴會結束。
+<section class="barbarian-feature class-feature-section" data-feature-level="2">
+  <h3>等級 2：險境感知</h3>
+  <p>只要你沒失能，你的敏捷豁免有優勢。</p>
+</section>
 
-使用次數見特性表：短休回 1 次,長休全回。
+<section class="barbarian-feature class-feature-section" data-feature-level="2">
+  <h3>等級 2：魯莽攻擊</h3>
+  <p>在你回合內第一次用力量攻擊前可宣告魯莽攻擊：</p>
+  <ul class="class-rule-list">
+    <li>你本回合用力量的近戰攻擊有優勢。</li>
+    <li>直到你下回合開始前，攻擊你的人也有優勢。</li>
+  </ul>
+</section>
 
-等級 1：無甲防禦
-你沒穿護甲時，AC = 10 + 敏捷調整值 + 體質調整值。
-你仍可持盾。
+<section class="barbarian-feature class-feature-section" data-feature-level="3">
+  <h3>等級 3：野蠻人子職</h3>
+  <p>你可選擇一個野蠻人子職；基本規則僅提供狂戰士道途。</p>
+</section>
 
-等級 1：武器精通
-從你熟練的武器中選 2 種，獲得其精通屬性（例如巨斧,手斧）。
-每次長休後可改其中 1 種。
+<section class="barbarian-feature class-feature-section" data-feature-level="3">
+  <h3>等級 3：狂怒（狂戰子職）</h3>
+  <p>當你在狂暴中使用魯莽攻擊，且用力量攻擊命中本回合第一個目標時，
+可額外造成若干 d6 傷害（骰數 = 狂暴傷害加值），類型同該次攻擊。</p>
+</section>
 
-等級 2：險境感知
-只要你沒失能，你的敏捷豁免有優勢。
+<section class="barbarian-feature class-feature-section" data-feature-level="3">
+  <h3>等級 3：先祖學識</h3>
+  <p>你從野蠻人初始技能列表中再獲得 1 項技能熟練。</p>
+  <p>此外，狂暴期間，你可用力量來做以下技能檢定：</p>
+  <p>${skillTip("體操")},${skillTip("威嚇")},${skillTip("察覺")},${skillTip("隱匿")},${skillTip("求生")}。</p>
+</section>
 
-等級 2：魯莽攻擊
-在你回合內第一次用力量攻擊前可宣告魯莽攻擊：
-- 你本回合用力量的近戰攻擊有優勢。
-- 直到你下回合開始前，攻擊你的人也有優勢。
+<section class="barbarian-feature class-feature-section" data-feature-level="4">
+  <h3>等級 4：屬性值提升</h3>
+  <p>獲得「屬性值提升」專長，或其他符合條件的專長。</p>
+  <p>另外依特性表提升武器精通可選數量。</p>
+</section>
 
-等級 3：野蠻人子職
-你可選擇一個野蠻人子職；基本規則僅提供狂戰士道途。
+<section class="barbarian-feature class-feature-section" data-feature-level="5">
+  <h3>等級 5：額外攻擊</h3>
+  <p>你在自己回合使用攻擊動作時，可以攻擊 2 次。</p>
+</section>
 
-等級 3：狂怒（狂戰子職）
-當你在狂暴中使用魯莽攻擊，且用力量攻擊命中本回合第一個目標時，
-可額外造成若干 d6 傷害（骰數 = 狂暴傷害加值），類型同該次攻擊。
+<section class="barbarian-feature class-feature-section" data-feature-level="5">
+  <h3>等級 5：快速移動</h3>
+  <p>若你未穿重甲，速度 +10 呎。</p>
+</section>
+</div>`,
 
-等級 3：先祖學識
-你從野蠻人初始技能列表中再獲得 1 項技能熟練。
-此外，狂暴期間，你可用力量來做以下技能檢定：
-${skillTip("體操")},${skillTip("威嚇")},${skillTip("察覺")},${skillTip("隱匿")},${skillTip("求生")}。
-
-等級 4：屬性值提升
-獲得「屬性值提升」專長，或其他符合條件的專長。
-另外依特性表提升武器精通可選數量。
-
-等級 5：額外攻擊
-你在自己回合使用攻擊動作時，可以攻擊 2 次。
-
-等級 5：快速移動
-若你未穿重甲，速度 +10 呎。
-`,
-
-  bard: `<table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+  bard: `<table class="class-core-profile-table class-core-profile-table--bard" aria-label="吟遊詩人核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
     <tr>
       <td style="width: 6em; font-weight: bold;">關鍵屬性</td>
@@ -245,11 +292,8 @@ ${skillTip("體操")},${skillTip("威嚇")},${skillTip("察覺")},${skillTip("�
       <td>90 金幣</td>
     </tr>
   </tbody>
-</table>
-<strong>藝人套組：</strong>背包、睡袋、鈴鐺、牛眼提燈、戲服 ×3、鏡子、油瓶 ×8、單日口糧 ×9、火絨盒、水袋。
-
-「酒館燭火搖曳，他撥動魯特琴的弦，旋律在空氣中流轉。原本劍拔弩張的傭兵們漸漸放下武器，連門口的守衛都露出微笑。沒有人知道，他在歌聲中悄悄改變了人心。曾在王城流浪的他，靠著故事與音樂換得一席之地。當一名神秘女子遞來密信，他的笑容不變，卻已準備踏入另一場未知的冒險。」
-
+</table><p class="class-core-equipment-note"><strong>藝人套組：</strong>背包、睡袋、鈴鐺、牛眼提燈、戲服 ×3、鏡子、油瓶 ×8、單日口糧 ×9、火絨盒、水袋。</p>
+<blockquote class="class-flavor-quote">「酒館燭火搖曳，他撥動魯特琴的弦，旋律在空氣中流轉。原本劍拔弩張的傭兵們漸漸放下武器，連門口的守衛都露出微笑。沒有人知道，他在歌聲中悄悄改變了人心。曾在王城流浪的他，靠著故事與音樂換得一席之地。當一名神秘女子遞來密信，他的笑容不變，卻已準備踏入另一場未知的冒險。」</blockquote>
 吟遊詩人以音樂與言語影響他人，擅長支援隊友,操控局勢與收集情報，是兼具社交與輔助能力的多面手。
 <strong>吟遊詩人特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.97em;">
       <thead>
@@ -323,72 +367,101 @@ ${skillTip("體操")},${skillTip("威嚇")},${skillTip("察覺")},${skillTip("�
         </tr>
       </tbody>
     </table>
-使用樂器：魅力檢定，演奏已知的曲子（DC 10），或即興創作歌曲（DC 15）。 
+<div class="class-feature-content">
+<p>使用樂器：魅力檢定，演奏已知的曲子（DC 10），或即興創作歌曲（DC 15）。 </p>
 
-如何扮演吟遊詩人
-你的吟遊詩人可以是吟唱史詩的詩人,彈魯特琴唱情歌的表演者,朗誦獨白的戲劇家，或用舞步帶動隊友節奏的舞者；建立角色時，想想你最擅長哪種演出,想帶給觀眾什麼情緒（歡樂,哀傷,激昂,諷刺），以及靈感來自哪裡（自然,回憶,榮耀,酒館日常）。你可以專精一種風格，也可以嘗試全能路線。
+<div class="class-rule-subsection bard-roleplay-guide">
+  <h4>如何扮演吟遊詩人</h4>
+  <p>你的吟遊詩人可以是吟唱史詩的詩人,彈魯特琴唱情歌的表演者,朗誦獨白的戲劇家，或用舞步帶動隊友節奏的舞者；建立角色時，想想你最擅長哪種演出,想帶給觀眾什麼情緒（歡樂,哀傷,激昂,諷刺），以及靈感來自哪裡（自然,回憶,榮耀,酒館日常）。你可以專精一種風格，也可以嘗試全能路線。</p>
+</div>
 
-等級 1：吟遊詩人激勵
-你可以用話語,音樂或表演鼓舞同伴，給對方 1 顆激勵骰（初始 d6）。
+<section class="bard-feature class-feature-section" data-feature-level="1">
+  <h3>等級 1：吟遊詩人激勵</h3>
+  <p>你可以用話語,音樂或表演鼓舞同伴，給對方 1 顆激勵骰（初始 d6）。</p>
+  <div class="class-rule-subsection" data-action-description>
+    <h4>使用方式：</h4>
+    <ul class="class-rule-list">
+      <li>附贈動作。</li>
+      <li>目標在你 60 呎內，且聽得到你或看得到你。</li>
+      <li>同一時間一個生物只能持有 1 顆你的激勵骰。</li>
+    </ul>
+  </div>
+  <div class="class-rule-subsection">
+    <h4>效果：</h4>
+    <ul class="class-rule-list">
+      <li>持續 1 小時。</li>
+      <li>目標在 d20 檢定失敗後，可擲這顆激勵骰加上去；擲出後骰子消耗。</li>
+    </ul>
+  </div>
+  <p>使用次數 = 你的魅力調整值（至少 1）。長休全回。</p>
+  <p>到 5 級時，激勵骰升為 d8（見特性表）。</p>
+</section>
 
-使用方式：
-- 附贈動作。
-- 目標在你 60 呎內，且聽得到你或看得到你。
-- 同一時間一個生物只能持有 1 顆你的激勵骰。
+<section class="bard-feature class-feature-section" data-feature-level="1">
+  <h3>等級 1：施法</h3>
+  <p>你可施放吟遊詩人法術（見吟遊詩人法術列表）。</p>
+  <div class="class-rule-subsection">
+    <h4>戲法：</h4>
+    <ul class="class-rule-list">
+      <li>起始學 2 個（建議：舞光術,惡言相加）。</li>
+      <li>升級時可換 1 個。</li>
+      <li>4 級再多學 1 個。</li>
+    </ul>
+  </div>
+  <p>法術位：看特性表，長休後全回復。</p>
+  <div class="class-rule-subsection">
+    <h4>準備法術：</h4>
+    <ul class="class-rule-list">
+      <li>起始準備 4 個 1 環法術（推薦：魅惑人類,七彩噴射,不諧低語,治癒真言）。</li>
+      <li>可準備總數隨等級增加（看「準備法術」欄）。</li>
+      <li>每當可準備數量提高時，你要從「吟遊詩人法術清單」再選新法術補上，直到數量和特性表一致。</li>
+      <li>只能準備你目前有法術位可施放的環級。</li>
+      <li>例如 3 級時可準備共 6 個 1 或 2 環法術。</li>
+    </ul>
+  </div>
+  <p>其他特性給的額外已準備法術，不占用上述數量。</p>
+  <p>每次升級時，你可把 1 個已準備法術換成另一個你可施放的吟遊詩人法術。</p>
+  <p>施法屬性：魅力。</p>
+  <p>施法法器：可用樂器。</p>
+</section>
 
-效果：
-- 持續 1 小時。
-- 目標在 d20 檢定失敗後，可擲這顆激勵骰加上去；擲出後骰子消耗。
+<section class="bard-feature class-feature-section" data-feature-level="2">
+  <h3>等級 2：專精</h3>
+  <p>選 2 項你已熟練的技能，改為專精（熟練加值加倍）。</p>
+</section>
 
-使用次數 = 你的魅力調整值（至少 1）。長休全回。
-到 5 級時，激勵骰升為 d8（見特性表）。
+<section class="bard-feature class-feature-section" data-feature-level="2">
+  <h3>等級 2：萬事通</h3>
+  <p>你對所有「未熟練」能力檢定，額外加上一半熟練加值（向下取整）。</p>
+</section>
 
-等級 1：施法
-你可施放吟遊詩人法術（見吟遊詩人法術列表）。
+<section class="bard-feature class-feature-section" data-feature-level="3">
+  <h3>等級 3：吟遊詩人子職</h3>
+  <p>你可選擇一個吟遊詩人子職；基本規則僅提供逸聞學院。</p>
+</section>
 
-戲法：
-- 起始學 2 個（建議：舞光術,惡言相加）。
-- 升級時可換 1 個。
-- 4 級再多學 1 個。
+<section class="bard-feature class-feature-section" data-feature-level="3">
+  <h3>等級 3：附贈熟練項（逸聞子職）</h3>
+  <p>你獲得任意三個自選技能的熟練項。</p>
+</section>
 
-法術位：看特性表，長休後全回復。
+<section class="bard-feature class-feature-section" data-feature-level="3" data-action-description>
+  <h3>等級 3：語出驚人（逸聞子職）</h3>
+  <p>當你 60 呎內看得到的生物在傷害擲骰,能力檢定或攻擊檢定成功時，
+你可用反應並消耗 1 次激勵干擾它，降低成果（依特性敘述判定）。</p>
+</section>
 
-準備法術：
-- 起始準備 4 個 1 環法術（推薦：魅惑人類,七彩噴射,不諧低語,治癒真言）。
-- 可準備總數隨等級增加（看「準備法術」欄）。
-- 每當可準備數量提高時，你要從「吟遊詩人法術清單」再選新法術補上，直到數量和特性表一致。
-- 只能準備你目前有法術位可施放的環級。
-- 例如 3 級時可準備共 6 個 1 或 2 環法術。
+<section class="bard-feature class-feature-section" data-feature-level="4">
+  <h3>等級 4：屬性值提升</h3>
+  <p>獲得「屬性值提升」專長，或其他符合條件的專長。</p>
+</section>
 
-其他特性給的額外已準備法術，不占用上述數量。
-每次升級時，你可把 1 個已準備法術換成另一個你可施放的吟遊詩人法術。
-
-施法屬性：魅力。
-施法法器：可用樂器。
-
-等級 2：專精
-選 2 項你已熟練的技能，改為專精（熟練加值加倍）。
-
-等級 2：萬事通
-你對所有「未熟練」能力檢定，額外加上一半熟練加值（向下取整）。
-
-等級 3：吟遊詩人子職
-你可選擇一個吟遊詩人子職；基本規則僅提供逸聞學院。
-
-等級 3：附贈熟練項（逸聞子職）
-你獲得任意三個自選技能的熟練項。
-
-等級 3：語出驚人（逸聞子職）
-當你 60 呎內看得到的生物在傷害擲骰,能力檢定或攻擊檢定成功時，
-你可用反應並消耗 1 次激勵干擾它，降低成果（依特性敘述判定）。
-
-等級 4：屬性值提升
-獲得「屬性值提升」專長，或其他符合條件的專長。
-
-等級 5：激勵之源
-你在短休或長休後都能回復已消耗的激勵次數。
-此外，你可消耗 1 個法術位換回 1 次激勵使用次數（不耗動作）。
-`,
+<section class="bard-feature class-feature-section" data-feature-level="5">
+  <h3>等級 5：激勵之源</h3>
+  <p>你在短休或長休後都能回復已消耗的激勵次數。</p>
+  <p>此外，你可消耗 1 個法術位換回 1 次激勵使用次數（不耗動作）。</p>
+</section>
+</div>`,
 
   cleric: `<table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
@@ -589,7 +662,7 @@ ${skillTip("體操")},${skillTip("威嚇")},${skillTip("察覺")},${skillTip("�
 將總值作為光耀傷害，套用到每個該次豁免失敗的不死生物。
 這個傷害不會中止驅散效果。
 `,
-  druid: `<table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+  druid: `<table class="class-core-profile-table class-core-profile-table--druid" aria-label="德魯伊核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
     <tr>
       <td style="width: 6em; font-weight: bold;">關鍵屬性</td>
@@ -632,11 +705,8 @@ ${skillTip("體操")},${skillTip("威嚇")},${skillTip("察覺")},${skillTip("�
       <td>50 金幣</td>
     </tr>
   </tbody>
-</table>
-<strong>探索套組：</strong>背包、床卷、油瓶 ×2、單日口糧 ×10、繩索、火絨盒、火把 ×10、水袋。
-
-「森林深處，霧氣繚繞，她赤足行走於濕潤的土地。狼群靜靜跟隨，樹葉在她身旁低語。當獵人踏入禁地，她的身影忽然消失，取而代之的是一頭巨熊自陰影中現身。她曾是城市的孩子，如今卻將心交給自然。遠方雷聲滾動，她抬頭，仿佛與天地共呼吸。」
-
+</table><p class="class-core-equipment-note"><strong>探索套組：</strong>背包、床卷、油瓶 ×2、單日口糧 ×10、繩索、火絨盒、火把 ×10、水袋。</p>
+<blockquote class="class-flavor-quote">「森林深處，霧氣繚繞，她赤足行走於濕潤的土地。狼群靜靜跟隨，樹葉在她身旁低語。當獵人踏入禁地，她的身影忽然消失，取而代之的是一頭巨熊自陰影中現身。她曾是城市的孩子，如今卻將心交給自然。遠方雷聲滾動，她抬頭，仿佛與天地共呼吸。」</blockquote>
 德魯伊與自然共鳴，能操控環境與變化形態，擅長支援,控制戰場與適應各種情境。
 <strong>德魯伊特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
@@ -712,134 +782,214 @@ ${skillTip("體操")},${skillTip("威嚇")},${skillTip("察覺")},${skillTip("�
     </tr>
   </tbody>
 </table>
-等級 1：德魯伊語
-- 你學會德魯伊的祕密語言「德魯伊語」，並始終準備法術「動物交談」。
-- 你可用德魯伊語留下隱藏訊息：
-  - 看得懂德魯伊語的人會自動發現。
-- 看不懂的人可做 DC 15 智力（${skillTip("調查")}）檢定察覺有訊息，但無法用非魔法方式解讀。
+<div class="class-feature-content">
+<section class="druid-feature class-feature-section" data-feature-level="1">
+  <h3>等級 1：德魯伊語</h3>
+  <ul class="class-rule-list">
+    <li>你學會德魯伊的祕密語言「德魯伊語」，並始終準備法術「動物交談」。</li>
+    <li>你可用德魯伊語留下隱藏訊息：
+      <ul>
+        <li>看得懂德魯伊語的人會自動發現。</li>
+      </ul>
+    </li>
+    <li>看不懂的人可做 DC 15 智力（${skillTip("調查")}）檢定察覺有訊息，但無法用非魔法方式解讀。</li>
+  </ul>
+</section>
 
-等級 1：原初使命
-- 你在下列使命擇一：
-  <label><input type="checkbox" id="druid-shaman"> 巫祝</label>：
-    - 額外學會 1 個德魯伊戲法。
-- 你的智力（${skillTip("奧秘")}／${skillTip("自然")}）檢定可額外加上感知調整值（至少 +1）。
-  <label><input type="checkbox" id="druid-sentinel"> 哨衛</label>：獲得軍用武器熟練，並接受中甲訓練。
+<section class="druid-feature class-feature-section" data-feature-level="1">
+  <h3>等級 1：原初使命</h3>
+  <p>你在下列使命擇一：</p>
+  <div class="druid-mission-options">
+    <div class="druid-mission-option">
+      <div class="druid-mission-option__heading"><label><input type="checkbox" id="druid-shaman"> 巫祝</label>：</div>
+      <ul class="class-rule-list">
+        <li>額外學會 1 個德魯伊戲法。</li>
+      </ul>
+      <p>你的智力（${skillTip("奧秘")}／${skillTip("自然")}）檢定可額外加上感知調整值（至少 +1）。</p>
+    </div>
+    <div class="druid-mission-option">
+      <div class="druid-mission-option__heading"><label><input type="checkbox" id="druid-sentinel"> 哨衛</label>：獲得軍用武器熟練，並接受中甲訓練。</div>
+    </div>
+  </div>
+</section>
 
-等級 1：施法
-- 你向自然借力施法，使用「德魯伊法術列表」。
-- 戲法：
-  - 起始學會 2 個德魯伊戲法（推薦：德魯伊伎倆,燃火術）。
-  - 每次升德魯伊等級可替換 1 個戲法。
-  - 4 級時再多學 1 個戲法。
-- 法術位：見「德魯伊特性」表，長休後全回復。
-- 準備法術：
-  - 起始先準備 4 個 1 環法術（推薦：化獸為友,療傷術,妖火,雷鳴波）。
-  - 之後可準備數量依表提升。
-  - 每當這個數量提高時，從德魯伊法術列表再選法術，直到準備數量與表格一致。
-  - 你只能準備目前有法術位環階的法術（例如 3 級時可準備 1～2 環法術）。
-- 若其他德魯伊特性提供額外已準備法術，這些法術不計入你平常的準備上限，但仍算德魯伊法術。
-- 每次長休後可重整準備法術清單。
-- 施法屬性：感知。
-- 施法法器：可用德魯伊法器。
+<section class="druid-feature class-feature-section" data-feature-level="1">
+  <h3>等級 1：施法</h3>
+  <ul class="class-rule-list">
+    <li>你向自然借力施法，使用「德魯伊法術列表」。</li>
+    <li>戲法：
+      <ul>
+        <li>起始學會 2 個德魯伊戲法（推薦：德魯伊伎倆,燃火術）。</li>
+        <li>每次升德魯伊等級可替換 1 個戲法。</li>
+        <li>4 級時再多學 1 個戲法。</li>
+      </ul>
+    </li>
+    <li>法術位：見「德魯伊特性」表，長休後全回復。</li>
+    <li>準備法術：
+      <ul>
+        <li>起始先準備 4 個 1 環法術（推薦：化獸為友,療傷術,妖火,雷鳴波）。</li>
+        <li>之後可準備數量依表提升。</li>
+        <li>每當這個數量提高時，從德魯伊法術列表再選法術，直到準備數量與表格一致。</li>
+        <li>你只能準備目前有法術位環階的法術（例如 3 級時可準備 1～2 環法術）。</li>
+      </ul>
+    </li>
+    <li>若其他德魯伊特性提供額外已準備法術，這些法術不計入你平常的準備上限，但仍算德魯伊法術。</li>
+    <li>每次長休後可重整準備法術清單。</li>
+    <li>施法屬性：感知。</li>
+    <li>施法法器：可用德魯伊法器。</li>
+  </ul>
+</section>
 
-等級 2：荒野形態
-- 你可用附贈動作變成已知的野獸形態（見下方「已知形態」）。
-- 單次變形持續時間：最多「德魯伊等級一半（向下取整）」小時。
-- 變形會提前結束的情況：
-  - 你再次使用荒野形態。
-  - 你陷入失能或死亡。
-  - 你用附贈動作主動解除。
-- 使用次數：起始 2 次；短休回復 1 次，長休回滿。高等級可用次數依表提升。
-野獸形態
-<table style="border-collapse:collapse; width:100%; font-size:0.98em;">
+<section class="druid-feature class-feature-section" data-feature-level="2">
+  <h3>等級 2：荒野形態</h3>
+  <ul class="class-rule-list">
+    <li>你可用附贈動作變成已知的野獸形態（見下方「已知形態」）。</li>
+    <li>單次變形持續時間：最多「德魯伊等級一半（向下取整）」小時。</li>
+    <li>變形會提前結束的情況：
+      <ul>
+        <li>你再次使用荒野形態。</li>
+        <li>你陷入失能或死亡。</li>
+        <li>你用附贈動作主動解除。</li>
+      </ul>
+    </li>
+    <li>使用次數：起始 2 次；短休回復 1 次，長休回滿。高等級可用次數依表提升。</li>
+  </ul>
+  <div class="class-rule-subsection druid-rule-subsection">
+    <h4>野獸形態</h4>
+    <div class="rule-table-shell rule-table-shell--wild-shape">
+<table class="rule-reference-table rule-progress-table rule-progress-table--wild-shape" aria-label="德魯伊野獸形態進程">
   <thead>
     <tr>
-      <th style="border:1px solid #aaa; padding:3px;">德魯伊等級</th>
-      <th style="border:1px solid #aaa; padding:3px;">已知形態</th>
-      <th style="border:1px solid #aaa; padding:3px;">最大挑戰等級</th>
-      <th style="border:1px solid #aaa; padding:3px;">飛行速度</th>
+      <th scope="col">德魯伊等級</th>
+      <th scope="col">已知形態</th>
+      <th scope="col">最大挑戰等級</th>
+      <th scope="col">飛行速度</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <td style="border:1px solid #aaa; padding:3px;">2</td>
-      <td style="border:1px solid #aaa; padding:3px;">4</td>
-      <td style="border:1px solid #aaa; padding:3px;">1/4</td>
-      <td style="border:1px solid #aaa; padding:3px;">無</td>
+      <th scope="row">2<span class="rule-level-suffix">級</span></th>
+      <td data-label="已知形態">4</td>
+      <td data-label="最大 CR">1/4</td>
+      <td data-label="飛行">無</td>
     </tr>
     <tr>
-      <td style="border:1px solid #aaa; padding:3px;">4</td>
-      <td style="border:1px solid #aaa; padding:3px;">6</td>
-      <td style="border:1px solid #aaa; padding:3px;">1/2</td>
-      <td style="border:1px solid #aaa; padding:3px;">無</td>
+      <th scope="row">4<span class="rule-level-suffix">級</span></th>
+      <td data-label="已知形態">6</td>
+      <td data-label="最大 CR">1/2</td>
+      <td data-label="飛行">無</td>
     </tr>
     <tr>
-      <td style="border:1px solid #aaa; padding:3px;">8</td>
-      <td style="border:1px solid #aaa; padding:3px;">8</td>
-      <td style="border:1px solid #aaa; padding:3px;">1</td>
-      <td style="border:1px solid #aaa; padding:3px;">有</td>
+      <th scope="row">8<span class="rule-level-suffix">級</span></th>
+      <td data-label="已知形態">8</td>
+      <td data-label="最大 CR">1</td>
+      <td data-label="飛行">有</td>
     </tr>
   </tbody>
 </table>
+</div>
+  </div>
+<section class="wild-shape-known-forms" aria-labelledby="wild-shape-known-forms-heading">
+  <h4 id="wild-shape-known-forms-heading">已知形態</h4>
+  <p class="wild-shape-known-forms__intro">你起始已知 4 種野獸形態，需從「挑戰等級 1/4 以下且無飛行速度」的野獸中挑選。</p>
+  <p class="wild-shape-known-forms__recommendation"><strong>推薦：</strong><span class="beast-tip" data-beast="rat">老鼠</span>,<span class="beast-tip" data-beast="riding_horse">馱用馬</span>,<span class="beast-tip" data-beast="spider">蜘蛛</span>,<span class="beast-tip" data-beast="wolf">狼</span>。</p>
+  <ul class="wild-shape-known-forms__rules">
+    <li>每次長休可替換 1 種已知形態。</li>
+    <li>隨德魯伊等級提高，你可學更多形態，且可選最大挑戰等級會提升。</li>
+    <li>8 級後可選有飛行速度的野獸。</li>
+    <li>經 DM 同意，也可參考《怪物圖鑑》或其他來源的合適野獸。</li>
+  </ul>
+  ${DRUID_WILD_SHAPE_BEAST_LIST_HTML}
+</section>
+  <div class="class-rule-subsection druid-rule-subsection druid-rule-subsection--transformation">
+    <h4>變形規則（重點）：</h4>
+    <ul class="class-rule-list">
+      <li>臨時生命值：變形時獲得等同德魯伊等級的臨時生命值。</li>
+      <li>遊戲數據：改用野獸數據，但保留你的生物類型,生命值,生命骰,智力/感知/魅力,職業特性,語言與專長。技能與豁免熟練仍保留，若野獸該數值更高可改用野獸值。</li>
+      <li>施法限制：變形期間不能施法，但不會中斷你已施放法術的專注或既有效果。</li>
+      <li>裝備互動：裝備可掉落,融入或由新形態穿戴；是否能穿戴由 DM 依體型與構造判定。無法穿戴者會掉落或融入，融入的裝備在變形期間不生效。</li>
+    </ul>
+  </div>
+</section>
 
-已知形態：
-- 你起始已知 4 種野獸形態，需從「挑戰等級 1/4 以下且無飛行速度」的野獸中挑選。
-- 推薦：<span class="beast-tip" data-beast="rat">老鼠</span>,<span class="beast-tip" data-beast="riding_horse">馱用馬</span>,<span class="beast-tip" data-beast="spider">蜘蛛</span>,<span class="beast-tip" data-beast="wolf">狼</span>。
-- 每次長休可替換 1 種已知形態。
-- 隨德魯伊等級提高，你可學更多形態，且可選最大挑戰等級會提升。
-- 8 級後可選有飛行速度的野獸。
-- 經 DM 同意，也可參考《怪物圖鑑》或其他來源的合適野獸。
-${DRUID_WILD_SHAPE_BEAST_LIST_HTML}
+<section class="druid-feature class-feature-section" data-feature-level="2">
+  <h3>等級 2：荒野夥伴</h3>
+  <ul class="class-rule-list">
+    <li>你可召喚動物外型的自然精魂。</li>
+    <li>作為魔法動作，消耗 1 個法術位或 1 次荒野形態使用次數，可施放一次不需材料成分的「獲得魔寵」。</li>
+    <li>以此方式召喚的魔寵類型為精類，並在你完成長休後消失。</li>
+  </ul>
+</section>
 
-變形規則（重點）：
-- 臨時生命值：變形時獲得等同德魯伊等級的臨時生命值。
-- 遊戲數據：改用野獸數據，但保留你的生物類型,生命值,生命骰,智力/感知/魅力,職業特性,語言與專長。技能與豁免熟練仍保留，若野獸該數值更高可改用野獸值。
-- 施法限制：變形期間不能施法，但不會中斷你已施放法術的專注或既有效果。
-- 裝備互動：裝備可掉落,融入或由新形態穿戴；是否能穿戴由 DM 依體型與構造判定。無法穿戴者會掉落或融入，融入的裝備在變形期間不生效。
+<section class="druid-feature class-feature-section" data-feature-level="3">
+  <h3>等級 3：德魯伊子職</h3>
+  <ul class="class-rule-list">
+    <li>你可選擇一個德魯伊子職；基本規則僅提供大地結社。</li>
+    <li>隨等級提升，你會陸續取得子職特性。</li>
+  </ul>
+</section>
 
-等級 2：荒野夥伴
-- 你可召喚動物外型的自然精魂。
-- 作為魔法動作，消耗 1 個法術位或 1 次荒野形態使用次數，可施放一次不需材料成分的「獲得魔寵」。
-- 以此方式召喚的魔寵類型為精類，並在你完成長休後消失。
+<section class="druid-feature class-feature-section" data-feature-level="3">
+  <h3>等級 3：大地結社法術（大地子職）</h3>
+  <ul class="class-rule-list">
+    <li>每次長休後，從旱地,極地,溫帶,熱帶擇一地貌。</li>
+    <li>你會始終準備該地貌對應,且目前等級可用的法術：</li>
+  </ul>
+  <div class="druid-terrain-spells">
+    <div class="druid-terrain-spells__group">
+      <p>旱地法術（等級 3）：朦朧術,燃燒之手,火焰箭</p>
+      <p>（等級 5）：火球術</p>
+    </div>
+    <div class="druid-terrain-spells__group">
+      <p>極地法術（等級 3）：雲霧術,人類定身術,冷凍射線</p>
+      <p>（等級 5）：雪雨暴</p>
+    </div>
+    <div class="druid-terrain-spells__group">
+      <p>溫帶法術（等級 3）：迷蹤步,電爪,睡眠術</p>
+      <p>（等級 5）：閃電束</p>
+    </div>
+    <div class="druid-terrain-spells__group">
+      <p>熱帶法術（等級 3）：酸液飛濺,致病射線,蛛網術</p>
+      <p>（等級 5）：臭雲術</p>
+    </div>
+  </div>
+</section>
 
-等級 3：德魯伊子職
-- 你可選擇一個德魯伊子職；基本規則僅提供大地結社。
-- 隨等級提升，你會陸續取得子職特性。
+<section class="druid-feature class-feature-section" data-feature-level="3">
+  <h3>等級 3：大地之援（大地子職）</h3>
+  <ul class="class-rule-list">
+    <li>作為魔法動作，你可消耗 1 次荒野形態，在 60 呎內選一點，產生 10 呎球形花荊區域。</li>
+    <li>區域內你指定的每個生物需做體質豁免（對抗你的法術豁免 DC）：
+      <ul>
+        <li>失敗：受 2d6 黯蝕傷害。</li>
+        <li>成功：傷害減半。</li>
+      </ul>
+    </li>
+    <li>同時你可指定其中 1 名生物回復 2d6 生命值。</li>
+    <li>此特性的傷害與治療會隨等級提升：德魯伊 10 級為 3d6，14 級為 4d6。</li>
+  </ul>
+</section>
 
-等級 3：大地結社法術（大地子職）
-- 每次長休後，從旱地,極地,溫帶,熱帶擇一地貌。
-- 你會始終準備該地貌對應,且目前等級可用的法術：
+<section class="druid-feature class-feature-section" data-feature-level="4">
+  <h3>等級 4：屬性值提升</h3>
+  <p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p>
+</section>
 
-旱地法術（等級 3）：朦朧術,燃燒之手,火焰箭
-（等級 5）：火球術
-
-極地法術（等級 3）：雲霧術,人類定身術,冷凍射線
-（等級 5）：雪雨暴
-
-溫帶法術（等級 3）：迷蹤步,電爪,睡眠術
-（等級 5）：閃電束
-
-熱帶法術（等級 3）：酸液飛濺,致病射線,蛛網術
-（等級 5）：臭雲術
-
-等級 3：大地之援（大地子職）
-- 作為魔法動作，你可消耗 1 次荒野形態，在 60 呎內選一點，產生 10 呎球形花荊區域。
-- 區域內你指定的每個生物需做體質豁免（對抗你的法術豁免 DC）：
-  - 失敗：受 2d6 黯蝕傷害。
-  - 成功：傷害減半。
-- 同時你可指定其中 1 名生物回復 2d6 生命值。
-- 此特性的傷害與治療會隨等級提升：德魯伊 10 級為 3d6，14 級為 4d6。
-
-等級 4：屬性值提升
-獲得「屬性值提升」專長，或改選其他符合條件的專長。
-
-等級 5：野性復甦
-每回合一次，若你沒有剩餘荒野形態次數：
-- 你可消耗 1 個法術位，立刻回復 1 次荒野形態（無需動作）。
-
-另外：
-- 你可消耗 1 次荒野形態，回復 1 個 1 環法術位（無需動作）。
-- 這個回復法術位的用法，在每次長休前只能使用 1 次。`,
+<section class="druid-feature class-feature-section" data-feature-level="5">
+  <h3>等級 5：野性復甦</h3>
+  <p>每回合一次，若你沒有剩餘荒野形態次數：</p>
+  <ul class="class-rule-list">
+    <li>你可消耗 1 個法術位，立刻回復 1 次荒野形態（無需動作）。</li>
+  </ul>
+  <div class="class-rule-subsection druid-rule-subsection">
+    <h4>另外：</h4>
+    <ul class="class-rule-list">
+      <li>你可消耗 1 次荒野形態，回復 1 個 1 環法術位（無需動作）。</li>
+      <li>這個回復法術位的用法，在每次長休前只能使用 1 次。</li>
+    </ul>
+  </div>
+</section>
+</div>`,
   fighter: `<table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
     <tr>
@@ -971,7 +1121,7 @@ ${DRUID_WILD_SHAPE_BEAST_LIST_HTML}
 等級 3：運動健將(勇士子職)
 平日的訓練鍛打出堅實的體能，你的先攻和力量（${skillTip("運動")}）檢定具有優勢。
 
-此外，當你造成重擊後，你可以立即移動至多等同於速度一半的距離，且不會引發借機攻擊。
+此外，當你造成重擊後，你可以立即移動至多等同於速度一半的距離，且不會引發藉機攻擊。
 
 等級 4：屬性值提升
 獲得“屬性值提升”專長或另一符合條件的自選專長。
@@ -1126,7 +1276,7 @@ ${DRUID_WILD_SHAPE_BEAST_LIST_HTML}
 
 等級 3：散打技巧（散打子職）
 當你用「疾風連擊」命中時，可讓目標承受 1 種效果：
-- 截擊：到你下回合結束前，目標不能發動借機攻擊。
+- 截擊：到你下回合結束前，目標不能發動藉機攻擊。
 - 擊退：目標力量豁免失敗則被推離你最多 15 呎。
 - 擊倒：目標敏捷豁免失敗則倒地。
 
@@ -1635,7 +1785,7 @@ ${DRUID_WILD_SHAPE_BEAST_LIST_HTML}
 
 - 淬毒（消耗 1d6）：目標體質豁免失敗則中毒 1 分鐘；其每回合結束可再豁免，成功即結束。使用此效果時你需攜帶制毒師工具。
 - 摔絆（消耗 1d6）：大型或更小目標敏捷豁免失敗則倒地。
-- 撤步（消耗 1d6）：攻擊後你可立刻移動至多一半速度，且不引發借機攻擊。
+- 撤步（消耗 1d6）：攻擊後你可立刻移動至多一半速度，且不引發藉機攻擊。
 
 等級 5：直覺閃避
 當你看得見的攻擊者命中你時，你可用反應讓該次攻擊傷害減半（向下取整）。
@@ -1798,35 +1948,34 @@ ${DRUID_WILD_SHAPE_BEAST_LIST_HTML}
   - 創造法術位：附贈動作消耗術法點換成法術位（見下表），且不能創造 6 環以上法術位。
 - 以此特性創造的法術位會在長休後消散。
 
-生成法術位
-<table style="border-collapse:collapse; width:60%; font-size:0.98em;">
+生成法術位<div class="rule-table-shell rule-table-shell--spell-slot">
+<table class="rule-reference-table rule-progress-table rule-progress-table--spell-slot" aria-label="術士生成法術位換算">
   <thead>
     <tr>
-      <th style="border:1px solid #aaa; padding:3px;">法術位環階</th>
-      <th style="border:1px solid #aaa; padding:3px;">術法點消耗</th>
-      <th style="border:1px solid #aaa; padding:3px;">最低術士等級</th>
+      <th scope="col">法術位環階</th>
+      <th scope="col">術法點消耗</th>
+      <th scope="col">最低術士等級</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <td style="border:1px solid #aaa; padding:3px;">1</td>
-      <td style="border:1px solid #aaa; padding:3px;">2</td>
-      <td style="border:1px solid #aaa; padding:3px;">2</td>
+      <td>1</td>
+      <td>2</td>
+      <td>2</td>
     </tr>
     <tr>
-      <td style="border:1px solid #aaa; padding:3px;">2</td>
-      <td style="border:1px solid #aaa; padding:3px;">3</td>
-      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td>2</td>
+      <td>3</td>
+      <td>3</td>
     </tr>
     <tr>
-      <td style="border:1px solid #aaa; padding:3px;">3</td>
-      <td style="border:1px solid #aaa; padding:3px;">5</td>
-      <td style="border:1px solid #aaa; padding:3px;">5</td>
+      <td>3</td>
+      <td>5</td>
+      <td>5</td>
     </tr>
   </tbody>
 </table>
-
-等級 2：超魔法
+</div>等級 2：超魔法
 - 你獲得 2 個「超魔法選項」（見後方）。
 - 使用超魔法需消耗對應術法點。
 - 除非選項另有註明，單次施法只能套用 1 個超魔法。

@@ -207,14 +207,16 @@
         spell_cast_DC1: { x: 699.48, y: 509.19, width: 39.22, height: 30 },
         spell_cast_toHit1: { x: 765.98, y: 509, width: 34.35, height: 30 },
         hp_dice_max1: { x: 535.42, y: 509, width: 25.23, height: 15 },
-        // Match each filled value to its printed gray-label anchor. Right
-        // widgets expand leftward while retaining the template's right edge.
+        // Match each filled value to its printed gray-label anchor. Each
+        // right-hand value shares the adjusted y position of the value on the
+        // same row. A uniform one-point optical correction keeps the label-to-
+        // value spacing consistent across the two columns.
         Subclass1: { dy: -6 },
-        Class1: { dy: -5.75, expandLeft: 2 },
+        Class1: { alignYTo: 'Subclass1', expandLeft: 1 },
         Specie1: { dy: -4 },
-        Background2: { dy: -5, expandLeft: 1 },
+        Background2: { alignYTo: 'Specie1', expandLeft: 1 },
         alignment1: { dy: -3.25 },
-        language1: { dy: -3.5, expandLeft: 2 },
+        language1: { alignYTo: 'alignment1', expandLeft: 1 },
 
         'sp-level-1': { x: 11, y: 517.8, width: 23, height: 23 },
         'sp-name-1': { x: 34, y: 517.7, width: 91, height: 23 },
@@ -842,8 +844,13 @@
       try {
         const field = form.getField(fieldName);
         let referenceRectangle = null;
+        let yAlignmentRectangle = null;
         if (adjustment.relativeTo) {
           referenceRectangle = form.getField(adjustment.relativeTo)
+            .acroField?.getWidgets?.()[0]?.getRectangle?.() || null;
+        }
+        if (adjustment.alignYTo) {
+          yAlignmentRectangle = form.getField(adjustment.alignYTo)
             .acroField?.getWidgets?.()[0]?.getRectangle?.() || null;
         }
         field.acroField?.getWidgets?.().forEach((widget) => {
@@ -855,7 +862,11 @@
                 ? referenceRectangle.x + (adjustment.referenceXOffset || 0)
                 : rectangle.x + (adjustment.dx || 0) - expandLeft
             ) - (referenceRectangle ? expandLeft : 0),
-            y: adjustment.y ?? (rectangle.y + (adjustment.dy || 0)),
+            y: adjustment.y ?? (
+              yAlignmentRectangle
+                ? yAlignmentRectangle.y + (adjustment.dy || 0)
+                : rectangle.y + (adjustment.dy || 0)
+            ),
             width: adjustment.width ?? (rectangle.width + expandLeft),
             height: adjustment.height ?? rectangle.height
           });

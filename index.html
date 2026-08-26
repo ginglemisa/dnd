@@ -45,18 +45,18 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎲%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20260825-turn-actions">
+  <link rel="stylesheet" href="styles.css?v=20260826-shared-class-layout-trailing-space">
   <script src="scroll-to-top.js" defer></script>
   <script src="monster.js" defer></script>
-  <script src="class-features.js" defer></script>
-  <script src="race.js" defer></script>
+    <script src="class-features.js?v=20260826-bard-semantic-layout" defer></script>
+  <script src="race.js?v=20260826-lineage-tables" defer></script>
   <script src="backgrounds.js" defer></script>
   <script src="tool-data.js" defer></script>
   <script src="feats.js" defer></script>
   <script src="equipment-notes.js?v=20260813-weapon-rule-popups-2" defer></script>
   <script src="spell-list.js" defer></script>
   <script src="condition.js" defer></script>
-  <script src="action-panel.js?v=20260825-warlock-invocation-actions" defer></script>
+  <script src="action-panel.js?v=20260826-button-labels" defer></script>
   <script src="character-rules.js" defer></script>
   <script src="legal-modal.js?v=20260824-onboarding-entry" defer></script>
   <script src="onboarding-tour.js?v=20260825-onboarding-step5-highlights" defer></script>
@@ -98,22 +98,15 @@
         </div>
       </fieldset>
 
-      <!-- 預留操作設定：功能完成後連同此前方分隔線解除註解。
       <div class="utility-menu__divider" role="separator"></div>
       <fieldset class="utility-menu__settings">
         <legend>操作設定</legend>
         <label class="utility-menu__setting" title="開啟時自動計算最大 HP、AC、先攻、速度與被動察覺；關閉後可自行輸入。">
-          <span>自動計算關鍵數值</span>
+          <span>自動計算數值</span>
           <input id="auto-calculate-key-stats-toggle" type="checkbox" role="switch" checked>
           <span class="utility-menu__switch" aria-hidden="true"></span>
         </label>
-        <label class="utility-menu__setting" title="開啟後，點擊屬性調整值即可進行擲骰。">
-          <span>點擊屬性擲骰</span>
-          <input id="click-ability-roll-toggle" type="checkbox" role="switch">
-          <span class="utility-menu__switch" aria-hidden="true"></span>
-        </label>
       </fieldset>
-      -->
 
       <div class="utility-menu__divider" role="separator"></div>
       <section class="utility-menu__section" aria-labelledby="utility-menu-data-title">
@@ -357,14 +350,14 @@
     <div class="mini-stat-card basic-metric-card">
       <div class="mini-stat-label">最大HP</div>
       <div class="basic-metric-values">
-        <span id="hp-display" class="hp-value">(0)</span>
+        <input id="hp-display" class="hp-value derived-stat-input" type="text" inputmode="numeric" value="0" aria-label="最大生命值" readonly>
         <input type="number" id="hp" aria-label="目前生命值" placeholder="HP" min="0" max="200" step="1" inputmode="numeric">
       </div>
     </div>
     <div class="mini-stat-card basic-metric-card">
       <div class="mini-stat-label">ＡＣ / 英雄激勵</div>
       <div class="basic-metric-values">
-        <span id="ac-display" class="hp-value">10</span>
+        <input id="ac-display" class="hp-value derived-stat-input" type="text" inputmode="numeric" value="10" aria-label="護甲等級" readonly>
         <input type="checkbox" id="heroic-inspiration" class="basic-display-checkbox" aria-label="英雄激勵">
       </div>
     </div>
@@ -373,16 +366,16 @@
   <div class="basic-row basic-row--combat">
     <div class="mini-stat-card">
       <div class="mini-stat-label">先攻</div>
-      <output id="initiative-input" class="speed-current-display" aria-label="先攻" aria-live="polite"></output>
+      <input id="initiative-input" class="speed-current-display derived-stat-input" type="text" inputmode="numeric" aria-label="先攻" readonly>
     </div>
     <div class="mini-stat-card">
       <div class="mini-stat-label">速度</div>
       <input id="speed-input" type="number" class="sr-only" value="30" aria-label="基礎速度">
-      <output id="speed-display" class="speed-current-display" aria-live="polite">30</output>
+      <input id="speed-display" class="speed-current-display derived-stat-input" type="text" inputmode="numeric" value="30" aria-label="速度" readonly>
     </div>
     <div class="mini-stat-card">
       <div class="mini-stat-label">被動察覺</div>
-      <output id="passive-perception" class="speed-current-display" aria-label="被動察覺" aria-live="polite"></output>
+      <input id="passive-perception" class="speed-current-display derived-stat-input" type="text" inputmode="numeric" aria-label="被動察覺" readonly>
     </div>
   </div>
 
@@ -498,7 +491,7 @@
 <div id="tab-skills" class="tab-content" role="tabpanel" aria-label="技能頁" hidden>
   <div class="section">
   <button onclick="fillSaves()">計算屬性豁免</button>
-  <div class="skill-action-hint">先把職業和等級選好，再按這個按鈕。</div>
+  <div class="skill-action-hint">決定屬性後，選好職業/等級，再按此鈕。</div>
   <div class="save-grid">
     <div class="save-pair"><label class="save-name" for="prof-str"><input type="checkbox" id="prof-str"><span class="save-stack"><span class="save-abbr">STR</span><span class="save-full">力量</span></span></label><input type="text" inputmode="numeric" id="save-str"></div>
     <div class="save-pair"><label class="save-name" for="prof-int"><input type="checkbox" id="prof-int"><span class="save-stack"><span class="save-abbr">INT</span><span class="save-full">智力</span></span></label><input type="text" inputmode="numeric" id="save-int"></div>
@@ -512,7 +505,7 @@
 
 <div class="section">
   <button type="button" id="calculate-skills-button" onclick="fillSkills()">計算技能加值</button>
-  <div class="skill-action-hint">先把熟練或專精勾好，再按這個按鈕。</div>
+  <div class="skill-action-hint">決定屬性後，勾選熟練/專精，再按此鈕。</div>
   <div class="skill-legend"><span class="legend-badge"><span class="legend-box"></span>熟練</span><span class="legend-badge"><span class="legend-circle"></span>專精</span></div>
   <div class="skill-grid">
     <div class="skill-cell"><div class="skill-name"><span class="skill-tip" data-skill="運動">運動</span>(力量)</div><div class="skill-control-row"><div class="skill-rank-controls"><input type="checkbox" id="prof-運動" data-skill-rank="運動" aria-label="運動 熟練"><input type="checkbox" id="exp-運動" class="circle-checkbox" data-skill-rank="運動" aria-label="運動 專精"></div><input type="text" inputmode="numeric" id="skill-運動"></div></div>
@@ -912,6 +905,7 @@
 
   <script>
 function updateHPDisplay() {
+  if (!isAutomaticKeyStatsEnabled()) return;
   const classValue = document.getElementById("class").value;
   const maxHp = calculateCharacterMaxHp({
     className: classValue,
@@ -920,7 +914,49 @@ function updateHPDisplay() {
     race: document.getElementById("race").value,
     hasToughFeat: hasSelectedFeat("強韌體魄")
   });
-  document.getElementById("hp-display").textContent = String(maxHp);
+  document.getElementById("hp-display").value = String(maxHp);
+}
+
+const AUTOMATIC_KEY_STAT_IDS = Object.freeze([
+  "hp-display",
+  "ac-display",
+  "initiative-input",
+  "speed-display",
+  "passive-perception"
+]);
+
+function isAutomaticKeyStatsEnabled() {
+  return document.getElementById("auto-calculate-key-stats-toggle")?.checked !== false;
+}
+
+function refreshAutomaticKeyStats() {
+  updateHPDisplay();
+  updateACDisplay();
+  updateAutomaticInitiative();
+  updateSpeedDisplay();
+  updatePassivePerceptionDisplay();
+}
+
+function syncAutomaticKeyStatsMode({ refresh = true } = {}) {
+  const automatic = isAutomaticKeyStatsEnabled();
+  AUTOMATIC_KEY_STAT_IDS.forEach((id) => {
+    const input = document.getElementById(id);
+    if (!input) return;
+    input.readOnly = automatic;
+    input.setAttribute("aria-readonly", String(automatic));
+  });
+  document.getElementById("tab-basic")?.classList.toggle("manual-key-stats", !automatic);
+  if (automatic && refresh) refreshAutomaticKeyStats();
+}
+
+function setupAutomaticKeyStats() {
+  const toggle = document.getElementById("auto-calculate-key-stats-toggle");
+  if (!toggle) return;
+  syncAutomaticKeyStatsMode();
+  toggle.addEventListener("change", () => syncAutomaticKeyStatsMode());
+  bindEventById("ac-display", "input", () => {
+    if (!isAutomaticKeyStatsEnabled()) updateEquipmentLoadoutSummary();
+  });
 }
 
 function bindEventById(id, eventName, handler) {
@@ -1030,13 +1066,13 @@ function updateClassFeatureOptionVisibility() {
 
 function updateSpeedDisplay() {
   const speedDisplay = document.getElementById("speed-display");
-  if (!speedDisplay || typeof window.calculateCharacterSpeed !== "function") return;
+  if (!speedDisplay || !isAutomaticKeyStatsEnabled() || typeof window.calculateCharacterSpeed !== "function") return;
 
   const armorName = document.getElementById("armor")?.value || "";
   const armor = armors.find(item => item.名稱 === armorName);
   const offHandName = document.getElementById("offHand")?.value || "";
   const hasShield = isShieldItem(armorName) || offHandName === "盾牌";
-  speedDisplay.textContent = window.calculateCharacterSpeed({
+  speedDisplay.value = window.calculateCharacterSpeed({
     baseSpeed: document.getElementById("speed-input")?.value,
     race: document.getElementById("race")?.value,
     elfLineage: document.getElementById("elf-lineage")?.value,
@@ -1437,6 +1473,10 @@ function enforceDruidMissionExclusivity(changedId) {
 
 // 計算AC頂部
 function updateACDisplay() {
+  if (!isAutomaticKeyStatsEnabled()) {
+    updateEquipmentLoadoutSummary();
+    return;
+  }
   const armorName = document.getElementById("armor")?.value;
   const hasArmor = Boolean(armorName) && !isShieldItem(armorName);
   const hasArmorShield = isShieldItem(armorName);
@@ -1460,7 +1500,7 @@ function updateACDisplay() {
     hasDefenseFightingStyle: hasDefenseFightingStyleFeat()
   });
 
-  document.getElementById("ac-display").textContent = armorClass ?? "--";
+  document.getElementById("ac-display").value = armorClass ?? "--";
   updateEquipmentLoadoutSummary();
 }
 // 計算AC底部
@@ -1868,6 +1908,24 @@ function restoreClassFeatureTableState(className, output) {
   });
 }
 
+function getClassFeatureHtmlBeforeLevel(raw, className, nextLevel) {
+  const template = document.createElement("template");
+  template.innerHTML = raw;
+  const leveledSections = Array.from(template.content.querySelectorAll("section[data-feature-level]"));
+
+  if (leveledSections.length) {
+    leveledSections.forEach(section => {
+      if (Number(section.dataset.featureLevel) >= nextLevel) section.remove();
+    });
+    return template.innerHTML;
+  }
+
+  const regex = new RegExp(`等級 ${nextLevel}：`);
+  const match = raw.match(regex);
+  if (!match) return raw;
+  return raw.slice(0, raw.indexOf(match[0]));
+}
+
 function updateClassFeature() {
   const selectedClass = document.getElementById("class").value;
   const level = document.getElementById("level").value;
@@ -1902,14 +1960,9 @@ function updateClassFeature() {
 
   if (level && !isNaN(level)) {
     const nextLevel = parseInt(level) + 1;
-    const regex = new RegExp(`等級 ${nextLevel}：`);
-    const match = raw.match(regex);
-    if (match) {
-      const cutoffIndex = raw.indexOf(match[0]);
-      output.innerHTML = highlightSpellNamesInClassFeature(raw.slice(0, cutoffIndex));
-    } else {
-      output.innerHTML = highlightSpellNamesInClassFeature(raw);
-    }
+    output.innerHTML = highlightSpellNamesInClassFeature(
+      getClassFeatureHtmlBeforeLevel(raw, selectedClass, nextLevel)
+    );
   } else {
     output.innerHTML = highlightSpellNamesInClassFeature(raw);
   }
@@ -1932,6 +1985,60 @@ function updateClassFeature() {
   }
 }
 
+
+function buildRaceLineageMobileView(table) {
+  const headerRow = table.tHead?.rows?.[0] || table.rows?.[0];
+  if (!headerRow || headerRow.cells.length < 2) return null;
+
+  const bodyRows = table.tBodies.length
+    ? Array.from(table.tBodies[0].rows)
+    : Array.from(table.rows).slice(1);
+  const mobileView = document.createElement("div");
+  const tableLabel = table.getAttribute("aria-label") || "血統等級能力";
+
+  mobileView.className = "race-lineage-mobile";
+  mobileView.setAttribute("aria-label", `${tableLabel}（手機版）`);
+
+  Array.from(headerRow.cells).slice(1).forEach((headerCell, lineageIndex) => {
+    const group = document.createElement("section");
+    const heading = document.createElement("h4");
+    const list = document.createElement("dl");
+
+    group.className = "race-lineage-mobile__group";
+    heading.className = "race-lineage-mobile__heading";
+    heading.textContent = headerCell.textContent.trim();
+    list.className = "race-lineage-mobile__list";
+
+    bodyRows.forEach((row) => {
+      const levelCell = row.cells[0];
+      const abilityCell = row.cells[lineageIndex + 1];
+      if (!levelCell || !abilityCell) return;
+
+      const level = document.createElement("dt");
+      const ability = document.createElement("dd");
+
+      level.textContent = `${levelCell.textContent.trim()}級`;
+      ability.innerHTML = abilityCell.innerHTML;
+      list.append(level, ability);
+    });
+
+    group.append(heading, list);
+    mobileView.appendChild(group);
+  });
+
+  return mobileView;
+}
+
+function enhanceRaceFeatureTables(container) {
+  container.querySelectorAll(".race-lineage-table").forEach((table) => {
+    const wrapper = table.closest(".race-feature-table-wrap");
+    const mobileView = buildRaceLineageMobileView(table);
+    if (!wrapper || !mobileView) return;
+
+    wrapper.classList.add("race-feature-table-wrap--lineage");
+    wrapper.appendChild(mobileView);
+  });
+}
 
 function updateRaceFeature() {
   const value = document.getElementById("race").value;
@@ -1979,7 +2086,9 @@ function updateRaceFeature() {
       .join("");
   }).join("");
 
-  document.getElementById("raceFeatures").innerHTML = formatted || "無資料";
+  const output = document.getElementById("raceFeatures");
+  output.innerHTML = formatted || "無資料";
+  enhanceRaceFeatureTables(output);
 }
 
 function updateBackgroundFeature() {
@@ -2001,7 +2110,13 @@ function updateBackgroundFeature() {
      <div><strong>專長：</strong>${bg.專長}</div>
      <div><strong>技能熟練：</strong>${bg.技能熟練}</div>
      <div><strong>工具熟練：</strong>${bg.工具熟練}</div>
-     <div class="background-guide-note"><strong>★</strong> 屬性可選擇：三項各 +1，或一項屬性 +2 另一項 +1。</div>
+     <div class="background-guide-note">
+       <span class="background-guide-note__icon" aria-hidden="true">★</span>
+       <span class="background-guide-note__content">
+         <span class="background-guide-note__label">屬性調整</span>
+         <span>可選擇三項各 <strong>+1</strong>，或一項屬性 <strong>+2</strong>、另一項 <strong>+1</strong>。</span>
+       </span>
+     </div>
    </div>
 
    <div class="background-guide-block background-guide-section">
@@ -3885,14 +4000,14 @@ function applyStatTextMaxLengthLimit() {
 function updatePassivePerceptionDisplay() {
   const perceptionRaw = String(document.getElementById("skill-察覺")?.value ?? "").trim();
   const passivePerception = document.getElementById("passive-perception");
-  if (!passivePerception) return;
+  if (!passivePerception || !isAutomaticKeyStatsEnabled()) return;
   passivePerception.value = perceptionRaw ? String(10 + parseSignedValue(perceptionRaw)) : "";
 }
 
 function updateAutomaticInitiative() {
   const dexRaw = String(document.getElementById("dex")?.value ?? "").trim();
   const initiative = document.getElementById("initiative-input");
-  if (!initiative) return;
+  if (!initiative || !isAutomaticKeyStatsEnabled()) return;
   if (!dexRaw) {
     initiative.value = "";
     return;
@@ -4514,7 +4629,7 @@ function updateEquipmentLoadoutSummary() {
   ].filter(Boolean);
   content.replaceChildren(...summaryRows);
   const acValue = document.getElementById("equipment-current-ac-value");
-  if (acValue) acValue.textContent = document.getElementById("ac-display")?.textContent?.trim() || "—";
+  if (acValue) acValue.textContent = document.getElementById("ac-display")?.value?.trim() || "—";
   const untrainedConsequence = document.getElementById("equipment-untrained-consequence");
   if (untrainedConsequence) untrainedConsequence.hidden = !(hasUntrainedShield || armorWarning);
   updateWeaponMasteryBadges();
@@ -6083,10 +6198,20 @@ function hideSkillPopup() {
   let dragState = null;
 
   document.addEventListener("pointerdown", (event) => {
+    // 已有指標正在拖曳時，不允許第二根手指覆蓋目前的拖曳狀態。
+    if (dragState) return;
+
     const popup = event.target.closest?.(popupSelector);
-    if (!popup || event.button !== 0 || event.target.closest("button, a, input, select, textarea, .close")) return;
+    if (
+      !popup ||
+      event.button !== 0 ||
+      event.target.closest("button, a, input, select, textarea, .close")
+    ) {
+      return;
+    }
 
     const rect = popup.getBoundingClientRect();
+
     dragState = {
       popup,
       pointerId: event.pointerId,
@@ -6095,6 +6220,7 @@ function hideSkillPopup() {
       width: rect.width,
       height: rect.height
     };
+
     popup.setPointerCapture?.(event.pointerId);
     popup.classList.add("is-dragging");
     event.preventDefault();
@@ -6103,24 +6229,50 @@ function hideSkillPopup() {
   document.addEventListener("pointermove", (event) => {
     if (!dragState || dragState.pointerId !== event.pointerId) return;
 
-    const { popup, offsetX, offsetY, width, height } = dragState;
+    const {
+      popup,
+      offsetX,
+      offsetY,
+      width,
+      height
+    } = dragState;
+
+    // 水平及垂直方向各保留至少 25%，其餘最多 75% 可移出畫面。
     const visibleRatio = 0.25;
+
     const minLeft = -width * (1 - visibleRatio);
     const maxLeft = window.innerWidth - width * visibleRatio;
     const minTop = -height * (1 - visibleRatio);
     const maxTop = window.innerHeight - height * visibleRatio;
-    const left = Math.min(maxLeft, Math.max(minLeft, event.clientX - offsetX));
-    const top = Math.min(maxTop, Math.max(minTop, event.clientY - offsetY));
+
+    const desiredLeft = event.clientX - offsetX;
+    const desiredTop = event.clientY - offsetY;
+
+    const left = Math.min(
+      maxLeft,
+      Math.max(minLeft, desiredLeft)
+    );
+
+    const top = Math.min(
+      maxTop,
+      Math.max(minTop, desiredTop)
+    );
 
     popup.style.left = `${left}px`;
     popup.style.top = `${top}px`;
+
     event.preventDefault();
   }, { passive: false });
 
   const finishDrag = (event) => {
     if (!dragState || dragState.pointerId !== event.pointerId) return;
+
     const { popup, pointerId } = dragState;
-    if (popup.hasPointerCapture?.(pointerId)) popup.releasePointerCapture(pointerId);
+
+    if (popup.hasPointerCapture?.(pointerId)) {
+      popup.releasePointerCapture(pointerId);
+    }
+
     popup.classList.remove("is-dragging");
     dragState = null;
   };
@@ -6414,18 +6566,6 @@ function collectStateObject(options = {}) {
     if (isSpellRowStateKey(el.id)) return;
     data[el.id] = el.type === "checkbox" ? el.checked : el.value;
   });
-  const acDisplay = document.getElementById("ac-display");
-  if (acDisplay) {
-    data["ac-display"] = (acDisplay.textContent || "").trim();
-  }
-  const hpDisplay = document.getElementById("hp-display");
-  if (hpDisplay) {
-    data["hp-display"] = (hpDisplay.textContent || "").trim();
-  }
-  ["initiative-input", "passive-perception"].forEach(id => {
-    const output = document.getElementById(id);
-    if (output) data[id] = String(output.value || output.textContent || "").trim();
-  });
   data[CHARACTER_SIZE_STATE_KEY] = characterSize;
   collectSpellRowsIntoState(data, includeDerivedSpellRows);
   getDynamicAreaConfigs().forEach(area => {
@@ -6559,7 +6699,7 @@ function applyStateObject(data) {
     updateSpellsByClassLevel();
     updatePickedSpellBoxes();
     refreshFeatDerivedEffects();
-    updateAutomaticInitiative();
+    syncAutomaticKeyStatsMode();
   } finally {
     autosaveSuspended = prevAutosaveSuspended;
   }
@@ -7597,6 +7737,7 @@ for (let i = 0; i < 1; i++) createSingleFeatRow();
   updateEquipmentLoadoutSummary();
   if (isWeaponAttackAutomationEnabled()) populateHandAttacks();
   else updateWeaponAutomationUI();
+  setupAutomaticKeyStats();
   // 4. 啟用自動儲存
   setupVisibilityAutoSave();
   setupClosePageAutoSave();

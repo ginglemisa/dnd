@@ -1383,6 +1383,9 @@
   }
 
   function resolveSpeedForPdf(state, options = {}) {
+    if (state['auto-calculate-key-stats-toggle'] === false) {
+      return normalizeText(state['speed-display']);
+    }
     if (typeof globalScope.calculateCharacterSpeed !== 'function') {
       return normalizeText(state['speed-input']);
     }

@@ -53,10 +53,12 @@
 
 - 入口與樣式：`index.html`、`styles.css`
 - Legal & About：`about.html`、`info-pages.css`、`legal-modal.js`（首頁 iframe modal）
-- 主要功能與資料：`scroll-to-top.js`、`monster.js`、`class-features.js`、`race.js`、`backgrounds.js`、`tool-data.js`、`feats.js`、`equipment-notes.js`、`equipment-data.js`、`spell-list.js`、`condition.js`、`character-rules.js`、`onboarding-tour.js`、`quick-build.js`、`deity-info.js`
+- 主要功能與資料：`scroll-to-top.js`、`action-panel.js`、`monster.js`、`class-features.js`、`race.js`、`backgrounds.js`、`tool-data.js`、`feats.js`、`equipment-notes.js`、`equipment-data.js`、`spell-list.js`、`condition.js`、`character-rules.js`、`onboarding-tour.js`、`quick-build.js`、`deity-info.js`
 - PDF 匯出程式：`pdf-lib.custom.min.js`、`fontkit.custom.min.js`、`pdf-field-map.js`、`pdf-export.js`
 - PDF 匯出素材：`5e_char_sheet.pdf`、`NotoSansTC-Regular-IdentityCID.otf`、`SourceHanSerifTC-Bold.otf`
 - Legal & About 視窗圖像：`logo.png`
+
+`action-panel.js` 負責「動作」分頁的動作、附贈動作與反應選項面板：提供基本選項，並依目前職業、種族、專長、已選法術與魔能祈喚，從既有資料顯示可用的動態按鈕；含有「等級 X：」的能力會依角色等級顯示。
 
 `pdf-export.js` 與其相依檔案只會在使用 PDF 匯出時動態載入；若不需要該功能，可省略「PDF 匯出程式」與「PDF 匯出素材」兩類。`TWD20-offline.html` 是另行產生的單檔離線版本，並非 `index.html` 的相依檔案。
 
