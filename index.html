@@ -6077,6 +6077,58 @@ function hideSkillPopup() {
   if (popup) popup.style.display = "none";
 }
 
+// 讓共用說明浮層可用滑鼠或觸控拖移；事件委派也能涵蓋稍後建立的浮層。
+(function setupDraggableContextPopups() {
+  const popupSelector = "#beastPopup, #skillPopup, #weaponRulePopup";
+  let dragState = null;
+
+  document.addEventListener("pointerdown", (event) => {
+    const popup = event.target.closest?.(popupSelector);
+    if (!popup || event.button !== 0 || event.target.closest("button, a, input, select, textarea, .close")) return;
+
+    const rect = popup.getBoundingClientRect();
+    dragState = {
+      popup,
+      pointerId: event.pointerId,
+      offsetX: event.clientX - rect.left,
+      offsetY: event.clientY - rect.top,
+      width: rect.width,
+      height: rect.height
+    };
+    popup.setPointerCapture?.(event.pointerId);
+    popup.classList.add("is-dragging");
+    event.preventDefault();
+  });
+
+  document.addEventListener("pointermove", (event) => {
+    if (!dragState || dragState.pointerId !== event.pointerId) return;
+
+    const { popup, offsetX, offsetY, width, height } = dragState;
+    const visibleRatio = 0.25;
+    const minLeft = -width * (1 - visibleRatio);
+    const maxLeft = window.innerWidth - width * visibleRatio;
+    const minTop = -height * (1 - visibleRatio);
+    const maxTop = window.innerHeight - height * visibleRatio;
+    const left = Math.min(maxLeft, Math.max(minLeft, event.clientX - offsetX));
+    const top = Math.min(maxTop, Math.max(minTop, event.clientY - offsetY));
+
+    popup.style.left = `${left}px`;
+    popup.style.top = `${top}px`;
+    event.preventDefault();
+  }, { passive: false });
+
+  const finishDrag = (event) => {
+    if (!dragState || dragState.pointerId !== event.pointerId) return;
+    const { popup, pointerId } = dragState;
+    if (popup.hasPointerCapture?.(pointerId)) popup.releasePointerCapture(pointerId);
+    popup.classList.remove("is-dragging");
+    dragState = null;
+  };
+
+  document.addEventListener("pointerup", finishDrag);
+  document.addEventListener("pointercancel", finishDrag);
+})();
+
 const SPELL_QR_IMAGE_SRC = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPAAAADwAQMAAAAEm3vRAAAABlBMVEX///8AAABVwtN+AAAACXBIWXMAAA7EAAAOxAGVKw4bAAABD0lEQVRYhe2YMQ6DMAxFXTFk5EgcjR6NIzEyINLYDk6ahpSiiun/BeHH9GXHPxBB96v3UXN4GZayAlzHq7o3zp2nIRSfqQLcwKG26Qu5ragAf8FdeC4PMRX4X5j2+QY+g9N8k2uOP7Bh2xx8Kkor1lcN8Hmcy0/UErBJLQzTzI/JbXFTs7vAh1gVVwibOu6dmLUicIHlDGQv/UriJUuPRwK+iEUcEVmCg9XSuwR8iHsZa3bSTOVYs2QLGvgDJ3GEtixtNxXgCziPNXovoS4ff+AqzvJ0bNBOvwduYutA2yXyHQGfwjEMcpZ2FVOBr2GyWLMvaOADLEqd+h5rgKs4DrTXVvTy56C87AH/hqG79QLS1jgHWvai8gAAAABJRU5ErkJggg==";
 
 function setupSpellQrModal() {
