@@ -538,10 +538,7 @@
   });
 
   function buildFallbackRacePdfText() {
-    return [
-      '種族特性：未提供',
-      '請重新選擇種族'
-    ];
+    return [];
   }
 
   function buildRaceTemplateText(state, options = {}) {

@@ -484,7 +484,7 @@ label {
 }
 
 .utility-menu__row--footer {
-  grid-template-columns: minmax(0, 1fr) 44px;
+  grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr);
 }
 
 .theme-picker,
@@ -4820,14 +4820,110 @@ div[id$="spells-area"] .form-row {
   font-weight: 700;
 }
 
-.invocation-block {
-  margin-bottom: 16px;
-  white-space: pre-wrap;
-  line-height: 1.45;
+.feature-choice-card {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.78rem 0.86rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-soft);
+  color: var(--text-body);
+  line-height: 1.58;
+  transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
 }
 
-.invocation-block:last-child {
+.feature-choice-card + .feature-choice-card {
+  margin-top: 0.62rem;
+}
+
+.feature-choice-card:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.feature-choice-card__heading {
+  display: flex;
+  align-items: center;
+  gap: 0.58rem;
+  min-height: 1.5rem;
+  color: var(--text);
+  font-size: var(--fs-base);
+  font-weight: 800;
+}
+
+label.feature-choice-card__heading {
+  cursor: pointer;
+}
+
+.feature-choice-card__checks {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.26rem;
+}
+
+.feature-choice-card__body {
+  padding-left: 1.65rem;
+  color: var(--text-body);
+  font-size: var(--fs-sm);
+  line-height: 1.62;
+  white-space: normal;
+}
+
+.feature-choice-card__meta {
+  margin-bottom: 0.38rem;
+  color: var(--accent-strong);
+  font-weight: 750;
+}
+
+.feature-choice-card__body > :first-child {
+  margin-top: 0;
+}
+
+.feature-choice-card__body > :last-child {
   margin-bottom: 0;
+}
+
+.feature-choice-card__body p {
+  margin: 0.42rem 0;
+  line-height: 1.62;
+}
+
+.feature-choice-card__body ul {
+  margin: 0.44rem 0;
+  padding-left: 1.3rem;
+}
+
+.feature-choice-card__body li {
+  padding-left: 0.08rem;
+  line-height: 1.58;
+}
+
+.feature-choice-card__body li + li {
+  margin-top: 0.28rem;
+}
+
+.feature-choice-card__body .invocation-prereq {
+  margin: 0;
+}
+
+@media (hover: hover) {
+  .feature-choice-card:hover {
+    border-color: var(--border-strong);
+    background: var(--surface-strong);
+  }
+}
+
+@media (max-width: 420px) {
+  .feature-choice-card {
+    padding: 0.72rem 0.76rem;
+  }
+
+  .feature-choice-card__body {
+    padding-left: 0;
+  }
 }
 
 .invocation-prereq {
@@ -5968,9 +6064,9 @@ div[id$="spells-area"] .form-row {
 
 .legal-modal-card {
   position: relative;
-  max-width: 332px;
-  margin: 72px auto 0;
-  padding: 18px 14px;
+  max-width: 310px;
+  margin: 56px auto 0;
+  padding: 16px 12px;
   border: 1px solid #d3deef;
   border-radius: 16px;
   background: linear-gradient(180deg, #ffffff 0%, #f5f8ff 100%);
@@ -6038,15 +6134,23 @@ div[id$="spells-area"] .form-row {
 }
 
 .legal-modal-dismiss {
-  margin-top: 9px;
+  margin-top: 10px;
   font-size: var(--fs-sm);
   line-height: 1.2;
+  text-align: center;
+}
+
+.legal-modal-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
 }
 
 #legal-onboarding-btn,
 #legal-ack-btn {
-  width: 100%;
-  margin-top: 12px;
+  flex: 1 1 0;
+  width: auto;
+  margin-top: 0;
   padding: 6px 0;
   border-radius: 0.8rem;
   font-size: var(--fs-base);
@@ -6060,7 +6164,6 @@ div[id$="spells-area"] .form-row {
 }
 
 #legal-ack-btn {
-  margin-top: 8px;
   border: 1px solid transparent;
   background: linear-gradient(180deg, var(--accent-strong) 0%, #2962e8 100%);
   color: #fff;

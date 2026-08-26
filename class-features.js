@@ -463,7 +463,7 @@ const classFeatures = {
 </section>
 </div>`,
 
-  cleric: `<table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+  cleric: `<table class="class-core-profile-table class-core-profile-table--cleric" aria-label="牧師核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
     <tr>
       <td style="width: 6em; font-weight: bold;">關鍵屬性</td>
@@ -586,81 +586,124 @@ const classFeatures = {
     </tr>
   </tbody>
 </table>
-等級 1：施法
-你透過祈禱與冥想施法，法術請看「牧師法術列表」。
+<div class="class-feature-content">
+<section class="cleric-feature class-feature-section" data-feature-level="1">
+  <h3>等級 1：施法</h3>
+  <p>你透過祈禱與冥想施法，法術請看「牧師法術列表」。</p>
+  <div class="class-rule-subsection">
+    <h4>戲法</h4>
+    <ul class="class-rule-list">
+      <li>起始學 3 個（建議：神導術,聖火術,奇術）。</li>
+      <li>每次升級可替換 1 個戲法。</li>
+      <li>4 級再多學 1 個。</li>
+    </ul>
+  </div>
+  <p>法術位：見「牧師特性」表，長休後全回復。</p>
+  <div class="class-rule-subsection">
+    <h4>準備法術</h4>
+    <ul class="class-rule-list">
+      <li>起始先準備 4 個 1 環法術（建議：祝福術,療傷術,光導箭,虔誠護盾）。</li>
+      <li>可準備數量隨等級增加（見表中「準備法術」欄）。</li>
+      <li>每當這個數量提高時，從牧師法術列表再選法術，直到準備數量與表格一致。</li>
+      <li>只能準備你目前有法術位可施放的環級。</li>
+      <li>例如 3 級可準備共 6 個 1 或 2 環法術。</li>
+    </ul>
+  </div>
+  <p>其他特性給你的額外已準備法術，不占上述數量。</p>
+  <p>每次長休後，你可重整準備列表。</p>
+  <p>施法屬性：感知。</p>
+  <p>施法法器：可用聖徽。</p>
+</section>
 
-戲法：
-- 起始學 3 個（建議：神導術,聖火術,奇術）。
-- 每次升級可替換 1 個戲法。
-- 4 級再多學 1 個。
+<section class="cleric-feature class-feature-section" data-feature-level="1">
+  <h3>等級 1：神聖使命</h3>
+  <p>你擇一：</p>
+  <div class="druid-mission-options">
+    <div class="druid-mission-option">
+      <div class="druid-mission-option__heading"><label><input type="checkbox" id="cleric-guardian"> 守護者</label>：獲得軍用武器熟練，並接受重甲訓練。</div>
+    </div>
+    <div class="druid-mission-option">
+      <div class="druid-mission-option__heading"><label><input type="checkbox" id="cleric-trickster"> 魔術使</label>：額外學 1 個牧師戲法；你的智力（奧秘／宗教）檢定再加上感知調整值（至少 +1）。</div>
+    </div>
+  </div>
+</section>
 
-法術位：見「牧師特性」表，長休後全回復。
+<section class="cleric-feature class-feature-section" data-feature-level="2">
+  <h3>等級 2：引導神力</h3>
+  <p>你可用引導神力產生神聖效果，起始有 2 種：</p>
+  <ul class="class-rule-list">
+    <li>神聖火花</li>
+    <li>驅散不死生物</li>
+  </ul>
+  <div class="class-rule-subsection">
+    <h4>使用次數</h4>
+    <ul class="class-rule-list">
+      <li>起始 2 次</li>
+      <li>短休回 1 次</li>
+      <li>長休全回</li>
+      <li>高等級時會增加上限（見特性表）</li>
+    </ul>
+  </div>
+  <p>若效果需要豁免，DC 用你的牧師法術豁免 DC。</p>
+  <div class="class-rule-subsection">
+    <h4>神聖火花（魔法動作）</h4>
+    <ul class="class-rule-list">
+      <li>指定 30 呎內你看得到的生物。</li>
+      <li>擲 1d8 + 感知調整值。</li>
+      <li>你可選擇：
+        <ul>
+          <li>讓目標回復等同結果的生命值，或</li>
+          <li>讓目標做體質豁免，失敗受等同結果的光耀／黯蝕傷害（你選），成功受一半（向下取整）。</li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+  <div class="class-rule-subsection">
+    <h4>驅散不死生物（魔法動作）</h4>
+    <ul class="class-rule-list">
+      <li>30 呎內每個不死生物做感知豁免。</li>
+      <li>失敗者在 1 分鐘內陷入恐慌與失能，並會在回合中盡量遠離你。</li>
+      <li>若其受傷,你失能或死亡，效果提前結束。</li>
+    </ul>
+  </div>
+</section>
 
-準備法術：
-- 起始先準備 4 個 1 環法術（建議：祝福術,療傷術,光導箭,虔誠護盾）。
-- 可準備數量隨等級增加（見表中「準備法術」欄）。
-- 每當這個數量提高時，從牧師法術列表再選法術，直到準備數量與表格一致。
-- 只能準備你目前有法術位可施放的環級。
-- 例如 3 級可準備共 6 個 1 或 2 環法術。
+<section class="cleric-feature class-feature-section" data-feature-level="3">
+  <h3>等級 3：牧師子職</h3>
+  <p>你可選擇一個牧師子職；基本規則僅提供生命領域。</p>
+</section>
 
-其他特性給你的額外已準備法術，不占上述數量。
-每次長休後，你可重整準備列表。
+<section class="cleric-feature class-feature-section" data-feature-level="3">
+  <h3>等級 3：生命領域法術（生命子職）</h3>
+  <p>你會自動準備以下法術：</p>
+  <ul class="class-rule-list">
+    <li>等級 3：援助術,祝福術,療傷術,次級復原術。</li>
+    <li>等級 5：群體治癒真言,回生術。</li>
+  </ul>
+</section>
 
-施法屬性：感知。
-施法法器：可用聖徽。
+<section class="cleric-feature class-feature-section" data-feature-level="3">
+  <h3>等級 3：生命門徒（生命子職）</h3>
+  <p>你用法術位施放回復法術時，目標在本回合額外回復「2 + 法術環級」生命值。</p>
+</section>
 
-等級 1：神聖使命
-你擇一：
- <label><input type="checkbox" id="cleric-guardian"> 守護者</label>：獲得軍用武器熟練，並接受重甲訓練。
- <label><input type="checkbox" id="cleric-trickster"> 魔術使</label>：額外學 1 個牧師戲法；你的智力（奧秘／宗教）檢定再加上感知調整值（至少 +1）。
+<section class="cleric-feature class-feature-section" data-feature-level="3">
+  <h3>等級 3：維持生命（生命子職）</h3>
+  <p>你可用魔法動作展示聖徽並消耗 1 次引導神力，分配總共「牧師等級 × 5」點治療量給 30 呎內任意數量重傷生物。</p>
+  <p>此特性不能把目標回到超過其生命值上限一半。</p>
+</section>
 
-等級 2：引導神力
-你可用引導神力產生神聖效果，起始有 2 種：
-- 神聖火花
-- 驅散不死生物
+<section class="cleric-feature class-feature-section" data-feature-level="4">
+  <h3>等級 4：屬性值提升</h3>
+  <p>獲得「屬性值提升」專長，或其他符合條件的專長。</p>
+</section>
 
-使用次數：
-- 起始 2 次
-- 短休回 1 次
-- 長休全回
-- 高等級時會增加上限（見特性表）
-
-若效果需要豁免，DC 用你的牧師法術豁免 DC。
-
-神聖火花（魔法動作）：
-- 指定 30 呎內你看得到的生物。
-- 擲 1d8 + 感知調整值。
-- 你可選擇：
-  - 讓目標回復等同結果的生命值，或
-  - 讓目標做體質豁免，失敗受等同結果的光耀／黯蝕傷害（你選），成功受一半（向下取整）。
-
-驅散不死生物（魔法動作）：
-- 30 呎內每個不死生物做感知豁免。
-- 失敗者在 1 分鐘內陷入恐慌與失能，並會在回合中盡量遠離你。
-- 若其受傷,你失能或死亡，效果提前結束。
-
-等級 3：牧師子職
-你可選擇一個牧師子職；基本規則僅提供生命領域。
-
-等級 3：生命領域法術（生命子職）
-你會自動準備以下法術：
-- 等級 3：援助術,祝福術,療傷術,次級復原術。
-- 等級 5：群體治癒真言,回生術。
-
-等級 3：生命門徒（生命子職）
-你用法術位施放回復法術時，目標在本回合額外回復「2 + 法術環級」生命值。
-
-等級 3：維持生命（生命子職）
-你可用魔法動作展示聖徽並消耗 1 次引導神力，分配總共「牧師等級 × 5」點治療量給 30 呎內任意數量重傷生物。
-此特性不能把目標回到超過其生命值上限一半。
-
-等級 4：屬性值提升
-獲得「屬性值提升」專長，或其他符合條件的專長。
-
-等級 5：焚燒不死生物
-當你使用驅散不死生物時，可額外擲等同感知調整值數量的 d8（最少 1d8），
-將總值作為光耀傷害，套用到每個該次豁免失敗的不死生物。
-這個傷害不會中止驅散效果。
+<section class="cleric-feature class-feature-section" data-feature-level="5">
+  <h3>等級 5：焚燒不死生物</h3>
+  <p>當你使用驅散不死生物時，可額外擲等同感知調整值數量的 d8（最少 1d8），將總值作為光耀傷害，套用到每個該次豁免失敗的不死生物。</p>
+  <p>這個傷害不會中止驅散效果。</p>
+</section>
+</div>
 `,
   druid: `<table class="class-core-profile-table class-core-profile-table--druid" aria-label="德魯伊核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
@@ -990,7 +1033,7 @@ const classFeatures = {
   </div>
 </section>
 </div>`,
-  fighter: `<table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+  fighter: `<table class="class-core-profile-table class-core-profile-table--fighter" aria-label="戰士核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
     <tr>
       <td style="width: 6em; font-weight: bold;">關鍵屬性</td>
@@ -1087,51 +1130,69 @@ const classFeatures = {
     </tr>
   </tbody>
 </table>
-等級 1：戰鬥風格
-你磨練你的戰鬥技藝。你可以獲得所選的一種 戰鬥風格 專長。推薦選擇 防禦。
+<div class="class-feature-content">
+<section class="fighter-feature class-feature-section" data-feature-level="1">
+  <h3>等級 1：戰鬥風格</h3>
+  <p>你磨練你的戰鬥技藝。你可以獲得所選的一種 戰鬥風格 專長。推薦選擇 防禦。</p>
+  <p>每當你獲得戰士等級時，你可以將原專長替換成另一個 戰鬥風格 專長。</p>
+</section>
 
-每當你獲得戰士等級時，你可以將原專長替換成另一個 戰鬥風格 專長。
+<section class="fighter-feature class-feature-section" data-feature-level="1">
+  <h3>等級 1：回氣</h3>
+  <p>你的身心都儲有底力，關鍵時刻尤為重要。作為一個附贈動作，你恢復 1d10+你戰士等級的生命值。</p>
+  <p>你可以使用該特性兩次。你在完成短休時恢復一次已消耗的使用次數，並在完成長休時重獲所有已消耗的使用次數。</p>
+  <p>當你達到特定的戰士等級後，你會獲得更多該特性的使用次數，如“戰士特性”表中的”回氣”一欄所示。</p>
+</section>
 
-等級 1：回氣
-你的身心都儲有底力，關鍵時刻尤為重要。作為一個附贈動作，你恢復 1d10+你戰士等級的生命值。
+<section class="fighter-feature class-feature-section" data-feature-level="1">
+  <h3>等級 1：武器精通</h3>
+  <p>你任選三種軍用或簡易武器並獲得其精通屬性。每當你完成長休後，你可以進行武器練習從而更改其中一種武器的選擇。</p>
+  <p>你可以掌握精通的武器數量將隨著戰士職業到達特定等級而增加，如“戰士特性”表中“武器精通”一欄所示。</p>
+</section>
 
-你可以使用該特性兩次。你在完成短休時恢復一次已消耗的使用次數，並在完成長休時重獲所有已消耗的使用次數。
+<section class="fighter-feature class-feature-section" data-feature-level="2">
+  <h3>等級 2：動作如潮</h3>
+  <p>你可以在短時間內突破極限。在你的回合中，你可以執行一個額外的動作，但不能用於魔法動作。</p>
+  <p>一旦使用了該特性，你將無法在完成短休或長休前再次使用。</p>
+</section>
 
-當你達到特定的戰士等級後，你會獲得更多該特性的使用次數，如“戰士特性”表中的”回氣”一欄所示。
+<section class="fighter-feature class-feature-section" data-feature-level="2">
+  <h3>等級 2：戰術思維</h3>
+  <p>無論在戰場內外，你都具有卓越的戰術思維。當你屬性檢定失敗時，你可以消耗一次 回氣 使用次數讓自己更接近成功。你擲 1d10 並將結果加入屬性檢定中而非恢復生命值，從而可能使結果變為成功。如果檢定依舊失敗，回氣 的使用次數將不會被消耗。</p>
+</section>
 
-等級 1：武器精通
-你任選三種軍用或簡易武器並獲得其精通屬性。每當你完成長休後，你可以進行武器練習從而更改其中一種武器的選擇。
+<section class="fighter-feature class-feature-section" data-feature-level="3">
+  <h3>等級 3：戰士子職</h3>
+  <p>你可選擇一個戰士子職；基本規則僅提供勇士。</p>
+</section>
 
-你可以掌握精通的武器數量將隨著戰士職業到達特定等級而增加，如“戰士特性”表中“武器精通”一欄所示。
+<section class="fighter-feature class-feature-section" data-feature-level="3">
+  <h3>等級 3：精通重擊(勇士子職)</h3>
+  <p>你使用武器和徒手打擊的攻擊檢定在擲出 19 或 20 時即可造成重擊。</p>
+</section>
 
-等級 2：動作如潮
-你可以在短時間內突破極限。在你的回合中，你可以執行一個額外的動作，但不能用於魔法動作。
+<section class="fighter-feature class-feature-section" data-feature-level="3">
+  <h3>等級 3：運動健將(勇士子職)</h3>
+  <p>平日的訓練鍛打出堅實的體能，你的先攻和力量（${skillTip("運動")}）檢定具有優勢。</p>
+  <p>此外，當你造成重擊後，你可以立即移動至多等同於速度一半的距離，且不會引發藉機攻擊。</p>
+</section>
 
-一旦使用了該特性，你將無法在完成短休或長休前再次使用。第 17 級起，你可在休息前使用該特性兩次，但每回合只能使用一次。
+<section class="fighter-feature class-feature-section" data-feature-level="4">
+  <h3>等級 4：屬性值提升</h3>
+  <p>獲得“屬性值提升”專長或另一符合條件的自選專長。</p>
+</section>
 
-等級 2：戰術思維
-無論在戰場內外，你都具有卓越的戰術思維。當你屬性檢定失敗時，你可以消耗一次 回氣 使用次數讓自己更接近成功。你擲 1d10 並將結果加入屬性檢定中而非恢復生命值，從而可能使結果變為成功。如果檢定依舊失敗，回氣 的使用次數將不會被消耗。
+<section class="fighter-feature class-feature-section" data-feature-level="5">
+  <h3>等級 5：額外攻擊</h3>
+  <p>你在自己回合執行攻擊動作時可以發動兩次攻擊。</p>
+</section>
 
-等級 3：戰士子職
-你可選擇一個戰士子職；基本規則僅提供勇士。
-
-等級 3：精通重擊(勇士子職)
-你使用武器和徒手打擊的攻擊檢定在擲出 19 或 20 時即可造成重擊。
-
-等級 3：運動健將(勇士子職)
-平日的訓練鍛打出堅實的體能，你的先攻和力量（${skillTip("運動")}）檢定具有優勢。
-
-此外，當你造成重擊後，你可以立即移動至多等同於速度一半的距離，且不會引發藉機攻擊。
-
-等級 4：屬性值提升
-獲得“屬性值提升”專長或另一符合條件的自選專長。
-
-等級 5：額外攻擊
-你在自己回合執行攻擊動作時可以發動兩次攻擊。
-
-等級 5：戰術轉移
-當你以附贈動作使用 回氣 時，你可以移動至多等同於你速度一半的距離，且不會引發藉機攻擊。`,
-  monk: `<table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+<section class="fighter-feature class-feature-section" data-feature-level="5">
+  <h3>等級 5：戰術轉移</h3>
+  <p>當你以附贈動作使用 回氣 時，你可以移動至多等同於你速度一半的距離，且不會引發藉機攻擊。</p>
+</section>
+</div>`,
+  monk: `<table class="class-core-profile-table class-core-profile-table--monk" aria-label="武僧核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
     <tr>
       <td style="width: 6em; font-weight: bold;">關鍵屬性</td>
@@ -1234,65 +1295,98 @@ const classFeatures = {
     </tr>
   </tbody>
 </table>
-等級 1：武藝
-你在「未穿護甲,未持盾，且只用徒手或武僧武器」時，獲得以下效果：
-- 附贈動作可再打 1 次徒手。
-- 徒手與武僧武器可用武藝骰（初始 1d6）取代原本傷害骰，骰值依等級提升（見武僧特性表）。
-- 徒手與武僧武器的攻擊與傷害可用敏捷取代力量；徒手推撞／擒抱的豁免 DC 也可用敏捷計算。
+<div class="class-feature-content">
+<section class="monk-feature class-feature-section" data-feature-level="1">
+  <h3>等級 1：武藝</h3>
+  <p>你在「未穿護甲,未持盾，且只用徒手或武僧武器」時，獲得以下效果：</p>
+  <ul class="class-rule-list">
+    <li>附贈動作可再打 1 次徒手。</li>
+    <li>徒手與武僧武器可用武藝骰（初始 1d6）取代原本傷害骰，骰值依等級提升（見武僧特性表）。</li>
+    <li>徒手與武僧武器的攻擊與傷害可用敏捷取代力量；徒手推撞／擒抱的豁免 DC 也可用敏捷計算。</li>
+  </ul>
+  <p>武僧武器包含：簡易近戰武器，以及具有輕型屬性的軍用近戰武器。</p>
+</section>
 
-武僧武器包含：簡易近戰武器，以及具有輕型屬性的軍用近戰武器。
+<section class="monk-feature class-feature-section" data-feature-level="1">
+  <h3>等級 1：無甲防禦</h3>
+  <p>未穿護甲,未持盾時，AC = 10 + 敏捷調整值 + 感知調整值。</p>
+</section>
 
-等級 1：無甲防禦
-未穿護甲,未持盾時，AC = 10 + 敏捷調整值 + 感知調整值。
+<section class="monk-feature class-feature-section" data-feature-level="2">
+  <h3>等級 2：聚氣凝神</h3>
+  <p>你可使用「專注點」施展武僧技巧。專注點上限見武僧特性表，短休或長休後全回復。</p>
+  <div class="class-rule-subsection">
+    <h4>你一開始有 3 種用法：</h4>
+    <ul class="class-rule-list">
+      <li>疾風連擊（1 點）：附贈動作打 2 次徒手。</li>
+      <li>閃轉騰挪：附贈動作可撤離；再花 1 點可同時撤離 + 回避。</li>
+      <li>疾步如風：附贈動作可疾走；再花 1 點可同時撤離 + 疾走，且本回合跳躍距離加倍。</li>
+    </ul>
+  </div>
+  <p>若特性要求豁免，DC = 8 + 熟練加值 + 感知調整值。</p>
+</section>
 
-等級 2：聚氣凝神
-你可使用「專注點」施展武僧技巧。專注點上限見武僧特性表，短休或長休後全回復。
+<section class="monk-feature class-feature-section" data-feature-level="2">
+  <h3>等級 2：無甲移動</h3>
+  <p>未穿護甲,未持盾時，速度 +10 呎（後續依等級再提升）。</p>
+</section>
 
-你一開始有 3 種用法：
-- 疾風連擊（1 點）：附贈動作打 2 次徒手。
-- 閃轉騰挪：附贈動作可撤離；再花 1 點可同時撤離 + 回避。
-- 疾步如風：附贈動作可疾走；再花 1 點可同時撤離 + 疾走，且本回合跳躍距離加倍。
+<section class="monk-feature class-feature-section" data-feature-level="2">
+  <h3>等級 2：吐故納新</h3>
+  <p>擲先攻時，你可回滿已消耗的專注點，並回復「武藝骰 + 武僧等級」生命值。</p>
+  <p>此能力每次長休只能用 1 次。</p>
+</section>
 
-若特性要求豁免，DC = 8 + 熟練加值 + 感知調整值。
+<section class="monk-feature class-feature-section" data-feature-level="3">
+  <h3>等級 3：撥擋化勁</h3>
+  <p>當攻擊命中你，且傷害含鈍擊／穿刺／揮砍時，你可用反應減傷：</p>
+  <p>1d10 + 敏捷調整值 + 武僧等級。</p>
+  <div class="class-rule-subsection">
+    <h4>若減到 0，你可再花 1 點專注點反擊：</h4>
+    <ul class="class-rule-list">
+      <li>擋近戰：選 5 呎內生物。</li>
+      <li>擋遠程：選 60 呎內,你看得到且不在全身掩護後的生物。</li>
+    </ul>
+    <p>目標需過敏捷豁免，失敗則受到 2 枚武藝骰 + 你的敏捷調整值傷害（同原攻擊類型）。</p>
+  </div>
+</section>
 
-等級 2：無甲移動
-未穿護甲,未持盾時，速度 +10 呎（後續依等級再提升）。
+<section class="monk-feature class-feature-section" data-feature-level="3">
+  <h3>等級 3：武僧子職</h3>
+  <p>你可選擇一個武僧子職；基本規則僅提供散打鬥士。</p>
+</section>
 
-等級 2：吐故納新
-擲先攻時，你可回滿已消耗的專注點，並回復「武藝骰 + 武僧等級」生命值。
-此能力每次長休只能用 1 次。
+<section class="monk-feature class-feature-section" data-feature-level="3">
+  <h3>等級 3：散打技巧（散打子職）</h3>
+  <p>當你用「疾風連擊」命中時，可讓目標承受 1 種效果：</p>
+  <ul class="class-rule-list">
+    <li>截擊：到你下回合結束前，目標不能發動藉機攻擊。</li>
+    <li>擊退：目標力量豁免失敗則被推離你最多 15 呎。</li>
+    <li>擊倒：目標敏捷豁免失敗則倒地。</li>
+  </ul>
+</section>
 
-等級 3：撥擋化勁
-當攻擊命中你，且傷害含鈍擊／穿刺／揮砍時，你可用反應減傷：
-1d10 + 敏捷調整值 + 武僧等級。
+<section class="monk-feature class-feature-section" data-feature-level="4">
+  <h3>等級 4：屬性值提升</h3>
+  <p>獲得「屬性值提升」專長，或其他符合條件的專長。</p>
+</section>
 
-若減到 0，你可再花 1 點專注點反擊：
-- 擋近戰：選 5 呎內生物。
-- 擋遠程：選 60 呎內,你看得到且不在全身掩護後的生物。
-目標需過敏捷豁免，失敗則受到 2 枚武藝骰 + 你的敏捷調整值傷害（同原攻擊類型）。
+<section class="monk-feature class-feature-section" data-feature-level="5">
+  <h3>等級 5：額外攻擊</h3>
+  <p>你在自己回合使用攻擊動作時，可以攻擊 2 次。</p>
+</section>
 
-等級 3：武僧子職
-你可選擇一個武僧子職；基本規則僅提供散打鬥士。
-
-等級 3：散打技巧（散打子職）
-當你用「疾風連擊」命中時，可讓目標承受 1 種效果：
-- 截擊：到你下回合結束前，目標不能發動藉機攻擊。
-- 擊退：目標力量豁免失敗則被推離你最多 15 呎。
-- 擊倒：目標敏捷豁免失敗則倒地。
-
-等級 4：屬性值提升
-獲得「屬性值提升」專長，或其他符合條件的專長。
-
-等級 5：額外攻擊
-你在自己回合使用攻擊動作時，可以攻擊 2 次。
-
-等級 5：震懾擊
-每回合 1 次，當你用武僧武器或徒手命中時，可花 1 點專注點發動震懾打擊。
-目標需做體質豁免：
-- 失敗：震懾到你下回合開始。
-- 成功：速度減半，且到你下回合開始前，下一次對它的攻擊有優勢。
-  `,
-  paladin: `<table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+<section class="monk-feature class-feature-section" data-feature-level="5">
+  <h3>等級 5：震懾擊</h3>
+  <p>每回合 1 次，當你用武僧武器或徒手命中時，可花 1 點專注點發動震懾打擊。</p>
+  <p>目標需做體質豁免：</p>
+  <ul class="class-rule-list">
+    <li>失敗：震懾到你下回合開始。</li>
+    <li>成功：速度減半，且到你下回合開始前，下一次對它的攻擊有優勢。</li>
+  </ul>
+</section>
+</div>`,
+  paladin: `<table class="class-core-profile-table class-core-profile-table--paladin" aria-label="聖騎士核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
     <tr>
       <td style="width: 6em; font-weight: bold;">關鍵屬性</td>
@@ -1401,92 +1495,128 @@ const classFeatures = {
     </tr>
   </tbody>
 </table>
-等級 1：聖療
-你有一個治療能量池，總量 = 聖騎士等級 × 5，長休後回滿。
+<div class="class-feature-content">
+<section class="paladin-feature class-feature-section" data-feature-level="1">
+  <h3>等級 1：聖療</h3>
+  <p>你有一個治療能量池，總量 = 聖騎士等級 × 5，長休後回滿。</p>
+  <p>附贈動作觸碰一個生物（可包含自己）時，你可從能量池分配治療量來回復生命值。</p>
+  <p>你也可改花 5 點能量，移除目標的中毒狀態（不回生命）。</p>
+</section>
 
-附贈動作觸碰一個生物（可包含自己）時，你可從能量池分配治療量來回復生命值。
-你也可改花 5 點能量，移除目標的中毒狀態（不回生命）。
+<section class="paladin-feature class-feature-section" data-feature-level="1">
+  <h3>等級 1：施法</h3>
+  <p>你透過祈禱與冥想施法，法術請看「聖騎士法術列表」。</p>
+  <p>法術位：見「聖騎士特性」表，長休後回滿。</p>
+  <div class="class-rule-subsection">
+    <h4>準備法術：你要先準備法術才能施放。</h4>
+    <ul class="class-rule-list">
+      <li>起始可準備 2 個 1 環聖騎士法術（建議：英雄氣概,熾焰斬）。</li>
+      <li>你可準備的法術數量會隨聖騎士等級提升，見「聖騎士特性」表。</li>
+      <li>每當這個數量提高時，從聖騎士法術列表再選法術，直到你的準備數量與表格一致。</li>
+      <li>你選擇的法術必須是你目前有法術位能施放的環級。</li>
+      <li>例如 5 級可準備共 6 個 1 或 2 環法術。</li>
+    </ul>
+  </div>
+  <p>若其他特性給你額外已準備法術，不占用上述數量。</p>
+  <p>每次長休後，可替換 1 個已準備法術。</p>
+  <p>施法屬性：魅力。</p>
+  <p>施法法器：可用聖徽。</p>
+</section>
 
-等級 1：施法
-你透過祈禱與冥想施法，法術請看「聖騎士法術列表」。
+<section class="paladin-feature class-feature-section" data-feature-level="1">
+  <h3>等級 1：武器精通</h3>
+  <p>從你熟練的武器中選 2 種，取得其精通屬性（例如長劍,標槍）。</p>
+  <p>每次長休後可改選。</p>
+</section>
 
-法術位：見「聖騎士特性」表，長休後回滿。
+<section class="paladin-feature class-feature-section" data-feature-level="2">
+  <h3>等級 2：戰鬥風格</h3>
+  <p>以下二選一：</p>
+  <ul class="class-rule-list">
+    <li><label><input type="checkbox" id="paladin-fighting-style"> 選 1 個「戰鬥風格」專長</label></li>
+    <li><label><input type="checkbox" id="paladin-blessed-warrior"> 選「受祝福的勇士」</label>：學 2 個牧師戲法（建議：神導術,聖火術）。<br>這些戲法視為你的聖騎士法術，施法屬性是魅力；每升 1 級可替換其中 1 個戲法。</li>
+  </ul>
+</section>
 
-準備法術：你要先準備法術才能施放。
-- 起始可準備 2 個 1 環聖騎士法術（建議：英雄氣概,熾焰斬）。
-- 你可準備的法術數量會隨聖騎士等級提升，見「聖騎士特性」表。
-- 每當這個數量提高時，從聖騎士法術列表再選法術，直到你的準備數量與表格一致。
-- 你選擇的法術必須是你目前有法術位能施放的環級。
-- 例如 5 級可準備共 6 個 1 或 2 環法術。
+<section class="paladin-feature class-feature-section" data-feature-level="2">
+  <h3>等級 2：聖騎士斬技</h3>
+  <p>你永遠準備好「至聖斬」。</p>
+  <p>另外你可在不耗法術位下施放它 1 次，用完需長休才恢復。</p>
+</section>
 
-若其他特性給你額外已準備法術，不占用上述數量。
-每次長休後，可替換 1 個已準備法術。
+<section class="paladin-feature class-feature-section" data-feature-level="3">
+  <h3>等級 3：引導神力</h3>
+  <p>你可使用「引導神力」製造神聖效果。你先獲得「神聖感知」，之後可由其他特性追加新效果。</p>
+  <p>每次使用時，從你已知的引導神力效果中選 1 個發動。</p>
+  <div class="class-rule-subsection">
+    <h4>你有 2 次使用次數：</h4>
+    <ul class="class-rule-list">
+      <li>短休回 1 次</li>
+      <li>長休回滿</li>
+    </ul>
+  </div>
+  <p>若效果需要豁免，DC 用你聖騎士施法 DC。</p>
+  <div class="class-rule-subsection">
+    <h4>神聖感知</h4>
+    <p>附贈動作啟動後，持續 10 分鐘（或你失能前）。</p>
+    <p>期間你可感知 60 呎內天界生物,邪魔,不死生物的位置與類型，並可偵測同範圍內受「聖居」祝福或褻瀆的地點／物件。</p>
+  </div>
+</section>
 
-施法屬性：魅力。
-施法法器：可用聖徽。
+<section class="paladin-feature class-feature-section" data-feature-level="3">
+  <h3>等級 3：聖騎士子職</h3>
+  <p>你可選擇一個聖騎士子職；基本規則僅提供奉獻之誓。</p>
+  <div class="class-rule-subsection">
+    <h4>奉獻之誓重視正義,秩序與榮譽，常見信條包括：</h4>
+    <ul class="class-rule-list">
+      <li>不誑語不欺騙，言出必行。</li>
+      <li>鋤強扶弱，無畏躬行。</li>
+      <li>以榮譽為世人樹立典範。</li>
+    </ul>
+  </div>
+</section>
 
-等級 1：武器精通
-從你熟練的武器中選 2 種，取得其精通屬性（例如長劍,標槍）。
-每次長休後可改選。
+<section class="paladin-feature class-feature-section" data-feature-level="3">
+  <h3>等級 3：奉獻之誓法術（奉獻子職）</h3>
+  <p>你會自動準備以下法術：</p>
+  <ul class="class-rule-list">
+    <li>3 級：防護善惡（1）,虔誠護盾（1）</li>
+    <li>5 級：援助術（2）,誠實之域（2）</li>
+  </ul>
+</section>
 
-等級 2：戰鬥風格
-以下二選一：
-- <label><input type="checkbox" id="paladin-fighting-style"> 選 1 個「戰鬥風格」專長</label>
-- <label><input type="checkbox" id="paladin-blessed-warrior"> 選「受祝福的勇士」</label>：學 2 個牧師戲法（建議：神導術,聖火術）。
-  這些戲法視為你的聖騎士法術，施法屬性是魅力；每升 1 級可替換其中 1 個戲法。
+<section class="paladin-feature class-feature-section" data-feature-level="3">
+  <h3>等級 3：祝聖武器（奉獻子職）</h3>
+  <p>當你執行攻擊動作時，可消耗 1 次引導神力，為手上一把近戰武器注入神聖力量，持續 10 分鐘（或你再次使用本特性）。</p>
+  <div class="class-rule-subsection">
+    <h4>效果期間：</h4>
+    <ul class="class-rule-list">
+      <li>該武器攻擊檢定加上你的魅力調整值（至少 +1）。</li>
+      <li>命中時可選擇造成原本傷害類型或光耀傷害。</li>
+      <li>武器發出 20 呎明亮光照 + 再外圈 20 呎微光。</li>
+    </ul>
+  </div>
+  <p>你可隨時無動作提前結束；若不再持有該武器，效果也會結束。</p>
+</section>
 
-等級 2：聖騎士斬技
-你永遠準備好「至聖斬」。
-另外你可在不耗法術位下施放它 1 次，用完需長休才恢復。
+<section class="paladin-feature class-feature-section" data-feature-level="4">
+  <h3>等級 4：屬性值提升</h3>
+  <p>獲得「屬性值提升」專長，或其他符合條件的專長。</p>
+</section>
 
-等級 3：引導神力
-你可使用「引導神力」製造神聖效果。你先獲得「神聖感知」，之後可由其他特性追加新效果。
-每次使用時，從你已知的引導神力效果中選 1 個發動。
+<section class="paladin-feature class-feature-section" data-feature-level="5">
+  <h3>等級 5：額外攻擊</h3>
+  <p>你在自己回合使用攻擊動作時，可以攻擊 2 次。</p>
+</section>
 
-你有 2 次使用次數：
-- 短休回 1 次
-- 長休回滿
-- 11 級時再多 1 次上限
-
-若效果需要豁免，DC 用你聖騎士施法 DC。
-
-神聖感知：附贈動作啟動後，持續 10 分鐘（或你失能前）。
-期間你可感知 60 呎內天界生物,邪魔,不死生物的位置與類型，並可偵測同範圍內受「聖居」祝福或褻瀆的地點／物件。
-
-等級 3：聖騎士子職
-你可選擇一個聖騎士子職；基本規則僅提供奉獻之誓。
-
-奉獻之誓重視正義,秩序與榮譽，常見信條包括：
-- 不誑語不欺騙，言出必行。
-- 鋤強扶弱，無畏躬行。
-- 以榮譽為世人樹立典範。
-
-等級 3：奉獻之誓法術（奉獻子職）
-你會自動準備以下法術：
-- 3 級：防護善惡（1）,虔誠護盾（1）
-- 5 級：援助術（2）,誠實之域（2）
-
-等級 3：祝聖武器（奉獻子職）
-當你執行攻擊動作時，可消耗 1 次引導神力，為手上一把近戰武器注入神聖力量，持續 10 分鐘（或你再次使用本特性）。
-
-效果期間：
-- 該武器攻擊檢定加上你的魅力調整值（至少 +1）。
-- 命中時可選擇造成原本傷害類型或光耀傷害。
-- 武器發出 20 呎明亮光照 + 再外圈 20 呎微光。
-
-你可隨時無動作提前結束；若不再持有該武器，效果也會結束。
-
-等級 4：屬性值提升
-獲得「屬性值提升」專長，或其他符合條件的專長。
-
-等級 5：額外攻擊
-你在自己回合使用攻擊動作時，可以攻擊 2 次。
-
-等級 5：忠誠坐騎
-你永遠準備好「召喚坐騎」。
-你可不耗法術位施放 1 次，長休後恢復。
+<section class="paladin-feature class-feature-section" data-feature-level="5">
+  <h3>等級 5：忠誠坐騎</h3>
+  <p>你永遠準備好「召喚坐騎」。</p>
+  <p>你可不耗法術位施放 1 次，長休後恢復。</p>
+</section>
+</div>
 `,
-  ranger: `<table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+  ranger: `<table class="class-core-profile-table class-core-profile-table--ranger" aria-label="遊俠核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
     <tr>
       <td style="width: 6em; font-weight: bold;">關鍵屬性</td>
@@ -1595,63 +1725,93 @@ const classFeatures = {
     </tr>
   </tbody>
 </table>
-等級 1：施法
-你透過自然魔法施法，法術請看「遊俠法術列表」。
+<div class="class-feature-content">
+<section class="ranger-feature class-feature-section" data-feature-level="1">
+  <h3>等級 1：施法</h3>
+  <p>你透過自然魔法施法，法術請看「遊俠法術列表」。</p>
+  <p>法術位：看「遊俠特性」表，長休後全回復。</p>
+  <div class="class-rule-subsection">
+    <h4>準備法術</h4>
+    <ul class="class-rule-list">
+      <li>起始可準備 2 個 1 環遊俠法術（建議：療傷術,誘捕打擊）。</li>
+      <li>你可準備的法術數量會隨遊俠等級提升，見「遊俠特性」表。</li>
+      <li>每當這個數量提高時，從遊俠法術列表再選法術，直到你的準備數量與表格一致。</li>
+      <li>你選擇的法術必須是你目前有法術位能施放的環級。</li>
+    </ul>
+  </div>
+  <p>若其他特性給你額外已準備法術，不占用上述數量。</p>
+  <p>每次長休後可替換 1 個已準備法術。</p>
+  <p>施法屬性：感知。</p>
+  <p>施法法器：可用德魯伊法器。</p>
+</section>
 
-法術位：看「遊俠特性」表，長休後全回復。
+<section class="ranger-feature class-feature-section" data-feature-level="1">
+  <h3>等級 1：宿敵</h3>
+  <p>你永遠準備好「獵人印記」。</p>
+  <p>可不耗法術位施放 2 次，長休後恢復。</p>
+  <p>這個免費次數會隨等級提升增加（見「遊俠特性」表「宿敵」欄）。</p>
+</section>
 
-準備法術：
-- 起始可準備 2 個 1 環遊俠法術（建議：療傷術,誘捕打擊）。
-- 你可準備的法術數量會隨遊俠等級提升，見「遊俠特性」表。
-- 每當這個數量提高時，從遊俠法術列表再選法術，直到你的準備數量與表格一致。
-- 你選擇的法術必須是你目前有法術位能施放的環級。
+<section class="ranger-feature class-feature-section" data-feature-level="1">
+  <h3>等級 1：武器精通</h3>
+  <p>從你熟練的武器中選 2 種，取得其精通屬性（例如長弓,短劍）。</p>
+  <p>每次長休後可改選。</p>
+</section>
 
-若其他特性給你額外已準備法術，不占用上述數量。
-每次長休後可替換 1 個已準備法術。
+<section class="ranger-feature class-feature-section" data-feature-level="2">
+  <h3>等級 2：熟練探險家</h3>
+  <p>你獲得：</p>
+  <ul class="class-rule-list">
+    <li>專精：選 1 項你已熟練但尚未專精的技能，改為專精。</li>
+    <li>語言：再學 2 種語言。</li>
+  </ul>
+</section>
 
-施法屬性：感知。
-施法法器：可用德魯伊法器。
+<section class="ranger-feature class-feature-section" data-feature-level="2">
+  <h3>等級 2：戰鬥風格</h3>
+  <p>你可以：</p>
+  <ul class="class-rule-list">
+    <li><label><input type="checkbox" id="ranger-fighting-style"> 選 1 個「戰鬥風格」專長</label>，或</li>
+    <li><label><input type="checkbox" id="ranger-druidic-warrior"> 選「德魯伊教戰士」</label>：
+      <ul>
+        <li>學 2 個德魯伊戲法（建議：神導術,流光閃靈）。</li>
+        <li>這些戲法視為你的遊俠法術，施法屬性是感知。</li>
+        <li>每升 1 級可替換其中 1 個戲法。</li>
+      </ul>
+    </li>
+  </ul>
+</section>
 
-等級 1：宿敵
-你永遠準備好「獵人印記」。
-可不耗法術位施放 2 次，長休後恢復。
+<section class="ranger-feature class-feature-section" data-feature-level="3">
+  <h3>等級 3：遊俠子職</h3>
+  <p>你可選擇一個遊俠子職；基本規則僅提供獵人。</p>
+</section>
 
-這個免費次數會隨等級提升增加（見「遊俠特性」表「宿敵」欄）。
+<section class="ranger-feature class-feature-section" data-feature-level="3">
+  <h3>等級 3：獵人學識（獵人子職）</h3>
+  <p>目標被你的「獵人印記」標記時，你會知道它的傷害免疫,抗性與易傷。</p>
+</section>
 
-等級 1：武器精通
-從你熟練的武器中選 2 種，取得其精通屬性（例如長弓,短劍）。
-每次長休後可改選。
+<section class="ranger-feature class-feature-section" data-feature-level="3">
+  <h3>等級 3：狩獵目標（獵人子職）</h3>
+  <p>從下列擇一；每次短休或長休後可改選：</p>
+  <ul class="class-rule-list">
+    <li>斬殺者：每回合 1 次，你用武器命中且目標先前已失去生命值時，額外造成 1d8 傷害。</li>
+    <li>破陣者：每回合 1 次，當你用武器攻擊時，可用同一把武器再攻擊 5 呎內另一個你本回合尚未攻擊過的目標。</li>
+  </ul>
+</section>
 
-等級 2：熟練探險家
-你獲得：
-- 專精：選 1 項你已熟練但尚未專精的技能，改為專精。
-- 語言：再學 2 種語言。
+<section class="ranger-feature class-feature-section" data-feature-level="4">
+  <h3>等級 4：屬性值提升</h3>
+  <p>獲得「屬性值提升」專長，或其他符合條件的專長。</p>
+</section>
 
-等級 2：戰鬥風格
-你可以：
-- <label><input type="checkbox" id="ranger-fighting-style"> 選 1 個「戰鬥風格」專長</label>，或
-- <label><input type="checkbox" id="ranger-druidic-warrior"> 選「德魯伊教戰士」</label>：
-  - 學 2 個德魯伊戲法（建議：神導術,流光閃靈）。
-  - 這些戲法視為你的遊俠法術，施法屬性是感知。
-  - 每升 1 級可替換其中 1 個戲法。
-
-等級 3：遊俠子職
-你可選擇一個遊俠子職；基本規則僅提供獵人。
-
-等級 3：獵人學識（獵人子職）
-目標被你的「獵人印記」標記時，你會知道它的傷害免疫,抗性與易傷。
-
-等級 3：狩獵目標（獵人子職）
-從下列擇一；每次短休或長休後可改選：
-- 斬殺者：每回合 1 次，你用武器命中且目標先前已失去生命值時，額外造成 1d8 傷害。
-- 破陣者：每回合 1 次，當你用武器攻擊時，可用同一把武器再攻擊 5 呎內另一個你本回合尚未攻擊過的目標。
-
-等級 4：屬性值提升
-獲得「屬性值提升」專長，或其他符合條件的專長。
-
-等級 5：額外攻擊
-你在自己回合使用攻擊動作時，可以攻擊 2 次。`,
-  rogue: `<table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+<section class="ranger-feature class-feature-section" data-feature-level="5">
+  <h3>等級 5：額外攻擊</h3>
+  <p>你在自己回合使用攻擊動作時，可以攻擊 2 次。</p>
+</section>
+</div>`,
+  rogue: `<table class="class-core-profile-table class-core-profile-table--rogue" aria-label="盜賊核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
     <tr>
       <td style="width: 6em; font-weight: bold;">關鍵屬性</td>
@@ -1742,55 +1902,83 @@ const classFeatures = {
     </tr>
   </tbody>
 </table>
-等級 1：專精
-選 2 項你已熟練的技能，改為專精（常見選擇：${skillTip("巧手")},${skillTip("隱匿")}）。
-到 6 級時，再選 2 項已熟練技能獲得專精。
+<div class="class-feature-content">
+<section class="rogue-feature class-feature-section" data-feature-level="1">
+  <h3>等級 1：專精</h3>
+  <p>選 2 項你已熟練的技能，改為專精（常見選擇：${skillTip("巧手")},${skillTip("隱匿")}）。</p>
+  <p>到 6 級時，再選 2 項已熟練技能獲得專精。</p>
+</section>
 
-等級 1：偷襲
-你每回合可觸發 1 次偷襲。
-當你用靈巧武器或遠程武器命中時，若符合以下任一條件，就可多造成 1d6 傷害（同武器傷害類型）：
-- 這次攻擊有優勢，或
-- 目標 5 呎內有至少 1 名未失能的友方，且你的攻擊沒有劣勢。
+<section class="rogue-feature class-feature-section" data-feature-level="1">
+  <h3>等級 1：偷襲</h3>
+  <p>你每回合可觸發 1 次偷襲。</p>
+  <p>當你用靈巧武器或遠程武器命中時，若符合以下任一條件，就可多造成 1d6 傷害（同武器傷害類型）：</p>
+  <ul class="class-rule-list">
+    <li>這次攻擊有優勢，或</li>
+    <li>目標 5 呎內有至少 1 名未失能的友方，且你的攻擊沒有劣勢。</li>
+  </ul>
+  <p>偷襲傷害會隨等級提升（見盜賊特性表）。</p>
+</section>
 
-偷襲傷害會隨等級提升（見盜賊特性表）。
+<section class="rogue-feature class-feature-section" data-feature-level="1">
+  <h3>等級 1：盜賊黑話</h3>
+  <p>你學會盜賊黑話，並再學 1 種語言。</p>
+</section>
 
-等級 1：盜賊黑話
-你學會盜賊黑話，並再學 1 種語言。
+<section class="rogue-feature class-feature-section" data-feature-level="1">
+  <h3>等級 1：武器精通</h3>
+  <p>從你熟練的武器中選 2 種，取得其精通屬性（例如匕首,短弓）。</p>
+  <p>每次長休後可改選。</p>
+</section>
 
-等級 1：武器精通
-從你熟練的武器中選 2 種，取得其精通屬性（例如匕首,短弓）。
-每次長休後可改選。
+<section class="rogue-feature class-feature-section" data-feature-level="2">
+  <h3>等級 2：靈巧動作</h3>
+  <p>你的回合中，可把以下其中一項當附贈動作使用：疾走,撤離,躲藏。</p>
+</section>
 
-等級 2：靈巧動作
-你的回合中，可把以下其中一項當附贈動作使用：疾走,撤離,躲藏。
+<section class="rogue-feature class-feature-section" data-feature-level="3">
+  <h3>等級 3：盜賊子職</h3>
+  <p>你可選擇一個盜賊子職；基本規則僅提供妙手。</p>
+</section>
 
-等級 3：盜賊子職
-你可選擇一個盜賊子職；基本規則僅提供妙手。
+<section class="rogue-feature class-feature-section" data-feature-level="3">
+  <h3>等級 3：快手（妙手子職）</h3>
+  <p>你可用附贈動作進行以下其中一項：</p>
+  <ul class="class-rule-list">
+    <li>${skillTip("巧手")}：做敏捷（${skillTip("巧手")}）檢定來開鎖,解除陷阱或扒竊。</li>
+    <li>使用物品：執行使用動作，或用魔法動作啟動需要該動作的魔法物品。</li>
+  </ul>
+</section>
 
-等級 3：快手（妙手子職）
-你可用附贈動作進行以下其中一項：
-- ${skillTip("巧手")}：做敏捷（${skillTip("巧手")}）檢定來開鎖,解除陷阱或扒竊。
-- 使用物品：執行使用動作，或用魔法動作啟動需要該動作的魔法物品。
+<section class="rogue-feature class-feature-section" data-feature-level="3">
+  <h3>等級 3：手穩就準</h3>
+  <p>附贈動作啟動後，你本回合下一次攻擊檢定有優勢。</p>
+  <p>但你必須在本回合尚未移動，且啟動後速度變為 0（到回合結束）。</p>
+</section>
 
-等級 3：手穩就準
-附贈動作啟動後，你本回合下一次攻擊檢定有優勢。
-但你必須在本回合尚未移動，且啟動後速度變為 0（到回合結束）。
+<section class="rogue-feature class-feature-section" data-feature-level="4">
+  <h3>等級 4：屬性值提升</h3>
+  <p>獲得「屬性值提升」專長，或其他符合條件的專長。</p>
+</section>
 
-等級 4：屬性值提升
-獲得「屬性值提升」專長，或其他符合條件的專長。
+<section class="rogue-feature class-feature-section" data-feature-level="5">
+  <h3>等級 5：靈巧打擊</h3>
+  <p>當你造成偷襲傷害時，可套用 1 種靈巧打擊效果。</p>
+  <p>每種效果都要先放棄部分偷襲傷害骰；若需要豁免，DC = 8 + 熟練加值 + 敏捷調整值。</p>
+  <ul class="class-rule-list">
+    <li>淬毒（消耗 1d6）：目標體質豁免失敗則中毒 1 分鐘；其每回合結束可再豁免，成功即結束。使用此效果時你需攜帶制毒師工具。</li>
+    <li>摔絆（消耗 1d6）：大型或更小目標敏捷豁免失敗則倒地。</li>
+    <li>撤步（消耗 1d6）：攻擊後你可立刻移動至多一半速度，且不引發藉機攻擊。</li>
+  </ul>
+</section>
 
-等級 5：靈巧打擊
-當你造成偷襲傷害時，可套用 1 種靈巧打擊效果。
-每種效果都要先放棄部分偷襲傷害骰；若需要豁免，DC = 8 + 熟練加值 + 敏捷調整值。
-
-- 淬毒（消耗 1d6）：目標體質豁免失敗則中毒 1 分鐘；其每回合結束可再豁免，成功即結束。使用此效果時你需攜帶制毒師工具。
-- 摔絆（消耗 1d6）：大型或更小目標敏捷豁免失敗則倒地。
-- 撤步（消耗 1d6）：攻擊後你可立刻移動至多一半速度，且不引發藉機攻擊。
-
-等級 5：直覺閃避
-當你看得見的攻擊者命中你時，你可用反應讓該次攻擊傷害減半（向下取整）。
+<section class="rogue-feature class-feature-section" data-feature-level="5">
+  <h3>等級 5：直覺閃避</h3>
+  <p>當你看得見的攻擊者命中你時，你可用反應讓該次攻擊傷害減半（向下取整）。</p>
+</section>
+</div>
 `,
-  sorcerer: `<table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+  sorcerer: `<table class="class-core-profile-table class-core-profile-table--sorcerer" aria-label="術士核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
     <tr>
       <td style="width: 6em; font-weight: bold;">關鍵屬性</td>
@@ -1911,44 +2099,61 @@ const classFeatures = {
     </tr>
   </tbody>
 </table>
-等級 1：施法
-你靠天生魔力施法，使用「術士法術列表」。
+<div class="class-feature-content">
+<section class="sorcerer-feature class-feature-section" data-feature-level="1">
+  <h3>等級 1：施法</h3>
+  <p>你靠天生魔力施法，使用「術士法術列表」。</p>
+  <div class="class-rule-subsection">
+    <h4>戲法</h4>
+    <ul class="class-rule-list">
+      <li>起始學會 4 個術士戲法（推薦：光亮術,魔法伎倆,電爪,術法衝擊）。</li>
+      <li>每次升術士等級，可把 1 個由此特性取得的戲法換成另一個術士戲法。</li>
+      <li>4 級與 10 級時，各再學 1 個術士戲法。</li>
+    </ul>
+  </div>
+  <p>法術位：見「術士特性」表，長休後全回復。</p>
+  <div class="class-rule-subsection">
+    <h4>準備法術</h4>
+    <ul class="class-rule-list">
+      <li>起始可準備 2 個 1 環術士法術（建議：燃燒之手,偵測魔法）。</li>
+      <li>你可準備的法術數量會隨術士等級提升，見「術士特性」表。</li>
+      <li>每當這個數量提高時，從術士法術列表再選法術，直到你的準備數量與表格一致。</li>
+      <li>你選擇的法術必須是你目前有法術位能施放的環級。</li>
+    </ul>
+  </div>
+  <p>若其他術士特性給你額外已準備法術，這些法術不計入上述準備上限，但仍算術士法術。</p>
+  <p>每次升術士等級時，可把準備清單中的 1 個法術換成另一個符合條件的術士法術。</p>
+  <p>施法屬性：魅力。</p>
+  <p>施法法器：可用奧術法器。</p>
+</section>
 
-戲法：
-  - 起始學會 4 個術士戲法（推薦：光亮術,魔法伎倆,電爪,術法衝擊）。
-  - 每次升術士等級，可把 1 個由此特性取得的戲法換成另一個術士戲法。
-  - 4 級與 10 級時，各再學 1 個術士戲法。
+<section class="sorcerer-feature class-feature-section" data-feature-level="1">
+  <h3>等級 1：天生術法</h3>
+  <p>你體內的魔力可被短暫解放。作為附贈動作啟動後，持續 1 分鐘並獲得：</p>
+  <ul class="class-rule-list">
+    <li>你的術士法術豁免 DC +1。</li>
+    <li>你的術士法術攻擊檢定具有優勢。</li>
+  </ul>
+  <p>使用次數：2 次；長休後全回復。</p>
+</section>
 
-法術位：見「術士特性」表，長休後全回復。
-
-準備法術：
-  - 起始可準備 2 個 1 環術士法術（建議：燃燒之手,偵測魔法）。
-  - 你可準備的法術數量會隨術士等級提升，見「術士特性」表。
-  - 每當這個數量提高時，從術士法術列表再選法術，直到你的準備數量與表格一致。
-  - 你選擇的法術必須是你目前有法術位能施放的環級。
-
-若其他術士特性給你額外已準備法術，這些法術不計入上述準備上限，但仍算術士法術。
-每次升術士等級時，可把準備清單中的 1 個法術換成另一個符合條件的術士法術。
-
-- 施法屬性：魅力。
-- 施法法器：可用奧術法器。
-
-等級 1：天生術法
-- 你體內的魔力可被短暫解放。作為附贈動作啟動後，持續 1 分鐘並獲得：
-  - 你的術士法術豁免 DC +1。
-  - 你的術士法術攻擊檢定具有優勢。
-- 使用次數：2 次；長休後全回復。
-
-等級 2：魔力泉湧
-- 你可運用術法點來啟動魔法效果。
-- 起始術法點為 2 點；高等級時依「術士特性」表提升。
-- 你持有的術法點不可超過目前等級上限；長休後全回復。
-- 你可使用以下轉換：
-  - 將法術位轉為術法點：消耗 1 個法術位，獲得等同該環階的術法點（無需動作）。
-  - 創造法術位：附贈動作消耗術法點換成法術位（見下表），且不能創造 6 環以上法術位。
-- 以此特性創造的法術位會在長休後消散。
-
-生成法術位<div class="rule-table-shell rule-table-shell--spell-slot">
+<section class="sorcerer-feature class-feature-section" data-feature-level="2">
+  <h3>等級 2：魔力泉湧</h3>
+  <ul class="class-rule-list">
+    <li>你可運用術法點來啟動魔法效果。</li>
+    <li>起始術法點為 2 點；高等級時依「術士特性」表提升。</li>
+    <li>你持有的術法點不可超過目前等級上限；長休後全回復。</li>
+    <li>你可使用以下轉換：
+      <ul>
+        <li>將法術位轉為術法點：消耗 1 個法術位，獲得等同該環階的術法點（無需動作）。</li>
+        <li>創造法術位：附贈動作消耗術法點換成法術位（見下表），且不能創造 6 環以上法術位。</li>
+      </ul>
+    </li>
+    <li>以此特性創造的法術位會在長休後消散。</li>
+  </ul>
+  <div class="class-rule-subsection">
+    <h4>生成法術位</h4>
+    <div class="rule-table-shell rule-table-shell--spell-slot">
 <table class="rule-reference-table rule-progress-table rule-progress-table--spell-slot" aria-label="術士生成法術位換算">
   <thead>
     <tr>
@@ -1975,72 +2180,131 @@ const classFeatures = {
     </tr>
   </tbody>
 </table>
-</div>等級 2：超魔法
-- 你獲得 2 個「超魔法選項」（見後方）。
-- 使用超魔法需消耗對應術法點。
-- 除非選項另有註明，單次施法只能套用 1 個超魔法。
-- 每次升術士等級時，可把 1 個已知超魔法換成另一個未習得選項。
+</div>
+  </div>
+</section>
 
-等級 3：術士子職
-- 你可選擇一個術士子職；基本規則僅提供龍族術法。
-- 隨等級提升，你會陸續獲得子職特性。
+<section class="sorcerer-feature class-feature-section" data-feature-level="2">
+  <h3>等級 2：超魔法</h3>
+  <ul class="class-rule-list">
+    <li>你獲得 2 個「超魔法選項」（見後方）。</li>
+    <li>使用超魔法需消耗對應術法點。</li>
+    <li>除非選項另有註明，單次施法只能套用 1 個超魔法。</li>
+    <li>每次升術士等級時，可把 1 個已知超魔法換成另一個未習得選項。</li>
+  </ul>
+</section>
 
-等級 3：龍族體魄（龍族子職）
-- 生命值上限提高 3，且此後每升 1 級術士再提高 1。
-- 你的皮膚浮現龍鱗特徵；未穿護甲時，護甲等級為 10＋敏捷調整值＋魅力調整值。
+<section class="sorcerer-feature class-feature-section" data-feature-level="3">
+  <h3>等級 3：術士子職</h3>
+  <ul class="class-rule-list">
+    <li>你可選擇一個術士子職；基本規則僅提供龍族術法。</li>
+    <li>隨等級提升，你會陸續獲得子職特性。</li>
+  </ul>
+</section>
 
-等級 3：龍族法術（龍族子職）
-- 當你達到對應術士等級後，會始終準備下列法術。
-- 龍族法術（等級 3）：變造自身,繁彩球,命令術,龍息術。
-- （等級 5）：恐懼術，飛行術。
+<section class="sorcerer-feature class-feature-section" data-feature-level="3">
+  <h3>等級 3：龍族體魄（龍族子職）</h3>
+  <ul class="class-rule-list">
+    <li>生命值上限提高 3，且此後每升 1 級術士再提高 1。</li>
+    <li>你的皮膚浮現龍鱗特徵；未穿護甲時，護甲等級為 10＋敏捷調整值＋魅力調整值。</li>
+  </ul>
+</section>
 
-等級 4：屬性值提升
-獲得「屬性值提升」專長，或改選其他符合條件的專長。
+<section class="sorcerer-feature class-feature-section" data-feature-level="3">
+  <h3>等級 3：龍族法術（龍族子職）</h3>
+  <ul class="class-rule-list">
+    <li>當你達到對應術士等級後，會始終準備下列法術。</li>
+    <li>龍族法術（等級 3）：變造自身,繁彩球,命令術,龍息術。</li>
+    <li>（等級 5）：恐懼術，飛行術。</li>
+  </ul>
+</section>
 
-等級 5：術法復甦
-- 完成短休時，你可回復已消耗術法點，最多為「術士等級一半（向下取整）」。
-- 使用後需完成長休才能再用。
+<section class="sorcerer-feature class-feature-section" data-feature-level="4">
+  <h3>等級 4：屬性值提升</h3>
+  <p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p>
+</section>
 
-超魔法選項
+<section class="sorcerer-feature class-feature-section" data-feature-level="5">
+  <h3>等級 5：術法復甦</h3>
+  <ul class="class-rule-list">
+    <li>完成短休時，你可回復已消耗術法點，最多為「術士等級一半（向下取整）」。</li>
+    <li>使用後需完成長休才能再用。</li>
+  </ul>
+</section>
 
-謹慎法術－消耗：1 術法點
-(讓你放大範圍法術時不會誤傷隊友)
-- 當你施放要求豁免的法術時，可指定最多等同魅力調整值（至少 1）名生物。
-- 這些目標對該法術豁免自動成功；若法術原本成功豁免為半傷，則改為不受傷害。
-
-遠程法術－消耗：1 術法點
-- 當你施放射程至少 5 呎的法術時，可使射程加倍。
-- 若法術射程為觸及，改為 30 呎。
-
-強效法術－消耗：1 術法點
-- 當你為法術擲傷害骰時，可重擲最多等同魅力調整值（至少 1）顆傷害骰，且必須採用重擲結果。
-- 即使你同次施法已套用另一種超魔法，仍可再用此選項。
-
-延效法術－消耗：1 術法點
-- 當你施放持續時間至少 1 分鐘的法術時，可使持續時間加倍（最長 24 小時）。
-- 若該法術需要專注，你為維持專注進行的體質豁免具有優勢。
-
-升階法術－消耗：2 術法點
-- 當你施放要求豁免的法術時，可使其中 1 個目標對該法術豁免具有劣勢。
-
-瞬發法術－消耗：2 術法點
-- 當你施放施法時間為動作的法術時，可改為附贈動作施放。
-- 你不能在同回合中同時透過此效果與一般規則再施放 1+環法術。
-
-追蹤法術－消耗：1 術法點
-- 當你以法術進行攻擊檢定失手時，可重擲 d20，且必須採用重擲結果。
-- 即使你同次施法已套用另一種超魔法，仍可再用此選項。
-
-精妙法術－消耗：1 術法點
-- 當你施放法術時，可忽略其言語,姿勢與一般材料成分。
-- 需被消耗或有標價的材料成分仍不能忽略。
-
-轉化法術－消耗：1 術法點
-- 當你施放造成強酸,冷凍,火焰,閃電,毒素或雷鳴傷害的法術時，可改成其中另一種傷害類型。
-
-孿生法術－消耗：1 術法點
-- 當你施放可透過升環增加目標的法術（例如魅惑人類）時，可使該法術生效環階提高 1 環。`,
-  warlock: `<table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+<section class="sorcerer-feature class-feature-section">
+  <h3>超魔法選項</h3>
+  <div class="class-rule-subsection">
+    <h4>謹慎法術－消耗：1 術法點</h4>
+    <p>(讓你放大範圍法術時不會誤傷隊友)</p>
+    <ul class="class-rule-list">
+      <li>當你施放要求豁免的法術時，可指定最多等同魅力調整值（至少 1）名生物。</li>
+      <li>這些目標對該法術豁免自動成功；若法術原本成功豁免為半傷，則改為不受傷害。</li>
+    </ul>
+  </div>
+  <div class="class-rule-subsection">
+    <h4>遠程法術－消耗：1 術法點</h4>
+    <ul class="class-rule-list">
+      <li>當你施放射程至少 5 呎的法術時，可使射程加倍。</li>
+      <li>若法術射程為觸及，改為 30 呎。</li>
+    </ul>
+  </div>
+  <div class="class-rule-subsection">
+    <h4>強效法術－消耗：1 術法點</h4>
+    <ul class="class-rule-list">
+      <li>當你為法術擲傷害骰時，可重擲最多等同魅力調整值（至少 1）顆傷害骰，且必須採用重擲結果。</li>
+      <li>即使你同次施法已套用另一種超魔法，仍可再用此選項。</li>
+    </ul>
+  </div>
+  <div class="class-rule-subsection">
+    <h4>延效法術－消耗：1 術法點</h4>
+    <ul class="class-rule-list">
+      <li>當你施放持續時間至少 1 分鐘的法術時，可使持續時間加倍（最長 24 小時）。</li>
+      <li>若該法術需要專注，你為維持專注進行的體質豁免具有優勢。</li>
+    </ul>
+  </div>
+  <div class="class-rule-subsection">
+    <h4>升階法術－消耗：2 術法點</h4>
+    <ul class="class-rule-list">
+      <li>當你施放要求豁免的法術時，可使其中 1 個目標對該法術豁免具有劣勢。</li>
+    </ul>
+  </div>
+  <div class="class-rule-subsection">
+    <h4>瞬發法術－消耗：2 術法點</h4>
+    <ul class="class-rule-list">
+      <li>當你施放施法時間為動作的法術時，可改為附贈動作施放。</li>
+      <li>你不能在同回合中同時透過此效果與一般規則再施放 1+環法術。</li>
+    </ul>
+  </div>
+  <div class="class-rule-subsection">
+    <h4>追蹤法術－消耗：1 術法點</h4>
+    <ul class="class-rule-list">
+      <li>當你以法術進行攻擊檢定失手時，可重擲 d20，且必須採用重擲結果。</li>
+      <li>即使你同次施法已套用另一種超魔法，仍可再用此選項。</li>
+    </ul>
+  </div>
+  <div class="class-rule-subsection">
+    <h4>精妙法術－消耗：1 術法點</h4>
+    <ul class="class-rule-list">
+      <li>當你施放法術時，可忽略其言語,姿勢與一般材料成分。</li>
+      <li>需被消耗或有標價的材料成分仍不能忽略。</li>
+    </ul>
+  </div>
+  <div class="class-rule-subsection">
+    <h4>轉化法術－消耗：1 術法點</h4>
+    <ul class="class-rule-list">
+      <li>當你施放造成強酸,冷凍,火焰,閃電,毒素或雷鳴傷害的法術時，可改成其中另一種傷害類型。</li>
+    </ul>
+  </div>
+  <div class="class-rule-subsection">
+    <h4>孿生法術－消耗：1 術法點</h4>
+    <ul class="class-rule-list">
+      <li>當你施放可透過升環增加目標的法術（例如魅惑人類）時，可使該法術生效環階提高 1 環。</li>
+    </ul>
+  </div>
+</section>
+</div>`,
+  warlock: `<table class="class-core-profile-table class-core-profile-table--warlock" aria-label="契術師核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
     <tr>
       <td style="width: 6em; font-weight: bold;">關鍵屬性</td>
@@ -2155,175 +2419,35 @@ const classFeatures = {
     </tr>
   </tbody>
 </table>
-等級 1：魔能祈喚
-- 你從禁忌知識獲得超自然能力，先選 1 個魔能祈喚（例如：書之魔契）。
-- 完整內容請見後方「魔能祈喚選項」。
-- 先決條件：若祈喚有先決條件，你必須符合才能選（例如要求契術師等級 5+）。
-- 升級調整：每次獲得契術師等級時，你可把 1 個已知祈喚換成另一個符合條件的祈喚；但若該祈喚是其他祈喚的前置，則不能替換。
-- 祈喚數量會隨等級提升（見「契術師特性」表的「祈喚」欄）。除非特別註明，同一祈喚只能選 1 次。
-
-等級 1：契約魔法
-你與神秘存在締結契約並獲得施法能力，使用「契術師法術列表」。
-
-- 戲法：
-  - 起始學會 2 個契術師戲法（推薦：魔能爆,魔法伎倆）。
-  - 每次升契術師等級時，可把 1 個由此特性取得的戲法換成另一個契術師戲法。
-  - 4 級與 10 級時，各再學 1 個戲法。
-
-法術位：
-  - 法術位數量與環階見「契術師特性」表。
-  - 你的契約魔法法術位全部都是同一環。
-  - 短休或長休後全部回復。
-  - 例：5 級契術師有 2 個 3 環法術位；就算施放 1 環法術，也會以 3 環施放。
-
-準備法術：
-  - 起始先準備 2 個 1 環契術師法術（推薦：魅惑人類,脆弱詛咒）。
-  - 你可準備的法術數量會隨契術師等級提升，見「契術師特性」表。
-  - 每當這個數量提高時，從契術師法術列表再選法術，直到你的準備數量與表格一致。
-  - 你可準備的法術環級，不得高於你目前的法術位環級（例如 6 級時可準備 1～3 環法術）。
-
-若其他契術師特性給你額外已準備法術，這些法術不計入上述準備數量，但仍算你的契術師法術。
-每次升契術師等級時，可把準備清單中的 1 個法術換成另一個符合條件的契術師法術。
-
-- 施法屬性：魅力。
-- 施法法器：可用奧術法器。
-
-等級 2：秘法回流
-- 你可進行 1 分鐘神秘儀式，結束時回復已消耗的契約魔法法術位。
-- 回復上限為「法術位最大值的一半（向上取整）」。
-- 使用後需完成長休才能再用。
-
-等級 3：契術師子職
-- 你可選擇一個契術師子職；基本規則僅提供邪魔。
-- 隨等級提升可獲得對應子職特性。
-
-等級 3：黑暗之賜（邪魔子職）
-- 當你將 10 呎內敵對生物生命值降到 0 時，你獲得等同「魅力調整值＋契術師等級」的臨時生命值（至少 1）。
-- 若是其他生物把你 10 呎內的敵對生物降到 0，你也會獲得此增益。
-
-等級 3：邪魔法術（邪魔子職）
-- 你會始終準備下列法術（達到對應契術師等級後生效）：
-
-邪魔法術（等級 3）：燃燒之手,命令術,灼熱射線,暗示術。
-（等級 5）：火球術,臭雲術。
-
-等級 4：屬性值提升
-獲得「屬性值提升」專長，或改選其他符合條件的專長。
-
-等級 5：無
-- 此等級沒有新增段落特性。
-- 魔能祈喚數量增加，請查看契術師特性表。
-
-魔能祈喚選項
-以下依先決條件與功能分組說明。
-
-刃之魔契
-你可用附贈動作：
-- 召喚一把簡易/軍用近戰武器，或
-- 與你觸碰的魔法武器建立聯結
-（武器若已被他人聯結或同調，則聯結失敗）
-
-聯結期間：
-- 你熟練該武器。
-- 你可把它當施法法器。
-
-聯結武器可用魅力計算命中與傷害加值。
-傷害可改為黯蝕,心靈或光耀。
-
-聯結結束條件：
-- 你再次使用本特性的附贈動作。
-- 武器離你超過 5 呎並持續 1 分鐘。
-- 你死亡。
-
-若是召喚武器，聯結結束時武器會一併消失。
-
-鏈之魔契
-你學會獲得魔寵，施法不耗法術位。
-魔寵可選一般形態或以下特殊形態：<hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;"><span class="beast-tip" data-beast="imp">小魔鬼</span>,<span class="beast-tip" data-beast="pseudodragon">偽龍</span>,<span class="beast-tip" data-beast="quasit">誇賽魔</span>,<span class="beast-tip" data-beast="skeleton">骷髏</span>,<span class="beast-tip" data-beast="sphinx_of_wonder">神奇斯芬克斯</span>,<span class="beast-tip" data-beast="sprite">小妖精</span> 或 <span class="beast-tip" data-beast="venomous_snake">毒蛇</span>。
-<hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;">當你攻擊，可放棄其中 1 次攻擊，改讓魔寵用反應發動 1 次攻擊。
-
-書之魔契
-你短休或長休結束時可召喚<strong>影之書</strong>。
-只有你能使用其中魔法。
-消失條件：再召一本；或你死亡。
-
-戲法與儀式（持有書時）
-- 選 3 個戲法與 2 個儀式一環法術。
-- 可選任一職業法術。
-- 等同你已準備，且視為契術師法術。
-
-你可用這本書作為施法法器。
-
-幽影護甲
-你可隨意施展法師護甲，不耗法術位。
-
-魔能意志
-你進行維持專注的體質豁免時具有優勢。
-
-邪魔活力（先決條件：契術師等級 2+）
-你可隨意施展虛假生命且不耗法術位；
-不擲臨時生命骰，視為擲滿。
-
-千面之臉（先決條件：契術師等級 2+）
-你可隨意施展易容術且不耗法術位。
-
-幻象迷蹤（先決條件：契術師等級 2+）
-你可隨意施展無聲幻影且不耗法術位。
-
-超凡跳躍（先決條件：契術師等級 2+）
-你可隨意施展跳躍術且不耗法術位。
-
-魔鬼視界（先決條件：契術師等級 2+）
-可在 120 呎內的魔法黑暗,非魔法黑暗與微光中正常視物。
-
-原初之一教習（先決條件：契術師等級 2+）
-你獲得 1 個起源專長。
-<hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;">可重複：可多次選此祈喚，但每次必須選不同的起源專長。
-
-苦痛魔爆（先決條件：契術師等級 2+，已知可造成傷害的契術師戲法）
-選 1 個你已知,可造成傷害的契術師戲法；你可將魅力調整值加到該戲法的傷害骰。
-<hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;">可重複：可多次選此祈喚，但每次要選不同戲法。
-
-魔能長槍（先決條件：契術師等級 2+，已知可造成傷害的契術師戲法）
-選 1 個你已知,射程至少 10 呎且可造成傷害的契術師戲法。施放時，該法術射程額外增加「契術師等級 × 30 呎」。
-<hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;">可重複：可多次選此祈喚，但每次要選不同戲法。
-
-斥力魔爆（先決條件：契術師等級 2+，通過攻擊檢定造成傷害的契術師戲法）
-選 1 個你已知,需要攻擊檢定的契術師戲法。當你用該戲法命中大型或更小生物時，可將其往遠離你的方向推開 10 呎。
-<hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;">可重複：可多次選此祈喚，但每次要選不同戲法。
-
-星移步法（先決條件：契術師等級 5+）
-你可隨意對自己施展浮空術，且不耗法術位。
-
-萬形之主（先決條件：契術師等級 5+）
-你可隨意施展變造自身，且不耗法術位。
-
-融身入影（先決條件：契術師等級 5+）
-當你在微光或黑暗中時，可隨意對自己施展隱形術，且不耗法術位。
-
-深海饋贈（先決條件：契術師等級 5+）
-你可在水中呼吸，並獲得等同自身速度的游泳速度。
-你也可不耗法術位施展 1 次水下呼吸，此用法在長休後恢復。
-
-共視感官（先決條件：契術師等級 5+）
-你可用附贈動作觸碰 1 名自願生物，建立感官連結至你下回合結束。只要你們在同一位面，你可在後續回合再用附贈動作延長連結到下回合結束；未延長則連結終止。
-連結期間，你可獲得該生物所有特殊感官；若你們距離在 60 呎內，你可視同身在該生物位置施法。
-
-魔能斬擊（先決條件：契術師等級 5+,刃之魔契祈喚）
-每回合一次，當你用契約武器命中生物時，可消耗 1 個契術師法術位，造成額外力場傷害：1d8＋該法術位每環階再加 1d8，並可使大型或更小目標倒地。
-
-饑渴魔刃（先決條件：契術師等級 5+,刃之魔契祈喚）
-你在使用契約武器時獲得額外攻擊：在你回合以該武器執行攻擊動作時，可攻擊 2 次而非 1 次。
-
-鏈主賦能（先決條件：契術師等級 5+,鏈之魔契祈喚）
-你施展獲得魔寵時，可對魔寵灌注魔能，獲得以下增益：
-飛行或游泳：魔寵獲得 40 呎飛行或游泳速度（擇一）。
-快速攻擊：你可用附贈動作命令魔寵執行攻擊動作。
-傷害轉換：魔寵造成鈍擊／穿刺／揮砍傷害時，你可改為黯蝕或光耀傷害。
-豁免：若魔寵要求目標做豁免，使用你的法術豁免 DC。
-抗性：當魔寵受傷時，你可用反應讓該次傷害有抗性。
+<div class="class-feature-content">
+<section class="warlock-feature class-feature-section" data-feature-level="1">
+  <h3>等級 1：魔能祈喚</h3>
+  <ul class="class-rule-list"><li>你從禁忌知識獲得超自然能力，先選 1 個魔能祈喚（例如：書之魔契）。</li><li>完整內容請見後方「魔能祈喚選項」。</li><li>先決條件：若祈喚有先決條件，你必須符合才能選（例如要求契術師等級 5+）。</li><li>升級調整：每次獲得契術師等級時，你可把 1 個已知祈喚換成另一個符合條件的祈喚；但若該祈喚是其他祈喚的前置，則不能替換。</li><li>祈喚數量會隨等級提升（見「契術師特性」表的「祈喚」欄）。除非特別註明，同一祈喚只能選 1 次。</li></ul>
+</section>
+<section class="warlock-feature class-feature-section" data-feature-level="1">
+  <h3>等級 1：契約魔法</h3><p>你與神秘存在締結契約並獲得施法能力，使用「契術師法術列表」。</p>
+  <div class="class-rule-subsection"><h4>戲法</h4><ul class="class-rule-list"><li>起始學會 2 個契術師戲法（推薦：魔能爆,魔法伎倆）。</li><li>每次升契術師等級時，可把 1 個由此特性取得的戲法換成另一個契術師戲法。</li><li>4 級與 10 級時，各再學 1 個戲法。</li></ul></div>
+  <div class="class-rule-subsection"><h4>法術位</h4><ul class="class-rule-list"><li>法術位數量與環階見「契術師特性」表。</li><li>你的契約魔法法術位全部都是同一環。</li><li>短休或長休後全部回復。</li><li>例：5 級契術師有 2 個 3 環法術位；就算施放 1 環法術，也會以 3 環施放。</li></ul></div>
+  <div class="class-rule-subsection"><h4>準備法術</h4><ul class="class-rule-list"><li>起始先準備 2 個 1 環契術師法術（推薦：魅惑人類,脆弱詛咒）。</li><li>你可準備的法術數量會隨契術師等級提升，見「契術師特性」表。</li><li>每當這個數量提高時，從契術師法術列表再選法術，直到你的準備數量與表格一致。</li><li>你可準備的法術環級，不得高於你目前的法術位環級（例如 6 級時可準備 1～3 環法術）。</li></ul></div>
+  <p>若其他契術師特性給你額外已準備法術，這些法術不計入上述準備數量，但仍算你的契術師法術。</p><p>每次升契術師等級時，可把準備清單中的 1 個法術換成另一個符合條件的契術師法術。</p><p>施法屬性：魅力。</p><p>施法法器：可用奧術法器。</p>
+</section>
+<section class="warlock-feature class-feature-section" data-feature-level="2"><h3>等級 2：秘法回流</h3><ul class="class-rule-list"><li>你可進行 1 分鐘神秘儀式，結束時回復已消耗的契約魔法法術位。</li><li>回復上限為「法術位最大值的一半（向上取整）」。</li><li>使用後需完成長休才能再用。</li></ul></section>
+<section class="warlock-feature class-feature-section" data-feature-level="3"><h3>等級 3：契術師子職</h3><ul class="class-rule-list"><li>你可選擇一個契術師子職；基本規則僅提供邪魔。</li><li>隨等級提升可獲得對應子職特性。</li></ul></section>
+<section class="warlock-feature class-feature-section" data-feature-level="3"><h3>等級 3：黑暗之賜（邪魔子職）</h3><ul class="class-rule-list"><li>當你將 10 呎內敵對生物生命值降到 0 時，你獲得等同「魅力調整值＋契術師等級」的臨時生命值（至少 1）。</li><li>若是其他生物把你 10 呎內的敵對生物降到 0，你也會獲得此增益。</li></ul></section>
+<section class="warlock-feature class-feature-section" data-feature-level="3"><h3>等級 3：邪魔法術（邪魔子職）</h3><ul class="class-rule-list"><li>你會始終準備下列法術（達到對應契術師等級後生效）：</li><li>邪魔法術（等級 3）：燃燒之手,命令術,灼熱射線,暗示術。</li><li>（等級 5）：火球術,臭雲術。</li></ul></section>
+<section class="warlock-feature class-feature-section" data-feature-level="4"><h3>等級 4：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
+<section class="warlock-feature class-feature-section" data-feature-level="5"><h3>等級 5：無</h3><ul class="class-rule-list"><li>此等級沒有新增段落特性。</li><li>魔能祈喚數量增加，請查看契術師特性表。</li></ul></section>
+<section class="warlock-feature class-feature-section"><h3>魔能祈喚選項</h3><p>以下依先決條件與功能分組說明。</p>
+  <div class="class-rule-subsection"><h4>刃之魔契</h4><p>你可用附贈動作：</p><ul class="class-rule-list"><li>召喚一把簡易/軍用近戰武器，或</li><li>與你觸碰的魔法武器建立聯結</li></ul><p>（武器若已被他人聯結或同調，則聯結失敗）</p><p>聯結期間：</p><ul class="class-rule-list"><li>你熟練該武器。</li><li>你可把它當施法法器。</li></ul><p>聯結武器可用魅力計算命中與傷害加值。</p><p>傷害可改為黯蝕,心靈或光耀。</p><p>聯結結束條件：</p><ul class="class-rule-list"><li>你再次使用本特性的附贈動作。</li><li>武器離你超過 5 呎並持續 1 分鐘。</li><li>你死亡。</li></ul><p>若是召喚武器，聯結結束時武器會一併消失。</p></div>
+  <div class="class-rule-subsection"><h4>鏈之魔契</h4><p>你學會獲得魔寵，施法不耗法術位。</p><p>魔寵可選一般形態或以下特殊形態：<hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;"><span class="beast-tip" data-beast="imp">小魔鬼</span>,<span class="beast-tip" data-beast="pseudodragon">偽龍</span>,<span class="beast-tip" data-beast="quasit">誇賽魔</span>,<span class="beast-tip" data-beast="skeleton">骷髏</span>,<span class="beast-tip" data-beast="sphinx_of_wonder">神奇斯芬克斯</span>,<span class="beast-tip" data-beast="sprite">小妖精</span> 或 <span class="beast-tip" data-beast="venomous_snake">毒蛇</span>。</p><hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;"><p>當你攻擊，可放棄其中 1 次攻擊，改讓魔寵用反應發動 1 次攻擊。</p></div>
+  <div class="class-rule-subsection"><h4>書之魔契</h4><p>你短休或長休結束時可召喚<strong>影之書</strong>。</p><p>只有你能使用其中魔法。</p><p>消失條件：再召一本；或你死亡。</p><h4>戲法與儀式（持有書時）</h4><ul class="class-rule-list"><li>選 3 個戲法與 2 個儀式一環法術。</li><li>可選任一職業法術。</li><li>等同你已準備，且視為契術師法術。</li></ul><p>你可用這本書作為施法法器。</p></div>
+  <div class="class-rule-subsection"><h4>幽影護甲</h4><p>你可隨意施展法師護甲，不耗法術位。</p></div><div class="class-rule-subsection"><h4>魔能意志</h4><p>你進行維持專注的體質豁免時具有優勢。</p></div><div class="class-rule-subsection"><h4>邪魔活力（先決條件：契術師等級 2+）</h4><p>你可隨意施展虛假生命且不耗法術位；</p><p>不擲臨時生命骰，視為擲滿。</p></div><div class="class-rule-subsection"><h4>千面之臉（先決條件：契術師等級 2+）</h4><p>你可隨意施展易容術且不耗法術位。</p></div><div class="class-rule-subsection"><h4>幻象迷蹤（先決條件：契術師等級 2+）</h4><p>你可隨意施展無聲幻影且不耗法術位。</p></div><div class="class-rule-subsection"><h4>超凡跳躍（先決條件：契術師等級 2+）</h4><p>你可隨意施展跳躍術且不耗法術位。</p></div><div class="class-rule-subsection"><h4>魔鬼視界（先決條件：契術師等級 2+）</h4><p>可在 120 呎內的魔法黑暗,非魔法黑暗與微光中正常視物。</p></div>
+  <div class="class-rule-subsection"><h4>原初之一教習（先決條件：契術師等級 2+）</h4><p>你獲得 1 個起源專長。</p><hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;"><p>可重複：可多次選此祈喚，但每次必須選不同的起源專長。</p></div><div class="class-rule-subsection"><h4>苦痛魔爆（先決條件：契術師等級 2+，已知可造成傷害的契術師戲法）</h4><p>選 1 個你已知,可造成傷害的契術師戲法；你可將魅力調整值加到該戲法的傷害骰。</p><hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;"><p>可重複：可多次選此祈喚，但每次要選不同戲法。</p></div><div class="class-rule-subsection"><h4>魔能長槍（先決條件：契術師等級 2+，已知可造成傷害的契術師戲法）</h4><p>選 1 個你已知,射程至少 10 呎且可造成傷害的契術師戲法。施放時，該法術射程額外增加「契術師等級 × 30 呎」。</p><hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;"><p>可重複：可多次選此祈喚，但每次要選不同戲法。</p></div><div class="class-rule-subsection"><h4>斥力魔爆（先決條件：契術師等級 2+，通過攻擊檢定造成傷害的契術師戲法）</h4><p>選 1 個你已知,需要攻擊檢定的契術師戲法。當你用該戲法命中大型或更小生物時，可將其往遠離你的方向推開 10 呎。</p><hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;"><p>可重複：可多次選此祈喚，但每次要選不同戲法。</p></div>
+  <div class="class-rule-subsection"><h4>星移步法（先決條件：契術師等級 5+）</h4><p>你可隨意對自己施展浮空術，且不耗法術位。</p></div><div class="class-rule-subsection"><h4>萬形之主（先決條件：契術師等級 5+）</h4><p>你可隨意施展變造自身，且不耗法術位。</p></div><div class="class-rule-subsection"><h4>融身入影（先決條件：契術師等級 5+）</h4><p>當你在微光或黑暗中時，可隨意對自己施展隱形術，且不耗法術位。</p></div><div class="class-rule-subsection"><h4>深海饋贈（先決條件：契術師等級 5+）</h4><p>你可在水中呼吸，並獲得等同自身速度的游泳速度。</p><p>你也可不耗法術位施展 1 次水下呼吸，此用法在長休後恢復。</p></div><div class="class-rule-subsection"><h4>共視感官（先決條件：契術師等級 5+）</h4><p>你可用附贈動作觸碰 1 名自願生物，建立感官連結至你下回合結束。只要你們在同一位面，你可在後續回合再用附贈動作延長連結到下回合結束；未延長則連結終止。</p><p>連結期間，你可獲得該生物所有特殊感官；若你們距離在 60 呎內，你可視同身在該生物位置施法。</p></div><div class="class-rule-subsection"><h4>魔能斬擊（先決條件：契術師等級 5+,刃之魔契祈喚）</h4><p>每回合一次，當你用契約武器命中生物時，可消耗 1 個契術師法術位，造成額外力場傷害：1d8＋該法術位每環階再加 1d8，並可使大型或更小目標倒地。</p></div><div class="class-rule-subsection"><h4>饑渴魔刃（先決條件：契術師等級 5+,刃之魔契祈喚）</h4><p>你在使用契約武器時獲得額外攻擊：在你回合以該武器執行攻擊動作時，可攻擊 2 次而非 1 次。</p></div><div class="class-rule-subsection"><h4>鏈主賦能（先決條件：契術師等級 5+,鏈之魔契祈喚）</h4><p>你施展獲得魔寵時，可對魔寵灌注魔能，獲得以下增益：</p><ul class="class-rule-list"><li>飛行或游泳：魔寵獲得 40 呎飛行或游泳速度（擇一）。</li><li>快速攻擊：你可用附贈動作命令魔寵執行攻擊動作。</li><li>傷害轉換：魔寵造成鈍擊／穿刺／揮砍傷害時，你可改為黯蝕或光耀傷害。</li><li>豁免：若魔寵要求目標做豁免，使用你的法術豁免 DC。</li><li>抗性：當魔寵受傷時，你可用反應讓該次傷害有抗性。</li></ul></div>
+</section>
+</div>
 `,
-  wizard: `<table style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+  wizard: `<table class="class-core-profile-table class-core-profile-table--wizard" aria-label="法師核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
     <tr>
       <td style="width: 6em; font-weight: bold;">關鍵屬性</td>
@@ -2514,6 +2638,95 @@ const classFeatures = {
 - 你可把 1 個由「施法」特性準備中的 1+環法師法術，替換成法術書中的另一個 1+環法師法術。
 `
 };
+
+function formatWizardFeatureBody(featureText) {
+  const lines = featureText.trim().split('\n');
+  const output = [];
+
+  const renderList = (listLines) => {
+    const items = [];
+    let currentItem = null;
+    let nestedItems = [];
+
+    const closeItem = () => {
+      if (!currentItem) return;
+      const nested = nestedItems.length ? `<ul>${nestedItems.map(item => `<li>${item}</li>`).join('')}</ul>` : '';
+      items.push(`<li>${currentItem}${nested}</li>`);
+      currentItem = null;
+      nestedItems = [];
+    };
+
+    listLines.forEach(line => {
+      const nestedMatch = line.match(/^\s{2,}-\s+(.+)$/);
+      const topLevelMatch = line.match(/^-\s+(.+)$/);
+      if (nestedMatch) {
+        nestedItems.push(nestedMatch[1]);
+      } else if (topLevelMatch) {
+        closeItem();
+        currentItem = topLevelMatch[1];
+      } else if (currentItem) {
+        currentItem += ` ${line.trim()}`;
+      }
+    });
+    closeItem();
+    return `<ul class="class-rule-list">${items.join('')}</ul>`;
+  };
+
+  for (let index = 0; index < lines.length;) {
+    const line = lines[index].trim();
+    if (!line) {
+      index += 1;
+      continue;
+    }
+
+    if (line.startsWith('- ')) {
+      const listLines = [];
+      while (index < lines.length && lines[index].trim()) {
+        listLines.push(lines[index]);
+        index += 1;
+      }
+      output.push(renderList(listLines));
+      continue;
+    }
+
+    if (index + 1 < lines.length && lines[index + 1].trim().startsWith('- ')) {
+      output.push(`<div class="class-rule-subsection"><h4>${line}</h4>`);
+      index += 1;
+      const listLines = [];
+      while (index < lines.length && lines[index].trim()) {
+        listLines.push(lines[index]);
+        index += 1;
+      }
+      output.push(`${renderList(listLines)}</div>`);
+      continue;
+    }
+
+    output.push(`<p>${line}</p>`);
+    index += 1;
+  }
+
+  return output.join('\n');
+}
+
+function formatPlainTextClassFeatures(classHtml, className, formatBody = text => text) {
+  const featureStart = '</table>\n等級 ';
+  const featureStartIndex = classHtml.indexOf(featureStart);
+  if (featureStartIndex < 0) return classHtml;
+
+  const prefix = classHtml.slice(0, featureStartIndex + '</table>'.length);
+  const featureText = classHtml.slice(featureStartIndex + '</table>\n'.length);
+  const sectionClass = `${className}-feature class-feature-section`;
+  const sections = [...featureText.matchAll(/(?:^|\n\n)等級 ([1-5])：([^\n]+)\n?([\s\S]*?)(?=\n\n等級 [1-5]：|$)/g)];
+  if (!sections.length) return classHtml;
+
+  const formattedFeatures = sections.map(([, level, title, body]) => (
+    `<section class="${sectionClass}" data-feature-level="${level}"><h3>等級 ${level}：${title}</h3>${formatBody(body)}</section>`
+  )).join('\n');
+
+  return `${prefix}\n<div class="class-feature-content">${formattedFeatures}</div>`;
+}
+
+classFeatures.wizard = formatPlainTextClassFeatures(classFeatures.wizard, 'wizard', formatWizardFeatureBody);
 
 function styleClassTagline(classHtml, classFeatureHeading) {
   const lines = classHtml.split('\n');
