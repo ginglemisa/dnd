@@ -613,14 +613,14 @@
       const spellClass = MAGIC_INITIATE_SPELL_CLASSES.has(savedFeatOptions.spellClass) && savedFeatOptions.spellClass !== blockedSpellClass
         ? savedFeatOptions.spellClass
         : "";
-      const cantrips = spellClass ? validSpellIds(SpellCatalog.getSpells(spellClass, "cantrips", spellMode()), savedFeatOptions.cantrips, 2) : [];
-      const levelOneSpells = spellClass ? validSpellIds(SpellCatalog.getSpells(spellClass, "1", spellMode()), savedFeatOptions.levelOneSpells, 1) : [];
+      const cantrips = spellClass ? validSpellIds(SpellCatalog.getSpells(spellClass, "cantrips"), savedFeatOptions.cantrips, 2) : [];
+      const levelOneSpells = spellClass ? validSpellIds(SpellCatalog.getSpells(spellClass, "1"), savedFeatOptions.levelOneSpells, 1) : [];
       const featOptions = { spellClass, cantrips, levelOneSpells };
       options = { ...options, featOptions };
       target.choices.raceOptions = options;
     }
     if (key === "elf" && options.lineage === "高等精靈血統") {
-      const validCantrip = canonicalSpell(options.cantrip)?.level === 0 && SpellCatalog.getSpells("wizard", "cantrips", spellMode()).some(spell => spell.spellId === options.cantrip);
+      const validCantrip = canonicalSpell(options.cantrip)?.level === 0 && SpellCatalog.getSpells("wizard", "cantrips").some(spell => spell.spellId === options.cantrip);
       if (!validCantrip) options = { ...options, cantrip: "" };
       target.choices.raceOptions = options;
     }
@@ -678,10 +678,6 @@
   function displayList(value) { return plainText(value).replace(/[，,]/gu, "、"); }
   function backgroundSource(key) { return { type: "background", id: key, label: BACKGROUND_LABELS[key], dataFile: "backgrounds.js" }; }
   function spellSourceForBackground(key) { return key === "acolyte" ? "cleric" : "wizard"; }
-
-  function spellMode() {
-    return typeof SPELL_MODE === "string" && ["basic", "full"].includes(SPELL_MODE) ? SPELL_MODE : "basic";
-  }
 
   function canonicalSpell(spellId) {
     return typeof SpellCatalog === "object" ? SpellCatalog.getSpell(spellId) || null : null;
@@ -757,7 +753,7 @@
     addDerivedAcquisition(target, "spells", { id, spellId, name: record.nameZh, sourceType: "race", sourceId: key, source, content: { ...content, spellId } });
   }
 
-  function spellOptionsForBackground(key, level) { return SpellCatalog.getSpells(spellSourceForBackground(key), level, spellMode()); }
+  function spellOptionsForBackground(key, level) { return SpellCatalog.getSpells(spellSourceForBackground(key), level); }
   function selectedSpellForBackground(key, spellId, level) { return spellOptionsForBackground(key, level).find(spell => spell.spellId === spellId) || null; }
   function validSpellIds(entries, spellIds, limit) {
     const allowed = new Set((Array.isArray(entries) ? entries : []).map(spell => spell.spellId));
@@ -1053,9 +1049,9 @@
     return [];
   }
 
-  function levelOneSpellOptions(classId, level) { return SpellCatalog.getSpells(classId, level, spellMode()); }
+  function levelOneSpellOptions(classId, level) { return SpellCatalog.getSpells(classId, level); }
   function allSpellOptions(level, predicate = null) {
-    return SpellCatalog.getAllSpells().filter(spell => spell.level === (level === "cantrips" ? 0 : Number(level)) && SpellCatalog.getClassIds(spell.spellId, spellMode()).length && (!predicate || predicate(spell))).sort((a, b) => a.nameZh.localeCompare(b.nameZh, "zh-Hant"));
+    return SpellCatalog.getAllSpells().filter(spell => spell.level === (level === "cantrips" ? 0 : Number(level)) && SpellCatalog.getClassIds(spell.spellId).length && (!predicate || predicate(spell))).sort((a, b) => a.nameZh.localeCompare(b.nameZh, "zh-Hant"));
   }
   function levelOneInvocationOptions() { return ELDRITCH_INVOCATION_OPTIONS.filter(option => !option.minWarlockLevel || option.minWarlockLevel <= 1); }
   function isRitualSpell(spell) { return Boolean(spell) && /儀式/u.test(spell.desc || ""); }
@@ -1194,8 +1190,8 @@
     if (invocations.length !== (definition.invocations || 0)) pendingChoices.push(`魔能祈喚 ${definition.invocations} 個`);
     const tome = isPlainObject(choices.tome) ? choices.tome : {};
     const hasTome = invocations.includes("pact-of-the-tome");
-    const tomeCantripSlots = hasTome ? uniqueValidSlots(tome.cantrips, 3, spellId => canonicalSpell(spellId)?.level === 0 && SpellCatalog.getClassIds(spellId, spellMode()).length) : [];
-    const tomeRitualSlots = hasTome ? uniqueValidSlots(tome.rituals, 2, spellId => canonicalSpell(spellId)?.level === 1 && isRitualSpell(canonicalSpell(spellId)) && SpellCatalog.getClassIds(spellId, spellMode()).length) : [];
+    const tomeCantripSlots = hasTome ? uniqueValidSlots(tome.cantrips, 3, spellId => canonicalSpell(spellId)?.level === 0 && SpellCatalog.getClassIds(spellId).length) : [];
+    const tomeRitualSlots = hasTome ? uniqueValidSlots(tome.rituals, 2, spellId => canonicalSpell(spellId)?.level === 1 && isRitualSpell(canonicalSpell(spellId)) && SpellCatalog.getClassIds(spellId).length) : [];
     const tomeCantrips = tomeCantripSlots.filter(Boolean);
     const tomeRituals = tomeRitualSlots.filter(Boolean);
     if (hasTome && tomeCantrips.length !== 3) pendingChoices.push("書之魔契戲法 3 個");
@@ -1397,7 +1393,7 @@
     return draft.choices.background === "acolyte" ? "cleric" : "wizard";
   }
 
-  function spellOptions(level) { return SpellCatalog.getSpells(spellSource(), level, spellMode()); }
+  function spellOptions(level) { return SpellCatalog.getSpells(spellSource(), level); }
 
   function selectedSpell(name, level) {
     return spellOptions(level).find(spell => spell.spellId === name) || null;
@@ -1603,8 +1599,8 @@
     const featOptions = isPlainObject(draft.choices.raceOptions.featOptions) ? draft.choices.raceOptions.featOptions : {};
     const spellClass = featOptions.spellClass || "";
     const blockedSpellClass = HUMAN_MAGIC_INITIATE_BLOCKED_CLASS_BY_BACKGROUND[draft.choices.background];
-    const cantrips = MAGIC_INITIATE_SPELL_CLASSES.has(spellClass) ? SpellCatalog.getSpells(spellClass, "cantrips", spellMode()) : [];
-    const levelOne = MAGIC_INITIATE_SPELL_CLASSES.has(spellClass) ? SpellCatalog.getSpells(spellClass, "1", spellMode()) : [];
+    const cantrips = MAGIC_INITIATE_SPELL_CLASSES.has(spellClass) ? SpellCatalog.getSpells(spellClass, "cantrips") : [];
+    const levelOne = MAGIC_INITIATE_SPELL_CLASSES.has(spellClass) ? SpellCatalog.getSpells(spellClass, "1") : [];
     const selectedCantrips = Array.isArray(featOptions.cantrips) ? featOptions.cantrips : ["", ""];
     return `<section class="quick-build-choice-panel"><h4>魔法學徒選項</h4><p class="quick-build-option-note">按「查看」可在法術詳情視窗中閱讀完整敘述。</p><div class="quick-build-spell-fields"><div class="quick-build-field"><label for="quick-build-human-spell-class">--職業--</label><select id="quick-build-human-spell-class" data-human-spell-class><option value="">--職業--</option><option value="cleric"${spellClass === "cleric" ? " selected" : ""}${blockedSpellClass === "cleric" ? " disabled" : ""}>牧師</option><option value="druid"${spellClass === "druid" ? " selected" : ""}>德魯伊</option><option value="wizard"${spellClass === "wizard" ? " selected" : ""}${blockedSpellClass === "wizard" ? " disabled" : ""}>法師</option></select></div>${humanMagicSpellSelect("quick-build-human-cantrip-1", "戲法 1", cantrips, selectedCantrips[0], selectedCantrips[1])}${humanMagicSpellSelect("quick-build-human-cantrip-2", "戲法 2", cantrips, selectedCantrips[1], selectedCantrips[0])}${humanMagicSpellSelect("quick-build-human-level-one", "一環法術", levelOne, featOptions.levelOneSpells?.[0] || "")}</div></section>`;
   }
@@ -1657,7 +1653,7 @@
     if (key === "elf") {
       fields.push(raceSelect("lineage", "精靈傳承", RACE_OPTION_DEFINITIONS.elf.lineage));
       fields.push(raceSelect("skill", "敏銳感官技能熟練", RACE_OPTION_DEFINITIONS.elf.skill, { disabled: backgroundSkills, note: "其他來源已熟練的技能會標示來源，但仍可選擇。" }));
-      if (options.lineage === "高等精靈血統") fields.push(raceSelectWithDetail("cantrip", "法師戲法", SpellCatalog.getSpells("wizard", "cantrips", spellMode()).map(spell => spell.spellId), { showSpellView: true, formatOption: spellNameZh }));
+      if (options.lineage === "高等精靈血統") fields.push(raceSelectWithDetail("cantrip", "法師戲法", SpellCatalog.getSpells("wizard", "cantrips").map(spell => spell.spellId), { showSpellView: true, formatOption: spellNameZh }));
     }
     if (key === "gnome") {
       fields.push(raceSelect("lineage", "侏儒血統", RACE_OPTION_DEFINITIONS.gnome.lineage));
@@ -2453,7 +2449,7 @@
     return true;
   }
 
-  function fullMobileSpellName(classId, level, spellId) { return SpellCatalog.getSpells(classId, level, spellMode()).some(spell => spell.spellId === spellId) ? spellDisplayName(spellId) : ""; }
+  function fullMobileSpellName(classId, level, spellId) { return SpellCatalog.getSpells(classId, level).some(spell => spell.spellId === spellId) ? spellDisplayName(spellId) : ""; }
   function chooseMobileSpellClass(level, spellId, preferredClass = "") {
     const allowed = level === "cantrips" ? CLASS_ORDER.filter(id => !["barbarian", "fighter", "monk", "paladin", "ranger", "rogue"].includes(id)) : [...SPELLCASTER_CLASS_IDS];
     return [preferredClass, ...allowed].find((classId, index, values) => classId && values.indexOf(classId) === index && fullMobileSpellName(classId, level, spellId)) || "";

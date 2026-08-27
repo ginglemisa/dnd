@@ -1,5 +1,5 @@
 // Canonical spell data. Each spell record is defined exactly once and has a permanent ID.
-// Class and Basic memberships below contain IDs only; level groupings are derived from each record's level.
+// Class memberships below contain IDs only; level groupings are derived from each record's level.
 globalThis.SpellCatalog = (() => {
   const spellsById = Object.freeze({
     "dancing-lights": Object.freeze({
@@ -306,7 +306,7 @@ globalThis.SpellCatalog = (() => {
 材料: null
 持續時間: 立即
 
-- 目標必須進行感知豁免檢定，否則在其下一回合必須執行命令
+- 射程內你能看見的一名生物必須進行感知豁免檢定，否則在其下一回合必須執行命令
 - 可選命令：
   - 過來：目標沿最短路徑移動至你5呎內，然後結束其回合
   - 放下：目標丟掉手中物品，然後結束其回合
@@ -565,7 +565,7 @@ globalThis.SpellCatalog = (() => {
 持續時間: 專注，最長1分鐘
 
 - 選擇射程內的一個點，形成半徑5呎的球形區域
-- 區域內每個生物必須進行一次感知豁免檢定
+- 區域內由你選擇的每個生物必須進行一次感知豁免檢定
 - 失敗則陷入失能狀態，直到下一個回合結束
 - 下一回合必須重複一次豁免
 - 第二次豁免失敗則在法術持續時間內昏迷
@@ -628,7 +628,7 @@ globalThis.SpellCatalog = (() => {
 - 每個生物進行體質豁免檢定
 - 豁免失敗: 受到2d8雷鳴傷害，推開10呎
 - 豁免成功: 受到一半傷害
-- 完全處於區域內的物件被推開10呎
+- 完全處於區域內且未被固定的物件被推開10呎
 - 雷鳴聲可在300呎內聽到
 - 使用更高環階法術位: 每高1環，傷害增加1d8`,
       "level": 1
@@ -652,7 +652,7 @@ globalThis.SpellCatalog = (() => {
 - 每回合可執行一個附贈動作命令僕役移動最多15呎並與物件互動
 - 僕從可執行簡單任務，如取物品、清潔、修補、疊衣物、點火、服侍餐食和倒飲料
 - 僕從會盡力完成命令，直到任務完成，然後等待下一個命令
-- 如果命令使僕從移動超過60呎，法術結束`,
+- 如果命令僕從執行會使其遠離你超過60呎的任務，法術結束`,
       "level": 1
     }),
     "aid": Object.freeze({
@@ -708,7 +708,7 @@ globalThis.SpellCatalog = (() => {
 
 - 目標: 射程內可見的生物
 - 效果: 目標必須進行一次體質豁免，否則陷入盲目或耳聾狀態（施法者選擇）
-- 重複豁免: 每回合結束時重複豁免，成功則結束法術
+- 重複豁免: 每個目標在自身回合結束時重複豁免，成功則終止該效應對其自身的影響
 - 高階施法: 使用更高環階法術位，每比2環高一環可多選擇一個目標`,
       "level": 2
     }),
@@ -724,9 +724,8 @@ globalThis.SpellCatalog = (() => {
 持續時間: 專注，最長1分鐘
 
 - 選擇射程內一點，20呎半徑的球形區域內的每個類人生物必須進行魅力豁免
-- 失敗則受到以下效果之一影響：
-  - 免疫魅惑和恐懼狀態，持續至法術結束
-  - 若已被魅惑或恐懼，這些狀態在法術持續時間內被抑制
+- 豁免失敗時，為每個生物選擇以下效果之一：
+  - 免疫魅惑和恐懼狀態，持續至法術結束；若已被魅惑或恐懼，這些狀態在法術持續時間內被抑制
   - 對你選擇的敵對生物變得冷漠
 - 冷漠結束條件：目標受到傷害或目睹盟友受到傷害
 - 法術結束時，生物的態度恢復正常`,
@@ -749,7 +748,7 @@ globalThis.SpellCatalog = (() => {
 - 感知思想:
   - 感知30呎內生物的思想。
   - 只能感知懂語言或具有心靈感應能力的生物。
-  - 無法讀取思想，只知道有思想生物存在。
+  - 無法讀取完整思想，但會知道該生物當下的一個念頭。
   - 法術無法穿透1英呎厚的石頭、泥土或木頭，1英寸厚的金屬或薄薄一層鉛。
 
 - 讀取思想:
@@ -822,7 +821,7 @@ globalThis.SpellCatalog = (() => {
 
 - 目標: 射程內可見的任意數量生物
 - 豁免: 進行一次感知豁免檢定
-- 自動成功: 任何正在戰鬥的生物
+- 自動成功: 正與你或你的同伴戰鬥的生物
 - 失敗效果: 
   - 在法術持續時間內，感知檢定受到-10的罰值
   - 被動察覺值降低同樣數值`,
@@ -865,7 +864,7 @@ globalThis.SpellCatalog = (() => {
 - 選擇一個射程內可見的類人生物作為目標
 - 目標必須進行一次感知豁免檢定，否則在法術持續時間內麻痺
 - 每回合結束時，目標重複豁免檢定，成功則結束法術效果
-- 使用更高環階法術位可增加目標數量，每高2環可多選擇一個類人生物`,
+- 使用更高環階法術位可增加目標數量，每比2環高一環可多選擇一個類人生物`,
       "level": 2
     }),
     "invisibility": Object.freeze({
@@ -917,7 +916,7 @@ globalThis.SpellCatalog = (() => {
 材料: null  
 持續時間: 立即  
 
-- 描述: 觸控一個生物並解除其一種狀態：目盲、耳聾、石化或中毒。`,
+- 描述: 觸控一個生物並解除其一種狀態：目盲、耳聾、麻痺或中毒。`,
       "level": 2
     }),
     "locate-animals-or-plants": Object.freeze({
@@ -965,11 +964,11 @@ globalThis.SpellCatalog = (() => {
 施法時間: 1分鐘或儀式
 射程: 30呎
 成分: V、S、M
-材料: 價值110+GP的玉石粉末（會被法術消耗）
+材料: 價值10+GP的玉石粉末（會被法術消耗）
 持續時間: 直到被解除
 
 - 植入訊息於一個物體，當觸發條件滿足時朗讀訊息
-- 選擇一個可見且未被其他生物攜帶的物體
+- 選擇射程內一個未被其他生物穿著或攜帶的物體
 - 訊息長度不超過25個單詞，最長可花10分鐘講出
 - 確定觸發法術的條件
 - 當觸發條件發生時，魔法嘴巴出現在物體上，用施法者的聲音朗讀訊息
@@ -1020,7 +1019,7 @@ globalThis.SpellCatalog = (() => {
 - 檢查成功後，目標意識到幻象，法術結束
 - 目標將幻象視為真實，合理化不合邏輯的結果
 - 若幻象為危險生物或危害，目標可受到幻象的傷害
-- 每回合若目標在幻象範圍內或距離幻象5呎內，造成2d8心靈傷害
+- 在你的每個回合中，若目標在幻象範圍內或距離幻象5呎內，幻象可以造成2d8心靈傷害
 - 目標感知的傷害類型與幻象相適應`,
       "level": 2
     }),
@@ -1091,7 +1090,7 @@ globalThis.SpellCatalog = (() => {
 材料: 一滴蜂蜜
 持續時間: 專注，最長8小時
 
-- 選擇一個能看到、聽到並聽懂你的生物，向其建議一項活動（不超過25個單詞）
+- 選擇射程內一個能聽到並聽懂你的生物，向其建議一項活動（不超過25個單詞）
 - 建議必須可行，且不應明顯傷害目標或其盟友
 - 目標需進行一次感知豁免檢定，否則陷入魅惑狀態，持續至法術結束，或你或你的盟友對目標造成傷害
 - 被魅惑的目標會盡力執行建議
@@ -1110,7 +1109,7 @@ globalThis.SpellCatalog = (() => {
 持續時間: 10分鐘
 
 - 創造一個半徑15呎的魔法區域，中心為射程內一點
-- 生物在進入該區域或開始其回合時，需進行一次魅力豁免檢定
+- 生物在一個回合中首次進入該區域或在其中開始其回合時，需進行一次魅力豁免檢定
 - 豁免失敗者在該區域內不能故意說謊
 - 施法者可知曉每個生物的豁免成功與否
 - 受影響生物可意識到法術存在，能主動迴避回答可能謊言的問題
@@ -1133,7 +1132,7 @@ globalThis.SpellCatalog = (() => {
   - 選擇一個屬性值，目標在該屬性的豁免檢定和屬性檢定時具有劣勢。
   - 目標對施法者的攻擊檢定具有劣勢。
   - 戰鬥中，目標在每回合開始時必須進行一次感知豁免，否則該回合必須執行迴避動作。
-- 若你以攻擊檢定或法術對目標造成傷害，目標額外受到1d8黯蝕傷害。
+  - 若你以攻擊檢定或法術對目標造成傷害，目標額外受到1d8黯蝕傷害。
 
 - 使用更高環階法術位：
   - 4環法術位：專注持續時間可延長至10分鐘。
@@ -1175,7 +1174,7 @@ globalThis.SpellCatalog = (() => {
 持續時間: 立即  
 
 - 選擇一個生物、物件或魔法效應作為目標。  
-- 目標上所有不足3環的持續性法術結束。  
+- 目標上所有3環或更低的持續性法術結束。
 - 對於4環及以上的持續性法術，進行屬性檢定（DC10 + 法術等級）。  
 - 檢定成功則該法術結束。  
 - 使用更高環階法術位。  
@@ -1196,8 +1195,7 @@ globalThis.SpellCatalog = (() => {
 
 - 影響範圍: 30呎錐形區域內的每個生物
 - 必須進行感知豁免檢定，失敗則扔掉持握的物品並處於恐慌狀態
-- 恐慌狀態: 每回合採取疾走行動，沿最安全路線遠離施法者
-- 若無法移動則不受影響
+- 恐慌狀態: 除非無路可走，否則每回合採取疾走行動，沿最安全路線遠離施法者
 - 回合結束時若在看不見施法者的位置，需再次進行感知豁免檢定
 - 豁免成功則法術在該生物上結束`,
       "level": 3
@@ -1225,7 +1223,7 @@ globalThis.SpellCatalog = (() => {
   - 區域內生物進行敏捷豁免檢定，失敗者受到5d8傷害（強酸、冰冷、火焰、閃電或雷鳴，施法者選擇），成功者傷害減半。
 
 - 法術符文:
-  - 可儲存一個已準備的、不超過3環的法術。
+  - 可儲存一個已準備的、不超過3環，且以單一生物或區域為目標的法術。
   - 儲存的法術在觸發時生效，針對觸發生物或以其為中心的區域。
   - 若法術召喚敵對生物或建立有害物體，將攻擊入侵者。
   - 若法術需要專注，將持續至完整持續時間。
@@ -1268,7 +1266,7 @@ globalThis.SpellCatalog = (() => {
 
 - 產生一個10呎發散區域，持續時間內保持不動
 - 若發散區域不足以完全包圍所有生物，法術失敗
-- 發散區域內的生物和物體可自由穿越
+- 施法時已在發散區域內的生物和物體可自由穿越
 - 其他生物和物體無法透過發散區域
 - 3環及以下的法術無法穿過發散區域，效果無法延伸至其中
 - 發散區域內環境舒適和乾燥
@@ -1404,7 +1402,8 @@ globalThis.SpellCatalog = (() => {
 - AC和敏捷豁免檢定受到-2的罰值
 - 無法執行反應動作
 - 在其回合中可選擇執行動作或附贈動作，但不能兩者都執行
-- 若施放需要動作成分的法術，有25%機率失敗
+- 執行攻擊動作時只能發動一次攻擊
+- 若施放需要姿勢成分的法術，有25%機率失敗
 - 每個回合結束時重複豁免檢定，成功則結束法術效果`,
       "level": 3
     }),
@@ -1465,7 +1464,7 @@ globalThis.SpellCatalog = (() => {
 材料: 一隻臭雞蛋
 持續時間: 專注，最長1分鐘
 
-- 產生20呎半徑的球形區域，充斥噁心的黃色濃霧
+- 以射程內選擇的一點為中心，產生20呎半徑的球形區域，充斥噁心的黃色濃霧
 - 雲氣覆蓋區域內為重度遮蔽
 - 雲氣持續至法術結束或被強風吹散
 - 每個在區域中開始回合的生物需進行體質豁免檢定
@@ -1647,7 +1646,7 @@ globalThis.SpellCatalog = (() => {
 材料: 一片紫杉葉子
 持續時間: 專注，最長10分鐘
 
-- 能感知30呎內的毒素、生物及魔法傳染病源位置
+- 能感知30呎內的毒素、帶毒或有毒腺的生物，以及魔法傳染病源的位置
 - 能感知毒素、生物或傳染源的型別
 - 無法穿透1英呎厚的石頭、泥土或木頭，1英寸厚的金屬或薄薄一層鉛`,
       "level": 1
@@ -1740,7 +1739,7 @@ globalThis.SpellCatalog = (() => {
 - 提供射程內一個生物保護  
 - 攻擊或施放傷害性法術前，必須進行一次感知豁免檢定  
 - 若未通過檢定，必須選擇新目標或失去攻擊/法術  
-- 無法保護生物免受影響區域的傷害  
+- 無法保護生物免受區域效應
 - 若被守護生物進行攻擊檢定、施放法術或造成傷害，法術結束`,
       "level": 1
     }),
@@ -1777,7 +1776,7 @@ globalThis.SpellCatalog = (() => {
   - 兇: 是壞的
   - 吉且兇: 好壞皆有
   - 無所謂: 即不好也不壞
-- 法術不計入環境影響
+- 法術不考慮可能改變結果的因素，通常是其他法術
 - 若在完成一次長休之前施放超過一次，第一次後每次施放得不到答案的機率累積增加25%`,
       "level": 2
     }),
@@ -1888,8 +1887,7 @@ globalThis.SpellCatalog = (() => {
 - 力場出現在射程內選擇的地方
 - 可對5呎內的一個生物發動一次近戰法術攻擊
 - 命中時，目標受到1d8 + 施法關鍵屬性調整值的力場傷害
-- 在以後的回合中，作為附贈動作可將力場移動至多20呎
-- 可再次對5呎範圍內的生物發動攻擊
+- 在後續回合中，可用附贈動作將力場移動至多20呎，並對其5呎內的生物再次發動攻擊
 - 使用更高環階法術位時，法術的傷害每比2環高一環增加1d8`,
       "level": 2
     }),
@@ -1938,7 +1936,7 @@ globalThis.SpellCatalog = (() => {
 - 要再控制生物24小時，必須在期限結束前再次施法。
 - 施法重申控制權，不創造新生物。
 - 最多可重申對四個不死生物的控制權，必須是用此法術創造的。
-- 使用更高環階法術位可額外創造或重申控制權：每高3環可額外創造2個或重申2個生物的控制權。
+- 使用更高環階法術位可額外創造或重申控制權：每比3環高一環可額外創造2個或重申2個生物的控制權。
 - 每個生物必須來自不同的屍體或骸骨。`,
       "level": 3
     }),
@@ -1972,7 +1970,7 @@ globalThis.SpellCatalog = (() => {
 材料: null
 持續時間: 立即
 
-- 創造45磅食物和30加侖的淡水
+- 在射程內的地面或容器中創造45磅食物和30加侖的淡水
 - 食物味道平淡但有營養，外觀可選
 - 水為乾淨
 - 食物在24小時後變質若未食用`,
@@ -1989,7 +1987,7 @@ globalThis.SpellCatalog = (() => {
 成分: V、S
 持續時間: 1小時
 
-- 產生60呎半徑的球形區域，充滿陽光，明亮環境。
+- 以射程內選擇的一點為中心，產生60呎半徑的球形區域，充滿陽光，形成明亮環境。
 - 向外60呎提供微光環境。
 - 可施放於未被穿著或攜帶的物體，從該物體擴散陽光。
 - 用不透明物品覆蓋可阻擋陽光。
@@ -2111,7 +2109,7 @@ globalThis.SpellCatalog = (() => {
 - 邪惡陣營：靈體呈現邪魔特徵。
 - 施法時可指定不受影響的生物。
 - 其他生物在範圍內速度減半。
-- 每當生物進入範圍或在範圍內結束回合，必須進行一次感知豁免檢定。
+- 每當發散區域進入生物的空間、生物進入發散區域或在其中結束回合，必須進行一次感知豁免檢定。
 - 豁免失敗：受到3d8光耀傷害（善良或中立）或3d8黯蝕傷害（邪惡）。
 - 豁免成功：受到一半的傷害。
 - 每個生物每回合只需進行一次此豁免。
@@ -2130,7 +2128,7 @@ globalThis.SpellCatalog = (() => {
 材料: 一塊軟木
 持續時間: 1小時
 
-- 允許在任何液體表面上自由移動（如水、酸液、泥漿、雪、流沙或熔岩）。
+- 允許在任何液體表面上自由移動（如水、酸液、泥漿、雪、流沙或熔岩），但穿過熔岩仍可能因高溫受到傷害。
 - 可選擇射程內最多十個自願生物獲得此能力。
 - 受影響生物需執行附贈動作才能進入或離開液體。
 - 若生物掉進液體，將直接透過表面進入液體中。`,
@@ -2258,7 +2256,7 @@ globalThis.SpellCatalog = (() => {
 - 法術結束時植物消失
 - 區域內每個生物（除施法者外）需進行力量豁免檢定
 - 未通過檢定的生物陷入束縛狀態，持續至法術結束
-- 束縛狀態生物可進行一次力量（運動）檢定對抗施法豁免DC
+- 束縛狀態生物可消耗動作進行一次力量（運動）檢定對抗施法豁免DC
 - 檢定成功後可脫離束縛，不再被束縛`,
       "level": 1
     }),
@@ -2273,7 +2271,7 @@ globalThis.SpellCatalog = (() => {
 成分: V、S
 持續時間: 專注，最長1小時
 
-- 創造一個半徑20呎的球形霧氣，該區域內為重度遮蔽
+- 以射程內選擇的一點為中心，創造一個半徑20呎的球形霧氣，該區域內為重度遮蔽
 - 持續至法術結束或強風將其吹散
 - 使用更高環階法術位可增加球狀區域半徑，每高1環增加20呎`,
       "level": 1
@@ -2426,7 +2424,7 @@ globalThis.SpellCatalog = (() => {
 - 形成一條60呎長、10呎寬的線形區域，持續到法術結束
 - 區域內每個生物必須進行力量豁免檢定，失敗則被推離15呎
 - 在區域內結束回合的生物必須再次進行豁免
-- 進入區域的生物每移動1呎需消耗2呎的移動力
+- 任何在線形區域中向你靠近的生物，每移動1呎需消耗2呎的移動力
 - 風可吹散氣體或煙霧，熄滅區域內的蠟燭和未受保護的火焰
 - 受保護的火焰有50%機率熄滅，並劇烈搖曳
 - 在後續回合中，作為附贈動作可改變風的方向`,
@@ -2466,9 +2464,9 @@ globalThis.SpellCatalog = (() => {
 材料: 槲寄生灰燼  
 持續時間: 專注，最長1小時  
 
-- 覆蓋30呎發散區域  
-- 在靈光中時，敏捷（隱匿）檢定獲得+10加成  
-- 在靈光中時，不會留下蹤跡`,
+- 散發靈氣覆蓋30呎發散區域  
+- 你與你選擇的每個生物在身處靈氣中時，敏捷（隱匿）檢定獲得+10加成
+- 這些生物在靈氣中時不會留下蹤跡`,
       "level": 2
     }),
     "spike-growth": Object.freeze({
@@ -2487,8 +2485,7 @@ globalThis.SpellCatalog = (() => {
 - 區域效果: 變成困難地形
 - 傷害: 每移動5呎受到2d4穿刺傷害
 - 隱蔽效果: 地面變形看起來自然
-- 搜索要求: 無法看到該區域的生物必須執行搜尋動作
-- 檢定要求: 進入該區域前需進行感知檢定，對抗法術豁免DC`,
+- 察覺危害: 施法時無法看到該區域的生物，在進入前必須執行搜尋動作，並成功通過對抗法術豁免DC的感知（察覺或求生）檢定，才能察覺這片地形的危害`,
       "level": 2
     }),
     "call-lightning": Object.freeze({
@@ -2502,7 +2499,7 @@ globalThis.SpellCatalog = (() => {
 成分: V、S
 持續時間: 專注，最長10分鐘
 
-- 施法時出現高10呎、半徑60呎的風暴雲
+- 施法時在射程內你能看見且高於你自身的一點，出現高10呎、半徑60呎的風暴雲
 - 選擇雲下可見的一點作為目標
 - 一道閃電射向該點
 - 目標5呎內的每個生物進行敏捷豁免
@@ -2527,8 +2524,8 @@ globalThis.SpellCatalog = (() => {
 - 召喚一個大型、半透明、無實體的獸群
 - 獸群形態可選擇：狼、蛇或鳥
 - 施法者在獸群5呎內時，力量豁免檢定獲得優勢
-- 每回合可將獸群移動最多30呎至可見的未被佔據空間
-- 當獸群移動至某可見生物10呎內，或某可見生物進入獸群10呎內或在該範圍內結束回合時，該生物需進行敏捷豁免檢定
+- 當你在自己的回合中移動時，可將獸群移動最多30呎至可見的未被佔據空間
+- 當獸群移動至某可見生物10呎內，或某可見生物進入獸群10呎內或在該範圍內結束回合時，你可以迫使該生物進行敏捷豁免檢定
 - 若豁免失敗，該生物受到3d10點揮砍傷害
 - 每個生物每回合只需進行一次此豁免
 - 使用更高環階法術位時，法術傷害每比3環高一環增加1d10`,
@@ -2593,7 +2590,7 @@ globalThis.SpellCatalog = (() => {
 - 強風可阻擋霧氣、煙霧和其他氣體
 - 小型或更小的飛行生物或物體無法穿過牆
 - 未固定的輕小物體靠近牆面時會被吸向上方
-- 射向牆的箭矢和普通投射物自動射偏
+- 射向牆後目標的箭矢和其他普通投射物會被牆面引導向上，因而自動失手
 - 巨人或攻城器械投擲的大物體不受影響
 - 氣體形態的生物無法穿過牆壁`,
       "level": 3
@@ -2750,7 +2747,7 @@ globalThis.SpellCatalog = (() => {
 - 若豁免失敗，目標陷入束縛狀態，直到法術結束
 - 若豁免成功，藤蔓枯萎消失，法術結束
 - 被束縛狀態的目標每回合開始時受到1d6點穿刺傷害
-- 目標或能觸及它的生物可進行力量（運動）檢定，對抗你的法術豁免DC
+- 目標或能觸及它的生物可消耗動作進行力量（運動）檢定，對抗你的法術豁免DC
 - 若檢定成功，法術結束
 - 使用更高環階法術位時，法術的傷害每增加1環，增加1d6點傷害`,
       "level": 1
@@ -2770,7 +2767,7 @@ globalThis.SpellCatalog = (() => {
 - 標記一個可見生物為獵物
 - 每當攻擊檢定命中目標時，額外造成1d6點力場傷害
 - 對該目標的感知檢定擁有優勢
-- 若目標生命值降至0，可將印記轉移至另一可見生物
+- 若目標生命值降至0，可用附贈動作將印記轉移至射程內你能看見的一名新生物
 - 使用更高環階法術位可延長專注時間：3~4環最長8小時，5+環最長24小時`,
       "level": 1
     }),
@@ -2954,7 +2951,7 @@ globalThis.SpellCatalog = (() => {
 施法時間: 動作
 射程: 自身
 成分: V、S、M
-材料: （一滴酒）
+材料: （一滴酒精）
 持續時間: 立即
 
 - 獲得: 2d4+4 臨時生命值
@@ -3061,7 +3058,7 @@ globalThis.SpellCatalog = (() => {
 - 變換自身形態，選擇以下選項之一：
   - 水棲適應：可在水下呼吸，游泳速度等同於步行速度。
   - 改變外貌：可自行設定外觀，無法變成不同大小的生物，基本形態保持不變。
-  - 天生武器：長出爪子、尖牙、角或蹄子，徒手打擊造成1d6點指定型別的傷害，使用施法關鍵屬性調整值進行攻擊檢定和傷害擲骰。
+  - 天生武器：長出爪子（揮砍）、尖牙（穿刺）、角（穿刺）或蹄子（鈍擊），徒手打擊造成1d6點括號內指定型別的傷害，使用施法關鍵屬性調整值進行攻擊檢定和傷害擲骰。
 
 - 在持續時間內可執行魔法動作以切換選項或改變外貌細節。`,
       "level": 2
@@ -3135,7 +3132,7 @@ globalThis.SpellCatalog = (() => {
 材料: 一個金屬彈簧
 持續時間: 專注，最長10分鐘
 
-- 目標: 一個生物或沒有固定的物體
+- 目標: 射程內你能看見的一個生物或一件未被固定的物體
 - 最大升高: 20呎
 - 最大重量: 500磅
 - 非自願生物可進行體質豁免以避免影響
@@ -3163,7 +3160,7 @@ globalThis.SpellCatalog = (() => {
   - 豁免成功: 傷害減半
 - 若目標未透過豁免，施法者在法術結束前知道其位置（僅在同一平面上有效）
 - 在掌握此資訊時，目標不能對施法者隱匿
-- 若目標隱形，施法者無法感知其隱形狀態
+- 目標無法對施法者躲藏，也無法在對抗施法者時從隱形狀態中獲益
 - 使用更高環階法術位時，法術傷害每比2環高增加1d8`,
       "level": 2
     }),
@@ -3236,8 +3233,8 @@ globalThis.SpellCatalog = (() => {
 - 蛛網造成困難地形，並提供輕度遮蔽
 - 若未固定於堅固物體或未覆蓋平面，法術效果在下一回合開始時結束
 - 蛛網厚度為5呎
-- 生物首次進入或在區域內開始回合時需進行敏捷豁免檢定，失敗則陷入束縛狀態
-- 被束縛生物可進行力量（運動）檢定對抗法術豁免DC以解除束縛
+- 生物首次進入或在區域內開始回合時需進行敏捷豁免檢定，失敗則在蛛網中維持束縛狀態，直到掙脫
+- 被束縛生物可消耗動作進行力量（運動）檢定對抗法術豁免DC以解除束縛
 - 蛛網可燃，5呎立方區域暴露於火源下1輪內燃燒
 - 在火焰中開始回合的生物受到2d4火焰傷害`,
       "level": 2
@@ -3368,7 +3365,7 @@ globalThis.SpellCatalog = (() => {
   - 目標速度加倍
   - 護甲等級獲得+2的加值
   - 敏捷豁免檢定具有優勢
-  - 每回合獲得一個額外行動（限於攻擊、疾走、撤離、躲藏或使用動作）
+  - 每回合獲得一個額外行動（限於攻擊〔僅限一次攻擊〕、疾走、撤離、躲藏或使用動作）
 - 法術結束後:
   - 目標陷入失能
   - 速度降為0，直到下一個回合結束`,
@@ -3464,7 +3461,7 @@ globalThis.SpellCatalog = (() => {
 - 每當攻擊檢定擊中目標時，造成額外1d6黯蝕傷害
 - 選擇一個屬性值，目標在相應屬性檢定時具有劣勢
 - 若目標生命值降至0，可在之後的回合以附贈動作對新生物施加詛咒
-- 使用更高環階法術位可延長專注時間：2環最長10分鐘，3環最長8小時，5+環最長24小時`,
+- 使用更高環階法術位可延長專注時間：2環最長4小時，3~4環最長8小時，5+環最長24小時`,
       "level": 1
     }),
     "ray-of-enfeeblement": Object.freeze({
@@ -3496,8 +3493,8 @@ globalThis.SpellCatalog = (() => {
 材料: 焚燒的香，價值10+GP，會被法術消耗
 持續時間: 立即
 
-- 召喚一隻魔寵，形態可選擇：蝙蝠、貓、青蛙、獵鷹、蜥蜴、章魚、貓頭鷹、老鼠、渡鴉、蜘蛛、鼬或其他挑戰等級為0的野獸。
-- 魔寵在射程內未被佔據的空間出現，為天界、妖精或邪魔生物。
+- 召喚一隻魔寵，形態可選擇：蝙蝠、貓、青蛙、獵鷹、蜥蜴、章魚、貓頭鷹、老鼠、渡鴉、蜘蛛、鼬或其他挑戰等級為0的野獸，並使用所選形態的資料。
+- 魔寵在射程內未被佔據的空間出現，其生物類型由你選擇，為天界、精類或邪魔，而非野獸。
 - 魔寵獨立於施法者行動，服從施法者命令。
 - 心靈感應連線：施法者可與100呎內的魔寵透過心靈感應交流。
 - 施法者可用附贈動作透過魔寵的眼睛看、耳朵聽，直到自己下一回合開始。
@@ -3525,7 +3522,7 @@ globalThis.SpellCatalog = (() => {
 
 - 觸碰一個關著的門、窗、容器或閘口，將其鎖住  
 - 鎖不能被任何非魔法手段開啟  
-- 施法者和指定生物可以無視鎖開啟和關閉物體  
+- 施法者和施展法術時指定的生物可以無視鎖開啟和關閉物體
 - 可設定口令，當在物體5呎範圍內說出時，解鎖持續1分鐘`,
       "level": 2
     }),
@@ -3569,6 +3566,653 @@ globalThis.SpellCatalog = (() => {
 - 法術結束時，坐騎逐漸消失，騎手有1分鐘的時間下馬
 - 若坐騎受到任何傷害，法術提前結束`,
       "level": 3
+    }),
+    "arcane-eye": Object.freeze({
+      "spellId": "arcane-eye",
+      "nameZh": "秘法眼",
+      "nameEn": "Arcane Eye",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 預言
+施法時間: 動作
+射程: 30呎
+成分: V、S、M
+材料: 一點蝙蝠毛皮
+持續時間: 專注，最長1小時
+
+- 在射程內創造一隻漂浮、隱形且免疫傷害的眼睛。
+- 眼睛具30呎黑暗視覺與全向視野；你以心靈接收其視覺。
+- 附贈動作：使眼睛向任意方向移動至多30呎。
+- 眼睛無法穿過固體障礙物，但可穿過直徑至少1英寸的開口。`,
+      "level": 4
+    }),
+    "aura-of-life": Object.freeze({
+      "spellId": "aura-of-life",
+      "nameZh": "生命靈氣",
+      "nameEn": "Aura of Life",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 防護
+施法時間: 動作
+射程: 自身
+成分: V
+材料: null
+持續時間: 專注，最長10分鐘
+
+- 你周圍30呎發散區域內的你與盟友：對黯蝕傷害具有抗性，且最大生命值不會降低。
+- 生命值為0的盟友在靈氣內開始回合時，恢復1點生命值。`,
+      "level": 4
+    }),
+    "banishment": Object.freeze({
+      "spellId": "banishment",
+      "nameZh": "放逐術",
+      "nameEn": "Banishment",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 防護
+施法時間: 動作
+射程: 30呎
+成分: V、S、M
+材料: 一個五角星
+持續時間: 專注，最長1分鐘
+
+- 目標: 射程內可見的一個生物。目標進行魅力豁免。
+- 失敗：被傳送至無害半位面並陷入失能狀態，直到法術結束；之後返回原處或最近的未被佔據空間。
+- 若目標為異怪、天界、元素、精類或邪魔，且法術持續滿1分鐘，目標不會返回，改傳送至其相關位面的隨機位置（由DM決定）。
+- 使用更高環階法術位: 每比4環高一環，可多選擇一個目標。`,
+      "level": 4
+    }),
+    "black-tentacles": Object.freeze({
+      "spellId": "black-tentacles",
+      "nameZh": "黑觸手",
+      "nameEn": "Black Tentacles",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 咒法
+施法時間: 動作
+射程: 90呎
+成分: V、S、M
+材料: 一段觸手
+持續時間: 專注，最長1分鐘
+
+- 在射程內可見處創造20呎見方觸手區域，區域為困難地形。
+- 區域內、進入區域或在其中結束回合的每個生物進行力量豁免（每回合最多一次）。
+- 豁免失敗：受到3d6鈍擊傷害並陷入束縛狀態，直到法術結束。
+- 束縛生物可執行動作進行力量（運動）檢定對抗你的法術豁免DC；成功則結束自身束縛狀態。`,
+      "level": 4
+    }),
+    "blight": Object.freeze({
+      "spellId": "blight",
+      "nameZh": "枯萎術",
+      "nameEn": "Blight",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 死靈
+施法時間: 動作
+射程: 30呎
+成分: V、S
+材料: null
+持續時間: 立即
+
+- 目標: 射程內可見的一個生物。目標進行體質豁免。
+- 失敗：受到8d8黯蝕傷害；成功：傷害減半。
+- 植物生物自動豁免失敗。
+- 或以非生物植物為目標；其無需豁免並枯萎死亡。
+- 使用更高環階法術位: 每比4環高一環，傷害+1d8。`,
+      "level": 4
+    }),
+    "charm-monster": Object.freeze({
+      "spellId": "charm-monster",
+      "nameZh": "魅惑怪物",
+      "nameEn": "Charm Monster",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 惑控
+施法時間: 動作
+射程: 30呎
+成分: V、S
+材料: null
+持續時間: 1小時
+
+- 目標: 射程內可見的一個生物。目標進行感知豁免；若正與你或盟友戰鬥，該豁免具有優勢。
+- 失敗：目標陷入魅惑狀態，直到法術結束或你或盟友對其造成傷害；目標對你態度友善。
+- 法術結束時，目標知道曾被你魅惑。
+- 使用更高環階法術位: 每比4環高一環，可多選擇一個目標。`,
+      "level": 4
+    }),
+    "compulsion": Object.freeze({
+      "spellId": "compulsion",
+      "nameZh": "強迫術",
+      "nameEn": "Compulsion",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 惑控
+施法時間: 動作
+射程: 30呎
+成分: V、S
+材料: null
+持續時間: 專注，最長1分鐘
+
+- 射程內由你選擇的每個生物進行感知豁免；失敗則陷入魅惑狀態，直到法術結束。
+- 附贈動作：指定一個相對你水平的方向。
+- 每個被魅惑目標的下個回合，必須盡可能沿最安全路徑朝該方向移動並使用所有移動力。
+- 目標如此移動後重複豁免；成功則結束法術對自身的影響。`,
+      "level": 4
+    }),
+    "confusion": Object.freeze({
+      "spellId": "confusion",
+      "nameZh": "困惑術",
+      "nameEn": "Confusion",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 惑控
+施法時間: 動作
+射程: 90呎
+成分: V、S、M
+材料: 三顆堅果殼
+持續時間: 專注，最長1分鐘
+
+- 射程內一點為中心的10呎半徑球形區域中，每個生物進行感知豁免。
+- 失敗：不能執行附贈動作或反應，並在每個自身回合開始時擲1d10：
+
+  - 1：不執行動作；用盡移動力向隨機方向移動（擲1d4：1北、2東、3南、4西）。
+  - 2-6：不移動且不執行動作。
+  - 7-8：不移動，並對觸及內隨機生物發動一次近戰攻擊；若無可攻擊生物則不執行動作。
+  - 9-10：自行決定行動。
+
+- 目標在每個自身回合結束時重複豁免；成功則結束法術對自身的影響。
+- 使用更高環階法術位: 每比4環高一環，球體半徑+5呎。`,
+      "level": 4
+    }),
+    "conjure-minor-elementals": Object.freeze({
+      "spellId": "conjure-minor-elementals",
+      "nameZh": "元素狂潮",
+      "nameEn": "Conjure Minor Elementals",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 咒法
+施法時間: 動作
+射程: 自身
+成分: V、S
+材料: null
+持續時間: 專注，最長10分鐘
+
+- 你周圍15呎發散區域內的地面對敵人為困難地形。
+- 你的攻擊命中範圍內生物時，額外造成2d8強酸、冷凍、火焰或閃電傷害（每次攻擊時選擇）。
+- 使用更高環階法術位: 每比4環高一環，額外傷害+1d8。`,
+      "level": 4
+    }),
+    "conjure-woodland-beings": Object.freeze({
+      "spellId": "conjure-woodland-beings",
+      "nameZh": "林地之精",
+      "nameEn": "Conjure Woodland Beings",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 咒法
+施法時間: 動作
+射程: 自身
+成分: V、S
+材料: null
+持續時間: 專注，最長10分鐘
+
+- 你周圍10呎發散區域內飛舞著自然靈體。
+- 當發散區域進入你可見生物的空間，或可見生物進入或在其中結束回合時，你可迫使該生物進行感知豁免（每回合最多一次）。
+- 豁免失敗：受到5d8力場傷害；成功：傷害減半。
+- 附贈動作：執行撤離動作。
+- 使用更高環階法術位: 每比4環高一環，傷害+1d8。`,
+      "level": 4
+    }),
+    "control-water": Object.freeze({
+      "spellId": "control-water",
+      "nameZh": "操控水體",
+      "nameEn": "Control Water",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 變化
+施法時間: 動作
+射程: 300呎
+成分: V、S、M
+材料: 水和塵土的混合物
+持續時間: 專注，最長10分鐘
+
+- 控制射程內至多100呎立方區域的水體，選擇以下一種效果。後續回合可執行魔法動作重複或更換效果：
+
+  - 淹漲：靜止水體水位+20呎。若選擇較大水體的一部分，改為創造20呎高浪潮橫越區域；路徑上的巨型或更小載具被帶至另一端，且有25%機率傾覆。水位持續至法術結束或更換效果；浪潮則在你的下個回合開始時重複。
+  - 分水：分開水體，形成貫穿區域、兩側為水牆的溝壑。持續至法術結束或更換效果；之後水體於下一輪填滿溝壑並恢復正常水位。
+  - 引流：使區域內流動水體朝你指定方向流動，可越過障礙物、沿牆上流或以其他非正常方向流動。水體離開區域後依地形恢復正常流動；效果持續至法術結束或更換效果。
+  - 漩渦：在至少50呎見方、25呎深的區域中心創造漩渦（底寬5呎、頂寬最多50呎、高25呎），持續至法術結束或更換效果。在水中且距漩渦25呎內的生物被拉近10呎。生物首次進入漩渦或在其中結束回合時進行力量豁免；失敗受2d8鈍擊傷害，成功傷害減半。生物須執行動作並成功進行力量（運動）檢定對抗你的法術豁免DC，才能遊離漩渦。`,
+      "level": 4
+    }),
+    "death-ward": Object.freeze({
+      "spellId": "death-ward",
+      "nameZh": "防死結界",
+      "nameEn": "Death Ward",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 防護
+施法時間: 動作
+射程: 觸及
+成分: V、S
+材料: null
+持續時間: 8小時
+
+- 目標: 你觸碰的一個生物。
+- 目標首次將降至0生命值時，改為降至1生命值，且法術結束。
+- 若目標受不造成傷害的立即死亡效果影響，該效果無效，且法術結束。`,
+      "level": 4
+    }),
+    "dimension-door": Object.freeze({
+      "spellId": "dimension-door",
+      "nameZh": "任意門",
+      "nameEn": "Dimension Door",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 咒法
+施法時間: 動作
+射程: 500呎
+成分: V
+材料: null
+持續時間: 立即
+
+- 你傳送至射程內指定地點；地點可見、可想像，或以距離和方向描述。
+- 可額外傳送一名傳送時距你5呎內的自願生物；其出現在目標地點5呎內的空間。
+- 若你或隨行生物將抵達被生物佔據或被一件以上物件填滿的空間，所有傳送者各受4d6力場傷害，且傳送失敗。`,
+      "level": 4
+    }),
+    "divination": Object.freeze({
+      "spellId": "divination",
+      "nameZh": "預言術",
+      "nameEn": "Divination",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 預言
+施法時間: 動作或儀式
+射程: 自身
+成分: V、S、M
+材料: 價值25+金幣的焚香（法術耗材）
+持續時間: 立即
+
+- 向神祇或其僕人詢問一個7天內將發生的特定目標、事件或活動。
+- DM以短語或謎樣韻文提供真實答案；不考慮其他法術等可能改變結果的因素。
+- 每次長休後首次以外的施法，有25%累加機率得不到答案。`,
+      "level": 4
+    }),
+    "dominate-beast": Object.freeze({
+      "spellId": "dominate-beast",
+      "nameZh": "支配野獸",
+      "nameEn": "Dominate Beast",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 惑控
+施法時間: 動作
+射程: 60呎
+成分: V、S
+材料: null
+持續時間: 專注，最長1分鐘
+
+- 目標: 射程內可見的一隻野獸；進行感知豁免。若正與你或盟友戰鬥，豁免具有優勢。
+- 豁免失敗: 目標陷入魅惑狀態，直到法術結束。
+- 目標每次受到傷害時重複豁免；成功則結束法術對自身的影響。
+- 你與目標位於同一位面時，可在你的回合透過心靈感應對其下達命令（無需動作）；目標在自身回合盡力遵從。
+- 若未收到指令，目標自行行動與移動，並保護自身。
+- 可命令目標執行反應，但你必須使用自己的反應。
+- 使用更高環階法術位: 5環持續最長10分鐘；6環最長1小時；7+環最長8小時。`,
+      "level": 4
+    }),
+    "fabricate": Object.freeze({
+      "spellId": "fabricate",
+      "nameZh": "鬼斧神工",
+      "nameEn": "Fabricate",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 變化
+施法時間: 10分鐘
+射程: 120呎
+成分: V、S
+材料: null
+持續時間: 立即
+
+- 目標: 射程內可見的原材料。
+- 將原材料轉化為相同材質的成品；物件品質取決於原材料品質。
+- 有足夠材料時，可製造一個大型或更小的物件，限於10呎立方區域或8個相連的5呎立方區域內。
+- 金屬、石頭或其他礦物製成的物件至多為中型，限於5呎立方區域內。
+- 無法創造生物或魔法物品。
+- 製造武器、盔甲等需高度技巧的物品時，必須具有所需工匠工具熟練項。`,
+      "level": 4
+    }),
+    "faithful-hound": Object.freeze({
+      "spellId": "faithful-hound",
+      "nameZh": "忠犬",
+      "nameEn": "Faithful Hound",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 咒法
+施法時間: 動作
+射程: 30呎
+成分: V、S、M
+材料: 一個銀哨
+持續時間: 8小時
+
+- 在射程內可見且未被佔據的空間召喚幽靈看門狗；你與其距離超過300呎時消失。
+- 獵犬無實體、免疫傷害，且僅你可見；具有30呎真實視覺。
+- 未說出口令的小型或更大生物接近至獵犬30呎內時，獵犬大聲吠叫。
+- 你的每回合開始時，獵犬嘗試撕咬5呎內的一名敵人；目標進行敏捷豁免，失敗受4d8力場傷害。
+- 後續回合可執行魔法動作，使獵犬移動至多30呎。`,
+      "level": 4
+    }),
+    "fire-shield": Object.freeze({
+      "spellId": "fire-shield",
+      "nameZh": "火焰護盾",
+      "nameEn": "Fire Shield",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 塑能
+施法時間: 動作
+射程: 自身
+成分: V、S、M
+材料: 一點磷或一隻螢火蟲
+持續時間: 10分鐘
+
+- 你周圍發出10呎半徑明亮光照與額外10呎微光光照。
+- 選擇一種護盾: 放熱護盾使你對冷凍傷害具有抗性；吸熱護盾使你對火焰傷害具有抗性。
+- 5呎內以近戰攻擊檢定命中你的生物: 放熱護盾使其受2d8火焰傷害；吸熱護盾使其受2d8冷凍傷害。`,
+      "level": 4
+    }),
+    "freedom-of-movement": Object.freeze({
+      "spellId": "freedom-of-movement",
+      "nameZh": "行動自如",
+      "nameEn": "Freedom of Movement",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 防護
+施法時間: 動作
+射程: 觸及
+成分: V、S、M
+材料: 一根皮帶
+持續時間: 1小時
+
+- 目標: 你觸碰的一名自願生物。
+- 目標移動不受困難地形影響；法術與其他魔法效應無法減少其速度，或使其陷入麻痺或束縛狀態。
+- 目標獲得等同於其速度的游泳速度。
+- 消耗5呎移動力，可自動逃脫非魔法束縛（如手銬或受擒狀態）。
+- 使用更高環階法術位: 每比4環高一環，可多選擇一名目標。`,
+      "level": 4
+    }),
+    "giant-insect": Object.freeze({
+      "spellId": "giant-insect",
+      "nameZh": "巨蟲術",
+      "nameEn": "Giant Insect",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 咒法
+施法時間: 動作
+射程: 60呎
+成分: V、S
+材料: null
+持續時間: 專注，最長10分鐘
+
+- 在射程內可見且未被佔據的空間召喚一隻巨型蜈蚣、蜘蛛或黃蜂（施法時選擇）；其生命值降至0或法術結束時消失。
+- 巨蟲是你與盟友的盟友，共享你的先攻，回合緊隨你之後；服從你的口頭命令（無需動作）。未收到命令時執行迴避動作並避開危險。
+- 使用更高環階法術位: 數據面板中的法術環階等於所用法術位環階。
+
+- 巨蟲（大型野獸，無陣營）:
+
+  - AC: 11 + 法術環階；生命值: 30 + 10 ×（法術環階 - 4）。
+  - 速度: 40呎，攀爬40呎，飛行40呎（僅黃蜂）。
+  - 力量17（+3，豁免+3）；敏捷13（+1，豁免+1）；體質15（+2，豁免+2）；智力4（-3，豁免-3）；感知14（+2，豁免+2）；魅力3（-4，豁免-4）。
+  - 感官: 黑暗視覺60呎，被動察覺12；語言: 理解你掌握的語言。
+  - 挑戰等級: 無（XP 0）；熟練加值與你相同。
+  - 蛛行: 可在難以攀爬的表面與天花板爬行，無需屬性檢定。
+
+- 動作:
+
+  - 多重攻擊: 發動等同法術環階一半（向下取整）次數的攻擊。
+  - 毒素戳刺: 近戰攻擊檢定（加值等於你的法術攻擊加值），觸及10呎；命中造成1d6 + 3 + 法術環階穿刺傷害，外加1d4毒素傷害。
+  - 蛛網射擊（僅蜘蛛）: 遠程攻擊檢定（加值等於你的法術攻擊加值），射程60呎；命中造成1d10 + 3 + 法術環階鈍擊傷害，目標速度降至0直到巨蟲下個回合開始。
+
+- 附贈動作:
+
+  - 毒液噴吐（僅蜈蚣）: 巨蟲10呎內可見的一名生物進行體質豁免（DC等於你的法術豁免DC）；失敗則中毒直到巨蟲下個回合開始。`,
+      "level": 4
+    }),
+    "greater-invisibility": Object.freeze({
+      "spellId": "greater-invisibility",
+      "nameZh": "高等隱形術",
+      "nameEn": "Greater Invisibility",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 幻術
+施法時間: 動作
+射程: 觸及
+成分: V、S
+材料: null
+持續時間: 專注，最長1分鐘
+
+- 目標: 你觸碰的一個生物；其在法術結束前處於隱形狀態。`,
+      "level": 4
+    }),
+    "guardian-of-faith": Object.freeze({
+      "spellId": "guardian-of-faith",
+      "nameZh": "信仰守衛",
+      "nameEn": "Guardian of Faith",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 咒法
+施法時間: 動作
+射程: 30呎
+成分: V
+材料: null
+持續時間: 8小時
+
+- 在射程內可見且未被佔據的空間召喚一名大型守護者；其免疫傷害並佔據該空間。
+- 敵人在回合中首次進入守護者10呎內，或在其中開始回合時，進行敏捷豁免。
+- 豁免失敗: 受20光耀傷害；成功: 傷害減半。
+- 守護者累計造成60點傷害後消失。`,
+      "level": 4
+    }),
+    "hallucinatory-terrain": Object.freeze({
+      "spellId": "hallucinatory-terrain",
+      "nameZh": "幻景",
+      "nameEn": "Hallucinatory Terrain",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 幻術
+施法時間: 10分鐘
+射程: 300呎
+成分: V、S、M
+材料: 一個蘑菇
+持續時間: 24小時
+
+- 使射程內150呎立方區域的自然地形在視覺、聽覺與嗅覺上呈現為另一種自然地形。
+- 人造結構、裝備與生物不受影響；地形的觸覺特徵不變。
+- 生物可察覺觸覺差異；若差異不明顯，可執行研究動作進行智力（調查）檢定對抗你的法術豁免DC以識破幻象。
+- 識破幻象的生物會看見模糊影像疊加在真實地形上。`,
+      "level": 4
+    }),
+    "ice-storm": Object.freeze({
+      "spellId": "ice-storm",
+      "nameZh": "冰風暴",
+      "nameEn": "Ice Storm",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 塑能
+施法時間: 動作
+射程: 300呎
+成分: V、S、M
+材料: 一個連指手套
+持續時間: 立即
+
+- 射程內一點為中心的20呎半徑、40呎高柱形區域內，每個生物進行敏捷豁免。
+- 豁免失敗: 受2d10鈍擊傷害與4d6冷凍傷害；成功: 傷害減半。
+- 區域內地面直到你的下個回合結束前為困難地形。
+- 使用更高環階法術位: 每比4環高一環，鈍擊傷害+1d10。`,
+      "level": 4
+    }),
+    "locate-creature": Object.freeze({
+      "spellId": "locate-creature",
+      "nameZh": "生物定位術",
+      "nameEn": "Locate Creature",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 預言
+施法時間: 動作
+射程: 自身
+成分: V、S、M
+材料: 尋血獵犬的毛皮
+持續時間: 專注，最長1小時
+
+- 描述或指名一個你熟悉的生物；若其在1,000呎內，你得知其所在方向與移動方向。
+- 可定位已知的特定生物，或特定類型中最近的一個；定位某類型生物時，必須曾在30呎內見過該類型生物至少一次。
+- 無法定位處於不同形態的目標。
+- 你與目標間的直接路徑被任何厚度的鉛阻擋時，無法定位。`,
+      "level": 4
+    }),
+    "phantasmal-killer": Object.freeze({
+      "spellId": "phantasmal-killer",
+      "nameZh": "魅影殺手",
+      "nameEn": "Phantasmal Killer",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 幻術
+施法時間: 動作
+射程: 120呎
+成分: V、S
+材料: null
+持續時間: 專注，最長1分鐘
+
+- 目標: 射程內可見的一個生物；進行感知豁免。
+- 豁免失敗: 受4d10心靈傷害，且直到法術結束前屬性檢定與攻擊檢定具有劣勢。
+- 豁免成功: 傷害減半，法術結束。
+- 目標每個自身回合結束時重複豁免；失敗再次受此傷害，成功則法術結束。
+- 使用更高環階法術位: 每比4環高一環，傷害+1d10。`,
+      "level": 4
+    }),
+    "polymorph": Object.freeze({
+      "spellId": "polymorph",
+      "nameZh": "變形術",
+      "nameEn": "Polymorph",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 變化
+施法時間: 動作
+射程: 60呎
+成分: V、S、M
+材料: 一隻毛毛蟲繭
+持續時間: 專注，最長1小時
+
+- 目標: 射程內可見的一個生物；進行感知豁免。
+- 豁免失敗: 變為你選擇、挑戰等級不高於目標挑戰等級（無挑戰等級則為目標等級）的野獸。
+- 目標數據由野獸數據面板取代，但保留陣營、個性、生物類型、生命值與生命骰。
+- 目標獲得等同野獸形態生命值的臨時生命值；法術結束時消失。臨時生命值耗盡時，法術對該目標提前結束。
+- 動作受新形態構造限制，且無法說話或施法。
+- 裝備融入新形態，無法使用或受益。`,
+      "level": 4
+    }),
+    "private-sanctum": Object.freeze({
+      "spellId": "private-sanctum",
+      "nameZh": "私人密室",
+      "nameEn": "Private Sanctum",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 防護
+施法時間: 10分鐘
+射程: 120呎
+成分: V、S、M
+材料: 一片薄薄的鉛
+持續時間: 24小時
+
+- 守護射程內邊長5至100呎的立方區域；施法時選擇以下一種保護：
+
+  - 聲音無法穿過區域邊界。
+  - 區域邊界變暗起霧，阻擋視線（包括黑暗視覺）。
+  - 預言法術的傳感器無法出現在區域內或穿過其邊界。
+  - 區域內生物無法成為預言法術的目標。
+  - 任何事物無法傳送進出區域。
+  - 區域內的位面旅行受阻。
+
+- 在365天內每天於同一地點施法，法術持續至被驅散。
+- 使用更高環階法術位: 每比4環高一環，立方區域邊長上限+100呎。`,
+      "level": 4
+    }),
+    "resilient-sphere": Object.freeze({
+      "spellId": "resilient-sphere",
+      "nameZh": "彈力法球",
+      "nameEn": "Resilient Sphere",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 防護
+施法時間: 動作
+射程: 30呎
+成分: V、S、M
+材料: 一個玻璃球
+持續時間: 專注，最長1分鐘
+
+- 目標: 射程內一個大型或更小的生物或物件；非自願生物進行敏捷豁免，失敗則被球體包裹。
+- 球體阻擋任何物體、能量與法術效果進出；內部生物仍可呼吸。
+- 球體免疫所有傷害；球內目標不受外部攻擊或效果傷害，且無法傷害外部事物。
+- 球體無重量，大小剛好容納目標。被包裹生物可執行動作推動球壁，使球體以其速度一半滾動；其他生物也可拾起或移動球體。
+- 解離術以球體為目標時摧毀球體，不傷害內部事物。`,
+      "level": 4
+    }),
+    "secret-chest": Object.freeze({
+      "spellId": "secret-chest",
+      "nameZh": "祕藏箱",
+      "nameEn": "Secret Chest",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 咒法
+施法時間: 動作
+射程: 觸及
+成分: V、S、M
+材料: 價值5,000+金幣的3×2×2呎珍稀材料箱子，以及價值50+金幣的同材質微型複製品
+持續時間: 直到被解除
+
+- 將作為材料的箱子及內容物藏入以太位面；箱子最多容納12立方呎非活體物質。
+- 箱子在以太位面時，執行魔法動作並觸碰複製品可將其召回至你5呎內未被佔據空間的地面。
+- 執行魔法動作並觸碰箱子與複製品，可將箱子送回以太位面。
+- 60天後，每天結束時有累加5%機率終止。
+- 再次施法或微型複製品被摧毀時，法術終止；若箱子仍在以太位面，會留在那裡直到被找到。`,
+      "level": 4
+    }),
+    "stone-shape": Object.freeze({
+      "spellId": "stone-shape",
+      "nameZh": "塑石術",
+      "nameEn": "Stone Shape",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 變化
+施法時間: 動作
+射程: 觸及
+成分: V、S、M
+材料: 軟土
+持續時間: 立即
+
+- 目標: 一個中型或更小的石質物件，或任一維度不超過5呎的一部分石材。
+- 將目標塑成任意形狀，可製成武器、雕像、保險箱，在5呎厚牆壁開闢小通道，或使石門或門框變形並封門。
+- 塑成的物件最多有2個鉸鏈與1個門閂，不能有更精細的機械結構。`,
+      "level": 4
+    }),
+    "stoneskin": Object.freeze({
+      "spellId": "stoneskin",
+      "nameZh": "石膚術",
+      "nameEn": "Stoneskin",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 變化
+施法時間: 動作
+射程: 觸及
+成分: V、S、M
+材料: 價值100+金幣的鑽石粉末（法術耗材）
+持續時間: 專注，最長1小時
+
+- 目標: 你觸碰的一名自願生物。
+- 目標對鈍擊、穿刺與揮砍傷害具有抗性。`,
+      "level": 4
+    }),
+    "vitriolic-sphere": Object.freeze({
+      "spellId": "vitriolic-sphere",
+      "nameZh": "濃酸法球",
+      "nameEn": "Vitriolic Sphere",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 塑能
+施法時間: 動作
+射程: 150呎
+成分: V、S、M
+材料: 一滴膽汁
+持續時間: 立即
+
+- 射程內一點為中心的20呎半徑球形區域內，每個生物進行敏捷豁免。
+- 豁免失敗: 受到10d4強酸傷害，並在下個回合結束時再受5d4強酸傷害。
+- 豁免成功: 僅受首次傷害的一半。
+- 使用更高環階法術位: 每比4環高一環，首次傷害+2d4。`,
+      "level": 4
+    }),
+    "wall-of-fire": Object.freeze({
+      "spellId": "wall-of-fire",
+      "nameZh": "火牆術",
+      "nameEn": "Wall of Fire",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 塑能
+施法時間: 動作
+射程: 120呎
+成分: V、S、M
+材料: 一塊木炭
+持續時間: 專注，最長1分鐘
+
+- 在射程內堅實表面創造不透明火牆：至多60呎長、20呎高、1呎厚的直牆，或至多20呎直徑、20呎高、1呎厚的環形牆。
+- 火牆出現時，牆內每個生物進行敏捷豁免；失敗受5d8火焰傷害，成功傷害減半。
+- 選擇火牆一側；該側10呎內或牆內結束回合的生物受5d8火焰傷害。
+- 生物在回合中首次進入火牆或在其中結束回合時，也受5d8火焰傷害；另一側不造成傷害。
+- 使用更高環階法術位: 每比4環高一環，傷害+1d8。`,
+      "level": 4
     }),
   });
 
@@ -3647,7 +4291,17 @@ globalThis.SpellCatalog = (() => {
       "speak-with-dead",
       "speak-with-plants",
       "stinking-cloud",
-      "tongues"
+      "tongues",
+      "charm-monster",
+      "compulsion",
+      "confusion",
+      "dimension-door",
+      "freedom-of-movement",
+      "greater-invisibility",
+      "hallucinatory-terrain",
+      "locate-creature",
+      "phantasmal-killer",
+      "polymorph"
     ]),
     "cleric": Object.freeze([
       "guidance",
@@ -3707,7 +4361,16 @@ globalThis.SpellCatalog = (() => {
       "speak-with-dead",
       "spirit-guardians",
       "tongues",
-      "water-walk"
+      "water-walk",
+      "aura-of-life",
+      "banishment",
+      "control-water",
+      "death-ward",
+      "divination",
+      "freedom-of-movement",
+      "guardian-of-faith",
+      "locate-creature",
+      "stone-shape"
     ]),
     "druid": Object.freeze([
       "druidcraft",
@@ -3772,7 +4435,25 @@ globalThis.SpellCatalog = (() => {
       "speak-with-plants",
       "water-breathing",
       "water-walk",
-      "wind-wall"
+      "wind-wall",
+      "blight",
+      "charm-monster",
+      "confusion",
+      "conjure-minor-elementals",
+      "conjure-woodland-beings",
+      "control-water",
+      "divination",
+      "dominate-beast",
+      "fire-shield",
+      "freedom-of-movement",
+      "giant-insect",
+      "hallucinatory-terrain",
+      "ice-storm",
+      "locate-creature",
+      "polymorph",
+      "stone-shape",
+      "stoneskin",
+      "wall-of-fire"
     ]),
     "paladin": Object.freeze([
       "bless",
@@ -3915,498 +4596,20 @@ globalThis.SpellCatalog = (() => {
       "tongues",
       "vampiric-touch",
       "water-breathing",
-      "water-walk"
-    ]),
-    "warlock": Object.freeze([
-      "chill-touch",
-      "eldritch-blast",
-      "mage-hand",
-      "minor-illusion",
-      "poison-spray",
-      "prestidigitation",
-      "true-strike",
-      "bane",
-      "charm-person",
-      "comprehend-languages",
-      "detect-magic",
-      "expeditious-retreat",
-      "hellish-rebuke",
-      "hex",
-      "illusory-script",
-      "protection-from-evil-and-good",
-      "speak-with-animals",
-      "hideous-laughter",
-      "unseen-servant",
-      "darkness",
-      "enthrall",
-      "hold-person",
-      "invisibility",
-      "mind-spike",
-      "mirror-image",
-      "misty-step",
-      "ray-of-enfeeblement",
-      "spider-climb",
-      "suggestion",
-      "counterspell",
-      "dispel-magic",
-      "fear",
-      "fly",
-      "gaseous-form",
-      "hypnotic-pattern",
-      "magic-circle",
-      "major-image",
-      "remove-curse",
-      "tongues",
-      "vampiric-touch"
-    ]),
-    "wizard": Object.freeze([
-      "acid-splash",
-      "chill-touch",
-      "dancing-lights",
-      "fire-bolt",
-      "light",
-      "mage-hand",
-      "mending",
-      "message",
-      "minor-illusion",
-      "poison-spray",
-      "prestidigitation",
-      "ray-of-frost",
-      "shocking-grasp",
-      "true-strike",
-      "alarm",
-      "burning-hands",
-      "charm-person",
-      "chromatic-orb",
-      "color-spray",
-      "comprehend-languages",
-      "detect-magic",
-      "disguise-self",
-      "expeditious-retreat",
-      "false-life",
-      "feather-fall",
-      "find-familiar",
-      "fog-cloud",
-      "grease",
-      "identify",
-      "illusory-script",
-      "jump",
-      "longstrider",
-      "mage-armor",
-      "magic-missile",
-      "protection-from-evil-and-good",
-      "shield",
-      "silent-image",
-      "sleep",
-      "thunderwave",
-      "unseen-servant",
-      "alter-self",
-      "arcane-lock",
-      "augury",
-      "blindness-deafness",
-      "blur",
-      "continual-flame",
-      "darkness",
-      "darkvision",
-      "detect-thoughts",
-      "enhance-ability",
-      "enlarge-reduce",
-      "flaming-sphere",
-      "gentle-repose",
-      "gust-of-wind",
-      "hold-person",
-      "invisibility",
-      "knock",
-      "levitate",
-      "locate-object",
-      "magic-mouth",
-      "magic-weapon",
-      "mirror-image",
-      "misty-step",
-      "ray-of-enfeeblement",
-      "rope-trick",
-      "scorching-ray",
-      "see-invisibility",
-      "shatter",
-      "spider-climb",
-      "suggestion",
-      "web",
-      "animate-dead",
-      "bestow-curse",
-      "blink",
-      "clairvoyance",
-      "counterspell",
-      "dispel-magic",
-      "fear",
-      "fireball",
-      "fly",
-      "gaseous-form",
-      "glyph-of-warding",
-      "haste",
-      "hypnotic-pattern",
-      "lightning-bolt",
-      "magic-circle",
-      "major-image",
-      "nondetection",
-      "phantom-steed",
-      "protection-from-energy",
-      "remove-curse",
-      "sending",
-      "sleet-storm",
-      "slow",
-      "speak-with-dead",
-      "stinking-cloud",
-      "tongues",
-      "vampiric-touch",
-      "water-breathing"
-    ]),
-  });
-
-  // Snapshot of the pre-canonicalization Basic UI results, represented only by spell IDs.
-  const basicSpellIdsByClass = Object.freeze({
-    "bard": Object.freeze([
-      "dancing-lights",
-      "light",
-      "mage-hand",
-      "mending",
-      "message",
-      "minor-illusion",
-      "prestidigitation",
-      "starry-wisp",
-      "thunderclap",
-      "true-strike",
-      "vicious-mockery",
-      "animal-friendship",
-      "bane",
-      "charm-person",
-      "color-spray",
-      "command",
-      "comprehend-languages",
-      "cure-wounds",
-      "detect-magic",
-      "disguise-self",
-      "dissonant-whispers",
-      "faerie-fire",
-      "feather-fall",
-      "healing-word",
-      "heroism",
-      "identify",
-      "illusory-script",
-      "longstrider",
-      "silent-image",
-      "sleep",
-      "speak-with-animals",
-      "hideous-laughter",
-      "thunderwave",
-      "unseen-servant",
-      "aid",
-      "animal-messenger",
-      "blindness-deafness",
-      "calm-emotions",
-      "detect-thoughts",
-      "enhance-ability",
-      "enlarge-reduce",
-      "enthrall",
-      "heat-metal",
-      "hold-person",
-      "invisibility",
-      "knock",
-      "lesser-restoration",
-      "locate-animals-or-plants",
-      "locate-object",
-      "magic-mouth",
-      "mirror-image",
-      "phantasmal-force",
-      "see-invisibility",
-      "shatter",
-      "silence",
-      "suggestion",
-      "zone-of-truth",
-      "bestow-curse",
-      "clairvoyance",
-      "dispel-magic",
-      "fear",
-      "glyph-of-warding",
-      "hypnotic-pattern",
-      "tiny-hut",
-      "major-image",
-      "mass-healing-word",
-      "nondetection",
-      "plant-growth",
-      "sending",
-      "slow",
-      "speak-with-dead",
-      "speak-with-plants",
-      "stinking-cloud",
-      "tongues"
-    ]),
-    "cleric": Object.freeze([
-      "guidance",
-      "light",
-      "mending",
-      "resistance",
-      "sacred-flame",
-      "spare-the-dying",
-      "thaumaturgy",
-      "bane",
-      "bless",
-      "command",
-      "create-or-destroy-water",
-      "cure-wounds",
-      "detect-evil-and-good",
-      "detect-magic",
-      "detect-poison-and-disease",
-      "guiding-bolt",
-      "healing-word",
-      "inflict-wounds",
-      "protection-from-evil-and-good",
-      "purify-food-and-drink",
-      "sanctuary",
-      "shield-of-faith",
-      "aid",
-      "augury",
-      "blindness-deafness",
-      "calm-emotions",
-      "continual-flame",
-      "enhance-ability",
-      "find-traps",
-      "gentle-repose",
-      "hold-person",
-      "lesser-restoration",
-      "locate-object",
-      "prayer-of-healing",
-      "protection-from-poison",
-      "silence",
-      "spiritual-weapon",
-      "warding-bond",
-      "zone-of-truth",
-      "animate-dead",
-      "beacon-of-hope",
-      "bestow-curse",
-      "clairvoyance",
-      "create-food-and-water",
-      "daylight",
-      "dispel-magic",
-      "glyph-of-warding",
-      "magic-circle",
-      "mass-healing-word",
-      "meld-into-stone",
-      "protection-from-energy",
-      "remove-curse",
-      "revivify",
-      "sending",
-      "speak-with-dead",
-      "spirit-guardians",
-      "tongues",
-      "water-walk"
-    ]),
-    "druid": Object.freeze([
-      "druidcraft",
-      "elementalism",
-      "guidance",
-      "mending",
-      "message",
-      "poison-spray",
-      "produce-flame",
-      "resistance",
-      "shillelagh",
-      "spare-the-dying",
-      "starry-wisp",
-      "animal-friendship",
-      "charm-person",
-      "create-or-destroy-water",
-      "cure-wounds",
-      "detect-magic",
-      "detect-poison-and-disease",
-      "entangle",
-      "faerie-fire",
-      "fog-cloud",
-      "goodberry",
-      "healing-word",
-      "ice-knife",
-      "jump",
-      "longstrider",
-      "protection-from-evil-and-good",
-      "purify-food-and-drink",
-      "speak-with-animals",
-      "thunderwave",
-      "aid",
-      "animal-messenger",
-      "augury",
-      "barkskin",
-      "continual-flame",
-      "darkvision",
-      "enhance-ability",
-      "enlarge-reduce",
-      "find-traps",
-      "flame-blade",
-      "flaming-sphere",
-      "gust-of-wind",
-      "heat-metal",
-      "hold-person",
-      "lesser-restoration",
-      "locate-animals-or-plants",
-      "locate-object",
-      "moonbeam",
-      "pass-without-trace",
-      "protection-from-poison",
-      "spike-growth",
-      "call-lightning",
-      "conjure-animals",
-      "daylight",
-      "dispel-magic",
-      "meld-into-stone",
-      "plant-growth",
-      "protection-from-energy",
-      "revivify",
-      "sleet-storm",
-      "speak-with-plants",
-      "water-breathing",
       "water-walk",
-      "wind-wall"
-    ]),
-    "paladin": Object.freeze([
-      "bless",
-      "command",
-      "cure-wounds",
-      "detect-evil-and-good",
-      "detect-magic",
-      "detect-poison-and-disease",
-      "divine-favor",
-      "divine-smite",
-      "heroism",
-      "protection-from-evil-and-good",
-      "purify-food-and-drink",
-      "searing-smite",
-      "shield-of-faith",
-      "aid",
-      "find-steed",
-      "gentle-repose",
-      "lesser-restoration",
-      "locate-object",
-      "magic-weapon",
-      "prayer-of-healing",
-      "protection-from-poison",
-      "shining-smite",
-      "warding-bond",
-      "zone-of-truth"
-    ]),
-    "ranger": Object.freeze([
-      "alarm",
-      "animal-friendship",
-      "cure-wounds",
-      "detect-magic",
-      "detect-poison-and-disease",
-      "ensnaring-strike",
-      "entangle",
-      "fog-cloud",
-      "goodberry",
-      "hunters-mark",
-      "jump",
-      "longstrider",
-      "speak-with-animals",
-      "aid",
-      "animal-messenger",
-      "barkskin",
-      "darkvision",
-      "enhance-ability",
-      "find-traps",
-      "gust-of-wind",
-      "lesser-restoration",
-      "locate-animals-or-plants",
-      "locate-object",
-      "magic-weapon",
-      "pass-without-trace",
-      "protection-from-poison",
-      "silence",
-      "spike-growth"
-    ]),
-    "sorcerer": Object.freeze([
-      "acid-splash",
-      "chill-touch",
-      "dancing-lights",
-      "elementalism",
-      "fire-bolt",
-      "light",
-      "mage-hand",
-      "mending",
-      "message",
-      "minor-illusion",
-      "poison-spray",
-      "prestidigitation",
-      "ray-of-frost",
-      "shocking-grasp",
-      "sorcerous-burst",
-      "true-strike",
-      "burning-hands",
-      "charm-person",
-      "chromatic-orb",
-      "color-spray",
-      "comprehend-languages",
-      "detect-magic",
-      "disguise-self",
-      "expeditious-retreat",
-      "false-life",
-      "feather-fall",
-      "fog-cloud",
-      "grease",
-      "ice-knife",
-      "jump",
-      "mage-armor",
-      "magic-missile",
-      "ray-of-sickness",
-      "shield",
-      "silent-image",
-      "sleep",
-      "thunderwave",
-      "alter-self",
-      "blindness-deafness",
-      "blur",
-      "darkness",
-      "darkvision",
-      "detect-thoughts",
-      "dragons-breath",
-      "enhance-ability",
-      "enlarge-reduce",
-      "flame-blade",
-      "flaming-sphere",
-      "gust-of-wind",
-      "hold-person",
-      "invisibility",
-      "knock",
-      "levitate",
-      "magic-weapon",
-      "mind-spike",
-      "mirror-image",
-      "misty-step",
-      "phantasmal-force",
-      "scorching-ray",
-      "see-invisibility",
-      "shatter",
-      "spider-climb",
-      "suggestion",
-      "web",
-      "blink",
-      "clairvoyance",
-      "counterspell",
-      "daylight",
-      "dispel-magic",
-      "fear",
-      "fireball",
-      "fly",
-      "gaseous-form",
-      "haste",
-      "hypnotic-pattern",
-      "lightning-bolt",
-      "major-image",
-      "protection-from-energy",
-      "sleet-storm",
-      "slow",
-      "stinking-cloud",
-      "tongues",
-      "vampiric-touch",
-      "water-breathing",
-      "water-walk"
+      "banishment",
+      "blight",
+      "charm-monster",
+      "confusion",
+      "dimension-door",
+      "dominate-beast",
+      "fire-shield",
+      "greater-invisibility",
+      "ice-storm",
+      "polymorph",
+      "stoneskin",
+      "vitriolic-sphere",
+      "wall-of-fire"
     ]),
     "warlock": Object.freeze([
       "chill-touch",
@@ -4448,7 +4651,12 @@ globalThis.SpellCatalog = (() => {
       "major-image",
       "remove-curse",
       "tongues",
-      "vampiric-touch"
+      "vampiric-touch",
+      "banishment",
+      "blight",
+      "charm-monster",
+      "dimension-door",
+      "hallucinatory-terrain"
     ]),
     "wizard": Object.freeze([
       "acid-splash",
@@ -4549,7 +4757,33 @@ globalThis.SpellCatalog = (() => {
       "stinking-cloud",
       "tongues",
       "vampiric-touch",
-      "water-breathing"
+      "water-breathing",
+      "arcane-eye",
+      "banishment",
+      "black-tentacles",
+      "blight",
+      "charm-monster",
+      "confusion",
+      "conjure-minor-elementals",
+      "control-water",
+      "dimension-door",
+      "divination",
+      "fabricate",
+      "faithful-hound",
+      "fire-shield",
+      "greater-invisibility",
+      "hallucinatory-terrain",
+      "ice-storm",
+      "locate-creature",
+      "phantasmal-killer",
+      "polymorph",
+      "private-sanctum",
+      "resilient-sphere",
+      "secret-chest",
+      "stone-shape",
+      "stoneskin",
+      "vitriolic-sphere",
+      "wall-of-fire"
     ]),
   });
 
@@ -4582,30 +4816,20 @@ globalThis.SpellCatalog = (() => {
     return Object.values(spellsById);
   }
 
-  function getSpellIds(classId, level, mode = "full") {
+  function getSpellIds(classId, level) {
     const normalizedLevel = normalizeLevel(level);
-    const memberships = mode === "full"
-      ? fullSpellIdsByClass
-      : mode === "basic"
-        ? basicSpellIdsByClass
-        : undefined;
-    const classSpellIds = typeof classId === "string" ? memberships?.[classId] : undefined;
+    const classSpellIds = typeof classId === "string" ? fullSpellIdsByClass[classId] : undefined;
     if (!classSpellIds || normalizedLevel === undefined) return [];
     return classSpellIds.filter(spellId => spellsById[spellId].level === normalizedLevel);
   }
 
-  function getSpells(classId, level, mode = "full") {
-    return getSpellIds(classId, level, mode).map(spellId => spellsById[spellId]);
+  function getSpells(classId, level) {
+    return getSpellIds(classId, level).map(spellId => spellsById[spellId]);
   }
 
-  function getClassIds(spellId, mode = "full") {
-    const memberships = mode === "full"
-      ? fullSpellIdsByClass
-      : mode === "basic"
-        ? basicSpellIdsByClass
-        : undefined;
-    if (typeof spellId !== "string" || !spellsById[spellId] || !memberships) return [];
-    return Object.keys(memberships).filter(classId => memberships[classId].includes(spellId));
+  function getClassIds(spellId) {
+    if (typeof spellId !== "string" || !spellsById[spellId]) return [];
+    return Object.keys(fullSpellIdsByClass).filter(classId => fullSpellIdsByClass[classId].includes(spellId));
   }
 
   function getDisplayName(spellId) {

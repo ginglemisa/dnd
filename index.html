@@ -45,8 +45,9 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎲%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20260826-class-options-spacing">
+  <link rel="stylesheet" href="styles.css?v=20260828-dice-compact">
   <script src="scroll-to-top.js" defer></script>
+  <script src="dice-roller.js?v=20260828-history-label" defer></script>
   <script src="monster.js" defer></script>
     <script src="class-features.js?v=20260826-class-options-spacing" defer></script>
   <script src="race.js?v=20260826-lineage-tables" defer></script>
@@ -106,6 +107,11 @@
           <input id="auto-calculate-key-stats-toggle" type="checkbox" role="switch" checked>
           <span class="utility-menu__switch" aria-hidden="true"></span>
         </label>
+        <label class="utility-menu__setting">
+          <span>開啟擲骰系統</span>
+          <input id="dice-system-toggle" type="checkbox" role="switch">
+          <span class="utility-menu__switch" aria-hidden="true"></span>
+        </label>
       </fieldset>
 
       <div class="utility-menu__divider" role="separator"></div>
@@ -113,17 +119,17 @@
         <h2 id="utility-menu-data-title" class="utility-menu__section-title">角色資料</h2>
         <div class="utility-menu__grid">
           <div class="utility-menu__row utility-menu__row--split">
-            <button type="button" id="import-json-btn" class="utility-menu__button">⬆️ 匯入</button>
-            <button type="button" id="export-json-btn" class="utility-menu__button">匯出 ⬇️</button>
+            <button type="button" id="import-json-btn" class="utility-menu__button">⬆️匯入JSON</button>
+            <button type="button" id="export-json-btn" class="utility-menu__button">匯出JSON⬇️</button>
           </div>
           <div class="utility-menu__row utility-menu__row--footer">
-            <button type="button" id="export-pdf-btn" class="utility-menu__button">📄 輸出 PDF</button>
+            <button type="button" id="export-pdf-btn" class="utility-menu__button">📄輸出PDF</button>
             <button type="button" id="open-qr-btn" class="utility-menu__button utility-menu__qr-button" aria-label="開啟 QR Code" title="QR Code">
               <svg class="utility-menu__qr-icon" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M3 3h7v7H3V3Zm2 2v3h3V5H5Zm9-2h7v7h-7V3Zm2 2v3h3V5h-3ZM3 14h7v7H3v-7Zm2 2v3h3v-3H5Zm9-2h3v3h-3v-3Zm4 0h3v3h-3v-3Zm-4 4h3v3h-3v-3Zm4 0h3v3h-3v-3Z"/>
               </svg>
             </button>
-            <button type="button" class="utility-menu__button share-url-btn" onclick="copyShareUrl()" aria-label="複製分享連結">分享角卡 🔗</button>
+            <button type="button" class="utility-menu__button share-url-btn" onclick="copyShareUrl()" aria-label="複製分享連結">分享角卡🔗</button>
           </div>
         </div>
       </section>
@@ -132,8 +138,8 @@
       <section class="utility-menu__section" aria-labelledby="utility-menu-help-title">
         <h2 id="utility-menu-help-title" class="utility-menu__section-title">參考與協助</h2>
         <div class="utility-menu__row utility-menu__row--split">
-          <button type="button" id="reference-deities-btn" class="utility-menu__button">🙏 參考神祇</button>
-          <button type="button" id="restart-onboarding-btn" class="utility-menu__button">新手導覽 🧭</button>
+          <button type="button" id="reference-deities-btn" class="utility-menu__button">🙏參考神祇</button>
+          <button type="button" id="restart-onboarding-btn" class="utility-menu__button">新手導覽🧭</button>
         </div>
       </section>
 
@@ -208,6 +214,9 @@
           <option value="3">3</option>
           <option value="4">4</option>
           <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
         </select>
       </div>
       <div class="basic-pair-field basic-pair-field--hit-dice">
@@ -219,6 +228,9 @@
           <option value="3">3</option>
           <option value="4">4</option>
           <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
         </select>
       </div>
       <div id="druid-land-control" class="class-feature-option is-hidden">
@@ -800,6 +812,7 @@
 
 
 <div id="tab-spells" class="tab-content" role="tabpanel" aria-label="法術頁" hidden>
+  <input type="checkbox" id="druid-natural-recovery-used" hidden tabindex="-1" aria-hidden="true">
     <div class="section spell-overview-section">
   <div id="spell-casting-stats-wrap" class="spell-casting-stats" aria-label="施法能力計算">
     <div class="spell-casting-field">
@@ -851,6 +864,13 @@
       <input type="checkbox" class="spell-slot-placeholder" tabindex="-1" aria-hidden="true">
       <input type="checkbox" class="spell-slot-placeholder" tabindex="-1" aria-hidden="true">
     </div>
+    <div id="spellslot4-row" class="spell-slot-column">
+      <label class="spell-slot-label">四環</label>
+      <input type="checkbox" id="spellslot4-1">
+      <input type="checkbox" id="spellslot4-2">
+      <input type="checkbox" class="spell-slot-placeholder" tabindex="-1" aria-hidden="true">
+      <input type="checkbox" class="spell-slot-placeholder" tabindex="-1" aria-hidden="true">
+    </div>
   </div>
 </div>
   <div id="no-spell-slots-message" class="spell-note-muted is-hidden">目前職業與等級沒有法術位</div>
@@ -863,9 +883,10 @@
     <div class="output spell-picked-box"><div id="picked-level1" class="spell-picked-content">—</div></div>
     <div class="output spell-picked-box"><div id="picked-level2" class="spell-picked-content">—</div></div>
     <div class="output spell-picked-box"><div id="picked-level3" class="spell-picked-content">—</div></div>
+    <div class="output spell-picked-box"><div id="picked-level4" class="spell-picked-content">—</div></div>
   </div>
   <div class="spell-meta-row">
-    <div class="spell-note-muted">本頁僅提供免費基本規則法術；部分 PHB 專屬內容未列入。</div>
+    <div id="spell-list-status-note" class="spell-note-muted" role="status" aria-live="polite">本頁僅提供免費基本規則法術；部分 PHB 專屬內容未列入。</div>
     <details class="spell-primer">
       <summary id="spell-primer-trigger">
         <span class="spell-primer__info" aria-hidden="true">i</span>
@@ -897,6 +918,10 @@
 <details class="section spell-level-section" open>
   <summary><h3 class="summary-title-inline">三環法術</h3></summary>
   <div id="level3spells-area"></div>
+</details>
+<details class="section spell-level-section" open>
+  <summary><h3 class="summary-title-inline">四環法術</h3></summary>
+  <div id="level4spells-area"></div>
 </details>
 
 <div id="highlevel-spells" class="is-hidden"></div>
@@ -1040,7 +1065,7 @@ function updateRaceOptionVisibility() {
   updateHighElfCantripVisibility();
 }
 
-function populateHighElfCantripOptions() { const select=document.getElementById("high-elf-cantrip");if(!select||select.options.length>1)return;SpellCatalog.getSpells("wizard","cantrips",SPELL_MODE).forEach(spell=>{const option=document.createElement("option");option.value=spell.spellId;option.textContent=SpellCatalog.getDisplayName(spell.spellId);select.appendChild(option);});if(select.querySelector('option[value="prestidigitation"]'))select.value="prestidigitation"; }
+function populateHighElfCantripOptions() { const select=document.getElementById("high-elf-cantrip");if(!select||select.options.length>1)return;SpellCatalog.getSpells("wizard","cantrips").forEach(spell=>{const option=document.createElement("option");option.value=spell.spellId;option.textContent=SpellCatalog.getDisplayName(spell.spellId);select.appendChild(option);});if(select.querySelector('option[value="prestidigitation"]'))select.value="prestidigitation"; }
 function updateHighElfCantripVisibility() { const select=document.getElementById("high-elf-cantrip");if(!select)return;populateHighElfCantripOptions();const visible=document.getElementById("race")?.value==="elf"&&document.getElementById("elf-lineage")?.value==="high_elf";select.classList.toggle("is-hidden",!visible);document.getElementById("elf-lineage-row")?.classList.toggle("has-cantrip",visible);if(visible&&!select.value&&select.querySelector('option[value="prestidigitation"]'))select.value="prestidigitation"; }
 
 function updateHitDieLabel() {
@@ -1052,10 +1077,17 @@ function updateHitDieLabel() {
   if (hitDieSizeLabel) hitDieSizeLabel.textContent = hitDieSize ? ` D${hitDieSize}` : "";
 }
 
-function syncHitDiceCountToLevel() {
-  const level = document.getElementById("level")?.value || "0";
+function syncHitDiceCountToLevel({ preserveCurrent = false } = {}) {
+  const level = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
   const hitDiceCount = document.getElementById("lifedicen");
-  if (hitDiceCount) hitDiceCount.value = level;
+  if (!hitDiceCount) return;
+  Array.from(hitDiceCount.options).forEach(option => {
+    const unavailable = Number.parseInt(option.value || "0", 10) > level;
+    option.disabled = unavailable;
+    option.hidden = unavailable;
+  });
+  const current = Number.parseInt(hitDiceCount.value || "0", 10) || 0;
+  hitDiceCount.value = String(preserveCurrent ? Math.min(current, level) : level);
 }
 
 function updateClassFeatureOptionVisibility() {
@@ -1471,6 +1503,114 @@ function enforceDruidMissionExclusivity(changedId) {
   }
 }
 
+const ADVANCED_CLASS_FEATURE_CHOICE_GROUPS = Object.freeze([
+  Object.freeze(["cleric-blessed-strikes-divine-strike", "cleric-blessed-strikes-potent-spellcasting"]),
+  Object.freeze(["druid-elemental-fury-primal-strike", "druid-elemental-fury-potent-spellcasting"]),
+  Object.freeze(["ranger-defensive-tactics-escape-the-horde", "ranger-defensive-tactics-multiattack-defense"])
+]);
+const ADVANCED_CLASS_FEATURE_AVAILABILITY = Object.freeze({
+  "cleric-blessed-strikes-divine-strike": Object.freeze({ className: "cleric", minimumLevel: 7 }),
+  "cleric-blessed-strikes-potent-spellcasting": Object.freeze({ className: "cleric", minimumLevel: 7 }),
+  "druid-elemental-fury-primal-strike": Object.freeze({ className: "druid", minimumLevel: 7 }),
+  "druid-elemental-fury-potent-spellcasting": Object.freeze({ className: "druid", minimumLevel: 7 }),
+  "ranger-defensive-tactics-escape-the-horde": Object.freeze({ className: "ranger", minimumLevel: 7 }),
+  "ranger-defensive-tactics-multiattack-defense": Object.freeze({ className: "ranger", minimumLevel: 7 }),
+  "sorcerer-elemental-affinity-damage-type": Object.freeze({ className: "sorcerer", minimumLevel: 6 })
+});
+const CLERIC_DIVINE_STRIKE_ATTACK_NOTE = "+1d8光/黯傷害";
+
+function isAdvancedClassFeatureControlAvailable(id) {
+  const requirement = ADVANCED_CLASS_FEATURE_AVAILABILITY[id];
+  if (!requirement) return true;
+  const classValue = document.getElementById("class")?.value || "";
+  const level = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
+  return classValue === requirement.className && level >= requirement.minimumLevel;
+}
+
+function enforceAdvancedClassFeatureChoiceExclusivity(changedId) {
+  const group = ADVANCED_CLASS_FEATURE_CHOICE_GROUPS.find(ids => ids.includes(changedId));
+  const changed = document.getElementById(changedId);
+  if (!group || !changed?.checked) return;
+  group.filter(id => id !== changedId).forEach(id => {
+    const input = document.getElementById(id);
+    if (input) input.checked = false;
+  });
+}
+
+function getDruidPrimalStrikeAttackNote() {
+  const raw = String(classFeatures?.druid || "");
+  const match = raw.match(/原初打擊。[\s\S]*?額外受到1d8([^。]+?)傷害/u);
+  const damageTypes = (match?.[1] || "冷凍、火焰、閃電或雷鳴")
+    .replace(/、|或/gu, "/")
+    .replace(/\s+/gu, "");
+  return `+1d8${damageTypes}傷害`;
+}
+
+function removeManagedAttackNoteFragment(value, fragment) {
+  const escaped = escapeRegExp(fragment);
+  const pattern = new RegExp(`(^|[；;]\\s*)${escaped}(?=\\s*(?:[；;]|$))`, "gu");
+  return String(value || "")
+    .replace(pattern, "")
+    .replace(/^\s*[；;]\s*/u, "")
+    .trimEnd();
+}
+
+function setManagedAttackNoteFragment(input, fragment, enabled) {
+  if (!input || !fragment) return;
+  const withoutFragment = removeManagedAttackNoteFragment(input.value, fragment);
+  const nextValue = enabled
+    ? `${withoutFragment}${withoutFragment ? "；" : ""}${fragment}`
+    : withoutFragment;
+  if (input.value === nextValue) return;
+  input.value = nextValue;
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function isApplicableWeaponAttack(hand) {
+  if (!isWeaponAttackAutomationEnabled()) {
+    return Boolean(document.getElementById(`atk-${hand}-name`)?.value.trim());
+  }
+  const selectionId = hand === "main" ? "mainHand" : "offHand";
+  const weaponName = document.getElementById(selectionId)?.value || "";
+  return Boolean(weaponName) && weaponName !== "盾牌";
+}
+
+function syncClassFeatureAttackNotes() {
+  const divineStrikeId = "cleric-blessed-strikes-divine-strike";
+  const primalStrikeId = "druid-elemental-fury-primal-strike";
+  const divineStrike = isAdvancedClassFeatureControlAvailable(divineStrikeId)
+    && Boolean(document.getElementById(divineStrikeId)?.checked);
+  const primalStrike = isAdvancedClassFeatureControlAvailable(primalStrikeId)
+    && Boolean(document.getElementById(primalStrikeId)?.checked);
+  const primalStrikeNote = getDruidPrimalStrikeAttackNote();
+  ["main", "off"].forEach(hand => {
+    const noteInput = document.getElementById(`atk-${hand}-note`);
+    const applicable = isApplicableWeaponAttack(hand);
+    setManagedAttackNoteFragment(noteInput, CLERIC_DIVINE_STRIKE_ATTACK_NOTE, divineStrike && applicable);
+    setManagedAttackNoteFragment(noteInput, primalStrikeNote, primalStrike && applicable);
+  });
+}
+
+function syncAdvancedClassFeatureControls() {
+  Object.entries(ADVANCED_CLASS_FEATURE_AVAILABILITY).forEach(([id]) => {
+    const control = document.getElementById(id);
+    if (!control) return;
+    const available = isAdvancedClassFeatureControlAvailable(id);
+    control.disabled = !available;
+    control.setAttribute("aria-disabled", String(!available));
+    control.closest(".feature-choice-card, .class-feature-option")?.classList.toggle("is-unavailable", !available);
+    if (!available && control.type === "checkbox") control.checked = false;
+    if (!available && control instanceof HTMLSelectElement) control.value = "";
+  });
+  ADVANCED_CLASS_FEATURE_CHOICE_GROUPS.forEach(group => {
+    const checked = group.map(id => document.getElementById(id)).filter(input => input?.checked);
+    checked.slice(1).forEach(input => { input.checked = false; });
+  });
+  const output = document.getElementById("classFeatures");
+  if (output) setupAutoSave(output);
+  syncClassFeatureAttackNotes();
+}
+
 // 計算AC頂部
 function updateACDisplay() {
   if (!isAutomaticKeyStatsEnabled()) {
@@ -1527,7 +1667,8 @@ const eldritchInvocations = [
   { name: "共視感官" },
   { name: "魔能斬擊" },
   { name: "饑渴魔刃" },
-  { name: "鏈主賦能" }
+  { name: "鏈主賦能" },
+  { name: "墳墓低語", spellId: "speak-with-dead", spellUse: "at-will", minWarlockLevel: 7 }
 ];
 
 function findNthIndex(text, needle, nth = 1) {
@@ -1654,6 +1795,32 @@ function getWarlockInvocationSelectionLimit() {
   const cls = document.getElementById("class")?.value || "";
   const level = document.getElementById("level")?.value || "1";
   return calculateWarlockInvocationSelectionLimit(cls, level);
+}
+
+function isWarlockInvocationAvailable(invocation) {
+  if (!invocation) return false;
+  const level = Number.parseInt(document.getElementById("level")?.value || "1", 10) || 1;
+  return !invocation.minWarlockLevel || level >= invocation.minWarlockLevel;
+}
+
+function syncWarlockInvocationAvailability() {
+  eldritchInvocations.forEach((invocation, index) => {
+    const available = isWarlockInvocationAvailable(invocation);
+    const checkCount = invocation.repeatable ? (invocation.max || 3) : 1;
+
+    for (let slot = 1; slot <= checkCount; slot++) {
+      const input = document.getElementById(getInvocationCheckboxId(index, slot));
+      if (!input) continue;
+      input.disabled = !available;
+      if (!available && input.checked) {
+        input.checked = false;
+      }
+    }
+
+    const card = document.getElementById(getInvocationCheckboxId(index, 1))?.closest(".feature-choice-card");
+    card?.classList.toggle("is-unavailable", !available);
+    if (card) card.setAttribute("aria-disabled", String(!available));
+  });
 }
 
 function enforceCheckboxSelectionLimit(inputs, limit, changedInput, alertMessage, shouldAlert = true) {
@@ -1807,6 +1974,15 @@ function updateMetamagicSummary() {
 }
 
 async function handleEldritchInvocationChange(el, event, output) {
+  const invocation = eldritchInvocations.find(option => option.name === el.dataset.invocationName);
+  if (!isWarlockInvocationAvailable(invocation)) {
+    el.checked = false;
+    updateWarlockInvocationSummary();
+    syncOriginAndSubclassDerivedSpellRows();
+    if (typeof scheduleSaveAllFields === "function") scheduleSaveAllFields();
+    return;
+  }
+
   if (el.checked) {
     const allowed = enforceCheckboxSelectionLimit(
       Array.from(output.querySelectorAll("input[data-invocation-name]")),
@@ -1845,14 +2021,15 @@ function renderEldritchInvocations() {
   if (!output) return;
 
   output.innerHTML = eldritchInvocations.map((invocation, index) => {
+    const available = isWarlockInvocationAvailable(invocation);
     const checkCount = invocation.repeatable ? (invocation.max || 3) : 1;
     const checks = Array.from({ length: checkCount }, (_, slotIndex) => {
       const checkboxId = getInvocationCheckboxId(index, slotIndex + 1);
       const slotLabel = checkCount > 1 ? `選擇 ${invocation.name}（第 ${slotIndex + 1} 次）` : `選擇 ${invocation.name}`;
-      return `<label class="inline-check-label"><input type="checkbox" id="${checkboxId}" data-invocation-name="${escapeHtml(invocation.name)}" aria-label="${escapeHtml(slotLabel)}"></label>`;
+      return `<label class="inline-check-label"><input type="checkbox" id="${checkboxId}" data-invocation-name="${escapeHtml(invocation.name)}" aria-label="${escapeHtml(slotLabel)}"${available ? "" : " disabled"}></label>`;
     }).join("");
 
-    return `<article class="feature-choice-card feature-choice-card--invocation">
+    return `<article class="feature-choice-card feature-choice-card--invocation${available ? "" : " is-unavailable"}" aria-disabled="${String(!available)}">
       <div class="feature-choice-card__heading">
         <span class="feature-choice-card__checks">${checks}</span>
         <strong>${escapeHtml(invocation.name)}</strong>
@@ -1901,6 +2078,7 @@ function updateEldritchInvocationSectionVisibility() {
   section.style.display = isWarlock ? "block" : "none";
 
   if (isWarlock) {
+    syncWarlockInvocationAvailability();
     syncWarlockInvocationSelectionLimit();
     updateWarlockInvocationSummary();
     updateACDisplay();
@@ -1970,13 +2148,17 @@ function updateClassFeature() {
   const metamagicSection = document.getElementById("metamagic-options-section");
   const metamagicOutput = document.getElementById("metamagicOptions");
   const metamagicSummary = document.getElementById("metamagic-summary");
-  const preservedCheckboxStates = new Map(Array.from(output.querySelectorAll('input[type="checkbox"][id]')).map(checkbox => [checkbox.id, checkbox.checked]));
+  const preservedControlStates = new Map(Array.from(output.querySelectorAll("input[id], select[id]")).map(control => [
+    control.id,
+    control.type === "checkbox" ? control.checked : control.value
+  ]));
 
   if (!selectedClass || !classFeatures[selectedClass]) {
     output.innerHTML = "無資料";
     metamagicSection.style.display = "none";
     metamagicOutput.innerHTML = "無資料";
     if (metamagicSummary) metamagicSummary.innerHTML = "尚未勾選超魔法";
+    syncAdvancedClassFeatureControls();
     return;
   }
 
@@ -2005,9 +2187,11 @@ function updateClassFeature() {
   }
 
   restoreClassFeatureTableState(selectedClass, output);
-  preservedCheckboxStates.forEach((checked, id) => {
-    const checkbox = document.getElementById(id);
-    if (checkbox) checkbox.checked = checked;
+  preservedControlStates.forEach((value, id) => {
+    const control = document.getElementById(id);
+    if (!control) return;
+    if (control.type === "checkbox") control.checked = Boolean(value);
+    else if (Array.from(control.options || []).some(option => option.value === value)) control.value = value;
   });
 
   if (selectedClass === "sorcerer" && level !== "1" && metamagicRaw) {
@@ -2020,6 +2204,7 @@ function updateClassFeature() {
     metamagicOutput.innerHTML = "無資料";
     if (metamagicSummary) metamagicSummary.innerHTML = "尚未勾選超魔法";
   }
+  syncAdvancedClassFeatureControls();
 }
 
 
@@ -2210,6 +2395,46 @@ function getFightingStyleOptionsHtml() {
   return `<option value="">-- 請選擇戰鬥風格 --</option>${styles.map(option => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`).join("")}`;
 }
 
+function getEntitledManualFeatRowCount() {
+  const classValue = document.getElementById("class")?.value || "";
+  const level = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
+  if (classValue === "fighter") return 1 + (level >= 6 ? 1 : 0) + (level >= 8 ? 1 : 0);
+  return 1 + (level >= 8 ? 1 : 0);
+}
+
+function syncEntitledManualFeatRows() {
+  const requiredCount = getEntitledManualFeatRowCount();
+  let rows = getManualFeatRows();
+  while (rows.length < requiredCount) {
+    createSingleFeatRow(rows[rows.length - 1] || null);
+    rows = getManualFeatRows();
+  }
+  updateFeatControlStates();
+}
+
+function syncDerivedFightingStyleOptions() {
+  const first = document.getElementById("derived-feat-fighting-style-fighter");
+  const second = document.getElementById("derived-feat-fighting-style-fighter-2");
+  if (!first || !second) return;
+  if (first.value && second.value === first.value) second.value = "";
+  [first, second].forEach((select, index) => {
+    const peerValue = (index === 0 ? second : first).value || "";
+    Array.from(select.options).forEach(option => {
+      option.disabled = Boolean(peerValue) && option.value === peerValue && option.value !== select.value;
+    });
+  });
+}
+
+function enforceDerivedFightingStyleExclusivity(changedSelect) {
+  if (!changedSelect || !["derived-feat-fighting-style-fighter", "derived-feat-fighting-style-fighter-2"].includes(changedSelect.id)) return;
+  const peerId = changedSelect.id.endsWith("-2")
+    ? "derived-feat-fighting-style-fighter"
+    : "derived-feat-fighting-style-fighter-2";
+  const peer = document.getElementById(peerId);
+  if (changedSelect.value && peer?.value === changedSelect.value) changedSelect.value = "";
+  syncDerivedFightingStyleOptions();
+}
+
 function getDerivedFeatSpecs() {
   const specs = [];
   const background = document.getElementById("background")?.value || "";
@@ -2236,6 +2461,13 @@ function getDerivedFeatSpecs() {
     fixed: false,
     optionsHtml: getFightingStyleOptionsHtml()
   });
+  if (classValue === "fighter" && level >= 7) specs.push({
+    key: "fighting-style-fighter-2",
+    source: "class",
+    label: "額外戰鬥風格：",
+    fixed: false,
+    optionsHtml: getFightingStyleOptionsHtml()
+  });
   return specs;
 }
 
@@ -2255,6 +2487,7 @@ function createDerivedFeatRow(spec) {
   desc.className = "output";
   const magicControls = createMagicInitiateControls(row);
   select.addEventListener("change", () => {
+    enforceDerivedFightingStyleExclusivity(select);
     updateFeatDesc(select.id, desc.id);
     updateMagicInitiateControlsForRow(row);
     refreshFeatDerivedEffects();
@@ -2287,6 +2520,7 @@ function setDerivedFeatRowValues(row, spec) {
 function syncDerivedFeatRows() {
   const area = document.getElementById("feats-area");
   if (!area) return;
+  syncEntitledManualFeatRows();
   const specs = getDerivedFeatSpecs();
   const desiredKeys = new Set(specs.map(spec => spec.key));
   Array.from(area.querySelectorAll(":scope > .feat-entry--derived")).forEach(row => {
@@ -2302,6 +2536,7 @@ function syncDerivedFeatRows() {
     const row = Array.from(area.querySelectorAll(":scope > .feat-entry--derived")).find(candidate => candidate.dataset.sourceKey === spec.key);
     if (row) area.insertBefore(row, firstManual);
   });
+  syncDerivedFightingStyleOptions();
   refreshFeatRows();
   refreshFeatDerivedEffects();
 }
@@ -2552,7 +2787,7 @@ function getMagicInitiateSpellPlaceholder(field) {
   return "--法術--";
 }
 
-function renderSpellOptionsForMagicInitiate(classValue, level, placeholder, previousValue = "") { const spells=classValue?getSpellsByMode(classValue,level):[];return {html:'<option value="">'+escapeHtml(placeholder)+'</option>'+spells.map(spell=>'<option value="'+escapeHtml(spell.spellId)+'">'+escapeHtml(SpellCatalog.getDisplayName(spell.spellId))+'</option>').join(''),value:spells.some(spell=>spell.spellId===previousValue)?previousValue:""}; }
+function renderSpellOptionsForMagicInitiate(classValue, level, placeholder, previousValue = "") { const spells=classValue?getClassSpells(classValue,level):[];return {html:'<option value="">'+escapeHtml(placeholder)+'</option>'+spells.map(spell=>'<option value="'+escapeHtml(spell.spellId)+'">'+escapeHtml(SpellCatalog.getDisplayName(spell.spellId))+'</option>').join(''),value:spells.some(spell=>spell.spellId===previousValue)?previousValue:""}; }
 
 function updateMagicInitiateSpellOptions(row) {
   const classValue = getMagicInitiateSelect(row, "class")?.value || "";
@@ -2810,7 +3045,8 @@ const SUBCLASS_DERIVED_SPELLS = Object.freeze({
   cleric: Object.freeze({ name: "生命領域", spells: Object.freeze([
     { level: 3, ring: 1, spellId: "bless" }, { level: 3, ring: 1, spellId: "cure-wounds" },
     { level: 3, ring: 2, spellId: "aid" }, { level: 3, ring: 2, spellId: "lesser-restoration" },
-    { level: 5, ring: 3, spellId: "mass-healing-word" }, { level: 5, ring: 3, spellId: "revivify" }
+    { level: 5, ring: 3, spellId: "mass-healing-word" }, { level: 5, ring: 3, spellId: "revivify" },
+    { level: 7, ring: 4, spellId: "aura-of-life" }, { level: 7, ring: 4, spellId: "death-ward" }
   ]) }),
   paladin: Object.freeze({ name: "奉獻之誓", spells: Object.freeze([
     { level: 3, ring: 1, spellId: "protection-from-evil-and-good" }, { level: 3, ring: 1, spellId: "shield-of-faith" },
@@ -2819,20 +3055,46 @@ const SUBCLASS_DERIVED_SPELLS = Object.freeze({
   sorcerer: Object.freeze({ name: "龍族術法", spells: Object.freeze([
     { level: 3, ring: 1, spellId: "chromatic-orb" }, { level: 3, ring: 1, spellId: "command" },
     { level: 3, ring: 2, spellId: "alter-self" }, { level: 3, ring: 2, spellId: "dragons-breath" },
-    { level: 5, ring: 3, spellId: "fear" }, { level: 5, ring: 3, spellId: "fly" }
+    { level: 5, ring: 3, spellId: "fear" }, { level: 5, ring: 3, spellId: "fly" },
+    { level: 7, ring: 4, spellId: "arcane-eye" }, { level: 7, ring: 4, spellId: "charm-monster" }
   ]) }),
   warlock: Object.freeze({ name: "邪魔", spells: Object.freeze([
     { level: 3, ring: 1, spellId: "burning-hands" }, { level: 3, ring: 1, spellId: "command" },
     { level: 3, ring: 2, spellId: "scorching-ray" }, { level: 3, ring: 2, spellId: "suggestion" },
-    { level: 5, ring: 3, spellId: "fireball" }, { level: 5, ring: 3, spellId: "stinking-cloud" }
+    { level: 5, ring: 3, spellId: "fireball" }, { level: 5, ring: 3, spellId: "stinking-cloud" },
+    { level: 7, ring: 4, spellId: "fire-shield" }, { level: 7, ring: 4, spellId: "wall-of-fire" }
   ]) })
 });
 
 const DRUID_LAND_SPELLS = Object.freeze({
-  arid: Object.freeze({ name: "旱地", spells: Object.freeze([{ level: 3, ring: "cantrips", spellId: "fire-bolt" }, { level: 3, ring: 1, spellId: "burning-hands" }, { level: 3, ring: 2, spellId: "blur" }, { level: 5, ring: 3, spellId: "fireball" }]) }),
-  polar: Object.freeze({ name: "極地", spells: Object.freeze([{ level: 3, ring: "cantrips", spellId: "ray-of-frost" }, { level: 3, ring: 1, spellId: "fog-cloud" }, { level: 3, ring: 2, spellId: "hold-person" }, { level: 5, ring: 3, spellId: "sleet-storm" }]) }),
-  temperate: Object.freeze({ name: "溫帶", spells: Object.freeze([{ level: 3, ring: "cantrips", spellId: "shocking-grasp" }, { level: 3, ring: 1, spellId: "sleep" }, { level: 3, ring: 2, spellId: "misty-step" }, { level: 5, ring: 3, spellId: "lightning-bolt" }]) }),
-  tropical: Object.freeze({ name: "熱帶", spells: Object.freeze([{ level: 3, ring: "cantrips", spellId: "acid-splash" }, { level: 3, ring: 1, spellId: "ray-of-sickness" }, { level: 3, ring: 2, spellId: "web" }, { level: 5, ring: 3, spellId: "stinking-cloud" }]) })
+  arid: Object.freeze({ name: "旱地", spells: Object.freeze([
+    { level: 3, ring: "cantrips", spellId: "fire-bolt" },
+    { level: 3, ring: 1, spellId: "burning-hands" },
+    { level: 3, ring: 2, spellId: "blur" },
+    { level: 5, ring: 3, spellId: "fireball" },
+    { level: 7, ring: 4, spellId: "blight" }
+  ]) }),
+  polar: Object.freeze({ name: "極地", spells: Object.freeze([
+    { level: 3, ring: "cantrips", spellId: "ray-of-frost" },
+    { level: 3, ring: 1, spellId: "fog-cloud" },
+    { level: 3, ring: 2, spellId: "hold-person" },
+    { level: 5, ring: 3, spellId: "sleet-storm" },
+    { level: 7, ring: 4, spellId: "ice-storm" }
+  ]) }),
+  temperate: Object.freeze({ name: "溫帶", spells: Object.freeze([
+    { level: 3, ring: "cantrips", spellId: "shocking-grasp" },
+    { level: 3, ring: 1, spellId: "sleep" },
+    { level: 3, ring: 2, spellId: "misty-step" },
+    { level: 5, ring: 3, spellId: "lightning-bolt" },
+    { level: 7, ring: 4, spellId: "freedom-of-movement" }
+  ]) }),
+  tropical: Object.freeze({ name: "熱帶", spells: Object.freeze([
+    { level: 3, ring: "cantrips", spellId: "acid-splash" },
+    { level: 3, ring: 1, spellId: "ray-of-sickness" },
+    { level: 3, ring: 2, spellId: "web" },
+    { level: 5, ring: 3, spellId: "stinking-cloud" },
+    { level: 7, ring: 4, spellId: "polymorph" }
+  ]) })
 });
 
 function getAreaIdForSpellRing(ring) {
@@ -2997,7 +3259,7 @@ function getSubclassDerivedSpellSpecs() {
 function getEldritchInvocationDerivedSpellSpecs() {
   if (document.getElementById("class")?.value !== "warlock") return [];
   const specs = eldritchInvocations.flatMap((invocation, index) => {
-    if (!invocation.spellId || !document.getElementById(getInvocationCheckboxId(index, 1))?.checked) return [];
+    if (!isWarlockInvocationAvailable(invocation) || !invocation.spellId || !document.getElementById(getInvocationCheckboxId(index, 1))?.checked) return [];
     const spell = SpellCatalog.getSpell(invocation.spellId);
     if (!spell) return [];
     const ring = spell.level === 0 ? "cantrips" : spell.level;
@@ -3070,7 +3332,7 @@ function setClassFeatureCantripRowValues(row, spec) {
     .filter(Boolean));
   classSel.innerHTML = `<option value="${escapeHtml(spec.selectableSpellClass)}">${escapeHtml(spec.sourceName)}</option>`;
   classSel.value = spec.selectableSpellClass;
-  const options = getSpellsByMode(spec.selectableSpellClass, "cantrips");
+  const options = getClassSpells(spec.selectableSpellClass, "cantrips");
   spellSel.innerHTML = `<option value="">-- 請選擇戲法 --</option>${options.map(spell => {
     const disabled = peerValues.has(spell.spellId) ? " disabled" : "";
     return `<option value="${escapeHtml(spell.spellId)}"${disabled}>${escapeHtml(SpellCatalog.getDisplayName(spell.spellId))}</option>`;
@@ -3091,7 +3353,7 @@ function setClassFeatureCantripRowValues(row, spec) {
 
 function getPactTomeSpellOptions(ring) {
   return SpellCatalog.getAllSpells().filter(spell => {
-    if (!SpellCatalog.getClassIds(spell.spellId, SPELL_MODE).length) return false;
+    if (!SpellCatalog.getClassIds(spell.spellId).length) return false;
     if (ring === "cantrips") return spell.level === 0;
     return spell.level === 1 && /儀式/u.test(spell.desc || "");
   }).sort((a, b) => a.nameZh.localeCompare(b.nameZh, "zh-Hant"));
@@ -3180,7 +3442,7 @@ function syncOriginAndSubclassDerivedSpellRows() {
 function updateFeatControlStates() {
   const rows = Array.from(document.querySelectorAll("#feats-area .form-row"));
   const manualRows = rows.filter(row => !isDerivedFeatRow(row));
-  const disableDelete = manualRows.length <= 1;
+  const disableDelete = manualRows.length <= getEntitledManualFeatRowCount();
   const lastRow = manualRows[manualRows.length - 1] || null;
 
   rows.forEach((row) => {
@@ -3993,13 +4255,18 @@ function fillSaves() {
   const abilities = ["str", "dex", "con", "int", "wis", "cha"];
   const selectedClass = document.getElementById("class")?.value || "";
   const profSaves = new Set(getClassSaveProficiencies(selectedClass));
+  const auraBonus = getPaladinAuraSavingThrowBonus(
+    selectedClass,
+    document.getElementById("level")?.value || "0",
+    document.getElementById("cha")?.value || "10"
+  );
 
   abilities.forEach(ab => {
     const profCheckbox = document.getElementById("prof-" + ab);
     if (profCheckbox) profCheckbox.checked = profSaves.has(ab);
 
     const mod = getModifier(ab);
-    const total = mod + (profSaves.has(ab) ? pb : 0);
+    const total = mod + (profSaves.has(ab) ? pb : 0) + auraBonus;
     document.getElementById("save-" + ab).value = formatSignedValue(total);
   });
 }
@@ -4137,9 +4404,10 @@ function getMonkMartialArtsDie() {
   return getMonkMartialArtsDieByLevel(level);
 }
 function getMonkMartialArtsWeapon() {
+  const level = Number.parseInt(document.getElementById("level")?.value || "1", 10) || 1;
   return {
     名稱: "武藝",
-    傷害: `${getMonkMartialArtsDie()} 鈍擊`,
+    傷害: `${getMonkMartialArtsDie()} ${level >= 6 ? "鈍擊／力場" : "鈍擊"}`,
     精通: "無",
     重量: "無",
     價格: "無",
@@ -4766,14 +5034,16 @@ function isWeaponAttackAutomationEnabled() {
 
 function populateHandAttacks(options = {}) {
   updateWeaponMasteryBadges();
-  if (!isWeaponAttackAutomationEnabled() && !options.force) return;
-  calculateHandAttacks().forEach(result => {
-    document.getElementById(`${result.prefix}-name`).value = result.name;
-    document.getElementById(`${result.prefix}-hit`).value = result.hit;
-    document.getElementById(`${result.prefix}-dmg`).value = result.damage;
-    attackCalculationDetails[result.key] = result.details;
-  });
-  updateWeaponAutomationUI();
+  if (isWeaponAttackAutomationEnabled() || options.force) {
+    calculateHandAttacks().forEach(result => {
+      document.getElementById(`${result.prefix}-name`).value = result.name;
+      document.getElementById(`${result.prefix}-hit`).value = result.hit;
+      document.getElementById(`${result.prefix}-dmg`).value = result.damage;
+      attackCalculationDetails[result.key] = result.details;
+    });
+    updateWeaponAutomationUI();
+  }
+  syncClassFeatureAttackNotes();
 }
 
 function updateWeaponAutomationUI() {
@@ -4874,7 +5144,10 @@ function setupWeaponAttackAutomation() {
   });
   ["atk-main-name", "atk-off-name"].forEach(id => {
     const updateManualMasteryBadge = () => {
-      if (!isWeaponAttackAutomationEnabled()) updateWeaponMasteryBadges();
+      if (!isWeaponAttackAutomationEnabled()) {
+        updateWeaponMasteryBadges();
+        syncClassFeatureAttackNotes();
+      }
     };
     document.getElementById(id)?.addEventListener("input", updateManualMasteryBadge);
     document.getElementById(id)?.addEventListener("change", updateManualMasteryBadge);
@@ -4920,11 +5193,7 @@ function updateArmorInfo() {
 
 // ====== 法術下拉產生用 ======
 
-// ====== Spell Mode (Basic / Full) ======
-// 預設給玩家：Basic，只顯示 Basic Allow 清單內的法術
-let SPELL_MODE = "basic"; // "basic" | "full"
-
-function getSpellsByMode(classVal, level) { return classVal ? SpellCatalog.getSpells(classVal, level, SPELL_MODE) : []; }
+function getClassSpells(classVal, level) { return classVal ? SpellCatalog.getSpells(classVal, level) : []; }
 
 const SPELLCASTING_CLASS_GROUPS = {
   int: ["wizard"],
@@ -4953,7 +5222,7 @@ function getSpellAreaIdByLevelKey(levelKey) {
 }
 
 function findSpellMetaById(spellId) { const spell=SpellCatalog.getSpell(spellId);if(!spell)return null;const levelKey=spell.level===0?"cantrips":String(spell.level);return {spellId,levelKey,areaId:getSpellAreaIdByLevelKey(levelKey),levelValue:spell.level===0?"cantrips":spell.level}; }
-function getAvailableClassesForSpell(spellId) { return SpellCatalog.getClassIds(spellId,SPELL_MODE); }
+function getAvailableClassesForSpell(spellId) { return SpellCatalog.getClassIds(spellId); }
 
 function getSpellClassSearchOrder(selectedAbility) {
   const sameAbilityClasses = Array.isArray(SPELLCASTING_CLASS_GROUPS[selectedAbility])
@@ -5082,32 +5351,8 @@ function showSpellPreparePopover(triggerEl) {
   });
 }
 
-async function autoPrepareSpellFromFeature(spellId, triggerEl) { if(!spellId||!(await showSpellPreparePopover(triggerEl)))return;const meta=findSpellMetaById(spellId);if(!meta){alert("找不到這個法術的資料。");return;}if(findExistingSpellRow(meta.areaId,spellId))return;const primary=document.getElementById("class")?.value||"",ability=document.getElementById("spellcasting-ability")?.value||"",target=getSpellClassSearchOrderWithPrimary(primary,ability).find(id=>SpellCatalog.getClassIds(spellId,SPELL_MODE).includes(id));if(!target){alert("找不到可以加入這個法術的職業。");return;}const row=findEmptySpellRow(meta.areaId)||createSingleSpellRow(meta.areaId,meta.levelValue),classSel=row?.querySelector("select[id*='-class-']"),spellSel=row?.querySelector("select[id*='-spell-']");if(!classSel||!spellSel)return;window.__spellAutoPrepareInProgress=true;try{classSel.value=target;classSel.dispatchEvent(new Event("change"));if(!Array.from(spellSel.options).some(option=>option.value===spellId)){alert("已找到職業，但該法術未出現在對應下拉選單中。");return;}spellSel.value=spellId;spellSel.dispatchEvent(new Event("change"));}finally{window.__spellAutoPrepareInProgress=false;} }
+async function autoPrepareSpellFromFeature(spellId, triggerEl) { if(!spellId||!(await showSpellPreparePopover(triggerEl)))return;const meta=findSpellMetaById(spellId);if(!meta){alert("找不到這個法術的資料。");return;}if(findExistingSpellRow(meta.areaId,spellId))return;const primary=document.getElementById("class")?.value||"",ability=document.getElementById("spellcasting-ability")?.value||"",target=getSpellClassSearchOrderWithPrimary(primary,ability).find(id=>SpellCatalog.getClassIds(spellId).includes(id));if(!target){alert("找不到可以加入這個法術的職業。");return;}const row=findEmptySpellRow(meta.areaId)||createSingleSpellRow(meta.areaId,meta.levelValue),classSel=row?.querySelector("select[id*='-class-']"),spellSel=row?.querySelector("select[id*='-spell-']");if(!classSel||!spellSel)return;window.__spellAutoPrepareInProgress=true;try{classSel.value=target;classSel.dispatchEvent(new Event("change"));if(!Array.from(spellSel.options).some(option=>option.value===spellId)){alert("已找到職業，但該法術未出現在對應下拉選單中。");return;}spellSel.value=spellId;spellSel.dispatchEvent(new Event("change"));}finally{window.__spellAutoPrepareInProgress=false;} }
 function bindFeatureSpellHighlightEvents() { if(window.__featureSpellHighlightEventsBound)return;window.__featureSpellHighlightEventsBound=true;const handler=target=>{const trigger=target?.closest?.(".spell-highlight-action[data-spell-id]");if(!trigger)return false;autoPrepareSpellFromFeature(trigger.dataset.spellId||"",trigger);return true;};document.addEventListener("click",event=>{if(handler(event.target))event.preventDefault();});document.addEventListener("keydown",event=>{if((event.key==="Enter"||event.key===" ")&&handler(event.target))event.preventDefault();}); }
-
-// 切換模式後，用於「不破壞 UI 結構」地刷新所有現存列的下拉與描述
-function refreshSpellDropdowns() {
-  document.querySelectorAll('#tab-spells .form-row').forEach(row => {
-    if (isDerivedSpellRow(row)) return;
-    const selects = row.querySelectorAll('select');
-    if (selects.length < 2) return;
-    const classSel = selects[0];
-    const spellSel = selects[1];
-    const prev = spellSel.value;
-    // 觸發 classSel 的 change 以重建 spell 選項
-    classSel.dispatchEvent(new Event('change'));
-    // 盡量保留原本選到的法術（若在新模式仍存在）
-    if (prev && Array.from(spellSel.options).some(o => o.value === prev)) {
-      spellSel.value = prev;
-    } else if (prev) {
-      spellSel.value = ""; // 避免 UI 崩潰：Basic 模式下曾選 Full 法術時，直接清空
-    }
-    spellSel.dispatchEvent(new Event('change'));
-  });
-}
-
-
-
 
 const classOptions = [
   {value: "bard", text: "吟遊詩人"},
@@ -5120,6 +5365,27 @@ const classOptions = [
   {value: "wizard", text: "法師"},
   // ... 其他職業 ...
 ];
+const SPELL_RING_CONFIGS = Object.freeze([
+  Object.freeze({ ring: 1, areaId: "level1spells-area", pickedId: "picked-level1", slotRowId: "spellslot1-row" }),
+  Object.freeze({ ring: 2, areaId: "level2spells-area", pickedId: "picked-level2", slotRowId: "spellslot2-row" }),
+  Object.freeze({ ring: 3, areaId: "level3spells-area", pickedId: "picked-level3", slotRowId: "spellslot3-row" }),
+  Object.freeze({ ring: 4, areaId: "level4spells-area", pickedId: "picked-level4", slotRowId: "spellslot4-row" })
+]);
+const SPELL_AREA_CONFIGS = Object.freeze([
+  Object.freeze({ level: "cantrips", areaId: "cantrips-area", pickedId: "picked-cantrips" }),
+  ...SPELL_RING_CONFIGS.map(config => Object.freeze({
+    level: config.ring,
+    areaId: config.areaId,
+    pickedId: config.pickedId
+  }))
+]);
+
+function getAvailableSpellSourceClasses(level) {
+  const characterLevel = Number.parseInt(document.getElementById("level")?.value || "8", 10) || 8;
+  const spellLevel = level === "cantrips" ? 0 : Number(level);
+  return classOptions.filter(option => classCanAccessSpellLevel(option.value, characterLevel, spellLevel));
+}
+
 function getSpellLevelLabel(level) {
   if (level === "cantrips") return "戲法";
   const ringMap = ["零", "一", "二", "三", "四", "五", "六", "七", "八", "九"];
@@ -5224,6 +5490,32 @@ function restoreSpellRowState(classSel, spellSel, rowState) {
   }
 }
 
+function renderSpellSourceClassOptions(level, selectedValue = "") {
+  const options = getAvailableSpellSourceClasses(level);
+  const html = `<option value="">--職業--</option>${options.map(option => (
+    `<option value="${escapeHtml(option.value)}">${escapeHtml(option.text)}</option>`
+  )).join("")}`;
+  return {
+    html,
+    value: options.some(option => option.value === selectedValue) ? selectedValue : ""
+  };
+}
+
+function refreshManualSpellSourceOptions() {
+  SPELL_AREA_CONFIGS.forEach(({ areaId, level }) => {
+    document.querySelectorAll(`#${areaId} .spell-entry:not(.spell-entry--derived)`).forEach(row => {
+      const classSel = row.querySelector("select[id*='-class-']");
+      if (!classSel) return;
+      const previousValue = classSel.value || "";
+      const next = renderSpellSourceClassOptions(level, previousValue);
+      if (classSel.innerHTML === next.html && classSel.value === next.value) return;
+      classSel.innerHTML = next.html;
+      classSel.value = next.value;
+      if (next.value !== previousValue) classSel.dispatchEvent(new Event("change"));
+    });
+  });
+}
+
 function createSingleSpellRow(areaId, level, afterRow = null, restoredRowState = null, rowOptions = {}) {
   const area = document.getElementById(areaId);
   if (!area) return;
@@ -5291,13 +5583,7 @@ function createSingleSpellRow(areaId, level, afterRow = null, restoredRowState =
 
   // 職業選單
   const classSel = document.createElement('select');
-
-  const classOptionsWithoutHalfCasters = classOptions.filter(o => o.value !== "paladin" && o.value !== "ranger");
-  const optionsToUse = (level === "cantrips" || level === 3) ? classOptionsWithoutHalfCasters : classOptions;
-
-  classSel.innerHTML =
-    `<option value="">--職業--</option>` +
-    optionsToUse.map(o => `<option value="${o.value}">${o.text}</option>`).join('');
+  classSel.innerHTML = renderSpellSourceClassOptions(level).html;
 
   classSel.id = `${areaId}-class-${idx}`;
 
@@ -5322,7 +5608,7 @@ function createSingleSpellRow(areaId, level, afterRow = null, restoredRowState =
   classSel.addEventListener('change', function () {
     const prevSpell = spellSel.value;
     const classVal = this.value;
-    const spells = classVal ? getSpellsByMode(classVal, level) : [];
+    const spells = classVal ? getClassSpells(classVal, level) : [];
     spellSel.innerHTML = `<option value="">--法術--</option>` + spells.map(s => `<option value="${escapeHtml(s.spellId)}">${escapeHtml(SpellCatalog.getDisplayName(s.spellId))}</option>`).join('');
     if (prevSpell && Array.from(spellSel.options).some(o => o.value === prevSpell)) {
       spellSel.value = prevSpell;
@@ -5412,16 +5698,58 @@ function getPickedSpellSourceTag(row) {
   return "";
 }
 
-function updatePickedSpellBoxes() {
-  const areaToTarget = [
-    { areaId: "cantrips-area", targetId: "picked-cantrips" },
-    { areaId: "level1spells-area", targetId: "picked-level1" },
-    { areaId: "level2spells-area", targetId: "picked-level2" },
-    { areaId: "level3spells-area", targetId: "picked-level3" }
-  ];
+function hasDruidNaturalRecoverySpells() {
+  const classValue = document.getElementById("class")?.value || "";
+  const level = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
+  if (classValue !== "druid" || level < 6 || !document.getElementById("druid-land")?.value) return false;
+  return getSubclassDerivedSpellSpecs().some(spec => typeof spec.ring === "number" && spec.ring >= 1);
+}
 
-  areaToTarget.forEach(({ areaId, targetId }) => {
-    const target = document.getElementById(targetId);
+function isDruidLandSpellRow(row) {
+  return hasDruidNaturalRecoverySpells()
+    && row?.dataset.spellSource === SUBCLASS_SPELL_SOURCE
+    && row.dataset.sourceKey?.startsWith("subclass-druid-")
+    && row.parentElement?.id !== "cantrips-area";
+}
+
+function renderDruidNaturalRecoveryMirror(row, spellName) {
+  if (!isDruidLandSpellRow(row)) return "";
+  const checked = document.getElementById("druid-natural-recovery-used")?.checked ? " checked" : "";
+  return `<label class="druid-natural-recovery-mirror-label"><input type="checkbox" class="druid-natural-recovery-mirror" aria-label="自然恢復：${escapeHtml(spellName)}的免費施法次數已使用"${checked}></label>`;
+}
+
+function syncDruidNaturalRecoveryControls() {
+  const canonical = document.getElementById("druid-natural-recovery-used");
+  if (!canonical) return;
+  document.querySelectorAll(".druid-natural-recovery-mirror").forEach(mirror => {
+    mirror.checked = canonical.checked;
+  });
+}
+
+const DEFAULT_SPELL_LIST_NOTE = "本頁僅提供免費基本規則法術；部分 PHB 專屬內容未列入。";
+const DUPLICATE_SPELL_LIST_NOTE = "法術列表存在重複，請冒險者留意！";
+
+function hasDuplicateSelectedSpells() {
+  const seenSpellIds = new Set();
+  return Array.from(document.querySelectorAll("#tab-spells .spell-entry select[id*='-spell-']")).some((select) => {
+    const spellId = select.value || "";
+    if (!spellId) return false;
+    if (seenSpellIds.has(spellId)) return true;
+    seenSpellIds.add(spellId);
+    return false;
+  });
+}
+
+function updateSpellListStatusNote() {
+  const note = document.getElementById("spell-list-status-note");
+  if (!note) return;
+  const nextText = hasDuplicateSelectedSpells() ? DUPLICATE_SPELL_LIST_NOTE : DEFAULT_SPELL_LIST_NOTE;
+  if (note.textContent !== nextText) note.textContent = nextText;
+}
+
+function updatePickedSpellBoxes() {
+  SPELL_AREA_CONFIGS.forEach(({ areaId, pickedId }) => {
+    const target = document.getElementById(pickedId);
     if (!target) return;
     const checkedState = new Map(Array.from(document.querySelectorAll(".free-spell-use-check"), box => [box.id, box.checked]));
     const spells = Array.from(document.querySelectorAll(`#${areaId} select[id*='-spell-']`))
@@ -5438,10 +5766,13 @@ function updatePickedSpellBoxes() {
       const row = select.closest(".spell-entry");
       const sourceKey = row?.dataset.sourceKey || "";
       const sourceTag = getPickedSpellSourceTag(row);
-      return `<span class="spell-picked-jump" role="button" tabindex="0" data-spell-jump="picked" data-area-id="${areaId}" data-spell-id="${escapeHtml(spellId)}" data-source-key="${escapeHtml(sourceKey)}">[${escapeHtml(nameZh)}]</span>${sourceTag ? `<span class="spell-picked-source-tag">[${sourceTag}]</span>` : ""}${useChecks}`;
+      const naturalRecovery = renderDruidNaturalRecoveryMirror(row, nameZh);
+      return `<span class="spell-picked-jump" role="button" tabindex="0" data-spell-jump="picked" data-area-id="${areaId}" data-spell-id="${escapeHtml(spellId)}" data-source-key="${escapeHtml(sourceKey)}">[${escapeHtml(nameZh)}]</span>${sourceTag ? `<span class="spell-picked-source-tag">[${sourceTag}]</span>` : ""}${useChecks}${naturalRecovery}`;
     }).join("\n");
     setupAutoSave(target);
   });
+  syncDruidNaturalRecoveryControls();
+  updateSpellListStatusNote();
 }
 
 function getFixedTabOffsetPadding() {
@@ -5510,7 +5841,7 @@ const SPELL_SEARCH_LEVEL_LABELS = {
 const SPELL_SEARCH_LEVEL_ORDER = ["cantrips", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
 let spellSearchIndex = null;
 
-function initializeSpellSearchIndex() { if(spellSearchIndex)return;spellSearchIndex=SpellCatalog.getAllSpells().map(spell=>({spellId:spell.spellId,spell,levelKey:spell.level===0?"cantrips":String(spell.level),classKeys:SpellCatalog.getClassIds(spell.spellId,SPELL_MODE),searchText:(spell.nameZh+"\n"+spell.nameEn+"\n"+SpellCatalog.getDisplayName(spell.spellId)+"\n"+spell.desc).toLowerCase()})); }
+function initializeSpellSearchIndex() { if(spellSearchIndex)return;spellSearchIndex=SpellCatalog.getAllSpells().map(spell=>({spellId:spell.spellId,spell,levelKey:spell.level===0?"cantrips":String(spell.level),classKeys:SpellCatalog.getClassIds(spell.spellId),searchText:(spell.nameZh+"\n"+spell.nameEn+"\n"+SpellCatalog.getDisplayName(spell.spellId)+"\n"+spell.desc).toLowerCase()})); }
 
 function clearSpellSearchResults() {
   const results = document.getElementById("spell-search-results");
@@ -5987,8 +6318,8 @@ function resetSpellSlotsAfterCharacterChange() {
 }
 
 function updateSpellSlotRows(slotCounts) {
-  [1, 2, 3].forEach(ring => {
-    const row = document.getElementById(`spellslot${ring}-row`);
+  SPELL_RING_CONFIGS.forEach(({ ring, slotRowId }) => {
+    const row = document.getElementById(slotRowId);
     if (!row) return;
     const count = slotCounts[ring - 1] || 0;
     row.style.display = count > 0 ? "" : "none";
@@ -6010,15 +6341,9 @@ function updateSpellsByClassLevel() {
   const level = Number.parseInt(lvl || "0", 10) || 0;
   const slotCounts = getSpellSlotCounts(cls, level);
   const hasSlots = slotCounts.some(Boolean);
-  const maxRing = complete ? getMaxSpellRing(cls, lvl) : 3;
+  const maxRing = complete ? getMaxSpellRing(cls, lvl) : SPELL_RING_CONFIGS.length;
 
-  const ringAreas = [
-    { ring: 1, areaId: "level1spells-area" },
-    { ring: 2, areaId: "level2spells-area" },
-    { ring: 3, areaId: "level3spells-area" },
-  ];
-
-  ringAreas.forEach(({ ring, areaId }) => {
+  SPELL_RING_CONFIGS.forEach(({ ring, areaId }) => {
     const area = document.getElementById(areaId);
     const sec = area?.closest(".section");
     if (!sec) return;
@@ -6030,6 +6355,7 @@ function updateSpellsByClassLevel() {
   if (management) management.classList.toggle("is-hidden", !complete || !hasSlots);
   if (noSlotsMessage) noSlotsMessage.classList.toggle("is-hidden", !complete || hasSlots);
   updateSpellSlotRows(slotCounts);
+  refreshManualSpellSourceOptions();
 }
 
 
@@ -6436,7 +6762,32 @@ document.addEventListener("click", (e) => {
 
 document.addEventListener("change", (e) => {
   const target = e.target;
-  if (!(target instanceof HTMLInputElement)) return;
+  if (!(target instanceof HTMLInputElement) && !(target instanceof HTMLSelectElement)) return;
+
+  if (target.classList.contains("druid-natural-recovery-mirror")) {
+    const canonical = document.getElementById("druid-natural-recovery-used");
+    if (canonical) {
+      canonical.checked = target.checked;
+      canonical.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    return;
+  }
+
+  if (target.id === "druid-natural-recovery-used") {
+    syncDruidNaturalRecoveryControls();
+    scheduleSaveAllFields();
+    return;
+  }
+
+  if (ADVANCED_CLASS_FEATURE_CHOICE_GROUPS.some(ids => ids.includes(target.id))) {
+    enforceAdvancedClassFeatureChoiceExclusivity(target.id);
+    syncClassFeatureAttackNotes();
+    scheduleSaveAllFields();
+  }
+
+  if (target.id === "sorcerer-elemental-affinity-damage-type") {
+    scheduleSaveAllFields();
+  }
 
   if (target.id === "cleric-guardian" || target.id === "cleric-trickster") {
     enforceClericMissionExclusivity(target.id);
@@ -6510,13 +6861,7 @@ async function decompressJson(bytes) {
 }
 
 function getSpellAreaConfigs() {
-  const ids = Array.from(document.querySelectorAll("#cantrips-area, div[id$='spells-area']"))
-    .map(el => el.id);
-  return ids.map(id => {
-    if (id === "cantrips-area") return { id, level: "cantrips" };
-    const m = id.match(/^level(\d+)spells-area$/);
-    return m ? { id, level: parseInt(m[1], 10) } : null;
-  }).filter(Boolean);
+  return SPELL_AREA_CONFIGS.map(({ areaId, level }) => ({ id: areaId, level }));
 }
 
 function isSpellAreaId(areaId) {
@@ -6735,6 +7080,9 @@ function applyStateObject(data) {
     updateSpellCastingStatsVisibility();
     updateSpellsByClassLevel();
     updatePickedSpellBoxes();
+    syncHitDiceCountToLevel({ preserveCurrent: true });
+    syncAdvancedClassFeatureControls();
+    syncDruidNaturalRecoveryControls();
     refreshFeatDerivedEffects();
     syncAutomaticKeyStatsMode();
   } finally {
@@ -6909,6 +7257,42 @@ function buildPdfPrecheckMessages() {
     });
   }
 
+  const advancedClassFeatureRequirements = {
+    cleric: {
+      minimumLevel: 7,
+      ids: ["cleric-blessed-strikes-divine-strike", "cleric-blessed-strikes-potent-spellcasting"],
+      message: "牧師神佑打擊尚未選擇。"
+    },
+    druid: {
+      minimumLevel: 7,
+      ids: ["druid-elemental-fury-primal-strike", "druid-elemental-fury-potent-spellcasting"],
+      message: "德魯伊元素狂怒尚未選擇。"
+    },
+    ranger: {
+      minimumLevel: 7,
+      ids: ["ranger-defensive-tactics-escape-the-horde", "ranger-defensive-tactics-multiattack-defense"],
+      message: "遊俠防守戰術尚未選擇。"
+    }
+  };
+  const advancedRequirement = advancedClassFeatureRequirements[selectedClass];
+  if (advancedRequirement && selectedLevel >= advancedRequirement.minimumLevel) {
+    const hasChoice = advancedRequirement.ids.some(id => document.getElementById(id)?.checked);
+    if (!hasChoice) reminders.push({
+      message: advancedRequirement.message,
+      tab: "basic",
+      selector: advancedRequirement.ids.map(id => `#${id}`).join(", "),
+      focusSelector: `#${advancedRequirement.ids[0]}`
+    });
+  }
+  if (selectedClass === "sorcerer" && selectedLevel >= 6 && !(document.getElementById("sorcerer-elemental-affinity-damage-type")?.value || "").trim()) {
+    reminders.push({
+      message: "術士元素親和傷害類型尚未選擇。",
+      tab: "basic",
+      selector: "#sorcerer-elemental-affinity-damage-type",
+      focusSelector: "#sorcerer-elemental-affinity-damage-type"
+    });
+  }
+
   if (selectedClass === "druid" && selectedLevel >= 3 && !(document.getElementById("druid-land")?.value || "").trim()) {
     reminders.push({
       message: "大地結社地貌尚未選擇。",
@@ -6921,6 +7305,10 @@ function buildPdfPrecheckMessages() {
   const fightingStyleSelect = selectedClass ? document.getElementById(`derived-feat-fighting-style-${selectedClass}`) : null;
   if (selectedClass === "fighter" && selectedLevel >= 1 && !fightingStyleSelect?.value) {
     reminders.push({ message: "戰士戰鬥風格尚未選擇。", tab: "basic", selector: "#feats-area", focusSelector: "#derived-feat-fighting-style-fighter" });
+  }
+  const additionalFightingStyleSelect = document.getElementById("derived-feat-fighting-style-fighter-2");
+  if (selectedClass === "fighter" && selectedLevel >= 7 && !additionalFightingStyleSelect?.value) {
+    reminders.push({ message: "戰士額外戰鬥風格尚未選擇。", tab: "basic", selector: "#feats-area", focusSelector: "#derived-feat-fighting-style-fighter-2" });
   }
   if (["paladin", "ranger"].includes(selectedClass) && selectedLevel >= 2) {
     const styleId = `${selectedClass}-fighting-style`;
@@ -7284,7 +7672,7 @@ let structureSaveDebounceTimer = null;
 let autosaveDirty = false;
 let autosaveSuspended = false;
 let autosaveClearing = false;
-const AUTOSAVE_EXCLUDED_IDS = new Set(["spell-search", "equipment-search", "equipment-purchase-quantity"]);
+const AUTOSAVE_EXCLUDED_IDS = new Set(["spell-search", "equipment-search", "equipment-purchase-quantity", "dice-system-toggle"]);
 
 function getAutosaveElements(root = document) {
   return Array.from(root.querySelectorAll("input, select, textarea"))
@@ -7734,11 +8122,11 @@ window.addEventListener("DOMContentLoaded", async function() {
   });
   updateEquipmentLoadoutSummary();
   // 2. 產生所有法術下拉欄位
-for (let i = 0; i < 1; i++) createSingleSpellRow('cantrips-area', 'cantrips');
-for (let i = 0; i < 1; i++) createSingleSpellRow('level1spells-area', 1);
-for (let i = 0; i < 1; i++) createSingleSpellRow('level2spells-area', 2);
-for (let i = 0; i < 1; i++) createSingleSpellRow('level3spells-area', 3);
-for (let i = 0; i < 1; i++) createSingleFeatRow();
+  SPELL_AREA_CONFIGS.forEach(({ areaId, level }) => {
+    if (!getSpellRowsForState(areaId, false).length) createSingleSpellRow(areaId, level);
+  });
+  if (!getManualFeatRows().length) createSingleFeatRow();
+  syncEntitledManualFeatRows();
   // 3. 還原所有欄位狀態
   const { data: sharedData, error: sharedError } = await decodeStateFromHash();
   if (sharedData) {
@@ -7757,6 +8145,7 @@ for (let i = 0; i < 1; i++) createSingleFeatRow();
   updateRaceOptionVisibility();
   updateClassFeatureOptionVisibility();
   updateHitDieLabel();
+  syncHitDiceCountToLevel({ preserveCurrent: true });
   syncDerivedFeatRows();
   syncBardInstrumentRows();
   syncOriginAndSubclassDerivedSpellRows();
@@ -7853,6 +8242,38 @@ for (let i = 0; i < 1; i++) createSingleFeatRow();
   </div>
   <div><a href="https://twD20.com/">twD20.com</a> | 5.5版手機角卡 | <a href="https://tinyurl.com/srd5etw" target="_blank" rel="noopener">空白角卡下載</a></div>
 </footer>
+
+<button type="button" id="dice-roller-fab" class="is-hidden" aria-label="開啟擲骰系統" aria-controls="dice-roller-modal" aria-expanded="false">🎲</button>
+
+<div id="dice-roller-modal" class="dice-roller-modal" aria-hidden="true" inert hidden>
+  <section class="dice-roller-card" role="dialog" aria-modal="true" aria-labelledby="dice-roller-title" aria-describedby="dice-roller-instructions" tabindex="-1">
+    <header class="dice-roller-header">
+      <h2 id="dice-roller-title">擲骰</h2>
+      <button type="button" id="dice-roller-close" class="dice-roller-close" aria-label="關閉擲骰視窗">✕</button>
+    </header>
+    <p id="dice-roller-instructions" class="sr-only">點擊骰子按鈕增加數量；長按一點二秒，或聚焦後按 Delete，會清空該種骰子。</p>
+    <div class="dice-roller-display">
+      <div id="dice-roller-stage" class="dice-roller-stage" role="status" aria-live="polite" aria-atomic="true" tabindex="-1">
+        <span class="dice-roller-empty">選取骰子後按 ROLL</span>
+      </div>
+      <div class="dice-roller-total" aria-label="擲骰加總">
+        <button type="button" id="dice-roller-history-toggle" class="dice-roller-total-toggle" aria-label="顯示擲骰紀錄" aria-pressed="false">總和</button>
+        <output id="dice-roller-total-value">—</output>
+      </div>
+    </div>
+    <div class="dice-roller-controls" role="group" aria-label="骰子選擇與擲骰操作">
+      <button type="button" class="dice-roller-die" data-die="100" aria-pressed="false"><span>100</span><span class="dice-roller-count" aria-hidden="true"></span></button>
+      <button type="button" class="dice-roller-die" data-die="20" aria-pressed="false"><span>20</span><span class="dice-roller-count" aria-hidden="true"></span></button>
+      <button type="button" class="dice-roller-die" data-die="12" aria-pressed="false"><span>12</span><span class="dice-roller-count" aria-hidden="true"></span></button>
+      <button type="button" class="dice-roller-die" data-die="10" aria-pressed="false"><span>10</span><span class="dice-roller-count" aria-hidden="true"></span></button>
+      <button type="button" class="dice-roller-die" data-die="8" aria-pressed="false"><span>8</span><span class="dice-roller-count" aria-hidden="true"></span></button>
+      <button type="button" class="dice-roller-die" data-die="6" aria-pressed="false"><span>6</span><span class="dice-roller-count" aria-hidden="true"></span></button>
+      <button type="button" class="dice-roller-die" data-die="4" aria-pressed="false"><span>4</span><span class="dice-roller-count" aria-hidden="true"></span></button>
+      <button type="button" id="dice-roller-roll" class="dice-roller-roll" disabled>ROLL</button>
+      <button type="button" id="dice-roller-clear" class="dice-roller-clear" aria-label="清空所有骰子">X</button>
+    </div>
+  </section>
+</div>
 
 <div id="spell-qr-modal" aria-hidden="true" inert>
   <div class="spell-qr-modal-card" role="dialog" aria-modal="true" aria-label="QR Code">

@@ -45,28 +45,38 @@
   const SPELLCASTER_BACKGROUNDS = new Set(["acolyte", "sage"]);
   const NON_SPELLCASTER_RACES = new Set(["dragonborn", "dwarf", "goliath", "halfling", "human", "orc"]);
   const SPELLCASTER_RACES = new Set(["elf", "gnome", "tiefling"]);
+  const CLASS_CANTRIP_CLASSES = new Set(["bard", "cleric", "druid", "sorcerer", "warlock", "wizard"]);
   const STANDARD_SPELL_SLOTS = Object.freeze({
-    1: Object.freeze([2, 0, 0]),
-    2: Object.freeze([3, 0, 0]),
-    3: Object.freeze([4, 2, 0]),
-    4: Object.freeze([4, 3, 0]),
-    5: Object.freeze([4, 3, 2])
+    1: Object.freeze([2, 0, 0, 0]),
+    2: Object.freeze([3, 0, 0, 0]),
+    3: Object.freeze([4, 2, 0, 0]),
+    4: Object.freeze([4, 3, 0, 0]),
+    5: Object.freeze([4, 3, 2, 0]),
+    6: Object.freeze([4, 3, 3, 0]),
+    7: Object.freeze([4, 3, 3, 1]),
+    8: Object.freeze([4, 3, 3, 2])
   });
 
   const HALF_CASTER_SPELL_SLOTS = Object.freeze({
-    1: Object.freeze([2, 0, 0]),
-    2: Object.freeze([2, 0, 0]),
-    3: Object.freeze([3, 0, 0]),
-    4: Object.freeze([3, 0, 0]),
-    5: Object.freeze([4, 2, 0])
+    1: Object.freeze([2, 0, 0, 0]),
+    2: Object.freeze([2, 0, 0, 0]),
+    3: Object.freeze([3, 0, 0, 0]),
+    4: Object.freeze([3, 0, 0, 0]),
+    5: Object.freeze([4, 2, 0, 0]),
+    6: Object.freeze([4, 2, 0, 0]),
+    7: Object.freeze([4, 3, 0, 0]),
+    8: Object.freeze([4, 3, 0, 0])
   });
 
   const WARLOCK_SPELL_SLOTS = Object.freeze({
-    1: Object.freeze([1, 0, 0]),
-    2: Object.freeze([2, 0, 0]),
-    3: Object.freeze([0, 2, 0]),
-    4: Object.freeze([0, 2, 0]),
-    5: Object.freeze([0, 0, 2])
+    1: Object.freeze([1, 0, 0, 0]),
+    2: Object.freeze([2, 0, 0, 0]),
+    3: Object.freeze([0, 2, 0, 0]),
+    4: Object.freeze([0, 2, 0, 0]),
+    5: Object.freeze([0, 0, 2, 0]),
+    6: Object.freeze([0, 0, 2, 0]),
+    7: Object.freeze([0, 0, 0, 2]),
+    8: Object.freeze([0, 0, 0, 2])
   });
 
   /** 將屬性值換算成屬性調整值；無效輸入視為 0。 */
@@ -162,7 +172,8 @@
     const numericLevel = Number.parseInt(level, 10);
     if (numericLevel <= 1 || !Number.isFinite(numericLevel)) return 1;
     if (numericLevel <= 4) return 3;
-    return 5;
+    if (numericLevel <= 6) return 5;
+    return 6;
   }
 
   /** 依等級取得武僧武藝傷害骰。 */
@@ -170,16 +181,39 @@
     return Number(level) >= 5 ? "1d8" : "1d6";
   }
 
-  /** 取得指定職業與等級的一至三環法術位數量。 */
+  /** 取得指定職業與等級的一至四環法術位數量。 */
   function getSpellSlotCounts(className, level) {
+    const numericLevel = Number(level);
+    if (!Number.isInteger(numericLevel)) return [0, 0, 0, 0];
     if (["bard", "cleric", "druid", "sorcerer", "wizard"].includes(className)) {
-      return STANDARD_SPELL_SLOTS[level] || [0, 0, 0];
+      return STANDARD_SPELL_SLOTS[numericLevel] || [0, 0, 0, 0];
     }
     if (["paladin", "ranger"].includes(className)) {
-      return HALF_CASTER_SPELL_SLOTS[level] || [0, 0, 0];
+      return HALF_CASTER_SPELL_SLOTS[numericLevel] || [0, 0, 0, 0];
     }
-    if (className === "warlock") return WARLOCK_SPELL_SLOTS[level] || [0, 0, 0];
-    return [0, 0, 0];
+    if (className === "warlock") return WARLOCK_SPELL_SLOTS[numericLevel] || [0, 0, 0, 0];
+    return [0, 0, 0, 0];
+  }
+
+  /** 判斷職業在指定角色等級是否可使用某一法術環階。 */
+  function classCanAccessSpellLevel(className, characterLevel, spellLevel) {
+    const numericSpellLevel = Number(spellLevel);
+    if (!Number.isInteger(numericSpellLevel) || numericSpellLevel < 0 || numericSpellLevel > 4) return false;
+    if (numericSpellLevel === 0) return CLASS_CANTRIP_CLASSES.has(className);
+
+    const slotCounts = getSpellSlotCounts(className, characterLevel);
+    const highestSpellLevel = slotCounts.reduce(
+      (highest, count, index) => count > 0 ? index + 1 : highest,
+      0
+    );
+    return numericSpellLevel <= highestSpellLevel;
+  }
+
+  /** 計算聖騎士守護靈氣提供的豁免加值。 */
+  function getPaladinAuraSavingThrowBonus(className, level, charismaScore) {
+    const numericLevel = Number(level);
+    if (className !== "paladin" || !Number.isInteger(numericLevel) || numericLevel < 6) return 0;
+    return Math.max(1, calculateAbilityModifier(charismaScore));
   }
 
   /** 計算 AC，包含無甲防禦、護甲、盾牌及防禦戰鬥風格。 */
@@ -231,7 +265,7 @@
     return Number.isFinite(parsed) ? parsed : 0;
   }
 
-  /** 計算角色速度，包含種族覆寫及武僧、野蠻人的職業加值條件。 */
+  /** 計算角色速度，包含種族覆寫及武僧、野蠻人、遊俠的職業加值條件。 */
   function calculateCharacterSpeed(options = {}) {
     const baseSpeedValue = Number.parseFloat(options.baseSpeed);
     const race = String(options.race || "").trim();
@@ -253,8 +287,14 @@
       && Number.isFinite(level)
       && level >= 5
       && !options.isWearingHeavyArmor;
+    const rangerBonusApplies = className === "ranger"
+      && Number.isFinite(level)
+      && level >= 6
+      && !options.isWearingHeavyArmor;
 
-    const classSpeedBonus = (monkBonusApplies || barbarianBonusApplies) ? 10 : 0;
+    let classSpeedBonus = 0;
+    if (monkBonusApplies) classSpeedBonus = level >= 6 ? 15 : 10;
+    else if (barbarianBonusApplies || rangerBonusApplies) classSpeedBonus = 10;
     const featSpeedBonus = options.hasSpeedyFeat ? 10 : 0;
     return String(baseSpeed + classSpeedBonus + featSpeedBonus);
   }
@@ -267,6 +307,7 @@
     calculateCharacterSpeed,
     calculateProficiencyBonus,
     calculateWarlockInvocationSelectionLimit,
+    classCanAccessSpellLevel,
     clampHpValue,
     formatSignedValue,
     getCharacterSizeForRace,
@@ -274,6 +315,7 @@
     getHitDiceValues,
     getMetamagicSelectionLimit,
     getMonkMartialArtsDieByLevel,
+    getPaladinAuraSavingThrowBonus,
     getSpellSlotCounts,
     hasSpellcastingCapabilityForSelections,
     normalizeCharacterSize,

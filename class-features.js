@@ -41,10 +41,28 @@ const DRUID_WILD_SHAPE_BEASTS = [
   { key: "scorpion", label: "蠍子", cr: "0" },
   { key: "seahorse", label: "海馬", cr: "0" },
   { key: "venomous_snake", label: "毒蛇", cr: "1/8" },
-  { key: "weasel", label: "鼬", cr: "0" }
+  { key: "weasel", label: "鼬", cr: "0" },
+  { key: "bat", label: "蝙蝠", cr: "0", hasFlight: true },
+  { key: "blood_hawk", label: "血鷹", cr: "1/8", hasFlight: true },
+  { key: "eagle", label: "鷹", cr: "0", hasFlight: true },
+  { key: "giant_bat", label: "巨蝙蝠", cr: "1/4", hasFlight: true },
+  { key: "giant_wasp", label: "巨蜂", cr: "1/2", hasFlight: true },
+  { key: "hawk", label: "獵鷹", cr: "0", hasFlight: true },
+  { key: "owl", label: "貓頭鷹", cr: "0", hasFlight: true },
+  { key: "pteranodon", label: "翼手龍", cr: "1/4", hasFlight: true },
+  { key: "raven", label: "渡鴉", cr: "0", hasFlight: true },
+  { key: "vulture", label: "禿鷹", cr: "0", hasFlight: true },
+  { key: "brown_bear", label: "棕熊", cr: "1" },
+  { key: "dire_wolf", label: "恐狼", cr: "1" },
+  { key: "giant_hyena", label: "巨鬣狗", cr: "1" },
+  { key: "giant_octopus", label: "巨章魚", cr: "1" },
+  { key: "giant_spider", label: "巨蜘蛛", cr: "1" },
+  { key: "giant_toad", label: "巨蟾蜍", cr: "1" },
+  { key: "lion", label: "獅子", cr: "1" },
+  { key: "tiger", label: "老虎", cr: "1" }
 ];
 
-const DRUID_WILD_SHAPE_CR_ORDER = ["0", "1/8", "1/4", "1/2"];
+const DRUID_WILD_SHAPE_CR_ORDER = ["0", "1/8", "1/4", "1/2", "1"];
 
 const DRUID_WILD_SHAPE_BEAST_LIST_HTML = `<details class="wild-shape-beast-disclosure">
   <summary>
@@ -56,7 +74,7 @@ const DRUID_WILD_SHAPE_BEAST_LIST_HTML = `<details class="wild-shape-beast-discl
       const beasts = DRUID_WILD_SHAPE_BEASTS.filter((beast) => beast.cr === cr);
       return `<section class="wild-shape-beast-group" aria-labelledby="wild-shape-cr-${cr.replace("/", "-")}">
         <h4 id="wild-shape-cr-${cr.replace("/", "-")}">CR ${cr}</h4>
-        <div class="wild-shape-beast-grid">${beasts.map(({ key, label }) => `<span class="beast-tip" data-beast="${key}">${label}</span>`).join("")}</div>
+        <div class="wild-shape-beast-grid">${beasts.map(({ key, label, hasFlight }) => `<span class="beast-tip" data-beast="${key}">${label}${hasFlight ? "（飛行；8 級+）" : ""}</span>`).join("")}</div>
       </section>`;
     }).join("")}
   </div>
@@ -161,6 +179,30 @@ const classFeatures = {
         <td style="border:1px solid #aaa; padding:3px;">+2</td>
         <td style="border:1px solid #aaa; padding:3px;">3</td>
       </tr>
+      <tr>
+        <td style="border:1px solid #aaa; padding:3px;">6</td>
+        <td style="border:1px solid #aaa; padding:3px;">+3</td>
+        <td style="border:1px solid #aaa; padding:3px;">子職特性</td>
+        <td style="border:1px solid #aaa; padding:3px;">4</td>
+        <td style="border:1px solid #aaa; padding:3px;">+2</td>
+        <td style="border:1px solid #aaa; padding:3px;">3</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #aaa; padding:3px;">7</td>
+        <td style="border:1px solid #aaa; padding:3px;">+3</td>
+        <td style="border:1px solid #aaa; padding:3px;">野性直覺，直覺猛撲</td>
+        <td style="border:1px solid #aaa; padding:3px;">4</td>
+        <td style="border:1px solid #aaa; padding:3px;">+2</td>
+        <td style="border:1px solid #aaa; padding:3px;">3</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #aaa; padding:3px;">8</td>
+        <td style="border:1px solid #aaa; padding:3px;">+3</td>
+        <td style="border:1px solid #aaa; padding:3px;">屬性值提升</td>
+        <td style="border:1px solid #aaa; padding:3px;">4</td>
+        <td style="border:1px solid #aaa; padding:3px;">+2</td>
+        <td style="border:1px solid #aaa; padding:3px;">3</td>
+      </tr>
      </tbody>
     </table>
 <div class="class-feature-content">
@@ -247,6 +289,26 @@ const classFeatures = {
   <h3>等級 5：快速移動</h3>
   <p>若你未穿重甲，速度 +10 呎。</p>
 </section>
+
+<section class="barbarian-feature class-feature-section" data-feature-level="6">
+  <h3>等級 6：無我狂暴（狂戰子職）</h3>
+  <p>狂暴期間，你免疫魅惑與恐慌狀態。若你進入狂暴時正處於其中一種狀態，該狀態立即終止。</p>
+</section>
+
+<section class="barbarian-feature class-feature-section" data-feature-level="7">
+  <h3>等級 7：野性本能</h3>
+  <p>你的先攻擲骰具有優勢。</p>
+</section>
+
+<section class="barbarian-feature class-feature-section" data-feature-level="7">
+  <h3>等級 7：直覺猛撲</h3>
+  <p>當你以附贈動作進入狂暴時，可以在該附贈動作中移動至多等同於你速度一半的距離。</p>
+</section>
+
+<section class="barbarian-feature class-feature-section" data-feature-level="8">
+  <h3>等級 8：屬性值提升</h3>
+  <p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p>
+</section>
 </div>`,
 
   bard: `<table class="class-core-profile-table class-core-profile-table--bard" aria-label="吟遊詩人核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
@@ -307,6 +369,7 @@ const classFeatures = {
           <th style="border:1px solid #aaa; padding:3px; white-space:nowrap;">１環</th>
           <th style="border:1px solid #aaa; padding:3px; white-space:nowrap;">２環</th>
           <th style="border:1px solid #aaa; padding:3px; white-space:nowrap;">３環</th>
+          <th style="border:1px solid #aaa; padding:3px; white-space:nowrap;">４環</th>
         </tr>
       </thead>
       <tbody>
@@ -320,6 +383,7 @@ const classFeatures = {
           <td style="border:1px solid #aaa; padding:3px;">2</td>
           <td style="border:1px solid #aaa; padding:3px;">-</td>
           <td style="border:1px solid #aaa; padding:3px;">-</td>
+          <td style="border:1px solid #aaa; padding:3px;">-</td>
         </tr>
         <tr>
           <td style="border:1px solid #aaa; padding:3px;">2</td>
@@ -329,6 +393,7 @@ const classFeatures = {
           <td style="border:1px solid #aaa; padding:3px;">2</td>
           <td style="border:1px solid #aaa; padding:3px;">5</td>
           <td style="border:1px solid #aaa; padding:3px;">3</td>
+          <td style="border:1px solid #aaa; padding:3px;">-</td>
           <td style="border:1px solid #aaa; padding:3px;">-</td>
           <td style="border:1px solid #aaa; padding:3px;">-</td>
         </tr>
@@ -342,6 +407,7 @@ const classFeatures = {
           <td style="border:1px solid #aaa; padding:3px;">4</td>
           <td style="border:1px solid #aaa; padding:3px;">2</td>
           <td style="border:1px solid #aaa; padding:3px;">-</td>
+          <td style="border:1px solid #aaa; padding:3px;">-</td>
         </tr>
         <tr>
           <td style="border:1px solid #aaa; padding:3px;">4</td>
@@ -353,8 +419,9 @@ const classFeatures = {
           <td style="border:1px solid #aaa; padding:3px;">4</td>
           <td style="border:1px solid #aaa; padding:3px;">3</td>
           <td style="border:1px solid #aaa; padding:3px;">-</td>
+          <td style="border:1px solid #aaa; padding:3px;">-</td>
         </tr>
-        <tr>
+<tr>
           <td style="border:1px solid #aaa; padding:3px;">5</td>
           <td style="border:1px solid #aaa; padding:3px;">+3</td>
           <td style="border:1px solid #aaa; padding:3px;">激勵之源</td>
@@ -362,6 +429,43 @@ const classFeatures = {
           <td style="border:1px solid #aaa; padding:3px;">3</td>
           <td style="border:1px solid #aaa; padding:3px;">9</td>
           <td style="border:1px solid #aaa; padding:3px;">4</td>
+          <td style="border:1px solid #aaa; padding:3px;">3</td>
+          <td style="border:1px solid #aaa; padding:3px;">2</td>
+          <td style="border:1px solid #aaa; padding:3px;">-</td>
+        </tr>
+        <tr>
+          <td style="border:1px solid #aaa; padding:3px;">6</td>
+          <td style="border:1px solid #aaa; padding:3px;">+3</td>
+          <td style="border:1px solid #aaa; padding:3px;">子職特性</td>
+          <td style="border:1px solid #aaa; padding:3px;">D8</td>
+          <td style="border:1px solid #aaa; padding:3px;">3</td>
+          <td style="border:1px solid #aaa; padding:3px;">10</td>
+          <td style="border:1px solid #aaa; padding:3px;">4</td>
+          <td style="border:1px solid #aaa; padding:3px;">3</td>
+          <td style="border:1px solid #aaa; padding:3px;">3</td>
+          <td style="border:1px solid #aaa; padding:3px;">-</td>
+        </tr>
+        <tr>
+          <td style="border:1px solid #aaa; padding:3px;">7</td>
+          <td style="border:1px solid #aaa; padding:3px;">+3</td>
+          <td style="border:1px solid #aaa; padding:3px;">反迷惑</td>
+          <td style="border:1px solid #aaa; padding:3px;">D8</td>
+          <td style="border:1px solid #aaa; padding:3px;">3</td>
+          <td style="border:1px solid #aaa; padding:3px;">11</td>
+          <td style="border:1px solid #aaa; padding:3px;">4</td>
+          <td style="border:1px solid #aaa; padding:3px;">3</td>
+          <td style="border:1px solid #aaa; padding:3px;">3</td>
+          <td style="border:1px solid #aaa; padding:3px;">1</td>
+        </tr>
+        <tr>
+          <td style="border:1px solid #aaa; padding:3px;">8</td>
+          <td style="border:1px solid #aaa; padding:3px;">+3</td>
+          <td style="border:1px solid #aaa; padding:3px;">屬性值提升</td>
+          <td style="border:1px solid #aaa; padding:3px;">D8</td>
+          <td style="border:1px solid #aaa; padding:3px;">3</td>
+          <td style="border:1px solid #aaa; padding:3px;">12</td>
+          <td style="border:1px solid #aaa; padding:3px;">4</td>
+          <td style="border:1px solid #aaa; padding:3px;">3</td>
           <td style="border:1px solid #aaa; padding:3px;">3</td>
           <td style="border:1px solid #aaa; padding:3px;">2</td>
         </tr>
@@ -461,6 +565,9 @@ const classFeatures = {
   <p>你在短休或長休後都能回復已消耗的激勵次數。</p>
   <p>此外，你可消耗 1 個法術位換回 1 次激勵使用次數（不耗動作）。</p>
 </section>
+<section class="bard-feature class-feature-section" data-feature-level="6"><h3>等級 6：魔法發現（逸聞子職）</h3><p>你從牧師、德魯伊或法師的法術列表中選擇並學會兩個法術；兩者可以來自不同列表。所選法術必須是戲法，或是你已有對應法術位的法術。</p><p>你始終準備所選法術。每當你獲得一個吟遊詩人等級時，可以將其中一個替換為另一個符合條件的法術。</p></section>
+<section class="bard-feature class-feature-section" data-feature-level="7"><h3>等級 7：反迷惑</h3><p>當你或你30呎內的一個生物在抵抗魅惑或恐慌狀態的豁免檢定中失敗時，你可以執行反應，使失敗者重新進行該豁免，且新的檢定具有優勢。</p></section>
+<section class="bard-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
 </div>`,
 
   cleric: `<table class="class-core-profile-table class-core-profile-table--cleric" aria-label="牧師核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
@@ -526,6 +633,7 @@ const classFeatures = {
           <th style="border:1px solid #aaa; padding:3px;">１環</th>
           <th style="border:1px solid #aaa; padding:3px;">２環</th>
           <th style="border:1px solid #aaa; padding:3px;">３環</th>
+          <th style="border:1px solid #aaa; padding:3px;">４環</th>
         </tr>
       </thead>
   <tbody>
@@ -539,6 +647,7 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
+          <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
@@ -550,6 +659,7 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
+          <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
@@ -561,6 +671,7 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
+          <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
@@ -572,6 +683,7 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
+          <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
@@ -583,8 +695,12 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
+          <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
-  </tbody>
+    <tr><td style="border:1px solid #aaa; padding:3px;">6</td><td style="border:1px solid #aaa; padding:3px;">+3</td><td style="border:1px solid #aaa; padding:3px;">子職特性</td><td style="border:1px solid #aaa; padding:3px;">3</td><td style="border:1px solid #aaa; padding:3px;">4</td><td style="border:1px solid #aaa; padding:3px;">10</td><td style="border:1px solid #aaa; padding:3px;">4</td><td style="border:1px solid #aaa; padding:3px;">3</td><td style="border:1px solid #aaa; padding:3px;">3</td><td style="border:1px solid #aaa; padding:3px;">-</td></tr>
+    <tr><td style="border:1px solid #aaa; padding:3px;">7</td><td style="border:1px solid #aaa; padding:3px;">+3</td><td style="border:1px solid #aaa; padding:3px;">神佑打擊</td><td style="border:1px solid #aaa; padding:3px;">3</td><td style="border:1px solid #aaa; padding:3px;">4</td><td style="border:1px solid #aaa; padding:3px;">11</td><td style="border:1px solid #aaa; padding:3px;">4</td><td style="border:1px solid #aaa; padding:3px;">3</td><td style="border:1px solid #aaa; padding:3px;">3</td><td style="border:1px solid #aaa; padding:3px;">1</td></tr>
+    <tr><td style="border:1px solid #aaa; padding:3px;">8</td><td style="border:1px solid #aaa; padding:3px;">+3</td><td style="border:1px solid #aaa; padding:3px;">屬性值提升</td><td style="border:1px solid #aaa; padding:3px;">3</td><td style="border:1px solid #aaa; padding:3px;">4</td><td style="border:1px solid #aaa; padding:3px;">12</td><td style="border:1px solid #aaa; padding:3px;">4</td><td style="border:1px solid #aaa; padding:3px;">3</td><td style="border:1px solid #aaa; padding:3px;">3</td><td style="border:1px solid #aaa; padding:3px;">2</td></tr>
+</tbody>
 </table>
 <div class="class-feature-content">
 <section class="cleric-feature class-feature-section" data-feature-level="1">
@@ -679,6 +795,7 @@ const classFeatures = {
   <ul class="class-rule-list">
     <li>等級 3：援助術,祝福術,療傷術,次級復原術。</li>
     <li>等級 5：群體治癒真言,回生術。</li>
+    <li>等級 7：生命靈氣，防死結界。</li>
   </ul>
 </section>
 
@@ -703,6 +820,9 @@ const classFeatures = {
   <p>當你使用驅散不死生物時，可額外擲等同感知調整值數量的 d8（最少 1d8），將總值作為光耀傷害，套用到每個該次豁免失敗的不死生物。</p>
   <p>這個傷害不會中止驅散效果。</p>
 </section>
+<section class="cleric-feature class-feature-section" data-feature-level="6"><h3>等級 6：神佑醫者（生命子職）</h3><p>當你使用法術位施展一個使一名或更多其他生物恢復生命值的法術後，你立即恢復等同於2＋該法術環階的生命值。</p></section>
+<section class="cleric-feature class-feature-section" data-feature-level="7"><h3>等級 7：神佑打擊</h3><p>選擇下列一項。即使你已從舊書中的牧師子職業獲得其中一項，也只能使用透過本特性選擇的選項。</p><div class="druid-mission-options"><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="cleric-blessed-strikes-divine-strike" data-feature-choice-group="cleric-blessed-strikes"> 神聖打擊</label>：在你的每個回合中一次，當你使用武器發動攻擊檢定並命中一個生物時，可以使目標額外受到1d8黯蝕或光耀傷害（由你選擇）。</div></div><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="cleric-blessed-strikes-potent-spellcasting" data-feature-choice-group="cleric-blessed-strikes"> 強力施法</label>：你將感知調整值加入所有你以牧師戲法造成的傷害中。</div></div></div></section>
+<section class="cleric-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
 </div>
 `,
   druid: `<table class="class-core-profile-table class-core-profile-table--druid" aria-label="德魯伊核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
@@ -752,7 +872,7 @@ const classFeatures = {
 <blockquote class="class-flavor-quote">「森林深處，霧氣繚繞，她赤足行走於濕潤的土地。狼群靜靜跟隨，樹葉在她身旁低語。當獵人踏入禁地，她的身影忽然消失，取而代之的是一頭巨熊自陰影中現身。她曾是城市的孩子，如今卻將心交給自然。遠方雷聲滾動，她抬頭，仿佛與天地共呼吸。」</blockquote>
 德魯伊與自然共鳴，能操控環境與變化形態，擅長支援,控制戰場與適應各種情境。
 <strong>德魯伊特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
-  <thead>
+<thead>
         <tr>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px;">等級</th>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px;">熟練加值</th>
@@ -765,10 +885,11 @@ const classFeatures = {
           <th style="border:1px solid #aaa; padding:3px;">１環</th>
           <th style="border:1px solid #aaa; padding:3px;">２環</th>
           <th style="border:1px solid #aaa; padding:3px;">３環</th>
+          <th style="border:1px solid #aaa; padding:3px; white-space:nowrap;">４環</th>
         </tr>
       </thead>
   <tbody>
-    <tr>
+<tr>
       <td style="border:1px solid #aaa; padding:3px;">1</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
       <td style="border:1px solid #aaa; padding:3px;">施法，德魯伊語，原初使命</td>
@@ -778,8 +899,9 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
-    <tr>
+<tr>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
       <td style="border:1px solid #aaa; padding:3px;">荒野形態，荒野夥伴</td>
@@ -787,6 +909,7 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
@@ -800,6 +923,7 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
@@ -811,8 +935,9 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
-    <tr>
+<tr>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">+3</td>
       <td style="border:1px solid #aaa; padding:3px;">野性復甦</td>
@@ -820,6 +945,43 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">9</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">2</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">6</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">子職特性</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">10</td>
+      <td style="border:1px solid #aaa; padding:3px;">4</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">7</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">元素狂怒</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">11</td>
+      <td style="border:1px solid #aaa; padding:3px;">4</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">1</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">8</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">屬性值提升</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">12</td>
+      <td style="border:1px solid #aaa; padding:3px;">4</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
     </tr>
@@ -978,23 +1140,43 @@ const classFeatures = {
     <li>每次長休後，從旱地,極地,溫帶,熱帶擇一地貌。</li>
     <li>你會始終準備該地貌對應,且目前等級可用的法術：</li>
   </ul>
-  <div class="druid-terrain-spells">
-    <div class="druid-terrain-spells__group">
-      <p>旱地法術（等級 3）：朦朧術,燃燒之手,火焰箭</p>
-      <p>（等級 5）：火球術</p>
-    </div>
-    <div class="druid-terrain-spells__group">
-      <p>極地法術（等級 3）：雲霧術,人類定身術,冷凍射線</p>
-      <p>（等級 5）：雪雨暴</p>
-    </div>
-    <div class="druid-terrain-spells__group">
-      <p>溫帶法術（等級 3）：迷蹤步,電爪,睡眠術</p>
-      <p>（等級 5）：閃電束</p>
-    </div>
-    <div class="druid-terrain-spells__group">
-      <p>熱帶法術（等級 3）：酸液飛濺,致病射線,蛛網術</p>
-      <p>（等級 5）：臭雲術</p>
-    </div>
+  <div class="rule-table-shell rule-table-shell--druid-terrain-spells">
+    <table class="rule-reference-table druid-terrain-spells" aria-label="大地結社地貌法術">
+      <thead>
+        <tr>
+          <th scope="col">地貌</th>
+          <th scope="col">等級 3</th>
+          <th scope="col">等級 5</th>
+          <th scope="col">等級 7</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row">旱地</th>
+          <td data-label="等級 3">朦朧術、燃燒之手、火焰箭</td>
+          <td data-label="等級 5">火球術</td>
+          <td data-label="等級 7">枯萎術</td>
+        </tr>
+        <tr>
+          <th scope="row">極地</th>
+          <td data-label="等級 3">雲霧術、人類定身術、冷凍射線</td>
+          <td data-label="等級 5">雪雨暴</td>
+          <td data-label="等級 7">冰風暴</td>
+        </tr>
+        <tr>
+          <th scope="row">溫帶</th>
+          <td data-label="等級 3">迷蹤步、電爪、睡眠術</td>
+          <td data-label="等級 5">閃電束</td>
+          <td data-label="等級 7">行動自如</td>
+        </tr>
+        <tr>
+          <th scope="row">熱帶</th>
+          <td data-label="等級 3">酸液飛濺、致病射線、蛛網術</td>
+          <td data-label="等級 5">臭雲術</td>
+          <td data-label="等級 7">變形術</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </section>
 
@@ -1032,6 +1214,9 @@ const classFeatures = {
     </ul>
   </div>
 </section>
+<section class="druid-feature class-feature-section" data-feature-level="6"><h3>等級 6：自然恢復（大地子職）</h3><p>你可以在不消耗法術位的情況下，施展一次透過結社法術特性準備的1+環法術。使用後，你必須完成長休才能再次這麼做。</p><p>此外，當你完成短休時，可以恢復部分已消耗的法術位。恢復的法術位環階總和等於你德魯伊職業等級的一半（向上取整），且每個法術位都不能是6+環。使用此效果後，你必須完成長休才能再次恢復法術位。</p></section>
+<section class="druid-feature class-feature-section" data-feature-level="7"><h3>等級 7：元素狂怒</h3><p>選擇並獲得下列一項：</p><div class="druid-mission-options"><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="druid-elemental-fury-potent-spellcasting" data-feature-choice-group="druid-elemental-fury"> 強力施法</label>：你將感知調整值加入所有你以德魯伊戲法造成的傷害中。</div></div><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="druid-elemental-fury-primal-strike" data-feature-choice-group="druid-elemental-fury"> 原初打擊</label>：在你的每個回合中一次，當你使用武器或荒野形態的野獸形態發動攻擊並命中一個生物時，可以使目標額外受到1d8冷凍、火焰、閃電或雷鳴傷害（由你選擇）。</div></div></div></section>
+<section class="druid-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
 </div>`,
   fighter: `<table class="class-core-profile-table class-core-profile-table--fighter" aria-label="戰士核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
@@ -1121,10 +1306,31 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
     </tr>
-    <tr>
+<tr>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">+3</td>
       <td style="border:1px solid #aaa; padding:3px;">額外攻擊，戰術轉移</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">4</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">6</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">屬性值提升</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">4</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">7</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">子職特性</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">4</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">8</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">屬性值提升</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
     </tr>
@@ -1191,6 +1397,9 @@ const classFeatures = {
   <h3>等級 5：戰術轉移</h3>
   <p>當你以附贈動作使用 回氣 時，你可以移動至多等同於你速度一半的距離，且不會引發藉機攻擊。</p>
 </section>
+<section class="fighter-feature class-feature-section" data-feature-level="6"><h3>等級 6：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
+<section class="fighter-feature class-feature-section" data-feature-level="7"><h3>等級 7：額外戰鬥風格（勇士子職）</h3><p>你再獲得一個自選的戰鬥風格專長。</p></section>
+<section class="fighter-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
 </div>`,
   monk: `<table class="class-core-profile-table class-core-profile-table--monk" aria-label="武僧核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
@@ -1285,13 +1494,37 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">+10呎</td>
     </tr>
-    <tr>
+<tr>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">+3</td>
       <td style="border:1px solid #aaa; padding:3px;">額外攻擊，震懾擊</td>
       <td style="border:1px solid #aaa; padding:3px;">1d8</td>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">+10呎</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">6</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">真力駐拳，子職特性</td>
+      <td style="border:1px solid #aaa; padding:3px;">1d8</td>
+      <td style="border:1px solid #aaa; padding:3px;">6</td>
+      <td style="border:1px solid #aaa; padding:3px;">+15呎</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">7</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">反射閃避</td>
+      <td style="border:1px solid #aaa; padding:3px;">1d8</td>
+      <td style="border:1px solid #aaa; padding:3px;">7</td>
+      <td style="border:1px solid #aaa; padding:3px;">+15呎</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">8</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">屬性值提升</td>
+      <td style="border:1px solid #aaa; padding:3px;">1d8</td>
+      <td style="border:1px solid #aaa; padding:3px;">8</td>
+      <td style="border:1px solid #aaa; padding:3px;">+15呎</td>
     </tr>
   </tbody>
 </table>
@@ -1371,6 +1604,11 @@ const classFeatures = {
   <p>獲得「屬性值提升」專長，或其他符合條件的專長。</p>
 </section>
 
+<section class="monk-feature class-feature-section" data-feature-level="4">
+  <h3>等級 4：輕身墜</h3>
+  <p>當你墜落時，可用「反應」減少武僧等級×5傷害。</p>
+</section>
+
 <section class="monk-feature class-feature-section" data-feature-level="5">
   <h3>等級 5：額外攻擊</h3>
   <p>你在自己回合使用攻擊動作時，可以攻擊 2 次。</p>
@@ -1385,6 +1623,7 @@ const classFeatures = {
     <li>成功：速度減半，且到你下回合開始前，下一次對它的攻擊有優勢。</li>
   </ul>
 </section>
+<section class="monk-feature class-feature-section" data-feature-level="6"><h3>等級 6：真力駐拳</h3><p>當你的徒手打擊造成傷害時，可以將其傷害類型替換為力場傷害。</p></section><section class="monk-feature class-feature-section" data-feature-level="6"><h3>等級 6：混元體（散打子職）</h3><p>作為附贈動作，你可以擲出武藝骰，恢復等同於擲骰結果＋你的感知調整值的生命值（最少恢復1點）。</p><p>你可以使用該特性的次數等同於你的感知調整值（最少一次），並在完成長休時恢復所有已消耗的使用次數。</p></section><section class="monk-feature class-feature-section" data-feature-level="7"><h3>等級 7：反射閃避</h3><p>當你受到允許進行敏捷豁免以使傷害減半的效應影響時，豁免成功則不受傷害，豁免失敗則僅受一半傷害。</p><p>你在失能狀態下無法從該特性中獲益。</p></section><section class="monk-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
 </div>`,
   paladin: `<table class="class-core-profile-table class-core-profile-table--paladin" aria-label="聖騎士核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
@@ -1484,7 +1723,7 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
-    <tr>
+<tr>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">+3</td>
       <td style="border:1px solid #aaa; padding:3px;">額外攻擊，忠誠坐騎</td>
@@ -1492,6 +1731,33 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">6</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">6</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">守護靈氣</td>
+      <td style="border:1px solid #aaa; padding:3px;">2</td>
+      <td style="border:1px solid #aaa; padding:3px;">6</td>
+      <td style="border:1px solid #aaa; padding:3px;">4</td>
+      <td style="border:1px solid #aaa; padding:3px;">2</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">7</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">子職特性</td>
+      <td style="border:1px solid #aaa; padding:3px;">2</td>
+      <td style="border:1px solid #aaa; padding:3px;">7</td>
+      <td style="border:1px solid #aaa; padding:3px;">4</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">8</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">屬性值提升</td>
+      <td style="border:1px solid #aaa; padding:3px;">2</td>
+      <td style="border:1px solid #aaa; padding:3px;">7</td>
+      <td style="border:1px solid #aaa; padding:3px;">4</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
     </tr>
   </tbody>
 </table>
@@ -1614,6 +1880,7 @@ const classFeatures = {
   <p>你永遠準備好「召喚坐騎」。</p>
   <p>你可不耗法術位施放 1 次，長休後恢復。</p>
 </section>
+<section class="paladin-feature class-feature-section" data-feature-level="6"><h3>等級 6：守護靈氣&#x20;</h3><p>你以自身為原點放射出10呎的無形保護性靈氣。你處於失能狀態時，靈氣失效。&#x20;</p><p>你和靈氣內的盟友進行豁免檢定時，獲得等同於你魅力調整值的加值（至少＋1）。&#x20;</p><p>一個生物同一時間只能從一道守護靈氣中獲益；處於多道靈氣重疊區域時，由該生物選擇使用哪一道。&#x20;</p></section><section class="paladin-feature class-feature-section" data-feature-level="7"><h3>等級 7：奉獻靈氣（奉獻子職）&#x20;</h3><p>守護靈氣使你和其中的盟友免疫魅惑狀態。若正被魅惑的盟友進入靈氣範圍，該狀態會暫時失效。&#x20;</p></section><section class="paladin-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
 </div>
 `,
   ranger: `<table class="class-core-profile-table class-core-profile-table--ranger" aria-label="遊俠核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
@@ -1714,7 +1981,7 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
-    <tr>
+<tr>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">+3</td>
       <td style="border:1px solid #aaa; padding:3px;">額外攻擊</td>
@@ -1722,6 +1989,33 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">6</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">6</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">越野</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">6</td>
+      <td style="border:1px solid #aaa; padding:3px;">4</td>
+      <td style="border:1px solid #aaa; padding:3px;">2</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">7</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">子職特性</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">7</td>
+      <td style="border:1px solid #aaa; padding:3px;">4</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">8</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">屬性值提升</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">7</td>
+      <td style="border:1px solid #aaa; padding:3px;">4</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
     </tr>
   </tbody>
 </table>
@@ -1810,6 +2104,7 @@ const classFeatures = {
   <h3>等級 5：額外攻擊</h3>
   <p>你在自己回合使用攻擊動作時，可以攻擊 2 次。</p>
 </section>
+<section class="ranger-feature class-feature-section" data-feature-level="6"><h3>等級 6：越野</h3><p>未穿著重甲時，你的速度增加10呎，並獲得等同於你速度的攀爬速度與游泳速度。</p></section><section class="ranger-feature class-feature-section" data-feature-level="7"><h3>等級 7：防守戰術（獵人子職）</h3><p>選擇並獲得下列一項。每當你完成短休或長休時，可以用另一項替換目前的選擇。</p><div class="druid-mission-options"><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="ranger-defensive-tactics-escape-the-horde" data-feature-choice-group="ranger-defensive-tactics"> 衝出重圍</label>：以你為目標的借機攻擊具有劣勢。</div></div><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="ranger-defensive-tactics-multiattack-defense" data-feature-choice-group="ranger-defensive-tactics"> 多重防禦</label>：當一個生物的攻擊檢定命中你時，該生物在本回合內對你發動的所有後續攻擊檢定均具有劣勢。</div></div></div></section><section class="ranger-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
 </div>`,
   rogue: `<table class="class-core-profile-table class-core-profile-table--rogue" aria-label="盜賊核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
@@ -1894,11 +2189,29 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">屬性值提升</td>
       <td style="border:1px solid #aaa; padding:3px;">2d6</td>
     </tr>
-    <tr>
+<tr>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">+3</td>
       <td style="border:1px solid #aaa; padding:3px;">靈巧打擊，直覺閃避</td>
       <td style="border:1px solid #aaa; padding:3px;">3d6</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">6</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">專精</td>
+      <td style="border:1px solid #aaa; padding:3px;">3d6</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">7</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">反射閃避，可靠才能</td>
+      <td style="border:1px solid #aaa; padding:3px;">4d6</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">8</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">屬性值提升</td>
+      <td style="border:1px solid #aaa; padding:3px;">4d6</td>
     </tr>
   </tbody>
 </table>
@@ -1976,6 +2289,7 @@ const classFeatures = {
   <h3>等級 5：直覺閃避</h3>
   <p>當你看得見的攻擊者命中你時，你可用反應讓該次攻擊傷害減半（向下取整）。</p>
 </section>
+<section class="rogue-feature class-feature-section" data-feature-level="6"><h3>等級 6：專精</h3><p>再選擇兩項你已有熟練的技能，並獲得其專精。</p></section><section class="rogue-feature class-feature-section" data-feature-level="7"><h3>等級 7：反射閃避</h3><p>當你受到允許進行敏捷豁免以使傷害減半的效應影響時，豁免成功則不受傷害，豁免失敗則僅受一半傷害。你在失能狀態下無法使用該特性。</p></section><section class="rogue-feature class-feature-section" data-feature-level="7"><h3>等級 7：可靠才能</h3><p>每當你使用技能或工具熟練項進行屬性檢定時，可以將d20骰中9或以下的結果視為10。</p></section><section class="rogue-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
 </div>
 `,
   sorcerer: `<table class="class-core-profile-table class-core-profile-table--sorcerer" aria-label="術士核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
@@ -2028,7 +2342,7 @@ const classFeatures = {
 
 術士的力量源自天賦血脈，擅長直接釋放強大魔法，爆發力高，帶有與生俱來的威勢。
 <strong>術士特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
-  <thead>
+<thead>
         <tr>
           <th style="border:1px solid #aaa; padding:3px;">等級</th>
           <th style="border:1px solid #aaa; padding:3px;">熟練加值</th>
@@ -2039,10 +2353,11 @@ const classFeatures = {
           <th style="border:1px solid #aaa; padding:3px; white-space:nowrap;">１環</th>
           <th style="border:1px solid #aaa; padding:3px; white-space:nowrap;">２環</th>
           <th style="border:1px solid #aaa; padding:3px; white-space:nowrap;">３環</th>
+          <th style="border:1px solid #aaa; padding:3px; white-space:nowrap;">４環</th>
         </tr>
       </thead>
   <tbody>
-    <tr>
+<tr>
       <td style="border:1px solid #aaa; padding:3px;">1</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
       <td style="border:1px solid #aaa; padding:3px;">施法，天生術法</td>
@@ -2052,8 +2367,9 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
-    <tr>
+<tr>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
       <td style="border:1px solid #aaa; padding:3px;">魔力泉湧，超魔法</td>
@@ -2061,6 +2377,7 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
@@ -2074,8 +2391,9 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
-    <tr>
+<tr>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
       <td style="border:1px solid #aaa; padding:3px;">屬性值提升</td>
@@ -2084,6 +2402,7 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">7</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
     <tr>
@@ -2094,6 +2413,43 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">9</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">2</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">6</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">子職特性</td>
+      <td style="border:1px solid #aaa; padding:3px;">6</td>
+      <td style="border:1px solid #aaa; padding:3px;">5</td>
+      <td style="border:1px solid #aaa; padding:3px;">10</td>
+      <td style="border:1px solid #aaa; padding:3px;">4</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">7</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">術法化身</td>
+      <td style="border:1px solid #aaa; padding:3px;">7</td>
+      <td style="border:1px solid #aaa; padding:3px;">5</td>
+      <td style="border:1px solid #aaa; padding:3px;">11</td>
+      <td style="border:1px solid #aaa; padding:3px;">4</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">1</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">8</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">屬性值提升</td>
+      <td style="border:1px solid #aaa; padding:3px;">8</td>
+      <td style="border:1px solid #aaa; padding:3px;">5</td>
+      <td style="border:1px solid #aaa; padding:3px;">12</td>
+      <td style="border:1px solid #aaa; padding:3px;">4</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
     </tr>
@@ -2216,6 +2572,7 @@ const classFeatures = {
     <li>當你達到對應術士等級後，會始終準備下列法術。</li>
     <li>龍族法術（等級 3）：變造自身,繁彩球,命令術,龍息術。</li>
     <li>（等級 5）：恐懼術，飛行術。</li>
+    <li>（等級 7）：秘法眼，魅惑怪物。</li>
   </ul>
 </section>
 
@@ -2232,6 +2589,7 @@ const classFeatures = {
   </ul>
 </section>
 
+<section class="sorcerer-feature class-feature-section" data-feature-level="6"><h3>等級 6：元素親和（龍族子職）</h3><p>選擇一種傷害類型：強酸、冷凍、火焰、閃電或毒素。</p><article class="feature-choice-card"><label class="feature-choice-card__heading" for="sorcerer-elemental-affinity-damage-type"><strong>傷害類型</strong></label><select id="sorcerer-elemental-affinity-damage-type"><option value="">--請選擇傷害類型--</option><option value="acid">強酸</option><option value="cold">冷凍</option><option value="fire">火焰</option><option value="lightning">閃電</option><option value="poison">毒素</option></select><div class="feature-choice-card__body"><p>你對所選傷害類型具有抗性。當你施展造成該類型傷害的法術時，可以將魅力調整值加到該法術的一次傷害擲骰中。</p></div></article></section><section class="sorcerer-feature class-feature-section" data-feature-level="7"><h3>等級 7：術法化身</h3><p>當天生術法的使用次數耗盡時，你可以執行附贈動作並消耗2術法點來激活它。</p><p>此外，在天生術法激活期間，你可以在施展的每道法術上應用至多兩個超魔法選項。</p></section><section class="sorcerer-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
 <section class="sorcerer-feature class-feature-section">
   <h3>超魔法選項</h3>
   <div class="class-rule-subsection">
@@ -2407,15 +2765,45 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
     </tr>
-    <tr>
+<tr>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">+3</td>
-      <td style="border:1px solid #aaa; padding:3px;">無</td>
+      <td style="border:1px solid #aaa; padding:3px;">--</td>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">6</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">6</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">子職特性</td>
+      <td style="border:1px solid #aaa; padding:3px;">5</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">7</td>
+      <td style="border:1px solid #aaa; padding:3px;">2</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">7</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">--</td>
+      <td style="border:1px solid #aaa; padding:3px;">6</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">8</td>
+      <td style="border:1px solid #aaa; padding:3px;">2</td>
+      <td style="border:1px solid #aaa; padding:3px;">4</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">8</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">屬性值提升</td>
+      <td style="border:1px solid #aaa; padding:3px;">6</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">9</td>
+      <td style="border:1px solid #aaa; padding:3px;">2</td>
+      <td style="border:1px solid #aaa; padding:3px;">4</td>
     </tr>
   </tbody>
 </table>
@@ -2434,9 +2822,10 @@ const classFeatures = {
 <section class="warlock-feature class-feature-section" data-feature-level="2"><h3>等級 2：秘法回流</h3><ul class="class-rule-list"><li>你可進行 1 分鐘神秘儀式，結束時回復已消耗的契約魔法法術位。</li><li>回復上限為「法術位最大值的一半（向上取整）」。</li><li>使用後需完成長休才能再用。</li></ul></section>
 <section class="warlock-feature class-feature-section" data-feature-level="3"><h3>等級 3：契術師子職</h3><ul class="class-rule-list"><li>你可選擇一個契術師子職；基本規則僅提供邪魔。</li><li>隨等級提升可獲得對應子職特性。</li></ul></section>
 <section class="warlock-feature class-feature-section" data-feature-level="3"><h3>等級 3：黑暗之賜（邪魔子職）</h3><ul class="class-rule-list"><li>當你將 10 呎內敵對生物生命值降到 0 時，你獲得等同「魅力調整值＋契術師等級」的臨時生命值（至少 1）。</li><li>若是其他生物把你 10 呎內的敵對生物降到 0，你也會獲得此增益。</li></ul></section>
-<section class="warlock-feature class-feature-section" data-feature-level="3"><h3>等級 3：邪魔法術（邪魔子職）</h3><ul class="class-rule-list"><li>你會始終準備下列法術（達到對應契術師等級後生效）：</li><li>邪魔法術（等級 3）：燃燒之手,命令術,灼熱射線,暗示術。</li><li>（等級 5）：火球術,臭雲術。</li></ul></section>
+<section class="warlock-feature class-feature-section" data-feature-level="3"><h3>等級 3：邪魔法術（邪魔子職）</h3><ul class="class-rule-list"><li>你會始終準備下列法術（達到對應契術師等級後生效）：</li><li>邪魔法術（等級 3）：燃燒之手,命令術,灼熱射線,暗示術。</li><li>（等級 5）：火球術,臭雲術。</li><li>（等級 7）：火焰護盾，火牆術。</li></ul></section>
 <section class="warlock-feature class-feature-section" data-feature-level="4"><h3>等級 4：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
 <section class="warlock-feature class-feature-section" data-feature-level="5"><h3>等級 5：無</h3><ul class="class-rule-list"><li>此等級沒有新增段落特性。</li><li>魔能祈喚數量增加，請查看契術師特性表。</li></ul></section>
+<section class="warlock-feature class-feature-section" data-feature-level="6"><h3>等級 6：黑暗強運（邪魔子職）</h3><p>當你進行屬性檢定或豁免檢定時，可以使用該特性將1d10加到擲骰結果中。你可以在看到擲骰結果後、結果生效前使用該特性。</p><p>你可以使用該特性的次數等同於你的魅力調整值（至少一次），但每次擲骰只能使用一次。完成長休時，你恢復所有已消耗的使用次數。</p></section><section class="warlock-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
 <section class="warlock-feature class-feature-section"><h3>魔能祈喚選項</h3><p>以下依先決條件與功能分組說明。</p>
   <div class="class-rule-subsection"><h4>刃之魔契</h4><p>你可用附贈動作：</p><ul class="class-rule-list"><li>召喚一把簡易/軍用近戰武器，或</li><li>與你觸碰的魔法武器建立聯結</li></ul><p>（武器若已被他人聯結或同調，則聯結失敗）</p><p>聯結期間：</p><ul class="class-rule-list"><li>你熟練該武器。</li><li>你可把它當施法法器。</li></ul><p>聯結武器可用魅力計算命中與傷害加值。</p><p>傷害可改為黯蝕,心靈或光耀。</p><p>聯結結束條件：</p><ul class="class-rule-list"><li>你再次使用本特性的附贈動作。</li><li>武器離你超過 5 呎並持續 1 分鐘。</li><li>你死亡。</li></ul><p>若是召喚武器，聯結結束時武器會一併消失。</p></div>
   <div class="class-rule-subsection"><h4>鏈之魔契</h4><p>你學會獲得魔寵，施法不耗法術位。</p><p>魔寵可選一般形態或以下特殊形態：<hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;"><span class="beast-tip" data-beast="imp">小魔鬼</span>,<span class="beast-tip" data-beast="pseudodragon">偽龍</span>,<span class="beast-tip" data-beast="quasit">誇賽魔</span>,<span class="beast-tip" data-beast="skeleton">骷髏</span>,<span class="beast-tip" data-beast="sphinx_of_wonder">神奇斯芬克斯</span>,<span class="beast-tip" data-beast="sprite">小妖精</span> 或 <span class="beast-tip" data-beast="venomous_snake">毒蛇</span>。</p><hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;"><p>當你攻擊，可放棄其中 1 次攻擊，改讓魔寵用反應發動 1 次攻擊。</p></div>
@@ -2444,6 +2833,7 @@ const classFeatures = {
   <div class="class-rule-subsection"><h4>幽影護甲</h4><p>你可隨意施展法師護甲，不耗法術位。</p></div><div class="class-rule-subsection"><h4>魔能意志</h4><p>你進行維持專注的體質豁免時具有優勢。</p></div><div class="class-rule-subsection"><h4>邪魔活力（先決條件：契術師等級 2+）</h4><p>你可隨意施展虛假生命且不耗法術位；</p><p>不擲臨時生命骰，視為擲滿。</p></div><div class="class-rule-subsection"><h4>千面之臉（先決條件：契術師等級 2+）</h4><p>你可隨意施展易容術且不耗法術位。</p></div><div class="class-rule-subsection"><h4>幻象迷蹤（先決條件：契術師等級 2+）</h4><p>你可隨意施展無聲幻影且不耗法術位。</p></div><div class="class-rule-subsection"><h4>超凡跳躍（先決條件：契術師等級 2+）</h4><p>你可隨意施展跳躍術且不耗法術位。</p></div><div class="class-rule-subsection"><h4>魔鬼視界（先決條件：契術師等級 2+）</h4><p>可在 120 呎內的魔法黑暗,非魔法黑暗與微光中正常視物。</p></div>
   <div class="class-rule-subsection"><h4>原初之一教習（先決條件：契術師等級 2+）</h4><p>你獲得 1 個起源專長。</p><hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;"><p>可重複：可多次選此祈喚，但每次必須選不同的起源專長。</p></div><div class="class-rule-subsection"><h4>苦痛魔爆（先決條件：契術師等級 2+，已知可造成傷害的契術師戲法）</h4><p>選 1 個你已知,可造成傷害的契術師戲法；你可將魅力調整值加到該戲法的傷害骰。</p><hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;"><p>可重複：可多次選此祈喚，但每次要選不同戲法。</p></div><div class="class-rule-subsection"><h4>魔能長槍（先決條件：契術師等級 2+，已知可造成傷害的契術師戲法）</h4><p>選 1 個你已知,射程至少 10 呎且可造成傷害的契術師戲法。施放時，該法術射程額外增加「契術師等級 × 30 呎」。</p><hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;"><p>可重複：可多次選此祈喚，但每次要選不同戲法。</p></div><div class="class-rule-subsection"><h4>斥力魔爆（先決條件：契術師等級 2+，通過攻擊檢定造成傷害的契術師戲法）</h4><p>選 1 個你已知,需要攻擊檢定的契術師戲法。當你用該戲法命中大型或更小生物時，可將其往遠離你的方向推開 10 呎。</p><hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;"><p>可重複：可多次選此祈喚，但每次要選不同戲法。</p></div>
   <div class="class-rule-subsection"><h4>星移步法（先決條件：契術師等級 5+）</h4><p>你可隨意對自己施展浮空術，且不耗法術位。</p></div><div class="class-rule-subsection"><h4>萬形之主（先決條件：契術師等級 5+）</h4><p>你可隨意施展變造自身，且不耗法術位。</p></div><div class="class-rule-subsection"><h4>融身入影（先決條件：契術師等級 5+）</h4><p>當你在微光或黑暗中時，可隨意對自己施展隱形術，且不耗法術位。</p></div><div class="class-rule-subsection"><h4>深海饋贈（先決條件：契術師等級 5+）</h4><p>你可在水中呼吸，並獲得等同自身速度的游泳速度。</p><p>你也可不耗法術位施展 1 次水下呼吸，此用法在長休後恢復。</p></div><div class="class-rule-subsection"><h4>共視感官（先決條件：契術師等級 5+）</h4><p>你可用附贈動作觸碰 1 名自願生物，建立感官連結至你下回合結束。只要你們在同一位面，你可在後續回合再用附贈動作延長連結到下回合結束；未延長則連結終止。</p><p>連結期間，你可獲得該生物所有特殊感官；若你們距離在 60 呎內，你可視同身在該生物位置施法。</p></div><div class="class-rule-subsection"><h4>魔能斬擊（先決條件：契術師等級 5+,刃之魔契祈喚）</h4><p>每回合一次，當你用契約武器命中生物時，可消耗 1 個契術師法術位，造成額外力場傷害：1d8＋該法術位每環階再加 1d8，並可使大型或更小目標倒地。</p></div><div class="class-rule-subsection"><h4>饑渴魔刃（先決條件：契術師等級 5+,刃之魔契祈喚）</h4><p>你在使用契約武器時獲得額外攻擊：在你回合以該武器執行攻擊動作時，可攻擊 2 次而非 1 次。</p></div><div class="class-rule-subsection"><h4>鏈主賦能（先決條件：契術師等級 5+,鏈之魔契祈喚）</h4><p>你施展獲得魔寵時，可對魔寵灌注魔能，獲得以下增益：</p><ul class="class-rule-list"><li>飛行或游泳：魔寵獲得 40 呎飛行或游泳速度（擇一）。</li><li>快速攻擊：你可用附贈動作命令魔寵執行攻擊動作。</li><li>傷害轉換：魔寵造成鈍擊／穿刺／揮砍傷害時，你可改為黯蝕或光耀傷害。</li><li>豁免：若魔寵要求目標做豁免，使用你的法術豁免 DC。</li><li>抗性：當魔寵受傷時，你可用反應讓該次傷害有抗性。</li></ul></div>
+  <div class="class-rule-subsection"><h4>墳墓低語（先決條件：契術師等級7+）</h4><p>你可以隨意施展死者交談，且不消耗法術位。</p></div>
 </section>
 </div>
 `,
@@ -2497,7 +2887,7 @@ const classFeatures = {
 
 法師透過學習與研究掌握魔法，擅長多樣化法術與策略運用，是變化最多的施法者。
 <strong>法師特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
-  <thead>
+<thead>
     <tr>
       <th style="border:1px solid #aaa; padding:3px;">等級</th>
       <th style="border:1px solid #aaa; padding:3px;">熟練加值</th>
@@ -2507,10 +2897,11 @@ const classFeatures = {
       <th style="border:1px solid #aaa; padding:3px; white-space:nowrap;">１環</th>
       <th style="border:1px solid #aaa; padding:3px; white-space:nowrap;">２環</th>
       <th style="border:1px solid #aaa; padding:3px; white-space:nowrap;">３環</th>
+          <th style="border:1px solid #aaa; padding:3px; white-space:nowrap;">４環</th>
     </tr>
   </thead>
   <tbody>
-    <tr>
+<tr>
       <td style="border:1px solid #aaa; padding:3px;">1</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
       <td style="border:1px solid #aaa; padding:3px;">施法，儀式精通，奧術回想</td>
@@ -2519,14 +2910,16 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
-    <tr>
+<tr>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
       <td style="border:1px solid #aaa; padding:3px;">學者</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
@@ -2539,6 +2932,7 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
@@ -2549,6 +2943,7 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">-</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
@@ -2557,6 +2952,40 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">9</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">2</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">6</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">子職特性</td>
+      <td style="border:1px solid #aaa; padding:3px;">4</td>
+      <td style="border:1px solid #aaa; padding:3px;">10</td>
+      <td style="border:1px solid #aaa; padding:3px;">4</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">7</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">--</td>
+      <td style="border:1px solid #aaa; padding:3px;">4</td>
+      <td style="border:1px solid #aaa; padding:3px;">11</td>
+      <td style="border:1px solid #aaa; padding:3px;">4</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
+      <td style="border:1px solid #aaa; padding:3px;">1</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #aaa; padding:3px;">8</td>
+      <td style="border:1px solid #aaa; padding:3px;">+3</td>
+      <td style="border:1px solid #aaa; padding:3px;">屬性值提升</td>
+      <td style="border:1px solid #aaa; padding:3px;">4</td>
+      <td style="border:1px solid #aaa; padding:3px;">12</td>
+      <td style="border:1px solid #aaa; padding:3px;">4</td>
+      <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
     </tr>
@@ -2636,6 +3065,12 @@ const classFeatures = {
 等級 5：記憶法術
 - 每次短休後，你可研讀法術書。
 - 你可把 1 個由「施法」特性準備中的 1+環法師法術，替換成法術書中的另一個 1+環法師法術。
+
+等級 6：法術塑形（塑能子職）
+當你施展會影響你所能看見之其他生物的塑能系法術時，可以從中選擇1＋該法術環階名生物。所選生物對抗該法術的豁免檢定自動成功，且不會受到通常在豁免成功時仍會承受的一半傷害。
+
+等級 8：屬性值提升
+獲得「屬性值提升」專長，或改選其他符合條件的專長。
 `
 };
 
@@ -2716,7 +3151,7 @@ function formatPlainTextClassFeatures(classHtml, className, formatBody = text =>
   const prefix = classHtml.slice(0, featureStartIndex + '</table>'.length);
   const featureText = classHtml.slice(featureStartIndex + '</table>\n'.length);
   const sectionClass = `${className}-feature class-feature-section`;
-  const sections = [...featureText.matchAll(/(?:^|\n\n)等級 ([1-5])：([^\n]+)\n?([\s\S]*?)(?=\n\n等級 [1-5]：|$)/g)];
+  const sections = [...featureText.matchAll(/(?:^|\n\n)等級 (\d+)：([^\n]+)\n?([\s\S]*?)(?=\n\n等級 \d+：|$)/g)];
   if (!sections.length) return classHtml;
 
   const formattedFeatures = sections.map(([, level, title, body]) => (

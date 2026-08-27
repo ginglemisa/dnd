@@ -242,9 +242,9 @@
     const timingPattern = mode === "bonus"
       ? /(?:附贈動作|(?:使用|用|消耗|以)[^。；\n]{0,6}「?附贈」?)/u
       : /(?:反應(?:動作)?|[藉借]機攻擊)/u;
-    const unavailablePattern = mode === "bonus"
+    const passiveOrUnavailablePattern = mode === "bonus"
       ? /(?:無法|不能)[^。；\n]{0,14}(?:附贈|動作)|附贈動作[^。；\n]{0,10}(?:被浪費|無法使用)/u
-      : /(?:無法|不能)[^。；\n]{0,14}反應|反應[^。；\n]{0,10}(?:被浪費|無法使用)|(?:不(?:會)?引發|不能發動|無法發動|針對你的)[^。；\n]{0,12}[藉借]機攻擊/u;
+      : /(?:無法|不能)[^。；\n]{0,14}反應|反應[^。；\n]{0,10}(?:被浪費|無法使用)|(?:不(?:會)?引發|不能發動|無法發動|針對你的|以你為目標的)[^。；\n]{0,12}[藉借]機攻擊|[藉借]機攻擊[^。；\n]{0,12}(?:具有|承受)[^。；\n]{0,6}(?:優勢|劣勢)/u;
     const sourceLabel = FEATURE_SOURCE_LABELS[source] || "角色";
     const entriesByLabel = new Map();
     const seen = new Set();
@@ -275,7 +275,7 @@
       holder.innerHTML = remainingRaw;
       holder.querySelectorAll("[data-action-description]").forEach(block => {
         const description = sourceToPlainText(block.innerHTML).replace(/\n{2,}/g, "\n");
-        if (!timingPattern.test(description) || unavailablePattern.test(description)) return;
+        if (!timingPattern.test(description) || passiveOrUnavailablePattern.test(description)) return;
         const featureSection = block.closest("section[data-feature-level]");
         const heading = featureSection?.querySelector("h3")?.textContent || "";
         const label = cleanFeatureTitle(heading, `${sourceLabel}能力`);
@@ -290,7 +290,7 @@
     const lines = plainText.split("\n");
 
     lines.forEach((line, index) => {
-      if (!timingPattern.test(line) || unavailablePattern.test(line)) return;
+      if (!timingPattern.test(line) || passiveOrUnavailablePattern.test(line)) return;
       const description = relevantParagraph(lines, index);
       const label = findFeatureTitle(lines, index, sourceLabel);
       addEntry(label, description);

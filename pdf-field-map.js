@@ -232,7 +232,7 @@
   });
 
   const GOLIATH_ANCESTRY_ABILITY_LINES = Object.freeze({
-    cloud: Object.freeze(['附贈傳送30呎', '可見未佔空位']),
+    cloud: Object.freeze(['附贈傳送30呎', '內可見無人空間']),
     fire: Object.freeze(['命中+1d10火傷']),
     frost: Object.freeze(['命中+1d6冰傷', '目標速度-10呎']),
     hill: Object.freeze(['大型以下可擊倒']),
@@ -1063,7 +1063,8 @@
       { area: 'cantrips-area', level: 0 },
       { area: 'level1spells-area', level: 1 },
       { area: 'level2spells-area', level: 2 },
-      { area: 'level3spells-area', level: 3 }
+      { area: 'level3spells-area', level: 3 },
+      { area: 'level4spells-area', level: 4 }
     ];
 
     areaConfig.forEach(({ area, level }) => {
@@ -1105,7 +1106,25 @@
     'eldritch-blast': Object.freeze({ name: '魔能爆', mode: 'attack', dmg: '1d10 力場', note: '120呎', note5: '120呎/2束分別攻擊' })
   });
 
-  function getDamageCantripExportValues(config, state) {
+  function shouldApplyPotentSpellcasting(spellId, state) {
+    const level = getSelectedLevelNumber(state.level);
+    if (level === null || level < 7) return false;
+    if (
+      state.class === 'cleric'
+      && state['cleric-blessed-strikes-potent-spellcasting'] === true
+    ) {
+      return spellId === 'sacred-flame';
+    }
+    if (
+      state.class === 'druid'
+      && state['druid-elemental-fury-potent-spellcasting'] === true
+    ) {
+      return ['poison-spray', 'produce-flame', 'starry-wisp'].includes(spellId);
+    }
+    return false;
+  }
+
+  function getDamageCantripExportValues(config, spellId, state) {
     const level = getSelectedLevelNumber(state.level);
     const isLevel5 = level !== null && level >= 5;
     const baseDamage = isLevel5 && config.dmg5 ? config.dmg5 : config.dmg;
@@ -1118,6 +1137,13 @@
         : '';
       if (adjustment) {
         damage = baseDamage.replace(/^(武器骰|武骰|1d\d+)/, `$1${adjustment}`);
+      }
+    }
+
+    if (shouldApplyPotentSpellcasting(spellId, state)) {
+      const wisdomModifier = getAbilityModifierNumber(state.wis);
+      if (Number.isFinite(wisdomModifier)) {
+        damage = damage.replace(/^(\d+d\d+)/, `$1${formatFormulaModifier(wisdomModifier)}`);
       }
     }
 
@@ -1147,7 +1173,7 @@
       if (slot > 7) break;
       const config = DAMAGE_CANTRIP_EXPORT_MAP[row.spellId];
       if (!config) continue;
-      const exportValues = getDamageCantripExportValues(config, state);
+      const exportValues = getDamageCantripExportValues(config, row.spellId, state);
 
       payload[`attack-weap-name-${slot}`] = config.name;
       payload[`toHit${slot}`] = config.mode === 'save'
@@ -1160,49 +1186,17 @@
   }
 
   function parseSpellSlotsFromClassFeature(classKey, level) {
-    const classLevel = Number.parseInt(level, 10);
-    if (!Number.isFinite(classLevel)) return { slot1: '', slot2: '', slot3: '' };
-
-    const fullCasterSlotMap = {
-      1: { slot1: '2', slot2: '', slot3: '' },
-      2: { slot1: '3', slot2: '', slot3: '' },
-      3: { slot1: '4', slot2: '2', slot3: '' },
-      4: { slot1: '4', slot2: '3', slot3: '' },
-      5: { slot1: '4', slot2: '3', slot3: '2' }
+    const getSlotCounts = globalScope.getSpellSlotCounts;
+    const counts = typeof getSlotCounts === 'function'
+      ? getSlotCounts(classKey, level)
+      : [0, 0, 0, 0];
+    const toPdfValue = (count) => Number(count) > 0 ? String(count) : '';
+    return {
+      slot1: toPdfValue(counts[0]),
+      slot2: toPdfValue(counts[1]),
+      slot3: toPdfValue(counts[2]),
+      slot4: toPdfValue(counts[3])
     };
-
-    const halfCasterSlotMap = {
-      1: { slot1: '2', slot2: '', slot3: '' },
-      2: { slot1: '2', slot2: '', slot3: '' },
-      3: { slot1: '3', slot2: '', slot3: '' },
-      4: { slot1: '3', slot2: '', slot3: '' },
-      5: { slot1: '4', slot2: '2', slot3: '' }
-    };
-
-    const warlockSlotMap = {
-      1: { slot1: '1', slot2: '', slot3: '' },
-      2: { slot1: '2', slot2: '', slot3: '' },
-      3: { slot1: '', slot2: '2', slot3: '' },
-      4: { slot1: '', slot2: '2', slot3: '' },
-      5: { slot1: '', slot2: '', slot3: '2' }
-    };
-
-    const fullCasterClasses = new Set(['bard', 'cleric', 'druid', 'sorcerer', 'wizard']);
-    const halfCasterClasses = new Set(['paladin', 'ranger']);
-
-    if (classKey === 'warlock') {
-      return warlockSlotMap[classLevel] || { slot1: '', slot2: '', slot3: '' };
-    }
-
-    if (fullCasterClasses.has(classKey)) {
-      return fullCasterSlotMap[classLevel] || { slot1: '', slot2: '', slot3: '' };
-    }
-
-    if (halfCasterClasses.has(classKey)) {
-      return halfCasterSlotMap[classLevel] || { slot1: '', slot2: '', slot3: '' };
-    }
-
-    return { slot1: '', slot2: '', slot3: '' };
   }
 
   function parseClassTableValue(classKey, label) {
@@ -1583,6 +1577,7 @@
     payload['spell-level-1'] = slots.slot1;
     payload['spell-level-2'] = slots.slot2;
     payload['spell-level-3'] = slots.slot3;
+    payload['spell-level-4'] = slots.slot4;
 
     const extraNotes = [];
     const overflowToolNames = selectedToolNames.slice(2);
