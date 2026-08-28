@@ -38,6 +38,7 @@ test("creates only the current draft schema when storage is empty", () => {
   const { api } = loadQuickBuild();
   const draft = api.getDraft();
 
+  assert.equal(typeof api.openSpellPrepareDetail, "function");
   assert.equal(draft.version, 12);
   assert.deepEqual(Object.keys(draft.ui).sort(), ["confirmedStepSignatures", "currentStepId", "view"]);
   assert.equal("currentStep" in draft, false);

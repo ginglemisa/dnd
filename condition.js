@@ -1,9 +1,10 @@
-// condition.js
-document.addEventListener("DOMContentLoaded", () => {
-  const container = document.querySelector("#condition-section");
-  if (!container) return;
+(function attachConditionData(globalScope) {
+  const freezeCondition = (condition) => Object.freeze({
+    ...condition,
+    effects: Object.freeze([...condition.effects])
+  });
 
-  const conditions = [
+  const CONDITIONS = Object.freeze([
     {
       key: "blinded",
       zh: "失明",
@@ -152,49 +153,94 @@ document.addEventListener("DOMContentLoaded", () => {
         "毫無察覺：你對周遭環境毫無察覺。"
       ]
     }
-  ];
+  ].map(freezeCondition));
 
-  container.innerHTML = `
-    <div class="section" style="margin-top:36px;">
-      <h3>狀態</h3>
-      <div class="small-text" style="margin-top: 8px;">點擊下方按鈕切換狀態說明。</div>
-      <div id="condition-button-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px;"></div>
-      <div id="condition-display-grid" class="condition-display-grid" style="margin-top: 10px;"></div>
-    </div>
-  `;
+  const CONDITIONS_BY_KEY = new Map(CONDITIONS.map((condition) => [condition.key, condition]));
 
-  const displayGrid = container.querySelector("#condition-display-grid");
-  const buttonGrid = container.querySelector("#condition-button-grid");
-
-  function renderCondition(condition) {
-    displayGrid.innerHTML = `
-      <div class="condition-display-card">
-        <div class="condition-title-row">
-          <strong>${condition.zh}</strong>
-          <span>${condition.en}</span>
-        </div>
-        <ul>
-          ${condition.effects.map((effect) => `<li>${effect}</li>`).join("")}
-        </ul>
-      </div>
-    `;
+  function getCondition(conditionOrKey) {
+    if (conditionOrKey && typeof conditionOrKey === "object") return conditionOrKey;
+    return CONDITIONS_BY_KEY.get(String(conditionOrKey || "")) || null;
   }
 
-  conditions.forEach((condition, index) => {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.textContent = condition.zh;
-    btn.addEventListener("click", () => {
-      renderCondition(condition);
-      buttonGrid.querySelectorAll("button").forEach((item) => item.classList.remove("active-condition"));
-      btn.classList.add("active-condition");
+  function createConditionDescription(conditionOrKey) {
+    const condition = getCondition(conditionOrKey);
+    if (!condition || typeof document === "undefined") return null;
+
+    const card = document.createElement("div");
+    card.className = "condition-display-card";
+
+    const titleRow = document.createElement("div");
+    titleRow.className = "condition-title-row";
+    const title = document.createElement("strong");
+    title.textContent = condition.zh;
+    const englishName = document.createElement("span");
+    englishName.textContent = condition.en;
+    titleRow.append(title, englishName);
+
+    const effects = document.createElement("ul");
+    condition.effects.forEach((effect) => {
+      const item = document.createElement("li");
+      item.textContent = effect;
+      effects.appendChild(item);
     });
 
-    if (index === 0) {
-      btn.classList.add("active-condition");
-      renderCondition(condition);
-    }
+    card.append(titleRow, effects);
+    return card;
+  }
 
-    buttonGrid.appendChild(btn);
+  function renderConditionDescription(container, conditionOrKey) {
+    if (!container) return;
+    const description = createConditionDescription(conditionOrKey);
+    container.replaceChildren(...(description ? [description] : []));
+  }
+
+  Object.assign(globalScope, {
+    DND_CONDITIONS: CONDITIONS,
+    getDndCondition: getCondition,
+    createDndConditionDescription: createConditionDescription,
+    renderDndConditionDescription: renderConditionDescription
   });
-});
+
+  if (typeof document === "undefined") return;
+  document.addEventListener("DOMContentLoaded", () => {
+    const container = document.querySelector("#condition-section");
+    if (!container) return;
+
+    const section = document.createElement("div");
+    section.className = "section condition-reference-section";
+    const heading = document.createElement("h3");
+    heading.textContent = "狀態";
+    const intro = document.createElement("p");
+    intro.className = "small-text condition-reference-intro";
+    intro.textContent = "點擊下方按鈕切換狀態說明。";
+    const buttonGrid = document.createElement("div");
+    buttonGrid.id = "condition-button-grid";
+    buttonGrid.className = "condition-button-grid";
+    const displayGrid = document.createElement("div");
+    displayGrid.id = "condition-display-grid";
+    displayGrid.className = "condition-display-grid";
+    section.append(heading, intro, buttonGrid, displayGrid);
+    container.replaceChildren(section);
+
+    CONDITIONS.forEach((condition, index) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = condition.zh;
+      button.setAttribute("aria-pressed", String(index === 0));
+      button.addEventListener("click", () => {
+        renderConditionDescription(displayGrid, condition);
+        buttonGrid.querySelectorAll("button").forEach((item) => {
+          const active = item === button;
+          item.classList.toggle("active-condition", active);
+          item.setAttribute("aria-pressed", String(active));
+        });
+      });
+
+      if (index === 0) {
+        button.classList.add("active-condition");
+        renderConditionDescription(displayGrid, condition);
+      }
+      buttonGrid.appendChild(button);
+    });
+  });
+})(typeof window !== "undefined" ? window : globalThis);

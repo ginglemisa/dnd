@@ -396,6 +396,7 @@
   let previouslyFocused = null;
   let spellDetailTrigger = null;
   let spellDetailOpenedOutsideWizard = false;
+  let spellPrepareDecisionResolver = null;
   let pageLock = null;
   const expandedChoiceGroups = new Set();
   let pendingChoiceCardScrollGroup = null;
@@ -1433,7 +1434,8 @@
       #quick-build-spell-detail.open{display:flex}#quick-build-spell-detail .quick-build-spell-detail-shell{display:flex;flex-direction:column;width:680px;max-width:calc(100% - 32px);max-height:calc(100dvh - 80px);overflow:hidden;border:1px solid var(--qb-border-strong);border-radius:14px;background:var(--qb-surface);color:var(--qb-text);box-shadow:var(--qb-shadow)}
       #quick-build-spell-detail .quick-build-spell-detail-header{display:flex;flex:0 0 auto;align-items:center;justify-content:space-between;gap:16px;padding:16px 18px;border-bottom:1px solid var(--qb-border)}#quick-build-spell-detail-title{margin:0;color:var(--qb-text);font-size:1.2rem}
       #quick-build-spell-detail .quick-build-spell-detail-close{display:grid;flex:0 0 44px;place-items:center;width:44px;min-width:44px;height:44px;min-height:44px;margin:0;padding:0;border:1px solid transparent;border-radius:9px;background:var(--qb-surface-elevated);color:var(--qb-text);font-size:1.5rem;line-height:1;cursor:pointer;touch-action:manipulation}#quick-build-spell-detail .quick-build-spell-detail-close:hover,#quick-build-spell-detail .quick-build-spell-detail-close:focus-visible{border-color:var(--qb-accent);background:var(--qb-accent-soft);outline:2px solid transparent}
-      #quick-build-spell-detail-content{min-height:120px;padding:20px;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;white-space:pre-wrap;color:var(--qb-text-body);line-height:1.65}#quick-build-spell-detail-content strong{display:block;margin-bottom:12px;color:var(--qb-accent-text);font-size:1.08rem}.quick-build-expansion-notice{margin-top:12px;padding-top:8px;border-top:1px solid var(--qb-border);color:var(--qb-text-muted);font-size:.78rem;line-height:1.45}
+      #quick-build-spell-detail-content{min-height:0;flex:1 1 auto;padding:20px;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;white-space:pre-wrap;color:var(--qb-text-body);line-height:1.65}#quick-build-spell-detail-content strong{display:block;margin-bottom:12px;color:var(--qb-accent-text);font-size:1.08rem}.quick-build-expansion-notice{margin-top:12px;padding-top:8px;border-top:1px solid var(--qb-border);color:var(--qb-text-muted);font-size:.78rem;line-height:1.45}
+      #quick-build-spell-detail .quick-build-spell-prepare{display:flex;flex:0 0 auto;align-items:center;justify-content:space-between;gap:16px;padding:16px 18px;border-top:1px solid var(--qb-border);background:var(--qb-surface-soft)}#quick-build-spell-detail .quick-build-spell-prepare[hidden]{display:none}#quick-build-spell-prepare-question{margin:0;color:var(--qb-text);font-weight:700;line-height:1.45}.quick-build-spell-prepare-actions{display:flex;flex:0 0 auto;gap:10px}.quick-build-spell-prepare-actions button{min-height:44px;margin:0;padding:8px 14px;border:1px solid var(--qb-border-strong);border-radius:8px;background:var(--qb-surface-elevated);color:var(--qb-text);font-weight:700;cursor:pointer}.quick-build-spell-prepare-actions button:hover,.quick-build-spell-prepare-actions button:focus-visible{border-color:var(--qb-accent);background:var(--qb-accent-soft);outline:2px solid transparent}.quick-build-spell-prepare-actions button:active{box-shadow:inset 0 2px 5px color-mix(in srgb,var(--qb-text) 18%,transparent)}.quick-build-spell-prepare-actions .quick-build-spell-prepare-confirm{border-color:var(--qb-accent);background:var(--qb-accent-hover);color:#fff}.quick-build-spell-prepare-actions .quick-build-spell-prepare-confirm:hover,.quick-build-spell-prepare-actions .quick-build-spell-prepare-confirm:focus-visible{background:var(--qb-accent);color:#fff}
       .quick-build-ability-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin:0 0 16px}.quick-build-ability-heading h3{margin:0!important}.quick-build-ability-status{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px}.quick-build-status-pill{padding:6px 10px;border:1px solid var(--qb-border);border-radius:999px;background:var(--qb-surface-soft);color:var(--qb-text-muted);font-size:.82rem;line-height:1.2}.quick-build-status-pill strong{color:var(--qb-text)}.quick-build-status-pill.is-complete{border-color:var(--qb-success-border);background:var(--qb-success-bg);color:var(--qb-success-text)}.quick-build-ability-grid{display:grid;gap:12px;padding:14px}.quick-build-ability-row{display:grid;grid-template-columns:minmax(92px,.7fr) minmax(0,2fr) minmax(74px,.55fr);gap:16px;align-items:center;padding:14px 16px;border:1px solid var(--qb-border);border-radius:10px;background:var(--qb-surface-muted)}.quick-build-ability-name{display:flex;flex-direction:column;gap:3px}.quick-build-ability-name strong{font-size:1.05rem;color:var(--qb-text)}.quick-build-ability-name small{color:var(--qb-text-muted);font-size:.76rem}.quick-build-ability-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.quick-build-ability-field{display:grid;gap:6px;min-width:0;color:var(--qb-text-muted);font-size:.82rem}.quick-build-ability-field select{width:100%;min-width:0;min-height:44px;margin:0;padding:8px 34px 8px 12px;border:1px solid var(--qb-border-strong);border-radius:8px;background:var(--qb-input);color:var(--qb-text);font:inherit;font-size:1rem}.quick-build-ability-field select:focus-visible{border-color:var(--qb-accent);outline:2px solid var(--qb-accent);outline-offset:1px}.quick-build-ability-field select:disabled{border-color:var(--qb-border);background:var(--qb-disabled);color:var(--qb-disabled-text);opacity:1}.quick-build-ability-total{display:grid;gap:2px;justify-items:end}.quick-build-ability-total span{color:var(--qb-text-muted);font-size:.75rem}.quick-build-ability-total strong{color:var(--qb-accent-text);font-size:1.45rem;line-height:1}.quick-build-ability-help{display:flex;flex-wrap:wrap;gap:6px 16px;margin:0 0 18px;color:var(--qb-text-muted);font-size:.88rem}.quick-build-ability-help strong{color:var(--qb-text-body)}.quick-build-complete{padding:18px;border-left:4px solid var(--qb-success-border);border-radius:8px;background:var(--qb-success-bg);color:var(--qb-success-text)}.quick-build-plan{margin:20px 0 0;padding-left:1.4rem;line-height:1.8;color:var(--qb-text-body)}.quick-build-plan li.current{color:var(--qb-accent-text);font-weight:700}
       .quick-build-ability-table-head,.quick-build-ability-row{display:grid;grid-template-columns:72px minmax(0,1fr) minmax(0,1fr) 48px;align-items:center;gap:6px}.quick-build-ability-table-head{padding:4px 10px;color:var(--qb-text-muted);font-size:.8rem;font-weight:700;text-align:center}.quick-build-ability-table-head span:first-child{text-align:left}.quick-build-ability-grid{gap:6px}.quick-build-ability-row{padding:8px 10px;background:var(--qb-surface-elevated)}.quick-build-ability-row.is-bonus-locked{background:var(--qb-surface-muted)}.quick-build-ability-control{display:flex;align-items:center;justify-content:center;gap:6px}.quick-build-ability-step{display:inline-flex;align-items:center;justify-content:center;width:34px;min-width:34px;height:34px;min-height:34px;margin:0;padding:0;border:1px solid var(--qb-border-strong);border-radius:999px;background:var(--qb-surface-elevated);color:var(--qb-text);font-size:1rem;font-weight:900;line-height:1;cursor:pointer}.quick-build-ability-step:disabled{cursor:not-allowed;opacity:.4}.quick-build-ability-value{min-width:28px;color:var(--qb-text);font-weight:700;text-align:center}.quick-build-ability-value.is-bonus{color:var(--qb-accent-text)}.quick-build-ability-total{display:block;text-align:center}.quick-build-ability-total strong{font-size:1.15rem}
       .quick-build-class-card{min-height:128px!important}.quick-build-class-card p{margin:0;color:var(--qb-text-body);line-height:1.55}.quick-build-substep-actions{display:flex;justify-content:space-between;gap:12px;margin-top:18px}.quick-build-substep-actions button{min-height:46px;padding:9px 16px;border:1px solid var(--qb-border-strong);border-radius:8px;background:var(--qb-surface-elevated);color:var(--qb-text);cursor:pointer}.quick-build-substep-actions button.primary{border-color:var(--qb-accent);background:var(--qb-accent-hover);color:#fff}.quick-build-substep-actions button:disabled{cursor:not-allowed;opacity:.55}.quick-build-proficiency-grid{display:grid;gap:14px}.quick-build-fixed-list{margin:12px 0 0;padding:12px;border-radius:8px;background:var(--qb-surface-muted);color:var(--qb-text-body);line-height:1.6}.quick-build-summary-list{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;margin:0}.quick-build-summary-list dt{color:var(--qb-text-muted)}.quick-build-summary-list dd{margin:0;color:var(--qb-text)}.quick-build-ability-summary{display:grid;gap:6px}.quick-build-ability-summary-row{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline}.quick-build-ability-summary-row>span{white-space:nowrap}.quick-build-ability-summary.wrap-all .quick-build-ability-summary-row{display:grid;grid-template-columns:1fr;gap:2px}.quick-build-ability-summary.wrap-all .quick-build-ability-modifier{padding-inline-start:1em}.quick-build-ability-modifier{font-weight:800;color:var(--qb-accent-text)}.quick-build-ability-modifier-sign{color:var(--qb-warning-text)}.quick-build-ability-modifier-value{color:var(--qb-accent)}.quick-build-complete .quick-build-summary-list dt,.quick-build-complete .quick-build-summary-list dd{color:var(--qb-success-text)}.quick-build-source-warning{margin-top:10px;color:var(--qb-warning-text);font-size:.9rem}
@@ -1450,7 +1452,7 @@
       #quick-build-wizard .quick-build-equipment-actions button.is-selected{border-color:var(--qb-accent);background:var(--qb-accent-hover);color:#fff;box-shadow:inset 0 0 0 1px var(--qb-accent)}
       @keyframes quick-build-flow-in{from{opacity:0;transform:translateY(-14px)}to{opacity:1;transform:translateY(0)}}@keyframes quick-build-next-ready{0%{transform:scale(.96);box-shadow:0 0 0 0 var(--qb-accent-soft)}55%{transform:scale(1.04);box-shadow:0 0 0 7px var(--qb-accent-soft)}100%{transform:scale(1);box-shadow:0 0 0 3px var(--qb-accent-soft)}}@keyframes quick-build-attention{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--qb-warning-border) 0%,transparent)}55%{box-shadow:0 0 0 7px color-mix(in srgb,var(--qb-warning-border) 28%,transparent)}100%{box-shadow:0 0 0 3px color-mix(in srgb,var(--qb-warning-border) 24%,transparent)}}
       @media(max-width:760px){.quick-build-class-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-      @media(max-width:620px){.quick-build-ability-grid{padding:8px}.quick-build-ability-table-head,.quick-build-ability-row{grid-template-columns:58px minmax(88px,1fr) minmax(88px,1fr) 36px;gap:2px;padding-right:5px;padding-left:5px}.quick-build-ability-step{width:30px;min-width:30px;height:30px;min-height:30px}.quick-build-ability-control{gap:2px}.quick-build-ability-value{min-width:22px}#quick-build-wizard .quick-build-body{padding:20px 16px}.quick-build-ability-heading{display:grid;gap:12px}.quick-build-ability-status{justify-content:flex-start}.quick-build-background-grid,.quick-build-class-grid{grid-template-columns:1fr}.quick-build-choice-actions{grid-template-columns:1fr}.quick-build-substep-actions:not(.quick-build-inline-actions){display:grid;grid-template-columns:1fr}.quick-build-substep-actions button{width:100%}.quick-build-inline-actions button{flex:1 1 0;width:auto;min-width:0}#quick-build-wizard .quick-build-footer{gap:8px;padding:12px}#quick-build-wizard .quick-build-footer button{min-height:48px;padding-right:8px;padding-left:8px}#quick-build-spell-detail{padding:16px}#quick-build-spell-detail .quick-build-spell-detail-shell{max-width:100%;max-height:calc(100dvh - 32px)}#quick-build-spell-detail-content{padding:18px 16px}}
+      @media(max-width:620px){.quick-build-ability-grid{padding:8px}.quick-build-ability-table-head,.quick-build-ability-row{grid-template-columns:58px minmax(88px,1fr) minmax(88px,1fr) 36px;gap:2px;padding-right:5px;padding-left:5px}.quick-build-ability-step{width:30px;min-width:30px;height:30px;min-height:30px}.quick-build-ability-control{gap:2px}.quick-build-ability-value{min-width:22px}#quick-build-wizard .quick-build-body{padding:20px 16px}.quick-build-ability-heading{display:grid;gap:12px}.quick-build-ability-status{justify-content:flex-start}.quick-build-background-grid,.quick-build-class-grid{grid-template-columns:1fr}.quick-build-choice-actions{grid-template-columns:1fr}.quick-build-substep-actions:not(.quick-build-inline-actions){display:grid;grid-template-columns:1fr}.quick-build-substep-actions button{width:100%}.quick-build-inline-actions button{flex:1 1 0;width:auto;min-width:0}#quick-build-wizard .quick-build-footer{gap:8px;padding:12px}#quick-build-wizard .quick-build-footer button{min-height:48px;padding-right:8px;padding-left:8px}#quick-build-spell-detail{padding:16px}#quick-build-spell-detail .quick-build-spell-detail-shell{max-width:100%;max-height:calc(100dvh - 32px)}#quick-build-spell-detail-content{padding:18px 16px}#quick-build-spell-detail .quick-build-spell-prepare{align-items:stretch;flex-direction:column;padding:14px 16px}.quick-build-spell-prepare-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%}.quick-build-spell-prepare-actions button{width:100%;padding-right:8px;padding-left:8px}}
       @media(max-width:380px){#quick-build-wizard{padding:8px}#quick-build-wizard .quick-build-shell{max-height:calc(100dvh - 16px)}#quick-build-wizard .quick-build-header{padding:14px 12px 10px}#quick-build-wizard .quick-build-body{padding:16px 10px}.quick-build-choice-panel.quick-build-ability-grid{padding:4px}.quick-build-ability-table-head,.quick-build-ability-row{grid-template-columns:44px minmax(70px,1fr) minmax(70px,1fr) 30px;gap:2px;padding:5px 4px}.quick-build-ability-step{width:26px;min-width:26px;height:28px;min-height:28px;font-size:.88rem}.quick-build-ability-value{min-width:18px;font-size:.9rem}.quick-build-ability-name strong{font-size:.92rem}.quick-build-ability-name small{font-size:.65rem}.quick-build-ability-table-head{font-size:.72rem}#quick-build-wizard .quick-build-footer{gap:6px;padding:10px 8px}#quick-build-wizard .quick-build-footer button{padding-right:4px;padding-left:4px;font-size:.9rem}}
       @media(prefers-reduced-motion:reduce){#quick-build-wizard .quick-build-flow-section.is-newly-revealed,#quick-build-wizard .quick-build-footer button.is-ready,#quick-build-wizard .quick-build-needs-attention{animation:none}#quick-build-wizard .quick-build-footer button{transition:none}}
     `;
@@ -1492,12 +1494,21 @@
     modal.inert = true;
     modal.setAttribute("aria-hidden", "true");
     modal.innerHTML = `
-      <section class="quick-build-spell-detail-shell" role="dialog" aria-modal="true" aria-labelledby="quick-build-spell-detail-title" aria-describedby="quick-build-spell-detail-content">
+      <section class="quick-build-spell-detail-shell" role="dialog" aria-modal="true" aria-labelledby="quick-build-spell-detail-title" aria-describedby="quick-build-spell-detail-content quick-build-spell-prepare-question">
         <header class="quick-build-spell-detail-header"><h2 id="quick-build-spell-detail-title">法術詳情</h2><button type="button" class="quick-build-spell-detail-close" aria-label="關閉法術詳情">×</button></header>
         <div id="quick-build-spell-detail-content" tabindex="0"></div>
+        <footer class="quick-build-spell-prepare" hidden>
+          <p id="quick-build-spell-prepare-question">是否準備這個法術？</p>
+          <div class="quick-build-spell-prepare-actions">
+            <button type="button" class="quick-build-spell-prepare-cancel">暫不準備</button>
+            <button type="button" class="quick-build-spell-prepare-confirm">準備法術</button>
+          </div>
+        </footer>
       </section>`;
     document.body.appendChild(modal);
     modal.querySelector(".quick-build-spell-detail-close").addEventListener("click", closeSpellDetail);
+    modal.querySelector(".quick-build-spell-prepare-cancel").addEventListener("click", closeSpellDetail);
+    modal.querySelector(".quick-build-spell-prepare-confirm").addEventListener("click", () => finishSpellPrepareDecision(true));
     modal.addEventListener("click", event => { if (event.target === modal) closeSpellDetail(); });
     modal.addEventListener("keydown", trapSpellDetailKeyboard);
     return modal;
@@ -2695,12 +2706,24 @@
     if (typeof saveAllFields === "function") saveAllFields();
   }
 
-  function importDraftToMobileCard() {
-    if (!window.confirm("匯入角色卡會清空玩家目前在手機角卡中的所有資料，且無法復原。確定要繼續嗎？")) return;
+  async function importDraftToMobileCard(event) {
+    const confirmed = await window.AppDialog.requestDecision({
+      title: "匯入至角色卡",
+      message: "這會清空目前手機角色卡中的所有角色資料，且無法復原。",
+      cancelLabel: "保留角色卡",
+      confirmLabel: "清空並匯入",
+      intent: "danger",
+      trigger: event?.currentTarget
+    });
+    if (!confirmed) return;
     saveDraft();
     const warnings = [];
     if (!resetMobileCardForImport(warnings)) {
-      window.alert(`匯入失敗。\n\n${warnings.join("\n")}`);
+      await window.AppDialog.showMessage({
+        title: "匯入失敗",
+        message: warnings.join("\n") || "無法重置目前角色卡。",
+        confirmLabel: "關閉"
+      });
       return;
     }
     if (typeof SHARE_MODE !== "undefined") {
@@ -2741,7 +2764,11 @@
     const resultText = completed
       ? "角色卡匯入完成。已計算屬性豁免與技能加值、匯入技能熟練與專精，並開啟武器攻擊自動化；巫祝與魔術使的技能額外加值也已納入計算。"
       : "角色卡只完成部分匯入，請依下列問題檢查。";
-    window.alert(`${resultText}${warningText}`);
+    await window.AppDialog.showMessage({
+      title: completed ? "角色卡匯入完成" : "角色卡部分匯入",
+      message: `${resultText}${warningText}`,
+      confirmLabel: "知道了"
+    });
   }
 
   function selectedChoiceForGroup(group) {
@@ -3438,13 +3465,29 @@
     openSpellDetail(spell, trigger);
   }
 
-  function openSpellDetail(spell, trigger) {
+  function settleSpellPrepareDecision(result) {
+    const resolve = spellPrepareDecisionResolver;
+    spellPrepareDecisionResolver = null;
+    resolve?.(result);
+  }
+
+  function finishSpellPrepareDecision(result) {
+    const resolve = spellPrepareDecisionResolver;
+    spellPrepareDecisionResolver = null;
+    closeSpellDetail();
+    resolve?.(result);
+  }
+
+  function openSpellDetail(spell, trigger, options = {}) {
+    if (!options.askToPrepare) settleSpellPrepareDecision(false);
     const modal = ensureSpellDetailModal();
     const wizard = document.getElementById("quick-build-wizard");
     const wizardIsOpen = wizard?.classList.contains("open");
     const wizardShell = wizard?.querySelector(".quick-build-shell");
     const content = modal.querySelector("#quick-build-spell-detail-content");
+    const prepareFooter = modal.querySelector(".quick-build-spell-prepare");
     modal.querySelector("#quick-build-spell-detail-title").textContent = "法術詳情";
+    prepareFooter.hidden = !options.askToPrepare;
     spellDetailTrigger = trigger || document.activeElement;
     const record = typeof spell === "string" ? canonicalSpell(spell) : spell;
     content.innerHTML = record ? `<strong>${escapeHtml(spellDisplayName(record.spellId))}</strong>${escapeHtml(record.desc)}` : "<span>你還沒有選擇法術喔！</span>";
@@ -3461,6 +3504,19 @@
     } else {
       lockPage(modal);
     }
+  }
+
+  function openSpellPrepareDetail(spellId, trigger) {
+    settleSpellPrepareDecision(false);
+    const spell = canonicalSpell(spellId);
+    if (!spell) {
+      openSpellDetail(null, trigger);
+      return Promise.resolve(false);
+    }
+    return new Promise(resolve => {
+      spellPrepareDecisionResolver = resolve;
+      openSpellDetail(spell, trigger, { askToPrepare: true });
+    });
   }
 
   function classFeaturePlainText(html) {
@@ -3504,6 +3560,8 @@
     const content = modal.querySelector("#quick-build-spell-detail-content");
     spellDetailTrigger = trigger || document.activeElement;
     modal.querySelector("#quick-build-spell-detail-title").textContent = title;
+    modal.querySelector(".quick-build-spell-prepare").hidden = true;
+    settleSpellPrepareDecision(false);
     if (description) {
       const lines = String(description).replace(/\r\n/g, "\n").split("\n");
       const noticeIndex = lines.findIndex(line => line.trim().startsWith("「擴充」為本站"));
@@ -3534,6 +3592,7 @@
       if (modal) modal.inert = true;
       wizardShell?.removeAttribute("inert");
       wizardShell?.removeAttribute("aria-hidden");
+      settleSpellPrepareDecision(false);
       return;
     }
     wizardShell?.removeAttribute("inert");
@@ -3546,6 +3605,7 @@
     modal.inert = true;
     modal.classList.remove("open");
     modal.setAttribute("aria-hidden", "true");
+    settleSpellPrepareDecision(false);
   }
 
   function trapSpellDetailKeyboard(event) {
@@ -3755,8 +3815,16 @@
     modal.querySelector(".quick-build-close")?.focus();
   }
 
-  function discardDraft() {
-    if (!window.confirm("確定要重置創角小幫手嗎？背景、種族、職業、裝備與其他選擇將無法復原。")) return;
+  async function discardDraft(event) {
+    const confirmed = await window.AppDialog.requestDecision({
+      title: "重置創角小幫手",
+      message: "背景、種族、職業、裝備與其他選擇都會清除，且無法復原。",
+      cancelLabel: "保留進度",
+      confirmLabel: "重置小幫手",
+      intent: "danger",
+      trigger: event?.currentTarget
+    });
+    if (!confirmed) return;
     storage.removeItem(STORAGE_KEY);
     draft = createDraft();
     expandedChoiceGroups.clear();
@@ -3783,7 +3851,7 @@
 
   window.quickBuild = {
     open: openWizard, close: closeWizard, createDraft,
-    openSpellDetail, openPactTomeModal,
+    openSpellDetail, openSpellPrepareDetail, openPactTomeModal,
     getDraft: () => structuredClone(draft), saveDraft,
     hasImportedInitialEquipment,
     storageKey: STORAGE_KEY

@@ -4841,6 +4841,12 @@ globalThis.SpellCatalog = (() => {
     return typeof exactName === "string" ? exactNameToSpellId.get(exactName) : undefined;
   }
 
+  function isConcentration(spellOrId) {
+    const spell = typeof spellOrId === "string" ? getSpell(spellOrId) : spellOrId;
+    if (!spell || typeof spell.desc !== "string") return false;
+    return /^持續時間\s*[：:]\s*[^\n]*專注/imu.test(spell.desc);
+  }
+
   const compatSpellList = {};
   for (const [classId, spellIds] of Object.entries(fullSpellIdsByClass)) {
     const levels = {};
@@ -4863,6 +4869,7 @@ globalThis.SpellCatalog = (() => {
     getClassIds,
     getDisplayName,
     resolveSpellId,
+    isConcentration,
     compatSpellList
   });
 })();

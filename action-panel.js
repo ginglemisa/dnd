@@ -1,4 +1,4 @@
-(function () {
+(function attachActionPanel(globalScope) {
   "use strict";
 
   const STATIC_OPTIONS = Object.freeze({
@@ -82,7 +82,8 @@
     race: "種族",
     feat: "專長",
     spell: "法術",
-    invocation: "魔能祈喚"
+    invocation: "魔能祈喚",
+    metamagic: "超魔法"
   });
 
   const GOLIATH_ANCESTRY_FEATURES = Object.freeze({
@@ -382,11 +383,33 @@
     });
   }
 
+  function getSelectedMetamagicEntries(mode) {
+    if (mode !== "bonus") return [];
+
+    return Array.from(
+      document.querySelectorAll("#metamagicOptions input[data-metamagic-name]:checked")
+    ).flatMap(input => {
+      const card = input.closest(".feature-choice-card--metamagic");
+      const description = sourceToPlainText(card?.innerHTML || "");
+      if (!description || !/附贈動作/u.test(description)) return [];
+
+      const label = input.dataset.metamagicName || "超魔法";
+      return [{
+        key: `dynamic-${mode}-metamagic-${stableKeyHash(label)}`,
+        label,
+        source: FEATURE_SOURCE_LABELS.metamagic,
+        description,
+        dynamic: true
+      }];
+    });
+  }
+
   function getDynamicOptions(mode) {
     if (mode !== "action" && mode !== "bonus" && mode !== "reaction") return [];
     const entries = [
       ...(mode === "action" ? getMonkCustomEntries(mode) : [...getFeatureEntries(mode), ...getMonkCustomEntries(mode)]),
       ...getSelectedInvocationEntries(mode),
+      ...getSelectedMetamagicEntries(mode),
       ...(mode === "action" ? [] : getSelectedSpellEntries(mode))
     ];
     const seen = new Set();
@@ -459,7 +482,20 @@
   }
 
   function getModeOptions(mode) {
+    if (!STATIC_OPTIONS[mode]) return [];
     return [...STATIC_OPTIONS[mode], ...getDynamicOptions(mode)];
+  }
+
+  function getPublicModeOptions(mode) {
+    return Object.freeze(
+      getModeOptions(mode).map(option => Object.freeze({ ...option }))
+    );
+  }
+
+  function getPublicModeMeta(mode) {
+    return MODE_META[mode]
+      ? Object.freeze({ ...MODE_META[mode] })
+      : null;
   }
 
   function renderMode(mode, preserveSelection = false) {
@@ -489,6 +525,10 @@
     const selected = options.find(option => option.key === selectedOptionKey);
     if (!selected) selectedOptionKey = "";
     renderDescription(selected || null);
+
+    globalScope.dispatchEvent?.(new CustomEvent("actionpanelchange", {
+      detail: { mode }
+    }));
   }
 
   function scheduleDynamicRefresh() {
@@ -546,5 +586,18 @@
     renderMode("action");
   }
 
+  globalScope.ActionPanel = Object.freeze({
+    getModes() {
+      return Object.freeze(Object.keys(MODE_META));
+    },
+    getModeMeta: getPublicModeMeta,
+    getOptions: getPublicModeOptions,
+    getSourceLabels() {
+      return Object.freeze({ ...FEATURE_SOURCE_LABELS });
+    },
+    getButtonLabel,
+    requestRefresh: scheduleDynamicRefresh
+  });
+
   document.addEventListener("DOMContentLoaded", initializeActionPanel);
-})();
+})(typeof window !== "undefined" ? window : globalThis);
