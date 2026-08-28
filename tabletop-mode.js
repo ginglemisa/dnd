@@ -1169,7 +1169,7 @@
     if (elements.deathHelp) {
       if (sacrificed) {
         elements.deathHelp.textContent =
-          `恢復 HP 可解除「${HEROIC_SACRIFICE_LABEL}」狀態。`;
+          `請節哀，大俠請重新來過吧。`;
       } else if (
         combatState.deathSaveStable
       ) {
