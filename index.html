@@ -46,9 +46,9 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎲%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20260828-tabletop-skill-columns">
+  <link rel="stylesheet" href="styles.css?v=20260829-tabletop-quick-rolls">
   <script src="scroll-to-top.js" defer></script>
-  <script src="dice-roller.js?v=20260828-history-label" defer></script>
+  <script src="dice-roller.js?v=20260829-compound-rolls" defer></script>
   <script src="monster.js" defer></script>
     <script src="class-features.js?v=20260826-class-options-spacing" defer></script>
   <script src="race.js?v=20260826-lineage-tables" defer></script>
@@ -60,11 +60,11 @@
   <script src="condition.js" defer></script>
   <script src="action-panel.js?v=20260828-shared-api" defer></script>
   <script src="character-rules.js?v=20260828-built-in-resources" defer></script>
-  <script src="app-dialog.js?v=20260828-content-actions" defer></script>
-  <script src="tabletop-mode.js?v=20260828-read-only-stats" defer></script>
+  <script src="app-dialog.js?v=20260829-dice-roll-toast" defer></script>
+  <script src="tabletop-mode.js?v=20260829-tabletop-quick-rolls" defer></script>
   <script src="tabletop-resources.js?v=20260828-card-only-free-uses" defer></script>
-  <script src="tabletop-actions.js?v=20260828-phase-2" defer></script>
-  <script src="tabletop-spells.js?v=20260828-all-free-use-mirrors" defer></script>
+  <script src="tabletop-actions.js?v=20260829-weapon-combined-roll" defer></script>
+  <script src="tabletop-spells.js?v=20260829-tabletop-quick-rolls-3" defer></script>
   <script src="legal-modal.js?v=20260824-onboarding-entry" defer></script>
   <script src="onboarding-tour.js?v=20260825-onboarding-step5-highlights" defer></script>
   <script src="quick-build.js" defer></script>
@@ -3376,7 +3376,7 @@ function getClassAlwaysPreparedSpellSpecs() {
   const classValue = document.getElementById("class")?.value || "";
   const level = Number.parseInt(levelValue || "0", 10) || 0;
   if (classValue === "druid" && level >= 1) {
-    return [{
+    const specs = [{
       level: 1,
       ring: 1,
       spellId: "speak-with-animals",
@@ -3387,6 +3387,18 @@ function getClassAlwaysPreparedSpellSpecs() {
       sourcePriority: 25,
       areaId: "level1spells-area"
     }];
+    if (level >= 2) specs.push({
+      level: 2,
+      ring: 1,
+      spellId: "find-familiar",
+      key: "class-druid-wild-companion-find-familiar",
+      source: CLASS_SPELL_SOURCE,
+      sourceName: "德魯伊",
+      sourceLabel: "來源：德魯伊等級 2：荒野夥伴",
+      sourcePriority: 25,
+      areaId: "level1spells-area"
+    });
+    return specs;
   }
   if (classValue === "paladin") {
     const specs = [];
@@ -8032,8 +8044,8 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
           return button;
         };
         options.append(
-          createOption('editable','可編輯表單版','約 6 MB','使用 Noto Sans TC；保留 PDF 表單，下載後仍可繼續填寫與修改。檔案較大。'),
-          createOption('compact','精緻易讀版','約 2 MB','使用思源宋體；檔案較小且字級較易閱讀。內容會固定，下載後無法編輯。')
+          createOption('editable','可編輯表單版','約 5 MB','使用 Noto Sans TC；保留文字輸入區，下載後仍可填寫或修改，檔案較大。'),
+          createOption('compact','精緻易讀版','約 2 MB','使用思源宋體；檔案較小，美觀但文字固定，下載後無法編輯。')
         );
         if(ENABLE_EDITABLE_NO_FONT_PDF_EXPORT){
           options.append(
@@ -8683,7 +8695,7 @@ window.addEventListener("DOMContentLoaded", async function() {
         <div class="tabletop-exhaustion-control">
           <label for="tabletop-exhaustion-level">力竭等級</label>
           <input id="tabletop-exhaustion-level" type="number" min="0" max="6" step="1" inputmode="numeric" value="0" aria-describedby="tabletop-exhaustion-help tabletop-condition-error" data-state-transient="true">
-          <span id="tabletop-exhaustion-help">0～6 級；不拆成六個獨立狀態。</span>
+          <span id="tabletop-exhaustion-help">0 級代表正常，6 級死亡。</span>
         </div>
         <section class="tabletop-condition-reference" aria-labelledby="tabletop-condition-reference-title">
           <h3 id="tabletop-condition-reference-title">狀態說明</h3>
@@ -8764,7 +8776,7 @@ window.addEventListener("DOMContentLoaded", async function() {
   <div class="ability-choice-card" role="dialog" aria-modal="true" aria-label="決定屬性方式">
     <button type="button" id="ability-choice-close" class="ability-choice-close" aria-label="關閉屬性選單">✕</button>
     <h3>決定屬性</h3>
-    <p class="ability-choice-tip">２７購點可自訂分配，也能快速套用職業預設。</p>
+    <p class="ability-choice-tip">２７購點自行分配，也可選職業預設。</p>
     <div class="ability-choice-actions">
       <button type="button" id="ability-choice-point-buy">２７購點</button>
       <hr class="ability-choice-divider">
@@ -8778,7 +8790,7 @@ window.addEventListener("DOMContentLoaded", async function() {
     <button type="button" id="point-buy-close" class="point-buy-close" aria-label="關閉點購視窗">✕</button>
     <header class="point-buy-header">
       <h3>🎲 27購點</h3>
-      <p>基礎值 8～15，總點數上限 27。背景額外加值最多 3 點（單項 +2）。</p>
+      <p>基礎值 8～15，總點數上限 27。背景額外加值 3 點（單項最多 +2）。</p>
       <label class="point-buy-background" for="point-buy-background">
         <span>背景</span>
         <select id="point-buy-background" aria-label="選擇背景"></select>

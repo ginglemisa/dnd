@@ -39,12 +39,65 @@
     return Boolean(weapon.name || weapon.hit || weapon.damage || weapon.note || weapon.mastery);
   }
 
-  function appendDefinition(list, term, value) {
+  function parseModifier(value) {
+    const normalized = String(value || "").trim().replace(/−/g, "-");
+    if (!/^[+-]?\d+$/.test(normalized)) return null;
+    const modifier = Number(normalized);
+    return Number.isSafeInteger(modifier) ? modifier : null;
+  }
+
+  function appendDefinition(list, term, value, rollType = "", label = "", weapon = null) {
     const item = createElement("div", "tabletop-weapon-field");
-    item.append(
-      createElement("dt", "", term),
-      createElement("dd", "", value || "—")
-    );
+    const description = createElement("dd");
+    const displayValue = value || "—";
+    if (rollType) {
+      const button = createElement("button", "tabletop-inline-roll", displayValue);
+      button.type = "button";
+      const modifier = rollType === "hit"
+        ? parseModifier(value)
+        : rollType === "attack"
+          ? parseModifier(weapon?.hit)
+          : null;
+      const canRoll = rollType === "hit"
+        ? modifier !== null
+        : rollType === "attack"
+          ? Boolean(
+              weapon?.name
+              && modifier !== null
+              && globalScope.DiceRoller?.canRollExpression?.(weapon.damage)
+            )
+          : Boolean(globalScope.DiceRoller?.canRollExpression?.(value));
+      button.disabled = !canRoll || !globalScope.DiceRoller?.isEnabled?.();
+      button.setAttribute(
+        "aria-label",
+        button.disabled ? `${label}${term}；請先開啟擲骰系統` : `擲${label}${term}`
+      );
+      button.addEventListener("click", () => {
+        if (rollType === "attack") {
+          const hitExpression = `1d20${modifier < 0 ? "" : "+"}${modifier}`;
+          globalScope.DiceRoller?.rollExpressions?.([
+            { expression: hitExpression, label: "命中" },
+            { expression: weapon.damage, label: "傷害" }
+          ]);
+          return;
+        }
+        if (rollType === "hit") {
+          globalScope.DiceRoller?.roll?.({
+            count: 1,
+            sides: 20,
+            modifier,
+            includeModifier: true,
+            label: `${label}${term}`
+          });
+          return;
+        }
+        globalScope.DiceRoller?.rollExpression?.(value, { label: `${label}${term}` });
+      });
+      description.appendChild(button);
+    } else {
+      description.textContent = displayValue;
+    }
+    item.append(createElement("dt", "", term), description);
     list.appendChild(item);
   }
 
@@ -57,9 +110,16 @@
     section.appendChild(heading);
 
     const list = createElement("dl", "tabletop-weapon-fields");
-    appendDefinition(list, "名稱", weapon.name || "未裝備");
-    appendDefinition(list, "命中", weapon.hit);
-    appendDefinition(list, "傷害", weapon.damage);
+    appendDefinition(
+      list,
+      "名稱",
+      weapon.name || "未裝備",
+      "attack",
+      `${weapon.label}${weapon.name ? ` ${weapon.name}` : ""}命中與傷害`,
+      weapon
+    );
+    appendDefinition(list, "命中", weapon.hit, "hit", `${weapon.label}${weapon.name ? ` ${weapon.name}` : ""}`);
+    appendDefinition(list, "傷害", weapon.damage, "damage", `${weapon.label}${weapon.name ? ` ${weapon.name}` : ""}`);
     appendDefinition(list, "備註", weapon.note);
     section.appendChild(list);
     return section;
@@ -133,11 +193,19 @@
       button.dataset.actionOptionKey = option.key;
       button.setAttribute("aria-pressed", String(option.key === selectedKey));
       if (option.key === selectedKey) button.classList.add("is-selected");
+      if (option.key === "drink-potion" && globalScope.DiceRoller?.isEnabled?.()) {
+        button.classList.add("has-quick-roll");
+        button.title = "點擊擲 2d4 + 2 恢復生命值";
+        button.setAttribute("aria-label", `${option.label}；擲 2d4 + 2 恢復生命值`);
+      }
       button.appendChild(createElement("span", "", api.getButtonLabel(option)));
       if (option.source) button.appendChild(createElement("span", "tabletop-source-tag", option.source));
       button.addEventListener("click", () => {
         selectedOptionKeys.set(mode, option.key);
         renderActionPanel(mode);
+        if (option.key === "drink-potion" && globalScope.DiceRoller?.isEnabled?.()) {
+          globalScope.DiceRoller.rollExpression("2d4+2", { label: "喝藥水恢復生命值" });
+        }
       });
       optionList.appendChild(button);
     });
@@ -216,6 +284,7 @@
     document.addEventListener("input", scheduleRender);
     document.addEventListener("change", scheduleRender);
     globalScope.addEventListener("actionpanelchange", scheduleRender);
+    globalScope.addEventListener("dicerollmodechange", scheduleRender);
     globalScope.addEventListener("tabletop-panelchange", event => {
       if (event.detail?.panel === "actions") scheduleRender();
     });

@@ -196,7 +196,7 @@ $html = [System.Text.RegularExpressions.Regex]::Replace(
   '<button\b(?=[^>]*\bid="export-pdf-btn")[^>]*>[\s\S]*?</button>',
   @'
 <button type="button" id="export-pdf-btn" class="utility-menu__button" aria-label="輸出 PDF（停用）" title="此離線精簡版不包含 PDF 匯出功能" disabled aria-disabled="true">
-    📄 輸出PDF（停用）
+    📄停用輸出
   </button>
 '@,
   [System.Text.RegularExpressions.RegexOptions]::IgnoreCase

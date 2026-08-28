@@ -5,6 +5,11 @@
   const REDUCED_MOTION_ROLL_MS = 100;
   const LONG_PRESS_MS = 1200;
   const HISTORY_LIMIT = 20;
+  const DIE_EXPRESSION_SOURCE = String.raw`\d+\s*d\s*(?:100|20|12|10|8|6|4)`;
+  const EXPRESSION_PATTERN = new RegExp(
+    `${DIE_EXPRESSION_SOURCE}(?:\\s*[+-]\\s*(?:${DIE_EXPRESSION_SOURCE}|\\d+))*`,
+    "i"
+  );
 
   const setup = () => {
     const toggle = document.getElementById("dice-system-toggle");
@@ -168,15 +173,19 @@
       else renderEmptyStage();
     };
 
+    const addHistoryEntry = (diceExpression, total) => {
+      historyEntries.unshift(`${diceExpression}=${total}`);
+      if (historyEntries.length > HISTORY_LIMIT) historyEntries.length = HISTORY_LIMIT;
+      updateHistoryButton();
+    };
+
     const recordRoll = (rollCounts, results) => {
       const diceExpression = DICE_SIDES
         .filter(sides => (rollCounts.get(sides) || 0) > 0)
         .map(sides => `${rollCounts.get(sides)}d${sides}`)
         .join("+");
       const total = results.reduce((sum, result) => sum + result.value, 0);
-      historyEntries.unshift(`${diceExpression}=${total}`);
-      if (historyEntries.length > HISTORY_LIMIT) historyEntries.length = HISTORY_LIMIT;
-      updateHistoryButton();
+      addHistoryEntry(diceExpression, total);
     };
 
     const rollDie = sides => {
@@ -188,6 +197,177 @@
         return (values[0] % sides) + 1;
       }
       return Math.floor(Math.random() * sides) + 1;
+    };
+
+    const normalizeRollRequest = request => {
+      const count = Number(request?.count);
+      const sides = Number(request?.sides);
+      const modifier = Number(request?.modifier ?? 0);
+      if (!Number.isSafeInteger(count) || count < 1 || count > 100) return null;
+      if (!DICE_SIDES.includes(sides)) return null;
+      if (!Number.isSafeInteger(modifier) || Math.abs(modifier) > 999) return null;
+      return {
+        count,
+        sides,
+        modifier,
+        includeModifier: Boolean(request?.includeModifier) || modifier !== 0,
+        label: String(request?.label || "擲骰").trim() || "擲骰"
+      };
+    };
+
+    const parseExpression = expression => {
+      const matchedExpression = String(expression || "").match(EXPRESSION_PATTERN)?.[0] || "";
+      if (!matchedExpression) return null;
+
+      const termPattern = /([+-]?)\s*(?:(\d+)\s*d\s*(100|20|12|10|8|6|4)|(\d+))/gi;
+      const terms = [];
+      let totalDice = 0;
+      for (const match of matchedExpression.matchAll(termPattern)) {
+        const sign = match[1] === "-" ? -1 : 1;
+        if (match[2] && match[3]) {
+          const count = Number(match[2]);
+          const sides = Number(match[3]);
+          if (!Number.isSafeInteger(count) || count < 1 || !DICE_SIDES.includes(sides)) return null;
+          totalDice += count;
+          if (totalDice > 100) return null;
+          terms.push(Object.freeze({ type: "dice", sign, count, sides }));
+          continue;
+        }
+
+        const value = Number(match[4]);
+        if (!Number.isSafeInteger(value) || value > 999) return null;
+        terms.push(Object.freeze({ type: "modifier", value: sign * value }));
+      }
+
+      if (!terms.length || terms[0].type !== "dice") return null;
+      return Object.freeze({ terms: Object.freeze(terms) });
+    };
+
+    const formatSignedTerm = modifier => modifier < 0
+      ? `− ${Math.abs(modifier)}`
+      : `+ ${modifier}`;
+
+    const notifyQuickRoll = equation => {
+      window.AppDialog?.notify(equation, {
+        tone: "info",
+        variant: "dice-roll",
+        duration: 3600
+      });
+    };
+
+    const performQuickRoll = request => {
+      if (!toggle.checked) return null;
+      const normalized = normalizeRollRequest(request);
+      if (!normalized) return null;
+
+      const values = Array.from(
+        { length: normalized.count },
+        () => rollDie(normalized.sides)
+      );
+      const diceTotal = values.reduce((sum, value) => sum + value, 0);
+      const total = diceTotal + normalized.modifier;
+      const modifierExpression = normalized.includeModifier
+        ? `${normalized.modifier < 0 ? "-" : "+"}${Math.abs(normalized.modifier)}`
+        : "";
+      const expression = `${normalized.count}d${normalized.sides}${modifierExpression}`;
+      const diceEquation = values.join(" + ");
+      const calculation = normalized.includeModifier
+        ? `${diceEquation} ${formatSignedTerm(normalized.modifier)}`
+        : diceEquation;
+      const equation = values.length > 1 || normalized.includeModifier
+        ? `${calculation} = ${total}`
+        : String(total);
+
+      addHistoryEntry(expression, total);
+      notifyQuickRoll(equation);
+
+      const detail = Object.freeze({
+        label: normalized.label,
+        expression,
+        values: Object.freeze([...values]),
+        modifier: normalized.modifier,
+        equation,
+        total
+      });
+      window.dispatchEvent?.(new CustomEvent("diceroll", { detail }));
+      return detail;
+    };
+
+    const performExpressionRoll = (parsed, options = {}) => {
+      if (!toggle.checked || !parsed?.terms?.length) return null;
+
+      const rolledTerms = parsed.terms.map(term => {
+        if (term.type === "modifier") return term;
+        return Object.freeze({
+          ...term,
+          values: Object.freeze(Array.from({ length: term.count }, () => rollDie(term.sides)))
+        });
+      });
+      const total = rolledTerms.reduce((sum, term) => {
+        if (term.type === "modifier") return sum + term.value;
+        return sum + term.sign * term.values.reduce((termSum, value) => termSum + value, 0);
+      }, 0);
+      const expressionText = rolledTerms.map((term, index) => {
+        const sign = index === 0 ? (term.sign < 0 ? "-" : "") : (term.sign < 0 || term.value < 0 ? "-" : "+");
+        const value = term.type === "dice"
+          ? `${term.count}d${term.sides}`
+          : String(Math.abs(term.value));
+        return `${sign}${value}`;
+      }).join("");
+      const equationParts = [];
+      rolledTerms.forEach(term => {
+        if (term.type === "modifier") {
+          equationParts.push(formatSignedTerm(term.value));
+          return;
+        }
+        term.values.forEach(value => {
+          const signedValue = term.sign < 0 ? -value : value;
+          equationParts.push(equationParts.length && signedValue >= 0 ? `+ ${signedValue}` : signedValue < 0 ? `− ${Math.abs(signedValue)}` : String(signedValue));
+        });
+      });
+      const calculation = equationParts.join(" ");
+      const equation = equationParts.length > 1 ? `${calculation} = ${total}` : String(total);
+      const label = String(options.label || "擲骰").trim() || "擲骰";
+
+      addHistoryEntry(expressionText, total);
+      if (options.notify !== false) notifyQuickRoll(equation);
+
+      const values = rolledTerms.flatMap(term => term.type === "dice" ? term.values : []);
+      const detail = Object.freeze({
+        label,
+        expression: expressionText,
+        values: Object.freeze(values),
+        terms: Object.freeze(rolledTerms),
+        equation,
+        total
+      });
+      window.dispatchEvent?.(new CustomEvent("diceroll", { detail }));
+      return detail;
+    };
+
+    const rollExpression = (expression, options = {}) => {
+      const parsed = parseExpression(expression);
+      return parsed
+        ? performExpressionRoll(parsed, options)
+        : null;
+    };
+
+    const rollExpressions = (entries, options = {}) => {
+      if (!toggle.checked || !Array.isArray(entries)) return Object.freeze([]);
+      const results = entries.flatMap(entry => {
+        const result = rollExpression(entry?.expression, {
+          label: entry?.label,
+          notify: false
+        });
+        return result ? [result] : [];
+      });
+      if (results.length) {
+        const message = results
+          .map(result => `${result.label}：${result.equation}`)
+          .join(options.separator || " ／ ");
+        notifyQuickRoll(message);
+      }
+      return Object.freeze(results);
     };
 
     const cancelRoll = () => {
@@ -314,7 +494,18 @@
       fab.classList.toggle("is-hidden", !nextEnabled);
       if (!nextEnabled) closeModal();
       if (persist) window.dndStorage?.setItem(STORAGE_KEY, String(nextEnabled));
+      window.dispatchEvent?.(new CustomEvent("dicerollmodechange", {
+        detail: Object.freeze({ enabled: nextEnabled })
+      }));
     };
+
+    window.DiceRoller = Object.freeze({
+      isEnabled: () => toggle.checked,
+      canRollExpression: expression => Boolean(parseExpression(expression)),
+      roll: performQuickRoll,
+      rollExpression,
+      rollExpressions
+    });
 
     dieButtons.forEach(button => {
       const sides = Number.parseInt(button.dataset.die || "0", 10);

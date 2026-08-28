@@ -48,6 +48,7 @@
     if (!normalizedMessage) return;
     window.clearTimeout(toastTimer);
     toast.dataset.tone = options.tone || "info";
+    toast.dataset.variant = options.variant || "default";
     toast.textContent = "";
     window.requestAnimationFrame(() => {
       toast.textContent = normalizedMessage;

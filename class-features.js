@@ -536,7 +536,7 @@ const classFeatures = {
 
 <section class="bard-feature class-feature-section" data-feature-level="2">
   <h3>等級 2：萬事通</h3>
-  <p>你對所有「未熟練」能力檢定，額外加上一半熟練加值（向下取整）。</p>
+  <p>你對所有「未熟練」能力檢定，額外加上一半熟練加值（捨去小數點）。</p>
 </section>
 
 <section class="bard-feature class-feature-section" data-feature-level="3">
@@ -769,7 +769,7 @@ const classFeatures = {
       <li>你可選擇：
         <ul>
           <li>讓目標回復等同結果的生命值，或</li>
-          <li>讓目標做體質豁免，失敗受等同結果的光耀／黯蝕傷害（你選），成功受一半（向下取整）。</li>
+          <li>讓目標做體質豁免，失敗受等同結果的光耀／黯蝕傷害（你選），成功受一半（捨去小數點）。</li>
         </ul>
       </li>
     </ul>
@@ -1049,7 +1049,7 @@ const classFeatures = {
   <h3>等級 2：荒野形態</h3>
   <ul class="class-rule-list">
     <li>你可用附贈動作變成已知的野獸形態（見下方「已知形態」）。</li>
-    <li>單次變形持續時間：最多「德魯伊等級一半（向下取整）」小時。</li>
+    <li>單次變形持續時間：最多「德魯伊等級一半（捨去小數點）」小時。</li>
     <li>變形會提前結束的情況：
       <ul>
         <li>你再次使用荒野形態。</li>
@@ -2104,7 +2104,7 @@ const classFeatures = {
   <h3>等級 5：額外攻擊</h3>
   <p>你在自己回合使用攻擊動作時，可以攻擊 2 次。</p>
 </section>
-<section class="ranger-feature class-feature-section" data-feature-level="6"><h3>等級 6：越野</h3><p>未穿著重甲時，你的速度增加10呎，並獲得等同於你速度的攀爬速度與游泳速度。</p></section><section class="ranger-feature class-feature-section" data-feature-level="7"><h3>等級 7：防守戰術（獵人子職）</h3><p>選擇並獲得下列一項。每當你完成短休或長休時，可以用另一項替換目前的選擇。</p><div class="druid-mission-options"><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="ranger-defensive-tactics-escape-the-horde" data-feature-choice-group="ranger-defensive-tactics"> 衝出重圍</label>：以你為目標的借機攻擊具有劣勢。</div></div><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="ranger-defensive-tactics-multiattack-defense" data-feature-choice-group="ranger-defensive-tactics"> 多重防禦</label>：當一個生物的攻擊檢定命中你時，該生物在本回合內對你發動的所有後續攻擊檢定均具有劣勢。</div></div></div></section><section class="ranger-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
+<section class="ranger-feature class-feature-section" data-feature-level="6"><h3>等級 6：越野</h3><p>未穿著重甲時，你的速度增加10呎，並獲得等同於你速度的攀爬速度與游泳速度。</p></section><section class="ranger-feature class-feature-section" data-feature-level="7"><h3>等級 7：防守戰術（獵人子職）</h3><p>選擇並獲得下列一項。每當你完成短休或長休時，可以用另一項替換目前的選擇。</p><div class="druid-mission-options"><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="ranger-defensive-tactics-escape-the-horde" data-feature-choice-group="ranger-defensive-tactics"> 衝出重圍</label>：以你為目標的藉機攻擊具有劣勢。</div></div><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="ranger-defensive-tactics-multiattack-defense" data-feature-choice-group="ranger-defensive-tactics"> 多重防禦</label>：當一個生物的攻擊檢定命中你時，該生物在本回合內對你發動的所有後續攻擊檢定均具有劣勢。</div></div></div></section><section class="ranger-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
 </div>`,
   rogue: `<table class="class-core-profile-table class-core-profile-table--rogue" aria-label="盜賊核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
@@ -2287,7 +2287,7 @@ const classFeatures = {
 
 <section class="rogue-feature class-feature-section" data-feature-level="5">
   <h3>等級 5：直覺閃避</h3>
-  <p>當你看得見的攻擊者命中你時，你可用反應讓該次攻擊傷害減半（向下取整）。</p>
+  <p>當你看得見的攻擊者命中你時，你可用反應讓該次攻擊傷害減半（捨去小數點）。</p>
 </section>
 <section class="rogue-feature class-feature-section" data-feature-level="6"><h3>等級 6：專精</h3><p>再選擇兩項你已有熟練的技能，並獲得其專精。</p></section><section class="rogue-feature class-feature-section" data-feature-level="7"><h3>等級 7：反射閃避</h3><p>當你受到允許進行敏捷豁免以使傷害減半的效應影響時，豁免成功則不受傷害，豁免失敗則僅受一半傷害。你在失能狀態下無法使用該特性。</p></section><section class="rogue-feature class-feature-section" data-feature-level="7"><h3>等級 7：可靠才能</h3><p>每當你使用技能或工具熟練項進行屬性檢定時，可以將d20骰中9或以下的結果視為10。</p></section><section class="rogue-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
 </div>
@@ -2570,7 +2570,7 @@ const classFeatures = {
   <h3>等級 3：龍族法術（龍族子職）</h3>
   <ul class="class-rule-list">
     <li>當你達到對應術士等級後，會始終準備下列法術。</li>
-    <li>龍族法術（等級 3）：變造自身,繁彩球,命令術,龍息術。</li>
+    <li>（等級 3）：變造自身,繁彩球,命令術,龍息術。</li>
     <li>（等級 5）：恐懼術，飛行術。</li>
     <li>（等級 7）：秘法眼，魅惑怪物。</li>
   </ul>
@@ -2584,7 +2584,7 @@ const classFeatures = {
 <section class="sorcerer-feature class-feature-section" data-feature-level="5">
   <h3>等級 5：術法復甦</h3>
   <ul class="class-rule-list">
-    <li>完成短休時，你可回復已消耗術法點，最多為「術士等級一半（向下取整）」。</li>
+    <li>完成短休時，你可回復已消耗術法點，最多為「術士等級一半（捨去小數點）」。</li>
     <li>使用後需完成長休才能再用。</li>
   </ul>
 </section>

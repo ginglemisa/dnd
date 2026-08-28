@@ -866,7 +866,31 @@
     return value || "—";
   }
 
-  function createReadOnlyValue(label, value, className, role = "") {
+  function parseRollModifier(value) {
+    const normalized = String(value ?? "")
+      .trim()
+      .replace(/−/g, "-")
+      .replace(/＋/g, "+");
+    if (!/^[+-]?\d+$/.test(normalized)) return null;
+    const modifier = Number(normalized);
+    return Number.isSafeInteger(modifier) ? modifier : null;
+  }
+
+  function createQuickRollButton(text, label, request, className = "tabletop-inline-roll", onRoll = null) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = className;
+    button.textContent = text;
+    button.disabled = !request || !globalScope.DiceRoller?.isEnabled?.();
+    button.setAttribute("aria-label", button.disabled ? `${label}；請先開啟擲骰系統` : `擲${label}`);
+    button.addEventListener("click", () => {
+      const result = globalScope.DiceRoller?.roll?.({ ...request, label });
+      if (result && typeof onRoll === "function") onRoll(result);
+    });
+    return button;
+  }
+
+  function createReadOnlyValue(label, value, className, role = "", rollLabel = "") {
     const item = document.createElement("span");
     item.className = className;
     if (role) item.setAttribute("role", role);
@@ -879,7 +903,23 @@
     number.className = `${className}__value`;
     number.textContent = value;
 
-    item.append(name, number);
+    const modifier = parseRollModifier(value);
+    if (rollLabel) {
+      const button = createQuickRollButton(
+        "",
+        rollLabel,
+        modifier === null ? null : {
+          count: 1,
+          sides: 20,
+          modifier,
+          includeModifier: true
+        }
+      );
+      button.append(name, number);
+      item.appendChild(button);
+    } else {
+      item.append(name, number);
+    }
     return item;
   }
 
@@ -892,26 +932,32 @@
   function renderAbilityModifiers() {
     if (!elements.abilityModifiers) return;
 
-    const values = ABILITY_KEYS.map(ability =>
-      createReadOnlyValue(
-        getAbilityLabel(ability),
+    const values = ABILITY_KEYS.map(ability => {
+      const label = getAbilityLabel(ability);
+      return createReadOnlyValue(
+        label,
         getReadOnlySourceValue(document.getElementById(`${ability}-mod`)),
-        "tabletop-ability-modifier"
-      )
-    );
+        "tabletop-ability-modifier",
+        "",
+        `${label}檢定`
+      );
+    });
 
     elements.abilityModifiers.replaceChildren(...values);
   }
 
   function renderSkills() {
     if (elements.savingThrows) {
-      const saves = ABILITY_KEYS.map(ability =>
-        createReadOnlyValue(
-          getAbilityLabel(ability),
+      const saves = ABILITY_KEYS.map(ability => {
+        const label = getAbilityLabel(ability);
+        return createReadOnlyValue(
+          label,
           getReadOnlySourceValue(document.getElementById(`save-${ability}`)),
-          "tabletop-saving-throw"
-        )
-      );
+          "tabletop-saving-throw",
+          "",
+          `${label}豁免`
+        );
+      });
       elements.savingThrows.replaceChildren(...saves);
     }
 
@@ -932,7 +978,8 @@
           label,
           getReadOnlySourceValue(input),
           "tabletop-skill-value",
-          "listitem"
+          "listitem",
+          `${label}技能檢定`
         )
       ];
     });
@@ -975,10 +1022,18 @@
     elements.ac.textContent =
       getDisplayValue("ac-display");
 
-    elements.initiative.textContent =
-      getDisplayValue(
-        "initiative-input"
-      );
+    const initiative = getDisplayValue("initiative-input");
+    const initiativeModifier = parseRollModifier(initiative);
+    elements.initiative.replaceChildren(createQuickRollButton(
+      initiative,
+      "先攻",
+      initiativeModifier === null ? null : {
+        count: 1,
+        sides: 20,
+        modifier: initiativeModifier,
+        includeModifier: true
+      }
+    ));
 
     elements.speed.textContent =
       getDisplayValue(
@@ -1156,29 +1211,37 @@
     }
 
     if (elements.deathTitle) {
-      elements.deathTitle.textContent =
-        sacrificed
-          ? HEROIC_SACRIFICE_LABEL
-          : (
-              combatState.deathSaveStable
-                ? "已穩定，昏迷 1D4 小時。"
-                : "死亡豁免"
-            );
+      const title = sacrificed
+        ? HEROIC_SACRIFICE_LABEL
+        : (
+            combatState.deathSaveStable
+              ? "已穩定，昏迷 1D4 小時。"
+              : "死亡豁免"
+          );
+      const canRoll = !sacrificed && !combatState.deathSaveStable;
+      const button = createQuickRollButton(
+        title,
+        "死亡豁免",
+        canRoll ? { count: 1, sides: 20 } : null,
+        "tabletop-inline-roll tabletop-death-roll",
+        result => recordDeathSaveRoll(result.values[0])
+      );
+      elements.deathTitle.replaceChildren(button);
     }
 
     if (elements.deathHelp) {
-      if (sacrificed) {
-        elements.deathHelp.textContent =
-          `請節哀，大俠請重新來過吧。`;
-      } else if (
-        combatState.deathSaveStable
-      ) {
-        elements.deathHelp.textContent =
-          "目前為穩定且昏迷；受到傷害會解除穩定並增加 1 次死亡豁免失敗。";
-      } else {
-        elements.deathHelp.textContent =
-          "目前為昏迷；死亡豁免 10+ 成功，1＝2 次失敗，20＝恢復 1 HP。";
-      }
+     if (sacrificed) {
+     elements.deathHelp.innerHTML =
+      `<em>If he dies, he dies.</em>`;
+     } else if (
+    combatState.deathSaveStable
+     ) {
+    elements.deathHelp.textContent =
+      "目前為穩定且昏迷；受到傷害會解除穩定並增加 1 次死亡豁免失敗。";
+     } else {
+    elements.deathHelp.textContent =
+      "目前為昏迷；死亡豁免 10+ 成功，1＝2 次失敗，20＝恢復 1 HP。";
+     }
     }
 
     elements.deathSaves
@@ -1887,10 +1950,8 @@
   /*
    * 完整死亡豁免骰面邏輯。
    *
-   * 目前沒有新增 UI，也沒有擅自依賴 dice-roller.js。
-   *
-   * 未來若確認骰子系統介面，
-   * 只需要呼叫：
+   * 快速擲骰只傳入原始 D20 骰面；
+   * 成功、失敗、自然 1 與自然 20 仍由此處統一處理：
    *
    * TabletopMode.recordDeathSaveRoll(roll)
    *
@@ -3215,6 +3276,11 @@
       "change",
       render
     );
+
+    globalScope.addEventListener(
+      "dicerollmodechange",
+      render
+    );
   }
 
   function init() {
@@ -3254,10 +3320,7 @@
     collectState,
     applyState,
 
-    /*
-     * 第 7 項死亡豁免骰面邏輯。
-     * 目前不綁任何未知骰子 UI。
-     */
+    // 死亡豁免骰面與生命狀態的唯一處理入口。
     recordDeathSaveRoll,
 
     refresh: render,

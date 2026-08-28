@@ -8248,6 +8248,14 @@ html[data-view-mode="tabletop"] #scrollToBottomBtn {
   border-left-color: var(--danger);
 }
 
+.app-toast[data-variant="dice-roll"] {
+  right: auto;
+  left: max(0.75rem, env(safe-area-inset-left, 0px), calc((100vw - var(--app-max-width)) / 2 + 0.75rem));
+  margin-left: 0;
+  border-left-color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
 .tabletop-primary-tabs,
 .tabletop-action-tabs {
   display: grid;
@@ -8605,6 +8613,13 @@ html[data-view-mode="tabletop"] #scrollToBottomBtn {
   background: var(--accent-soft);
   color: var(--accent-strong);
   box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.tabletop-action-option.has-quick-roll > span:first-child {
+  text-decoration: underline;
+  text-decoration-style: dashed;
+  text-decoration-color: var(--accent);
+  text-underline-offset: 0.2em;
 }
 
 .tabletop-action-description {
@@ -9276,6 +9291,89 @@ html.app-dialog-open {
   color: var(--accent-strong);
   font-size: var(--fs-base);
   font-variant-numeric: tabular-nums;
+}
+
+.tabletop-inline-roll {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.22rem;
+  width: auto;
+  min-width: 0;
+  min-height: 24px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  box-shadow: none;
+  font: inherit;
+  line-height: inherit;
+  text-align: inherit;
+}
+
+.tabletop-inline-roll:not(:disabled) {
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--accent) 62%, transparent);
+  cursor: pointer;
+}
+
+.tabletop-inline-roll:disabled {
+  color: inherit;
+  cursor: default;
+  opacity: 1;
+}
+
+.tabletop-inline-roll:not(:disabled):focus-visible,
+.tabletop-dice-expression:not(:disabled):focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.tabletop-skill-value > .tabletop-inline-roll {
+  justify-content: space-between;
+  width: 100%;
+}
+
+.tabletop-key-stat .tabletop-inline-roll,
+.tabletop-death-roll {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.tabletop-dice-expression {
+  display: inline-flex;
+  align-items: center;
+  width: auto;
+  min-width: 0;
+  min-height: 24px;
+  margin: 0 0.08em;
+  padding: 0 0.08em;
+  border: 0;
+  border-bottom: 1px dashed var(--accent);
+  border-radius: 0;
+  background: transparent;
+  color: var(--accent-strong);
+  box-shadow: none;
+  font: inherit;
+  font-weight: 850;
+  line-height: inherit;
+  vertical-align: baseline;
+}
+
+.tabletop-dice-expression:disabled {
+  margin-inline: 0;
+  padding-inline: 0;
+  border-bottom-color: transparent;
+  color: inherit;
+  cursor: text;
+  opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tabletop-inline-roll:not(:disabled):hover,
+  .tabletop-dice-expression:not(:disabled):hover {
+    color: var(--accent);
+  }
 }
 
 .tabletop-saving-throw-values {
@@ -10289,6 +10387,12 @@ html[data-theme="dark"] .pdf-export-flow-modal__card .pdf-export-format-option,
 html[data-theme="dark"] .pdf-export-flow-modal__button--secondary {
   border-color: var(--border-strong);
   background: var(--input-bg);
+  color: var(--text);
+}
+
+html[data-theme="dark"] .equipment-purchase-balance {
+  border: 1px solid var(--border-strong);
+  background: var(--surface-muted);
   color: var(--text);
 }
 

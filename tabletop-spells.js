@@ -2,6 +2,7 @@
   "use strict";
 
   const LEVEL_LABELS = Object.freeze(["戲法", "一環", "二環", "三環", "四環"]);
+  const DICE_TOKEN_PATTERN = /\d+\s*d\s*(?:100|20|12|10|8|6|4)(?:\s*[+-]\s*(?:\d+\s*d\s*(?:100|20|12|10|8|6|4)|\d+))*/gi;
   const elements = {};
   let initialized = false;
   let scheduledRender = 0;
@@ -80,7 +81,37 @@
       ["法術命中加值", getFieldValue("spell-attack-bonus") || "—"]
     ].map(([term, value]) => {
       const row = createElement("div", "tabletop-casting-summary__item");
-      row.append(createElement("dt", "", term), createElement("dd", "", value));
+      const name = createElement("dt");
+      const number = createElement("dd");
+      if (term === "法術命中加值") {
+        const modifier = parseModifier(value);
+        [
+          [name, term],
+          [number, value]
+        ].forEach(([container, text]) => {
+          const button = createElement("button", "tabletop-inline-roll", text);
+          button.type = "button";
+          button.disabled = modifier === null || !globalScope.DiceRoller?.isEnabled?.();
+          button.setAttribute(
+            "aria-label",
+            button.disabled ? `${term}；請先開啟擲骰系統` : `擲${term}`
+          );
+          button.addEventListener("click", () => {
+            globalScope.DiceRoller?.roll?.({
+              count: 1,
+              sides: 20,
+              modifier,
+              includeModifier: true,
+              label: term
+            });
+          });
+          container.appendChild(button);
+        });
+      } else {
+        name.textContent = term;
+        number.textContent = value;
+      }
+      row.append(name, number);
       return row;
     });
     elements.castingSummary.replaceChildren(...rows);
@@ -126,8 +157,49 @@
   function createSpellDetailContent(spell) {
     const content = createElement("div", "tabletop-spell-detail");
     content.appendChild(createElement("p", "tabletop-spell-detail__english", spell.nameEn));
-    content.appendChild(createElement("div", "tabletop-spell-detail__copy", spell.desc));
+    const copy = createElement("div", "tabletop-spell-detail__copy");
+    const description = String(spell.desc || "");
+    let cursor = 0;
+    for (const match of description.matchAll(DICE_TOKEN_PATTERN)) {
+      const expression = match[0].replace(/\s+/g, "").toLowerCase();
+      copy.appendChild(document.createTextNode(description.slice(cursor, match.index)));
+      const button = createElement("button", "tabletop-dice-expression", expression);
+      button.type = "button";
+      button.disabled = !globalScope.DiceRoller?.isEnabled?.();
+      button.setAttribute(
+        "aria-label",
+        button.disabled ? `${expression}；請先開啟擲骰系統` : `擲 ${expression}`
+      );
+      button.addEventListener("click", () => {
+        globalScope.DiceRoller?.rollExpression?.(expression, {
+          label: `${spell.nameZh} ${expression}`
+        });
+      });
+      copy.appendChild(button);
+      cursor = match.index + match[0].length;
+    }
+    copy.appendChild(document.createTextNode(description.slice(cursor)));
+    content.appendChild(copy);
     return content;
+  }
+
+  function parseModifier(value) {
+    const normalized = String(value || "").trim().replace(/−/g, "-");
+    if (!/^[+-]?\d+$/.test(normalized)) return null;
+    const modifier = Number(normalized);
+    return Number.isSafeInteger(modifier) ? modifier : null;
+  }
+
+  function rollConcentrationSave(spellName) {
+    const modifier = parseModifier(getFieldValue("save-con"));
+    if (modifier === null) return null;
+    return globalScope.DiceRoller?.roll?.({
+      count: 1,
+      sides: 20,
+      modifier,
+      includeModifier: true,
+      label: `${spellName}專注體質豁免`
+    });
   }
 
   function getConcentrationName(spellId) {
@@ -221,6 +293,15 @@
       ? `專注：${spell.nameZh}`
       : "專注：來源法術不存在";
     elements.concentrationDetail.disabled = !spell;
+    const diceEnabled = Boolean(globalScope.DiceRoller?.isEnabled?.());
+    if (diceEnabled) elements.concentrationDetail.removeAttribute("aria-haspopup");
+    else elements.concentrationDetail.setAttribute("aria-haspopup", "dialog");
+    elements.concentrationDetail.setAttribute(
+      "aria-label",
+      diceEnabled && spell
+        ? `擲${spell.nameZh}專注體質豁免`
+        : `查看${spell?.nameZh || "專注法術"}說明`
+    );
     elements.concentrationDetail.dataset.spellId = spellId;
     const note = !spell
       ? `匯入的 spellId「${spellId}」不在目前法術目錄中；記錄未被清除，可手動停止專注。`
@@ -316,6 +397,10 @@
 
     elements.concentrationDetail.addEventListener("click", () => {
       const spellId = elements.concentrationDetail.dataset.spellId || "";
+      if (globalScope.DiceRoller?.isEnabled?.()) {
+        const spellName = getConcentrationName(spellId);
+        if (rollConcentrationSave(spellName)) return;
+      }
       if (spellId) showSpellDetail(spellId, elements.concentrationDetail);
     });
     elements.concentrationStop.addEventListener("click", () => {
@@ -327,6 +412,7 @@
     document.addEventListener("input", scheduleRender);
     document.addEventListener("change", scheduleRender);
     globalScope.addEventListener("tabletopstatechange", scheduleRender);
+    globalScope.addEventListener("dicerollmodechange", scheduleRender);
     globalScope.addEventListener("tabletop-panelchange", event => {
       if (event.detail?.panel === "overview" || event.detail?.panel === "spells") scheduleRender();
     });
