@@ -34,6 +34,7 @@
 - 角色計算與共用規則以 `character-rules.js` 為準；職業、種族、背景、專長與工具資料分別位於 `class-features.js`、`race.js`、`backgrounds.js`、`feats.js`、`tool-data.js`。
 - 其他會影響角色選項或顯示內容的資料，分別位於 `monster.js`（野獸／怪物）、`equipment-data.js` 與 `equipment-notes.js`（裝備）、`spell-list.js`（法術）、`condition.js`（狀態）及 `deity-info.js`（神祉）。
 - `action-panel.js` 負責「動作」分頁的基本與動態按鈕；動態按鈕從職業、種族、專長、已選法術與魔能祈喚的既有資料萃取，僅在此檔處理按鈕的顯示條件、標題與說明呈現，不得複製或取代來源規則文字。標題帶有「等級 X：」的動態按鈕必須受角色等級限制；種族血統或祖源能力也必須受目前下拉選項限制。
+- 桌邊戰鬥模式以 `tabletop-mode.js` 為狀態、模式切換與共用 API 的唯一入口；`tabletop-actions.js`、`tabletop-spells.js`、`tabletop-resources.js` 分別只處理動作、法術／專注、資源分頁的呈現與操作，透過 `TabletopMode` API 及其事件同步，不能另存平行狀態或重複推算來源規則。`app-dialog.js` 是全站共用的對話框與 toast 通知元件。
 - Legal & About 的說明、授權與 attribution 文字以 `about.html` 為唯一來源；其獨立頁面樣式以 `info-pages.css` 為準。`legal-modal.js` 只負責首頁 iframe modal 的開關與定位，不得重複保存同類文案。
 - `index.html` 內的初始化、選項串接與角色卡行為，以及 `quick-build.js` 的創角小幫手流程，都必須與上述規則／資料來源一致；若有衝突，不應僅以既有程式行為判定正確。
 - 未經使用者當次明確要求，不需為 D&D 規則內容上網查詢。
