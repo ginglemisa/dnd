@@ -1,8 +1,10 @@
 (function attachTabletopMode(globalScope) {
   const PANEL_PREFERENCE_KEY = "dnd.tabletopPanel.v1";
-  const TABLETOP_PANELS = Object.freeze(["overview", "actions", "spells", "resources"]);
+  const TABLETOP_PANELS = Object.freeze(["overview", "skills", "actions", "spells", "resources"]);
+  const ABILITY_KEYS = Object.freeze(["str", "dex", "con", "int", "wis", "cha"]);
   const CUSTOM_RESOURCE_LIMIT = 50;
   const CUSTOM_RESOURCE_MAX = 999;
+  const BUILT_IN_RESOURCE_MAX = 999;
   const HEROIC_SACRIFICE_LABEL = "您已英勇犧牲";
   const DEFAULT_COMBAT_STATE = Object.freeze({
     temporaryHp: 0,
@@ -13,6 +15,7 @@
     activeConditions: Object.freeze([]),
     exhaustionLevel: 0,
     concentrationSpellId: "",
+    builtInResourceUsage: Object.freeze({}),
     customResources: Object.freeze([])
   });
 
@@ -67,6 +70,15 @@
 
       return [{ id, label, current, max: maximum, recoveryNote }];
     });
+  }
+
+  function normalizeBuiltInResourceUsage(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+    return Object.fromEntries(Object.entries(value).slice(0, 50).flatMap(([key, rawSpent]) => {
+      if (!/^[a-z0-9][a-z0-9-]{0,79}$/.test(key)) return [];
+      const spent = toBoundedInteger(rawSpent, 0, BUILT_IN_RESOURCE_MAX, 0);
+      return spent > 0 ? [[key, spent]] : [];
+    }));
   }
 
   function createCustomResourceId() {
@@ -201,6 +213,7 @@
     activeConditions: [],
     exhaustionLevel: DEFAULT_COMBAT_STATE.exhaustionLevel,
     concentrationSpellId: DEFAULT_COMBAT_STATE.concentrationSpellId,
+    builtInResourceUsage: {},
     customResources: []
   };
 
@@ -337,6 +350,7 @@
       activeConditions,
       exhaustionLevel,
       concentrationSpellId: normalizeConcentrationSpellId(data.concentrationSpellId),
+      builtInResourceUsage: normalizeBuiltInResourceUsage(data.builtInResourceUsage),
       customResources: normalizeCustomResources(data.customResources)
     };
   }
@@ -359,6 +373,9 @@
         combatState.exhaustionLevel,
       concentrationSpellId:
         combatState.concentrationSpellId,
+      builtInResourceUsage: {
+        ...combatState.builtInResourceUsage
+      },
       customResources:
         combatState.customResources.map(resource => ({ ...resource }))
     };
@@ -378,6 +395,23 @@
 
   function stopConcentration(message = "已停止專注。") {
     return setConcentrationSpellId("", message);
+  }
+
+  function getBuiltInResourceSpent(resourceKey) {
+    return toNonNegativeInteger(combatState.builtInResourceUsage[resourceKey]);
+  }
+
+  function setBuiltInResourceSpent(resourceKey, value, maximum) {
+    const key = String(resourceKey || "").trim();
+    if (!/^[a-z0-9][a-z0-9-]{0,79}$/.test(key)) return false;
+    const safeMaximum = toBoundedInteger(maximum, 1, BUILT_IN_RESOURCE_MAX, 1);
+    const spent = toBoundedInteger(value, 0, safeMaximum, getBuiltInResourceSpent(key));
+    if (spent === getBuiltInResourceSpent(key)) return true;
+    combatState.builtInResourceUsage = { ...combatState.builtInResourceUsage };
+    if (spent > 0) combatState.builtInResourceUsage[key] = spent;
+    else delete combatState.builtInResourceUsage[key];
+    markStateChanged();
+    return true;
   }
 
   function getCustomResources() {
@@ -691,6 +725,17 @@
     }
   }
 
+  function emitStateChange() {
+    globalScope.dispatchEvent?.(
+      new CustomEvent(
+        "tabletopstatechange",
+        {
+          detail: collectState()
+        }
+      )
+    );
+  }
+
   function markStateChanged(
     message = ""
   ) {
@@ -701,14 +746,7 @@
       announce(message);
     }
 
-    globalScope.dispatchEvent?.(
-      new CustomEvent(
-        "tabletopstatechange",
-        {
-          detail: collectState()
-        }
-      )
-    );
+    emitStateChange();
   }
 
   function announce(message) {
@@ -817,6 +855,91 @@
       : "—";
   }
 
+  function getReadOnlySourceValue(source) {
+    if (!source) return "—";
+
+    const value =
+      "value" in source
+        ? String(source.value).trim()
+        : String(source.textContent || "").trim();
+
+    return value || "—";
+  }
+
+  function createReadOnlyValue(label, value, className, role = "") {
+    const item = document.createElement("span");
+    item.className = className;
+    if (role) item.setAttribute("role", role);
+
+    const name = document.createElement("span");
+    name.className = `${className}__label`;
+    name.textContent = label;
+
+    const number = document.createElement("strong");
+    number.className = `${className}__value`;
+    number.textContent = value;
+
+    item.append(name, number);
+    return item;
+  }
+
+  function getAbilityLabel(ability) {
+    return document.querySelector(
+      `label[for="prof-${ability}"] .save-full`
+    )?.textContent?.trim() || ability.toUpperCase();
+  }
+
+  function renderAbilityModifiers() {
+    if (!elements.abilityModifiers) return;
+
+    const values = ABILITY_KEYS.map(ability =>
+      createReadOnlyValue(
+        getAbilityLabel(ability),
+        getReadOnlySourceValue(document.getElementById(`${ability}-mod`)),
+        "tabletop-ability-modifier"
+      )
+    );
+
+    elements.abilityModifiers.replaceChildren(...values);
+  }
+
+  function renderSkills() {
+    if (elements.savingThrows) {
+      const saves = ABILITY_KEYS.map(ability =>
+        createReadOnlyValue(
+          getAbilityLabel(ability),
+          getReadOnlySourceValue(document.getElementById(`save-${ability}`)),
+          "tabletop-saving-throw"
+        )
+      );
+      elements.savingThrows.replaceChildren(...saves);
+    }
+
+    if (!elements.skillValues) return;
+
+    const skills = Array.from(
+      document.querySelectorAll("#tab-skills .skill-grid .skill-cell")
+    ).flatMap(cell => {
+      const input = cell.querySelector('input[id^="skill-"]');
+      if (!input) return [];
+
+      const label =
+        cell.querySelector(".skill-tip")?.textContent?.trim()
+        || input.id.replace("skill-", "");
+
+      return [
+        createReadOnlyValue(
+          label,
+          getReadOnlySourceValue(input),
+          "tabletop-skill-value",
+          "listitem"
+        )
+      ];
+    });
+
+    elements.skillValues.replaceChildren(...skills);
+  }
+
   function renderSummary() {
     if (!elements.characterSummary) {
       return;
@@ -867,6 +990,9 @@
       getDisplayValue(
         "passive-perception"
       );
+
+    renderAbilityModifiers();
+    renderSkills();
   }
 
   function renderHealth() {
@@ -1035,7 +1161,7 @@
           ? HEROIC_SACRIFICE_LABEL
           : (
               combatState.deathSaveStable
-                ? "已穩定"
+                ? "已穩定，昏迷 1D4 小時。"
                 : "死亡豁免"
             );
     }
@@ -1178,6 +1304,7 @@
     undoSnapshot = null;
 
     render();
+    emitStateChange();
   }
 
   function handleLifeOperation(
@@ -2740,6 +2867,21 @@
             "tabletop-passive-perception"
           ),
 
+        abilityModifiers:
+          document.getElementById(
+            "tabletop-ability-modifiers"
+          ),
+
+        savingThrows:
+          document.getElementById(
+            "tabletop-saving-throw-values"
+          ),
+
+        skillValues:
+          document.getElementById(
+            "tabletop-skill-values"
+          ),
+
         currentHp:
           document.getElementById(
             "tabletop-current-hp"
@@ -3126,6 +3268,8 @@
     getConcentrationSpellId,
     setConcentrationSpellId,
     stopConcentration,
+    getBuiltInResourceSpent,
+    setBuiltInResourceSpent,
     getCustomResources,
     addCustomResource,
     updateCustomResource,
@@ -3139,6 +3283,7 @@
       appendConcentrationSaveReminder,
       evaluateDeathSaveRoll,
       getExhaustionEffects,
+      normalizeBuiltInResourceUsage,
       normalizeConcentrationSpellId,
       normalizeCustomResources
     })

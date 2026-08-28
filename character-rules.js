@@ -138,6 +138,79 @@
     return 2;
   }
 
+  /** 依目前職業、種族、等級與屬性計算桌邊模式應顯示的內建資源。 */
+  function getCharacterResourceSpecs(options = {}) {
+    const className = String(options.className || "").trim();
+    const race = String(options.race || "").trim();
+    const level = Number.parseInt(options.level, 10);
+    if (!Number.isInteger(level) || level < 1) return [];
+    const proficiency = calculateProficiencyBonus(level);
+    const wisdomModifier = Math.max(1, calculateAbilityModifier(options.wisdomScore ?? 10));
+    const charismaModifier = Math.max(1, calculateAbilityModifier(options.charismaScore ?? 10));
+    const resources = [];
+    const addUses = (key, label, maximum, recoveryNote) => resources.push({
+      key,
+      kind: "uses",
+      label,
+      maximum,
+      recoveryNote
+    });
+    const addPoints = (key, label, maximum, recoveryNote) => resources.push({
+      key,
+      kind: "points",
+      label,
+      maximum,
+      recoveryNote
+    });
+
+    if (race === "dragonborn" && level >= 5) addUses("dragonborn-dragon-flight", "龍翔天際", 1, "長休後回復。");
+    if (race === "dwarf") addUses("dwarf-stonecunning", "石中精妙", proficiency, "長休後全回復。");
+    if (race === "goliath" && level >= 5) addUses("goliath-large-form", "巨化形體", 1, "長休後回復。");
+    if (race === "orc") {
+      addUses("orc-adrenaline-rush", "熱血湧動", proficiency, "短休或長休後全回復。");
+      addUses("orc-relentless-endurance", "堅韌不屈", 1, "長休後回復。");
+    }
+
+    if (className === "barbarian") {
+      addUses("barbarian-rage", "狂暴", level >= 6 ? 4 : (level >= 3 ? 3 : 2), "短休回 1 次，長休全回。");
+    }
+    if (className === "bard") {
+      addUses(
+        "bard-inspiration",
+        "吟遊詩人激勵",
+        charismaModifier,
+        level >= 5 ? "短休或長休後全回復。" : "長休後全回復。"
+      );
+    }
+    if (className === "cleric" && level >= 2) {
+      addUses("cleric-channel-divinity", "引導神力", level >= 6 ? 3 : 2, "短休回 1 次，長休全回。");
+    }
+    if (className === "druid" && level >= 2) {
+      addUses("druid-wild-shape", "荒野形態", level >= 6 ? 3 : 2, "短休回 1 次，長休全回。");
+    }
+    if (className === "fighter") {
+      addUses("fighter-second-wind", "回氣", level >= 4 ? 3 : 2, "短休回 1 次，長休全回。");
+      if (level >= 2) addUses("fighter-action-surge", "動作如潮", 1, "短休或長休後回復。");
+    }
+    if (className === "monk" && level >= 2) {
+      addPoints("monk-focus-points", "專注點", level, "短休或長休後全回復。");
+      addUses("monk-uncanny-metabolism", "吐故納新", 1, "長休後回復。");
+      if (level >= 6) addUses("monk-wholeness", "混元體", wisdomModifier, "長休後全回復。");
+    }
+    if (className === "paladin") {
+      addPoints("paladin-lay-on-hands", "聖療", level * 5, "長休後全回復。");
+      if (level >= 3) addUses("paladin-channel-divinity", "引導神力", 2, "短休回 1 次，長休全回。");
+    }
+    if (className === "sorcerer") {
+      addUses("sorcerer-innate-sorcery", "天生術法", 2, "長休後全回復。");
+      if (level >= 2) addPoints("sorcerer-sorcery-points", "術法點", level, "長休後全回復。");
+    }
+    if (className === "warlock" && level >= 6) {
+      addUses("warlock-dark-ones-own-luck", "黑暗強運", charismaModifier, "長休後全回復。");
+    }
+    return resources.map(resource => Object.freeze(resource));
+  }
+
   /** 取得指定職業熟練的兩項豁免屬性代號。 */
   function getClassSaveProficiencies(classId) {
     return CLASS_SAVE_PROFICIENCIES[classId] || [];
@@ -311,6 +384,7 @@
     clampHpValue,
     formatSignedValue,
     getCharacterSizeForRace,
+    getCharacterResourceSpecs,
     getClassSaveProficiencies,
     getHitDiceValues,
     getMetamagicSelectionLimit,

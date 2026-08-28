@@ -46,7 +46,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎲%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20260828-tabletop-combat-hud-3">
+  <link rel="stylesheet" href="styles.css?v=20260828-tabletop-skill-columns">
   <script src="scroll-to-top.js" defer></script>
   <script src="dice-roller.js?v=20260828-history-label" defer></script>
   <script src="monster.js" defer></script>
@@ -59,12 +59,12 @@
   <script src="spell-list.js?v=20260828-concentration" defer></script>
   <script src="condition.js" defer></script>
   <script src="action-panel.js?v=20260828-shared-api" defer></script>
-  <script src="character-rules.js" defer></script>
+  <script src="character-rules.js?v=20260828-built-in-resources" defer></script>
   <script src="app-dialog.js?v=20260828-content-actions" defer></script>
-  <script src="tabletop-mode.js?v=20260828-combat-feedback" defer></script>
-  <script src="tabletop-resources.js?v=20260828-inline-resources" defer></script>
+  <script src="tabletop-mode.js?v=20260828-read-only-stats" defer></script>
+  <script src="tabletop-resources.js?v=20260828-card-only-free-uses" defer></script>
   <script src="tabletop-actions.js?v=20260828-phase-2" defer></script>
-  <script src="tabletop-spells.js?v=20260828-concentration-note" defer></script>
+  <script src="tabletop-spells.js?v=20260828-all-free-use-mirrors" defer></script>
   <script src="legal-modal.js?v=20260824-onboarding-entry" defer></script>
   <script src="onboarding-tour.js?v=20260825-onboarding-step5-highlights" defer></script>
   <script src="quick-build.js" defer></script>
@@ -208,12 +208,15 @@
 
     <div class="tabletop-primary-tabs" role="tablist" aria-label="桌邊戰鬥模式主視圖">
       <button type="button" id="tabletop-tab-overview" role="tab" aria-selected="true" aria-controls="tabletop-panel-overview" data-tabletop-tab="overview">總覽</button>
+      <button type="button" id="tabletop-tab-skills" role="tab" aria-selected="false" aria-controls="tabletop-panel-skills" data-tabletop-tab="skills" tabindex="-1">技能</button>
       <button type="button" id="tabletop-tab-actions" role="tab" aria-selected="false" aria-controls="tabletop-panel-actions" data-tabletop-tab="actions" tabindex="-1">動作</button>
       <button type="button" id="tabletop-tab-spells" role="tab" aria-selected="false" aria-controls="tabletop-panel-spells" data-tabletop-tab="spells" tabindex="-1">法術</button>
       <button type="button" id="tabletop-tab-resources" role="tab" aria-selected="false" aria-controls="tabletop-panel-resources" data-tabletop-tab="resources" tabindex="-1">資源</button>
     </div>
 
     <section id="tabletop-panel-overview" class="tabletop-panel" role="tabpanel" aria-labelledby="tabletop-tab-overview" data-tabletop-panel="overview">
+
+    <div id="tabletop-ability-modifiers" class="tabletop-ability-modifiers" aria-label="六大屬性加值"></div>
 
     <dl class="tabletop-key-stats" aria-label="關鍵數值">
       <div class="tabletop-key-stat"><dt>AC</dt><dd id="tabletop-ac">—</dd></div>
@@ -316,6 +319,17 @@
     </section>
     </section>
 
+    <section id="tabletop-panel-skills" class="tabletop-panel" role="tabpanel" aria-labelledby="tabletop-tab-skills" data-tabletop-panel="skills" hidden>
+      <section class="tabletop-section tabletop-saving-throws" aria-labelledby="tabletop-saving-throws-title">
+        <div class="tabletop-section-heading"><h2 id="tabletop-saving-throws-title">屬性豁免</h2></div>
+        <div id="tabletop-saving-throw-values" class="tabletop-saving-throw-values" aria-label="屬性豁免數值"></div>
+      </section>
+      <section class="tabletop-section tabletop-skills" aria-labelledby="tabletop-skills-title">
+        <div class="tabletop-section-heading"><h2 id="tabletop-skills-title">技能</h2></div>
+        <div id="tabletop-skill-values" class="tabletop-skill-values" role="list" aria-label="技能加值"></div>
+      </section>
+    </section>
+
     <section id="tabletop-panel-actions" class="tabletop-panel" role="tabpanel" aria-labelledby="tabletop-tab-actions" data-tabletop-panel="actions" hidden>
       <header class="tabletop-panel-intro">
         <span class="tabletop-eyebrow">戰鬥查閱</span>
@@ -361,13 +375,6 @@
           </div>
           <div id="tabletop-spell-slots" class="spell-slot-grid tabletop-spell-slot-grid"></div>
         </section>
-        <section id="tabletop-spell-uses-section" class="tabletop-section" aria-labelledby="tabletop-spell-uses-title">
-          <div class="tabletop-section-heading">
-            <h3 id="tabletop-spell-uses-title">免費施放與特殊次數</h3>
-            <span class="tabletop-section-note">沿用角色卡的消耗記錄</span>
-          </div>
-          <div id="tabletop-spell-uses" class="tabletop-resource-list"></div>
-        </section>
         <section class="tabletop-section" aria-labelledby="tabletop-selected-spells-title">
           <div class="tabletop-section-heading"><h3 id="tabletop-selected-spells-title">已選法術</h3></div>
           <div id="tabletop-selected-spells" class="tabletop-spell-levels"></div>
@@ -377,9 +384,9 @@
 
     <section id="tabletop-panel-resources" class="tabletop-panel" role="tabpanel" aria-labelledby="tabletop-tab-resources" data-tabletop-panel="resources" hidden>
       <header class="tabletop-panel-intro">
-        <span class="tabletop-eyebrow">手動追蹤</span>
+        <span class="tabletop-eyebrow">資源追蹤</span>
         <h2>資源</h2>
-        <p class="tabletop-panel-notice">此處只同步既有欄位或保存你的手動記錄，不會從能力說明推算職業資源。</p>
+        <p class="tabletop-panel-notice">符合目前職業、種族與等級的內建資源會自動出現；消耗記錄與角色資料同步。</p>
       </header>
       <section class="tabletop-section" aria-labelledby="tabletop-built-in-resources-title">
         <div class="tabletop-section-heading"><h3 id="tabletop-built-in-resources-title">角色資源</h3></div>
@@ -525,7 +532,7 @@
         <option value="silver_cold">銀龍－寒</option>
         <option value="white_cold">白龍－寒</option>
       </select>
-      <span id="dragonborn-breath-uses" class="dragonborn-breath-uses" aria-label="吐息次數">
+      <span id="dragonborn-breath-uses" class="dragonborn-breath-uses is-hidden" aria-label="吐息次數" aria-hidden="true" hidden>
         <span class="dragonborn-breath-uses__label">吐息次數</span>
         <input type="checkbox" id="race-ab-check1" aria-label="吐息次數 1">
         <input type="checkbox" id="race-ab-check2" aria-label="吐息次數 2">
@@ -572,7 +579,7 @@
         <option value="stone">石裔</option>
         <option value="storm">風暴裔</option>
       </select>
-      <span id="goliath-giant-ancestry-uses" class="proficiency-use-checks" aria-label="巨人血統異能">
+      <span id="goliath-giant-ancestry-uses" class="proficiency-use-checks is-hidden" aria-label="巨人血統異能" aria-hidden="true" hidden>
         <span class="proficiency-use-checks__label">巨人血統異能</span>
         <input type="checkbox" id="goliath-giant-ancestry-check1" aria-label="巨人血統異能 1">
         <input type="checkbox" id="goliath-giant-ancestry-check2" aria-label="巨人血統異能 2">
@@ -1106,19 +1113,19 @@
       <input type="checkbox" class="spell-slot-placeholder" tabindex="-1" aria-hidden="true">
     </div>
   </div>
+  <div id="spell-picked-grid-wrap" class="spell-picked-grid" hidden aria-label="已選法術摘要">
+    <section class="spell-picked-box"><h4 class="spell-picked-heading">戲法</h4><div id="picked-cantrips" class="spell-picked-content">—</div></section>
+    <section class="spell-picked-box"><h4 class="spell-picked-heading">一環</h4><div id="picked-level1" class="spell-picked-content">—</div></section>
+    <section class="spell-picked-box"><h4 class="spell-picked-heading">二環</h4><div id="picked-level2" class="spell-picked-content">—</div></section>
+    <section class="spell-picked-box"><h4 class="spell-picked-heading">三環</h4><div id="picked-level3" class="spell-picked-content">—</div></section>
+    <section class="spell-picked-box"><h4 class="spell-picked-heading">四環</h4><div id="picked-level4" class="spell-picked-content">—</div></section>
+  </div>
 </div>
   <div id="no-spell-slots-message" class="spell-note-muted is-hidden">目前職業與等級沒有法術位</div>
   <div class="form-row">
     <textarea id="spell-notes" rows="2" placeholder="筆記：可記錄每日準備,消耗情形,額外內容等"></textarea>
   </div>
 
-  <div id="spell-picked-grid-wrap" class="spell-picked-grid" hidden>
-    <div class="output spell-picked-box"><div id="picked-cantrips" class="spell-picked-content">—</div></div>
-    <div class="output spell-picked-box"><div id="picked-level1" class="spell-picked-content">—</div></div>
-    <div class="output spell-picked-box"><div id="picked-level2" class="spell-picked-content">—</div></div>
-    <div class="output spell-picked-box"><div id="picked-level3" class="spell-picked-content">—</div></div>
-    <div class="output spell-picked-box"><div id="picked-level4" class="spell-picked-content">—</div></div>
-  </div>
   <div class="spell-meta-row">
     <div id="spell-list-status-note" class="spell-note-muted" role="status" aria-live="polite">本頁僅提供免費基本規則法術；部分 PHB 專屬內容未列入。</div>
     <details class="spell-primer">
@@ -5867,10 +5874,14 @@ function getFreeSpellUseSpec(spellSelect) {
   return count ? { key: row.dataset.sourceKey, count, label: `${row.dataset.sourceLabel || "種族特性"}；長休恢復` } : null;
 }
 
-function renderFreeSpellUseChecks(spec, checkedState) {
+function getFreeSpellUseInputId(spec, index) {
   const safeKey = spec.key.replace(/[^A-Za-z0-9_-]/g, char => `u${char.codePointAt(0).toString(16)}`);
+  return `free-spell-use-${safeKey}-${index + 1}`;
+}
+
+function renderFreeSpellUseChecks(spec, checkedState) {
   const boxes = Array.from({ length: spec.count }, (_, index) => {
-    const id = `free-spell-use-${safeKey}-${index + 1}`;
+    const id = getFreeSpellUseInputId(spec, index);
     const checked = checkedState.get(id) ? " checked" : "";
     return `<input type="checkbox" id="${id}" class="free-spell-use-check" aria-label="${escapeHtml(spec.label)} ${index + 1}/${spec.count}" title="${escapeHtml(spec.label)}"${checked}>`;
   }).join("");
@@ -5902,6 +5913,36 @@ function isDruidLandSpellRow(row) {
     && row.dataset.sourceKey?.startsWith("subclass-druid-")
     && row.parentElement?.id !== "cantrips-area";
 }
+
+function getSpellFreeUseControls(spellSelect) {
+  const row = spellSelect?.closest?.(".spell-entry");
+  if (!row) return [];
+  const controls = [];
+  const useSpec = getFreeSpellUseSpec(spellSelect);
+  if (useSpec) {
+    for (let index = 0; index < useSpec.count; index += 1) {
+      const canonical = document.getElementById(getFreeSpellUseInputId(useSpec, index));
+      if (!(canonical instanceof HTMLInputElement) || canonical.disabled) continue;
+      controls.push({
+        canonical,
+        label: `${useSpec.label} ${index + 1}/${useSpec.count}`,
+        title: useSpec.label
+      });
+    }
+  }
+
+  if (isDruidLandSpellRow(row)) {
+    const canonical = document.getElementById("druid-natural-recovery-used");
+    if (canonical instanceof HTMLInputElement && !canonical.disabled) controls.push({
+      canonical,
+      label: `自然恢復：${SpellCatalog.getSpell(spellSelect.value)?.nameZh || "大地結社法術"}的免費施法次數已使用`,
+      title: "自然恢復；長休恢復"
+    });
+  }
+  return controls;
+}
+
+window.getSpellFreeUseControls = getSpellFreeUseControls;
 
 function renderDruidNaturalRecoveryMirror(row, spellName) {
   if (!isDruidLandSpellRow(row)) return "";
@@ -5967,7 +6008,7 @@ function updatePickedSpellBoxes() {
       const sourceKey = row?.dataset.sourceKey || "";
       const sourceTag = getPickedSpellSourceTag(row);
       const naturalRecovery = renderDruidNaturalRecoveryMirror(row, nameZh);
-      return `<span class="spell-picked-jump" role="button" tabindex="0" data-spell-jump="picked" data-area-id="${areaId}" data-spell-id="${escapeHtml(spellId)}" data-source-key="${escapeHtml(sourceKey)}">[${escapeHtml(nameZh)}]</span>${sourceTag ? `<span class="spell-picked-source-tag">[${sourceTag}]</span>` : ""}${useChecks}${naturalRecovery}`;
+      return `<span class="spell-picked-item"><span class="spell-picked-jump" role="button" tabindex="0" data-spell-jump="picked" data-area-id="${areaId}" data-spell-id="${escapeHtml(spellId)}" data-source-key="${escapeHtml(sourceKey)}">[${escapeHtml(nameZh)}]</span>${sourceTag ? `<span class="spell-picked-source-tag">[${sourceTag}]</span>` : ""}${useChecks}${naturalRecovery}</span>`;
     }).join("\n");
     setupAutoSave(target);
   });
@@ -7165,6 +7206,115 @@ function collectStateObject(options = {}) {
   return data;
 }
 
+const SHARE_STATE_VERSION = 1;
+const SHARE_ALWAYS_INCLUDED_IDS = new Set([
+  "auto-calculate-key-stats-toggle",
+  "weapon-attack-automation"
+]);
+const SHARE_OMITTED_IDS = new Set([
+  "dice-system-toggle",
+  "spell-search",
+  "equipment-search",
+  "equipment-purchase-quantity",
+  "lifedicen",
+  "heroic-inspiration",
+  "druid-natural-recovery-used",
+  "hp-display",
+  "ac-display",
+  "initiative-input",
+  "speed-display",
+  "passive-perception",
+  "__deletedSpellRowCache"
+]);
+const SHARE_TABLETOP_STATE_KEYS = new Set([
+  "temporaryHp",
+  "deathSaveSuccesses",
+  "deathSaveFailures",
+  "deathSaveStable",
+  "heroicSacrifice",
+  "activeConditions",
+  "exhaustionLevel",
+  "concentrationSpellId",
+  "builtInResourceUsage",
+  "customResources"
+]);
+const SHARE_AUTOMATIC_ATTACK_IDS = new Set([
+  "atk-main-name",
+  "atk-main-hit",
+  "atk-main-dmg",
+  "atk-off-name",
+  "atk-off-hit",
+  "atk-off-dmg"
+]);
+
+function isShareFieldRelevant(id, data) {
+  const classValue = data.class || "";
+  const level = Number.parseInt(data.level || "0", 10) || 0;
+  const raceValue = data.race || "";
+
+  if (id === "druid-land") return classValue === "druid" && level >= 3;
+  if (id === "dragonborn-ancestry") return raceValue === "dragonborn";
+  if (id === "elf-lineage") return raceValue === "elf";
+  if (id === "high-elf-cantrip") return raceValue === "elf" && data["elf-lineage"] === "high_elf";
+  if (id === "gnome-lineage") return raceValue === "gnome";
+  if (id === "goliath-ancestry") return raceValue === "goliath";
+  if (id === "tiefling-legacy") return raceValue === "tiefling";
+  if (id === "ranger-fighting-style" || id === "ranger-druidic-warrior") return classValue === "ranger" && level >= 2;
+  if (id.startsWith("ranger-defensive-tactics-")) return classValue === "ranger" && level >= 7;
+  if (id === "paladin-fighting-style" || id === "paladin-blessed-warrior") return classValue === "paladin" && level >= 2;
+  if (id.startsWith("cleric-")) return classValue === "cleric";
+  if (id.startsWith("druid-")) return classValue === "druid";
+  if (id === "sorcerer-elemental-affinity-damage-type" || id.startsWith("metamagic-option-")) return classValue === "sorcerer";
+  if (id.startsWith("eldritch-invocation-") || id.startsWith("bard-instrument-")) {
+    return id.startsWith("eldritch-invocation-") ? classValue === "warlock" : classValue === "bard";
+  }
+  if (id === "language-extra-1" && (classValue === "druid" || classValue === "rogue")) return false;
+  return true;
+}
+
+function collectShareState() {
+  const data = collectStateObject({ includeMoneyLogs: false });
+  data.__shareStateVersion = SHARE_STATE_VERSION;
+
+  Object.keys(data).forEach((id) => {
+    if (SHARE_ALWAYS_INCLUDED_IDS.has(id)) return;
+    if (SHARE_OMITTED_IDS.has(id) || SHARE_TABLETOP_STATE_KEYS.has(id)) {
+      delete data[id];
+      return;
+    }
+    if (/^(?:race-ab-check|forest-gnome-animal-speech-check|goliath-giant-ancestry-check|spellslot\d+-|free-spell-use-)/.test(id)) {
+      delete data[id];
+      return;
+    }
+    if (data["weapon-attack-automation"] === true && SHARE_AUTOMATIC_ATTACK_IDS.has(id)) {
+      delete data[id];
+      return;
+    }
+    if (typeof data[id] === "boolean" && data[id] === false) {
+      delete data[id];
+      return;
+    }
+    if (data[id] === "" || !isShareFieldRelevant(id, data)) {
+      delete data[id];
+    }
+  });
+
+  if (data.__pactTomeSpellSelection?.cantrips?.length === 0 && data.__pactTomeSpellSelection?.rituals?.length === 0) {
+    delete data.__pactTomeSpellSelection;
+  }
+  if (Object.keys(data.__classFeatureCantrips || {}).length === 0) {
+    delete data.__classFeatureCantrips;
+  }
+  return data;
+}
+
+function resetOmittedShareCheckboxes(data) {
+  document.querySelectorAll('input[type="checkbox"][id]').forEach((input) => {
+    if (SHARE_ALWAYS_INCLUDED_IDS.has(input.id) || Object.prototype.hasOwnProperty.call(data, input.id)) return;
+    input.checked = false;
+  });
+}
+
 async function encodeStateToHash(data) {
   const json = JSON.stringify(data);
   const compressed = await compressJson(json);
@@ -7231,6 +7381,9 @@ function applyStateObject(data) {
   autosaveSuspended = true;
 
   try {
+    if (data.__shareStateVersion === SHARE_STATE_VERSION) {
+      resetOmittedShareCheckboxes(data);
+    }
     removeMagicInitiateDerivedSpellRows();
     deletedSpellRowCache = cloneDeletedSpellRowCache(data.__deletedSpellRowCache);
     setPactTomeSpellSelection(data.__pactTomeSpellSelection, { sync: false });
@@ -7295,7 +7448,7 @@ function applyStateObject(data) {
 }
 
 async function copyShareUrl() {
-  const hash = await encodeStateToHash(collectStateObject({ includeMoneyLogs: false }));
+  const hash = await encodeStateToHash(collectShareState());
   const shareUrl = `${location.origin}${location.pathname}${location.search}${hash}`;
   try {
     await navigator.clipboard.writeText(shareUrl);

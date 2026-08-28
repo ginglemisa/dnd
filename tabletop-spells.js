@@ -27,6 +27,7 @@
         return [{
           spellId,
           spell,
+          spellSelect: select,
           source: source || (row?.dataset.spellSource ? "能力" : "職業"),
           sourceLabel: row?.dataset.sourceLabel || "",
           sourceKey: row?.dataset.sourceKey || ""
@@ -36,6 +37,27 @@
 
   function isSpellCurrentlySelected(spellId) {
     return getSelectedSpellEntries().some(entry => entry.spellId === spellId);
+  }
+
+  function createSpellUseMirrors(entry) {
+    const useControls = globalScope.getSpellFreeUseControls?.(entry.spellSelect) || [];
+    if (!useControls.length) return null;
+
+    const controls = createElement("span", "tabletop-spell-card__uses");
+    controls.setAttribute("role", "group");
+    controls.setAttribute("aria-label", `${entry.spell.nameZh}免費施法次數；勾選表示已使用`);
+    useControls.forEach(({ canonical, label, title }) => {
+      const mirror = document.createElement("input");
+      mirror.type = "checkbox";
+      mirror.checked = canonical.checked;
+      mirror.setAttribute("aria-label", label || `${entry.spell.nameZh}免費施法已使用`);
+      mirror.title = title || "免費施法";
+      mirror.addEventListener("change", () => {
+        globalScope.TabletopResources?.setCanonicalCheckbox?.(canonical, mirror.checked);
+      });
+      controls.appendChild(mirror);
+    });
+    return controls;
   }
 
   function getFieldValue(id) {
@@ -64,11 +86,9 @@
     elements.castingSummary.replaceChildren(...rows);
   }
 
-  function renderSpellSlotsAndUses() {
+  function renderSpellSlots() {
     const slotCount = globalScope.TabletopResources?.renderSpellSlots(elements.spellSlots) || 0;
-    const useCount = globalScope.TabletopResources?.renderSpellUsage(elements.spellUses) || 0;
     if (elements.spellSlotsSection) elements.spellSlotsSection.hidden = slotCount === 0;
-    if (elements.spellUsesSection) elements.spellUsesSection.hidden = useCount === 0;
   }
 
   function renderSelectedSpells(entries) {
@@ -80,6 +100,7 @@
       section.appendChild(createElement("h4", "", label));
       const list = createElement("div", "tabletop-spell-list");
       spells.forEach(entry => {
+        const card = createElement("div", "tabletop-spell-card");
         const button = createElement("button", "tabletop-spell-button");
         button.type = "button";
         button.dataset.spellId = entry.spellId;
@@ -91,7 +112,10 @@
         );
         button.append(names, createElement("span", "tabletop-source-tag", entry.source));
         button.addEventListener("click", () => showSpellDetail(entry.spellId, button));
-        list.appendChild(button);
+        card.appendChild(button);
+        const useMirrors = createSpellUseMirrors(entry);
+        if (useMirrors) card.appendChild(useMirrors);
+        list.appendChild(card);
       });
       section.appendChild(list);
       return [section];
@@ -259,7 +283,7 @@
     if (emptyMessage) renderEmptyState(emptyMessage, concentrationId);
     else {
       renderCastingSummary();
-      renderSpellSlotsAndUses();
+      renderSpellSlots();
       renderSelectedSpells(entries);
     }
     renderConcentrationSummary();
@@ -280,8 +304,6 @@
       castingSummary: document.getElementById("tabletop-casting-summary"),
       spellSlotsSection: document.getElementById("tabletop-spell-slots-section"),
       spellSlots: document.getElementById("tabletop-spell-slots"),
-      spellUsesSection: document.getElementById("tabletop-spell-uses-section"),
-      spellUses: document.getElementById("tabletop-spell-uses"),
       selectedSpells: document.getElementById("tabletop-selected-spells"),
       concentration: document.getElementById("tabletop-concentration"),
       concentrationTitle: document.getElementById("tabletop-concentration-title"),

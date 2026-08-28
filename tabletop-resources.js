@@ -63,6 +63,105 @@
     return row;
   }
 
+  function createCanonicalUseRow(label, note, canonicalInputs) {
+    const { row, controls } = createResourceRow(label, note);
+    controls.classList.add("tabletop-resource-checks");
+    canonicalInputs.forEach((canonical, index) => {
+      const slot = createElement("label", "tabletop-resource-check");
+      const mirror = document.createElement("input");
+      mirror.type = "checkbox";
+      mirror.checked = canonical.checked;
+      mirror.setAttribute("aria-label", `${label} ${index + 1}/${canonicalInputs.length}，勾選表示已消耗`);
+      mirror.addEventListener("change", () => setCanonicalCheckbox(canonical, mirror.checked));
+      slot.appendChild(mirror);
+      controls.appendChild(slot);
+    });
+    return row;
+  }
+
+  function createStoredUseRow({ key, label, note, maximum }) {
+    if (!key || maximum < 1) return null;
+    const readSpent = () => Math.min(
+      maximum,
+      Math.max(0, globalScope.TabletopMode?.getBuiltInResourceSpent(key) || 0)
+    );
+    const spent = readSpent();
+    const { row, controls } = createResourceRow(label, note);
+    controls.classList.add("tabletop-resource-checks");
+
+    for (let index = 1; index <= maximum; index += 1) {
+      const slot = createElement("label", "tabletop-resource-check");
+      const mirror = document.createElement("input");
+      mirror.type = "checkbox";
+      mirror.checked = index <= spent;
+      mirror.setAttribute("aria-label", `${label} ${index}/${maximum}，勾選表示已消耗`);
+      mirror.addEventListener("change", () => {
+        const current = readSpent();
+        const next = mirror.checked ? Math.max(current, index) : Math.min(current, index - 1);
+        globalScope.TabletopMode?.setBuiltInResourceSpent(key, next, maximum);
+        announce(`${label}目前已消耗 ${next}/${maximum} 次。`);
+      });
+      slot.appendChild(mirror);
+      controls.appendChild(slot);
+    }
+    return row;
+  }
+
+  function createPointPoolRow({ key, label, note, maximum }) {
+    if (!key || maximum < 1) return null;
+    const spent = Math.min(
+      maximum,
+      Math.max(0, globalScope.TabletopMode?.getBuiltInResourceSpent(key) || 0)
+    );
+    const remaining = maximum - spent;
+    const { row, controls } = createResourceRow(label, note);
+    controls.classList.add("tabletop-resource-stepper");
+
+    const readRemaining = () => {
+      const currentSpent = globalScope.TabletopMode?.getBuiltInResourceSpent(key) || 0;
+      const safeSpent = Math.min(maximum, Math.max(0, currentSpent));
+      return maximum - safeSpent;
+    };
+
+    const setRemaining = rawValue => {
+      const parsed = Number.parseInt(String(rawValue), 10);
+      const next = Math.min(maximum, Math.max(0, Number.isSafeInteger(parsed) ? parsed : readRemaining()));
+      globalScope.TabletopMode?.setBuiltInResourceSpent(key, maximum - next, maximum);
+      announce(`${label}剩餘 ${next}/${maximum} 點。`);
+    };
+
+    const decrease = createElement("button", "", "−");
+    decrease.type = "button";
+    decrease.disabled = remaining <= 0;
+    decrease.setAttribute("aria-label", `${label}減少 1 點`);
+    decrease.addEventListener("click", () => setRemaining(readRemaining() - 1));
+
+    const current = document.createElement("input");
+    current.type = "number";
+    current.className = "tabletop-resource-stepper__value";
+    current.min = "0";
+    current.max = String(maximum);
+    current.step = "1";
+    current.inputMode = "numeric";
+    current.value = String(remaining);
+    current.setAttribute("aria-label", `${label}剩餘點數，最大 ${maximum}`);
+    current.addEventListener("change", () => setRemaining(current.value));
+
+    const increase = createElement("button", "", "+");
+    increase.type = "button";
+    increase.disabled = remaining >= maximum;
+    increase.setAttribute("aria-label", `${label}增加 1 點`);
+    increase.addEventListener("click", () => setRemaining(readRemaining() + 1));
+
+    const refill = createElement("button", "tabletop-compact-button", "回滿");
+    refill.type = "button";
+    refill.disabled = remaining >= maximum;
+    refill.setAttribute("aria-label", `將${label}回滿`);
+    refill.addEventListener("click", () => setRemaining(maximum));
+    controls.append(decrease, current, increase, refill);
+    return row;
+  }
+
   function createSpellSlotMirrors(label, canonicalInputs) {
     const column = createElement(
       "div",
@@ -139,12 +238,13 @@
 
   function getRaceUseGroups() {
     const race = document.getElementById("race")?.value || "";
+    const level = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
     const gnomeLineage = document.getElementById("gnome-lineage")?.value || "";
     const goliathAncestry = document.getElementById("goliath-ancestry")?.value || "";
     const configs = [
-      { visible: race === "dragonborn", id: "dragonborn-breath-uses", label: "吐息次數" },
-      { visible: race === "gnome" && gnomeLineage === "forest_gnome", id: "forest-gnome-animal-speech-uses", label: "動物交談次數" },
-      { visible: race === "goliath" && Boolean(goliathAncestry), id: "goliath-giant-ancestry-uses", label: "巨人血統異能" }
+      { visible: level >= 1 && race === "dragonborn", id: "dragonborn-breath-uses", label: "吐息武器", note: "使用次數等同熟練加值；長休後全回復。" },
+      { visible: level >= 1 && race === "gnome" && gnomeLineage === "forest_gnome", id: "forest-gnome-animal-speech-uses", label: "動物交談", note: "使用次數等同熟練加值。" },
+      { visible: level >= 1 && race === "goliath" && Boolean(goliathAncestry), id: "goliath-giant-ancestry-uses", label: "巨人血統異能", note: "使用次數等同熟練加值；長休後全回復。" }
     ];
 
     return configs.flatMap(config => {
@@ -155,52 +255,20 @@
     });
   }
 
-  function findSpellLabelForUseGroup(group) {
-    let sibling = group.previousElementSibling;
-    while (sibling && !sibling.classList.contains("spell-picked-jump")) {
-      sibling = sibling.previousElementSibling;
-    }
-    const spellId = sibling?.dataset.spellId || "";
-    return globalScope.SpellCatalog?.getSpell(spellId)?.nameZh
-      || sibling?.textContent?.replace(/[\[\]]/g, "").trim()
-      || "免費施法";
-  }
-
-  function getSpellUseGroups() {
-    const groups = Array.from(document.querySelectorAll(".free-spell-use-checks")).flatMap(group => {
-      const canonicalInputs = Array.from(group.querySelectorAll(".free-spell-use-check"))
-        .filter(input => !input.disabled && !input.hidden);
-      if (!canonicalInputs.length) return [];
-      const title = canonicalInputs[0].title || "與角色卡的免費施法次數同步。";
-      return [{
-        label: findSpellLabelForUseGroup(group),
-        note: title,
-        canonicalInputs
-      }];
-    });
-
-    const naturalRecovery = document.getElementById("druid-natural-recovery-used");
-    const hasNaturalRecovery = typeof globalScope.hasDruidNaturalRecoverySpells === "function"
-      && globalScope.hasDruidNaturalRecoverySpells();
-    if (hasNaturalRecovery && naturalRecovery instanceof HTMLInputElement) {
-      groups.push({
-        label: "自然恢復",
-        note: "勾選表示本次免費施法已使用。",
-        canonicalInputs: [naturalRecovery]
-      });
-    }
-    return groups;
-  }
-
-  function renderSpellUsage(target) {
-    if (!(target instanceof HTMLElement)) return 0;
-    const groups = getSpellUseGroups();
-    target.replaceChildren(...groups.map(group => createCheckboxMirrors(
-      group.label,
-      group.note,
-      group.canonicalInputs
-    )));
-    return groups.length;
+  function getAutomaticResourceSpecs() {
+    if (typeof globalScope.getCharacterResourceSpecs !== "function") return [];
+    return globalScope.getCharacterResourceSpecs({
+      className: document.getElementById("class")?.value || "",
+      race: document.getElementById("race")?.value || "",
+      level: document.getElementById("level")?.value || "",
+      wisdomScore: document.getElementById("wis")?.value || "10",
+      charismaScore: document.getElementById("cha")?.value || "10"
+    }).map(spec => ({
+      ...spec,
+      note: spec.kind === "points"
+        ? `顯示目前剩餘點數。${spec.recoveryNote}`
+        : `${spec.recoveryNote}`
+    }));
   }
 
   function renderSpellSlots(target) {
@@ -237,25 +305,24 @@
     if (inspiration) rows.push(inspiration);
     if (hitDice) rows.push(hitDice);
     else {
-      const note = createElement("div", "tabletop-inline-empty", "請先在角色卡的數值頁選擇職業與等級，之後即可追蹤生命骰。");
+      const note = createElement("div", "tabletop-inline-empty", "請先選擇職業與等級，之後即可追蹤生命骰。");
       rows.push(note);
     }
 
     const raceGroups = getRaceUseGroups();
-    raceGroups.forEach(group => rows.push(createCheckboxMirrors(
-      group.label,
-      "只顯示目前角色等級可用的使用格。",
-      group.canonicalInputs
-    )));
-    if (!raceGroups.length) {
-      rows.push(createElement("div", "tabletop-inline-empty", "目前沒有可顯示的種族／祖源使用次數；選定相關種族與血統後會出現。"));
-    }
-
-    getSpellUseGroups().forEach(group => rows.push(createCheckboxMirrors(
+    raceGroups.forEach(group => rows.push(createCanonicalUseRow(
       group.label,
       group.note,
       group.canonicalInputs
     )));
+
+    getAutomaticResourceSpecs().forEach(spec => {
+      const resource = spec.kind === "points"
+        ? createPointPoolRow(spec)
+        : createStoredUseRow(spec);
+      if (resource) rows.push(resource);
+    });
+
     elements.builtInResources.replaceChildren(...rows);
   }
 
@@ -443,7 +510,7 @@
       const empty = createElement("div", "tabletop-empty-state");
       empty.append(
         createElement("strong", "", "尚未登記自訂資源"),
-        createElement("p", "", "可登記狂暴、專注點等角色資源；數值由玩家手動維護，不會依職業規則自動產生。")
+        createElement("p", "", "在此建立個人化角色資源計數器。")
       );
       elements.customList.replaceChildren(empty);
       return;
@@ -455,7 +522,6 @@
     if (!initialized) return;
     renderBuiltInResources();
     renderCustomResources();
-    if (elements.spellUses) renderSpellUsage(elements.spellUses);
   }
 
   function scheduleRender() {
@@ -469,7 +535,6 @@
   function init() {
     Object.assign(elements, {
       builtInResources: document.getElementById("tabletop-built-in-resources"),
-      spellUses: document.getElementById("tabletop-spell-uses"),
       customList: document.getElementById("tabletop-custom-resources"),
       customAdd: document.getElementById("tabletop-custom-resource-add"),
       customForm: document.getElementById("tabletop-custom-resource-form"),
@@ -512,7 +577,7 @@
 
   globalScope.TabletopResources = Object.freeze({
     renderSpellSlots,
-    renderSpellUsage,
+    setCanonicalCheckbox,
     refresh: scheduleRender
   });
 

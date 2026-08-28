@@ -1108,6 +1108,7 @@ details > summary::-webkit-details-marker,
   white-space: nowrap;
 }
 
+.dragonborn-breath-uses.is-hidden,
 .proficiency-use-checks.is-hidden {
   display: none;
 }
@@ -4376,10 +4377,9 @@ html.equipment-detail-open body {
 
 .spell-picked-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.95rem;
-  margin-top: 1rem;
-  margin-bottom: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem 1rem;
+  margin-top: 1.1rem;
 }
 
 #feats-area .form-row,
@@ -4389,15 +4389,27 @@ div[id$="spells-area"] .form-row {
 }
 
 .spell-picked-box {
-  padding: 8px 10px;
-  border-radius: 1rem;
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.spell-picked-heading {
+  margin: 0 0 0.3rem;
+  color: var(--text);
+  font-size: var(--fs-base);
 }
 
 .spell-picked-content {
-  white-space: pre-line;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem 1rem;
   font-size: var(--fs-md);
   line-height: 1.45;
   color: var(--text-body);
+}
+
+.spell-picked-item {
+  min-width: 0;
 }
 
 .free-spell-use-checks {
@@ -4409,6 +4421,11 @@ div[id$="spells-area"] .form-row {
 
 .free-spell-use-check {
   margin: 0;
+}
+
+/* 一般角色卡只顯示法術摘要；免費施放的消耗追蹤集中於桌邊模式。 */
+html:not([data-view-mode="tabletop"]) .free-spell-use-checks {
+  display: none;
 }
 
 .druid-natural-recovery-mirror-label {
@@ -6850,7 +6867,7 @@ html[data-view-mode="tabletop"] #scrollToBottomBtn {
   }
 
   .spell-picked-grid {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.75rem), 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   #tab-skills .save-grid,
@@ -7014,17 +7031,11 @@ html[data-view-mode="tabletop"] #scrollToBottomBtn {
   }
 
   .spell-picked-grid {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .spell-slot-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 920px) {
-  .spell-picked-grid {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 7.4rem), 1fr));
   }
 }
 
@@ -8248,6 +8259,10 @@ html[data-view-mode="tabletop"] #scrollToBottomBtn {
   background: var(--surface-soft);
 }
 
+.tabletop-primary-tabs {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
 .tabletop-primary-tabs button,
 .tabletop-action-tabs button {
   min-height: 44px;
@@ -8698,7 +8713,26 @@ html[data-view-mode="tabletop"] #scrollToBottomBtn {
   gap: 0.35rem;
 }
 
-.tabletop-resource-check,
+.tabletop-resource-checks {
+  flex-wrap: nowrap;
+  gap: 0.45rem;
+}
+
+.tabletop-resource-check {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-width: 32px;
+  min-height: 32px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
 .tabletop-resource-toggle {
   display: inline-flex;
   align-items: center;
@@ -8707,16 +8741,12 @@ html[data-view-mode="tabletop"] #scrollToBottomBtn {
   min-width: 44px;
   min-height: 44px;
   margin: 0;
-  padding: 0.35rem;
+  padding: 0.35rem 0.65rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--surface-strong);
   color: var(--text-body);
   cursor: pointer;
-}
-
-.tabletop-resource-toggle {
-  padding-inline: 0.65rem;
 }
 
 .tabletop-resource-check input,
@@ -8737,6 +8767,17 @@ html[data-view-mode="tabletop"] #scrollToBottomBtn {
   min-width: 4.4rem;
   color: var(--text);
   font-size: var(--fs-lg);
+  font-weight: 900;
+  text-align: center;
+}
+
+.tabletop-resource-stepper__value {
+  width: 4.6rem;
+  min-height: 44px;
+  margin: 0;
+  padding-inline: 0.35rem;
+  color: var(--text);
+  font-size: var(--fs-base);
   font-weight: 900;
   text-align: center;
 }
@@ -8764,6 +8805,38 @@ html[data-view-mode="tabletop"] #scrollToBottomBtn {
 .tabletop-spell-list {
   display: grid;
   gap: 0.4rem;
+}
+
+.tabletop-spell-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-strong);
+  overflow: hidden;
+}
+
+.tabletop-spell-card > .tabletop-spell-button {
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.tabletop-spell-card__uses {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  padding: 0.35rem 0.55rem 0.35rem 0.15rem;
+}
+
+.tabletop-spell-card__uses input {
+  flex: 0 0 auto;
+  margin: 0;
 }
 
 .tabletop-spell-button__names {
@@ -9153,6 +9226,100 @@ html.app-dialog-open {
 .tabletop-key-stats {
   gap: 0.3rem;
   padding: 0 0.55rem 0.45rem;
+}
+
+.tabletop-ability-modifiers,
+.tabletop-saving-throw-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 0;
+  justify-content: center;
+}
+
+.tabletop-ability-modifiers {
+  margin: 0;
+  padding: 0.18rem 0.7rem 0.42rem;
+  border-top: 1px solid var(--border);
+  color: var(--text-body);
+}
+
+.tabletop-ability-modifier,
+.tabletop-saving-throw {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.22rem;
+  padding: 0 0.52rem;
+  border-right: 1px solid var(--border);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+  white-space: nowrap;
+}
+
+.tabletop-ability-modifier:first-child,
+.tabletop-saving-throw:first-child {
+  padding-left: 0;
+}
+
+.tabletop-ability-modifier:last-child,
+.tabletop-saving-throw:last-child {
+  border-right: 0;
+}
+
+.tabletop-ability-modifier__label,
+.tabletop-saving-throw__label {
+  color: var(--text-muted);
+  font-weight: 750;
+}
+
+.tabletop-ability-modifier__value,
+.tabletop-saving-throw__value {
+  color: var(--accent-strong);
+  font-size: var(--fs-base);
+  font-variant-numeric: tabular-nums;
+}
+
+.tabletop-saving-throw-values {
+  padding-top: 0.05rem;
+}
+
+.tabletop-skill-values {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-top: 1px solid var(--border);
+}
+
+.tabletop-skill-value {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 0.48rem 0.08rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-body);
+  font-size: var(--fs-sm);
+}
+
+.tabletop-skill-value:nth-child(odd) {
+  padding-right: 0.8rem;
+  border-right: 1px solid var(--border);
+}
+
+.tabletop-skill-value:nth-child(even) {
+  padding-left: 0.8rem;
+}
+
+.tabletop-skill-value__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tabletop-skill-value__value {
+  flex: 0 0 auto;
+  color: var(--accent-strong);
+  font-size: var(--fs-base);
+  font-variant-numeric: tabular-nums;
 }
 
 .tabletop-key-stat {
@@ -9673,15 +9840,15 @@ html.app-dialog-open {
   padding: 0.35rem 0;
 }
 
-.tabletop-resource-check,
-.tabletop-resource-toggle {
-  min-width: 40px;
-  min-height: 40px;
-  padding: 0.25rem;
+.tabletop-resource-check {
+  min-width: 30px;
+  min-height: 30px;
 }
 
 .tabletop-resource-toggle {
-  padding-inline: 0.5rem;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0.25rem 0.5rem;
   font-size: var(--fs-xs);
 }
 
@@ -9696,6 +9863,11 @@ html.app-dialog-open {
 .tabletop-resource-stepper output {
   min-width: 3.7rem;
   font-size: var(--fs-base);
+}
+
+.tabletop-resource-stepper__value {
+  width: 4.25rem;
+  min-height: 40px;
 }
 
 .tabletop-spell-level {
@@ -9837,8 +10009,12 @@ html.app-dialog-open {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .tabletop-resource-check:hover,
   .tabletop-resource-toggle:hover {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  .tabletop-spell-card:hover {
     border-color: var(--accent);
     background: var(--accent-soft);
   }
@@ -9855,7 +10031,6 @@ html.app-dialog-open {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  #tabletop-spell-uses,
   #tabletop-built-in-resources {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     column-gap: 0.85rem;
@@ -9863,6 +10038,25 @@ html.app-dialog-open {
 }
 
 @media (min-width: 720px) {
+  .tabletop-skill-values {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .tabletop-skill-value:nth-child(odd),
+  .tabletop-skill-value:nth-child(even) {
+    padding-inline: 0.55rem;
+    border-right: 1px solid var(--border);
+  }
+
+  .tabletop-skill-value:nth-child(3n + 1) {
+    padding-left: 0.08rem;
+  }
+
+  .tabletop-skill-value:nth-child(3n) {
+    padding-right: 0.08rem;
+    border-right: 0;
+  }
+
   .tabletop-action-options {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
@@ -10296,4 +10490,19 @@ html[data-theme="dark"] .site-footer a,
 html[data-theme="dark"] .equipment-purchase-link,
 html[data-theme="dark"] .feat-icon-btn--add {
   color: var(--accent);
+}
+
+/* The utility menu is an overlay, so its surface must remain opaque. */
+.utility-menu {
+  background: #fff;
+}
+
+html[data-theme="dark"] .utility-menu {
+  background: var(--surface-strong);
+}
+
+@media (min-width: 720px) {
+  .spell-picked-content {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
