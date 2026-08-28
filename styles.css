@@ -10061,12 +10061,12 @@ html.app-dialog-open {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
-/* 手機：六大屬性／豁免固定 3 + 3，第二排輕微右移 */
+/* 手機：六大屬性與六項豁免固定 3 × 2 */
 @media (max-width: 619px) {
   .tabletop-ability-modifiers,
   .tabletop-saving-throw-values {
     display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.15rem 0;
   }
 
@@ -10074,40 +10074,11 @@ html.app-dialog-open {
   .tabletop-saving-throw {
     min-width: 0;
     justify-content: center;
-    padding: 0 0.25rem;
+    padding: 0 0.35rem;
   }
 
-  /* 上排：稍微靠左 */
-  .tabletop-ability-modifier:nth-child(1),
-  .tabletop-saving-throw:nth-child(1) {
-    grid-column: 1 / span 2;
-  }
-
-  .tabletop-ability-modifier:nth-child(2),
-  .tabletop-saving-throw:nth-child(2) {
-    grid-column: 3 / span 2;
-  }
-
-  .tabletop-ability-modifier:nth-child(3),
-  .tabletop-saving-throw:nth-child(3) {
-    grid-column: 5 / span 2;
-    border-right: 0;
-  }
-
-  /* 下排：稍微靠右 */
-  .tabletop-ability-modifier:nth-child(4),
-  .tabletop-saving-throw:nth-child(4) {
-    grid-column: 2 / span 2;
-  }
-
-  .tabletop-ability-modifier:nth-child(5),
-  .tabletop-saving-throw:nth-child(5) {
-    grid-column: 4 / span 2;
-  }
-
-  .tabletop-ability-modifier:nth-child(6),
-  .tabletop-saving-throw:nth-child(6) {
-    grid-column: 6 / span 2;
+  .tabletop-ability-modifier:nth-child(3n),
+  .tabletop-saving-throw:nth-child(3n) {
     border-right: 0;
   }
 }
