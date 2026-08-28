@@ -7216,14 +7216,26 @@ const SHARE_OMITTED_IDS = new Set([
   "spell-search",
   "equipment-search",
   "equipment-purchase-quantity",
+
   "lifedicen",
   "heroic-inspiration",
   "druid-natural-recovery-used",
-  "hp-display",
-  "ac-display",
-  "initiative-input",
-  "speed-display",
-  "passive-perception",
+
+  // 金錢操作視窗暫存資料：分享端不需要
+  "money-note",
+  "money-amount",
+  "money-currency",
+  "money-pp",
+  "money-gp",
+  "money-sp",
+  "money-cp",
+
+  "money-adjust-pp",
+  "money-adjust-gp",
+  "money-adjust-sp",
+  "money-adjust-cp",
+  "money-adjust-note",
+
   "__deletedSpellRowCache"
 ]);
 const SHARE_TABLETOP_STATE_KEYS = new Set([
@@ -7245,6 +7257,13 @@ const SHARE_AUTOMATIC_ATTACK_IDS = new Set([
   "atk-off-name",
   "atk-off-hit",
   "atk-off-dmg"
+]);
+const SHARE_AUTOMATIC_KEY_STAT_IDS = new Set([
+  "hp-display",
+  "ac-display",
+  "initiative-input",
+  "speed-display",
+  "passive-perception"
 ]);
 
 function isShareFieldRelevant(id, data) {
@@ -7287,6 +7306,10 @@ function collectShareState() {
       return;
     }
     if (data["weapon-attack-automation"] === true && SHARE_AUTOMATIC_ATTACK_IDS.has(id)) {
+      delete data[id];
+      return;
+    }
+    if (data["auto-calculate-key-stats-toggle"] === true && SHARE_AUTOMATIC_KEY_STAT_IDS.has(id)) {
       delete data[id];
       return;
     }
@@ -8517,22 +8540,30 @@ window.addEventListener("DOMContentLoaded", async function() {
   // 3. 還原所有欄位狀態
   const { data: sharedData, error: sharedError } = await decodeStateFromHash();
   if (sharedData) {
-    SHARE_MODE = true;
-    window.SHARE_MODE = true;
-    applyStateObject(sharedData);
-    const shareModeTip = document.getElementById("share-mode-tip");
-    if (shareModeTip) shareModeTip.style.display = "block";
-  } else {
-    if (location.hash.startsWith("#s=") || location.hash.startsWith("#s2=")) {
-      await window.AppDialog.showMessage({
-        title: "分享連結讀取失敗",
-        message: "網址可能過長、遭到截斷或資料已損壞。頁面已改為讀取本機暫存。",
-        confirmLabel: "知道了"
-      });
-      if (sharedError) console.warn("分享還原失敗：", sharedError);
+  SHARE_MODE = true;
+  window.SHARE_MODE = true;
+  applyStateObject(sharedData);
+  const shareModeTip = document.getElementById("share-mode-tip");
+  if (shareModeTip) shareModeTip.style.display = "block";
+} else {
+  const hasShareHash =
+    location.hash.startsWith("#s=") ||
+    location.hash.startsWith("#s2=");
+
+  if (hasShareHash) {
+    await window.AppDialog.showMessage({
+      title: "分享連結讀取失敗",
+      message: "網址可能過長、遭到截斷、瀏覽器不支援壓縮分享，或資料已損壞。為避免顯示錯誤角色，本頁不會讀取本機角色紀錄。",
+      confirmLabel: "知道了"
+    });
+
+    if (sharedError) {
+      console.warn("分享還原失敗：", sharedError);
     }
+  } else {
     restoreAllFields();
   }
+}
   updateRaceOptionVisibility();
   updateClassFeatureOptionVisibility();
   updateHitDieLabel();
