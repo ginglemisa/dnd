@@ -1405,6 +1405,23 @@
         "請先在角色卡填入目前 HP。"
       );
 
+      Promise.resolve(
+        window.onboardingTour?.jumpToTarget?.({
+          tab: "basic",
+          selector: ".basic-row--vitals",
+          focusSelector: "#hp"
+        })
+      ).then((jumped) => {
+        if (!jumped) return;
+
+        const hpInput = document.getElementById("hp");
+        if (hpInput && typeof showSkillPopup === "function") {
+          showSkillPopup("目前HP", hpInput);
+        }
+      }).catch((error) => {
+        console.warn("無法前往目前 HP 欄位：", error);
+      });
+
       return;
     }
 
