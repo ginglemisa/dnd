@@ -146,6 +146,7 @@
     const line = lines[index]?.trim() || "";
     const previousLine = lines[index - 1]?.trim() || "";
     if (!line || previousLine || /^[-*•\d]/u.test(line) || line.length > 48) return false;
+    if (NON_FEATURE_HEADINGS.has(line)) return false;
     if (/[。；，,]$/u.test(line)) return false;
     if (/(?:以下|用法|使用方式|持續時間|期間|結束條件|次數|回復|恢復)/u.test(line)) return false;
     return true;
@@ -202,6 +203,12 @@
   });
 
   const MONK_REMOVED_LABELS = new Set(["疾風連擊", "閃轉騰挪", "疾步如風"]);
+  const NON_FEATURE_HEADINGS = new Set([
+    "對敵人做攻擊檢定，或",
+    "讓敵人做豁免檢定，或",
+    "再用一次附贈動作延長狂暴。",
+  ]);
+  const ACTION_OPTIONS_BEFORE_ATTACK = new Set(["魯莽", "等級 5：震懾擊", "鏈之魔契"]);
   const MONK_CUSTOM_OPTIONS = Object.freeze([
     {
       mode: "bonus", level: 2, label: "等級 2：聚氣凝神",
@@ -237,6 +244,24 @@
     return MONK_CUSTOM_OPTIONS
       .filter(option => option.mode === mode && level >= option.level)
       .map(option => ({ ...option, key: `dynamic-${mode}-class-${stableKeyHash(option.label)}`, source: FEATURE_SOURCE_LABELS.class, dynamic: true }));
+  }
+
+  function getBarbarianRecklessAttackEntries(mode) {
+    if (mode !== "action" || document.getElementById("class")?.value !== "barbarian" || getCharacterLevel() < 2) return [];
+    const heading = Array.from(document.querySelectorAll('#classFeatures .barbarian-feature[data-feature-level="2"] h3'))
+      .find(element => cleanFeatureTitle(element.textContent, "") === "等級 2：魯莽攻擊");
+    const featureSection = heading?.closest("section[data-feature-level]");
+    const description = sourceToPlainText(featureSection?.innerHTML || "");
+    if (!description) return [];
+
+    return [{
+      key: `dynamic-action-class-${stableKeyHash("魯莽")}`,
+      label: "魯莽",
+      source: FEATURE_SOURCE_LABELS.class,
+      description,
+      dynamic: true,
+      requiredLevel: 2
+    }];
   }
 
   function extractTimedFeatureEntries(raw, mode, source) {
@@ -407,7 +432,9 @@
   function getDynamicOptions(mode) {
     if (mode !== "action" && mode !== "bonus" && mode !== "reaction") return [];
     const entries = [
-      ...(mode === "action" ? getMonkCustomEntries(mode) : [...getFeatureEntries(mode), ...getMonkCustomEntries(mode)]),
+      ...(mode === "action"
+        ? [...getBarbarianRecklessAttackEntries(mode), ...getMonkCustomEntries(mode)]
+        : [...getFeatureEntries(mode), ...getMonkCustomEntries(mode)]),
       ...getSelectedInvocationEntries(mode),
       ...getSelectedMetamagicEntries(mode),
       ...(mode === "action" ? [] : getSelectedSpellEntries(mode))
@@ -526,9 +553,11 @@
 
   function createOffhandAttackOption() {
     const option = STATIC_OPTIONS.bonus.find(candidate => candidate.key === "offhand-attack");
+    if (!option || document.documentElement.dataset.viewMode !== "tabletop") return option || null;
+
     const mainWeapon = getSelectedWeapon("mainHand");
     const offWeapon = getSelectedWeapon("offHand");
-    if (!option || !mainWeapon || !offWeapon) return null;
+    if (!mainWeapon || !offWeapon) return null;
 
     const mainIsLight = weaponHasProperty(mainWeapon, "輕型");
     const offIsLight = weaponHasProperty(offWeapon, "輕型");
@@ -562,7 +591,13 @@
 
   function getModeOptions(mode) {
     if (!STATIC_OPTIONS[mode]) return [];
-    return [...getAvailableStaticOptions(mode), ...getDynamicOptions(mode)];
+    const staticOptions = getAvailableStaticOptions(mode);
+    const dynamicOptions = getDynamicOptions(mode);
+    if (mode !== "action") return [...staticOptions, ...dynamicOptions];
+
+    const beforeAttack = dynamicOptions.filter(option => ACTION_OPTIONS_BEFORE_ATTACK.has(option.label));
+    const afterAttack = dynamicOptions.filter(option => !ACTION_OPTIONS_BEFORE_ATTACK.has(option.label));
+    return [...beforeAttack, ...staticOptions, ...afterAttack];
   }
 
   function getPublicModeOptions(mode) {

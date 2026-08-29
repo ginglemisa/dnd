@@ -2887,6 +2887,8 @@
         nextMode !== "tabletop";
     }
 
+    moveGearNotesToCurrentMode(nextMode);
+
     document
       .querySelectorAll(
         ".tab-content"
@@ -2965,6 +2967,14 @@
     render();
   }
 
+  function moveGearNotesToCurrentMode(mode) {
+    const target = mode === "tabletop"
+      ? elements.gearNotesTabletopMount
+      : elements.gearNotesSheetMount;
+    if (!elements.gearNotes || !target || elements.gearNotes.parentElement === target) return;
+    target.append(elements.gearNotes);
+  }
+
   function cacheElements() {
     Object.assign(
       elements,
@@ -2982,6 +2992,21 @@
         tabletopMode:
           document.getElementById(
             "tabletop-mode"
+          ),
+
+        gearNotes:
+          document.getElementById(
+            "gear-notes"
+          ),
+
+        gearNotesSheetMount:
+          document.getElementById(
+            "gear-notes-sheet-mount"
+          ),
+
+        gearNotesTabletopMount:
+          document.getElementById(
+            "tabletop-gear-notes-mount"
           ),
 
         tabletopTabs:

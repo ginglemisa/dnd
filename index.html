@@ -46,7 +46,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎲%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20260829-action-option-layout">
+  <link rel="stylesheet" href="styles.css?v=20260829-tabletop-gear-notes">
   <script src="scroll-to-top.js" defer></script>
   <script src="dice-roller.js?v=20260829-compound-rolls" defer></script>
   <script src="monster.js" defer></script>
@@ -61,7 +61,7 @@
   <script src="action-panel.js?v=20260829-action-option-layout" defer></script>
   <script src="character-rules.js?v=20260829-shillelagh-weapons" defer></script>
   <script src="app-dialog.js?v=20260829-dice-roll-toast" defer></script>
-  <script src="tabletop-mode.js?v=20260829-tabletop-quick-rolls" defer></script>
+  <script src="tabletop-mode.js?v=20260829-tabletop-gear-notes" defer></script>
   <script src="tabletop-resources.js?v=20260828-card-only-free-uses" defer></script>
   <script src="tabletop-actions.js?v=20260829-action-option-layout" defer></script>
   <script src="tabletop-spells.js?v=20260829-tabletop-quick-rolls-3" defer></script>
@@ -422,6 +422,10 @@
         <div id="tabletop-custom-resources" class="tabletop-custom-resource-list"></div>
         <p id="tabletop-resource-status" class="sr-only" role="status" aria-live="polite"></p>
       </section>
+      <section class="tabletop-section tabletop-gear-notes" aria-labelledby="tabletop-gear-notes-title">
+        <div class="tabletop-section-heading"><h3 id="tabletop-gear-notes-title">攜帶物品</h3></div>
+        <div id="tabletop-gear-notes-mount"></div>
+      </section>
     </section>
   </article>
 </section>
@@ -656,11 +660,6 @@
     </div>
   </div>
 </div>
-
-
-
-
-
 
   <div class="section">
     <div class="ability-grid">
@@ -950,7 +949,7 @@
 
   <div class="section">
     <h3>攜帶物品</h3>
-<textarea id="gear-notes" rows="4" placeholder="請輸入角色攜帶的其他裝備,補給品,雜物等..."></textarea>
+    <div id="gear-notes-sheet-mount"><textarea id="gear-notes" rows="4" placeholder="請輸入角色攜帶的其他裝備,補給品,雜物等..."></textarea></div>
     <div class="money-section" aria-label="錢財管理">
       <div class="money-balance-header">
         <h4 class="money-title">總財產</h4>
@@ -2976,6 +2975,20 @@ function createMagicInitiateSelect(field, labelText) {
   select.innerHTML = `<option value="">--${labelText}--</option>`;
 
   fieldWrap.appendChild(select);
+  if (field !== "class") {
+    const detailButton = document.createElement("button");
+    detailButton.type = "button";
+    detailButton.className = "magic-initiate-spell-detail";
+    detailButton.textContent = "ⓘ";
+    detailButton.disabled = true;
+    detailButton.setAttribute("aria-label", `查看${labelText}法術詳情`);
+    detailButton.title = "請先選擇法術";
+    detailButton.addEventListener("click", () => {
+      const spell = SpellCatalog.getSpell(select.value);
+      if (spell) window.quickBuild?.openSpellDetail?.(spell, detailButton);
+    });
+    fieldWrap.appendChild(detailButton);
+  }
   return { fieldWrap, select };
 }
 
@@ -3008,6 +3021,7 @@ function createMagicInitiateControls(rowDiv) {
 
   [cantripOneField.select, cantripTwoField.select, levelOneField.select].forEach((select) => {
     select.addEventListener("change", () => {
+      syncMagicInitiateSpellDetailButton(select);
       syncMagicInitiateDerivedSpellRows();
       scheduleSaveAllFields();
     });
@@ -3018,6 +3032,14 @@ function createMagicInitiateControls(rowDiv) {
 
 function getMagicInitiateSelect(row, field) {
   return row?.querySelector?.(`[data-magic-initiate-field="${field}"]`) || null;
+}
+
+function syncMagicInitiateSpellDetailButton(select) {
+  const detailButton = select?.parentElement?.querySelector(".magic-initiate-spell-detail");
+  const spell = SpellCatalog.getSpell(select?.value);
+  if (!detailButton) return;
+  detailButton.disabled = !spell;
+  detailButton.title = spell ? `查看${SpellCatalog.getDisplayName(select.value)}的法術詳情` : "請先選擇法術";
 }
 
 function getMagicInitiateSpellPlaceholder(field) {
@@ -3047,6 +3069,7 @@ function updateMagicInitiateSpellOptions(row) {
     );
     select.innerHTML = rendered.html;
     select.value = rendered.value;
+    syncMagicInitiateSpellDetailButton(select);
   });
 }
 
