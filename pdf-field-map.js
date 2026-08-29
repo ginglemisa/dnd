@@ -1153,13 +1153,14 @@
     };
   }
 
-  function canDamageCantripsUseFirstWeaponRows(state) {
-    const equippedHands = [state.mainHand, state.offHand].map(normalizeText);
-    const hasEquippedWeapon = equippedHands.some((name) => name && name !== '盾牌');
-    const hasWeaponNote = [state['atk-main-note'], state['atk-off-note']]
-      .some((note) => Boolean(normalizeText(note)));
-    return !hasEquippedWeapon && !hasWeaponNote;
-  }
+function isWeaponRowEmpty(payload, slot) {
+  return [
+    payload[`attack-weap-name-${slot}`],
+    payload[`toHit${slot}`],
+    payload[`dmg_type_${slot}`],
+    payload[`wp-note-${slot}`]
+  ].every((value) => !normalizeText(value));
+}
 
   function fillDamageCantripsToWeaponRows(payload, spellRows, state) {
     const cantripRows = spellRows.filter((row) => row.level === 0);
@@ -1167,7 +1168,13 @@
 
     const attackBonus = normalizeText(state['spell-attack-bonus']);
     const saveDc = normalizeText(state['spell-save-dc']);
-    let slot = canDamageCantripsUseFirstWeaponRows(state) ? 1 : 3;
+    let slot = 3;
+
+    if (isWeaponRowEmpty(payload, 1)) {
+      slot = 1;
+    } else if (isWeaponRowEmpty(payload, 2)) {
+      slot = 2;
+    }
 
     for (const row of cantripRows) {
       if (slot > 7) break;
@@ -1182,6 +1189,14 @@
       payload[`dmg_type_${slot}`] = exportValues.damage;
       payload[`wp-note-${slot}`] = exportValues.note;
       slot += 1;
+
+      while (slot <= 2 && !isWeaponRowEmpty(payload, slot)) {
+        slot += 1;
+      }
+
+      if (slot === 2 && !isWeaponRowEmpty(payload, 2)) {
+        slot = 3;
+      }
     }
   }
 
