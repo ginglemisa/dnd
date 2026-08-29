@@ -84,30 +84,29 @@
       const name = createElement("dt");
       const number = createElement("dd");
       if (term === "法術命中加值") {
-        const modifier = parseModifier(value);
-        [
-          [name, term],
-          [number, value]
-        ].forEach(([container, text]) => {
-          const button = createElement("button", "tabletop-inline-roll", text);
-          button.type = "button";
-          button.disabled = modifier === null || !globalScope.DiceRoller?.isEnabled?.();
-          button.setAttribute(
-            "aria-label",
-            button.disabled ? `${term}；請先開啟擲骰系統` : `擲${term}`
-          );
-          button.addEventListener("click", () => {
-            globalScope.DiceRoller?.roll?.({
-              count: 1,
-              sides: 20,
-              modifier,
-              includeModifier: true,
-              label: term
-            });
-          });
-          container.appendChild(button);
-        });
-      } else {
+  const modifier = parseModifier(value);
+
+  name.textContent = term;
+
+  const button = createElement("button", "tabletop-inline-roll", value);
+  button.type = "button";
+  button.disabled = modifier === null || !globalScope.DiceRoller?.isEnabled?.();
+  button.setAttribute(
+    "aria-label",
+    button.disabled ? `${term}；請先開啟擲骰系統` : `擲${term}`
+  );
+  button.addEventListener("click", () => {
+    globalScope.DiceRoller?.roll?.({
+      count: 1,
+      sides: 20,
+      modifier,
+      includeModifier: true,
+      label: term
+    });
+  });
+
+  number.appendChild(button);
+} else {
         name.textContent = term;
         number.textContent = value;
       }

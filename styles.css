@@ -6833,8 +6833,8 @@ html[data-view-mode="tabletop"] #scrollToBottomBtn {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .action-option-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .action-option-grid[data-action-mode="action"] {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .spell-slot-grid {
