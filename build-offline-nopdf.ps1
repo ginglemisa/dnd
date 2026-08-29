@@ -114,12 +114,76 @@ $scriptTags = [System.Text.RegularExpressions.Regex]::Matches(
   '<script\b(?=[^>]*\bsrc="([^"]+)")[^>]*>\s*</script>',
   [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
 )
+
 foreach ($match in $scriptTags) {
   $reference = $match.Groups[1].Value
-  if ($reference -match '^(?:data:|https?:|//)') { continue }
+
+  if ($reference -match '^(?:data:|https?:|//)') {
+    continue
+  }
+
   $assetPath = Get-LocalAssetPath -Reference $reference
-  $dataUrl = Get-Base64TextDataUrl -Path $assetPath -MimeType "text/javascript;charset=utf-8"
-  $html = $html.Replace($match.Value, "<script defer src=`"$dataUrl`" data-offline-source=`"$reference`"></script>")
+
+  # Read the JavaScript source so local binary assets referenced from JS
+  # (for example dice.webp) can also be embedded into the offline build.
+  $scriptContent = Get-Content -Raw -Encoding UTF8 $assetPath
+
+  $embeddedBinaryReferences = [System.Text.RegularExpressions.Regex]::Matches(
+    $scriptContent,
+    '(?<quote>["''`])(?<binaryReference>(?!data:|https?:|//)[^"''`]*?\.(?:gif|jpeg|jpg|png|svg|webp)(?:\?[^"''`]*)?)(?<endquote>["''`])',
+    [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
+  )
+
+  foreach ($binaryMatch in $embeddedBinaryReferences) {
+    if ($binaryMatch.Groups["quote"].Value -ne $binaryMatch.Groups["endquote"].Value) {
+      continue
+    }
+
+    $binaryReference = $binaryMatch.Groups["binaryReference"].Value
+
+    # Remove query/hash before resolving the actual local file.
+    $binaryAssetPath = Get-LocalAssetPath -Reference $binaryReference
+    $binaryMimeType = Get-BinaryMimeType -Path $binaryAssetPath
+    $binaryDataUrl = Get-Base64BinaryDataUrl `
+      -Path $binaryAssetPath `
+      -MimeType $binaryMimeType
+
+    $queryOrHash = ""
+    $binaryReferenceWithoutQuery = $binaryReference
+
+    if ($binaryReference -match '^(.*?)([?#].*)$') {
+      $binaryReferenceWithoutQuery = $Matches[1]
+      $queryOrHash = $Matches[2]
+    }
+
+    if ($queryOrHash) {
+      # Data URLs cannot use the original URL query in the same way.
+      # Convert it to a fragment so cache-busting expressions such as:
+      # dice.webp?roll=${++rollSequence}
+      # remain unique without breaking the Data URL.
+      if ($queryOrHash.StartsWith("?")) {
+        $queryOrHash = "#" + $queryOrHash.Substring(1)
+      }
+    }
+
+    $replacement = $binaryDataUrl + $queryOrHash
+
+    $scriptContent = $scriptContent.Replace(
+      $binaryMatch.Groups["binaryReference"].Value,
+      $replacement
+    )
+  }
+
+  $scriptBase64 = [Convert]::ToBase64String(
+    [System.Text.Encoding]::UTF8.GetBytes($scriptContent)
+  )
+
+  $scriptDataUrl = "data:text/javascript;charset=utf-8;base64,$scriptBase64"
+
+  $html = $html.Replace(
+    $match.Value,
+    "<script defer src=`"$scriptDataUrl`" data-offline-source=`"$reference`"></script>"
+  )
 }
 
 $imageTags = [System.Text.RegularExpressions.Regex]::Matches(
