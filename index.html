@@ -46,7 +46,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎲%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20260829-tabletop-quick-rolls">
+  <link rel="stylesheet" href="styles.css?v=20260829-action-option-layout">
   <script src="scroll-to-top.js" defer></script>
   <script src="dice-roller.js?v=20260829-compound-rolls" defer></script>
   <script src="monster.js" defer></script>
@@ -58,12 +58,12 @@
   <script src="equipment-notes.js?v=20260813-weapon-rule-popups-2" defer></script>
   <script src="spell-list.js?v=20260828-concentration" defer></script>
   <script src="condition.js" defer></script>
-  <script src="action-panel.js?v=20260828-shared-api" defer></script>
-  <script src="character-rules.js?v=20260828-built-in-resources" defer></script>
+  <script src="action-panel.js?v=20260829-action-option-layout" defer></script>
+  <script src="character-rules.js?v=20260829-shillelagh-weapons" defer></script>
   <script src="app-dialog.js?v=20260829-dice-roll-toast" defer></script>
   <script src="tabletop-mode.js?v=20260829-tabletop-quick-rolls" defer></script>
   <script src="tabletop-resources.js?v=20260828-card-only-free-uses" defer></script>
-  <script src="tabletop-actions.js?v=20260829-weapon-combined-roll" defer></script>
+  <script src="tabletop-actions.js?v=20260829-action-option-layout" defer></script>
   <script src="tabletop-spells.js?v=20260829-tabletop-quick-rolls-3" defer></script>
   <script src="legal-modal.js?v=20260824-onboarding-entry" defer></script>
   <script src="onboarding-tour.js?v=20260825-onboarding-step5-highlights" defer></script>
@@ -891,7 +891,6 @@
           <span class="action-command-eyebrow">回合操作</span>
           <h3 id="action-command-title">選擇可用行動</h3>
         </div>
-        <span id="action-option-count" class="action-option-count" aria-live="polite"></span>
       </div>
 
       <div class="action-mode-tabs" role="tablist" aria-label="行動類型">
@@ -4458,15 +4457,15 @@ function updateSpellCastingStats() {
     adjustmentInput.value = "";
     saveDcInput.value = "";
     attackInput.value = "";
-    return;
+  } else {
+    const mod = getModifier(ability);
+    const pb = getProficiencyBonus();
+
+    adjustmentInput.value = formatSignedValue(mod);
+    saveDcInput.value = String(8 + pb + mod);
+    attackInput.value = formatSignedValue(mod + pb);
   }
-
-  const mod = getModifier(ability);
-  const pb = getProficiencyBonus();
-
-  adjustmentInput.value = formatSignedValue(mod);
-  saveDcInput.value = String(8 + pb + mod);
-  attackInput.value = formatSignedValue(mod + pb);
+  if (typeof populateHandAttacks === "function") populateHandAttacks();
 }
 
 function bindSpellCastingStatsEvents() {
@@ -4859,6 +4858,30 @@ function getWeaponVersatileDie(weapon) {
   return null;
 }
 
+function hasPreparedSpell(spellId) {
+  return Array.from(document.querySelectorAll('#tab-spells select[id*="-spell-"]'))
+    .some(select => select.value === spellId);
+}
+
+function getPreparedShillelaghTargetHand() {
+  return getShillelaghTargetHand({
+    isPrepared: hasPreparedSpell("shillelagh"),
+    mainHandWeaponName: document.getElementById("mainHand")?.value || "",
+    offHandWeaponName: document.getElementById("offHand")?.value || ""
+  });
+}
+
+function getPreparedShillelaghEffect(weaponName, strengthModifier) {
+  const spellcastingAbility = document.getElementById("spellcasting-ability")?.value || "";
+  return getShillelaghWeaponEffect({
+    weaponName,
+    isPrepared: true,
+    level: document.getElementById("level")?.value || "1",
+    strengthModifier,
+    spellcastingModifier: spellcastingAbility ? getModifier(spellcastingAbility) : null
+  });
+}
+
 function isMonkWeapon(weapon) {
   if (!weapon || weapon.名稱 === "盾牌") return false;
   if (weapon.名稱 === "武藝") return true;
@@ -5202,6 +5225,7 @@ function updateEquipmentLoadoutSummary() {
 function calculateHandAttacks() {
   const hasTwoWeaponFighting = hasTwoWeaponFightingStyleFeat();
   const hasArcheryFightingStyle = hasArcheryFightingStyleFeat();
+  const shillelaghTargetHand = getPreparedShillelaghTargetHand();
   const hands = [
     { key: "main", selectId: "mainHand", prefix: "atk-main" },
     { key: "off", selectId: "offHand", prefix: "atk-off" }
@@ -5221,9 +5245,14 @@ function calculateHandAttacks() {
     const pb = getProficiencyBonus();
     const proficient = isMonkMartialArts ? true : isWeaponProficient(weapon);
     const useMonkProficientFormula = cls === "monk" && proficient && isMonkMartialArtsActive() && isMonkWeapon(weapon);
+    const shillelaghEffect = hand.key === shillelaghTargetHand
+      ? getPreparedShillelaghEffect(weaponName, strMod)
+      : null;
 
     let attackAbilityMod;
-    if (useMonkProficientFormula) {
+    if (shillelaghEffect) {
+      attackAbilityMod = shillelaghEffect.abilityModifier;
+    } else if (useMonkProficientFormula) {
       attackAbilityMod = Math.max(strMod, dexMod);
     } else if (isRanged) {
       attackAbilityMod = dexMod;
@@ -5240,9 +5269,14 @@ function calculateHandAttacks() {
     }
     const hit = formatSigned(hitBonus);
     // 傷害部分
-    const isOffHand = hand.prefix === "atk-off";
+    const shouldApplyDamageMod = shouldApplyDamageModForSummary(hand.key, hasTwoWeaponFighting, attackAbilityMod);
     let damage = "";
-    if (useMonkProficientFormula) {
+    if (shillelaghEffect) {
+      damage = formatWeaponDamage(
+        `${shillelaghEffect.damageDie} ${shillelaghEffect.damageType}`,
+        shouldApplyDamageMod ? attackAbilityMod : null
+      );
+    } else if (useMonkProficientFormula) {
       const selectedDie = getHighestDiceExpression([
         getMonkMartialArtsDie(),
         getWeaponBaseDamageDie(weapon),
@@ -5251,10 +5285,11 @@ function calculateHandAttacks() {
       const damageType = weapon.傷害.split(/\s+/).slice(1).join(" ");
       damage = formatWeaponDamage(`${selectedDie} ${damageType}`, attackAbilityMod);
     } else {
-      const shouldApplyDamageMod = !isOffHand || hasTwoWeaponFighting || attackAbilityMod < 0;
       damage = formatWeaponDamage(weapon.傷害, shouldApplyDamageMod ? attackAbilityMod : null);
     }
-    const abilityLabel = useMonkProficientFormula
+    const abilityLabel = shillelaghEffect
+      ? shillelaghEffect.abilityLabel
+      : useMonkProficientFormula
       ? (dexMod > strMod ? "敏捷" : "力量")
       : (isRanged ? "敏捷" : (isDexEligible && dexMod > strMod ? "敏捷" : "力量"));
     return {
@@ -5269,10 +5304,12 @@ function calculateHandAttacks() {
         proficient,
         proficiencyBonus: proficient ? pb : 0,
         archeryBonus: hasArcheryFightingStyle && isRanged ? 2 : 0,
-        baseDamage: useMonkProficientFormula ? damage.match(/^\d+d\d+/u)?.[0] || weapon.傷害.split(/\s+/u)[0] : weapon.傷害.split(/\s+/u)[0],
-        damageModifier: useMonkProficientFormula || shouldApplyDamageModForSummary(hand.key, hasTwoWeaponFighting, attackAbilityMod) ? attackAbilityMod : null,
+        baseDamage: shillelaghEffect
+          ? shillelaghEffect.damageDie
+          : (useMonkProficientFormula ? damage.match(/^\d+d\d+/u)?.[0] || weapon.傷害.split(/\s+/u)[0] : weapon.傷害.split(/\s+/u)[0]),
+        damageModifier: useMonkProficientFormula || shouldApplyDamageMod ? attackAbilityMod : null,
         omittedOffHandModifier: !useMonkProficientFormula && hand.key === "off" && !hasTwoWeaponFighting && attackAbilityMod > 0,
-        damageType: weapon.傷害.split(/\s+/u).slice(1).join(" "),
+        damageType: shillelaghEffect?.damageType || weapon.傷害.split(/\s+/u).slice(1).join(" "),
         hit,
         damage
       }
@@ -6027,6 +6064,7 @@ function updatePickedSpellBoxes() {
   if (grid) grid.hidden = visibleBoxCount === 0;
   syncDruidNaturalRecoveryControls();
   updateSpellListStatusNote();
+  if (typeof populateHandAttacks === "function") populateHandAttacks();
 }
 
 function getFixedTabOffsetPadding() {

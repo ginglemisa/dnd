@@ -46,6 +46,7 @@
   const NON_SPELLCASTER_RACES = new Set(["dragonborn", "dwarf", "goliath", "halfling", "human", "orc"]);
   const SPELLCASTER_RACES = new Set(["elf", "gnome", "tiefling"]);
   const CLASS_CANTRIP_CLASSES = new Set(["bard", "cleric", "druid", "sorcerer", "warlock", "wizard"]);
+  const SHILLELAGH_WEAPON_NAMES = new Set(["短棒", "長棍"]);
   const STANDARD_SPELL_SLOTS = Object.freeze({
     1: Object.freeze([2, 0, 0, 0]),
     2: Object.freeze([3, 0, 0, 0]),
@@ -254,6 +255,36 @@
     return Number(level) >= 5 ? "1d8" : "1d6";
   }
 
+  /** 套用橡棍術至短棒或長棍；5 級起傷害骰提升為 1d10。 */
+  function getShillelaghWeaponEffect(options = {}) {
+    const weaponName = String(options.weaponName || "").trim();
+    if (!options.isPrepared || !SHILLELAGH_WEAPON_NAMES.has(weaponName)) return null;
+
+    const normalizeModifier = value => value === null || value === undefined || value === "" ? Number.NaN : Number(value);
+    const strengthModifier = normalizeModifier(options.strengthModifier);
+    const spellcastingModifier = normalizeModifier(options.spellcastingModifier);
+    const availableModifiers = [strengthModifier, spellcastingModifier].filter(Number.isFinite);
+    const abilityModifier = availableModifiers.length ? Math.max(...availableModifiers) : 0;
+    const level = Number.parseInt(options.level, 10);
+
+    return Object.freeze({
+      damageDie: Number.isFinite(level) && level >= 5 ? "1d10" : "1d8",
+      abilityModifier,
+      abilityLabel: Number.isFinite(spellcastingModifier) && spellcastingModifier > strengthModifier
+        ? "施法"
+        : (Number.isFinite(spellcastingModifier) && spellcastingModifier === strengthModifier ? "力量／施法" : "力量"),
+      damageType: "鈍擊/力場"
+    });
+  }
+
+  /** 橡棍術一次只套用一把武器；符合時優先選擇主手，否則選擇副手。 */
+  function getShillelaghTargetHand(options = {}) {
+    if (!options.isPrepared) return null;
+    if (SHILLELAGH_WEAPON_NAMES.has(String(options.mainHandWeaponName || "").trim())) return "main";
+    if (SHILLELAGH_WEAPON_NAMES.has(String(options.offHandWeaponName || "").trim())) return "off";
+    return null;
+  }
+
   /** 取得指定職業與等級的一至四環法術位數量。 */
   function getSpellSlotCounts(className, level) {
     const numericLevel = Number(level);
@@ -390,6 +421,8 @@
     getMetamagicSelectionLimit,
     getMonkMartialArtsDieByLevel,
     getPaladinAuraSavingThrowBonus,
+    getShillelaghTargetHand,
+    getShillelaghWeaponEffect,
     getSpellSlotCounts,
     hasSpellcastingCapabilityForSelections,
     normalizeCharacterSize,

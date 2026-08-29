@@ -481,9 +481,88 @@
     return button;
   }
 
+  function getSelectedWeapon(selectId) {
+    const weaponName = document.getElementById(selectId)?.value || "";
+    if (!weaponName) return null;
+    const weapons = typeof globalScope.getAllWeaponsWithShield === "function"
+      ? globalScope.getAllWeaponsWithShield()
+      : [
+          ...(globalScope.weapons_simple_melee || []),
+          ...(globalScope.weapons_simple_ranged || []),
+          ...(globalScope.weapons_martial_melee || []),
+          ...(globalScope.weapons_martial_ranged || []),
+          ...(globalScope.shield || [])
+        ];
+    return weapons.find(weapon => weapon?.名稱 === weaponName) || null;
+  }
+
+  function weaponHasProperty(weapon, keyword) {
+    if (!weapon) return false;
+    if (typeof globalScope.weaponHasProp === "function") {
+      return globalScope.weaponHasProp(weapon, keyword);
+    }
+    return [weapon.屬性1, weapon.屬性2, weapon.屬性3, weapon.屬性4]
+      .some(property => String(property || "").includes(keyword));
+  }
+
+  function isMeleeWeapon(weapon) {
+    if (!weapon || weapon.名稱 === "盾牌") return false;
+    if (typeof globalScope.isRangedWeapon === "function") {
+      return !globalScope.isRangedWeapon(weapon);
+    }
+    return ![
+      ...(globalScope.weapons_simple_ranged || []),
+      ...(globalScope.weapons_martial_ranged || [])
+    ].some(candidate => candidate?.名稱 === weapon.名稱);
+  }
+
+  function hasSelectedFeat(featName) {
+    if (typeof globalScope.hasSelectedFeat === "function") {
+      return globalScope.hasSelectedFeat(featName);
+    }
+    return Array.from(document.querySelectorAll("#feats-area select"))
+      .some(select => select.value === featName);
+  }
+
+  function createOffhandAttackOption() {
+    const option = STATIC_OPTIONS.bonus.find(candidate => candidate.key === "offhand-attack");
+    const mainWeapon = getSelectedWeapon("mainHand");
+    const offWeapon = getSelectedWeapon("offHand");
+    if (!option || !mainWeapon || !offWeapon) return null;
+
+    const mainIsLight = weaponHasProperty(mainWeapon, "輕型");
+    const offIsLight = weaponHasProperty(offWeapon, "輕型");
+    const bothAreLight = mainIsLight && offIsLight;
+    const hasDualWielder = hasSelectedFeat("雙持追擊");
+    const dualWielderEligible = hasDualWielder
+      && mainIsLight
+      && isMeleeWeapon(offWeapon)
+      && !weaponHasProperty(offWeapon, "雙手");
+    if (!bothAreLight && !dualWielderEligible) return null;
+
+    const baseDescription = dualWielderEligible && !offIsLight
+      ? "以輕型武器完成攻擊後，可用附贈動作持另一把非雙手近戰武器再攻擊一次。"
+      : "以輕型武器完成攻擊後，可用附贈動作持另一把輕型武器再攻擊一次。";
+    const damageWarning = hasSelectedFeat("雙武器戰鬥")
+      ? ""
+      : "除非具備特定專長，這次攻擊的傷害不加正值屬性調整值。";
+    return {
+      ...option,
+      description: `${baseDescription}${damageWarning}`
+    };
+  }
+
+  function getAvailableStaticOptions(mode) {
+    return STATIC_OPTIONS[mode].flatMap(option => {
+      if (option.key !== "offhand-attack") return [option];
+      const offhandOption = createOffhandAttackOption();
+      return offhandOption ? [offhandOption] : [];
+    });
+  }
+
   function getModeOptions(mode) {
     if (!STATIC_OPTIONS[mode]) return [];
-    return [...STATIC_OPTIONS[mode], ...getDynamicOptions(mode)];
+    return [...getAvailableStaticOptions(mode), ...getDynamicOptions(mode)];
   }
 
   function getPublicModeOptions(mode) {
@@ -504,7 +583,6 @@
     if (!preserveSelection) selectedOptionKey = "";
     const meta = MODE_META[mode];
     const options = getModeOptions(mode);
-    const dynamicCount = options.filter(option => option.dynamic).length;
 
     panelElements.tabs.forEach(tab => {
       const active = tab.dataset.actionMode === mode;
@@ -517,9 +595,7 @@
     panelElements.timing.textContent = meta.timing;
     panelElements.summary.textContent = meta.summary;
     panelElements.grid.setAttribute("aria-label", `${activeTab.textContent.trim()}選項`);
-    panelElements.count.textContent = dynamicCount
-      ? `${STATIC_OPTIONS[mode].length} 項基本・${dynamicCount} 項角色能力`
-      : `${options.length} 項`;
+    panelElements.grid.dataset.actionMode = mode;
 
     panelElements.grid.replaceChildren(...options.map(createOptionButton));
     const selected = options.find(option => option.key === selectedOptionKey);
@@ -575,7 +651,6 @@
       description,
       timing: document.getElementById("action-mode-timing"),
       summary: document.getElementById("action-mode-summary"),
-      count: document.getElementById("action-option-count"),
       tabs: Array.from(document.querySelectorAll(".action-mode-tab"))
     };
     panelElements.tabs.forEach(tab => {

@@ -152,7 +152,32 @@
     const heading = createElement("div", "tabletop-action-description__heading");
     heading.appendChild(createElement("strong", "", option.label));
     if (option.source) heading.appendChild(createElement("span", "tabletop-source-tag", option.source));
-    const copy = createElement("div", "tabletop-action-description__copy", option.description);
+    const copy = createElement("div", "tabletop-action-description__copy");
+    if (option.key === "drink-potion") {
+      const description = String(option.description || "");
+      const match = description.match(/\d+\s*d\s*(?:100|20|12|10|8|6|4)(?:\s*[+-]\s*\d+)?/i);
+      if (match && Number.isInteger(match.index)) {
+        copy.appendChild(document.createTextNode(description.slice(0, match.index)));
+        const rollButton = createElement("button", "tabletop-dice-expression", match[0]);
+        rollButton.type = "button";
+        rollButton.disabled = !globalScope.DiceRoller?.isEnabled?.();
+        rollButton.setAttribute(
+          "aria-label",
+          rollButton.disabled ? `${match[0]}；請先開啟擲骰系統` : `擲喝藥水恢復量 ${match[0]}`
+        );
+        rollButton.addEventListener("click", () => {
+          globalScope.DiceRoller?.rollExpression?.(match[0], { label: "喝藥水恢復生命值" });
+        });
+        copy.append(
+          rollButton,
+          document.createTextNode(description.slice(match.index + match[0].length))
+        );
+      } else {
+        copy.textContent = description;
+      }
+    } else {
+      copy.textContent = option.description;
+    }
     description.append(heading, copy);
     return description;
   }
@@ -178,34 +203,23 @@
       createElement("strong", "", meta.timing),
       createElement("span", "", meta.summary)
     );
-    const dynamicCount = options.filter(option => option.dynamic).length;
-    context.append(
-      contextCopy,
-      createElement("span", "tabletop-action-count", dynamicCount ? `${options.length - dynamicCount} 項基本・${dynamicCount} 項角色能力` : `${options.length} 項`)
-    );
+    context.append(contextCopy);
 
     const layout = createElement("div", "tabletop-action-layout");
     const optionList = createElement("div", "tabletop-action-options");
     optionList.setAttribute("aria-label", "可用選項");
+    optionList.dataset.actionMode = mode;
     options.forEach(option => {
       const button = createElement("button", "tabletop-action-option");
       button.type = "button";
       button.dataset.actionOptionKey = option.key;
       button.setAttribute("aria-pressed", String(option.key === selectedKey));
       if (option.key === selectedKey) button.classList.add("is-selected");
-      if (option.key === "drink-potion" && globalScope.DiceRoller?.isEnabled?.()) {
-        button.classList.add("has-quick-roll");
-        button.title = "點擊擲 2d4 + 2 恢復生命值";
-        button.setAttribute("aria-label", `${option.label}；擲 2d4 + 2 恢復生命值`);
-      }
       button.appendChild(createElement("span", "", api.getButtonLabel(option)));
       if (option.source) button.appendChild(createElement("span", "tabletop-source-tag", option.source));
       button.addEventListener("click", () => {
         selectedOptionKeys.set(mode, option.key);
         renderActionPanel(mode);
-        if (option.key === "drink-potion" && globalScope.DiceRoller?.isEnabled?.()) {
-          globalScope.DiceRoller.rollExpression("2d4+2", { label: "喝藥水恢復生命值" });
-        }
       });
       optionList.appendChild(button);
     });
