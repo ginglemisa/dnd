@@ -500,6 +500,47 @@
     );
   }
 
+  function addActiveCondition(conditionKey) {
+    if (combatState.activeConditions.includes(conditionKey)) {
+      return false;
+    }
+
+    combatState.activeConditions = [
+      ...combatState.activeConditions,
+      conditionKey
+    ];
+
+    return true;
+  }
+
+  function removeActiveCondition(conditionKey) {
+    if (!combatState.activeConditions.includes(conditionKey)) {
+      return false;
+    }
+
+    combatState.activeConditions = combatState.activeConditions.filter(
+      key => key !== conditionKey
+    );
+
+    return true;
+  }
+
+  /*
+   * 生命垂危狀態與「狀態」清單共用同一份 combatState：
+   * 0 HP 時維持昏迷；從 0 HP 被治療至至少 1 HP 時，
+   * 解除昏迷並改為倒地。
+   */
+  function enterDeathSaveCondition() {
+    return addActiveCondition("unconscious");
+  }
+
+  function reviveFromZeroHpCondition() {
+    const unconsciousRemoved = removeActiveCondition("unconscious");
+    const proneAdded = addActiveCondition("prone");
+
+    return unconsciousRemoved || proneAdded;
+  }
+
   function becomeStable() {
     if (combatState.heroicSacrifice) {
       return false;
@@ -513,6 +554,7 @@
     combatState.deathSaveSuccesses = 0;
     combatState.deathSaveFailures = 0;
     combatState.deathSaveStable = true;
+    enterDeathSaveCondition();
 
     return changed;
   }
@@ -622,6 +664,7 @@
     const safeAmount =
       toNonNegativeInteger(amount);
 
+    enterDeathSaveCondition();
     combatState.deathSaveStable = false;
 
     const previous =
@@ -671,6 +714,7 @@
     const safeAmount =
       toNonNegativeInteger(amount);
 
+    enterDeathSaveCondition();
     const previous =
       combatState.deathSaveSuccesses;
 
@@ -711,7 +755,10 @@
       deathSaveStable:
         combatState.deathSaveStable,
       heroicSacrifice:
-        combatState.heroicSacrifice
+        combatState.heroicSacrifice,
+      activeConditions: [
+        ...combatState.activeConditions
+      ]
     };
   }
 
@@ -1362,6 +1409,8 @@
       (readCurrentHp() ?? 0) > 0
     ) {
       clearDeathSaves();
+    } else if (readCurrentHp() === 0) {
+      enterDeathSaveCondition();
     }
 
     undoSnapshot = null;
@@ -1549,6 +1598,7 @@
        */
       if (result.currentHp === 0) {
         clearDeathSaves();
+        enterDeathSaveCondition();
 
         if (
           maximumHp !== null
@@ -1652,12 +1702,17 @@
      */
     if (result.currentHp > 0) {
       clearCriticalLifeState();
+      if (currentHp === 0) {
+        reviveFromZeroHpCondition();
+      }
     }
 
     elements.lifeAmount.value = "";
 
     markStateChanged(
-      `獲得治療 ${result.restoredHp} 點。`
+      currentHp === 0 && result.currentHp > 0
+        ? `獲得治療 ${result.restoredHp} 點；已解除昏迷並改為倒地。`
+        : `獲得治療 ${result.restoredHp} 點。`
     );
   }
 
@@ -1762,6 +1817,10 @@
     combatState.heroicSacrifice =
       snapshot.heroicSacrifice;
 
+    combatState.activeConditions = [
+      ...snapshot.activeConditions
+    ];
+
     setCurrentHp(
       snapshot.currentHp
     );
@@ -1793,21 +1852,30 @@
      * 玩家直接在角色卡把 HP 改成 >0，
      * 與使用治療按鈕同樣視為恢復 HP。
      */
-    const cleared =
+    const revived =
       currentHp !== null
       && currentHp > 0
-        ? clearCriticalLifeState()
-        : false;
+        && (
+          hasDeathSaveState()
+          || combatState.activeConditions.includes("unconscious")
+        );
+
+    if (revived) {
+      clearCriticalLifeState();
+      reviveFromZeroHpCondition();
+    } else if (currentHp === 0) {
+      enterDeathSaveCondition();
+    }
 
     render();
 
-    if (cleared) {
+    if (revived) {
       scheduleCharacterSave();
 
       announce(
         wasSacrificed
           ? `目前 HP 已高於 0，「${HEROIC_SACRIFICE_LABEL}」與死亡豁免狀態已清除。`
-          : "目前 HP 已高於 0，死亡豁免與穩定狀態已清除。"
+          : "目前 HP 已高於 0，死亡豁免與穩定狀態已清除，已解除昏迷並改為倒地。"
       );
     }
   }
@@ -1836,6 +1904,7 @@
         clearHeroicSacrifice();
 
       clearDeathSaves();
+      enterDeathSaveCondition();
 
       markStateChanged(
         hadSacrifice
@@ -2055,6 +2124,7 @@
       setCurrentHp(1);
 
       clearCriticalLifeState();
+      reviveFromZeroHpCondition();
 
       markStateChanged(
         "死亡豁免擲出 20：恢復 1 HP，死亡豁免、穩定與英勇犧牲狀態已清除。"
