@@ -2,7 +2,7 @@
   "use strict";
 
   const STATIC_OPTIONS = Object.freeze({
-    action: Object.freeze([
+    basic: Object.freeze([
       { key: "attack", label: "攻擊", description: "拾取或拔出一把武器進行攻擊。" },
       { key: "unarmed", label: "徒手", description: "對 5 呎內的目標拳打、踢擊或以其他方式徒手攻擊。命中加值為力量調整值加熟練加值；命中時造成 1 加力量調整值的鈍擊傷害。" },
       { key: "grapple", label: "擒抱", description: "以一次擒抱替代一次攻擊，以空手抓住 5 呎內、且體型不超過你一級的目標。目標進行力量或敏捷豁免（DC = 8 + 力量調整值 + 熟練加值）；失敗時陷入擒抱狀態。" },
@@ -18,6 +18,9 @@
       { key: "search", label: "搜索", description: "進行感知（洞悉、醫藥、察覺或生存）檢定，尋找隱藏的生物、物品或線索。" },
       { key: "study", label: "研究", description: "進行智力（奧秘、歷史、調查、自然或宗教）檢定，回想或分析相關資訊。" },
       { key: "utilize", label: "使用", description: "操作或使用需要動作的非魔法物品。" }
+    ]),
+    action: Object.freeze([
+
     ]),
     bonus: Object.freeze([
       { key: "drink-potion", label: "喝藥水", description: "以附贈動作喝下一瓶治療藥水，恢復 2d4 + 2 點生命值。" },
@@ -71,7 +74,8 @@
   });
 
   const MODE_META = Object.freeze({
-    action: { timing: "每回合一次", summary: "執行主要行動，例如攻擊或閃避。", prompt: "請選擇一個動作查看說明。" },
+    basic: { timing: "每回合一次", summary: "執行主要行動，例如攻擊或閃避。", prompt: "請選擇一個動作查看說明。" },
+    action: { timing: "每回合一次", summary: "執行專屬行動，例如魯莽攻擊。", prompt: "請選擇一個專屬動作查看說明。" },
     bonus: { timing: "每回合最多一次", summary: "執行有條件的額外動作，只有規則或能力允許時才能使用。", prompt: "請選擇一個附贈動作查看說明。" },
     reaction: { timing: "每輪最多一次", summary: "在自己或別人的回合符合觸發條件時使用。", prompt: "請選擇一個反應查看說明。" },
     movement: { timing: "自己的回合中", summary: "改變你的位置，移動可分段穿插在動作前後。", prompt: "請選擇一項移動規則查看說明。" }
@@ -175,8 +179,23 @@
   function relevantParagraph(lines, matchIndex) {
     let start = matchIndex;
     let end = matchIndex;
-    while (start > 0 && lines[start - 1].trim()) start -= 1;
-    while (end + 1 < lines.length && lines[end + 1].trim()) end += 1;
+    
+    while (
+  start > 0 &&
+  lines[start - 1].trim() &&
+  !/^等級\s*\d+\s*[：:]/u.test(lines[start - 1].trim())
+) {
+  start -= 1;
+}
+    
+    while (
+  end + 1 < lines.length &&
+  lines[end + 1].trim() &&
+  !/^等級\s*\d+\s*[：:]/u.test(lines[end + 1].trim())
+) {
+  end += 1;
+}
+    
     const paragraph = lines.slice(start, end + 1).map(line => line.trim()).filter(Boolean).join("\n");
     if (paragraph.length <= 760) return paragraph;
 
@@ -196,11 +215,19 @@
 
   // These are deliberate one-to-one metadata rules for features whose source
   // wording does not expose its level or selection requirement to the extractor.
-  const SPECIAL_FEATURE_RULES = Object.freeze({
-    "龍翔天際": { label: "等級 5：龍翔天際", requiredLevel: 5 },
-    "岩石侏儒": { gnomeLineage: "rock_gnome" },
-    "巨化形體": { label: "等級 5：巨化形體", requiredLevel: 5 }
-  });
+const SPECIAL_FEATURE_RULES = Object.freeze({
+  "龍翔天際": { label: "等級 5：龍翔天際", requiredLevel: 5 },
+  "岩石侏儒": { gnomeLineage: "rock_gnome" },
+  "巨化形體": { label: "等級 5：巨化形體", requiredLevel: 5 },
+
+  "天生術法": {
+    description: "你體內的魔力可被短暫解放。作為附贈動作啟動後，持續 1 分鐘並獲得：\n\n- 你的術士法術豁免 DC +1。\n- 你的術士法術攻擊檢定具有優勢。\n\n使用次數：2 次；長休後全回復。"
+  },
+"創造法術位": {
+  label: "魔力泉湧",
+  description: "你可運用術法點來啟動魔法效果。\n起始術法點為 2 點；高等級時依「術士特性」表提升。\n你持有的術法點不可超過目前等級上限；長休後全回復。\n\n你可使用以下轉換：\n- 將法術位轉為術法點：消耗 1 個法術位，獲得等同該環階的術法點，無需動作。\n- 創造法術位：以附贈動作消耗術法點換成法術位，且不能創造 6 環以上法術位。\n\n消耗與最低術士等級如下：\n1 環法術位消耗 2 點術法點，最低術士等級 2\n2 環法術位消耗 3 點，最低術士等級 3\n3 環法術位消耗 5 點，最低術士等級 5\n4 環法術位消耗 6 點，最低術士等級 7\n\n以此特性創造的法術位會在長休後消散。"
+}
+});
 
   const MONK_REMOVED_LABELS = new Set(["疾風連擊", "閃轉騰挪", "疾步如風"]);
   const NON_FEATURE_HEADINGS = new Set([
@@ -208,7 +235,7 @@
     "讓敵人做豁免檢定，或",
     "再用一次附贈動作延長狂暴。",
   ]);
-  const ACTION_OPTIONS_BEFORE_ATTACK = new Set(["魯莽", "等級 5：震懾擊", "鏈之魔契"]);
+  
   const MONK_CUSTOM_OPTIONS = Object.freeze([
     {
       mode: "bonus", level: 2, label: "等級 2：聚氣凝神",
@@ -233,9 +260,13 @@
   }
 
   function applySpecialFeatureRule(entry) {
-    const rule = SPECIAL_FEATURE_RULES[entry.label];
+    const cleanName = String(entry.label || "")
+  .replace(/^等級\s*\d+\s*[：:]\s*/u, "");
+
+const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanName];
+    
     if (!rule) return entry;
-    return { ...entry, label: rule.label || entry.label, requiredLevel: rule.requiredLevel, gnomeLineage: rule.gnomeLineage };
+    return { ...entry, label: rule.label || entry.label, requiredLevel: rule.requiredLevel ?? entry.requiredLevel, gnomeLineage: rule.gnomeLineage, description: rule.description || entry.description };
   }
 
   function getMonkCustomEntries(mode) {
@@ -473,9 +504,9 @@
     description.append(heading, copy);
   }
 
-  function getButtonLabel(option) {
-    return String(option.label).replace(/^等級\s*\d+\s*[：:]\s*/u, "");
-  }
+function getButtonLabel(option) {
+  return String(option.label).replace(/^等級\s*\d+\s*[：:]\s*/u, "");
+}
 
   function createOptionButton(option) {
     const button = document.createElement("button");
@@ -589,16 +620,10 @@
     });
   }
 
-  function getModeOptions(mode) {
-    if (!STATIC_OPTIONS[mode]) return [];
-    const staticOptions = getAvailableStaticOptions(mode);
-    const dynamicOptions = getDynamicOptions(mode);
-    if (mode !== "action") return [...staticOptions, ...dynamicOptions];
-
-    const beforeAttack = dynamicOptions.filter(option => ACTION_OPTIONS_BEFORE_ATTACK.has(option.label));
-    const afterAttack = dynamicOptions.filter(option => !ACTION_OPTIONS_BEFORE_ATTACK.has(option.label));
-    return [...beforeAttack, ...staticOptions, ...afterAttack];
-  }
+function getModeOptions(mode) {
+  if (!STATIC_OPTIONS[mode]) return [];
+  return [...getAvailableStaticOptions(mode), ...getDynamicOptions(mode)];
+}
 
   function getPublicModeOptions(mode) {
     return Object.freeze(
@@ -693,7 +718,7 @@
       tab.addEventListener("keydown", bindTabKeyboardNavigation);
     });
     observeDynamicSources();
-    renderMode("action");
+    renderMode("basic");
   }
 
   globalScope.ActionPanel = Object.freeze({

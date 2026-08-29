@@ -345,12 +345,14 @@
       <section class="tabletop-section tabletop-action-browser" aria-labelledby="tabletop-action-browser-title">
         <div class="tabletop-section-heading"><h3 id="tabletop-action-browser-title">可用選項</h3></div>
         <div class="tabletop-action-tabs" role="tablist" aria-label="行動類型">
-          <button type="button" id="tabletop-action-tab-action" role="tab" aria-selected="true" aria-controls="tabletop-action-panel-action" data-tabletop-action-tab="action">動作</button>
+          <button type="button" id="tabletop-action-tab-basic" role="tab" aria-selected="true" aria-controls="tabletop-action-panel-basic" data-tabletop-action-tab="basic">基本</button>
+          <button type="button" id="tabletop-action-tab-action" role="tab" aria-selected="false" aria-controls="tabletop-action-panel-action" data-tabletop-action-tab="action" tabindex="-1">動作</button>
           <button type="button" id="tabletop-action-tab-bonus" role="tab" aria-selected="false" aria-controls="tabletop-action-panel-bonus" data-tabletop-action-tab="bonus" tabindex="-1">附贈</button>
           <button type="button" id="tabletop-action-tab-reaction" role="tab" aria-selected="false" aria-controls="tabletop-action-panel-reaction" data-tabletop-action-tab="reaction" tabindex="-1">反應</button>
           <button type="button" id="tabletop-action-tab-movement" role="tab" aria-selected="false" aria-controls="tabletop-action-panel-movement" data-tabletop-action-tab="movement" tabindex="-1">移動</button>
         </div>
-        <section id="tabletop-action-panel-action" class="tabletop-action-panel" role="tabpanel" aria-labelledby="tabletop-action-tab-action" data-tabletop-action-panel="action"></section>
+        <section id="tabletop-action-panel-basic" class="tabletop-action-panel" role="tabpanel" aria-labelledby="tabletop-action-tab-basic" data-tabletop-action-panel="basic"></section>
+        <section id="tabletop-action-panel-action" class="tabletop-action-panel" role="tabpanel" aria-labelledby="tabletop-action-tab-action" data-tabletop-action-panel="action" hidden></section>
         <section id="tabletop-action-panel-bonus" class="tabletop-action-panel" role="tabpanel" aria-labelledby="tabletop-action-tab-bonus" data-tabletop-action-panel="bonus" hidden></section>
         <section id="tabletop-action-panel-reaction" class="tabletop-action-panel" role="tabpanel" aria-labelledby="tabletop-action-tab-reaction" data-tabletop-action-panel="reaction" hidden></section>
         <section id="tabletop-action-panel-movement" class="tabletop-action-panel" role="tabpanel" aria-labelledby="tabletop-action-tab-movement" data-tabletop-action-panel="movement" hidden></section>
@@ -893,13 +895,14 @@
       </div>
 
       <div class="action-mode-tabs" role="tablist" aria-label="行動類型">
-        <button id="action-mode-action" class="action-mode-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="action-mode-panel" data-action-mode="action">動作</button>
+        <button id="action-mode-basic" class="action-mode-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="action-mode-panel" data-action-mode="basic">基本</button>
+        <button id="action-mode-action" class="action-mode-tab" type="button" role="tab" aria-selected="false" aria-controls="action-mode-panel" data-action-mode="action" tabindex="-1">動作</button>
         <button id="action-mode-bonus" class="action-mode-tab" type="button" role="tab" aria-selected="false" aria-controls="action-mode-panel" data-action-mode="bonus" tabindex="-1">附贈</button>
         <button id="action-mode-reaction" class="action-mode-tab" type="button" role="tab" aria-selected="false" aria-controls="action-mode-panel" data-action-mode="reaction" tabindex="-1">反應</button>
         <button id="action-mode-movement" class="action-mode-tab" type="button" role="tab" aria-selected="false" aria-controls="action-mode-panel" data-action-mode="movement" tabindex="-1">移動</button>
       </div>
 
-      <div id="action-mode-panel" class="action-mode-panel" role="tabpanel" aria-labelledby="action-mode-action">
+      <div id="action-mode-panel" class="action-mode-panel" role="tabpanel" aria-labelledby="action-mode-basic">
         <div class="action-mode-context">
           <strong id="action-mode-timing">每回合一次</strong>
           <span id="action-mode-summary">執行主要行動，例如攻擊或閃避。</span>

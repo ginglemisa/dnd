@@ -1214,7 +1214,7 @@ const classFeatures = {
     </ul>
   </div>
 </section>
-<section class="druid-feature class-feature-section" data-feature-level="6"><h3>等級 6：自然恢復（大地子職）</h3><p>你可以在不消耗法術位的情況下，施展一次透過結社法術特性準備的1+環法術。使用後，你必須完成長休才能再次這麼做。</p><p>此外，當你完成短休時，可以恢復部分已消耗的法術位。恢復的法術位環階總和等於你德魯伊職業等級的一半（向上取整），且每個法術位都不能是6+環。使用此效果後，你必須完成長休才能再次恢復法術位。</p></section>
+<section class="druid-feature class-feature-section" data-feature-level="6"><h3>等級 6：自然恢復（大地子職）</h3><p>你可以在不消耗法術位的情況下，施展一次透過結社法術特性準備的1+環法術。使用後，你必須完成長休才能再次這麼做。</p><p>此外，當你完成短休時，可以恢復部分已消耗的法術位。恢復的法術位環階總和等於你德魯伊職業等級的一半（小數無條件進位），且每個法術位都不能是6+環。使用此效果後，你必須完成長休才能再次恢復法術位。</p></section>
 <section class="druid-feature class-feature-section" data-feature-level="7"><h3>等級 7：元素狂怒</h3><p>選擇並獲得下列一項：</p><div class="druid-mission-options"><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="druid-elemental-fury-potent-spellcasting" data-feature-choice-group="druid-elemental-fury"> 強力施法</label>：你將感知調整值加入所有你以德魯伊戲法造成的傷害中。</div></div><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="druid-elemental-fury-primal-strike" data-feature-choice-group="druid-elemental-fury"> 原初打擊</label>：在你的每個回合中一次，當你使用武器或荒野形態的野獸形態發動攻擊並命中一個生物時，可以使目標額外受到1d8冷凍、火焰、閃電或雷鳴傷害（由你選擇）。</div></div></div></section>
 <section class="druid-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
 </div>`,
@@ -2819,7 +2819,7 @@ const classFeatures = {
   <div class="class-rule-subsection"><h4>準備法術</h4><ul class="class-rule-list"><li>起始先準備 2 個 1 環契術師法術（推薦：魅惑人類,脆弱詛咒）。</li><li>你可準備的法術數量會隨契術師等級提升，見「契術師特性」表。</li><li>每當這個數量提高時，從契術師法術列表再選法術，直到你的準備數量與表格一致。</li><li>你可準備的法術環級，不得高於你目前的法術位環級（例如 6 級時可準備 1～3 環法術）。</li></ul></div>
   <p>若其他契術師特性給你額外已準備法術，這些法術不計入上述準備數量，但仍算你的契術師法術。</p><p>每次升契術師等級時，可把準備清單中的 1 個法術換成另一個符合條件的契術師法術。</p><p>施法屬性：魅力。</p><p>施法法器：可用奧術法器。</p>
 </section>
-<section class="warlock-feature class-feature-section" data-feature-level="2"><h3>等級 2：秘法回流</h3><ul class="class-rule-list"><li>你可進行 1 分鐘神秘儀式，結束時回復已消耗的契約魔法法術位。</li><li>回復上限為「法術位最大值的一半（向上取整）」。</li><li>使用後需完成長休才能再用。</li></ul></section>
+<section class="warlock-feature class-feature-section" data-feature-level="2"><h3>等級 2：秘法回流</h3><ul class="class-rule-list"><li>你可進行 1 分鐘神秘儀式，結束時回復已消耗的契約魔法法術位。</li><li>回復上限為「法術位最大值的一半（小數無條件進位）」。</li><li>使用後需完成長休才能再用。</li></ul></section>
 <section class="warlock-feature class-feature-section" data-feature-level="3"><h3>等級 3：契術師子職</h3><ul class="class-rule-list"><li>你可選擇一個契術師子職；基本規則僅提供邪魔。</li><li>隨等級提升可獲得對應子職特性。</li></ul></section>
 <section class="warlock-feature class-feature-section" data-feature-level="3"><h3>等級 3：黑暗之賜（邪魔子職）</h3><ul class="class-rule-list"><li>當你將 10 呎內敵對生物生命值降到 0 時，你獲得等同「魅力調整值＋契術師等級」的臨時生命值（至少 1）。</li><li>若是其他生物把你 10 呎內的敵對生物降到 0，你也會獲得此增益。</li></ul></section>
 <section class="warlock-feature class-feature-section" data-feature-level="3"><h3>等級 3：邪魔法術（邪魔子職）</h3><ul class="class-rule-list"><li>你會始終準備下列法術（達到對應契術師等級後生效）：</li><li>邪魔法術（等級 3）：燃燒之手,命令術,灼熱射線,暗示術。</li><li>（等級 5）：火球術,臭雲術。</li><li>（等級 7）：火焰護盾，火牆術。</li></ul></section>
@@ -3036,7 +3036,7 @@ const classFeatures = {
 
 等級 1：奧術回想
 - 完成短休時，你可回復已消耗法術位。
-- 可回復的法術位環階總和上限為「法師等級一半（向上取整）」。
+- 可回復的法術位環階總和上限為「法師等級一半（小數無條件進位）」。
 - 單一被回復法術位不可高於 5 環。
 - 例：4 級法師最多回復總和 2 環（如 1 個 2 環，或 2 個 1 環）。
 - 使用後需完成長休才能再用。

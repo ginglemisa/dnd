@@ -2898,7 +2898,7 @@ input[type="checkbox"]:focus-visible {
 
 .action-mode-tabs {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   margin-inline: 1.05rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
@@ -3021,7 +3021,7 @@ input[type="checkbox"]:focus-visible {
   margin-top: 0.8rem;
 }
 
-.action-option-grid[data-action-mode="action"] {
+.action-option-grid[data-action-mode="basic"] {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
@@ -6857,7 +6857,7 @@ html[data-view-mode="tabletop"] #scrollToBottomBtn {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .action-option-grid[data-action-mode="action"] {
+  .action-option-grid[data-action-mode="basic"] {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
@@ -7064,7 +7064,7 @@ html[data-view-mode="tabletop"] #scrollToBottomBtn {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
-  .action-option-grid[data-action-mode="action"] {
+  .action-option-grid[data-action-mode="basic"] {
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
@@ -9824,7 +9824,7 @@ html.app-dialog-open {
 }
 
 .tabletop-action-tabs {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   margin: 0 0 0.4rem;
 }
 
@@ -9862,7 +9862,7 @@ html.app-dialog-open {
   gap: 0.35rem;
 }
 
-.tabletop-action-options[data-action-mode="action"] {
+.tabletop-action-options[data-action-mode="basic"] {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
@@ -10144,7 +10144,7 @@ html.app-dialog-open {
   .tabletop-action-options {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
-  .tabletop-action-options[data-action-mode="action"] {
+  .tabletop-action-options[data-action-mode="basic"] {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
@@ -10184,7 +10184,7 @@ html.app-dialog-open {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
-  .tabletop-action-options[data-action-mode="action"] {
+  .tabletop-action-options[data-action-mode="basic"] {
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }

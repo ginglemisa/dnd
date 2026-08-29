@@ -2,10 +2,10 @@
   "use strict";
 
   const MODE_PREFERENCE_KEY = "dnd.tabletopActionMode.v1";
-  const MODES = Object.freeze(["action", "bonus", "reaction", "movement"]);
+  const MODES = Object.freeze(["basic", "action", "bonus", "reaction", "movement"]);
   const selectedOptionKeys = new Map(MODES.map(mode => [mode, ""]));
   const elements = {};
-  let currentMode = "action";
+  let currentMode = "basic";
   let scheduledRender = 0;
   let initialized = false;
 
@@ -251,7 +251,7 @@
   }
 
   function setMode(mode, { persist = true, focusTab = false } = {}) {
-    currentMode = MODES.includes(mode) ? mode : "action";
+    currentMode = MODES.includes(mode) ? mode : "basic";
     elements.tabs?.forEach(tab => {
       const selected = tab.dataset.tabletopActionTab === currentMode;
       tab.setAttribute("aria-selected", String(selected));
