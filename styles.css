@@ -6833,6 +6833,10 @@ html[data-view-mode="tabletop"] #scrollToBottomBtn {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
+  .action-option-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .spell-slot-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.9rem 1rem;
@@ -10104,6 +10108,9 @@ html.app-dialog-open {
 @media (min-width: 360px) {
   .tabletop-action-options {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .tabletop-action-options[data-action-mode="action"] {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
