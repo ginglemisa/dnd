@@ -345,8 +345,8 @@
       <section class="tabletop-section tabletop-action-browser" aria-labelledby="tabletop-action-browser-title">
         <div class="tabletop-section-heading"><h3 id="tabletop-action-browser-title">可用選項</h3></div>
         <div class="tabletop-action-tabs" role="tablist" aria-label="行動類型">
-          <button type="button" id="tabletop-action-tab-basic" role="tab" aria-selected="true" aria-controls="tabletop-action-panel-basic" data-tabletop-action-tab="basic">基本</button>
-          <button type="button" id="tabletop-action-tab-action" role="tab" aria-selected="false" aria-controls="tabletop-action-panel-action" data-tabletop-action-tab="action" tabindex="-1">動作</button>
+          <button type="button" id="tabletop-action-tab-basic" role="tab" aria-selected="true" aria-controls="tabletop-action-panel-basic" data-tabletop-action-tab="basic">動作</button>
+          <button type="button" id="tabletop-action-tab-action" role="tab" aria-selected="false" aria-controls="tabletop-action-panel-action" data-tabletop-action-tab="action" tabindex="-1">特殊</button>
           <button type="button" id="tabletop-action-tab-bonus" role="tab" aria-selected="false" aria-controls="tabletop-action-panel-bonus" data-tabletop-action-tab="bonus" tabindex="-1">附贈</button>
           <button type="button" id="tabletop-action-tab-reaction" role="tab" aria-selected="false" aria-controls="tabletop-action-panel-reaction" data-tabletop-action-tab="reaction" tabindex="-1">反應</button>
           <button type="button" id="tabletop-action-tab-movement" role="tab" aria-selected="false" aria-controls="tabletop-action-panel-movement" data-tabletop-action-tab="movement" tabindex="-1">移動</button>
@@ -381,6 +381,14 @@
           <div class="tabletop-section-heading"><h3 id="tabletop-selected-spells-title">已選法術</h3></div>
           <div id="tabletop-selected-spells" class="tabletop-spell-levels"></div>
         </section>
+
+        <section class="tabletop-section" aria-labelledby="tabletop-metamagic-title"  id="tabletop-metamagic-section" hidden>
+  <div class="tabletop-section-heading">
+    <h3 id="tabletop-metamagic-title">超魔法</h3>
+  </div>
+  <div id="tabletop-metamagic-options" class="tabletop-metamagic-options"></div>
+</section>
+
       </div>
     </section>
 
@@ -895,8 +903,8 @@
       </div>
 
       <div class="action-mode-tabs" role="tablist" aria-label="行動類型">
-        <button id="action-mode-basic" class="action-mode-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="action-mode-panel" data-action-mode="basic">基本</button>
-        <button id="action-mode-action" class="action-mode-tab" type="button" role="tab" aria-selected="false" aria-controls="action-mode-panel" data-action-mode="action" tabindex="-1">動作</button>
+        <button id="action-mode-basic" class="action-mode-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="action-mode-panel" data-action-mode="basic">動作</button>
+        <button id="action-mode-action" class="action-mode-tab" type="button" role="tab" aria-selected="false" aria-controls="action-mode-panel" data-action-mode="action" tabindex="-1">特殊</button>
         <button id="action-mode-bonus" class="action-mode-tab" type="button" role="tab" aria-selected="false" aria-controls="action-mode-panel" data-action-mode="bonus" tabindex="-1">附贈</button>
         <button id="action-mode-reaction" class="action-mode-tab" type="button" role="tab" aria-selected="false" aria-controls="action-mode-panel" data-action-mode="reaction" tabindex="-1">反應</button>
         <button id="action-mode-movement" class="action-mode-tab" type="button" role="tab" aria-selected="false" aria-controls="action-mode-panel" data-action-mode="movement" tabindex="-1">移動</button>
@@ -1289,7 +1297,7 @@ function bindCoreCharacterEvents() {
   ["gnome-lineage", "elf-lineage", "tiefling-legacy", "high-elf-cantrip", "druid-land"].forEach(id => {
     bindEventById(id, "change", () => { syncOriginAndSubclassDerivedSpellRows(); updateSpellsByClassLevel(); });
   });
-  bindEventById("gnome-lineage", "change", updateForestGnomeUseVisibility);
+  //bindEventById("gnome-lineage", "change", updateForestGnomeUseVisibility);
   bindEventById("class", "change", updateSpellCastingStatsVisibility);
   bindEventById("background", "change", updateSpellCastingStatsVisibility);
   bindEventById("race", "change", updateSpellCastingStatsVisibility);
@@ -3873,7 +3881,7 @@ document.addEventListener("DOMContentLoaded", () => {
   updateACDisplay(); // AC顯示
   updateRaceOptionVisibility();
   syncProficiencyUseChecks();
-  updateForestGnomeUseVisibility();
+  //updateForestGnomeUseVisibility();
   updateSpeedDisplay();
   updateAutomaticInitiative();
   updatePassivePerceptionDisplay();
@@ -4467,10 +4475,10 @@ function syncProficiencyUseChecks() {
   });
 }
 
-function updateForestGnomeUseVisibility() {
-  const isForestGnome = document.getElementById("gnome-lineage")?.value === "forest_gnome";
-  document.getElementById("forest-gnome-animal-speech-uses")?.classList.toggle("is-hidden", !isForestGnome);
-}
+//交給 tabletop-resources.js 管理
+//function updateForestGnomeUseVisibility() {
+//  const isForestGnome = document.getElementById("gnome-lineage")?.value === "forest_gnome";
+//  document.getElementById("forest-gnome-animal-speech-uses")?.classList.toggle("is-hidden", !isForestGnome);}
 
 function updateSpellCastingStats() {
   const ability = document.getElementById("spellcasting-ability")?.value;

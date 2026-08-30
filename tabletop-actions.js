@@ -227,6 +227,65 @@
     panel.replaceChildren(context, layout);
   }
 
+function updateTabVisibility() {
+  const api = globalScope.ActionPanel;
+  if (!api || !elements.tabs?.length) return;
+
+  elements.tabs.forEach(tab => {
+    const mode = tab.dataset.tabletopActionTab;
+    const hasOptions = api.getOptions(mode).length > 0;
+    tab.hidden = !hasOptions;
+  });
+}
+
+  function renderMetamagic() {
+    const section = document.getElementById("tabletop-metamagic-section");
+  const output = document.getElementById("tabletop-metamagic-options");
+  if (!section || !output) return;
+
+  const isSorcerer = document.getElementById("class")?.value === "sorcerer";
+  section.hidden = !isSorcerer;
+
+  if (!isSorcerer) {
+    output.replaceChildren();
+    return;
+  }
+
+  const inputs = Array.from(
+    document.querySelectorAll("#metamagicOptions input[data-metamagic-name]:checked")
+  );
+
+  if (!inputs.length) {
+    output.textContent = "尚未選擇超魔法";
+    return;
+  }
+
+  const items = inputs.flatMap(input => {
+    const name = input.dataset.metamagicName || "";
+    const card = input.closest(".feature-choice-card--metamagic");
+    if (!name || !card) return [];
+
+const body = card.querySelector(".feature-choice-card__body");
+if (!body) return [];
+
+return [{
+  name,
+  body: body.cloneNode(true)
+}];
+  });
+
+  output.replaceChildren(
+    ...items.map(item => {
+  const article = createElement("article", "tabletop-metamagic-option");
+  article.appendChild(
+    createElement("strong", "", item.name)
+  );
+  article.appendChild(item.body);
+  return article;
+    })
+  );
+}
+
   function renderNotice() {
     if (!elements.notice) return;
     const hasClass = Boolean(document.getElementById("class")?.value);
@@ -235,12 +294,14 @@
     elements.notice.textContent = "請先在角色卡的數值頁選擇職業與等級；基本動作仍可查閱，角色能力會在完成選擇後加入。";
   }
 
-  function render() {
-    if (!initialized) return;
-    renderNotice();
-    renderWeapons();
-    renderActionPanel(currentMode);
-  }
+function render() {
+  if (!initialized) return;
+  renderNotice();
+  renderWeapons();
+  updateTabVisibility();
+  renderActionPanel(currentMode);
+  renderMetamagic();
+}
 
   function scheduleRender() {
     if (scheduledRender) cancelAnimationFrame(scheduledRender);
@@ -251,20 +312,44 @@
   }
 
   function setMode(mode, { persist = true, focusTab = false } = {}) {
-    currentMode = MODES.includes(mode) ? mode : "basic";
-    elements.tabs?.forEach(tab => {
-      const selected = tab.dataset.tabletopActionTab === currentMode;
-      tab.setAttribute("aria-selected", String(selected));
-      tab.tabIndex = selected ? 0 : -1;
-      tab.classList.toggle("is-active", selected);
-      if (selected && focusTab) tab.focus({ preventScroll: true });
+  const api = globalScope.ActionPanel;
+
+  let nextMode = MODES.includes(mode) ? mode : "basic";
+
+  if (api && api.getOptions(nextMode).length === 0) {
+    const fallbackTab = elements.tabs?.find(tab => {
+      const tabMode = tab.dataset.tabletopActionTab;
+      return api.getOptions(tabMode).length > 0;
     });
-    elements.panels?.forEach(panel => {
-      panel.hidden = panel.dataset.tabletopActionPanel !== currentMode;
-    });
-    if (persist) globalScope.dndStorage?.setItem(MODE_PREFERENCE_KEY, currentMode);
-    renderActionPanel(currentMode);
+
+    if (fallbackTab) {
+      nextMode = fallbackTab.dataset.tabletopActionTab;
+    }
   }
+
+  currentMode = nextMode;
+
+  elements.tabs?.forEach(tab => {
+    const selected = tab.dataset.tabletopActionTab === currentMode;
+    tab.setAttribute("aria-selected", String(selected));
+    tab.tabIndex = selected ? 0 : -1;
+    tab.classList.toggle("is-active", selected);
+
+    if (selected && focusTab) {
+      tab.focus({ preventScroll: true });
+    }
+  });
+
+  elements.panels?.forEach(panel => {
+    panel.hidden = panel.dataset.tabletopActionPanel !== currentMode;
+  });
+
+  if (persist) {
+    globalScope.dndStorage?.setItem(MODE_PREFERENCE_KEY, currentMode);
+  }
+
+  renderActionPanel(currentMode);
+}
 
   function handleTabKeydown(event) {
     const keys = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"];

@@ -1934,6 +1934,10 @@ details > summary::-webkit-details-marker,
   color: var(--text-body);
 }
 
+     #metamagic-summary .selection-summary-body {
+     white-space: normal;
+      }
+
 #metamagic-summary {
   margin-bottom: 12px;
 }
@@ -2898,7 +2902,7 @@ input[type="checkbox"]:focus-visible {
 
 .action-mode-tabs {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
   margin-inline: 1.05rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
@@ -8500,6 +8504,31 @@ html[data-view-mode="tabletop"] #scrollToBottomBtn {
   gap: 0;
 }
 
+.tabletop-metamagic-options {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.tabletop-metamagic-option {
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+}
+
+.tabletop-metamagic-option strong {
+  display: block;
+  margin-bottom: 0.3rem;
+  color: var(--text-heading);
+}
+
+.tabletop-metamagic-option p {
+  margin: 0;
+  color: var(--text-body);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+
 .tabletop-weapon-row {
   padding: 0.8rem 0;
   border-bottom: 1px solid var(--border);
@@ -9824,7 +9853,7 @@ html.app-dialog-open {
 }
 
 .tabletop-action-tabs {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
   margin: 0 0 0.4rem;
 }
 

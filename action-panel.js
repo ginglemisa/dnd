@@ -637,12 +637,43 @@ function getModeOptions(mode) {
       : null;
   }
 
-  function renderMode(mode, preserveSelection = false) {
-    if (!MODE_META[mode]) return;
-    currentMode = mode;
-    if (!preserveSelection) selectedOptionKey = "";
-    const meta = MODE_META[mode];
-    const options = getModeOptions(mode);
+function renderMode(mode, preserveSelection = false) {
+  if (!MODE_META[mode]) return;
+
+  const modeOptions = Object.fromEntries(
+    Object.keys(MODE_META).map(tabMode => [
+      tabMode,
+      getModeOptions(tabMode)
+    ])
+  );
+
+  panelElements.tabs.forEach(tab => {
+    const tabMode = tab.dataset.actionMode;
+    tab.hidden = modeOptions[tabMode].length === 0;
+  });
+
+  if (modeOptions[mode].length === 0) {
+    const fallbackTab = panelElements.tabs.find(
+      tab => !tab.hidden
+    );
+
+    if (fallbackTab) {
+      mode = fallbackTab.dataset.actionMode;
+    }
+  }
+
+  currentMode = mode;
+  if (!preserveSelection) selectedOptionKey = "";
+
+  const meta = MODE_META[mode];
+  const options = modeOptions[mode];
+
+    panelElements.tabs.forEach(tab => {
+  const tabMode = tab.dataset.actionMode;
+  const hasOptions = getModeOptions(tabMode).length > 0;
+
+  tab.hidden = !hasOptions;
+});
 
     panelElements.tabs.forEach(tab => {
       const active = tab.dataset.actionMode === mode;
