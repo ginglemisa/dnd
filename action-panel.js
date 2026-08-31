@@ -27,7 +27,8 @@
       { key: "offhand-attack", label: "二次攻擊", description: "以輕型武器完成攻擊後，可用附贈動作持另一把輕型武器再攻擊一次。除非具備特定專長，這次攻擊的傷害不加正值屬性調整值。" }
     ]),
     reaction: Object.freeze([
-      { key: "opportunity-attack", label: "藉機攻擊", description: "當你能看見的生物離開你的觸及範圍時，你可以使用反應，對該生物進行一次近戰攻擊。" }
+      { key: "opportunity-attack", label: "藉機攻擊", description: "當你能看見的生物離開你的觸及範圍時，你可以使用反應，對該生物進行一次近戰攻擊。" },
+      { key: "execute-ready", label: "執行準備", description: "先前使用「準備」且指定觸發條件成立時發生" }
     ]),
     movement: Object.freeze([
       {
@@ -89,6 +90,20 @@
     invocation: "魔能祈喚",
     metamagic: "超魔法"
   });
+
+  const TABLETOP_FEAT_ACTION_RULES = Object.freeze([
+    { feat: "醫療兵", modes: ["action"], label: "急救處置", ruleNames: ["急救處置"], proficiencyValue: true },
+    { feat: "醫療兵", modes: ["action"], label: "穩定療效", ruleNames: ["穩定療效"] },
+    { feat: "擒抱者", modes: ["action"], label: "重拳擒抱", ruleNames: ["重拳擒抱"] },
+    { feat: "擒抱者", modes: ["movement"], label: "迅捷摔技", ruleNames: ["迅捷摔技"] },
+    { feat: "衝鋒猛擊", modes: ["movement"], label: "加速疾走", ruleNames: ["加速疾走"] },
+    { feat: "衝鋒猛擊", modes: ["action", "movement"], label: "直線衝擊", ruleNames: ["直線衝擊"], numberedChoices: true },
+    { feat: "雙持追擊", modes: ["action"], label: "雙持追擊", ruleNames: ["雙持追擊", "傷害調整"], quickMasteryLabel: true },
+    { feat: "雙持追擊", modes: ["action"], label: "快速換手", ruleNames: ["快速換手"] },
+    { feat: "最佳旅伴", modes: ["action"], label: "妙語如珠", ruleNames: ["妙語如珠"] },
+    { feat: "封鎖者", modes: ["reaction"], label: "封鎖者", ruleNames: ["封鎖者"], numberedTriggers: true },
+    { feat: "迅捷步法", modes: ["action", "movement"], label: "跨越險地", ruleNames: ["跨越險地"] }
+  ]);
 
   const GOLIATH_ANCESTRY_FEATURES = Object.freeze({
     cloud: "雲遊四方",
@@ -223,6 +238,9 @@ const SPECIAL_FEATURE_RULES = Object.freeze({
   "天生術法": {
     description: "你體內的魔力可被短暫解放。作為附贈動作啟動後，持續 1 分鐘並獲得：\n\n- 你的術士法術豁免 DC +1。\n- 你的術士法術攻擊檢定具有優勢。\n\n使用次數：2 次；長休後全回復。"
   },
+"熱血湧動": {
+  description: () => `使用附贈讓速度×2，同時獲得臨時${getProficiencyBonus()}點臨時 HP。`
+},
 "創造法術位": {
   label: "魔力泉湧",
   description: "你可運用術法點來啟動魔法效果。\n起始術法點為 2 點；高等級時依「術士特性」表提升。\n你持有的術法點不可超過目前等級上限；長休後全回復。\n\n你可使用以下轉換：\n- 將法術位轉為術法點：消耗 1 個法術位，獲得等同該環階的術法點，無需動作。\n- 創造法術位：以附贈動作消耗術法點換成法術位，且不能創造 6 環以上法術位。\n\n消耗與最低術士等級如下：\n1 環法術位消耗 2 點術法點，最低術士等級 2\n2 環法術位消耗 3 點，最低術士等級 3\n3 環法術位消耗 5 點，最低術士等級 5\n4 環法術位消耗 6 點，最低術士等級 7\n\n以此特性創造的法術位會在長休後消散。"
@@ -255,6 +273,151 @@ const SPECIAL_FEATURE_RULES = Object.freeze({
     return Number(document.getElementById("level")?.value) || 1;
   }
 
+  function getProficiencyBonus() {
+    return globalScope.calculateProficiencyBonus?.(getCharacterLevel()) || 2;
+  }
+
+  function getSelectedFeatNames() {
+    return new Set(Array.from(document.querySelectorAll("#feats-area select"), select => select.value).filter(Boolean));
+  }
+
+  function getFeatRuleText(featName, ruleName) {
+    const lines = sourceToPlainText(typeof featsDesc === "undefined" ? "" : featsDesc[featName]).split("\n");
+    const prefixPattern = new RegExp(`^${ruleName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*[：:]\\s*`, "u");
+    const line = lines.find(candidate => prefixPattern.test(candidate.trim()));
+    return line ? line.trim().replace(prefixPattern, "").trim() : "";
+  }
+
+  function formatTabletopFeatRule(rule) {
+    let description = rule.ruleNames
+      .map(ruleName => getFeatRuleText(rule.feat, ruleName))
+      .filter(Boolean)
+      .join(" ");
+    if (!description) return "";
+    if (rule.proficiencyValue && document.getElementById("level")?.value) {
+      description = description.replace(/熟練加值/gu, String(getProficiencyBonus()));
+    }
+    if (rule.quickMasteryLabel) {
+      description = description
+        .replace(/；?\s*可與「迅切」並用。?/u, "；可與「迅切」武器精通並用。")
+        .replace(/。\s*若無/u, "；若無");
+    }
+    if (rule.numberedChoices) {
+      description = description.replace(/：\s*\+1d8 傷害；或將/u, "：\n\n1️⃣+1d8 傷害\n2️⃣將");
+    }
+    if (rule.numberedTriggers) {
+      description = description.replace(/：進行「撤離」行動；攻擊命中他人。?$/u, "：\n\n1️⃣進行「撤離」行動的目標\n2️⃣攻擊命中他人的目標。");
+    }
+    return description;
+  }
+
+  function getTabletopFeatRuleEntries(mode) {
+    const selectedFeats = getSelectedFeatNames();
+    return TABLETOP_FEAT_ACTION_RULES.flatMap(rule => {
+      if (!rule.modes.includes(mode) || !selectedFeats.has(rule.feat)) return [];
+      const description = formatTabletopFeatRule(rule);
+      if (!description) return [];
+      return [{
+        key: `dynamic-${mode}-feat-curated-${stableKeyHash(`${rule.feat}|${rule.label}`)}`,
+        label: rule.label,
+        source: rule.source || FEATURE_SOURCE_LABELS.feat,
+        description,
+        dynamic: true
+      }];
+    });
+  }
+
+  function getAbilityModifier(abilityId) {
+    const rawScore = String(document.getElementById(abilityId)?.value || "").trim();
+    if (!/^[+-]?\d+$/u.test(rawScore)) return null;
+    const score = Number(rawScore);
+    return Number.isSafeInteger(score) ? Math.floor((score - 10) / 2) : null;
+  }
+
+  function getDragonbornBreathDamageDice(level) {
+    if (level >= 17) return "4d10";
+    if (level >= 11) return "3d10";
+    if (level >= 5) return "2d10";
+    return "1d10";
+  }
+
+  function getDragonbornBreathDamageType() {
+    const ancestry = document.getElementById("dragonborn-ancestry")?.value || "";
+    const damageTypes = {
+      acid: "酸",
+      lightning: "電",
+      fire: "火",
+      poison: "毒",
+      cold: "冰"
+    };
+    return damageTypes[ancestry.split("_").at(-1)] || "";
+  }
+
+  function createRaceOption(mode, label, description, extras = {}) {
+    return {
+      key: `dynamic-${mode}-race-${stableKeyHash(label)}`,
+      label,
+      source: FEATURE_SOURCE_LABELS.race,
+      description,
+      dynamic: true,
+      ...extras
+    };
+  }
+
+  function getRaceActionEntries(mode) {
+    const race = document.getElementById("race")?.value || "";
+    const level = getCharacterLevel();
+
+    if (race === "dragonborn" && mode === "action") {
+      const constitutionModifier = getAbilityModifier("con");
+      const saveDc = constitutionModifier === null
+        ? "8+熟練+體質加值"
+        : String(8 + getProficiencyBonus() + constitutionModifier);
+      const damageType = getDragonbornBreathDamageType();
+      return [createRaceOption(
+        mode,
+        "吐息元素",
+        `將１次攻擊換為吐息\n15呎錐形 或 30呎直線\n目標生物敏捷豁免 DC ${saveDc}\n造成 ${getDragonbornBreathDamageDice(level)} 點${damageType}傷害`
+      )];
+    }
+
+    if (race === "goliath") {
+      const ancestry = document.getElementById("goliath-ancestry")?.value || "";
+      const actionOptions = {
+        fire: ["星火燎原", "攻擊命中目標時增加 1d10 火焰傷害。"],
+        frost: ["凜若冰霜", "攻擊命中目標時增加 1d6 冷凍傷害，並在你的下個回合開始之前速度下降10呎。"],
+        hill: ["地動山搖", "攻擊命中大型以下的生物可令其陷入「倒地」狀態。"]
+      };
+      if (mode === "action" && actionOptions[ancestry]) {
+        const [label, description] = actionOptions[ancestry];
+        return [createRaceOption(mode, label, description)];
+      }
+      if (mode === "reaction" && ancestry === "stone") {
+        const constitutionModifier = getAbilityModifier("con");
+        const modifierText = constitutionModifier === null ? "體質調整值" : String(constitutionModifier);
+        return [createRaceOption(mode, "堅若磐石", `受傷時可用反應扣除1d12 + ${modifierText}傷害。`)];
+      }
+      return [];
+    }
+
+    if (race !== "halfling") return [];
+    const tabletopOnly = true;
+    if (mode === "movement") {
+      return [createRaceOption(mode, "半身人靈巧", "可穿過體型比你大的生物\n不能停在同一格", { tabletopOnly })];
+    }
+    if (mode === "action") {
+      const options = [
+        createRaceOption(mode, "吉運", "任何 D20 檢定中擲出 1 都可以重擲一次。", { tabletopOnly }),
+        createRaceOption(mode, "天生善匿", "你可以在體型比你大的生物後方使用躲藏動作。", { tabletopOnly })
+      ];
+      return options;
+    }
+    if (mode === "bonus" && document.getElementById("class")?.value === "rogue" && level >= 2) {
+      return [createRaceOption(mode, "天生善匿", "你可以在體型比你大的生物後方使用躲藏動作。", { tabletopOnly })];
+    }
+    return [];
+  }
+
   function getRequiredLevel(entry) {
     return entry.requiredLevel || Number(String(entry.label).match(/^等級\s*(\d+)\s*[：:]/u)?.[1]) || 1;
   }
@@ -266,7 +429,10 @@ const SPECIAL_FEATURE_RULES = Object.freeze({
 const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanName];
     
     if (!rule) return entry;
-    return { ...entry, label: rule.label || entry.label, requiredLevel: rule.requiredLevel ?? entry.requiredLevel, gnomeLineage: rule.gnomeLineage, description: rule.description || entry.description };
+    const description = typeof rule.description === "function"
+      ? rule.description()
+      : rule.description || entry.description;
+    return { ...entry, label: rule.label || entry.label, requiredLevel: rule.requiredLevel ?? entry.requiredLevel, gnomeLineage: rule.gnomeLineage, description };
   }
 
   function getMonkCustomEntries(mode) {
@@ -359,7 +525,11 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
   function getSelectedFeatEntries(mode) {
     if (typeof featsDesc === "undefined") return [];
     const values = new Set(Array.from(document.querySelectorAll("#feats-area select"), select => select.value).filter(Boolean));
+    const curatedFeatNames = new Set(
+      TABLETOP_FEAT_ACTION_RULES.filter(rule => rule.modes.includes(mode)).map(rule => rule.feat)
+    );
     return Array.from(values)
+      .filter(value => !curatedFeatNames.has(value))
       .flatMap(value => extractTimedFeatureEntries(featsDesc[value], mode, "feat"))
       .filter(entry => getCharacterLevel() >= getRequiredLevel(entry));
   }
@@ -369,6 +539,7 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
     const selectedGnomeLineage = document.getElementById("gnome-lineage")?.value || "";
     return entries.filter(entry => {
       if (selectedRace === "goliath" && GOLIATH_ANCESTRY_FEATURE_NAMES.has(entry.label) && entry.label !== selectedFeature) return false;
+      if (selectedRace === "goliath" && entry.label === "堅若磐石") return false;
       if (entry.gnomeLineage && entry.gnomeLineage !== selectedGnomeLineage) return false;
       return getCharacterLevel() >= getRequiredLevel(entry);
     });
@@ -461,14 +632,18 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
   }
 
   function getDynamicOptions(mode) {
-    if (mode !== "action" && mode !== "bonus" && mode !== "reaction") return [];
+    if (mode !== "action" && mode !== "bonus" && mode !== "reaction" && mode !== "movement") return [];
     const entries = [
       ...(mode === "action"
         ? [...getBarbarianRecklessAttackEntries(mode), ...getMonkCustomEntries(mode)]
-        : [...getFeatureEntries(mode), ...getMonkCustomEntries(mode)]),
+        : mode === "movement"
+          ? getMonkCustomEntries(mode)
+          : [...getFeatureEntries(mode), ...getMonkCustomEntries(mode)]),
+      ...getTabletopFeatRuleEntries(mode),
+      ...getRaceActionEntries(mode),
       ...getSelectedInvocationEntries(mode),
       ...getSelectedMetamagicEntries(mode),
-      ...(mode === "action" ? [] : getSelectedSpellEntries(mode))
+      ...((mode === "bonus" || mode === "reaction") ? getSelectedSpellEntries(mode) : [])
     ];
     const seen = new Set();
     return entries.filter(entry => {
@@ -539,85 +714,8 @@ function getButtonLabel(option) {
     return button;
   }
 
-  function getSelectedWeapon(selectId) {
-    const weaponName = document.getElementById(selectId)?.value || "";
-    if (!weaponName) return null;
-    const weapons = typeof globalScope.getAllWeaponsWithShield === "function"
-      ? globalScope.getAllWeaponsWithShield()
-      : [
-          ...(globalScope.weapons_simple_melee || []),
-          ...(globalScope.weapons_simple_ranged || []),
-          ...(globalScope.weapons_martial_melee || []),
-          ...(globalScope.weapons_martial_ranged || []),
-          ...(globalScope.shield || [])
-        ];
-    return weapons.find(weapon => weapon?.名稱 === weaponName) || null;
-  }
-
-  function weaponHasProperty(weapon, keyword) {
-    if (!weapon) return false;
-    if (typeof globalScope.weaponHasProp === "function") {
-      return globalScope.weaponHasProp(weapon, keyword);
-    }
-    return [weapon.屬性1, weapon.屬性2, weapon.屬性3, weapon.屬性4]
-      .some(property => String(property || "").includes(keyword));
-  }
-
-  function isMeleeWeapon(weapon) {
-    if (!weapon || weapon.名稱 === "盾牌") return false;
-    if (typeof globalScope.isRangedWeapon === "function") {
-      return !globalScope.isRangedWeapon(weapon);
-    }
-    return ![
-      ...(globalScope.weapons_simple_ranged || []),
-      ...(globalScope.weapons_martial_ranged || [])
-    ].some(candidate => candidate?.名稱 === weapon.名稱);
-  }
-
-  function hasSelectedFeat(featName) {
-    if (typeof globalScope.hasSelectedFeat === "function") {
-      return globalScope.hasSelectedFeat(featName);
-    }
-    return Array.from(document.querySelectorAll("#feats-area select"))
-      .some(select => select.value === featName);
-  }
-
-  function createOffhandAttackOption() {
-    const option = STATIC_OPTIONS.bonus.find(candidate => candidate.key === "offhand-attack");
-    if (!option || document.documentElement.dataset.viewMode !== "tabletop") return option || null;
-
-    const mainWeapon = getSelectedWeapon("mainHand");
-    const offWeapon = getSelectedWeapon("offHand");
-    if (!mainWeapon || !offWeapon) return null;
-
-    const mainIsLight = weaponHasProperty(mainWeapon, "輕型");
-    const offIsLight = weaponHasProperty(offWeapon, "輕型");
-    const bothAreLight = mainIsLight && offIsLight;
-    const hasDualWielder = hasSelectedFeat("雙持追擊");
-    const dualWielderEligible = hasDualWielder
-      && mainIsLight
-      && isMeleeWeapon(offWeapon)
-      && !weaponHasProperty(offWeapon, "雙手");
-    if (!bothAreLight && !dualWielderEligible) return null;
-
-    const baseDescription = dualWielderEligible && !offIsLight
-      ? "以輕型武器完成攻擊後，可用附贈動作持另一把非雙手近戰武器再攻擊一次。"
-      : "以輕型武器完成攻擊後，可用附贈動作持另一把輕型武器再攻擊一次。";
-    const damageWarning = hasSelectedFeat("雙武器戰鬥")
-      ? ""
-      : "除非具備特定專長，這次攻擊的傷害不加正值屬性調整值。";
-    return {
-      ...option,
-      description: `${baseDescription}${damageWarning}`
-    };
-  }
-
   function getAvailableStaticOptions(mode) {
-    return STATIC_OPTIONS[mode].flatMap(option => {
-      if (option.key !== "offhand-attack") return [option];
-      const offhandOption = createOffhandAttackOption();
-      return offhandOption ? [offhandOption] : [];
-    });
+    return STATIC_OPTIONS[mode] || [];
   }
 
 function getModeOptions(mode) {
@@ -627,7 +725,20 @@ function getModeOptions(mode) {
 
   function getPublicModeOptions(mode) {
     return Object.freeze(
-      getModeOptions(mode).map(option => Object.freeze({ ...option }))
+      getAvailableStaticOptions(mode).map(option => Object.freeze({ ...option }))
+    );
+  }
+
+  function getPublicTabletopModeOptions(mode) {
+    return Object.freeze(
+      getModeOptions(mode)
+        .filter(option => {
+          if (mode !== "movement") return true;
+          if (option.key === "special-speeds" || option.key === "speed-changes") return false;
+          return option.key !== "flying"
+            || (document.getElementById("race")?.value === "dragonborn" && getCharacterLevel() >= 5);
+        })
+        .map(option => Object.freeze({ ...option }))
     );
   }
 
@@ -643,7 +754,7 @@ function renderMode(mode, preserveSelection = false) {
   const modeOptions = Object.fromEntries(
     Object.keys(MODE_META).map(tabMode => [
       tabMode,
-      getModeOptions(tabMode)
+      getAvailableStaticOptions(tabMode)
     ])
   );
 
@@ -670,7 +781,7 @@ function renderMode(mode, preserveSelection = false) {
 
     panelElements.tabs.forEach(tab => {
   const tabMode = tab.dataset.actionMode;
-  const hasOptions = getModeOptions(tabMode).length > 0;
+  const hasOptions = getAvailableStaticOptions(tabMode).length > 0;
 
   tab.hidden = !hasOptions;
 });
@@ -702,7 +813,7 @@ function renderMode(mode, preserveSelection = false) {
     if (scheduledRefresh) cancelAnimationFrame(scheduledRefresh);
     scheduledRefresh = requestAnimationFrame(() => {
       scheduledRefresh = 0;
-      if (currentMode === "action" || currentMode === "bonus" || currentMode === "reaction") renderMode(currentMode, true);
+      if (currentMode === "action" || currentMode === "bonus" || currentMode === "reaction" || currentMode === "movement") renderMode(currentMode, true);
     });
   }
 
@@ -728,6 +839,7 @@ function renderMode(mode, preserveSelection = false) {
       if (target) observer.observe(target, { childList: true, subtree: true, characterData: true });
     });
     document.addEventListener("change", scheduleDynamicRefresh);
+    document.addEventListener("input", scheduleDynamicRefresh);
   }
 
   function initializeActionPanel() {
@@ -758,6 +870,7 @@ function renderMode(mode, preserveSelection = false) {
     },
     getModeMeta: getPublicModeMeta,
     getOptions: getPublicModeOptions,
+    getTabletopOptions: getPublicTabletopModeOptions,
     getSourceLabels() {
       return Object.freeze({ ...FEATURE_SOURCE_LABELS });
     },

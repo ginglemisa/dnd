@@ -87,9 +87,6 @@
       this.spellPreviewSnapshot = null;
       this.searchStateSnapshot = null;
       this.backgroundInertSnapshot = null;
-      this.pointBuyPreviewOpened = false;
-      this.pointBuyCardWasInert = false;
-      this.pointBuyCardStateCaptured = false;
       this.utilityMenuPreviewOpened = false;
       this.utilityMenuControlSnapshot = null;
       this.identityPreviewSnapshot = null;
@@ -98,9 +95,6 @@
       this.spellControlSnapshot = null;
       this.spellSearchControlSnapshot = null;
       this.spellSearchPreviewOpened = false;
-      this.pointBuySelectSnapshot = null;
-      this.pointBuyControlSnapshot = null;
-      this.tourPointBuyState = null;
       this.tooltipDragPosition = null;
       this.tooltipDragPointerId = null;
       this.highlightDragState = null;
@@ -179,42 +173,35 @@
         },
         {
           tab: "basic",
-          title: () => this.stepPhase === 0
-            ? "🎲 2. 屬性與快速創角"
-            : "🎲 2. 使用 27 購點",
-          text: () => this.stepPhase === 0
-            ? "六項屬性決定角色擅長什麼；上方是檢定常用的修正值。點擊「決定屬性」可以快速套用或自行配點。"
-            : "27 購點可自由配置六項屬性，背景加值會另外計算。第一次創角則推薦從「決定屬性」裡開啟創角小幫手，由它帶你完成一名 1 級角色。",
-          placement: () => this.stepPhase === 0 ? "top" : "overlay-bottom",
+          title: "🎲 2. 屬性與快速創角",
+          text: "六項屬性決定角色擅長什麼；上方是檢定常用的修正值。接著會開啟「決定屬性」選單。",
+          placement: "top",
           getHoles: () => {
-            if (this.stepPhase === 1) {
-              return [this.getHoleForSelector("#point-buy-modal .point-buy-modal-card", 6)].filter(Boolean);
-            }
-            if (document.getElementById("ability-choice-modal")?.classList.contains("open")) {
-              return [this.getHoleForSelector("#ability-choice-modal .ability-choice-card", 6)].filter(Boolean);
-            }
             return [
               this.getHoleForSelector("#set-default-abilities", 8),
               this.getHoleForSelector("#tab-basic .ability-grid", 8)
             ].filter(Boolean);
           },
           beforePosition: async () => {
-            if (this.stepPhase === 1) {
-              await this.openPointBuyPreview();
-              return;
-            }
-            this.closePointBuyPreview();
             this.prepareAbilityPreview();
             await this.scrollElementIntoView(document.querySelector("#set-default-abilities"), 150);
           },
-          afterLeave: () => {
-            this.restoreAbilityPreview();
-            this.closePointBuyPreview();
-          }
+          afterLeave: () => this.restoreAbilityPreview()
+        },
+        {
+          tab: "basic",
+          title: "🎲 3. 決定屬性",
+          text: "「決定屬性」提供可用的設定方式。第一次創角建議使用「創角小幫手」，由它帶你完成一名 1 級角色。",
+          placement: "overlay-bottom",
+          getHoles: () => [this.getHoleForSelector("#ability-choice-modal .ability-choice-card", 6)].filter(Boolean),
+          beforePosition: async () => {
+            await this.openAbilityChoicePreview();
+          },
+          afterLeave: () => this.closeAbilityChoicePreview()
         },
         {
           tab: "equipment",
-          title: "🛡️ 3. 確認武器、護甲與 AC",
+          title: "🛡️ 4. 確認武器、護甲與 AC",
           text: "選擇目前使用的武器與護甲，下方會整理傷害、射程、武器精通與 AC。點擊摘要中的名稱還能查看詳細規則。",
           placement: "bottom",
           getHoles: () => [this.getHoleFromElements([
@@ -229,7 +216,7 @@
         },
         {
           tab: "spells",
-          title: "✨ 4. 選擇與查看法術",
+          title: "✨ 5. 選擇與查看法術",
           text: "有施法能力時，可以在這裡管理戲法與法術。選擇法術後，可查看完整說明與施法資料。",
           placement: "top",
           getHoles: () => [this.getHoleFromElements([
@@ -250,8 +237,8 @@
         {
           tab: "spells",
           title: () => this.stepPhase === 0
-            ? "🔎 5. 搜尋法術/裝備/道具"
-            : "☰ 5. 保存、輸出與分享",
+            ? "🔎 6. 搜尋法術/裝備/道具"
+            : "☰ 6. 保存、輸出與分享",
           text: () => this.stepPhase === 0
             ? "法術與裝備分頁都有搜尋功能，可快速查找名稱與規則資料。"
             : "右上角選單可以保存紀錄、輸出 PDF、分享角色卡，或再次開啟本導覽。",
@@ -313,18 +300,7 @@
 
     async next() {
       if (!this.active || this.isTransitioning) return;
-      if (this.currentIndex === 1 && this.stepPhase === 0) {
-        this.isTransitioning = true;
-        this.restoreAbilityPreview();
-        this.stepPhase = 1;
-        this.tooltipDragPosition = null;
-        await this.steps[1].beforePosition();
-        await waitForLayoutStability();
-        await this.renderStep();
-        this.isTransitioning = false;
-        return;
-      }
-      if (this.currentIndex === 4 && this.stepPhase === 0) {
+      if (this.currentIndex === 5 && this.stepPhase === 0) {
         this.isTransitioning = true;
         this.stepPhase = 1;
         this.tooltipDragPosition = null;
@@ -343,18 +319,7 @@
 
     async prev() {
       if (!this.active || this.isTransitioning) return;
-      if (this.currentIndex === 1 && this.stepPhase === 1) {
-        this.isTransitioning = true;
-        this.closePointBuyPreview();
-        this.stepPhase = 0;
-        this.tooltipDragPosition = null;
-        await waitForLayoutStability();
-        await this.steps[1].beforePosition();
-        await this.renderStep();
-        this.isTransitioning = false;
-        return;
-      }
-      if (this.currentIndex === 4 && this.stepPhase === 1) {
+      if (this.currentIndex === 5 && this.stepPhase === 1) {
         this.isTransitioning = true;
         this.closeUtilityMenuPreview();
         this.stepPhase = 0;
@@ -395,7 +360,6 @@
     stop({ resetView = true } = {}) {
       const currentStep = this.steps[this.currentIndex];
       if (currentStep && typeof currentStep.afterLeave === "function") currentStep.afterLeave();
-      this.closePointBuyPreview();
       this.closeUtilityMenuPreview();
       this.restoreIdentityPreview();
       this.restoreAbilityPreview();
@@ -836,168 +800,28 @@
       this.spellPreviewSnapshot = null;
     }
 
-    async openPointBuyPreview() {
-      if (!this.pointBuyPreviewOpened) {
-        this.isInternalTourAction = true;
-        try {
-          const choiceModal = document.getElementById("ability-choice-modal");
-          if (!choiceModal?.classList.contains("open")) {
-            this.runWithBackgroundElementUnlocked(document.getElementById("set-default-abilities"), (button) => button.click());
-            await waitForLayoutStability();
-          }
-          this.runWithBackgroundElementUnlocked(document.getElementById("ability-choice-point-buy"), (button) => button.click());
-        } finally {
-          this.isInternalTourAction = false;
-        }
-        this.pointBuyPreviewOpened = true;
+    async openAbilityChoicePreview() {
+      const modal = document.getElementById("ability-choice-modal");
+      if (modal?.classList.contains("open")) return;
+      this.isInternalTourAction = true;
+      try {
+        this.runWithBackgroundElementUnlocked(document.getElementById("set-default-abilities"), (button) => button.click());
+        await waitForLayoutStability();
+      } finally {
+        this.isInternalTourAction = false;
       }
-      const modal = document.getElementById("point-buy-modal");
-      modal?.classList.add("onboarding-tour-preview");
-      const card = document.querySelector("#point-buy-modal .point-buy-modal-card");
-      if (card && !this.pointBuyCardStateCaptured) {
-        this.pointBuyCardWasInert = card.inert;
-        this.pointBuyCardStateCaptured = true;
-        card.inert = false;
-        card.style.pointerEvents = "auto";
-      }
-      this.prepareTourPointBuyState();
       this.refreshTourInteractionRoots();
-      await waitForLayoutStability();
     }
 
-    prepareTourPointBuyState() {
-      const backgroundSelect = document.getElementById("point-buy-background");
-      if (backgroundSelect && !this.pointBuySelectSnapshot) {
-        this.pointBuySelectSnapshot = {
-          element: backgroundSelect,
-          value: backgroundSelect.value,
-          disabled: backgroundSelect.disabled
-        };
+    closeAbilityChoicePreview() {
+      const modal = document.getElementById("ability-choice-modal");
+      if (!modal?.classList.contains("open")) return;
+      this.isInternalTourAction = true;
+      try {
+        this.runWithBackgroundElementUnlocked(document.getElementById("ability-choice-close"), (button) => button.click());
+      } finally {
+        this.isInternalTourAction = false;
       }
-      if (backgroundSelect) {
-        backgroundSelect.value = "soldier";
-        backgroundSelect.disabled = true;
-      }
-      if (!this.pointBuyControlSnapshot) {
-        this.pointBuyControlSnapshot = [
-          "point-buy-close",
-          "ability-choice-default",
-          "point-buy-reset",
-          "point-buy-apply"
-        ].map((id) => document.getElementById(id)).filter(Boolean).map((element) => ({
-          element,
-          disabled: element.disabled
-        }));
-      }
-      this.pointBuyControlSnapshot.forEach(({ element }) => {
-        element.disabled = true;
-      });
-      if (!this.tourPointBuyState) {
-        this.tourPointBuyState = {
-          base: { str: 8, dex: 8, con: 8, int: 8, wis: 8, cha: 8 },
-          bonus: { str: 0, dex: 0, con: 0, int: 0, wis: 0, cha: 0 }
-        };
-      }
-      this.renderTourPointBuyRows();
-    }
-
-    getTourPointBuySpent() {
-      const costs = { 8: 0, 9: 1, 10: 2, 11: 3, 12: 4, 13: 5, 14: 7, 15: 9 };
-      return Object.values(this.tourPointBuyState?.base || {}).reduce((sum, value) => sum + costs[value], 0);
-    }
-
-    renderTourPointBuyRows() {
-      if (!this.tourPointBuyState) return;
-      const rows = document.getElementById("point-buy-rows");
-      if (!rows) return;
-      const labels = { str: "力量", dex: "敏捷", con: "體質", int: "智力", wis: "感知", cha: "魅力" };
-      const costs = { 8: 0, 9: 1, 10: 2, 11: 3, 12: 4, 13: 5, 14: 7, 15: 9 };
-      const soldierAbilities = new Set(["str", "dex", "con"]);
-      const spent = this.getTourPointBuySpent();
-      const bonusTotal = Object.values(this.tourPointBuyState.bonus).reduce((sum, value) => sum + value, 0);
-      rows.innerHTML = Object.keys(labels).map((key) => {
-        const baseValue = this.tourPointBuyState.base[key];
-        const bonusValue = this.tourPointBuyState.bonus[key];
-        const nextCost = baseValue < 15 ? costs[baseValue + 1] - costs[baseValue] : Infinity;
-        const canIncreaseBase = baseValue < 15 && spent + nextCost <= 27;
-        const bonusEnabled = soldierAbilities.has(key);
-        const canIncreaseBonus = bonusEnabled && bonusValue < 2 && bonusTotal < 3;
-        return `
-          <div class="point-buy-row ${bonusEnabled ? "" : "point-buy-row--bonus-locked"}" data-ability="${key}">
-            <div class="point-buy-ability">${labels[key]}</div>
-            <div class="point-buy-control-group">
-              <button type="button" class="point-buy-step" data-action="base-dec" data-ability="${key}" ${baseValue > 8 ? "" : "disabled"}>▼</button>
-              <span class="point-buy-value">${baseValue}</span>
-              <button type="button" class="point-buy-step" data-action="base-inc" data-ability="${key}" ${canIncreaseBase ? "" : "disabled"}>▲</button>
-            </div>
-            <div class="point-buy-control-group point-buy-control-group--bonus">
-              <button type="button" class="point-buy-step" data-action="bonus-dec" data-ability="${key}" ${bonusEnabled && bonusValue > 0 ? "" : "disabled"}>▼</button>
-              <span class="point-buy-value point-buy-value--bonus">${bonusEnabled ? `+${bonusValue}` : "—"}</span>
-              <button type="button" class="point-buy-step" data-action="bonus-inc" data-ability="${key}" ${canIncreaseBonus ? "" : "disabled"}>▲</button>
-            </div>
-            <div class="point-buy-total">${baseValue + bonusValue}</div>
-          </div>`;
-      }).join("");
-      const used = document.getElementById("point-buy-used");
-      const remain = document.getElementById("point-buy-remain");
-      const hint = document.getElementById("point-buy-hint");
-      if (used) used.textContent = String(spent);
-      if (remain) remain.textContent = String(27 - spent);
-      if (hint) hint.textContent = "士兵背景加值可分配在：力量、敏捷、體質（共 3 點，單項上限 +2）";
-    }
-
-    adjustTourPointBuy(action, key) {
-      const state = this.tourPointBuyState;
-      if (!state || !Object.prototype.hasOwnProperty.call(state.base, key)) return;
-      const costs = { 8: 0, 9: 1, 10: 2, 11: 3, 12: 4, 13: 5, 14: 7, 15: 9 };
-      if (action === "base-dec" && state.base[key] > 8) state.base[key] -= 1;
-      if (action === "base-inc" && state.base[key] < 15) {
-        const increase = costs[state.base[key] + 1] - costs[state.base[key]];
-        if (this.getTourPointBuySpent() + increase <= 27) state.base[key] += 1;
-      }
-      const soldierAbilities = new Set(["str", "dex", "con"]);
-      const bonusTotal = Object.values(state.bonus).reduce((sum, value) => sum + value, 0);
-      if (action === "bonus-dec" && soldierAbilities.has(key) && state.bonus[key] > 0) state.bonus[key] -= 1;
-      if (action === "bonus-inc" && soldierAbilities.has(key) && state.bonus[key] < 2 && bonusTotal < 3) state.bonus[key] += 1;
-      this.renderTourPointBuyRows();
-    }
-
-    closePointBuyPreview() {
-      const modal = document.getElementById("point-buy-modal");
-      const card = modal?.querySelector(".point-buy-modal-card");
-      if (this.pointBuySelectSnapshot?.element) {
-        this.pointBuySelectSnapshot.element.value = this.pointBuySelectSnapshot.value;
-        this.pointBuySelectSnapshot.element.disabled = this.pointBuySelectSnapshot.disabled;
-      }
-      this.pointBuySelectSnapshot = null;
-      this.tourPointBuyState = null;
-      this.pointBuyControlSnapshot?.forEach(({ element, disabled }) => {
-        element.disabled = disabled;
-      });
-      this.pointBuyControlSnapshot = null;
-      if (card && this.pointBuyCardStateCaptured) {
-        card.inert = this.pointBuyCardWasInert;
-        card.style.pointerEvents = "";
-      }
-      if (this.pointBuyPreviewOpened && modal?.classList.contains("open")) {
-        this.isInternalTourAction = true;
-        try {
-          this.runWithBackgroundElementUnlocked(document.getElementById("point-buy-close"), (button) => button.click());
-        } finally {
-          this.isInternalTourAction = false;
-        }
-      }
-      modal?.classList.remove("onboarding-tour-preview");
-      const abilityChoiceModal = document.getElementById("ability-choice-modal");
-      if (abilityChoiceModal?.contains(document.activeElement)) document.activeElement.blur();
-      if (abilityChoiceModal) {
-        abilityChoiceModal.inert = true;
-        abilityChoiceModal.classList.remove("open");
-        abilityChoiceModal.setAttribute("aria-hidden", "true");
-      }
-      this.pointBuyPreviewOpened = false;
-      this.pointBuyCardWasInert = false;
-      this.pointBuyCardStateCaptured = false;
     }
 
     async openSpellSearchPreview() {
@@ -1089,7 +913,7 @@
 
     isUtilityMenuPreviewLocked() {
       return this.active
-        && this.currentIndex === 4
+        && this.currentIndex === 5
         && this.stepPhase === 1
         && this.utilityMenuPreviewOpened
         && !this.isInternalTourAction;
@@ -1139,30 +963,20 @@
           .filter(Boolean);
       }
       if (this.currentIndex === 1 && this.stepPhase === 0) {
-        const choiceModalOpen = document.getElementById("ability-choice-modal")?.classList.contains("open");
-        if (!choiceModalOpen) {
-          return [
-            document.getElementById("set-default-abilities"),
-            ...["str", "dex", "con", "int", "wis", "cha"].map((id) => document.getElementById(id))
-          ].filter((element) => element && isElementVisible(element));
-        }
         return [
-          document.getElementById("ability-choice-point-buy"),
-          document.getElementById("quick-card-builder")
+          document.getElementById("set-default-abilities"),
+          ...["str", "dex", "con", "int", "wis", "cha"].map((id) => document.getElementById(id))
         ].filter((element) => element && isElementVisible(element));
       }
-      if (this.currentIndex === 1 && this.stepPhase === 1) {
-        return Array.from(document.querySelectorAll("#point-buy-modal .point-buy-step:not(:disabled)"));
-      }
-      if (this.currentIndex === 2 && this.equipmentPreviewSnapshot) {
+      if (this.currentIndex === 3 && this.equipmentPreviewSnapshot) {
         return ["mainHand", "offHand", "armor"]
           .map((id) => document.getElementById(id))
           .filter(Boolean);
       }
-      if (this.currentIndex === 3 && this.spellControlSnapshot) {
+      if (this.currentIndex === 4 && this.spellControlSnapshot) {
         return [this.spellControlSnapshot.classSelect, this.spellControlSnapshot.spellSelect];
       }
-      if (this.currentIndex === 4 && this.stepPhase === 1 && this.utilityMenuPreviewOpened) {
+      if (this.currentIndex === 5 && this.stepPhase === 1 && this.utilityMenuPreviewOpened) {
         return Array.from(document.querySelectorAll('#utility-menu input[name="site-theme"]:not(:disabled)'));
       }
       return [];
@@ -1171,7 +985,7 @@
     isAllowedTourInteraction(target) {
       if (!(target instanceof Element)) return false;
       if (this.tooltip?.contains(target)) return true;
-      if (this.currentIndex === 4 && this.stepPhase === 1 && target.closest(".theme-picker__option")) return true;
+      if (this.currentIndex === 5 && this.stepPhase === 1 && target.closest(".theme-picker__option")) return true;
       return this.getAllowedTourElements().some((element) => element === target || element.contains(target));
     }
 
@@ -1308,17 +1122,6 @@
       if (this.tooltip?.contains(target)) return;
 
       if (this.currentIndex === 1 && this.stepPhase === 0) {
-        if (target.closest("#quick-card-builder")) {
-          event.preventDefault();
-          event.stopImmediatePropagation();
-          return;
-        }
-        if (target.closest("#ability-choice-point-buy")) {
-          event.preventDefault();
-          event.stopImmediatePropagation();
-          this.advanceToPointBuyPreview();
-          return;
-        }
         if (target.closest("#set-default-abilities")) {
           window.setTimeout(async () => {
             if (!this.active || this.currentIndex !== 1 || this.stepPhase !== 0) return;
@@ -1331,36 +1134,10 @@
         }
       }
 
-      if (this.currentIndex === 1 && this.stepPhase === 1) {
-        const button = target.closest(".point-buy-step[data-action][data-ability]");
-        if (button && !button.disabled) {
-          event.preventDefault();
-          event.stopImmediatePropagation();
-          const { action, ability } = button.dataset;
-          this.adjustTourPointBuy(action, ability);
-          this.refreshTourInteractionRoots();
-          document.querySelector(`#point-buy-modal .point-buy-step[data-action="${action}"][data-ability="${ability}"]:not(:disabled)`)
-            ?.focus({ preventScroll: true });
-          return;
-        }
-      }
-
       if (!this.isAllowedTourInteraction(target)) {
         event.preventDefault();
         event.stopImmediatePropagation();
       }
-    }
-
-    async advanceToPointBuyPreview() {
-      if (!this.active || this.isTransitioning || this.currentIndex !== 1 || this.stepPhase !== 0) return;
-      this.isTransitioning = true;
-      this.restoreAbilityPreview();
-      this.stepPhase = 1;
-      this.tooltipDragPosition = null;
-      await this.openPointBuyPreview();
-      await waitForLayoutStability();
-      await this.renderStep();
-      this.isTransitioning = false;
     }
 
     handleTourFormEventCapture(event) {
@@ -1369,12 +1146,12 @@
       if (!(target instanceof HTMLSelectElement) || !this.isAllowedTourInteraction(target)) return;
       event.stopImmediatePropagation();
       if (event.type !== "change") return;
-      if (this.currentIndex === 2 && this.equipmentPreviewSnapshot) {
+      if (this.currentIndex === 3 && this.equipmentPreviewSnapshot) {
         this.refreshEquipmentPreviewOutputs();
         this.renderStep();
         return;
       }
-      if (this.currentIndex === 3 && this.spellControlSnapshot) {
+      if (this.currentIndex === 4 && this.spellControlSnapshot) {
         if (target === this.spellControlSnapshot.classSelect) {
           this.populateTourSpellOptions(target.value);
           this.renderStep();
@@ -1473,8 +1250,7 @@
     }
 
     getNextButtonText() {
-      if (this.currentIndex === 1 && this.stepPhase === 0) return "27購點";
-      if (this.currentIndex === 4 && this.stepPhase === 0) return "查看選單";
+      if (this.currentIndex === 5 && this.stepPhase === 0) return "查看選單";
       if (this.currentIndex === this.steps.length - 1) return "導覽完成";
       return "下一步";
     }

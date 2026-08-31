@@ -173,8 +173,9 @@
       else renderEmptyStage();
     };
 
-    const addHistoryEntry = (diceExpression, total) => {
-      historyEntries.unshift(`${diceExpression}=${total}`);
+    const addHistoryEntry = (diceExpression, total, label = "") => {
+      const rollLabel = String(label || "").trim();
+      historyEntries.unshift(`${rollLabel ? `${rollLabel}：` : ""}${diceExpression}=${total}`);
       if (historyEntries.length > HISTORY_LIMIT) historyEntries.length = HISTORY_LIMIT;
       updateHistoryButton();
     };
@@ -278,8 +279,8 @@
         ? `${calculation} = ${total}`
         : String(total);
 
-      addHistoryEntry(expression, total);
-      notifyQuickRoll(equation);
+      addHistoryEntry(expression, total, normalized.label);
+      notifyQuickRoll(`${normalized.label}：${equation}`);
 
       const detail = Object.freeze({
         label: normalized.label,
@@ -329,8 +330,8 @@
       const equation = equationParts.length > 1 ? `${calculation} = ${total}` : String(total);
       const label = String(options.label || "擲骰").trim() || "擲骰";
 
-      addHistoryEntry(expressionText, total);
-      if (options.notify !== false) notifyQuickRoll(equation);
+      addHistoryEntry(expressionText, total, label);
+      if (options.notify !== false) notifyQuickRoll(`${label}：${equation}`);
 
       const values = rolledTerms.flatMap(term => term.type === "dice" ? term.values : []);
       const detail = Object.freeze({
@@ -354,20 +355,22 @@
 
     const rollExpressions = (entries, options = {}) => {
       if (!toggle.checked || !Array.isArray(entries)) return Object.freeze([]);
-      const results = entries.flatMap(entry => {
+      const rolls = entries.flatMap(entry => {
         const result = rollExpression(entry?.expression, {
           label: entry?.label,
           notify: false
         });
-        return result ? [result] : [];
+        if (!result) return [];
+        const toastLabel = String(entry?.toastLabel || result.label).trim() || result.label;
+        return [{ result, toastLabel }];
       });
-      if (results.length) {
-        const message = results
-          .map(result => `${result.label}：${result.equation}`)
+      if (rolls.length) {
+        const message = rolls
+          .map(({ result, toastLabel }) => `${toastLabel}：${result.equation}`)
           .join(options.separator || " ／ ");
         notifyQuickRoll(message);
       }
-      return Object.freeze(results);
+      return Object.freeze(rolls.map(({ result }) => result));
     };
 
     const cancelRoll = () => {

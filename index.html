@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-Hant"><head>
 	<script>
@@ -46,24 +45,24 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎲%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20260829-tabletop-gear-notes">
+  <link rel="stylesheet" href="styles.css?v=20260831-tabletop-weapon-compact-shared-notes">
   <script src="scroll-to-top.js" defer></script>
-  <script src="dice-roller.js?v=20260829-compound-rolls" defer></script>
+  <script src="dice-roller.js?v=20260831-remove-great-weapon-roll" defer></script>
   <script src="monster.js" defer></script>
     <script src="class-features.js?v=20260826-class-options-spacing" defer></script>
   <script src="race.js?v=20260826-lineage-tables" defer></script>
   <script src="backgrounds.js" defer></script>
   <script src="tool-data.js" defer></script>
-  <script src="feats.js" defer></script>
+  <script src="feats.js?v=20260831-tabletop-feat-rules" defer></script>
   <script src="equipment-notes.js?v=20260813-weapon-rule-popups-2" defer></script>
   <script src="spell-list.js?v=20260828-concentration" defer></script>
   <script src="condition.js" defer></script>
-  <script src="action-panel.js?v=20260829-action-option-layout" defer></script>
+  <script src="action-panel.js?v=20260831-medical-feat-source" defer></script>
   <script src="character-rules.js?v=20260829-shillelagh-weapons" defer></script>
-  <script src="app-dialog.js?v=20260829-dice-roll-toast" defer></script>
-  <script src="tabletop-mode.js?v=20260829-tabletop-gear-notes" defer></script>
-  <script src="tabletop-resources.js?v=20260828-card-only-free-uses" defer></script>
-  <script src="tabletop-actions.js?v=20260829-action-option-layout" defer></script>
+  <script src="app-dialog.js?v=20260831-number-input" defer></script>
+  <script src="tabletop-mode.js?v=20260831-tabletop-shared-notes" defer></script>
+  <script src="tabletop-resources.js?v=20260831-resource-value-dialog" defer></script>
+  <script src="tabletop-actions.js?v=20260831-tabletop-weapon-compact" defer></script>
   <script src="tabletop-spells.js?v=20260829-tabletop-quick-rolls-3" defer></script>
   <script src="legal-modal.js?v=20260824-onboarding-entry" defer></script>
   <script src="onboarding-tour.js?v=20260825-onboarding-step5-highlights" defer></script>
@@ -201,8 +200,7 @@
 <section id="tabletop-mode" class="tabletop-mode" aria-labelledby="tabletop-title" hidden>
   <article class="tabletop-sheet">
     <header class="tabletop-summary">
-      <span class="tabletop-eyebrow">桌邊模式(β版)</span>
-      <h1 id="tabletop-title">角色戰況</h1>
+      <h1 id="tabletop-title" class="tabletop-summary__name is-placeholder" role="button" tabindex="0">點我修改角色名稱</h1>
       <p id="tabletop-character-summary">尚未選擇職業 · 等級 — · 尚未選擇種族</p>
     </header>
 
@@ -224,6 +222,10 @@
       <div class="tabletop-key-stat"><dt>速度</dt><dd id="tabletop-speed">—</dd></div>
       <div class="tabletop-key-stat"><dt>被動察覺</dt><dd id="tabletop-passive-perception">—</dd></div>
     </dl>
+
+    <section id="tabletop-overview-rule-summary-section" class="tabletop-section tabletop-defense-summary" aria-label="戰鬥規則提示" hidden>
+      <div id="tabletop-overview-rule-summary" class="tabletop-defense-summary__list"></div>
+    </section>
 
     <section id="tabletop-concentration" class="tabletop-concentration" aria-labelledby="tabletop-concentration-title" hidden>
       <div>
@@ -317,6 +319,11 @@
       <button type="button" id="tabletop-death-stable" class="tabletop-death-stable" aria-pressed="false">穩定</button>
       <p class="tabletop-field-help">HP 為 0 時受到傷害會自動增加死亡豁免失敗；成功、失敗與穩定仍可在此手動調整。</p>
     </section>
+
+    <section class="tabletop-section tabletop-shared-notes" aria-labelledby="tabletop-class-extra-title">
+      <div class="tabletop-section-heading"><h2 id="tabletop-class-extra-title">職業筆記區</h2></div>
+      <div id="tabletop-class-extra-mount"></div>
+    </section>
     </section>
 
     <section id="tabletop-panel-skills" class="tabletop-panel" role="tabpanel" aria-labelledby="tabletop-tab-skills" data-tabletop-panel="skills" hidden>
@@ -324,9 +331,16 @@
         <div class="tabletop-section-heading"><h2 id="tabletop-saving-throws-title">屬性豁免</h2></div>
         <div id="tabletop-saving-throw-values" class="tabletop-saving-throw-values" aria-label="屬性豁免數值"></div>
       </section>
+      <section id="tabletop-defense-summary-section" class="tabletop-section tabletop-defense-summary" aria-label="角色防禦資訊" hidden>
+        <div id="tabletop-defense-summary" class="tabletop-defense-summary__list"></div>
+      </section>
       <section class="tabletop-section tabletop-skills" aria-labelledby="tabletop-skills-title">
         <div class="tabletop-section-heading"><h2 id="tabletop-skills-title">技能</h2></div>
         <div id="tabletop-skill-values" class="tabletop-skill-values" role="list" aria-label="技能加值"></div>
+      </section>
+      <section class="tabletop-section tabletop-shared-notes" aria-labelledby="tabletop-skill-extra-title">
+        <div class="tabletop-section-heading"><h2 id="tabletop-skill-extra-title">技能/工具筆記區</h2></div>
+        <div id="tabletop-skill-extra-mount"></div>
       </section>
     </section>
 
@@ -337,9 +351,12 @@
         <p id="tabletop-actions-notice" class="tabletop-panel-notice" hidden></p>
       </header>
 
-      <section class="tabletop-section" aria-labelledby="tabletop-weapons-title">
-        <div class="tabletop-section-heading"><h3 id="tabletop-weapons-title">武器攻擊摘要</h3></div>
+      <section class="tabletop-section" aria-label="武器攻擊">
         <div id="tabletop-weapon-summary" class="tabletop-weapon-summary" aria-live="polite"></div>
+      </section>
+
+      <section id="tabletop-weapon-rule-summary-section" class="tabletop-section tabletop-defense-summary" aria-label="武器規則提示" hidden>
+        <div id="tabletop-weapon-rule-summary" class="tabletop-defense-summary__list"></div>
       </section>
 
       <section class="tabletop-section tabletop-action-browser" aria-labelledby="tabletop-action-browser-title">
@@ -370,6 +387,9 @@
           <div class="tabletop-section-heading"><h3 id="tabletop-casting-summary-title">施法摘要</h3></div>
           <dl id="tabletop-casting-summary" class="tabletop-casting-summary"></dl>
         </section>
+        <section id="tabletop-spell-rule-summary-section" class="tabletop-section tabletop-defense-summary" aria-label="施法規則提示" hidden>
+          <div id="tabletop-spell-rule-summary" class="tabletop-defense-summary__list"></div>
+        </section>
         <section id="tabletop-spell-slots-section" class="tabletop-section" aria-labelledby="tabletop-spell-slots-title">
           <div class="tabletop-section-heading">
             <h3 id="tabletop-spell-slots-title">法術位</h3>
@@ -390,6 +410,7 @@
 </section>
 
       </div>
+      <div id="tabletop-spell-notes-mount" class="tabletop-section tabletop-shared-notes"></div>
     </section>
 
     <section id="tabletop-panel-resources" class="tabletop-panel" role="tabpanel" aria-labelledby="tabletop-tab-resources" data-tabletop-panel="resources" hidden>
@@ -573,15 +594,6 @@
         <option value="forest_gnome">森林侏儒</option>
         <option value="rock_gnome">岩石侏儒</option>
       </select>
-      <span id="forest-gnome-animal-speech-uses" class="proficiency-use-checks is-hidden" aria-label="動物交談次數">
-        <span class="proficiency-use-checks__label">動物交談次數</span>
-        <input type="checkbox" id="forest-gnome-animal-speech-check1" aria-label="動物交談次數 1">
-        <input type="checkbox" id="forest-gnome-animal-speech-check2" aria-label="動物交談次數 2">
-        <input type="checkbox" id="forest-gnome-animal-speech-check3" aria-label="動物交談次數 3">
-        <input type="checkbox" id="forest-gnome-animal-speech-check4" aria-label="動物交談次數 4">
-        <input type="checkbox" id="forest-gnome-animal-speech-check5" aria-label="動物交談次數 5">
-        <input type="checkbox" id="forest-gnome-animal-speech-check6" aria-label="動物交談次數 6">
-      </span>
     </span>
     <span id="goliath-ancestry-row" class="race-option-row is-hidden" data-race-option-for="goliath">
       <select id="goliath-ancestry" aria-label="巨人裔祖源">
@@ -708,7 +720,7 @@
 
 <div class="section" id="class-features-section">
       <h3>職業筆記區</h3>
-<textarea id="class-extra" rows="4" placeholder="職業選項,能力使用次數等等......"></textarea>
+<div id="class-extra-sheet-mount"><textarea id="class-extra" rows="4" placeholder="職業選項,能力使用次數等等......"></textarea></div>
   </div>
 
 <div class="section">
@@ -792,8 +804,8 @@
   </div>
 
   <div class="section">
-      <h3>備註 / 其他說明</h3>
-<textarea id="skill-extra" rows="4" placeholder="如果技能有其他規則，記在這裡。"></textarea>
+      <h3>技能/工具筆記區</h3>
+<div id="skill-extra-sheet-mount"><textarea id="skill-extra" rows="4" placeholder="如果技能有其他規則，記在這裡。"></textarea></div>
   </div>
 
   <div class="section language-card">
@@ -897,14 +909,12 @@
     <section class="section action-command-card" aria-labelledby="action-command-title">
       <div class="action-command-heading">
         <div>
-          <span class="action-command-eyebrow">回合操作</span>
-          <h3 id="action-command-title">選擇可用行動</h3>
+          <h3 id="action-command-title">簡易行動規則</h3>
         </div>
       </div>
 
       <div class="action-mode-tabs" role="tablist" aria-label="行動類型">
         <button id="action-mode-basic" class="action-mode-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="action-mode-panel" data-action-mode="basic">動作</button>
-        <button id="action-mode-action" class="action-mode-tab" type="button" role="tab" aria-selected="false" aria-controls="action-mode-panel" data-action-mode="action" tabindex="-1">特殊</button>
         <button id="action-mode-bonus" class="action-mode-tab" type="button" role="tab" aria-selected="false" aria-controls="action-mode-panel" data-action-mode="bonus" tabindex="-1">附贈</button>
         <button id="action-mode-reaction" class="action-mode-tab" type="button" role="tab" aria-selected="false" aria-controls="action-mode-panel" data-action-mode="reaction" tabindex="-1">反應</button>
         <button id="action-mode-movement" class="action-mode-tab" type="button" role="tab" aria-selected="false" aria-controls="action-mode-panel" data-action-mode="movement" tabindex="-1">移動</button>
@@ -1131,7 +1141,7 @@
   </div>
 </div>
   <div id="no-spell-slots-message" class="spell-note-muted is-hidden">目前職業與等級沒有法術位</div>
-  <div class="form-row">
+  <div id="spell-notes-sheet-mount" class="form-row">
     <textarea id="spell-notes" rows="2" placeholder="筆記：可記錄每日準備,消耗情形,額外內容等"></textarea>
   </div>
 
@@ -1297,7 +1307,6 @@ function bindCoreCharacterEvents() {
   ["gnome-lineage", "elf-lineage", "tiefling-legacy", "high-elf-cantrip", "druid-land"].forEach(id => {
     bindEventById(id, "change", () => { syncOriginAndSubclassDerivedSpellRows(); updateSpellsByClassLevel(); });
   });
-  //bindEventById("gnome-lineage", "change", updateForestGnomeUseVisibility);
   bindEventById("class", "change", updateSpellCastingStatsVisibility);
   bindEventById("background", "change", updateSpellCastingStatsVisibility);
   bindEventById("race", "change", updateSpellCastingStatsVisibility);
@@ -3305,7 +3314,7 @@ const RACE_DERIVED_SPELLS = Object.freeze({
     wood_elf: Object.freeze([{ level: 1, ring: "cantrips", spellId: "druidcraft" }, { level: 3, ring: 1, spellId: "longstrider", freeUses: 1 }, { level: 5, ring: 2, spellId: "pass-without-trace", freeUses: 1 }])
   }),
   gnome: Object.freeze({
-    forest_gnome: Object.freeze([{ level: 1, ring: "cantrips", spellId: "minor-illusion" }, { level: 1, ring: 1, spellId: "speak-with-animals" }]),
+    forest_gnome: Object.freeze([{ level: 1, ring: "cantrips", spellId: "minor-illusion" }, { level: 1, ring: 1, spellId: "speak-with-animals", freeUses: "proficiency" }]),
     rock_gnome: Object.freeze([{ level: 1, ring: "cantrips", spellId: "mending" }, { level: 1, ring: "cantrips", spellId: "prestidigitation" }])
   }),
   tiefling: Object.freeze({
@@ -3881,7 +3890,6 @@ document.addEventListener("DOMContentLoaded", () => {
   updateACDisplay(); // AC顯示
   updateRaceOptionVisibility();
   syncProficiencyUseChecks();
-  //updateForestGnomeUseVisibility();
   updateSpeedDisplay();
   updateAutomaticInitiative();
   updatePassivePerceptionDisplay();
@@ -4466,7 +4474,7 @@ function getProficiencyBonus() {
 
 function syncProficiencyUseChecks() {
   const count = getProficiencyBonus();
-  ["dragonborn-breath-uses", "forest-gnome-animal-speech-uses", "goliath-giant-ancestry-uses"].forEach(containerId => {
+  ["dragonborn-breath-uses", "goliath-giant-ancestry-uses"].forEach(containerId => {
     document.querySelectorAll(`#${containerId} input[type='checkbox']`).forEach((checkbox, index) => {
       const isAvailable = index < count;
       checkbox.hidden = !isAvailable;
@@ -4474,11 +4482,6 @@ function syncProficiencyUseChecks() {
     });
   });
 }
-
-//交給 tabletop-resources.js 管理
-//function updateForestGnomeUseVisibility() {
-//  const isForestGnome = document.getElementById("gnome-lineage")?.value === "forest_gnome";
-//  document.getElementById("forest-gnome-animal-speech-uses")?.classList.toggle("is-hidden", !isForestGnome);}
 
 function updateSpellCastingStats() {
   const ability = document.getElementById("spellcasting-ability")?.value;
@@ -5115,13 +5118,13 @@ function updateFeatCombatNotes() {
     addNote("衝鋒猛擊", "「衝刺」比平常再多 10 呎。朝目標直線移動 10 呎再以近戰攻擊命中，可擇一（每回合一次）： +1d8 傷害；或將體型至多大你一級的目標推開最多 10 呎。");
   }
   if (hasSelectedFeat("雙持追擊")) {
-    addNote("雙持追擊", "使用輕型武器攻擊後，可消耗「附贈」以另一把非雙手近戰武器再攻擊 1 次；可與「迅切」並用。若無「雙武器戰鬥」，這次額外攻擊不加正值屬性調整。每次原本可拔出或收納 1 把武器時，可改為同時處理 2 把非雙手武器。");
+    addNote("雙持追擊", "使用輕型武器攻擊後，可消耗「附贈」以另一把非雙手近戰武器再攻擊 1 次；可與「迅切」武器精通並用。若無「雙武器戰鬥」，這次額外攻擊不加正值屬性調整。每次原本可拔出或收納 1 把武器時，可改為同時處理 2 把非雙手武器。");
   }
   if (hasSelectedFeat("重甲減傷")) {
     addNote("重甲減傷", "穿重甲被攻擊命中時，可減少揮砍、穿刺、鈍擊「熟練加值」傷害。");
   }
   if (hasSelectedFeat("封鎖者")) {
-    addNote("封鎖者", "你可以藉機攻擊 5 呎內做出以下任一行為的生物：「撤離」；攻擊命中他人。藉機攻擊命中後，目標速度在目前回合變為 0。");
+    addNote("封鎖者", "你可以藉機攻擊 5 呎內進行「撤離」行動或攻擊命中他人的生物；命中後，目標在你的下一回合之前速度為 0。");
   }
   if (hasSelectedFeat("迅捷步法")) {
     addNote("迅捷步法", "速度增加 10 呎。自身回合使用「衝刺」後，本回合移動可無視困難地形。針對你的藉機攻擊丟二取低。");
@@ -7385,7 +7388,7 @@ function collectShareState() {
       delete data[id];
       return;
     }
-    if (/^(?:race-ab-check|forest-gnome-animal-speech-check|goliath-giant-ancestry-check|spellslot\d+-|free-spell-use-)/.test(id)) {
+    if (/^(?:race-ab-check|goliath-giant-ancestry-check|spellslot\d+-|free-spell-use-)/.test(id)) {
       delete data[id];
       return;
     }
@@ -7958,7 +7961,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
     };
     const steps=["precheck","name","equipment"];
     const result={
-      characterName:"",
+      characterName:window.TabletopMode?.getCharacterName?.() || "",
       includeDefaultEquipment:false,
       dragonbornAncestry:(state?.["dragonborn-ancestry"] || "").trim(),
       elfLineage:(state?.["elf-lineage"] || "").trim(),

@@ -7,6 +7,7 @@
   const BUILT_IN_RESOURCE_MAX = 999;
   const HEROIC_SACRIFICE_LABEL = "您已英勇犧牲";
   const DEFAULT_COMBAT_STATE = Object.freeze({
+    characterName: "",
     temporaryHp: 0,
     deathSaveSuccesses: 0,
     deathSaveFailures: 0,
@@ -42,6 +43,10 @@
 
   function normalizeConcentrationSpellId(value) {
     return typeof value === "string" ? value.trim().slice(0, 160) : "";
+  }
+
+  function normalizeCharacterName(value) {
+    return typeof value === "string" ? value.trim() : "";
   }
 
   function normalizeCustomResources(value) {
@@ -205,6 +210,7 @@
   }
 
   let combatState = {
+    characterName: DEFAULT_COMBAT_STATE.characterName,
     temporaryHp: DEFAULT_COMBAT_STATE.temporaryHp,
     deathSaveSuccesses: DEFAULT_COMBAT_STATE.deathSaveSuccesses,
     deathSaveFailures: DEFAULT_COMBAT_STATE.deathSaveFailures,
@@ -340,6 +346,7 @@
     }
 
     return {
+      characterName: normalizeCharacterName(data.characterName),
       temporaryHp: toNonNegativeInteger(
         data.temporaryHp
       ),
@@ -357,6 +364,7 @@
 
   function collectState() {
     return {
+      characterName: combatState.characterName,
       temporaryHp: combatState.temporaryHp,
       deathSaveSuccesses:
         combatState.deathSaveSuccesses,
@@ -383,6 +391,73 @@
 
   function getConcentrationSpellId() {
     return combatState.concentrationSpellId;
+  }
+
+  function getCharacterName() {
+    return combatState.characterName;
+  }
+
+  function setCharacterName(value, message = "角色名稱已更新。") {
+    const normalizedName = normalizeCharacterName(value);
+    if (combatState.characterName === normalizedName) return false;
+    combatState.characterName = normalizedName;
+    markStateChanged(message);
+    return true;
+  }
+
+  async function requestCharacterName(trigger) {
+    if (typeof globalScope.AppDialog?.showContent !== "function") return;
+
+    let input = null;
+    const fieldId = `tabletop-character-name-${Date.now()}`;
+    const hintId = `${fieldId}-hint`;
+
+    const nextName = await globalScope.AppDialog.showContent({
+      title: "修改角色名稱",
+      message: "名稱會顯示在桌邊模式，並自動帶入 PDF 匯出。",
+      trigger,
+      cancelLabel: "取消",
+      confirmLabel: "儲存名稱",
+      initialFocus: "content",
+      renderContent(body) {
+        const field = document.createElement("label");
+        field.className = "app-dialog__number-field";
+        field.htmlFor = fieldId;
+        field.appendChild(document.createTextNode("角色名稱"));
+
+        input = document.createElement("input");
+        input.id = fieldId;
+        input.className = "app-dialog__number-input tabletop-character-name-input";
+        input.type = "text";
+        input.value = combatState.characterName;
+        input.placeholder = "例如：艾拉・銀葉";
+        input.autocomplete = "off";
+        input.spellcheck = false;
+        input.dataset.stateTransient = "true";
+
+        const hint = document.createElement("span");
+        hint.id = hintId;
+        hint.className = "app-dialog__number-hint";
+        hint.textContent = "留空可還原提示文字。PDF 匯出時仍可修改名稱。";
+
+        input.setAttribute("aria-describedby", hintId);
+        input.addEventListener("keydown", (event) => {
+          if (event.key !== "Enter" || event.isComposing) return;
+          event.preventDefault();
+          body.closest(".app-dialog__surface")
+            ?.querySelector(".app-dialog__button--primary")
+            ?.click();
+        });
+
+        field.append(input, hint);
+        body.appendChild(field);
+      },
+      resolveConfirm() {
+        return input?.value.trim() || "";
+      }
+    });
+
+    if (typeof nextName === "string") setCharacterName(nextName);
   }
 
   function setConcentrationSpellId(spellId, message = "") {
@@ -976,6 +1051,193 @@
     )?.textContent?.trim() || ability.toUpperCase();
   }
 
+  function getSelectedRace() {
+    return document.getElementById("race")?.value || "";
+  }
+
+  function getDarkvisionEntry() {
+    const race = getSelectedRace();
+    const racialRange = {
+      dragonborn: 60,
+      dwarf: 120,
+      elf: 60,
+      gnome: 60,
+      orc: 120,
+      tiefling: 60
+    }[race] || 0;
+    const drowRange = race === "elf" && document.getElementById("elf-lineage")?.value === "drow" ? 120 : 0;
+    const characterLevel = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
+    const hasDevilsSight = document.getElementById("class")?.value === "warlock"
+      && characterLevel >= 2
+      && Boolean(globalScope.hasWarlockInvocation?.("魔鬼視界"));
+    const range = Math.max(racialRange, drowRange, hasDevilsSight ? 120 : 0);
+    if (!range) return null;
+
+    return {
+      label: "黑暗視覺",
+      value: `${range} 呎`,
+      detail: hasDevilsSight
+        ? "魔鬼視界：可在 120 呎內的魔法黑暗、非魔法黑暗與微光中正常視物。"
+        : ""
+    };
+  }
+
+  function getDragonbornResistanceEntry() {
+    if (getSelectedRace() !== "dragonborn") return null;
+    const ancestry = document.getElementById("dragonborn-ancestry")?.value || "";
+    const damageType = {
+      acid: "強酸",
+      lightning: "閃電",
+      fire: "火焰",
+      poison: "毒素",
+      cold: "冷凍"
+    }[ancestry.split("_").pop()] || "";
+    if (!damageType) return null;
+    return {
+      label: "龍族血統",
+      detail: `抗性：${damageType}傷害減半。`
+    };
+  }
+
+  function getTieflingResistanceEntry() {
+    if (getSelectedRace() !== "tiefling") return null;
+    const legacy = document.getElementById("tiefling-legacy")?.value || "";
+    const resistance = {
+      abyssal: { label: "深淵血統抗性", damageType: "毒素" },
+      chthonic: { label: "冥界血統抗性", damageType: "黯蝕" },
+      infernal: { label: "煉獄血統抗性", damageType: "火焰" }
+    }[legacy];
+    if (!resistance) return null;
+    return {
+      label: resistance.label,
+      detail: `抗性：${resistance.damageType}傷害減半。`
+    };
+  }
+
+  function getDwarfResistanceEntry() {
+    if (getSelectedRace() !== "dwarf") return null;
+    return {
+      label: "矮人體魄",
+      detail: "抗性：毒素傷害減半。"
+    };
+  }
+
+  function hasSelectedFeat(featName) {
+    return Array.from(document.querySelectorAll("#feats-area select"))
+      .some(select => select.value === featName);
+  }
+
+  function isWearingHeavyArmor() {
+    const armorName = document.getElementById("armor")?.value || "";
+    return Array.from(globalScope.armors || [])
+      .some(armor => armor?.名稱 === armorName && armor?.分類 === "重甲");
+  }
+
+  function getCharacterProficiencyBonus() {
+    const level = Number.parseInt(document.getElementById("level")?.value || "", 10);
+    if (!Number.isInteger(level) || level < 1) return null;
+    const proficiencyBonus = Number(globalScope.calculateProficiencyBonus?.(level));
+    return Number.isFinite(proficiencyBonus) ? proficiencyBonus : null;
+  }
+
+  function getCharacterDefenseEntries() {
+    const race = getSelectedRace();
+    const entries = [
+      getDarkvisionEntry(),
+      getDragonbornResistanceEntry(),
+      getTieflingResistanceEntry(),
+      getDwarfResistanceEntry()
+    ].filter(Boolean);
+    const racialDefenses = {
+      dwarf: [{ label: "矮人體魄", detail: "對中毒狀態的豁免具有優勢。" }],
+      elf: [{ label: "精類血統", detail: "對魅惑狀態的豁免具有優勢。" }],
+      gnome: [{ label: "侏儒狡黠", detail: "智力、感知、魅力豁免時具有優勢。" }],
+      halfling: [
+        { label: "勇氣", detail: "避免或終止恐慌狀態的豁免具有優勢。" },
+        { label: "吉運", detail: "D20 檢定中擲出 1 時，可以重擲一次。" }
+      ],
+      goliath: [{ label: "身強力壯", detail: "掙脫擒抱狀態的屬性檢定具有優勢。" }],
+      orc: [{ label: "堅韌不屈", detail: "若 HP 被傷害至 0 且沒有即死，可強制 HP=1。" }]
+    };
+    return entries.concat(racialDefenses[race] || []);
+  }
+
+  function isDamageRelatedEntry(entry) {
+    return /(?:傷害|抗性)/u.test(`${entry?.label || ""} ${entry?.detail || ""}`);
+  }
+
+  function getDefenseEntries() {
+    const entries = getCharacterDefenseEntries().filter(entry => !isDamageRelatedEntry(entry));
+    if (hasSelectedFeat("臨陣施法")) {
+      entries.push({ label: "穩住專注", detail: "維持專注的體質豁免丟二取高。" });
+    }
+    return entries;
+  }
+
+  function getOverviewRuleEntries() {
+    const entries = getCharacterDefenseEntries().filter(isDamageRelatedEntry);
+    if (hasSelectedFeat("警覺")) {
+      entries.push({ label: "警覺", detail: "擲先攻後，可與指定隊友互換順序，失能無效。" });
+    }
+    if (hasSelectedFeat("重甲減傷") && isWearingHeavyArmor()) {
+      const proficiencyBonus = getCharacterProficiencyBonus();
+      const reduction = proficiencyBonus === null ? "「熟練加值」" : `${proficiencyBonus} 點`;
+      entries.push({ label: "裝甲吸收", detail: `穿重甲被攻擊命中時，可減少揮砍、穿刺、鈍擊 ${reduction}傷害。` });
+    }
+    if (hasSelectedFeat("迅捷步法")) {
+      entries.push({ label: "閃避反擊", detail: "針對你的藉機攻擊丟二取低。" });
+    }
+    if (hasSelectedFeat("醫療兵")) {
+      entries.push({ label: "醫療兵", detail: "法術或照護的恢復骰出 1 可重丟一次。" });
+    }
+    return entries;
+  }
+
+  function getSpellRuleEntries() {
+    const entries = [];
+    if (hasSelectedFeat("臨陣施法")) {
+      entries.push({ label: "穩住專注", detail: "維持專注的體質豁免丟二取高。" });
+    }
+    if (hasSelectedFeat("醫療兵")) {
+      entries.push({ label: "醫療兵", detail: "法術或照護的恢復骰出 1 可重丟一次。" });
+    }
+    return entries;
+  }
+
+  function createDefenseSummaryItem(entry) {
+    const item = document.createElement("p");
+    item.className = "tabletop-defense-summary__item";
+    const heading = entry.value ? `${entry.label}：${entry.value}` : entry.label;
+
+    const title = document.createElement("strong");
+    title.textContent = entry.detail ? `${heading}：` : heading;
+    item.appendChild(title);
+
+    if (entry.detail) {
+      item.appendChild(document.createTextNode(entry.detail));
+    }
+
+    return item;
+  }
+
+  function renderDefenseSummary() {
+    if (!elements.defenseSummary || !elements.defenseSection) return;
+    const entries = getDefenseEntries();
+    elements.defenseSection.hidden = entries.length === 0;
+    elements.defenseSummary.replaceChildren(...entries.map(createDefenseSummaryItem));
+  }
+
+  function renderRuleSummary(section, output, entries) {
+    if (!section || !output) return;
+    section.hidden = entries.length === 0;
+    output.replaceChildren(...entries.map(createDefenseSummaryItem));
+  }
+
+  function renderRuleSummaries() {
+    renderRuleSummary(elements.overviewRuleSection, elements.overviewRuleSummary, getOverviewRuleEntries());
+    renderRuleSummary(elements.spellRuleSection, elements.spellRuleSummary, getSpellRuleEntries());
+  }
+
   function renderAbilityModifiers() {
     if (!elements.abilityModifiers) return;
 
@@ -1008,6 +1270,8 @@
       elements.savingThrows.replaceChildren(...saves);
     }
 
+    renderDefenseSummary();
+
     if (!elements.skillValues) return;
 
     const skills = Array.from(
@@ -1035,6 +1299,21 @@
   }
 
   function renderSummary() {
+    if (elements.characterName) {
+      const name = combatState.characterName || "點我修改角色名稱";
+      elements.characterName.textContent = name;
+      elements.characterName.classList.toggle(
+        "is-placeholder",
+        !combatState.characterName
+      );
+      elements.characterName.setAttribute(
+        "aria-label",
+        combatState.characterName
+          ? `${name}；點擊修改角色名稱`
+          : "點我修改角色名稱"
+      );
+    }
+
     if (!elements.characterSummary) {
       return;
     }
@@ -1095,6 +1374,7 @@
 
     renderAbilityModifiers();
     renderSkills();
+    renderRuleSummaries();
   }
 
   function renderHealth() {
@@ -2887,7 +3167,7 @@
         nextMode !== "tabletop";
     }
 
-    moveGearNotesToCurrentMode(nextMode);
+    moveSharedNotesToCurrentMode(nextMode);
 
     document
       .querySelectorAll(
@@ -2967,12 +3247,17 @@
     render();
   }
 
-  function moveGearNotesToCurrentMode(mode) {
-    const target = mode === "tabletop"
-      ? elements.gearNotesTabletopMount
-      : elements.gearNotesSheetMount;
-    if (!elements.gearNotes || !target || elements.gearNotes.parentElement === target) return;
-    target.append(elements.gearNotes);
+  function moveSharedNotesToCurrentMode(mode) {
+    [
+      [elements.gearNotes, elements.gearNotesSheetMount, elements.gearNotesTabletopMount],
+      [elements.classExtra, elements.classExtraSheetMount, elements.classExtraTabletopMount],
+      [elements.skillExtra, elements.skillExtraSheetMount, elements.skillExtraTabletopMount],
+      [elements.spellNotes, elements.spellNotesSheetMount, elements.spellNotesTabletopMount]
+    ].forEach(([field, sheetMount, tabletopMount]) => {
+      const target = mode === "tabletop" ? tabletopMount : sheetMount;
+      if (!field || !target || field.parentElement === target) return;
+      target.append(field);
+    });
   }
 
   function cacheElements() {
@@ -3009,6 +3294,51 @@
             "tabletop-gear-notes-mount"
           ),
 
+        classExtra:
+          document.getElementById(
+            "class-extra"
+          ),
+
+        classExtraSheetMount:
+          document.getElementById(
+            "class-extra-sheet-mount"
+          ),
+
+        classExtraTabletopMount:
+          document.getElementById(
+            "tabletop-class-extra-mount"
+          ),
+
+        skillExtra:
+          document.getElementById(
+            "skill-extra"
+          ),
+
+        skillExtraSheetMount:
+          document.getElementById(
+            "skill-extra-sheet-mount"
+          ),
+
+        skillExtraTabletopMount:
+          document.getElementById(
+            "tabletop-skill-extra-mount"
+          ),
+
+        spellNotes:
+          document.getElementById(
+            "spell-notes"
+          ),
+
+        spellNotesSheetMount:
+          document.getElementById(
+            "spell-notes-sheet-mount"
+          ),
+
+        spellNotesTabletopMount:
+          document.getElementById(
+            "tabletop-spell-notes-mount"
+          ),
+
         tabletopTabs:
           Array.from(document.querySelectorAll("[data-tabletop-tab]")),
 
@@ -3018,6 +3348,11 @@
         characterSummary:
           document.getElementById(
             "tabletop-character-summary"
+          ),
+
+        characterName:
+          document.getElementById(
+            "tabletop-title"
           ),
 
         ac:
@@ -3040,6 +3375,16 @@
             "tabletop-passive-perception"
           ),
 
+        overviewRuleSection:
+          document.getElementById(
+            "tabletop-overview-rule-summary-section"
+          ),
+
+        overviewRuleSummary:
+          document.getElementById(
+            "tabletop-overview-rule-summary"
+          ),
+
         abilityModifiers:
           document.getElementById(
             "tabletop-ability-modifiers"
@@ -3048,6 +3393,26 @@
         savingThrows:
           document.getElementById(
             "tabletop-saving-throw-values"
+          ),
+
+        defenseSection:
+          document.getElementById(
+            "tabletop-defense-summary-section"
+          ),
+
+        defenseSummary:
+          document.getElementById(
+            "tabletop-defense-summary"
+          ),
+
+        spellRuleSection:
+          document.getElementById(
+            "tabletop-spell-rule-summary-section"
+          ),
+
+        spellRuleSummary:
+          document.getElementById(
+            "tabletop-spell-rule-summary"
           ),
 
         skillValues:
@@ -3230,6 +3595,24 @@
               ? "tabletop"
               : "sheet"
           );
+        }
+      );
+
+    elements.characterName
+      ?.addEventListener(
+        "click",
+        (event) => {
+          requestCharacterName(event.currentTarget);
+        }
+      );
+
+    elements.characterName
+      ?.addEventListener(
+        "keydown",
+        (event) => {
+          if (event.key !== "Enter" && event.key !== " ") return;
+          event.preventDefault();
+          requestCharacterName(event.currentTarget);
         }
       );
 
@@ -3440,6 +3823,8 @@
     getMode: () => currentMode,
     setPanel: setActivePanel,
     getPanel: () => currentPanel,
+    getCharacterName,
+    setCharacterName,
     getConcentrationSpellId,
     setConcentrationSpellId,
     stopConcentration,

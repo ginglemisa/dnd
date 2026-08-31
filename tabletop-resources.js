@@ -13,6 +13,42 @@
     return element;
   }
 
+  function createResourceMeter(current, maximum) {
+    const safeMaximum = Math.max(1, Number(maximum) || 1);
+    const safeCurrent = Math.min(safeMaximum, Math.max(0, Number(current) || 0));
+    const meter = createElement("div", "tabletop-resource-meter");
+    const fill = createElement("span", "tabletop-resource-meter__fill");
+    meter.style.setProperty("--tabletop-resource-fill", `${(safeCurrent / safeMaximum) * 100}%`);
+    meter.classList.toggle("is-empty", safeCurrent === 0);
+    meter.classList.toggle("is-full", safeCurrent === safeMaximum);
+    meter.setAttribute("aria-hidden", "true");
+    meter.appendChild(fill);
+    return meter;
+  }
+
+  function formatResourceAmount(current, maximum) {
+    return `${current}／${maximum}`;
+  }
+
+  async function requestResourceValue({ label, current, maximum, trigger }) {
+    if (typeof globalScope.AppDialog?.requestNumber !== "function") return false;
+    return globalScope.AppDialog.requestNumber({
+      title: `設定${label}`,
+      message: "直接輸入目前剩餘的數值。",
+      inputLabel: "目前值",
+      value: current,
+      min: 0,
+      max: maximum,
+      step: 1,
+      integer: true,
+      hint: `可輸入 0～${maximum}；最大值維持 ${maximum}。`,
+      invalidMessage: `請輸入 0～${maximum} 的整數。`,
+      cancelLabel: "取消",
+      confirmLabel: "套用數值",
+      trigger
+    });
+  }
+
   function dispatchCanonicalUpdate(control) {
     control.dispatchEvent(new Event("input", { bubbles: true }));
     control.dispatchEvent(new Event("change", { bubbles: true }));
@@ -115,7 +151,9 @@
     );
     const remaining = maximum - spent;
     const { row, controls } = createResourceRow(label, note);
+    row.classList.add("tabletop-resource-row--counter");
     controls.classList.add("tabletop-resource-stepper");
+    const stepper = createElement("div", "tabletop-number-stepper");
 
     const readRemaining = () => {
       const currentSpent = globalScope.TabletopMode?.getBuiltInResourceSpent(key) || 0;
@@ -130,24 +168,32 @@
       announce(`${label}剩餘 ${next}/${maximum} 點。`);
     };
 
-    const decrease = createElement("button", "", "−");
+    const decrease = createElement("button", "tabletop-number-stepper__adjust", "−");
     decrease.type = "button";
     decrease.disabled = remaining <= 0;
     decrease.setAttribute("aria-label", `${label}減少 1 點`);
     decrease.addEventListener("click", () => setRemaining(readRemaining() - 1));
 
-    const current = document.createElement("input");
-    current.type = "number";
-    current.className = "tabletop-resource-stepper__value";
-    current.min = "0";
-    current.max = String(maximum);
-    current.step = "1";
-    current.inputMode = "numeric";
-    current.value = String(remaining);
-    current.setAttribute("aria-label", `${label}剩餘點數，最大 ${maximum}`);
-    current.addEventListener("change", () => setRemaining(current.value));
+    const current = createElement(
+      "button",
+      "tabletop-number-stepper__value",
+      formatResourceAmount(remaining, maximum)
+    );
+    current.type = "button";
+    current.setAttribute("aria-haspopup", "dialog");
+    current.setAttribute("aria-label", `${label}剩餘 ${remaining}/${maximum}；點擊直接設定`);
+    current.addEventListener("click", async () => {
+      const next = await requestResourceValue({
+        label,
+        current: readRemaining(),
+        maximum,
+        trigger: current
+      });
+      if (next === false) return;
+      setRemaining(next);
+    });
 
-    const increase = createElement("button", "", "+");
+    const increase = createElement("button", "tabletop-number-stepper__adjust", "+");
     increase.type = "button";
     increase.disabled = remaining >= maximum;
     increase.setAttribute("aria-label", `${label}增加 1 點`);
@@ -158,7 +204,9 @@
     refill.disabled = remaining >= maximum;
     refill.setAttribute("aria-label", `將${label}回滿`);
     refill.addEventListener("click", () => setRemaining(maximum));
-    controls.append(decrease, current, increase, refill);
+    stepper.append(decrease, current, increase);
+    controls.append(stepper, refill);
+    row.appendChild(createResourceMeter(remaining, maximum));
     return row;
   }
 
@@ -210,15 +258,21 @@
     const maximum = availableValues.length ? Math.max(...availableValues) : level;
     const current = Number.parseInt(canonical.value || "0", 10) || 0;
     const { row, controls } = createResourceRow("生命骰", "手動追蹤目前剩餘顆數。") ;
+    row.classList.add("tabletop-resource-row--counter");
     controls.classList.add("tabletop-resource-stepper");
+    const stepper = createElement("div", "tabletop-number-stepper");
 
-    const decrease = createElement("button", "", "−");
+    const decrease = createElement("button", "tabletop-number-stepper__adjust", "−");
     decrease.type = "button";
     decrease.disabled = current <= 0;
     decrease.setAttribute("aria-label", "生命骰減少 1");
-    const output = createElement("output", "", `${current}／${maximum}`);
+    const output = createElement(
+      "output",
+      "tabletop-number-stepper__value",
+      formatResourceAmount(current, maximum)
+    );
     output.setAttribute("aria-label", `生命骰 ${current}/${maximum}`);
-    const increase = createElement("button", "", "+");
+    const increase = createElement("button", "tabletop-number-stepper__adjust", "+");
     increase.type = "button";
     increase.disabled = current >= maximum;
     increase.setAttribute("aria-label", "生命骰增加 1");
@@ -232,18 +286,18 @@
     };
     decrease.addEventListener("click", () => setValue(current - 1));
     increase.addEventListener("click", () => setValue(current + 1));
-    controls.append(decrease, output, increase);
+    stepper.append(decrease, output, increase);
+    controls.append(stepper);
+    row.appendChild(createResourceMeter(current, maximum));
     return row;
   }
 
   function getRaceUseGroups() {
     const race = document.getElementById("race")?.value || "";
     const level = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
-    const gnomeLineage = document.getElementById("gnome-lineage")?.value || "";
     const goliathAncestry = document.getElementById("goliath-ancestry")?.value || "";
     const configs = [
-      { visible: level >= 1 && race === "dragonborn", id: "dragonborn-breath-uses", label: "吐息武器", note: "使用次數等同熟練加值；長休後全回復。" },
-      { visible: level >= 1 && race === "gnome" && gnomeLineage === "forest_gnome", id: "forest-gnome-animal-speech-uses", label: "動物交談", note: "使用次數等同熟練加值。" },
+      { visible: level >= 1 && race === "dragonborn", id: "dragonborn-breath-uses", label: "吐息元素", note: "使用次數等同熟練加值；長休後全回復。" },
       { visible: level >= 1 && race === "goliath" && Boolean(goliathAncestry), id: "goliath-giant-ancestry-uses", label: "巨人血統異能", note: "使用次數等同熟練加值；長休後全回復。" }
     ];
 
@@ -348,7 +402,7 @@
   function openCustomResourceForm(resource = null) {
     elements.customForm.hidden = false;
     elements.customAdd.setAttribute("aria-expanded", "true");
-    elements.customAdd.textContent = resource ? "編輯資源中" : "新增資源中";
+    elements.customAdd.textContent = resource ? "取消編輯" : "收起表單";
     elements.customId.value = resource?.id || "";
     elements.customLabel.value = resource?.label || "";
     elements.customCurrent.value = String(resource?.current ?? 0);
@@ -415,12 +469,11 @@
     const copy = createElement("div");
     copy.appendChild(createElement("h4", "", resource.label));
     if (resource.recoveryNote) copy.appendChild(createElement("p", "", resource.recoveryNote));
-    const total = createElement("strong", "tabletop-custom-resource__total", `${resource.current}／${resource.max}`);
-    total.setAttribute("aria-label", `${resource.label} ${resource.current}/${resource.max}`);
-    heading.append(copy, total);
+    heading.append(copy);
 
     const stepper = createElement("div", "tabletop-custom-resource__stepper");
-    const decrease = createElement("button", "", "−1");
+    const counter = createElement("div", "tabletop-number-stepper");
+    const decrease = createElement("button", "tabletop-number-stepper__adjust", "−");
     decrease.type = "button";
     decrease.disabled = resource.current <= 0;
     decrease.setAttribute("aria-label", `${resource.label}減少 1`);
@@ -428,7 +481,33 @@
       globalScope.TabletopMode?.setCustomResourceCurrent(resource.id, resource.current - 1);
       announce(`${resource.label}已減少為 ${Math.max(0, resource.current - 1)}。`);
     });
-    const increase = createElement("button", "", "+1");
+    const current = createElement(
+      "button",
+      "tabletop-number-stepper__value",
+      formatResourceAmount(resource.current, resource.max)
+    );
+    current.type = "button";
+    current.setAttribute("aria-haspopup", "dialog");
+    current.setAttribute(
+      "aria-label",
+      `${resource.label}剩餘 ${resource.current}/${resource.max}；點擊直接設定`
+    );
+    current.addEventListener("click", async () => {
+      const latest = globalScope.TabletopMode?.getCustomResources?.()
+        .find(item => item.id === resource.id);
+      if (!latest) return;
+      const next = await requestResourceValue({
+        label: latest.label,
+        current: latest.current,
+        maximum: latest.max,
+        trigger: current
+      });
+      if (next === false) return;
+      globalScope.TabletopMode?.setCustomResourceCurrent(resource.id, next);
+      announce(`${latest.label}已設定為 ${next}。`);
+    });
+
+    const increase = createElement("button", "tabletop-number-stepper__adjust", "+");
     increase.type = "button";
     increase.disabled = resource.current >= resource.max;
     increase.setAttribute("aria-label", `${resource.label}增加 1`);
@@ -436,7 +515,7 @@
       globalScope.TabletopMode?.setCustomResourceCurrent(resource.id, resource.current + 1);
       announce(`${resource.label}已增加為 ${Math.min(resource.max, resource.current + 1)}。`);
     });
-    const refill = createElement("button", "tabletop-compact-button", "回滿此項");
+    const refill = createElement("button", "tabletop-compact-button", "回滿");
     refill.type = "button";
     refill.disabled = resource.current >= resource.max;
     refill.setAttribute("aria-label", `只將${resource.label}回滿`);
@@ -444,36 +523,9 @@
       globalScope.TabletopMode?.setCustomResourceCurrent(resource.id, resource.max);
       announce(`${resource.label}已回滿。`);
     });
-    stepper.append(decrease, increase, refill);
-
-    const exactForm = createElement("form", "tabletop-custom-resource__exact");
-    exactForm.noValidate = true;
-    const exactLabel = createElement("label", "sr-only", `精確設定${resource.label}目前值`);
-    const exactInput = document.createElement("input");
-    exactInput.id = `tabletop-custom-exact-${resource.id}`;
-    exactLabel.htmlFor = exactInput.id;
-    exactInput.type = "number";
-    exactInput.min = "0";
-    exactInput.max = String(resource.max);
-    exactInput.step = "1";
-    exactInput.inputMode = "numeric";
-    exactInput.value = String(resource.current);
-    exactInput.setAttribute("aria-label", `精確設定${resource.label}目前值`);
-    const exactButton = createElement("button", "tabletop-compact-button", "設定");
-    exactButton.type = "submit";
-    exactForm.append(exactLabel, exactInput, exactButton);
-    exactForm.addEventListener("submit", event => {
-      event.preventDefault();
-      const next = Number(exactInput.value);
-      if (!Number.isSafeInteger(next) || next < 0 || next > resource.max) {
-        exactInput.setAttribute("aria-invalid", "true");
-        announce(`請輸入 0～${resource.max} 的整數。`);
-        exactInput.focus();
-        return;
-      }
-      globalScope.TabletopMode?.setCustomResourceCurrent(resource.id, next);
-      announce(`${resource.label}已設定為 ${next}。`);
-    });
+    counter.append(decrease, current, increase);
+    stepper.append(counter, refill);
+    const meter = createResourceMeter(resource.current, resource.max);
 
     const actions = createElement("div", "tabletop-custom-resource__actions");
     const edit = createElement("button", "tabletop-compact-button", "編輯");
@@ -499,7 +551,7 @@
       });
     });
     actions.append(edit, remove);
-    item.append(heading, stepper, exactForm, actions);
+    item.append(heading, stepper, meter, actions);
     return item;
   }
 
@@ -509,8 +561,8 @@
     if (!resources.length) {
       const empty = createElement("div", "tabletop-empty-state");
       empty.append(
-        createElement("strong", "", "尚未登記自訂資源"),
-        createElement("p", "", "在此建立個人化角色資源計數器。")
+        createElement("strong", "", "還沒有自訂資源"),
+        createElement("p", "", "新增可手動追蹤的次數或點數。")
       );
       elements.customList.replaceChildren(empty);
       return;

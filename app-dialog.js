@@ -67,6 +67,7 @@
     const root = document.createElement("div");
     root.className = "app-dialog";
     root.setAttribute("aria-hidden", "false");
+    if (options.variant) root.dataset.variant = String(options.variant);
 
     const surface = document.createElement("section");
     surface.className = "app-dialog__surface";
@@ -217,7 +218,29 @@
       activeDialog = { close };
       closeButton.addEventListener("click", () => close(false));
       cancelButton?.addEventListener("click", () => close(false));
-      confirmButton?.addEventListener("click", () => close(true));
+      let resolvingConfirm = false;
+      confirmButton?.addEventListener("click", async () => {
+        if (resolvingConfirm) return;
+        if (typeof options.resolveConfirm !== "function") {
+          close(true);
+          return;
+        }
+        resolvingConfirm = true;
+        confirmButton.disabled = true;
+        try {
+          const result = await options.resolveConfirm();
+          if (result === false) {
+            resolvingConfirm = false;
+            confirmButton.disabled = false;
+            return;
+          }
+          close(result === undefined ? true : result);
+        } catch (error) {
+          resolvingConfirm = false;
+          confirmButton.disabled = false;
+          console.error("AppDialog confirm handler failed.", error);
+        }
+      });
       actionButtons.forEach((button, index) => {
         button.addEventListener("click", () => close(customActions[index]?.value ?? index));
       });
@@ -227,8 +250,94 @@
       document.addEventListener("keydown", onKeyDown, true);
       const initialTarget = options.initialFocus === "primary"
         ? (actionButtons.find(button => button.classList.contains("app-dialog__button--primary")) || confirmButton)
+        : options.initialFocus === "content"
+          ? getFocusableElements(body)[0]
         : (cancelButton || actionButtons[0] || copyArea || confirmButton);
       (initialTarget || surface).focus();
+    });
+  }
+
+  function requestNumber(options = {}) {
+    let input = null;
+    let error = null;
+    const minimum = Number.isFinite(Number(options.min)) ? Number(options.min) : Number.NEGATIVE_INFINITY;
+    const maximum = Number.isFinite(Number(options.max)) ? Number(options.max) : Number.POSITIVE_INFINITY;
+    const step = Number(options.step) > 0 ? Number(options.step) : 1;
+    const fieldToken = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const inputId = `app-dialog-number-${fieldToken}`;
+    const hintId = `app-dialog-number-hint-${fieldToken}`;
+    const errorId = `app-dialog-number-error-${fieldToken}`;
+
+    return open({
+      ...options,
+      variant: "number",
+      cancelLabel: options.cancelLabel || "取消",
+      confirmLabel: options.confirmLabel || "套用數值",
+      initialFocus: "content",
+      renderContent(body) {
+        const field = document.createElement("label");
+        field.className = "app-dialog__number-field";
+        field.htmlFor = inputId;
+        field.appendChild(document.createTextNode(String(options.inputLabel || "目前值")));
+
+        input = document.createElement("input");
+        input.id = inputId;
+        input.className = "app-dialog__number-input";
+        input.type = "number";
+        input.inputMode = options.integer === false ? "decimal" : "numeric";
+        input.step = String(step);
+        if (Number.isFinite(minimum)) input.min = String(minimum);
+        if (Number.isFinite(maximum)) input.max = String(maximum);
+        input.value = String(options.value ?? "");
+        input.dataset.stateTransient = "true";
+
+        const hint = document.createElement("span");
+        hint.id = hintId;
+        hint.className = "app-dialog__number-hint";
+        hint.textContent = String(options.hint || "輸入要套用的數值。");
+
+        error = document.createElement("span");
+        error.id = errorId;
+        error.className = "app-dialog__number-error";
+        error.setAttribute("aria-live", "polite");
+
+        input.setAttribute("aria-describedby", `${hintId} ${errorId}`);
+        input.addEventListener("input", () => {
+          input.removeAttribute("aria-invalid");
+          error.textContent = "";
+        });
+        input.addEventListener("keydown", event => {
+          if (event.key !== "Enter") return;
+          event.preventDefault();
+          body.closest(".app-dialog__surface")
+            ?.querySelector(".app-dialog__button--primary")
+            ?.click();
+        });
+
+        field.append(input, hint, error);
+        body.appendChild(field);
+      },
+      resolveConfirm() {
+        const rawValue = input?.value.trim() || "";
+        const value = Number(rawValue);
+        const isInteger = options.integer === false || Number.isSafeInteger(value);
+        const inRange = value >= minimum && value <= maximum;
+        if (!rawValue || !Number.isFinite(value) || !isInteger || !inRange) {
+          input?.setAttribute("aria-invalid", "true");
+          if (error) {
+            error.textContent = String(
+              options.invalidMessage
+              || (Number.isFinite(minimum) && Number.isFinite(maximum)
+                ? `請輸入 ${minimum}～${maximum} 的${options.integer === false ? "數值" : "整數"}。`
+                : "請輸入有效數值。")
+            );
+          }
+          input?.focus();
+          input?.select();
+          return false;
+        }
+        return value;
+      }
     });
   }
 
@@ -241,6 +350,7 @@
       requestDecision(options) {
         return open({ ...options, role: "alertdialog" });
       },
+      requestNumber,
       showCopy(options) {
         return open(options);
       },
