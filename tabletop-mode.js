@@ -3153,8 +3153,13 @@
         nextMode;
 
     if (elements.modeToggle) {
-      elements.modeToggle.checked =
-        nextMode === "tabletop";
+      const tabletopEnabled = nextMode === "tabletop";
+      elements.modeToggle.setAttribute("aria-pressed", String(tabletopEnabled));
+      elements.modeToggle.setAttribute("aria-label", tabletopEnabled ? "返回角色卡" : "進入桌邊模式（β）");
+      const modeLabel = elements.modeToggle.querySelector("#tabletop-mode-toggle-label");
+      const modeIcon = elements.modeToggle.querySelector("#tabletop-mode-toggle-icon");
+      if (modeLabel) modeLabel.textContent = tabletopEnabled ? "角色卡模式" : "桌邊模式";
+      if (modeIcon) modeIcon.textContent = tabletopEnabled ? "📄" : "⚔️";
     }
 
     if (elements.sheetTabs) {
@@ -3588,12 +3593,12 @@
 
     elements.modeToggle
       ?.addEventListener(
-        "change",
+        "click",
         () => {
           applyModeVisibility(
-            elements.modeToggle.checked
-              ? "tabletop"
-              : "sheet"
+            currentMode === "tabletop"
+              ? "sheet"
+              : "tabletop"
           );
         }
       );

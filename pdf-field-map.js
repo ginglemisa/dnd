@@ -1603,7 +1603,7 @@ function isWeaponRowEmpty(payload, slot) {
       const remainingSpellText = remainingSpellRows
         .map((row) => `${getCanonicalSpell(row.spellId)?.nameZh || ''}(${row.level})`)
         .join('、');
-      extraNotes.push(`其餘已準備法術：${remainingSpellText}。`);
+      extraNotes.push(`其他準備法術：${remainingSpellText}。`);
     }
 
     const spellNotesText = normalizeText(state['spell-notes']);
@@ -1617,7 +1617,7 @@ function isWeaponRowEmpty(payload, slot) {
 
     const gearExtraText = normalizeText(state['gear-extra']);
     if (gearExtraText) {
-      extraNotes.push(`其他裝備備註：${gearExtraText}`);
+      extraNotes.push(`其他備註：${gearExtraText}`);
     }
 
     if (extraNotes.length) {

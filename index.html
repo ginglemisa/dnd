@@ -90,28 +90,21 @@
       </button>
     </div>
     <div id="utility-menu" class="utility-menu" aria-hidden="true" inert>
-      <fieldset class="theme-picker">
-        <legend>主題</legend>
-        <div class="theme-picker__options">
-          <label class="theme-picker__option">
-            <input type="radio" name="site-theme" value="light">
-            <span>淺色</span>
-          </label>
-          <label class="theme-picker__option">
-            <input type="radio" name="site-theme" value="dark">
-            <span>深色</span>
-          </label>
+      <section class="utility-menu__section" aria-labelledby="utility-menu-view-title">
+        <h2 id="utility-menu-view-title" class="utility-menu__section-title">顯示與模式</h2>
+        <div class="utility-menu__row utility-menu__row--split utility-menu__mode-row">
+          <button type="button" id="theme-toggle" class="utility-menu__button utility-menu__mode-button utility-menu__mode-button--theme" aria-pressed="false">
+            <span id="theme-toggle-icon" class="utility-menu__mode-icon" aria-hidden="true">☀️</span><span id="theme-toggle-label">淺色主題</span>
+          </button>
+          <button type="button" id="tabletop-mode-toggle" class="utility-menu__button utility-menu__mode-button utility-menu__mode-button--tabletop" aria-pressed="false" aria-controls="tabletop-mode" title="開啟桌邊模式總覽；角色資料與角色卡模式完全共用。">
+            <span id="tabletop-mode-toggle-label">桌邊模式</span><span id="tabletop-mode-toggle-icon" class="utility-menu__mode-icon" aria-hidden="true">⚔️</span>
+          </button>
         </div>
-      </fieldset>
+      </section>
 
       <div class="utility-menu__divider" role="separator"></div>
       <fieldset class="utility-menu__settings">
         <legend>操作設定</legend>
-        <label class="utility-menu__setting" title="開啟桌邊模式總覽；角色資料與角色卡模式完全共用。">
-          <span>桌邊模式(β版)</span>
-          <input id="tabletop-mode-toggle" type="checkbox" role="switch" aria-controls="tabletop-mode" data-state-transient="true">
-          <span class="utility-menu__switch" aria-hidden="true"></span>
-        </label>
         <label class="utility-menu__setting" title="開啟時自動計算最大 HP、AC、先攻、速度與被動察覺；關閉後可自行輸入。">
           <span>自動計算HP/AC/先攻等數值</span>
           <input id="auto-calculate-key-stats-toggle" type="checkbox" role="switch" checked>
@@ -7012,16 +7005,20 @@ function setupUtilityMenu() {
   if (!shell || !toggle || !menu) return;
 
   let isOpen = false;
-  const isTourPreviewLocked = () => window.onboardingTour?.isUtilityMenuPreviewLocked?.() === true;
   const themeKey = "dnd.theme.v1";
-  const themeInputs = [...menu.querySelectorAll('input[name="site-theme"]')];
+  const themeButton = document.getElementById("theme-toggle");
+  const themeLabel = document.getElementById("theme-toggle-label");
+  const themeIcon = document.getElementById("theme-toggle-icon");
 
   const applyTheme = (theme, { persist = true } = {}) => {
     const nextTheme = theme === "dark" ? "dark" : "light";
     document.documentElement.dataset.theme = nextTheme;
-    themeInputs.forEach((input) => {
-      input.checked = input.value === nextTheme;
-    });
+    if (themeButton) {
+      themeButton.setAttribute("aria-pressed", String(nextTheme === "dark"));
+      themeButton.setAttribute("aria-label", `目前為${nextTheme === "dark" ? "深色" : "淺色"}主題；切換為${nextTheme === "dark" ? "淺色" : "深色"}主題`);
+    }
+    if (themeLabel) themeLabel.textContent = nextTheme === "dark" ? "深色主題" : "淺色主題";
+    if (themeIcon) themeIcon.textContent = nextTheme === "dark" ? "🌙" : "☀️";
     if (persist) {
       try {
         window.dndStorage.setItem(themeKey, nextTheme);
@@ -7032,10 +7029,8 @@ function setupUtilityMenu() {
   };
 
   applyTheme(document.documentElement.dataset.theme, { persist: false });
-  themeInputs.forEach((input) => {
-    input.addEventListener("change", () => {
-      if (input.checked) applyTheme(input.value);
-    });
+  themeButton?.addEventListener("click", () => {
+    applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
   });
 
   const setOpen = (open, { restoreFocus = false } = {}) => {
@@ -7052,33 +7047,23 @@ function setupUtilityMenu() {
   };
 
   toggle.addEventListener("click", (event) => {
-    if (isTourPreviewLocked()) {
-      event.preventDefault();
-      return;
-    }
     setOpen(!isOpen);
   });
   menu.addEventListener("click", (event) => {
-    if (isTourPreviewLocked()) {
-      if (event.target.closest(".theme-picker__option")) return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      return;
-    }
     if (event.target.closest("button")) setOpen(false);
   }, true);
 
   document.addEventListener("pointerdown", (event) => {
-    if (!isOpen || shell.contains(event.target) || isTourPreviewLocked()) return;
+    if (!isOpen || shell.contains(event.target)) return;
     setOpen(false);
   });
 
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && isOpen && !isTourPreviewLocked()) setOpen(false, { restoreFocus: true });
+    if (event.key === "Escape" && isOpen) setOpen(false, { restoreFocus: true });
   });
 
   window.addEventListener("tabchange", () => {
-    if (!isTourPreviewLocked()) setOpen(false);
+    setOpen(false);
   });
 }
 // 事件委派：不用管 class-features 何時重繪

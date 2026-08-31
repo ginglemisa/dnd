@@ -87,8 +87,6 @@
       this.spellPreviewSnapshot = null;
       this.searchStateSnapshot = null;
       this.backgroundInertSnapshot = null;
-      this.utilityMenuPreviewOpened = false;
-      this.utilityMenuControlSnapshot = null;
       this.identityPreviewSnapshot = null;
       this.abilityPreviewSnapshot = null;
       this.equipmentPreviewSnapshot = null;
@@ -236,37 +234,19 @@
         },
         {
           tab: "spells",
-          title: () => this.stepPhase === 0
-            ? "🔎 6. 搜尋法術/裝備/道具"
-            : "☰ 6. 保存、輸出與分享",
-          text: () => this.stepPhase === 0
-            ? "法術與裝備分頁都有搜尋功能，可快速查找名稱與規則資料。"
-            : "右上角選單可以保存紀錄、輸出 PDF、分享角色卡，或再次開啟本導覽。",
+          title: "🔎 6. 搜尋法術/裝備/道具",
+          text: "法術與裝備分頁都有搜尋功能，可快速查找名稱與規則資料。",
           placement: "bottom",
-          getHoles: () => (this.stepPhase === 0
-            ? [
-                this.getHoleForSelector("#spell-tab-toolbar .spell-search-controls", 7),
-                this.getHoleForSelector("#spell-search-fab", 7)
-              ]
-            : [
-                this.getHoleForSelector("#utility-menu", 7),
-                this.getHoleForSelector("#utility-menu-toggle", 7)
-              ]
-          ).filter(Boolean),
+          getHoles: () => [
+            this.getHoleForSelector("#spell-tab-toolbar .spell-search-controls", 7),
+            this.getHoleForSelector("#spell-search-fab", 7)
+          ].filter(Boolean),
           beforeTab: () => this.ensureSpellPreview(),
           beforePosition: async () => {
             await animateWindowScrollTo(0);
-            if (this.stepPhase === 0) {
-              this.closeUtilityMenuPreview();
-              await this.openSpellSearchPreview();
-            } else {
-              await this.openUtilityMenuPreview();
-            }
+            await this.openSpellSearchPreview();
           },
-          afterLeave: () => {
-            this.closeUtilityMenuPreview();
-            this.closeSpellSearchPreview();
-          }
+          afterLeave: () => this.closeSpellSearchPreview()
         }
       ];
     }
@@ -300,16 +280,6 @@
 
     async next() {
       if (!this.active || this.isTransitioning) return;
-      if (this.currentIndex === 5 && this.stepPhase === 0) {
-        this.isTransitioning = true;
-        this.stepPhase = 1;
-        this.tooltipDragPosition = null;
-        await this.steps[4].beforePosition();
-        await waitForLayoutStability();
-        await this.renderStep();
-        this.isTransitioning = false;
-        return;
-      }
       if (this.currentIndex >= this.steps.length - 1) {
         this.stop();
         return;
@@ -319,17 +289,6 @@
 
     async prev() {
       if (!this.active || this.isTransitioning) return;
-      if (this.currentIndex === 5 && this.stepPhase === 1) {
-        this.isTransitioning = true;
-        this.closeUtilityMenuPreview();
-        this.stepPhase = 0;
-        this.tooltipDragPosition = null;
-        await this.steps[4].beforePosition();
-        await waitForLayoutStability();
-        await this.renderStep();
-        this.isTransitioning = false;
-        return;
-      }
       if (this.currentIndex <= 0) return;
       await this.goTo(this.currentIndex - 1);
     }
@@ -360,7 +319,6 @@
     stop({ resetView = true } = {}) {
       const currentStep = this.steps[this.currentIndex];
       if (currentStep && typeof currentStep.afterLeave === "function") currentStep.afterLeave();
-      this.closeUtilityMenuPreview();
       this.restoreIdentityPreview();
       this.restoreAbilityPreview();
       this.restoreEquipmentPreview();
@@ -877,62 +835,6 @@
       this.spellSearchPreviewOpened = false;
     }
 
-    async openUtilityMenuPreview() {
-      const toggle = document.getElementById("utility-menu-toggle");
-      if (toggle?.getAttribute("aria-expanded") !== "true") {
-        this.isInternalTourAction = true;
-        try {
-          this.runWithBackgroundElementUnlocked(toggle, (button) => button.click());
-          this.utilityMenuPreviewOpened = true;
-        } finally {
-          this.isInternalTourAction = false;
-        }
-      }
-      this.prepareUtilityMenuControls();
-      await waitForLayoutStability();
-    }
-
-    prepareUtilityMenuControls() {
-      if (this.utilityMenuControlSnapshot) return;
-      const controls = Array.from(document.querySelectorAll("#utility-menu button, #utility-menu input, #utility-menu select"));
-      this.utilityMenuControlSnapshot = controls.map((element) => ({
-        element,
-        disabled: element.disabled
-      }));
-      this.utilityMenuControlSnapshot.forEach(({ element }) => {
-        if (!element.matches('input[name="site-theme"]')) element.disabled = true;
-      });
-    }
-
-    restoreUtilityMenuControls() {
-      this.utilityMenuControlSnapshot?.forEach(({ element, disabled }) => {
-        element.disabled = disabled;
-      });
-      this.utilityMenuControlSnapshot = null;
-    }
-
-    isUtilityMenuPreviewLocked() {
-      return this.active
-        && this.currentIndex === 5
-        && this.stepPhase === 1
-        && this.utilityMenuPreviewOpened
-        && !this.isInternalTourAction;
-    }
-
-    closeUtilityMenuPreview() {
-      const toggle = document.getElementById("utility-menu-toggle");
-      this.restoreUtilityMenuControls();
-      if (this.utilityMenuPreviewOpened && toggle?.getAttribute("aria-expanded") === "true") {
-        this.isInternalTourAction = true;
-        try {
-          this.runWithBackgroundElementUnlocked(toggle, (button) => button.click());
-        } finally {
-          this.isInternalTourAction = false;
-        }
-      }
-      this.utilityMenuPreviewOpened = false;
-    }
-
     getBodyChildForElement(element) {
       let current = element;
       while (current?.parentElement && current.parentElement !== document.body) current = current.parentElement;
@@ -976,16 +878,12 @@
       if (this.currentIndex === 4 && this.spellControlSnapshot) {
         return [this.spellControlSnapshot.classSelect, this.spellControlSnapshot.spellSelect];
       }
-      if (this.currentIndex === 5 && this.stepPhase === 1 && this.utilityMenuPreviewOpened) {
-        return Array.from(document.querySelectorAll('#utility-menu input[name="site-theme"]:not(:disabled)'));
-      }
       return [];
     }
 
     isAllowedTourInteraction(target) {
       if (!(target instanceof Element)) return false;
       if (this.tooltip?.contains(target)) return true;
-      if (this.currentIndex === 5 && this.stepPhase === 1 && target.closest(".theme-picker__option")) return true;
       return this.getAllowedTourElements().some((element) => element === target || element.contains(target));
     }
 
@@ -1250,7 +1148,6 @@
     }
 
     getNextButtonText() {
-      if (this.currentIndex === 5 && this.stepPhase === 0) return "查看選單";
       if (this.currentIndex === this.steps.length - 1) return "導覽完成";
       return "下一步";
     }
