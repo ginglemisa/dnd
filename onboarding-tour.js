@@ -152,7 +152,7 @@
         {
           tab: "basic",
           title: "⚔️ 1. 決定你的冒險者方向",
-          text: "背景代表角色過去，種族帶來天生特性，職業則決定冒險方式。選擇後，生命值、能力與相關資料會跟著更新。",
+          text: "背景代表角色過去，種族帶來天生特性，職業則決定冒險方式。選好之後，生命值、護甲等數值資料會自動更新。",
           placement: "bottom",
           getHoles: () => {
             const identity = this.getHoleFromElements([
@@ -174,7 +174,7 @@
         {
           tab: "basic",
           title: "🎲 2. 屬性與快速創角",
-          text: "六項屬性決定角色擅長什麼；上方是檢定常用的修正值。接著會開啟「決定屬性」選單。",
+          text: "六項屬性決定角色擅長什麼；上方是擲骰檢定用到的調整值。下方的欄位可直接填入屬性數字。",
           placement: "top",
           getHoles: () => {
             return [
@@ -191,7 +191,7 @@
         {
           tab: "basic",
           title: "🎲 3. 決定屬性",
-          text: "「決定屬性」提供可用的設定方式。第一次創角建議使用「創角小幫手」，由它帶你完成一名 1 級角色。",
+          text: "除了自行填寫屬性以外，你也可以使用 27 購點配置。初次遊玩建議使用「創角小幫手」，由它帶你完成一名 1 級角色。",
           placement: "overlay-bottom",
           getHoles: () => [this.getHoleForSelector("#ability-choice-modal .ability-choice-card", 6)].filter(Boolean),
           beforePosition: async () => {
@@ -202,7 +202,7 @@
         {
           tab: "equipment",
           title: "🛡️ 4. 確認武器、護甲與 AC",
-          text: "選擇目前使用的武器與護甲，下方會整理傷害、射程、武器精通與 AC。點擊摘要中的名稱還能查看詳細規則。",
+          text: "選擇目前使用的武器與護甲，下方會整理傷害、射程、特性等資訊。點擊摘要中的名稱還能查看詳細規則。",
           placement: "bottom",
           getHoles: () => [this.getHoleFromElements([
             document.querySelector("#tab-equipment .equipment-loadout-controls"),
