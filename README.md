@@ -15,7 +15,7 @@
 - TRPG 推廣活動、體驗場與收費團
 - 希望減少準備時間的快速開團
 
-本工具以手機操作為主，並預設現場有主持人或教學者協助說明規則。
+本工具以手機操作為主，並預設現場有主持人或教學者協助玩家並說明規則。
 
 本工具不附帶朋友和地下城主，找團請洽詢 TRPG 網路或在地社群。
 
@@ -55,7 +55,7 @@
 - 入口與樣式：`index.html`、`styles.css`
 - Legal & About：`about.html`、`info-pages.css`、`legal-modal.js`（首頁 iframe modal）
 - 主要功能與資料：`scroll-to-top.js`、`action-panel.js`、`monster.js`、`class-features.js`、`race.js`、`backgrounds.js`、`tool-data.js`、`feats.js`、`equipment-notes.js`、`equipment-data.js`、`spell-list.js`、`condition.js`、`character-rules.js`、`onboarding-tour.js`、`quick-build.js`、`deity-info.js`
-- 桌邊模式：`tabletop-mode.js`（主頁面）、`tabletop-actions.js`（武器與行動查閱）、`tabletop-spells.js`（法術與專注）、`tabletop-resources.js`（既有與自訂資源）；`app-dialog.js` 提供全站共用的對話框與通知
+- 桌邊模式：`tabletop-mode.js`（變數設定）、`tabletop-actions.js`（武器與行動查閱）、`tabletop-spells.js`（法術與專注）、`tabletop-resources.js`（既有與自訂資源）；`app-dialog.js` 提供全站共用的對話框與通知
 - PDF 匯出程式：`pdf-lib.custom.min.js`、`fontkit.custom.min.js`、`pdf-field-map.js`、`pdf-export.js`
 - PDF 匯出素材：`5e_char_sheet.pdf`、`NotoSansTC-Regular-IdentityCID.otf`、`SourceHanSerifTC-Bold.otf`
 - Legal & About 視窗圖像：`logo.png`
@@ -64,7 +64,9 @@
 
 桌邊模式的資料與原角色卡欄位同步。`tabletop-mode.js` 是此模式的狀態與切換入口，並對其他桌邊模組提供 `TabletopMode` API 與 `tabletopstatechange`／`tabletop-panelchange` 事件；其餘三個 `tabletop-*.js` 僅負責各自分頁的呈現與操作，不應重複保存或推算規則資料。
 
-`pdf-export.js` 與其相依檔案只會在使用 PDF 匯出時動態載入；若不需要該功能，可省略「PDF 匯出程式」與「PDF 匯出素材」兩類。`TWD20-offline.html` 是另行產生的單檔離線版本，並非 `index.html` 的相依檔案。
+`pdf-export.js` 與其他相關檔案只會在使用 PDF 匯出時動態載入；若不需要該功能，可省略「PDF 匯出程式」與「PDF 匯出素材」兩類。
+
+`TWD20-offline.html` 是另行產生的單檔離線版本，可獨立運行。
 
 ## 中文角色紙
 
