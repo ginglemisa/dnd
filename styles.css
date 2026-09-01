@@ -5399,7 +5399,17 @@ html[data-view-mode="tabletop"] #scrollToBottomBtn {
   color: var(--text);
 }
 
-.dice-roller-total-toggle {
+.dice-roller-view-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.38em;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.dice-roller-view-tab {
   width: auto;
   min-width: 0;
   min-height: 24px;
@@ -5409,7 +5419,7 @@ html[data-view-mode="tabletop"] #scrollToBottomBtn {
   border-radius: 0;
   background: transparent;
   color: var(--text-muted);
-  font-size: var(--fs-xs);
+  font-size: inherit;
   font-weight: 800;
   line-height: 1;
   letter-spacing: 0.08em;
@@ -5417,9 +5427,8 @@ html[data-view-mode="tabletop"] #scrollToBottomBtn {
   text-align: left;
 }
 
-.dice-roller-total-toggle:hover,
-.dice-roller-total-toggle:active,
-.dice-roller-total-toggle[aria-pressed="true"] {
+.dice-roller-view-tab:hover,
+.dice-roller-view-tab:active {
   transform: none;
   border: 0;
   background: transparent;
@@ -5427,7 +5436,11 @@ html[data-view-mode="tabletop"] #scrollToBottomBtn {
   box-shadow: none;
 }
 
-.dice-roller-total-toggle:disabled {
+.dice-roller-view-tab.is-active {
+  color: var(--primary);
+}
+
+.dice-roller-view-tab:disabled:not(.is-active) {
   opacity: 1;
   color: var(--text-muted);
   cursor: default;
