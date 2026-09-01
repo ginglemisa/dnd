@@ -194,8 +194,8 @@
         // may safely use presentation rectangles sized for their final text.
         specie_features1: { dy: 3.5 },
         feats1: { dy: 3.5 },
-        Name1: { x: 112.61, y: 524, width: 141.27, height: 28 },
-        Name2: { alignment: 'right' },
+        Name1: { x: 104.61, y: 524, width: 141.27, height: 28, alignment: 'right'  },
+        Name2: { dx: -8, alignment: 'right' },
         Level1: { x: 18.65, y: 512, width: 33, height: 28 },
         proficiencyBonus1: { x: 18.59, y: 371.5, width: 35, height: 27 },
         weaponsProficiency1: { x: 104.22, y: 71.66, width: 133.41, height: 20 },
@@ -221,18 +221,32 @@
         language1: { alignYTo: 'alignment1', expandLeft: 1 },
 
         'sp-level-1': { x: 11, y: 517.8, width: 23, height: 23 },
-        'sp-name-1': { x: 34, y: 517.7, width: 91, height: 23 },
+        'sp-name-1': { x: 36, y: 517.7, width: 91, height: 23 },
         note1: { x: 280, y: 518, width: 270, height: 23 },
         'sp-level-2': { x: 11, y: 491, width: 23, height: 23 },
-        'sp-name-2': { x: 34, y: 490.9, width: 91, height: 23 },
+        'sp-name-2': { x: 36, y: 490.9, width: 91, height: 23 },
         note2: { x: 280, y: 491.2, width: 270, height: 23 },
 
-        strMod1: { dx: -5.75 },
-        dexMod1: { dx: -6.31 },
-        conMod1: { dx: -6.71 },
-        intMod1: { dx: -6.31 },
-        wisMod1: { dx: -6.42 },
-        chaMod1: { dx: -6.55 },
+        ...Object.fromEntries(Array.from({ length: 17 }, (_, index) => [
+          `sp-name-${index + 3}`,
+          { dx: 2 }
+        ])),
+        ...Object.fromEntries(Array.from({ length: 19 }, (_, index) => [
+          `sp-range-${index + 1}`,
+          { dx: -1 }
+        ])),
+
+        strMod1: { dx: -3.75 },
+        dexMod1: { dx: -4.31 },
+        conMod1: { dx: -4.71 },
+        intMod1: { dx: -4.31 },
+        wisMod1: { dx: -4.42 },
+        chaMod1: { dx: -4.55 },
+
+        classFeatures1: { dy: 6 },
+        classFeatures2: { dy: 6 },
+        equipment1: { dy: 6 },
+        extra1: { dy: 6 },
 
         // str1 is the bracket-relative baseline. The other five offsets keep
         // the same optical center inside their own template parentheses.
