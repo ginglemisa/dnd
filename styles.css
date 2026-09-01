@@ -5428,16 +5428,13 @@ html[data-view-mode="tabletop"] #scrollToBottomBtn {
 }
 
 .dice-roller-view-tab:hover,
-.dice-roller-view-tab:active {
+.dice-roller-view-tab:active,
+.dice-roller-view-tab.is-active {
   transform: none;
   border: 0;
   background: transparent;
-  color: var(--text-muted);
-  box-shadow: none;
-}
-
-.dice-roller-view-tab.is-active {
   color: var(--primary);
+  box-shadow: none;
 }
 
 .dice-roller-view-tab:disabled:not(.is-active) {
