@@ -257,8 +257,30 @@
       .filter(Number.isFinite);
     const maximum = availableValues.length ? Math.max(...availableValues) : level;
     const current = Number.parseInt(canonical.value || "0", 10) || 0;
-    const { row, controls } = createResourceRow("生命骰", "手動追蹤目前剩餘顆數。") ;
+    const hitDieSize = Number(globalScope.getHitDiceValues?.(
+      document.getElementById("class")?.value || ""
+    )?.Y) || 0;
+    if (!hitDieSize) return null;
+    const { row, controls } = createResourceRow("", "點擊生命骰可擲 1 顆；愛心可消耗生命骰恢復 HP。") ;
     row.classList.add("tabletop-resource-row--counter");
+    const heading = row.querySelector(".tabletop-resource-row__copy h4");
+    heading?.classList.add("tabletop-hit-die-heading");
+    const rollHitDie = createElement("button", "tabletop-hit-die-roll");
+    rollHitDie.type = "button";
+    rollHitDie.disabled = !globalScope.DiceRoller?.isEnabled?.();
+    rollHitDie.setAttribute("aria-label", `擲生命骰 D${hitDieSize}`);
+    const hitDieSizeLabel = createElement("span", "hit-die-size", ` D${hitDieSize}`);
+    hitDieSizeLabel.setAttribute("aria-hidden", "true");
+    rollHitDie.append(createElement("span", "", "生命骰"), hitDieSizeLabel);
+    rollHitDie.addEventListener("click", () => {
+      globalScope.DiceRoller?.rollExpression?.(`1d${hitDieSize}`, { label: "生命骰" });
+    });
+    const heal = createElement("button", "tabletop-hit-die-heal", "💗");
+    heal.type = "button";
+    heal.disabled = !globalScope.DiceRoller?.isEnabled?.();
+    heal.setAttribute("aria-label", "消耗生命骰恢復生命值");
+    heal.setAttribute("aria-haspopup", "dialog");
+    heading?.replaceChildren(rollHitDie, heal);
     controls.classList.add("tabletop-resource-stepper");
     const stepper = createElement("div", "tabletop-number-stepper");
 
@@ -284,6 +306,75 @@
       canonical.value = option.value;
       dispatchCanonicalUpdate(canonical);
     };
+    heal.addEventListener("click", async () => {
+      const hpInput = document.getElementById("hp");
+      const maximumHpInput = document.getElementById("hp-display");
+      const startingHp = Number.parseInt(hpInput?.value || "", 10);
+      const maximumHp = Number.parseInt(maximumHpInput?.value || "", 10);
+      if (!(hpInput instanceof HTMLInputElement) || !Number.isFinite(startingHp)
+        || !Number.isFinite(maximumHp) || maximumHp < 1) {
+        globalScope.AppDialog?.notify?.("請先設定有效的目前 HP 與最大 HP。", { tone: "warning" });
+        return;
+      }
+      if (startingHp >= maximumHp) {
+        globalScope.AppDialog?.notify?.("生命值已全滿，不需要消耗生命骰。", { tone: "info" });
+        return;
+      }
+      if (current < 1) {
+        globalScope.AppDialog?.notify?.("生命骰已用盡。", { tone: "warning" });
+        return;
+      }
+      const confirmed = await globalScope.AppDialog?.requestDecision?.({
+        title: "使用生命骰恢復",
+        message: "是否消耗所有生命骰直至 HP 全滿？",
+        cancelLabel: "取消",
+        confirmLabel: "開始恢復",
+        initialFocus: "primary",
+        dismissOnBackdrop: false,
+        trigger: heal
+      });
+      if (!confirmed) return;
+
+      let nextHp = startingHp;
+      let spent = 0;
+      const records = [];
+      while (nextHp < maximumHp && spent < current) {
+        const result = globalScope.DiceRoller?.rollExpression?.(`1d${hitDieSize}`, {
+          label: `第 ${spent + 1} 顆生命骰`,
+          notify: false
+        });
+        const rolled = Number(result?.values?.[0]);
+        if (!Number.isFinite(rolled)) break;
+        spent += 1;
+        nextHp = Math.min(maximumHp, nextHp + rolled);
+        records.push(`第 ${spent} 顆：D${hitDieSize}=${rolled} | HP ${nextHp} / ${maximumHp}`);
+      }
+
+      if (!spent) {
+        globalScope.AppDialog?.notify?.("無法擲生命骰，請確認擲骰系統已開啟。", { tone: "warning" });
+        return;
+      }
+      hpInput.value = String(nextHp);
+      dispatchCanonicalUpdate(hpInput);
+      setValue(current - spent);
+
+      const content = createElement("div", "hit-die-recovery-content");
+      const log = createElement("ol", "hit-die-recovery-log");
+      records.forEach(record => log.appendChild(createElement("li", "", record)));
+      const outcome = createElement(
+        "p",
+        "hit-die-recovery-result",
+        nextHp >= maximumHp ? "生命值已完全恢復！" : "生命骰用盡，祝好運！"
+      );
+      content.append(log, outcome);
+      await globalScope.AppDialog?.showContent?.({
+        title: "生命骰恢復結果",
+        content,
+        confirmLabel: "完成",
+        trigger: heal
+      });
+      announce(`已消耗 ${spent} 顆生命骰，目前 HP ${nextHp}/${maximumHp}。`);
+    });
     decrease.addEventListener("click", () => setValue(current - 1));
     increase.addEventListener("click", () => setValue(current + 1));
     stepper.append(decrease, output, increase);
