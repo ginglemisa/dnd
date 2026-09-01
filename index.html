@@ -63,7 +63,7 @@
   <script src="tabletop-mode.js?v=20260831-tabletop-shared-notes" defer></script>
   <script src="tabletop-resources.js?v=20260901-hit-die-links" defer></script>
   <script src="tabletop-actions.js?v=20260831-tabletop-weapon-compact" defer></script>
-  <script src="tabletop-spells.js?v=20260829-tabletop-quick-rolls-3" defer></script>
+  <script src="tabletop-spells.js?v=20260901-slot-only-visibility" defer></script>
   <script src="legal-modal.js?v=20260824-onboarding-entry" defer></script>
   <script src="onboarding-tour.js?v=20260825-onboarding-step5-highlights" defer></script>
   <script src="quick-build.js" defer></script>
@@ -4518,21 +4518,12 @@ function hasSpellcastingCapability() {
 }
 
 function updateSpellCastingStatsVisibility() {
-  const canCast = hasSpellcastingCapability();
   const spellTab = document.getElementById("tab-spells");
   const spellTabButton = document.getElementById("spells-tab-button");
 
-  if (spellTab) {
-    spellTab.style.display = canCast ? "" : "none";
-  }
-  if (spellTabButton) {
-    spellTabButton.style.display = canCast ? "" : "none";
-  }
-
-  if (!canCast && spellTab?.classList.contains("active")) {
-    const basicTabButton = document.getElementById("basic-tab-button");
-    showTab("basic", basicTabButton);
-  }
+  // 種族、背景與專長也可能提供法術；法術頁應始終可供所有角色使用。
+  if (spellTab) spellTab.style.display = "";
+  if (spellTabButton) spellTabButton.style.display = "";
 }
 
 function fillSaves() {
@@ -6224,7 +6215,7 @@ document.getElementById("spell-picked-grid-wrap")?.addEventListener("keydown", (
   jumpToPickedSpell(trigger.dataset.areaId || "", trigger.dataset.spellId || "", trigger.dataset.sourceKey || "");
 });
 
-// 依「玩家職業 + 等級 + 種族血統法術」自動限制法術頁顯示到幾環（含法術位列）
+// 法術列表供所有來源使用；只有法術位列依職業與等級調整。
 function splitEquipmentSearchText(text) {
   return String(text || "")
     .split(/\n\s*\n+/)
