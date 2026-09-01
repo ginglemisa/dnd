@@ -261,26 +261,35 @@
       document.getElementById("class")?.value || ""
     )?.Y) || 0;
     if (!hitDieSize) return null;
-    const { row, controls } = createResourceRow("", "點擊生命骰可擲 1 顆；愛心可消耗生命骰恢復 HP。") ;
+    const { row, controls } = createResourceRow("", "手動追蹤目前剩餘顆數。") ;
     row.classList.add("tabletop-resource-row--counter");
     const heading = row.querySelector(".tabletop-resource-row__copy h4");
-    heading?.classList.add("tabletop-hit-die-heading");
-    const rollHitDie = createElement("button", "tabletop-hit-die-roll");
+    const rollHitDie = createElement("button", "tabletop-inline-roll");
     rollHitDie.type = "button";
     rollHitDie.disabled = !globalScope.DiceRoller?.isEnabled?.();
     rollHitDie.setAttribute("aria-label", `擲生命骰 D${hitDieSize}`);
-    const hitDieSizeLabel = createElement("span", "hit-die-size", ` D${hitDieSize}`);
+    const hitDieSizeLabel = createElement("span", "hit-die-size", `D${hitDieSize}`);
     hitDieSizeLabel.setAttribute("aria-hidden", "true");
-    rollHitDie.append(createElement("span", "", "生命骰"), hitDieSizeLabel);
+    rollHitDie.append(hitDieSizeLabel);
     rollHitDie.addEventListener("click", () => {
       globalScope.DiceRoller?.rollExpression?.(`1d${hitDieSize}`, { label: "生命骰" });
     });
-    const heal = createElement("button", "tabletop-hit-die-heal", "💗");
+    const heal = createElement(
+      "button",
+      "tabletop-inline-roll tabletop-inline-roll--plain",
+      "💗"
+    );
     heal.type = "button";
     heal.disabled = !globalScope.DiceRoller?.isEnabled?.();
     heal.setAttribute("aria-label", "消耗生命骰恢復生命值");
     heal.setAttribute("aria-haspopup", "dialog");
-    heading?.replaceChildren(rollHitDie, heal);
+    heading?.replaceChildren(
+      createElement("span", "", "生命骰"),
+      document.createTextNode(" "),
+      rollHitDie,
+      document.createTextNode(" "),
+      heal
+    );
     controls.classList.add("tabletop-resource-stepper");
     const stepper = createElement("div", "tabletop-number-stepper");
 
@@ -358,15 +367,11 @@
       dispatchCanonicalUpdate(hpInput);
       setValue(current - spent);
 
-      const content = createElement("div", "hit-die-recovery-content");
-      const log = createElement("ol", "hit-die-recovery-log");
-      records.forEach(record => log.appendChild(createElement("li", "", record)));
-      const outcome = createElement(
-        "p",
-        "hit-die-recovery-result",
+      const content = createElement("p", "", [
+        ...records,
+        "",
         nextHp >= maximumHp ? "生命值已完全恢復！" : "生命骰用盡，祝好運！"
-      );
-      content.append(log, outcome);
+      ].join("\n"));
       await globalScope.AppDialog?.showContent?.({
         title: "生命骰恢復結果",
         content,

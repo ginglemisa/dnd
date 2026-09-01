@@ -9085,7 +9085,7 @@ html[data-view-mode="tabletop"] #scrollToBottomBtn {
   .tabletop-spell-button:hover,
   .tabletop-compact-button:hover,
   .tabletop-custom-resource button:hover,
-  .tabletop-resource-row button:hover {
+  .tabletop-resource-row button:not(.tabletop-inline-roll):hover {
     border-color: var(--accent);
     background: var(--accent-soft);
     color: var(--accent-strong);
@@ -9461,6 +9461,12 @@ html.app-dialog-open {
   .tabletop-dice-expression:not(:disabled):hover {
     color: var(--accent);
   }
+}
+
+.tabletop-inline-roll--plain:not(:disabled),
+.tabletop-inline-roll--plain:not(:disabled):hover {
+  box-shadow: none;
+  color: inherit;
 }
 
 .tabletop-saving-throw-values {
