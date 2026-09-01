@@ -145,6 +145,72 @@
     wizard: '塑能學派'
   });
 
+  const CLASS_FEATURE_CHOICE_SPECS = Object.freeze({
+    cleric: Object.freeze([
+      Object.freeze({
+        heading: '等級 1：神聖使命',
+        choices: Object.freeze([
+          Object.freeze({ stateKey: 'cleric-guardian', label: '守護者' }),
+          Object.freeze({ stateKey: 'cleric-trickster', label: '魔術使' })
+        ])
+      }),
+      Object.freeze({
+        heading: '等級 7：神佑打擊',
+        choices: Object.freeze([
+          Object.freeze({ stateKey: 'cleric-blessed-strikes-divine-strike', label: '神聖打擊' }),
+          Object.freeze({ stateKey: 'cleric-blessed-strikes-potent-spellcasting', label: '強力施法' })
+        ])
+      })
+    ]),
+    druid: Object.freeze([
+      Object.freeze({
+        heading: '等級 1：原初使命',
+        choices: Object.freeze([
+          Object.freeze({ stateKey: 'druid-shaman', label: '巫祝' }),
+          Object.freeze({ stateKey: 'druid-sentinel', label: '哨衛' })
+        ])
+      }),
+      Object.freeze({
+        heading: '等級 7：元素狂怒',
+        choices: Object.freeze([
+          Object.freeze({ stateKey: 'druid-elemental-fury-potent-spellcasting', label: '強力施法' }),
+          Object.freeze({ stateKey: 'druid-elemental-fury-primal-strike', label: '原初打擊' })
+        ])
+      })
+    ]),
+    paladin: Object.freeze([
+      Object.freeze({
+        heading: '等級 2：戰鬥風格',
+        choices: Object.freeze([
+          Object.freeze({ stateKey: 'paladin-fighting-style', label: '戰鬥風格專長' }),
+          Object.freeze({ stateKey: 'paladin-blessed-warrior', label: '受祝福的勇士' })
+        ])
+      })
+    ]),
+    ranger: Object.freeze([
+      Object.freeze({
+        heading: '等級 2：戰鬥風格',
+        choices: Object.freeze([
+          Object.freeze({ stateKey: 'ranger-fighting-style', label: '戰鬥風格專長' }),
+          Object.freeze({ stateKey: 'ranger-druidic-warrior', label: '德魯伊教戰士' })
+        ])
+      })
+    ]),
+    sorcerer: Object.freeze([
+      Object.freeze({
+        heading: '等級 6：元素親和（龍族）',
+        selectStateKey: 'sorcerer-elemental-affinity-damage-type',
+        labels: Object.freeze({
+          acid: '強酸',
+          cold: '冷凍',
+          fire: '火焰',
+          lightning: '閃電',
+          poison: '毒素'
+        })
+      })
+    ])
+  });
+
   const BACKGROUND_LABELS = Object.freeze({
     acolyte: '侍僧',
     soldier: '士兵',
@@ -966,6 +1032,27 @@
     return output;
   }
 
+  function getSelectedClassFeatureChoiceLabel(spec, state) {
+    if (spec.selectStateKey) {
+      return spec.labels?.[normalizeText(state[spec.selectStateKey])] || '';
+    }
+    return spec.choices?.find((choice) => Boolean(state[choice.stateKey]))?.label || '';
+  }
+
+  function insertSelectedClassFeatureChoices(lines, classKey, state) {
+    const specs = CLASS_FEATURE_CHOICE_SPECS[classKey] || [];
+    if (!specs.length) return lines;
+
+    const choiceByHeading = new Map(specs.map((spec) => [
+      spec.heading,
+      getSelectedClassFeatureChoiceLabel(spec, state)
+    ]));
+    return lines.flatMap((line) => {
+      const label = choiceByHeading.get(line);
+      return label ? [line, `選擇：${label}`] : [line];
+    });
+  }
+
   function removeSubclassTextInsideParentheses(text) {
     return normalizeText(text)
       .replace(/（([^）]*)）/g, (_, inner) => `（${inner.replace(/子職/g, '')}）`)
@@ -1497,7 +1584,11 @@ function isWeaponRowEmpty(payload, slot) {
       .join(', ');
 
     const classFeatureLines = insertClassLanguageLines(
-      extractClassFeatureHeadings(getClassFeaturesMap()[classKey] || '', level),
+      insertSelectedClassFeatureChoices(
+        extractClassFeatureHeadings(getClassFeaturesMap()[classKey] || '', level),
+        classKey,
+        state
+      ),
       classKey,
       state
     );
@@ -1613,6 +1704,9 @@ function isWeaponRowEmpty(payload, slot) {
 
     if (options.characterName) {
       payload.Name1 = normalizeText(options.characterName);
+    }
+    if (options.outputMode === 'compact' && options.englishName) {
+      payload.Name2 = normalizeText(options.englishName);
     }
 
     const gearExtraText = normalizeText(state['gear-extra']);

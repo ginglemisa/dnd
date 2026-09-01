@@ -96,7 +96,7 @@
     }),
     compact: createPdfLayoutSettings({
       minFontSize: 4,
-      fieldMinFontSizes: { equipment1: 9, extra1: 9 },
+      fieldMinFontSizes: { Name1: 9, equipment1: 9, extra1: 9 },
       horizontalPadding: 3,
       verticalPadding: 2,
       lineHeightFactor: 1.2,
@@ -115,6 +115,7 @@
         weaponsProficiency1: 12
       },
       fixedFontSizes: {
+        Name2: 12,
         classFeatures1: 9.2,
         classFeatures2: 9.2,
         specie_features1: 8.8,
@@ -194,6 +195,7 @@
         specie_features1: { dy: 3.5 },
         feats1: { dy: 3.5 },
         Name1: { x: 112.61, y: 524, width: 141.27, height: 28 },
+        Name2: { alignment: 'right' },
         Level1: { x: 18.65, y: 512, width: 33, height: 28 },
         proficiencyBonus1: { x: 18.59, y: 371.5, width: 35, height: 27 },
         weaponsProficiency1: { x: 104.22, y: 71.66, width: 133.41, height: 20 },
@@ -280,7 +282,13 @@
     })
   });
   const DEFAULT_PDF_EXPORT_MODE = 'editable';
-  const MAX_NAME_UNITS = 18;
+  const COMPACT_ENGLISH_NAME_FONT_SIZE = 12;
+  // Verified against the first-page Name1 widget in 5e_char_sheet.pdf:
+  // [112.61348, 528.512085, 245.080856, 561.848206].
+  const EDITABLE_CHARACTER_NAME_FIELD_WIDTH = 245.080856 - 112.61348;
+  // Verified against the first-page Name2 widget in 5e_char_sheet.pdf:
+  // [96.4134674, 514.112122, 245.080948, 530.048279].
+  const COMPACT_ENGLISH_NAME_FIELD_WIDTH = 245.080948 - 96.4134674;
   const PDF_FILENAME_CLASS_LABELS = Object.freeze({
     barbarian: '野蠻人',
     bard: '吟遊詩人',
@@ -297,6 +305,7 @@
   });
   const sourcePdfBytesPromises = new Map();
   const cjkFontBytesPromises = new Map();
+  const validationFontPromises = new Map();
 
   function getUtc8Timestamp(date = new Date()) {
     const utc8Date = new Date(date.getTime() + (8 * 60 * 60 * 1000));
@@ -421,6 +430,74 @@
     const assetPromises = [getSourcePdfBytes(profile.sourcePdfPath)];
     if (profile.fontPath) assetPromises.push(getCjkFontBytes(profile.fontPath));
     await Promise.all(assetPromises);
+  }
+
+  function measureTextWidth(cjkFont, text, fontSize) {
+    if (!text) return 0;
+    if (typeof cjkFont.widthOfTextAtSize === 'function') {
+      return cjkFont.widthOfTextAtSize(text, fontSize);
+    }
+    return cjkFont.layout(text).glyphs.reduce((sum, glyph) => (
+      sum + glyph.advanceWidth
+    ), 0) / cjkFont.unitsPerEm * fontSize;
+  }
+
+  async function getValidationFont(profile) {
+    if (!profile.fontPath) return null;
+    if (!globalScope.fontkit?.create) throw new Error('fontkit 尚未載入');
+    if (!validationFontPromises.has(profile.fontPath)) {
+      const fontPromise = getCjkFontBytes(profile.fontPath)
+        .then((fontBytes) => globalScope.fontkit.create(new Uint8Array(fontBytes)))
+        .catch((error) => {
+          validationFontPromises.delete(profile.fontPath);
+          throw error;
+        });
+      validationFontPromises.set(profile.fontPath, fontPromise);
+    }
+    return validationFontPromises.get(profile.fontPath);
+  }
+
+  function measurePdfCharacterName(cjkFont, value, outputMode) {
+    const text = String(value || '').trim();
+    const profile = getPdfExportProfile({ outputMode });
+    const layoutSettings = getPdfLayoutSettings(profile);
+    const preferredFontSize = layoutSettings.namedFontSizes.Name1;
+    const minimumFontSize = layoutSettings.fieldMinFontSizes.Name1 || layoutSettings.minFontSize;
+    const fieldWidth = layoutSettings.fieldAdjustments.Name1?.width
+      || EDITABLE_CHARACTER_NAME_FIELD_WIDTH;
+    const maxWidth = fieldWidth - layoutSettings.horizontalPadding;
+    const width = measureTextWidth(cjkFont, text, preferredFontSize);
+    const fittedFontSize = !text || width <= maxWidth
+      ? preferredFontSize
+      : Math.floor(preferredFontSize * (maxWidth / width) * 10) / 10;
+    return {
+      fits: fittedFontSize >= minimumFontSize,
+      fontSize: Math.max(minimumFontSize, fittedFontSize),
+      preferredFontSize,
+      minimumFontSize,
+      shrinks: fittedFontSize < preferredFontSize,
+      width,
+      maxWidth
+    };
+  }
+
+  async function validatePdfCharacterName(value, outputMode = DEFAULT_PDF_EXPORT_MODE) {
+    const profile = getPdfExportProfile({ outputMode });
+    if (!profile.fontPath) return null;
+    return measurePdfCharacterName(await getValidationFont(profile), value, outputMode);
+  }
+
+  function measureCompactEnglishName(cjkFont, value) {
+    const text = String(value || '').trim();
+    const maxWidth = COMPACT_ENGLISH_NAME_FIELD_WIDTH
+      - PDF_LAYOUT_SETTINGS.compact.horizontalPadding;
+    const width = measureTextWidth(cjkFont, text, COMPACT_ENGLISH_NAME_FONT_SIZE);
+    return { fits: width <= maxWidth, width, maxWidth };
+  }
+
+  async function validateCompactEnglishName(value) {
+    const profile = PDF_EXPORT_PROFILES.compact;
+    return measureCompactEnglishName(await getValidationFont(profile), value);
   }
 
   function setCheckboxField(form, fieldName, checked) {
@@ -910,6 +987,18 @@
     });
   }
 
+  function markAllTextFieldsDirtyForFlattening(form) {
+    form.getFields().forEach((field) => {
+      if (typeof field?.getText !== 'function' || typeof field?.setText !== 'function') return;
+
+      // Interactive readers can rebuild an incomplete blank /AP, but after
+      // flattening that appearance becomes a page XObject with no form field
+      // left to regenerate it. Reapply the current value so pdf-lib rebuilds
+      // every text appearance before the AcroForm is removed.
+      field.setText(field.getText() || '');
+    });
+  }
+
   async function exportCharacterPdfFromState(state, exportOptions = {}) {
     if (!globalScope.PDFLib || !globalScope.PDFLib.PDFDocument) {
       throw new Error('pdf-lib 尚未載入');
@@ -924,6 +1013,7 @@
     const pdfDoc = await globalScope.PDFLib.PDFDocument.load(sourceBytes);
     const form = pdfDoc.getForm();
     const characterName = (exportOptions.characterName || '').trim();
+    const englishName = (exportOptions.englishName || '').trim();
     const goliathAncestry = exportOptions.goliathAncestry || '';
     const dragonbornAncestry = exportOptions.dragonbornAncestry || '';
     const elfLineage = exportOptions.elfLineage || '';
@@ -932,6 +1022,7 @@
     const includeDefaultEquipment = !!exportOptions.includeDefaultEquipment;
     const payload = globalScope.buildPdfFieldPayload(state, {
       characterName,
+      englishName,
       goliathAncestry,
       dragonbornAncestry,
       elfLineage,
@@ -961,13 +1052,26 @@
       }
 
       const fontEmbedResult = await embedCjkFont(pdfDoc, profile);
+      const characterNameMeasurement = measurePdfCharacterName(
+        fontEmbedResult.font,
+        characterName,
+        exportOptions.outputMode || DEFAULT_PDF_EXPORT_MODE
+      );
+      if (!characterNameMeasurement.fits) {
+        throw new Error(`角色名稱在 ${characterNameMeasurement.minimumFontSize} pt 的可讀下限仍超出 Name1 欄位，請縮短後再試。`);
+      }
       if (profile.layoutId === 'compact') {
+        const englishNameMeasurement = measureCompactEnglishName(fontEmbedResult.font, englishName);
+        if (!englishNameMeasurement.fits) {
+          throw new Error('英文名超出 Name2 欄位在 12 pt 可容納的寬度，請縮短後再試。');
+        }
         // Damage type is rules-significant, so preserve it at the compact
         // attack-row minimum instead of replacing its tail with an ellipsis.
         // Borrow only the required space from the adjacent note widget.
         expandCompactDamageFields(form, fontEmbedResult.font, layoutSettings);
       }
       fitPayloadTextFields(form, payload, fontEmbedResult.font, layoutSettings);
+      if (profile.flattenForm) markAllTextFieldsDirtyForFlattening(form);
       form.updateFieldAppearances(fontEmbedResult.font);
       normalizeProblematicFieldDA(
         globalScope.PDFLib,
@@ -1003,4 +1107,6 @@
 
   globalScope.exportCharacterPdfFromState = exportCharacterPdfFromState;
   globalScope.preloadPdfExportAssets = preloadPdfExportAssets;
+  globalScope.validatePdfCharacterName = validatePdfCharacterName;
+  globalScope.validateCompactEnglishName = validateCompactEnglishName;
 })(window);

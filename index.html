@@ -2350,6 +2350,7 @@ function getSpellAliasToId() { const aliases=new Map();SpellCatalog.getAllSpells
 function highlightSpellNamesInClassFeature(html, options = {}) { const aliases=getSpellAliasToId(),skip=new Set(options.skipClickableNames||[]),names=[...aliases.keys()].sort((a,b)=>b.length-a.length);if(!names.length)return html;const regex=new RegExp('('+names.map(escapeRegExp).join('|')+')','g'),decorate=match=>skip.has(match)?match:'<strong class="spell-highlight spell-highlight-action" role="button" tabindex="0" data-spell-id="'+escapeHtml(aliases.get(match))+'">'+match+'</strong>';return html.split(/(<[^>]+>)/g).map(part=>part.startsWith('<')&&part.endsWith('>')?part:part.replace(regex,decorate)).join('').replace(/<strong>([^<]+)<\/strong>/g,(all,text)=>aliases.has(text)?decorate(text):all); }
 
 const CLASS_FEATURE_TABLE_STATE_KEY = "dndchar_class_feature_table_state_v1";
+const CLASS_CORE_CREATION_INFO_STATE_KEY = "dndchar_class_core_creation_info_state_v1";
 
 function getClassFeatureTableStates() {
   try {
@@ -2375,6 +2376,27 @@ function restoreClassFeatureTableState(className, output) {
     } catch (_error) {
       // 私密瀏覽或儲存空間不可用時，仍保留本次頁面中的收闔操作。
     }
+  });
+}
+
+function restoreClassCoreCreationInfoState(className, output) {
+  const coreCreationInfo = output.querySelector(".class-core-creation-info");
+  if (!coreCreationInfo) return;
+
+  let savedStates = {};
+  try {
+    const parsedStates = JSON.parse(window.dndStorage.getItem(CLASS_CORE_CREATION_INFO_STATE_KEY));
+    if (parsedStates && typeof parsedStates === "object" && !Array.isArray(parsedStates)) {
+      savedStates = parsedStates;
+    }
+  } catch (_error) {
+    savedStates = {};
+  }
+
+  coreCreationInfo.open = savedStates[className] !== false;
+  coreCreationInfo.addEventListener("toggle", () => {
+    savedStates[className] = coreCreationInfo.open;
+    window.dndStorage.setItem(CLASS_CORE_CREATION_INFO_STATE_KEY, JSON.stringify(savedStates));
   });
 }
 
@@ -2442,6 +2464,7 @@ function updateClassFeature() {
   }
 
   restoreClassFeatureTableState(selectedClass, output);
+  restoreClassCoreCreationInfoState(selectedClass, output);
   preservedControlStates.forEach((value, id) => {
     const control = document.getElementById(id);
     if (!control) return;
@@ -7038,6 +7061,12 @@ function setupUtilityMenu() {
     menu.inert = !isOpen;
     toggle.setAttribute("aria-expanded", String(isOpen));
     toggle.setAttribute("aria-label", isOpen ? "關閉工具選單" : "開啟工具選單");
+    if (isOpen) {
+      // 工具選單出現後才在背景預熱 PDF 引擎；一般創角流程不下載任何 PDF 資源。
+      ensurePdfExportReady().catch((error) => {
+        console.warn("PDF 匯出引擎背景載入失敗：", error);
+      });
+    }
     if (!isOpen && restoreFocus) toggle.focus();
   };
 
@@ -7127,6 +7156,7 @@ const APP_STORAGE_KEYS = Object.freeze([
   AUTO_SAVE_KEY,
   ACTIVE_TAB_KEY,
   CLASS_FEATURE_TABLE_STATE_KEY,
+  CLASS_CORE_CREATION_INFO_STATE_KEY,
   "dnd.quickBuildDraft.v1",
   ...LEGACY_LEGAL_DISMISS_KEYS
 ]);
@@ -7906,16 +7936,10 @@ function buildPdfPrecheckMessages() {
 
 
 
-const PDF_EXPORT_MAX_NAME_UNITS = 18;
-
 // 第三種「可編輯表單版(精簡版)」預設關閉。
 // 如要開啟，請把下面兩行交換註解；不需要改其他 PDF 匯出程式。
 const ENABLE_EDITABLE_NO_FONT_PDF_EXPORT = false;
 // const ENABLE_EDITABLE_NO_FONT_PDF_EXPORT = true;
-
-function countPdfNameUnits(text) {
-  return Array.from(text).reduce((sum, ch) => sum + (/[㐀-鿿豈-﫿]/.test(ch) ? 2 : 1), 0);
-}
 
 function showPdfExportModal(state, reminders, exportPdfBtn) {
   return new Promise((resolve) => {
@@ -7942,6 +7966,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
     const steps=["precheck","name","equipment"];
     const result={
       characterName:window.TabletopMode?.getCharacterName?.() || "",
+      englishName:"",
       includeDefaultEquipment:false,
       dragonbornAncestry:(state?.["dragonborn-ancestry"] || "").trim(),
       elfLineage:(state?.["elf-lineage"] || "").trim(),
@@ -7959,21 +7984,26 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
     })();
     if (raceChoice && !result[raceChoice.key]) steps.push("race");
     steps.push("format");
-    let idx=0, busy=false, lastMode=null;
+    let idx=0, busy=false, lastMode=null, formatError='', selectedNameMeasurement=null;
 
     function close(v, restoreFocus=true){ document.removeEventListener('keydown', onKeyDown, true); overlay.remove(); if(restoreFocus)(exportPdfBtn||prevFocus)?.focus?.(); resolve(v); }
     function getFocusable(){ return Array.from(card.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')).filter(el=>!el.disabled); }
     function trapTab(e){ if(e.key!== 'Tab') return; const f=getFocusable(); if(!f.length)return; const first=f[0],last=f[f.length-1]; if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();} else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
     function onKeyDown(e){ if(e.key==='Escape' && !busy){e.preventDefault(); close(null);} trapTab(e);}    
 
-    async function startExport(outputMode){
+    async function startExport(outputMode, nameMeasurement=selectedNameMeasurement){
       busy=true; lastMode=outputMode;
-      render('progress','準備中，正在載入匯出資源…');
+      const nameFitMessage=nameMeasurement?.shrinks
+        ? `角色名稱將縮小至 ${nameMeasurement.fontSize.toFixed(1)} pt，正在載入匯出資源…`
+        : '準備中，正在載入匯出資源…';
+      render('progress',nameFitMessage);
       try {
         await ensurePdfExportReady();
         const exportOptions={...result,outputMode};
         await window.preloadPdfExportAssets?.(exportOptions);
-        render('progress','匯出中，請稍候…');
+        render('progress',nameMeasurement?.shrinks
+          ? `角色名稱將以 ${nameMeasurement.fontSize.toFixed(1)} pt 輸出，製作中…`
+          : '匯出中，請稍候…');
         await window.exportCharacterPdfFromState(state,exportOptions);
         close({ ...exportOptions, skipExport:true });
       } catch (error) {
@@ -7989,6 +8019,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
       const stepTitles={
         precheck:['匯出前檢查','確認角色資料是否還有需要補填的地方。'],
         name:['角色名稱','名稱會寫入角色卡中；不需要時也可以留空。'],
+        englishName:['英文名','英文名會以 12 pt 靠右寫入美觀易讀版的 Name2 欄位。'],
         equipment:quickBuildEquipmentIncluded
           ? ['預設裝備已加入','創角小幫手已將實際選擇寫入「攜帶物品」。']
           : ['加入預設裝備','決定是否把職業與背景提供的起始裝備一併寫入。'],
@@ -8018,7 +8049,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
         const icon=document.createElement('span'); icon.className='pdf-export-status__icon'; icon.setAttribute('aria-hidden','true'); icon.textContent='!';
         const copy=document.createElement('div'); const errorText=document.createElement('p'); errorText.className='pdf-export-flow-modal__error'; errorText.textContent=message; const hint=document.createElement('p'); hint.textContent='請確認網路連線後重試，或先關閉視窗稍後再試。'; copy.append(errorText,hint); status.append(icon,copy); d.appendChild(status);
         const closeBtn=document.createElement('button'); closeBtn.type='button'; closeBtn.className='pdf-export-flow-modal__button pdf-export-flow-modal__button--secondary'; closeBtn.textContent='關閉'; closeBtn.onclick=()=>close(null);
-        const retry=document.createElement('button'); retry.type='button'; retry.className='pdf-export-flow-modal__button pdf-export-flow-modal__button--primary'; retry.textContent='重新製作'; retry.onclick=()=>startExport(lastMode); a.append(closeBtn,retry); retry.focus(); return;
+        const retry=document.createElement('button'); retry.type='button'; retry.className='pdf-export-flow-modal__button pdf-export-flow-modal__button--primary'; retry.textContent='重新製作'; retry.onclick=()=>startExport(lastMode,selectedNameMeasurement); a.append(closeBtn,retry); retry.focus(); return;
       }
 
       if(step==='precheck'){
@@ -8053,13 +8084,10 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
         const label=document.createElement('label'); label.htmlFor='pdf-export-character-name'; label.textContent='角色名稱';
         const i=document.createElement('input'); i.id='pdf-export-character-name'; i.className='pdf-export-name-field__input'; i.placeholder='例如：艾拉・銀葉'; i.value=result.characterName; i.autocomplete='off'; i.spellcheck=false; i.enterKeyHint='next';
         const meta=document.createElement('div'); meta.className='pdf-export-name-field__meta'; meta.id='pdf-export-name-hint';
-        const hint=document.createElement('span'); hint.textContent='最多 18 個英數字元或 9 個中文字';
-        const counter=document.createElement('span'); counter.className='pdf-export-name-field__counter';
-        const err=document.createElement('p'); err.id='pdf-export-name-error'; err.className='pdf-export-flow-modal__error'; err.setAttribute('aria-live','polite');
-        i.setAttribute('aria-describedby','pdf-export-name-hint pdf-export-name-error');
-        const updateCounter=()=>{ const units=countPdfNameUnits(i.value.trim()); counter.textContent=`${units} / ${PDF_EXPORT_MAX_NAME_UNITS}`; counter.classList.toggle('is-over',units>PDF_EXPORT_MAX_NAME_UNITS); if(err.textContent){err.textContent='';i.removeAttribute('aria-invalid');} };
-        updateCounter(); i.addEventListener('input',updateCounter); meta.append(hint,counter); field.append(label,i,meta,err); d.appendChild(field);
-        const submitName=()=>{const v=i.value.trim(); if(countPdfNameUnits(v)>PDF_EXPORT_MAX_NAME_UNITS){err.textContent='名稱過長，請縮短後再繼續。';i.setAttribute('aria-invalid','true');i.focus();return;} result.characterName=v;idx++;render();};
+        const hint=document.createElement('span'); hint.textContent='選擇格式後，會依實際字型、字級與欄位寬度檢查';
+        i.setAttribute('aria-describedby','pdf-export-name-hint');
+        meta.append(hint); field.append(label,i,meta); d.appendChild(field);
+        const submitName=()=>{result.characterName=i.value.trim();idx++;render();};
         i.addEventListener('keydown',(event)=>{if(event.key==='Enter'){event.preventDefault();submitName();}});
         const n=document.createElement('button'); n.type='button'; n.className='pdf-export-flow-modal__button pdf-export-flow-modal__button--primary'; n.textContent='下一步'; n.onclick=submitName; a.append(n); i.focus();
       }
@@ -8085,22 +8113,65 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
         d.appendChild(choices); choices.querySelector('button')?.focus(); a.hidden=true;
       }
       else if(step==='format'){
+        if(formatError){const err=document.createElement('p');err.className='pdf-export-flow-modal__error';err.setAttribute('role','alert');err.textContent=formatError;d.appendChild(err);}
         const wait=document.createElement('div'); wait.className='pdf-export-wait-note';
         const waitIcon=document.createElement('span'); waitIcon.setAttribute('aria-hidden','true'); waitIcon.textContent='⌛';
         const waitCopy=document.createElement('div'); const waitTitle=document.createElement('strong'); waitTitle.textContent='製作 PDF 需要一些時間'; const waitText=document.createElement('span'); waitText.textContent='選擇版本後，請保持頁面開啟並耐心等候下載開始。'; waitCopy.append(waitTitle,waitText); wait.append(waitIcon,waitCopy);
-        const options=document.createElement('div'); options.className='pdf-export-format-options';
-        const createOption=(mode,title,badge,description)=>{
+        const options=document.createElement('div'); options.className='pdf-export-format-options'; options.setAttribute('role','group'); options.setAttribute('aria-label','PDF 格式選項');
+        options.addEventListener('keydown',(event)=>{
+          if(!['ArrowDown','ArrowUp','Home','End'].includes(event.key)) return;
+          const buttons=Array.from(options.querySelectorAll('.pdf-export-format-option:not(:disabled)'));
+          const current=event.target.closest('.pdf-export-format-option');
+          const currentIndex=buttons.indexOf(current);
+          if(currentIndex<0||!buttons.length) return;
+          event.preventDefault();
+          const nextIndex=event.key==='Home'
+            ? 0
+            : event.key==='End'
+              ? buttons.length-1
+              : event.key==='ArrowDown'
+                ? (currentIndex+1)%buttons.length
+                : (currentIndex-1+buttons.length)%buttons.length;
+          buttons[nextIndex].focus();
+        });
+        const createOption=(mode,title,badge,description,emphasis='')=>{
           const button=document.createElement('button'); button.type='button'; button.className='pdf-export-format-option';
           const heading=document.createElement('span'); heading.className='pdf-export-format-option__heading';
           const name=document.createElement('strong'); name.textContent=title;
           const tag=document.createElement('span'); tag.className='pdf-export-format-option__badge'; tag.textContent=badge;
-          const detail=document.createElement('span'); detail.className='pdf-export-format-option__detail'; detail.textContent=description;
-          heading.append(name,tag); button.append(heading,detail); button.onclick=()=>startExport(mode);
+          const detail=document.createElement('span'); detail.className='pdf-export-format-option__detail'; detail.append(description);
+          if(emphasis){const strong=document.createElement('strong');strong.textContent=emphasis;detail.append(strong);}
+          heading.append(name,tag); button.append(heading,detail); button.onclick=async()=>{
+            formatError='';
+            options.querySelectorAll('button').forEach((option)=>{option.disabled=true;});
+            waitTitle.textContent='正在依實際字型檢查角色名稱…';
+            try{
+              await ensurePdfExportReady();
+              if(typeof window.validatePdfCharacterName!=='function') throw new Error('角色名字寬檢查函式不存在');
+              const measurement=await window.validatePdfCharacterName(result.characterName,mode);
+              if(measurement && !measurement.fits){
+                formatError=`角色名稱即使縮小至 ${measurement.minimumFontSize.toFixed(1)} pt 仍超出欄位，請縮短後再輸出。`;
+                render();
+                return;
+              }
+              selectedNameMeasurement=measurement;
+              if(mode!=='compact'){
+                startExport(mode,measurement);
+                return;
+              }
+              if(!steps.includes('englishName')) steps.push('englishName');
+              idx++;
+              render();
+            }catch(error){
+              formatError=`無法檢查角色名稱：${error?.message||'未知錯誤'}`;
+              render();
+            }
+          };
           return button;
         };
         options.append(
           createOption('editable','可編輯表單版','約 5 MB','使用 Noto Sans TC；保留文字輸入區，下載後仍可填寫或修改，檔案較大。'),
-          createOption('compact','精緻易讀版','約 2 MB','使用思源宋體；檔案較小，美觀但文字固定，下載後無法編輯。')
+          createOption('compact','美觀易讀版','輸出約 2 MB','使用思源宋體，文字固定、下載後無法編輯。','首次輸出需額外載入約 26 MB 字型資源。')
         );
         if(ENABLE_EDITABLE_NO_FONT_PDF_EXPORT){
           options.append(
@@ -8114,7 +8185,47 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
         }
         const note=document.createElement('p'); note.className='pdf-export-format-note';
         note.append('想下載「可填寫、檔案也較小」的空白 PDF？請 ',Object.assign(document.createElement('a'),{href:'https://drive.google.com/file/d/1Tu7rAyjfKBl6wagkuRiSNgpQW5LCBP6J/view',target:'_blank',rel:'noopener noreferrer',textContent:'點此下載'}));
-        d.append(wait,options,note); a.hidden=true; options.querySelector('button')?.focus();
+        d.append(wait,options,note);
+        if(formatError){
+          const back=document.createElement('button');back.type='button';back.className='pdf-export-flow-modal__button pdf-export-flow-modal__button--secondary';back.textContent='返回修改名稱';back.onclick=()=>{formatError='';idx=steps.indexOf('name');render();};a.append(back);a.hidden=false;back.focus();
+        }else{
+          a.hidden=true;options.querySelector('button')?.focus();
+        }
+      }
+      else if(step==='englishName'){
+        if(selectedNameMeasurement?.shrinks){const fit=document.createElement('p');fit.className='pdf-export-step-copy';fit.textContent=`角色名稱將由 ${selectedNameMeasurement.preferredFontSize.toFixed(1)} pt 縮小至 ${selectedNameMeasurement.fontSize.toFixed(1)} pt。`;d.appendChild(fit);}
+        const field=document.createElement('div'); field.className='pdf-export-name-field';
+        const label=document.createElement('label'); label.htmlFor='pdf-export-english-name'; label.textContent='英文名';
+        const i=document.createElement('input'); i.id='pdf-export-english-name'; i.className='pdf-export-name-field__input'; i.placeholder='例如：Elaria Silverleaf'; i.value=result.englishName; i.autocomplete='off'; i.spellcheck=false; i.enterKeyHint='done'; i.lang='en';
+        const meta=document.createElement('div'); meta.className='pdf-export-name-field__meta'; meta.id='pdf-export-english-name-hint';
+        const hint=document.createElement('span'); hint.textContent='可留空；依思源宋體 12 pt 的實際字寬檢查';
+        const err=document.createElement('p'); err.id='pdf-export-english-name-error'; err.className='pdf-export-flow-modal__error'; err.setAttribute('aria-live','polite');
+        i.setAttribute('aria-describedby','pdf-export-english-name-hint pdf-export-english-name-error');
+        i.addEventListener('input',()=>{if(err.textContent){err.textContent='';i.removeAttribute('aria-invalid');}});
+        meta.append(hint); field.append(label,i,meta,err); d.appendChild(field);
+        const submitEnglishName=async()=>{
+          const value=i.value.trim();
+          i.disabled=true; n.disabled=true; n.textContent='檢查字寬中…';
+          try{
+            await ensurePdfExportReady();
+            if(typeof window.validateCompactEnglishName!=='function') throw new Error('英文名字寬檢查函式不存在');
+            const measurement=await window.validateCompactEnglishName(value);
+            if(!measurement.fits){
+              err.textContent='英文名超出欄位在 12 pt 可容納的寬度，請縮短。';
+              i.setAttribute('aria-invalid','true');
+              i.disabled=false; n.disabled=false; n.textContent='製作美觀易讀版'; i.focus();
+              return;
+            }
+            result.englishName=value;
+            await startExport('compact');
+          }catch(error){
+            err.textContent=`無法檢查英文名：${error?.message||'未知錯誤'}`;
+            i.setAttribute('aria-invalid','true');
+            i.disabled=false; n.disabled=false; n.textContent='製作美觀易讀版'; i.focus();
+          }
+        };
+        i.addEventListener('keydown',(event)=>{if(event.key==='Enter'){event.preventDefault();submitEnglishName();}});
+        const n=document.createElement('button'); n.type='button'; n.className='pdf-export-flow-modal__button pdf-export-flow-modal__button--primary'; n.textContent='製作美觀易讀版'; n.onclick=submitEnglishName; a.append(n); i.focus();
       }
     }
 
@@ -8122,6 +8233,14 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
     document.body.appendChild(overlay);
     document.addEventListener('keydown', onKeyDown, true);
     render();
+
+    // Modal 先顯示，再於背景準備可編輯版共用的 PDF 範本與 Noto Sans TC。
+    // 美觀易讀版的 Source Han Serif 仍會等到使用者選擇該格式後才下載。
+    ensurePdfExportReady()
+      .then(() => window.preloadPdfExportAssets?.({ outputMode: 'editable' }))
+      .catch((error) => {
+        console.warn('PDF 可編輯版資源背景載入失敗：', error);
+      });
   });
 }
 
