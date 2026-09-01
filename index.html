@@ -45,9 +45,9 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎲%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20260901-spell-primer-scroll-chain">
+  <link rel="stylesheet" href="styles.css?v=20260901-dice-history-tabs">
   <script src="scroll-to-top.js" defer></script>
-  <script src="dice-roller.js?v=20260831-remove-great-weapon-roll" defer></script>
+  <script src="dice-roller.js?v=20260901-persistent-history-tabs" defer></script>
   <script src="monster.js" defer></script>
     <script src="class-features.js?v=20260826-class-options-spacing" defer></script>
   <script src="race.js?v=20260826-lineage-tables" defer></script>
@@ -6616,16 +6616,6 @@ function hasCompletePrimaryCharacterSelections() {
   return ["class", "level", "background", "race"].every(id => Boolean(document.getElementById(id)?.value));
 }
 
-function getMaxSpellRing(cls, lvl) {
-  const level = Number.parseInt(lvl || "0", 10) || 0;
-  const slotCounts = getSpellSlotCounts(cls, level);
-  let maxRing = slotCounts.reduce((highest, count, index) => count > 0 ? index + 1 : highest, 0);
-  const derivedRings = [...getRacialDerivedSpellSpecs(), ...getSubclassDerivedSpellSpecs()]
-    .map(spec => typeof spec.ring === "number" ? spec.ring : 0);
-  getMagicInitiateConfigs().forEach(config => { if (config.level1) derivedRings.push(1); });
-  return Math.max(maxRing, ...derivedRings, 0);
-}
-
 let previousSpellSlotClass = null;
 let previousSpellSlotLevel = null;
 
@@ -6663,14 +6653,6 @@ function updateSpellsByClassLevel() {
   const level = Number.parseInt(lvl || "0", 10) || 0;
   const slotCounts = getSpellSlotCounts(cls, level);
   const hasSlots = slotCounts.some(Boolean);
-  const maxRing = complete ? getMaxSpellRing(cls, lvl) : SPELL_RING_CONFIGS.length;
-
-  SPELL_RING_CONFIGS.forEach(({ ring, areaId }) => {
-    const area = document.getElementById(areaId);
-    const sec = area?.closest(".section");
-    if (!sec) return;
-    sec.style.display = (ring <= maxRing) ? "" : "none";
-  });
 
   const management = document.getElementById("spell-slot-management-wrap");
   const noSlotsMessage = document.getElementById("no-spell-slots-message");
@@ -8795,7 +8777,11 @@ window.addEventListener("DOMContentLoaded", async function() {
         <span class="dice-roller-empty">選取骰子後按 ROLL</span>
       </div>
       <div class="dice-roller-total" aria-label="擲骰加總">
-        <button type="button" id="dice-roller-history-toggle" class="dice-roller-total-toggle" aria-label="顯示擲骰紀錄" aria-pressed="false">總和</button>
+        <div class="dice-roller-view-tabs" role="group" aria-label="顯示模式">
+          <button type="button" id="dice-roller-history-view" class="dice-roller-view-tab" aria-pressed="false">紀錄</button>
+          <span aria-hidden="true">/</span>
+          <button type="button" id="dice-roller-total-view" class="dice-roller-view-tab is-active" aria-pressed="true">總和</button>
+        </div>
         <output id="dice-roller-total-value">—</output>
       </div>
     </div>
