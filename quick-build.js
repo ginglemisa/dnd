@@ -2761,8 +2761,11 @@
     }
     closeWizard();
     const warningText = warnings.length ? `\n\n第一輪未完成／已略過：\n${warnings.map(item => `• ${item}`).join("\n")}` : "\n\n第一輪沒有偵測到略過項目。";
+    const classSkillBonusText = ["druid", "cleric"].includes(draft.choices.class)
+      ? "；巫祝與魔術使的技能額外加值也已納入計算。"
+      : "。";
     const resultText = completed
-      ? "角色卡匯入完成。已計算屬性豁免與技能加值、匯入技能熟練與專精，並開啟武器攻擊自動化；巫祝與魔術使的技能額外加值也已納入計算。"
+      ? `角色卡匯入完成。已計算屬性豁免與技能加值、匯入技能熟練與專精，並開啟武器攻擊自動化${classSkillBonusText}`
       : "角色卡只完成部分匯入，請依下列問題檢查。";
     await window.AppDialog.showMessage({
       title: completed ? "角色卡匯入完成" : "角色卡部分匯入",

@@ -45,7 +45,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎲%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20260901-dice-history-tabs">
+  <link rel="stylesheet" href="styles.css?v=20260901-spell-capability-tabs">
   <script src="scroll-to-top.js" defer></script>
   <script src="dice-roller.js?v=20260901-persistent-history-tabs" defer></script>
   <script src="monster.js" defer></script>
@@ -60,7 +60,7 @@
   <script src="action-panel.js?v=20260831-medical-feat-source" defer></script>
   <script src="character-rules.js?v=20260829-shillelagh-weapons" defer></script>
   <script src="app-dialog.js?v=20260831-number-input" defer></script>
-  <script src="tabletop-mode.js?v=20260831-tabletop-shared-notes" defer></script>
+  <script src="tabletop-mode.js?v=20260901-spell-capability-tabs" defer></script>
   <script src="tabletop-resources.js?v=20260901-hit-die-links" defer></script>
   <script src="tabletop-actions.js?v=20260831-tabletop-weapon-compact" defer></script>
   <script src="tabletop-spells.js?v=20260901-slot-only-visibility" defer></script>
@@ -93,8 +93,8 @@
       <section class="utility-menu__section" aria-labelledby="utility-menu-view-title">
         <h2 id="utility-menu-view-title" class="utility-menu__section-title">顯示與模式</h2>
         <div class="utility-menu__row utility-menu__row--split utility-menu__mode-row">
-          <button type="button" id="theme-toggle" class="utility-menu__button utility-menu__mode-button utility-menu__mode-button--theme" aria-pressed="false">
-            <span id="theme-toggle-icon" class="utility-menu__mode-icon" aria-hidden="true">☀️</span><span id="theme-toggle-label">淺色主題</span>
+          <button type="button" id="theme-toggle" class="utility-menu__button utility-menu__mode-button utility-menu__mode-button--theme" aria-label="換深色主題">
+            <span id="theme-toggle-icon" class="utility-menu__mode-icon" aria-hidden="true">🌙</span><span id="theme-toggle-label">換深色主題</span>
           </button>
           <button type="button" id="tabletop-mode-toggle" class="utility-menu__button utility-menu__mode-button utility-menu__mode-button--tabletop" aria-pressed="false" aria-controls="tabletop-mode" title="開啟桌邊模式總覽；角色資料與角色卡模式完全共用。">
             <span id="tabletop-mode-toggle-label">桌邊模式</span><span id="tabletop-mode-toggle-icon" class="utility-menu__mode-icon" aria-hidden="true">⚔️</span>
@@ -197,7 +197,7 @@
       <p id="tabletop-character-summary">尚未選擇職業 · 等級 — · 尚未選擇種族</p>
     </header>
 
-    <div class="tabletop-primary-tabs" role="tablist" aria-label="桌邊模式主視圖">
+    <div class="tabletop-primary-tabs" role="tablist" aria-label="桌邊模式主視圖" data-visible-tab-count="5">
       <button type="button" id="tabletop-tab-overview" role="tab" aria-selected="true" aria-controls="tabletop-panel-overview" data-tabletop-tab="overview">總覽</button>
       <button type="button" id="tabletop-tab-skills" role="tab" aria-selected="false" aria-controls="tabletop-panel-skills" data-tabletop-tab="skills" tabindex="-1">技能</button>
       <button type="button" id="tabletop-tab-actions" role="tab" aria-selected="false" aria-controls="tabletop-panel-actions" data-tabletop-tab="actions" tabindex="-1">動作</button>
@@ -1090,6 +1090,8 @@
       <input type="text" id="spell-attack-bonus" inputmode="numeric" aria-label="命中加值" maxlength="4" placeholder="">
     </div>
   </div>
+  <div id="spell-overview-management-wrap">
+  <p id="no-spellcasting-capability-message" class="spell-capability-warning" role="status" aria-live="polite" hidden>目前角色沒有施法能力；你仍可在下方瀏覽與選擇法術，作為規則查閱使用。</p>
   <div id="spell-slot-management-wrap">
     <div class="spell-slot-heading">
   <h3>法術位管理</h3>
@@ -1124,6 +1126,7 @@
       <input type="checkbox" class="spell-slot-placeholder" tabindex="-1" aria-hidden="true">
       <input type="checkbox" class="spell-slot-placeholder" tabindex="-1" aria-hidden="true">
     </div>
+  </div>
   </div>
   <div id="spell-picked-grid-wrap" class="spell-picked-grid" hidden aria-label="已選法術摘要">
     <section class="spell-picked-box"><h4 class="spell-picked-heading">戲法</h4><div id="picked-cantrips" class="spell-picked-content">—</div></section>
@@ -4518,12 +4521,17 @@ function hasSpellcastingCapability() {
 }
 
 function updateSpellCastingStatsVisibility() {
+  const canCast = hasSpellcastingCapability();
   const spellTab = document.getElementById("tab-spells");
   const spellTabButton = document.getElementById("spells-tab-button");
+  const capabilityMessage = document.getElementById("no-spellcasting-capability-message");
 
-  // 種族、背景與專長也可能提供法術；法術頁應始終可供所有角色使用。
+  // 一般模式保留法術頁供規則查閱；桌邊模式則依施法能力與專注紀錄決定是否顯示。
   if (spellTab) spellTab.style.display = "";
   if (spellTabButton) spellTabButton.style.display = "";
+  if (capabilityMessage) capabilityMessage.hidden = canCast;
+  updateSpellOverviewManagementVisibility();
+  window.TabletopMode?.syncSpellPanelAvailability?.();
 }
 
 function fillSaves() {
@@ -6083,6 +6091,7 @@ function updatePickedSpellBoxes() {
     setupAutoSave(target);
   });
   if (grid) grid.hidden = visibleBoxCount === 0;
+  updateSpellOverviewManagementVisibility();
   syncDruidNaturalRecoveryControls();
   updateSpellListStatusNote();
   if (typeof populateHandAttacks === "function") populateHandAttacks();
@@ -6607,6 +6616,19 @@ function hasCompletePrimaryCharacterSelections() {
   return ["class", "level", "background", "race"].every(id => Boolean(document.getElementById(id)?.value));
 }
 
+function updateSpellOverviewManagementVisibility() {
+  const overview = document.getElementById("spell-overview-management-wrap");
+  const capabilityMessage = document.getElementById("no-spellcasting-capability-message");
+  const slotManagement = document.getElementById("spell-slot-management-wrap");
+  const pickedSpells = document.getElementById("spell-picked-grid-wrap");
+  if (!overview) return;
+
+  const hasCapabilityMessage = Boolean(capabilityMessage && !capabilityMessage.hidden);
+  const hasVisibleSlots = Boolean(slotManagement && !slotManagement.classList.contains("is-hidden"));
+  const hasPickedSpells = Boolean(pickedSpells && !pickedSpells.hidden);
+  overview.classList.toggle("is-hidden", !hasCapabilityMessage && !hasVisibleSlots && !hasPickedSpells);
+}
+
 let previousSpellSlotClass = null;
 let previousSpellSlotLevel = null;
 
@@ -6641,6 +6663,7 @@ function updateSpellsByClassLevel() {
   const cls = document.getElementById("class")?.value || "";
   const lvl = document.getElementById("level")?.value || "";
   const complete = hasCompletePrimaryCharacterSelections();
+  const canCast = hasSpellcastingCapability();
   const level = Number.parseInt(lvl || "0", 10) || 0;
   const slotCounts = getSpellSlotCounts(cls, level);
   const hasSlots = slotCounts.some(Boolean);
@@ -6648,7 +6671,8 @@ function updateSpellsByClassLevel() {
   const management = document.getElementById("spell-slot-management-wrap");
   const noSlotsMessage = document.getElementById("no-spell-slots-message");
   if (management) management.classList.toggle("is-hidden", !complete || !hasSlots);
-  if (noSlotsMessage) noSlotsMessage.classList.toggle("is-hidden", !complete || hasSlots);
+  if (noSlotsMessage) noSlotsMessage.classList.toggle("is-hidden", !complete || hasSlots || !canCast);
+  updateSpellOverviewManagementVisibility();
   updateSpellSlotRows(slotCounts);
   refreshManualSpellSourceOptions();
 }
@@ -6986,12 +7010,10 @@ function setupUtilityMenu() {
   const applyTheme = (theme, { persist = true } = {}) => {
     const nextTheme = theme === "dark" ? "dark" : "light";
     document.documentElement.dataset.theme = nextTheme;
-    if (themeButton) {
-      themeButton.setAttribute("aria-pressed", String(nextTheme === "dark"));
-      themeButton.setAttribute("aria-label", `目前為${nextTheme === "dark" ? "深色" : "淺色"}主題；切換為${nextTheme === "dark" ? "淺色" : "深色"}主題`);
-    }
-    if (themeLabel) themeLabel.textContent = nextTheme === "dark" ? "深色主題" : "淺色主題";
-    if (themeIcon) themeIcon.textContent = nextTheme === "dark" ? "🌙" : "☀️";
+    const themeActionLabel = nextTheme === "dark" ? "換淺色主題" : "換深色主題";
+    if (themeButton) themeButton.setAttribute("aria-label", themeActionLabel);
+    if (themeLabel) themeLabel.textContent = themeActionLabel;
+    if (themeIcon) themeIcon.textContent = nextTheme === "dark" ? "☀️" : "🌙";
     if (persist) {
       try {
         window.dndStorage.setItem(themeKey, nextTheme);

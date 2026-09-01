@@ -1662,6 +1662,7 @@
       return;
     }
 
+    syncSpellPanelAvailability();
     renderSummary();
     renderKeyStats();
     renderHealth();
@@ -3068,7 +3069,8 @@
       focusTab = false
     } = {}
   ) {
-    const nextPanel = TABLETOP_PANELS.includes(panel) ? panel : "overview";
+    const requestedPanel = TABLETOP_PANELS.includes(panel) ? panel : "overview";
+    const nextPanel = isTabletopPanelAvailable(requestedPanel) ? requestedPanel : "overview";
 
     if (restoreScroll && initialized && currentMode === "tabletop") {
       panelScrollPositions[currentPanel] = window.scrollY;
@@ -3111,7 +3113,7 @@
     const keys = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"];
     if (!keys.includes(event.key)) return;
     event.preventDefault();
-    const tabs = elements.tabletopTabs || [];
+    const tabs = (elements.tabletopTabs || []).filter(tab => !tab.hidden);
     const currentIndex = tabs.indexOf(event.currentTarget);
     let nextIndex = currentIndex;
     if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
@@ -3124,6 +3126,39 @@
     if (event.key === "End") nextIndex = tabs.length - 1;
     const nextTab = tabs[nextIndex];
     if (nextTab) setActivePanel(nextTab.dataset.tabletopTab, { focusTab: true });
+  }
+
+  function isTabletopPanelAvailable(panel) {
+    if (panel !== "spells") return true;
+    const canCast = typeof globalScope.hasSpellcastingCapability === "function"
+      ? globalScope.hasSpellcastingCapability()
+      : true;
+    return canCast || Boolean(getConcentrationSpellId());
+  }
+
+  function syncSpellPanelAvailability() {
+    if (!initialized) return;
+    const spellTab = elements.tabletopTabs?.find(tab => tab.dataset.tabletopTab === "spells");
+    const spellPanel = elements.tabletopPanels?.find(panel => panel.dataset.tabletopPanel === "spells");
+    const available = isTabletopPanelAvailable("spells");
+
+    if (spellTab) spellTab.hidden = !available;
+    if (elements.tabletopPrimaryTabs) {
+      elements.tabletopPrimaryTabs.dataset.visibleTabCount = available ? "5" : "4";
+    }
+
+    if (available) return;
+    if (spellPanel) spellPanel.hidden = true;
+    if (globalScope.dndStorage?.getItem(PANEL_PREFERENCE_KEY) === "spells") {
+      globalScope.dndStorage.setItem(PANEL_PREFERENCE_KEY, "overview");
+    }
+    if (currentPanel === "spells") {
+      setActivePanel("overview", {
+        persist: true,
+        restoreScroll: false,
+        focusTab: currentMode === "tabletop"
+      });
+    }
   }
 
   function applyModeVisibility(
@@ -3346,6 +3381,9 @@
 
         tabletopTabs:
           Array.from(document.querySelectorAll("[data-tabletop-tab]")),
+
+        tabletopPrimaryTabs:
+          document.querySelector(".tabletop-primary-tabs"),
 
         tabletopPanels:
           Array.from(document.querySelectorAll("[data-tabletop-panel]")),
@@ -3799,6 +3837,8 @@
     populateConditionOptions();
     bindEvents();
 
+    syncSpellPanelAvailability();
+
     const savedPanel = globalScope.dndStorage?.getItem(PANEL_PREFERENCE_KEY);
     setActivePanel(savedPanel, {
       persist: false,
@@ -3824,6 +3864,7 @@
     recordDeathSaveRoll,
 
     refresh: render,
+    syncSpellPanelAvailability,
     setMode: applyModeVisibility,
     getMode: () => currentMode,
     setPanel: setActivePanel,
