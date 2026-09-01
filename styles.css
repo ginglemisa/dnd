@@ -4804,7 +4804,8 @@ html:not([data-view-mode="tabletop"]) .free-spell-use-checks {
   max-height: min(22rem, calc(100dvh - 8rem));
   padding: 1rem 1.05rem 1.05rem;
   overflow-y: auto;
-  overscroll-behavior: contain;
+  /* Let wheel and touch gestures continue scrolling the page at either edge. */
+  overscroll-behavior-y: auto;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
   background: var(--surface-strong);
