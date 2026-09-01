@@ -359,13 +359,11 @@
     const emptyMessage = getEmptyMessage(entries);
     const concentrationId = globalScope.TabletopMode?.getConcentrationSpellId?.() || "";
     elements.empty.hidden = !emptyMessage;
-    elements.content.hidden = Boolean(emptyMessage);
+    elements.content.hidden = false;
     if (emptyMessage) renderEmptyState(emptyMessage, concentrationId);
-    else {
-      renderCastingSummary();
-      renderSpellSlots();
-      renderSelectedSpells(entries);
-    }
+    renderCastingSummary();
+    renderSpellSlots();
+    renderSelectedSpells(entries);
     renderConcentrationSummary();
   }
 
