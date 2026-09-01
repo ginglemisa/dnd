@@ -1,10 +1,11 @@
 (function initDiceRoller() {
   const DICE_SIDES = Object.freeze([100, 20, 12, 10, 8, 6, 4]);
   const STORAGE_KEY = "dnd.diceSystemEnabled.v1";
+  const HISTORY_STORAGE_KEY = "dnd.diceRollHistory.v1";
   const ROLL_ANIMATION_MS = 1800;
   const REDUCED_MOTION_ROLL_MS = 100;
   const LONG_PRESS_MS = 1200;
-  const HISTORY_LIMIT = 20;
+  const HISTORY_LIMIT = 66;
   const DIE_EXPRESSION_SOURCE = String.raw`\d+\s*d\s*(?:100|20|12|10|8|6|4)`;
   const EXPRESSION_PATTERN = new RegExp(
     `${DIE_EXPRESSION_SOURCE}(?:\\s*[+-]\\s*(?:${DIE_EXPRESSION_SOURCE}|\\d+))*`,
@@ -19,12 +20,13 @@
     const closeButton = document.getElementById("dice-roller-close");
     const stage = document.getElementById("dice-roller-stage");
     const totalOutput = document.getElementById("dice-roller-total-value");
-    const historyButton = document.getElementById("dice-roller-history-toggle");
+    const historyButton = document.getElementById("dice-roller-history-view");
+    const totalButton = document.getElementById("dice-roller-total-view");
     const rollButton = document.getElementById("dice-roller-roll");
     const clearButton = document.getElementById("dice-roller-clear");
     const dieButtons = Array.from(document.querySelectorAll(".dice-roller-die[data-die]"));
 
-    if (!toggle || !fab || !modal || !card || !closeButton || !stage || !totalOutput || !historyButton || !rollButton || !clearButton || dieButtons.length !== DICE_SIDES.length) return;
+    if (!toggle || !fab || !modal || !card || !closeButton || !stage || !totalOutput || !historyButton || !totalButton || !rollButton || !clearButton || dieButtons.length !== DICE_SIDES.length) return;
 
     const counts = new Map(DICE_SIDES.map(sides => [sides, 0]));
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -36,7 +38,17 @@
     let rollSequence = 0;
     let currentResults = [];
     let currentView = "results";
-    const historyEntries = [];
+    const loadHistory = () => {
+      try {
+        const stored = JSON.parse(window.dndStorage?.getItem(HISTORY_STORAGE_KEY) || "[]");
+        return Array.isArray(stored)
+          ? stored.filter(entry => typeof entry === "string").slice(0, HISTORY_LIMIT)
+          : [];
+      } catch (_error) {
+        return [];
+      }
+    };
+    const historyEntries = loadHistory();
     let backgroundInertStates = new Map();
     let previousBodyOverflow = "";
     let previousBodyPaddingRight = "";
@@ -47,14 +59,14 @@
     const updateHistoryButton = () => {
       const showingHistory = currentView === "history";
       const recordCount = historyEntries.length;
-      const label = showingHistory
-        ? "返回目前擲骰結果"
-        : `顯示擲骰紀錄${recordCount ? `，共 ${recordCount} 筆` : ""}`;
-      historyButton.textContent = showingHistory ? "紀錄" : "總和";
+      historyButton.classList.toggle("is-active", showingHistory);
       historyButton.setAttribute("aria-pressed", String(showingHistory));
-      historyButton.setAttribute("aria-label", label);
-      historyButton.title = label;
+      historyButton.setAttribute("aria-label", `顯示擲骰紀錄${recordCount ? `，共 ${recordCount} 筆` : ""}`);
+      totalButton.classList.toggle("is-active", !showingHistory);
+      totalButton.setAttribute("aria-pressed", String(!showingHistory));
+      totalButton.setAttribute("aria-label", "顯示目前擲骰總和");
       historyButton.disabled = isRolling;
+      totalButton.disabled = isRolling;
     };
 
     const getFocusable = () => Array.from(card.querySelectorAll(
@@ -177,6 +189,7 @@
       const rollLabel = String(label || "").trim();
       historyEntries.unshift(`${rollLabel ? `${rollLabel}：` : ""}${diceExpression}=${total}`);
       if (historyEntries.length > HISTORY_LIMIT) historyEntries.length = HISTORY_LIMIT;
+      window.dndStorage?.setItem(HISTORY_STORAGE_KEY, JSON.stringify(historyEntries));
       updateHistoryButton();
     };
 
@@ -554,10 +567,8 @@
     toggle.addEventListener("change", () => setEnabled(toggle.checked));
     fab.addEventListener("click", openModal);
     closeButton.addEventListener("click", closeModal);
-    historyButton.addEventListener("click", () => {
-      if (currentView === "history") showCurrentResult();
-      else renderHistory();
-    });
+    historyButton.addEventListener("click", renderHistory);
+    totalButton.addEventListener("click", showCurrentResult);
     rollButton.addEventListener("click", roll);
     clearButton.addEventListener("click", clearAll);
     modal.addEventListener("click", event => {
