@@ -4518,21 +4518,12 @@ function hasSpellcastingCapability() {
 }
 
 function updateSpellCastingStatsVisibility() {
-  const canCast = hasSpellcastingCapability();
   const spellTab = document.getElementById("tab-spells");
   const spellTabButton = document.getElementById("spells-tab-button");
 
-  if (spellTab) {
-    spellTab.style.display = canCast ? "" : "none";
-  }
-  if (spellTabButton) {
-    spellTabButton.style.display = canCast ? "" : "none";
-  }
-
-  if (!canCast && spellTab?.classList.contains("active")) {
-    const basicTabButton = document.getElementById("basic-tab-button");
-    showTab("basic", basicTabButton);
-  }
+  // 種族、背景與專長也可能提供法術；法術頁應始終可供所有角色使用。
+  if (spellTab) spellTab.style.display = "";
+  if (spellTabButton) spellTabButton.style.display = "";
 }
 
 function fillSaves() {
@@ -6224,7 +6215,7 @@ document.getElementById("spell-picked-grid-wrap")?.addEventListener("keydown", (
   jumpToPickedSpell(trigger.dataset.areaId || "", trigger.dataset.spellId || "", trigger.dataset.sourceKey || "");
 });
 
-// 依「玩家職業 + 等級 + 種族血統法術」自動限制法術頁顯示到幾環（含法術位列）
+// 法術列表供所有來源使用；只有法術位列依職業與等級調整。
 function splitEquipmentSearchText(text) {
   return String(text || "")
     .split(/\n\s*\n+/)
