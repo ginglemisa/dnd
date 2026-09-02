@@ -45,7 +45,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎲%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20260901-spell-capability-tabs">
+  <link rel="stylesheet" href="styles.css?v=20260902-concentration-reminders">
   <script src="scroll-to-top.js" defer></script>
   <script src="dice-roller.js?v=20260901-persistent-history-tabs" defer></script>
   <script src="monster.js" defer></script>
@@ -57,13 +57,13 @@
   <script src="equipment-notes.js?v=20260813-weapon-rule-popups-2" defer></script>
   <script src="spell-list.js?v=20260828-concentration" defer></script>
   <script src="condition.js" defer></script>
-  <script src="action-panel.js?v=20260831-medical-feat-source" defer></script>
-  <script src="character-rules.js?v=20260829-shillelagh-weapons" defer></script>
+  <script src="action-panel.js?v=20260902-tabletop-spell-dialog-actions" defer></script>
+  <script src="character-rules.js?v=20260902-class-resources" defer></script>
   <script src="app-dialog.js?v=20260831-number-input" defer></script>
-  <script src="tabletop-mode.js?v=20260901-spell-capability-tabs" defer></script>
+  <script src="tabletop-mode.js?v=20260902-concentration-reminders" defer></script>
   <script src="tabletop-resources.js?v=20260901-hit-die-links" defer></script>
-  <script src="tabletop-actions.js?v=20260831-tabletop-weapon-compact" defer></script>
-  <script src="tabletop-spells.js?v=20260901-slot-only-visibility" defer></script>
+  <script src="tabletop-actions.js?v=20260902-tabletop-spell-dialog-actions" defer></script>
+  <script src="tabletop-spells.js?v=20260902-concentration-reminders" defer></script>
   <script src="legal-modal.js?v=20260824-onboarding-entry" defer></script>
   <script src="onboarding-tour.js?v=20260825-onboarding-step5-highlights" defer></script>
   <script src="quick-build.js" defer></script>
@@ -220,16 +220,7 @@
       <div id="tabletop-overview-rule-summary" class="tabletop-defense-summary__list"></div>
     </section>
 
-    <section id="tabletop-concentration" class="tabletop-concentration" aria-labelledby="tabletop-concentration-title" hidden>
-      <div>
-        <span class="tabletop-eyebrow">目前專注</span>
-        <button type="button" id="tabletop-concentration-detail" class="tabletop-concentration__detail" aria-haspopup="dialog">
-          <span id="tabletop-concentration-title">專注：—</span>
-        </button>
-        <p id="tabletop-concentration-note"></p>
-      </div>
-      <button type="button" id="tabletop-concentration-stop" class="tabletop-concentration__stop">停止專注</button>
-    </section>
+    <div id="tabletop-concentration-overview" class="tabletop-concentration-list tabletop-concentration-list--overview" aria-live="polite" hidden></div>
 
     <section class="tabletop-section tabletop-health" aria-labelledby="tabletop-health-title">
       <div class="tabletop-section-heading">
@@ -374,6 +365,7 @@
         <span class="tabletop-eyebrow">施法查閱</span>
         <h2>法術</h2>
       </header>
+      <div id="tabletop-concentration-spells" class="tabletop-concentration-list tabletop-concentration-list--spells" aria-live="polite" hidden></div>
       <div id="tabletop-spells-empty" class="tabletop-empty-state" hidden></div>
       <div id="tabletop-spells-content">
         <section class="tabletop-section" aria-labelledby="tabletop-casting-summary-title">
@@ -1764,10 +1756,18 @@ const ADVANCED_CLASS_FEATURE_CHOICE_GROUPS = Object.freeze([
   Object.freeze(["ranger-defensive-tactics-escape-the-horde", "ranger-defensive-tactics-multiattack-defense"])
 ]);
 const ADVANCED_CLASS_FEATURE_AVAILABILITY = Object.freeze({
+  "cleric-guardian": Object.freeze({ className: "cleric", minimumLevel: 1 }),
+  "cleric-trickster": Object.freeze({ className: "cleric", minimumLevel: 1 }),
   "cleric-blessed-strikes-divine-strike": Object.freeze({ className: "cleric", minimumLevel: 7 }),
   "cleric-blessed-strikes-potent-spellcasting": Object.freeze({ className: "cleric", minimumLevel: 7 }),
+  "druid-shaman": Object.freeze({ className: "druid", minimumLevel: 1 }),
+  "druid-sentinel": Object.freeze({ className: "druid", minimumLevel: 1 }),
   "druid-elemental-fury-primal-strike": Object.freeze({ className: "druid", minimumLevel: 7 }),
   "druid-elemental-fury-potent-spellcasting": Object.freeze({ className: "druid", minimumLevel: 7 }),
+  "paladin-fighting-style": Object.freeze({ className: "paladin", minimumLevel: 2 }),
+  "paladin-blessed-warrior": Object.freeze({ className: "paladin", minimumLevel: 2 }),
+  "ranger-fighting-style": Object.freeze({ className: "ranger", minimumLevel: 2 }),
+  "ranger-druidic-warrior": Object.freeze({ className: "ranger", minimumLevel: 2 }),
   "ranger-defensive-tactics-escape-the-horde": Object.freeze({ className: "ranger", minimumLevel: 7 }),
   "ranger-defensive-tactics-multiattack-defense": Object.freeze({ className: "ranger", minimumLevel: 7 }),
   "sorcerer-elemental-affinity-damage-type": Object.freeze({ className: "sorcerer", minimumLevel: 6 })
@@ -2054,8 +2054,11 @@ function getWarlockInvocationSelectionLimit() {
 
 function isWarlockInvocationAvailable(invocation) {
   if (!invocation) return false;
-  const level = Number.parseInt(document.getElementById("level")?.value || "1", 10) || 1;
-  return !invocation.minWarlockLevel || level >= invocation.minWarlockLevel;
+  const classValue = document.getElementById("class")?.value || "";
+  const level = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
+  return classValue === "warlock"
+    && level >= 1
+    && (!invocation.minWarlockLevel || level >= invocation.minWarlockLevel);
 }
 
 function syncWarlockInvocationAvailability() {
@@ -2097,6 +2100,16 @@ function enforceCheckboxSelectionLimit(inputs, limit, changedInput, alertMessage
 function syncMetamagicSelectionLimit() {
   const inputs = Array.from(document.querySelectorAll("#metamagicOptions input[data-metamagic-name]"));
   if (!inputs.length) return true;
+  const classValue = document.getElementById("class")?.value || "";
+  const level = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
+  const available = classValue === "sorcerer" && level >= 2;
+  inputs.forEach(input => {
+    input.disabled = !available;
+    input.setAttribute("aria-disabled", String(!available));
+    input.closest(".feature-choice-card")?.classList.toggle("is-unavailable", !available);
+    if (!available) input.checked = false;
+  });
+  if (!available) return true;
   return enforceCheckboxSelectionLimit(inputs, getMetamagicSelectionLimit(), null, "超魔法只能勾選兩個喔！", false);
 }
 
@@ -7344,6 +7357,7 @@ const SHARE_TABLETOP_STATE_KEYS = new Set([
   "activeConditions",
   "exhaustionLevel",
   "concentrationSpellId",
+  "endedConcentrations",
   "builtInResourceUsage",
   "customResources"
 ]);
@@ -8082,7 +8096,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
       else if(step==='name'){
         const field=document.createElement('div'); field.className='pdf-export-name-field';
         const label=document.createElement('label'); label.htmlFor='pdf-export-character-name'; label.textContent='角色名稱';
-        const i=document.createElement('input'); i.id='pdf-export-character-name'; i.className='pdf-export-name-field__input'; i.placeholder='例如：艾拉・銀葉'; i.value=result.characterName; i.autocomplete='off'; i.spellcheck=false; i.enterKeyHint='next';
+        const i=document.createElement('input'); i.id='pdf-export-character-name'; i.className='pdf-export-name-field__input'; i.placeholder='例如：艾尼克斯・薩卡蘭姆'; i.value=result.characterName; i.autocomplete='off'; i.spellcheck=false; i.enterKeyHint='next';
         const meta=document.createElement('div'); meta.className='pdf-export-name-field__meta'; meta.id='pdf-export-name-hint';
         const hint=document.createElement('span'); hint.textContent='選擇格式後，會依實際字型、字級與欄位寬度檢查';
         i.setAttribute('aria-describedby','pdf-export-name-hint');
@@ -8196,7 +8210,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
         if(selectedNameMeasurement?.shrinks){const fit=document.createElement('p');fit.className='pdf-export-step-copy';fit.textContent=`角色名稱將由 ${selectedNameMeasurement.preferredFontSize.toFixed(1)} pt 縮小至 ${selectedNameMeasurement.fontSize.toFixed(1)} pt。`;d.appendChild(fit);}
         const field=document.createElement('div'); field.className='pdf-export-name-field';
         const label=document.createElement('label'); label.htmlFor='pdf-export-english-name'; label.textContent='英文名';
-        const i=document.createElement('input'); i.id='pdf-export-english-name'; i.className='pdf-export-name-field__input'; i.placeholder='例如：Elaria Silverleaf'; i.value=result.englishName; i.autocomplete='off'; i.spellcheck=false; i.enterKeyHint='done'; i.lang='en';
+        const i=document.createElement('input'); i.id='pdf-export-english-name'; i.className='pdf-export-name-field__input'; i.placeholder='例如：Enix Zakarum'; i.value=result.englishName; i.autocomplete='off'; i.spellcheck=false; i.enterKeyHint='done'; i.lang='en';
         const meta=document.createElement('div'); meta.className='pdf-export-name-field__meta'; meta.id='pdf-export-english-name-hint';
         const hint=document.createElement('span'); hint.textContent='可留空；依思源宋體 12 pt 的實際字寬檢查';
         const err=document.createElement('p'); err.id='pdf-export-english-name-error'; err.className='pdf-export-flow-modal__error'; err.setAttribute('aria-live','polite');

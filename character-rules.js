@@ -188,6 +188,22 @@
     }
     if (className === "druid" && level >= 2) {
       addUses("druid-wild-shape", "荒野形態", level >= 6 ? 3 : 2, "短休回 1 次，長休全回。");
+      if (level >= 5) {
+        addUses(
+          "druid-wild-resurgence-spell-slot",
+          "野性復甦（法術位）",
+          1,
+          "無需動作；消耗 1 次荒野形態，恢復 1 個 1 環法術位。每次長休前只能使用 1 次；完成長休後恢復。"
+        );
+      }
+      if (level >= 6) {
+        addUses(
+          "druid-natural-recovery-spell-slots",
+          "自然恢復（法術位）",
+          1,
+          `完成短休時，可恢復環階總和 ${Math.ceil(level / 2)} 的已消耗法術位（德魯伊等級一半，進位；每個法術位須低於 6 環）。每次長休前只能使用 1 次；完成長休後恢復。`
+        );
+      }
     }
     if (className === "fighter") {
       addUses("fighter-second-wind", "回氣", level >= 4 ? 3 : 2, "短休回 1 次，長休全回。");
@@ -205,9 +221,34 @@
     if (className === "sorcerer") {
       addUses("sorcerer-innate-sorcery", "天生術法", 2, "長休後全回復。");
       if (level >= 2) addPoints("sorcerer-sorcery-points", "術法點", level, "長休後全回復。");
+      if (level >= 5) {
+        addUses(
+          "sorcerer-sorcerous-restoration",
+          "術法復甦",
+          1,
+          `完成短休時，恢復最多 ${Math.floor(level / 2)} 點已消耗的術法點（術士等級一半，捨去）。每次長休前只能使用 1 次；完成長休後恢復。`
+        );
+      }
     }
-    if (className === "warlock" && level >= 6) {
-      addUses("warlock-dark-ones-own-luck", "黑暗強運", charismaModifier, "長休後全回復。");
+    if (className === "warlock") {
+      if (level >= 2) {
+        const pactSlotMaximum = Math.max(...getSpellSlotCounts("warlock", level));
+        addUses(
+          "warlock-magical-cunning",
+          "秘法回流",
+          1,
+          `進行 1 分鐘儀式；恢復最多 ${Math.ceil(pactSlotMaximum / 2)} 個已消耗的契約魔法法術位（法術位最大值一半，進位）。每次長休前只能使用 1 次；完成長休後恢復。`
+        );
+      }
+      if (level >= 6) addUses("warlock-dark-ones-own-luck", "黑暗強運", charismaModifier, "長休後全回復。");
+    }
+    if (className === "wizard") {
+      addUses(
+        "wizard-arcane-recovery",
+        "奧術回想",
+        1,
+        `完成短休時，恢復環階總和最多 ${Math.ceil(level / 2)} 的已消耗法術位（法師等級一半，進位；單一法術位最高 5 環）。每次長休前只能使用 1 次；完成長休後恢復。`
+      );
     }
     return resources.map(resource => Object.freeze(resource));
   }

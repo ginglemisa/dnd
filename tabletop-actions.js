@@ -4,6 +4,7 @@
   const MODE_PREFERENCE_KEY = "dnd.tabletopActionMode.v1";
   const MODES = Object.freeze(["basic", "action", "bonus", "reaction", "movement"]);
   const selectedOptionKeys = new Map(MODES.map(mode => [mode, ""]));
+  const spellGroupExpanded = new Map(["action", "bonus", "reaction"].map(mode => [mode, false]));
   const elements = {};
   let currentMode = "basic";
   let scheduledRender = 0;
@@ -278,20 +279,71 @@
     const optionList = createElement("div", "tabletop-action-options");
     optionList.setAttribute("aria-label", "可用選項");
     optionList.dataset.actionMode = mode;
-    options.forEach(option => {
+    const spellSourceLabel = api.getSourceLabels?.().spell || "法術";
+    const spellOptions = options.filter(option => option.source === spellSourceLabel);
+    const regularOptions = options.filter(option => option.source !== spellSourceLabel);
+
+    function createOptionButton(option) {
+      const opensSpellDialog = option.source === spellSourceLabel && Boolean(option.spellId);
       const button = createElement("button", "tabletop-action-option");
       button.type = "button";
       button.dataset.actionOptionKey = option.key;
-      button.setAttribute("aria-pressed", String(option.key === selectedKey));
-      if (option.key === selectedKey) button.classList.add("is-selected");
+      if (opensSpellDialog) {
+        button.setAttribute("aria-haspopup", "dialog");
+      } else {
+        button.setAttribute("aria-pressed", String(option.key === selectedKey));
+        if (option.key === selectedKey) button.classList.add("is-selected");
+      }
       button.appendChild(createElement("span", "", api.getButtonLabel(option)));
-      if (option.source) button.appendChild(createElement("span", "tabletop-source-tag", option.source));
+      const buttonTag = option.buttonTag || option.source;
+      if (buttonTag) button.appendChild(createElement("span", "tabletop-source-tag", buttonTag));
       button.addEventListener("click", () => {
+        if (opensSpellDialog) {
+          selectedOptionKeys.set(mode, "");
+          optionList.querySelectorAll(".tabletop-action-option.is-selected").forEach(selectedButton => {
+            selectedButton.classList.remove("is-selected");
+            selectedButton.setAttribute("aria-pressed", "false");
+          });
+          layout.querySelector(".tabletop-action-description")
+            ?.replaceWith(createActionDescription(null, meta.prompt));
+          globalScope.TabletopSpells?.showSpellDetail(option.spellId, button);
+          return;
+        }
         selectedOptionKeys.set(mode, option.key);
         renderActionPanel(mode);
       });
-      optionList.appendChild(button);
-    });
+      return button;
+    }
+
+    regularOptions.forEach(option => optionList.appendChild(createOptionButton(option)));
+
+    if (spellOptions.length && spellGroupExpanded.has(mode)) {
+      const expanded = spellGroupExpanded.get(mode) === true;
+      const groupId = `tabletop-action-spells-${mode}`;
+      const toggle = createElement("button", "tabletop-action-spell-toggle");
+      toggle.type = "button";
+      toggle.setAttribute("aria-expanded", String(expanded));
+      toggle.setAttribute("aria-controls", groupId);
+      toggle.setAttribute(
+        "aria-label",
+        `法術，共 ${spellOptions.length} 個，目前${expanded ? "展開" : "收合"}，點擊${expanded ? "收合" : "展開"}`
+      );
+      toggle.append(
+        createElement("strong", "", "法術"),
+        createElement("span", "tabletop-action-spell-toggle__hint", `${expanded ? "點擊收合" : "點擊展開"} · ${spellOptions.length} 個`),
+        createElement("span", "tabletop-action-spell-toggle__icon", "⌄")
+      );
+      toggle.addEventListener("click", () => {
+        spellGroupExpanded.set(mode, !expanded);
+        renderActionPanel(mode);
+      });
+
+      const spellGroup = createElement("div", "tabletop-action-spell-options");
+      spellGroup.id = groupId;
+      spellGroup.hidden = !expanded;
+      spellOptions.forEach(option => spellGroup.appendChild(createOptionButton(option)));
+      optionList.append(toggle, spellGroup);
+    }
     layout.append(optionList, createActionDescription(selected, meta.prompt));
     panel.replaceChildren(context, layout);
   }

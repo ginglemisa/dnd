@@ -205,7 +205,8 @@
   const jumpConfig = [
     { rowId: "spellslot1-row", level: 1, label: "一環" },
     { rowId: "spellslot2-row", level: 2, label: "二環" },
-    { rowId: "spellslot3-row", level: 3, label: "三環" }
+    { rowId: "spellslot3-row", level: 3, label: "三環" },
+    { rowId: "spellslot4-row", level: 4, label: "四環" }
   ];
 
   const smoothScrollToElement = (element) => {

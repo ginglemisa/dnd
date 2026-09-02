@@ -5,6 +5,7 @@
   const CUSTOM_RESOURCE_LIMIT = 50;
   const CUSTOM_RESOURCE_MAX = 999;
   const BUILT_IN_RESOURCE_MAX = 999;
+  const ENDED_CONCENTRATION_LIMIT = 12;
   const HEROIC_SACRIFICE_LABEL = "您已英勇犧牲";
   const DEFAULT_COMBAT_STATE = Object.freeze({
     characterName: "",
@@ -16,6 +17,7 @@
     activeConditions: Object.freeze([]),
     exhaustionLevel: 0,
     concentrationSpellId: "",
+    endedConcentrations: Object.freeze([]),
     builtInResourceUsage: Object.freeze({}),
     customResources: Object.freeze([])
   });
@@ -39,6 +41,38 @@
       hash = Math.imul(hash, 16777619);
     }
     return (hash >>> 0).toString(36);
+  }
+
+  function normalizeEndedConcentrations(value) {
+    if (!Array.isArray(value)) return [];
+    const usedIds = new Set();
+
+    return value.slice(-ENDED_CONCENTRATION_LIMIT).flatMap((entry, index) => {
+      if (!entry || typeof entry !== "object" || Array.isArray(entry)) return [];
+      const spellId = normalizeConcentrationSpellId(entry.spellId);
+      const replacementSpellId = normalizeConcentrationSpellId(entry.replacementSpellId);
+      if (!spellId || !replacementSpellId) return [];
+
+      const rawId = typeof entry.id === "string" ? entry.id.trim().slice(0, 100) : "";
+      const validId = /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,99}$/.test(rawId);
+      const fingerprint = `${spellId}|${replacementSpellId}|${index}`;
+      const baseId = validId ? rawId : `concentration-${stableKeyHash(fingerprint)}`;
+      let id = baseId;
+      let duplicateIndex = 2;
+      while (usedIds.has(id)) {
+        id = `${baseId.slice(0, 94)}-${duplicateIndex}`;
+        duplicateIndex += 1;
+      }
+      usedIds.add(id);
+
+      return [{ id, spellId, replacementSpellId }];
+    });
+  }
+
+  function createConcentrationNoticeId(spellId, replacementSpellId) {
+    const randomId = globalScope.crypto?.randomUUID?.();
+    if (randomId) return `concentration-${randomId}`;
+    return `concentration-${Date.now().toString(36)}-${stableKeyHash(`${spellId}|${replacementSpellId}|${Math.random()}`)}`;
   }
 
   function normalizeConcentrationSpellId(value) {
@@ -219,6 +253,7 @@
     activeConditions: [],
     exhaustionLevel: DEFAULT_COMBAT_STATE.exhaustionLevel,
     concentrationSpellId: DEFAULT_COMBAT_STATE.concentrationSpellId,
+    endedConcentrations: [],
     builtInResourceUsage: {},
     customResources: []
   };
@@ -357,6 +392,7 @@
       activeConditions,
       exhaustionLevel,
       concentrationSpellId: normalizeConcentrationSpellId(data.concentrationSpellId),
+      endedConcentrations: normalizeEndedConcentrations(data.endedConcentrations),
       builtInResourceUsage: normalizeBuiltInResourceUsage(data.builtInResourceUsage),
       customResources: normalizeCustomResources(data.customResources)
     };
@@ -381,6 +417,8 @@
         combatState.exhaustionLevel,
       concentrationSpellId:
         combatState.concentrationSpellId,
+      endedConcentrations:
+        combatState.endedConcentrations.map(entry => ({ ...entry })),
       builtInResourceUsage: {
         ...combatState.builtInResourceUsage
       },
@@ -391,6 +429,10 @@
 
   function getConcentrationSpellId() {
     return combatState.concentrationSpellId;
+  }
+
+  function getEndedConcentrations() {
+    return combatState.endedConcentrations.map(entry => Object.freeze({ ...entry }));
   }
 
   function getCharacterName() {
@@ -463,6 +505,17 @@
   function setConcentrationSpellId(spellId, message = "") {
     const normalizedId = normalizeConcentrationSpellId(spellId);
     if (combatState.concentrationSpellId === normalizedId) return false;
+    const previousId = combatState.concentrationSpellId;
+    if (previousId && normalizedId) {
+      combatState.endedConcentrations = [
+        ...combatState.endedConcentrations,
+        {
+          id: createConcentrationNoticeId(previousId, normalizedId),
+          spellId: previousId,
+          replacementSpellId: normalizedId
+        }
+      ].slice(-ENDED_CONCENTRATION_LIMIT);
+    }
     combatState.concentrationSpellId = normalizedId;
     markStateChanged(message);
     return true;
@@ -470,6 +523,15 @@
 
   function stopConcentration(message = "已停止專注。") {
     return setConcentrationSpellId("", message);
+  }
+
+  function dismissEndedConcentration(noticeId, message = "已關閉專注提醒。") {
+    const normalizedId = typeof noticeId === "string" ? noticeId.trim() : "";
+    const next = combatState.endedConcentrations.filter(entry => entry.id !== normalizedId);
+    if (!normalizedId || next.length === combatState.endedConcentrations.length) return false;
+    combatState.endedConcentrations = next;
+    markStateChanged(message);
+    return true;
   }
 
   function getBuiltInResourceSpent(resourceKey) {
@@ -2646,8 +2708,47 @@
     void globalScope.AppDialog.showContent({
       title: `${label}說明`,
       content,
-      confirmLabel: "關閉",
+      actions: [
+        {
+          label: "狀態結束",
+          intent: "danger",
+          value: "end-condition"
+        },
+        {
+          label: "關閉",
+          intent: "primary",
+          value: "close"
+        }
+      ],
       trigger
+    }).then((result) => {
+      if (result !== "end-condition") {
+        return;
+      }
+
+      const ended =
+        conditionKey === "exhaustion"
+          ? combatState.exhaustionLevel > 0
+          : removeActiveCondition(conditionKey);
+
+      if (!ended) {
+        return;
+      }
+
+      if (conditionKey === "exhaustion") {
+        combatState.exhaustionLevel = 0;
+        elements.exhaustionInput.value = "0";
+      } else {
+        const checkbox = elements.conditionOptions?.querySelector(
+          `input[data-condition-option="${conditionKey}"]`
+        );
+
+        if (checkbox) {
+          checkbox.checked = false;
+        }
+      }
+
+      markStateChanged(`已結束「${label}」狀態。`);
     });
   }
 
@@ -3133,7 +3234,9 @@
     const canCast = typeof globalScope.hasSpellcastingCapability === "function"
       ? globalScope.hasSpellcastingCapability()
       : true;
-    return canCast || Boolean(getConcentrationSpellId());
+    return canCast
+      || Boolean(getConcentrationSpellId())
+      || combatState.endedConcentrations.length > 0;
   }
 
   function syncSpellPanelAvailability() {
@@ -3872,8 +3975,10 @@
     getCharacterName,
     setCharacterName,
     getConcentrationSpellId,
+    getEndedConcentrations,
     setConcentrationSpellId,
     stopConcentration,
+    dismissEndedConcentration,
     getBuiltInResourceSpent,
     setBuiltInResourceSpent,
     getCustomResources,
@@ -3891,6 +3996,7 @@
       getExhaustionEffects,
       normalizeBuiltInResourceUsage,
       normalizeConcentrationSpellId,
+      normalizeEndedConcentrations,
       normalizeCustomResources
     })
   };

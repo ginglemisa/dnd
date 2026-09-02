@@ -206,8 +206,16 @@
     return spell?.nameZh || `未知法術（${spellId}）`;
   }
 
-  function restoreStableFocus(spellId = "") {
+  function restoreStableFocus(spellId = "", preferredTarget = null) {
     globalScope.requestAnimationFrame(() => {
+      if (
+        preferredTarget instanceof HTMLElement
+        && preferredTarget.isConnected
+        && !preferredTarget.closest("[inert]")
+      ) {
+        preferredTarget.focus({ preventScroll: true });
+        return;
+      }
       const inSpellPanel = globalScope.TabletopMode?.getPanel?.() === "spells";
       const spellButton = inSpellPanel
         ? Array.from(document.querySelectorAll(".tabletop-spell-button[data-spell-id]"))
@@ -227,14 +235,14 @@
     if (!currentId) {
       globalScope.TabletopMode?.setConcentrationSpellId(spellId, `開始專注於${spell.nameZh}。`);
       globalScope.AppDialog?.notify(`開始專注：${spell.nameZh}。`, { tone: "success" });
-      restoreStableFocus(spellId);
+      restoreStableFocus(spellId, trigger);
       return true;
     }
     if (currentId === spellId) return true;
 
     const confirmed = await globalScope.AppDialog?.requestDecision({
       title: "替換專注法術",
-      message: `目前專注：${getConcentrationName(currentId)}\n即將開始：${spell.nameZh}\n\n替換後只會保留新的專注記錄，不會消耗法術位。`,
+      message: `目前專注：${getConcentrationName(currentId)}\n即將開始：${spell.nameZh}\n\n原專注會結束，並保留提醒供你確認；不會消耗法術位。`,
       cancelLabel: "取消",
       confirmLabel: "替換專注",
       dismissOnBackdrop: false,
@@ -243,7 +251,7 @@
     if (!confirmed) return false;
     globalScope.TabletopMode?.setConcentrationSpellId(spellId, `已將專注替換為${spell.nameZh}。`);
     globalScope.AppDialog?.notify(`已替換專注：${spell.nameZh}。`, { tone: "success" });
-    restoreStableFocus(spellId);
+    restoreStableFocus(spellId, trigger);
     return true;
   }
 
@@ -271,64 +279,123 @@
     if (currentId === spellId) {
       globalScope.TabletopMode?.stopConcentration(`已停止專注於${spell.nameZh}。`);
       globalScope.AppDialog.notify(`已停止專注：${spell.nameZh}。`, { tone: "info" });
-      restoreStableFocus(spellId);
+      restoreStableFocus(spellId, trigger);
       return;
     }
     await beginConcentration(spellId, trigger);
   }
 
-  function renderConcentrationSummary() {
-    if (!elements.concentration) return;
-    const spellId = globalScope.TabletopMode?.getConcentrationSpellId?.() || "";
-    elements.concentration.hidden = !spellId;
-    if (!spellId) return;
+  function getActiveConcentrationNote(spellId, spell) {
+    if (!spell) {
+      return `匯入的 spellId「${spellId}」不在目前法術目錄中；記錄未被清除，可手動停止專注。`;
+    }
+    if (!globalScope.SpellCatalog.isConcentration(spell)) {
+      return "這筆匯入記錄的來源法術不是專注法術；記錄未被清除，可手動停止專注。";
+    }
+    if (!isSpellCurrentlySelected(spellId)) {
+      return "來源法術已移除；專注記錄會保留，直到你手動停止。";
+    }
+    return "";
+  }
 
-    const spell = globalScope.SpellCatalog?.getSpell(spellId);
-    const selected = spell ? isSpellCurrentlySelected(spellId) : false;
-    const isConcentrationSpell = spell
-      ? globalScope.SpellCatalog.isConcentration(spell)
-      : false;
-    elements.concentrationTitle.textContent = spell
-      ? `專注：${spell.nameZh}`
-      : "專注：來源法術不存在";
-    elements.concentrationDetail.disabled = !spell;
-    const diceEnabled = Boolean(globalScope.DiceRoller?.isEnabled?.());
-    if (diceEnabled) elements.concentrationDetail.removeAttribute("aria-haspopup");
-    else elements.concentrationDetail.setAttribute("aria-haspopup", "dialog");
-    elements.concentrationDetail.setAttribute(
+  function createConcentrationCard(record, viewName, index) {
+    const ended = record.status === "ended";
+    const spell = globalScope.SpellCatalog?.getSpell(record.spellId);
+    const replacementSpell = ended
+      ? globalScope.SpellCatalog?.getSpell(record.replacementSpellId)
+      : null;
+    const card = createElement(
+      "section",
+      `tabletop-concentration${ended ? " tabletop-concentration--ended" : ""}`
+    );
+    const titleKey = String(record.noticeId || record.spellId || index)
+      .replace(/[^A-Za-z0-9_-]/g, "-")
+      .slice(0, 80);
+    const titleId = `tabletop-concentration-${viewName}-${titleKey}-${index}`;
+    card.setAttribute("aria-labelledby", titleId);
+
+    const copy = createElement("div");
+    copy.appendChild(createElement("span", "tabletop-eyebrow", ended ? "專注已結束" : "目前專注"));
+
+    const detail = createElement("button", "tabletop-concentration__detail");
+    detail.type = "button";
+    detail.disabled = !spell;
+    detail.dataset.concentrationAction = ended ? "ended-detail" : "active-detail";
+    detail.dataset.spellId = record.spellId;
+    const title = createElement(
+      "span",
+      "",
+      spell
+        ? `${ended ? "已結束" : "專注"}：${spell.nameZh}`
+        : `${ended ? "已結束" : "專注"}：來源法術不存在`
+    );
+    title.id = titleId;
+    detail.appendChild(title);
+
+    const diceEnabled = !ended && Boolean(globalScope.DiceRoller?.isEnabled?.());
+    if (!diceEnabled) detail.setAttribute("aria-haspopup", "dialog");
+    detail.setAttribute(
       "aria-label",
       diceEnabled && spell
         ? `擲${spell.nameZh}專注體質豁免`
         : `查看${spell?.nameZh || "專注法術"}說明`
     );
-    elements.concentrationDetail.dataset.spellId = spellId;
-    const note = !spell
-      ? `匯入的 spellId「${spellId}」不在目前法術目錄中；記錄未被清除，可手動停止專注。`
-      : !isConcentrationSpell
-        ? "這筆匯入記錄的來源法術不是專注法術；記錄未被清除，可手動停止專注。"
-      : !selected
-        ? "來源法術已移除；專注記錄會保留，直到你手動停止。"
-        : "";
-    elements.concentrationNote.textContent = note;
-    elements.concentrationNote.hidden = !note;
+    copy.appendChild(detail);
+
+    const note = ended
+      ? replacementSpell
+        ? `因開始專注於「${replacementSpell.nameZh}」而結束。`
+        : "因開始另一個專注法術而結束。"
+      : getActiveConcentrationNote(record.spellId, spell);
+    if (note) copy.appendChild(createElement("p", "", note));
+
+    const action = createElement(
+      "button",
+      "tabletop-concentration__stop",
+      ended ? "關閉" : "停止專注"
+    );
+    action.type = "button";
+    action.dataset.concentrationAction = ended ? "dismiss" : "stop";
+    if (record.noticeId) action.dataset.noticeId = record.noticeId;
+    action.setAttribute(
+      "aria-label",
+      ended
+        ? `關閉${spell?.nameZh || "這筆"}專注結束提醒`
+        : `停止專注於${spell?.nameZh || "目前法術"}`
+    );
+
+    card.append(copy, action);
+    return card;
   }
 
-  function renderEmptyState(message, concentrationId = "") {
+  function renderConcentrationSummaries() {
+    const views = [elements.concentrationOverview, elements.concentrationSpells].filter(Boolean);
+    if (!views.length) return;
+
+    const spellId = globalScope.TabletopMode?.getConcentrationSpellId?.() || "";
+    const ended = globalScope.TabletopMode?.getEndedConcentrations?.() || [];
+    const records = [
+      ...(spellId ? [{ status: "active", spellId }] : []),
+      ...ended.slice().reverse().map(entry => ({
+        status: "ended",
+        noticeId: entry.id,
+        spellId: entry.spellId,
+        replacementSpellId: entry.replacementSpellId
+      }))
+    ];
+
+    views.forEach(view => {
+      view.hidden = records.length === 0;
+      view.replaceChildren(...records.map((record, index) => (
+        createConcentrationCard(record, view.dataset.concentrationView || "view", index)
+      )));
+    });
+  }
+
+  function renderEmptyState(message) {
     const empty = createElement("div");
     empty.appendChild(createElement("strong", "", message.title));
     empty.appendChild(createElement("p", "", message.body));
-    if (concentrationId) {
-      const note = createElement("p", "tabletop-warning-text", `目前仍保存專注記錄：${getConcentrationName(concentrationId)}。`);
-      const stop = createElement("button", "tabletop-compact-button", "停止這筆專注");
-      stop.type = "button";
-      stop.addEventListener("click", () => {
-        const name = getConcentrationName(concentrationId);
-        globalScope.TabletopMode?.stopConcentration(`已停止專注於${name}。`);
-        globalScope.AppDialog?.notify(`已停止專注：${name}。`, { tone: "info" });
-        restoreStableFocus();
-      });
-      empty.append(note, stop);
-    }
     elements.empty.replaceChildren(empty);
   }
 
@@ -357,14 +424,13 @@
     if (!initialized) return;
     const entries = getSelectedSpellEntries();
     const emptyMessage = getEmptyMessage(entries);
-    const concentrationId = globalScope.TabletopMode?.getConcentrationSpellId?.() || "";
     elements.empty.hidden = !emptyMessage;
     elements.content.hidden = false;
-    if (emptyMessage) renderEmptyState(emptyMessage, concentrationId);
+    if (emptyMessage) renderEmptyState(emptyMessage);
     renderCastingSummary();
     renderSpellSlots();
     renderSelectedSpells(entries);
-    renderConcentrationSummary();
+    renderConcentrationSummaries();
   }
 
   function scheduleRender() {
@@ -375,6 +441,50 @@
     });
   }
 
+  function handleConcentrationAction(event) {
+    const button = event.target.closest("button[data-concentration-action]");
+    if (!button || !event.currentTarget.contains(button)) return;
+    const action = button.dataset.concentrationAction;
+    const spellId = button.dataset.spellId || "";
+
+    if (action === "active-detail") {
+      if (globalScope.DiceRoller?.isEnabled?.()) {
+        const spellName = getConcentrationName(spellId);
+        if (rollConcentrationSave(spellName)) return;
+      }
+      if (spellId) showSpellDetail(spellId, button);
+      return;
+    }
+
+    if (action === "ended-detail") {
+      if (spellId) showSpellDetail(spellId, button);
+      return;
+    }
+
+    if (action === "stop") {
+      const currentId = globalScope.TabletopMode?.getConcentrationSpellId?.() || "";
+      if (!currentId) return;
+      const name = getConcentrationName(currentId);
+      globalScope.TabletopMode.stopConcentration(`已停止專注於${name}。`);
+      globalScope.AppDialog?.notify(`已停止專注：${name}。`, { tone: "info" });
+      restoreStableFocus();
+      return;
+    }
+
+    if (action !== "dismiss") return;
+    const noticeId = button.dataset.noticeId || "";
+    const notice = globalScope.TabletopMode?.getEndedConcentrations?.()
+      .find(entry => entry.id === noticeId);
+    if (!notice) return;
+    const name = getConcentrationName(notice.spellId);
+    if (!globalScope.TabletopMode.dismissEndedConcentration(
+      noticeId,
+      `已關閉${name}的專注結束提醒。`
+    )) return;
+    globalScope.AppDialog?.notify(`已關閉專注提醒：${name}。`, { tone: "info" });
+    restoreStableFocus();
+  }
+
   function init() {
     Object.assign(elements, {
       empty: document.getElementById("tabletop-spells-empty"),
@@ -383,28 +493,24 @@
       spellSlotsSection: document.getElementById("tabletop-spell-slots-section"),
       spellSlots: document.getElementById("tabletop-spell-slots"),
       selectedSpells: document.getElementById("tabletop-selected-spells"),
-      concentration: document.getElementById("tabletop-concentration"),
-      concentrationTitle: document.getElementById("tabletop-concentration-title"),
-      concentrationNote: document.getElementById("tabletop-concentration-note"),
-      concentrationDetail: document.getElementById("tabletop-concentration-detail"),
-      concentrationStop: document.getElementById("tabletop-concentration-stop")
+      concentrationOverview: document.getElementById("tabletop-concentration-overview"),
+      concentrationSpells: document.getElementById("tabletop-concentration-spells")
     });
-    if (!elements.empty || !elements.concentration || !globalScope.TabletopMode || !globalScope.SpellCatalog) return;
+    if (
+      !elements.empty
+      || (!elements.concentrationOverview && !elements.concentrationSpells)
+      || !globalScope.TabletopMode
+      || !globalScope.SpellCatalog
+    ) return;
     initialized = true;
 
-    elements.concentrationDetail.addEventListener("click", () => {
-      const spellId = elements.concentrationDetail.dataset.spellId || "";
-      if (globalScope.DiceRoller?.isEnabled?.()) {
-        const spellName = getConcentrationName(spellId);
-        if (rollConcentrationSave(spellName)) return;
-      }
-      if (spellId) showSpellDetail(spellId, elements.concentrationDetail);
-    });
-    elements.concentrationStop.addEventListener("click", () => {
-      const name = getConcentrationName(globalScope.TabletopMode.getConcentrationSpellId());
-      globalScope.TabletopMode.stopConcentration(`已停止專注於${name}。`);
-      globalScope.AppDialog?.notify(`已停止專注：${name}。`, { tone: "info" });
-      restoreStableFocus();
+    [
+      [elements.concentrationOverview, "overview"],
+      [elements.concentrationSpells, "spells"]
+    ].forEach(([view, name]) => {
+      if (!view) return;
+      view.dataset.concentrationView = name;
+      view.addEventListener("click", handleConcentrationAction);
     });
     document.addEventListener("input", scheduleRender);
     document.addEventListener("change", scheduleRender);

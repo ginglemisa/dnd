@@ -577,9 +577,11 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
 
   function getSelectedSpellEntries(mode) {
     if (typeof SpellCatalog === "undefined") return [];
-    const timingPattern = mode === "bonus"
-      ? /施法時間\s*[：:]\s*附贈動作/u
-      : /施法時間\s*[：:]\s*反應動作/u;
+    const timingPattern = mode === "action"
+      ? /(?:施法時間\s*[：:]\s*動作(?:或儀式)?(?=[ \t]*(?:\r?\n|$))|施法時間\s*[：:][ \t]*(?:\r?\n)+[ \t]*-[ \t]*動作(?:（[^）]+）)?)/u
+      : mode === "bonus"
+        ? /施法時間\s*[：:]\s*附贈動作/u
+        : /施法時間\s*[：:]\s*反應動作/u;
     const spellIds = new Set(Array.from(document.querySelectorAll('#tab-spells select[id*="-spell-"]'), select => select.value).filter(Boolean));
 
     return Array.from(spellIds).flatMap(spellId => {
@@ -587,8 +589,12 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
       if (!spell || !timingPattern.test(spell.desc || "")) return [];
       return [{
         key: `dynamic-${mode}-spell-${spellId}`,
+        spellId,
         label: spell.nameZh,
         source: FEATURE_SOURCE_LABELS.spell,
+        buttonTag: spell.level === 0
+          ? "戲法"
+          : `${["", "一", "二", "三", "四", "五", "六", "七", "八", "九"][spell.level] || spell.level}環`,
         description: spell.desc,
         dynamic: true
       }];
@@ -651,7 +657,7 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
       ...getRaceActionEntries(mode),
       ...getSelectedInvocationEntries(mode),
       ...getSelectedMetamagicEntries(mode),
-      ...((mode === "bonus" || mode === "reaction") ? getSelectedSpellEntries(mode) : [])
+      ...((mode === "action" || mode === "bonus" || mode === "reaction") ? getSelectedSpellEntries(mode) : [])
     ];
     const seen = new Set();
     return entries.filter(entry => {

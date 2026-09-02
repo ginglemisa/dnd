@@ -194,8 +194,8 @@
         // may safely use presentation rectangles sized for their final text.
         specie_features1: { dy: 3.5 },
         feats1: { dy: 3.5 },
-        Name1: { x: 104.61, y: 524, width: 141.27, height: 28, alignment: 'right'  },
-        Name2: { dx: -8, alignment: 'right' },
+        Name1: { x: 104.61, y: 524, width: 140.47, height: 28, alignment: 'right' },
+        Name2: { alignment: 'right' },
         Level1: { x: 18.65, y: 512, width: 33, height: 28 },
         proficiencyBonus1: { x: 18.59, y: 371.5, width: 35, height: 27 },
         weaponsProficiency1: { x: 104.22, y: 71.66, width: 133.41, height: 20 },

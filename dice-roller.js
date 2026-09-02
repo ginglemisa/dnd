@@ -19,6 +19,7 @@
     const card = modal?.querySelector(".dice-roller-card");
     const closeButton = document.getElementById("dice-roller-close");
     const stage = document.getElementById("dice-roller-stage");
+    const title = document.getElementById("dice-roller-title");
     const totalOutput = document.getElementById("dice-roller-total-value");
     const historyButton = document.getElementById("dice-roller-history-view");
     const totalButton = document.getElementById("dice-roller-total-view");
@@ -26,7 +27,10 @@
     const clearButton = document.getElementById("dice-roller-clear");
     const dieButtons = Array.from(document.querySelectorAll(".dice-roller-die[data-die]"));
 
-    if (!toggle || !fab || !modal || !card || !closeButton || !stage || !totalOutput || !historyButton || !totalButton || !rollButton || !clearButton || dieButtons.length !== DICE_SIDES.length) return;
+    if (!toggle || !fab || !modal || !card || !closeButton || !stage || !title || !totalOutput || !historyButton || !totalButton || !rollButton || !clearButton || dieButtons.length !== DICE_SIDES.length) return;
+
+    const viewTabs = historyButton.parentElement;
+    const totalBar = totalOutput.parentElement;
 
     const counts = new Map(DICE_SIDES.map(sides => [sides, 0]));
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -41,9 +45,21 @@
     const loadHistory = () => {
       try {
         const stored = JSON.parse(window.dndStorage?.getItem(HISTORY_STORAGE_KEY) || "[]");
-        return Array.isArray(stored)
-          ? stored.filter(entry => typeof entry === "string").slice(0, HISTORY_LIMIT)
-          : [];
+        if (!Array.isArray(stored)) return [];
+        return stored.map(entry => {
+          if (typeof entry === "string") return Object.freeze({ legacyText: entry });
+          if (entry && typeof entry.legacyText === "string") return Object.freeze({ legacyText: entry.legacyText });
+          if (!entry || typeof entry !== "object" || typeof entry.expression !== "string") return null;
+          const values = Array.isArray(entry.values)
+            ? entry.values.filter(value => Number.isSafeInteger(value?.value) && DICE_SIDES.includes(value?.sides))
+            : [];
+          return Object.freeze({
+            label: String(entry.label || "").trim(),
+            expression: entry.expression,
+            total: Number.isFinite(entry.total) ? entry.total : null,
+            values: Object.freeze(values.map(value => Object.freeze({ value: value.value, sides: value.sides })))
+          });
+        }).filter(Boolean).slice(0, HISTORY_LIMIT);
       } catch (_error) {
         return [];
       }
@@ -55,6 +71,22 @@
 
     const formatNumber = value => new Intl.NumberFormat("zh-Hant").format(value);
     const getTotalDice = () => DICE_SIDES.reduce((sum, sides) => sum + counts.get(sides), 0);
+
+    const saveHistory = () => {
+      window.dndStorage?.setItem(HISTORY_STORAGE_KEY, JSON.stringify(historyEntries));
+    };
+
+    const formatHistoryEntry = entry => entry.legacyText || `${entry.label ? `${entry.label}：` : ""}${entry.expression}=${entry.total}`;
+
+    const removeDetailNavigation = () => {
+      totalBar?.querySelectorAll(".dice-roller-detail-back").forEach(button => button.remove());
+    };
+
+    const restoreHistoryHeader = () => {
+      title.textContent = "擲骰";
+      removeDetailNavigation();
+      if (viewTabs && !viewTabs.isConnected) totalBar?.prepend(viewTabs);
+    };
 
     const updateHistoryButton = () => {
       const showingHistory = currentView === "history";
@@ -90,6 +122,7 @@
     };
 
     const renderEmptyStage = (message = "選取骰子後按 ROLL") => {
+      restoreHistoryHeader();
       currentResults = [];
       currentView = "results";
       stage.classList.remove("is-history");
@@ -125,6 +158,7 @@
     };
 
     const renderResults = results => {
+      restoreHistoryHeader();
       currentResults = results;
       currentView = "results";
       stage.classList.remove("is-history");
@@ -150,7 +184,8 @@
       window.requestAnimationFrame(layoutResults);
     };
 
-    const renderHistory = () => {
+    const renderHistory = (focusEntry = null) => {
+      restoreHistoryHeader();
       currentView = "history";
       stage.classList.add("is-history");
       stage.tabIndex = 0;
@@ -168,16 +203,33 @@
 
       const list = document.createElement("ol");
       list.className = "dice-roller-history";
+      let focusTarget = null;
       historyEntries.forEach(entry => {
         const item = document.createElement("li");
         item.className = "dice-roller-history-entry";
-        item.textContent = entry;
+        if (entry.values?.length) {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "dice-roller-history-open";
+          button.setAttribute("aria-label", `查看 ${formatHistoryEntry(entry)} 的個別骰面`);
+          button.append(
+            Object.assign(document.createElement("span"), { textContent: formatHistoryEntry(entry) }),
+            Object.assign(document.createElement("span"), { className: "dice-roller-history-chevron", textContent: "›", ariaHidden: "true" })
+          );
+          button.addEventListener("click", () => renderHistoryDetail(entry));
+          if (entry === focusEntry) focusTarget = button;
+          item.append(button);
+        } else {
+          item.classList.add("is-legacy");
+          item.textContent = formatHistoryEntry(entry);
+        }
         list.appendChild(item);
       });
       stage.setAttribute("aria-label", `擲骰紀錄，共 ${historyEntries.length} 筆，由新到舊排列。`);
       stage.replaceChildren(list);
       stage.scrollTop = 0;
       updateHistoryButton();
+      focusTarget?.focus({ preventScroll: true });
     };
 
     const showCurrentResult = () => {
@@ -185,11 +237,54 @@
       else renderEmptyStage();
     };
 
-    const addHistoryEntry = (diceExpression, total, label = "") => {
-      const rollLabel = String(label || "").trim();
-      historyEntries.unshift(`${rollLabel ? `${rollLabel}：` : ""}${diceExpression}=${total}`);
+    const renderHistoryDetail = entry => {
+      currentView = "detail";
+      title.textContent = "擲骰詳情";
+      stage.classList.add("is-history");
+      stage.tabIndex = 0;
+      const backButton = document.createElement("button");
+      backButton.type = "button";
+      backButton.className = "dice-roller-detail-back";
+      backButton.textContent = "‹ 返回紀錄";
+      backButton.addEventListener("click", () => renderHistory(entry));
+      removeDetailNavigation();
+      viewTabs?.remove();
+      totalBar?.prepend(backButton);
+
+      const detail = document.createElement("section");
+      detail.className = "dice-roller-history-detail";
+      detail.setAttribute("aria-label", `${entry.label || "擲骰"}詳情`);
+      const heading = document.createElement("p");
+      heading.className = "dice-roller-detail-expression";
+      heading.textContent = entry.label ? `${entry.label}｜${entry.expression}` : entry.expression;
+      const results = document.createElement("div");
+      results.className = "dice-roller-detail-results";
+      entry.values.forEach(({ value, sides }, index) => {
+        const result = document.createElement("span");
+        result.className = "dice-roller-detail-result";
+        if (value === 1) result.classList.add("is-low");
+        if (value === sides) result.classList.add("is-high");
+        result.textContent = formatNumber(value);
+        result.setAttribute("aria-label", `第 ${index + 1} 顆 D${sides}：${value}`);
+        results.appendChild(result);
+      });
+      detail.append(heading, results);
+      stage.setAttribute("aria-label", `${formatHistoryEntry(entry)}，共 ${entry.values.length} 顆骰子。`);
+      stage.replaceChildren(detail);
+      totalOutput.textContent = Number.isFinite(entry.total) ? formatNumber(entry.total) : "—";
+      updateHistoryButton();
+      backButton.focus({ preventScroll: true });
+    };
+
+    const addHistoryEntry = ({ expression, total, label = "", values = [] }) => {
+      historyEntries.unshift(Object.freeze({
+        label: String(label || "").trim(),
+        expression,
+        total,
+        values: Object.freeze(values.map(({ value, sides }) => Object.freeze({ value, sides })))
+      }));
       if (historyEntries.length > HISTORY_LIMIT) historyEntries.length = HISTORY_LIMIT;
-      window.dndStorage?.setItem(HISTORY_STORAGE_KEY, JSON.stringify(historyEntries));
+      saveHistory();
       updateHistoryButton();
     };
 
@@ -199,7 +294,7 @@
         .map(sides => `${rollCounts.get(sides)}d${sides}`)
         .join("+");
       const total = results.reduce((sum, result) => sum + result.value, 0);
-      addHistoryEntry(diceExpression, total);
+      addHistoryEntry({ expression: diceExpression, total, values: results });
     };
 
     const rollDie = sides => {
@@ -292,7 +387,12 @@
         ? `${calculation} = ${total}`
         : String(total);
 
-      addHistoryEntry(expression, total, normalized.label);
+      addHistoryEntry({
+        expression,
+        total,
+        label: normalized.label,
+        values: values.map(value => ({ value, sides: normalized.sides }))
+      });
       notifyQuickRoll(`${normalized.label}：${equation}`);
 
       const detail = Object.freeze({
@@ -343,7 +443,14 @@
       const equation = equationParts.length > 1 ? `${calculation} = ${total}` : String(total);
       const label = String(options.label || "擲骰").trim() || "擲骰";
 
-      addHistoryEntry(expressionText, total, label);
+      addHistoryEntry({
+        expression: expressionText,
+        total,
+        label,
+        values: rolledTerms.flatMap(term => term.type === "dice"
+          ? term.values.map(value => ({ value, sides: term.sides }))
+          : [])
+      });
       if (options.notify !== false) notifyQuickRoll(`${label}：${equation}`);
 
       const values = rolledTerms.flatMap(term => term.type === "dice" ? term.values : []);
@@ -567,7 +674,7 @@
     toggle.addEventListener("change", () => setEnabled(toggle.checked));
     fab.addEventListener("click", openModal);
     closeButton.addEventListener("click", closeModal);
-    historyButton.addEventListener("click", renderHistory);
+    historyButton.addEventListener("click", () => renderHistory());
     totalButton.addEventListener("click", showCurrentResult);
     rollButton.addEventListener("click", roll);
     clearButton.addEventListener("click", clearAll);

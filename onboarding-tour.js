@@ -150,7 +150,7 @@
         {
           tab: "basic",
           title: "⚔️ 1. 決定你的冒險者方向",
-          text: "背景代表角色過去，種族帶來天生特性，職業則決定冒險方式。選好之後，生命值、護甲等數值資料會自動更新。",
+          text: "背景代表角色過去，種族帶來天生特性，職業則決定冒險方式。選好之後，最大 HP、速度等數值資料會自動更新。",
           placement: "bottom",
           getHoles: () => {
             const identity = this.getHoleFromElements([
@@ -172,7 +172,7 @@
         {
           tab: "basic",
           title: "🎲 2. 屬性與快速創角",
-          text: "六項屬性決定角色擅長什麼；上方是擲骰檢定用到的調整值。下方的欄位可直接填入屬性數字。",
+          text: "六項屬性決定角色擅長什麼；上方是 D20 檢定用到的調整值。下方的欄位可直接填入屬性數字。",
           placement: "top",
           getHoles: () => {
             return [
@@ -200,7 +200,7 @@
         {
           tab: "equipment",
           title: "🛡️ 4. 確認武器、護甲與 AC",
-          text: "選擇目前使用的武器與護甲，下方會整理傷害、射程、特性等資訊。點擊摘要中的名稱還能查看詳細規則。",
+          text: "選擇目前使用的武器與護甲，下方會整理傷害、特性等資訊。點擊摘要中的名稱能查看詳細規則。",
           placement: "bottom",
           getHoles: () => [this.getHoleFromElements([
             document.querySelector("#tab-equipment .equipment-loadout-controls"),
