@@ -472,7 +472,7 @@
         input.className = "app-dialog__number-input tabletop-character-name-input";
         input.type = "text";
         input.value = combatState.characterName;
-        input.placeholder = "例如：艾拉・銀葉";
+        input.placeholder = "例如：艾尼克斯・薩卡蘭姆";
         input.autocomplete = "off";
         input.spellcheck = false;
         input.dataset.stateTransient = "true";
