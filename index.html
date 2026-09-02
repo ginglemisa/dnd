@@ -45,9 +45,9 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎲%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20260902-concentration-reminders">
+  <link rel="stylesheet" href="styles.css?v=20260903-tabletop-action-preferences">
   <script src="scroll-to-top.js" defer></script>
-  <script src="dice-roller.js?v=20260901-persistent-history-tabs" defer></script>
+  <script src="dice-roller.js?v=20260902-tabletop-casting" defer></script>
   <script src="monster.js" defer></script>
     <script src="class-features.js?v=20260826-class-options-spacing" defer></script>
   <script src="race.js?v=20260826-lineage-tables" defer></script>
@@ -55,17 +55,17 @@
   <script src="tool-data.js" defer></script>
   <script src="feats.js?v=20260831-tabletop-feat-rules" defer></script>
   <script src="equipment-notes.js?v=20260813-weapon-rule-popups-2" defer></script>
-  <script src="spell-list.js?v=20260828-concentration" defer></script>
+  <script src="spell-list.js?v=20260903-life-healing" defer></script>
   <script src="condition.js" defer></script>
-  <script src="action-panel.js?v=20260902-tabletop-spell-dialog-actions" defer></script>
+  <script src="action-panel.js?v=20260903-tabletop-action-spell-casting" defer></script>
   <script src="character-rules.js?v=20260902-class-resources" defer></script>
   <script src="app-dialog.js?v=20260831-number-input" defer></script>
-  <script src="tabletop-mode.js?v=20260902-concentration-reminders" defer></script>
+  <script src="tabletop-mode.js?v=20260903-tabletop-action-preferences" defer></script>
   <script src="tabletop-resources.js?v=20260901-hit-die-links" defer></script>
-  <script src="tabletop-actions.js?v=20260902-tabletop-spell-dialog-actions" defer></script>
-  <script src="tabletop-spells.js?v=20260902-concentration-reminders" defer></script>
+  <script src="tabletop-actions.js?v=20260903-tabletop-action-preferences" defer></script>
+  <script src="tabletop-spells.js?v=20260903-tabletop-action-spell-casting" defer></script>
   <script src="legal-modal.js?v=20260824-onboarding-entry" defer></script>
-  <script src="onboarding-tour.js?v=20260825-onboarding-step5-highlights" defer></script>
+  <script src="onboarding-tour.js?v=20260903-onboarding-ability-branches" defer></script>
   <script src="quick-build.js" defer></script>
   <script src="deity-info.js" defer></script>
 
@@ -191,6 +191,7 @@
 </div>
 
 <section id="tabletop-mode" class="tabletop-mode" aria-labelledby="tabletop-title" hidden>
+  <input type="checkbox" id="druid-natural-recovery-used" hidden tabindex="-1" aria-hidden="true">
   <article class="tabletop-sheet">
     <header class="tabletop-summary">
       <h1 id="tabletop-title" class="tabletop-summary__name is-placeholder" role="button" tabindex="0">點我修改角色名稱</h1>
@@ -344,7 +345,10 @@
       </section>
 
       <section class="tabletop-section tabletop-action-browser" aria-labelledby="tabletop-action-browser-title">
-        <div class="tabletop-section-heading"><h3 id="tabletop-action-browser-title">可用選項</h3></div>
+        <div class="tabletop-section-heading">
+          <h3 id="tabletop-action-browser-title">可用選項</h3>
+          <button type="button" id="tabletop-action-manage" class="tabletop-action-manage" aria-haspopup="dialog">管理</button>
+        </div>
         <div class="tabletop-action-tabs" role="tablist" aria-label="行動類型">
           <button type="button" id="tabletop-action-tab-basic" role="tab" aria-selected="true" aria-controls="tabletop-action-panel-basic" data-tabletop-action-tab="basic">動作</button>
           <button type="button" id="tabletop-action-tab-action" role="tab" aria-selected="false" aria-controls="tabletop-action-panel-action" data-tabletop-action-tab="action" tabindex="-1">特殊</button>
@@ -1058,10 +1062,7 @@
   <div id="equipment-notes-section"></div>
 
 </div> <!-- END OF tab-equipment -->
-
-
 <div id="tab-spells" class="tab-content" role="tabpanel" aria-label="法術頁" hidden>
-  <input type="checkbox" id="druid-natural-recovery-used" hidden tabindex="-1" aria-hidden="true">
     <div class="section spell-overview-section">
   <div id="spell-casting-stats-wrap" class="spell-casting-stats" aria-label="施法能力計算">
     <div class="spell-casting-field">
@@ -1916,7 +1917,7 @@ const eldritchInvocations = [
   { name: "超凡跳躍", spellId: "jump", spellUse: "at-will" },
   { name: "魔鬼視界" },
   { name: "原初之一教習", repeatable: true, max: 3 },
-  { name: "苦痛魔爆", repeatable: true, max: 3 },
+  { name: "苦痛魔爆", repeatable: true, max: 3, minWarlockLevel: 2 },
   { name: "魔能長槍", repeatable: true, max: 3 },
   { name: "斥力魔爆", repeatable: true, max: 3 },
   { name: "星移步法", spellId: "levitate", spellUse: "at-will" },
@@ -1973,6 +1974,93 @@ function fillEldritchInvocationTextsFromClassFeatures() {
 function getInvocationCheckboxId(index, slot = 1) {
   return `eldritch-invocation-${index}-${slot}`;
 }
+
+const AGONIZING_BLAST_INVOCATION_NAME = "苦痛魔爆";
+
+function getAgonizingBlastSelectId(index, slot = 1) {
+  return `eldritch-invocation-${index}-${slot}-cantrip`;
+}
+
+function isAgonizingBlastSelectId(id) {
+  return /^eldritch-invocation-\d+-\d+-cantrip$/.test(String(id || ""));
+}
+
+function getKnownWarlockDamageCantrips() {
+  const spells = Array.from(document.querySelectorAll('#tab-spells .spell-entry select[id*="-spell-"]'))
+    .flatMap(select => {
+      const spell = SpellCatalog.getSpell(select.value);
+      const row = select.closest(".spell-entry");
+      const classSelect = row?.querySelector('select[id*="-class-"]');
+      const spellClass = row?.dataset.spellClass || classSelect?.value || "";
+      const isWarlockSpell = spellClass === "warlock" || row?.dataset.spellSource === PACT_TOME_SPELL_SOURCE;
+      const hasDamage = SpellCatalog.getCastMetadata(spell?.spellId)?.outcomes
+        ?.some(outcome => outcome.kind === "damage");
+      return spell?.level === 0 && isWarlockSpell && hasDamage ? [spell] : [];
+    });
+  return [...new Map(spells.map(spell => [spell.spellId, spell])).values()]
+    .sort((left, right) => left.nameZh.localeCompare(right.nameZh, "zh-Hant"));
+}
+
+function getAgonizingBlastSelects() {
+  return Array.from(document.querySelectorAll("select[data-agonizing-blast-slot]"));
+}
+
+function getAgonizingBlastSelections() {
+  return getAgonizingBlastSelects().flatMap(select => {
+    const checkbox = document.getElementById(select.dataset.checkboxId || "");
+    return checkbox?.checked && select.value ? [select.value] : [];
+  });
+}
+
+function syncAgonizingBlastSelections(options = {}) {
+  const selects = getAgonizingBlastSelects();
+  if (!selects.length) return;
+  const eligible = getKnownWarlockDamageCantrips();
+  const eligibleIds = new Set(eligible.map(spell => spell.spellId));
+  const accepted = new Set();
+  let clearedInvalid = false;
+
+  selects.forEach(select => {
+    const checkbox = document.getElementById(select.dataset.checkboxId || "");
+    const active = Boolean(checkbox?.checked && !checkbox.disabled);
+    const previous = select.value || "";
+    const valid = active && eligibleIds.has(previous) && !accepted.has(previous);
+    const nextValue = valid ? previous : "";
+    if (previous && !valid) clearedInvalid = true;
+    if (nextValue) accepted.add(nextValue);
+    select.disabled = !active;
+    select.setAttribute("aria-disabled", String(!active));
+    select.innerHTML = `<option value="">--選擇契術師傷害戲法--</option>${eligible.map(spell => (
+      `<option value="${escapeHtml(spell.spellId)}">${escapeHtml(SpellCatalog.getDisplayName(spell.spellId))}</option>`
+    )).join("")}`;
+    select.value = nextValue;
+  });
+
+  const selectedValues = new Set(getAgonizingBlastSelections());
+  selects.forEach(select => {
+    Array.from(select.options).forEach(option => {
+      if (!option.value) return;
+      option.disabled = option.value !== select.value && selectedValues.has(option.value);
+    });
+  });
+  if (clearedInvalid && options.notify !== false) {
+    window.AppDialog?.notify("苦痛魔爆的戲法選擇已失效或重複，已清除；請重新選擇。", { tone: "warning" });
+  }
+}
+
+function applyAgonizingBlastState(data = {}) {
+  syncAgonizingBlastSelections({ notify: false });
+  getAgonizingBlastSelects().forEach(select => {
+    const requested = String(data[select.id] || "");
+    if (requested && Array.from(select.options).some(option => option.value === requested && !option.disabled)) {
+      select.value = requested;
+    }
+    syncAgonizingBlastSelections({ notify: false });
+  });
+  updateWarlockInvocationSummary();
+}
+
+window.getAgonizingBlastSelections = getAgonizingBlastSelections;
 
 function getNormalizedInvocationText(text) {
   return (text || "")
@@ -2083,6 +2171,8 @@ function syncWarlockInvocationAvailability() {
     card?.classList.toggle("is-unavailable", !available);
     if (card) card.setAttribute("aria-disabled", String(!available));
   });
+  syncAgonizingBlastSelections({ notify: false });
+  updateWarlockInvocationSummary();
 }
 
 function enforceCheckboxSelectionLimit(inputs, limit, changedInput, alertMessage, shouldAlert = true) {
@@ -2249,6 +2339,7 @@ async function handleEldritchInvocationChange(el, event, output) {
   const invocation = eldritchInvocations.find(option => option.name === el.dataset.invocationName);
   if (!isWarlockInvocationAvailable(invocation)) {
     el.checked = false;
+    syncAgonizingBlastSelections();
     updateWarlockInvocationSummary();
     syncOriginAndSubclassDerivedSpellRows();
     if (typeof scheduleSaveAllFields === "function") scheduleSaveAllFields();
@@ -2264,6 +2355,7 @@ async function handleEldritchInvocationChange(el, event, output) {
       event.isTrusted
     );
     if (!allowed) {
+      syncAgonizingBlastSelections();
       updateWarlockInvocationSummary();
       updateACDisplay();
       populateHandAttacks();
@@ -2285,12 +2377,15 @@ async function handleEldritchInvocationChange(el, event, output) {
   updateACDisplay();
   populateHandAttacks();
   syncOriginAndSubclassDerivedSpellRows();
+  syncAgonizingBlastSelections();
   if (typeof scheduleSaveAllFields === "function") scheduleSaveAllFields();
 }
 
 function renderEldritchInvocations() {
   const output = document.getElementById("eldritch-invocations-output");
   if (!output) return;
+  const previousChecked = new Set(Array.from(output.querySelectorAll("input[data-invocation-name]:checked"), input => input.id));
+  const previousTargets = new Map(Array.from(output.querySelectorAll("select[data-agonizing-blast-slot]"), select => [select.id, select.value]));
 
   output.innerHTML = eldritchInvocations.map((invocation, index) => {
     const available = isWarlockInvocationAvailable(invocation);
@@ -2298,7 +2393,11 @@ function renderEldritchInvocations() {
     const checks = Array.from({ length: checkCount }, (_, slotIndex) => {
       const checkboxId = getInvocationCheckboxId(index, slotIndex + 1);
       const slotLabel = checkCount > 1 ? `選擇 ${invocation.name}（第 ${slotIndex + 1} 次）` : `選擇 ${invocation.name}`;
-      return `<label class="inline-check-label"><input type="checkbox" id="${checkboxId}" data-invocation-name="${escapeHtml(invocation.name)}" aria-label="${escapeHtml(slotLabel)}"${available ? "" : " disabled"}></label>`;
+      const checked = available && previousChecked.has(checkboxId) ? " checked" : "";
+      const target = invocation.name === AGONIZING_BLAST_INVOCATION_NAME
+        ? `<label class="invocation-target-select" for="${getAgonizingBlastSelectId(index, slotIndex + 1)}"><span>套用戲法</span><select id="${getAgonizingBlastSelectId(index, slotIndex + 1)}" data-agonizing-blast-slot="${slotIndex + 1}" data-checkbox-id="${checkboxId}"${available ? "" : " disabled"}><option value="">--選擇契術師傷害戲法--</option></select></label>`
+        : "";
+      return `<span class="feature-choice-card__invocation-pick"><label class="inline-check-label"><input type="checkbox" id="${checkboxId}" data-invocation-name="${escapeHtml(invocation.name)}" aria-label="${escapeHtml(slotLabel)}"${checked}${available ? "" : " disabled"}></label>${target}</span>`;
     }).join("");
 
     return `<article class="feature-choice-card feature-choice-card--invocation${available ? "" : " is-unavailable"}" aria-disabled="${String(!available)}">
@@ -2313,6 +2412,19 @@ function renderEldritchInvocations() {
   output.querySelectorAll("input[type='checkbox']").forEach(el => {
     el.addEventListener("change", event => { void handleEldritchInvocationChange(el, event, output); });
   });
+  syncAgonizingBlastSelections({ notify: false });
+  output.querySelectorAll("select[data-agonizing-blast-slot]").forEach(select => {
+    const previous = previousTargets.get(select.id) || "";
+    if (previous && Array.from(select.options).some(option => option.value === previous && !option.disabled)) {
+      select.value = previous;
+    }
+    select.addEventListener("change", () => {
+      syncAgonizingBlastSelections();
+      updateWarlockInvocationSummary();
+      scheduleSaveAllFields();
+    });
+  });
+  syncAgonizingBlastSelections({ notify: false });
 }
 
 function updateWarlockInvocationSummary() {
@@ -2325,8 +2437,11 @@ function updateWarlockInvocationSummary() {
     for (let slot = 1; slot <= checkCount; slot++) {
       const input = document.getElementById(getInvocationCheckboxId(index, slot));
       if (input?.checked) {
+        const targetId = getAgonizingBlastSelectId(index, slot);
+        const targetSpellId = document.getElementById(targetId)?.value || "";
+        const targetSpell = SpellCatalog.getSpell(targetSpellId);
         picks.push({
-          name: invocation.name,
+          name: targetSpell ? `${invocation.name}（${targetSpell.nameZh}）` : invocation.name,
           text: invocation.text || ""
         });
       }
@@ -2964,7 +3079,7 @@ function normalizePactTomeSpellSelection(selection) {
   const cantrips = Array.isArray(selection?.cantrips) ? selection.cantrips.filter(spellId => SpellCatalog.getSpell(spellId)?.level === 0).slice(0, 3) : [];
   const rituals = Array.isArray(selection?.rituals) ? selection.rituals.filter(spellId => {
     const spell = SpellCatalog.getSpell(spellId);
-    return spell?.level === 1 && /儀式/u.test(spell.desc || "");
+    return spell?.level === 1 && SpellCatalog.isRitual(spell);
   }).slice(0, 2) : [];
   return { cantrips: [...new Set(cantrips)], rituals: [...new Set(rituals)] };
 }
@@ -3300,6 +3415,10 @@ function setMagicInitiateDerivedRowValues(row, spec) {
   classSel.setAttribute("aria-disabled", "true");
   spellSel.setAttribute("aria-disabled", "true");
   row.classList.toggle("spell-entry--placeholder", !spec.spellValue);
+  row.dataset.spellClass = spec.classValue || "";
+  row.dataset.castMode = spec.level === 1 ? "free-or-slot" : "cantrip";
+  row.dataset.fixedCastLevel = spec.level === 1 ? "1" : "0";
+  row.dataset.ritualAllowed = String(spec.level === 1);
 }
 
 function syncMagicInitiateDerivedSpellRows() {
@@ -3445,6 +3564,10 @@ function getRacialDerivedSpellSpecs() {
     sourceName: raceName,
     sourceLabel: `來源：${raceName}（${lineageName}）`,
     sourcePriority: 20,
+    spellClass: "",
+    castMode: spell.freeUses ? "free-or-slot" : "slot",
+    fixedCastLevel: typeof spell.ring === "number" ? spell.ring : 0,
+    ritualAllowed: typeof spell.ring === "number",
     areaId: getAreaIdForSpellRing(spell.ring)
   }));
 }
@@ -3461,8 +3584,10 @@ function getClassAlwaysPreparedSpellSpecs() {
       key: "class-druid-druidic-spells-speak-with-animals",
       source: CLASS_SPELL_SOURCE,
       sourceName: "德魯伊",
+      spellClass: "druid",
       sourceLabel: "來源：德魯伊等級 1：德魯伊語",
       sourcePriority: 25,
+      ritualAllowed: true,
       areaId: "level1spells-area"
     }];
     if (level >= 2) specs.push({
@@ -3472,8 +3597,10 @@ function getClassAlwaysPreparedSpellSpecs() {
       key: "class-druid-wild-companion-find-familiar",
       source: CLASS_SPELL_SOURCE,
       sourceName: "德魯伊",
+      spellClass: "druid",
       sourceLabel: "來源：德魯伊等級 2：荒野夥伴",
       sourcePriority: 25,
+      ritualAllowed: false,
       areaId: "level1spells-area"
     });
     return specs;
@@ -3487,10 +3614,14 @@ function getClassAlwaysPreparedSpellSpecs() {
       key: "class-paladin-divine-smite",
       source: CLASS_SPELL_SOURCE,
       sourceName: "聖騎士",
+      spellClass: "paladin",
       sourceLabel: "職業",
       sourcePriority: 25,
       sourceTag: "職業",
       freeUses: 1,
+      castMode: "free-or-slot",
+      fixedCastLevel: 1,
+      ritualAllowed: true,
       areaId: "level1spells-area"
     });
     if (level >= 5) specs.push({
@@ -3500,10 +3631,14 @@ function getClassAlwaysPreparedSpellSpecs() {
       key: "class-paladin-find-steed",
       source: CLASS_SPELL_SOURCE,
       sourceName: "聖騎士",
+      spellClass: "paladin",
       sourceLabel: "職業",
       sourcePriority: 25,
       sourceTag: "職業",
       freeUses: 1,
+      castMode: "free-or-slot",
+      fixedCastLevel: 2,
+      ritualAllowed: true,
       areaId: "level2spells-area"
     });
     if (level >= 2 && document.getElementById("paladin-blessed-warrior")?.checked) {
@@ -3521,6 +3656,7 @@ function getClassAlwaysPreparedSpellSpecs() {
           sourcePriority: 25,
           sourceTag: "職業",
           selectableSpellClass: "cleric",
+          spellClass: "cleric",
           areaId: "cantrips-area"
         });
       }
@@ -3536,10 +3672,14 @@ function getClassAlwaysPreparedSpellSpecs() {
     key: "class-ranger-favored-enemy-hunters-mark",
     source: CLASS_SPELL_SOURCE,
     sourceName: "遊俠",
+    spellClass: "ranger",
     sourceLabel: "來源：遊俠等級 1：宿敵",
     sourcePriority: 25,
     areaId: "level1spells-area",
-    freeUses
+    freeUses,
+    castMode: "free-or-slot",
+    fixedCastLevel: 1,
+    ritualAllowed: true
   }];
   if (level >= 2 && document.getElementById("ranger-druidic-warrior")?.checked) {
     for (let slot = 1; slot <= 2; slot += 1) {
@@ -3556,6 +3696,7 @@ function getClassAlwaysPreparedSpellSpecs() {
         sourcePriority: 25,
         sourceTag: "職業",
         selectableSpellClass: "druid",
+        spellClass: "druid",
         areaId: "cantrips-area"
       });
     }
@@ -3581,8 +3722,10 @@ function getSubclassDerivedSpellSpecs() {
     key: `subclass-${classValue}-${subclass.name}-${spell.ring}-${spell.spellId}-${index}`,
     source: SUBCLASS_SPELL_SOURCE,
     sourceName: className,
+    spellClass: classValue,
     sourceLabel: `來源：${className}（${subclass.name}）`,
     sourcePriority: 30,
+    ritualAllowed: true,
     areaId: getAreaIdForSpellRing(spell.ring)
   }));
 }
@@ -3600,10 +3743,14 @@ function getEldritchInvocationDerivedSpellSpecs() {
       key: `invocation-${invocation.name}-${invocation.spellId}`,
       source: ELDRITCH_INVOCATION_SPELL_SOURCE,
       sourceName: "契術師",
+      spellClass: "warlock",
       sourceLabel: `來源：魔能祈喚（${invocation.name}）`,
       sourcePriority: 35,
       sourceTag: invocation.spellUse === "at-will" ? "隨意" : "職業",
       freeUses: invocation.spellUse === "once" ? 1 : "",
+      castMode: invocation.spellUse === "at-will" ? "at-will" : "free-or-slot",
+      fixedCastLevel: spell.level,
+      ritualAllowed: false,
       areaId: getAreaIdForSpellRing(ring)
     }];
   });
@@ -3618,9 +3765,13 @@ function getEldritchInvocationDerivedSpellSpecs() {
     key: `pact-tome-${spell.ring}-${index}`,
     source: PACT_TOME_SPELL_SOURCE,
     sourceName: "契術師",
+    spellClass: "warlock",
     sourceLabel: "來源：書之魔契",
     sourcePriority: 36,
     sourceTag: "書契",
+    castMode: "slot",
+    fixedCastLevel: typeof spell.ring === "number" ? spell.ring : 0,
+    ritualAllowed: true,
     areaId: getAreaIdForSpellRing(spell.ring)
   })));
 }
@@ -3645,6 +3796,10 @@ function setGenericDerivedRowValues(row, spec) {
   row.dataset.sourceLabel = spec.sourceLabel;
   row.dataset.sourceTag = spec.sourceTag || "";
   row.dataset.freeUses = spec.freeUses || "";
+  row.dataset.spellClass = spec.spellClass || "";
+  row.dataset.castMode = spec.castMode || (spec.freeUses ? "free-or-slot" : "slot");
+  row.dataset.fixedCastLevel = String(spec.fixedCastLevel ?? (typeof spec.ring === "number" ? spec.ring : 0));
+  row.dataset.ritualAllowed = String(Boolean(spec.ritualAllowed));
   spellSel.dispatchEvent(new Event("change"));
   classSel.disabled = true;
   spellSel.disabled = true;
@@ -3674,6 +3829,10 @@ function setClassFeatureCantripRowValues(row, spec) {
   row.dataset.sourcePriority = String(spec.sourcePriority);
   row.dataset.sourceLabel = spec.sourceLabel;
   row.dataset.sourceTag = spec.sourceTag || "職業";
+  row.dataset.spellClass = spec.spellClass || spec.selectableSpellClass || "";
+  row.dataset.castMode = "cantrip";
+  row.dataset.fixedCastLevel = "0";
+  row.dataset.ritualAllowed = "false";
   classSel.disabled = true;
   classSel.setAttribute("aria-disabled", "true");
   spellSel.disabled = false;
@@ -3686,7 +3845,7 @@ function getPactTomeSpellOptions(ring) {
   return SpellCatalog.getAllSpells().filter(spell => {
     if (!SpellCatalog.getClassIds(spell.spellId).length) return false;
     if (ring === "cantrips") return spell.level === 0;
-    return spell.level === 1 && /儀式/u.test(spell.desc || "");
+    return spell.level === 1 && SpellCatalog.isRitual(spell);
   }).sort((a, b) => a.nameZh.localeCompare(b.nameZh, "zh-Hant"));
 }
 
@@ -3708,6 +3867,11 @@ function setPactTomeDerivedRowValues(row, spec) {
   row.dataset.sourcePriority = String(spec.sourcePriority);
   row.dataset.sourceLabel = spec.sourceLabel;
   row.dataset.sourceTag = spec.sourceTag || "書契";
+  row.dataset.freeUses = spec.freeUses || "";
+  row.dataset.spellClass = spec.spellClass || "warlock";
+  row.dataset.castMode = spec.castMode || (spec.ring === "cantrips" ? "cantrip" : "slot");
+  row.dataset.fixedCastLevel = String(spec.fixedCastLevel ?? (typeof spec.ring === "number" ? spec.ring : 0));
+  row.dataset.ritualAllowed = String(Boolean(spec.ritualAllowed));
   classSel.disabled = true;
   classSel.setAttribute("aria-disabled", "true");
   spellSel.disabled = false;
@@ -5919,6 +6083,8 @@ function createSingleSpellRow(areaId, level, afterRow = null, restoredRowState =
     rowDiv.remove();
     refreshSpellRows(areaId);
     updatePickedSpellBoxes();
+    syncAgonizingBlastSelections();
+    updateWarlockInvocationSummary();
     scheduleStructuralSaveAllFields();
   });
 
@@ -5970,6 +6136,10 @@ function createSingleSpellRow(areaId, level, afterRow = null, restoredRowState =
     const desc = SpellCatalog.getSpell(spellVal)?.desc || "—";
     descDiv.innerHTML = renderSpellDescHtml(desc);
     updatePickedSpellBoxes();
+    syncAgonizingBlastSelections({
+      notify: !window.__originSpellSyncInProgress && !window.__magicInitiateSyncInProgress
+    });
+    updateWarlockInvocationSummary();
     if (rowDiv.dataset.spellSource === PACT_TOME_SPELL_SOURCE) {
       updatePactTomeSelectionFromRows();
     }
@@ -6090,20 +6260,6 @@ function getSpellFreeUseControls(spellSelect) {
 
 window.getSpellFreeUseControls = getSpellFreeUseControls;
 
-function renderDruidNaturalRecoveryMirror(row, spellName) {
-  if (!isDruidLandSpellRow(row)) return "";
-  const checked = document.getElementById("druid-natural-recovery-used")?.checked ? " checked" : "";
-  return `<label class="druid-natural-recovery-mirror-label"><input type="checkbox" class="druid-natural-recovery-mirror" aria-label="自然恢復：${escapeHtml(spellName)}的免費施法次數已使用"${checked}></label>`;
-}
-
-function syncDruidNaturalRecoveryControls() {
-  const canonical = document.getElementById("druid-natural-recovery-used");
-  if (!canonical) return;
-  document.querySelectorAll(".druid-natural-recovery-mirror").forEach(mirror => {
-    mirror.checked = canonical.checked;
-  });
-}
-
 const DEFAULT_SPELL_LIST_NOTE = "本頁僅提供免費基本規則法術；部分 PHB 專屬內容未列入。";
 const DUPLICATE_SPELL_LIST_NOTE = "法術列表存在重複，請冒險者留意！";
 
@@ -6153,14 +6309,12 @@ function updatePickedSpellBoxes() {
       const row = select.closest(".spell-entry");
       const sourceKey = row?.dataset.sourceKey || "";
       const sourceTag = getPickedSpellSourceTag(row);
-      const naturalRecovery = renderDruidNaturalRecoveryMirror(row, nameZh);
-      return `<span class="spell-picked-item"><span class="spell-picked-jump" role="button" tabindex="0" data-spell-jump="picked" data-area-id="${areaId}" data-spell-id="${escapeHtml(spellId)}" data-source-key="${escapeHtml(sourceKey)}">[${escapeHtml(nameZh)}]</span>${sourceTag ? `<span class="spell-picked-source-tag">[${sourceTag}]</span>` : ""}${useChecks}${naturalRecovery}</span>`;
+      return `<span class="spell-picked-item"><span class="spell-picked-jump" role="button" tabindex="0" data-spell-jump="picked" data-area-id="${areaId}" data-spell-id="${escapeHtml(spellId)}" data-source-key="${escapeHtml(sourceKey)}">[${escapeHtml(nameZh)}]</span>${sourceTag ? `<span class="spell-picked-source-tag">[${sourceTag}]</span>` : ""}${useChecks}</span>`;
     }).join("\n");
     setupAutoSave(target);
   });
   if (grid) grid.hidden = visibleBoxCount === 0;
   updateSpellOverviewManagementVisibility();
-  syncDruidNaturalRecoveryControls();
   updateSpellListStatusNote();
   if (typeof populateHandAttacks === "function") populateHandAttacks();
 }
@@ -7147,17 +7301,7 @@ document.addEventListener("change", (e) => {
   const target = e.target;
   if (!(target instanceof HTMLInputElement) && !(target instanceof HTMLSelectElement)) return;
 
-  if (target.classList.contains("druid-natural-recovery-mirror")) {
-    const canonical = document.getElementById("druid-natural-recovery-used");
-    if (canonical) {
-      canonical.checked = target.checked;
-      canonical.dispatchEvent(new Event("change", { bubbles: true }));
-    }
-    return;
-  }
-
   if (target.id === "druid-natural-recovery-used") {
-    syncDruidNaturalRecoveryControls();
     scheduleSaveAllFields();
     return;
   }
@@ -7203,6 +7347,7 @@ const APP_STORAGE_KEYS = Object.freeze([
   CLASS_FEATURE_TABLE_STATE_KEY,
   CLASS_CORE_CREATION_INFO_STATE_KEY,
   "dnd.quickBuildDraft.v1",
+  "dnd.tabletopActionPreferences.v1",
   ...LEGACY_LEGAL_DISMISS_KEYS
 ]);
 let SHARE_MODE = false;
@@ -7572,6 +7717,7 @@ function applyStateObject(data) {
     for (const id in data) {
       if (id === "__deletedSpellRowCache" || id === "__pactTomeSpellSelection" || id === "__classFeatureCantrips") continue;
       if (isSpellRowStateKey(id)) continue;
+      if (isAgonizingBlastSelectId(id)) continue;
       const el = document.getElementById(id);
       if (!el) continue;
       if (el.type === "checkbox") {
@@ -7596,6 +7742,7 @@ function applyStateObject(data) {
       }
     });
     syncOriginAndSubclassDerivedSpellRows();
+    applyAgonizingBlastState(data);
     updateClassFeatureOptionVisibility();
     updateHighElfCantripVisibility();
     updateBaseLanguageOptions();
@@ -7606,7 +7753,6 @@ function applyStateObject(data) {
     updatePickedSpellBoxes();
     syncHitDiceCountToLevel({ preserveCurrent: true });
     syncAdvancedClassFeatureControls();
-    syncDruidNaturalRecoveryControls();
     refreshFeatDerivedEffects();
     syncAutomaticKeyStatsMode();
     updateOffHandRolePresentation();
@@ -8853,7 +8999,7 @@ window.addEventListener("DOMContentLoaded", async function() {
       }
       const confirmed = await window.AppDialog.requestDecision({
         title: "清除本機角色紀錄",
-        message: "這會清除角色欄位、版權提醒與分頁狀態，並重新載入預設角色卡。此操作無法復原。",
+        message: "這會清除角色欄位、版權提醒、分頁狀態與桌邊動作偏好，並重新載入預設角色卡。此操作無法復原。",
         cancelLabel: "保留紀錄",
         confirmLabel: "清除紀錄",
         intent: "danger"
@@ -8991,7 +9137,7 @@ window.addEventListener("DOMContentLoaded", async function() {
       <button type="button" class="dice-roller-die" data-die="6" aria-pressed="false"><span>6</span><span class="dice-roller-count" aria-hidden="true"></span></button>
       <button type="button" class="dice-roller-die" data-die="4" aria-pressed="false"><span>4</span><span class="dice-roller-count" aria-hidden="true"></span></button>
       <button type="button" id="dice-roller-roll" class="dice-roller-roll" disabled>ROLL</button>
-      <button type="button" id="dice-roller-clear" class="dice-roller-clear" aria-label="清空所有骰子">X</button>
+      <button type="button" id="dice-roller-clear" class="dice-roller-clear" aria-label="清空所有骰子；按住 3 秒清除擲骰紀錄">X</button>
     </div>
   </section>
 </div>

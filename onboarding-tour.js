@@ -103,10 +103,16 @@
       this.activeTabStorageSnapshot = null;
       this.activeHoles = [];
       this.scrollRenderPending = false;
+      this.pointBuyScrollRenderPending = false;
       this.lastTourScrollY = window.scrollY;
       this.bodyTouchActionSnapshot = null;
+      this.quickBuildDecisionPending = false;
+      this.pointBuyPresetTooltip = null;
+      this.pointBuyPresetTooltipTrigger = null;
+      this.pointBuyPresetTooltipDescribedBy = null;
       this.handleResize = this.handleResize.bind(this);
       this.handleScroll = this.handleScroll.bind(this);
+      this.handlePointBuyScroll = this.handlePointBuyScroll.bind(this);
       this.handleKeydown = this.handleKeydown.bind(this);
       this.handleFocusIn = this.handleFocusIn.bind(this);
       this.preventScrollEvent = this.preventScrollEvent.bind(this);
@@ -125,6 +131,8 @@
       this.skipBtn.addEventListener("click", () => this.stop());
       window.addEventListener("resize", this.handleResize);
       window.addEventListener("scroll", this.handleScroll, { passive: true });
+      document.querySelector("#point-buy-modal .point-buy-modal-card")
+        ?.addEventListener("scroll", this.handlePointBuyScroll, { passive: true });
       document.addEventListener("keydown", this.handleKeydown);
       document.addEventListener("focusin", this.handleFocusIn);
       document.addEventListener("pointerdown", this.handleTourPointerDownCapture, true);
@@ -188,14 +196,46 @@
         },
         {
           tab: "basic",
-          title: "🎲 3. 決定屬性",
-          text: "除了自行填寫屬性以外，你也可以使用 27 購點配置。初次遊玩建議使用「創角小幫手」，由它帶你完成一名 1 級角色。",
+          title: () => {
+            if (this.stepPhase === 1) return "🎲 3. 27 購點：配置基礎值";
+            if (this.stepPhase === 2) return "🎲 3. 27 購點：背景加值與套用";
+            return "🎲 3. 決定屬性";
+          },
+          text: () => {
+            if (this.stepPhase === 1) {
+              return "每項基礎值可在 8～15 之間調整，數值越高花費越多。留意下方的已用與剩餘點數，總花費不能超過 27 點。";
+            }
+            if (this.stepPhase === 2) {
+              return "選擇背景後，可在背景允許的三項屬性間分配共 3 點加值，單項最多 +2；也可使用職業範本快速配置。完成後可套用到角色，本次導覽請按「下一步」繼續。";
+            }
+            return "除了自行填寫屬性以外，你也可以使用 27 購點配置。初次遊玩建議使用「創角小幫手」，由它帶你完成一名 1 級角色。";
+          },
           placement: "overlay-bottom",
-          getHoles: () => [this.getHoleForSelector("#ability-choice-modal .ability-choice-card", 6)].filter(Boolean),
+          getHoles: () => {
+            if (this.stepPhase === 1) {
+              return [
+                this.getPointBuyHole([document.getElementById("point-buy-rows")], 6),
+                this.getPointBuyHole([document.querySelector("#point-buy-modal .point-buy-summary")], 6)
+              ].filter(Boolean);
+            }
+            if (this.stepPhase === 2) {
+              return [
+                this.getPointBuyHole([
+                  document.querySelector("#point-buy-modal .point-buy-background"),
+                  document.querySelector("#point-buy-modal .point-buy-preset")
+                ], 6),
+                this.getPointBuyHole([document.querySelector("#point-buy-modal .point-buy-actions")], 6)
+              ].filter(Boolean);
+            }
+            return [this.getHoleForSelector("#ability-choice-modal .ability-choice-card", 6)].filter(Boolean);
+          },
           beforePosition: async () => {
             await this.openAbilityChoicePreview();
           },
-          afterLeave: () => this.closeAbilityChoicePreview()
+          afterLeave: () => {
+            this.closeAbilityChoicePreview();
+            this.closePointBuyPreview();
+          }
         },
         {
           tab: "equipment",
@@ -251,10 +291,11 @@
       ];
     }
 
-    async start() {
+    async start(initialIndex = 0) {
       if (this.active) this.stop({ resetView: false });
       this.steps = this.getSteps();
       if (!this.steps.length) return;
+      const targetIndex = Math.max(0, Math.min(initialIndex, this.steps.length - 1));
       this.currentIndex = -1;
       this.stepPhase = 0;
       this.tooltipDragPosition = null;
@@ -275,11 +316,18 @@
       this.overlay.inert = false;
       this.overlay.style.display = "block";
       this.overlay.setAttribute("aria-hidden", "false");
-      await this.goTo(0);
+      await this.goTo(targetIndex);
     }
 
     async next() {
       if (!this.active || this.isTransitioning) return;
+      this.hidePointBuyPresetTooltip();
+      if (this.currentIndex === 2 && this.stepPhase === 1) {
+        this.stepPhase = 2;
+        this.tooltipDragPosition = null;
+        await this.renderStep();
+        return;
+      }
       if (this.currentIndex >= this.steps.length - 1) {
         this.stop();
         return;
@@ -287,14 +335,53 @@
       await this.goTo(this.currentIndex + 1);
     }
 
+    async finishTourForQuickBuild() {
+      if (!this.active) return;
+      this.stop({ resetView: false });
+      window.quickBuild?.open?.();
+    }
+
+    async confirmQuickBuildEntry(trigger) {
+      if (this.quickBuildDecisionPending) return;
+      this.quickBuildDecisionPending = true;
+      try {
+        const confirmed = await window.AppDialog?.requestDecision?.({
+          title: "進入創角小幫手",
+          message: "要進入創角小幫手流程嗎？進入後將結束本次新手導覽。",
+          cancelLabel: "留在導覽",
+          confirmLabel: "進入小幫手",
+          trigger
+        });
+        if (confirmed) await this.finishTourForQuickBuild();
+      } finally {
+        this.quickBuildDecisionPending = false;
+      }
+    }
+
     async prev() {
       if (!this.active || this.isTransitioning) return;
+      this.hidePointBuyPresetTooltip();
+      if (this.currentIndex === 2 && this.stepPhase === 2) {
+        this.stepPhase = 1;
+        this.tooltipDragPosition = null;
+        await this.renderStep();
+        return;
+      }
+      if (this.currentIndex === 2 && this.stepPhase === 1) {
+        this.closePointBuyPreview();
+        this.stepPhase = 0;
+        this.tooltipDragPosition = null;
+        await this.openAbilityChoicePreview();
+        await this.renderStep();
+        return;
+      }
       if (this.currentIndex <= 0) return;
       await this.goTo(this.currentIndex - 1);
     }
 
     async goTo(index) {
       if (!this.active || this.isTransitioning) return;
+      this.hidePointBuyPresetTooltip();
       this.isTransitioning = true;
       const previousStep = this.steps[this.currentIndex];
       if (previousStep && typeof previousStep.afterLeave === "function") previousStep.afterLeave();
@@ -317,6 +404,7 @@
     }
 
     stop({ resetView = true } = {}) {
+      this.hidePointBuyPresetTooltip();
       const currentStep = this.steps[this.currentIndex];
       if (currentStep && typeof currentStep.afterLeave === "function") currentStep.afterLeave();
       this.restoreIdentityPreview();
@@ -792,6 +880,87 @@
       }
     }
 
+    async enterPointBuyTutorial() {
+      if (!this.active || this.currentIndex !== 2) return;
+      this.stepPhase = 1;
+      this.tooltipDragPosition = null;
+      await waitForLayoutStability();
+      this.refreshTourInteractionRoots();
+      await this.renderStep();
+    }
+
+    closePointBuyPreview() {
+      this.hidePointBuyPresetTooltip();
+      const modal = document.getElementById("point-buy-modal");
+      if (!modal?.classList.contains("open")) return;
+      this.isInternalTourAction = true;
+      modal.classList.add("onboarding-tour-preview");
+      try {
+        this.runWithBackgroundElementUnlocked(document.getElementById("point-buy-close"), (button) => button.click());
+      } finally {
+        modal.classList.remove("onboarding-tour-preview");
+        this.isInternalTourAction = false;
+      }
+    }
+
+    togglePointBuyPresetTooltip(trigger) {
+      if (this.pointBuyPresetTooltip) {
+        this.hidePointBuyPresetTooltip();
+        return;
+      }
+      const source = document.querySelector("#default-ability-class-modal .default-ability-class-note");
+      const message = source?.textContent?.trim();
+      if (!trigger || !message) return;
+
+      const tooltip = document.createElement("div");
+      tooltip.id = "tour-point-buy-preset-tooltip";
+      tooltip.className = "tour-branch-tooltip";
+      tooltip.setAttribute("role", "tooltip");
+      tooltip.textContent = message;
+      document.body.appendChild(tooltip);
+
+      this.pointBuyPresetTooltip = tooltip;
+      this.pointBuyPresetTooltipTrigger = trigger;
+      this.pointBuyPresetTooltipDescribedBy = trigger.getAttribute("aria-describedby");
+      trigger.setAttribute("aria-describedby", [this.pointBuyPresetTooltipDescribedBy, tooltip.id].filter(Boolean).join(" "));
+      this.positionPointBuyPresetTooltip();
+    }
+
+    positionPointBuyPresetTooltip() {
+      const tooltip = this.pointBuyPresetTooltip;
+      const trigger = this.pointBuyPresetTooltipTrigger;
+      if (!tooltip || !trigger?.isConnected) return;
+      const margin = 10;
+      const gap = 8;
+      const anchor = trigger.getBoundingClientRect();
+      const tip = tooltip.getBoundingClientRect();
+      const left = Math.min(
+        window.innerWidth - tip.width - margin,
+        Math.max(margin, anchor.left + (anchor.width - tip.width) / 2)
+      );
+      const below = anchor.bottom + gap;
+      const top = below + tip.height <= window.innerHeight - margin
+        ? below
+        : Math.max(margin, anchor.top - tip.height - gap);
+      tooltip.style.left = `${left}px`;
+      tooltip.style.top = `${top}px`;
+    }
+
+    hidePointBuyPresetTooltip() {
+      const trigger = this.pointBuyPresetTooltipTrigger;
+      if (trigger?.isConnected) {
+        if (this.pointBuyPresetTooltipDescribedBy) {
+          trigger.setAttribute("aria-describedby", this.pointBuyPresetTooltipDescribedBy);
+        } else {
+          trigger.removeAttribute("aria-describedby");
+        }
+      }
+      this.pointBuyPresetTooltip?.remove();
+      this.pointBuyPresetTooltip = null;
+      this.pointBuyPresetTooltipTrigger = null;
+      this.pointBuyPresetTooltipDescribedBy = null;
+    }
+
     async openSpellSearchPreview() {
       const toolbar = document.getElementById("spell-tab-toolbar");
       if (toolbar?.classList.contains("is-hidden")) {
@@ -880,6 +1049,27 @@
           ...["str", "dex", "con", "int", "wis", "cha"].map((id) => document.getElementById(id))
         ].filter((element) => element && isElementVisible(element));
       }
+      if (this.currentIndex === 2) {
+        if (this.stepPhase === 1) {
+          return [
+            document.getElementById("point-buy-rows"),
+            document.getElementById("point-buy-reset")
+          ].filter((element) => element && isElementVisible(element));
+        }
+        if (this.stepPhase === 2) {
+          return [
+            document.getElementById("point-buy-background"),
+            document.getElementById("point-buy-rows"),
+            document.getElementById("point-buy-reset"),
+            document.getElementById("ability-choice-default")
+          ].filter((element) => element && isElementVisible(element));
+        }
+        return [
+          document.getElementById("ability-choice-point-buy"),
+          document.getElementById("quick-card-builder")
+        ]
+          .filter((element) => element && isElementVisible(element));
+      }
       if (this.currentIndex === 3 && this.equipmentPreviewSnapshot) {
         return ["mainHand", "offHand", "armor"]
           .map((id) => document.getElementById(id))
@@ -894,6 +1084,7 @@
     isAllowedTourInteraction(target) {
       if (!(target instanceof Element)) return false;
       if (this.tooltip?.contains(target)) return true;
+      if (target.closest(".app-dialog")) return true;
       return this.getAllowedTourElements().some((element) => element === target || element.contains(target));
     }
 
@@ -903,6 +1094,21 @@
       const clientY = touch?.clientY ?? event.clientY;
       if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) return null;
       return { x: clientX, y: clientY };
+    }
+
+    getPointBuyTutorialScrollContainer(event) {
+      if (!this.active || this.currentIndex !== 2 || this.stepPhase === 0) return null;
+      if (this.tooltip?.contains(event.target)) return null;
+      const container = document.querySelector("#point-buy-modal.open .point-buy-modal-card");
+      const point = this.getEventViewportPoint(event);
+      if (!container || !point) return null;
+      const rect = container.getBoundingClientRect();
+      return point.x >= rect.left
+        && point.x <= rect.right
+        && point.y >= rect.top
+        && point.y <= rect.bottom
+        ? container
+        : null;
     }
 
     isEventInsideActiveHole(event) {
@@ -1002,13 +1208,17 @@
 
     handleTourPointerDownCapture(event) {
       if (!this.active || this.isInternalTourAction) return;
-      if (event.pointerType !== "mouse" && this.isEventInsideActiveHole(event)) {
+      const pointBuyScrollContainer = event.pointerType !== "mouse"
+        ? this.getPointBuyTutorialScrollContainer(event)
+        : null;
+      if (event.pointerType !== "mouse" && (pointBuyScrollContainer || this.isEventInsideActiveHole(event))) {
         this.highlightDragState = {
           pointerId: event.pointerId,
           startY: event.clientY,
           lastY: event.clientY,
           moved: false,
-          scrollTarget: this.getHighlightScrollTarget(event.target, event.clientX, event.clientY)
+          scrollTarget: pointBuyScrollContainer
+            || this.getHighlightScrollTarget(event.target, event.clientX, event.clientY)
         };
         return;
       }
@@ -1029,17 +1239,33 @@
       }
       if (this.tooltip?.contains(target)) return;
 
+      if (this.currentIndex === 2 && this.stepPhase === 2 && target.closest("#ability-choice-default")) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        this.togglePointBuyPresetTooltip(target.closest("#ability-choice-default"));
+        return;
+      }
+      if (this.pointBuyPresetTooltip) this.hidePointBuyPresetTooltip();
+
       if (this.currentIndex === 1 && this.stepPhase === 0) {
         if (target.closest("#set-default-abilities")) {
-          window.setTimeout(async () => {
-            if (!this.active || this.currentIndex !== 1 || this.stepPhase !== 0) return;
-            this.tooltipDragPosition = null;
-            await waitForLayoutStability();
-            this.refreshTourInteractionRoots();
-            await this.renderStep();
-          }, 0);
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          this.goTo(2);
           return;
         }
+      }
+
+      if (this.currentIndex === 2 && target.closest("#quick-card-builder")) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        this.confirmQuickBuildEntry(target.closest("#quick-card-builder"));
+        return;
+      }
+
+      if (this.currentIndex === 2 && this.stepPhase === 0 && target.closest("#ability-choice-point-buy")) {
+        window.setTimeout(() => this.enterPointBuyTutorial(), 0);
+        return;
       }
 
       if (!this.isAllowedTourInteraction(target)) {
@@ -1052,6 +1278,7 @@
       if (!this.active || this.isInternalTourAction) return;
       const target = event.target;
       if (!(target instanceof HTMLSelectElement) || !this.isAllowedTourInteraction(target)) return;
+      if (this.currentIndex === 2 && target.id === "point-buy-background") return;
       event.stopImmediatePropagation();
       if (event.type !== "change") return;
       if (this.currentIndex === 3 && this.equipmentPreviewSnapshot) {
@@ -1109,6 +1336,21 @@
       };
     }
 
+    getPointBuyHole(elements, padding = 8) {
+      const hole = this.getHoleFromElements(elements, padding);
+      const scrollContainer = document.querySelector("#point-buy-modal .point-buy-modal-card");
+      if (!hole || !scrollContainer) return hole;
+      const clip = scrollContainer.getBoundingClientRect();
+      const clipped = {
+        left: Math.max(hole.left, clip.left),
+        top: Math.max(hole.top, clip.top),
+        right: Math.min(hole.right, clip.right),
+        bottom: Math.min(hole.bottom, clip.bottom)
+      };
+      if (clipped.right <= clipped.left || clipped.bottom <= clipped.top) return null;
+      return clipped;
+    }
+
     getVisibleHole(hole) {
       if (!hole) return null;
       const visibleHole = {
@@ -1127,7 +1369,7 @@
       return value ?? fallback;
     }
 
-    async renderStep() {
+    async renderStep({ refreshInteractionRoots = true, ensureFocus = true } = {}) {
       if (!this.active) return;
       this.resetHighlightState();
       const step = this.steps[this.currentIndex];
@@ -1145,6 +1387,7 @@
       this.progress.textContent = `${this.currentIndex + 1}/${this.steps.length}`;
       this.progress.setAttribute("aria-label", `導覽進度：第 ${this.currentIndex + 1} 步，共 ${this.steps.length} 步`);
       this.prevBtn.disabled = this.currentIndex === 0;
+      this.skipBtn.hidden = this.currentIndex === this.steps.length - 1;
       this.nextBtn.textContent = this.getNextButtonText();
       this.tooltip.style.display = "";
 
@@ -1152,13 +1395,14 @@
       if (visibleHoles[0]) this.positionTooltip(visibleHoles[0], placement);
       else this.positionTooltipWithoutHighlight();
       this.applyTooltipDragPosition();
-      this.refreshTourInteractionRoots();
-      this.ensureTourFocus();
+      if (refreshInteractionRoots) this.refreshTourInteractionRoots();
+      if (ensureFocus) this.ensureTourFocus();
       this.lastTourScrollY = window.scrollY;
     }
 
     getNextButtonText() {
       if (this.currentIndex === this.steps.length - 1) return "導覽完成";
+      if (this.currentIndex === 2 && this.stepPhase === 1) return "繼續購點教學";
       return "下一步";
     }
 
@@ -1342,6 +1586,7 @@
 
     handleResize() {
       if (!this.active) return;
+      this.hidePointBuyPresetTooltip();
       requestAnimationFrame(() => this.renderStep());
     }
 
@@ -1355,7 +1600,18 @@
         this.lastTourScrollY = window.scrollY;
         this.keepHighlightedTargetsReachable(scrollDelta);
         this.lastTourScrollY = window.scrollY;
-        this.renderStep();
+        this.renderStep({ refreshInteractionRoots: false, ensureFocus: false });
+      });
+    }
+
+    handlePointBuyScroll() {
+      if (!this.active || this.currentIndex !== 2 || this.stepPhase === 0 || this.pointBuyScrollRenderPending) return;
+      this.hidePointBuyPresetTooltip();
+      this.pointBuyScrollRenderPending = true;
+      requestAnimationFrame(() => {
+        this.pointBuyScrollRenderPending = false;
+        if (!this.active || this.currentIndex !== 2 || this.stepPhase === 0) return;
+        this.renderStep({ refreshInteractionRoots: false, ensureFocus: false });
       });
     }
 
@@ -1378,6 +1634,7 @@
 
     handleKeydown(event) {
       if (!this.active) return;
+      if (event.target instanceof Element && event.target.closest(".app-dialog")) return;
       if (event.key === "Escape") {
         event.preventDefault();
         this.stop();
@@ -1409,7 +1666,10 @@
     }
 
     ensureTourFocus() {
-      if (this.getTourFocusableButtons().includes(document.activeElement)) return;
+      const activeElement = document.activeElement;
+      if (this.getTourFocusableButtons().some((element) => (
+        element === activeElement || (activeElement instanceof Element && element.contains(activeElement))
+      ))) return;
       this.nextBtn?.focus({ preventScroll: true });
     }
 
@@ -1436,6 +1696,17 @@
         return;
       }
       if (event.type === "touchmove") {
+        event.preventDefault();
+        return;
+      }
+      const pointBuyScrollContainer = this.getPointBuyTutorialScrollContainer(event);
+      if (pointBuyScrollContainer) {
+        const deltaScale = event.deltaMode === 1
+          ? 16
+          : event.deltaMode === 2
+            ? pointBuyScrollContainer.clientHeight
+            : 1;
+        pointBuyScrollContainer.scrollTop += event.deltaY * deltaScale;
         event.preventDefault();
         return;
       }

@@ -6,6 +6,13 @@
   const CUSTOM_RESOURCE_MAX = 999;
   const BUILT_IN_RESOURCE_MAX = 999;
   const ENDED_CONCENTRATION_LIMIT = 12;
+  const TABLETOP_ACTION_PREFERENCES_KEY = "dnd.tabletopActionPreferences.v1";
+  const TABLETOP_ACTION_PREFERENCES_VERSION = 1;
+  const TABLETOP_ACTION_MODES = Object.freeze(["basic", "action", "bonus", "reaction", "movement"]);
+  const CUSTOM_TABLETOP_ACTION_LIMIT = 50;
+  const CUSTOM_TABLETOP_ACTION_LABEL_MAX = 40;
+  const CUSTOM_TABLETOP_ACTION_DESCRIPTION_MAX = 600;
+  const HIDDEN_TABLETOP_ACTION_LIMIT = 500;
   const HEROIC_SACRIFICE_LABEL = "您已英勇犧牲";
   const DEFAULT_COMBAT_STATE = Object.freeze({
     characterName: "",
@@ -41,6 +48,81 @@
       hash = Math.imul(hash, 16777619);
     }
     return (hash >>> 0).toString(36);
+  }
+
+  function createDefaultTabletopActionPreferences() {
+    return {
+      version: TABLETOP_ACTION_PREFERENCES_VERSION,
+      customActions: [],
+      hiddenKeys: []
+    };
+  }
+
+  function normalizeCustomTabletopActions(value) {
+    if (!Array.isArray(value)) return [];
+    const usedIds = new Set();
+
+    return value.slice(0, CUSTOM_TABLETOP_ACTION_LIMIT).flatMap((entry, index) => {
+      if (!entry || typeof entry !== "object" || Array.isArray(entry)) return [];
+      const label = String(entry.label ?? "").trim().slice(0, CUSTOM_TABLETOP_ACTION_LABEL_MAX);
+      const mode = String(entry.mode || "");
+      const description = String(entry.description ?? "").trim().slice(0, CUSTOM_TABLETOP_ACTION_DESCRIPTION_MAX);
+      if (!label || !description || !TABLETOP_ACTION_MODES.includes(mode)) return [];
+
+      const rawId = typeof entry.id === "string" ? entry.id.trim().slice(0, 100) : "";
+      const validId = /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,99}$/.test(rawId);
+      const fingerprint = `${rawId}|${label}|${mode}|${description}|${index}`;
+      const baseId = validId ? rawId : `custom-action-${stableKeyHash(fingerprint)}`;
+      let id = baseId;
+      let duplicateIndex = 2;
+      while (usedIds.has(id)) {
+        id = `${baseId.slice(0, 94)}-${duplicateIndex}`;
+        duplicateIndex += 1;
+      }
+      usedIds.add(id);
+      return [{ id, label, mode, description }];
+    });
+  }
+
+  function normalizeHiddenTabletopActionKeys(value, customActions = []) {
+    if (!Array.isArray(value)) return [];
+    const customIds = new Set(customActions.map(action => action.id));
+    const normalized = [];
+    const usedKeys = new Set();
+
+    for (const rawKey of value) {
+      if (normalized.length >= HIDDEN_TABLETOP_ACTION_LIMIT) break;
+      if (typeof rawKey !== "string") continue;
+      const key = rawKey.trim();
+      if (!key || key.length > 280 || usedKeys.has(key)) continue;
+      const officialMatch = key.match(/^official:(basic|action|bonus|reaction|movement):(.+)$/u);
+      const customMatch = key.match(/^custom:([A-Za-z0-9][A-Za-z0-9_.:-]{0,99})$/u);
+      if (!officialMatch && (!customMatch || !customIds.has(customMatch[1]))) continue;
+      usedKeys.add(key);
+      normalized.push(key);
+    }
+    return normalized;
+  }
+
+  function normalizeTabletopActionPreferences(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+      return createDefaultTabletopActionPreferences();
+    }
+    if (value.version !== undefined && value.version !== TABLETOP_ACTION_PREFERENCES_VERSION) {
+      return createDefaultTabletopActionPreferences();
+    }
+    const customActions = normalizeCustomTabletopActions(value.customActions);
+    return {
+      version: TABLETOP_ACTION_PREFERENCES_VERSION,
+      customActions,
+      hiddenKeys: normalizeHiddenTabletopActionKeys(value.hiddenKeys, customActions)
+    };
+  }
+
+  function createCustomTabletopActionId() {
+    const randomId = globalScope.crypto?.randomUUID?.();
+    if (randomId) return `custom-action-${randomId}`;
+    return `custom-action-${Date.now().toString(36)}-${stableKeyHash(Math.random())}`;
   }
 
   function normalizeEndedConcentrations(value) {
@@ -118,6 +200,181 @@
       const spent = toBoundedInteger(rawSpent, 0, BUILT_IN_RESOURCE_MAX, 0);
       return spent > 0 ? [[key, spent]] : [];
     }));
+  }
+
+  function freezeCastOption(value) {
+    return Object.freeze({ ...value });
+  }
+
+  function buildSpellCastOptions(spec = {}) {
+    const baseLevel = Math.max(1, Number.parseInt(spec.baseLevel, 10) || 1);
+    const castMode = String(spec.castMode || "slot");
+    const fixedCastLevel = Math.max(baseLevel, Number.parseInt(spec.fixedCastLevel, 10) || baseLevel);
+    const freeControls = Array.isArray(spec.freeControls) ? spec.freeControls : [];
+    const slotGroups = Array.isArray(spec.slotGroups) ? spec.slotGroups : [];
+    const methods = [];
+    const atWill = castMode === "at-will";
+    const freeControl = freeControls.find(control => (
+      control?.id && !control.checked && !control.disabled
+    ));
+
+    if (!atWill && freeControl) methods.push(freezeCastOption({
+      id: "free",
+      label: "免費次數",
+      effectiveLevel: fixedCastLevel,
+      resourceId: String(freeControl.id),
+      resourceLabel: String(freeControl.label || "免費施法次數")
+    }));
+
+    if (atWill) methods.push(freezeCastOption({
+      id: "at-will",
+      label: "隨意施法",
+      effectiveLevel: fixedCastLevel,
+      resourceId: "",
+      resourceLabel: "不消耗資源"
+    }));
+
+    if (!atWill && spec.ritual && spec.ritualAllowed) methods.push(freezeCastOption({
+      id: "ritual",
+      label: "儀式施法",
+      effectiveLevel: baseLevel,
+      resourceId: "",
+      resourceLabel: String(spec.ritualExtraTime || "不消耗法術位")
+    }));
+
+    const slots = atWill ? [] : slotGroups.flatMap(group => {
+      const level = Number.parseInt(group?.level, 10);
+      if (!Number.isSafeInteger(level) || level < baseLevel) return [];
+      const available = (Array.isArray(group.controls) ? group.controls : [])
+        .filter(control => control?.id && !control.checked && !control.disabled);
+      if (!available.length) return [];
+      return [freezeCastOption({
+        level,
+        resourceId: String(available[0].id),
+        available: available.length,
+        hasUpcastEffect: level === baseLevel || Boolean(spec.hasUpcastEffect),
+        noExtraEffect: level > baseLevel && !spec.hasUpcastEffect
+      })];
+    }).sort((left, right) => left.level - right.level);
+
+    if (slots.length) methods.push(freezeCastOption({
+      id: "slot",
+      label: "法術位",
+      effectiveLevel: slots[0].level,
+      resourceId: slots[0].resourceId,
+      resourceLabel: `${slots[0].level} 環法術位`
+    }));
+
+    const defaultMethod = methods.find(method => method.id === "free")
+      || methods.find(method => method.id === "at-will")
+      || methods.find(method => method.id === "slot")
+      || methods.find(method => method.id === "ritual")
+      || null;
+    return Object.freeze({
+      baseLevel,
+      methods: Object.freeze(methods),
+      slots: Object.freeze(slots),
+      defaultMethod: defaultMethod?.id || "",
+      defaultSlotLevel: slots[0]?.level || 0
+    });
+  }
+
+  function getCanonicalSpellSlotGroups() {
+    if (typeof document === "undefined") return [];
+    return [1, 2, 3, 4].flatMap(level => {
+      const row = document.getElementById(`spellslot${level}-row`);
+      if (!row || row.style.display === "none" || row.hidden) return [];
+      const controls = Array.from(row.querySelectorAll('input[type="checkbox"][id]'))
+        .filter(input => !input.hidden && input.style.display !== "none")
+        .map(input => ({ id: input.id, checked: input.checked, disabled: input.disabled }));
+      return controls.length ? [{ level, controls }] : [];
+    });
+  }
+
+  function getSpellCastOptions(entry = {}) {
+    const spell = entry.spell || globalScope.SpellCatalog?.getSpell?.(entry.spellId);
+    const metadata = globalScope.SpellCatalog?.getCastMetadata?.(spell?.spellId);
+    if (!spell || spell.level < 1 || !metadata) return buildSpellCastOptions({ baseLevel: 1 });
+    const discoveredFreeControls = globalScope.getSpellFreeUseControls?.(entry.spellSelect) || [];
+    const latestFreeControls = discoveredFreeControls.length
+      ? discoveredFreeControls
+      : Array.isArray(entry.freeUseControls) ? entry.freeUseControls : [];
+    return buildSpellCastOptions({
+      baseLevel: spell.level,
+      castMode: entry.castMode,
+      fixedCastLevel: entry.fixedCastLevel,
+      ritual: metadata.ritual,
+      ritualAllowed: entry.ritualAllowed,
+      ritualExtraTime: metadata.ritualExtraTime,
+      hasUpcastEffect: metadata.hasUpcastEffect,
+      freeControls: latestFreeControls.map(control => ({
+        id: control.canonical?.id || "",
+        checked: Boolean(control.canonical?.checked),
+        disabled: Boolean(control.canonical?.disabled),
+        label: control.label || control.title || "免費施法次數"
+      })),
+      slotGroups: getCanonicalSpellSlotGroups()
+    });
+  }
+
+  function dispatchCanonicalCastUpdate(control) {
+    control.dispatchEvent(new Event("input", { bubbles: true }));
+    control.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+
+  function validateSpellCastSelection(options = {}, selection = {}) {
+    const methodId = String(selection.method || "");
+    const methods = Array.isArray(options.methods) ? options.methods : [];
+    const slots = Array.isArray(options.slots) ? options.slots : [];
+    const method = methods.find(candidate => candidate.id === methodId);
+    if (!method) return Object.freeze({ ok: false, reason: "method-unavailable" });
+
+    let effectiveLevel = method.effectiveLevel;
+    let resourceId = method.resourceId || "";
+    let resourceLabel = method.resourceLabel || "不消耗資源";
+    let slot = null;
+    if (methodId === "slot") {
+      const slotLevel = Number.parseInt(selection.slotLevel, 10);
+      slot = slots.find(candidate => candidate.level === slotLevel);
+      if (!slot) return Object.freeze({ ok: false, reason: "slot-unavailable" });
+      effectiveLevel = slot.level;
+      resourceId = slot.resourceId;
+      resourceLabel = `${slot.level} 環法術位`;
+    }
+
+    if (resourceId && resourceId !== String(selection.resourceId || "")) {
+      return Object.freeze({ ok: false, reason: "resource-changed" });
+    }
+
+    return Object.freeze({
+      ok: true,
+      reason: "",
+      method: methodId,
+      effectiveLevel,
+      resourceId,
+      resourceLabel,
+      hasUpcastEffect: methodId !== "slot" || !slot?.noExtraEffect
+    });
+  }
+
+  function commitSpellCastResource(entry = {}, selection = {}) {
+    const validated = validateSpellCastSelection(getSpellCastOptions(entry), selection);
+    if (!validated.ok) return validated;
+
+    if (validated.resourceId) {
+      const resourceId = validated.resourceId;
+      const canonical = typeof document !== "undefined" ? document.getElementById(resourceId) : null;
+      const isCheckbox = typeof HTMLInputElement !== "undefined"
+        && canonical instanceof HTMLInputElement
+        && canonical.type === "checkbox";
+      if (!isCheckbox || canonical.disabled || canonical.checked) {
+        return Object.freeze({ ok: false, reason: "resource-changed" });
+      }
+      canonical.checked = true;
+      dispatchCanonicalCastUpdate(canonical);
+    }
+
+    return validated;
   }
 
   function createCustomResourceId() {
@@ -257,6 +514,7 @@
     builtInResourceUsage: {},
     customResources: []
   };
+  let tabletopActionPreferences = null;
 
   let undoSnapshot = null;
   let initialized = false;
@@ -276,6 +534,143 @@
   );
 
   const elements = {};
+
+  function getTabletopActionPreferencesState() {
+    if (tabletopActionPreferences) return tabletopActionPreferences;
+    let parsed = null;
+    try {
+      const stored = globalScope.dndStorage?.getItem(TABLETOP_ACTION_PREFERENCES_KEY);
+      parsed = stored ? JSON.parse(stored) : null;
+    } catch (_error) {
+      parsed = null;
+    }
+    tabletopActionPreferences = normalizeTabletopActionPreferences(parsed);
+    return tabletopActionPreferences;
+  }
+
+  function emitTabletopActionPreferencesChange() {
+    if (typeof globalScope.CustomEvent !== "function") return;
+    globalScope.dispatchEvent?.(new globalScope.CustomEvent("tabletopactionpreferenceschange", {
+      detail: getTabletopActionPreferences()
+    }));
+  }
+
+  function persistTabletopActionPreferences(value) {
+    const normalized = normalizeTabletopActionPreferences(value);
+    try {
+      if (!globalScope.dndStorage?.setItem) return false;
+      const stored = globalScope.dndStorage.setItem(
+        TABLETOP_ACTION_PREFERENCES_KEY,
+        JSON.stringify(normalized)
+      );
+      if (stored === false) return false;
+    } catch (_error) {
+      return false;
+    }
+    tabletopActionPreferences = normalized;
+    emitTabletopActionPreferencesChange();
+    return true;
+  }
+
+  function getTabletopActionPreferences() {
+    const preferences = getTabletopActionPreferencesState();
+    return Object.freeze({
+      version: preferences.version,
+      customActions: Object.freeze(
+        preferences.customActions.map(action => Object.freeze({ ...action }))
+      ),
+      hiddenKeys: Object.freeze([...preferences.hiddenKeys])
+    });
+  }
+
+  function addCustomTabletopAction(action = {}) {
+    const current = getTabletopActionPreferencesState();
+    if (current.customActions.length >= CUSTOM_TABLETOP_ACTION_LIMIT) {
+      return Object.freeze({ ok: false, reason: "limit" });
+    }
+    const customActions = normalizeCustomTabletopActions([
+      ...current.customActions,
+      { ...action, id: createCustomTabletopActionId() }
+    ]);
+    if (customActions.length !== current.customActions.length + 1) {
+      return Object.freeze({ ok: false, reason: "invalid" });
+    }
+    const created = customActions[customActions.length - 1];
+    if (!persistTabletopActionPreferences({ ...current, customActions })) {
+      return Object.freeze({ ok: false, reason: "storage" });
+    }
+    return Object.freeze({ ok: true, action: Object.freeze({ ...created }) });
+  }
+
+  function updateCustomTabletopAction(actionId, patch = {}) {
+    const current = getTabletopActionPreferencesState();
+    const index = current.customActions.findIndex(action => action.id === actionId);
+    if (index === -1) return Object.freeze({ ok: false, reason: "not-found" });
+    const nextActions = current.customActions.map(action => ({ ...action }));
+    nextActions[index] = { ...nextActions[index], ...patch, id: actionId };
+    const customActions = normalizeCustomTabletopActions(nextActions);
+    const updated = customActions.find(action => action.id === actionId);
+    if (!updated || customActions.length !== nextActions.length) {
+      return Object.freeze({ ok: false, reason: "invalid" });
+    }
+    if (!persistTabletopActionPreferences({ ...current, customActions })) {
+      return Object.freeze({ ok: false, reason: "storage" });
+    }
+    return Object.freeze({ ok: true, action: Object.freeze({ ...updated }) });
+  }
+
+  function removeCustomTabletopAction(actionId) {
+    const current = getTabletopActionPreferencesState();
+    const removed = current.customActions.find(action => action.id === actionId);
+    if (!removed) return Object.freeze({ ok: false, reason: "not-found" });
+    const customActions = current.customActions.filter(action => action.id !== actionId);
+    const hiddenKey = `custom:${actionId}`;
+    const hiddenKeys = current.hiddenKeys.filter(key => key !== hiddenKey);
+    if (!persistTabletopActionPreferences({ ...current, customActions, hiddenKeys })) {
+      return Object.freeze({ ok: false, reason: "storage" });
+    }
+    return Object.freeze({ ok: true, action: Object.freeze({ ...removed }) });
+  }
+
+  function setTabletopActionHidden(hiddenKey, hidden) {
+    const current = getTabletopActionPreferencesState();
+    const candidate = hidden
+      ? [...current.hiddenKeys, hiddenKey]
+      : current.hiddenKeys.filter(key => key !== hiddenKey);
+    const hiddenKeys = normalizeHiddenTabletopActionKeys(candidate, current.customActions);
+    if (hidden && !hiddenKeys.includes(hiddenKey)) {
+      return Object.freeze({ ok: false, reason: "invalid" });
+    }
+    if (hiddenKeys.length === current.hiddenKeys.length
+      && hiddenKeys.every((key, index) => key === current.hiddenKeys[index])) {
+      return Object.freeze({ ok: true, changed: false });
+    }
+    if (!persistTabletopActionPreferences({ ...current, hiddenKeys })) {
+      return Object.freeze({ ok: false, reason: "storage" });
+    }
+    return Object.freeze({ ok: true, changed: true });
+  }
+
+  function restoreTabletopActionCategory(mode) {
+    if (!TABLETOP_ACTION_MODES.includes(mode)) {
+      return Object.freeze({ ok: false, reason: "invalid" });
+    }
+    const current = getTabletopActionPreferencesState();
+    const customIds = new Set(
+      current.customActions.filter(action => action.mode === mode).map(action => action.id)
+    );
+    const officialPrefix = `official:${mode}:`;
+    const hiddenKeys = current.hiddenKeys.filter(key => (
+      !key.startsWith(officialPrefix)
+      && !(key.startsWith("custom:") && customIds.has(key.slice("custom:".length)))
+    ));
+    const restored = current.hiddenKeys.length - hiddenKeys.length;
+    if (!restored) return Object.freeze({ ok: true, restored: 0 });
+    if (!persistTabletopActionPreferences({ ...current, hiddenKeys })) {
+      return Object.freeze({ ok: false, reason: "storage" });
+    }
+    return Object.freeze({ ok: true, restored });
+  }
 
   function getConditionData() {
     return Array.isArray(globalScope.DND_CONDITIONS)
@@ -764,6 +1159,84 @@
     } finally {
       isUpdatingHp = false;
     }
+  }
+
+  function restoreHitPoints(
+    amount,
+    { sourceLabel = "治療" } = {}
+  ) {
+    const safeAmount =
+      toNonNegativeInteger(amount);
+
+    if (safeAmount <= 0) {
+      return Object.freeze({
+        ok: false,
+        reason: "invalid-amount",
+        requestedAmount: safeAmount,
+        restoredHp: 0
+      });
+    }
+
+    const currentHp = readCurrentHp();
+    if (currentHp === null) {
+      return Object.freeze({
+        ok: false,
+        reason: "current-hp-unavailable",
+        requestedAmount: safeAmount,
+        restoredHp: 0
+      });
+    }
+
+    const maximumHp = readMaximumHp();
+    if (maximumHp === null || maximumHp <= 0) {
+      return Object.freeze({
+        ok: false,
+        reason: "maximum-hp-unavailable",
+        requestedAmount: safeAmount,
+        restoredHp: 0
+      });
+    }
+
+    const result = applyHealingState(
+      currentHp,
+      maximumHp,
+      safeAmount
+    );
+    if (result.restoredHp <= 0) {
+      return Object.freeze({
+        ok: true,
+        reason: "at-maximum-hp",
+        requestedAmount: safeAmount,
+        restoredHp: 0,
+        currentHp
+      });
+    }
+
+    undoSnapshot = createLifeSnapshot();
+    setCurrentHp(result.currentHp);
+
+    const revived = currentHp === 0
+      && result.currentHp > 0;
+    if (result.currentHp > 0) {
+      clearCriticalLifeState();
+      if (revived) reviveFromZeroHpCondition();
+    }
+
+    const label = String(sourceLabel || "治療");
+    markStateChanged(
+      revived
+        ? `${label}回復 ${result.restoredHp} 點 HP；已解除昏迷並改為倒地。`
+        : `${label}回復 ${result.restoredHp} 點 HP。`
+    );
+
+    return Object.freeze({
+      ok: true,
+      reason: "",
+      requestedAmount: safeAmount,
+      restoredHp: result.restoredHp,
+      currentHp: result.currentHp,
+      revived
+    });
   }
 
   function markHeroicSacrifice({
@@ -3296,7 +3769,7 @@
       elements.modeToggle.setAttribute("aria-label", tabletopEnabled ? "返回角色卡" : "進入桌邊模式（β）");
       const modeLabel = elements.modeToggle.querySelector("#tabletop-mode-toggle-label");
       const modeIcon = elements.modeToggle.querySelector("#tabletop-mode-toggle-icon");
-      if (modeLabel) modeLabel.textContent = tabletopEnabled ? "角色卡模式" : "桌邊模式";
+      if (modeLabel) modeLabel.textContent = tabletopEnabled ? "角色卡模式" : "桌邊模式(β版)";
       if (modeIcon) modeIcon.textContent = tabletopEnabled ? "📄" : "⚔️";
     }
 
@@ -3972,8 +4445,17 @@
     getMode: () => currentMode,
     setPanel: setActivePanel,
     getPanel: () => currentPanel,
+    getTabletopActionPreferences,
+    addCustomTabletopAction,
+    updateCustomTabletopAction,
+    removeCustomTabletopAction,
+    setTabletopActionHidden,
+    restoreTabletopActionCategory,
     getCharacterName,
     setCharacterName,
+    restoreHitPoints,
+    getSpellCastOptions,
+    commitSpellCastResource,
     getConcentrationSpellId,
     getEndedConcentrations,
     setConcentrationSpellId,
@@ -3994,9 +4476,12 @@
       appendConcentrationSaveReminder,
       evaluateDeathSaveRoll,
       getExhaustionEffects,
+      buildSpellCastOptions,
+      validateSpellCastSelection,
       normalizeBuiltInResourceUsage,
       normalizeConcentrationSpellId,
       normalizeEndedConcentrations,
+      normalizeTabletopActionPreferences,
       normalizeCustomResources
     })
   };

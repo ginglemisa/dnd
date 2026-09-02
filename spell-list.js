@@ -4788,6 +4788,325 @@ globalThis.SpellCatalog = (() => {
     ]),
   });
 
+  const DAMAGE_TYPE_LABELS = Object.freeze({
+    acid: "強酸",
+    bludgeoning: "鈍擊",
+    cold: "冷凍",
+    fire: "火焰",
+    force: "力場",
+    lightning: "閃電",
+    necrotic: "黯蝕",
+    piercing: "穿刺",
+    poison: "毒素",
+    psychic: "心靈",
+    radiant: "光耀",
+    slashing: "揮砍",
+    thunder: "雷鳴"
+  });
+
+  const TABLETOP_DAMAGE_CANTRIP_IDS = Object.freeze([
+    "starry-wisp",
+    "thunderclap",
+    "vicious-mockery",
+    "sacred-flame",
+    "poison-spray",
+    "produce-flame",
+    "acid-splash",
+    "chill-touch",
+    "fire-bolt",
+    "ray-of-frost",
+    "shocking-grasp",
+    "sorcerous-burst",
+    "eldritch-blast"
+  ]);
+  const tabletopDamageCantripIdSet = new Set(TABLETOP_DAMAGE_CANTRIP_IDS);
+
+  // These flags are data, not description-time guesses. Spell descriptions remain the rules text.
+  const ritualSpellIdSet = new Set([
+    "comprehend-languages", "detect-magic", "identify", "illusory-script",
+    "speak-with-animals", "unseen-servant", "animal-messenger",
+    "locate-animals-or-plants", "magic-mouth", "silence", "tiny-hut",
+    "detect-poison-and-disease", "purify-food-and-drink", "augury",
+    "gentle-repose", "meld-into-stone", "water-walk", "water-breathing",
+    "alarm", "find-familiar", "phantom-steed", "divination"
+  ]);
+
+  const upcastSpellIdSet = new Set([
+    "animal-friendship", "bane", "charm-person", "command", "cure-wounds",
+    "dissonant-whispers", "healing-word", "heroism", "longstrider",
+    "hideous-laughter", "thunderwave", "aid", "animal-messenger",
+    "blindness-deafness", "enhance-ability", "heat-metal", "hold-person",
+    "invisibility", "shatter", "bestow-curse", "dispel-magic",
+    "glyph-of-warding", "major-image", "mass-healing-word", "bless",
+    "create-or-destroy-water", "guiding-bolt", "inflict-wounds",
+    "prayer-of-healing", "spiritual-weapon", "animate-dead", "magic-circle",
+    "spirit-guardians", "fog-cloud", "ice-knife", "jump", "flame-blade",
+    "flaming-sphere", "moonbeam", "call-lightning", "conjure-animals",
+    "divine-smite", "searing-smite", "find-steed", "magic-weapon",
+    "shining-smite", "ensnaring-strike", "hunters-mark", "burning-hands",
+    "chromatic-orb", "false-life", "magic-missile", "ray-of-sickness",
+    "dragons-breath", "mind-spike", "scorching-ray", "spider-climb",
+    "fireball", "fly", "gaseous-form", "lightning-bolt", "vampiric-touch",
+    "hellish-rebuke", "hex", "banishment", "blight", "charm-monster",
+    "confusion", "conjure-minor-elementals", "conjure-woodland-beings",
+    "dominate-beast", "freedom-of-movement", "giant-insect", "ice-storm",
+    "phantasmal-killer", "private-sanctum", "vitriolic-sphere", "wall-of-fire"
+  ]);
+
+  const OPTIONAL_ELEMENTAL_TYPES = Object.freeze([
+    "acid", "cold", "fire", "lightning", "poison", "thunder"
+  ]);
+
+  function freezeOutcome(outcome) {
+    const frozen = { ...outcome };
+    if (Array.isArray(outcome.damageTypes)) frozen.damageTypes = Object.freeze([...outcome.damageTypes]);
+    if (Array.isArray(outcome.modifierTags)) frozen.modifierTags = Object.freeze([...outcome.modifierTags]);
+    return Object.freeze(frozen);
+  }
+
+  function freezeOutcomeList(outcomes) {
+    return Object.freeze((outcomes || []).map(freezeOutcome));
+  }
+
+  const outcomeMetadataBySpellId = Object.freeze({
+    "starry-wisp": freezeOutcomeList([{ kind: "damage", formula: "1d8", cantripAt5: "2d8", damageType: "radiant", autoOnCast: true, context: "命中時傷害" }]),
+    "thunderclap": freezeOutcomeList([{ kind: "damage", formula: "1d6", cantripAt5: "2d6", damageType: "thunder", autoOnCast: true, context: "豁免依規則處理" }]),
+    "vicious-mockery": freezeOutcomeList([{ kind: "damage", formula: "1d6", cantripAt5: "2d6", damageType: "psychic", autoOnCast: true, context: "豁免失敗時傷害" }]),
+    "sacred-flame": freezeOutcomeList([{ kind: "damage", formula: "1d8", cantripAt5: "2d8", damageType: "radiant", autoOnCast: true, context: "豁免依規則處理" }]),
+    "poison-spray": freezeOutcomeList([{ kind: "damage", formula: "1d12", cantripAt5: "2d12", damageType: "poison", autoOnCast: true, context: "命中時傷害" }]),
+    "produce-flame": freezeOutcomeList([{ kind: "damage", formula: "1d8", cantripAt5: "2d8", damageType: "fire", autoOnCast: true, context: "命中時傷害；本流程直接擲傷害" }]),
+    "acid-splash": freezeOutcomeList([{ kind: "damage", formula: "1d6", cantripAt5: "2d6", damageType: "acid", autoOnCast: true, context: "豁免依規則處理" }]),
+    "chill-touch": freezeOutcomeList([{ kind: "damage", formula: "1d10", cantripAt5: "2d10", damageType: "necrotic", autoOnCast: true, context: "命中時傷害" }]),
+    "fire-bolt": freezeOutcomeList([{ kind: "damage", formula: "1d10", cantripAt5: "2d10", damageType: "fire", autoOnCast: true, context: "命中時傷害" }]),
+    "ray-of-frost": freezeOutcomeList([{ kind: "damage", formula: "1d8", cantripAt5: "2d8", damageType: "cold", autoOnCast: true, context: "命中時傷害" }]),
+    "shocking-grasp": freezeOutcomeList([{ kind: "damage", formula: "1d8", cantripAt5: "2d8", damageType: "lightning", autoOnCast: true, context: "命中時傷害" }]),
+    "sorcerous-burst": freezeOutcomeList([{ kind: "damage", formula: "1d8", cantripAt5: "2d8", damageTypes: ["acid", "cold", "fire", "lightning", "poison", "psychic", "thunder"], autoOnCast: true, context: "命中時基礎傷害；擲出 8 的額外骰依術文手動處理" }]),
+    "eldritch-blast": freezeOutcomeList([{ kind: "damage", formula: "1d10", damageType: "force", repeatAt5: 2, autoOnCast: true, context: "每束各自進行攻擊與傷害擲骰", repeatLabel: "能量束" }]),
+
+    "aid": freezeOutcomeList([{ kind: "healing", fixed: 5, upcastFixed: 5, autoOnCast: true, context: "每名目標的當前與最大生命值提高；不直接修改角色 HP" }]),
+    "cure-wounds": freezeOutcomeList([{ kind: "healing", formula: "2d8", abilityModifier: "spellcasting", upcastDice: "2d8", modifierTags: ["restores-hit-points", "can-restore-other-creature-hit-points"], autoOnCast: true, context: "治療量；不直接修改角色 HP" }]),
+    "dissonant-whispers": freezeOutcomeList([{ kind: "damage", formula: "3d6", upcastDice: "1d6", damageType: "psychic", autoOnCast: true, context: "豁免依規則處理" }]),
+    "healing-word": freezeOutcomeList([{ kind: "healing", formula: "2d4", abilityModifier: "spellcasting", upcastDice: "2d4", modifierTags: ["restores-hit-points", "can-restore-other-creature-hit-points"], autoOnCast: true, context: "治療量；不直接修改角色 HP" }]),
+    "thunderwave": freezeOutcomeList([{ kind: "damage", formula: "2d8", upcastDice: "1d8", damageType: "thunder", autoOnCast: true, context: "區域傷害擲一次；豁免依規則處理" }]),
+    "guiding-bolt": freezeOutcomeList([{ kind: "damage", formula: "4d6", upcastDice: "1d6", damageType: "radiant", autoOnCast: true, context: "命中時傷害" }]),
+    "inflict-wounds": freezeOutcomeList([{ kind: "damage", formula: "2d10", upcastDice: "1d10", damageType: "necrotic", autoOnCast: true, context: "豁免失敗時傷害" }]),
+    "goodberry": freezeOutcomeList([{ kind: "healing", fixed: 1, autoOnCast: false, context: "之後吃下一顆漿果時；不在初次施法擲骰" }]),
+    "ice-knife": freezeOutcomeList([
+      { kind: "damage", formula: "1d10", damageType: "piercing", autoOnCast: true, context: "命中時穿刺傷害" },
+      { kind: "damage", formula: "2d6", upcastDice: "1d6", damageType: "cold", autoOnCast: true, context: "爆裂區域傷害擲一次；豁免依規則處理" }
+    ]),
+    "divine-favor": freezeOutcomeList([{ kind: "damage", formula: "1d4", damageType: "radiant", autoOnCast: false, context: "之後武器攻擊命中時" }]),
+    "divine-smite": freezeOutcomeList([{ kind: "damage", formula: "2d8", upcastDice: "1d8", damageType: "radiant", autoOnCast: true, context: "觸發本法術的命中額外傷害；特定目標額外 1d8 依術文手動處理" }]),
+    "searing-smite": freezeOutcomeList([
+      { kind: "damage", formula: "1d6", upcastDice: "1d6", damageType: "fire", autoOnCast: true, context: "觸發本法術的命中額外傷害" },
+      { kind: "damage", formula: "1d6", upcastDice: "1d6", damageType: "fire", autoOnCast: false, context: "目標後續回合開始時；不在初次施法重複擲骰" }
+    ]),
+    "ensnaring-strike": freezeOutcomeList([{ kind: "damage", formula: "1d6", upcastDice: "1d6", damageType: "piercing", autoOnCast: false, context: "目標後續回合開始時" }]),
+    "hunters-mark": freezeOutcomeList([{ kind: "damage", formula: "1d6", damageType: "force", autoOnCast: false, context: "之後攻擊命中標記目標時" }]),
+    "burning-hands": freezeOutcomeList([{ kind: "damage", formula: "3d6", upcastDice: "1d6", damageType: "fire", autoOnCast: true, context: "區域傷害擲一次；豁免依規則處理" }]),
+    "chromatic-orb": freezeOutcomeList([{ kind: "damage", formula: "3d8", upcastDice: "1d8", damageTypes: OPTIONAL_ELEMENTAL_TYPES, autoOnCast: true, context: "命中時傷害；跳轉後的額外攻擊依術文手動處理" }]),
+    "false-life": freezeOutcomeList([{ kind: "temporary-hp", formula: "2d4+4", autoOnCast: false, context: "臨時生命值；特殊來源可能改以最大值處理" }]),
+    "magic-missile": freezeOutcomeList([{ kind: "damage", formula: "1d4+1", damageType: "force", repeat: 3, repeatPerSlot: 1, autoOnCast: true, context: "每枚飛彈分開呈現", repeatLabel: "飛彈" }]),
+    "ray-of-sickness": freezeOutcomeList([{ kind: "damage", formula: "2d8", upcastDice: "1d8", damageType: "poison", autoOnCast: true, context: "命中時傷害" }]),
+    "hellish-rebuke": freezeOutcomeList([{ kind: "damage", formula: "2d10", upcastDice: "1d10", damageType: "fire", autoOnCast: true, context: "豁免依規則處理" }]),
+    "hex": freezeOutcomeList([{ kind: "damage", formula: "1d6", damageType: "necrotic", autoOnCast: false, context: "之後攻擊命中詛咒目標時" }]),
+
+    "heat-metal": freezeOutcomeList([{ kind: "damage", formula: "2d8", upcastDice: "1d8", damageType: "fire", autoOnCast: true, context: "施法時接觸物品者的傷害；後續附贈動作傷害另擲" }]),
+    "enlarge-reduce": freezeOutcomeList([{ kind: "damage", formula: "1d4", autoOnCast: false, context: "變巨後之後攻擊命中時；傷害類型依原攻擊" }]),
+    "phantasmal-force": freezeOutcomeList([{ kind: "damage", formula: "2d8", damageType: "psychic", autoOnCast: false, context: "後續回合符合幻象條件時" }]),
+    "shatter": freezeOutcomeList([{ kind: "damage", formula: "3d8", upcastDice: "1d8", damageType: "thunder", autoOnCast: true, context: "區域傷害擲一次；豁免依規則處理" }]),
+    "prayer-of-healing": freezeOutcomeList([{ kind: "healing", formula: "2d8", upcastDice: "1d8", modifierTags: ["restores-hit-points", "can-restore-other-creature-hit-points"], autoOnCast: true, context: "每名目標的治療量擲一次；不直接修改角色 HP" }]),
+    "spiritual-weapon": freezeOutcomeList([{ kind: "damage", formula: "1d8", abilityModifier: "spellcasting", upcastDice: "1d8", damageType: "force", autoOnCast: true, context: "施法時可發動的攻擊命中傷害" }]),
+    "flame-blade": freezeOutcomeList([{ kind: "damage", formula: "3d6", abilityModifier: "spellcasting", upcastDice: "1d6", damageType: "fire", autoOnCast: false, context: "之後以魔法動作命中時" }]),
+    "flaming-sphere": freezeOutcomeList([{ kind: "damage", formula: "2d6", upcastDice: "1d6", damageType: "fire", autoOnCast: false, context: "生物回合結束或法球移入其空間時" }]),
+    "moonbeam": freezeOutcomeList([{ kind: "damage", formula: "2d10", upcastDice: "1d10", damageType: "radiant", autoOnCast: true, context: "柱形區域出現時的區域傷害擲一次；豁免依規則處理" }]),
+    "spike-growth": freezeOutcomeList([{ kind: "damage", formula: "2d4", damageType: "piercing", autoOnCast: false, context: "之後每移動 5 呎時" }]),
+    "shining-smite": freezeOutcomeList([{ kind: "damage", formula: "2d6", upcastDice: "1d6", damageType: "radiant", autoOnCast: true, context: "觸發本法術的命中額外傷害" }]),
+    "alter-self": freezeOutcomeList([{ kind: "damage", formula: "1d6", abilityModifier: "spellcasting", damageTypes: ["slashing", "piercing", "bludgeoning"], autoOnCast: false, context: "之後使用天生武器命中時" }]),
+    "dragons-breath": freezeOutcomeList([{ kind: "damage", formula: "3d6", upcastDice: "1d6", damageTypes: ["acid", "cold", "fire", "lightning", "poison"], autoOnCast: false, context: "目標之後使用龍息時" }]),
+    "mind-spike": freezeOutcomeList([{ kind: "damage", formula: "3d8", upcastDice: "1d8", damageType: "psychic", autoOnCast: true, context: "豁免依規則處理" }]),
+    "scorching-ray": freezeOutcomeList([{ kind: "damage", formula: "2d6", damageType: "fire", repeat: 3, repeatPerSlot: 1, autoOnCast: true, context: "每道射線各自進行攻擊與傷害擲骰", repeatLabel: "射線" }]),
+    "web": freezeOutcomeList([{ kind: "damage", formula: "2d4", damageType: "fire", autoOnCast: false, context: "之後在燃燒蛛網中開始回合時" }]),
+
+    "bestow-curse": freezeOutcomeList([{ kind: "damage", formula: "1d8", damageType: "necrotic", autoOnCast: false, context: "選擇對應詛咒且之後造成傷害時" }]),
+    "glyph-of-warding": freezeOutcomeList([{ kind: "damage", formula: "5d8", upcastDice: "1d8", damageTypes: ["acid", "cold", "fire", "lightning", "thunder"], autoOnCast: false, context: "爆炸符文之後被觸發時" }]),
+    "mass-healing-word": freezeOutcomeList([{ kind: "healing", formula: "2d4", abilityModifier: "spellcasting", upcastDice: "1d4", modifierTags: ["restores-hit-points", "can-restore-other-creature-hit-points"], autoOnCast: true, context: "所有目標共用一次治療量；不直接修改角色 HP" }]),
+    "revivify": freezeOutcomeList([{ kind: "healing", fixed: 1, autoOnCast: true, context: "目標以 1 點生命值復活；不直接修改角色 HP" }]),
+    "meld-into-stone": freezeOutcomeList([
+      { kind: "damage", formula: "6d6", damageType: "force", autoOnCast: false, context: "石頭大部分被破壞或變形而被逐出時" },
+      { kind: "damage", fixed: 50, damageType: "force", autoOnCast: false, context: "石頭完全被破壞或轉化時" }
+    ]),
+    "spirit-guardians": freezeOutcomeList([{ kind: "damage", formula: "3d8", upcastDice: "1d8", damageTypes: ["radiant", "necrotic"], autoOnCast: true, context: "發散區域出現／進入空間時的傷害擲一次；豁免依規則處理" }]),
+    "call-lightning": freezeOutcomeList([{ kind: "damage", formula: "3d10", upcastDice: "1d10", damageType: "lightning", autoOnCast: true, context: "施法時召下的閃電；室外風暴額外 1d10 依術文手動處理" }]),
+    "conjure-animals": freezeOutcomeList([{ kind: "damage", formula: "3d10", upcastDice: "1d10", damageType: "slashing", autoOnCast: false, context: "獸群之後移動至生物附近或生物進入／結束回合時" }]),
+    "wind-wall": freezeOutcomeList([{ kind: "damage", formula: "4d8", damageType: "bludgeoning", autoOnCast: true, context: "風牆出現時的區域傷害擲一次；豁免依規則處理" }]),
+    "vampiric-touch": freezeOutcomeList([{ kind: "damage", formula: "3d6", upcastDice: "1d6", damageType: "necrotic", autoOnCast: true, context: "施法時的攻擊命中傷害；恢復量為本次黯蝕傷害一半" }]),
+    "fireball": freezeOutcomeList([{ kind: "damage", formula: "8d6", upcastDice: "1d6", damageType: "fire", autoOnCast: true, context: "區域傷害擲一次；豁免依規則處理" }]),
+    "lightning-bolt": freezeOutcomeList([{ kind: "damage", formula: "8d6", upcastDice: "1d6", damageType: "lightning", autoOnCast: true, context: "區域傷害擲一次；豁免依規則處理" }]),
+
+    "aura-of-life": freezeOutcomeList([{ kind: "healing", fixed: 1, autoOnCast: false, context: "生命值為 0 的盟友之後在靈氣內開始回合時" }]),
+    "black-tentacles": freezeOutcomeList([{ kind: "damage", formula: "3d6", damageType: "bludgeoning", autoOnCast: true, context: "區域出現時其中生物的傷害擲一次；豁免依規則處理" }]),
+    "blight": freezeOutcomeList([{ kind: "damage", formula: "8d8", upcastDice: "1d8", damageType: "necrotic", autoOnCast: true, context: "豁免依規則處理" }]),
+    "conjure-minor-elementals": freezeOutcomeList([{ kind: "damage", formula: "2d8", upcastDice: "1d8", damageTypes: ["acid", "cold", "fire", "lightning"], autoOnCast: false, context: "之後攻擊命中發散區域內生物時" }]),
+    "conjure-woodland-beings": freezeOutcomeList([{ kind: "damage", formula: "5d8", upcastDice: "1d8", damageType: "force", autoOnCast: true, context: "發散區域出現／進入空間時的傷害擲一次；豁免依規則處理" }]),
+    "control-water": freezeOutcomeList([{ kind: "damage", formula: "2d8", damageType: "bludgeoning", autoOnCast: false, context: "選擇漩渦且生物之後進入或結束回合時" }]),
+    "dimension-door": freezeOutcomeList([{ kind: "damage", formula: "4d6", damageType: "force", autoOnCast: false, context: "目的地被佔據而傳送失敗時" }]),
+    "faithful-hound": freezeOutcomeList([{ kind: "damage", formula: "4d8", damageType: "force", autoOnCast: false, context: "之後施法者回合開始時獵犬撕咬" }]),
+    "fire-shield": freezeOutcomeList([{ kind: "damage", formula: "2d8", damageTypes: ["fire", "cold"], autoOnCast: false, context: "之後近戰攻擊命中施法者時" }]),
+    "giant-insect": freezeOutcomeList([
+      { kind: "damage", formula: "1d6+3", addSlotLevel: true, damageType: "piercing", autoOnCast: false, context: "巨蟲之後以毒素戳刺命中時" },
+      { kind: "damage", formula: "1d4", damageType: "poison", autoOnCast: false, context: "毒素戳刺的附加傷害" },
+      { kind: "damage", formula: "1d10+3", addSlotLevel: true, damageType: "bludgeoning", autoOnCast: false, context: "蜘蛛之後以蛛網射擊命中時" }
+    ]),
+    "guardian-of-faith": freezeOutcomeList([{ kind: "damage", fixed: 20, damageType: "radiant", autoOnCast: false, context: "敵人之後進入守護者附近或開始回合時" }]),
+    "ice-storm": freezeOutcomeList([
+      { kind: "damage", formula: "2d10", upcastDice: "1d10", damageType: "bludgeoning", autoOnCast: true, context: "區域鈍擊傷害；豁免依規則處理" },
+      { kind: "damage", formula: "4d6", damageType: "cold", autoOnCast: true, context: "同一次區域冷凍傷害；豁免依規則處理" }
+    ]),
+    "phantasmal-killer": freezeOutcomeList([{ kind: "damage", formula: "4d10", upcastDice: "1d10", damageType: "psychic", autoOnCast: true, context: "初次豁免的傷害；後續回合傷害另擲" }]),
+    "vitriolic-sphere": freezeOutcomeList([
+      { kind: "damage", formula: "10d4", upcastDice: "2d4", damageType: "acid", autoOnCast: true, context: "首次區域傷害擲一次；豁免依規則處理" },
+      { kind: "damage", formula: "5d4", damageType: "acid", autoOnCast: false, context: "豁免失敗者下個回合結束時" }
+    ]),
+    "wall-of-fire": freezeOutcomeList([
+      { kind: "damage", formula: "5d8", upcastDice: "1d8", damageType: "fire", autoOnCast: true, context: "火牆出現時的區域傷害擲一次；豁免依規則處理" },
+      { kind: "damage", formula: "5d8", upcastDice: "1d8", damageType: "fire", autoOnCast: false, context: "之後進入火牆或在其中／附近結束回合時" }
+    ])
+  });
+
+  function appendExpressionTerm(expression, term, times) {
+    const count = Math.max(0, Number.parseInt(times, 10) || 0);
+    return count ? `${expression}${Array.from({ length: count }, () => `+${term}`).join("")}` : expression;
+  }
+
+  function appendNumericModifier(expression, modifier) {
+    const value = Number(modifier) || 0;
+    if (!value) return expression;
+    return `${expression}${value < 0 ? "" : "+"}${value}`;
+  }
+
+  function resolveCastOutcomes(spellId, options = {}) {
+    const spell = spellsById[spellId];
+    if (!spell) return Object.freeze([]);
+    const effectiveLevel = Math.max(spell.level, Number.parseInt(options.effectiveLevel, 10) || spell.level);
+    const characterLevel = Math.max(1, Number.parseInt(options.characterLevel, 10) || 1);
+    const spellcastingModifier = Number.isSafeInteger(Number(options.spellcastingModifier))
+      ? Number(options.spellcastingModifier)
+      : 0;
+    const modifiers = Array.isArray(options.modifiers) ? options.modifiers : [];
+    const usedOnceModifiers = new Set();
+    const resolved = [];
+
+    (outcomeMetadataBySpellId[spellId] || []).forEach((outcome, outcomeIndex) => {
+      let expression = characterLevel >= 5 && outcome.cantripAt5
+        ? outcome.cantripAt5
+        : outcome.formula || "";
+      const slotDifference = Math.max(0, effectiveLevel - spell.level);
+      if (expression && outcome.upcastDice) {
+        expression = appendExpressionTerm(expression, outcome.upcastDice, slotDifference);
+      }
+      if (expression && outcome.abilityModifier === "spellcasting") {
+        expression = appendNumericModifier(expression, spellcastingModifier);
+      }
+      if (expression && outcome.addSlotLevel) {
+        expression = appendNumericModifier(expression, effectiveLevel);
+      }
+      let fixed = Number.isFinite(outcome.fixed) ? Number(outcome.fixed) : null;
+      if (fixed !== null && Number.isFinite(outcome.upcastFixed)) {
+        fixed += slotDifference * Number(outcome.upcastFixed);
+      }
+      const damageType = outcome.damageTypes?.includes(options.damageType)
+        ? options.damageType
+        : outcome.damageType || outcome.damageTypes?.[0] || "";
+      let repeat = Math.max(1, Number.parseInt(outcome.repeat, 10) || 1);
+      if (characterLevel >= 5 && outcome.repeatAt5) repeat = Math.max(repeat, outcome.repeatAt5);
+      if (outcome.repeatPerSlot) repeat += slotDifference * outcome.repeatPerSlot;
+
+      for (let repeatIndex = 0; repeatIndex < repeat; repeatIndex += 1) {
+        let rollExpression = expression;
+        let rollFixed = fixed;
+        const modifierLabels = [];
+        modifiers.forEach((modifier, modifierIndex) => {
+          const value = Number(modifier?.value) || 0;
+          if (!value || outcome.kind !== (modifier.kind || "damage")) return;
+          if (modifier.requiredTag && !outcome.modifierTags?.includes(modifier.requiredTag)) return;
+          if (modifier.damageType && modifier.damageType !== damageType) return;
+          const modifierKey = String(modifier.id || modifierIndex);
+          if (modifier.frequency === "once" && usedOnceModifiers.has(modifierKey)) return;
+          if (rollExpression) rollExpression = appendNumericModifier(rollExpression, value);
+          else if (rollFixed !== null) rollFixed += value;
+          else return;
+          modifierLabels.push(String(modifier.label || "加值"));
+          if (modifier.frequency === "once") usedOnceModifiers.add(modifierKey);
+        });
+        resolved.push(Object.freeze({
+          spellId,
+          outcomeIndex,
+          repeatIndex,
+          repeat,
+          repeatLabel: outcome.repeatLabel || "",
+          kind: outcome.kind,
+          expression: rollExpression,
+          fixed: rollFixed,
+          damageType,
+          damageTypeLabel: DAMAGE_TYPE_LABELS[damageType] || "",
+          autoOnCast: Boolean(outcome.autoOnCast),
+          context: outcome.context || "",
+          modifierLabels: Object.freeze(modifierLabels)
+        }));
+      }
+    });
+    return Object.freeze(resolved);
+  }
+
+  const castMetadataBySpellId = Object.freeze(Object.fromEntries(
+    Object.values(spellsById).map(spell => [spell.spellId, Object.freeze({
+      spellId: spell.spellId,
+      baseLevel: spell.level,
+      tabletopCast: spell.level > 0 || tabletopDamageCantripIdSet.has(spell.spellId),
+      ritual: ritualSpellIdSet.has(spell.spellId),
+      ritualExtraTime: ritualSpellIdSet.has(spell.spellId) ? "額外 10 分鐘" : "",
+      hasUpcastEffect: upcastSpellIdSet.has(spell.spellId),
+      outcomes: outcomeMetadataBySpellId[spell.spellId] || Object.freeze([])
+    })])
+  ));
+
+  function getCastMetadata(spellId) {
+    return typeof spellId === "string" ? castMetadataBySpellId[spellId] : undefined;
+  }
+
+  function canCastFromTabletop(spellId) {
+    return Boolean(getCastMetadata(spellId)?.tabletopCast);
+  }
+
+  function isRitual(spellOrId) {
+    const spellId = typeof spellOrId === "string" ? spellOrId : spellOrId?.spellId;
+    return Boolean(getCastMetadata(spellId)?.ritual);
+  }
+
+  function hasUpcastEffect(spellOrId) {
+    const spellId = typeof spellOrId === "string" ? spellOrId : spellOrId?.spellId;
+    return Boolean(getCastMetadata(spellId)?.hasUpcastEffect);
+  }
+
+  function getCastDamageTypes(spellId) {
+    const types = (getCastMetadata(spellId)?.outcomes || []).flatMap(outcome => (
+      outcome.damageTypes || (outcome.damageType ? [outcome.damageType] : [])
+    ));
+    return [...new Set(types)];
+  }
+
+  function getSelectableCastDamageTypes(spellId) {
+    const types = (getCastMetadata(spellId)?.outcomes || []).flatMap(outcome => outcome.damageTypes || []);
+    return [...new Set(types)];
+  }
+
+  function hasCastOutcomeTag(spellId, tag) {
+    if (typeof tag !== "string" || !tag) return false;
+    return (getCastMetadata(spellId)?.outcomes || [])
+      .some(outcome => outcome.modifierTags?.includes(tag));
+  }
+
   const exactNameToSpellId = new Map();
   function addExactNameAlias(name, spellId) {
     const existing = exactNameToSpellId.get(name);
@@ -4862,7 +5181,7 @@ globalThis.SpellCatalog = (() => {
   Object.freeze(compatSpellList);
 
   return Object.freeze({
-    schemaVersion: 2,
+    schemaVersion: 3,
     getSpell,
     getAllSpells,
     getSpellIds,
@@ -4871,6 +5190,16 @@ globalThis.SpellCatalog = (() => {
     getDisplayName,
     resolveSpellId,
     isConcentration,
+    getCastMetadata,
+    canCastFromTabletop,
+    isRitual,
+    hasUpcastEffect,
+    getCastDamageTypes,
+    getSelectableCastDamageTypes,
+    hasCastOutcomeTag,
+    resolveCastOutcomes,
+    damageTypeLabels: DAMAGE_TYPE_LABELS,
+    tabletopDamageCantripIds: TABLETOP_DAMAGE_CANTRIP_IDS,
     compatSpellList
   });
 })();

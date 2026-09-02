@@ -5,6 +5,7 @@
   const ROLL_ANIMATION_MS = 1800;
   const REDUCED_MOTION_ROLL_MS = 100;
   const LONG_PRESS_MS = 1200;
+  const HISTORY_CLEAR_LONG_PRESS_MS = 3000;
   const HISTORY_LIMIT = 66;
   const DIE_EXPRESSION_SOURCE = String.raw`\d+\s*d\s*(?:100|20|12|10|8|6|4)`;
   const EXPRESSION_PATTERN = new RegExp(
@@ -325,8 +326,12 @@
     };
 
     const parseExpression = expression => {
-      const matchedExpression = String(expression || "").match(EXPRESSION_PATTERN)?.[0] || "";
+      const sourceExpression = String(expression || "").trim().replace(/−/g, "-");
+      const matchedExpression = sourceExpression.match(EXPRESSION_PATTERN)?.[0] || "";
       if (!matchedExpression) return null;
+      const compactSource = sourceExpression.replace(/\s+/g, "").toLowerCase();
+      const compactMatch = matchedExpression.replace(/\s+/g, "").toLowerCase();
+      if (compactSource !== compactMatch) return null;
 
       const termPattern = /([+-]?)\s*(?:(\d+)\s*d\s*(100|20|12|10|8|6|4)|(\d+))/gi;
       const terms = [];
@@ -493,6 +498,109 @@
       return Object.freeze(rolls.map(({ result }) => result));
     };
 
+    const renderAutomatedRolls = (rolls, options = {}) => {
+      restoreHistoryHeader();
+      currentResults = [];
+      currentView = "automated";
+      title.textContent = String(options.title || "自動擲骰結果");
+      stage.classList.add("is-history");
+      stage.tabIndex = 0;
+      stage.removeAttribute("aria-busy");
+
+      const list = document.createElement("div");
+      list.className = "dice-roller-automated-results";
+      rolls.forEach(({ entry, result }) => {
+        const item = document.createElement("article");
+        item.className = "dice-roller-automated-result";
+        const heading = document.createElement("strong");
+        heading.textContent = entry.label;
+        const equation = document.createElement("span");
+        equation.className = "dice-roller-automated-result__equation";
+        equation.textContent = result.fixed
+          ? `${result.total}（固定值）`
+          : `${result.expression} = ${result.total}`;
+        item.append(heading, equation);
+        if (entry.detail) {
+          const detail = document.createElement("span");
+          detail.className = "dice-roller-automated-result__detail";
+          detail.textContent = entry.detail;
+          item.appendChild(detail);
+        }
+        list.appendChild(item);
+      });
+
+      const ariaText = rolls.map(({ entry, result }) => (
+        `${entry.label}：${result.fixed ? `${result.total}，固定值` : result.equation}`
+      )).join("；");
+      stage.setAttribute("aria-label", `自動擲骰結果：${ariaText}`);
+      stage.replaceChildren(list);
+      totalOutput.textContent = rolls.length === 1 ? formatNumber(rolls[0].result.total) : "—";
+      updateHistoryButton();
+      stage.scrollTop = 0;
+    };
+
+    const rollExpressionsInModal = (entries, options = {}) => {
+      if (!toggle.checked) return Object.freeze({ ok: false, reason: "disabled", results: Object.freeze([]) });
+      if (!Array.isArray(entries) || !entries.length) {
+        return Object.freeze({ ok: false, reason: "empty", results: Object.freeze([]) });
+      }
+
+      const normalizedEntries = entries.map((entry, index) => {
+        const expression = String(entry?.expression || "").trim();
+        const fixed = Number(entry?.fixed);
+        const hasFixed = entry?.fixed !== null && entry?.fixed !== undefined && Number.isFinite(fixed);
+        if (!expression && !hasFixed) return null;
+        if (expression && !parseExpression(expression)) return null;
+        return Object.freeze({
+          expression,
+          fixed: hasFixed ? fixed : null,
+          label: String(entry?.label || `結果 ${index + 1}`).trim() || `結果 ${index + 1}`,
+          detail: String(entry?.detail || "").trim()
+        });
+      });
+      const invalidIndex = normalizedEntries.findIndex(entry => !entry);
+      if (invalidIndex >= 0) {
+        return Object.freeze({
+          ok: false,
+          reason: "invalid-expression",
+          invalidIndex,
+          results: Object.freeze([])
+        });
+      }
+
+      const rolls = normalizedEntries.map(entry => {
+        if (entry.expression) {
+          const result = performExpressionRoll(parseExpression(entry.expression), {
+            label: entry.label,
+            notify: false
+          });
+          return result ? { entry, result } : null;
+        }
+        const result = Object.freeze({
+          label: entry.label,
+          expression: String(entry.fixed),
+          values: Object.freeze([]),
+          terms: Object.freeze([]),
+          equation: String(entry.fixed),
+          total: entry.fixed,
+          fixed: true
+        });
+        addHistoryEntry({ expression: String(entry.fixed), total: entry.fixed, label: entry.label });
+        return { entry, result };
+      });
+      if (rolls.some(rollEntry => !rollEntry)) {
+        return Object.freeze({ ok: false, reason: "roll-failed", results: Object.freeze([]) });
+      }
+
+      openModal(options.trigger);
+      renderAutomatedRolls(rolls, options);
+      const results = Object.freeze(rolls.map(({ result }) => result));
+      window.dispatchEvent?.(new CustomEvent("diceautomatedroll", {
+        detail: Object.freeze({ title: String(options.title || ""), results })
+      }));
+      return Object.freeze({ ok: true, reason: "", results });
+    };
+
     const cancelRoll = () => {
       window.clearTimeout(rollTimer);
       rollTimer = 0;
@@ -505,6 +613,14 @@
       DICE_SIDES.forEach(sides => counts.set(sides, 0));
       updateControls();
       renderEmptyStage();
+    };
+
+    const clearHistory = () => {
+      if (!historyEntries.length) return;
+      historyEntries.length = 0;
+      saveHistory();
+      if (currentView === "history" || currentView === "detail") renderHistory();
+      else updateHistoryButton();
     };
 
     const clearDie = sides => {
@@ -577,11 +693,13 @@
       document.body.classList.add("dice-roller-open");
     };
 
-    const openModal = () => {
+    const openModal = trigger => {
       if (isOpen) return;
       window.clearTimeout(closeTimer);
       isOpen = true;
-      opener = document.activeElement instanceof HTMLElement ? document.activeElement : fab;
+      opener = trigger instanceof HTMLElement
+        ? trigger
+        : document.activeElement instanceof HTMLElement ? document.activeElement : fab;
       modal.hidden = false;
       modal.inert = false;
       modal.setAttribute("aria-hidden", "false");
@@ -627,7 +745,8 @@
       canRollExpression: expression => Boolean(parseExpression(expression)),
       roll: performQuickRoll,
       rollExpression,
-      rollExpressions
+      rollExpressions,
+      rollExpressionsInModal
     });
 
     dieButtons.forEach(button => {
@@ -672,12 +791,39 @@
     });
 
     toggle.addEventListener("change", () => setEnabled(toggle.checked));
-    fab.addEventListener("click", openModal);
+    fab.addEventListener("click", () => openModal(fab));
     closeButton.addEventListener("click", closeModal);
     historyButton.addEventListener("click", () => renderHistory());
     totalButton.addEventListener("click", showCurrentResult);
     rollButton.addEventListener("click", roll);
-    clearButton.addEventListener("click", clearAll);
+    let clearHistoryTimer = 0;
+    let suppressClearClick = false;
+    const cancelClearHistoryHold = () => {
+      window.clearTimeout(clearHistoryTimer);
+      clearHistoryTimer = 0;
+      clearButton.classList.remove("is-holding");
+    };
+    clearButton.addEventListener("click", () => {
+      if (suppressClearClick) {
+        suppressClearClick = false;
+        return;
+      }
+      clearAll();
+    });
+    clearButton.addEventListener("pointerdown", event => {
+      if (event.button !== 0 || clearButton.disabled) return;
+      suppressClearClick = false;
+      clearButton.classList.add("is-holding");
+      clearHistoryTimer = window.setTimeout(() => {
+        clearHistoryTimer = 0;
+        suppressClearClick = true;
+        clearButton.classList.remove("is-holding");
+        clearHistory();
+        window.navigator.vibrate?.(30);
+      }, HISTORY_CLEAR_LONG_PRESS_MS);
+    });
+    ["pointerup", "pointerleave", "pointercancel"].forEach(eventName => clearButton.addEventListener(eventName, cancelClearHistoryHold));
+    clearButton.addEventListener("contextmenu", event => event.preventDefault());
     modal.addEventListener("click", event => {
       if (event.target === modal) closeModal();
     });

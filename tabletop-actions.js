@@ -3,6 +3,15 @@
 
   const MODE_PREFERENCE_KEY = "dnd.tabletopActionMode.v1";
   const MODES = Object.freeze(["basic", "action", "bonus", "reaction", "movement"]);
+  const MODE_LABELS = Object.freeze({
+    basic: "動作",
+    action: "特殊",
+    bonus: "附贈",
+    reaction: "反應",
+    movement: "移動"
+  });
+  const CUSTOM_ACTION_LABEL_MAX = 40;
+  const CUSTOM_ACTION_DESCRIPTION_MAX = 600;
   const selectedOptionKeys = new Map(MODES.map(mode => [mode, ""]));
   const spellGroupExpanded = new Map(["action", "bonus", "reaction"].map(mode => [mode, false]));
   const elements = {};
@@ -15,6 +24,61 @@
     if (className) element.className = className;
     if (text) element.textContent = text;
     return element;
+  }
+
+  function getActionPreferences() {
+    return globalScope.TabletopMode?.getTabletopActionPreferences?.() || {
+      customActions: [],
+      hiddenKeys: []
+    };
+  }
+
+  function getOfficialHiddenKey(mode, optionKey) {
+    return `official:${mode}:${String(optionKey || "")}`;
+  }
+
+  function getCustomHiddenKey(actionId) {
+    return `custom:${actionId}`;
+  }
+
+  function getModeOptionSet(mode) {
+    const api = globalScope.ActionPanel;
+    const preferences = getActionPreferences();
+    const hiddenKeys = new Set(preferences.hiddenKeys || []);
+    const officialOptions = api
+      ? (api.getTabletopOptions || api.getOptions)(mode).map(option => ({
+          ...option,
+          preferenceKey: getOfficialHiddenKey(mode, option.key),
+          customActionId: ""
+        }))
+      : [];
+    const customOptions = (preferences.customActions || [])
+      .filter(action => action.mode === mode)
+      .map(action => ({
+        key: `custom:${action.id}`,
+        label: action.label,
+        description: action.description,
+        source: "自訂",
+        buttonTag: "自訂",
+        preferenceKey: getCustomHiddenKey(action.id),
+        customActionId: action.id
+      }));
+    const all = [...officialOptions, ...customOptions];
+    return {
+      all,
+      visible: all.filter(option => !hiddenKeys.has(option.preferenceKey))
+    };
+  }
+
+  function getHiddenCountForMode(mode, preferences = getActionPreferences()) {
+    const customIds = new Set(
+      (preferences.customActions || []).filter(action => action.mode === mode).map(action => action.id)
+    );
+    const officialPrefix = `official:${mode}:`;
+    return (preferences.hiddenKeys || []).filter(key => (
+      key.startsWith(officialPrefix)
+      || (key.startsWith("custom:") && customIds.has(key.slice("custom:".length)))
+    )).length;
   }
 
   function readField(id) {
@@ -74,6 +138,11 @@
     return Number.isSafeInteger(modifier) ? modifier : null;
   }
 
+  function getDamageRollExpression(value) {
+    const normalized = String(value || "").trim().replace(/−/g, "-");
+    return normalized.match(/^\d+\s*d\s*\d+(?:\s*[+-]\s*(?:\d+\s*d\s*\d+|\d+))*/iu)?.[0] || "";
+  }
+
   function appendDefinition(list, term, value, rollType = "", label = "", weapon = null) {
     const item = createElement("div", "tabletop-weapon-field");
     const description = createElement("dd");
@@ -86,15 +155,18 @@
         : rollType === "attack"
           ? parseModifier(weapon?.hit)
           : null;
+      const damageExpression = getDamageRollExpression(
+        rollType === "attack" ? weapon?.damage : value
+      );
       const canRoll = rollType === "hit"
         ? modifier !== null
         : rollType === "attack"
           ? Boolean(
               weapon?.name
               && modifier !== null
-              && globalScope.DiceRoller?.canRollExpression?.(weapon.damage)
+              && globalScope.DiceRoller?.canRollExpression?.(damageExpression)
             )
-          : Boolean(globalScope.DiceRoller?.canRollExpression?.(value));
+          : Boolean(globalScope.DiceRoller?.canRollExpression?.(damageExpression));
       button.disabled = !canRoll || !globalScope.DiceRoller?.isEnabled?.();
       button.setAttribute(
         "aria-label",
@@ -106,7 +178,7 @@
           const weaponLabel = `${weapon.label}${weapon.name || ""}`;
           globalScope.DiceRoller?.rollExpressions?.([
             { expression: hitExpression, label: `${weaponLabel} 命中` },
-            { expression: weapon.damage, label: `${weaponLabel} 傷害`, toastLabel: "傷害" }
+            { expression: damageExpression, label: `${weaponLabel} 傷害`, toastLabel: "傷害" }
           ]);
           return;
         }
@@ -120,7 +192,7 @@
           });
           return;
         }
-        globalScope.DiceRoller?.rollExpression?.(value, { label: `${label}${term}` });
+        globalScope.DiceRoller?.rollExpression?.(damageExpression, { label: `${label}${term}` });
       });
       description.appendChild(button);
     } else {
@@ -169,7 +241,7 @@
     const weapons = [getWeaponData("main"), getWeaponData("off")];
     if (!weapons.some(hasWeaponData)) {
       const empty = createElement("div", "tabletop-empty-state");
-      empty.textContent = "未裝備武器，也可關閉自動化自寫。";
+      empty.textContent = "尚未裝備武器，若下拉選單不符需求，可關閉武器攻擊自動化自行填寫。";
       elements.weaponSummary.replaceChildren(empty);
       return;
     }
@@ -253,12 +325,307 @@
     return description;
   }
 
+  async function openCustomActionEditor(action = null, trigger = elements.manage) {
+    if (typeof globalScope.AppDialog?.showContent !== "function") return false;
+    const token = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const nameId = `tabletop-custom-action-name-${token}`;
+    const modeId = `tabletop-custom-action-mode-${token}`;
+    const descriptionId = `tabletop-custom-action-description-${token}`;
+    const errorId = `tabletop-custom-action-error-${token}`;
+    let nameInput = null;
+    let modeSelect = null;
+    let descriptionInput = null;
+    let error = null;
+
+    const result = await globalScope.AppDialog.showContent({
+      title: action ? "編輯自訂按鈕" : "新增自訂按鈕",
+      message: "自訂按鈕只顯示文字說明，不會執行擲骰、消耗資源或其他自動化。",
+      variant: "action-editor",
+      cancelLabel: "取消",
+      confirmLabel: action ? "儲存變更" : "新增按鈕",
+      initialFocus: "content",
+      dismissOnBackdrop: false,
+      trigger,
+      renderContent(body) {
+        const form = createElement("form", "tabletop-action-editor");
+        form.noValidate = true;
+
+        const source = createElement("div", "tabletop-action-editor__source");
+        source.append(
+          createElement("span", "", "來源"),
+          createElement("span", "tabletop-source-tag", "自訂")
+        );
+
+        const nameField = createElement("label", "tabletop-action-editor__field");
+        nameField.htmlFor = nameId;
+        nameField.appendChild(createElement("span", "", "名稱"));
+        nameInput = document.createElement("input");
+        nameInput.id = nameId;
+        nameInput.type = "text";
+        nameInput.maxLength = CUSTOM_ACTION_LABEL_MAX;
+        nameInput.value = action?.label || "";
+        nameInput.autocomplete = "off";
+        nameInput.dataset.stateTransient = "true";
+        nameInput.setAttribute("aria-describedby", errorId);
+        nameField.appendChild(nameInput);
+
+        const modeField = createElement("label", "tabletop-action-editor__field");
+        modeField.htmlFor = modeId;
+        modeField.appendChild(createElement("span", "", "分類"));
+        modeSelect = document.createElement("select");
+        modeSelect.id = modeId;
+        modeSelect.dataset.stateTransient = "true";
+        MODES.forEach(mode => {
+          const option = document.createElement("option");
+          option.value = mode;
+          option.textContent = MODE_LABELS[mode];
+          modeSelect.appendChild(option);
+        });
+        modeSelect.value = MODES.includes(action?.mode) ? action.mode : currentMode;
+        modeSelect.setAttribute("aria-describedby", errorId);
+        modeField.appendChild(modeSelect);
+
+        const descriptionField = createElement("label", "tabletop-action-editor__field");
+        descriptionField.htmlFor = descriptionId;
+        descriptionField.appendChild(createElement("span", "", "說明"));
+        descriptionInput = document.createElement("textarea");
+        descriptionInput.id = descriptionId;
+        descriptionInput.maxLength = CUSTOM_ACTION_DESCRIPTION_MAX;
+        descriptionInput.rows = 5;
+        descriptionInput.value = action?.description || "";
+        descriptionInput.dataset.stateTransient = "true";
+        descriptionInput.setAttribute("aria-describedby", errorId);
+        descriptionField.appendChild(descriptionInput);
+
+        error = createElement("p", "tabletop-action-editor__error");
+        error.id = errorId;
+        error.setAttribute("aria-live", "polite");
+
+        [nameInput, modeSelect, descriptionInput].forEach(field => {
+          field.addEventListener("input", () => {
+            field.removeAttribute("aria-invalid");
+            error.textContent = "";
+          });
+        });
+        form.addEventListener("submit", event => {
+          event.preventDefault();
+          body.closest(".app-dialog__surface")
+            ?.querySelector(".app-dialog__button--primary")
+            ?.click();
+        });
+        form.append(source, nameField, modeField, descriptionField, error);
+        body.appendChild(form);
+      },
+      resolveConfirm() {
+        const label = nameInput?.value.trim() || "";
+        const mode = modeSelect?.value || "";
+        const description = descriptionInput?.value.trim() || "";
+        [nameInput, modeSelect, descriptionInput].forEach(field => field?.removeAttribute("aria-invalid"));
+
+        if (!label) {
+          nameInput?.setAttribute("aria-invalid", "true");
+          error.textContent = "請輸入按鈕名稱。";
+          nameInput?.focus();
+          return false;
+        }
+        if (label.length > CUSTOM_ACTION_LABEL_MAX) {
+          nameInput?.setAttribute("aria-invalid", "true");
+          error.textContent = `名稱最多 ${CUSTOM_ACTION_LABEL_MAX} 個字元。`;
+          nameInput?.focus();
+          return false;
+        }
+        if (!MODES.includes(mode)) {
+          modeSelect?.setAttribute("aria-invalid", "true");
+          error.textContent = "請選擇有效的分類。";
+          modeSelect?.focus();
+          return false;
+        }
+        if (!description) {
+          descriptionInput?.setAttribute("aria-invalid", "true");
+          error.textContent = "請輸入按鈕說明。";
+          descriptionInput?.focus();
+          return false;
+        }
+        if (description.length > CUSTOM_ACTION_DESCRIPTION_MAX) {
+          descriptionInput?.setAttribute("aria-invalid", "true");
+          error.textContent = `說明最多 ${CUSTOM_ACTION_DESCRIPTION_MAX} 個字元。`;
+          descriptionInput?.focus();
+          return false;
+        }
+
+        const values = { label, mode, description };
+        const saved = action
+          ? globalScope.TabletopMode?.updateCustomTabletopAction?.(action.id, values)
+          : globalScope.TabletopMode?.addCustomTabletopAction?.(values);
+        if (!saved?.ok) {
+          error.textContent = saved?.reason === "limit"
+            ? "自訂按鈕已達 50 筆上限，請先刪除不再使用的項目。"
+            : saved?.reason === "storage"
+              ? "無法寫入本機儲存，請確認瀏覽器允許儲存後再試。"
+              : "無法儲存這顆按鈕，請檢查欄位後再試。";
+          return false;
+        }
+        return saved.action;
+      }
+    });
+
+    if (!result || typeof result !== "object") return false;
+    render();
+    globalScope.AppDialog.notify(
+      action ? `已更新「${result.label}」。` : `已新增「${result.label}」至${MODE_LABELS[result.mode]}。`,
+      { tone: "success" }
+    );
+    return true;
+  }
+
+  function renderActionManagerContent(container) {
+    const api = globalScope.ActionPanel;
+    if (!api) return;
+    const preferences = getActionPreferences();
+    const optionSet = getModeOptionSet(currentMode);
+    const hiddenKeys = new Set(preferences.hiddenKeys || []);
+    const header = createElement("div", "tabletop-action-manager__toolbar");
+    const summary = createElement(
+      "p",
+      "tabletop-action-manager__summary",
+      `${MODE_LABELS[currentMode]}共有 ${optionSet.all.length} 顆目前可用按鈕。取消勾選即可隱藏。`
+    );
+    const toolbarActions = createElement("div", "tabletop-action-manager__toolbar-actions");
+    const restore = createElement("button", "tabletop-compact-button", "全部恢復");
+    restore.type = "button";
+    restore.disabled = getHiddenCountForMode(currentMode, preferences) === 0;
+    const add = createElement("button", "tabletop-compact-button tabletop-action-manager__add", "新增按鈕");
+    add.type = "button";
+    toolbarActions.append(restore, add);
+    header.append(summary, toolbarActions);
+
+    const list = createElement("div", "tabletop-action-manager__list");
+    list.setAttribute("role", "list");
+    if (!optionSet.all.length) {
+      list.appendChild(createElement("p", "tabletop-inline-empty", "目前分類沒有按鈕；仍可新增自訂按鈕。"));
+    } else {
+      optionSet.all.forEach(option => {
+        const row = createElement("div", "tabletop-action-manager__row");
+        row.setAttribute("role", "listitem");
+        const visibility = createElement("label", "tabletop-action-manager__visibility");
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = !hiddenKeys.has(option.preferenceKey);
+        checkbox.setAttribute("aria-label", `顯示${option.label}`);
+        const copy = createElement("span", "tabletop-action-manager__copy");
+        copy.append(
+          createElement("strong", "", api.getButtonLabel(option)),
+          createElement("span", "tabletop-source-tag", option.customActionId ? "自訂" : (option.buttonTag || option.source || "內建"))
+        );
+        visibility.append(checkbox, copy);
+        row.appendChild(visibility);
+
+        if (option.customActionId) {
+          const actions = createElement("div", "tabletop-action-manager__row-actions");
+          const edit = createElement("button", "tabletop-compact-button", "編輯");
+          edit.type = "button";
+          const remove = createElement("button", "tabletop-compact-button tabletop-danger-button", "刪除");
+          remove.type = "button";
+          edit.addEventListener("click", async () => {
+            const latest = getActionPreferences().customActions
+              .find(action => action.id === option.customActionId);
+            if (latest) await openCustomActionEditor(latest, edit);
+            openActionManager(elements.manage);
+          });
+          remove.addEventListener("click", async () => {
+            const confirmed = await globalScope.AppDialog?.requestDecision({
+              title: `刪除「${option.label}」`,
+              message: "這會從這台裝置的桌邊動作移除這顆自訂按鈕，且無法復原。角色資料不受影響。",
+              cancelLabel: "取消",
+              confirmLabel: "刪除按鈕",
+              intent: "danger",
+              dismissOnBackdrop: false,
+              trigger: remove
+            });
+            if (confirmed) {
+              const removed = globalScope.TabletopMode?.removeCustomTabletopAction?.(option.customActionId);
+              if (!removed?.ok) {
+                globalScope.AppDialog?.notify(
+                  removed?.reason === "storage"
+                    ? "無法寫入本機儲存，按鈕沒有刪除。"
+                    : "找不到這顆自訂按鈕。",
+                  { tone: "error" }
+                );
+              } else {
+                render();
+                globalScope.AppDialog?.notify(`已刪除「${removed.action.label}」。`, { tone: "success" });
+              }
+            }
+            openActionManager(elements.manage);
+          });
+          actions.append(edit, remove);
+          row.appendChild(actions);
+        }
+
+        checkbox.addEventListener("change", () => {
+          const result = globalScope.TabletopMode?.setTabletopActionHidden?.(
+            option.preferenceKey,
+            !checkbox.checked
+          );
+          if (!result?.ok) {
+            checkbox.checked = !checkbox.checked;
+            globalScope.AppDialog?.notify(
+              result?.reason === "storage"
+                ? "無法寫入本機儲存，顯示設定沒有變更。"
+                : "無法變更這顆按鈕的顯示設定。",
+              { tone: "error" }
+            );
+            return;
+          }
+          restore.disabled = getHiddenCountForMode(currentMode) === 0;
+          render();
+        });
+        list.appendChild(row);
+      });
+    }
+
+    restore.addEventListener("click", () => {
+      const result = globalScope.TabletopMode?.restoreTabletopActionCategory?.(currentMode);
+      if (!result?.ok) {
+        globalScope.AppDialog?.notify("無法寫入本機儲存，按鈕沒有恢復。", { tone: "error" });
+        return;
+      }
+      render();
+      renderActionManagerContent(container);
+      container.querySelector(".tabletop-action-manager__add")?.focus();
+      if (result.restored) {
+        globalScope.AppDialog?.notify(`已恢復${MODE_LABELS[currentMode]}分類的按鈕。`, { tone: "success" });
+      }
+    });
+    add.addEventListener("click", async () => {
+      await openCustomActionEditor(null, add);
+      openActionManager(elements.manage);
+    });
+    container.replaceChildren(header, list);
+  }
+
+  async function openActionManager(trigger = elements.manage) {
+    if (typeof globalScope.AppDialog?.showContent !== "function") return;
+    const content = createElement("div", "tabletop-action-manager");
+    renderActionManagerContent(content);
+    await globalScope.AppDialog.showContent({
+      title: `管理${MODE_LABELS[currentMode]}按鈕`,
+      message: "這些設定只保留在目前裝置，不會寫入角色或分享資料。",
+      content,
+      variant: "action-manager",
+      confirmLabel: "完成",
+      initialFocus: "content",
+      trigger
+    });
+  }
+
   function renderActionPanel(mode) {
     const panel = elements.panels?.find(candidate => candidate.dataset.tabletopActionPanel === mode);
     const api = globalScope.ActionPanel;
     if (!panel || !api) return;
     const meta = api.getModeMeta(mode);
-    const options = (api.getTabletopOptions || api.getOptions)(mode);
+    const optionSet = getModeOptionSet(mode);
+    const options = optionSet.visible;
     if (!meta) return;
 
     let selectedKey = selectedOptionKeys.get(mode) || "";
@@ -290,6 +657,8 @@
       button.type = "button";
       button.dataset.actionOptionKey = option.key;
       if (opensSpellDialog) {
+        button.dataset.spellId = option.spellId;
+        button.dataset.spellSourceKey = option.spellSourceKey || "";
         button.setAttribute("aria-haspopup", "dialog");
       } else {
         button.setAttribute("aria-pressed", String(option.key === selectedKey));
@@ -307,7 +676,11 @@
           });
           layout.querySelector(".tabletop-action-description")
             ?.replaceWith(createActionDescription(null, meta.prompt));
-          globalScope.TabletopSpells?.showSpellDetail(option.spellId, button);
+          const matchingEntries = globalScope.TabletopSpells?.getSelectedSpellEntries?.()
+            .filter(entry => entry.spellId === option.spellId) || [];
+          const spellEntry = matchingEntries.find(entry => entry.sourceKey === option.spellSourceKey)
+            || (matchingEntries.length === 1 ? matchingEntries[0] : null);
+          globalScope.TabletopSpells?.showSpellDetail(spellEntry || option.spellId, button);
           return;
         }
         selectedOptionKeys.set(mode, option.key);
@@ -317,6 +690,15 @@
     }
 
     regularOptions.forEach(option => optionList.appendChild(createOptionButton(option)));
+
+    if (!options.length) {
+      const empty = createElement(
+        "p",
+        "tabletop-action-options__empty",
+        "目前分類的按鈕都已隱藏，可從「管理」恢復。"
+      );
+      optionList.appendChild(empty);
+    }
 
     if (spellOptions.length && spellGroupExpanded.has(mode)) {
       const expanded = spellGroupExpanded.get(mode) === true;
@@ -355,7 +737,7 @@ function updateTabVisibility() {
 
   elements.tabs.forEach(tab => {
     const mode = tab.dataset.tabletopActionTab;
-    const hasOptions = (api.getTabletopOptions || api.getOptions)(mode).length > 0;
+    const hasOptions = getModeOptionSet(mode).all.length > 0;
     tab.hidden = !hasOptions;
   });
 }
@@ -439,10 +821,10 @@ function render() {
 
   let nextMode = MODES.includes(mode) ? mode : "basic";
 
-  if (api && (api.getTabletopOptions || api.getOptions)(nextMode).length === 0) {
+  if (api && getModeOptionSet(nextMode).all.length === 0) {
     const fallbackTab = elements.tabs?.find(tab => {
       const tabMode = tab.dataset.tabletopActionTab;
-      return (api.getTabletopOptions || api.getOptions)(tabMode).length > 0;
+      return getModeOptionSet(tabMode).all.length > 0;
     });
 
     if (fallbackTab) {
@@ -495,6 +877,7 @@ function render() {
       weaponSummary: document.getElementById("tabletop-weapon-summary"),
       weaponRuleSection: document.getElementById("tabletop-weapon-rule-summary-section"),
       weaponRuleSummary: document.getElementById("tabletop-weapon-rule-summary"),
+      manage: document.getElementById("tabletop-action-manage"),
       tabs: Array.from(document.querySelectorAll("[data-tabletop-action-tab]")),
       panels: Array.from(document.querySelectorAll("[data-tabletop-action-panel]"))
     });
@@ -505,9 +888,11 @@ function render() {
       tab.addEventListener("click", () => setMode(tab.dataset.tabletopActionTab));
       tab.addEventListener("keydown", handleTabKeydown);
     });
+    elements.manage?.addEventListener("click", () => openActionManager(elements.manage));
     document.addEventListener("input", scheduleRender);
     document.addEventListener("change", scheduleRender);
     globalScope.addEventListener("actionpanelchange", scheduleRender);
+    globalScope.addEventListener("tabletopactionpreferenceschange", scheduleRender);
     globalScope.addEventListener("dicerollmodechange", scheduleRender);
     globalScope.addEventListener("tabletop-panelchange", event => {
       if (event.detail?.panel === "actions") scheduleRender();

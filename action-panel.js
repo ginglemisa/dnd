@@ -582,19 +582,30 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
       : mode === "bonus"
         ? /施法時間\s*[：:]\s*附贈動作/u
         : /施法時間\s*[：:]\s*反應動作/u;
-    const spellIds = new Set(Array.from(document.querySelectorAll('#tab-spells select[id*="-spell-"]'), select => select.value).filter(Boolean));
-
-    return Array.from(spellIds).flatMap(spellId => {
+    return Array.from(document.querySelectorAll('#tab-spells .spell-entry select[id*="-spell-"]')).flatMap(select => {
+      const spellId = select.value || "";
       const spell = SpellCatalog.getSpell(spellId);
       if (!spell || !timingPattern.test(spell.desc || "")) return [];
+      const row = select.closest(".spell-entry");
+      const classSelect = row?.querySelector('select[id*="-class-"]');
+      const sourceTag = typeof globalScope.getPickedSpellSourceTag === "function"
+        ? globalScope.getPickedSpellSourceTag(row)
+        : "";
+      const sourceClassLabel = classSelect?.selectedOptions?.[0]?.textContent?.trim() || "";
+      const sourceKey = row?.dataset.sourceKey || select.id;
+      const sourceLabel = row?.dataset.sourceLabel
+        || (sourceClassLabel ? `來源：${sourceClassLabel}法表` : "來源：職業法表");
+      const levelTag = spell.level === 0
+        ? "戲法"
+        : `${["", "一", "二", "三", "四", "五", "六", "七", "八", "九"][spell.level] || spell.level}環`;
+      const shortSourceLabel = sourceTag || sourceLabel.replace(/^來源[：:]\s*/u, "");
       return [{
-        key: `dynamic-${mode}-spell-${spellId}`,
+        key: `dynamic-${mode}-spell-${spellId}-${stableKeyHash(sourceKey)}`,
         spellId,
+        spellSourceKey: sourceKey,
         label: spell.nameZh,
         source: FEATURE_SOURCE_LABELS.spell,
-        buttonTag: spell.level === 0
-          ? "戲法"
-          : `${["", "一", "二", "三", "四", "五", "六", "七", "八", "九"][spell.level] || spell.level}環`,
+        buttonTag: shortSourceLabel ? `${levelTag} · ${shortSourceLabel}` : levelTag,
         description: spell.desc,
         dynamic: true
       }];
@@ -661,7 +672,7 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
     ];
     const seen = new Set();
     return entries.filter(entry => {
-      const fingerprint = `${entry.source}|${entry.label}|${entry.description}`.replace(/\s+/g, " ");
+      const fingerprint = `${entry.source}|${entry.label}|${entry.description}|${entry.spellSourceKey || ""}`.replace(/\s+/g, " ");
       if (seen.has(fingerprint)) return false;
       seen.add(fingerprint);
       return true;

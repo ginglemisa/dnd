@@ -1,11 +1,10 @@
-# TWD20 | 5.5版手機角卡
+# twD20｜5.5 版手機角卡
 
-給 TRPG 新手、帶團者與教學活動使用的手機創角網站。
-以較低的規則負擔協助玩家建立 1～8 級角色，快速開始第一場冒險。
+twD20 是為 TRPG 新手、帶團者與教學活動設計的手機優先創角與桌邊輔助工具。它以較低的規則負擔協助玩家建立 1～8 級角色，快速看懂角色並開始遊戲。
 
-- 正式網站：[https://twd20.com](https://twd20.com)
-- Legal & About：[版權宣告](https://twd20.com/about.html)
-- GitHub：[https://github.com/ginglemisa/dnd](https://github.com/ginglemisa/dnd)
+- 正式網站：[twd20.com](https://twd20.com)
+- Legal & About：[完整說明、授權與 attribution](https://twd20.com/about.html)
+- GitHub：[ginglemisa/dnd](https://github.com/ginglemisa/dnd)
 
 > twD20 是獨立製作的第三方 5.5 版相容工具，與 Wizards of the Coast LLC 或其他官方品牌無關。
 
@@ -14,127 +13,102 @@
 - 第一次接觸 5.5 版奇幻 TRPG 的玩家
 - DM／教學者在桌邊帶領新手創角
 - TRPG 推廣活動、體驗場與收費團
-- 希望減少準備時間的快速開團
+- 希望減少準備與查表時間的團務
 
-本工具以手機操作為主，並預設現場有主持人或教學者協助玩家並說明規則。
-
-本工具不附帶朋友和地下城主，找團請洽詢 TRPG 網路或在地社群。
+本工具以手機操作為主，並預設現場有主持人或教學者協助說明規則。它不附帶朋友和地下城主，找團請洽 TRPG 網路或在地社群。
 
 ## 目前功能
 
-- 五個角色卡分頁：數值、技能、動作、裝備、法術
-- 支援 1～8 級角色資料與相關選項
-- 桌邊模式
-- 簡易擲骰系統
-- 本機自動儲存角色資料
-- JSON 角色紀錄匯入與匯出
-- 分享角卡網址
-- 指向 `https://twd20.com` 的 QR Code
-- PDF 角色卡匯出
-- 藍白外觀與深色外觀
-- 創角小幫手
-- 可獨立開啟的離線版本
+### 創角與角色卡
 
-右上角工具選單集中提供外觀切換、紀錄管理、QR Code、PDF 匯出、分享角卡與新手導覽。
+- 數值、技能、動作、裝備、法術五個角色卡分頁
+- 1～8 級角色資料與選項，以及可切換的關鍵數值自動計算
+- 27 點購買、職業屬性範本、創角小幫手與新手導覽
+- 裝備與法術搜尋、動態動作選項及規則摘要
+- 藍白與深色外觀
+
+### 桌邊模式
+
+- 總覽、技能、動作、法術、資源五個桌邊分頁，與原角色卡共用資料
+- HP、臨時 HP、狀態、死亡豁免與專注追蹤
+- 武器攻擊與角色可用行動查閱；可隱藏既有項目或建立自訂行動
+- 法術位、已選法術、施法方式與資源消耗管理，並支援可用結果的自動擲骰或治療處理
+- 依目前職業、種族與等級顯示內建資源，也可建立自訂資源
+
+### 儲存、分享與輸出
+
+- 可選用的擲骰系統，支援常用骰、骰式結果與本機歷史紀錄
+- 瀏覽器本機自動儲存，以及 JSON 角色紀錄匯入／匯出
+- 分享角卡網址與指向 `https://twd20.com` 的 QR Code
+- PDF 角色卡匯出
+- 可直接下載開啟的單檔離線版本
+
+右上角工具選單集中提供外觀與模式切換、操作設定、紀錄管理、QR Code、PDF 匯出、分享角卡、神祇參考及新手導覽。
 
 ## 資料保存與分享
 
-一般模式下，角色資料會自動儲存在目前瀏覽器的 LocalStorage。
-清除瀏覽器資料或更換裝置後，資料不會自動保留；建議定期使用「匯出紀錄」備份 JSON 檔案，需要時再以「匯入紀錄」還原。
+一般模式下，角色資料與部分操作偏好會儲存在目前瀏覽器的 LocalStorage。清除瀏覽器資料或更換裝置後，資料不會自動保留；建議定期匯出 JSON 備份，需要時再匯入還原。
 
-透過分享網址開啟角色時會進入分享模式。在分享模式中的修改不會自動寫入本機儲存，請使用匯入／匯出功能保存需要的內容。
+透過分享網址開啟角色時會進入分享模式。分享模式中的修改不會自動寫入本機儲存，請使用匯入／匯出功能保存需要的內容。
 
-## 離線版本
+## 本機執行
 
-專案提供單檔離線角卡：[`TWD20-offline.html`](TWD20-offline.html)。下載後可直接以瀏覽器開啟，不必安裝應用程式。
+本專案是原生 HTML、CSS、JavaScript 靜態網站，沒有 npm 相依套件或必要的編譯步驟。以任意靜態 HTTP 伺服器提供專案目錄，再開啟 `index.html` 即可；例如環境已有 Python 時：
 
-離線版本無法輸出 PDF 文件，請注意。
+```powershell
+python -m http.server 8000
+```
+
+接著開啟 `http://localhost:8000/`。多數功能可直接開啟 HTML 使用，但 PDF 匯出需透過 HTTP 伺服器載入相關檔案。
 
 ## 專案結構
 
-這是原生 HTML、CSS 與 JavaScript 的靜態網頁專案；PDF 匯出功能需要以伺服器啟動 `index.html` 方能生效。
+- 網站入口與共用樣式：`index.html`、`styles.css`
+- 資料與共用規則：`character-rules.js`、`class-features.js`、`race.js`、`backgrounds.js`、`feats.js`、`tool-data.js`、`monster.js`、`equipment-data.js`、`equipment-notes.js`、`spell-list.js`、`condition.js`、`deity-info.js`
+- 角色卡互動：`action-panel.js`、`dice-roller.js`、`quick-build.js`、`onboarding-tour.js`、`app-dialog.js`、`scroll-to-top.js`
+- 桌邊模式：`tabletop-mode.js`（狀態與共用 API）、`tabletop-actions.js`（武器與行動）、`tabletop-spells.js`（施法與專注）、`tabletop-resources.js`（內建與自訂資源）
+- PDF 匯出：`pdf-export.js`、`pdf-field-map.js`、`pdf-lib.custom.min.js`、`fontkit.custom.min.js`，以及角色紙與字型素材
+- 資訊頁面：`about.html`、`ddals1.html`、`info-pages.css`、`legal-modal.js`
+- 維護工具：`validate-tabletop-spellcasting.js`、`build-offline-nopdf.ps1`
+- 衍生檔案：`TWD20-offline.html`
 
-- 入口與樣式：`index.html`、`styles.css`
-- Legal & About：`about.html`、`info-pages.css`、`legal-modal.js`（首頁 iframe modal）
-- 主要功能與資料：`scroll-to-top.js`、`action-panel.js`、`monster.js`、`class-features.js`、`race.js`、`backgrounds.js`、`tool-data.js`、`feats.js`、`equipment-notes.js`、`equipment-data.js`、`spell-list.js`、`condition.js`、`character-rules.js`、`onboarding-tour.js`、`quick-build.js`、`deity-info.js`
-- 桌邊模式：`tabletop-mode.js`（桌邊模式控制器）、`tabletop-actions.js`（武器與行動查閱）、`tabletop-spells.js`（法術與專注）、`tabletop-resources.js`（既有與自訂資源）；`app-dialog.js` 提供全站共用的對話框與通知
-- PDF 匯出程式：`pdf-lib.custom.min.js`、`fontkit.custom.min.js`、`pdf-field-map.js`、`pdf-export.js`
-- PDF 匯出素材：`5e_char_sheet.pdf`、`NotoSansTC-Regular-IdentityCID.otf`、`SourceHanSerifTC-Bold.otf`
-- Legal & About 視窗圖像：`logo.png`
+`SpellCatalog` 由 `spell-list.js` 提供，是法術內容及桌邊施法 metadata 的來源。`ActionPanel` 從既有職業、種族、專長與法術資料建立角色可用動作。桌邊模組則統一經由 `TabletopMode` 同步狀態，擲骰由 `DiceRoller` 提供。
 
-`action-panel.js` 負責「動作」分頁的動作、附贈動作與反應選項面板：提供基本選項，並依目前職業、種族、專長、已選法術與魔能祈喚，從既有資料顯示可用的動態按鈕；含有「等級 X：」的能力會依角色等級顯示。
+PDF 程式與素材只會在使用 PDF 匯出時動態載入；不需要 PDF 功能的部署可省略這些檔案。
 
-桌邊模式的資料與原角色卡欄位同步。`tabletop-mode.js` 是此模式的狀態與切換入口，並對其他桌邊模組提供 `TabletopMode` API 與 `tabletopstatechange`／`tabletop-panelchange` 事件；其餘三個 `tabletop-*.js` 負責各自分頁的呈現與操作，規則狀態統一由 `tabletop-mode.js` 管理。
+## 維護與驗證
 
-`pdf-export.js` 與其他相關檔案只會在使用 PDF 匯出時動態載入；若不需要該功能，可省略「PDF 匯出程式」與「PDF 匯出素材」兩類。
+修改 JavaScript 後，可先執行最低成本的語法檢查：
 
-`TWD20-offline.html` 是另行產生的單檔離線版本，可獨立運行。
+```powershell
+node --check .\受影響的檔案.js
+```
 
-## 中文角色紙
+若修改法術 metadata 或桌邊施法、法術位、專注、自動擲骰流程，另執行專用驗證：
 
-- [SRD 中文角色紙](https://tinyurl.com/srd5etw)：具備表單功能，可先填寫再列印
-- 角色卡排版作者：[赤赤@AkaA](https://x.com/AkaAAkaAka)
-- [無表單 PDF／原 PNG 檔](https://drive.google.com/drive/folders/1brrzdbRcxMvxHcYYjyzs2N_8aPaQewW6?usp=sharing)
-- PDF 使用字型：[Noto Sans TC](https://fonts.google.com/download?family=Noto%20Sans%20TC)、[思源宋體 SourceHanSerifTC-Bold.otf](https://github.com/adobe-fonts/source-han-serif/tree/release/OTF/TraditionalChinese)
+```powershell
+node .\validate-tabletop-spellcasting.js
+```
 
-## 授權與法律聲明
+專案沒有通用測試框架。請避免為一般修改新增套件管理器或建置相依。
 
-### 規則內容
+## 離線版本
 
-本專案使用並改編 System Reference Document 5.2.1（SRD 5.2.1）的內容。
+[`TWD20-offline.html`](TWD20-offline.html) 是由來源檔產生的單檔版本，會內嵌本機 CSS、JavaScript、圖片與 Legal & About 內容，可下載後直接以瀏覽器開啟。精簡離線版不包含 PDF 匯出功能。
 
-SRD 5.2.1 採 Creative Commons Attribution 4.0 International（CC BY 4.0）授權。依該授權使用、重製或改編相關內容時，應保留適當的來源與授權資訊，並於修改內容時依授權條件標示相關變更。
+維護者只有在確定要同步離線成品時，才需從 PowerShell 執行：
 
-本專案對 SRD 內容所做的翻譯、縮寫、重新編排或介面呈現，不改變原始 SRD 內容適用的授權條件。
+```powershell
+.\build-offline-nopdf.ps1
+```
 
-### 專案原始程式碼
+請勿直接只修改 `TWD20-offline.html`；功能與文案應先修改來源檔，再重新產生離線版本。
 
-除另有標示的第三方內容外，本專案中由專案作者創作、修改或有權授權的原始程式碼，以 MIT License 提供。
+## 授權、素材與法律聲明
 
-MIT License 允許使用、複製、修改、合併、發布、散布、再授權及商業使用相關程式碼，但使用者應依 License 文件保留必要的著作權與授權聲明。
-
-MIT License 僅適用於本專案有權以該授權提供的內容，不代表 repository 中所有第三方素材、SRD 內容、字型或其他外部作品均採 MIT License。
-
-完整條款請見專案中的 LICENSE 文件。
-
-### AI 協作開發
-
-本專案部分原始程式碼與文字內容曾使用生成式 AI 協助產生、修改、整理、檢查或除錯，並經人工選擇、整合與調整。
-MIT License 所提供的授權，以專案作者依法具有著作權或其他授權權限的範圍為限。對於依法不受著作權保護、屬第三方權利，或另受其他授權條款拘束的內容，本專案不主張以 MIT License 取得或授予超出依法可授權範圍的權利。
-
-### 第三方素材
-
-本專案包含或搭配使用部分第三方素材，包括但不限於：
-System Reference Document 5.2.1：依 CC BY 4.0 使用 Noto Sans TC 字型：依其原始字型授權條款使用 Source Han Serif／思源宋體字型：依其原始字型授權條款使用
-
-PDF 角色紙、排版、圖像或其他標示作者／來源的素材：權利仍屬各該權利人，並依其個別授權或使用條件處理
-第三方 JavaScript 函式庫及其他外部元件：依各自的 License 使用
-
-除非另有明確標示，本專案的 MIT License 不取代上述第三方內容原有的授權條款。
-
-使用者若重製、修改、重新散布或商業使用本專案，應自行確認實際使用內容所適用的授權條件。
-
-### 商標與品牌
-本專案名稱、說明或規則文字中可能出現用於辨識相容性、來源或規則內容的第三方名稱。
-
-除依法或相關授權所允許的使用外，本專案不主張任何第三方商標、品牌名稱、標誌或其他識別標誌的權利，亦不表示相關權利人對 TWD20 有任何贊助、認可或合作關係。
-
-### 免責聲明
-本專案以現況（AS IS）提供，不保證內容完全正確、完整或適合任何特定用途。
-
-規則摘要與介面文字以方便遊戲與新手使用為目的，可能經過翻譯、縮寫或重新整理；如需確認完整規則，應以相關授權來源及其正式文件為準。
-
-使用者應自行判斷本專案及其內容是否符合所在地法律、活動需求、平台規範與第三方授權條件。
-
-SRD Attribution
-This work includes material from the System Reference Document 5.2.1 (“SRD 5.2.1”) by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd.
-The SRD 5.2.1 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode.
-
-完整的專案、第三方內容與相關說明請見 [Legal & About](https://twd20.com/about.html)。
+本專案使用並改編 SRD 5.2.1，並包含另有授權條件的字型、角色紙、函式庫與其他第三方內容。專案原始程式碼、SRD 內容、第三方素材、AI 協作說明、商標及免責聲明的適用範圍不同；請以 [`about.html`](about.html)／[線上 Legal & About](https://twd20.com/about.html) 的完整說明與 attribution 為準。
 
 ## 問題回報與參與
-
-如果發現 Bug 或有改善建議，可透過以下方式聯絡：
 
 - Email：tsai.reggie428@gmail.com
 - 巴哈姆特站內信：`reggietsai`
