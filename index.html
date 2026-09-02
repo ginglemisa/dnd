@@ -877,8 +877,8 @@
     </div>
   </section>
   <section class="weapon-attack-card" aria-labelledby="atk-off-title">
-    <h4 id="atk-off-title">副手攻擊<button type="button" id="atk-off-mastery" class="weapon-mastery-badge" data-weapon-rule-kind="mastery" hidden></button></h4>
-    <div class="weapon-attack-fields" role="group" aria-label="副手攻擊欄位">
+    <h4 id="atk-off-title"><span id="atk-off-title-text">副手攻擊</span><button type="button" id="atk-off-mastery" class="weapon-mastery-badge" data-weapon-rule-kind="mastery" hidden></button></h4>
+    <div id="atk-off-fields" class="weapon-attack-fields" role="group" aria-label="副手攻擊欄位">
       <label class="weapon-attack-name">名稱<input type="text" id="atk-off-name" placeholder="尚未裝備"></label>
       <label>命中<input type="text" id="atk-off-hit" class="attack-calculation-trigger" placeholder="—" readonly aria-haspopup="dialog" data-attack-hand="off" data-attack-calculation="hit"></label>
       <label>傷害<input type="text" id="atk-off-dmg" class="attack-calculation-trigger" placeholder="—" readonly aria-haspopup="dialog" data-attack-hand="off" data-attack-calculation="damage"></label>
@@ -935,10 +935,14 @@
       <label for="offHand">副手</label>
       <select id="offHand" disabled=""><option disabled="">(雙手佔用)</option></select>
     </div>
-    <div class="form-row equipment-loadout-field">
+    <div class="form-row equipment-loadout-field equipment-loadout-field--armor">
       <label for="armor">護甲</label>
       <select id="armor"><option value="">-- 請選擇 --</option><option value="布甲">布甲</option><option value="皮甲">皮甲</option><option value="鑲釘皮甲">鑲釘皮甲</option><option value="獸皮甲">獸皮甲</option><option value="半身鎖甲">半身鎖甲</option><option value="鱗甲">鱗甲</option><option value="胸甲">胸甲</option><option value="半身板甲">半身板甲</option><option value="環甲">環甲</option><option value="鎖子甲">鎖子甲</option><option value="條板甲">條板甲</option><option value="全身板甲">全身板甲</option></select>
     </div>
+    <label class="equipment-alternate-main-option" for="offHandAsMain">
+      <input type="checkbox" id="offHandAsMain">
+      <span>將副手設為另一把主手武器。</span>
+    </label>
     </div>
     <section class="equipment-loadout-summary" aria-labelledby="equipment-loadout-summary-title">
       <h4 id="equipment-loadout-summary-title">目前裝備摘要</h4>
@@ -1350,7 +1354,7 @@ function updateSpeedDisplay() {
   const armorName = document.getElementById("armor")?.value || "";
   const armor = armors.find(item => item.名稱 === armorName);
   const offHandName = document.getElementById("offHand")?.value || "";
-  const hasShield = isShieldItem(armorName) || offHandName === "盾牌";
+  const hasShield = isShieldItem(armorName) || (!isOffHandAlternateMain() && offHandName === "盾牌");
   speedDisplay.value = window.calculateCharacterSpeed({
     baseSpeed: document.getElementById("speed-input")?.value,
     race: document.getElementById("race")?.value,
@@ -1878,7 +1882,7 @@ function updateACDisplay() {
   const offHandName = document.getElementById("offHand")?.value;
   const className = document.getElementById("class")?.value;
   const armor = hasArmor ? armors.find(item => item.名稱 === armorName) : null;
-  const hasOffHandShield = offHandName === "盾牌";
+  const hasOffHandShield = !isOffHandAlternateMain() && offHandName === "盾牌";
   const hasShield = (hasOffHandShield || hasArmorShield)
     && !(hasOffHandShield && hasArmorShield);
   const armorClass = calculateArmorClass({
@@ -4819,9 +4823,30 @@ function getArmorSections(includeShield = false) {
 function isShieldItem(name) {
   return name === "盾牌";
 }
+
+function isOffHandAlternateMain() {
+  return document.getElementById("offHandAsMain")?.checked === true;
+}
+
+function updateOffHandRolePresentation() {
+  const alternateMain = isOffHandAlternateMain();
+  const attackLabel = alternateMain ? "另一把主手攻擊" : "副手攻擊";
+  const title = document.getElementById("atk-off-title-text");
+  const fields = document.getElementById("atk-off-fields");
+  const note = document.getElementById("atk-off-note");
+  if (title) title.textContent = attackLabel;
+  if (fields) fields.setAttribute("aria-label", `${attackLabel}欄位`);
+  if (note) note.setAttribute("aria-label", `${attackLabel}備註`);
+}
+
 function updateOffHandOptions(mainHandValue) {
   const mainWeapon = getAllWeaponsWithoutShield().find(w => w.名稱 === mainHandValue);
   const offHandSelect = document.getElementById("offHand");
+  if (isOffHandAlternateMain()) {
+    populateSelectWithSections(offHandSelect, getWeaponSections(false, false));
+    offHandSelect.disabled = false;
+    return;
+  }
   if (!mainWeapon) {
     populateSelectWithSections(offHandSelect, getWeaponSections(true, true));
     offHandSelect.disabled = false;
@@ -4955,7 +4980,7 @@ function isMonkWeapon(weapon) {
   return isSimpleMelee || isLightMartialMelee;
 }
 
-function isMonkMartialArtsActive() {
+function isMonkMartialArtsActive(weaponName = "") {
   const cls = document.getElementById("class")?.value || "";
   if (cls !== "monk") return false;
 
@@ -4964,8 +4989,13 @@ function isMonkMartialArtsActive() {
   const offHandName = document.getElementById("offHand")?.value || "";
 
   const hasArmor = Boolean(armorName);
-  const hasShield = mainHandName === "盾牌" || offHandName === "盾牌";
+  const hasShield = mainHandName === "盾牌" || (!isOffHandAlternateMain() && offHandName === "盾牌");
   if (hasArmor || hasShield) return false;
+
+  if (isOffHandAlternateMain()) {
+    const currentWeapon = getAllWeaponsWithShield().find(w => w.名稱 === weaponName);
+    return !weaponName || isMonkWeapon(currentWeapon);
+  }
 
   const mainWeapon = getAllWeaponsWithShield().find(w => w.名稱 === mainHandName);
   const offWeapon = getAllWeaponsWithShield().find(w => w.名稱 === offHandName);
@@ -5291,9 +5321,10 @@ function calculateHandAttacks() {
   const hasTwoWeaponFighting = hasTwoWeaponFightingStyleFeat();
   const hasArcheryFightingStyle = hasArcheryFightingStyleFeat();
   const shillelaghTargetHand = getPreparedShillelaghTargetHand();
+  const offHandAsMain = isOffHandAlternateMain();
   const hands = [
-    { key: "main", selectId: "mainHand", prefix: "atk-main" },
-    { key: "off", selectId: "offHand", prefix: "atk-off" }
+    { key: "main", selectId: "mainHand", prefix: "atk-main", usesMainHandRules: true },
+    { key: "off", selectId: "offHand", prefix: "atk-off", usesMainHandRules: offHandAsMain }
   ];
   return hands.map(hand => {
     const weaponName = document.getElementById(hand.selectId).value;
@@ -5309,7 +5340,7 @@ function calculateHandAttacks() {
     const isDexEligible = weaponHasProp(weapon, "靈巧");
     const pb = getProficiencyBonus();
     const proficient = isMonkMartialArts ? true : isWeaponProficient(weapon);
-    const useMonkProficientFormula = cls === "monk" && proficient && isMonkMartialArtsActive() && isMonkWeapon(weapon);
+    const useMonkProficientFormula = cls === "monk" && proficient && isMonkMartialArtsActive(weaponName) && isMonkWeapon(weapon);
     const shillelaghEffect = hand.key === shillelaghTargetHand
       ? getPreparedShillelaghEffect(weaponName, strMod)
       : null;
@@ -5334,7 +5365,7 @@ function calculateHandAttacks() {
     }
     const hit = formatSigned(hitBonus);
     // 傷害部分
-    const shouldApplyDamageMod = shouldApplyDamageModForSummary(hand.key, hasTwoWeaponFighting, attackAbilityMod);
+    const shouldApplyDamageMod = shouldApplyDamageModForSummary(hand.key, hasTwoWeaponFighting, attackAbilityMod, hand.usesMainHandRules);
     let damage = "";
     if (shillelaghEffect) {
       damage = formatWeaponDamage(
@@ -5373,7 +5404,7 @@ function calculateHandAttacks() {
           ? shillelaghEffect.damageDie
           : (useMonkProficientFormula ? damage.match(/^\d+d\d+/u)?.[0] || weapon.傷害.split(/\s+/u)[0] : weapon.傷害.split(/\s+/u)[0]),
         damageModifier: useMonkProficientFormula || shouldApplyDamageMod ? attackAbilityMod : null,
-        omittedOffHandModifier: !useMonkProficientFormula && hand.key === "off" && !hasTwoWeaponFighting && attackAbilityMod > 0,
+        omittedOffHandModifier: !useMonkProficientFormula && hand.key === "off" && !hand.usesMainHandRules && !hasTwoWeaponFighting && attackAbilityMod > 0,
         damageType: shillelaghEffect?.damageType || weapon.傷害.split(/\s+/u).slice(1).join(" "),
         hit,
         damage
@@ -5382,8 +5413,8 @@ function calculateHandAttacks() {
   });
 }
 
-function shouldApplyDamageModForSummary(handKey, hasTwoWeaponFighting, attackAbilityMod) {
-  return handKey !== "off" || hasTwoWeaponFighting || attackAbilityMod < 0;
+function shouldApplyDamageModForSummary(handKey, hasTwoWeaponFighting, attackAbilityMod, usesMainHandRules = false) {
+  return handKey !== "off" || usesMainHandRules || hasTwoWeaponFighting || attackAbilityMod < 0;
 }
 
 function isWeaponAttackAutomationEnabled() {
@@ -5550,6 +5581,7 @@ function refreshWeaponSelections() {
     if (offHandSelect.value !== previousOff) offHandSelect.value = "";
   }
 
+  updateOffHandRolePresentation();
   updateEquipmentLoadoutSummary();
 }
 // 裝備護甲顯示
@@ -7521,6 +7553,8 @@ function applyStateObject(data) {
     removeMagicInitiateDerivedSpellRows();
     deletedSpellRowCache = cloneDeletedSpellRowCache(data.__deletedSpellRowCache);
     setPactTomeSpellSelection(data.__pactTomeSpellSelection, { sync: false });
+    const offHandAsMain = document.getElementById("offHandAsMain");
+    if (offHandAsMain) offHandAsMain.checked = data.offHandAsMain === true;
 
     const spellAreas = getSpellAreaConfigs();
     getDynamicAreaConfigs().forEach(area => {
@@ -7575,6 +7609,7 @@ function applyStateObject(data) {
     syncDruidNaturalRecoveryControls();
     refreshFeatDerivedEffects();
     syncAutomaticKeyStatsMode();
+    updateOffHandRolePresentation();
     window.TabletopMode?.applyState?.(data);
   } finally {
     autosaveSuspended = prevAutosaveSuspended;
@@ -8541,6 +8576,10 @@ function setupMoneyTracker() {
 
   let transactionType = "expense";
   const modalOpeners = new WeakMap();
+  // Keep fixed money dialogs outside the animated/glass tab surfaces. Those
+  // ancestors create containing and stacking contexts that can let later
+  // equipment cards paint over a tall dialog.
+  document.querySelectorAll(".money-modal").forEach((modal) => document.body.appendChild(modal));
   const openModal = (modal) => {
     if (!modal) return;
     const activeElement = document.activeElement;
@@ -8708,6 +8747,7 @@ window.addEventListener("DOMContentLoaded", async function() {
   // 1. 初始化裝備下拉
   const mainHandSelect = document.getElementById("mainHand");
   const offHandSelect = document.getElementById("offHand");
+  const offHandAsMainToggle = document.getElementById("offHandAsMain");
   const armorSelect = document.getElementById("armor");
   refreshWeaponSelections();
   populateSelectWithSections(armorSelect, getArmorSections(false));
@@ -8719,7 +8759,6 @@ window.addEventListener("DOMContentLoaded", async function() {
       if (offHandSelect.value !== previousOff) offHandSelect.value = "";
     }
     updateEquipmentLoadoutSummary();
-    updateEquipmentLoadoutSummary();
     if (typeof updateACDisplay === "function") updateACDisplay();
     if (typeof updateSpeedDisplay === "function") updateSpeedDisplay();
     if (typeof populateHandAttacks === "function") populateHandAttacks();
@@ -8730,6 +8769,18 @@ window.addEventListener("DOMContentLoaded", async function() {
     if (typeof updateSpeedDisplay === "function") updateSpeedDisplay();
     if (typeof populateHandAttacks === "function") populateHandAttacks();
   });
+  offHandAsMainToggle?.addEventListener("change", () => {
+    const previousOff = offHandSelect.value;
+    updateOffHandOptions(mainHandSelect.value);
+    offHandSelect.value = previousOff;
+    if (offHandSelect.value !== previousOff) offHandSelect.value = "";
+    updateOffHandRolePresentation();
+    updateEquipmentLoadoutSummary();
+    if (typeof updateACDisplay === "function") updateACDisplay();
+    if (typeof updateSpeedDisplay === "function") updateSpeedDisplay();
+    if (typeof populateHandAttacks === "function") populateHandAttacks();
+  });
+  updateOffHandRolePresentation();
   updateEquipmentLoadoutSummary();
   // 2. 產生所有法術下拉欄位
   SPELL_AREA_CONFIGS.forEach(({ areaId, level }) => {

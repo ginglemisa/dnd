@@ -490,9 +490,15 @@
           value: element.value,
           disabled: element.disabled
         })),
+        alternateMainToggle: document.getElementById("offHandAsMain"),
+        alternateMainChecked: document.getElementById("offHandAsMain")?.checked === true,
         summary: document.querySelector("#tab-equipment .equipment-loadout-summary"),
         summaryHtml: document.querySelector("#tab-equipment .equipment-loadout-summary")?.innerHTML || ""
       };
+      if (this.equipmentPreviewSnapshot.alternateMainToggle) {
+        this.equipmentPreviewSnapshot.alternateMainToggle.checked = false;
+        window.updateOffHandRolePresentation?.();
+      }
       this.setTourSelectGroups(document.getElementById("mainHand"), [
         { label: "單手軍用近戰武器", values: ["戰斧", "連枷", "長劍"] }
       ]);
@@ -522,6 +528,10 @@
         element.value = value;
         element.disabled = disabled;
       });
+      if (snapshot.alternateMainToggle) {
+        snapshot.alternateMainToggle.checked = snapshot.alternateMainChecked;
+        window.updateOffHandRolePresentation?.();
+      }
       this.refreshEquipmentPreviewOutputs();
       if (snapshot.summary && typeof window.updateEquipmentLoadoutSummary !== "function") {
         snapshot.summary.innerHTML = snapshot.summaryHtml;

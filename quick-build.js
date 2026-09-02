@@ -2564,6 +2564,11 @@
     dispatchMobileField(document.getElementById("money-count-weight"));
 
     const loadout = draft.selections.classEquipment?.content?.loadout || {};
+    const offHandAsMain = document.getElementById("offHandAsMain");
+    if (offHandAsMain) {
+      offHandAsMain.checked = false;
+      dispatchMobileField(offHandAsMain);
+    }
     setMobileField("mainHand", loadout.mainHand || "", warnings, "主手");
     setMobileField("offHand", loadout.offHand || "", warnings, "副手");
     setMobileField("armor", loadout.armor || "", warnings, "護甲");

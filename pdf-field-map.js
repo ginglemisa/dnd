@@ -1241,12 +1241,26 @@
   }
 
 function isWeaponRowEmpty(payload, slot) {
-  return [
-    payload[`attack-weap-name-${slot}`],
+  const weaponName = normalizeText(payload[`attack-weap-name-${slot}`]);
+  const otherValues = [
     payload[`toHit${slot}`],
     payload[`dmg_type_${slot}`],
     payload[`wp-note-${slot}`]
-  ].every((value) => !normalizeText(value));
+  ];
+  const otherFieldsAreEmpty = otherValues.every((value) => !normalizeText(value));
+
+  // A two-handed main weapon leaves a disabled placeholder in the off-hand
+  // name field. When the rest of row 2 is blank, let a damage cantrip replace
+  // that placeholder just as it would replace a fully empty row.
+  if (
+    slot === 2
+    && /^[（(]\s*雙手[佔占]用\s*[）)]$/u.test(weaponName)
+    && otherFieldsAreEmpty
+  ) {
+    return true;
+  }
+
+  return !weaponName && otherFieldsAreEmpty;
 }
 
   function fillDamageCantripsToWeaponRows(payload, spellRows, state) {
@@ -1496,7 +1510,7 @@ function isWeaponRowEmpty(payload, slot) {
       level: state.level,
       isWearingArmor: Boolean(armorName) && !isShield(armorName),
       isWearingHeavyArmor: armor?.分類 === '重甲',
-      hasShield: isShield(armorName) || normalizeText(state.offHand) === '盾牌'
+      hasShield: isShield(armorName) || (state.offHandAsMain !== true && normalizeText(state.offHand) === '盾牌')
     });
   }
 

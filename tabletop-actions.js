@@ -50,9 +50,10 @@
   function getWeaponData(hand) {
     const prefix = hand === "main" ? "atk-main" : "atk-off";
     const mastery = document.getElementById(`${prefix}-mastery`);
+    const isAlternateMain = hand === "off" && document.getElementById("offHandAsMain")?.checked === true;
     return {
       hand,
-      label: hand === "main" ? "主手" : "副手",
+      label: hand === "main" ? "主手" : (isAlternateMain ? "另一把主手" : "副手"),
       name: readField(`${prefix}-name`),
       hit: readField(`${prefix}-hit`),
       damage: readField(`${prefix}-dmg`),
