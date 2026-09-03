@@ -170,7 +170,36 @@ assertSameValues(candidatesWithoutOutcome, [
 
 require("./tabletop-mode.js");
 assert.equal(typeof globalThis.TabletopMode.restoreHitPoints, "function", "TabletopMode 必須提供共用 HP 回復 API");
-const { applyHealingState, buildSpellCastOptions, validateSpellCastSelection } = globalThis.TabletopMode.logic;
+const {
+  applyHealingState,
+  buildSorcererElementalAffinityEntry,
+  buildSpellCastOptions,
+  validateSpellCastSelection
+} = globalThis.TabletopMode.logic;
+assert.deepEqual(
+  buildSorcererElementalAffinityEntry({
+    className: "sorcerer",
+    characterLevel: 6,
+    damageType: "lightning"
+  }),
+  { label: "元素親和", detail: "抗性：閃電傷害減半。" },
+  "6 級術士選擇元素親和傷害類型後，桌邊總覽必須顯示對應抗性"
+);
+assert.equal(
+  buildSorcererElementalAffinityEntry({ className: "sorcerer", characterLevel: 5, damageType: "fire" }),
+  null,
+  "6 級前不得顯示元素親和抗性"
+);
+assert.equal(
+  buildSorcererElementalAffinityEntry({ className: "wizard", characterLevel: 6, damageType: "fire" }),
+  null,
+  "非術士不得顯示元素親和抗性"
+);
+assert.equal(
+  buildSorcererElementalAffinityEntry({ className: "sorcerer", characterLevel: 6, damageType: "" }),
+  null,
+  "尚未選擇傷害類型時不得顯示空白元素親和抗性"
+);
 assert.deepEqual(
   applyHealingState(8, 10, 5),
   { currentHp: 10, restoredHp: 2 },
