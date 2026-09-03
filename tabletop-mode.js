@@ -1634,6 +1634,30 @@
     };
   }
 
+  function buildSorcererElementalAffinityEntry({ className, characterLevel, damageType }) {
+    const level = Number.parseInt(characterLevel, 10) || 0;
+    const damageTypeLabel = {
+      acid: "強酸",
+      cold: "冷凍",
+      fire: "火焰",
+      lightning: "閃電",
+      poison: "毒素"
+    }[damageType] || "";
+    if (className !== "sorcerer" || level < 6 || !damageTypeLabel) return null;
+    return {
+      label: "元素親和",
+      detail: `抗性：${damageTypeLabel}傷害減半。`
+    };
+  }
+
+  function getSorcererElementalAffinityEntry() {
+    return buildSorcererElementalAffinityEntry({
+      className: document.getElementById("class")?.value || "",
+      characterLevel: document.getElementById("level")?.value || "",
+      damageType: document.getElementById("sorcerer-elemental-affinity-damage-type")?.value || ""
+    });
+  }
+
   function getTieflingResistanceEntry() {
     if (getSelectedRace() !== "tiefling") return null;
     const legacy = document.getElementById("tiefling-legacy")?.value || "";
@@ -1681,7 +1705,8 @@
       getDarkvisionEntry(),
       getDragonbornResistanceEntry(),
       getTieflingResistanceEntry(),
-      getDwarfResistanceEntry()
+      getDwarfResistanceEntry(),
+      getSorcererElementalAffinityEntry()
     ].filter(Boolean);
     const racialDefenses = {
       dwarf: [{ label: "矮人體魄", detail: "對中毒狀態的豁免具有優勢。" }],
@@ -4476,6 +4501,7 @@
       appendConcentrationSaveReminder,
       evaluateDeathSaveRoll,
       getExhaustionEffects,
+      buildSorcererElementalAffinityEntry,
       buildSpellCastOptions,
       validateSpellCastSelection,
       normalizeBuiltInResourceUsage,
