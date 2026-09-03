@@ -45,11 +45,11 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎲%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20260903-tabletop-action-preferences">
+  <link rel="stylesheet" href="styles.css?v=20260903-spell-counts-magical-discoveries">
   <script src="scroll-to-top.js" defer></script>
   <script src="dice-roller.js?v=20260902-tabletop-casting" defer></script>
   <script src="monster.js" defer></script>
-    <script src="class-features.js?v=20260826-class-options-spacing" defer></script>
+    <script src="class-features.js?v=20260903-magical-discoveries" defer></script>
   <script src="race.js?v=20260826-lineage-tables" defer></script>
   <script src="backgrounds.js" defer></script>
   <script src="tool-data.js" defer></script>
@@ -1132,6 +1132,7 @@
     <section class="spell-picked-box"><h4 class="spell-picked-heading">三環</h4><div id="picked-level3" class="spell-picked-content">—</div></section>
     <section class="spell-picked-box"><h4 class="spell-picked-heading">四環</h4><div id="picked-level4" class="spell-picked-content">—</div></section>
   </div>
+  <p id="spell-prepared-counts" class="spell-prepared-counts" hidden></p>
 </div>
   <div id="no-spell-slots-message" class="spell-note-muted is-hidden">目前職業與等級沒有法術位</div>
   <div id="spell-notes-sheet-mount" class="form-row">
@@ -2557,6 +2558,7 @@ function updateClassFeature() {
   const metamagicSection = document.getElementById("metamagic-options-section");
   const metamagicOutput = document.getElementById("metamagicOptions");
   const metamagicSummary = document.getElementById("metamagic-summary");
+  captureBardMagicalDiscoverySelectionFromControls();
   const preservedControlStates = new Map(Array.from(output.querySelectorAll("input[id], select[id]")).map(control => [
     control.id,
     control.type === "checkbox" ? control.checked : control.value
@@ -2595,6 +2597,7 @@ function updateClassFeature() {
     output.innerHTML = highlightSpellNamesInClassFeature(raw);
   }
 
+  renderBardMagicalDiscoveryControls();
   restoreClassFeatureTableState(selectedClass, output);
   restoreClassCoreCreationInfoState(selectedClass, output);
   preservedControlStates.forEach((value, id) => {
@@ -3117,6 +3120,228 @@ const MAGIC_INITIATE_CLASS_BY_LABEL = {
   "德魯伊": "druid",
   "法師": "wizard"
 };
+const BARD_MAGICAL_DISCOVERY_SLOT_COUNT = 2;
+let bardMagicalDiscoverySelection = Array.from(
+  { length: BARD_MAGICAL_DISCOVERY_SLOT_COUNT },
+  () => ({ classValue: "", ring: "", spellId: "" })
+);
+
+function normalizeBardMagicalDiscoverySelection(selection) {
+  return Array.from({ length: BARD_MAGICAL_DISCOVERY_SLOT_COUNT }, (_, index) => {
+    const item = Array.isArray(selection) ? selection[index] : null;
+    const classValue = MAGIC_INITIATE_CLASS_OPTIONS.some(option => option.value === item?.classValue)
+      ? item.classValue
+      : "";
+    const ring = item?.ring === "cantrips" || /^[1-4]$/.test(String(item?.ring || ""))
+      ? String(item.ring)
+      : "";
+    const spellId = String(item?.spellId || "");
+    const spellLevel = ring === "cantrips" ? 0 : Number(ring);
+    const isValidSpell = Boolean(classValue && ring && getClassSpells(classValue, ring === "cantrips" ? "cantrips" : spellLevel)
+      .some(spell => spell.spellId === spellId));
+    return { classValue, ring, spellId: isValidSpell ? spellId : "" };
+  });
+}
+
+function getBardMagicalDiscoverySelection() {
+  return bardMagicalDiscoverySelection.map(item => ({ ...item }));
+}
+
+function setBardMagicalDiscoverySelection(selection, options = {}) {
+  bardMagicalDiscoverySelection = normalizeBardMagicalDiscoverySelection(selection);
+  if (options.sync !== false && typeof syncOriginAndSubclassDerivedSpellRows === "function") {
+    syncOriginAndSubclassDerivedSpellRows();
+  }
+}
+
+function getBardMagicalDiscoveryMaxSpellLevel() {
+  const level = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
+  return getSpellSlotCounts("bard", level).reduce(
+    (highest, count, index) => count > 0 ? index + 1 : highest,
+    0
+  );
+}
+
+function getBardMagicalDiscoveryControl(slot, field) {
+  return document.querySelector(`[data-bard-magical-discovery-slot="${slot}"][data-bard-magical-discovery-field="${field}"]`);
+}
+
+function syncBardMagicalDiscoveryDetailButton(row) {
+  const spellSelect = row?.querySelector('[data-bard-magical-discovery-field="spell"]');
+  const detailButton = row?.querySelector(".bard-magical-discovery-detail");
+  const spell = SpellCatalog.getSpell(spellSelect?.value);
+  if (!detailButton) return;
+  detailButton.disabled = !spell;
+  detailButton.title = spell ? `查看${spell.nameZh}的法術詳情` : "請先選擇法術";
+}
+
+function updateBardMagicalDiscoverySpellOptions(row, preferredSpellId = "") {
+  if (!row) return;
+  const classValue = row.querySelector('[data-bard-magical-discovery-field="class"]')?.value || "";
+  const ringValue = row.querySelector('[data-bard-magical-discovery-field="ring"]')?.value || "";
+  const spellSelect = row.querySelector('[data-bard-magical-discovery-field="spell"]');
+  if (!spellSelect) return;
+  const spells = classValue && ringValue
+    ? getClassSpells(classValue, ringValue === "cantrips" ? "cantrips" : Number(ringValue))
+    : [];
+  const previousValue = preferredSpellId || spellSelect.value;
+  spellSelect.innerHTML = '<option value="">--法術名稱--</option>' + spells.map(spell => (
+    `<option value="${escapeHtml(spell.spellId)}">${escapeHtml(SpellCatalog.getDisplayName(spell.spellId))}</option>`
+  )).join("");
+  spellSelect.value = spells.some(spell => spell.spellId === previousValue) ? previousValue : "";
+  spellSelect.disabled = !classValue || !ringValue;
+  syncBardMagicalDiscoveryDetailButton(row);
+}
+
+function captureBardMagicalDiscoverySelectionFromControls() {
+  const mount = document.getElementById("bard-magical-discoveries");
+  if (!mount) return;
+  bardMagicalDiscoverySelection = normalizeBardMagicalDiscoverySelection(
+    Array.from({ length: BARD_MAGICAL_DISCOVERY_SLOT_COUNT }, (_, index) => {
+      const slot = index + 1;
+      return {
+        classValue: getBardMagicalDiscoveryControl(slot, "class")?.value || "",
+        ring: getBardMagicalDiscoveryControl(slot, "ring")?.value || "",
+        spellId: getBardMagicalDiscoveryControl(slot, "spell")?.value || ""
+      };
+    })
+  );
+}
+
+function commitBardMagicalDiscoverySelection() {
+  captureBardMagicalDiscoverySelectionFromControls();
+  syncOriginAndSubclassDerivedSpellRows();
+  scheduleSaveAllFields();
+}
+
+function createBardMagicalDiscoveryField(labelText, control, controlId) {
+  const field = document.createElement("div");
+  field.className = "bard-magical-discovery-field";
+  const label = document.createElement("span");
+  label.className = "bard-magical-discovery-field__label";
+  label.textContent = labelText;
+  label.id = `${controlId}-label`;
+  const labelledControl = control.matches?.("select, input, textarea, button")
+    ? control
+    : control.querySelector?.("select, input, textarea, button");
+  labelledControl?.setAttribute("aria-labelledby", label.id);
+  field.append(label, control);
+  return field;
+}
+
+function renderBardMagicalDiscoveryControls() {
+  const mount = document.getElementById("bard-magical-discoveries");
+  if (!mount) return;
+  const maxSpellLevel = getBardMagicalDiscoveryMaxSpellLevel();
+  const rows = bardMagicalDiscoverySelection.map((selection, index) => {
+    const slot = index + 1;
+    const row = document.createElement("div");
+    row.className = "bard-magical-discovery-row";
+    row.dataset.bardMagicalDiscoveryRow = String(slot);
+
+    const marker = document.createElement("strong");
+    marker.className = "bard-magical-discovery-row__marker";
+    marker.textContent = `選擇 ${slot}`;
+
+    const classSelect = document.createElement("select");
+    classSelect.id = `bard-magical-discovery-${slot}-class`;
+    classSelect.dataset.bardMagicalDiscoverySlot = String(slot);
+    classSelect.dataset.bardMagicalDiscoveryField = "class";
+    classSelect.dataset.stateTransient = "true";
+    classSelect.innerHTML = '<option value="">--職業--</option>' + MAGIC_INITIATE_CLASS_OPTIONS.map(option => (
+      `<option value="${option.value}">${option.text}</option>`
+    )).join("");
+    classSelect.value = selection.classValue;
+
+    const ringSelect = document.createElement("select");
+    ringSelect.id = `bard-magical-discovery-${slot}-ring`;
+    ringSelect.dataset.bardMagicalDiscoverySlot = String(slot);
+    ringSelect.dataset.bardMagicalDiscoveryField = "ring";
+    ringSelect.dataset.stateTransient = "true";
+    ringSelect.innerHTML = '<option value="">--環階--</option><option value="cantrips">戲法</option>' +
+      Array.from({ length: maxSpellLevel }, (_, ringIndex) => {
+        const ring = ringIndex + 1;
+        return `<option value="${ring}">${getSpellLevelLabel(ring)}</option>`;
+      }).join("");
+    ringSelect.value = Array.from(ringSelect.options).some(option => option.value === selection.ring)
+      ? selection.ring
+      : "";
+
+    const spellSelect = document.createElement("select");
+    spellSelect.id = `bard-magical-discovery-${slot}-spell`;
+    spellSelect.dataset.bardMagicalDiscoverySlot = String(slot);
+    spellSelect.dataset.bardMagicalDiscoveryField = "spell";
+    spellSelect.dataset.stateTransient = "true";
+
+    const spellControl = document.createElement("span");
+    spellControl.className = "bard-magical-discovery-spell-control";
+    const detailButton = document.createElement("button");
+    detailButton.type = "button";
+    detailButton.className = "bard-magical-discovery-detail";
+    detailButton.textContent = "查看";
+    detailButton.disabled = true;
+    detailButton.setAttribute("aria-label", `查看魔法發現選擇 ${slot} 的法術詳情`);
+    detailButton.addEventListener("click", () => {
+      const spell = SpellCatalog.getSpell(spellSelect.value);
+      if (spell) window.quickBuild?.openSpellDetail?.(spell, detailButton);
+    });
+    spellControl.append(spellSelect, detailButton);
+
+    row.append(
+      marker,
+      createBardMagicalDiscoveryField("職業", classSelect, classSelect.id),
+      createBardMagicalDiscoveryField("戲法或環位", ringSelect, ringSelect.id),
+      createBardMagicalDiscoveryField("法術名稱", spellControl, spellSelect.id)
+    );
+    updateBardMagicalDiscoverySpellOptions(row, selection.spellId);
+
+    classSelect.addEventListener("change", () => {
+      updateBardMagicalDiscoverySpellOptions(row);
+      commitBardMagicalDiscoverySelection();
+    });
+    ringSelect.addEventListener("change", () => {
+      updateBardMagicalDiscoverySpellOptions(row);
+      commitBardMagicalDiscoverySelection();
+    });
+    spellSelect.addEventListener("change", () => {
+      syncBardMagicalDiscoveryDetailButton(row);
+      commitBardMagicalDiscoverySelection();
+    });
+    return row;
+  });
+  mount.replaceChildren(...rows);
+}
+
+function getBardMagicalDiscoveryDerivedSpellSpecs() {
+  const classValue = document.getElementById("class")?.value || "";
+  const level = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
+  if (classValue !== "bard" || level < 6) return [];
+  const maxSpellLevel = getBardMagicalDiscoveryMaxSpellLevel();
+  return bardMagicalDiscoverySelection.flatMap((selection, index) => {
+    const spell = SpellCatalog.getSpell(selection.spellId);
+    const ring = selection.ring === "cantrips" ? "cantrips" : Number(selection.ring);
+    const spellLevel = ring === "cantrips" ? 0 : ring;
+    const sourceClass = MAGIC_INITIATE_CLASS_OPTIONS.find(option => option.value === selection.classValue);
+    if (!spell || !sourceClass || spell.level !== spellLevel || (spellLevel > 0 && spellLevel > maxSpellLevel)) return [];
+    if (!getClassSpells(selection.classValue, ring).some(option => option.spellId === selection.spellId)) return [];
+    return [{
+      level: 6,
+      ring,
+      spellId: selection.spellId,
+      key: `class-bard-magical-discovery-${index + 1}`,
+      source: CLASS_SPELL_SOURCE,
+      sourceName: "吟遊詩人",
+      spellClass: "bard",
+      sourceLabel: `來源：吟遊詩人等級 6：魔法發現（${sourceClass.text}法表）`,
+      sourcePriority: 25,
+      sourceTag: "職業",
+      castMode: ring === "cantrips" ? "cantrip" : "slot",
+      fixedCastLevel: spellLevel,
+      ritualAllowed: spellLevel > 0,
+      areaId: getAreaIdForSpellRing(ring)
+    }];
+  });
+}
 
 function getFeatSelectFromRow(row) {
   return row?.querySelector?.("select:not([id*='magic-initiate'])") || null;
@@ -3576,6 +3801,7 @@ function getClassAlwaysPreparedSpellSpecs() {
   const levelValue = document.getElementById("level")?.value || "";
   const classValue = document.getElementById("class")?.value || "";
   const level = Number.parseInt(levelValue || "0", 10) || 0;
+  if (classValue === "bard") return getBardMagicalDiscoveryDerivedSpellSpecs();
   if (classValue === "druid" && level >= 1) {
     const specs = [{
       level: 1,
@@ -6277,8 +6503,39 @@ function hasDuplicateSelectedSpells() {
 function updateSpellListStatusNote() {
   const note = document.getElementById("spell-list-status-note");
   if (!note) return;
-  const nextText = hasDuplicateSelectedSpells() ? DUPLICATE_SPELL_LIST_NOTE : DEFAULT_SPELL_LIST_NOTE;
+  const hasDuplicates = hasDuplicateSelectedSpells();
+  const nextText = hasDuplicates ? DUPLICATE_SPELL_LIST_NOTE : DEFAULT_SPELL_LIST_NOTE;
   if (note.textContent !== nextText) note.textContent = nextText;
+  note.classList.toggle("spell-note-muted--warning", hasDuplicates);
+}
+
+function updatePreparedSpellCounts() {
+  const target = document.getElementById("spell-prepared-counts");
+  if (!target) return;
+  const classValue = document.getElementById("class")?.value || "";
+  const level = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
+  const isSpellcasterClass = Object.values(SPELLCASTING_CLASS_GROUPS).some(classes => classes.includes(classValue));
+  const slotCounts = getSpellSlotCounts(classValue, level);
+  const highestRing = slotCounts.reduce(
+    (highest, count, index) => count > 0 ? index + 1 : highest,
+    0
+  );
+  if (!isSpellcasterClass || !level || !highestRing) {
+    target.hidden = true;
+    target.textContent = "";
+    return;
+  }
+
+  const counts = Array.from({ length: highestRing }, (_, index) => {
+    const area = document.getElementById(`level${index + 1}spells-area`);
+    return Array.from(area?.querySelectorAll(":scope > .spell-entry:not([data-spell-source]) select[id*='-spell-']") || [])
+      .filter(select => Boolean(select.value)).length;
+  });
+  const total = counts.reduce((sum, count) => sum + count, 0);
+  const ringLabels = ["一環", "二環", "三環", "四環"];
+  const parts = [`準備法術總數：${total}`].concat(counts.map((count, index) => `${ringLabels[index]}：${count}`));
+  target.textContent = `〔${parts.join(" | ")}〕`;
+  target.hidden = false;
 }
 
 function updatePickedSpellBoxes() {
@@ -6314,6 +6571,7 @@ function updatePickedSpellBoxes() {
     setupAutoSave(target);
   });
   if (grid) grid.hidden = visibleBoxCount === 0;
+  updatePreparedSpellCounts();
   updateSpellOverviewManagementVisibility();
   updateSpellListStatusNote();
   if (typeof populateHandAttacks === "function") populateHandAttacks();
@@ -6897,6 +7155,7 @@ function updateSpellsByClassLevel() {
   updateSpellOverviewManagementVisibility();
   updateSpellSlotRows(slotCounts);
   refreshManualSpellSourceOptions();
+  updatePreparedSpellCounts();
 }
 
 
@@ -7470,6 +7729,7 @@ function collectStateObject(options = {}) {
   const includeMoneyLogs = options.includeMoneyLogs !== false;
   const includeDerivedSpellRows = options.includeDerivedSpellRows === true;
   const data = {};
+  captureBardMagicalDiscoverySelectionFromControls();
   const skippedShareFields = new Set(["money-log-data", "money-history-data"]);
   document.querySelectorAll("input, select, textarea").forEach(el => {
     if (!el.id) return;
@@ -7486,6 +7746,7 @@ function collectStateObject(options = {}) {
   });
   data.__deletedSpellRowCache = cloneDeletedSpellRowCache(deletedSpellRowCache);
   data.__pactTomeSpellSelection = getPactTomeSpellSelection();
+  data.__bardMagicalDiscoverySelection = getBardMagicalDiscoverySelection();
   data.__classFeatureCantrips = Object.fromEntries(Array.from(document.querySelectorAll(`.spell-entry[data-spell-source="${CLASS_SPELL_SOURCE}"]`))
     .filter(row => row.dataset.sourceKey?.includes("-warrior-cantrip-"))
     .map(row => [row.dataset.sourceKey, row.querySelector("select[id*='-spell-']")?.value || ""]));
@@ -7698,6 +7959,7 @@ function applyStateObject(data) {
     removeMagicInitiateDerivedSpellRows();
     deletedSpellRowCache = cloneDeletedSpellRowCache(data.__deletedSpellRowCache);
     setPactTomeSpellSelection(data.__pactTomeSpellSelection, { sync: false });
+    setBardMagicalDiscoverySelection(data.__bardMagicalDiscoverySelection, { sync: false });
     const offHandAsMain = document.getElementById("offHandAsMain");
     if (offHandAsMain) offHandAsMain.checked = data.offHandAsMain === true;
 
@@ -7715,7 +7977,7 @@ function applyStateObject(data) {
     }
 
     for (const id in data) {
-      if (id === "__deletedSpellRowCache" || id === "__pactTomeSpellSelection" || id === "__classFeatureCantrips") continue;
+      if (id === "__deletedSpellRowCache" || id === "__pactTomeSpellSelection" || id === "__bardMagicalDiscoverySelection" || id === "__classFeatureCantrips") continue;
       if (isSpellRowStateKey(id)) continue;
       if (isAgonizingBlastSelectId(id)) continue;
       const el = document.getElementById(id);

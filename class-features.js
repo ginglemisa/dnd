@@ -565,7 +565,7 @@ const classFeatures = {
   <p>你在短休或長休後都能回復已消耗的激勵次數。</p>
   <p>此外，你可消耗 1 個法術位換回 1 次激勵使用次數（不耗動作）。</p>
 </section>
-<section class="bard-feature class-feature-section" data-feature-level="6"><h3>等級 6：魔法發現（逸聞子職）</h3><p>你從牧師、德魯伊或法師的法術列表中選擇並學會兩個法術；兩者可以來自不同列表。所選法術必須是戲法，或是你已有對應法術位的法術。</p><p>你始終準備所選法術。每當你獲得一個吟遊詩人等級時，可以將其中一個替換為另一個符合條件的法術。</p></section>
+<section class="bard-feature class-feature-section" data-feature-level="6"><h3>等級 6：魔法發現（逸聞子職）</h3><p>你從牧師、德魯伊或法師的法術列表中選擇並學會兩個法術；兩者可以來自不同列表。所選法術必須是戲法，或是你已有對應法術位的法術。</p><p>你始終準備所選法術。每當你獲得一個吟遊詩人等級時，可以將其中一個替換為另一個符合條件的法術。</p><div id="bard-magical-discoveries" class="bard-magical-discoveries" aria-label="魔法發現法術選擇"></div></section>
 <section class="bard-feature class-feature-section" data-feature-level="7"><h3>等級 7：反迷惑</h3><p>當你或你30呎內的一個生物在抵抗魅惑或恐慌狀態的豁免檢定中失敗時，你可以執行反應，使失敗者重新進行該豁免，且新的檢定具有優勢。</p></section>
 <section class="bard-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
 </div>`,

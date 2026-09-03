@@ -4493,6 +4493,76 @@ html:not([data-view-mode="tabletop"]) .free-spell-use-checks {
   box-shadow: none;
 }
 
+.bard-magical-discoveries {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.9rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--border);
+}
+
+.bard-magical-discovery-row {
+  display: grid;
+  grid-template-columns: minmax(6.75rem, 0.72fr) minmax(6.75rem, 0.68fr) minmax(12rem, 1.6fr);
+  gap: 0.5rem 0.65rem;
+  min-width: 0;
+}
+
+.bard-magical-discovery-row__marker {
+  grid-column: 1 / -1;
+  color: var(--accent-strong);
+  font-size: var(--fs-xs);
+  font-weight: 850;
+  letter-spacing: 0.06em;
+}
+
+.bard-magical-discovery-field {
+  display: grid;
+  gap: 0.28rem;
+  min-width: 0;
+}
+
+.bard-magical-discovery-field__label {
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+.bard-magical-discovery-field select {
+  width: 100%;
+  min-width: 0;
+}
+
+.bard-magical-discovery-spell-control {
+  display: flex;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.bard-magical-discovery-spell-control select {
+  flex: 1 1 auto;
+}
+
+.bard-magical-discovery-detail {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 3.2rem;
+  padding-inline: 0.65rem;
+  border-color: var(--border-strong);
+  background: var(--surface-soft);
+  color: var(--accent-strong);
+  font-size: var(--fs-xs);
+  font-weight: 800;
+}
+
+.bard-magical-discovery-detail:hover:not(:disabled),
+.bard-magical-discovery-detail:focus-visible {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
 .magic-initiate-source-badge {
   grid-column: 1 / -1;
   grid-row: 2;
@@ -4519,6 +4589,14 @@ html:not([data-view-mode="tabletop"]) .free-spell-use-checks {
 @media (max-width: 520px) {
   .magic-initiate-controls {
     grid-template-columns: 1fr;
+  }
+
+  .bard-magical-discovery-row {
+    grid-template-columns: 1fr;
+  }
+
+  .bard-magical-discovery-row__marker {
+    grid-column: 1;
   }
 }
 
@@ -4732,6 +4810,11 @@ html:not([data-view-mode="tabletop"]) .free-spell-use-checks {
   font-size: var(--fs-xs);
   line-height: 1.45;
   color: var(--text-muted);
+}
+
+.spell-note-muted--warning {
+  color: var(--warning);
+  font-weight: 750;
 }
 
 .spell-meta-row {
@@ -8914,6 +8997,18 @@ html[data-view-mode="tabletop"] #scrollToBottomBtn {
 .tabletop-spell-levels {
   display: grid;
   gap: 0;
+}
+
+.spell-prepared-counts {
+  margin: 0.85rem 0 0;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
 }
 
 .tabletop-metamagic-options {
