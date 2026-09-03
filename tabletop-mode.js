@@ -12,6 +12,7 @@
   const CUSTOM_TABLETOP_ACTION_LIMIT = 50;
   const CUSTOM_TABLETOP_ACTION_LABEL_MAX = 40;
   const CUSTOM_TABLETOP_ACTION_DESCRIPTION_MAX = 600;
+  const TABLETOP_ACTION_NOTES_MAX = 50000;
   const HIDDEN_TABLETOP_ACTION_LIMIT = 500;
   const HEROIC_SACRIFICE_LABEL = "您已英勇犧牲";
   const DEFAULT_COMBAT_STATE = Object.freeze({
@@ -54,7 +55,8 @@
     return {
       version: TABLETOP_ACTION_PREFERENCES_VERSION,
       customActions: [],
-      hiddenKeys: []
+      hiddenKeys: [],
+      notes: ""
     };
   }
 
@@ -115,7 +117,8 @@
     return {
       version: TABLETOP_ACTION_PREFERENCES_VERSION,
       customActions,
-      hiddenKeys: normalizeHiddenTabletopActionKeys(value.hiddenKeys, customActions)
+      hiddenKeys: normalizeHiddenTabletopActionKeys(value.hiddenKeys, customActions),
+      notes: String(value.notes ?? "").slice(0, TABLETOP_ACTION_NOTES_MAX)
     };
   }
 
@@ -579,8 +582,16 @@
       customActions: Object.freeze(
         preferences.customActions.map(action => Object.freeze({ ...action }))
       ),
-      hiddenKeys: Object.freeze([...preferences.hiddenKeys])
+      hiddenKeys: Object.freeze([...preferences.hiddenKeys]),
+      notes: preferences.notes
     });
+  }
+
+  function setTabletopActionNotes(notes) {
+    const current = getTabletopActionPreferencesState();
+    const normalizedNotes = String(notes ?? "").slice(0, TABLETOP_ACTION_NOTES_MAX);
+    if (normalizedNotes === current.notes) return true;
+    return persistTabletopActionPreferences({ ...current, notes: normalizedNotes });
   }
 
   function addCustomTabletopAction(action = {}) {
@@ -4471,6 +4482,7 @@
     setPanel: setActivePanel,
     getPanel: () => currentPanel,
     getTabletopActionPreferences,
+    setTabletopActionNotes,
     addCustomTabletopAction,
     updateCustomTabletopAction,
     removeCustomTabletopAction,
