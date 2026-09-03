@@ -504,7 +504,7 @@
           '效果同魔法伎倆'
         );
       } else {
-        lines.push('血統戲法：依血統');
+        lines.push('血統戲法：未選');
       }
       return lines;
     }),

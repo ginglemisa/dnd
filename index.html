@@ -48,7 +48,7 @@
   <link rel="stylesheet" href="styles.css?v=20260903-tabletop-combat-notes">
   <script src="scroll-to-top.js" defer></script>
   <script src="dice-roller.js?v=20260902-tabletop-casting" defer></script>
-  <script src="monster.js" defer></script>
+  <script src="monster.js?v=20260903-quick-build-mastery-tip" defer></script>
     <script src="class-features.js?v=20260903-magical-discoveries" defer></script>
   <script src="race.js?v=20260826-lineage-tables" defer></script>
   <script src="backgrounds.js" defer></script>
@@ -66,7 +66,7 @@
   <script src="tabletop-spells.js?v=20260903-tabletop-action-spell-casting" defer></script>
   <script src="legal-modal.js?v=20260824-onboarding-entry" defer></script>
   <script src="onboarding-tour.js?v=20260903-onboarding-ability-branches" defer></script>
-  <script src="quick-build.js" defer></script>
+  <script src="quick-build.js?v=20260903-quick-build-tooltip-buttons" defer></script>
   <script src="deity-info.js" defer></script>
 
 </head>
@@ -8704,6 +8704,105 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
       });
   });
 }
+
+async function downloadQuickBuildCompactPdf() {
+  let nameInput;
+  let nameError;
+  const currentName = window.TabletopMode?.getCharacterName?.() || "";
+  const characterName = await window.AppDialog.showContent({
+    title: "下載角色卡 PDF",
+    message: "輸入角色名稱後，將直接下載美觀易讀版 PDF。",
+    confirmLabel: "下載 PDF",
+    cancelLabel: "取消",
+    initialFocus: "content",
+    renderContent(body) {
+      const field = document.createElement("label");
+      field.className = "app-dialog__number-field";
+      field.htmlFor = "quick-build-pdf-character-name";
+      field.appendChild(document.createTextNode("角色名稱"));
+
+      nameInput = document.createElement("input");
+      nameInput.id = "quick-build-pdf-character-name";
+      nameInput.className = "app-dialog__number-input";
+      nameInput.type = "text";
+      nameInput.value = currentName;
+      nameInput.placeholder = "例如：艾尼克斯・薩卡蘭姆";
+      nameInput.autocomplete = "off";
+      nameInput.spellcheck = false;
+      nameInput.dataset.stateTransient = "true";
+
+      const hint = document.createElement("span");
+      hint.className = "app-dialog__number-hint";
+      hint.textContent = "名稱可留空；過長時會提示你縮短。";
+
+      nameError = document.createElement("span");
+      nameError.className = "app-dialog__number-error";
+      nameError.setAttribute("aria-live", "polite");
+      nameInput.setAttribute("aria-describedby", "quick-build-pdf-character-name-hint quick-build-pdf-character-name-error");
+      hint.id = "quick-build-pdf-character-name-hint";
+      nameError.id = "quick-build-pdf-character-name-error";
+      nameInput.addEventListener("input", () => {
+        nameInput.removeAttribute("aria-invalid");
+        nameError.textContent = "";
+      });
+      nameInput.addEventListener("keydown", event => {
+        if (event.key !== "Enter") return;
+        event.preventDefault();
+        body.closest(".app-dialog__surface")?.querySelector(".app-dialog__button--primary")?.click();
+      });
+      field.append(nameInput, hint, nameError);
+      body.appendChild(field);
+    },
+    async resolveConfirm() {
+      const value = nameInput?.value.trim() || "";
+      try {
+        await ensurePdfExportReady();
+        if (typeof window.validatePdfCharacterName !== "function") throw new Error("角色名稱檢查功能尚未載入");
+        const measurement = await window.validatePdfCharacterName(value, "compact");
+        if (measurement && !measurement.fits) {
+          nameError.textContent = `角色名稱即使縮小至 ${measurement.minimumFontSize.toFixed(1)} pt 仍超出欄位，請縮短後再下載。`;
+          nameInput?.setAttribute("aria-invalid", "true");
+          nameInput?.focus();
+          return false;
+        }
+        return value;
+      } catch (error) {
+        nameError.textContent = `無法檢查角色名稱：${error?.message || "未知錯誤"}`;
+        nameInput?.setAttribute("aria-invalid", "true");
+        nameInput?.focus();
+        return false;
+      }
+    }
+  });
+  if (characterName === false) return;
+
+  try {
+    const state = collectStateObject({ includeDerivedSpellRows: true });
+    const exportOptions = {
+      characterName,
+      englishName: "",
+      includeDefaultEquipment: false,
+      dragonbornAncestry: (state["dragonborn-ancestry"] || "").trim(),
+      elfLineage: (state["elf-lineage"] || "").trim(),
+      gnomeLineage: (state["gnome-lineage"] || "").trim(),
+      goliathAncestry: (state["goliath-ancestry"] || "").trim(),
+      tieflingLegacy: (state["tiefling-legacy"] || "").trim(),
+      outputMode: "compact"
+    };
+    window.AppDialog.notify("正在製作角色卡 PDF，請保持頁面開啟。", { duration: 8000 });
+    await window.preloadPdfExportAssets?.(exportOptions);
+    await window.exportCharacterPdfFromState(state, exportOptions);
+  } catch (error) {
+    console.warn("創角小幫手 PDF 匯出失敗：", error);
+    await window.AppDialog.showMessage({
+      title: "PDF 匯出失敗",
+      message: `無法下載角色卡 PDF：${error?.message || "未知錯誤"}`,
+      confirmLabel: "關閉"
+    });
+  }
+}
+
+window.downloadQuickBuildCompactPdf = downloadQuickBuildCompactPdf;
 
 const INPUT_AUTOSAVE_DEBOUNCE_MS = 10000;
 const STRUCTURE_AUTOSAVE_DEBOUNCE_MS = 3000;

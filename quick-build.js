@@ -68,6 +68,16 @@
     return SKILL_OPTIONS.filter(name => allowed.has(name));
   }
 
+  function skillDescriptionButton(skill) {
+    const normalizedSkill = SKILL_OPTIONS.includes(skill) ? skill : "";
+    return `<button type="button" class="quick-build-skill-info skill-tip" data-skill="${escapeHtml(normalizedSkill)}"${normalizedSkill ? "" : " disabled"} aria-label="${escapeHtml(normalizedSkill ? `${normalizedSkill}：查看技能說明` : "請先選擇技能，再查看說明")}">技能說明</button>`;
+  }
+
+  function weaponMasteryDescriptionButton(mastery) {
+    const normalizedMastery = String(mastery || "");
+    return `<button type="button" class="quick-build-skill-info" data-weapon-rule-kind="mastery" data-weapon-rule="${escapeHtml(normalizedMastery)}"${normalizedMastery ? "" : " disabled"} aria-label="${escapeHtml(normalizedMastery ? `${normalizedMastery}精通：查看說明` : "請先選擇精通武器，再查看精通")}">查看精通</button>`;
+  }
+
   function humanOriginFeatOptions() {
     const featOptions = typeof FEAT_OPTIONS === "object" && Array.isArray(FEAT_OPTIONS) ? FEAT_OPTIONS : [];
     return featOptions
@@ -1424,11 +1434,11 @@
       #quick-build-wizard .quick-build-card{width:100%;min-height:0;padding:16px;border:1px solid var(--qb-border);border-radius:12px;background:var(--qb-surface-elevated);color:var(--qb-text);text-align:left;cursor:pointer;transition:border-color .18s ease,background-color .18s ease,box-shadow .18s ease,opacity .18s ease}
       #quick-build-wizard .quick-build-card:hover,#quick-build-wizard .quick-build-card:focus-visible{border-color:var(--qb-accent);background:var(--qb-accent-soft);outline:2px solid transparent}.quick-build-card h4{margin:0 0 10px;font-size:1.12rem;color:var(--qb-accent-text)}
       .quick-build-summary{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;margin:0;font-size:.9rem;line-height:1.45}.quick-build-summary dt{color:var(--qb-text-muted)}.quick-build-summary dd{margin:0;color:var(--qb-text-body)}.quick-build-expansion-tag{display:inline-flex;align-items:center;min-height:24px;margin-left:8px;padding:2px 8px;border:1px solid var(--qb-border-strong);border-radius:999px;color:var(--qb-text-muted);font-size:.7rem;vertical-align:middle}.quick-build-card-toggle-hint{display:block;margin-top:12px;color:var(--qb-accent-text);font-size:.78rem;font-weight:700}
-      .quick-build-choice-panel{padding:18px;border:1px solid var(--qb-border);border-radius:12px;background:var(--qb-surface-soft)}.quick-build-review-panel+ .quick-build-review-panel{margin-top:14px}.quick-build-review-panel>h4{margin:0 0 14px;color:var(--qb-text)}.quick-build-equipment-list{margin:12px 0 20px;padding:14px;border-radius:8px;background:var(--qb-surface-muted);line-height:1.7;color:var(--qb-text-body)}
+      .quick-build-choice-panel{padding:18px;border:1px solid var(--qb-border);border-radius:12px;background:var(--qb-surface-soft)}.quick-build-review-panel+ .quick-build-review-panel{margin-top:14px}.quick-build-review-panel>h4{margin:0 0 14px;color:var(--qb-text)}.quick-build-equipment-list{margin:12px 0 20px;padding:14px;border-radius:8px;background:var(--qb-surface-muted);line-height:1.7;color:var(--qb-text-body)}.quick-build-equipment-help{margin:12px 0 0;color:var(--qb-accent-text);font-size:.92rem;font-weight:800}.quick-build-equipment-help .skill-tip{color:inherit}.quick-build-equipment-help .skill-tip:hover,.quick-build-equipment-help .skill-tip:focus-visible{color:var(--qb-accent);text-decoration-thickness:2px}.quick-build-equipment-help .skill-tip:focus-visible{outline:2px solid var(--qb-accent);outline-offset:3px;border-radius:3px}
       .quick-build-race-options{display:grid;gap:16px}.quick-build-option-note{margin:6px 0 0;color:var(--qb-text-muted);font-size:.9rem}.quick-build-ancestry-detail{margin:0;padding:14px;border:1px solid var(--qb-border);border-radius:9px;background:var(--qb-surface-muted);color:var(--qb-text-body);line-height:1.65}.quick-build-ancestry-detail strong{display:block;margin-bottom:5px;color:var(--qb-accent-text)}.quick-build-warning{margin:14px 0;padding:12px;border-left:4px solid var(--qb-warning-border);border-radius:7px;background:var(--qb-warning-bg);color:var(--qb-warning-text)}.quick-build-pending{margin-top:14px;padding:12px;border-radius:7px;background:var(--qb-pending-bg);color:var(--qb-pending-text)}
       .quick-build-choice-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px}.quick-build-choice-actions button{min-height:48px;padding:10px;border:1px solid var(--qb-border-strong);border-radius:8px;background:var(--qb-surface-elevated);color:var(--qb-text);cursor:pointer}.quick-build-choice-actions button.primary{border-color:var(--qb-accent);background:var(--qb-accent-hover);color:#fff}.quick-build-choice-actions .quick-build-choice-action-full{grid-column:1/-1}
       .quick-build-spell-layout{display:grid;gap:16px}
-      .quick-build-spell-fields{display:flex;flex-direction:column;gap:14px}.quick-build-field label{display:block;margin-bottom:6px;color:var(--qb-text-muted)}.quick-build-field-control{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}.quick-build-field select{width:100%;min-height:44px;padding:8px;border:1px solid var(--qb-border-strong);border-radius:7px;background:var(--qb-input);color:var(--qb-text)}.quick-build-spell-view{min-width:64px;margin:0;padding:8px 12px;border:1px solid var(--qb-border-strong);border-radius:7px;background:var(--qb-surface-elevated);color:var(--qb-text);cursor:pointer}.quick-build-spell-view:disabled{color:var(--qb-disabled-text);cursor:not-allowed;opacity:.65}
+      .quick-build-spell-fields{display:flex;flex-direction:column;gap:14px}.quick-build-field label{display:block;margin-bottom:6px;color:var(--qb-text-muted)}.quick-build-field-control{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}.quick-build-field select{width:100%;min-height:44px;padding:8px;border:1px solid var(--qb-border-strong);border-radius:7px;background:var(--qb-input);color:var(--qb-text)}.quick-build-spell-view,.quick-build-skill-info{min-width:64px;margin:0;padding:8px 12px;border:1px solid var(--qb-border-strong);border-radius:7px;background:var(--qb-surface-elevated);color:var(--qb-text);cursor:pointer}.quick-build-skill-info{font-size:.88rem;font-weight:700;text-decoration:none}.quick-build-skill-info:hover,.quick-build-skill-info:focus-visible{border-color:var(--qb-accent);background:var(--qb-accent-soft);outline:2px solid transparent}.quick-build-spell-view:disabled,.quick-build-skill-info:disabled{color:var(--qb-disabled-text);cursor:not-allowed;opacity:.65}
       #quick-build-wizard option.quick-build-known-option{color:var(--qb-text-muted)}
       #quick-build-spell-detail{position:fixed;inset:0;z-index:10030;display:none;align-items:center;justify-content:center;width:100%;max-width:none;padding:32px;overflow:hidden;overscroll-behavior:contain;background:var(--qb-overlay-nested)}
       #quick-build-spell-detail.open{display:flex}#quick-build-spell-detail .quick-build-spell-detail-shell{display:flex;flex-direction:column;width:680px;max-width:calc(100% - 32px);max-height:calc(100dvh - 80px);overflow:hidden;border:1px solid var(--qb-border-strong);border-radius:14px;background:var(--qb-surface);color:var(--qb-text);box-shadow:var(--qb-shadow)}
@@ -1526,8 +1536,13 @@
   function renderBackgroundEquipment(body) {
     const key = draft.choices.background;
     const data = backgroundData(key) || {};
-    body.innerHTML = `<h3>${BACKGROUND_LABELS[key]}：背景裝備</h3><p class="quick-build-lead">是否取得背景提供的預設裝備？若選否，改為獲得 50 金幣。</p><section class="quick-build-choice-panel"><strong>預設裝備 A</strong><div class="quick-build-equipment-list">${escapeHtml(data.裝備A)}</div><div class="quick-build-choice-actions quick-build-equipment-actions"><button type="button" data-wealth="default">取得預設裝備</button><button type="button" data-wealth="gold">否，取得 50 金幣</button></div></section>`;
+    body.innerHTML = `<h3>${BACKGROUND_LABELS[key]}：背景裝備</h3><p class="quick-build-lead">是否取得背景提供的預設裝備？若選否，改為獲得 50 金幣。</p><section class="quick-build-choice-panel"><strong>預設裝備 A</strong><div class="quick-build-equipment-list">${escapeHtml(data.裝備A)}</div><div class="quick-build-choice-actions quick-build-equipment-actions"><button type="button" data-wealth="default">取得預設裝備</button><button type="button" data-wealth="gold">否，取得 50 金幣</button></div></section><p class="quick-build-equipment-help"><span class="skill-tip" data-skill="為什麼預設裝備要選兩次？ ℹ️" role="button" tabindex="0" aria-label="為什麼預設裝備要選兩次？開啟說明">為什麼預設裝備要選兩次？ ℹ️</span></p>`;
     body.querySelectorAll("[data-wealth]").forEach(button => button.addEventListener("click", () => chooseBackgroundWealth(button.dataset.wealth)));
+    body.querySelector(".quick-build-equipment-help .skill-tip")?.addEventListener("keydown", event => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      event.currentTarget.click();
+    });
   }
 
   function renderBackgroundToolChoice(body) {
@@ -1580,10 +1595,12 @@
   function raceSelect(field, label, values, { disabled = [], note = "" } = {}) {
     const selected = draft.choices.raceOptions[field] || "";
     const options = field === "skill" ? orderedSkillOptions(values) : values;
-    return `<div class="quick-build-field"><label for="quick-build-race-${field}">${label}</label><select id="quick-build-race-${field}" data-race-option="${field}"><option value="">請選擇</option>${options.map(value => {
+    const selectId = `quick-build-race-${field}`;
+    const select = `<select id="${selectId}" data-race-option="${field}"><option value="">請選擇</option>${options.map(value => {
       const sources = field === "skill" ? duplicateSourceLabels("skills", value, "race") : [];
       return `<option value="${escapeHtml(value)}"${value === selected ? " selected" : ""}${sources.length ? ' class="quick-build-known-option"' : ""}>${escapeHtml(raceOptionLabel(value))}${sources.length ? `（${escapeHtml(sources.join("、"))}已熟練）` : ""}</option>`;
-    }).join("")}</select>${note ? `<p class="quick-build-option-note">${escapeHtml(note)}</p>` : ""}</div>`;
+    }).join("")}</select>`;
+    return `<div class="quick-build-field"><label for="${selectId}">${label}</label>${field === "skill" ? `<div class="quick-build-field-control">${select}${skillDescriptionButton(selected)}</div>` : select}${note ? `<p class="quick-build-option-note">${escapeHtml(note)}</p>` : ""}</div>`;
   }
 
   function raceSelectWithDetail(field, label, values, { showSpellView = false, formatOption = value => value } = {}) {
@@ -1641,7 +1658,10 @@
         if (acquiredTools.has(name)) sources.push(RACE_LABELS[draft.choices.race] || "種族");
         return `<option value="tool:${escapeHtml(name)}"${selected === value ? " selected" : ""}${peerDuplicate ? " disabled" : ""}${sources.length && !peerDuplicate ? ' class="quick-build-known-option"' : ""}>工具：${escapeHtml(name)}${peerDuplicate ? "（本頁已選）" : sources.length ? `（${escapeHtml(sources.join("、"))}已熟練）` : ""}</option>`;
       }));
-    return `<div class="quick-build-field"><label for="quick-build-human-skilled-${index}">熟習選項 ${index + 1}</label><select id="quick-build-human-skilled-${index}" data-human-skilled>${options.join("")}</select></div>`;
+    const selectId = `quick-build-human-skilled-${index}`;
+    const selectedValue = String(selected || "");
+    const selectedSkill = selectedValue.startsWith("skill:") ? selectedValue.slice("skill:".length) : "";
+    return `<div class="quick-build-field"><label for="${selectId}">熟習選項 ${index + 1}</label><div class="quick-build-field-control"><select id="${selectId}" data-human-skilled>${options.join("")}</select>${skillDescriptionButton(selectedSkill)}</div></div>`;
   }
 
   function renderHumanSkilledFeatOptions() {
@@ -1830,12 +1850,14 @@
     const otherSelections = new Set(selectedValues.filter((_, otherIndex) => otherIndex !== index));
     const label = type === "skill" ? `技能 ${index + 1}` : `工具 ${index + 1}`;
     const options = type === "skill" ? orderedSkillOptions(values) : values;
-    return `<div class="quick-build-field"><label for="quick-build-class-${type}-${index}">${label}</label><select id="quick-build-class-${type}-${index}" data-class-${type}><option value="">請選擇</option>${options.map(name => {
+    const selectId = `quick-build-class-${type}-${index}`;
+    const select = `<select id="${selectId}" data-class-${type}><option value="">請選擇</option>${options.map(name => {
       const peerDuplicate = otherSelections.has(name) && name !== selected;
       const sources = duplicateSourceLabels(type === "skill" ? "skills" : "tools", name, "class");
       const displayName = type === "skill" ? skillOptionLabel(name) : name;
       return `<option value="${escapeHtml(name)}"${name === selected ? " selected" : ""}${peerDuplicate ? " disabled" : ""}${sources.length && !peerDuplicate ? ' class="quick-build-known-option"' : ""}>${escapeHtml(displayName)}${peerDuplicate ? "（本頁已選）" : sources.length ? `（${escapeHtml(sources.join("、"))}已熟練）` : ""}</option>`;
-    }).join("")}</select></div>`;
+    }).join("")}</select>`;
+    return `<div class="quick-build-field"><label for="${selectId}">${label}</label>${type === "skill" ? `<div class="quick-build-field-control">${select}${skillDescriptionButton(selected)}</div>` : select}</div>`;
   }
 
   function renderClassProficiencies(body) {
@@ -2176,12 +2198,20 @@
     const count = LEVEL_ONE_DEFINITIONS[key].weaponMastery;
     const selected = draft.choices.levelOne?.weaponMasteries || [];
     const options = allWeaponMasteryOptionsForClass(key);
-    const select = index => `<div class="quick-build-field"><label for="quick-build-mastery-${index}">-- 選擇精通武器 --</label><select id="quick-build-mastery-${index}" data-level-one-mastery><option value="">-- 選擇精通武器 --</option>${options.map(([name, mastery]) => {
+    const select = index => {
+      const selectId = `quick-build-mastery-${index}`;
+      return `<div class="quick-build-field"><label for="${selectId}">-- 選擇精通武器 --</label><div class="quick-build-field-control"><select id="${selectId}" data-level-one-mastery><option value="">-- 選擇精通武器 --</option>${options.map(([name, mastery]) => {
       const peerDuplicate = selected.includes(name) && selected[index] !== name;
       return `<option value="${escapeHtml(name)}"${selected[index] === name ? " selected" : ""}${peerDuplicate ? " disabled" : ""}>${escapeHtml(name)}（${escapeHtml(mastery)}）${peerDuplicate ? "（本頁已選）" : ""}</option>`;
-    }).join("")}</select></div>`;
-    body.innerHTML = `<h3>武器精通選擇</h3><section class="quick-build-choice-panel"><div class="quick-build-spell-fields">${Array.from({ length: count }, (_, index) => select(index)).join("")}</div></section>`;
+    }).join("")}</select>${weaponMasteryDescriptionButton(options.find(([name]) => name === selected[index])?.[1])}</div></div>`;
+    };
+    body.innerHTML = `<h3>武器精通選擇</h3><section class="quick-build-choice-panel"><div class="quick-build-spell-fields">${Array.from({ length: count }, (_, index) => select(index)).join("")}</div></section><p class="quick-build-equipment-help"><span class="skill-tip" data-skill="什麼是武器精通？ ℹ️" role="button" tabindex="0" aria-label="什麼是武器精通？開啟說明">什麼是武器精通？ ℹ️</span></p>`;
     body.querySelectorAll("[data-level-one-mastery]").forEach(selectEl => selectEl.addEventListener("change", () => updateLevelOneField(next => { next.weaponMasteries = [...body.querySelectorAll("[data-level-one-mastery]")].map(item => item.value || ""); })));
+    body.querySelector(".quick-build-equipment-help .skill-tip")?.addEventListener("keydown", event => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      event.currentTarget.click();
+    });
   }
 
   function renderLevelOneExpertise(body) {
@@ -2191,10 +2221,11 @@
     const select = index => {
       const current = selected[index] || "";
       const stale = current && !options.includes(current) ? `<option value="${escapeHtml(current)}" selected>${escapeHtml(skillOptionLabel(current))}（目前未熟練）</option>` : "";
-      return `<div class="quick-build-field"><label for="quick-build-expertise-${index}">專精 ${index + 1}</label><select id="quick-build-expertise-${index}" data-level-one-expertise><option value="">請選擇</option>${stale}${options.map(name => {
+      const selectId = `quick-build-expertise-${index}`;
+      return `<div class="quick-build-field"><label for="${selectId}">專精 ${index + 1}</label><div class="quick-build-field-control"><select id="${selectId}" data-level-one-expertise><option value="">請選擇</option>${stale}${options.map(name => {
         const peerDuplicate = selected.includes(name) && current !== name;
         return `<option value="${escapeHtml(name)}"${current === name ? " selected" : ""}${peerDuplicate ? " disabled" : ""}>${escapeHtml(skillOptionLabel(name))}${peerDuplicate ? "（本頁已選）" : ""}</option>`;
-      }).join("")}</select></div>`;
+      }).join("")}</select>${skillDescriptionButton(current)}</div></div>`;
     };
     body.innerHTML = `<h3>${CLASS_LABELS[draft.choices.class]}：專精</h3><section class="quick-build-choice-panel"><p class="quick-build-option-note">只能選擇已從背景、種族或職業取得熟練的技能。</p><div class="quick-build-spell-fields">${Array.from({ length: requiredCount }, (_, index) => select(index)).join("")}</div></section>`;
     body.querySelectorAll("[data-level-one-expertise]").forEach(selectEl => selectEl.addEventListener("change", () => updateLevelOneField(next => { next.expertise = [...body.querySelectorAll("[data-level-one-expertise]")].map(item => item.value || ""); })));
@@ -2772,11 +2803,18 @@
     const resultText = completed
       ? `角色卡匯入完成。已計算屬性豁免與技能加值、匯入技能熟練與專精，並開啟武器攻擊自動化${classSkillBonusText}`
       : "角色卡只完成部分匯入，請依下列問題檢查。";
-    await window.AppDialog.showMessage({
+    const completionAction = await window.AppDialog.showMessage({
       title: completed ? "角色卡匯入完成" : "角色卡部分匯入",
       message: `${resultText}${warningText}`,
+      actions: completed ? [
+        { label: "下載角色卡 PDF", intent: "primary", value: "download-compact-pdf" },
+        { label: "知道了", intent: "secondary", value: "close" }
+      ] : undefined,
       confirmLabel: "知道了"
     });
+    if (completionAction === "download-compact-pdf") {
+      await window.downloadQuickBuildCompactPdf?.();
+    }
   }
 
   function selectedChoiceForGroup(group) {
@@ -3743,7 +3781,7 @@
     const modal = activeModal || ensureWizard();
     const scrollY = window.scrollY;
     const inertElements = [...document.body.children]
-      .filter(element => element !== modal && element.id !== "quick-build-spell-detail")
+      .filter(element => element !== modal && element.id !== "quick-build-spell-detail" && element.id !== "skillPopup" && element.id !== "weaponRulePopup")
       .map(element => ({ element, inert: element.inert }));
     inertElements.forEach(({ element }) => { element.inert = true; });
     pageLock = {
@@ -3795,6 +3833,7 @@
     const modal = ensureWizard();
     const wizardShell = modal.querySelector(".quick-build-shell");
     const spellDetail = document.getElementById("quick-build-spell-detail");
+    ["skillPopup", "weaponRulePopup"].forEach(id => document.getElementById(id)?.style.setProperty("z-index", "10040"));
     wizardShell?.removeAttribute("inert");
     wizardShell?.removeAttribute("aria-hidden");
     if (spellDetail?.contains(document.activeElement)) document.activeElement.blur();
@@ -3844,6 +3883,12 @@
     const modal = document.getElementById("quick-build-wizard");
     if (!modal?.classList.contains("open")) return;
     closeSpellDetail();
+    ["skillPopup", "weaponRulePopup"].forEach(id => {
+      const popup = document.getElementById(id);
+      if (!popup) return;
+      popup.style.display = "none";
+      popup.style.removeProperty("z-index");
+    });
     if (save) saveDraft();
     unlockPage();
     previouslyFocused?.focus?.();
