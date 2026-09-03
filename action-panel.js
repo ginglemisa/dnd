@@ -265,17 +265,61 @@ const SPECIAL_FEATURE_RULES = Object.freeze({
   const MONK_CUSTOM_OPTIONS = Object.freeze([
     {
       mode: "bonus", level: 2, label: "等級 2：聚氣凝神",
-      description: "等級 2：聚氣凝神\n你可使用「專注點」施展武僧技巧。專注點上限見武僧特性表，短休或長休後全回復。\n\n你一開始有 3 種用法：\n\n- 疾風連擊（1 點）：附贈動作打 2 次徒手。\n- 閃轉騰挪：附贈動作可撤離；再花 1 點可同時撤離 + 回避。\n- 疾步如風：附贈動作可疾走；再花 1 點可同時撤離 + 疾走，且本回合跳躍距離加倍。\n\n若特性要求豁免，DC = 8 + 熟練加值 + 感知調整值。"
+      description: "你可使用「專注點」施展武僧技巧。專注點上限見武僧特性表，短休或長休後全回復。\n\n你一開始有 3 種用法：\n\n- 疾風連擊（1 點）：附贈動作打 2 次徒手。\n- 閃轉騰挪：附贈動作可撤離；再花 1 點可同時撤離 + 回避。\n- 疾步如風：附贈動作可疾走；再花 1 點可同時撤離 + 疾走，且本回合跳躍距離加倍。\n\n若特性要求豁免，DC = 8 + 熟練加值 + 感知調整值。"
     },
     {
       mode: "bonus", level: 3, label: "等級 3：散打技巧",
-      description: "等級 3：散打技巧\n當你用「疾風連擊」命中時，可讓目標承受 1 種效果：\n\n- 截擊：到你下回合結束前，目標不能發動借機攻擊。\n- 擊退：目標力量豁免失敗則被推離你最多 15 呎。\n- 擊倒：目標敏捷豁免失敗則倒地。"
+      description: "當你用「疾風連擊」命中時，可讓目標承受 1 種效果：\n\n- 截擊：到你下回合結束前，目標不能發動借機攻擊。\n- 擊退：目標力量豁免失敗則被推離你最多 15 呎。\n- 擊倒：目標敏捷豁免失敗則倒地。"
     },
     {
       mode: "action", level: 5, label: "等級 5：震懾擊",
-      description: "等級 5：震懾擊\n每回合 1 次，當你用武僧武器或徒手命中時，可花 1 點專注點發動震懾打擊。 目標需做體質豁免：\n  - 失敗：震懾到你下回合開始。\n  - 成功：速度減半，且到你下回合開始前，下一次對它的攻擊有優勢。"
+      description: "每回合 1 次，當你用武僧武器或徒手命中時，可花 1 點專注點發動震懾打擊。 目標需做體質豁免：\n  - 失敗：震懾到你下回合開始。\n  - 成功：速度減半，且到你下回合開始前，下一次對它的攻擊有優勢。"
     }
   ]);
+
+  const BARBARIAN_CUSTOM_OPTIONS = Object.freeze([
+    {
+      mode: "bonus", level: 1, label: "等級 1：狂暴",
+      description: () => `你可以用附贈動作進入狂暴（未穿重甲時）。
+
+狂暴期間：
+
+- 你對鈍擊,穿刺,揮砍傷害有抗性。
+- 你用力量造成的傷害 +${getBarbarianRageDamageBonus()}
+- 你的力量檢定與力量豁免有優勢。
+- 你不能施法，也不能維持專注。
+
+持續時間：到你下個回合結束。若要延長，每回合至少做一項：
+
+- 對敵人做攻擊檢定，或
+- 讓敵人做豁免檢定，或
+- 再用一次附贈動作延長狂暴。`
+    },
+    {
+      mode: "action", level: 3, label: "等級 3：狂怒（狂戰子職）",
+      description: () => `在狂暴中使用魯莽攻擊力量命中該回合第一個目標時額外造成 ${getBarbarianRageDamageBonus()}d6 傷害。`
+    },
+    {
+      mode: "action", level: 5, label: "等級 5：額外攻擊",
+      description: "你在自己回合使用攻擊動作時，可以攻擊 2 次。"
+    },
+    {
+      mode: "movement", level: 5, label: "等級 5：快速移動",
+      description: "若你未穿重甲，速度 +10 呎。"
+    },
+    {
+      mode: "movement", level: 7, label: "等級 7：直覺猛撲",
+      description: "當你以附贈動作進入狂暴時，可以在該附贈動作中移動至多等同於你速度一半的距離。"
+    },
+    {
+      mode: "bonus", level: 7, label: "等級 7：直覺猛撲",
+      description: "當你以附贈動作進入狂暴時，可以在該附贈動作中移動至多等同於你速度一半的距離。"
+    }
+  ]);
+
+  const BARBARIAN_CURATED_FEATURE_LABELS = new Set(
+    BARBARIAN_CUSTOM_OPTIONS.map(option => option.label)
+  );
 
   function getCharacterLevel() {
     return Number(document.getElementById("level")?.value) || 1;
@@ -283,6 +327,13 @@ const SPECIAL_FEATURE_RULES = Object.freeze({
 
   function getProficiencyBonus() {
     return globalScope.calculateProficiencyBonus?.(getCharacterLevel()) || 2;
+  }
+
+  function getBarbarianRageDamageBonus() {
+    const level = getCharacterLevel();
+    if (level >= 16) return 4;
+    if (level >= 9) return 3;
+    return 2;
   }
 
   function getSelectedFeatNames() {
@@ -451,12 +502,27 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
       .map(option => ({ ...option, key: `dynamic-${mode}-class-${stableKeyHash(option.label)}`, source: FEATURE_SOURCE_LABELS.class, dynamic: true }));
   }
 
+  function getBarbarianCustomEntries(mode) {
+    if (document.getElementById("class")?.value !== "barbarian") return [];
+    const level = getCharacterLevel();
+    return BARBARIAN_CUSTOM_OPTIONS
+      .filter(option => option.mode === mode && level >= option.level)
+      .map(option => ({
+        ...option,
+        key: `dynamic-${mode}-barbarian-${stableKeyHash(option.label)}`,
+        source: FEATURE_SOURCE_LABELS.class,
+        description: typeof option.description === "function" ? option.description() : option.description,
+        dynamic: true
+      }));
+  }
+
   function getBarbarianRecklessAttackEntries(mode) {
     if (mode !== "action" || document.getElementById("class")?.value !== "barbarian" || getCharacterLevel() < 2) return [];
     const heading = Array.from(document.querySelectorAll('#classFeatures .barbarian-feature[data-feature-level="2"] h3'))
       .find(element => cleanFeatureTitle(element.textContent, "") === "等級 2：魯莽攻擊");
     const featureSection = heading?.closest("section[data-feature-level]");
-    const description = sourceToPlainText(featureSection?.innerHTML || "");
+    const description = sourceToPlainText(featureSection?.innerHTML || "")
+      .replace(/^等級\s*2\s*[：:]\s*魯莽攻擊\s*/u, "");
     if (!description) return [];
 
     return [{
@@ -567,7 +633,8 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
     const selectedClass = document.getElementById("class")?.value || "";
     const classEntries = extractTimedFeatureEntries(classText, mode, "class")
       .filter(entry => getCharacterLevel() >= getRequiredLevel(entry))
-      .filter(entry => selectedClass !== "monk" || !MONK_REMOVED_LABELS.has(entry.label));
+      .filter(entry => selectedClass !== "monk" || !MONK_REMOVED_LABELS.has(entry.label))
+      .filter(entry => selectedClass !== "barbarian" || !BARBARIAN_CURATED_FEATURE_LABELS.has(entry.label));
     return [
       ...classEntries,
       ...availableRaceEntries,
@@ -660,10 +727,10 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
     if (mode !== "action" && mode !== "bonus" && mode !== "reaction" && mode !== "movement") return [];
     const entries = [
       ...(mode === "action"
-        ? [...getBarbarianRecklessAttackEntries(mode), ...getMonkCustomEntries(mode)]
+        ? [...getBarbarianRecklessAttackEntries(mode), ...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode)]
         : mode === "movement"
-          ? getMonkCustomEntries(mode)
-          : [...getFeatureEntries(mode), ...getMonkCustomEntries(mode)]),
+          ? [...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode)]
+          : [...getFeatureEntries(mode), ...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode)]),
       ...getTabletopFeatRuleEntries(mode),
       ...getRaceActionEntries(mode),
       ...getSelectedInvocationEntries(mode),

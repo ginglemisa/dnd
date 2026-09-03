@@ -45,7 +45,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎲%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20260903-tabletop-combat-notes-2">
+  <link rel="stylesheet" href="styles.css?v=20260904-tabletop-notes-order">
   <script src="scroll-to-top.js" defer></script>
   <script src="dice-roller.js?v=20260902-tabletop-casting" defer></script>
   <script src="monster.js?v=20260903-quick-build-mastery-tip" defer></script>
@@ -57,10 +57,10 @@
   <script src="equipment-notes.js?v=20260813-weapon-rule-popups-2" defer></script>
   <script src="spell-list.js?v=20260903-life-healing" defer></script>
   <script src="condition.js" defer></script>
-  <script src="action-panel.js?v=20260903-tabletop-action-spell-casting" defer></script>
+  <script src="action-panel.js?v=20260904-action-title-cleanup" defer></script>
   <script src="character-rules.js?v=20260902-class-resources" defer></script>
   <script src="app-dialog.js?v=20260831-number-input" defer></script>
-  <script src="tabletop-mode.js?v=20260903-tabletop-combat-notes" defer></script>
+  <script src="tabletop-mode.js?v=20260904-barbarian-summaries" defer></script>
   <script src="tabletop-resources.js?v=20260901-hit-die-links" defer></script>
   <script src="tabletop-actions.js?v=20260903-tabletop-combat-notes" defer></script>
   <script src="tabletop-spells.js?v=20260903-tabletop-action-spell-casting" defer></script>
@@ -305,9 +305,8 @@
       <p class="tabletop-field-help">HP 為 0 時受到傷害會自動增加死亡豁免失敗；成功、失敗與穩定仍可在此手動調整。</p>
     </section>
 
-    <section class="tabletop-section tabletop-shared-notes" aria-labelledby="tabletop-class-extra-title">
-      <div class="tabletop-section-heading"><h2 id="tabletop-class-extra-title">職業筆記區</h2></div>
-      <div id="tabletop-class-extra-mount"></div>
+    <section class="tabletop-section tabletop-action-notes" aria-label="戰鬥筆記區">
+      <textarea id="tabletop-action-notes" placeholder="戰鬥筆記區" aria-label="戰鬥筆記區" data-state-transient="true"></textarea>
     </section>
     </section>
 
@@ -363,8 +362,9 @@
         <section id="tabletop-action-panel-movement" class="tabletop-action-panel" role="tabpanel" aria-labelledby="tabletop-action-tab-movement" data-tabletop-action-panel="movement" hidden></section>
       </section>
 
-      <section class="tabletop-section tabletop-action-notes" aria-label="戰鬥筆記區">
-        <textarea id="tabletop-action-notes" placeholder="戰鬥筆記區" aria-label="戰鬥筆記區" data-state-transient="true"></textarea>
+      <section class="tabletop-section tabletop-shared-notes" aria-labelledby="tabletop-class-extra-title">
+        <div class="tabletop-section-heading"><h2 id="tabletop-class-extra-title">職業筆記區</h2></div>
+        <div id="tabletop-class-extra-mount"></div>
       </section>
     </section>
 

@@ -1712,6 +1712,8 @@
 
   function getCharacterDefenseEntries() {
     const race = getSelectedRace();
+    const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
+    const isBarbarian = document.getElementById("class")?.value === "barbarian";
     const entries = [
       getDarkvisionEntry(),
       getDragonbornResistanceEntry(),
@@ -1730,7 +1732,23 @@
       goliath: [{ label: "身強力壯", detail: "掙脫擒抱狀態的屬性檢定具有優勢。" }],
       orc: [{ label: "堅韌不屈", detail: "若 HP 被傷害至 0 且沒有即死，可強制 HP=1。" }]
     };
-    return entries.concat(racialDefenses[race] || []);
+    const barbarianDefenses = [];
+    if (isBarbarian && characterLevel >= 2) {
+      barbarianDefenses.push({ label: "險境感知", detail: "只要你沒失能，你的敏捷豁免有優勢。" });
+    }
+    if (isBarbarian && characterLevel >= 3) {
+      barbarianDefenses.push({ label: "先祖學識", detail: "狂暴時你可用力量做以下技能檢定：體操,威嚇,察覺,隱匿,求生。" });
+    }
+    if (isBarbarian && characterLevel >= 5) {
+      barbarianDefenses.push({ label: "快速移動", detail: "若你若你未穿重甲，速度 +10 呎。", summaryPanel: "overview" });
+    }
+    if (isBarbarian && characterLevel >= 6) {
+      barbarianDefenses.push({ label: "無我狂暴", detail: "狂暴期間，你免疫魅惑與恐慌狀態。", summaryPanel: "overview" });
+    }
+    if (isBarbarian && characterLevel >= 7) {
+      barbarianDefenses.push({ label: "野性本能", detail: "你的先攻擲骰具有優勢。", summaryPanel: "overview" });
+    }
+    return entries.concat(racialDefenses[race] || [], barbarianDefenses);
   }
 
   function isDamageRelatedEntry(entry) {
@@ -1738,7 +1756,9 @@
   }
 
   function getDefenseEntries() {
-    const entries = getCharacterDefenseEntries().filter(entry => !isDamageRelatedEntry(entry));
+    const entries = getCharacterDefenseEntries().filter(entry => (
+      !isDamageRelatedEntry(entry) && entry.summaryPanel !== "overview"
+    ));
     if (hasSelectedFeat("臨陣施法")) {
       entries.push({ label: "穩住專注", detail: "維持專注的體質豁免丟二取高。" });
     }
@@ -1746,7 +1766,9 @@
   }
 
   function getOverviewRuleEntries() {
-    const entries = getCharacterDefenseEntries().filter(isDamageRelatedEntry);
+    const entries = getCharacterDefenseEntries().filter(entry => (
+      isDamageRelatedEntry(entry) || entry.summaryPanel === "overview"
+    ));
     if (hasSelectedFeat("警覺")) {
       entries.push({ label: "警覺", detail: "擲先攻後，可與指定隊友互換順序，失能無效。" });
     }
