@@ -9111,6 +9111,14 @@ html[data-view-mode="tabletop"] #scrollToBottomBtn {
   padding-top: 0.85rem;
 }
 
+.tabletop-action-notes textarea {
+  display: block;
+  min-height: 1.2em;
+  margin: 0;
+  resize: vertical;
+  overflow: auto;
+}
+
 .tabletop-action-context {
   display: flex;
   align-items: flex-start;

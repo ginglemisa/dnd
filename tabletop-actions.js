@@ -878,6 +878,7 @@ function render() {
       weaponRuleSection: document.getElementById("tabletop-weapon-rule-summary-section"),
       weaponRuleSummary: document.getElementById("tabletop-weapon-rule-summary"),
       manage: document.getElementById("tabletop-action-manage"),
+      notes: document.getElementById("tabletop-action-notes"),
       tabs: Array.from(document.querySelectorAll("[data-tabletop-action-tab]")),
       panels: Array.from(document.querySelectorAll("[data-tabletop-action-panel]"))
     });
@@ -889,6 +890,12 @@ function render() {
       tab.addEventListener("keydown", handleTabKeydown);
     });
     elements.manage?.addEventListener("click", () => openActionManager(elements.manage));
+    if (elements.notes) {
+      elements.notes.value = getActionPreferences().notes || "";
+      elements.notes.addEventListener("input", () => {
+        globalScope.TabletopMode?.setTabletopActionNotes?.(elements.notes.value);
+      });
+    }
     document.addEventListener("input", scheduleRender);
     document.addEventListener("change", scheduleRender);
     globalScope.addEventListener("actionpanelchange", scheduleRender);
