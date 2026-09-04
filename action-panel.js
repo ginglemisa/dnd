@@ -355,7 +355,16 @@ const SPECIAL_FEATURE_RULES = Object.freeze({
     },
     {
       mode: "action", level: 2, label: "等級 2：驅散不死生物",
-      description: "這會消耗引導神力，視為魔法動作。\n\n- 30 呎內每個不死生物做感知豁免。\n- 失敗者在 1 分鐘內陷入恐慌與失能，並會在回合中盡量遠離你。\n- 若其受傷、你失能或死亡，效果提前結束。"
+      description: () => {
+        const level = getCharacterLevel();
+        const base = "這會消耗引導神力，視為魔法動作。\n\n- 30 呎內每個不死生物做感知豁免。\n- 失敗者在 1 分鐘內陷入恐慌與失能，並會在回合中盡量遠離你。\n- 若其受傷、你失能或死亡，效果提前結束。";
+        if (level < 5) return base;
+        const wisdomModifier = getAbilityModifier("wis");
+        const damageDice = wisdomModifier === null
+          ? "Xd8（X＝感知調整值，最少 1d8）"
+          : `${Math.max(1, wisdomModifier)}d8`;
+        return `${base}\n\n等級 5：焚燒不死生物\n- 驅散時，額外擲 ${damageDice} 光耀傷害，傷害每個豁免失敗的不死生物。\n- 此傷害不會中止驅散效果。`;
+      }
     },
     {
       mode: "action", level: 3, label: "等級 3：生命門徒（生命）",
@@ -367,16 +376,6 @@ const SPECIAL_FEATURE_RULES = Object.freeze({
         const rawLevel = String(document.getElementById("level")?.value || "").trim();
         const healingTotal = rawLevel ? String(getCharacterLevel() * 5) : "牧師等級 × 5";
         return `這會消耗引導神力，視為魔法動作。\n\n你展示聖徽，分配總共「${healingTotal}」點治療量給 30 呎內任意數量重傷生物。\n\n此特性不能把目標回到超過其生命值上限一半。`;
-      }
-    },
-    {
-      mode: "action", level: 5, label: "等級 5：焚燒不死生物",
-      description: () => {
-        const wisdomModifier = getAbilityModifier("wis");
-        const damageDice = wisdomModifier === null
-          ? "Xd8（X＝感知調整值，最少 1d8）"
-          : `${Math.max(1, wisdomModifier)}d8`;
-        return `這會消耗引導神力，視為魔法動作。\n\n當你使用驅散不死生物時，可以額外擲 ${damageDice} 光耀傷害，傷害每個豁免失敗的不死生物。`;
       }
     }
   ]);
