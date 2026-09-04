@@ -255,7 +255,6 @@ const SPECIAL_FEATURE_RULES = Object.freeze({
 }
 });
 
-  const MONK_REMOVED_LABELS = new Set(["疾風連擊", "閃轉騰挪", "疾步如風"]);
   const NON_FEATURE_HEADINGS = new Set([
     "對敵人做攻擊檢定，或",
     "讓敵人做豁免檢定，或",
@@ -263,18 +262,78 @@ const SPECIAL_FEATURE_RULES = Object.freeze({
   ]);
   
   const MONK_CUSTOM_OPTIONS = Object.freeze([
+    { id: "martial-arts-action", mode: "action", level: 1, label: "等級 1：武藝", description: getMonkMartialArtsDescription },
+    { id: "martial-arts-bonus", mode: "bonus", level: 1, label: "等級 1：武藝", description: getMonkMartialArtsDescription },
+    { id: "focused-aim", mode: "bonus", level: 2, label: "等級 2：聚氣凝神", description: getMonkFocusDescription },
+    { id: "deflect-attacks", mode: "reaction", level: 3, label: "等級 3：撥擋化勁", description: getMonkDeflectAttacksDescription },
+    { id: "slow-fall", mode: "reaction", level: 4, label: "等級 4：輕身墜", description: getMonkSlowFallDescription },
     {
-      mode: "bonus", level: 2, label: "等級 2：聚氣凝神",
-      description: "你可使用「專注點」施展武僧技巧。專注點上限見武僧特性表，短休或長休後全回復。\n\n你一開始有 3 種用法：\n\n- 疾風連擊（1 點）：附贈動作打 2 次徒手。\n- 閃轉騰挪：附贈動作可撤離；再花 1 點可同時撤離 + 回避。\n- 疾步如風：附贈動作可疾走；再花 1 點可同時撤離 + 疾走，且本回合跳躍距離加倍。\n\n若特性要求豁免，DC = 8 + 熟練加值 + 感知調整值。"
+      id: "stunning-strike", mode: "action", level: 5, label: "等級 5：震懾擊",
+      description: "每回合 1 次，當你用武僧武器或徒手命中時，可花 1 點專注點發動震懾打擊。目標需做體質豁免：\n\n- 失敗：震懾到你下回合開始。\n- 成功：速度減半，且到你下回合開始前，下一次對它的攻擊有優勢。"
     },
     {
-      mode: "bonus", level: 3, label: "等級 3：散打技巧",
-      description: "當你用「疾風連擊」命中時，可讓目標承受 1 種效果：\n\n- 截擊：到你下回合結束前，目標不能發動借機攻擊。\n- 擊退：目標力量豁免失敗則被推離你最多 15 呎。\n- 擊倒：目標敏捷豁免失敗則倒地。"
+      id: "extra-attack", mode: "action", level: 5, label: "等級 5：額外攻擊",
+      description: "你在自己回合使用攻擊動作時，可以攻擊 2 次。"
+    },
+    { id: "wholeness-of-body", mode: "bonus", level: 6, label: "等級 6：混元體", description: getMonkWholenessDescription }
+  ]);
+
+  const MONK_CURATED_FEATURE_LABELS = new Set([
+    ...MONK_CUSTOM_OPTIONS.map(option => option.label),
+    "武藝",
+    "聚氣凝神",
+    "疾風連擊",
+    "閃轉騰挪",
+    "疾步如風",
+    "散打技巧",
+    "等級 3：散打技巧",
+    "撥擋化勁",
+    "輕身墜",
+    "震懾擊",
+    "額外攻擊",
+    "混元體"
+  ]);
+
+  const PALADIN_CUSTOM_OPTIONS = Object.freeze([
+    {
+      id: "lay-on-hands",
+      mode: "bonus",
+      level: 1,
+      label: "等級 1：聖療",
+      description: "以附贈動作觸碰自己或一個生物，從「聖療」池分配任意點數，使其恢復等量 HP。\n\n也可消耗 5 點聖療，移除目標的中毒狀態；此時不恢復 HP。"
     },
     {
-      mode: "action", level: 5, label: "等級 5：震懾擊",
-      description: "每回合 1 次，當你用武僧武器或徒手命中時，可花 1 點專注點發動震懾打擊。 目標需做體質豁免：\n  - 失敗：震懾到你下回合開始。\n  - 成功：速度減半，且到你下回合開始前，下一次對它的攻擊有優勢。"
+      id: "divine-sense",
+      mode: "bonus",
+      level: 3,
+      label: "等級 3：神聖感知",
+      description: "消耗 1 次引導神力，以附贈動作啟動，持續 10 分鐘或直到你失能。\n\n期間你能感知 60 呎內天界生物、邪魔與不死生物的位置與類型，也能察覺範圍內受「聖居」祝福或褻瀆的地點與物件。"
+    },
+    {
+      id: "sacred-weapon",
+      mode: "action",
+      level: 3,
+      devotion: true,
+      label: "等級 3：祝聖武器",
+      description: getPaladinSacredWeaponDescription
+    },
+    {
+      id: "extra-attack",
+      mode: "action",
+      level: 5,
+      label: "等級 5：額外攻擊",
+      description: "你在自己回合使用攻擊動作時，可以攻擊 2 次。"
     }
+  ]);
+
+  const PALADIN_CURATED_FEATURE_LABELS = new Set([
+    ...PALADIN_CUSTOM_OPTIONS.map(option => option.label),
+    "聖療",
+    "引導神力",
+    "等級 3：引導神力",
+    "神聖感知",
+    "祝聖武器",
+    "額外攻擊"
   ]);
 
   const BARBARIAN_CUSTOM_OPTIONS = Object.freeze([
@@ -455,6 +514,119 @@ const SPECIAL_FEATURE_RULES = Object.freeze({
     return globalScope.calculateProficiencyBonus?.(getCharacterLevel()) || 2;
   }
 
+  function getMonkAbilityModifier(abilityId) {
+    const field = document.getElementById(abilityId);
+    const rawScore = field && "value" in field ? String(field.value || "").trim() : "";
+    if (!rawScore) return 0;
+    const modifier = globalScope.calculateAbilityModifier?.(rawScore);
+    return Number.isFinite(modifier) ? modifier : 0;
+  }
+
+  function getMonkMartialArtsDie() {
+    return globalScope.getMonkMartialArtsDieByLevel(getCharacterLevel());
+  }
+
+  function getDoubleMonkMartialArtsDice() {
+    const martialArtsDie = getMonkMartialArtsDie();
+    if (String(martialArtsDie || "").startsWith("1d")) {
+      return `2d${String(martialArtsDie).slice(2)}`;
+    }
+    return `2 × ${martialArtsDie}`;
+  }
+
+  function formatSignedModifier(value) {
+    const modifier = Number(value);
+    if (!Number.isFinite(modifier) || modifier === 0) return "+ 0";
+    return modifier > 0 ? `+ ${modifier}` : `- ${Math.abs(modifier)}`;
+  }
+
+  function formatDiceWithModifier(dice, modifier) {
+    return `${dice} ${formatSignedModifier(modifier)}`;
+  }
+
+  function getMonkMartialArtsDescription() {
+    return `你在未穿護甲、未持盾，且只使用徒手攻擊或武僧武器時，獲得以下效果：
+
+武僧武器：簡易近戰武器，以及具有輕型屬性的軍用近戰武器。
+
+- 附贈動作可再進行 1 次徒手攻擊。
+- 徒手攻擊與武僧武器可使用武藝骰作為傷害骰，目前為 ${getMonkMartialArtsDie()}。
+- 徒手攻擊與武僧武器的攻擊與傷害可用敏捷取代力量。
+- 徒手推撞／擒抱的豁免 DC 也可用敏捷計算。`;
+  }
+
+  function getMonkFocusDescription() {
+    const saveDc = 8 + getProficiencyBonus() + getMonkAbilityModifier("wis");
+    const base = `你可消耗「專注點」施展武僧技巧。
+
+你一開始有 3 種用法：
+
+- 疾風連擊（1 點）：附贈動作打 2 次徒手。
+- 閃轉騰挪：附贈動作可撤離；再花 1 點可同時撤離 + 回避。
+- 疾步如風：附贈動作可疾走；再花 1 點可同時撤離 + 疾走，且本回合跳躍距離加倍。
+
+若特性要求豁免，DC = ${saveDc}。`;
+    if (getCharacterLevel() < 3) return base;
+    return `${base}
+
+等級 3：散打技巧
+
+當「疾風連擊」命中時，可讓目標承受 1 種效果：
+
+- 截擊：到你下回合結束前，目標不能發動借機攻擊。
+- 擊退：目標力量豁免失敗則被推離你最多 15 呎。
+- 擊倒：目標敏捷豁免失敗則倒地。`;
+  }
+
+  function getMonkDeflectAttacksDescription() {
+    const level = getCharacterLevel();
+    const dexterityModifier = getMonkAbilityModifier("dex");
+    return `當攻擊命中你，且傷害含鈍擊／穿刺／揮砍時，你可用反應減傷：
+
+${formatDiceWithModifier("1d10", dexterityModifier + level)}
+
+若減到 0，你可再花 1 點專注點反擊：
+
+- 擋近戰：選 5 呎內生物。
+- 擋遠程：選 60 呎內你看得到，且不在全身掩護後的生物。
+
+目標需過敏捷豁免；失敗則受到 ${formatDiceWithModifier(getDoubleMonkMartialArtsDice(), dexterityModifier)} 傷害（同原攻擊類型）。`;
+  }
+
+  function getMonkSlowFallDescription() {
+    return `當你墜落時，可用「反應」減少 ${getCharacterLevel() * 5} 傷害。`;
+  }
+
+  function getMonkWholenessDescription() {
+    return `以附贈動作恢復 ${formatDiceWithModifier(getMonkMartialArtsDie(), getMonkAbilityModifier("wis"))} HP，最少恢復 1 點。`;
+  }
+
+  function isDevotionPaladin() {
+    if (document.getElementById("class")?.value !== "paladin" || getCharacterLevel() < 3) return false;
+    return Array.from(
+      document.querySelectorAll('#classFeatures .paladin-feature[data-feature-level="3"] h3')
+    ).some(heading => (
+      String(heading.textContent || "").trim() === "等級 3：祝聖武器（奉獻子職）"
+    ));
+  }
+
+  function getPaladinCharismaBonus() {
+    const field = document.getElementById("cha");
+    const rawScore = field && "value" in field ? String(field.value || "").trim() : "";
+    const modifier = rawScore ? globalScope.calculateAbilityModifier?.(rawScore) : 0;
+    return Math.max(1, Number.isFinite(modifier) ? modifier : 0);
+  }
+
+  function getPaladinSacredWeaponDescription() {
+    return `執行攻擊動作時，可消耗 1 次引導神力，祝聖手上一把近戰武器，持續 10 分鐘。
+
+- 該武器的攻擊檢定額外 +${getPaladinCharismaBonus()}。
+- 命中時可改造成光耀傷害。
+- 武器發出 20 呎明亮光照，再外延 20 呎微光。
+
+你可無需動作提前結束；不再持有該武器或再次使用此能力時也會結束。`;
+  }
+
   function getBarbarianRageDamageBonus() {
     const level = getCharacterLevel();
     if (level >= 16) return 4;
@@ -625,7 +797,28 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
     const level = getCharacterLevel();
     return MONK_CUSTOM_OPTIONS
       .filter(option => option.mode === mode && level >= option.level)
-      .map(option => ({ ...option, key: `dynamic-${mode}-class-${stableKeyHash(option.label)}`, source: FEATURE_SOURCE_LABELS.class, dynamic: true }));
+      .map(option => ({
+        ...option,
+        key: `dynamic-${mode}-monk-curated-${option.id}`,
+        source: FEATURE_SOURCE_LABELS.class,
+        description: typeof option.description === "function" ? option.description() : option.description,
+        dynamic: true
+      }));
+  }
+
+  function getPaladinCustomEntries(mode) {
+    if (document.getElementById("class")?.value !== "paladin") return [];
+    const level = getCharacterLevel();
+    return PALADIN_CUSTOM_OPTIONS
+      .filter(option => option.mode === mode && level >= option.level)
+      .filter(option => !option.devotion || isDevotionPaladin())
+      .map(option => ({
+        ...option,
+        key: `dynamic-${mode}-paladin-curated-${option.id}`,
+        source: FEATURE_SOURCE_LABELS.class,
+        description: typeof option.description === "function" ? option.description() : option.description,
+        dynamic: true
+      }));
   }
 
   function getBarbarianCustomEntries(mode) {
@@ -814,7 +1007,8 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
     const selectedClass = document.getElementById("class")?.value || "";
     const classEntries = extractTimedFeatureEntries(classText, mode, "class")
       .filter(entry => getCharacterLevel() >= getRequiredLevel(entry))
-      .filter(entry => selectedClass !== "monk" || !MONK_REMOVED_LABELS.has(entry.label))
+      .filter(entry => selectedClass !== "monk" || !MONK_CURATED_FEATURE_LABELS.has(entry.label))
+      .filter(entry => selectedClass !== "paladin" || !PALADIN_CURATED_FEATURE_LABELS.has(entry.label))
       .filter(entry => selectedClass !== "barbarian" || !BARBARIAN_CURATED_FEATURE_LABELS.has(entry.label))
       .filter(entry => selectedClass !== "ranger" || !RANGER_CURATED_FEATURE_LABELS.has(entry.label))
       .filter(entry => selectedClass !== "druid" || !DRUID_CURATED_FEATURE_LABELS.has(entry.label))
@@ -932,10 +1126,10 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
     if (mode !== "action" && mode !== "bonus" && mode !== "reaction" && mode !== "movement") return [];
     const entries = [
       ...(mode === "action"
-        ? [...getBarbarianRecklessAttackEntries(mode), ...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getRangerCustomEntries(mode), ...getClericCustomEntries(mode), ...getDruidCustomEntries(mode), ...getFighterCustomEntries(mode)]
+        ? [...getBarbarianRecklessAttackEntries(mode), ...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getPaladinCustomEntries(mode), ...getRangerCustomEntries(mode), ...getClericCustomEntries(mode), ...getDruidCustomEntries(mode), ...getFighterCustomEntries(mode)]
         : mode === "movement"
-          ? [...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getRangerCustomEntries(mode), ...getClericCustomEntries(mode), ...getDruidCustomEntries(mode), ...getFighterCustomEntries(mode)]
-          : [...getFeatureEntries(mode), ...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getRangerCustomEntries(mode), ...getClericCustomEntries(mode), ...getDruidCustomEntries(mode), ...getFighterCustomEntries(mode)]),
+          ? [...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getPaladinCustomEntries(mode), ...getRangerCustomEntries(mode), ...getClericCustomEntries(mode), ...getDruidCustomEntries(mode), ...getFighterCustomEntries(mode)]
+          : [...getFeatureEntries(mode), ...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getPaladinCustomEntries(mode), ...getRangerCustomEntries(mode), ...getClericCustomEntries(mode), ...getDruidCustomEntries(mode), ...getFighterCustomEntries(mode)]),
       ...getTabletopFeatRuleEntries(mode),
       ...getRaceActionEntries(mode),
       ...getToolProficiencyEntries(mode),
