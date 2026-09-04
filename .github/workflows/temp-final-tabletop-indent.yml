@@ -1,0 +1,105 @@
+name: Temporary final tabletop indent
+
+on:
+  push:
+    branches:
+      - chatgpt/final-tabletop-rules-20260904
+    paths:
+      - .github/workflows/temp-final-tabletop-indent.yml
+
+permissions:
+  contents: write
+
+jobs:
+  indent:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: chatgpt/final-tabletop-rules-20260904
+          fetch-depth: 0
+      - name: Indent inserted blocks and verify
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          def indent_inserted_block(text, start_marker, end_marker, label):
+              start = text.find(start_marker)
+              end = text.find(end_marker, start + len(start_marker))
+              if start < 0 or end < 0:
+                  raise SystemExit(f"{label}: markers not found")
+              block = text[start:end]
+              lines = block.splitlines(keepends=True)
+              for index in range(1, len(lines)):
+                  if lines[index].strip():
+                      lines[index] = "  " + lines[index]
+              return text[:start] + "".join(lines) + text[end:]
+
+          action_path = Path("action-panel.js")
+          action = action_path.read_text(encoding="utf-8")
+          action = indent_inserted_block(
+              action,
+              '  const WARLOCK_CUSTOM_OPTIONS = Object.freeze([',
+              '  const BARBARIAN_CUSTOM_OPTIONS = Object.freeze([',
+              "catalogs"
+          )
+          action = indent_inserted_block(
+              action,
+              '  function getWarlockCustomEntries(mode) {',
+              '  function getBarbarianCustomEntries(mode) {',
+              "providers"
+          )
+          action_path.write_text(action, encoding="utf-8")
+
+          mode_path = Path("tabletop-mode.js")
+          mode = mode_path.read_text(encoding="utf-8")
+          mode = indent_inserted_block(
+              mode,
+              '  function getWarlockDarkOnesBlessingOverviewEntry() {',
+              '  function getCharacterDefenseEntries() {',
+              "summary helpers"
+          )
+          mode_path.write_text(mode, encoding="utf-8")
+          PY
+
+          node --check action-panel.js
+          node --check tabletop-mode.js
+          git diff --check
+
+          python3 <<'PY'
+          from pathlib import Path
+          action = Path("action-panel.js").read_text(encoding="utf-8")
+          mode = Path("tabletop-mode.js").read_text(encoding="utf-8")
+          required_action = [
+              'label: "等級 2：秘法回流"',
+              'label: "等級 6：黑暗強運（邪魔子職）"',
+              'label: "等級 3：強力戲法（塑能子職）"',
+              'label: "等級 5：記憶法術"',
+              'label: "等級 6：法術塑形（塑能子職）"',
+              'selectedClass !== "warlock" || !WARLOCK_CURATED_FEATURE_LABELS.has(entry.label)',
+              'selectedClass !== "wizard" || !WIZARD_CURATED_FEATURE_LABELS.has(entry.label)'
+          ]
+          required_mode = [
+              'label: "守護靈氣", detail: "額外豁免加值已自動計算。"',
+              'label: "元素親和"',
+              'label: "黑暗之賜"',
+              'Math.max(1, characterLevel + (Number.isFinite(charismaModifier) ? charismaModifier : 0))',
+              'document.getElementById("sorcerer-elemental-affinity-damage-type")'
+          ]
+          for needle in required_action:
+              if needle not in action:
+                  raise SystemExit(f"missing action requirement: {needle}")
+          for needle in required_mode:
+              if needle not in mode:
+                  raise SystemExit(f"missing summary requirement: {needle}")
+          if action.count('function extractTimedFeatureEntries(raw, mode, source)') != 1:
+              raise SystemExit("parser function changed or missing")
+          PY
+
+          test "$(git diff --name-only | sort | tr '\n' ' ')" = "action-panel.js tabletop-mode.js "
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add action-panel.js tabletop-mode.js
+          git commit -m "Format final tabletop class rules"
+          git push origin HEAD:chatgpt/final-tabletop-rules-20260904
