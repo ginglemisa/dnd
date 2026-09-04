@@ -381,6 +381,39 @@ const SPECIAL_FEATURE_RULES = Object.freeze({
     }
   ]);
 
+  const DRUID_CUSTOM_OPTIONS = Object.freeze([
+    {
+      mode: "bonus", level: 2, label: "等級 2：荒野形態",
+      description: () => {
+        const level = getCharacterLevel();
+        const durationHours = Math.floor(level / 2);
+        const wildShapeUses = level >= 6 ? 3 : 2;
+        const formLimits = level >= 8
+          ? { knownForms: 8, maxCr: "1", flight: "可有飛行速度" }
+          : level >= 4
+            ? { knownForms: 6, maxCr: "1/2", flight: "不可有飛行速度" }
+            : { knownForms: 4, maxCr: "1/4", flight: "不可有飛行速度" };
+        return `你可用附贈動作變成已知的野獸形態，也可用附贈動作主動解除。\n\n- 持續時間：最多 ${durationHours} 小時。\n- 臨時生命值：變形時獲得 ${level} 點。\n- 已知形態：${formLimits.knownForms} 種；最大 CR ${formLimits.maxCr}；${formLimits.flight}。\n- 使用次數：${wildShapeUses} 次；短休回復 1 次，長休回滿。\n- 變形期間不能施法，但不會中斷既有法術的專注或效果。\n- 陷入失能、死亡，或再次使用荒野形態時會提前結束。`;
+      }
+    },
+    {
+      mode: "action", level: 2, label: "等級 2：荒野夥伴",
+      description: "這會消耗 1 個法術位或 1 次荒野形態，視為魔法動作。\n\n- 施放一次不需要材料成分的「獲得魔寵」。\n- 召喚的魔寵為精類，外型為動物。\n- 魔寵會在你完成長休後消失。"
+    },
+    {
+      mode: "action", level: 3, label: "等級 3：大地之援",
+      description: "這會消耗 1 次荒野形態，視為魔法動作。\n\n- 在 60 呎內選一點，產生 10 呎球形花荊區域。\n- 區域內你指定的每個生物做體質豁免。\n- 失敗：受到 2d6 黯蝕傷害。\n- 成功：傷害減半。\n- 同時指定區域內 1 名生物回復 2d6 生命值。"
+    },
+    {
+      mode: "action", level: 5, label: "等級 5：野性復甦",
+      description: "每回合一次，若你沒有剩餘荒野形態次數：\n\n- 可消耗 1 個法術位，立刻回復 1 次荒野形態，無需動作。\n\n另外：\n\n- 可消耗 1 次荒野形態，回復 1 個 1 環法術位，無需動作。\n- 回復法術位的用法每次長休前只能使用 1 次。"
+    }
+  ]);
+
+  const DRUID_CURATED_FEATURE_LABELS = new Set(
+    DRUID_CUSTOM_OPTIONS.map(option => option.label)
+  );
+
   function getCharacterLevel() {
     return Number(document.getElementById("level")?.value) || 1;
   }
@@ -603,6 +636,20 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
       }));
   }
 
+  function getDruidCustomEntries(mode) {
+    if (document.getElementById("class")?.value !== "druid") return [];
+    const level = getCharacterLevel();
+    return DRUID_CUSTOM_OPTIONS
+      .filter(option => option.mode === mode && level >= option.level)
+      .map(option => ({
+        ...option,
+        key: `dynamic-${mode}-druid-${stableKeyHash(option.label)}`,
+        source: FEATURE_SOURCE_LABELS.class,
+        description: typeof option.description === "function" ? option.description() : option.description,
+        dynamic: true
+      }));
+  }
+
   function getBarbarianRecklessAttackEntries(mode) {
     if (mode !== "action" || document.getElementById("class")?.value !== "barbarian" || getCharacterLevel() < 2) return [];
     const heading = Array.from(document.querySelectorAll('#classFeatures .barbarian-feature[data-feature-level="2"] h3'))
@@ -722,7 +769,8 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
       .filter(entry => getCharacterLevel() >= getRequiredLevel(entry))
       .filter(entry => selectedClass !== "monk" || !MONK_REMOVED_LABELS.has(entry.label))
       .filter(entry => selectedClass !== "barbarian" || !BARBARIAN_CURATED_FEATURE_LABELS.has(entry.label))
-      .filter(entry => selectedClass !== "ranger" || !RANGER_CURATED_FEATURE_LABELS.has(entry.label));
+      .filter(entry => selectedClass !== "ranger" || !RANGER_CURATED_FEATURE_LABELS.has(entry.label))
+      .filter(entry => selectedClass !== "druid" || !DRUID_CURATED_FEATURE_LABELS.has(entry.label));
     return [
       ...classEntries,
       ...availableRaceEntries,
@@ -836,10 +884,10 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
     if (mode !== "action" && mode !== "bonus" && mode !== "reaction" && mode !== "movement") return [];
     const entries = [
       ...(mode === "action"
-        ? [...getBarbarianRecklessAttackEntries(mode), ...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getRangerCustomEntries(mode), ...getClericCustomEntries(mode)]
+        ? [...getBarbarianRecklessAttackEntries(mode), ...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getRangerCustomEntries(mode), ...getClericCustomEntries(mode), ...getDruidCustomEntries(mode)]
         : mode === "movement"
-          ? [...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getRangerCustomEntries(mode), ...getClericCustomEntries(mode)]
-          : [...getFeatureEntries(mode), ...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getRangerCustomEntries(mode), ...getClericCustomEntries(mode)]),
+          ? [...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getRangerCustomEntries(mode), ...getClericCustomEntries(mode), ...getDruidCustomEntries(mode)]
+          : [...getFeatureEntries(mode), ...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getRangerCustomEntries(mode), ...getClericCustomEntries(mode), ...getDruidCustomEntries(mode)]),
       ...getTabletopFeatRuleEntries(mode),
       ...getRaceActionEntries(mode),
       ...getToolProficiencyEntries(mode),
