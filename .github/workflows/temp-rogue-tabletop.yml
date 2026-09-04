@@ -196,31 +196,25 @@ jobs:
               "Rogue summary helpers"
           )
 
-          reliable_anchor = '''    if (selectedClass === "monk" && characterLevel >= 7) {
-              entries.push({
-                label: "反射閃避",
-                detail: "敏捷豁免原可使傷害減半時：成功則不受傷害，失敗則傷害減半；失能時無效。"
-              });
-            }
-            if (hasSelectedFeat("臨陣施法")) {'''
-          reliable_replacement = '''    if (selectedClass === "monk" && characterLevel >= 7) {
-              entries.push({
-                label: "反射閃避",
-                detail: "敏捷豁免原可使傷害減半時：成功則不受傷害，失敗則傷害減半；失能時無效。"
-              });
-            }
-            const rogueReliableTalent = getRogueReliableTalentEntry();
+          reliable_insert = '''    const rogueReliableTalent = getRogueReliableTalentEntry();
             if (rogueReliableTalent) entries.push(rogueReliableTalent);
-            if (hasSelectedFeat("臨陣施法")) {'''
-          mode = replace_once(mode, reliable_anchor, reliable_replacement, "Reliable Talent summary")
+          '''
+          mode = replace_once(
+              mode,
+              '    if (hasSelectedFeat("臨陣施法")) {',
+              reliable_insert + '    if (hasSelectedFeat("臨陣施法")) {',
+              "Reliable Talent summary"
+          )
 
-          overview_anchor = '''    const monkSlowFall = getMonkSlowFallOverviewEntry();
-            if (monkSlowFall) entries.push(monkSlowFall);'''
-          overview_replacement = '''    const rogueUncannyDodge = getRogueUncannyDodgeOverviewEntry();
+          overview_insert = '''    const rogueUncannyDodge = getRogueUncannyDodgeOverviewEntry();
             if (rogueUncannyDodge) entries.push(rogueUncannyDodge);
-            const monkSlowFall = getMonkSlowFallOverviewEntry();
-            if (monkSlowFall) entries.push(monkSlowFall);'''
-          mode = replace_once(mode, overview_anchor, overview_replacement, "Uncanny Dodge summary")
+          '''
+          mode = replace_once(
+              mode,
+              '    const monkSlowFall = getMonkSlowFallOverviewEntry();',
+              overview_insert + '    const monkSlowFall = getMonkSlowFallOverviewEntry();',
+              "Uncanny Dodge summary"
+          )
           mode_path.write_text(mode, encoding="utf-8")
           PY
 
