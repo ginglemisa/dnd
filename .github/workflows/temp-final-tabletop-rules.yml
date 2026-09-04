@@ -1,0 +1,266 @@
+name: Temporary final tabletop rules patch
+
+on:
+  push:
+    branches:
+      - chatgpt/final-tabletop-rules-20260904
+    paths:
+      - .github/workflows/temp-final-tabletop-rules.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: chatgpt/final-tabletop-rules-20260904
+          fetch-depth: 0
+
+      - name: Patch final tabletop rules
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          def replace_once(text, old, new, label):
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{label}: expected 1 anchor, found {count}")
+              return text.replace(old, new, 1)
+
+          action_path = Path("action-panel.js")
+          action = action_path.read_text(encoding="utf-8")
+
+          class_options = '''  const WARLOCK_CUSTOM_OPTIONS = Object.freeze([
+            {
+              id: "arcane-recovery",
+              mode: "action",
+              level: 2,
+              label: "等級 2：秘法回流",
+              description: "你進行 1 分鐘儀式，回復 1 個已消耗的法術位，長休後恢復。"
+            },
+            {
+              id: "dark-ones-own-luck",
+              mode: "action",
+              level: 6,
+              label: "等級 6：黑暗強運（邪魔子職）",
+              description: "當你進行屬性檢定或豁免檢定時，可以使用該特性將1d10加到擲骰結果中。你可以在看到擲骰結果後、結果生效前使用該特性。\\n\\n你可以使用該特性的次數等同於你的魅力調整值（至少一次），但每次擲骰只能使用一次。完成長休時，你恢復所有已消耗的使用次數。"
+            }
+          ]);
+
+          const WARLOCK_CURATED_FEATURE_LABELS = new Set([
+            ...WARLOCK_CUSTOM_OPTIONS.map(option => option.label),
+            "秘法回流",
+            "黑暗強運",
+            "黑暗強運（邪魔子職）"
+          ]);
+
+          const WIZARD_CUSTOM_OPTIONS = Object.freeze([
+            {
+              id: "potent-cantrip",
+              mode: "action",
+              level: 3,
+              label: "等級 3：強力戲法（塑能子職）",
+              description: "當你對生物施放會造成傷害的戲法時：\\n\\n- 若攻擊檢定失手，或\\n- 目標在該戲法豁免成功，\\n- 目標仍會受到一半傷害（若該戲法有傷害），但不受其他效果影響。"
+            },
+            {
+              id: "memorize-spell",
+              mode: "action",
+              level: 5,
+              label: "等級 5：記憶法術",
+              description: "每次短休後，你可研讀法術書。\\n\\n你可把 1 個由「施法」特性準備中的 1+環法師法術，替換成法術書中的另一個 1+環法師法術。"
+            },
+            {
+              id: "sculpt-spells",
+              mode: "action",
+              level: 6,
+              label: "等級 6：法術塑形（塑能子職）",
+              description: "當你施展會影響你所能看見之其他生物的塑能系法術時，可以從中選擇1＋該法術環階名生物。所選生物對抗該法術的豁免檢定自動成功，且不會受到通常在豁免成功時仍會承受的一半傷害。"
+            }
+          ]);
+
+          const WIZARD_CURATED_FEATURE_LABELS = new Set([
+            ...WIZARD_CUSTOM_OPTIONS.map(option => option.label),
+            "強力戲法",
+            "強力戲法（塑能子職）",
+            "記憶法術",
+            "法術塑形",
+            "法術塑形（塑能子職）"
+          ]);
+
+          '''
+          action = replace_once(
+              action,
+              '  const BARBARIAN_CUSTOM_OPTIONS = Object.freeze([',
+              class_options + '  const BARBARIAN_CUSTOM_OPTIONS = Object.freeze([',
+              "Warlock and Wizard custom option catalogs"
+          )
+
+          custom_entries = '''  function getWarlockCustomEntries(mode) {
+            if (document.getElementById("class")?.value !== "warlock") return [];
+            const level = getCharacterLevel();
+            return WARLOCK_CUSTOM_OPTIONS
+              .filter(option => option.mode === mode && level >= option.level)
+              .map(option => ({
+                ...option,
+                key: `dynamic-${mode}-warlock-curated-${option.id}`,
+                source: FEATURE_SOURCE_LABELS.class,
+                dynamic: true
+              }));
+          }
+
+          function getWizardCustomEntries(mode) {
+            if (document.getElementById("class")?.value !== "wizard") return [];
+            const level = getCharacterLevel();
+            return WIZARD_CUSTOM_OPTIONS
+              .filter(option => option.mode === mode && level >= option.level)
+              .map(option => ({
+                ...option,
+                key: `dynamic-${mode}-wizard-curated-${option.id}`,
+                source: FEATURE_SOURCE_LABELS.class,
+                dynamic: true
+              }));
+          }
+
+          '''
+          action = replace_once(
+              action,
+              '  function getBarbarianCustomEntries(mode) {',
+              custom_entries + '  function getBarbarianCustomEntries(mode) {',
+              "Warlock and Wizard custom entry providers"
+          )
+
+          action = replace_once(
+              action,
+              '      .filter(entry => selectedClass !== "rogue" || !ROGUE_CURATED_FEATURE_LABELS.has(entry.label))\n',
+              '      .filter(entry => selectedClass !== "rogue" || !ROGUE_CURATED_FEATURE_LABELS.has(entry.label))\n      .filter(entry => selectedClass !== "warlock" || !WARLOCK_CURATED_FEATURE_LABELS.has(entry.label))\n      .filter(entry => selectedClass !== "wizard" || !WIZARD_CURATED_FEATURE_LABELS.has(entry.label))\n',
+              "Warlock and Wizard parser filters"
+          )
+
+          old_chain = '...getRogueCustomEntries(mode), ...getRangerCustomEntries(mode)'
+          if action.count(old_chain) != 3:
+              raise SystemExit(f"custom option chains: expected 3 anchors, found {action.count(old_chain)}")
+          action = action.replace(
+              old_chain,
+              '...getRogueCustomEntries(mode), ...getWarlockCustomEntries(mode), ...getWizardCustomEntries(mode), ...getRangerCustomEntries(mode)'
+          )
+          action_path.write_text(action, encoding="utf-8")
+
+          mode_path = Path("tabletop-mode.js")
+          mode = mode_path.read_text(encoding="utf-8")
+
+          summary_helpers = '''  function getWarlockDarkOnesBlessingOverviewEntry() {
+            const selectedClass = document.getElementById("class")?.value || "";
+            const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
+            if (selectedClass !== "warlock" || characterLevel < 3) return null;
+            const rawCharisma = String(document.getElementById("cha")?.value || "").trim();
+            const charismaModifier = rawCharisma ? globalScope.calculateAbilityModifier?.(rawCharisma) : 0;
+            const temporaryHp = Math.max(1, characterLevel + (Number.isFinite(charismaModifier) ? charismaModifier : 0));
+            return {
+              label: "黑暗之賜",
+              detail: `在你 10 呎內的敵對生物生命值降到 0 時，你獲得 ${temporaryHp} 點臨時生命值（至少 1）。`
+            };
+          }
+
+          function getSorcererElementalAffinitySpellEntry() {
+            const selectedClass = document.getElementById("class")?.value || "";
+            const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
+            if (selectedClass !== "sorcerer" || characterLevel < 6) return null;
+            const damageTypeSelect = document.getElementById("sorcerer-elemental-affinity-damage-type");
+            if (!damageTypeSelect?.value) return null;
+            const damageType = String(damageTypeSelect.selectedOptions?.[0]?.textContent || "").trim();
+            if (!damageType) return null;
+            const rawCharisma = String(document.getElementById("cha")?.value || "").trim();
+            const charismaModifier = rawCharisma ? globalScope.calculateAbilityModifier?.(rawCharisma) : 0;
+            const bonus = Number.isFinite(charismaModifier) ? charismaModifier : 0;
+            const signedBonus = bonus >= 0 ? `+${bonus}` : String(bonus);
+            return {
+              label: "元素親和",
+              detail: `施展${damageType}類型法術時，可 ${signedBonus} 點傷害。`
+            };
+          }
+
+          '''
+          mode = replace_once(
+              mode,
+              '  function getCharacterDefenseEntries() {',
+              summary_helpers + '  function getCharacterDefenseEntries() {',
+              "Warlock and Sorcerer summary helpers"
+          )
+
+          mode = replace_once(
+              mode,
+              '    const rogueReliableTalent = getRogueReliableTalentEntry();\n    if (rogueReliableTalent) entries.push(rogueReliableTalent);\n    if (hasSelectedFeat("臨陣施法")) {',
+              '    const rogueReliableTalent = getRogueReliableTalentEntry();\n    if (rogueReliableTalent) entries.push(rogueReliableTalent);\n    if (selectedClass === "paladin" && characterLevel >= 6) {\n      entries.push({ label: "守護靈氣", detail: "額外豁免加值已自動計算。" });\n    }\n    if (hasSelectedFeat("臨陣施法")) {',
+              "Paladin skills summary"
+          )
+
+          mode = replace_once(
+              mode,
+              '    const rogueUncannyDodge = getRogueUncannyDodgeOverviewEntry();',
+              '    const warlockDarkOnesBlessing = getWarlockDarkOnesBlessingOverviewEntry();\n    if (warlockDarkOnesBlessing) entries.push(warlockDarkOnesBlessing);\n    const rogueUncannyDodge = getRogueUncannyDodgeOverviewEntry();',
+              "Warlock overview summary"
+          )
+
+          mode = replace_once(
+              mode,
+              '  function getSpellRuleEntries() {\n    const entries = [];\n',
+              '  function getSpellRuleEntries() {\n    const entries = [];\n    const sorcererElementalAffinity = getSorcererElementalAffinitySpellEntry();\n    if (sorcererElementalAffinity) entries.push(sorcererElementalAffinity);\n',
+              "Sorcerer spell summary"
+          )
+          mode_path.write_text(mode, encoding="utf-8")
+          PY
+
+          node --check action-panel.js
+          node --check tabletop-mode.js
+          git diff --check
+
+          python3 <<'PY'
+          from pathlib import Path
+          action = Path("action-panel.js").read_text(encoding="utf-8")
+          mode = Path("tabletop-mode.js").read_text(encoding="utf-8")
+
+          action_needles = [
+              'label: "等級 2：秘法回流"',
+              'label: "等級 6：黑暗強運（邪魔子職）"',
+              'label: "等級 3：強力戲法（塑能子職）"',
+              'label: "等級 5：記憶法術"',
+              'label: "等級 6：法術塑形（塑能子職）"',
+              'getWarlockCustomEntries(mode)',
+              'getWizardCustomEntries(mode)',
+              'selectedClass !== "warlock" || !WARLOCK_CURATED_FEATURE_LABELS.has(entry.label)',
+              'selectedClass !== "wizard" || !WIZARD_CURATED_FEATURE_LABELS.has(entry.label)',
+          ]
+          for needle in action_needles:
+              if needle not in action:
+                  raise SystemExit(f"missing action-panel requirement: {needle}")
+
+          mode_needles = [
+              'label: "守護靈氣", detail: "額外豁免加值已自動計算。"',
+              'label: "元素親和"',
+              'getWarlockDarkOnesBlessingOverviewEntry()',
+              'label: "黑暗之賜"',
+              'sorcerer-elemental-affinity-damage-type',
+          ]
+          for needle in mode_needles:
+              if needle not in mode:
+                  raise SystemExit(f"missing tabletop-mode requirement: {needle}")
+
+          if action.count('function extractTimedFeatureEntries(raw, mode, source)') != 1:
+              raise SystemExit("parser function changed or missing")
+          PY
+
+          if [ "$(git diff --name-only | sort | tr '\n' ' ')" != "action-panel.js tabletop-mode.js " ]; then
+            echo "Unexpected changed files:" >&2
+            git diff --name-only >&2
+            exit 1
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add action-panel.js tabletop-mode.js
+          git commit -m "Add final tabletop class rules"
+          git push origin HEAD:chatgpt/final-tabletop-rules-20260904
