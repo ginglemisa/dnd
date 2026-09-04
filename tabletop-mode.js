@@ -1760,35 +1760,35 @@ function getRogueReliableTalentEntry() {
 }
 
   function getWarlockDarkOnesBlessingOverviewEntry() {
-  const selectedClass = document.getElementById("class")?.value || "";
-  const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
-  if (selectedClass !== "warlock" || characterLevel < 3) return null;
-  const rawCharisma = String(document.getElementById("cha")?.value || "").trim();
-  const charismaModifier = rawCharisma ? globalScope.calculateAbilityModifier?.(rawCharisma) : 0;
-  const temporaryHp = Math.max(1, characterLevel + (Number.isFinite(charismaModifier) ? charismaModifier : 0));
-  return {
-    label: "黑暗之賜",
-    detail: `在你 10 呎內的敵對生物生命值降到 0 時，你獲得 ${temporaryHp} 點臨時生命值（至少 1）。`
-  };
-}
+    const selectedClass = document.getElementById("class")?.value || "";
+    const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
+    if (selectedClass !== "warlock" || characterLevel < 3) return null;
+    const rawCharisma = String(document.getElementById("cha")?.value || "").trim();
+    const charismaModifier = rawCharisma ? globalScope.calculateAbilityModifier?.(rawCharisma) : 0;
+    const temporaryHp = Math.max(1, characterLevel + (Number.isFinite(charismaModifier) ? charismaModifier : 0));
+    return {
+      label: "黑暗之賜",
+      detail: `在你 10 呎內的敵對生物生命值降到 0 時，你獲得 ${temporaryHp} 點臨時生命值（至少 1）。`
+    };
+  }
 
-function getSorcererElementalAffinitySpellEntry() {
-  const selectedClass = document.getElementById("class")?.value || "";
-  const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
-  if (selectedClass !== "sorcerer" || characterLevel < 6) return null;
-  const damageTypeSelect = document.getElementById("sorcerer-elemental-affinity-damage-type");
-  if (!damageTypeSelect?.value) return null;
-  const damageType = String(damageTypeSelect.selectedOptions?.[0]?.textContent || "").trim();
-  if (!damageType) return null;
-  const rawCharisma = String(document.getElementById("cha")?.value || "").trim();
-  const charismaModifier = rawCharisma ? globalScope.calculateAbilityModifier?.(rawCharisma) : 0;
-  const bonus = Number.isFinite(charismaModifier) ? charismaModifier : 0;
-  const signedBonus = bonus >= 0 ? `+${bonus}` : String(bonus);
-  return {
-    label: "元素親和",
-    detail: `施展${damageType}類型法術時，可 ${signedBonus} 點傷害。`
-  };
-}
+  function getSorcererElementalAffinitySpellEntry() {
+    const selectedClass = document.getElementById("class")?.value || "";
+    const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
+    if (selectedClass !== "sorcerer" || characterLevel < 6) return null;
+    const damageTypeSelect = document.getElementById("sorcerer-elemental-affinity-damage-type");
+    if (!damageTypeSelect?.value) return null;
+    const damageType = String(damageTypeSelect.selectedOptions?.[0]?.textContent || "").trim();
+    if (!damageType) return null;
+    const rawCharisma = String(document.getElementById("cha")?.value || "").trim();
+    const charismaModifier = rawCharisma ? globalScope.calculateAbilityModifier?.(rawCharisma) : 0;
+    const bonus = Number.isFinite(charismaModifier) ? charismaModifier : 0;
+    const signedBonus = bonus >= 0 ? `+${bonus}` : String(bonus);
+    return {
+      label: "元素親和",
+      detail: `施展${damageType}類型法術時，可 ${signedBonus} 點傷害。`
+    };
+  }
 
   function getCharacterDefenseEntries() {
     const race = getSelectedRace();
