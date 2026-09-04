@@ -196,25 +196,31 @@ jobs:
               "Rogue summary helpers"
           )
 
-          reliable_insert = '''    const rogueReliableTalent = getRogueReliableTalentEntry();
-            if (rogueReliableTalent) entries.push(rogueReliableTalent);
-          '''
-          mode = replace_once(
-              mode,
-              '    if (hasSelectedFeat("臨陣施法")) {',
-              reliable_insert + '    if (hasSelectedFeat("臨陣施法")) {',
-              "Reliable Talent summary"
+          defense_start = mode.index('  function getDefenseEntries() {')
+          overview_start = mode.index('  function getOverviewRuleEntries() {', defense_start)
+          defense = mode[defense_start:overview_start]
+          reliable_target = '    if (hasSelectedFeat("臨陣施法")) {'
+          if defense.count(reliable_target) != 1:
+              raise SystemExit(f"Reliable Talent summary: expected 1 scoped anchor, found {defense.count(reliable_target)}")
+          defense = defense.replace(
+              reliable_target,
+              '    const rogueReliableTalent = getRogueReliableTalentEntry();\n    if (rogueReliableTalent) entries.push(rogueReliableTalent);\n' + reliable_target,
+              1
           )
+          mode = mode[:defense_start] + defense + mode[overview_start:]
 
-          overview_insert = '''    const rogueUncannyDodge = getRogueUncannyDodgeOverviewEntry();
-            if (rogueUncannyDodge) entries.push(rogueUncannyDodge);
-          '''
-          mode = replace_once(
-              mode,
-              '    const monkSlowFall = getMonkSlowFallOverviewEntry();',
-              overview_insert + '    const monkSlowFall = getMonkSlowFallOverviewEntry();',
-              "Uncanny Dodge summary"
+          overview_start = mode.index('  function getOverviewRuleEntries() {')
+          spell_rules_start = mode.index('  function getSpellRuleEntries() {', overview_start)
+          overview = mode[overview_start:spell_rules_start]
+          overview_target = '    const monkSlowFall = getMonkSlowFallOverviewEntry();'
+          if overview.count(overview_target) != 1:
+              raise SystemExit(f"Uncanny Dodge summary: expected 1 scoped anchor, found {overview.count(overview_target)}")
+          overview = overview.replace(
+              overview_target,
+              '    const rogueUncannyDodge = getRogueUncannyDodgeOverviewEntry();\n    if (rogueUncannyDodge) entries.push(rogueUncannyDodge);\n' + overview_target,
+              1
           )
+          mode = mode[:overview_start] + overview + mode[spell_rules_start:]
           mode_path.write_text(mode, encoding="utf-8")
           PY
 
