@@ -24,6 +24,13 @@
     "輕身墜",
     "混元體"
   ]);
+  const PALADIN_CURATED_FEATURE_LABELS = new Set([
+    "聖療",
+    "引導神力",
+    "神聖感知",
+    "祝聖武器",
+    "額外攻擊"
+  ]);
   const selectedOptionKeys = new Map(MODES.map(mode => [mode, ""]));
   const spellGroupExpanded = new Map(["action", "bonus", "reaction"].map(mode => [mode, false]));
   const elements = {};
@@ -202,6 +209,91 @@ ${formatDiceWithModifier("1d10", dexterityModifier + level)}
     ];
   }
 
+  function isDevotionPaladin() {
+    if (readField("class") !== "paladin" || getCharacterLevel() < 3) return false;
+    return Array.from(
+      document.querySelectorAll('#classFeatures .paladin-feature[data-feature-level="3"] h3')
+    ).some(heading => (
+      String(heading.textContent || "").trim() === "等級 3：祝聖武器（奉獻子職）"
+    ));
+  }
+
+  function getPaladinCharismaBonus() {
+    return Math.max(1, getAbilityModifier("cha"));
+  }
+
+  function getPaladinSacredWeaponDescription() {
+    return `執行攻擊動作時，可消耗 1 次引導神力，祝聖手上一把近戰武器，持續 10 分鐘。
+
+- 該武器的攻擊檢定額外 +${getPaladinCharismaBonus()}。
+- 命中時可改造成光耀傷害。
+- 武器發出 20 呎明亮光照，再外延 20 呎微光。
+
+你可無需動作提前結束；不再持有該武器或再次使用此能力時也會結束。`;
+  }
+
+  function createPaladinCuratedOption(mode, option) {
+    const key = `dynamic-${mode}-paladin-curated-${option.id}`;
+    return {
+      key,
+      label: option.label,
+      source: getClassSourceLabel(),
+      description: typeof option.description === "function" ? option.description() : option.description,
+      preferenceKey: getOfficialHiddenKey(mode, key),
+      customActionId: "",
+      dynamic: true
+    };
+  }
+
+  function getPaladinCuratedOptions(mode) {
+    if (readField("class") !== "paladin") return [];
+    const level = getCharacterLevel();
+    const options = [
+      {
+        id: "lay-on-hands",
+        mode: "bonus",
+        level: 1,
+        label: "等級 1：聖療",
+        description: "以附贈動作觸碰自己或一個生物，從「聖療」池分配任意點數，使其恢復等量 HP。\n\n也可消耗 5 點聖療，移除目標的中毒狀態；此時不恢復 HP。"
+      },
+      {
+        id: "divine-sense",
+        mode: "bonus",
+        level: 3,
+        label: "等級 3：神聖感知",
+        description: "消耗 1 次引導神力，以附贈動作啟動，持續 10 分鐘或直到你失能。\n\n期間你能感知 60 呎內天界生物、邪魔與不死生物的位置與類型，也能察覺範圍內受「聖居」祝福或褻瀆的地點與物件。"
+      },
+      {
+        id: "sacred-weapon",
+        mode: "action",
+        level: 3,
+        devotion: true,
+        label: "等級 3：祝聖武器",
+        description: getPaladinSacredWeaponDescription
+      },
+      {
+        id: "extra-attack",
+        mode: "action",
+        level: 5,
+        label: "等級 5：額外攻擊",
+        description: "你在自己回合使用攻擊動作時，可以攻擊 2 次。"
+      }
+    ];
+    return options
+      .filter(option => option.mode === mode && level >= option.level)
+      .filter(option => !option.devotion || isDevotionPaladin())
+      .map(option => createPaladinCuratedOption(mode, option));
+  }
+
+  function applyPaladinCuratedOptions(mode, options) {
+    const baseOptions = Array.isArray(options) ? options : [];
+    if (readField("class") !== "paladin") return baseOptions;
+    return [
+      ...baseOptions.filter(option => !PALADIN_CURATED_FEATURE_LABELS.has(getPlainOptionLabel(option))),
+      ...getPaladinCuratedOptions(mode)
+    ];
+  }
+
   function getMonkSlowFallOverviewEntry() {
     if (readField("class") !== "monk") return null;
     const level = getCharacterLevel();
@@ -232,17 +324,53 @@ ${formatDiceWithModifier("1d10", dexterityModifier + level)}
     section.hidden = false;
   }
 
+  function getPaladinAuraOverviewEntry() {
+    if (readField("class") !== "paladin") return null;
+    const level = getCharacterLevel();
+    if (level < 6) return null;
+    const bonus = getPaladinCharismaBonus();
+    return {
+      label: "守護靈氣",
+      detail: level >= 7 && isDevotionPaladin()
+        ? `你與 10 呎內盟友的豁免 +${bonus}，並免疫魅惑（已有的魅惑會暫停）；失能時無效。`
+        : `你與 10 呎內盟友的豁免 +${bonus}；失能時無效。`
+    };
+  }
+
+  function renderPaladinAuraOverviewSummary() {
+    const section = document.getElementById("tabletop-overview-rule-summary-section");
+    const output = document.getElementById("tabletop-overview-rule-summary");
+    if (!section || !output) return;
+    output.querySelectorAll('[data-tabletop-paladin-overview-rule="aura-of-protection"]').forEach(item => item.remove());
+    const entry = getPaladinAuraOverviewEntry();
+    if (!entry) {
+      if (!output.children.length) section.hidden = true;
+      return;
+    }
+    const item = createElement("p", "tabletop-defense-summary__item");
+    item.dataset.tabletopPaladinOverviewRule = "aura-of-protection";
+    item.append(
+      createElement("strong", "", `${entry.label}：`),
+      document.createTextNode(entry.detail)
+    );
+    output.appendChild(item);
+    section.hidden = false;
+  }
+
   function getModeOptionSet(mode) {
     const api = globalScope.ActionPanel;
     const preferences = getActionPreferences();
     const hiddenKeys = new Set(preferences.hiddenKeys || []);
-    const officialOptions = applyMonkCuratedOptions(mode, api
-      ? (api.getTabletopOptions || api.getOptions)(mode).map(option => ({
-          ...option,
-          preferenceKey: getOfficialHiddenKey(mode, option.key),
-          customActionId: ""
-        }))
-      : []);
+    const officialOptions = applyPaladinCuratedOptions(
+      mode,
+      applyMonkCuratedOptions(mode, api
+        ? (api.getTabletopOptions || api.getOptions)(mode).map(option => ({
+            ...option,
+            preferenceKey: getOfficialHiddenKey(mode, option.key),
+            customActionId: ""
+          }))
+        : [])
+    );
     const customOptions = (preferences.customActions || [])
       .filter(action => action.mode === mode)
       .map(action => ({
@@ -1000,6 +1128,7 @@ function render() {
   renderWeapons();
   renderWeaponRules();
   renderMonkSlowFallOverviewSummary();
+  renderPaladinAuraOverviewSummary();
   updateTabVisibility();
   renderActionPanel(currentMode);
   renderMetamagic();
