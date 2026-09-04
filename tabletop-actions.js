@@ -336,7 +336,7 @@ ${formatDiceWithModifier("1d10", dexterityModifier + level)}
 
   function appendDefinition(list, term, value, rollType = "", label = "", weapon = null) {
     const item = createElement("div", "tabletop-weapon-field");
-    const description = createElement("dd");
+    const description = document.createElement("dd");
     const displayValue = value || "—";
     if (rollType) {
       const button = createElement("button", "tabletop-inline-roll", displayValue);
@@ -1098,9 +1098,7 @@ function render() {
     globalScope.addEventListener("actionpanelchange", scheduleRender);
     globalScope.addEventListener("tabletopactionpreferenceschange", scheduleRender);
     globalScope.addEventListener("dicerollmodechange", scheduleRender);
-    globalScope.addEventListener("tabletop-panelchange", event => {
-      if (event.detail?.panel === "actions") scheduleRender();
-    });
+    globalScope.addEventListener("tabletop-panelchange", scheduleRender);
 
     const sourcePanel = document.getElementById("tab-actions");
     if (sourcePanel && globalScope.MutationObserver) {
