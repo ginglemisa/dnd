@@ -730,6 +730,12 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
     ];
   }
 
+  function hasSelectedSpell(spellId) {
+    if (typeof SpellCatalog === "undefined") return false;
+    return Array.from(document.querySelectorAll('#tab-spells .spell-entry select[id*="-spell-"]'))
+      .some(select => SpellCatalog.getSpell(select.value || "")?.spellId === spellId);
+  }
+
   function getSelectedSpellEntries(mode) {
     if (typeof SpellCatalog === "undefined") return [];
     const timingPattern = mode === "action"
@@ -765,6 +771,21 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
         dynamic: true
       }];
     });
+  }
+
+  function getToolProficiencyEntries(mode) {
+    if (mode !== "action") return [];
+    const hasThievesTools = Array.from(
+      document.querySelectorAll("#tool-proficiency-list .tool-proficiency-select")
+    ).some(select => select.value === "盜賊工具");
+    if (!hasThievesTools) return [];
+    return [{
+      key: "dynamic-action-tool-thieves-tools",
+      label: "盜賊工具",
+      source: "工具熟練",
+      description: "你可以使用盜賊工具開鎖或解除陷阱，DC 15。",
+      dynamic: true
+    }];
   }
 
   function getSelectedInvocationEntries(mode) {
@@ -821,6 +842,7 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
           : [...getFeatureEntries(mode), ...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getRangerCustomEntries(mode), ...getClericCustomEntries(mode)]),
       ...getTabletopFeatRuleEntries(mode),
       ...getRaceActionEntries(mode),
+      ...getToolProficiencyEntries(mode),
       ...getSelectedInvocationEntries(mode),
       ...getSelectedMetamagicEntries(mode),
       ...((mode === "action" || mode === "bonus" || mode === "reaction") ? getSelectedSpellEntries(mode) : [])
@@ -916,7 +938,8 @@ function getModeOptions(mode) {
           if (mode !== "movement") return true;
           if (option.key === "special-speeds" || option.key === "speed-changes") return false;
           return option.key !== "flying"
-            || (document.getElementById("race")?.value === "dragonborn" && getCharacterLevel() >= 5);
+            || (document.getElementById("race")?.value === "dragonborn" && getCharacterLevel() >= 5)
+            || hasSelectedSpell("fly");
         })
         .map(option => Object.freeze({ ...option }))
     );
