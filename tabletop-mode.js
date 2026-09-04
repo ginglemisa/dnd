@@ -747,14 +747,6 @@
     let heroicSacrifice =
       data.heroicSacrifice === true;
 
-    /*
-     * 舊版存檔沒有 heroicSacrifice。
-     * 如果舊資料已經是力竭 6 級，第一次讀取新版時視為死亡。
-     *
-     * 新版若玩家透過治療解除死亡，
-     * heroicSacrifice 會明確存成 false，
-     * 因此即使力竭仍為 6，也不會在每次讀檔時強制重新死亡。
-     */
     if (
       !hasHeroicSacrificeFlag
       && exhaustionLevel >= 6
@@ -766,10 +758,6 @@
       heroicSacrifice = true;
     }
 
-    /*
-     * 第三次成功或手動標記 Stable：
-     * 成功／失敗紀錄歸零並進入穩定。
-     */
     if (
       !heroicSacrifice
       && (
@@ -1068,11 +1056,6 @@
     return true;
   }
 
-  /*
-   * 生命垂危狀態與「狀態」清單共用同一份 combatState：
-   * 0 HP 時維持昏迷；從 0 HP 被治療至至少 1 HP 時，
-   * 解除昏迷並改為倒地。
-   */
   function enterDeathSaveCondition() {
     return addActiveCondition("unconscious");
   }
@@ -1720,6 +1703,42 @@
     };
   }
 
+  function getMonkSlowFallOverviewEntry() {
+    const selectedClass = document.getElementById("class")?.value || "";
+    const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
+    if (selectedClass !== "monk" || characterLevel < 4) return null;
+    return {
+      label: "輕身墜",
+      detail: `當你墜落時，可用「反應」減少 ${characterLevel * 5} 傷害。`
+    };
+  }
+
+  function isDevotionPaladin() {
+    const selectedClass = document.getElementById("class")?.value || "";
+    const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
+    if (selectedClass !== "paladin" || characterLevel < 3) return false;
+    return Array.from(
+      document.querySelectorAll('#classFeatures .paladin-feature[data-feature-level="3"] h3')
+    ).some(heading => (
+      String(heading.textContent || "").trim() === "等級 3：祝聖武器（奉獻子職）"
+    ));
+  }
+
+  function getPaladinAuraOverviewEntry() {
+    const selectedClass = document.getElementById("class")?.value || "";
+    const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
+    if (selectedClass !== "paladin" || characterLevel < 6) return null;
+    const rawCharisma = String(document.getElementById("cha")?.value || "").trim();
+    const charismaModifier = rawCharisma ? globalScope.calculateAbilityModifier?.(rawCharisma) : 0;
+    const bonus = Math.max(1, Number.isFinite(charismaModifier) ? charismaModifier : 0);
+    return {
+      label: "守護靈氣",
+      detail: characterLevel >= 7 && isDevotionPaladin()
+        ? `你與 10 呎內盟友的豁免 +${bonus}，並免疫魅惑（已有的魅惑會暫停）；失能時無效。`
+        : `你與 10 呎內盟友的豁免 +${bonus}；失能時無效。`
+    };
+  }
+
   function getCharacterDefenseEntries() {
     const race = getSelectedRace();
     const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
@@ -1815,6 +1834,10 @@
     if (hasSelectedFeat("醫療兵")) {
       entries.push({ label: "醫療兵", detail: "法術或照護的恢復骰出 1 可重丟一次。" });
     }
+    const monkSlowFall = getMonkSlowFallOverviewEntry();
+    if (monkSlowFall) entries.push(monkSlowFall);
+    const paladinAura = getPaladinAuraOverviewEntry();
+    if (paladinAura) entries.push(paladinAura);
     return entries;
   }
 
@@ -2267,12 +2290,6 @@
       combatState.deathSaveStable
     );
 
-    /*
-     * 即使已英勇犧牲，
-     * 仍保留既有「手動重置」按鈕，
-     * 讓使用者可以修正誤操作。
-     * 不新增任何 UI。
-     */
     elements.deathReset.disabled =
       false;
 
@@ -2299,14 +2316,6 @@
     combatState =
       normalizeCombatState(data);
 
-    /*
-     * 已儲存為英勇犧牲：
-     * HP 強制保持 0。
-     *
-     * 若 heroicSacrifice 明確是 false，
-     * 即使力竭 6 級也尊重玩家先前透過治療
-     * 或手動重置解除死亡的操作。
-     */
     if (
       combatState.heroicSacrifice
     ) {
@@ -2414,11 +2423,6 @@
 
       elements.lifeAmount.value = "";
 
-      /*
-       * 已經英勇犧牲後再受到傷害：
-       * 不再增加死亡失敗，
-       * 只保留既有臨時 HP 扣除行為。
-       */
       if (wasSacrificed) {
         markStateChanged(
           appendConcentrationSaveReminder(
@@ -2430,18 +2434,6 @@
         return;
       }
 
-      /*
-       * 原本已經是 0 HP。
-       *
-       * 2024：
-       * 任意傷害 → 死亡豁免失敗 +1。
-       *
-       * 如果單次傷害本身 >= 最大 HP，
-       * 直接死亡。
-       *
-       * 使用者明確要求不要新增暴擊 UI，
-       * 因此這裡不處理 Critical Hit +2。
-       */
       if (currentHp === 0) {
         if (
           maximumHp !== null
@@ -2493,15 +2485,6 @@
         return;
       }
 
-      /*
-       * 原本 HP > 0，
-       * 這次傷害降到 0。
-       *
-       * 大量傷害：
-       * 扣除臨時 HP 與目前 HP 後，
-       * 若剩餘傷害 >= 最大 HP，
-       * 立即英勇犧牲。
-       */
       if (result.currentHp === 0) {
         clearDeathSaves();
         enterDeathSaveCondition();
@@ -2560,9 +2543,6 @@
       return;
     }
 
-    /*
-     * Healing
-     */
     const maximumHp =
       readMaximumHp();
 
@@ -2594,18 +2574,6 @@
       result.currentHp
     );
 
-    /*
-     * 專案自訂規則：
-     * 只要恢復到 1 HP 以上，
-     * 直接解除：
-     * - 死亡豁免成功
-     * - 死亡豁免失敗
-     * - 穩定
-     * - 您已英勇犧牲
-     *
-     * 這是依照使用者要求，
-     * 不是官方死亡復活規則。
-     */
     if (result.currentHp > 0) {
       clearCriticalLifeState();
       if (currentHp === 0) {
@@ -2754,10 +2722,6 @@
     const wasSacrificed =
       combatState.heroicSacrifice;
 
-    /*
-     * 玩家直接在角色卡把 HP 改成 >0，
-     * 與使用治療按鈕同樣視為恢復 HP。
-     */
     const revived =
       currentHp !== null
       && currentHp > 0
@@ -2796,13 +2760,6 @@
       return;
     }
 
-    /*
-     * 既有手動重置按鈕同時可用來修正
-     * 誤觸造成的英勇犧牲。
-     *
-     * HP 仍維持 0，
-     * 所以重置後仍是昏迷＋死亡豁免狀態。
-     */
     if (
       button === elements.deathReset
     ) {
@@ -2827,12 +2784,6 @@
       return;
     }
 
-    /*
-     * 手動穩定。
-     *
-     * 成為 Stable 時，
-     * 成功與失敗紀錄都歸零。
-     */
     if (
       button === elements.stable
     ) {
@@ -2881,20 +2832,11 @@
         ? "deathSaveSuccesses"
         : "deathSaveFailures";
 
-    /*
-     * 保留原本 UI：
-     * 點第 N 格設定為 N；
-     * 再點已達到的格子則退回 N - 1。
-     */
     combatState[stateKey] =
       combatState[stateKey] >= slot
         ? slot - 1
         : slot;
 
-    /*
-     * 第三次成功：
-     * Stable + 成功／失敗歸零。
-     */
     if (
       kind === "success"
       && combatState
@@ -2909,10 +2851,6 @@
       return;
     }
 
-    /*
-     * 第三次失敗：
-     * 共用「您已英勇犧牲」狀態。
-     */
     if (
       kind === "failure"
       && combatState
@@ -2939,18 +2877,6 @@
     );
   }
 
-  /*
-   * 完整死亡豁免骰面邏輯。
-   *
-   * 快速擲骰只傳入原始 D20 骰面；
-   * 成功、失敗、自然 1 與自然 20 仍由此處統一處理：
-   *
-   * TabletopMode.recordDeathSaveRoll(roll)
-   *
-   * 例如：
-   * TabletopMode.recordDeathSaveRoll(1)
-   * TabletopMode.recordDeathSaveRoll(20)
-   */
   function recordDeathSaveRoll(roll) {
     const evaluation =
       evaluateDeathSaveRoll(roll);
@@ -3001,10 +2927,6 @@
     undoSnapshot =
       createLifeSnapshot();
 
-    /*
-     * Natural 20：
-     * 恢復 1 HP。
-     */
     if (
       evaluation.outcome
         === "revive"
@@ -3043,10 +2965,6 @@
       });
     }
 
-    /*
-     * 10～19：
-     * 成功 +1。
-     */
     if (
       evaluation.outcome
         === "success"
@@ -3073,13 +2991,6 @@
       });
     }
 
-    /*
-     * 2～9：
-     * 失敗 +1。
-     *
-     * Natural 1：
-     * 失敗 +2。
-     */
     const result =
       addDeathSaveFailures(
         evaluation.failures
@@ -3172,11 +3083,6 @@
       return;
     }
 
-    /*
-     * 不依賴 condition.js 裡面的力竭文字，
-     * 直接在 tabletop-mode 使用
-     * 2024 / SRD 5.2.1 力竭規則。
-     */
     if (
       conditionKey === "exhaustion"
     ) {
@@ -3602,14 +3508,6 @@
         exhaustionLevel
       );
 
-    /*
-     * 只有「從 0～5 進入 6」時
-     * 自動觸發英勇犧牲。
-     *
-     * 如果玩家在力竭 6 時
-     * 已透過治療解除死亡，
-     * 再次儲存其他狀態時不會立刻重新死亡。
-     */
     const newlyReachedFatalExhaustion =
       previousExhaustionLevel < 6
       && exhaustion.heroicSacrifice;
@@ -3617,12 +3515,6 @@
     if (
       newlyReachedFatalExhaustion
     ) {
-      /*
-       * 力竭變成 6 並不是
-       * 「上一筆 HP 操作」，
-       * 因此清除舊的 HP undo，
-       * 避免復原按鈕復原到不相關的傷害。
-       */
       undoSnapshot = null;
 
       markHeroicSacrifice({
@@ -4214,10 +4106,6 @@
             "tabletop-death-saves"
           ),
 
-        /*
-         * 以下三個都使用你現有 HTML，
-         * 沒有新增 UI 元件。
-         */
         deathEyebrow:
           document.querySelector(
             "#tabletop-death-saves .tabletop-danger-eyebrow"
@@ -4526,7 +4414,6 @@
     collectState,
     applyState,
 
-    // 死亡豁免骰面與生命狀態的唯一處理入口。
     recordDeathSaveRoll,
 
     refresh: render,
