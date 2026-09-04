@@ -1781,6 +1781,14 @@
     ));
     const tacticalMind = getFighterTacticalMindEntry();
     if (tacticalMind) entries.push(tacticalMind);
+    const selectedClass = document.getElementById("class")?.value || "";
+    const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
+    if (selectedClass === "monk" && characterLevel >= 7) {
+      entries.push({
+        label: "反射閃避",
+        detail: "敏捷豁免原可使傷害減半時：成功則不受傷害，失敗則傷害減半；失能時無效。"
+      });
+    }
     if (hasSelectedFeat("臨陣施法")) {
       entries.push({ label: "穩住專注", detail: "維持專注的體質豁免丟二取高。" });
     }
