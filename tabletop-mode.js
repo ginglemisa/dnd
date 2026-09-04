@@ -1759,6 +1759,37 @@ function getRogueReliableTalentEntry() {
   };
 }
 
+  function getWarlockDarkOnesBlessingOverviewEntry() {
+    const selectedClass = document.getElementById("class")?.value || "";
+    const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
+    if (selectedClass !== "warlock" || characterLevel < 3) return null;
+    const rawCharisma = String(document.getElementById("cha")?.value || "").trim();
+    const charismaModifier = rawCharisma ? globalScope.calculateAbilityModifier?.(rawCharisma) : 0;
+    const temporaryHp = Math.max(1, characterLevel + (Number.isFinite(charismaModifier) ? charismaModifier : 0));
+    return {
+      label: "黑暗之賜",
+      detail: `在你 10 呎內的敵對生物生命值降到 0 時，你獲得 ${temporaryHp} 點臨時生命值（至少 1）。`
+    };
+  }
+
+  function getSorcererElementalAffinitySpellEntry() {
+    const selectedClass = document.getElementById("class")?.value || "";
+    const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
+    if (selectedClass !== "sorcerer" || characterLevel < 6) return null;
+    const damageTypeSelect = document.getElementById("sorcerer-elemental-affinity-damage-type");
+    if (!damageTypeSelect?.value) return null;
+    const damageType = String(damageTypeSelect.selectedOptions?.[0]?.textContent || "").trim();
+    if (!damageType) return null;
+    const rawCharisma = String(document.getElementById("cha")?.value || "").trim();
+    const charismaModifier = rawCharisma ? globalScope.calculateAbilityModifier?.(rawCharisma) : 0;
+    const bonus = Number.isFinite(charismaModifier) ? charismaModifier : 0;
+    const signedBonus = bonus >= 0 ? `+${bonus}` : String(bonus);
+    return {
+      label: "元素親和",
+      detail: `施展${damageType}類型法術時，可 ${signedBonus} 點傷害。`
+    };
+  }
+
   function getCharacterDefenseEntries() {
     const race = getSelectedRace();
     const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
@@ -1830,6 +1861,9 @@ function getRogueReliableTalentEntry() {
     }
     const rogueReliableTalent = getRogueReliableTalentEntry();
     if (rogueReliableTalent) entries.push(rogueReliableTalent);
+    if (selectedClass === "paladin" && characterLevel >= 6) {
+      entries.push({ label: "守護靈氣", detail: "額外豁免加值已自動計算。" });
+    }
     if (hasSelectedFeat("臨陣施法")) {
       entries.push({ label: "穩住專注", detail: "維持專注的體質豁免丟二取高。" });
     }
@@ -1856,6 +1890,8 @@ function getRogueReliableTalentEntry() {
     if (hasSelectedFeat("醫療兵")) {
       entries.push({ label: "醫療兵", detail: "法術或照護的恢復骰出 1 可重丟一次。" });
     }
+    const warlockDarkOnesBlessing = getWarlockDarkOnesBlessingOverviewEntry();
+    if (warlockDarkOnesBlessing) entries.push(warlockDarkOnesBlessing);
     const rogueUncannyDodge = getRogueUncannyDodgeOverviewEntry();
     if (rogueUncannyDodge) entries.push(rogueUncannyDodge);
     const monkSlowFall = getMonkSlowFallOverviewEntry();
@@ -1867,6 +1903,8 @@ function getRogueReliableTalentEntry() {
 
   function getSpellRuleEntries() {
     const entries = [];
+    const sorcererElementalAffinity = getSorcererElementalAffinitySpellEntry();
+    if (sorcererElementalAffinity) entries.push(sorcererElementalAffinity);
     if (hasSelectedFeat("臨陣施法")) {
       entries.push({ label: "穩住專注", detail: "維持專注的體質豁免丟二取高。" });
     }
