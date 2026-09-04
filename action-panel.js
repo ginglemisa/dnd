@@ -348,6 +348,39 @@ const SPECIAL_FEATURE_RULES = Object.freeze({
     RANGER_CUSTOM_OPTIONS.map(option => option.label)
   );
 
+  const CLERIC_CUSTOM_OPTIONS = Object.freeze([
+    {
+      mode: "action", level: 2, label: "等級 2：神聖火花",
+      description: "這會消耗引導神力，視為魔法動作。\n\n- 指定 30 呎內你看得到的生物。\n- 擲 1d8 + 感知調整值。\n\n你可選擇：\n- 讓目標回復等同結果的生命值，或\n- 讓目標做體質豁免，失敗受等同結果的光耀／黯蝕傷害（你選），成功受一半（捨去小數點）。"
+    },
+    {
+      mode: "action", level: 2, label: "等級 2：驅散不死生物",
+      description: "這會消耗引導神力，視為魔法動作。\n\n- 30 呎內每個不死生物做感知豁免。\n- 失敗者在 1 分鐘內陷入恐慌與失能，並會在回合中盡量遠離你。\n- 若其受傷、你失能或死亡，效果提前結束。"
+    },
+    {
+      mode: "action", level: 3, label: "等級 3：生命門徒（生命）",
+      description: "你用法術位施放回復法術時，目標在本回合額外回復「2 + 法術環級」生命值。"
+    },
+    {
+      mode: "action", level: 3, label: "等級 3：維持生命（生命）",
+      description: () => {
+        const rawLevel = String(document.getElementById("level")?.value || "").trim();
+        const healingTotal = rawLevel ? String(getCharacterLevel() * 5) : "牧師等級 × 5";
+        return `這會消耗引導神力，視為魔法動作。\n\n你展示聖徽，分配總共「${healingTotal}」點治療量給 30 呎內任意數量重傷生物。\n\n此特性不能把目標回到超過其生命值上限一半。`;
+      }
+    },
+    {
+      mode: "action", level: 5, label: "等級 5：焚燒不死生物",
+      description: () => {
+        const wisdomModifier = getAbilityModifier("wis");
+        const damageDice = wisdomModifier === null
+          ? "Xd8（X＝感知調整值，最少 1d8）"
+          : `${Math.max(1, wisdomModifier)}d8`;
+        return `這會消耗引導神力，視為魔法動作。\n\n當你使用驅散不死生物時，可以額外擲 ${damageDice} 光耀傷害，傷害每個豁免失敗的不死生物。`;
+      }
+    }
+  ]);
+
   function getCharacterLevel() {
     return Number(document.getElementById("level")?.value) || 1;
   }
@@ -552,6 +585,20 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
         ...option,
         key: `dynamic-${mode}-ranger-${stableKeyHash(option.label)}`,
         source: FEATURE_SOURCE_LABELS.class,
+        dynamic: true
+      }));
+  }
+
+  function getClericCustomEntries(mode) {
+    if (document.getElementById("class")?.value !== "cleric") return [];
+    const level = getCharacterLevel();
+    return CLERIC_CUSTOM_OPTIONS
+      .filter(option => option.mode === mode && level >= option.level)
+      .map(option => ({
+        ...option,
+        key: `dynamic-${mode}-cleric-${stableKeyHash(option.label)}`,
+        source: FEATURE_SOURCE_LABELS.class,
+        description: typeof option.description === "function" ? option.description() : option.description,
         dynamic: true
       }));
   }
@@ -768,10 +815,10 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
     if (mode !== "action" && mode !== "bonus" && mode !== "reaction" && mode !== "movement") return [];
     const entries = [
       ...(mode === "action"
-        ? [...getBarbarianRecklessAttackEntries(mode), ...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getRangerCustomEntries(mode)]
+        ? [...getBarbarianRecklessAttackEntries(mode), ...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getRangerCustomEntries(mode), ...getClericCustomEntries(mode)]
         : mode === "movement"
-          ? [...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getRangerCustomEntries(mode)]
-          : [...getFeatureEntries(mode), ...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getRangerCustomEntries(mode)]),
+          ? [...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getRangerCustomEntries(mode), ...getClericCustomEntries(mode)]
+          : [...getFeatureEntries(mode), ...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getRangerCustomEntries(mode), ...getClericCustomEntries(mode)]),
       ...getTabletopFeatRuleEntries(mode),
       ...getRaceActionEntries(mode),
       ...getSelectedInvocationEntries(mode),
