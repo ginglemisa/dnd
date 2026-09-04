@@ -321,6 +321,33 @@ const SPECIAL_FEATURE_RULES = Object.freeze({
     BARBARIAN_CUSTOM_OPTIONS.map(option => option.label)
   );
 
+  const RANGER_CUSTOM_OPTIONS = Object.freeze([
+    {
+      mode: "bonus", level: 3, label: "等級 3：獵人學識",
+      description: "目標被你的「獵人印記」標記時，你會知道它的傷害免疫、抗性與易傷。"
+    },
+    {
+      mode: "action", level: 3, label: "等級 3：狩獵目標",
+      description: "從下列擇一；每次短休或長休後可改選：\n\n- 斬殺者：每回合 1 次，你用武器命中且目標先前已失去生命值時，額外造成 1d8 傷害。\n- 破陣者：每回合 1 次，當你用武器攻擊時，可用同一把武器再攻擊 5 呎內另一個你本回合尚未攻擊過的目標。"
+    },
+    {
+      mode: "action", level: 5, label: "等級 5：額外攻擊",
+      description: "使用攻擊動作時，可以攻擊 2 次。"
+    },
+    {
+      mode: "movement", level: 6, label: "等級 6：越野",
+      description: "未穿著重甲時，你的速度增加 10 呎，並獲得等同於你速度的攀爬速度與游泳速度。"
+    },
+    {
+      mode: "action", level: 7, label: "等級 7：防守戰術",
+      description: "選擇並獲得下列一項。每當你完成短休或長休時，可以用另一項替換目前的選擇。\n\n- 衝出重圍：以你為目標的藉機攻擊具有劣勢。\n- 多重防禦：當一個生物的攻擊檢定命中你時，該生物在本回合內對你發動的所有後續攻擊檢定均具有劣勢。"
+    }
+  ]);
+
+  const RANGER_CURATED_FEATURE_LABELS = new Set(
+    RANGER_CUSTOM_OPTIONS.map(option => option.label)
+  );
+
   function getCharacterLevel() {
     return Number(document.getElementById("level")?.value) || 1;
   }
@@ -516,6 +543,19 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
       }));
   }
 
+  function getRangerCustomEntries(mode) {
+    if (document.getElementById("class")?.value !== "ranger") return [];
+    const level = getCharacterLevel();
+    return RANGER_CUSTOM_OPTIONS
+      .filter(option => option.mode === mode && level >= option.level)
+      .map(option => ({
+        ...option,
+        key: `dynamic-${mode}-ranger-${stableKeyHash(option.label)}`,
+        source: FEATURE_SOURCE_LABELS.class,
+        dynamic: true
+      }));
+  }
+
   function getBarbarianRecklessAttackEntries(mode) {
     if (mode !== "action" || document.getElementById("class")?.value !== "barbarian" || getCharacterLevel() < 2) return [];
     const heading = Array.from(document.querySelectorAll('#classFeatures .barbarian-feature[data-feature-level="2"] h3'))
@@ -634,7 +674,8 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
     const classEntries = extractTimedFeatureEntries(classText, mode, "class")
       .filter(entry => getCharacterLevel() >= getRequiredLevel(entry))
       .filter(entry => selectedClass !== "monk" || !MONK_REMOVED_LABELS.has(entry.label))
-      .filter(entry => selectedClass !== "barbarian" || !BARBARIAN_CURATED_FEATURE_LABELS.has(entry.label));
+      .filter(entry => selectedClass !== "barbarian" || !BARBARIAN_CURATED_FEATURE_LABELS.has(entry.label))
+      .filter(entry => selectedClass !== "ranger" || !RANGER_CURATED_FEATURE_LABELS.has(entry.label));
     return [
       ...classEntries,
       ...availableRaceEntries,
@@ -727,10 +768,10 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
     if (mode !== "action" && mode !== "bonus" && mode !== "reaction" && mode !== "movement") return [];
     const entries = [
       ...(mode === "action"
-        ? [...getBarbarianRecklessAttackEntries(mode), ...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode)]
+        ? [...getBarbarianRecklessAttackEntries(mode), ...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getRangerCustomEntries(mode)]
         : mode === "movement"
-          ? [...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode)]
-          : [...getFeatureEntries(mode), ...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode)]),
+          ? [...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getRangerCustomEntries(mode)]
+          : [...getFeatureEntries(mode), ...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getRangerCustomEntries(mode)]),
       ...getTabletopFeatRuleEntries(mode),
       ...getRaceActionEntries(mode),
       ...getSelectedInvocationEntries(mode),
