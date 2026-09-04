@@ -1710,10 +1710,22 @@
     return Number.isFinite(proficiencyBonus) ? proficiencyBonus : null;
   }
 
+  function getFighterTacticalMindEntry() {
+    const isFighter = document.getElementById("class")?.value === "fighter";
+    const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
+    if (!isFighter || characterLevel < 2) return null;
+    return {
+      label: "戰術思維",
+      detail: "屬性檢定失敗時可嘗試消耗「回氣」+1d10 使其成功，如果檢定依舊失敗，回氣次數不消耗。"
+    };
+  }
+
   function getCharacterDefenseEntries() {
     const race = getSelectedRace();
     const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
-    const isBarbarian = document.getElementById("class")?.value === "barbarian";
+    const selectedClass = document.getElementById("class")?.value || "";
+    const isBarbarian = selectedClass === "barbarian";
+    const isFighter = selectedClass === "fighter";
     const entries = [
       getDarkvisionEntry(),
       getDragonbornResistanceEntry(),
@@ -1733,6 +1745,7 @@
       orc: [{ label: "堅韌不屈", detail: "若 HP 被傷害至 0 且沒有即死，可強制 HP=1。" }]
     };
     const barbarianDefenses = [];
+    const fighterSummaries = [];
     if (isBarbarian && characterLevel >= 2) {
       barbarianDefenses.push({ label: "險境感知", detail: "只要你沒失能，你的敏捷豁免有優勢。" });
     }
@@ -1748,7 +1761,14 @@
     if (isBarbarian && characterLevel >= 7) {
       barbarianDefenses.push({ label: "野性本能", detail: "你的先攻擲骰具有優勢。", summaryPanel: "overview" });
     }
-    return entries.concat(racialDefenses[race] || [], barbarianDefenses);
+    if (isFighter && characterLevel >= 3) {
+      fighterSummaries.push({
+        label: "運動健將",
+        detail: "先攻與力量（運動）檢定具有優勢；造成重擊後，可立即移動至多等同於速度一半的距離，且不會引發藉機攻擊。",
+        summaryPanel: "overview"
+      });
+    }
+    return entries.concat(racialDefenses[race] || [], barbarianDefenses, fighterSummaries);
   }
 
   function isDamageRelatedEntry(entry) {
@@ -1759,6 +1779,8 @@
     const entries = getCharacterDefenseEntries().filter(entry => (
       !isDamageRelatedEntry(entry) && entry.summaryPanel !== "overview"
     ));
+    const tacticalMind = getFighterTacticalMindEntry();
+    if (tacticalMind) entries.push(tacticalMind);
     if (hasSelectedFeat("臨陣施法")) {
       entries.push({ label: "穩住專注", detail: "維持專注的體質豁免丟二取高。" });
     }
@@ -1769,6 +1791,8 @@
     const entries = getCharacterDefenseEntries().filter(entry => (
       isDamageRelatedEntry(entry) || entry.summaryPanel === "overview"
     ));
+    const tacticalMind = getFighterTacticalMindEntry();
+    if (tacticalMind) entries.unshift(tacticalMind);
     if (hasSelectedFeat("警覺")) {
       entries.push({ label: "警覺", detail: "擲先攻後，可與指定隊友互換順序，失能無效。" });
     }

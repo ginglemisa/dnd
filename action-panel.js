@@ -414,6 +414,40 @@ const SPECIAL_FEATURE_RULES = Object.freeze({
     DRUID_CUSTOM_OPTIONS.map(option => option.label)
   );
 
+  const FIGHTER_CUSTOM_OPTIONS = Object.freeze([
+    {
+      mode: "bonus", level: 1, label: "等級 1：回氣",
+      description: () => {
+        const level = getCharacterLevel();
+        const uses = level >= 4 ? 3 : 2;
+        const tacticalShift = level >= 5
+          ? "\n- 戰術轉移：使用回氣時，可移動至多等同於速度一半的距離，且不會引發藉機攻擊。"
+          : "";
+        return `使用附贈動作，恢復 1d10 + ${level} 生命值。\n\n- 使用次數：${uses} 次；短休回復 1 次，長休全部回復。${tacticalShift}`;
+      }
+    },
+    {
+      mode: "action", level: 2, label: "等級 2：動作如潮",
+      description: "你的回合中，可以獲得 1 個額外動作。\n\n- 此額外動作不能用於魔法動作。\n- 使用後，短休或長休才能再次使用。"
+    },
+    {
+      mode: "movement", level: 3, label: "等級 3：運動健將",
+      description: "造成重擊後，可立即移動至多等同於速度一半的距離，且不會引發藉機攻擊。"
+    },
+    {
+      mode: "action", level: 5, label: "等級 5：額外攻擊",
+      description: "使用攻擊動作時，可以攻擊 2 次。"
+    },
+    {
+      mode: "movement", level: 5, label: "等級 5：戰術轉移",
+      description: "當你以附贈動作使用回氣時，可以移動至多等同於你速度一半的距離，且不會引發藉機攻擊。"
+    }
+  ]);
+
+  const FIGHTER_CURATED_FEATURE_LABELS = new Set(
+    FIGHTER_CUSTOM_OPTIONS.map(option => option.label)
+  );
+
   function getCharacterLevel() {
     return Number(document.getElementById("level")?.value) || 1;
   }
@@ -650,6 +684,20 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
       }));
   }
 
+  function getFighterCustomEntries(mode) {
+    if (document.getElementById("class")?.value !== "fighter") return [];
+    const level = getCharacterLevel();
+    return FIGHTER_CUSTOM_OPTIONS
+      .filter(option => option.mode === mode && level >= option.level)
+      .map(option => ({
+        ...option,
+        key: `dynamic-${mode}-fighter-${stableKeyHash(option.label)}`,
+        source: FEATURE_SOURCE_LABELS.class,
+        description: typeof option.description === "function" ? option.description() : option.description,
+        dynamic: true
+      }));
+  }
+
   function getBarbarianRecklessAttackEntries(mode) {
     if (mode !== "action" || document.getElementById("class")?.value !== "barbarian" || getCharacterLevel() < 2) return [];
     const heading = Array.from(document.querySelectorAll('#classFeatures .barbarian-feature[data-feature-level="2"] h3'))
@@ -770,7 +818,8 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
       .filter(entry => selectedClass !== "monk" || !MONK_REMOVED_LABELS.has(entry.label))
       .filter(entry => selectedClass !== "barbarian" || !BARBARIAN_CURATED_FEATURE_LABELS.has(entry.label))
       .filter(entry => selectedClass !== "ranger" || !RANGER_CURATED_FEATURE_LABELS.has(entry.label))
-      .filter(entry => selectedClass !== "druid" || !DRUID_CURATED_FEATURE_LABELS.has(entry.label));
+      .filter(entry => selectedClass !== "druid" || !DRUID_CURATED_FEATURE_LABELS.has(entry.label))
+      .filter(entry => selectedClass !== "fighter" || !FIGHTER_CURATED_FEATURE_LABELS.has(entry.label));
     return [
       ...classEntries,
       ...availableRaceEntries,
@@ -884,10 +933,10 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
     if (mode !== "action" && mode !== "bonus" && mode !== "reaction" && mode !== "movement") return [];
     const entries = [
       ...(mode === "action"
-        ? [...getBarbarianRecklessAttackEntries(mode), ...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getRangerCustomEntries(mode), ...getClericCustomEntries(mode), ...getDruidCustomEntries(mode)]
+        ? [...getBarbarianRecklessAttackEntries(mode), ...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getRangerCustomEntries(mode), ...getClericCustomEntries(mode), ...getDruidCustomEntries(mode), ...getFighterCustomEntries(mode)]
         : mode === "movement"
-          ? [...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getRangerCustomEntries(mode), ...getClericCustomEntries(mode), ...getDruidCustomEntries(mode)]
-          : [...getFeatureEntries(mode), ...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getRangerCustomEntries(mode), ...getClericCustomEntries(mode), ...getDruidCustomEntries(mode)]),
+          ? [...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getRangerCustomEntries(mode), ...getClericCustomEntries(mode), ...getDruidCustomEntries(mode), ...getFighterCustomEntries(mode)]
+          : [...getFeatureEntries(mode), ...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getRangerCustomEntries(mode), ...getClericCustomEntries(mode), ...getDruidCustomEntries(mode), ...getFighterCustomEntries(mode)]),
       ...getTabletopFeatRuleEntries(mode),
       ...getRaceActionEntries(mode),
       ...getToolProficiencyEntries(mode),
