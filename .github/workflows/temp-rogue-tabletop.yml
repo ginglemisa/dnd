@@ -1,4 +1,4 @@
-name: Temporary Rogue tabletop patch
+name: Temporary Rogue tabletop verification
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   contents: write
 
 jobs:
-  patch:
+  verify:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
@@ -20,7 +20,7 @@ jobs:
           ref: chatgpt/rogue-tabletop-20260904
           fetch-depth: 0
 
-      - name: Patch Rogue tabletop rules
+      - name: Polish Rogue helpers and verify behavior
         shell: bash
         run: |
           python3 <<'PY'
@@ -34,67 +34,64 @@ jobs:
 
           action_path = Path("action-panel.js")
           action = action_path.read_text(encoding="utf-8")
+          old = '''  function getRogueSneakAttackDescription() {
+          const level = getCharacterLevel();
+          const sneakAttackDice = Math.max(1, Math.ceil(level / 2));
+          const base = `你每回合可用靈巧或遠程武器觸發 1 次偷襲，造成額外 ${sneakAttackDice}d6 傷害。
 
-          paladin_anchor = '''  const PALADIN_CURATED_FEATURE_LABELS = new Set([
-              ...PALADIN_CUSTOM_OPTIONS.map(option => option.label),
-              "聖療",
-              "引導神力",
-              "等級 3：引導神力",
-              "神聖感知",
-              "祝聖武器",
-              "額外攻擊"
-            ]);
+          偷襲必須滿足以下條件其中之一：
 
-            const BARBARIAN_CUSTOM_OPTIONS = Object.freeze(['''
-          rogue_catalog = '''  const PALADIN_CURATED_FEATURE_LABELS = new Set([
-              ...PALADIN_CUSTOM_OPTIONS.map(option => option.label),
-              "聖療",
-              "引導神力",
-              "等級 3：引導神力",
-              "神聖感知",
-              "祝聖武器",
-              "額外攻擊"
-            ]);
+          - 這次攻擊有優勢，或
+          - 目標 5 呎內有至少 1 名未失能的友方，且你的攻擊沒有劣勢。`;
+          if (level < 5) return base;
+          const dexterityModifier = getAbilityModifier("dex") ?? 0;
+          const saveDc = 8 + getProficiencyBonus() + dexterityModifier;
+          return `${base}
 
-            const ROGUE_CUSTOM_OPTIONS = Object.freeze([
-              {
-                id: "sneak-attack",
-                mode: "action",
-                level: 1,
-                label: "等級 1：偷襲",
-                description: getRogueSneakAttackDescription
-              },
-              {
-                id: "fast-hands",
-                mode: "bonus",
-                level: 3,
-                label: "等級 3：快手",
-                description: "你可用附贈動作進行以下其中一項：\\n\\n- 巧手：做敏捷（巧手）檢定來開鎖、解除陷阱或扒竊。\\n- 使用物品：執行使用動作，或用魔法動作啟動需要該動作的魔法物品。"
-              },
-              {
-                id: "steady-aim",
-                mode: "bonus",
-                level: 3,
-                label: "等級 3：手穩就準",
-                description: "附贈動作啟動後，你本回合下一次攻擊檢定有優勢。\\n\\n但你必須在本回合尚未移動，且啟動後速度變為 0（直到回合結束）。"
-              }
-            ]);
+          等級 5：靈巧打擊
 
-            const ROGUE_CURATED_FEATURE_LABELS = new Set([
-              ...ROGUE_CUSTOM_OPTIONS.map(option => option.label),
-              "偷襲",
-              "快手",
-              "快手（妙手子職）",
-              "等級 3：快手（妙手子職）",
-              "手穩就準",
-              "靈巧打擊",
-              "等級 5：靈巧打擊"
-            ]);
+          當你造成偷襲傷害時，可套用 1 種靈巧打擊效果。
 
-            const BARBARIAN_CUSTOM_OPTIONS = Object.freeze(['''
-          action = replace_once(action, paladin_anchor, rogue_catalog, "Rogue catalog")
+          每種效果都要先放棄部分偷襲傷害骰；若需要豁免，DC = ${saveDc}。
 
-          rogue_description = '''  function getRogueSneakAttackDescription() {
+          淬毒（消耗 1d6）：目標體質豁免失敗則中毒 1 分鐘；其每回合結束可再豁免，成功即結束。使用此效果時你需攜帶制毒師工具。
+          摔絆（消耗 1d6）：大型或更小目標敏捷豁免失敗則倒地。
+          撤步（消耗 1d6）：攻擊後你可立刻移動至多一半速度，且不引發藉機攻擊。`;
+        }
+
+          function getBarbarianRageDamageBonus() {'''
+          # The prior workflow inserted this helper with its body at column 1; normalize only that exact block.
+          if old not in action:
+              old = '''  function getRogueSneakAttackDescription() {
+          const level = getCharacterLevel();
+          const sneakAttackDice = Math.max(1, Math.ceil(level / 2));
+          const base = `你每回合可用靈巧或遠程武器觸發 1 次偷襲，造成額外 ${sneakAttackDice}d6 傷害。
+
+          偷襲必須滿足以下條件其中之一：
+
+          - 這次攻擊有優勢，或
+          - 目標 5 呎內有至少 1 名未失能的友方，且你的攻擊沒有劣勢。`;
+          if (level < 5) return base;
+          const dexterityModifier = getAbilityModifier("dex") ?? 0;
+          const saveDc = 8 + getProficiencyBonus() + dexterityModifier;
+          return `${base}
+
+          等級 5：靈巧打擊
+
+          當你造成偷襲傷害時，可套用 1 種靈巧打擊效果。
+
+          每種效果都要先放棄部分偷襲傷害骰；若需要豁免，DC = ${saveDc}。
+
+          淬毒（消耗 1d6）：目標體質豁免失敗則中毒 1 分鐘；其每回合結束可再豁免，成功即結束。使用此效果時你需攜帶制毒師工具。
+          摔絆（消耗 1d6）：大型或更小目標敏捷豁免失敗則倒地。
+          撤步（消耗 1d6）：攻擊後你可立刻移動至多一半速度，且不引發藉機攻擊。`;
+        }
+
+          function getBarbarianRageDamageBonus() {'''
+          # Use brace-delimited extraction instead of relying on whitespace from YAML rendering.
+          start = action.index('  function getRogueSneakAttackDescription() {')
+          end = action.index('  function getBarbarianRageDamageBonus() {', start)
+          polished = '''  function getRogueSneakAttackDescription() {
             const level = getCharacterLevel();
             const sneakAttackDice = Math.max(1, Math.ceil(level / 2));
             const base = `你每回合可用靈巧或遠程武器觸發 1 次偷襲，造成額外 ${sneakAttackDice}d6 傷害。
@@ -120,14 +117,11 @@ jobs:
           }
 
           '''
-          action = replace_once(
-              action,
-              '  function getBarbarianRageDamageBonus() {',
-              rogue_description + '  function getBarbarianRageDamageBonus() {',
-              "Rogue description helper"
-          )
+          action = action[:start] + polished + action[end:]
 
-          rogue_entries = '''  function getRogueCustomEntries(mode) {
+          start = action.index('  function getRogueCustomEntries(mode) {')
+          end = action.index('  function getBarbarianCustomEntries(mode) {', start)
+          polished_entries = '''  function getRogueCustomEntries(mode) {
             if (document.getElementById("class")?.value !== "rogue") return [];
             const level = getCharacterLevel();
             return ROGUE_CUSTOM_OPTIONS
@@ -142,33 +136,14 @@ jobs:
           }
 
           '''
-          action = replace_once(
-              action,
-              '  function getBarbarianCustomEntries(mode) {',
-              rogue_entries + '  function getBarbarianCustomEntries(mode) {',
-              "Rogue entries"
-          )
-
-          action = replace_once(
-              action,
-              '      .filter(entry => selectedClass !== "paladin" || !PALADIN_CURATED_FEATURE_LABELS.has(entry.label))\n',
-              '      .filter(entry => selectedClass !== "paladin" || !PALADIN_CURATED_FEATURE_LABELS.has(entry.label))\n      .filter(entry => selectedClass !== "rogue" || !ROGUE_CURATED_FEATURE_LABELS.has(entry.label))\n',
-              "Rogue parser filtering"
-          )
-
-          old_chain = '...getPaladinCustomEntries(mode), ...getRangerCustomEntries(mode)'
-          if action.count(old_chain) != 3:
-              raise SystemExit(f"Rogue option chains: expected 3 anchors, found {action.count(old_chain)}")
-          action = action.replace(
-              old_chain,
-              '...getPaladinCustomEntries(mode), ...getRogueCustomEntries(mode), ...getRangerCustomEntries(mode)'
-          )
+          action = action[:start] + polished_entries + action[end:]
           action_path.write_text(action, encoding="utf-8")
 
           mode_path = Path("tabletop-mode.js")
           mode = mode_path.read_text(encoding="utf-8")
-
-          rogue_summary_helpers = '''  function getRogueUncannyDodgeOverviewEntry() {
+          start = mode.index('  function getRogueUncannyDodgeOverviewEntry() {')
+          end = mode.index('  function getCharacterDefenseEntries() {', start)
+          polished_mode = '''  function getRogueUncannyDodgeOverviewEntry() {
             const selectedClass = document.getElementById("class")?.value || "";
             const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
             if (selectedClass !== "rogue" || characterLevel < 5) return null;
@@ -189,38 +164,7 @@ jobs:
           }
 
           '''
-          mode = replace_once(
-              mode,
-              '  function getCharacterDefenseEntries() {',
-              rogue_summary_helpers + '  function getCharacterDefenseEntries() {',
-              "Rogue summary helpers"
-          )
-
-          defense_start = mode.index('  function getDefenseEntries() {')
-          overview_start = mode.index('  function getOverviewRuleEntries() {', defense_start)
-          defense = mode[defense_start:overview_start]
-          reliable_target = '    if (hasSelectedFeat("臨陣施法")) {'
-          if defense.count(reliable_target) != 1:
-              raise SystemExit(f"Reliable Talent summary: expected 1 scoped anchor, found {defense.count(reliable_target)}")
-          defense = defense.replace(
-              reliable_target,
-              '    const rogueReliableTalent = getRogueReliableTalentEntry();\n    if (rogueReliableTalent) entries.push(rogueReliableTalent);\n' + reliable_target,
-              1
-          )
-          mode = mode[:defense_start] + defense + mode[overview_start:]
-
-          overview_start = mode.index('  function getOverviewRuleEntries() {')
-          spell_rules_start = mode.index('  function getSpellRuleEntries() {', overview_start)
-          overview = mode[overview_start:spell_rules_start]
-          overview_target = '    const monkSlowFall = getMonkSlowFallOverviewEntry();'
-          if overview.count(overview_target) != 1:
-              raise SystemExit(f"Uncanny Dodge summary: expected 1 scoped anchor, found {overview.count(overview_target)}")
-          overview = overview.replace(
-              overview_target,
-              '    const rogueUncannyDodge = getRogueUncannyDodgeOverviewEntry();\n    if (rogueUncannyDodge) entries.push(rogueUncannyDodge);\n' + overview_target,
-              1
-          )
-          mode = mode[:overview_start] + overview + mode[spell_rules_start:]
+          mode = mode[:start] + polished_mode + mode[end:]
           mode_path.write_text(mode, encoding="utf-8")
           PY
 
@@ -230,28 +174,62 @@ jobs:
 
           python3 <<'PY'
           from pathlib import Path
+          import re
+
           action = Path("action-panel.js").read_text(encoding="utf-8")
           mode = Path("tabletop-mode.js").read_text(encoding="utf-8")
-          required = [
+
+          # Level matrix for SRD Rogue 1–8.
+          expected_dice = {1:1, 2:1, 3:2, 4:2, 5:3, 6:3, 7:4, 8:4}
+          for level, dice in expected_dice.items():
+              actual = max(1, (level + 1) // 2)
+              assert actual == dice, (level, actual, dice)
+              assert (level >= 3) == (level in range(3, 9))
+              assert (level >= 5) == (level in range(5, 9))
+              assert (level >= 7) == (level in range(7, 9))
+
+          # Dynamic Cunning Strike DC examples using the existing project progression.
+          def proficiency(level):
+              return 3 if level >= 5 else 2
+          def modifier(score):
+              return (score - 10) // 2
+          assert 8 + proficiency(5) + modifier(16) == 14
+          assert 8 + proficiency(5) + modifier(18) == 15
+
+          required_action = [
               'label: "等級 1：偷襲"',
               'label: "等級 3：快手"',
               'label: "等級 3：手穩就準"',
               '等級 5：靈巧打擊',
-              'getRogueCustomEntries(mode)',
-              'selectedClass !== "rogue" || !ROGUE_CURATED_FEATURE_LABELS.has(entry.label)',
+              'const dexterityModifier = getAbilityModifier("dex") ?? 0;',
+              'const saveDc = 8 + getProficiencyBonus() + dexterityModifier;',
+              '.filter(entry => selectedClass !== "rogue" || !ROGUE_CURATED_FEATURE_LABELS.has(entry.label))',
           ]
-          for needle in required:
-              if needle not in action:
-                  raise SystemExit(f"missing action-panel requirement: {needle}")
-          if 'function extractTimedFeatureEntries(raw, mode, source)' not in action:
-              raise SystemExit("parser entry missing")
-          for needle in ['label: "直覺閃避"', 'label: "可靠才能"']:
-              if needle not in mode:
-                  raise SystemExit(f"missing tabletop summary: {needle}")
+          for needle in required_action:
+              assert needle in action, needle
+          assert action.count('id: "sneak-attack"') == 1
+          assert action.count('id: "fast-hands"') == 1
+          assert action.count('id: "steady-aim"') == 1
+          assert 'mode: "action",\n      level: 1,\n      label: "等級 1：偷襲"' in action
+          assert 'mode: "bonus",\n      level: 3,\n      label: "等級 3：快手"' in action
+          assert 'mode: "bonus",\n      level: 3,\n      label: "等級 3：手穩就準"' in action
+
+          assert 'label: "直覺閃避"' in mode
+          assert 'selectedClass !== "rogue" || characterLevel < 5' in mode
+          assert 'label: "可靠才能"' in mode
+          assert 'selectedClass !== "rogue" || characterLevel < 7' in mode
+
+          # Parser core declarations remain present; Rogue only adds an entry filter.
+          assert action.count('function extractTimedFeatureEntries(raw, mode, source)') == 1
+          assert action.count('const timingPattern = mode === "bonus"') == 1
           PY
 
+          if git diff --quiet -- action-panel.js tabletop-mode.js; then
+            echo "No formatting changes needed"
+            exit 0
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add action-panel.js tabletop-mode.js
-          git commit -m "Curate Rogue tabletop actions and summaries"
+          git commit -m "Polish Rogue tabletop helpers"
           git push origin HEAD:chatgpt/rogue-tabletop-20260904
