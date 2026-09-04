@@ -100,11 +100,14 @@
   }
 
   function createMonkCuratedOption(mode, option) {
+    const key = `dynamic-${mode}-monk-curated-${option.id}`;
     return {
-      key: `dynamic-${mode}-monk-curated-${stableKeyHash(option.label)}`,
+      key,
       label: option.label,
       source: getClassSourceLabel(),
       description: typeof option.description === "function" ? option.description() : option.description,
+      preferenceKey: getOfficialHiddenKey(mode, key),
+      customActionId: "",
       dynamic: true
     };
   }
@@ -170,20 +173,20 @@ ${formatDiceWithModifier("1d10", dexterityModifier + level)}
     if (readField("class") !== "monk") return [];
     const level = getCharacterLevel();
     const options = [
-      { mode: "action", level: 1, label: "等級 1：武藝", description: getMonkMartialArtsDescription },
-      { mode: "bonus", level: 1, label: "等級 1：武藝", description: getMonkMartialArtsDescription },
-      { mode: "bonus", level: 2, label: "等級 2：聚氣凝神", description: getMonkFocusDescription },
-      { mode: "reaction", level: 3, label: "等級 3：撥擋化勁", description: getMonkDeflectAttacksDescription },
-      { mode: "reaction", level: 4, label: "等級 4：輕身墜", description: getMonkSlowFallDescription },
+      { id: "martial-arts-action", mode: "action", level: 1, label: "等級 1：武藝", description: getMonkMartialArtsDescription },
+      { id: "martial-arts-bonus", mode: "bonus", level: 1, label: "等級 1：武藝", description: getMonkMartialArtsDescription },
+      { id: "focused-aim", mode: "bonus", level: 2, label: "等級 2：聚氣凝神", description: getMonkFocusDescription },
+      { id: "deflect-attacks", mode: "reaction", level: 3, label: "等級 3：撥擋化勁", description: getMonkDeflectAttacksDescription },
+      { id: "slow-fall", mode: "reaction", level: 4, label: "等級 4：輕身墜", description: getMonkSlowFallDescription },
       {
-        mode: "action", level: 5, label: "等級 5：震懾擊",
+        id: "stunning-strike", mode: "action", level: 5, label: "等級 5：震懾擊",
         description: "每回合 1 次，當你用武僧武器或徒手命中時，可花 1 點專注點發動震懾打擊。目標需做體質豁免：\n\n- 失敗：震懾到你下回合開始。\n- 成功：速度減半，且到你下回合開始前，下一次對它的攻擊有優勢。"
       },
       {
-        mode: "action", level: 5, label: "等級 5：額外攻擊",
+        id: "extra-attack", mode: "action", level: 5, label: "等級 5：額外攻擊",
         description: "你在自己回合使用攻擊動作時，可以攻擊 2 次。"
       },
-      { mode: "bonus", level: 6, label: "等級 6：混元體", description: getMonkWholenessDescription }
+      { id: "wholeness-of-body", mode: "bonus", level: 6, label: "等級 6：混元體", description: getMonkWholenessDescription }
     ];
     return options
       .filter(option => option.mode === mode && level >= option.level)
