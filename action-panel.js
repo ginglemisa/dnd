@@ -371,6 +371,63 @@ const SPECIAL_FEATURE_RULES = Object.freeze({
     "等級 5：靈巧打擊"
   ]);
 
+  const WARLOCK_CUSTOM_OPTIONS = Object.freeze([
+  {
+    id: "arcane-recovery",
+    mode: "action",
+    level: 2,
+    label: "等級 2：秘法回流",
+    description: "你進行 1 分鐘儀式，回復 1 個已消耗的法術位，長休後恢復。"
+  },
+  {
+    id: "dark-ones-own-luck",
+    mode: "action",
+    level: 6,
+    label: "等級 6：黑暗強運（邪魔子職）",
+    description: "當你進行屬性檢定或豁免檢定時，可以使用該特性將1d10加到擲骰結果中。你可以在看到擲骰結果後、結果生效前使用該特性。\n\n你可以使用該特性的次數等同於你的魅力調整值（至少一次），但每次擲骰只能使用一次。完成長休時，你恢復所有已消耗的使用次數。"
+  }
+]);
+
+const WARLOCK_CURATED_FEATURE_LABELS = new Set([
+  ...WARLOCK_CUSTOM_OPTIONS.map(option => option.label),
+  "秘法回流",
+  "黑暗強運",
+  "黑暗強運（邪魔子職）"
+]);
+
+const WIZARD_CUSTOM_OPTIONS = Object.freeze([
+  {
+    id: "potent-cantrip",
+    mode: "action",
+    level: 3,
+    label: "等級 3：強力戲法（塑能子職）",
+    description: "當你對生物施放會造成傷害的戲法時：\n\n- 若攻擊檢定失手，或\n- 目標在該戲法豁免成功，\n- 目標仍會受到一半傷害（若該戲法有傷害），但不受其他效果影響。"
+  },
+  {
+    id: "memorize-spell",
+    mode: "action",
+    level: 5,
+    label: "等級 5：記憶法術",
+    description: "每次短休後，你可研讀法術書。\n\n你可把 1 個由「施法」特性準備中的 1+環法師法術，替換成法術書中的另一個 1+環法師法術。"
+  },
+  {
+    id: "sculpt-spells",
+    mode: "action",
+    level: 6,
+    label: "等級 6：法術塑形（塑能子職）",
+    description: "當你施展會影響你所能看見之其他生物的塑能系法術時，可以從中選擇1＋該法術環階名生物。所選生物對抗該法術的豁免檢定自動成功，且不會受到通常在豁免成功時仍會承受的一半傷害。"
+  }
+]);
+
+const WIZARD_CURATED_FEATURE_LABELS = new Set([
+  ...WIZARD_CUSTOM_OPTIONS.map(option => option.label),
+  "強力戲法",
+  "強力戲法（塑能子職）",
+  "記憶法術",
+  "法術塑形",
+  "法術塑形（塑能子職）"
+]);
+
   const BARBARIAN_CUSTOM_OPTIONS = Object.freeze([
     {
       mode: "bonus", level: 1, label: "等級 1：狂暴",
@@ -895,6 +952,32 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
     }));
 }
 
+  function getWarlockCustomEntries(mode) {
+  if (document.getElementById("class")?.value !== "warlock") return [];
+  const level = getCharacterLevel();
+  return WARLOCK_CUSTOM_OPTIONS
+    .filter(option => option.mode === mode && level >= option.level)
+    .map(option => ({
+      ...option,
+      key: `dynamic-${mode}-warlock-curated-${option.id}`,
+      source: FEATURE_SOURCE_LABELS.class,
+      dynamic: true
+    }));
+}
+
+function getWizardCustomEntries(mode) {
+  if (document.getElementById("class")?.value !== "wizard") return [];
+  const level = getCharacterLevel();
+  return WIZARD_CUSTOM_OPTIONS
+    .filter(option => option.mode === mode && level >= option.level)
+    .map(option => ({
+      ...option,
+      key: `dynamic-${mode}-wizard-curated-${option.id}`,
+      source: FEATURE_SOURCE_LABELS.class,
+      dynamic: true
+    }));
+}
+
   function getBarbarianCustomEntries(mode) {
     if (document.getElementById("class")?.value !== "barbarian") return [];
     const level = getCharacterLevel();
@@ -1084,6 +1167,8 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
       .filter(entry => selectedClass !== "monk" || !MONK_CURATED_FEATURE_LABELS.has(entry.label))
       .filter(entry => selectedClass !== "paladin" || !PALADIN_CURATED_FEATURE_LABELS.has(entry.label))
       .filter(entry => selectedClass !== "rogue" || !ROGUE_CURATED_FEATURE_LABELS.has(entry.label))
+      .filter(entry => selectedClass !== "warlock" || !WARLOCK_CURATED_FEATURE_LABELS.has(entry.label))
+      .filter(entry => selectedClass !== "wizard" || !WIZARD_CURATED_FEATURE_LABELS.has(entry.label))
       .filter(entry => selectedClass !== "barbarian" || !BARBARIAN_CURATED_FEATURE_LABELS.has(entry.label))
       .filter(entry => selectedClass !== "ranger" || !RANGER_CURATED_FEATURE_LABELS.has(entry.label))
       .filter(entry => selectedClass !== "druid" || !DRUID_CURATED_FEATURE_LABELS.has(entry.label))
@@ -1201,10 +1286,10 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
     if (mode !== "action" && mode !== "bonus" && mode !== "reaction" && mode !== "movement") return [];
     const entries = [
       ...(mode === "action"
-        ? [...getBarbarianRecklessAttackEntries(mode), ...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getPaladinCustomEntries(mode), ...getRogueCustomEntries(mode), ...getRangerCustomEntries(mode), ...getClericCustomEntries(mode), ...getDruidCustomEntries(mode), ...getFighterCustomEntries(mode)]
+        ? [...getBarbarianRecklessAttackEntries(mode), ...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getPaladinCustomEntries(mode), ...getRogueCustomEntries(mode), ...getWarlockCustomEntries(mode), ...getWizardCustomEntries(mode), ...getRangerCustomEntries(mode), ...getClericCustomEntries(mode), ...getDruidCustomEntries(mode), ...getFighterCustomEntries(mode)]
         : mode === "movement"
-          ? [...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getPaladinCustomEntries(mode), ...getRogueCustomEntries(mode), ...getRangerCustomEntries(mode), ...getClericCustomEntries(mode), ...getDruidCustomEntries(mode), ...getFighterCustomEntries(mode)]
-          : [...getFeatureEntries(mode), ...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getPaladinCustomEntries(mode), ...getRogueCustomEntries(mode), ...getRangerCustomEntries(mode), ...getClericCustomEntries(mode), ...getDruidCustomEntries(mode), ...getFighterCustomEntries(mode)]),
+          ? [...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getPaladinCustomEntries(mode), ...getRogueCustomEntries(mode), ...getWarlockCustomEntries(mode), ...getWizardCustomEntries(mode), ...getRangerCustomEntries(mode), ...getClericCustomEntries(mode), ...getDruidCustomEntries(mode), ...getFighterCustomEntries(mode)]
+          : [...getFeatureEntries(mode), ...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getPaladinCustomEntries(mode), ...getRogueCustomEntries(mode), ...getWarlockCustomEntries(mode), ...getWizardCustomEntries(mode), ...getRangerCustomEntries(mode), ...getClericCustomEntries(mode), ...getDruidCustomEntries(mode), ...getFighterCustomEntries(mode)]),
       ...getTabletopFeatRuleEntries(mode),
       ...getRaceActionEntries(mode),
       ...getToolProficiencyEntries(mode),
