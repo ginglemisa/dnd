@@ -336,6 +336,41 @@ const SPECIAL_FEATURE_RULES = Object.freeze({
     "額外攻擊"
   ]);
 
+  const ROGUE_CUSTOM_OPTIONS = Object.freeze([
+    {
+      id: "sneak-attack",
+      mode: "action",
+      level: 1,
+      label: "等級 1：偷襲",
+      description: getRogueSneakAttackDescription
+    },
+    {
+      id: "fast-hands",
+      mode: "bonus",
+      level: 3,
+      label: "等級 3：快手",
+      description: "你可用附贈動作進行以下其中一項：\n\n- 巧手：做敏捷（巧手）檢定來開鎖、解除陷阱或扒竊。\n- 使用物品：執行使用動作，或用魔法動作啟動需要該動作的魔法物品。"
+    },
+    {
+      id: "steady-aim",
+      mode: "bonus",
+      level: 3,
+      label: "等級 3：手穩就準",
+      description: "附贈動作啟動後，你本回合下一次攻擊檢定有優勢。\n\n但你必須在本回合尚未移動，且啟動後速度變為 0（直到回合結束）。"
+    }
+  ]);
+
+  const ROGUE_CURATED_FEATURE_LABELS = new Set([
+    ...ROGUE_CUSTOM_OPTIONS.map(option => option.label),
+    "偷襲",
+    "快手",
+    "快手（妙手子職）",
+    "等級 3：快手（妙手子職）",
+    "手穩就準",
+    "靈巧打擊",
+    "等級 5：靈巧打擊"
+  ]);
+
   const BARBARIAN_CUSTOM_OPTIONS = Object.freeze([
     {
       mode: "bonus", level: 1, label: "等級 1：狂暴",
@@ -627,6 +662,31 @@ ${formatDiceWithModifier("1d10", dexterityModifier + level)}
 你可無需動作提前結束；不再持有該武器或再次使用此能力時也會結束。`;
   }
 
+  function getRogueSneakAttackDescription() {
+  const level = getCharacterLevel();
+  const sneakAttackDice = Math.max(1, Math.ceil(level / 2));
+  const base = `你每回合可用靈巧或遠程武器觸發 1 次偷襲，造成額外 ${sneakAttackDice}d6 傷害。
+
+偷襲必須滿足以下條件其中之一：
+
+- 這次攻擊有優勢，或
+- 目標 5 呎內有至少 1 名未失能的友方，且你的攻擊沒有劣勢。`;
+  if (level < 5) return base;
+  const dexterityModifier = getAbilityModifier("dex") ?? 0;
+  const saveDc = 8 + getProficiencyBonus() + dexterityModifier;
+  return `${base}
+
+等級 5：靈巧打擊
+
+當你造成偷襲傷害時，可套用 1 種靈巧打擊效果。
+
+每種效果都要先放棄部分偷襲傷害骰；若需要豁免，DC = ${saveDc}。
+
+淬毒（消耗 1d6）：目標體質豁免失敗則中毒 1 分鐘；其每回合結束可再豁免，成功即結束。使用此效果時你需攜帶制毒師工具。
+摔絆（消耗 1d6）：大型或更小目標敏捷豁免失敗則倒地。
+撤步（消耗 1d6）：攻擊後你可立刻移動至多一半速度，且不引發藉機攻擊。`;
+}
+
   function getBarbarianRageDamageBonus() {
     const level = getCharacterLevel();
     if (level >= 16) return 4;
@@ -821,6 +881,20 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
       }));
   }
 
+  function getRogueCustomEntries(mode) {
+  if (document.getElementById("class")?.value !== "rogue") return [];
+  const level = getCharacterLevel();
+  return ROGUE_CUSTOM_OPTIONS
+    .filter(option => option.mode === mode && level >= option.level)
+    .map(option => ({
+      ...option,
+      key: `dynamic-${mode}-rogue-curated-${option.id}`,
+      source: FEATURE_SOURCE_LABELS.class,
+      description: typeof option.description === "function" ? option.description() : option.description,
+      dynamic: true
+    }));
+}
+
   function getBarbarianCustomEntries(mode) {
     if (document.getElementById("class")?.value !== "barbarian") return [];
     const level = getCharacterLevel();
@@ -1009,6 +1083,7 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
       .filter(entry => getCharacterLevel() >= getRequiredLevel(entry))
       .filter(entry => selectedClass !== "monk" || !MONK_CURATED_FEATURE_LABELS.has(entry.label))
       .filter(entry => selectedClass !== "paladin" || !PALADIN_CURATED_FEATURE_LABELS.has(entry.label))
+      .filter(entry => selectedClass !== "rogue" || !ROGUE_CURATED_FEATURE_LABELS.has(entry.label))
       .filter(entry => selectedClass !== "barbarian" || !BARBARIAN_CURATED_FEATURE_LABELS.has(entry.label))
       .filter(entry => selectedClass !== "ranger" || !RANGER_CURATED_FEATURE_LABELS.has(entry.label))
       .filter(entry => selectedClass !== "druid" || !DRUID_CURATED_FEATURE_LABELS.has(entry.label))
@@ -1126,10 +1201,10 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
     if (mode !== "action" && mode !== "bonus" && mode !== "reaction" && mode !== "movement") return [];
     const entries = [
       ...(mode === "action"
-        ? [...getBarbarianRecklessAttackEntries(mode), ...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getPaladinCustomEntries(mode), ...getRangerCustomEntries(mode), ...getClericCustomEntries(mode), ...getDruidCustomEntries(mode), ...getFighterCustomEntries(mode)]
+        ? [...getBarbarianRecklessAttackEntries(mode), ...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getPaladinCustomEntries(mode), ...getRogueCustomEntries(mode), ...getRangerCustomEntries(mode), ...getClericCustomEntries(mode), ...getDruidCustomEntries(mode), ...getFighterCustomEntries(mode)]
         : mode === "movement"
-          ? [...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getPaladinCustomEntries(mode), ...getRangerCustomEntries(mode), ...getClericCustomEntries(mode), ...getDruidCustomEntries(mode), ...getFighterCustomEntries(mode)]
-          : [...getFeatureEntries(mode), ...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getPaladinCustomEntries(mode), ...getRangerCustomEntries(mode), ...getClericCustomEntries(mode), ...getDruidCustomEntries(mode), ...getFighterCustomEntries(mode)]),
+          ? [...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getPaladinCustomEntries(mode), ...getRogueCustomEntries(mode), ...getRangerCustomEntries(mode), ...getClericCustomEntries(mode), ...getDruidCustomEntries(mode), ...getFighterCustomEntries(mode)]
+          : [...getFeatureEntries(mode), ...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode), ...getPaladinCustomEntries(mode), ...getRogueCustomEntries(mode), ...getRangerCustomEntries(mode), ...getClericCustomEntries(mode), ...getDruidCustomEntries(mode), ...getFighterCustomEntries(mode)]),
       ...getTabletopFeatRuleEntries(mode),
       ...getRaceActionEntries(mode),
       ...getToolProficiencyEntries(mode),

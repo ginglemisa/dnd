@@ -1739,6 +1739,26 @@
     };
   }
 
+  function getRogueUncannyDodgeOverviewEntry() {
+  const selectedClass = document.getElementById("class")?.value || "";
+  const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
+  if (selectedClass !== "rogue" || characterLevel < 5) return null;
+  return {
+    label: "直覺閃避",
+    detail: "當你看見攻擊者命中你時，可用反應讓傷害減半（捨去小數）。"
+  };
+}
+
+function getRogueReliableTalentEntry() {
+  const selectedClass = document.getElementById("class")?.value || "";
+  const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
+  if (selectedClass !== "rogue" || characterLevel < 7) return null;
+  return {
+    label: "可靠才能",
+    detail: "當你使用有熟練的技能或工具進行屬性檢定時，可以將d20骰中9或以下的結果視為10。"
+  };
+}
+
   function getCharacterDefenseEntries() {
     const race = getSelectedRace();
     const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
@@ -1808,6 +1828,8 @@
         detail: "敏捷豁免原可使傷害減半時：成功則不受傷害，失敗則傷害減半；失能時無效。"
       });
     }
+    const rogueReliableTalent = getRogueReliableTalentEntry();
+    if (rogueReliableTalent) entries.push(rogueReliableTalent);
     if (hasSelectedFeat("臨陣施法")) {
       entries.push({ label: "穩住專注", detail: "維持專注的體質豁免丟二取高。" });
     }
@@ -1834,6 +1856,8 @@
     if (hasSelectedFeat("醫療兵")) {
       entries.push({ label: "醫療兵", detail: "法術或照護的恢復骰出 1 可重丟一次。" });
     }
+    const rogueUncannyDodge = getRogueUncannyDodgeOverviewEntry();
+    if (rogueUncannyDodge) entries.push(rogueUncannyDodge);
     const monkSlowFall = getMonkSlowFallOverviewEntry();
     if (monkSlowFall) entries.push(monkSlowFall);
     const paladinAura = getPaladinAuraOverviewEntry();
