@@ -265,6 +265,10 @@ const SPECIAL_FEATURE_RULES = Object.freeze({
     { id: "martial-arts-action", mode: "action", level: 1, label: "等級 1：武藝", description: getMonkMartialArtsDescription },
     { id: "martial-arts-bonus", mode: "bonus", level: 1, label: "等級 1：武藝", description: getMonkMartialArtsDescription },
     { id: "focused-aim", mode: "bonus", level: 2, label: "等級 2：聚氣凝神", description: getMonkFocusDescription },
+    {
+      id: "uncanny-metabolism", mode: "action", level: 2, label: "等級 2：吐故納新",
+      description: "擲先攻時，你可回滿已消耗的專注點，並回復「武藝骰 + 武僧等級」生命值。\n\n此能力每次長休只能用 1 次。"
+    },
     { id: "deflect-attacks", mode: "reaction", level: 3, label: "等級 3：撥擋化勁", description: getMonkDeflectAttacksDescription },
     { id: "slow-fall", mode: "reaction", level: 4, label: "等級 4：輕身墜", description: getMonkSlowFallDescription },
     {
@@ -378,6 +382,22 @@ const SPECIAL_FEATURE_RULES = Object.freeze({
       level: 2,
       label: "等級 2：秘法回流",
       description: "你進行 1 分鐘儀式，回復 1 個已消耗的法術位，長休後恢復。"
+    },
+    {
+      id: "thirsting-blade",
+      mode: "action",
+      level: 5,
+      invocation: "饑渴魔刃",
+      label: "饑渴魔刃",
+      description: "先決條件：契術師等級 5+,刃之魔契祈喚\n你在使用契約武器時獲得額外攻擊：在你回合以該武器執行攻擊動作時，可攻擊 2 次而非 1 次。"
+    },
+    {
+      id: "eldritch-smite",
+      mode: "action",
+      level: 5,
+      invocation: "魔能斬擊",
+      label: "魔能斬擊",
+      description: "先決條件：契術師等級 5+,刃之魔契祈喚\n每回合一次，當你用契約武器命中生物時，可消耗 1 個契術師法術位，造成額外力場傷害：1d8＋該法術位每環階再加 1d8，並可使大型或更小目標倒地。"
     },
     {
       id: "dark-ones-own-luck",
@@ -528,6 +548,14 @@ const SPECIAL_FEATURE_RULES = Object.freeze({
         const healingTotal = rawLevel ? String(getCharacterLevel() * 5) : "牧師等級 × 5";
         return `這會消耗引導神力，視為魔法動作。\n\n你展示聖徽，分配總共「${healingTotal}」點治療量給 30 呎內任意數量重傷生物。\n\n此特性不能把目標回到超過其生命值上限一半。`;
       }
+    },
+    {
+      id: "divine-strike",
+      mode: "action",
+      level: 7,
+      choiceId: "cleric-blessed-strikes-divine-strike",
+      label: "等級 7：神聖打擊",
+      description: "在你的每個回合中一次，當你使用武器發動攻擊檢定並命中一個生物時，可以使目標額外受到1d8黯蝕或光耀傷害（由你選擇）。"
     }
   ]);
 
@@ -557,6 +585,14 @@ const SPECIAL_FEATURE_RULES = Object.freeze({
     {
       mode: "action", level: 5, label: "等級 5：野性復甦",
       description: "每回合一次，若你沒有剩餘荒野形態次數：\n\n- 可消耗 1 個法術位，立刻回復 1 次荒野形態，無需動作。\n\n另外：\n\n- 可消耗 1 次荒野形態，回復 1 個 1 環法術位，無需動作。\n- 回復法術位的用法每次長休前只能使用 1 次。"
+    },
+    {
+      id: "primal-strike",
+      mode: "action",
+      level: 7,
+      choiceId: "druid-elemental-fury-primal-strike",
+      label: "等級 7：原初打擊",
+      description: "在你的每個回合中一次，當你使用武器或荒野形態的野獸形態發動攻擊並命中一個生物時，可以使目標額外受到1d8冷凍、火焰、閃電或雷鳴傷害（由你選擇）。"
     }
   ]);
 
@@ -952,11 +988,19 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
     }));
 }
 
+  function hasSelectedEldritchInvocation(invocationName) {
+    if (!invocationName) return true;
+    return Array.from(
+      document.querySelectorAll("#eldritch-invocations-output input[data-invocation-name]:checked")
+    ).some(input => input.dataset.invocationName === invocationName);
+  }
+
   function getWarlockCustomEntries(mode) {
     if (document.getElementById("class")?.value !== "warlock") return [];
     const level = getCharacterLevel();
     return WARLOCK_CUSTOM_OPTIONS
       .filter(option => option.mode === mode && level >= option.level)
+      .filter(option => !option.invocation || hasSelectedEldritchInvocation(option.invocation))
       .map(option => ({
         ...option,
         key: `dynamic-${mode}-warlock-curated-${option.id}`,
@@ -1010,6 +1054,7 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
     const level = getCharacterLevel();
     return CLERIC_CUSTOM_OPTIONS
       .filter(option => option.mode === mode && level >= option.level)
+      .filter(option => !option.choiceId || document.getElementById(option.choiceId)?.checked)
       .map(option => ({
         ...option,
         key: `dynamic-${mode}-cleric-${stableKeyHash(option.label)}`,
@@ -1024,6 +1069,7 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
     const level = getCharacterLevel();
     return DRUID_CUSTOM_OPTIONS
       .filter(option => option.mode === mode && level >= option.level)
+      .filter(option => !option.choiceId || document.getElementById(option.choiceId)?.checked)
       .map(option => ({
         ...option,
         key: `dynamic-${mode}-druid-${stableKeyHash(option.label)}`,
