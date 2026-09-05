@@ -548,6 +548,14 @@ const SPECIAL_FEATURE_RULES = Object.freeze({
         const healingTotal = rawLevel ? String(getCharacterLevel() * 5) : "牧師等級 × 5";
         return `這會消耗引導神力，視為魔法動作。\n\n你展示聖徽，分配總共「${healingTotal}」點治療量給 30 呎內任意數量重傷生物。\n\n此特性不能把目標回到超過其生命值上限一半。`;
       }
+    },
+    {
+      id: "divine-strike",
+      mode: "action",
+      level: 7,
+      choiceId: "cleric-blessed-strikes-divine-strike",
+      label: "等級 7：神聖打擊",
+      description: "在你的每個回合中一次，當你使用武器發動攻擊檢定並命中一個生物時，可以使目標額外受到1d8黯蝕或光耀傷害（由你選擇）。"
     }
   ]);
 
@@ -577,6 +585,14 @@ const SPECIAL_FEATURE_RULES = Object.freeze({
     {
       mode: "action", level: 5, label: "等級 5：野性復甦",
       description: "每回合一次，若你沒有剩餘荒野形態次數：\n\n- 可消耗 1 個法術位，立刻回復 1 次荒野形態，無需動作。\n\n另外：\n\n- 可消耗 1 次荒野形態，回復 1 個 1 環法術位，無需動作。\n- 回復法術位的用法每次長休前只能使用 1 次。"
+    },
+    {
+      id: "primal-strike",
+      mode: "action",
+      level: 7,
+      choiceId: "druid-elemental-fury-primal-strike",
+      label: "等級 7：原初打擊",
+      description: "在你的每個回合中一次，當你使用武器或荒野形態的野獸形態發動攻擊並命中一個生物時，可以使目標額外受到1d8冷凍、火焰、閃電或雷鳴傷害（由你選擇）。"
     }
   ]);
 
@@ -800,7 +816,7 @@ ${formatDiceWithModifier("1d10", dexterityModifier + level)}
       description = description.replace(/：\s*\+1d8 傷害；或將/u, "：\n\n1️⃣+1d8 傷害\n2️⃣將");
     }
     if (rule.numberedTriggers) {
-      description = description.replace(/：進行「撤離」行動；攻擊命中他人。?$/u, "：\n\n1️⃣進行「撤離」行動的目標\n2️⃣攻擊命中他人的目標。");
+      description = description.replace(/：進行「撤離」行動；攻擊命中他人。?$/u, "：\n\n1️⃣進行「撤離」行動的目標\n2️⃣攻擊命中他人的目標。")
     }
     return description;
   }
@@ -1038,6 +1054,7 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
     const level = getCharacterLevel();
     return CLERIC_CUSTOM_OPTIONS
       .filter(option => option.mode === mode && level >= option.level)
+      .filter(option => !option.choiceId || document.getElementById(option.choiceId)?.checked)
       .map(option => ({
         ...option,
         key: `dynamic-${mode}-cleric-${stableKeyHash(option.label)}`,
@@ -1052,6 +1069,7 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
     const level = getCharacterLevel();
     return DRUID_CUSTOM_OPTIONS
       .filter(option => option.mode === mode && level >= option.level)
+      .filter(option => !option.choiceId || document.getElementById(option.choiceId)?.checked)
       .map(option => ({
         ...option,
         key: `dynamic-${mode}-druid-${stableKeyHash(option.label)}`,
