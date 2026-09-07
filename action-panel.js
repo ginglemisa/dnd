@@ -92,34 +92,130 @@
   });
 
   const TABLETOP_FEAT_ACTION_RULES = Object.freeze([
+    { feat: "臨陣施法", level: 4, modes: ["reaction"], label: "迎擊法術", ruleNames: ["迎擊法術"], legacyKeys: { reaction: "dynamic-reaction-feat-dkui7n" } },
+    { feat: "尋物好手", level: 4, modes: ["bonus"], label: "信手拈來", ruleNames: ["信手拈來"], legacyKeys: { bonus: "dynamic-bonus-feat-a4ncv1" } },
     { feat: "醫療兵", modes: ["action"], label: "急救處置", ruleNames: ["急救處置"], proficiencyValue: true },
     { feat: "醫療兵", modes: ["action"], label: "穩定療效", ruleNames: ["穩定療效"] },
-    { feat: "擒抱者", modes: ["action"], label: "重拳擒抱", ruleNames: ["重拳擒抱"] },
-    { feat: "擒抱者", modes: ["movement"], label: "迅捷摔技", ruleNames: ["迅捷摔技"] },
-    { feat: "衝鋒猛擊", modes: ["movement"], label: "加速疾走", ruleNames: ["加速疾走"] },
-    { feat: "衝鋒猛擊", modes: ["action", "movement"], label: "直線衝擊", ruleNames: ["直線衝擊"], numberedChoices: true },
-    { feat: "雙持追擊", modes: ["action"], label: "雙持追擊", ruleNames: ["雙持追擊", "傷害調整"], quickMasteryLabel: true },
-    { feat: "雙持追擊", modes: ["action"], label: "快速換手", ruleNames: ["快速換手"] },
-    { feat: "最佳旅伴", modes: ["action"], label: "妙語如珠", ruleNames: ["妙語如珠"] },
-    { feat: "封鎖者", modes: ["reaction"], label: "封鎖者", ruleNames: ["封鎖者"], numberedTriggers: true },
-    { feat: "迅捷步法", modes: ["action", "movement"], label: "跨越險地", ruleNames: ["跨越險地"] }
+    { feat: "擒抱者", level: 4, modes: ["action"], label: "重拳擒抱", ruleNames: ["重拳擒抱"] },
+    { feat: "擒抱者", level: 4, modes: ["movement"], label: "迅捷摔技", ruleNames: ["迅捷摔技"] },
+    { feat: "衝鋒猛擊", level: 4, modes: ["movement"], label: "加速疾走", ruleNames: ["加速疾走"] },
+    { feat: "衝鋒猛擊", level: 4, modes: ["action", "movement"], label: "直線衝擊", ruleNames: ["直線衝擊"], numberedChoices: true },
+    { feat: "雙持追擊", level: 4, modes: ["action", "bonus"], legacyKeys: { bonus: "dynamic-bonus-feat-rklusa" }, label: "雙持追擊", ruleNames: ["雙持追擊", "傷害調整"], quickMasteryLabel: true },
+    { feat: "雙持追擊", level: 4, modes: ["action"], label: "快速換手", ruleNames: ["快速換手"] },
+    { feat: "最佳旅伴", level: 4, modes: ["action"], label: "妙語如珠", ruleNames: ["妙語如珠"] },
+    { feat: "封鎖者", level: 4, modes: ["reaction"], label: "封鎖者", ruleNames: ["封鎖者"], numberedTriggers: true },
+    { feat: "迅捷步法", level: 4, modes: ["action", "movement"], label: "跨越險地", ruleNames: ["跨越險地"] }
   ]);
 
-  const GOLIATH_ANCESTRY_FEATURES = Object.freeze({
-    cloud: "雲遊四方",
-    fire: "星火燎原",
-    frost: "凜若冰霜",
-    hill: "地動山搖",
-    stone: "堅若磐石",
-    storm: "轟雷掣電"
-  });
-  const GOLIATH_ANCESTRY_FEATURE_NAMES = new Set(Object.values(GOLIATH_ANCESTRY_FEATURES));
+  const INVOCATION_ACTION_RULES = Object.freeze([
+    { name: "刃之魔契", modes: ["bonus"], level: 1 },
+    { name: "鏈之魔契", modes: ["action"], level: 1 },
+    { name: "共視感官", modes: ["bonus"], level: 5 },
+    { name: "鏈主賦能", modes: ["bonus", "reaction"], level: 5, requires: "鏈之魔契" }
+  ]);
 
-  const INVOCATION_OPTIONS_BY_MODE = Object.freeze({
-    action: new Set(["鏈之魔契"]),
-    bonus: new Set(["刃之魔契", "共視感官", "鏈主賦能"]),
-    reaction: new Set(["鏈主賦能"])
+  // Timing and requirements are explicit. Description IDs only select display copy
+  // from canonical class data; headings and prose never decide availability.
+  // Each class currently has one fixed SRD subclass, acquired at level 3.
+  // Existing keys are persisted player hide preferences: keep them when editing labels.
+  const CLASS_ACTION_RULES = Object.freeze({
+    barbarian: Object.freeze([
+      { id: "reckless-attack", mode: "action", level: 2, label: "魯莽", key: "dynamic-action-class-8jjnkp", descriptionId: "barbarian-reckless-attack" },
+      { id: "rage", mode: "bonus", level: 1, label: "等級 1：狂暴", key: "dynamic-bonus-barbarian-3te1cj", description: () => `你可以用附贈動作進入狂暴（未穿重甲時）。
+
+狂暴期間：
+
+- 你對鈍擊,穿刺,揮砍傷害有抗性。
+- 你用力量造成的傷害 +${getBarbarianRageDamageBonus()}
+- 你的力量檢定與力量豁免有優勢。
+- 你不能施法，也不能維持專注。
+
+持續時間：到你下個回合結束。若要延長，每回合至少做一項：
+
+- 對敵人做攻擊檢定，或
+- 讓敵人做豁免檢定，或
+- 再用一次附贈動作延長狂暴。` },
+      { id: "frenzy", mode: "action", level: 3, label: "等級 3：狂怒（狂戰子職）", key: "dynamic-action-barbarian-ekb4kt", description: () => `在狂暴中使用魯莽攻擊力量命中該回合第一個目標時額外造成 ${getBarbarianRageDamageBonus()}d6 傷害。` },
+      { id: "extra-attack", mode: "action", level: 5, label: "等級 5：額外攻擊", key: "dynamic-action-barbarian-113ebtz", description: "你在自己回合使用攻擊動作時，可以攻擊 2 次。" },
+      { id: "fast-movement", mode: "movement", level: 5, label: "等級 5：快速移動", key: "dynamic-movement-barbarian-18h2p2v", description: "若你未穿重甲，速度 +10 呎。" },
+      { id: "instinctive-pounce", mode: "movement", level: 7, label: "等級 7：直覺猛撲", key: "dynamic-movement-barbarian-1iw4zkg", description: "當你以附贈動作進入狂暴時，可以在該附贈動作中移動至多等同於你速度一半的距離。" },
+      { id: "instinctive-pounce", mode: "bonus", level: 7, label: "等級 7：直覺猛撲", key: "dynamic-bonus-barbarian-1iw4zkg", description: "當你以附贈動作進入狂暴時，可以在該附贈動作中移動至多等同於你速度一半的距離。" },
+    ]),
+    monk: Object.freeze([
+      { id: "focus", mode: "bonus", level: 2, label: "等級 2：聚氣凝神", key: "dynamic-bonus-class-ricpmu", description: "你可使用「專注點」施展武僧技巧。專注點上限見武僧特性表，短休或長休後全回復。\n\n你一開始有 3 種用法：\n\n- 疾風連擊（1 點）：附贈動作打 2 次徒手。\n- 閃轉騰挪：附贈動作可撤離；再花 1 點可同時撤離 + 回避。\n- 疾步如風：附贈動作可疾走；再花 1 點可同時撤離 + 疾走，且本回合跳躍距離加倍。\n\n若特性要求豁免，DC = 8 + 熟練加值 + 感知調整值。" },
+      { id: "open-hand-technique", mode: "bonus", level: 3, label: "等級 3：散打技巧", key: "dynamic-bonus-class-1kcppo0", description: "當你用「疾風連擊」命中時，可讓目標承受 1 種效果：\n\n- 截擊：到你下回合結束前，目標不能發動借機攻擊。\n- 擊退：目標力量豁免失敗則被推離你最多 15 呎。\n- 擊倒：目標敏捷豁免失敗則倒地。" },
+      { id: "stunning-strike", mode: "action", level: 5, label: "等級 5：震懾擊", key: "dynamic-action-class-1g9j8ui", description: "每回合 1 次，當你用武僧武器或徒手命中時，可花 1 點專注點發動震懾打擊。 目標需做體質豁免：\n  - 失敗：震懾到你下回合開始。\n  - 成功：速度減半，且到你下回合開始前，下一次對它的攻擊有優勢。" },
+      { id: "martial-arts", mode: "bonus", level: 1, label: "等級 1：武藝", key: "dynamic-bonus-class-muonvc", descriptionId: "monk-martial-arts" },
+      { id: "deflect-attacks", mode: "reaction", level: 3, label: "等級 3：撥擋化勁", key: "dynamic-reaction-class-5l2yua", descriptionId: "monk-deflect-attacks" },
+      { id: "slow-fall", mode: "reaction", level: 4, label: "等級 4：輕身墜", key: "dynamic-reaction-class-1l1lc9s", descriptionId: "monk-slow-fall" },
+      { id: "wholeness-of-body", mode: "bonus", level: 6, label: "等級 6：混元體", key: "dynamic-bonus-class-3mzm48", descriptionId: "monk-wholeness-of-body" }
+    ]),
+    bard: Object.freeze([
+      { id: "inspiration", mode: "bonus", level: 1, label: "等級 1：吟遊詩人激勵", key: "dynamic-bonus-class-r7asqs", description: () => `選擇 1 名 60 呎內看得到你或聽得到你的生物，使其獲得 1 顆激勵骰（d${getCharacterLevel() >= 5 ? 8 : 6}）。
+
+- 目標在 d20 檢定失敗後，可擲激勵骰並加到結果上。
+- 激勵骰使用後消耗，未使用則持續 1 小時。
+- 同一生物同時只能持有 1 顆你的激勵骰。
+- 可用次數＝魅力調整值（至少 1 次），長休後全部恢復。` },
+      { id: "cutting-words", mode: "reaction", level: 3, label: "等級 3：語出驚人", key: "dynamic-reaction-class-1y0uv3b", descriptionId: "bard-cutting-words" },
+      { id: "countercharm", mode: "reaction", level: 7, label: "等級 7：反迷惑", key: "dynamic-reaction-class-ul9dq", descriptionId: "bard-countercharm" }
+    ]),
+    cleric: Object.freeze([
+      { id: "channel-divinity", mode: "action", level: 2, label: "等級 2：引導神力", descriptionId: "cleric-channel-divinity" },
+      { id: "preserve-life", mode: "action", level: 3, label: "等級 3：維持生命（生命子職）", descriptionId: "cleric-preserve-life" }
+    ]),
+    druid: Object.freeze([
+      { id: "wild-shape", mode: "bonus", level: 2, label: "等級 2：荒野形態", key: "dynamic-bonus-class-3u4zp1", descriptionId: "druid-wild-shape" },
+      { id: "wild-companion", mode: "action", level: 2, label: "等級 2：荒野夥伴", descriptionId: "druid-wild-companion" },
+      { id: "lands-aid", mode: "action", level: 3, label: "等級 3：大地之援（大地子職）", descriptionId: "druid-lands-aid" }
+    ]),
+    fighter: Object.freeze([
+      { id: "second-wind", mode: "bonus", level: 1, label: "等級 1：回氣", key: "dynamic-bonus-class-fj2om2", descriptionId: "fighter-second-wind" },
+      { id: "action-surge", mode: "action", level: 2, label: "等級 2：動作如潮", descriptionId: "fighter-action-surge" },
+      { id: "tactical-shift", mode: "bonus", level: 5, label: "等級 5：戰術轉移", key: "dynamic-bonus-class-1endlro", descriptionId: "fighter-tactical-shift" }
+    ]),
+    paladin: Object.freeze([
+      { id: "lay-on-hands", mode: "bonus", level: 1, label: "等級 1：聖療", key: "dynamic-bonus-class-1ol2xxh", descriptionId: "paladin-lay-on-hands" },
+      { id: "divine-sense", mode: "bonus", level: 3, label: "神聖感知", key: "dynamic-bonus-class-1axs7np", descriptionId: "paladin-divine-sense" },
+      { id: "sacred-weapon", mode: "action", level: 3, label: "等級 3：祝聖武器（奉獻子職）", descriptionId: "paladin-sacred-weapon" }
+    ]),
+    rogue: Object.freeze([
+      { id: "cunning-action", mode: "bonus", level: 2, label: "等級 2：靈巧動作", key: "dynamic-bonus-class-1vms7ce", descriptionId: "rogue-cunning-action" },
+      { id: "fast-hands", mode: "bonus", level: 3, label: "等級 3：快手", key: "dynamic-bonus-class-84ttm1", descriptionId: "rogue-fast-hands" },
+      { id: "steady-aim", mode: "bonus", level: 3, label: "等級 3：手穩就準", key: "dynamic-bonus-class-kwgie8", descriptionId: "rogue-steady-aim" },
+      { id: "uncanny-dodge", mode: "reaction", level: 5, label: "等級 5：直覺閃避", key: "dynamic-reaction-class-5f9k5x", descriptionId: "rogue-uncanny-dodge" }
+    ]),
+    sorcerer: Object.freeze([
+      { id: "innate-sorcery", mode: "bonus", level: 1, label: "等級 1：天生術法", key: "dynamic-bonus-class-1lqwnvp", description: "你體內的魔力可被短暫解放。作為附贈動作啟動後，持續 1 分鐘並獲得：\n\n- 你的術士法術豁免 DC +1。\n- 你的術士法術攻擊檢定具有優勢。\n\n使用次數：2 次；長休後全回復。" },
+      { id: "font-of-magic", mode: "bonus", level: 2, label: "魔力泉湧", key: "dynamic-bonus-class-i5lemn", description: "你可運用術法點來啟動魔法效果。\n起始術法點為 2 點；高等級時依「術士特性」表提升。\n你持有的術法點不可超過目前等級上限；長休後全回復。\n\n你可使用以下轉換：\n- 將法術位轉為術法點：消耗 1 個法術位，獲得等同該環階的術法點，無需動作。\n- 創造法術位：以附贈動作消耗術法點換成法術位，且不能創造 6 環以上法術位。\n\n消耗與最低術士等級如下：\n1 環法術位消耗 2 點術法點，最低術士等級 2\n2 環法術位消耗 3 點，最低術士等級 3\n3 環法術位消耗 5 點，最低術士等級 5\n4 環法術位消耗 6 點，最低術士等級 7\n\n以此特性創造的法術位會在長休後消散。" },
+      { id: "sorcery-incarnate", mode: "bonus", level: 7, label: "等級 7：術法化身", key: "dynamic-bonus-class-1lfxnv8", descriptionId: "sorcerer-sorcery-incarnate" }
+    ]),
+    // Audited: ranger/wizard have no additional timed non-spell actions;
+    // warlock's selected invocations are resolved separately below.
+    ranger: Object.freeze([]),
+    warlock: Object.freeze([]),
+    wizard: Object.freeze([])
   });
+
+  const RACE_ACTION_RULES = Object.freeze([
+    { id: "breath", race: "dragonborn", level: 1, mode: "action", label: "吐息元素", key: "dynamic-action-race-1loctyz", description: getDragonbornBreathDescription },
+    { id: "fire-burn", race: "goliath", level: 1, mode: "action", label: "星火燎原", key: "dynamic-action-race-1vjg9hw", choiceId: "goliath-ancestry", choiceValue: "fire", description: "攻擊命中目標時增加 1d10 火焰傷害。" },
+    { id: "frost-chill", race: "goliath", level: 1, mode: "action", label: "凜若冰霜", key: "dynamic-action-race-cc167a", choiceId: "goliath-ancestry", choiceValue: "frost", ruleName: "凜若冰霜（霜巨人）" },
+    { id: "hill-tumble", race: "goliath", level: 1, mode: "action", label: "地動山搖", key: "dynamic-action-race-11249i9", choiceId: "goliath-ancestry", choiceValue: "hill", description: "攻擊命中大型以下的生物可令其陷入「倒地」狀態。" },
+    { id: "stone-endurance", race: "goliath", level: 1, mode: "reaction", label: "堅若磐石", key: "dynamic-reaction-race-16nfphm", choiceId: "goliath-ancestry", choiceValue: "stone", description: ()=>`受傷時可用反應扣除1d12 + ${getAbilityModifier('con') ?? '體質調整值'}傷害。` },
+    { id: "nimbleness", race: "halfling", level: 1, mode: "movement", label: "半身人靈巧", key: "dynamic-movement-race-hkw7d1", description: "可穿過體型比你大的生物\n不能停在同一格", tabletopOnly: true },
+    { id: "lucky", race: "halfling", level: 1, mode: "action", label: "吉運", key: "dynamic-action-race-1migdkt", description: "任何 D20 檢定中擲出 1 都可以重擲一次。", tabletopOnly: true },
+    { id: "naturally-stealthy", race: "halfling", level: 1, mode: "action", label: "天生善匿", key: "dynamic-action-race-150qsdc", description: "你可以在體型比你大的生物後方使用躲藏動作。", tabletopOnly: true },
+    { id: "naturally-stealthy", race: "halfling", level: 2, mode: "bonus", label: "天生善匿", className: "rogue", description: "你可以在體型比你大的生物後方使用躲藏動作。", tabletopOnly: true, key: "dynamic-bonus-race-150qsdc" },
+    { id: "draconic-flight", race: "dragonborn", level: 5, mode: "bonus", label: "等級 5：龍翔天際", key: "dynamic-bonus-race-1h4jffx", ruleName: "龍翔天際" },
+    { id: "stonecunning", race: "dwarf", level: 1, mode: "bonus", label: "石中精妙", key: "dynamic-bonus-race-m9n3bt", ruleName: "石中精妙" },
+    { id: "clockwork-device", race: "gnome", level: 1, mode: "bonus", label: "岩石侏儒", key: "dynamic-bonus-race-1ljlrzt", ruleName: "岩石侏儒", choiceId: "gnome-lineage", choiceValue: "rock_gnome" },
+    { id: "dismantle-device", race: "gnome", level: 1, mode: "action", label: "拆除發條裝置", ruleName: "岩石侏儒", choiceId: "gnome-lineage", choiceValue: "rock_gnome" },
+    { id: "cloud-jaunt", race: "goliath", level: 1, mode: "bonus", label: "雲遊四方", key: "dynamic-bonus-race-r7ggqg", ruleName: "雲遊四方（雲巨人）", choiceId: "goliath-ancestry", choiceValue: "cloud" },
+    { id: "storm-thunder", race: "goliath", level: 1, mode: "reaction", label: "轟雷掣電", key: "dynamic-reaction-race-4cc8u8", ruleName: "轟雷掣電（風暴巨人）", choiceId: "goliath-ancestry", choiceValue: "storm" },
+    { id: "large-form", race: "goliath", level: 5, mode: "bonus", label: "等級 5：巨化形體", key: "dynamic-bonus-race-1svsj4g", ruleName: "巨化形體" },
+    { id: "adrenaline-rush", race: "orc", level: 1, mode: "bonus", label: "熱血湧動", key: "dynamic-bonus-race-ydqmx5", ruleName: "熱血湧動", proficiencyValue: true }
+  ]);
 
   let currentMode = "action";
   let selectedOptionKey = "";
@@ -141,84 +237,6 @@
       .trim();
   }
 
-  function cleanFeatureTitle(value, fallback) {
-    const cleaned = String(value || "")
-      .replace(/^[-*•]\s*/, "")
-      .replace(/[：:]\s*$/, "")
-      .replace(/[－—-]\s*消耗\s*[：:]?[^）\n]+$/u, "")
-      .replace(/[（(](?:先決條件[^）)]*|[^）)]*子職|[^）)]*巨人|消耗[^）)]*|\s*\d+\s*點)[）)]\s*$/u, "")
-      .replace(/[\p{Extended_Pictographic}\p{Emoji_Modifier}\uFE0F]/gu, "")
-      .replace(/\s+/g, " ")
-      .trim();
-    return cleaned && cleaned.length <= 36 ? cleaned : fallback;
-  }
-
-  function isMeaningfulInlineTitle(value) {
-    const candidate = String(value || "").trim();
-    if (!candidate || candidate.length > 28) return false;
-    if (/(?:附贈|反應|[藉借]機攻擊)/u.test(candidate)) return false;
-    if (/^(?:施法時間|觸發|響應|效果|備註|使用方式|持續時間|聯結結束條件|你|你的|當|若|如果)/u.test(candidate)) return false;
-    return !/[。；，,]$/u.test(candidate);
-  }
-
-  function isStandaloneFeatureHeading(lines, index) {
-    const line = lines[index]?.trim() || "";
-    const previousLine = lines[index - 1]?.trim() || "";
-    if (!line || previousLine || /^[-*•\d]/u.test(line) || line.length > 48) return false;
-    if (NON_FEATURE_HEADINGS.has(line)) return false;
-    if (/[。；，,]$/u.test(line)) return false;
-    if (/(?:以下|用法|使用方式|持續時間|期間|結束條件|次數|回復|恢復)/u.test(line)) return false;
-    return true;
-  }
-
-  function findFeatureTitle(lines, matchIndex, sourceLabel) {
-    const matchedLine = lines[matchIndex] || "";
-    const inlineHeading = matchedLine.match(/^[-*•]?\s*(?:等級\s*\d+\s*[：:]\s*)?([^：:]{1,36})[：:]/u)?.[1];
-    if (isMeaningfulInlineTitle(inlineHeading)) {
-      return cleanFeatureTitle(inlineHeading, `${sourceLabel}能力`);
-    }
-
-    const earliestIndex = Math.max(0, matchIndex - 60);
-    for (let index = matchIndex; index >= earliestIndex; index -= 1) {
-      const line = lines[index]?.trim();
-      if (!line) continue;
-      if (/^等級\s*\d+\s*[：:]\s*.{1,36}$/u.test(line)) {
-        return cleanFeatureTitle(line, `${sourceLabel}能力`);
-      }
-      if (index < matchIndex && isStandaloneFeatureHeading(lines, index)) return cleanFeatureTitle(line, `${sourceLabel}能力`);
-    }
-
-    return `${sourceLabel}能力`;
-  }
-
-  function relevantParagraph(lines, matchIndex) {
-    let start = matchIndex;
-    let end = matchIndex;
-    
-    while (
-  start > 0 &&
-  lines[start - 1].trim() &&
-  !/^等級\s*\d+\s*[：:]/u.test(lines[start - 1].trim())
-) {
-  start -= 1;
-}
-    
-    while (
-  end + 1 < lines.length &&
-  lines[end + 1].trim() &&
-  !/^等級\s*\d+\s*[：:]/u.test(lines[end + 1].trim())
-) {
-  end += 1;
-}
-    
-    const paragraph = lines.slice(start, end + 1).map(line => line.trim()).filter(Boolean).join("\n");
-    if (paragraph.length <= 760) return paragraph;
-
-    const compactStart = Math.max(start, matchIndex - 1);
-    const compactEnd = Math.min(end, matchIndex + 4);
-    return lines.slice(compactStart, compactEnd + 1).map(line => line.trim()).filter(Boolean).join("\n");
-  }
-
   function stableKeyHash(value) {
     let hash = 2166136261;
     for (const character of String(value)) {
@@ -227,99 +245,6 @@
     }
     return (hash >>> 0).toString(36);
   }
-
-  // These are deliberate one-to-one metadata rules for features whose source
-  // wording does not expose its level or selection requirement to the extractor.
-const SPECIAL_FEATURE_RULES = Object.freeze({
-  "龍翔天際": { label: "等級 5：龍翔天際", requiredLevel: 5 },
-  "岩石侏儒": { gnomeLineage: "rock_gnome" },
-  "巨化形體": { label: "等級 5：巨化形體", requiredLevel: 5 },
-  "吟遊詩人激勵": {
-    description: () => `選擇 1 名 60 呎內看得到你或聽得到你的生物，使其獲得 1 顆激勵骰（d${getCharacterLevel() >= 5 ? 8 : 6}）。
-
-- 目標在 d20 檢定失敗後，可擲激勵骰並加到結果上。
-- 激勵骰使用後消耗，未使用則持續 1 小時。
-- 同一生物同時只能持有 1 顆你的激勵骰。
-- 可用次數＝魅力調整值（至少 1 次），長休後全部恢復。`
-  },
-
-  "天生術法": {
-    description: "你體內的魔力可被短暫解放。作為附贈動作啟動後，持續 1 分鐘並獲得：\n\n- 你的術士法術豁免 DC +1。\n- 你的術士法術攻擊檢定具有優勢。\n\n使用次數：2 次；長休後全回復。"
-  },
-"熱血湧動": {
-  description: () => `使用附贈讓速度×2，同時獲得臨時${getProficiencyBonus()}點臨時 HP。`
-},
-"創造法術位": {
-  label: "魔力泉湧",
-  description: "你可運用術法點來啟動魔法效果。\n起始術法點為 2 點；高等級時依「術士特性」表提升。\n你持有的術法點不可超過目前等級上限；長休後全回復。\n\n你可使用以下轉換：\n- 將法術位轉為術法點：消耗 1 個法術位，獲得等同該環階的術法點，無需動作。\n- 創造法術位：以附贈動作消耗術法點換成法術位，且不能創造 6 環以上法術位。\n\n消耗與最低術士等級如下：\n1 環法術位消耗 2 點術法點，最低術士等級 2\n2 環法術位消耗 3 點，最低術士等級 3\n3 環法術位消耗 5 點，最低術士等級 5\n4 環法術位消耗 6 點，最低術士等級 7\n\n以此特性創造的法術位會在長休後消散。"
-}
-});
-
-  const MONK_REMOVED_LABELS = new Set(["疾風連擊", "閃轉騰挪", "疾步如風"]);
-  const NON_FEATURE_HEADINGS = new Set([
-    "對敵人做攻擊檢定，或",
-    "讓敵人做豁免檢定，或",
-    "再用一次附贈動作延長狂暴。",
-  ]);
-  
-  const MONK_CUSTOM_OPTIONS = Object.freeze([
-    {
-      mode: "bonus", level: 2, label: "等級 2：聚氣凝神",
-      description: "你可使用「專注點」施展武僧技巧。專注點上限見武僧特性表，短休或長休後全回復。\n\n你一開始有 3 種用法：\n\n- 疾風連擊（1 點）：附贈動作打 2 次徒手。\n- 閃轉騰挪：附贈動作可撤離；再花 1 點可同時撤離 + 回避。\n- 疾步如風：附贈動作可疾走；再花 1 點可同時撤離 + 疾走，且本回合跳躍距離加倍。\n\n若特性要求豁免，DC = 8 + 熟練加值 + 感知調整值。"
-    },
-    {
-      mode: "bonus", level: 3, label: "等級 3：散打技巧",
-      description: "當你用「疾風連擊」命中時，可讓目標承受 1 種效果：\n\n- 截擊：到你下回合結束前，目標不能發動借機攻擊。\n- 擊退：目標力量豁免失敗則被推離你最多 15 呎。\n- 擊倒：目標敏捷豁免失敗則倒地。"
-    },
-    {
-      mode: "action", level: 5, label: "等級 5：震懾擊",
-      description: "每回合 1 次，當你用武僧武器或徒手命中時，可花 1 點專注點發動震懾打擊。 目標需做體質豁免：\n  - 失敗：震懾到你下回合開始。\n  - 成功：速度減半，且到你下回合開始前，下一次對它的攻擊有優勢。"
-    }
-  ]);
-
-  const BARBARIAN_CUSTOM_OPTIONS = Object.freeze([
-    {
-      mode: "bonus", level: 1, label: "等級 1：狂暴",
-      description: () => `你可以用附贈動作進入狂暴（未穿重甲時）。
-
-狂暴期間：
-
-- 你對鈍擊,穿刺,揮砍傷害有抗性。
-- 你用力量造成的傷害 +${getBarbarianRageDamageBonus()}
-- 你的力量檢定與力量豁免有優勢。
-- 你不能施法，也不能維持專注。
-
-持續時間：到你下個回合結束。若要延長，每回合至少做一項：
-
-- 對敵人做攻擊檢定，或
-- 讓敵人做豁免檢定，或
-- 再用一次附贈動作延長狂暴。`
-    },
-    {
-      mode: "action", level: 3, label: "等級 3：狂怒（狂戰子職）",
-      description: () => `在狂暴中使用魯莽攻擊力量命中該回合第一個目標時額外造成 ${getBarbarianRageDamageBonus()}d6 傷害。`
-    },
-    {
-      mode: "action", level: 5, label: "等級 5：額外攻擊",
-      description: "你在自己回合使用攻擊動作時，可以攻擊 2 次。"
-    },
-    {
-      mode: "movement", level: 5, label: "等級 5：快速移動",
-      description: "若你未穿重甲，速度 +10 呎。"
-    },
-    {
-      mode: "movement", level: 7, label: "等級 7：直覺猛撲",
-      description: "當你以附贈動作進入狂暴時，可以在該附贈動作中移動至多等同於你速度一半的距離。"
-    },
-    {
-      mode: "bonus", level: 7, label: "等級 7：直覺猛撲",
-      description: "當你以附贈動作進入狂暴時，可以在該附贈動作中移動至多等同於你速度一半的距離。"
-    }
-  ]);
-
-  const BARBARIAN_CURATED_FEATURE_LABELS = new Set(
-    BARBARIAN_CUSTOM_OPTIONS.map(option => option.label)
-  );
 
   function getCharacterLevel() {
     return Number(document.getElementById("level")?.value) || 1;
@@ -341,10 +266,7 @@ const SPECIAL_FEATURE_RULES = Object.freeze({
   }
 
   function getFeatRuleText(featName, ruleName) {
-    const lines = sourceToPlainText(typeof featsDesc === "undefined" ? "" : featsDesc[featName]).split("\n");
-    const prefixPattern = new RegExp(`^${ruleName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*[：:]\\s*`, "u");
-    const line = lines.find(candidate => prefixPattern.test(candidate.trim()));
-    return line ? line.trim().replace(prefixPattern, "").trim() : "";
+    return getNamedRuleDescription(typeof featsDesc === "undefined" ? "" : featsDesc[featName], ruleName);
   }
 
   function formatTabletopFeatRule(rule) {
@@ -373,11 +295,11 @@ const SPECIAL_FEATURE_RULES = Object.freeze({
   function getTabletopFeatRuleEntries(mode) {
     const selectedFeats = getSelectedFeatNames();
     return TABLETOP_FEAT_ACTION_RULES.flatMap(rule => {
-      if (!rule.modes.includes(mode) || !selectedFeats.has(rule.feat)) return [];
+      if (!rule.modes.includes(mode) || !selectedFeats.has(rule.feat) || getCharacterLevel() < (rule.level || 1)) return [];
       const description = formatTabletopFeatRule(rule);
       if (!description) return [];
       return [{
-        key: `dynamic-${mode}-feat-curated-${stableKeyHash(`${rule.feat}|${rule.label}`)}`,
+        key: rule.legacyKeys?.[mode] || `dynamic-${mode}-feat-curated-${stableKeyHash(`${rule.feat}|${rule.label}`)}`,
         label: rule.label,
         source: rule.source || FEATURE_SOURCE_LABELS.feat,
         description,
@@ -412,234 +334,12 @@ const SPECIAL_FEATURE_RULES = Object.freeze({
     return damageTypes[ancestry.split("_").at(-1)] || "";
   }
 
-  function createRaceOption(mode, label, description, extras = {}) {
-    return {
-      key: `dynamic-${mode}-race-${stableKeyHash(label)}`,
-      label,
-      source: FEATURE_SOURCE_LABELS.race,
-      description,
-      dynamic: true,
-      ...extras
-    };
-  }
-
-  function getRaceActionEntries(mode) {
-    const race = document.getElementById("race")?.value || "";
-    const level = getCharacterLevel();
-
-    if (race === "dragonborn" && mode === "action") {
-      const constitutionModifier = getAbilityModifier("con");
-      const saveDc = constitutionModifier === null
-        ? "8+熟練+體質加值"
-        : String(8 + getProficiencyBonus() + constitutionModifier);
-      const damageType = getDragonbornBreathDamageType();
-      return [createRaceOption(
-        mode,
-        "吐息元素",
-        `將１次攻擊換為吐息\n15呎錐形 或 30呎直線\n目標生物敏捷豁免 DC ${saveDc}\n造成 ${getDragonbornBreathDamageDice(level)} 點${damageType}傷害`
-      )];
-    }
-
-    if (race === "goliath") {
-      const ancestry = document.getElementById("goliath-ancestry")?.value || "";
-      const actionOptions = {
-        fire: ["星火燎原", "攻擊命中目標時增加 1d10 火焰傷害。"],
-        frost: ["凜若冰霜", "攻擊命中目標時增加 1d6 冷凍傷害，並在你的下個回合開始之前速度下降10呎。"],
-        hill: ["地動山搖", "攻擊命中大型以下的生物可令其陷入「倒地」狀態。"]
-      };
-      if (mode === "action" && actionOptions[ancestry]) {
-        const [label, description] = actionOptions[ancestry];
-        return [createRaceOption(mode, label, description)];
-      }
-      if (mode === "reaction" && ancestry === "stone") {
-        const constitutionModifier = getAbilityModifier("con");
-        const modifierText = constitutionModifier === null ? "體質調整值" : String(constitutionModifier);
-        return [createRaceOption(mode, "堅若磐石", `受傷時可用反應扣除1d12 + ${modifierText}傷害。`)];
-      }
-      return [];
-    }
-
-    if (race !== "halfling") return [];
-    const tabletopOnly = true;
-    if (mode === "movement") {
-      return [createRaceOption(mode, "半身人靈巧", "可穿過體型比你大的生物\n不能停在同一格", { tabletopOnly })];
-    }
-    if (mode === "action") {
-      const options = [
-        createRaceOption(mode, "吉運", "任何 D20 檢定中擲出 1 都可以重擲一次。", { tabletopOnly }),
-        createRaceOption(mode, "天生善匿", "你可以在體型比你大的生物後方使用躲藏動作。", { tabletopOnly })
-      ];
-      return options;
-    }
-    if (mode === "bonus" && document.getElementById("class")?.value === "rogue" && level >= 2) {
-      return [createRaceOption(mode, "天生善匿", "你可以在體型比你大的生物後方使用躲藏動作。", { tabletopOnly })];
-    }
-    return [];
-  }
-
-  function getRequiredLevel(entry) {
-    return entry.requiredLevel || Number(String(entry.label).match(/^等級\s*(\d+)\s*[：:]/u)?.[1]) || 1;
-  }
-
-  function applySpecialFeatureRule(entry) {
-    const cleanName = String(entry.label || "")
-  .replace(/^等級\s*\d+\s*[：:]\s*/u, "");
-
-const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanName];
-    
-    if (!rule) return entry;
-    const description = typeof rule.description === "function"
-      ? rule.description()
-      : rule.description || entry.description;
-    return { ...entry, label: rule.label || entry.label, requiredLevel: rule.requiredLevel ?? entry.requiredLevel, gnomeLineage: rule.gnomeLineage, description };
-  }
-
-  function getMonkCustomEntries(mode) {
-    if (document.getElementById("class")?.value !== "monk") return [];
-    const level = getCharacterLevel();
-    return MONK_CUSTOM_OPTIONS
-      .filter(option => option.mode === mode && level >= option.level)
-      .map(option => ({ ...option, key: `dynamic-${mode}-class-${stableKeyHash(option.label)}`, source: FEATURE_SOURCE_LABELS.class, dynamic: true }));
-  }
-
-  function getBarbarianCustomEntries(mode) {
-    if (document.getElementById("class")?.value !== "barbarian") return [];
-    const level = getCharacterLevel();
-    return BARBARIAN_CUSTOM_OPTIONS
-      .filter(option => option.mode === mode && level >= option.level)
-      .map(option => ({
-        ...option,
-        key: `dynamic-${mode}-barbarian-${stableKeyHash(option.label)}`,
-        source: FEATURE_SOURCE_LABELS.class,
-        description: typeof option.description === "function" ? option.description() : option.description,
-        dynamic: true
-      }));
-  }
-
-  function getBarbarianRecklessAttackEntries(mode) {
-    if (mode !== "action" || document.getElementById("class")?.value !== "barbarian" || getCharacterLevel() < 2) return [];
-    const heading = Array.from(document.querySelectorAll('#classFeatures .barbarian-feature[data-feature-level="2"] h3'))
-      .find(element => cleanFeatureTitle(element.textContent, "") === "等級 2：魯莽攻擊");
-    const featureSection = heading?.closest("section[data-feature-level]");
-    const description = sourceToPlainText(featureSection?.innerHTML || "")
-      .replace(/^等級\s*2\s*[：:]\s*魯莽攻擊\s*/u, "");
-    if (!description) return [];
-
-    return [{
-      key: `dynamic-action-class-${stableKeyHash("魯莽")}`,
-      label: "魯莽",
-      source: FEATURE_SOURCE_LABELS.class,
-      description,
-      dynamic: true,
-      requiredLevel: 2
-    }];
-  }
-
-  function extractTimedFeatureEntries(raw, mode, source) {
-    const timingPattern = mode === "bonus"
-      ? /(?:附贈動作|(?:使用|用|消耗|以)[^。；\n]{0,6}「?附贈」?)/u
-      : /(?:反應(?:動作)?|[藉借]機攻擊)/u;
-    const passiveOrUnavailablePattern = mode === "bonus"
-      ? /(?:無法|不能)[^。；\n]{0,14}(?:附贈|動作)|附贈動作[^。；\n]{0,10}(?:被浪費|無法使用|(?:主動)?(?:解除|結束))/u
-      : /(?:無法|不能)[^。；\n]{0,14}反應|反應[^。；\n]{0,10}(?:被浪費|無法使用)|(?:不(?:會)?引發|不能發動|無法發動|針對你的|以你為目標的)[^。；\n]{0,12}[藉借]機攻擊|[藉借]機攻擊[^。；\n]{0,12}(?:具有|承受)[^。；\n]{0,6}(?:優勢|劣勢)/u;
-    const sourceLabel = FEATURE_SOURCE_LABELS[source] || "角色";
-    const entriesByLabel = new Map();
-    const seen = new Set();
-
-    function addEntry(label, description, requiredLevel) {
-      const fingerprint = `${label}|${description}`.replace(/\s+/g, " ");
-      if (seen.has(fingerprint)) return;
-      seen.add(fingerprint);
-      const existing = entriesByLabel.get(label);
-      if (existing) {
-        existing.description = `${existing.description}\n\n${description}`;
-      } else {
-        const entry = {
-          key: `dynamic-${mode}-${source}-${stableKeyHash(`${source}|${label}`)}`,
-          label,
-          source: sourceLabel,
-          description,
-          dynamic: true
-        };
-        if (requiredLevel) entry.requiredLevel = requiredLevel;
-        entriesByLabel.set(label, entry);
-      }
-    }
-
-    let remainingRaw = String(raw ?? "");
-    if (remainingRaw.includes("data-action-description")) {
-      const holder = document.createElement("div");
-      holder.innerHTML = remainingRaw;
-      holder.querySelectorAll("[data-action-description]").forEach(block => {
-        const description = sourceToPlainText(block.innerHTML).replace(/\n{2,}/g, "\n");
-        if (!timingPattern.test(description) || passiveOrUnavailablePattern.test(description)) return;
-        const featureSection = block.closest("section[data-feature-level]");
-        const heading = featureSection?.querySelector("h3")?.textContent || "";
-        const label = cleanFeatureTitle(heading, `${sourceLabel}能力`);
-        addEntry(label, description, Number(featureSection?.dataset.featureLevel) || undefined);
-        block.remove();
-      });
-      remainingRaw = holder.innerHTML;
-    }
-
-    const plainText = sourceToPlainText(remainingRaw);
-    if (!plainText) return Array.from(entriesByLabel.values()).map(applySpecialFeatureRule);
-    const lines = plainText.split("\n");
-
-    lines.forEach((line, index) => {
-      if (!timingPattern.test(line) || passiveOrUnavailablePattern.test(line)) return;
-      const description = relevantParagraph(lines, index);
-      const label = findFeatureTitle(lines, index, sourceLabel);
-      addEntry(label, description);
-    });
-
-    return Array.from(entriesByLabel.values()).map(applySpecialFeatureRule);
-  }
-
-  function getSelectedFeatEntries(mode) {
-    if (typeof featsDesc === "undefined") return [];
-    const values = new Set(Array.from(document.querySelectorAll("#feats-area select"), select => select.value).filter(Boolean));
-    const curatedFeatNames = new Set(
-      TABLETOP_FEAT_ACTION_RULES.filter(rule => rule.modes.includes(mode)).map(rule => rule.feat)
-    );
-    return Array.from(values)
-      .filter(value => !curatedFeatNames.has(value))
-      .flatMap(value => extractTimedFeatureEntries(featsDesc[value], mode, "feat"))
-      .filter(entry => getCharacterLevel() >= getRequiredLevel(entry));
-  }
-
-  function filterRaceEntriesForSelections(entries, selectedRace, selectedGoliathAncestry) {
-    const selectedFeature = GOLIATH_ANCESTRY_FEATURES[selectedGoliathAncestry];
-    const selectedGnomeLineage = document.getElementById("gnome-lineage")?.value || "";
-    return entries.filter(entry => {
-      if (selectedRace === "goliath" && GOLIATH_ANCESTRY_FEATURE_NAMES.has(entry.label) && entry.label !== selectedFeature) return false;
-      if (selectedRace === "goliath" && entry.label === "堅若磐石") return false;
-      if (entry.gnomeLineage && entry.gnomeLineage !== selectedGnomeLineage) return false;
-      return getCharacterLevel() >= getRequiredLevel(entry);
-    });
-  }
-
-  function getFeatureEntries(mode) {
-    let classText = document.getElementById("classFeatures")?.innerHTML || "";
-    const invocationOptionsIndex = classText.lastIndexOf("魔能祈喚選項");
-    if (invocationOptionsIndex !== -1) {
-      classText = classText.slice(0, invocationOptionsIndex);
-    }
-    const raceText = document.getElementById("raceFeatures")?.innerHTML || "";
-    const raceEntries = extractTimedFeatureEntries(raceText, mode, "race");
-    const selectedRace = document.getElementById("race")?.value || "";
-    const selectedGoliathAncestry = document.getElementById("goliath-ancestry")?.value || "";
-    const availableRaceEntries = filterRaceEntriesForSelections(raceEntries, selectedRace, selectedGoliathAncestry);
-    const selectedClass = document.getElementById("class")?.value || "";
-    const classEntries = extractTimedFeatureEntries(classText, mode, "class")
-      .filter(entry => getCharacterLevel() >= getRequiredLevel(entry))
-      .filter(entry => selectedClass !== "monk" || !MONK_REMOVED_LABELS.has(entry.label))
-      .filter(entry => selectedClass !== "barbarian" || !BARBARIAN_CURATED_FEATURE_LABELS.has(entry.label));
-    return [
-      ...classEntries,
-      ...availableRaceEntries,
-      ...getSelectedFeatEntries(mode)
-    ];
+  function getDragonbornBreathDescription() {
+    const constitutionModifier = getAbilityModifier("con");
+    const saveDc = constitutionModifier === null
+      ? "8+熟練+體質加值"
+      : String(8 + getProficiencyBonus() + constitutionModifier);
+    return `將１次攻擊換為吐息\n15呎錐形 或 30呎直線\n目標生物敏捷豁免 DC ${saveDc}\n造成 ${getDragonbornBreathDamageDice(getCharacterLevel())} 點${getDragonbornBreathDamageType()}傷害`;
   }
 
   function getSelectedSpellEntries(mode) {
@@ -680,16 +380,17 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
   }
 
   function getSelectedInvocationEntries(mode) {
-    if (typeof eldritchInvocations === "undefined") return [];
-    const availableNames = INVOCATION_OPTIONS_BY_MODE[mode];
-    if (!availableNames) return [];
+    if (typeof eldritchInvocations === "undefined" || document.getElementById("class")?.value !== "warlock") return [];
     const selectedNames = new Set(Array.from(
       document.querySelectorAll("#eldritch-invocations-output input[data-invocation-name]:checked"),
       input => input.dataset.invocationName
     ).filter(Boolean));
 
-    return eldritchInvocations.flatMap(invocation => {
-      if (!selectedNames.has(invocation.name) || !availableNames.has(invocation.name)) return [];
+    return INVOCATION_ACTION_RULES.flatMap(rule => {
+      if (!selectedNames.has(rule.name) || !rule.modes.includes(mode) || getCharacterLevel() < rule.level) return [];
+      if (rule.requires && !selectedNames.has(rule.requires)) return [];
+      const invocation = eldritchInvocations.find(entry => entry.name === rule.name);
+      if (!invocation) return [];
       const invocationText = sourceToPlainText(invocation.text || "");
 
       return [{
@@ -703,14 +404,15 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
   }
 
   function getSelectedMetamagicEntries(mode) {
-    if (mode !== "bonus") return [];
+    if (mode !== "bonus" || document.getElementById("class")?.value !== "sorcerer" || getCharacterLevel() < 2) return [];
 
     return Array.from(
       document.querySelectorAll("#metamagicOptions input[data-metamagic-name]:checked")
     ).flatMap(input => {
-      const card = input.closest(".feature-choice-card--metamagic");
-      const description = sourceToPlainText(card?.innerHTML || "");
-      if (!description || !/附贈動作/u.test(description)) return [];
+      if (input.dataset.metamagicName !== "瞬發法術") return [];
+      const option = typeof metamagicOptions === "undefined" ? null : metamagicOptions.find(entry => entry.name === "瞬發法術");
+      const description = sourceToPlainText(option?.text || "");
+      if (!description) return [];
 
       const label = input.dataset.metamagicName || "超魔法";
       return [{
@@ -723,16 +425,74 @@ const rule = SPECIAL_FEATURE_RULES[entry.label] || SPECIAL_FEATURE_RULES[cleanNa
     });
   }
 
+  const classDescriptionCache = new Map();
+
+  function getClassActionDescription(className, descriptionId) {
+    if (typeof classFeatures === "undefined") return "";
+    const raw = classFeatures[className] || "";
+    let cached = classDescriptionCache.get(className);
+    if (!cached || cached.raw !== raw) {
+      const holder = document.createElement("div");
+      holder.innerHTML = raw;
+      const descriptions = new Map(Array.from(holder.querySelectorAll("[data-action-id]"), block => {
+        const copy = block.cloneNode(true);
+        copy.querySelectorAll("h3").forEach(heading => heading.remove());
+        return [block.dataset.actionId, sourceToPlainText(copy.innerHTML)];
+      }));
+      cached = { raw, descriptions };
+      classDescriptionCache.set(className, cached);
+    }
+    return cached.descriptions.get(descriptionId) || "";
+  }
+
+  // Exact named-rule lookup is display-only; metadata supplies every mode and gate.
+  // Preserve continuation lines (including lists), unlike the old one-line feat copy.
+  function getNamedRuleDescription(raw, ruleName) {
+    const text = sourceToPlainText(raw);
+    const escaped = ruleName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const match = new RegExp('(?:^|\\n)' + escaped + '[：:]\\s*([\\s\\S]*?)(?=\\n[^\\n：:]+[：:]|\\n「擴充」|$)', 'u').exec(text);
+    return match ? match[1].trim() : "";
+  }
+
+  function resolveFeatureRules(rules, mode, source, describe) {
+    const level = getCharacterLevel();
+    return rules.flatMap(rule => {
+      if (rule.mode !== mode || level < rule.level) return [];
+      if (rule.className && document.getElementById("class")?.value !== rule.className) return [];
+      if (rule.choiceId && document.getElementById(rule.choiceId)?.value !== rule.choiceValue) return [];
+      let description = typeof rule.description === "function" ? rule.description() : rule.description || describe(rule);
+      if (!description) return [];
+      if (rule.proficiencyValue) description = description.replace(/熟練加值/gu, String(getProficiencyBonus()));
+      return [{
+        key: rule.key || `dynamic-${mode}-${source}-${rule.id}`,
+        label: rule.label,
+        source: FEATURE_SOURCE_LABELS[source],
+        description,
+        requiredLevel: rule.level,
+        ...(rule.tabletopOnly ? { tabletopOnly: true } : {}),
+        dynamic: true
+      }];
+    });
+  }
+
+  function getExplicitClassEntries(mode) {
+    const className = document.getElementById("class")?.value || "";
+    return resolveFeatureRules(CLASS_ACTION_RULES[className] || [], mode, "class",
+      rule => getClassActionDescription(className, rule.descriptionId));
+  }
+
+  function getExplicitRaceEntries(mode) {
+    const raceName = document.getElementById("race")?.value || "";
+    return resolveFeatureRules(RACE_ACTION_RULES.filter(rule => rule.race === raceName), mode, "race",
+      rule => getNamedRuleDescription(typeof raceFeatures === "undefined" ? "" : raceFeatures[raceName], rule.ruleName));
+  }
+
   function getDynamicOptions(mode) {
     if (mode !== "action" && mode !== "bonus" && mode !== "reaction" && mode !== "movement") return [];
     const entries = [
-      ...(mode === "action"
-        ? [...getBarbarianRecklessAttackEntries(mode), ...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode)]
-        : mode === "movement"
-          ? [...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode)]
-          : [...getFeatureEntries(mode), ...getBarbarianCustomEntries(mode), ...getMonkCustomEntries(mode)]),
+      ...getExplicitClassEntries(mode),
+      ...getExplicitRaceEntries(mode),
       ...getTabletopFeatRuleEntries(mode),
-      ...getRaceActionEntries(mode),
       ...getSelectedInvocationEntries(mode),
       ...getSelectedMetamagicEntries(mode),
       ...((mode === "action" || mode === "bonus" || mode === "reaction") ? getSelectedSpellEntries(mode) : [])

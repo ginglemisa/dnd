@@ -247,7 +247,7 @@ const classFeatures = {
   <p>只要你沒失能，你的敏捷豁免有優勢。</p>
 </section>
 
-<section class="barbarian-feature class-feature-section" data-feature-level="2">
+<section class="barbarian-feature class-feature-section" data-feature-level="2" data-action-id="barbarian-reckless-attack">
   <h3>等級 2：魯莽攻擊</h3>
   <p>在你回合內第一次用力量攻擊前可宣告魯莽攻擊：</p>
   <ul class="class-rule-list">
@@ -482,7 +482,7 @@ const classFeatures = {
 <section class="bard-feature class-feature-section" data-feature-level="1">
   <h3>等級 1：吟遊詩人激勵</h3>
   <p>你可以用話語,音樂或表演鼓舞同伴，給對方 1 顆激勵骰（初始 d6）。</p>
-  <div class="class-rule-subsection" data-action-description>
+  <div class="class-rule-subsection">
     <h4>使用方式：</h4>
     <ul class="class-rule-list">
       <li>附贈動作。</li>
@@ -549,7 +549,7 @@ const classFeatures = {
   <p>你獲得任意三個自選技能的熟練項。</p>
 </section>
 
-<section class="bard-feature class-feature-section" data-feature-level="3" data-action-description>
+<section class="bard-feature class-feature-section" data-feature-level="3" data-action-id="bard-cutting-words">
   <h3>等級 3：語出驚人（逸聞子職）</h3>
   <p>當你 60 呎內看得到的生物在傷害擲骰,能力檢定或攻擊檢定成功時，
 你可用反應並消耗 1 次激勵干擾它，降低成果（依特性敘述判定）。</p>
@@ -566,7 +566,7 @@ const classFeatures = {
   <p>此外，你可消耗 1 個法術位換回 1 次激勵使用次數（不耗動作）。</p>
 </section>
 <section class="bard-feature class-feature-section" data-feature-level="6"><h3>等級 6：魔法發現（逸聞子職）</h3><p>你從牧師、德魯伊或法師的法術列表中選擇並學會兩個法術；兩者可以來自不同列表。所選法術必須是戲法，或是你已有對應法術位的法術。</p><p>你始終準備所選法術。每當你獲得一個吟遊詩人等級時，可以將其中一個替換為另一個符合條件的法術。</p><div id="bard-magical-discoveries" class="bard-magical-discoveries" aria-label="魔法發現法術選擇"></div></section>
-<section class="bard-feature class-feature-section" data-feature-level="7"><h3>等級 7：反迷惑</h3><p>當你或你30呎內的一個生物在抵抗魅惑或恐慌狀態的豁免檢定中失敗時，你可以執行反應，使失敗者重新進行該豁免，且新的檢定具有優勢。</p></section>
+<section class="bard-feature class-feature-section" data-feature-level="7" data-action-id="bard-countercharm"><h3>等級 7：反迷惑</h3><p>當你或你30呎內的一個生物在抵抗魅惑或恐慌狀態的豁免檢定中失敗時，你可以執行反應，使失敗者重新進行該豁免，且新的檢定具有優勢。</p></section>
 <section class="bard-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
 </div>`,
 
@@ -744,7 +744,7 @@ const classFeatures = {
   </div>
 </section>
 
-<section class="cleric-feature class-feature-section" data-feature-level="2">
+<section class="cleric-feature class-feature-section" data-feature-level="2" data-action-id="cleric-channel-divinity">
   <h3>等級 2：引導神力</h3>
   <p>你可用引導神力產生神聖效果，起始有 2 種：</p>
   <ul class="class-rule-list">
@@ -804,7 +804,7 @@ const classFeatures = {
   <p>你用法術位施放回復法術時，目標在本回合額外回復「2 + 法術環級」生命值。</p>
 </section>
 
-<section class="cleric-feature class-feature-section" data-feature-level="3">
+<section class="cleric-feature class-feature-section" data-feature-level="3" data-action-id="cleric-preserve-life">
   <h3>等級 3：維持生命（生命子職）</h3>
   <p>你可用魔法動作展示聖徽並消耗 1 次引導神力，分配總共「牧師等級 × 5」點治療量給 30 呎內任意數量重傷生物。</p>
   <p>此特性不能把目標回到超過其生命值上限一半。</p>
@@ -1045,7 +1045,7 @@ const classFeatures = {
   </ul>
 </section>
 
-<section class="druid-feature class-feature-section" data-feature-level="2">
+<section class="druid-feature class-feature-section" data-feature-level="2" data-action-id="druid-wild-shape">
   <h3>等級 2：荒野形態</h3>
   <ul class="class-rule-list">
     <li>你可用附贈動作變成已知的野獸形態（見下方「已知形態」）。</li>
@@ -1117,7 +1117,7 @@ const classFeatures = {
   </div>
 </section>
 
-<section class="druid-feature class-feature-section" data-feature-level="2">
+<section class="druid-feature class-feature-section" data-feature-level="2" data-action-id="druid-wild-companion">
   <h3>等級 2：荒野夥伴</h3>
   <ul class="class-rule-list">
     <li>你可召喚動物外型的自然精魂。</li>
@@ -1180,7 +1180,7 @@ const classFeatures = {
   </div>
 </section>
 
-<section class="druid-feature class-feature-section" data-feature-level="3">
+<section class="druid-feature class-feature-section" data-feature-level="3" data-action-id="druid-lands-aid">
   <h3>等級 3：大地之援（大地子職）</h3>
   <ul class="class-rule-list">
     <li>作為魔法動作，你可消耗 1 次荒野形態，在 60 呎內選一點，產生 10 呎球形花荊區域。</li>
@@ -1343,7 +1343,7 @@ const classFeatures = {
   <p>每當你獲得戰士等級時，你可以將原專長替換成另一個 戰鬥風格 專長。</p>
 </section>
 
-<section class="fighter-feature class-feature-section" data-feature-level="1">
+<section class="fighter-feature class-feature-section" data-feature-level="1" data-action-id="fighter-second-wind">
   <h3>等級 1：回氣</h3>
   <p>你的身心都儲有底力，關鍵時刻尤為重要。作為一個附贈動作，你恢復 1d10+你戰士等級的生命值。</p>
   <p>你可以使用該特性兩次。你在完成短休時恢復一次已消耗的使用次數，並在完成長休時重獲所有已消耗的使用次數。</p>
@@ -1356,7 +1356,7 @@ const classFeatures = {
   <p>你可以掌握精通的武器數量將隨著戰士職業到達特定等級而增加，如“戰士特性”表中“武器精通”一欄所示。</p>
 </section>
 
-<section class="fighter-feature class-feature-section" data-feature-level="2">
+<section class="fighter-feature class-feature-section" data-feature-level="2" data-action-id="fighter-action-surge">
   <h3>等級 2：動作如潮</h3>
   <p>你可以在短時間內突破極限。在你的回合中，你可以執行一個額外的動作，但不能用於魔法動作。</p>
   <p>一旦使用了該特性，你將無法在完成短休或長休前再次使用。</p>
@@ -1393,7 +1393,7 @@ const classFeatures = {
   <p>你在自己回合執行攻擊動作時可以發動兩次攻擊。</p>
 </section>
 
-<section class="fighter-feature class-feature-section" data-feature-level="5">
+<section class="fighter-feature class-feature-section" data-feature-level="5" data-action-id="fighter-tactical-shift">
   <h3>等級 5：戰術轉移</h3>
   <p>當你以附贈動作使用 回氣 時，你可以移動至多等同於你速度一半的距離，且不會引發藉機攻擊。</p>
 </section>
@@ -1529,7 +1529,7 @@ const classFeatures = {
   </tbody>
 </table>
 <div class="class-feature-content">
-<section class="monk-feature class-feature-section" data-feature-level="1">
+<section class="monk-feature class-feature-section" data-feature-level="1" data-action-id="monk-martial-arts">
   <h3>等級 1：武藝</h3>
   <p>你在「未穿護甲,未持盾，且只用徒手或武僧武器」時，獲得以下效果：</p>
   <ul class="class-rule-list">
@@ -1570,7 +1570,7 @@ const classFeatures = {
   <p>此能力每次長休只能用 1 次。</p>
 </section>
 
-<section class="monk-feature class-feature-section" data-feature-level="3">
+<section class="monk-feature class-feature-section" data-feature-level="3" data-action-id="monk-deflect-attacks">
   <h3>等級 3：撥擋化勁</h3>
   <p>當攻擊命中你，且傷害含鈍擊／穿刺／揮砍時，你可用反應減傷：</p>
   <p>1d10 + 敏捷調整值 + 武僧等級。</p>
@@ -1604,7 +1604,7 @@ const classFeatures = {
   <p>獲得「屬性值提升」專長，或其他符合條件的專長。</p>
 </section>
 
-<section class="monk-feature class-feature-section" data-feature-level="4">
+<section class="monk-feature class-feature-section" data-feature-level="4" data-action-id="monk-slow-fall">
   <h3>等級 4：輕身墜</h3>
   <p>當你墜落時，可用「反應」減少武僧等級×5傷害。</p>
 </section>
@@ -1623,7 +1623,7 @@ const classFeatures = {
     <li>成功：速度減半，且到你下回合開始前，下一次對它的攻擊有優勢。</li>
   </ul>
 </section>
-<section class="monk-feature class-feature-section" data-feature-level="6"><h3>等級 6：真力駐拳</h3><p>當你的徒手打擊造成傷害時，可以將其傷害類型替換為力場傷害。</p></section><section class="monk-feature class-feature-section" data-feature-level="6"><h3>等級 6：混元體（散打子職）</h3><p>作為附贈動作，你可以擲出武藝骰，恢復等同於擲骰結果＋你的感知調整值的生命值（最少恢復1點）。</p><p>你可以使用該特性的次數等同於你的感知調整值（最少一次），並在完成長休時恢復所有已消耗的使用次數。</p></section><section class="monk-feature class-feature-section" data-feature-level="7"><h3>等級 7：反射閃避</h3><p>當你受到允許進行敏捷豁免以使傷害減半的效應影響時，豁免成功則不受傷害，豁免失敗則僅受一半傷害。</p><p>你在失能狀態下無法從該特性中獲益。</p></section><section class="monk-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
+<section class="monk-feature class-feature-section" data-feature-level="6"><h3>等級 6：真力駐拳</h3><p>當你的徒手打擊造成傷害時，可以將其傷害類型替換為力場傷害。</p></section><section class="monk-feature class-feature-section" data-feature-level="6" data-action-id="monk-wholeness-of-body"><h3>等級 6：混元體（散打子職）</h3><p>作為附贈動作，你可以擲出武藝骰，恢復等同於擲骰結果＋你的感知調整值的生命值（最少恢復1點）。</p><p>你可以使用該特性的次數等同於你的感知調整值（最少一次），並在完成長休時恢復所有已消耗的使用次數。</p></section><section class="monk-feature class-feature-section" data-feature-level="7"><h3>等級 7：反射閃避</h3><p>當你受到允許進行敏捷豁免以使傷害減半的效應影響時，豁免成功則不受傷害，豁免失敗則僅受一半傷害。</p><p>你在失能狀態下無法從該特性中獲益。</p></section><section class="monk-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
 </div>`,
   paladin: `<table class="class-core-profile-table class-core-profile-table--paladin" aria-label="聖騎士核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
@@ -1762,7 +1762,7 @@ const classFeatures = {
   </tbody>
 </table>
 <div class="class-feature-content">
-<section class="paladin-feature class-feature-section" data-feature-level="1">
+<section class="paladin-feature class-feature-section" data-feature-level="1" data-action-id="paladin-lay-on-hands">
   <h3>等級 1：聖療</h3>
   <p>你有一個治療能量池，總量 = 聖騎士等級 × 5，長休後回滿。</p>
   <p>附贈動作觸碰一個生物（可包含自己）時，你可從能量池分配治療量來回復生命值。</p>
@@ -1810,7 +1810,7 @@ const classFeatures = {
   <p>另外你可在不耗法術位下施放它 1 次，用完需長休才恢復。</p>
 </section>
 
-<section class="paladin-feature class-feature-section" data-feature-level="3">
+<section class="paladin-feature class-feature-section" data-feature-level="3" data-action-id="paladin-divine-sense">
   <h3>等級 3：引導神力</h3>
   <p>你可使用「引導神力」製造神聖效果。你先獲得「神聖感知」，之後可由其他特性追加新效果。</p>
   <p>每次使用時，從你已知的引導神力效果中選 1 個發動。</p>
@@ -1851,7 +1851,7 @@ const classFeatures = {
   </ul>
 </section>
 
-<section class="paladin-feature class-feature-section" data-feature-level="3">
+<section class="paladin-feature class-feature-section" data-feature-level="3" data-action-id="paladin-sacred-weapon">
   <h3>等級 3：祝聖武器（奉獻子職）</h3>
   <p>當你執行攻擊動作時，可消耗 1 次引導神力，為手上一把近戰武器注入神聖力量，持續 10 分鐘（或你再次使用本特性）。</p>
   <div class="class-rule-subsection">
@@ -2244,7 +2244,7 @@ const classFeatures = {
   <p>每次長休後可改選。</p>
 </section>
 
-<section class="rogue-feature class-feature-section" data-feature-level="2">
+<section class="rogue-feature class-feature-section" data-feature-level="2" data-action-id="rogue-cunning-action">
   <h3>等級 2：靈巧動作</h3>
   <p>你的回合中，可把以下其中一項當附贈動作使用：疾走,撤離,躲藏。</p>
 </section>
@@ -2254,7 +2254,7 @@ const classFeatures = {
   <p>你可選擇一個盜賊子職；基本規則僅提供妙手。</p>
 </section>
 
-<section class="rogue-feature class-feature-section" data-feature-level="3">
+<section class="rogue-feature class-feature-section" data-feature-level="3" data-action-id="rogue-fast-hands">
   <h3>等級 3：快手（妙手子職）</h3>
   <p>你可用附贈動作進行以下其中一項：</p>
   <ul class="class-rule-list">
@@ -2263,7 +2263,7 @@ const classFeatures = {
   </ul>
 </section>
 
-<section class="rogue-feature class-feature-section" data-feature-level="3">
+<section class="rogue-feature class-feature-section" data-feature-level="3" data-action-id="rogue-steady-aim">
   <h3>等級 3：手穩就準</h3>
   <p>附贈動作啟動後，你本回合下一次攻擊檢定有優勢。</p>
   <p>但你必須在本回合尚未移動，且啟動後速度變為 0（到回合結束）。</p>
@@ -2285,7 +2285,7 @@ const classFeatures = {
   </ul>
 </section>
 
-<section class="rogue-feature class-feature-section" data-feature-level="5">
+<section class="rogue-feature class-feature-section" data-feature-level="5" data-action-id="rogue-uncanny-dodge">
   <h3>等級 5：直覺閃避</h3>
   <p>當你看得見的攻擊者命中你時，你可用反應讓該次攻擊傷害減半（捨去小數點）。</p>
 </section>
@@ -2589,7 +2589,7 @@ const classFeatures = {
   </ul>
 </section>
 
-<section class="sorcerer-feature class-feature-section" data-feature-level="6"><h3>等級 6：元素親和（龍族子職）</h3><p>選擇一種傷害類型：強酸、冷凍、火焰、閃電或毒素。</p><article class="feature-choice-card"><label class="feature-choice-card__heading" for="sorcerer-elemental-affinity-damage-type"><strong>傷害類型</strong></label><select id="sorcerer-elemental-affinity-damage-type"><option value="">--請選擇傷害類型--</option><option value="acid">強酸</option><option value="cold">冷凍</option><option value="fire">火焰</option><option value="lightning">閃電</option><option value="poison">毒素</option></select><div class="feature-choice-card__body"><p>你對所選傷害類型具有抗性。當你施展造成該類型傷害的法術時，可以將魅力調整值加到該法術的一次傷害擲骰中。</p></div></article></section><section class="sorcerer-feature class-feature-section" data-feature-level="7"><h3>等級 7：術法化身</h3><p>當天生術法的使用次數耗盡時，你可以執行附贈動作並消耗2術法點來激活它。</p><p>此外，在天生術法激活期間，你可以在施展的每道法術上應用至多兩個超魔法選項。</p></section><section class="sorcerer-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
+<section class="sorcerer-feature class-feature-section" data-feature-level="6"><h3>等級 6：元素親和（龍族子職）</h3><p>選擇一種傷害類型：強酸、冷凍、火焰、閃電或毒素。</p><article class="feature-choice-card"><label class="feature-choice-card__heading" for="sorcerer-elemental-affinity-damage-type"><strong>傷害類型</strong></label><select id="sorcerer-elemental-affinity-damage-type"><option value="">--請選擇傷害類型--</option><option value="acid">強酸</option><option value="cold">冷凍</option><option value="fire">火焰</option><option value="lightning">閃電</option><option value="poison">毒素</option></select><div class="feature-choice-card__body"><p>你對所選傷害類型具有抗性。當你施展造成該類型傷害的法術時，可以將魅力調整值加到該法術的一次傷害擲骰中。</p></div></article></section><section class="sorcerer-feature class-feature-section" data-feature-level="7" data-action-id="sorcerer-sorcery-incarnate"><h3>等級 7：術法化身</h3><p>當天生術法的使用次數耗盡時，你可以執行附贈動作並消耗2術法點來激活它。</p><p>此外，在天生術法激活期間，你可以在施展的每道法術上應用至多兩個超魔法選項。</p></section><section class="sorcerer-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
 <section class="sorcerer-feature class-feature-section">
   <h3>超魔法選項</h3>
   <div class="class-rule-subsection">
