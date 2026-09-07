@@ -2819,7 +2819,7 @@ const classFeatures = {
   <div class="class-rule-subsection"><h4>準備法術</h4><ul class="class-rule-list"><li>起始先準備 2 個 1 環契術師法術（推薦：魅惑人類,脆弱詛咒）。</li><li>你可準備的法術數量會隨契術師等級提升，見「契術師特性」表。</li><li>每當這個數量提高時，從契術師法術列表再選法術，直到你的準備數量與表格一致。</li><li>你可準備的法術環級，不得高於你目前的法術位環級（例如 6 級時可準備 1～3 環法術）。</li></ul></div>
   <p>若其他契術師特性給你額外已準備法術，這些法術不計入上述準備數量，但仍算你的契術師法術。</p><p>每次升契術師等級時，可把準備清單中的 1 個法術換成另一個符合條件的契術師法術。</p><p>施法屬性：魅力。</p><p>施法法器：可用奧術法器。</p>
 </section>
-<section class="warlock-feature class-feature-section" data-feature-level="2"><h3>等級 2：秘法回流</h3><ul class="class-rule-list"><li>你可進行 1 分鐘神秘儀式，結束時回復已消耗的契約魔法法術位。</li><li>回復上限為「法術位最大值的一半（小數無條件進位）」。</li><li>使用後需完成長休才能再用。</li></ul></section>
+<section class="warlock-feature class-feature-section" data-feature-level="2" data-action-id="warlock-magical-cunning"><h3>等級 2：秘法回流</h3><ul class="class-rule-list"><li>你可進行 1 分鐘神秘儀式，結束時回復已消耗的契約魔法法術位。</li><li>回復上限為「法術位最大值的一半（小數無條件進位）」。</li><li>使用後需完成長休才能再用。</li></ul></section>
 <section class="warlock-feature class-feature-section" data-feature-level="3"><h3>等級 3：契術師子職</h3><ul class="class-rule-list"><li>你可選擇一個契術師子職；基本規則僅提供邪魔。</li><li>隨等級提升可獲得對應子職特性。</li></ul></section>
 <section class="warlock-feature class-feature-section" data-feature-level="3"><h3>等級 3：黑暗之賜（邪魔子職）</h3><ul class="class-rule-list"><li>當你將 10 呎內敵對生物生命值降到 0 時，你獲得等同「魅力調整值＋契術師等級」的臨時生命值（至少 1）。</li><li>若是其他生物把你 10 呎內的敵對生物降到 0，你也會獲得此增益。</li></ul></section>
 <section class="warlock-feature class-feature-section" data-feature-level="3"><h3>等級 3：邪魔法術（邪魔子職）</h3><ul class="class-rule-list"><li>你會始終準備下列法術（達到對應契術師等級後生效）：</li><li>邪魔法術（等級 3）：燃燒之手,命令術,灼熱射線,暗示術。</li><li>（等級 5）：火球術,臭雲術。</li><li>（等級 7）：火焰護盾，火牆術。</li></ul></section>

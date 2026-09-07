@@ -12,36 +12,37 @@
 2026-09-08 更正：原盤點未涵蓋本機 `main` 的 `424680f` 所包含的另一批
 curated 按鈕設計。因此，以下最初 checklist 與 baseline 測試只證明
 `76a4172` 的遷移 coverage，不能視為已保留 `424680f` 的全部產品行為。
-這次依使用者要求修正牧師的拆分與升級，其餘 main 差異列於下表，沒有一併移植。
-main 本身仍含 broad parser；工作分支 parser 退役與 main 個人化行為完整承接是兩件事。
+`6cc2314` 先修正牧師拆分與升級。後續依使用者要求，補齊下表指定職業的
+個人化設計並合併原 main 歷史；德魯伊動作留待另一個工作處理。
+合併後繼續使用 explicit metadata，不恢復原 main 的 broad parser。
 
 ## main 個人化設計複查（2026-09-08）
 
-來源為 `git show main:action-panel.js` 的各職業 `*_CUSTOM_OPTIONS`、對應
+來源為 `git show 424680f:action-panel.js` 的各職業 `*_CUSTOM_OPTIONS`、對應
 description 函式、curated exclusion 與實際 resolver，以及
-`main:tabletop-mode.js`、`main:tabletop-actions.js` 的摘要路徑。
+`424680f:tabletop-mode.js`、`424680f:tabletop-actions.js` 的摘要路徑。
 這些是既有 UI 編排，不能單憑規則段落或施法／動作關鍵字重新推導。
 下列 Action／Bonus／Movement 指 UI 分頁位置，不代表另收取一次該類動作。
 
 | 來源 | main 的個人化設計 | 本工作分支目前狀態 |
 | --- | --- | --- |
 | 牧師：引導神力 | 神聖火花與驅散分開；5 級在驅散說明加入焚燒效果，原 main 按鈕名稱仍為驅散 | 本次恢復兩鈕，依使用者要求於 5 級改名為焚燒；保留 main 兩個 key，升降級不改隱藏偏好 |
-| 牧師：其他 | 生命門徒另列 Action；維持生命顯示等級 × 5 的實際治療量；7 級勾選神聖打擊才顯示其 Action | 維持生命仍讀完整規則；生命門徒、神聖打擊與 main 動態摘要未移植 |
-| 武僧 | 3 級散打技巧併入聚氣凝神，不另列按鈕；武藝同時列 Action／Bonus；吐故納新雖於先攻觸發仍列 Action；撥擋、墜落、治療代入實際數字 | 仍分開列散打；缺 Action 武藝、吐故納新與額外攻擊；其餘說明編排亦有差異 |
-| 盜賊 | 偷襲列 Action 並計算骰數；5 級將靈巧打擊三種用法和 DC 併入偷襲，不另列；快手、手穩就準各自 Bonus | 缺偷襲及併入其中的靈巧打擊；其餘原有 Bonus／直覺閃避 Reaction 仍在 |
-| 戰士 | 5 級戰術轉移併入回氣說明，另於 Movement 提供捷徑；運動健將列 Movement；額外攻擊列 Action；回氣顯示實際治療加值與次數 | 回氣與戰術轉移仍為兩個 Bonus；上述 Movement 與額外攻擊未移植 |
+| 牧師：其他 | 生命門徒另列 Action；維持生命顯示等級 × 5 的實際治療量；7 級勾選神聖打擊才顯示其 Action | 已補齊生命門徒、維持生命動態摘要、神聖打擊等級與勾選條件 |
+| 武僧 | 3 級散打技巧併入聚氣凝神，不另列按鈕；武藝同時列 Action／Bonus；吐故納新雖於先攻觸發仍列 Action；撥擋、墜落、治療代入實際數字 | 已補齊 main 按鈕與動態摘要；散打已併入聚氣凝神 |
+| 盜賊 | 偷襲列 Action 並計算骰數；5 級將靈巧打擊三種用法和 DC 併入偷襲，不另列；快手、手穩就準各自 Bonus | 已補齊偷襲與靈巧打擊合併摘要；保留靈巧動作及直覺閃避 |
+| 戰士 | 5 級戰術轉移併入回氣說明，另於 Movement 提供捷徑；運動健將列 Movement；額外攻擊列 Action；回氣顯示實際治療加值與次數 | 已補齊回氣合併摘要、Movement 捷徑與額外攻擊；不另列戰術轉移 Bonus |
 | 德魯伊 | 荒野形態一鈕整合變形／解除、時數、暫時 HP、CR 與形態限制；野性復甦兩方向資源轉換合列 Action，文字仍明示無需動作；7 級勾選原初打擊才顯示 | 荒野形態仍用完整規則；野性復甦、原初打擊與 main 動態摘要未移植 |
-| 聖騎士 | 引導神力拆成神聖感知 Bonus、祝聖武器 Action；聖療同鈕包含解除中毒；祝聖武器代入魅力，額外攻擊另列 Action | 已有前三者的拆分／內容；動態魅力摘要及額外攻擊未移植 |
-| 遊俠 | 狩獵目標、防守戰術各以一個 Action 列出兩種可選效果；獵人學識列 Bonus；額外攻擊列 Action、越野列 Movement | 這批 curated 按鈕未移植；原本衍生法術仍在 |
-| 契術師 | 秘法回流、黑暗強運列 Action；選定饑渴魔刃／魔能斬擊後各自顯示 Action | 這四個 curated 按鈕未移植；其他祈喚與衍生法術仍在 |
-| 法師 | 強力戲法、記憶法術、法術塑形均作為 Action 頁規則捷徑，包含被動與短休能力 | 這三個 curated 按鈕未移植 |
+| 聖騎士 | 引導神力拆成神聖感知 Bonus、祝聖武器 Action；聖療同鈕包含解除中毒；祝聖武器代入魅力，額外攻擊另列 Action | 已補齊動態魅力摘要及額外攻擊，保留其他個人化編排 |
+| 遊俠 | 狩獵目標、防守戰術各以一個 Action 列出兩種可選效果；獵人學識列 Bonus；額外攻擊列 Action、越野列 Movement | 已補齊五個 curated 按鈕；選項合列而非依各個 checkbox 拆鈕 |
+| 契術師 | 秘法回流、黑暗強運列 Action；選定饑渴魔刃／魔能斬擊後各自顯示 Action | 已補齊四鈕；祈喚需達 5 級、已選該祈喚與刃之魔契；秘法回流說明讀 canonical class data |
+| 法師 | 強力戲法、記憶法術、法術塑形均作為 Action 頁規則捷徑，包含被動與短休能力 | 已補齊三個規則捷徑 |
 | 工具／移動 | 選擇盜賊工具熟練後提供 Action；選有飛行術也顯示飛行 Movement | 工具捷徑與飛行術顯示條件未移植；飛行仍限定龍裔 5+ |
 
 另有「放在摘要而非獨立按鈕」的設計：main 在概覽／技能／武器摘要處理
 戰士精通重擊與戰術思維、聖騎士守護靈氣（7 級加入奉獻靈氣）、
 盜賊直覺閃避／可靠才能、武僧輕身墜、契術師黑暗之賜、術士元素親和。
 其中直覺閃避與輕身墜仍有 Reaction 按鈕，不能因出現在摘要便當成重複誤刪。
-這批 main 摘要差異本次僅盤點。
+這批原 main 摘要隨合併保留；沒有以 parser 重新推導或搬移。
 
 最初基準就有且仍保留的特殊編排，包含野蠻人直覺猛撲同列 Bonus／Movement、
 半身人天生善匿隨盜賊等級增加 Bonus 入口，以及專長依明確定義跨分頁呈現。
@@ -68,8 +69,9 @@ description 函式、curated exclusion 與實際 resolver，以及
 並保留續行和清單。這些函式均不決定能力是否存在、等級或動作分類。
 `index.html` 既有的祈喚／超魔法說明擷取與法術衍生選項流程也保持原狀。
 
-## 職業與子職 migration checklist
+## 最初基準的職業與子職 migration checklist
 
+以下保留最初基準的遷移紀錄；後續個人化設計的最終狀態以上表為準。
 全部 12 職業、等級 1–8 均已比對。專案目前每職業只提供一個固定子職，
 沒有獨立 subclass form control；子職能力由所屬 class 與取得等級限制。
 沒有新增子職選單或假設 repository 未提供的子職。
@@ -89,7 +91,7 @@ description 函式、curated exclusion 與實際 resolver，以及
 | 契術師（邪魔） | 無獨立 class parser 按鈕 | 已選祈喚與衍生法術分別處理 |
 | 法師（塑能） | 無 | 無需 broad parser；既有法術路徑保留 |
 
-沒有為了對稱性新增所有被動特性或把休息能力變成新的回合動作。
+沒有為了對稱性新增所有被動特性；後續補回的休息／被動能力屬於使用者指定的既有規則捷徑。
 舊的 Action curated 項目也包含攻擊修飾能力，保持原有產品分類。
 
 ## 種族、專長、背景與選擇
@@ -119,12 +121,13 @@ description 函式、curated exclusion 與實際 resolver，以及
   `getTabletopOptions()` 繼續提供 static + resolved dynamic options。
 - 類別／種族共用 `resolveFeatureRules()`；feat 格式化、祈喚和法術維持各自必要的 adapter。
 - 保留原基準已有的 option key，包括 parser 以前產生的 key。牧師本次改用 main 的兩個獨立 key；前次遷移新建的合併「引導神力」按鈕已撤回。
+- 指定職業沿用原 main 的穩定 key；同 mode、同能力另提供前次重構 key 的隱藏偏好別名，分類恢復會一併清除。合併／換分類的按鈕不盲目繼承另一能力的隱藏狀態。
 - 保留最終全來源去重，包含 `spellSourceKey`，所以同法術不同來源仍可各自施放。
 - `tabletop-actions.js` 的 `official:<mode>:<key>`／`custom:<id>` 過濾、
   自訂動作新增／修改／移除，以及 `TabletopMode` 的 preference normalization 完整保留。
 - 動作偏好原本儲存在 `dnd.tabletopActionPreferences.v1`，屬於本機設定，
   不包含在角色 JSON／分享 schema 中。本次沒有改變這個產品行為。
-- 未變更 TabletopMode facade、DiceRoller、生命值、死亡豁免、資源或施法流程。
+- 保持 TabletopMode facade 與 DiceRoller 公開 API；原 main 的桌邊摘要及其他既有修改隨合併保留。
 - 只更新實際修改的 JS cache versions；沒有重建離線衍生檔。
 
 ## 移除的 obsolete code
@@ -153,13 +156,14 @@ feat curated 排除名單，以及石巨人的 parser 排除項只在 parser 路
 
 - 刪除 parser 前，以真實瀏覽器擷取原始結果，再切換 explicit 路徑比較：
   230 筆跨職業／等級／種族血統／專長的既有 option 均保留原 key。
-- 原 `getSelectedSpellEntries()` 函式逐字相同；額外將 215 個法術各放入兩個不同來源，
+- 原 `getSelectedSpellEntries()` 函式正規化換行後逐字相同；額外將 215 個法術各放入兩個不同來源，
   新舊完整輸出一致：Action 344、Bonus 44、Reaction 8 個選項；其他施法時間不進入這三類。
-- `validate-action-metadata.js`：4,814 個 coverage assertions，包含所有 class／level、
+- `validate-action-metadata.js`：4,945 個 coverage assertions，包含所有 class／level、
   種族／血統、20 專長、祈喚／超魔法限制、無重複、完整說明、隱藏 key 相容性，
   以及替換渲染後 prose 不影響動作輸出的驗證。
 - 同一腳本操作桌邊與 legacy UI、自訂動作 CRUD、隱藏官方／自訂動作、分類恢復、
   JSON 下載／匯入、分享編解碼、autosave reload 與本機偏好還原。
+- 個人化設計驗證：main 穩定 key、等級 1–8、武僧／盜賊／戰士合併時機、聖騎士魅力下限、遊俠合列選項、祈喚前置限制、舊 key 隱藏與分類恢復。
 - 牧師新增驗證：2–4 級拆分、5–8 級升級、降級還原、獨立說明、感知傷害骰最小值、保留驅散效果，以及隱藏偏好跨升級不變。
 - `node validate-tabletop-spellcasting.js`：215 法術、85 outcomes，通過。
 - 修改的 JS 與驗證腳本執行 `node --check`；`index.html` inline scripts 另行擷取做語法檢查。

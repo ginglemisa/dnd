@@ -256,6 +256,63 @@ const baseline = {
   },
 };
 
+// Personalized option identities captured from main 424680f; cleric upgrade is intentional.
+const personalizedClasses = {
+  monk: [
+    ["action",1,"等級 1：武藝","dynamic-action-monk-curated-martial-arts-action"],
+    ["bonus",1,"等級 1：武藝","dynamic-bonus-monk-curated-martial-arts-bonus"],
+    ["bonus",2,"等級 2：聚氣凝神","dynamic-bonus-monk-curated-focused-aim"],
+    ["action",2,"等級 2：吐故納新","dynamic-action-monk-curated-uncanny-metabolism"],
+    ["reaction",3,"等級 3：撥擋化勁","dynamic-reaction-monk-curated-deflect-attacks"],
+    ["reaction",4,"等級 4：輕身墜","dynamic-reaction-monk-curated-slow-fall"],
+    ["action",5,"等級 5：震懾擊","dynamic-action-monk-curated-stunning-strike"],
+    ["action",5,"等級 5：額外攻擊","dynamic-action-monk-curated-extra-attack"],
+    ["bonus",6,"等級 6：混元體","dynamic-bonus-monk-curated-wholeness-of-body"]
+  ],
+  paladin: [
+    ["bonus",1,"等級 1：聖療","dynamic-bonus-paladin-curated-lay-on-hands"],
+    ["bonus",3,"等級 3：神聖感知","dynamic-bonus-paladin-curated-divine-sense"],
+    ["action",3,"等級 3：祝聖武器","dynamic-action-paladin-curated-sacred-weapon"],
+    ["action",5,"等級 5：額外攻擊","dynamic-action-paladin-curated-extra-attack"]
+  ],
+  rogue: [
+    ["action",1,"等級 1：偷襲","dynamic-action-rogue-curated-sneak-attack"],
+    ["bonus",3,"等級 3：快手","dynamic-bonus-rogue-curated-fast-hands"],
+    ["bonus",3,"等級 3：手穩就準","dynamic-bonus-rogue-curated-steady-aim"],
+    ["bonus",2,"等級 2：靈巧動作","dynamic-bonus-class-1vms7ce"],
+    ["reaction",5,"等級 5：直覺閃避","dynamic-reaction-class-5f9k5x"]
+  ],
+  fighter: [
+    ["bonus",1,"等級 1：回氣","dynamic-bonus-fighter-qmmfue"],
+    ["action",2,"等級 2：動作如潮","dynamic-action-fighter-1870147"],
+    ["movement",3,"等級 3：運動健將","dynamic-movement-fighter-1s26hvz"],
+    ["action",5,"等級 5：額外攻擊","dynamic-action-fighter-113ebtz"],
+    ["movement",5,"等級 5：戰術轉移","dynamic-movement-fighter-1liysqo"]
+  ],
+  ranger: [
+    ["bonus",3,"等級 3：獵人學識","dynamic-bonus-ranger-we5ttw"],
+    ["action",3,"等級 3：狩獵目標","dynamic-action-ranger-vdr4tc"],
+    ["action",5,"等級 5：額外攻擊","dynamic-action-ranger-113ebtz"],
+    ["movement",6,"等級 6：越野","dynamic-movement-ranger-bulhou"],
+    ["action",7,"等級 7：防守戰術","dynamic-action-ranger-p55ifk"]
+  ],
+  warlock: [
+    ["action",2,"等級 2：秘法回流","dynamic-action-warlock-curated-arcane-recovery"],
+    ["action",6,"等級 6：黑暗強運（邪魔子職）","dynamic-action-warlock-curated-dark-ones-own-luck"]
+  ],
+  wizard: [
+    ["action",3,"等級 3：強力戲法（塑能子職）","dynamic-action-wizard-curated-potent-cantrip"],
+    ["action",5,"等級 5：記憶法術","dynamic-action-wizard-curated-memorize-spell"],
+    ["action",6,"等級 6：法術塑形（塑能子職）","dynamic-action-wizard-curated-sculpt-spells"]
+  ],
+  cleric: [
+    ["action",2,"等級 2：神聖火花","dynamic-action-cleric-1c18bru"],
+    ["action",2,"等級 2：驅散不死生物","dynamic-action-cleric-xonbxu"],
+    ["action",3,"等級 3：生命門徒（生命）","dynamic-action-cleric-1ocjvx6"],
+    ["action",3,"等級 3：維持生命（生命）","dynamic-action-cleric-aoatsu"]
+  ]
+};
+
 const additions = {
   cleric: [["action", 2, "等級 2：神聖火花", "dynamic-action-cleric-1c18bru"], ["action", 2, "等級 2：驅散不死生物", "dynamic-action-cleric-xonbxu"], ["action", 3, "等級 3：維持生命（生命子職）"]],
   druid: [["action", 2, "等級 2：荒野夥伴"], ["action", 3, "等級 3：大地之援（大地子職）"]],
@@ -264,7 +321,7 @@ const additions = {
 };
 
 async function verifyCoverage(page) {
-  return page.evaluate(({ baseline, additions }) => {
+  return page.evaluate(({ baseline, additions, personalizedClasses }) => {
     let assertions = 0;
     function check(condition, message) { assertions++; if (!condition) throw new Error(message); }
     const modes = ["basic", "action", "bonus", "reaction", "movement"];
@@ -283,7 +340,7 @@ async function verifyCoverage(page) {
       check(Object.hasOwn(baseline.classes, name), `${name}: class missing from audit`);
       for (let level = 1; level <= 8; level++) {
         setClass(name, level);
-        const expected = [...baseline.classes[name], ...(additions[name] || [])].filter(r => r[1] <= level);
+        const expected = (personalizedClasses[name] || [...baseline.classes[name], ...(additions[name] || [])]).filter(r => r[1] <= level);
         for (const mode of modes) {
           const actual = options(mode, "職業");
           const wanted = expected.filter(r => r[0] === mode);
@@ -300,6 +357,36 @@ async function verifyCoverage(page) {
       el("classFeatures").innerHTML = "<h3>等級 1：虛構特性</h3><p>你可使用附贈動作或反應攻擊。</p>";
       check(snapshot === JSON.stringify(modes.map(m => options(m, "職業"))), `${name}: still depends on rendered feature prose`);
     }
+    const classOption = (mode, label) => options(mode, "職業").find(o => o.label.includes(label));
+    for (const level of [2, 3, 5, 8]) {
+      setClass("monk", level); el("wis").value = "16"; el("dex").value = "18";
+      check(classOption("bonus", "聚氣凝神").description.includes("散打技巧") === (level >= 3), "Open Hand is folded into Focus at level 3");
+      check(!classOption("bonus", "散打技巧"), "no standalone Open Hand duplicate");
+      check(classOption("action", "武藝").description === classOption("bonus", "武藝").description, "Martial Arts shares its Action/Bonus summary");
+      if (level >= 4) check(classOption("reaction", "輕身墜").description.includes(`${level * 5}`), "Slow Fall uses current level");
+      setClass("rogue", level);
+      const sneak = classOption("action", "偷襲").description;
+      check(sneak.includes(`${Math.ceil(level / 2)}d6`), "Sneak Attack scales with level");
+      check(sneak.includes("靈巧打擊") === (level >= 5), "Cunning Strike is folded into Sneak Attack at level 5");
+      check(!classOption("action", "靈巧打擊"), "no standalone Cunning Strike duplicate");
+      setClass("fighter", level);
+      const wind = classOption("bonus", "回氣").description;
+      check(wind.includes(`1d10 + ${level}`) && wind.includes("戰術轉移") === (level >= 5), "Second Wind scales and includes Tactical Shift at level 5");
+      check(!classOption("bonus", "戰術轉移") && !!classOption("movement", "戰術轉移") === (level >= 5), "Tactical Shift uses Movement shortcut");
+    }
+    setClass("paladin", 5); el("cha").value = "18";
+    check(classOption("action", "祝聖武器").description.includes("+4"), "Sacred Weapon uses Charisma");
+    el("cha").value = "8";
+    check(classOption("action", "祝聖武器").description.includes("+1"), "Sacred Weapon minimum bonus");
+    setClass("ranger", 7);
+    check(classOption("action", "狩獵目標").description.includes("斬殺者") && classOption("action", "狩獵目標").description.includes("破陣者"), "Hunter's Prey contains both choices");
+    check(classOption("action", "防守戰術").description.includes("衝出重圍") && classOption("action", "防守戰術").description.includes("多重防禦"), "Defensive Tactics contains both choices");
+    setClass("cleric", 7);
+    check(!classOption("action", "神聖打擊"), "Divine Strike requires a selection");
+    el("cleric-blessed-strikes-divine-strike").checked = true;
+    check(!!classOption("action", "神聖打擊"), "selected Divine Strike appears");
+    el("level").value = "6";
+    check(!classOption("action", "神聖打擊"), "stale Divine Strike selection cannot bypass level gate");
     for (const [score, expectedDice] of [["18", "4d8"], ["8", "1d8"], ["", "Xd8"]]) {
       setClass("cleric", 5); el("wis").value = score;
       const turn = options("action", "職業").find(e => e.key === "dynamic-action-cleric-xonbxu");
@@ -375,7 +462,10 @@ async function verifyCoverage(page) {
         const wanted = (expectedInvocations[mode] || []).filter(n => level >= 5 || ["刃之魔契", "鏈之魔契"].includes(n));
         check(JSON.stringify(options(mode, "魔能祈喚").map(e => e.label).sort()) === JSON.stringify(wanted.sort()), `invocation gate ${level} ${mode}`);
       }
+      check(options("action", "職業").filter(o => ["饑渴魔刃", "魔能斬擊"].includes(o.label)).length === (level >= 5 ? 2 : 0), "selected blade invocations respect level 5");
     }
+    inputs.filter(i => i.dataset.invocationName === "刃之魔契").forEach(i => { i.checked = false; });
+    check(!options("action", "職業").some(o => ["饑渴魔刃", "魔能斬擊"].includes(o.label)), "blade action shortcuts require Blade Pact");
     inputs.filter(i => i.dataset.invocationName === "鏈之魔契").forEach(i => { i.checked = false; });
     check(!options("bonus", "魔能祈喚").some(e => e.label === "鏈主賦能") && !options("reaction", "魔能祈喚").length, "chain master requires selected chain pact");
     el("class").value = "fighter";
@@ -404,7 +494,7 @@ async function verifyCoverage(page) {
       unique(mode);
     }
     return assertions;
-  }, { baseline, additions });
+  }, { baseline, additions, personalizedClasses });
 }
 
 async function verifyUiAndPersistence(page) {
@@ -497,6 +587,38 @@ async function verifyUiAndPersistence(page) {
   assert.equal(await undeadButton.count(), 0, "upgrade keeps the hidden preference key");
   await page.evaluate(() => TabletopMode.setTabletopActionHidden("official:action:dynamic-action-cleric-xonbxu", false));
   await undeadButton.waitFor({state:"visible"});
+  await page.evaluate(() => {
+    document.getElementById("class").value = "monk";
+    document.getElementById("level").value = "3";
+    document.getElementById("class").dispatchEvent(new Event("change", {bubbles:true}));
+  });
+  await page.click("#tabletop-action-tab-bonus");
+  const focusButton = page.locator('[data-action-option-key="dynamic-bonus-monk-curated-focused-aim"]');
+  await focusButton.click();
+  assert.match(await page.locator("#tabletop-action-panel-bonus .tabletop-action-description").innerText(), /散打技巧/);
+  await page.evaluate(() => TabletopMode.setTabletopActionHidden("official:bonus:dynamic-bonus-class-ricpmu", true));
+  await focusButton.waitFor({state:"detached"});
+  await page.evaluate(() => TabletopMode.restoreTabletopActionCategory("bonus"));
+  await focusButton.waitFor({state:"visible"});
+  await page.evaluate(() => {
+    document.getElementById("class").value = "cleric";
+    document.getElementById("level").value = "7";
+    document.getElementById("class").dispatchEvent(new Event("change", {bubbles:true}));
+  });
+  await page.click("#tabletop-action-tab-action");
+  const strikeButton = page.locator('[data-action-option-key="dynamic-action-cleric-sxx32"]');
+  assert.equal(await strikeButton.count(), 0);
+  await page.evaluate(() => {
+    const checkbox = document.getElementById("cleric-blessed-strikes-divine-strike");
+    checkbox.checked = true; checkbox.dispatchEvent(new Event("change", {bubbles:true}));
+  });
+  await strikeButton.click();
+  assert.match(await page.locator("#tabletop-action-panel-action .tabletop-action-description").innerText(), /1d8/);
+  await page.evaluate(() => {
+    const checkbox = document.getElementById("cleric-blessed-strikes-divine-strike");
+    checkbox.checked = false; checkbox.dispatchEvent(new Event("change", {bubbles:true}));
+  });
+  await strikeButton.waitFor({state:"detached"});
   if (process.env.DND_SCREENSHOT_DIR) {
     await page.screenshot({path:path.join(process.env.DND_SCREENSHOT_DIR,"actions-desktop.png")});
     await page.setViewportSize({width:390,height:844});
