@@ -161,7 +161,12 @@
       { id: "countercharm", mode: "reaction", level: 7, label: "等級 7：反迷惑", key: "dynamic-reaction-class-ul9dq", descriptionId: "bard-countercharm" }
     ]),
     cleric: Object.freeze([
-      { id: "channel-divinity", mode: "action", level: 2, label: "等級 2：引導神力", descriptionId: "cleric-channel-divinity" },
+      { id: "divine-spark", mode: "action", level: 2, label: "等級 2：神聖火花", key: "dynamic-action-cleric-1c18bru", description: () => getClericChannelDescription("cleric-divine-spark") },
+      {
+        id: "turn-undead", mode: "action", level: 2, key: "dynamic-action-cleric-xonbxu",
+        label: () => getCharacterLevel() >= 5 ? "等級 5：焚燒不死生物" : "等級 2：驅散不死生物",
+        description: getClericTurnUndeadDescription
+      },
       { id: "preserve-life", mode: "action", level: 3, label: "等級 3：維持生命（生命子職）", descriptionId: "cleric-preserve-life" }
     ]),
     druid: Object.freeze([
@@ -427,6 +432,20 @@
 
   const classDescriptionCache = new Map();
 
+  function getClericChannelDescription(descriptionId) {
+    return `消耗 1 次引導神力，視為魔法動作。\n\n${getClassActionDescription("cleric", descriptionId)}`;
+  }
+
+  function getClericTurnUndeadDescription() {
+    const base = getClericChannelDescription("cleric-turn-undead");
+    if (getCharacterLevel() < 5) return base;
+    const wisdomModifier = getAbilityModifier("wis");
+    const damageDice = wisdomModifier === null
+      ? "Xd8（X＝感知調整值，最少 1d8）"
+      : `${Math.max(1, wisdomModifier)}d8`;
+    return `${base}\n\n${getClassActionDescription("cleric", "cleric-sear-undead")}\n\n額外光耀傷害骰：${damageDice}。`;
+  }
+
   function getClassActionDescription(className, descriptionId) {
     if (typeof classFeatures === "undefined") return "";
     const raw = classFeatures[className] || "";
@@ -465,7 +484,7 @@
       if (rule.proficiencyValue) description = description.replace(/熟練加值/gu, String(getProficiencyBonus()));
       return [{
         key: rule.key || `dynamic-${mode}-${source}-${rule.id}`,
-        label: rule.label,
+        label: typeof rule.label === "function" ? rule.label() : rule.label,
         source: FEATURE_SOURCE_LABELS[source],
         description,
         requiredLevel: rule.level,

@@ -744,7 +744,7 @@ const classFeatures = {
   </div>
 </section>
 
-<section class="cleric-feature class-feature-section" data-feature-level="2" data-action-id="cleric-channel-divinity">
+<section class="cleric-feature class-feature-section" data-feature-level="2">
   <h3>等級 2：引導神力</h3>
   <p>你可用引導神力產生神聖效果，起始有 2 種：</p>
   <ul class="class-rule-list">
@@ -761,7 +761,7 @@ const classFeatures = {
     </ul>
   </div>
   <p>若效果需要豁免，DC 用你的牧師法術豁免 DC。</p>
-  <div class="class-rule-subsection">
+  <div class="class-rule-subsection" data-action-id="cleric-divine-spark">
     <h4>神聖火花（魔法動作）</h4>
     <ul class="class-rule-list">
       <li>指定 30 呎內你看得到的生物。</li>
@@ -774,7 +774,7 @@ const classFeatures = {
       </li>
     </ul>
   </div>
-  <div class="class-rule-subsection">
+  <div class="class-rule-subsection" data-action-id="cleric-turn-undead">
     <h4>驅散不死生物（魔法動作）</h4>
     <ul class="class-rule-list">
       <li>30 呎內每個不死生物做感知豁免。</li>
@@ -815,7 +815,7 @@ const classFeatures = {
   <p>獲得「屬性值提升」專長，或其他符合條件的專長。</p>
 </section>
 
-<section class="cleric-feature class-feature-section" data-feature-level="5">
+<section class="cleric-feature class-feature-section" data-feature-level="5" data-action-id="cleric-sear-undead">
   <h3>等級 5：焚燒不死生物</h3>
   <p>當你使用驅散不死生物時，可額外擲等同感知調整值數量的 d8（最少 1d8），將總值作為光耀傷害，套用到每個該次豁免失敗的不死生物。</p>
   <p>這個傷害不會中止驅散效果。</p>

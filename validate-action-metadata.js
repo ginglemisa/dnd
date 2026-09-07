@@ -257,7 +257,7 @@ const baseline = {
 };
 
 const additions = {
-  cleric: [["action", 2, "等級 2：引導神力"], ["action", 3, "等級 3：維持生命（生命子職）"]],
+  cleric: [["action", 2, "等級 2：神聖火花", "dynamic-action-cleric-1c18bru"], ["action", 2, "等級 2：驅散不死生物", "dynamic-action-cleric-xonbxu"], ["action", 3, "等級 3：維持生命（生命子職）"]],
   druid: [["action", 2, "等級 2：荒野夥伴"], ["action", 3, "等級 3：大地之援（大地子職）"]],
   fighter: [["action", 2, "等級 2：動作如潮"]],
   paladin: [["action", 3, "等級 3：祝聖武器（奉獻子職）"]]
@@ -289,7 +289,8 @@ async function verifyCoverage(page) {
           const wanted = expected.filter(r => r[0] === mode);
           check(actual.length === wanted.length, `${name} ${level} ${mode}: unexpected class/subclass actions`);
           for (const [, , label, key] of wanted) {
-            check(actual.some(e => e.label === label && (!key || e.key === key)), `${name} ${level}: missing ${label} / legacy key`);
+            const expectedLabel = name === "cleric" && label === "等級 2：驅散不死生物" && level >= 5 ? "等級 5：焚燒不死生物" : label;
+            check(actual.some(e => e.label === expectedLabel && (!key || e.key === key)), `${name} ${level}: missing ${expectedLabel} / legacy key`);
           }
           unique(mode);
         }
@@ -298,6 +299,12 @@ async function verifyCoverage(page) {
       const snapshot = JSON.stringify(modes.map(m => options(m, "職業")));
       el("classFeatures").innerHTML = "<h3>等級 1：虛構特性</h3><p>你可使用附贈動作或反應攻擊。</p>";
       check(snapshot === JSON.stringify(modes.map(m => options(m, "職業"))), `${name}: still depends on rendered feature prose`);
+    }
+    for (const [score, expectedDice] of [["18", "4d8"], ["8", "1d8"], ["", "Xd8"]]) {
+      setClass("cleric", 5); el("wis").value = score;
+      const turn = options("action", "職業").find(e => e.key === "dynamic-action-cleric-xonbxu");
+      check(turn.description.includes(expectedDice) && turn.description.includes("不會中止驅散效果"), "Sear Undead adds damage without losing Turn Undead");
+      check(turn.description.includes("感知豁免") && turn.description.includes("恐慌與失能"), "Sear Undead retains base conditions");
     }
     setClass("", 8);
     for (const [race, scenarios] of Object.entries(baseline.races)) {
@@ -467,9 +474,29 @@ async function verifyUiAndPersistence(page) {
     control.value = "cleric"; control.dispatchEvent(new Event("change", {bubbles:true}));
   });
   await page.click("#tabletop-action-tab-action");
-  await page.locator('[data-action-option-key="dynamic-action-class-channel-divinity"]').click();
-  const channelCopy = await page.locator("#tabletop-action-panel-action .tabletop-action-description").innerText();
-  assert.match(channelCopy, /神聖火花/); assert.match(channelCopy, /驅散不死生物/);
+  const sparkButton = page.locator('[data-action-option-key="dynamic-action-cleric-1c18bru"]');
+  const undeadButton = page.locator('[data-action-option-key="dynamic-action-cleric-xonbxu"]');
+  await sparkButton.click();
+  const sparkCopy = await page.locator("#tabletop-action-panel-action .tabletop-action-description").innerText();
+  assert.match(sparkCopy, /神聖火花/); assert.doesNotMatch(sparkCopy, /不死生物/);
+  assert.match(await undeadButton.innerText(), /焚燒不死生物/);
+  await undeadButton.click();
+  assert.match(await page.locator("#tabletop-action-panel-action .tabletop-action-description").innerText(), /不會中止驅散效果/);
+  await page.evaluate(() => {
+    const level = document.getElementById("level"); level.value = "4"; level.dispatchEvent(new Event("change", {bubbles:true}));
+  });
+  await page.waitForFunction(() => document.querySelector('[data-action-option-key="dynamic-action-cleric-xonbxu"]')?.textContent.includes("驅散不死生物"));
+  await undeadButton.click();
+  assert.doesNotMatch(await page.locator("#tabletop-action-panel-action .tabletop-action-description").innerText(), /額外光耀傷害骰|焚燒/);
+  await page.evaluate(() => TabletopMode.setTabletopActionHidden("official:action:dynamic-action-cleric-xonbxu", true));
+  await undeadButton.waitFor({state:"detached"});
+  assert.equal(await sparkButton.count(), 1, "the two Channel Divinity buttons have independent visibility");
+  await page.evaluate(() => {
+    const level = document.getElementById("level"); level.value = "5"; level.dispatchEvent(new Event("change", {bubbles:true}));
+  });
+  assert.equal(await undeadButton.count(), 0, "upgrade keeps the hidden preference key");
+  await page.evaluate(() => TabletopMode.setTabletopActionHidden("official:action:dynamic-action-cleric-xonbxu", false));
+  await undeadButton.waitFor({state:"visible"});
   if (process.env.DND_SCREENSHOT_DIR) {
     await page.screenshot({path:path.join(process.env.DND_SCREENSHOT_DIR,"actions-desktop.png")});
     await page.setViewportSize({width:390,height:844});
