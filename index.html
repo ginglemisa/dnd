@@ -45,7 +45,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎲%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20260904-tabletop-notes-order">
+  <link rel="stylesheet" href="styles.css?v=20260908-skill-rank-icons">
   <script src="scroll-to-top.js" defer></script>
   <script src="dice-roller.js?v=20260902-tabletop-casting" defer></script>
   <script src="monster.js?v=20260903-quick-build-mastery-tip" defer></script>
@@ -58,10 +58,10 @@
   <script src="spell-list.js?v=20260908-spell-attack" defer></script>
   <script src="condition.js" defer></script>
   <script src="action-panel.js?v=20260908-action-copy-review" defer></script>
-  <script src="character-rules.js?v=20260902-class-resources" defer></script>
+  <script src="character-rules.js?v=20260909-bard-initiative" defer></script>
   <script src="app-dialog.js?v=20260831-number-input" defer></script>
-  <script src="tabletop-mode.js?v=20260908-personalized-actions" defer></script>
-  <script src="tabletop-resources.js?v=20260901-hit-die-links" defer></script>
+  <script src="tabletop-mode.js?v=20260908-skill-rank-icons" defer></script>
+  <script src="tabletop-resources.js?v=20260909-human-inspiration" defer></script>
   <script src="tabletop-actions.js?v=20260908-personalized-actions" defer></script>
   <script src="tabletop-spells.js?v=20260908-spell-attack" defer></script>
   <script src="legal-modal.js?v=20260824-onboarding-entry" defer></script>
@@ -1289,6 +1289,7 @@ window.setCharacterSize = setCharacterSize;
 window.getCharacterSize = () => characterSize;
 
 function bindCoreCharacterEvents() {
+  bindEventById("class", "change", updateAutomaticInitiative);
   bindEventById("race", "change", () => { syncCharacterSizeFromRace(); updateRaceFeature(); updateRaceOptionVisibility(); updateSpeedDisplay(); syncOriginAndSubclassDerivedSpellRows(); updateSpellsByClassLevel(); updateBaseLanguageOptions(); });
   bindEventById("background", "change", () => { updateBackgroundFeature(); updateSpellsByClassLevel(); updateBackgroundToolRow(); });
   bindEventById("armor", "change", () => { updateACDisplay(); updateSpeedDisplay(); populateHandAttacks(); });
@@ -5041,7 +5042,12 @@ function updateAutomaticInitiative() {
   }
   const dexMod = calculateAbilityModifier(dexScore);
   const hasAlertFeat = getFeatSelects().some(select => select.value === ALERT_FEAT_NAME);
-  initiative.value = formatSignedValue(dexMod + (hasAlertFeat ? getProficiencyBonus() : 0));
+  const jackOfAllTradesBonus = getJackOfAllTradesBonus(
+    document.getElementById("class")?.value,
+    document.getElementById("level")?.value,
+    hasAlertFeat
+  );
+  initiative.value = formatSignedValue(dexMod + (hasAlertFeat ? getProficiencyBonus() : jackOfAllTradesBonus));
 }
 
 function fillSkills() {
@@ -5058,7 +5064,6 @@ function fillSkills() {
   const proficiencyBonus = getProficiencyBonus();
   const wisdomCheckBonus = Math.max(1, getModifier("wis"));
   const bonusSkills = new Set();
-  const hasJackOfAllTrades = selectedClass === "bard" && level >= 2;
 
   if (selectedClass === "cleric" && document.getElementById("cleric-trickster")?.checked) {
     bonusSkills.add("奧秘");
@@ -5079,9 +5084,9 @@ function fillSkills() {
 
     const skillProficiencyBonus = expInput.checked ? proficiencyBonus * 2 : (profInput.checked ? proficiencyBonus : 0);
     const featureBonus = bonusSkills.has(skill) ? wisdomCheckBonus : 0;
-    const jackOfAllTradesBonus = hasJackOfAllTrades && !profInput.checked && !expInput.checked
-      ? Math.floor(proficiencyBonus / 2)
-      : 0;
+    const jackOfAllTradesBonus = getJackOfAllTradesBonus(
+      selectedClass, level, profInput.checked || expInput.checked
+    );
     const total = mod + skillProficiencyBonus + featureBonus + jackOfAllTradesBonus;
     input.value = formatSignedValue(total);
   }

@@ -1057,14 +1057,19 @@
   }
 
   function enterDeathSaveCondition() {
-    return addActiveCondition("unconscious");
+    const unconsciousAdded = addActiveCondition("unconscious");
+    const proneAdded = addActiveCondition("prone");
+    const incapacitatedAdded = addActiveCondition("incapacitated");
+
+    return unconsciousAdded || proneAdded || incapacitatedAdded;
   }
 
   function reviveFromZeroHpCondition() {
     const unconsciousRemoved = removeActiveCondition("unconscious");
+    const incapacitatedRemoved = removeActiveCondition("incapacitated");
     const proneAdded = addActiveCondition("prone");
 
-    return unconsciousRemoved || proneAdded;
+    return unconsciousRemoved || incapacitatedRemoved || proneAdded;
   }
 
   function becomeStable() {
@@ -1219,7 +1224,7 @@
     const label = String(sourceLabel || "治療");
     markStateChanged(
       revived
-        ? `${label}回復 ${result.restoredHp} 點 HP；已解除昏迷並改為倒地。`
+        ? `${label}回復 ${result.restoredHp} 點 HP；已解除昏迷與失能，仍為倒地。`
         : `${label}回復 ${result.restoredHp} 點 HP。`
     );
 
@@ -1994,15 +1999,30 @@ function getRogueReliableTalentEntry() {
         cell.querySelector(".skill-tip")?.textContent?.trim()
         || input.id.replace("skill-", "");
 
-      return [
-        createReadOnlyValue(
-          label,
-          getReadOnlySourceValue(input),
-          "tabletop-skill-value",
-          "listitem",
-          `${label}技能檢定`
-        )
-      ];
+      const skillKey = input.id.replace("skill-", "");
+      const hasExpertise = document.getElementById(`exp-${skillKey}`)?.checked;
+      const hasProficiency = document.getElementById(`prof-${skillKey}`)?.checked;
+      const rank = hasExpertise ? "expertise" : hasProficiency ? "proficient" : "untrained";
+      const rankLabel = hasExpertise ? "專精" : hasProficiency ? "熟練" : "未熟練";
+      const item = createReadOnlyValue(
+        label,
+        getReadOnlySourceValue(input),
+        "tabletop-skill-value",
+        "listitem",
+        `${label}技能檢定`
+      );
+      item.dataset.skillRank = rank;
+
+      const marker = document.createElement("span");
+      marker.className = "tabletop-skill-value__rank";
+      marker.setAttribute("aria-hidden", "true");
+      marker.title = rankLabel;
+      marker.textContent = hasExpertise ? "◆" : hasProficiency ? "●" : "○";
+      item.querySelector(".tabletop-skill-value__label").appendChild(marker);
+
+      const button = item.querySelector(".tabletop-inline-roll");
+      button.setAttribute("aria-label", `${button.getAttribute("aria-label")}；${rankLabel}`);
+      return [item];
     });
 
     elements.skillValues.replaceChildren(...skills);
@@ -2583,7 +2603,7 @@ function getRogueReliableTalentEntry() {
 
         markStateChanged(
           appendConcentrationSaveReminder(
-            `受到 ${amount} 點傷害${temporaryHpNote}，目前 HP 降至 0；角色昏迷並開始死亡豁免${maximumHpNote}。`,
+            `受到 ${amount} 點傷害${temporaryHpNote}，目前 HP 降至 0；角色昏迷、倒地且失能，並開始死亡豁免${maximumHpNote}。`,
             amount
           )
         );
@@ -2647,7 +2667,7 @@ function getRogueReliableTalentEntry() {
 
     markStateChanged(
       currentHp === 0 && result.currentHp > 0
-        ? `獲得治療 ${result.restoredHp} 點；已解除昏迷並改為倒地。`
+        ? `獲得治療 ${result.restoredHp} 點；已解除昏迷與失能，仍為倒地。`
         : `獲得治療 ${result.restoredHp} 點。`
     );
   }
@@ -2807,7 +2827,7 @@ function getRogueReliableTalentEntry() {
       announce(
         wasSacrificed
           ? `目前 HP 已高於 0，「${HEROIC_SACRIFICE_LABEL}」與死亡豁免狀態已清除。`
-          : "目前 HP 已高於 0，死亡豁免與穩定狀態已清除，已解除昏迷並改為倒地。"
+          : "目前 HP 已高於 0，死亡豁免與穩定狀態已清除，已解除昏迷與失能，仍為倒地。"
       );
     }
   }
@@ -3017,7 +3037,7 @@ function getRogueReliableTalentEntry() {
       reviveFromZeroHpCondition();
 
       markStateChanged(
-        "死亡豁免擲出 20：恢復 1 HP，死亡豁免、穩定與英勇犧牲狀態已清除。"
+        "死亡豁免擲出 20：恢復 1 HP，死亡豁免、穩定與英勇犧牲狀態已清除；已解除昏迷與失能，仍為倒地。"
       );
 
       return Object.freeze({

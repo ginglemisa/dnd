@@ -9914,6 +9914,11 @@ html.app-dialog-open {
   width: 100%;
 }
 
+.tabletop-skill-value > .tabletop-inline-roll:disabled {
+  background: transparent;
+  color: var(--text-body);
+}
+
 .tabletop-key-stat .tabletop-inline-roll,
 .tabletop-death-roll {
   font-size: inherit;
@@ -10004,6 +10009,24 @@ html.app-dialog-open {
   color: var(--accent-strong);
   font-size: var(--fs-base);
   font-variant-numeric: tabular-nums;
+}
+
+.tabletop-skill-value__rank {
+  margin-left: 0.3rem;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+.tabletop-skill-value[data-skill-rank="proficient"] .tabletop-skill-value__rank {
+  color: var(--accent);
+}
+
+.tabletop-skill-value[data-skill-rank="expertise"] .tabletop-skill-value__rank {
+  color: #7044a6;
+}
+
+html[data-theme="dark"] .tabletop-skill-value[data-skill-rank="expertise"] .tabletop-skill-value__rank {
+  color: #c4a5ed;
 }
 
 .tabletop-defense-summary__list {

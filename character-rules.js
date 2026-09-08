@@ -139,6 +139,12 @@
     return 2;
   }
 
+  /** 萬事通只加在尚未套用熟練加值的能力檢定。 */
+  function getJackOfAllTradesBonus(className, level, hasProficiency = false) {
+    if (className !== "bard" || !(Number.parseInt(level, 10) >= 2) || hasProficiency) return 0;
+    return Math.floor(calculateProficiencyBonus(level) / 2);
+  }
+
   /** 依目前職業、種族、等級與屬性計算桌邊模式應顯示的內建資源。 */
   function getCharacterResourceSpecs(options = {}) {
     const className = String(options.className || "").trim();
@@ -459,6 +465,7 @@
     getCharacterResourceSpecs,
     getClassSaveProficiencies,
     getHitDiceValues,
+    getJackOfAllTradesBonus,
     getMetamagicSelectionLimit,
     getMonkMartialArtsDieByLevel,
     getPaladinAuraSavingThrowBonus,

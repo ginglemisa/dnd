@@ -239,11 +239,22 @@
   function createHeroicInspirationRow() {
     const canonical = document.getElementById("heroic-inspiration");
     if (!(canonical instanceof HTMLInputElement)) return null;
-    return createCheckboxMirrors(
+    const recoveryNote = document.getElementById("race")?.value === "human"
+      ? "足智多謀：完成長休後，獲得 1 顆英雄激勵。"
+      : "";
+    const row = createCheckboxMirrors(
       "英雄激勵",
-      "與角色卡數值頁同步。",
+      recoveryNote || "與角色卡數值頁同步。",
       [canonical]
     );
+    if (recoveryNote) {
+      const wrapper = createElement("div", "tabletop-resource-row");
+      const copy = createElement("div", "tabletop-resource-row__copy");
+      copy.append(row, createElement("p", "", recoveryNote));
+      wrapper.appendChild(copy);
+      return wrapper;
+    }
+    return row;
   }
 
   function createHitDiceRow() {
