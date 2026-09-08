@@ -69,7 +69,7 @@ const castableCantripIds = spells
   .filter(spell => spell.level === 0 && catalog.canCastFromTabletop(spell.spellId))
   .map(spell => spell.spellId);
 assertSameValues(catalog.tabletopDamageCantripIds, expectedCantripIds, "戲法白名單必須恰好為指定 13 個");
-assertSameValues(castableCantripIds, expectedCantripIds, "只有指定 13 個戲法可顯示施法按鈕");
+assertSameValues(castableCantripIds, [...expectedCantripIds, "true-strike"], "傷害戲法與克敵機先可顯示施法按鈕");
 assert.equal(
   spells.filter(spell => spell.level > 0 && catalog.canCastFromTabletop(spell.spellId)).length,
   187,
@@ -111,7 +111,7 @@ spells.forEach(spell => {
   assert.equal(typeof metadata.hasUpcastEffect, "boolean", `${spell.spellId} hasUpcastEffect 必須為布林值`);
   metadata.outcomes.forEach((outcome, outcomeIndex) => {
     outcomeCount += 1;
-    assert(["damage", "healing", "temporary-hp"].includes(outcome.kind), `${spell.spellId} outcome ${outcomeIndex} kind 無效`);
+    assert(["damage", "healing", "temporary-hp", "attack"].includes(outcome.kind), `${spell.spellId} outcome ${outcomeIndex} kind 無效`);
     assert.equal(typeof outcome.autoOnCast, "boolean", `${spell.spellId} outcome ${outcomeIndex} autoOnCast 必須明確設定`);
     if (outcome.autoOnCast) autoOutcomeCount += 1;
     if (outcome.damageType) assert(allowedDamageTypes.has(outcome.damageType), `${spell.spellId} 傷害類型無效`);
@@ -159,7 +159,6 @@ const candidatesWithoutOutcome = numericOutcomeCandidates
   .filter(spell => !catalog.getCastMetadata(spell.spellId).outcomes.length)
   .map(spell => spell.spellId);
 assertSameValues(candidatesWithoutOutcome, [
-  "true-strike",
   "guidance",
   "resistance",
   "bless",
@@ -420,6 +419,52 @@ assert.equal(
 );
 
 const tabletopSpellSource = fs.readFileSync("tabletop-spells.js", "utf8");
+// Exercise the actual UI roll builder with character form values, without a browser dependency.
+const rollFields = { "spell-adjustment": "+3", "spell-attack-bonus": "+7", level: "5" };
+const rollSandbox = {
+  SpellCatalog: catalog,
+  document: {
+    getElementById: id => ({ value: rollFields[id] || "" }),
+    querySelectorAll: () => [],
+    addEventListener() {}
+  },
+  getProficiencyBonus: () => 3
+};
+vm.createContext(rollSandbox);
+vm.runInContext(tabletopSpellSource, rollSandbox);
+const buildRolls = (spellId, effectiveLevel = 0) => [...rollSandbox.TabletopSpells.logic.buildRollEntries({
+  spellId, spell: catalog.getSpell(spellId), spellClass: "", spellSource: "manual"
+}, { effectiveLevel })];
+const attackSpellIds = [
+  "starry-wisp", "poison-spray", "produce-flame", "chill-touch", "fire-bolt",
+  "ray-of-frost", "shocking-grasp", "sorcerous-burst", "eldritch-blast",
+  "guiding-bolt", "ice-knife", "chromatic-orb", "ray-of-sickness",
+  "spiritual-weapon", "scorching-ray", "vampiric-touch"
+];
+assertSameValues(spells.filter(spell => catalog.getCastMetadata(spell.spellId).outcomes
+  .some(outcome => outcome.attack === "spell")).map(spell => spell.spellId), attackSpellIds,
+"攻擊 metadata 必須涵蓋施法時直接發動的法術攻擊");
+attackSpellIds.forEach(spellId => {
+  const rolls = buildRolls(spellId, catalog.getSpell(spellId).level);
+  assert.equal(rolls[0].expression, "1d20+7", `${spellId} 必須先擲法術命中加值`);
+  assert(rolls[0].label.includes("攻擊命中"));
+  assert(rolls[1].label.includes("傷害"));
+});
+assert.deepEqual(buildRolls("eldritch-blast").map(roll => roll.expression), ["1d20+7", "1d10", "1d20+7", "1d10"]);
+assert.deepEqual(buildRolls("scorching-ray", 3).map(roll => roll.expression),
+  Array.from({ length: 4 }, () => ["1d20+7", "2d6"]).flat(), "升環射線每道各擲命中與傷害");
+assert.deepEqual(buildRolls("ice-knife", 2).map(roll => roll.expression), ["1d20+7", "1d10", "2d6+1d6"], "冰刃爆裂不可另擲命中");
+["shillelagh", "acid-splash", "sacred-flame", "inflict-wounds", "divine-smite", "magic-missile", "flame-blade"].forEach(spellId => {
+  assert(!buildRolls(spellId).some(roll => roll.expression.startsWith("1d20")), `${spellId} 不應在施法時新增命中檢定`);
+});
+assert.deepEqual(buildRolls("true-strike").map(roll => roll.expression), ["1d20+6"], "克敵機先使用施法屬性加熟練，而非法術命中加值");
+rollFields["spell-attack-bonus"] = "-2";
+assert.equal(buildRolls("fire-bolt")[0].expression, "1d20-2");
+rollFields["spell-attack-bonus"] = "+0";
+assert.equal(buildRolls("fire-bolt")[0].expression, "1d20+0");
+rollFields["spell-attack-bonus"] = "";
+assert.throws(() => buildRolls("fire-bolt"), /Missing spell attack bonus/);
+
 const tabletopModeSource = fs.readFileSync("tabletop-mode.js", "utf8");
 const diceSource = fs.readFileSync("dice-roller.js", "utf8");
 const indexSource = fs.readFileSync("index.html", "utf8");

@@ -31,7 +31,7 @@ twD20 是為 TRPG 新手、帶團者與教學活動設計的手機優先創角�
 
 - 總覽、技能、動作、法術、資源五個桌邊分頁，與原角色卡共用資料
 - HP、臨時 HP、狀態、死亡豁免與專注追蹤
-- 武器攻擊與角色可用行動查閱；可隱藏既有項目或建立自訂行動
+- 武器命中與傷害擲骰、角色可用行動查閱；可隱藏既有項目或建立僅顯示文字說明的自訂行動
 - 法術位、已選法術、施法方式與資源消耗管理，並支援可用結果的自動擲骰或治療處理
 - 依目前職業、種族與等級顯示內建資源，也可建立自訂資源
 
@@ -49,11 +49,13 @@ twD20 是為 TRPG 新手、帶團者與教學活動設計的手機優先創角�
 
 一般模式下，角色資料與部分操作偏好會儲存在目前瀏覽器的 LocalStorage。清除瀏覽器資料或更換裝置後，資料不會自動保留；建議定期匯出 JSON 備份，需要時再匯入還原。
 
-透過分享網址開啟角色時會進入分享模式。分享模式中的修改不會自動寫入本機儲存，請使用匯入／匯出功能保存需要的內容。
+透過有效分享網址開啟角色時會進入分享模式。分享模式中的角色修改不會自動寫入本機儲存，可先匯出 JSON 保存；匯入 JSON 後會退出分享模式，將匯入的角色資料存到本機。
+
+桌邊動作的隱藏設定、自訂按鈕與動作筆記屬於目前瀏覽器的操作偏好，獨立於角色資料保存，不包含在角色 JSON 或分享網址中；在分享模式下調整這些偏好仍會存到本機。
 
 ## 本機執行
 
-本專案是原生 HTML、CSS、JavaScript 靜態網站，沒有 npm 相依套件或必要的編譯步驟。以任意靜態 HTTP 伺服器提供專案目錄，再開啟 `index.html` 即可；例如環境已有 Python 時：
+本專案是原生 HTML、CSS、JavaScript 靜態網站，網站執行不需 npm 安裝或編譯。`index.html` 以傳統 `<script defer>` 依序載入全域模組，並保留初始化與表單串接等 inline 程式。以任意靜態 HTTP 伺服器提供專案目錄，再開啟 `index.html` 即可；例如環境已有 Python 時：
 
 ```powershell
 python -m http.server 8000
@@ -69,12 +71,15 @@ python -m http.server 8000
 - 桌邊模式：`tabletop-mode.js`（狀態與共用 API）、`tabletop-actions.js`（武器與行動）、`tabletop-spells.js`（施法與專注）、`tabletop-resources.js`（內建與自訂資源）
 - PDF 匯出：`pdf-export.js`、`pdf-field-map.js`、`pdf-lib.custom.min.js`、`fontkit.custom.min.js`，以及角色紙與字型素材
 - 資訊頁面：`about.html`、`ddals1.html`、`info-pages.css`、`legal-modal.js`
-- 維護工具：`validate-tabletop-spellcasting.js`、`build-offline-nopdf.ps1`
+- 維護工具：`validate-tabletop-spellcasting.js`、`validate-action-metadata.js`、`build-offline-nopdf.ps1`
+- 動作系統遷移紀錄：`ACTION-METADATA-MIGRATION.md`（歷史盤點與驗證紀錄；目前行為仍以實際程式與資料為準）
 - 衍生檔案：`TWD20-offline.html`
 
-`SpellCatalog` 由 `spell-list.js` 提供，是法術內容及桌邊施法 metadata 的來源。`ActionPanel` 從既有職業、種族、專長與法術資料建立角色可用動作。桌邊模組則統一經由 `TabletopMode` 同步狀態，擲骰由 `DiceRoller` 提供。
+`character-rules.js` 提供共用角色計算與規則。`SpellCatalog` 由 `spell-list.js` 提供，是法術內容及桌邊施法 metadata 的來源。`ActionPanel` 依明確的非施法能力動作定義及角色選擇，建立職業、種族、專長、魔能祈喚與超魔等動作選項；法術施法時間則沿用既有分類機制。動作 key、分類、等級與選擇條件由結構化定義控制，說明取自規則資料或既有個人化摘要。
 
-PDF 程式與素材只會在使用 PDF 匯出時動態載入；不需要 PDF 功能的部署可省略這些檔案。
+`action-panel.js` 負責動作選項與角色卡的動作 UI，`tabletop-actions.js` 負責桌邊呈現與操作。桌邊模組經由 `TabletopMode` 共用 API 協作，角色目前選擇仍由既有表單／DOM 提供，擲骰統一經由 `DiceRoller`，本機儲存則透過 `window.dndStorage` 存取。
+
+PDF 程式與素材只會在使用 PDF 匯出時動態載入。正式網站若保留 PDF 匯出入口，需一併提供這些檔案；離線精簡版由產生腳本停用 PDF 匯出。
 
 ## 維護與驗證
 
@@ -84,13 +89,21 @@ PDF 程式與素材只會在使用 PDF 匯出時動態載入；不需要 PDF 功
 node --check .\受影響的檔案.js
 ```
 
-若修改法術 metadata 或桌邊施法、法術位、專注、自動擲骰流程，另執行專用驗證：
+若修改法術 metadata 或桌邊施法、法術位、專注、自動擲骰流程，從專案根目錄執行專用驗證（需要 Node.js 與 Git，會讀取 `HEAD:spell-list.js` 比對）：
 
 ```powershell
 node .\validate-tabletop-spellcasting.js
 ```
 
-專案沒有通用測試框架。請避免為一般修改新增套件管理器或建置相依。
+若修改非施法能力動作定義、動作 UI 或桌邊動作偏好，可執行瀏覽器回歸驗證：
+
+```powershell
+node .\validate-action-metadata.js
+```
+
+此腳本需要環境已提供可由 Node.js 載入的 `playwright` 與可用瀏覽器，會自行啟動本機靜態伺服器，檢查動作條件、角色卡／桌邊 UI、自訂與隱藏動作，以及 JSON、分享與自動儲存流程。若使用環境內附的套件，可用 `NODE_PATH` 指向其 `node_modules`；使用已安裝的 Microsoft Edge 時，可先在 PowerShell 設定 `$env:DND_BROWSER_CHANNEL = "msedge"`。
+
+專案未建立套件管理或通用測試框架；上述瀏覽器腳本沿用環境已有的 Playwright，不需為一般修改新增專案相依。只修改 Markdown 時，檢查檔名、連結、命令與內容是否符合現況即可。修改正式載入的 CSS／JavaScript 時，亦應檢查 `index.html` 對應資源的快取版本。
 
 ## 離線版本
 
@@ -102,7 +115,7 @@ node .\validate-tabletop-spellcasting.js
 .\build-offline-nopdf.ps1
 ```
 
-請勿直接只修改 `TWD20-offline.html`；功能與文案應先修改來源檔，再重新產生離線版本。
+請勿直接只修改 `TWD20-offline.html`；功能與文案應先修改來源檔，再於需要同步離線成品時重新產生。一般來源修改不會自動更新此檔，離線成品可能與目前網站來源不同步。
 
 ## 授權、素材與法律聲明
 

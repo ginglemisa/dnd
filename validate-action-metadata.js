@@ -358,6 +358,25 @@ async function verifyCoverage(page) {
       check(snapshot === JSON.stringify(modes.map(m => options(m, "職業"))), `${name}: still depends on rendered feature prose`);
     }
     const classOption = (mode, label) => options(mode, "職業").find(o => o.label.includes(label));
+    for (const level of [1, 4, 5, 8]) {
+      setClass("bard", level);
+      const inspiration = classOption("bonus", "吟遊詩人激勵").description;
+      check(inspiration.includes("短休或長休後全部恢復") === (level >= 5), "Inspiration recovery upgrades at level 5");
+      check(inspiration.includes("無需動作消耗 1 個法術位") === (level >= 5), "Font of Inspiration conversion has a level gate");
+    }
+    for (const [level, uses] of [[1, 2], [3, 3], [6, 4]]) {
+      setClass("barbarian", level);
+      const rage = classOption("bonus", "狂暴").description;
+      check(rage.includes(`使用次數：${uses} 次`) && rage.includes("短休回 1 次") && rage.includes("長休全回"), "Rage shows current uses and recovery");
+      check(rage.includes("穿上重甲、陷入失能，或超過 10 分鐘"), "Rage retains termination conditions");
+    }
+    setClass("monk", 6);
+    for (const score of ["16", "8", ""]) {
+      el("wis").value = score;
+      const wholeness = classOption("bonus", "混元體").description;
+      check(wholeness.includes("使用次數＝感知調整值（至少 1 次），長休後全部恢復"), "Wholeness retains its use limit even with low/unset Wisdom");
+    }
+    check(options("bonus").find(o => o.key === "offhand-attack").description.includes("在自己的回合以輕型武器執行攻擊動作後"), "Offhand attack requires the Attack action on your turn");
     for (const level of [2, 3, 5, 8]) {
       setClass("monk", level); el("wis").value = "16"; el("dex").value = "18";
       check(classOption("bonus", "聚氣凝神").description.includes("散打技巧") === (level >= 3), "Open Hand is folded into Focus at level 3");
@@ -367,6 +386,7 @@ async function verifyCoverage(page) {
       setClass("rogue", level);
       const sneak = classOption("action", "偷襲").description;
       check(sneak.includes(`${Math.ceil(level / 2)}d6`), "Sneak Attack scales with level");
+      check(sneak.includes("命中時") && sneak.includes("同武器傷害類型"), "Sneak Attack retains hit requirement and damage type");
       check(sneak.includes("靈巧打擊") === (level >= 5), "Cunning Strike is folded into Sneak Attack at level 5");
       check(!classOption("action", "靈巧打擊"), "no standalone Cunning Strike duplicate");
       setClass("fighter", level);
@@ -374,11 +394,22 @@ async function verifyCoverage(page) {
       check(wind.includes(`1d10 + ${level}`) && wind.includes("戰術轉移") === (level >= 5), "Second Wind scales and includes Tactical Shift at level 5");
       check(!classOption("bonus", "戰術轉移") && !!classOption("movement", "戰術轉移") === (level >= 5), "Tactical Shift uses Movement shortcut");
     }
-    setClass("paladin", 5); el("cha").value = "18";
-    check(classOption("action", "祝聖武器").description.includes("+4"), "Sacred Weapon uses Charisma");
-    el("cha").value = "8";
-    check(classOption("action", "祝聖武器").description.includes("+1"), "Sacred Weapon minimum bonus");
+    setClass("paladin", 5);
+    for (const score of ["18", "10", "8", ""]) {
+      el("cha").value = score;
+      const sacred = classOption("action", "祝聖武器");
+      check(sacred.description.includes("該武器攻擊檢定加上你的魅力調整值（至少 +1）。"), "Sacred Weapon retains the Charisma formula at every score");
+      check(sacred.legacyKeys.includes("dynamic-action-class-sacred-weapon"), "Sacred Weapon preserves hidden preferences");
+    }
+    setClass("barbarian", 3);
+    const frenzy = classOption("action", "狂怒").description;
+    check(frenzy.includes("2d6") && frenzy.includes("骰數＝狂暴傷害加值") && frenzy.includes("類型同該次攻擊"), "Frenzy retains dice source and damage type");
+    for (const name of ["barbarian", "fighter", "monk", "paladin", "ranger"]) {
+      setClass(name, 5);
+      check(classOption("action", "額外攻擊").description.includes("自己回合"), `${name}: Extra Attack retains own-turn restriction`);
+    }
     setClass("ranger", 7);
+    check(classOption("movement", "越野").description === "你獲得等同於你速度的攀爬速度與游泳速度。\n\n未穿重甲時，你的速度增加 10 呎。", "Roving restricts only the +10 speed bonus by armor");
     check(classOption("action", "狩獵目標").description.includes("斬殺者") && classOption("action", "狩獵目標").description.includes("破陣者"), "Hunter's Prey contains both choices");
     check(classOption("action", "防守戰術").description.includes("衝出重圍") && classOption("action", "防守戰術").description.includes("多重防禦"), "Defensive Tactics contains both choices");
     setClass("cleric", 7);
@@ -423,6 +454,15 @@ async function verifyCoverage(page) {
     check(options("action", "種族").length === 0 && options("reaction", "種族").length === 0, "unselected Goliath ancestry");
     el("goliath-ancestry").value = "frost";
     check(options("action", "種族")[0].description.includes("目標速度降低"), "Frost ancestry slows the target");
+    for (const [choice, mode] of [["cloud", "bonus"], ["stone", "reaction"], ["storm", "reaction"]]) {
+      el("goliath-ancestry").value = choice;
+      check(options(mode, "種族").find(o => !o.label.includes("巨化形體")).description.includes("使用次數＝熟練加值，長休後恢復"), `${choice}: ancestry retains its shared use limit`);
+    }
+    el("goliath-ancestry").value = "stone";
+    for (const [score, expected] of [["8", "1d12 - 1"], ["10", "1d12 + 0"], ["16", "1d12 + 3"], ["", "1d12 + 體質調整值"]]) {
+      el("con").value = score;
+      check(options("reaction", "種族")[0].description.includes(expected), "Stone's Endurance formats signed and unset Constitution");
+    }
     el("race").value = "orc"; updateRaceFeature();
     check(options("bonus", "種族")[0].description.includes("數值＝3"), "Orc proficiency value remains numeric");
     el("race").value = "dragonborn"; updateRaceFeature(); el("con").value = "16"; el("dragonborn-ancestry").value = "red_fire";
@@ -430,6 +470,8 @@ async function verifyCoverage(page) {
       el("level").value = String(level);
       const breath = options("action", "種族")[0].description;
       check(breath.includes(dice) && breath.includes(`DC ${dc}`) && breath.includes("火傷害"), "Dragonborn breath scaling/type/DC");
+      check(breath.includes("5呎寬、30呎長") && breath.includes("成功傷害減半"), "Dragonborn breath retains area and successful-save damage");
+      check(breath.includes("使用次數＝熟練加值，長休後恢復"), "Dragonborn breath retains usage limit and recovery");
     }
     el("race").value = ""; updateRaceFeature(); setClass("", 8);
     for (const [feat, expected] of Object.entries(baseline.feats)) {
@@ -514,6 +556,7 @@ async function verifyUiAndPersistence(page) {
   const bardButton = page.locator(`[data-action-option-key="${bardKey}"]`);
   await bardButton.click();
   assert.match(await page.locator("#tabletop-action-panel-bonus .tabletop-action-description").innerText(), /d8/);
+  assert.match(await page.locator("#tabletop-action-panel-bonus .tabletop-action-description").innerText(), /短休或長休後全部恢復/);
   const created = await page.evaluate(() => TabletopMode.addCustomTabletopAction({mode:"bonus",label:"測試自訂動作",description:"自訂說明"}));
   assert.equal(created.ok, true);
   const customId = created.action.id;
@@ -619,6 +662,36 @@ async function verifyUiAndPersistence(page) {
     checkbox.checked = false; checkbox.dispatchEvent(new Event("change", {bubbles:true}));
   });
   await strikeButton.waitFor({state:"detached"});
+  await page.evaluate(() => {
+    document.getElementById("class").value = "paladin";
+    document.getElementById("class").dispatchEvent(new Event("change", {bubbles:true}));
+  });
+  await page.locator('[data-action-option-key="dynamic-action-paladin-curated-sacred-weapon"]').click();
+  for (const score of ["18", "8"]) {
+    await page.evaluate(value => {
+      const charisma = document.getElementById("cha");
+      charisma.value = value; charisma.dispatchEvent(new Event("input", {bubbles:true}));
+    }, score);
+    assert.match(await page.locator("#tabletop-action-panel-action .tabletop-action-description").innerText(), /該武器攻擊檢定加上你的魅力調整值（至少 \+1）。/);
+  }
+  await page.evaluate(() => {
+    document.getElementById("class").value = "ranger";
+    document.getElementById("level").value = "6";
+    document.getElementById("class").dispatchEvent(new Event("change", {bubbles:true}));
+    document.getElementById("race").value = "goliath";
+    document.getElementById("race").dispatchEvent(new Event("change", {bubbles:true}));
+    document.getElementById("goliath-ancestry").value = "stone";
+    document.getElementById("con").value = "8";
+    document.getElementById("goliath-ancestry").dispatchEvent(new Event("change", {bubbles:true}));
+  });
+  await page.click("#tabletop-action-tab-reaction");
+  await page.locator('[data-action-option-key="dynamic-reaction-race-16nfphm"]').click();
+  const stoneCopy = await page.locator("#tabletop-action-panel-reaction .tabletop-action-description").innerText();
+  assert.match(stoneCopy, /1d12 - 1/);
+  assert.match(stoneCopy, /使用次數＝熟練加值，長休後恢復/);
+  await page.click("#tabletop-action-tab-movement");
+  await page.locator('[data-action-option-key="dynamic-movement-ranger-bulhou"]').click();
+  assert.match(await page.locator("#tabletop-action-panel-movement .tabletop-action-description").innerText(), /你獲得等同於你速度的攀爬速度與游泳速度。\s+未穿重甲時，你的速度增加 10 呎。/);
   if (process.env.DND_SCREENSHOT_DIR) {
     await page.screenshot({path:path.join(process.env.DND_SCREENSHOT_DIR,"actions-desktop.png")});
     await page.setViewportSize({width:390,height:844});

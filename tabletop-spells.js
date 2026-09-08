@@ -675,11 +675,13 @@
       characterLevel: getCharacterLevel(),
       damageType: castResult.damageType,
       spellcastingModifier,
+      proficiencyBonus: globalScope.getProficiencyBonus?.() || 0,
       modifiers
-    }).filter(outcome => outcome.autoOnCast).map(outcome => {
+    }).filter(outcome => outcome.autoOnCast).flatMap(outcome => {
       const kindLabel = outcome.kind === "healing"
         ? "治療"
-        : outcome.kind === "temporary-hp" ? "臨時生命值" : "傷害";
+        : outcome.kind === "temporary-hp" ? "臨時生命值"
+          : outcome.kind === "attack" ? "武器攻擊命中" : "傷害";
       const repeatLabel = outcome.repeat > 1
         ? `${outcome.repeatLabel || "第"} ${outcome.repeatIndex + 1}/${outcome.repeat}`
         : "";
@@ -687,12 +689,20 @@
       const modifierText = outcome.modifierLabels.length
         ? `；已套用：${outcome.modifierLabels.join("、")}`
         : "";
-      return Object.freeze({
+      const result = Object.freeze({
         expression: outcome.expression,
         fixed: outcome.fixed,
         label: `${entry.spell.nameZh}｜${formatCastLevel(castResult.effectiveLevel)}｜${kindLabel}${typeLabel}${repeatLabel ? `｜${repeatLabel}` : ""}`,
         detail: `${outcome.context || "依術文處理"}${modifierText}`
       });
+      if (outcome.attack !== "spell") return [result];
+      const attackBonus = parseModifier(getFieldValue("spell-attack-bonus"));
+      if (attackBonus === null) throw new Error("Missing spell attack bonus");
+      return [Object.freeze({
+        expression: `1d20${attackBonus < 0 ? "" : "+"}${attackBonus}`,
+        label: `${entry.spell.nameZh}｜${formatCastLevel(castResult.effectiveLevel)}｜攻擊命中${repeatLabel ? `｜${repeatLabel}` : ""}`,
+        detail: "法術攻擊檢定；對照目標 AC 判定命中，命中才套用對應傷害。"
+      }), result];
     });
   }
 
@@ -1086,6 +1096,7 @@
     showSpellDetail,
     refresh: scheduleRender,
     logic: Object.freeze({
+      buildRollEntries,
       buildLifeDiscipleModifier,
       buildBlessedHealerRecovery
     })

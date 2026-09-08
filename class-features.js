@@ -2104,7 +2104,16 @@ const classFeatures = {
   <h3>等級 5：額外攻擊</h3>
   <p>你在自己回合使用攻擊動作時，可以攻擊 2 次。</p>
 </section>
-<section class="ranger-feature class-feature-section" data-feature-level="6"><h3>等級 6：越野</h3><p>未穿著重甲時，你的速度增加10呎，並獲得等同於你速度的攀爬速度與游泳速度。</p></section><section class="ranger-feature class-feature-section" data-feature-level="7"><h3>等級 7：防守戰術（獵人子職）</h3><p>選擇並獲得下列一項。每當你完成短休或長休時，可以用另一項替換目前的選擇。</p><div class="druid-mission-options"><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="ranger-defensive-tactics-escape-the-horde" data-feature-choice-group="ranger-defensive-tactics"> 衝出重圍</label>：以你為目標的藉機攻擊具有劣勢。</div></div><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="ranger-defensive-tactics-multiattack-defense" data-feature-choice-group="ranger-defensive-tactics"> 多重防禦</label>：當一個生物的攻擊檢定命中你時，該生物在本回合內對你發動的所有後續攻擊檢定均具有劣勢。</div></div></div></section><section class="ranger-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
+<section class="ranger-feature class-feature-section" data-feature-level="6">
+  <h3>等級 6：越野</h3><p>，並</p>
+  <ul class="class-rule-list">
+    <li>你獲得攀爬速度與游泳速度，數值與速度一樣。</li>
+    <li>未穿重甲時，你的速度增加 10 呎。</li>
+  </ul>
+</section><section class="ranger-feature class-feature-section" data-feature-level="7">
+<h3>等級 7：防守戰術（獵人子職）</h3>
+<p>選擇並獲得下列一項。每當你完成短休或長休時，可以用另一項替換目前的選擇。</p>
+<div class="druid-mission-options"><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="ranger-defensive-tactics-escape-the-horde" data-feature-choice-group="ranger-defensive-tactics"> 衝出重圍</label>：以你為目標的藉機攻擊具有劣勢。</div></div><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="ranger-defensive-tactics-multiattack-defense" data-feature-choice-group="ranger-defensive-tactics"> 多重防禦</label>：當一個生物的攻擊檢定命中你時，該生物在本回合內對你發動的所有後續攻擊檢定均具有劣勢。</div></div></div></section><section class="ranger-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
 </div>`,
   rogue: `<table class="class-core-profile-table class-core-profile-table--rogue" aria-label="盜賊核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>

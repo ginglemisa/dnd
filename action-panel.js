@@ -24,7 +24,7 @@
     ]),
     bonus: Object.freeze([
       { key: "drink-potion", label: "喝藥水", description: "以附贈動作喝下一瓶治療藥水，恢復 2d4 + 2 點生命值。" },
-      { key: "offhand-attack", label: "二次攻擊", description: "以輕型武器完成攻擊後，可用附贈動作持另一把輕型武器再攻擊一次。除非具備特定專長，這次攻擊的傷害不加正值屬性調整值。" }
+      { key: "offhand-attack", label: "二次攻擊", description: "在自己的回合以輕型武器執行攻擊動作後，可用附贈動作持另一把輕型武器再攻擊一次。除非具備特定專長，這次攻擊的傷害不加正值屬性調整值。" }
     ]),
     reaction: Object.freeze([
       { key: "opportunity-attack", label: "藉機攻擊", description: "當你能看見的生物離開你的觸及範圍時，你可以使用反應，對該生物進行一次近戰攻擊。" },
@@ -121,7 +121,10 @@
   const CLASS_ACTION_RULES = Object.freeze({
     barbarian: Object.freeze([
       { id: "reckless-attack", mode: "action", level: 2, label: "魯莽", key: "dynamic-action-class-8jjnkp", descriptionId: "barbarian-reckless-attack" },
-      { id: "rage", mode: "bonus", level: 1, label: "等級 1：狂暴", key: "dynamic-bonus-barbarian-3te1cj", description: () => `你可以用附贈動作進入狂暴（未穿重甲時）。
+      { id: "rage", mode: "bonus", level: 1, label: "等級 1：狂暴", key: "dynamic-bonus-barbarian-3te1cj", description: () => {
+        const resource = globalScope.getCharacterResourceSpecs({ className: "barbarian", level: getCharacterLevel() })
+          .find(spec => spec.key === "barbarian-rage");
+        return `你可以用附贈動作進入狂暴（未穿重甲時）。
 
 狂暴期間：
 
@@ -134,8 +137,13 @@
 
 - 對敵人做攻擊檢定，或
 - 讓敵人做豁免檢定，或
-- 再用一次附贈動作延長狂暴。` },
-      { id: "frenzy", mode: "action", level: 3, label: "等級 3：狂怒（狂戰子職）", key: "dynamic-action-barbarian-ekb4kt", description: () => `在狂暴中使用魯莽攻擊力量命中該回合第一個目標時額外造成 ${getBarbarianRageDamageBonus()}d6 傷害。` },
+- 再用一次附贈動作延長狂暴。
+
+若你穿上重甲、陷入失能，或超過 10 分鐘，狂暴會結束。
+
+使用次數：${resource.maximum} 次；${resource.recoveryNote}`;
+      } },
+      { id: "frenzy", mode: "action", level: 3, label: "等級 3：狂怒（狂戰子職）", key: "dynamic-action-barbarian-ekb4kt", description: () => `在狂暴中使用魯莽攻擊，且用力量攻擊命中本回合第一個目標時，可額外造成 ${getBarbarianRageDamageBonus()}d6 傷害（骰數＝狂暴傷害加值），類型同該次攻擊。` },
       { id: "extra-attack", mode: "action", level: 5, label: "等級 5：額外攻擊", key: "dynamic-action-barbarian-113ebtz", description: "你在自己回合使用攻擊動作時，可以攻擊 2 次。" },
       { id: "fast-movement", mode: "movement", level: 5, label: "等級 5：快速移動", key: "dynamic-movement-barbarian-18h2p2v", description: "若你未穿重甲，速度 +10 呎。" },
       { id: "instinctive-pounce", mode: "movement", level: 7, label: "等級 7：直覺猛撲", key: "dynamic-movement-barbarian-1iw4zkg", description: "當你以附贈動作進入狂暴時，可以在該附贈動作中移動至多等同於你速度一半的距離。" },
@@ -158,7 +166,7 @@
 - 目標在 d20 檢定失敗後，可擲激勵骰並加到結果上。
 - 激勵骰使用後消耗，未使用則持續 1 小時。
 - 同一生物同時只能持有 1 顆你的激勵骰。
-- 可用次數＝魅力調整值（至少 1 次），長休後全部恢復。` },
+- 可用次數＝魅力調整值（至少 1 次），${getCharacterLevel() >= 5 ? "短休或長休後全部恢復。\n- 激勵之源：你可無需動作消耗 1 個法術位，恢復 1 次激勵使用次數。" : "長休後全部恢復。"}` },
       { id: "cutting-words", mode: "reaction", level: 3, label: "等級 3：語出驚人", key: "dynamic-reaction-class-1y0uv3b", descriptionId: "bard-cutting-words" },
       { id: "countercharm", mode: "reaction", level: 7, label: "等級 7：反迷惑", key: "dynamic-reaction-class-ul9dq", descriptionId: "bard-countercharm" }
     ]),
@@ -193,13 +201,13 @@
       }, key: "dynamic-bonus-fighter-qmmfue", id: "second-wind", legacyKeys: ["dynamic-bonus-class-fj2om2"] },
       { mode: "action", level: 2, label: "等級 2：動作如潮", description: "你的回合中，可以獲得 1 個額外動作。\n\n- 此額外動作不能用於魔法動作。\n- 使用後，短休或長休才能再次使用。", key: "dynamic-action-fighter-1870147", id: "action-surge", legacyKeys: ["dynamic-action-class-action-surge"] },
       { mode: "movement", level: 3, label: "等級 3：運動健將", description: "造成重擊後，可立即移動至多等同於速度一半的距離，且不會引發藉機攻擊。", key: "dynamic-movement-fighter-1s26hvz", id: "remarkable-athlete" },
-      { mode: "action", level: 5, label: "等級 5：額外攻擊", description: "使用攻擊動作時，可以攻擊 2 次。", key: "dynamic-action-fighter-113ebtz", id: "extra-attack" },
+      { mode: "action", level: 5, label: "等級 5：額外攻擊", description: "你在自己回合使用攻擊動作時，可以攻擊 2 次。", key: "dynamic-action-fighter-113ebtz", id: "extra-attack" },
       { mode: "movement", level: 5, label: "等級 5：戰術轉移", description: "當你以附贈動作使用回氣時，可以移動至多等同於你速度一半的距離，且不會引發藉機攻擊。", key: "dynamic-movement-fighter-1liysqo", id: "tactical-shift" }
     ]),
     paladin: Object.freeze([
       { id: "lay-on-hands", mode: "bonus", level: 1, label: "等級 1：聖療", description: "以附贈動作觸碰自己或一個生物，從「聖療」池分配任意點數，使其恢復等量 HP。\n\n也可消耗 5 點聖療，移除目標的中毒狀態；此時不恢復 HP。", key: "dynamic-bonus-paladin-curated-lay-on-hands", legacyKeys: ["dynamic-bonus-class-1ol2xxh"] },
       { id: "divine-sense", mode: "bonus", level: 3, label: "等級 3：神聖感知", description: "消耗 1 次引導神力，以附贈動作啟動，持續 10 分鐘或直到你失能。\n\n期間你能感知 60 呎內天界生物、邪魔與不死生物的位置與類型，也能察覺範圍內受「聖居」祝福或褻瀆的地點與物件。", key: "dynamic-bonus-paladin-curated-divine-sense", legacyKeys: ["dynamic-bonus-class-1axs7np"] },
-      { id: "sacred-weapon", mode: "action", level: 3, label: "等級 3：祝聖武器", description: getPaladinSacredWeaponDescription, key: "dynamic-action-paladin-curated-sacred-weapon", legacyKeys: ["dynamic-action-class-sacred-weapon"] },
+      { id: "sacred-weapon", mode: "action", level: 3, label: "等級 3：祝聖武器", descriptionId: "paladin-sacred-weapon", key: "dynamic-action-paladin-curated-sacred-weapon", legacyKeys: ["dynamic-action-class-sacred-weapon"] },
       { id: "extra-attack", mode: "action", level: 5, label: "等級 5：額外攻擊", description: "你在自己回合使用攻擊動作時，可以攻擊 2 次。", key: "dynamic-action-paladin-curated-extra-attack" }
     ]),
     rogue: Object.freeze([
@@ -217,8 +225,8 @@
     ranger: Object.freeze([
       { mode: "bonus", level: 3, label: "等級 3：獵人學識", description: "目標被你的「獵人印記」標記時，你會知道它的傷害免疫、抗性與易傷。", key: "dynamic-bonus-ranger-we5ttw", id: "hunters-lore" },
       { mode: "action", level: 3, label: "等級 3：狩獵目標", description: "從下列擇一；每次短休或長休後可改選：\n\n- 斬殺者：每回合 1 次，你用武器命中且目標先前已失去生命值時，額外造成 1d8 傷害。\n- 破陣者：每回合 1 次，當你用武器攻擊時，可用同一把武器再攻擊 5 呎內另一個你本回合尚未攻擊過的目標。", key: "dynamic-action-ranger-vdr4tc", id: "hunters-prey" },
-      { mode: "action", level: 5, label: "等級 5：額外攻擊", description: "使用攻擊動作時，可以攻擊 2 次。", key: "dynamic-action-ranger-113ebtz", id: "extra-attack" },
-      { mode: "movement", level: 6, label: "等級 6：越野", description: "未穿著重甲時，你的速度增加 10 呎，並獲得等同於你速度的攀爬速度與游泳速度。", key: "dynamic-movement-ranger-bulhou", id: "roving" },
+      { mode: "action", level: 5, label: "等級 5：額外攻擊", description: "你在自己回合使用攻擊動作時，可以攻擊 2 次。", key: "dynamic-action-ranger-113ebtz", id: "extra-attack" },
+      { mode: "movement", level: 6, label: "等級 6：越野", description: "你獲得等同於你速度的攀爬速度與游泳速度。\n\n未穿重甲時，你的速度增加 10 呎。", key: "dynamic-movement-ranger-bulhou", id: "roving" },
       { mode: "action", level: 7, label: "等級 7：防守戰術", description: "選擇並獲得下列一項。每當你完成短休或長休時，可以用另一項替換目前的選擇。\n\n- 衝出重圍：以你為目標的藉機攻擊具有劣勢。\n- 多重防禦：當一個生物的攻擊檢定命中你時，該生物在本回合內對你發動的所有後續攻擊檢定均具有劣勢。", key: "dynamic-action-ranger-p55ifk", id: "defensive-tactics" }
     ]),
     warlock: Object.freeze([
@@ -239,7 +247,11 @@
     { id: "fire-burn", race: "goliath", level: 1, mode: "action", label: "星火燎原", key: "dynamic-action-race-1vjg9hw", choiceId: "goliath-ancestry", choiceValue: "fire", description: "攻擊命中目標時增加 1d10 火焰傷害。" },
     { id: "frost-chill", race: "goliath", level: 1, mode: "action", label: "凜若冰霜", key: "dynamic-action-race-cc167a", choiceId: "goliath-ancestry", choiceValue: "frost", ruleName: "凜若冰霜（霜巨人）" },
     { id: "hill-tumble", race: "goliath", level: 1, mode: "action", label: "地動山搖", key: "dynamic-action-race-11249i9", choiceId: "goliath-ancestry", choiceValue: "hill", description: "攻擊命中大型以下的生物可令其陷入「倒地」狀態。" },
-    { id: "stone-endurance", race: "goliath", level: 1, mode: "reaction", label: "堅若磐石", key: "dynamic-reaction-race-16nfphm", choiceId: "goliath-ancestry", choiceValue: "stone", description: ()=>`受傷時可用反應扣除1d12 + ${getAbilityModifier('con') ?? '體質調整值'}傷害。` },
+    { id: "stone-endurance", race: "goliath", level: 1, mode: "reaction", label: "堅若磐石", key: "dynamic-reaction-race-16nfphm", choiceId: "goliath-ancestry", choiceValue: "stone", description: () => {
+      const modifier = getAbilityModifier("con");
+      const dice = modifier === null ? "1d12 + 體質調整值" : formatDiceWithModifier("1d12", modifier);
+      return getGoliathAncestryDescription("堅若磐石（石巨人）", `受傷時可用反應扣除 ${dice} 傷害。`);
+    } },
     { id: "nimbleness", race: "halfling", level: 1, mode: "movement", label: "半身人靈巧", key: "dynamic-movement-race-hkw7d1", description: "可穿過體型比你大的生物\n不能停在同一格", tabletopOnly: true },
     { id: "lucky", race: "halfling", level: 1, mode: "action", label: "吉運", key: "dynamic-action-race-1migdkt", description: "任何 D20 檢定中擲出 1 都可以重擲一次。", tabletopOnly: true },
     { id: "naturally-stealthy", race: "halfling", level: 1, mode: "action", label: "天生善匿", key: "dynamic-action-race-150qsdc", description: "你可以在體型比你大的生物後方使用躲藏動作。", tabletopOnly: true },
@@ -248,8 +260,8 @@
     { id: "stonecunning", race: "dwarf", level: 1, mode: "bonus", label: "石中精妙", key: "dynamic-bonus-race-m9n3bt", ruleName: "石中精妙" },
     { id: "clockwork-device", race: "gnome", level: 1, mode: "bonus", label: "岩石侏儒", key: "dynamic-bonus-race-1ljlrzt", ruleName: "岩石侏儒", choiceId: "gnome-lineage", choiceValue: "rock_gnome" },
     { id: "dismantle-device", race: "gnome", level: 1, mode: "action", label: "拆除發條裝置", ruleName: "岩石侏儒", choiceId: "gnome-lineage", choiceValue: "rock_gnome" },
-    { id: "cloud-jaunt", race: "goliath", level: 1, mode: "bonus", label: "雲遊四方", key: "dynamic-bonus-race-r7ggqg", ruleName: "雲遊四方（雲巨人）", choiceId: "goliath-ancestry", choiceValue: "cloud" },
-    { id: "storm-thunder", race: "goliath", level: 1, mode: "reaction", label: "轟雷掣電", key: "dynamic-reaction-race-4cc8u8", ruleName: "轟雷掣電（風暴巨人）", choiceId: "goliath-ancestry", choiceValue: "storm" },
+    { id: "cloud-jaunt", race: "goliath", level: 1, mode: "bonus", label: "雲遊四方", key: "dynamic-bonus-race-r7ggqg", description: () => getGoliathAncestryDescription("雲遊四方（雲巨人）"), choiceId: "goliath-ancestry", choiceValue: "cloud" },
+    { id: "storm-thunder", race: "goliath", level: 1, mode: "reaction", label: "轟雷掣電", key: "dynamic-reaction-race-4cc8u8", description: () => getGoliathAncestryDescription("轟雷掣電（風暴巨人）"), choiceId: "goliath-ancestry", choiceValue: "storm" },
     { id: "large-form", race: "goliath", level: 5, mode: "bonus", label: "等級 5：巨化形體", key: "dynamic-bonus-race-1svsj4g", ruleName: "巨化形體" },
     { id: "adrenaline-rush", race: "orc", level: 1, mode: "bonus", label: "熱血湧動", key: "dynamic-bonus-race-ydqmx5", ruleName: "熱血湧動", proficiencyValue: true }
   ]);
@@ -352,6 +364,11 @@
     return Number.isSafeInteger(score) ? Math.floor((score - 10) / 2) : null;
   }
 
+  function getGoliathAncestryDescription(ruleName, override = "") {
+    const description = override || getNamedRuleDescription(typeof raceFeatures === "undefined" ? "" : raceFeatures.goliath, ruleName);
+    return description ? `${description}\n\n使用次數＝熟練加值，長休後恢復。` : "";
+  }
+
   function getDragonbornBreathDamageDice(level) {
     if (level >= 17) return "4d10";
     if (level >= 11) return "3d10";
@@ -376,7 +393,7 @@
     const saveDc = constitutionModifier === null
       ? "8+熟練+體質加值"
       : String(8 + getProficiencyBonus() + constitutionModifier);
-    return `將１次攻擊換為吐息\n15呎錐形 或 30呎直線\n目標生物敏捷豁免 DC ${saveDc}\n造成 ${getDragonbornBreathDamageDice(getCharacterLevel())} 點${getDragonbornBreathDamageType()}傷害`;
+    return `將１次攻擊換為吐息\n15呎錐形 或 5呎寬、30呎長直線\n範圍內生物敏捷豁免 DC ${saveDc}\n失敗造成 ${getDragonbornBreathDamageDice(getCharacterLevel())} 點${getDragonbornBreathDamageType()}傷害，成功傷害減半。\n使用次數＝熟練加值，長休後恢復。`;
   }
 
   function getSelectedSpellEntries(mode) {
@@ -546,30 +563,13 @@ ${formatDiceWithModifier("1d10", dexterityModifier + level)}
   }
 
   function getMonkWholenessDescription() {
-    return `以附贈動作恢復 ${formatDiceWithModifier(getMonkMartialArtsDie(), getMonkAbilityModifier("wis"))} HP，最少恢復 1 點。`;
-  }
-
-  function getPaladinCharismaBonus() {
-    const field = document.getElementById("cha");
-    const rawScore = field && "value" in field ? String(field.value || "").trim() : "";
-    const modifier = rawScore ? globalScope.calculateAbilityModifier?.(rawScore) : 0;
-    return Math.max(1, Number.isFinite(modifier) ? modifier : 0);
-  }
-
-  function getPaladinSacredWeaponDescription() {
-    return `執行攻擊動作時，可消耗 1 次引導神力，祝聖手上一把近戰武器，持續 10 分鐘。
-
-- 該武器的攻擊檢定額外 +${getPaladinCharismaBonus()}。
-- 命中時可改造成光耀傷害。
-- 武器發出 20 呎明亮光照，再外延 20 呎微光。
-
-你可無需動作提前結束；不再持有該武器或再次使用此能力時也會結束。`;
+    return `以附贈動作恢復 ${formatDiceWithModifier(getMonkMartialArtsDie(), getMonkAbilityModifier("wis"))} HP，最少恢復 1 點。\n\n使用次數＝感知調整值（至少 1 次），長休後全部恢復。`;
   }
 
   function getRogueSneakAttackDescription() {
   const level = getCharacterLevel();
   const sneakAttackDice = Math.max(1, Math.ceil(level / 2));
-  const base = `你每回合可用靈巧或遠程武器觸發 1 次偷襲，造成額外 ${sneakAttackDice}d6 傷害。
+  const base = `你每回合可在用靈巧或遠程武器命中時觸發 1 次偷襲，造成額外 ${sneakAttackDice}d6 傷害（同武器傷害類型）。
 
 偷襲必須滿足以下條件其中之一：
 
