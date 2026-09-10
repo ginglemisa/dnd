@@ -4209,6 +4209,32 @@ html.equipment-detail-open body {
   overscroll-behavior: contain;
 }
 
+.equipment-detail-modal__actions {
+  display: flex;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  padding: 0.9rem 1.15rem;
+  border-top: 1px solid var(--border);
+  background: var(--surface-soft);
+}
+
+.equipment-detail-modal__actions[hidden] {
+  display: none;
+}
+
+.equipment-detail-modal__actions select {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.equipment-detail-modal__actions button {
+  width: auto;
+  min-width: 6rem;
+  margin: 0;
+}
+
 .equipment-detail-tags {
   display: flex;
   flex-wrap: wrap;

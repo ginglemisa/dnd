@@ -45,7 +45,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎲%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20260908-skill-rank-icons">
+  <link rel="stylesheet" href="styles.css?v=20260910-equipment-detail-purchase">
   <script src="scroll-to-top.js" defer></script>
   <script src="dice-roller.js?v=20260902-tabletop-casting" defer></script>
   <script src="monster.js?v=20260903-quick-build-mastery-tip" defer></script>
@@ -6067,8 +6067,9 @@ async function autoPrepareSpellFromFeature(spellId, triggerEl) {
   if (findExistingSpellRow(meta.areaId, spellId)) return;
   const primary = document.getElementById("class")?.value || "";
   const ability = document.getElementById("spellcasting-ability")?.value || "";
+  const availableClasses = new Set(getAvailableSpellSourceClasses(meta.levelValue).map(option => option.value));
   const target = getSpellClassSearchOrderWithPrimary(primary, ability)
-    .find((id) => SpellCatalog.getClassIds(spellId).includes(id));
+    .find((id) => availableClasses.has(id) && SpellCatalog.getClassIds(spellId).includes(id));
   if (!target) {
     await window.AppDialog.showMessage({ title: "無法加入法術", message: "找不到可以加入這個法術的職業。", confirmLabel: "關閉" });
     return;
@@ -6091,6 +6092,7 @@ async function autoPrepareSpellFromFeature(spellId, triggerEl) {
     }
     spellSelect.value = spellId;
     spellSelect.dispatchEvent(new Event("change"));
+    scheduleStructuralSaveAllFields();
   } finally {
     window.__spellAutoPrepareInProgress = false;
   }
@@ -6679,11 +6681,11 @@ function searchAllSpells() {
     else groupedMatches.set(groupKey, { spellId: match.spellId, spell: match.spell, levelKey: match.levelKey, classKeys: [...match.classKeys] });
   });
   const fragment = document.createDocumentFragment();
-  groupedMatches.forEach(({ spellId, spell, levelKey, classKeys }) => {
+  groupedMatches.forEach(({ spellId, levelKey, classKeys }) => {
     const row = document.createElement("div"); row.className = "spell-search-result-item"; row.setAttribute("role", "listitem");
     const labels = [...new Set(classKeys)].map(classId => SPELL_SEARCH_CLASS_SHORT_LABELS[classId] || SPELL_SEARCH_CLASS_LABELS[classId] || classId).join("");
     row.append(`(${labels})${SPELL_SEARCH_LEVEL_LABELS[levelKey] || levelKey}-`);
-    const button = document.createElement("button"); button.type = "button"; button.className = "spell-search-result-name"; button.textContent = SpellCatalog.getDisplayName(spellId) || ""; button.setAttribute("aria-label", `查看${button.textContent}的法術詳情`); button.addEventListener("click", () => window.quickBuild?.openSpellDetail?.(spell, button)); row.appendChild(button); fragment.appendChild(row);
+    const button = document.createElement("button"); button.type = "button"; button.className = "spell-search-result-name"; button.textContent = SpellCatalog.getDisplayName(spellId) || ""; button.setAttribute("aria-label", `查看${button.textContent}的法術詳情`); button.addEventListener("click", () => autoPrepareSpellFromFeature(spellId, button)); row.appendChild(button); fragment.appendChild(row);
   });
   list.replaceChildren(fragment); summary.textContent = groupedMatches.size ? `找到 ${groupedMatches.size} 筆結果` : `找不到包含「${keyword}」的法術`; results.classList.remove("is-hidden");
 }
@@ -6959,6 +6961,7 @@ function ensureEquipmentDetailModal() {
         <button type="button" class="equipment-detail-modal__close" aria-label="關閉裝備詳情">×</button>
       </header>
       <div id="equipment-detail-content" class="equipment-detail-modal__content" tabindex="0"></div>
+      <footer class="equipment-detail-modal__actions"></footer>
     </section>`;
   document.body.appendChild(modal);
   modal.querySelector(".equipment-detail-modal__close")?.addEventListener("click", closeEquipmentDetail);
@@ -6970,7 +6973,7 @@ function ensureEquipmentDetailModal() {
       return;
     }
     if (event.key !== "Tab") return;
-    const focusable = [...modal.querySelectorAll("button:not(:disabled), [tabindex='0']")].filter(element => element.offsetParent !== null);
+    const focusable = [...modal.querySelectorAll("button:not(:disabled), select:not(:disabled), [tabindex='0']")].filter(element => element.offsetParent !== null);
     if (!focusable.length) return;
     const first = focusable[0];
     const last = focusable[focusable.length - 1];
@@ -7004,6 +7007,48 @@ function renderEquipmentTextDetail(entry) {
     ${entry.tableHtml ? `<div class="equipment-detail-table">${entry.tableHtml}</div>` : ""}`;
 }
 
+function renderEquipmentPurchaseActions(entry, modal) {
+  const actions = modal.querySelector(".equipment-detail-modal__actions");
+  actions.replaceChildren();
+  const sourceLinks = [...document.querySelectorAll("#equipment-notes-section .equipment-purchase-link")];
+  const directLink = sourceLinks.find(link => link.textContent.trim() === entry.name);
+  // 多種品項沿用原卡片已建立的購買連結，不另行解析價格或維護交易資料。
+  const tableNames = new Set([...modal.querySelectorAll(".equipment-detail-table .equipment-purchase-link")]
+    .map(link => link.textContent.trim()));
+  const links = directLink ? [directLink] : sourceLinks.filter(link => {
+    const name = link.textContent.trim();
+    return tableNames.has(name) || new RegExp(`(?:^|[\\n：，；])\\s*${escapeRegExp(name)}（`, "u").test(entry.text || "");
+  });
+  actions.hidden = !links.length;
+  if (!links.length) return;
+
+  const purchase = (link) => {
+    closeEquipmentDetail();
+    link.click();
+  };
+  let select;
+  if (links.length > 1) {
+    select = document.createElement("select");
+    select.setAttribute("aria-label", "選擇購買品項");
+    links.forEach((link, index) => {
+      const option = document.createElement("option");
+      option.value = String(index);
+      option.textContent = link.getAttribute("aria-label")?.replace(/^購買/u, "") || link.textContent;
+      select.appendChild(option);
+    });
+    actions.appendChild(select);
+  }
+  const button = document.createElement("button");
+  button.type = "button";
+  button.textContent = "購買";
+  button.addEventListener("click", () => purchase(links[select ? Number(select.value) : 0]));
+  actions.appendChild(button);
+  modal.querySelectorAll(".equipment-detail-table .equipment-purchase-link").forEach(link => {
+    const sourceLink = links.find(source => source.textContent.trim() === link.textContent.trim());
+    if (sourceLink) link.addEventListener("click", () => purchase(sourceLink));
+  });
+}
+
 function openEquipmentDetail(entry, trigger) {
   const modal = ensureEquipmentDetailModal();
   equipmentDetailTrigger = trigger || document.activeElement;
@@ -7011,6 +7056,7 @@ function openEquipmentDetail(entry, trigger) {
   modal.querySelector("#equipment-detail-title").textContent = entry.name;
   const content = modal.querySelector("#equipment-detail-content");
   content.innerHTML = entry.data ? renderEquipmentDataDetail(entry) : renderEquipmentTextDetail(entry);
+  renderEquipmentPurchaseActions(entry, modal);
   content.scrollTop = 0;
   modal.inert = false;
   modal.classList.add("open");
