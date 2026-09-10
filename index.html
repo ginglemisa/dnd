@@ -6071,7 +6071,7 @@ async function autoPrepareSpellFromFeature(spellId, triggerEl) {
   const target = getSpellClassSearchOrderWithPrimary(primary, ability)
     .find((id) => availableClasses.has(id) && SpellCatalog.getClassIds(spellId).includes(id));
   if (!target) {
-    await window.AppDialog.showMessage({ title: "無法加入法術", message: "找不到可以加入這個法術的職業。", confirmLabel: "關閉" });
+    await window.AppDialog.showMessage({ ...getSpellPrepareWarning(spellId, primary), confirmLabel: "關閉" });
     return;
   }
   const row = findEmptySpellRow(meta.areaId) || createSingleSpellRow(meta.areaId, meta.levelValue);
@@ -6096,6 +6096,32 @@ async function autoPrepareSpellFromFeature(spellId, triggerEl) {
   } finally {
     window.__spellAutoPrepareInProgress = false;
   }
+}
+function getSpellPrepareWarning(spellId, primaryClassId) {
+  const spell = SpellCatalog.getSpell(spellId);
+  const spellName = SpellCatalog.getDisplayName(spellId);
+  const levelSelect = document.getElementById("level");
+  const characterLevel = Number.parseInt(levelSelect?.value || "8", 10) || 8;
+  const primaryLabel = document.getElementById("class")?.selectedOptions[0]?.textContent?.trim() || "";
+  const sourceClasses = classOptions.filter(option => SpellCatalog.getClassIds(spellId).includes(option.value));
+  if (!sourceClasses.length) {
+    return { title: "職業來源不可用", message: `「${spellName}」沒有可供目前法術選單使用的職業來源。` };
+  }
+  // 門檻由共用規則與現有角色等級選項取得，不另存一份法術進度表。
+  const levels = [...levelSelect.options].map(option => Number(option.value)).filter(level => level > 0).sort((a, b) => a - b);
+  const requirements = sourceClasses.map(option => {
+    const requiredLevel = levels.find(level => classCanAccessSpellLevel(option.value, level, spell.level));
+    return requiredLevel ? `${option.text}：${requiredLevel} 級起` : `${option.text}：目前支援的等級尚未開放`;
+  });
+  const classMismatch = Boolean(primaryClassId && !sourceClasses.some(option => option.value === primaryClassId));
+  return {
+    title: classMismatch ? "職業不符且等級不足" : "等級不足",
+    message: [
+      classMismatch ? `「${spellName}」不在${primaryLabel}的職業法術清單中。` : `「${spellName}」是${getSpellLevelLabel(spell.level === 0 ? "cantrips" : spell.level)}。`,
+      `目前角色等級為 ${characterLevel}，尚未達到可用職業來源的要求。`,
+      `可用來源與等級要求：\n${requirements.join("\n")}`
+    ].join("\n\n")
+  };
 }
 function bindFeatureSpellHighlightEvents() { if(window.__featureSpellHighlightEventsBound)return;window.__featureSpellHighlightEventsBound=true;const handler=target=>{const trigger=target?.closest?.(".spell-highlight-action[data-spell-id]");if(!trigger)return false;autoPrepareSpellFromFeature(trigger.dataset.spellId||"",trigger);return true;};document.addEventListener("click",event=>{if(handler(event.target))event.preventDefault();});document.addEventListener("keydown",event=>{if((event.key==="Enter"||event.key===" ")&&handler(event.target))event.preventDefault();}); }
 
