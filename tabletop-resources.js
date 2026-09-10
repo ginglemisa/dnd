@@ -272,6 +272,13 @@
       document.getElementById("class")?.value || ""
     )?.Y) || 0;
     if (!hitDieSize) return null;
+    const getHitDieExpression = () => {
+      const constitutionScore = document.getElementById("con")?.value || "10";
+      const constitutionModifier = globalScope.calculateAbilityModifier?.(constitutionScore);
+      const modifier = Number.isFinite(constitutionModifier) ? constitutionModifier : 0;
+      const modifierText = modifier > 0 ? `+${modifier}` : modifier < 0 ? String(modifier) : "";
+      return `1d${hitDieSize}${modifierText}`;
+    };
     const { row, controls } = createResourceRow("", "手動追蹤目前剩餘顆數。") ;
     row.classList.add("tabletop-resource-row--counter");
     const heading = row.querySelector(".tabletop-resource-row__copy h4");
@@ -283,7 +290,7 @@
     hitDieSizeLabel.setAttribute("aria-hidden", "true");
     rollHitDie.append(hitDieSizeLabel);
     rollHitDie.addEventListener("click", () => {
-      globalScope.DiceRoller?.rollExpression?.(`1d${hitDieSize}`, { label: "生命骰" });
+      globalScope.DiceRoller?.rollExpression?.(getHitDieExpression(), { label: "生命骰" });
     });
     const heal = createElement(
       "button",
@@ -359,15 +366,16 @@
       let spent = 0;
       const records = [];
       while (nextHp < maximumHp && spent < current) {
-        const result = globalScope.DiceRoller?.rollExpression?.(`1d${hitDieSize}`, {
+        const result = globalScope.DiceRoller?.rollExpression?.(getHitDieExpression(), {
           label: `第 ${spent + 1} 顆生命骰`,
           notify: false
         });
-        const rolled = Number(result?.values?.[0]);
-        if (!Number.isFinite(rolled)) break;
+        const rolledTotal = Number(result?.total);
+        if (!Number.isFinite(rolledTotal)) break;
+        const rolled = Math.max(1, rolledTotal);
         spent += 1;
         nextHp = Math.min(maximumHp, nextHp + rolled);
-        records.push(`第 ${spent} 顆：D${hitDieSize}=${rolled} | HP ${nextHp} / ${maximumHp}`);
+        records.push(`第 ${spent} 顆：${result.expression}=${rolled} | HP ${nextHp} / ${maximumHp}`);
       }
 
       if (!spent) {
