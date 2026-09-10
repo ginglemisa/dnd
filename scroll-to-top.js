@@ -1,12 +1,3 @@
-(function initSheetTabOrder() {
-  const tabs = document.querySelector("#sheet-tabs-row .tabs");
-  const actionTab = tabs?.querySelector('[aria-controls="tab-actions"]');
-  const equipmentTab = tabs?.querySelector('[aria-controls="tab-equipment"]');
-  if (!tabs || !actionTab || !equipmentTab) return;
-
-  tabs.insertBefore(equipmentTab, actionTab);
-})();
-
 (function initFloatingTopOffset() {
   const tabsShell = document.querySelector(".tabs-shell");
   if (!tabsShell) return;
