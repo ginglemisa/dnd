@@ -121,7 +121,7 @@
   const CLASS_ACTION_RULES = Object.freeze({
     barbarian: Object.freeze([
       { id: "reckless-attack", mode: "action", level: 2, label: "魯莽", key: "dynamic-action-class-8jjnkp", descriptionId: "barbarian-reckless-attack" },
-      { id: "rage", mode: "bonus", level: 1, label: "等級 1：狂暴", key: "dynamic-bonus-barbarian-3te1cj", description: () => {
+      { id: "rage", mode: "bonus", level: 1, label: "等級 1：狂暴", key: "dynamic-bonus-barbarian-3te1cj", resourceKey: "barbarian-rage", description: () => {
         const resource = globalScope.getCharacterResourceSpecs({ className: "barbarian", level: getCharacterLevel() })
           .find(spec => spec.key === "barbarian-rage");
         return `你可以用附贈動作進入狂暴（未穿重甲時）。
@@ -153,28 +153,28 @@
       { id: "martial-arts-action", mode: "action", level: 1, label: "等級 1：武藝", description: getMonkMartialArtsDescription, key: "dynamic-action-monk-curated-martial-arts-action" },
       { id: "martial-arts-bonus", mode: "bonus", level: 1, label: "等級 1：武藝", description: getMonkMartialArtsDescription, key: "dynamic-bonus-monk-curated-martial-arts-bonus", legacyKeys: ["dynamic-bonus-class-muonvc"] },
       { id: "focused-aim", mode: "bonus", level: 2, label: "等級 2：聚氣凝神", description: getMonkFocusDescription, key: "dynamic-bonus-monk-curated-focused-aim", legacyKeys: ["dynamic-bonus-class-ricpmu"] },
-      { id: "uncanny-metabolism", mode: "action", level: 2, label: "等級 2：吐故納新", description: "擲先攻時，你可回滿已消耗的專注點，並回復「武藝骰 + 武僧等級」生命值。\n\n此能力每次長休只能用 1 次。", key: "dynamic-action-monk-curated-uncanny-metabolism" },
+      { id: "uncanny-metabolism", mode: "action", level: 2, label: "等級 2：吐故納新", description: "擲先攻時，你可回滿已消耗的專注點，並回復「武藝骰 + 武僧等級」生命值。\n\n此能力每次長休只能用 1 次。", key: "dynamic-action-monk-curated-uncanny-metabolism", resourceKey: "monk-uncanny-metabolism" },
       { id: "deflect-attacks", mode: "reaction", level: 3, label: "等級 3：撥擋化勁", description: getMonkDeflectAttacksDescription, key: "dynamic-reaction-monk-curated-deflect-attacks", legacyKeys: ["dynamic-reaction-class-5l2yua"] },
       { id: "slow-fall", mode: "reaction", level: 4, label: "等級 4：輕身墜", description: getMonkSlowFallDescription, key: "dynamic-reaction-monk-curated-slow-fall", legacyKeys: ["dynamic-reaction-class-1l1lc9s"] },
       { id: "stunning-strike", mode: "action", level: 5, label: "等級 5：震懾擊", description: "每回合 1 次，當你用武僧武器或徒手命中時，可花 1 點專注點發動震懾打擊。目標需做體質豁免：\n\n- 失敗：震懾到你下回合開始。\n- 成功：速度減半，且到你下回合開始前，下一次對它的攻擊有優勢。", key: "dynamic-action-monk-curated-stunning-strike", legacyKeys: ["dynamic-action-class-1g9j8ui"] },
       { id: "extra-attack", mode: "action", level: 5, label: "等級 5：額外攻擊", description: "你在自己回合使用攻擊動作時，可以攻擊 2 次。", key: "dynamic-action-monk-curated-extra-attack" },
-      { id: "wholeness-of-body", mode: "bonus", level: 6, label: "等級 6：混元體", description: getMonkWholenessDescription, key: "dynamic-bonus-monk-curated-wholeness-of-body", legacyKeys: ["dynamic-bonus-class-3mzm48"] }
+      { id: "wholeness-of-body", mode: "bonus", level: 6, label: "等級 6：混元體", description: getMonkWholenessDescription, key: "dynamic-bonus-monk-curated-wholeness-of-body", resourceKey: "monk-wholeness", legacyKeys: ["dynamic-bonus-class-3mzm48"] }
     ]),
     bard: Object.freeze([
-      { id: "inspiration", mode: "bonus", level: 1, label: "等級 1：吟遊詩人激勵", key: "dynamic-bonus-class-r7asqs", description: () => `選擇 1 名 60 呎內看得到你或聽得到你的生物，使其獲得 1 顆激勵骰（d${getCharacterLevel() >= 5 ? 8 : 6}）。
+      { id: "inspiration", mode: "bonus", level: 1, label: "等級 1：吟遊詩人激勵", key: "dynamic-bonus-class-r7asqs", resourceKey: "bard-inspiration", description: () => `選擇 1 名 60 呎內看得到你或聽得到你的生物，使其獲得 1 顆激勵骰（d${getCharacterLevel() >= 5 ? 8 : 6}）。
 
 - 目標在 d20 檢定失敗後，可擲激勵骰並加到結果上。
 - 激勵骰使用後消耗，未使用則持續 1 小時。
 - 同一生物同時只能持有 1 顆你的激勵骰。
 - 可用次數＝魅力調整值（至少 1 次），${getCharacterLevel() >= 5 ? "短休或長休後全部恢復。\n- 激勵之源：你可無需動作消耗 1 個法術位，恢復 1 次激勵使用次數。" : "長休後全部恢復。"}` },
-      { id: "cutting-words", mode: "reaction", level: 3, label: "等級 3：語出驚人", key: "dynamic-reaction-class-1y0uv3b", descriptionId: "bard-cutting-words" },
+      { id: "cutting-words", mode: "reaction", level: 3, label: "等級 3：語出驚人", key: "dynamic-reaction-class-1y0uv3b", resourceKey: "bard-inspiration", descriptionId: "bard-cutting-words" },
       { id: "countercharm", mode: "reaction", level: 7, label: "等級 7：反迷惑", key: "dynamic-reaction-class-ul9dq", descriptionId: "bard-countercharm" }
     ]),
     cleric: Object.freeze([
-      { id: "divine-spark", mode: "action", level: 2, label: "等級 2：神聖火花", key: "dynamic-action-cleric-1c18bru", description: () => getClericChannelDescription("cleric-divine-spark") },
+      { id: "divine-spark", mode: "action", level: 2, label: "等級 2：神聖火花", key: "dynamic-action-cleric-1c18bru", resourceKey: "cleric-channel-divinity", description: () => getClericChannelDescription("cleric-divine-spark") },
       {
         id: "turn-undead", mode: "action", level: 2, key: "dynamic-action-cleric-xonbxu",
-        label: () => getCharacterLevel() >= 5 ? "等級 5：焚燒不死生物" : "等級 2：驅散不死生物",
+        label: () => getCharacterLevel() >= 5 ? "等級 5：焚燒不死生物" : "等級 2：驅散不死生物", resourceKey: "cleric-channel-divinity",
         description: getClericTurnUndeadDescription
       },
       { mode: "action", level: 3, label: "等級 3：生命門徒（生命）", description: "你用法術位施放回復法術時，目標在本回合額外回復「2 + 法術環級」生命值。", key: "dynamic-action-cleric-1ocjvx6", id: "disciple-of-life" },
@@ -182,16 +182,31 @@
         const rawLevel = String(document.getElementById("level")?.value || "").trim();
         const healingTotal = rawLevel ? String(getCharacterLevel() * 5) : "牧師等級 × 5";
         return `這會消耗引導神力，視為魔法動作。\n\n你展示聖徽，分配總共「${healingTotal}」點治療量給 30 呎內任意數量重傷生物。\n\n此特性不能把目標回到超過其生命值上限一半。`;
-      }, key: "dynamic-action-cleric-aoatsu", id: "preserve-life", legacyKeys: ["dynamic-action-class-preserve-life"] },
+      }, key: "dynamic-action-cleric-aoatsu", id: "preserve-life", resourceKey: "cleric-channel-divinity", legacyKeys: ["dynamic-action-class-preserve-life"] },
       { id: "divine-strike", mode: "action", level: 7, label: "等級 7：神聖打擊", description: "在你的每個回合中一次，當你使用武器發動攻擊檢定並命中一個生物時，可以使目標額外受到1d8黯蝕或光耀傷害（由你選擇）。", key: "dynamic-action-cleric-sxx32", checkedId: "cleric-blessed-strikes-divine-strike" }
     ]),
     druid: Object.freeze([
-      { id: "wild-shape", mode: "bonus", level: 2, label: "等級 2：荒野形態", key: "dynamic-bonus-class-3u4zp1", descriptionId: "druid-wild-shape" },
-      { id: "wild-companion", mode: "action", level: 2, label: "等級 2：荒野夥伴", descriptionId: "druid-wild-companion" },
-      { id: "lands-aid", mode: "action", level: 3, label: "等級 3：大地之援（大地子職）", descriptionId: "druid-lands-aid" }
+      { id: "wild-shape", mode: "bonus", level: 2, label: "等級 2：荒野形態", key: "dynamic-bonus-class-3u4zp1", druidOperation: "shape", description: `你可用附贈動作變成已知野獸形態，起始 2 次；短休回 1 次，長休回滿。
+
+單次變形持續時間：最多「德魯伊等級一半（捨去小數點）」小時。
+
+以下情況會提前結束變形：
+
+- 你再次使用荒野形態。
+- 你陷入失能或死亡。
+- 你用附贈動作主動解除。
+
+變形規則
+
+- 臨時生命值：變形時獲得等同德魯伊等級的臨時生命值。
+- 遊戲數據：改用野獸數據，但保留你的生物類型,生命值,生命骰,智力/感知/魅力,職業特性,語言與專長。技能與豁免熟練仍保留，若野獸該數值更高可改用野獸值。
+- 施法限制：變形期間不能施法，但不會中斷你已施放法術的專注或既有效果。
+- 裝備互動：裝備可掉落,融入或由新形態穿戴；是否能穿戴由 DM 依體型與構造判定。無法穿戴者會掉落或融入，融入的裝備在變形期間不生效。` },
+      { id: "wild-companion", mode: "action", level: 2, label: "等級 2：荒野夥伴", descriptionId: "druid-wild-companion", druidOperation: "companion" },
+      { id: "lands-aid", mode: "action", level: 3, label: "等級 3：大地之援（大地子職）", descriptionId: "druid-lands-aid", druidOperation: "aid" }
     ]),
     fighter: Object.freeze([
-      { mode: "bonus", level: 1, label: "等級 1：回氣", description: () => {
+      { mode: "bonus", level: 1, label: "等級 1：回氣", resourceKey: "fighter-second-wind", description: () => {
         const level = getCharacterLevel();
         const uses = level >= 4 ? 3 : 2;
         const tacticalShift = level >= 5
@@ -199,15 +214,15 @@
           : "";
         return `使用附贈動作，恢復 1d10 + ${level} 生命值。\n\n- 使用次數：${uses} 次；短休回復 1 次，長休全部回復。${tacticalShift}`;
       }, key: "dynamic-bonus-fighter-qmmfue", id: "second-wind", legacyKeys: ["dynamic-bonus-class-fj2om2"] },
-      { mode: "action", level: 2, label: "等級 2：動作如潮", description: "你的回合中，可以獲得 1 個額外動作。\n\n- 此額外動作不能用於魔法動作。\n- 使用後，短休或長休才能再次使用。", key: "dynamic-action-fighter-1870147", id: "action-surge", legacyKeys: ["dynamic-action-class-action-surge"] },
+      { mode: "action", level: 2, label: "等級 2：動作如潮", description: "你的回合中，可以獲得 1 個額外動作。\n\n- 此額外動作不能用於魔法動作。\n- 使用後，短休或長休才能再次使用。", key: "dynamic-action-fighter-1870147", id: "action-surge", resourceKey: "fighter-action-surge", legacyKeys: ["dynamic-action-class-action-surge"] },
       { mode: "movement", level: 3, label: "等級 3：運動健將", description: "造成重擊後，可立即移動至多等同於速度一半的距離，且不會引發藉機攻擊。", key: "dynamic-movement-fighter-1s26hvz", id: "remarkable-athlete" },
       { mode: "action", level: 5, label: "等級 5：額外攻擊", description: "你在自己回合使用攻擊動作時，可以攻擊 2 次。", key: "dynamic-action-fighter-113ebtz", id: "extra-attack" },
       { mode: "movement", level: 5, label: "等級 5：戰術轉移", description: "當你以附贈動作使用回氣時，可以移動至多等同於你速度一半的距離，且不會引發藉機攻擊。", key: "dynamic-movement-fighter-1liysqo", id: "tactical-shift" }
     ]),
     paladin: Object.freeze([
       { id: "lay-on-hands", mode: "bonus", level: 1, label: "等級 1：聖療", description: "以附贈動作觸碰自己或一個生物，從「聖療」池分配任意點數，使其恢復等量 HP。\n\n也可消耗 5 點聖療，移除目標的中毒狀態；此時不恢復 HP。", key: "dynamic-bonus-paladin-curated-lay-on-hands", legacyKeys: ["dynamic-bonus-class-1ol2xxh"] },
-      { id: "divine-sense", mode: "bonus", level: 3, label: "等級 3：神聖感知", description: "消耗 1 次引導神力，以附贈動作啟動，持續 10 分鐘或直到你失能。\n\n期間你能感知 60 呎內天界生物、邪魔與不死生物的位置與類型，也能察覺範圍內受「聖居」祝福或褻瀆的地點與物件。", key: "dynamic-bonus-paladin-curated-divine-sense", legacyKeys: ["dynamic-bonus-class-1axs7np"] },
-      { id: "sacred-weapon", mode: "action", level: 3, label: "等級 3：祝聖武器", descriptionId: "paladin-sacred-weapon", key: "dynamic-action-paladin-curated-sacred-weapon", legacyKeys: ["dynamic-action-class-sacred-weapon"] },
+      { id: "divine-sense", mode: "bonus", level: 3, label: "等級 3：神聖感知", description: "消耗 1 次引導神力，以附贈動作啟動，持續 10 分鐘或直到你失能。\n\n期間你能感知 60 呎內天界生物、邪魔與不死生物的位置與類型，也能察覺範圍內受「聖居」祝福或褻瀆的地點與物件。", key: "dynamic-bonus-paladin-curated-divine-sense", resourceKey: "paladin-channel-divinity", legacyKeys: ["dynamic-bonus-class-1axs7np"] },
+      { id: "sacred-weapon", mode: "action", level: 3, label: "等級 3：祝聖武器", descriptionId: "paladin-sacred-weapon", key: "dynamic-action-paladin-curated-sacred-weapon", resourceKey: "paladin-channel-divinity", legacyKeys: ["dynamic-action-class-sacred-weapon"] },
       { id: "extra-attack", mode: "action", level: 5, label: "等級 5：額外攻擊", description: "你在自己回合使用攻擊動作時，可以攻擊 2 次。", key: "dynamic-action-paladin-curated-extra-attack" }
     ]),
     rogue: Object.freeze([
@@ -218,7 +233,7 @@
       { id: "uncanny-dodge", mode: "reaction", level: 5, label: "等級 5：直覺閃避", key: "dynamic-reaction-class-5f9k5x", descriptionId: "rogue-uncanny-dodge" }
     ]),
     sorcerer: Object.freeze([
-      { id: "innate-sorcery", mode: "bonus", level: 1, label: "等級 1：天生術法", key: "dynamic-bonus-class-1lqwnvp", description: "你體內的魔力可被短暫解放。作為附贈動作啟動後，持續 1 分鐘並獲得：\n\n- 你的術士法術豁免 DC +1。\n- 你的術士法術攻擊檢定具有優勢。\n\n使用次數：2 次；長休後全回復。" },
+      { id: "innate-sorcery", mode: "bonus", level: 1, label: "等級 1：天生術法", key: "dynamic-bonus-class-1lqwnvp", resourceKey: "sorcerer-innate-sorcery", description: "你體內的魔力可被短暫解放。作為附贈動作啟動後，持續 1 分鐘並獲得：\n\n- 你的術士法術豁免 DC +1。\n- 你的術士法術攻擊檢定具有優勢。\n\n使用次數：2 次；長休後全回復。" },
       { id: "font-of-magic", mode: "bonus", level: 2, label: "魔力泉湧", key: "dynamic-bonus-class-i5lemn", description: "你可運用術法點來啟動魔法效果。\n起始術法點為 2 點；高等級時依「術士特性」表提升。\n你持有的術法點不可超過目前等級上限；長休後全回復。\n\n你可使用以下轉換：\n- 將法術位轉為術法點：消耗 1 個法術位，獲得等同該環階的術法點，無需動作。\n- 創造法術位：以附贈動作消耗術法點換成法術位，且不能創造 6 環以上法術位。\n\n消耗與最低術士等級如下：\n1 環法術位消耗 2 點術法點，最低術士等級 2\n2 環法術位消耗 3 點，最低術士等級 3\n3 環法術位消耗 5 點，最低術士等級 5\n4 環法術位消耗 6 點，最低術士等級 7\n\n以此特性創造的法術位會在長休後消散。" },
       { id: "sorcery-incarnate", mode: "bonus", level: 7, label: "等級 7：術法化身", key: "dynamic-bonus-class-1lfxnv8", descriptionId: "sorcerer-sorcery-incarnate" }
     ]),
@@ -230,10 +245,10 @@
       { mode: "action", level: 7, label: "等級 7：防守戰術", description: "選擇並獲得下列一項。每當你完成短休或長休時，可以用另一項替換目前的選擇。\n\n- 衝出重圍：以你為目標的藉機攻擊具有劣勢。\n- 多重防禦：當一個生物的攻擊檢定命中你時，該生物在本回合內對你發動的所有後續攻擊檢定均具有劣勢。", key: "dynamic-action-ranger-p55ifk", id: "defensive-tactics" }
     ]),
     warlock: Object.freeze([
-      { id: "arcane-recovery", mode: "action", level: 2, label: "等級 2：秘法回流", key: "dynamic-action-warlock-curated-arcane-recovery", descriptionId: "warlock-magical-cunning" },
+      { id: "arcane-recovery", mode: "action", level: 2, label: "等級 2：秘法回流", key: "dynamic-action-warlock-curated-arcane-recovery", resourceKey: "warlock-magical-cunning", descriptionId: "warlock-magical-cunning" },
       { id: "thirsting-blade", mode: "action", level: 5, invocation: "饑渴魔刃", label: "饑渴魔刃", description: "先決條件：契術師等級 5+,刃之魔契祈喚\n你在使用契約武器時獲得額外攻擊：在你回合以該武器執行攻擊動作時，可攻擊 2 次而非 1 次。", key: "dynamic-action-warlock-curated-thirsting-blade", requiresInvocation: "刃之魔契" },
       { id: "eldritch-smite", mode: "action", level: 5, invocation: "魔能斬擊", label: "魔能斬擊", description: "先決條件：契術師等級 5+,刃之魔契祈喚\n每回合一次，當你用契約武器命中生物時，可消耗 1 個契術師法術位，造成額外力場傷害：1d8＋該法術位每環階再加 1d8，並可使大型或更小目標倒地。", key: "dynamic-action-warlock-curated-eldritch-smite", requiresInvocation: "刃之魔契" },
-      { id: "dark-ones-own-luck", mode: "action", level: 6, label: "等級 6：黑暗強運（邪魔子職）", description: "當你進行屬性檢定或豁免檢定時，可以使用該特性將1d10加到擲骰結果中。你可以在看到擲骰結果後、結果生效前使用該特性。\n\n你可以使用該特性的次數等同於你的魅力調整值（至少一次），但每次擲骰只能使用一次。完成長休時，你恢復所有已消耗的使用次數。", key: "dynamic-action-warlock-curated-dark-ones-own-luck" }
+      { id: "dark-ones-own-luck", mode: "action", level: 6, label: "等級 6：黑暗強運（邪魔子職）", description: "當你進行屬性檢定或豁免檢定時，可以使用該特性將1d10加到擲骰結果中。你可以在看到擲骰結果後、結果生效前使用該特性。\n\n你可以使用該特性的次數等同於你的魅力調整值（至少一次），但每次擲骰只能使用一次。完成長休時，你恢復所有已消耗的使用次數。", key: "dynamic-action-warlock-curated-dark-ones-own-luck", resourceKey: "warlock-dark-ones-own-luck" }
     ]),
     wizard: Object.freeze([
       { id: "potent-cantrip", mode: "action", level: 3, label: "等級 3：強力戲法（塑能子職）", description: "當你對生物施放會造成傷害的戲法時：\n\n- 若攻擊檢定失手，或\n- 目標在該戲法豁免成功，\n- 目標仍會受到一半傷害（若該戲法有傷害），但不受其他效果影響。", key: "dynamic-action-wizard-curated-potent-cantrip" },
@@ -243,11 +258,11 @@
   });
 
   const RACE_ACTION_RULES = Object.freeze([
-    { id: "breath", race: "dragonborn", level: 1, mode: "action", label: "吐息元素", key: "dynamic-action-race-1loctyz", description: getDragonbornBreathDescription },
-    { id: "fire-burn", race: "goliath", level: 1, mode: "action", label: "星火燎原", key: "dynamic-action-race-1vjg9hw", choiceId: "goliath-ancestry", choiceValue: "fire", description: "攻擊命中目標時增加 1d10 火焰傷害。" },
-    { id: "frost-chill", race: "goliath", level: 1, mode: "action", label: "凜若冰霜", key: "dynamic-action-race-cc167a", choiceId: "goliath-ancestry", choiceValue: "frost", ruleName: "凜若冰霜（霜巨人）" },
-    { id: "hill-tumble", race: "goliath", level: 1, mode: "action", label: "地動山搖", key: "dynamic-action-race-11249i9", choiceId: "goliath-ancestry", choiceValue: "hill", description: "攻擊命中大型以下的生物可令其陷入「倒地」狀態。" },
-    { id: "stone-endurance", race: "goliath", level: 1, mode: "reaction", label: "堅若磐石", key: "dynamic-reaction-race-16nfphm", choiceId: "goliath-ancestry", choiceValue: "stone", description: () => {
+    { id: "breath", race: "dragonborn", level: 1, mode: "action", label: "吐息元素", key: "dynamic-action-race-1loctyz", resourceKey: "dragonborn-breath-uses", description: getDragonbornBreathDescription },
+    { id: "fire-burn", race: "goliath", level: 1, mode: "action", label: "星火燎原", key: "dynamic-action-race-1vjg9hw", resourceKey: "goliath-giant-ancestry-uses", choiceId: "goliath-ancestry", choiceValue: "fire", description: "攻擊命中目標時增加 1d10 火焰傷害。" },
+    { id: "frost-chill", race: "goliath", level: 1, mode: "action", label: "凜若冰霜", key: "dynamic-action-race-cc167a", resourceKey: "goliath-giant-ancestry-uses", choiceId: "goliath-ancestry", choiceValue: "frost", ruleName: "凜若冰霜（霜巨人）" },
+    { id: "hill-tumble", race: "goliath", level: 1, mode: "action", label: "地動山搖", key: "dynamic-action-race-11249i9", resourceKey: "goliath-giant-ancestry-uses", choiceId: "goliath-ancestry", choiceValue: "hill", description: "攻擊命中大型以下的生物可令其陷入「倒地」狀態。" },
+    { id: "stone-endurance", race: "goliath", level: 1, mode: "reaction", label: "堅若磐石", key: "dynamic-reaction-race-16nfphm", resourceKey: "goliath-giant-ancestry-uses", choiceId: "goliath-ancestry", choiceValue: "stone", description: () => {
       const modifier = getAbilityModifier("con");
       const dice = modifier === null ? "1d12 + 體質調整值" : formatDiceWithModifier("1d12", modifier);
       return getGoliathAncestryDescription("堅若磐石（石巨人）", `受傷時可用反應扣除 ${dice} 傷害。`);
@@ -256,14 +271,14 @@
     { id: "lucky", race: "halfling", level: 1, mode: "action", label: "吉運", key: "dynamic-action-race-1migdkt", description: "任何 D20 檢定中擲出 1 都可以重擲一次。", tabletopOnly: true },
     { id: "naturally-stealthy", race: "halfling", level: 1, mode: "action", label: "天生善匿", key: "dynamic-action-race-150qsdc", description: "你可以在體型比你大的生物後方使用躲藏動作。", tabletopOnly: true },
     { id: "naturally-stealthy", race: "halfling", level: 2, mode: "bonus", label: "天生善匿", className: "rogue", description: "你可以在體型比你大的生物後方使用躲藏動作。", tabletopOnly: true, key: "dynamic-bonus-race-150qsdc" },
-    { id: "draconic-flight", race: "dragonborn", level: 5, mode: "bonus", label: "等級 5：龍翔天際", key: "dynamic-bonus-race-1h4jffx", ruleName: "龍翔天際" },
-    { id: "stonecunning", race: "dwarf", level: 1, mode: "bonus", label: "石中精妙", key: "dynamic-bonus-race-m9n3bt", ruleName: "石中精妙" },
+    { id: "draconic-flight", race: "dragonborn", level: 5, mode: "bonus", label: "等級 5：龍翔天際", key: "dynamic-bonus-race-1h4jffx", resourceKey: "dragonborn-dragon-flight", ruleName: "龍翔天際" },
+    { id: "stonecunning", race: "dwarf", level: 1, mode: "bonus", label: "石中精妙", key: "dynamic-bonus-race-m9n3bt", resourceKey: "dwarf-stonecunning", ruleName: "石中精妙" },
     { id: "clockwork-device", race: "gnome", level: 1, mode: "bonus", label: "岩石侏儒", key: "dynamic-bonus-race-1ljlrzt", ruleName: "岩石侏儒", choiceId: "gnome-lineage", choiceValue: "rock_gnome" },
     { id: "dismantle-device", race: "gnome", level: 1, mode: "action", label: "拆除發條裝置", ruleName: "岩石侏儒", choiceId: "gnome-lineage", choiceValue: "rock_gnome" },
-    { id: "cloud-jaunt", race: "goliath", level: 1, mode: "bonus", label: "雲遊四方", key: "dynamic-bonus-race-r7ggqg", description: () => getGoliathAncestryDescription("雲遊四方（雲巨人）"), choiceId: "goliath-ancestry", choiceValue: "cloud" },
-    { id: "storm-thunder", race: "goliath", level: 1, mode: "reaction", label: "轟雷掣電", key: "dynamic-reaction-race-4cc8u8", description: () => getGoliathAncestryDescription("轟雷掣電（風暴巨人）"), choiceId: "goliath-ancestry", choiceValue: "storm" },
-    { id: "large-form", race: "goliath", level: 5, mode: "bonus", label: "等級 5：巨化形體", key: "dynamic-bonus-race-1svsj4g", ruleName: "巨化形體" },
-    { id: "adrenaline-rush", race: "orc", level: 1, mode: "bonus", label: "熱血湧動", key: "dynamic-bonus-race-ydqmx5", ruleName: "熱血湧動", proficiencyValue: true }
+    { id: "cloud-jaunt", race: "goliath", level: 1, mode: "bonus", label: "雲遊四方", key: "dynamic-bonus-race-r7ggqg", resourceKey: "goliath-giant-ancestry-uses", description: () => getGoliathAncestryDescription("雲遊四方（雲巨人）"), choiceId: "goliath-ancestry", choiceValue: "cloud" },
+    { id: "storm-thunder", race: "goliath", level: 1, mode: "reaction", label: "轟雷掣電", key: "dynamic-reaction-race-4cc8u8", resourceKey: "goliath-giant-ancestry-uses", description: () => getGoliathAncestryDescription("轟雷掣電（風暴巨人）"), choiceId: "goliath-ancestry", choiceValue: "storm" },
+    { id: "large-form", race: "goliath", level: 5, mode: "bonus", label: "等級 5：巨化形體", key: "dynamic-bonus-race-1svsj4g", resourceKey: "goliath-large-form", ruleName: "巨化形體" },
+    { id: "adrenaline-rush", race: "orc", level: 1, mode: "bonus", label: "熱血湧動", key: "dynamic-bonus-race-ydqmx5", resourceKey: "orc-adrenaline-rush", ruleName: "熱血湧動", proficiencyValue: true }
   ]);
 
   let currentMode = "action";
@@ -406,7 +421,9 @@
     return Array.from(document.querySelectorAll('#tab-spells .spell-entry select[id*="-spell-"]')).flatMap(select => {
       const spellId = select.value || "";
       const spell = SpellCatalog.getSpell(spellId);
-      if (!spell || !timingPattern.test(spell.desc || "")) return [];
+      // 燃火術以附贈動作施法，也能以魔法動作投擲現有火焰。
+      const isProduceFlameAction = spellId === "produce-flame" && mode === "action";
+      if (!spell || (!isProduceFlameAction && !timingPattern.test(spell.desc || ""))) return [];
       const row = select.closest(".spell-entry");
       const classSelect = row?.querySelector('select[id*="-class-"]');
       const sourceTag = typeof globalScope.getPickedSpellSourceTag === "function"
@@ -528,7 +545,7 @@
 
 - 疾風連擊（1 點）：附贈動作打 2 次徒手。
 - 閃轉騰挪：附贈動作可撤離；再花 1 點可同時撤離 + 回避。
-- 疾步如風：附贈動作可疾走；再花 1 點可同時撤離 + 疾走，且本回合跳躍距離加倍。
+- 疾步如風：附贈動作可衝刺；再花 1 點可同時撤離 + 衝刺，且本回合跳躍距離加倍。
 
 若特性要求豁免，DC = ${saveDc}。`;
     if (getCharacterLevel() < 3) return base;
@@ -586,7 +603,7 @@ ${formatDiceWithModifier("1d10", dexterityModifier + level)}
 
 每種效果都要先放棄部分偷襲傷害骰；若需要豁免，DC = ${saveDc}。
 
-淬毒（消耗 1d6）：目標體質豁免失敗則中毒 1 分鐘；其每回合結束可再豁免，成功即結束。使用此效果時你需攜帶制毒師工具。
+淬毒（消耗 1d6）：目標體質豁免失敗則中毒 1 分鐘；其每回合結束可再豁免，成功即結束。使用此效果時你需攜帶製毒師工具。
 摔絆（消耗 1d6）：大型或更小目標敏捷豁免失敗則倒地。
 撤步（消耗 1d6）：攻擊後你可立刻移動至多一半速度，且不引發藉機攻擊。`;
 }
@@ -661,6 +678,8 @@ ${formatDiceWithModifier("1d10", dexterityModifier + level)}
         description,
         requiredLevel: rule.level,
         ...(rule.legacyKeys ? { legacyKeys: rule.legacyKeys } : {}),
+        ...(rule.resourceKey ? { resourceKey: rule.resourceKey } : {}),
+        ...(rule.druidOperation ? { druidOperation: rule.druidOperation } : {}),
         ...(rule.tabletopOnly ? { tabletopOnly: true } : {}),
         dynamic: true
       }];
@@ -773,16 +792,47 @@ function getModeOptions(mode) {
     );
   }
 
+  function getTabletopDescription(option) {
+    let description = option.description;
+    const level = Number(document.getElementById("level")?.value) || 0;
+    const dc = 8 + getProficiencyBonus() + getMonkAbilityModifier("wis");
+    if (option.resourceKey === "barbarian-rage" && level >= 7) {
+      description += "\n\n直覺猛撲：當你以附贈動作進入狂暴時，可以在該附贈動作中移動至多等同於你速度一半的距離。";
+    }
+    if (option.resourceKey === "monk-uncanny-metabolism" && level > 0) {
+      description = description.replace("「武藝骰 + 武僧等級」", `${getMonkMartialArtsDie()} + ${level}`);
+    }
+    if (option.key === "dynamic-action-monk-curated-stunning-strike") {
+      description = description.replace("體質豁免", `體質豁免（DC ${dc}）`);
+    }
+    if (option.key === "dynamic-action-cleric-1c18bru") {
+      description = description.replace("1d8 + 感知調整值", formatDiceWithModifier("1d8", getMonkAbilityModifier("wis")))
+        .replace("體質豁免", `體質豁免（DC ${dc}）`);
+    }
+    if (option.key === "dynamic-action-ranger-vdr4tc") {
+      description = document.getElementById("ranger-hunters-prey-colossus-slayer")?.checked
+        ? "斬殺者：每回合 1 次，你用武器命中 HP 不是全滿的敵人，額外造成 1d8 傷害。"
+        : document.getElementById("ranger-hunters-prey-horde-breaker")?.checked
+          ? "破陣者：每回合 1 次，你用武器攻擊時，可用同一把再攻擊 5 呎內另一個你本回合尚未攻擊過的目標。"
+          : "請在職業能力中選擇狩獵目標。";
+    }
+    return { ...option, description };
+  }
+
   function getPublicTabletopModeOptions(mode) {
     return Object.freeze(
-      getModeOptions(mode)
+      [...getModeOptions(mode), ...(mode === "action" && document.getElementById("class")?.value === "bard"
+        ? getModeOptions("bonus").filter(option => option.key === "dynamic-bonus-class-r7asqs") : [])]
         .filter(option => {
+          if (["dynamic-bonus-barbarian-1iw4zkg", "dynamic-movement-barbarian-1iw4zkg"].includes(option.key)) return false;
           if (mode !== "movement") return true;
           if (option.key === "special-speeds" || option.key === "speed-changes") return false;
           return option.key !== "flying"
-            || (document.getElementById("race")?.value === "dragonborn" && getCharacterLevel() >= 5);
+            || (document.getElementById("race")?.value === "dragonborn" && getCharacterLevel() >= 5)
+            || Boolean(globalScope.TabletopMode?.getDruidForm?.()?.speeds?.["飛行"] || globalScope.TabletopMode?.getDruidForm?.()?.speeds?.["游泳"])
+            || (document.getElementById("class")?.value === "wizard" && globalScope.TabletopSpells?.isSpellCurrentlySelected?.("fly"));
         })
-        .map(option => Object.freeze({ ...option }))
+        .map(option => Object.freeze(getTabletopDescription(option)))
     );
   }
 

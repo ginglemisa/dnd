@@ -340,7 +340,9 @@ async function verifyCoverage(page) {
       check(Object.hasOwn(baseline.classes, name), `${name}: class missing from audit`);
       for (let level = 1; level <= 8; level++) {
         setClass(name, level);
-        const expected = (personalizedClasses[name] || [...baseline.classes[name], ...(additions[name] || [])]).filter(r => r[1] <= level);
+        const expected = (personalizedClasses[name] || [...baseline.classes[name], ...(additions[name] || [])])
+          .filter(r => r[1] <= level && !String(r[3] || "").includes("1iw4zkg"));
+        if (name === "bard") expected.push(["action", 1, "等級 1：吟遊詩人激勵", "dynamic-bonus-class-r7asqs"]);
         for (const mode of modes) {
           const actual = options(mode, "職業");
           const wanted = expected.filter(r => r[0] === mode);
@@ -410,7 +412,10 @@ async function verifyCoverage(page) {
     }
     setClass("ranger", 7);
     check(classOption("movement", "越野").description === "你獲得等同於你速度的攀爬速度與游泳速度。\n\n未穿重甲時，你的速度增加 10 呎。", "Roving restricts only the +10 speed bonus by armor");
-    check(classOption("action", "狩獵目標").description.includes("斬殺者") && classOption("action", "狩獵目標").description.includes("破陣者"), "Hunter's Prey contains both choices");
+    check(classOption("action", "狩獵目標").description.includes("請在職業能力"), "Hunter's Prey asks for a choice");
+    el("ranger-hunters-prey-colossus-slayer").checked = true;
+    check(classOption("action", "狩獵目標").description.startsWith("斬殺者：") && !classOption("action", "狩獵目標").description.includes("破陣者"), "Hunter's Prey shows selected choice only");
+    el("ranger-hunters-prey-colossus-slayer").checked = false;
     check(classOption("action", "防守戰術").description.includes("衝出重圍") && classOption("action", "防守戰術").description.includes("多重防禦"), "Defensive Tactics contains both choices");
     setClass("cleric", 7);
     check(!classOption("action", "神聖打擊"), "Divine Strike requires a selection");
@@ -715,6 +720,110 @@ async function verifyUiAndPersistence(page) {
   assert.equal((await page.evaluate(() => TabletopMode.getTabletopActionPreferences())).customActions.length, 0);
 }
 
+async function verifyClassTabletopUpdates(page) {
+  const setCharacter = async (name, level) => {
+    await page.evaluate(({name, level}) => {
+      document.getElementById("class").value = name;
+      document.getElementById("level").value = String(level);
+      document.getElementById("wis").value = "18";
+      document.getElementById("class").dispatchEvent(new Event("change", {bubbles:true}));
+      TabletopMode.applyState({});
+      TabletopMode.setMode("tabletop");
+      TabletopMode.setPanel("actions");
+    }, {name, level});
+  };
+  const choose = async (mode, key) => {
+    await page.click(`#tabletop-action-tab-${mode}`);
+    await page.locator(`#tabletop-action-panel-${mode} [data-action-option-key="${key}"]`).click();
+  };
+  await setCharacter("wizard", 5);
+  assert.equal(await page.evaluate(() => ActionPanel.getTabletopOptions("movement").some(option => option.key === "flying")), false);
+  await page.evaluate(() => {
+    createSingleSpellRow("level3spells-area", "3", null, {classValue:"wizard", spellValue:"fly"});
+    const row = document.querySelector("#level3spells-area .spell-entry:last-child");
+    const spell = row.querySelector('select[id*="-spell-"]');
+    spell.value = "fly"; spell.dispatchEvent(new Event("change", {bubbles:true}));
+  });
+  assert.equal(await page.evaluate(() => TabletopSpells.isSpellCurrentlySelected("fly")), true);
+  assert.equal(await page.evaluate(() => ActionPanel.getTabletopOptions("movement").some(option => option.key === "flying")), true);
+  await setCharacter("druid", 8);
+  await page.evaluate(() => {
+    const run = (op, data) => TabletopMode.commitDruidOperation(op, data, TabletopMode.getDruidContext().token);
+    if (!run("known", {keys:["owl", "giant_octopus"]}).ok) throw new Error("known forms");
+    for (const key of ["owl", "giant_octopus"]) {
+      if (!run("shape", {key}).ok) throw new Error(`shape ${key}`);
+      if (!ActionPanel.getTabletopOptions("movement").some(option => option.key === "flying")) throw new Error(`movement ${key}`);
+      run("end");
+    }
+  });
+  await setCharacter("barbarian", 7);
+  await choose("bonus", "dynamic-bonus-barbarian-3te1cj");
+  assert.match(await page.locator("#tabletop-action-panel-bonus .tabletop-action-description").innerText(), /直覺猛撲/);
+  assert.equal(await page.locator('[data-action-option-key*="1iw4zkg"]').count(), 0);
+  await setCharacter("cleric", 6);
+  await choose("action", "dynamic-action-cleric-1c18bru");
+  assert.match(await page.locator("#tabletop-action-panel-action .tabletop-action-description").innerText(), /1d8 \+ 4/);
+  assert.match(await page.locator("#tabletop-action-panel-action .tabletop-action-description").innerText(), /體質豁免（DC 15）/);
+  for (const panel of ["overview", "actions", "spells"]) {
+    await page.evaluate(panel => TabletopMode.setPanel(panel), panel);
+    await page.waitForFunction(panel => document.getElementById(`tabletop-panel-${panel}`).textContent.includes("神佑醫者"), panel);
+  }
+  await setCharacter("ranger", 7);
+  await page.evaluate(() => {
+    for (const id of ["ranger-hunters-prey-colossus-slayer", "ranger-hunters-prey-horde-breaker", "ranger-defensive-tactics-multiattack-defense"]) {
+      const input = document.getElementById(id); input.checked = true; input.dispatchEvent(new Event("change", {bubbles:true}));
+    }
+  });
+  assert.equal(await page.locator("#ranger-hunters-prey-colossus-slayer").isChecked(), false);
+  assert.equal(await page.evaluate(() => collectStateObject()["ranger-hunters-prey-horde-breaker"]), true);
+  await choose("action", "dynamic-action-ranger-vdr4tc");
+  const prey = await page.locator("#tabletop-action-panel-action .tabletop-action-description").innerText();
+  assert.match(prey, /破陣者：/); assert.doesNotMatch(prey, /斬殺者：/);
+  await page.evaluate(() => TabletopMode.setPanel("overview"));
+  await page.waitForFunction(() => document.getElementById("tabletop-overview-rule-summary").textContent.includes("多重防禦"));
+  assert.match(await page.locator("#tabletop-overview-rule-summary").innerText(), /攀爬速度與游泳速度/);
+  for (const name of ["cleric", "druid", "paladin", "ranger", "warlock", "sorcerer"]) {
+    await setCharacter(name, 7);
+    await page.evaluate(() => TabletopMode.setPanel("overview"));
+    await page.locator(".tabletop-class-choice-alert").first().waitFor({state:"visible"});
+  }
+  await setCharacter("sorcerer", 5);
+  await page.waitForFunction(() => document.getElementById("tabletop-metamagic-section").parentElement.id === "tabletop-actions-metamagic-mount");
+  await page.evaluate(() => TabletopMode.setPanel("spells"));
+  assert.equal(await page.locator("#tabletop-spells-metamagic-mount #tabletop-metamagic-section").count(), 1);
+  await setCharacter("bard", 5);
+  await page.evaluate(() => TabletopMode.setBuiltInResourceSpent("bard-inspiration", 1, 4));
+  await choose("action", "dynamic-bonus-class-r7asqs");
+  await page.getByRole("button", {name:"激勵之源", exact:true}).click();
+  await page.getByRole("button", {name:"取消", exact:true}).click();
+  assert.equal(await page.evaluate(() => TabletopMode.getBuiltInResourceSpent("bard-inspiration")), 1);
+  await page.getByRole("button", {name:"激勵之源", exact:true}).click();
+  const dialogSelect = page.locator(".app-dialog select");
+  await dialogSelect.selectOption({index:1});
+  const slotId = await dialogSelect.inputValue();
+  await page.getByRole("button", {name:"消耗並恢復", exact:true}).click();
+  await page.waitForFunction(() => TabletopMode.getBuiltInResourceSpent("bard-inspiration") === 0);
+  assert.equal(await page.locator(`#${slotId}`).isChecked(), true);
+  await setCharacter("monk", 6);
+  await page.evaluate(() => TabletopMode.setBuiltInResourceSpent("monk-focus-points", 4, 6));
+  await choose("action", "dynamic-action-monk-curated-uncanny-metabolism");
+  assert.match(await page.locator("#tabletop-action-panel-action .tabletop-action-description").innerText(), /1d8 \+ 6/);
+  await page.locator("#tabletop-action-panel-action .tabletop-action-resource-use").click();
+  await page.getByRole("button", {name:"使用能力", exact:true}).last().click();
+  await page.waitForFunction(() => TabletopMode.getBuiltInResourceSpent("monk-focus-points") === 0);
+  assert.equal(await page.evaluate(() => TabletopMode.getBuiltInResourceSpent("monk-uncanny-metabolism")), 1);
+  await choose("action", "dynamic-action-monk-curated-stunning-strike");
+  assert.match(await page.locator("#tabletop-action-panel-action .tabletop-action-description").innerText(), /體質豁免（DC 15）/);
+  await page.evaluate(() => {
+    const toggle = document.getElementById("dice-system-toggle"); toggle.checked = true; toggle.dispatchEvent(new Event("change", {bubbles:true}));
+  });
+  await choose("bonus", "dynamic-bonus-monk-curated-wholeness-of-body");
+  await page.locator("#tabletop-action-panel-bonus .tabletop-action-resource-use").click();
+  await page.getByRole("button", {name:"使用能力", exact:true}).last().click();
+  await page.waitForFunction(() => TabletopMode.getBuiltInResourceSpent("monk-wholeness") === 1);
+  await page.waitForFunction(() => document.querySelector("#dice-roller-stage")?.textContent.includes("混元體"));
+}
+
 async function main() {
   const root = __dirname;
   const server = http.createServer((req, res) => {
@@ -738,6 +847,8 @@ async function main() {
     const assertions = await verifyCoverage(page);
     console.log(`Action metadata: ${assertions} coverage assertions passed.`);
     await verifyUiAndPersistence(page);
+    await verifyClassTabletopUpdates(page);
+    console.log("Class tabletop descriptions, alerts, choices, resource conversion and recovery passed.");
     assert.deepEqual(errors, [], "browser runtime errors");
     console.log("Tabletop + legacy UI, custom/hidden actions, JSON/share/autosave round trips passed.");
   } finally {

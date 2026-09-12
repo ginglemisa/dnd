@@ -273,7 +273,7 @@
     )?.Y) || 0;
     if (!hitDieSize) return null;
     const getHitDieExpression = () => {
-      const constitutionScore = document.getElementById("con")?.value || "10";
+      const constitutionScore = globalScope.TabletopMode?.getDruidForm?.()?.abilities.con ?? document.getElementById("con")?.value ?? "10";
       const constitutionModifier = globalScope.calculateAbilityModifier?.(constitutionScore);
       const modifier = Number.isFinite(constitutionModifier) ? constitutionModifier : 0;
       const modifierText = modifier > 0 ? `+${modifier}` : modifier < 0 ? String(modifier) : "";
@@ -486,7 +486,9 @@
     )));
 
     getAutomaticResourceSpecs().forEach(spec => {
-      const resource = spec.kind === "points"
+      const resource = spec.key === "druid-natural-recovery-spell-slots" && globalScope.TabletopDruid
+        ? globalScope.TabletopDruid.createNaturalRecoveryRow()
+        : spec.kind === "points"
         ? createPointPoolRow(spec)
         : createStoredUseRow(spec);
       if (resource) rows.push(resource);

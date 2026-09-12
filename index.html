@@ -45,11 +45,11 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎲%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20260910-equipment-detail-purchase">
+  <link rel="stylesheet" href="styles.css?v=20260913-invocation-modal">
   <script src="scroll-to-top.js" defer></script>
   <script src="dice-roller.js?v=20260902-tabletop-casting" defer></script>
-  <script src="monster.js?v=20260903-quick-build-mastery-tip" defer></script>
-    <script src="class-features.js?v=20260908-personalized-actions" defer></script>
+  <script src="monster.js?v=20260912-druid-controls" defer></script>
+    <script src="class-features.js?v=20260913-class-tabletop" defer></script>
   <script src="race.js?v=20260826-lineage-tables" defer></script>
   <script src="backgrounds.js" defer></script>
   <script src="tool-data.js?v=20260908-personalized-actions" defer></script>
@@ -57,13 +57,14 @@
   <script src="equipment-notes.js?v=20260813-weapon-rule-popups-2" defer></script>
   <script src="spell-list.js?v=20260908-spell-attack" defer></script>
   <script src="condition.js" defer></script>
-  <script src="action-panel.js?v=20260908-action-copy-review" defer></script>
-  <script src="character-rules.js?v=20260909-bard-initiative" defer></script>
+  <script src="action-panel.js?v=20260913-class-tabletop" defer></script>
+  <script src="character-rules.js?v=20260911-druid-tabletop" defer></script>
   <script src="app-dialog.js?v=20260831-number-input" defer></script>
-  <script src="tabletop-mode.js?v=20260908-skill-rank-icons" defer></script>
-  <script src="tabletop-resources.js?v=20260910-hit-dice-con-modifier" defer></script>
-  <script src="tabletop-actions.js?v=20260908-personalized-actions" defer></script>
-  <script src="tabletop-spells.js?v=20260908-spell-attack" defer></script>
+  <script src="tabletop-mode.js?v=20260913-class-tabletop" defer></script>
+  <script src="tabletop-druid.js?v=20260912-druid-controls" defer></script>
+  <script src="tabletop-resources.js?v=20260912-druid-controls" defer></script>
+  <script src="tabletop-actions.js?v=20260913-class-tabletop" defer></script>
+  <script src="tabletop-spells.js?v=20260911-druid-tabletop" defer></script>
   <script src="legal-modal.js?v=20260824-onboarding-entry" defer></script>
   <script src="onboarding-tour.js?v=20260903-onboarding-ability-branches" defer></script>
   <script src="quick-build.js?v=20260903-quick-build-tooltip-buttons" defer></script>
@@ -207,6 +208,7 @@
     </div>
 
     <section id="tabletop-panel-overview" class="tabletop-panel" role="tabpanel" aria-labelledby="tabletop-tab-overview" data-tabletop-panel="overview">
+      <section id="tabletop-druid-overview" class="tabletop-section druid-status" aria-label="德魯伊目前形態" hidden></section>
 
     <div id="tabletop-ability-modifiers" class="tabletop-ability-modifiers" aria-label="六大屬性加值"></div>
 
@@ -329,6 +331,7 @@
     </section>
 
     <section id="tabletop-panel-actions" class="tabletop-panel" role="tabpanel" aria-labelledby="tabletop-tab-actions" data-tabletop-panel="actions" hidden>
+      <section id="tabletop-druid-actions" class="tabletop-section druid-status" aria-label="德魯伊形態操作" hidden></section>
       <header class="tabletop-panel-intro">
         <span class="tabletop-eyebrow">戰鬥查閱</span>
         <h2>動作</h2>
@@ -362,6 +365,7 @@
         <section id="tabletop-action-panel-movement" class="tabletop-action-panel" role="tabpanel" aria-labelledby="tabletop-action-tab-movement" data-tabletop-action-panel="movement" hidden></section>
       </section>
 
+      <div id="tabletop-actions-metamagic-mount"></div>
       <section class="tabletop-section tabletop-shared-notes" aria-labelledby="tabletop-class-extra-title">
         <div class="tabletop-section-heading"><h2 id="tabletop-class-extra-title">職業筆記區</h2></div>
         <div id="tabletop-class-extra-mount"></div>
@@ -395,6 +399,7 @@
           <div id="tabletop-selected-spells" class="tabletop-spell-levels"></div>
         </section>
 
+        <div id="tabletop-spells-metamagic-mount"></div>
         <section class="tabletop-section" aria-labelledby="tabletop-metamagic-title"  id="tabletop-metamagic-section" hidden>
   <div class="tabletop-section-heading">
     <h3 id="tabletop-metamagic-title">超魔法</h3>
@@ -415,6 +420,7 @@
       <section class="tabletop-section" aria-labelledby="tabletop-built-in-resources-title">
         <div class="tabletop-section-heading"><h3 id="tabletop-built-in-resources-title">角色資源</h3></div>
         <div id="tabletop-built-in-resources" class="tabletop-resource-list"></div>
+        <div id="tabletop-druid-resources" class="druid-operation" hidden></div>
       </section>
       <section class="tabletop-section" aria-labelledby="tabletop-custom-resources-title">
         <div class="tabletop-section-heading">
@@ -1762,11 +1768,14 @@ function enforceDruidMissionExclusivity(changedId) {
 }
 
 const ADVANCED_CLASS_FEATURE_CHOICE_GROUPS = Object.freeze([
+  Object.freeze(["ranger-hunters-prey-colossus-slayer", "ranger-hunters-prey-horde-breaker"]),
   Object.freeze(["cleric-blessed-strikes-divine-strike", "cleric-blessed-strikes-potent-spellcasting"]),
   Object.freeze(["druid-elemental-fury-primal-strike", "druid-elemental-fury-potent-spellcasting"]),
   Object.freeze(["ranger-defensive-tactics-escape-the-horde", "ranger-defensive-tactics-multiattack-defense"])
 ]);
 const ADVANCED_CLASS_FEATURE_AVAILABILITY = Object.freeze({
+  "ranger-hunters-prey-colossus-slayer": Object.freeze({ className: "ranger", minimumLevel: 3 }),
+  "ranger-hunters-prey-horde-breaker": Object.freeze({ className: "ranger", minimumLevel: 3 }),
   "cleric-guardian": Object.freeze({ className: "cleric", minimumLevel: 1 }),
   "cleric-trickster": Object.freeze({ className: "cleric", minimumLevel: 1 }),
   "cleric-blessed-strikes-divine-strike": Object.freeze({ className: "cleric", minimumLevel: 7 }),
@@ -1922,10 +1931,10 @@ const eldritchInvocations = [
   { name: "幻象迷蹤", spellId: "silent-image", spellUse: "at-will" },
   { name: "超凡跳躍", spellId: "jump", spellUse: "at-will" },
   { name: "魔鬼視界" },
-  { name: "原初之一教習", repeatable: true, max: 3 },
-  { name: "苦痛魔爆", repeatable: true, max: 3, minWarlockLevel: 2 },
-  { name: "魔能長槍", repeatable: true, max: 3 },
-  { name: "斥力魔爆", repeatable: true, max: 3 },
+  { name: "原初之一教習", repeatable: true },
+  { name: "苦痛魔爆", repeatable: true, minWarlockLevel: 2 },
+  { name: "魔能長槍", repeatable: true },
+  { name: "斥力魔爆", repeatable: true },
   { name: "星移步法", spellId: "levitate", spellUse: "at-will" },
   { name: "萬形之主", spellId: "alter-self", spellUse: "at-will" },
   { name: "融身入影", spellId: "invisibility", spellUse: "at-will" },
@@ -1989,6 +1998,10 @@ function getAgonizingBlastSelectId(index, slot = 1) {
 
 function isAgonizingBlastSelectId(id) {
   return /^eldritch-invocation-\d+-\d+-cantrip$/.test(String(id || ""));
+}
+
+function isEldritchInvocationCheckboxId(id) {
+  return /^eldritch-invocation-\d+-\d+$/.test(String(id || ""));
 }
 
 function getKnownWarlockDamageCantrips() {
@@ -2067,6 +2080,68 @@ function applyAgonizingBlastState(data = {}) {
 }
 
 window.getAgonizingBlastSelections = getAgonizingBlastSelections;
+
+async function openAgonizingBlastModal(invocationIndex, trigger) {
+  const activeSlots = getInvocationCheckboxInputs(invocationIndex)
+    .filter(input => input.checked && !input.disabled)
+    .map(input => ({
+      slot: Number.parseInt(input.dataset.invocationSlot || "0", 10),
+      select: document.getElementById(getAgonizingBlastSelectId(invocationIndex, input.dataset.invocationSlot))
+    }))
+    .filter(entry => Number.isFinite(entry.slot) && entry.slot > 0 && entry.select);
+  if (!activeSlots.length) return;
+
+  syncAgonizingBlastSelections({ notify: false });
+  const modalSlots = [];
+  await window.AppDialog?.showContent({
+    title: "苦痛魔爆：戲法設定",
+    message: "為每個已選的苦痛魔爆指定不同的契術師傷害戲法。",
+    cancelLabel: "取消",
+    confirmLabel: "套用設定",
+    initialFocus: "content",
+    trigger,
+    renderContent(body) {
+      const refreshModalSlots = () => {
+        const chosen = new Set(modalSlots.map(entry => entry.control.value).filter(Boolean));
+        modalSlots.forEach(entry => {
+          Array.from(entry.control.options).forEach(option => {
+            option.disabled = Boolean(option.value && option.value !== entry.control.value && chosen.has(option.value));
+          });
+          const spell = SpellCatalog.getSpell(entry.control.value);
+          entry.description.innerHTML = spell
+            ? renderSpellDescHtml(spell.desc || "—")
+            : "選擇戲法後，可在此查看法術說明。";
+        });
+      };
+
+      activeSlots.forEach(({ slot, select: sourceSelect }) => {
+        const field = document.createElement("section");
+        field.className = "agonizing-blast-setting";
+        const label = document.createElement("label");
+        label.textContent = `第 ${slot} 次套用戲法`;
+        const control = document.createElement("select");
+        control.className = "agonizing-blast-setting__select";
+        control.innerHTML = sourceSelect.innerHTML;
+        control.value = sourceSelect.value;
+        label.appendChild(control);
+        const description = document.createElement("div");
+        description.className = "agonizing-blast-setting__description";
+        field.append(label, description);
+        body.appendChild(field);
+        modalSlots.push({ control, description, sourceSelect });
+        control.addEventListener("change", refreshModalSlots);
+      });
+      refreshModalSlots();
+    },
+    resolveConfirm() {
+      modalSlots.forEach(({ control, sourceSelect }) => { sourceSelect.value = control.value; });
+      syncAgonizingBlastSelections();
+      updateWarlockInvocationSummary();
+      if (typeof scheduleSaveAllFields === "function") scheduleSaveAllFields();
+      return true;
+    }
+  });
+}
 
 function getNormalizedInvocationText(text) {
   return (text || "")
@@ -2162,16 +2237,12 @@ function isWarlockInvocationAvailable(invocation) {
 function syncWarlockInvocationAvailability() {
   eldritchInvocations.forEach((invocation, index) => {
     const available = isWarlockInvocationAvailable(invocation);
-    const checkCount = invocation.repeatable ? (invocation.max || 3) : 1;
-
-    for (let slot = 1; slot <= checkCount; slot++) {
-      const input = document.getElementById(getInvocationCheckboxId(index, slot));
-      if (!input) continue;
+    getInvocationCheckboxInputs(index).forEach(input => {
       input.disabled = !available;
       if (!available && input.checked) {
         input.checked = false;
       }
-    }
+    });
 
     const card = document.getElementById(getInvocationCheckboxId(index, 1))?.closest(".feature-choice-card");
     card?.classList.toggle("is-unavailable", !available);
@@ -2379,6 +2450,8 @@ async function handleEldritchInvocationChange(el, event, output) {
     else setPactTomeSpellSelection(selection, { sync: false });
   }
 
+  if (invocation?.repeatable) renderEldritchInvocations();
+
   updateWarlockInvocationSummary();
   updateACDisplay();
   populateHandAttacks();
@@ -2387,31 +2460,70 @@ async function handleEldritchInvocationChange(el, event, output) {
   if (typeof scheduleSaveAllFields === "function") scheduleSaveAllFields();
 }
 
-function renderEldritchInvocations() {
+function getInvocationCheckboxInputs(index) {
+  return Array.from(document.querySelectorAll(`#eldritch-invocations-output input[data-invocation-index="${index}"]`));
+}
+
+function getRepeatableInvocationSlotCount(index, checkedIds) {
+  const slotPattern = new RegExp(`^${getInvocationCheckboxId(index, "").replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&")}(\\d+)$`);
+  const largestCheckedSlot = Array.from(checkedIds).reduce((largest, id) => {
+    const match = slotPattern.exec(id);
+    return match ? Math.max(largest, Number.parseInt(match[1], 10) || 0) : largest;
+  }, 0);
+  return largestCheckedSlot + 1;
+}
+
+function insertRepeatableInvocationChecks(bodyHtml, checksHtml) {
+  if (!checksHtml) return bodyHtml;
+  const checks = `<span class="feature-choice-card__repeatable-checks">${checksHtml}</span>`;
+  return /<p[^>]*>\s*可重複：/.test(bodyHtml)
+    ? bodyHtml.replace(/(<p[^>]*>\s*)可重複：/, `$1${checks}可重複：`)
+    : `${bodyHtml}${checks}`;
+}
+
+function renderEldritchInvocations(options = {}) {
   const output = document.getElementById("eldritch-invocations-output");
   if (!output) return;
-  const previousChecked = new Set(Array.from(output.querySelectorAll("input[data-invocation-name]:checked"), input => input.id));
+  const previousChecked = new Set([
+    ...Array.from(output.querySelectorAll("input[data-invocation-name]:checked"), input => input.id),
+    ...Object.entries(options.state || {})
+      .filter(([id, value]) => isEldritchInvocationCheckboxId(id) && value === true)
+      .map(([id]) => id)
+  ]);
   const previousTargets = new Map(Array.from(output.querySelectorAll("select[data-agonizing-blast-slot]"), select => [select.id, select.value]));
 
   output.innerHTML = eldritchInvocations.map((invocation, index) => {
     const available = isWarlockInvocationAvailable(invocation);
-    const checkCount = invocation.repeatable ? (invocation.max || 3) : 1;
+    const checkCount = invocation.repeatable ? getRepeatableInvocationSlotCount(index, previousChecked) : 1;
     const checks = Array.from({ length: checkCount }, (_, slotIndex) => {
       const checkboxId = getInvocationCheckboxId(index, slotIndex + 1);
       const slotLabel = checkCount > 1 ? `選擇 ${invocation.name}（第 ${slotIndex + 1} 次）` : `選擇 ${invocation.name}`;
       const checked = available && previousChecked.has(checkboxId) ? " checked" : "";
-      const target = invocation.name === AGONIZING_BLAST_INVOCATION_NAME
-        ? `<label class="invocation-target-select" for="${getAgonizingBlastSelectId(index, slotIndex + 1)}"><span>套用戲法</span><select id="${getAgonizingBlastSelectId(index, slotIndex + 1)}" data-agonizing-blast-slot="${slotIndex + 1}" data-checkbox-id="${checkboxId}"${available ? "" : " disabled"}><option value="">--選擇契術師傷害戲法--</option></select></label>`
-        : "";
-      return `<span class="feature-choice-card__invocation-pick"><label class="inline-check-label"><input type="checkbox" id="${checkboxId}" data-invocation-name="${escapeHtml(invocation.name)}" aria-label="${escapeHtml(slotLabel)}"${checked}${available ? "" : " disabled"}></label>${target}</span>`;
+      return `<span class="feature-choice-card__invocation-pick"><label class="inline-check-label"><input type="checkbox" id="${checkboxId}" data-invocation-index="${index}" data-invocation-slot="${slotIndex + 1}" data-invocation-name="${escapeHtml(invocation.name)}" aria-label="${escapeHtml(slotLabel)}"${checked}${available ? "" : " disabled"}></label></span>`;
     }).join("");
+    const repeatableChecks = invocation.repeatable ? checks.split(/(?=<span class="feature-choice-card__invocation-pick">)/u) : [];
+    const primaryCheck = invocation.repeatable ? repeatableChecks.shift() : checks;
+    const bodyHtml = insertRepeatableInvocationChecks(formatInvocationText(invocation.text), repeatableChecks.join(""));
+    const agonizingTargets = invocation.name === AGONIZING_BLAST_INVOCATION_NAME
+      ? Array.from({ length: checkCount }, (_, slotIndex) => {
+        const checkboxId = getInvocationCheckboxId(index, slotIndex + 1);
+        return `<select id="${getAgonizingBlastSelectId(index, slotIndex + 1)}" data-agonizing-blast-slot="${slotIndex + 1}" data-checkbox-id="${checkboxId}" hidden><option value="">--選擇契術師傷害戲法--</option></select>`;
+      }).join("")
+      : "";
+    const hasAgonizingSelection = invocation.name === AGONIZING_BLAST_INVOCATION_NAME
+      && Array.from({ length: checkCount }, (_, slotIndex) => previousChecked.has(getInvocationCheckboxId(index, slotIndex + 1))).some(Boolean);
+    const settingsButton = invocation.name === AGONIZING_BLAST_INVOCATION_NAME
+      ? `<button type="button" class="feature-choice-card__settings-button" data-agonizing-blast-settings="${index}"${hasAgonizingSelection ? "" : " disabled"}>戲法設定</button>`
+      : "";
 
     return `<article class="feature-choice-card feature-choice-card--invocation${available ? "" : " is-unavailable"}" aria-disabled="${String(!available)}">
       <div class="feature-choice-card__heading">
-        <span class="feature-choice-card__checks">${checks}</span>
+        <span class="feature-choice-card__checks">${primaryCheck}</span>
         <strong>${escapeHtml(invocation.name)}</strong>
+        ${settingsButton}
       </div>
-      ${invocation.text ? `<div class="feature-choice-card__body">${formatInvocationText(invocation.text)}</div>` : ""}
+      ${invocation.text ? `<div class="feature-choice-card__body">${bodyHtml}</div>` : ""}
+      ${agonizingTargets}
     </article>`;
   }).join("");
 
@@ -2424,11 +2536,9 @@ function renderEldritchInvocations() {
     if (previous && Array.from(select.options).some(option => option.value === previous && !option.disabled)) {
       select.value = previous;
     }
-    select.addEventListener("change", () => {
-      syncAgonizingBlastSelections();
-      updateWarlockInvocationSummary();
-      scheduleSaveAllFields();
-    });
+  });
+  output.querySelectorAll("[data-agonizing-blast-settings]").forEach(button => {
+    button.addEventListener("click", () => { void openAgonizingBlastModal(Number.parseInt(button.dataset.agonizingBlastSettings || "", 10), button); });
   });
   syncAgonizingBlastSelections({ notify: false });
 }
@@ -2439,10 +2549,9 @@ function updateWarlockInvocationSummary() {
 
   const picks = [];
   eldritchInvocations.forEach((invocation, index) => {
-    const checkCount = invocation.repeatable ? (invocation.max || 3) : 1;
-    for (let slot = 1; slot <= checkCount; slot++) {
-      const input = document.getElementById(getInvocationCheckboxId(index, slot));
+    getInvocationCheckboxInputs(index).forEach(input => {
       if (input?.checked) {
+        const slot = Number.parseInt(input.dataset.invocationSlot || "0", 10);
         const targetId = getAgonizingBlastSelectId(index, slot);
         const targetSpellId = document.getElementById(targetId)?.value || "";
         const targetSpell = SpellCatalog.getSpell(targetSpellId);
@@ -2451,7 +2560,7 @@ function updateWarlockInvocationSummary() {
           text: invocation.text || ""
         });
       }
-    }
+    });
   });
 
   renderSelectedFeatureSummary(
@@ -5051,13 +5160,7 @@ function updateAutomaticInitiative() {
 }
 
 function fillSkills() {
-  const skillMap = {
-    "運動": "str",
-    "體操": "dex", "巧手": "dex", "隱匿": "dex",
-    "奧秘": "int", "歷史": "int", "調查": "int", "自然": "int", "宗教": "int",
-    "馴獸": "wis", "洞悉": "wis", "醫藥": "wis", "察覺": "wis", "求生": "wis",
-    "欺瞞": "cha", "威嚇": "cha", "表演": "cha", "遊說": "cha"
-  };
+  const skillMap = CharacterSkillAbilities;
 
   const selectedClass = document.getElementById("class")?.value || "";
   const level = parseInt(document.getElementById("level")?.value || "1", 10);
@@ -5716,7 +5819,7 @@ function updateEquipmentLoadoutSummary() {
 
 
 // 動作命中傷害
-function calculateHandAttacks() {
+function calculateHandAttacks(options = {}) {
   const hasTwoWeaponFighting = hasTwoWeaponFightingStyleFeat();
   const hasArcheryFightingStyle = hasArcheryFightingStyleFeat();
   const shillelaghTargetHand = getPreparedShillelaghTargetHand();
@@ -5731,8 +5834,8 @@ function calculateHandAttacks() {
     if (!weapon || weapon.名稱 === "盾牌") {
       return { ...hand, name: weaponName || "", hit: "", damage: "", details: null };
     }
-    const strMod = getModifier("str");
-    const dexMod = getModifier("dex");
+    const strMod = options.strModifier ?? getModifier("str");
+    const dexMod = options.dexModifier ?? getModifier("dex");
     const isMonkMartialArts = weapon.名稱 === "武藝";
     const cls = document.getElementById("class")?.value || "";
     const isRanged = isRangedWeapon(weapon);
@@ -7909,6 +8012,7 @@ function isShareFieldRelevant(id, data) {
   if (id === "goliath-ancestry") return raceValue === "goliath";
   if (id === "tiefling-legacy") return raceValue === "tiefling";
   if (id === "ranger-fighting-style" || id === "ranger-druidic-warrior") return classValue === "ranger" && level >= 2;
+  if (id.startsWith("ranger-hunters-prey-")) return classValue === "ranger" && level >= 3;
   if (id.startsWith("ranger-defensive-tactics-")) return classValue === "ranger" && level >= 7;
   if (id === "paladin-fighting-style" || id === "paladin-blessed-warrior") return classValue === "paladin" && level >= 2;
   if (id.startsWith("cleric-")) return classValue === "cleric";
@@ -7923,6 +8027,9 @@ function isShareFieldRelevant(id, data) {
 
 function collectShareState() {
   const data = collectStateObject({ includeMoneyLogs: false });
+  // Share character choices, preserving the existing exclusion of live combat state.
+  if (data.class === "druid" && data.druid?.knownForms?.length) data.druid = { knownForms: [...data.druid.knownForms] };
+  else delete data.druid;
   data.__shareStateVersion = SHARE_STATE_VERSION;
 
   Object.keys(data).forEach((id) => {
@@ -8060,7 +8167,7 @@ function applyStateObject(data) {
     for (const id in data) {
       if (id === "__deletedSpellRowCache" || id === "__pactTomeSpellSelection" || id === "__bardMagicalDiscoverySelection" || id === "__classFeatureCantrips") continue;
       if (isSpellRowStateKey(id)) continue;
-      if (isAgonizingBlastSelectId(id)) continue;
+      if (isAgonizingBlastSelectId(id) || isEldritchInvocationCheckboxId(id)) continue;
       const el = document.getElementById(id);
       if (!el) continue;
       if (el.type === "checkbox") {
@@ -8085,6 +8192,9 @@ function applyStateObject(data) {
       }
     });
     syncOriginAndSubclassDerivedSpellRows();
+    renderEldritchInvocations({ state: data });
+    syncWarlockInvocationSelectionLimit();
+    renderEldritchInvocations();
     applyAgonizingBlastState(data);
     updateClassFeatureOptionVisibility();
     updateHighElfCantripVisibility();

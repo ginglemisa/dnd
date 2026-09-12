@@ -295,6 +295,7 @@
   }
 
   function getSpellCastOptions(entry = {}) {
+    if (getDruidForm() || entry.sourceKey === "class-druid-wild-companion-find-familiar") return buildSpellCastOptions({ baseLevel: 1 });
     const spell = entry.spell || globalScope.SpellCatalog?.getSpell?.(entry.spellId);
     const metadata = globalScope.SpellCatalog?.getCastMetadata?.(spell?.spellId);
     if (!spell || spell.level < 1 || !metadata) return buildSpellCastOptions({ baseLevel: 1 });
@@ -361,6 +362,7 @@
   }
 
   function commitSpellCastResource(entry = {}, selection = {}) {
+    if (getDruidForm()) return Object.freeze({ ok: false, reason: "wild-shape" });
     const validated = validateSpellCastSelection(getSpellCastOptions(entry), selection);
     if (!validated.ok) return validated;
 
@@ -515,7 +517,8 @@
     concentrationSpellId: DEFAULT_COMBAT_STATE.concentrationSpellId,
     endedConcentrations: [],
     builtInResourceUsage: {},
-    customResources: []
+    customResources: [],
+    druid: normalizeDruidState()
   };
   let tabletopActionPreferences = null;
 
@@ -788,13 +791,15 @@
       concentrationSpellId: normalizeConcentrationSpellId(data.concentrationSpellId),
       endedConcentrations: normalizeEndedConcentrations(data.endedConcentrations),
       builtInResourceUsage: normalizeBuiltInResourceUsage(data.builtInResourceUsage),
-      customResources: normalizeCustomResources(data.customResources)
+      customResources: normalizeCustomResources(data.customResources),
+      druid: normalizeDruidState(data.druid)
     };
   }
 
   function collectState() {
     return {
       characterName: combatState.characterName,
+      druid: normalizeDruidState(combatState.druid),
       temporaryHp: combatState.temporaryHp,
       deathSaveSuccesses:
         combatState.deathSaveSuccesses,
@@ -1062,6 +1067,174 @@
     const incapacitatedAdded = addActiveCondition("incapacitated");
 
     return unconsciousAdded || proneAdded || incapacitatedAdded;
+  }
+
+  function normalizeDruidState(value = {}) {
+    const data = value && typeof value === "object" ? value : {};
+    const exists = key => Boolean(globalScope.DruidBeastForms?.some(form => form.key === key));
+    const knownForms = [...new Set(Array.isArray(data.knownForms) ? data.knownForms : [])].filter(exists).slice(0, 8);
+    const equipment = {};
+    for (const key of ["armor", "main", "off", "other"]) {
+      equipment[key] = ["wear", "drop", "merge"].includes(data.equipment?.[key]) ? data.equipment[key] : "merge";
+    }
+    return {
+      knownForms,
+      formKey: exists(data.formKey) ? data.formKey : "",
+      equipment,
+      acOverride: Number.isInteger(data.acOverride) && data.acOverride >= 0 && data.acOverride <= 99 ? data.acOverride : null,
+      companion: data.companion === true,
+      beastUsed: Array.isArray(data.beastUsed) ? [...new Set(data.beastUsed.filter(key => typeof key === "string" && key.length < 100))].slice(0, 100) : []
+    };
+  }
+
+  function getDruidContext() {
+    const field = id => typeof document === "undefined" ? "" : document.getElementById(id)?.value || "";
+    const level = field("class") === "druid" ? Number(field("level")) || 0 : 0;
+    const rules = globalScope.getDruidWildShapeRules?.(level) || { known: 0, maximum: 0, hours: 0 };
+    const druid = normalizeDruidState(combatState.druid);
+    const slots = getCanonicalSpellSlotGroups();
+    const incapacitated = combatState.heroicSacrifice || combatState.activeConditions.some(key =>
+      ["incapacitated", "paralyzed", "petrified", "stunned", "unconscious"].includes(key));
+    const remaining = Math.max(0, rules.maximum - getBuiltInResourceSpent("druid-wild-shape"));
+    return { level, rules, druid, slots, incapacitated, remaining,
+      token: JSON.stringify([level, druid, slots, combatState.builtInResourceUsage, combatState.temporaryHp,
+        incapacitated, field("druid-land"), ["str", "dex", "con", "wis", "armor", "mainHand", "offHand"].map(field)]) };
+  }
+
+  function getDruidForm() {
+    const context = getDruidContext();
+    const form = globalScope.DruidBeastForms?.find(item => item.key === context.druid.formKey);
+    if (context.incapacitated || !globalScope.isDruidBeastAllowed?.(form, context.level)) return null;
+    return globalScope.BeastCatalog?.get(form.key) || null;
+  }
+
+  function getDruidEffectiveValue(id, fallback) {
+    const read = key => document.getElementById(key)?.value || "0";
+    const original = fallback ?? read(id);
+    const beast = getDruidForm();
+    if (!beast) return original;
+    const score = key => ["str", "dex", "con"].includes(key) ? beast.abilities[key] : Number(read(key));
+    const mod = key => globalScope.calculateAbilityModifier(score(key));
+    const signed = value => globalScope.formatSignedValue(value);
+    const check = (ability, beastTotal) => signed(globalScope.calculateWildShapeCheck(Number(original), Number(read(ability)), score(ability), beastTotal));
+    if (/^(str|dex|con|int|wis|cha)-mod$/.test(id)) return signed(mod(id.slice(0, 3)));
+    if (/^save-(str|dex|con|int|wis|cha)$/.test(id)) return check(id.slice(5), beast.saves?.[id.slice(5)]);
+    if (id.startsWith("skill-")) {
+      const key = id.slice(6);
+      const ability = globalScope.CharacterSkillAbilities?.[key];
+      return ability ? check(ability, beast.skills[key]) : original;
+    }
+    if (id === "initiative-input") return check("dex");
+    if (id === "passive-perception") {
+      const perception = Number(getDruidEffectiveValue("skill-察覺", read("skill-察覺")));
+      return String(Number(original) - Number(read("skill-察覺")) + perception);
+    }
+    if (id === "speed-display") {
+      const bonus = hasSelectedFeat("迅捷步法") ? 10 : 0;
+      return Object.entries(beast.speeds).map(([label, feet]) => `${label} ${feet + bonus} 呎`).join("、");
+    }
+    if (id === "ac-display") {
+      const state = combatState.druid;
+      if (state.acOverride !== null) return String(state.acOverride);
+      const armorName = read("armor");
+      const armor = state.equipment.armor === "wear" ? globalScope.armors?.find(item => item.名稱 === armorName) : null;
+      const shield = (state.equipment.off === "wear" && read("offHand") === "盾牌" && !document.getElementById("offHandAsMain")?.checked)
+        || (state.equipment.armor === "wear" && armorName === "盾牌");
+      if (armor) return String(globalScope.calculateArmorClass({ armor, hasArmor: true, className: "druid",
+        dexterityScore: score("dex"), constitutionScore: score("con"), wisdomScore: score("wis"), charismaScore: score("cha"),
+        hasShield: shield, hasDefenseFightingStyle: globalScope.hasDefenseFightingStyleFeat?.() }));
+      return String(Number(beast.ac) + (shield ? 2 : 0));
+    }
+    return original;
+  }
+
+  // Validate every component before mutating any resource. One save/event follows the complete operation.
+  function commitDruidOperation(operation, selection = {}, token = "") {
+    const context = getDruidContext();
+    const { level, rules, remaining, slots, incapacitated } = context;
+    const fail = message => ({ ok: false, message });
+    if (level < 2) return fail("目前角色沒有荒野形態能力。");
+    if (token && token !== context.token) return fail("角色或資源已變更，請重新開啟操作；未消耗資源。");
+    const next = normalizeDruidState(context.druid);
+    const usage = { ...combatState.builtInResourceUsage };
+    const updates = [];
+    let temporaryHp = combatState.temporaryHp;
+    const takeWild = () => { usage["druid-wild-shape"] = rules.maximum - remaining + 1; };
+    const availableSlot = slots.flatMap(group => group.controls.map(control => ({ ...control, level: group.level })))
+      .find(control => control.id === selection.slotId && !control.checked && !control.disabled);
+    const recoveryKey = "druid-natural-recovery-spell-slots";
+    const resurgenceKey = "druid-wild-resurgence-spell-slot";
+    if (["shape", "companion", "aid", "resurge-shape", "resurge-slot", "beast-use"].includes(operation) && incapacitated) return fail("失能或死亡時無法使用此能力。");
+    if (operation === "known") {
+      const keys = Array.isArray(selection.keys) ? [...new Set(selection.keys)] : [];
+      if (!keys.length || keys.length > rules.known || keys.some(key => !globalScope.isDruidBeastAllowed(globalScope.DruidBeastForms.find(form => form.key === key), level))) return fail(`請選擇 1～${rules.known} 種符合等級的形態。`);
+      if (next.formKey && !keys.includes(next.formKey)) return fail("請先解除目前形態，再移除該已知形態。");
+      next.knownForms = keys;
+    } else if (operation === "shape") {
+      if (!remaining) return fail("荒野形態次數已耗盡。");
+      if (next.knownForms.length > rules.known) return fail("等級已變更，請先調整已知形態數量。");
+      const form = globalScope.DruidBeastForms.find(item => item.key === selection.key);
+      if (!next.knownForms.includes(selection.key) || !globalScope.isDruidBeastAllowed(form, level)) return fail("請選擇符合等級的已知形態。");
+      next.formKey = selection.key;
+      const normalized = normalizeDruidState({ equipment: selection.equipment, acOverride: selection.acOverride });
+      next.equipment = normalized.equipment;
+      next.acOverride = normalized.acOverride;
+      if (!selection.keepTemporaryHp) temporaryHp = level;
+      takeWild();
+    } else if (operation === "end") {
+      next.formKey = "";
+    } else if (operation === "companion") {
+      if (getDruidForm()) return fail("荒野形態期間不能施法。");
+      if (selection.method === "wild" && remaining > 0) takeWild();
+      else if (selection.method === "slot" && availableSlot) updates.push([availableSlot.id, true]);
+      else return fail("所選資源已耗盡。");
+      next.companion = true;
+    } else if (operation === "end-companion") {
+      next.companion = false;
+    } else if (operation === "aid") {
+      if (level < 3 || remaining < 1) return fail("大地之援需要等級 3 及 1 次荒野形態。");
+      takeWild();
+    } else if (operation === "resurge-shape") {
+      if (level < 5 || remaining !== 0 || !availableSlot) return fail("需等級 5、荒野形態剩餘 0 次及一個可用法術位。");
+      usage["druid-wild-shape"] = rules.maximum - 1;
+      updates.push([availableSlot.id, true]);
+    } else if (operation === "resurge-slot") {
+      const slot = slots.find(group => group.level === 1)?.controls.find(control => control.checked && !control.disabled);
+      if (level < 5 || !remaining || usage[resurgenceKey] || !slot) return fail("需要荒野形態次數、已消耗的一環位，且本次長休後尚未使用此用法。");
+      takeWild();
+      usage[resurgenceKey] = 1;
+      updates.push([slot.id, false]);
+    } else if (operation === "recover") {
+      const selected = [...new Set(Array.isArray(selection.slotIds) ? selection.slotIds : [])];
+      if (!selected.length) return fail("請選擇要恢復的法術位。");
+      if (selected.length) {
+        const spentSlots = slots.flatMap(group => group.controls.filter(control => control.checked && !control.disabled).map(control => ({ ...control, level: group.level })));
+        const chosen = selected.map(id => spentSlots.find(control => control.id === id));
+        if (level < 6 || usage[recoveryKey] || chosen.some(slot => !slot || slot.level >= 6)
+          || chosen.reduce((sum, slot) => sum + slot.level, 0) > Math.ceil(level / 2)) return fail("法術位選擇超過自然恢復額度，或此能力已使用。");
+        chosen.forEach(slot => updates.push([slot.id, false]));
+        usage[recoveryKey] = 1;
+      }
+    } else if (operation === "beast-use" || operation === "beast-recharge") {
+      const beast = getDruidForm();
+      const action = beast?.actions?.find(item => item.id === selection.actionId);
+      if (!action?.recovery) return fail("目前沒有這項野獸資源。");
+      const key = `${beast.key}:${action.id}`;
+      if (operation === "beast-use") {
+        if (next.beastUsed.includes(key)) return fail("此能力需要恢復後才能再次使用。");
+        next.beastUsed.push(key);
+      } else next.beastUsed = next.beastUsed.filter(item => item !== key);
+    } else return fail("未知的德魯伊操作。");
+    const controls = updates.map(([id, checked]) => ({ control: document.getElementById(id), checked }));
+    if (controls.some(({ control }) => !control || control.type !== "checkbox" || control.disabled)) return fail("法術位已變更；未消耗資源。");
+    combatState.druid = next;
+    undoSnapshot = null;
+    combatState.builtInResourceUsage = usage;
+    combatState.temporaryHp = temporaryHp;
+    controls.forEach(({ control, checked }) => { control.checked = checked; });
+    controls.forEach(({ control }) => dispatchCanonicalCastUpdate(control));
+    markStateChanged("德魯伊能力與資源已更新。");
+    return { ok: true, operation, aidDice: rules.aidDice };
   }
 
   function reviveFromZeroHpCondition() {
@@ -1354,6 +1527,7 @@
 
   function createLifeSnapshot() {
     return {
+      druidFormKey: combatState.druid?.formKey || "",
       currentHp: readCurrentHp(),
       temporaryHp:
         combatState.temporaryHp,
@@ -1590,6 +1764,8 @@
   }
 
   function getDarkvisionEntry() {
+    const beast = getDruidForm();
+    if (beast) return { label: "形態感官", detail: `${beast.senses}（被動察覺以總覽重算值為準）` };
     const race = getSelectedRace();
     const racialRange = {
       dragonborn: 60,
@@ -1686,6 +1862,7 @@
   }
 
   function isWearingHeavyArmor() {
+    if (getDruidForm() && combatState.druid.equipment.armor !== "wear") return false;
     const armorName = document.getElementById("armor")?.value || "";
     return Array.from(globalScope.armors || [])
       .some(armor => armor?.名稱 === armorName && armor?.分類 === "重甲");
@@ -1875,10 +2052,36 @@ function getRogueReliableTalentEntry() {
     return entries;
   }
 
+  function getBlessedHealerEntry() {
+    if (document.getElementById("class")?.value !== "cleric" || Number(document.getElementById("level")?.value) < 6) return null;
+    const source = document.createElement("div");
+    source.innerHTML = typeof classFeatures !== "undefined" ? classFeatures.cleric || "" : "";
+    const section = source.querySelector('.cleric-feature[data-feature-level="6"]');
+    const detail = section?.querySelector("p")?.textContent?.trim();
+    return detail ? { label: "神佑醫者", detail } : null;
+  }
+
+  function getClassChoiceAlerts() {
+    const selectedClass = document.getElementById("class")?.value;
+    if (!["cleric", "druid", "paladin", "ranger", "warlock", "sorcerer"].includes(selectedClass)) return [];
+    return (globalScope.buildPdfPrecheckMessages?.() || [])
+      .filter(entry => /神聖使命|原初使命|神佑打擊|元素狂怒|防守戰術|戰鬥風格|受祝福的勇士|德魯伊教戰士|魔能祈喚|超魔法/.test(entry.message))
+      .map(entry => ({ label: "職業選項", detail: entry.message, warning: true }));
+  }
+
   function getOverviewRuleEntries() {
     const entries = getCharacterDefenseEntries().filter(entry => (
       isDamageRelatedEntry(entry) || entry.summaryPanel === "overview"
     ));
+    entries.push(...getClassChoiceAlerts());
+    const healer = getBlessedHealerEntry();
+    if (healer) entries.push(healer);
+    if (document.getElementById("class")?.value === "ranger") {
+      const level = Number(document.getElementById("level")?.value);
+      if (level >= 6) entries.push({ label: "越野", detail: "你獲得等同於你速度的攀爬速度與游泳速度。未穿重甲時，你的速度增加 10 呎。" });
+      if (level >= 7 && document.getElementById("ranger-defensive-tactics-escape-the-horde")?.checked) entries.push({ label: "衝出重圍", detail: "以你為目標的藉機攻擊具有劣勢。" });
+      if (level >= 7 && document.getElementById("ranger-defensive-tactics-multiattack-defense")?.checked) entries.push({ label: "多重防禦", detail: "一個生物攻擊命中過你之後，本回合內後續攻擊都帶劣勢。" });
+    }
     const tacticalMind = getFighterTacticalMindEntry();
     if (tacticalMind) entries.unshift(tacticalMind);
     if (hasSelectedFeat("警覺")) {
@@ -1908,6 +2111,8 @@ function getRogueReliableTalentEntry() {
 
   function getSpellRuleEntries() {
     const entries = [];
+    const healer = getBlessedHealerEntry();
+    if (healer) entries.push(healer);
     const sorcererElementalAffinity = getSorcererElementalAffinitySpellEntry();
     if (sorcererElementalAffinity) entries.push(sorcererElementalAffinity);
     if (hasSelectedFeat("臨陣施法")) {
@@ -1922,6 +2127,10 @@ function getRogueReliableTalentEntry() {
   function createDefenseSummaryItem(entry) {
     const item = document.createElement("p");
     item.className = "tabletop-defense-summary__item";
+    if (entry.warning) {
+      item.classList.add("tabletop-class-choice-alert");
+      item.setAttribute("role", "status");
+    }
     const heading = entry.value ? `${entry.label}：${entry.value}` : entry.label;
 
     const title = document.createElement("strong");
@@ -1960,7 +2169,7 @@ function getRogueReliableTalentEntry() {
       const label = getAbilityLabel(ability);
       return createReadOnlyValue(
         label,
-        getReadOnlySourceValue(document.getElementById(`${ability}-mod`)),
+        getDruidEffectiveValue(`${ability}-mod`, getReadOnlySourceValue(document.getElementById(`${ability}-mod`))),
         "tabletop-ability-modifier",
         "",
         `${label}檢定`
@@ -1976,7 +2185,7 @@ function getRogueReliableTalentEntry() {
         const label = getAbilityLabel(ability);
         return createReadOnlyValue(
           label,
-          getReadOnlySourceValue(document.getElementById(`save-${ability}`)),
+          getDruidEffectiveValue(`save-${ability}`, getReadOnlySourceValue(document.getElementById(`save-${ability}`))),
           "tabletop-saving-throw",
           "",
           `${label}豁免`
@@ -2002,11 +2211,12 @@ function getRogueReliableTalentEntry() {
       const skillKey = input.id.replace("skill-", "");
       const hasExpertise = document.getElementById(`exp-${skillKey}`)?.checked;
       const hasProficiency = document.getElementById(`prof-${skillKey}`)?.checked;
-      const rank = hasExpertise ? "expertise" : hasProficiency ? "proficient" : "untrained";
-      const rankLabel = hasExpertise ? "專精" : hasProficiency ? "熟練" : "未熟練";
+      const beastSkill = Number.isFinite(getDruidForm()?.skills[skillKey]);
+      const rank = hasExpertise ? "expertise" : hasProficiency || beastSkill ? "proficient" : "untrained";
+      const rankLabel = hasExpertise ? "專精" : hasProficiency ? "熟練" : beastSkill ? "野獸技能" : "未熟練";
       const item = createReadOnlyValue(
         label,
-        getReadOnlySourceValue(input),
+        getDruidEffectiveValue(input.id, getReadOnlySourceValue(input)),
         "tabletop-skill-value",
         "listitem",
         `${label}技能檢定`
@@ -2076,9 +2286,9 @@ function getRogueReliableTalentEntry() {
     }
 
     elements.ac.textContent =
-      getDisplayValue("ac-display");
+      getDruidEffectiveValue("ac-display", getDisplayValue("ac-display"));
 
-    const initiative = getDisplayValue("initiative-input");
+    const initiative = getDruidEffectiveValue("initiative-input", getDisplayValue("initiative-input"));
     const initiativeModifier = parseRollModifier(initiative);
     elements.initiative.replaceChildren(createQuickRollButton(
       initiative,
@@ -2091,16 +2301,16 @@ function getRogueReliableTalentEntry() {
       }
     ));
 
-    elements.speed.textContent =
+    elements.speed.textContent = getDruidEffectiveValue("speed-display",
       getDisplayValue(
         "speed-display",
         " 呎"
-      );
+      ));
 
-    elements.passivePerception.textContent =
+    elements.passivePerception.textContent = getDruidEffectiveValue("passive-perception",
       getDisplayValue(
         "passive-perception"
-      );
+      ));
 
     renderAbilityModifiers();
     renderSkills();
@@ -2384,6 +2594,13 @@ function getRogueReliableTalentEntry() {
   function render() {
     if (!initialized) {
       return;
+    }
+
+    if (combatState.druid?.formKey && !getDruidForm()) {
+      if (getDruidContext().incapacitated) combatState.concentrationSpellId = "";
+      combatState.druid.formKey = "";
+      scheduleCharacterSave();
+      emitStateChange();
     }
 
     syncSpellPanelAvailability();
@@ -2760,6 +2977,7 @@ function getRogueReliableTalentEntry() {
 
     combatState.temporaryHp =
       snapshot.temporaryHp;
+    if (combatState.druid) combatState.druid.formKey = snapshot.druidFormKey || "";
 
     combatState.deathSaveSuccesses =
       snapshot.deathSaveSuccesses;
@@ -3715,6 +3933,9 @@ function getRogueReliableTalentEntry() {
     }
 
     currentPanel = nextPanel;
+    const metamagic = document.getElementById("tabletop-metamagic-section");
+    const metamagicMount = document.getElementById(nextPanel === "actions" ? "tabletop-actions-metamagic-mount" : "tabletop-spells-metamagic-mount");
+    if (metamagic && metamagicMount && metamagic.parentElement !== metamagicMount) metamagicMount.appendChild(metamagic);
 
     elements.tabletopTabs?.forEach(tab => {
       const selected = tab.dataset.tabletopTab === nextPanel;
@@ -4515,6 +4736,12 @@ function getRogueReliableTalentEntry() {
     setCharacterName,
     restoreHitPoints,
     getSpellCastOptions,
+    getBlessedHealerEntry,
+    getCanonicalSpellSlotGroups,
+    getDruidContext,
+    getDruidForm,
+    getDruidEffectiveValue,
+    commitDruidOperation,
     commitSpellCastResource,
     getConcentrationSpellId,
     getEndedConcentrations,

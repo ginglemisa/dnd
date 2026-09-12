@@ -167,6 +167,7 @@
 
   function createSpellDetailContent(spell, entry = null) {
     const content = createElement("div", "tabletop-spell-detail");
+    if (globalScope.TabletopMode?.getDruidForm?.()) content.appendChild(createElement("p", "druid-resource-note", "荒野形態期間不能施法；既有專注與法術效果保留。"));
     content.appendChild(createElement("p", "tabletop-spell-detail__english", spell.nameEn));
     if (entry?.sourceLabel) {
       content.appendChild(createElement("p", "tabletop-spell-detail__source", entry.sourceLabel));
@@ -205,7 +206,7 @@
   }
 
   function rollConcentrationSave(spellName) {
-    const modifier = parseModifier(getFieldValue("save-con"));
+    const modifier = parseModifier(globalScope.TabletopMode?.getDruidEffectiveValue?.("save-con", getFieldValue("save-con")) ?? getFieldValue("save-con"));
     if (modifier === null) return null;
     return globalScope.DiceRoller?.roll?.({
       count: 1,
@@ -614,6 +615,11 @@
       dismissOnBackdrop: false,
       trigger,
       resolveConfirm() {
+        if (globalScope.TabletopMode?.getDruidForm?.()) {
+          errorMessage = "荒野形態期間不能施法；未消耗資源。";
+          render();
+          return false;
+        }
         if (cantrip) return Object.freeze({
           ok: true,
           method: "cantrip",
@@ -795,6 +801,14 @@
   }
 
   async function castSpell(entry, trigger) {
+    if (globalScope.TabletopMode?.getDruidForm?.()) {
+      globalScope.AppDialog?.notify("荒野形態期間不能施法；既有專注仍保留。");
+      return;
+    }
+    if (entry?.sourceKey === "class-druid-wild-companion-find-familiar") {
+      await globalScope.TabletopDruid?.openOperation("companion", trigger);
+      return;
+    }
     if (!entry?.spell || !globalScope.SpellCatalog.canCastFromTabletop(entry.spellId)) return;
     const selectableTypes = globalScope.SpellCatalog.getSelectableCastDamageTypes(entry.spellId);
     const needsCantripChoice = entry.spell.level === 0 && selectableTypes.length > 1;
@@ -815,6 +829,10 @@
     const spellId = entry?.spellId || String(entryOrSpellId || "");
     const spell = entry?.spell || globalScope.SpellCatalog?.getSpell(spellId);
     if (!spell || !globalScope.AppDialog) return;
+    if (entry?.sourceKey === "class-druid-wild-companion-find-familiar") {
+      await globalScope.TabletopDruid?.openOperation("companion", trigger);
+      return;
+    }
     const currentId = globalScope.TabletopMode?.getConcentrationSpellId?.() || "";
     const actions = [{ label: "關閉", value: "close" }];
     if (currentId === spellId) actions.push({
@@ -822,7 +840,7 @@
       value: "stop-concentration",
       intent: "secondary"
     });
-    if (entry && globalScope.SpellCatalog.canCastFromTabletop(spellId)) actions.push({
+    if (entry && globalScope.SpellCatalog.canCastFromTabletop(spellId) && !globalScope.TabletopMode?.getDruidForm?.()) actions.push({
       label: "施法",
       value: "cast",
       intent: "primary"

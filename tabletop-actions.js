@@ -63,7 +63,7 @@
         preferenceKey: getCustomHiddenKey(action.id),
         customActionId: action.id
       }));
-    const all = [...officialOptions, ...customOptions];
+    const all = [...officialOptions, ...(globalScope.TabletopDruid?.getActionOptions?.(mode) || []), ...customOptions];
     return {
       all,
       visible: all.filter(option => !hiddenKeys.has(option.preferenceKey)
@@ -116,12 +116,16 @@
     const prefix = hand === "main" ? "atk-main" : "atk-off";
     const mastery = document.getElementById(`${prefix}-mastery`);
     const isAlternateMain = hand === "off" && document.getElementById("offHandAsMain")?.checked === true;
+    const beast = globalScope.TabletopMode?.getDruidForm?.();
+    const projected = beast && globalScope.isWeaponAttackAutomationEnabled?.()
+      ? globalScope.calculateHandAttacks?.({ strModifier: globalScope.calculateAbilityModifier(beast.abilities.str), dexModifier: globalScope.calculateAbilityModifier(beast.abilities.dex) })?.find(item => item.key === hand)
+      : null;
     return {
       hand,
       label: hand === "main" ? "主手" : (isAlternateMain ? "另一把主手" : "副手"),
       name: readField(`${prefix}-name`),
-      hit: readField(`${prefix}-hit`),
-      damage: readField(`${prefix}-dmg`),
+      hit: projected?.hit ?? (beast ? "" : readField(`${prefix}-hit`)),
+      damage: projected?.damage ?? (beast ? "" : readField(`${prefix}-dmg`)),
       note: readField(`${prefix}-note`),
       mastery: mastery && !mastery.hidden ? String(mastery.textContent || "").trim() : "",
       masteryRule: mastery && !mastery.hidden ? String(mastery.dataset.weaponRule || "").trim() : ""
@@ -239,6 +243,7 @@
 
   function renderWeapons() {
     if (!elements.weaponSummary) return;
+    if (globalScope.TabletopDruid?.renderBeastWeapons?.(elements.weaponSummary, getWeaponData, createWeaponSummary)) return;
     const weapons = [getWeaponData("main"), getWeaponData("off")];
     if (!weapons.some(hasWeaponData)) {
       const empty = createElement("div", "tabletop-empty-state");
@@ -251,7 +256,11 @@
 
   function getWeaponRuleEntries() {
     const entries = [];
-    const equippedWeapons = [getEquippedWeapon("main"), getEquippedWeapon("off")].filter(Boolean);
+    const healer = globalScope.TabletopMode?.getBlessedHealerEntry?.();
+    if (healer) entries.push([healer.label, healer.detail]);
+    const form = globalScope.TabletopMode?.getDruidForm?.();
+    const equipment = globalScope.TabletopMode?.getDruidContext?.().druid.equipment;
+    const equippedWeapons = ["main", "off"].filter(hand => !form || equipment?.[hand] === "wear").map(getEquippedWeapon).filter(Boolean);
     const selectedClass = document.getElementById("class")?.value || "";
     const characterLevel = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
     if (selectedClass === "fighter" && characterLevel >= 3) {
@@ -324,11 +333,205 @@
       } else {
         copy.textContent = description;
       }
+    } else if (option.druidOperation === "shape" && globalScope.TabletopDruid) {
+      globalScope.TabletopDruid.renderShapeDescription(copy, option.description);
     } else {
       copy.textContent = option.description;
     }
     description.append(heading, copy);
+    if (option.druidOperation || option.beastActionId) {
+      globalScope.TabletopDruid?.appendActionControl?.(description, option);
+      return description;
+    }
+    const resource = getActionResourceState(option);
+    if (resource) {
+      const control = createElement("div", "tabletop-action-resource-control");
+      const status = createElement(
+        "span",
+        "tabletop-action-resource-status",
+        `消耗 1 次${resource.label} · 剩餘 ${resource.remaining}/${resource.maximum}`
+      );
+      const useButton = createElement(
+        "button",
+        "tabletop-compact-button tabletop-action-resource-use",
+        "使用能力"
+      );
+      useButton.type = "button";
+      useButton.disabled = resource.remaining < 1;
+      useButton.setAttribute(
+        "aria-label",
+        resource.remaining < 1
+          ? `${option.label}；${resource.label}已耗盡`
+          : `使用${option.label}；將消耗 1 次${resource.label}，剩餘 ${resource.remaining}/${resource.maximum}`
+      );
+      useButton.addEventListener("click", () => requestActionResourceUse(option, useButton));
+      control.appendChild(status);
+      if (option.resourceKey === "bard-inspiration" && option.key === "dynamic-bonus-class-r7asqs" && Number(document.getElementById("level")?.value) >= 5) {
+        const restoreButton = createElement("button", "tabletop-compact-button", "激勵之源");
+        restoreButton.type = "button";
+        restoreButton.disabled = resource.remaining >= resource.maximum || !getInspirationSlots().length;
+        restoreButton.addEventListener("click", () => restoreInspiration(option, restoreButton));
+        control.appendChild(restoreButton);
+      }
+      control.appendChild(useButton);
+      description.appendChild(control);
+    }
     return description;
+  }
+
+  function getCharacterResourceSpecs() {
+    if (typeof globalScope.getCharacterResourceSpecs !== "function") return [];
+    return globalScope.getCharacterResourceSpecs({
+      className: document.getElementById("class")?.value || "",
+      race: document.getElementById("race")?.value || "",
+      level: document.getElementById("level")?.value || "",
+      wisdomScore: document.getElementById("wis")?.value || "10",
+      charismaScore: document.getElementById("cha")?.value || "10"
+    });
+  }
+
+  function getActionResourceState(option) {
+    const key = String(option?.resourceKey || "").trim();
+    if (!key) return null;
+
+    const canonicalContainer = document.getElementById(key);
+    if (canonicalContainer) {
+      const inputs = Array.from(canonicalContainer.querySelectorAll('input[type="checkbox"]'))
+        .filter(input => !input.disabled && !input.hidden);
+      if (!inputs.length) return null;
+      return {
+        kind: "canonical",
+        key,
+        label: canonicalContainer.getAttribute("aria-label") || option.label,
+        maximum: inputs.length,
+        remaining: inputs.filter(input => !input.checked).length
+      };
+    }
+
+    const spec = getCharacterResourceSpecs().find(candidate => candidate.key === key);
+    if (!spec || spec.kind !== "uses" || !Number.isInteger(spec.maximum) || spec.maximum < 1) return null;
+    const spent = Math.min(
+      spec.maximum,
+      Math.max(0, globalScope.TabletopMode?.getBuiltInResourceSpent?.(key) || 0)
+    );
+    return {
+      kind: "stored",
+      key,
+      label: spec.label,
+      maximum: spec.maximum,
+      remaining: spec.maximum - spent
+    };
+  }
+
+  function consumeActionResource(option) {
+    const resource = getActionResourceState(option);
+    if (!resource || resource.remaining < 1) return null;
+
+    if (resource.kind === "canonical") {
+      const input = Array.from(document.querySelectorAll(`#${resource.key} input[type="checkbox"]`))
+        .find(candidate => !candidate.disabled && !candidate.hidden && !candidate.checked);
+      if (!input || typeof globalScope.TabletopResources?.setCanonicalCheckbox !== "function") return null;
+      globalScope.TabletopResources.setCanonicalCheckbox(input, true);
+    } else if (!globalScope.TabletopMode?.setBuiltInResourceSpent?.(
+      resource.key,
+      resource.maximum - resource.remaining + 1,
+      resource.maximum
+    )) {
+      return null;
+    }
+
+    return getActionResourceState(option);
+  }
+
+  function getInspirationSlots() {
+    return (globalScope.TabletopMode?.getCanonicalSpellSlotGroups?.() || []).flatMap(group => {
+      const available = group.controls.filter(control => !control.checked && !control.disabled);
+      return available.length ? [{ level: group.level, id: available[0].id, remaining: available.length }] : [];
+    });
+  }
+
+  async function restoreInspiration(option, trigger) {
+    const slots = getInspirationSlots();
+    const resource = getActionResourceState(option);
+    if (!slots.length || !resource || resource.remaining >= resource.maximum) return;
+    let select;
+    const result = await globalScope.AppDialog.showContent({
+      title: "激勵之源", message: "消耗 1 個法術位，恢復 1 次吟遊詩人激勵。",
+      cancelLabel: "取消", confirmLabel: "消耗並恢復", trigger,
+      renderContent(body) {
+        const label = createElement("label", "", "選擇法術位 ");
+        select = document.createElement("select");
+        select.dataset.stateTransient = "true";
+        slots.forEach(slot => {
+          const item = createElement("option", "", `${slot.level} 環（剩餘 ${slot.remaining}）`);
+          item.value = slot.id;
+          select.appendChild(item);
+        });
+        label.appendChild(select);
+        body.appendChild(label);
+      }
+    });
+    if (!result) return;
+    const current = getActionResourceState(option);
+    const available = getInspirationSlots().find(slot => slot.id === select.value);
+    if (document.getElementById("class")?.value !== "bard" || Number(document.getElementById("level")?.value) < 5 || !available || !current || current.remaining >= current.maximum) {
+      globalScope.AppDialog?.notify("資源已變更，未消耗法術位。", { tone: "error" });
+      return;
+    }
+    const slotInput = document.getElementById(available.id);
+    if (current.kind === "canonical") {
+      const spent = Array.from(document.querySelectorAll(`#${current.key} input[type="checkbox"]`)).find(input => input.checked && !input.disabled && !input.hidden);
+      if (!spent) return;
+      globalScope.TabletopResources.setCanonicalCheckbox(spent, false);
+    } else {
+      globalScope.TabletopMode.setBuiltInResourceSpent(current.key, current.maximum - current.remaining - 1, current.maximum);
+    }
+    globalScope.TabletopResources.setCanonicalCheckbox(slotInput, true);
+    globalScope.AppDialog?.notify(`已消耗 ${available.level} 環法術位，恢復 1 次吟遊詩人激勵。`, { tone: "success" });
+    renderActionPanel(currentMode);
+  }
+
+  async function requestActionResourceUse(option, trigger) {
+    const resource = getActionResourceState(option);
+    if (!resource || resource.remaining < 1 || typeof globalScope.AppDialog?.requestDecision !== "function") return;
+    const confirmed = await globalScope.AppDialog.requestDecision({
+      title: `使用${option.label}`,
+      message: `確認後會消耗 1 次${resource.label}（目前剩餘 ${resource.remaining}/${resource.maximum}）。`,
+      cancelLabel: "取消",
+      confirmLabel: "使用能力",
+      dismissOnBackdrop: false,
+      trigger
+    });
+    if (!confirmed) return;
+
+    const remainingResource = consumeActionResource(option);
+    if (!remainingResource) {
+      globalScope.AppDialog?.notify("資源已變更或已耗盡，未消耗任何次數。", { tone: "error" });
+      renderActionPanel(currentMode);
+      return;
+    }
+    globalScope.AppDialog?.notify(
+      `已使用${option.label}；${remainingResource.label}剩餘 ${remainingResource.remaining}/${remainingResource.maximum}。`,
+      { tone: "success" }
+    );
+    if (option.resourceKey === "monk-uncanny-metabolism") {
+      const focus = getCharacterResourceSpecs().find(spec => spec.key === "monk-focus-points");
+      if (focus) globalScope.TabletopMode.setBuiltInResourceSpent(focus.key, 0, focus.maximum);
+    }
+    if (option.resourceKey === "monk-wholeness") {
+      const level = Number(document.getElementById("level")?.value);
+      const die = globalScope.getMonkMartialArtsDieByLevel(level);
+      const wisdom = globalScope.calculateAbilityModifier(document.getElementById("wis")?.value || "10");
+      const expression = `${die}${wisdom >= 0 ? "+" : ""}${wisdom}`;
+      if (globalScope.DiceRoller?.isEnabled?.()) {
+        globalScope.DiceRoller.rollExpressionsInModal([
+          { expression, label: "混元體恢復生命值", detail: "最少恢復 1 點生命值。" }
+        ], { title: "混元體", trigger: document.getElementById("tabletop-action-tab-bonus") });
+      } else {
+        globalScope.AppDialog?.notify(`混元體：請手動擲 ${expression}，最少恢復 1 點生命值。`, { tone: "warning" });
+      }
+    }
+    renderActionPanel(currentMode);
   }
 
   async function openCustomActionEditor(action = null, trigger = elements.manage) {
@@ -905,6 +1108,7 @@ function render() {
     document.addEventListener("input", scheduleRender);
     document.addEventListener("change", scheduleRender);
     globalScope.addEventListener("actionpanelchange", scheduleRender);
+    globalScope.addEventListener("tabletopstatechange", scheduleRender);
     globalScope.addEventListener("tabletopactionpreferenceschange", scheduleRender);
     globalScope.addEventListener("dicerollmodechange", scheduleRender);
     globalScope.addEventListener("tabletop-panelchange", event => {

@@ -63,6 +63,7 @@ const DRUID_WILD_SHAPE_BEASTS = [
 ];
 
 const DRUID_WILD_SHAPE_CR_ORDER = ["0", "1/8", "1/4", "1/2", "1"];
+globalThis.DruidBeastForms = Object.freeze(DRUID_WILD_SHAPE_BEASTS.map(form => Object.freeze({ ...form })));
 
 const DRUID_WILD_SHAPE_BEAST_LIST_HTML = `<details class="wild-shape-beast-disclosure">
   <summary>
@@ -1553,7 +1554,7 @@ const classFeatures = {
     <ul class="class-rule-list">
       <li>疾風連擊（1 點）：附贈動作打 2 次徒手。</li>
       <li>閃轉騰挪：附贈動作可撤離；再花 1 點可同時撤離 + 回避。</li>
-      <li>疾步如風：附贈動作可疾走；再花 1 點可同時撤離 + 疾走，且本回合跳躍距離加倍。</li>
+      <li>疾步如風：附贈動作可衝刺；再花 1 點可同時撤離 + 衝刺，且本回合跳躍距離加倍。</li>
     </ul>
   </div>
   <p>若特性要求豁免，DC = 8 + 熟練加值 + 感知調整值。</p>
@@ -2090,8 +2091,8 @@ const classFeatures = {
   <h3>等級 3：狩獵目標（獵人子職）</h3>
   <p>從下列擇一；每次短休或長休後可改選：</p>
   <ul class="class-rule-list">
-    <li>斬殺者：每回合 1 次，你用武器命中且目標先前已失去生命值時，額外造成 1d8 傷害。</li>
-    <li>破陣者：每回合 1 次，當你用武器攻擊時，可用同一把武器再攻擊 5 呎內另一個你本回合尚未攻擊過的目標。</li>
+    <li><label><input type="checkbox" id="ranger-hunters-prey-colossus-slayer" data-feature-choice-group="ranger-hunters-prey"> 斬殺者</label>：每回合 1 次，你用武器命中且目標先前已失去生命值時，額外造成 1d8 傷害。</li>
+    <li><label><input type="checkbox" id="ranger-hunters-prey-horde-breaker" data-feature-choice-group="ranger-hunters-prey"> 破陣者</label>：每回合 1 次，當你用武器攻擊時，可用同一把武器再攻擊 5 呎內另一個你本回合尚未攻擊過的目標。</li>
   </ul>
 </section>
 
@@ -2105,7 +2106,7 @@ const classFeatures = {
   <p>你在自己回合使用攻擊動作時，可以攻擊 2 次。</p>
 </section>
 <section class="ranger-feature class-feature-section" data-feature-level="6">
-  <h3>等級 6：越野</h3><p>，並</p>
+  <h3>等級 6：越野</h3>
   <ul class="class-rule-list">
     <li>你獲得攀爬速度與游泳速度，數值與速度一樣。</li>
     <li>未穿重甲時，你的速度增加 10 呎。</li>
@@ -2227,7 +2228,7 @@ const classFeatures = {
 <div class="class-feature-content">
 <section class="rogue-feature class-feature-section" data-feature-level="1">
   <h3>等級 1：專精</h3>
-  <p>選 2 項你已熟練的技能，改為專精（常見選擇：${skillTip("巧手")},${skillTip("隱匿")}）。</p>
+  <p>選 2 項你已熟練的技能，改為專精（常見選擇：${skillTip("巧手")}、${skillTip("隱匿")}）。</p>
   <p>到 6 級時，再選 2 項已熟練技能獲得專精。</p>
 </section>
 
@@ -2255,7 +2256,7 @@ const classFeatures = {
 
 <section class="rogue-feature class-feature-section" data-feature-level="2" data-action-id="rogue-cunning-action">
   <h3>等級 2：靈巧動作</h3>
-  <p>你的回合中，可把以下其中一項當附贈動作使用：疾走,撤離,躲藏。</p>
+  <p>你的回合中，可把以下其中一項當附贈動作使用：衝刺、撤離、躲藏。</p>
 </section>
 
 <section class="rogue-feature class-feature-section" data-feature-level="3">
@@ -2288,7 +2289,7 @@ const classFeatures = {
   <p>當你造成偷襲傷害時，可套用 1 種靈巧打擊效果。</p>
   <p>每種效果都要先放棄部分偷襲傷害骰；若需要豁免，DC = 8 + 熟練加值 + 敏捷調整值。</p>
   <ul class="class-rule-list">
-    <li>淬毒（消耗 1d6）：目標體質豁免失敗則中毒 1 分鐘；其每回合結束可再豁免，成功即結束。使用此效果時你需攜帶制毒師工具。</li>
+    <li>淬毒（消耗 1d6）：目標體質豁免失敗則中毒 1 分鐘；其每回合結束可再豁免，成功即結束。使用此效果時你需攜帶製毒師工具。</li>
     <li>摔絆（消耗 1d6）：大型或更小目標敏捷豁免失敗則倒地。</li>
     <li>撤步（消耗 1d6）：攻擊後你可立刻移動至多一半速度，且不引發藉機攻擊。</li>
   </ul>
@@ -2833,7 +2834,7 @@ const classFeatures = {
 <section class="warlock-feature class-feature-section" data-feature-level="3"><h3>等級 3：黑暗之賜（邪魔子職）</h3><ul class="class-rule-list"><li>當你將 10 呎內敵對生物生命值降到 0 時，你獲得等同「魅力調整值＋契術師等級」的臨時生命值（至少 1）。</li><li>若是其他生物把你 10 呎內的敵對生物降到 0，你也會獲得此增益。</li></ul></section>
 <section class="warlock-feature class-feature-section" data-feature-level="3"><h3>等級 3：邪魔法術（邪魔子職）</h3><ul class="class-rule-list"><li>你會始終準備下列法術（達到對應契術師等級後生效）：</li><li>邪魔法術（等級 3）：燃燒之手,命令術,灼熱射線,暗示術。</li><li>（等級 5）：火球術,臭雲術。</li><li>（等級 7）：火焰護盾，火牆術。</li></ul></section>
 <section class="warlock-feature class-feature-section" data-feature-level="4"><h3>等級 4：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
-<section class="warlock-feature class-feature-section" data-feature-level="5"><h3>等級 5：無</h3><ul class="class-rule-list"><li>此等級沒有新增段落特性。</li><li>魔能祈喚數量增加，請查看契術師特性表。</li></ul></section>
+<section class="warlock-feature class-feature-section" data-feature-level="5"><h3>等級 5：無</h3><ul class="class-rule-list"><li>魔能祈喚數量增加，請查看契術師特性表。</li></ul></section>
 <section class="warlock-feature class-feature-section" data-feature-level="6"><h3>等級 6：黑暗強運（邪魔子職）</h3><p>當你進行屬性檢定或豁免檢定時，可以使用該特性將1d10加到擲骰結果中。你可以在看到擲骰結果後、結果生效前使用該特性。</p><p>你可以使用該特性的次數等同於你的魅力調整值（至少一次），但每次擲骰只能使用一次。完成長休時，你恢復所有已消耗的使用次數。</p></section><section class="warlock-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
 <section class="warlock-feature class-feature-section"><h3>魔能祈喚選項</h3><p>以下依先決條件與功能分組說明。</p>
   <div class="class-rule-subsection"><h4>刃之魔契</h4><p>你可用附贈動作：</p><ul class="class-rule-list"><li>召喚一把簡易/軍用近戰武器，或</li><li>與你觸碰的魔法武器建立聯結</li></ul><p>（武器若已被他人聯結或同調，則聯結失敗）</p><p>聯結期間：</p><ul class="class-rule-list"><li>你熟練該武器。</li><li>你可把它當施法法器。</li></ul><p>聯結武器可用魅力計算命中與傷害加值。</p><p>傷害可改為黯蝕,心靈或光耀。</p><p>聯結結束條件：</p><ul class="class-rule-list"><li>你再次使用本特性的附贈動作。</li><li>武器離你超過 5 呎並持續 1 分鐘。</li><li>你死亡。</li></ul><p>若是召喚武器，聯結結束時武器會一併消失。</p></div>

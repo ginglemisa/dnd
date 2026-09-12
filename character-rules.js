@@ -193,7 +193,7 @@
       addUses("cleric-channel-divinity", "引導神力", level >= 6 ? 3 : 2, "短休回 1 次，長休全回。");
     }
     if (className === "druid" && level >= 2) {
-      addUses("druid-wild-shape", "荒野形態", level >= 6 ? 3 : 2, "短休回 1 次，長休全回。");
+      addUses("druid-wild-shape", "荒野形態", getDruidWildShapeRules(level).maximum, "短休回 1 次，長休全回。");
       if (level >= 5) {
         addUses(
           "druid-wild-resurgence-spell-slot",
@@ -450,9 +450,47 @@
     return String(baseSpeed + classSpeedBonus + featSpeedBonus);
   }
 
+  // 荒野形態進程以職業文本的 2／4／8 級表為準。
+  function getDruidWildShapeRules(level) {
+    const value = Number.parseInt(level, 10) || 0;
+    return Object.freeze({
+      known: value >= 8 ? 8 : value >= 4 ? 6 : value >= 2 ? 4 : 0,
+      maxCr: value >= 8 ? 1 : value >= 4 ? 0.5 : 0.25,
+      flight: value >= 8,
+      maximum: value >= 6 ? 3 : value >= 2 ? 2 : 0,
+      hours: Math.floor(value / 2),
+      aidDice: value >= 14 ? "4d6" : value >= 10 ? "3d6" : "2d6"
+    });
+  }
+
+  const CharacterSkillAbilities = Object.freeze({
+    "運動": "str", "體操": "dex", "巧手": "dex", "隱匿": "dex",
+    "奧秘": "int", "歷史": "int", "調查": "int", "自然": "int", "宗教": "int",
+    "馴獸": "wis", "洞悉": "wis", "醫藥": "wis", "察覺": "wis", "求生": "wis",
+    "欺瞞": "cha", "威嚇": "cha", "表演": "cha", "遊說": "cha"
+  });
+
+  function isDruidBeastAllowed(form, level) {
+    if (!form) return false;
+    const rule = getDruidWildShapeRules(level);
+    const parts = String(form.cr).split("/").map(Number);
+    const cr = parts.length === 2 ? parts[0] / parts[1] : parts[0];
+    return rule.known > 0 && cr <= rule.maxCr && (!form.hasFlight || rule.flight);
+  }
+
+  // 保留角色熟練與特性加值，以新屬性重算，再與野獸明列的技能／豁免取高。
+  function calculateWildShapeCheck(originalTotal, originalScore, effectiveScore, beastTotal) {
+    const own = Number(originalTotal) - calculateAbilityModifier(originalScore) + calculateAbilityModifier(effectiveScore);
+    return Number.isFinite(beastTotal) ? Math.max(own, beastTotal) : own;
+  }
+
   // 將純規則函式提供給 index.html 的傳統 script 呼叫。
   Object.assign(globalScope, {
     calculateAbilityModifier,
+    CharacterSkillAbilities,
+    getDruidWildShapeRules,
+    isDruidBeastAllowed,
+    calculateWildShapeCheck,
     calculateArmorClass,
     calculateCharacterMaxHp,
     calculateCharacterSpeed,

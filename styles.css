@@ -5103,6 +5103,66 @@ label.feature-choice-card__heading {
   align-items: center;
 }
 
+.feature-choice-card__repeatable-checks {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.feature-choice-card__repeatable-checks .inline-check-label {
+  margin: 0;
+}
+
+.feature-choice-card__settings-button {
+  width: auto;
+  min-height: 2rem;
+  margin: -0.2rem 0 -0.2rem auto;
+  padding: 0.28rem 0.55rem;
+  font-size: var(--fs-xs);
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.agonizing-blast-setting {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+}
+
+.agonizing-blast-setting > label {
+  display: grid;
+  gap: 0.34rem;
+  color: var(--text);
+  font-size: var(--fs-sm);
+  font-weight: 800;
+}
+
+.agonizing-blast-setting__select {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+
+.agonizing-blast-setting__description {
+  color: var(--text-body);
+  font-size: var(--fs-sm);
+  line-height: 1.58;
+}
+
+.agonizing-blast-setting__description > :first-child {
+  margin-top: 0;
+}
+
+.agonizing-blast-setting__description > :last-child {
+  margin-bottom: 0;
+}
+
 .invocation-target-select {
   display: grid;
   gap: 0.2rem;
@@ -6036,7 +6096,8 @@ html[data-view-mode="tabletop"] #scrollToBottomBtn {
 /* ===== Modals / Popups ===== */
 #beastPopup,
 #skillPopup,
-#weaponRulePopup {
+#weaponRulePopup,
+.druid-beast-tooltip {
   position: fixed;
   z-index: 9999;
   box-sizing: border-box;
@@ -10780,6 +10841,74 @@ html[data-theme="dark"] .tabletop-skill-value[data-skill-rank="expertise"] .tabl
   line-height: 1.5;
 }
 
+.tabletop-action-resource-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem;
+  margin-top: 0.8rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--border);
+}
+
+.tabletop-action-resource-status {
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.tabletop-action-resource-use {
+  min-width: 8.25rem;
+  min-height: 46px;
+  margin: 0;
+  padding: 0.55rem 0.9rem;
+  border-color: transparent;
+  background: var(--accent-gradient);
+  color: var(--on-accent);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  box-shadow: 0 2px 5px color-mix(in srgb, var(--accent-strong) 22%, transparent);
+  transition: transform 150ms ease, box-shadow 150ms ease, filter 150ms ease;
+}
+
+.tabletop-action-resource-use:not(:disabled):hover {
+  border-color: transparent;
+  background: var(--accent-gradient);
+  color: var(--on-accent);
+  box-shadow: 0 4px 10px color-mix(in srgb, var(--accent-strong) 28%, transparent);
+  transform: translateY(-1px);
+}
+
+.tabletop-action-resource-use:not(:disabled):active {
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--accent-strong) 20%, transparent);
+  transform: translateY(0);
+}
+
+.tabletop-action-resource-use:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.tabletop-action-resource-use:disabled {
+  border-color: var(--border);
+  background: var(--disabled-bg);
+  color: var(--disabled-text);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+@media (max-width: 520px) {
+  .tabletop-action-resource-control {
+    grid-template-columns: 1fr;
+    gap: 0.45rem;
+  }
+
+  .tabletop-action-resource-use {
+    width: 100%;
+  }
+}
+
 .tabletop-casting-summary {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.35rem;
@@ -12138,6 +12267,32 @@ html[data-theme="dark"] .feat-icon-btn--add {
 }
 
 /* The utility menu is an overlay, so its surface must remain opaque. */
+.druid-operation, .druid-beast-detail { display: grid; gap: .75rem; min-width: 0; }
+.druid-operation p, .druid-beast-detail p, .druid-status p { margin: .35rem 0; line-height: 1.65; overflow-wrap: anywhere; }
+.druid-field { display: grid; gap: .4rem; font-weight: 600; }
+.druid-field select, .druid-field input { width: 100%; min-width: 0; min-height: 42px; box-sizing: border-box; }
+.druid-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .65rem; }
+.druid-known-form { display: grid; grid-template-columns: 20px minmax(0, 1fr); align-items: center; column-gap: .5rem; }
+.druid-known-form > .druid-check { width: auto; margin: 0; }
+.druid-known-form > small { grid-column: 2; }
+.druid-beast-name { justify-self: start; width: auto; min-width: 0; min-height: 40px; margin: 0; padding: .35rem 0; color: inherit; font: inherit; background: none; border: 0; border-radius: 0; box-shadow: none; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.druid-beast-tooltip:not([hidden]) { display: block; }
+.druid-beast-tooltip { max-height: min(65vh, 32rem); overflow-y: auto; cursor: auto; touch-action: auto; user-select: text; }
+.druid-beast-tooltip > button { float: right; margin: 0 0 .4rem .4rem; }
+.druid-shape-description { white-space: normal; }
+.druid-shape-description p, .druid-shape-description ul { margin: .85rem 0; }
+.druid-shape-description ul { padding-left: 1.4rem; }
+.druid-shape-description li { margin: .4rem 0; }
+.druid-check { display: flex; align-items: center; gap: .5rem; min-height: 40px; }
+.druid-check input { flex: 0 0 auto; width: 18px; height: 18px; }
+.druid-button-row { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: .5rem 0; }
+.druid-status .tabletop-compact-button, .tabletop-action-description > .tabletop-compact-button { margin: .2rem .35rem .2rem 0; }
+.druid-resource-note { color: var(--text-muted, #64748b); }
+.druid-error { color: var(--danger, #b42318); font-weight: 600; }
+.druid-beast-attacks { grid-column: 1 / -1; min-width: 0; }
+.druid-beast-attacks > p { line-height: 1.7; }
+#tabletop-druid-resources { margin-top: 1rem; }
+
 .utility-menu {
   background: #fff;
 }
@@ -12150,4 +12305,12 @@ html[data-theme="dark"] .utility-menu {
   .spell-picked-content {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+}
+
+.tabletop-class-choice-alert {
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--warning-border);
+  border-radius: 8px;
+  color: var(--warning);
+  background: var(--warning-soft);
 }
