@@ -3,6 +3,13 @@
 
   const TAB_HEADER_OFFSET = 96;
   const SCROLL_DURATION = 480;
+  // Shared by the first-table tour and the repeatable turn reminder.
+  const TURN_GUIDANCE = [
+    "通常可以移動並做一個動作；能力允許時可使用附贈動作。",
+    "移動與動作的順序通常可以交錯，仍依能力條件處理。",
+    "反應需要符合觸發條件，也可能發生在別人的回合。"
+  ].join("\n\n");
+  const COMMON_ACTION_KEYS = ["attack", "dash", "disengage", "dodge", "help", "hide", "ready", "search", "study", "influence"];
 
   function isElementVisible(element) {
     if (!element) return false;
@@ -21,7 +28,7 @@
     });
   }
 
-  function animateWindowScrollTo(targetY, durationMs = SCROLL_DURATION) {
+  function animateWindowScrollTo(targetY, durationMs = SCROLL_DURATION, isCurrent = () => true) {
     return new Promise((resolve) => {
       const startY = window.scrollY;
       const maxScroll = Math.max(0, document.body.scrollHeight - window.innerHeight);
@@ -35,6 +42,7 @@
 
       const startedAt = performance.now();
       const tick = (now) => {
+        if (!isCurrent()) { resolve(); return; }
         const progress = Math.min(1, (now - startedAt) / durationMs);
         const eased = 1 - Math.pow(1 - progress, 3);
         window.scrollTo(0, startY + distance * eased);
@@ -80,6 +88,9 @@
       this.nextBtn = document.getElementById("tour-next-btn");
       this.skipBtn = document.getElementById("tour-skip-btn");
       this.steps = [];
+      this.kind = "sheet";
+      this.transitionId = 0;
+      this.tabletopViewSnapshot = null;
       this.currentIndex = -1;
       this.stepPhase = 0;
       this.active = false;
@@ -151,6 +162,44 @@
         if (ring) ring.style.pointerEvents = "none";
       });
       document.getElementById("restart-onboarding-btn")?.addEventListener("click", () => this.start());
+      document.getElementById("first-table-tour-btn")?.addEventListener("click", () => this.startTabletop());
+      document.getElementById("help-quick-build-btn")?.addEventListener("click", () => window.quickBuild?.open());
+      document.getElementById("tabletop-turn-help")?.addEventListener("click", (event) => {
+        const options = window.ActionPanel?.getOptions("basic") || [];
+        const names = COMMON_ACTION_KEYS.map(key => options.find(option => option.key === key)?.label).filter(Boolean);
+        window.AppDialog?.showMessage({
+          title: "我的回合",
+          message: `${TURN_GUIDANCE}\n\n常見動作：${names.join("、")}。\n\n也可以直接告訴 DM，你想嘗試什麼。`,
+          trigger: event.currentTarget,
+          confirmLabel: "知道了"
+        });
+      });
+    }
+
+    getTabletopSteps() {
+      const step = (tab, title, text, selector) => ({
+        tab, title, text, selector, placement: "overlay-bottom",
+        getHoles: () => [this.getHoleForSelector(selector)].filter(Boolean)
+      });
+      return [
+        { ...step("overview", "先說你想做什麼",
+          "DM 描述情況，你描述角色行動。例如：「我靠近木門，聽聽裡面有沒有聲音。」\n\n不必先選技能，DM 會依情況判斷如何處理。", "#tabletop-character-summary"), examples: true },
+        step("skills", "需要判定時，再找數值",
+          "DM 要求檢定時，找指定項目。可以使用實體骰，或開啟網站擲骰。這裡先認識技能區，不需要實際擲骰。", ".tabletop-skills"),
+        step("overview", "戰鬥開始，確認順序",
+          "DM 要求擲先攻時，找到先攻加值；依桌上的先攻順序行動。\n\n這裡顯示的是先攻加值。速度用來確認移動距離。", ".tabletop-key-stat:nth-child(2), .tabletop-key-stat:nth-child(3)"),
+        step("actions", "輪到你，可以做什麼？", TURN_GUIDANCE, ".tabletop-action-browser"),
+        ...(document.getElementById("tabletop-tab-spells") && !document.getElementById("tabletop-tab-spells").hidden ? [
+          step("spells", "想施法，先看說明",
+            "先說想施放哪個法術、對誰使用，再確認施法時間、距離與其他條件。\n\n留意法術位與專注提示。", "#tabletop-panel-spells")
+        ] : []),
+        step("resources", "做完之後，記下變化",
+          "確認能力剩餘次數及操作是否已更新，避免重複扣除。HP 與狀態可回總覽管理。\n\n聽情況 → 說行動 → 需要時判定 → 記錄結果", "#tabletop-panel-resources > .tabletop-section")
+      ];
+    }
+
+    startTabletop() {
+      return this.start(0, "tabletop");
     }
 
     getSteps() {
@@ -173,7 +222,7 @@
           },
           beforePosition: async () => {
             this.prepareIdentityPreview();
-            await animateWindowScrollTo(0);
+            await this.animateScrollTo(0);
           },
           afterLeave: () => this.restoreIdentityPreview()
         },
@@ -208,7 +257,7 @@
             if (this.stepPhase === 2) {
               return "選擇背景後，可在背景允許的三項屬性間分配共 3 點加值，單項最多 +2；也可使用職業範本快速配置。完成後可套用到角色，本次導覽請按「下一步」繼續。";
             }
-            return "除了自行填寫屬性以外，你也可以使用 27 購點配置。初次遊玩建議使用「創角小幫手」，由它帶你完成一名 1 級角色。";
+            return "除了自行填寫屬性以外，你也可以使用 27 購點配置，或以「屬性擲骰」擲出六組數值再分配。創角小幫手可從工具選單開啟。";
           },
           placement: "overlay-bottom",
           getHoles: () => {
@@ -283,7 +332,9 @@
           ].filter(Boolean),
           beforeTab: () => this.ensureSpellPreview(),
           beforePosition: async () => {
-            await animateWindowScrollTo(0);
+            const transitionId = this.transitionId;
+            await this.animateScrollTo(0);
+            if (!this.active || transitionId !== this.transitionId) return;
             await this.openSpellSearchPreview();
           },
           afterLeave: () => this.closeSpellSearchPreview()
@@ -291,9 +342,21 @@
       ];
     }
 
-    async start(initialIndex = 0) {
+    async start(initialIndex = 0, kind = "sheet") {
       if (this.active) this.stop({ resetView: false });
-      this.steps = this.getSteps();
+      this.kind = kind;
+      this.transitionId++;
+      this.tabletopViewSnapshot = kind === "tabletop" ? {
+        mode: window.TabletopMode.getMode(),
+        panel: window.TabletopMode.getPanel(),
+        scrollX: window.scrollX,
+        scrollY: window.scrollY,
+        focus: document.activeElement
+      } : null;
+      this.overlay.dataset.tourKind = kind;
+      this.text.replaceChildren();
+      this.renderedContentStep = null;
+      this.steps = kind === "tabletop" ? this.getTabletopSteps() : this.getSteps();
       if (!this.steps.length) return;
       const targetIndex = Math.max(0, Math.min(initialIndex, this.steps.length - 1));
       this.currentIndex = -1;
@@ -304,55 +367,58 @@
       this.autosaveSuspendedSnapshot = typeof autosaveSuspended === "boolean" ? autosaveSuspended : null;
       if (this.autosaveSuspendedSnapshot === false) window.flushPendingAutosave?.();
       if (this.autosaveSuspendedSnapshot !== null) autosaveSuspended = true;
-      this.activeTabStorageSnapshot = {
+      this.activeTabStorageSnapshot = kind === "sheet" ? {
         value: window.dndStorage?.getItem?.("activeTab") ?? null
-      };
+      } : null;
       this.active = true;
       this.isTransitioning = false;
-      this.captureSpellPreviewState();
-      this.captureSearchState();
+      if (kind === "sheet") {
+        this.captureSpellPreviewState();
+        this.captureSearchState();
+      }
       this.lockBackgroundInteraction();
       this.lockUserScroll();
       this.overlay.inert = false;
       this.overlay.style.display = "block";
       this.overlay.setAttribute("aria-hidden", "false");
+      this.nextBtn.focus({ preventScroll: true });
       await this.goTo(targetIndex);
     }
 
     async next() {
       if (!this.active || this.isTransitioning) return;
       this.hidePointBuyPresetTooltip();
-      if (this.currentIndex === 2 && this.stepPhase === 1) {
+      if (this.kind === "sheet" && this.currentIndex === 2 && this.stepPhase === 1) {
         this.stepPhase = 2;
         this.tooltipDragPosition = null;
         await this.renderStep();
         return;
       }
       if (this.currentIndex >= this.steps.length - 1) {
-        this.stop();
+        this.stop({ completed: this.kind === "tabletop" });
         return;
       }
       await this.goTo(this.currentIndex + 1);
     }
 
-    async finishTourForQuickBuild() {
+    async finishTourForAbilityRoll() {
       if (!this.active) return;
       this.stop({ resetView: false });
-      window.quickBuild?.open?.();
+      document.getElementById("ability-choice-roll")?.click();
     }
 
-    async confirmQuickBuildEntry(trigger) {
+    async confirmAbilityRollEntry(trigger) {
       if (this.quickBuildDecisionPending) return;
       this.quickBuildDecisionPending = true;
       try {
         const confirmed = await window.AppDialog?.requestDecision?.({
-          title: "進入創角小幫手",
-          message: "要進入創角小幫手流程嗎？進入後將結束本次新手導覽。",
+          title: "進入屬性擲骰",
+          message: "要開始屬性擲骰嗎？進入後將結束本次認識角卡導覽。",
           cancelLabel: "留在導覽",
-          confirmLabel: "進入小幫手",
+          confirmLabel: "開始擲骰",
           trigger
         });
-        if (confirmed) await this.finishTourForQuickBuild();
+        if (confirmed) await this.finishTourForAbilityRoll();
       } finally {
         this.quickBuildDecisionPending = false;
       }
@@ -361,13 +427,13 @@
     async prev() {
       if (!this.active || this.isTransitioning) return;
       this.hidePointBuyPresetTooltip();
-      if (this.currentIndex === 2 && this.stepPhase === 2) {
+      if (this.kind === "sheet" && this.currentIndex === 2 && this.stepPhase === 2) {
         this.stepPhase = 1;
         this.tooltipDragPosition = null;
         await this.renderStep();
         return;
       }
-      if (this.currentIndex === 2 && this.stepPhase === 1) {
+      if (this.kind === "sheet" && this.currentIndex === 2 && this.stepPhase === 1) {
         this.closePointBuyPreview();
         this.stepPhase = 0;
         this.tooltipDragPosition = null;
@@ -381,6 +447,8 @@
 
     async goTo(index) {
       if (!this.active || this.isTransitioning) return;
+      if (this.kind === "tabletop") return this.goToTabletop(index);
+      const transitionId = ++this.transitionId;
       this.hidePointBuyPresetTooltip();
       this.isTransitioning = true;
       const previousStep = this.steps[this.currentIndex];
@@ -395,15 +463,52 @@
       if (typeof step.beforeTab === "function") step.beforeTab();
       this.showTab(step.tab);
       await waitForLayoutStability();
+      if (!this.active || transitionId !== this.transitionId) return;
       if (typeof step.beforePosition === "function") {
         await step.beforePosition();
+        if (!this.active || transitionId !== this.transitionId) return;
         await waitForLayoutStability();
       }
+      if (!this.active || transitionId !== this.transitionId) return;
       await this.renderStep();
       this.isTransitioning = false;
     }
 
-    stop({ resetView = true } = {}) {
+    async goToTabletop(index) {
+      const transitionId = ++this.transitionId;
+      this.isTransitioning = true;
+      this.currentIndex = index;
+      this.tooltipDragPosition = null;
+      this.activeHoles = [];
+      this.resetHighlightState();
+      const step = this.steps[index];
+      try {
+        window.TabletopMode.setMode("tabletop", { restoreScroll: false });
+        window.TabletopMode.setPanel(step.tab, { persist: false, restoreScroll: false });
+        await waitForLayoutStability();
+        if (!this.active || transitionId !== this.transitionId) return;
+        const target = document.querySelector(step.selector);
+        if (!isElementVisible(target)) throw new Error("找不到導覽目標");
+        const header = document.querySelector(".tabs-shell")?.getBoundingClientRect().bottom || 0;
+        window.scrollTo(0, window.scrollY + target.getBoundingClientRect().top - Math.max(80, header + 16));
+        await waitForLayoutStability();
+        if (!this.active || transitionId !== this.transitionId) return;
+        if (!step.getHoles().some(hole => this.getVisibleHole(hole))) throw new Error("導覽目標不在可見範圍");
+        await this.renderStep();
+      } catch (error) {
+        if (this.active && transitionId === this.transitionId) {
+          this.stop();
+          window.AppDialog?.notify("暫時無法定位導覽內容，已回到原來畫面。請稍後重試。");
+          console.warn("第一次上桌導覽定位失敗：", error);
+        }
+      } finally {
+        if (transitionId === this.transitionId) this.isTransitioning = false;
+      }
+    }
+
+    stop({ resetView = true, completed = false } = {}) {
+      if (!this.active) return;
+      this.transitionId++;
       this.hidePointBuyPresetTooltip();
       const currentStep = this.steps[this.currentIndex];
       if (currentStep && typeof currentStep.afterLeave === "function") currentStep.afterLeave();
@@ -438,9 +543,22 @@
         this.overlay.setAttribute("aria-hidden", "true");
       }
 
-      if (resetView) {
+      if (this.kind === "tabletop") {
+        const snapshot = this.tabletopViewSnapshot;
+        this.tabletopViewSnapshot = null;
+        window.TabletopMode.setPanel(completed ? "overview" : snapshot.panel, { persist: false, restoreScroll: false });
+        window.TabletopMode.setMode(completed ? "tabletop" : snapshot.mode, { restoreScroll: false });
+        window.scrollTo(completed ? 0 : snapshot.scrollX, completed ? 0 : snapshot.scrollY);
+        const originalFocus = snapshot.focus;
+        const focus = completed ? document.getElementById("tabletop-tab-overview")
+          : originalFocus?.isConnected && isElementVisible(originalFocus) && !originalFocus.closest("[inert]")
+            ? originalFocus : document.getElementById("utility-menu-toggle");
+        focus?.focus({ preventScroll: true });
+      } else if (resetView) {
         this.showTab("basic");
+        const transitionId = this.transitionId;
         requestAnimationFrame(() => {
+          if (transitionId !== this.transitionId) return;
           window.scrollTo(0, 0);
           this.restoreSearchState();
           document.getElementById("basic-tab-button")?.focus({ preventScroll: true });
@@ -463,7 +581,12 @@
     async scrollElementIntoView(element, extraOffset = TAB_HEADER_OFFSET) {
       if (!element) return;
       const targetY = window.scrollY + element.getBoundingClientRect().top - extraOffset;
-      await animateWindowScrollTo(targetY);
+      await this.animateScrollTo(targetY);
+    }
+
+    animateScrollTo(targetY) {
+      const transitionId = this.transitionId;
+      return animateWindowScrollTo(targetY, SCROLL_DURATION, () => transitionId === this.transitionId);
     }
 
     captureRestrictedSelect(select, allowedValues) {
@@ -881,7 +1004,7 @@
     }
 
     async enterPointBuyTutorial() {
-      if (!this.active || this.currentIndex !== 2) return;
+      if (!this.active || this.kind !== "sheet" || this.currentIndex !== 2) return;
       this.stepPhase = 1;
       this.tooltipDragPosition = null;
       await waitForLayoutStability();
@@ -1038,6 +1161,7 @@
 
     getAllowedTourElements() {
       if (!this.active) return [];
+      if (this.kind === "tabletop") return [];
       if (this.currentIndex === 0) {
         return ["class", "level", "background", "race"]
           .map((id) => document.getElementById(id))
@@ -1066,7 +1190,7 @@
         }
         return [
           document.getElementById("ability-choice-point-buy"),
-          document.getElementById("quick-card-builder")
+          document.getElementById("ability-choice-roll")
         ]
           .filter((element) => element && isElementVisible(element));
       }
@@ -1097,7 +1221,7 @@
     }
 
     getPointBuyTutorialScrollContainer(event) {
-      if (!this.active || this.currentIndex !== 2 || this.stepPhase === 0) return null;
+      if (!this.active || this.kind !== "sheet" || this.currentIndex !== 2 || this.stepPhase === 0) return null;
       if (this.tooltip?.contains(event.target)) return null;
       const container = document.querySelector("#point-buy-modal.open .point-buy-modal-card");
       const point = this.getEventViewportPoint(event);
@@ -1208,6 +1332,7 @@
 
     handleTourPointerDownCapture(event) {
       if (!this.active || this.isInternalTourAction) return;
+      if (this.kind === "tabletop" && this.tooltip?.contains(event.target)) return;
       const pointBuyScrollContainer = event.pointerType !== "mouse"
         ? this.getPointBuyTutorialScrollContainer(event)
         : null;
@@ -1238,6 +1363,11 @@
         return;
       }
       if (this.tooltip?.contains(target)) return;
+      if (this.kind === "tabletop") {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+      }
 
       if (this.currentIndex === 2 && this.stepPhase === 2 && target.closest("#ability-choice-default")) {
         event.preventDefault();
@@ -1256,10 +1386,10 @@
         }
       }
 
-      if (this.currentIndex === 2 && target.closest("#quick-card-builder")) {
+      if (this.currentIndex === 2 && target.closest("#ability-choice-roll")) {
         event.preventDefault();
         event.stopImmediatePropagation();
-        this.confirmQuickBuildEntry(target.closest("#quick-card-builder"));
+        this.confirmAbilityRollEntry(target.closest("#ability-choice-roll"));
         return;
       }
 
@@ -1383,11 +1513,35 @@
       this.focusRings.forEach((ring, index) => this.setFocusRing(ring, visibleHoles[index]));
 
       this.title.textContent = this.getStepValue(step, "title", "");
-      this.text.textContent = this.getStepValue(step, "text", "");
+      if (this.kind !== "tabletop" || this.renderedContentStep !== step) {
+        this.text.textContent = this.getStepValue(step, "text", "");
+        this.text.scrollTop = 0;
+        if (this.kind === "tabletop" && step.examples) {
+          const details = document.createElement("details");
+          const summary = document.createElement("summary");
+          summary.textContent = "看看其他例子";
+          details.appendChild(summary);
+          [
+            "探索：「我檢查雕像後面有沒有機關。」",
+            "社交：「我想讓守衛相信我們是商人，拿出貨單給他看。」",
+            "戰鬥：「我靠近哥布林，拔出長劍攻擊。」"
+          ].forEach(example => {
+            const paragraph = document.createElement("p");
+            paragraph.textContent = example;
+            details.appendChild(paragraph);
+          });
+          this.text.appendChild(details);
+          details.addEventListener("toggle", () => {
+            if (this.active && this.kind === "tabletop") this.renderStep({ ensureFocus: false });
+          });
+        }
+        this.renderedContentStep = step;
+      }
       this.progress.textContent = `${this.currentIndex + 1}/${this.steps.length}`;
       this.progress.setAttribute("aria-label", `導覽進度：第 ${this.currentIndex + 1} 步，共 ${this.steps.length} 步`);
       this.prevBtn.disabled = this.currentIndex === 0;
-      this.skipBtn.hidden = this.currentIndex === this.steps.length - 1;
+      this.skipBtn.hidden = this.kind !== "tabletop" && this.currentIndex === this.steps.length - 1;
+      this.skipBtn.textContent = this.kind === "tabletop" ? "關閉" : "跳過";
       this.nextBtn.textContent = this.getNextButtonText();
       this.tooltip.style.display = "";
 
@@ -1401,6 +1555,7 @@
     }
 
     getNextButtonText() {
+      if (this.kind === "tabletop") return this.currentIndex === this.steps.length - 1 ? "開始使用桌邊模式" : "下一步";
       if (this.currentIndex === this.steps.length - 1) return "導覽完成";
       if (this.currentIndex === 2 && this.stepPhase === 1) return "繼續購點教學";
       return "下一步";
@@ -1512,8 +1667,8 @@
     positionTooltip(hole, placement) {
       const margin = 10;
       const width = Math.min(360, window.innerWidth - margin * 2);
-      const height = this.tooltip.offsetHeight || 170;
       this.tooltip.style.width = `${width}px`;
+      const height = this.tooltip.offsetHeight || 170;
       this.tooltip.style.left = `${Math.min(window.innerWidth - width - margin, Math.max(margin, hole.left))}px`;
 
       if (placement === "overlay-bottom") {
@@ -1547,6 +1702,7 @@
 
     handleTooltipPointerDown(event) {
       if (!this.active || !this.tooltip || event.button !== 0) return;
+      if (this.kind === "tabletop") return;
       if (event.target instanceof Element && event.target.closest(".tour-btn-row button")) return;
       const rect = this.tooltip.getBoundingClientRect();
       this.tooltipDragPointerId = event.pointerId;
@@ -1657,6 +1813,7 @@
     getTourFocusableButtons() {
       return [
         ...this.getAllowedTourElements(),
+        ...(this.kind === "tabletop" ? Array.from(this.text.querySelectorAll("summary")) : []),
         this.prevBtn,
         this.skipBtn,
         this.nextBtn
@@ -1690,6 +1847,7 @@
 
     preventScrollEvent(event) {
       if (!this.active) return;
+      if (this.kind === "tabletop" && this.tooltip?.contains(event.target)) return;
       if (event.type === "touchmove" && this.highlightDragState) {
         const point = this.getEventViewportPoint(event);
         if (point && this.moveHighlightDrag(point.y)) event.preventDefault();
@@ -1715,15 +1873,16 @@
     }
 
     lockUserScroll() {
+      this.bodyOverscrollSnapshot = document.body.style.overscrollBehavior;
       document.body.style.overscrollBehavior = "none";
       if (this.bodyTouchActionSnapshot === null) this.bodyTouchActionSnapshot = document.body.style.touchAction;
-      document.body.style.touchAction = "none";
+      document.body.style.touchAction = this.kind === "tabletop" ? "pan-y" : "none";
       window.addEventListener("wheel", this.preventScrollEvent, { passive: false, capture: true });
       window.addEventListener("touchmove", this.preventScrollEvent, { passive: false, capture: true });
     }
 
     unlockUserScroll() {
-      document.body.style.overscrollBehavior = "";
+      document.body.style.overscrollBehavior = this.bodyOverscrollSnapshot || "";
       if (this.bodyTouchActionSnapshot !== null) document.body.style.touchAction = this.bodyTouchActionSnapshot;
       this.bodyTouchActionSnapshot = null;
       window.removeEventListener("wheel", this.preventScrollEvent, { capture: true });

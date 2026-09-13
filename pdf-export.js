@@ -1043,6 +1043,7 @@
       gnomeLineage,
       tieflingLegacy,
       includeDefaultEquipment,
+      includeSpellbook: exportOptions.includeSpellbook !== false,
       outputMode: exportOptions.outputMode || DEFAULT_PDF_EXPORT_MODE
     });
     const missingFields = applyPayloadToForm(form, payload);

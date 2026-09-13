@@ -68,16 +68,18 @@ python -m http.server 8000
 - 網站入口與共用樣式：`index.html`、`styles.css`
 - 資料與共用規則：`character-rules.js`、`class-features.js`、`race.js`、`backgrounds.js`、`feats.js`、`tool-data.js`、`monster.js`、`equipment-data.js`、`equipment-notes.js`、`spell-list.js`、`condition.js`、`deity-info.js`
 - 角色卡互動：`action-panel.js`、`dice-roller.js`、`quick-build.js`、`onboarding-tour.js`、`app-dialog.js`、`scroll-to-top.js`
-- 桌邊模式：`tabletop-mode.js`（狀態與共用 API）、`tabletop-actions.js`（武器與行動）、`tabletop-spells.js`（施法與專注）、`tabletop-resources.js`（內建與自訂資源）
+- 桌邊模式：`tabletop-mode.js`（狀態與共用 API）、`tabletop-actions.js`（武器與行動）、`tabletop-druid.js`（德魯伊形態與職業專屬操作）、`tabletop-spells.js`（施法與專注）、`tabletop-resources.js`（內建與自訂資源）
 - PDF 匯出：`pdf-export.js`、`pdf-field-map.js`、`pdf-lib.custom.min.js`、`fontkit.custom.min.js`，以及角色紙與字型素材
 - 資訊頁面：`about.html`、`ddals1.html`、`info-pages.css`、`legal-modal.js`
-- 維護工具：`validate-tabletop-spellcasting.js`、`validate-action-metadata.js`、`build-offline-nopdf.ps1`
+- 維護工具：`validate-tabletop-spellcasting.js`、`validate-action-metadata.js`、`validate-tabletop-druid.js`、`build-offline-nopdf.ps1`
 - 動作系統遷移紀錄：`ACTION-METADATA-MIGRATION.md`（歷史盤點與驗證紀錄；目前行為仍以實際程式與資料為準）
 - 衍生檔案：`TWD20-offline.html`
 
 `character-rules.js` 提供共用角色計算與規則。`SpellCatalog` 由 `spell-list.js` 提供，是法術內容及桌邊施法 metadata 的來源。`ActionPanel` 依明確的非施法能力動作定義及角色選擇，建立職業、種族、專長、魔能祈喚與超魔等動作選項；法術施法時間則沿用既有分類機制。動作 key、分類、等級與選擇條件由結構化定義控制，說明取自規則資料或既有個人化摘要。
 
 `action-panel.js` 負責動作選項與角色卡的動作 UI，`tabletop-actions.js` 負責桌邊呈現與操作。桌邊模組經由 `TabletopMode` 共用 API 協作，角色目前選擇仍由既有表單／DOM 提供，擲骰統一經由 `DiceRoller`，本機儲存則透過 `window.dndStorage` 存取。
+
+`tabletop-druid.js` 負責德魯伊專屬的桌邊操作，包括荒野形態與已知形態、野獸攻擊、荒野夥伴、野性復甦、自然恢復及原初打擊。形態、資源及夥伴狀態仍透過 `TabletopMode` 管理，野獸規則資料則沿用專案既有的結構化資料來源。
 
 PDF 程式與素材只會在使用 PDF 匯出時動態載入。正式網站若保留 PDF 匯出入口，需一併提供這些檔案；離線精簡版由產生腳本停用 PDF 匯出。
 
@@ -102,6 +104,14 @@ node .\validate-action-metadata.js
 ```
 
 此腳本需要環境已提供可由 Node.js 載入的 `playwright` 與可用瀏覽器，會自行啟動本機靜態伺服器，檢查動作條件、角色卡／桌邊 UI、自訂與隱藏動作，以及 JSON、分享與自動儲存流程。若使用環境內附的套件，可用 `NODE_PATH` 指向其 `node_modules`；使用已安裝的 Microsoft Edge 時，可先在 PowerShell 設定 `$env:DND_BROWSER_CHANNEL = "msedge"`。
+
+若修改德魯伊荒野形態、野獸資料與攻擊、職業專屬資源、相關桌邊狀態或 responsive UI，執行德魯伊專用的瀏覽器回歸驗證：
+
+```powershell
+node .\validate-tabletop-druid.js
+```
+
+此腳本同樣使用環境既有的 Playwright 與瀏覽器，會檢查形態資格與能力值、野獸攻擊、荒野形態資源、荒野夥伴、野性復甦、自然恢復、原初打擊、專注限制、失能處理、JSON／分享／autosave、對話框取消流程及桌面與手機版面。
 
 專案未建立套件管理或通用測試框架；上述瀏覽器腳本沿用環境已有的 Playwright，不需為一般修改新增專案相依。只修改 Markdown 時，檢查檔名、連結、命令與內容是否符合現況即可。修改正式載入的 CSS／JavaScript 時，亦應檢查 `index.html` 對應資源的快取版本。
 

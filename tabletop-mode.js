@@ -217,11 +217,12 @@
     const slotGroups = Array.isArray(spec.slotGroups) ? spec.slotGroups : [];
     const methods = [];
     const atWill = castMode === "at-will";
+    const ritualOnly = castMode === "ritual-only";
     const freeControl = freeControls.find(control => (
       control?.id && !control.checked && !control.disabled
     ));
 
-    if (!atWill && freeControl) methods.push(freezeCastOption({
+    if (!atWill && !ritualOnly && freeControl) methods.push(freezeCastOption({
       id: "free",
       label: "免費次數",
       effectiveLevel: fixedCastLevel,
@@ -245,7 +246,7 @@
       resourceLabel: String(spec.ritualExtraTime || "不消耗法術位")
     }));
 
-    const slots = atWill ? [] : slotGroups.flatMap(group => {
+    const slots = atWill || ritualOnly ? [] : slotGroups.flatMap(group => {
       const level = Number.parseInt(group?.level, 10);
       if (!Number.isSafeInteger(level) || level < baseLevel) return [];
       const available = (Array.isArray(group.controls) ? group.controls : [])
@@ -295,6 +296,11 @@
   }
 
   function getSpellCastOptions(entry = {}) {
+    if (entry.spellSource === "wizard-spellbook") {
+      const current = globalScope.Spellbook?.getRitualEntries().find(item => item.sourceKey === entry.sourceKey);
+      if (!current) return buildSpellCastOptions({ baseLevel: 1 });
+      entry = current;
+    }
     if (getDruidForm() || entry.sourceKey === "class-druid-wild-companion-find-familiar") return buildSpellCastOptions({ baseLevel: 1 });
     const spell = entry.spell || globalScope.SpellCatalog?.getSpell?.(entry.spellId);
     const metadata = globalScope.SpellCatalog?.getCastMetadata?.(spell?.spellId);
@@ -4053,9 +4059,7 @@ function getRogueReliableTalentEntry() {
       elements.modeToggle.setAttribute("aria-pressed", String(tabletopEnabled));
       elements.modeToggle.setAttribute("aria-label", tabletopEnabled ? "返回角色卡" : "進入桌邊模式（β）");
       const modeLabel = elements.modeToggle.querySelector("#tabletop-mode-toggle-label");
-      const modeIcon = elements.modeToggle.querySelector("#tabletop-mode-toggle-icon");
-      if (modeLabel) modeLabel.textContent = tabletopEnabled ? "角色卡模式" : "桌邊模式(β版)";
-      if (modeIcon) modeIcon.textContent = tabletopEnabled ? "📄" : "⚔️";
+      if (modeLabel) modeLabel.textContent = tabletopEnabled ? "角色卡模式" : "桌邊模式(β)";
     }
 
     if (elements.sheetTabs) {

@@ -9,7 +9,7 @@
     const checkbox = document.getElementById("legal-dismiss");
     const closeBtn = document.getElementById("legal-close-btn");
     const ackBtn = document.getElementById("legal-ack-btn");
-    const onboardingBtn = document.getElementById("legal-onboarding-btn");
+    const quickBuildBtn = document.getElementById("legal-onboarding-btn");
     const aboutModal = document.getElementById("legal-about-modal");
     const aboutCloseBtn = aboutModal?.querySelector(".legal-about-close");
     const aboutFrame = aboutModal?.querySelector(".legal-about-frame");
@@ -86,14 +86,16 @@
     modal.style.display = "block";
     const closeModal = () => {
       modal.style.display = "none";
+      // Give the wizard a visible return target after the welcome dialog closes.
+      document.getElementById("utility-menu-toggle")?.focus();
     };
 
     closeBtn?.addEventListener("click", closeModal);
     ackBtn?.addEventListener("click", closeModal);
-    onboardingBtn?.addEventListener("click", () => {
+    quickBuildBtn?.addEventListener("click", () => {
       closeModal();
-      Promise.resolve(window.onboardingTour?.start?.()).catch((error) => {
-        console.error("無法啟動新手導覽：", error);
+      Promise.resolve(window.quickBuild?.open?.()).catch((error) => {
+        console.error("無法啟動創角小幫手：", error);
       });
     });
   }

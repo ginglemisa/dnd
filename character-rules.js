@@ -47,6 +47,20 @@
   const SPELLCASTER_RACES = new Set(["elf", "gnome", "tiefling"]);
   const CLASS_CANTRIP_CLASSES = new Set(["bard", "cleric", "druid", "sorcerer", "warlock", "wizard"]);
   const SHILLELAGH_WEAPON_NAMES = new Set(["短棒", "長棍"]);
+  // Prepared-spell columns in class-features.js, for the supported levels 1–8.
+  const STANDARD_PREPARED_SPELLS = Object.freeze([4, 5, 6, 7, 9, 10, 11, 12]);
+  const HALF_CASTER_PREPARED_SPELLS = Object.freeze([2, 3, 4, 5, 6, 6, 7, 7]);
+  const PREPARED_SPELLS_BY_CLASS = Object.freeze({
+    bard: STANDARD_PREPARED_SPELLS, cleric: STANDARD_PREPARED_SPELLS,
+    druid: STANDARD_PREPARED_SPELLS, wizard: STANDARD_PREPARED_SPELLS,
+    paladin: HALF_CASTER_PREPARED_SPELLS, ranger: HALF_CASTER_PREPARED_SPELLS,
+    sorcerer: Object.freeze([2, 4, 6, 7, 9, 10, 11, 12]),
+    warlock: Object.freeze([2, 3, 4, 5, 6, 7, 8, 9])
+  });
+
+  function getPreparedSpellLimit(className, level) {
+    return Number.isInteger(Number(level)) ? PREPARED_SPELLS_BY_CLASS[className]?.[Number(level) - 1] ?? null : null;
+  }
   const STANDARD_SPELL_SLOTS = Object.freeze({
     1: Object.freeze([2, 0, 0, 0]),
     2: Object.freeze([3, 0, 0, 0]),
@@ -510,6 +524,7 @@
     getShillelaghTargetHand,
     getShillelaghWeaponEffect,
     getSpellSlotCounts,
+    getPreparedSpellLimit,
     hasSpellcastingCapabilityForSelections,
     normalizeCharacterSize,
     parseSignedValue

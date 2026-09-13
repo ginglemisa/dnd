@@ -2264,7 +2264,7 @@
       summaryRow("技能額外加值", sourceAwareAcquisitions("skillBonuses")),
       summaryRow("戲法", (content.cantrips || []).concat(content.tome?.cantrips || []).map(spellNameZh).join("、")),
       summaryRow("準備法術", (content.preparedSpells || []).concat(content.tome?.rituals || []).map(spellNameZh).join("、")),
-      summaryRow("法術書筆記", spellbookSummary),
+      summaryRow("法術書", spellbookSummary),
       summaryRow("武器精通", (content.weaponMasteries || []).join("、")),
       summaryRow("專精", (content.expertise || []).join("、")),
       summaryRow("語言", (content.languages || []).map(value => LANGUAGE_OPTIONS.find(option => option.value === value)?.label || value).join("、")),
@@ -2714,14 +2714,10 @@
   function importMobileSpells(warnings) {
     const content = draft.selections.levelOne?.content || {};
     (content.cantrips || []).forEach(spellId => addManualMobileSpell({ spellId, level: "cantrips", classId: draft.choices.class }, warnings));
-    (content.preparedSpells || []).forEach(spellId => addManualMobileSpell({ spellId, level: 1, classId: draft.choices.class }, warnings));
-    if (content.spellbookSpells?.length) {
-      const note = `法術書（一環）：${content.spellbookSpells.map(spellId => {
-        const acquisition = (draft.acquisitions.spells || []).find(item => item.content?.spellbook && item.spellId === spellId);
-        return `${spellNameZh(spellId)}${acquisition?.content?.ritual ? "（儀式）" : ""}`;
-      }).join("、")}`;
-      setMobileField("spell-notes", note, warnings, "法術筆記", "input");
+    if (draft.choices.class === "wizard") {
+      window.Spellbook.setState({ spellIds: content.spellbookSpells || [] }, { sync: false });
     }
+    (content.preparedSpells || []).forEach(spellId => addManualMobileSpell({ spellId, level: 1, classId: draft.choices.class }, warnings));
     if (typeof syncOriginAndSubclassDerivedSpellRows === "function") syncOriginAndSubclassDerivedSpellRows();
     if (typeof updatePickedSpellBoxes === "function") updatePickedSpellBoxes();
   }
@@ -2808,12 +2804,15 @@
       message: `${resultText}${warningText}`,
       actions: completed ? [
         { label: "下載角色卡 PDF", intent: "primary", value: "download-compact-pdf" },
+        ...(warnings.length === 0 ? [{ label: "第一次上桌", intent: "secondary", value: "first-table" }] : []),
         { label: "知道了", intent: "secondary", value: "close" }
       ] : undefined,
       confirmLabel: "知道了"
     });
     if (completionAction === "download-compact-pdf") {
       await window.downloadQuickBuildCompactPdf?.();
+    } else if (completionAction === "first-table" && completed && warnings.length === 0) {
+      await window.onboardingTour?.startTabletop?.();
     }
   }
 
@@ -3534,9 +3533,17 @@
     const prepareFooter = modal.querySelector(".quick-build-spell-prepare");
     modal.querySelector("#quick-build-spell-detail-title").textContent = "法術詳情";
     prepareFooter.hidden = !options.askToPrepare;
+    modal.querySelector("#quick-build-spell-prepare-question").textContent = options.question || "是否準備這個法術？";
+    modal.querySelector(".quick-build-spell-prepare-confirm").textContent = options.confirmLabel || "準備法術";
+    modal.querySelector(".quick-build-spell-prepare-cancel").textContent = options.cancelLabel || "暫不準備";
     spellDetailTrigger = trigger || document.activeElement;
     const record = typeof spell === "string" ? canonicalSpell(spell) : spell;
     content.innerHTML = record ? `<strong>${escapeHtml(spellDisplayName(record.spellId))}</strong>${escapeHtml(record.desc)}` : "<span>你還沒有選擇法術喔！</span>";
+    if (options.stateNote) {
+      const note = document.createElement("p");
+      note.textContent = options.stateNote;
+      content.appendChild(note);
+    }
     content.scrollTop = 0;
     spellDetailOpenedOutsideWizard = !wizardIsOpen;
     modal.inert = false;
@@ -3552,7 +3559,7 @@
     }
   }
 
-  function openSpellPrepareDetail(spellId, trigger) {
+  function openSpellPrepareDetail(spellId, trigger, options = {}) {
     settleSpellPrepareDecision(false);
     const spell = canonicalSpell(spellId);
     if (!spell) {
@@ -3561,7 +3568,7 @@
     }
     return new Promise(resolve => {
       spellPrepareDecisionResolver = resolve;
-      openSpellDetail(spell, trigger, { askToPrepare: true });
+      openSpellDetail(spell, trigger, { ...options, askToPrepare: true });
     });
   }
 
@@ -3897,10 +3904,6 @@
     modal.classList.remove("open");
     modal.setAttribute("aria-hidden", "true");
   }
-
-  document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById("quick-card-builder")?.addEventListener("click", openWizard);
-  });
 
   window.quickBuild = {
     open: openWizard, close: closeWizard, createDraft,

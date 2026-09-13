@@ -45,9 +45,9 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎲%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20260913-invocation-modal">
+  <link rel="stylesheet" href="styles.css?v=20260914-menu-fixes">
   <script src="scroll-to-top.js" defer></script>
-  <script src="dice-roller.js?v=20260902-tabletop-casting" defer></script>
+  <script src="dice-roller.js?v=20260913-ability-fate" defer></script>
   <script src="monster.js?v=20260912-druid-controls" defer></script>
     <script src="class-features.js?v=20260913-class-tabletop" defer></script>
   <script src="race.js?v=20260826-lineage-tables" defer></script>
@@ -58,16 +58,17 @@
   <script src="spell-list.js?v=20260908-spell-attack" defer></script>
   <script src="condition.js" defer></script>
   <script src="action-panel.js?v=20260913-class-tabletop" defer></script>
-  <script src="character-rules.js?v=20260911-druid-tabletop" defer></script>
+  <script src="character-rules.js?v=20260913-spellbook" defer></script>
   <script src="app-dialog.js?v=20260831-number-input" defer></script>
-  <script src="tabletop-mode.js?v=20260913-class-tabletop" defer></script>
+  <script src="tabletop-mode.js?v=20260914-menu" defer></script>
   <script src="tabletop-druid.js?v=20260912-druid-controls" defer></script>
   <script src="tabletop-resources.js?v=20260912-druid-controls" defer></script>
   <script src="tabletop-actions.js?v=20260913-class-tabletop" defer></script>
-  <script src="tabletop-spells.js?v=20260911-druid-tabletop" defer></script>
-  <script src="legal-modal.js?v=20260824-onboarding-entry" defer></script>
-  <script src="onboarding-tour.js?v=20260903-onboarding-ability-branches" defer></script>
-  <script src="quick-build.js?v=20260903-quick-build-tooltip-buttons" defer></script>
+  <script src="tabletop-spells.js?v=20260913-spellbook" defer></script>
+  <script src="legal-modal.js?v=20260914-menu-fixes" defer></script>
+  <script src="onboarding-tour.js?v=20260913-ability-roll" defer></script>
+  <script src="quick-build.js?v=20260913-ability-roll" defer></script>
+  <script src="spellbook.js?v=20260913-spellbook" defer></script>
   <script src="deity-info.js" defer></script>
 
 </head>
@@ -86,19 +87,15 @@
         <button class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="tab-actions" onclick="showTab(&#39;actions&#39;, this)">動作</button>
         <button id="spells-tab-button" class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="tab-spells" onclick="showTab(&#39;spells&#39;, this)">法術</button>
       </nav>
-      <button type="button" id="utility-menu-toggle" class="utility-menu-toggle" aria-label="開啟工具選單" aria-expanded="false" aria-controls="utility-menu">
-        <span class="utility-menu-toggle__icon" aria-hidden="true"><span></span><span></span><span></span></span>
-      </button>
+      <button type="button" id="utility-menu-toggle" class="utility-menu-toggle" aria-label="開啟工具選單" aria-expanded="false" aria-controls="utility-menu">選單</button>
     </div>
     <div id="utility-menu" class="utility-menu" aria-hidden="true" inert>
       <section class="utility-menu__section" aria-labelledby="utility-menu-view-title">
-        <h2 id="utility-menu-view-title" class="utility-menu__section-title">顯示與模式</h2>
+        <h2 id="utility-menu-view-title" class="utility-menu__section-title">主要功能</h2>
         <div class="utility-menu__row utility-menu__row--split utility-menu__mode-row">
-          <button type="button" id="theme-toggle" class="utility-menu__button utility-menu__mode-button utility-menu__mode-button--theme" aria-label="換深色主題">
-            <span id="theme-toggle-icon" class="utility-menu__mode-icon" aria-hidden="true">🌙</span><span id="theme-toggle-label">換深色主題</span>
-          </button>
+          <button type="button" id="help-quick-build-btn" class="utility-menu__button utility-menu__mode-button" title="一步步完成一名 1 級角色">創角小幫手</button>
           <button type="button" id="tabletop-mode-toggle" class="utility-menu__button utility-menu__mode-button utility-menu__mode-button--tabletop" aria-pressed="false" aria-controls="tabletop-mode" title="開啟桌邊模式總覽；角色資料與角色卡模式完全共用。">
-            <span id="tabletop-mode-toggle-label">桌邊模式</span><span id="tabletop-mode-toggle-icon" class="utility-menu__mode-icon" aria-hidden="true">⚔️</span>
+            <span id="tabletop-mode-toggle-label">桌邊模式(β)</span>
           </button>
         </div>
       </section>
@@ -106,16 +103,23 @@
       <div class="utility-menu__divider" role="separator"></div>
       <fieldset class="utility-menu__settings">
         <legend>操作設定</legend>
-        <label class="utility-menu__setting" title="開啟時自動計算最大 HP、AC、先攻、速度與被動察覺；關閉後可自行輸入。">
-          <span>自動計算HP/AC/先攻等數值</span>
-          <input id="auto-calculate-key-stats-toggle" type="checkbox" role="switch" checked>
-          <span class="utility-menu__switch" aria-hidden="true"></span>
-        </label>
-        <label class="utility-menu__setting">
-          <span>開啟擲骰系統</span>
-          <input id="dice-system-toggle" type="checkbox" role="switch">
-          <span class="utility-menu__switch" aria-hidden="true"></span>
-        </label>
+        <div class="utility-menu__settings-row">
+          <label class="utility-menu__setting" title="開啟時自動計算最大 HP、AC、先攻、速度與被動察覺；關閉後可自行輸入。">
+            <span>自動計算HP/AC/先攻</span>
+            <input id="auto-calculate-key-stats-toggle" type="checkbox" role="switch" checked>
+            <span class="utility-menu__switch" aria-hidden="true"></span>
+          </label>
+          <label class="utility-menu__setting">
+            <span>開啟擲骰系統</span>
+            <input id="dice-system-toggle" type="checkbox" role="switch">
+            <span class="utility-menu__switch" aria-hidden="true"></span>
+          </label>
+          <label class="utility-menu__setting">
+            <span id="theme-toggle-label">更換主題顏色</span>
+            <input id="theme-toggle" type="checkbox" role="switch" aria-label="更換主題顏色" data-state-transient="true">
+            <span class="utility-menu__switch" aria-hidden="true"></span>
+          </label>
+        </div>
       </fieldset>
 
       <div class="utility-menu__divider" role="separator"></div>
@@ -127,28 +131,28 @@
             <button type="button" id="export-json-btn" class="utility-menu__button">匯出JSON⬇️</button>
           </div>
           <div class="utility-menu__row utility-menu__row--footer">
-            <button type="button" id="export-pdf-btn" class="utility-menu__button">📄輸出PDF</button>
+            <button type="button" id="export-pdf-btn" class="utility-menu__button">輸出PDF</button>
             <button type="button" id="open-qr-btn" class="utility-menu__button utility-menu__qr-button" aria-label="開啟 QR Code" title="QR Code">
               <svg class="utility-menu__qr-icon" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M3 3h7v7H3V3Zm2 2v3h3V5H5Zm9-2h7v7h-7V3Zm2 2v3h3V5h-3ZM3 14h7v7H3v-7Zm2 2v3h3v-3H5Zm9-2h3v3h-3v-3Zm4 0h3v3h-3v-3Zm-4 4h3v3h-3v-3Zm4 0h3v3h-3v-3Z"/>
               </svg>
             </button>
-            <button type="button" class="utility-menu__button share-url-btn" onclick="copyShareUrl()" aria-label="複製分享連結">分享角卡🔗</button>
+            <button type="button" class="utility-menu__button share-url-btn" onclick="copyShareUrl()" aria-label="複製分享連結">分享角卡</button>
           </div>
         </div>
       </section>
 
       <div class="utility-menu__divider" role="separator"></div>
       <section class="utility-menu__section" aria-labelledby="utility-menu-help-title">
-        <h2 id="utility-menu-help-title" class="utility-menu__section-title">參考與協助</h2>
-        <div class="utility-menu__row utility-menu__row--split">
-          <button type="button" id="reference-deities-btn" class="utility-menu__button">🙏參考神祇</button>
-          <button type="button" id="restart-onboarding-btn" class="utility-menu__button">新手導覽🧭</button>
+        <h2 id="utility-menu-help-title" class="utility-menu__section-title">參考/教學/重置</h2>
+        <div class="utility-menu__help">
+          <button type="button" id="restart-onboarding-btn" class="utility-menu__button" title="了解欄位、裝備、法術與搜尋">認識角卡</button>
+          <button type="button" id="first-table-tour-btn" class="utility-menu__button" title="角色做好了，接下來怎麼玩？">初次遊玩</button>
+          <button type="button" id="reference-deities-btn" class="utility-menu__button">認識神祉</button>
+          <button id="clear-storage-btn" class="utility-menu__button utility-menu__button--danger">清除紀錄</button>
         </div>
       </section>
 
-      <div class="utility-menu__divider" role="separator"></div>
-      <button id="clear-storage-btn" class="utility-menu__button utility-menu__button--danger">🗑️ 清除紀錄</button>
       <input type="file" id="import-json-file" accept="application/json" class="is-hidden">
     </div>
     <div id="spell-tab-toolbar" class="spell-toolbar is-hidden" aria-label="法術搜尋工具列">
@@ -334,7 +338,7 @@
       <section id="tabletop-druid-actions" class="tabletop-section druid-status" aria-label="德魯伊形態操作" hidden></section>
       <header class="tabletop-panel-intro">
         <span class="tabletop-eyebrow">戰鬥查閱</span>
-        <h2>動作</h2>
+        <div class="tabletop-section-heading"><h2>動作</h2><button type="button" id="tabletop-turn-help" class="tabletop-compact-button" aria-haspopup="dialog">？ 我的回合</button></div>
         <p id="tabletop-actions-notice" class="tabletop-panel-notice" hidden></p>
       </header>
 
@@ -1167,6 +1171,11 @@
   </div>
 </div>
 
+<details id="spellbook-card" class="section spell-level-section" open hidden>
+  <summary><h3 id="spellbook-title" class="summary-title-inline">法術書</h3><button id="spellbook-manage" type="button">管理法術書</button></summary>
+  <div id="spellbook-list" class="spellbook-grid"></div>
+  <p class="spell-note-muted spellbook-legend">* 為儀式法術；紅字為已準備法術。</p>
+</details>
 <details class="section spell-level-section" open>
   <summary><h3 class="summary-title-inline">戲法</h3></summary>
   <div id="cantrips-area"></div>
@@ -2442,7 +2451,7 @@ async function handleEldritchInvocationChange(el, event, output) {
   }
 
   if (el.checked && el.dataset.invocationName === "書之魔契" && event.isTrusted) {
-    const selection = await window.quickBuild?.openPactTomeModal?.({
+    const selection = await window.Spellbook?.openTomeSelection?.({
       initial: getPactTomeSpellSelection(),
       knownSpellIds: getNonPactTomeSelectedSpellIds()
     });
@@ -4523,7 +4532,7 @@ const defaultAbilityByClass = {
   const abilityChoiceCloseBtn = document.getElementById("ability-choice-close");
   const abilityChoiceDefaultBtn = document.getElementById("ability-choice-default");
   const abilityChoicePointBuyBtn = document.getElementById("ability-choice-point-buy");
-  const quickCardBuilderBtn = document.getElementById("quick-card-builder");
+  const abilityRollBtn = document.getElementById("ability-choice-roll");
   const backgroundSelect = document.getElementById("background");
   const classSelect = document.getElementById("class");
   const defaultAbilityClassCloseBtn = document.getElementById("default-ability-class-close");
@@ -4856,7 +4865,22 @@ const defaultAbilityByClass = {
     closeAbilityChoiceModal({ restoreFocus: false });
     openPointBuyModal();
   });
-  quickCardBuilderBtn?.addEventListener("click", () => closeAbilityChoiceModal({ restoreFocus: false }));
+  abilityRollBtn?.addEventListener("click", () => {
+    closeAbilityChoiceModal({ restoreFocus: false });
+    window.DiceRoller?.rollAbilities({
+      trigger: triggerButton,
+      abilities: abilities.map(key => ({ key, label: abilityLabels[key] })),
+      onApply(scores) {
+        for (const key of abilities) {
+          const field = document.getElementById(key);
+          if (!field) continue;
+          field.value = scores[key];
+          field.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+        if (typeof scheduleSaveAllFields === "function") scheduleSaveAllFields();
+      }
+    });
+  });
   abilityChoiceCloseBtn?.addEventListener("click", closeAbilityChoiceModal);
   abilityChoiceModal?.addEventListener("click", (event) => {
     if (event.target === abilityChoiceModal) closeAbilityChoiceModal();
@@ -6674,7 +6698,9 @@ function updatePreparedSpellCounts() {
   const total = counts.reduce((sum, count) => sum + count, 0);
   const ringLabels = ["一環", "二環", "三環", "四環"];
   const parts = [`準備法術總數：${total}`].concat(counts.map((count, index) => `${ringLabels[index]}：${count}`));
-  target.textContent = `〔${parts.join(" | ")}〕`;
+  const preparedLimit = window.getPreparedSpellLimit(classValue, level);
+  const classLabel = document.getElementById("class")?.selectedOptions[0]?.textContent?.trim() || classValue;
+  target.textContent = `〔${parts.join(" | ")}〕${preparedLimit === null ? "" : ` ${classLabel}等級${level} 準備法術數量 ${preparedLimit}`}`;
   target.hidden = false;
 }
 
@@ -6714,6 +6740,7 @@ function updatePickedSpellBoxes() {
   updatePreparedSpellCounts();
   updateSpellOverviewManagementVisibility();
   updateSpellListStatusNote();
+  window.Spellbook?.render();
   if (typeof populateHandAttacks === "function") populateHandAttacks();
 }
 
@@ -7668,17 +7695,14 @@ function setupUtilityMenu() {
 
   let isOpen = false;
   const themeKey = "dnd.theme.v1";
-  const themeButton = document.getElementById("theme-toggle");
+  const themeToggle = document.getElementById("theme-toggle");
   const themeLabel = document.getElementById("theme-toggle-label");
-  const themeIcon = document.getElementById("theme-toggle-icon");
 
   const applyTheme = (theme, { persist = true } = {}) => {
     const nextTheme = theme === "dark" ? "dark" : "light";
     document.documentElement.dataset.theme = nextTheme;
-    const themeActionLabel = nextTheme === "dark" ? "換淺色主題" : "換深色主題";
-    if (themeButton) themeButton.setAttribute("aria-label", themeActionLabel);
-    if (themeLabel) themeLabel.textContent = themeActionLabel;
-    if (themeIcon) themeIcon.textContent = nextTheme === "dark" ? "☀️" : "🌙";
+    if (themeToggle) themeToggle.checked = nextTheme === "dark";
+    if (themeLabel) themeLabel.textContent = "更換主題顏色";
     if (persist) {
       try {
         window.dndStorage.setItem(themeKey, nextTheme);
@@ -7689,9 +7713,21 @@ function setupUtilityMenu() {
   };
 
   applyTheme(document.documentElement.dataset.theme, { persist: false });
-  themeButton?.addEventListener("click", () => {
-    applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
+  themeToggle?.addEventListener("change", () => {
+    applyTheme(themeToggle.checked ? "dark" : "light");
   });
+
+  const updateMenuHeight = () => {
+    if (!isOpen) return;
+    // offsetTop excludes the menu's entrance transform; include the shell border.
+    const top = shell.getBoundingClientRect().top + shell.clientTop + menu.offsetTop;
+    menu.style.setProperty("--utility-menu-top", `${top}px`);
+  };
+  window.addEventListener("resize", updateMenuHeight);
+  if (typeof ResizeObserver === "function") {
+    const menuPositionObserver = new ResizeObserver(updateMenuHeight);
+    menuPositionObserver.observe(shell);
+  }
 
   const setOpen = (open, { restoreFocus = false } = {}) => {
     isOpen = !!open;
@@ -7704,6 +7740,7 @@ function setupUtilityMenu() {
     toggle.setAttribute("aria-expanded", String(isOpen));
     toggle.setAttribute("aria-label", isOpen ? "關閉工具選單" : "開啟工具選單");
     if (isOpen) {
+      updateMenuHeight();
       // 工具選單出現後才在背景預熱 PDF 引擎；一般創角流程不下載任何 PDF 資源。
       ensurePdfExportReady().catch((error) => {
         console.warn("PDF 匯出引擎背景載入失敗：", error);
@@ -7930,6 +7967,7 @@ function collectStateObject(options = {}) {
   });
   data.__deletedSpellRowCache = cloneDeletedSpellRowCache(deletedSpellRowCache);
   data.__pactTomeSpellSelection = getPactTomeSpellSelection();
+  data.__wizardSpellbook = window.Spellbook?.getState() || { version: 1, spellIds: [] };
   data.__bardMagicalDiscoverySelection = getBardMagicalDiscoverySelection();
   data.__classFeatureCantrips = Object.fromEntries(Array.from(document.querySelectorAll(`.spell-entry[data-spell-source="${CLASS_SPELL_SOURCE}"]`))
     .filter(row => row.dataset.sourceKey?.includes("-warrior-cantrip-"))
@@ -8210,6 +8248,7 @@ function applyStateObject(data) {
     syncAutomaticKeyStatsMode();
     updateOffHandRolePresentation();
     window.TabletopMode?.applyState?.(data);
+    window.Spellbook?.restoreState(data);
   } finally {
     autosaveSuspended = prevAutosaveSuspended;
   }
@@ -8315,8 +8354,8 @@ async function ensurePdfExportReady() {
     pdfExportLoaderPromise = (async () => {
       await loadScriptOnce("pdf-lib.custom.min.js");
       await loadScriptOnce("fontkit.custom.min.js");
-      await loadScriptOnce("pdf-field-map.js");
-      await loadScriptOnce("pdf-export.js");
+      await loadScriptOnce("pdf-field-map.js?v=20260913-spellbook-notes");
+      await loadScriptOnce("pdf-export.js?v=20260913-spellbook-option");
     })().catch((error) => {
       pdfExportLoaderPromise = null;
       throw error;
@@ -8612,10 +8651,12 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
       tiefling: { key:"tieflingLegacy", title:"請選擇邪魔遺贈", options:[["abyssal","深淵血統"],["chthonic","冥界血統"],["infernal","煉獄血統"]] }
     };
     const steps=["precheck","name","equipment"];
+    if (state?.class === "wizard") steps.push("spellbook");
     const result={
       characterName:window.TabletopMode?.getCharacterName?.() || "",
       englishName:"",
       includeDefaultEquipment:false,
+      includeSpellbook:true,
       dragonbornAncestry:(state?.["dragonborn-ancestry"] || "").trim(),
       elfLineage:(state?.["elf-lineage"] || "").trim(),
       gnomeLineage:(state?.["gnome-lineage"] || "").trim(),
@@ -8672,6 +8713,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
           ? ['預設裝備已加入','創角小幫手已將實際選擇寫入「攜帶物品」。']
           : ['加入預設裝備','決定是否把職業與背景提供的起始裝備一併寫入。'],
         race:[raceChoice?.title || '選擇種族特性','這項選擇會影響角色能力與 PDF 內容。'],
+        spellbook:['是否將法術書寫入法術 notes？','選擇是否附上書內法術清單。原有法術筆記會照常輸出。'],
         format:['選擇 PDF 格式','最後一步：依照是否需要後續編輯來選擇。']
       };
       const viewTitle=type==='error' ? 'PDF 匯出失敗' : type==='progress' ? '正在製作 PDF' : stepTitles[step]?.[0] || 'PDF 匯出';
@@ -8753,6 +8795,18 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
           createChoice('只使用目前裝備','不加入職業與背景提供的預設裝備。',false),
           createChoice('包含預設裝備','一併加入職業與背景提供的起始裝備。',true)
         );
+        d.appendChild(choices); choices.querySelector('button')?.focus(); a.hidden=true;
+      }
+      else if(step==='spellbook'){
+        const choices=document.createElement('div'); choices.className='pdf-export-choice-options';
+        [[true,'是','將法術書清單寫入 PDF 的法術 notes。'],[false,'否','省略自動附加的法術書清單。']].forEach(([value,title,description])=>{
+          const button=document.createElement('button'); button.type='button'; button.className='pdf-export-choice-option';
+          const strong=document.createElement('strong'); strong.textContent=title;
+          const detail=document.createElement('span'); detail.textContent=description;
+          button.append(strong,detail);
+          button.onclick=()=>{result.includeSpellbook=value;idx++;render();};
+          choices.appendChild(button);
+        });
         d.appendChild(choices); choices.querySelector('button')?.focus(); a.hidden=true;
       }
       else if(step==='race'){
@@ -8969,6 +9023,7 @@ async function downloadQuickBuildCompactPdf() {
       characterName,
       englishName: "",
       includeDefaultEquipment: false,
+      includeSpellbook: true,
       dragonbornAncestry: (state["dragonborn-ancestry"] || "").trim(),
       elfLineage: (state["elf-lineage"] || "").trim(),
       gnomeLineage: (state["gnome-lineage"] || "").trim(),
@@ -9720,8 +9775,7 @@ window.addEventListener("DOMContentLoaded", async function() {
     <p class="ability-choice-tip">２７購點自行分配，也可選職業預設。</p>
     <div class="ability-choice-actions">
       <button type="button" id="ability-choice-point-buy">２７購點</button>
-      <hr class="ability-choice-divider">
-      <button type="button" id="quick-card-builder">創角小幫手</button>
+      <button type="button" id="ability-choice-roll">屬性擲骰</button>
     </div>
   </div>
 </div>
@@ -9834,11 +9888,11 @@ window.addEventListener("DOMContentLoaded", async function() {
       <div>SRD 5.2.1 material under CC BY 4.0.</div>
     </div>
     <div class="legal-modal-actions">
-      <button type="button" id="legal-onboarding-btn">🧭 新手導覽</button>
-      <button type="button" id="legal-ack-btn" aria-label="關閉提醒">我知道了</button>
+      <button type="button" id="legal-onboarding-btn">快速創角 LV1</button>
+      <button type="button" id="legal-ack-btn" aria-label="開始使用">開始使用</button>
     </div>
     <div class="legal-modal-dismiss">
-      <label><input type="checkbox" id="legal-dismiss"> 不要再提醒我</label>
+      <label><input type="checkbox" id="legal-dismiss"> 不再顯示此視窗</label>
     </div>
   </div>
 </div>

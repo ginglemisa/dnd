@@ -44,7 +44,7 @@
           ritualAllowed: row?.dataset.ritualAllowed === "true" || spellSource === "manual",
           freeUseControls
         }];
-      });
+      }).concat(globalScope.Spellbook?.getRitualEntries() || []);
   }
 
   function isSpellCurrentlySelected(spellId) {

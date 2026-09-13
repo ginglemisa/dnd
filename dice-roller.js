@@ -3,6 +3,7 @@
   const STORAGE_KEY = "dnd.diceSystemEnabled.v1";
   const HISTORY_STORAGE_KEY = "dnd.diceRollHistory.v1";
   const ROLL_ANIMATION_MS = 1800;
+  const ABILITY_ROLL_ANIMATION_MS = 1200;
   const REDUCED_MOTION_ROLL_MS = 100;
   const LONG_PRESS_MS = 1200;
   const HISTORY_CLEAR_LONG_PRESS_MS = 3000;
@@ -43,6 +44,7 @@
     let rollSequence = 0;
     let currentResults = [];
     let currentView = "results";
+    let abilitySession = null;
     const loadHistory = () => {
       try {
         const stored = JSON.parse(window.dndStorage?.getItem(HISTORY_STORAGE_KEY) || "[]");
@@ -58,7 +60,7 @@
             label: String(entry.label || "").trim(),
             expression: entry.expression,
             total: Number.isFinite(entry.total) ? entry.total : null,
-            values: Object.freeze(values.map(value => Object.freeze({ value: value.value, sides: value.sides })))
+            values: Object.freeze(values.map(value => Object.freeze({ value: value.value, sides: value.sides, ...(value.dropped === true ? { dropped: true } : {}) })))
           });
         }).filter(Boolean).slice(0, HISTORY_LIMIT);
       } catch (_error) {
@@ -85,6 +87,10 @@
 
     const restoreHistoryHeader = () => {
       title.textContent = "擲骰";
+      stage.setAttribute("role", "status");
+      stage.setAttribute("aria-live", "polite");
+      totalOutput.hidden = Boolean(abilitySession);
+      if (abilitySession) card.removeAttribute("aria-describedby");
       removeDetailNavigation();
       if (viewTabs && !viewTabs.isConnected) totalBar?.prepend(viewTabs);
     };
@@ -97,7 +103,8 @@
       historyButton.setAttribute("aria-label", `顯示擲骰紀錄${recordCount ? `，共 ${recordCount} 筆` : ""}`);
       totalButton.classList.toggle("is-active", !showingHistory);
       totalButton.setAttribute("aria-pressed", String(!showingHistory));
-      totalButton.setAttribute("aria-label", "顯示目前擲骰總和");
+      totalButton.textContent = abilitySession ? "屬性" : "總和";
+      totalButton.setAttribute("aria-label", abilitySession ? "返回屬性分配" : "顯示目前擲骰總和");
       historyButton.disabled = isRolling;
       totalButton.disabled = isRolling;
     };
@@ -217,6 +224,18 @@
             Object.assign(document.createElement("span"), { textContent: formatHistoryEntry(entry) }),
             Object.assign(document.createElement("span"), { className: "dice-roller-history-chevron", textContent: "›", ariaHidden: "true" })
           );
+          if (entry.values.some(value => value.dropped)) {
+            const dice = document.createElement("span");
+            dice.className = "dice-ability-history-dice";
+            entry.values.forEach(({ value, dropped }) => {
+              const die = document.createElement("span");
+              die.className = dropped ? "is-dropped" : "";
+              die.textContent = String(value);
+              die.setAttribute("aria-label", `D6：${value}${dropped ? "，捨棄" : ""}`);
+              dice.append(die);
+            });
+            button.firstElementChild.append(dice);
+          }
           button.addEventListener("click", () => renderHistoryDetail(entry));
           if (entry === focusEntry) focusTarget = button;
           item.append(button);
@@ -234,7 +253,8 @@
     };
 
     const showCurrentResult = () => {
-      if (currentResults.length) renderResults(currentResults);
+      if (abilitySession) renderAbilitySession();
+      else if (currentResults.length) renderResults(currentResults);
       else renderEmptyStage();
     };
 
@@ -260,19 +280,21 @@
       heading.textContent = entry.label ? `${entry.label}｜${entry.expression}` : entry.expression;
       const results = document.createElement("div");
       results.className = "dice-roller-detail-results";
-      entry.values.forEach(({ value, sides }, index) => {
+      entry.values.forEach(({ value, sides, dropped }, index) => {
         const result = document.createElement("span");
         result.className = "dice-roller-detail-result";
         if (value === 1) result.classList.add("is-low");
         if (value === sides) result.classList.add("is-high");
+        if (dropped) result.classList.add("is-dropped");
         result.textContent = formatNumber(value);
-        result.setAttribute("aria-label", `第 ${index + 1} 顆 D${sides}：${value}`);
+        result.setAttribute("aria-label", `第 ${index + 1} 顆 D${sides}：${value}${dropped ? "，捨棄最低骰" : ""}`);
         results.appendChild(result);
       });
       detail.append(heading, results);
       stage.setAttribute("aria-label", `${formatHistoryEntry(entry)}，共 ${entry.values.length} 顆骰子。`);
       stage.replaceChildren(detail);
       totalOutput.textContent = Number.isFinite(entry.total) ? formatNumber(entry.total) : "—";
+      totalOutput.hidden = false;
       updateHistoryButton();
       backButton.focus({ preventScroll: true });
     };
@@ -282,7 +304,7 @@
         label: String(label || "").trim(),
         expression,
         total,
-        values: Object.freeze(values.map(({ value, sides }) => Object.freeze({ value, sides })))
+        values: Object.freeze(values.map(({ value, sides, dropped }) => Object.freeze({ value, sides, ...(dropped ? { dropped: true } : {}) })))
       }));
       if (historyEntries.length > HISTORY_LIMIT) historyEntries.length = HISTORY_LIMIT;
       saveHistory();
@@ -307,6 +329,159 @@
         return (values[0] % sides) + 1;
       }
       return Math.floor(Math.random() * sides) + 1;
+    };
+
+    const resetAbilitySession = () => {
+      if (abilitySession && isRolling) cancelRoll();
+      abilitySession = null;
+      card.classList.remove("is-ability-roll");
+      card.querySelector(".dice-roller-controls").hidden = false;
+      card.setAttribute("aria-describedby", "dice-roller-instructions");
+      totalOutput.hidden = false;
+    };
+
+    const renderAbilitySession = () => {
+      restoreHistoryHeader();
+      currentView = "abilities";
+      title.textContent = "屬性擲骰";
+      stage.classList.add("is-history");
+      stage.setAttribute("role", "region");
+      stage.setAttribute("aria-live", "off");
+      stage.setAttribute("aria-label", "六組屬性結果與分配");
+      stage.replaceChildren(abilitySession.form);
+      card.setAttribute("aria-describedby", "dice-ability-instructions");
+      stage.scrollTop = 0;
+      updateHistoryButton();
+    };
+
+    // This dedicated entry uses the shared RNG and history, even when automatic dice are off.
+    const rollAbilities = (options = {}) => {
+      const abilities = options.abilities;
+      if (!Array.isArray(abilities) || abilities.length !== 6 || new Set(abilities.map(ability => ability.key)).size !== 6 || typeof options.onApply !== "function") return false;
+      cancelRoll();
+      let rolls = [];
+      let sortedRolls = [];
+      const form = document.createElement("form");
+      form.className = "dice-ability-form";
+      form.innerHTML = `
+        <p id="dice-ability-instructions" class="dice-ability-hint">六次 4d6 取 3 高，分配給六項屬性。</p>
+        <div class="dice-ability-results" aria-label="可用數值"></div>
+        <div class="dice-ability-assignments" role="group" aria-label="分配基礎屬性"></div>
+        <fieldset class="dice-ability-background">
+          <legend>背景加值</legend>
+          <div class="dice-ability-pattern" role="group" aria-label="背景加值方式">
+            <label><input type="radio" name="ability-bonus-pattern" value="1,1,1" checked> +1／+1／+1</label>
+            <label><input type="radio" name="ability-bonus-pattern" value="2,1,0"> +2／+1</label>
+          </div>
+          <div class="dice-ability-bonuses"></div>
+        </fieldset>
+        <p class="dice-ability-status" aria-live="polite"></p>
+        <button type="submit" class="dice-ability-apply" disabled>套用至角色卡</button>`;
+      const results = form.querySelector(".dice-ability-results");
+      const startButton = document.createElement("button");
+      startButton.type = "button";
+      startButton.className = "dice-ability-start";
+      startButton.innerHTML = '<span class="dice-ability-art" aria-hidden="true"><canvas width="360" height="360"></canvas></span><span class="dice-ability-start-label">點擊開啟命運</span>';
+      results.append(startButton);
+      // Snapshot the existing animated asset once, keeping the invitation still until clicked.
+      const staticDice = new Image();
+      const canvas = startButton.querySelector("canvas");
+      staticDice.onload = () => canvas.getContext("2d")?.drawImage(staticDice, 0, 0, canvas.width, canvas.height);
+      staticDice.onerror = () => { startButton.querySelector(".dice-ability-art").textContent = "🎲"; };
+      staticDice.src = "dice.webp";
+      const makeSelect = (parent, labelText, ariaLabel) => {
+        const label = document.createElement("label");
+        const caption = document.createElement("span");
+        caption.textContent = labelText;
+        const select = document.createElement("select");
+        select.setAttribute("aria-label", ariaLabel);
+        label.append(caption, select);
+        parent.append(label);
+        return select;
+      };
+      const assignments = abilities.map(({ label }) => makeSelect(form.querySelector(".dice-ability-assignments"), label, `${label}基礎值`));
+      const bonuses = Array.from({ length: 3 }, (_, i) => makeSelect(form.querySelector(".dice-ability-bonuses"), "+1", `背景屬性 ${i + 1}`));
+      const populateRemaining = (selects, choices, placeholder) => {
+        const selected = selects.map(select => select.value);
+        selects.forEach((select, index) => {
+          const available = choices.filter(choice => choice.value === selected[index] || !selected.includes(choice.value));
+          select.replaceChildren(new Option(placeholder, ""), ...available.map(choice => new Option(choice.label, choice.value)));
+          select.value = selected[index];
+        });
+      };
+      const getBonuses = () => form.querySelector('input[name="ability-bonus-pattern"]:checked').value.split(",").map(Number);
+      const getScores = () => {
+        const increments = getBonuses();
+        return Object.fromEntries(abilities.map(({ key }, index) => [key,
+          rolls[Number(assignments[index].value)].total + bonuses.reduce((sum, select, i) => sum + (select.value === key ? increments[i] : 0), 0)
+        ]));
+      };
+      const updateForm = () => {
+        populateRemaining(assignments, sortedRolls.map(roll => ({ value: roll.id, label: String(roll.total) })), "選數值");
+        assignments.forEach(select => { select.disabled = !rolls.length; });
+        populateRemaining(bonuses, abilities.map(ability => ({ value: ability.key, label: ability.label })), "選屬性");
+        const increments = getBonuses();
+        bonuses.forEach((select, index) => { select.previousElementSibling.textContent = increments[index] ? `+${increments[index]}` : "不加值"; });
+        const complete = rolls.length === 6 && [...assignments, ...bonuses].every(select => select.value !== "");
+        form.querySelector(".dice-ability-apply").disabled = !complete;
+        const scores = complete ? getScores() : null;
+        form.querySelector(".dice-ability-status").textContent = complete
+          ? abilities.map(({ key, label }) => `${label} ${scores[key]}`).join(" · ")
+          : "分配六個數值，並選擇三個不同的背景屬性。";
+      };
+      startButton.addEventListener("click", () => {
+        if (isRolling || rolls.length) return;
+        const session = abilitySession;
+        isRolling = true;
+        startButton.disabled = true;
+        closeButton.focus({ preventScroll: true });
+        startButton.setAttribute("aria-busy", "true");
+        startButton.querySelector(".dice-ability-start-label").textContent = "命運轉動中…";
+        if (!reduceMotion.matches) {
+          const animation = new Image();
+          animation.alt = "";
+          animation.src = `dice.webp?roll=${++rollSequence}`;
+          startButton.querySelector(".dice-ability-art").replaceChildren(animation);
+        }
+        updateControls();
+        rollTimer = window.setTimeout(() => {
+          rollTimer = 0;
+          if (abilitySession !== session || !isOpen) return;
+          isRolling = false;
+          rolls = Array.from({ length: 6 }, (_, index) => {
+            const values = Array.from({ length: 4 }, () => ({ sides: 6, value: rollDie(6) }));
+            const minimum = Math.min(...values.map(die => die.value));
+            values[values.findIndex(die => die.value === minimum)].dropped = true;
+            return { id: String(index), total: values.reduce((sum, die) => sum + (die.dropped ? 0 : die.value), 0), values };
+          });
+          // Keep the six history rows in their original order, newest batch first.
+          [...rolls].reverse().forEach(({ id, total, values }) => addHistoryEntry({
+            label: `屬性 ${Number(id) + 1}`, expression: "4d6 取 3 高", total, values
+          }));
+          sortedRolls = [...rolls].sort((a, b) => b.total - a.total);
+          results.replaceChildren(...sortedRolls.map(roll => Object.assign(document.createElement("strong"), { textContent: String(roll.total) })));
+          updateForm();
+          updateControls();
+          assignments[0].focus({ preventScroll: true });
+        }, ABILITY_ROLL_ANIMATION_MS);
+      });
+      form.addEventListener("change", updateForm);
+      form.addEventListener("submit", event => {
+        event.preventDefault();
+        if (rolls.length !== 6 || [...assignments, ...bonuses].some(select => select.value === "")) return;
+        options.onApply(getScores());
+        closeModal();
+        window.AppDialog?.notify("已套用六項屬性，含背景加值。", { tone: "success" });
+      });
+      abilitySession = { form };
+      currentResults = [];
+      card.classList.add("is-ability-roll");
+      card.querySelector(".dice-roller-controls").hidden = true;
+      card.setAttribute("aria-describedby", "dice-ability-instructions");
+      updateForm();
+      openModal(options.trigger);
+      renderAbilitySession();
+      return true;
     };
 
     const normalizeRollRequest = request => {
@@ -592,6 +767,7 @@
         return Object.freeze({ ok: false, reason: "roll-failed", results: Object.freeze([]) });
       }
 
+      resetAbilitySession();
       openModal(options.trigger);
       renderAutomatedRolls(rolls, options);
       const results = Object.freeze(rolls.map(({ result }) => result));
@@ -714,6 +890,7 @@
 
     const closeModal = () => {
       if (!isOpen) return;
+      if (abilitySession && isRolling) cancelRoll();
       isOpen = false;
       modal.classList.remove("is-open");
       modal.setAttribute("aria-hidden", "true");
@@ -746,7 +923,8 @@
       roll: performQuickRoll,
       rollExpression,
       rollExpressions,
-      rollExpressionsInModal
+      rollExpressionsInModal,
+      rollAbilities
     });
 
     dieButtons.forEach(button => {
@@ -791,7 +969,13 @@
     });
 
     toggle.addEventListener("change", () => setEnabled(toggle.checked));
-    fab.addEventListener("click", () => openModal(fab));
+    fab.addEventListener("click", () => {
+      if (abilitySession) {
+        resetAbilitySession();
+        renderEmptyStage();
+      }
+      openModal(fab);
+    });
     closeButton.addEventListener("click", closeModal);
     historyButton.addEventListener("click", () => renderHistory());
     totalButton.addEventListener("click", showCurrentResult);
