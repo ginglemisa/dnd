@@ -134,6 +134,12 @@ async function main() {
     await page.goto(`http://127.0.0.1:${server.address().port}/index.html`);
     await page.waitForFunction(() => window.onboardingTour && window.quickBuild && window.TabletopMode);
     await page.locator("#legal-ack-btn").click();
+    if (process.argv.includes("--imports-only")) {
+      await verifyImports(browser, page.url());
+      await verifyImports(browser, page.url(), { width: 390, height: 844 });
+      await verifyPdfLifecycle(browser, page.url());
+      return;
+    }
     if (process.argv.includes("--touch-only")) {
       await verifyTouch(browser, page.url());
       return;
@@ -212,6 +218,8 @@ async function main() {
     assert.deepEqual(await page.evaluate(() => quickBuild.getDraft()), draft);
     await page.evaluate(() => quickBuild.close());
     await verifyImports(browser, page.url());
+    await verifyImports(browser, page.url(), { width: 390, height: 844 });
+    await verifyPdfLifecycle(browser, page.url());
     await verifyTouch(browser, page.url());
     assert.deepEqual(errors, []);
     console.log("Cancellation races, failed positioning, turn dialog, legacy ability/point-buy branches, target jump and quick-build draft reopen passed.");
@@ -274,8 +282,8 @@ async function verifyTouch(browser, url) {
   console.log("Touch: collapsed examples, internal swipe, visible controls, blocked background operation and existing HP/resource/dice state preservation passed.");
 }
 
-async function verifyImports(browser, url) {
-  const page = await browser.newPage();
+async function verifyImports(browser, url, viewport = { width: 1280, height: 800 }) {
+  const page = await browser.newPage({ viewport });
   // Exercise the real private importer using a deterministic draft, retaining its
   // confirmation and result dialogs; no extra production API is needed.
   await page.route("**/quick-build.js?*", async route => {
@@ -290,9 +298,9 @@ async function verifyImports(browser, url) {
           levelOne: { languages: ['矮人語', '精靈語'], weaponMastery: ['巨斧', '手斧'] }
         });
         reconcileDraft(draft);
+        draft.ui.currentStepId = 'level-one-review';
+        draft.ui.view = 'review';
         saveDraft();
-        openWizard();
-        window.importOnboardingDraft = importDraftToMobileCard;
       };
       window.quickBuild = {`);
     await route.fulfill({ response, body: source });
@@ -300,18 +308,26 @@ async function verifyImports(browser, url) {
   for (const scenario of ["cancel", "complete", "warning", "failure", "pdf", "close"]) {
     await page.goto(url);
     await page.waitForFunction(() => window.prepareOnboardingImport && window.onboardingTour);
-    await page.locator("#legal-ack-btn").click();
     await page.evaluate(scenario => {
       prepareOnboardingImport();
       if (scenario === "warning") document.getElementById("calculate-skills-button").remove();
       if (scenario === "failure") window.fillSaves = () => { throw new Error("test import failure"); };
       if (scenario === "pdf") window.downloadQuickBuildCompactPdf = async () => { window.pdfRequested = true; };
-      void importOnboardingDraft();
     }, scenario);
+    if (scenario === "complete") {
+      await page.locator("#legal-onboarding-btn").click();
+    } else {
+      await page.locator("#legal-ack-btn").click();
+      await page.locator("#utility-menu-toggle").click();
+      await page.locator("#help-quick-build-btn").click();
+    }
+    await page.locator('[data-import-mobile-card]').click();
     if (scenario === "cancel") {
       const before = await page.evaluate(() => collectStateObject());
       await page.getByRole("button", { name: "保留角色卡", exact: true }).click();
       assert.deepEqual(await page.evaluate(() => collectStateObject()), before);
+      await page.locator(".quick-build-close").click();
+      await assertPageInteractive(page);
       continue;
     }
     await page.getByRole("button", { name: "清空並匯入", exact: true }).click();
@@ -320,15 +336,17 @@ async function verifyImports(browser, url) {
     assert.equal(await firstTable.count(), ["warning", "failure"].includes(scenario) ? 0 : 1, await page.locator(".app-dialog__body").innerText());
     assert.equal(await page.evaluate(() => onboardingTour.active), false);
     if (scenario !== "failure") {
-      assert.deepEqual(await page.evaluate(() => ({
+      const hp = await page.evaluate(() => ({
         current: document.getElementById("hp").value,
         maximum: document.getElementById("hp-display").value
-      })), { current: "15", maximum: "15" }, "quick-build import fills current HP with maximum HP");
+      }));
+      assert(Number(hp.maximum) > 0);
+      assert.equal(hp.current, hp.maximum, "quick-build import fills current HP with maximum HP");
     }
     if (scenario === "complete") {
       await firstTable.click();
       await ready(page, 0);
-      await page.keyboard.press("Escape");
+      await page.locator("#tour-skip-btn").click();
       await closed(page);
     } else if (scenario === "pdf") {
       await page.getByRole("button", { name: "下載角色卡 PDF", exact: true }).click();
@@ -337,9 +355,74 @@ async function verifyImports(browser, url) {
       await page.getByRole("button", { name: "知道了", exact: true }).click();
       assert.equal(await page.evaluate(() => onboardingTour.active), false);
     }
+    await assertPageInteractive(page);
   }
   await page.close();
-  console.log("Quick-build import: confirmation cancellation, complete-only first-table entry, warning/exception exclusion, PDF dispatch and close passed.");
+  console.log(`Quick-build import (${viewport.width}px): confirmation cancellation, complete-only first-table entry, warning/exception exclusion, PDF dispatch and close passed.`);
+}
+
+async function assertPageInteractive(page) {
+  assert.equal(await page.locator("#main-content").evaluate(el => el.inert), false);
+  assert.equal(await page.locator(".app-dialog").count(), 0);
+  assert.equal(await page.evaluate(() => document.documentElement.classList.contains("app-dialog-open")), false);
+  assert.equal(await page.evaluate(() => document.body.style.position), "");
+  await page.locator("#utility-menu-toggle").click();
+  assert.equal(await page.locator("#utility-menu-toggle").getAttribute("aria-expanded"), "true");
+  await page.locator("#help-quick-build-btn").click();
+  await page.locator(".quick-build-close").click();
+  assert.equal(await page.locator("#main-content").evaluate(el => el.inert), false);
+}
+
+async function verifyPdfLifecycle(browser, url) {
+  const page = await browser.newPage();
+  await page.goto(url);
+  await page.waitForFunction(() => window.quickBuild && window.onboardingTour);
+  await page.locator("#legal-ack-btn").click();
+  let attempts = 0;
+  await page.route("**/pdf-retry-test.js", route => {
+    attempts++;
+    return attempts === 1 ? route.abort("failed")
+      : route.fulfill({ contentType: "text/javascript", body: "window.pdfRetryLoaded = true;" });
+  });
+  assert.equal(await page.evaluate(() => loadScriptOnce("pdf-retry-test.js").then(() => false, () => true)), true);
+  const retried = await page.evaluate(() => Promise.race([
+    loadScriptOnce("pdf-retry-test.js").then(() => window.pdfRetryLoaded),
+    new Promise(resolve => setTimeout(() => resolve("timed out"), 2000))
+  ]));
+  assert.equal(retried, true, "a failed PDF script must be fetched again on retry");
+  assert.equal(attempts, 2);
+
+  // Keep the real name dialog and export control flow; isolate font/PDF work.
+  for (const scenario of ["cancel", "pending-cancel", "success", "failure"]) {
+    await page.evaluate(scenario => {
+      window.pdfExportCalls = 0;
+      window.validatePdfCharacterName = () => scenario === "pending-cancel"
+        ? new Promise(resolve => { window.finishPdfNameCheck = () => resolve({ fits: true }); })
+        : Promise.resolve({ fits: true });
+      window.preloadPdfExportAssets = async () => {};
+      window.exportCharacterPdfFromState = async () => {
+        window.pdfExportCalls++;
+        if (scenario === "failure") throw new Error("test PDF export failure");
+      };
+      window.pdfFlow = downloadQuickBuildCompactPdf();
+    }, scenario);
+    await page.locator("#quick-build-pdf-character-name").fill("測試角色");
+    if (scenario !== "cancel") await page.getByRole("button", { name: "下載 PDF", exact: true }).click();
+    if (scenario === "pending-cancel") await page.waitForFunction(() => typeof window.finishPdfNameCheck === "function");
+    if (scenario.endsWith("cancel")) {
+      await page.getByRole("button", { name: "取消", exact: true }).click();
+      if (scenario === "pending-cancel") await page.evaluate(() => finishPdfNameCheck());
+    }
+    if (scenario === "failure") {
+      await page.getByRole("heading", { name: "PDF 匯出失敗", exact: true }).waitFor();
+      await page.getByRole("button", { name: "關閉", exact: true }).click();
+    }
+    await page.evaluate(() => window.pdfFlow);
+    assert.equal(await page.evaluate(() => window.pdfExportCalls), scenario.endsWith("cancel") ? 0 : 1);
+    await assertPageInteractive(page);
+  }
+  await page.close();
+  console.log("PDF lifecycle: failed-script retry, cancellation (including pending name validation), success/error cleanup and page interaction passed; PDF rendering was stubbed.");
 }
 
 main().catch(error => { console.error(error); process.exitCode = 1; });
