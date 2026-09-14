@@ -32,22 +32,36 @@ function Get-BinaryMimeType {
   param([Parameter(Mandatory = $true)][string]$Path)
 
   switch ([System.IO.Path]::GetExtension($Path).ToLowerInvariant()) {
-    ".gif"  { return "image/gif" }
-    ".jpeg" { return "image/jpeg" }
-    ".jpg"  { return "image/jpeg" }
-    ".png"  { return "image/png" }
-    ".svg"  { return "image/svg+xml" }
-    ".webp" { return "image/webp" }
-    default  { throw "build-offline-nopdf.ps1: unsupported binary asset type: $Path" }
+    ".gif"   { return "image/gif" }
+    ".jpeg"  { return "image/jpeg" }
+    ".jpg"   { return "image/jpeg" }
+    ".png"   { return "image/png" }
+    ".svg"   { return "image/svg+xml" }
+    ".webp"  { return "image/webp" }
+    ".woff"  { return "font/woff" }
+    ".woff2" { return "font/woff2" }
+    ".ttf"   { return "font/ttf" }
+    ".otf"   { return "font/otf" }
+    default   { throw "build-offline-nopdf.ps1: unsupported binary asset type: $Path" }
   }
 }
 
 function Get-LocalAssetPath {
-  param([Parameter(Mandatory = $true)][string]$Reference)
+  param(
+    [Parameter(Mandatory = $true)][string]$Reference,
+    [string]$BaseDirectory = $root
+  )
 
   $relativePath = ($Reference -split '[?#]', 2)[0]
   $relativePath = [Uri]::UnescapeDataString($relativePath).Replace('/', [System.IO.Path]::DirectorySeparatorChar)
-  $candidatePath = [System.IO.Path]::GetFullPath((Join-Path $root $relativePath))
+
+  # Treat web-root references such as /assets/foo.webp as project-root relative.
+  if ($relativePath.StartsWith([System.IO.Path]::DirectorySeparatorChar)) {
+    $relativePath = $relativePath.TrimStart([System.IO.Path]::DirectorySeparatorChar)
+    $BaseDirectory = $root
+  }
+
+  $candidatePath = [System.IO.Path]::GetFullPath((Join-Path $BaseDirectory $relativePath))
   $rootPrefix = [System.IO.Path]::GetFullPath($root).TrimEnd('\', '/') + [System.IO.Path]::DirectorySeparatorChar
   if (-not $candidatePath.StartsWith($rootPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
     throw "build-offline-nopdf.ps1: local asset escapes the project directory: $Reference"
@@ -56,6 +70,77 @@ function Get-LocalAssetPath {
     throw "build-offline-nopdf.ps1: referenced local asset is missing: $Reference"
   }
   return $candidatePath
+}
+
+function Get-CssUrlReference {
+  param([Parameter(Mandatory = $true)][System.Text.RegularExpressions.Match]$Match)
+
+  $reference = $Match.Groups["reference"].Value.Trim()
+  if ($reference.Length -ge 2) {
+    $first = $reference.Substring(0, 1)
+    $last = $reference.Substring($reference.Length - 1, 1)
+    if (($first -eq '"' -and $last -eq '"') -or ($first -eq "'" -and $last -eq "'")) {
+      $reference = $reference.Substring(1, $reference.Length - 2).Trim()
+    }
+  }
+  return $reference
+}
+
+function Convert-CssLocalAssetsToDataUrls {
+  param(
+    [Parameter(Mandatory = $true)][string]$CssContent,
+    [Parameter(Mandatory = $true)][string]$StylesheetPath
+  )
+
+  $stylesheetDirectory = Split-Path -Parent $StylesheetPath
+  $cssUrlPattern = 'url\(\s*(?<reference>[^)]+?)\s*\)'
+  $cssUrlMatches = [System.Text.RegularExpressions.Regex]::Matches(
+    $CssContent,
+    $cssUrlPattern,
+    [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
+  )
+
+  foreach ($match in $cssUrlMatches) {
+    $reference = Get-CssUrlReference -Match $match
+    if (-not $reference) { continue }
+    if ($reference -match '^(?:data:|https?:|//|#)' -or $reference.Contains('${')) { continue }
+
+    $assetPath = Get-LocalAssetPath -Reference $reference -BaseDirectory $stylesheetDirectory
+    $dataUrl = Get-Base64BinaryDataUrl -Path $assetPath -MimeType (Get-BinaryMimeType -Path $assetPath)
+    $CssContent = $CssContent.Replace($match.Value, "url(`"$dataUrl`")")
+  }
+
+  # Do not silently generate an offline file whose stylesheet still depends on
+  # a local file. This catches future theme/background/font assets automatically.
+  $remainingLocalCssAssets = @(
+    [System.Text.RegularExpressions.Regex]::Matches(
+      $CssContent,
+      $cssUrlPattern,
+      [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
+    ) | Where-Object {
+      $reference = Get-CssUrlReference -Match $_
+      $reference -and
+        $reference -notmatch '^(?:data:|https?:|//|#)' -and
+        -not $reference.Contains('${')
+    }
+  )
+
+  if ($remainingLocalCssAssets.Count -gt 0) {
+    $missingAssets = ($remainingLocalCssAssets | ForEach-Object { Get-CssUrlReference -Match $_ } | Sort-Object -Unique) -join ", "
+    throw "build-offline-nopdf.ps1: stylesheet local assets were not embedded: $missingAssets"
+  }
+
+  return $CssContent
+}
+
+function Get-StylesheetDataUrl {
+  param([Parameter(Mandatory = $true)][string]$Path)
+
+  $cssContent = Get-Content -Raw -Encoding UTF8 $Path
+  $cssContent = Convert-CssLocalAssetsToDataUrls -CssContent $cssContent -StylesheetPath $Path
+  $bytes = [System.Text.Encoding]::UTF8.GetBytes($cssContent)
+  $base64 = [Convert]::ToBase64String($bytes)
+  return "data:text/css;charset=utf-8;base64,$base64"
 }
 
 $html = Get-Content -Raw -Encoding UTF8 $sourceHtmlPath
@@ -105,7 +190,7 @@ foreach ($match in $stylesheetTags) {
   $reference = $match.Groups[1].Value
   if ($reference -match '^(?:data:|https?:|//)') { continue }
   $assetPath = Get-LocalAssetPath -Reference $reference
-  $dataUrl = Get-Base64TextDataUrl -Path $assetPath -MimeType "text/css;charset=utf-8"
+  $dataUrl = Get-StylesheetDataUrl -Path $assetPath
   $html = $html.Replace($match.Value, "<link rel=`"stylesheet`" href=`"$dataUrl`" data-offline-source=`"$reference`">")
 }
 
@@ -128,6 +213,18 @@ foreach ($match in $scriptTags) {
   # (for example dice.webp) can also be embedded into the offline build.
   $scriptContent = Get-Content -Raw -Encoding UTF8 $assetPath
 
+  # The normal site offers a compact-PDF action when Quick Build finishes.
+  # This build intentionally contains no PDF runtime, so remove that action
+  # instead of leaving a button that can only fail after the user clicks it.
+  if ([System.IO.Path]::GetFileName($assetPath).Equals("quick-build.js", [System.StringComparison]::OrdinalIgnoreCase)) {
+    $scriptContent = [System.Text.RegularExpressions.Regex]::Replace(
+      $scriptContent,
+      '\s*\{\s*label:\s*"下載角色卡 PDF"\s*,\s*intent:\s*"primary"\s*,\s*value:\s*"download-compact-pdf"\s*\}\s*,?',
+      '',
+      [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
+    )
+  }
+
   $embeddedBinaryReferences = [System.Text.RegularExpressions.Regex]::Matches(
     $scriptContent,
     '(?<quote>["''`])(?<binaryReference>(?!data:|https?:|//)[^"''`]*?\.(?:gif|jpeg|jpg|png|svg|webp)(?:\?[^"''`]*)?)(?<endquote>["''`])',
@@ -142,17 +239,15 @@ foreach ($match in $scriptTags) {
     $binaryReference = $binaryMatch.Groups["binaryReference"].Value
 
     # Remove query/hash before resolving the actual local file.
-    $binaryAssetPath = Get-LocalAssetPath -Reference $binaryReference
+    $binaryAssetPath = Get-LocalAssetPath -Reference $binaryReference -BaseDirectory (Split-Path -Parent $assetPath)
     $binaryMimeType = Get-BinaryMimeType -Path $binaryAssetPath
     $binaryDataUrl = Get-Base64BinaryDataUrl `
       -Path $binaryAssetPath `
       -MimeType $binaryMimeType
 
     $queryOrHash = ""
-    $binaryReferenceWithoutQuery = $binaryReference
 
     if ($binaryReference -match '^(.*?)([?#].*)$') {
-      $binaryReferenceWithoutQuery = $Matches[1]
       $queryOrHash = $Matches[2]
     }
 
@@ -223,8 +318,8 @@ foreach ($match in $iframeTags) {
   foreach ($stylesheetMatch in $embeddedStylesheetTags) {
     $stylesheetReference = $stylesheetMatch.Groups[1].Value
     if ($stylesheetReference -match '^(?:data:|https?:|//)') { continue }
-    $stylesheetPath = Get-LocalAssetPath -Reference $stylesheetReference
-    $stylesheetDataUrl = Get-Base64TextDataUrl -Path $stylesheetPath -MimeType "text/css;charset=utf-8"
+    $stylesheetPath = Get-LocalAssetPath -Reference $stylesheetReference -BaseDirectory (Split-Path -Parent $assetPath)
+    $stylesheetDataUrl = Get-StylesheetDataUrl -Path $stylesheetPath
     $embeddedHtml = $embeddedHtml.Replace($stylesheetMatch.Value, "<link rel=`"stylesheet`" href=`"$stylesheetDataUrl`" data-offline-source=`"$stylesheetReference`">")
   }
 
