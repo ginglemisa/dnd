@@ -3745,6 +3745,16 @@ input[type="checkbox"] {
   box-shadow: none;
 }
 
+html[data-ui-theme="warm"][data-theme="dark"] .circle-checkbox {
+  border-color: var(--border-strong);
+}
+
+html[data-ui-theme="warm"][data-theme="dark"] .circle-checkbox:checked {
+  border-color: var(--accent);
+  background: var(--accent);
+  box-shadow: inset 0 0 0 4px var(--surface-strong);
+}
+
 /* ===== Actions / Conditions / Equipment ===== */
 .condition-display-grid {
   display: grid;
