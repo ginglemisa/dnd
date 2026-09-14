@@ -2,6 +2,8 @@
   const DICE_SIDES = Object.freeze([100, 20, 12, 10, 8, 6, 4]);
   const STORAGE_KEY = "dnd.diceSystemEnabled.v1";
   const HISTORY_STORAGE_KEY = "dnd.diceRollHistory.v1";
+  const getDiceAsset = () => document.documentElement.dataset.uiTheme === "warm"
+    ? "dice-warm-animated.webp" : "dice.webp";
   const ROLL_ANIMATION_MS = 1800;
   const ABILITY_ROLL_ANIMATION_MS = 1200;
   const REDUCED_MOTION_ROLL_MS = 100;
@@ -391,7 +393,7 @@
       const canvas = startButton.querySelector("canvas");
       staticDice.onload = () => canvas.getContext("2d")?.drawImage(staticDice, 0, 0, canvas.width, canvas.height);
       staticDice.onerror = () => { startButton.querySelector(".dice-ability-art").textContent = "🎲"; };
-      staticDice.src = "dice.webp";
+      staticDice.src = getDiceAsset();
       const makeSelect = (parent, labelText, ariaLabel) => {
         const label = document.createElement("label");
         const caption = document.createElement("span");
@@ -450,7 +452,7 @@
         if (!reduceMotion.matches) {
           const animation = new Image();
           animation.alt = "";
-          animation.src = `dice.webp?roll=${++rollSequence}`;
+          animation.src = `${getDiceAsset()}?roll=${++rollSequence}`;
           startButton.querySelector(".dice-ability-art").replaceChildren(animation);
         }
         updateControls();
@@ -842,7 +844,7 @@
       } else {
         const animation = document.createElement("img");
         animation.className = "dice-roller-animation";
-        animation.src = `dice.webp?roll=${++rollSequence}`;
+        animation.src = `${getDiceAsset()}?roll=${++rollSequence}`;
         animation.alt = "";
         animation.setAttribute("aria-hidden", "true");
         stage.replaceChildren(animation);

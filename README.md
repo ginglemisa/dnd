@@ -25,7 +25,7 @@ twD20 是為 TRPG 新手、帶團者與教學活動設計的手機優先創角�
 - 1～8 級角色資料與選項，以及可切換的關鍵數值自動計算
 - 27 點購買、職業屬性範本、創角小幫手與新手導覽
 - 裝備與法術搜尋、動態動作選項及規則摘要
-- 藍白與深色外觀
+- 經典藍色與暖紙磚紅兩套主題，各自支援亮色／暗色；包含主題專用 Logo、骰子動畫與暖紙亮色紙紋
 
 ### 桌邊模式
 
@@ -44,6 +44,8 @@ twD20 是為 TRPG 新手、帶團者與教學活動設計的手機優先創角�
 - 可直接下載開啟的單檔離線版本
 
 右上角工具選單集中提供外觀與模式切換、操作設定、紀錄管理、QR Code、PDF 匯出、分享角卡、神祇參考及新手導覽。
+
+「更換主題顏色」開關切換經典／暖紙，左側 🌓 按鈕切換亮色／暗色，下方文字顯示目前組合。預設暖紙，沿用既有明暗偏好；兩個設定會各自記住，不包含在角色 JSON 或分享網址中。
 
 ## 資料保存與分享
 
@@ -66,13 +68,13 @@ python -m http.server 8000
 ## 專案結構
 
 - 網站入口與共用樣式：`index.html`、`styles.css`
+- 外觀與版面規格：[DESIGN.md](DESIGN.md)
 - 資料與共用規則：`character-rules.js`、`class-features.js`、`race.js`、`backgrounds.js`、`feats.js`、`tool-data.js`、`monster.js`、`equipment-data.js`、`equipment-notes.js`、`spell-list.js`、`condition.js`、`deity-info.js`
 - 角色卡互動：`action-panel.js`、`dice-roller.js`、`quick-build.js`、`onboarding-tour.js`、`app-dialog.js`、`scroll-to-top.js`
 - 桌邊模式：`tabletop-mode.js`（狀態與共用 API）、`tabletop-actions.js`（武器與行動）、`tabletop-druid.js`（德魯伊形態與職業專屬操作）、`tabletop-spells.js`（施法與專注）、`tabletop-resources.js`（內建與自訂資源）
 - PDF 匯出：`pdf-export.js`、`pdf-field-map.js`、`pdf-lib.custom.min.js`、`fontkit.custom.min.js`，以及角色紙與字型素材
 - 資訊頁面：`about.html`、`ddals1.html`、`info-pages.css`、`legal-modal.js`
 - 維護工具：`validate-tabletop-spellcasting.js`、`validate-action-metadata.js`、`validate-tabletop-druid.js`、`build-offline-nopdf.ps1`
-- 動作系統遷移紀錄：`ACTION-METADATA-MIGRATION.md`（歷史盤點與驗證紀錄；目前行為仍以實際程式與資料為準）
 - 衍生檔案：`TWD20-offline.html`
 
 `character-rules.js` 提供共用角色計算與規則。`SpellCatalog` 由 `spell-list.js` 提供，是法術內容及桌邊施法 metadata 的來源。`ActionPanel` 依明確的非施法能力動作定義及角色選擇，建立職業、種族、專長、魔能祈喚與超魔等動作選項；法術施法時間則沿用既有分類機制。動作 key、分類、等級與選擇條件由結構化定義控制，說明取自規則資料或既有個人化摘要。
@@ -84,6 +86,8 @@ python -m http.server 8000
 PDF 程式與素材只會在使用 PDF 匯出時動態載入。正式網站若保留 PDF 匯出入口，需一併提供這些檔案；離線精簡版由產生腳本停用 PDF 匯出。
 
 ## 維護與驗證
+
+主題、技能版面、主題素材及 PDF 盾牌／血統提示可執行 `node validate-ui-themes.js`。此檢查使用既有 Playwright，包含四種外觀、窄版、儲存與實際可編輯 PDF 匯出；可用 `DND_BROWSER_CHANNEL=msedge` 選擇本機 Edge。
 
 修改 JavaScript 後，可先執行最低成本的語法檢查：
 

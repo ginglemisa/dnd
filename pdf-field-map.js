@@ -76,6 +76,13 @@
     'prof-cha': 'chaSaveChk1'
   });
 
+  // Keep a standalone fallback for PDF exports that are invoked without the
+  // main page's armor-training table. When the page table is available, use it
+  // as the source of truth instead of duplicating its class entries here.
+  const PDF_SHIELD_PROFICIENT_CLASSES = Object.freeze([
+    'barbarian', 'cleric', 'druid', 'fighter', 'paladin', 'ranger'
+  ]);
+
   // Text specs recalibrated against the resized PDF fields using the
   // calibration overlay. Values are intentionally conservative so form
   // rendering has some headroom for punctuation and mixed-width text.
@@ -759,6 +766,19 @@
       wizard: '6'
     };
     return map[classKey] || '';
+  }
+
+  function hasShieldProficiencyForPdf(state) {
+    const classKey = normalizeText(state?.class);
+    const armorTrainingMap = typeof ARMOR_TRAINING_BY_CLASS !== 'undefined'
+      ? ARMOR_TRAINING_BY_CLASS
+      : globalScope.ARMOR_TRAINING_BY_CLASS;
+
+    if (armorTrainingMap && typeof armorTrainingMap === 'object') {
+      return Array.isArray(armorTrainingMap[classKey])
+        && armorTrainingMap[classKey].includes('盾牌');
+    }
+    return PDF_SHIELD_PROFICIENT_CLASSES.includes(classKey);
   }
 
   function collectToolProficiencyNames(state) {
@@ -1582,6 +1602,7 @@ function isWeaponRowEmpty(payload, slot) {
     Object.entries(CHECKBOX_FIELD_MAP).forEach(([stateKey, pdfFieldName]) => {
       payload[pdfFieldName] = Boolean(state[stateKey]);
     });
+    payload.chk_shld1 = hasShieldProficiencyForPdf(state);
 
     const characterSize = normalizeText(state['character-size']);
     payload['SIZE-CHK-S'] = characterSize === '小型';
