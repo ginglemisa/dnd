@@ -2234,9 +2234,8 @@ function getRogueReliableTalentEntry() {
       marker.setAttribute("aria-hidden", "true");
       marker.title = rankLabel;
       marker.textContent = hasExpertise ? "◆" : hasProficiency ? "●" : "○";
-      item.querySelector(".tabletop-skill-value__label").appendChild(marker);
-
       const button = item.querySelector(".tabletop-inline-roll");
+      button.insertBefore(marker, item.querySelector(".tabletop-skill-value__label"));
       button.setAttribute("aria-label", `${button.getAttribute("aria-label")}；${rankLabel}`);
       return [item];
     });

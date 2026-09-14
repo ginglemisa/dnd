@@ -1,0 +1,55 @@
+# twD20 外觀與版面
+
+本文件整合暖紙視覺稿的設計意圖；實際樣式以 `styles.css` 為準。角色卡、桌邊模式與創角小幫手沿用同一份規則與狀態，外觀不改變角色資料。
+
+## 主題與明暗
+
+| 設定 | 控制 | DOM | 本機儲存 |
+| --- | --- | --- | --- |
+| 經典／暖紙 | 工具選單「更換主題顏色」開關 | `html[data-ui-theme="classic\|warm"]` | `dnd.uiTheme.v1` |
+| 亮色／暗色 | 開關左側的 🌓 按鈕 | `html[data-theme="light\|dark"]` | `dnd.theme.v1` |
+
+預設為暖紙亮色；既有 `dnd.theme.v1` 明暗偏好會沿用。兩個設定獨立，切換其中之一不會重設另一個。按鈕提供 title、可讀名稱、鍵盤操作與目前組合文字。外觀經由 `window.dndStorage` 保存，不包含在角色 JSON 或分享網址中；儲存不可用時仍能切換。
+
+`index.html` 在樣式載入前恢復兩個設定。`styles.css` 的未限定規則管理共用結構與排版，`:where(html[data-ui-theme="warm"])` 等限定選擇器管理外觀差異；`:where()` 不增加原有 specificity。修改共同版面時不需維護兩套 HTML。Quick Build 僅在既有 CSS template 中處理主題差異，沒有第二份創角邏輯。
+
+## 色彩與材質
+
+| 項目 | 經典亮色 | 經典暗色 | 暖紙亮色 | 暖紙暗色 |
+| --- | --- | --- | --- | --- |
+| 背景基色 | `#eef3ff` | `#09111f` | `#FAF5E9` | `#141312` |
+| 主要文字 | `#16213d` | `#f1f7fd` | `#191919` | `#E2D3BA` |
+| 強調文字 | `#2852d6` | `#38bdf8` | 磚紅 | `#D08F79` |
+| 主要操作 | 藍色漸層 | 青藍漸層 | `#B9362E` | `#8F302B` |
+| 視覺特徵 | 圓角、柔陰影 | 圓角、柔陰影 | 暖紙、深棕硬邊 | 深棕、低亮度實色 |
+
+暖紙主題以紙本 RPG 角色表與冒險海報為意象。硬陰影集中於導覽、主要按鈕與對話框；密集數值、技能和表單保持清楚平整。圓角 tokens 為 3／4／6px。文字 accent 與按鈕填色分開，避免暗色模式出現難讀的暗紅文字。
+
+頁面背景由 `html` 的 `--page-background` 繪製。暖紙亮色重複本地 `assets/textures/paper002-color-512.webp`，上覆 94% 不透明的 `#FEF9ED`，讓整體接近 `#FAF5E9`；卡片、表單與按鈕維持實色。暖紙暗色無背景圖片。素材出處與授權集中於 [About](about.html#legal-heading)。
+
+紙紋沿用提供素材的處理紀錄：原始 Color tile 為 794×1024，縮放至 512×512，以對向 16px 邊緣混合減少重複接縫，輸出 WebP quality 52／method 6。不包含 normal、roughness 或 displacement 等 PBR maps。色彩與背景設定由 `styles.css` 維護。
+
+Quick Build 使用 `--qb-*` 語意 tokens。暖紙完成摘要採暖灰米色：亮色 `#E8DDC8`／`#594331`／`#9A8060`，暗色 `#302820`／`#D3BE9E`／`#79634D`；不改變成功狀態的文字與意義。其他功能仍使用原有 success tokens。
+
+## Logo 與骰子
+
+- 經典主題保留 `logo.png` 與 `dice.webp`。
+- 暖紙主題使用 `Light.jpg`／`Dark.jpg` 與 `dice-warm-animated.webp`。
+- 暖紙 Logo 保留原圖，以 CSS 裁切 x=350、y=45、寬1080、高350 的字樣與底線區域；依明暗切換，固定比例避免高度跳動。
+- 骰子素材由 `DiceRoller` 在建立一般與屬性擲骰動畫時依目前主題選取。屬性擲骰開始前以 canvas 顯示靜態預覽；自動／公式擲骰與 reduced-motion 沿用既有行為。亂數、計時與歷史紀錄維持共用入口。
+
+## 共用排版
+
+- 主內容維持 720px 上限，保留 safe-area、原有 sticky/fixed 定位及表格獨立橫向捲動。
+- 角色卡技能區使用 `skill-section` container，內寬 18.75／28.5／38.25rem 起分別為 2／3／4 欄，以下為單欄。欄距 0.75rem，卡片 padding 0.5rem。
+- 技能屬性以次要色呈現；數值框寬 3.5rem、高 2.75rem。熟練／專精 checkbox 為 20×20px，label 提供 1.75rem 寬、至少 2.75rem 高的可點區域。不可用的專精連同 label 隱藏，熟練圖例持續可見。
+- 語言選單在技能容器 ≥28.5rem 時並排兩欄，工具與筆記保持單欄。360–399px 的雙欄豁免卡收緊水平間距，避免名稱與數值重疊。
+- 桌邊技能使用 `tabletop-skills` container，內寬 18.75／30rem 起分別為 2／3 欄。保留來源順序、分隔線與熟練圖例；每列至少高 44px，熟練符號位於名稱左側，加值靠右。
+- ≥720px 的六欄屬性區縮小水平間距；角色卡與桌邊法術位區維持四欄，checkbox 固定 20×20px，避免壓縮。較窄畫面保留原有法術位配置。
+- 裝備可展開標題使用 `--fs-xl`、800 字重與 1.5 行高。
+
+## 互動與維護
+
+保留既有原生表單、對話框焦點／Escape 行為、textarea 垂直 resize 與減少動態效果偏好。沒有新增字體下載、前端框架或 runtime dependency。外觀調整不應修改持久化欄位或規則資料。
+
+主題、技能版面與 PDF 欄位驗證使用 `node validate-ui-themes.js`；其他適用檢查見 [README.md](README.md#維護與驗證)。
