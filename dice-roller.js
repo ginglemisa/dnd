@@ -6,6 +6,7 @@
   const ABILITY_ROLL_ANIMATION_MS = 1200;
   const REDUCED_MOTION_ROLL_MS = 100;
   const LONG_PRESS_MS = 1200;
+  const ROLL_NOTE_LONG_PRESS_MS = 1300;
   const HISTORY_CLEAR_LONG_PRESS_MS = 3000;
   const HISTORY_LIMIT = 66;
   const DIE_EXPRESSION_SOURCE = String.raw`\d+\s*d\s*(?:100|20|12|10|8|6|4)`;
@@ -58,6 +59,7 @@
             : [];
           return Object.freeze({
             label: String(entry.label || "").trim(),
+            note: String(entry.note || "").trim(),
             expression: entry.expression,
             total: Number.isFinite(entry.total) ? entry.total : null,
             values: Object.freeze(values.map(value => Object.freeze({ value: value.value, sides: value.sides, ...(value.dropped === true ? { dropped: true } : {}) })))
@@ -79,7 +81,7 @@
       window.dndStorage?.setItem(HISTORY_STORAGE_KEY, JSON.stringify(historyEntries));
     };
 
-    const formatHistoryEntry = entry => entry.legacyText || `${entry.label ? `${entry.label}：` : ""}${entry.expression}=${entry.total}`;
+    const formatHistoryEntry = entry => entry.legacyText || `${entry.label ? `${entry.label}：` : ""}${entry.expression}=${entry.total}${entry.note ? `｜${entry.note}` : ""}`;
 
     const removeDetailNavigation = () => {
       totalBar?.querySelectorAll(".dice-roller-detail-back").forEach(button => button.remove());
@@ -277,7 +279,7 @@
       detail.setAttribute("aria-label", `${entry.label || "擲骰"}詳情`);
       const heading = document.createElement("p");
       heading.className = "dice-roller-detail-expression";
-      heading.textContent = entry.label ? `${entry.label}｜${entry.expression}` : entry.expression;
+      heading.textContent = `${entry.label ? `${entry.label}｜` : ""}${entry.expression}${entry.note ? `｜${entry.note}` : ""}`;
       const results = document.createElement("div");
       results.className = "dice-roller-detail-results";
       entry.values.forEach(({ value, sides, dropped }, index) => {
@@ -299,9 +301,10 @@
       backButton.focus({ preventScroll: true });
     };
 
-    const addHistoryEntry = ({ expression, total, label = "", values = [] }) => {
+    const addHistoryEntry = ({ expression, total, label = "", note = "", values = [] }) => {
       historyEntries.unshift(Object.freeze({
         label: String(label || "").trim(),
+        note: String(note || "").trim(),
         expression,
         total,
         values: Object.freeze(values.map(({ value, sides, dropped }) => Object.freeze({ value, sides, ...(dropped ? { dropped: true } : {}) })))
@@ -311,13 +314,13 @@
       updateHistoryButton();
     };
 
-    const recordRoll = (rollCounts, results) => {
+    const recordRoll = (rollCounts, results, note = "") => {
       const diceExpression = DICE_SIDES
         .filter(sides => (rollCounts.get(sides) || 0) > 0)
         .map(sides => `${rollCounts.get(sides)}d${sides}`)
         .join("+");
       const total = results.reduce((sum, result) => sum + result.value, 0);
-      addHistoryEntry({ expression: diceExpression, total, values: results });
+      addHistoryEntry({ expression: diceExpression, total, note, values: results });
     };
 
     const rollDie = sides => {
@@ -804,7 +807,7 @@
       updateControls();
     };
 
-    const roll = () => {
+    const roll = (note = "") => {
       if (isRolling || getTotalDice() === 0) return;
 
       const rollCounts = new Map(DICE_SIDES.map(sides => [sides, counts.get(sides) || 0]));
@@ -840,9 +843,41 @@
         rollTimer = 0;
         isRolling = false;
         updateControls();
-        recordRoll(rollCounts, results);
+        recordRoll(rollCounts, results, note);
         renderResults(results);
       }, reduceMotion.matches ? REDUCED_MOTION_ROLL_MS : ROLL_ANIMATION_MS);
+    };
+
+    const requestRollNote = async () => {
+      if (isRolling || getTotalDice() === 0 || typeof window.AppDialog?.showContent !== "function") return;
+      let noteInput = null;
+      const note = await window.AppDialog.showContent({
+        title: "擲骰備註",
+        message: "輸入這次擲骰的文字備註，儲存後會顯示在擲骰紀錄中。",
+        trigger: rollButton,
+        cancelLabel: "取消",
+        confirmLabel: "擲骰",
+        initialFocus: "content",
+        dismissOnBackdrop: false,
+        renderContent(body) {
+          const label = document.createElement("label");
+          label.className = "app-dialog__roll-note-field";
+          label.textContent = "文字備註（選填）";
+          noteInput = document.createElement("textarea");
+          noteInput.className = "app-dialog__roll-note-input";
+          noteInput.rows = 3;
+          noteInput.maxLength = 120;
+          noteInput.placeholder = "例如：調查密門";
+          noteInput.dataset.stateTransient = "true";
+          label.appendChild(noteInput);
+          body.appendChild(label);
+        },
+        resolveConfirm() {
+          return noteInput?.value.trim() || "";
+        }
+      });
+      suppressRollClick = false;
+      if (typeof note === "string") roll(note);
     };
 
     const restoreBackground = () => {
@@ -979,7 +1014,34 @@
     closeButton.addEventListener("click", closeModal);
     historyButton.addEventListener("click", () => renderHistory());
     totalButton.addEventListener("click", showCurrentResult);
-    rollButton.addEventListener("click", roll);
+    let rollNoteTimer = 0;
+    let suppressRollClick = false;
+    const cancelRollNoteHold = () => {
+      window.clearTimeout(rollNoteTimer);
+      rollNoteTimer = 0;
+      rollButton.classList.remove("is-holding");
+    };
+    rollButton.addEventListener("click", () => {
+      if (suppressRollClick) {
+        suppressRollClick = false;
+        return;
+      }
+      roll();
+    });
+    rollButton.addEventListener("pointerdown", event => {
+      if (event.button !== 0 || rollButton.disabled) return;
+      suppressRollClick = false;
+      rollButton.classList.add("is-holding");
+      rollNoteTimer = window.setTimeout(() => {
+        rollNoteTimer = 0;
+        suppressRollClick = true;
+        rollButton.classList.remove("is-holding");
+        window.navigator.vibrate?.(30);
+        void requestRollNote();
+      }, ROLL_NOTE_LONG_PRESS_MS);
+    });
+    ["pointerup", "pointerleave", "pointercancel"].forEach(eventName => rollButton.addEventListener(eventName, cancelRollNoteHold));
+    rollButton.addEventListener("contextmenu", event => event.preventDefault());
     let clearHistoryTimer = 0;
     let suppressClearClick = false;
     const cancelClearHistoryHold = () => {
