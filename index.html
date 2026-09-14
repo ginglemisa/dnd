@@ -44,8 +44,8 @@
   <meta name="twitter:card" content="summary_large_image">
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🎲%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20260914-menu-fixes">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css?v=20260914-qr-close">
   <script src="scroll-to-top.js" defer></script>
   <script src="dice-roller.js?v=20260913-ability-fate" defer></script>
   <script src="monster.js?v=20260912-druid-controls" defer></script>
@@ -87,7 +87,9 @@
         <button class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="tab-actions" onclick="showTab(&#39;actions&#39;, this)">動作</button>
         <button id="spells-tab-button" class="tab-button" type="button" role="tab" aria-selected="false" aria-controls="tab-spells" onclick="showTab(&#39;spells&#39;, this)">法術</button>
       </nav>
-      <button type="button" id="utility-menu-toggle" class="utility-menu-toggle" aria-label="開啟工具選單" aria-expanded="false" aria-controls="utility-menu">選單</button>
+      <button type="button" id="utility-menu-toggle" class="utility-menu-toggle" aria-label="開啟工具選單" aria-expanded="false" aria-controls="utility-menu">
+        <span class="utility-menu-toggle__icon" aria-hidden="true"><span></span><span></span><span></span></span>
+      </button>
     </div>
     <div id="utility-menu" class="utility-menu" aria-hidden="true" inert>
       <section class="utility-menu__section" aria-labelledby="utility-menu-view-title">
@@ -7662,7 +7664,7 @@ function setupSpellQrModal() {
   const modal = document.getElementById("spell-qr-modal");
   if (!openBtn || !modal) return;
 
-  const closeBtn = modal.querySelector(".spell-qr-modal-close");
+  const card = modal.querySelector(".spell-qr-modal-card");
   const qrImage = modal.querySelector(".spell-qr-modal-image");
   if (qrImage) qrImage.src = SPELL_QR_IMAGE_SRC;
 
@@ -7671,11 +7673,10 @@ function setupSpellQrModal() {
     modal.inert = !open;
     modal.classList.toggle("open", open);
     modal.setAttribute("aria-hidden", String(!open));
-    if (open) closeBtn?.focus();
+    if (open) card?.focus();
   };
 
   openBtn.addEventListener("click", () => setOpen(true));
-  closeBtn?.addEventListener("click", () => setOpen(false));
   modal.addEventListener("click", (event) => {
     if (event.target === modal) setOpen(false);
   });
@@ -9750,10 +9751,9 @@ window.addEventListener("DOMContentLoaded", async function() {
 </div>
 
 <div id="spell-qr-modal" aria-hidden="true" inert>
-  <div class="spell-qr-modal-card" role="dialog" aria-modal="true" aria-label="QR Code">
-    <button type="button" class="spell-qr-modal-close" aria-label="關閉 QR Code">✕</button>
+  <div class="spell-qr-modal-card" role="dialog" aria-modal="true" aria-label="QR Code" tabindex="-1">
     <img class="spell-qr-modal-image" alt="QR Code 圖片">
-    <p class="spell-qr-modal-note" style="text-align: center; font-weight: bold;">掃 QR CODE 快速分享桌友</p>
+    <p class="spell-qr-modal-note" style="text-align: center; font-weight: bold;">讓桌友掃 QR Code 打開 twD20.com</p>
   </div>
 </div>
 

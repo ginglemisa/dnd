@@ -465,10 +465,10 @@ html[data-view-mode="tabletop"] .utility-menu {
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  width: auto;
-  min-width: 3.75rem;
+  width: 44px;
+  min-width: 44px;
   min-height: 44px;
-  padding: 0 0.7rem;
+  padding: 0;
   border: 1px solid transparent;
   border-radius: 1.1rem;
   background: transparent;
@@ -477,6 +477,19 @@ html[data-view-mode="tabletop"] .utility-menu {
   font-weight: 800;
   white-space: nowrap;
   box-shadow: none;
+}
+
+.utility-menu-toggle__icon {
+  display: grid;
+  gap: 4px;
+  width: 20px;
+}
+
+.utility-menu-toggle__icon span {
+  display: block;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
 }
 
 .utility-menu-toggle:hover {
@@ -6522,26 +6535,6 @@ html[data-view-mode="tabletop"] #scrollToBottomBtn {
   background: var(--surface-strong);
   color: var(--text-body);
   box-shadow: var(--shadow-strong);
-}
-
-.spell-qr-modal-close {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  min-width: 44px;
-  min-height: 44px;
-  padding: 0;
-  border: 1px solid var(--border-strong);
-  border-radius: 999px;
-  background: var(--control-bg);
-  color: var(--text);
-  box-shadow: none;
-  font-size: 1.1rem;
-  line-height: 1;
 }
 
 .spell-qr-modal-image {
