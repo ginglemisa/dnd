@@ -422,15 +422,22 @@
       const updateForm = () => {
         populateRemaining(assignments, sortedRolls.map(roll => ({ value: roll.id, label: String(roll.total) })), "選數值");
         assignments.forEach(select => { select.disabled = !rolls.length; });
-        populateRemaining(bonuses, abilities.map(ability => ({ value: ability.key, label: ability.label })), "選屬性");
         const increments = getBonuses();
-        bonuses.forEach((select, index) => { select.previousElementSibling.textContent = increments[index] ? `+${increments[index]}` : "不加值"; });
-        const complete = rolls.length === 6 && [...assignments, ...bonuses].every(select => select.value !== "");
+        bonuses.forEach((select, index) => {
+          const isActive = increments[index] > 0;
+          if (!isActive) select.value = "";
+          select.disabled = !isActive;
+          select.parentElement.hidden = !isActive;
+          select.previousElementSibling.textContent = isActive ? `+${increments[index]}` : "不加值";
+        });
+        populateRemaining(bonuses, abilities.map(ability => ({ value: ability.key, label: ability.label })), "選屬性");
+        const activeBonuses = bonuses.filter((_, index) => increments[index] > 0);
+        const complete = rolls.length === 6 && [...assignments, ...activeBonuses].every(select => select.value !== "");
         form.querySelector(".dice-ability-apply").disabled = !complete;
         const scores = complete ? getScores() : null;
         form.querySelector(".dice-ability-status").textContent = complete
           ? abilities.map(({ key, label }) => `${label} ${scores[key]}`).join(" · ")
-          : "分配六個數值，並選擇三個不同的背景屬性。";
+          : `分配六個數值，並選擇${activeBonuses.length === 3 ? "三" : "兩"}個不同的背景屬性。`;
       };
       startButton.addEventListener("click", () => {
         if (isRolling || rolls.length) return;
@@ -471,7 +478,9 @@
       form.addEventListener("change", updateForm);
       form.addEventListener("submit", event => {
         event.preventDefault();
-        if (rolls.length !== 6 || [...assignments, ...bonuses].some(select => select.value === "")) return;
+        const increments = getBonuses();
+        const activeBonuses = bonuses.filter((_, index) => increments[index] > 0);
+        if (rolls.length !== 6 || [...assignments, ...activeBonuses].some(select => select.value === "")) return;
         options.onApply(getScores());
         closeModal();
         window.AppDialog?.notify("已套用六項屬性，含背景加值。", { tone: "success" });

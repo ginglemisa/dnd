@@ -110,8 +110,17 @@ async function main() {
     await selects.nth(1).selectOption("");
     for (let i = 0; i < 6; i++) await selects.nth(i).selectOption(String(i));
     const bonuses = page.locator(".dice-ability-bonuses select");
-    for (const [i, key] of ["str", "dex", "con"].entries()) await bonuses.nth(i).selectOption(key);
+    for (const [i, key] of ["str", "dex"].entries()) await bonuses.nth(i).selectOption(key);
     assert.equal(await bonuses.nth(1).locator('option[value="str"]').count(), 0, "background attributes must differ");
+    await page.locator('input[name="ability-bonus-pattern"][value="2,1,0"]').check();
+    assert.equal(await bonuses.nth(2).isHidden(), true, "+2/+1 hides the unused third background attribute");
+    assert.equal(await bonuses.nth(2).isDisabled(), true, "the unused background attribute is not interactive");
+    assert.equal(await page.locator(".dice-ability-apply").isEnabled(), true, "+2/+1 only requires two background attributes");
+    assert.equal(await page.locator(".dice-ability-status").textContent(), "力量 20 · 敏捷 16 · 體質 15 · 智力 12 · 感知 9 · 魅力 3");
+    await page.locator('input[name="ability-bonus-pattern"][value="1,1,1"]').check();
+    assert.equal(await bonuses.nth(2).isVisible(), true, "+1/+1/+1 restores the third background attribute");
+    assert.equal(await page.locator(".dice-ability-apply").isDisabled(), true, "+1/+1/+1 requires all three background attributes");
+    await bonuses.nth(2).selectOption("con");
     assert.equal(await page.locator(".dice-ability-status").textContent(), "力量 19 · 敏捷 16 · 體質 16 · 智力 12 · 感知 9 · 魅力 3");
     await page.locator('input[name="ability-bonus-pattern"][value="2,1,0"]').check();
     assert.equal(await page.locator(".dice-ability-status").textContent(), "力量 20 · 敏捷 16 · 體質 15 · 智力 12 · 感知 9 · 魅力 3");
