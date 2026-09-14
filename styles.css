@@ -6119,7 +6119,7 @@ html[data-view-mode="tabletop"] #scrollToBottomBtn {
 }
 
 .dice-roller-roll.is-holding::after {
-  animation: dice-long-press 1.3s linear forwards;
+  animation: dice-long-press 2.5s linear forwards;
 }
 
 .dice-roller-clear.is-holding::after {

@@ -6,7 +6,7 @@
   const ABILITY_ROLL_ANIMATION_MS = 1200;
   const REDUCED_MOTION_ROLL_MS = 100;
   const LONG_PRESS_MS = 1200;
-  const ROLL_NOTE_LONG_PRESS_MS = 1300;
+  const ROLL_NOTE_LONG_PRESS_MS = 2500;
   const HISTORY_CLEAR_LONG_PRESS_MS = 3000;
   const HISTORY_LIMIT = 66;
   const DIE_EXPRESSION_SOURCE = String.raw`\d+\s*d\s*(?:100|20|12|10|8|6|4)`;
@@ -876,7 +876,6 @@
           return noteInput?.value.trim() || "";
         }
       });
-      suppressRollClick = false;
       if (typeof note === "string") roll(note);
     };
 
@@ -1021,12 +1020,21 @@
       rollNoteTimer = 0;
       rollButton.classList.remove("is-holding");
     };
-    rollButton.addEventListener("click", () => {
-      if (suppressRollClick) {
+    rollButton.addEventListener("click", event => {
+      // Keep suppressing the held pointer's click even if its dialog was cancelled.
+      // Keyboard activation has detail 0 and must not consume that suppression.
+      if (suppressRollClick && event.detail > 0) {
         suppressRollClick = false;
         return;
       }
       roll();
+    });
+    rollButton.addEventListener("keydown", event => {
+      if (event.key !== "Enter" || !event.shiftKey) return;
+      event.preventDefault();
+      if (event.repeat) return;
+      cancelRollNoteHold();
+      void requestRollNote();
     });
     rollButton.addEventListener("pointerdown", event => {
       if (event.button !== 0 || rollButton.disabled) return;
