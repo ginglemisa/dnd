@@ -2735,6 +2735,8 @@
     } else mobileImportWarning("找不到武器攻擊自動化開關", warnings);
     if (typeof populateHandAttacks === "function") populateHandAttacks({ force: true });
     if (typeof updateSpellCastingStats === "function") updateSpellCastingStats();
+    if (typeof updateHPDisplay === "function") updateHPDisplay();
+    setMobileField("hp", document.getElementById("hp-display")?.value, warnings, "目前 HP", "input");
     if (typeof saveAllFields === "function") saveAllFields();
   }
 

@@ -319,6 +319,12 @@ async function verifyImports(browser, url) {
     const firstTable = page.getByRole("button", { name: "第一次上桌", exact: true });
     assert.equal(await firstTable.count(), ["warning", "failure"].includes(scenario) ? 0 : 1, await page.locator(".app-dialog__body").innerText());
     assert.equal(await page.evaluate(() => onboardingTour.active), false);
+    if (scenario !== "failure") {
+      assert.deepEqual(await page.evaluate(() => ({
+        current: document.getElementById("hp").value,
+        maximum: document.getElementById("hp-display").value
+      })), { current: "15", maximum: "15" }, "quick-build import fills current HP with maximum HP");
+    }
     if (scenario === "complete") {
       await firstTable.click();
       await ready(page, 0);
