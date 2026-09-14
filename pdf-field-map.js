@@ -588,15 +588,17 @@
         firstLevelLine1,
         firstLevelLine2
       ];
+      const leveledSpellLines = [];
       if (shouldShowAtOrAboveSelectedLevel(context.level, 3)) {
-        lines.push(thirdLevelLine);
+        leveledSpellLines.push(thirdLevelLine);
       }
       if (shouldShowAtOrAboveSelectedLevel(context.level, 5)) {
-        lines.push(fifthLevelLine);
+        leveledSpellLines.push(fifthLevelLine);
       }
-      lines.push(
-        '長休後環法恢復'
-      );
+      if (leveledSpellLines.length) {
+        lines.push(...leveledSpellLines);
+        lines.push('長休後環法恢復');
+      }
       return lines;
     })
   });
