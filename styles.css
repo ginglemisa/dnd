@@ -6101,6 +6101,7 @@ html[data-view-mode="tabletop"] #scrollToBottomBtn {
 }
 
 .dice-roller-die::after,
+.dice-roller-roll::after,
 .dice-roller-clear::after {
   content: "";
   position: absolute;
@@ -6115,6 +6116,10 @@ html[data-view-mode="tabletop"] #scrollToBottomBtn {
 
 .dice-roller-die.is-holding::after {
   animation: dice-long-press 1.2s linear forwards;
+}
+
+.dice-roller-roll.is-holding::after {
+  animation: dice-long-press 1.3s linear forwards;
 }
 
 .dice-roller-clear.is-holding::after {
@@ -8933,6 +8938,25 @@ html[data-view-mode="tabletop"] #scrollToBottomBtn {
   font-size: var(--fs-xs);
   font-weight: 700;
   line-height: 1.4;
+}
+
+.app-dialog__roll-note-field {
+  display: grid;
+  gap: 0.42rem;
+  margin: 0;
+  color: var(--text);
+  font-size: var(--fs-sm);
+  font-weight: 850;
+}
+
+.app-dialog__roll-note-input {
+  width: 100%;
+  min-height: 6rem;
+  margin: 0;
+  resize: vertical;
+  color: var(--text);
+  font-size: var(--fs-md);
+  line-height: 1.5;
 }
 
 .app-dialog__number-hint {
