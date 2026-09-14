@@ -471,10 +471,8 @@
       }
       if (leveledSpellLines.length) {
         lines.push(...leveledSpellLines);
+        lines.push('長休後環法恢復');
       }
-      lines.push(
-        '長休後環法恢復'
-      );
       return lines;
     }),
     gnome: Object.freeze((context = {}) => {
