@@ -46,7 +46,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20260915-tabletop-health">
+  <link rel="stylesheet" href="styles.css?v=20260915-main2-shield">
   <script src="scroll-to-top.js" defer></script>
   <script src="dice-roller.js?v=20260915-dual-themes" defer></script>
   <script src="monster.js?v=20260912-druid-controls" defer></script>
@@ -61,8 +61,8 @@
   <script src="action-panel.js?v=20260913-class-tabletop" defer></script>
   <script src="character-rules.js?v=20260913-spellbook" defer></script>
   <script src="app-dialog.js?v=20260831-number-input" defer></script>
-  <script src="tabletop-mode.js?v=20260915-tabletop-health" defer></script>
-  <script src="tabletop-druid.js?v=20260912-druid-controls" defer></script>
+  <script src="tabletop-mode.js?v=20260915-main2-shield" defer></script>
+  <script src="tabletop-druid.js?v=20260915-main2-shield" defer></script>
   <script src="tabletop-resources.js?v=20260912-druid-controls" defer></script>
   <script src="tabletop-actions.js?v=20260913-class-tabletop" defer></script>
   <script src="tabletop-spells.js?v=20260913-spellbook" defer></script>
@@ -974,17 +974,23 @@
 <select id="mainHand"><option value="">-- 請選擇 --</option><option value="短棒">短棒</option><option value="匕首">匕首</option><option value="巨棒">巨棒</option><option value="手斧">手斧</option><option value="標槍">標槍</option><option value="輕錘">輕錘</option><option value="硬頭錘">硬頭錘</option><option value="長棍">長棍</option><option value="鐮刀">鐮刀</option><option value="短矛">短矛</option><option value="飛鏢">飛鏢</option><option value="輕弩">輕弩</option><option value="短弓">短弓</option><option value="投石索">投石索</option><option value="戰斧">戰斧</option><option value="連枷">連枷</option><option value="長柄刀">長柄刀</option><option value="巨斧">巨斧</option><option value="巨劍">巨劍</option><option value="長戟">長戟</option><option value="騎槍">騎槍</option><option value="長劍">長劍</option><option value="巨錘">巨錘</option><option value="釘頭錘">釘頭錘</option><option value="長矛">長矛</option><option value="刺劍">刺劍</option><option value="彎刀">彎刀</option><option value="短劍">短劍</option><option value="三叉戟">三叉戟</option><option value="戰錘">戰錘</option><option value="戰鎬">戰鎬</option><option value="鞭">鞭</option><option value="吹箭筒">吹箭筒</option><option value="手弩">手弩</option><option value="重弩">重弩</option><option value="長弓">長弓</option><option value="火繩槍">火繩槍</option><option value="手槍">手槍</option></select>
     </div>
     <div class="form-row equipment-loadout-field">
-      <label for="offHand">副手</label>
+      <label id="offHandLabel" for="offHand">副手</label>
       <select id="offHand" disabled=""><option disabled="">(雙手佔用)</option></select>
     </div>
     <div class="form-row equipment-loadout-field equipment-loadout-field--armor">
       <label for="armor">護甲</label>
       <select id="armor"><option value="">-- 請選擇 --</option><option value="布甲">布甲</option><option value="皮甲">皮甲</option><option value="鑲釘皮甲">鑲釘皮甲</option><option value="獸皮甲">獸皮甲</option><option value="半身鎖甲">半身鎖甲</option><option value="鱗甲">鱗甲</option><option value="胸甲">胸甲</option><option value="半身板甲">半身板甲</option><option value="環甲">環甲</option><option value="鎖子甲">鎖子甲</option><option value="條板甲">條板甲</option><option value="全身板甲">全身板甲</option></select>
     </div>
-    <label class="equipment-alternate-main-option" for="offHandAsMain">
-      <input type="checkbox" id="offHandAsMain">
-      <span>將副手設為另一把主手武器。</span>
-    </label>
+    <div class="equipment-mode-options">
+      <label class="equipment-alternate-main-option" for="offHandAsMain">
+        <input type="checkbox" id="offHandAsMain">
+        <span>將副手設為另一把主手武器。</span>
+      </label>
+      <label id="main2ShieldOption" class="equipment-alternate-main-option" for="main2Shield" hidden>
+        <input type="checkbox" id="main2Shield">
+        <span>裝備盾牌</span>
+      </label>
+    </div>
     </div>
     <section class="equipment-loadout-summary" aria-labelledby="equipment-loadout-summary-title">
       <h4 id="equipment-loadout-summary-title">目前裝備摘要</h4>
@@ -1399,8 +1405,7 @@ function updateSpeedDisplay() {
 
   const armorName = document.getElementById("armor")?.value || "";
   const armor = armors.find(item => item.名稱 === armorName);
-  const offHandName = document.getElementById("offHand")?.value || "";
-  const hasShield = isShieldItem(armorName) || (!isOffHandAlternateMain() && offHandName === "盾牌");
+  const hasShield = isShieldItem(armorName) || isEffectiveEquippedShield();
   speedDisplay.value = window.calculateCharacterSpeed({
     baseSpeed: document.getElementById("speed-input")?.value,
     race: document.getElementById("race")?.value,
@@ -1923,6 +1928,7 @@ function syncAdvancedClassFeatureControls() {
 
 // 計算AC頂部
 function updateACDisplay() {
+  syncMain2ShieldControl();
   if (!isAutomaticKeyStatsEnabled()) {
     updateEquipmentLoadoutSummary();
     return;
@@ -1930,10 +1936,9 @@ function updateACDisplay() {
   const armorName = document.getElementById("armor")?.value;
   const hasArmor = Boolean(armorName) && !isShieldItem(armorName);
   const hasArmorShield = isShieldItem(armorName);
-  const offHandName = document.getElementById("offHand")?.value;
   const className = document.getElementById("class")?.value;
   const armor = hasArmor ? armors.find(item => item.名稱 === armorName) : null;
-  const hasOffHandShield = !isOffHandAlternateMain() && offHandName === "盾牌";
+  const hasOffHandShield = isEffectiveEquippedShield();
   const hasShield = (hasOffHandShield || hasArmorShield)
     && !(hasOffHandShield && hasArmorShield);
   const armorClass = calculateArmorClass({
@@ -5294,7 +5299,7 @@ function getMonkMartialArtsWeapon() {
   };
 }
 function hasTwoHandedProperty(weapon) {
-  return [weapon.屬性1, weapon.屬性2, weapon.屬性3, weapon.屬性4].some(p => p?.includes("雙手"));
+  return [weapon?.屬性1, weapon?.屬性2, weapon?.屬性3, weapon?.屬性4].some(p => p?.includes("雙手"));
 }
 function populateSelect(selectEl, items) {
   selectEl.innerHTML = ""; // 清空選項
@@ -5380,8 +5385,57 @@ function isOffHandAlternateMain() {
   return document.getElementById("offHandAsMain")?.checked === true;
 }
 
+function getWeaponByName(name) {
+  return getAllWeaponsWithoutShield().find(weapon => weapon.名稱 === name);
+}
+
+function isEffectiveShieldEquippedForState(state, options = {}) {
+  const alternateMain = state?.offHandAsMain === true;
+  if (!alternateMain) return String(state?.offHand || "") === "盾牌";
+  const proficient = typeof options.isShieldProficient === "function"
+    ? options.isShieldProficient(state)
+    : false;
+  const weaponIsTwoHanded = typeof options.isTwoHandedWeapon === "function"
+    ? options.isTwoHandedWeapon
+    : () => false;
+  return state?.main2Shield === true
+    && proficient
+    && ![state?.mainHand, state?.offHand].filter(Boolean).some(weaponIsTwoHanded);
+}
+
+function isMain2ShieldEligible() {
+  if (!isOffHandAlternateMain() || !isShieldProficient()) return false;
+  return ["mainHand", "offHand"].every(id => {
+    const name = document.getElementById(id)?.value || "";
+    return !name || !hasTwoHandedProperty(getWeaponByName(name));
+  });
+}
+
+function isEffectiveEquippedShield() {
+  return isEffectiveShieldEquippedForState({
+    offHandAsMain: isOffHandAlternateMain(),
+    main2Shield: document.getElementById("main2Shield")?.checked === true,
+    mainHand: document.getElementById("mainHand")?.value || "",
+    offHand: document.getElementById("offHand")?.value || ""
+  }, {
+    isShieldProficient,
+    isTwoHandedWeapon: name => hasTwoHandedProperty(getWeaponByName(name))
+  });
+}
+
+function syncMain2ShieldControl({ legalize = !autosaveSuspended } = {}) {
+  const option = document.getElementById("main2ShieldOption");
+  const checkbox = document.getElementById("main2Shield");
+  if (!option || !checkbox) return;
+  const eligible = isMain2ShieldEligible();
+  option.hidden = !eligible;
+  checkbox.disabled = !eligible;
+  if (legalize && !eligible) checkbox.checked = false;
+}
+
 function updateOffHandRolePresentation() {
   const alternateMain = isOffHandAlternateMain();
+  const equipmentLabel = document.getElementById("offHandLabel");
   const attackLabel = alternateMain ? "另一把主手攻擊" : "副手攻擊";
   const title = document.getElementById("atk-off-title-text");
   const fields = document.getElementById("atk-off-fields");
@@ -5389,6 +5443,8 @@ function updateOffHandRolePresentation() {
   if (title) title.textContent = attackLabel;
   if (fields) fields.setAttribute("aria-label", `${attackLabel}欄位`);
   if (note) note.setAttribute("aria-label", `${attackLabel}備註`);
+  if (equipmentLabel) equipmentLabel.textContent = alternateMain ? "主手2" : "副手";
+  syncMain2ShieldControl();
 }
 
 function updateOffHandOptions(mainHandValue) {
@@ -5541,7 +5597,7 @@ function isMonkMartialArtsActive(weaponName = "") {
   const offHandName = document.getElementById("offHand")?.value || "";
 
   const hasArmor = Boolean(armorName);
-  const hasShield = mainHandName === "盾牌" || (!isOffHandAlternateMain() && offHandName === "盾牌");
+  const hasShield = mainHandName === "盾牌" || isEffectiveEquippedShield();
   if (hasArmor || hasShield) return false;
 
   if (isOffHandAlternateMain()) {
@@ -5855,7 +5911,8 @@ function updateEquipmentLoadoutSummary() {
 
   const summaryRows = [
     mainName && buildEquipmentSummaryRow("主手", mainName, weaponDetails(mainWeapon), { warning: mainWeaponWarning }),
-    offName && buildEquipmentSummaryRow("副手", offName, weaponDetails(offWeapon), { warning: offWeaponWarning }),
+    offName && buildEquipmentSummaryRow(isOffHandAlternateMain() ? "主手2" : "副手", offName, weaponDetails(offWeapon), { warning: offWeaponWarning }),
+    isOffHandAlternateMain() && isEffectiveEquippedShield() && buildEquipmentSummaryRow("盾牌", "盾牌", ["AC+2 (裝備/卸除需 1 個動作)"]),
     armorName && buildEquipmentSummaryRow("護甲", armorName, armorDetails, { warning: armorWarning })
   ].filter(Boolean);
   content.replaceChildren(...summaryRows);
@@ -8235,6 +8292,8 @@ function applyStateObject(data) {
     setBardMagicalDiscoverySelection(data.__bardMagicalDiscoverySelection, { sync: false });
     const offHandAsMain = document.getElementById("offHandAsMain");
     if (offHandAsMain) offHandAsMain.checked = data.offHandAsMain === true;
+    const main2Shield = document.getElementById("main2Shield");
+    if (main2Shield) main2Shield.checked = false;
 
     const spellAreas = getSpellAreaConfigs();
     getDynamicAreaConfigs().forEach(area => {
@@ -8294,11 +8353,15 @@ function applyStateObject(data) {
     refreshFeatDerivedEffects();
     syncAutomaticKeyStatsMode();
     updateOffHandRolePresentation();
+    syncMain2ShieldControl();
     window.TabletopMode?.applyState?.(data);
     window.Spellbook?.restoreState(data);
   } finally {
     autosaveSuspended = prevAutosaveSuspended;
   }
+  syncMain2ShieldControl({ legalize: true });
+  updateACDisplay();
+  updateSpeedDisplay();
 }
 
 async function copyShareUrl() {
@@ -8406,7 +8469,7 @@ async function ensurePdfExportReady() {
     pdfExportLoaderPromise = (async () => {
       await loadScriptOnce("pdf-lib.custom.min.js");
       await loadScriptOnce("fontkit.custom.min.js");
-      await loadScriptOnce("pdf-field-map.js?v=20260915-shield-lineage");
+      await loadScriptOnce("pdf-field-map.js?v=20260915-main2-shield");
       await loadScriptOnce("pdf-export.js?v=20260913-spellbook-option");
     })().catch((error) => {
       pdfExportLoaderPromise = null;
@@ -9553,38 +9616,75 @@ window.addEventListener("DOMContentLoaded", async function() {
   const mainHandSelect = document.getElementById("mainHand");
   const offHandSelect = document.getElementById("offHand");
   const offHandAsMainToggle = document.getElementById("offHandAsMain");
+  const main2ShieldToggle = document.getElementById("main2Shield");
   const armorSelect = document.getElementById("armor");
   refreshWeaponSelections();
   populateSelectWithSections(armorSelect, getArmorSections(false));
-  mainHandSelect.addEventListener("change", () => {
-    const previousOff = offHandSelect.value;
-    updateOffHandOptions(mainHandSelect.value);
-    if (!offHandSelect.disabled) {
-      offHandSelect.value = previousOff;
-      if (offHandSelect.value !== previousOff) offHandSelect.value = "";
-    }
+  let previousMainHand = mainHandSelect.value;
+  let previousOffHand = offHandSelect.value;
+  const refreshEquipmentEffects = () => {
+    syncMain2ShieldControl();
     updateEquipmentLoadoutSummary();
     if (typeof updateACDisplay === "function") updateACDisplay();
     if (typeof updateSpeedDisplay === "function") updateSpeedDisplay();
     if (typeof populateHandAttacks === "function") populateHandAttacks();
+  };
+  const confirmTwoHandedSelection = (select, previousValue, accept) => {
+    const requestedValue = select.value;
+    const needsConfirmation = isOffHandAlternateMain()
+      && main2ShieldToggle?.checked
+      && hasTwoHandedProperty(getWeaponByName(requestedValue));
+    if (!needsConfirmation) {
+      accept();
+      return;
+    }
+    select.value = previousValue;
+    refreshEquipmentEffects();
+    window.AppDialog.requestDecision({
+      title: "卸下盾牌？",
+      message: "雙手武器無法同時使用盾牌。繼續將卸下盾牌。",
+      cancelLabel: "取消",
+      confirmLabel: "繼續"
+    }).then(confirmed => {
+      if (confirmed) {
+        select.value = requestedValue;
+        main2ShieldToggle.checked = false;
+        accept();
+      } else {
+        refreshEquipmentEffects();
+      }
+    });
+  };
+  mainHandSelect.addEventListener("change", () => {
+    confirmTwoHandedSelection(mainHandSelect, previousMainHand, () => {
+      previousMainHand = mainHandSelect.value;
+      const previousOff = offHandSelect.value;
+      updateOffHandOptions(mainHandSelect.value);
+      if (!offHandSelect.disabled) {
+        offHandSelect.value = previousOff;
+        if (offHandSelect.value !== previousOff) offHandSelect.value = "";
+      }
+      previousOffHand = offHandSelect.value;
+      refreshEquipmentEffects();
+    });
   });
   offHandSelect.addEventListener("change", () => {
-    updateEquipmentLoadoutSummary();
-    if (typeof updateACDisplay === "function") updateACDisplay();
-    if (typeof updateSpeedDisplay === "function") updateSpeedDisplay();
-    if (typeof populateHandAttacks === "function") populateHandAttacks();
+    confirmTwoHandedSelection(offHandSelect, previousOffHand, () => {
+      previousOffHand = offHandSelect.value;
+      refreshEquipmentEffects();
+    });
   });
   offHandAsMainToggle?.addEventListener("change", () => {
+    if (!autosaveSuspended && main2ShieldToggle) main2ShieldToggle.checked = false;
     const previousOff = offHandSelect.value;
     updateOffHandOptions(mainHandSelect.value);
     offHandSelect.value = previousOff;
     if (offHandSelect.value !== previousOff) offHandSelect.value = "";
     updateOffHandRolePresentation();
-    updateEquipmentLoadoutSummary();
-    if (typeof updateACDisplay === "function") updateACDisplay();
-    if (typeof updateSpeedDisplay === "function") updateSpeedDisplay();
-    if (typeof populateHandAttacks === "function") populateHandAttacks();
+    previousOffHand = offHandSelect.value;
+    refreshEquipmentEffects();
   });
+  main2ShieldToggle?.addEventListener("change", refreshEquipmentEffects);
   updateOffHandRolePresentation();
   updateEquipmentLoadoutSummary();
   // 2. 產生所有法術下拉欄位
