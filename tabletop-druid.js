@@ -232,8 +232,9 @@
       update();
       const equipment = {};
       content.append(el("p", "裝備是否能穿戴由 DM 依體型與構造判定。融入／掉落的護甲與武器不套用；其他裝備特殊效果請依實際裁定。"));
+      const main2Shield = globalScope.isEffectiveEquippedShield?.() && document.getElementById("offHandAsMain")?.checked;
       for (const [key, label, field] of [["armor", "護甲", "armor"], ["main", "主手", "mainHand"], ["off", "副手", "offHand"], ["other", "其他裝備", ""]]) {
-        const equipped = field ? document.getElementById(field)?.value || "未裝備" : "";
+        const equipped = key === "off" && main2Shield ? "盾牌" : (field ? document.getElementById(field)?.value || "未裝備" : "");
         equipment[key] = selectField(content, `${label}${equipped ? `：${equipped}` : ""}`, [
           { value: "merge", label: "融入（不生效）" }, { value: "drop", label: "掉落（不生效）" }, { value: "wear", label: "穿戴／持用（DM 同意）" }
         ], c.druid.equipment[key]);
@@ -398,7 +399,8 @@
       card.appendChild(section);
     }
     for (const item of beast.conditionalDamage || []) rollButton(card, `${item.name} ${item.expression}（條件成立時）`, item.expression);
-    const weapons = ["main", "off"].filter(hand => c.druid.equipment[hand] === "wear").map(getWeaponData).filter(item => item.name && item.name !== "盾牌");
+    const hands = document.getElementById("offHandAsMain")?.checked ? ["main"] : ["main", "off"];
+    const weapons = hands.filter(hand => c.druid.equipment[hand] === "wear").map(getWeaponData).filter(item => item.name && item.name !== "盾牌");
     target.replaceChildren(card, ...weapons.map(createWeaponSummary));
     if (weapons.length && !globalScope.isWeaponAttackAutomationEnabled?.()) target.append(el("p", "目前武器為手填模式，請依變形後屬性自行裁定武器加值；野獸攻擊可直接擲骰。"));
     return true;

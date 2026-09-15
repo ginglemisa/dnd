@@ -781,6 +781,27 @@
     return PDF_SHIELD_PROFICIENT_CLASSES.includes(classKey);
   }
 
+  function hasEffectiveShieldForPdf(state) {
+    const weaponList = [
+      ...(globalScope.weapons_simple_melee || []),
+      ...(globalScope.weapons_simple_ranged || []),
+      ...(globalScope.weapons_martial_melee || []),
+      ...(globalScope.weapons_martial_ranged || [])
+    ];
+    const isTwoHandedWeapon = name => {
+      const weapon = weaponList.find(item => item?.名稱 === name);
+      return [weapon?.屬性1, weapon?.屬性2, weapon?.屬性3, weapon?.屬性4]
+        .some(property => String(property || '').includes('雙手'));
+    };
+    if (typeof globalScope.isEffectiveShieldEquippedForState === 'function') {
+      return globalScope.isEffectiveShieldEquippedForState(state, {
+        isShieldProficient: hasShieldProficiencyForPdf,
+        isTwoHandedWeapon
+      });
+    }
+    return state.offHandAsMain !== true && normalizeText(state.offHand) === '盾牌';
+  }
+
   function collectToolProficiencyNames(state) {
     const seen = new Set();
     return Object.keys(state)
@@ -1530,7 +1551,7 @@ function isWeaponRowEmpty(payload, slot) {
       level: state.level,
       isWearingArmor: Boolean(armorName) && !isShield(armorName),
       isWearingHeavyArmor: armor?.分類 === '重甲',
-      hasShield: isShield(armorName) || (state.offHandAsMain !== true && normalizeText(state.offHand) === '盾牌')
+      hasShield: isShield(armorName) || hasEffectiveShieldForPdf(state)
     });
   }
 
