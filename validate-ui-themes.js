@@ -58,8 +58,7 @@ async function main() {
       await screenshot(`${family}-${mode}-logo`);
       await page.locator("#legal-close-btn").click();
       const bg = await page.locator("html").evaluate(el => getComputedStyle(el).backgroundImage);
-      const expectedTexture = family === "warm" ? `warm-paper-${mode === "light" ? "dark" : "light"}.webp` : "";
-      assert.equal(expectedTexture ? bg.includes(expectedTexture) : !bg.includes("warm-paper-"), true);
+      assert.equal(bg.includes("paper002"), family === "warm" && mode === "light");
       await page.locator("#utility-menu-toggle").click();
       await screenshot(`${family}-${mode}-menu`);
       await page.locator("#color-mode-toggle").focus();
