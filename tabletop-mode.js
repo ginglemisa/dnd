@@ -2399,9 +2399,7 @@ function getRogueReliableTalentEntry() {
       tags.push({
         key: "exhaustion",
         label:
-          `力竭 ${exhaustion.level} 級`
-          + `｜D20 −${exhaustion.d20Penalty}`
-          + `｜速度 −${exhaustion.speedPenaltyFeet} 呎`
+          `力竭${exhaustion.level},骰-${exhaustion.d20Penalty},速-${exhaustion.speedPenaltyFeet}`
       });
     }
 
@@ -3854,7 +3852,7 @@ function getRogueReliableTalentEntry() {
 
     if (exhaustion.level > 0) {
       markStateChanged(
-        `目前狀態已更新，共標記 ${total} 項。力竭 ${exhaustion.level} 級：D20 −${exhaustion.d20Penalty}，速度 −${exhaustion.speedPenaltyFeet} 呎。`
+        `目前狀態已更新，共標記 ${total} 項。力竭${exhaustion.level},骰-${exhaustion.d20Penalty},速-${exhaustion.speedPenaltyFeet}。`
       );
 
       return;
