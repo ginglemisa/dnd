@@ -235,15 +235,20 @@
 
     <div id="tabletop-concentration-overview" class="tabletop-concentration-list tabletop-concentration-list--overview" aria-live="polite" hidden></div>
 
-    <section class="tabletop-section tabletop-health" aria-labelledby="tabletop-health-title">
-      <div class="tabletop-section-heading">
-        <h2 id="tabletop-health-title">生命狀態</h2>
-        <div class="tabletop-section-heading__actions">
-          <button type="button" id="tabletop-undo" class="tabletop-undo" disabled aria-disabled="true">復原上一筆</button>
-          <button type="button" id="tabletop-temporary-hp-toggle" class="tabletop-temporary-hp-toggle" aria-expanded="false" aria-controls="tabletop-temporary-hp-form">設定臨時 HP</button>
-        </div>
-      </div>
-      <div class="tabletop-hp-readout" aria-label="生命值摘要">
+    <section class="tabletop-section tabletop-health" aria-label="生命值操作">
+      <div class="tabletop-health-layout">
+        <button type="button" id="tabletop-avatar-button" class="tabletop-avatar" aria-label="選擇角色圖片" aria-haspopup="dialog" aria-controls="tabletop-avatar-modal">
+          <img id="tabletop-avatar-image" alt="" hidden>
+          <span class="tabletop-avatar__placeholder" aria-hidden="true"><span>＋</span>角色圖片</span>
+        </button>
+        <div class="tabletop-health-controls">
+          <div class="tabletop-section-heading tabletop-health-actions">
+            <div class="tabletop-section-heading__actions">
+              <button type="button" id="tabletop-undo" class="tabletop-undo" disabled aria-disabled="true">復原</button>
+              <button type="button" id="tabletop-temporary-hp-toggle" class="tabletop-temporary-hp-toggle" aria-expanded="false" aria-controls="tabletop-temporary-hp-form">設定入臨時HP</button>
+            </div>
+          </div>
+          <div class="tabletop-hp-readout" aria-label="生命值摘要">
         <div class="tabletop-hp-primary">
           <span class="tabletop-hp-label">目前／最大 HP</span>
           <strong><span id="tabletop-current-hp">—</span><span aria-hidden="true">／</span><span id="tabletop-maximum-hp">—</span></strong>
@@ -252,14 +257,14 @@
           <span>臨時 HP</span>
           <strong id="tabletop-temporary-hp">0</strong>
         </div>
-      </div>
+          </div>
 
       <form id="tabletop-life-form" class="tabletop-life-form" novalidate>
         <label for="tabletop-life-amount">傷害或治療點數</label>
         <div class="tabletop-life-controls">
           <input id="tabletop-life-amount" type="number" min="1" step="1" inputmode="numeric" aria-describedby="tabletop-life-error" data-state-transient="true">
-          <button type="submit" name="life-operation" value="damage" class="tabletop-action-button tabletop-action-button--damage">受到傷害</button>
-          <button type="submit" name="life-operation" value="heal" class="tabletop-action-button tabletop-action-button--heal">獲得治療</button>
+          <button type="submit" name="life-operation" value="damage" class="tabletop-action-button tabletop-action-button--damage">受傷</button>
+          <button type="submit" name="life-operation" value="heal" class="tabletop-action-button tabletop-action-button--heal">治療</button>
         </div>
         <p id="tabletop-life-error" class="tabletop-field-error" aria-live="polite"></p>
       </form>
@@ -275,7 +280,25 @@
       </form>
 
       <p id="tabletop-live-status" class="tabletop-live-status" role="status" aria-live="polite" aria-atomic="true"></p>
+        </div>
+      </div>
     </section>
+
+    <div id="tabletop-avatar-modal" class="tabletop-avatar-modal" hidden inert>
+      <div class="tabletop-avatar-modal__surface" role="dialog" aria-modal="true" aria-labelledby="tabletop-avatar-modal-title">
+        <h2 id="tabletop-avatar-modal-title">裁切角色圖片</h2>
+        <div id="tabletop-avatar-crop" class="tabletop-avatar-crop" aria-label="拖曳圖片調整裁切位置">
+          <img id="tabletop-avatar-crop-image" alt="待裁切的角色圖片" draggable="false">
+          <span class="tabletop-avatar-crop__frame" aria-hidden="true"></span>
+        </div>
+        <p class="tabletop-avatar-modal__hint">拖曳調整位置，滾輪或雙指縮放</p>
+        <div class="tabletop-avatar-modal__actions">
+          <button type="button" id="tabletop-avatar-cancel">取消</button>
+          <button type="button" id="tabletop-avatar-confirm">確定</button>
+        </div>
+      </div>
+    </div>
+    <input id="tabletop-avatar-file" type="file" accept="image/jpeg,image/png,image/webp" hidden data-state-transient="true">
 
     <section class="tabletop-section tabletop-conditions" aria-labelledby="tabletop-conditions-title">
       <div class="tabletop-section-heading">
@@ -7856,6 +7879,7 @@ const APP_STORAGE_KEYS = Object.freeze([
   CLASS_CORE_CREATION_INFO_STATE_KEY,
   "dnd.quickBuildDraft.v1",
   "dnd.tabletopActionPreferences.v1",
+  "dnd.tabletopAvatar.v1",
   ...LEGACY_LEGAL_DISMISS_KEYS
 ]);
 let SHARE_MODE = false;
@@ -9639,7 +9663,7 @@ window.addEventListener("DOMContentLoaded", async function() {
       }
       const confirmed = await window.AppDialog.requestDecision({
         title: "清除本機角色紀錄",
-        message: "這會清除角色欄位、版權提醒、分頁狀態與桌邊動作偏好，並重新載入預設角色卡。此操作無法復原。",
+        message: "這會清除角色欄位、角色圖片、版權提醒、分頁狀態與桌邊動作偏好，並重新載入預設角色卡。此操作無法復原。",
         cancelLabel: "保留紀錄",
         confirmLabel: "清除紀錄",
         intent: "danger"
