@@ -11743,29 +11743,6 @@ html.tabletop-avatar-modal-open { overflow: hidden; }
   gap: 0.5rem;
 }
 
-@media (min-width: 900px) {
-  .tabletop-health-controls {
-    display: grid;
-    grid-template-columns: minmax(15rem, 0.9fr) minmax(18rem, 1.1fr);
-    align-items: start;
-    column-gap: 0.75rem;
-  }
-
-  .tabletop-hp-readout {
-    padding-bottom: 0;
-  }
-
-  .tabletop-life-form {
-    padding-top: 0;
-    border-top: 0;
-  }
-
-  .tabletop-temporary-hp-form,
-  .tabletop-live-status {
-    grid-column: 1 / -1;
-  }
-}
-
 .tabletop-field-help,
 .tabletop-field-error,
 .tabletop-live-status,
@@ -16129,4 +16106,28 @@ html[data-theme="dark"] .utility-menu {
   border-radius: var(--radius-sm);
   color: var(--warning);
   background: var(--warning-soft);
+}
+
+/* 720px 起才嘗試橫排；欄位可縮小，避免頭像展開時造成水平溢位。 */
+@media (min-width: 720px) {
+  .tabletop-health-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    align-items: start;
+    column-gap: 0.75rem;
+  }
+
+  .tabletop-hp-readout {
+    padding-bottom: 0;
+  }
+
+  .tabletop-life-form {
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .tabletop-temporary-hp-form,
+  .tabletop-live-status {
+    grid-column: 1 / -1;
+  }
 }
