@@ -142,7 +142,7 @@ html:where([data-ui-theme="warm"])[data-theme="light"] {
   --accent-soft: #EFD2BF;
 
   /* Only the page canvas receives texture; all component surfaces stay solid. */
-  --page-background: url("assets/textures/warm-paper-dark.png") 0 0 / 2048px 2048px repeat var(--bg);
+  --page-background: url("assets/textures/warm-paper-dark.webp") 0 0 / 2048px 2048px repeat var(--bg);
   --nav-surface: var(--surface);
   --nav-border: var(--ink);
   --nav-bottom-border: #80644D;
@@ -345,7 +345,7 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] {
   --accent: #D08F79;
   --accent-strong: #D9A08A;
   --accent-soft: #3D2721;
-  --page-background: url("assets/textures/warm-paper-light.png") 0 0 / 2048px 2048px repeat var(--bg);
+  --page-background: url("assets/textures/warm-paper-light.webp") 0 0 / 2048px 2048px repeat var(--bg);
   --nav-surface: var(--surface-strong);
   --nav-border: #8D7962;
   --nav-bottom-border: var(--nav-border);
