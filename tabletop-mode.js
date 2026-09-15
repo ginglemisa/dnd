@@ -4793,3 +4793,162 @@ function getRogueReliableTalentEntry() {
     ? window
     : globalThis
 );
+
+(function attachTabletopAvatar(globalScope) {
+  "use strict";
+
+  const STORAGE_KEY = "dnd.tabletopAvatar.v1";
+  const OUTPUT_SIZE = 512;
+  const MAX_FILE_BYTES = 20 * 1024 * 1024;
+  const pointers = new Map();
+  let objectUrl = "";
+  let lastGesture = null;
+  let state = { x: 0, y: 0, scale: 1, minimumScale: 1 };
+
+  function getElements() {
+    return {
+      button: document.getElementById("tabletop-avatar-button"),
+      image: document.getElementById("tabletop-avatar-image"),
+      placeholder: document.querySelector(".tabletop-avatar__placeholder"),
+      file: document.getElementById("tabletop-avatar-file"),
+      modal: document.getElementById("tabletop-avatar-modal"),
+      crop: document.getElementById("tabletop-avatar-crop"),
+      cropImage: document.getElementById("tabletop-avatar-crop-image"),
+      cancel: document.getElementById("tabletop-avatar-cancel"),
+      confirm: document.getElementById("tabletop-avatar-confirm")
+    };
+  }
+
+  function renderTransform(elements) {
+    const cropSize = elements.crop.clientWidth;
+    const halfWidth = elements.cropImage.naturalWidth * state.scale / 2;
+    const halfHeight = elements.cropImage.naturalHeight * state.scale / 2;
+    state.x = Math.max(cropSize / 2 - halfWidth, Math.min(halfWidth - cropSize / 2, state.x));
+    state.y = Math.max(cropSize / 2 - halfHeight, Math.min(halfHeight - cropSize / 2, state.y));
+    elements.cropImage.style.transform = `translate(-50%, -50%) translate(${state.x}px, ${state.y}px) scale(${state.scale})`;
+  }
+
+  function setSavedAvatar(elements, dataUrl) {
+    elements.image.src = dataUrl || "";
+    elements.image.hidden = !dataUrl;
+    elements.placeholder.hidden = Boolean(dataUrl);
+    elements.button.setAttribute("aria-label", dataUrl ? "更換角色圖片" : "選擇角色圖片");
+  }
+
+  function closeCropper(elements) {
+    elements.modal.hidden = true;
+    elements.modal.inert = true;
+    document.documentElement.classList.remove("tabletop-avatar-modal-open");
+    pointers.clear();
+    lastGesture = null;
+    elements.file.value = "";
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
+    objectUrl = "";
+    elements.button.focus();
+  }
+
+  function openFile(elements, file) {
+    if (!file || !/^image\/(?:jpeg|png|webp)$/.test(file.type) || file.size > MAX_FILE_BYTES) {
+      globalScope.AppDialog?.notify?.("請選擇 20MB 以下的 JPG、PNG 或 WebP 圖片。", { tone: "danger" });
+      elements.file.value = "";
+      return;
+    }
+    objectUrl = URL.createObjectURL(file);
+    elements.cropImage.onload = () => {
+      const cropSize = elements.crop.clientWidth;
+      const minimumScale = Math.max(
+        cropSize / elements.cropImage.naturalWidth,
+        cropSize / elements.cropImage.naturalHeight
+      );
+      state = { x: 0, y: 0, scale: minimumScale, minimumScale };
+      renderTransform(elements);
+    };
+    elements.cropImage.src = objectUrl;
+    elements.modal.hidden = false;
+    elements.modal.inert = false;
+    document.documentElement.classList.add("tabletop-avatar-modal-open");
+    elements.cancel.focus();
+  }
+
+  function gestureSnapshot() {
+    const active = Array.from(pointers.values());
+    if (!active.length) return null;
+    const center = active.reduce((sum, point) => ({ x: sum.x + point.x / active.length, y: sum.y + point.y / active.length }), { x: 0, y: 0 });
+    const distance = active.length > 1 ? Math.hypot(active[0].x - active[1].x, active[0].y - active[1].y) : 0;
+    return { center, distance };
+  }
+
+  function init() {
+    const elements = getElements();
+    if (!elements.button || !elements.crop) return;
+    setSavedAvatar(elements, globalScope.dndStorage?.getItem(STORAGE_KEY) || "");
+
+    elements.button.addEventListener("click", () => elements.file.click());
+    elements.file.addEventListener("change", () => openFile(elements, elements.file.files?.[0]));
+    elements.cancel.addEventListener("click", () => closeCropper(elements));
+
+    elements.crop.addEventListener("wheel", (event) => {
+      event.preventDefault();
+      const previous = state.scale;
+      state.scale = Math.max(state.minimumScale, Math.min(state.minimumScale * 5, state.scale * Math.exp(-event.deltaY * 0.0015)));
+      const rect = elements.crop.getBoundingClientRect();
+      const cursorX = event.clientX - rect.left - rect.width / 2;
+      const cursorY = event.clientY - rect.top - rect.height / 2;
+      const ratio = state.scale / previous;
+      state.x = cursorX - (cursorX - state.x) * ratio;
+      state.y = cursorY - (cursorY - state.y) * ratio;
+      renderTransform(elements);
+    }, { passive: false });
+
+    elements.crop.addEventListener("pointerdown", (event) => {
+      elements.crop.setPointerCapture(event.pointerId);
+      pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      lastGesture = gestureSnapshot();
+    });
+    elements.crop.addEventListener("pointermove", (event) => {
+      if (!pointers.has(event.pointerId)) return;
+      pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      const next = gestureSnapshot();
+      if (!lastGesture || !next) return;
+      state.x += next.center.x - lastGesture.center.x;
+      state.y += next.center.y - lastGesture.center.y;
+      if (next.distance && lastGesture.distance) {
+        state.scale = Math.max(state.minimumScale, Math.min(state.minimumScale * 5, state.scale * next.distance / lastGesture.distance));
+      }
+      lastGesture = next;
+      renderTransform(elements);
+    });
+    const endPointer = (event) => {
+      pointers.delete(event.pointerId);
+      lastGesture = gestureSnapshot();
+    };
+    elements.crop.addEventListener("pointerup", endPointer);
+    elements.crop.addEventListener("pointercancel", endPointer);
+
+    elements.confirm.addEventListener("click", () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = OUTPUT_SIZE;
+      canvas.height = OUTPUT_SIZE;
+      const ratio = OUTPUT_SIZE / elements.crop.clientWidth;
+      const context = canvas.getContext("2d");
+      context.fillStyle = "#fff";
+      context.fillRect(0, 0, OUTPUT_SIZE, OUTPUT_SIZE);
+      context.translate(OUTPUT_SIZE / 2 + state.x * ratio, OUTPUT_SIZE / 2 + state.y * ratio);
+      context.scale(state.scale * ratio, state.scale * ratio);
+      context.drawImage(elements.cropImage, -elements.cropImage.naturalWidth / 2, -elements.cropImage.naturalHeight / 2);
+      const dataUrl = canvas.toDataURL("image/webp", 0.82);
+      if (!globalScope.dndStorage?.setItem(STORAGE_KEY, dataUrl)) {
+        globalScope.AppDialog?.notify?.("圖片無法儲存，本機空間可能已滿。", { tone: "danger" });
+        return;
+      }
+      setSavedAvatar(elements, dataUrl);
+      closeCropper(elements);
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !elements.modal.hidden) closeCropper(elements);
+    });
+  }
+
+  if (typeof document !== "undefined") document.addEventListener("DOMContentLoaded", init);
+})(typeof window !== "undefined" ? window : globalThis);
