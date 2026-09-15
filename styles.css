@@ -144,7 +144,7 @@ html:where([data-ui-theme="warm"])[data-theme="light"] {
   /* Only the page canvas receives texture; all component surfaces stay solid. */
   --page-background:
     linear-gradient(rgba(254, 249, 237, 0.94), rgba(254, 249, 237, 0.94)),
-    url("assets/textures/paper002-color-512.webp") 0 0 / 512px 512px repeat var(--bg);
+    url("paper002-color-512.webp") 0 0 / 512px 512px repeat var(--bg);
   --nav-surface: var(--surface);
   --nav-border: var(--ink);
   --nav-bottom-border: #80644D;

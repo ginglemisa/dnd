@@ -25,7 +25,7 @@
 
 暖紙主題以紙本 RPG 角色表與冒險海報為意象。硬陰影集中於導覽、主要按鈕與對話框；密集數值、技能和表單保持清楚平整。圓角 tokens 為 3／4／6px。文字 accent 與按鈕填色分開，避免暗色模式出現難讀的暗紅文字。
 
-頁面背景由 `html` 的 `--page-background` 繪製。暖紙亮色重複本地 `assets/textures/paper002-color-512.webp`，上覆 94% 不透明的 `#FEF9ED`，讓整體接近 `#FAF5E9`；卡片、表單與按鈕維持實色。暖紙暗色無背景圖片。素材出處與授權集中於 [About](about.html#legal-heading)。
+頁面背景由 `html` 的 `--page-background` 繪製。暖紙亮色重複本地 `paper002-color-512.webp`，上覆 94% 不透明的 `#FEF9ED`，讓整體接近 `#FAF5E9`；卡片、表單與按鈕維持實色。暖紙暗色無背景圖片。素材出處與授權集中於 [About](about.html#legal-heading)。
 
 紙紋沿用提供素材的處理紀錄：原始 Color tile 為 794×1024，縮放至 512×512，以對向 16px 邊緣混合減少重複接縫，輸出 WebP quality 52／method 6。不包含 normal、roughness 或 displacement 等 PBR maps。色彩與背景設定由 `styles.css` 維護。
 
