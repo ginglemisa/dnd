@@ -2348,13 +2348,15 @@ function getRogueReliableTalentEntry() {
         combatState.temporaryHp
       );
 
-    elements.undo.disabled =
-      !undoSnapshot;
+    if (elements.undo) {
+      elements.undo.disabled =
+        !undoSnapshot;
 
-    elements.undo.setAttribute(
-      "aria-disabled",
-      String(!undoSnapshot)
-    );
+      elements.undo.setAttribute(
+        "aria-disabled",
+        String(!undoSnapshot)
+      );
+    }
   }
 
   function renderConditions() {
@@ -4798,6 +4800,7 @@ function getRogueReliableTalentEntry() {
   "use strict";
 
   const STORAGE_KEY = "dnd.tabletopAvatar.v1";
+  const VISIBILITY_STORAGE_KEY = "dnd.tabletopAvatarVisible.v1";
   const OUTPUT_SIZE = 512;
   const MAX_FILE_BYTES = 20 * 1024 * 1024;
   const pointers = new Map();
@@ -4808,6 +4811,8 @@ function getRogueReliableTalentEntry() {
   function getElements() {
     return {
       button: document.getElementById("tabletop-avatar-button"),
+      layout: document.querySelector(".tabletop-health-layout"),
+      visibilityToggle: document.getElementById("tabletop-avatar-visibility-toggle"),
       image: document.getElementById("tabletop-avatar-image"),
       placeholder: document.querySelector(".tabletop-avatar__placeholder"),
       file: document.getElementById("tabletop-avatar-file"),
@@ -4833,6 +4838,15 @@ function getRogueReliableTalentEntry() {
     elements.image.hidden = !dataUrl;
     elements.placeholder.hidden = Boolean(dataUrl);
     elements.button.setAttribute("aria-label", dataUrl ? "更換角色圖片" : "選擇角色圖片");
+  }
+
+  function setAvatarVisible(elements, visible, persist = false) {
+    elements.layout?.classList.toggle("tabletop-health-layout--avatar-collapsed", !visible);
+    elements.button.hidden = !visible;
+    elements.visibilityToggle.setAttribute("aria-expanded", String(visible));
+    elements.visibilityToggle.setAttribute("aria-label", visible ? "收合角色圖片" : "展開角色圖片");
+    elements.visibilityToggle.querySelector("span").textContent = visible ? "‹" : "›";
+    if (persist) globalScope.dndStorage?.setItem(VISIBILITY_STORAGE_KEY, String(visible));
   }
 
   function closeCropper(elements) {
@@ -4881,9 +4895,15 @@ function getRogueReliableTalentEntry() {
   function init() {
     const elements = getElements();
     if (!elements.button || !elements.crop) return;
-    setSavedAvatar(elements, globalScope.dndStorage?.getItem(STORAGE_KEY) || "");
+    const savedAvatar = globalScope.dndStorage?.getItem(STORAGE_KEY) || "";
+    const savedVisibility = globalScope.dndStorage?.getItem(VISIBILITY_STORAGE_KEY);
+    setSavedAvatar(elements, savedAvatar);
+    setAvatarVisible(elements, savedVisibility === null ? Boolean(savedAvatar) : savedVisibility === "true");
 
     elements.button.addEventListener("click", () => elements.file.click());
+    elements.visibilityToggle.addEventListener("click", () => {
+      setAvatarVisible(elements, elements.visibilityToggle.getAttribute("aria-expanded") !== "true", true);
+    });
     elements.file.addEventListener("change", () => openFile(elements, elements.file.files?.[0]));
     elements.cancel.addEventListener("click", () => closeCropper(elements));
 

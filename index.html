@@ -46,7 +46,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20260915-dual-themes">
+  <link rel="stylesheet" href="styles.css?v=20260915-tabletop-health">
   <script src="scroll-to-top.js" defer></script>
   <script src="dice-roller.js?v=20260915-dual-themes" defer></script>
   <script src="monster.js?v=20260912-druid-controls" defer></script>
@@ -61,7 +61,7 @@
   <script src="action-panel.js?v=20260913-class-tabletop" defer></script>
   <script src="character-rules.js?v=20260913-spellbook" defer></script>
   <script src="app-dialog.js?v=20260831-number-input" defer></script>
-  <script src="tabletop-mode.js?v=20260915-skill-layout" defer></script>
+  <script src="tabletop-mode.js?v=20260915-tabletop-health" defer></script>
   <script src="tabletop-druid.js?v=20260912-druid-controls" defer></script>
   <script src="tabletop-resources.js?v=20260912-druid-controls" defer></script>
   <script src="tabletop-actions.js?v=20260913-class-tabletop" defer></script>
@@ -241,22 +241,17 @@
           <img id="tabletop-avatar-image" alt="" hidden>
           <span class="tabletop-avatar__placeholder" aria-hidden="true"><span>＋</span>角色圖片</span>
         </button>
+        <button type="button" id="tabletop-avatar-visibility-toggle" class="tabletop-avatar-visibility-toggle" aria-expanded="false" aria-controls="tabletop-avatar-button" aria-label="展開角色圖片"><span aria-hidden="true">›</span></button>
         <div class="tabletop-health-controls">
-          <div class="tabletop-section-heading tabletop-health-actions">
-            <div class="tabletop-section-heading__actions">
-              <button type="button" id="tabletop-undo" class="tabletop-undo" disabled aria-disabled="true">🔙復原</button>
-              <button type="button" id="tabletop-temporary-hp-toggle" class="tabletop-temporary-hp-toggle" aria-expanded="false" aria-controls="tabletop-temporary-hp-form">修改臨時HP</button>
-            </div>
-          </div>
           <div class="tabletop-hp-readout" aria-label="生命值摘要">
         <div class="tabletop-hp-primary">
           <span class="tabletop-hp-label">目前／最大 HP</span>
           <strong><span id="tabletop-current-hp">—</span><span aria-hidden="true">／</span><span id="tabletop-maximum-hp">—</span></strong>
         </div>
-        <div class="tabletop-hp-temporary">
+        <button type="button" id="tabletop-temporary-hp-toggle" class="tabletop-hp-temporary" aria-expanded="false" aria-controls="tabletop-temporary-hp-form" aria-label="修改臨時 HP">
           <span>臨時 HP</span>
           <strong id="tabletop-temporary-hp">0</strong>
-        </div>
+        </button>
           </div>
 
       <form id="tabletop-life-form" class="tabletop-life-form" novalidate>
