@@ -136,6 +136,15 @@
     return Boolean(weapon.name);
   }
 
+  function canShowSecondaryWeapon() {
+    const offHandName = document.getElementById("offHand")?.value || "";
+    if (!offHandName || offHandName === "盾牌") return false;
+
+    const mainWeapon = getEquippedWeapon("main");
+    const isAlternateMain = document.getElementById("offHandAsMain")?.checked === true;
+    return isAlternateMain || !weaponHasProperty(mainWeapon, "雙手");
+  }
+
   function parseModifier(value) {
     const normalized = String(value || "").trim().replace(/−/g, "-");
     if (!/^[+-]?\d+$/.test(normalized)) return null;
@@ -244,7 +253,8 @@
   function renderWeapons() {
     if (!elements.weaponSummary) return;
     if (globalScope.TabletopDruid?.renderBeastWeapons?.(elements.weaponSummary, getWeaponData, createWeaponSummary)) return;
-    const weapons = [getWeaponData("main"), getWeaponData("off")];
+    const weapons = [getWeaponData("main")];
+    if (canShowSecondaryWeapon()) weapons.push(getWeaponData("off"));
     if (!weapons.some(hasWeaponData)) {
       const empty = createElement("div", "tabletop-empty-state");
       empty.textContent = "尚未裝備武器，若下拉選單不符需求，可關閉武器攻擊自動化自行填寫。";
