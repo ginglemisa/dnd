@@ -399,7 +399,9 @@
       card.appendChild(section);
     }
     for (const item of beast.conditionalDamage || []) rollButton(card, `${item.name} ${item.expression}（條件成立時）`, item.expression);
-    const hands = document.getElementById("offHandAsMain")?.checked ? ["main"] : ["main", "off"];
+    const main2Shield = document.getElementById("offHandAsMain")?.checked === true
+      && globalScope.isEffectiveEquippedShield?.();
+    const hands = main2Shield ? ["main"] : ["main", "off"];
     const weapons = hands.filter(hand => c.druid.equipment[hand] === "wear").map(getWeaponData).filter(item => item.name && item.name !== "盾牌");
     target.replaceChildren(card, ...weapons.map(createWeaponSummary));
     if (weapons.length && !globalScope.isWeaponAttackAutomationEnabled?.()) target.append(el("p", "目前武器為手填模式，請依變形後屬性自行裁定武器加值；野獸攻擊可直接擲骰。"));
