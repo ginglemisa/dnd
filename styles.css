@@ -4469,7 +4469,6 @@ html[data-ui-theme="warm"][data-theme="dark"] .circle-checkbox:checked {
 }
 
 .equipment-alternate-main-option {
-  grid-column: 1 / -1;
   display: inline-flex;
   align-items: center;
   justify-self: start;
@@ -4481,6 +4480,14 @@ html[data-ui-theme="warm"][data-theme="dark"] .circle-checkbox:checked {
   font-weight: 750;
   line-height: 1.45;
   cursor: pointer;
+}
+
+.equipment-mode-options {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 1.25rem;
 }
 
 .equipment-alternate-main-option input {
