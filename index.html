@@ -8366,25 +8366,83 @@ function applyStateObject(data) {
 async function copyShareUrl() {
   const hash = await encodeStateToHash(collectShareState());
   const shareUrl = `${location.origin}${location.pathname}${location.search}${hash}`;
+  const shareButtons = Array.from(document.querySelectorAll(".share-url-btn"));
+  shareButtons.forEach((button) => {
+    button.disabled = true;
+    button.setAttribute("aria-busy", "true");
+  });
+  window.AppDialog.notify("正在建立短網址…", { tone: "info" });
+
+  let urlToCopy = shareUrl;
+  let shortened = false;
   try {
-    await navigator.clipboard.writeText(shareUrl);
-    if (shareUrl.length > 4000) {
-      await window.AppDialog.showMessage({
-        title: "分享網址已複製",
-        message: `網址長度為 ${shareUrl.length}，部分瀏覽器可能無法完整讀取。建議改用「匯入 JSON／匯出 JSON」保存與還原。`,
-        confirmLabel: "知道了"
-      });
-    } else {
-      window.AppDialog.notify("分享網址已複製。", { tone: "success" });
-    }
+    urlToCopy = await shortenShareUrl(shareUrl);
+    shortened = true;
+  } catch (error) {
+    console.warn("is.gd 短網址建立失敗：", error);
+  } finally {
+    shareButtons.forEach((button) => {
+      button.disabled = false;
+      button.removeAttribute("aria-busy");
+    });
+  }
+
+  try {
+    await navigator.clipboard.writeText(urlToCopy);
+    window.AppDialog.notify(
+      shortened ? "分享短網址已複製。" : "短網址建立失敗，已改為複製原始分享網址。",
+      { tone: shortened ? "success" : "error", duration: shortened ? 5200 : 8000 }
+    );
   } catch (e) {
     await window.AppDialog.showCopy({
-      title: "手動複製分享網址",
+      title: shortened ? "手動複製分享短網址" : "手動複製分享網址",
       message: "瀏覽器未允許自動複製。請選取下方網址後使用裝置的複製功能。",
-      copyValue: shareUrl,
+      copyValue: urlToCopy,
       confirmLabel: "關閉"
     });
   }
+}
+
+async function shortenShareUrl(shareUrl) {
+  return new Promise((resolve, reject) => {
+    const callbackName = `isGdCallback_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const script = document.createElement("script");
+    const cleanup = () => {
+      window.clearTimeout(timeoutId);
+      script.remove();
+      delete window[callbackName];
+    };
+    const fail = (error) => {
+      cleanup();
+      reject(error);
+    };
+    const timeoutId = window.setTimeout(() => fail(new Error("is.gd 請求逾時")), 10000);
+
+    window[callbackName] = (result) => {
+      if (result?.errorcode) {
+        fail(new Error(result.errormessage || `is.gd error ${result.errorcode}`));
+        return;
+      }
+
+      try {
+        const shortUrl = new URL(result?.shorturl || "");
+        if (shortUrl.protocol !== "https:" || shortUrl.hostname !== "is.gd") {
+          throw new Error("is.gd 回傳了無效的短網址");
+        }
+        cleanup();
+        resolve(shortUrl.href);
+      } catch (error) {
+        fail(error);
+      }
+    };
+    script.onerror = () => fail(new Error("無法連線至 is.gd"));
+    script.src = `https://is.gd/create.php?${new URLSearchParams({
+      format: "json",
+      callback: callbackName,
+      url: shareUrl
+    })}`;
+    document.head.appendChild(script);
+  });
 }
 
 function downloadStateAsJson() {
