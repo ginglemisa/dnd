@@ -18,6 +18,14 @@
 * 表單控制項與結構化 DOM 可作為角色目前選擇的 canonical state，無需另建中央 store。純顯示文字不作為主要規則資料來源，除非該解析本身是明確保留的設計。
 * LocalStorage 沿用 `window.dndStorage`。變更持久化欄位或意義時，檢查 LocalStorage、自動存檔、JSON 匯入／匯出與分享網址的還原相容性；UI 調整不應意外改變資料格式。
 * 修改正式部署載入的 CSS／JavaScript 時，依 `index.html` 既有查詢字串策略更新對應快取版本，只處理本次變動資源。
+* 分享流程入口為 `index.html` 的 `copyShareUrl()`，對話框沿用 `AppDialog`。短網址只在使用者明確選擇後建立，傳送當次編碼產生的區域變數 `hash`，不可改用可能過期的 `location.hash`；保留 `#s=`／`#s2=` 格式相容性與永久網址的複製 fallback。
+* 短網址僅供正式 Origin `https://twd20.com`、`#s2=` 且 hash 長度 ≤10000 使用，離線頁不得呼叫服務。90 天有效期由 Worker／KV 管理；建立失敗須明確提示並保留改選永久網址的操作，不可悄悄改複製長網址，也不可自動重試建立請求。
+
+## Cloudflare 短網址服務
+
+* Worker 的 source of truth 為 `cloudflare/twd20-url/worker.js`，bindings 與部署設定在同目錄的 `wrangler.jsonc`；修改前查閱 [Worker README](cloudflare/twd20-url/README.md)。網站前端與 Worker 分開部署，不因修改程式碼而自行部署。
+* 維持前後端的 7 碼英數短網址、HMAC 驗證與分享格式相容性。建立 API 的限流不得套用到 GET redirect；具體設定以 Worker 設定檔與 README 為準。
+* 不將 Secret、token、API key 的實際值或 KV runtime 資料寫入 repo；不猜測資源 ID，也不自行更換 `HMAC_SECRET`，以免既有短網址失效。
 
 ## 規則與資料入口
 

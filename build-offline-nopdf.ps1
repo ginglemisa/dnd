@@ -361,6 +361,23 @@ $html = [System.Text.RegularExpressions.Regex]::Replace(
   [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
 )
 
+# Offline sharing keeps the original direct long-URL copy flow. Remove the
+# online-only chooser and API helpers, retaining the shared clipboard body.
+$offlineSharePattern = '(?m)^function getShortShareUnavailableReason\(hash\) \{[\s\S]*?^async function copyResolvedShareUrl\(shareUrl\) \{'
+if ([System.Text.RegularExpressions.Regex]::Matches($html, $offlineSharePattern).Count -ne 1) {
+  throw "build-offline-nopdf.ps1: expected one share flow to replace; check the sharing functions in index.html."
+}
+$offlineShareReplacement = @'
+async function copyShareUrl() {
+  const hash = await encodeStateToHash(collectShareState());
+  const shareUrl = `${location.origin}${location.pathname}${location.search}${hash}`;
+'@
+$html = [System.Text.RegularExpressions.Regex]::Replace(
+  $html,
+  $offlineSharePattern,
+  [System.Text.RegularExpressions.MatchEvaluator]{ param($match) $offlineShareReplacement }
+)
+
 if ($html.Contains('const SPELL_QR_IMAGE_SRC = "./qr.png";')) {
   $qrPath = Join-Path $root "qr.png"
   if (Test-Path $qrPath) {

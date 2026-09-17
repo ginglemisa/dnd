@@ -1,0 +1,26 @@
+{
+  "name": "twd20-url",
+  "main": "worker.js",
+  "compatibility_date": "2026-09-17",
+  "kv_namespaces": [
+    {
+      "binding": "URLS",
+      "id": "b4cf47f3ff17471d9e91c4145733c8e7"
+    }
+  ],
+  "ratelimits": [
+    {
+      "name": "CREATE_RATE_LIMITER",
+      "namespace_id": "1001",
+      "simple": {
+        "limit": 20,
+        "period": 60
+      }
+    }
+  ],
+  "secrets": {
+    "required": [
+      "HMAC_SECRET"
+    ]
+  }
+}

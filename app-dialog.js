@@ -159,6 +159,7 @@
             : "secondary";
         button.className = `app-dialog__button app-dialog__button--${intent}`;
         button.textContent = String(action?.label || "關閉");
+        button.disabled = Boolean(action?.disabled);
         button.dataset.dialogActionIndex = String(index);
         actions.appendChild(button);
         actionButtons.push(button);
@@ -178,8 +179,10 @@
     document.documentElement.classList.add("app-dialog-open");
 
     return new Promise((resolve) => {
+      let actionController = null;
       const close = (result, restoreFocus = true) => {
         if (!root.isConnected) return;
+        actionController?.abort();
         document.removeEventListener("keydown", onKeyDown, true);
         restoreBackground(backgroundStates);
         root.remove();
@@ -242,7 +245,33 @@
         }
       });
       actionButtons.forEach((button, index) => {
-        button.addEventListener("click", () => close(customActions[index]?.value ?? index));
+        button.addEventListener("click", async () => {
+          if (button.disabled || actionController) return;
+          const action = customActions[index];
+          if (typeof action.resolve !== "function") {
+            close(action?.value ?? index);
+            return;
+          }
+          actionController = new AbortController();
+          const label = button.textContent;
+          actionButtons.forEach(item => { item.disabled = true; });
+          button.textContent = String(action.busyLabel || label);
+          button.setAttribute("aria-busy", "true");
+          try {
+            const result = await action.resolve(actionController.signal);
+            if (result !== false) close(result === undefined ? (action.value ?? index) : result);
+          } catch (error) {
+            if (!actionController.signal.aborted) console.error("AppDialog action handler failed.", error);
+          } finally {
+            actionController = null;
+            if (root.isConnected) {
+              actionButtons.forEach((item, actionIndex) => { item.disabled = Boolean(customActions[actionIndex]?.disabled); });
+              button.textContent = label;
+              button.removeAttribute("aria-busy");
+              button.focus();
+            }
+          }
+        });
       });
       root.addEventListener("click", (event) => {
         if (event.target === root && options.dismissOnBackdrop !== false) close(false);
