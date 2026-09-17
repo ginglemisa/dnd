@@ -6779,10 +6779,10 @@ function updatePreparedSpellCounts() {
   });
   const total = counts.reduce((sum, count) => sum + count, 0);
   const ringLabels = ["一環", "二環", "三環", "四環"];
-  const parts = [`準備法術總數：${total}`].concat(counts.map((count, index) => `${ringLabels[index]}：${count}`));
+  const parts = counts.map((count, index) => `${ringLabels[index]} ${count}`);
   const preparedLimit = window.getPreparedSpellLimit(classValue, level);
   const classLabel = document.getElementById("class")?.selectedOptions[0]?.textContent?.trim() || classValue;
-  target.textContent = `〔${parts.join(" | ")}〕${preparedLimit === null ? "" : ` ${classLabel}等級${level} 準備法術數量 ${preparedLimit}`}`;
+  target.innerText = `已準備 ${total} 個法術\n${parts.join(" | ")}${preparedLimit === null ? "" : `\n${classLabel} LV${level}｜最多可準備 ${preparedLimit} 個`}`;
   target.hidden = false;
 }
 
