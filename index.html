@@ -8404,45 +8404,28 @@ async function copyShareUrl() {
 }
 
 async function shortenShareUrl(shareUrl) {
-  return new Promise((resolve, reject) => {
-    const callbackName = `isGdCallback_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-    const script = document.createElement("script");
-    const cleanup = () => {
-      window.clearTimeout(timeoutId);
-      script.remove();
-      delete window[callbackName];
-    };
-    const fail = (error) => {
-      cleanup();
-      reject(error);
-    };
-    const timeoutId = window.setTimeout(() => fail(new Error("is.gd 請求逾時")), 10000);
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), 6000);
+  const apiUrl = `https://is.gd/create.php?${new URLSearchParams({
+    format: "simple",
+    url: shareUrl
+  })}`;
 
-    window[callbackName] = (result) => {
-      if (result?.errorcode) {
-        fail(new Error(result.errormessage || `is.gd error ${result.errorcode}`));
-        return;
-      }
+  try {
+    // is.gd's public API accepts GET requests. Its plain-text response avoids
+    // the JSONP callback path, which does not complete reliably in every browser.
+    const response = await fetch(apiUrl, { signal: controller.signal });
+    const responseText = (await response.text()).trim();
+    if (!response.ok) throw new Error(responseText || `HTTP ${response.status}`);
 
-      try {
-        const shortUrl = new URL(result?.shorturl || "");
-        if (shortUrl.protocol !== "https:" || shortUrl.hostname !== "is.gd") {
-          throw new Error("is.gd 回傳了無效的短網址");
-        }
-        cleanup();
-        resolve(shortUrl.href);
-      } catch (error) {
-        fail(error);
-      }
-    };
-    script.onerror = () => fail(new Error("無法連線至 is.gd"));
-    script.src = `https://is.gd/create.php?${new URLSearchParams({
-      format: "json",
-      callback: callbackName,
-      url: shareUrl
-    })}`;
-    document.head.appendChild(script);
-  });
+    const shortUrl = new URL(responseText);
+    if (shortUrl.protocol !== "https:" || shortUrl.hostname !== "is.gd") {
+      throw new Error(responseText || "is.gd 回傳了無效的短網址");
+    }
+    return shortUrl.href;
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
 }
 
 function downloadStateAsJson() {
