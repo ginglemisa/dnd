@@ -6778,9 +6778,30 @@ html:not([data-view-mode="tabletop"]) .free-spell-use-checks {
   padding: 10px 12px;
   border: 1px solid var(--warning-border);
   border-radius: var(--radius-sm);
-  background: var(--surface-soft);
+  background: var(--warning-soft);
   color: var(--warning);
   font-weight: 700;
+}
+
+.share-mode-tip {
+  border-inline-start-width: 5px !important;
+  line-height: 1.6;
+}
+
+.share-mode-tip strong,
+.share-mode-tip span {
+  display: block;
+}
+
+.share-mode-tip span {
+  margin-top: 4px;
+  font-weight: 400;
+}
+
+.utility-menu__button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 .feature-choice-card {
@@ -7085,6 +7106,23 @@ label.feature-choice-card__heading {
 }
 
 /* ===== Floating UI ===== */
+#exit-share-mode:not([hidden]) {
+  position: fixed;
+  right: max(3rem, calc((100vw - var(--app-max-width)) / 2 + 3rem));
+  bottom: 0.85rem;
+  z-index: 999;
+  padding: 0 0.35rem;
+  border-radius: 4px;
+  background: var(--surface-strong);
+  color: var(--text-body);
+  font-size: 0.875rem;
+  line-height: 1.5rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
 #scrollToTopBtn {
   position: fixed;
   right: max(0.95rem, calc((100vw - var(--app-max-width)) / 2 + 0.95rem));
@@ -9697,6 +9735,41 @@ html[data-view-mode="tabletop"] #scrollToBottomBtn {
   font-size: var(--fs-lg);
   line-height: 1.15;
   text-align: center;
+}
+
+#legal-modal.is-share-mode .legal-modal-card {
+  box-sizing: border-box;
+  width: calc(100% - 32px);
+  max-width: 460px;
+  max-height: calc(100dvh - 64px);
+  margin: 32px auto;
+  padding: 24px 20px 20px;
+  overflow-y: auto;
+}
+
+#legal-modal.is-share-mode .legal-modal-logo,
+#legal-modal.is-share-mode .legal-modal-copy,
+#legal-modal.is-share-mode .legal-modal-meta,
+#legal-modal.is-share-mode .legal-modal-dismiss,
+#legal-modal.is-share-mode #legal-onboarding-btn {
+  display: none;
+}
+
+#legal-modal.is-share-mode .legal-modal-title {
+  padding-right: 32px;
+  text-align: left;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.legal-share-copy {
+  color: var(--text-body);
+  font-size: var(--fs-sm);
+  line-height: 1.65;
+}
+
+.legal-share-copy p {
+  margin: 12px 0;
 }
 
 :where(html:not([data-ui-theme="warm"])) .legal-modal-logo {

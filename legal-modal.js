@@ -19,6 +19,14 @@
     };
     if (!modal || !checkbox) return;
 
+    if (isShareMode) {
+      modal.classList.add("is-share-mode");
+      modal.querySelector(".legal-modal-title").textContent = "你正在查看分享的角色卡";
+      modal.querySelector(".legal-share-copy").hidden = false;
+      ackBtn.textContent = "開始查看";
+      ackBtn.setAttribute("aria-label", "開始查看");
+    }
+
     let aboutTrigger = null;
     const closeAboutModal = () => {
       if (!aboutModal) return;
@@ -55,31 +63,33 @@
     });
 
     let shouldDismiss = checkbox.checked === true;
-    try {
-      if (!shouldDismiss) {
-        const raw = storage.getItem(AUTO_SAVE_KEY);
-        if (!raw) throw new Error("no autosave data");
-        const data = JSON.parse(raw);
-        shouldDismiss =
-          data["legal-dismiss"] === true ||
-          data["legal-dismiss"] === "true" ||
-          data["legal-dismiss"] === 1;
+    if (!isShareMode) {
+      try {
+        if (!shouldDismiss) {
+          const raw = storage.getItem(AUTO_SAVE_KEY);
+          if (!raw) throw new Error("no autosave data");
+          const data = JSON.parse(raw);
+          shouldDismiss =
+            data["legal-dismiss"] === true ||
+            data["legal-dismiss"] === "true" ||
+            data["legal-dismiss"] === 1;
+        }
+      } catch (error) {
+        void error;
       }
-    } catch (error) {
-      void error;
-    }
 
-    if (!shouldDismiss && storage.getItem(LEGACY_LEGAL_DISMISS_KEY) === "1") {
-      shouldDismiss = true;
-      checkbox.checked = true;
-      if (typeof scheduleSaveAllFields === "function") scheduleSaveAllFields();
-    }
+      if (!shouldDismiss && storage.getItem(LEGACY_LEGAL_DISMISS_KEY) === "1") {
+        shouldDismiss = true;
+        checkbox.checked = true;
+        if (typeof scheduleSaveAllFields === "function") scheduleSaveAllFields();
+      }
 
-    storage.removeItem(LEGACY_LEGAL_DISMISS_KEY);
-    checkbox.checked = shouldDismiss;
-    checkbox.addEventListener("change", () => {
-      if (typeof scheduleSaveAllFields === "function") scheduleSaveAllFields();
-    });
+      storage.removeItem(LEGACY_LEGAL_DISMISS_KEY);
+      checkbox.checked = shouldDismiss;
+      checkbox.addEventListener("change", () => {
+        if (typeof scheduleSaveAllFields === "function") scheduleSaveAllFields();
+      });
+    }
 
     if (!isShareMode && shouldDismiss) return;
 

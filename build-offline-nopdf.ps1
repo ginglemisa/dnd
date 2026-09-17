@@ -361,22 +361,50 @@ $html = [System.Text.RegularExpressions.Regex]::Replace(
   [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
 )
 
-# Offline sharing keeps the original direct long-URL copy flow. Remove the
-# online-only chooser and API helpers, retaining the shared clipboard body.
-$offlineSharePattern = '(?m)^function getShortShareUnavailableReason\(hash\) \{[\s\S]*?^async function copyResolvedShareUrl\(shareUrl\) \{'
+# Offline sharing copies a public permanent URL without any network request.
+# Never share local file/content paths or temporary provider permissions. Remove the
+# online-only chooser and API helpers separately. Keep shared mode lifecycle
+# functions between those sections (including exitShareMode) intact.
+$offlineHelpersPattern = '(?m)^function getShortShareUnavailableReason\(hash\) \{[\s\S]*?^let shareDialogPending = false;\r?\n'
+if ([System.Text.RegularExpressions.Regex]::Matches($html, $offlineHelpersPattern).Count -ne 1) {
+  throw "build-offline-nopdf.ps1: expected one short URL helper section; check index.html."
+}
+$html = [System.Text.RegularExpressions.Regex]::Replace($html, $offlineHelpersPattern, '')
+$offlineSharePattern = '(?m)^async function copyShareUrl\(\) \{[\s\S]*?^async function copyResolvedShareUrl\(shareUrl\) \{'
 if ([System.Text.RegularExpressions.Regex]::Matches($html, $offlineSharePattern).Count -ne 1) {
   throw "build-offline-nopdf.ps1: expected one share flow to replace; check the sharing functions in index.html."
 }
 $offlineShareReplacement = @'
 async function copyShareUrl() {
+  if (SHARE_MODE) return;
   const hash = await encodeStateToHash(collectShareState());
-  const shareUrl = `${location.origin}${location.pathname}${location.search}${hash}`;
+  const shareUrl = `https://twd20.com/${hash}`;
 '@
 $html = [System.Text.RegularExpressions.Regex]::Replace(
   $html,
   $offlineSharePattern,
   [System.Text.RegularExpressions.MatchEvaluator]{ param($match) $offlineShareReplacement }
 )
+
+# Match the offline feature set while keeping the website source copy intact.
+$html = $html.Replace(
+  '可修改後輸出 PDF，或匯出 JSON 保存。此模式不提供再次分享與匯入 JSON。',
+  '可修改後匯出 JSON 保存。此模式不提供再次分享與匯入 JSON。'
+).Replace(
+  '你可以修改這份角色卡的內容，也可以將目前內容輸出為 PDF。',
+  '你可以修改這份角色卡的內容，並使用「匯出 JSON」保存。此離線版不提供 PDF 匯出。'
+).Replace(
+  'window.AppDialog.notify("分享網址已複製。", { tone: "success" });',
+  'window.AppDialog.notify("分享網址已複製，接收者需連網開啟 twd20.com；完全離線交換請使用 JSON。", { tone: "success" });'
+).Replace(
+  '瀏覽器未允許自動複製。請選取下方網址後使用裝置的複製功能。',
+  '請手動複製下方網址。接收者需連網開啟 twd20.com；完全離線交換請使用 JSON。'
+)
+
+if (-not $html.Contains('async function exitShareMode(event) {') -or
+    $html.Contains('twd20-url.ginglemisa.workers.dev/api/create')) {
+  throw "build-offline-nopdf.ps1: offline sharing must retain exitShareMode and exclude the short URL API."
+}
 
 if ($html.Contains('const SPELL_QR_IMAGE_SRC = "./qr.png";')) {
   $qrPath = Join-Path $root "qr.png"

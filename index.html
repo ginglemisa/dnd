@@ -46,7 +46,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20260917-health-css-cleanup">
+  <link rel="stylesheet" href="styles.css?v=20260918-share-exit">
   <script src="scroll-to-top.js" defer></script>
   <script src="dice-roller.js?v=20260915-dual-themes" defer></script>
   <script src="monster.js?v=20260912-druid-controls" defer></script>
@@ -66,7 +66,7 @@
   <script src="tabletop-resources.js?v=20260912-druid-controls" defer></script>
   <script src="tabletop-actions.js?v=20260913-class-tabletop" defer></script>
   <script src="tabletop-spells.js?v=20260913-spellbook" defer></script>
-  <script src="legal-modal.js?v=20260914-menu-fixes" defer></script>
+  <script src="legal-modal.js?v=20260918-share-mode" defer></script>
   <script src="onboarding-tour.js?v=20260913-ability-roll" defer></script>
   <script src="quick-build.js?v=20260915-dual-themes" defer></script>
   <script src="spellbook.js?v=20260913-spellbook" defer></script>
@@ -197,8 +197,10 @@
 </header>
 
 <main id="main-content">
+<a id="exit-share-mode" hidden>離開分享模式</a>
 <div id="share-mode-tip" class="share-mode-tip is-hidden" role="status">
-  目前為分享模式：你的修改不會自動寫入本機儲存。可從右上角選單使用「匯入紀錄／匯出紀錄」功能保存與還原。
+  <strong>分享模式｜修改不會自動儲存</strong>
+  <span>可修改後輸出 PDF，或匯出 JSON 保存。此模式不提供再次分享與匯入 JSON。</span>
 </div>
 
 <section id="tabletop-mode" class="tabletop-mode" aria-labelledby="tabletop-title" hidden>
@@ -8402,7 +8404,34 @@ async function createShortShareUrl(hash, signal) {
 }
 
 let shareDialogPending = false;
+let exitShareDialogPending = false;
+async function exitShareMode(event) {
+  event.preventDefault();
+  if (!SHARE_MODE || exitShareDialogPending) return;
+  exitShareDialogPending = true;
+  try {
+    const confirmed = await window.AppDialog.requestDecision({
+      title: "離開分享模式？",
+      message: "離開後將回到一般角色卡，並讀取原本的本機角色存檔（若有）。這份分享角色卡的修改不會儲存；若要保留，請先取消並使用「匯出 JSON」。",
+      cancelLabel: "繼續查看",
+      confirmLabel: "離開分享模式",
+      intent: "danger",
+      trigger: document.getElementById("exit-share-mode")
+    });
+    if (!confirmed) return;
+    // Removing only the fragment is same-document navigation, so explicitly
+    // reload to restore local state. Keep SHARE_MODE true until unloading.
+    const destination = new URL(location.href);
+    destination.hash = "";
+    history.replaceState(null, "", destination.href);
+    location.reload();
+  } finally {
+    exitShareDialogPending = false;
+  }
+}
+
 async function copyShareUrl() {
+  if (SHARE_MODE) return;
   if (shareDialogPending) return;
   shareDialogPending = true;
   try {
@@ -8493,6 +8522,7 @@ function downloadStateAsJson() {
 }
 
 async function importStateFromJsonFile(file) {
+  if (SHARE_MODE) return;
   if (!file) return;
   try {
     const text = await file.text();
@@ -9788,6 +9818,16 @@ window.addEventListener("DOMContentLoaded", async function() {
   if (sharedData) {
   SHARE_MODE = true;
   window.SHARE_MODE = true;
+  const exitShareLink = document.getElementById("exit-share-mode");
+  const exitShareUrl = new URL(location.href);
+  exitShareUrl.hash = "";
+  exitShareLink.href = exitShareUrl.href;
+  exitShareLink.hidden = false;
+  exitShareLink.addEventListener("click", exitShareMode);
+  document.querySelectorAll('.share-url-btn, #import-json-btn, #import-json-file').forEach(control => {
+    control.disabled = true;
+    control.title = "分享模式不提供此功能";
+  });
   applyStateObject(sharedData);
   const shareModeTip = document.getElementById("share-mode-tip");
   if (shareModeTip) shareModeTip.style.display = "block";
@@ -10125,6 +10165,13 @@ window.addEventListener("DOMContentLoaded", async function() {
       <img class="legal-modal-logo-dark" src="Dark.jpg" alt="" width="1774" height="444">
     </div>
     <h3 class="legal-modal-title">twD20.com | 5.5e手機角卡</h3>
+    <div class="legal-share-copy" hidden>
+      <p>你原本的角色存檔仍然保留，<strong>不會被這份分享角色卡覆蓋</strong>。</p>
+      <p>你可以修改這份角色卡的內容，也可以將目前內容輸出為 PDF。</p>
+      <p><strong>修改不會自動儲存，關閉或重新整理頁面後就會消失。</strong><br>若要保存修改後的角色資料，供日後匯入並繼續編輯，請使用<strong>「匯出 JSON」</strong>。</p>
+      <p>注意：分享模式下，<strong>「分享角卡」與「匯入 JSON」按鈕將停用</strong>。</p>
+      <a href="#legal-about-modal" class="legal-about-trigger">Legal &amp; About</a>
+    </div>
     <div class="legal-modal-copy">
       twD20 是新手專用的5.5版創角工具，以 SRD 5.2.1 為基礎改編。詳細授權、資料與使用說明請見 <a href="#legal-about-modal" class="legal-about-trigger">Legal &amp; About</a>。
     </div>
