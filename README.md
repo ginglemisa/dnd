@@ -21,10 +21,11 @@ twD20 是為 TRPG 新手、帶團者與教學活動設計的手機優先創角�
 
 ### 創角與角色卡
 
-- 數值、技能、動作、裝備、法術五個角色卡分頁
+- 數值、技能、裝備、動作、法術五個角色卡分頁
 - 1～8 級角色資料與選項，以及可切換的關鍵數值自動計算
-- 27 點購買、職業屬性範本、創角小幫手與新手導覽
+- 27 點購買、屬性擲骰、職業屬性範本、創角小幫手與新手導覽
 - 裝備與法術搜尋、動態動作選項及規則摘要
+- 法師法術書與契術師影之書管理，以及準備法術與書內儀式施法
 - 經典藍色與暖紙磚紅兩套主題，各自支援亮色／暗色；包含主題專用 Logo、骰子動畫與暖紙亮色紙紋
 
 ### 桌邊模式
@@ -70,11 +71,11 @@ python -m http.server 8000
 - 網站入口與共用樣式：`index.html`、`styles.css`
 - 外觀與版面規格：[DESIGN.md](DESIGN.md)
 - 資料與共用規則：`character-rules.js`、`class-features.js`、`race.js`、`backgrounds.js`、`feats.js`、`tool-data.js`、`monster.js`、`equipment-data.js`、`equipment-notes.js`、`spell-list.js`、`condition.js`、`deity-info.js`
-- 角色卡互動：`action-panel.js`、`dice-roller.js`、`quick-build.js`、`onboarding-tour.js`、`app-dialog.js`、`scroll-to-top.js`
+- 角色卡互動：`action-panel.js`、`dice-roller.js`、`spellbook.js`、`quick-build.js`、`onboarding-tour.js`、`app-dialog.js`、`scroll-to-top.js`
 - 桌邊模式：`tabletop-mode.js`（狀態與共用 API）、`tabletop-actions.js`（武器與行動）、`tabletop-druid.js`（德魯伊形態與職業專屬操作）、`tabletop-spells.js`（施法與專注）、`tabletop-resources.js`（內建與自訂資源）
 - PDF 匯出：`pdf-export.js`、`pdf-field-map.js`、`pdf-lib.custom.min.js`、`fontkit.custom.min.js`，以及角色紙與字型素材
 - 資訊頁面：`about.html`、`ddals1.html`、`info-pages.css`、`legal-modal.js`
-- 維護工具：`validate-tabletop-spellcasting.js`、`validate-action-metadata.js`、`validate-tabletop-druid.js`、`build-offline-nopdf.ps1`
+- 維護工具：`validate-*.js`（各功能回歸驗證）、`build-offline-nopdf.ps1`（離線版本產製）
 - 衍生檔案：`TWD20-offline.html`
 
 `character-rules.js` 提供共用角色計算與規則。`SpellCatalog` 由 `spell-list.js` 提供，是法術內容及桌邊施法 metadata 的來源。`ActionPanel` 依明確的非施法能力動作定義及角色選擇，建立職業、種族、專長、魔能祈喚與超魔等動作選項；法術施法時間則沿用既有分類機制。動作 key、分類、等級與選擇條件由結構化定義控制，說明取自規則資料或既有個人化摘要。
@@ -87,7 +88,13 @@ PDF 程式與素材只會在使用 PDF 匯出時動態載入。正式網站若�
 
 ## 維護與驗證
 
+專案已在 `package.json` 宣告 Playwright 開發依賴，`package-lock.json` 目前鎖定 1.63.0，需 Node.js 20 以上。新開發環境可用 `npm ci` 還原依賴；瀏覽器驗證另需可用的 Chromium 或腳本支援的本機瀏覽器。這些工具不影響正式網站的執行需求。
+
+修改後優先執行最相關的 `validate-*.js`，完整驗證規則見 [AGENTS.md](AGENTS.md)。需要臨時瀏覽器檢查時，使用 `npx --no-install playwright cli`；具體操作見 repository 內的 [Playwright CLI skill](.agents/skills/playwright-cli/SKILL.md)。
+
 主題、技能版面、主題素材及 PDF 盾牌／血統提示可執行 `node validate-ui-themes.js`。此檢查使用既有 Playwright，包含四種外觀、窄版、儲存與實際可編輯 PDF 匯出；可用 `DND_BROWSER_CHANNEL=msedge` 選擇本機 Edge。
+
+法術書、準備法術總數、儀式施法與相關匯入、持久化或 UI 修改，可執行 `node validate-spellbook.js`。
 
 修改 JavaScript 後，可先執行最低成本的語法檢查：
 
@@ -107,7 +114,7 @@ node .\validate-tabletop-spellcasting.js
 node .\validate-action-metadata.js
 ```
 
-此腳本需要環境已提供可由 Node.js 載入的 `playwright` 與可用瀏覽器，會自行啟動本機靜態伺服器，檢查動作條件、角色卡／桌邊 UI、自訂與隱藏動作，以及 JSON、分享與自動儲存流程。若使用環境內附的套件，可用 `NODE_PATH` 指向其 `node_modules`；使用已安裝的 Microsoft Edge 時，可先在 PowerShell 設定 `$env:DND_BROWSER_CHANNEL = "msedge"`。
+此腳本使用專案的 Playwright 依賴與可用瀏覽器，會自行啟動本機靜態伺服器，檢查動作條件、角色卡／桌邊 UI、自訂與隱藏動作，以及 JSON、分享與自動儲存流程。若改用環境內附的套件，可用 `NODE_PATH` 指向其 `node_modules`；使用已安裝的 Microsoft Edge 時，可先在 PowerShell 設定 `$env:DND_BROWSER_CHANNEL = "msedge"`。
 
 若修改德魯伊荒野形態、野獸資料與攻擊、職業專屬資源、相關桌邊狀態或 responsive UI，執行德魯伊專用的瀏覽器回歸驗證：
 
@@ -115,9 +122,9 @@ node .\validate-action-metadata.js
 node .\validate-tabletop-druid.js
 ```
 
-此腳本同樣使用環境既有的 Playwright 與瀏覽器，會檢查形態資格與能力值、野獸攻擊、荒野形態資源、荒野夥伴、野性復甦、自然恢復、原初打擊、專注限制、失能處理、JSON／分享／autosave、對話框取消流程及桌面與手機版面。
+此腳本同樣使用既有的 Playwright 與瀏覽器，會檢查形態資格與能力值、野獸攻擊、荒野形態資源、荒野夥伴、野性復甦、自然恢復、原初打擊、專注限制、失能處理、JSON／分享／autosave、對話框取消流程及桌面與手機版面。
 
-正式網站無 build step；npm 僅用於開發驗證工具。上述瀏覽器腳本沿用環境已有的 Playwright，不需為一般修改新增專案相依。只修改 Markdown 時，檢查檔名、連結、命令與內容是否符合現況即可。修改正式載入的 CSS／JavaScript 時，亦應檢查 `index.html` 對應資源的快取版本。
+正式網站無 build step；npm 僅用於開發驗證工具。上述瀏覽器腳本沿用專案或環境中已有的 Playwright，不需為一般修改新增專案相依。只修改 Markdown 時，檢查檔名、連結、命令與內容是否符合現況即可。修改正式載入的 CSS／JavaScript 時，亦應檢查 `index.html` 對應資源的快取版本。
 
 ## 離線版本
 

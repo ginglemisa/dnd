@@ -11470,10 +11470,7 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] .legal-modal-logo-dark {
 
 .tabletop-hp-readout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(6.2rem, 0.52fr);
   align-items: stretch;
-  gap: 0.6rem;
-  padding-bottom: 0.9rem;
 }
 
 /* 總覽生命值：頭像與操作保持成一個緊湊、有限寬度的工作區。 */
@@ -11500,6 +11497,11 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] .legal-modal-logo-dark {
 
 .tabletop-health-controls {
   min-width: 0;
+  /* 橫排時共用；各斷點只決定何時啟用 grid。 */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+  align-content: start;
+  column-gap: 0.4rem;
 }
 
 .tabletop-avatar {
@@ -11516,7 +11518,6 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] .legal-modal-logo-dark {
   background: var(--surface-soft);
   color: var(--text-muted);
   box-shadow: none;
-  align-self: start;
 }
 
 .tabletop-avatar[hidden] {
@@ -11658,7 +11659,6 @@ html.tabletop-avatar-modal-open { overflow: hidden; }
 
   .tabletop-health-controls .tabletop-hp-primary strong {
     font-size: clamp(1.35rem, 6.5vw, 1.8rem);
-    white-space: nowrap;
   }
 }
 
@@ -11667,29 +11667,24 @@ html.tabletop-avatar-modal-open { overflow: hidden; }
   display: grid;
   align-content: center;
   gap: 0.15rem;
-  min-height: 5.4rem;
-  padding: 0.75rem 0.85rem;
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
   background: var(--surface-soft);
 }
 
 .tabletop-hp-label,
 .tabletop-hp-temporary span {
   color: var(--text-muted);
-  font-size: var(--fs-sm);
   font-weight: 800;
 }
 
 .tabletop-hp-primary strong {
   color: var(--text);
-  font-size: clamp(1.8rem, 9vw, 2.6rem);
   line-height: 1;
 }
 
 .tabletop-hp-temporary {
   width: 100%;
-  border-left: 3px solid var(--accent);
+  border-left: 2px solid var(--accent);
   color: inherit;
   box-shadow: none;
   text-align: center;
@@ -11704,14 +11699,12 @@ html.tabletop-avatar-modal-open { overflow: hidden; }
 
 .tabletop-hp-temporary strong {
   color: var(--accent-strong);
-  font-size: 1.8rem;
   line-height: 1;
 }
 
 .tabletop-life-form,
 .tabletop-temporary-hp-form {
   margin: 0;
-  padding: 0.85rem 0;
   border-top: 1px solid var(--border);
 }
 
@@ -11723,8 +11716,6 @@ html.tabletop-avatar-modal-open { overflow: hidden; }
 
 .tabletop-life-controls {
   display: grid;
-  grid-template-columns: minmax(6rem, 0.75fr) repeat(2, minmax(0, 1fr));
-  gap: 0.5rem;
 }
 
 .tabletop-life-controls input,
@@ -11746,8 +11737,6 @@ html.tabletop-avatar-modal-open { overflow: hidden; }
 
 .tabletop-temporary-hp-controls {
   display: grid;
-  grid-template-columns: minmax(6rem, 0.75fr) minmax(0, 1.35fr);
-  gap: 0.5rem;
 }
 
 .tabletop-field-help,
@@ -13207,14 +13196,6 @@ html.app-dialog-open {
     min-height: 12rem;
   }
 
-  .tabletop-life-controls {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .tabletop-life-controls input {
-    grid-column: 1 / -1;
-  }
-
   .tabletop-condition-modal,
   .app-dialog {
     place-items: end stretch;
@@ -13301,11 +13282,6 @@ html.app-dialog-open {
     width: auto;
   }
 
-  .tabletop-hp-readout {
-    grid-template-columns: minmax(0, 1fr) minmax(5.4rem, 0.48fr);
-  }
-
-  .tabletop-temporary-hp-controls,
   .tabletop-condition-options {
     grid-template-columns: 1fr;
   }
@@ -13721,7 +13697,6 @@ html[data-theme="dark"] .tabletop-skill-value[data-skill-rank="expertise"] .tabl
 }
 
 .tabletop-undo,
-.tabletop-temporary-hp-toggle,
 .tabletop-condition-manage,
 .tabletop-death-reset {
   min-height: 36px;
@@ -13752,10 +13727,6 @@ html[data-theme="dark"] .tabletop-skill-value[data-skill-rank="expertise"] .tabl
 
 .tabletop-hp-primary strong {
   font-size: clamp(1.55rem, 7vw, 2rem);
-}
-
-.tabletop-hp-temporary {
-  border-left-width: 2px;
 }
 
 .tabletop-hp-temporary strong {
@@ -14801,14 +14772,6 @@ html[data-theme="dark"] .tabletop-skill-value[data-skill-rank="expertise"] .tabl
   .tabletop-primary-tabs button,
   .tabletop-action-tabs button {
     font-size: var(--fs-xs);
-  }
-
-  .tabletop-life-controls {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .tabletop-life-controls input {
-    grid-column: 1 / -1;
   }
 
   .tabletop-conditions {
@@ -16116,6 +16079,11 @@ html[data-theme="dark"] .utility-menu {
 }
 
 /* 生命值、操作回饋與狀態共用右欄，頭像保留尺寸並垂直置中。 */
+.tabletop-health-controls .tabletop-temporary-hp-form,
+.tabletop-health-controls .tabletop-live-status {
+  grid-column: 1 / -1;
+}
+
 .tabletop-health-layout .tabletop-avatar {
   align-self: center;
 }
@@ -16144,10 +16112,6 @@ html[data-theme="dark"] .utility-menu {
 @media (min-width: 720px) {
   .tabletop-health-controls {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    align-items: start;
-    align-content: start;
-    column-gap: 0.4rem;
   }
 
   .tabletop-hp-readout {
@@ -16198,11 +16162,6 @@ html[data-theme="dark"] .utility-menu {
     padding-top: 0;
     border-top: 0;
   }
-
-  .tabletop-temporary-hp-form,
-  .tabletop-live-status {
-    grid-column: 1 / -1;
-  }
 }
 
 @media (min-width: 389px) and (max-width: 520px) {
@@ -16215,10 +16174,6 @@ html[data-theme="dark"] .utility-menu {
 @media (min-width: 560px) and (max-width: 719px) {
   .tabletop-health-layout--avatar-collapsed .tabletop-health-controls {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    align-items: start;
-    align-content: start;
-    column-gap: 0.4rem;
   }
 
   .tabletop-health-layout--avatar-collapsed .tabletop-hp-readout {
@@ -16251,15 +16206,6 @@ html[data-theme="dark"] .utility-menu {
 
   .tabletop-health-layout--avatar-collapsed .tabletop-life-controls {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .tabletop-health-layout--avatar-collapsed .tabletop-life-controls input {
-    grid-column: auto;
-  }
-
-  .tabletop-health-layout--avatar-collapsed .tabletop-temporary-hp-form,
-  .tabletop-health-layout--avatar-collapsed .tabletop-live-status {
-    grid-column: 1 / -1;
   }
 }
 
@@ -16351,7 +16297,6 @@ html[data-theme="dark"] .utility-menu {
     grid-column: 1;
     grid-row: 1;
     width: 5.75rem;
-    justify-self: center;
   }
 
   .tabletop-health-layout .tabletop-avatar-visibility-toggle {
