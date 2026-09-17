@@ -199,8 +199,7 @@ export default {
           env.HMAC_SECRET
         );
 
-        const shortUrl =
-          `https://twd20-url.ginglemisa.workers.dev/${publicCode}`;
+        const shortUrl =`${TWD20_ORIGIN}/s/${publicCode}`;
 
         return new Response(
           JSON.stringify({
@@ -229,11 +228,29 @@ export default {
       });
     }
 
-    const code = url.pathname.slice(1);
+if (url.pathname === "/") {
+  return new Response("TWD20 URL Shortener");
+}
 
-    if (!code) {
-      return new Response("TWD20 URL Shortener");
-    }
+const parts = url.pathname.split("/").filter(Boolean);
+
+let code = null;
+
+// 新網址：https://twd20.com/s/XXXXXXX
+if (parts.length === 2 && parts[0] === "s") {
+  code = parts[1];
+}
+
+// 舊網址：https://twd20-url.ginglemisa.workers.dev/XXXXXXX
+else if (parts.length === 1) {
+  code = parts[0];
+}
+
+if (!code) {
+  return new Response("Not Found", {
+    status: 404,
+  });
+}
 
     const id = await validateCode(
       code,

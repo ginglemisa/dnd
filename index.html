@@ -8391,7 +8391,7 @@ async function createShortShareUrl(hash, signal) {
     const data = await response.json();
     if (controller.signal.aborted) throw new Error("Short sharing cancelled");
     if (typeof data?.shortUrl !== "string" ||
-        !/^https:\/\/twd20-url\.ginglemisa\.workers\.dev\/[A-Za-z0-9]{7}$/.test(data.shortUrl)) {
+        !/^https:\/\/twd20\.com\/s\/[A-Za-z0-9]{7}$/.test(data.shortUrl)) {
       throw new Error("Invalid short URL");
     }
     return data.shortUrl;
