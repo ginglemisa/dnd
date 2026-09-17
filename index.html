@@ -8366,24 +8366,65 @@ function applyStateObject(data) {
 async function copyShareUrl() {
   const hash = await encodeStateToHash(collectShareState());
   const shareUrl = `${location.origin}${location.pathname}${location.search}${hash}`;
+  const shareButtons = Array.from(document.querySelectorAll(".share-url-btn"));
+  shareButtons.forEach((button) => {
+    button.disabled = true;
+    button.setAttribute("aria-busy", "true");
+  });
+  window.AppDialog.notify("正在建立短網址…", { tone: "info" });
+
+  let urlToCopy = shareUrl;
+  let shortened = false;
   try {
-    await navigator.clipboard.writeText(shareUrl);
-    if (shareUrl.length > 4000) {
-      await window.AppDialog.showMessage({
-        title: "分享網址已複製",
-        message: `網址長度為 ${shareUrl.length}，部分瀏覽器可能無法完整讀取。建議改用「匯入 JSON／匯出 JSON」保存與還原。`,
-        confirmLabel: "知道了"
-      });
-    } else {
-      window.AppDialog.notify("分享網址已複製。", { tone: "success" });
-    }
+    urlToCopy = await shortenShareUrl(shareUrl);
+    shortened = true;
+  } catch (error) {
+    console.warn("is.gd 短網址建立失敗：", error);
+  } finally {
+    shareButtons.forEach((button) => {
+      button.disabled = false;
+      button.removeAttribute("aria-busy");
+    });
+  }
+
+  try {
+    await navigator.clipboard.writeText(urlToCopy);
+    window.AppDialog.notify(
+      shortened ? "分享短網址已複製。" : "短網址建立失敗，已改為複製原始分享網址。",
+      { tone: shortened ? "success" : "error", duration: shortened ? 5200 : 8000 }
+    );
   } catch (e) {
     await window.AppDialog.showCopy({
-      title: "手動複製分享網址",
+      title: shortened ? "手動複製分享短網址" : "手動複製分享網址",
       message: "瀏覽器未允許自動複製。請選取下方網址後使用裝置的複製功能。",
-      copyValue: shareUrl,
+      copyValue: urlToCopy,
       confirmLabel: "關閉"
     });
+  }
+}
+
+async function shortenShareUrl(shareUrl) {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), 10000);
+  try {
+    const response = await fetch("https://is.gd/create.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+      body: new URLSearchParams({ format: "json", url: shareUrl }),
+      signal: controller.signal
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const result = await response.json();
+    if (result?.errorcode) throw new Error(result.errormessage || `is.gd error ${result.errorcode}`);
+
+    const shortUrl = new URL(result?.shorturl || "");
+    if (shortUrl.protocol !== "https:" || shortUrl.hostname !== "is.gd") {
+      throw new Error("is.gd 回傳了無效的短網址");
+    }
+    return shortUrl.href;
+  } finally {
+    window.clearTimeout(timeoutId);
   }
 }
 
