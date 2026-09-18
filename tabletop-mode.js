@@ -4893,6 +4893,16 @@ function getRogueReliableTalentEntry() {
   function init() {
     const elements = getElements();
     if (!elements.button || !elements.crop) return;
+    // Share decoding is asynchronous, so check the hash before reading local images.
+    const shareHash = globalScope.location?.hash || "";
+    if (globalScope.SHARE_MODE || shareHash.startsWith("#s=") || shareHash.startsWith("#s2=")) {
+      setAvatarVisible(elements, false);
+      elements.button.disabled = true;
+      elements.file.disabled = true;
+      elements.visibilityToggle.disabled = true;
+      elements.visibilityToggle.title = "分享模式不提供此功能";
+      return;
+    }
     const savedAvatar = globalScope.dndStorage?.getItem(STORAGE_KEY) || "";
     const savedVisibility = globalScope.dndStorage?.getItem(VISIBILITY_STORAGE_KEY);
     setSavedAvatar(elements, savedAvatar);
