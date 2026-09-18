@@ -4508,6 +4508,8 @@ const defaultAbilityByClass = {
   wizard:    [8, 12, 13, 15, 14, 10]
 };
 
+const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
+
 (() => {
   document.addEventListener("DOMContentLoaded", () => {
   const triggerButton = document.getElementById("set-default-abilities");
@@ -4570,9 +4572,11 @@ const defaultAbilityByClass = {
   const defaultAbilityClassCloseBtn = document.getElementById("default-ability-class-close");
   const defaultAbilityClassGrid = document.querySelector(".default-ability-class-grid");
   const pointBuyExitMessage = document.getElementById("point-buy-exit-message");
+  const pointBuyExitTitle = document.getElementById("point-buy-exit-title");
   const pointBuyExitContinueBtn = document.getElementById("point-buy-exit-continue");
   const pointBuyExitConfirmBtn = document.getElementById("point-buy-exit-confirm");
   let pendingPointBuyExitAction = null;
+  let pointBuyOpeningSnapshot = null;
 
   function openAbilityChoiceModal() {
     if (!abilityChoiceModal) return;
@@ -4623,15 +4627,6 @@ const defaultAbilityByClass = {
         ...Array.from(backgroundSelect.options, (option) => option.cloneNode(true))
       );
     }
-    pointBuyBackgroundSelect.value = backgroundSelect.value;
-  }
-
-  function getBackgroundBonusTotal() {
-    return abilities.reduce((sum, key) => sum + pointBuyState.bonus[key], 0);
-  }
-
-  function isBackgroundBonusComplete() {
-    return getBackgroundBonusAbilities().length === 3 && getBackgroundBonusTotal() === 3;
   }
 
   function resetPointBuyPresetStatus() {
@@ -4668,17 +4663,15 @@ const defaultAbilityByClass = {
   }
 
   function openPointBuyExitModal(action) {
-    if (!pointBuyExitModal || !pointBuyExitMessage || !pointBuyExitConfirmBtn) return;
+    if (!pointBuyExitModal || !pointBuyExitTitle || !pointBuyExitMessage || !pointBuyExitConfirmBtn) return;
     pendingPointBuyExitAction = action;
-    const selectedBackground = getBackgroundBonusAbilities().length === 3;
-    const bonusTotal = getBackgroundBonusTotal();
-    const actionQuestion = action === "apply"
-      ? "仍要套用目前的屬性嗎？"
-      : "確定要離開 27 購點嗎？";
-    pointBuyExitMessage.textContent = selectedBackground
-      ? `目前只分配了 ${bonusTotal}/3 點背景加值。${actionQuestion}`
-      : `尚未選擇背景，因此無法分配背景加值。${actionQuestion}`;
-    pointBuyExitConfirmBtn.textContent = action === "apply" ? "仍要套用" : "仍要離開";
+    const isApply = action === "apply";
+    pointBuyExitTitle.textContent = isApply ? "套用 27 購點屬性？" : "放棄未套用的變更？";
+    pointBuyExitMessage.textContent = isApply
+      ? "這會直接取代角色目前的六項屬性。若角色已有後續的屬性成長，這些數值也會被覆蓋。"
+      : "目前的修改尚未套用，離開後將不會保留。";
+    if (pointBuyExitContinueBtn) pointBuyExitContinueBtn.textContent = isApply ? "返回編輯" : "繼續編輯";
+    pointBuyExitConfirmBtn.textContent = isApply ? "確認套用" : "放棄變更";
     pointBuyExitModal.inert = false;
     pointBuyExitModal.classList.add("open");
     pointBuyExitModal.setAttribute("aria-hidden", "false");
@@ -4687,8 +4680,8 @@ const defaultAbilityByClass = {
   }
 
   function getBackgroundBonusAbilities() {
-    if (!backgroundSelect) return [];
-    return backgroundAbilityMap[backgroundSelect.value] || [];
+    if (!pointBuyBackgroundSelect) return [];
+    return backgroundAbilityMap[pointBuyBackgroundSelect.value] || [];
   }
 
   function getSpentPoints() {
@@ -4765,7 +4758,7 @@ const defaultAbilityByClass = {
 
     if (pointBuyUsed) pointBuyUsed.textContent = String(getSpentPoints());
     if (pointBuyRemain) pointBuyRemain.textContent = String(POINT_BUDGET - getSpentPoints());
-    if (pointBuyApplyBtn) pointBuyApplyBtn.disabled = getSpentPoints() > POINT_BUDGET;
+    if (pointBuyApplyBtn) pointBuyApplyBtn.disabled = getSpentPoints() !== POINT_BUDGET;
     syncPointBuyHeader();
   }
 
@@ -4774,40 +4767,78 @@ const defaultAbilityByClass = {
       pointBuyState.base[key] = 8;
       pointBuyState.bonus[key] = 0;
     }
-    resetBonusByBackground();
     resetPointBuyPresetStatus();
     renderPointBuyRows();
   }
 
-  function initializePointBuyFromCurrentStats() {
+  function getPointBuySnapshot() {
+    return {
+      base: Object.fromEntries(abilities.map((key) => [key, pointBuyState.base[key]])),
+      bonus: Object.fromEntries(abilities.map((key) => [key, pointBuyState.bonus[key]])),
+      background: pointBuyBackgroundSelect?.value || ""
+    };
+  }
+
+  function isValidPointBuyRecord(record) {
+    if (!record || typeof record !== "object" || !record.base || !record.bonus) return false;
+    if (!pointBuyBackgroundSelect || !Array.from(pointBuyBackgroundSelect.options).some((option) => option.value === record.background)) return false;
+    const allowed = new Set(backgroundAbilityMap[record.background] || []);
+    let bonusTotal = 0;
+    let spentPoints = 0;
     for (const key of abilities) {
-      const raw = Number(document.getElementById(key)?.value || 8);
-      pointBuyState.base[key] = Math.min(BASE_MAX, Math.max(BASE_MIN, Number.isFinite(raw) ? raw : 8));
-      pointBuyState.bonus[key] = 0;
+      if (!Number.isInteger(record.base[key]) || record.base[key] < BASE_MIN || record.base[key] > BASE_MAX) return false;
+      if (!Number.isInteger(record.bonus[key]) || record.bonus[key] < 0 || record.bonus[key] > 2) return false;
+      if (!allowed.has(key) && record.bonus[key] !== 0) return false;
+      spentPoints += pointCostTable[record.base[key]];
+      bonusTotal += record.bonus[key];
     }
-    if (getSpentPoints() > POINT_BUDGET) {
-      for (const key of abilities) pointBuyState.base[key] = 8;
+    return spentPoints === POINT_BUDGET && bonusTotal <= 3;
+  }
+
+  function initializePointBuyState() {
+    let record = null;
+    try {
+      record = JSON.parse(window.dndStorage.getItem(POINT_BUY_LAST_APPLIED_KEY));
+    } catch (_error) {
+      record = null;
     }
-    resetBonusByBackground();
+    const saved = isValidPointBuyRecord(record) ? record : null;
+    for (const key of abilities) {
+      pointBuyState.base[key] = saved ? saved.base[key] : 8;
+      pointBuyState.bonus[key] = saved ? saved.bonus[key] : 0;
+    }
+    if (pointBuyBackgroundSelect) pointBuyBackgroundSelect.value = saved?.background || "";
     resetPointBuyPresetStatus();
     renderPointBuyRows();
+    pointBuyOpeningSnapshot = JSON.stringify(getPointBuySnapshot());
+  }
+
+  function isPointBuyDirty() {
+    return pointBuyOpeningSnapshot !== JSON.stringify(getPointBuySnapshot());
   }
 
   function applyPointBuyToSheet() {
+    if (getSpentPoints() !== POINT_BUDGET) return false;
     for (const key of abilities) {
       const finalValue = pointBuyState.base[key] + pointBuyState.bonus[key];
       const field = document.getElementById(key);
       if (!field) continue;
       field.value = finalValue;
-      field.dispatchEvent(new Event("input"));
+      field.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    if (backgroundSelect && pointBuyBackgroundSelect) {
+      backgroundSelect.value = pointBuyBackgroundSelect.value;
+      backgroundSelect.dispatchEvent(new Event("change", { bubbles: true }));
     }
     if (typeof scheduleSaveAllFields === "function") scheduleSaveAllFields();
+    window.dndStorage.setItem(POINT_BUY_LAST_APPLIED_KEY, JSON.stringify(getPointBuySnapshot()));
+    return true;
   }
 
   function openPointBuyModal() {
     if (!pointBuyModal) return;
     syncPointBuyBackgroundSelect();
-    initializePointBuyFromCurrentStats();
+    initializePointBuyState();
     pointBuyModal.inert = false;
     pointBuyModal.classList.add("open");
     pointBuyModal.setAttribute("aria-hidden", "false");
@@ -4822,6 +4853,7 @@ const defaultAbilityByClass = {
     pointBuyModal.inert = true;
     pointBuyModal.classList.remove("open");
     pointBuyModal.setAttribute("aria-hidden", "true");
+    pointBuyOpeningSnapshot = null;
   }
 
   function requestClosePointBuyModal() {
@@ -4829,7 +4861,7 @@ const defaultAbilityByClass = {
       closePointBuyModal();
       return;
     }
-    if (isBackgroundBonusComplete()) {
+    if (!isPointBuyDirty()) {
       closePointBuyModal();
       return;
     }
@@ -4837,11 +4869,7 @@ const defaultAbilityByClass = {
   }
 
   function requestApplyPointBuyToSheet() {
-    if (isBackgroundBonusComplete()) {
-      applyPointBuyToSheet();
-      closePointBuyModal();
-      return;
-    }
+    if (getSpentPoints() !== POINT_BUDGET) return;
     openPointBuyExitModal("apply");
   }
 
@@ -4923,12 +4951,6 @@ const defaultAbilityByClass = {
     if (event.target === pointBuyModal) requestClosePointBuyModal();
   });
   pointBuyBackgroundSelect?.addEventListener("change", () => {
-    if (!backgroundSelect) return;
-    backgroundSelect.value = pointBuyBackgroundSelect.value;
-    backgroundSelect.dispatchEvent(new Event("change", { bubbles: true }));
-  });
-  backgroundSelect?.addEventListener("change", () => {
-    syncPointBuyBackgroundSelect();
     resetBonusByBackground();
     enforceBackgroundBonusRules();
     renderPointBuyRows();
@@ -4947,8 +4969,7 @@ const defaultAbilityByClass = {
   pointBuyExitContinueBtn?.addEventListener("click", closePointBuyExitModal);
   pointBuyExitConfirmBtn?.addEventListener("click", () => {
     const action = pendingPointBuyExitAction;
-    if (action === "apply") applyPointBuyToSheet();
-    closePointBuyModal();
+    if (action !== "apply" || applyPointBuyToSheet()) closePointBuyModal();
   });
   pointBuyExitModal?.addEventListener("click", (event) => {
     if (event.target === pointBuyExitModal) closePointBuyExitModal();
@@ -7931,6 +7952,7 @@ const APP_STORAGE_KEYS = Object.freeze([
   CLASS_FEATURE_TABLE_STATE_KEY,
   CLASS_CORE_CREATION_INFO_STATE_KEY,
   "dnd.quickBuildDraft.v1",
+  POINT_BUY_LAST_APPLIED_KEY,
   "dnd.tabletopActionPreferences.v1",
   "dnd.tabletopAvatar.v1",
   ...LEGACY_LEGAL_DISMISS_KEYS
@@ -10068,7 +10090,7 @@ window.addEventListener("DOMContentLoaded", async function() {
       <h3>🎲 27購點</h3>
       <p>基礎值 8～15，總點數上限 27。背景額外加值 3 點（單項最多 +2）。</p>
       <label class="point-buy-background" for="point-buy-background">
-        <span>背景</span>
+        <span>背景（選填）</span>
         <select id="point-buy-background" aria-label="選擇背景"></select>
       </label>
       <p id="point-buy-hint" class="point-buy-hint">尚未選擇背景：背景加值欄位已鎖定</p>
@@ -10147,11 +10169,11 @@ window.addEventListener("DOMContentLoaded", async function() {
 
 <div id="point-buy-exit-modal" aria-hidden="true" inert>
   <div class="point-buy-exit-card" role="alertdialog" aria-modal="true" aria-labelledby="point-buy-exit-title" aria-describedby="point-buy-exit-message">
-    <h3 id="point-buy-exit-title">背景加值尚未完成</h3>
+    <h3 id="point-buy-exit-title">放棄未套用的變更？</h3>
     <p id="point-buy-exit-message"></p>
     <div class="point-buy-exit-actions">
-      <button type="button" id="point-buy-exit-continue">繼續分配</button>
-      <button type="button" id="point-buy-exit-confirm">仍要離開</button>
+      <button type="button" id="point-buy-exit-continue">繼續編輯</button>
+      <button type="button" id="point-buy-exit-confirm">放棄變更</button>
     </div>
   </div>
 </div>
