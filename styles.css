@@ -3075,14 +3075,6 @@ input[type="checkbox"] {
   min-width: 0;
 }
 
-/* Keep the selection and vital rows prominent; quiet the supporting fields. */
-#tab-basic :is(.basic-row--origin, .basic-row--combat, .basic-row--misc) .mini-stat-card {
-  padding: 0.65rem;
-  border-color: color-mix(in srgb, var(--border) 55%, transparent);
-  background: transparent;
-  box-shadow: none;
-}
-
 .basic-row--combat .speed-current-display {
   width: 100%;
   height: 3rem;
@@ -3096,16 +3088,11 @@ input[type="checkbox"] {
 }
 
 .basic-pair-card--class-level {
-  grid-template-columns: minmax(0, 1.5fr) repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
 }
 
-.basic-pair-field--level,
-.basic-pair-field--hit-dice {
+.basic-pair-field--level {
   width: 100%;
-}
-
-.basic-pair-field--hit-dice {
-  container-type: inline-size;
 }
 
 .hit-die-size {
@@ -3118,8 +3105,7 @@ input[type="checkbox"] {
   }
 }
 
-.basic-pair-field--level select,
-.basic-pair-field--hit-dice select {
+.basic-pair-field--level select {
   width: 100%;
   min-height: 2.9rem;
 }
@@ -3180,6 +3166,15 @@ input[type="checkbox"] {
 
 .basic-metric-values > * {
   min-width: 0;
+}
+
+.basic-metric-values > select {
+  width: 100%;
+  min-height: 3rem;
+}
+
+#hit-die-label .hit-die-size {
+  display: inline;
 }
 
 .hp-value,

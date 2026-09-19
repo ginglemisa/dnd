@@ -46,7 +46,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20260920-welcome-skills">
+  <link rel="stylesheet" href="styles.css?v=20260920-basic-hit-dice-r2">
   <script src="scroll-to-top.js" defer></script>
   <script src="dice-roller.js?v=20260915-dual-themes" defer></script>
   <script src="monster.js?v=20260912-druid-controls" defer></script>
@@ -525,20 +525,6 @@
           <option value="8">8</option>
         </select>
       </div>
-      <div class="basic-pair-field basic-pair-field--hit-dice">
-        <div id="hit-die-label" class="mini-stat-label"><span>生命骰</span><span class="hit-die-size" aria-hidden="true"></span></div>
-        <select id="lifedicen">
-          <option value="0" selected>0</option>
-          <option value="1">1</option>
-          <option value="2">2</option>
-          <option value="3">3</option>
-          <option value="4">4</option>
-          <option value="5">5</option>
-          <option value="6">6</option>
-          <option value="7">7</option>
-          <option value="8">8</option>
-        </select>
-      </div>
       <div id="druid-land-control" class="class-feature-option is-hidden">
         <select id="druid-land" aria-label="大地結社地貌">
           <option value="">--請選擇大地結社地貌--</option>
@@ -664,9 +650,22 @@
       </div>
     </div>
     <div class="mini-stat-card basic-metric-card">
-      <div class="mini-stat-label">ＡＣ / 英雄激勵</div>
+      <div id="hit-die-label" class="mini-stat-label">AC / <span>生命骰</span><span class="hit-die-size" aria-hidden="true"></span></div>
       <div class="basic-metric-values">
         <input id="ac-display" class="hp-value derived-stat-input" type="text" inputmode="numeric" value="10" aria-label="護甲等級" readonly>
+        <select id="lifedicen" aria-label="生命骰數量">
+          <option value="0" selected>0</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+        </select>
+      </div>
+      <div hidden>
         <input type="checkbox" id="heroic-inspiration" class="basic-display-checkbox" aria-label="英雄激勵">
       </div>
     </div>
