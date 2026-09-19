@@ -41,7 +41,7 @@
 
   const NON_SPELLCASTER_CLASSES = new Set(["barbarian", "fighter", "monk", "rogue"]);
   const SPELLCASTER_CLASSES = new Set(["bard", "cleric", "druid", "paladin", "ranger", "sorcerer", "warlock", "wizard"]);
-  const NON_SPELLCASTER_BACKGROUNDS = new Set(["soldier", "criminal"]);
+  const NON_SPELLCASTER_BACKGROUNDS = new Set(["soldier", "criminal", "seeker", "fieldhand"]);
   const SPELLCASTER_BACKGROUNDS = new Set(["acolyte", "sage"]);
   const NON_SPELLCASTER_RACES = new Set(["dragonborn", "dwarf", "goliath", "halfling", "human", "orc"]);
   const SPELLCASTER_RACES = new Set(["elf", "gnome", "tiefling"]);
