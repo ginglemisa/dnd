@@ -2736,13 +2736,13 @@ input[type="checkbox"] {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  :where(html[data-ui-theme="warm"]) :is(#set-default-abilities, #legal-ack-btn, .utility-menu__button--primary,
+  :where(html[data-ui-theme="warm"]) :is(#set-default-abilities, #legal-onboarding-btn, .utility-menu__button--primary,
       .app-dialog__button--primary, .pdf-export-flow-modal__button--primary):not(:disabled):hover {
     background: var(--action-hover);
   }
 }
 
-:where(html[data-ui-theme="warm"]) :is(#set-default-abilities, #legal-ack-btn, .utility-menu__button--primary,
+:where(html[data-ui-theme="warm"]) :is(#set-default-abilities, #legal-onboarding-btn, .utility-menu__button--primary,
     .app-dialog__button--primary, .pdf-export-flow-modal__button--primary,
     .tabs-shell .tab-button):not(:disabled):active {
   box-shadow: none;
@@ -3073,6 +3073,14 @@ input[type="checkbox"] {
   display: grid;
   grid-template-rows: auto 1fr;
   min-width: 0;
+}
+
+/* Keep the selection and vital rows prominent; quiet the supporting fields. */
+#tab-basic :is(.basic-row--origin, .basic-row--combat, .basic-row--misc) .mini-stat-card {
+  padding: 0.65rem;
+  border-color: color-mix(in srgb, var(--border) 55%, transparent);
+  background: transparent;
+  box-shadow: none;
 }
 
 .basic-row--combat .speed-current-display {
@@ -3479,6 +3487,57 @@ input[type="checkbox"] {
   container: skill-section / inline-size;
 }
 
+/* The decorative wordmark occupies the two spare cells only in four columns. */
+.skill-brand {
+  display: none;
+  min-width: 0;
+}
+
+.skill-brand-art {
+  display: none;
+  position: relative;
+  width: min(100%, 18rem);
+  aspect-ratio: 1080 / 350;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+}
+
+.skill-brand-wordmark {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  padding: 0.1em 0.16em 0.16em;
+  color: var(--text);
+  font-family: "Arial Black", "Segoe UI", sans-serif;
+  font-size: clamp(3rem, 8cqi, 4rem);
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: -0.075em;
+  line-height: 1;
+}
+
+.skill-brand-wordmark strong {
+  color: var(--accent);
+  font-weight: 900;
+}
+
+.skill-brand-wordmark::after {
+  content: "";
+  position: absolute;
+  inset: auto 0.08em 0 0.2em;
+  height: 3px;
+  background: linear-gradient(90deg, var(--text) 0 27%, var(--accent) 27% 100%);
+  transform: skewX(-18deg);
+}
+
+html[data-ui-theme="warm"] .skill-brand-art {
+  display: block;
+}
+
+html[data-ui-theme="warm"] .skill-brand-wordmark {
+  display: none;
+}
+
 @container skill-section (min-width: 18.75rem) {
   .skill-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3498,6 +3557,12 @@ input[type="checkbox"] {
 @container skill-section (min-width: 38.25rem) {
   .skill-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .skill-brand {
+    display: grid;
+    grid-column: span 2;
+    place-items: center;
   }
 }
 
@@ -9794,7 +9859,7 @@ html[data-view-mode="tabletop"] #scrollToBottomBtn {
 
 /* Original artwork crop: x=350, y=45, width=1080, height=350.
    Keep the wordmark and underline; hide palette notes and slogans. */
-:where(html[data-ui-theme="warm"]) .legal-modal-logo img {
+.brand-logo-crop img {
   position: absolute;
   width: 164.259259%;
   max-width: none;
@@ -9804,12 +9869,12 @@ html[data-view-mode="tabletop"] #scrollToBottomBtn {
   display: block;
 }
 
-:where(html[data-ui-theme="warm"]) .legal-modal-logo .legal-modal-logo-dark,
-html:where([data-ui-theme="warm"])[data-theme="dark"] .legal-modal-logo-light {
+.brand-logo-crop .legal-modal-logo-dark,
+html[data-theme="dark"] .brand-logo-crop .legal-modal-logo-light {
   display: none;
 }
 
-html:where([data-ui-theme="warm"])[data-theme="dark"] .legal-modal-logo-dark {
+html[data-theme="dark"] .brand-logo-crop .legal-modal-logo-dark {
   display: block;
 }
 
@@ -9818,7 +9883,10 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] .legal-modal-logo-dark {
 }
 
 .legal-modal-copy {
-  font-size: var(--fs-xs);
+  font-size: var(--fs-base);
+  font-weight: 600;
+  text-align: center;
+  text-wrap: balance;
   line-height: 1.55;
   color: var(--text-body);
 }
@@ -9844,12 +9912,12 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] .legal-modal-logo-dark {
 }
 
 :where(html:not([data-ui-theme="warm"])) .legal-modal-meta-title {
-  font-weight: 700;
+  font-weight: 500;
   color: #2a3b56;
 }
 
 :where(html[data-ui-theme="warm"]) .legal-modal-meta-title {
-  font-weight: 700;
+  font-weight: 500;
   color: var(--text);
 }
 
@@ -9866,8 +9934,8 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] .legal-modal-logo-dark {
   margin-top: 12px;
 }
 
-:where(html:not([data-ui-theme="warm"])) #legal-onboarding-btn,
-:where(html:not([data-ui-theme="warm"])) #legal-ack-btn {
+:where(html:not([data-ui-theme="warm"])) #legal-ack-btn,
+:where(html:not([data-ui-theme="warm"])) #legal-onboarding-btn {
   flex: 1 1 0;
   width: auto;
   margin-top: 0;
@@ -9876,8 +9944,8 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] .legal-modal-logo-dark {
   font-size: var(--fs-base);
 }
 
-:where(html[data-ui-theme="warm"]) #legal-onboarding-btn,
-:where(html[data-ui-theme="warm"]) #legal-ack-btn {
+:where(html[data-ui-theme="warm"]) #legal-ack-btn,
+:where(html[data-ui-theme="warm"]) #legal-onboarding-btn {
   flex: 1 1 0;
   width: auto;
   margin-top: 0;
@@ -9890,21 +9958,21 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] .legal-modal-logo-dark {
   box-shadow: var(--shadow-control);
 }
 
-#legal-onboarding-btn {
+#legal-ack-btn {
   border: 1px solid var(--accent-strong);
   background: var(--control-bg);
   color: var(--accent-strong);
   box-shadow: none;
 }
 
-:where(html:not([data-ui-theme="warm"])) #legal-ack-btn {
+:where(html:not([data-ui-theme="warm"])) #legal-onboarding-btn {
   border: 1px solid transparent;
   background: linear-gradient(180deg, var(--accent-strong) 0%, #2962e8 100%);
   color: #fff;
   box-shadow: 0 8px 18px rgba(31, 100, 255, 0.24);
 }
 
-:where(html[data-ui-theme="warm"]) #legal-ack-btn {
+:where(html[data-ui-theme="warm"]) #legal-onboarding-btn {
   border: 2px solid var(--ink);
   background: var(--action-fill);
   color: var(--on-accent);
@@ -15715,7 +15783,7 @@ html[data-theme="dark"] .tab-button.active,
 html[data-theme="dark"] .tabs-shell .tab-button.active:hover,
 html[data-theme="dark"] .utility-menu__button--primary,
 html[data-theme="dark"] .utility-menu__button--primary:hover,
-html[data-theme="dark"] #legal-ack-btn {
+html[data-theme="dark"] #legal-onboarding-btn {
   border-color: var(--accent-strong);
   background: var(--accent-gradient);
   color: var(--on-accent);

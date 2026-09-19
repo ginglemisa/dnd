@@ -46,7 +46,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20260918-share-exit">
+  <link rel="stylesheet" href="styles.css?v=20260920-welcome-skills">
   <script src="scroll-to-top.js" defer></script>
   <script src="dice-roller.js?v=20260915-dual-themes" defer></script>
   <script src="monster.js?v=20260912-druid-controls" defer></script>
@@ -818,6 +818,13 @@
     <div class="skill-cell"><div class="skill-name"><span class="skill-tip" data-skill="調查">調查</span><span class="skill-ability">(智力)</span></div><div class="skill-control-row"><div class="skill-rank-controls"><label class="skill-rank-target"><input type="checkbox" id="prof-調查" data-skill-rank="調查" aria-label="調查 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-調查" class="circle-checkbox" data-skill-rank="調查" aria-label="調查 專精"></label></div><input type="text" inputmode="numeric" id="skill-調查"></div></div>
     <div class="skill-cell"><div class="skill-name"><span class="skill-tip" data-skill="自然">自然</span><span class="skill-ability">(智力)</span></div><div class="skill-control-row"><div class="skill-rank-controls"><label class="skill-rank-target"><input type="checkbox" id="prof-自然" data-skill-rank="自然" aria-label="自然 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-自然" class="circle-checkbox" data-skill-rank="自然" aria-label="自然 專精"></label></div><input type="text" inputmode="numeric" id="skill-自然"></div></div>
     <div class="skill-cell"><div class="skill-name"><span class="skill-tip" data-skill="宗教">宗教</span><span class="skill-ability">(智力)</span></div><div class="skill-control-row"><div class="skill-rank-controls"><label class="skill-rank-target"><input type="checkbox" id="prof-宗教" data-skill-rank="宗教" aria-label="宗教 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-宗教" class="circle-checkbox" data-skill-rank="宗教" aria-label="宗教 專精"></label></div><input type="text" inputmode="numeric" id="skill-宗教"></div></div>
+    <div class="skill-brand" aria-hidden="true">
+      <div class="skill-brand-art brand-logo-crop">
+        <img class="legal-modal-logo-light" src="Light.jpg" alt="" width="1774" height="440">
+        <img class="legal-modal-logo-dark" src="Dark.jpg" alt="" width="1774" height="444">
+      </div>
+      <div class="skill-brand-wordmark"><span>tw</span><strong>D20</strong></div>
+    </div>
     <div class="skill-cell"><div class="skill-name"><span class="skill-tip" data-skill="馴獸">馴獸</span><span class="skill-ability">(感知)</span></div><div class="skill-control-row"><div class="skill-rank-controls"><label class="skill-rank-target"><input type="checkbox" id="prof-馴獸" data-skill-rank="馴獸" aria-label="馴獸 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-馴獸" class="circle-checkbox" data-skill-rank="馴獸" aria-label="馴獸 專精"></label></div><input type="text" inputmode="numeric" id="skill-馴獸"></div></div>
     <div class="skill-cell"><div class="skill-name"><span class="skill-tip" data-skill="洞悉">洞悉</span><span class="skill-ability">(感知)</span></div><div class="skill-control-row"><div class="skill-rank-controls"><label class="skill-rank-target"><input type="checkbox" id="prof-洞悉" data-skill-rank="洞悉" aria-label="洞悉 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-洞悉" class="circle-checkbox" data-skill-rank="洞悉" aria-label="洞悉 專精"></label></div><input type="text" inputmode="numeric" id="skill-洞悉"></div></div>
     <div class="skill-cell"><div class="skill-name"><span class="skill-tip" data-skill="醫藥">醫藥</span><span class="skill-ability">(感知)</span></div><div class="skill-control-row"><div class="skill-rank-controls"><label class="skill-rank-target"><input type="checkbox" id="prof-醫藥" data-skill-rank="醫藥" aria-label="醫藥 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-醫藥" class="circle-checkbox" data-skill-rank="醫藥" aria-label="醫藥 專精"></label></div><input type="text" inputmode="numeric" id="skill-醫藥"></div></div>
@@ -10182,7 +10189,7 @@ window.addEventListener("DOMContentLoaded", async function() {
   <div class="legal-modal-card">
     <button type="button" id="legal-close-btn" aria-label="關閉提醒">✕</button>
     <img class="legal-modal-logo legal-modal-logo-classic" src="logo.png" alt="twD20 標誌">
-    <div class="legal-modal-logo legal-modal-logo-warm" role="img" aria-label="twD20 標誌">
+    <div class="legal-modal-logo legal-modal-logo-warm brand-logo-crop" role="img" aria-label="twD20 標誌">
       <img class="legal-modal-logo-light" src="Light.jpg" alt="" width="1774" height="440">
       <img class="legal-modal-logo-dark" src="Dark.jpg" alt="" width="1774" height="444">
     </div>
@@ -10195,9 +10202,11 @@ window.addEventListener("DOMContentLoaded", async function() {
       <a href="#legal-about-modal" class="legal-about-trigger">Legal &amp; About</a>
     </div>
     <div class="legal-modal-copy">
-      twD20 是新手專用的5.5版創角工具，以 SRD 5.2.1 為基礎改編。詳細授權、資料與使用說明請見 <a href="#legal-about-modal" class="legal-about-trigger">Legal &amp; About</a>。
+      建立角色、查看能力，帶著手機直接開團。
     </div>
     <div class="legal-modal-meta">
+      <div>新手適用的 5.5 版創角工具，以 SRD 5.2.1 為基礎改編。</div>
+      <div>授權、資料與使用說明：<a href="#legal-about-modal" class="legal-about-trigger">Legal &amp; About</a></div>
       <div class="legal-modal-meta-title">5.5e compatible character builder</div>
       <div>SRD 5.2.1 material under CC BY 4.0.</div>
     </div>
