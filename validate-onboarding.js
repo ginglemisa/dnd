@@ -190,6 +190,18 @@ async function main() {
     await ready(page, 0);
     await page.locator("#tour-next-btn").click();
     await ready(page, 1);
+    await page.locator("#utility-menu-toggle").click();
+    await page.waitForFunction(() => document.getElementById("utility-menu-toggle")?.getAttribute("aria-expanded") === "true");
+    await page.locator("#help-quick-build-btn").waitFor({ state: "visible" });
+    assert.equal(await page.evaluate(() => onboardingTour.currentIndex), 1, "opening utility menu keeps onboarding on step 2");
+    for (const selector of ["#help-quick-build-btn", "#set-default-abilities"]) {
+      assert.equal(await page.locator(selector).isVisible(), true, `${selector} is visible in utility menu`);
+      assert.equal(await page.locator(selector).evaluate(element => {
+        const rect = element.getBoundingClientRect();
+        return rect.top >= 0 && rect.left >= 0 && rect.bottom <= innerHeight && rect.right <= innerWidth
+          && Boolean(element.closest("#utility-menu"));
+      }), true, `${selector} is within the viewport and utility menu`);
+    }
     await page.locator("#set-default-abilities").click();
     await ready(page, 2);
     await page.locator("#ability-choice-point-buy").click();
@@ -201,7 +213,11 @@ async function main() {
     // Complete all original steps, including equipment, spells and search.
     await page.evaluate(() => onboardingTour.start());
     await ready(page, 0);
-    for (let index = 1; index < 6; index++) {
+    await page.locator("#tour-next-btn").click();
+    await ready(page, 1);
+    await page.locator("#tour-next-btn").click();
+    await ready(page, 2);
+    for (let index = 3; index < 6; index++) {
       await page.locator("#tour-next-btn").click();
       await ready(page, index);
     }

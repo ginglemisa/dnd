@@ -60,7 +60,6 @@ async function main() {
       fs.mkdirSync(process.env.DND_ABILITY_SCREENSHOT_DIR, { recursive: true });
       await page.screenshot({ path: path.join(process.env.DND_ABILITY_SCREENSHOT_DIR, "menu.png") });
     }
-    await page.locator("#utility-menu-toggle").click();
     await page.locator("#set-default-abilities").click();
     const choices = await page.locator(".ability-choice-actions button").evaluateAll(buttons => buttons.map(button => button.getBoundingClientRect().toJSON()));
     assert.equal(choices[0].top, choices[1].top);
@@ -169,7 +168,7 @@ async function main() {
     const expected = ["20", "16", "15", "12", "9", "3"];
     const sheetValues = () => page.evaluate(() => ["str", "dex", "con", "int", "wis", "cha"].map(key => document.getElementById(key).value));
     assert.deepEqual(await sheetValues(), expected);
-    assert.equal(await page.evaluate(() => document.activeElement.id), "set-default-abilities");
+    assert.notEqual(await page.evaluate(() => document.activeElement.id), "set-default-abilities", "focus does not return to the hidden utility-menu button");
     await page.reload();
     await page.waitForFunction(() => window.DiceRoller);
     await page.locator("#legal-ack-btn").click();
@@ -183,6 +182,7 @@ async function main() {
     await page.locator("#dice-roller-history-view").click();
     assert.equal(await page.locator(".dice-ability-history-dice .is-dropped").count(), 6, "discard markers survive reload");
     await page.locator("#dice-roller-close").click();
+    await page.locator("#utility-menu-toggle").click();
     await page.locator("#set-default-abilities").click();
     await page.locator("#ability-choice-roll").click();
     const historyBeforeCancel = await page.evaluate(() => dndStorage.getItem("dnd.diceRollHistory.v1"));
@@ -198,6 +198,7 @@ async function main() {
     await page.waitForTimeout(250);
     assert.equal(await page.locator(".dice-roller-result").count(), 1);
     await page.locator("#dice-roller-close").click();
+    await page.locator("#utility-menu-toggle").click();
     await page.locator("#set-default-abilities").click();
     await page.locator("#ability-choice-roll").click();
     await page.evaluate(() => DiceRoller.rollExpressionsInModal([{ label: "測試", expression: "1d6+2" }]));

@@ -1099,6 +1099,7 @@ html:not([data-ui-theme="warm"]) .legal-modal-logo-warm {
 
 .utility-menu__mode-row {
   align-items: stretch;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 44px;
 }
 
 .utility-menu__mode-button {
@@ -1107,6 +1108,12 @@ html:not([data-ui-theme="warm"]) .legal-modal-logo-warm {
   gap: 0;
   justify-content: center;
   text-align: center;
+}
+
+.utility-menu__mode-button--tabletop {
+  padding-right: 0;
+  padding-left: 0;
+  font-size: 1.15rem;
 }
 
 .utility-menu__mode-button[aria-pressed="true"] {
@@ -2727,22 +2734,14 @@ input[type="checkbox"] {
 }
 
 /* Primary actions share the same press depth; dense/secondary controls stay flat. */
-:where(html[data-ui-theme="warm"]) #set-default-abilities {
-  border: 2px solid var(--ink);
-  background: var(--action-fill);
-  color: var(--on-accent);
-  box-shadow: var(--shadow-control);
-  font-weight: 900;
-}
-
 @media (hover: hover) and (pointer: fine) {
-  :where(html[data-ui-theme="warm"]) :is(#set-default-abilities, #legal-onboarding-btn, .utility-menu__button--primary,
+  :where(html[data-ui-theme="warm"]) :is(#legal-onboarding-btn, .utility-menu__button--primary,
       .app-dialog__button--primary, .pdf-export-flow-modal__button--primary):not(:disabled):hover {
     background: var(--action-hover);
   }
 }
 
-:where(html[data-ui-theme="warm"]) :is(#set-default-abilities, #legal-onboarding-btn, .utility-menu__button--primary,
+:where(html[data-ui-theme="warm"]) :is(#legal-onboarding-btn, .utility-menu__button--primary,
     .app-dialog__button--primary, .pdf-export-flow-modal__button--primary,
     .tabs-shell .tab-button):not(:disabled):active {
   box-shadow: none;
@@ -3060,16 +3059,15 @@ input[type="checkbox"] {
   grid-template-columns: 1fr;
 }
 
-.basic-row--vitals,
-.basic-row--misc {
+.basic-row--vitals {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .basic-row--combat {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
 }
 
-.basic-row--combat .mini-stat-card {
+.basic-row--combat > .mini-stat-card {
   display: grid;
   grid-template-rows: auto 1fr;
   min-width: 0;
@@ -3081,6 +3079,21 @@ input[type="checkbox"] {
   min-height: 3rem;
 }
 
+.basic-combat-pair-card {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.basic-row--combat > .basic-combat-pair-card {
+  grid-template-rows: auto;
+}
+
+.basic-combat-field {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-width: 0;
+}
+
 .basic-pair-card {
   display: grid;
   gap: 0.75rem;
@@ -3088,7 +3101,7 @@ input[type="checkbox"] {
 }
 
 .basic-pair-card--class-level {
-  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.5fr) minmax(4.5rem, 0.65fr) minmax(5.5rem, 0.85fr);
 }
 
 .basic-pair-field--level {
@@ -3105,7 +3118,8 @@ input[type="checkbox"] {
   }
 }
 
-.basic-pair-field--level select {
+.basic-pair-field--level select,
+.basic-pair-field--hit-dice select {
   width: 100%;
   min-height: 2.9rem;
 }

@@ -46,7 +46,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20260920-basic-hit-dice-r2">
+  <link rel="stylesheet" href="styles.css?v=20260920-utility-basic-layout">
   <script src="scroll-to-top.js" defer></script>
   <script src="dice-roller.js?v=20260915-dual-themes" defer></script>
   <script src="monster.js?v=20260912-druid-controls" defer></script>
@@ -61,14 +61,14 @@
   <script src="action-panel.js?v=20260913-class-tabletop" defer></script>
   <script src="character-rules.js?v=20260920-background-spellcasting" defer></script>
   <script src="app-dialog.js?v=20260917-share-options" defer></script>
-  <script src="tabletop-mode.js?v=20260918-share-avatar" defer></script>
+  <script src="tabletop-mode.js?v=20260920-tabletop-intro" defer></script>
   <script src="tabletop-druid.js?v=20260915-main2-shield" defer></script>
   <script src="tabletop-resources.js?v=20260912-druid-controls" defer></script>
   <script src="tabletop-actions.js?v=20260913-class-tabletop" defer></script>
   <script src="tabletop-spells.js?v=20260913-spellbook" defer></script>
   <script src="legal-modal.js?v=20260918-share-mode" defer></script>
-  <script src="onboarding-tour.js?v=20260913-ability-roll" defer></script>
-  <script src="quick-build.js?v=20260915-dual-themes" defer></script>
+  <script src="onboarding-tour.js?v=20260920-utility-tools" defer></script>
+  <script src="quick-build.js?v=20260920-quick-build-name" defer></script>
   <script src="spellbook.js?v=20260913-spellbook" defer></script>
   <script src="deity-info.js" defer></script>
 
@@ -95,10 +95,11 @@
     <div id="utility-menu" class="utility-menu" aria-hidden="true" inert>
       <section class="utility-menu__section" aria-labelledby="utility-menu-view-title">
         <h2 id="utility-menu-view-title" class="utility-menu__section-title">主要功能</h2>
-        <div class="utility-menu__row utility-menu__row--split utility-menu__mode-row">
-          <button type="button" id="help-quick-build-btn" class="utility-menu__button utility-menu__mode-button" title="一步步完成一名 1 級角色">創角小幫手</button>
-          <button type="button" id="tabletop-mode-toggle" class="utility-menu__button utility-menu__mode-button utility-menu__mode-button--tabletop" aria-pressed="false" aria-controls="tabletop-mode" title="開啟桌邊模式總覽；角色資料與角色卡模式完全共用。">
-            <span id="tabletop-mode-toggle-label">桌邊模式(β)</span>
+        <div class="utility-menu__row utility-menu__mode-row">
+          <button type="button" id="help-quick-build-btn" class="utility-menu__button utility-menu__mode-button" title="一步步完成一名 1 級角色">快速創角</button>
+          <button id="set-default-abilities" type="button" class="utility-menu__button utility-menu__mode-button">決定屬性</button>
+          <button type="button" id="tabletop-mode-toggle" class="utility-menu__button utility-menu__mode-button utility-menu__mode-button--tabletop" aria-label="進入桌邊模式" aria-pressed="false" aria-controls="tabletop-mode" title="進入桌邊模式">
+            <span id="tabletop-mode-toggle-label" aria-hidden="true">📝</span>
           </button>
         </div>
       </section>
@@ -525,6 +526,20 @@
           <option value="8">8</option>
         </select>
       </div>
+      <div class="basic-pair-field basic-pair-field--hit-dice">
+        <div id="hit-die-label" class="mini-stat-label">生命骰<span class="hit-die-size" aria-hidden="true"></span></div>
+        <select id="lifedicen" aria-label="生命骰數量">
+          <option value="0" selected>0</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+        </select>
+      </div>
       <div id="druid-land-control" class="class-feature-option is-hidden">
         <select id="druid-land" aria-label="大地結社地貌">
           <option value="">--請選擇大地結社地貌--</option>
@@ -650,20 +665,11 @@
       </div>
     </div>
     <div class="mini-stat-card basic-metric-card">
-      <div id="hit-die-label" class="mini-stat-label">AC / <span>生命骰</span><span class="hit-die-size" aria-hidden="true"></span></div>
+      <div class="mini-stat-label">AC / 速度</div>
       <div class="basic-metric-values">
         <input id="ac-display" class="hp-value derived-stat-input" type="text" inputmode="numeric" value="10" aria-label="護甲等級" readonly>
-        <select id="lifedicen" aria-label="生命骰數量">
-          <option value="0" selected>0</option>
-          <option value="1">1</option>
-          <option value="2">2</option>
-          <option value="3">3</option>
-          <option value="4">4</option>
-          <option value="5">5</option>
-          <option value="6">6</option>
-          <option value="7">7</option>
-          <option value="8">8</option>
-        </select>
+        <input id="speed-input" type="number" class="sr-only" value="30" aria-label="基礎速度">
+        <input id="speed-display" class="speed-current-display derived-stat-input" type="text" inputmode="numeric" value="30" aria-label="速度" readonly>
       </div>
       <div hidden>
         <input type="checkbox" id="heroic-inspiration" class="basic-display-checkbox" aria-label="英雄激勵">
@@ -672,22 +678,16 @@
   </div>
 
   <div class="basic-row basic-row--combat">
-    <div class="mini-stat-card">
-      <div class="mini-stat-label">先攻</div>
-      <input id="initiative-input" class="speed-current-display derived-stat-input" type="text" inputmode="numeric" aria-label="先攻" readonly>
+    <div class="mini-stat-card basic-combat-pair-card">
+      <div class="basic-combat-field">
+        <div class="mini-stat-label">先攻</div>
+        <input id="initiative-input" class="speed-current-display derived-stat-input" type="text" inputmode="numeric" aria-label="先攻" readonly>
+      </div>
+      <div class="basic-combat-field">
+        <div class="mini-stat-label">被動察覺</div>
+        <input id="passive-perception" class="speed-current-display derived-stat-input" type="text" inputmode="numeric" aria-label="被動察覺" readonly>
+      </div>
     </div>
-    <div class="mini-stat-card">
-      <div class="mini-stat-label">速度</div>
-      <input id="speed-input" type="number" class="sr-only" value="30" aria-label="基礎速度">
-      <input id="speed-display" class="speed-current-display derived-stat-input" type="text" inputmode="numeric" value="30" aria-label="速度" readonly>
-    </div>
-    <div class="mini-stat-card">
-      <div class="mini-stat-label">被動察覺</div>
-      <input id="passive-perception" class="speed-current-display derived-stat-input" type="text" inputmode="numeric" aria-label="被動察覺" readonly>
-    </div>
-  </div>
-
-  <div class="basic-row basic-row--misc">
     <div class="mini-stat-card">
       <div class="mini-stat-label">陣營</div>
       <select id="alignment">
@@ -702,10 +702,6 @@
         <option value="NE">中立邪惡</option>
         <option value="CE">混亂邪惡</option>
       </select>
-    </div>
-    <div class="mini-stat-card">
-      <div class="mini-stat-label">快速創角</div>
-      <button id="set-default-abilities" type="button" class="button-compact">決定屬性</button>
     </div>
   </div>
 </div>
@@ -4592,9 +4588,14 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
     abilityChoiceCloseBtn?.focus();
   }
 
+  function restoreAbilityTriggerFocus() {
+    const target = triggerButton.closest("[inert]") ? document.getElementById("utility-menu-toggle") : triggerButton;
+    target?.focus();
+  }
+
   function closeAbilityChoiceModal({ restoreFocus = true } = {}) {
     if (!abilityChoiceModal) return;
-    if (restoreFocus && abilityChoiceModal.contains(document.activeElement)) triggerButton.focus();
+    if (restoreFocus && abilityChoiceModal.contains(document.activeElement)) restoreAbilityTriggerFocus();
     abilityChoiceModal.inert = true;
     abilityChoiceModal.classList.remove("open");
     abilityChoiceModal.setAttribute("aria-hidden", "true");
@@ -4855,7 +4856,7 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
     if (!pointBuyModal) return;
     closeDefaultAbilityClassModal({ restoreFocus: false });
     closePointBuyExitModal({ restoreFocus: false });
-    if (pointBuyModal.contains(document.activeElement)) triggerButton.focus();
+    if (pointBuyModal.contains(document.activeElement)) restoreAbilityTriggerFocus();
     pointBuyModal.inert = true;
     pointBuyModal.classList.remove("open");
     pointBuyModal.setAttribute("aria-hidden", "true");
@@ -7961,6 +7962,7 @@ const APP_STORAGE_KEYS = Object.freeze([
   POINT_BUY_LAST_APPLIED_KEY,
   "dnd.tabletopActionPreferences.v1",
   "dnd.tabletopAvatar.v1",
+  "dnd.tabletopIntroSeen.v1",
   ...LEGACY_LEGAL_DISMISS_KEYS
 ]);
 let SHARE_MODE = false;
@@ -8973,7 +8975,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
         name:['角色名稱','名稱會寫入角色卡中；不需要時也可以留空。'],
         englishName:['英文名','英文名會以 12 pt 靠右寫入美觀易讀版的 Name2 欄位。'],
         equipment:quickBuildEquipmentIncluded
-          ? ['預設裝備已加入','創角小幫手已將實際選擇寫入「攜帶物品」。']
+          ? ['預設裝備已加入','快速創角已將實際選擇寫入「攜帶物品」。']
           : ['加入預設裝備','決定是否把職業與背景提供的起始裝備一併寫入。'],
         race:[raceChoice?.title || '選擇種族特性','這項選擇會影響角色能力與 PDF 內容。'],
         spellbook:['是否將法術書寫入法術 notes？','選擇是否附上書內法術清單。原有法術筆記會照常輸出。'],
@@ -9048,7 +9050,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
         if(quickBuildEquipmentIncluded){
           const success=document.createElement('div'); success.className='pdf-export-check-success';
           const icon=document.createElement('span'); icon.setAttribute('aria-hidden','true'); icon.textContent='✓';
-          const copy=document.createElement('div'); const strong=document.createElement('strong'); strong.textContent='已從創角小幫手匯入初始裝備'; const hint=document.createElement('p'); hint.textContent='「攜帶物品」已包含創角小幫手選擇的裝備，PDF 不會再次加入，以免內容重複。'; copy.append(strong,hint); success.append(icon,copy); d.appendChild(success);
+          const copy=document.createElement('div'); const strong=document.createElement('strong'); strong.textContent='已從快速創角匯入初始裝備'; const hint=document.createElement('p'); hint.textContent='「攜帶物品」已包含快速創角選擇的裝備，PDF 不會再次加入，以免內容重複。'; copy.append(strong,hint); success.append(icon,copy); d.appendChild(success);
           const n=document.createElement('button'); n.type='button'; n.className='pdf-export-flow-modal__button pdf-export-flow-modal__button--primary'; n.textContent='使用目前裝備繼續'; n.onclick=()=>{result.includeDefaultEquipment=false;idx++;render();}; a.append(n); n.focus();
           return;
         }

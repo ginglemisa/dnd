@@ -1507,7 +1507,7 @@
     modal.setAttribute("aria-hidden", "true");
     modal.innerHTML = `
       <section class="quick-build-shell" role="dialog" aria-modal="true" aria-labelledby="quick-build-title">
-        <header class="quick-build-header"><div><div class="quick-build-title-row"><h2 id="quick-build-title">創角小幫手</h2><button type="button" class="quick-build-reset" aria-label="重置小幫手">重置</button></div><p class="quick-build-progress" aria-live="polite"></p></div><button type="button" class="quick-build-close" aria-label="關閉創角小幫手">✕</button></header>
+        <header class="quick-build-header"><div><div class="quick-build-title-row"><h2 id="quick-build-title">快速創角</h2><button type="button" class="quick-build-reset" aria-label="重置快速創角">重置</button></div><p class="quick-build-progress" aria-live="polite"></p></div><button type="button" class="quick-build-close" aria-label="關閉快速創角">✕</button></header>
         <main class="quick-build-body"></main>
         <footer class="quick-build-footer"><button type="button" class="quick-build-previous">上一步</button><button type="button" class="quick-build-modify" hidden>↑修改↑</button><button type="button" class="quick-build-next">下一步</button></footer>
       </section>`;
@@ -3212,7 +3212,7 @@
     if (!TOOL_CATALOG_AVAILABLE) {
       body.insertAdjacentHTML(
         "afterbegin",
-        '<div class="quick-build-warning" role="alert"><strong>工具資料載入失敗</strong><br>創角小幫手仍可使用，但士兵賭具、吟遊詩人與武僧的工具選擇，以及「熟習」的工具選項目前不可用。請重新載入頁面；若問題持續，請確認 tool-data.js 可正常載入。</div>'
+        '<div class="quick-build-warning" role="alert"><strong>工具資料載入失敗</strong><br>快速創角仍可使用，但士兵賭具、吟遊詩人與武僧的工具選擇，以及「熟習」的工具選項目前不可用。請重新載入頁面；若問題持續，請確認 tool-data.js 可正常載入。</div>'
       );
     }
     body.scrollTop = preserveBodyScroll ? previousScrollTop : 0;
@@ -3901,10 +3901,10 @@
 
   async function discardDraft(event) {
     const confirmed = await window.AppDialog.requestDecision({
-      title: "重置創角小幫手",
+      title: "重置快速創角",
       message: "背景、種族、職業、裝備與其他選擇都會清除，且無法復原。",
       cancelLabel: "保留進度",
-      confirmLabel: "重置小幫手",
+      confirmLabel: "重置快速創角",
       intent: "danger",
       trigger: event?.currentTarget
     });

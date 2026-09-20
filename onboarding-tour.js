@@ -164,6 +164,11 @@
       document.getElementById("restart-onboarding-btn")?.addEventListener("click", () => this.start());
       document.getElementById("first-table-tour-btn")?.addEventListener("click", () => this.startTabletop());
       document.getElementById("help-quick-build-btn")?.addEventListener("click", () => window.quickBuild?.open());
+      document.getElementById("utility-menu-toggle")?.addEventListener("click", () => {
+        window.setTimeout(() => {
+          if (this.active && this.kind === "sheet" && this.currentIndex === 1) this.renderStep({ ensureFocus: false });
+        }, 0);
+      });
       document.getElementById("tabletop-turn-help")?.addEventListener("click", (event) => {
         const options = window.ActionPanel?.getOptions("basic") || [];
         const names = COMMON_ACTION_KEYS.map(key => options.find(option => option.key === key)?.label).filter(Boolean);
@@ -229,17 +234,25 @@
         {
           tab: "basic",
           title: "🎲 2. 屬性與快速創角",
-          text: "六項屬性決定角色擅長什麼；上方是 D20 檢定用到的調整值。下方的欄位可直接填入屬性數字。",
+          text: "六項屬性決定角色擅長什麼。屬性相關工具已移到右上角選單。點開右上選單可以找到『快速創角』與『決定屬性』。",
           placement: "top",
           getHoles: () => {
-            return [
-              this.getHoleForSelector("#set-default-abilities", 8),
-              this.getHoleForSelector("#tab-basic .ability-grid", 8)
-            ].filter(Boolean);
+            const menuOpen = document.getElementById("utility-menu-toggle")?.getAttribute("aria-expanded") === "true";
+            return (menuOpen
+              ? [
+                  this.getHoleFromElements([
+                    document.getElementById("help-quick-build-btn"),
+                    document.getElementById("set-default-abilities")
+                  ], 6)
+                ]
+              : [
+                  this.getHoleForSelector("#utility-menu-toggle", 6),
+                  this.getHoleForSelector("#tab-basic .ability-grid", 8)
+                ]).filter(Boolean);
           },
           beforePosition: async () => {
             this.prepareAbilityPreview();
-            await this.scrollElementIntoView(document.querySelector("#set-default-abilities"), 150);
+            await this.scrollElementIntoView(document.querySelector("#tab-basic .ability-grid"), 150);
           },
           afterLeave: () => this.restoreAbilityPreview()
         },
@@ -257,7 +270,7 @@
             if (this.stepPhase === 2) {
               return "選擇背景後，可在背景允許的三項屬性間分配共 3 點加值，單項最多 +2；也可使用職業範本快速配置。完成後可套用到角色，本次導覽請按「下一步」繼續。";
             }
-            return "除了自行填寫屬性以外，你也可以使用 27 購點配置，或以「屬性擲骰」擲出六組數值再分配。創角小幫手可從工具選單開啟。";
+            return "除了自行填寫屬性以外，你也可以使用 27 購點配置，或以「屬性擲骰」擲出六組數值再分配。『決定屬性』與『快速創角』都可從右上工具選單開啟。";
           },
           placement: "overlay-bottom",
           getHoles: () => {
@@ -1169,6 +1182,8 @@
       }
       if (this.currentIndex === 1 && this.stepPhase === 0) {
         return [
+          document.getElementById("utility-menu-toggle"),
+          document.getElementById("help-quick-build-btn"),
           document.getElementById("set-default-abilities"),
           ...["str", "dex", "con", "int", "wis", "cha"].map((id) => document.getElementById(id))
         ].filter((element) => element && isElementVisible(element));
@@ -1509,6 +1524,10 @@
         .filter(Boolean)
         .slice(0, 2);
       const visibleHoles = this.applyMasksForHoles(holes);
+      const allowStepTwoControls = this.kind === "sheet" && this.currentIndex === 1;
+      this.maskGroups.forEach((group) => Object.values(group).forEach((mask) => {
+        if (mask) mask.style.pointerEvents = allowStepTwoControls ? "none" : "";
+      }));
       this.activeHoles = visibleHoles;
       this.focusRings.forEach((ring, index) => this.setFocusRing(ring, visibleHoles[index]));
 

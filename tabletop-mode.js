@@ -4056,9 +4056,11 @@ function getRogueReliableTalentEntry() {
     if (elements.modeToggle) {
       const tabletopEnabled = nextMode === "tabletop";
       elements.modeToggle.setAttribute("aria-pressed", String(tabletopEnabled));
-      elements.modeToggle.setAttribute("aria-label", tabletopEnabled ? "返回角色卡" : "進入桌邊模式（β）");
+      const accessibleLabel = tabletopEnabled ? "返回角色卡" : "進入桌邊模式";
+      elements.modeToggle.setAttribute("aria-label", accessibleLabel);
+      elements.modeToggle.setAttribute("title", accessibleLabel);
       const modeLabel = elements.modeToggle.querySelector("#tabletop-mode-toggle-label");
-      if (modeLabel) modeLabel.textContent = tabletopEnabled ? "角色卡模式" : "桌邊模式(β)";
+      if (modeLabel) modeLabel.textContent = "📝";
     }
 
     if (elements.sheetTabs) {
@@ -4492,12 +4494,26 @@ function getRogueReliableTalentEntry() {
     elements.modeToggle
       ?.addEventListener(
         "click",
-        () => {
-          applyModeVisibility(
-            currentMode === "tabletop"
-              ? "sheet"
-              : "tabletop"
-          );
+        async () => {
+          if (currentMode === "tabletop") {
+            applyModeVisibility("sheet");
+            return;
+          }
+          const introKey = "dnd.tabletopIntroSeen.v1";
+          if (globalScope.dndStorage?.getItem(introKey)) {
+            applyModeVisibility("tabletop");
+            return;
+          }
+          const confirmed = await globalScope.AppDialog?.requestDecision({
+            title: "桌邊模式",
+            message: "跑團時使用的精簡介面，集中顯示常用數值、擲骰與戰鬥操作。",
+            cancelLabel: "稍後",
+            confirmLabel: "進入桌邊模式",
+            trigger: document.getElementById("utility-menu-toggle")
+          });
+          if (!confirmed) return;
+          globalScope.dndStorage?.setItem(introKey, "1");
+          applyModeVisibility("tabletop");
         }
       );
 
