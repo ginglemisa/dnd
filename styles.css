@@ -7219,8 +7219,10 @@ label.feature-choice-card__heading {
   right: max(0.95rem, calc((100vw - var(--app-max-width)) / 2 + 0.95rem));
   bottom: 0.85rem;
   z-index: 999;
-  width: auto;
-  height: auto;
+  width: 2.5rem;
+  height: 2.5rem;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
   padding: 0;
   display: inline-flex;
   align-items: center;
@@ -7240,8 +7242,10 @@ label.feature-choice-card__heading {
   top: var(--floating-top-offset, 4.2rem);
   left: max(0.95rem, calc((100vw - var(--app-max-width)) / 2 + 0.95rem));
   z-index: 1100;
-  width: auto;
-  height: auto;
+  width: 2.5rem;
+  height: 2.5rem;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
   padding: 0;
   display: inline-flex;
   align-items: center;
@@ -7262,8 +7266,10 @@ label.feature-choice-card__heading {
   top: var(--floating-top-offset, 4.2rem);
   left: max(0.95rem, calc((100vw - var(--app-max-width)) / 2 + 0.95rem));
   z-index: 1100;
-  width: auto;
-  height: auto;
+  width: 2.5rem;
+  height: 2.5rem;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
   padding: 0;
   display: inline-flex;
   align-items: center;
@@ -7290,11 +7296,13 @@ html[data-view-mode="tabletop"] #scrollToBottomBtn {
 :where(html:not([data-ui-theme="warm"])) #spell-search-fab,
 :where(html:not([data-ui-theme="warm"])) #equipment-search-fab {
   position: fixed;
-  top: 4.2rem;
+  top: var(--floating-top-offset, 4.2rem);
   right: max(0.95rem, calc((100vw - var(--app-max-width)) / 2 + 0.95rem));
   z-index: 1200;
-  width: auto;
-  height: auto;
+  width: 2.5rem;
+  height: 2.5rem;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
   padding: 0;
   border: 0;
   border-radius: 0;
@@ -7303,21 +7311,23 @@ html[data-view-mode="tabletop"] #scrollToBottomBtn {
   justify-content: center;
   background: transparent;
   color: inherit;
-  font-size: 1.6rem;
+  font-size: 1.5rem;
   line-height: 1;
   box-shadow: none;
   opacity: 1;
-  transition: transform 0.2s ease;
+  transition: top 0.2s ease;
 }
 
 :where(html[data-ui-theme="warm"]) #spell-search-fab,
 :where(html[data-ui-theme="warm"]) #equipment-search-fab {
   position: fixed;
-  top: 4.2rem;
+  top: var(--floating-top-offset, 4.2rem);
   right: max(0.95rem, calc((100vw - var(--app-max-width)) / 2 + 0.95rem));
   z-index: 1200;
-  width: auto;
-  height: auto;
+  width: 2.5rem;
+  height: 2.5rem;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
   padding: 0;
   border: 0;
   border-radius: 0;
@@ -7326,21 +7336,16 @@ html[data-view-mode="tabletop"] #scrollToBottomBtn {
   justify-content: center;
   background: transparent;
   color: inherit;
-  font-size: 1.6rem;
+  font-size: 1.5rem;
   line-height: 1;
   box-shadow: none;
   opacity: 1;
-  transition: transform 120ms ease;
+  transition: top 120ms ease;
 }
 
 #spell-search-fab.is-hidden,
 #equipment-search-fab.is-hidden {
   display: none;
-}
-
-#spell-search-fab.toolbar-open,
-#equipment-search-fab.toolbar-open {
-  transform: translateY(3.15rem);
 }
 
 #spell-search-fab:hover,
@@ -7365,15 +7370,16 @@ html[data-view-mode="tabletop"] #scrollToBottomBtn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: auto;
-  height: auto;
-  min-height: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
   padding: 0;
   border: 0;
   border-radius: 0;
   background: transparent;
   color: inherit;
-  font-size: 1.6rem;
+  font-size: 1.5rem;
   line-height: 1;
   box-shadow: none;
 }
