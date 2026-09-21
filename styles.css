@@ -7217,7 +7217,7 @@ label.feature-choice-card__heading {
 #scrollToTopBtn {
   position: fixed;
   right: max(0.95rem, calc((100vw - var(--app-max-width)) / 2 + 0.95rem));
-  bottom: 0.85rem;
+  bottom: calc(0.55rem + 2.5rem + 0.2rem);
   z-index: 999;
   width: 2.5rem;
   height: 2.5rem;
@@ -7239,8 +7239,8 @@ label.feature-choice-card__heading {
 
 :where(html:not([data-ui-theme="warm"])) #scrollToBottomBtn {
   position: fixed;
-  top: var(--floating-top-offset, 4.2rem);
-  left: max(0.95rem, calc((100vw - var(--app-max-width)) / 2 + 0.95rem));
+  right: max(0.95rem, calc((100vw - var(--app-max-width)) / 2 + 0.95rem));
+  bottom: 0.55rem;
   z-index: 1100;
   width: 2.5rem;
   height: 2.5rem;
@@ -7258,13 +7258,13 @@ label.feature-choice-card__heading {
   line-height: 1;
   box-shadow: none;
   opacity: 1;
-  transition: top 0.2s ease;
+  transition: bottom 0.2s ease;
 }
 
 :where(html[data-ui-theme="warm"]) #scrollToBottomBtn {
   position: fixed;
-  top: var(--floating-top-offset, 4.2rem);
-  left: max(0.95rem, calc((100vw - var(--app-max-width)) / 2 + 0.95rem));
+  right: max(0.95rem, calc((100vw - var(--app-max-width)) / 2 + 0.95rem));
+  bottom: 0.55rem;
   z-index: 1100;
   width: 2.5rem;
   height: 2.5rem;
@@ -7282,15 +7282,11 @@ label.feature-choice-card__heading {
   line-height: 1;
   box-shadow: none;
   opacity: 1;
-  transition: top 120ms ease;
+  transition: bottom 120ms ease;
 }
 
 html:where([data-ui-theme="warm"])[data-theme="dark"] :is(#scrollToTopBtn, #scrollToBottomBtn) {
   color: var(--text-muted);
-}
-
-html[data-view-mode="tabletop"] #scrollToBottomBtn {
-  top: max(0.75rem, env(safe-area-inset-top, 0px));
 }
 
 :where(html:not([data-ui-theme="warm"])) #spell-search-fab,
@@ -7365,7 +7361,7 @@ html[data-view-mode="tabletop"] #scrollToBottomBtn {
 #dice-roller-fab {
   position: fixed;
   left: max(0.95rem, calc((100vw - var(--app-max-width)) / 2 + 0.95rem));
-  bottom: 0.85rem;
+  bottom: 0.55rem;
   z-index: 1200;
   display: inline-flex;
   align-items: center;
