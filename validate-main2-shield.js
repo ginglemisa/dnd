@@ -25,6 +25,7 @@ async function main() {
     await page.check("#legal-dismiss");
     await page.click("#legal-close-btn");
     await page.selectOption("#class", "fighter");
+    await page.getByRole("tab", { name: "裝備", exact: true }).click();
     await page.selectOption("#mainHand", "長劍");
     await page.check("#offHandAsMain");
     await page.selectOption("#offHand", "標槍");
@@ -34,7 +35,10 @@ async function main() {
     assert.equal(await page.locator("#main2ShieldOption").isVisible(), true);
     await page.check("#main2Shield");
     assert.equal(await page.inputValue("#ac-display"), "12");
-    assert.equal(await page.locator("#equipment-loadout-summary-content").innerText().then(text => text.includes("主手2") && text.includes("盾牌")), true);
+    assert.deepEqual(
+      await page.locator("#equipment-loadout-summary-content .equipment-summary-row strong").allTextContents(),
+      ["長劍：", "標槍：", "盾牌："]
+    );
 
     await page.selectOption("#offHand", "巨劍");
     await page.getByRole("button", { name: "取消" }).click();

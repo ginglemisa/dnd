@@ -146,7 +146,7 @@ async function main() {
     assert.equal(await page.locator("#spellbook-card").isVisible(), true);
     assert.equal(await page.locator("#spellbook-list .spellbook-ring").count(), 1);
     assert.equal(await page.locator("#spellbook-list .is-prepared").count(), 1);
-    assert.match(await page.locator("#spell-prepared-counts").innerText(), /〕 法師等級1 準備法術數量 4$/);
+    assert.equal(await page.locator("#spell-prepared-counts").innerText(), "已準備 1 個法術\n一環 1\n法師 LV1｜最多可準備 4 個");
     await page.locator('#spellbook-list [data-spell-id="detect-magic"]').click();
     await page.locator(".quick-build-spell-prepare-confirm").click();
     assert.equal(await page.locator('#spellbook-list [data-spell-id="detect-magic"].is-prepared').count(), 1);

@@ -122,7 +122,7 @@
       : null;
     return {
       hand,
-      label: hand === "main" ? "主手" : (isAlternateMain ? "另一把主手" : "副手"),
+      label: hand === "main" ? "主手" : (isAlternateMain ? "主手2" : "副手"),
       name: readField(`${prefix}-name`),
       hit: projected?.hit ?? (beast ? "" : readField(`${prefix}-hit`)),
       damage: projected?.damage ?? (beast ? "" : readField(`${prefix}-dmg`)),
@@ -133,10 +133,16 @@
   }
 
   function hasWeaponData(weapon) {
+    if (globalScope.isWeaponAttackAutomationEnabled?.() === false) {
+      return ["name", "hit", "dmg", "note"].some(suffix => (
+        readField(`atk-${weapon.hand}-${suffix}`)
+      ));
+    }
     return Boolean(weapon.name);
   }
 
   function canShowSecondaryWeapon() {
+    if (globalScope.isWeaponAttackAutomationEnabled?.() === false) return true;
     const offHandName = document.getElementById("offHand")?.value || "";
     if (!offHandName || offHandName === "盾牌") return false;
 

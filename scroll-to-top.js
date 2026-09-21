@@ -35,19 +35,12 @@
   scrollToTopBtn.type = "button";
   scrollToTopBtn.textContent = "▲";
   scrollToTopBtn.setAttribute("aria-label", "回到頁面頂端");
-  scrollToTopBtn.style.display = "none";
 
   scrollToTopBtn.addEventListener("click", () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   });
 
-  const updateVisibility = () => {
-    scrollToTopBtn.style.display = window.scrollY > 220 ? "block" : "none";
-  };
-
   document.body.appendChild(scrollToTopBtn);
-  window.addEventListener("scroll", updateVisibility, { passive: true });
-  updateVisibility();
 })();
 
 (function initScrollToBottomButton() {
@@ -58,22 +51,12 @@
   scrollToBottomBtn.type = "button";
   scrollToBottomBtn.textContent = "▼";
   scrollToBottomBtn.setAttribute("aria-label", "移至當前頁面底部");
-  scrollToBottomBtn.style.display = "none";
 
   scrollToBottomBtn.addEventListener("click", () => {
     window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
   });
 
-  const updateVisibility = () => {
-    const scrollBottom = window.scrollY + window.innerHeight;
-    const pageBottom = document.documentElement.scrollHeight;
-    const isAtBottom = scrollBottom >= pageBottom - 1;
-    scrollToBottomBtn.style.display = isAtBottom ? "none" : "block";
-  };
-
   document.body.appendChild(scrollToBottomBtn);
-  window.addEventListener("scroll", updateVisibility, { passive: true });
-  updateVisibility();
 })();
 
 (function initSpellSearchFloatingButton() {

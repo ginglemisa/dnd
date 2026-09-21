@@ -824,6 +824,58 @@ async function verifyClassTabletopUpdates(page) {
   await page.waitForFunction(() => document.querySelector("#dice-roller-stage")?.textContent.includes("混元體"));
 }
 
+async function verifyManualWeaponVisibility(page) {
+  await page.reload();
+  await page.waitForFunction(() => !!window.TabletopMode);
+  const secondary = page.locator('#tabletop-weapon-summary section[aria-label="副手武器攻擊"], #tabletop-weapon-summary section[aria-label="主手2武器攻擊"]');
+  for (const equipment of [
+    { mainHand: "", offHand: "", offHandAsMain: false },
+    { mainHand: "長劍", offHand: "盾牌", offHandAsMain: false },
+    { mainHand: "巨劍", offHand: "", offHandAsMain: false },
+    { mainHand: "", offHand: "", offHandAsMain: true },
+    { mainHand: "長劍", offHand: "標槍", offHandAsMain: true, main2Shield: true }
+  ]) {
+    await page.evaluate(equipment => {
+      for (const hand of ["main", "off"]) {
+        for (const suffix of ["name", "hit", "dmg", "note"]) {
+          document.getElementById(`atk-${hand}-${suffix}`).value = "";
+        }
+      }
+      document.getElementById("weapon-attack-automation").checked = true;
+      applyStateObject({ class: "fighter", level: "1", main2Shield: false, ...equipment, "weapon-attack-automation": true });
+      TabletopMode.setMode("tabletop");
+      TabletopMode.setPanel("actions");
+    }, equipment);
+    await page.click("#tabletop-action-tab-basic");
+    await page.waitForFunction(expected => document.querySelectorAll('#tabletop-weapon-summary .tabletop-weapon-attack-card').length === expected,
+      equipment.offHandAsMain && equipment.offHand ? 2 : equipment.mainHand ? 1 : 0, { timeout: 5000 });
+    assert.equal(await page.textContent("#atk-off-title-text"), equipment.offHandAsMain ? "主手攻擊2" : "副手攻擊");
+    await page.evaluate(() => {
+      const toggle = document.getElementById("weapon-attack-automation");
+      toggle.checked = false;
+      toggle.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    for (const suffix of ["name", "hit", "dmg", "note"]) {
+      await page.evaluate(suffix => {
+        for (const field of ["name", "hit", "dmg", "note"]) {
+          const input = document.getElementById(`atk-off-${field}`);
+          input.value = field === suffix ? "手填測試" : "";
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+      }, suffix);
+      await secondary.waitFor({ state: "visible" });
+      assert.match(await secondary.innerText(), /手填測試/);
+    }
+    await page.evaluate(() => {
+      const note = document.getElementById("atk-off-note");
+      note.value = "   ";
+      note.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await secondary.waitFor({ state: "detached" });
+  }
+  console.log("Manual secondary weapons: empty equipment, shield, two-handed, main2, partial fields and clearing passed.");
+}
+
 async function main() {
   const root = __dirname;
   const server = http.createServer((req, res) => {
@@ -848,6 +900,7 @@ async function main() {
     console.log(`Action metadata: ${assertions} coverage assertions passed.`);
     await verifyUiAndPersistence(page);
     await verifyClassTabletopUpdates(page);
+    await verifyManualWeaponVisibility(page);
     console.log("Class tabletop descriptions, alerts, choices, resource conversion and recovery passed.");
     assert.deepEqual(errors, [], "browser runtime errors");
     console.log("Tabletop + legacy UI, custom/hidden actions, JSON/share/autosave round trips passed.");
