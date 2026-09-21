@@ -150,6 +150,15 @@ $html = $html.Replace(
   '<meta charset="UTF-8">'
 )
 
+# The generated offline bundle is intentionally downloadable and usable,
+# but should not compete with the canonical web app in search results.
+if (-not $html.Contains('<meta name="robots" content="noindex">')) {
+  $html = $html.Replace(
+    '<meta charset="UTF-8">',
+    "<meta charset=`"UTF-8`">`r`n  <meta name=`"robots`" content=`"noindex`">"
+  )
+}
+
 $html = [System.Text.RegularExpressions.Regex]::Replace(
   $html,
   '^\s*<meta\s+(?:name="description"|property="og:[^"]+"|name="twitter:[^"]+")\s+content="[^"]*">\s*\r?\n?',
