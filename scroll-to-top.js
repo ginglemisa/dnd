@@ -59,6 +59,26 @@
   document.body.appendChild(scrollToBottomBtn);
 })();
 
+(function initScrollButtonsToggle() {
+  const toggle = document.getElementById("scroll-buttons-toggle");
+  if (!toggle) return;
+
+  const storageKey = "dnd.scrollButtonsVisible.v1";
+  const buttons = [document.getElementById("scrollToTopBtn"), document.getElementById("scrollToBottomBtn")];
+  const updateVisibility = () => {
+    buttons.forEach((button) => {
+      if (button) button.style.display = toggle.checked ? "" : "none";
+    });
+  };
+
+  toggle.checked = window.dndStorage.getItem(storageKey) !== "false";
+  updateVisibility();
+  toggle.addEventListener("change", () => {
+    window.dndStorage.setItem(storageKey, String(toggle.checked));
+    updateVisibility();
+  });
+})();
+
 (function initSpellSearchFloatingButton() {
   if (document.getElementById("spell-search-fab")) return;
 

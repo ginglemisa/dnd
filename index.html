@@ -47,7 +47,7 @@
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="styles.css?v=20260923-persistent-spells">
-  <script src="scroll-to-top.js?v=20260922-always-visible" defer></script>
+  <script src="scroll-to-top.js?v=20260922-visibility-toggle" defer></script>
   <script src="dice-roller.js?v=20260915-dual-themes" defer></script>
   <script src="monster.js?v=20260912-druid-controls" defer></script>
     <script src="class-features.js?v=20260913-class-tabletop" defer></script>
@@ -67,7 +67,7 @@
   <script src="tabletop-actions.js?v=20260922-manual-weapons" defer></script>
   <script src="tabletop-spells.js?v=20260923-persistent-spells" defer></script>
   <script src="legal-modal.js?v=20260918-share-mode" defer></script>
-  <script src="onboarding-tour.js?v=20260920-utility-tools" defer></script>
+  <script src="onboarding-tour.js?v=20260922-tour-drag" defer></script>
   <script src="quick-build.js?v=20260922-skip-file-reset" defer></script>
   <script src="spellbook.js?v=20260913-spellbook" defer></script>
   <script src="deity-info.js" defer></script>
@@ -114,7 +114,12 @@
             <span class="utility-menu__switch" aria-hidden="true"></span>
           </label>
           <label class="utility-menu__setting">
-            <span>開啟擲骰系統</span>
+            <span>顯示▲▼按鈕</span>
+            <input id="scroll-buttons-toggle" type="checkbox" role="switch" checked data-state-transient="true">
+            <span class="utility-menu__switch" aria-hidden="true"></span>
+          </label>
+          <label class="utility-menu__setting">
+            <span>開啟擲骰功能</span>
             <input id="dice-system-toggle" type="checkbox" role="switch">
             <span class="utility-menu__switch" aria-hidden="true"></span>
           </label>
@@ -351,8 +356,10 @@
         <div id="tabletop-defense-summary" class="tabletop-defense-summary__list"></div>
       </section>
       <section class="tabletop-section tabletop-skills" aria-labelledby="tabletop-skills-title">
-        <div class="tabletop-section-heading"><h2 id="tabletop-skills-title">技能</h2></div>
-        <p class="tabletop-skill-legend" aria-label="技能熟練圖例"><span>○ 未熟練</span><span>● 熟練</span><span>◆ 專精</span></p>
+        <div class="tabletop-section-heading">
+          <h2 id="tabletop-skills-title">技能</h2>
+          <p class="tabletop-skill-legend" aria-label="技能熟練圖例"><span>○ 未熟練</span><span>● 熟練</span><span>◆ 專精</span></p>
+        </div>
         <div id="tabletop-skill-values" class="tabletop-skill-values" role="list" aria-label="技能加值"></div>
       </section>
       <section class="tabletop-section tabletop-shared-notes" aria-labelledby="tabletop-skill-extra-title">
@@ -10030,7 +10037,7 @@ window.addEventListener("DOMContentLoaded", async function() {
   <div><a href="https://twD20.com/">twD20.com</a> | <a href="ddals1.html">官方免費冒險劇本</a> | <a href="https://tinyurl.com/srd5etw" target="_blank" rel="noopener">空白角卡下載</a> | <a href="mailto:tsai.reggie428@gmail.com">bug回報</a></div>
 </footer>
 
-<button type="button" id="dice-roller-fab" class="is-hidden" aria-label="開啟擲骰系統" aria-controls="dice-roller-modal" aria-expanded="false">🎲</button>
+<button type="button" id="dice-roller-fab" class="is-hidden" aria-label="開啟擲骰功能" aria-controls="dice-roller-modal" aria-expanded="false">🎲</button>
 
 <div id="dice-roller-modal" class="dice-roller-modal" aria-hidden="true" inert hidden>
   <section class="dice-roller-card" role="dialog" aria-modal="true" aria-labelledby="dice-roller-title" aria-describedby="dice-roller-instructions" tabindex="-1">
@@ -10133,7 +10140,7 @@ window.addEventListener("DOMContentLoaded", async function() {
 
     <div class="point-buy-actions">
       <button type="button" id="point-buy-reset">重設</button>
-      <button type="button" id="point-buy-apply">套用到角色</button>
+      <button type="button" id="point-buy-apply">套用</button>
     </div>
   </div>
 </div>

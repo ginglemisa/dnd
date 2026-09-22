@@ -8322,13 +8322,15 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] :is(#scrollToTopBtn, #scro
   display: flex;
   flex-direction: column;
   max-height: min(55dvh, calc(100dvh - 32px));
-  top: auto !important;
-  bottom: 10px;
   touch-action: pan-y !important;
-  cursor: default !important;
+}
+
+#tour-overlay[data-tour-kind="tabletop"] .tour-heading-row {
+  touch-action: none;
 }
 
 #tour-overlay[data-tour-kind="tabletop"] #tour-step-text {
+  cursor: auto;
   overflow-y: auto;
   overscroll-behavior: contain;
   white-space: pre-line;
@@ -13740,6 +13742,19 @@ html.app-dialog-open {
   font-weight: inherit;
 }
 
+/* Disabled summary rolls read like the adjacent plain-text values. */
+.tabletop-key-stat dd .tabletop-inline-roll:disabled,
+.tabletop-casting-summary dd .tabletop-inline-roll:disabled {
+  display: inline;
+  min-height: 0;
+  background: transparent;
+  color: inherit;
+  box-shadow: none;
+  transform: none;
+  translate: none;
+  vertical-align: baseline;
+}
+
 .tabletop-dice-expression {
   display: inline-flex;
   align-items: center;
@@ -13790,11 +13805,17 @@ html.app-dialog-open {
   container: tabletop-skills / inline-size;
 }
 
+.tabletop-skills .tabletop-section-heading {
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  white-space: nowrap;
+}
+
 .tabletop-skill-legend {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.25rem 0.75rem;
-  margin: 0 0 0.5rem;
+  margin: 0;
   color: var(--text-muted);
   font-size: var(--fs-sm);
 }
