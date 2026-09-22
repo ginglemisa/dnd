@@ -169,45 +169,52 @@
     const wisdomModifier = Math.max(1, calculateAbilityModifier(options.wisdomScore ?? 10));
     const charismaModifier = Math.max(1, calculateAbilityModifier(options.charismaScore ?? 10));
     const resources = [];
-    const addUses = (key, label, maximum, recoveryNote) => resources.push({
+    const recovery = (shortRest = null) => Object.freeze({ shortRest, longRest: "all" });
+    const addUses = (key, label, maximum, recoveryNote, shortRest = null, restChoice = null) => resources.push({
       key,
       kind: "uses",
       label,
       maximum,
-      recoveryNote
+      recoveryNote,
+      target: Object.freeze({ type: "builtIn", key }),
+      recovery: recovery(shortRest),
+      restChoice: restChoice && Object.freeze(restChoice)
     });
-    const addPoints = (key, label, maximum, recoveryNote) => resources.push({
+    const addPoints = (key, label, maximum, recoveryNote, shortRest = null) => resources.push({
       key,
       kind: "points",
       label,
       maximum,
-      recoveryNote
+      recoveryNote,
+      target: Object.freeze({ type: "builtIn", key }),
+      recovery: recovery(shortRest)
     });
 
     if (race === "dragonborn" && level >= 5) addUses("dragonborn-dragon-flight", "龍翔天際", 1, "長休後回復。");
     if (race === "dwarf") addUses("dwarf-stonecunning", "石中精妙", proficiency, "長休後全回復。");
     if (race === "goliath" && level >= 5) addUses("goliath-large-form", "巨化形體", 1, "長休後回復。");
     if (race === "orc") {
-      addUses("orc-adrenaline-rush", "熱血湧動", proficiency, "短休或長休後全回復。");
+      addUses("orc-adrenaline-rush", "熱血湧動", proficiency, "短休或長休後全回復。", "all");
       addUses("orc-relentless-endurance", "堅韌不屈", 1, "長休後回復。");
     }
 
     if (className === "barbarian") {
-      addUses("barbarian-rage", "狂暴", level >= 6 ? 4 : (level >= 3 ? 3 : 2), "短休回 1 次，長休全回。");
+      addUses("barbarian-rage", "狂暴", level >= 6 ? 4 : (level >= 3 ? 3 : 2), "短休回 1 次，長休全回。", 1);
     }
     if (className === "bard") {
       addUses(
         "bard-inspiration",
         "吟遊詩人激勵",
         charismaModifier,
-        level >= 5 ? "短休或長休後全回復。" : "長休後全回復。"
+        level >= 5 ? "短休或長休後全回復。" : "長休後全回復。",
+        level >= 5 ? "all" : null
       );
     }
     if (className === "cleric" && level >= 2) {
-      addUses("cleric-channel-divinity", "引導神力", level >= 6 ? 3 : 2, "短休回 1 次，長休全回。");
+      addUses("cleric-channel-divinity", "引導神力", level >= 6 ? 3 : 2, "短休回 1 次，長休全回。", 1);
     }
     if (className === "druid" && level >= 2) {
-      addUses("druid-wild-shape", "荒野形態", getDruidWildShapeRules(level).maximum, "短休回 1 次，長休全回。");
+      addUses("druid-wild-shape", "荒野形態", getDruidWildShapeRules(level).maximum, "短休回 1 次，長休全回。", 1);
       if (level >= 5) {
         addUses(
           "druid-wild-resurgence-spell-slot",
@@ -221,22 +228,23 @@
           "druid-natural-recovery-spell-slots",
           "自然恢復（法術位）",
           1,
-          `完成短休時，可恢復環階總和 ${Math.ceil(level / 2)} 的已消耗法術位（德魯伊等級一半，進位；每個法術位須低於 6 環）。每次長休前只能使用 1 次；完成長休後恢復。`
+          `完成短休時，可恢復環階總和 ${Math.ceil(level / 2)} 的已消耗法術位（德魯伊等級一半，進位；每個法術位須低於 6 環）。每次長休前只能使用 1 次；完成長休後恢復。`,
+          null, { when: "shortRest", effect: "spellSlots", budget: Math.ceil(level / 2), maximumSlotLevel: 5 }
         );
       }
     }
     if (className === "fighter") {
-      addUses("fighter-second-wind", "回氣", level >= 4 ? 3 : 2, "短休回 1 次，長休全回。");
-      if (level >= 2) addUses("fighter-action-surge", "動作如潮", 1, "短休或長休後回復。");
+      addUses("fighter-second-wind", "回氣", level >= 4 ? 3 : 2, "短休回 1 次，長休全回。", 1);
+      if (level >= 2) addUses("fighter-action-surge", "動作如潮", 1, "短休或長休後回復。", "all");
     }
     if (className === "monk" && level >= 2) {
-      addPoints("monk-focus-points", "專注點", level, "短休或長休後全回復。");
+      addPoints("monk-focus-points", "專注點", level, "短休或長休後全回復。", "all");
       addUses("monk-uncanny-metabolism", "吐故納新", 1, "長休後回復。");
       if (level >= 6) addUses("monk-wholeness", "混元體", wisdomModifier, "長休後全回復。");
     }
     if (className === "paladin") {
       addPoints("paladin-lay-on-hands", "聖療", level * 5, "長休後全回復。");
-      if (level >= 3) addUses("paladin-channel-divinity", "引導神力", 2, "短休回 1 次，長休全回。");
+      if (level >= 3) addUses("paladin-channel-divinity", "引導神力", 2, "短休回 1 次，長休全回。", 1);
     }
     if (className === "sorcerer") {
       addUses("sorcerer-innate-sorcery", "天生術法", 2, "長休後全回復。");
@@ -246,7 +254,8 @@
           "sorcerer-sorcerous-restoration",
           "術法復甦",
           1,
-          `完成短休時，恢復最多 ${Math.floor(level / 2)} 點已消耗的術法點（術士等級一半，捨去）。每次長休前只能使用 1 次；完成長休後恢復。`
+          `完成短休時，恢復最多 ${Math.floor(level / 2)} 點已消耗的術法點（術士等級一半，捨去）。每次長休前只能使用 1 次；完成長休後恢復。`,
+          null, { when: "shortRest", effect: "points", targetKey: "sorcerer-sorcery-points", budget: Math.floor(level / 2) }
         );
       }
     }
@@ -267,9 +276,40 @@
         "wizard-arcane-recovery",
         "奧術回想",
         1,
-        `完成短休時，恢復環階總和最多 ${Math.ceil(level / 2)} 的已消耗法術位（法師等級一半，進位；單一法術位最高 5 環）。每次長休前只能使用 1 次；完成長休後恢復。`
+        `完成短休時，恢復環階總和最多 ${Math.ceil(level / 2)} 的已消耗法術位（法師等級一半，進位；單一法術位最高 5 環）。每次長休前只能使用 1 次；完成長休後恢復。`,
+        null, { when: "shortRest", effect: "spellSlots", budget: Math.ceil(level / 2), maximumSlotLevel: 5 }
       );
     }
+    // Canonical controls are described here; callers only supply existing spell-source identities.
+    const addControls = (key, label, ids, shortRest = null) => resources.push({
+      key, label, kind: "canonical", maximum: ids.length,
+      target: Object.freeze({ type: "checkboxes", ids: Object.freeze(ids) }),
+      recovery: recovery(shortRest)
+    });
+    if (race === "dragonborn") addControls("dragonborn-breath", "吐息元素",
+      Array.from({ length: proficiency }, (_, i) => `race-ab-check${i + 1}`));
+    if (race === "goliath" && options.goliathAncestry) addControls("goliath-ancestry", "巨人血統異能",
+      Array.from({ length: proficiency }, (_, i) => `goliath-giant-ancestry-check${i + 1}`));
+    if (className === "druid" && level >= 6 && options.druidLand) {
+      addControls("druid-natural-recovery-free", "自然恢復（免費施法）", ["druid-natural-recovery-used"]);
+    }
+    for (const group of options.spellSlotGroups || []) {
+      addControls(`spell-slots-${group.level}`, `${group.level} 環法術位`, [...group.ids], className === "warlock" ? "all" : null);
+    }
+    for (const group of options.freeSpellUses || []) {
+      addControls(`free-${group.key}`, group.label, [...group.ids]);
+    }
+    if (race === "human") resources.push({
+      key: "human-inspiration", label: "英雄激勵", kind: "canonical",
+      target: Object.freeze({ type: "checkbox", id: "heroic-inspiration" }),
+      recovery: Object.freeze({ shortRest: null, longRest: "grant" })
+    });
+    if (options.hasTravelCompanion) resources.push({
+      key: "travel-companion", label: "最佳旅伴", kind: "restChoice",
+      target: Object.freeze({ type: "state", key: "temporaryHp" }),
+      restChoice: Object.freeze({ when: "either", effect: "temporaryHp", level,
+        abilities: Object.freeze(["wis", "cha"]) })
+    });
     return resources.map(resource => Object.freeze(resource));
   }
 

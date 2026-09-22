@@ -5,6 +5,7 @@
   const elements = {};
   let initialized = false;
   let scheduledRender = 0;
+  let restDialogOpen = false;
 
   function createElement(tagName, className = "", text = "") {
     const element = document.createElement(tagName);
@@ -247,14 +248,198 @@
       recoveryNote || "與角色卡數值頁同步。",
       [canonical]
     );
-    if (recoveryNote) {
-      const wrapper = createElement("div", "tabletop-resource-row");
-      const copy = createElement("div", "tabletop-resource-row__copy");
-      copy.append(row, createElement("p", "", recoveryNote));
-      wrapper.appendChild(copy);
-      return wrapper;
+    const wrapper = createElement("div", "tabletop-resource-row tabletop-rest-row");
+    const copy = createElement("div", "tabletop-resource-row__copy");
+    const heading = createElement("div", "tabletop-rest-heading");
+    const actions = createElement("div", "tabletop-rest-actions");
+    for (const [kind, label] of [["shortRest", "短休"], ["longRest", "長休"]]) {
+      const button = createElement("button", "tabletop-compact-button", label);
+      button.type = "button";
+      button.dataset.rest = kind;
+      button.setAttribute("aria-haspopup", "dialog");
+      button.addEventListener("click", () => openRest(kind, button));
+      actions.appendChild(button);
     }
-    return row;
+    heading.append(row, actions);
+    copy.appendChild(heading);
+    if (recoveryNote) copy.appendChild(createElement("p", "", recoveryNote));
+    wrapper.appendChild(copy);
+    return wrapper;
+  }
+
+  function restCheck(target, text) {
+    const label = createElement("label", "tabletop-rest-check");
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.dataset.stateTransient = "true";
+    label.append(input, document.createTextNode(text));
+    target.appendChild(label);
+    return input;
+  }
+
+  function restNumber(target, labelText, minimum) {
+    const label = createElement("label", "app-dialog__number-field", labelText);
+    const input = document.createElement("input");
+    input.type = "number";
+    input.min = String(minimum);
+    input.max = "999";
+    input.step = "1";
+    input.inputMode = "numeric";
+    input.dataset.stateTransient = "true";
+    label.appendChild(input);
+    target.appendChild(label);
+    return input;
+  }
+
+  async function openRest(kind, trigger) {
+    if (restDialogOpen) return;
+    const context = globalScope.TabletopMode.getRestContext();
+    if (!context.ready) {
+      globalScope.AppDialog.notify("請先選擇職業與等級。", { tone: "warning" });
+      return;
+    }
+    restDialogOpen = true;
+    const isLong = kind === "longRest";
+    const name = isLong ? "長休" : "短休";
+    try {
+      const content = createElement("div", "tabletop-rest-dialog");
+      content.appendChild(createElement("p", "", isLong
+        ? `${context.race === "elf" ? "傳思 4 小時" : "休息至少 8 小時"}。完成後至少等 16 小時再開始長休。`
+        : "休息 1 小時。完成後可逐顆使用生命骰。"));
+      const summary = createElement("ul", "tabletop-rest-summary");
+      if (isLong) {
+        summary.appendChild(createElement("li", "", "HP、生命骰與長休資源回滿；力竭減 1。"));
+        summary.appendChild(createElement("li", "", "清空臨時 HP。"));
+        if (context.specs.some(spec => spec.key === "druid-wild-shape")) {
+          summary.appendChild(createElement("li", "", "結束荒野形態與荒野夥伴。"));
+        }
+      } else {
+        const recovered = context.specs.filter(spec => spec.recovery?.shortRest);
+        for (const spec of recovered) summary.appendChild(createElement("li", "",
+          `${spec.label}：${spec.recovery.shortRest === "all" ? "全回" : `恢復 ${spec.recovery.shortRest} 次`}。`));
+        if (!recovered.length) summary.appendChild(createElement("li", "", "沒有自動恢復的短休資源。"));
+      }
+      if (isLong && context.race === "human") summary.appendChild(createElement("li", "", "獲得英雄激勵。"));
+      content.appendChild(summary);
+      const recoveryFields = [];
+      for (const spec of context.specs.filter(item => item.restChoice?.when === kind)) {
+        const section = createElement("fieldset", "tabletop-rest-choice");
+        section.appendChild(createElement("legend", "", spec.label));
+        content.appendChild(section);
+        if (globalScope.TabletopMode.getBuiltInResourceSpent(spec.key) >= spec.maximum) {
+          section.appendChild(createElement("p", "", "已使用，長休後恢復。"));
+          continue;
+        }
+        const choice = spec.restChoice;
+        if (choice.effect === "spellSlots") {
+          section.appendChild(createElement("p", "", `可選用：總和最多 ${choice.budget} 環；每個最高 ${choice.maximumSlotLevel} 環。`));
+          const boxes = context.slots.flatMap(group => group.level > choice.maximumSlotLevel ? []
+            : group.controls.filter(control => control.checked).map(control => ({
+              id: control.id, input: restCheck(section, `${group.level} 環法術位 ${control.id.split("-").pop()}`)
+            })));
+          if (!boxes.length) section.appendChild(createElement("p", "", "沒有可恢復的法術位。"));
+          recoveryFields.push({ key: spec.key, read: () => { const ids = boxes.filter(box => box.input.checked).map(box => box.id); return ids.length ? ids : false; } });
+        } else if (choice.effect === "points") {
+          const spent = globalScope.TabletopMode.getBuiltInResourceSpent(choice.targetKey);
+          const input = restCheck(section, `恢復 ${Math.min(spent, choice.budget)} 點術法點`);
+          input.disabled = spent === 0;
+          recoveryFields.push({ key: spec.key, read: () => input.checked });
+        }
+      }
+      let companion = null;
+      const companionChoice = context.specs.find(spec => spec.key === "travel-companion")?.restChoice;
+      if (companionChoice) {
+        const section = createElement("fieldset", "tabletop-rest-choice");
+        section.appendChild(createElement("legend", "", "最佳旅伴"));
+        section.appendChild(createElement("p", "", "與你一起休息的至多 5 名隊友也可獲得相同臨時 HP。"));
+        const use = restCheck(section, "套用最佳旅伴");
+        const label = createElement("label", "app-dialog__number-field", "此專長提升的屬性");
+        const ability = document.createElement("select");
+        ability.dataset.stateTransient = "true";
+        for (const [value, text] of [["", "請選擇"], ...companionChoice.abilities.map(key => [key, { wis: "感知", cha: "魅力" }[key]])]) {
+          const option = createElement("option", "", text); option.value = value; ability.appendChild(option);
+        }
+        label.appendChild(ability);
+        section.appendChild(label);
+        const amount = restNumber(section, "臨時 HP（等級＋屬性調整值，可修改）", 0);
+        amount.value = "0";
+        ability.disabled = amount.disabled = true;
+        use.addEventListener("change", () => { ability.disabled = amount.disabled = !use.checked; });
+        ability.addEventListener("change", () => {
+          amount.value = String(Math.max(0, companionChoice.level + globalScope.calculateAbilityModifier(document.getElementById(ability.value)?.value || 10)));
+        });
+        section.appendChild(createElement("p", "", isLong ? "長休先清空臨時 HP，再套用此數值。"
+          : `目前臨時 HP：${globalScope.TabletopMode.collectState().temporaryHp}。套用會替換，不相加。`));
+        content.appendChild(section);
+        companion = { use, ability, amount };
+      }
+      const error = createElement("p", "app-dialog__number-error");
+      error.id = "tabletop-rest-error";
+      error.setAttribute("role", "status");
+      content.appendChild(error);
+      for (const input of content.querySelectorAll("input, select")) {
+        input.setAttribute("aria-describedby", error.id);
+        input.addEventListener("input", () => { input.removeAttribute("aria-invalid"); error.textContent = ""; });
+      }
+      const completed = await globalScope.AppDialog.showContent({
+        title: `完成${name}`, content, cancelLabel: "取消", confirmLabel: `完成${name}`,
+        trigger, dismissOnBackdrop: false,
+        resolveConfirm() {
+          if (companion?.use.checked && (!companion.ability.value || !companion.amount.value.trim()
+            || !Number.isSafeInteger(Number(companion.amount.value)) || Number(companion.amount.value) < 0 || Number(companion.amount.value) > 999)) {
+            const field = !companion.ability.value ? companion.ability : companion.amount;
+            error.textContent = "請選擇屬性並填寫臨時 HP（0～999）。";
+            field.setAttribute("aria-invalid", "true"); field.focus();
+            return false;
+          }
+          const selection = { recovery: Object.fromEntries(recoveryFields.map(field => [field.key, field.read()])),
+            companion: companion?.use.checked ? { ability: companion.ability.value, amount: Number(companion.amount.value) } : null };
+          const result = globalScope.TabletopMode.commitRest(kind, selection, context.token);
+          if (!result.ok) { error.textContent = result.reason; return false; }
+          return true;
+        }
+      });
+      if (!completed) return;
+      globalScope.AppDialog.notify(`${name}完成。`, { tone: "success" });
+      if (!isLong) {
+        const dice = globalScope.TabletopMode.getHitDiceContext();
+        if (dice.remaining > 0 && dice.hp !== null && dice.maximumHp > dice.hp) await openRestHitDice(trigger);
+      }
+    } finally {
+      restDialogOpen = false;
+      if (!document.querySelector(".app-dialog")) document.querySelector(`[data-rest="${kind}"]`)?.focus();
+    }
+  }
+
+  async function openRestHitDice(trigger) {
+    const content = createElement("div", "tabletop-rest-dialog");
+    const status = createElement("p");
+    status.setAttribute("role", "status");
+    const resultText = createElement("p");
+    resultText.setAttribute("aria-live", "polite");
+    content.append(status, createElement("p", "", "每次使用 1 顆，可隨時結束。已使用的生命骰會立即扣除。"));
+    const automatic = Boolean(globalScope.DiceRoller?.isEnabled());
+    const manual = automatic ? null : restNumber(content, "本顆回血（骰值＋體質調整值，至少 1）", 1);
+    const use = createElement("button", "tabletop-compact-button", automatic ? "擲 1 顆並回血" : "使用 1 顆並回血");
+    use.type = "button";
+    const update = () => {
+      const dice = globalScope.TabletopMode.getHitDiceContext();
+      status.textContent = `HP ${dice.hp}/${dice.maximumHp}；生命骰 ${dice.remaining} 顆（${dice.expression}）。`;
+      use.disabled = dice.remaining < 1 || dice.hp >= dice.maximumHp;
+    };
+    use.addEventListener("click", () => {
+      const result = globalScope.TabletopMode.spendHitDice({ manualHealing: manual ? Number(manual.value) : null, preserveConditions: true });
+      resultText.textContent = result.ok ? result.records.join("\n") : result.reason;
+      if (!result.ok && manual) { manual.setAttribute("aria-invalid", "true"); manual.focus(); }
+      else if (manual) { manual.removeAttribute("aria-invalid"); manual.value = ""; }
+      update();
+      if (use.disabled) content.closest(".app-dialog__surface")?.querySelector(".app-dialog__button--primary")?.focus();
+    });
+    resultText.id = "tabletop-rest-hit-dice-result";
+    manual?.setAttribute("aria-describedby", resultText.id);
+    content.append(use, resultText);
+    update();
+    await globalScope.AppDialog.showContent({ title: "短休：生命骰", content, confirmLabel: "結束", trigger, dismissOnBackdrop: false });
   }
 
   function createHitDiceRow() {
@@ -272,13 +457,6 @@
       document.getElementById("class")?.value || ""
     )?.Y) || 0;
     if (!hitDieSize) return null;
-    const getHitDieExpression = () => {
-      const constitutionScore = globalScope.TabletopMode?.getDruidForm?.()?.abilities.con ?? document.getElementById("con")?.value ?? "10";
-      const constitutionModifier = globalScope.calculateAbilityModifier?.(constitutionScore);
-      const modifier = Number.isFinite(constitutionModifier) ? constitutionModifier : 0;
-      const modifierText = modifier > 0 ? `+${modifier}` : modifier < 0 ? String(modifier) : "";
-      return `1d${hitDieSize}${modifierText}`;
-    };
     const { row, controls } = createResourceRow("", "手動追蹤目前剩餘顆數。") ;
     row.classList.add("tabletop-resource-row--counter");
     const heading = row.querySelector(".tabletop-resource-row__copy h4");
@@ -290,7 +468,16 @@
     hitDieSizeLabel.setAttribute("aria-hidden", "true");
     rollHitDie.append(hitDieSizeLabel);
     rollHitDie.addEventListener("click", () => {
-      globalScope.DiceRoller?.rollExpression?.(getHitDieExpression(), { label: "生命骰" });
+      const context = globalScope.TabletopMode.getHitDiceContext();
+      if (context.hp !== null && context.maximumHp > 0 && context.hp >= context.maximumHp) {
+        globalScope.AppDialog.notify("HP已滿，不擲骰不扣生命骰資源。", { tone: "info" });
+        return;
+      }
+      const result = globalScope.TabletopMode.spendHitDice({ count: 1 });
+      globalScope.AppDialog.notify(
+        result.ok ? `${result.records.join("\n")}；已消耗 1 顆生命骰。` : result.reason,
+        { tone: result.ok ? "success" : "warning" }
+      );
     });
     const heal = createElement(
       "button",
@@ -362,34 +549,15 @@
       });
       if (!confirmed) return;
 
-      let nextHp = startingHp;
-      let spent = 0;
-      const records = [];
-      while (nextHp < maximumHp && spent < current) {
-        const result = globalScope.DiceRoller?.rollExpression?.(getHitDieExpression(), {
-          label: `第 ${spent + 1} 顆生命骰`,
-          notify: false
-        });
-        const rolledTotal = Number(result?.total);
-        if (!Number.isFinite(rolledTotal)) break;
-        const rolled = Math.max(1, rolledTotal);
-        spent += 1;
-        nextHp = Math.min(maximumHp, nextHp + rolled);
-        records.push(`第 ${spent} 顆：${result.expression}=${rolled} | HP ${nextHp} / ${maximumHp}`);
-      }
-
-      if (!spent) {
-        globalScope.AppDialog?.notify?.("無法擲生命骰，請確認擲骰系統已開啟。", { tone: "warning" });
+      const result = globalScope.TabletopMode.spendHitDice({ count: current });
+      if (!result.ok) {
+        globalScope.AppDialog?.notify?.(result.reason, { tone: "warning" });
         return;
       }
-      hpInput.value = String(nextHp);
-      dispatchCanonicalUpdate(hpInput);
-      setValue(current - spent);
-
       const content = createElement("p", "", [
-        ...records,
+        ...result.records,
         "",
-        nextHp >= maximumHp ? "生命值已完全恢復！" : "生命骰用盡，祝好運！"
+        result.hp >= maximumHp ? "生命值已完全恢復！" : "生命骰用盡，祝好運！"
       ].join("\n"));
       await globalScope.AppDialog?.showContent?.({
         title: "生命骰恢復結果",
@@ -397,7 +565,7 @@
         confirmLabel: "完成",
         trigger: heal
       });
-      announce(`已消耗 ${spent} 顆生命骰，目前 HP ${nextHp}/${maximumHp}。`);
+      announce(`已消耗 ${result.spent} 顆生命骰，目前 HP ${result.hp}/${maximumHp}。`);
     });
     decrease.addEventListener("click", () => setValue(current - 1));
     increase.addEventListener("click", () => setValue(current + 1));
@@ -432,7 +600,7 @@
       level: document.getElementById("level")?.value || "",
       wisdomScore: document.getElementById("wis")?.value || "10",
       charismaScore: document.getElementById("cha")?.value || "10"
-    }).map(spec => ({
+    }).filter(spec => spec.target.type === "builtIn").map(spec => ({
       ...spec,
       note: spec.kind === "points"
         ? `顯示目前剩餘點數。${spec.recoveryNote}`
@@ -468,6 +636,7 @@
 
   function renderBuiltInResources() {
     if (!elements.builtInResources) return;
+    const focusedRest = document.activeElement?.dataset?.rest;
     const rows = [];
     const inspiration = createHeroicInspirationRow();
     const hitDice = createHitDiceRow();
@@ -495,6 +664,7 @@
     });
 
     elements.builtInResources.replaceChildren(...rows);
+    if (focusedRest) elements.builtInResources.querySelector(`[data-rest="${focusedRest}"]`)?.focus({ preventScroll: true });
   }
 
   function announce(message) {

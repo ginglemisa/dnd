@@ -132,6 +132,8 @@ node .\validate-tabletop-druid.js
 
 此腳本同樣使用既有的 Playwright 與瀏覽器，會檢查形態資格與能力值、野獸攻擊、荒野形態資源、荒野夥伴、野性復甦、自然恢復、原初打擊、專注限制、失能處理、JSON／分享／autosave、對話框取消流程及桌面與手機版面。
 
+若修改短休／長休、資源恢復 metadata、生命骰回血或最佳旅伴，執行 `node validate-tabletop-rest.js`。此腳本檢查各職業與種族的恢復規則、免費施法、可選恢復額度、取消與資料變更檢查、JSON／autosave 及手機版對話框。休息結算沿用原有 canonical state；不追蹤時間或中斷，也不改動角色選項。
+
 正式網站無 build step；npm 僅用於開發驗證工具。上述瀏覽器腳本沿用專案或環境中已有的 Playwright，不需為一般修改新增專案相依。只修改 Markdown 時，檢查檔名、連結、命令與內容是否符合現況即可。修改正式載入的 CSS／JavaScript 時，亦應檢查 `index.html` 對應資源的快取版本。
 
 ## 離線版本

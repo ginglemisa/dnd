@@ -960,6 +960,148 @@
     return combatState.customResources.map(resource => Object.freeze({ ...resource }));
   }
 
+  function getRestContext() {
+    const value = id => document.getElementById(id)?.value || "";
+    const slots = getCanonicalSpellSlotGroups().map(group => ({ ...group,
+      controls: group.controls.filter(control => !control.disabled) }));
+    const freeSpellUses = Array.from(document.querySelectorAll('.spell-entry select[id*="-spell-"]')).flatMap(select => {
+      const source = globalScope.getFreeSpellUseSpec?.(select);
+      if (!select.value || !source) return [];
+      const ids = (globalScope.getSpellFreeUseControls?.(select) || [])
+        .map(item => item.canonical.id).filter(id => id !== "druid-natural-recovery-used");
+      return ids.length ? [{ key: source.key, label: select.selectedOptions[0]?.textContent || "免費施法", ids }] : [];
+    });
+    const options = {
+      className: value("class"), race: value("race"), level: value("level"),
+      wisdomScore: value("wis"), charismaScore: value("cha"),
+      goliathAncestry: value("goliath-ancestry"), druidLand: value("druid-land"),
+      hasTravelCompanion: Boolean(globalScope.hasSelectedFeat?.("最佳旅伴")),
+      spellSlotGroups: slots.map(group => ({ level: group.level, ids: group.controls.map(control => control.id) })),
+      freeSpellUses
+    };
+    const specs = globalScope.getCharacterResourceSpecs(options);
+    const controls = [...new Set(specs.flatMap(spec => spec.target?.ids || (spec.target?.id ? [spec.target.id] : [])))];
+    const hp = readCurrentHp();
+    const maximumHp = readMaximumHp();
+    const hitDice = Number(value("lifedicen"));
+    const token = JSON.stringify([options, collectState(), hp, maximumHp, hitDice, value("con"),
+      controls.map(id => [id, document.getElementById(id)?.checked, document.getElementById(id)?.disabled])]);
+    return { specs, slots, hp, maximumHp, hitDice, token, level: Number(options.level), race: options.race,
+      ready: Boolean(options.className && Number(options.level) >= 1) };
+  }
+
+  function getHitDiceContext() {
+    const die = globalScope.getHitDiceValues(document.getElementById("class")?.value)?.Y || 0;
+    const constitution = getDruidForm()?.abilities.con ?? document.getElementById("con")?.value ?? 10;
+    const modifier = globalScope.calculateAbilityModifier(constitution);
+    return { hp: readCurrentHp(), maximumHp: readMaximumHp(),
+      remaining: Number(document.getElementById("lifedicen")?.value || 0), die,
+      expression: `1d${die}${modifier > 0 ? "+" : ""}${modifier || ""}` };
+  }
+
+  function spendHitDice({ count = 1, manualHealing = null, preserveConditions = false } = {}) {
+    const context = getHitDiceContext();
+    const fail = reason => ({ ok: false, reason });
+    if (context.hp === null || !(context.maximumHp > 0) || !context.die) return fail("請先設定有效的 HP、職業與等級。");
+    if (context.hp >= context.maximumHp) return fail("生命值已全滿。");
+    if (context.remaining < 1) return fail("生命骰已用盡。");
+    if (!Number.isSafeInteger(count) || count < 1) return fail("請選擇有效的生命骰數量。");
+    if (manualHealing !== null && (!Number.isSafeInteger(manualHealing) || manualHealing < 1 || manualHealing > 999 || count !== 1)) return fail("請輸入本顆恢復的 HP（1～999）。");
+    if (manualHealing === null && !globalScope.DiceRoller?.isEnabled()) return fail("請啟用擲骰，或輸入實體骰的回血結果。");
+    let hp = context.hp;
+    const records = [];
+    for (let index = 0; index < Math.min(count, context.remaining) && hp < context.maximumHp; index += 1) {
+      const result = manualHealing === null
+        ? globalScope.DiceRoller.rollExpression(context.expression, { label: `第 ${index + 1} 顆生命骰`, notify: false })
+        : { total: manualHealing, expression: "手動" };
+      if (!Number.isFinite(result?.total)) break;
+      const healed = Math.max(1, result.total);
+      hp = Math.min(context.maximumHp, hp + healed);
+      records.push(`${result.expression}＝${healed}；HP ${hp}/${context.maximumHp}`);
+    }
+    if (!records.length) return fail("無法擲生命骰，請再試一次。");
+    undoSnapshot = null;
+    setCurrentHp(hp);
+    const control = document.getElementById("lifedicen");
+    control.value = String(context.remaining - records.length);
+    dispatchCanonicalCastUpdate(control);
+    if (!preserveConditions) handleHpSourceChange();
+    markStateChanged(`已消耗 ${records.length} 顆生命骰，HP ${hp}/${context.maximumHp}。`);
+    return { ok: true, records, spent: records.length, hp };
+  }
+
+  // Validate the complete selection before changing any canonical control or shared state.
+  function commitRest(kind, selection = {}, expectedToken) {
+    const context = getRestContext();
+    const fail = reason => ({ ok: false, reason });
+    if (!["shortRest", "longRest"].includes(kind) || !context.ready) return fail("請先選擇職業與等級。");
+    if (expectedToken !== context.token) return fail("角色資料已變更，請重新開啟休息。");
+    if (kind === "longRest" && !(context.maximumHp > 0)) return fail("請先設定有效的最大 HP。");
+    const usage = { ...combatState.builtInResourceUsage };
+    const updates = new Map();
+    const setSpent = (key, amount) => { if (amount > 0) usage[key] = amount; else delete usage[key]; };
+    for (const spec of context.specs) {
+      const rule = spec.recovery?.[kind];
+      if (!rule) continue;
+      if (spec.target.type === "builtIn") {
+        const spent = Math.min(spec.maximum, getBuiltInResourceSpent(spec.key));
+        setSpent(spec.key, rule === "all" ? 0 : Math.max(0, spent - rule));
+      } else if (spec.target.type === "checkboxes") {
+        spec.target.ids.forEach(id => updates.set(id, false));
+      } else if (spec.target.type === "checkbox") updates.set(spec.target.id, true);
+    }
+    for (const [key, chosen] of Object.entries(selection.recovery || {})) {
+      if (!chosen) continue;
+      const spec = context.specs.find(item => item.key === key);
+      const choice = spec?.restChoice;
+      if (!choice || choice.when !== kind || getBuiltInResourceSpent(key) >= spec.maximum) return fail("這項恢復能力目前無法使用。");
+      if (choice.effect === "spellSlots") {
+        if (!Array.isArray(chosen) || !chosen.length || new Set(chosen).size !== chosen.length) return fail("請選擇要恢復的法術位。");
+        const spent = context.slots.flatMap(group => group.controls.filter(control => control.checked)
+          .map(control => ({ ...control, level: group.level })));
+        const picked = chosen.map(id => spent.find(control => control.id === id));
+        if (picked.some(control => !control || control.level > choice.maximumSlotLevel)
+          || picked.reduce((sum, control) => sum + control.level, 0) > choice.budget) return fail("所選法術位超過恢復額度。");
+        picked.forEach(control => updates.set(control.id, false));
+      } else if (choice.effect === "points") {
+        const target = context.specs.find(item => item.key === choice.targetKey);
+        const spent = Math.min(target.maximum, getBuiltInResourceSpent(target.key));
+        if (!spent) return fail("術法點已全滿。");
+        setSpent(target.key, Math.max(0, spent - choice.budget));
+      } else return fail("無法使用這項恢復能力。");
+      setSpent(key, getBuiltInResourceSpent(key) + 1);
+    }
+    let temporaryHp = kind === "longRest" ? 0 : combatState.temporaryHp;
+    if (selection.companion) {
+      const choice = context.specs.find(spec => spec.key === "travel-companion")?.restChoice;
+      const { ability, amount } = selection.companion;
+      if (!choice?.abilities.includes(ability) || !Number.isSafeInteger(amount) || amount < 0 || amount > 999) return fail("請設定最佳旅伴的屬性與臨時 HP（0～999）。");
+      temporaryHp = amount;
+    }
+    const controls = [...updates].map(([id, checked]) => ({ control: document.getElementById(id), checked }));
+    if (controls.some(({ control }) => !(control instanceof HTMLInputElement) || control.type !== "checkbox" || control.disabled)) return fail("資源已變更，請重新開啟休息。");
+    const hitDice = document.getElementById("lifedicen");
+    if (kind === "longRest" && !Array.from(hitDice?.options || []).some(option => !option.disabled && Number(option.value) === context.level)) return fail("生命骰資料已變更，請重新開啟休息。");
+
+    undoSnapshot = null;
+    combatState.builtInResourceUsage = usage;
+    combatState.temporaryHp = temporaryHp;
+    if (kind === "longRest") {
+      combatState.exhaustionLevel = Math.max(0, combatState.exhaustionLevel - 1);
+      if (combatState.druid) {
+        combatState.druid.formKey = "";
+        combatState.druid.companion = false;
+      }
+      setCurrentHp(context.maximumHp);
+      hitDice.value = String(context.level);
+    }
+    controls.forEach(({ control, checked }) => { control.checked = checked; });
+    controls.forEach(({ control }) => dispatchCanonicalCastUpdate(control));
+    if (kind === "longRest") dispatchCanonicalCastUpdate(hitDice);
+    markStateChanged(kind === "longRest" ? "長休完成。" : "短休完成。");
+    return { ok: true };
+  }
+
   function addCustomResource(resource) {
     if (combatState.customResources.length >= CUSTOM_RESOURCE_LIMIT) return null;
     const normalized = normalizeCustomResources([
@@ -4769,6 +4911,10 @@ function getRogueReliableTalentEntry() {
     dismissEndedConcentration,
     getBuiltInResourceSpent,
     setBuiltInResourceSpent,
+    getRestContext,
+    commitRest,
+    getHitDiceContext,
+    spendHitDice,
     getCustomResources,
     addCustomResource,
     updateCustomResource,

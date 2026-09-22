@@ -14730,6 +14730,66 @@ html[data-theme="dark"] .tabletop-skill-value[data-skill-rank="expertise"] .tabl
   padding: 0.35rem 0;
 }
 
+.tabletop-rest-heading,
+.tabletop-rest-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tabletop-rest-actions {
+  margin-left: auto;
+}
+
+.tabletop-rest-actions button {
+  min-height: 44px;
+}
+
+#tabletop-panel-resources .tabletop-rest-row > .tabletop-resource-row__copy {
+  grid-column: 1 / -1;
+}
+
+.tabletop-rest-dialog {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.tabletop-rest-dialog p,
+.tabletop-rest-summary {
+  margin: 0;
+}
+
+.tabletop-rest-summary {
+  padding-left: 1.4em;
+}
+
+.tabletop-rest-choice {
+  min-width: 0;
+  display: grid;
+  gap: 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem;
+}
+
+.tabletop-rest-choice legend {
+  font-weight: 700;
+}
+
+.tabletop-rest-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.tabletop-rest-check input {
+  flex: 0 0 auto;
+}
+
 .tabletop-resource-check {
   min-width: 30px;
   min-height: 30px;

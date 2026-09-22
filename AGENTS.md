@@ -98,3 +98,30 @@
 * 沿用環境提供的 task branch／worktree，不自行改寫 `main`。保留使用者既有修改，未受要求不 merge、force push、改寫歷史或刪除他人 branch；只要求工作區修改時不必額外 commit。
 * 完成代表需求已實作、受影響的呼叫端與資料相容性已處理、適用驗證已有結果。收尾檢查 diff 與 git status，清除本次產生的 debug code、臨時檔及無關修改。
 * 簡短回報修改內容、驗證結果及未驗證部分；任務外問題如需提及，列出但不順帶修復。
+
+## Product audit known exceptions
+
+The generic product-audit tool produces several known false positives for this project. Do not modify working product behavior merely to make these warnings disappear.
+
+Known exceptions:
+
+* **Buttons reported as having no action**
+
+  * This project commonly binds interactions through JavaScript `addEventListener`.
+  * The audit tool may only inspect inline HTML handlers such as `onclick`, so these warnings are not evidence that a control is broken.
+  * Verify the interaction in the browser or inspect its JavaScript event binding before making changes.
+  * Do not convert `addEventListener` handlers to inline event attributes solely to satisfy the audit.
+
+* **Textarea resize warnings**
+
+  * The project intentionally uses `resize: vertical`.
+  * Do not change these textareas to `resize: none` solely to satisfy the audit.
+
+* **Native select ownership/configuration warnings**
+
+  * Native browser form controls are intentionally used in this project.
+  * Do not replace or restructure working native `<select>` controls solely to satisfy the audit.
+
+These exceptions apply only to the specific warning patterns above. Other audit findings must still be investigated normally.
+
+Audit output is advisory, not a requirement to reach zero warnings. Product behavior, accessibility, existing architecture, and verified browser behavior take priority over generic lint assumptions.
