@@ -11644,6 +11644,16 @@ html[data-theme="dark"] .brand-logo-crop .legal-modal-logo-dark {
   overflow-wrap: anywhere;
 }
 
+.tabletop-stat--spell-effect {
+  color: var(--warning);
+}
+
+.tabletop-ac-effect-label {
+  color: inherit;
+  font: inherit;
+  white-space: nowrap;
+}
+
 .tabletop-section {
   padding: 1rem;
   border-top: 1px solid var(--border);

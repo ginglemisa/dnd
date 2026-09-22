@@ -2495,6 +2495,7 @@
     trimDynamicMobileRows();
     const blankState = {};
     document.querySelectorAll("#main-content input[id], #main-content select[id], #main-content textarea[id]").forEach(element => {
+      if (element.type === "file") return;
       if (element.type === "checkbox") blankState[element.id] = element.defaultChecked;
       else if (element.tagName === "SELECT") blankState[element.id] = [...element.options].find(option => option.defaultSelected)?.value ?? element.options[0]?.value ?? "";
       else blankState[element.id] = element.defaultValue;
@@ -2771,9 +2772,9 @@
   async function importDraftToMobileCard(event) {
     const confirmed = await window.AppDialog.requestDecision({
       title: "匯入至角色卡",
-      message: "這會清空目前手機角色卡中的所有角色資料，且無法復原。",
-      cancelLabel: "保留角色卡",
-      confirmLabel: "清空並匯入",
+      message: "這會刪除目前手機角色卡中的所有角色資料，且無法復原。",
+      cancelLabel: "保留目前資料",
+      confirmLabel: "刪除並匯入",
       intent: "danger",
       trigger: event?.currentTarget
     });

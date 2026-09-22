@@ -401,6 +401,8 @@
     const affinityType = document.getElementById("sorcerer-elemental-affinity-damage-type")?.value || "";
     let damageType = selectableTypes.includes(affinityType) ? affinityType : selectableTypes[0] || "";
     let restoresOtherCreatureHitPoints = blessedHealerEligible;
+    const persistentEffect = globalScope.TabletopMode?.getPersistentSpellEffects?.().find(effect => effect.spellId === entry.spellId);
+    let effectSelf = true;
     let castOptions = cantrip
       ? null
       : globalScope.TabletopMode?.getSpellCastOptions?.(entry);
@@ -531,6 +533,26 @@
         content.appendChild(targetField);
       }
 
+      if (persistentEffect) {
+        const targets = createElement("fieldset", "tabletop-cast-form__methods");
+        targets.appendChild(createElement("legend", "", `${persistentEffect.name}目標`));
+        [{ value: true, label: `自己（套用桌邊${persistentEffect.stat}）` }, { value: false, label: "其他生物（不包含自己）" }].forEach(option => {
+          const label = createElement("label", "tabletop-cast-form__choice");
+          const input = document.createElement("input");
+          input.type = "radio";
+          input.name = "tabletop-cast-effect-target";
+          input.checked = effectSelf === option.value;
+          input.addEventListener("change", () => {
+            effectSelf = option.value;
+            clearError();
+            updateSummary();
+          });
+          label.append(input, document.createTextNode(option.label));
+          targets.appendChild(label);
+        });
+        content.appendChild(targets);
+      }
+
       const summary = document.createElement("dl");
       summary.className = "tabletop-cast-summary";
       summary.dataset.castSummary = "true";
@@ -597,7 +619,10 @@
               ? "不套用（本次不是使用法術位施法）"
               : "不套用（本次沒有其他生物恢復生命值）"
         )] : []),
-        createSummaryRow("專注", concentration)
+        createSummaryRow("專注", concentration),
+        ...(persistentEffect ? [createSummaryRow("持續效果", effectSelf
+          ? persistentEffect.summary
+          : "套用於其他生物；自身數值不變。")] : [])
       );
     };
 
@@ -607,7 +632,7 @@
       content,
       cancelLabel: "取消",
       confirmLabel: "施法",
-      initialFocus: selectableTypes.length > 1
+      initialFocus: Boolean(persistentEffect) || selectableTypes.length > 1
         || (blessedHealerEligible && castOptions?.methods.some(method => method.id === "slot"))
         || (!cantrip && ((castOptions?.methods.length || 0) > 1 || (castOptions?.slots.length || 0) > 1))
         ? "content"
@@ -615,6 +640,11 @@
       dismissOnBackdrop: false,
       trigger,
       resolveConfirm() {
+        if (entry.spellId === "mage-armor" && effectSelf && !globalScope.TabletopMode?.canApplyMageArmor()) {
+          errorMessage = "自己已穿著護甲，不能套用法師護甲；未消耗資源。請卸下護甲或選擇其他生物。";
+          render();
+          return false;
+        }
         if (globalScope.TabletopMode?.getDruidForm?.()) {
           errorMessage = "荒野形態期間不能施法；未消耗資源。";
           render();
@@ -649,6 +679,7 @@
         }
         return Object.freeze({
           ...committed,
+          effectSelf: Boolean(persistentEffect) && effectSelf,
           damageType,
           restoresOtherCreatureHitPoints: blessedHealerEligible
             && methodId === "slot"
@@ -713,6 +744,9 @@
   }
 
   async function completeCast(entry, castResult, trigger = null) {
+    if (castResult.effectSelf) {
+      globalScope.TabletopMode?.setPersistentSpellEffect(entry.spellId, true);
+    }
     const currentId = globalScope.TabletopMode?.getConcentrationSpellId?.() || "";
     if (globalScope.SpellCatalog.isConcentration(entry.spell) && currentId !== entry.spellId) {
       const message = currentId
@@ -961,11 +995,36 @@
     ];
 
     views.forEach(view => {
-      view.hidden = records.length === 0;
+      const effects = globalScope.TabletopMode?.getPersistentSpellEffects?.().filter(effect => effect.active) || [];
+      view.hidden = records.length === 0 && effects.length === 0;
       view.replaceChildren(...records.map((record, index) => (
         createConcentrationCard(record, view.dataset.concentrationView || "view", index)
       )));
+      view.append(...effects.map(createPersistentEffectCard));
     });
+  }
+
+  function createPersistentEffectCard(effect) {
+    const card = createElement("section", "tabletop-concentration");
+    card.setAttribute("aria-label", `${effect.name}持續效果`);
+    const copy = createElement("div");
+    copy.appendChild(createElement("span", "tabletop-eyebrow", "持續效果"));
+    const detail = createElement("button", "tabletop-concentration__detail");
+    detail.type = "button";
+    detail.setAttribute("aria-haspopup", "dialog");
+    detail.appendChild(createElement("span", "", effect.name));
+    detail.addEventListener("click", () => showSpellDetail(effect.spellId, detail));
+    copy.append(detail, createElement("p", "", effect.summary));
+    const stop = createElement("button", "tabletop-concentration__stop", "解除");
+    stop.type = "button";
+    stop.setAttribute("aria-label", `解除${effect.name}`);
+    stop.addEventListener("click", () => {
+      globalScope.TabletopMode?.setPersistentSpellEffect(effect.spellId, false);
+      globalScope.AppDialog?.notify(`已解除${effect.name}。`, { tone: "info" });
+      restoreStableFocus(effect.spellId);
+    });
+    card.append(copy, stop);
+    return card;
   }
 
   function renderEmptyState(message) {

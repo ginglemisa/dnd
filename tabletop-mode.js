@@ -25,6 +25,9 @@
     activeConditions: Object.freeze([]),
     exhaustionLevel: 0,
     concentrationSpellId: "",
+    mageArmorActive: false,
+    barkskinActive: false,
+    longstriderActive: false,
     endedConcentrations: Object.freeze([]),
     builtInResourceUsage: Object.freeze({}),
     customResources: Object.freeze([])
@@ -521,6 +524,9 @@
     activeConditions: [],
     exhaustionLevel: DEFAULT_COMBAT_STATE.exhaustionLevel,
     concentrationSpellId: DEFAULT_COMBAT_STATE.concentrationSpellId,
+    mageArmorActive: DEFAULT_COMBAT_STATE.mageArmorActive,
+    barkskinActive: DEFAULT_COMBAT_STATE.barkskinActive,
+    longstriderActive: DEFAULT_COMBAT_STATE.longstriderActive,
     endedConcentrations: [],
     builtInResourceUsage: {},
     customResources: [],
@@ -795,6 +801,9 @@
       activeConditions,
       exhaustionLevel,
       concentrationSpellId: normalizeConcentrationSpellId(data.concentrationSpellId),
+      mageArmorActive: data.mageArmorActive === true,
+      barkskinActive: data.barkskinActive === true,
+      longstriderActive: data.longstriderActive === true,
       endedConcentrations: normalizeEndedConcentrations(data.endedConcentrations),
       builtInResourceUsage: normalizeBuiltInResourceUsage(data.builtInResourceUsage),
       customResources: normalizeCustomResources(data.customResources),
@@ -804,6 +813,9 @@
 
   function collectState() {
     return {
+      mageArmorActive: combatState.mageArmorActive,
+      barkskinActive: combatState.barkskinActive,
+      longstriderActive: combatState.longstriderActive,
       characterName: combatState.characterName,
       druid: normalizeDruidState(combatState.druid),
       temporaryHp: combatState.temporaryHp,
@@ -958,6 +970,61 @@
 
   function getCustomResources() {
     return combatState.customResources.map(resource => Object.freeze({ ...resource }));
+  }
+
+  function canApplyMageArmor() {
+    if (getDruidForm() && combatState.druid.equipment.armor !== "wear") return true;
+    const armorName = document.getElementById("armor")?.value || "";
+    return !armorName || Boolean(globalScope.isShieldItem?.(armorName));
+  }
+
+  function getMageArmorEffect() {
+    const dexterity = getDruidForm()?.abilities.dex ?? document.getElementById("dex")?.value ?? 10;
+    const modifier = globalScope.calculateAbilityModifier(dexterity);
+    return { active: combatState.mageArmorActive, ac: 13 + modifier, dexterityModifier: modifier };
+  }
+
+  const PERSISTENT_SPELL_EFFECTS = Object.freeze([
+    { spellId: "mage-armor", stateKey: "mageArmorActive", name: "法師護甲", stat: "AC", summary: "AC＝13＋敏捷調整值；持續 8 小時，請手動解除；穿上護甲會結束。" },
+    { spellId: "barkskin", stateKey: "barkskinActive", name: "樹膚術", stat: "AC", summary: "AC 不足 17 時視為 17；持續 1 小時，請手動解除。" },
+    { spellId: "longstrider", stateKey: "longstriderActive", name: "大步奔行", stat: "速度", summary: "速度增加 10 呎；持續 1 小時，請手動解除。" }
+  ].map(Object.freeze));
+
+  function getPersistentSpellEffects() {
+    return PERSISTENT_SPELL_EFFECTS.map(effect => ({ ...effect, active: combatState[effect.stateKey] }));
+  }
+
+  function setPersistentSpellEffect(spellId, active) {
+    const effect = PERSISTENT_SPELL_EFFECTS.find(item => item.spellId === spellId);
+    if (!effect) return false;
+    if (spellId === "mage-armor") return setMageArmorActive(active);
+    const next = active === true;
+    if (combatState[effect.stateKey] === next) return false;
+    combatState[effect.stateKey] = next;
+    markStateChanged(`已${next ? "啟用" : "解除"}${effect.name}。`);
+    return true;
+  }
+
+  function renderEffectStat(element, text, labels) {
+    const value = document.createElement("span");
+    value.className = "tabletop-stat--spell-effect";
+    value.textContent = text;
+    element.replaceChildren(value);
+    labels.forEach(text => {
+      const label = document.createElement("span");
+      label.className = "tabletop-ac-effect-label";
+      label.textContent = text;
+      element.append(document.createTextNode(" "), label);
+    });
+  }
+
+  function setMageArmorActive(active) {
+    const next = active === true;
+    if (next && !canApplyMageArmor()) return false;
+    if (combatState.mageArmorActive === next) return false;
+    combatState.mageArmorActive = next;
+    markStateChanged(next ? "已啟用法師護甲。" : "已解除法師護甲。");
+    return true;
   }
 
   function getRestContext() {
@@ -2434,6 +2501,15 @@ function getRogueReliableTalentEntry() {
 
     elements.ac.textContent =
       getDruidEffectiveValue("ac-display", getDisplayValue("ac-display"));
+    const mageArmor = getMageArmorEffect();
+    if (mageArmor.active || combatState.barkskinActive) {
+      const baseAc = mageArmor.active ? mageArmor.ac : Number(elements.ac.textContent);
+      const ac = combatState.barkskinActive && Number.isFinite(baseAc) ? Math.max(17, baseAc) : baseAc;
+      renderEffectStat(elements.ac, Number.isFinite(ac) ? String(ac) : "—", [
+        ...(mageArmor.active ? ["(法護)"] : []),
+        ...(combatState.barkskinActive ? ["(樹膚)"] : [])
+      ]);
+    }
 
     const initiative = getDruidEffectiveValue("initiative-input", getDisplayValue("initiative-input"));
     const initiativeModifier = parseRollModifier(initiative);
@@ -2453,6 +2529,15 @@ function getRogueReliableTalentEntry() {
         "speed-display",
         " 呎"
       ));
+
+    if (combatState.longstriderActive) {
+      const beast = getDruidForm();
+      const baseSpeed = document.getElementById("speed-display")?.value.trim() || "";
+      const speed = beast
+        ? Object.entries(beast.speeds).map(([label, feet]) => `${label} ${feet + (hasSelectedFeat("迅捷步法") ? 10 : 0) + 10} 呎`).join("、")
+        : baseSpeed && Number.isFinite(Number(baseSpeed)) ? `${Number(baseSpeed) + 10} 呎` : "—";
+      renderEffectStat(elements.speed, speed, ["(大步)"]);
+    }
 
     elements.passivePerception.textContent = getDruidEffectiveValue("passive-perception",
       getDisplayValue(
@@ -2751,6 +2836,12 @@ function getRogueReliableTalentEntry() {
     }
 
     syncSpellPanelAvailability();
+    if (combatState.mageArmorActive && !canApplyMageArmor()) {
+      combatState.mageArmorActive = false;
+      scheduleCharacterSave();
+      announce("已穿著護甲，法師護甲結束。");
+      emitStateChange();
+    }
     renderSummary();
     renderKeyStats();
     renderHealth();
@@ -4902,6 +4993,11 @@ function getRogueReliableTalentEntry() {
     getDruidContext,
     getDruidForm,
     getDruidEffectiveValue,
+    canApplyMageArmor,
+    getMageArmorEffect,
+    getPersistentSpellEffects,
+    setPersistentSpellEffect,
+    setMageArmorActive,
     commitDruidOperation,
     commitSpellCastResource,
     getConcentrationSpellId,
@@ -5022,7 +5118,8 @@ function getRogueReliableTalentEntry() {
   }
 
   function openFile(elements, file) {
-    if (!file || !/^image\/(?:jpeg|png|webp)$/.test(file.type) || file.size > MAX_FILE_BYTES) {
+    if (!file) return;
+    if (!/^image\/(?:jpeg|png|webp)$/.test(file.type) || file.size > MAX_FILE_BYTES) {
       globalScope.AppDialog?.notify?.("請選擇 20MB 以下的 JPG、PNG 或 WebP 圖片。", { tone: "danger" });
       elements.file.value = "";
       return;

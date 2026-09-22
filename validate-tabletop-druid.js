@@ -7,6 +7,105 @@ const path = require("node:path");
 const http = require("node:http");
 const { chromium } = require("playwright");
 
+// The same browser harness covers persistent effects on normal and beast stats.
+async function checkPersistentSpells(page) {
+  await page.evaluate(() => {
+    TabletopMode.applyState({});
+    TabletopMode.setPanel("overview");
+    document.getElementById("armor").value = "";
+    document.getElementById("dex").value = "14";
+    document.getElementById("ac-display").value = "12";
+    document.getElementById("speed-display").value = "30";
+    document.querySelectorAll('[id^="spellslot"] input[type="checkbox"]').forEach(input => { input.checked = false; });
+    TabletopMode.setConcentrationSpellId("entangle");
+  });
+  const openCast = async spellId => {
+    await page.evaluate(spellId => {
+      void TabletopSpells.showSpellDetail({ spellId, spell: SpellCatalog.getSpell(spellId), source: "職業", sourceLabel: "職業" });
+    }, spellId);
+    await page.getByRole("dialog").getByRole("button", { name: "施法", exact: true }).click();
+    await page.getByRole("dialog").getByText(/目標$/, { exact: false }).first().waitFor();
+  };
+  const spent = () => page.evaluate(() => document.querySelectorAll('[id^="spellslot"] input:checked').length);
+  for (const id of ["barkskin", "longstrider"]) {
+    await openCast(id);
+    const before = await spent();
+    await page.getByRole("dialog").getByRole("button", { name: "取消", exact: true }).click();
+    assert.equal(await spent(), before, "cancel does not spend slots");
+    assert.equal(await page.evaluate(id => TabletopMode.getPersistentSpellEffects().find(e => e.spellId === id).active, id), false);
+    await openCast(id);
+    await page.getByRole("dialog").getByLabel("其他生物（不包含自己）").check();
+    await page.getByRole("dialog").getByRole("button", { name: "施法", exact: true }).click();
+    assert.equal(await spent(), before + 1, "casting on others spends one slot");
+    assert.equal(await page.evaluate(id => TabletopMode.getPersistentSpellEffects().find(e => e.spellId === id).active, id), false);
+    await openCast(id);
+    await page.getByRole("dialog").getByRole("button", { name: "施法", exact: true }).click();
+    await page.waitForFunction(id => TabletopMode.getPersistentSpellEffects().find(e => e.spellId === id).active, id);
+  }
+  assert.equal(await page.locator("#tabletop-ac").innerText(), "17 (樹膚)");
+  assert.equal(await page.locator("#tabletop-speed").innerText(), "40 呎 (大步)");
+  await page.evaluate(() => TabletopMode.setMageArmorActive(true));
+  assert.equal(await page.locator("#tabletop-ac").innerText(), "17 (法護) (樹膚)");
+  await page.evaluate(() => TabletopMode.setPersistentSpellEffect("longstrider", true));
+  assert.equal(await page.locator("#tabletop-speed").innerText(), "40 呎 (大步)", "no repeated stacking");
+  assert.equal(await page.evaluate(() => TabletopMode.getConcentrationSpellId()), "entangle");
+  assert.equal(await page.locator("#ac-display").inputValue(), "12");
+  assert.equal(await page.locator("#speed-display").inputValue(), "30");
+  for (const ui of ["classic", "warm"]) for (const theme of ["light", "dark"]) {
+    const colors = await page.evaluate(({ ui, theme }) => {
+      document.documentElement.dataset.uiTheme = ui;
+      document.documentElement.dataset.theme = theme;
+      return ["#tabletop-ac", "#tabletop-speed"].map(selector => {
+        const stat = document.querySelector(selector);
+        const value = stat.querySelector(".tabletop-stat--spell-effect");
+        const label = stat.querySelector(".tabletop-ac-effect-label");
+        const probe = document.createElement("span"); probe.style.color = "var(--warning)"; stat.append(probe);
+        const result = [getComputedStyle(value).color, getComputedStyle(probe).color, getComputedStyle(label).color, getComputedStyle(stat).color, getComputedStyle(label).fontSize, getComputedStyle(stat).fontSize];
+        probe.remove(); return result;
+      });
+    }, { ui, theme });
+    for (const c of colors) { assert.equal(c[0], c[1]); assert.equal(c[2], c[3]); assert.equal(c[4], c[5]); }
+  }
+  await page.evaluate(() => { saveAllFields(); });
+  await page.reload();
+  await page.waitForFunction(() => TabletopMode.collectState().longstriderActive);
+  assert.equal(await page.evaluate(() => TabletopMode.collectState().barkskinActive), true);
+  assert.equal(await page.evaluate(() => TabletopMode.collectState().mageArmorActive), true);
+  const stateChecks = await page.evaluate(() => {
+    const state = collectStateObject();
+    TabletopMode.applyState(JSON.parse(JSON.stringify(state)));
+    const share = collectShareState();
+    const restored = TabletopMode.collectState();
+    return [restored.barkskinActive, restored.longstriderActive, "barkskinActive" in share, "longstriderActive" in share];
+  });
+  assert.deepEqual(stateChecks, [true, true, false, false]);
+  await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("overview"); });
+  await page.locator("#tabletop-concentration-overview").getByRole("button", { name: "解除樹膚術", exact: true }).click();
+  assert.match(await page.locator("#tabletop-ac").innerText(), /15 \(法護\)/);
+  assert.equal(await page.evaluate(() => TabletopMode.collectState().longstriderActive), true);
+  await page.evaluate(() => {
+    TabletopMode.setMageArmorActive(false);
+    document.getElementById("ac-display").value = "20";
+    TabletopMode.setPersistentSpellEffect("barkskin", true);
+  });
+  assert.equal(await page.locator("#tabletop-ac").innerText(), "20 (樹膚)", "barkskin never lowers AC");
+  await page.evaluate(() => {
+    TabletopMode.commitDruidOperation("known", { keys: ["owl"] });
+    const result = TabletopMode.commitDruidOperation("shape", { key: "owl" });
+    if (!result.ok) throw new Error(result.message);
+  });
+  assert.equal(await page.locator("#tabletop-ac").innerText(), "17 (樹膚)");
+  const beastSpeeds = await page.evaluate(() => Object.entries(TabletopMode.getDruidForm().speeds).map(([key, speed]) => `${key} ${speed + 10} 呎`).join("、"));
+  assert.equal(await page.locator("#tabletop-speed").innerText(), `${beastSpeeds} (大步)`);
+  await page.locator("#tabletop-concentration-overview").getByRole("button", { name: "解除大步奔行", exact: true }).click();
+  assert.doesNotMatch(await page.locator("#tabletop-speed").innerText(), /大步/);
+  assert.equal(await page.evaluate(() => TabletopMode.collectState().barkskinActive), true);
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+  await page.evaluate(() => TabletopMode.applyState({}));
+  assert.equal(await page.evaluate(() => TabletopMode.getPersistentSpellEffects().some(e => e.active)), false, "legacy state defaults inactive");
+  console.log("Persistent spells: casting, targets, cancellation, stacking, themes, persistence, dismissal and beast stats passed.");
+}
+
 async function main() {
   const root = __dirname;
   const server = http.createServer((req, res) => {
@@ -252,6 +351,7 @@ async function main() {
     if (process.env.DND_SCREENSHOT_DIR) await page.screenshot({ path: path.join(process.env.DND_SCREENSHOT_DIR, "druid-tooltip-mobile.png") });
     await tooltip.getByRole("button", { name: "關閉野獸資料" }).click();
     await dialog.getByRole("button", { name: "取消", exact: true }).click();
+    await checkPersistentSpells(page);
     assert.deepEqual(errors, [], "browser runtime errors");
     console.log("Druid dialogs, cancellation, alternate payment, autosave and responsive layout passed.");
   } finally {
