@@ -3,11 +3,12 @@
 
   const TAB_HEADER_OFFSET = 96;
   const SCROLL_DURATION = 480;
+  const GUIDANCE_PAUSE = 260;
   // Shared by the first-table tour and the repeatable turn reminder.
   const TURN_GUIDANCE = [
-    "通常可以移動並做一個動作；能力允許時可使用附贈動作。",
-    "移動與動作的順序通常可以交錯，仍依能力條件處理。",
-    "反應需要符合觸發條件，也可能發生在別人的回合。"
+    "通常是先「移動」，再做一次「動作」；規則允許時，可再使用「附贈」。",
+    "移動與動作的順序通常可以交錯，例如先走 2 格，攻擊，再走 3 格。",
+    "「反應」要符合條件才能使用，可以在別人的回合宣告觸發。"
   ].join("\n\n");
   const COMMON_ACTION_KEYS = ["attack", "dash", "disengage", "dodge", "help", "hide", "ready", "search", "study", "influence"];
 
@@ -118,6 +119,7 @@
       this.lastTourScrollY = window.scrollY;
       this.bodyTouchActionSnapshot = null;
       this.quickBuildDecisionPending = false;
+      this.abilityMenuGuidancePromise = null;
       this.pointBuyPresetTooltip = null;
       this.pointBuyPresetTooltipTrigger = null;
       this.pointBuyPresetTooltipDescribedBy = null;
@@ -166,7 +168,13 @@
       document.getElementById("help-quick-build-btn")?.addEventListener("click", () => window.quickBuild?.open());
       document.getElementById("utility-menu-toggle")?.addEventListener("click", () => {
         window.setTimeout(() => {
-          if (this.active && this.kind === "sheet" && this.currentIndex === 1) this.renderStep({ ensureFocus: false });
+          if (!this.active || this.kind !== "sheet" || this.currentIndex !== 1) return;
+          if (this.stepPhase === 0
+            && document.getElementById("utility-menu-toggle")?.getAttribute("aria-expanded") === "true") {
+            this.advanceAbilityMenuGuidance();
+            return;
+          }
+          this.renderStep({ ensureFocus: false });
         }, 0);
       });
       document.getElementById("tabletop-turn-help")?.addEventListener("click", (event) => {
@@ -187,19 +195,20 @@
         getHoles: () => [this.getHoleForSelector(selector)].filter(Boolean)
       });
       return [
-        { ...step("overview", "先說你想做什麼",
-          "DM 描述情況，你描述角色行動。例如：「我靠近木門，聽聽裡面有沒有聲音。」\n\n不必先選技能，DM 會依情況判斷如何處理。", "#tabletop-character-summary"), examples: true },
+        { tab: "overview", title: "遊戲開始，先說你想做什麼？",
+          text: "DM 描述情況，你描述角色行動。例如：「我靠近木門，聽聽裡面有沒有聲音。」",
+          placement: "center", getHoles: () => [], examples: true },
         step("skills", "需要判定時，再找數值",
-          "DM 要求檢定時，找指定項目。可以使用實體骰，或開啟網站擲骰。這裡先認識技能區，不需要實際擲骰。", ".tabletop-skills"),
+          "DM 要求檢定時，確認數字加多少，再擲 D20。\n如果手上沒有骰子，右上角選單可以開啟「擲骰功能」。", ".tabletop-skills"),
         step("overview", "戰鬥開始，確認順序",
-          "DM 要求擲先攻時，找到先攻加值；依桌上的先攻順序行動。\n\n這裡顯示的是先攻加值。速度用來確認移動距離。", ".tabletop-key-stat:nth-child(2), .tabletop-key-stat:nth-child(3)"),
-        step("actions", "輪到你，可以做什麼？", TURN_GUIDANCE, ".tabletop-action-browser"),
+          "DM 說出「請丟先攻」時，投擲 D20 + 先攻；或開擲骰功能點上方數字。\n\n速度是你一個回合可以移動的距離，5 呎 = 1 格。", ".tabletop-key-stat:nth-child(2), .tabletop-key-stat:nth-child(3)"),
+        step("actions", "戰鬥時，你可以做什麼？", TURN_GUIDANCE, ".tabletop-action-browser"),
         ...(document.getElementById("tabletop-tab-spells") && !document.getElementById("tabletop-tab-spells").hidden ? [
           step("spells", "想施法，先看說明",
-            "先說想施放哪個法術、對誰使用，再確認施法時間、距離與其他條件。\n\n留意法術位與專注提示。", "#tabletop-panel-spells")
+            "先告訴 DM 想施放哪個法術、對誰使用，再確認施法時間、距離與其他條件。\n\n有些法術需要專注，無法同時維持兩種專注法術。", "#tabletop-panel-spells")
         ] : []),
         step("resources", "做完之後，記下變化",
-          "確認能力剩餘次數及操作是否已更新，避免重複扣除。HP 與狀態可回總覽管理。\n\n聽情況 → 說行動 → 需要時判定 → 記錄結果", "#tabletop-panel-resources > .tabletop-section")
+          "使用能力或施展法術後可來此處，確認剩餘可用次數。\n\n懶人包如下\n聽情況 → 說行動 → 需要時丟骰子判定 → 隨時記錄結果", "#tabletop-panel-resources > .tabletop-section")
       ];
     }
 
@@ -212,18 +221,13 @@
         {
           tab: "basic",
           title: "⚔️ 1. 決定你的冒險者方向",
-          text: "背景代表角色過去，種族帶來天生特性，職業則決定冒險方式。選好之後，最大 HP、速度等數值資料會自動更新。",
+          text: "背景代表角色過去，種族帶來天生特性，職業則決定冒險方式。選好之後，速度、專長等資料會自動更新。",
           placement: "bottom",
           getHoles: () => {
-            const identity = this.getHoleFromElements([
-              document.querySelector(".basic-row--class-level"),
-              document.querySelector(".basic-row--origin")
-            ], 8);
-            const derived = this.getHoleFromElements([
-              document.querySelector(".basic-row--vitals"),
-              document.querySelector(".basic-row--combat")
-            ], 8);
-            return [identity, derived].filter(Boolean);
+            return [
+              this.getHoleForSelector(".basic-row--class-level", 8),
+              this.getHoleForSelector(".basic-row--origin", 8)
+            ].filter(Boolean);
           },
           beforePosition: async () => {
             this.prepareIdentityPreview();
@@ -234,21 +238,16 @@
         {
           tab: "basic",
           title: "🎲 2. 屬性與快速創角",
-          text: "六項屬性決定角色擅長什麼。屬性相關工具已移到右上角選單。點開右上選單可以找到『快速創角』與『決定屬性』。",
+          text: "六項屬性決定角色擅長什麼。玩家可以自行輸入數字，或使用右上角選單點擊『決定屬性』。",
           placement: "top",
           getHoles: () => {
-            const menuOpen = document.getElementById("utility-menu-toggle")?.getAttribute("aria-expanded") === "true";
-            return (menuOpen
-              ? [
-                  this.getHoleFromElements([
-                    document.getElementById("help-quick-build-btn"),
-                    document.getElementById("set-default-abilities")
-                  ], 6)
-                ]
-              : [
-                  this.getHoleForSelector("#utility-menu-toggle", 6),
-                  this.getHoleForSelector("#tab-basic .ability-grid", 8)
-                ]).filter(Boolean);
+            if (this.stepPhase === 1) {
+              return [this.getHoleForSelector("#utility-menu-toggle", 6)].filter(Boolean);
+            }
+            if (this.stepPhase === 2) {
+              return [this.getHoleForSelector("#set-default-abilities", 6)].filter(Boolean);
+            }
+            return [this.getHoleForSelector("#tab-basic .ability-grid", 8)].filter(Boolean);
           },
           beforePosition: async () => {
             this.prepareAbilityPreview();
@@ -265,12 +264,12 @@
           },
           text: () => {
             if (this.stepPhase === 1) {
-              return "每項基礎值可在 8～15 之間調整，數值越高花費越多。留意下方的已用與剩餘點數，總花費不能超過 27 點。";
+              return "屬性在 8~15 之間調整，9~13 消耗 1 點；14, 15 各消耗 2 點，留意下方剩餘點數，總花費不能超過 27。";
             }
             if (this.stepPhase === 2) {
-              return "選擇背景後，可在背景允許的三項屬性間分配共 3 點加值，單項最多 +2；也可使用職業範本快速配置。完成後可套用到角色，本次導覽請按「下一步」繼續。";
+              return "選擇背景後，可在三項屬性分配 3 點，單項最多 +2；選擇職業範本提供預設分配，分配完成後點「套用」確定屬性。";
             }
-            return "除了自行填寫屬性以外，你也可以使用 27 購點配置，或以「屬性擲骰」擲出六組數值再分配。『決定屬性』與『快速創角』都可從右上工具選單開啟。";
+            return "「27 購點」是冒險者聯盟通用的創角規則。「屬性擲骰」是更為隨機性的規則選項，大多在私人團務且遊戲主持人同意的情況下才能使用。";
           },
           placement: "overlay-bottom",
           getHoles: () => {
@@ -301,8 +300,8 @@
         },
         {
           tab: "equipment",
-          title: "🛡️ 4. 確認武器、護甲與 AC",
-          text: "選擇目前使用的武器與護甲，下方會整理傷害、特性等資訊。點擊摘要中的名稱能查看詳細規則。",
+          title: "🛡️ 4. 選擇武器與護甲",
+          text: "選單下方顯示傷害、特性等資訊。點擊摘要中的專有名詞能查看詳細規則。",
           placement: "bottom",
           getHoles: () => [this.getHoleFromElements([
             document.querySelector("#tab-equipment .equipment-loadout-controls"),
@@ -319,20 +318,11 @@
           title: "✨ 5. 選擇與查看法術",
           text: "有施法能力時，可以在這裡管理戲法與法術。選擇法術後，可查看完整說明與施法資料。",
           placement: "top",
-          getHoles: () => [this.getHoleFromElements([
-            document.querySelector("#tab-spells details.spell-level-section:first-of-type > summary"),
-            this.spellControlSnapshot?.row
-              || document.querySelector("#cantrips-area .spell-entry:not(.spell-entry--derived)"),
-            this.spellControlSnapshot?.description
-          ], 8)].filter(Boolean),
+          getHoles: () => [this.getHoleForSelector("#spells-tab-button", 6)].filter(Boolean),
           beforeTab: () => this.ensureSpellPreview(),
           beforePosition: async () => {
-            const firstSpellSection = document.querySelector("#tab-spells details.spell-level-section");
-            if (firstSpellSection) firstSpellSection.open = true;
-            this.prepareSpellControlPreview();
-            await this.scrollElementIntoView(firstSpellSection);
-          },
-          afterLeave: () => this.restoreSpellControlPreview()
+            await this.animateScrollTo(0);
+          }
         },
         {
           tab: "spells",
@@ -401,6 +391,10 @@
     async next() {
       if (!this.active || this.isTransitioning) return;
       this.hidePointBuyPresetTooltip();
+      if (this.kind === "sheet" && this.currentIndex === 1) {
+        await this.advanceAbilityMenuGuidance();
+        return;
+      }
       if (this.kind === "sheet" && this.currentIndex === 2 && this.stepPhase === 1) {
         this.stepPhase = 2;
         this.tooltipDragPosition = null;
@@ -412,6 +406,65 @@
         return;
       }
       await this.goTo(this.currentIndex + 1);
+    }
+
+    async advanceAbilityMenuGuidance() {
+      if (!this.active || this.kind !== "sheet" || this.currentIndex !== 1) return;
+      if (this.abilityMenuGuidancePromise) return this.abilityMenuGuidancePromise;
+
+      const transitionId = this.transitionId;
+      const sequence = (async () => {
+        this.isTransitioning = true;
+        try {
+          this.stepPhase = 1;
+          this.tooltipDragPosition = null;
+          await this.animateScrollTo(0);
+          if (!this.active || transitionId !== this.transitionId || this.currentIndex !== 1) return;
+          await this.renderStep({ ensureFocus: false });
+          await new Promise((resolve) => window.setTimeout(resolve, GUIDANCE_PAUSE));
+          if (!this.active || transitionId !== this.transitionId || this.currentIndex !== 1) return;
+
+          const menuToggle = document.getElementById("utility-menu-toggle");
+          if (menuToggle?.getAttribute("aria-expanded") !== "true") {
+            this.isInternalTourAction = true;
+            try {
+              this.runWithBackgroundElementUnlocked(menuToggle, (button) => button.click());
+            } finally {
+              this.isInternalTourAction = false;
+            }
+            await waitForLayoutStability();
+          }
+          if (!this.active || transitionId !== this.transitionId || this.currentIndex !== 1) return;
+
+          this.stepPhase = 2;
+          await this.renderStep({ ensureFocus: false });
+          await new Promise((resolve) => window.setTimeout(resolve, GUIDANCE_PAUSE));
+          if (!this.active || transitionId !== this.transitionId || this.currentIndex !== 1) return;
+
+          this.isInternalTourAction = true;
+          try {
+            this.runWithBackgroundElementUnlocked(
+              document.getElementById("set-default-abilities"),
+              (button) => button.click()
+            );
+          } finally {
+            this.isInternalTourAction = false;
+          }
+          await waitForLayoutStability();
+        } finally {
+          if (transitionId === this.transitionId) this.isTransitioning = false;
+        }
+
+        if (this.active && transitionId === this.transitionId && this.currentIndex === 1) {
+          await this.goTo(2);
+        }
+      })();
+      this.abilityMenuGuidancePromise = sequence;
+      try {
+        await sequence;
+      } finally {
+        if (this.abilityMenuGuidancePromise === sequence) this.abilityMenuGuidancePromise = null;
+      }
     }
 
     async finishTourForAbilityRoll() {
@@ -500,13 +553,15 @@
         window.TabletopMode.setPanel(step.tab, { persist: false, restoreScroll: false });
         await waitForLayoutStability();
         if (!this.active || transitionId !== this.transitionId) return;
-        const target = document.querySelector(step.selector);
-        if (!isElementVisible(target)) throw new Error("找不到導覽目標");
-        const header = document.querySelector(".tabs-shell")?.getBoundingClientRect().bottom || 0;
-        window.scrollTo(0, window.scrollY + target.getBoundingClientRect().top - Math.max(80, header + 16));
-        await waitForLayoutStability();
-        if (!this.active || transitionId !== this.transitionId) return;
-        if (!step.getHoles().some(hole => this.getVisibleHole(hole))) throw new Error("導覽目標不在可見範圍");
+        if (step.placement !== "center") {
+          const target = document.querySelector(step.selector);
+          if (!isElementVisible(target)) throw new Error("找不到導覽目標");
+          const header = document.querySelector(".tabs-shell")?.getBoundingClientRect().bottom || 0;
+          window.scrollTo(0, window.scrollY + target.getBoundingClientRect().top - Math.max(80, header + 16));
+          await waitForLayoutStability();
+          if (!this.active || transitionId !== this.transitionId) return;
+          if (!step.getHoles().some(hole => this.getVisibleHole(hole))) throw new Error("導覽目標不在可見範圍");
+        }
         await this.renderStep();
       } catch (error) {
         if (this.active && transitionId === this.transitionId) {
@@ -533,6 +588,7 @@
       this.resetHighlightState();
       this.active = false;
       this.isTransitioning = false;
+      this.abilityMenuGuidancePromise = null;
       this.currentIndex = -1;
       this.stepPhase = 0;
       this.tooltipDragPosition = null;
@@ -1384,6 +1440,13 @@
         return;
       }
 
+      if (this.currentIndex === 1 && this.stepPhase === 0 && target.closest("#utility-menu-toggle")) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        this.advanceAbilityMenuGuidance();
+        return;
+      }
+
       if (this.currentIndex === 2 && this.stepPhase === 2 && target.closest("#ability-choice-default")) {
         event.preventDefault();
         event.stopImmediatePropagation();
@@ -1576,7 +1639,7 @@
     getNextButtonText() {
       if (this.kind === "tabletop") return this.currentIndex === this.steps.length - 1 ? "開始使用桌邊模式" : "下一步";
       if (this.currentIndex === this.steps.length - 1) return "導覽完成";
-      if (this.currentIndex === 2 && this.stepPhase === 1) return "繼續購點教學";
+      if (this.currentIndex === 2 && this.stepPhase === 1) return "繼續";
       return "下一步";
     }
 
@@ -1721,7 +1784,9 @@
 
     handleTooltipPointerDown(event) {
       if (!this.active || !this.tooltip || event.button !== 0) return;
-      if (this.kind === "tabletop") return;
+      // Keep the scrollable examples and their disclosure available to touch.
+      if (this.kind === "tabletop" && event.target instanceof Element
+        && event.target.closest("#tour-step-text")) return;
       if (event.target instanceof Element && event.target.closest(".tour-btn-row button")) return;
       const rect = this.tooltip.getBoundingClientRect();
       this.tooltipDragPointerId = event.pointerId;

@@ -4647,9 +4647,9 @@ function getRogueReliableTalentEntry() {
             return;
           }
           const confirmed = await globalScope.AppDialog?.requestDecision({
-            title: "桌邊模式",
-            message: "跑團時使用的精簡介面，集中顯示常用數值、擲骰與戰鬥操作。",
-            cancelLabel: "稍後",
+            title: "📝桌邊模式",
+            message: "跑團使用的簡易介面，顯示常用數值、戰鬥可用選項、點擊丟骰等功能。",
+            cancelLabel: "暫不進入",
             confirmLabel: "進入桌邊模式",
             trigger: document.getElementById("utility-menu-toggle")
           });
