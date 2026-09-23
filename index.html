@@ -46,9 +46,9 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20260923-persistent-spells">
+  <link rel="stylesheet" href="styles.css?v=20260923-dice-hold">
   <script src="scroll-to-top.js?v=20260922-visibility-toggle" defer></script>
-  <script src="dice-roller.js?v=20260915-dual-themes" defer></script>
+  <script src="dice-roller.js?v=20260923-dice-hold" defer></script>
   <script src="monster.js?v=20260912-druid-controls" defer></script>
     <script src="class-features.js?v=20260913-class-tabletop" defer></script>
   <script src="race.js?v=20260826-lineage-tables" defer></script>
@@ -67,7 +67,7 @@
   <script src="tabletop-actions.js?v=20260922-manual-weapons" defer></script>
   <script src="tabletop-spells.js?v=20260923-persistent-spells" defer></script>
   <script src="legal-modal.js?v=20260918-share-mode" defer></script>
-  <script src="onboarding-tour.js?v=20260922-tour-drag" defer></script>
+  <script src="onboarding-tour.js?v=20260923-tour-draggable-guidance" defer></script>
   <script src="quick-build.js?v=20260922-skip-file-reset" defer></script>
   <script src="spellbook.js?v=20260913-spellbook" defer></script>
   <script src="deity-info.js" defer></script>
@@ -10045,7 +10045,7 @@ window.addEventListener("DOMContentLoaded", async function() {
       <h2 id="dice-roller-title">擲骰</h2>
       <button type="button" id="dice-roller-close" class="dice-roller-close" aria-label="關閉擲骰視窗">✕</button>
     </header>
-    <p id="dice-roller-instructions" class="sr-only">點擊骰子按鈕增加數量；長按一點二秒，或聚焦後按 Delete，會清空該種骰子。按住 ROLL 二點五秒，或聚焦後按 Shift+Enter，可為該次擲骰加入文字備註。</p>
+    <p id="dice-roller-instructions" class="sr-only">點擊骰子按鈕增加數量；長按一點三秒，或聚焦後按 Delete，會清空該種骰子。按住 ROLL 一點三秒，或聚焦後按 Shift+Enter，可為該次擲骰加入文字備註。按住 X 一點三秒，可清除擲骰紀錄。</p>
     <div class="dice-roller-display">
       <div id="dice-roller-stage" class="dice-roller-stage" role="status" aria-live="polite" aria-atomic="true" tabindex="-1">
         <span class="dice-roller-empty">選取骰子後按 ROLL</span>
@@ -10067,8 +10067,8 @@ window.addEventListener("DOMContentLoaded", async function() {
       <button type="button" class="dice-roller-die" data-die="8" aria-pressed="false"><span>8</span><span class="dice-roller-count" aria-hidden="true"></span></button>
       <button type="button" class="dice-roller-die" data-die="6" aria-pressed="false"><span>6</span><span class="dice-roller-count" aria-hidden="true"></span></button>
       <button type="button" class="dice-roller-die" data-die="4" aria-pressed="false"><span>4</span><span class="dice-roller-count" aria-hidden="true"></span></button>
-      <button type="button" id="dice-roller-roll" class="dice-roller-roll" aria-label="擲骰；按住 2.5 秒或按 Shift+Enter 可加入文字備註" aria-keyshortcuts="Shift+Enter" title="按住 2.5 秒或按 Shift+Enter 可加入文字備註" disabled>ROLL</button>
-      <button type="button" id="dice-roller-clear" class="dice-roller-clear" aria-label="清空所有骰子；按住 3 秒清除擲骰紀錄">X</button>
+      <button type="button" id="dice-roller-roll" class="dice-roller-roll" aria-label="擲骰；按住 1.3 秒或按 Shift+Enter 可加入文字備註" aria-keyshortcuts="Shift+Enter" title="按住 1.3 秒或按 Shift+Enter 可加入文字備註" disabled>ROLL</button>
+      <button type="button" id="dice-roller-clear" class="dice-roller-clear" aria-label="清空所有骰子；按住 1.3 秒清除擲骰紀錄">X</button>
     </div>
   </section>
 </div>

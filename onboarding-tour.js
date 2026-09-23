@@ -3,7 +3,7 @@
 
   const TAB_HEADER_OFFSET = 96;
   const SCROLL_DURATION = 480;
-  const GUIDANCE_PAUSE = 260;
+  const GUIDANCE_MOVE_DURATION = 600;
   // Shared by the first-table tour and the repeatable turn reminder.
   const TURN_GUIDANCE = [
     "通常是先「移動」，再做一次「動作」；規則允許時，可再使用「附贈」。",
@@ -107,6 +107,9 @@
       this.spellSearchPreviewOpened = false;
       this.tooltipDragPosition = null;
       this.tooltipDragPointerId = null;
+      this.tooltipDragStartPoint = null;
+      this.tooltipDragMoved = false;
+      this.suppressTooltipDragClick = false;
       this.highlightDragState = null;
       this.suppressNextHighlightClick = false;
       this.tooltipDragOffset = { x: 0, y: 0 };
@@ -119,7 +122,7 @@
       this.lastTourScrollY = window.scrollY;
       this.bodyTouchActionSnapshot = null;
       this.quickBuildDecisionPending = false;
-      this.abilityMenuGuidancePromise = null;
+      this.abilityMenuStage = null;
       this.pointBuyPresetTooltip = null;
       this.pointBuyPresetTooltipTrigger = null;
       this.pointBuyPresetTooltipDescribedBy = null;
@@ -166,17 +169,6 @@
       document.getElementById("restart-onboarding-btn")?.addEventListener("click", () => this.start());
       document.getElementById("first-table-tour-btn")?.addEventListener("click", () => this.startTabletop());
       document.getElementById("help-quick-build-btn")?.addEventListener("click", () => window.quickBuild?.open());
-      document.getElementById("utility-menu-toggle")?.addEventListener("click", () => {
-        window.setTimeout(() => {
-          if (!this.active || this.kind !== "sheet" || this.currentIndex !== 1) return;
-          if (this.stepPhase === 0
-            && document.getElementById("utility-menu-toggle")?.getAttribute("aria-expanded") === "true") {
-            this.advanceAbilityMenuGuidance();
-            return;
-          }
-          this.renderStep({ ensureFocus: false });
-        }, 0);
-      });
       document.getElementById("tabletop-turn-help")?.addEventListener("click", (event) => {
         const options = window.ActionPanel?.getOptions("basic") || [];
         const names = COMMON_ACTION_KEYS.map(key => options.find(option => option.key === key)?.label).filter(Boolean);
@@ -241,12 +233,6 @@
           text: "六項屬性決定角色擅長什麼。玩家可以自行輸入數字，或使用右上角選單點擊『決定屬性』。",
           placement: "top",
           getHoles: () => {
-            if (this.stepPhase === 1) {
-              return [this.getHoleForSelector("#utility-menu-toggle", 6)].filter(Boolean);
-            }
-            if (this.stepPhase === 2) {
-              return [this.getHoleForSelector("#set-default-abilities", 6)].filter(Boolean);
-            }
             return [this.getHoleForSelector("#tab-basic .ability-grid", 8)].filter(Boolean);
           },
           beforePosition: async () => {
@@ -263,6 +249,8 @@
             return "🎲 3. 決定屬性";
           },
           text: () => {
+            if (this.abilityMenuStage === "menu") return "先找到右上角的選單按鈕。點擊畫面任意處，開啟選單並找到「決定屬性」。";
+            if (this.abilityMenuStage === "button") return "「決定屬性」就在選單內。點擊畫面任意處，開啟屬性選擇視窗。";
             if (this.stepPhase === 1) {
               return "屬性在 8~15 之間調整，9~13 消耗 1 點；14, 15 各消耗 2 點，留意下方剩餘點數，總花費不能超過 27。";
             }
@@ -271,8 +259,11 @@
             }
             return "「27 購點」是冒險者聯盟通用的創角規則。「屬性擲骰」是更為隨機性的規則選項，大多在私人團務且遊戲主持人同意的情況下才能使用。";
           },
-          placement: "overlay-bottom",
+          placement: () => this.stepPhase === 0 ? "highlight-bottom-left" : "overlay-bottom",
           getHoles: () => {
+            if (this.abilityMenuStage) {
+              return [this.getHoleForSelector(this.abilityMenuStage === "menu" ? "#utility-menu-toggle" : "#set-default-abilities", 6)].filter(Boolean);
+            }
             if (this.stepPhase === 1) {
               return [
                 this.getPointBuyHole([document.getElementById("point-buy-rows")], 6),
@@ -291,9 +282,17 @@
             return [this.getHoleForSelector("#ability-choice-modal .ability-choice-card", 6)].filter(Boolean);
           },
           beforePosition: async () => {
+            if (this.abilityMenuStage) {
+              this.setAbilityMenuOpen(false);
+              await this.renderStep();
+              await this.animateScrollTo(0);
+              return;
+            }
             await this.openAbilityChoicePreview();
           },
           afterLeave: () => {
+            if (this.abilityMenuStage) this.setAbilityMenuOpen(false);
+            this.abilityMenuStage = null;
             this.closeAbilityChoicePreview();
             this.closePointBuyPreview();
           }
@@ -392,6 +391,10 @@
       if (!this.active || this.isTransitioning) return;
       this.hidePointBuyPresetTooltip();
       if (this.kind === "sheet" && this.currentIndex === 1) {
+        await this.goTo(2, { guideAbilityMenu: true });
+        return;
+      }
+      if (this.abilityMenuStage) {
         await this.advanceAbilityMenuGuidance();
         return;
       }
@@ -408,62 +411,67 @@
       await this.goTo(this.currentIndex + 1);
     }
 
-    async advanceAbilityMenuGuidance() {
-      if (!this.active || this.kind !== "sheet" || this.currentIndex !== 1) return;
-      if (this.abilityMenuGuidancePromise) return this.abilityMenuGuidancePromise;
-
-      const transitionId = this.transitionId;
-      const sequence = (async () => {
-        this.isTransitioning = true;
-        try {
-          this.stepPhase = 1;
-          this.tooltipDragPosition = null;
-          await this.animateScrollTo(0);
-          if (!this.active || transitionId !== this.transitionId || this.currentIndex !== 1) return;
-          await this.renderStep({ ensureFocus: false });
-          await new Promise((resolve) => window.setTimeout(resolve, GUIDANCE_PAUSE));
-          if (!this.active || transitionId !== this.transitionId || this.currentIndex !== 1) return;
-
-          const menuToggle = document.getElementById("utility-menu-toggle");
-          if (menuToggle?.getAttribute("aria-expanded") !== "true") {
-            this.isInternalTourAction = true;
-            try {
-              this.runWithBackgroundElementUnlocked(menuToggle, (button) => button.click());
-            } finally {
-              this.isInternalTourAction = false;
-            }
-            await waitForLayoutStability();
-          }
-          if (!this.active || transitionId !== this.transitionId || this.currentIndex !== 1) return;
-
-          this.stepPhase = 2;
-          await this.renderStep({ ensureFocus: false });
-          await new Promise((resolve) => window.setTimeout(resolve, GUIDANCE_PAUSE));
-          if (!this.active || transitionId !== this.transitionId || this.currentIndex !== 1) return;
-
-          this.isInternalTourAction = true;
-          try {
-            this.runWithBackgroundElementUnlocked(
-              document.getElementById("set-default-abilities"),
-              (button) => button.click()
-            );
-          } finally {
-            this.isInternalTourAction = false;
-          }
-          await waitForLayoutStability();
-        } finally {
-          if (transitionId === this.transitionId) this.isTransitioning = false;
-        }
-
-        if (this.active && transitionId === this.transitionId && this.currentIndex === 1) {
-          await this.goTo(2);
-        }
-      })();
-      this.abilityMenuGuidancePromise = sequence;
+    setAbilityMenuOpen(open) {
+      const toggle = document.getElementById("utility-menu-toggle");
+      if (!toggle || (toggle.getAttribute("aria-expanded") === "true") === open) return;
+      this.isInternalTourAction = true;
       try {
-        await sequence;
+        this.runWithBackgroundElementUnlocked(toggle, button => button.click());
       } finally {
-        if (this.abilityMenuGuidancePromise === sequence) this.abilityMenuGuidancePromise = null;
+        this.isInternalTourAction = false;
+      }
+    }
+
+    async moveAbilityMenuHighlight(isCurrent) {
+      const from = this.activeHoles[0];
+      if (!from || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      await new Promise(resolve => {
+        const startedAt = performance.now();
+        const tick = now => {
+          if (!isCurrent()) { resolve(); return; }
+          // Re-measure so a resize during the move cannot leave a stale target.
+          const target = this.getVisibleHole(this.getHoleForSelector("#set-default-abilities", 6));
+          if (!target) { resolve(); return; }
+          const progress = Math.min(1, (now - startedAt) / GUIDANCE_MOVE_DURATION);
+          const eased = progress * progress * (3 - 2 * progress);
+          const hole = Object.fromEntries(["left", "right", "top", "bottom"].map(key => [key, from[key] + (target[key] - from[key]) * eased]));
+          this.activeHoles = this.applyMasksForHoles([hole]);
+          this.setFocusRing(this.focusRings[0], hole);
+          if (progress < 1) requestAnimationFrame(tick);
+          else resolve();
+        };
+        requestAnimationFrame(tick);
+      });
+    }
+
+    async advanceAbilityMenuGuidance() {
+      if (!this.active || !this.abilityMenuStage || this.isTransitioning) return;
+      const transitionId = this.transitionId;
+      const isCurrent = () => this.active && transitionId === this.transitionId && this.currentIndex === 2;
+      this.isTransitioning = true;
+      try {
+        if (this.abilityMenuStage === "menu") {
+          this.setAbilityMenuOpen(true);
+          await waitForLayoutStability();
+          if (!isCurrent()) return;
+          // The menu can retain a scroll position from its lower help buttons.
+          const menu = document.getElementById("utility-menu");
+          await Promise.all((menu?.getAnimations() || []).map(animation => animation.finished.catch(() => {})));
+          if (!isCurrent()) return;
+          document.getElementById("set-default-abilities")?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "instant" });
+          await waitForLayoutStability();
+          if (!isCurrent()) return;
+          await this.moveAbilityMenuHighlight(isCurrent);
+          if (!isCurrent()) return;
+          this.abilityMenuStage = "button";
+        } else {
+          await this.openAbilityChoicePreview();
+          if (!isCurrent()) return;
+          this.abilityMenuStage = null;
+        }
+        await this.renderStep();
+      } finally {
+        if (transitionId === this.transitionId) this.isTransitioning = false;
       }
     }
 
@@ -511,7 +519,7 @@
       await this.goTo(this.currentIndex - 1);
     }
 
-    async goTo(index) {
+    async goTo(index, { guideAbilityMenu = false } = {}) {
       if (!this.active || this.isTransitioning) return;
       if (this.kind === "tabletop") return this.goToTabletop(index);
       const transitionId = ++this.transitionId;
@@ -521,6 +529,7 @@
       if (previousStep && typeof previousStep.afterLeave === "function") previousStep.afterLeave();
 
       this.currentIndex = index;
+      this.abilityMenuStage = guideAbilityMenu ? "menu" : null;
       this.stepPhase = 0;
       this.tooltipDragPosition = null;
       this.activeHoles = [];
@@ -588,7 +597,6 @@
       this.resetHighlightState();
       this.active = false;
       this.isTransitioning = false;
-      this.abilityMenuGuidancePromise = null;
       this.currentIndex = -1;
       this.stepPhase = 0;
       this.tooltipDragPosition = null;
@@ -1230,6 +1238,7 @@
 
     getAllowedTourElements() {
       if (!this.active) return [];
+      if (this.abilityMenuStage) return [];
       if (this.kind === "tabletop") return [];
       if (this.currentIndex === 0) {
         return ["class", "level", "background", "race"]
@@ -1403,6 +1412,14 @@
 
     handleTourPointerDownCapture(event) {
       if (!this.active || this.isInternalTourAction) return;
+      this.suppressTooltipDragClick = false;
+      if (this.abilityMenuStage) {
+        if (this.tooltip?.contains(event.target)) this.handleTooltipPointerDown(event);
+        // Keep the menu open when tapping the guide or its backdrop.
+        // Do not cancel the pointer default: touch still needs its following click.
+        event.stopImmediatePropagation();
+        return;
+      }
       if (this.kind === "tabletop" && this.tooltip?.contains(event.target)) return;
       const pointBuyScrollContainer = event.pointerType !== "mouse"
         ? this.getPointBuyTutorialScrollContainer(event)
@@ -1427,6 +1444,18 @@
       if (!this.active || this.isInternalTourAction) return;
       const target = event.target instanceof Element ? event.target : null;
       if (!target) return;
+      if (this.suppressTooltipDragClick) {
+        this.suppressTooltipDragClick = false;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+      }
+      if (this.abilityMenuStage && !target.closest(".tour-btn-row button, .app-dialog")) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        this.advanceAbilityMenuGuidance();
+        return;
+      }
       if (this.suppressNextHighlightClick) {
         this.suppressNextHighlightClick = false;
         event.preventDefault();
@@ -1443,7 +1472,7 @@
       if (this.currentIndex === 1 && this.stepPhase === 0 && target.closest("#utility-menu-toggle")) {
         event.preventDefault();
         event.stopImmediatePropagation();
-        this.advanceAbilityMenuGuidance();
+        this.goTo(2, { guideAbilityMenu: true });
         return;
       }
 
@@ -1628,6 +1657,7 @@
       this.tooltip.style.display = "";
 
       const placement = this.getStepValue(step, "placement", "bottom");
+      this.tooltip.style.cursor = this.tooltipDragPointerId === null ? "grab" : "grabbing";
       if (visibleHoles[0]) this.positionTooltip(visibleHoles[0], placement);
       else this.positionTooltipWithoutHighlight();
       this.applyTooltipDragPosition();
@@ -1637,6 +1667,7 @@
     }
 
     getNextButtonText() {
+      if (this.abilityMenuStage) return this.abilityMenuStage === "menu" ? "開啟選單" : "開啟決定屬性";
       if (this.kind === "tabletop") return this.currentIndex === this.steps.length - 1 ? "開始使用桌邊模式" : "下一步";
       if (this.currentIndex === this.steps.length - 1) return "導覽完成";
       if (this.currentIndex === 2 && this.stepPhase === 1) return "繼續";
@@ -1753,6 +1784,13 @@
       const height = this.tooltip.offsetHeight || 170;
       this.tooltip.style.left = `${Math.min(window.innerWidth - width - margin, Math.max(margin, hole.left))}px`;
 
+      if (placement === "highlight-bottom-left") {
+        const position = this.clampTooltipPosition(hole.right - width, hole.bottom + margin);
+        this.tooltip.style.left = `${position.left}px`;
+        this.tooltip.style.top = `${position.top}px`;
+        return;
+      }
+
       if (placement === "overlay-bottom") {
         this.tooltip.style.top = `${Math.max(margin, window.innerHeight - height - margin)}px`;
         return;
@@ -1790,6 +1828,8 @@
       if (event.target instanceof Element && event.target.closest(".tour-btn-row button")) return;
       const rect = this.tooltip.getBoundingClientRect();
       this.tooltipDragPointerId = event.pointerId;
+      this.tooltipDragStartPoint = { x: event.clientX, y: event.clientY };
+      this.tooltipDragMoved = false;
       this.tooltipDragOffset = { x: event.clientX - rect.left, y: event.clientY - rect.top };
       this.tooltip.setPointerCapture?.(event.pointerId);
       this.tooltip.style.cursor = "grabbing";
@@ -1798,6 +1838,9 @@
 
     handleTooltipPointerMove(event) {
       if (!this.active || this.tooltipDragPointerId !== event.pointerId || !this.tooltip) return;
+      if (Math.hypot(event.clientX - this.tooltipDragStartPoint.x, event.clientY - this.tooltipDragStartPoint.y) >= 4) {
+        this.tooltipDragMoved = true;
+      }
       const position = this.clampTooltipPosition(
         event.clientX - this.tooltipDragOffset.x,
         event.clientY - this.tooltipDragOffset.y
@@ -1819,6 +1862,7 @@
         this.highlightDragState = null;
       }
       if (this.tooltipDragPointerId !== event.pointerId) return;
+      if (this.abilityMenuStage && this.tooltipDragMoved) this.suppressTooltipDragClick = true;
       if (this.tooltip?.hasPointerCapture?.(event.pointerId)) this.tooltip.releasePointerCapture(event.pointerId);
       this.tooltipDragPointerId = null;
       if (this.tooltip) this.tooltip.style.cursor = "grab";

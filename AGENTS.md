@@ -73,7 +73,7 @@
 
 ## 驗證條件
 
-修改功能後，優先執行最相關的既有 `validate-*.js` regression script，並依下表補足適用檢查；除非修改範圍跨越多個系統，不執行全部 regression tests。
+修改功能後，依下表執行受影響範圍的驗證，不需每次執行全部腳本。執行環境、命令、選項與限制統一維護於 [README：維護與驗證](README.md#維護與驗證)；新增或調整驗證腳本時同步更新兩處。
 
 | 變更範圍 | 驗證 |
 | --- | --- |
@@ -82,9 +82,19 @@
 | 非施法能力結構化動作、Action UI、桌邊動作、自訂／隱藏偏好及其持久化 | `node validate-action-metadata.js` |
 | 德魯伊荒野形態、野獸資料與攻擊／資源操作、荒野夥伴、野性復甦、自然恢復、原初打擊及相關桌邊狀態、autosave、responsive UI | `node validate-tabletop-druid.js` |
 | 法術書、準備法術總數、儀式施法、法術書匯入／持久化及其 UI | `node validate-spellbook.js` |
+| 屬性擲骰、結果分配、背景加值、擲骰歷史或工具選單版面 | `node validate-ability-roll.js` |
+| 擲骰備註、長按／鍵盤／觸控操作、取消或歷史相容性 | `node validate-dice-roll-notes.js` |
+| 主手2、盾牌、雙手武器衝突、相關 AC／裝備摘要／PDF 欄位 | `node validate-main2-shield.js` |
+| 新手／桌邊導覽（含點擊推進與減少動態效果）、創角匯入銜接、PDF 載入與取消流程 | `node validate-onboarding.js` |
+| 短休／長休、生命骰、資源恢復或最佳旅伴 | `node validate-tabletop-rest.js` |
+| 主題、技能版面、主題素材、PDF 盾牌受訓或實際可編輯 PDF 匯出 | `node validate-ui-themes.js` |
+| PDF 精靈／魔人血統環法恢復提示 | `node validate-pdf-lineage-recovery.js`；涉及實際匯出時加跑 `node validate-ui-themes.js` |
+| 明確要求建立、測試或更新離線角色卡 | 先執行 `build-offline-nopdf.ps1`，再執行 `node validate-offline-sharing.js` |
 | 僅 Markdown | 核對檔名、連結、命令與結構描述，不執行 JavaScript 驗證 |
 
-* 可直接使用既有本機驗證工具與瀏覽器，修正本次變更造成的失敗並重跑受影響檢查，無需逐步取得批准。Action 與德魯伊驗證依賴 Playwright 及瀏覽器，沿用專案或環境已有安裝，不為測試新增框架或依賴。
+持續法術效果影響一般角色或野獸的 AC／速度時，也需執行 `node validate-tabletop-druid.js`。
+
+* 沿用專案或環境已有的 Playwright 與瀏覽器，不為測試新增框架或依賴。
 * 涉及 DOM 互動、responsive layout、焦點、modal、事件、LocalStorage、autosave 或跨頁狀態，且靜態檢查不足時，驗證最小必要 UI 流程；僅在需要瀏覽器驗證時啟動本機伺服器。
 * 需要臨時瀏覽器檢查時，先讀取 [.agents/skills/playwright-cli/SKILL.md](.agents/skills/playwright-cli/SKILL.md)，使用既有 dependency 的 `npx --no-install playwright cli`。沿用現有 regression scripts，不另建 Playwright Test 或 Test Agents。
 * Browser workflow 優先採用 `open → snapshot/find → interact → assertion`，僅操作本次驗證所需元素；唯讀確認可省略 interact。完成後關閉本次 browser session 與本機伺服器，不為單一修改自由探索整個網站。
@@ -99,29 +109,6 @@
 * 完成代表需求已實作、受影響的呼叫端與資料相容性已處理、適用驗證已有結果。收尾檢查 diff 與 git status，清除本次產生的 debug code、臨時檔及無關修改。
 * 簡短回報修改內容、驗證結果及未驗證部分；任務外問題如需提及，列出但不順帶修復。
 
-## Product audit known exceptions
+## 自動稽核判讀
 
-The generic product-audit tool produces several known false positives for this project. Do not modify working product behavior merely to make these warnings disappear.
-
-Known exceptions:
-
-* **Buttons reported as having no action**
-
-  * This project commonly binds interactions through JavaScript `addEventListener`.
-  * The audit tool may only inspect inline HTML handlers such as `onclick`, so these warnings are not evidence that a control is broken.
-  * Verify the interaction in the browser or inspect its JavaScript event binding before making changes.
-  * Do not convert `addEventListener` handlers to inline event attributes solely to satisfy the audit.
-
-* **Textarea resize warnings**
-
-  * The project intentionally uses `resize: vertical`.
-  * Do not change these textareas to `resize: none` solely to satisfy the audit.
-
-* **Native select ownership/configuration warnings**
-
-  * Native browser form controls are intentionally used in this project.
-  * Do not replace or restructure working native `<select>` controls solely to satisfy the audit.
-
-These exceptions apply only to the specific warning patterns above. Other audit findings must still be investigated normally.
-
-Audit output is advisory, not a requirement to reach zero warnings. Product behavior, accessibility, existing architecture, and verified browser behavior take priority over generic lint assumptions.
+稽核警告需以程式與瀏覽器行為確認，不以警告歸零為目標。`addEventListener` 綁定的按鈕可能被誤報為無動作；先檢查事件綁定，不為消除警告改成 inline handler。保留既有 textarea 的 `resize: vertical` 與原生 `<select>`，不因通用稽核建議而替換正常運作的控制項。其他警告仍需依實際影響調查。

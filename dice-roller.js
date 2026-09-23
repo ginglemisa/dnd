@@ -7,9 +7,7 @@
   const ROLL_ANIMATION_MS = 1800;
   const ABILITY_ROLL_ANIMATION_MS = 1200;
   const REDUCED_MOTION_ROLL_MS = 100;
-  const LONG_PRESS_MS = 1200;
-  const ROLL_NOTE_LONG_PRESS_MS = 2500;
-  const HISTORY_CLEAR_LONG_PRESS_MS = 3000;
+  const LONG_PRESS_MS = 1300;
   const HISTORY_LIMIT = 66;
   const DIE_EXPRESSION_SOURCE = String.raw`\d+\s*d\s*(?:100|20|12|10|8|6|4)`;
   const EXPRESSION_PATTERN = new RegExp(
@@ -1057,7 +1055,7 @@
         rollButton.classList.remove("is-holding");
         window.navigator.vibrate?.(30);
         void requestRollNote();
-      }, ROLL_NOTE_LONG_PRESS_MS);
+      }, LONG_PRESS_MS);
     });
     ["pointerup", "pointerleave", "pointercancel"].forEach(eventName => rollButton.addEventListener(eventName, cancelRollNoteHold));
     rollButton.addEventListener("contextmenu", event => event.preventDefault());
@@ -1085,7 +1083,7 @@
         clearButton.classList.remove("is-holding");
         clearHistory();
         window.navigator.vibrate?.(30);
-      }, HISTORY_CLEAR_LONG_PRESS_MS);
+      }, LONG_PRESS_MS);
     });
     ["pointerup", "pointerleave", "pointercancel"].forEach(eventName => clearButton.addEventListener(eventName, cancelClearHistoryHold));
     clearButton.addEventListener("contextmenu", event => event.preventDefault());

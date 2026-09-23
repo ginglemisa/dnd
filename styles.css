@@ -8112,16 +8112,10 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] :is(#scrollToTopBtn, #scro
   transform-origin: left;
 }
 
-.dice-roller-die.is-holding::after {
-  animation: dice-long-press 1.2s linear forwards;
-}
-
-.dice-roller-roll.is-holding::after {
-  animation: dice-long-press 2.5s linear forwards;
-}
-
+.dice-roller-die.is-holding::after,
+.dice-roller-roll.is-holding::after,
 .dice-roller-clear.is-holding::after {
-  animation: dice-long-press 3s linear forwards;
+  animation: dice-long-press 1.3s linear forwards;
 }
 
 .dice-roller-roll {
@@ -8205,12 +8199,10 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] :is(#scrollToTopBtn, #scro
     transform: none;
   }
 
-  .dice-roller-die.is-holding::after {
-    animation-duration: 1.2s;
-  }
-
+  .dice-roller-die.is-holding::after,
+  .dice-roller-roll.is-holding::after,
   .dice-roller-clear.is-holding::after {
-    animation-duration: 3s;
+    animation-duration: 1.3s;
   }
 }
 

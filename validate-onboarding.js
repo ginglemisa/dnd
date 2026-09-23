@@ -129,7 +129,7 @@ async function verifyTour(page, { width, height, caster, mode, complete }) {
       await ready(page, index);
     }
   }
-  if (complete) await page.getByRole("button", { name: "開始使用桌邊模式", exact: true }).click();
+  if (complete) await page.locator("#tour-next-btn").click();
   else await page.keyboard.press("Escape");
   await closed(page);
   const after = await snapshot(page);
@@ -168,6 +168,7 @@ async function main() {
       return;
     }
     if (process.argv.includes("--touch-only")) {
+      await verifyAbilityGuidance(browser, page.url());
       await verifyTouch(browser, page.url());
       return;
     }
@@ -237,20 +238,32 @@ async function main() {
     await page.waitForFunction(() => {
       const hole = onboardingTour.activeHoles[0];
       const rect = document.getElementById("utility-menu-toggle").getBoundingClientRect();
-      return onboardingTour.currentIndex === 1 && onboardingTour.stepPhase === 1
+      return onboardingTour.currentIndex === 2 && onboardingTour.abilityMenuStage === "menu"
         && onboardingTour.activeHoles.length === 1
-        && hole.left <= rect.left && hole.right >= rect.right && hole.top <= rect.top && hole.bottom >= rect.bottom;
-    });
-    await page.waitForFunction(() => {
-      const hole = onboardingTour.activeHoles[0];
-      const rect = document.getElementById("set-default-abilities").getBoundingClientRect();
-      return onboardingTour.currentIndex === 1 && onboardingTour.stepPhase === 2
-        && onboardingTour.activeHoles.length === 1
-        && document.getElementById("utility-menu-toggle").getAttribute("aria-expanded") === "true"
         && hole.left <= rect.left && hole.right >= rect.right && hole.top <= rect.top && hole.bottom >= rect.bottom;
     });
     await ready(page, 2);
-    assert.equal(await page.locator("#ability-choice-modal").isVisible(), true, "step 3 opens automatically from Decide abilities");
+    assert.equal(await page.locator("#tour-step-title").innerText(), "🎲 3. 決定屬性");
+    await page.waitForTimeout(900);
+    assert.equal(await page.evaluate(() => onboardingTour.abilityMenuStage), "menu", "menu highlight waits for the player");
+    await page.mouse.click(15, 200);
+    await page.waitForFunction(() => {
+      const hole = onboardingTour.activeHoles[0];
+      const rect = document.getElementById("set-default-abilities").getBoundingClientRect();
+      const menu = document.getElementById("utility-menu").getBoundingClientRect();
+      return onboardingTour.currentIndex === 2 && onboardingTour.abilityMenuStage === "button"
+        && onboardingTour.activeHoles.length === 1
+        && document.getElementById("utility-menu-toggle").getAttribute("aria-expanded") === "true"
+        && rect.top >= menu.top && rect.bottom <= menu.bottom
+        && hole.left <= rect.left && hole.right >= rect.right && hole.top <= rect.top && hole.bottom >= rect.bottom;
+    });
+    await ready(page, 2);
+    await page.waitForTimeout(900);
+    assert.equal(await page.evaluate(() => onboardingTour.abilityMenuStage), "button", "button highlight waits for a second click");
+    assert.equal(await page.locator("#ability-choice-modal").isVisible(), false);
+    await page.locator("#tour-next-btn").press("Enter");
+    await page.waitForFunction(() => !onboardingTour.isTransitioning && !onboardingTour.abilityMenuStage);
+    assert.equal(await page.locator("#ability-choice-modal").isVisible(), true, "step 3 opens after player confirmation");
     await page.locator("#ability-choice-point-buy").click();
     await page.waitForFunction(() => onboardingTour.stepPhase === 1);
     await page.locator("#tour-next-btn").click();
@@ -262,6 +275,10 @@ async function main() {
     await ready(page, 0);
     await page.locator("#tour-next-btn").click();
     await ready(page, 1);
+    await page.locator("#tour-next-btn").click();
+    await ready(page, 2);
+    await page.locator("#tour-next-btn").click();
+    await ready(page, 2);
     await page.locator("#tour-next-btn").click();
     await ready(page, 2);
     for (let index = 3; index < 6; index++) {
@@ -292,6 +309,7 @@ async function main() {
     await verifyImports(browser, page.url());
     await verifyImports(browser, page.url(), { width: 390, height: 844 });
     await verifyPdfLifecycle(browser, page.url());
+    await verifyAbilityGuidance(browser, page.url());
     await verifyTouch(browser, page.url());
     assert.deepEqual(errors, []);
     console.log("Cancellation races, failed positioning, turn dialog, legacy ability/point-buy branches, target jump and quick-build draft reopen passed.");
@@ -299,6 +317,59 @@ async function main() {
     await browser?.close();
     await new Promise(resolve => server.close(resolve));
   }
+}
+
+async function verifyAbilityGuidance(browser, url) {
+  for (const reducedMotion of ["no-preference", "reduce"]) {
+    const page = await browser.newPage({ viewport: { width: 320, height: 568 }, isMobile: true, hasTouch: true, reducedMotion });
+    await page.goto(url);
+    await page.waitForFunction(() => window.onboardingTour);
+    await page.locator("#legal-ack-btn").tap();
+    await page.waitForTimeout(650);
+    await page.evaluate(() => window.flushPendingAutosave?.());
+    const before = await snapshot(page);
+    await page.evaluate(() => onboardingTour.start(1));
+    await page.locator("#tour-next-btn").tap();
+    await ready(page, 2);
+    assert.equal(await page.evaluate(() => {
+      const rect = document.getElementById("tour-tooltip").getBoundingClientRect();
+      const hole = onboardingTour.activeHoles[0];
+      return rect.top >= hole.bottom && rect.left <= hole.left && rect.right <= innerWidth;
+    }), true, "step 3 starts below and to the left of its highlight");
+    await verifyTooltipDrag(page);
+    assert.equal(await page.evaluate(() => onboardingTour.abilityMenuStage), "menu", "dragging does not advance the guide");
+    const draggedTip = await page.locator("#tour-tooltip").boundingBox();
+    const assertDraggedPosition = async () => {
+      const rect = await page.locator("#tour-tooltip").boundingBox();
+      assert(Math.abs(rect.x - draggedTip.x) <= 1 && Math.abs(rect.y - draggedTip.y) <= 1, "highlight changes preserve the dragged tooltip position");
+    };
+    await page.touchscreen.tap(15, 200);
+    await page.touchscreen.tap(15, 200);
+    await ready(page, 2);
+    assert.equal(await page.evaluate(() => onboardingTour.abilityMenuStage), "button", "rapid taps cannot skip the moving highlight");
+    await assertDraggedPosition();
+    const tip = await page.locator("#tour-step-text").boundingBox();
+    await page.touchscreen.tap(tip.x + 20, tip.y + 15);
+    await ready(page, 2);
+    assert.equal(await page.evaluate(() => onboardingTour.abilityMenuStage), null);
+    assert.equal(await page.locator("#ability-choice-modal").isVisible(), true);
+    await assertDraggedPosition();
+    if (process.env.DND_ONBOARDING_SCREENSHOT_DIR) await page.screenshot({ path: path.join(process.env.DND_ONBOARDING_SCREENSHOT_DIR, `ability-guidance-${reducedMotion}.png`) });
+    await page.locator("#tour-prev-btn").tap();
+    await ready(page, 1);
+    await page.locator("#tour-next-btn").tap();
+    await ready(page, 2);
+    // Cancel while the menu and highlight are still moving; stale work must stop.
+    await page.touchscreen.tap(15, 200);
+    await page.locator("#tour-skip-btn").tap();
+    await closed(page);
+    assert.equal(await page.locator("#utility-menu-toggle").getAttribute("aria-expanded"), "false");
+    assert.equal(await page.locator("#ability-choice-modal").isVisible(), false);
+    const after = await snapshot(page);
+    for (const key of ["data", "storage", "dice", "hash"]) assert.deepEqual(after[key], before[key], `ability guidance preserves ${key}`);
+    await page.close();
+  }
+  console.log("Ability guidance: player-paced touch, highlight-relative placement and dragging, reduced motion, back, cancellation and state preservation passed.");
 }
 
 async function verifyTouch(browser, url) {
@@ -333,6 +404,8 @@ async function verifyTouch(browser, url) {
   await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: dragX, y: dragY }] });
   for (let offset = 10; offset <= 40; offset += 10) {
     await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: dragX, y: dragY - offset }] });
+    // Give Chromium time to recognize each move, as in the swipe below.
+    await page.waitForTimeout(35);
   }
   await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
   assert(Math.abs((await page.locator("#tour-tooltip").boundingBox()).y - (initialTip.y - 40)) <= 1, "touch dragging moves the heading");
@@ -410,13 +483,13 @@ async function verifyImports(browser, url, viewport = { width: 1280, height: 800
     await page.locator('[data-import-mobile-card]').click();
     if (scenario === "cancel") {
       const before = await page.evaluate(() => collectStateObject());
-      await page.getByRole("button", { name: "保留目前資料", exact: true }).click();
+      await page.locator(".app-dialog__actions .app-dialog__button--secondary").click();
       assert.deepEqual(await page.evaluate(() => collectStateObject()), before);
       await page.locator(".quick-build-close").click();
       await assertPageInteractive(page);
       continue;
     }
-    await page.getByRole("button", { name: "刪除並匯入", exact: true }).click();
+    await page.locator(".app-dialog__actions .app-dialog__button--danger").click();
     await page.waitForFunction(() => document.querySelector(".app-dialog__header h2")?.textContent.includes("角色卡"));
     const firstTable = page.getByRole("button", { name: "第一次上桌", exact: true });
     assert.equal(await firstTable.count(), ["warning", "failure"].includes(scenario) ? 0 : 1, await page.locator(".app-dialog__body").innerText());

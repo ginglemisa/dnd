@@ -96,49 +96,53 @@ PDF 程式與素材只會在使用 PDF 匯出時動態載入。正式網站若�
 
 ## 維護與驗證
 
-專案已在 `package.json` 宣告 Playwright 開發依賴，`package-lock.json` 目前鎖定 1.63.0，需 Node.js 20 以上。新開發環境可用 `npm ci` 還原依賴；瀏覽器驗證另需可用的 Chromium 或腳本支援的本機瀏覽器。這些工具不影響正式網站的執行需求。
+從專案根目錄執行下列命令，依修改範圍選擇相關腳本即可。修改 JavaScript 時，另執行 `node --check <受影響檔案.js>`；只修改 Markdown 時，核對檔名、連結、命令與說明，不需執行功能驗證。
 
-修改後優先執行最相關的 `validate-*.js`，完整驗證規則見 [AGENTS.md](AGENTS.md)。需要臨時瀏覽器檢查時，使用 `npx --no-install playwright cli`；具體操作見 repository 內的 [Playwright CLI skill](.agents/skills/playwright-cli/SKILL.md)。
+### 執行環境
 
-主題、技能版面、主題素材及 PDF 盾牌／血統提示可執行 `node validate-ui-themes.js`。此檢查使用既有 Playwright，包含四種外觀、窄版、儲存與實際可編輯 PDF 匯出；可用 `DND_BROWSER_CHANNEL=msedge` 選擇本機 Edge。
-
-法術書、準備法術總數、儀式施法與相關匯入、持久化或 UI 修改，可執行 `node validate-spellbook.js`。
-
-修改 JavaScript 後，可先執行最低成本的語法檢查：
+使用 Node.js 20 以上。標示「瀏覽器」的腳本需要 Playwright 與 Chromium，會自行啟動及關閉本機伺服器，不需手動啟動網站。新環境可執行：
 
 ```powershell
-node --check .\受影響的檔案.js
+npm ci
+npx --no-install playwright install chromium
 ```
 
-若修改法術 metadata 或桌邊施法、法術位、專注、自動擲骰流程，從專案根目錄執行專用驗證（需要 Node.js 與 Git，會讀取 `HEAD:spell-list.js` 比對）：
+已有可用依賴與瀏覽器時不需重裝。除 `validate-main2-shield.js` 固定使用 Playwright Chromium 外，其餘瀏覽器腳本可用 `$env:DND_BROWSER_CHANNEL = "msedge"` 選用已安裝的 Edge；執行 `Remove-Item Env:DND_BROWSER_CHANNEL` 可恢復預設。使用環境提供的 Playwright 套件時，可設定 `NODE_PATH` 指向其 `node_modules`。
 
-```powershell
-node .\validate-tabletop-spellcasting.js
-```
+### 驗證腳本
 
-若修改非施法能力動作定義、動作 UI 或桌邊動作偏好，可執行瀏覽器回歸驗證：
+| 執行命令 | 用途與檢查範圍 | 額外需求／限制 |
+| --- | --- | --- |
+| `node validate-ability-roll.js` | 屬性擲骰、去最低骰、結果分配、背景加值、歷史與自動儲存、工具選單及不同寬度版面 | 瀏覽器 |
+| `node validate-action-metadata.js` | 非施法動作定義、角色卡／桌邊動作、自訂與隱藏偏好、手動副武器、JSON／分享／自動儲存 | 瀏覽器 |
+| `node validate-dice-roll-notes.js` | 擲骰備註、長按與 Shift+Enter、取消、觸控、焦點及舊歷史格式相容性 | 瀏覽器 |
+| `node validate-main2-shield.js` | 主手2 搭配盾牌、雙手武器衝突確認、AC、裝備摘要、狀態還原與 PDF 欄位 | 瀏覽器；固定使用 Playwright Chromium |
+| `node validate-offline-sharing.js` | 離線成品的 inline 語法、永久分享網址、禁止短網址 API、複製 fallback、分享模式與離開流程 | 純 Node.js；須先產生 `TWD20-offline.html`，見[離線版本](#離線版本)。使用 URL 模擬，不代表手機檔案權限或儲存已通過實機驗證 |
+| `node validate-onboarding.js` | 新手／桌邊導覽（含第 3 步點擊推進、減少動態效果）、創角小幫手匯入、觸控、取消、資料與焦點保留、PDF 載入及取消流程 | 瀏覽器；PDF 繪製以替身驗證，未測實際成品 |
+| `node validate-pdf-lineage-recovery.js` | 精靈與魔人於不同等級的 PDF 血統環法恢復提示 | 純 Node.js；只檢查欄位資料 |
+| `node validate-spellbook.js` | 法術書、準備數量、書內儀式、創角匯入、PDF 法術書選項、JSON／分享／自動儲存及版面 | 瀏覽器 |
+| `node validate-tabletop-druid.js` | 荒野形態、野獸攻擊、德魯伊資源、持續法術效果（含一般／野獸 AC 與速度）、專注、儲存與版面 | 瀏覽器 |
+| `node validate-tabletop-rest.js` | 短休／長休、生命骰、職業與種族資源恢復、最佳旅伴、可選恢復、取消與自動儲存 | 瀏覽器 |
+| `node validate-tabletop-spellcasting.js` | 法術 metadata、施法條件、法術位、專注與自動擲骰 | 純 Node.js 與 Git；需可讀取 `HEAD:spell-list.js`，比對既有法術 ID |
+| `node validate-ui-themes.js` | 四種外觀、偏好保存、技能版面、主題素材、桌邊／創角 UI，以及 PDF 盾牌受訓與血統提示 | 瀏覽器；會實際匯出並重新讀取可編輯 PDF，需專案 PDF 與字型素材 |
 
-```powershell
-node .\validate-action-metadata.js
-```
+`validate-onboarding.js` 可加 `--imports-only` 只跑匯入與 PDF 生命週期，或加 `--touch-only` 只跑觸控流程；不加參數才是完整驗證。PDF 血統提示的小範圍修改可先用 `validate-pdf-lineage-recovery.js`，涉及實際匯出時再用 `validate-ui-themes.js`。
 
-此腳本使用專案的 Playwright 依賴與可用瀏覽器，會自行啟動本機靜態伺服器，檢查動作條件、角色卡／桌邊 UI、自訂與隱藏動作，以及 JSON、分享與自動儲存流程。若改用環境內附的套件，可用 `NODE_PATH` 指向其 `node_modules`；使用已安裝的 Microsoft Edge 時，可先在 PowerShell 設定 `$env:DND_BROWSER_CHANNEL = "msedge"`。
+需要檢查視覺版面時，部分腳本可透過下列環境變數輸出截圖；一般驗證不需設定。請先建立輸出目錄，避免將截圖加入版本控制。
 
-若修改德魯伊荒野形態、野獸資料與攻擊、職業專屬資源、相關桌邊狀態或 responsive UI，執行德魯伊專用的瀏覽器回歸驗證：
+| 腳本 | 截圖目錄環境變數 |
+| --- | --- |
+| `validate-ability-roll.js` | `DND_ABILITY_SCREENSHOT_DIR` |
+| `validate-action-metadata.js`、`validate-tabletop-druid.js` | `DND_SCREENSHOT_DIR` |
+| `validate-onboarding.js` | `DND_ONBOARDING_SCREENSHOT_DIR` |
+| `validate-spellbook.js` | `DND_SPELLBOOK_SCREENSHOTS` |
+| `validate-ui-themes.js` | `DND_THEME_SCREENSHOT_DIR` |
 
-```powershell
-node .\validate-tabletop-druid.js
-```
-
-此腳本同樣使用既有的 Playwright 與瀏覽器，會檢查形態資格與能力值、野獸攻擊、荒野形態資源、荒野夥伴、野性復甦、自然恢復、原初打擊、專注限制、失能處理、JSON／分享／autosave、對話框取消流程及桌面與手機版面。
-
-若修改短休／長休、資源恢復 metadata、生命骰回血或最佳旅伴，執行 `node validate-tabletop-rest.js`。此腳本檢查各職業與種族的恢復規則、免費施法、可選恢復額度、取消與資料變更檢查、JSON／autosave 及手機版對話框。休息結算沿用原有 canonical state；不追蹤時間或中斷，也不改動角色選項。
-
-正式網站無 build step；npm 僅用於開發驗證工具。上述瀏覽器腳本沿用專案或環境中已有的 Playwright，不需為一般修改新增專案相依。只修改 Markdown 時，檢查檔名、連結、命令與內容是否符合現況即可。修改正式載入的 CSS／JavaScript 時，亦應檢查 `index.html` 對應資源的快取版本。
+完整變更與驗證條件見 [AGENTS.md](AGENTS.md)。臨時瀏覽器檢查沿用 [Playwright CLI skill](.agents/skills/playwright-cli/SKILL.md) 與 `npx --no-install playwright cli`。
 
 ## 離線版本
 
-[`TWD20-offline.html`](TWD20-offline.html) 是由來源檔產生的單檔版本，會內嵌本機 CSS、JavaScript、圖片與 Legal & About 內容，可下載後直接以瀏覽器開啟。精簡離線版不包含 PDF 匯出功能。
+`TWD20-offline.html` 是由來源檔產生的單檔版本，會內嵌本機 CSS、JavaScript、圖片與 Legal & About 內容，產生後可直接以瀏覽器開啟。精簡離線版不包含 PDF 匯出功能。
 
 離線版一般模式的「分享角卡」會在本機編碼資料，直接複製 `https://twd20.com/#s2=...`（或相容的 `#s=...`）永久網址，不建立短網址，也不傳送建立請求。網址不包含本機磁碟路徑或 Android 檔案提供者的 `content://` 路徑；接收者需連網開啟正式網站。完全離線交換角色請使用 JSON 匯出／匯入。
 
