@@ -46,9 +46,9 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20260924-race-size-bold">
-  <script src="scroll-to-top.js?v=20260922-visibility-toggle" defer></script>
-  <script src="dice-roller.js?v=20260923-dice-hold" defer></script>
+  <link rel="stylesheet" href="styles.css?v=20260924-onboarding-previews-toast-stack">
+  <script src="scroll-to-top.js?v=20260924-default-off" defer></script>
+  <script src="dice-roller.js?v=20260924-quick-roll-toast" defer></script>
   <script src="monster.js?v=20260912-druid-controls" defer></script>
     <script src="class-features.js?v=20260913-class-tabletop" defer></script>
   <script src="race.js?v=20260924-feature-source" defer></script>
@@ -60,14 +60,14 @@
   <script src="condition.js" defer></script>
   <script src="action-panel.js?v=20260913-class-tabletop" defer></script>
   <script src="character-rules.js?v=20260922-rest" defer></script>
-  <script src="app-dialog.js?v=20260917-share-options" defer></script>
+  <script src="app-dialog.js?v=20260924-toast-stack" defer></script>
   <script src="tabletop-mode.js?v=20260923-persistent-spells" defer></script>
   <script src="tabletop-druid.js?v=20260915-main2-shield" defer></script>
-  <script src="tabletop-resources.js?v=20260922-hit-die-healing" defer></script>
+  <script src="tabletop-resources.js?v=20260924-onboarding-previews" defer></script>
   <script src="tabletop-actions.js?v=20260922-manual-weapons" defer></script>
   <script src="tabletop-spells.js?v=20260923-persistent-spells" defer></script>
   <script src="legal-modal.js?v=20260923-legal-about" defer></script>
-  <script src="onboarding-tour.js?v=20260924-tabletop-spacing" defer></script>
+  <script src="onboarding-tour.js?v=20260924-onboarding-previews" defer></script>
   <script src="quick-build.js?v=20260924-background-presets" defer></script>
   <script src="spellbook.js?v=20260913-spellbook" defer></script>
   <script src="deity-info.js" defer></script>
@@ -115,12 +115,12 @@
           </label>
           <label class="utility-menu__setting">
             <span>顯示▲▼按鈕</span>
-            <input id="scroll-buttons-toggle" type="checkbox" role="switch" checked data-state-transient="true">
+            <input id="scroll-buttons-toggle" type="checkbox" role="switch" data-state-transient="true">
             <span class="utility-menu__switch" aria-hidden="true"></span>
           </label>
           <label class="utility-menu__setting">
             <span>開啟擲骰功能</span>
-            <input id="dice-system-toggle" type="checkbox" role="switch">
+            <input id="dice-system-toggle" type="checkbox" role="switch" data-state-transient="true">
             <span class="utility-menu__switch" aria-hidden="true"></span>
           </label>
           <div class="utility-menu__setting utility-menu__theme-setting">
@@ -8282,7 +8282,7 @@ function collectShareState() {
 
 function resetOmittedShareCheckboxes(data) {
   document.querySelectorAll('input[type="checkbox"][id]').forEach((input) => {
-    if (SHARE_ALWAYS_INCLUDED_IDS.has(input.id) || Object.prototype.hasOwnProperty.call(data, input.id)) return;
+    if (input.dataset.stateTransient === "true" || SHARE_ALWAYS_INCLUDED_IDS.has(input.id) || Object.prototype.hasOwnProperty.call(data, input.id)) return;
     input.checked = false;
   });
 }
@@ -8384,6 +8384,7 @@ function applyStateObject(data) {
       if (isAgonizingBlastSelectId(id) || isEldritchInvocationCheckboxId(id)) continue;
       const el = document.getElementById(id);
       if (!el) continue;
+      if (el.dataset.stateTransient === "true") continue;
       if (el.type === "checkbox") {
         el.checked = !!data[id];
       } else {

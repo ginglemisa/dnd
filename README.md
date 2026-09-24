@@ -72,18 +72,21 @@ npx --no-install playwright install chromium
 | --- | --- | --- |
 | `node validate-ability-roll.js` | 屬性擲骰、去最低骰、結果分配、背景加值、歷史與自動儲存、工具選單及不同寬度版面 | 瀏覽器 |
 | `node validate-action-metadata.js` | 非施法動作定義、角色卡／跑團模式動作、自訂與隱藏偏好、手動副武器、JSON／分享／自動儲存 | 瀏覽器 |
+| `node validate-app-dialog-toast.js` | 共用提示最多三則、顯示順序、獨立倒數、關閉按鈕及左右觸控滑除 | 瀏覽器 |
 | `node validate-dice-roll-notes.js` | 擲骰備註、長按與 Shift+Enter、取消、觸控、焦點及舊歷史格式相容性 | 瀏覽器 |
 | `node validate-main2-shield.js` | 主手2 搭配盾牌、雙手武器衝突確認、AC、裝備摘要、狀態還原與 PDF 欄位 | 瀏覽器；固定使用 Playwright Chromium |
 | `node validate-offline-sharing.js` | 離線成品的 inline 語法、永久分享網址、禁止短網址 API、複製 fallback、分享模式與離開流程 | 純 Node.js；須先產生 `TWD20-offline.html`，見[離線版本](#離線版本)。使用 URL 模擬，不代表手機檔案權限或儲存已通過實機驗證 |
-| `node validate-onboarding.js` | 新手／跑團模式導覽（含第 3 步自動開啟選單、雙高亮與按鈕點擊、減少動態效果）、創角小幫手匯入、觸控、取消、資料與焦點保留、PDF 載入及取消流程 | 瀏覽器；PDF 繪製以替身驗證，未測實際成品 |
+| `node validate-onboarding.js` | 新手／跑團模式導覽（含第 3 步自動開啟選單、雙高亮與按鈕點擊、法術與資源教學預覽、減少動態效果）、創角小幫手匯入、觸控、取消、資料與焦點保留、PDF 載入及取消流程 | 瀏覽器；PDF 繪製以替身驗證，未測實際成品 |
 | `node validate-pdf-lineage-recovery.js` | 精靈與魔人於不同等級的 PDF 血統環法恢復提示 | 純 Node.js；只檢查欄位資料 |
 | `node validate-spellbook.js` | 法術書、準備數量、書內儀式、創角匯入、PDF 法術書選項、JSON／分享／自動儲存及版面 | 瀏覽器 |
 | `node validate-tabletop-druid.js` | 荒野形態、野獸攻擊、德魯伊資源、持續法術效果（含一般／野獸 AC 與速度）、專注、儲存與版面 | 瀏覽器 |
 | `node validate-tabletop-rest.js` | 短休／長休、生命骰、職業與種族資源恢復、最佳旅伴、可選恢復、取消與自動儲存 | 瀏覽器 |
-| `node validate-tabletop-spellcasting.js` | 法術 metadata、施法條件、法術位、專注與自動擲骰 | 純 Node.js 與 Git；需可讀取 `HEAD:spell-list.js`，比對既有法術 ID |
+| `node validate-tabletop-spellcasting.js` | 法術 metadata、施法條件、法術位、專注與自動擲骰 | 純 Node.js；以 `spell-id-baseline.json` 比對既有法術 ID |
 | `node validate-ui-themes.js` | 四種外觀、About 載入／重試／定位與焦點、偏好保存、技能版面、主題素材、跑團模式／創角 UI，以及 PDF 盾牌受訓與血統提示 | 瀏覽器；會實際匯出並重新讀取可編輯 PDF，需專案 PDF 與字型素材 |
 
 `validate-ability-roll.js` 可加 `--point-buy-only` 只驗證 27 購點未用滿時的提醒、確認、套用與還原。`validate-onboarding.js` 可加 `--imports-only` 只跑匯入與 PDF 生命週期，或加 `--touch-only` 只跑觸控流程；不加參數才是完整驗證。PDF 血統提示的小範圍修改可先用 `validate-pdf-lineage-recovery.js`，涉及實際匯出時再用 `validate-ui-themes.js`。
+
+有意新增、移除或更名法術 ID 時，須同步檢查並更新 `spell-id-baseline.json`。
 
 需要檢查視覺版面時，部分腳本可透過下列環境變數輸出截圖；一般驗證不需設定。請先建立輸出目錄，避免將截圖加入版本控制。
 

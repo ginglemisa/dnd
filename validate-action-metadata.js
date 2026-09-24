@@ -863,7 +863,7 @@ async function verifyManualWeaponVisibility(page) {
           input.dispatchEvent(new Event("input", { bubbles: true }));
         }
       }, suffix);
-      await secondary.waitFor({ state: "visible" });
+      await secondary.getByText("手填測試", { exact: true }).waitFor({ state: "visible" });
       assert.match(await secondary.innerText(), /手填測試/);
     }
     await page.evaluate(() => {

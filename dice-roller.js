@@ -552,7 +552,7 @@
       window.AppDialog?.notify(equation, {
         tone: "info",
         variant: "dice-roll",
-        duration: 3600
+        duration: 4700
       });
     };
 

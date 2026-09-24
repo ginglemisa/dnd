@@ -94,9 +94,10 @@
 | 德魯伊荒野形態、野獸資料與攻擊／資源操作、荒野夥伴、野性復甦、自然恢復、原初打擊及其狀態／持久化 | `node validate-tabletop-druid.js` |
 | 法術書管理、準備法術總數、儀式施法、法術書匯入／持久化 | `node validate-spellbook.js` |
 | 屬性擲骰、結果分配、背景加值及其擲骰歷史／自動儲存 | `node validate-ability-roll.js`；僅 27 購點套用與還原可用 `node validate-ability-roll.js --point-buy-only` |
+| 共用 AppDialog 提示的堆疊、倒數、關閉及觸控滑除 | `node validate-app-dialog-toast.js` |
 | 擲骰備註、長按／鍵盤／觸控操作、取消或歷史相容性 | `node validate-dice-roll-notes.js` |
 | 主手2、盾牌、雙手武器衝突、相關 AC／裝備摘要／PDF 欄位 | `node validate-main2-shield.js` |
-| 導覽屬性引導／觸控；創角匯入銜接／PDF 載入取消；共用導覽流程 | 分別優先使用 `node validate-onboarding.js --touch-only`、`node validate-onboarding.js --imports-only`；影響共用導覽或分項不足以涵蓋時執行完整 `node validate-onboarding.js` |
+| 導覽屬性引導／觸控；創角匯入銜接／PDF 載入取消；跑團模式法術與資源教學預覽；共用導覽流程 | 分別優先使用 `node validate-onboarding.js --touch-only`、`node validate-onboarding.js --imports-only`；影響共用導覽或分項不足以涵蓋時執行完整 `node validate-onboarding.js` |
 | 短休／長休、生命骰、資源恢復或最佳旅伴 | `node validate-tabletop-rest.js` |
 | 共用主題切換／保存、主題變數／素材、技能網格共用版面、PDF 盾牌受訓或實際可編輯 PDF 匯出 | `node validate-ui-themes.js`；此腳本混合主題、About、技能及 PDF，局部 About 內容／互動依上方原則驗證，不自動連帶驗證 PDF 或導覽 |
 | PDF 精靈／魔人血統環法恢復提示 | `node validate-pdf-lineage-recovery.js`；涉及實際匯出時加跑 `node validate-ui-themes.js` |

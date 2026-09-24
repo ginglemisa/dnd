@@ -71,7 +71,7 @@
     });
   };
 
-  toggle.checked = window.dndStorage.getItem(storageKey) !== "false";
+  toggle.checked = window.dndStorage.getItem(storageKey) === "true";
   updateVisibility();
   toggle.addEventListener("change", () => {
     window.dndStorage.setItem(storageKey, String(toggle.checked));

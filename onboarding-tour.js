@@ -91,6 +91,9 @@
       this.kind = "sheet";
       this.transitionId = 0;
       this.tabletopViewSnapshot = null;
+      this.tabletopSpellPreviewDialog = null;
+      this.tabletopResourcePreview = null;
+      this.tabletopResourceDisplaySnapshot = null;
       this.currentIndex = -1;
       this.stepPhase = 0;
       this.active = false;
@@ -193,15 +196,102 @@
           "當 DM 要求進行檢定時，找到對應的數字加值，擲出 D20，再將兩者相加。\n\n如果手邊沒有骰子，可以從右上角選單開啟擲骰功能。", ".tabletop-skills", ["開啟擲骰功能"]),
         step("overview", "戰鬥開始時，決定行動順序",
           "當 DM 說請擲先攻時，擲出 D20 + 先攻加值，決定角色在戰鬥中的行動順序。\n\n你也可以開啟擲骰功能，點擊角色卡上的先攻數值進行擲骰。\n\n角色的速度代表一個回合中可以移動的距離。\n\n使用格線地圖時，通常 5 呎 = 1 格。", ".tabletop-key-stat:nth-child(2), .tabletop-key-stat:nth-child(3)", ["請擲先攻", "擲骰功能", "速度", "5 呎 = 1 格"]),
-        step("actions", "在你的回合中採取行動",
+        { ...step("actions", "在你的回合中採取行動",
           "你的回合通常包含移動與一次動作；若能力或規則允許，也可以使用一次附贈。\n\n移動不一定要一次完成，也不需要固定在動作之前。\n例如，你可以先移動 2 格、進行攻擊，再移動剩下的 3 格。\n\n反應則需要符合特定的觸發條件才能使用，通常在其他角色的回合中發生。", ".tabletop-action-browser", ["移動", "動作", "附贈", "移動", "動作", "移動", "移動", "反應"]),
-        ...(document.getElementById("tabletop-tab-spells") && !document.getElementById("tabletop-tab-spells").hidden ? [
-          step("spells", "施放法術前，確認施法條件",
-            "先告訴 DM 你要施放的法術，以及預計影響的目標，再確認法術的施法時間、距離與其他施法條件。\n\n部分法術需要維持專注。一般情況下，一名角色無法同時維持兩個需要專注的法術。", "#tabletop-panel-spells")
-        ] : []),
-        step("resources", "記錄角色狀態的變化",
-          "使用具有次數限制的能力或施放法術後，記得更新角色目前的使用狀態，確認還剩下多少可用次數。\n\n受到傷害、恢復生命值，或獲得其他狀態時，也應同步記錄角色的變化。\n\n基本遊戲流程\n了解情況 → 描述行動 → 必要時進行判定 → 記錄結果", "#tabletop-panel-resources > .tabletop-section", ["法術"])
+          placement: "action-corner",
+          getHoles: () => [
+            this.getHoleFromElements([
+              document.querySelector(".tabletop-action-browser .tabletop-section-heading"),
+              document.querySelector(".tabletop-action-browser .tabletop-action-tabs")
+            ], 8),
+            this.getHoleForSelector('#tabletop-action-panel-basic [data-action-option-key="attack"]', 8)
+          ].filter(Boolean) },
+        { ...step("actions", "施放法術前，確認施法條件",
+          "先告訴 DM 你要施放的法術，以及預計影響的目標，再確認法術的施法時間、距離與其他施法條件。\n\n部分法術需要維持專注。一般情況下，一名角色無法同時維持兩個需要專注的法術。", '.app-dialog[data-tour-spell-preview] .tabletop-spell-detail__copy'),
+          placement: "spell-details-bottom",
+          getHoles: () => [this.getSpellMetadataHole()].filter(Boolean),
+          beforePosition: () => this.openTabletopSpellPreview(),
+          afterLeave: () => this.closeTabletopSpellPreview() },
+        { ...step("resources", "記錄角色狀態的變化",
+          "使用具有次數限制的能力或施放法術後，記得更新角色目前的使用狀態，確認還剩下多少可用次數。\n\n受到傷害、恢復生命值，或獲得其他狀態時，也應同步記錄角色的變化。\n\n基本遊戲流程\n了解情況 → 描述行動 → 必要時進行判定 → 記錄結果", "#tabletop-tour-resource-preview", ["法術"]),
+          tooltipHoleIndex: 1,
+          getHoles: () => [
+            this.getHoleForSelector("#tabletop-tour-resource-preview > .tabletop-resource-row:first-child", 6),
+            this.getHoleForSelector("#tabletop-tour-resource-preview > .tabletop-resource-row:last-child", 6)
+          ].filter(Boolean),
+          beforePosition: () => this.openTabletopResourcePreview(),
+          afterLeave: () => this.closeTabletopResourcePreview() }
       ];
+    }
+
+    getSpellMetadataHole() {
+      const copy = this.tabletopSpellPreviewDialog?.querySelector(".tabletop-spell-detail__copy");
+      const textNode = copy?.firstChild;
+      if (textNode?.nodeType !== Node.TEXT_NODE) return null;
+      const marker = "持續時間: 專注，最長1分鐘";
+      const end = textNode.textContent.indexOf(marker);
+      if (end < 0) return null;
+      const range = document.createRange();
+      range.setStart(textNode, 0);
+      range.setEnd(textNode, end + marker.length);
+      const rects = Array.from(range.getClientRects()).filter(rect => rect.width > 0 && rect.height > 0);
+      if (!rects.length) return null;
+      return {
+        left: Math.min(...rects.map(rect => rect.left)) - 6,
+        top: Math.min(...rects.map(rect => rect.top)) - 6,
+        right: Math.max(...rects.map(rect => rect.right)) + 6,
+        bottom: Math.max(...rects.map(rect => rect.bottom)) + 6
+      };
+    }
+
+    async openTabletopSpellPreview() {
+      void window.TabletopSpells?.showSpellDetail("hideous-laughter", this.nextBtn);
+      const dialog = document.querySelector(".app-dialog");
+      if (!dialog) throw new Error("找不到法術教學視窗");
+      dialog.dataset.tourSpellPreview = "true";
+      this.tabletopSpellPreviewDialog = dialog;
+      this.overlay.classList.add("onboarding-spell-preview");
+      this.overlay.inert = false;
+      await waitForLayoutStability();
+      dialog.querySelector(".app-dialog__body")?.scrollTo(0, 0);
+      this.nextBtn.focus({ preventScroll: true });
+    }
+
+    closeTabletopSpellPreview() {
+      this.isInternalTourAction = true;
+      try {
+        this.tabletopSpellPreviewDialog?.querySelector(".app-dialog__close")?.click();
+      } finally {
+        this.isInternalTourAction = false;
+      }
+      this.tabletopSpellPreviewDialog = null;
+      this.overlay.classList.remove("onboarding-spell-preview");
+    }
+
+    openTabletopResourcePreview() {
+      const builtIn = document.getElementById("tabletop-built-in-resources");
+      const createPreview = window.TabletopResources?.createOnboardingResourcePreview;
+      if (!builtIn || !createPreview) throw new Error("找不到資源教學內容");
+      const preview = document.createElement("div");
+      preview.id = "tabletop-tour-resource-preview";
+      preview.className = "tabletop-resource-list";
+      const rows = [createPreview("hit-dice"), createPreview("bard-inspiration")];
+      if (rows.some(row => !row)) throw new Error("無法建立資源教學卡片");
+      preview.append(...rows);
+      this.tabletopResourceDisplaySnapshot = builtIn.style.display;
+      builtIn.style.display = "none";
+      builtIn.before(preview);
+      this.tabletopResourcePreview = preview;
+      this.overlay.classList.add("onboarding-resource-preview");
+    }
+
+    closeTabletopResourcePreview() {
+      this.tabletopResourcePreview?.remove();
+      this.tabletopResourcePreview = null;
+      this.overlay.classList.remove("onboarding-resource-preview");
+      const builtIn = document.getElementById("tabletop-built-in-resources");
+      if (builtIn && this.tabletopResourceDisplaySnapshot !== null) builtIn.style.display = this.tabletopResourceDisplaySnapshot;
+      this.tabletopResourceDisplaySnapshot = null;
     }
 
     startTabletop() {
@@ -216,6 +306,7 @@
           text: "背景描述過往經歷，\n種族提供不同特性，\n職業則決定擅長的能力，以及在冒險中解決問題的方式。\n\n完成選擇後，速度、專長與其他角色資料會自動更新。",
           highlights: ["背景", "種族", "職業"],
           placement: "bottom",
+          tooltipHoleIndex: 1,
           getHoles: () => {
             return [
               this.getHoleForSelector(".basic-row--class-level", 8),
@@ -530,6 +621,8 @@
     async goToTabletop(index) {
       const transitionId = ++this.transitionId;
       this.isTransitioning = true;
+      const previousStep = this.steps[this.currentIndex];
+      if (previousStep && typeof previousStep.afterLeave === "function") previousStep.afterLeave();
       this.currentIndex = index;
       this.tooltipDragPosition = null;
       this.activeHoles = [];
@@ -540,11 +633,18 @@
         window.TabletopMode.setPanel(step.tab, { persist: false, restoreScroll: false });
         await waitForLayoutStability();
         if (!this.active || transitionId !== this.transitionId) return;
+        if (typeof step.beforePosition === "function") {
+          await step.beforePosition();
+          if (!this.active || transitionId !== this.transitionId) return;
+          await waitForLayoutStability();
+        }
         if (step.placement !== "center") {
           const target = document.querySelector(step.selector);
           if (!isElementVisible(target)) throw new Error("找不到導覽目標");
           const header = document.querySelector(".tabs-shell")?.getBoundingClientRect().bottom || 0;
-          window.scrollTo(0, window.scrollY + target.getBoundingClientRect().top - Math.max(80, header + 16));
+          if (step.placement !== "spell-details-bottom") {
+            window.scrollTo(0, window.scrollY + target.getBoundingClientRect().top - Math.max(80, header + 16));
+          }
           await waitForLayoutStability();
           if (!this.active || transitionId !== this.transitionId) return;
           if (!step.getHoles().some(hole => this.getVisibleHole(hole))) throw new Error("導覽目標不在可見範圍");
@@ -572,6 +672,8 @@
       this.restoreEquipmentPreview();
       this.restoreSpellControlPreview();
       this.restoreSpellPreviewState();
+      this.closeTabletopSpellPreview();
+      this.closeTabletopResourcePreview();
       this.resetHighlightState();
       this.active = false;
       this.isTransitioning = false;
@@ -1266,7 +1368,7 @@
     isAllowedTourInteraction(target) {
       if (!(target instanceof Element)) return false;
       if (this.tooltip?.contains(target)) return true;
-      if (target.closest(".app-dialog")) return true;
+      if (target.closest(".app-dialog:not([data-tour-spell-preview])")) return true;
       return this.getAllowedTourElements().some((element) => element === target || element.contains(target));
     }
 
@@ -1666,8 +1768,8 @@
 
       const placement = this.getStepValue(step, "placement", "bottom");
       this.tooltip.style.cursor = this.tooltipDragPointerId === null ? "grab" : "grabbing";
-      const tooltipHole = this.abilityMenuGuideActive && visibleHoles[1] ? visibleHoles[1] : visibleHoles[0];
-      if (tooltipHole) this.positionTooltip(tooltipHole, placement);
+      const tooltipHole = visibleHoles[this.getStepValue(step, "tooltipHoleIndex", this.abilityMenuGuideActive ? 1 : 0)] || visibleHoles[0];
+      if (tooltipHole) this.positionTooltip(tooltipHole, placement, visibleHoles);
       else this.positionTooltipWithoutHighlight();
       this.applyTooltipDragPosition();
       if (refreshInteractionRoots) this.refreshTourInteractionRoots();
@@ -1786,12 +1888,26 @@
       this.tooltip.style.top = `${Math.max(margin, Math.floor((window.innerHeight - height) / 2))}px`;
     }
 
-    positionTooltip(hole, placement) {
+    positionTooltip(hole, placement, holes = []) {
       const margin = 10;
       const width = Math.min(360, window.innerWidth - margin * 2);
       this.tooltip.style.width = `${width}px`;
       const height = this.tooltip.offsetHeight || 170;
       this.tooltip.style.left = `${Math.min(window.innerWidth - width - margin, Math.max(margin, hole.left))}px`;
+
+      if (placement === "action-corner") {
+        const position = this.clampTooltipPosition(holes[1]?.right + margin || hole.right + margin, hole.bottom + margin);
+        this.tooltip.style.left = `${position.left}px`;
+        this.tooltip.style.top = `${position.top}px`;
+        return;
+      }
+
+      if (placement === "spell-details-bottom") {
+        const position = this.clampTooltipPosition(hole.left, hole.bottom + margin);
+        this.tooltip.style.left = `${position.left}px`;
+        this.tooltip.style.top = `${position.top}px`;
+        return;
+      }
 
       if (placement === "highlight-bottom-left") {
         const position = this.clampTooltipPosition(hole.right - width, hole.bottom + margin);
@@ -1926,7 +2042,7 @@
 
     handleKeydown(event) {
       if (!this.active) return;
-      if (event.target instanceof Element && event.target.closest(".app-dialog")) return;
+      if (event.target instanceof Element && event.target.closest(".app-dialog:not([data-tour-spell-preview])")) return;
       if (event.key === "Escape") {
         event.preventDefault();
         this.stop();
