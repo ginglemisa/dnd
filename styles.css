@@ -3189,7 +3189,12 @@ input[type="checkbox"] {
   width: 2.2rem;
   min-width: 2.2rem;
   padding: 0.35rem;
+  font-weight: 800;
   text-align: center;
+}
+
+.race-size-select option {
+  font-weight: 800;
 }
 
 .basic-metric-card {
