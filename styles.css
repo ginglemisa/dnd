@@ -3045,6 +3045,12 @@ input[type="checkbox"] {
   margin-bottom: 0.75rem;
 }
 
+.basic-overview-group {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
 .basic-row {
   display: grid;
   gap: 0.75rem;
