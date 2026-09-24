@@ -13803,7 +13803,7 @@ html[data-theme="dark"] .tabletop-skill-value[data-skill-rank="expertise"] .tabl
   .tabletop-skill-value:nth-child(even) { padding-inline-end: 0.08rem; }
 }
 
-@container tabletop-skills (min-width: 30rem) {
+@container tabletop-skills (min-width: 22rem) {
   .tabletop-skill-values { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .tabletop-skill-value:nth-child(n) { padding-inline: 0.5rem; border-right: 1px solid var(--border); }
   .tabletop-skill-value:nth-child(3n + 1) { padding-inline-start: 0.08rem; }
