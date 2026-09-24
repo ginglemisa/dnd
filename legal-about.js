@@ -1,54 +1,36 @@
-<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="關於 twD20 | 5.5版手機角卡：使用方式、資料保存、角色紙下載，以及 SRD 5.2.1、CC BY 4.0、MIT License、AI 協作與第三方內容授權說明。">
-  <title>twD20｜Legal &amp; About</title>
-  <link rel="canonical" href="https://twd20.com/about.html">
-  <link rel="stylesheet" href="info-pages.css">
-  <script>
-    if (new URLSearchParams(window.location.search).has("embed")) {
-      document.documentElement.classList.add("embed-mode");
-    }
-  </script>
-</head>
-<body>
-  <header class="wrap">
-    <h1>twD20｜Legal &amp; About</h1>
-  </header>
+(function() {
+  "use strict";
 
-  <main class="wrap">
-    <article class="card">
-      <h2>關於 twD20</h2>
+  // Static, project-owned copy; never interpolate character or URL data here.
+  const content = `
+    <article class="legal-about-content">
+<h2>關於 twD20</h2>
       <p>這是一個給 TRPG 新手的禮物。</p>
-      <p>目標：少翻規則、少填表，快點開始玩。</p>
-      <p>支援 1～8 級角色，提供擲骰、角色儲存、分享網址與 PDF 匯出等功能。</p>
+      <p>目標：在短時間內完成創角，並確保所需規則都能查閱。</p>
+      <p>支援 1～8 級角色，提供擲骰、儲存、分享網址、PDF 匯出功能。</p>
 
       <h2>目標對象</h2>
       <ul>
-        <li>第一次接觸 5.5 版奇幻 TRPG 的玩家</li>
-        <li>需要在桌邊快速帶新手創角的 DM／教學者</li>
-        <li>TRPG 推廣活動、體驗場與收費團</li>
-        <li>希望減少創角時間、提供簡易查詢規則</li>
+        <li>初次接觸 5.5e 劍魔奇幻遊戲的玩家</li>
+        <li>需要快速帶新手創角的 DM</li>
+        <li>推廣活動、體驗場、收費團</li>
 
-        <li>本工具以手機操作為主，並預設現場有主持人或教學者協助玩家並說明規則。</li>
+        <li>本工具以手機操作為主，並預設現場有主持人進行口頭教學。</li>
         <li>本工具不附帶朋友和地下城主，找團請洽詢 TRPG 網路或在地社群 ^_^ </li>
       </ul>
 
-      <h2>設計方向</h2>
-      <p>加速玩家「建立角色 → 看懂角色 → 開始遊戲」學習流程。</p>
-      <p>規則文字經過大量刪減、縮寫、整理、重新潤譯。</p>
-      <p>目前支援的角色範圍為 1～8 級。若需要完整規則、更高等級內容或其他子職、背景、種族，請參考更正式的官方規則書。</p>
+      <h2>注意事項</h2>
+      <p>本網站的規則經過大量刪減整理，並非完整規則。</p>
+      <p>如需更高等級或其他子職、背景、種族，請購買 WotC 官方規則書。</p>
 
       <h2>資料怎麼保存？</h2>
       <p>角色資料只存在你自己的裝置裡。</p>
       <p>若清除瀏覽器資料、更換 APP 或裝置，都可能讓紀錄消失。</p>
-      <p>建議使用網站提供的 JSON 匯出功能備份角色，需要時可再匯入還原。</p>
+      <p>建議使用網站提供的 JSON 匯入匯出功能備份角色。</p>
 
       <h2>分享角色</h2>
       <p>你可以產生分享網址，把角色卡給其他人看。</p>
-      <p>透過分享網址開啟時會進入分享模式，不會存檔。。</p>
+      <p>透過分享網址開啟時會進入分享模式，不會存檔。</p>
 
       <h2>流量統計</h2>
       <p>本站使用 Google Analytics 觀察整體使用情況，作為後續更新參考。</p>
@@ -66,7 +48,7 @@
 
       <h2>作者</h2>
       <p>Reggie Tsai / 瑞基</p>
-      <p>twD20 為獨立製作的第三方 5.5 版相容工具，與 Wizards of the Coast LLC 或其他官方品牌無關。</p>
+      <p>twD20 是獨立製作的第三方工具，與 Wizards of the Coast LLC 或其他官方品牌無關。</p>
 
       <hr class="legal-divider">
 
@@ -89,43 +71,36 @@
         <p>完整條款請見 GitHub repository 中的 <a href="https://github.com/ginglemisa/dnd/blob/main/LICENSE" target="_blank" rel="noopener">LICENSE</a> 文件。</p>
 
         <h3>AI 協作開發</h3>
-        <p>twD20 的部分程式碼與文字內容曾使用生成式 AI 協助產生、修改、整理、檢查或除錯，並由專案作者進行需求設計、選擇、測試、修改與整合。</p>
+        <p>twD20 的程式碼與文字使用生成式 AI 協助撰寫、檢查除錯，並由專案作者進行需求設計、測試整合。</p>
         <p>本專案所提供的 MIT License，以專案作者依法具有著作權或其他授權權限的範圍為限。若部分內容依法不受著作權保護、涉及第三方權利，或另受其他授權條款拘束，本專案不主張透過 MIT License 取得或授予超出依法可授權範圍的權利。</p>
 
         <h3>第三方內容</h3>
         <p>暖紙亮色背景使用 <a href="https://ambientcg.com/view?id=Paper002" target="_blank" rel="noopener">ambientCG Paper 002</a> 的 Color 素材（<a href="https://docs.ambientcg.com/license/" target="_blank" rel="noopener">CC0</a>）。本專案沿用縮放、接縫處理後的 512×512 WebP，並以 CSS 淡化紙紋。</p>
-        <p>本專案包含或搭配使用若干第三方內容，例如 SRD 5.2.1、Noto Sans TC、Source Han Serif／思源宋體、中文角色紙及其排版素材、第三方 JavaScript 函式庫，以及其他另有標示來源或授權的素材。</p>
-        <p>這些內容仍分別依其原始授權、著作權或使用條件處理。除非另有明確標示，twD20 的 MIT License 不取代第三方內容原有的授權條件。</p>
+        <p>本專案包含若干第三方內容，例如 SRD 5.2.1、Noto Sans TC、Source Han Serif／思源宋體、中文角色紙及其排版素材、第三方 JavaScript 函式庫，以及其他另有標示來源或授權的素材。</p>
+        <p>這些內容仍分別依其原始授權、著作權或使用條件處理。</p>
         <p>若要重新散布、修改或商業使用本專案，請自行確認實際使用內容所適用的授權。</p>
 
-        <h3>商標與官方關係</h3>
-        <p>twD20 是獨立製作的第三方相容工具，並非 Wizards of the Coast LLC 所製作、贊助、認可或授權的官方產品。</p>
-        <p>網站中為說明規則來源、相容性或第三方內容而出現的名稱、商標或品牌，其權利仍屬各自權利人所有。</p>
-
         <h3>免責聲明</h3>
-        <p>twD20 以現況（AS IS）提供。本工具以方便創角、桌邊使用與新手理解為主要目的，不保證所有規則摘要、翻譯、計算結果或程式功能在任何情況下皆完全正確或完整。</p>
+        <p>twD20 以現況（AS IS）提供。本工具以方便創角、跑團使用與新手理解為主要目的，不保證所有規則摘要、翻譯、計算結果或程式功能在任何情況下皆完全正確或完整。</p>
         <p>本站部分規則文字經過縮寫或重新整理，不應取代完整規則來源。若規則內容出現疑義，請以相應的正式規則來源及實際團務裁定為準。</p>
         <p>使用者如欲重製、修改、重新散布或商業使用本專案或其中內容，應自行確認所在地法律、使用平台規範及相關第三方授權條件。</p>
 
         <h3>SRD Attribution</h3>
         <p>This work includes material from the System Reference Document 5.2.1 (“SRD 5.2.1”) by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode.</p>
       </section>
-    </article>
-  </main>
+      <footer class="legal-about-footer">
+        <a href="https://github.com/ginglemisa/dnd" target="_blank" rel="noopener">GitHub Repo</a>
+        <p>Independent 5.5-compatible character builder.</p>
+      </footer>
+    </article>`;
 
-  <footer class="wrap footer">
-    <nav class="links" aria-label="網站資訊連結">
-      <a href="index.html">Home</a>
-      <a href="https://github.com/ginglemisa/dnd" target="_blank" rel="noopener">GitHub Repo</a>
-    </nav>
-    <div>Independent 5.5-compatible character builder.</div>
-  </footer>
-
-  <a class="back-to-card" href="index.html" aria-label="回到角卡首頁">
-    <svg class="back-to-card__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="M19 12H5m7-7-7 7 7 7" />
-    </svg>
-    <span>回到角卡</span>
-  </a>
-</body>
-</html>
+  window.LegalAbout = Object.freeze({
+    render(body, fragment = "") {
+      body.innerHTML = content;
+      body.scrollTop = 0;
+      if (fragment === "#character-sheet-download") {
+        body.querySelector("#character-sheet-download")?.scrollIntoView({ block: "start", behavior: "instant" });
+      }
+    }
+  });
+})();

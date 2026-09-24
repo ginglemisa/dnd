@@ -28,7 +28,8 @@ const raceFeatures = {
   </tbody>
 </table>
 
-吐息元素：你可用吐息魔法替代一次<strong>攻擊</strong>，吐息前決定範圍：1️⃣15 英呎錐形 | 2️⃣5×30 英呎直線。
+吐息元素：你可用吐息魔法替代一次<strong>攻擊</strong>
+  - 吐息前決定範圍：15 英呎錐形或 5×30 英呎直線。
   - 範圍內的生物進行<strong>敏捷豁免</strong>
   （豁免難度=8+熟練加值+體質調整值）
   - 失敗受 1d10 點傷害，成功半傷
@@ -42,7 +43,7 @@ const raceFeatures = {
 龍翔天際：５級後可用，使用<strong>附贈</strong>展開光譜龍翼短暫飛行，持續１０分鐘。
   - 可隨時收回（免動作）
   - <strong>失能狀態</strong>解除
-  - 獲得同距離飛行速度
+  - 獲得飛行速度
   - 每長休限１次
 `,
 dwarf: `生物類型：類人生物
@@ -138,6 +139,10 @@ dwarf: `生物類型：類人生物
 
 巨人血統：你是巨人後裔，以下先祖恩賜選擇一項增益; 使用次數＝熟練加值（長休恢復）。
 
+身強力壯：掙脫<strong>擒抱狀態</strong>的屬性檢定具有優勢。計算可攜重量時視為大型體型。
+
+巨化形體：等級５能力，空間足夠時，使用<strong>附贈</strong>變成大體型(2*2格)，速度增加 10 英呎，力量檢定具有優勢，持續 10 分鐘直到你主動結束（無需動作），長休前不能再次使用。
+
 雲遊四方（雲巨人）：使用<strong>附贈</strong>魔法傳送 30 英呎內你能看見的未佔據空間。
 
 星火燎原（火巨人）：攻擊命中目標時增加 1d10 火焰傷害。
@@ -150,9 +155,6 @@ dwarf: `生物類型：類人生物
 
 轟雷掣電（風暴巨人）：使用<strong>反應</strong>對 60 英呎內傷害你的生物造成 1d8 雷鳴傷害。
 
-身強力壯：掙脫<strong>擒抱狀態</strong>的屬性檢定具有優勢。計算可攜重量時視為大型體型。
-
-巨化形體：等級５能力，空間足夠時，使用<strong>附贈</strong>變成大體型(2*2格)，速度增加 10 英呎，力量檢定具有優勢，持續 10 分鐘直到你主動結束（無需動作），長休前不能再次使用。
 `,
   halfling: `生物類型：類人生物
 體型：小型（約 2-3 英呎高）
@@ -251,3 +253,52 @@ tiefling: `生物類型：類人生物
 你始終準備血統法術，可免費施展環位法術各一次，之後需消耗環位。長休後免費次數恢復。選擇智力,感知,魅力其一為施法屬性（選擇血統時決定）。
 `
 };
+
+function formatRaceFeatureContent(raceHtml) {
+  const blocks = raceHtml.trim().split(/\n\s*\n/);
+  const profileLines = (blocks.shift() || '').split('\n').filter(Boolean);
+  const traitIntroIndex = blocks.findIndex(block => /^作為.+以下特質。$/.test(block.trim()));
+  const introBlocks = blocks.splice(0, traitIntroIndex >= 0 ? traitIntroIndex + 1 : 0);
+
+  const renderTraitBody = body => body
+    .split(/(<table[\s\S]*?<\/table>)/gi)
+    .filter(Boolean)
+    .map(part => {
+      if (part.startsWith('<table')) return `<div class="race-feature-table-wrap">${part}</div>`;
+
+      const lines = part.trim().split('\n').map(line => line.trim()).filter(Boolean);
+      if (!lines.length) return '';
+
+      const paragraphs = [];
+      for (let index = 0; index < lines.length;) {
+        if (!lines[index].startsWith('- ')) {
+          paragraphs.push(`<p>${lines[index]}</p>`);
+          index += 1;
+          continue;
+        }
+
+        const items = [];
+        while (index < lines.length && lines[index].startsWith('- ')) {
+          items.push(`<li>${lines[index].slice(2)}</li>`);
+          index += 1;
+        }
+        paragraphs.push(`<ul class="class-rule-list">${items.join('')}</ul>`);
+      }
+      return paragraphs.join('');
+    })
+    .join('');
+
+  const traits = blocks.map(block => {
+    const [heading, ...bodyParts] = block.trim().split('：');
+    const body = bodyParts.join('：').trim();
+    if (!bodyParts.length) return `<section class="class-feature-section"><p>${block.trim()}</p></section>`;
+    return `<section class="class-feature-section"><h3>${heading}</h3>${renderTraitBody(body)}</section>`;
+  }).join('');
+
+  return `${profileLines.map(line => `<div class="race-feature-line">${line}</div>`).join('')}<div class="class-feature-tagline">${introBlocks.join('<br><br>')}</div><div class="class-feature-content">${traits}</div>`;
+}
+
+// Keep raceFeatures as rule text for action summaries and other consumers.
+const raceFeatureDisplay = Object.fromEntries(
+  Object.entries(raceFeatures).map(([raceName, ruleText]) => [raceName, formatRaceFeatureContent(ruleText)])
+);

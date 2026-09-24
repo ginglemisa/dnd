@@ -10,9 +10,6 @@
     const closeBtn = document.getElementById("legal-close-btn");
     const ackBtn = document.getElementById("legal-ack-btn");
     const quickBuildBtn = document.getElementById("legal-onboarding-btn");
-    const aboutModal = document.getElementById("legal-about-modal");
-    const aboutCloseBtn = aboutModal?.querySelector(".legal-about-close");
-    const aboutFrame = aboutModal?.querySelector(".legal-about-frame");
     const storage = window.dndStorage || {
       getItem(key) { try { return localStorage.getItem(key); } catch (_error) { return null; } },
       removeItem(key) { try { localStorage.removeItem(key); return true; } catch (_error) { return false; } }
@@ -27,39 +24,82 @@
       ackBtn.setAttribute("aria-label", "開始查看");
     }
 
-    let aboutTrigger = null;
-    const closeAboutModal = () => {
-      if (!aboutModal) return;
-      aboutModal.setAttribute("aria-hidden", "true");
-      aboutModal.setAttribute("inert", "");
-      aboutTrigger?.focus();
+    let aboutLoader = null;
+    let aboutBody = null;
+    const isAboutHash = () => ["#legal-about-modal", "#character-sheet-download"].includes(location.hash);
+    const ensureAboutReady = () => {
+      if (window.LegalAbout) return Promise.resolve();
+      if (aboutLoader) return aboutLoader;
+      aboutLoader = new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        let timer;
+        const finish = (error) => {
+          clearTimeout(timer);
+          script.onload = script.onerror = null;
+          if (error) { script.remove(); reject(error); }
+          else resolve();
+        };
+        script.src = "legal-about.js?v=20260923-legal-about";
+        script.onload = () => finish(window.LegalAbout ? null : new Error("About module unavailable"));
+        script.onerror = () => finish(new Error("About module failed to load"));
+        timer = setTimeout(() => finish(new Error("About module timed out")), 15000);
+        document.head.appendChild(script);
+      }).catch((error) => { aboutLoader = null; throw error; });
+      return aboutLoader;
     };
-    const openAboutModal = (trigger) => {
-      if (!aboutModal) return;
-      aboutTrigger = trigger;
+    const loadAbout = async (body, fragment) => {
+      body.setAttribute("aria-busy", "true");
+      body.innerHTML = '<p role="status">正在載入說明…</p>';
+      try {
+        await ensureAboutReady();
+        if (body.isConnected) window.LegalAbout.render(body, fragment);
+      } catch (_error) {
+        if (!body.isConnected) return;
+        body.innerHTML = '<p role="alert">無法載入說明，請檢查連線後重試。</p>';
+        const retry = document.createElement("button");
+        retry.type = "button";
+        retry.textContent = "重新載入";
+        retry.addEventListener("click", () => {
+          body.closest(".app-dialog").querySelector(".app-dialog__close").focus();
+          void loadAbout(body, fragment);
+        });
+        body.appendChild(retry);
+      } finally {
+        body.removeAttribute("aria-busy");
+      }
+    };
+    const openAboutModal = (trigger, fragment = "") => {
+      if (aboutBody?.isConnected) return;
       modal.style.display = "none";
-      aboutModal.removeAttribute("inert");
-      aboutModal.setAttribute("aria-hidden", "false");
-      const fragment = trigger.getAttribute("href") === "#character-sheet-download"
-        ? "#character-sheet-download"
-        : "";
-      if (aboutFrame) aboutFrame.src = `about.html?embed=1${fragment}`;
-      aboutCloseBtn?.focus();
+      const returnTarget = trigger?.offsetParent ? trigger : document.getElementById("utility-menu-toggle");
+      const openedHash = isAboutHash() ? location.hash : "";
+      const closed = window.AppDialog.showContent({
+        title: "關於與授權",
+        variant: "legal-about",
+        confirmLabel: "回到角卡",
+        trigger: returnTarget,
+        renderContent(body) { aboutBody = body; }
+      });
+      const root = aboutBody.closest(".app-dialog");
+      root.id = "legal-about-modal";
+      root.querySelector(".app-dialog__close").focus();
+      void loadAbout(aboutBody, fragment);
+      closed.then(() => {
+        aboutBody = null;
+        if (openedHash && location.hash === openedHash) {
+          history.replaceState(history.state, "", location.pathname + location.search);
+        }
+      });
     };
-
     document.addEventListener("click", (event) => {
       const trigger = event.target.closest?.(".legal-about-trigger");
-      if (trigger) {
-        event.preventDefault();
-        openAboutModal(trigger);
-      } else if (event.target === aboutModal || event.target === aboutCloseBtn) {
-        closeAboutModal();
-      }
+      if (!trigger) return;
+      event.preventDefault();
+      openAboutModal(trigger, trigger.getAttribute("href"));
     });
-    document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape" && aboutModal?.getAttribute("aria-hidden") === "false") {
-        closeAboutModal();
-      }
+    window.addEventListener("hashchange", () => {
+      if (isAboutHash()) openAboutModal(null, location.hash);
+      else aboutBody?.closest(".app-dialog")?.querySelector(".app-dialog__close").click();
     });
 
     let shouldDismiss = checkbox.checked === true;
@@ -91,6 +131,10 @@
       });
     }
 
+    if (isAboutHash()) {
+      openAboutModal(null, location.hash);
+      return;
+    }
     if (!isShareMode && shouldDismiss) return;
 
     modal.style.display = "block";

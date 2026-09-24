@@ -536,7 +536,7 @@
       if (persistentEffect) {
         const targets = createElement("fieldset", "tabletop-cast-form__methods");
         targets.appendChild(createElement("legend", "", `${persistentEffect.name}目標`));
-        [{ value: true, label: `自己（套用桌邊${persistentEffect.stat}）` }, { value: false, label: "其他生物（不包含自己）" }].forEach(option => {
+        [{ value: true, label: `自己（套用跑團模式${persistentEffect.stat}）` }, { value: false, label: "其他生物（不包含自己）" }].forEach(option => {
           const label = createElement("label", "tabletop-cast-form__choice");
           const input = document.createElement("input");
           input.type = "radio";
@@ -1046,7 +1046,7 @@
       : true;
     if (!canCast) return {
       title: "目前角色沒有施法來源",
-      body: "可在角色卡調整職業、種族、背景或專長；桌邊模式不會自行建立法術能力。"
+      body: "可在角色卡調整職業、種族、背景或專長；跑團模式不會自行建立法術能力。"
     };
     if (!entries.length) return {
       title: "尚未選擇法術",

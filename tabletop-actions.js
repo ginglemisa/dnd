@@ -760,7 +760,7 @@
           remove.addEventListener("click", async () => {
             const confirmed = await globalScope.AppDialog?.requestDecision({
               title: `刪除「${option.label}」`,
-              message: "這會從這台裝置的桌邊動作移除這顆自訂按鈕，且無法復原。角色資料不受影響。",
+              message: "這會移除這台裝置的自訂按鈕，且無法復原。",
               cancelLabel: "取消",
               confirmLabel: "刪除按鈕",
               intent: "danger",

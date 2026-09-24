@@ -147,20 +147,20 @@
     ]
   };
   const DEFAULT_ABILITIES_BY_BUILD_AND_BACKGROUND = {
-    barbarian: { acolyte: [[14,14,14,8,10,12], { int: 1, wis: 2 }], criminal: [[14,13,14,8,12,12], { dex: 1, con: 2 }], sage: [[14,14,15,8,10,10], { con: 1, wis: 2 }], soldier: [[14,14,15,8,10,10], { str: 2, con: 1 }] },
-    bard: { acolyte: [[8,14,14,8,12,15], { int: 2, cha: 1 }], criminal: [[8,14,15,10,10,14], { dex: 2, con: 1 }], sage: [[8,14,15,8,12,14], { con: 1, int: 2 }], soldier: [[8,14,15,10,10,14], { dex: 2, con: 1 }] },
-    "cleric:thaumaturge": { acolyte: [[8,14,14,8,15,12], { int: 2, wis: 1 }], criminal: [[8,13,14,12,14,12], { dex: 1, con: 2 }], sage: [[8,14,14,10,15,10], { con: 2, wis: 1 }], soldier: [[8,13,14,12,14,12], { dex: 1, con: 2 }] },
-    "cleric:guardian": { acolyte: [[14,10,14,8,15,10], { wis: 1, cha: 2 }], criminal: [[14,8,15,8,14,12], { dex: 2, con: 1 }], sage: [[14,8,14,8,15,12], { con: 2, wis: 1 }], soldier: [[14,8,15,8,14,12], { str: 2, con: 1 }] },
-    druid: { acolyte: [[8,14,14,10,15,10], { int: 2, wis: 1 }], criminal: [[8,13,14,12,14,12], { dex: 1, con: 2 }], sage: [[8,14,14,10,15,10], { con: 2, wis: 1 }], soldier: [[8,13,14,12,14,12], { dex: 1, con: 2 }] },
-    "fighter:strength": { acolyte: [[14,12,14,8,13,12], { int: 2, wis: 1 }], criminal: [[14,11,14,10,12,12], { dex: 1, con: 2 }], sage: [[14,12,14,9,12,12], { con: 2, int: 1 }], soldier: [[15,9,15,8,12,12], { str: 1, dex: 1, con: 1 }] },
-    "fighter:dexterity": { acolyte: [[10,14,14,10,13,12], { int: 2, wis: 1 }], criminal: [[8,15,15,9,12,12], { dex: 1, con: 1, int: 1 }], sage: [[10,14,14,11,12,12], { con: 2, int: 1 }], soldier: [[9,14,15,10,12,12], { dex: 2, con: 1 }] },
-    monk: { acolyte: [[10,14,14,8,15,10], { int: 2, wis: 1 }], criminal: [[8,14,15,10,14,10], { dex: 2, con: 1 }], sage: [[8,14,14,10,15,10], { con: 2, wis: 1 }], soldier: [[8,14,15,10,14,10], { dex: 2, con: 1 }] },
-    paladin: { acolyte: [[14,10,14,8,10,15], { wis: 2, cha: 1 }], criminal: [[14,8,15,8,12,14], { dex: 2, con: 1 }], sage: [[14,10,15,8,10,14], { con: 1, wis: 2 }], soldier: [[14,8,15,8,12,14], { str: 2, con: 1 }] },
-    ranger: { acolyte: [[10,14,14,8,15,10], { int: 2, wis: 1 }], criminal: [[8,14,15,10,14,10], { dex: 2, con: 1 }], sage: [[8,14,14,10,15,10], { con: 2, wis: 1 }], soldier: [[8,14,15,10,14,10], { dex: 2, con: 1 }] },
-    rogue: { acolyte: [[8,14,14,11,13,13], { int: 1, wis: 1, cha: 1 }], criminal: [[8,14,15,10,10,14], { dex: 2, con: 1 }], sage: [[8,14,14,12,13,12], { con: 2, wis: 1 }], soldier: [[8,14,15,10,10,14], { dex: 2, con: 1 }] },
-    sorcerer: { acolyte: [[8,14,14,8,12,15], { int: 2, cha: 1 }], criminal: [[8,14,15,8,12,14], { dex: 2, con: 1 }], sage: [[8,14,15,8,12,14], { con: 1, int: 2 }], soldier: [[8,14,15,8,12,14], { dex: 2, con: 1 }] },
-    warlock: { acolyte: [[8,14,14,8,12,15], { int: 2, cha: 1 }], criminal: [[8,14,15,8,12,14], { dex: 2, con: 1 }], sage: [[8,14,15,8,12,14], { con: 1, int: 2 }], soldier: [[8,14,15,8,12,14], { dex: 2, con: 1 }] },
-    wizard: { acolyte: [[8,14,14,15,10,10], { int: 1, wis: 2 }], criminal: [[8,13,15,15,10,10], { dex: 1, con: 1, int: 1 }], sage: [[8,14,14,15,10,10], { con: 2, int: 1 }], soldier: [[10,13,14,14,12,10], { dex: 1, con: 2 }] }
+    barbarian: { acolyte: [[14,14,14,8,10,12], { int: 1, wis: 2 }], criminal: [[14,13,14,8,12,12], { dex: 1, con: 2 }], sage: [[14,14,15,8,10,10], { con: 1, wis: 2 }], soldier: [[14,14,15,8,10,10], { str: 2, con: 1 }], fieldhand: [[14,14,15,8,10,10], { str: 2, con: 1 }], seeker: [[14,14,15,8,10,10], { con: 1, wis: 2 }] },
+    bard: { acolyte: [[8,14,14,8,12,15], { int: 2, cha: 1 }], criminal: [[8,14,15,10,10,14], { dex: 2, con: 1 }], sage: [[8,14,15,8,12,14], { con: 1, int: 2 }], soldier: [[8,14,15,10,10,14], { dex: 2, con: 1 }], fieldhand: [[8,14,15,8,12,14], { con: 1, wis: 2 }], seeker: [[8,14,14,8,12,15], { con: 2, cha: 1 }] },
+    "cleric:thaumaturge": { acolyte: [[8,14,14,8,15,12], { int: 2, wis: 1 }], criminal: [[8,13,14,12,14,12], { dex: 1, con: 2 }], sage: [[8,14,14,10,15,10], { con: 2, wis: 1 }], soldier: [[8,13,14,12,14,12], { dex: 1, con: 2 }], fieldhand: [[8,14,14,8,15,12], { con: 2, wis: 1 }], seeker: [[8,14,14,8,15,12], { con: 2, wis: 1 }] },
+    "cleric:guardian": { acolyte: [[14,10,14,8,15,10], { wis: 1, cha: 2 }], criminal: [[14,8,15,8,14,12], { dex: 2, con: 1 }], sage: [[14,8,14,8,15,12], { con: 2, wis: 1 }], soldier: [[14,8,15,8,14,12], { str: 2, con: 1 }], fieldhand: [[14,10,14,8,15,10], { str: 2, wis: 1 }], seeker: [[14,10,14,8,15,10], { con: 2, wis: 1 }] },
+    druid: { acolyte: [[8,14,14,10,15,10], { int: 2, wis: 1 }], criminal: [[8,13,14,12,14,12], { dex: 1, con: 2 }], sage: [[8,14,14,10,15,10], { con: 2, wis: 1 }], soldier: [[8,13,14,12,14,12], { dex: 1, con: 2 }], fieldhand: [[8,14,14,10,15,10], { con: 2, wis: 1 }], seeker: [[8,14,14,10,15,10], { con: 2, wis: 1 }] },
+    "fighter:strength": { acolyte: [[14,12,14,8,13,12], { int: 2, wis: 1 }], criminal: [[14,11,14,10,12,12], { dex: 1, con: 2 }], sage: [[14,12,14,9,12,12], { con: 2, int: 1 }], soldier: [[15,9,15,8,12,12], { str: 1, dex: 1, con: 1 }], fieldhand: [[14,12,14,8,13,12], { str: 2, wis: 1 }], seeker: [[14,12,14,8,13,12], { con: 2, wis: 1 }] },
+    "fighter:dexterity": { acolyte: [[10,14,14,10,13,12], { int: 2, wis: 1 }], criminal: [[8,15,15,9,12,12], { dex: 1, con: 1, int: 1 }], sage: [[10,14,14,11,12,12], { con: 2, int: 1 }], soldier: [[9,14,15,10,12,12], { dex: 2, con: 1 }], fieldhand: [[10,14,14,10,13,12], { con: 2, wis: 1 }], seeker: [[10,14,14,10,13,12], { con: 2, wis: 1 }] },
+    monk: { acolyte: [[10,14,14,8,15,10], { int: 2, wis: 1 }], criminal: [[8,14,15,10,14,10], { dex: 2, con: 1 }], sage: [[8,14,14,10,15,10], { con: 2, wis: 1 }], soldier: [[8,14,15,10,14,10], { dex: 2, con: 1 }], fieldhand: [[10,14,14,8,15,10], { con: 2, wis: 1 }], seeker: [[10,14,14,8,15,10], { con: 2, wis: 1 }] },
+    paladin: { acolyte: [[14,10,14,8,10,15], { wis: 2, cha: 1 }], criminal: [[14,8,15,8,12,14], { dex: 2, con: 1 }], sage: [[14,10,15,8,10,14], { con: 1, wis: 2 }], soldier: [[14,8,15,8,12,14], { str: 2, con: 1 }], fieldhand: [[14,10,15,8,10,14], { str: 2, con: 1 }], seeker: [[14,10,14,8,10,15], { con: 2, cha: 1 }] },
+    ranger: { acolyte: [[10,14,14,8,15,10], { int: 2, wis: 1 }], criminal: [[8,14,15,10,14,10], { dex: 2, con: 1 }], sage: [[8,14,14,10,15,10], { con: 2, wis: 1 }], soldier: [[8,14,15,10,14,10], { dex: 2, con: 1 }], fieldhand: [[10,14,14,8,15,10], { con: 2, wis: 1 }], seeker: [[10,14,14,8,15,10], { con: 2, wis: 1 }] },
+    rogue: { acolyte: [[8,14,14,11,13,13], { int: 1, wis: 1, cha: 1 }], criminal: [[8,14,15,10,10,14], { dex: 2, con: 1 }], sage: [[8,14,14,12,13,12], { con: 2, wis: 1 }], soldier: [[8,14,15,10,10,14], { dex: 2, con: 1 }], fieldhand: [[8,14,14,12,13,12], { con: 2, wis: 1 }], seeker: [[8,14,14,12,13,12], { con: 2, wis: 1 }] },
+    sorcerer: { acolyte: [[8,14,14,8,12,15], { int: 2, cha: 1 }], criminal: [[8,14,15,8,12,14], { dex: 2, con: 1 }], sage: [[8,14,15,8,12,14], { con: 1, int: 2 }], soldier: [[8,14,15,8,12,14], { dex: 2, con: 1 }], fieldhand: [[8,14,15,8,12,14], { con: 1, wis: 2 }], seeker: [[8,14,14,8,12,15], { con: 2, cha: 1 }] },
+    warlock: { acolyte: [[8,14,14,8,12,15], { int: 2, cha: 1 }], criminal: [[8,14,15,8,12,14], { dex: 2, con: 1 }], sage: [[8,14,15,8,12,14], { con: 1, int: 2 }], soldier: [[8,14,15,8,12,14], { dex: 2, con: 1 }], fieldhand: [[8,14,15,8,12,14], { con: 1, wis: 2 }], seeker: [[8,14,14,8,12,15], { con: 2, cha: 1 }] },
+    wizard: { acolyte: [[8,14,14,15,10,10], { int: 1, wis: 2 }], criminal: [[8,13,15,15,10,10], { dex: 1, con: 1, int: 1 }], sage: [[8,14,14,15,10,10], { con: 2, int: 1 }], soldier: [[10,13,14,14,12,10], { dex: 1, con: 2 }], fieldhand: [[8,14,15,14,10,10], { con: 1, wis: 2 }], seeker: [[8,14,15,14,10,10], { con: 1, wis: 2 }] }
   };
   const DEFAULT_ABILITIES_BY_CLASS = Object.fromEntries(Object.entries(DEFAULT_ABILITIES_BY_BUILD_AND_BACKGROUND).filter(([key]) => !key.includes(":"))
     .map(([key, entries]) => [key, Object.fromEntries(["str", "dex", "con", "int", "wis", "cha"].map((ability, index) => [ability, entries.acolyte[0][index]]))]));
@@ -487,7 +487,7 @@
     const preset = buildPresets?.[backgroundKey];
     if (preset) return { abilities: abilityMapFromArray(preset[0]), bonuses: { ...emptyAbilityMap(0), ...preset[1] } };
 
-    // 擴充背景沿用同職業既有的合法 27 購點，再依背景可調整屬性與職業關鍵屬性安排 +2/+1。
+    // 尚無專用配置的背景沿用同職業既有的合法 27 購點，再依可調整屬性與職業關鍵屬性安排 +2/+1。
     const fallback = buildPresets?.acolyte || Object.values(buildPresets || {})[0];
     const data = backgroundData(backgroundKey);
     if (!fallback || !data) return null;

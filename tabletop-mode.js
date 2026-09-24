@@ -873,7 +873,7 @@
 
     const nextName = await globalScope.AppDialog.showContent({
       title: "修改角色名稱",
-      message: "名稱會顯示在桌邊模式，並自動帶入 PDF 匯出。",
+      message: "名稱會顯示在跑團模式，並自動帶入 PDF 匯出。",
       trigger,
       cancelLabel: "取消",
       confirmLabel: "儲存名稱",
@@ -4289,7 +4289,7 @@ function getRogueReliableTalentEntry() {
     if (elements.modeToggle) {
       const tabletopEnabled = nextMode === "tabletop";
       elements.modeToggle.setAttribute("aria-pressed", String(tabletopEnabled));
-      const accessibleLabel = tabletopEnabled ? "返回角色卡" : "進入桌邊模式";
+      const accessibleLabel = tabletopEnabled ? "返回角色卡" : "進入跑團模式";
       elements.modeToggle.setAttribute("aria-label", accessibleLabel);
       elements.modeToggle.setAttribute("title", accessibleLabel);
       const modeLabel = elements.modeToggle.querySelector("#tabletop-mode-toggle-label");
@@ -4738,10 +4738,10 @@ function getRogueReliableTalentEntry() {
             return;
           }
           const confirmed = await globalScope.AppDialog?.requestDecision({
-            title: "📝桌邊模式",
+            title: "📝跑團模式",
             message: "跑團使用的簡易介面，顯示常用數值、戰鬥可用選項、點擊丟骰等功能。",
             cancelLabel: "暫不進入",
-            confirmLabel: "進入桌邊模式",
+            confirmLabel: "進入跑團模式",
             trigger: document.getElementById("utility-menu-toggle")
           });
           if (!confirmed) return;

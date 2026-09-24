@@ -159,7 +159,7 @@
     return Math.floor(calculateProficiencyBonus(level) / 2);
   }
 
-  /** 依目前職業、種族、等級與屬性計算桌邊模式應顯示的內建資源。 */
+  /** 依目前職業、種族、等級與屬性計算跑團模式應顯示的內建資源。 */
   function getCharacterResourceSpecs(options = {}) {
     const className = String(options.className || "").trim();
     const race = String(options.race || "").trim();

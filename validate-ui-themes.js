@@ -57,7 +57,28 @@ async function main() {
       assert.equal(await legalModal.locator(".legal-modal-logo-classic:visible, .legal-modal-logo-warm img:visible").count(), 1);
       assert.equal(await legalModal.locator(expectedLogo).evaluate(el => el.complete && el.naturalWidth > 0), true);
       await screenshot(`${family}-${mode}-logo`);
-      await page.locator("#legal-close-btn").click();
+      assert.equal(await page.locator('script[src*="legal-about.js"]').count(), 0, "About must load on demand");
+      await legalModal.locator(".legal-about-trigger:visible").first().click();
+      const about = page.locator("#legal-about-modal");
+      await about.getByRole("heading", { name: "SRD Attribution", exact: true }).waitFor();
+      assert.equal(await page.locator("iframe").count(), 0);
+      assert.equal(await about.getByText("twD20｜Legal & About", { exact: true }).count(), 0);
+      const aboutColors = await about.evaluate(root => {
+        const surface = getComputedStyle(root.querySelector(".app-dialog__surface"));
+        const body = getComputedStyle(root.querySelector(".legal-about-content p"));
+        return { background: surface.backgroundColor, text: body.color };
+      });
+      assert.deepEqual(aboutColors, {
+        background: { "classic-light": "rgba(255, 255, 255, 0.96)", "classic-dark": "rgb(23, 36, 58)", "warm-light": "rgb(255, 249, 239)", "warm-dark": "rgb(33, 28, 24)" }[`${family}-${mode}`],
+        text: { "classic-light": "rgb(51, 65, 93)", "classic-dark": "rgb(213, 226, 239)", "warm-light": "rgb(61, 48, 39)", "warm-dark": "rgb(204, 189, 165)" }[`${family}-${mode}`]
+      });
+      assert.equal(await about.locator(".app-dialog__body").evaluate(el => el.scrollWidth <= el.clientWidth), true);
+      await page.keyboard.press("Shift+Tab");
+      assert.equal(await about.getByRole("button", { name: "回到角卡" }).evaluate(el => el === document.activeElement), true);
+      await page.keyboard.press("Escape");
+      assert.equal(await about.count(), 0);
+      assert.equal(await page.locator("#utility-menu-toggle").evaluate(el => el === document.activeElement), true);
+
       const bg = await page.locator("html").evaluate(el => getComputedStyle(el).backgroundImage);
       assert.equal(bg.includes("paper002"), family === "warm" && mode === "light");
       await page.locator("#utility-menu-toggle").click();
@@ -181,8 +202,26 @@ async function main() {
     await blocked.locator(".utility-menu__theme-switch").click();
     assert.deepEqual(await blocked.evaluate(() => [document.documentElement.dataset.uiTheme, document.documentElement.dataset.theme]), ["classic", "dark"]);
     await blocked.close();
+    const aboutPage = await browser.newPage({ viewport: { width: 320, height: 640 } });
+    await aboutPage.route("**/legal-about.js?*", route => route.abort());
+    await aboutPage.goto(`${url}#legal-about-modal`);
+    await aboutPage.getByRole("button", { name: "重新載入" }).waitFor();
+    await aboutPage.unroute("**/legal-about.js?*");
+    await aboutPage.getByRole("button", { name: "重新載入" }).click();
+    await aboutPage.getByRole("heading", { name: "SRD Attribution", exact: true }).waitFor();
+    await aboutPage.keyboard.press("Escape");
+    assert.equal(new URL(aboutPage.url()).hash, "");
+    await aboutPage.goto(`${url}#character-sheet-download`);
+    await aboutPage.locator("#character-sheet-download").waitFor();
+    assert.equal(await aboutPage.locator(".app-dialog__body").evaluate(el => el.scrollTop > 0), true);
+    await aboutPage.getByRole("button", { name: "回到角卡" }).click();
+    await aboutPage.evaluate(() => { location.hash = "legal-about-modal"; });
+    await aboutPage.getByRole("heading", { name: "SRD Attribution", exact: true }).waitFor();
+    await aboutPage.evaluate(() => { location.hash = ""; });
+    await aboutPage.locator("#legal-about-modal").waitFor({ state: "detached" });
+    await aboutPage.close();
     assert.deepEqual(errors, []);
-    console.log("Themes: four combinations, persistence, keyboard, blocked storage, 48 skill layouts, tabletop, Quick Build and themed dice passed.");
+    console.log("Themes: Legal & About loading, retry, routes, focus, four combinations, persistence, keyboard, blocked storage, 48 skill layouts, tabletop, Quick Build and themed dice passed.");
   } finally {
     await browser?.close();
     await new Promise(resolve => server.close(resolve));

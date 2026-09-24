@@ -189,6 +189,9 @@ $html = [System.Text.RegularExpressions.Regex]::Replace(
   [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
 )
 
+# The online About module is lazy-loaded; the offline bundle must carry it locally.
+$html = $html.Replace('</head>', '<script src="legal-about.js" defer></script></head>')
+
 # Read the page's actual tags instead of maintaining a second, easily stale asset list.
 $stylesheetTags = [System.Text.RegularExpressions.Regex]::Matches(
   $html,

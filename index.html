@@ -46,12 +46,12 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20260923-dice-hold">
+  <link rel="stylesheet" href="styles.css?v=20260924-sheet-copy-layout">
   <script src="scroll-to-top.js?v=20260922-visibility-toggle" defer></script>
   <script src="dice-roller.js?v=20260923-dice-hold" defer></script>
   <script src="monster.js?v=20260912-druid-controls" defer></script>
     <script src="class-features.js?v=20260913-class-tabletop" defer></script>
-  <script src="race.js?v=20260826-lineage-tables" defer></script>
+  <script src="race.js?v=20260924-feature-source" defer></script>
   <script src="backgrounds.js" defer></script>
   <script src="tool-data.js?v=20260908-personalized-actions" defer></script>
   <script src="feats.js?v=20260831-tabletop-feat-rules" defer></script>
@@ -66,9 +66,9 @@
   <script src="tabletop-resources.js?v=20260922-hit-die-healing" defer></script>
   <script src="tabletop-actions.js?v=20260922-manual-weapons" defer></script>
   <script src="tabletop-spells.js?v=20260923-persistent-spells" defer></script>
-  <script src="legal-modal.js?v=20260918-share-mode" defer></script>
-  <script src="onboarding-tour.js?v=20260923-tour-draggable-guidance" defer></script>
-  <script src="quick-build.js?v=20260922-skip-file-reset" defer></script>
+  <script src="legal-modal.js?v=20260923-legal-about" defer></script>
+  <script src="onboarding-tour.js?v=20260924-tabletop-spacing" defer></script>
+  <script src="quick-build.js?v=20260924-background-presets" defer></script>
   <script src="spellbook.js?v=20260913-spellbook" defer></script>
   <script src="deity-info.js" defer></script>
 
@@ -98,7 +98,7 @@
         <div class="utility-menu__row utility-menu__mode-row">
           <button type="button" id="help-quick-build-btn" class="utility-menu__button utility-menu__mode-button" title="一步步完成一名 1 級角色">快速創角</button>
           <button id="set-default-abilities" type="button" class="utility-menu__button utility-menu__mode-button">決定屬性</button>
-          <button type="button" id="tabletop-mode-toggle" class="utility-menu__button utility-menu__mode-button utility-menu__mode-button--tabletop" aria-label="進入桌邊模式" aria-pressed="false" aria-controls="tabletop-mode" title="進入桌邊模式">
+          <button type="button" id="tabletop-mode-toggle" class="utility-menu__button utility-menu__mode-button utility-menu__mode-button--tabletop" aria-label="進入跑團模式" aria-pressed="false" aria-controls="tabletop-mode" title="進入跑團模式">
             <span id="tabletop-mode-toggle-label" aria-hidden="true">📝</span>
           </button>
         </div>
@@ -217,7 +217,7 @@
       <p id="tabletop-character-summary">尚未選擇職業 · 等級 — · 尚未選擇種族</p>
     </header>
 
-    <div class="tabletop-primary-tabs" role="tablist" aria-label="桌邊模式主視圖" data-visible-tab-count="5">
+    <div class="tabletop-primary-tabs" role="tablist" aria-label="跑團模式主視圖" data-visible-tab-count="5">
       <button type="button" id="tabletop-tab-overview" role="tab" aria-selected="true" aria-controls="tabletop-panel-overview" data-tabletop-tab="overview">總覽</button>
       <button type="button" id="tabletop-tab-skills" role="tab" aria-selected="false" aria-controls="tabletop-panel-skills" data-tabletop-tab="skills" tabindex="-1">技能</button>
       <button type="button" id="tabletop-tab-actions" role="tab" aria-selected="false" aria-controls="tabletop-panel-actions" data-tabletop-tab="actions" tabindex="-1">動作</button>
@@ -575,6 +575,7 @@
       </div>
       <div class="basic-pair-field">
         <div class="mini-stat-label mini-stat-label--jump" data-jump-target="race-features-section">種族</div>
+        <div class="race-select-control">
         <select id="race">
           <option value="">待選</option>
           <option value="dragonborn">龍裔</option>
@@ -587,6 +588,11 @@
           <option value="orc">獸人</option>
           <option value="tiefling">提夫林</option>
         </select>
+          <select id="character-size-select" class="race-size-select is-hidden" aria-label="角色體型">
+            <option value="中型">中</option>
+            <option value="小型">小</option>
+          </select>
+        </div>
       </div>
     <div id="race-options-control" class="race-options is-hidden">
     <span id="dragonborn-ancestry-row" class="race-option-row is-hidden" data-race-option-for="dragonborn">
@@ -1332,12 +1338,19 @@ let characterSize = "";
 
 function setCharacterSize(value) {
   characterSize = normalizeCharacterSize(value);
+  const sizeSelect = document.getElementById("character-size-select");
+  if (sizeSelect && characterSize) sizeSelect.value = characterSize;
   return characterSize;
 }
 
 function syncCharacterSizeFromRace(savedSize = "") {
   const race = document.getElementById("race")?.value || "";
-  return setCharacterSize(getCharacterSizeForRace(race, savedSize));
+  const sizeSelect = document.getElementById("character-size-select");
+  const canChooseSize = race === "human" || race === "tiefling";
+  const size = getCharacterSizeForRace(race, savedSize || (canChooseSize ? sizeSelect?.value : ""));
+
+  sizeSelect?.classList.toggle("is-hidden", !canChooseSize);
+  return setCharacterSize(size || (canChooseSize ? "中型" : ""));
 }
 
 window.setCharacterSize = setCharacterSize;
@@ -1346,6 +1359,7 @@ window.getCharacterSize = () => characterSize;
 function bindCoreCharacterEvents() {
   bindEventById("class", "change", updateAutomaticInitiative);
   bindEventById("race", "change", () => { syncCharacterSizeFromRace(); updateRaceFeature(); updateRaceOptionVisibility(); updateSpeedDisplay(); syncOriginAndSubclassDerivedSpellRows(); updateSpellsByClassLevel(); updateBaseLanguageOptions(); });
+  bindEventById("character-size-select", "change", event => setCharacterSize(event.target.value));
   bindEventById("background", "change", () => { updateBackgroundFeature(); updateSpellsByClassLevel(); updateBackgroundToolRow(); });
   bindEventById("armor", "change", () => { updateACDisplay(); updateSpeedDisplay(); populateHandAttacks(); });
   bindEventById("str", "input", populateHandAttacks);
@@ -2842,6 +2856,15 @@ function enhanceRaceFeatureTables(container) {
 function updateRaceFeature() {
   const value = document.getElementById("race").value;
   const raw = raceFeatures[value] || "無資料";
+  const output = document.getElementById("raceFeatures");
+
+  const display = raceFeatureDisplay[value];
+  if (display) {
+    output.innerHTML = highlightSpellNamesInClassFeature(display, { skipClickableNames: ["黑暗視覺"] });
+    enhanceRaceFeatureTables(output);
+    return;
+  }
+
   const normalized = String(raw).replace(/\r\n/g, "\n").replace(/\r/g, "\n");
   const tablePattern = /<table[\s\S]*?<\/table>/gi;
   const chunks = [];
@@ -2885,7 +2908,6 @@ function updateRaceFeature() {
       .join("");
   }).join("");
 
-  const output = document.getElementById("raceFeatures");
   output.innerHTML = formatted || "無資料";
   enhanceRaceFeatureTables(output);
 }
@@ -4680,9 +4702,10 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
     if (!pointBuyExitModal || !pointBuyExitTitle || !pointBuyExitMessage || !pointBuyExitConfirmBtn) return;
     pendingPointBuyExitAction = action;
     const isApply = action === "apply";
+    const remainingPoints = getRemainingPoints();
     pointBuyExitTitle.textContent = isApply ? "套用 27 購點屬性？" : "放棄未套用的變更？";
     pointBuyExitMessage.textContent = isApply
-      ? "這會直接取代角色目前的六項屬性。若角色已有後續的屬性成長，這些數值也會被覆蓋。"
+      ? `${remainingPoints > 0 ? `還有 ${remainingPoints} 點未使用，確定仍要套用嗎？` : ""}這會直接取代角色目前的六項屬性。若角色已有後續的屬性成長，這些數值也會被覆蓋。`
       : "目前的修改尚未套用，離開後將不會保留。";
     if (pointBuyExitContinueBtn) pointBuyExitContinueBtn.textContent = isApply ? "返回編輯" : "繼續編輯";
     pointBuyExitConfirmBtn.textContent = isApply ? "確認套用" : "放棄變更";
@@ -4772,7 +4795,6 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
 
     if (pointBuyUsed) pointBuyUsed.textContent = String(getSpentPoints());
     if (pointBuyRemain) pointBuyRemain.textContent = String(POINT_BUDGET - getSpentPoints());
-    if (pointBuyApplyBtn) pointBuyApplyBtn.disabled = getSpentPoints() !== POINT_BUDGET;
     syncPointBuyHeader();
   }
 
@@ -4806,7 +4828,7 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
       spentPoints += pointCostTable[record.base[key]];
       bonusTotal += record.bonus[key];
     }
-    return spentPoints === POINT_BUDGET && bonusTotal <= 3;
+    return spentPoints <= POINT_BUDGET && bonusTotal <= 3;
   }
 
   function initializePointBuyState() {
@@ -4832,7 +4854,7 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
   }
 
   function applyPointBuyToSheet() {
-    if (getSpentPoints() !== POINT_BUDGET) return false;
+    if (getSpentPoints() > POINT_BUDGET) return false;
     for (const key of abilities) {
       const finalValue = pointBuyState.base[key] + pointBuyState.bonus[key];
       const field = document.getElementById(key);
@@ -4883,7 +4905,7 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
   }
 
   function requestApplyPointBuyToSheet() {
-    if (getSpentPoints() !== POINT_BUDGET) return;
+    if (getSpentPoints() > POINT_BUDGET) return;
     openPointBuyExitModal("apply");
   }
 
@@ -5162,7 +5184,7 @@ function updateSpellCastingStatsVisibility() {
   const spellTabButton = document.getElementById("spells-tab-button");
   const capabilityMessage = document.getElementById("no-spellcasting-capability-message");
 
-  // 一般模式保留法術頁供規則查閱；桌邊模式則依施法能力與專注紀錄決定是否顯示。
+  // 一般模式保留法術頁供規則查閱；跑團模式則依施法能力與專注紀錄決定是否顯示。
   if (spellTab) spellTab.style.display = "";
   if (spellTabButton) spellTabButton.style.display = "";
   if (capabilityMessage) capabilityMessage.hidden = canCast;
@@ -9930,7 +9952,7 @@ window.addEventListener("DOMContentLoaded", async function() {
       }
       const confirmed = await window.AppDialog.requestDecision({
         title: "清除本機角色紀錄",
-        message: "這會清除角色欄位、角色圖片、版權提醒、分頁狀態與桌邊動作偏好，並重新載入預設角色卡。此操作無法復原。",
+        message: "這會清除角色欄位、角色圖片、版權提醒、分頁狀態與跑團模式動作偏好，並重新載入預設角色卡。此操作無法復原。",
         cancelLabel: "保留紀錄",
         confirmLabel: "清除紀錄",
         intent: "danger"
@@ -9996,7 +10018,7 @@ window.addEventListener("DOMContentLoaded", async function() {
   <section class="tabletop-condition-modal__sheet" role="dialog" aria-modal="true" aria-labelledby="tabletop-condition-modal-title" aria-describedby="tabletop-condition-modal-intro">
     <header class="tabletop-condition-modal__header">
       <div>
-        <span class="tabletop-eyebrow">桌邊戰鬥記錄</span>
+        <span class="tabletop-eyebrow">跑團模式戰鬥記錄</span>
         <h2 id="tabletop-condition-modal-title">管理目前狀態</h2>
       </div>
       <button type="button" id="tabletop-condition-close" class="tabletop-condition-modal__close" aria-label="關閉狀態管理">×</button>
@@ -10230,16 +10252,6 @@ window.addEventListener("DOMContentLoaded", async function() {
       <label><input type="checkbox" id="legal-dismiss"> 不再顯示此視窗</label>
     </div>
   </div>
-</div>
-
-<div id="legal-about-modal" aria-hidden="true" inert>
-  <article class="legal-about-card" role="dialog" aria-modal="true" aria-labelledby="legal-about-title">
-    <button type="button" class="legal-about-close" aria-label="關閉 Legal &amp; About">✕</button>
-    <header class="legal-about-header">
-      <h2 id="legal-about-title">twD20｜Legal &amp; About</h2>
-    </header>
-    <iframe class="legal-about-frame" src="about.html?embed=1" title="Legal &amp; About"></iframe>
-  </article>
 </div>
 
 <div id="tour-overlay" aria-hidden="true" inert>

@@ -43,13 +43,13 @@
 * UI 模組沿用主要資料與公開 API，不複製平行規則。若任務涉及的 UI 與明確規則來源不符，修正實作；既有錯誤行為不是規格。
 * 規則來源互相矛盾時，先查實際使用路徑；仍無法判定且會改變角色規則或計算結果時，列出差異與建議交由使用者決定。
 
-## 動作、擲骰與桌邊模式
+## 動作、擲骰與跑團模式
 
 | 模組 | 責任 |
 | --- | --- |
 | `action-panel.js` | 動作選項與既有 Action UI |
-| `tabletop-mode.js`／`TabletopMode` | 桌邊模式共用狀態與公開 API：模式、生命值、死亡豁免、專注、資源、自訂資源及動作偏好 |
-| `tabletop-actions.js` | 桌邊動作呈現與操作 |
+| `tabletop-mode.js`／`TabletopMode` | 跑團模式共用狀態與公開 API：模式、生命值、死亡豁免、專注、資源、自訂資源及動作偏好 |
+| `tabletop-actions.js` | 跑團模式動作呈現與操作 |
 | `tabletop-druid.js` | 荒野形態、已知形態、野獸攻擊與德魯伊專屬資源操作 |
 | `tabletop-spells.js` | 法術、施法操作與專注 UI |
 | `tabletop-resources.js` | 資源呈現與操作 |
@@ -57,43 +57,58 @@
 
 * 非法術能力使用結構化動作定義，保留穩定 key、分類、等級與角色選擇條件。調整識別或分類時，維持自訂動作、玩家隱藏偏好、過濾及其持久化相容性。
 * 按鈕拆分、合併、升級替換與摘要可能是產品設計，修改前同時核對規則與 UI 定義。法術施法時間沿用現有分類機制，其他已有結構化欄位的施法規則以 `SpellCatalog` 為準。
-* 桌邊子模組透過 `TabletopMode`、`SpellCatalog`、`CharacterRules`、`DiceRoller` 協作；不另建競爭的共用狀態、持久化、亂數或擲骰歷史。必要的內部拆分保持 `window.TabletopMode` 公開 API 相容。
+* 跑團模式子模組透過 `TabletopMode`、`SpellCatalog`、`CharacterRules`、`DiceRoller` 協作；不另建競爭的共用狀態、持久化、亂數或擲骰歷史。必要的內部拆分保持 `window.TabletopMode` 公開 API 相容。
 * `action-panel.js` 與 `tabletop-actions.js` 保留各自責任及公開 API。
 
 ## 對話框與資訊頁
 
 * 新 dialog／toast 沿用 `app-dialog.js`；除特殊平台限制或使用者要求外，不改用原生 `alert`、`confirm`、`prompt`。
-* Legal、About、授權與 attribution 完整文字只維護於 `about.html`；README 與其他頁面保留摘要並連回該頁。
-* `info-pages.css` 負責獨立資訊頁樣式，`legal-modal.js` 只控制首頁 iframe modal 的開關與定位。`ddals1.html` 是官方免費冒險外部連結整理頁，不是規則來源。
+* Legal／About 網站內容維護於按需載入的 `legal-about.js`，入口為 `index.html#legal-about-modal`；README 整合必要說明與素材連結，SRD Attribution 必須完整保留。
+* `info-pages.css` 負責獨立資訊頁樣式；`legal-modal.js` 控制歡迎視窗與 About 按需載入，About 沿用 `AppDialog` 與主頁主題。`ddals1.html` 是官方免費冒險外部連結整理頁，不是規則來源。
 
 ## 離線角色卡
 
 * 一般任務只更新來源檔案。只有使用者明確要求建立、測試或更新離線角色卡時，才執行 `build-offline-nopdf.ps1` 並驗證產製結果。
-* `TWD20-offline.html` 是衍生產物，不能作為 source of truth 或只修改它。產生腳本內嵌本機 CSS、JavaScript、圖片與 About iframe，並停用 PDF 匯出。
+* `TWD20-offline.html` 是衍生產物，不能作為 source of truth 或只修改它。產生腳本內嵌本機 CSS、JavaScript、圖片與 About 模組，並停用 PDF 匯出。
 
 ## 驗證條件
 
-修改功能後，依下表執行受影響範圍的驗證，不需每次執行全部腳本。執行環境、命令、選項與限制統一維護於 [README：維護與驗證](README.md#維護與驗證)；新增或調整驗證腳本時同步更新兩處。
+依本次 diff、實際呼叫路徑與改變的行為選擇驗證，不以檔名、關鍵字或腳本數量決定。`index.html`、`styles.css`、`tabletop-mode.js` 等共用檔案被修改，不代表其中所有功能都受影響；工作區既有且非本次修改也不自動納入。執行環境、命令、選項與限制統一維護於 [README：維護與驗證](README.md#維護與驗證)；新增或調整驗證腳本時同步更新兩處。
+
+### 選擇驗證範圍
+
+* **文件、純文案或局部排版**：僅修改 Markdown 時核對連結、命令與描述，不執行 JavaScript 或功能驗證；畫面文案與排版驗證受影響區域即可，不預設啟動整支功能回歸。先確認文字未被規則、動作摘要或 PDF 解析使用，且未改變控制項、事件與持久化資料。種族／職業的標題、行距、列表樣式可採此方式；修改原始規則文字或 HTML 結構時須追查其消費端。
+* **局部 UI 互動**：僅影響單一對話框、區域或流程，且不改變角色規則、共用機制或資料格式時，優先使用涵蓋該行為的既有分項驗證；沒有合適分項時，可用最小必要瀏覽器流程取代夾帶無關功能的整支腳本。按實際變更涵蓋開啟／操作／關閉，以及相關的取消、失敗重試、焦點或狀態保留，不能只確認元素出現。
+* **規則、計算、資料或共用機制**：執行下表對應的回歸；修改共用狀態、事件分派、初始化或持久化時，沿實際受影響的呼叫端追加驗證。持久化變更須涵蓋相關 LocalStorage／autosave、JSON 與分享還原相容性；不以局部畫面成功代替資料驗證，也不因多支腳本都測存檔就刪除不同資料的案例。
+* **語法與外觀**：修改 JavaScript 時對受影響檔案執行 `node --check <檔案>`；修改 HTML 內嵌 JavaScript 時檢查該程式區塊語法，單純更新 script URL 不需重跑全部 JS 語法。排版先選受影響區域的桌機／窄螢幕與必要主題；只有共用斷點、主題切換／變數或多處共用樣式改變時才擴大矩陣。局部使用既有主題色不等於修改主題系統。
+* **執行前簡述選擇**：用一句話交代本次影響的行為及要跑的檢查，不需逐項列出所有不跑的腳本或等待批准。新增功能或修正 bug 若既有驗證未涵蓋，補上必要案例；低風險文案／排版不為形式完整而新增永久測試。
+
+### 回歸腳本對照
+
+下表是行為與腳本的對照，不是關鍵字命中即全部執行的清單；局部文案、排版與 UI 互動先適用上述範圍判斷。
 
 | 變更範圍 | 驗證 |
 | --- | --- |
-| JavaScript | 對受影響檔案執行 `node --check <檔案>` |
-| `spell-list.js` 施法 metadata、桌邊施法、法術位、專注或自動擲骰 | `node validate-tabletop-spellcasting.js` |
-| 非施法能力結構化動作、Action UI、桌邊動作、自訂／隱藏偏好及其持久化 | `node validate-action-metadata.js` |
-| 德魯伊荒野形態、野獸資料與攻擊／資源操作、荒野夥伴、野性復甦、自然恢復、原初打擊及相關桌邊狀態、autosave、responsive UI | `node validate-tabletop-druid.js` |
-| 法術書、準備法術總數、儀式施法、法術書匯入／持久化及其 UI | `node validate-spellbook.js` |
-| 屬性擲骰、結果分配、背景加值、擲骰歷史或工具選單版面 | `node validate-ability-roll.js` |
+| 施法 metadata、跑團模式施法條件、法術位、專注或施法自動擲骰 | `node validate-tabletop-spellcasting.js` |
+| 非施法能力動作定義／摘要解析、動作選項與操作、自訂／隱藏偏好及其持久化 | `node validate-action-metadata.js` |
+| 德魯伊荒野形態、野獸資料與攻擊／資源操作、荒野夥伴、野性復甦、自然恢復、原初打擊及其狀態／持久化 | `node validate-tabletop-druid.js` |
+| 法術書管理、準備法術總數、儀式施法、法術書匯入／持久化 | `node validate-spellbook.js` |
+| 屬性擲骰、結果分配、背景加值及其擲骰歷史／自動儲存 | `node validate-ability-roll.js`；僅 27 購點套用與還原可用 `node validate-ability-roll.js --point-buy-only` |
 | 擲骰備註、長按／鍵盤／觸控操作、取消或歷史相容性 | `node validate-dice-roll-notes.js` |
 | 主手2、盾牌、雙手武器衝突、相關 AC／裝備摘要／PDF 欄位 | `node validate-main2-shield.js` |
-| 新手／桌邊導覽（含點擊推進與減少動態效果）、創角匯入銜接、PDF 載入與取消流程 | `node validate-onboarding.js` |
+| 導覽屬性引導／觸控；創角匯入銜接／PDF 載入取消；共用導覽流程 | 分別優先使用 `node validate-onboarding.js --touch-only`、`node validate-onboarding.js --imports-only`；影響共用導覽或分項不足以涵蓋時執行完整 `node validate-onboarding.js` |
 | 短休／長休、生命骰、資源恢復或最佳旅伴 | `node validate-tabletop-rest.js` |
-| 主題、技能版面、主題素材、PDF 盾牌受訓或實際可編輯 PDF 匯出 | `node validate-ui-themes.js` |
+| 共用主題切換／保存、主題變數／素材、技能網格共用版面、PDF 盾牌受訓或實際可編輯 PDF 匯出 | `node validate-ui-themes.js`；此腳本混合主題、About、技能及 PDF，局部 About 內容／互動依上方原則驗證，不自動連帶驗證 PDF 或導覽 |
 | PDF 精靈／魔人血統環法恢復提示 | `node validate-pdf-lineage-recovery.js`；涉及實際匯出時加跑 `node validate-ui-themes.js` |
 | 明確要求建立、測試或更新離線角色卡 | 先執行 `build-offline-nopdf.ps1`，再執行 `node validate-offline-sharing.js` |
-| 僅 Markdown | 核對檔名、連結、命令與結構描述，不執行 JavaScript 驗證 |
 
-持續法術效果影響一般角色或野獸的 AC／速度時，也需執行 `node validate-tabletop-druid.js`。
+持續法術效果改變一般角色或野獸的 AC／速度計算、施法操作或狀態保存時，也需執行 `node validate-tabletop-druid.js`；僅調整其顯示字色、字級或間距不因此觸發整套德魯伊回歸。
 
+### 執行與停止條件
+
+* 先用既有分項或最小重現驗證修改，再依影響範圍決定是否需要完整腳本；分項已充分涵蓋時不自動補跑完整版本。腳本沒有分項不代表必須重構測試或跑遍所有功能，但規則、資料與共用機制仍須完成對應回歸，不得以節省時間為由略過。
+* 同一程式版本已有可確認通過紀錄的檢查可沿用；只有後續修改影響該檢查的程式、依賴或測試前提時才重跑。既有腳本已涵蓋的流程不再用臨時瀏覽器重做，除非需要補足視覺、未涵蓋的互動或排查失敗。
+* 失敗後先縮小到失敗情境，確認是本次回歸、測試／環境問題或既有問題；必要時用修改前版本對照。修正本次造成的失敗，再重跑受修正影響的範圍，不反覆執行無關的完整流程直到偶然通過。確認與本次無關後回報證據及未通過範圍，不擅自擴大修復，也不能將失敗算作通過。
 * 沿用專案或環境已有的 Playwright 與瀏覽器，不為測試新增框架或依賴。
 * 涉及 DOM 互動、responsive layout、焦點、modal、事件、LocalStorage、autosave 或跨頁狀態，且靜態檢查不足時，驗證最小必要 UI 流程；僅在需要瀏覽器驗證時啟動本機伺服器。
 * 需要臨時瀏覽器檢查時，先讀取 [.agents/skills/playwright-cli/SKILL.md](.agents/skills/playwright-cli/SKILL.md)，使用既有 dependency 的 `npx --no-install playwright cli`。沿用現有 regression scripts，不另建 Playwright Test 或 Test Agents。

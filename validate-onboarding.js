@@ -7,6 +7,49 @@ const path = require("node:path");
 const http = require("node:http");
 const { chromium } = require("playwright");
 
+const TABLETOP_COPY = [
+  ["描述你的行動", "DM 會描述目前的情況，你只需要告訴 DM，你的角色打算採取什麼行動。\n\n例如：「我靠近木門，聽聽裡面有沒有聲音。」", []],
+  ["需要判定時，再進行擲骰", "當 DM 要求進行檢定時，找到對應的數字加值，擲出 D20，再將兩者相加。\n\n如果手邊沒有骰子，可以從右上角選單開啟擲骰功能。", ["開啟擲骰功能"]],
+  ["戰鬥開始時，決定行動順序", "當 DM 說請擲先攻時，擲出 D20 + 先攻加值，決定角色在戰鬥中的行動順序。\n\n你也可以開啟擲骰功能，點擊角色卡上的先攻數值進行擲骰。\n\n角色的速度代表一個回合中可以移動的距離。\n\n使用格線地圖時，通常 5 呎 = 1 格。", ["請擲先攻", "擲骰功能", "速度", "5 呎 = 1 格"]],
+  ["在你的回合中採取行動", "你的回合通常包含移動與一次動作；若能力或規則允許，也可以使用一次附贈。\n\n移動不一定要一次完成，也不需要固定在動作之前。\n例如，你可以先移動 2 格、進行攻擊，再移動剩下的 3 格。\n\n反應則需要符合特定的觸發條件才能使用，通常在其他角色的回合中發生。", ["移動", "動作", "附贈", "移動", "動作", "移動", "移動", "反應"]],
+  ["施放法術前，確認施法條件", "先告訴 DM 你要施放的法術，以及預計影響的目標，再確認法術的施法時間、距離與其他施法條件。\n\n部分法術需要維持專注。一般情況下，一名角色無法同時維持兩個需要專注的法術。", []],
+  ["記錄角色狀態的變化", "使用具有次數限制的能力或施放法術後，記得更新角色目前的使用狀態，確認還剩下多少可用次數。\n\n受到傷害、恢復生命值，或獲得其他狀態時，也應同步記錄角色的變化。\n\n基本遊戲流程\n了解情況 → 描述行動 → 必要時進行判定 → 記錄結果", ["法術"]]
+];
+
+const SHEET_COPY = [
+  ["⚔️ 建立你的冒險角色", "背景描述過往經歷，\n種族提供不同特性，\n職業則決定擅長的能力，以及在冒險中解決問題的方式。\n\n完成選擇後，速度、專長與其他角色資料會自動更新。", 1, ["背景", "種族", "職業"]],
+  ["🎲 決定角色屬性", "六項屬性代表角色的基本能力，並會影響攻擊、技能與各種檢定。\n\n你可以直接輸入屬性數值，也可以從右上角選單開啟決定屬性功能。", 2, ["六項屬性", "決定屬性"]],
+  ["🎲 選擇屬性產生方式", "接下來，選擇角色的屬性產生方式。\n\n點擊決定屬性開始設定。", 2, ["決定屬性"]],
+  ["🎲 選擇購點或擲骰", "27 點購點讓你自行分配屬性，角色能力較為穩定。\n\n屬性擲骰則具有較高的隨機性，通常在 DM 同意使用時採用。\n\n選擇適合目前遊戲的方式後，即可開始配置屬性。", 3, ["27 點購點", "屬性擲骰", "DM 同意"]],
+  ["🎲 配置基礎屬性", "使用 27 點購點時，每項屬性可以設定在 8～15 之間。\n\n屬性越高，需要消耗的點數越多。調整數值時，可以從下方確認剩餘點數。\n\n完成配置前，總花費不得超過 27 點。", 4, ["27 點購點", "剩餘點數"]],
+  ["🎲 套用背景加值", "選擇背景後，將提供的屬性加值分配至角色屬性。\n\n你也可以選擇職業範本，快速套用適合該職業的建議配置。\n\n確認所有數值後，點擊套用完成屬性設定。", 5, ["背景", "職業範本", "套用"]],
+  ["🛡️ 選擇武器與護甲", "選擇武器或護甲時，下方會顯示傷害、防禦與相關特性。\n\n遇到不熟悉的規則名詞，可以直接點擊摘要中的名稱查看詳細說明。", 6, []],
+  ["✨ 選擇與管理法術", "如果角色具有施法能力，可以在這裡選擇與管理戲法及法術。\n\n先選擇職業，再選擇想查看的法術，即可確認詳細說明、施法時間、距離資料等資料。", 7, []],
+  ["🔎 搜尋規則資料", "法術與裝備頁面都提供搜尋功能。\n\n輸入名稱或關鍵字即可快速找到相關規則內容。", 8, []]
+];
+
+async function assertSheetCopy(page, stage) {
+  const [title, body, progress, highlights] = SHEET_COPY[stage];
+  await page.waitForFunction(([expectedTitle, expectedProgress]) =>
+    document.getElementById("tour-step-title").textContent === expectedTitle
+      && document.getElementById("tour-step-progress").textContent === `${expectedProgress}/8`,
+  [title, progress]);
+  assert.equal(await page.locator("#tour-step-title").textContent(), title);
+  assert.equal(await page.locator("#tour-step-text").textContent(), body);
+  assert.equal(await page.locator("#tour-step-progress").textContent(), `${progress}/8`);
+  assert.equal(await page.locator("#tour-step-progress").getAttribute("aria-label"), `導覽進度：第 ${progress} 步，共 8 步`);
+  assert.deepEqual(await page.locator("#tour-step-text .tour-step-emphasis").allTextContents(), highlights);
+}
+
+async function assertTourCopy(page, index, caster) {
+  const steps = caster ? TABLETOP_COPY : TABLETOP_COPY.filter((_, position) => position !== 4);
+  const [title, text, highlights] = steps[index];
+  assert.equal(await page.locator("#tour-step-title").textContent(), title);
+  assert.equal(await page.locator("#tour-step-text").evaluate(el =>
+    [...el.childNodes].filter(node => node.nodeName !== "DETAILS").map(node => node.textContent).join("")), text);
+  assert.deepEqual(await page.locator("#tour-step-text .tour-step-emphasis").allTextContents(), highlights);
+}
+
 async function snapshot(page) {
   return page.evaluate(() => ({
     data: collectStateObject(),
@@ -45,9 +88,10 @@ async function assertLayout(page) {
     const ring = document.getElementById("tour-focus-ring").getBoundingClientRect();
     const next = document.getElementById("tour-next-btn").getBoundingClientRect();
     return { tip: { left: tip.left, top: tip.top, right: tip.right, bottom: tip.bottom },
-      highlightVisible: ring.width > 0 && ring.top < tip.top && ring.bottom > 0,
+      highlightVisible: ring.width > 0 && ring.height > 0 && ring.bottom > 0 && ring.top < innerHeight,
       nextVisible: next.top >= 0 && next.bottom <= innerHeight,
-      width: innerWidth, height: innerHeight, index: onboardingTour.currentIndex, ring: { top: ring.top, bottom: ring.bottom, width: ring.width }, scroll: scrollY, holes: onboardingTour.steps[onboardingTour.currentIndex].getHoles(), panel: TabletopMode.getPanel(), overflow: document.documentElement.scrollWidth > innerWidth };
+      width: innerWidth, height: innerHeight, index: onboardingTour.currentIndex, ring: { left: ring.left, top: ring.top, bottom: ring.bottom, width: ring.width },
+      dragged: Boolean(onboardingTour.tooltipDragPosition), scroll: scrollY, holes: onboardingTour.steps[onboardingTour.currentIndex].getHoles(), panel: TabletopMode.getPanel(), overflow: document.documentElement.scrollWidth > innerWidth };
   });
   assert(layout.tip.left >= 0 && layout.tip.top >= 0 && layout.tip.right <= layout.width && layout.tip.bottom <= layout.height, JSON.stringify(layout));
   if (layout.index === 0) {
@@ -60,6 +104,10 @@ async function assertLayout(page) {
     }
   } else {
     assert(layout.highlightVisible, JSON.stringify(layout));
+    if (!layout.dragged) {
+      const expectedLeft = Math.min(layout.width - (layout.tip.right - layout.tip.left) - 10, Math.max(10, layout.ring.left));
+      assert(Math.abs(layout.tip.left - expectedLeft) <= 1, `tooltip aligns with the highlight's left edge: ${JSON.stringify(layout)}`);
+    }
   }
   assert(layout.nextVisible && !layout.overflow, JSON.stringify(layout));
 }
@@ -67,14 +115,55 @@ async function assertLayout(page) {
 async function verifyTooltipDrag(page) {
   const heading = await page.locator(".tour-heading-row").boundingBox();
   const before = await page.locator("#tour-tooltip").boundingBox();
+  const deltaY = before.y >= 50 ? -40 : 40;
   await page.mouse.move(heading.x + heading.width / 2, heading.y + heading.height / 2);
   await page.mouse.down();
-  await page.mouse.move(heading.x + heading.width / 2, heading.y + heading.height / 2 - 40, { steps: 5 });
+  await page.mouse.move(heading.x + heading.width / 2, heading.y + heading.height / 2 + deltaY, { steps: 5 });
+  await page.mouse.move(heading.x + heading.width / 2, heading.y + heading.height / 2 + deltaY);
   await page.mouse.up();
   const after = await page.locator("#tour-tooltip").boundingBox();
-  assert(Math.abs(after.y - (before.y - 40)) <= 1, "heading drags the tooltip");
+  assert(Math.abs(after.y - (before.y + deltaY)) <= 1,
+    `heading drags the tooltip: ${JSON.stringify({ before, after, deltaY })}`);
   await page.evaluate(() => onboardingTour.renderStep({ ensureFocus: false }));
   assert.deepEqual(await page.locator("#tour-tooltip").boundingBox(), after, "render preserves dragged position");
+}
+
+async function assertAbilityMenuGuide(page) {
+  const state = await page.evaluate(() => {
+    const holes = onboardingTour.activeHoles;
+    const targets = ["utility-menu-toggle", "set-default-abilities"]
+      .map(id => document.getElementById(id).getBoundingClientRect());
+    const tip = document.getElementById("tour-tooltip").getBoundingClientRect();
+    const menu = document.getElementById("utility-menu").getBoundingClientRect();
+    return {
+      active: onboardingTour.abilityMenuGuideActive,
+      menuOpen: document.getElementById("utility-menu-toggle").getAttribute("aria-expanded") === "true",
+      holesCoverTargets: holes.length === 2 && holes.every((hole, index) => (
+        hole.left <= targets[index].left && hole.right >= targets[index].right
+        && hole.top <= targets[index].top && hole.bottom >= targets[index].bottom
+      )),
+      buttonVisibleInMenu: targets[1].top >= menu.top && targets[1].bottom <= menu.bottom,
+      buttonReceivesPointer: Boolean(document.elementFromPoint(
+        (targets[1].left + targets[1].right) / 2,
+        (targets[1].top + targets[1].bottom) / 2
+      )?.closest("#set-default-abilities")),
+      tooltipBelowButton: tip.top >= holes[1]?.bottom,
+      tooltipInViewport: tip.left >= 0 && tip.right <= innerWidth && tip.top >= 0 && tip.bottom <= innerHeight,
+      text: document.getElementById("tour-step-text").textContent,
+      emphasis: [...document.querySelectorAll("#tour-step-text .tour-step-emphasis")].map(node => node.textContent)
+    };
+  });
+  assert.deepEqual(state, {
+    active: true,
+    menuOpen: true,
+    holesCoverTargets: true,
+    buttonVisibleInMenu: true,
+    buttonReceivesPointer: true,
+    tooltipBelowButton: true,
+    tooltipInViewport: true,
+    text: SHEET_COPY[2][1],
+    emphasis: ["決定屬性"]
+  }, "step 3 opens the menu with two highlights and places its instruction below 決定屬性");
 }
 
 async function verifyTour(page, { width, height, caster, mode, complete }) {
@@ -101,6 +190,13 @@ async function verifyTour(page, { width, height, caster, mode, complete }) {
   assert.equal(await page.evaluate(() => onboardingTour.steps.length), caster ? 6 : 5);
   const examples = page.locator("#tour-step-text details");
   assert.equal(await examples.evaluate(el => el.open), false);
+  await assertTourCopy(page, 0, caster);
+  assert.equal(await examples.locator("summary").textContent(), "查看更多範例");
+  assert.deepEqual(await examples.locator("p").allTextContents(), [
+    "探索：「我檢查雕像後方，看看是否藏有機關。」",
+    "社交：「我拿出貨單，試著讓守衛相信我們是商人。」",
+    "戰鬥：「我靠近哥布林，拔出長劍攻擊。」"
+  ]);
   await assertLayout(page);
   await verifyTooltipDrag(page);
   await page.keyboard.press("Tab");
@@ -117,12 +213,12 @@ async function verifyTour(page, { width, height, caster, mode, complete }) {
     await page.locator("#tour-next-btn").click();
     await ready(page, index);
     await assertLayout(page);
+    await assertTourCopy(page, index, caster);
     if (index === 1) await verifyTooltipDrag(page);
     if (index === 3) {
       if (process.env.DND_ONBOARDING_SCREENSHOT_DIR && width === 390 && !caster && mode === "sheet" && !complete) {
         await page.screenshot({ path: path.join(process.env.DND_ONBOARDING_SCREENSHOT_DIR, "actions-mobile.png") });
       }
-      assert.match(await page.locator("#tour-step-text").innerText(), /「反應」要符合條件才能使用，可以在別人的回合宣告觸發/);
       await page.locator("#tour-prev-btn").click();
       await ready(page, index - 1);
       await page.locator("#tour-next-btn").click();
@@ -216,6 +312,7 @@ async function main() {
     await page.locator("#utility-menu-toggle").click();
     await page.locator("#restart-onboarding-btn").click();
     await ready(page, 0);
+    await assertSheetCopy(page, 0);
     assert.equal(await page.evaluate(() => {
       const holes = onboardingTour.steps[0].getHoles();
       const rows = [".basic-row--class-level", ".basic-row--origin"].map(selector => document.querySelector(selector).getBoundingClientRect());
@@ -226,6 +323,7 @@ async function main() {
     }), true, "step 1 highlights class/level and background/race as two separate regions");
     await page.locator("#tour-next-btn").click();
     await ready(page, 1);
+    await assertSheetCopy(page, 1);
     assert.equal(await page.evaluate(() => {
       const holes = onboardingTour.steps[1].getHoles();
       const hole = holes[0];
@@ -235,55 +333,41 @@ async function main() {
         && hole.top < rect.top && hole.bottom > rect.bottom;
     }), true, "step 2 initially highlights only the ability grid");
     await page.locator("#utility-menu-toggle").click();
-    await page.waitForFunction(() => {
-      const hole = onboardingTour.activeHoles[0];
-      const rect = document.getElementById("utility-menu-toggle").getBoundingClientRect();
-      return onboardingTour.currentIndex === 2 && onboardingTour.abilityMenuStage === "menu"
-        && onboardingTour.activeHoles.length === 1
-        && hole.left <= rect.left && hole.right >= rect.right && hole.top <= rect.top && hole.bottom >= rect.bottom;
-    });
     await ready(page, 2);
-    assert.equal(await page.locator("#tour-step-title").innerText(), "🎲 3. 決定屬性");
-    await page.waitForTimeout(900);
-    assert.equal(await page.evaluate(() => onboardingTour.abilityMenuStage), "menu", "menu highlight waits for the player");
+    await assertSheetCopy(page, 2);
+    await assertAbilityMenuGuide(page);
     await page.mouse.click(15, 200);
-    await page.waitForFunction(() => {
-      const hole = onboardingTour.activeHoles[0];
-      const rect = document.getElementById("set-default-abilities").getBoundingClientRect();
-      const menu = document.getElementById("utility-menu").getBoundingClientRect();
-      return onboardingTour.currentIndex === 2 && onboardingTour.abilityMenuStage === "button"
-        && onboardingTour.activeHoles.length === 1
-        && document.getElementById("utility-menu-toggle").getAttribute("aria-expanded") === "true"
-        && rect.top >= menu.top && rect.bottom <= menu.bottom
-        && hole.left <= rect.left && hole.right >= rect.right && hole.top <= rect.top && hole.bottom >= rect.bottom;
-    });
-    await ready(page, 2);
-    await page.waitForTimeout(900);
-    assert.equal(await page.evaluate(() => onboardingTour.abilityMenuStage), "button", "button highlight waits for a second click");
-    assert.equal(await page.locator("#ability-choice-modal").isVisible(), false);
-    await page.locator("#tour-next-btn").press("Enter");
-    await page.waitForFunction(() => !onboardingTour.isTransitioning && !onboardingTour.abilityMenuStage);
-    assert.equal(await page.locator("#ability-choice-modal").isVisible(), true, "step 3 opens after player confirmation");
+    await assertAbilityMenuGuide(page);
+    assert.equal(await page.locator("#ability-choice-modal").isVisible(), false, "backdrop clicks do not advance step 3");
+    await page.locator("#set-default-abilities").click();
+    await page.waitForFunction(() => !onboardingTour.isTransitioning && !onboardingTour.abilityMenuGuideActive);
+    assert.equal(await page.locator("#ability-choice-modal").isVisible(), true, "pressing 決定屬性 opens the choice modal");
+    await assertSheetCopy(page, 3);
     await page.locator("#ability-choice-point-buy").click();
     await page.waitForFunction(() => onboardingTour.stepPhase === 1);
+    await assertSheetCopy(page, 4);
     await page.locator("#tour-next-btn").click();
     await page.waitForFunction(() => onboardingTour.stepPhase === 2);
+    await assertSheetCopy(page, 5);
     await page.keyboard.press("Escape");
     await closed(page);
     // Complete all original steps, including equipment, spells and search.
     await page.evaluate(() => onboardingTour.start());
     await ready(page, 0);
+    await assertSheetCopy(page, 0);
     await page.locator("#tour-next-btn").click();
     await ready(page, 1);
+    await assertSheetCopy(page, 1);
     await page.locator("#tour-next-btn").click();
     await ready(page, 2);
+    await assertSheetCopy(page, 2);
     await page.locator("#tour-next-btn").click();
     await ready(page, 2);
-    await page.locator("#tour-next-btn").click();
-    await ready(page, 2);
+    await assertSheetCopy(page, 3);
     for (let index = 3; index < 6; index++) {
       await page.locator("#tour-next-btn").click();
       await ready(page, index);
+      await assertSheetCopy(page, index + 3);
       if (index === 4) {
         assert.equal(await page.evaluate(() => {
           const hole = onboardingTour.activeHoles[0];
@@ -331,27 +415,29 @@ async function verifyAbilityGuidance(browser, url) {
     await page.evaluate(() => onboardingTour.start(1));
     await page.locator("#tour-next-btn").tap();
     await ready(page, 2);
-    assert.equal(await page.evaluate(() => {
-      const rect = document.getElementById("tour-tooltip").getBoundingClientRect();
-      const hole = onboardingTour.activeHoles[0];
-      return rect.top >= hole.bottom && rect.left <= hole.left && rect.right <= innerWidth;
-    }), true, "step 3 starts below and to the left of its highlight");
+    await assertAbilityMenuGuide(page);
     await verifyTooltipDrag(page);
-    assert.equal(await page.evaluate(() => onboardingTour.abilityMenuStage), "menu", "dragging does not advance the guide");
+    assert.equal(await page.evaluate(() => onboardingTour.abilityMenuGuideActive), true, "dragging does not advance the guide");
     const draggedTip = await page.locator("#tour-tooltip").boundingBox();
     const assertDraggedPosition = async () => {
       const rect = await page.locator("#tour-tooltip").boundingBox();
-      assert(Math.abs(rect.x - draggedTip.x) <= 1 && Math.abs(rect.y - draggedTip.y) <= 1, "highlight changes preserve the dragged tooltip position");
+      assert(Math.abs(rect.x - draggedTip.x) <= 1 && Math.abs(rect.y - draggedTip.y) <= 1, "guide changes preserve the dragged tooltip position");
     };
-    await page.touchscreen.tap(15, 200);
-    await page.touchscreen.tap(15, 200);
-    await ready(page, 2);
-    assert.equal(await page.evaluate(() => onboardingTour.abilityMenuStage), "button", "rapid taps cannot skip the moving highlight");
+    const backdropPoint = await page.evaluate(() => ({ x: 5, y: innerHeight - 5 }));
+    await page.touchscreen.tap(backdropPoint.x, backdropPoint.y);
+    await page.touchscreen.tap(backdropPoint.x, backdropPoint.y);
+    assert.deepEqual(await page.evaluate(() => ({
+      active: onboardingTour.active,
+      index: onboardingTour.currentIndex,
+      transitioning: onboardingTour.isTransitioning,
+      guide: onboardingTour.abilityMenuGuideActive,
+      menuOpen: document.getElementById("utility-menu-toggle").getAttribute("aria-expanded") === "true"
+    })), { active: true, index: 2, transitioning: false, guide: true, menuOpen: true },
+    "backdrop taps cannot advance or close the guide");
     await assertDraggedPosition();
-    const tip = await page.locator("#tour-step-text").boundingBox();
-    await page.touchscreen.tap(tip.x + 20, tip.y + 15);
+    await page.locator("#tour-next-btn").tap();
     await ready(page, 2);
-    assert.equal(await page.evaluate(() => onboardingTour.abilityMenuStage), null);
+    await page.waitForFunction(() => !onboardingTour.abilityMenuGuideActive);
     assert.equal(await page.locator("#ability-choice-modal").isVisible(), true);
     await assertDraggedPosition();
     if (process.env.DND_ONBOARDING_SCREENSHOT_DIR) await page.screenshot({ path: path.join(process.env.DND_ONBOARDING_SCREENSHOT_DIR, `ability-guidance-${reducedMotion}.png`) });
@@ -359,8 +445,16 @@ async function verifyAbilityGuidance(browser, url) {
     await ready(page, 1);
     await page.locator("#tour-next-btn").tap();
     await ready(page, 2);
-    // Cancel while the menu and highlight are still moving; stale work must stop.
-    await page.touchscreen.tap(15, 200);
+    await assertAbilityMenuGuide(page);
+    await page.locator("#set-default-abilities").tap();
+    await ready(page, 2);
+    await page.waitForFunction(() => !onboardingTour.abilityMenuGuideActive);
+    assert.equal(await page.locator("#ability-choice-modal").isVisible(), true, "touching 決定屬性 opens the choice modal");
+    await page.locator("#tour-prev-btn").tap();
+    await ready(page, 1);
+    await page.locator("#tour-next-btn").tap();
+    await ready(page, 2);
+    await assertAbilityMenuGuide(page);
     await page.locator("#tour-skip-btn").tap();
     await closed(page);
     assert.equal(await page.locator("#utility-menu-toggle").getAttribute("aria-expanded"), "false");
@@ -369,7 +463,7 @@ async function verifyAbilityGuidance(browser, url) {
     for (const key of ["data", "storage", "dice", "hash"]) assert.deepEqual(after[key], before[key], `ability guidance preserves ${key}`);
     await page.close();
   }
-  console.log("Ability guidance: player-paced touch, highlight-relative placement and dragging, reduced motion, back, cancellation and state preservation passed.");
+  console.log("Ability guidance: open-menu dual highlights, button tap, tooltip placement and dragging, reduced motion, back, cancellation and state preservation passed.");
 }
 
 async function verifyTouch(browser, url) {

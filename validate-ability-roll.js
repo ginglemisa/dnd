@@ -7,6 +7,43 @@ const http = require("node:http");
 const vm = require("node:vm");
 const { chromium } = require("playwright");
 
+async function validatePointBuy(page) {
+  const sheetValues = () => page.evaluate(() => ["str", "dex", "con", "int", "wis", "cha"].map(key => document.getElementById(key).value));
+  const originalValues = await sheetValues();
+  await page.locator("#utility-menu-toggle").click();
+  await page.locator("#set-default-abilities").click();
+  await page.locator("#ability-choice-point-buy").click();
+  assert.equal(await page.locator("#point-buy-apply").isEnabled(), true, "unused points do not disable apply");
+  await page.locator("#point-buy-apply").click();
+  assert.match(await page.locator("#point-buy-exit-message").textContent(), /還有 27 點未使用/);
+  await page.locator("#point-buy-exit-continue").click();
+  assert.deepEqual(await sheetValues(), originalValues, "cancelling under-budget apply preserves scores");
+  await page.locator('[data-action="base-inc"][data-ability="str"]').click();
+  await page.locator('[data-action="base-inc"][data-ability="str"]').click();
+  assert.equal(await page.locator("#point-buy-remain").textContent(), "25");
+  await page.locator("#point-buy-apply").click();
+  assert.match(await page.locator("#point-buy-exit-message").textContent(), /還有 25 點未使用/);
+  assert.deepEqual(await sheetValues(), originalValues, "scores stay unchanged before confirmation");
+  await page.locator("#point-buy-exit-confirm").click();
+  assert.deepEqual(await sheetValues(), ["10", "8", "8", "8", "8", "8"]);
+  assert.equal(await page.evaluate(() => JSON.parse(dndStorage.getItem("dnd.pointBuyLastApplied.v1")).base.str), 10);
+  await page.reload();
+  await page.locator("#legal-ack-btn").click();
+  assert.deepEqual(await sheetValues(), ["10", "8", "8", "8", "8", "8"], "under-budget scores survive reload");
+  await page.locator("#utility-menu-toggle").click();
+  await page.locator("#set-default-abilities").click();
+  await page.locator("#ability-choice-point-buy").click();
+  assert.equal(await page.locator("#point-buy-used").textContent(), "2", "last under-budget allocation reopens");
+  await page.locator("#ability-choice-default").click();
+  await page.locator('[data-default-ability-class="fighter"]').click();
+  assert.equal(await page.locator("#point-buy-used").textContent(), "27");
+  await page.locator("#point-buy-apply").click();
+  assert.doesNotMatch(await page.locator("#point-buy-exit-message").textContent(), /未使用/, "full-budget apply has no unused-points reminder");
+  await page.locator("#point-buy-exit-continue").click();
+  await page.locator("#point-buy-close").click();
+  await page.locator("#point-buy-exit-confirm").click();
+}
+
 async function main() {
   for (const match of fs.readFileSync(path.join(__dirname, "index.html"), "utf8").matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)) {
     if (match[1].trim()) new vm.Script(match[1]);
@@ -30,6 +67,12 @@ async function main() {
     page.on("pageerror", error => errors.push(String(error)));
     await page.goto(`http://127.0.0.1:${server.address().port}/`);
     await page.locator("#legal-ack-btn").click();
+    if (process.argv.includes("--point-buy-only")) {
+      await validatePointBuy(page);
+      assert.deepEqual(errors, []);
+      console.log("Point buy: under-budget reminder, cancellation, confirmed apply, autosave and last allocation restore passed.");
+      return;
+    }
     await page.locator("#utility-menu-toggle").click();
     for (const [width, height] of [[390, 844], [320, 568], [1280, 800]]) {
       await page.setViewportSize({ width, height });
@@ -42,15 +85,16 @@ async function main() {
           help: [...document.querySelectorAll(".utility-menu__help button")].map(el => el.getBoundingClientRect().toJSON())
         };
       });
-      assert.equal(layout.settings.length, 3);
-      assert.equal(layout.switches.length, 3);
-      assert(layout.settings[0].top < layout.settings[1].top);
-      assert(layout.settings[1].top < layout.settings[2].top);
+      assert.equal(layout.settings.length, 4);
+      assert.equal(layout.switches.length, 4);
+      for (let index = 1; index < layout.settings.length; index++) {
+        assert(layout.settings[index - 1].top < layout.settings[index].top);
+      }
       layout.settings.forEach((setting, index) => {
         assert.equal(setting.left, layout.settings[0].left);
         assert.equal(layout.switches[index].right, setting.right);
       });
-      assert.equal(layout.row.right, layout.settings[2].right);
+      assert.equal(layout.row.right, layout.settings.at(-1).right);
       assert.equal(layout.help[0].top, layout.help[1].top);
       assert.equal(layout.help[2].top, layout.help[3].top);
       assert.equal(layout.help[0].left, layout.help[2].left);
@@ -209,6 +253,10 @@ async function main() {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.evaluate(() => onboardingTour.start(2));
     await page.waitForFunction(() => onboardingTour.active && !onboardingTour.isTransitioning && onboardingTour.currentIndex === 2);
+    assert.equal(await page.evaluate(() => onboardingTour.abilityMenuGuideActive), true, "tour starts with the ability menu guide");
+    await page.locator("#set-default-abilities").click();
+    await page.waitForFunction(() => !onboardingTour.isTransitioning && !onboardingTour.abilityMenuGuideActive);
+    assert.equal(await page.locator("#ability-choice-modal").isVisible(), true, "ability choices open before selecting the roll option");
     await page.locator("#ability-choice-roll").click();
     await page.getByRole("button", { name: "留在導覽", exact: true }).click();
     assert.equal(await page.evaluate(() => onboardingTour.active), true);

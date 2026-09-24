@@ -182,7 +182,7 @@ assert.deepEqual(
     damageType: "lightning"
   }),
   { label: "元素親和", detail: "抗性：閃電傷害減半。" },
-  "6 級術士選擇元素親和傷害類型後，桌邊總覽必須顯示對應抗性"
+  "6 級術士選擇元素親和傷害類型後，跑團模式總覽必須顯示對應抗性"
 );
 assert.equal(
   buildSorcererElementalAffinityEntry({ className: "sorcerer", characterLevel: 5, damageType: "fire" }),
@@ -469,7 +469,7 @@ const tabletopModeSource = fs.readFileSync("tabletop-mode.js", "utf8");
 const diceSource = fs.readFileSync("dice-roller.js", "utf8");
 const indexSource = fs.readFileSync("index.html", "utf8");
 assert(!/window\.(?:confirm|prompt)\s*\(/.test(tabletopSpellSource), "施法流程不得使用瀏覽器原生對話框");
-assert(tabletopSpellSource.includes("commitSpellCastResource"), "桌邊法術必須透過 TabletopMode 提交資源");
+assert(tabletopSpellSource.includes("commitSpellCastResource"), "跑團模式法術必須透過 TabletopMode 提交資源");
 assert(tabletopSpellSource.includes('entry.spellClass === "cleric"'), "牧師強力施法必須核對實際法表來源");
 assert(tabletopSpellSource.includes('entry.spellClass === "druid"'), "德魯伊強力施法必須核對實際法表來源");
 assert(tabletopSpellSource.includes('entry.spellClass === "warlock"'), "苦痛魔爆必須核對實際契術師法術來源");

@@ -3,12 +3,11 @@
 
   const TAB_HEADER_OFFSET = 96;
   const SCROLL_DURATION = 480;
-  const GUIDANCE_MOVE_DURATION = 600;
-  // Shared by the first-table tour and the repeatable turn reminder.
+  // Used by the repeatable turn reminder.
   const TURN_GUIDANCE = [
-    "通常是先「移動」，再做一次「動作」；規則允許時，可再使用「附贈」。",
-    "移動與動作的順序通常可以交錯，例如先走 2 格，攻擊，再走 3 格。",
-    "「反應」要符合條件才能使用，可以在別人的回合宣告觸發。"
+    "通常是先「移動」，再做一次「動作」；\n規則允許時，可再使用「附贈」。",
+    "移動與動作的順序通常可以交錯\n例如先走 2 格，攻擊，再走 3 格",
+    "「反應」要符合條件才能使用，\n可以在別人的回合宣告觸發。"
   ].join("\n\n");
   const COMMON_ACTION_KEYS = ["attack", "dash", "disengage", "dodge", "help", "hide", "ready", "search", "study", "influence"];
 
@@ -122,7 +121,7 @@
       this.lastTourScrollY = window.scrollY;
       this.bodyTouchActionSnapshot = null;
       this.quickBuildDecisionPending = false;
-      this.abilityMenuStage = null;
+      this.abilityMenuGuideActive = false;
       this.pointBuyPresetTooltip = null;
       this.pointBuyPresetTooltipTrigger = null;
       this.pointBuyPresetTooltipDescribedBy = null;
@@ -182,25 +181,26 @@
     }
 
     getTabletopSteps() {
-      const step = (tab, title, text, selector) => ({
-        tab, title, text, selector, placement: "overlay-bottom",
+      const step = (tab, title, text, selector, highlights = []) => ({
+        tab, title, text, selector, highlights, placement: "bottom",
         getHoles: () => [this.getHoleForSelector(selector)].filter(Boolean)
       });
       return [
-        { tab: "overview", title: "遊戲開始，先說你想做什麼？",
-          text: "DM 描述情況，你描述角色行動。例如：「我靠近木門，聽聽裡面有沒有聲音。」",
+        { tab: "overview", title: "描述你的行動",
+          text: "DM 會描述目前的情況，你只需要告訴 DM，你的角色打算採取什麼行動。\n\n例如：「我靠近木門，聽聽裡面有沒有聲音。」",
           placement: "center", getHoles: () => [], examples: true },
-        step("skills", "需要判定時，再找數值",
-          "DM 要求檢定時，確認數字加多少，再擲 D20。\n如果手上沒有骰子，右上角選單可以開啟「擲骰功能」。", ".tabletop-skills"),
-        step("overview", "戰鬥開始，確認順序",
-          "DM 說出「請丟先攻」時，投擲 D20 + 先攻；或開擲骰功能點上方數字。\n\n速度是你一個回合可以移動的距離，5 呎 = 1 格。", ".tabletop-key-stat:nth-child(2), .tabletop-key-stat:nth-child(3)"),
-        step("actions", "戰鬥時，你可以做什麼？", TURN_GUIDANCE, ".tabletop-action-browser"),
+        step("skills", "需要判定時，再進行擲骰",
+          "當 DM 要求進行檢定時，找到對應的數字加值，擲出 D20，再將兩者相加。\n\n如果手邊沒有骰子，可以從右上角選單開啟擲骰功能。", ".tabletop-skills", ["開啟擲骰功能"]),
+        step("overview", "戰鬥開始時，決定行動順序",
+          "當 DM 說請擲先攻時，擲出 D20 + 先攻加值，決定角色在戰鬥中的行動順序。\n\n你也可以開啟擲骰功能，點擊角色卡上的先攻數值進行擲骰。\n\n角色的速度代表一個回合中可以移動的距離。\n\n使用格線地圖時，通常 5 呎 = 1 格。", ".tabletop-key-stat:nth-child(2), .tabletop-key-stat:nth-child(3)", ["請擲先攻", "擲骰功能", "速度", "5 呎 = 1 格"]),
+        step("actions", "在你的回合中採取行動",
+          "你的回合通常包含移動與一次動作；若能力或規則允許，也可以使用一次附贈。\n\n移動不一定要一次完成，也不需要固定在動作之前。\n例如，你可以先移動 2 格、進行攻擊，再移動剩下的 3 格。\n\n反應則需要符合特定的觸發條件才能使用，通常在其他角色的回合中發生。", ".tabletop-action-browser", ["移動", "動作", "附贈", "移動", "動作", "移動", "移動", "反應"]),
         ...(document.getElementById("tabletop-tab-spells") && !document.getElementById("tabletop-tab-spells").hidden ? [
-          step("spells", "想施法，先看說明",
-            "先告訴 DM 想施放哪個法術、對誰使用，再確認施法時間、距離與其他條件。\n\n有些法術需要專注，無法同時維持兩種專注法術。", "#tabletop-panel-spells")
+          step("spells", "施放法術前，確認施法條件",
+            "先告訴 DM 你要施放的法術，以及預計影響的目標，再確認法術的施法時間、距離與其他施法條件。\n\n部分法術需要維持專注。一般情況下，一名角色無法同時維持兩個需要專注的法術。", "#tabletop-panel-spells")
         ] : []),
-        step("resources", "做完之後，記下變化",
-          "使用能力或施展法術後可來此處，確認剩餘可用次數。\n\n懶人包如下\n聽情況 → 說行動 → 需要時丟骰子判定 → 隨時記錄結果", "#tabletop-panel-resources > .tabletop-section")
+        step("resources", "記錄角色狀態的變化",
+          "使用具有次數限制的能力或施放法術後，記得更新角色目前的使用狀態，確認還剩下多少可用次數。\n\n受到傷害、恢復生命值，或獲得其他狀態時，也應同步記錄角色的變化。\n\n基本遊戲流程\n了解情況 → 描述行動 → 必要時進行判定 → 記錄結果", "#tabletop-panel-resources > .tabletop-section", ["法術"])
       ];
     }
 
@@ -212,8 +212,9 @@
       return [
         {
           tab: "basic",
-          title: "⚔️ 1. 決定你的冒險者方向",
-          text: "背景代表角色過去，種族帶來天生特性，職業則決定冒險方式。選好之後，速度、專長等資料會自動更新。",
+          title: "⚔️ 建立你的冒險角色",
+          text: "背景描述過往經歷，\n種族提供不同特性，\n職業則決定擅長的能力，以及在冒險中解決問題的方式。\n\n完成選擇後，速度、專長與其他角色資料會自動更新。",
+          highlights: ["背景", "種族", "職業"],
           placement: "bottom",
           getHoles: () => {
             return [
@@ -229,8 +230,9 @@
         },
         {
           tab: "basic",
-          title: "🎲 2. 屬性與快速創角",
-          text: "六項屬性決定角色擅長什麼。玩家可以自行輸入數字，或使用右上角選單點擊『決定屬性』。",
+          title: "🎲 決定角色屬性",
+          text: "六項屬性代表角色的基本能力，並會影響攻擊、技能與各種檢定。\n\n你可以直接輸入屬性數值，也可以從右上角選單開啟決定屬性功能。",
+          highlights: ["六項屬性", "決定屬性"],
           placement: "top",
           getHoles: () => {
             return [this.getHoleForSelector("#tab-basic .ability-grid", 8)].filter(Boolean);
@@ -244,25 +246,33 @@
         {
           tab: "basic",
           title: () => {
-            if (this.stepPhase === 1) return "🎲 3. 27 購點：配置基礎值";
-            if (this.stepPhase === 2) return "🎲 3. 27 購點：背景加值與套用";
-            return "🎲 3. 決定屬性";
+            if (this.stepPhase === 1) return "🎲 配置基礎屬性";
+            if (this.stepPhase === 2) return "🎲 套用背景加值";
+            return this.abilityMenuGuideActive ? "🎲 選擇屬性產生方式" : "🎲 選擇購點或擲骰";
           },
           text: () => {
-            if (this.abilityMenuStage === "menu") return "先找到右上角的選單按鈕。點擊畫面任意處，開啟選單並找到「決定屬性」。";
-            if (this.abilityMenuStage === "button") return "「決定屬性」就在選單內。點擊畫面任意處，開啟屬性選擇視窗。";
+            if (this.abilityMenuGuideActive) return "接下來，選擇角色的屬性產生方式。\n\n點擊決定屬性開始設定。";
             if (this.stepPhase === 1) {
-              return "屬性在 8~15 之間調整，9~13 消耗 1 點；14, 15 各消耗 2 點，留意下方剩餘點數，總花費不能超過 27。";
+              return "使用 27 點購點時，每項屬性可以設定在 8～15 之間。\n\n屬性越高，需要消耗的點數越多。調整數值時，可以從下方確認剩餘點數。\n\n完成配置前，總花費不得超過 27 點。";
             }
             if (this.stepPhase === 2) {
-              return "選擇背景後，可在三項屬性分配 3 點，單項最多 +2；選擇職業範本提供預設分配，分配完成後點「套用」確定屬性。";
+              return "選擇背景後，將提供的屬性加值分配至角色屬性。\n\n你也可以選擇職業範本，快速套用適合該職業的建議配置。\n\n確認所有數值後，點擊套用完成屬性設定。";
             }
-            return "「27 購點」是冒險者聯盟通用的創角規則。「屬性擲骰」是更為隨機性的規則選項，大多在私人團務且遊戲主持人同意的情況下才能使用。";
+            return "27 點購點讓你自行分配屬性，角色能力較為穩定。\n\n屬性擲骰則具有較高的隨機性，通常在 DM 同意使用時採用。\n\n選擇適合目前遊戲的方式後，即可開始配置屬性。";
           },
-          placement: () => this.stepPhase === 0 ? "highlight-bottom-left" : "overlay-bottom",
+          highlights: () => {
+            if (this.abilityMenuGuideActive) return ["決定屬性"];
+            if (this.stepPhase === 1) return ["27 點購點", "剩餘點數"];
+            if (this.stepPhase === 2) return ["背景", "職業範本", "套用"];
+            return ["27 點購點", "屬性擲骰", "DM 同意"];
+          },
+          placement: () => this.abilityMenuGuideActive ? "bottom" : this.stepPhase > 0 ? "overlay-bottom" : "highlight-bottom-left",
           getHoles: () => {
-            if (this.abilityMenuStage) {
-              return [this.getHoleForSelector(this.abilityMenuStage === "menu" ? "#utility-menu-toggle" : "#set-default-abilities", 6)].filter(Boolean);
+            if (this.abilityMenuGuideActive) {
+              return [
+                this.getHoleForSelector("#utility-menu-toggle", 6),
+                this.getHoleForSelector("#set-default-abilities", 6)
+              ].filter(Boolean);
             }
             if (this.stepPhase === 1) {
               return [
@@ -282,25 +292,31 @@
             return [this.getHoleForSelector("#ability-choice-modal .ability-choice-card", 6)].filter(Boolean);
           },
           beforePosition: async () => {
-            if (this.abilityMenuStage) {
-              this.setAbilityMenuOpen(false);
-              await this.renderStep();
+            if (this.abilityMenuGuideActive) {
+              const transitionId = this.transitionId;
               await this.animateScrollTo(0);
+              if (!this.active || transitionId !== this.transitionId) return;
+              this.setAbilityMenuOpen(true);
+              const menu = document.getElementById("utility-menu");
+              await Promise.all((menu?.getAnimations() || []).map(animation => animation.finished.catch(() => {})));
+              if (!this.active || transitionId !== this.transitionId) return;
+              document.getElementById("set-default-abilities")?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "instant" });
+              await waitForLayoutStability();
               return;
             }
             await this.openAbilityChoicePreview();
           },
           afterLeave: () => {
-            if (this.abilityMenuStage) this.setAbilityMenuOpen(false);
-            this.abilityMenuStage = null;
+            if (this.abilityMenuGuideActive) this.setAbilityMenuOpen(false);
+            this.abilityMenuGuideActive = false;
             this.closeAbilityChoicePreview();
             this.closePointBuyPreview();
           }
         },
         {
           tab: "equipment",
-          title: "🛡️ 4. 選擇武器與護甲",
-          text: "選單下方顯示傷害、特性等資訊。點擊摘要中的專有名詞能查看詳細規則。",
+          title: "🛡️ 選擇武器與護甲",
+          text: "選擇武器或護甲時，下方會顯示傷害、防禦與相關特性。\n\n遇到不熟悉的規則名詞，可以直接點擊摘要中的名稱查看詳細說明。",
           placement: "bottom",
           getHoles: () => [this.getHoleFromElements([
             document.querySelector("#tab-equipment .equipment-loadout-controls"),
@@ -314,8 +330,8 @@
         },
         {
           tab: "spells",
-          title: "✨ 5. 選擇與查看法術",
-          text: "有施法能力時，可以在這裡管理戲法與法術。選擇法術後，可查看完整說明與施法資料。",
+          title: "✨ 選擇與管理法術",
+          text: "如果角色具有施法能力，可以在這裡選擇與管理戲法及法術。\n\n先選擇職業，再選擇想查看的法術，即可確認詳細說明、施法時間、距離資料等資料。",
           placement: "top",
           getHoles: () => [this.getHoleForSelector("#spells-tab-button", 6)].filter(Boolean),
           beforeTab: () => this.ensureSpellPreview(),
@@ -325,8 +341,8 @@
         },
         {
           tab: "spells",
-          title: "🔎 6. 搜尋法術/裝備/道具",
-          text: "法術與裝備分頁都有搜尋功能，可快速查找名稱與規則資料。",
+          title: "🔎 搜尋規則資料",
+          text: "法術與裝備頁面都提供搜尋功能。\n\n輸入名稱或關鍵字即可快速找到相關規則內容。",
           placement: "bottom",
           getHoles: () => [
             this.getHoleForSelector("#spell-tab-toolbar .spell-search-controls", 7),
@@ -391,10 +407,10 @@
       if (!this.active || this.isTransitioning) return;
       this.hidePointBuyPresetTooltip();
       if (this.kind === "sheet" && this.currentIndex === 1) {
-        await this.goTo(2, { guideAbilityMenu: true });
+        await this.goTo(2);
         return;
       }
-      if (this.abilityMenuStage) {
+      if (this.abilityMenuGuideActive) {
         await this.advanceAbilityMenuGuidance();
         return;
       }
@@ -422,53 +438,15 @@
       }
     }
 
-    async moveAbilityMenuHighlight(isCurrent) {
-      const from = this.activeHoles[0];
-      if (!from || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-      await new Promise(resolve => {
-        const startedAt = performance.now();
-        const tick = now => {
-          if (!isCurrent()) { resolve(); return; }
-          // Re-measure so a resize during the move cannot leave a stale target.
-          const target = this.getVisibleHole(this.getHoleForSelector("#set-default-abilities", 6));
-          if (!target) { resolve(); return; }
-          const progress = Math.min(1, (now - startedAt) / GUIDANCE_MOVE_DURATION);
-          const eased = progress * progress * (3 - 2 * progress);
-          const hole = Object.fromEntries(["left", "right", "top", "bottom"].map(key => [key, from[key] + (target[key] - from[key]) * eased]));
-          this.activeHoles = this.applyMasksForHoles([hole]);
-          this.setFocusRing(this.focusRings[0], hole);
-          if (progress < 1) requestAnimationFrame(tick);
-          else resolve();
-        };
-        requestAnimationFrame(tick);
-      });
-    }
-
     async advanceAbilityMenuGuidance() {
-      if (!this.active || !this.abilityMenuStage || this.isTransitioning) return;
+      if (!this.active || !this.abilityMenuGuideActive || this.isTransitioning) return;
       const transitionId = this.transitionId;
       const isCurrent = () => this.active && transitionId === this.transitionId && this.currentIndex === 2;
       this.isTransitioning = true;
       try {
-        if (this.abilityMenuStage === "menu") {
-          this.setAbilityMenuOpen(true);
-          await waitForLayoutStability();
-          if (!isCurrent()) return;
-          // The menu can retain a scroll position from its lower help buttons.
-          const menu = document.getElementById("utility-menu");
-          await Promise.all((menu?.getAnimations() || []).map(animation => animation.finished.catch(() => {})));
-          if (!isCurrent()) return;
-          document.getElementById("set-default-abilities")?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "instant" });
-          await waitForLayoutStability();
-          if (!isCurrent()) return;
-          await this.moveAbilityMenuHighlight(isCurrent);
-          if (!isCurrent()) return;
-          this.abilityMenuStage = "button";
-        } else {
-          await this.openAbilityChoicePreview();
-          if (!isCurrent()) return;
-          this.abilityMenuStage = null;
-        }
+        await this.openAbilityChoicePreview();
+        if (!isCurrent()) return;
+        this.abilityMenuGuideActive = false;
         await this.renderStep();
       } finally {
         if (transitionId === this.transitionId) this.isTransitioning = false;
@@ -519,7 +497,7 @@
       await this.goTo(this.currentIndex - 1);
     }
 
-    async goTo(index, { guideAbilityMenu = false } = {}) {
+    async goTo(index, { openAbilityChoiceDirectly = false } = {}) {
       if (!this.active || this.isTransitioning) return;
       if (this.kind === "tabletop") return this.goToTabletop(index);
       const transitionId = ++this.transitionId;
@@ -529,7 +507,7 @@
       if (previousStep && typeof previousStep.afterLeave === "function") previousStep.afterLeave();
 
       this.currentIndex = index;
-      this.abilityMenuStage = guideAbilityMenu ? "menu" : null;
+      this.abilityMenuGuideActive = index === 2 && !openAbilityChoiceDirectly;
       this.stepPhase = 0;
       this.tooltipDragPosition = null;
       this.activeHoles = [];
@@ -1238,7 +1216,7 @@
 
     getAllowedTourElements() {
       if (!this.active) return [];
-      if (this.abilityMenuStage) return [];
+      if (this.abilityMenuGuideActive) return [document.getElementById("set-default-abilities")].filter(Boolean);
       if (this.kind === "tabletop") return [];
       if (this.currentIndex === 0) {
         return ["class", "level", "background", "race"]
@@ -1413,7 +1391,7 @@
     handleTourPointerDownCapture(event) {
       if (!this.active || this.isInternalTourAction) return;
       this.suppressTooltipDragClick = false;
-      if (this.abilityMenuStage) {
+      if (this.abilityMenuGuideActive) {
         if (this.tooltip?.contains(event.target)) this.handleTooltipPointerDown(event);
         // Keep the menu open when tapping the guide or its backdrop.
         // Do not cancel the pointer default: touch still needs its following click.
@@ -1450,10 +1428,10 @@
         event.stopImmediatePropagation();
         return;
       }
-      if (this.abilityMenuStage && !target.closest(".tour-btn-row button, .app-dialog")) {
+      if (this.abilityMenuGuideActive && !target.closest(".tour-btn-row button, .app-dialog")) {
         event.preventDefault();
         event.stopImmediatePropagation();
-        this.advanceAbilityMenuGuidance();
+        if (target.closest("#set-default-abilities")) this.advanceAbilityMenuGuidance();
         return;
       }
       if (this.suppressNextHighlightClick) {
@@ -1472,7 +1450,7 @@
       if (this.currentIndex === 1 && this.stepPhase === 0 && target.closest("#utility-menu-toggle")) {
         event.preventDefault();
         event.stopImmediatePropagation();
-        this.goTo(2, { guideAbilityMenu: true });
+        this.goTo(2);
         return;
       }
 
@@ -1488,7 +1466,7 @@
         if (target.closest("#set-default-abilities")) {
           event.preventDefault();
           event.stopImmediatePropagation();
-          this.goTo(2);
+          this.goTo(2, { openAbilityChoiceDirectly: true });
           return;
         }
       }
@@ -1606,6 +1584,30 @@
       return value ?? fallback;
     }
 
+    renderStepText(step) {
+      const content = this.getStepValue(step, "text", "");
+      const highlights = this.getStepValue(step, "highlights", []);
+      if (!Array.isArray(highlights) || !highlights.length) {
+        this.text.textContent = content;
+        return;
+      }
+
+      const fragment = document.createDocumentFragment();
+      let offset = 0;
+      highlights.forEach((word) => {
+        const index = content.indexOf(word, offset);
+        if (index < 0) return;
+        fragment.append(document.createTextNode(content.slice(offset, index)));
+        const strong = document.createElement("strong");
+        strong.className = "tour-step-emphasis";
+        strong.textContent = word;
+        fragment.append(strong);
+        offset = index + word.length;
+      });
+      fragment.append(document.createTextNode(content.slice(offset)));
+      this.text.replaceChildren(fragment);
+    }
+
     async renderStep({ refreshInteractionRoots = true, ensureFocus = true } = {}) {
       if (!this.active) return;
       this.resetHighlightState();
@@ -1625,16 +1627,16 @@
 
       this.title.textContent = this.getStepValue(step, "title", "");
       if (this.kind !== "tabletop" || this.renderedContentStep !== step) {
-        this.text.textContent = this.getStepValue(step, "text", "");
+        this.renderStepText(step);
         this.text.scrollTop = 0;
         if (this.kind === "tabletop" && step.examples) {
           const details = document.createElement("details");
           const summary = document.createElement("summary");
-          summary.textContent = "看看其他例子";
+          summary.textContent = "查看更多範例";
           details.appendChild(summary);
           [
-            "探索：「我檢查雕像後面有沒有機關。」",
-            "社交：「我想讓守衛相信我們是商人，拿出貨單給他看。」",
+            "探索：「我檢查雕像後方，看看是否藏有機關。」",
+            "社交：「我拿出貨單，試著讓守衛相信我們是商人。」",
             "戰鬥：「我靠近哥布林，拔出長劍攻擊。」"
           ].forEach(example => {
             const paragraph = document.createElement("p");
@@ -1648,8 +1650,14 @@
         }
         this.renderedContentStep = step;
       }
-      this.progress.textContent = `${this.currentIndex + 1}/${this.steps.length}`;
-      this.progress.setAttribute("aria-label", `導覽進度：第 ${this.currentIndex + 1} 步，共 ${this.steps.length} 步`);
+      const progressIndex = this.kind === "sheet"
+        ? this.currentIndex < 2 ? this.currentIndex + 1
+          : this.currentIndex === 2 ? this.abilityMenuGuideActive ? 2 : this.stepPhase + 3
+            : this.currentIndex + 3
+        : this.currentIndex + 1;
+      const progressTotal = this.kind === "sheet" ? 8 : this.steps.length;
+      this.progress.textContent = `${progressIndex}/${progressTotal}`;
+      this.progress.setAttribute("aria-label", `導覽進度：第 ${progressIndex} 步，共 ${progressTotal} 步`);
       this.prevBtn.disabled = this.currentIndex === 0;
       this.skipBtn.hidden = this.kind !== "tabletop" && this.currentIndex === this.steps.length - 1;
       this.skipBtn.textContent = this.kind === "tabletop" ? "關閉" : "跳過";
@@ -1658,7 +1666,8 @@
 
       const placement = this.getStepValue(step, "placement", "bottom");
       this.tooltip.style.cursor = this.tooltipDragPointerId === null ? "grab" : "grabbing";
-      if (visibleHoles[0]) this.positionTooltip(visibleHoles[0], placement);
+      const tooltipHole = this.abilityMenuGuideActive && visibleHoles[1] ? visibleHoles[1] : visibleHoles[0];
+      if (tooltipHole) this.positionTooltip(tooltipHole, placement);
       else this.positionTooltipWithoutHighlight();
       this.applyTooltipDragPosition();
       if (refreshInteractionRoots) this.refreshTourInteractionRoots();
@@ -1667,8 +1676,8 @@
     }
 
     getNextButtonText() {
-      if (this.abilityMenuStage) return this.abilityMenuStage === "menu" ? "開啟選單" : "開啟決定屬性";
-      if (this.kind === "tabletop") return this.currentIndex === this.steps.length - 1 ? "開始使用桌邊模式" : "下一步";
+      if (this.abilityMenuGuideActive) return "開啟決定屬性";
+      if (this.kind === "tabletop") return this.currentIndex === this.steps.length - 1 ? "開始使用跑團模式" : "下一步";
       if (this.currentIndex === this.steps.length - 1) return "導覽完成";
       if (this.currentIndex === 2 && this.stepPhase === 1) return "繼續";
       return "下一步";
@@ -1822,9 +1831,8 @@
 
     handleTooltipPointerDown(event) {
       if (!this.active || !this.tooltip || event.button !== 0) return;
-      // Keep the scrollable examples and their disclosure available to touch.
-      if (this.kind === "tabletop" && event.target instanceof Element
-        && event.target.closest("#tour-step-text")) return;
+      // Let long guidance scroll on touch; the heading remains the drag handle.
+      if (event.target instanceof Element && event.target.closest("#tour-step-text")) return;
       if (event.target instanceof Element && event.target.closest(".tour-btn-row button")) return;
       const rect = this.tooltip.getBoundingClientRect();
       this.tooltipDragPointerId = event.pointerId;
@@ -1862,7 +1870,7 @@
         this.highlightDragState = null;
       }
       if (this.tooltipDragPointerId !== event.pointerId) return;
-      if (this.abilityMenuStage && this.tooltipDragMoved) this.suppressTooltipDragClick = true;
+      if (this.abilityMenuGuideActive && this.tooltipDragMoved) this.suppressTooltipDragClick = true;
       if (this.tooltip?.hasPointerCapture?.(event.pointerId)) this.tooltip.releasePointerCapture(event.pointerId);
       this.tooltipDragPointerId = null;
       if (this.tooltip) this.tooltip.style.cursor = "grab";

@@ -151,7 +151,7 @@
       el("p", `野獸 AC ${beast.ac} · ${beast.speed}`),
       el("p", `力 ${beast.abilities.str} · 敏 ${beast.abilities.dex} · 體 ${beast.abilities.con} · ${mental.join(" · ")}`),
       el("p", `保留角色 HP、生命骰、熟練、職業特性、語言與專長。最長 ${c.rules.hours} 小時，變形獲得 ${c.level} 點臨時 HP。`),
-      el("p", `感官：${beast.senses}；被動察覺以桌邊總覽重算值為準。`),
+      el("p", `感官：${beast.senses}；被動察覺以跑團模式總覽重算值為準。`),
       el("p", `特性：${beast.traits}`), el("p", `動作：${beast.attacks}`));
     return content;
   }

@@ -3167,6 +3167,25 @@ input[type="checkbox"] {
   min-width: 0;
 }
 
+.race-select-control {
+  display: flex;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.race-select-control #race {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.race-size-select {
+  appearance: none;
+  width: 2.2rem;
+  min-width: 2.2rem;
+  padding: 0.35rem;
+  text-align: center;
+}
+
 .basic-metric-card {
   min-width: 0;
 }
@@ -6218,7 +6237,7 @@ div[id$="spells-area"] .form-row > .output {
   margin: 0;
 }
 
-/* 一般角色卡只顯示法術摘要；免費施放的消耗追蹤集中於桌邊模式。 */
+/* 一般角色卡只顯示法術摘要；免費施放的消耗追蹤集中於跑團模式。 */
 html:not([data-view-mode="tabletop"]) .free-spell-use-checks {
   display: none;
 }
@@ -8309,6 +8328,25 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] :is(#scrollToTopBtn, #scro
   pointer-events: auto;
 }
 
+#tour-overlay[data-tour-kind="sheet"] #tour-tooltip {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  max-height: min(32dvh, calc(100dvh - 20px));
+  touch-action: pan-y !important;
+}
+
+#tour-overlay[data-tour-kind="sheet"] #tour-step-text {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+#tour-overlay[data-tour-kind="sheet"] .tour-heading-row,
+#tour-overlay[data-tour-kind="sheet"] .tour-btn-row {
+  flex-shrink: 0;
+}
+
 #tour-overlay[data-tour-kind="tabletop"] #tour-tooltip {
   box-sizing: border-box;
   display: flex;
@@ -8325,7 +8363,6 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] :is(#scrollToTopBtn, #scro
   cursor: auto;
   overflow-y: auto;
   overscroll-behavior: contain;
-  white-space: pre-line;
   min-height: 0;
   line-height: 1.6;
 }
@@ -8398,6 +8435,15 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] :is(#scrollToTopBtn, #scro
   font-weight: 900;
   line-height: 1.25;
   white-space: nowrap;
+}
+
+#tour-step-text {
+  white-space: pre-line;
+}
+
+#tour-step-text .tour-step-emphasis {
+  color: var(--warning);
+  font-weight: 800;
 }
 
 :where(html:not([data-ui-theme="warm"])) #tour-step-text {
@@ -9686,129 +9732,6 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] :is(#scrollToTopBtn, #scro
   z-index: 9999;
   display: none;
   background: var(--overlay);
-}
-
-:where(html:not([data-ui-theme="warm"])) #legal-about-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 10000;
-  display: grid;
-  place-items: center;
-  padding: max(1rem, env(safe-area-inset-top, 0px)) 1rem max(1rem, env(safe-area-inset-bottom, 0px));
-  background: rgba(0, 0, 0, 0.58);
-}
-
-:where(html[data-ui-theme="warm"]) #legal-about-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 10000;
-  display: grid;
-  place-items: center;
-  padding: max(1rem, env(safe-area-inset-top, 0px)) 1rem max(1rem, env(safe-area-inset-bottom, 0px));
-  background: var(--overlay);
-}
-
-#legal-about-modal[aria-hidden="true"] {
-  display: none;
-}
-
-:where(html:not([data-ui-theme="warm"])) .legal-about-card {
-  position: relative;
-  width: min(680px, 100%);
-  height: min(82dvh, 760px);
-  overflow: hidden;
-  padding: 0;
-  border: 1px solid #d3deef;
-  border-radius: 1.25rem;
-  background: linear-gradient(180deg, #ffffff 0%, #f5f8ff 100%);
-  box-shadow: 0 18px 44px rgba(15, 26, 58, 0.34);
-  overscroll-behavior: contain;
-}
-
-:where(html[data-ui-theme="warm"]) .legal-about-card {
-  position: relative;
-  width: min(680px, 100%);
-  height: min(82dvh, 760px);
-  overflow: hidden;
-  padding: 0;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--surface-soft);
-  box-shadow: var(--shadow-soft);
-  overscroll-behavior: contain;
-}
-
-:where(html:not([data-ui-theme="warm"])) .legal-about-close {
-  position: absolute;
-  z-index: 2;
-  top: 0.65rem;
-  right: 0.8rem;
-  width: 44px;
-  min-width: 44px;
-  height: 44px;
-  min-height: 44px;
-  padding: 0;
-  border: 1px solid #cfd9ee;
-  border-radius: 0.6rem;
-  background: var(--surface-strong, #fff);
-  color: var(--text);
-  box-shadow: none;
-  line-height: 1;
-}
-
-:where(html[data-ui-theme="warm"]) .legal-about-close {
-  position: absolute;
-  z-index: 2;
-  top: 0.65rem;
-  right: 0.8rem;
-  width: 44px;
-  min-width: 44px;
-  height: 44px;
-  min-height: 44px;
-  padding: 0;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface-strong, var(--surface-strong));
-  color: var(--text);
-  box-shadow: none;
-  line-height: 1;
-}
-
-.legal-about-header h2 {
-  margin: 0;
-  font-size: var(--fs-xl);
-}
-
-:where(html:not([data-ui-theme="warm"])) .legal-about-header {
-  position: relative;
-  z-index: 1;
-  padding: 1rem 4rem 0.9rem 1.2rem;
-  border-bottom: 1px solid #d3deef;
-  background: var(--surface-strong, #fff);
-}
-
-:where(html[data-ui-theme="warm"]) .legal-about-header {
-  position: relative;
-  z-index: 1;
-  padding: 1rem 4rem 0.9rem 1.2rem;
-  border-bottom: 1px solid var(--border);
-  background: var(--surface-strong, var(--surface-strong));
-}
-
-:where(html:not([data-ui-theme="warm"])) .legal-about-frame {
-  display: block;
-  width: 100%;
-  height: calc(100% - 4.25rem);
-  border: 0;
-  background: #eef3ff;
-}
-
-:where(html[data-ui-theme="warm"]) .legal-about-frame {
-  display: block;
-  width: 100%;
-  height: calc(100% - 4.25rem);
-  border: 0;
-  background: var(--surface-soft);
 }
 
 :where(html:not([data-ui-theme="warm"])) .legal-modal-card {
@@ -15529,7 +15452,7 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] #tabletop-panel-resources 
   content: "×";
 }
 
-/* 桌邊武器沿用角色卡的攻擊欄位骨架；值改為擲骰按鈕。 */
+/* 跑團模式武器沿用角色卡的攻擊欄位骨架；值改為擲骰按鈕。 */
 #tabletop-panel-actions .tabletop-weapon-summary {
   gap: 0.65rem;
 }
@@ -16153,7 +16076,6 @@ html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .ability-choice-card
 html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .default-ability-class-card,
 html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .point-buy-exit-card,
 html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .legal-modal-card,
-html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .legal-about-card,
 html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .pdf-export-flow-modal__card {
   border-color: var(--border-strong);
   background: linear-gradient(180deg, var(--surface-strong) 0%, var(--surface) 100%);
@@ -16166,7 +16088,6 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] .ability-choice-card,
 html:where([data-ui-theme="warm"])[data-theme="dark"] .default-ability-class-card,
 html:where([data-ui-theme="warm"])[data-theme="dark"] .point-buy-exit-card,
 html:where([data-ui-theme="warm"])[data-theme="dark"] .legal-modal-card,
-html:where([data-ui-theme="warm"])[data-theme="dark"] .legal-about-card,
 html:where([data-ui-theme="warm"])[data-theme="dark"] .pdf-export-flow-modal__card {
   border-color: var(--border-strong);
   background: var(--surface-soft);
@@ -16635,3 +16556,65 @@ html[data-theme="dark"] .utility-menu {
     grid-template-columns: minmax(0, 1fr) minmax(4.5rem, 0.55fr);
   }
 }
+
+/* About shares the AppDialog behavior and the active theme's semantic colors. */
+.app-dialog[data-variant="legal-about"] .app-dialog__surface {
+  position: relative;
+  width: min(680px, 100%);
+  height: min(82dvh, 760px);
+  color: var(--text-body);
+}
+.app-dialog[data-variant="legal-about"] .app-dialog__header {
+  position: absolute;
+  z-index: 1;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0;
+  border: 0;
+}
+.app-dialog[data-variant="legal-about"] .app-dialog__header h2 {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.app-dialog[data-variant="legal-about"] .app-dialog__close {
+  background: var(--surface-strong);
+  color: var(--text);
+  box-shadow: none;
+}
+.app-dialog[data-variant="legal-about"] .app-dialog__close:hover {
+  background: var(--surface-muted);
+}
+.app-dialog[data-variant="legal-about"] .app-dialog__body {
+  display: block;
+  flex: 1 1 auto;
+  padding: 1.25rem;
+  overflow-wrap: anywhere;
+  line-height: 1.75;
+}
+.legal-about-content h2 {
+  margin: 1.5rem 0 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  color: var(--text);
+  font-size: var(--fs-xl);
+  line-height: 1.5;
+}
+.legal-about-content > h2:first-child {
+  margin-top: 0;
+  padding: 0 3rem 0 0;
+  border: 0;
+}
+.legal-about-content h3 { margin: 1.25rem 0 0.35rem; color: var(--text); }
+.app-dialog__body .legal-about-content p { margin: 0.45rem 0 0; white-space: normal; }
+.legal-about-content ul { padding-left: 1.3rem; margin: 0.55rem 0; }
+.legal-about-content li + li { margin-top: 0.25rem; }
+.legal-about-content a { color: var(--accent); text-underline-offset: 0.18em; }
+.legal-about-content a:hover { color: var(--accent-strong); }
+.legal-about-content a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.legal-about-content [id] { scroll-margin-top: 3.5rem; }
+.legal-about-content .legal-divider { margin: 1.5rem 0; border: 0; border-top: 2px solid var(--border-strong); }
+.legal-about-footer { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: var(--fs-sm); }
