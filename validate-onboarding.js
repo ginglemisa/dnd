@@ -41,9 +41,8 @@ async function assertSheetCopy(page, stage) {
   assert.deepEqual(await page.locator("#tour-step-text .tour-step-emphasis").allTextContents(), highlights);
 }
 
-async function assertTourCopy(page, index, caster) {
-  const steps = caster ? TABLETOP_COPY : TABLETOP_COPY.filter((_, position) => position !== 4);
-  const [title, text, highlights] = steps[index];
+async function assertTourCopy(page, index) {
+  const [title, text, highlights] = TABLETOP_COPY[index];
   assert.equal(await page.locator("#tour-step-title").textContent(), title);
   assert.equal(await page.locator("#tour-step-text").evaluate(el =>
     [...el.childNodes].filter(node => node.nodeName !== "DETAILS").map(node => node.textContent).join("")), text);
@@ -72,6 +71,8 @@ async function closed(page) {
   // Include outstanding layout/animation callbacks and the autosave debounce.
   await page.waitForTimeout(650);
   assert.equal(await page.locator("#tour-overlay").isVisible(), false);
+  assert.equal(await page.locator('.app-dialog[data-tour-spell-preview]').count(), 0);
+  assert.equal(await page.locator('#tabletop-tour-resource-preview').count(), 0);
   assert.equal(await page.locator("#main-content").evaluate(el => el.inert), false);
   assert.equal(await page.evaluate(() => document.body.style.touchAction), "");
 }
@@ -105,7 +106,10 @@ async function assertLayout(page) {
   } else {
     assert(layout.highlightVisible, JSON.stringify(layout));
     if (!layout.dragged) {
-      const expectedLeft = Math.min(layout.width - (layout.tip.right - layout.tip.left) - 10, Math.max(10, layout.ring.left));
+      const expectedLeft = layout.index === 3
+        ? Math.min(layout.width - (layout.tip.right - layout.tip.left) - 10, Math.max(10, layout.holes[1].right + 10))
+        : Math.min(layout.width - (layout.tip.right - layout.tip.left) - 10, Math.max(10,
+          layout.index === 5 ? layout.holes[1].left : layout.ring.left));
       assert(Math.abs(layout.tip.left - expectedLeft) <= 1, `tooltip aligns with the highlight's left edge: ${JSON.stringify(layout)}`);
     }
   }
@@ -113,6 +117,13 @@ async function assertLayout(page) {
 }
 
 async function verifyTooltipDrag(page) {
+  // Mobile emulation can report the previous fixed-position rect briefly after a tour step.
+  // Wait for the rendered position before choosing pointer coordinates.
+  await page.waitForFunction(() => {
+    const tip = document.getElementById("tour-tooltip");
+    return Math.abs(tip.getBoundingClientRect().top - parseFloat(tip.style.top)) <= 1;
+  });
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   const heading = await page.locator(".tour-heading-row").boundingBox();
   const before = await page.locator("#tour-tooltip").boundingBox();
   const deltaY = before.y >= 50 ? -40 : 40;
@@ -187,7 +198,7 @@ async function verifyTour(page, { width, height, caster, mode, complete }) {
   await page.evaluate(() => { window.scrollTo(0, 130); window.flushPendingAutosave?.(); });
   const before = await snapshot(page);
   await enter(page);
-  assert.equal(await page.evaluate(() => onboardingTour.steps.length), caster ? 6 : 5);
+  assert.equal(await page.evaluate(() => onboardingTour.steps.length), 6);
   const examples = page.locator("#tour-step-text details");
   assert.equal(await examples.evaluate(el => el.open), false);
   await assertTourCopy(page, 0, caster);
@@ -209,13 +220,25 @@ async function verifyTour(page, { width, height, caster, mode, complete }) {
     await page.screenshot({ path: path.join(process.env.DND_ONBOARDING_SCREENSHOT_DIR, "examples-mobile.png") });
   }
   await page.keyboard.press("Enter");
-  for (let index = 1; index < (caster ? 6 : 5); index++) {
+  for (let index = 1; index < 6; index++) {
     await page.locator("#tour-next-btn").click();
     await ready(page, index);
     await assertLayout(page);
     await assertTourCopy(page, index, caster);
     if (index === 1) await verifyTooltipDrag(page);
     if (index === 3) {
+      assert.equal(await page.evaluate(() => {
+        const holes = onboardingTour.activeHoles;
+        const bar = [".tabletop-action-browser .tabletop-section-heading", ".tabletop-action-browser .tabletop-action-tabs"]
+          .map(selector => document.querySelector(selector).getBoundingClientRect());
+        const attack = document.querySelector('#tabletop-action-panel-basic [data-action-option-key="attack"]').getBoundingClientRect();
+        const tip = document.getElementById("tour-tooltip").getBoundingClientRect();
+        const expectedTop = Math.min(Math.max(10, holes[0].bottom + 10), Math.max(10, innerHeight - tip.height - 10));
+        return holes.length === 2
+          && bar.every(rect => holes[0].left <= rect.left && holes[0].right >= rect.right && holes[0].top <= rect.top && holes[0].bottom >= rect.bottom)
+          && holes[1].left <= attack.left && holes[1].right >= attack.right && holes[1].top <= attack.top && holes[1].bottom >= attack.bottom
+          && Math.abs(tip.top - expectedTop) <= 1;
+      }), true, "action step highlights the controls and attack button, with the tooltip below the controls");
       if (process.env.DND_ONBOARDING_SCREENSHOT_DIR && width === 390 && !caster && mode === "sheet" && !complete) {
         await page.screenshot({ path: path.join(process.env.DND_ONBOARDING_SCREENSHOT_DIR, "actions-mobile.png") });
       }
@@ -223,6 +246,74 @@ async function verifyTour(page, { width, height, caster, mode, complete }) {
       await ready(page, index - 1);
       await page.locator("#tour-next-btn").click();
       await ready(page, index);
+    }
+    if (index === 4) {
+      const spellPreview = await page.evaluate(() => {
+        const dialog = document.querySelector('.app-dialog[data-tour-spell-preview]');
+        const copy = dialog?.querySelector('.tabletop-spell-detail__copy');
+        const hole = onboardingTour.activeHoles[0];
+        const tip = document.getElementById('tour-tooltip').getBoundingClientRect();
+        const expected = [
+          '學派: 惑控', '施法時間: 動作', '射程: 30呎', '成分: V、S、M',
+          '材料: 一個水果小餡餅和一片羽毛', '持續時間: 專注，最長1分鐘'
+        ];
+        return {
+          dialog: Boolean(dialog), copy: Boolean(copy), lines: expected.map(line => copy?.textContent.includes(line)),
+          hole, copyRect: copy?.getBoundingClientRect().toJSON(), tipTop: tip.top,
+          overlayInert: document.getElementById('tour-overlay').inert
+        };
+      });
+      assert(spellPreview.dialog && spellPreview.copy && spellPreview.lines.every(Boolean)
+        && spellPreview.hole?.top >= spellPreview.copyRect.top - 6
+        && spellPreview.hole.bottom < spellPreview.copyRect.bottom
+        && spellPreview.tipTop >= spellPreview.hole.bottom - 1
+        && !spellPreview.overlayInert,
+      `spell step previews Hideous Laughter and highlights its metadata: ${JSON.stringify(spellPreview)}`);
+      if (width === 1280 && !caster && mode === "sheet" && !complete) {
+        await page.keyboard.press("Tab");
+        assert.equal(await page.evaluate(() => document.getElementById("tour-tooltip").contains(document.activeElement)), true);
+        await page.locator("#tour-prev-btn").click();
+        await ready(page, 3);
+        assert.equal(await page.locator('.app-dialog[data-tour-spell-preview]').count(), 0);
+        await page.locator("#tour-next-btn").click();
+        await ready(page, 4);
+      }
+    }
+    if (index === 5) {
+      const resourcePreview = await page.evaluate(() => {
+        const preview = document.getElementById('tabletop-tour-resource-preview');
+        const rows = [...(preview?.querySelectorAll(':scope > .tabletop-resource-row') || [])];
+        const holes = onboardingTour.activeHoles;
+        const tip = document.getElementById('tour-tooltip').getBoundingClientRect();
+        return {
+          rows: rows.map(row => ({ title: row.querySelector('h4')?.textContent, rect: row.getBoundingClientRect().toJSON() })),
+          holes,
+          covers: rows.every((row, i) => {
+            const rect = row.getBoundingClientRect();
+            return holes[i]?.left <= rect.left && holes[i]?.right >= rect.right
+              && holes[i]?.top <= rect.top && holes[i]?.bottom >= rect.bottom;
+          }),
+          tipTop: tip.top,
+          tipHeight: tip.height,
+          viewportHeight: innerHeight,
+          dialog: Boolean(document.querySelector('.app-dialog[data-tour-spell-preview]'))
+        };
+      });
+      assert(resourcePreview.rows.length === 2 && resourcePreview.holes.length === 2
+        && resourcePreview.rows[0].title.includes('生命骰')
+        && resourcePreview.rows[1].title.includes('吟遊詩人激勵')
+        && resourcePreview.covers && !resourcePreview.dialog
+        && (resourcePreview.tipTop >= resourcePreview.holes[1].bottom - 1
+          || resourcePreview.holes[1].bottom + 10 + resourcePreview.tipHeight > resourcePreview.viewportHeight - 10),
+      `resource step previews and highlights hit dice and Bardic Inspiration: ${JSON.stringify(resourcePreview)}`);
+      if (width === 1280 && !caster && mode === "sheet" && !complete) {
+        await page.locator("#tour-prev-btn").click();
+        await ready(page, 4);
+        assert.equal(await page.locator('#tabletop-tour-resource-preview').count(), 0);
+        assert.equal(await page.locator('.app-dialog[data-tour-spell-preview]').count(), 1);
+        await page.locator("#tour-next-btn").click();
+        await ready(page, 5);
+      }
     }
   }
   if (complete) await page.locator("#tour-next-btn").click();
@@ -268,6 +359,16 @@ async function main() {
       await verifyTouch(browser, page.url());
       return;
     }
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.evaluate(() => onboardingTour.start());
+    await ready(page, 0);
+    assert.equal(await page.evaluate(() => {
+      const origin = onboardingTour.activeHoles[1];
+      const tip = document.getElementById("tour-tooltip").getBoundingClientRect();
+      return origin && Math.abs(tip.left - origin.left) <= 1 && tip.top >= origin.bottom;
+    }), true, "sheet introduction aligns below the origin row on desktop");
+    await page.locator("#tour-skip-btn").click();
+    await closed(page);
     for (const viewport of [{ width: 1280, height: 800 }, { width: 390, height: 844 }, { width: 320, height: 568 }]) {
       for (const caster of [false, true]) {
         for (const mode of ["sheet", "tabletop"]) {
@@ -275,7 +376,14 @@ async function main() {
         }
       }
     }
-    console.log("First-table tour: desktop/mobile, both modes, optional spells, examples, back/next, completion/Escape and data/storage/focus/scroll preservation passed.");
+    console.log("First-table tour: desktop/mobile, both modes, spell and resource previews for all classes, examples, back/next, completion/Escape and data/storage/focus/scroll preservation passed.");
+
+    const beforeSpellCancel = await snapshot(page);
+    await page.evaluate(() => onboardingTour.start(4, "tabletop"));
+    await ready(page, 4);
+    await page.keyboard.press("Escape");
+    await closed(page);
+    assert.deepEqual(await snapshot(page), beforeSpellCancel, "Escape from the spell preview restores the previous view and data");
 
     // Exit during each asynchronous positioning boundary, then restart rapidly.
     for (const delay of [0, 70, 110]) {
@@ -321,6 +429,12 @@ async function main() {
         && hole.top < rows[index].top && hole.bottom > rows[index].bottom
       ));
     }), true, "step 1 highlights class/level and background/race as two separate regions");
+    assert.equal(await page.evaluate(() => {
+      const holes = onboardingTour.activeHoles;
+      const tip = document.getElementById("tour-tooltip").getBoundingClientRect();
+      return holes.length === 2 && Math.abs(tip.left - Math.min(innerWidth - tip.width - 10, Math.max(10, holes[1].left))) <= 1
+        && (tip.top >= holes[1].bottom || holes[1].bottom + 10 + tip.height > innerHeight - 10);
+    }), true, "step 1 places its instruction below the origin row when it fits");
     await page.locator("#tour-next-btn").click();
     await ready(page, 1);
     await assertSheetCopy(page, 1);

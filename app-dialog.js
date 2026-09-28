@@ -1,6 +1,8 @@
 (function attachAppDialog(globalScope) {
   let activeDialog = null;
-  let toastTimer = null;
+  const MAX_TOASTS = 3;
+  const TOAST_MOTION_MS = 220;
+  const toastTimers = new WeakMap();
 
   function getFocusableElements(root) {
     return Array.from(root.querySelectorAll(
@@ -27,36 +29,163 @@
     });
   }
 
-  function ensureToast() {
-    let toast = document.getElementById("app-toast");
-    if (toast) return toast;
-    toast = document.createElement("div");
-    toast.id = "app-toast";
-    toast.className = "app-toast";
-    toast.setAttribute("role", "status");
-    toast.setAttribute("aria-live", "polite");
-    toast.setAttribute("aria-atomic", "true");
-    toast.hidden = true;
-    document.body.appendChild(toast);
-    return toast;
+  function ensureToastStack() {
+    let stack = document.getElementById("app-toast");
+    if (stack) return stack;
+    stack = document.createElement("div");
+    stack.id = "app-toast";
+    stack.className = "app-toast-stack";
+    stack.setAttribute("aria-live", "polite");
+    stack.setAttribute("aria-relevant", "additions text");
+    document.body.appendChild(stack);
+    return stack;
+  }
+
+  function prefersReducedToastMotion() {
+    return window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+  }
+
+  function reflowToasts(stack, mutate) {
+    const previous = new Map(Array.from(stack.children, toast => [toast, toast.getBoundingClientRect().top]));
+    mutate();
+    if (prefersReducedToastMotion()) return;
+    Array.from(stack.children).forEach(toast => {
+      const oldTop = previous.get(toast);
+      if (oldTop === undefined) return;
+      const offset = oldTop - toast.getBoundingClientRect().top;
+      if (Math.abs(offset) > 1) {
+        toast.animate([{ translate: `0 ${offset}px` }, { translate: "0 0" }], {
+          duration: TOAST_MOTION_MS,
+          easing: "ease-out"
+        });
+      }
+    });
+  }
+
+  function clearToastTimer(toast) {
+    const timer = toastTimers.get(toast);
+    if (timer) window.clearTimeout(timer.id);
+    toastTimers.delete(toast);
+    return timer;
+  }
+
+  function removeToast(toast) {
+    clearToastTimer(toast);
+    if (!toast.isConnected) return;
+    const stack = toast.parentElement;
+    const restoreFocus = toast.contains(document.activeElement);
+    const nextButton = toast.nextElementSibling?.querySelector(".app-toast__close")
+      || toast.previousElementSibling?.querySelector(".app-toast__close");
+    reflowToasts(stack, () => toast.remove());
+    if (restoreFocus) nextButton?.focus({ preventScroll: true });
+  }
+
+  function scheduleToastRemoval(toast, duration) {
+    const remaining = Math.max(0, duration);
+    toastTimers.set(toast, {
+      id: window.setTimeout(() => removeToast(toast), remaining),
+      expiresAt: performance.now() + remaining
+    });
+  }
+
+  function enableToastSwipe(toast) {
+    let gesture = null;
+    toast.addEventListener("pointerdown", event => {
+      if (event.pointerType === "mouse" || event.target.closest("button") || gesture || toast.dataset.dismissing) return;
+      const timer = clearToastTimer(toast);
+      gesture = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        deltaX: 0,
+        moving: false,
+        remaining: timer ? timer.expiresAt - performance.now() : 0
+      };
+      toast.setPointerCapture?.(event.pointerId);
+    });
+    toast.addEventListener("pointermove", event => {
+      if (!gesture || event.pointerId !== gesture.pointerId) return;
+      const deltaX = event.clientX - gesture.startX;
+      const deltaY = event.clientY - gesture.startY;
+      if (!gesture.moving && (Math.abs(deltaX) < 8 || Math.abs(deltaX) <= Math.abs(deltaY))) return;
+      gesture.moving = true;
+      gesture.deltaX = deltaX;
+      toast.style.transform = `translateX(${deltaX}px)`;
+      toast.style.opacity = String(Math.max(0.35, 1 - Math.abs(deltaX) / toast.offsetWidth));
+      if (event.cancelable) event.preventDefault();
+    });
+    const finish = event => {
+      if (!gesture || event.pointerId !== gesture.pointerId) return;
+      const { deltaX, moving, remaining } = gesture;
+      gesture = null;
+      if (!toast.isConnected) return;
+      if (event.type === "pointerup" && moving && Math.abs(deltaX) >= Math.max(72, toast.offsetWidth * 0.25)) {
+        clearToastTimer(toast);
+        toast.dataset.dismissing = "true";
+        toast.setAttribute("aria-hidden", "true");
+        if (prefersReducedToastMotion()) {
+          removeToast(toast);
+        } else {
+          const targetX = Math.sign(deltaX) * (window.innerWidth + toast.offsetWidth);
+          toast.animate([
+            { transform: `translateX(${deltaX}px)`, opacity: Number(toast.style.opacity) },
+            { transform: `translateX(${targetX}px)`, opacity: 0 }
+          ], { duration: TOAST_MOTION_MS, easing: "ease-out" }).finished
+            .then(() => removeToast(toast), () => removeToast(toast));
+        }
+        return;
+      }
+      if (moving && !prefersReducedToastMotion()) {
+        toast.animate([
+          { transform: `translateX(${deltaX}px)`, opacity: Number(toast.style.opacity) },
+          { transform: "translateX(0)", opacity: 1 }
+        ], { duration: TOAST_MOTION_MS, easing: "ease-out" });
+      }
+      toast.style.transform = "";
+      toast.style.opacity = "";
+      scheduleToastRemoval(toast, remaining);
+    };
+    toast.addEventListener("pointerup", finish);
+    toast.addEventListener("pointercancel", finish);
   }
 
   function notify(message, options = {}) {
     if (typeof document === "undefined") return;
-    const toast = ensureToast();
     const normalizedMessage = String(message || "").trim();
     if (!normalizedMessage) return;
-    window.clearTimeout(toastTimer);
+    const stack = ensureToastStack();
+    const toast = document.createElement("div");
+    toast.className = "app-toast";
     toast.dataset.tone = options.tone || "info";
     toast.dataset.variant = options.variant || "default";
-    toast.textContent = "";
-    window.requestAnimationFrame(() => {
-      toast.textContent = normalizedMessage;
+    const text = document.createElement("span");
+    text.className = "app-toast__message";
+    const closeButton = document.createElement("button");
+    closeButton.type = "button";
+    closeButton.className = "app-toast__close";
+    closeButton.setAttribute("aria-label", `關閉提示：${normalizedMessage}`);
+    closeButton.textContent = "×";
+    closeButton.addEventListener("click", () => removeToast(toast));
+    toast.append(text, closeButton);
+    enableToastSwipe(toast);
+    let restoreFocus = false;
+    reflowToasts(stack, () => {
+      if (stack.children.length >= MAX_TOASTS) {
+        const oldest = stack.firstElementChild;
+        restoreFocus = oldest.contains(document.activeElement);
+        clearToastTimer(oldest);
+        oldest.remove();
+      }
+      stack.appendChild(toast);
     });
-    toast.hidden = false;
-    toastTimer = window.setTimeout(() => {
-      toast.hidden = true;
-    }, Number(options.duration) > 0 ? Number(options.duration) : 5200);
+    if (restoreFocus) stack.firstElementChild?.querySelector(".app-toast__close")?.focus({ preventScroll: true });
+    if (!prefersReducedToastMotion()) {
+      toast.animate([{ opacity: 0 }, { opacity: 1 }], { duration: TOAST_MOTION_MS, easing: "ease-out" });
+    }
+    window.requestAnimationFrame(() => {
+      if (toast.isConnected) text.textContent = normalizedMessage;
+    });
+    scheduleToastRemoval(toast, Number(options.duration) > 0 ? Number(options.duration) : 5200);
   }
 
   function open(options = {}) {

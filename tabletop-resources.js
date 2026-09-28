@@ -667,6 +667,35 @@
     if (focusedRest) elements.builtInResources.querySelector(`[data-rest="${focusedRest}"]`)?.focus({ preventScroll: true });
   }
 
+  function createOnboardingResourcePreview(key) {
+    if (key === "hit-dice") {
+      const current = Array.from(elements.builtInResources?.querySelectorAll(".tabletop-resource-row") || [])
+        .find(row => row.querySelector("h4")?.textContent.startsWith("生命骰"));
+      if (current) {
+        const preview = current.cloneNode(true);
+        preview.querySelectorAll("input, button").forEach(control => { control.disabled = true; });
+        return preview;
+      }
+      const { row, controls } = createResourceRow("生命骰", "手動追蹤目前剩餘顆數。");
+      row.classList.add("tabletop-resource-row--counter");
+      const value = createElement("output", "tabletop-number-stepper__value", "1／1");
+      value.setAttribute("aria-label", "生命骰 1/1（教學示例）");
+      controls.classList.add("tabletop-resource-stepper");
+      controls.appendChild(value);
+      return row;
+    }
+    if (key !== "bard-inspiration") return null;
+    const spec = globalScope.getCharacterResourceSpecs?.({
+      className: "bard",
+      level: Math.max(1, Number.parseInt(document.getElementById("level")?.value || "1", 10) || 1),
+      charismaScore: document.getElementById("cha")?.value || "10"
+    }).find(item => item.key === key);
+    if (!spec) return null;
+    const row = createStoredUseRow({ ...spec, note: spec.recoveryNote })?.cloneNode(true);
+    row?.querySelectorAll("input, button").forEach(control => { control.disabled = true; });
+    return row;
+  }
+
   function announce(message) {
     if (!elements.status) return;
     elements.status.textContent = "";
@@ -917,6 +946,7 @@
   globalScope.TabletopResources = Object.freeze({
     renderSpellSlots,
     setCanonicalCheckbox,
+    createOnboardingResourcePreview,
     refresh: scheduleRender
   });
 

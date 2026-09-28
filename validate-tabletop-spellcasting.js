@@ -1,7 +1,6 @@
 "use strict";
 
 const assert = require("assert/strict");
-const childProcess = require("child_process");
 const fs = require("fs");
 const vm = require("vm");
 
@@ -38,15 +37,10 @@ assert.equal(spells.length, 215, "法術總數應為 215");
 assert.deepEqual(spellsByLevel, { 0: 28, 1: 56, 2: 55, 3: 42, 4: 34 });
 assert.equal(new Set(spellIds).size, spellIds.length, "spellId 不得重複");
 
-const headSpellSource = childProcess.execFileSync(
-  "git",
-  ["show", "HEAD:spell-list.js"],
-  { encoding: "utf8" }
-);
-const headCatalog = loadSpellCatalog(headSpellSource);
+const baselineSpellIds = JSON.parse(fs.readFileSync("spell-id-baseline.json", "utf8"));
 assertSameValues(
   spellIds,
-  headCatalog.getAllSpells().map(spell => spell.spellId),
+  baselineSpellIds,
   "既有 spellId 不得遺失或新增意外 ID"
 );
 
