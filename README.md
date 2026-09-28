@@ -47,7 +47,7 @@ python -m http.server 8000
 | `legal-modal.js`、`legal-about.js` | 歡迎視窗與按需載入的 About 內容；`#legal-about-modal` 可直接開啟，使用主頁主題 |
 | `ddals1.html`、`info-pages.css` | 官方免費冒險外部連結頁及獨立資訊頁樣式 |
 | `pdf-export.js`、`pdf-field-map.js`、`pdf-lib.custom.min.js`、`fontkit.custom.min.js` | 按需載入的 PDF 匯出；部署需包含角色紙與字型素材 |
-| `validate-*.js`、`build-offline-nopdf.ps1` | 回歸驗證與離線版本產製 |
+| `validate-*.js`、`build-offline-nopdf.ps1` | 系統級回歸；離線版本產製與成品驗證 |
 | `cloudflare/twd20-url/` | 短網址 Worker，與網站分開部署；API、KV、限流與維護見 [Worker README](cloudflare/twd20-url/README.md) |
 
 角色選擇由既有表單／DOM 提供；跑團模式模組共用 `TabletopMode`、`SpellCatalog`、`CharacterRules`、`DiceRoller`，儲存統一使用 `window.dndStorage`。非施法動作以穩定 key、分類、等級及角色選擇條件定義，沿用主要規則資料。
@@ -66,6 +66,8 @@ python -m http.server 8000
 
 從專案根目錄執行下列命令，依修改範圍選擇相關腳本即可。修改 JavaScript 時，另執行 `node --check <受影響檔案.js>`；只修改 Markdown 時，核對檔名、連結、命令與說明，不需執行功能驗證。
 
+必要的永久 regression case 優先加入最接近的既有系統級 suite，不為單次修改、單一 bug 或 UI 細節另建 validator。小型、低風險、可逆修改優先使用既有 regression、build／check 命令或不提交的臨時驗證，臨時腳本須於收尾前清除。只有獨立、長期存在且容易回歸的子系統，並且既有 suite 無法合理承接時，才新增永久 suite；完整判斷原則見 [AGENTS.md](AGENTS.md#驗證條件)。
+
 ### 執行環境
 
 使用 Node.js 20 以上。標示「瀏覽器」的腳本需要 Playwright 與 Chromium，會自行啟動及關閉本機伺服器，不需手動啟動網站。新環境可執行：
@@ -75,28 +77,25 @@ npm ci
 npx --no-install playwright install chromium
 ```
 
-已有可用依賴與瀏覽器時不需重裝。除 `validate-main2-shield.js` 固定使用 Playwright Chromium 外，其餘瀏覽器腳本可用 `$env:DND_BROWSER_CHANNEL = "msedge"` 選用已安裝的 Edge；執行 `Remove-Item Env:DND_BROWSER_CHANNEL` 可恢復預設。使用環境提供的 Playwright 套件時，可設定 `NODE_PATH` 指向其 `node_modules`。
+已有可用依賴與瀏覽器時不需重裝。瀏覽器腳本皆可用 `$env:DND_BROWSER_CHANNEL = "msedge"` 選用已安裝的 Edge；執行 `Remove-Item Env:DND_BROWSER_CHANNEL` 可恢復預設。使用環境提供的 Playwright 套件時，可設定 `NODE_PATH` 指向其 `node_modules`。
 
 ### 驗證腳本
 
 | 執行命令 | 用途與檢查範圍 | 額外需求／限制 |
 | --- | --- | --- |
-| `node validate-ability-roll.js` | 屬性擲骰、去最低骰、結果分配、背景加值、歷史與自動儲存、工具選單及不同寬度版面 | 瀏覽器 |
-| `node validate-action-metadata.js` | 非施法動作定義、角色卡／跑團模式動作、自訂與隱藏偏好、手動副武器、JSON／分享／自動儲存 | 瀏覽器 |
-| `node validate-app-dialog-toast.js` | 共用提示最多三則、顯示順序、獨立倒數、關閉按鈕及左右觸控滑除 | 瀏覽器 |
-| `node validate-dice-roll-notes.js` | 擲骰備註、長按與 Shift+Enter、取消、觸控、焦點及舊歷史格式相容性 | 瀏覽器 |
-| `node validate-main2-shield.js` | 主手2 搭配盾牌、雙手武器衝突確認、AC、裝備摘要、狀態還原與 PDF 欄位 | 瀏覽器；固定使用 Playwright Chromium |
-| `node validate-offline-sharing.js` | 離線成品的 inline 語法、永久分享網址、禁止短網址 API、複製 fallback、分享模式與離開流程 | 純 Node.js；須先產生 `TWD20-offline.html`，見[離線版本](#離線版本)。使用 URL 模擬，不代表手機檔案權限或儲存已通過實機驗證 |
+| `node validate-ability-roll.js` | 屬性產生與共用擲骰：27 購點、去最低骰、結果分配、背景加值、備註、長按／鍵盤／觸控與取消、焦點、舊歷史相容性、自動儲存及擲骰版面 | 瀏覽器；完整執行包含購點與一般擲骰分項 |
+| `node validate-action-metadata.js` | 非施法動作定義、角色卡／跑團模式動作、自訂與隱藏偏好、武器裝備互動（含主手2／盾牌／雙手衝突、AC、摘要、還原與 PDF 對應）、JSON／分享／自動儲存 | 瀏覽器；PDF 僅檢查欄位資料 |
 | `node validate-onboarding.js` | 新手／跑團模式導覽（含第 3 步自動開啟選單、雙高亮與按鈕點擊、法術與資源教學預覽、減少動態效果）、創角小幫手匯入、觸控、取消、資料與焦點保留、PDF 載入及取消流程 | 瀏覽器；PDF 繪製以替身驗證，未測實際成品 |
-| `node validate-pdf-lineage-recovery.js` | 精靈與魔人於不同等級的 PDF 血統環法恢復提示 | 純 Node.js；只檢查欄位資料 |
 | `node validate-spellbook.js` | 法術書、準備數量、書內儀式、創角匯入、PDF 法術書選項、JSON／分享／自動儲存及版面 | 瀏覽器 |
 | `node validate-spell-search.js` | 法術全文搜尋、職業全名／別名與指定環位、排序、空結果／清空、鍵盤、窄螢幕與詳情／焦點保留；含 Artificer 無資料與模擬資料案例，以及裝備索引、詳情／規則關鍵字說明／購買取消、切頁及導覽還原 | 瀏覽器；可加 `--equipment-only` 僅驗證裝備搜尋，含桌機／窄螢幕、說明開關及焦點還原；同時檢查 `search.js` 與主頁內嵌 JavaScript 語法 |
 | `node validate-tabletop-druid.js` | 荒野形態、野獸攻擊、德魯伊資源、持續法術效果（含一般／野獸 AC 與速度）、專注、儲存與版面 | 瀏覽器 |
 | `node validate-tabletop-rest.js` | 短休／長休、生命骰、職業與種族資源恢復、最佳旅伴、可選恢復、取消與自動儲存 | 瀏覽器 |
 | `node validate-tabletop-spellcasting.js` | 法術 metadata、施法條件、法術位、專注與自動擲骰 | 純 Node.js；以 `spell-id-baseline.json` 比對既有法術 ID |
-| `node validate-ui-themes.js` | 四種外觀、About 載入／重試／定位與焦點、偏好保存、技能版面、主題素材、跑團模式／創角 UI，以及 PDF 盾牌受訓與血統提示 | 瀏覽器；會實際匯出並重新讀取可編輯 PDF，需專案 PDF 與字型素材 |
+| `node validate-ui.js` | 共用 UI：四種外觀／保存／素材、工具選單與技能版面、跑團模式／創角 UI、Legal／About 載入與焦點、AppDialog toast 堆疊／倒數／關閉／觸控滑除，以及 PDF 欄位與匯出 | 瀏覽器；完整執行會實際匯出並重新讀取可編輯 PDF，需專案 PDF 與字型素材 |
 
-`validate-ability-roll.js` 可加 `--point-buy-only` 只驗證 27 購點未用滿時的提醒、確認、套用與還原。`validate-onboarding.js` 可加 `--imports-only` 只跑匯入與 PDF 生命週期，或加 `--touch-only` 只跑觸控流程；不加參數才是完整驗證。PDF 血統提示的小範圍修改可先用 `validate-pdf-lineage-recovery.js`，涉及實際匯出時再用 `validate-ui-themes.js`。
+`validate-ability-roll.js` 可加 `--point-buy-only` 只驗證 27 購點未用滿時的提醒、確認、套用與還原，或加 `--dice-only` 只跑一般擲骰備註、取消與歷史相容性。`validate-onboarding.js` 可加 `--imports-only` 只跑匯入與 PDF 生命週期，或加 `--touch-only` 只跑觸控流程；不加參數才是完整驗證。
+
+`validate-ui.js` 內部分項共用同一個瀏覽器／伺服器生命週期，案例以獨立 context 隔離資料。不加參數執行全部，或擇一使用 `--appearance-only`（四種外觀、Legal／About 主題與焦點、保存及共用版面）、`--dialogs-only`（toast 與 About 載入重試／網址定位）、`--pdf-only`（欄位及實際匯出）、`--pdf-fields-only`（僅盾牌受訓及精靈／魔人血統提示欄位，不需 PDF／字型素材）。局部內容或互動依實際影響選分項或最小必要流程，不因共用 UI 檔案改動而連帶跑完整矩陣。
 
 有意新增、移除或更名法術 ID 時，須同步檢查並更新 `spell-id-baseline.json`。
 
@@ -108,18 +107,19 @@ npx --no-install playwright install chromium
 | `validate-action-metadata.js`、`validate-tabletop-druid.js` | `DND_SCREENSHOT_DIR` |
 | `validate-onboarding.js` | `DND_ONBOARDING_SCREENSHOT_DIR` |
 | `validate-spellbook.js` | `DND_SPELLBOOK_SCREENSHOTS` |
-| `validate-ui-themes.js` | `DND_THEME_SCREENSHOT_DIR` |
+| `validate-ui.js` | `DND_UI_SCREENSHOT_DIR` |
 
 完整變更與驗證條件見 [AGENTS.md](AGENTS.md)。臨時瀏覽器檢查沿用 [Playwright CLI skill](.agents/skills/playwright-cli/SKILL.md) 與 `npx --no-install playwright cli`。
 
 ## 離線版本
 
-`TWD20-offline.html` 是衍生的單檔精簡版，內嵌本機 CSS、JavaScript、圖片與 About 模組，不包含 PDF 匯出。只有需要同步成品時才執行：
+`TWD20-offline.html` 是衍生的單檔精簡版，內嵌本機 CSS、JavaScript、圖片與 About 模組，不包含 PDF 匯出。建置需 PowerShell 與 Node.js 20 以上；只有需要同步或驗證成品時才執行：
 
 ```powershell
 .\build-offline-nopdf.ps1
-node validate-offline-sharing.js
 ```
+
+建置腳本會自動執行 offline build verification：檢查產物 inline JavaScript 語法、排除短網址 API、六種本機 URL 形式下的永久分享、剪貼簿失敗 fallback、分享模式限制，以及取消／確認離開流程；任一檢查失敗即回報建置失敗。這是建置後的成品驗證，不另列為產品 regression suite。URL 與瀏覽器 API 使用 Node.js 模擬，不能取代手機檔案權限或本機儲存的實機驗證。
 
 先修改來源檔，不直接修改成品；一般來源變更不會自動更新離線版。離線分享在本機編碼，產生 `https://twd20.com/#s2=...`（相容 `#s=...`）永久網址，不含本機路徑，也不呼叫短網址服務；接收者需連網，完全離線交換請使用 JSON。
 

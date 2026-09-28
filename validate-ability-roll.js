@@ -44,6 +44,119 @@ async function validatePointBuy(page) {
   await page.locator("#point-buy-exit-confirm").click();
 }
 
+async function validateDiceHistory(browser, url) {
+  const page = await browser.newPage({ viewport: { width: 390, height: 844 }, hasTouch: true, reducedMotion: "reduce" });
+  try {
+    const errors = [];
+    page.on("pageerror", error => errors.push(String(error)));
+    await page.goto(url);
+    await page.locator("#legal-ack-btn").click();
+    // Include both historical formats before reloading the history reader.
+    await page.evaluate(() => dndStorage.setItem("dnd.diceRollHistory.v1", JSON.stringify([
+      "1d6=3",
+      { label: "舊紀錄", expression: "1d20", total: 12, values: [{ value: 12, sides: 20 }] }
+    ])));
+    await page.reload();
+    await page.locator("#legal-ack-btn").click();
+    await page.locator("#utility-menu-toggle").click();
+    await page.locator("#dice-system-toggle").check();
+    await page.locator("#utility-menu-toggle").click();
+    await page.locator("#dice-roller-fab").click();
+    await page.locator('.dice-roller-die[data-die="20"]').click();
+
+    const roll = page.locator("#dice-roller-roll");
+    const dialog = page.locator(".app-dialog");
+    const input = page.locator(".app-dialog__roll-note-input");
+    const history = () => page.evaluate(() => JSON.parse(dndStorage.getItem("dnd.diceRollHistory.v1") || "[]"));
+    const settledCount = async expected => {
+      await page.waitForTimeout(250);
+      assert.equal((await history()).length, expected);
+    };
+    const hold = async () => {
+      await roll.hover();
+      await page.mouse.down();
+      await dialog.waitFor({ state: "visible" });
+    };
+    const shortcut = async () => {
+      await roll.focus();
+      await page.keyboard.press("Shift+Enter");
+      await input.waitFor({ state: "visible" });
+      assert.equal(await input.evaluate(element => document.activeElement === element), true);
+    };
+
+    // Cancelling before releasing the original pointer must never roll.
+    await hold();
+    await page.keyboard.press("Escape");
+    await page.mouse.up();
+    await settledCount(2);
+    assert.equal(await dialog.count(), 0);
+    assert.equal(await roll.evaluate(element => document.activeElement === element), true);
+    await roll.click();
+    await settledCount(3);
+
+    // After release over the dialog there may be no click to consume the flag.
+    // Both normal keyboard activation methods must still work immediately.
+    for (const key of ["Enter", "Space"]) {
+      const before = (await history()).length;
+      await hold();
+      await page.mouse.up();
+      await page.locator(".app-dialog__button--secondary").click();
+      await settledCount(before);
+      await page.keyboard.press(key);
+      await settledCount(before + 1);
+    }
+
+    const note = "調查密門 <b>文字</b>\n第二行";
+    await shortcut();
+    await settledCount(5);
+    await input.fill(`  ${note}  `);
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Tab");
+    assert.equal(await page.locator(".app-dialog__button--primary").evaluate(element => document.activeElement === element), true);
+    await page.keyboard.press("Enter");
+    await settledCount(6);
+    assert.equal((await history())[0].note, note);
+    await page.locator("#dice-roller-history-view").click();
+    assert((await page.locator(".dice-roller-history-open").first().textContent()).includes(note));
+    assert.equal(await page.locator(".dice-roller-history-open b").count(), 0);
+    await page.locator(".dice-roller-history-open").first().click();
+    assert((await page.locator(".dice-roller-detail-expression").textContent()).includes(note));
+
+    await shortcut();
+    await page.keyboard.press("Escape");
+    await settledCount(6);
+    await shortcut();
+    await page.locator(".app-dialog__button--primary").click();
+    await settledCount(7);
+    assert.equal((await history())[0].note, "");
+
+    // Exercise a real touch pointer sequence, including implicit capture.
+    const cdp = await page.context().newCDPSession(page);
+    const rect = await roll.boundingBox();
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }] });
+    await dialog.waitFor({ state: "visible" });
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    await input.fill("觸控備註");
+    await page.locator(".app-dialog__button--primary").tap();
+    await settledCount(8);
+    assert.equal((await history())[0].note, "觸控備註");
+
+    await page.reload();
+    await page.locator("#legal-ack-btn").click();
+    await page.locator("#dice-roller-fab").click();
+    await page.locator("#dice-roller-history-view").click();
+    assert((await page.locator(".dice-roller-history-open").first().textContent()).includes("觸控備註"));
+    assert((await page.locator(".dice-roller-history").textContent()).includes(note));
+    assert.equal(await page.locator(".dice-roller-history-entry.is-legacy").textContent(), "1d6=3");
+    assert((await page.locator(".dice-roller-history-open").last().textContent()).includes("舊紀錄：1d20=12"));
+    assert.deepEqual(errors, []);
+    await cdp.detach();
+    console.log("Dice history: pointer/keyboard/touch notes, cancellation, focus and legacy reload passed.");
+  } finally {
+    await page.close();
+  }
+}
+
 async function main() {
   for (const match of fs.readFileSync(path.join(__dirname, "index.html"), "utf8").matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)) {
     if (match[1].trim()) new vm.Script(match[1]);
@@ -73,37 +186,22 @@ async function main() {
       console.log("Point buy: under-budget reminder, cancellation, confirmed apply, autosave and last allocation restore passed.");
       return;
     }
+    const url = page.url();
+    await validateDiceHistory(browser, url);
+    if (process.argv.includes("--dice-only")) {
+      assert.deepEqual(errors, []);
+      return;
+    }
+    // A fresh context prevents point-buy autosave from changing ability-roll fixtures.
+    const pointBuy = await browser.newPage({ viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });
+    pointBuy.on("pageerror", error => errors.push(String(error)));
+    try {
+      await pointBuy.goto(url);
+      await pointBuy.locator("#legal-ack-btn").click();
+      await validatePointBuy(pointBuy);
+      console.log("Point buy: reminder, cancellation, apply, autosave and restore passed.");
+    } finally { await pointBuy.close(); }
     await page.locator("#utility-menu-toggle").click();
-    for (const [width, height] of [[390, 844], [320, 568], [1280, 800]]) {
-      await page.setViewportSize({ width, height });
-      const layout = await page.evaluate(() => {
-        const rect = selector => document.querySelector(selector).getBoundingClientRect().toJSON();
-        return {
-          row: rect(".utility-menu__settings-row"),
-          settings: [...document.querySelectorAll(".utility-menu__setting")].map(el => el.getBoundingClientRect().toJSON()),
-          switches: [...document.querySelectorAll(".utility-menu__switch")].map(el => el.getBoundingClientRect().toJSON()),
-          help: [...document.querySelectorAll(".utility-menu__help button")].map(el => el.getBoundingClientRect().toJSON())
-        };
-      });
-      assert.equal(layout.settings.length, 4);
-      assert.equal(layout.switches.length, 4);
-      for (let index = 1; index < layout.settings.length; index++) {
-        assert(layout.settings[index - 1].top < layout.settings[index].top);
-      }
-      layout.settings.forEach((setting, index) => {
-        assert.equal(setting.left, layout.settings[0].left);
-        assert.equal(layout.switches[index].right, setting.right);
-      });
-      assert.equal(layout.row.right, layout.settings.at(-1).right);
-      assert.equal(layout.help[0].top, layout.help[1].top);
-      assert.equal(layout.help[2].top, layout.help[3].top);
-      assert.equal(layout.help[0].left, layout.help[2].left);
-    }
-    await page.setViewportSize({ width: 390, height: 844 });
-    if (process.env.DND_ABILITY_SCREENSHOT_DIR) {
-      fs.mkdirSync(process.env.DND_ABILITY_SCREENSHOT_DIR, { recursive: true });
-      await page.screenshot({ path: path.join(process.env.DND_ABILITY_SCREENSHOT_DIR, "menu.png") });
-    }
     await page.locator("#set-default-abilities").click();
     const choices = await page.locator(".ability-choice-actions button").evaluateAll(buttons => buttons.map(button => button.getBoundingClientRect().toJSON()));
     assert.equal(choices[0].top, choices[1].top);

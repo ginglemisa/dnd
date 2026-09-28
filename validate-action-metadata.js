@@ -559,6 +559,8 @@ async function verifyUiAndPersistence(page) {
   await page.click("#tabletop-action-tab-bonus");
   const bardKey = "dynamic-bonus-class-r7asqs";
   const bardButton = page.locator(`[data-action-option-key="${bardKey}"]`);
+  // Compact button labels differ from canonical metadata and detail headings.
+  assert.equal(await bardButton.locator("span").first().textContent(), "詩人激勵");
   await bardButton.click();
   assert.match(await page.locator("#tabletop-action-panel-bonus .tabletop-action-description").innerText(), /d8/);
   assert.match(await page.locator("#tabletop-action-panel-bonus .tabletop-action-description").innerText(), /短休或長休後全部恢復/);
@@ -617,13 +619,13 @@ async function verifyUiAndPersistence(page) {
   await sparkButton.click();
   const sparkCopy = await page.locator("#tabletop-action-panel-action .tabletop-action-description").innerText();
   assert.match(sparkCopy, /神聖火花/); assert.doesNotMatch(sparkCopy, /不死生物/);
-  assert.match(await undeadButton.innerText(), /焚燒不死生物/);
+  assert.equal(await undeadButton.locator("span").first().textContent(), "焚燒不死");
   await undeadButton.click();
   assert.match(await page.locator("#tabletop-action-panel-action .tabletop-action-description").innerText(), /不會中止驅散效果/);
   await page.evaluate(() => {
     const level = document.getElementById("level"); level.value = "4"; level.dispatchEvent(new Event("change", {bubbles:true}));
   });
-  await page.waitForFunction(() => document.querySelector('[data-action-option-key="dynamic-action-cleric-xonbxu"]')?.textContent.includes("驅散不死生物"));
+  await page.waitForFunction(() => document.querySelector('[data-action-option-key="dynamic-action-cleric-xonbxu"] > span')?.textContent === "驅散不死");
   await undeadButton.click();
   assert.doesNotMatch(await page.locator("#tabletop-action-panel-action .tabletop-action-description").innerText(), /額外光耀傷害骰|焚燒/);
   await page.evaluate(() => TabletopMode.setTabletopActionHidden("official:action:dynamic-action-cleric-xonbxu", true));
@@ -876,6 +878,57 @@ async function verifyManualWeaponVisibility(page) {
   console.log("Manual secondary weapons: empty equipment, shield, two-handed, main2, partial fields and clearing passed.");
 }
 
+async function verifyEquipmentLoadout(browser, url) {
+  // Fresh storage and default scores keep the AC and restore fixtures independent.
+  const page = await browser.newPage();
+  const errors = [];
+  page.on("pageerror", error => errors.push(String(error)));
+  try {
+    await page.goto(url);
+    await page.check("#legal-dismiss");
+    await page.click("#legal-close-btn");
+    await page.selectOption("#class", "fighter");
+    await page.getByRole("tab", { name: "裝備", exact: true }).click();
+    await page.selectOption("#mainHand", "長劍");
+    await page.check("#offHandAsMain");
+    await page.selectOption("#offHand", "標槍");
+
+    assert.equal(await page.textContent("#offHandLabel"), "主手2");
+    assert.equal(await page.locator("#offHand option[value='盾牌']").count(), 0);
+    assert.equal(await page.locator("#main2ShieldOption").isVisible(), true);
+    await page.check("#main2Shield");
+    assert.equal(await page.inputValue("#ac-display"), "12");
+    assert.deepEqual(
+      await page.locator("#equipment-loadout-summary-content .equipment-summary-row strong").allTextContents(),
+      ["長劍：", "標槍：", "盾牌："]
+    );
+
+    await page.selectOption("#offHand", "巨劍");
+    await page.getByRole("button", { name: "取消" }).click();
+    assert.equal(await page.inputValue("#offHand"), "標槍");
+    assert.equal(await page.isChecked("#main2Shield"), true);
+    await page.selectOption("#offHand", "巨劍");
+    await page.getByRole("button", { name: "繼續" }).click();
+    assert.equal(await page.inputValue("#offHand"), "巨劍");
+    assert.equal(await page.isChecked("#main2Shield"), false);
+    assert.equal(await page.locator("#main2ShieldOption").isVisible(), false);
+
+    await page.evaluate(() => applyStateObject({ class: "fighter", mainHand: "長劍", offHand: "標槍", offHandAsMain: true, main2Shield: true }));
+    assert.equal(await page.isChecked("#main2Shield"), true);
+    await page.addScriptTag({ path: path.join(__dirname, "pdf-field-map.js") });
+    assert.equal(await page.evaluate(() => buildPdfFieldPayload(collectStateObject()).AC1), "12");
+    await page.evaluate(() => applyStateObject({ class: "fighter", mainHand: "巨劍", offHand: "標槍", offHandAsMain: true, main2Shield: true }));
+    assert.equal(await page.isChecked("#main2Shield"), false);
+
+    await page.uncheck("#offHandAsMain");
+    await page.selectOption("#mainHand", "長劍");
+    await page.selectOption("#offHand", "盾牌");
+    assert.equal(await page.inputValue("#ac-display"), "12");
+    assert.deepEqual(errors, [], "equipment browser errors");
+    console.log("Equipment loadout: main2/shield, two-handed cancel/confirm, AC, summary, restore and PDF mapping passed.");
+  } finally { await page.close(); }
+}
+
 async function main() {
   const root = __dirname;
   const server = http.createServer((req, res) => {
@@ -901,6 +954,7 @@ async function main() {
     await verifyUiAndPersistence(page);
     await verifyClassTabletopUpdates(page);
     await verifyManualWeaponVisibility(page);
+    await verifyEquipmentLoadout(browser, page.url());
     console.log("Class tabletop descriptions, alerts, choices, resource conversion and recovery passed.");
     assert.deepEqual(errors, [], "browser runtime errors");
     console.log("Tabletop + legacy UI, custom/hidden actions, JSON/share/autosave round trips passed.");

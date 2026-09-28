@@ -81,28 +81,27 @@
 * **局部 UI 互動**：僅影響單一對話框、區域或流程，且不改變角色規則、共用機制或資料格式時，優先使用涵蓋該行為的既有分項驗證；沒有合適分項時，可用最小必要瀏覽器流程取代夾帶無關功能的整支腳本。按實際變更涵蓋開啟／操作／關閉，以及相關的取消、失敗重試、焦點或狀態保留，不能只確認元素出現。
 * **規則、計算、資料或共用機制**：執行下表對應的回歸；修改共用狀態、事件分派、初始化或持久化時，沿實際受影響的呼叫端追加驗證。持久化變更須涵蓋相關 LocalStorage／autosave、JSON 與分享還原相容性；不以局部畫面成功代替資料驗證，也不因多支腳本都測存檔就刪除不同資料的案例。
 * **語法與外觀**：修改 JavaScript 時對受影響檔案執行 `node --check <檔案>`；修改 HTML 內嵌 JavaScript 時檢查該程式區塊語法，單純更新 script URL 不需重跑全部 JS 語法。排版先選受影響區域的桌機／窄螢幕與必要主題；只有共用斷點、主題切換／變數或多處共用樣式改變時才擴大矩陣。局部使用既有主題色不等於修改主題系統。
-* **執行前簡述選擇**：用一句話交代本次影響的行為及要跑的檢查，不需逐項列出所有不跑的腳本或等待批准。新增功能或修正 bug 若既有驗證未涵蓋，補上必要案例；低風險文案／排版不為形式完整而新增永久測試。
+* **執行前簡述選擇**：用一句話交代本次影響的行為及要跑的檢查，不需逐項列出所有不跑的腳本或等待批准。
+* **永久案例與 suite 邊界**：不得只為證明本次修改正確就新增永久的 `validate-*.js`、`check-*.js` 或 test file。小型、低風險、可逆修改優先使用既有 regression、既有 build／check 命令，或不提交的臨時驗證；低風險文案／排版不為形式完整而新增永久測試。
+* **補足 regression coverage**：新增功能或修正 bug 時，保護有實際回歸風險的重要行為，必要案例優先補進最接近的既有系統級 suite。沒有適合 suite 時先考慮最小必要臨時驗證；「沒有既有 testcase」不等於需要新檔。只有真正獨立、長期存在且容易回歸的子系統，併入既有 suite 又會明顯破壞責任邊界時，才依專案慣例新增永久 suite。單一 bugfix、UI 元件、欄位、PDF 文案或 edge case 原則上不足以成立獨立 suite。臨時 debug／verification script 不得提交，收尾前須清除。
 
 ### 回歸腳本對照
 
 下表是行為與腳本的對照，不是關鍵字命中即全部執行的清單；局部文案、排版與 UI 互動先適用上述範圍判斷。
 
-| 變更範圍 | 驗證 |
+| 系統級責任 | 驗證 |
 | --- | --- |
 | 施法 metadata、跑團模式施法條件、法術位、專注或施法自動擲骰 | `node validate-tabletop-spellcasting.js` |
-| 非施法能力動作定義／摘要解析、動作選項與操作、自訂／隱藏偏好及其持久化 | `node validate-action-metadata.js` |
+| 非施法動作定義／摘要、角色卡與跑團操作、自訂／隱藏偏好及持久化；武器裝備互動、衝突確認、AC／摘要與 PDF 對應 | `node validate-action-metadata.js` |
 | 德魯伊荒野形態、野獸資料與攻擊／資源操作、荒野夥伴、野性復甦、自然恢復、原初打擊及其狀態／持久化 | `node validate-tabletop-druid.js` |
 | 法術書管理、準備法術總數、儀式施法、法術書匯入／持久化 | `node validate-spellbook.js` |
 | 法術頁籤全文／職業別名／環位搜尋及排序；`search.js` 的裝備搜尋／詳情／規則關鍵字／購買入口、搜尋切頁及導覽還原 | `node validate-spell-search.js`（含 Artificer 無資料／模擬資料、外部搜尋模組與主頁內嵌語法）；僅裝備搜尋可加 `--equipment-only` |
-| 屬性擲骰、結果分配、背景加值及其擲骰歷史／自動儲存 | `node validate-ability-roll.js`；僅 27 購點套用與還原可用 `node validate-ability-roll.js --point-buy-only` |
-| 共用 AppDialog 提示的堆疊、倒數、關閉及觸控滑除 | `node validate-app-dialog-toast.js` |
-| 擲骰備註、長按／鍵盤／觸控操作、取消或歷史相容性 | `node validate-dice-roll-notes.js` |
-| 主手2、盾牌、雙手武器衝突、相關 AC／裝備摘要／PDF 欄位 | `node validate-main2-shield.js` |
+| 屬性產生與共用擲骰：購點、結果分配、背景加值、備註／取消／鍵盤／觸控、歷史相容性及自動儲存 | `node validate-ability-roll.js`；可用 `--point-buy-only` 或 `--dice-only` 選擇購點或一般擲骰／歷史分項 |
 | 導覽屬性引導／觸控；創角匯入銜接／PDF 載入取消；跑團模式法術與資源教學預覽；共用導覽流程 | 分別優先使用 `node validate-onboarding.js --touch-only`、`node validate-onboarding.js --imports-only`；影響共用導覽或分項不足以涵蓋時執行完整 `node validate-onboarding.js` |
 | 短休／長休、生命骰、資源恢復或最佳旅伴 | `node validate-tabletop-rest.js` |
-| 共用主題切換／保存、主題變數／素材、技能網格共用版面、PDF 盾牌受訓或實際可編輯 PDF 匯出 | `node validate-ui-themes.js`；此腳本混合主題、About、技能及 PDF，局部 About 內容／互動依上方原則驗證，不自動連帶驗證 PDF 或導覽 |
-| PDF 精靈／魔人血統環法恢復提示 | `node validate-pdf-lineage-recovery.js`；涉及實際匯出時加跑 `node validate-ui-themes.js` |
-| 明確要求建立、測試或更新離線角色卡 | 先執行 `build-offline-nopdf.ps1`，再執行 `node validate-offline-sharing.js` |
+| 共用 UI：主題／保存／素材、工具選單與技能版面、Legal／About、AppDialog／toast、PDF 欄位與實際可編輯匯出 | `node validate-ui.js`；可用 `--appearance-only`、`--dialogs-only`、`--pdf-only` 或 `--pdf-fields-only` 選擇分項。局部 UI 依上方原則驗證，不自動連帶驗證 PDF 或導覽 |
+
+離線成品屬於建置驗證，不列為產品 regression suite。明確要求建立、測試或更新離線角色卡時執行 `build-offline-nopdf.ps1`；建置完成會自動檢查產物語法與離線分享／離開流程，失敗時回報建置失敗。環境需求與模擬限制見 README。
 
 持續法術效果改變一般角色或野獸的 AC／速度計算、施法操作或狀態保存時，也需執行 `node validate-tabletop-druid.js`；僅調整其顯示字色、字級或間距不因此觸發整套德魯伊回歸。
 
