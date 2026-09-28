@@ -2,7 +2,7 @@ $ErrorActionPreference = "Stop"
 
 $root = $PSScriptRoot
 $sourceHtmlPath = Join-Path $root "index.html"
-$outputFileName = "TWD20-offline.html"
+$outputFileName = "twD20-offline.html"
 $outputHtmlPath = Join-Path $root $outputFileName
 
 function Get-Base64TextDataUrl {

@@ -40,6 +40,7 @@ python -m http.server 8000
 | `character-rules.js` | 共用角色計算與規則 |
 | `class-features.js`、`race.js`、`backgrounds.js`、`feats.js`、`tool-data.js`、`monster.js`、`equipment-data.js`、`equipment-notes.js`、`spell-list.js`、`condition.js`、`deity-info.js` | 職業、種族、背景、專長、工具、野獸、裝備、法術、狀態及神祇資料 |
 | `action-panel.js`、`spellbook.js`、`quick-build.js`、`onboarding-tour.js` | 動作選項、法術書、創角及導覽 |
+| `search.js` | 法術全文／職業／環位搜尋、裝備搜尋與結果詳情；保留工具列與導覽使用的全域入口 |
 | `tabletop-mode.js` | 跑團模式共用狀態與 `TabletopMode` API |
 | `tabletop-actions.js`、`tabletop-druid.js`、`tabletop-spells.js`、`tabletop-resources.js` | 跑團模式動作、德魯伊形態／能力、施法及資源操作 |
 | `dice-roller.js`、`app-dialog.js`、`scroll-to-top.js` | 擲骰與歷史、共用對話框、頁面捲動 |
@@ -50,6 +51,16 @@ python -m http.server 8000
 | `cloudflare/twd20-url/` | 短網址 Worker，與網站分開部署；API、KV、限流與維護見 [Worker README](cloudflare/twd20-url/README.md) |
 
 角色選擇由既有表單／DOM 提供；跑團模式模組共用 `TabletopMode`、`SpellCatalog`、`CharacterRules`、`DiceRoller`，儲存統一使用 `window.dndStorage`。非施法動作以穩定 key、分類、等級及角色選擇條件定義，沿用主要規則資料。
+
+### 在類似專案整合搜尋
+
+以 [search.js](search.js) 為搜尋實作入口，檔案開頭列出整合契約。沿用原生 `<script defer>`，放在 `equipment-data.js` 後載入並加上資源版本；法術來源仍是 `SpellCatalog`，裝備來源仍是結構化陣列及 `equipment-notes.js` 產生的說明 DOM。
+
+另一個專案需同步核對 `index.html` 的法術／裝備搜尋表單與結果 DOM、`styles.css` 的搜尋與裝備詳情樣式，以及 `scroll-to-top.js` 的搜尋開關／切頁行為。搜尋本身不包含這些 UI 素材，也不接管角色保存。法術結果呼叫宿主的 `window.autoPrepareSpellFromFeature(spellId, trigger)`；裝備購買沿用原說明區的購買連結。若宿主的 DOM 或詳情 API 不同，應在這些邊界調整串接。
+
+`window.searchAllSpells()`、`window.clearSpellSearchResults()`、`window.applyEquipmentFilter()` 保留供工具列與導覽還原使用；索引與輔助函式封裝於檔案內。法術索引於載入時預建，裝備索引於首次搜尋建立，因此必須等裝備說明 DOM 就緒再開放搜尋。分享與 autosave 繼續排除 `spell-search`、`equipment-search`，不改變既有角色資料格式。
+
+搜尋別名包含德魯伊的「小D／小德」、Warlock 的「邪術／邪術師／魔導／魔導師／魔導士」，並支援「奇械／奇械師」的全職業與指定環位查詢（例如「奇械法術」「奇械師法術」「奇械一環」）。Artificer 法術須由宿主 `SpellCatalog.getClassIds()` 回傳 `artificer`；本專案未加入該職業或法術資料，因此相關查詢會顯示空結果。
 
 ## 維護與驗證
 
@@ -78,6 +89,7 @@ npx --no-install playwright install chromium
 | `node validate-onboarding.js` | 新手／跑團模式導覽（含第 3 步自動開啟選單、雙高亮與按鈕點擊、減少動態效果）、創角小幫手匯入、觸控、取消、資料與焦點保留、PDF 載入及取消流程 | 瀏覽器；PDF 繪製以替身驗證，未測實際成品 |
 | `node validate-pdf-lineage-recovery.js` | 精靈與魔人於不同等級的 PDF 血統環法恢復提示 | 純 Node.js；只檢查欄位資料 |
 | `node validate-spellbook.js` | 法術書、準備數量、書內儀式、創角匯入、PDF 法術書選項、JSON／分享／自動儲存及版面 | 瀏覽器 |
+| `node validate-spell-search.js` | 法術全文搜尋、職業全名／別名與指定環位、排序、空結果／清空、鍵盤、窄螢幕與詳情／焦點保留；含 Artificer 無資料與模擬資料案例，以及裝備索引、詳情／規則關鍵字說明／購買取消、切頁及導覽還原 | 瀏覽器；可加 `--equipment-only` 僅驗證裝備搜尋，含桌機／窄螢幕、說明開關及焦點還原；同時檢查 `search.js` 與主頁內嵌 JavaScript 語法 |
 | `node validate-tabletop-druid.js` | 荒野形態、野獸攻擊、德魯伊資源、持續法術效果（含一般／野獸 AC 與速度）、專注、儲存與版面 | 瀏覽器 |
 | `node validate-tabletop-rest.js` | 短休／長休、生命骰、職業與種族資源恢復、最佳旅伴、可選恢復、取消與自動儲存 | 瀏覽器 |
 | `node validate-tabletop-spellcasting.js` | 法術 metadata、施法條件、法術位、專注與自動擲骰 | 純 Node.js 與 Git；需可讀取 `HEAD:spell-list.js`，比對既有法術 ID |

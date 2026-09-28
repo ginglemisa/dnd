@@ -12,6 +12,16 @@
   });
   const CUSTOM_ACTION_LABEL_MAX = 40;
   const CUSTOM_ACTION_DESCRIPTION_MAX = 600;
+  const OPTION_BUTTON_LABELS = Object.freeze({
+    "半身人靈巧": "半身靈巧",
+    "吟遊詩人激勵": "詩人激勵",
+    "驅散不死生物": "驅散不死",
+    "焚燒不死生物": "焚燒不死",
+    "生命門徒（生命）": "生命門徒",
+    "維持生命（生命）": "維持生命",
+    "拆除發條裝置": "拆除裝置",
+    "解除荒野形態": "解除形態"
+  });
   const selectedOptionKeys = new Map(MODES.map(mode => [mode, ""]));
   const spellGroupExpanded = new Map(["action", "bonus", "reaction"].map(mode => [mode, false]));
   const elements = {};
@@ -889,7 +899,13 @@
         button.setAttribute("aria-pressed", String(option.key === selectedKey));
         if (option.key === selectedKey) button.classList.add("is-selected");
       }
-      button.appendChild(createElement("span", "", api.getButtonLabel(option)));
+      let buttonLabel = api.getButtonLabel(option);
+      if (option.source === "職業" || option.source === "種族") {
+        buttonLabel = OPTION_BUTTON_LABELS[buttonLabel] || buttonLabel;
+      }
+      button.appendChild(createElement("span", "", option.source === "職業"
+        ? buttonLabel.replace(/（[^（）]+子職）$/u, "")
+        : buttonLabel));
       const buttonTag = option.buttonTag || option.source;
       if (buttonTag) button.appendChild(createElement("span", "tabletop-source-tag", buttonTag));
       button.addEventListener("click", () => {
