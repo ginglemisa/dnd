@@ -1911,7 +1911,7 @@
     const hitDieSummary = String(content.hitDie || "").replace(/，每級多一顆$/, "");
     const spellcastingSourceLabel = content.spellcastingAbilitySource === "class" ? "職業固定" : content.spellcastingAbilitySource === "player-override" ? `${content.spellcastingSource?.label || "來源"}選擇` : `${content.spellcastingSource?.label || "來源"}預選`;
     const spellcastingSummary = content.spellcastingSource ? `<dt>施法屬性</dt><dd>${escapeHtml(ABILITY_LABELS[content.spellcastingAbility] || "")}（${escapeHtml(spellcastingSourceLabel)}）</dd>` : "";
-    const skillBonusSummary = sourceAwareAcquisitions("skillBonuses", item => item.sourceType === "class");
+    const skillBonusSummary = groupedSourceAcquisitions("skillBonuses", item => item.sourceType === "class", compactFeatureSource);
     const optionalRow = (label, value) => !value || value === "無" ? "" : `<dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd>`;
     body.innerHTML = `<h3>職業與屬性摘要確認</h3><section class="quick-build-complete"><dl class="quick-build-summary-list"><dt>職業</dt><dd>${escapeHtml(selection?.label || "")}${content.classTypeLabel ? `（${escapeHtml(content.classTypeLabel)}）` : ""}</dd><dt>關鍵屬性</dt><dd>${escapeHtml(content.keyAbilityText || "")}</dd><dt>生命骰</dt><dd>${escapeHtml(hitDieSummary)}</dd><dt class="quick-build-summary-full-label">屬性總值</dt><dd class="quick-build-summary-full-value"><div class="quick-build-ability-summary">${abilitySummary}</div></dd>${spellcastingSummary}<dt>豁免熟練</dt><dd>${escapeHtml((content.saves || []).join("、"))}</dd><dt>技能熟練</dt><dd>${escapeHtml(skillSummary)}</dd>${optionalRow("技能額外加值", skillBonusSummary)}${optionalRow("工具熟練", toolSummary)}${optionalRow("武器熟練", content.weaponProficiencies)}${optionalRow("護甲訓練", content.armorTraining)}</dl></section>${duplicateReviewWarning()}`;
   }
@@ -2289,7 +2289,7 @@
     const summaryRows = [
       summaryRow("固定能力", (content.fixed || []).join("、")),
       summaryRow("職業選項", optionSummary),
-      summaryRow("技能額外加值", sourceAwareAcquisitions("skillBonuses")),
+      summaryRow("技能額外加值", groupedSourceAcquisitions("skillBonuses", () => true, compactFeatureSource)),
       summaryRow("戲法", (content.cantrips || []).concat(content.tome?.cantrips || []).map(spellNameZh).join("、")),
       summaryRow("準備法術", (content.preparedSpells || []).concat(content.tome?.rituals || []).map(spellNameZh).join("、")),
       summaryRow("法術書", spellbookSummary),
@@ -2346,6 +2346,18 @@
       else groups.push({ source: sourceText, names: [item.name] });
     });
     return groups.map(group => `${group.names.join("、")}${group.source ? `（${group.source}）` : ""}`).join("\n");
+  }
+
+
+  function compactFeatureSource(item) {
+    return item.source?.feature || item.source?.label || item.sourceType || "未知來源";
+  }
+
+  function compactExpertiseSource(item) {
+    const sourceLabel = item.source?.label || item.sourceType || "未知來源";
+    const feature = String(item.source?.feature || "").replace(/\s*1\s*級/u, "").trim();
+    if (!feature || feature === "專精") return `${sourceLabel}專精`;
+    return feature;
   }
 
   function raceOptionSummary() {
@@ -2410,8 +2422,8 @@
         ${summaryField("戰鬥風格", fightingStyle)}
         ${summaryField("武器精通", weaponMasteries)}
         ${summaryField("技能熟練", groupedSourceAcquisitions("skills"), true)}
-        ${summaryField("專精", sourceAwareAcquisitions("expertise"))}
-        ${summaryField("技能額外加值", sourceAwareAcquisitions("skillBonuses"))}
+        ${summaryField("專精", groupedSourceAcquisitions("expertise", () => true, compactExpertiseSource), true)}
+        ${summaryField("技能額外加值", groupedSourceAcquisitions("skillBonuses", () => true, compactFeatureSource), true)}
         ${summaryField("工具熟練", groupedSourceAcquisitions("tools"), true)}
         ${summaryField("語言", languageSummary, true)}
         ${summaryField("法術", groupedSourceAcquisitions("spells"), true)}
