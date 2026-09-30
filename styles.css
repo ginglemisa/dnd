@@ -4058,6 +4058,139 @@ html[data-ui-theme="warm"][data-theme="dark"] .circle-checkbox:checked {
   padding-left: 18px;
 }
 
+/* 狀態／危害共用參考介面，沿用四種主題的現有色彩 token。 */
+.condition-reference-section,
+.condition-reference-panel,
+.condition-display-card {
+  min-width: 0;
+}
+
+.condition-reference-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-soft);
+}
+
+.condition-reference-tab {
+  min-width: 0;
+  min-height: 2.75rem;
+  padding: 0.6rem 0.4rem;
+  border: 0;
+  border-right: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-muted);
+  font-size: var(--fs-md);
+  font-weight: 750;
+}
+
+.condition-reference-tab:last-child {
+  border-right: 0;
+}
+
+.condition-reference-tab[aria-selected="true"] {
+  background: var(--accent-soft);
+  box-shadow: inset 0 -3px 0 var(--accent);
+  color: var(--accent);
+}
+
+.condition-reference-tab:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+}
+
+.condition-reference-panel[hidden] {
+  display: none;
+}
+
+.condition-reference-panel .condition-button-grid button {
+  min-width: 0;
+  padding-inline: 0.25rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+#hazard-button-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.condition-reference-panel .condition-display-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.condition-display-card ul li {
+  overflow-wrap: anywhere;
+}
+
+.condition-requirements-table {
+  width: 100%;
+  margin-top: 0.85rem;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: var(--fs-sm);
+}
+
+.condition-requirements-table caption {
+  padding-bottom: 0.4rem;
+  color: var(--text);
+  font-weight: 750;
+  text-align: left;
+}
+
+.condition-requirements-english,
+.condition-size-english {
+  display: block;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+
+.condition-requirements-table th,
+.condition-requirements-table td {
+  padding: 0.45rem 0.35rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.condition-requirements-table thead th {
+  background: var(--surface-muted);
+  color: var(--text);
+  font-weight: 750;
+}
+
+.condition-requirements-table tbody th {
+  width: 60%;
+  font-weight: 650;
+}
+
+.condition-requirements-table td {
+  overflow-wrap: anywhere;
+}
+
+:where(html:not([data-ui-theme="warm"])) #hazard-button-grid .active-condition {
+  background: var(--accent-soft);
+  border-color: #b8c8ff;
+  color: #2447c7;
+}
+
+:where(html[data-ui-theme="warm"]) #hazard-button-grid .active-condition {
+  background: var(--accent-soft);
+  border-color: var(--border);
+  color: var(--accent);
+}
+
+html[data-theme="dark"] #hazard-button-grid .active-condition {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
 :where(html:not([data-ui-theme="warm"])) #condition-button-grid .active-condition {
   background: var(--accent-soft);
   border-color: #b8c8ff;
