@@ -990,14 +990,8 @@ html[data-view-mode="tabletop"] .utility-menu {
 #theme-toggle-label {
   flex: 1 1 auto;
   margin: 0;
+  font-size: inherit;
   cursor: pointer;
-}
-
-#theme-current-label {
-  display: block;
-  color: var(--text-muted);
-  font-size: var(--fs-xs);
-  font-weight: 400;
 }
 
 .utility-menu__theme-setting #color-mode-toggle {

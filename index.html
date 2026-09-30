@@ -46,7 +46,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261001-condition-hazards">
+  <link rel="stylesheet" href="styles.css?v=20261001-compact-menu">
   <script src="scroll-to-top.js?v=20260924-default-off" defer></script>
   <script src="dice-roller.js?v=20260924-quick-roll-toast" defer></script>
   <script src="monster.js?v=20260912-druid-controls" defer></script>
@@ -108,8 +108,7 @@
       </section>
 
       <div class="utility-menu__divider" role="separator"></div>
-      <fieldset class="utility-menu__settings">
-        <legend>操作設定</legend>
+      <fieldset class="utility-menu__settings" aria-label="操作設定">
         <div class="utility-menu__settings-row">
           <label class="utility-menu__setting" title="開啟時自動計算最大 HP、AC、先攻、速度與被動察覺；關閉後可自行輸入。">
             <span>自動計算HP/AC/先攻</span>
@@ -127,7 +126,7 @@
             <span class="utility-menu__switch" aria-hidden="true"></span>
           </label>
           <div class="utility-menu__setting utility-menu__theme-setting">
-            <label id="theme-toggle-label" for="theme-toggle">更換主題顏色<small id="theme-current-label" aria-live="polite">暖紙・亮色</small></label>
+            <label id="theme-toggle-label" for="theme-toggle">更換主題：<span id="theme-current-label" aria-live="polite">暖紙 | 亮</span></label>
             <button type="button" id="color-mode-toggle" aria-label="切換為暗色" aria-pressed="false" title="切換亮色／暗色"><span aria-hidden="true">🌓</span></button>
             <label class="utility-menu__theme-switch" title="切換經典／暖紙主題">
               <input id="theme-toggle" type="checkbox" role="switch" aria-label="暖紙主題（關閉使用經典主題）" data-state-transient="true">
@@ -7355,7 +7354,7 @@ function setupUtilityMenu() {
       colorModeToggle.setAttribute("aria-pressed", String(dark));
       colorModeToggle.title = label;
     }
-    if (currentThemeLabel) currentThemeLabel.textContent = `${warm ? "暖紙" : "經典"}・${dark ? "暗色" : "亮色"}`;
+    if (currentThemeLabel) currentThemeLabel.textContent = `${warm ? "暖紙" : "經典"} | ${dark ? "暗" : "亮"}`;
   };
 
   const applyTheme = (theme, { persist = true } = {}) => {
