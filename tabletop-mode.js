@@ -4786,7 +4786,7 @@ function getRogueReliableTalentEntry() {
             return;
           }
           const confirmed = await globalScope.AppDialog?.requestDecision({
-            title: "📝跑團模式",
+            title: "跑團模式",
             message: "跑團使用的簡易介面，顯示常用數值、戰鬥可用選項、點擊丟骰等功能。",
             cancelLabel: "暫不進入",
             confirmLabel: "進入跑團模式",
