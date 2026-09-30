@@ -9,6 +9,7 @@ twD20 是 Reggie Tsai / 瑞基製作的手機創角工具，協助新手、DM �
 - **創角與角色卡**：數值、技能、裝備、動作、法術；支援 27 點購買、屬性擲骰、職業範本、自動計算、創角小幫手及新手導覽。
 - **跑團模式操作**：HP、臨時 HP、狀態、死亡豁免、專注、武器攻擊、法術位與職業資源；可隱藏或自訂行動，管理法術書與儀式施法。
 - **紀錄與輸出**：本機自動儲存、JSON 匯入／匯出、分享網址、QR Code、PDF 角色卡及單檔離線版；可選用擲骰與歷史紀錄。
+- **冒險日誌**：獨立書頁閱讀與編輯、分頁及整本 JSON 匯入／匯出；手動記錄角色資訊、團錄與獎勵，使用 `dnd.adventureJournal.v1` 保存，不包含在角色 JSON、分享或角色自動存檔中，清除角色紀錄也會保留日誌。匯入會經確認後取代整本日誌，請先匯出備份。
 - **外觀**：工具選單切換暖紙／經典，🌓 切換亮色／暗色；預設暖紙並沿用既有明暗偏好。兩項設定各自保存，不包含在角色 JSON 或分享網址中。
 
 ## 資料保存與分享
@@ -40,6 +41,7 @@ python -m http.server 8000
 | `character-rules.js` | 共用角色計算與規則 |
 | `class-features.js`、`race.js`、`backgrounds.js`、`feats.js`、`tool-data.js`、`monster.js`、`equipment-data.js`、`equipment-notes.js`、`spell-list.js`、`condition.js`、`deity-info.js` | 職業、種族、背景、專長、工具、野獸、裝備、法術、狀態及神祇資料 |
 | `action-panel.js`、`spellbook.js`、`quick-build.js`、`onboarding-tour.js` | 動作選項、法術書、創角及導覽 |
+| `adventure-journal.js` | 獨立冒險日誌、版本化 JSON、本機保存與匯入／匯出 |
 | `search.js` | 法術全文／職業／環位搜尋、裝備搜尋與結果詳情；保留工具列與導覽使用的全域入口 |
 | `tabletop-mode.js` | 跑團模式共用狀態與 `TabletopMode` API |
 | `tabletop-actions.js`、`tabletop-druid.js`、`tabletop-spells.js`、`tabletop-resources.js` | 跑團模式動作、德魯伊形態／能力、施法及資源操作 |
