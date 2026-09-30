@@ -704,14 +704,27 @@
       : [];
   }
 
-  function getConditionKeys() {
+  function getHazardData() {
+    return Array.isArray(globalScope.DND_HAZARDS)
+      ? globalScope.DND_HAZARDS
+      : [];
+  }
+
+  function getTrackableStatusData() {
+    return [
+      ...getConditionData(),
+      ...getHazardData()
+    ];
+  }
+
+  function getTrackableStatusKeys() {
     return new Set(
-      getConditionData().map((condition) => condition.key)
+      getTrackableStatusData().map((item) => item.key)
     );
   }
 
   function normalizeCombatState(data = {}) {
-    const allowedKeys = getConditionKeys();
+    const allowedKeys = getTrackableStatusKeys();
     const rawConditions = Array.isArray(data.activeConditions)
       ? data.activeConditions
       : [];
@@ -2593,10 +2606,10 @@ function getRogueReliableTalentEntry() {
 
     const conditionMap =
       new Map(
-        getConditionData().map(
-          (condition) => [
-            condition.key,
-            condition
+        getTrackableStatusData().map(
+          (item) => [
+            item.key,
+            item
           ]
         )
       );
@@ -2638,7 +2651,7 @@ function getRogueReliableTalentEntry() {
         "tabletop-condition-empty";
 
       empty.textContent =
-        "目前沒有標記狀態。";
+        "目前沒有標記狀態或危害。";
 
       elements.activeConditions
         .replaceChildren(empty);
@@ -3657,6 +3670,27 @@ function getRogueReliableTalentEntry() {
       return;
     }
 
+    const isHazard =
+      getHazardData().some(
+        (hazard) =>
+          hazard.key === conditionKey
+      );
+
+    if (
+      isHazard
+      && typeof globalScope
+        .renderDndHazardDescription
+        === "function"
+    ) {
+      globalScope
+        .renderDndHazardDescription(
+          container,
+          conditionKey
+        );
+
+      return;
+    }
+
     if (
       typeof globalScope
         .renderDndConditionDescription
@@ -3696,10 +3730,20 @@ function getRogueReliableTalentEntry() {
           item.key === conditionKey
       );
 
+    const hazard =
+      getHazardData().find(
+        (item) =>
+          item.key === conditionKey
+      );
+
+    const isHazard = Boolean(hazard);
+
     const label =
       conditionKey === "exhaustion"
         ? "力竭"
-        : condition?.zh || "狀態";
+        : condition?.zh
+          || hazard?.zh
+          || "狀態／危害";
 
     const content =
       document.createElement("div");
@@ -3717,7 +3761,9 @@ function getRogueReliableTalentEntry() {
       content,
       actions: [
         {
-          label: "狀態結束",
+          label: isHazard
+            ? "危害結束"
+            : "狀態結束",
           intent: "danger",
           value: "end-condition"
         },
@@ -3755,7 +3801,9 @@ function getRogueReliableTalentEntry() {
         }
       }
 
-      markStateChanged(`已結束「${label}」狀態。`);
+      markStateChanged(
+        `已結束「${label}」${isHazard ? "危害" : "狀態"}。`
+      );
     });
   }
 
@@ -3765,7 +3813,7 @@ function getRogueReliableTalentEntry() {
     }
 
     const rows =
-      getConditionData()
+      getTrackableStatusData()
         .filter(
           (condition) =>
             condition.key
@@ -3902,7 +3950,7 @@ function getRogueReliableTalentEntry() {
           ? "exhaustion"
           : ""
       )
-      || getConditionData()[0]
+      || getTrackableStatusData()[0]
         ?.key;
 
     renderModalDescription(
@@ -4077,7 +4125,7 @@ function getRogueReliableTalentEntry() {
       newlyReachedFatalExhaustion
     ) {
       markStateChanged(
-        `目前狀態已更新，共標記 ${total} 項。力竭 6 級：${HEROIC_SACRIFICE_LABEL}。`
+        `目前狀態／危害已更新，共標記 ${total} 項。力竭 6 級：${HEROIC_SACRIFICE_LABEL}。`
       );
 
       return;
@@ -4085,14 +4133,14 @@ function getRogueReliableTalentEntry() {
 
     if (exhaustion.level > 0) {
       markStateChanged(
-        `目前狀態已更新，共標記 ${total} 項。力竭${exhaustion.level},骰-${exhaustion.d20Penalty},速-${exhaustion.speedPenaltyFeet}。`
+        `目前狀態／危害已更新，共標記 ${total} 項。力竭${exhaustion.level},骰-${exhaustion.d20Penalty},速-${exhaustion.speedPenaltyFeet}。`
       );
 
       return;
     }
 
     markStateChanged(
-      `目前狀態已更新，共標記 ${total} 項。`
+      `目前狀態／危害已更新，共標記 ${total} 項。`
     );
   }
 
