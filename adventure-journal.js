@@ -18,8 +18,8 @@
   const icons = {
     add: '<path d="M14 2H5v20h14V7zM14 2v5h5M8 14h8M12 10v8"/>',
     delete: '<path d="M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7"/>',
-    export: '<path d="M12 16V3M7 8l5-5 5 5M4 14v7h16v-7"/>',
-    import: '<path d="M12 3v13M7 11l5 5 5-5M4 14v7h16v-7"/>',
+    import: '<path d="M12 16V3M7 8l5-5 5 5M4 14v7h16v-7"/>',
+    export: '<path d="M12 3v13M7 11l5 5 5-5M4 14v7h16v-7"/>',
     close: '<path d="M6 6l12 12M18 6L6 18"/>'
   };
   let book = emptyBook();
@@ -120,7 +120,7 @@
     toolbar.setAttribute("role", "group");
     toolbar.setAttribute("aria-label", "日誌工具");
     toolbar.append(button("新增一頁", "add", "add"), button("刪除此頁", "delete", "delete"),
-      button("匯出 JSON", "export", "export"), button("匯入 JSON", "import", "import"));
+      button("匯入 JSON", "export", "export"), button("匯出 JSON", "import", "import"));
     header.append(toolbar, button("關閉冒險日誌", "close", "close"));
     const file = document.createElement("input");
     file.id = "journal-import-file";
