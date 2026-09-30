@@ -4061,7 +4061,7 @@ html[data-ui-theme="warm"][data-theme="dark"] .circle-checkbox:checked {
 /* 狀態／危害共用參考介面，沿用四種主題的現有色彩 token。 */
 .condition-reference-section,
 .condition-reference-panel,
-.condition-display-card {
+.condition-reference-panel .condition-display-card {
   min-width: 0;
 }
 
@@ -4122,7 +4122,7 @@ html[data-ui-theme="warm"][data-theme="dark"] .circle-checkbox:checked {
   grid-template-columns: minmax(0, 1fr);
 }
 
-.condition-display-card ul li {
+.condition-reference-panel .condition-display-card ul li {
   overflow-wrap: anywhere;
 }
 
