@@ -1485,7 +1485,7 @@
 :where(html[data-ui-theme="warm"]) #quick-build-wizard .quick-build-footer button.is-incomplete:focus-visible {box-shadow:var(--shadow-control)}:where(html:not([data-ui-theme="warm"])) #quick-build-wizard .quick-build-footer button.is-ready {animation:quick-build-next-ready .52s cubic-bezier(.22,1,.36,1)}:where(html[data-ui-theme="warm"]) #quick-build-wizard .quick-build-footer button.is-ready {animation:none}#quick-build-wizard .quick-build-footer button:disabled {cursor:not-allowed;opacity:.55;box-shadow:none}
       :where(html[data-ui-theme="warm"]) #quick-build-wizard .quick-build-footer button:not(:disabled):active {box-shadow:none;translate:1px 1px}
       #quick-build-wizard .quick-build-previous {grid-column:1}#quick-build-wizard .quick-build-modify {grid-column:2;border-color:var(--qb-accent);color:var(--qb-accent-text);font-weight:800}#quick-build-wizard .quick-build-next {grid-column:3}
-      .quick-build-summary-list .quick-build-summary-full-label {grid-column:1/-1}.quick-build-summary-list .quick-build-summary-full-value {grid-column:1/-1;padding-inline-start:1em;text-align:left}
+      .quick-build-summary-list .quick-build-summary-full-label {grid-column:1/-1}.quick-build-summary-list .quick-build-summary-full-value {grid-column:1/-1;padding-inline-start:1em;text-align:left}.quick-build-review-panel .quick-build-source-groups {white-space:pre-line}
       :where(html:not([data-ui-theme="warm"])) #quick-build-wizard .quick-build-equipment-actions button.is-selected {border-color:var(--qb-accent);background:var(--qb-accent-hover);color:#fff;box-shadow:inset 0 0 0 1px var(--qb-accent)}
       :where(html[data-ui-theme="warm"]) #quick-build-wizard .quick-build-equipment-actions button.is-selected {border-color:var(--qb-accent);background:var(--qb-accent-hover);color:var(--on-accent);box-shadow:inset 0 0 0 1px var(--qb-accent)}
       @keyframes quick-build-flow-in {from{opacity:0;transform:translateY(-14px)}to{opacity:1;transform:translateY(0)}}@keyframes quick-build-next-ready {0%{transform:scale(.96);box-shadow:0 0 0 0 var(--qb-accent-soft)}55%{transform:scale(1.04);box-shadow:0 0 0 7px var(--qb-accent-soft)}100%{transform:scale(1);box-shadow:0 0 0 3px var(--qb-accent-soft)}}@keyframes quick-build-attention {0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--qb-warning-border) 0%,transparent)}55%{box-shadow:0 0 0 7px color-mix(in srgb,var(--qb-warning-border) 28%,transparent)}100%{box-shadow:0 0 0 3px color-mix(in srgb,var(--qb-warning-border) 24%,transparent)}}
@@ -2333,6 +2333,21 @@
     }).join("、");
   }
 
+  function groupedSourceAcquisitions(type, predicate = () => true, formatSource = item => item.source?.label || item.sourceType || "未知來源") {
+    const entries = (draft.acquisitions[type] || []).filter(item => acquisitionAppliesAtLevel(item) && predicate(item));
+    if (!entries.length) return "無";
+    const groups = [];
+    entries.forEach(item => {
+      const source = formatSource(item);
+      const gainedAt = Number(item.content?.gainedAt) > 1 ? `，${item.content.gainedAt} 級取得` : "";
+      const sourceText = `${source}${gainedAt}`;
+      const lastGroup = groups[groups.length - 1];
+      if (lastGroup?.source === sourceText) lastGroup.names.push(item.name);
+      else groups.push({ source: sourceText, names: [item.name] });
+    });
+    return groups.map(group => `${group.names.join("、")}${group.source ? `（${group.source}）` : ""}`).join("\n");
+  }
+
   function raceOptionSummary() {
     const options = draft.choices.raceOptions || {};
     const labels = { ancestry: "血統／恩賜", lineage: "傳承／血統", legacy: "邪魔遺贈", size: "體型", skill: "技能", cantrip: "戲法", feat: "起源專長" };
@@ -2359,12 +2374,12 @@
     const invocations = (levelOne.invocations || []).map(id => ELDRITCH_INVOCATION_OPTIONS.find(option => option.id === id)?.label || id);
     const fixedSpecialLanguages = (levelOne.fixed || []).filter(name => ["德魯伊語", "盜賊黑話"].includes(name))
       .map(name => `${name}（${CLASS_LABELS[draft.choices.class]}）`);
-    const selectedLanguages = sourceAwareAcquisitions("languages", () => true, item => {
+    const selectedLanguages = groupedSourceAcquisitions("languages", () => true, item => {
       if (item.sourceId === "rogue") return CLASS_LABELS.rogue;
       if (draft.choices.race === "tiefling" && item.content?.value === "infernal") return RACE_LABELS.tiefling;
       return "";
     });
-    const languageSummary = [selectedLanguages === "無" ? "" : selectedLanguages, ...fixedSpecialLanguages].filter(Boolean).join("、") || "無";
+    const languageSummary = [selectedLanguages === "無" ? "" : selectedLanguages, ...fixedSpecialLanguages].filter(Boolean).join("\n") || "無";
     const levelOneOptions = [classOption, ...invocations].filter(Boolean).join("、") || "無";
     const fightingStyle = levelOne.fightingStyle || "無";
     const weaponMasteries = (levelOne.weaponMasteries || []).map(name => {
@@ -2372,7 +2387,7 @@
       return mastery ? `${name}（${mastery}）` : name;
     }).join("、") || "無";
     const duplicateWarning = duplicateReviewWarning();
-    const summaryField = (label, value) => value === "無" ? "" : `<dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd>`;
+    const summaryField = (label, value, grouped = false) => value === "無" ? "" : `<dt>${escapeHtml(label)}</dt><dd${grouped ? ' class="quick-build-source-groups"' : ""}>${escapeHtml(value)}</dd>`;
     body.innerHTML = `<h3>1 級角色總覽</h3><p class="quick-build-lead">以下保留每一筆取得內容及其來源，供匯入手機角卡前確認。</p>${duplicateWarning}
       <section class="quick-build-choice-panel quick-build-review-panel"><h4>背景、種族與職業</h4><dl class="quick-build-summary-list">
         ${summaryField("背景", draft.selections.background?.label || "無")}
@@ -2394,12 +2409,12 @@
         ${summaryField("專長", sourceAwareAcquisitions("feats", item => item.content?.type !== "fightingStyle", item => item.source?.label || item.sourceType || "未知來源"))}
         ${summaryField("戰鬥風格", fightingStyle)}
         ${summaryField("武器精通", weaponMasteries)}
-        ${summaryField("技能熟練", sourceAwareAcquisitions("skills", () => true, item => item.source?.label || item.sourceType || "未知來源"))}
+        ${summaryField("技能熟練", groupedSourceAcquisitions("skills"), true)}
         ${summaryField("專精", sourceAwareAcquisitions("expertise"))}
         ${summaryField("技能額外加值", sourceAwareAcquisitions("skillBonuses"))}
-        ${summaryField("工具熟練", sourceAwareAcquisitions("tools", () => true, item => item.source?.label || item.sourceType || "未知來源"))}
-        ${summaryField("語言", languageSummary)}
-        ${summaryField("法術", sourceAwareAcquisitions("spells", () => true, item => item.source?.label || item.sourceType || "未知來源"))}
+        ${summaryField("工具熟練", groupedSourceAcquisitions("tools"), true)}
+        ${summaryField("語言", languageSummary, true)}
+        ${summaryField("法術", groupedSourceAcquisitions("spells"), true)}
       </dl></section>
       <section class="quick-build-choice-panel quick-build-review-panel"><h4>裝備選擇</h4><dl class="quick-build-summary-list">
         ${summaryField("背景裝備", formatEquipmentSelection(draft.selections.backgroundEquipment))}
