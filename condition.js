@@ -155,7 +155,7 @@
     }
   ].map(freezeCondition));
 
-  // 危害僅供規則參考，不加入可套用至角色的 DND_CONDITIONS。
+  // 危害維持獨立規則資料，不加入 DND_CONDITIONS；是否作為可追蹤標記由消費端決定。
   const HAZARDS = Object.freeze([
     {
       key: "burning",
@@ -246,10 +246,16 @@
   })));
 
   const CONDITIONS_BY_KEY = new Map(CONDITIONS.map((condition) => [condition.key, condition]));
+  const HAZARDS_BY_KEY = new Map(HAZARDS.map((hazard) => [hazard.key, hazard]));
 
   function getCondition(conditionOrKey) {
     if (conditionOrKey && typeof conditionOrKey === "object") return conditionOrKey;
     return CONDITIONS_BY_KEY.get(String(conditionOrKey || "")) || null;
+  }
+
+  function getHazard(hazardOrKey) {
+    if (hazardOrKey && typeof hazardOrKey === "object") return hazardOrKey;
+    return HAZARDS_BY_KEY.get(String(hazardOrKey || "")) || null;
   }
 
   function createConditionDescription(conditionOrKey) {
@@ -284,7 +290,10 @@
     container.replaceChildren(...(description ? [description] : []));
   }
 
-  function createHazardDescription(hazard) {
+  function createHazardDescription(hazardOrKey) {
+    const hazard = getHazard(hazardOrKey);
+    if (!hazard) return null;
+
     // 共用既有卡片結構，不改變其他模組呼叫的狀態說明 API。
     const card = createConditionDescription(hazard);
     if (!card) return null;
@@ -339,12 +348,21 @@
     return card;
   }
 
+  function renderHazardDescription(container, hazardOrKey) {
+    if (!container) return;
+    const description = createHazardDescription(hazardOrKey);
+    container.replaceChildren(...(description ? [description] : []));
+  }
+
   Object.assign(globalScope, {
     DND_CONDITIONS: CONDITIONS,
     DND_HAZARDS: HAZARDS,
     getDndCondition: getCondition,
+    getDndHazard: getHazard,
     createDndConditionDescription: createConditionDescription,
-    renderDndConditionDescription: renderConditionDescription
+    createDndHazardDescription: createHazardDescription,
+    renderDndConditionDescription: renderConditionDescription,
+    renderDndHazardDescription: renderHazardDescription
   });
 
   if (typeof document === "undefined") return;
@@ -405,7 +423,7 @@
     );
     const hazardPanel = createReferencePanel(
       "hazard", HAZARDS, "點擊下方按鈕切換危害說明。",
-      (display, hazard) => display.replaceChildren(createHazardDescription(hazard))
+      renderHazardDescription
     );
 
     const tabList = document.createElement("div");

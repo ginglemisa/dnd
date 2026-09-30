@@ -57,12 +57,12 @@
   <script src="feats.js?v=20260831-tabletop-feat-rules" defer></script>
   <script src="equipment-notes.js?v=20260813-weapon-rule-popups-2" defer></script>
   <script src="spell-list.js?v=20260908-spell-attack" defer></script>
-  <script src="condition.js?v=20261001-condition-hazards" defer></script>
+  <script src="condition.js?v=20261001-tabletop-hazards" defer></script>
   <script src="action-panel.js?v=20260913-class-tabletop" defer></script>
   <script src="character-rules.js?v=20260922-rest" defer></script>
   <script src="app-dialog.js?v=20260924-toast-stack" defer></script>
   <script src="adventure-journal.js?v=20260930-adventure-journal" defer></script>
-  <script src="tabletop-mode.js?v=20260923-persistent-spells" defer></script>
+  <script src="tabletop-mode.js?v=20261001-tabletop-hazards" defer></script>
   <script src="tabletop-druid.js?v=20260915-main2-shield" defer></script>
 <script src="tabletop-resources.js?v=20260924-onboarding-previews" defer></script>
 <script src="tabletop-actions.js?v=20260928-button-labels-2" defer></script>
@@ -288,11 +288,11 @@
       <p id="tabletop-live-status" class="tabletop-live-status" role="status" aria-live="polite" aria-atomic="true"></p>
     <section class="tabletop-section tabletop-conditions" aria-labelledby="tabletop-conditions-title">
       <div class="tabletop-section-heading">
-        <h2 id="tabletop-conditions-title">目前狀態</h2>
-        <button type="button" id="tabletop-condition-manage" class="tabletop-condition-manage" aria-haspopup="dialog" aria-controls="tabletop-condition-modal">管理狀態</button>
+        <h2 id="tabletop-conditions-title">目前狀態／危害</h2>
+        <button type="button" id="tabletop-condition-manage" class="tabletop-condition-manage" aria-haspopup="dialog" aria-controls="tabletop-condition-modal">管理狀態／危害</button>
       </div>
       <div id="tabletop-active-conditions" class="tabletop-active-conditions" aria-live="polite">
-        <p class="tabletop-condition-empty">目前沒有標記狀態。</p>
+        <p class="tabletop-condition-empty">目前沒有標記狀態或危害。</p>
       </div>
     </section>
         </div>
@@ -9522,15 +9522,15 @@ window.addEventListener("DOMContentLoaded", async function() {
     <header class="tabletop-condition-modal__header">
       <div>
         <span class="tabletop-eyebrow">跑團模式戰鬥記錄</span>
-        <h2 id="tabletop-condition-modal-title">管理目前狀態</h2>
+        <h2 id="tabletop-condition-modal-title">管理目前狀態／危害</h2>
       </div>
-      <button type="button" id="tabletop-condition-close" class="tabletop-condition-modal__close" aria-label="關閉狀態管理">×</button>
+      <button type="button" id="tabletop-condition-close" class="tabletop-condition-modal__close" aria-label="關閉狀態／危害管理">×</button>
     </header>
     <form id="tabletop-condition-form" novalidate>
       <div class="tabletop-condition-modal__body">
-        <p id="tabletop-condition-modal-intro" class="tabletop-condition-modal__intro">勾選目前作用中的狀態；這些標記只供記錄與查閱，不會自動修改角色數值。</p>
+        <p id="tabletop-condition-modal-intro" class="tabletop-condition-modal__intro">勾選目前作用中的狀態或危害；這些標記只供記錄與查閱，不會自動修改角色數值。</p>
         <fieldset class="tabletop-condition-fieldset">
-          <legend>作用中的狀態</legend>
+          <legend>作用中的狀態／危害</legend>
           <div id="tabletop-condition-options" class="tabletop-condition-options"></div>
         </fieldset>
         <div class="tabletop-exhaustion-control">
@@ -9539,14 +9539,14 @@ window.addEventListener("DOMContentLoaded", async function() {
           <span id="tabletop-exhaustion-help">0 級代表正常，6 級死亡。</span>
         </div>
         <section class="tabletop-condition-reference" aria-labelledby="tabletop-condition-reference-title">
-          <h3 id="tabletop-condition-reference-title">狀態說明</h3>
+          <h3 id="tabletop-condition-reference-title">狀態／危害說明</h3>
           <div id="tabletop-condition-description" aria-live="polite"></div>
         </section>
         <p id="tabletop-condition-error" class="tabletop-field-error" aria-live="polite"></p>
       </div>
       <footer class="tabletop-condition-modal__actions">
         <button type="button" id="tabletop-condition-cancel" class="tabletop-condition-modal__cancel">取消</button>
-        <button type="submit" class="tabletop-condition-modal__apply">套用狀態</button>
+        <button type="submit" class="tabletop-condition-modal__apply">套用</button>
       </footer>
     </form>
   </section>
