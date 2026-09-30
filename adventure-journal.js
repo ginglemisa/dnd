@@ -119,7 +119,7 @@
     toolbar.className = "journal-toolbar";
     toolbar.setAttribute("role", "group");
     toolbar.setAttribute("aria-label", "日誌工具");
-    toolbar.append(button("新增一頁", "add", "add"), button("刪除此頁", "delete", "delete"), button("匯入 JSON", "import", "import"), button("匯出 JSON", "export", "export"));
+    toolbar.append(button("新增", "add", "add"), button("刪除", "delete", "delete"), button("上傳", "import", "import"), button("下載", "export", "export"));
     header.append(toolbar, button("關閉冒險日誌", "close", "close"));
     const file = document.createElement("input");
     file.id = "journal-import-file";
