@@ -155,7 +155,7 @@
     }
   ].map(freezeCondition));
 
-  // 危害僅供規則參考，不加入可套用至角色的 DND_CONDITIONS。
+  // 危害維持獨立規則資料，不加入 DND_CONDITIONS；是否作為可追蹤標記由消費端決定。
   const HAZARDS = Object.freeze([
     {
       key: "burning",
