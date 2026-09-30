@@ -46,7 +46,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20260924-onboarding-previews-toast-stack">
+  <link rel="stylesheet" href="styles.css?v=20260930-adventure-journal">
   <script src="scroll-to-top.js?v=20260924-default-off" defer></script>
   <script src="dice-roller.js?v=20260924-quick-roll-toast" defer></script>
   <script src="monster.js?v=20260912-druid-controls" defer></script>
@@ -61,6 +61,7 @@
   <script src="action-panel.js?v=20260913-class-tabletop" defer></script>
   <script src="character-rules.js?v=20260922-rest" defer></script>
   <script src="app-dialog.js?v=20260924-toast-stack" defer></script>
+  <script src="adventure-journal.js?v=20260930-adventure-journal" defer></script>
   <script src="tabletop-mode.js?v=20260923-persistent-spells" defer></script>
   <script src="tabletop-druid.js?v=20260915-main2-shield" defer></script>
 <script src="tabletop-resources.js?v=20260924-onboarding-previews" defer></script>
@@ -99,8 +100,10 @@
           <button type="button" id="help-quick-build-btn" class="utility-menu__button utility-menu__mode-button" title="一步步完成一名 1 級角色">快速創角</button>
           <button id="set-default-abilities" type="button" class="utility-menu__button utility-menu__mode-button">決定屬性</button>
           <button type="button" id="tabletop-mode-toggle" class="utility-menu__button utility-menu__mode-button utility-menu__mode-button--tabletop" aria-label="進入跑團模式" aria-pressed="false" aria-controls="tabletop-mode" title="進入跑團模式">
-            <span id="tabletop-mode-toggle-label" aria-hidden="true">📝</span>
+            <span id="tabletop-mode-toggle-label" aria-hidden="true" hidden>📝</span>
+            <span aria-hidden="true">跑團模式</span>
           </button>
+          <button type="button" id="adventure-journal-btn" class="utility-menu__button utility-menu__mode-button" aria-haspopup="dialog" aria-controls="adventure-journal" title="閱讀與記錄冒險歷程">冒險日誌</button>
         </div>
       </section>
 
@@ -8092,7 +8095,7 @@ async function importStateFromJsonFile(file) {
   try {
     const text = await file.text();
     const data = JSON.parse(text);
-    if (!data || typeof data !== "object" || Array.isArray(data)) {
+    if (!data || typeof data !== "object" || Array.isArray(data) || data.kind === "twd20-adventure-journal") {
       throw new Error("invalid json shape");
     }
     applyStateObject(data);
