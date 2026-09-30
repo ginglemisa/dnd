@@ -9,7 +9,7 @@
     ["race", "種族", "text"],
     ["adventureDate", "冒險日期", "date"],
     ["adventureName", "冒險名稱", "text"],
-    ["dmName", "DM 名稱", "text"],
+    ["dmName", "DM 姓名", "text"],
     ["notes", "團錄內容", "textarea"],
     ["gold", "獲得金幣", "number"],
     ["magicItems", "獲得魔法物品", "textarea"],
