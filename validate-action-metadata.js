@@ -929,6 +929,370 @@ async function verifyEquipmentLoadout(browser, url) {
   } finally { await page.close(); }
 }
 
+async function verifyAutomaticFeatRows(browser, url) {
+  const page = await browser.newPage();
+  const selectFeatWithoutScrolling = async (id, value) => {
+    const before = await page.locator(`#${id}`).evaluate(async select => {
+      select.focus({ preventScroll: true });
+      window.scrollTo({ top: window.scrollY + select.getBoundingClientRect().top - 150, behavior: "instant" });
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      return window.scrollY;
+    });
+    await page.selectOption(`#${id}`, value);
+    const after = await page.evaluate(async () => {
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      return { scrollY: window.scrollY, focusedId: document.activeElement.id };
+    });
+    assert.ok(Math.abs(after.scrollY - before) <= 1, `${id}: selection preserves page position (${before} -> ${after.scrollY})`);
+    assert.equal(after.focusedId, id, `${id}: selection retains control focus`);
+  };
+  try {
+    await page.route("**/quick-build.js?*", async route => {
+      const response = await route.fetch();
+      const source = (await response.text()).replace("  window.quickBuild = {", `
+        window.__testAutomaticFeatImport = () => {
+          draft = createDraft();
+          Object.assign(draft.choices, { class: 'fighter', background: 'soldier', race: 'human',
+            raceOptions: { feat: '魔法學徒', featOptions: { spellClass: 'wizard', cantrips: ['light', 'mage-hand'], levelOneSpells: ['shield'] } },
+            levelOne: { fightingStyle: '防禦' } });
+          draft = reconcileDraft(draft);
+          const warnings = [];
+          resetMobileCardForImport(warnings);
+          setMobileField('class', 'fighter', warnings);
+          setMobileField('level', '1', warnings);
+          setMobileField('background', 'soldier', warnings);
+          setMobileField('race', 'human', warnings);
+          importMobileFeats(warnings);
+          return warnings;
+        };
+        window.quickBuild = {`);
+      await route.fulfill({ response, body: source });
+    });
+    await page.goto(url);
+    await page.waitForFunction(() => !!window.TabletopMode);
+    await page.check("#legal-dismiss");
+    await page.click("#legal-close-btn");
+    const rows = page.locator("#feats-area .form-row:not([data-feat-source])");
+    assert.equal(await page.isChecked("#manual-feat-management"), false, "fresh character uses automation");
+    assert.equal(await page.locator(".feat-management-toggle").evaluate(label => getComputedStyle(label).fontSize === getComputedStyle(document.querySelector("p.character-features-hint")).fontSize), true, "management font matches hint");
+    assert.equal(await rows.count(), 1, "legacy base row retained");
+    assert.equal(await rows.first().isVisible(), false, "empty legacy row hidden");
+    await page.evaluate(() => {
+      document.querySelector('#feats-area [data-feat-action="add"]').click();
+      document.querySelector('#feats-area [data-feat-action="delete"]').click();
+    });
+    assert.equal(await rows.count(), 1, "disabled controls cannot mutate rows");
+    for (const classValue of Object.keys(baseline.classes)) {
+      await page.selectOption("#class", classValue);
+      for (const level of ["1", "4", "6", "7", "8"]) {
+        await page.selectOption("#level", level);
+        const expected = (classValue === "fighter" ? [4, 6, 8] : [4, 8]).filter(n => n <= Number(level)).length;
+        assert.equal(await page.locator('#classFeatures [data-feat-choice] select[id*="-level-"]').count(), expected, `${classValue} ${level}: granted slots`);
+        assert.equal(await page.locator('#feats-area [data-source-key*="-level-"] > select:enabled').count(), expected, `${classValue} ${level}: main card grants selectable`);
+        assert.equal(await rows.count(), 1, "no new manual rows");
+      }
+    }
+    for (const [background, value] of [["acolyte", "魔法學徒"], ["sage", "魔法學徒"], ["criminal", "警覺"], ["seeker", "醫療兵"], ["fieldhand", "強韌體魄"], ["soldier", "兇蠻打手"]]) {
+      await page.selectOption("#background", background);
+      assert.equal(await page.inputValue("#derived-feat-background"), value);
+      assert.equal(await page.locator("#derived-feat-background").isDisabled(), true);
+    }
+    await page.selectOption("#class", "fighter");
+    await page.selectOption("#race", "human");
+    await page.fill("#dex", "10");
+    await page.evaluate(() => openCharacterFeatures("race"));
+    await page.selectOption("#feat-choice-human-origin", "警覺");
+    assert.equal(await page.inputValue("#derived-feat-human-origin"), "警覺");
+    assert.equal(await page.locator("#derived-feat-human-origin").isDisabled(), false);
+    await page.evaluate(() => selectCharacterFeatureTab("class"));
+    await page.selectOption("#feat-choice-fighting-style-fighter", "防禦");
+    await page.selectOption("#feat-choice-fighting-style-fighter-2", "箭術");
+    assert.equal(await page.locator('#feat-choice-fighting-style-fighter-2 option[value="防禦"]').isDisabled(), true);
+    assert.equal(await page.locator("#derived-feat-fighting-style-fighter").isDisabled(), false);
+    await page.selectOption("#feat-choice-fighter-level-4", "屬性值提升");
+    await page.selectOption("#feat-choice-fighter-level-6", "屬性值提升");
+    await page.click("#character-features-modal .app-dialog__close");
+    await page.selectOption("#derived-feat-human-origin", "醫療兵");
+    assert.equal(await page.inputValue("#feat-choice-human-origin"), "醫療兵", "main human choice updates race source");
+    assert.equal(await page.evaluate(() => ActionPanel.getTabletopOptions("action").some(option => option.label === "急救處置")), true, "main feat choice refreshes actions");
+    await page.selectOption("#derived-feat-human-origin", "警覺");
+    const alertInitiative = await page.inputValue("#initiative-input");
+    await page.selectOption("#derived-feat-human-origin", "熟習");
+    assert.equal(Number(alertInitiative) - Number(await page.inputValue("#initiative-input")), 3, "main choice removes alert initiative bonus");
+    await page.evaluate(() => openCharacterFeatures("race"));
+    assert.equal(await page.inputValue("#feat-choice-human-origin"), "熟習", "reopening race shows main choice");
+    await page.selectOption("#feat-choice-human-origin", "警覺");
+    assert.equal(await page.inputValue("#initiative-input"), alertInitiative, "source choice restores alert initiative bonus");
+    await page.click("#character-features-modal .app-dialog__close");
+    await selectFeatWithoutScrolling("derived-feat-fighter-level-8", "強韌體魄");
+    assert.equal(await page.inputValue("#feat-choice-fighter-level-8"), "強韌體魄", "main level feat updates class source");
+    assert.equal(await page.locator('#derived-feat-fighter-level-8 option[value="警覺"]').isDisabled(), true, "main duplicate restrictions mirror source");
+    assert.equal(await page.locator('#derived-feat-fighting-style-fighter option[value="熟習"]').count(), 0, "main style choices limited to styles");
+    assert.equal(await page.locator('#derived-feat-human-origin option[value="屬性值提升"]').count(), 0, "main human choices limited to origin feats");
+    await page.selectOption("#derived-feat-fighting-style-fighter", "巨武器戰鬥");
+    assert.equal(await page.inputValue("#feat-choice-fighting-style-fighter"), "巨武器戰鬥", "main fighting style updates source");
+    assert.equal(await page.locator('#derived-feat-fighting-style-fighter-2 option[value="巨武器戰鬥"]').isDisabled(), true, "main extra style rejects duplicate");
+    assert.equal(await page.locator('#feat-choice-fighting-style-fighter-2 option[value="巨武器戰鬥"]').isDisabled(), true, "source extra style restriction updates");
+    await page.evaluate(() => {
+      const select = document.getElementById("derived-feat-fighting-style-fighter-2");
+      select.value = "巨武器戰鬥";
+      select.dispatchEvent(new Event("change"));
+    });
+    assert.equal(await page.inputValue("#derived-feat-fighting-style-fighter-2"), "箭術", "invalid main selection preserves peer and own choices");
+    await page.selectOption("#derived-feat-fighting-style-fighter", "防禦");
+    assert.equal(await page.locator('#derived-feat-fighting-style-fighter-2 option[value="巨武器戰鬥"]').isDisabled(), false, "changing main style releases previous choice");
+    assert.equal(await page.locator('#derived-feat-fighter-level-8 option[value="擒抱者"]').isDisabled(), true, "main prerequisites mirror source");
+    await page.fill("#dex", "13");
+    await page.press("#dex", "Tab");
+    assert.equal(await page.locator('#derived-feat-fighter-level-8 option[value="擒抱者"]').isDisabled(), false, "main prerequisites refresh after ability change");
+    await page.fill("#dex", "10");
+    await page.press("#dex", "Tab");
+    assert.equal(await page.locator('#feat-choice-fighter-level-8 option[value="警覺"]').isDisabled(), true);
+    assert.equal(await page.locator('#feat-choice-fighter-level-8 option[value="警覺"]').isDisabled(), true);
+    const saved = await page.evaluate(() => collectStateObject());
+    await page.evaluate(() => applyStateObject({ hp: "10" }));
+    assert.equal(await page.inputValue("#derived-feat-fighter-level-8"), "強韌體魄", "partial state keeps feat choices");
+    await page.evaluate(() => saveAllFields());
+    await page.reload();
+    await page.waitForFunction(() => document.getElementById("level").value === "8");
+    assert.equal(await page.inputValue("#derived-feat-human-origin"), "警覺", "autosave human feat");
+    assert.equal(await page.inputValue("#derived-feat-fighter-level-8"), "強韌體魄", "autosave level feat");
+    await page.selectOption("#level", "6");
+    assert.equal(await page.locator("#derived-feat-fighter-level-8").count(), 0, "lower level removes grant");
+    await page.setInputFiles("#import-json-file", { name: "feat-regression.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(saved)) });
+    await page.waitForFunction(() => document.getElementById("derived-feat-fighter-level-8")?.value === "強韌體魄");
+    assert.equal(await page.isChecked("#manual-feat-management"), false, "new JSON keeps explicit automation");
+    const beforeManual = await page.evaluate(() => getFeatSelects().map(select => select.value));
+    await page.check("#manual-feat-management");
+    assert.deepEqual(await page.evaluate(() => getFeatSelects().map(select => select.value)), beforeManual, "unlock keeps all selections");
+    assert.equal(await page.locator("#derived-feat-background").isDisabled(), false, "background unlocked");
+    assert.equal(await page.locator("#derived-feat-fighting-style-fighter").isDisabled(), false, "style unlocked");
+    await page.selectOption("#derived-feat-fighting-style-fighter-2", "防禦");
+    assert.equal(await page.inputValue("#derived-feat-fighting-style-fighter-2"), "防禦", "self-management removes automatic option restrictions");
+    await page.selectOption("#derived-feat-background", "醫療兵");
+    await page.selectOption("#derived-feat-fighting-style-fighter", "熟習");
+    await page.locator('#derived-feat-fighter-level-8').locator('..').locator('[data-feat-action="delete"]').click();
+    await rows.last().locator('[data-feat-action="add"]').click();
+    await page.selectOption("#feat-1", "箭術");
+    await page.selectOption("#class", "bard");
+    await page.selectOption("#background", "criminal");
+    assert.equal(await page.inputValue("#derived-feat-background"), "醫療兵", "manual background not overwritten");
+    assert.equal(await page.inputValue("#derived-feat-fighting-style-fighter"), "熟習", "manual class not overwritten");
+    const manualSaved = await page.evaluate(() => collectStateObject());
+    const managedValues = manualSaved.__managedFeatRows.map(row => row.value);
+    await page.evaluate(() => applyStateObject({ hp: "10" }));
+    assert.deepEqual(await page.evaluate(() => collectManagedFeatRows().map(row => row.value)), managedValues, "partial updates preserve manual rows");
+    await page.evaluate(() => saveAllFields());
+    await page.reload();
+    await page.waitForFunction(() => document.getElementById("manual-feat-management").checked);
+    assert.deepEqual(await page.evaluate(() => collectManagedFeatRows().map(row => row.value)), managedValues, "manual edits/deletions survive autosave");
+    assert.equal(await page.locator("#derived-feat-fighter-level-8").count(), 0, "deleted derived row stays deleted");
+    await page.selectOption("#feat-1", "防禦");
+    await page.setInputFiles("#import-json-file", { name: "manual-feats.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(manualSaved)) });
+    await page.waitForFunction(() => document.getElementById("feat-1")?.value === "箭術");
+    assert.deepEqual(await page.evaluate(() => collectManagedFeatRows().map(row => row.value)), managedValues, "manual JSON round trip");
+    const manualHash = await page.evaluate(() => encodeStateToHash(collectShareState()));
+    await page.goto(new URL(manualHash, url).href);
+    await page.reload();
+    await page.waitForFunction(() => window.SHARE_MODE && document.getElementById("manual-feat-management").checked);
+    assert.deepEqual(await page.evaluate(() => collectManagedFeatRows().map(row => row.value)), managedValues, "manual share round trip");
+    await page.goto(url);
+    await page.waitForFunction(() => !!window.TabletopMode && document.getElementById("manual-feat-management").checked);
+    await page.uncheck("#manual-feat-management");
+    assert.equal(await page.locator("#derived-feat-background").isDisabled(), true, "toggle off restores locks");
+    assert.equal(await page.inputValue("#derived-feat-background"), "警覺", "toggle off restores background source");
+    assert.equal(await page.evaluate(() => getManualFeatRows().some(row => getFeatSelectFromRow(row).value === "醫療兵")), true, "manual override retained as custom row");
+    await page.evaluate(saved => applyStateObject(saved), saved);
+    const legacy = { class: "fighter", level: "1", race: "elf", "feats-area-count": 2, "feat-0": "熟習", "feat-1": "警覺", "derived-feat-fighting-style-fighter": "箭術" };
+    await page.setInputFiles("#import-json-file", { name: "legacy-feats.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(legacy)) });
+    await page.waitForFunction(() => document.getElementById("manual-feat-management").checked && document.getElementById("feat-1")?.value === "警覺");
+    assert.equal(await page.inputValue("#feat-choice-fighting-style-fighter"), "箭術", "legacy style migrates to source");
+    assert.equal(await rows.count(), 2, "legacy selections retained");
+    assert.equal(await page.locator("#feat-1").isDisabled(), false, "legacy feat editable");
+    assert.equal(await rows.last().locator('[data-feat-action="delete"]').isVisible(), true);
+    assert.equal(await rows.last().locator('[data-feat-action="add"]').isVisible(), true);
+    await page.evaluate(legacy => dndStorage.setItem("dndchar_autosave_v1", JSON.stringify(legacy)), legacy);
+    await page.reload();
+    await page.waitForFunction(() => document.getElementById("manual-feat-management").checked);
+    assert.equal(await page.inputValue("#feat-1"), "警覺", "legacy local save retains feat");
+    await page.evaluate(saved => applyStateObject(saved), saved);
+    await page.selectOption("#class", "warlock");
+    await page.evaluate(() => openCharacterFeatures("invocations"));
+    const lessons = page.locator('#eldritch-invocations-output input[data-invocation-name="原初之一教習"]');
+    await lessons.first().check();
+    await page.selectOption("#feat-choice-lessons-1", "熟習");
+    await lessons.nth(1).check();
+    assert.equal(await page.locator('#feat-choice-lessons-2 option[value="熟習"]').isDisabled(), true, "lessons picks must differ");
+    await page.selectOption("#feat-choice-lessons-2", "醫療兵");
+    await page.click("#character-features-modal .app-dialog__close");
+    await page.selectOption("#derived-feat-lessons-2", "強韌體魄");
+    assert.equal(await page.inputValue("#feat-choice-lessons-2"), "強韌體魄", "main invocation choice updates source");
+    assert.equal(await page.locator('#derived-feat-lessons-2 option[value="熟習"]').isDisabled(), true, "main invocation rejects repeat lessons choice");
+    await page.selectOption("#derived-feat-lessons-2", "醫療兵");
+    const invocationState = await page.evaluate(() => collectStateObject());
+    await page.evaluate(state => applyStateObject(state), invocationState);
+    assert.equal(await page.inputValue("#derived-feat-lessons-2"), "醫療兵", "repeat invocation restore");
+    await page.evaluate(() => openCharacterFeatures("invocations"));
+    await lessons.first().uncheck();
+    assert.equal(await page.locator("#derived-feat-lessons-1").count(), 0, "uncheck removes invocation feat");
+    await page.selectOption("#level", "1");
+    assert.equal(await page.locator('#eldritch-invocations-output [data-feat-choice]').count(), 0, "lower level removes unavailable invocation choices");
+    await page.selectOption("#level", "8");
+    await page.selectOption("#class", "ranger");
+    await page.evaluate(() => selectCharacterFeatureTab("class"));
+    await page.check("#ranger-fighting-style");
+    await page.click("#character-features-modal .app-dialog__close");
+    await page.selectOption("#derived-feat-fighting-style-ranger", "防禦");
+    assert.equal(await page.inputValue("#feat-choice-fighting-style-ranger"), "防禦", "main ranger style updates source");
+    await page.evaluate(() => openCharacterFeatures("class"));
+    await page.selectOption("#feat-choice-fighting-style-ranger", "箭術");
+    assert.equal(await page.inputValue("#derived-feat-fighting-style-ranger"), "箭術", "ranger source updates main style");
+    await page.check("#ranger-druidic-warrior");
+    assert.equal(await page.locator("#derived-feat-fighting-style-ranger").count(), 0, "ranger caster alternative removes style");
+    await page.selectOption("#class", "paladin");
+    await page.evaluate(() => selectCharacterFeatureTab("class"));
+    await page.check("#paladin-fighting-style");
+    await page.click("#character-features-modal .app-dialog__close");
+    await page.selectOption("#derived-feat-fighting-style-paladin", "防禦");
+    assert.equal(await page.inputValue("#feat-choice-fighting-style-paladin"), "防禦", "main paladin style updates source");
+    await page.evaluate(() => openCharacterFeatures("class"));
+    await page.check("#paladin-blessed-warrior");
+    assert.equal(await page.locator("#derived-feat-fighting-style-paladin").count(), 0, "caster alternative removes style");
+    assert.deepEqual(await page.evaluate(() => __testAutomaticFeatImport()), [], "quick-build feat import has no warnings");
+    assert.equal(await page.inputValue("#derived-feat-human-origin"), "魔法學徒", "quick-build uses human source");
+    assert.equal(await page.inputValue("#derived-feat-fighting-style-fighter"), "防禦", "quick-build uses style source");
+    assert.equal(await page.inputValue("#derived-feat-human-origin-magic-initiate-level-1"), "shield");
+    const magicSaved = await page.evaluate(() => collectStateObject());
+    const manualMagic = await page.evaluate(() => {
+      const toggle = document.getElementById("manual-feat-management");
+      toggle.checked = true;
+      toggle.dispatchEvent(new Event("change"));
+      return collectStateObject();
+    });
+    await page.evaluate(state => applyStateObject(Object.fromEntries(Object.entries(state).reverse())), manualMagic);
+    assert.equal(await page.inputValue("#derived-feat-human-origin-magic-initiate-cantrip-2"), "mage-hand", "manual magic spell selections survive restore");
+    await page.evaluate(saved => applyStateObject(saved), magicSaved);
+    await page.selectOption("#level", "8");
+    await page.click("#character-features-modal .app-dialog__close");
+    await page.selectOption("#derived-feat-fighter-level-4", "魔法學徒");
+    await page.selectOption("#derived-feat-fighter-level-6", "魔法學徒");
+    assert.equal(await page.locator('#feat-choice-fighter-level-8 option[value="魔法學徒"]').isDisabled(), true, "magic initiate limited to different available lists");
+    assert.equal(await page.locator('#derived-feat-fighter-level-8 option[value="魔法學徒"]').isDisabled(), true, "main magic initiate repetition mirrors source");
+    await page.evaluate(saved => applyStateObject(Object.fromEntries(Object.entries(saved).reverse())), magicSaved);
+    assert.equal(await page.inputValue("#derived-feat-human-origin-magic-initiate-cantrip-2"), "mage-hand", "magic initiate restores spells");
+    await page.selectOption("#background", "sage");
+    assert.equal(await page.inputValue("#derived-feat-human-origin-magic-initiate-class"), "", "background takes priority over duplicate magic list");
+    assert.equal(await page.locator('#derived-feat-human-origin-magic-initiate-class option[value="wizard"]').isDisabled(), true);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.selectOption("#derived-feat-human-origin", "熟習");
+    await selectFeatWithoutScrolling("derived-feat-fighting-style-fighter", "巨武器戰鬥");
+    assert.equal(await page.inputValue("#feat-choice-human-origin"), "熟習", "narrow viewport main choice works without modal");
+    assert.equal(await page.locator("#character-features-modal").isVisible(), false, "main choice does not open modal");
+    const fits = await page.locator("#derived-feat-human-origin").evaluate(select => {
+      const control = select.getBoundingClientRect();
+      const card = select.closest(".section").getBoundingClientRect();
+      return control.left >= card.left && control.right <= card.right;
+    });
+    assert.equal(fits, true, "narrow main control fits card");
+    await page.evaluate(saved => applyStateObject(saved), saved);
+    const shareUrl = await page.evaluate(async () => encodeStateToHash(collectShareState()));
+    await page.goto(new URL(shareUrl, url).href);
+    await page.reload();
+    await page.waitForFunction(() => window.SHARE_MODE === true && document.getElementById("level").value === "8");
+    assert.equal(await page.isChecked("#manual-feat-management"), false, "new share keeps explicit automation");
+    assert.equal(await page.inputValue("#derived-feat-human-origin"), "警覺", "share human feat");
+    assert.equal(await page.inputValue("#derived-feat-fighter-level-8"), "強韌體魄", "share level feat");
+    console.log("Feat management: bidirectional choices, option restrictions, automation, manual edits/add/delete, repeat invocations, legacy migration and new JSON/share/autosave passed.");
+  } finally { await page.close(); }
+}
+
+async function verifyLegacyShareFeatCompatibility(browser, url) {
+  const legacy = {
+    class: "fighter", level: "7", background: "sage", race: "human",
+    "feats-area-count": 2,
+    "feat-0": "魔法學徒", "feat-0-magic-initiate-class": "cleric",
+    "feat-0-magic-initiate-cantrip-1": "light", "feat-0-magic-initiate-cantrip-2": "guidance",
+    "feat-0-magic-initiate-level-1": "bless", "feat-1": "醫療兵",
+    "derived-feat-background": "魔法學徒",
+    "derived-feat-background-magic-initiate-class": "wizard",
+    "derived-feat-background-magic-initiate-cantrip-1": "mage-hand",
+    "derived-feat-background-magic-initiate-cantrip-2": "light",
+    "derived-feat-background-magic-initiate-level-1": "shield",
+    "derived-feat-fighting-style-fighter": "箭術",
+    "derived-feat-fighting-style-fighter-2": "防禦"
+  };
+  const localSave = JSON.stringify({ class: "rogue", level: "1", race: "orc", background: "soldier",
+    "feats-area-count": 1, "feat-0": "強韌體魄", "manual-feat-management": false });
+  const encoder = await browser.newPage();
+  try {
+    await encoder.goto(url);
+    await encoder.waitForFunction(() => !!window.TabletopMode);
+    for (const versioned of [false, true]) {
+      const data = versioned ? { ...legacy, __shareStateVersion: 1 } : legacy;
+      const compressed = await encoder.evaluate(async data => {
+        const bytes = await compressJson(JSON.stringify(data));
+        if (!bytes) throw new Error("Compressed share test requires CompressionStream");
+        return `#s2=${bytesToBase64Url(bytes)}`;
+      }, data);
+      const hashes = [`#s=${Buffer.from(JSON.stringify(data), "utf8").toString("base64")}`, compressed];
+      for (const hash of hashes) {
+        const context = await browser.newContext();
+        const errors = [];
+        await context.addInitScript(localSave => {
+          if (localStorage.getItem("dndchar_autosave_v1") === null) localStorage.setItem("dndchar_autosave_v1", localSave);
+        }, localSave);
+        const page = await context.newPage();
+        page.on("pageerror", error => errors.push(String(error)));
+        const label = `${hash.startsWith("#s2=") ? "#s2" : "#s"} ${versioned ? "versioned" : "unversioned"}`;
+        try {
+          await page.goto(new URL(hash, url).href);
+          await page.waitForFunction(() => window.SHARE_MODE && document.getElementById("manual-feat-management").checked);
+          assert.equal(await page.inputValue("#class"), "fighter", `${label}: share overrides local character`);
+          for (const [id, value] of Object.entries(legacy).filter(([id]) => id.startsWith("feat-") || id.startsWith("derived-feat-"))) {
+            assert.equal(await page.inputValue(`#${id}`), value, `${label}: preserves ${id}`);
+          }
+          assert.equal(await page.locator("#feat-0").isDisabled(), false, `${label}: legacy feats editable`);
+          assert.equal(await page.locator("#derived-feat-fighting-style-fighter").isDisabled(), false);
+          assert.equal(await page.evaluate(() => ActionPanel.getTabletopOptions("action").some(option => option.label === "急救處置")), true, `${label}: feat actions work`);
+          const values = await page.evaluate(() => collectManagedFeatRows().map(row => ({ key: row.key, value: row.value, magic: row.magic })));
+          const upgraded = await page.evaluate(() => collectShareState());
+          assert.equal(upgraded["manual-feat-management"], true, `${label}: new share records migrated mode`);
+          const upgradedHash = await page.evaluate(data => encodeStateToHash(data), upgraded);
+          await page.goto(new URL(upgradedHash, url).href);
+          await page.reload();
+          await page.waitForFunction(() => window.SHARE_MODE && document.getElementById("manual-feat-management").checked);
+          assert.deepEqual(await page.evaluate(() => collectManagedFeatRows().map(row => ({ key: row.key, value: row.value, magic: row.magic }))), values, `${label}: re-share preserves all feats and spell choices`);
+          if (!versioned && hash.startsWith("#s=")) {
+            if (await page.locator("#legal-close-btn").isVisible()) {
+              await page.click("#legal-close-btn");
+            }
+            await page.uncheck("#manual-feat-management");
+            const automatic = await page.evaluate(() => collectShareState());
+            assert.equal(automatic["manual-feat-management"], false, "migrated share can explicitly return to automation");
+            const automaticHash = await page.evaluate(data => encodeStateToHash(data), automatic);
+            await page.goto(new URL(automaticHash, url).href);
+            await page.reload();
+            await page.waitForFunction(() => window.SHARE_MODE && document.getElementById("level").value === "7");
+            assert.equal(await page.isChecked("#manual-feat-management"), false, "re-shared automation does not trigger legacy migration again");
+            assert.equal(await page.inputValue("#feat-0"), "魔法學徒", "return to automation keeps legacy manual feat");
+            assert.equal(await page.inputValue("#feat-0-magic-initiate-level-1"), "bless");
+            assert.equal(await page.inputValue("#derived-feat-fighting-style-fighter"), "箭術");
+            assert.equal(await page.locator("#derived-feat-fighting-style-fighter").isDisabled(), false, "migrated automatic source supports bidirectional selection");
+            assert.equal(await page.locator("#feat-0").isDisabled(), true, "legacy custom feats remain fixed in automation");
+            if (await page.locator("#legal-close-btn").isVisible()) await page.click("#legal-close-btn");
+            await page.selectOption("#derived-feat-fighting-style-fighter", "巨武器戰鬥");
+            assert.equal(await page.inputValue("#feat-choice-fighting-style-fighter"), "巨武器戰鬥", "migrated share main style updates source");
+          }
+          await page.evaluate(() => { saveAllFields(); flushPendingAutosave(); });
+          assert.equal(await page.evaluate(() => localStorage.getItem("dndchar_autosave_v1")), localSave, `${label}: share leaves device autosave intact`);
+          assert.deepEqual(errors, [], `${label}: browser runtime errors`);
+        } finally { await context.close(); }
+      }
+    }
+    console.log("Legacy share feats: #s/#s2, unversioned/versioned payloads, migration, spell choices, actions, new re-share, automation switch and local-save isolation passed.");
+  } finally { await encoder.close(); }
+}
+
 async function main() {
   const root = __dirname;
   const server = http.createServer((req, res) => {
@@ -955,6 +1319,8 @@ async function main() {
     await verifyClassTabletopUpdates(page);
     await verifyManualWeaponVisibility(page);
     await verifyEquipmentLoadout(browser, page.url());
+    await verifyAutomaticFeatRows(browser, page.url());
+    await verifyLegacyShareFeatCompatibility(browser, page.url());
     console.log("Class tabletop descriptions, alerts, choices, resource conversion and recovery passed.");
     assert.deepEqual(errors, [], "browser runtime errors");
     console.log("Tabletop + legacy UI, custom/hidden actions, JSON/share/autosave round trips passed.");

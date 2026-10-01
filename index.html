@@ -46,30 +46,30 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261001-compact-menu">
-  <script src="scroll-to-top.js?v=20260924-default-off" defer></script>
-  <script src="dice-roller.js?v=20260924-quick-roll-toast" defer></script>
+  <link rel="stylesheet" href="styles.css?v=20261001-manual-feat-management">
+  <script src="scroll-to-top.js?v=20261001-character-features-modal" defer></script>
+  <script src="dice-roller.js?v=20261001-roll-equations" defer></script>
   <script src="monster.js?v=20260912-druid-controls" defer></script>
-    <script src="class-features.js?v=20260913-class-tabletop" defer></script>
+    <script src="class-features.js?v=20261001-rest-options" defer></script>
   <script src="race.js?v=20260924-feature-source" defer></script>
-  <script src="backgrounds.js" defer></script>
+  <script src="backgrounds.js?v=20261001-equipment-label" defer></script>
   <script src="tool-data.js?v=20260908-personalized-actions" defer></script>
-  <script src="feats.js?v=20260831-tabletop-feat-rules" defer></script>
+  <script src="feats.js?v=20261001-automatic-feat-grants" defer></script>
   <script src="equipment-notes.js?v=20260813-weapon-rule-popups-2" defer></script>
   <script src="spell-list.js?v=20260908-spell-attack" defer></script>
   <script src="condition.js?v=20261001-tabletop-hazards" defer></script>
   <script src="action-panel.js?v=20260913-class-tabletop" defer></script>
   <script src="character-rules.js?v=20260922-rest" defer></script>
-  <script src="app-dialog.js?v=20260924-toast-stack" defer></script>
+  <script src="app-dialog.js?v=20261001-features-reference-layers" defer></script>
   <script src="adventure-journal.js?v=20260930-adventure-journal" defer></script>
-  <script src="tabletop-mode.js?v=20261001-tabletop-hazards" defer></script>
+  <script src="tabletop-mode.js?v=20261001-roll-equations" defer></script>
   <script src="tabletop-druid.js?v=20260915-main2-shield" defer></script>
-<script src="tabletop-resources.js?v=20260924-onboarding-previews" defer></script>
+<script src="tabletop-resources.js?v=20261001-rest-hit-dice-inline" defer></script>
 <script src="tabletop-actions.js?v=20260928-button-labels-2" defer></script>
   <script src="tabletop-spells.js?v=20260923-persistent-spells" defer></script>
   <script src="legal-modal.js?v=20260923-legal-about" defer></script>
-  <script src="onboarding-tour.js?v=20260924-onboarding-previews" defer></script>
-  <script src="quick-build.js?v=20260930-compact-source-labels" defer></script>
+  <script src="onboarding-tour.js?v=20261001-character-features-modal" defer></script>
+  <script src="quick-build.js?v=20261001-automatic-feat-grants" defer></script>
   <script src="spellbook.js?v=20260913-spellbook" defer></script>
   <script src="deity-info.js" defer></script>
 
@@ -505,7 +505,7 @@
     <div class="basic-row basic-row--class-level">
     <div class="mini-stat-card basic-pair-card basic-pair-card--class-level">
       <div class="basic-pair-field basic-pair-field--class">
-        <div class="mini-stat-label mini-stat-label--jump" data-jump-target="class-features-section">職業</div>
+        <button type="button" class="mini-stat-label mini-stat-label--features" data-character-features-tab="class" aria-haspopup="dialog" aria-controls="character-features-modal" aria-label="查看職業能力">職業</button>
         <select id="class">
           <option value="">待選</option>
           <option value="barbarian">野蠻人</option>
@@ -551,7 +551,7 @@
         </select>
       </div>
       <div id="druid-land-control" class="class-feature-option is-hidden">
-        <select id="druid-land" aria-label="大地結社地貌">
+        <select id="druid-land" aria-label="大地結社地貌" data-rest-change="longRest">
           <option value="">--請選擇大地結社地貌--</option>
           <option value="arid">旱地</option>
           <option value="polar">極地</option>
@@ -565,7 +565,7 @@
   <div class="basic-row basic-row--origin">
     <div class="mini-stat-card basic-pair-card basic-pair-card--equal">
       <div class="basic-pair-field">
-        <div class="mini-stat-label mini-stat-label--jump" data-jump-target="background-features-section">背景</div>
+        <button type="button" class="mini-stat-label mini-stat-label--features" data-character-features-tab="background" aria-haspopup="dialog" aria-controls="character-features-modal" aria-label="查看背景能力">背景</button>
         <select id="background">
           <option value="">待選</option>
           <option value="acolyte">侍僧</option>
@@ -577,7 +577,7 @@
         </select>
       </div>
       <div class="basic-pair-field">
-        <div class="mini-stat-label mini-stat-label--jump" data-jump-target="race-features-section">種族</div>
+        <button type="button" class="mini-stat-label mini-stat-label--features" data-character-features-tab="race" aria-haspopup="dialog" aria-controls="character-features-modal" aria-label="查看種族能力">種族</button>
         <div class="race-select-control">
         <select id="race">
           <option value="">待選</option>
@@ -629,7 +629,7 @@
         <option value="high_elf">高等精靈</option>
         <option value="wood_elf">木精靈</option>
       </select>
-      <select id="high-elf-cantrip" class="is-hidden" aria-label="高等精靈戲法">
+      <select id="high-elf-cantrip" class="is-hidden" aria-label="高等精靈戲法" data-rest-change="longRest">
         <option value="">--高等精靈戲法--</option>
       </select>
     </span>
@@ -669,6 +669,7 @@
       </select>
     </span>
     </div>
+    <p class="character-features-hint">＊點擊上方職業、種族、背景可查看細節。</p>
     </div>
   </div>
 
@@ -761,46 +762,50 @@
     </div>
   </div>
 
+<div class="section">
+  <div id="feats-area"></div>
+  <label class="character-features-hint feat-management-toggle" for="manual-feat-management"><input type="checkbox" id="manual-feat-management"> 自行管理專長／戰鬥風格</label>
+</div>
+
 <div class="section" id="class-features-section">
       <h3>職業筆記區</h3>
 <div id="class-extra-sheet-mount"><textarea id="class-extra" rows="4" placeholder="職業選項,能力使用次數等等......"></textarea></div>
   </div>
 
-<div class="section">
-  <details open>
-    <summary><h3 class="summary-title-inline">職業能力</h3></summary>
-    <div class="output" id="classFeatures">無資料</div>
-  </details>
+<!-- Keep the original controls mounted while the details dialog is closed. -->
 </div>
-<div class="section is-hidden" id="metamagic-options-section">
-  <div id="metamagic-summary" class="selection-summary">尚未勾選超魔法</div>
-  <details open>
-    <summary><h3 class="summary-title-inline">超魔法選項</h3></summary>
-    <div class="output" id="metamagicOptions">無資料</div>
-  </details>
-</div>
-
-<div class="section is-hidden" id="eldritch-invocations-section">
-  <div id="warlock-invocation-summary" class="selection-summary">尚未勾選魔能祈喚</div>
-  <details open>
-    <summary><h3 class="summary-title-inline">魔能祈喚</h3></summary>
-    <div class="output" id="eldritch-invocations-output">無資料</div>
-  </details>
-</div>
-	<div class="section" id="background-features-section">
-    <details open><summary><h3 class="summary-title-inline">背景能力</h3></summary>
-    <div class="output" id="backgroundFeatures">無資料</div></details>
-	</div>
-  <div class="section" id="race-features-section">
-    <details open><summary><h3 class="summary-title-inline">種族能力</h3></summary>
-    <div class="output" id="raceFeatures">無資料</div></details>
+<div id="character-features-mount" hidden>
+<div id="character-features" class="character-features">
+  <div class="condition-reference-tabs character-features-tabs" role="tablist" aria-label="角色能力分類">
+    <button type="button" id="character-features-tab-creation" class="condition-reference-tab" role="tab" aria-selected="false" aria-controls="class-creation-panel" data-feature-tab="creation" tabindex="-1">創角/表格</button>
+    <button type="button" id="character-features-tab-class" class="condition-reference-tab" role="tab" aria-selected="true" aria-controls="class-abilities-panel" data-feature-tab="class">職業</button>
+    <button type="button" id="character-features-tab-metamagic" class="condition-reference-tab" role="tab" aria-selected="false" aria-controls="metamagic-options-section" data-feature-tab="metamagic" tabindex="-1" hidden>超魔法</button>
+    <button type="button" id="character-features-tab-invocations" class="condition-reference-tab" role="tab" aria-selected="false" aria-controls="eldritch-invocations-section" data-feature-tab="invocations" tabindex="-1" hidden>魔能祈喚</button>
+    <button type="button" id="character-features-tab-background" class="condition-reference-tab" role="tab" aria-selected="false" aria-controls="background-features-section" data-feature-tab="background" tabindex="-1">背景</button>
+    <button type="button" id="character-features-tab-race" class="condition-reference-tab" role="tab" aria-selected="false" aria-controls="race-features-section" data-feature-tab="race" tabindex="-1">種族</button>
   </div>
-
-
-  <div class="section">
-  <div id="feats-area"></div>
+<div class="section character-feature-panel" id="class-creation-panel" role="tabpanel" aria-labelledby="character-features-tab-creation" data-feature-panel="creation" hidden inert>
+  <div class="output" id="classCreationInfo">無資料</div>
+</div>
+<div class="section character-feature-panel" id="class-abilities-panel" role="tabpanel" aria-labelledby="character-features-tab-class" data-feature-panel="class">
+  <div class="output" id="classFeatures">無資料</div>
+</div>
+<div class="section is-hidden character-feature-panel" id="metamagic-options-section" role="tabpanel" aria-labelledby="character-features-tab-metamagic" data-feature-panel="metamagic" hidden inert>
+  <div id="metamagic-summary" class="selection-summary">尚未勾選超魔法</div>
+  <div class="output" id="metamagicOptions">無資料</div>
 </div>
 
+<div class="section is-hidden character-feature-panel" id="eldritch-invocations-section" role="tabpanel" aria-labelledby="character-features-tab-invocations" data-feature-panel="invocations" hidden inert>
+  <div id="warlock-invocation-summary" class="selection-summary">尚未勾選魔能祈喚</div>
+  <div class="output" id="eldritch-invocations-output">無資料</div>
+</div>
+  <div class="section character-feature-panel" id="background-features-section" role="tabpanel" aria-labelledby="character-features-tab-background" data-feature-panel="background" hidden inert>
+    <div class="output" id="backgroundFeatures">無資料</div>
+  </div>
+  <div class="section character-feature-panel" id="race-features-section" role="tabpanel" aria-labelledby="character-features-tab-race" data-feature-panel="race" hidden inert>
+    <div class="output" id="raceFeatures">無資料</div>
+  </div>
+</div>
 </div>
 
 
@@ -1365,15 +1370,17 @@ window.getCharacterSize = () => characterSize;
 
 function bindCoreCharacterEvents() {
   bindEventById("class", "change", updateAutomaticInitiative);
-  bindEventById("race", "change", () => { syncCharacterSizeFromRace(); updateRaceFeature(); updateRaceOptionVisibility(); updateSpeedDisplay(); syncOriginAndSubclassDerivedSpellRows(); updateSpellsByClassLevel(); updateBaseLanguageOptions(); });
+  bindEventById("race", "change", () => { syncCharacterSizeFromRace(); updateRaceFeature(); syncDerivedFeatRows(); updateRaceOptionVisibility(); updateSpeedDisplay(); syncOriginAndSubclassDerivedSpellRows(); updateSpellsByClassLevel(); updateBaseLanguageOptions(); });
   bindEventById("character-size-select", "change", event => setCharacterSize(event.target.value));
   bindEventById("background", "change", () => { updateBackgroundFeature(); updateSpellsByClassLevel(); updateBackgroundToolRow(); });
+  bindEventById("manual-feat-management", "change", updateFeatManagementMode);
   bindEventById("armor", "change", () => { updateACDisplay(); updateSpeedDisplay(); populateHandAttacks(); });
   bindEventById("str", "input", populateHandAttacks);
   bindEventById("dex", "input", () => { updateACDisplay(); updateAutomaticInitiative(); populateHandAttacks(); });
   bindEventById("con", "input", updateACDisplay);
   bindEventById("wis", "input", updateACDisplay);
   bindEventById("cha", "input", updateACDisplay);
+  ["str", "dex", "con", "int", "wis", "cha"].forEach(id => bindEventById(id, "change", syncDerivedFeatRows));
   bindEventById("armor", "change", updateArmorInfo);
   bindEventById("class", "change", () => {updateHitDieLabel();resetSpellSlotsAfterCharacterChange();refreshWeaponSelections();updateClassFeature();updateClassFeatureOptionVisibility();syncDerivedFeatRows();syncBardInstrumentRows();updateACDisplay();updateSpeedDisplay();updateEldritchInvocationSectionVisibility();populateHandAttacks();syncOriginAndSubclassDerivedSpellRows();updateSpellsByClassLevel();updateExpertiseVisibility();updateExtraLanguageFields();});
   bindEventById("level", "change", () => {syncHitDiceCountToLevel();syncProficiencyUseChecks();updateAutomaticInitiative();resetSpellSlotsAfterCharacterChange();refreshWeaponSelections();updateClassFeature();updateClassFeatureOptionVisibility();syncDerivedFeatRows();updateACDisplay();updateSpeedDisplay();updateEldritchInvocationSectionVisibility();populateHandAttacks();syncOriginAndSubclassDerivedSpellRows();updateSpellsByClassLevel();updateExtraLanguageFields();});
@@ -2427,13 +2434,15 @@ function renderMetamagicOptions() {
   output.innerHTML = availableOptions.map((option, index) => {
     const checkboxId = getMetamagicCheckboxId(index);
     const checked = previouslyChecked.has(option.name) ? " checked" : "";
+    const { detail, body } = splitFeatureChoiceText(option.text);
 
     return `<article class="feature-choice-card feature-choice-card--metamagic">
       <label class="feature-choice-card__heading" for="${checkboxId}">
         <input type="checkbox" id="${checkboxId}" data-metamagic-name="${escapeHtml(option.name)}"${checked}>
         <strong>${escapeHtml(option.name)}</strong>
+        ${detail ? `<span class="feature-choice-card__meta">${escapeHtml(detail)}</span>` : ""}
       </label>
-      ${option.text ? `<div class="feature-choice-card__body">${formatFeatureChoiceText(option.text)}</div>` : ""}
+      ${body ? `<div class="feature-choice-card__body">${highlightSpellNamesInClassFeature(body)}</div>` : ""}
     </article>`;
   }).join("");
 
@@ -2562,6 +2571,7 @@ function renderEldritchInvocations(options = {}) {
       .map(([id]) => id)
   ]);
   const previousTargets = new Map(Array.from(output.querySelectorAll("select[data-agonizing-blast-slot]"), select => [select.id, select.value]));
+  const previousFeats = new Map(Array.from(output.querySelectorAll("[data-feat-choice] select"), select => [select.id, select.value]));
 
   output.innerHTML = eldritchInvocations.map((invocation, index) => {
     const available = isWarlockInvocationAvailable(invocation);
@@ -2601,6 +2611,8 @@ function renderEldritchInvocations(options = {}) {
   output.querySelectorAll("input[type='checkbox']").forEach(el => {
     el.addEventListener("change", event => { void handleEldritchInvocationChange(el, event, output); });
   });
+  renderInvocationFeatChoices(previousFeats);
+  syncDerivedFeatRows();
   syncAgonizingBlastSelections({ notify: false });
   output.querySelectorAll("select[data-agonizing-blast-slot]").forEach(select => {
     const previous = previousTargets.get(select.id) || "";
@@ -2649,6 +2661,7 @@ function updateEldritchInvocationSectionVisibility() {
 
   const isWarlock = cls === "warlock";
   section.style.display = isWarlock ? "block" : "none";
+  syncCharacterFeatureTabs();
 
   if (isWarlock) {
     syncWarlockInvocationAvailability();
@@ -2657,6 +2670,115 @@ function updateEldritchInvocationSectionVisibility() {
     updateACDisplay();
     populateHandAttacks();
   }
+  syncDerivedFeatRows();
+}
+
+// The ability controls stay in the document; only their container moves.
+function selectCharacterFeatureTab(tab) {
+  const container = document.getElementById("character-features");
+  if (!container) return;
+  const tabs = document.querySelector(".character-features-tabs");
+  const buttons = Array.from(tabs.querySelectorAll("[data-feature-tab]"));
+  const selected = buttons.find(button => button.dataset.featureTab === tab && !button.hidden)
+    || buttons.find(button => button.dataset.featureTab === "class");
+  buttons.forEach(button => {
+    const active = button === selected;
+    button.setAttribute("aria-selected", String(active));
+    button.tabIndex = active ? 0 : -1;
+  });
+  container.querySelectorAll("[data-feature-panel]").forEach(panel => {
+    const active = panel.dataset.featurePanel === selected.dataset.featureTab;
+    panel.hidden = !active;
+    panel.inert = !active;
+  });
+  const tabRect = selected.getBoundingClientRect();
+  const stripRect = tabs.getBoundingClientRect();
+  if (tabRect.left < stripRect.left) tabs.scrollLeft += tabRect.left - stripRect.left;
+  else if (tabRect.right > stripRect.right) tabs.scrollLeft += tabRect.right - stripRect.right;
+}
+
+function syncCharacterFeatureTabs() {
+  const tabs = document.querySelector(".character-features-tabs");
+  if (!tabs) return;
+  const cls = document.getElementById("class")?.value;
+  const level = Number(document.getElementById("level")?.value || 0);
+  tabs.querySelector('[data-feature-tab="metamagic"]').hidden = cls !== "sorcerer" || level < 2;
+  tabs.querySelector('[data-feature-tab="invocations"]').hidden = cls !== "warlock";
+  selectCharacterFeatureTab(tabs.querySelector('[aria-selected="true"]')?.dataset.featureTab || "class");
+}
+
+function openCharacterFeatures(tab = "class", trigger) {
+  const content = document.getElementById("character-features");
+  const mount = document.getElementById("character-features-mount");
+  const tabs = document.querySelector(".character-features-tabs");
+  if (!content || !mount || !window.AppDialog) return false;
+  syncCharacterFeatureTabs();
+  selectCharacterFeatureTab(tab);
+  if (!content.closest("#character-features-modal")) {
+    const contextPopups = ["skillPopup", "beastPopup"].map(id => document.getElementById(id)).filter(Boolean);
+    window.AppDialog.showContent({
+      title: "角色能力",
+      variant: "character-features",
+      content,
+      trigger,
+      initialFocus: "content",
+      allowNested: true,
+      onEscape() {
+        const visible = contextPopups.filter(popup => popup.style.display === "block");
+        visible.forEach(popup => { popup.style.display = "none"; });
+        return visible.length === 0;
+      },
+      onClose() {
+        content.prepend(tabs);
+        mount.appendChild(content);
+        contextPopups.forEach(popup => {
+          popup.style.display = "none";
+          document.body.appendChild(popup);
+        });
+      }
+    });
+    const modal = content.closest(".app-dialog");
+    modal.id = "character-features-modal";
+    modal.querySelector(".app-dialog__actions").remove();
+    const header = modal.querySelector(".app-dialog__header");
+    header.querySelector("h2").classList.add("sr-only");
+    header.insertBefore(tabs, header.querySelector(".app-dialog__close"));
+    header.querySelector(".app-dialog__close").setAttribute("aria-label", "關閉角色能力");
+    // Keep reference popups interactive inside the modal's background lock.
+    contextPopups.forEach(popup => {
+      modal.appendChild(popup);
+      popup.inert = false;
+    });
+  }
+  selectCharacterFeatureTab(tab);
+  tabs.querySelector('[role="tab"][aria-selected="true"]')?.focus({ preventScroll: true });
+  return true;
+}
+
+function bindCharacterFeatureDialog() {
+  document.querySelectorAll("[data-character-features-tab]").forEach(button => {
+    button.addEventListener("click", () => openCharacterFeatures(button.dataset.characterFeaturesTab, button));
+  });
+  const tabs = document.querySelector(".character-features-tabs");
+  tabs.addEventListener("click", event => {
+    const button = event.target.closest("[data-feature-tab]");
+    if (!button) return;
+    selectCharacterFeatureTab(button.dataset.featureTab);
+    const body = tabs.closest(".app-dialog")?.querySelector(".app-dialog__body");
+    if (body) body.scrollTop = 0;
+  });
+  tabs.addEventListener("keydown", event => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+    const buttons = Array.from(tabs.querySelectorAll("[data-feature-tab]")).filter(button => !button.hidden);
+    const current = buttons.indexOf(document.activeElement);
+    if (current < 0) return;
+    event.preventDefault();
+    const next = event.key === "Home" ? 0 : event.key === "End" ? buttons.length - 1
+      : (current + (event.key === "ArrowRight" ? 1 : -1) + buttons.length) % buttons.length;
+    buttons[next].click();
+    buttons[next].focus({ preventScroll: true });
+  });
+  syncCharacterFeatureTabs();
 }
 
 // ====== utilities ======
@@ -2670,52 +2792,26 @@ function highlightSpellNamesInClassFeature(html, options = {}) { const aliases=g
 const CLASS_FEATURE_TABLE_STATE_KEY = "dndchar_class_feature_table_state_v1";
 const CLASS_CORE_CREATION_INFO_STATE_KEY = "dndchar_class_core_creation_info_state_v1";
 
-function getClassFeatureTableStates() {
-  try {
-    const savedStates = JSON.parse(window.dndStorage.getItem(CLASS_FEATURE_TABLE_STATE_KEY));
-    return savedStates && typeof savedStates === "object" && !Array.isArray(savedStates) ? savedStates : {};
-  } catch (_error) {
-    return {};
-  }
-}
-
-function restoreClassFeatureTableState(className, output) {
-  const featureTable = output.querySelector(`[data-class-feature-table="${className}"]`);
-  if (!featureTable) return;
-
-  const savedStates = getClassFeatureTableStates();
-  featureTable.open = savedStates[className] !== false;
-
-  featureTable.addEventListener("toggle", () => {
-    try {
-      const nextStates = getClassFeatureTableStates();
-      nextStates[className] = featureTable.open;
-      window.dndStorage.setItem(CLASS_FEATURE_TABLE_STATE_KEY, JSON.stringify(nextStates));
-    } catch (_error) {
-      // 私密瀏覽或儲存空間不可用時，仍保留本次頁面中的收闔操作。
-    }
+function moveClassCreationInfo(output, creationOutput) {
+  creationOutput.replaceChildren();
+  // Transform display wrappers only; classFeatures remains the rules source.
+  output.querySelectorAll(".class-core-creation-info, .class-feature-table-details").forEach(details => {
+    const section = document.createElement("section");
+    section.className = details.className;
+    if (details.dataset.classFeatureTable) section.dataset.classFeatureTable = details.dataset.classFeatureTable;
+    const summary = details.querySelector(":scope > summary");
+    const heading = document.createElement("h3");
+    heading.textContent = summary?.textContent || "";
+    summary?.remove();
+    section.append(heading, ...details.childNodes);
+    details.remove();
+    creationOutput.appendChild(section);
   });
-}
-
-function restoreClassCoreCreationInfoState(className, output) {
-  const coreCreationInfo = output.querySelector(".class-core-creation-info");
-  if (!coreCreationInfo) return;
-
-  let savedStates = {};
-  try {
-    const parsedStates = JSON.parse(window.dndStorage.getItem(CLASS_CORE_CREATION_INFO_STATE_KEY));
-    if (parsedStates && typeof parsedStates === "object" && !Array.isArray(parsedStates)) {
-      savedStates = parsedStates;
-    }
-  } catch (_error) {
-    savedStates = {};
+  if (!creationOutput.childNodes.length) creationOutput.textContent = "無資料";
+  // The output uses pre-wrap; relocated blocks must not leave blank leading rows.
+  while (output.firstChild?.nodeType === Node.TEXT_NODE && !output.firstChild.textContent.trim()) {
+    output.firstChild.remove();
   }
-
-  coreCreationInfo.open = savedStates[className] !== false;
-  coreCreationInfo.addEventListener("toggle", () => {
-    savedStates[className] = coreCreationInfo.open;
-    window.dndStorage.setItem(CLASS_CORE_CREATION_INFO_STATE_KEY, JSON.stringify(savedStates));
-  });
 }
 
 function getClassFeatureHtmlBeforeLevel(raw, className, nextLevel) {
@@ -2740,21 +2836,24 @@ function updateClassFeature() {
   const selectedClass = document.getElementById("class").value;
   const level = document.getElementById("level").value;
   const output = document.getElementById("classFeatures");
+  const creationOutput = document.getElementById("classCreationInfo");
   const metamagicSection = document.getElementById("metamagic-options-section");
   const metamagicOutput = document.getElementById("metamagicOptions");
   const metamagicSummary = document.getElementById("metamagic-summary");
   captureBardMagicalDiscoverySelectionFromControls();
-  const preservedControlStates = new Map(Array.from(output.querySelectorAll("input[id], select[id]")).map(control => [
+  const preservedControlStates = new Map([output, creationOutput].flatMap(container => Array.from(container.querySelectorAll("input[id], select[id]"))).map(control => [
     control.id,
     control.type === "checkbox" ? control.checked : control.value
   ]));
 
   if (!selectedClass || !classFeatures[selectedClass]) {
     output.innerHTML = "無資料";
+    creationOutput.textContent = "無資料";
     metamagicSection.style.display = "none";
     metamagicOutput.innerHTML = "無資料";
     if (metamagicSummary) metamagicSummary.innerHTML = "尚未勾選超魔法";
     syncAdvancedClassFeatureControls();
+    syncCharacterFeatureTabs();
     return;
   }
 
@@ -2783,8 +2882,8 @@ function updateClassFeature() {
   }
 
   renderBardMagicalDiscoveryControls();
-  restoreClassFeatureTableState(selectedClass, output);
-  restoreClassCoreCreationInfoState(selectedClass, output);
+  renderClassFeatChoices();
+  moveClassCreationInfo(output, creationOutput);
   preservedControlStates.forEach((value, id) => {
     const control = document.getElementById(id);
     if (!control) return;
@@ -2803,6 +2902,7 @@ function updateClassFeature() {
     if (metamagicSummary) metamagicSummary.innerHTML = "尚未勾選超魔法";
   }
   syncAdvancedClassFeatureControls();
+  syncCharacterFeatureTabs();
 }
 
 
@@ -2861,6 +2961,7 @@ function enhanceRaceFeatureTables(container) {
 }
 
 function updateRaceFeature() {
+  const previousHumanFeat = document.getElementById(getFeatChoiceId("human-origin"))?.value || "";
   const value = document.getElementById("race").value;
   const raw = raceFeatures[value] || "無資料";
   const output = document.getElementById("raceFeatures");
@@ -2869,6 +2970,7 @@ function updateRaceFeature() {
   if (display) {
     output.innerHTML = highlightSpellNamesInClassFeature(display, { skipClickableNames: ["黑暗視覺"] });
     enhanceRaceFeatureTables(output);
+    renderRaceFeatChoice(previousHumanFeat);
     return;
   }
 
@@ -2917,6 +3019,7 @@ function updateRaceFeature() {
 
   output.innerHTML = formatted || "無資料";
   enhanceRaceFeatureTables(output);
+  renderRaceFeatChoice(previousHumanFeat);
 }
 
 function updateBackgroundFeature() {
@@ -2938,13 +3041,6 @@ function updateBackgroundFeature() {
      <div><strong>專長：</strong>${bg.專長}</div>
      <div><strong>技能熟練：</strong>${bg.技能熟練}</div>
      <div><strong>工具熟練：</strong>${bg.工具熟練}</div>
-     <div class="background-guide-note">
-       <span class="background-guide-note__icon" aria-hidden="true">★</span>
-       <span class="background-guide-note__content">
-         <span class="background-guide-note__label">屬性調整</span>
-         <span>可選擇三項各 <strong>+1</strong>，或一項屬性 <strong>+2</strong>、另一項 <strong>+1</strong>。</span>
-       </span>
-     </div>
    </div>
 
    <div class="background-guide-block background-guide-section">
@@ -2988,6 +3084,214 @@ function getFeatOptionsHtml() {
     FEAT_OPTIONS.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join("");
 }
 
+function isManualFeatManagementEnabled() {
+  return document.getElementById("manual-feat-management")?.checked === true;
+}
+
+function collectManagedFeatRows() {
+  return Array.from(document.querySelectorAll("#feats-area > .form-row"), row => ({
+    source: row.dataset.featSource || "",
+    key: row.dataset.sourceKey || "",
+    label: row.querySelector(".feat-row-head label")?.textContent || "",
+    value: getFeatSelectFromRow(row)?.value || "",
+    magic: Object.fromEntries(["class", "cantrip1", "cantrip2", "level1"].map(field => [field, getMagicInitiateSelect(row, field)?.value || ""]))
+  }));
+}
+
+function restoreManagedFeatRows(entries) {
+  if (!Array.isArray(entries)) return;
+  document.getElementById("feats-area").replaceChildren();
+  const restoredKeys = new Set();
+  entries.forEach(entry => {
+    if (!entry || typeof entry !== "object") return;
+    let row;
+    if (["background", "race", "class", "invocation"].includes(entry.source) && /^[a-z0-9-]+$/u.test(entry.key || "") && !restoredKeys.has(entry.key)) {
+      const spec = { source: String(entry.source), key: String(entry.key), label: String(entry.label || "專長："), fixed: false, optionsHtml: getFeatOptionsHtml() };
+      row = createDerivedFeatRow(spec);
+      setDerivedFeatRowValues(row, spec);
+      restoredKeys.add(entry.key);
+    } else row = createSingleFeatRow();
+    const select = getFeatSelectFromRow(row);
+    select.value = entry.value || "";
+    select.dataset.previousValue = select.value;
+    updateMagicInitiateControlsForRow(row, { sync: false });
+    ["class", "cantrip1", "cantrip2", "level1"].forEach(field => {
+      const control = getMagicInitiateSelect(row, field);
+      if (control) control.value = entry.magic?.[field] || "";
+      if (field === "class") updateMagicInitiateSpellOptions(row);
+    });
+    document.getElementById("feats-area").appendChild(row);
+  });
+  if (!document.querySelector("#feats-area > .form-row")) createSingleFeatRow();
+  refreshFeatRows();
+}
+
+function updateFeatManagementMode() {
+  if (!isManualFeatManagementEnabled()) {
+    // 回到自動模式時，將手動改寫的來源列保留為自訂列。
+    const specs = new Map(getDerivedFeatSpecs().map(spec => [spec.key, spec]));
+    document.querySelectorAll("#feats-area > [data-feat-source]").forEach(row => {
+      const value = getFeatSelectFromRow(row)?.value || "";
+      if (!value || specs.get(row.dataset.sourceKey)?.value === value) return;
+      const entry = collectManagedFeatRows().find(entry => entry.key === row.dataset.sourceKey);
+      const manual = createSingleFeatRow();
+      getFeatSelectFromRow(manual).value = value;
+      updateMagicInitiateControlsForRow(manual, { sync: false });
+      ["class", "cantrip1", "cantrip2", "level1"].forEach(field => {
+        const control = getMagicInitiateSelect(manual, field);
+        if (control) control.value = entry.magic[field];
+        if (field === "class") updateMagicInitiateSpellOptions(manual);
+      });
+    });
+  }
+  syncDerivedFeatRows();
+  scheduleStructuralSaveAllFields();
+}
+
+function getFeatChoiceSpecs() {
+  const cls = document.getElementById("class")?.value || "";
+  const level = Number(document.getElementById("level")?.value || 0);
+  const specs = [];
+  if (document.getElementById("race")?.value === "human") {
+    specs.push({ key: "human-origin", source: "race", label: "靈活人才：起源專長", type: "origin", active: true });
+  }
+  if (cls === "fighter" && level >= 1) {
+    specs.push({ key: "fighting-style-fighter", source: "class", label: "戰鬥風格", type: "style", level: 1, active: true });
+    if (level >= 7) specs.push({ key: "fighting-style-fighter-2", source: "class", label: "額外戰鬥風格", type: "style", level: 7, active: true });
+  }
+  if (["paladin", "ranger"].includes(cls) && level >= 2) {
+    specs.push({ key: `fighting-style-${cls}`, source: "class", label: "戰鬥風格", type: "style", level: 2, active: Boolean(document.getElementById(`${cls}-fighting-style`)?.checked) });
+  }
+  (CLASS_FEAT_LEVELS[cls] || []).filter(grantLevel => level >= grantLevel).forEach(grantLevel => {
+    specs.push({ key: `${cls}-level-${grantLevel}`, source: "class", label: `等級 ${grantLevel} 專長`, type: "level", level: grantLevel, active: true });
+  });
+  if (cls === "warlock" && level >= 2) {
+    document.querySelectorAll('#eldritch-invocations-output input[data-invocation-name="原初之一教習"]:checked:not(:disabled)').forEach(input => {
+      specs.push({ key: `lessons-${input.dataset.invocationSlot}`, source: "invocation", label: `原初之一教習 ${input.dataset.invocationSlot}：起源專長`, type: "origin", active: true, checkboxId: input.id });
+    });
+  }
+  return specs;
+}
+
+function getFeatChoiceId(key) { return `feat-choice-${key}`; }
+
+function getFeatChoiceOptions(spec) {
+  return FEAT_OPTIONS.filter(option => {
+    const type = FEAT_RULES[option.value]?.type;
+    return spec.type === "level" ? type !== "style" : type === spec.type;
+  });
+}
+
+function appendFeatChoice(container, spec, previousValue = "") {
+  if (!container) return;
+  const wrap = document.createElement("div");
+  wrap.className = "form-row";
+  wrap.dataset.featChoice = spec.key;
+  const label = document.createElement("label");
+  label.htmlFor = getFeatChoiceId(spec.key);
+  label.textContent = spec.label;
+  const select = document.createElement("select");
+  select.id = label.htmlFor;
+  select.innerHTML = '<option value="">-- 請選擇專長 --</option>' + getFeatChoiceOptions(spec).map(option => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`).join("");
+  select.value = previousValue;
+  select.addEventListener("change", () => {
+    const hadAlertFeat = hasSelectedFeat(ALERT_FEAT_NAME);
+    syncDerivedFeatRows();
+    if (!autosaveSuspended) syncInitiativeForAlertFeatPresenceChange(hadAlertFeat, hasSelectedFeat(ALERT_FEAT_NAME));
+    scheduleSaveAllFields();
+  });
+  wrap.append(label, select);
+  container.append(wrap);
+}
+
+function renderClassFeatChoices() {
+  const output = document.getElementById("classFeatures");
+  getFeatChoiceSpecs().filter(spec => spec.source === "class").forEach(spec => {
+    const heading = Array.from(output.querySelectorAll("h3")).find(heading => heading.textContent.trim().startsWith(`等級 ${spec.level}：${spec.type === "style" ? spec.label : "屬性值提升"}`));
+    appendFeatChoice(heading?.parentElement, spec);
+  });
+}
+
+function renderRaceFeatChoice(previousValue = "") {
+  const spec = getFeatChoiceSpecs().find(spec => spec.source === "race");
+  if (!spec) return;
+  appendFeatChoice(document.getElementById("raceFeatures"), spec, previousValue);
+}
+
+function renderInvocationFeatChoices(previousValues = new Map()) {
+  getFeatChoiceSpecs().filter(spec => spec.source === "invocation").forEach(spec => {
+    const card = document.getElementById(spec.checkboxId)?.closest(".feature-choice-card");
+    appendFeatChoice(card, spec, previousValues.get(getFeatChoiceId(spec.key)) || "");
+  });
+}
+
+function isFeatChoiceEligible(value, spec) {
+  const rule = FEAT_RULES[value];
+  if (!rule) return false;
+  if (spec.type === "level") {
+    if (rule.type === "style") return false;
+  } else if (rule.type !== spec.type) return false;
+  if (rule.abilities && !rule.abilities.some(id => Number(document.getElementById(id)?.value || 0) >= 13)) return false;
+  const cls = document.getElementById("class")?.value || "";
+  if (rule.heavyArmor && !(["fighter", "paladin"].includes(cls) || (cls === "cleric" && document.getElementById("cleric-guardian")?.checked))) return false;
+  if (rule.spellcasting && !hasSpellcastingCapabilityForSelections({
+    className: cls,
+    background: document.getElementById("background")?.value || "",
+    race: document.getElementById("race")?.value || "",
+    hasMagicInitiate: getDerivedBackgroundFeatSpec()?.value === MAGIC_INITIATE_FEAT_NAME
+      || getFeatChoiceSpecs().some(peer => peer.active && document.getElementById(getFeatChoiceId(peer.key))?.value === MAGIC_INITIATE_FEAT_NAME)
+      || getManualFeatRows().some(row => isMagicInitiateFeatSelectedInRow(row))
+  })) return false;
+  return true;
+}
+
+function syncFeatChoiceOptions() {
+  const specs = getFeatChoiceSpecs();
+  if (isManualFeatManagementEnabled()) {
+    specs.forEach(spec => { const select = document.getElementById(getFeatChoiceId(spec.key)); if (select) select.disabled = true; });
+    return;
+  }
+  const claimed = new Set();
+  const background = getDerivedBackgroundFeatSpec();
+  if (background) claimed.add(background.value);
+  let magicFeatCount = background?.value === MAGIC_INITIATE_FEAT_NAME ? 1 : 0;
+  getManualFeatRows().forEach(row => {
+    const value = getFeatSelectFromRow(row)?.value;
+    if (value) claimed.add(value);
+    if (value === MAGIC_INITIATE_FEAT_NAME) magicFeatCount += 1;
+  });
+  const lessons = new Set();
+  specs.forEach(spec => {
+    const select = document.getElementById(getFeatChoiceId(spec.key));
+    if (!select) return;
+    select.disabled = !spec.active;
+    const value = select.value;
+    const duplicate = value && ((!FEAT_RULES[value]?.repeatable && claimed.has(value))
+      || (spec.source === "invocation" && lessons.has(value))
+      || (value === MAGIC_INITIATE_FEAT_NAME && magicFeatCount >= MAGIC_INITIATE_CLASS_OPTIONS.length));
+    // 還原中先保留候選值，等所有來源及屬性還原後再判斷。
+    if (!autosaveSuspended && (!spec.active || (value && (!isFeatChoiceEligible(value, spec) || duplicate)))) select.value = "";
+    if (spec.active && select.value) {
+      claimed.add(select.value);
+      if (select.value === MAGIC_INITIATE_FEAT_NAME) magicFeatCount += 1;
+      if (spec.source === "invocation") lessons.add(select.value);
+    }
+  });
+  specs.forEach(spec => {
+    const select = document.getElementById(getFeatChoiceId(spec.key));
+    if (!select) return;
+    const peers = specs.filter(peer => peer.key !== spec.key && peer.active).map(peer => document.getElementById(getFeatChoiceId(peer.key))?.value).filter(Boolean);
+    if (background) peers.push(background.value);
+    getManualFeatRows().forEach(row => { const value = getFeatSelectFromRow(row)?.value; if (value) peers.push(value); });
+    Array.from(select.options).forEach(option => {
+      const value = option.value;
+      const otherLesson = spec.source === "invocation" && specs.some(peer => peer.source === "invocation" && peer.key !== spec.key && document.getElementById(getFeatChoiceId(peer.key))?.value === value);
+      const magicLimit = value === MAGIC_INITIATE_FEAT_NAME && peers.filter(peer => peer === value).length >= MAGIC_INITIATE_CLASS_OPTIONS.length;
+      option.disabled = Boolean(value) && (!isFeatChoiceEligible(value, spec) || (!FEAT_RULES[value]?.repeatable && peers.includes(value)) || otherLesson || magicLimit);
+    });
+  });
+}
+
 function isDerivedFeatRow(row) {
   return Boolean(row?.dataset?.featSource);
 }
@@ -2996,83 +3300,26 @@ function getManualFeatRows() {
   return Array.from(document.querySelectorAll("#feats-area .form-row")).filter(row => !isDerivedFeatRow(row));
 }
 
-function getFightingStyleOptionsHtml() {
-  const styles = FEAT_OPTIONS.filter(option => /戰鬥風格/u.test(option.label || ""));
-  return `<option value="">-- 請選擇戰鬥風格 --</option>${styles.map(option => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`).join("")}`;
-}
-
-function getEntitledManualFeatRowCount() {
-  const classValue = document.getElementById("class")?.value || "";
-  const level = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
-  if (classValue === "fighter") return 1 + (level >= 6 ? 1 : 0) + (level >= 8 ? 1 : 0);
-  return 1 + (level >= 8 ? 1 : 0);
-}
-
-function syncEntitledManualFeatRows() {
-  const requiredCount = getEntitledManualFeatRowCount();
-  let rows = getManualFeatRows();
-  while (rows.length < requiredCount) {
-    createSingleFeatRow(rows[rows.length - 1] || null);
-    rows = getManualFeatRows();
-  }
-  updateFeatControlStates();
-}
-
-function syncDerivedFightingStyleOptions() {
-  const first = document.getElementById("derived-feat-fighting-style-fighter");
-  const second = document.getElementById("derived-feat-fighting-style-fighter-2");
-  if (!first || !second) return;
-  if (first.value && second.value === first.value) second.value = "";
-  [first, second].forEach((select, index) => {
-    const peerValue = (index === 0 ? second : first).value || "";
-    Array.from(select.options).forEach(option => {
-      option.disabled = Boolean(peerValue) && option.value === peerValue && option.value !== select.value;
-    });
-  });
-}
-
-function enforceDerivedFightingStyleExclusivity(changedSelect) {
-  if (!changedSelect || !["derived-feat-fighting-style-fighter", "derived-feat-fighting-style-fighter-2"].includes(changedSelect.id)) return;
-  const peerId = changedSelect.id.endsWith("-2")
-    ? "derived-feat-fighting-style-fighter"
-    : "derived-feat-fighting-style-fighter-2";
-  const peer = document.getElementById(peerId);
-  if (changedSelect.value && peer?.value === changedSelect.value) changedSelect.value = "";
-  syncDerivedFightingStyleOptions();
-}
-
-function getDerivedFeatSpecs() {
-  const specs = [];
+function getDerivedBackgroundFeatSpec() {
   const background = document.getElementById("background")?.value || "";
   const backgroundData = (typeof detailedBackgroundFeatures !== "undefined" ? detailedBackgroundFeatures : globalThis.detailedBackgroundFeatures)?.[background];
   const backgroundFeat = FEAT_OPTIONS.find(option => backgroundData?.專長?.startsWith(option.value));
-  if (backgroundFeat) specs.push({
+  return backgroundFeat ? {
     key: "background",
     source: "background",
     label: "背景專長：",
     value: backgroundFeat.value,
     fixed: true,
     backgroundData
-  });
+  } : null;
+}
 
-  const classValue = document.getElementById("class")?.value || "";
-  const level = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
-  const hasClassStyle = (classValue === "fighter" && level >= 1)
-    || (classValue === "paladin" && level >= 2 && document.getElementById("paladin-fighting-style")?.checked)
-    || (classValue === "ranger" && level >= 2 && document.getElementById("ranger-fighting-style")?.checked);
-  if (hasClassStyle) specs.push({
-    key: `fighting-style-${classValue}`,
-    source: "class",
-    label: "職業專長：",
-    fixed: false,
-    optionsHtml: getFightingStyleOptionsHtml()
-  });
-  if (classValue === "fighter" && level >= 7) specs.push({
-    key: "fighting-style-fighter-2",
-    source: "class",
-    label: "額外戰鬥風格：",
-    fixed: false,
-    optionsHtml: getFightingStyleOptionsHtml()
+function getDerivedFeatSpecs() {
+  const background = getDerivedBackgroundFeatSpec();
+  const specs = background ? [background] : [];
+  getFeatChoiceSpecs().filter(spec => spec.active).forEach(spec => {
+    const select = document.getElementById(getFeatChoiceId(spec.key));
+    specs.push({ ...spec, label: `${spec.label}：`, value: select?.value || "", fixed: false });
   });
   return specs;
 }
@@ -3088,14 +3335,26 @@ function createDerivedFeatRow(spec) {
   rowHead.className = "feat-row-head";
   const label = document.createElement("label");
   rowHead.appendChild(label);
+  rowHead.appendChild(createFeatRowControls(row));
   const select = document.createElement("select");
   const desc = document.createElement("div");
   desc.className = "output";
   const magicControls = createMagicInitiateControls(row);
   select.addEventListener("change", () => {
-    enforceDerivedFightingStyleExclusivity(select);
+    const previousValue = select.dataset.previousValue || "";
+    const choice = document.getElementById(getFeatChoiceId(row.dataset.sourceKey));
+    if (choice && !isManualFeatManagementEnabled()) {
+      // 兩處共用來源選項與限制，避免下方選擇繞過先決條件或重複限制。
+      const option = Array.from(choice.options).find(option => option.value === select.value);
+      if (!choice.disabled && option && !option.disabled) choice.value = select.value;
+      syncDerivedFeatRows();
+      syncInitiativeAfterFeatSelectionChange(select, previousValue);
+      scheduleSaveAllFields();
+      return;
+    }
     updateFeatDesc(select.id, desc.id);
     updateMagicInitiateControlsForRow(row);
+    syncInitiativeAfterFeatSelectionChange(select, previousValue);
     refreshFeatDerivedEffects();
     scheduleSaveAllFields();
   });
@@ -3109,40 +3368,51 @@ function setDerivedFeatRowValues(row, spec) {
   const label = row.querySelector(".feat-row-head label");
   const desc = row.querySelector(".output");
   if (!select || !label || !desc) return;
-  const previousValue = select.value || "";
+  const choice = !spec.fixed ? document.getElementById(getFeatChoiceId(spec.key)) : null;
   select.id = `derived-feat-${spec.key}`;
   label.htmlFor = select.id;
   label.textContent = spec.label;
   desc.id = `${select.id}-desc`;
-  select.innerHTML = spec.fixed ? getFeatOptionsHtml() : spec.optionsHtml;
-  select.value = spec.fixed ? spec.value : (Array.from(select.options).some(option => option.value === previousValue) ? previousValue : "");
-  select.disabled = Boolean(spec.fixed);
+  select.innerHTML = choice ? choice.innerHTML : getFeatOptionsHtml();
+  select.value = spec.value;
+  select.disabled = !choice || choice.disabled;
+  select.dataset.previousValue = select.value;
   updateFeatDesc(select.id, desc.id);
   updateMagicInitiateControlIds(row, select.id);
   updateMagicInitiateControlsForRow(row, { sync: false });
-  if (spec.fixed && spec.backgroundData) applyMagicInitiateBackgroundDefault(select, spec.backgroundData);
+  if (spec.fixed && spec.backgroundData && !isManualFeatManagementEnabled()) applyMagicInitiateBackgroundDefault(select, spec.backgroundData);
 }
 
 function syncDerivedFeatRows() {
   const area = document.getElementById("feats-area");
   if (!area) return;
-  syncEntitledManualFeatRows();
+  syncFeatChoiceOptions();
+  if (isManualFeatManagementEnabled()) {
+    refreshFeatRows();
+    refreshFeatDerivedEffects();
+    return;
+  }
   const specs = getDerivedFeatSpecs();
   const desiredKeys = new Set(specs.map(spec => spec.key));
-  Array.from(area.querySelectorAll(":scope > .feat-entry--derived")).forEach(row => {
+  document.querySelectorAll("#eldritch-invocations-output [data-feat-choice]").forEach(control => {
+    if (!desiredKeys.has(control.dataset.featChoice)) control.remove();
+  });
+  Array.from(area.querySelectorAll(":scope > [data-feat-source]")).forEach(row => {
     if (!desiredKeys.has(row.dataset.sourceKey)) row.remove();
   });
   specs.forEach(spec => {
-    let row = Array.from(area.querySelectorAll(":scope > .feat-entry--derived")).find(candidate => candidate.dataset.sourceKey === spec.key);
+    let row = Array.from(area.querySelectorAll(":scope > [data-feat-source]")).find(candidate => candidate.dataset.sourceKey === spec.key);
     if (!row) row = createDerivedFeatRow(spec);
     if (row) setDerivedFeatRowValues(row, spec);
   });
-  const firstManual = getManualFeatRows()[0] || null;
-  specs.forEach(spec => {
-    const row = Array.from(area.querySelectorAll(":scope > .feat-entry--derived")).find(candidate => candidate.dataset.sourceKey === spec.key);
-    if (row) area.insertBefore(row, firstManual);
+  let nextRow = getManualFeatRows()[0] || null;
+  specs.slice().reverse().forEach(spec => {
+    const row = Array.from(area.querySelectorAll(":scope > [data-feat-source]")).find(candidate => candidate.dataset.sourceKey === spec.key);
+    if (!row) return;
+    // 順序未變時保留 DOM，避免移動已聚焦的下拉選單造成捲動跳位。
+    if (row.nextElementSibling !== nextRow) area.insertBefore(row, nextRow);
+    nextRow = row;
   });
-  syncDerivedFightingStyleOptions();
   refreshFeatRows();
   refreshFeatDerivedEffects();
 }
@@ -3601,6 +3871,7 @@ function createMagicInitiateControls(rowDiv) {
   wrap.appendChild(levelOneField.fieldWrap);
 
   classField.select.addEventListener("change", () => {
+    syncMagicInitiateClassOptions(classField.select);
     updateMagicInitiateSpellOptions(rowDiv);
     syncMagicInitiateDerivedSpellRows();
     updateSpellCastingStatsVisibility();
@@ -3621,6 +3892,26 @@ function createMagicInitiateControls(rowDiv) {
 
 function getMagicInitiateSelect(row, field) {
   return row?.querySelector?.(`[data-magic-initiate-field="${field}"]`) || null;
+}
+
+function syncMagicInitiateClassOptions(changedSelect) {
+  if (isManualFeatManagementEnabled()) return;
+  const rows = Array.from(document.querySelectorAll("#feats-area .form-row")).filter(isMagicInitiateFeatSelectedInRow);
+  const selects = rows.map(row => getMagicInitiateSelect(row, "class")).filter(Boolean);
+  if (!autosaveSuspended && changedSelect?.value && selects.some(select => select !== changedSelect && select.value === changedSelect.value)) {
+    changedSelect.value = "";
+  }
+  const used = new Set();
+  selects.forEach(select => {
+    const row = select.closest(".form-row");
+    if (!autosaveSuspended && used.has(select.value) && isDerivedFeatRow(row) && row.dataset.featSource !== "background") {
+      select.value = "";
+      updateMagicInitiateSpellOptions(row);
+    }
+    if (select.value) used.add(select.value);
+    const peers = selects.filter(peer => peer !== select).map(peer => peer.value).filter(Boolean);
+    Array.from(select.options).forEach(option => { option.disabled = Boolean(option.value) && peers.includes(option.value) && option.value !== select.value; });
+  });
 }
 
 function syncMagicInitiateSpellDetailButton(select) {
@@ -4355,16 +4646,34 @@ function syncOriginAndSubclassDerivedSpellRows() {
 
 function updateFeatControlStates() {
   const rows = Array.from(document.querySelectorAll("#feats-area .form-row"));
-  const manualRows = rows.filter(row => !isDerivedFeatRow(row));
-  const disableDelete = manualRows.length <= getEntitledManualFeatRowCount();
-  const lastRow = manualRows[manualRows.length - 1] || null;
+  const enabled = isManualFeatManagementEnabled();
+  const disableDelete = rows.length <= 1;
+  const lastRow = rows[rows.length - 1] || null;
 
   rows.forEach((row) => {
+    const manual = !isDerivedFeatRow(row);
+    row.hidden = manual && !enabled && !getFeatSelectFromRow(row)?.value;
+    const select = getFeatSelectFromRow(row);
+    if (select) {
+      const choice = !manual ? document.getElementById(getFeatChoiceId(row.dataset.sourceKey)) : null;
+      select.disabled = !enabled && (!choice || choice.disabled);
+      if (enabled) {
+        const value = select.value;
+        select.innerHTML = getFeatOptionsHtml();
+        select.value = value;
+      }
+    }
+    row.classList.toggle("feat-entry--derived", !enabled);
+    const magicClass = getMagicInitiateSelect(row, "class");
+    if (magicClass) magicClass.disabled = !enabled && row.dataset.featSource === "background";
+    const controls = row.querySelector(".feat-row-controls");
+    if (controls) controls.hidden = !enabled;
     const delBtn = row.querySelector(".feat-icon-btn[data-feat-action='delete']");
     const addBtn = row.querySelector(".feat-icon-btn[data-feat-action='add']");
-    if (delBtn) delBtn.disabled = isDerivedFeatRow(row) || disableDelete;
+    if (delBtn) delBtn.disabled = !enabled || disableDelete;
     if (addBtn) {
-      const isLast = row === lastRow;
+      const isLast = enabled && row === lastRow;
+      addBtn.disabled = !enabled;
       addBtn.style.display = isLast ? "inline-flex" : "none";
       addBtn.tabIndex = isLast ? 0 : -1;
       addBtn.setAttribute("aria-hidden", isLast ? "false" : "true");
@@ -4391,26 +4700,13 @@ function refreshFeatRows() {
     if (!isDerivedFeatRow(row)) manualIndex += 1;
   });
   updateFeatControlStates();
+  syncMagicInitiateClassOptions();
   syncMagicInitiateDerivedSpellRows();
   updateSpellCastingStatsVisibility();
   updateSpellsByClassLevel();
 }
 
-function createSingleFeatRow(afterRow = null) {
-  const area = document.getElementById("feats-area");
-  if (!area) return;
-
-  const idx = getManualFeatRows().length;
-  const rowDiv = document.createElement("div");
-  rowDiv.className = "form-row";
-
-  const rowHead = document.createElement("div");
-  rowHead.className = "feat-row-head";
-
-  const label = document.createElement("label");
-  label.htmlFor = `feat-${idx}`;
-  label.textContent = `專長${idx + 1}`;
-
+function createFeatRowControls(rowDiv) {
   const controls = document.createElement("div");
   controls.className = "feat-row-controls";
 
@@ -4422,6 +4718,7 @@ function createSingleFeatRow(afterRow = null) {
   addBtn.title = "新增";
   addBtn.dataset.featAction = "add";
   addBtn.addEventListener("click", () => {
+    if (!isManualFeatManagementEnabled()) return;
     createSingleFeatRow(rowDiv);
     scheduleStructuralSaveAllFields();
   });
@@ -4434,7 +4731,8 @@ function createSingleFeatRow(afterRow = null) {
   delBtn.title = "刪除";
   delBtn.dataset.featAction = "delete";
   delBtn.addEventListener("click", () => {
-    if (getManualFeatRows().length <= 1) return;
+    if (!isManualFeatManagementEnabled()) return;
+    if (document.querySelectorAll("#feats-area > .form-row").length <= 1) return;
     const hadAlertFeat = hasAlertFeatSelectedWithOverride();
     rowDiv.remove();
     refreshFeatRows();
@@ -4445,8 +4743,22 @@ function createSingleFeatRow(afterRow = null) {
 
   controls.appendChild(delBtn);
   controls.appendChild(addBtn);
+  return controls;
+}
+
+function createSingleFeatRow(afterRow = null) {
+  const area = document.getElementById("feats-area");
+  if (!area) return;
+  const idx = getManualFeatRows().length;
+  const rowDiv = document.createElement("div");
+  rowDiv.className = "form-row";
+  const rowHead = document.createElement("div");
+  rowHead.className = "feat-row-head";
+  const label = document.createElement("label");
+  label.htmlFor = `feat-${idx}`;
+  label.textContent = `專長${idx + 1}`;
   rowHead.appendChild(label);
-  rowHead.appendChild(controls);
+  rowHead.appendChild(createFeatRowControls(rowDiv));
 
   const featSel = document.createElement("select");
   featSel.id = `feat-${idx}`;
@@ -4483,6 +4795,7 @@ function createSingleFeatRow(afterRow = null) {
   }
 
   refreshFeatRows();
+  return rowDiv;
 }
 
 // ✅ 簡單防 XSS：把純文字安全地放進 innerHTML
@@ -4527,6 +4840,7 @@ document.addEventListener("DOMContentLoaded", () => {
   bindSkillRankExclusiveEvents();
   bindSpellCastingStatsEvents();
   bindFeatureSpellHighlightEvents();
+  bindCharacterFeatureDialog();
   applyStatTextMaxLengthLimit();
 
 });
@@ -7465,6 +7779,7 @@ document.addEventListener("change", (e) => {
     enforceClericMissionExclusivity(target.id);
     populateHandAttacks();
     updateEquipmentLoadoutSummary();
+    syncDerivedFeatRows();
   }
 
   if (target.id === "druid-shaman" || target.id === "druid-sentinel") {
@@ -7628,6 +7943,7 @@ function collectStateObject(options = {}) {
     data[el.id] = el.type === "checkbox" ? el.checked : el.value;
   });
   data[CHARACTER_SIZE_STATE_KEY] = characterSize;
+  if (isManualFeatManagementEnabled()) data.__managedFeatRows = collectManagedFeatRows();
   collectSpellRowsIntoState(data, includeDerivedSpellRows);
   getDynamicAreaConfigs().forEach(area => {
     if (isSpellAreaId(area.key)) return;
@@ -7647,6 +7963,7 @@ function collectStateObject(options = {}) {
 const SHARE_STATE_VERSION = 1;
 const SHARE_ALWAYS_INCLUDED_IDS = new Set([
   "auto-calculate-key-stats-toggle",
+  "manual-feat-management",
   "weapon-attack-automation"
 ]);
 const SHARE_OMITTED_IDS = new Set([
@@ -7853,6 +8170,12 @@ function applyStateObject(data) {
     if (data.__shareStateVersion === SHARE_STATE_VERSION) {
       resetOmittedShareCheckboxes(data);
     }
+    const managementControl = document.getElementById("manual-feat-management");
+    const hasManagementState = Object.hasOwn(data, "manual-feat-management");
+    const legacyFeatState = !hasManagementState && Number(data["feats-area-count"]) >= 1;
+    const restoringManagement = hasManagementState || legacyFeatState;
+    const requestedManualMode = hasManagementState ? data["manual-feat-management"] === true : legacyFeatState;
+    if (restoringManagement) managementControl.checked = requestedManualMode && Array.isArray(data.__managedFeatRows);
     removeMagicInitiateDerivedSpellRows();
     deletedSpellRowCache = cloneDeletedSpellRowCache(data.__deletedSpellRowCache);
     setPactTomeSpellSelection(data.__pactTomeSpellSelection, { sync: false });
@@ -7864,9 +8187,11 @@ function applyStateObject(data) {
 
     const spellAreas = getSpellAreaConfigs();
     getDynamicAreaConfigs().forEach(area => {
+      if (area.key === "feats-area" && !Object.hasOwn(data, "feats-area-count")) return;
       const n = parseInt(data[`${area.key}-count`] || "0", 10);
       area.ensureCount(n);
     });
+    if (restoringManagement && requestedManualMode && Array.isArray(data.__managedFeatRows)) restoreManagedFeatRows(data.__managedFeatRows);
     const highlevelCount = spellAreas
       .filter(area => typeof area.level === "number" && area.level >= 4)
       .reduce((sum, area) => sum + parseInt(data[`${area.id}-count`] || "0", 10), 0);
@@ -7876,6 +8201,7 @@ function applyStateObject(data) {
     }
 
     for (const id in data) {
+      if (id === "manual-feat-management") continue;
       if (id === "__deletedSpellRowCache" || id === "__pactTomeSpellSelection" || id === "__bardMagicalDiscoverySelection" || id === "__classFeatureCantrips") continue;
       if (isSpellRowStateKey(id)) continue;
       if (isAgonizingBlastSelectId(id) || isEldritchInvocationCheckboxId(id)) continue;
@@ -7908,6 +8234,23 @@ function applyStateObject(data) {
     syncWarlockInvocationSelectionLimit();
     renderEldritchInvocations();
     applyAgonizingBlastState(data);
+    // 來源控制項必須先建立再還原，避免 JSON 欄位順序或重繪遺失選擇。
+    const restoringFullFeatState = Object.hasOwn(data, "feats-area-count") || data.__shareStateVersion === SHARE_STATE_VERSION;
+    getFeatChoiceSpecs().forEach(spec => {
+      const select = document.getElementById(getFeatChoiceId(spec.key));
+      if (!select) return;
+      const value = data[select.id] ?? data[`derived-feat-${spec.key}`] ?? (restoringFullFeatState ? "" : select.value);
+      select.value = value;
+    });
+    syncDerivedFeatRows();
+    Object.entries(data).filter(([id]) => /^derived-feat-.*-magic-initiate-/u.test(id))
+      .sort(([a], [b]) => Number(!a.endsWith("-class")) - Number(!b.endsWith("-class")))
+      .forEach(([id, value]) => {
+      const control = document.getElementById(id);
+      if (!control) return;
+      control.value = value;
+      control.dispatchEvent(new Event("change"));
+    });
     updateClassFeatureOptionVisibility();
     updateHighElfCantripVisibility();
     updateBaseLanguageOptions();
@@ -7918,6 +8261,7 @@ function applyStateObject(data) {
     updatePickedSpellBoxes();
     syncHitDiceCountToLevel({ preserveCurrent: true });
     syncAdvancedClassFeatureControls();
+    if (restoringManagement) managementControl.checked = requestedManualMode;
     refreshFeatDerivedEffects();
     syncAutomaticKeyStatsMode();
     updateOffHandRolePresentation();
@@ -7927,6 +8271,7 @@ function applyStateObject(data) {
   } finally {
     autosaveSuspended = prevAutosaveSuspended;
   }
+  syncDerivedFeatRows();
   syncMain2ShieldControl({ legalize: true });
   updateACDisplay();
   updateSpeedDisplay();
@@ -8282,29 +8627,32 @@ function buildPdfPrecheckMessages() {
   }
 
   const fightingStyleSelect = selectedClass ? document.getElementById(`derived-feat-fighting-style-${selectedClass}`) : null;
-  if (selectedClass === "fighter" && selectedLevel >= 1 && !fightingStyleSelect?.value) {
-    reminders.push({ message: "戰士戰鬥風格尚未選擇。", tab: "basic", selector: "#feats-area", focusSelector: "#derived-feat-fighting-style-fighter" });
+  getFeatChoiceSpecs().filter(spec => !isManualFeatManagementEnabled() && spec.active && spec.type !== "style").forEach(spec => {
+    const id = getFeatChoiceId(spec.key);
+    if (!document.getElementById(id)?.value) reminders.push({ message: `${spec.label}尚未選擇。`, tab: "basic", selector: `#${id}` });
+  });
+  if (!isManualFeatManagementEnabled() && selectedClass === "fighter" && selectedLevel >= 1 && !fightingStyleSelect?.value) {
+    reminders.push({ message: "戰士戰鬥風格尚未選擇。", tab: "basic", selector: "#feat-choice-fighting-style-fighter" });
   }
   const additionalFightingStyleSelect = document.getElementById("derived-feat-fighting-style-fighter-2");
-  if (selectedClass === "fighter" && selectedLevel >= 7 && !additionalFightingStyleSelect?.value) {
-    reminders.push({ message: "戰士額外戰鬥風格尚未選擇。", tab: "basic", selector: "#feats-area", focusSelector: "#derived-feat-fighting-style-fighter-2" });
+  if (!isManualFeatManagementEnabled() && selectedClass === "fighter" && selectedLevel >= 7 && !additionalFightingStyleSelect?.value) {
+    reminders.push({ message: "戰士額外戰鬥風格尚未選擇。", tab: "basic", selector: "#feat-choice-fighting-style-fighter-2" });
   }
   if (["paladin", "ranger"].includes(selectedClass) && selectedLevel >= 2) {
     const styleId = `${selectedClass}-fighting-style`;
     const magicId = selectedClass === "paladin" ? "paladin-blessed-warrior" : "ranger-druidic-warrior";
     const styleChecked = Boolean(document.getElementById(styleId)?.checked);
     const magicChecked = Boolean(document.getElementById(magicId)?.checked);
-    if (!styleChecked && !magicChecked) reminders.push({
+    if (!isManualFeatManagementEnabled() && !styleChecked && !magicChecked) reminders.push({
       message: `${selectedClass === "paladin" ? "聖騎士" : "遊俠"}戰鬥風格類型尚未選擇。`,
       tab: "basic",
       selector: `#${styleId}, #${magicId}`,
       focusSelector: `#${styleId}`
     });
-    if (styleChecked && !fightingStyleSelect?.value) reminders.push({
+    if (!isManualFeatManagementEnabled() && styleChecked && !fightingStyleSelect?.value) reminders.push({
       message: `${selectedClass === "paladin" ? "聖騎士" : "遊俠"}戰鬥風格尚未選擇。`,
       tab: "basic",
-      selector: "#feats-area",
-      focusSelector: `#derived-feat-fighting-style-${selectedClass}`
+      selector: `#feat-choice-fighting-style-${selectedClass}`
     });
     if (magicChecked) {
       const sourceFragment = selectedClass === "paladin" ? "blessed-warrior" : "druidic-warrior";
@@ -9378,7 +9726,6 @@ window.addEventListener("DOMContentLoaded", async function() {
     if (!getSpellRowsForState(areaId, false).length) createSingleSpellRow(areaId, level);
   });
   if (!getManualFeatRows().length) createSingleFeatRow();
-  syncEntitledManualFeatRows();
   // 3. 還原所有欄位狀態
   const { data: sharedData, error: sharedError } = await decodeStateFromHash();
   if (sharedData) {

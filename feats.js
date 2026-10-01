@@ -203,3 +203,33 @@ const FEAT_OPTIONS = [
   { value: "巨武器戰鬥", label: "巨武器戰鬥(戰鬥風格)" },
   { value: "雙武器戰鬥", label: "雙武器戰鬥(戰鬥風格)" }
 ];
+
+// 專長取得與先決條件，依本檔及職業／種族規則；不解析顯示文案。
+const FEAT_RULES = {
+  "警覺": { type: "origin" },
+  "魔法學徒": { type: "origin", repeatable: true },
+  "兇蠻打手": { type: "origin" },
+  "熟習": { type: "origin", repeatable: true },
+  "醫療兵": { type: "origin" },
+  "強韌體魄": { type: "origin" },
+  "屬性值提升": { type: "general", repeatable: true },
+  "擒抱者": { type: "general", abilities: ["str", "dex"] },
+  "衝鋒猛擊": { type: "general", abilities: ["str", "dex"] },
+  "雙持追擊": { type: "general", abilities: ["str", "dex"] },
+  "尋物好手": { type: "general", abilities: ["int", "wis"] },
+  "最佳旅伴": { type: "general", abilities: ["wis", "cha"] },
+  "重甲減傷": { type: "general", heavyArmor: true },
+  "封鎖者": { type: "general", abilities: ["str", "dex"] },
+  "迅捷步法": { type: "general", abilities: ["dex", "con"] },
+  "臨陣施法": { type: "general", spellcasting: true },
+  "箭術": { type: "style" },
+  "防禦": { type: "style" },
+  "巨武器戰鬥": { type: "style" },
+  "雙武器戰鬥": { type: "style" }
+};
+
+const CLASS_FEAT_LEVELS = {
+  barbarian: [4, 8], bard: [4, 8], cleric: [4, 8], druid: [4, 8],
+  fighter: [4, 6, 8], monk: [4, 8], paladin: [4, 8], ranger: [4, 8],
+  rogue: [4, 8], sorcerer: [4, 8], warlock: [4, 8], wizard: [4, 8]
+};

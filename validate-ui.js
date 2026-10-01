@@ -361,6 +361,247 @@ async function verifyToasts(browser) {
   console.log("AppDialog toast stack, timeout, keyboard dismiss, and touch swipes passed.");
 }
 
+async function verifyCharacterFeatures(browser, url) {
+  const page = await newUiPage(browser, { viewport: { width: 1280, height: 900 }, reducedMotion: "reduce" });
+  try {
+    await page.goto(url);
+    await page.locator("#legal-close-btn").click();
+    await page.locator("#class").selectOption("rogue");
+    await page.locator("#level").selectOption("1");
+    await page.locator("#background").selectOption("soldier");
+    await page.locator("#race").selectOption("elf");
+    const source = await page.evaluate(() => JSON.stringify(classFeatures));
+    await page.evaluate(() => {
+      dndStorage.setItem(CLASS_FEATURE_TABLE_STATE_KEY, JSON.stringify({ rogue: false }));
+      dndStorage.setItem(CLASS_CORE_CREATION_INFO_STATE_KEY, JSON.stringify({ rogue: false }));
+    });
+    for (const cls of Object.keys(JSON.parse(source))) {
+      await page.locator("#class").selectOption(cls);
+      assert.equal(await page.evaluate(className => {
+        const template = document.createElement("template");
+        template.innerHTML = classFeatures[className];
+        const creation = document.getElementById("classCreationInfo");
+        const abilities = document.getElementById("classFeatures");
+        return ["class-core-creation-info", "class-feature-table-details"].every(className => {
+          const original = template.content.querySelector(`.${className}`);
+          const displayed = creation.querySelector(`section.${className}`);
+          const normalize = node => node.textContent.replace(/\s+/g, " ").trim();
+          return original && displayed && normalize(original) === normalize(displayed)
+            && !abilities.querySelector(`.${className}`) && !displayed.querySelector("summary");
+        }) && !creation.querySelector("details");
+      }, cls), true, `${cls} creation info and full table move without changing content`);
+    }
+    assert.equal(await page.evaluate(() => JSON.stringify(classFeatures)), source, "display relocation must leave classFeatures data intact");
+    await page.locator("#class").selectOption("");
+    assert.equal(await page.locator("#classCreationInfo").textContent(), "無資料", "clearing class removes stale creation data");
+    await page.locator("#class").selectOption("rogue");
+    assert.equal(await page.locator("[data-feature-panel] > details").count(), 0, "tabs replace outer headings and disclosure controls");
+    assert.equal(await page.locator("#tab-basic #classFeatures, #tab-basic #backgroundFeatures, #tab-basic #raceFeatures, #tab-basic #metamagicOptions, #tab-basic #eldritch-invocations-output").count(), 0);
+    assert.equal(await page.evaluate(() => Boolean(document.getElementById("feats-area").closest(".section").nextElementSibling?.querySelector("#class-extra"))), true);
+    assert.equal(await page.locator(".basic-row--origin .character-features-hint").textContent(), "＊點擊上方職業、種族、背景可查看細節。");
+    const state = await page.evaluate(() => {
+      window.featureControlNodes = ["classFeatures", "backgroundFeatures", "raceFeatures"].map(id => document.getElementById(id));
+      return collectStateObject();
+    });
+    const opener = page.locator('[data-character-features-tab="class"]');
+    await opener.focus();
+    const scroll = await page.evaluate(() => scrollY);
+    await page.keyboard.press("Enter");
+    const modal = page.locator("#character-features-modal");
+    const tabs = modal.locator('[role="tab"]:visible');
+    assert.deepEqual(await tabs.allTextContents(), ["創角/表格", "職業", "背景", "種族"]);
+    assert.equal(await page.evaluate(() => scrollY), scroll, "opening details must not jump down the sheet");
+    assert.equal(await modal.evaluate(el => {
+      const body = el.querySelector(".app-dialog__body");
+      body.scrollTop = 200;
+      const header = el.querySelector(".app-dialog__header");
+      const rect = header.querySelector('[role="tablist"]').getBoundingClientRect();
+      const close = header.querySelector(".app-dialog__close").getBoundingClientRect();
+      const viewport = header.getBoundingClientRect();
+      body.scrollTop = 0;
+      return rect.top >= viewport.top && rect.bottom <= viewport.bottom && rect.right <= close.left
+        && header.querySelector("h2").classList.contains("sr-only");
+    }), true, "tabs replace the visible title and stay beside the close button above scrolling content");
+    assert.equal((await modal.locator("#classFeatures").textContent()).includes("等級 2：靈巧動作"), false);
+    await page.keyboard.press("Home");
+    assert.equal(await modal.locator("#classCreationInfo").isVisible(), true);
+    assert.equal(await modal.locator("#classFeatures").isVisible(), false);
+    assert.equal(await modal.locator("#classCreationInfo .class-feature-table").isVisible(), true, "saved collapsed state no longer hides tables");
+    await page.keyboard.press("ArrowRight");
+    assert.equal(await modal.locator("#classFeatures").isVisible(), true);
+    await page.keyboard.press("ArrowRight");
+    assert.equal(await modal.locator('[role="tab"][aria-selected="true"]').textContent(), "背景");
+    assert.equal(await modal.locator("#backgroundFeatures").isVisible(), true);
+    await page.keyboard.press("End");
+    assert.equal(await modal.locator("#raceFeatures").isVisible(), true);
+    const lastControl = modal.locator('button:visible:not([tabindex="-1"]), a[href]:visible, input:visible:not([disabled]), select:visible:not([disabled]), textarea:visible:not([disabled]), [tabindex="0"]:visible').last();
+    await lastControl.focus();
+    await page.keyboard.press("Tab");
+    assert.equal(await modal.locator('[role="tab"][aria-selected="true"]').evaluate(el => el === document.activeElement), true);
+    await page.keyboard.press("Shift+Tab");
+    assert.equal(await lastControl.evaluate(el => el === document.activeElement), true);
+    await page.keyboard.press("Escape");
+    assert.equal(await opener.evaluate(el => el === document.activeElement), true);
+    assert.equal(await page.locator("#classFeatures").isVisible(), false);
+    assert.deepEqual(await page.evaluate(() => collectStateObject()), state, "opening and switching tabs must preserve character data");
+    assert.equal(await page.evaluate(() => featureControlNodes.every(node => document.getElementById(node.id) === node)), true);
+    await page.locator("#level").selectOption("2");
+    await opener.click();
+    assert.equal((await modal.locator("#classFeatures").textContent()).includes("等級 2：靈巧動作"), true);
+    await modal.locator(".app-dialog__close").click();
+    for (const tab of ["background", "race"]) {
+      await page.locator(`[data-character-features-tab="${tab}"]`).click();
+      assert.equal(await modal.locator('[role="tab"][aria-selected="true"]').getAttribute("data-feature-tab"), tab);
+      await modal.locator(".app-dialog__close").click();
+    }
+    await page.locator("#class").selectOption("sorcerer");
+    await page.locator("#level").selectOption("1");
+    await opener.click();
+    assert.deepEqual(await tabs.allTextContents(), ["創角/表格", "職業", "背景", "種族"]);
+    await page.keyboard.press("Escape");
+    await page.locator("#level").selectOption("2");
+    await opener.click();
+    assert.deepEqual(await tabs.allTextContents(), ["創角/表格", "職業", "超魔法", "背景", "種族"]);
+    await modal.getByRole("tab", { name: "超魔法", exact: true }).click();
+    const metamagic = modal.locator("#metamagicOptions input[data-metamagic-name]").first();
+    await metamagic.check();
+    const choiceId = await metamagic.getAttribute("id");
+    const chosen = await page.evaluate(() => collectStateObject());
+    assert.equal(chosen[choiceId], true);
+    assert.equal(await page.evaluate(id => collectShareState()[id], choiceId), true);
+    await page.keyboard.press("Escape");
+    assert.deepEqual(await page.evaluate(() => collectStateObject()), chosen);
+    await page.waitForFunction(id => JSON.parse(dndStorage.getItem("dndchar_autosave_v1") || "{}")[id] === true, choiceId, { timeout: 15000 });
+    await page.reload();
+    await page.locator("#legal-close-btn").click();
+    await opener.click();
+    await modal.getByRole("tab", { name: "超魔法", exact: true }).click();
+    assert.equal(await page.locator(`#${choiceId}`).isChecked(), true, "metamagic survives autosave and reload while its panel is closed");
+    await page.keyboard.press("Escape");
+    await page.locator("#class").selectOption("warlock");
+    await page.locator("#level").selectOption("2");
+    await page.evaluate(() => showTab("spells"));
+    await page.locator('#cantrips-area select[id*="-class-"]').first().selectOption("warlock");
+    await page.locator('#cantrips-area select[id*="-spell-"]').first().selectOption("eldritch-blast");
+    await page.evaluate(() => showTab("basic"));
+    await opener.click();
+    assert.deepEqual(await tabs.allTextContents(), ["創角/表格", "職業", "魔能祈喚", "背景", "種族"]);
+    await modal.getByRole("tab", { name: "魔能祈喚", exact: true }).click();
+    await modal.locator('input[data-invocation-name="苦痛魔爆"]').first().check();
+    const settings = modal.locator("[data-agonizing-blast-settings]");
+    await settings.click();
+    const nested = page.locator('.app-dialog:not(#character-features-modal)');
+    await nested.locator("select").waitFor();
+    assert.equal(await modal.evaluate(el => el.inert), true);
+    const spellId = await nested.locator("select").evaluate(el => Array.from(el.options).find(option => option.value)?.value);
+    assert(spellId, "damage cantrip options remain available in the nested dialog");
+    await nested.locator("select").selectOption(spellId);
+    await nested.getByRole("button", { name: "套用設定" }).click();
+    assert.equal(await modal.evaluate(el => el.inert), false);
+    assert.equal(await settings.evaluate(el => el === document.activeElement), true);
+    assert.equal(await page.locator("[data-agonizing-blast-slot]").first().inputValue(), spellId);
+    await settings.click();
+    await page.keyboard.press("Escape");
+    assert.equal(await modal.isVisible(), true, "Escape closes only the nested dialog");
+    await modal.locator('input[data-invocation-name="書之魔契"]').first().check();
+    await nested.getByRole("button", { name: "取消", exact: true }).click();
+    assert.equal(await modal.locator('input[data-invocation-name="書之魔契"]').first().isChecked(), false);
+    assert.equal(await modal.isVisible(), true, "canceling Tome selection keeps ability details open");
+    for (const width of [1280, 320]) {
+      await page.setViewportSize({ width, height: 900 });
+      for (const tab of ["創角/表格", "職業", "魔能祈喚", "背景", "種族"]) {
+        await modal.getByRole("tab", { name: tab, exact: true }).click();
+        assert.equal(await modal.evaluate(el => {
+          const surface = el.querySelector(".app-dialog__surface").getBoundingClientRect();
+          const body = el.querySelector(".app-dialog__body");
+          const tabs = el.querySelector('[role="tablist"]').getBoundingClientRect();
+          const close = el.querySelector(".app-dialog__close").getBoundingClientRect();
+          const selected = el.querySelector('[role="tab"][aria-selected="true"]').getBoundingClientRect();
+          return surface.left >= 0 && surface.right <= innerWidth && body.scrollWidth <= body.clientWidth
+            && tabs.right <= close.left && selected.left >= tabs.left - 1 && selected.right <= tabs.right + 1;
+        }), true, `${tab} details fit ${width}px viewport`);
+      }
+    }
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await modal.click({ position: { x: 3, y: 3 } });
+    assert.equal(await modal.count(), 0, "backdrop closes details");
+    assert.equal(await page.locator("#main-content").evaluate(el => el.closest("[inert]") === null), true);
+    await page.evaluate(async () => {
+      await onboardingTour.jumpToTarget({ selector: '#eldritch-invocations-output input[data-invocation-name="苦痛魔爆"]' });
+    });
+    assert.equal(await modal.locator('[role="tab"][aria-selected="true"]').textContent(), "魔能祈喚");
+    assert.equal(await modal.locator('input[data-invocation-name="苦痛魔爆"]').first().evaluate(el => el === document.activeElement), true);
+    await page.keyboard.press("Escape");
+    console.log("Character abilities: creation/table relocation for all classes, tab conditions, controls, nested settings, saved state, focus, reminders and responsive layout passed.");
+  } finally { await page.close(); }
+}
+
+async function verifyFeatureReferences(browser, url) {
+  const page = await newUiPage(browser, { viewport: { width: 1280, height: 900 }, reducedMotion: "reduce" });
+  try {
+    await page.goto(url);
+    await page.locator("#legal-close-btn").click();
+    await page.locator("#class").selectOption("druid");
+    await page.locator("#level").selectOption("3");
+    const opener = page.locator('[data-character-features-tab="class"]');
+    const modal = page.locator("#character-features-modal");
+    const assertOnTop = async locator => {
+      await locator.waitFor({ state: "visible" });
+      assert.equal(await locator.evaluate(el => {
+        const rect = el.getBoundingClientRect();
+        const x = Math.min(innerWidth - 1, rect.left + rect.width / 2);
+        const y = Math.min(innerHeight - 1, rect.top + rect.height / 2);
+        return !el.closest("[inert]") && el.contains(document.elementFromPoint(x, y));
+      }), true, "reference must receive input above the ability dialog");
+    };
+    for (const width of [1280, 320]) {
+      await page.setViewportSize({ width, height: 900 });
+      await opener.click();
+      await modal.getByRole("tab", { name: "創角/表格", exact: true }).click();
+      await modal.locator("#classCreationInfo .skill-tip").first().click();
+      await assertOnTop(page.locator("#skillPopup"));
+      await page.locator("#skillPopup .close").click();
+      await modal.getByRole("tab", { name: "職業", exact: true }).click();
+      for (const [trigger, popup] of [[".skill-tip", "#skillPopup"], ['.beast-tip[data-beast="wolf"]', "#beastPopup"]]) {
+        await modal.locator(`#classFeatures ${trigger}`).first().click();
+        const reference = page.locator(popup);
+        await assertOnTop(reference);
+        assert.notEqual(await reference.locator(".content").textContent(), "");
+        await reference.locator(".close").click();
+        assert.equal(await reference.isVisible(), false);
+        assert.equal(await modal.isVisible(), true);
+        await modal.locator(`#classFeatures ${trigger}`).first().click();
+        await assertOnTop(reference);
+        await page.keyboard.press("Escape");
+        assert.equal(await reference.isVisible(), false);
+        assert.equal(await modal.isVisible(), true, "Escape dismisses a reference without closing abilities");
+      }
+      const spellTrigger = modal.locator("#classFeatures .spell-highlight-action").first();
+      await spellTrigger.click();
+      const spell = page.locator("#quick-build-spell-detail");
+      await assertOnTop(spell.locator(".quick-build-spell-detail-shell"));
+      assert.equal(await spell.locator(".quick-build-spell-detail-close").evaluate(el => el === document.activeElement), true);
+      await spell.locator(".quick-build-spell-prepare-cancel").click();
+      assert.equal(await modal.isVisible(), true);
+      assert.equal(await spellTrigger.evaluate(el => el === document.activeElement), true);
+      await spellTrigger.click();
+      await page.keyboard.press("Escape");
+      assert.equal(await spell.isVisible(), false);
+      assert.equal(await modal.isVisible(), true, "Escape closes only the spell reference");
+      await modal.locator('#classFeatures .beast-tip[data-beast="wolf"]').first().click();
+      await modal.locator(".app-dialog__close").click();
+      assert.equal(await page.locator("#beastPopup").isVisible(), false);
+      assert.equal(await page.locator("#skillPopup, #beastPopup").evaluateAll(popups => popups.every(el => el.parentElement === document.body && !el.inert)), true);
+      await page.evaluate(() => showTab("skills"));
+      await page.locator('#tab-skills .skill-tip[data-skill="運動"]').click();
+      await assertOnTop(page.locator("#skillPopup"));
+      await page.locator("#skillPopup .close").click();
+      await page.evaluate(() => showTab("basic"));
+    }
+    console.log("Ability references: spells, skills and druid beasts stay above the dialog; close, Escape, focus and reused popups passed on desktop/mobile.");
+  } finally { await page.close(); }
+}
+
 async function main() {
   const sections = new Set(process.argv.slice(2));
   for (const flag of sections) assert(["--appearance-only", "--dialogs-only", "--pdf-only", "--pdf-fields-only"].includes(flag), `Unknown option: ${flag}`);
@@ -393,6 +634,8 @@ async function main() {
     if (all || sections.has("--dialogs-only")) {
       await verifyToasts(browser);
       await verifyAboutRoutes(browser, url);
+      await verifyCharacterFeatures(browser, url);
+      await verifyFeatureReferences(browser, url);
     }
     if (all || sections.has("--pdf-only") || sections.has("--pdf-fields-only")) {
       const page = await newUiPage(browser);

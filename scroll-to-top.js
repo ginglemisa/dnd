@@ -252,38 +252,3 @@
     });
   });
 })();
-
-(function initBasicOverviewQuickJump() {
-  const headerOffset = 92;
-  const smoothScrollToElement = (element) => {
-    if (!element) return;
-    const targetY = element.getBoundingClientRect().top + window.scrollY - headerOffset;
-    window.scrollTo({ top: Math.max(targetY, 0), behavior: "smooth" });
-  };
-
-  const jumpLabels = document.querySelectorAll(".mini-stat-label--jump[data-jump-target]");
-  jumpLabels.forEach((label) => {
-    const targetId = label.getAttribute("data-jump-target");
-    if (!targetId) return;
-
-    label.setAttribute("role", "button");
-    label.setAttribute("tabindex", "0");
-    label.setAttribute("aria-label", `跳到${label.textContent?.trim() || ""}區塊`);
-    label.title = `跳到${label.textContent?.trim() || ""}區塊`;
-
-    const handleJump = () => {
-      const target = document.getElementById(targetId);
-      const details = target?.querySelector("details");
-      if (details) details.open = true;
-      if (target) smoothScrollToElement(target);
-    };
-
-    label.addEventListener("click", handleJump);
-    label.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        handleJump();
-      }
-    });
-  });
-})();

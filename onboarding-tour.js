@@ -2149,12 +2149,18 @@
       const candidates = Array.from(document.querySelectorAll(selector));
       const target = candidates.find(isElementVisible) || candidates[0];
       if (!target) return false;
+      const featurePanel = target.closest("[data-feature-panel]");
+      if (featurePanel) {
+        window.openCharacterFeatures?.(featurePanel.dataset.featurePanel);
+        await waitForLayoutStability();
+      }
       const details = target.closest("details");
       if (details && !details.open) {
         details.open = true;
         await waitForLayoutStability();
       }
-      await this.scrollElementIntoView(target, 120);
+      if (featurePanel) target.scrollIntoView({ block: "nearest" });
+      else await this.scrollElementIntoView(target, 120);
       const focusTarget = Array.from(document.querySelectorAll(focusSelector)).find((element) => {
         return isElementVisible(element) && !element.disabled;
       });

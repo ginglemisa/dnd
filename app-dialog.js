@@ -7,7 +7,8 @@
   function getFocusableElements(root) {
     return Array.from(root.querySelectorAll(
       "button:not(:disabled), textarea:not(:disabled), input:not(:disabled), select:not(:disabled), [href], [tabindex]:not([tabindex='-1'])"
-    )).filter((element) => !element.hidden && element.getAttribute("aria-hidden") !== "true");
+    )).filter((element) => element.tabIndex >= 0 && !element.closest("[inert]")
+      && element.getAttribute("aria-hidden") !== "true" && element.getClientRects().length > 0);
   }
 
   function setBackgroundInert(dialogRoot, inert) {
@@ -190,7 +191,8 @@
 
   function open(options = {}) {
     if (typeof document === "undefined") return Promise.resolve(false);
-    if (activeDialog) activeDialog.close(false, false);
+    const parentDialog = activeDialog?.allowNested ? activeDialog : activeDialog?.parentDialog || null;
+    if (activeDialog && activeDialog !== parentDialog) activeDialog.close(false, false);
 
     const opener = options.trigger instanceof HTMLElement ? options.trigger : document.activeElement;
     const root = document.createElement("div");
@@ -314,9 +316,10 @@
         actionController?.abort();
         document.removeEventListener("keydown", onKeyDown, true);
         restoreBackground(backgroundStates);
+        if (typeof options.onClose === "function") options.onClose(result);
         root.remove();
-        document.documentElement.classList.remove("app-dialog-open");
-        activeDialog = null;
+        activeDialog = parentDialog;
+        if (!activeDialog) document.documentElement.classList.remove("app-dialog-open");
         if (restoreFocus && opener instanceof HTMLElement && opener.isConnected && !opener.closest("[inert]")) {
           opener.focus();
         }
@@ -324,8 +327,10 @@
       };
 
       const onKeyDown = (event) => {
+        if (activeDialog?.root !== root || root.inert) return;
         if (event.key === "Escape") {
           event.preventDefault();
+          if (typeof options.onEscape === "function" && options.onEscape(event) === false) return;
           close(false);
           return;
         }
@@ -347,7 +352,7 @@
         }
       };
 
-      activeDialog = { close };
+      activeDialog = { close, root, parentDialog, allowNested: Boolean(options.allowNested) };
       closeButton.addEventListener("click", () => close(false));
       cancelButton?.addEventListener("click", () => close(false));
       let resolvingConfirm = false;

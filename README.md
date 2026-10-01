@@ -86,18 +86,18 @@ npx --no-install playwright install chromium
 | 執行命令 | 用途與檢查範圍 | 額外需求／限制 |
 | --- | --- | --- |
 | `node validate-ability-roll.js` | 屬性產生與共用擲骰：27 購點、去最低骰、結果分配、背景加值、備註、長按／鍵盤／觸控與取消、焦點、舊歷史相容性、自動儲存及擲骰版面 | 瀏覽器；完整執行包含購點與一般擲骰分項 |
-| `node validate-action-metadata.js` | 非施法動作定義、角色卡／跑團模式動作、自訂與隱藏偏好、武器裝備互動（含主手2／盾牌／雙手衝突、AC、摘要、還原與 PDF 對應）、JSON／分享／自動儲存 | 瀏覽器；PDF 僅檢查欄位資料 |
+| `node validate-action-metadata.js` | 非施法動作定義、角色卡／跑團模式動作、自訂與隱藏偏好、專長來源雙向選擇／自動同步／固定來源灰階鎖定／自行管理增刪與新舊資料／分享還原、武器裝備互動（含主手2／盾牌／雙手衝突、AC、摘要、還原與 PDF 對應）、JSON／分享／自動儲存 | 瀏覽器；PDF 僅檢查欄位資料 |
 | `node validate-onboarding.js` | 新手／跑團模式導覽（含第 3 步自動開啟選單、雙高亮與按鈕點擊、法術與資源教學預覽、減少動態效果）、創角小幫手匯入、觸控、取消、資料與焦點保留、PDF 載入及取消流程 | 瀏覽器；PDF 繪製以替身驗證，未測實際成品 |
 | `node validate-spellbook.js` | 法術書、準備數量、書內儀式、創角匯入、PDF 法術書選項、JSON／分享／自動儲存及版面 | 瀏覽器 |
 | `node validate-spell-search.js` | 法術全文搜尋、職業全名／別名與指定環位、排序、空結果／清空、鍵盤、窄螢幕與詳情／焦點保留；含 Artificer 無資料與模擬資料案例，以及裝備索引、詳情／規則關鍵字說明／購買取消、切頁及導覽還原 | 瀏覽器；可加 `--equipment-only` 僅驗證裝備搜尋，含桌機／窄螢幕、說明開關及焦點還原；同時檢查 `search.js` 與主頁內嵌 JavaScript 語法 |
 | `node validate-tabletop-druid.js` | 荒野形態、野獸攻擊、德魯伊資源、持續法術效果（含一般／野獸 AC 與速度）、專注、儲存與版面 | 瀏覽器 |
-| `node validate-tabletop-rest.js` | 短休／長休、生命骰、職業與種族資源恢復、最佳旅伴、可選恢復、取消與自動儲存 | 瀏覽器 |
+| `node validate-tabletop-rest.js` | 短休／長休、休息後選項同步與還原、生命骰（含擲骰關閉時的單顆／連續回血）、職業與種族資源恢復、最佳旅伴、可選恢復、取消與自動儲存 | 瀏覽器 |
 | `node validate-tabletop-spellcasting.js` | 法術 metadata、施法條件、法術位、專注與自動擲骰 | 純 Node.js；以 `spell-id-baseline.json` 比對既有法術 ID |
 | `node validate-ui.js` | 共用 UI：四種外觀／保存／素材、工具選單與技能版面、跑團模式／創角 UI、Legal／About 載入與焦點、AppDialog toast 堆疊／倒數／關閉／觸控滑除，以及 PDF 欄位與匯出 | 瀏覽器；完整執行會實際匯出並重新讀取可編輯 PDF，需專案 PDF 與字型素材 |
 
 `validate-ability-roll.js` 可加 `--point-buy-only` 只驗證 27 購點未用滿時的提醒、確認、套用與還原，或加 `--dice-only` 只跑一般擲骰備註、取消與歷史相容性。`validate-onboarding.js` 可加 `--imports-only` 只跑匯入與 PDF 生命週期，或加 `--touch-only` 只跑觸控流程；不加參數才是完整驗證。
 
-`validate-ui.js` 內部分項共用同一個瀏覽器／伺服器生命週期，案例以獨立 context 隔離資料。不加參數執行全部，或擇一使用 `--appearance-only`（四種外觀、Legal／About 主題與焦點、保存及共用版面）、`--dialogs-only`（toast 與 About 載入重試／網址定位）、`--pdf-only`（欄位及實際匯出）、`--pdf-fields-only`（僅盾牌受訓及精靈／魔人血統提示欄位，不需 PDF／字型素材）。局部內容或互動依實際影響選分項或最小必要流程，不因共用 UI 檔案改動而連帶跑完整矩陣。
+`validate-ui.js` 內部分項共用同一個瀏覽器／伺服器生命週期，案例以獨立 context 隔離資料。不加參數執行全部，或擇一使用 `--appearance-only`（四種外觀、Legal／About 主題與焦點、保存及共用版面）、`--dialogs-only`（toast、About 載入重試／網址定位，以及角色能力頁籤視窗的創角／表格顯示移位、頁籤條件、選項保存、子視窗、法術／技能／動物參考浮層、焦點與補填入口）、`--pdf-only`（欄位及實際匯出）、`--pdf-fields-only`（僅盾牌受訓及精靈／魔人血統提示欄位，不需 PDF／字型素材）。局部內容或互動依實際影響選分項或最小必要流程，不因共用 UI 檔案改動而連帶跑完整矩陣。
 
 有意新增、移除或更名法術 ID 時，須同步檢查並更新 `spell-id-baseline.json`。
 

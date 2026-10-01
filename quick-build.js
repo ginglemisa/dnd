@@ -2741,7 +2741,6 @@
   }
 
   function importMobileFeats(warnings) {
-    let nextFeatIndex = 0;
     const backgroundMagic = draft.choices.backgroundMagic || {};
     if (["acolyte", "sage"].includes(draft.choices.background)) {
       const row = document.getElementById("derived-feat-background")?.closest(".form-row");
@@ -2749,7 +2748,8 @@
     }
     if (draft.choices.race === "human" && draft.choices.raceOptions?.feat) {
       const feat = draft.choices.raceOptions.feat;
-      const row = setMobileFeat(nextFeatIndex++, feat, warnings, "人類起源專長");
+      setMobileField("feat-choice-human-origin", feat, warnings, "人類起源專長");
+      const row = document.getElementById("derived-feat-human-origin")?.closest(".form-row");
       if (feat === "魔法學徒") {
         const options = draft.choices.raceOptions.featOptions || {};
         setMobileMagicInitiate(row, options.spellClass, options.cantrips, options.levelOneSpells, warnings, "人類魔法學徒");
@@ -2757,7 +2757,7 @@
     }
     const fightingStyle = draft.selections.levelOne?.content?.fightingStyle;
     if (fightingStyle) {
-      const select = document.getElementById(`derived-feat-fighting-style-${draft.choices.class}`);
+      const select = document.getElementById(`feat-choice-fighting-style-${draft.choices.class}`);
       if (!select || ![...select.options].some(option => option.value === fightingStyle)) {
         mobileImportWarning(`戰鬥風格「${fightingStyle}」：找不到角色卡選項`, warnings);
       } else {

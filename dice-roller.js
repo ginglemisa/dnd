@@ -600,7 +600,7 @@
     };
 
     const performExpressionRoll = (parsed, options = {}) => {
-      if (!toggle.checked || !parsed?.terms?.length) return null;
+      if ((!toggle.checked && options.force !== true) || !parsed?.terms?.length) return null;
 
       const rolledTerms = parsed.terms.map(term => {
         if (term.type === "modifier") return term;
@@ -705,7 +705,7 @@
         equation.className = "dice-roller-automated-result__equation";
         equation.textContent = result.fixed
           ? `${result.total}（固定值）`
-          : `${result.expression} = ${result.total}`;
+          : result.equation;
         item.append(heading, equation);
         if (entry.detail) {
           const detail = document.createElement("span");

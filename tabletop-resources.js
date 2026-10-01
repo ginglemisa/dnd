@@ -321,6 +321,35 @@
       }
       if (isLong && context.race === "human") summary.appendChild(createElement("li", "", "獲得英雄激勵。"));
       content.appendChild(summary);
+      const optionFields = context.optionGroups.filter(group => [kind, "either"].includes(group.when)).map(group => {
+        const section = createElement("fieldset", "tabletop-rest-choice");
+        section.appendChild(createElement("legend", "", group.label));
+        content.appendChild(section);
+        if (group.type === "select") {
+          const select = document.createElement("select");
+          select.dataset.stateTransient = "true";
+          select.setAttribute("aria-label", group.label);
+          for (const choice of group.choices) {
+            const option = createElement("option", "", choice.label);
+            option.value = choice.value;
+            select.appendChild(option);
+          }
+          select.value = group.value;
+          section.appendChild(select);
+          return { key: group.key, read: () => select.value };
+        }
+        const boxes = group.choices.map(choice => {
+          const input = restCheck(section, choice.label);
+          input.checked = choice.checked;
+          const detail = choice.detail.slice(choice.label.length).replace(/^\s*[：:]\s*/, "");
+          if (detail) section.appendChild(createElement("p", "tabletop-rest-option-detail", detail));
+          return { id: choice.id, input };
+        });
+        for (const box of boxes) box.input.addEventListener("change", () => {
+          if (box.input.checked) boxes.filter(peer => peer !== box).forEach(peer => { peer.input.checked = false; });
+        });
+        return { key: group.key, read: () => boxes.filter(box => box.input.checked).map(box => box.id) };
+      });
       const recoveryFields = [];
       for (const spec of context.specs.filter(item => item.restChoice?.when === kind)) {
         const section = createElement("fieldset", "tabletop-rest-choice");
@@ -392,7 +421,8 @@
             field.setAttribute("aria-invalid", "true"); field.focus();
             return false;
           }
-          const selection = { recovery: Object.fromEntries(recoveryFields.map(field => [field.key, field.read()])),
+          const selection = { options: Object.fromEntries(optionFields.map(field => [field.key, field.read()])),
+            recovery: Object.fromEntries(recoveryFields.map(field => [field.key, field.read()])),
             companion: companion?.use.checked ? { ability: companion.ability.value, amount: Number(companion.amount.value) } : null };
           const result = globalScope.TabletopMode.commitRest(kind, selection, context.token);
           if (!result.ok) { error.textContent = result.reason; return false; }
@@ -401,10 +431,7 @@
       });
       if (!completed) return;
       globalScope.AppDialog.notify(`${name}完成。`, { tone: "success" });
-      if (!isLong) {
-        const dice = globalScope.TabletopMode.getHitDiceContext();
-        if (dice.remaining > 0 && dice.hp !== null && dice.maximumHp > dice.hp) await openRestHitDice(trigger);
-      }
+      if (!isLong) await openRestHitDice(trigger);
     } finally {
       restDialogOpen = false;
       if (!document.querySelector(".app-dialog")) document.querySelector(`[data-rest="${kind}"]`)?.focus();
@@ -413,33 +440,59 @@
 
   async function openRestHitDice(trigger) {
     const content = createElement("div", "tabletop-rest-dialog");
-    const status = createElement("p");
+    const status = createElement("dl", "tabletop-rest-hit-dice-status");
     status.setAttribute("role", "status");
-    const resultText = createElement("p");
-    resultText.setAttribute("aria-live", "polite");
-    content.append(status, createElement("p", "", "每次使用 1 顆，可隨時結束。已使用的生命骰會立即扣除。"));
-    const automatic = Boolean(globalScope.DiceRoller?.isEnabled());
-    const manual = automatic ? null : restNumber(content, "本顆回血（骰值＋體質調整值，至少 1）", 1);
-    const use = createElement("button", "tabletop-compact-button", automatic ? "擲 1 顆並回血" : "使用 1 顆並回血");
-    use.type = "button";
+    const results = createElement("div", "tabletop-rest-dialog");
+    results.id = "tabletop-rest-hit-dice-result";
+    results.setAttribute("aria-live", "polite");
+    results.hidden = true;
+    content.append(status, results);
+    const records = [];
+    let spent = 0;
     const update = () => {
       const dice = globalScope.TabletopMode.getHitDiceContext();
-      status.textContent = `HP ${dice.hp}/${dice.maximumHp}；生命骰 ${dice.remaining} 顆（${dice.expression}）。`;
-      use.disabled = dice.remaining < 1 || dice.hp >= dice.maximumHp;
+      status.replaceChildren();
+      for (const [label, value] of [["最大 HP", dice.maximumHp], ["目前 HP", dice.hp ?? "未設定"], ["剩餘生命骰", `${dice.remaining} 顆（D${dice.die}）`]]) {
+        const item = createElement("div");
+        item.append(createElement("dt", "", label), createElement("dd", "", String(value)));
+        status.appendChild(item);
+      }
+      const disabled = dice.hp === null || !(dice.maximumHp > 0) || !dice.die || dice.remaining < 1 || dice.hp >= dice.maximumHp;
+      actions[0].disabled = actions[1].disabled = disabled;
+      results.hidden = records.length === 0;
+      results.replaceChildren(...records.map(record => createElement("p", "", record)));
+      if (records.length) results.appendChild(createElement("p", "", `已消耗 ${spent} 顆生命骰，剩餘 ${dice.remaining} 顆。`));
+      return disabled;
     };
-    use.addEventListener("click", () => {
-      const result = globalScope.TabletopMode.spendHitDice({ manualHealing: manual ? Number(manual.value) : null, preserveConditions: true });
-      resultText.textContent = result.ok ? result.records.join("\n") : result.reason;
-      if (!result.ok && manual) { manual.setAttribute("aria-invalid", "true"); manual.focus(); }
-      else if (manual) { manual.removeAttribute("aria-invalid"); manual.value = ""; }
-      update();
-      if (use.disabled) content.closest(".app-dialog__surface")?.querySelector(".app-dialog__button--primary")?.focus();
+    const roll = useAll => {
+      const dice = globalScope.TabletopMode.getHitDiceContext();
+      const result = globalScope.TabletopMode.spendHitDice({ count: useAll ? dice.remaining : 1, forceRoll: true, preserveConditions: true });
+      if (!result.ok) {
+        globalScope.AppDialog.notify(result.reason, { tone: "warning" });
+      } else {
+        records.push(...result.records);
+        spent += result.spent;
+      }
+      const disabled = update();
+      globalScope.requestAnimationFrame(() => {
+        const body = content.closest(".app-dialog__body");
+        if (body) body.scrollTop = body.scrollHeight;
+        if (disabled) content.closest(".app-dialog__surface")?.querySelector('[data-dialog-action-index="2"]')?.focus();
+      });
+      return false;
+    };
+    const actions = [
+      { label: "擲骰", intent: "primary", resolve: () => roll(false) },
+      { label: "用盡生命骰", resolve: () => roll(true) },
+      { label: "結束", value: "finish" }
+    ];
+    if (update()) {
+      actions[0].intent = "secondary";
+      actions[2].intent = "primary";
+    }
+    await globalScope.AppDialog.showContent({
+      title: "短休：生命骰", variant: "rest-hit-dice", content, trigger, dismissOnBackdrop: false, initialFocus: "primary", actions
     });
-    resultText.id = "tabletop-rest-hit-dice-result";
-    manual?.setAttribute("aria-describedby", resultText.id);
-    content.append(use, resultText);
-    update();
-    await globalScope.AppDialog.showContent({ title: "短休：生命骰", content, confirmLabel: "結束", trigger, dismissOnBackdrop: false });
   }
 
   function createHitDiceRow() {

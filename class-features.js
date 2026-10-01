@@ -2087,7 +2087,7 @@ const classFeatures = {
   <p>目標被你的「獵人印記」標記時，你會知道它的傷害免疫,抗性與易傷。</p>
 </section>
 
-<section class="ranger-feature class-feature-section" data-feature-level="3">
+<section class="ranger-feature class-feature-section" data-feature-level="3" data-rest-change="either">
   <h3>等級 3：狩獵目標（獵人子職）</h3>
   <p>從下列擇一；每次短休或長休後可改選：</p>
   <ul class="class-rule-list">
@@ -2111,7 +2111,7 @@ const classFeatures = {
     <li>你獲得攀爬速度與游泳速度，數值與速度一樣。</li>
     <li>未穿重甲時，你的速度增加 10 呎。</li>
   </ul>
-</section><section class="ranger-feature class-feature-section" data-feature-level="7">
+</section><section class="ranger-feature class-feature-section" data-feature-level="7" data-rest-change="either">
 <h3>等級 7：防守戰術（獵人子職）</h3>
 <p>選擇並獲得下列一項。每當你完成短休或長休時，可以用另一項替換目前的選擇。</p>
 <div class="druid-mission-options"><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="ranger-defensive-tactics-escape-the-horde" data-feature-choice-group="ranger-defensive-tactics"> 衝出重圍</label>：以你為目標的藉機攻擊具有劣勢。</div></div><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="ranger-defensive-tactics-multiattack-defense" data-feature-choice-group="ranger-defensive-tactics"> 多重防禦</label>：當一個生物的攻擊檢定命中你時，該生物在本回合內對你發動的所有後續攻擊檢定均具有劣勢。</div></div></div></section><section class="ranger-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
@@ -2599,7 +2599,7 @@ const classFeatures = {
   </ul>
 </section>
 
-<section class="sorcerer-feature class-feature-section" data-feature-level="6"><h3>等級 6：元素親和（龍族子職）</h3><p>選擇一種傷害類型：強酸、冷凍、火焰、閃電或毒素。</p><article class="feature-choice-card"><label class="feature-choice-card__heading" for="sorcerer-elemental-affinity-damage-type"><strong>傷害類型</strong></label><select id="sorcerer-elemental-affinity-damage-type"><option value="">--請選擇傷害類型--</option><option value="acid">強酸</option><option value="cold">冷凍</option><option value="fire">火焰</option><option value="lightning">閃電</option><option value="poison">毒素</option></select><div class="feature-choice-card__body"><p>你對所選傷害類型具有抗性。當你施展造成該類型傷害的法術時，可以將魅力調整值加到該法術的一次傷害擲骰中。</p></div></article></section><section class="sorcerer-feature class-feature-section" data-feature-level="7" data-action-id="sorcerer-sorcery-incarnate"><h3>等級 7：術法化身</h3><p>當天生術法的使用次數耗盡時，你可以執行附贈動作並消耗2術法點來激活它。</p><p>此外，在天生術法激活期間，你可以在施展的每道法術上應用至多兩個超魔法選項。</p></section><section class="sorcerer-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
+<section class="sorcerer-feature class-feature-section" data-feature-level="6"><h3>等級 6：元素親和（龍族子職）</h3><p>選擇一種傷害類型：強酸、冷凍、火焰、閃電或毒素。</p><article class="feature-choice-card"><select id="sorcerer-elemental-affinity-damage-type"><option value="">--請選擇傷害類型--</option><option value="acid">強酸</option><option value="cold">冷凍</option><option value="fire">火焰</option><option value="lightning">閃電</option><option value="poison">毒素</option></select><div class="feature-choice-card__body"><p>你對所選傷害類型具有抗性。當你施展造成該類型傷害的法術時，可以將魅力調整值加到該法術的一次傷害擲骰中。</p></div></article></section><section class="sorcerer-feature class-feature-section" data-feature-level="7" data-action-id="sorcerer-sorcery-incarnate"><h3>等級 7：術法化身</h3><p>當天生術法的使用次數耗盡時，你可以執行附贈動作並消耗2術法點來激活它。</p><p>此外，在天生術法激活期間，你可以在施展的每道法術上應用至多兩個超魔法選項。</p></section><section class="sorcerer-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
 <section class="sorcerer-feature class-feature-section">
   <h3>超魔法選項</h3>
   <div class="class-rule-subsection">

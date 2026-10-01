@@ -86,6 +86,41 @@ async function main() {
       check(document.getElementById("ranger-hunters-prey-horde-breaker").checked
         && document.getElementById("ranger-defensive-tactics-multiattack-defense").checked, "rest preserves hunter choices");
       check(JSON.stringify(Array.from(document.querySelectorAll('.spell-entry select[id*="-spell-"]'), control => control.value)) === JSON.stringify(prepared), "rest preserves prepared spell selections");
+      check(context().optionGroups.length === 2, "both hunter choices available at level eight");
+      check(rest("shortRest", { options: { "ranger-hunters-prey": ["ranger-hunters-prey-colossus-slayer"],
+        "ranger-defensive-tactics": ["ranger-defensive-tactics-escape-the-horde"] } }).ok, "short rest can replace hunter choices");
+      check(document.getElementById("ranger-hunters-prey-colossus-slayer").checked
+        && !document.getElementById("ranger-hunters-prey-horde-breaker").checked
+        && document.getElementById("ranger-defensive-tactics-escape-the-horde").checked
+        && !document.getElementById("ranger-defensive-tactics-multiattack-defense").checked, "hunter changes remain exclusive");
+      const invalidHunter = JSON.stringify(collectStateObject());
+      check(!rest("longRest", { options: { "ranger-defensive-tactics": ["ranger-defensive-tactics-escape-the-horde", "ranger-defensive-tactics-multiattack-defense"] } }).ok
+        && JSON.stringify(collectStateObject()) === invalidHunter, "multiple hunter choices rejected atomically");
+      const staleChoice = context().token;
+      document.getElementById("ranger-defensive-tactics-escape-the-horde").checked = false;
+      check(!TabletopMode.commitRest("longRest", {}, staleChoice).ok, "canonical choice changes invalidate open rest");
+      prepare("ranger", 3);
+      check(context().optionGroups.length === 1 && context().optionGroups[0].key === "ranger-hunters-prey", "defensive tactics gated by level");
+      prepare("fighter", 8, "elf"); field("elf-lineage", "high_elf");
+      const oldCantrip = document.getElementById("high-elf-cantrip").value;
+      check(!rest("shortRest", { options: { "high-elf-cantrip": "mage-hand" } }).ok
+        && document.getElementById("high-elf-cantrip").value === oldCantrip, "high elf cantrip requires long rest");
+      check(rest("longRest", { options: { "high-elf-cantrip": "mage-hand" } }).ok
+        && document.getElementById("high-elf-cantrip").value === "mage-hand", "high elf cantrip replaced on long rest");
+      check(Array.from(document.querySelectorAll('.spell-entry select[id*="-spell-"]')).some(select => select.value === "mage-hand"), "high elf spell source synchronizes");
+      const elfSaved = JSON.parse(JSON.stringify(collectStateObject()));
+      const elfShare = collectShareState();
+      field("high-elf-cantrip", "prestidigitation"); applyStateObject(elfSaved);
+      check(document.getElementById("high-elf-cantrip").value === "mage-hand", "JSON retains rest choice");
+      field("high-elf-cantrip", "prestidigitation"); applyStateObject(elfShare);
+      check(document.getElementById("high-elf-cantrip").value === "mage-hand", "share retains rest choice");
+      field("elf-lineage", "wood_elf");
+      check(!context().optionGroups.length && !rest("longRest", { options: { "high-elf-cantrip": "mage-hand" } }).ok, "high elf option restricted to lineage");
+      prepare("druid"); field("druid-land", "arid");
+      check(!rest("shortRest", { options: { "druid-land": "polar" } }).ok, "land change requires long rest");
+      check(rest("longRest", { options: { "druid-land": "polar" } }).ok
+        && document.getElementById("druid-land").value === "polar", "land changes on long rest");
+      check(!rest("longRest", { options: { "druid-land": "invalid" } }).ok, "unknown select option rejected");
       prepare("fighter");
       TabletopMode.applyState({ activeConditions: ["unconscious", "poisoned"], exhaustionLevel: 1 });
       const conditions = JSON.stringify(state().activeConditions);
@@ -200,27 +235,65 @@ async function main() {
       field("hp", 1); field("lifedicen", 3);
       check(TabletopMode.spendHitDice().ok && context().hp === 2 && context().hitDice === 2 && rolls === 1, "minimum one HP and exactly one roll");
       window.DiceRoller = originalRoller;
+      const toggle = document.getElementById("dice-system-toggle");
+      toggle.checked = false; toggle.dispatchEvent(new Event("change", { bubbles: true }));
+      field("hp", context().maximumHp - 1); field("lifedicen", 3);
+      check(!TabletopMode.spendHitDice().ok && context().hitDice === 3, "ordinary hit dice retain disabled gate");
+      check(TabletopMode.spendHitDice({ count: 3, forceRoll: true }).spent === 1
+        && context().hp === context().maximumHp && context().hitDice === 2, "forced batch stops immediately at full HP");
+      check(!DiceRoller.isEnabled(), "forced rest roll leaves dice toggle off");
+      field("hp", 1); field("lifedicen", 2);
+      check(TabletopMode.spendHitDice({ count: 8, forceRoll: true }).spent === 2
+        && context().hitDice === 0, "forced batch stops at remaining dice");
       window.restTestField = field;
       return checks;
     });
     console.log(`Rest mechanics: ${count} assertions passed.`);
 
+    const dialog = page.getByRole("dialog");
     await page.evaluate(() => {
-      restTestField("class", "wizard"); restTestField("race", "elf"); restTestField("elf-lineage", "high_elf");
+      restTestField("class", "ranger"); restTestField("level", 7); restTestField("race", "human");
+      document.getElementById("ranger-defensive-tactics-multiattack-defense").checked = true;
+      TabletopMode.setMode("tabletop"); TabletopMode.setPanel("resources");
+    });
+    await page.locator('[data-rest="shortRest"]').click();
+    await dialog.getByLabel("衝出重圍", { exact: true }).check();
+    assert.equal(await dialog.getByLabel("多重防禦", { exact: true }).isChecked(), false, "modal choices stay exclusive");
+    await page.keyboard.press("Escape");
+    assert.equal(await page.locator("#ranger-defensive-tactics-multiattack-defense").isChecked(), true, "cancel keeps canonical hunter selection");
+    await page.locator('[data-rest="shortRest"]').click();
+    await dialog.getByLabel("衝出重圍", { exact: true }).check();
+    await dialog.getByRole("button", { name: "完成短休", exact: true }).click();
+    await page.getByRole("heading", { name: "短休：生命骰", exact: true }).waitFor();
+    assert.equal(await page.locator("#ranger-defensive-tactics-escape-the-horde").isChecked(), true);
+    await dialog.getByRole("button", { name: "結束", exact: true }).click();
+    await page.locator('[data-rest="longRest"]').click();
+    await dialog.getByLabel("多重防禦", { exact: true }).check();
+    await dialog.getByRole("button", { name: "完成長休", exact: true }).click();
+    assert.equal(await page.locator("#ranger-defensive-tactics-multiattack-defense").isChecked(), true, "long rest also replaces hunter selection");
+    await page.locator('[data-rest="shortRest"]').click();
+    await dialog.getByRole("button", { name: "完成短休", exact: true }).click();
+    await page.getByRole("heading", { name: "短休：生命骰", exact: true }).waitFor();
+    assert.equal(await dialog.getByRole("button", { name: "擲骰", exact: true }).isDisabled(), true, "full HP prevents spending dice");
+    assert.equal(await dialog.getByRole("button", { name: "結束", exact: true }).evaluate(el => el === document.activeElement), true, "finished healing focuses exit");
+    await page.keyboard.press("Escape");
+    await page.evaluate(() => {
+      restTestField("class", "wizard"); restTestField("level", 8); restTestField("race", "elf"); restTestField("elf-lineage", "high_elf");
       restTestField("feat-0", "最佳旅伴"); restTestField("hp", 2); restTestField("lifedicen", 3);
       TabletopMode.applyState({ exhaustionLevel: 2, temporaryHp: 9 });
       TabletopMode.setMode("tabletop"); TabletopMode.setPanel("resources");
       TabletopMode.getCanonicalSpellSlotGroups().forEach(group => group.controls.forEach(control => { document.getElementById(control.id).checked = true; }));
     });
-    const dialog = page.getByRole("dialog");
     const beforeCancel = await page.evaluate(() => JSON.stringify(collectStateObject()));
     await page.locator('[data-rest="longRest"]').click();
     assert.match(await dialog.innerText(), /傳思 4 小時/);
     assert.match(await dialog.innerText(), /16 小時/);
+    await dialog.getByLabel("高等精靈戲法", { exact: true }).selectOption("mage-hand");
     await page.keyboard.press("Escape");
     assert.equal(await page.evaluate(() => JSON.stringify(collectStateObject())), beforeCancel, "cancel leaves state untouched");
     assert.equal(await page.locator('[data-rest="longRest"]').evaluate(el => el === document.activeElement), true, "focus returns after cancel");
     await page.locator('[data-rest="shortRest"]').click();
+    assert.equal(await dialog.getByLabel("高等精靈戲法", { exact: true }).count(), 0, "long rest choices absent in short rest");
     await dialog.getByLabel("套用最佳旅伴").check();
     await dialog.getByRole("button", { name: "完成短休", exact: true }).click();
     assert.match(await dialog.locator("#tabletop-rest-error").innerText(), /請選擇屬性/);
@@ -228,15 +301,23 @@ async function main() {
     await dialog.getByLabel("2 環法術位 1", { exact: true }).check();
     await dialog.getByRole("button", { name: "完成短休", exact: true }).click();
     await page.getByRole("heading", { name: "短休：生命骰", exact: true }).waitFor();
-    await dialog.getByLabel("本顆回血（骰值＋體質調整值，至少 1）").fill("3");
-    await dialog.getByRole("button", { name: "使用 1 顆並回血", exact: true }).click();
-    assert.equal(await page.locator("#hp").inputValue(), "5");
+    assert.match(await dialog.innerText(), /最大 HP[\s\S]*目前 HP[\s\S]*剩餘生命骰/);
+    assert.equal(await page.evaluate(() => DiceRoller.isEnabled()), false);
+    await dialog.evaluate(el => { window.restHitDiceDialog = el; });
+    await dialog.getByRole("button", { name: "擲骰", exact: true }).click();
+    await dialog.locator("#tabletop-rest-hit-dice-result").waitFor();
+    assert.equal(await dialog.evaluate(el => el === window.restHitDiceDialog), true, "roll updates the same dialog");
+    assert.match(await dialog.locator("#tabletop-rest-hit-dice-result").innerText(), /\d+ \+ 2 = \d+；恢復.*HP/);
+    const healedHp = await page.locator("#hp").inputValue();
+    assert(Number(healedHp) > 2, "real dice heal while dice feature is disabled");
     assert.equal(await page.locator("#lifedicen").inputValue(), "2");
+    assert.equal(await page.evaluate(() => DiceRoller.isEnabled()), false);
+    assert.equal(await dialog.locator("#tabletop-rest-hit-dice-result p").last().innerText(), "已消耗 1 顆生命骰，剩餘 2 顆。");
     await dialog.getByRole("button", { name: "結束", exact: true }).click();
     assert.equal(await page.evaluate(() => TabletopMode.getBuiltInResourceSpent("wizard-arcane-recovery")), 1);
     assert.equal(await page.evaluate(() => TabletopMode.collectState().temporaryHp), 11);
     // Wait for the existing autosave rather than forcing a save in the test.
-    await page.waitForFunction(() => JSON.parse(dndStorage.getItem(AUTO_SAVE_KEY) || "{}").hp === "5");
+    await page.waitForFunction(hp => JSON.parse(dndStorage.getItem(AUTO_SAVE_KEY) || "{}").hp === hp, healedHp);
     await page.reload();
     await page.waitForFunction(() => window.TabletopMode?.getBuiltInResourceSpent("wizard-arcane-recovery") === 1);
     assert.equal(await page.locator("#lifedicen").inputValue(), "2", "rest dice survive autosave");
@@ -244,21 +325,25 @@ async function main() {
     await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("resources"); });
     await page.setViewportSize({ width: 360, height: 800 });
     await page.locator('[data-rest="longRest"]').click();
+    await dialog.getByLabel("高等精靈戲法", { exact: true }).selectOption("mage-hand");
     await dialog.getByLabel("套用最佳旅伴").check();
     await dialog.getByLabel("此專長提升的屬性").selectOption("cha");
     await dialog.getByLabel("臨時 HP（等級＋屬性調整值，可修改）").fill("14");
     const bounds = await dialog.boundingBox();
     assert(bounds.x >= 0 && bounds.x + bounds.width <= 360 && bounds.y >= 0 && bounds.y + bounds.height <= 800, "mobile dialog fits");
     await dialog.getByRole("button", { name: "完成長休", exact: true }).click();
+    assert.equal(await page.locator("#high-elf-cantrip").inputValue(), "mage-hand");
     assert.equal(await page.evaluate(() => TabletopMode.collectState().temporaryHp), 14);
     assert.equal(await page.evaluate(() => TabletopMode.collectState().exhaustionLevel), 1);
     assert.equal(await page.evaluate(() => TabletopMode.getBuiltInResourceSpent("wizard-arcane-recovery")), 0);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, "mobile resources do not overflow");
     assert.equal(await page.locator('[data-rest="longRest"]').evaluate(el => el === document.activeElement), true, "focus survives resource redraw");
+    await page.waitForFunction(() => JSON.parse(dndStorage.getItem(AUTO_SAVE_KEY) || "{}")["high-elf-cantrip"] === "mage-hand");
+    await page.reload();
+    await page.waitForFunction(() => document.getElementById("high-elf-cantrip")?.value === "mage-hand");
     await page.evaluate(() => {
-      const toggle = document.getElementById("dice-system-toggle"); toggle.checked = true;
-      toggle.dispatchEvent(new Event("change", { bubbles: true }));
-      for (const [id, value] of [["hp", "1"], ["lifedicen", "2"]]) {
+      TabletopMode.setMode("tabletop"); TabletopMode.setPanel("resources");
+      for (const [id, value] of [["hp", "1"], ["lifedicen", "3"]]) {
         const control = document.getElementById(id); control.value = value;
         control.dispatchEvent(new Event("change", { bubbles: true }));
       }
@@ -266,13 +351,32 @@ async function main() {
     await page.locator('[data-rest="shortRest"]').click();
     await dialog.getByRole("button", { name: "完成短休", exact: true }).click();
     await page.getByRole("heading", { name: "短休：生命骰", exact: true }).waitFor();
-    await dialog.getByRole("button", { name: "擲 1 顆並回血", exact: true }).click();
-    assert.equal(await page.locator("#lifedicen").inputValue(), "1", "real DiceRoller consumes exactly one die");
-    assert(Number(await page.locator("#hp").inputValue()) > 1, "real DiceRoller heals");
+    const buttons = dialog.locator(".app-dialog__actions button");
+    assert.deepEqual(await buttons.allTextContents(), ["擲骰", "用盡生命骰", "結束"]);
+    const buttonBounds = await Promise.all([buttons.nth(0).boundingBox(), buttons.nth(1).boundingBox(), buttons.nth(2).boundingBox()]);
+    assert(buttonBounds.every(box => Math.abs(box.y - buttonBounds[0].y) < 1) && buttonBounds[0].x < buttonBounds[1].x && buttonBounds[1].x < buttonBounds[2].x, "mobile buttons stay on one row");
+    await dialog.evaluate(el => { window.restHitDiceDialog = el; });
+    await dialog.getByRole("button", { name: "擲骰", exact: true }).click();
+    await page.waitForFunction(() => document.getElementById("lifedicen").value === "2");
+    await dialog.getByRole("button", { name: "用盡生命骰", exact: true }).click();
+    await page.waitForFunction(() => document.getElementById("lifedicen").value === "0");
+    assert.equal(await dialog.evaluate(el => el === window.restHitDiceDialog), true, "single and batch results share one dialog");
+    assert.equal(await page.locator("#lifedicen").inputValue(), "0", "continuous rolling consumes remaining dice");
+    assert(Number(await page.locator("#hp").inputValue()) > 1, "continuous rolling heals");
+    const resultLines = await dialog.locator("#tabletop-rest-hit-dice-result p").allTextContents();
+    assert.equal(resultLines.length, 4, "one result line per consumed die and one final summary");
+    assert(resultLines.slice(0, -1).every(line => /\d+ \+ 2 = \d+；恢復.*HP/.test(line)), "batch retains individual roll equations");
+    assert.equal(resultLines.at(-1), "已消耗 3 顆生命骰，剩餘 0 顆。", "summary uses cumulative spent and final remaining dice");
+    assert.equal(resultLines.filter(line => line.includes("已消耗")).length, 1, "summary appears only once at the end");
+    assert.equal(await dialog.getByRole("button", { name: "擲骰", exact: true }).isDisabled(), true);
+    assert.equal(await dialog.getByRole("button", { name: "用盡生命骰", exact: true }).isDisabled(), true);
+    await page.waitForFunction(() => document.activeElement?.textContent === "結束");
+    assert.equal(await dialog.evaluate(el => el.scrollWidth <= el.clientWidth), true, "mobile results do not overflow");
     await page.keyboard.press("Escape");
-    assert.equal(await page.locator("#lifedicen").inputValue(), "1", "closing after a roll retains committed die");
+    assert.equal(await page.locator("#lifedicen").inputValue(), "0", "closing after a roll retains committed dice");
+    assert.equal(await page.locator('[data-rest="shortRest"]').evaluate(el => el === document.activeElement), true, "focus returns after dice dialogs");
     assert.deepEqual(errors, [], "browser runtime errors");
-    console.log("Rest dialogs, optional recovery, cancellation, manual dice, autosave and narrow layout passed.");
+    console.log("Rest choices, optional recovery, cancellation, forced single/batch dice, autosave and narrow layout passed.");
   } finally {
     await browser?.close();
     await new Promise(resolve => server.close(resolve));

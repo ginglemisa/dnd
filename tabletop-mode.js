@@ -1040,6 +1040,29 @@
     return true;
   }
 
+  function getRestOptionGroups() {
+    const level = Number(document.getElementById("level")?.value || 0);
+    return Array.from(document.querySelectorAll("[data-rest-change]")).flatMap(source => {
+      const when = source.dataset.restChange;
+      if (!["shortRest", "longRest", "either"].includes(when)) return [];
+      if (source instanceof HTMLSelectElement) {
+        if (source.disabled || source.classList.contains("is-hidden")
+          || source.closest(".class-feature-option.is-hidden, .race-option-row.is-hidden")) return [];
+        return [{ key: source.id, label: source.getAttribute("aria-label"), when, type: "select",
+          value: source.value, choices: Array.from(source.options).filter(option => !option.disabled && !option.hidden)
+            .map(option => ({ value: option.value, label: option.textContent })) }];
+      }
+      if (Number(source.dataset.featureLevel) > level) return [];
+      const inputs = Array.from(source.querySelectorAll('input[type="checkbox"][data-feature-choice-group]'));
+      if (!inputs.length || inputs.some(input => input.disabled)) return [];
+      return [{ key: inputs[0].dataset.featureChoiceGroup, when, type: "checkboxes",
+        label: source.querySelector("h3")?.textContent || "休息後選項",
+        choices: inputs.map(input => ({ id: input.id, checked: input.checked,
+          label: input.closest("label")?.textContent.trim() || input.id,
+          detail: input.closest("li, .druid-mission-option__heading")?.textContent.trim() || "" })) }];
+    });
+  }
+
   function getRestContext() {
     const value = id => document.getElementById(id)?.value || "";
     const slots = getCanonicalSpellSlotGroups().map(group => ({ ...group,
@@ -1064,9 +1087,10 @@
     const hp = readCurrentHp();
     const maximumHp = readMaximumHp();
     const hitDice = Number(value("lifedicen"));
+    const optionGroups = getRestOptionGroups();
     const token = JSON.stringify([options, collectState(), hp, maximumHp, hitDice, value("con"),
-      controls.map(id => [id, document.getElementById(id)?.checked, document.getElementById(id)?.disabled])]);
-    return { specs, slots, hp, maximumHp, hitDice, token, level: Number(options.level), race: options.race,
+      controls.map(id => [id, document.getElementById(id)?.checked, document.getElementById(id)?.disabled]), optionGroups]);
+    return { specs, slots, optionGroups, hp, maximumHp, hitDice, token, level: Number(options.level), race: options.race,
       ready: Boolean(options.className && Number(options.level) >= 1) };
   }
 
@@ -1079,7 +1103,7 @@
       expression: `1d${die}${modifier > 0 ? "+" : ""}${modifier || ""}` };
   }
 
-  function spendHitDice({ count = 1, manualHealing = null, preserveConditions = false } = {}) {
+  function spendHitDice({ count = 1, manualHealing = null, preserveConditions = false, forceRoll = false } = {}) {
     const context = getHitDiceContext();
     const fail = reason => ({ ok: false, reason });
     if (context.hp === null || !(context.maximumHp > 0) || !context.die) return fail("請先設定有效的 HP、職業與等級。");
@@ -1087,17 +1111,17 @@
     if (context.remaining < 1) return fail("生命骰已用盡。");
     if (!Number.isSafeInteger(count) || count < 1) return fail("請選擇有效的生命骰數量。");
     if (manualHealing !== null && (!Number.isSafeInteger(manualHealing) || manualHealing < 1 || manualHealing > 999 || count !== 1)) return fail("請輸入本顆恢復的 HP（1～999）。");
-    if (manualHealing === null && !globalScope.DiceRoller?.isEnabled()) return fail("請啟用擲骰，或輸入實體骰的回血結果。");
+    if (manualHealing === null && !forceRoll && !globalScope.DiceRoller?.isEnabled()) return fail("請啟用擲骰，或輸入實體骰的回血結果。");
     let hp = context.hp;
     const records = [];
     for (let index = 0; index < Math.min(count, context.remaining) && hp < context.maximumHp; index += 1) {
       const result = manualHealing === null
-        ? globalScope.DiceRoller.rollExpression(context.expression, { label: `第 ${index + 1} 顆生命骰`, notify: false })
+        ? globalScope.DiceRoller?.rollExpression(context.expression, { label: `第 ${index + 1} 顆生命骰`, notify: false, force: forceRoll })
         : { total: manualHealing, expression: "手動" };
       if (!Number.isFinite(result?.total)) break;
       const healed = Math.max(1, result.total);
       hp = Math.min(context.maximumHp, hp + healed);
-      records.push(`${result.expression}＝${healed}；HP ${hp}/${context.maximumHp}`);
+      records.push(`${result.equation || result.total}；恢復 ${healed} HP；HP ${hp}/${context.maximumHp}`);
     }
     if (!records.length) return fail("無法擲生命骰，請再試一次。");
     undoSnapshot = null;
@@ -1119,6 +1143,18 @@
     if (kind === "longRest" && !(context.maximumHp > 0)) return fail("請先設定有效的最大 HP。");
     const usage = { ...combatState.builtInResourceUsage };
     const updates = new Map();
+    const optionUpdates = [];
+    for (const [key, chosen] of Object.entries(selection.options || {})) {
+      const group = context.optionGroups.find(item => item.key === key && [kind, "either"].includes(item.when));
+      if (!group) return fail("這項選擇無法在本次休息更換。");
+      if (group.type === "select") {
+        if (!group.choices.some(option => option.value === chosen)) return fail("請選擇有效的休息後選項。");
+        optionUpdates.push({ control: document.getElementById(key), value: chosen });
+      } else {
+        if (!Array.isArray(chosen) || chosen.length > 1 || chosen.some(id => !group.choices.some(option => option.id === id))) return fail("每項能力只能選擇一個選項。");
+        group.choices.forEach(option => optionUpdates.push({ control: document.getElementById(option.id), checked: chosen.includes(option.id) }));
+      }
+    }
     const setSpent = (key, amount) => { if (amount > 0) usage[key] = amount; else delete usage[key]; };
     for (const spec of context.specs) {
       const rule = spec.recovery?.[kind];
@@ -1160,6 +1196,7 @@
     }
     const controls = [...updates].map(([id, checked]) => ({ control: document.getElementById(id), checked }));
     if (controls.some(({ control }) => !(control instanceof HTMLInputElement) || control.type !== "checkbox" || control.disabled)) return fail("資源已變更，請重新開啟休息。");
+    if (optionUpdates.some(({ control }) => !control || control.disabled)) return fail("選項已變更，請重新開啟休息。");
     const hitDice = document.getElementById("lifedicen");
     if (kind === "longRest" && !Array.from(hitDice?.options || []).some(option => !option.disabled && Number(option.value) === context.level)) return fail("生命骰資料已變更，請重新開啟休息。");
 
@@ -1178,6 +1215,11 @@
     controls.forEach(({ control, checked }) => { control.checked = checked; });
     controls.forEach(({ control }) => dispatchCanonicalCastUpdate(control));
     if (kind === "longRest") dispatchCanonicalCastUpdate(hitDice);
+    optionUpdates.forEach(({ control, value, checked }) => {
+      if (value !== undefined) control.value = value;
+      else control.checked = checked;
+    });
+    optionUpdates.forEach(({ control }) => dispatchCanonicalCastUpdate(control));
     markStateChanged(kind === "longRest" ? "長休完成。" : "短休完成。");
     return { ok: true };
   }

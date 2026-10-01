@@ -2011,26 +2011,26 @@ details > summary::-webkit-details-marker,
   display: none;
 }
 
-#tab-basic .output {
+:is(#tab-basic, #character-features) .output {
   max-width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
   overscroll-behavior-x: contain;
 }
 
-#tab-basic .output table:not(.class-feature-table) {
+:is(#tab-basic, #character-features) .output table:not(.class-feature-table) {
   width: 100%;
   max-width: 100%;
   table-layout: fixed;
 }
 
-#tab-basic .output table:not(.class-feature-table) th,
-#tab-basic .output table:not(.class-feature-table) td {
+:is(#tab-basic, #character-features) .output table:not(.class-feature-table) th,
+:is(#tab-basic, #character-features) .output table:not(.class-feature-table) td {
   white-space: normal !important;
   word-break: break-word;
 }
 
-:where(html:not([data-ui-theme="warm"])) #tab-basic .output .rule-table-shell {
+:where(html:not([data-ui-theme="warm"])) :is(#tab-basic, #character-features) .output .rule-table-shell {
   width: fit-content;
   max-width: 100%;
   margin: 0.45rem 0 0.9rem;
@@ -2043,7 +2043,7 @@ details > summary::-webkit-details-marker,
   -webkit-overflow-scrolling: touch;
 }
 
-:where(html[data-ui-theme="warm"]) #tab-basic .output .rule-table-shell {
+:where(html[data-ui-theme="warm"]) :is(#tab-basic, #character-features) .output .rule-table-shell {
   width: fit-content;
   max-width: 100%;
   margin: 0.45rem 0 0.9rem;
@@ -2056,15 +2056,15 @@ details > summary::-webkit-details-marker,
   -webkit-overflow-scrolling: touch;
 }
 
-#tab-basic .output .rule-table-shell--wild-shape {
+:is(#tab-basic, #character-features) .output .rule-table-shell--wild-shape {
   width: min(100%, 34rem);
 }
 
-#tab-basic .output .rule-table-shell--spell-slot {
+:is(#tab-basic, #character-features) .output .rule-table-shell--spell-slot {
   width: min(100%, 28rem);
 }
 
-#tab-basic .output table.rule-reference-table {
+:is(#tab-basic, #character-features) .output table.rule-reference-table {
   width: 100%;
   max-width: none;
   margin: 0;
@@ -2077,12 +2077,12 @@ details > summary::-webkit-details-marker,
   line-height: 1.4;
 }
 
-#tab-basic .output .rule-progress-table--wild-shape {
+:is(#tab-basic, #character-features) .output .rule-progress-table--wild-shape {
   min-width: 32rem;
 }
 
-#tab-basic .output .rule-reference-table th,
-#tab-basic .output .rule-reference-table td {
+:is(#tab-basic, #character-features) .output .rule-reference-table th,
+:is(#tab-basic, #character-features) .output .rule-reference-table td {
   padding: 0.62rem 0.68rem;
   border: 0;
   border-right: 1px solid var(--border);
@@ -2091,33 +2091,33 @@ details > summary::-webkit-details-marker,
   vertical-align: middle;
 }
 
-#tab-basic .output .rule-reference-table tr > :last-child {
+:is(#tab-basic, #character-features) .output .rule-reference-table tr > :last-child {
   border-right: 0;
 }
 
-#tab-basic .output .rule-reference-table tbody tr:last-child > * {
+:is(#tab-basic, #character-features) .output .rule-reference-table tbody tr:last-child > * {
   border-bottom: 0;
 }
 
-#tab-basic .output .rule-reference-table thead th {
+:is(#tab-basic, #character-features) .output .rule-reference-table thead th {
   background: var(--surface-muted);
   color: var(--text);
   font-weight: 800;
   line-height: 1.3;
 }
 
-#tab-basic .output .rule-reference-table tbody th {
+:is(#tab-basic, #character-features) .output .rule-reference-table tbody th {
   background: var(--surface-soft);
   color: var(--accent-strong);
   font-size: 1rem;
   font-weight: 850;
 }
 
-#tab-basic .output .rule-reference-table tbody tr:hover > * {
+:is(#tab-basic, #character-features) .output .rule-reference-table tbody tr:hover > * {
   background: var(--accent-soft);
 }
 
-#tab-basic .output .rule-progress-table--spell-slot tbody td:nth-child(2) {
+:is(#tab-basic, #character-features) .output .rule-progress-table--spell-slot tbody td:nth-child(2) {
   color: var(--accent-strong);
   font-size: 1rem;
   font-weight: 850;
@@ -2127,7 +2127,7 @@ details > summary::-webkit-details-marker,
   display: none;
 }
 
-#tab-basic .output .class-core-profile-table {
+:is(#tab-basic, #character-features) .output .class-core-profile-table {
   margin: 0 0 0.75rem;
   border-collapse: separate !important;
   border-spacing: 0;
@@ -2139,32 +2139,32 @@ details > summary::-webkit-details-marker,
   overflow: hidden;
 }
 
-#tab-basic .output .class-core-profile-table td {
+:is(#tab-basic, #character-features) .output .class-core-profile-table td {
   padding: 0.52rem 0.65rem !important;
   border: 0;
   border-bottom: 1px solid var(--border);
   vertical-align: top;
 }
 
-#tab-basic .output .class-core-profile-table tr:last-child td {
+:is(#tab-basic, #character-features) .output .class-core-profile-table tr:last-child td {
   border-bottom: 0;
 }
 
-#tab-basic .output .class-core-profile-table td:first-child {
+:is(#tab-basic, #character-features) .output .class-core-profile-table td:first-child {
   width: 7.2rem !important;
   background: var(--surface-muted);
   color: var(--text);
   font-weight: 800 !important;
 }
 
-#tab-basic .output .class-core-equipment-note {
+:is(#tab-basic, #character-features) .output .class-core-equipment-note {
   margin: 0.5rem 0 0.35rem;
   color: var(--text-body);
   line-height: 1.55;
   white-space: normal;
 }
 
-#tab-basic .output .class-flavor-quote {
+:is(#tab-basic, #character-features) .output .class-flavor-quote {
   margin: 0.35rem 0;
   padding: 0.1rem 0 0.1rem 0.9rem;
   border-left: 3px solid var(--border-strong);
@@ -2175,31 +2175,31 @@ details > summary::-webkit-details-marker,
   white-space: normal;
 }
 
-#tab-basic .output .class-feature-content {
+:is(#tab-basic, #character-features) .output .class-feature-content {
   width: min(100%, 38rem);
   margin-top: 0.85rem;
   color: var(--text-body);
   white-space: normal;
 }
 
-#tab-basic .output .class-feature-section {
+:is(#tab-basic, #character-features) .output .class-feature-section {
   padding: 1rem 0 1.05rem;
   border-top: 1px solid var(--border);
 }
 
-#tab-basic .output .class-feature-section:first-child {
+:is(#tab-basic, #character-features) .output .class-feature-section:first-child {
   border-top-color: var(--border-strong);
 }
 
-#tab-basic .output .class-feature-section:last-child {
+:is(#tab-basic, #character-features) .output .class-feature-section:last-child {
   padding-bottom: 0;
 }
 
-#tab-basic .output .class-feature-section:last-child > :last-child {
+:is(#tab-basic, #character-features) .output .class-feature-section:last-child > :last-child {
   margin-bottom: 0;
 }
 
-#tab-basic .output .class-feature-section > h3 {
+:is(#tab-basic, #character-features) .output .class-feature-section > h3 {
   margin: 0 0 0.62rem;
   padding-left: 0.7rem;
   border-left: 3px solid var(--accent);
@@ -2209,57 +2209,57 @@ details > summary::-webkit-details-marker,
   line-height: 1.35;
 }
 
-#tab-basic .output .class-feature-section p {
+:is(#tab-basic, #character-features) .output .class-feature-section p {
   margin: 0.48rem 0;
   line-height: 1.62;
 }
 
-#tab-basic .output .class-rule-list {
+:is(#tab-basic, #character-features) .output .class-rule-list {
   margin: 0.5rem 0 0;
   padding-left: 1.35rem;
 }
 
-#tab-basic .output .class-rule-list li {
+:is(#tab-basic, #character-features) .output .class-rule-list li {
   padding-left: 0.08rem;
   line-height: 1.58;
 }
 
-#tab-basic .output .class-rule-list li::marker {
+:is(#tab-basic, #character-features) .output .class-rule-list li::marker {
   color: var(--accent);
 }
 
-#tab-basic .output .class-rule-list li + li {
+:is(#tab-basic, #character-features) .output .class-rule-list li + li {
   margin-top: 0.34rem;
 }
 
-#tab-basic .output .class-rule-list ul {
+:is(#tab-basic, #character-features) .output .class-rule-list ul {
   margin: 0.32rem 0 0.18rem;
   padding-left: 1.25rem;
   color: var(--text-body);
   list-style-type: circle;
 }
 
-#tab-basic .output .class-rule-list ul li + li {
+:is(#tab-basic, #character-features) .output .class-rule-list ul li + li {
   margin-top: 0.22rem;
 }
 
-#tab-basic .output .class-rule-list ul ul {
+:is(#tab-basic, #character-features) .output .class-rule-list ul ul {
   color: var(--text-muted);
   font-size: var(--fs-sm);
   list-style-type: square;
 }
 
-#tab-basic .output .class-rule-subsection {
+:is(#tab-basic, #character-features) .output .class-rule-subsection {
   margin-top: 0.85rem;
 }
 
-#tab-basic .output .barbarian-rule-subsection + .barbarian-rule-subsection {
+:is(#tab-basic, #character-features) .output .barbarian-rule-subsection + .barbarian-rule-subsection {
   padding-top: 0.75rem;
   border-top: 1px dashed var(--border-strong);
 }
 
-#tab-basic .output .class-rule-subsection > h4,
-#tab-basic .output .wild-shape-known-forms > h4 {
+:is(#tab-basic, #character-features) .output .class-rule-subsection > h4,
+:is(#tab-basic, #character-features) .output .wild-shape-known-forms > h4 {
   margin: 0 0 0.42rem;
   color: var(--accent-strong);
   font-size: var(--fs-sm);
@@ -2268,77 +2268,77 @@ details > summary::-webkit-details-marker,
   line-height: 1.5;
 }
 
-#tab-basic .output .druid-mission-options {
+:is(#tab-basic, #character-features) .output .druid-mission-options {
   margin: 0.65rem 0 0.2rem 0.15rem;
   border-left: 2px solid var(--border-strong);
 }
 
-#tab-basic .output .druid-mission-option {
+:is(#tab-basic, #character-features) .output .druid-mission-option {
   padding: 0.2rem 0 0.45rem 0.85rem;
 }
 
-#tab-basic .output .druid-mission-option + .druid-mission-option {
+:is(#tab-basic, #character-features) .output .druid-mission-option + .druid-mission-option {
   padding-top: 0.65rem;
   border-top: 1px solid var(--border);
 }
 
-#tab-basic .output .druid-mission-option__heading {
+:is(#tab-basic, #character-features) .output .druid-mission-option__heading {
   color: var(--text-body);
   line-height: 1.58;
 }
 
-#tab-basic .output .druid-mission-option__heading label {
+:is(#tab-basic, #character-features) .output .druid-mission-option__heading label {
   color: var(--text);
   font-weight: 800;
 }
 
-#tab-basic .output .druid-mission-option .class-rule-list {
+:is(#tab-basic, #character-features) .output .druid-mission-option .class-rule-list {
   margin-top: 0.35rem;
 }
 
-#tab-basic .output .druid-rule-subsection--transformation {
+:is(#tab-basic, #character-features) .output .druid-rule-subsection--transformation {
   padding-top: 0.85rem;
   border-top: 1px dashed var(--border-strong);
 }
 
-#tab-basic .output .rule-table-shell--druid-terrain-spells {
+:is(#tab-basic, #character-features) .output .rule-table-shell--druid-terrain-spells {
   margin-top: 0.72rem;
 }
 
-#tab-basic .output .druid-terrain-spells {
+:is(#tab-basic, #character-features) .output .druid-terrain-spells {
   width: max-content;
   max-width: none;
   table-layout: auto;
 }
 
 /* 覆寫基本頁通用表格的強制換行，讓欄寬與德魯伊特性表一樣依文字內容計算。 */
-#tab-basic .output .druid-terrain-spells th,
-#tab-basic .output .druid-terrain-spells td {
+:is(#tab-basic, #character-features) .output .druid-terrain-spells th,
+:is(#tab-basic, #character-features) .output .druid-terrain-spells td {
   white-space: nowrap !important;
   word-break: normal !important;
 }
 
-#tab-basic .output .druid-terrain-spells td {
+:is(#tab-basic, #character-features) .output .druid-terrain-spells td {
   text-align: left;
 }
 
-#tab-basic .output .wild-shape-known-forms {
+:is(#tab-basic, #character-features) .output .wild-shape-known-forms {
   width: min(100%, 34rem);
   margin: 0.95rem 0 1.1rem;
   color: var(--text-body);
   white-space: normal;
 }
 
-#tab-basic .output .wild-shape-known-forms > h4 {
+:is(#tab-basic, #character-features) .output .wild-shape-known-forms > h4 {
   margin: 0 0 0.45rem;
 }
 
-#tab-basic .output .wild-shape-known-forms__intro {
+:is(#tab-basic, #character-features) .output .wild-shape-known-forms__intro {
   margin: 0;
   line-height: 1.6;
 }
 
-#tab-basic .output .wild-shape-known-forms__recommendation {
+:is(#tab-basic, #character-features) .output .wild-shape-known-forms__recommendation {
   margin: 0.7rem 0;
   padding: 0.62rem 0.75rem;
   border-left: 3px solid var(--accent);
@@ -2347,20 +2347,20 @@ details > summary::-webkit-details-marker,
   line-height: 1.55;
 }
 
-#tab-basic .output .wild-shape-known-forms__recommendation strong {
+:is(#tab-basic, #character-features) .output .wild-shape-known-forms__recommendation strong {
   color: var(--accent-strong);
 }
 
-#tab-basic .output .wild-shape-known-forms__rules {
+:is(#tab-basic, #character-features) .output .wild-shape-known-forms__rules {
   margin: 0.65rem 0 0;
   padding-left: 1.35rem;
 }
 
-#tab-basic .output .wild-shape-known-forms__rules li + li {
+:is(#tab-basic, #character-features) .output .wild-shape-known-forms__rules li + li {
   margin-top: 0.28rem;
 }
 
-#tab-basic .output .wild-shape-beast-disclosure {
+:is(#tab-basic, #character-features) .output .wild-shape-beast-disclosure {
   margin-top: 0.85rem;
   overflow: hidden;
   border: 1px solid var(--border-strong);
@@ -2368,7 +2368,7 @@ details > summary::-webkit-details-marker,
   background: var(--surface-strong);
 }
 
-:where(html:not([data-ui-theme="warm"])) #tab-basic .output .wild-shape-beast-disclosure > summary {
+:where(html:not([data-ui-theme="warm"])) :is(#tab-basic, #character-features) .output .wild-shape-beast-disclosure > summary {
   min-height: 0;
   padding: 0.68rem 0.78rem;
   color: var(--text);
@@ -2376,7 +2376,7 @@ details > summary::-webkit-details-marker,
   transition: background 0.18s ease, color 0.18s ease;
 }
 
-:where(html[data-ui-theme="warm"]) #tab-basic .output .wild-shape-beast-disclosure > summary {
+:where(html[data-ui-theme="warm"]) :is(#tab-basic, #character-features) .output .wild-shape-beast-disclosure > summary {
   min-height: 0;
   padding: 0.68rem 0.78rem;
   color: var(--text);
@@ -2384,39 +2384,39 @@ details > summary::-webkit-details-marker,
   transition: background 120ms ease, color 120ms ease;
 }
 
-#tab-basic .output .wild-shape-beast-disclosure > summary:hover {
+:is(#tab-basic, #character-features) .output .wild-shape-beast-disclosure > summary:hover {
   background: var(--accent-soft);
   color: var(--accent-strong);
 }
 
-#tab-basic .output .wild-shape-beast-disclosure > summary:focus-visible {
+:is(#tab-basic, #character-features) .output .wild-shape-beast-disclosure > summary:focus-visible {
   outline: 3px solid var(--focus-ring);
   outline-offset: -3px;
 }
 
-#tab-basic .output .wild-shape-beast-disclosure__hide,
-#tab-basic .output .wild-shape-beast-disclosure[open] .wild-shape-beast-disclosure__show {
+:is(#tab-basic, #character-features) .output .wild-shape-beast-disclosure__hide,
+:is(#tab-basic, #character-features) .output .wild-shape-beast-disclosure[open] .wild-shape-beast-disclosure__show {
   display: none;
 }
 
-#tab-basic .output .wild-shape-beast-disclosure[open] .wild-shape-beast-disclosure__hide {
+:is(#tab-basic, #character-features) .output .wild-shape-beast-disclosure[open] .wild-shape-beast-disclosure__hide {
   display: inline;
 }
 
-#tab-basic .output .wild-shape-beast-groups {
+:is(#tab-basic, #character-features) .output .wild-shape-beast-groups {
   border-top: 1px solid var(--border-strong);
 }
 
-#tab-basic .output .wild-shape-beast-group {
+:is(#tab-basic, #character-features) .output .wild-shape-beast-group {
   display: grid;
   grid-template-columns: 4.25rem minmax(0, 1fr);
 }
 
-#tab-basic .output .wild-shape-beast-group + .wild-shape-beast-group {
+:is(#tab-basic, #character-features) .output .wild-shape-beast-group + .wild-shape-beast-group {
   border-top: 1px solid var(--border);
 }
 
-#tab-basic .output .wild-shape-beast-group h4 {
+:is(#tab-basic, #character-features) .output .wild-shape-beast-group h4 {
   display: flex;
   align-items: flex-start;
   margin: 0;
@@ -2430,7 +2430,7 @@ details > summary::-webkit-details-marker,
   white-space: nowrap;
 }
 
-#tab-basic .output .wild-shape-beast-grid {
+:is(#tab-basic, #character-features) .output .wild-shape-beast-grid {
   display: flex;
   flex-wrap: wrap;
   gap: 0.42rem 1rem;
@@ -2440,7 +2440,7 @@ details > summary::-webkit-details-marker,
   line-height: 1.45;
 }
 
-#tab-basic .output .wild-shape-beast-grid .beast-tip {
+:is(#tab-basic, #character-features) .output .wild-shape-beast-grid .beast-tip {
   display: inline-block;
   color: var(--text-body);
   font-weight: 650;
@@ -2521,37 +2521,37 @@ details > summary::-webkit-details-marker,
     border-bottom: 0;
   }
 
-  #tab-basic .output .rule-table-shell--wild-shape {
+  :is(#tab-basic, #character-features) .output .rule-table-shell--wild-shape {
     width: 100%;
     margin-block: 0.22rem 0.58rem;
     overflow-x: hidden;
   }
 
-  #tab-basic .output table.rule-progress-table--wild-shape {
+  :is(#tab-basic, #character-features) .output table.rule-progress-table--wild-shape {
     display: block;
     min-width: 0;
   }
 
-  #tab-basic .output .rule-progress-table--wild-shape thead {
+  :is(#tab-basic, #character-features) .output .rule-progress-table--wild-shape thead {
     display: none;
   }
 
-  #tab-basic .output .rule-progress-table--wild-shape tbody {
+  :is(#tab-basic, #character-features) .output .rule-progress-table--wild-shape tbody {
     display: block;
   }
 
-  #tab-basic .output .rule-progress-table--wild-shape tbody tr {
+  :is(#tab-basic, #character-features) .output .rule-progress-table--wild-shape tbody tr {
     display: grid;
     grid-template-columns: 3.2rem repeat(3, minmax(0, 1fr));
     background: var(--surface-strong);
   }
 
-  #tab-basic .output .rule-progress-table--wild-shape tbody tr + tr {
+  :is(#tab-basic, #character-features) .output .rule-progress-table--wild-shape tbody tr + tr {
     border-top: 1px solid var(--border-strong);
   }
 
-  #tab-basic .output .rule-progress-table--wild-shape tbody th,
-  #tab-basic .output .rule-progress-table--wild-shape tbody td {
+  :is(#tab-basic, #character-features) .output .rule-progress-table--wild-shape tbody th,
+  :is(#tab-basic, #character-features) .output .rule-progress-table--wild-shape tbody td {
     display: flex;
     min-width: 0;
     min-height: 3.15rem;
@@ -2562,7 +2562,7 @@ details > summary::-webkit-details-marker,
     border-bottom: 0;
   }
 
-  #tab-basic .output .rule-progress-table--wild-shape tbody td::before {
+  :is(#tab-basic, #character-features) .output .rule-progress-table--wild-shape tbody td::before {
     content: attr(data-label);
     margin-bottom: 0.16rem;
     color: var(--text-muted);
@@ -2572,7 +2572,7 @@ details > summary::-webkit-details-marker,
     white-space: nowrap;
   }
 
-  #tab-basic .output .rule-progress-table--wild-shape tbody th {
+  :is(#tab-basic, #character-features) .output .rule-progress-table--wild-shape tbody th {
     flex-direction: row;
     background: var(--accent-soft);
   }
@@ -2583,21 +2583,21 @@ details > summary::-webkit-details-marker,
     font-size: 0.72rem;
   }
 
-  #tab-basic .output .wild-shape-beast-group {
+  :is(#tab-basic, #character-features) .output .wild-shape-beast-group {
     grid-template-columns: 3.75rem minmax(0, 1fr);
   }
 
-  #tab-basic .output .wild-shape-beast-group h4,
-  #tab-basic .output .wild-shape-beast-grid {
+  :is(#tab-basic, #character-features) .output .wild-shape-beast-group h4,
+  :is(#tab-basic, #character-features) .output .wild-shape-beast-grid {
     padding-inline: 0.58rem;
   }
 
-  #tab-basic .output .wild-shape-beast-grid {
+  :is(#tab-basic, #character-features) .output .wild-shape-beast-grid {
     gap: 0.42rem 0.8rem;
   }
 
-  #tab-basic .output .rule-progress-table--spell-slot th,
-  #tab-basic .output .rule-progress-table--spell-slot td {
+  :is(#tab-basic, #character-features) .output .rule-progress-table--spell-slot th,
+  :is(#tab-basic, #character-features) .output .rule-progress-table--spell-slot td {
     padding-inline: 0.4rem;
   }
 }
@@ -2864,7 +2864,7 @@ input[type="checkbox"] {
 :where(html:not([data-ui-theme="warm"])) button:focus-visible,
 :where(html:not([data-ui-theme="warm"])) summary:focus-visible,
 :where(html:not([data-ui-theme="warm"])) a:focus-visible,
-:where(html:not([data-ui-theme="warm"])) .mini-stat-label--jump:focus-visible,
+:where(html:not([data-ui-theme="warm"])) .mini-stat-label--features:focus-visible,
 :where(html:not([data-ui-theme="warm"])) .spell-slot-label--jump:focus-visible,
 :where(html:not([data-ui-theme="warm"])) .spell-picked-jump:focus-visible {
   outline: 3px solid var(--focus-ring);
@@ -2890,7 +2890,7 @@ input[type="checkbox"] {
 :where(html[data-ui-theme="warm"]) [role="button"]:focus-visible,
 :where(html[data-ui-theme="warm"]) summary:focus-visible,
 :where(html[data-ui-theme="warm"]) a:focus-visible,
-:where(html[data-ui-theme="warm"]) .mini-stat-label--jump:focus-visible,
+:where(html[data-ui-theme="warm"]) .mini-stat-label--features:focus-visible,
 :where(html[data-ui-theme="warm"]) .spell-slot-label--jump:focus-visible,
 :where(html[data-ui-theme="warm"]) .spell-picked-jump:focus-visible {
   outline: 3px solid var(--focus-ring);
@@ -4095,6 +4095,83 @@ html[data-ui-theme="warm"][data-theme="dark"] .circle-checkbox:checked {
 .condition-reference-tab:focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: -3px;
+}
+
+/* Keep legacy skill/beast popups (9999) and spell details (10030) above abilities. */
+.app-dialog[data-variant="character-features"] {
+  z-index: 9998;
+}
+
+.app-dialog[data-variant="character-features"] .app-dialog__surface {
+  width: min(100%, 52rem);
+}
+
+.app-dialog[data-variant="character-features"] .app-dialog__header {
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.8rem;
+}
+
+.character-features,
+.character-feature-panel {
+  min-width: 0;
+}
+
+.character-features-tabs {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  background: var(--surface-strong);
+}
+
+.character-features-tabs > button {
+  flex: 1 0 auto;
+  width: auto;
+  min-width: max-content;
+  padding-inline: 0.8rem;
+  white-space: nowrap;
+}
+
+.character-features-tabs > button[hidden],
+.character-feature-panel[hidden] {
+  display: none !important;
+}
+
+.character-features > .character-feature-panel {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+#classCreationInfo > section + section {
+  margin-top: 1.4rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--border);
+}
+
+#classCreationInfo > section > h3 {
+  margin: 0 0 0.6rem;
+  font-size: var(--fs-lg);
+}
+
+.character-features-hint {
+  grid-column: 1 / -1;
+  margin: 0.45rem 0 0;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+}
+
+.feat-management-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  font-weight: normal;
 }
 
 .condition-reference-panel[hidden] {
@@ -6944,15 +7021,30 @@ html:not([data-view-mode="tabletop"]) .free-spell-use-checks {
   color: var(--accent-strong);
 }
 
-.mini-stat-label--jump {
+#tab-basic button.mini-stat-label--features {
+  display: block;
+  width: fit-content;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  font-family: inherit;
+  font-size: var(--fs-xs);
+  line-height: inherit;
   cursor: pointer;
   text-decoration: underline;
   text-decoration-thickness: 1.5px;
   text-underline-offset: 0.14em;
 }
 
-.mini-stat-label--jump:hover,
-.mini-stat-label--jump:focus-visible {
+#tab-basic button.mini-stat-label--features:hover,
+#tab-basic button.mini-stat-label--features:focus-visible {
+  background: transparent;
+  box-shadow: none;
+  transform: none;
   color: var(--accent-strong);
 }
 
@@ -7404,6 +7496,17 @@ label.feature-choice-card__heading {
   margin-bottom: 0.38rem;
   color: var(--accent-strong);
   font-weight: 750;
+}
+
+.feature-choice-card--metamagic .feature-choice-card__heading > strong,
+.feature-choice-card--metamagic .feature-choice-card__heading > .feature-choice-card__meta {
+  white-space: nowrap;
+}
+
+.feature-choice-card--metamagic .feature-choice-card__heading > .feature-choice-card__meta {
+  margin: 0;
+  font-size: var(--fs-sm);
+  line-height: 1.62;
 }
 
 .feature-choice-card__body > :first-child {
@@ -8423,6 +8526,14 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] :is(#scrollToTopBtn, #scro
   border-color: transparent;
   background: var(--accent-gradient);
   color: var(--on-accent);
+}
+
+.dice-roller-roll::after {
+  background: #000;
+}
+
+html[data-theme="dark"] .dice-roller-roll::after {
+  background: #fff;
 }
 
 .dice-roller-clear {
@@ -10345,68 +10456,21 @@ html[data-theme="dark"] .brand-logo-crop .legal-modal-logo-dark {
   line-height: 1.25;
 }
 
-.background-guide-note {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 9px;
-  align-items: start;
-  margin-top: 12px;
-  padding: 10px 12px;
-  border-left: 3px solid var(--accent);
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-  background: var(--accent-soft);
-  color: var(--text-body);
-  font-size: var(--fs-sm);
-  line-height: 1.5;
-}
-
-:where(html:not([data-ui-theme="warm"])) .background-guide-note__icon {
-  display: inline-grid;
-  place-items: center;
-  width: 1.4rem;
-  height: 1.4rem;
-  margin-top: 1px;
-  border-radius: 50%;
-  background: var(--accent);
-  color: var(--on-accent);
-  font-size: 0.68rem;
-  line-height: 1;
-}
-
-:where(html[data-ui-theme="warm"]) .background-guide-note__icon {
-  display: inline-grid;
-  place-items: center;
-  width: 1.4rem;
-  height: 1.4rem;
-  margin-top: 1px;
-  border-radius: 50%;
-  background: var(--action-fill);
-  color: var(--on-accent);
-  font-size: 0.68rem;
-  line-height: 1;
-}
-
-.background-guide-note__content {
-  min-width: 0;
-}
-
-.background-guide-note__label {
-  display: block;
-  margin-bottom: 1px;
-  color: var(--accent-strong);
-  font-size: var(--fs-xs);
-  font-weight: 800;
-  letter-spacing: 0.04em;
-}
-
-.background-guide-note__content strong {
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-  font-weight: 800;
-}
-
 .background-guide-section {
   margin-top: 12px;
+}
+
+.background-guide-section > div + div {
+  position: relative;
+  margin-block-start: 0.4em;
+  margin-inline-start: 1em;
+  padding-inline-start: 2em;
+  line-height: 1.6;
+}
+
+.background-guide-section > div + div > strong {
+  position: absolute;
+  inset-inline-start: 0;
 }
 
 .background-guide-description {
@@ -15071,6 +15135,43 @@ html[data-theme="dark"] .tabletop-skill-value[data-skill-rank="expertise"] .tabl
 
 .tabletop-rest-check input {
   flex: 0 0 auto;
+}
+
+.tabletop-rest-choice select {
+  width: 100%;
+  min-width: 0;
+}
+
+.tabletop-rest-option-detail {
+  padding-left: 1.5rem;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
+.tabletop-rest-hit-dice-status {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.tabletop-rest-hit-dice-status dt {
+  font-size: var(--fs-sm);
+}
+
+.tabletop-rest-hit-dice-status dd {
+  margin: 0.35rem 0 0;
+  font-weight: 700;
+}
+
+.app-dialog[data-variant="rest-hit-dice"] .app-dialog__actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.app-dialog[data-variant="rest-hit-dice"] .app-dialog__actions button {
+  min-width: 0;
+  padding-inline: 0.5rem;
 }
 
 .tabletop-resource-check {
