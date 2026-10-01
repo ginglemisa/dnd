@@ -299,6 +299,14 @@ async function verifyToasts(browser) {
   await desktop.waitForTimeout(250);
   assert.deepEqual(await toastMessages(desktop), ["第一則", "第二則", "第三則"]);
   await assertStackOrder(desktop);
+  assert.equal(await desktop.locator("#app-toast").evaluate(stack => {
+    const rect = stack.getBoundingClientRect();
+    return rect.top < 20 && rect.bottom < window.innerHeight / 2;
+  }), true, "Toast stack should open at the top of the viewport");
+  assert.equal(await desktop.locator(".app-toast__close").first().evaluate(button => {
+    const rect = button.getBoundingClientRect();
+    return rect.width >= 44 && rect.height >= 44;
+  }), true, "Toast close button should provide at least a 44px pointer target");
   assert.equal(await desktop.locator('.app-toast[data-variant="dice-roll"]').count(), 1);
   assert.equal(await desktop.locator(".app-toast").evaluateAll(toasts =>
     toasts[1].getBoundingClientRect().left < toasts[2].getBoundingClientRect().left

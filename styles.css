@@ -12828,7 +12828,7 @@ html.tabletop-avatar-modal-open { overflow: hidden; }
 
 .app-toast-stack {
   position: fixed;
-  bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+  top: max(0.75rem, env(safe-area-inset-top, 0px));
   right: 0;
   left: 0;
   z-index: var(--z-toast);
@@ -12867,15 +12867,15 @@ html.tabletop-avatar-modal-open { overflow: hidden; }
 
 .app-toast__close {
   flex: none;
-  width: 1.75rem;
-  height: 1.75rem;
+  width: 2.75rem;
+  height: 2.75rem;
   padding: 0;
   border: 0;
   border-radius: var(--radius-sm);
   background: transparent;
   color: inherit;
   font: inherit;
-  font-size: 1.35rem;
+  font-size: 1.75rem;
   line-height: 1;
   cursor: pointer;
 }
