@@ -351,7 +351,11 @@
       alCheckbox.checked = draft.alFormat;
       alCheckbox.dataset.stateTransient = "true";
       alCheckbox.dataset.journalField = "alFormat";
-      alCheckbox.addEventListener("change", () => render());
+      alCheckbox.addEventListener("change", () => {
+        const editor = grid.querySelector(".journal-al-editor");
+        if (alCheckbox.checked && !editor) grid.appendChild(renderAlEditor());
+        else if (!alCheckbox.checked) editor?.remove();
+      });
       alToggle.append(alCheckbox, document.createTextNode("以 AL 格式紀錄"));
       grid.appendChild(alToggle);
       if (draft.alFormat) grid.appendChild(renderAlEditor());
@@ -391,7 +395,8 @@
       }
       rewards.append(rewardTitle, list);
       body.append(metadata, notes, rewards);
-      if (entry.alFormat) body.appendChild(renderStoryRewards(entry.storyRewards));
+      const storyRewards = entry.storyRewards.filter(hasStoryReward);
+      if (entry.alFormat && storyRewards.length) body.appendChild(renderStoryRewards(storyRewards));
     }
     if (draft) {
       const actions = document.createElement("div");
@@ -480,14 +485,18 @@
     const title = document.createElement("h3");
     title.textContent = "故事獎勵";
     section.appendChild(title);
-    rewards.filter(reward => reward.title || reward.content).forEach(reward => {
+    rewards.forEach(reward => {
       const item = document.createElement("p");
       const name = document.createElement("strong");
-      name.textContent = `${reward.title || "未命名獎勵"}：`;
+      name.textContent = `${reward.title.trim() || "未命名獎勵"}：`;
       item.append(name, document.createTextNode(reward.content));
       section.appendChild(item);
     });
     return section;
+  }
+
+  function hasStoryReward(reward) {
+    return Boolean(reward.title.trim() || reward.content.trim());
   }
 
   function resizeMagicItems(input) {
