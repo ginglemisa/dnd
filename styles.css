@@ -12827,7 +12827,7 @@ html.tabletop-avatar-modal-open { overflow: hidden; }
 
 .app-toast-stack {
   position: fixed;
-  top: max(0.75rem, env(safe-area-inset-top, 0px));
+  bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
   right: 0;
   left: 0;
   z-index: var(--z-toast);
