@@ -479,6 +479,20 @@ async function verifyCharacterFeatures(browser, url) {
     assert.equal(await page.locator(`#${choiceId}`).isChecked(), true, "metamagic survives autosave and reload while its panel is closed");
     await page.keyboard.press("Escape");
     await page.locator("#class").selectOption("warlock");
+    await page.locator("#level").selectOption("1");
+    await opener.click();
+    await modal.getByRole("tab", { name: "魔能祈喚", exact: true }).click();
+    const invocation = name => modal.locator(`input[data-invocation-name="${name}"]`).first();
+    assert.equal(await invocation("魔能意志").isEnabled(), true, "level 1 invocation remains selectable");
+    for (const name of ["邪魔活力", "千面之臉", "幻象迷蹤", "超凡跳躍", "魔鬼視界", "原初之一教習", "苦痛魔爆", "魔能長槍", "斥力魔爆"]) {
+      assert.equal(await invocation(name).isDisabled(), true, `${name} is unavailable before level 2`);
+    }
+    for (const name of ["星移步法", "萬形之主", "融身入影", "深海饋贈", "共視感官", "魔能斬擊", "饑渴魔刃", "鏈主賦能"]) {
+      assert.equal(await invocation(name).isDisabled(), true, `${name} is unavailable before level 5`);
+    }
+    assert.equal(await invocation("墳墓低語").isDisabled(), true, "level 7 invocation is unavailable at level 1");
+    assert.equal(await invocation("星移步法").locator("xpath=ancestor::article[1]").getAttribute("aria-disabled"), "true");
+    await page.keyboard.press("Escape");
     await page.locator("#level").selectOption("2");
     await page.evaluate(() => showTab("spells"));
     await page.locator('#cantrips-area select[id*="-class-"]').first().selectOption("warlock");
@@ -487,6 +501,13 @@ async function verifyCharacterFeatures(browser, url) {
     await opener.click();
     assert.deepEqual(await tabs.allTextContents(), ["創角/表格", "職業", "魔能祈喚", "背景", "種族"]);
     await modal.getByRole("tab", { name: "魔能祈喚", exact: true }).click();
+    assert.equal(await invocation("邪魔活力").isEnabled(), true, "level 2 invocation unlocks at level 2");
+    assert.equal(await invocation("星移步法").isDisabled(), true, "level 5 invocation remains unavailable at level 2");
+    for (const name of ["幽影護甲", "魔能意志", "邪魔活力"]) await invocation(name).check();
+    await invocation("千面之臉").check();
+    assert.equal(await modal.locator("#eldritch-invocations-output input[data-invocation-name]:checked").count(), 3, "level 2 invocation limit is enforced");
+    assert.equal(await invocation("千面之臉").isChecked(), false, "the invocation exceeding the level limit is reverted");
+    for (const name of ["幽影護甲", "魔能意志", "邪魔活力"]) await invocation(name).uncheck();
     await modal.locator('input[data-invocation-name="苦痛魔爆"]').first().check();
     const settings = modal.locator("[data-agonizing-blast-settings]");
     await settings.click();
