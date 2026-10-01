@@ -2733,7 +2733,7 @@
     } else {
       mobileImportWarning("找不到工具熟練匯入介面", warnings);
     }
-    const skillNotes = [skillBonuses.length ? `技能額外加值：\n${skillBonuses.join("\n")}` : ""].filter(Boolean);
+    const skillNotes = [skillBonuses.length ? `\n${skillBonuses.join("\n")}` : ""].filter(Boolean);
     setMobileField("skill-extra", skillNotes.join("；"), warnings, "技能筆記", "input");
 
     const languageDetails = draft.selections.levelOne?.content?.languageDetails || [];
