@@ -12,8 +12,8 @@
     ["dmName", "DM 姓名", "text"],
     ["notes", "團錄內容", "textarea"],
     ["gold", "獲得金幣", "number"],
-    ["magicItems", "獲得魔法物品", "textarea"],
-    ["downtime", "獲得修整日", "number"]
+    ["downtime", "獲得休整日", "number"],
+    ["magicItems", "獲得魔法物品", "textarea"]
   ];
   const icons = {
     add: '<path d="M14 2H5v20h14V7zM14 2v5h5M8 14h8M12 10v8"/>',
@@ -33,6 +33,9 @@
   let background = [];
   let storedRaw = null;
   let loadError = false;
+  let longPressTimer = null;
+  let longPressPointer = null;
+  let suppressNavigationClick = false;
 
   function emptyBook() { return { kind: KIND, version: 1, entries: [] }; }
   function validateBook(value) {
@@ -49,7 +52,7 @@
       fields.forEach(([key, , type]) => {
         if (type === "number") {
           if (entry[key] !== null && (typeof entry[key] !== "number" || !Number.isFinite(entry[key]))) {
-            throw new Error("金幣與修整日必須是有效數字或空值。");
+            throw new Error("金幣與休整日必須是有效數字或空值。");
           }
         } else if (typeof entry[key] !== "string") {
           throw new Error("日誌頁面缺少必要文字欄位。");
@@ -113,7 +116,7 @@
     root.id = "adventure-journal";
     root.className = "adventure-journal";
     root.hidden = true;
-    root.innerHTML = '<section class="journal-shell" role="dialog" aria-modal="true" aria-labelledby="journal-title"><header class="journal-header"><h2 id="journal-title">我的冒險日誌</h2></header><div class="journal-body" tabindex="0"></div><footer class="journal-footer"><p class="journal-page-count" role="status" aria-live="polite"></p><div class="journal-navigation"></div></footer></section>';
+    root.innerHTML = '<section class="journal-shell" role="dialog" aria-modal="true" aria-labelledby="journal-title"><header class="journal-header"><h2 id="journal-title">冒險日誌</h2></header><div class="journal-body" tabindex="0"></div><footer class="journal-footer"><p class="journal-page-count" role="status" aria-live="polite"></p><div class="journal-navigation"></div></footer></section>';
     const header = root.querySelector(".journal-header");
     const toolbar = document.createElement("div");
     toolbar.className = "journal-toolbar";
@@ -134,8 +137,27 @@
     root.addEventListener("click", event => {
       if (event.target === root) run("close");
       const target = event.target.closest("[data-journal-action]");
+      if (target && suppressNavigationClick && ["previous", "next"].includes(target.dataset.journalAction)) {
+        suppressNavigationClick = false;
+        return;
+      }
       if (target && !target.disabled) run(target.dataset.journalAction);
     });
+    root.addEventListener("pointerdown", event => {
+      const target = event.target.closest('[data-journal-action="previous"], [data-journal-action="next"]');
+      if (!target || target.disabled || draft || longPressTimer) return;
+      longPressPointer = { id: event.pointerId, target, x: event.clientX, y: event.clientY };
+      longPressTimer = window.setTimeout(() => {
+        longPressTimer = null;
+        suppressNavigationClick = true;
+        openPagePicker(target);
+      }, 550);
+    });
+    root.addEventListener("pointermove", event => {
+      if (!longPressPointer || event.pointerId !== longPressPointer.id) return;
+      if (Math.hypot(event.clientX - longPressPointer.x, event.clientY - longPressPointer.y) > 10) clearLongPress();
+    });
+    ["pointerup", "pointercancel"].forEach(type => root.addEventListener(type, clearLongPress));
     // Journal inputs must never trigger character event delegation or autosave.
     root.addEventListener("input", event => {
       event.stopPropagation();
@@ -197,10 +219,37 @@
   }
 
   function dirty() { return draft !== null && JSON.stringify(draft) !== originalDraft; }
+  function clearLongPress() {
+    if (longPressTimer) window.clearTimeout(longPressTimer);
+    longPressTimer = null;
+    longPressPointer = null;
+  }
+
+  async function openPagePicker(trigger) {
+    clearLongPress();
+    if (!book.entries.length || draft) return;
+    const requestedPage = await window.AppDialog.requestNumber({
+      title: "快速跳頁",
+      inputLabel: "頁數",
+      hint: `輸入 1～${book.entries.length} 頁。`,
+      invalidMessage: `請輸入 1～${book.entries.length} 的整數。`,
+      min: 1,
+      max: book.entries.length,
+      value: pageIndex + 1,
+      confirmLabel: "前往",
+      trigger
+    });
+    if (requestedPage === false || !opened) return;
+    pageIndex = requestedPage - 1;
+    render();
+  }
+
   function edit(isNew) {
     newPage = isNew;
     draft = isNew ? Object.fromEntries(fields.map(([key]) => [key, ""])) : { ...book.entries[pageIndex] };
     if (isNew) {
+      const previousEntry = book.entries[pageIndex] || book.entries.at(-1);
+      ["characterName", "classLevel", "race"].forEach(key => { draft[key] = previousEntry?.[key] || ""; });
       do {
         draft.id = window.crypto.randomUUID ? window.crypto.randomUUID()
           : [...window.crypto.getRandomValues(new Uint8Array(16))].map(value => value.toString(16).padStart(2, "0")).join("");
@@ -249,9 +298,14 @@
         if (type !== "textarea") input.type = type;
         if (type === "number") input.step = "any";
         if (type === "date") input.max = "9999-12-31";
-        if (type === "textarea") input.rows = key === "notes" ? 12 : 3;
+        if (type === "textarea") input.rows = key === "notes" ? 12 : 1;
         if (key === "classLevel") input.placeholder = "例如：遊俠 3 級";
         input.value = draft[key];
+        if (key === "magicItems") {
+          input.classList.add("journal-auto-textarea");
+          input.addEventListener("input", () => resizeMagicItems(input));
+          window.requestAnimationFrame(() => resizeMagicItems(input));
+        }
         field.appendChild(input);
         grid.appendChild(field);
       });
@@ -259,9 +313,18 @@
       form.addEventListener("submit", event => { event.preventDefault(); run("save"); });
       body.appendChild(form);
     } else {
-      const metadata = document.createElement("dl");
-      metadata.className = "journal-metadata";
-      fields.slice(0, 6).forEach(([key, label]) => appendDetail(metadata, label, entry[key]));
+      const metadata = document.createElement("div");
+      metadata.className = "journal-entry-summary";
+      const identity = document.createElement("p");
+      identity.className = "journal-entry-summary__identity";
+      identity.textContent = [entry.characterName, entry.classLevel, entry.race].map(value => value || "—").join(" | ");
+      const session = document.createElement("p");
+      session.className = "journal-entry-summary__session";
+      session.textContent = `日期: ${entry.adventureDate || "—"} | DM: ${entry.dmName || "—"}`;
+      const adventure = document.createElement("dl");
+      adventure.className = "journal-adventure-name";
+      appendDetail(adventure, "冒險名稱", entry.adventureName);
+      metadata.append(identity, session, adventure);
       const notes = document.createElement("section");
       notes.className = "journal-notes";
       const title = document.createElement("h3");
@@ -280,11 +343,6 @@
       rewards.append(rewardTitle, list);
       body.append(metadata, notes, rewards);
     }
-    const previous = button("上一頁", "previous");
-    const next = button("下一頁", "next");
-    previous.disabled = !book.entries.length || (newPage && draft ? false : pageIndex === 0);
-    next.disabled = !book.entries.length || (draft && newPage) || pageIndex >= book.entries.length - 1;
-    footer.appendChild(previous);
     if (draft) {
       const actions = document.createElement("div");
       actions.className = "journal-edit-actions";
@@ -293,12 +351,28 @@
       actions.append(save, button("取消", "cancel"));
       footer.appendChild(actions);
     } else {
+      const previous = button("上一頁", "previous");
+      const next = button("下一頁", "next");
+      previous.disabled = !book.entries.length || pageIndex === 0;
+      next.disabled = !book.entries.length || pageIndex >= book.entries.length - 1;
+      footer.appendChild(previous);
       const modify = button("修改", "edit");
       modify.disabled = !book.entries.length;
       footer.appendChild(modify);
+      footer.appendChild(next);
     }
-    footer.appendChild(next);
     body.scrollTop = 0;
+  }
+
+  function resizeMagicItems(input) {
+    input.style.height = "auto";
+    const style = window.getComputedStyle(input);
+    const lineHeight = parseFloat(style.lineHeight) || 24;
+    const chrome = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom)
+      + parseFloat(style.borderTopWidth) + parseFloat(style.borderBottomWidth);
+    const maximum = lineHeight * 4 + chrome;
+    input.style.height = `${Math.min(input.scrollHeight, maximum)}px`;
+    input.style.overflowY = input.scrollHeight > maximum ? "auto" : "hidden";
   }
 
   function appendDetail(list, label, value) {
