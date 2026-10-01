@@ -6307,16 +6307,7 @@ html.equipment-detail-open body {
   .equipment-detail-stats { grid-template-columns: 1fr; }
 }
 
-.spell-toolbar-actions {
-  display: flex;
-  gap: 0.6rem;
-  flex: 0 0 auto;
-  width: auto;
-  margin-left: auto;
-}
-
-:where(html:not([data-ui-theme="warm"])) .spell-search-button,
-:where(html:not([data-ui-theme="warm"])) .spell-toolbar-actions button {
+:where(html:not([data-ui-theme="warm"])) .spell-search-button {
   width: auto;
   box-sizing: border-box;
   height: 50px;
@@ -6329,8 +6320,7 @@ html.equipment-detail-open body {
   box-shadow: none;
 }
 
-:where(html[data-ui-theme="warm"]) .spell-search-button,
-:where(html[data-ui-theme="warm"]) .spell-toolbar-actions button {
+:where(html[data-ui-theme="warm"]) .spell-search-button {
   width: auto;
   box-sizing: border-box;
   height: 50px;

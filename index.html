@@ -46,7 +46,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261001-adventure-journal-refresh">
+  <link rel="stylesheet" href="styles.css?v=20261001-spell-search-toolbar">
   <script src="scroll-to-top.js?v=20261001-character-features-modal" defer></script>
   <script src="dice-roller.js?v=20261001-roll-equations" defer></script>
   <script src="monster.js?v=20260912-druid-controls" defer></script>
@@ -175,10 +175,6 @@
           <input type="text" id="spell-search" inputmode="search" enterkeyhint="search" placeholder="輸入&quot;火球&quot;或&quot;牧師法術&quot;" aria-label="搜尋全部法術資料">
           <button type="submit" id="spell-search-button" class="spell-search-button" aria-label="執行法術搜尋">搜尋</button>
         </form>
-        <div id="spell-toolbar-actions" class="spell-toolbar-actions">
-          <button type="button" id="expand-spells">全展</button>
-          <button type="button" id="collapse-spells">收合</button>
-        </div>
       </div>
       <section id="spell-search-results" class="spell-search-results is-hidden" aria-label="法術搜尋結果" aria-live="polite">
         <p id="spell-search-summary" class="spell-search-summary"></p>
@@ -7239,13 +7235,6 @@ function jumpToPickedSpell(areaId, spellId, sourceKey = "") {
   });
   if (targetRow) scrollSpellSelectIntoView(targetRow.querySelector("select[id*='-spell-']"));
 }
-
-document.getElementById("expand-spells")?.addEventListener("click", () => {
-  document.querySelectorAll("#tab-spells .spell-level-section").forEach(sec => sec.open = true);
-});
-document.getElementById("collapse-spells")?.addEventListener("click", () => {
-  document.querySelectorAll("#tab-spells .spell-level-section").forEach(sec => sec.open = false);
-});
 
 document.getElementById("spell-picked-grid-wrap")?.addEventListener("click", (event) => {
   const trigger = event.target?.closest?.("[data-spell-jump='picked'][data-area-id][data-spell-id]");
