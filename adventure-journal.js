@@ -15,6 +15,11 @@
     ["downtime", "獲得休整日", "number"],
     ["magicItems", "獲得魔法物品", "textarea"]
   ];
+  const alFields = [
+    ["totalGold", "累計金幣"],
+    ["totalDowntime", "累計休整期"],
+    ["totalMagicItems", "累計魔法物品數量"]
+  ];
   const icons = {
     add: '<path d="M14 2H5v20h14V7zM14 2v5h5M8 14h8M12 10v8"/>',
     delete: '<path d="M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7"/>',
@@ -61,6 +66,23 @@
           throw new Error("冒險日期格式無效，請使用 YYYY-MM-DD。");
         }
         normalized[key] = entry[key];
+      });
+      normalized.alFormat = entry.alFormat === true;
+      alFields.forEach(([key]) => {
+        const value = entry[key] === undefined ? null : entry[key];
+        if (value !== null && (typeof value !== "number" || !Number.isFinite(value))) {
+          throw new Error("AL 累計欄位必須是有效數字或空值。");
+        }
+        normalized[key] = value;
+      });
+      if (entry.storyRewards !== undefined && !Array.isArray(entry.storyRewards)) {
+        throw new Error("故事獎勵格式無效。");
+      }
+      normalized.storyRewards = (entry.storyRewards || []).map(reward => {
+        if (!reward || typeof reward.title !== "string" || typeof reward.content !== "string") {
+          throw new Error("故事獎勵必須包含名稱與內容。");
+        }
+        return { title: reward.title, content: reward.content };
       });
       return normalized;
     });
@@ -161,8 +183,13 @@
     // Journal inputs must never trigger character event delegation or autosave.
     root.addEventListener("input", event => {
       event.stopPropagation();
-      if (!draft || !event.target.dataset.journalField) return;
-      draft[event.target.dataset.journalField] = event.target.value;
+      if (!draft) return;
+      const target = event.target;
+      if (target.dataset.journalField) {
+        draft[target.dataset.journalField] = target.type === "checkbox" ? target.checked : target.value;
+      } else if (target.dataset.storyField) {
+        draft.storyRewards[Number(target.dataset.storyIndex)][target.dataset.storyField] = target.value;
+      }
     });
     root.addEventListener("change", event => event.stopPropagation());
     file.addEventListener("change", () => {
@@ -246,8 +273,14 @@
 
   function edit(isNew) {
     newPage = isNew;
-    draft = isNew ? Object.fromEntries(fields.map(([key]) => [key, ""])) : { ...book.entries[pageIndex] };
+    draft = isNew ? Object.fromEntries(fields.map(([key]) => [key, ""])) : {
+      ...book.entries[pageIndex],
+      storyRewards: book.entries[pageIndex].storyRewards.map(reward => ({ ...reward }))
+    };
     if (isNew) {
+      draft.alFormat = false;
+      alFields.forEach(([key]) => { draft[key] = ""; });
+      draft.storyRewards = [];
       const previousEntry = book.entries[pageIndex] || book.entries.at(-1);
       ["characterName", "classLevel", "race"].forEach(key => { draft[key] = previousEntry?.[key] || ""; });
       do {
@@ -256,7 +289,9 @@
       } while (book.entries.some(entry => entry.id === draft.id));
     } else {
       fields.filter(([, , type]) => type === "number").forEach(([key]) => { draft[key] = draft[key] === null ? "" : String(draft[key]); });
+      alFields.forEach(([key]) => { draft[key] = draft[key] === null ? "" : String(draft[key]); });
     }
+    if (draft.alFormat && !draft.storyRewards.length) draft.storyRewards.push({ title: "", content: "" });
     originalDraft = JSON.stringify(draft);
     render();
     form.querySelector("input").focus();
@@ -309,6 +344,17 @@
         field.appendChild(input);
         grid.appendChild(field);
       });
+      const alToggle = document.createElement("label");
+      alToggle.className = "journal-al-toggle";
+      const alCheckbox = document.createElement("input");
+      alCheckbox.type = "checkbox";
+      alCheckbox.checked = draft.alFormat;
+      alCheckbox.dataset.stateTransient = "true";
+      alCheckbox.dataset.journalField = "alFormat";
+      alCheckbox.addEventListener("change", () => render());
+      alToggle.append(alCheckbox, document.createTextNode("以 AL 格式紀錄"));
+      grid.appendChild(alToggle);
+      if (draft.alFormat) grid.appendChild(renderAlEditor());
       form.appendChild(grid);
       form.addEventListener("submit", event => { event.preventDefault(); run("save"); });
       body.appendChild(form);
@@ -340,8 +386,12 @@
       const list = document.createElement("dl");
       list.className = "journal-metadata";
       fields.slice(7).forEach(([key, label]) => appendDetail(list, label, entry[key]));
+      if (entry.alFormat) {
+        alFields.forEach(([key, label], index) => appendDetail(list, label, entry[key], index === 0 ? "journal-metadata__al-start" : ""));
+      }
       rewards.append(rewardTitle, list);
       body.append(metadata, notes, rewards);
+      if (entry.alFormat) body.appendChild(renderStoryRewards(entry.storyRewards));
     }
     if (draft) {
       const actions = document.createElement("div");
@@ -364,6 +414,82 @@
     body.scrollTop = 0;
   }
 
+  function renderAlEditor() {
+    const section = document.createElement("section");
+    section.className = "journal-al-editor";
+    const totals = document.createElement("div");
+    totals.className = "journal-al-totals";
+    alFields.forEach(([key, label]) => {
+      const field = document.createElement("label");
+      field.className = `journal-field journal-field--${key}`;
+      field.appendChild(document.createTextNode(label));
+      const input = document.createElement("input");
+      input.type = "number";
+      input.step = "any";
+      input.dataset.stateTransient = "true";
+      input.dataset.journalField = key;
+      input.value = draft[key];
+      field.appendChild(input);
+      totals.appendChild(field);
+    });
+    if (!draft.storyRewards.length) draft.storyRewards.push({ title: "", content: "" });
+    const heading = document.createElement("div");
+    heading.className = "journal-story-editor__heading";
+    const title = document.createElement("h3");
+    title.textContent = "故事獎勵";
+    const controls = document.createElement("div");
+    controls.className = "journal-story-controls";
+    const remove = button("減少一組故事獎勵", "remove-story");
+    remove.textContent = "−";
+    remove.disabled = draft.storyRewards.length <= 1;
+    const add = button("增加一組故事獎勵", "add-story");
+    add.textContent = "+";
+    controls.append(remove, add);
+    heading.append(title, controls);
+    const rewards = document.createElement("div");
+    rewards.className = "journal-story-editor";
+    draft.storyRewards.forEach((reward, index) => {
+      const group = document.createElement("div");
+      group.className = "journal-story-fields";
+      const name = document.createElement("input");
+      name.type = "text";
+      name.placeholder = "故事獎勵";
+      name.setAttribute("aria-label", `第 ${index + 1} 組故事獎勵`);
+      name.dataset.stateTransient = "true";
+      name.dataset.storyField = "title";
+      name.dataset.storyIndex = String(index);
+      name.value = reward.title;
+      const content = document.createElement("textarea");
+      content.rows = 4;
+      content.placeholder = "獎勵內容";
+      content.setAttribute("aria-label", `第 ${index + 1} 組獎勵內容`);
+      content.dataset.stateTransient = "true";
+      content.dataset.storyField = "content";
+      content.dataset.storyIndex = String(index);
+      content.value = reward.content;
+      group.append(name, content);
+      rewards.appendChild(group);
+    });
+    section.append(totals, heading, rewards);
+    return section;
+  }
+
+  function renderStoryRewards(rewards) {
+    const section = document.createElement("section");
+    section.className = "journal-story-rewards";
+    const title = document.createElement("h3");
+    title.textContent = "故事獎勵";
+    section.appendChild(title);
+    rewards.filter(reward => reward.title || reward.content).forEach(reward => {
+      const item = document.createElement("p");
+      const name = document.createElement("strong");
+      name.textContent = `${reward.title || "未命名獎勵"}：`;
+      item.append(name, document.createTextNode(reward.content));
+      section.appendChild(item);
+    });
+    return section;
+  }
+
   function resizeMagicItems(input) {
     input.style.height = "auto";
     const style = window.getComputedStyle(input);
@@ -375,8 +501,9 @@
     input.style.overflowY = input.scrollHeight > maximum ? "auto" : "hidden";
   }
 
-  function appendDetail(list, label, value) {
+  function appendDetail(list, label, value, className = "") {
     const group = document.createElement("div");
+    if (className) group.className = className;
     const term = document.createElement("dt");
     term.textContent = label;
     const detail = document.createElement("dd");
@@ -389,6 +516,7 @@
     if (!draft || !form.reportValidity()) return false;
     const entry = { ...draft };
     fields.filter(([, , type]) => type === "number").forEach(([key]) => { entry[key] = entry[key] === "" ? null : Number(entry[key]); });
+    alFields.forEach(([key]) => { entry[key] = entry[key] === "" ? null : Number(entry[key]); });
     const entries = book.entries.slice();
     if (newPage) entries.push(entry);
     else entries[pageIndex] = entry;
@@ -446,6 +574,17 @@
     if (busy) return;
     busy = true;
     try {
+      if (action === "add-story") {
+        draft.storyRewards.push({ title: "", content: "" });
+        render();
+        form.querySelector('.journal-story-fields:last-child input').focus();
+        return;
+      }
+      if (action === "remove-story") {
+        if (draft.storyRewards.length > 1) draft.storyRewards.pop();
+        render();
+        return;
+      }
       if (action === "import") { root.querySelector("#journal-import-file").click(); return; }
       if (action === "import-file") { await importFile(file); return; }
       if (action === "save") { save(); return; }

@@ -1210,7 +1210,7 @@ html.journal-open { overflow: hidden; }
 .journal-adventure-name { margin: 18px 0 0; }
 .journal-adventure-name dt { color: var(--qb-text-muted); font-size: var(--fs-sm); }
 .journal-adventure-name dd { margin: 6px 0 0; color: var(--qb-text); font-weight: 700; line-height: 1.65; }
-.journal-notes, .journal-rewards {
+.journal-notes, .journal-rewards, .journal-story-rewards {
   margin-top: 24px;
   padding-top: 20px;
   border-top: 1px solid var(--qb-border);
@@ -1239,6 +1239,43 @@ html.journal-open { overflow: hidden; }
 .journal-field--notes { grid-column: 1 / -1; }
 .journal-field--notes { padding-top: 20px; border-top: 1px solid var(--qb-border); }
 .journal-field input::placeholder { color: var(--qb-text-muted); }
+.journal-al-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  grid-column: 1 / -1;
+  padding-top: 4px;
+  color: var(--qb-text-muted);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+.journal-al-toggle input { width: 18px; height: 18px; margin: 0; accent-color: var(--qb-accent); }
+.journal-al-editor { display: grid; gap: 22px; grid-column: 1 / -1; padding-top: 20px; border-top: 1px solid var(--qb-border); }
+.journal-al-totals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.journal-story-editor__heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.journal-story-editor__heading h3 { margin: 0; }
+.journal-story-controls { display: flex; gap: 8px; }
+.adventure-journal .journal-story-controls button { width: 44px; padding: 6px; font-size: var(--fs-xl); line-height: 1; }
+.journal-story-editor { display: grid; gap: 16px; }
+.journal-story-fields { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 12px; }
+.journal-story-fields input, .journal-story-fields textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  margin: 0;
+  padding: 10px;
+  border: 1px solid var(--qb-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--qb-input);
+  color: var(--qb-text);
+  font: inherit;
+}
+.journal-story-fields textarea { resize: vertical; line-height: 1.75; }
+.journal-story-fields ::placeholder { color: var(--qb-text-muted); }
+.journal-metadata__al-start { grid-column: 1; }
+.journal-story-rewards p { margin: 0 0 12px; white-space: pre-wrap; line-height: 1.9; }
+.journal-story-rewards strong { color: var(--qb-text); }
 .journal-footer { flex: 0 0 auto; padding: 12px 20px 16px; border-top: 1px solid var(--qb-border); }
 .journal-page-count { margin: 0 0 10px; text-align: center; font-size: var(--fs-sm); color: var(--qb-text-muted); }
 .journal-navigation { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; gap: 10px; }
@@ -1254,6 +1291,8 @@ html.journal-open { overflow: hidden; }
   .adventure-journal .journal-icon-button { width: 40px; height: 40px; padding: 9px; flex-basis: 40px; }
   .journal-body { padding: 16px; }
   .journal-metadata, .journal-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; }
+  .journal-al-totals { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .journal-story-fields { grid-template-columns: minmax(0, 1fr); }
   .journal-footer { padding: 12px; }
   .journal-navigation { gap: 6px; }
   .journal-navigation button { padding: 8px 4px; }
@@ -1263,6 +1302,7 @@ html.journal-open { overflow: hidden; }
   .journal-header h2 { flex-basis: calc(100% - 48px); }
   .journal-toolbar { order: 1; flex-basis: 100%; margin-left: 0; }
   .journal-fields { grid-template-columns: minmax(0, 1fr); }
+  .journal-al-totals { grid-template-columns: minmax(0, 1fr); }
 }
 
 .utility-menu__mode-button[aria-pressed="true"] {
