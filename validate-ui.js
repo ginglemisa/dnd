@@ -400,6 +400,24 @@ async function verifyCharacterFeatures(browser, url) {
       }, cls), true, `${cls} creation info and full table move without changing content`);
     }
     assert.equal(await page.evaluate(() => JSON.stringify(classFeatures)), source, "display relocation must leave classFeatures data intact");
+    const raceOptionCases = [
+      { race: "dragonborn", control: "#dragonborn-ancestry", value: "red_fire", all: ".dragon-ancestry-table td", chosen: "紅龍", rejected: "黑龍" },
+      { race: "elf", control: "#elf-lineage", value: "high_elf", all: ".race-lineage-table thead th:not(:first-child)", chosen: "高等精靈血統", rejected: "卓爾血統" },
+      { race: "gnome", control: "#gnome-lineage", value: "rock_gnome", all: ".class-feature-section h3", chosen: "岩石侏儒", rejected: "森林侏儒" },
+      { race: "goliath", control: "#goliath-ancestry", value: "stone", all: ".class-feature-section h3", chosen: "堅若磐石（石巨人）", rejected: "雲遊四方（雲巨人）" },
+      { race: "tiefling", control: "#tiefling-legacy", value: "chthonic", all: ".race-lineage-table thead th:not(:first-child)", chosen: "冥界血統", rejected: "深淵血統" }
+    ];
+    for (const testCase of raceOptionCases) {
+      await page.locator("#race").selectOption(testCase.race);
+      const output = page.locator("#raceFeatures");
+      assert((await output.locator(testCase.all).allTextContents()).some(text => text.includes(testCase.rejected)), `${testCase.race} shows every option before a choice`);
+      await page.locator(testCase.control).selectOption(testCase.value);
+      assert((await output.locator(testCase.all).filter({ visible: true }).allTextContents()).some(text => text.includes(testCase.chosen)), `${testCase.race} keeps the selected option visible`);
+      assert.equal(await output.getByText(testCase.rejected, { exact: false }).filter({ visible: true }).count(), 0, `${testCase.race} hides unselected options`);
+      await page.locator(testCase.control).selectOption("");
+      assert((await output.locator(testCase.all).filter({ visible: true }).allTextContents()).some(text => text.includes(testCase.rejected)), `${testCase.race} restores every option when cleared`);
+    }
+    await page.locator("#race").selectOption("elf");
     await page.locator("#class").selectOption("");
     assert.equal(await page.locator("#classCreationInfo").textContent(), "無資料", "clearing class removes stale creation data");
     await page.locator("#class").selectOption("rogue");

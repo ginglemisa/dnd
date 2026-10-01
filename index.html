@@ -1382,6 +1382,9 @@ function bindCoreCharacterEvents() {
   bindEventById("level", "change", () => {syncHitDiceCountToLevel();syncProficiencyUseChecks();updateAutomaticInitiative();resetSpellSlotsAfterCharacterChange();refreshWeaponSelections();updateClassFeature();updateClassFeatureOptionVisibility();syncDerivedFeatRows();updateACDisplay();updateSpeedDisplay();updateEldritchInvocationSectionVisibility();populateHandAttacks();syncOriginAndSubclassDerivedSpellRows();updateSpellsByClassLevel();updateExtraLanguageFields();});
   bindEventById("speed-input", "input", updateSpeedDisplay);
   bindEventById("elf-lineage", "change", () => { updateSpeedDisplay(); updateHighElfCantripVisibility(); });
+  ["dragonborn-ancestry", "elf-lineage", "gnome-lineage", "goliath-ancestry", "tiefling-legacy"].forEach(id => {
+    bindEventById(id, "change", updateRaceFeature);
+  });
   ["gnome-lineage", "elf-lineage", "tiefling-legacy", "high-elf-cantrip", "druid-land"].forEach(id => {
     bindEventById(id, "change", () => { syncOriginAndSubclassDerivedSpellRows(); updateSpellsByClassLevel(); });
   });
@@ -2956,6 +2959,61 @@ function enhanceRaceFeatureTables(container) {
   });
 }
 
+function hideUnselectedRaceOptions(container, race) {
+  const selectionId = {
+    dragonborn: "dragonborn-ancestry",
+    elf: "elf-lineage",
+    gnome: "gnome-lineage",
+    goliath: "goliath-ancestry",
+    tiefling: "tiefling-legacy"
+  }[race];
+  const selected = document.getElementById(selectionId)?.value || "";
+  if (!selected) return;
+
+  if (race === "dragonborn") {
+    const selectedName = {
+      black_acid: "黑龍", blue_lightning: "藍龍", brass_fire: "黃銅龍", bronze_lightning: "青銅龍", copper_acid: "赤銅龍",
+      gold_fire: "金龍", green_poison: "綠龍", red_fire: "紅龍", silver_cold: "銀龍", white_cold: "白龍"
+    }[selected];
+    container.querySelectorAll(".dragon-ancestry-table td").forEach(cell => {
+      cell.hidden = cell.querySelector(".dragon-ancestry-name")?.textContent.trim() !== selectedName;
+    });
+    return;
+  }
+
+  if (race === "elf" || race === "tiefling") {
+    const selectedIndex = {
+      drow: 1, high_elf: 2, wood_elf: 3,
+      abyssal: 1, chthonic: 2, infernal: 3
+    }[selected];
+    container.querySelectorAll(".race-lineage-table tr").forEach(row => {
+      Array.from(row.cells).slice(1).forEach((cell, index) => { cell.hidden = index + 1 !== selectedIndex; });
+    });
+    container.querySelectorAll(".race-lineage-mobile__group").forEach((group, index) => { group.hidden = index + 1 !== selectedIndex; });
+
+    if (race === "tiefling") {
+      const selectedHeading = { abyssal: "深淵", chthonic: "冥界", infernal: "煉獄" }[selected];
+      const tagline = container.querySelector(".class-feature-tagline");
+      if (tagline) {
+        const parts = tagline.innerHTML.split(/<br\s*\/?>\s*<br\s*\/?>/i);
+        tagline.innerHTML = parts.filter(part => !/^(深淵|冥界|煉獄)：/.test(part.trim()) || part.trim().startsWith(`${selectedHeading}：`)).join("<br><br>");
+      }
+    }
+    return;
+  }
+
+  const selectedHeading = race === "gnome"
+    ? { forest_gnome: "森林侏儒", rock_gnome: "岩石侏儒" }[selected]
+    : { cloud: "雲遊四方（雲巨人）", fire: "星火燎原（火巨人）", frost: "凜若冰霜（霜巨人）", hill: "地動山搖（山丘巨人）", stone: "堅若磐石（石巨人）", storm: "轟雷掣電（風暴巨人）" }[selected];
+  const optionHeadings = race === "gnome"
+    ? new Set(["森林侏儒", "岩石侏儒"])
+    : new Set(["雲遊四方（雲巨人）", "星火燎原（火巨人）", "凜若冰霜（霜巨人）", "地動山搖（山丘巨人）", "堅若磐石（石巨人）", "轟雷掣電（風暴巨人）"]);
+  container.querySelectorAll(".class-feature-section").forEach(section => {
+    const heading = section.querySelector(":scope > h3")?.textContent.trim();
+    if (optionHeadings.has(heading)) section.hidden = heading !== selectedHeading;
+  });
+}
+
 function updateRaceFeature() {
   const previousHumanFeat = document.getElementById(getFeatChoiceId("human-origin"))?.value || "";
   const value = document.getElementById("race").value;
@@ -2966,6 +3024,7 @@ function updateRaceFeature() {
   if (display) {
     output.innerHTML = highlightSpellNamesInClassFeature(display, { skipClickableNames: ["黑暗視覺"] });
     enhanceRaceFeatureTables(output);
+    hideUnselectedRaceOptions(output, value);
     renderRaceFeatChoice(previousHumanFeat);
     return;
   }
