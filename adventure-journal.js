@@ -17,8 +17,8 @@
   ];
   const alFields = [
     ["totalGold", "累計金幣"],
-    ["totalDowntime", "累計休整期"],
-    ["totalMagicItems", "累計魔法物品數量"]
+    ["totalDowntime", "累計休整日"],
+    ["totalMagicItems", "魔法物品總數"]
   ];
   const icons = {
     add: '<path d="M14 2H5v20h14V7zM14 2v5h5M8 14h8M12 10v8"/>',
@@ -388,12 +388,15 @@
       const rewardTitle = document.createElement("h3");
       rewardTitle.textContent = "冒險獎勵";
       const list = document.createElement("dl");
-      list.className = "journal-metadata";
-      fields.slice(7).forEach(([key, label]) => appendDetail(list, label, entry[key]));
-      if (entry.alFormat) {
-        alFields.forEach(([key, label], index) => appendDetail(list, label, entry[key], index === 0 ? "journal-metadata__al-start" : ""));
-      }
+      list.className = "journal-metadata journal-reward-metadata";
+      fields.slice(7).forEach(([key, label]) => appendDetail(list, label, entry[key], `journal-metadata__${key}`));
       rewards.append(rewardTitle, list);
+      if (entry.alFormat) {
+        const totals = document.createElement("dl");
+        totals.className = "journal-metadata journal-reward-metadata journal-reward-metadata--totals";
+        alFields.forEach(([key, label]) => appendDetail(totals, label, entry[key], `journal-metadata__${key}`));
+        rewards.appendChild(totals);
+      }
       body.append(metadata, notes, rewards);
       const storyRewards = entry.storyRewards.filter(hasStoryReward);
       if (entry.alFormat && storyRewards.length) body.appendChild(renderStoryRewards(storyRewards));
@@ -505,7 +508,7 @@
     const lineHeight = parseFloat(style.lineHeight) || 24;
     const chrome = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom)
       + parseFloat(style.borderTopWidth) + parseFloat(style.borderBottomWidth);
-    const maximum = lineHeight * 4 + chrome;
+    const maximum = lineHeight * 3 + chrome;
     input.style.height = `${Math.min(input.scrollHeight, maximum)}px`;
     input.style.overflowY = input.scrollHeight > maximum ? "auto" : "hidden";
   }

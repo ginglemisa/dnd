@@ -1202,6 +1202,16 @@ html.journal-open { overflow: hidden; }
   white-space: pre-wrap;
   line-height: 1.65;
 }
+.journal-reward-metadata {
+  grid-template-columns: minmax(max-content, 0.75fr) minmax(max-content, 0.9fr) minmax(0, 2.35fr);
+  column-gap: 12px;
+}
+.journal-reward-metadata--totals { margin-top: 20px; }
+.journal-metadata__magicItems dd {
+  max-height: 4.95em;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
 .journal-entry-summary { color: var(--qb-text); }
 .journal-entry-summary p { margin: 0; }
 .journal-entry-summary__identity { font-size: var(--fs-lg); font-weight: 700; line-height: 1.55; }
@@ -1272,7 +1282,6 @@ html.journal-open { overflow: hidden; }
 }
 .journal-story-fields textarea { resize: vertical; line-height: 1.75; }
 .journal-story-fields ::placeholder { color: var(--qb-text-muted); }
-.journal-metadata__al-start { grid-column: 1; }
 .journal-story-rewards p { margin: 0 0 12px; white-space: pre-wrap; line-height: 1.9; }
 .journal-story-rewards strong { color: var(--qb-text); }
 .journal-footer { flex: 0 0 auto; padding: 12px 20px 16px; border-top: 1px solid var(--qb-border); }
@@ -1290,6 +1299,8 @@ html.journal-open { overflow: hidden; }
   .adventure-journal .journal-icon-button { width: 40px; height: 40px; padding: 9px; flex-basis: 40px; }
   .journal-body { padding: 16px; }
   .journal-metadata, .journal-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; }
+  .journal-reward-metadata { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .journal-reward-metadata :is(.journal-metadata__magicItems, .journal-metadata__totalMagicItems) { grid-column: 1 / -1; }
   .journal-al-totals { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .journal-story-fields { grid-template-columns: minmax(0, 1fr); }
   .journal-footer { padding: 12px; }
@@ -1301,6 +1312,7 @@ html.journal-open { overflow: hidden; }
   .journal-header h2 { flex-basis: calc(100% - 48px); }
   .journal-toolbar { order: 1; flex-basis: 100%; margin-left: 0; }
   .journal-fields { grid-template-columns: minmax(0, 1fr); }
+  .journal-reward-metadata { grid-template-columns: minmax(0, 1fr); }
   .journal-al-totals { grid-template-columns: minmax(0, 1fr); }
 }
 
