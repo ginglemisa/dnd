@@ -1113,7 +1113,7 @@ html.journal-open { overflow: hidden; }
   z-index: calc(var(--z-backdrop) - 2);
   display: grid;
   place-items: center;
-  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
   background: var(--qb-overlay);
 }
 .journal-shell {
@@ -1121,8 +1121,7 @@ html.journal-open { overflow: hidden; }
   flex-direction: column;
   width: 100%;
   max-width: 700px;
-  max-height: 100%;
-  max-height: min(900px, calc(100dvh - 24px));
+  height: min(900px, 100%);
   min-height: 0;
   overflow: hidden;
   border: 1px solid var(--qb-border-strong);
