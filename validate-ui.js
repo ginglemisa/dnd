@@ -301,8 +301,8 @@ async function verifyToasts(browser) {
   await assertStackOrder(desktop);
   assert.equal(await desktop.locator("#app-toast").evaluate(stack => {
     const rect = stack.getBoundingClientRect();
-    return rect.top < 20 && rect.bottom < window.innerHeight / 2;
-  }), true, "Toast stack should open at the top of the viewport");
+    return rect.top > window.innerHeight / 2 && rect.bottom > window.innerHeight - 20;
+  }), true, "Toast stack should open at the bottom of the viewport");
   assert.equal(await desktop.locator(".app-toast__close").first().evaluate(button => {
     const rect = button.getBoundingClientRect();
     return rect.width >= 44 && rect.height >= 44;
