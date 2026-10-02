@@ -723,17 +723,25 @@
     );
   }
 
-  function normalizeCombatState(data = {}) {
+  function normalizeActiveConditions(keys) {
+    const data = getTrackableStatusData();
     const allowedKeys = getTrackableStatusKeys();
+    const active = new Set((Array.isArray(keys) ? keys : []).map(String)
+      .filter(key => key !== "exhaustion" && allowedKeys.has(key)));
+    for (const condition of data) {
+      if (!active.has(condition.key)) continue;
+      for (const key of condition.impliedConditions || []) active.add(key);
+      for (const key of condition.removedConditions || []) active.delete(key);
+    }
+    return [...active];
+  }
+
+  function normalizeCombatState(data = {}) {
     const rawConditions = Array.isArray(data.activeConditions)
       ? data.activeConditions
       : [];
 
-    const activeConditions = [
-      ...new Set(rawConditions.map(String))
-    ].filter(
-      (key) => key !== "exhaustion" && allowedKeys.has(key)
-    );
+    const activeConditions = normalizeActiveConditions(rawConditions);
 
     let exhaustionLevel = toBoundedInteger(
       data.exhaustionLevel,
@@ -1306,17 +1314,26 @@
     );
   }
 
-  function addActiveCondition(conditionKey) {
-    if (combatState.activeConditions.includes(conditionKey)) {
-      return false;
-    }
-
-    combatState.activeConditions = [
-      ...combatState.activeConditions,
-      conditionKey
-    ];
-
+  function interruptIncapacitatedConcentration() {
+    if (!combatState.activeConditions.includes("incapacitated") || !combatState.concentrationSpellId) return false;
+    combatState.concentrationSpellId = "";
+    globalScope.AppDialog?.notify("你因失能失去專注。", { tone: "warning" });
     return true;
+  }
+
+  function updateActiveConditions(keys, previous = combatState.activeConditions) {
+    const next = normalizeActiveConditions(keys);
+    const changed = JSON.stringify(previous) !== JSON.stringify(next);
+    combatState.activeConditions = next;
+    interruptIncapacitatedConcentration();
+    if (next.includes("unconscious") && !previous.includes("unconscious")) {
+      globalScope.AppDialog?.notify("你手上的東西因昏迷掉落。", { tone: "warning" });
+    }
+    return changed;
+  }
+
+  function addActiveCondition(conditionKey) {
+    return updateActiveConditions([...combatState.activeConditions, conditionKey]);
   }
 
   function removeActiveCondition(conditionKey) {
@@ -1324,11 +1341,8 @@
       return false;
     }
 
-    combatState.activeConditions = combatState.activeConditions.filter(
-      key => key !== conditionKey
-    );
-
-    return true;
+    updateActiveConditions(combatState.activeConditions.filter(key => key !== conditionKey));
+    return !combatState.activeConditions.includes(conditionKey);
   }
 
   function enterDeathSaveCondition() {
@@ -1515,6 +1529,12 @@
     return unconsciousRemoved || incapacitatedRemoved || proneAdded;
   }
 
+  function getRevivedConditionMessage() {
+    return combatState.activeConditions.includes("incapacitated")
+      ? "已解除昏迷，其他狀態仍造成失能，仍為倒地。"
+      : "已解除昏迷與失能，仍為倒地。";
+  }
+
   function becomeStable() {
     if (combatState.heroicSacrifice) {
       return false;
@@ -1667,7 +1687,7 @@
     const label = String(sourceLabel || "治療");
     markStateChanged(
       revived
-        ? `${label}回復 ${result.restoredHp} 點 HP；已解除昏迷與失能，仍為倒地。`
+        ? `${label}回復 ${result.restoredHp} 點 HP；${getRevivedConditionMessage()}`
         : `${label}回復 ${result.restoredHp} 點 HP。`
     );
 
@@ -2319,7 +2339,7 @@ function getRogueReliableTalentEntry() {
     if (hasSelectedFeat("臨陣施法")) {
       entries.push({ label: "穩住專注", detail: "維持專注的體質豁免丟二取高。" });
     }
-    return entries;
+    return entries.concat(getConditionRuleEntries("skills"));
   }
 
   function getBlessedHealerEntry() {
@@ -2376,7 +2396,7 @@ function getRogueReliableTalentEntry() {
     if (monkSlowFall) entries.push(monkSlowFall);
     const paladinAura = getPaladinAuraOverviewEntry();
     if (paladinAura) entries.push(paladinAura);
-    return entries;
+    return entries.concat(getConditionRuleEntries("overview"));
   }
 
   function getSpellRuleEntries() {
@@ -2391,7 +2411,25 @@ function getRogueReliableTalentEntry() {
     if (hasSelectedFeat("醫療兵")) {
       entries.push({ label: "醫療兵", detail: "法術或照護的恢復骰出 1 可重丟一次。" });
     }
-    return entries;
+    return entries.concat(getConditionRuleEntries("spells"));
+  }
+
+  function getConditionRuleEntries(panel) {
+    const keys = new Set(combatState.activeConditions);
+    if (combatState.exhaustionLevel > 0) keys.add("exhaustion");
+    return getTrackableStatusData().filter(condition => keys.has(condition.key)).flatMap(condition => {
+      const indexes = condition.summaryPanels?.[panel] || [];
+      return indexes.map(index => {
+        let detail = condition.effects[index];
+        if (condition.key === "exhaustion") {
+          const effects = getExhaustionEffects(combatState.exhaustionLevel);
+          if (index === 0) detail = `目前力竭 ${effects.level} 級；達到 6 級時，你死亡。`;
+          if (index === 1) detail = `所有 D20 檢定的結果減去 ${effects.d20Penalty}。`;
+          if (index === 2) detail = `速度減少 ${effects.speedPenaltyFeet} 呎。`;
+        }
+        return { label: condition.zh, detail, negative: true, conditionKey: condition.key };
+      });
+    });
   }
 
   function createDefenseSummaryItem(entry) {
@@ -2402,13 +2440,19 @@ function getRogueReliableTalentEntry() {
       item.setAttribute("role", "status");
     }
     const heading = entry.value ? `${entry.label}：${entry.value}` : entry.label;
+    const copy = entry.negative ? document.createElement("span") : item;
+    if (entry.negative) {
+      copy.className = "tabletop-condition-warning";
+      item.dataset.conditionHint = entry.conditionKey;
+      item.appendChild(copy);
+    }
 
     const title = document.createElement("strong");
     title.textContent = entry.detail ? `${heading}：` : heading;
-    item.appendChild(title);
+    copy.appendChild(title);
 
     if (entry.detail) {
-      item.appendChild(document.createTextNode(entry.detail));
+      copy.appendChild(document.createTextNode(entry.detail));
     }
 
     return item;
@@ -2430,6 +2474,7 @@ function getRogueReliableTalentEntry() {
   function renderRuleSummaries() {
     renderRuleSummary(elements.overviewRuleSection, elements.overviewRuleSummary, getOverviewRuleEntries());
     renderRuleSummary(elements.spellRuleSection, elements.spellRuleSummary, getSpellRuleEntries());
+    renderRuleSummary(elements.resourceRuleSection, elements.resourceRuleSummary, getConditionRuleEntries("resources"));
   }
 
   function renderAbilityModifiers() {
@@ -2883,6 +2928,10 @@ function getRogueReliableTalentEntry() {
       return;
     }
 
+    if (interruptIncapacitatedConcentration()) {
+      scheduleCharacterSave();
+      emitStateChange();
+    }
     if (combatState.druid?.formKey && !getDruidForm()) {
       if (getDruidContext().incapacitated) combatState.concentrationSpellId = "";
       combatState.druid.formKey = "";
@@ -2905,8 +2954,10 @@ function getRogueReliableTalentEntry() {
   }
 
   function applyState(data) {
+    const previousConditions = combatState.activeConditions;
     combatState =
       normalizeCombatState(data);
+    updateActiveConditions(combatState.activeConditions, previousConditions);
 
     if (
       combatState.heroicSacrifice
@@ -3177,7 +3228,7 @@ function getRogueReliableTalentEntry() {
 
     markStateChanged(
       currentHp === 0 && result.currentHp > 0
-        ? `獲得治療 ${result.restoredHp} 點；已解除昏迷與失能，仍為倒地。`
+        ? `獲得治療 ${result.restoredHp} 點；${getRevivedConditionMessage()}`
         : `獲得治療 ${result.restoredHp} 點。`
     );
   }
@@ -3284,9 +3335,7 @@ function getRogueReliableTalentEntry() {
     combatState.heroicSacrifice =
       snapshot.heroicSacrifice;
 
-    combatState.activeConditions = [
-      ...snapshot.activeConditions
-    ];
+    updateActiveConditions(snapshot.activeConditions);
 
     setCurrentHp(
       snapshot.currentHp
@@ -3338,7 +3387,7 @@ function getRogueReliableTalentEntry() {
       announce(
         wasSacrificed
           ? `目前 HP 已高於 0，「${HEROIC_SACRIFICE_LABEL}」與死亡豁免狀態已清除。`
-          : "目前 HP 已高於 0，死亡豁免與穩定狀態已清除，已解除昏迷與失能，仍為倒地。"
+          : `目前 HP 已高於 0，死亡豁免與穩定狀態已清除，${getRevivedConditionMessage()}`
       );
     }
   }
@@ -3548,7 +3597,7 @@ function getRogueReliableTalentEntry() {
       reviveFromZeroHpCondition();
 
       markStateChanged(
-        "死亡豁免擲出 20：恢復 1 HP，死亡豁免、穩定與英勇犧牲狀態已清除；已解除昏迷與失能，仍為倒地。"
+        `死亡豁免擲出 20：恢復 1 HP，死亡豁免、穩定與英勇犧牲狀態已清除；${getRevivedConditionMessage()}`
       );
 
       return Object.freeze({
@@ -3758,6 +3807,44 @@ function getRogueReliableTalentEntry() {
     );
   }
 
+  function rollHazardCheck(conditionKey) {
+    const readModifier = id => parseRollModifier(getDruidEffectiveValue(id,
+      getReadOnlySourceValue(document.getElementById(id))));
+    let label = "體質豁免";
+    let modifier = readModifier("save-con");
+    let dc = 10;
+    if (conditionKey === "falling") {
+      const athletics = readModifier("skill-運動");
+      const acrobatics = readModifier("skill-體操");
+      const useAthletics = athletics !== null && (acrobatics === null || athletics >= acrobatics);
+      label = useAthletics ? "運動檢定" : "體操檢定";
+      modifier = useAthletics ? athletics : acrobatics;
+      dc = 15;
+    }
+    if (modifier === null) {
+      globalScope.AppDialog?.notify("請先填入屬性值，才能進行危害檢定。", { tone: "warning" });
+      return false;
+    }
+    const penalty = getExhaustionEffects(combatState.exhaustionLevel).d20Penalty;
+    const expression = `1d20${modifier >= 0 ? "+" : ""}${modifier}${penalty ? `-${penalty}` : ""}`;
+    const title = conditionKey === "falling" ? "落水減傷" : "進食不足";
+    const result = globalScope.DiceRoller?.rollExpression(expression, {
+      label: `${title}：${label}（DC ${dc}）`, force: true, notify: false
+    });
+    if (!result) {
+      globalScope.AppDialog?.notify("無法進行危害檢定，請稍後再試。", { tone: "warning" });
+      return false;
+    }
+    const success = result.total >= dc;
+    const outcome = conditionKey === "falling"
+      ? (success ? "成功，此次墜落傷害減半。" : "失敗，此次墜落傷害不減半。")
+      : (success ? "成功。" : "失敗，一日結束時獲得 1 級力竭，請手動調整。");
+    globalScope.AppDialog.notify(`${title}：${label}（DC ${dc}），${result.equation}，${outcome}`, {
+      tone: success ? "success" : "warning", variant: "dice-roll", duration: 8000
+    });
+    return false;
+  }
+
   function showConditionDescription(
     trigger,
     conditionKey
@@ -3798,10 +3885,23 @@ function getRogueReliableTalentEntry() {
       conditionKey
     );
 
+    const hazardActions = [];
+    if (conditionKey === "burning") {
+      hazardActions.push({ label: "倒地翻滾滅火", value: "end-prone" });
+    }
+    if (conditionKey === "falling") {
+      hazardActions.push({ label: "危害結束並倒地", value: "end-prone" });
+      hazardActions.push({ label: "落水減傷豁免", resolve: () => rollHazardCheck(conditionKey) });
+    }
+    if (conditionKey === "malnutrition") {
+      hazardActions.push({ label: "進食不足豁免", resolve: () => rollHazardCheck(conditionKey) });
+    }
+
     void globalScope.AppDialog.showContent({
       title: `${label}說明`,
       content,
       actions: [
+        ...hazardActions,
         {
           label: isHazard
             ? "危害結束"
@@ -3817,7 +3917,7 @@ function getRogueReliableTalentEntry() {
       ],
       trigger
     }).then((result) => {
-      if (result !== "end-condition") {
+      if (result !== "end-condition" && result !== "end-prone") {
         return;
       }
 
@@ -3827,24 +3927,25 @@ function getRogueReliableTalentEntry() {
           : removeActiveCondition(conditionKey);
 
       if (!ended) {
+        if (combatState.activeConditions.includes(conditionKey)) {
+          globalScope.AppDialog.notify("其他仍啟用的狀態也會造成此狀態，請先結束相關狀態。", { tone: "warning" });
+        }
         return;
       }
+
+      if (result === "end-prone") addActiveCondition("prone");
 
       if (conditionKey === "exhaustion") {
         combatState.exhaustionLevel = 0;
         elements.exhaustionInput.value = "0";
       } else {
-        const checkbox = elements.conditionOptions?.querySelector(
-          `input[data-condition-option="${conditionKey}"]`
-        );
-
-        if (checkbox) {
-          checkbox.checked = false;
+        for (const checkbox of elements.conditionOptions?.querySelectorAll("input[data-condition-option]") || []) {
+          checkbox.checked = combatState.activeConditions.includes(checkbox.value);
         }
       }
 
       markStateChanged(
-        `已結束「${label}」${isHazard ? "危害" : "狀態"}。`
+        `已結束「${label}」${isHazard ? "危害" : "狀態"}${result === "end-prone" ? "，並獲得倒地狀態" : ""}。`
       );
     });
   }
@@ -4118,7 +4219,7 @@ function getRogueReliableTalentEntry() {
     const previousExhaustionLevel =
       combatState.exhaustionLevel;
 
-    combatState.activeConditions =
+    updateActiveConditions(
       Array.from(
         elements.conditionOptions
           .querySelectorAll(
@@ -4126,7 +4227,7 @@ function getRogueReliableTalentEntry() {
           ),
         (checkbox) =>
           checkbox.value
-      );
+      ));
 
     combatState.exhaustionLevel =
       exhaustionLevel;
@@ -4647,6 +4748,9 @@ function getRogueReliableTalentEntry() {
             "tabletop-spell-rule-summary"
           ),
 
+        resourceRuleSection: document.getElementById("tabletop-resource-rule-summary-section"),
+        resourceRuleSummary: document.getElementById("tabletop-resource-rule-summary"),
+
         skillValues:
           document.getElementById(
             "tabletop-skill-values"
@@ -5079,6 +5183,8 @@ function getRogueReliableTalentEntry() {
     restoreHitPoints,
     getSpellCastOptions,
     getBlessedHealerEntry,
+    getConditionRuleEntries,
+    createRuleSummaryItem: createDefenseSummaryItem,
     getCanonicalSpellSlotGroups,
     getDruidContext,
     getDruidForm,
@@ -5114,6 +5220,7 @@ function getRogueReliableTalentEntry() {
       appendConcentrationSaveReminder,
       evaluateDeathSaveRoll,
       getExhaustionEffects,
+      normalizeActiveConditions,
       buildSorcererElementalAffinityEntry,
       buildSpellCastOptions,
       validateSpellCastSelection,

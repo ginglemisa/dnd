@@ -1223,7 +1223,7 @@
     'poison-spray': Object.freeze({ name: '毒氣噴濺', mode: 'attack', dmg: '1d12 毒素', dmg5: '2d12 毒素', note: '30呎' }),
     'starry-wisp': Object.freeze({ name: '流光閃靈', mode: 'attack', dmg: '1d8 光耀', dmg5: '2d8 光耀', note: '60呎/發微光消隱形' }),
     'chill-touch': Object.freeze({ name: '凍寒之觸', mode: 'attack', dmg: '1d10 黯蝕', dmg5: '2d10 黯蝕', note: '觸及/不能回復HP' }),
-    'sorcerous-burst': Object.freeze({ name: '術法衝擊', mode: 'attack', dmg: '1d8自選', dmg5: '2d8自選', note: '120呎/傷害出8可再丟' }),
+    'sorcerous-burst': Object.freeze({ name: '術法衝擊', mode: 'attack', dmg: '1d8自選', dmg5: '2d8自選', note: '120呎/傷害出8可再次擲骰' }),
     'vicious-mockery': Object.freeze({ name: '惡言相加', mode: 'save', dmg: '1d6 精神', dmg5: '2d6 精神', note: '60呎/感知豁免/攻擊劣勢' }),
     'sacred-flame': Object.freeze({ name: '聖火術', mode: 'save', dmg: '1d8 光耀', dmg5: '2d8 光耀', note: '60呎/敏捷豁免' }),
     'shocking-grasp': Object.freeze({ name: '電爪', mode: 'attack', dmg: '1d8 閃電', dmg5: '2d8 閃電', note: '觸及/不能藉機' }),
@@ -1675,7 +1675,7 @@ function isWeaponRowEmpty(payload, slot) {
     }
     const skillExtraText = normalizeText(state['skill-extra']);
     if (skillExtraText) {
-      extraClassLines.push(`技能備註：${skillExtraText}`);
+      extraClassLines.push(skillExtraText);
     }
     if (extraClassLines.length) {
       payload.classFeatures2 = payload.classFeatures2

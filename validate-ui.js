@@ -242,6 +242,17 @@ async function verifyPdf(page, fieldsOnly) {
   await page.addScriptTag({ url: "/pdf-export.js" });
   await page.evaluate(async () => {
     const expected = new Set(["barbarian", "cleric", "druid", "fighter", "paladin", "ranger"]);
+    const template = await PDFLib.PDFDocument.load(await (await fetch('/5e_char_sheet.pdf')).arrayBuffer());
+    const originalName2 = template.getForm().getTextField('Name2').acroField.getWidgets()[0].getRectangle();
+    const checkNames = (form, mode) => {
+      const name1 = form.getTextField('Name1');
+      const name2 = form.getTextField('Name2');
+      const first = name1.acroField.getWidgets()[0].getRectangle();
+      const second = name2.acroField.getWidgets()[0].getRectangle();
+      if (name1.getAlignment() !== PDFLib.TextAlignment.Center || name2.getAlignment() !== PDFLib.TextAlignment.Center) throw new Error(`Name alignment: ${mode}`);
+      if (Math.abs(first.x - second.x) > 0.001 || Math.abs(first.width - second.width) > 0.001) throw new Error(`Name horizontal bounds: ${mode}`);
+      if (second.y !== originalName2.y || second.height !== originalName2.height) throw new Error(`Name2 vertical bounds: ${mode}`);
+    };
     // Exercise the actual exporter and reopen its serialized editable PDF.
     const create = URL.createObjectURL.bind(URL);
     let blob;
@@ -251,10 +262,36 @@ async function verifyPdf(page, fieldsOnly) {
         await exportCharacterPdfFromState({ class: cls, level: "1" }, { outputMode: "editable", characterName: "UI regression" });
         const document = await PDFLib.PDFDocument.load(await blob.arrayBuffer());
         if (document.getForm().getCheckBox("chk_shld1").isChecked() !== expected.has(cls)) throw new Error(`Serialized shield checkbox: ${cls}`);
+        checkNames(document.getForm(), 'editable');
+        if (document.getForm().getTextField('Name1').getText() !== 'UI regression') throw new Error('Serialized character name');
       }
+      await exportCharacterPdfFromState({ class: 'fighter', level: '1' }, { outputMode: 'editable_no_font', characterName: '無嵌入字型' });
+      const noFont = await PDFLib.PDFDocument.load(await blob.arrayBuffer());
+      checkNames(noFont.getForm(), 'editable_no_font');
+      if (noFont.getForm().getTextField('Name1').getText() !== '無嵌入字型') throw new Error('Value-only character name');
+      // Compact removes the form, so inspect the generated appearances just
+      // before flattening, then verify the saved document has no AcroForm.
+      const flatten = PDFLib.PDFForm.prototype.flatten;
+      let checkedCompact = false;
+      PDFLib.PDFForm.prototype.flatten = function (options) {
+        checkNames(this, 'compact');
+        if (this.getTextField('Name2').getText() !== 'Enix Zakarum') throw new Error('Compact English name');
+        for (const field of ['Name1', 'Name2']) {
+          if (!this.getTextField(field).acroField.getWidgets()[0].getAppearances()?.normal) throw new Error(`Name appearance: ${field}`);
+        }
+        checkedCompact = true;
+        return flatten.call(this, options);
+      };
+      try {
+        await exportCharacterPdfFromState({ class: 'fighter', level: '1' }, { outputMode: 'compact', characterName: '艾尼克斯', englishName: 'Enix Zakarum' });
+        const compact = await PDFLib.PDFDocument.load(await blob.arrayBuffer());
+        if (!checkedCompact || compact.catalog.has(PDFLib.PDFName.of('AcroForm'))) throw new Error('Compact flattening');
+        const measurement = await validateCompactEnglishName('Enix Zakarum');
+        if (Math.abs(measurement.maxWidth - (140.47 - 3)) > 0.001) throw new Error('English name validation width');
+      } finally { PDFLib.PDFForm.prototype.flatten = flatten; }
     } finally { URL.createObjectURL = create; }
   });
-  console.log("PDF export: 2 actual editable PDFs reopened and checked.");
+  console.log("PDF export: 4 actual PDFs checked, including shared name centering in all 3 modes.");
 }
 
 async function prepareToastFixture(page) {

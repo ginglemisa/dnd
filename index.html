@@ -46,7 +46,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261001-journal-reward-three-lines">
+  <link rel="stylesheet" href="styles.css?v=20261002-journal-reading-summary">
   <script src="scroll-to-top.js?v=20261001-character-features-modal" defer></script>
   <script src="dice-roller.js?v=20261001-roll-equations" defer></script>
   <script src="monster.js?v=20260912-druid-controls" defer></script>
@@ -57,18 +57,18 @@
   <script src="feats.js?v=20261001-automatic-feat-grants" defer></script>
   <script src="equipment-notes.js?v=20260813-weapon-rule-popups-2" defer></script>
   <script src="spell-list.js?v=20260908-spell-attack" defer></script>
-  <script src="condition.js?v=20261001-tabletop-hazards" defer></script>
+  <script src="condition.js?v=20261002-condition-effects" defer></script>
   <script src="action-panel.js?v=20260913-class-tabletop" defer></script>
   <script src="character-rules.js?v=20260922-rest" defer></script>
   <script src="app-dialog.js?v=20261001-features-reference-layers" defer></script>
-  <script src="adventure-journal.js?v=20261001-journal-reward-three-lines" defer></script>
-  <script src="tabletop-mode.js?v=20261001-roll-equations" defer></script>
+  <script src="adventure-journal.js?v=20261002-journal-reading-summary" defer></script>
+  <script src="tabletop-mode.js?v=20261002-condition-effects" defer></script>
   <script src="tabletop-druid.js?v=20260915-main2-shield" defer></script>
 <script src="tabletop-resources.js?v=20261001-rest-hit-dice-inline" defer></script>
-<script src="tabletop-actions.js?v=20260928-button-labels-2" defer></script>
+<script src="tabletop-actions.js?v=20261002-condition-effects" defer></script>
   <script src="tabletop-spells.js?v=20260923-persistent-spells" defer></script>
   <script src="legal-modal.js?v=20260923-legal-about" defer></script>
-  <script src="onboarding-tour.js?v=20261001-character-features-modal" defer></script>
+  <script src="onboarding-tour.js?v=20261001-tour-search-position" defer></script>
   <script src="quick-build.js?v=20261001-skill-bonus-notes" defer></script>
   <script src="spellbook.js?v=20260913-spellbook" defer></script>
   <script src="deity-info.js" defer></script>
@@ -452,6 +452,9 @@
         <h2>資源</h2>
         <p class="tabletop-panel-notice">符合目前職業、種族與等級的內建資源會自動出現；消耗記錄與角色資料同步。</p>
       </header>
+      <section id="tabletop-resource-rule-summary-section" class="tabletop-section tabletop-defense-summary" aria-label="狀態規則提示" hidden>
+        <div id="tabletop-resource-rule-summary" class="tabletop-defense-summary__list"></div>
+      </section>
       <section class="tabletop-section" aria-labelledby="tabletop-built-in-resources-title">
         <div class="tabletop-section-heading"><h3 id="tabletop-built-in-resources-title">角色資源</h3></div>
         <div id="tabletop-built-in-resources" class="tabletop-resource-list"></div>
@@ -8549,8 +8552,8 @@ async function ensurePdfExportReady() {
     pdfExportLoaderPromise = (async () => {
       await loadScriptOnce("pdf-lib.custom.min.js");
       await loadScriptOnce("fontkit.custom.min.js");
-      await loadScriptOnce("pdf-field-map.js?v=20260915-main2-shield");
-      await loadScriptOnce("pdf-export.js?v=20260913-spellbook-option");
+      await loadScriptOnce("pdf-field-map.js?v=20261001-skill-notes");
+      await loadScriptOnce("pdf-export.js?v=20261002-editable-appearance-fit");
     })().catch((error) => {
       pdfExportLoaderPromise = null;
       throw error;
@@ -8906,7 +8909,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
       const stepTitles={
         precheck:['匯出前檢查','確認角色資料是否還有需要補填的地方。'],
         name:['角色名稱','名稱會寫入角色卡中；不需要時也可以留空。'],
-        englishName:['英文名','英文名會以 12 pt 靠右寫入美觀易讀版的 Name2 欄位。'],
+        englishName:['英文名','英文名會以 12 pt 置中寫入美觀易讀版，與角色名稱共用相同的欄位寬度及中心。'],
         equipment:quickBuildEquipmentIncluded
           ? ['預設裝備已加入','快速創角已將實際選擇寫入「攜帶物品」。']
           : ['加入預設裝備','決定是否把職業與背景提供的起始裝備一併寫入。'],

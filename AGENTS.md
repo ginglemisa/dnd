@@ -92,7 +92,7 @@
 | 系統級責任 | 驗證 |
 | --- | --- |
 | 施法 metadata、跑團模式施法條件、法術位、專注或施法自動擲骰 | `node validate-tabletop-spellcasting.js` |
-| 非施法動作定義／摘要、角色卡與跑團操作、自訂／隱藏偏好及持久化；專長來源雙向選擇、自動同步、固定來源灰階鎖定、自行管理增刪與新舊資料／分享還原；武器裝備互動、衝突確認、AC／摘要與 PDF 對應 | `node validate-action-metadata.js` |
+| 非施法動作定義／摘要、角色卡與跑團操作、自訂／隱藏偏好及持久化；狀態／危害連動與專注中斷、危害檢定及分頁提示；專長來源雙向選擇、自動同步、固定來源灰階鎖定、自行管理增刪與新舊資料／分享還原；武器裝備互動、衝突確認、AC／摘要與 PDF 對應 | `node validate-action-metadata.js` |
 | 德魯伊荒野形態、野獸資料與攻擊／資源操作、荒野夥伴、野性復甦、自然恢復、原初打擊及其狀態／持久化 | `node validate-tabletop-druid.js` |
 | 法術書管理、準備法術總數、儀式施法、法術書匯入／持久化 | `node validate-spellbook.js` |
 | 法術頁籤全文／職業別名／環位搜尋及排序；`search.js` 的裝備搜尋／詳情／規則關鍵字／購買入口、搜尋切頁及導覽還原 | `node validate-spell-search.js`（含 Artificer 無資料／模擬資料、外部搜尋模組與主頁內嵌語法）；僅裝備搜尋可加 `--equipment-only` |

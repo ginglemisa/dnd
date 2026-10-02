@@ -1202,7 +1202,7 @@ html.journal-open { overflow: hidden; }
   white-space: pre-wrap;
   line-height: 1.65;
 }
-.journal-reward-metadata {
+.journal-metadata.journal-reward-metadata {
   grid-template-columns: minmax(max-content, 0.75fr) minmax(max-content, 0.9fr) minmax(0, 2.35fr);
   column-gap: 12px;
 }
@@ -1212,13 +1212,27 @@ html.journal-open { overflow: hidden; }
   overflow-y: auto;
   overscroll-behavior: contain;
 }
-.journal-entry-summary { color: var(--qb-text); }
-.journal-entry-summary p { margin: 0; }
-.journal-entry-summary__identity { font-size: var(--fs-lg); font-weight: 700; line-height: 1.55; }
-.journal-entry-summary__session { margin-top: 4px !important; color: var(--qb-text-muted); line-height: 1.55; }
-.journal-adventure-name { margin: 18px 0 0; }
-.journal-adventure-name dt { color: var(--qb-text-muted); font-size: var(--fs-sm); }
-.journal-adventure-name dd { margin: 6px 0 0; color: var(--qb-text); font-weight: 700; line-height: 1.65; }
+.journal-entry-summary { display: grid; gap: 20px; color: var(--qb-text); }
+.journal-adventure-name { min-width: 0; }
+.journal-adventure-name p { margin: 0 0 6px; color: var(--qb-text-muted); font-size: var(--fs-sm); line-height: 1.5; }
+.journal-body .journal-adventure-name h3 {
+  margin: 0;
+  font-size: var(--fs-2xl);
+  font-weight: 800;
+  line-height: 1.35;
+  text-wrap: pretty;
+}
+.journal-entry-summary__identity, .journal-entry-summary__session {
+  display: grid;
+  gap: 16px;
+  margin: 0;
+}
+.journal-entry-summary__identity { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.journal-entry-summary__session { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.journal-entry-summary dl > div { min-width: 0; }
+.journal-entry-summary dt { color: var(--qb-text-muted); font-size: var(--fs-sm); line-height: 1.5; }
+.journal-entry-summary dd { margin: 4px 0 0; font-size: var(--fs-base); font-weight: 500; line-height: 1.6; white-space: pre-wrap; }
+.journal-entry-summary__character dd { font-weight: 700; }
 .journal-notes, .journal-rewards, .journal-story-rewards {
   margin-top: 24px;
   padding-top: 20px;
@@ -1267,11 +1281,12 @@ html.journal-open { overflow: hidden; }
 .adventure-journal .journal-story-controls button { width: 44px; padding: 6px; font-size: var(--fs-xl); line-height: 1; }
 .journal-story-editor { display: grid; gap: 16px; }
 .journal-story-fields { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 12px; }
-.journal-story-fields input, .journal-story-fields textarea {
+.journal-story-fields input[type="text"], .journal-story-fields textarea {
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
   min-height: 44px;
+  height: calc(1.4em + 22px);
   margin: 0;
   padding: 10px;
   border: 1px solid var(--qb-border-strong);
@@ -1279,8 +1294,9 @@ html.journal-open { overflow: hidden; }
   background: var(--qb-input);
   color: var(--qb-text);
   font: inherit;
+  line-height: 1.4;
 }
-.journal-story-fields textarea { resize: vertical; line-height: 1.75; }
+.journal-story-fields textarea { resize: none; overflow-y: auto; }
 .journal-story-fields ::placeholder { color: var(--qb-text-muted); }
 .journal-story-rewards p { margin: 0 0 12px; white-space: pre-wrap; line-height: 1.9; }
 .journal-story-rewards strong { color: var(--qb-text); }
@@ -1298,9 +1314,11 @@ html.journal-open { overflow: hidden; }
   .journal-header h2 { font-size: var(--fs-xl); }
   .adventure-journal .journal-icon-button { width: 40px; height: 40px; padding: 9px; flex-basis: 40px; }
   .journal-body { padding: 16px; }
+  .journal-entry-summary { gap: 16px; }
+  .journal-entry-summary__identity { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 12px; }
+  .journal-entry-summary__session { gap: 12px; }
+  .journal-entry-summary__character { grid-column: 1 / -1; }
   .journal-metadata, .journal-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; }
-  .journal-reward-metadata { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .journal-reward-metadata :is(.journal-metadata__magicItems, .journal-metadata__totalMagicItems) { grid-column: 1 / -1; }
   .journal-al-totals { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .journal-story-fields { grid-template-columns: minmax(0, 1fr); }
   .journal-footer { padding: 12px; }
@@ -1312,8 +1330,14 @@ html.journal-open { overflow: hidden; }
   .journal-header h2 { flex-basis: calc(100% - 48px); }
   .journal-toolbar { order: 1; flex-basis: 100%; margin-left: 0; }
   .journal-fields { grid-template-columns: minmax(0, 1fr); }
-  .journal-reward-metadata { grid-template-columns: minmax(0, 1fr); }
   .journal-al-totals { grid-template-columns: minmax(0, 1fr); }
+}
+@media (width < 385px) {
+  .journal-metadata.journal-reward-metadata { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .journal-reward-metadata :is(.journal-metadata__magicItems, .journal-metadata__totalMagicItems) { grid-column: 1 / -1; }
+}
+@media (width < 245px) {
+  .journal-metadata.journal-reward-metadata { grid-template-columns: minmax(0, 1fr); }
 }
 
 .utility-menu__mode-button[aria-pressed="true"] {
@@ -14268,6 +14292,15 @@ html[data-theme="dark"] .tabletop-skill-value[data-skill-rank="expertise"] .tabl
   font-size: var(--fs-sm);
   color: var(--text-body);
   line-height: 1.45;
+}
+
+.tabletop-condition-warning {
+  padding: 0.08em 0.24em;
+  border-radius: 0.2em;
+  background: var(--warning-soft);
+  color: var(--warning);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 
 @media (min-width: 720px) {

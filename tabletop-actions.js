@@ -315,13 +315,10 @@
 
   function renderWeaponRules() {
     if (!elements.weaponRuleSection || !elements.weaponRuleSummary) return;
-    const entries = getWeaponRuleEntries();
+    const entries = getWeaponRuleEntries().map(([label, detail]) => ({ label, detail }))
+      .concat(globalScope.TabletopMode.getConditionRuleEntries("actions"));
     elements.weaponRuleSection.hidden = entries.length === 0;
-    elements.weaponRuleSummary.replaceChildren(...entries.map(([label, detail]) => {
-      const item = createElement("p", "tabletop-defense-summary__item");
-      item.append(createElement("strong", "", `${label}：`), document.createTextNode(detail));
-      return item;
-    }));
+    elements.weaponRuleSummary.replaceChildren(...entries.map(globalScope.TabletopMode.createRuleSummaryItem));
   }
 
   function createActionDescription(option, prompt) {

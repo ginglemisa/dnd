@@ -194,8 +194,7 @@
         // may safely use presentation rectangles sized for their final text.
         specie_features1: { dy: 3.5 },
         feats1: { dy: 3.5 },
-        Name1: { x: 104.61, y: 524, width: 140.47, height: 28, alignment: 'right' },
-        Name2: { alignment: 'right' },
+        Name1: { x: 104.61, y: 524, width: 140.47, height: 28 },
         Level1: { x: 18.65, y: 512, width: 33, height: 28 },
         proficiencyBonus1: { x: 18.59, y: 371.5, width: 35, height: 27 },
         weaponsProficiency1: { x: 104.22, y: 71.66, width: 133.41, height: 20 },
@@ -205,9 +204,11 @@
         passivePerception1: { x: 727.5, y: 273.5, width: 34, height: 34.5 },
         initiative1: { x: 768.5, y: 273.5, width: 34, height: 34.5 },
         spell_cast_attri1: { x: 569.26, y: 507.38, width: 62.17, height: 30 },
-        spell_cast_Mod1: { x: 633.96, y: 509.63, width: 33.66, height: 30 },
-        spell_cast_DC1: { x: 699.48, y: 509.19, width: 39.22, height: 30 },
-        spell_cast_toHit1: { x: 765.98, y: 509, width: 34.35, height: 30 },
+        // Share the CJK value's vertical anchor, with a small optical
+        // correction for the 18 pt numeral glyphs beside the 14 pt CJK glyphs.
+        spell_cast_Mod1: { x: 633.96, alignYTo: 'spell_cast_attri1', dy: 0.15, width: 33.66, height: 30 },
+        spell_cast_DC1: { x: 699.48, alignYTo: 'spell_cast_attri1', dy: 0.15, width: 39.22, height: 30 },
+        spell_cast_toHit1: { x: 765.98, alignYTo: 'spell_cast_attri1', dy: 0.15, width: 34.35, height: 30 },
         hp_dice_max1: { x: 535.42, y: 509, width: 25.23, height: 15 },
         // Match each filled value to its printed gray-label anchor. Each
         // right-hand value shares the adjusted y position of the value on the
@@ -300,9 +301,6 @@
   // Verified against the first-page Name1 widget in 5e_char_sheet.pdf:
   // [112.61348, 528.512085, 245.080856, 561.848206].
   const EDITABLE_CHARACTER_NAME_FIELD_WIDTH = 245.080856 - 112.61348;
-  // Verified against the first-page Name2 widget in 5e_char_sheet.pdf:
-  // [96.4134674, 514.112122, 245.080948, 530.048279].
-  const COMPACT_ENGLISH_NAME_FIELD_WIDTH = 245.080948 - 96.4134674;
   const PDF_FILENAME_CLASS_LABELS = Object.freeze({
     barbarian: '野蠻人',
     bard: '吟遊詩人',
@@ -503,7 +501,7 @@
 
   function measureCompactEnglishName(cjkFont, value) {
     const text = String(value || '').trim();
-    const maxWidth = COMPACT_ENGLISH_NAME_FIELD_WIDTH
+    const maxWidth = PDF_LAYOUT_SETTINGS.compact.fieldAdjustments.Name1.width
       - PDF_LAYOUT_SETTINGS.compact.horizontalPadding;
     const width = measureTextWidth(cjkFont, text, COMPACT_ENGLISH_NAME_FONT_SIZE);
     return { fits: width <= maxWidth, width, maxWidth };
@@ -930,6 +928,26 @@
     }
   }
 
+  function alignNameFields(form) {
+    const nameField = form.getTextField('Name1');
+    nameField.setAlignment(globalScope.PDFLib.TextAlignment.Center);
+    try {
+      const englishNameField = form.getTextField('Name2');
+      const nameRectangle = nameField.acroField.getWidgets()[0].getRectangle();
+      englishNameField.acroField.getWidgets().forEach((widget) => {
+        // Share Name1's horizontal bounds while preserving the second row.
+        widget.setRectangle({
+          ...widget.getRectangle(),
+          x: nameRectangle.x,
+          width: nameRectangle.width
+        });
+      });
+      englishNameField.setAlignment(globalScope.PDFLib.TextAlignment.Center);
+    } catch (error) {
+      // Name2 is optional for compatibility with alternative templates.
+    }
+  }
+
   function applyFieldAdjustments(form, layoutSettings) {
     Object.entries(layoutSettings.fieldAdjustments).forEach(([fieldName, adjustment]) => {
       try {
@@ -1001,6 +1019,110 @@
     });
   }
 
+  const EDITABLE_APPEARANCE_FONT_SIZES = Object.freeze({
+    Subclass1: 14,
+    Class1: 14,
+    Specie1: 14,
+    Background2: 14,
+    alignment1: 14,
+    language1: 14,
+    Level1: 18,
+    proficiencyBonus1: 18,
+    Name1: 18,
+    hp_max1: 18,
+    hp_dice_max1: 12,
+    spell_cast_attri1: 14,
+    spell_cast_Mod1: 18,
+    spell_cast_DC1: 18,
+    spell_cast_toHit1: 18,
+    AC1: 18,
+    speed1: 18,
+    passivePerception1: 18,
+    initiative1: 18,
+    extra1: 10,
+    ...Object.fromEntries(['str', 'dex', 'con', 'int', 'wis', 'cha'].flatMap(ability => [
+      [`${ability}1`, 10],
+      [`${ability}Mod1`, 18],
+      [`${ability}SaveMod1`, 12]
+    ])),
+    ...Object.fromEntries(Array.from({ length: 7 }, (_, index) => index + 1).flatMap(row => [
+      [`attack-weap-name-${row}`, 14],
+      [`toHit${row}`, 14],
+      [`dmg_type_${row}`, 12],
+      [`wp-note-${row}`, 12]
+    ])),
+    ...Object.fromEntries(Array.from({ length: 19 }, (_, index) => index + 1).flatMap(row => [
+      [`sp-level-${row}`, 14],
+      [`sp-name-${row}`, 14],
+      [`sp-cast-time-${row}`, 12],
+      [`sp-range-${row}`, 12],
+      [`note${row}`, 12]
+    ])),
+    ...Object.fromEntries(Array.from({ length: 9 }, (_, index) => [
+      `spell-level-${index + 1}`, 16
+    ]))
+  });
+
+  function getEditableAppearanceFontSize(field, cjkFont, preferredSize, layoutSettings) {
+    if (field.isMultiline()) {
+      return getFittedFontSize(field, cjkFont, preferredSize, layoutSettings);
+    }
+    const text = (field.getText() || '').replace(/\r?\n/g, ' ');
+    const rectangle = getTextFieldRectangle(field);
+    if (!text.trim() || !rectangle) return preferredSize;
+
+    const widthAtOnePoint = cjkFont.widthOfTextAtSize(text, 1);
+    const maxByWidth = Math.max(1, rectangle.width - layoutSettings.horizontalPadding)
+      / Math.max(0.001, widthAtOnePoint);
+    let heightAtOnePoint = cjkFont.heightAtSize(1);
+    const rawFont = cjkFont.embedder?.font;
+    if (rawFont?.layout && rawFont.unitsPerEm > 0) {
+      const boxes = rawFont.layout(text).glyphs.map(glyph => glyph.bbox)
+        .filter(box => Number.isFinite(box.minY) && Number.isFinite(box.maxY) && box.maxY > box.minY);
+      const os2 = rawFont['OS/2'];
+      const hasTypoMetrics = os2 && Number.isFinite(os2.typoAscender)
+        && Number.isFinite(os2.typoDescender) && os2.typoAscender > os2.typoDescender;
+      const ascent = hasTypoMetrics ? os2.typoAscender : rawFont.ascent;
+      const descent = hasTypoMetrics ? os2.typoDescender : rawFont.descent;
+      if (boxes.length && Number.isFinite(ascent) && Number.isFinite(descent)) {
+        // Match the existing appearance baseline; reserve room on both sides
+        // for the actual glyphs, including ascenders and descenders.
+        const baselineOffset = (ascent + descent) / (2 * rawFont.unitsPerEm);
+        const top = Math.max(...boxes.map(box => box.maxY)) / rawFont.unitsPerEm;
+        const bottom = Math.min(...boxes.map(box => box.minY)) / rawFont.unitsPerEm;
+        heightAtOnePoint = 2 * Math.max(top - baselineOffset, baselineOffset - bottom);
+      }
+    }
+    const maxByHeight = Math.max(1, rectangle.height - layoutSettings.verticalPadding)
+      / Math.max(0.001, heightAtOnePoint);
+    return Math.max(0.1, Math.floor(Math.min(preferredSize, maxByWidth, maxByHeight) * 10) / 10);
+  }
+
+  function applyEditableAppearanceFontSizes(form, cjkFont, layoutSettings) {
+    const appearanceKey = globalScope.PDFLib.PDFName.of('DA');
+    for (const [fieldName, preferredSize] of Object.entries(EDITABLE_APPEARANCE_FONT_SIZES)) {
+      let field;
+      try {
+        field = form.getTextField(fieldName);
+      } catch (error) {
+        continue;
+      }
+      const defaults = [field.acroField.dict, ...field.acroField.getWidgets().map(widget => widget.dict)]
+        .map(dict => ({ dict, value: dict.get(appearanceKey) }));
+      try {
+        // Apply initial appearance sizes while retaining the editing defaults.
+        const fontSize = getEditableAppearanceFontSize(field, cjkFont, preferredSize, layoutSettings);
+        field.setFontSize(fontSize);
+        field.updateAppearances(cjkFont);
+      } finally {
+        defaults.forEach(({ dict, value }) => {
+          if (value) dict.set(appearanceKey, value);
+          else dict.delete(appearanceKey);
+        });
+      }
+    }
+  }
+
   function markAllTextFieldsDirtyForFlattening(form) {
     form.getFields().forEach((field) => {
       if (typeof field?.getText !== 'function' || typeof field?.setText !== 'function') return;
@@ -1053,6 +1175,7 @@
     }
 
     if (profile.writeValuesOnly) {
+      alignNameFields(form);
       matchLanguageFontSizeToAlignment(form);
       prepareValueOnlyAcroForm(globalScope.PDFLib, form, payload);
     } else {
@@ -1061,6 +1184,7 @@
       normalizeProblematicFieldDA(globalScope.PDFLib, pdfDoc, form, undefined, defaultAppearanceFontAlias);
       applyTemplateFieldSettings(form, layoutSettings);
       applyFieldAdjustments(form, layoutSettings);
+      alignNameFields(form);
 
       if (!profile.flattenForm) {
         configureEditableMultilineFields(form);
@@ -1095,6 +1219,9 @@
         profile.flattenForm ? fontEmbedResult.font.ref : undefined,
         defaultAppearanceFontAlias
       );
+      if (profile.layoutId === 'editable') {
+        applyEditableAppearanceFontSizes(form, fontEmbedResult.font, layoutSettings);
+      }
 
       if (profile.flattenForm) {
         form.flatten({ updateFieldAppearances: false });

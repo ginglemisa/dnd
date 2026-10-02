@@ -1293,6 +1293,252 @@ async function verifyLegacyShareFeatCompatibility(browser, url) {
   } finally { await encoder.close(); }
 }
 
+async function verifyConditionEffects(browser, url) {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  const errors = [];
+  page.on("pageerror", error => errors.push(String(error)));
+  try {
+    await page.goto(url);
+    await page.waitForFunction(() => !!window.TabletopMode && !!window.DiceRoller);
+    await page.check("#legal-dismiss");
+    await page.click("#legal-close-btn");
+    await page.selectOption("#class", "wizard");
+    await page.selectOption("#level", "5");
+    for (const [id, value] of [["str", "12"], ["dex", "18"], ["con", "14"], ["hp", "20"]]) {
+      await page.fill(`#${id}`, value);
+    }
+    await page.evaluate(() => {
+      fillSaves();
+      fillSkills();
+      TabletopMode.applyState({});
+      TabletopMode.setMode("tabletop");
+      TabletopMode.setPanel("overview");
+    });
+    const state = () => page.evaluate(() => TabletopMode.collectState());
+    const option = key => page.locator(`input[data-condition-option="${key}"]`);
+    const detail = () => page.getByRole("dialog");
+    const expectToast = pattern => page.locator(".app-toast__message").filter({ hasText: pattern }).first().waitFor();
+    const openDetail = async key => {
+      await page.evaluate(() => TabletopMode.setPanel("overview"));
+      await page.locator(`.tabletop-condition-tag[data-condition-key="${key}"]`).click();
+    };
+    const closeDetail = async () => {
+      await detail().getByRole("button", { name: "關閉", exact: true }).click();
+      await detail().waitFor({ state: "detached" });
+    };
+
+    // Draft changes must not break concentration or apply linked conditions.
+    await page.evaluate(() => TabletopMode.setConcentrationSpellId("fly"));
+    await page.click("#tabletop-condition-manage");
+    await option("unconscious").check();
+    assert.equal((await state()).concentrationSpellId, "fly");
+    assert.deepEqual((await state()).activeConditions, []);
+    await page.click("#tabletop-condition-cancel");
+    assert.equal((await state()).concentrationSpellId, "fly");
+    assert.deepEqual((await state()).activeConditions, []);
+
+    for (const key of ["paralyzed", "petrified", "stunned", "unconscious", "incapacitated"]) {
+      await page.evaluate(() => {
+        TabletopMode.applyState({ activeConditions: ["poisoned"], concentrationSpellId: "fly" });
+      });
+      await page.click("#tabletop-condition-manage");
+      await option(key).check();
+      await page.locator("#tabletop-condition-form").getByRole("button", { name: "套用", exact: true }).click();
+      const applied = await state();
+      assert.ok(applied.activeConditions.includes("incapacitated"), `${key} links incapacitated`);
+      assert.equal(applied.concentrationSpellId, "", `${key} ends concentration`);
+      assert.ok((await page.locator(".app-toast__message").allTextContents()).some(text => /失能失去專注/.test(text)));
+      assert.equal(applied.activeConditions.includes("poisoned"), key !== "petrified");
+      if (key === "unconscious") {
+        assert.ok(applied.activeConditions.includes("prone"));
+        assert.ok((await page.locator(".app-toast__message").allTextContents()).includes("你手上的東西因昏迷掉落。"));
+      }
+      await page.click("#tabletop-condition-manage");
+      assert.equal(await option("incapacitated").isChecked(), true);
+      if (key === "unconscious") assert.equal(await option("prone").isChecked(), true);
+      if (key === "petrified") assert.equal(await option("poisoned").isChecked(), false);
+      await page.click("#tabletop-condition-cancel");
+    }
+    // Ending a parent leaves its added conditions in the ordinary flat list.
+    await page.evaluate(() => TabletopMode.applyState({ activeConditions: ["paralyzed"] }));
+    await openDetail("paralyzed");
+    await detail().getByRole("button", { name: "狀態結束", exact: true }).click();
+    await page.waitForFunction(() => !TabletopMode.collectState().activeConditions.includes("paralyzed"));
+    assert.deepEqual((await state()).activeConditions, ["incapacitated"]);
+    await openDetail("incapacitated");
+    await detail().getByRole("button", { name: "狀態結束", exact: true }).click();
+    await page.waitForFunction(() => TabletopMode.collectState().activeConditions.length === 0);
+
+    for (const [key, button] of [["burning", "倒地翻滾滅火"], ["falling", "危害結束並倒地"]]) {
+      await page.evaluate(key => TabletopMode.applyState({ activeConditions: [key] }), key);
+      await openDetail(key);
+      assert.equal(await detail().getByRole("button", { name: "危害結束", exact: true }).count(), 1);
+      await detail().getByRole("button", { name: button, exact: true }).click();
+      await page.waitForFunction(key => !TabletopMode.collectState().activeConditions.includes(key), key);
+      assert.deepEqual((await state()).activeConditions, ["prone"]);
+    }
+
+    // Exercise the real RNG, shared roll event and persisted history with fixed dice.
+    await page.evaluate(() => {
+      window.__conditionRolls = [];
+      window.addEventListener("diceroll", event => __conditionRolls.push(event.detail));
+      window.__conditionDie = 19;
+      window.crypto.getRandomValues = values => { values.fill(__conditionDie); return values; };
+      document.getElementById("dice-system-toggle").checked = false;
+      TabletopMode.applyState({ activeConditions: ["falling"], exhaustionLevel: 1 });
+    });
+    const rollResult = () => page.evaluate(() => __conditionRolls.at(-1));
+    await openDetail("falling");
+    await detail().getByRole("button", { name: "落水減傷豁免", exact: true }).click();
+    assert.match((await rollResult()).label, /體操檢定（DC 15）/);
+    assert.equal((await rollResult()).expression, "1d20+4-2");
+    assert.equal((await rollResult()).total, 22);
+    await expectToast(/成功，此次墜落傷害減半/);
+    assert.equal(await detail().isVisible(), true, "roll keeps description open");
+    await page.evaluate(() => { __conditionDie = 0; });
+    await detail().getByRole("button", { name: "落水減傷豁免", exact: true }).click();
+    assert.equal((await rollResult()).total, 3);
+    await expectToast(/失敗，此次墜落傷害不減半/);
+    await closeDetail();
+    await page.evaluate(() => {
+      document.getElementById("str").value = "20";
+      document.getElementById("str").dispatchEvent(new Event("input", { bubbles: true }));
+      fillSkills();
+    });
+    await openDetail("falling");
+    await detail().getByRole("button", { name: "落水減傷豁免", exact: true }).click();
+    assert.match((await rollResult()).label, /運動檢定（DC 15）/);
+    assert.equal((await rollResult()).expression, "1d20+5-2");
+    await closeDetail();
+    await page.evaluate(() => TabletopMode.applyState({ activeConditions: ["malnutrition"], exhaustionLevel: 2 }));
+    await openDetail("malnutrition");
+    await detail().getByRole("button", { name: "進食不足豁免", exact: true }).click();
+    assert.match((await rollResult()).label, /體質豁免（DC 10）/);
+    assert.equal((await rollResult()).expression, "1d20+2-4");
+    await expectToast(/失敗.*請手動調整/);
+    assert.equal((await state()).exhaustionLevel, 2, "failed save does not add exhaustion");
+    await page.evaluate(() => { __conditionDie = 19; });
+    await detail().getByRole("button", { name: "進食不足豁免", exact: true }).click();
+    assert.equal((await rollResult()).total, 18);
+    assert.equal((await state()).exhaustionLevel, 2);
+    assert.equal(await page.evaluate(() => DiceRoller.isEnabled()), false);
+    const history = await page.evaluate(() => JSON.parse(dndStorage.getItem("dnd.diceRollHistory.v1")));
+    assert.match(history[0].label, /進食不足/);
+    assert.equal(history[0].total, 18);
+    assert.equal(history.filter(entry => /落水減傷|進食不足/.test(entry.label)).length, 5);
+    await closeDetail();
+
+    await page.evaluate(() => TabletopMode.applyState({ activeConditions: ["suffocation"] }));
+    for (const [score, duration] of [[18, "5 分鐘"], [8, "30 秒"]]) {
+      await page.evaluate(score => { document.getElementById("con").value = String(score); }, score);
+      await openDetail("suffocation");
+      assert.ok((await detail().innerText()).includes(`你可以憋氣 ${duration}。`));
+      await closeDetail();
+    }
+
+    await page.evaluate(() => TabletopMode.applyState({
+      activeConditions: [...DND_CONDITIONS, ...DND_HAZARDS].map(item => item.key).filter(key => key !== "petrified" && key !== "exhaustion"),
+      exhaustionLevel: 2
+    }));
+    const panels = {
+      overview: ["blinded", "charmed", "deafened", "exhaustion", "frightened", "grappled", "incapacitated", "paralyzed", "poisoned", "prone", "restrained", "stunned", "unconscious", "burning", "dehydration", "falling", "malnutrition"],
+      skills: ["blinded", "charmed", "deafened", "exhaustion", "frightened", "paralyzed", "poisoned", "restrained", "stunned", "unconscious", "falling", "malnutrition"],
+      actions: ["blinded", "charmed", "exhaustion", "frightened", "grappled", "incapacitated", "paralyzed", "poisoned", "prone", "restrained", "stunned", "unconscious", "burning", "falling"],
+      spells: ["blinded", "charmed", "exhaustion", "frightened", "incapacitated", "poisoned", "restrained"],
+      resources: ["exhaustion", "malnutrition"]
+    };
+    for (const [panel, keys] of Object.entries(panels)) {
+      await page.evaluate(panel => TabletopMode.setPanel(panel), panel);
+      const hints = page.locator(`#tabletop-panel-${panel} [data-condition-hint]`);
+      await page.waitForFunction(({ panel, key }) => !!document.querySelector(`#tabletop-panel-${panel} [data-condition-hint="${key}"]`), { panel, key: keys[0] });
+      assert.deepEqual([...new Set(await hints.evaluateAll(items => items.map(item => item.dataset.conditionHint)))].sort(), keys.slice().sort());
+      assert.equal(await hints.locator(".tabletop-condition-warning").count(), await hints.count());
+    }
+    await page.evaluate(() => TabletopMode.setPanel("skills"));
+    const blindedSkill = await page.locator('#tabletop-panel-skills [data-condition-hint="blinded"]').innerText();
+    assert.match(blindedSkill, /需要視覺.*自動失敗/);
+    assert.doesNotMatch(blindedSkill, /攻擊受影響/);
+    await page.evaluate(() => TabletopMode.setPanel("actions"));
+    assert.match(await page.locator('#tabletop-panel-actions [data-condition-hint="blinded"]').innerText(), /攻擊受影響/);
+    assert.match(await page.locator('#tabletop-panel-actions [data-condition-hint="exhaustion"]').innerText(), /減去 4/);
+    for (const ui of ["classic", "warm"]) for (const theme of ["light", "dark"]) {
+      await page.evaluate(({ ui, theme }) => { document.documentElement.dataset.uiTheme = ui; document.documentElement.dataset.theme = theme; }, { ui, theme });
+      for (const width of [390, 1280]) {
+        await page.setViewportSize({ width, height: 900 });
+        const style = await page.locator("#tabletop-panel-actions .tabletop-condition-warning").first().evaluate(element => {
+          const probe = document.createElement("span");
+          probe.style.background = "var(--warning-soft)";
+          element.parentElement.appendChild(probe);
+          const expected = getComputedStyle(probe).backgroundColor;
+          probe.remove();
+          return { background: getComputedStyle(element).backgroundColor, expected, overflow: document.documentElement.scrollWidth > innerWidth };
+        });
+        assert.equal(style.background, style.expected, `${ui}/${theme} warning background`);
+        assert.equal(style.overflow, false, `${ui}/${theme}/${width} condition hints fit`);
+      }
+    }
+    await page.evaluate(() => TabletopMode.applyState({ activeConditions: ["petrified", "poisoned"] }));
+    assert.equal((await state()).activeConditions.includes("poisoned"), false);
+    for (const panel of ["overview", "skills", "actions"]) {
+      await page.evaluate(panel => TabletopMode.setPanel(panel), panel);
+      await page.locator(`#tabletop-panel-${panel} [data-condition-hint="petrified"]`).first().waitFor();
+    }
+
+    // HP-driven unconsciousness uses the same concentration and linked-state path.
+    await page.evaluate(() => {
+      TabletopMode.applyState({ concentrationSpellId: "fly" });
+      document.getElementById("hp").value = "0";
+      document.getElementById("hp").dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    assert.deepEqual(new Set((await state()).activeConditions), new Set(["unconscious", "incapacitated", "prone"]));
+    assert.equal((await state()).concentrationSpellId, "");
+    await page.evaluate(() => {
+      document.getElementById("hp").value = "20";
+      document.getElementById("hp").dispatchEvent(new Event("change", { bubbles: true }));
+      TabletopMode.applyState({ activeConditions: ["unconscious", "burning", "falling", "malnutrition"], exhaustionLevel: 2, concentrationSpellId: "fly" });
+    });
+    const persisted = await state();
+    const downloadEvent = page.waitForEvent("download");
+    await page.evaluate(() => downloadStateAsJson());
+    const exported = JSON.parse(fs.readFileSync(await (await downloadEvent).path(), "utf8"));
+    assert.deepEqual(exported.activeConditions, persisted.activeConditions);
+    await page.evaluate(() => TabletopMode.applyState({}));
+    await page.setInputFiles("#import-json-file", { name: "condition-regression.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(exported)) });
+    await page.waitForFunction(() => TabletopMode.collectState().activeConditions.includes("unconscious"));
+    assert.deepEqual((await state()).activeConditions, persisted.activeConditions);
+    assert.equal((await state()).exhaustionLevel, 2);
+    const share = await page.evaluate(async () => {
+      const data = collectShareState();
+      return { hash: await encodeStateToHash(data), keys: Object.keys(data) };
+    });
+    for (const key of ["activeConditions", "exhaustionLevel", "concentrationSpellId"]) {
+      assert.equal(share.keys.includes(key), false, `normal sharing omits live ${key}`);
+    }
+    await page.evaluate(() => { saveAllFields(); flushPendingAutosave(); });
+    await page.reload();
+    await page.waitForFunction(() => TabletopMode?.collectState().activeConditions.includes("unconscious"));
+    assert.deepEqual((await state()).activeConditions, persisted.activeConditions);
+    assert.equal((await state()).concentrationSpellId, "");
+    await page.goto("about:blank");
+    await page.goto(url.split("#")[0] + share.hash);
+    await page.waitForFunction(() => window.SHARE_MODE);
+    assert.deepEqual((await state()).activeConditions, [], "normal sharing keeps the existing live-state exclusion");
+    assert.equal((await state()).exhaustionLevel, 0);
+    const legacy = { ...exported, activeConditions: ["unconscious", "petrified", "poisoned", "exhaustion"], exhaustionLevel: 0, concentrationSpellId: "fly" };
+    await page.goto("about:blank");
+    await page.goto(url.split("#")[0] + "#s=" + Buffer.from(JSON.stringify(legacy)).toString("base64"));
+    await page.waitForFunction(() => window.SHARE_MODE && TabletopMode.collectState().activeConditions.includes("unconscious"));
+    assert.deepEqual(new Set((await state()).activeConditions), new Set(["unconscious", "petrified", "incapacitated", "prone"]));
+    assert.equal((await state()).exhaustionLevel, 1, "legacy exhaustion tag is restored");
+    assert.equal((await state()).concentrationSpellId, "");
+    assert.deepEqual(errors, [], "condition browser runtime errors");
+    console.log("Condition links, concentration, hazard rolls, themed hints and JSON/share/autosave passed.");
+  } finally {
+    await context.close();
+  }
+}
+
 async function main() {
   const root = __dirname;
   const server = http.createServer((req, res) => {
@@ -1317,6 +1563,7 @@ async function main() {
     console.log(`Action metadata: ${assertions} coverage assertions passed.`);
     await verifyUiAndPersistence(page);
     await verifyClassTabletopUpdates(page);
+    await verifyConditionEffects(browser, page.url());
     await verifyManualWeaponVisibility(page);
     await verifyEquipmentLoadout(browser, page.url());
     await verifyAutomaticFeatRows(browser, page.url());

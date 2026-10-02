@@ -2733,7 +2733,7 @@
     } else {
       mobileImportWarning("找不到工具熟練匯入介面", warnings);
     }
-    const skillNotes = [skillBonuses.length ? `\n${skillBonuses.join("\n")}` : ""].filter(Boolean);
+    const skillNotes = [skillBonuses.length ? skillBonuses.join("\n") : ""].filter(Boolean);
     setMobileField("skill-extra", skillNotes.join("；"), warnings, "技能筆記", "input");
 
     const languageDetails = draft.selections.levelOne?.content?.languageDetails || [];
@@ -2850,7 +2850,7 @@
       mobileImportWarning(`匯入流程中斷：${error?.message || "未知錯誤"}`, warnings);
     }
     closeWizard();
-    const warningText = warnings.length ? `\n\n第一輪未完成／已略過：\n${warnings.map(item => `• ${item}`).join("\n")}` : "\n\n第一輪沒有偵測到略過項目。";
+    const warningText = warnings.length ? `\n\n以下項目未完成匯入：\n${warnings.map(item => `• ${item}`).join("\n")}` : "";
     const classSkillBonusText = ["druid", "cleric"].includes(draft.choices.class)
       ? "；巫祝與魔術使的技能額外加值也已納入計算。"
       : "。";
@@ -2862,7 +2862,7 @@
       message: `${resultText}${warningText}`,
       actions: completed ? [
         { label: "下載角色卡 PDF", intent: "primary", value: "download-compact-pdf" },
-        ...(warnings.length === 0 ? [{ label: "第一次上桌", intent: "secondary", value: "first-table" }] : []),
+        ...(warnings.length === 0 ? [{ label: "初次遊玩教學", intent: "secondary", value: "first-table" }] : []),
         { label: "知道了", intent: "secondary", value: "close" }
       ] : undefined,
       confirmLabel: "知道了"

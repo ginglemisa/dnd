@@ -1,6 +1,38 @@
 (function attachConditionData(globalScope) {
+  // 索引指向下方原文 effects；提示與連動沿用同一份規則資料。
+  const SUMMARY_PANELS = {
+    blinded: { overview: [0], skills: [0], actions: [1], spells: [0, 1] },
+    charmed: { overview: [0], skills: [1], actions: [0], spells: [0] },
+    deafened: { overview: [0], skills: [0] },
+    exhaustion: { overview: [0, 2], skills: [1], actions: [1], spells: [1], resources: [3] },
+    frightened: { overview: [1], skills: [0], actions: [0, 1], spells: [0] },
+    grappled: { overview: [0], actions: [0, 1] },
+    incapacitated: { overview: [2, 3], actions: [0], spells: [0, 1, 2] },
+    paralyzed: { overview: [1], skills: [2], actions: [3, 4] },
+    petrified: { overview: [1, 4, 5], skills: [3], actions: [2] },
+    poisoned: { overview: [0], skills: [0], actions: [0], spells: [0] },
+    prone: { overview: [0], actions: [0, 1] },
+    restrained: { overview: [0], skills: [2], actions: [1], spells: [1] },
+    stunned: { overview: [1], skills: [2], actions: [3] },
+    unconscious: { overview: [0, 1, 5], skills: [3], actions: [2, 4] },
+    burning: { overview: [0], actions: [1, 2] },
+    dehydration: { overview: [0, 1, 2] },
+    falling: { overview: [0, 1], skills: [2], actions: [2] },
+    malnutrition: { overview: [0, 1, 2], skills: [1], resources: [3] }
+  };
+  const CONDITION_LINKS = {
+    paralyzed: ["incapacitated"],
+    petrified: ["incapacitated"],
+    stunned: ["incapacitated"],
+    unconscious: ["incapacitated", "prone"]
+  };
   const freezeCondition = (condition) => Object.freeze({
     ...condition,
+    impliedConditions: Object.freeze(CONDITION_LINKS[condition.key] || []),
+    removedConditions: Object.freeze(condition.key === "petrified" ? ["poisoned"] : []),
+    summaryPanels: Object.freeze(Object.fromEntries(
+      Object.entries(SUMMARY_PANELS[condition.key] || {}).map(([panel, indexes]) => [panel, Object.freeze(indexes)])
+    )),
     effects: Object.freeze([...condition.effects])
   });
 
@@ -63,7 +95,7 @@
       zh: "失能",
       en: "Incapacitated",
       effects: [
-        "無法行動：你不能採取任何動作,附贈動作或反應。",
+        "無法行動：你不能採取任何動作，附贈動作或反應。",
         "無法維持專注：你的專注會被打斷。",
         "無法說話：你不能說話。",
         "措手不及：若你在擲先攻時處於失能狀態，你該次擲骰具有劣勢。"
@@ -235,8 +267,7 @@
       ]
     }
   ].map((hazard) => Object.freeze({
-    ...hazard,
-    effects: Object.freeze([...hazard.effects]),
+    ...freezeCondition(hazard),
     ...(hazard.requirements ? {
       requirements: Object.freeze({
         ...hazard.requirements,
@@ -291,8 +322,20 @@
   }
 
   function createHazardDescription(hazardOrKey) {
-    const hazard = getHazard(hazardOrKey);
+    let hazard = getHazard(hazardOrKey);
     if (!hazard) return null;
+
+    if (hazard.key === "suffocation") {
+      const rawConstitution = globalScope.TabletopMode?.getDruidForm?.()?.abilities.con
+        ?? (typeof document !== "undefined" ? document.getElementById("con")?.value : "");
+      const modifier = globalScope.calculateAbilityModifier?.(rawConstitution);
+      if (Number.isFinite(modifier)) {
+        const duration = modifier + 1 >= 1 ? `${modifier + 1} 分鐘` : "30 秒";
+        hazard = { ...hazard, effects: hazard.effects.map((effect, index) => index === 0
+          ? `憋氣時間：你可以憋氣 ${duration}。`
+          : effect) };
+      }
+    }
 
     // 共用既有卡片結構，不改變其他模組呼叫的狀態說明 API。
     const card = createConditionDescription(hazard);

@@ -365,16 +365,23 @@
     } else {
       const metadata = document.createElement("div");
       metadata.className = "journal-entry-summary";
-      const identity = document.createElement("p");
-      identity.className = "journal-entry-summary__identity";
-      identity.textContent = [entry.characterName, entry.classLevel, entry.race].map(value => value || "—").join(" | ");
-      const session = document.createElement("p");
-      session.className = "journal-entry-summary__session";
-      session.textContent = `日期: ${entry.adventureDate || "—"} | DM: ${entry.dmName || "—"}`;
-      const adventure = document.createElement("dl");
+      const adventure = document.createElement("div");
       adventure.className = "journal-adventure-name";
-      appendDetail(adventure, "冒險名稱", entry.adventureName);
-      metadata.append(identity, session, adventure);
+      const adventureLabel = document.createElement("p");
+      adventureLabel.textContent = "冒險名稱";
+      const adventureTitle = document.createElement("h3");
+      adventureTitle.textContent = entry.adventureName || "—";
+      adventure.append(adventureLabel, adventureTitle);
+      const identity = document.createElement("dl");
+      identity.className = "journal-entry-summary__identity";
+      appendDetail(identity, "角色名稱", entry.characterName, "journal-entry-summary__character");
+      appendDetail(identity, "職業等級", entry.classLevel);
+      appendDetail(identity, "種族", entry.race);
+      const session = document.createElement("dl");
+      session.className = "journal-entry-summary__session";
+      appendDetail(session, "冒險日期", entry.adventureDate);
+      appendDetail(session, "DM 姓名", entry.dmName);
+      metadata.append(adventure, identity, session);
       const notes = document.createElement("section");
       notes.className = "journal-notes";
       const title = document.createElement("h3");
@@ -468,7 +475,7 @@
       name.dataset.storyIndex = String(index);
       name.value = reward.title;
       const content = document.createElement("textarea");
-      content.rows = 4;
+      content.rows = 1;
       content.placeholder = "獎勵內容";
       content.setAttribute("aria-label", `第 ${index + 1} 組獎勵內容`);
       content.dataset.stateTransient = "true";
@@ -593,8 +600,13 @@
         return;
       }
       if (action === "remove-story") {
-        if (draft.storyRewards.length > 1) draft.storyRewards.pop();
-        render();
+        if (draft.storyRewards.length > 1) {
+          draft.storyRewards.pop();
+          form.querySelector('.journal-story-fields:last-child').remove();
+          const remove = form.querySelector('[data-journal-action="remove-story"]');
+          remove.disabled = draft.storyRewards.length <= 1;
+          if (remove.disabled) form.querySelector('[data-journal-action="add-story"]').focus({ preventScroll: true });
+        }
         return;
       }
       if (action === "import") { root.querySelector("#journal-import-file").click(); return; }

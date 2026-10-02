@@ -3,6 +3,11 @@
 
   const TAB_HEADER_OFFSET = 96;
   const SCROLL_DURATION = 480;
+  const PRESENTATION_DURATION = 320;
+
+  function prefersReducedMotion() {
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }
   // Used by the repeatable turn reminder.
   const TURN_GUIDANCE = [
     "通常是先「移動」，再做一次「動作」；\n規則允許時，可再使用「附贈」。",
@@ -34,8 +39,8 @@
       const maxScroll = Math.max(0, document.body.scrollHeight - window.innerHeight);
       const finalY = Math.max(0, Math.min(targetY, maxScroll));
       const distance = finalY - startY;
-      if (Math.abs(distance) < 1) {
-        window.scrollTo(0, finalY);
+      if (Math.abs(distance) < 1 || prefersReducedMotion()) {
+        window.scrollTo({ left: 0, top: finalY, behavior: "instant" });
         resolve();
         return;
       }
@@ -44,8 +49,8 @@
       const tick = (now) => {
         if (!isCurrent()) { resolve(); return; }
         const progress = Math.min(1, (now - startedAt) / durationMs);
-        const eased = 1 - Math.pow(1 - progress, 3);
-        window.scrollTo(0, startY + distance * eased);
+        const eased = progress * progress * (3 - 2 * progress);
+        window.scrollTo({ left: 0, top: startY + distance * eased, behavior: "instant" });
         if (progress < 1) requestAnimationFrame(tick);
         else resolve();
       };
@@ -80,6 +85,12 @@
         document.getElementById("tour-focus-ring"),
         document.getElementById("tour-focus-ring-secondary")
       ];
+      this.masks = this.maskGroups.flatMap(group => Object.values(group)).filter(Boolean);
+      this.presentedHoles = [];
+      this.presentationFrame = null;
+      this.presentationResolve = null;
+      this.tooltipRevealAnimation = null;
+      this.hasPresentedStep = false;
       this.tooltip = document.getElementById("tour-tooltip");
       this.title = document.getElementById("tour-step-title");
       this.text = document.getElementById("tour-step-text");
@@ -91,6 +102,7 @@
       this.kind = "sheet";
       this.transitionId = 0;
       this.tabletopViewSnapshot = null;
+      this.tabletopMenuGuidePhase = null;
       this.tabletopSpellPreviewDialog = null;
       this.tabletopResourcePreview = null;
       this.tabletopResourceDisplaySnapshot = null;
@@ -164,6 +176,8 @@
       if (this.tooltip) {
         this.tooltip.style.touchAction = "none";
         this.tooltip.style.cursor = "grab";
+        // Geometry is animated together with the spotlight, on one frame clock.
+        this.tooltip.style.transition = "none";
       }
       this.focusRings.forEach((ring) => {
         if (ring) ring.style.pointerEvents = "none";
@@ -189,13 +203,25 @@
         getHoles: () => [this.getHoleForSelector(selector)].filter(Boolean)
       });
       return [
+        { menuIntro: true, title: "從這裡進入跑團模式",
+          text: "角色準備好了，就可以開始冒險！\n\n打開右上角選單，找到「跑團模式」。這裡會集中顯示遊玩時常用的數值、動作與資源。\n\n按「下一步」，一起看看遊戲如何進行。",
+          highlights: ["右上角選單", "跑團模式", "下一步"],
+          placement: () => this.tabletopMenuGuidePhase === "welcome" ? "center" : "bottom",
+          getHoles: () => this.tabletopMenuGuidePhase === "welcome" ? [] : [
+            this.getHoleForSelector(this.tabletopMenuGuidePhase === "button"
+              ? "#tabletop-mode-toggle" : "#utility-menu-toggle", 6)
+          ].filter(Boolean),
+          afterLeave: () => {
+            this.setAbilityMenuOpen(false);
+            this.tabletopMenuGuidePhase = null;
+          } },
         { tab: "overview", title: "描述你的行動",
           text: "DM 會描述目前的情況，你只需要告訴 DM，你的角色打算採取什麼行動。\n\n例如：「我靠近木門，聽聽裡面有沒有聲音。」",
           placement: "center", getHoles: () => [], examples: true },
         step("skills", "需要判定時，再進行擲骰",
           "當 DM 要求進行檢定時，找到對應的數字加值，擲出 D20，再將兩者相加。\n\n如果手邊沒有骰子，可以從右上角選單開啟擲骰功能。", ".tabletop-skills", ["開啟擲骰功能"]),
         step("overview", "戰鬥開始時，決定行動順序",
-          "當 DM 說請擲先攻時，擲出 D20 + 先攻加值，決定角色在戰鬥中的行動順序。\n\n你也可以開啟擲骰功能，點擊角色卡上的先攻數值進行擲骰。\n\n角色的速度代表一個回合中可以移動的距離。\n\n使用格線地圖時，通常 5 呎 = 1 格。", ".tabletop-key-stat:nth-child(2), .tabletop-key-stat:nth-child(3)", ["請擲先攻", "擲骰功能", "速度", "5 呎 = 1 格"]),
+          "當 DM 說請擲先攻時，擲出 D20 + 先攻加值，決定角色在戰鬥中的行動順序。\n\n你也可以開啟擲骰功能，點擊角色卡上的先攻數值進行擲骰。\n\n角色的速度代表一個回合中可以移動的距離。\n\n使用格線地圖時，通常 5 呎 = 1 格。", ".tabletop-key-stat:nth-child(2), .tabletop-key-stat:nth-child(3)", ["請擲先攻", "開啟擲骰功能", "速度", "5 呎 = 1 格"]),
         { ...step("actions", "在你的回合中採取行動",
           "你的回合通常包含移動與一次動作；若能力或規則允許，也可以使用一次附贈。\n\n移動不一定要一次完成，也不需要固定在動作之前。\n例如，你可以先移動 2 格、進行攻擊，再移動剩下的 3 格。\n\n反應則需要符合特定的觸發條件才能使用，通常在其他角色的回合中發生。", ".tabletop-action-browser", ["移動", "動作", "附贈", "移動", "動作", "移動", "移動", "反應"]),
           placement: "action-corner",
@@ -206,14 +232,14 @@
             ], 8),
             this.getHoleForSelector('#tabletop-action-panel-basic [data-action-option-key="attack"]', 8)
           ].filter(Boolean) },
-        { ...step("actions", "施放法術前，確認施法條件",
-          "先告訴 DM 你要施放的法術，以及預計影響的目標，再確認法術的施法時間、距離與其他施法條件。\n\n部分法術需要維持專注。一般情況下，一名角色無法同時維持兩個需要專注的法術。", '.app-dialog[data-tour-spell-preview] .tabletop-spell-detail__copy'),
+        { ...step("actions", "如果你想施放魔法",
+          "先告訴 DM 你要用什麼法術，閱讀文字確認條件滿足後，就可以選擇目標。\n\n部分法術需要維持專注。\n一般情況下，玩家無法同時維持兩個需要專注的法術。", '.app-dialog[data-tour-spell-preview] .tabletop-spell-detail__copy'),
           placement: "spell-details-bottom",
           getHoles: () => [this.getSpellMetadataHole()].filter(Boolean),
           beforePosition: () => this.openTabletopSpellPreview(),
           afterLeave: () => this.closeTabletopSpellPreview() },
-        { ...step("resources", "記錄角色狀態的變化",
-          "使用具有次數限制的能力或施放法術後，記得更新角色目前的使用狀態，確認還剩下多少可用次數。\n\n受到傷害、恢復生命值，或獲得其他狀態時，也應同步記錄角色的變化。\n\n基本遊戲流程\n了解情況 → 描述行動 → 必要時進行判定 → 記錄結果", "#tabletop-tour-resource-preview", ["法術"]),
+        { ...step("resources", "記錄角色狀態",
+          "使用具有次數限制的能力或施放法術後，記得更新資源的數字，確認還剩下多少可用次數。\n\n受到傷害、恢復生命值，或罹患狀態時，也應立即記錄。\n\n基本遊戲流程：了解情況 → 描述行動 → 進行判定 → 記錄結果 → 開心玩遊戲！", "#tabletop-tour-resource-preview", ["法術"]),
           tooltipHoleIndex: 1,
           getHoles: () => [
             this.getHoleForSelector("#tabletop-tour-resource-preview > .tabletop-resource-row:first-child", 6),
@@ -434,7 +460,7 @@
           tab: "spells",
           title: "🔎 搜尋規則資料",
           text: "法術與裝備頁面都提供搜尋功能。\n\n輸入名稱或關鍵字即可快速找到相關規則內容。",
-          placement: "bottom",
+          placement: "search-controls-bottom",
           getHoles: () => [
             this.getHoleForSelector("#spell-tab-toolbar .spell-search-controls", 7),
             this.getHoleForSelector("#spell-search-fab", 7)
@@ -465,6 +491,10 @@
       this.overlay.dataset.tourKind = kind;
       this.text.replaceChildren();
       this.renderedContentStep = null;
+      this.renderedContentKey = null;
+      this.resetHighlightState();
+      this.tooltip.style.visibility = "hidden";
+      this.applyMasksForHoles([]);
       this.steps = kind === "tabletop" ? this.getTabletopSteps() : this.getSteps();
       if (!this.steps.length) return;
       const targetIndex = Math.max(0, Math.min(initialIndex, this.steps.length - 1));
@@ -615,7 +645,35 @@
       }
       if (!this.active || transitionId !== this.transitionId) return;
       await this.renderStep();
-      this.isTransitioning = false;
+      if (transitionId === this.transitionId) this.isTransitioning = false;
+    }
+
+    async showTabletopMenuIntro() {
+      const transitionId = this.transitionId;
+      const isCurrent = () => this.active && transitionId === this.transitionId;
+      this.setAbilityMenuOpen(false);
+      this.tabletopMenuGuidePhase = "welcome";
+      await this.renderStep();
+      if (!isCurrent()) return;
+      await this.animateScrollTo(0);
+      await waitForLayoutStability();
+      if (!isCurrent()) return;
+
+      this.tabletopMenuGuidePhase = "toggle";
+      if (!isElementVisible(document.getElementById("utility-menu-toggle"))) throw new Error("找不到工具選單");
+      await this.renderStep();
+      if (!isCurrent()) return;
+      this.setAbilityMenuOpen(true);
+      const menu = document.getElementById("utility-menu");
+      await Promise.all((menu?.getAnimations() || []).map(animation => animation.finished.catch(() => {})));
+      if (!isCurrent()) return;
+      const button = document.getElementById("tabletop-mode-toggle");
+      button?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "instant" });
+      await waitForLayoutStability();
+      if (!isCurrent()) return;
+      if (!isElementVisible(button)) throw new Error("找不到跑團模式按鈕");
+      this.tabletopMenuGuidePhase = "button";
+      await this.renderStep();
     }
 
     async goToTabletop(index) {
@@ -626,9 +684,12 @@
       this.currentIndex = index;
       this.tooltipDragPosition = null;
       this.activeHoles = [];
-      this.resetHighlightState();
       const step = this.steps[index];
       try {
+        if (step.menuIntro) {
+          await this.showTabletopMenuIntro();
+          return;
+        }
         window.TabletopMode.setMode("tabletop", { restoreScroll: false });
         window.TabletopMode.setPanel(step.tab, { persist: false, restoreScroll: false });
         await waitForLayoutStability();
@@ -643,7 +704,7 @@
           if (!isElementVisible(target)) throw new Error("找不到導覽目標");
           const header = document.querySelector(".tabs-shell")?.getBoundingClientRect().bottom || 0;
           if (step.placement !== "spell-details-bottom") {
-            window.scrollTo(0, window.scrollY + target.getBoundingClientRect().top - Math.max(80, header + 16));
+            await this.animateScrollTo(window.scrollY + target.getBoundingClientRect().top - Math.max(80, header + 16));
           }
           await waitForLayoutStability();
           if (!this.active || transitionId !== this.transitionId) return;
@@ -1493,7 +1554,7 @@
     handleTourPointerDownCapture(event) {
       if (!this.active || this.isInternalTourAction) return;
       this.suppressTooltipDragClick = false;
-      if (this.abilityMenuGuideActive) {
+      if (this.abilityMenuGuideActive || (this.kind === "tabletop" && this.steps[this.currentIndex]?.menuIntro)) {
         if (this.tooltip?.contains(event.target)) this.handleTooltipPointerDown(event);
         // Keep the menu open when tapping the guide or its backdrop.
         // Do not cancel the pointer default: touch still needs its following click.
@@ -1710,25 +1771,28 @@
       this.text.replaceChildren(fragment);
     }
 
-    async renderStep({ refreshInteractionRoots = true, ensureFocus = true } = {}) {
+    async renderStep({ refreshInteractionRoots = true, ensureFocus = true, animate = true } = {}) {
       if (!this.active) return;
-      this.resetHighlightState();
       const step = this.steps[this.currentIndex];
       if (!step) return;
+      this.cancelPresentation();
+      const previousPosition = this.hasPresentedStep ? {
+        left: parseFloat(this.tooltip.style.left) || 0,
+        top: parseFloat(this.tooltip.style.top) || 0
+      } : null;
       const holes = (typeof step.getHoles === "function" ? step.getHoles() : [])
         .map((hole) => this.getVisibleHole(hole))
         .filter(Boolean)
         .slice(0, 2);
-      const visibleHoles = this.applyMasksForHoles(holes);
+      const visibleHoles = holes;
       const allowStepTwoControls = this.kind === "sheet" && this.currentIndex === 1;
-      this.maskGroups.forEach((group) => Object.values(group).forEach((mask) => {
-        if (mask) mask.style.pointerEvents = allowStepTwoControls ? "none" : "";
-      }));
+      this.maskPointerEvents = allowStepTwoControls ? "none" : "";
       this.activeHoles = visibleHoles;
-      this.focusRings.forEach((ring, index) => this.setFocusRing(ring, visibleHoles[index]));
 
       this.title.textContent = this.getStepValue(step, "title", "");
-      if (this.kind !== "tabletop" || this.renderedContentStep !== step) {
+      const contentKey = `${this.kind}:${this.currentIndex}:${this.stepPhase}:${this.abilityMenuGuideActive}`;
+      const contentChanged = this.renderedContentStep !== step || this.renderedContentKey !== contentKey;
+      if (contentChanged) {
         this.renderStepText(step);
         this.text.scrollTop = 0;
         if (this.kind === "tabletop" && step.examples) {
@@ -1751,6 +1815,7 @@
           });
         }
         this.renderedContentStep = step;
+        this.renderedContentKey = contentKey;
       }
       const progressIndex = this.kind === "sheet"
         ? this.currentIndex < 2 ? this.currentIndex + 1
@@ -1765,6 +1830,8 @@
       this.skipBtn.textContent = this.kind === "tabletop" ? "關閉" : "跳過";
       this.nextBtn.textContent = this.getNextButtonText();
       this.tooltip.style.display = "";
+      this.tooltip.style.maxHeight = "";
+      this.tooltip.style.overflowY = "";
 
       const placement = this.getStepValue(step, "placement", "bottom");
       this.tooltip.style.cursor = this.tooltipDragPointerId === null ? "grab" : "grabbing";
@@ -1772,9 +1839,75 @@
       if (tooltipHole) this.positionTooltip(tooltipHole, placement, visibleHoles);
       else this.positionTooltipWithoutHighlight();
       this.applyTooltipDragPosition();
+      const position = {
+        left: parseFloat(this.tooltip.style.left),
+        top: parseFloat(this.tooltip.style.top)
+      };
+      this.tooltip.style.visibility = "";
+      // Fade in once on entry; keep brightness constant between steps.
+      if (!previousPosition && animate && !prefersReducedMotion()) {
+        this.tooltipRevealAnimation = this.tooltip.animate([{ opacity: 0 }, { opacity: 1 }], {
+          duration: PRESENTATION_DURATION, easing: "ease-out"
+        });
+      }
       if (refreshInteractionRoots) this.refreshTourInteractionRoots();
       if (ensureFocus) this.ensureTourFocus();
       this.lastTourScrollY = window.scrollY;
+      await this.presentStep(visibleHoles, position, previousPosition, animate);
+    }
+
+    cancelPresentation() {
+      if (this.presentationFrame !== null) cancelAnimationFrame(this.presentationFrame);
+      this.presentationFrame = null;
+      this.presentationResolve?.();
+      this.presentationResolve = null;
+    }
+
+    presentStep(holes, position, previousPosition, animate) {
+      const previousHoles = this.presentedHoles;
+      const collapse = hole => ({
+        left: (hole.left + hole.right) / 2, right: (hole.left + hole.right) / 2,
+        top: (hole.top + hole.bottom) / 2, bottom: (hole.top + hole.bottom) / 2
+      });
+      const count = Math.max(previousHoles.length, holes.length);
+      const from = Array.from({ length: count }, (_, i) => previousHoles[i] || collapse(holes[i]));
+      const to = Array.from({ length: count }, (_, i) => holes[i] || collapse(previousHoles[i]));
+      const startPosition = previousPosition || position;
+      const paint = progress => {
+        const lerp = (a, b) => a + (b - a) * progress;
+        const currentHoles = progress === 1 ? holes : from.map((hole, i) => ({
+          left: lerp(hole.left, to[i].left), right: lerp(hole.right, to[i].right),
+          top: lerp(hole.top, to[i].top), bottom: lerp(hole.bottom, to[i].bottom)
+        }));
+        this.presentedHoles = currentHoles;
+        this.applyMasksForHoles(currentHoles);
+        this.focusRings.forEach((ring, i) => this.setFocusRing(ring, currentHoles[i]));
+        if (this.tooltipDragPointerId === null && !this.tooltipDragPosition) {
+          this.tooltip.style.left = `${lerp(startPosition.left, position.left)}px`;
+          this.tooltip.style.top = `${lerp(startPosition.top, position.top)}px`;
+        }
+      };
+      this.hasPresentedStep = true;
+      if (!animate || prefersReducedMotion()) {
+        paint(1);
+        return Promise.resolve();
+      }
+      paint(0);
+      return new Promise(resolve => {
+        this.presentationResolve = resolve;
+        const startedAt = performance.now();
+        const tick = now => {
+          const progress = Math.min(1, (now - startedAt) / PRESENTATION_DURATION);
+          paint(progress * progress * (3 - 2 * progress));
+          if (progress < 1) this.presentationFrame = requestAnimationFrame(tick);
+          else {
+            this.presentationFrame = null;
+            this.presentationResolve = null;
+            resolve();
+          }
+        };
+        this.presentationFrame = requestAnimationFrame(tick);
+      });
     }
 
     getNextButtonText() {
@@ -1785,23 +1918,17 @@
       return "下一步";
     }
 
-    hideMaskGroup(group) {
-      Object.values(group || {}).forEach((mask) => {
-        if (!mask) return;
-        mask.style.cssText = "display:none;left:0;top:0;width:0;height:0;";
-      });
-    }
-
     resetHighlightState() {
-      this.maskGroups.forEach((group) => this.hideMaskGroup(group));
+      this.cancelPresentation();
+      this.tooltipRevealAnimation?.cancel();
+      this.tooltipRevealAnimation = null;
+      this.presentedHoles = [];
+      this.hasPresentedStep = false;
+      this.masks.forEach(mask => { mask.style.display = "none"; });
       this.focusRings.forEach((ring) => {
         if (!ring) return;
         ring.style.cssText = "display:none;left:0;top:0;width:0;height:0;pointer-events:none;";
       });
-      if (this.tooltip) {
-        this.tooltip.style.left = "0px";
-        this.tooltip.style.top = "0px";
-      }
     }
 
     setMaskRect(mask, left, top, width, height) {
@@ -1809,74 +1936,51 @@
         if (mask) mask.style.display = "none";
         return;
       }
-      mask.style.cssText = `display:block;left:${left}px;top:${top}px;width:${width}px;height:${height}px;`;
-    }
-
-    placeMaskGroup(group, hole, region) {
-      const leftBound = region.left;
-      const rightBound = region.right;
-      const topBound = region.top;
-      const bottomBound = region.bottom;
-      const holeLeft = Math.max(leftBound, Math.min(rightBound, hole.left));
-      const holeRight = Math.max(leftBound, Math.min(rightBound, hole.right));
-      const holeTop = Math.max(topBound, Math.min(bottomBound, hole.top));
-      const holeBottom = Math.max(topBound, Math.min(bottomBound, hole.bottom));
-      this.setMaskRect(group.top, leftBound, topBound, rightBound - leftBound, holeTop - topBound);
-      this.setMaskRect(group.left, leftBound, holeTop, holeLeft - leftBound, holeBottom - holeTop);
-      this.setMaskRect(group.right, holeRight, holeTop, rightBound - holeRight, holeBottom - holeTop);
-      this.setMaskRect(group.bottom, leftBound, holeBottom, rightBound - leftBound, bottomBound - holeBottom);
+      mask.style.cssText = `display:block;left:${left}px;top:${top}px;width:${width}px;height:${height}px;transition:none;`;
+      mask.style.pointerEvents = this.maskPointerEvents || "";
     }
 
     applyMasksForHoles(holes) {
-      if (!holes.length) {
-        this.setMaskRect(this.maskGroups[0].top, 0, 0, window.innerWidth, window.innerHeight);
-        this.hideMaskGroup(this.maskGroups[1]);
-        return [];
-      }
-      if (holes.length === 1) {
-        this.placeMaskGroup(this.maskGroups[0], holes[0], {
-          left: 0, right: window.innerWidth, top: 0, bottom: window.innerHeight
+      // Paint the complement of the holes in disjoint horizontal bands. Unlike
+      // switching between horizontal/vertical splits, this stays continuous
+      // when moving spotlights overlap or a second spotlight appears/disappears.
+      const visible = holes.map(hole => this.getVisibleHole(hole)).filter(Boolean);
+      const edges = [...new Set([0, window.innerHeight, ...visible.flatMap(hole => [hole.top, hole.bottom])])]
+        .sort((a, b) => a - b);
+      let used = 0;
+      const place = (left, top, right, bottom) => {
+        if (right <= left || bottom <= top) return;
+        if (!this.masks[used]) {
+          // Two disjoint holes can require nine rectangles during a transition.
+          const mask = document.createElement("div");
+          mask.className = "tour-mask";
+          this.overlay.insertBefore(mask, this.focusRings[0]);
+          this.masks.push(mask);
+        }
+        this.setMaskRect(this.masks[used++], left, top, right - left, bottom - top);
+      };
+      for (let i = 0; i < edges.length - 1; i++) {
+        const top = edges[i];
+        const bottom = edges[i + 1];
+        const openings = visible.filter(hole => hole.top < bottom && hole.bottom > top)
+          .sort((a, b) => a.left - b.left);
+        let left = 0;
+        openings.forEach(hole => {
+          place(left, top, hole.left, bottom);
+          left = Math.max(left, hole.right);
         });
-        this.hideMaskGroup(this.maskGroups[1]);
-        return holes;
+        place(left, top, window.innerWidth, bottom);
       }
-
-      const [first, second] = holes;
-      const overlapX = Math.max(0, Math.min(first.right, second.right) - Math.max(first.left, second.left));
-      const minWidth = Math.max(1, Math.min(first.right - first.left, second.right - second.left));
-      if (overlapX / minWidth > 0.6) {
-        const firstIsUpper = first.top <= second.top;
-        const upper = firstIsUpper ? first : second;
-        const lower = firstIsUpper ? second : first;
-        const splitY = Math.max(0, Math.min(window.innerHeight, Math.floor((upper.bottom + lower.top) / 2)));
-        this.placeMaskGroup(this.maskGroups[0], first, firstIsUpper
-          ? { left: 0, right: window.innerWidth, top: 0, bottom: splitY }
-          : { left: 0, right: window.innerWidth, top: splitY, bottom: window.innerHeight });
-        this.placeMaskGroup(this.maskGroups[1], second, firstIsUpper
-          ? { left: 0, right: window.innerWidth, top: splitY, bottom: window.innerHeight }
-          : { left: 0, right: window.innerWidth, top: 0, bottom: splitY });
-        return holes;
-      }
-
-      const firstIsLeft = first.left <= second.left;
-      const leftHole = firstIsLeft ? first : second;
-      const rightHole = firstIsLeft ? second : first;
-      const splitX = Math.max(0, Math.min(window.innerWidth, Math.floor((leftHole.right + rightHole.left) / 2)));
-      this.placeMaskGroup(this.maskGroups[0], first, firstIsLeft
-        ? { left: 0, right: splitX, top: 0, bottom: window.innerHeight }
-        : { left: splitX, right: window.innerWidth, top: 0, bottom: window.innerHeight });
-      this.placeMaskGroup(this.maskGroups[1], second, firstIsLeft
-        ? { left: splitX, right: window.innerWidth, top: 0, bottom: window.innerHeight }
-        : { left: 0, right: splitX, top: 0, bottom: window.innerHeight });
+      this.masks.slice(used).forEach(mask => { mask.style.display = "none"; });
       return holes;
     }
 
     setFocusRing(ring, hole) {
-      if (!ring || !hole) {
+      if (!ring || !hole || hole.right <= hole.left || hole.bottom <= hole.top) {
         if (ring) ring.style.display = "none";
         return;
       }
-      ring.style.cssText = `display:block;left:${hole.left}px;top:${hole.top}px;width:${Math.max(0, hole.right - hole.left)}px;height:${Math.max(0, hole.bottom - hole.top)}px;pointer-events:none;`;
+      ring.style.cssText = `display:block;left:${hole.left}px;top:${hole.top}px;width:${Math.max(0, hole.right - hole.left)}px;height:${Math.max(0, hole.bottom - hole.top)}px;pointer-events:none;transition:none;`;
     }
 
     positionTooltipWithoutHighlight() {
@@ -1895,8 +1999,17 @@
       const height = this.tooltip.offsetHeight || 170;
       this.tooltip.style.left = `${Math.min(window.innerWidth - width - margin, Math.max(margin, hole.left))}px`;
 
+      if (placement === "search-controls-bottom") {
+        const bottom = Math.max(...holes.map(target => target.bottom), hole.bottom);
+        this.tooltip.style.top = `${bottom + margin}px`;
+        this.tooltip.style.maxHeight = `${Math.max(0, window.innerHeight - bottom - margin * 2)}px`;
+        this.tooltip.style.overflowY = "auto";
+        return;
+      }
+
       if (placement === "action-corner") {
-        const position = this.clampTooltipPosition(holes[1]?.right + margin || hole.right + margin, hole.bottom + margin);
+        const attackHole = holes[1] || hole;
+        const position = this.clampTooltipPosition(attackHole.left, attackHole.bottom + margin);
         this.tooltip.style.left = `${position.left}px`;
         this.tooltip.style.top = `${position.top}px`;
         return;
@@ -1995,7 +2108,10 @@
     handleResize() {
       if (!this.active) return;
       this.hidePointBuyPresetTooltip();
-      requestAnimationFrame(() => this.renderStep());
+      requestAnimationFrame(() => {
+        if (!this.active || (this.isTransitioning && this.presentationFrame === null)) return;
+        this.renderStep({ animate: false });
+      });
     }
 
     handleScroll() {
@@ -2008,18 +2124,18 @@
         this.lastTourScrollY = window.scrollY;
         this.keepHighlightedTargetsReachable(scrollDelta);
         this.lastTourScrollY = window.scrollY;
-        this.renderStep({ refreshInteractionRoots: false, ensureFocus: false });
+        this.renderStep({ refreshInteractionRoots: false, ensureFocus: false, animate: false });
       });
     }
 
     handlePointBuyScroll() {
-      if (!this.active || this.currentIndex !== 2 || this.stepPhase === 0 || this.pointBuyScrollRenderPending) return;
+      if (!this.active || this.isTransitioning || this.currentIndex !== 2 || this.stepPhase === 0 || this.pointBuyScrollRenderPending) return;
       this.hidePointBuyPresetTooltip();
       this.pointBuyScrollRenderPending = true;
       requestAnimationFrame(() => {
         this.pointBuyScrollRenderPending = false;
-        if (!this.active || this.currentIndex !== 2 || this.stepPhase === 0) return;
-        this.renderStep({ refreshInteractionRoots: false, ensureFocus: false });
+        if (!this.active || this.isTransitioning || this.currentIndex !== 2 || this.stepPhase === 0) return;
+        this.renderStep({ refreshInteractionRoots: false, ensureFocus: false, animate: false });
       });
     }
 
