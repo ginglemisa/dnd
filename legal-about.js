@@ -5,6 +5,9 @@
   const content = `
     <article class="legal-about-content">
 <h2>關於 twD20</h2>
+      <p>twD20 是為繁體中文玩家製作的 DND 手機角色卡與創角工具，
+      用於遊玩 Dungeons & Dragons 2024 規則版本，
+      也常稱為 D&D 2024、5.5e、5R。</p>
       <p>這是一個給 TRPG 新手的禮物。</p>
       <p>目標：在短時間內完成創角，並確保所需規則都能查閱。</p>
       <p>支援 1～8 級角色，提供擲骰、儲存、分享網址、PDF 匯出功能。</p>
