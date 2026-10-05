@@ -270,7 +270,7 @@ const classFeatures = {
 
 <section class="barbarian-feature class-feature-section" data-feature-level="3">
   <h3>等級 3：野蠻人子職</h3>
-  <p>你可選擇一個野蠻人子職；基本規則僅提供狂戰士道途。</p>
+  <p>你可選擇一個野蠻人子職；基本規則僅提供「狂戰士道途」。</p>
 </section>
 
 <section class="barbarian-feature class-feature-section" data-feature-level="3">
@@ -288,7 +288,7 @@ const classFeatures = {
 
 <section class="barbarian-feature class-feature-section" data-feature-level="4">
   <h3>等級 4：屬性值提升</h3>
-  <p>獲得「屬性值提升」專長，或其他符合條件的專長。</p>
+  <p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p>
   <p>另外依特性表提升武器精通可選數量。</p>
 </section>
 
@@ -319,7 +319,7 @@ const classFeatures = {
 
 <section class="barbarian-feature class-feature-section" data-feature-level="8">
   <h3>等級 8：屬性值提升</h3>
-  <p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p>
+  <p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p>
 </section>
 </div>
 `,
@@ -557,7 +557,7 @@ const classFeatures = {
 
 <section class="bard-feature class-feature-section" data-feature-level="3">
   <h3>等級 3：吟遊詩人子職</h3>
-  <p>你可選擇一個吟遊詩人子職；基本規則僅提供逸聞學院。</p>
+  <p>你可選擇一個吟遊詩人子職；基本規則僅提供「逸聞學院」。</p>
 </section>
 
 <section class="bard-feature class-feature-section" data-feature-level="3">
@@ -573,7 +573,7 @@ const classFeatures = {
 
 <section class="bard-feature class-feature-section" data-feature-level="4">
   <h3>等級 4：屬性值提升</h3>
-  <p>獲得「屬性值提升」專長，或其他符合條件的專長。</p>
+  <p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p>
 </section>
 
 <section class="bard-feature class-feature-section" data-feature-level="5">
@@ -583,7 +583,7 @@ const classFeatures = {
 </section>
 <section class="bard-feature class-feature-section" data-feature-level="6"><h3>等級 6：魔法發現（逸聞子職）</h3><p>你從牧師、德魯伊或法師的法術列表中選擇並學會兩個法術；兩者可以來自不同列表。所選法術必須是戲法，或是你已有對應法術位的法術。</p><p>你始終準備所選法術。每當你獲得一個吟遊詩人等級時，可以將其中一個替換為另一個符合條件的法術。</p><div id="bard-magical-discoveries" class="bard-magical-discoveries" aria-label="魔法發現法術選擇"></div></section>
 <section class="bard-feature class-feature-section" data-feature-level="7" data-action-id="bard-countercharm"><h3>等級 7：反迷惑</h3><p>當你或你30呎內的一個生物在抵抗魅惑或恐慌狀態的豁免檢定中失敗時，你可以執行反應，使失敗者重新進行該豁免，且新的檢定具有優勢。</p></section>
-<section class="bard-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
+<section class="bard-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p></section>
 </div>
 `,
   cleric: `<section class="class-creation-content" data-class-feature-panel="creation">
@@ -810,7 +810,7 @@ const classFeatures = {
 
 <section class="cleric-feature class-feature-section" data-feature-level="3">
   <h3>等級 3：牧師子職</h3>
-  <p>你可選擇一個牧師子職；基本規則僅提供生命領域。</p>
+  <p>你可選擇一個牧師子職；基本規則僅提供「生命領域」。</p>
 </section>
 
 <section class="cleric-feature class-feature-section" data-feature-level="3">
@@ -836,7 +836,7 @@ const classFeatures = {
 
 <section class="cleric-feature class-feature-section" data-feature-level="4">
   <h3>等級 4：屬性值提升</h3>
-  <p>獲得「屬性值提升」專長，或其他符合條件的專長。</p>
+  <p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p>
 </section>
 
 <section class="cleric-feature class-feature-section" data-feature-level="5" data-action-id="cleric-sear-undead">
@@ -846,7 +846,7 @@ const classFeatures = {
 </section>
 <section class="cleric-feature class-feature-section" data-feature-level="6"><h3>等級 6：神佑醫者（生命子職）</h3><p>當你使用法術位施展一個使一名或更多其他生物恢復生命值的法術後，你立即恢復等同於2＋該法術環階的生命值。</p></section>
 <section class="cleric-feature class-feature-section" data-feature-level="7"><h3>等級 7：神佑打擊</h3><p>選擇下列一項。即使你已從舊書中的牧師子職業獲得其中一項，也只能使用透過本特性選擇的選項。</p><div class="druid-mission-options"><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="cleric-blessed-strikes-divine-strike" data-feature-choice-group="cleric-blessed-strikes"> 神聖打擊</label>：在你的每個回合中一次，當你使用武器發動攻擊檢定並命中一個生物時，可以使目標額外受到1d8黯蝕或光耀傷害（由你選擇）。</div></div><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="cleric-blessed-strikes-potent-spellcasting" data-feature-choice-group="cleric-blessed-strikes"> 強力施法</label>：你將感知調整值加入所有你以牧師戲法造成的傷害中。</div></div></div></section>
-<section class="cleric-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
+<section class="cleric-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p></section>
 </div>
 `,
   druid: `<section class="class-creation-content" data-class-feature-panel="creation">
@@ -1163,7 +1163,7 @@ const classFeatures = {
 <section class="druid-feature class-feature-section" data-feature-level="3">
   <h3>等級 3：德魯伊子職</h3>
   <ul class="class-rule-list">
-    <li>你可選擇一個德魯伊子職；基本規則僅提供大地結社。</li>
+    <li>你可選擇一個德魯伊子職；基本規則僅提供「大地結社」。</li>
     <li>隨等級提升，你會陸續取得子職特性。</li>
   </ul>
 </section>
@@ -1231,7 +1231,7 @@ const classFeatures = {
 
 <section class="druid-feature class-feature-section" data-feature-level="4">
   <h3>等級 4：屬性值提升</h3>
-  <p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p>
+  <p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p>
 </section>
 
 <section class="druid-feature class-feature-section" data-feature-level="5">
@@ -1250,7 +1250,7 @@ const classFeatures = {
 </section>
 <section class="druid-feature class-feature-section" data-feature-level="6"><h3>等級 6：自然恢復（大地子職）</h3><p>你可以在不消耗法術位的情況下，施展一次透過結社法術特性準備的1+環法術。使用後，你必須完成長休才能再次這麼做。</p><p>此外，當你完成短休時，可以恢復部分已消耗的法術位。恢復的法術位環階總和等於你德魯伊職業等級的一半（小數無條件進位），且每個法術位都不能是6+環。使用此效果後，你必須完成長休才能再次恢復法術位。</p></section>
 <section class="druid-feature class-feature-section" data-feature-level="7"><h3>等級 7：元素狂怒</h3><p>選擇並獲得下列一項：</p><div class="druid-mission-options"><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="druid-elemental-fury-potent-spellcasting" data-feature-choice-group="druid-elemental-fury"> 強力施法</label>：你將感知調整值加入所有你以德魯伊戲法造成的傷害中。</div></div><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="druid-elemental-fury-primal-strike" data-feature-choice-group="druid-elemental-fury"> 原初打擊</label>：在你的每個回合中一次，當你使用武器或荒野形態的野獸形態發動攻擊並命中一個生物時，可以使目標額外受到1d8冷凍、火焰、閃電或雷鳴傷害（由你選擇）。</div></div></div></section>
-<section class="druid-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
+<section class="druid-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p></section>
 </div>
 `,
   fighter: `<section class="class-creation-content" data-class-feature-panel="creation">
@@ -1412,7 +1412,7 @@ const classFeatures = {
 
 <section class="fighter-feature class-feature-section" data-feature-level="3">
   <h3>等級 3：戰士子職</h3>
-  <p>你可選擇一個戰士子職；基本規則僅提供勇士。</p>
+  <p>你可選擇一個戰士子職；基本規則僅提供「勇士」。</p>
 </section>
 
 <section class="fighter-feature class-feature-section" data-feature-level="3">
@@ -1428,7 +1428,7 @@ const classFeatures = {
 
 <section class="fighter-feature class-feature-section" data-feature-level="4">
   <h3>等級 4：屬性值提升</h3>
-  <p>獲得“屬性值提升”專長或另一符合條件的自選專長。</p>
+  <p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p>
 </section>
 
 <section class="fighter-feature class-feature-section" data-feature-level="5">
@@ -1440,9 +1440,9 @@ const classFeatures = {
   <h3>等級 5：戰術轉移</h3>
   <p>當你以附贈動作使用 回氣 時，你可以移動至多等同於你速度一半的距離，且不會引發藉機攻擊。</p>
 </section>
-<section class="fighter-feature class-feature-section" data-feature-level="6"><h3>等級 6：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
+<section class="fighter-feature class-feature-section" data-feature-level="6"><h3>等級 6：屬性值提升</h3><p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p></section>
 <section class="fighter-feature class-feature-section" data-feature-level="7"><h3>等級 7：額外戰鬥風格（勇士子職）</h3><p>你再獲得一個自選的戰鬥風格專長。</p></section>
-<section class="fighter-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
+<section class="fighter-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p></section>
 </div>
 `,
   monk: `<section class="class-creation-content" data-class-feature-panel="creation">
@@ -1653,7 +1653,7 @@ const classFeatures = {
 
 <section class="monk-feature class-feature-section" data-feature-level="4">
   <h3>等級 4：屬性值提升</h3>
-  <p>獲得「屬性值提升」專長，或其他符合條件的專長。</p>
+  <p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p>
 </section>
 
 <section class="monk-feature class-feature-section" data-feature-level="4" data-action-id="monk-slow-fall">
@@ -1675,7 +1675,7 @@ const classFeatures = {
     <li>成功：速度減半，且到你下回合開始前，下一次對它的攻擊有優勢。</li>
   </ul>
 </section>
-<section class="monk-feature class-feature-section" data-feature-level="6"><h3>等級 6：真力駐拳</h3><p>當你的徒手打擊造成傷害時，可以將其傷害類型替換為力場傷害。</p></section><section class="monk-feature class-feature-section" data-feature-level="6" data-action-id="monk-wholeness-of-body"><h3>等級 6：混元體（散打子職）</h3><p>作為附贈動作，你可以擲出武藝骰，恢復等同於擲骰結果＋你的感知調整值的生命值（最少恢復1點）。</p><p>你可以使用該特性的次數等同於你的感知調整值（最少一次），並在完成長休時恢復所有已消耗的使用次數。</p></section><section class="monk-feature class-feature-section" data-feature-level="7"><h3>等級 7：反射閃避</h3><p>當你受到允許進行敏捷豁免以使傷害減半的效應影響時，豁免成功則不受傷害，豁免失敗則僅受一半傷害。</p><p>你在失能狀態下無法從該特性中獲益。</p></section><section class="monk-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
+<section class="monk-feature class-feature-section" data-feature-level="6"><h3>等級 6：真力駐拳</h3><p>當你的徒手打擊造成傷害時，可以將其傷害類型替換為力場傷害。</p></section><section class="monk-feature class-feature-section" data-feature-level="6" data-action-id="monk-wholeness-of-body"><h3>等級 6：混元體（散打子職）</h3><p>作為附贈動作，你可以擲出武藝骰，恢復等同於擲骰結果＋你的感知調整值的生命值（最少恢復1點）。</p><p>你可以使用該特性的次數等同於你的感知調整值（最少一次），並在完成長休時恢復所有已消耗的使用次數。</p></section><section class="monk-feature class-feature-section" data-feature-level="7"><h3>等級 7：反射閃避</h3><p>當你受到允許進行敏捷豁免以使傷害減半的效應影響時，豁免成功則不受傷害，豁免失敗則僅受一半傷害。</p><p>你在失能狀態下無法從該特性中獲益。</p></section><section class="monk-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p></section>
 </div>
 `,
   paladin: `<section class="class-creation-content" data-class-feature-panel="creation">
@@ -1892,7 +1892,7 @@ const classFeatures = {
 
 <section class="paladin-feature class-feature-section" data-feature-level="3">
   <h3>等級 3：聖騎士子職</h3>
-  <p>你可選擇一個聖騎士子職；基本規則僅提供奉獻之誓。</p>
+  <p>你可選擇一個聖騎士子職；基本規則僅提供「奉獻之誓」。</p>
   <div class="class-rule-subsection">
     <h4>奉獻之誓重視正義,秩序與榮譽，常見信條包括：</h4>
     <ul class="class-rule-list">
@@ -1928,7 +1928,7 @@ const classFeatures = {
 
 <section class="paladin-feature class-feature-section" data-feature-level="4">
   <h3>等級 4：屬性值提升</h3>
-  <p>獲得「屬性值提升」專長，或其他符合條件的專長。</p>
+  <p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p>
 </section>
 
 <section class="paladin-feature class-feature-section" data-feature-level="5">
@@ -1941,7 +1941,7 @@ const classFeatures = {
   <p>你永遠準備好「召喚坐騎」。</p>
   <p>你可不耗法術位施放 1 次，長休後恢復。</p>
 </section>
-<section class="paladin-feature class-feature-section" data-feature-level="6"><h3>等級 6：守護靈氣&#x20;</h3><p>你以自身為原點放射出10呎的無形保護性靈氣。你處於失能狀態時，靈氣失效。&#x20;</p><p>你和靈氣內的盟友進行豁免檢定時，獲得等同於你魅力調整值的加值（至少＋1）。&#x20;</p><p>一個生物同一時間只能從一道守護靈氣中獲益；處於多道靈氣重疊區域時，由該生物選擇使用哪一道。&#x20;</p></section><section class="paladin-feature class-feature-section" data-feature-level="7"><h3>等級 7：奉獻靈氣（奉獻子職）&#x20;</h3><p>守護靈氣使你和其中的盟友免疫魅惑狀態。若正被魅惑的盟友進入靈氣範圍，該狀態會暫時失效。&#x20;</p></section><section class="paladin-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
+<section class="paladin-feature class-feature-section" data-feature-level="6"><h3>等級 6：守護靈氣&#x20;</h3><p>你以自身為原點放射出10呎的無形保護性靈氣。你處於失能狀態時，靈氣失效。&#x20;</p><p>你和靈氣內的盟友進行豁免檢定時，獲得等同於你魅力調整值的加值（至少＋1）。&#x20;</p><p>一個生物同一時間只能從一道守護靈氣中獲益；處於多道靈氣重疊區域時，由該生物選擇使用哪一道。&#x20;</p></section><section class="paladin-feature class-feature-section" data-feature-level="7"><h3>等級 7：奉獻靈氣（奉獻子職）&#x20;</h3><p>守護靈氣使你和其中的盟友免疫魅惑狀態。若正被魅惑的盟友進入靈氣範圍，該狀態會暫時失效。&#x20;</p></section><section class="paladin-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p></section>
 </div>
 `,
   ranger: `<section class="class-creation-content" data-class-feature-panel="creation">
@@ -2166,7 +2166,7 @@ const classFeatures = {
 
 <section class="ranger-feature class-feature-section" data-feature-level="4">
   <h3>等級 4：屬性值提升</h3>
-  <p>獲得「屬性值提升」專長，或其他符合條件的專長。</p>
+  <p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p>
 </section>
 
 <section class="ranger-feature class-feature-section" data-feature-level="5">
@@ -2182,7 +2182,7 @@ const classFeatures = {
 </section><section class="ranger-feature class-feature-section" data-feature-level="7" data-rest-change="either">
 <h3>等級 7：防守戰術（獵人子職）</h3>
 <p>選擇並獲得下列一項。每當你完成短休或長休時，可以用另一項替換目前的選擇。</p>
-<div class="druid-mission-options"><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="ranger-defensive-tactics-escape-the-horde" data-feature-choice-group="ranger-defensive-tactics"> 衝出重圍</label>：以你為目標的藉機攻擊具有劣勢。</div></div><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="ranger-defensive-tactics-multiattack-defense" data-feature-choice-group="ranger-defensive-tactics"> 多重防禦</label>：當一個生物的攻擊檢定命中你時，該生物在本回合內對你發動的所有後續攻擊檢定均具有劣勢。</div></div></div></section><section class="ranger-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
+<div class="druid-mission-options"><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="ranger-defensive-tactics-escape-the-horde" data-feature-choice-group="ranger-defensive-tactics"> 衝出重圍</label>：以你為目標的藉機攻擊具有劣勢。</div></div><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="ranger-defensive-tactics-multiattack-defense" data-feature-choice-group="ranger-defensive-tactics"> 多重防禦</label>：當一個生物的攻擊檢定命中你時，該生物在本回合內對你發動的所有後續攻擊檢定均具有劣勢。</div></div></div></section><section class="ranger-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p></section>
 </div>
 `,
   rogue: `<section class="class-creation-content" data-class-feature-panel="creation">
@@ -2338,7 +2338,7 @@ const classFeatures = {
 
 <section class="rogue-feature class-feature-section" data-feature-level="3">
   <h3>等級 3：盜賊子職</h3>
-  <p>你可選擇一個盜賊子職；基本規則僅提供妙手。</p>
+  <p>你可選擇一個盜賊子職；基本規則僅提「妙手」。</p>
 </section>
 
 <section class="rogue-feature class-feature-section" data-feature-level="3" data-action-id="rogue-fast-hands">
@@ -2358,7 +2358,7 @@ const classFeatures = {
 
 <section class="rogue-feature class-feature-section" data-feature-level="4">
   <h3>等級 4：屬性值提升</h3>
-  <p>獲得「屬性值提升」專長，或其他符合條件的專長。</p>
+  <p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p>
 </section>
 
 <section class="rogue-feature class-feature-section" data-feature-level="5">
@@ -2376,7 +2376,7 @@ const classFeatures = {
   <h3>等級 5：直覺閃避</h3>
   <p>當你看得見的攻擊者命中你時，你可用反應讓該次攻擊傷害減半（捨去小數點）。</p>
 </section>
-<section class="rogue-feature class-feature-section" data-feature-level="6"><h3>等級 6：專精</h3><p>再選擇兩項你已有熟練的技能，並獲得其專精。</p></section><section class="rogue-feature class-feature-section" data-feature-level="7"><h3>等級 7：反射閃避</h3><p>當你受到允許進行敏捷豁免以使傷害減半的效應影響時，豁免成功則不受傷害，豁免失敗則僅受一半傷害。你在失能狀態下無法使用該特性。</p></section><section class="rogue-feature class-feature-section" data-feature-level="7"><h3>等級 7：可靠才能</h3><p>每當你使用技能或工具熟練項進行屬性檢定時，可以將d20骰中9或以下的結果視為10。</p></section><section class="rogue-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
+<section class="rogue-feature class-feature-section" data-feature-level="6"><h3>等級 6：專精</h3><p>再選擇兩項你已有熟練的技能，並獲得其專精。</p></section><section class="rogue-feature class-feature-section" data-feature-level="7"><h3>等級 7：反射閃避</h3><p>當你受到允許進行敏捷豁免以使傷害減半的效應影響時，豁免成功則不受傷害，豁免失敗則僅受一半傷害。你在失能狀態下無法使用該特性。</p></section><section class="rogue-feature class-feature-section" data-feature-level="7"><h3>等級 7：可靠才能</h3><p>每當你使用技能或工具熟練項進行屬性檢定時，可以將d20骰中9或以下的結果視為10。</p></section><section class="rogue-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p></section>
 </div>
 `,
   sorcerer: `<section class="class-creation-content" data-class-feature-panel="creation">
@@ -2648,7 +2648,7 @@ const classFeatures = {
 <section class="sorcerer-feature class-feature-section" data-feature-level="3">
   <h3>等級 3：術士子職</h3>
   <ul class="class-rule-list">
-    <li>你可選擇一個術士子職；基本規則僅提供龍族術法。</li>
+    <li>你可選擇一個術士子職；基本規則僅提供「龍族術法」。</li>
     <li>隨等級提升，你會陸續獲得子職特性。</li>
   </ul>
 </section>
@@ -2673,7 +2673,7 @@ const classFeatures = {
 
 <section class="sorcerer-feature class-feature-section" data-feature-level="4">
   <h3>等級 4：屬性值提升</h3>
-  <p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p>
+  <p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p>
 </section>
 
 <section class="sorcerer-feature class-feature-section" data-feature-level="5">
@@ -2684,7 +2684,7 @@ const classFeatures = {
   </ul>
 </section>
 
-<section class="sorcerer-feature class-feature-section" data-feature-level="6"><h3>等級 6：元素親和（龍族子職）</h3><p>選擇一種傷害類型：強酸、冷凍、火焰、閃電或毒素。</p><article class="feature-choice-card"><select id="sorcerer-elemental-affinity-damage-type"><option value="">--請選擇傷害類型--</option><option value="acid">強酸</option><option value="cold">冷凍</option><option value="fire">火焰</option><option value="lightning">閃電</option><option value="poison">毒素</option></select><div class="feature-choice-card__body"><p>你對所選傷害類型具有抗性。當你施展造成該類型傷害的法術時，可以將魅力調整值加到該法術的一次傷害擲骰中。</p></div></article></section><section class="sorcerer-feature class-feature-section" data-feature-level="7" data-action-id="sorcerer-sorcery-incarnate"><h3>等級 7：術法化身</h3><p>當天生術法的使用次數耗盡時，你可以執行附贈動作並消耗2術法點來激活它。</p><p>此外，在天生術法激活期間，你可以在施展的每道法術上應用至多兩個超魔法選項。</p></section><section class="sorcerer-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
+<section class="sorcerer-feature class-feature-section" data-feature-level="6"><h3>等級 6：元素親和（龍族子職）</h3><p>選擇一種傷害類型：強酸、冷凍、火焰、閃電或毒素。</p><article class="feature-choice-card"><select id="sorcerer-elemental-affinity-damage-type"><option value="">--請選擇傷害類型--</option><option value="acid">強酸</option><option value="cold">冷凍</option><option value="fire">火焰</option><option value="lightning">閃電</option><option value="poison">毒素</option></select><div class="feature-choice-card__body"><p>你對所選傷害類型具有抗性。當你施展造成該類型傷害的法術時，可以將魅力調整值加到該法術的一次傷害擲骰中。</p></div></article></section><section class="sorcerer-feature class-feature-section" data-feature-level="7" data-action-id="sorcerer-sorcery-incarnate"><h3>等級 7：術法化身</h3><p>當天生術法的使用次數耗盡時，你可以執行附贈動作並消耗2術法點來激活它。</p><p>此外，在天生術法激活期間，你可以在施展的每道法術上應用至多兩個超魔法選項。</p></section><section class="sorcerer-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p></section>
 <section class="sorcerer-feature class-feature-section">
   <h3>超魔法選項</h3>
   <div class="class-rule-subsection">
@@ -2924,12 +2924,12 @@ const classFeatures = {
   <p>若其他契術師特性給你額外已準備法術，這些法術不計入上述準備數量，但仍算你的契術師法術。</p><p>每次升契術師等級時，可把準備清單中的 1 個法術換成另一個符合條件的契術師法術。</p><p>施法屬性：魅力。</p><p>施法法器：可用奧術法器。</p>
 </section>
 <section class="warlock-feature class-feature-section" data-feature-level="2" data-action-id="warlock-magical-cunning"><h3>等級 2：秘法回流</h3><ul class="class-rule-list"><li>你可進行 1 分鐘神秘儀式，結束時回復已消耗的契約魔法法術位。</li><li>回復上限為「法術位最大值的一半（小數無條件進位）」。</li><li>使用後需完成長休才能再用。</li></ul></section>
-<section class="warlock-feature class-feature-section" data-feature-level="3"><h3>等級 3：契術師子職</h3><ul class="class-rule-list"><li>你可選擇一個契術師子職；基本規則僅提供邪魔。</li><li>隨等級提升可獲得對應子職特性。</li></ul></section>
+<section class="warlock-feature class-feature-section" data-feature-level="3"><h3>等級 3：契術師子職</h3><ul class="class-rule-list"><li>你可選擇一個契術師子職；基本規則僅提供「邪魔宗主」。</li><li>隨等級提升可獲得對應子職特性。</li></ul></section>
 <section class="warlock-feature class-feature-section" data-feature-level="3"><h3>等級 3：黑暗之賜（邪魔子職）</h3><ul class="class-rule-list"><li>當你將 10 呎內敵對生物生命值降到 0 時，你獲得等同「魅力調整值＋契術師等級」的臨時生命值（至少 1）。</li><li>若是其他生物把你 10 呎內的敵對生物降到 0，你也會獲得此增益。</li></ul></section>
 <section class="warlock-feature class-feature-section" data-feature-level="3"><h3>等級 3：邪魔法術（邪魔子職）</h3><ul class="class-rule-list"><li>你會始終準備下列法術（達到對應契術師等級後生效）：</li><li>邪魔法術（等級 3）：燃燒之手,命令術,灼熱射線,暗示術。</li><li>（等級 5）：火球術,臭雲術。</li><li>（等級 7）：火焰護盾，火牆術。</li></ul></section>
-<section class="warlock-feature class-feature-section" data-feature-level="4"><h3>等級 4：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
+<section class="warlock-feature class-feature-section" data-feature-level="4"><h3>等級 4：屬性值提升</h3><p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p></section>
 <section class="warlock-feature class-feature-section" data-feature-level="5"><h3>等級 5：無</h3><ul class="class-rule-list"><li>魔能祈喚數量增加，請查看契術師特性表。</li></ul></section>
-<section class="warlock-feature class-feature-section" data-feature-level="6"><h3>等級 6：黑暗強運（邪魔子職）</h3><p>當你進行屬性檢定或豁免檢定時，可以使用該特性將1d10加到擲骰結果中。你可以在看到擲骰結果後、結果生效前使用該特性。</p><p>你可以使用該特性的次數等同於你的魅力調整值（至少一次），但每次擲骰只能使用一次。完成長休時，你恢復所有已消耗的使用次數。</p></section><section class="warlock-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
+<section class="warlock-feature class-feature-section" data-feature-level="6"><h3>等級 6：黑暗強運（邪魔子職）</h3><p>當你進行屬性檢定或豁免檢定時，可以使用該特性將1d10加到擲骰結果中。你可以在看到擲骰結果後、結果生效前使用該特性。</p><p>你可以使用該特性的次數等同於你的魅力調整值（至少一次），但每次擲骰只能使用一次。完成長休時，你恢復所有已消耗的使用次數。</p></section><section class="warlock-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p></section>
 <section class="warlock-feature class-feature-section"><h3>魔能祈喚選項</h3><p>以下依先決條件與功能分組說明。</p>
   <div class="class-rule-subsection"><h4>刃之魔契</h4><p>你可用附贈動作：</p><ul class="class-rule-list"><li>召喚一把簡易/軍用近戰武器，或</li><li>與你觸碰的魔法武器建立聯結</li></ul><p>（武器若已被他人聯結或同調，則聯結失敗）</p><p>聯結期間：</p><ul class="class-rule-list"><li>你熟練該武器。</li><li>你可把它當施法法器。</li></ul><p>聯結武器可用魅力計算命中與傷害加值。</p><p>傷害可改為黯蝕,心靈或光耀。</p><p>聯結結束條件：</p><ul class="class-rule-list"><li>你再次使用本特性的附贈動作。</li><li>武器離你超過 5 呎並持續 1 分鐘。</li><li>你死亡。</li></ul><p>若是召喚武器，聯結結束時武器會一併消失。</p></div>
   <div class="class-rule-subsection"><h4>鏈之魔契</h4><p>你學會獲得魔寵，施法不耗法術位。</p><p>魔寵可選一般形態或以下特殊形態：<hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;"><span class="beast-tip" data-beast="imp">小魔鬼</span>,<span class="beast-tip" data-beast="pseudodragon">偽龍</span>,<span class="beast-tip" data-beast="quasit">誇賽魔</span>,<span class="beast-tip" data-beast="skeleton">骷髏</span>,<span class="beast-tip" data-beast="sphinx_of_wonder">神奇斯芬克斯</span>,<span class="beast-tip" data-beast="sprite">小妖精</span> 或 <span class="beast-tip" data-beast="venomous_snake">毒蛇</span>。</p><hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;"><p>當你攻擊，可放棄其中 1 次攻擊，改讓魔寵用反應發動 1 次攻擊。</p></div>
@@ -3103,26 +3103,21 @@ const classFeatures = {
 </div>
 </section>
 </section>
-<div class="class-feature-content" data-class-feature-panel="class"><section class="wizard-feature class-feature-section" data-feature-level="1"><h3>等級 1：施法</h3><p>你透過奧術研究施法，使用「法師法術列表」。</p>
-<ul class="class-rule-list"><li>戲法：<ul><li>起始學會 3 個法師戲法（推薦：光亮術,法師之手,冷凍射線）。</li><li>每次長休後，你可把 1 個由此特性取得的戲法換成另一個法師戲法。</li><li>4 級與 10 級時，各再學 1 個法師戲法。</li></ul></li></ul>
-<ul class="class-rule-list"><li>法術書： （推薦：<span data-wizard-spellbook-recommendations>偵測魔法,羽落術,法師護甲,魔法飛彈,睡眠術,雷鳴波</span>）。<ul><li>你的法術書重 3 磅,100 頁，記錄你的法師法術。</li><li>起始記錄 6 個 1 環法師法術</li><li>每升 1 級法師，可再把 2 個符合目前環階的法師法術寫入法術書。</li></ul></li></ul>
-<p>法術位：見「法師特性」表，長休後全回復。</p>
-<ul class="class-rule-list"><li>準備法術：<ul><li>起始可從法術書準備 4 個法術。</li><li>可準備數量隨等級提高，依「法師特性」表為準。</li><li>你只能準備目前有法術位環階的法術（例如 3 級時可準備法術書中的 1～2 環法術）。</li><li>每當這個數量提高時，從法術書再選法術，直到你的準備數量與表格一致。</li></ul></li></ul>
-<p>若其他法師特性給你額外已準備法術，這些法術不計入上述準備上限，但仍算你的法師法術。</p>
-<p>每次長休後，你可重整準備清單，把任意數量已準備法術換成法術書中的其他法術。</p>
-<ul class="class-rule-list"><li>施法屬性：智力。</li><li>施法法器：可用奧術法器或法術書。</li></ul>
+<div class="class-feature-content" data-class-feature-panel="class"><section class="wizard-feature class-feature-section" data-feature-level="1"><h3>等級 1：施法</h3><p>你透過奧術研究施展「法師法術列表」中的法術。</p>
+<ul class="class-rule-list"><li>戲法：起始學會 3 個法師戲法（推薦：光亮術、法師之手、冷凍射線）。每次長休後，可替換其中 1 個。4 級時，再學會 1 個。</li><li>法術書：起始記錄 6 個 1 環法師法術（推薦：<span data-wizard-spellbook-recommendations>偵測魔法、羽落術、法師護甲、魔法飛彈、睡眠術、雷鳴波</span>）。每提升 1 級法師，再加入 2 個你目前能準備環階的法師法術。法術書只有你能直接閱讀；施展「鑑定術」也能辨讀。</li><li>法術位：數量見「法師特性」表，長休後全部恢復。</li><li>準備法術：起始從法術書準備 4 個法術，之後依「法師特性」表增加。只能準備你目前擁有對應環階法術位的法術；例如 3 級時，可準備共 6 個 1～2 環法術。</li><li>每次長休後，可任意更換已準備法術。</li><li>其他法師特性給予的額外準備法術不計入上限，但仍視為你的法師法術。</li><li>施法屬性：智力。</li><li>施法法器：奧術法器或法術書。</li></ul>
 <div class="class-rule-subsection"><h4>擴充與替換法術書</h4>
-<ul class="class-rule-list"><li>你可在冒險中把新發現的法師法術（例如卷軸）抄入法術書。</li><li>抄錄新法術：<ul><li>條件：你能準備該法術，且有時間解讀與抄寫。</li><li>成本：每環階 2 小時＋50 金幣。</li></ul></li><li>複製到新書：<ul><li>你可把舊法術書內容複製到另一本書。</li><li>成本：每環階 1 小時＋10 金幣。</li></ul></li></ul></div>
-<p>若法術書遺失，你可先把目前已準備法術抄進新書，再逐步補齊其餘法術；許多法師都會準備備用法術書。</p></section>
-<section class="wizard-feature class-feature-section" data-feature-level="1"><h3>等級 1：儀式精通</h3><ul class="class-rule-list"><li>只要法術在你的法術書中且有「儀式」標籤，你可用儀式方式施放。</li><li>你不需要先準備該法術，但施放時必須能閱讀法術書。</li></ul></section>
-<section class="wizard-feature class-feature-section" data-feature-level="1"><h3>等級 1：奧術回想</h3><ul class="class-rule-list"><li>完成短休時，你可回復已消耗法術位。</li><li>可回復的法術位環階總和上限為「法師等級一半（小數無條件進位）」。</li><li>單一被回復法術位不可高於 5 環。</li><li>例：4 級法師最多回復總和 2 環（如 1 個 2 環，或 2 個 1 環）。</li><li>使用後需完成長休才能再用。</li></ul></section>
-<section class="wizard-feature class-feature-section" data-feature-level="2"><h3>等級 2：學者</h3><ul class="class-rule-list"><li>在${skillTip("奧秘")},${skillTip("歷史")},${skillTip("自然")},${skillTip("宗教")}中，選 1 個你已熟練的技能。</li><li>你對該技能獲得專精。</li></ul></section>
-<section class="wizard-feature class-feature-section" data-feature-level="3"><h3>等級 3：法師子職</h3><ul class="class-rule-list"><li>你可選擇一個法師子職；基本規則僅提供塑能師。</li><li>隨等級提升，你會陸續獲得子職特性。</li></ul></section>
-<section class="wizard-feature class-feature-section" data-feature-level="3"><h3>等級 3：塑能學者（塑能子職）</h3><ul class="class-rule-list"><li>你可選 2 個不高於 2 環的塑能學派法師法術，免費抄入法術書。</li><li>之後每當你在本職業獲得新環階法術位時，可再免費抄入 1 個你目前能施放環階的塑能法術。</li></ul></section>
-<section class="wizard-feature class-feature-section" data-feature-level="3"><h3>等級 3：強力戲法（塑能子職）</h3><ul class="class-rule-list"><li>當你對生物施放會造成傷害的戲法時：<ul><li>若攻擊檢定失手，或</li><li>目標在該戲法豁免成功，</li><li>目標仍會受到一半傷害（若該戲法有傷害），但不受其他效果影響。</li></ul></li></ul></section>
-<section class="wizard-feature class-feature-section" data-feature-level="4"><h3>等級 4：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
-<section class="wizard-feature class-feature-section" data-feature-level="5"><h3>等級 5：記憶法術</h3><ul class="class-rule-list"><li>每次短休後，你可研讀法術書。</li><li>你可把 1 個由「施法」特性準備中的 1+環法師法術，替換成法術書中的另一個 1+環法師法術。</li></ul></section>
-<section class="wizard-feature class-feature-section" data-feature-level="6"><h3>等級 6：法術塑形（塑能子職）</h3><p>當你施展會影響你所能看見之其他生物的塑能系法術時，可以從中選擇1＋該法術環階名生物。所選生物對抗該法術的豁免檢定自動成功，且不會受到通常在豁免成功時仍會承受的一半傷害。</p></section>
-<section class="wizard-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section></div>
+<p>冒險中發現新的法師法術（如法術卷軸）時，你可將其抄入法術書。</p>
+<ul class="class-rule-list"><li>抄錄法術：你必須能準備該法術。每環需花費 2 小時與 50 金幣。</li><li>複製法術書：將已知法術抄到新書時，每環需花費 1 小時與 10 金幣。</li></ul></div>
+<p>若法術書遺失，可先將目前已準備的法術抄入新書，再重新取得其餘法術。因此許多法師會準備備用法術書。</p></section>
+<section class="wizard-feature class-feature-section" data-feature-level="1"><h3>等級 1：儀式精通</h3><p>法術書中具有「儀式」標籤的法術，即使未準備，也可用儀式方式施放；施法時必須閱讀法術書。</p></section>
+<section class="wizard-feature class-feature-section" data-feature-level="1"><h3>等級 1：奧術回想</h3><p>完成短休時，可恢復部分已消耗的法術位：</p><ul class="class-rule-list"><li>恢復的法術位合計環階不得超過法師等級的一半（無條件進位）。</li><li>單一法術位最高為 5 環。</li><li>例如 4 級法師可恢復合計 2 環，如 1 個 2 環或 2 個 1 環。</li><li>使用後，完成長休才能再次使用。</li></ul></section>
+<section class="wizard-feature class-feature-section" data-feature-level="2"><h3>等級 2：學者</h3><p>從${skillTip("奧秘")}、${skillTip("歷史")}、${skillTip("調查")}、${skillTip("醫藥")}、${skillTip("自然")}、${skillTip("宗教")}中，選擇 1 個你已熟練的技能，使其獲得專精。</p></section>
+<section class="wizard-feature class-feature-section" data-feature-level="3"><h3>等級 3：法師子職</h3><p>選擇一個法師子職；基本規則僅提供「塑能師」。隨等級提升，你會獲得相應的子職特性。</p></section>
+<section class="wizard-feature class-feature-section" data-feature-level="3"><h3>等級 3：塑能學者（塑能師）</h3><p>選擇 2 個不高於 2 環的塑能系法師法術，免費抄入法術書。</p><p>之後每當你首次獲得更高環階的法術位時，可再免費抄入 1 個不高於該環階的塑能系法師法術。</p></section>
+<section class="wizard-feature class-feature-section" data-feature-level="3"><h3>等級 3：強力戲法（塑能師）</h3><p>當你對生物施放會造成傷害的戲法時，即使攻擊失手或目標豁免成功，仍會受到一半傷害，但不受該戲法的其他效果影響。</p></section>
+<section class="wizard-feature class-feature-section" data-feature-level="4"><h3>等級 4：屬性值提升</h3><p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p></section>
+<section class="wizard-feature class-feature-section" data-feature-level="5"><h3>等級 5：記憶法術</h3><p>每次短休後，可研讀法術書，將 1 個透過「施法」準備的 1 環以上法師法術，換成書中另一個 1 環以上法師法術。</p></section>
+<section class="wizard-feature class-feature-section" data-feature-level="6"><h3>等級 6：法術塑形（塑能師）</h3><p>當你施展會影響其他可見生物的塑能系法術時，可選擇至多「1＋法術環階」名生物。</p><p>這些生物對該法術的豁免自動成功，且不會受到豁免成功時原本仍會承受的傷害。</p></section>
+<section class="wizard-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p></section></div>
 `
 };

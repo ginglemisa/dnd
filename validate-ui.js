@@ -534,7 +534,7 @@ async function verifyCharacterFeatures(browser, url) {
     assert.equal(await page.locator("[data-feature-panel] > details").count(), 0, "tabs replace outer headings and disclosure controls");
     assert.equal(await page.locator("#tab-basic #classFeatures, #tab-basic #backgroundFeatures, #tab-basic #raceFeatures, #tab-basic #metamagicOptions, #tab-basic #eldritch-invocations-output").count(), 0);
     assert.equal(await page.evaluate(() => Boolean(document.getElementById("feats-area").closest(".section").nextElementSibling?.querySelector("#class-extra"))), true);
-    assert.equal(await page.locator(".basic-row--origin .character-features-hint").textContent(), "＊點擊上方職業、種族、背景可查看細節。");
+    assert.equal(await page.locator(".basic-row--origin .character-features-hint").textContent(), "＊點擊職業、種族、背景標題或旁邊的 🛈，可查看詳細資訊。");
     const state = await page.evaluate(() => {
       window.featureControlNodes = ["classFeatures", "backgroundFeatures", "raceFeatures"].map(id => document.getElementById(id));
       return collectStateObject();

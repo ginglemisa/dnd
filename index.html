@@ -46,11 +46,11 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261005-adaptive-spell-list">
+  <link rel="stylesheet" href="styles.css?v=20261006-feat-view-unified-type">
   <script src="scroll-to-top.js?v=20261001-character-features-modal" defer></script>
   <script src="dice-roller.js?v=20261001-roll-equations" defer></script>
   <script src="monster.js?v=20260912-druid-controls" defer></script>
-    <script src="class-features.js?v=20261005-wizard-spellbook-entry" defer></script>
+    <script src="class-features.js?v=20261006-wizard-feature-copy" defer></script>
   <script src="race.js?v=20261003-race-flavor" defer></script>
   <script src="backgrounds.js?v=20261003-background-flavor" defer></script>
   <script src="tool-data.js?v=20260908-personalized-actions" defer></script>
@@ -62,7 +62,7 @@
   <script src="character-rules.js?v=20260922-rest" defer></script>
   <script src="app-dialog.js?v=20261001-features-reference-layers" defer></script>
   <script src="adventure-journal.js?v=20261002-journal-reading-summary" defer></script>
-  <script src="tabletop-mode.js?v=20261005-feat-eligibility-warning" defer></script>
+  <script src="tabletop-mode.js?v=20261006-tabletop-return" defer></script>
   <script src="tabletop-druid.js?v=20260915-main2-shield" defer></script>
 <script src="tabletop-resources.js?v=20261001-rest-hit-dice-inline" defer></script>
 <script src="tabletop-actions.js?v=20261005-feat-eligibility-warning" defer></script>
@@ -213,6 +213,7 @@
     <header class="tabletop-summary">
       <h1 id="tabletop-title" class="tabletop-summary__name is-placeholder" role="button" tabindex="0">點我修改角色名稱</h1>
       <p id="tabletop-character-summary">尚未選擇職業 · 等級 — · 尚未選擇種族</p>
+      <button type="button" id="tabletop-return-to-sheet" class="tabletop-compact-button tabletop-summary__return">返回角色卡</button>
     </header>
 
     <div class="tabletop-primary-tabs" role="tablist" aria-label="跑團模式主視圖" data-visible-tab-count="5">
@@ -504,7 +505,7 @@
     <div class="basic-row basic-row--class-level">
     <div class="mini-stat-card basic-pair-card basic-pair-card--class-level">
       <div class="basic-pair-field basic-pair-field--class">
-        <button type="button" class="mini-stat-label mini-stat-label--features" data-character-features-tab="class" aria-haspopup="dialog" aria-controls="character-features-modal" aria-label="查看職業能力">職業</button>
+        <button type="button" class="mini-stat-label mini-stat-label--features" data-character-features-tab="class" aria-haspopup="dialog" aria-controls="character-features-modal" aria-label="查看職業能力">職業 <span class="character-features-info-icon" aria-hidden="true">🛈</span></button>
         <select id="class">
           <option value="">待選</option>
           <option value="barbarian">野蠻人</option>
@@ -564,7 +565,7 @@
   <div class="basic-row basic-row--origin">
     <div class="mini-stat-card basic-pair-card basic-pair-card--equal">
       <div class="basic-pair-field">
-        <button type="button" class="mini-stat-label mini-stat-label--features" data-character-features-tab="background" aria-haspopup="dialog" aria-controls="character-features-modal" aria-label="查看背景能力">背景</button>
+        <button type="button" class="mini-stat-label mini-stat-label--features" data-character-features-tab="background" aria-haspopup="dialog" aria-controls="character-features-modal" aria-label="查看背景能力">背景 <span class="character-features-info-icon" aria-hidden="true">🛈</span></button>
         <select id="background">
           <option value="">待選</option>
           <option value="acolyte">侍僧</option>
@@ -576,7 +577,7 @@
         </select>
       </div>
       <div class="basic-pair-field">
-        <button type="button" class="mini-stat-label mini-stat-label--features" data-character-features-tab="race" aria-haspopup="dialog" aria-controls="character-features-modal" aria-label="查看種族能力">種族</button>
+        <button type="button" class="mini-stat-label mini-stat-label--features" data-character-features-tab="race" aria-haspopup="dialog" aria-controls="character-features-modal" aria-label="查看種族能力">種族 <span class="character-features-info-icon" aria-hidden="true">🛈</span></button>
         <div class="race-select-control">
         <select id="race">
           <option value="">待選</option>
@@ -668,7 +669,7 @@
       </select>
     </span>
     </div>
-    <p class="character-features-hint">＊點擊上方職業、種族、背景可查看細節。</p>
+    <p class="character-features-hint">＊點擊職業、種族、背景標題或旁邊的 <span class="character-features-info-icon">🛈</span>，可查看詳細資訊。</p>
     </div>
   </div>
 
@@ -3932,7 +3933,7 @@ function createMagicInitiateSelect(field, labelText) {
     const detailButton = document.createElement("button");
     detailButton.type = "button";
     detailButton.className = "magic-initiate-spell-detail";
-    detailButton.textContent = "ⓘ";
+    detailButton.textContent = "查看";
     detailButton.disabled = true;
     detailButton.setAttribute("aria-label", `查看${labelText}法術詳情`);
     detailButton.title = "請先選擇法術";

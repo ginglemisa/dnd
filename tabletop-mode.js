@@ -4600,6 +4600,11 @@ function getRogueReliableTalentEntry() {
             "tabletop-mode-toggle"
           ),
 
+        returnToSheet:
+          document.getElementById(
+            "tabletop-return-to-sheet"
+          ),
+
         sheetTabs:
           document.querySelector(
             "#sheet-tabs-row .tabs"
@@ -4911,6 +4916,11 @@ function getRogueReliableTalentEntry() {
   }
 
   function bindEvents() {
+    elements.returnToSheet?.addEventListener("click", () => {
+      applyModeVisibility("sheet");
+      elements.sheetTabs?.querySelector('[aria-selected="true"]')?.focus({ preventScroll: true });
+    });
+
     elements.tabletopTabs
       ?.forEach(tab => {
         tab.addEventListener("click", () => {
