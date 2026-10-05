@@ -46,13 +46,13 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261002-journal-reading-summary">
+  <link rel="stylesheet" href="styles.css?v=20261005-adaptive-spell-list">
   <script src="scroll-to-top.js?v=20261001-character-features-modal" defer></script>
   <script src="dice-roller.js?v=20261001-roll-equations" defer></script>
   <script src="monster.js?v=20260912-druid-controls" defer></script>
-    <script src="class-features.js?v=20261001-rest-options" defer></script>
-  <script src="race.js?v=20260924-feature-source" defer></script>
-  <script src="backgrounds.js?v=20261001-equipment-label" defer></script>
+    <script src="class-features.js?v=20261005-wizard-spellbook-entry" defer></script>
+  <script src="race.js?v=20261003-race-flavor" defer></script>
+  <script src="backgrounds.js?v=20261003-background-flavor" defer></script>
   <script src="tool-data.js?v=20260908-personalized-actions" defer></script>
   <script src="feats.js?v=20261001-automatic-feat-grants" defer></script>
   <script src="equipment-notes.js?v=20260813-weapon-rule-popups-2" defer></script>
@@ -62,15 +62,15 @@
   <script src="character-rules.js?v=20260922-rest" defer></script>
   <script src="app-dialog.js?v=20261001-features-reference-layers" defer></script>
   <script src="adventure-journal.js?v=20261002-journal-reading-summary" defer></script>
-  <script src="tabletop-mode.js?v=20261002-condition-effects" defer></script>
+  <script src="tabletop-mode.js?v=20261005-feat-eligibility-warning" defer></script>
   <script src="tabletop-druid.js?v=20260915-main2-shield" defer></script>
 <script src="tabletop-resources.js?v=20261001-rest-hit-dice-inline" defer></script>
-<script src="tabletop-actions.js?v=20261002-condition-effects" defer></script>
+<script src="tabletop-actions.js?v=20261005-feat-eligibility-warning" defer></script>
   <script src="tabletop-spells.js?v=20260923-persistent-spells" defer></script>
   <script src="legal-modal.js?v=20260923-legal-about" defer></script>
-  <script src="onboarding-tour.js?v=20261001-tour-search-position" defer></script>
-  <script src="quick-build.js?v=20261001-skill-bonus-notes" defer></script>
-  <script src="spellbook.js?v=20260913-spellbook" defer></script>
+  <script src="onboarding-tour.js?v=20261003-tour-abilities-shield" defer></script>
+  <script src="quick-build.js?v=20261005-spell-prepare-nowrap" defer></script>
+  <script src="spellbook.js?v=20261005-spell-name-labels" defer></script>
   <script src="deity-info.js" defer></script>
 
 </head>
@@ -784,25 +784,31 @@
     <button type="button" id="character-features-tab-race" class="condition-reference-tab" role="tab" aria-selected="false" aria-controls="race-features-section" data-feature-tab="race" tabindex="-1">種族</button>
   </div>
 <div class="section character-feature-panel" id="class-creation-panel" role="tabpanel" aria-labelledby="character-features-tab-creation" data-feature-panel="creation" hidden inert>
-  <div class="output" id="classCreationInfo">無資料</div>
+  <div class="output" id="classCreationInfo">請先選擇職業</div>
 </div>
 <div class="section character-feature-panel" id="class-abilities-panel" role="tabpanel" aria-labelledby="character-features-tab-class" data-feature-panel="class">
-  <div class="output" id="classFeatures">無資料</div>
+  <div class="output" id="classFeatures">請先選擇職業</div>
 </div>
 <div class="section is-hidden character-feature-panel" id="metamagic-options-section" role="tabpanel" aria-labelledby="character-features-tab-metamagic" data-feature-panel="metamagic" hidden inert>
   <div id="metamagic-summary" class="selection-summary">尚未勾選超魔法</div>
-  <div class="output" id="metamagicOptions">無資料</div>
+  <details id="metamagic-options-disclosure" class="feature-choice-disclosure" data-feature-choice-disclosure="metamagic" open>
+    <summary tabindex="0">超魔法選項</summary>
+    <div class="output" id="metamagicOptions">無資料</div>
+  </details>
 </div>
 
 <div class="section is-hidden character-feature-panel" id="eldritch-invocations-section" role="tabpanel" aria-labelledby="character-features-tab-invocations" data-feature-panel="invocations" hidden inert>
   <div id="warlock-invocation-summary" class="selection-summary">尚未勾選魔能祈喚</div>
-  <div class="output" id="eldritch-invocations-output">無資料</div>
+  <details id="invocation-options-disclosure" class="feature-choice-disclosure" data-feature-choice-disclosure="invocations" open>
+    <summary tabindex="0">魔能祈喚選項</summary>
+    <div class="output" id="eldritch-invocations-output">無資料</div>
+  </details>
 </div>
   <div class="section character-feature-panel" id="background-features-section" role="tabpanel" aria-labelledby="character-features-tab-background" data-feature-panel="background" hidden inert>
-    <div class="output" id="backgroundFeatures">無資料</div>
+    <div class="output" id="backgroundFeatures">請先選擇背景</div>
   </div>
   <div class="section character-feature-panel" id="race-features-section" role="tabpanel" aria-labelledby="character-features-tab-race" data-feature-panel="race" hidden inert>
-    <div class="output" id="raceFeatures">無資料</div>
+    <div class="output" id="raceFeatures">請先選擇種族</div>
   </div>
 </div>
 </div>
@@ -1203,7 +1209,12 @@
     <section class="spell-picked-box"><h4 class="spell-picked-heading">三環</h4><div id="picked-level3" class="spell-picked-content">—</div></section>
     <section class="spell-picked-box"><h4 class="spell-picked-heading">四環</h4><div id="picked-level4" class="spell-picked-content">—</div></section>
   </div>
-  <p id="spell-prepared-counts" class="spell-prepared-counts" hidden></p>
+  <div id="spell-prepared-summary" class="spell-prepared-summary" hidden>
+    <p id="spell-prepared-counts" class="spell-prepared-counts" tabindex="-1" hidden></p>
+    <div class="spell-prepared-actions">
+      <button id="spell-clear-prepared" type="button" disabled>清空已準備</button>
+    </div>
+  </div>
 </div>
   <div id="no-spell-slots-message" class="spell-note-muted is-hidden">目前職業與等級沒有法術位</div>
   <div id="spell-notes-sheet-mount" class="form-row">
@@ -1613,6 +1624,30 @@ function refreshToolProficiencyRows() {
   });
 }
 
+// 四種來源的工具列共用「查看」按鈕，讀取當前選項並沿用裝備搜尋詳情。
+function syncToolProficiencyViewButtons() {
+  getToolProficiencyRows().forEach(row => {
+    const select = row.querySelector("select");
+    if (!select) return;
+    let button = row.querySelector(".tool-proficiency-view");
+    if (!button) {
+      button = document.createElement("button");
+      button.type = "button";
+      button.className = "tool-proficiency-view";
+      button.textContent = "查看";
+      button.setAttribute("aria-haspopup", "dialog");
+      button.addEventListener("click", () => {
+        if (!window.openEquipmentDetailByName?.(select.value, button)) {
+          window.AppDialog.showMessage({ title: "工具詳情", message: "暫時無法讀取此工具的說明，請重新載入頁面後再試。", trigger: button });
+        }
+      });
+      select.after(button);
+    }
+    button.disabled = !select.value;
+    button.setAttribute("aria-label", select.value ? `查看${select.value}的工具詳情` : "查看工具詳情（請先選擇工具）");
+  });
+}
+
 function syncToolProficiencyOptions() {
   const selects = getToolProficiencyRows().map(row => row.querySelector("select")).filter(Boolean);
   const selectedValues = new Set(selects.map(select => select.value).filter(Boolean));
@@ -1625,6 +1660,7 @@ function syncToolProficiencyOptions() {
       option.disabled = Boolean(option.value && option.value !== select.value && selectedValues.has(option.value));
     });
   });
+  syncToolProficiencyViewButtons();
 }
 
 function removeDuplicateToolProficiencies() {
@@ -2791,47 +2827,42 @@ function escapeRegExp(text) {
 function getSpellAliasToId() { const aliases=new Map();SpellCatalog.getAllSpells().forEach(spell=>[spell.nameZh,spell.nameEn,SpellCatalog.getDisplayName(spell.spellId)].forEach(alias=>{if(alias&&!aliases.has(alias))aliases.set(alias,spell.spellId);}));return aliases; }
 function highlightSpellNamesInClassFeature(html, options = {}) { const aliases=getSpellAliasToId(),skip=new Set(options.skipClickableNames||[]),names=[...aliases.keys()].sort((a,b)=>b.length-a.length);if(!names.length)return html;const regex=new RegExp('('+names.map(escapeRegExp).join('|')+')','g'),decorate=match=>skip.has(match)?match:'<strong class="spell-highlight spell-highlight-action" role="button" tabindex="0" data-spell-id="'+escapeHtml(aliases.get(match))+'">'+match+'</strong>';return html.split(/(<[^>]+>)/g).map(part=>part.startsWith('<')&&part.endsWith('>')?part:part.replace(regex,decorate)).join('').replace(/<strong>([^<]+)<\/strong>/g,(all,text)=>aliases.has(text)?decorate(text):all); }
 
+// 選項收合只包裝顯示層；原始職業文字與選項控制項保持原位。
+const FEATURE_CHOICE_DISCLOSURE_STATE_KEY = "dnd.featureChoiceDisclosure.v1";
+function initFeatureChoiceDisclosures() {
+  let saved = {};
+  try { saved = JSON.parse(window.dndStorage.getItem(FEATURE_CHOICE_DISCLOSURE_STATE_KEY) || "{}"); } catch (_error) {}
+  const disclosures = Array.from(document.querySelectorAll("[data-feature-choice-disclosure]"));
+  disclosures.forEach(details => {
+    details.open = saved?.[details.dataset.featureChoiceDisclosure] !== false;
+    details.addEventListener("toggle", () => {
+      if (autosaveClearing) return;
+      const state = Object.fromEntries(disclosures.map(item => [item.dataset.featureChoiceDisclosure, item.open]));
+      window.dndStorage.setItem(FEATURE_CHOICE_DISCLOSURE_STATE_KEY, JSON.stringify(state));
+    });
+  });
+}
+
 const CLASS_FEATURE_TABLE_STATE_KEY = "dndchar_class_feature_table_state_v1";
 const CLASS_CORE_CREATION_INFO_STATE_KEY = "dndchar_class_core_creation_info_state_v1";
 
-function moveClassCreationInfo(output, creationOutput) {
-  creationOutput.replaceChildren();
-  // Transform display wrappers only; classFeatures remains the rules source.
-  output.querySelectorAll(".class-core-creation-info, .class-feature-table-details").forEach(details => {
-    const section = document.createElement("section");
-    section.className = details.className;
-    if (details.dataset.classFeatureTable) section.dataset.classFeatureTable = details.dataset.classFeatureTable;
-    const summary = details.querySelector(":scope > summary");
-    const heading = document.createElement("h3");
-    heading.textContent = summary?.textContent || "";
-    summary?.remove();
-    section.append(heading, ...details.childNodes);
-    details.remove();
-    creationOutput.appendChild(section);
-  });
-  if (!creationOutput.childNodes.length) creationOutput.textContent = "無資料";
-  // The output uses pre-wrap; relocated blocks must not leave blank leading rows.
-  while (output.firstChild?.nodeType === Node.TEXT_NODE && !output.firstChild.textContent.trim()) {
-    output.firstChild.remove();
-  }
+function renderClassFeaturePanels(html, output, creationOutput) {
+  const template = document.createElement("template");
+  template.innerHTML = html;
+  // 頁籤歸屬由 class-features.js 的明確標記決定，不解析標題或改寫排版結構。
+  const abilities = template.content.querySelector('[data-class-feature-panel="class"]');
+  const creation = template.content.querySelector('[data-class-feature-panel="creation"]');
+  output.replaceChildren(abilities || document.createTextNode("無資料"));
+  creationOutput.replaceChildren(creation || document.createTextNode("無資料"));
 }
 
-function getClassFeatureHtmlBeforeLevel(raw, className, nextLevel) {
+function getClassFeatureHtmlBeforeLevel(raw, nextLevel) {
   const template = document.createElement("template");
   template.innerHTML = raw;
-  const leveledSections = Array.from(template.content.querySelectorAll("section[data-feature-level]"));
-
-  if (leveledSections.length) {
-    leveledSections.forEach(section => {
-      if (Number(section.dataset.featureLevel) >= nextLevel) section.remove();
-    });
-    return template.innerHTML;
-  }
-
-  const regex = new RegExp(`等級 ${nextLevel}：`);
-  const match = raw.match(regex);
-  if (!match) return raw;
-  return raw.slice(0, raw.indexOf(match[0]));
+  template.content.querySelectorAll("section[data-feature-level]").forEach(section => {
+    if (Number(section.dataset.featureLevel) >= nextLevel) section.remove();
+  });
+  return template.innerHTML;
 }
 
 function updateClassFeature() {
@@ -2849,8 +2880,8 @@ function updateClassFeature() {
   ]));
 
   if (!selectedClass || !classFeatures[selectedClass]) {
-    output.innerHTML = "無資料";
-    creationOutput.textContent = "無資料";
+    output.innerHTML = "請先選擇職業";
+    creationOutput.textContent = "請先選擇職業";
     metamagicSection.style.display = "none";
     metamagicOutput.innerHTML = "無資料";
     if (metamagicSummary) metamagicSummary.innerHTML = "尚未勾選超魔法";
@@ -2874,18 +2905,13 @@ function updateClassFeature() {
     }
   }
 
-  if (level && !isNaN(level)) {
-    const nextLevel = parseInt(level) + 1;
-    output.innerHTML = highlightSpellNamesInClassFeature(
-      getClassFeatureHtmlBeforeLevel(raw, selectedClass, nextLevel)
-    );
-  } else {
-    output.innerHTML = highlightSpellNamesInClassFeature(raw);
-  }
+  const visibleHtml = level && !isNaN(level)
+    ? getClassFeatureHtmlBeforeLevel(raw, parseInt(level) + 1)
+    : raw;
+  renderClassFeaturePanels(highlightSpellNamesInClassFeature(visibleHtml), output, creationOutput);
 
   renderBardMagicalDiscoveryControls();
   renderClassFeatChoices();
-  moveClassCreationInfo(output, creationOutput);
   preservedControlStates.forEach((value, id) => {
     const control = document.getElementById(id);
     if (!control) return;
@@ -3020,7 +3046,7 @@ function hideUnselectedRaceOptions(container, race) {
 function updateRaceFeature() {
   const previousHumanFeat = document.getElementById(getFeatChoiceId("human-origin"))?.value || "";
   const value = document.getElementById("race").value;
-  const raw = raceFeatures[value] || "無資料";
+  const raw = raceFeatures[value] || "請先選擇種族";
   const output = document.getElementById("raceFeatures");
 
   const display = raceFeatureDisplay[value];
@@ -3087,7 +3113,7 @@ function updateBackgroundFeature() {
   const el = document.getElementById("backgroundFeatures");
 
   if (!bg) {
-    el.innerText = "無資料";
+    el.innerText = "請先選擇背景";
     syncDerivedFeatRows();
     return;
   }
@@ -3258,7 +3284,12 @@ function appendFeatChoice(container, spec, previousValue = "") {
     if (!autosaveSuspended) syncInitiativeForAlertFeatPresenceChange(hadAlertFeat, hasSelectedFeat(ALERT_FEAT_NAME));
     scheduleSaveAllFields();
   });
-  wrap.append(label, select);
+  if (spec.type === "level") {
+    select.setAttribute("aria-label", spec.label);
+    wrap.append(select);
+  } else {
+    wrap.append(label, select);
+  }
   container.append(wrap);
 }
 
@@ -3309,43 +3340,14 @@ function syncFeatChoiceOptions() {
     specs.forEach(spec => { const select = document.getElementById(getFeatChoiceId(spec.key)); if (select) select.disabled = true; });
     return;
   }
-  const claimed = new Set();
-  const background = getDerivedBackgroundFeatSpec();
-  if (background) claimed.add(background.value);
-  let magicFeatCount = background?.value === MAGIC_INITIATE_FEAT_NAME ? 1 : 0;
-  getManualFeatRows().forEach(row => {
-    const value = getFeatSelectFromRow(row)?.value;
-    if (value) claimed.add(value);
-    if (value === MAGIC_INITIATE_FEAT_NAME) magicFeatCount += 1;
-  });
-  const lessons = new Set();
   specs.forEach(spec => {
     const select = document.getElementById(getFeatChoiceId(spec.key));
     if (!select) return;
     select.disabled = !spec.active;
-    const value = select.value;
-    const duplicate = value && ((!FEAT_RULES[value]?.repeatable && claimed.has(value))
-      || (spec.source === "invocation" && lessons.has(value))
-      || (value === MAGIC_INITIATE_FEAT_NAME && magicFeatCount >= MAGIC_INITIATE_CLASS_OPTIONS.length));
-    // 還原中先保留候選值，等所有來源及屬性還原後再判斷。
-    if (!autosaveSuspended && (!spec.active || (value && (!isFeatChoiceEligible(value, spec) || duplicate)))) select.value = "";
-    if (spec.active && select.value) {
-      claimed.add(select.value);
-      if (select.value === MAGIC_INITIATE_FEAT_NAME) magicFeatCount += 1;
-      if (spec.source === "invocation") lessons.add(select.value);
-    }
-  });
-  specs.forEach(spec => {
-    const select = document.getElementById(getFeatChoiceId(spec.key));
-    if (!select) return;
-    const peers = specs.filter(peer => peer.key !== spec.key && peer.active).map(peer => document.getElementById(getFeatChoiceId(peer.key))?.value).filter(Boolean);
-    if (background) peers.push(background.value);
-    getManualFeatRows().forEach(row => { const value = getFeatSelectFromRow(row)?.value; if (value) peers.push(value); });
+    if (!autosaveSuspended && !spec.active) select.value = "";
+    // 保留選擇；資格由共用判斷控制警示及計算，不在選單上阻擋。
     Array.from(select.options).forEach(option => {
-      const value = option.value;
-      const otherLesson = spec.source === "invocation" && specs.some(peer => peer.source === "invocation" && peer.key !== spec.key && document.getElementById(getFeatChoiceId(peer.key))?.value === value);
-      const magicLimit = value === MAGIC_INITIATE_FEAT_NAME && peers.filter(peer => peer === value).length >= MAGIC_INITIATE_CLASS_OPTIONS.length;
-      option.disabled = Boolean(value) && (!isFeatChoiceEligible(value, spec) || (!FEAT_RULES[value]?.repeatable && peers.includes(value)) || otherLesson || magicLimit);
+      option.disabled = false;
     });
   });
 }
@@ -3402,7 +3404,7 @@ function createDerivedFeatRow(spec) {
     const previousValue = select.dataset.previousValue || "";
     const choice = document.getElementById(getFeatChoiceId(row.dataset.sourceKey));
     if (choice && !isManualFeatManagementEnabled()) {
-      // 兩處共用來源選項與限制，避免下方選擇繞過先決條件或重複限制。
+      // 兩處共用來源選項；選後由共用資格判斷控制警示及計算。
       const option = Array.from(choice.options).find(option => option.value === select.value);
       if (!choice.disabled && option && !option.disabled) choice.value = select.value;
       syncDerivedFeatRows();
@@ -3430,6 +3432,7 @@ function setDerivedFeatRowValues(row, spec) {
   select.id = `derived-feat-${spec.key}`;
   label.htmlFor = select.id;
   label.textContent = spec.label;
+  label.classList.toggle("sr-only", spec.type === "level");
   desc.id = `${select.id}-desc`;
   select.innerHTML = choice ? choice.innerHTML : getFeatOptionsHtml();
   select.value = spec.value;
@@ -3481,14 +3484,45 @@ function getFeatSelects() {
   return Array.from(document.querySelectorAll("#feats-area .form-row")).map(getFeatSelectFromRow).filter(Boolean);
 }
 
+function getFeatUsageEntries(changedSelect = null, overrideValue = "") {
+  const specs = getFeatChoiceSpecs();
+  const entries = getFeatSelects().map(select => {
+    const row = select.closest(".form-row");
+    const spec = specs.find(spec => spec.key === row.dataset.sourceKey)
+      || { type: FEAT_RULES[select.value]?.type, active: !isDerivedFeatRow(row) || row.dataset.featSource === "background" };
+    return { select, row, spec, value: select === changedSelect ? overrideValue : select.value };
+  });
+  if (isManualFeatManagementEnabled()) return entries.map(entry => ({ ...entry, usable: Boolean(entry.value) }));
+
+  // 固定背景與既有自訂列保留優先權，其餘依來源順序判斷重複取得。
+  const priority = entry => entry.row.dataset.featSource === "background" ? -2
+    : !isDerivedFeatRow(entry.row) ? -1 : specs.indexOf(entry.spec);
+  const claimed = new Set();
+  const lessons = new Set();
+  let magicFeatCount = 0;
+  entries.sort((a, b) => priority(a) - priority(b)).forEach(entry => {
+    const { value, spec } = entry;
+    const duplicate = (!FEAT_RULES[value]?.repeatable && claimed.has(value))
+      || (spec.source === "invocation" && lessons.has(value))
+      || (value === MAGIC_INITIATE_FEAT_NAME && magicFeatCount >= MAGIC_INITIATE_CLASS_OPTIONS.length);
+    entry.usable = Boolean(value && spec.active && isFeatChoiceEligible(value, spec) && !duplicate);
+    if (!entry.usable) return;
+    claimed.add(value);
+    if (spec.source === "invocation") lessons.add(value);
+    if (value === MAGIC_INITIATE_FEAT_NAME) magicFeatCount += 1;
+  });
+  return entries;
+}
+
 function hasSelectedFeat(featName) {
-  return getFeatSelects().some(select => select.value === featName);
+  return getFeatUsageEntries().some(entry => entry.value === featName && entry.usable);
 }
 
 function refreshFeatDerivedEffects() {
   if (typeof updateHPDisplay === "function") updateHPDisplay();
   if (typeof updateACDisplay === "function") updateACDisplay();
   if (typeof updateSpeedDisplay === "function") updateSpeedDisplay();
+  if (typeof updateAutomaticInitiative === "function") updateAutomaticInitiative();
   if (typeof updateExpertiseVisibility === "function") updateExpertiseVisibility();
   if (typeof populateHandAttacks === "function") populateHandAttacks();
   if (typeof updateFeatCombatNotes === "function") updateFeatCombatNotes();
@@ -3496,10 +3530,7 @@ function refreshFeatDerivedEffects() {
 }
 
 function hasAlertFeatSelectedWithOverride(changedSelect = null, overrideValue = "") {
-  return getFeatSelects().some(select => {
-    const value = select === changedSelect ? overrideValue : select.value;
-    return value === ALERT_FEAT_NAME;
-  });
+  return getFeatUsageEntries(changedSelect, overrideValue).some(entry => entry.value === ALERT_FEAT_NAME && entry.usable);
 }
 
 function syncInitiativeForAlertFeatPresenceChange(hadAlertFeat, hasAlertFeat) {
@@ -3522,7 +3553,8 @@ function syncInitiativeAfterFeatSelectionChange(changedSelect, previousValue = "
 }
 
 function updateFeatDesc(selectId, descId) {
-  const v = document.getElementById(selectId).value;
+  const select = document.getElementById(selectId);
+  const v = select.value;
   const raw = featsDesc[v] || "—";
   const el = document.getElementById(descId);
 
@@ -3580,7 +3612,12 @@ function updateFeatDesc(selectId, descId) {
     })
     .join("");
 
+  const unmet = getFeatUsageEntries().some(entry => entry.select === select && entry.value && !entry.usable);
+  const warningId = `${descId}-warning`;
+  if (unmet) select.setAttribute("aria-describedby", warningId);
+  else select.removeAttribute("aria-describedby");
   el.innerHTML =
+    (unmet ? `<div id="${warningId}" class="feat-eligibility-warning" role="status">角色未達專長使用條件</div>` : "") +
     `<div class="feat-desc-title">${escapeHtml(title || "—")}</div>` +
     (subtitle ? `<div class="feat-desc-subtitle">${escapeHtml(subtitle)}</div>` : ``) +
     `<div class="feat-desc-body">${bodyHtml}</div>`;
@@ -3873,8 +3910,7 @@ function isMagicInitiateFeatSelectedInRow(row) {
 }
 
 function hasMagicInitiateFeatSelected() {
-  return Array.from(document.querySelectorAll("#feats-area .form-row"))
-    .some(row => isMagicInitiateFeatSelectedInRow(row));
+  return hasSelectedFeat(MAGIC_INITIATE_FEAT_NAME);
 }
 
 function getMagicInitiateClassFromBackgroundFeature(featText = "") {
@@ -4075,9 +4111,10 @@ function applyMagicInitiateBackgroundDefault(featSelect, backgroundData) {
 }
 
 function getMagicInitiateConfigs() {
+  const usableSelects = new Set(getFeatUsageEntries().filter(entry => entry.usable).map(entry => entry.select));
   return Array.from(document.querySelectorAll("#feats-area .form-row"))
     .map((row, rowIndex) => {
-      if (!isMagicInitiateFeatSelectedInRow(row)) return null;
+      if (!isMagicInitiateFeatSelectedInRow(row) || !usableSelects.has(getFeatSelectFromRow(row))) return null;
       const featId = getFeatSelectFromRow(row)?.id || `feat-${rowIndex}`;
       return {
         featKey: featId,
@@ -4868,6 +4905,7 @@ function escapeHtml(s) {
 
 
 document.addEventListener("DOMContentLoaded", () => {
+  initFeatureChoiceDisclosures();
   fillEldritchInvocationTextsFromClassFeatures();
   fillMetamagicTextsFromClassFeatures();
   renderEldritchInvocations();
@@ -5492,7 +5530,7 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
   globalThis.shield = globalThis.shield || [];
 </script>
 <script src="equipment-data.js" defer></script>
-<script src="search.js?v=20260928-equipment-rule-links" defer></script>
+<script src="search.js?v=20261003-tool-details" defer></script>
 
 <script>
 function getModifier(statId) {
@@ -5645,7 +5683,7 @@ function updateAutomaticInitiative() {
     return;
   }
   const dexMod = calculateAbilityModifier(dexScore);
-  const hasAlertFeat = getFeatSelects().some(select => select.value === ALERT_FEAT_NAME);
+  const hasAlertFeat = hasSelectedFeat(ALERT_FEAT_NAME);
   const jackOfAllTradesBonus = getJackOfAllTradesBonus(
     document.getElementById("class")?.value,
     document.getElementById("level")?.value,
@@ -6708,7 +6746,22 @@ function findEmptySpellRow(areaId) {
 }
 
 async function autoPrepareSpellFromFeature(spellId, triggerEl) {
-  if (!spellId || !(await window.quickBuild?.openSpellPrepareDetail?.(spellId, triggerEl))) return;
+  if (!spellId) return;
+  const spell = SpellCatalog.getSpell(spellId);
+  const canWriteSpellbook = document.getElementById("class")?.value === "wizard"
+    && triggerEl?.closest?.("#classFeatures [data-wizard-spellbook-recommendations]")
+    && spell?.level === 1 && SpellCatalog.getClassIds(spellId).includes("wizard");
+  const alreadyRecorded = canWriteSpellbook && window.Spellbook?.getState().spellIds.includes(spellId);
+  const detailOptions = canWriteSpellbook ? {
+    spellbookAlreadyRecorded: alreadyRecorded,
+    stateNote: alreadyRecorded ? "此法術已在法術書中。" : "",
+    onWriteSpellbook: () => {
+      if (!window.Spellbook?.addWizardSpell(spellId)) return false;
+      window.AppDialog.notify(`已將「${spell.nameZh}」寫入法術書。`);
+      return true;
+    }
+  } : {};
+  if (!(await window.quickBuild?.openSpellPrepareDetail?.(spellId, triggerEl, detailOptions))) return;
   const meta = findSpellMetaById(spellId);
   if (!meta) {
     await window.AppDialog.showMessage({ title: "找不到法術", message: "目前資料中沒有這個法術。", confirmLabel: "關閉" });
@@ -7196,9 +7249,41 @@ function updateSpellListStatusNote() {
   note.classList.toggle("spell-note-muted--warning", hasDuplicates);
 }
 
+function getClearablePreparedSpellSelects() {
+  return SPELL_RING_CONFIGS.flatMap(({ areaId }) => Array.from(document.querySelectorAll(
+    `#${areaId} > .spell-entry:not([data-spell-source]):not(.spell-entry--derived) select[id*='-spell-']:not(:disabled)`
+  ))).filter(select => Boolean(select.value));
+}
+
+document.getElementById("spell-clear-prepared")?.addEventListener("click", async (event) => {
+  const trigger = event.currentTarget;
+  if (!getClearablePreparedSpellSelects().length) return;
+  const confirmed = await window.AppDialog.requestDecision({
+    title: "清空已準備",
+    message: "要清空一至四環手動選擇的已準備法術嗎？戲法、法術書，以及種族、職業、背景、子職與專長提供的灰階法術都會保留。",
+    confirmLabel: "清空已準備",
+    cancelLabel: "取消",
+    intent: "danger",
+    trigger
+  });
+  if (!confirmed) return;
+  getClearablePreparedSpellSelects().forEach(select => {
+    select.value = "";
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  updatePickedSpellBoxes();
+  scheduleStructuralSaveAllFields();
+  window.TabletopSpells?.refresh();
+  document.getElementById("spell-prepared-counts")?.focus({ preventScroll: true });
+  window.AppDialog.notify("已清空手動準備的法術，灰階法術已保留。");
+});
+
 function updatePreparedSpellCounts() {
   const target = document.getElementById("spell-prepared-counts");
   if (!target) return;
+  const summary = document.getElementById("spell-prepared-summary");
+  const clearButton = document.getElementById("spell-clear-prepared");
+  if (clearButton) clearButton.disabled = !getClearablePreparedSpellSelects().length;
   const classValue = document.getElementById("class")?.value || "";
   const level = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
   const isSpellcasterClass = Object.values(SPELLCASTING_CLASS_GROUPS).some(classes => classes.includes(classValue));
@@ -7208,6 +7293,7 @@ function updatePreparedSpellCounts() {
     0
   );
   if (!isSpellcasterClass || !level || !highestRing) {
+    if (summary) summary.hidden = true;
     target.hidden = true;
     target.textContent = "";
     return;
@@ -7225,7 +7311,45 @@ function updatePreparedSpellCounts() {
   const classLabel = document.getElementById("class")?.selectedOptions[0]?.textContent?.trim() || classValue;
   target.innerText = `已準備 ${total} 個法術\n${parts.join(" | ")}${preparedLimit === null ? "" : `\n${classLabel} LV${level}｜最多可準備 ${preparedLimit} 個`}`;
   target.hidden = false;
+  if (summary) summary.hidden = false;
 }
+
+let pickedSpellLayoutFrame = 0;
+
+function schedulePickedSpellLayout() {
+  if (pickedSpellLayoutFrame) return;
+  pickedSpellLayoutFrame = requestAnimationFrame(() => {
+    pickedSpellLayoutFrame = 0;
+    const grid = document.getElementById("spell-picked-grid-wrap");
+    const lists = Array.from(grid?.querySelectorAll(".spell-picked-box:not([hidden]) .spell-picked-content") || []);
+    const width = lists[0]?.getBoundingClientRect().width || 0;
+    if (!width) return;
+    const gap = parseFloat(getComputedStyle(lists[0]).columnGap) || 0;
+    const items = lists.flatMap(list => Array.from(list.children));
+    // Measure complete labels at their natural width, including source tags.
+    grid.classList.add("is-measuring-spells");
+    const longest = Math.ceil(Math.max(...items.map(item => item.getBoundingClientRect().width)));
+    grid.classList.remove("is-measuring-spells");
+    const columns = Math.max(1, Math.min(
+      Math.max(...lists.map(list => list.children.length)),
+      Math.floor((width + gap) / (longest + gap))
+    ));
+    grid.style.setProperty("--spell-picked-columns", columns);
+  });
+}
+
+const pickedSpellGrid = document.getElementById("spell-picked-grid-wrap");
+if (pickedSpellGrid && typeof ResizeObserver === "function") {
+  let previousWidth = -1;
+  new ResizeObserver(entries => {
+    const width = entries[0].contentRect.width;
+    if (width === previousWidth) return;
+    previousWidth = width;
+    schedulePickedSpellLayout();
+  }).observe(pickedSpellGrid);
+}
+window.addEventListener("resize", schedulePickedSpellLayout);
+document.fonts?.ready.then(schedulePickedSpellLayout);
 
 function updatePickedSpellBoxes() {
   const grid = document.getElementById("spell-picked-grid-wrap");
@@ -7255,7 +7379,7 @@ function updatePickedSpellBoxes() {
       const row = select.closest(".spell-entry");
       const sourceKey = row?.dataset.sourceKey || "";
       const sourceTag = getPickedSpellSourceTag(row);
-      return `<span class="spell-picked-item"><span class="spell-picked-jump" role="button" tabindex="0" data-spell-jump="picked" data-area-id="${areaId}" data-spell-id="${escapeHtml(spellId)}" data-source-key="${escapeHtml(sourceKey)}">[${escapeHtml(nameZh)}]</span>${sourceTag ? `<span class="spell-picked-source-tag">[${sourceTag}]</span>` : ""}${useChecks}</span>`;
+      return `<span class="spell-picked-item"><span class="spell-picked-jump" role="button" tabindex="0" data-spell-jump="picked" data-area-id="${areaId}" data-spell-id="${escapeHtml(spellId)}" data-source-key="${escapeHtml(sourceKey)}">${escapeHtml(nameZh)}</span>${sourceTag ? `<span class="spell-picked-source-tag">[${sourceTag}]</span>` : ""}${useChecks}</span>`;
     }).join("\n");
     setupAutoSave(target);
   });
@@ -7263,6 +7387,7 @@ function updatePickedSpellBoxes() {
   updatePreparedSpellCounts();
   updateSpellOverviewManagementVisibility();
   updateSpellListStatusNote();
+  schedulePickedSpellLayout();
   window.Spellbook?.render();
   if (typeof populateHandAttacks === "function") populateHandAttacks();
 }
@@ -7857,6 +7982,7 @@ const APP_STORAGE_KEYS = Object.freeze([
   ACTIVE_TAB_KEY,
   CLASS_FEATURE_TABLE_STATE_KEY,
   CLASS_CORE_CREATION_INFO_STATE_KEY,
+  FEATURE_CHOICE_DISCLOSURE_STATE_KEY,
   "dnd.quickBuildDraft.v1",
   POINT_BUY_LAST_APPLIED_KEY,
   "dnd.tabletopActionPreferences.v1",
@@ -8678,6 +8804,14 @@ function buildPdfPrecheckMessages() {
   }
 
   const fightingStyleSelect = selectedClass ? document.getElementById(`derived-feat-fighting-style-${selectedClass}`) : null;
+  getFeatUsageEntries().filter(entry => entry.value && !entry.usable).forEach(entry => {
+    reminders.push({
+      message: `${entry.value}：角色未達專長使用條件（不套用自動計算加值）。`,
+      tab: "basic",
+      selector: `#${entry.select.id}`,
+      focusSelector: `#${entry.select.id}`
+    });
+  });
   getFeatChoiceSpecs().filter(spec => !isManualFeatManagementEnabled() && spec.active && spec.type !== "style").forEach(spec => {
     const id = getFeatChoiceId(spec.key);
     if (!document.getElementById(id)?.value) reminders.push({ message: `${spec.label}尚未選擇。`, tab: "basic", selector: `#${id}` });
@@ -8945,7 +9079,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
 
       if(step==='precheck'){
         if(reminders.length){
-          const intro=document.createElement('p'); intro.className='pdf-export-step-copy'; intro.textContent='以下項目尚未完成。你仍可繼續匯出，或點擊項目前往補填。';
+          const intro=document.createElement('p'); intro.className='pdf-export-step-copy'; intro.textContent='以下項目需要留意。你仍可繼續匯出，或點擊項目前往調整。';
           const list=document.createElement('ol'); list.className='pdf-export-precheck-list';
           reminders.forEach((reminder)=>{
             const item=document.createElement('li');

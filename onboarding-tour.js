@@ -393,7 +393,10 @@
             }
             if (this.stepPhase === 1) {
               return [
-                this.getPointBuyHole([document.getElementById("point-buy-rows")], 6),
+                this.getPointBuyHole([
+                  document.querySelector('#point-buy-rows .point-buy-row[data-ability="str"]'),
+                  document.querySelector('#point-buy-rows .point-buy-row[data-ability="dex"]')
+                ], 6),
                 this.getPointBuyHole([document.querySelector("#point-buy-modal .point-buy-summary")], 6)
               ].filter(Boolean);
             }
@@ -932,7 +935,8 @@
         { label: "單手軍用近戰武器", values: ["戰斧", "連枷", "長劍"] }
       ]);
       this.setTourSelectGroups(document.getElementById("offHand"), [
-        { label: "單手簡易近戰武器", values: ["短棒", "匕首", "手斧"] }
+        { label: "單手簡易近戰武器", values: ["短棒", "匕首", "手斧"] },
+        { label: "盾牌", values: ["盾牌"] }
       ]);
       this.setTourSelectGroups(document.getElementById("armor"), [
         { label: "輕甲", values: ["布甲"] },

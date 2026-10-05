@@ -81,8 +81,14 @@ const DRUID_WILD_SHAPE_BEAST_LIST_HTML = `<details class="wild-shape-beast-discl
   </div>
 </details>`;
 
+// 各職業直接標記頁籤內容：creation 為簡介、引文、核心創角資訊與成長表；class 為各等級能力。
 const classFeatures = {
-  barbarian: `<table class="class-core-profile-table class-core-profile-table--barbarian" aria-label="野蠻人核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+  barbarian: `<section class="class-creation-content" data-class-feature-panel="creation">
+<div class="class-feature-tagline">野蠻人以狂暴強化力量與韌性，是勇猛的前線戰士。</div>
+<blockquote class="class-flavor-quote">「戰場邊緣的風帶著血腥味，他赤著上身踏入泥濘，胸口刻著古老圖紋。敵軍的長矛手還來不及列陣，他已怒吼著衝入人群，像暴風撕裂隊形。曾在部族被焚毀的夜裡失去一切的他，如今只信任手中的巨斧與心中翻騰的怒火。遠處的弓手艾琳顫聲呼喊他的名字，他卻已聽不見，只剩戰鬥的鼓動在血液裡轟鳴。」</blockquote>
+<section class="class-core-creation-info">
+<h3>核心創角資訊</h3>
+<table class="class-core-profile-table class-core-profile-table--barbarian" aria-label="野蠻人核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
     <tr>
       <td style="width: 6em; font-weight: bold;">關鍵屬性</td>
@@ -126,9 +132,11 @@ const classFeatures = {
     </tr>
   </tbody>
 </table><p class="class-core-equipment-note"><strong>探索套組：</strong>背包、床卷、油瓶 ×2、單日口糧 ×10、繩索、火絨盒、火把 ×10、水袋。</p>
-<blockquote class="class-flavor-quote">「戰場邊緣的風帶著血腥味，他赤著上身踏入泥濘，胸口刻著古老圖紋。敵軍的長矛手還來不及列陣，他已怒吼著衝入人群，像暴風撕裂隊形。曾在部族被焚毀的夜裡失去一切的他，如今只信任手中的巨斧與心中翻騰的怒火。遠處的弓手艾琳顫聲呼喊他的名字，他卻已聽不見，只剩戰鬥的鼓動在血液裡轟鳴。」</blockquote>
-野蠻人以強悍體魄與爆發力著稱，擅長正面衝鋒與承受傷害，常作為隊伍的前線壓制者，以純粹力量撕開敵人防線。
-<strong>野蠻人特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
+</section>
+<section class="class-feature-table-details" data-class-feature-table="barbarian">
+<h3>野蠻人特性表格</h3>
+<div class="class-feature-table-wrap">
+<table class="class-feature-table" style="border-collapse:collapse; width:100%; font-size:0.98em;">
      <thead>
       <tr>
       <th style="border:1px solid #aaa; padding:3px;">等級</th>
@@ -206,7 +214,10 @@ const classFeatures = {
       </tr>
      </tbody>
     </table>
-<div class="class-feature-content">
+</div>
+</section>
+</section>
+<div class="class-feature-content" data-class-feature-panel="class">
 <section class="barbarian-feature class-feature-section" data-feature-level="1">
   <h3>等級 1：狂暴</h3>
   <p>你可以用附贈動作進入狂暴（未穿重甲時）。</p>
@@ -310,9 +321,14 @@ const classFeatures = {
   <h3>等級 8：屬性值提升</h3>
   <p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p>
 </section>
-</div>`,
-
-  bard: `<table class="class-core-profile-table class-core-profile-table--bard" aria-label="吟遊詩人核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+</div>
+`,
+  bard: `<section class="class-creation-content" data-class-feature-panel="creation">
+<div class="class-feature-tagline">吟遊詩人能施法、激勵同伴，又善於交涉，是隊伍裡的萬金油。</div>
+<blockquote class="class-flavor-quote">「酒館燭火搖曳，他撥動魯特琴的弦，旋律在空氣中流轉。原本劍拔弩張的傭兵們漸漸放下武器，連門口的守衛都露出微笑。沒有人知道，他在歌聲中悄悄改變了人心。曾在王城流浪的他，靠著故事與音樂換得一席之地。當一名神秘女子遞來密信，他的笑容不變，卻已準備踏入另一場未知的冒險。」</blockquote>
+<section class="class-core-creation-info">
+<h3>核心創角資訊</h3>
+<table class="class-core-profile-table class-core-profile-table--bard" aria-label="吟遊詩人核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
     <tr>
       <td style="width: 6em; font-weight: bold;">關鍵屬性</td>
@@ -356,9 +372,11 @@ const classFeatures = {
     </tr>
   </tbody>
 </table><p class="class-core-equipment-note"><strong>藝人套組：</strong>背包、睡袋、鈴鐺、牛眼提燈、戲服 ×3、鏡子、油瓶 ×8、單日口糧 ×9、火絨盒、水袋。</p>
-<blockquote class="class-flavor-quote">「酒館燭火搖曳，他撥動魯特琴的弦，旋律在空氣中流轉。原本劍拔弩張的傭兵們漸漸放下武器，連門口的守衛都露出微笑。沒有人知道，他在歌聲中悄悄改變了人心。曾在王城流浪的他，靠著故事與音樂換得一席之地。當一名神秘女子遞來密信，他的笑容不變，卻已準備踏入另一場未知的冒險。」</blockquote>
-吟遊詩人以音樂與言語影響他人，擅長支援隊友,操控局勢與收集情報，是兼具社交與輔助能力的多面手。
-<strong>吟遊詩人特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.97em;">
+</section>
+<section class="class-feature-table-details" data-class-feature-table="bard">
+<h3>吟遊詩人特性表格</h3>
+<div class="class-feature-table-wrap">
+<table class="class-feature-table" style="border-collapse:collapse; width:100%; font-size:0.97em;">
       <thead>
         <tr>
           <th style="border:1px solid #aaa; padding:3px;">等級</th>
@@ -472,13 +490,10 @@ const classFeatures = {
         </tr>
       </tbody>
     </table>
-<div class="class-feature-content">
-<p>使用樂器：魅力檢定，演奏已知的曲子（DC 10），或即興創作歌曲（DC 15）。 </p>
-
-<div class="class-rule-subsection bard-roleplay-guide">
-  <h4>如何扮演吟遊詩人</h4>
-  <p>你的吟遊詩人可以是吟唱史詩的詩人,彈魯特琴唱情歌的表演者,朗誦獨白的戲劇家，或用舞步帶動隊友節奏的舞者；建立角色時，想想你最擅長哪種演出,想帶給觀眾什麼情緒（歡樂,哀傷,激昂,諷刺），以及靈感來自哪裡（自然,回憶,榮耀,酒館日常）。你可以專精一種風格，也可以嘗試全能路線。</p>
 </div>
+</section>
+</section>
+<div class="class-feature-content" data-class-feature-panel="class">
 
 <section class="bard-feature class-feature-section" data-feature-level="1">
   <h3>等級 1：吟遊詩人激勵</h3>
@@ -569,9 +584,14 @@ const classFeatures = {
 <section class="bard-feature class-feature-section" data-feature-level="6"><h3>等級 6：魔法發現（逸聞子職）</h3><p>你從牧師、德魯伊或法師的法術列表中選擇並學會兩個法術；兩者可以來自不同列表。所選法術必須是戲法，或是你已有對應法術位的法術。</p><p>你始終準備所選法術。每當你獲得一個吟遊詩人等級時，可以將其中一個替換為另一個符合條件的法術。</p><div id="bard-magical-discoveries" class="bard-magical-discoveries" aria-label="魔法發現法術選擇"></div></section>
 <section class="bard-feature class-feature-section" data-feature-level="7" data-action-id="bard-countercharm"><h3>等級 7：反迷惑</h3><p>當你或你30呎內的一個生物在抵抗魅惑或恐慌狀態的豁免檢定中失敗時，你可以執行反應，使失敗者重新進行該豁免，且新的檢定具有優勢。</p></section>
 <section class="bard-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
-</div>`,
-
-  cleric: `<table class="class-core-profile-table class-core-profile-table--cleric" aria-label="牧師核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+</div>
+`,
+  cleric: `<section class="class-creation-content" data-class-feature-panel="creation">
+<div class="class-feature-tagline">牧師是披甲持盾的神術施法者，能支援同伴，也能站上前線。</div>
+<blockquote class="class-flavor-quote">「廢墟神殿中，火光閃爍，她跪在破碎的石像前低聲祈禱。傷痕累累的騎士倒在一旁，氣息微弱。她伸出手，光芒從掌心綻放，傷口逐漸癒合。她曾在信仰崩塌之際失去方向，如今卻在戰火中重新找回神的聲音。當黑暗生物自陰影中逼近，她站起身，舉起聖徽，毫不動搖。」</blockquote>
+<section class="class-core-creation-info">
+<h3>核心創角資訊</h3>
+<table class="class-core-profile-table class-core-profile-table--cleric" aria-label="牧師核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
     <tr>
       <td style="width: 6em; font-weight: bold;">關鍵屬性</td>
@@ -616,11 +636,11 @@ const classFeatures = {
   </tbody>
 </table>
 <strong>祭司套組：</strong>背包、毯子、聖水、油燈、單日口糧 ×7、長袍、火絨盒。
-
-「廢墟神殿中，火光閃爍，她跪在破碎的石像前低聲祈禱。傷痕累累的騎士倒在一旁，氣息微弱。她伸出手，光芒從掌心綻放，傷口逐漸癒合。她曾在信仰崩塌之際失去方向，如今卻在戰火中重新找回神的聲音。當黑暗生物自陰影中逼近，她站起身，舉起聖徽，毫不動搖。」
-
-牧師透過信仰獲得力量，擅長治療,保護與對抗邪惡，常在隊伍中負責維持生存與提供神聖支援。
-<strong>牧師特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
+</section>
+<section class="class-feature-table-details" data-class-feature-table="cleric">
+<h3>牧師特性表格</h3>
+<div class="class-feature-table-wrap">
+<table class="class-feature-table" style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
         <tr>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px;">等級</th>
@@ -703,7 +723,10 @@ const classFeatures = {
     <tr><td style="border:1px solid #aaa; padding:3px;">8</td><td style="border:1px solid #aaa; padding:3px;">+3</td><td style="border:1px solid #aaa; padding:3px;">屬性值提升</td><td style="border:1px solid #aaa; padding:3px;">3</td><td style="border:1px solid #aaa; padding:3px;">4</td><td style="border:1px solid #aaa; padding:3px;">12</td><td style="border:1px solid #aaa; padding:3px;">4</td><td style="border:1px solid #aaa; padding:3px;">3</td><td style="border:1px solid #aaa; padding:3px;">3</td><td style="border:1px solid #aaa; padding:3px;">2</td></tr>
 </tbody>
 </table>
-<div class="class-feature-content">
+</div>
+</section>
+</section>
+<div class="class-feature-content" data-class-feature-panel="class">
 <section class="cleric-feature class-feature-section" data-feature-level="1">
   <h3>等級 1：施法</h3>
   <p>你透過祈禱與冥想施法，法術請看「牧師法術列表」。</p>
@@ -826,7 +849,12 @@ const classFeatures = {
 <section class="cleric-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
 </div>
 `,
-  druid: `<table class="class-core-profile-table class-core-profile-table--druid" aria-label="德魯伊核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+  druid: `<section class="class-creation-content" data-class-feature-panel="creation">
+<div class="class-feature-tagline">德魯伊操使自然魔法，也能化身野獸。</div>
+<blockquote class="class-flavor-quote">「森林深處，霧氣繚繞，她赤足行走於濕潤的土地。狼群靜靜跟隨，樹葉在她身旁低語。當獵人踏入禁地，她的身影忽然消失，取而代之的是一頭巨熊自陰影中現身。她曾是城市的孩子，如今卻將心交給自然。遠方雷聲滾動，她抬頭，仿佛與天地共呼吸。」</blockquote>
+<section class="class-core-creation-info">
+<h3>核心創角資訊</h3>
+<table class="class-core-profile-table class-core-profile-table--druid" aria-label="德魯伊核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
     <tr>
       <td style="width: 6em; font-weight: bold;">關鍵屬性</td>
@@ -870,9 +898,11 @@ const classFeatures = {
     </tr>
   </tbody>
 </table><p class="class-core-equipment-note"><strong>探索套組：</strong>背包、床卷、油瓶 ×2、單日口糧 ×10、繩索、火絨盒、火把 ×10、水袋。</p>
-<blockquote class="class-flavor-quote">「森林深處，霧氣繚繞，她赤足行走於濕潤的土地。狼群靜靜跟隨，樹葉在她身旁低語。當獵人踏入禁地，她的身影忽然消失，取而代之的是一頭巨熊自陰影中現身。她曾是城市的孩子，如今卻將心交給自然。遠方雷聲滾動，她抬頭，仿佛與天地共呼吸。」</blockquote>
-德魯伊與自然共鳴，能操控環境與變化形態，擅長支援,控制戰場與適應各種情境。
-<strong>德魯伊特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
+</section>
+<section class="class-feature-table-details" data-class-feature-table="druid">
+<h3>德魯伊特性表格</h3>
+<div class="class-feature-table-wrap">
+<table class="class-feature-table" style="border-collapse:collapse; width:100%; font-size:0.98em;">
 <thead>
         <tr>
           <th rowspan="2" style="border:1px solid #aaa; padding:3px;">等級</th>
@@ -988,7 +1018,10 @@ const classFeatures = {
     </tr>
   </tbody>
 </table>
-<div class="class-feature-content">
+</div>
+</section>
+</section>
+<div class="class-feature-content" data-class-feature-panel="class">
 <section class="druid-feature class-feature-section" data-feature-level="1">
   <h3>等級 1：德魯伊語</h3>
   <ul class="class-rule-list">
@@ -1218,8 +1251,14 @@ const classFeatures = {
 <section class="druid-feature class-feature-section" data-feature-level="6"><h3>等級 6：自然恢復（大地子職）</h3><p>你可以在不消耗法術位的情況下，施展一次透過結社法術特性準備的1+環法術。使用後，你必須完成長休才能再次這麼做。</p><p>此外，當你完成短休時，可以恢復部分已消耗的法術位。恢復的法術位環階總和等於你德魯伊職業等級的一半（小數無條件進位），且每個法術位都不能是6+環。使用此效果後，你必須完成長休才能再次恢復法術位。</p></section>
 <section class="druid-feature class-feature-section" data-feature-level="7"><h3>等級 7：元素狂怒</h3><p>選擇並獲得下列一項：</p><div class="druid-mission-options"><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="druid-elemental-fury-potent-spellcasting" data-feature-choice-group="druid-elemental-fury"> 強力施法</label>：你將感知調整值加入所有你以德魯伊戲法造成的傷害中。</div></div><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="druid-elemental-fury-primal-strike" data-feature-choice-group="druid-elemental-fury"> 原初打擊</label>：在你的每個回合中一次，當你使用武器或荒野形態的野獸形態發動攻擊並命中一個生物時，可以使目標額外受到1d8冷凍、火焰、閃電或雷鳴傷害（由你選擇）。</div></div></div></section>
 <section class="druid-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
-</div>`,
-  fighter: `<table class="class-core-profile-table class-core-profile-table--fighter" aria-label="戰士核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+</div>
+`,
+  fighter: `<section class="class-creation-content" data-class-feature-panel="creation">
+<div class="class-feature-tagline">戰士精通武器與戰技，能適應各種戰鬥方式。</div>
+<blockquote class="class-flavor-quote">「鋼鐵碰撞聲在城牆上回響，他穩穩握住長劍，步伐不亂。無論敵人是盜匪還是訓練有素的士兵，他總能找到破綻。年輕時在軍團中摸爬滾打的他，早已習慣命令與混亂並存的戰場。當新兵在他身後顫抖，他只是簡短地說了一句：站穩，菜鳥，準備戰鬥。」</blockquote>
+<section class="class-core-creation-info">
+<h3>核心創角資訊</h3>
+<table class="class-core-profile-table class-core-profile-table--fighter" aria-label="戰士核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
     <tr>
       <td style="width: 6em; font-weight: bold;">關鍵屬性</td>
@@ -1264,11 +1303,11 @@ const classFeatures = {
   </tbody>
 </table>
 <strong>地城套組：</strong>背包、鐵蒺藜、撬棍、油瓶 ×2、單日口糧 ×10、繩索、火絨盒、火把 ×10、水袋
-
-「鋼鐵碰撞聲在城牆上回響，他穩穩握住長劍，步伐不亂。無論敵人是盜匪還是訓練有素的士兵，他總能找到破綻。年輕時在軍團中摸爬滾打的他，早已習慣命令與混亂並存的戰場。當新兵在他身後顫抖，他只是簡短地說了一句：站穩，菜鳥，準備戰鬥。」
-
-戰士專精各類武器與戰鬥技巧，能在不同情況下穩定輸出與防守，是可靠的核心戰力。
-<strong>戰士特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
+</section>
+<section class="class-feature-table-details" data-class-feature-table="fighter">
+<h3>戰士特性表格</h3>
+<div class="class-feature-table-wrap">
+<table class="class-feature-table" style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
     <tr>
       <th style="border:1px solid #aaa; padding:3px;">等級</th>
@@ -1337,7 +1376,10 @@ const classFeatures = {
     </tr>
   </tbody>
 </table>
-<div class="class-feature-content">
+</div>
+</section>
+</section>
+<div class="class-feature-content" data-class-feature-panel="class">
 <section class="fighter-feature class-feature-section" data-feature-level="1">
   <h3>等級 1：戰鬥風格</h3>
   <p>你磨練你的戰鬥技藝。你可以獲得所選的一種 戰鬥風格 專長。推薦選擇 防禦。</p>
@@ -1401,8 +1443,14 @@ const classFeatures = {
 <section class="fighter-feature class-feature-section" data-feature-level="6"><h3>等級 6：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
 <section class="fighter-feature class-feature-section" data-feature-level="7"><h3>等級 7：額外戰鬥風格（勇士子職）</h3><p>你再獲得一個自選的戰鬥風格專長。</p></section>
 <section class="fighter-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
-</div>`,
-  monk: `<table class="class-core-profile-table class-core-profile-table--monk" aria-label="武僧核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+</div>
+`,
+  monk: `<section class="class-creation-content" data-class-feature-panel="creation">
+<div class="class-feature-tagline">武僧以高速移動、徒手或武器連擊制敵。</div>
+<blockquote class="class-flavor-quote">「山間寺院的鐘聲回蕩，他在晨霧中緩緩收勢。當刺客翻牆而入，他未曾拔刀，只是側身避開，拳如閃電擊中對方要害。自幼修行的他，將身體與心志鍛鍊至極致。同行的旅人驚訝地看著這一切，他卻只是合掌，彷彿剛才的戰鬥不過是一場呼吸。」</blockquote>
+<section class="class-core-creation-info">
+<h3>核心創角資訊</h3>
+<table class="class-core-profile-table class-core-profile-table--monk" aria-label="武僧核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
     <tr>
       <td style="width: 6em; font-weight: bold;">關鍵屬性</td>
@@ -1447,11 +1495,11 @@ const classFeatures = {
   </tbody>
 </table>
 <strong>探索套組：</strong>背包、床卷、油瓶 ×2、單日口糧 ×10、繩索、火絨盒、10 根火把、水袋
-
-「山間寺院的鐘聲回蕩，他在晨霧中緩緩收勢。當刺客翻牆而入，他未曾拔刀，只是側身避開，拳如閃電擊中對方要害。自幼修行的他，將身體與心志鍛鍊至極致。同行的旅人驚訝地看著這一切，他卻只是合掌，彷彿剛才的戰鬥不過是一場呼吸。」
-
-武僧以身體為武器，擅長快速打擊與靈活移動，能在戰場中迅速進出並精準制敵。
-<strong>武僧特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
+</section>
+<section class="class-feature-table-details" data-class-feature-table="monk">
+<h3>武僧特性表格</h3>
+<div class="class-feature-table-wrap">
+<table class="class-feature-table" style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
     <tr>
       <th style="border:1px solid #aaa; padding:3px;">等級</th>
@@ -1529,7 +1577,10 @@ const classFeatures = {
     </tr>
   </tbody>
 </table>
-<div class="class-feature-content">
+</div>
+</section>
+</section>
+<div class="class-feature-content" data-class-feature-panel="class">
 <section class="monk-feature class-feature-section" data-feature-level="1" data-action-id="monk-martial-arts">
   <h3>等級 1：武藝</h3>
   <p>你在「未穿護甲,未持盾，且只用徒手或武僧武器」時，獲得以下效果：</p>
@@ -1625,8 +1676,14 @@ const classFeatures = {
   </ul>
 </section>
 <section class="monk-feature class-feature-section" data-feature-level="6"><h3>等級 6：真力駐拳</h3><p>當你的徒手打擊造成傷害時，可以將其傷害類型替換為力場傷害。</p></section><section class="monk-feature class-feature-section" data-feature-level="6" data-action-id="monk-wholeness-of-body"><h3>等級 6：混元體（散打子職）</h3><p>作為附贈動作，你可以擲出武藝骰，恢復等同於擲骰結果＋你的感知調整值的生命值（最少恢復1點）。</p><p>你可以使用該特性的次數等同於你的感知調整值（最少一次），並在完成長休時恢復所有已消耗的使用次數。</p></section><section class="monk-feature class-feature-section" data-feature-level="7"><h3>等級 7：反射閃避</h3><p>當你受到允許進行敏捷豁免以使傷害減半的效應影響時，豁免成功則不受傷害，豁免失敗則僅受一半傷害。</p><p>你在失能狀態下無法從該特性中獲益。</p></section><section class="monk-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
-</div>`,
-  paladin: `<table class="class-core-profile-table class-core-profile-table--paladin" aria-label="聖騎士核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+</div>
+`,
+  paladin: `<section class="class-creation-content" data-class-feature-panel="creation">
+<div class="class-feature-tagline">聖騎士以神聖之力守護同伴，以斬技重創敵人。</div>
+<blockquote class="class-flavor-quote">「戰火中的教堂前，他舉劍立誓，盔甲沾滿灰燼。當惡魔逼近時，他的劍燃起光芒。曾經迷失的他，在誓言中找回方向，願以生命守護弱者。受傷的孩童抓住他的披風，他沒有回頭，只是向前一步，擋在黑暗之前。」</blockquote>
+<section class="class-core-creation-info">
+<h3>核心創角資訊</h3>
+<table class="class-core-profile-table class-core-profile-table--paladin" aria-label="聖騎士核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
     <tr>
       <td style="width: 6em; font-weight: bold;">關鍵屬性</td>
@@ -1671,11 +1728,11 @@ const classFeatures = {
   </tbody>
 </table>
 <strong>祭司套組：</strong>背包、毯子、聖水、油燈、單日口糧 ×7、長袍、火絨盒
-
-「戰火中的教堂前，他舉劍立誓，盔甲沾滿灰燼。當惡魔逼近時，他的劍燃起光芒。曾經迷失的他，在誓言中找回方向，願以生命守護弱者。受傷的孩童抓住他的披風，他沒有回頭，只是向前一步，擋在黑暗之前。」
-
-聖騎士以誓言為力量來源，兼具戰鬥與守護能力，能保護同伴並對抗強大邪惡。
-<strong>聖騎士特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
+</section>
+<section class="class-feature-table-details" data-class-feature-table="paladin">
+<h3>聖騎士特性表格</h3>
+<div class="class-feature-table-wrap">
+<table class="class-feature-table" style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
     <tr>
       <th style="border:1px solid #aaa; padding:3px;">等級</th>
@@ -1762,7 +1819,10 @@ const classFeatures = {
     </tr>
   </tbody>
 </table>
-<div class="class-feature-content">
+</div>
+</section>
+</section>
+<div class="class-feature-content" data-class-feature-panel="class">
 <section class="paladin-feature class-feature-section" data-feature-level="1" data-action-id="paladin-lay-on-hands">
   <h3>等級 1：聖療</h3>
   <p>你有一個治療能量池，總量 = 聖騎士等級 × 5，長休後回滿。</p>
@@ -1884,7 +1944,12 @@ const classFeatures = {
 <section class="paladin-feature class-feature-section" data-feature-level="6"><h3>等級 6：守護靈氣&#x20;</h3><p>你以自身為原點放射出10呎的無形保護性靈氣。你處於失能狀態時，靈氣失效。&#x20;</p><p>你和靈氣內的盟友進行豁免檢定時，獲得等同於你魅力調整值的加值（至少＋1）。&#x20;</p><p>一個生物同一時間只能從一道守護靈氣中獲益；處於多道靈氣重疊區域時，由該生物選擇使用哪一道。&#x20;</p></section><section class="paladin-feature class-feature-section" data-feature-level="7"><h3>等級 7：奉獻靈氣（奉獻子職）&#x20;</h3><p>守護靈氣使你和其中的盟友免疫魅惑狀態。若正被魅惑的盟友進入靈氣範圍，該狀態會暫時失效。&#x20;</p></section><section class="paladin-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
 </div>
 `,
-  ranger: `<table class="class-core-profile-table class-core-profile-table--ranger" aria-label="遊俠核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+  ranger: `<section class="class-creation-content" data-class-feature-panel="creation">
+<div class="class-feature-tagline">遊俠結合武藝、自然魔法與野外本領，是出色的獵手。</div>
+<blockquote class="class-flavor-quote">「暮色森林邊緣，他蹲下檢視足跡，指尖輕觸泥土。遠處的同伴低聲詢問，他已用手勢示意方向。那頭潛伏的怪物無聲無息，但他更熟悉這片土地。曾孤身穿越荒野的他，學會與風與影同行。箭矢離弦的瞬間，獵物甚至還未察覺危險降臨。」</blockquote>
+<section class="class-core-creation-info">
+<h3>核心創角資訊</h3>
+<table class="class-core-profile-table class-core-profile-table--ranger" aria-label="遊俠核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
     <tr>
       <td style="width: 6em; font-weight: bold;">關鍵屬性</td>
@@ -1929,11 +1994,11 @@ const classFeatures = {
   </tbody>
 </table>
 <strong>探索套組：</strong>背包、床卷、油瓶 ×2、單日口糧 ×10、繩索、火絨盒、火把 ×10、水袋
-
-「暮色森林邊緣，他蹲下檢視足跡，指尖輕觸泥土。遠處的同伴低聲詢問，他已用手勢示意方向。那頭潛伏的怪物無聲無息，但他更熟悉這片土地。曾孤身穿越荒野的他，學會與風與影同行。箭矢離弦的瞬間，獵物甚至還未察覺危險降臨。」
-
-遊俠擅長追蹤,遠距攻擊與野外生存，能在自然環境中提供情報與精準打擊。
-<strong>遊俠特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
+</section>
+<section class="class-feature-table-details" data-class-feature-table="ranger">
+<h3>遊俠特性表格</h3>
+<div class="class-feature-table-wrap">
+<table class="class-feature-table" style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
     <tr>
       <th style="border:1px solid #aaa; padding:3px;">等級</th>
@@ -2020,7 +2085,10 @@ const classFeatures = {
     </tr>
   </tbody>
 </table>
-<div class="class-feature-content">
+</div>
+</section>
+</section>
+<div class="class-feature-content" data-class-feature-panel="class">
 <section class="ranger-feature class-feature-section" data-feature-level="1">
   <h3>等級 1：施法</h3>
   <p>你透過自然魔法施法，法術請看「遊俠法術列表」。</p>
@@ -2115,8 +2183,14 @@ const classFeatures = {
 <h3>等級 7：防守戰術（獵人子職）</h3>
 <p>選擇並獲得下列一項。每當你完成短休或長休時，可以用另一項替換目前的選擇。</p>
 <div class="druid-mission-options"><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="ranger-defensive-tactics-escape-the-horde" data-feature-choice-group="ranger-defensive-tactics"> 衝出重圍</label>：以你為目標的藉機攻擊具有劣勢。</div></div><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="ranger-defensive-tactics-multiattack-defense" data-feature-choice-group="ranger-defensive-tactics"> 多重防禦</label>：當一個生物的攻擊檢定命中你時，該生物在本回合內對你發動的所有後續攻擊檢定均具有劣勢。</div></div></div></section><section class="ranger-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
-</div>`,
-  rogue: `<table class="class-core-profile-table class-core-profile-table--rogue" aria-label="盜賊核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+</div>
+`,
+  rogue: `<section class="class-creation-content" data-class-feature-panel="creation">
+<div class="class-feature-tagline">盜賊以技巧、機動與偷襲抓住破綻，是各種難題的專家。</div>
+<blockquote class="class-flavor-quote">「夜色籠罩城市屋頂，她在瓦片間無聲移動。下方的守衛正交談著，她早已記住巡邏節奏。從貧民窟長大的她，學會用影子隱藏自己。當她輕巧落地，鎖扣發出微不可聞的聲響，寶箱緩緩開啟。遠方鐘聲響起，她已消失在巷弄深處。」</blockquote>
+<section class="class-core-creation-info">
+<h3>核心創角資訊</h3>
+<table class="class-core-profile-table class-core-profile-table--rogue" aria-label="盜賊核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
     <tr>
       <td style="width: 6em; font-weight: bold;">關鍵屬性</td>
@@ -2161,11 +2235,11 @@ const classFeatures = {
   </tbody>
 </table>
 <strong>竊賊套組：</strong>背包、滾珠、鈴鐺、蠟燭 ×10、撬棍、附蓋提燈、油瓶 ×7、單日口糧 ×5、繩索、火絨盒、水袋
-
-「夜色籠罩城市屋頂，她在瓦片間無聲移動。下方的守衛正交談著，她早已記住巡邏節奏。從貧民窟長大的她，學會用影子隱藏自己。當她輕巧落地，鎖扣發出微不可聞的聲響，寶箱緩緩開啟。遠方鐘聲響起，她已消失在巷弄深處。」
-
-盜賊擅長潛行,偷襲與解除陷阱，能在危險環境中迅速行動並精準打擊要害。
-<strong>盜賊特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
+</section>
+<section class="class-feature-table-details" data-class-feature-table="rogue">
+<h3>盜賊特性表格</h3>
+<div class="class-feature-table-wrap">
+<table class="class-feature-table" style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
     <tr>
       <th style="border:1px solid #aaa; padding:3px;">等級</th>
@@ -2225,7 +2299,10 @@ const classFeatures = {
     </tr>
   </tbody>
 </table>
-<div class="class-feature-content">
+</div>
+</section>
+</section>
+<div class="class-feature-content" data-class-feature-panel="class">
 <section class="rogue-feature class-feature-section" data-feature-level="1">
   <h3>等級 1：專精</h3>
   <p>選 2 項你已熟練的技能，改為專精（常見選擇：${skillTip("巧手")}、${skillTip("隱匿")}）。</p>
@@ -2302,7 +2379,12 @@ const classFeatures = {
 <section class="rogue-feature class-feature-section" data-feature-level="6"><h3>等級 6：專精</h3><p>再選擇兩項你已有熟練的技能，並獲得其專精。</p></section><section class="rogue-feature class-feature-section" data-feature-level="7"><h3>等級 7：反射閃避</h3><p>當你受到允許進行敏捷豁免以使傷害減半的效應影響時，豁免成功則不受傷害，豁免失敗則僅受一半傷害。你在失能狀態下無法使用該特性。</p></section><section class="rogue-feature class-feature-section" data-feature-level="7"><h3>等級 7：可靠才能</h3><p>每當你使用技能或工具熟練項進行屬性檢定時，可以將d20骰中9或以下的結果視為10。</p></section><section class="rogue-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
 </div>
 `,
-  sorcerer: `<table class="class-core-profile-table class-core-profile-table--sorcerer" aria-label="術士核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+  sorcerer: `<section class="class-creation-content" data-class-feature-panel="creation">
+<div class="class-feature-tagline">術士以天生魔力施法，並能直接塑造法術。</div>
+<blockquote class="class-flavor-quote">「火焰在她指尖緩緩燃起，映出瞳孔中隱約的鱗紋。她站在斷裂的城牆上，呼吸之間帶著灼熱氣息。幼年時，她曾在夢中聽見古老巨龍的低語，如今那聲音仍在血液深處回響。敵軍逼近時，她只是輕抬手臂，烈焰如龍吐息般席捲而出，吞沒整排士兵。」</blockquote>
+<section class="class-core-creation-info">
+<h3>核心創角資訊</h3>
+<table class="class-core-profile-table class-core-profile-table--sorcerer" aria-label="術士核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
     <tr>
       <td style="width: 6em; font-weight: bold;">關鍵屬性</td>
@@ -2347,11 +2429,11 @@ const classFeatures = {
   </tbody>
 </table>
 <strong>地城套組：</strong>背包、鐵蒺藜、撬棍、油瓶 ×2、單日口糧 ×10、繩索、火絨盒、火把 ×10，水袋
-  
-「火焰在她指尖緩緩燃起，映出瞳孔中隱約的鱗紋。她站在斷裂的城牆上，呼吸之間帶著灼熱氣息。幼年時，她曾在夢中聽見古老巨龍的低語，如今那聲音仍在血液深處回響。敵軍逼近時，她只是輕抬手臂，烈焰如龍吐息般席捲而出，吞沒整排士兵。」
-
-術士的力量源自天賦血脈，擅長直接釋放強大魔法，爆發力高，帶有與生俱來的威勢。
-<strong>術士特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
+</section>
+<section class="class-feature-table-details" data-class-feature-table="sorcerer">
+<h3>術士特性表格</h3>
+<div class="class-feature-table-wrap">
+<table class="class-feature-table" style="border-collapse:collapse; width:100%; font-size:0.98em;">
 <thead>
         <tr>
           <th style="border:1px solid #aaa; padding:3px;">等級</th>
@@ -2465,7 +2547,10 @@ const classFeatures = {
     </tr>
   </tbody>
 </table>
-<div class="class-feature-content">
+</div>
+</section>
+</section>
+<div class="class-feature-content" data-class-feature-panel="class">
 <section class="sorcerer-feature class-feature-section" data-feature-level="1">
   <h3>等級 1：施法</h3>
   <p>你靠天生魔力施法，使用「術士法術列表」。</p>
@@ -2671,8 +2756,14 @@ const classFeatures = {
     </ul>
   </div>
 </section>
-</div>`,
-  warlock: `<table class="class-core-profile-table class-core-profile-table--warlock" aria-label="契術師核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+</div>
+`,
+  warlock: `<section class="class-creation-content" data-class-feature-panel="creation">
+<div class="class-feature-tagline">契術師從超自然契約取得力量與獨特魔法。</div>
+<blockquote class="class-flavor-quote">「月光下，他站在廢棄祭壇前，低聲與看不見的存在對話。那聲音不屬於此世，卻回應了他的渴望。為了力量，他曾付出代價，如今無法回頭。當敵人靠近，他伸出手，黑影如利爪般撕裂空氣。遠方的同伴感到不安，而他只是微笑，仿佛有人在他耳邊低語。」</blockquote>
+<section class="class-core-creation-info">
+<h3>核心創角資訊</h3>
+<table class="class-core-profile-table class-core-profile-table--warlock" aria-label="契術師核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
     <tr>
       <td style="width: 6em; font-weight: bold;">關鍵屬性</td>
@@ -2717,11 +2808,11 @@ const classFeatures = {
   </tbody>
 </table>
 <strong>學者套組：</strong>背包、書籍、墨水、墨水筆、油燈、油瓶 ×10、羊皮紙 ×10、火絨盒
-
-「月光下，他站在廢棄祭壇前，低聲與看不見的存在對話。那聲音不屬於此世，卻回應了他的渴望。為了力量，他曾付出代價，如今無法回頭。當敵人靠近，他伸出手，黑影如利爪般撕裂空氣。遠方的同伴感到不安，而他只是微笑，仿佛有人在他耳邊低語。」
-
-契術師透過與異界存在締結契約獲得力量，多為詭異且強大的魔法，以不可預知的代價換取。
-<strong>契術師特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
+</section>
+<section class="class-feature-table-details" data-class-feature-table="warlock">
+<h3>契術師特性表格</h3>
+<div class="class-feature-table-wrap">
+<table class="class-feature-table" style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
     <tr>
       <th style="border:1px solid #aaa; padding:3px;">等級</th>
@@ -2817,7 +2908,10 @@ const classFeatures = {
     </tr>
   </tbody>
 </table>
-<div class="class-feature-content">
+</div>
+</section>
+</section>
+<div class="class-feature-content" data-class-feature-panel="class">
 <section class="warlock-feature class-feature-section" data-feature-level="1">
   <h3>等級 1：魔能祈喚</h3>
   <ul class="class-rule-list"><li>你從禁忌知識獲得超自然能力，先選 1 個魔能祈喚（例如：書之魔契）。</li><li>完整內容請見後方「魔能祈喚選項」。</li><li>先決條件：若祈喚有先決條件，你必須符合才能選（例如要求契術師等級 5+）。</li><li>升級調整：每次獲得契術師等級時，你可把 1 個已知祈喚換成另一個符合條件的祈喚；但若該祈喚是其他祈喚的前置，則不能替換。</li><li>祈喚數量會隨等級提升（見「契術師特性」表的「祈喚」欄）。除非特別註明，同一祈喚只能選 1 次。</li></ul>
@@ -2847,7 +2941,12 @@ const classFeatures = {
 </section>
 </div>
 `,
-  wizard: `<table class="class-core-profile-table class-core-profile-table--wizard" aria-label="法師核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
+  wizard: `<section class="class-creation-content" data-class-feature-panel="creation">
+<div class="class-feature-tagline">法師學習大量法術，靠知識與事前準備應付各種情況。</div>
+<blockquote class="class-flavor-quote">「高塔書房中，他翻閱泛黃卷軸，燭光映出密密麻麻的筆記。多年苦讀讓他掌握了改變現實的知識。當同伴在外呼喊，他冷靜地合上書，口中念出精準的咒語。敵人尚未靠近，空間已被扭曲。對他而言，力量來自理解，而非本能。」</blockquote>
+<section class="class-core-creation-info">
+<h3>核心創角資訊</h3>
+<table class="class-core-profile-table class-core-profile-table--wizard" aria-label="法師核心創角資訊" style="width: 100%; border-collapse: collapse; font-size: 0.95em;">
   <tbody>
     <tr>
       <td style="width: 6em; font-weight: bold;">關鍵屬性</td>
@@ -2892,11 +2991,11 @@ const classFeatures = {
   </tbody>
 </table>
 <strong>學者套組：</strong>背包、書籍、墨水、墨水筆、油燈、油瓶 ×10、羊皮紙 ×10、火絨盒
-
-「高塔書房中，他翻閱泛黃卷軸，燭光映出密密麻麻的筆記。多年苦讀讓他掌握了改變現實的知識。當同伴在外呼喊，他冷靜地合上書，口中念出精準的咒語。敵人尚未靠近，空間已被扭曲。對他而言，力量來自理解，而非本能。」
-
-法師透過學習與研究掌握魔法，擅長多樣化法術與策略運用，是變化最多的施法者。
-<strong>法師特性</strong><table style="border-collapse:collapse; width:100%; font-size:0.98em;">
+</section>
+<section class="class-feature-table-details" data-class-feature-table="wizard">
+<h3>法師特性表格</h3>
+<div class="class-feature-table-wrap">
+<table class="class-feature-table" style="border-collapse:collapse; width:100%; font-size:0.98em;">
 <thead>
     <tr>
       <th style="border:1px solid #aaa; padding:3px;">等級</th>
@@ -3001,241 +3100,29 @@ const classFeatures = {
     </tr>
   </tbody>
 </table>
-等級 1：施法
-你透過奧術研究施法，使用「法師法術列表」。
-
-- 戲法：
-  - 起始學會 3 個法師戲法（推薦：光亮術,法師之手,冷凍射線）。
-  - 每次長休後，你可把 1 個由此特性取得的戲法換成另一個法師戲法。
-  - 4 級與 10 級時，各再學 1 個法師戲法。
-
-- 法術書：
-  - 你的法術書重 3 磅,100 頁，記錄你的法師法術。
-  - 起始記錄 6 個 1 環法師法術
-    （推薦：偵測魔法,羽落術,法師護甲,魔法飛彈,睡眠術,雷鳴波）。
-  - 每升 1 級法師，可再把 2 個符合目前環階的法師法術寫入法術書。
-
-法術位：見「法師特性」表，長休後全回復。
-
-- 準備法術：
-  - 起始可從法術書準備 4 個法術。
-  - 可準備數量隨等級提高，依「法師特性」表為準。
-  - 你只能準備目前有法術位環階的法術（例如 3 級時可準備法術書中的 1～2 環法術）。
-  - 每當這個數量提高時，從法術書再選法術，直到你的準備數量與表格一致。
-
-若其他法師特性給你額外已準備法術，這些法術不計入上述準備上限，但仍算你的法師法術。
-每次長休後，你可重整準備清單，把任意數量已準備法術換成法術書中的其他法術。
-
-- 施法屬性：智力。
-- 施法法器：可用奧術法器或法術書。
-
-擴充與替換法術書
-- 你可在冒險中把新發現的法師法術（例如卷軸）抄入法術書。
-- 抄錄新法術：
-  - 條件：你能準備該法術，且有時間解讀與抄寫。
-  - 成本：每環階 2 小時＋50 金幣。
-- 複製到新書：
-  - 你可把舊法術書內容複製到另一本書。
-  - 成本：每環階 1 小時＋10 金幣。
-
-若法術書遺失，你可先把目前已準備法術抄進新書，再逐步補齊其餘法術；許多法師都會準備備用法術書。
-
-等級 1：儀式精通
-- 只要法術在你的法術書中且有「儀式」標籤，你可用儀式方式施放。
-- 你不需要先準備該法術，但施放時必須能閱讀法術書。
-
-等級 1：奧術回想
-- 完成短休時，你可回復已消耗法術位。
-- 可回復的法術位環階總和上限為「法師等級一半（小數無條件進位）」。
-- 單一被回復法術位不可高於 5 環。
-- 例：4 級法師最多回復總和 2 環（如 1 個 2 環，或 2 個 1 環）。
-- 使用後需完成長休才能再用。
-
-等級 2：學者
-- 在${skillTip("奧秘")},${skillTip("歷史")},${skillTip("自然")},${skillTip("宗教")}中，選 1 個你已熟練的技能。
-- 你對該技能獲得專精。
-
-等級 3：法師子職
-- 你可選擇一個法師子職；基本規則僅提供塑能師。
-- 隨等級提升，你會陸續獲得子職特性。
-
-等級 3：塑能學者（塑能子職）
-- 你可選 2 個不高於 2 環的塑能學派法師法術，免費抄入法術書。
-- 之後每當你在本職業獲得新環階法術位時，可再免費抄入 1 個你目前能施放環階的塑能法術。
-
-等級 3：強力戲法（塑能子職）
-- 當你對生物施放會造成傷害的戲法時：
-  - 若攻擊檢定失手，或
-  - 目標在該戲法豁免成功，
-  - 目標仍會受到一半傷害（若該戲法有傷害），但不受其他效果影響。
-
-等級 4：屬性值提升
-獲得「屬性值提升」專長，或改選其他符合條件的專長。
-
-等級 5：記憶法術
-- 每次短休後，你可研讀法術書。
-- 你可把 1 個由「施法」特性準備中的 1+環法師法術，替換成法術書中的另一個 1+環法師法術。
-
-等級 6：法術塑形（塑能子職）
-當你施展會影響你所能看見之其他生物的塑能系法術時，可以從中選擇1＋該法術環階名生物。所選生物對抗該法術的豁免檢定自動成功，且不會受到通常在豁免成功時仍會承受的一半傷害。
-
-等級 8：屬性值提升
-獲得「屬性值提升」專長，或改選其他符合條件的專長。
+</div>
+</section>
+</section>
+<div class="class-feature-content" data-class-feature-panel="class"><section class="wizard-feature class-feature-section" data-feature-level="1"><h3>等級 1：施法</h3><p>你透過奧術研究施法，使用「法師法術列表」。</p>
+<ul class="class-rule-list"><li>戲法：<ul><li>起始學會 3 個法師戲法（推薦：光亮術,法師之手,冷凍射線）。</li><li>每次長休後，你可把 1 個由此特性取得的戲法換成另一個法師戲法。</li><li>4 級與 10 級時，各再學 1 個法師戲法。</li></ul></li></ul>
+<ul class="class-rule-list"><li>法術書： （推薦：<span data-wizard-spellbook-recommendations>偵測魔法,羽落術,法師護甲,魔法飛彈,睡眠術,雷鳴波</span>）。<ul><li>你的法術書重 3 磅,100 頁，記錄你的法師法術。</li><li>起始記錄 6 個 1 環法師法術</li><li>每升 1 級法師，可再把 2 個符合目前環階的法師法術寫入法術書。</li></ul></li></ul>
+<p>法術位：見「法師特性」表，長休後全回復。</p>
+<ul class="class-rule-list"><li>準備法術：<ul><li>起始可從法術書準備 4 個法術。</li><li>可準備數量隨等級提高，依「法師特性」表為準。</li><li>你只能準備目前有法術位環階的法術（例如 3 級時可準備法術書中的 1～2 環法術）。</li><li>每當這個數量提高時，從法術書再選法術，直到你的準備數量與表格一致。</li></ul></li></ul>
+<p>若其他法師特性給你額外已準備法術，這些法術不計入上述準備上限，但仍算你的法師法術。</p>
+<p>每次長休後，你可重整準備清單，把任意數量已準備法術換成法術書中的其他法術。</p>
+<ul class="class-rule-list"><li>施法屬性：智力。</li><li>施法法器：可用奧術法器或法術書。</li></ul>
+<div class="class-rule-subsection"><h4>擴充與替換法術書</h4>
+<ul class="class-rule-list"><li>你可在冒險中把新發現的法師法術（例如卷軸）抄入法術書。</li><li>抄錄新法術：<ul><li>條件：你能準備該法術，且有時間解讀與抄寫。</li><li>成本：每環階 2 小時＋50 金幣。</li></ul></li><li>複製到新書：<ul><li>你可把舊法術書內容複製到另一本書。</li><li>成本：每環階 1 小時＋10 金幣。</li></ul></li></ul></div>
+<p>若法術書遺失，你可先把目前已準備法術抄進新書，再逐步補齊其餘法術；許多法師都會準備備用法術書。</p></section>
+<section class="wizard-feature class-feature-section" data-feature-level="1"><h3>等級 1：儀式精通</h3><ul class="class-rule-list"><li>只要法術在你的法術書中且有「儀式」標籤，你可用儀式方式施放。</li><li>你不需要先準備該法術，但施放時必須能閱讀法術書。</li></ul></section>
+<section class="wizard-feature class-feature-section" data-feature-level="1"><h3>等級 1：奧術回想</h3><ul class="class-rule-list"><li>完成短休時，你可回復已消耗法術位。</li><li>可回復的法術位環階總和上限為「法師等級一半（小數無條件進位）」。</li><li>單一被回復法術位不可高於 5 環。</li><li>例：4 級法師最多回復總和 2 環（如 1 個 2 環，或 2 個 1 環）。</li><li>使用後需完成長休才能再用。</li></ul></section>
+<section class="wizard-feature class-feature-section" data-feature-level="2"><h3>等級 2：學者</h3><ul class="class-rule-list"><li>在${skillTip("奧秘")},${skillTip("歷史")},${skillTip("自然")},${skillTip("宗教")}中，選 1 個你已熟練的技能。</li><li>你對該技能獲得專精。</li></ul></section>
+<section class="wizard-feature class-feature-section" data-feature-level="3"><h3>等級 3：法師子職</h3><ul class="class-rule-list"><li>你可選擇一個法師子職；基本規則僅提供塑能師。</li><li>隨等級提升，你會陸續獲得子職特性。</li></ul></section>
+<section class="wizard-feature class-feature-section" data-feature-level="3"><h3>等級 3：塑能學者（塑能子職）</h3><ul class="class-rule-list"><li>你可選 2 個不高於 2 環的塑能學派法師法術，免費抄入法術書。</li><li>之後每當你在本職業獲得新環階法術位時，可再免費抄入 1 個你目前能施放環階的塑能法術。</li></ul></section>
+<section class="wizard-feature class-feature-section" data-feature-level="3"><h3>等級 3：強力戲法（塑能子職）</h3><ul class="class-rule-list"><li>當你對生物施放會造成傷害的戲法時：<ul><li>若攻擊檢定失手，或</li><li>目標在該戲法豁免成功，</li><li>目標仍會受到一半傷害（若該戲法有傷害），但不受其他效果影響。</li></ul></li></ul></section>
+<section class="wizard-feature class-feature-section" data-feature-level="4"><h3>等級 4：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section>
+<section class="wizard-feature class-feature-section" data-feature-level="5"><h3>等級 5：記憶法術</h3><ul class="class-rule-list"><li>每次短休後，你可研讀法術書。</li><li>你可把 1 個由「施法」特性準備中的 1+環法師法術，替換成法術書中的另一個 1+環法師法術。</li></ul></section>
+<section class="wizard-feature class-feature-section" data-feature-level="6"><h3>等級 6：法術塑形（塑能子職）</h3><p>當你施展會影響你所能看見之其他生物的塑能系法術時，可以從中選擇1＋該法術環階名生物。所選生物對抗該法術的豁免檢定自動成功，且不會受到通常在豁免成功時仍會承受的一半傷害。</p></section>
+<section class="wizard-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>獲得「屬性值提升」專長，或改選其他符合條件的專長。</p></section></div>
 `
 };
-
-function formatWizardFeatureBody(featureText) {
-  const lines = featureText.trim().split('\n');
-  const output = [];
-
-  const renderList = (listLines) => {
-    const items = [];
-    let currentItem = null;
-    let nestedItems = [];
-
-    const closeItem = () => {
-      if (!currentItem) return;
-      const nested = nestedItems.length ? `<ul>${nestedItems.map(item => `<li>${item}</li>`).join('')}</ul>` : '';
-      items.push(`<li>${currentItem}${nested}</li>`);
-      currentItem = null;
-      nestedItems = [];
-    };
-
-    listLines.forEach(line => {
-      const nestedMatch = line.match(/^\s{2,}-\s+(.+)$/);
-      const topLevelMatch = line.match(/^-\s+(.+)$/);
-      if (nestedMatch) {
-        nestedItems.push(nestedMatch[1]);
-      } else if (topLevelMatch) {
-        closeItem();
-        currentItem = topLevelMatch[1];
-      } else if (currentItem) {
-        currentItem += ` ${line.trim()}`;
-      }
-    });
-    closeItem();
-    return `<ul class="class-rule-list">${items.join('')}</ul>`;
-  };
-
-  for (let index = 0; index < lines.length;) {
-    const line = lines[index].trim();
-    if (!line) {
-      index += 1;
-      continue;
-    }
-
-    if (line.startsWith('- ')) {
-      const listLines = [];
-      while (index < lines.length && lines[index].trim()) {
-        listLines.push(lines[index]);
-        index += 1;
-      }
-      output.push(renderList(listLines));
-      continue;
-    }
-
-    if (index + 1 < lines.length && lines[index + 1].trim().startsWith('- ')) {
-      output.push(`<div class="class-rule-subsection"><h4>${line}</h4>`);
-      index += 1;
-      const listLines = [];
-      while (index < lines.length && lines[index].trim()) {
-        listLines.push(lines[index]);
-        index += 1;
-      }
-      output.push(`${renderList(listLines)}</div>`);
-      continue;
-    }
-
-    output.push(`<p>${line}</p>`);
-    index += 1;
-  }
-
-  return output.join('\n');
-}
-
-function formatPlainTextClassFeatures(classHtml, className, formatBody = text => text) {
-  const featureStart = '</table>\n等級 ';
-  const featureStartIndex = classHtml.indexOf(featureStart);
-  if (featureStartIndex < 0) return classHtml;
-
-  const prefix = classHtml.slice(0, featureStartIndex + '</table>'.length);
-  const featureText = classHtml.slice(featureStartIndex + '</table>\n'.length);
-  const sectionClass = `${className}-feature class-feature-section`;
-  const sections = [...featureText.matchAll(/(?:^|\n\n)等級 (\d+)：([^\n]+)\n?([\s\S]*?)(?=\n\n等級 \d+：|$)/g)];
-  if (!sections.length) return classHtml;
-
-  const formattedFeatures = sections.map(([, level, title, body]) => (
-    `<section class="${sectionClass}" data-feature-level="${level}"><h3>等級 ${level}：${title}</h3>${formatBody(body)}</section>`
-  )).join('\n');
-
-  return `${prefix}\n<div class="class-feature-content">${formattedFeatures}</div>`;
-}
-
-classFeatures.wizard = formatPlainTextClassFeatures(classFeatures.wizard, 'wizard', formatWizardFeatureBody);
-
-function styleClassTagline(classHtml, classFeatureHeading) {
-  const lines = classHtml.split('\n');
-  const headingIndex = lines.findIndex((line) => line.includes(`<strong>${classFeatureHeading}</strong>`));
-
-  if (headingIndex <= 0) return classHtml;
-
-  for (let i = headingIndex - 1; i >= 0; i -= 1) {
-    const textLine = lines[i].trim();
-    if (!textLine) continue;
-
-    lines[i] = `<div class="class-feature-tagline">${textLine}</div>`;
-    break;
-  }
-
-  return lines.join('\n');
-}
-
-function wrapCoreCreationInfo(classHtml, classFeatureHeading) {
-  const featureHeading = `<strong>${classFeatureHeading}</strong>`;
-  const featureHeadingIndex = classHtml.indexOf(featureHeading);
-
-  if (featureHeadingIndex <= 0) return classHtml;
-
-  // 輸出區使用 pre-wrap；移除特性表前的尾端換行，避免產生多餘空白列。
-  return `<details class="class-core-creation-info" open><summary><strong>核心創角資訊</strong></summary>${classHtml.slice(0, featureHeadingIndex).trimEnd()}</details>${classHtml.slice(featureHeadingIndex)}`;
-}
-
-function wrapClassFeatureTable(classHtml, classFeatureHeading, className) {
-  const featureHeading = `<strong>${classFeatureHeading}</strong>`;
-  const featureHeadingIndex = classHtml.indexOf(featureHeading);
-  if (featureHeadingIndex < 0) return classHtml;
-
-  // 僅處理各職業標題後的第一張特性表，避免影響後續說明中的其他內容。
-  const tableStart = classHtml.indexOf('<table', featureHeadingIndex + featureHeading.length);
-  const tableEnd = classHtml.indexOf('</table>', tableStart);
-  if (tableStart < 0 || tableEnd < 0) return classHtml;
-
-  const openingTableEnd = classHtml.indexOf('>', tableStart);
-  if (openingTableEnd < 0 || openingTableEnd > tableEnd) return classHtml;
-
-  const openingTable = classHtml.slice(tableStart, openingTableEnd);
-  const styledOpeningTable = openingTable.replace('<table', '<table class="class-feature-table"');
-
-  return `${classHtml.slice(0, featureHeadingIndex)}<details class="class-feature-table-details" data-class-feature-table="${className}" open><summary><strong>${classFeatureHeading}表格</strong></summary>${classHtml.slice(featureHeadingIndex + featureHeading.length, tableStart)}<div class="class-feature-table-wrap">${styledOpeningTable}>${classHtml.slice(openingTableEnd + 1, tableEnd)}</table></div></details>${classHtml.slice(tableEnd + '</table>'.length)}`;
-}
-
-const classFeatureHeadingMap = {
-  barbarian: '野蠻人特性',
-  bard: '吟遊詩人特性',
-  cleric: '牧師特性',
-  druid: '德魯伊特性',
-  fighter: '戰士特性',
-  monk: '武僧特性',
-  paladin: '聖騎士特性',
-  ranger: '遊俠特性',
-  rogue: '盜賊特性',
-  sorcerer: '術士特性',
-  warlock: '契術師特性',
-  wizard: '法師特性'
-};
-
-Object.entries(classFeatureHeadingMap).forEach(([className, classFeatureHeading]) => {
-  const classHtml = styleClassTagline(classFeatures[className], classFeatureHeading);
-  const classHtmlWithCoreCreationInfo = wrapCoreCreationInfo(classHtml, classFeatureHeading);
-  classFeatures[className] = wrapClassFeatureTable(classHtmlWithCoreCreationInfo, classFeatureHeading, className);
-});

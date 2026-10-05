@@ -1007,7 +1007,7 @@ async function verifyAutomaticFeatRows(browser, url) {
     await page.evaluate(() => selectCharacterFeatureTab("class"));
     await page.selectOption("#feat-choice-fighting-style-fighter", "防禦");
     await page.selectOption("#feat-choice-fighting-style-fighter-2", "箭術");
-    assert.equal(await page.locator('#feat-choice-fighting-style-fighter-2 option[value="防禦"]').isDisabled(), true);
+    assert.equal(await page.locator('#feat-choice-fighting-style-fighter-2 option[value="防禦"]').isDisabled(), false, "duplicate style remains selectable");
     assert.equal(await page.locator("#derived-feat-fighting-style-fighter").isDisabled(), false);
     await page.selectOption("#feat-choice-fighter-level-4", "屬性值提升");
     await page.selectOption("#feat-choice-fighter-level-6", "屬性值提升");
@@ -1026,29 +1026,30 @@ async function verifyAutomaticFeatRows(browser, url) {
     await page.click("#character-features-modal .app-dialog__close");
     await selectFeatWithoutScrolling("derived-feat-fighter-level-8", "強韌體魄");
     assert.equal(await page.inputValue("#feat-choice-fighter-level-8"), "強韌體魄", "main level feat updates class source");
-    assert.equal(await page.locator('#derived-feat-fighter-level-8 option[value="警覺"]').isDisabled(), true, "main duplicate restrictions mirror source");
+    assert.equal(await page.locator('#derived-feat-fighter-level-8 option[value="警覺"]').isDisabled(), false, "duplicate feats remain selectable");
     assert.equal(await page.locator('#derived-feat-fighting-style-fighter option[value="熟習"]').count(), 0, "main style choices limited to styles");
     assert.equal(await page.locator('#derived-feat-human-origin option[value="屬性值提升"]').count(), 0, "main human choices limited to origin feats");
     await page.selectOption("#derived-feat-fighting-style-fighter", "巨武器戰鬥");
     assert.equal(await page.inputValue("#feat-choice-fighting-style-fighter"), "巨武器戰鬥", "main fighting style updates source");
-    assert.equal(await page.locator('#derived-feat-fighting-style-fighter-2 option[value="巨武器戰鬥"]').isDisabled(), true, "main extra style rejects duplicate");
-    assert.equal(await page.locator('#feat-choice-fighting-style-fighter-2 option[value="巨武器戰鬥"]').isDisabled(), true, "source extra style restriction updates");
+    assert.equal(await page.locator('#derived-feat-fighting-style-fighter-2 option[value="巨武器戰鬥"]').isDisabled(), false, "main extra style permits duplicate");
+    assert.equal(await page.locator('#feat-choice-fighting-style-fighter-2 option[value="巨武器戰鬥"]').isDisabled(), false, "source extra style permits duplicate");
     await page.evaluate(() => {
       const select = document.getElementById("derived-feat-fighting-style-fighter-2");
       select.value = "巨武器戰鬥";
       select.dispatchEvent(new Event("change"));
     });
-    assert.equal(await page.inputValue("#derived-feat-fighting-style-fighter-2"), "箭術", "invalid main selection preserves peer and own choices");
+    assert.equal(await page.inputValue("#derived-feat-fighting-style-fighter-2"), "巨武器戰鬥", "invalid selection is retained");
+    assert.equal(await page.locator("#derived-feat-fighting-style-fighter-2-desc .feat-eligibility-warning").textContent(), "角色未達專長使用條件", "duplicate selection warns");
     await page.selectOption("#derived-feat-fighting-style-fighter", "防禦");
+    assert.equal(await page.locator("#derived-feat-fighting-style-fighter-2-desc .feat-eligibility-warning").count(), 0, "released duplicate becomes usable");
     assert.equal(await page.locator('#derived-feat-fighting-style-fighter-2 option[value="巨武器戰鬥"]').isDisabled(), false, "changing main style releases previous choice");
-    assert.equal(await page.locator('#derived-feat-fighter-level-8 option[value="擒抱者"]').isDisabled(), true, "main prerequisites mirror source");
+    assert.equal(await page.locator('#derived-feat-fighter-level-8 option[value="擒抱者"]').isDisabled(), false, "unmet prerequisites remain selectable");
     await page.fill("#dex", "13");
     await page.press("#dex", "Tab");
     assert.equal(await page.locator('#derived-feat-fighter-level-8 option[value="擒抱者"]').isDisabled(), false, "main prerequisites refresh after ability change");
     await page.fill("#dex", "10");
     await page.press("#dex", "Tab");
-    assert.equal(await page.locator('#feat-choice-fighter-level-8 option[value="警覺"]').isDisabled(), true);
-    assert.equal(await page.locator('#feat-choice-fighter-level-8 option[value="警覺"]').isDisabled(), true);
+    assert.equal(await page.locator('#feat-choice-fighter-level-8 option[value="警覺"]').isDisabled(), false);
     const saved = await page.evaluate(() => collectStateObject());
     await page.evaluate(() => applyStateObject({ hp: "10" }));
     assert.equal(await page.inputValue("#derived-feat-fighter-level-8"), "強韌體魄", "partial state keeps feat choices");
@@ -1122,12 +1123,12 @@ async function verifyAutomaticFeatRows(browser, url) {
     await lessons.first().check();
     await page.selectOption("#feat-choice-lessons-1", "熟習");
     await lessons.nth(1).check();
-    assert.equal(await page.locator('#feat-choice-lessons-2 option[value="熟習"]').isDisabled(), true, "lessons picks must differ");
+    assert.equal(await page.locator('#feat-choice-lessons-2 option[value="熟習"]').isDisabled(), false, "lessons duplicates remain selectable");
     await page.selectOption("#feat-choice-lessons-2", "醫療兵");
     await page.click("#character-features-modal .app-dialog__close");
     await page.selectOption("#derived-feat-lessons-2", "強韌體魄");
     assert.equal(await page.inputValue("#feat-choice-lessons-2"), "強韌體魄", "main invocation choice updates source");
-    assert.equal(await page.locator('#derived-feat-lessons-2 option[value="熟習"]').isDisabled(), true, "main invocation rejects repeat lessons choice");
+    assert.equal(await page.locator('#derived-feat-lessons-2 option[value="熟習"]').isDisabled(), false, "main invocation permits repeat lessons choice");
     await page.selectOption("#derived-feat-lessons-2", "醫療兵");
     const invocationState = await page.evaluate(() => collectStateObject());
     await page.evaluate(state => applyStateObject(state), invocationState);
@@ -1176,8 +1177,11 @@ async function verifyAutomaticFeatRows(browser, url) {
     await page.click("#character-features-modal .app-dialog__close");
     await page.selectOption("#derived-feat-fighter-level-4", "魔法學徒");
     await page.selectOption("#derived-feat-fighter-level-6", "魔法學徒");
-    assert.equal(await page.locator('#feat-choice-fighter-level-8 option[value="魔法學徒"]').isDisabled(), true, "magic initiate limited to different available lists");
-    assert.equal(await page.locator('#derived-feat-fighter-level-8 option[value="魔法學徒"]').isDisabled(), true, "main magic initiate repetition mirrors source");
+    assert.equal(await page.locator('#feat-choice-fighter-level-8 option[value="魔法學徒"]').isDisabled(), false, "extra magic initiate remains selectable");
+    assert.equal(await page.locator('#derived-feat-fighter-level-8 option[value="魔法學徒"]').isDisabled(), false, "main extra magic initiate remains selectable");
+    await page.selectOption("#derived-feat-fighter-level-8", "魔法學徒");
+    assert.equal(await page.locator("#derived-feat-fighter-level-8-desc .feat-eligibility-warning").count(), 1, "fourth magic initiate warns");
+    assert.equal(await page.evaluate(() => getMagicInitiateConfigs().length), 3, "invalid extra magic initiate grants no spell rows");
     await page.evaluate(saved => applyStateObject(Object.fromEntries(Object.entries(saved).reverse())), magicSaved);
     assert.equal(await page.inputValue("#derived-feat-human-origin-magic-initiate-cantrip-2"), "mage-hand", "magic initiate restores spells");
     await page.selectOption("#background", "sage");
@@ -1204,6 +1208,103 @@ async function verifyAutomaticFeatRows(browser, url) {
     assert.equal(await page.inputValue("#derived-feat-fighter-level-8"), "強韌體魄", "share level feat");
     console.log("Feat management: bidirectional choices, option restrictions, automation, manual edits/add/delete, repeat invocations, legacy migration and new JSON/share/autosave passed.");
   } finally { await page.close(); }
+}
+
+async function verifyFeatEligibilityWarnings(browser, url) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await context.newPage();
+  try {
+    await page.goto(url);
+    await page.waitForFunction(() => !!window.TabletopMode);
+    await page.check("#legal-dismiss");
+    await page.click("#legal-close-btn");
+    await page.evaluate(() => applyStateObject({
+      class: "fighter", level: "8", background: "soldier", race: "human",
+      str: "10", dex: "10", con: "10", int: "10", wis: "10", cha: "10",
+      "speed-input": "30", "manual-feat-management": false,
+      "feat-choice-fighter-level-4": "迅捷步法", "feat-choice-fighter-level-8": "臨陣施法"
+    }));
+    const warning = page.locator("#derived-feat-fighter-level-4-desc .feat-eligibility-warning");
+    assert.equal(await warning.textContent(), "角色未達專長使用條件");
+    assert.equal(await page.inputValue("#speed-display"), "30", "ineligible speedy feat adds no speed");
+    assert.equal(await page.evaluate(() => hasSelectedFeat("臨陣施法")), false, "ineligible caster feat is inactive");
+    await page.evaluate(() => TabletopMode.setMode("tabletop"));
+    assert.match(await page.locator("#tabletop-speed").textContent(), /30/u, "tabletop speed also excludes ineligible feat");
+    assert.equal(await page.locator("#tabletop-overview-rule-summary").textContent().then(text => text.includes("閃避反擊")), false, "tabletop effect excludes ineligible feat");
+    await page.evaluate(() => TabletopMode.setMode("sheet"));
+    assert.equal(await warning.evaluate(el => el.nextElementSibling.classList.contains("feat-desc-title")), true, "warning precedes feat title");
+    for (const family of ["classic", "warm"]) {
+      for (const theme of ["light", "dark"]) {
+        assert.equal(await warning.evaluate((el, { family, theme }) => {
+          document.documentElement.dataset.uiTheme = family;
+          document.documentElement.dataset.theme = theme;
+          const probe = document.createElement("span");
+          probe.style.color = "var(--warning)";
+          document.body.append(probe);
+          const matches = getComputedStyle(el).color === getComputedStyle(probe).color;
+          probe.remove();
+          const rect = el.getBoundingClientRect();
+          const parent = el.parentElement.getBoundingClientRect();
+          return matches && rect.width > 0 && rect.right <= parent.right && el.scrollWidth <= el.clientWidth;
+        }, { family, theme }), true, `${family}/${theme}: themed warning fits narrow card`);
+      }
+    }
+    const invalid = await page.evaluate(() => collectStateObject());
+    await page.fill("#dex", "13");
+    await page.press("#dex", "Tab");
+    assert.equal(await warning.count(), 0, "meeting prerequisites clears warning");
+    assert.equal(await page.inputValue("#speed-display"), "40", "qualified speedy feat adds speed");
+    await page.fill("#dex", "10");
+    await page.press("#dex", "Tab");
+    assert.equal(await page.inputValue("#derived-feat-fighter-level-4"), "迅捷步法", "losing prerequisites preserves choice");
+    assert.equal(await page.inputValue("#speed-display"), "30", "losing prerequisites removes speed");
+    await page.check("#manual-feat-management");
+    assert.equal(await page.locator(".feat-eligibility-warning").count(), 0, "manual mode has no eligibility warning");
+    assert.equal(await page.inputValue("#speed-display"), "40", "manual mode applies ineligible feat bonus");
+    assert.equal(await page.evaluate(() => hasSelectedFeat("臨陣施法")), true, "manual mode enables caster feat");
+    await page.evaluate(() => TabletopMode.setMode("tabletop"));
+    assert.match(await page.locator("#tabletop-speed").textContent(), /40/u, "manual mode enables tabletop speed bonus");
+    assert.equal(await page.locator("#tabletop-overview-rule-summary").textContent().then(text => text.includes("閃避反擊")), true, "manual mode enables tabletop effect");
+    await page.evaluate(() => TabletopMode.setMode("sheet"));
+    assert.equal(await page.evaluate(() => buildPdfPrecheckMessages().some(entry => entry.message.includes("角色未達專長使用條件"))), false, "manual mode has no PDF eligibility reminder");
+    await page.uncheck("#manual-feat-management");
+    assert.equal(await page.inputValue("#speed-display"), "30", "automatic mode restores numeric gating");
+    await page.evaluate(() => saveAllFields());
+    await page.reload();
+    await page.waitForFunction(() => document.getElementById("derived-feat-fighter-level-4")?.value === "迅捷步法");
+    assert.equal(await warning.count(), 1, "autosave retains invalid choice and warning");
+    await page.evaluate(state => applyStateObject(Object.fromEntries(Object.entries(state).reverse())), invalid);
+    assert.equal(await warning.count(), 1, "JSON state restores invalid choice independent of field order");
+    const hash = await page.evaluate(() => encodeStateToHash(collectShareState()));
+    await page.goto(new URL(hash, url).href);
+    await page.reload();
+    await page.waitForFunction(() => window.SHARE_MODE && document.getElementById("derived-feat-fighter-level-4")?.value === "迅捷步法");
+    assert.equal(await warning.count(), 1, "share restores invalid choice and warning");
+    assert.equal(await page.inputValue("#speed-display"), "30", "share restores inactive numeric effect");
+    await page.click("#legal-close-btn");
+    await page.evaluate(() => {
+      window.validatePdfCharacterName = async () => ({ fits: true });
+      window.exportCharacterPdfFromState = async state => { window.__featWarningPdfExport = state; };
+    });
+    await page.click("#utility-menu-toggle");
+    await page.click("#export-pdf-btn");
+    const dialog = page.locator(".pdf-export-flow-modal");
+    assert.equal(await dialog.getByText("迅捷步法：角色未達專長使用條件（不套用自動計算加值）。", { exact: true }).count(), 1, "PDF precheck shows same warning");
+    await page.press("body", "Escape");
+    assert.equal(await dialog.count(), 0, "PDF warning can be cancelled");
+    assert.equal(await warning.count(), 1, "cancelling PDF preserves selected feat warning");
+    if (await page.getAttribute("#utility-menu-toggle", "aria-expanded") === "false") await page.click("#utility-menu-toggle");
+    await page.click("#export-pdf-btn");
+    await dialog.getByRole("button", { name: "繼續", exact: true }).click();
+    await page.fill("#pdf-export-character-name", "專長警示驗證");
+    await dialog.getByRole("button", { name: "下一步", exact: true }).click();
+    await dialog.getByRole("button", { name: "只使用目前裝備" }).click();
+    await dialog.getByRole("button", { name: "可編輯表單版", exact: false }).click();
+    await page.waitForFunction(() => !!window.__featWarningPdfExport);
+    assert.equal(await page.evaluate(() => window.__featWarningPdfExport["speed-display"]), "30", "forced PDF uses gated numeric values");
+    assert.equal(await page.evaluate(() => window.__featWarningPdfExport["derived-feat-fighter-level-4"]), "迅捷步法", "forced PDF preserves selected feat");
+    console.log("Feat eligibility: selection retention, theme warnings, numeric gating, manual override, JSON/share/autosave and advisory PDF export passed.");
+  } finally { await context.close(); }
 }
 
 async function verifyLegacyShareFeatCompatibility(browser, url) {
@@ -1567,6 +1668,7 @@ async function main() {
     await verifyManualWeaponVisibility(page);
     await verifyEquipmentLoadout(browser, page.url());
     await verifyAutomaticFeatRows(browser, page.url());
+    await verifyFeatEligibilityWarnings(browser, page.url());
     await verifyLegacyShareFeatCompatibility(browser, page.url());
     console.log("Class tabletop descriptions, alerts, choices, resource conversion and recovery passed.");
     assert.deepEqual(errors, [], "browser runtime errors");

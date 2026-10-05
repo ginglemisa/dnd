@@ -554,6 +554,19 @@
     modal.querySelector(".equipment-detail-modal__close")?.focus();
   }
 
+  function openEquipmentDetailByName(value, trigger) {
+    const name = String(value || "").trim();
+    if (!name) return false;
+    initializeEquipmentSearchIndex();
+    // 樂器、賭具的個別選項沿用搜尋中的整組說明，不另複製規則文本。
+    const toolGroup = globalScope.ToolProficiencyCatalog?.groups.find(group => group.options.includes(name));
+    const entry = equipmentSearchIndex.find(candidate => candidate.name === name)
+      || equipmentSearchIndex.find(candidate => candidate.kind === "tool" && candidate.name === toolGroup?.label);
+    if (!entry) return false;
+    openEquipmentDetail(entry, trigger);
+    return true;
+  }
+
   function closeEquipmentDetail() {
     const modal = document.getElementById("equipment-detail-modal");
     if (!modal?.classList.contains("open")) return;
@@ -637,7 +650,7 @@
   });
 
   // 公開相容入口；索引與其餘輔助函式保留於模組內。
-  Object.assign(globalScope, { searchAllSpells, clearSpellSearchResults, applyEquipmentFilter });
+  Object.assign(globalScope, { searchAllSpells, clearSpellSearchResults, applyEquipmentFilter, openEquipmentDetailByName });
 
   // 保留法術索引的載入時預建；裝備說明在 DOMContentLoaded 產生，仍延後到搜尋時建立。
   if (document.readyState === "complete") {

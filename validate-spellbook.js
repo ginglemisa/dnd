@@ -7,6 +7,247 @@ const path = require("node:path");
 const http = require("node:http");
 const { chromium } = require("playwright");
 
+async function verifyClearPreparedSpells(page) {
+  const state = {
+    class: "druid", level: "8", background: "acolyte", race: "tiefling",
+    "druid-land": "polar", "tiefling-legacy": "infernal", "spellcasting-ability": "wis",
+    "derived-feat-background-magic-initiate-cantrip-1": "light",
+    "derived-feat-background-magic-initiate-cantrip-2": "guidance",
+    "derived-feat-background-magic-initiate-level-1": "bless",
+    "cantrips-area-count": 1, "cantrips-area-class-0": "druid", "cantrips-area-spell-0": "mending",
+    ...Object.fromEntries(["cure-wounds", "lesser-restoration", "dispel-magic", "blight"].flatMap((id, index) => [
+      [`level${index + 1}spells-area-count`, 1],
+      [`level${index + 1}spells-area-class-0`, "druid"],
+      [`level${index + 1}spells-area-spell-0`, id]
+    ]))
+  };
+  await page.evaluate(state => {
+    document.getElementById("legal-modal")?.style.setProperty("display", "none");
+    window.onboardingTour?.finish?.();
+    applyStateObject(state);
+    showTab("spells");
+    document.getElementById("spellslot1-1").checked = true;
+    const freeUse = document.querySelector(".free-spell-use-check");
+    if (freeUse) freeUse.checked = true;
+  }, state);
+  const snapshot = () => page.evaluate(() => ({
+    derived: [...document.querySelectorAll("#tab-spells .spell-entry[data-spell-source]")].map(row => ({
+      source: row.dataset.spellSource, key: row.dataset.sourceKey,
+      spell: row.querySelector("select[id*='-spell-']").value,
+      disabled: row.querySelector("select[id*='-spell-']").disabled
+    })),
+    cantrips: [...document.querySelectorAll("#cantrips-area select[id*='-spell-']")].map(select => select.value),
+    slots: [...document.querySelectorAll("#spell-slot-management-wrap input:not(.spell-slot-placeholder)")].map(box => box.checked),
+    freeUses: [...document.querySelectorAll(".free-spell-use-check")].map(box => [box.id, box.checked])
+  }));
+  const original = await snapshot();
+  for (const source of ["race", "class", "subclass", "magic-initiate"]) {
+    assert(original.derived.some(row => row.source === source && row.spell && row.disabled), `${source} fixed spells exist`);
+  }
+  const button = page.locator("#spell-clear-prepared");
+  await button.focus();
+  await page.keyboard.press("Enter");
+  const dialog = page.getByRole("alertdialog", { name: "清空已準備" });
+  assert.equal(await dialog.isVisible(), true);
+  assert.equal(await dialog.getByRole("button", { name: "取消", exact: true }).evaluate(el => el === document.activeElement), true);
+  await page.keyboard.press("Escape");
+  assert.equal(await button.evaluate(el => el === document.activeElement), true);
+  assert.equal(await page.evaluate(() => getClearablePreparedSpellSelects().length), 4);
+  await button.click();
+  await dialog.getByRole("button", { name: "取消", exact: true }).click();
+  assert.equal(await button.evaluate(el => el === document.activeElement), true);
+  assert.deepEqual(await snapshot(), original);
+  await button.click();
+  await dialog.getByRole("button", { name: "清空已準備", exact: true }).click();
+  assert.equal(await page.evaluate(() => getClearablePreparedSpellSelects().length), 0);
+  assert.deepEqual(await snapshot(), original, "fixed spells, cantrips and consumed uses stay intact");
+  assert.equal(await button.isDisabled(), true);
+  assert.equal(await page.locator("#spell-prepared-counts").evaluate(el => el === document.activeElement), true);
+  assert.match(await page.locator("#spell-prepared-counts").innerText(), /^已準備 0 個法術/);
+  assert.equal(await page.evaluate(() => TabletopSpells.getSelectedSpellEntries().filter(entry => entry.spell.level > 0 && entry.spellSource === "manual").length), 0);
+  await page.waitForFunction(() => {
+    const saved = JSON.parse(dndStorage.getItem("dndchar_autosave_v1") || "null");
+    return saved?.class === "druid" && [1, 2, 3, 4].every(ring => !saved[`level${ring}spells-area-spell-0`]);
+  });
+  await page.reload();
+  await page.waitForFunction(() => window.Spellbook && document.querySelector("#cantrips-area select"));
+  assert.equal(await page.evaluate(() => getClearablePreparedSpellSelects().length), 0);
+  assert.deepEqual(await snapshot(), original, "autosave reload keeps only the protected selections");
+  await page.evaluate(() => {
+    const json = JSON.parse(JSON.stringify(collectStateObject()));
+    applyStateObject(json);
+  });
+  assert.deepEqual(await snapshot(), original, "JSON restore keeps protected selections and consumed uses");
+  await page.evaluate(async () => {
+    history.replaceState(null, "", await encodeStateToHash(collectShareState()));
+    const decoded = await decodeStateFromHash();
+    applyStateObject(decoded.data);
+    history.replaceState(null, "", location.pathname);
+  });
+  assert.equal(await page.evaluate(() => getClearablePreparedSpellSelects().length), 0);
+  assert.deepEqual(await snapshot(), {
+    ...original, slots: original.slots.map(() => false), freeUses: original.freeUses.map(([id]) => [id, false])
+  }, "share keeps protected selections and excludes live consumed uses by design");
+
+  await page.evaluate(() => {
+    applyStateObject({ class: "wizard", level: "8", background: "soldier", race: "human",
+      "level1spells-area-count": 1, "level1spells-area-class-0": "wizard",
+      "level1spells-area-spell-0": "detect-magic",
+      __wizardSpellbook: { version: 1, spellIds: ["detect-magic", "mage-armor"] } });
+    document.getElementById("legal-modal")?.style.setProperty("display", "none");
+    showTab("spells");
+  });
+  for (const width of [1100, 320]) {
+    await page.setViewportSize({ width, height: 850 });
+    for (const theme of ["classic", "warm"]) {
+      for (const brightness of ["light", "dark"]) {
+        await page.evaluate(({ theme, brightness }) => {
+          document.documentElement.dataset.uiTheme = theme;
+          document.documentElement.dataset.theme = brightness;
+        }, { theme, brightness });
+        assert.equal(await page.evaluate(() => {
+          const summary = document.getElementById("spell-prepared-summary").getBoundingClientRect();
+          const counts = document.getElementById("spell-prepared-counts").getBoundingClientRect();
+          const button = document.getElementById("spell-clear-prepared");
+          const box = button.getBoundingClientRect();
+          const actual = getComputedStyle(button);
+          const sibling = getComputedStyle(document.getElementById("spellbook-manage"));
+          const layoutFits = innerWidth > 320
+            ? Math.abs(box.top - counts.top) < 1 && box.left >= counts.right
+            : Math.abs(counts.width - summary.width) < 1 && box.top >= counts.bottom;
+          return layoutFits
+            && Math.abs(box.right - summary.right) < 1 && box.left >= summary.left
+            && ["backgroundColor", "color", "borderColor", "borderRadius", "fontSize", "padding", "minHeight"].every(key => actual[key] === sibling[key]);
+        }), true, `clear button aligns beside text or wraps below without squeezing at ${width}px ${theme}/${brightness}`);
+      }
+    }
+  }
+  await button.click();
+  await dialog.getByRole("button", { name: "清空已準備", exact: true }).click();
+  assert.deepEqual(await page.evaluate(() => Spellbook.getState().spellIds), ["detect-magic", "mage-armor"]);
+  assert.equal(await page.locator("#spellbook-list .is-prepared").count(), 0);
+  assert.equal(await page.evaluate(() => Spellbook.getRitualEntries().some(entry => entry.spellId === "detect-magic")), true);
+  await page.setViewportSize({ width: 1100, height: 850 });
+  console.log("Clear preparation: confirmation/cancel/focus, four rings, protected origins/cantrips/book, consumed uses, JSON/share/autosave and adaptive text/button layout in four themes passed.");
+}
+
+async function verifyRecommendedSpellbookEntry(page) {
+  const ids = ["detect-magic", "feather-fall", "mage-armor", "magic-missile", "sleep", "thunderwave"];
+  await page.evaluate(() => {
+    document.getElementById("legal-modal")?.style.setProperty("display", "none");
+    window.onboardingTour?.finish?.();
+    applyStateObject({ class: "wizard", level: "1", background: "soldier", race: "human",
+      "spellcasting-ability": "int", "spell-notes": "玩家原有筆記",
+      "level1spells-area-count": 1, "level1spells-area-class-0": "wizard",
+      "level1spells-area-spell-0": "mage-armor", __wizardSpellbook: { version: 1, spellIds: [] } });
+    showTab("basic");
+  });
+  await page.locator('[data-character-features-tab="class"]').click();
+  const featureModal = page.locator("#character-features-modal");
+  const recommendations = featureModal.locator("#classFeatures [data-wizard-spellbook-recommendations] .spell-highlight-action");
+  assert.deepEqual(await recommendations.evaluateAll(elements => elements.map(el => el.dataset.spellId)), ids);
+  const detail = page.locator("#quick-build-spell-detail");
+  const writeButton = detail.getByRole("button", { name: "寫入法術書", exact: true });
+  const trigger = id => featureModal.locator(`#classFeatures [data-wizard-spellbook-recommendations] .spell-highlight-action[data-spell-id="${id}"]`);
+  const preparedIds = () => page.locator('#level1spells-area select[id*="-spell-"]').evaluateAll(selects => selects.map(select => select.value));
+  const initialPrepared = await preparedIds();
+
+  await trigger(ids[0]).focus();
+  await page.keyboard.press("Enter");
+  assert.equal(await writeButton.isEnabled(), true);
+  await page.keyboard.press("Shift+Tab");
+  assert.equal(await writeButton.evaluate(el => el === document.activeElement), true, "focus wraps to the new last action");
+  await page.keyboard.press("Tab");
+  assert.equal(await detail.locator(".quick-build-spell-detail-close").evaluate(el => el === document.activeElement), true);
+  await detail.locator(".quick-build-spell-prepare-cancel").click();
+  assert.equal(await trigger(ids[0]).evaluate(el => el === document.activeElement), true);
+  await trigger(ids[0]).click();
+  await page.keyboard.press("Escape");
+  assert.equal(await featureModal.isVisible(), true);
+  assert.deepEqual(await page.evaluate(() => Spellbook.getState().spellIds), []);
+
+  for (const width of [1100, 650, 320]) {
+    await page.setViewportSize({ width, height: 850 });
+    await trigger(ids[0]).click();
+    assert.equal(await detail.evaluate(el => {
+      const shell = el.querySelector(".quick-build-spell-detail-shell");
+      const actions = [...el.querySelectorAll(".quick-build-spell-prepare-actions button")];
+      const shellRect = shell.getBoundingClientRect();
+      const boxes = actions.map(button => button.getBoundingClientRect());
+      const cancel = getComputedStyle(actions[0]);
+      const write = getComputedStyle(actions[2]);
+      return shell.scrollWidth <= shell.clientWidth + 1 && shellRect.left >= 0 && shellRect.right <= innerWidth
+        && boxes.every(box => box.left >= shellRect.left && box.right <= shellRect.right && box.bottom <= innerHeight)
+        && cancel.backgroundColor === write.backgroundColor && cancel.color === write.color
+        && cancel.borderColor === write.borderColor
+        && (innerWidth <= 620 || boxes[2].left >= boxes[1].right);
+    }), true, `write action matches cancel and fits ${width}px`);
+    await detail.locator(".quick-build-spell-prepare-cancel").click();
+  }
+  await page.setViewportSize({ width: 1100, height: 850 });
+  for (const id of ids) {
+    await trigger(id).click();
+    assert.equal(await writeButton.isEnabled(), true, `${id} can be written from its recommendation`);
+    await writeButton.focus();
+    await page.keyboard.press("Enter");
+    assert.equal(await detail.isVisible(), false);
+    assert.equal(await trigger(id).evaluate(el => el === document.activeElement), true);
+  }
+  assert.deepEqual(await page.evaluate(() => Spellbook.getState().spellIds), ids);
+  assert.deepEqual(await preparedIds(), initialPrepared, "writing does not prepare or cancel existing spells");
+  assert.equal(await page.locator("#spell-notes").inputValue(), "玩家原有筆記");
+  await trigger(ids[0]).click();
+  assert.equal(await writeButton.isDisabled(), true);
+  assert.equal(await detail.getByText("此法術已在法術書中。", { exact: true }).isVisible(), true);
+  await page.keyboard.press("Escape");
+  await trigger(ids[0]).click();
+  await detail.locator(".quick-build-spell-prepare-confirm").click();
+  assert((await preparedIds()).includes(ids[0]), "recommendation still supports preparing a spell");
+  assert.deepEqual(await page.evaluate(() => Spellbook.getState().spellIds), ids, "preparing does not duplicate book entries");
+  await featureModal.locator('#classFeatures .spell-highlight-action[data-spell-id="light"]').first().click();
+  assert.equal(await detail.locator(".quick-build-spellbook-write").isVisible(), false, "wizard cantrip uses the regular modal");
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("Escape");
+  await page.evaluate(() => showTab("spells"));
+  await page.locator('#spellbook-list [data-spell-id="detect-magic"]').click();
+  assert.equal(await detail.locator(".quick-build-spellbook-write").isVisible(), false, "book detail does not inherit recommendation action");
+  await page.keyboard.press("Escape");
+  await page.evaluate(() => { quickBuild.openSpellPrepareDetail("detect-magic", document.getElementById("spellbook-manage")); });
+  assert.equal(await detail.locator(".quick-build-spellbook-write").isVisible(), false, "same spell through a regular entry has no write action");
+  await page.keyboard.press("Escape");
+  assert.deepEqual(await page.evaluate(() => [Spellbook.addWizardSpell("detect-magic"), Spellbook.addWizardSpell("light"),
+    Spellbook.addWizardSpell("cure-wounds"), Spellbook.addWizardSpell("invalid-spell")]), [false, false, false, false]);
+  await page.waitForFunction(() => JSON.parse(dndStorage.getItem("dndchar_autosave_v1"))?.__wizardSpellbook?.spellIds.length === 6);
+  assert.equal(await page.evaluate(async () => {
+    const json = JSON.parse(JSON.stringify(collectStateObject()));
+    Spellbook.setState({ spellIds: [] });
+    applyStateObject(json);
+    if (Spellbook.getState().spellIds.length !== 6) return false;
+    history.replaceState(null, "", await encodeStateToHash(collectShareState()));
+    const decoded = await decodeStateFromHash();
+    Spellbook.setState({ spellIds: [] });
+    applyStateObject(decoded.data);
+    history.replaceState(null, "", location.pathname);
+    saveAllFields();
+    return Spellbook.getState().spellIds.length === 6;
+  }), true, "written recommendations survive JSON and sharing");
+  await page.reload();
+  await page.waitForFunction(() => window.Spellbook?.getState().spellIds.length === 6);
+  assert.deepEqual(await page.evaluate(() => Spellbook.getState().spellIds), ids, "written recommendations survive autosave reload");
+  await page.evaluate(() => {
+    document.getElementById("legal-modal")?.style.setProperty("display", "none");
+    applyStateObject({ class: "sorcerer", level: "1", background: "soldier", race: "human" });
+    showTab("basic");
+  });
+  await page.locator('[data-character-features-tab="class"]').click();
+  await featureModal.locator('#classFeatures .spell-highlight-action[data-spell-id="detect-magic"]').first().click();
+  assert.equal(await detail.locator(".quick-build-spellbook-write").isVisible(), false, "other classes never show the write action");
+  assert.equal(await page.evaluate(() => Spellbook.addWizardSpell("feather-fall")), false, "write API rejects non-wizards");
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("Escape");
+  console.log("Wizard recommendations: six exclusive entries, book-only writes, duplicate guard, keyboard/focus, responsive styling and JSON/share/autosave passed.");
+}
+
 async function verifyPdfSpellbookOptions(page) {
   await page.addScriptTag({ url: "/pdf-field-map.js" });
   await page.addScriptTag({ url: "/pdf-export.js" });
@@ -135,6 +376,8 @@ async function main() {
     });
     await page.goto(`http://127.0.0.1:${server.address().port}/index.html`);
     await page.waitForFunction(() => window.Spellbook && document.querySelector("#cantrips-area select"));
+    await verifyRecommendedSpellbookEntry(page);
+    await verifyClearPreparedSpells(page);
     await page.evaluate(() => {
       document.getElementById("legal-modal")?.style.setProperty("display", "none");
       window.onboardingTour?.finish?.();

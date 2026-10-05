@@ -64,8 +64,7 @@ document.addEventListener("DOMContentLoaded", () => {
 <h3 id="equipment-tools-heading">各種工具|冒險用品</h3>
   <details>
     <summary class="equipment-note-summary">工匠工具</summary>
-    <div class="small-text equipment-note-body" style="white-space:pre-line;">
-工匠工具專注於製作物品和從事某種行業。每種工具需要單獨的熟練項。
+    <div class="small-text equipment-note-body" style="white-space:pre-line;">工匠工具專注於製作物品和從事某種行業。每種工具需要單獨的熟練項。
 
 工具熟練項
 如果你對某個工具有熟練項，則在使用該工具進行屬性檢定時，你可以將熟練加值加到檢定上。如果你在使用該工具的檢定中擁有相關的技能熟練項， 你還可以在檢定中獲得優勢。
@@ -178,8 +177,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   <details>
     <summary class="equipment-note-summary">其他工具</summary>
-    <div class="small-text equipment-note-body" style="white-space:pre-line;">
-這些工具為冒險和其他活動提供幫助。
+    <div class="small-text equipment-note-body" style="white-space:pre-line;">這些工具為冒險和其他活動提供幫助。
 
 易容工具（25 金幣）
 屬性： 魅力 

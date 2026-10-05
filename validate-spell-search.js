@@ -195,7 +195,83 @@ async function validateArtificerCatalog(browser) {
   }
 }
 
+async function validateToolProficiencyDetails(page) {
+  const tab = name => page.locator(`[aria-controls="tab-${name}"]`).click();
+  const list = page.locator("#tool-proficiency-list");
+  const rowFor = id => list.locator(".tool-proficiency-row").filter({ has: page.locator(`#${id}`) });
+  const detail = page.locator("#equipment-detail-modal");
+  const view = async (id, title, closeWithButton = false) => {
+    const row = rowFor(id);
+    const button = row.locator(".tool-proficiency-view");
+    assert.equal(await button.count(), 1, `${id}: one view button`);
+    const selected = await row.locator("select").inputValue();
+    await button.focus();
+    await button.press("Enter");
+    assert.equal(await detail.isVisible(), true, `${id}: opens shared detail`);
+    assert.equal(await detail.locator("#equipment-detail-title").textContent(), title);
+    assert.match(await detail.locator("#equipment-detail-content").textContent(), /使用：/u);
+    if (closeWithButton) await detail.getByRole("button", { name: "關閉裝備詳情" }).click();
+    else await page.keyboard.press("Escape");
+    assert.equal(await detail.isVisible(), false);
+    assert.equal(await button.evaluate(el => el === document.activeElement), true, `${id}: restores focus`);
+    assert.equal(await row.locator("select").inputValue(), selected, `${id}: selection unchanged`);
+  };
+  const checkLayout = async () => {
+    for (const width of [1100, 320]) {
+      await page.setViewportSize({ width, height: 850 });
+      const controls = await list.locator(".tool-proficiency-control").evaluateAll(nodes => nodes.map(node => {
+        const select = node.querySelector("select").getBoundingClientRect();
+        const button = node.querySelector(".tool-proficiency-view").getBoundingClientRect();
+        return { selectRight: select.right, selectTop: select.top, buttonLeft: button.left, buttonTop: button.top, right: node.getBoundingClientRect().right, scroll: node.scrollWidth, width: node.clientWidth };
+      }));
+      controls.forEach(control => {
+        assert.ok(control.buttonLeft >= control.selectRight, "view stays to the right of its select");
+        assert.ok(Math.abs(control.selectTop - control.buttonTop) < 12, "view stays on the same line");
+        assert.ok(control.scroll <= control.width + 1 && control.right <= width, "tool controls fit narrow viewport");
+      });
+    }
+  };
+  await tab("basic");
+  await page.locator("#class").selectOption("bard");
+  await page.locator("#background").selectOption("");
+  await tab("skills");
+  assert.equal(await rowFor("tool-proficiency-0").locator(".tool-proficiency-view").isDisabled(), true);
+  assert.equal(await rowFor("bard-instrument-1").locator(".tool-proficiency-view").isDisabled(), true);
+  await page.locator("#bard-instrument-1").selectOption("長笛");
+  await view("bard-instrument-1", "樂器"); // Works before the first equipment search.
+  await page.locator("#add-tool-proficiency").click();
+  assert.equal(await rowFor("tool-proficiency-1").locator(".tool-proficiency-view").isDisabled(), true);
+  await page.locator("#tool-proficiency-1").selectOption("煉金師工具");
+  await view("tool-proficiency-1", "煉金師工具", true);
+  await page.locator("#tool-proficiency-1").selectOption("紙牌");
+  await view("tool-proficiency-1", "賭具");
+  await tab("basic");
+  await page.locator("#background").selectOption("sage");
+  await tab("skills");
+  assert.equal(await page.locator("#tool-proficiency-0").isDisabled(), true);
+  await view("tool-proficiency-0", "書法工具");
+  await checkLayout();
+  await tab("basic");
+  await page.locator("#class").selectOption("rogue");
+  await page.locator("#background").selectOption("soldier");
+  await tab("skills");
+  assert.equal(await page.locator("#bard-instrument-1").count(), 0);
+  assert.equal(await page.locator("#rogue-fixed-tool-proficiency").isDisabled(), true);
+  await view("rogue-fixed-tool-proficiency", "盜賊工具");
+  assert.equal(await rowFor("tool-proficiency-0").locator(".tool-proficiency-view").isDisabled(), true);
+  await page.locator("#tool-proficiency-0").selectOption("骰子");
+  await view("tool-proficiency-0", "賭具");
+  await checkLayout();
+  await rowFor("tool-proficiency-1").locator(".tool-proficiency-remove").click();
+  await page.locator("#add-tool-proficiency").click();
+  assert.equal(await rowFor("tool-proficiency-1").locator(".tool-proficiency-view").isDisabled(), true);
+  await page.locator("#tool-proficiency-1").selectOption("草藥工具");
+  await view("tool-proficiency-1", "草藥工具");
+  console.log("Tool details passed: all four row sources, empty/fixed/changed selections, instrument/gaming variants, add/delete, keyboard, close/focus and desktop/narrow layout.");
+}
+
 async function validateEquipmentSearch(page) {
+  await validateToolProficiencyDetails(page);
   await page.setViewportSize({ width: 1100, height: 850 });
   await page.locator('[aria-controls="tab-equipment"]').click();
   await page.locator("#equipment-search-fab").click();

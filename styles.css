@@ -1797,6 +1797,11 @@ details > summary::-webkit-details-marker,
   border-bottom: 0;
 }
 
+.class-creation-content {
+  /* 原始碼保留換行；創角版面的間距由各區塊 margin 控制。 */
+  white-space: normal;
+}
+
 .class-feature-tagline {
   margin: 8px 0;
   color: var(--class-tagline);
@@ -2275,6 +2280,10 @@ details > summary::-webkit-details-marker,
 
 :is(#tab-basic, #character-features) .output .class-feature-section:first-child {
   border-top-color: var(--border-strong);
+}
+
+:is(#tab-basic, #character-features) #classFeatures .class-feature-section:first-child {
+  border-top: 0;
 }
 
 :is(#tab-basic, #character-features) .output .class-feature-section:last-child {
@@ -3172,7 +3181,7 @@ input[type="checkbox"] {
 }
 
 .tool-proficiency-row--derived .tool-proficiency-control {
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) auto;
 }
 
 :where(html:not([data-ui-theme="warm"])) .feat-entry--derived > select:disabled {
@@ -3189,13 +3198,13 @@ input[type="checkbox"] {
 
 .tool-proficiency-control {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 0.55rem;
   align-items: center;
 }
 
 .tool-proficiency-row--background .tool-proficiency-control {
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) auto;
 }
 
 .tool-proficiency-select {
@@ -3204,14 +3213,35 @@ input[type="checkbox"] {
 }
 
 .tool-proficiency-add,
+.tool-proficiency-view,
 .tool-proficiency-remove {
   width: auto;
+}
+
+.tool-proficiency-view,
+.tool-proficiency-remove {
+  white-space: nowrap;
+}
+
+.tool-proficiency-view:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .tool-proficiency-hint {
   margin: -0.2rem 0 0;
   color: var(--text-muted);
   font-size: var(--fs-xs);
+}
+
+@media (width < 320px) {
+  .tool-proficiency-row:not(.tool-proficiency-row--background) .tool-proficiency-control {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tool-proficiency-row:not(.tool-proficiency-row--background) .tool-proficiency-control > .tool-proficiency-select {
+    grid-column: 1 / -1;
+  }
 }
 
 .inline-check-label {
@@ -4895,7 +4925,7 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
 
 .weapon-attack-fields {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(4.25rem, 0.72fr) minmax(5.25rem, 0.9fr);
+  grid-template-columns: minmax(0, 1fr) 3.7rem minmax(0, 1.5fr);
   gap: 0.55rem;
 }
 
@@ -4911,6 +4941,22 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
 
 .weapon-attack-free-note {
   grid-column: 1 / -1;
+}
+
+@media (width < 320px) {
+  .weapon-attack-fields {
+    grid-template-columns: 3.7rem minmax(0, 1fr);
+  }
+
+  .weapon-attack-fields > .weapon-attack-name {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (width < 280px) {
+  .weapon-attack-fields {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
+  }
 }
 
 :where(html:not([data-ui-theme="warm"])) .weapon-attack-fields input {
@@ -6510,7 +6556,7 @@ html.equipment-detail-open body {
 #spellbook-card > summary { display: flex; align-items: center; gap: 10px; }
 #spellbook-card > summary::before { flex-shrink: 0; }
 
-:where(html:not([data-ui-theme="warm"])) #spellbook-manage {
+:where(html:not([data-ui-theme="warm"])) :is(#spellbook-manage, #spell-clear-prepared) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -6531,7 +6577,7 @@ html.equipment-detail-open body {
   transition: border-color 160ms ease, background 160ms ease, color 160ms ease, transform 160ms ease;
 }
 
-:where(html[data-ui-theme="warm"]) #spellbook-manage {
+:where(html[data-ui-theme="warm"]) :is(#spellbook-manage, #spell-clear-prepared) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -6552,16 +6598,21 @@ html.equipment-detail-open body {
   transition: border-color 160ms ease, background 160ms ease, color 160ms ease, transform 160ms ease;
 }
 
-#spellbook-manage:hover {
+:is(#spellbook-manage, #spell-clear-prepared):hover:not(:disabled) {
   border-color: var(--accent);
   background: var(--control-hover-bg);
   color: var(--accent);
   transform: translateY(-1px);
 }
 
-#spellbook-manage:focus-visible {
+:is(#spellbook-manage, #spell-clear-prepared):focus-visible {
   outline: 3px solid var(--focus-ring);
   outline-offset: 2px;
+}
+
+#spell-clear-prepared:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .spellbook-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding-top: 10px; }
@@ -6650,8 +6701,8 @@ div[id$="spells-area"] .form-row > .output {
 
 .spell-picked-content {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.35rem 1rem;
+  grid-template-columns: repeat(var(--spell-picked-columns, 1), minmax(0, 1fr));
+  gap: 0.12rem 1rem;
   font-size: var(--fs-md);
   line-height: 1.45;
   color: var(--text-body);
@@ -6659,6 +6710,15 @@ div[id$="spells-area"] .form-row > .output {
 
 .spell-picked-item {
   min-width: 0;
+}
+
+.spell-picked-source-tag {
+  white-space: nowrap;
+}
+
+.is-measuring-spells .spell-picked-item {
+  width: max-content;
+  white-space: nowrap;
 }
 
 .free-spell-use-checks {
@@ -7414,6 +7474,33 @@ html:not([data-view-mode="tabletop"]) .free-spell-use-checks {
   opacity: 0.5;
   cursor: not-allowed;
   box-shadow: none;
+}
+
+.feature-choice-disclosure {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-soft);
+}
+
+.feature-choice-disclosure > summary {
+  min-height: 2.75rem;
+  color: var(--text);
+  font-weight: 800;
+}
+
+.feature-choice-disclosure > summary:hover {
+  color: var(--accent);
+}
+
+.feature-choice-disclosure > summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.feature-choice-disclosure[open] > .output {
+  margin-top: 0.65rem;
 }
 
 .feature-choice-card {
@@ -10480,6 +10567,18 @@ html[data-theme="dark"] .brand-logo-crop .legal-modal-logo-dark {
   font-weight: 800;
 }
 
+.feat-eligibility-warning {
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--warning-border);
+  border-radius: var(--radius-sm);
+  background: var(--warning-soft);
+  color: var(--warning);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  line-height: 1.5;
+}
+
 :where(html:not([data-ui-theme="warm"])) .feat-desc-subtitle {
   margin-bottom: 10px;
   font-size: var(--fs-sm);
@@ -10668,7 +10767,7 @@ html[data-theme="dark"] .brand-logo-crop .legal-modal-logo-dark {
 
 @media (min-width: 500px) {
   .weapon-attack-fields {
-    grid-template-columns: minmax(7rem, 1.4fr) minmax(4.75rem, 0.7fr) minmax(6.5rem, 1fr);
+    grid-template-columns: minmax(0, 1fr) 3.7rem minmax(0, 1.5fr);
     gap: 0.7rem;
   }
 
@@ -13188,16 +13287,34 @@ html.tabletop-avatar-modal-open { overflow: hidden; }
   gap: 0;
 }
 
-.spell-prepared-counts {
+.spell-prepared-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.5rem 1rem;
   margin: 0.85rem 0 0;
   padding-top: 0.65rem;
   border-top: 1px solid var(--border);
+}
+
+.spell-prepared-counts {
+  flex: 1 0 auto;
+  width: max-content;
+  max-width: 100%;
+  margin: 0;
   color: var(--text-muted);
   font-size: var(--fs-sm);
   font-weight: 750;
   font-variant-numeric: tabular-nums;
   line-height: 1.5;
   letter-spacing: 0.01em;
+}
+
+.spell-prepared-actions {
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: flex-end;
+  margin-left: auto;
 }
 
 .tabletop-metamagic-options {
@@ -15985,7 +16102,7 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] #tabletop-panel-resources 
 }
 
 #tabletop-panel-actions .tabletop-weapon-fields {
-  grid-template-columns: minmax(0, 1.35fr) minmax(4.25rem, 0.72fr) minmax(5.25rem, 0.9fr);
+  grid-template-columns: minmax(0, 1fr) 3.7rem minmax(0, 1.5fr);
   gap: 0.42rem;
   margin: 0;
 }
@@ -16149,15 +16266,31 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] #tabletop-panel-resources 
 
 @media (min-width: 500px) {
   #tabletop-panel-actions .tabletop-weapon-fields {
-    grid-template-columns: minmax(7rem, 1.4fr) minmax(4.75rem, 0.7fr) minmax(6.5rem, 1fr);
+    grid-template-columns: minmax(0, 1fr) 3.7rem minmax(0, 1.5fr);
     gap: 0.55rem;
   }
 }
 
 @media (max-width: 380px) {
   #tabletop-panel-actions .tabletop-weapon-fields {
-    grid-template-columns: minmax(0, 1.35fr) minmax(4.25rem, 0.72fr) minmax(5.25rem, 0.9fr);
+    grid-template-columns: minmax(0, 1fr) 3.7rem minmax(0, 1.5fr);
     gap: 0.42rem;
+  }
+}
+
+@media (width < 320px) {
+  #tabletop-panel-actions .tabletop-weapon-fields {
+    grid-template-columns: 3.7rem minmax(0, 1fr);
+  }
+
+  #tabletop-panel-actions .tabletop-weapon-field:first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (width < 280px) {
+  #tabletop-panel-actions .tabletop-weapon-fields {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
   }
 }
 
@@ -16802,12 +16935,6 @@ html[data-theme="dark"] .feat-icon-btn--add {
 
 html[data-theme="dark"] .utility-menu {
   background: var(--surface-strong);
-}
-
-@media (min-width: 720px) {
-  .spell-picked-content {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
 }
 
 :where(html:not([data-ui-theme="warm"])) .tabletop-class-choice-alert {

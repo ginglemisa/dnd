@@ -59,6 +59,7 @@
 * 按鈕拆分、合併、升級替換與摘要可能是產品設計，修改前同時核對規則與 UI 定義。法術施法時間沿用現有分類機制，其他已有結構化欄位的施法規則以 `SpellCatalog` 為準。
 * 跑團模式子模組透過 `TabletopMode`、`SpellCatalog`、`CharacterRules`、`DiceRoller` 協作；不另建競爭的共用狀態、持久化、亂數或擲骰歷史。必要的內部拆分保持 `window.TabletopMode` 公開 API 相容。
 * `action-panel.js` 與 `tabletop-actions.js` 保留各自責任及公開 API。
+* 自動管理專長保留來源分類及固定背景來源，來源選項不以先決條件或重複取得限制停用／清空；不合格的已選專長顯示主題警示，數值計算與衍生法術使用共用資格判斷。PDF 前置檢查只提醒，仍可繼續輸出。自行管理不套用資格限制或警示，保留既有計算行為。
 
 ## 對話框與資訊頁
 
@@ -92,10 +93,10 @@
 | 系統級責任 | 驗證 |
 | --- | --- |
 | 施法 metadata、跑團模式施法條件、法術位、專注或施法自動擲骰 | `node validate-tabletop-spellcasting.js` |
-| 非施法動作定義／摘要、角色卡與跑團操作、自訂／隱藏偏好及持久化；狀態／危害連動與專注中斷、危害檢定及分頁提示；專長來源雙向選擇、自動同步、固定來源灰階鎖定、自行管理增刪與新舊資料／分享還原；武器裝備互動、衝突確認、AC／摘要與 PDF 對應 | `node validate-action-metadata.js` |
+| 非施法動作定義／摘要、角色卡與跑團操作、自訂／隱藏偏好及持久化；狀態／危害連動與專注中斷、危害檢定及分頁提示；專長來源雙向選擇、自動同步、固定來源灰階鎖定、資格警示／數值停用／PDF 提醒、自行管理增刪與新舊資料／分享還原；武器裝備互動、衝突確認、AC／摘要與 PDF 對應 | `node validate-action-metadata.js` |
 | 德魯伊荒野形態、野獸資料與攻擊／資源操作、荒野夥伴、野性復甦、自然恢復、原初打擊及其狀態／持久化 | `node validate-tabletop-druid.js` |
-| 法術書管理、準備法術總數、儀式施法、法術書匯入／持久化 | `node validate-spellbook.js` |
-| 法術頁籤全文／職業別名／環位搜尋及排序；`search.js` 的裝備搜尋／詳情／規則關鍵字／購買入口、搜尋切頁及導覽還原 | `node validate-spell-search.js`（含 Artificer 無資料／模擬資料、外部搜尋模組與主頁內嵌語法）；僅裝備搜尋可加 `--equipment-only` |
+| 法術書管理（含法師六個推薦法術的專屬寫入入口）、準備法術總數、清空已準備／固定來源保留、儀式施法、法術書匯入／持久化 | `node validate-spellbook.js` |
+| 法術頁籤全文／職業別名／環位搜尋及排序；`search.js` 的裝備搜尋／詳情／規則關鍵字／購買入口、四種工具熟練列的查看按鈕、搜尋切頁及導覽還原 | `node validate-spell-search.js`（含 Artificer 無資料／模擬資料、外部搜尋模組與主頁內嵌語法）；僅裝備搜尋與工具查看可加 `--equipment-only` |
 | 屬性產生與共用擲骰：購點、結果分配、背景加值、備註／取消／鍵盤／觸控、歷史相容性及自動儲存 | `node validate-ability-roll.js`；可用 `--point-buy-only` 或 `--dice-only` 選擇購點或一般擲骰／歷史分項 |
 | 導覽屬性引導／觸控；創角匯入銜接／PDF 載入取消；跑團模式法術與資源教學預覽；共用導覽流程 | 分別優先使用 `node validate-onboarding.js --touch-only`、`node validate-onboarding.js --imports-only`；影響共用導覽或分項不足以涵蓋時執行完整 `node validate-onboarding.js` |
 | 短休／長休、休息後選項同步與還原、生命骰（含擲骰關閉時的單顆／連續回血）、資源恢復或最佳旅伴 | `node validate-tabletop-rest.js` |

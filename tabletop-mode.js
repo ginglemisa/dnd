@@ -2147,6 +2147,7 @@
   }
 
   function hasSelectedFeat(featName) {
+    if (typeof globalScope.hasSelectedFeat === "function") return globalScope.hasSelectedFeat(featName);
     return Array.from(document.querySelectorAll("#feats-area select"))
       .some(select => select.value === featName);
   }

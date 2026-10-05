@@ -31,6 +31,15 @@
     if (options.sync !== false) changed();
   }
 
+  function addWizardSpell(spellId) {
+    const spell = catalog()?.getSpell(spellId);
+    if (!isWizard() || !spell || spell.level < 1
+      || !catalog().getClassIds(spellId).includes("wizard") || spellIds.includes(spellId)) return false;
+    spellIds.push(spellId);
+    changed();
+    return true;
+  }
+
   function preparedRows(id) {
     return Array.from(document.querySelectorAll('#tab-spells .spell-entry:not([data-spell-source])'))
       .filter(row => row.querySelector('select[id*="-class-"]')?.value === "wizard"
@@ -71,7 +80,7 @@
       spells.forEach(spell => {
         const prepared = tome || preparedRows(spell.spellId).length > 0;
         const button = node("button", `spellbook-spell${prepared ? " is-prepared" : ""}`,
-          `[${spell.nameZh}${catalog().isRitual(spell) ? "*" : ""}]`);
+          `${spell.nameZh}${catalog().isRitual(spell) ? "*" : ""}`);
         button.type = "button";
         button.dataset.spellId = spell.spellId;
         button.setAttribute("aria-label", `${spell.nameZh}${prepared ? "，已準備" : ""}${catalog().isRitual(spell) ? "，儀式法術" : ""}`);
@@ -247,6 +256,6 @@
     render();
   }
 
-  globalScope.Spellbook = Object.freeze({ getState, setState, restoreState, render, getRitualEntries, openTomeSelection });
+  globalScope.Spellbook = Object.freeze({ getState, setState, addWizardSpell, restoreState, render, getRitualEntries, openTomeSelection });
   document.addEventListener("DOMContentLoaded", init);
 })(window);

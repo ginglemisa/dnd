@@ -406,6 +406,65 @@ async function verifyToasts(browser) {
   console.log("AppDialog toast stack, timeout, keyboard dismiss, and touch swipes passed.");
 }
 
+async function verifyFeatureChoiceDisclosures(browser, url) {
+  for (const width of [1280, 390]) {
+    const page = await newUiPage(browser, { viewport: { width, height: 900 }, reducedMotion: "reduce" });
+    try {
+      await page.goto(url);
+      await page.locator("#legal-close-btn").click();
+      for (const [cls, level, tab, disclosureId, outputId, summaryId, inputSelector] of [
+        ["sorcerer", "2", "超魔法", "metamagic-options-disclosure", "metamagicOptions", "metamagic-summary", "input[data-metamagic-name]"],
+        ["warlock", "1", "魔能祈喚", "invocation-options-disclosure", "eldritch-invocations-output", "warlock-invocation-summary", 'input[data-invocation-name="魔能意志"]']
+      ]) {
+        await page.locator("#class").selectOption(cls);
+        await page.locator("#level").selectOption(level);
+        await page.locator('[data-character-features-tab="class"]').click();
+        await page.getByRole("tab", { name: tab, exact: true }).click();
+        const source = await page.evaluate(() => JSON.stringify(classFeatures));
+        const details = page.locator("#" + disclosureId);
+        const summary = details.locator(":scope > summary");
+        const input = page.locator("#" + outputId).locator(inputSelector).first();
+        assert.equal(await details.evaluate(el => el.open), true, "options start expanded");
+        await input.check();
+        const inputId = await input.getAttribute("id");
+        const selectedText = await page.locator("#" + summaryId).innerText();
+        const state = await page.evaluate(() => collectStateObject());
+        const share = await page.evaluate(() => collectShareState());
+        await summary.focus();
+        await page.keyboard.press("Space");
+        await page.waitForFunction(id => !document.getElementById(id).open, disclosureId);
+        assert.equal(await input.isVisible(), false, "closed disclosure hides checkbox list");
+        assert.equal(await page.locator("#" + summaryId).isVisible(), true, "chosen content remains visible");
+        assert.equal(await page.locator("#" + summaryId).innerText(), selectedText);
+        assert.deepEqual(await page.evaluate(() => collectStateObject()), state, "collapse preserves character state");
+        assert.deepEqual(await page.evaluate(() => collectShareState()), share, "collapse stays outside share data");
+        assert.equal(await page.evaluate(() => JSON.stringify(classFeatures)), source, "disclosures never mutate rule text");
+        await page.keyboard.press("Escape");
+        await page.locator("#level").selectOption("3");
+        assert.equal(await details.evaluate(el => el.open), false, "option rerender preserves collapse");
+        await page.waitForFunction(id => JSON.parse(dndStorage.getItem("dndchar_autosave_v1") || "{}")[id] === true, inputId, { timeout: 15000 });
+        await page.reload();
+        await page.locator("#legal-close-btn").click();
+        assert.equal(await details.evaluate(el => el.open), false, "collapse survives reload");
+        assert.equal(await page.locator("#" + inputId).isChecked(), true, "selected options survive reload");
+        await page.locator('[data-character-features-tab="class"]').click();
+        await page.getByRole("tab", { name: tab, exact: true }).click();
+        await summary.click();
+        assert.equal(await details.evaluate(el => el.open), true);
+        await page.locator("#" + inputId).uncheck();
+        assert.equal((await page.locator("#" + summaryId).innerText()).includes("尚未勾選"), true);
+        await summary.click();
+        await page.keyboard.press("Escape");
+      }
+      await Promise.all([page.waitForNavigation(), page.evaluate(() => clearAppStateAndReload())]);
+      for (const id of ["metamagic-options-disclosure", "invocation-options-disclosure"]) {
+        assert.equal(await page.locator("#" + id).evaluate(el => el.open), true, "clear restores expanded defaults");
+      }
+    } finally { await page.close(); }
+  }
+  console.log("Feature choice disclosures: keyboard, chosen summaries, rerender, reload, clear and desktop/mobile passed.");
+}
+
 async function verifyCharacterFeatures(browser, url) {
   const page = await newUiPage(browser, { viewport: { width: 1280, height: 900 }, reducedMotion: "reduce" });
   try {
@@ -427,16 +486,30 @@ async function verifyCharacterFeatures(browser, url) {
         template.innerHTML = classFeatures[className];
         const creation = document.getElementById("classCreationInfo");
         const abilities = document.getElementById("classFeatures");
+        const introduction = creation.querySelector(".class-creation-content");
+        const normalize = node => node.textContent.replace(/\s+/g, " ").trim();
+        const expectedOrder = ["class-feature-tagline", "class-flavor-quote", "class-core-creation-info", "class-feature-table-details"];
+        const correctIntroduction = introduction && expectedOrder.every((name, index) => {
+          const original = template.content.querySelector(`.${name}`);
+          const displayed = introduction.children[index];
+          return original && displayed?.classList.contains(name) && normalize(original) === normalize(displayed)
+            && !abilities.querySelector(`.${name}`);
+        });
+        const sections = Array.from(abilities.querySelectorAll(".class-feature-section"));
+        const correctAbilities = sections.length > 0 && sections[0].querySelector("h3").textContent.startsWith("等級 1：")
+          && getComputedStyle(sections[0]).borderTopWidth === "0px"
+          && sections.every(section => !section.dataset.featureLevel || Number(section.dataset.featureLevel) <= 1)
+          && (sections.length < 2 || parseFloat(getComputedStyle(sections[1]).borderTopWidth) > 0);
         return ["class-core-creation-info", "class-feature-table-details"].every(className => {
           const original = template.content.querySelector(`.${className}`);
           const displayed = creation.querySelector(`section.${className}`);
-          const normalize = node => node.textContent.replace(/\s+/g, " ").trim();
           return original && displayed && normalize(original) === normalize(displayed)
             && !abilities.querySelector(`.${className}`) && !displayed.querySelector("summary");
-        }) && !creation.querySelector("details");
-      }, cls), true, `${cls} creation info and full table move without changing content`);
+        }) && correctIntroduction && correctAbilities && !creation.querySelector("details");
+      }, cls), true, `${cls} introduction/core/table order, source content and level 1 abilities without an opening divider`);
     }
-    assert.equal(await page.evaluate(() => JSON.stringify(classFeatures)), source, "display relocation must leave classFeatures data intact");
+    assert.equal(await page.evaluate(() => /使用樂器：魅力檢定|如何扮演吟遊詩人/.test(classFeatures.bard)), false, "removed bard guidance stays out of the source");
+    assert.equal(await page.evaluate(() => JSON.stringify(classFeatures)), source, "panel rendering must leave classFeatures data intact");
     const raceOptionCases = [
       { race: "dragonborn", control: "#dragonborn-ancestry", value: "red_fire", all: ".dragon-ancestry-table td", chosen: "紅龍", rejected: "黑龍" },
       { race: "elf", control: "#elf-lineage", value: "high_elf", all: ".race-lineage-table thead th:not(:first-child)", chosen: "高等精靈血統", rejected: "卓爾血統" },
@@ -456,7 +529,7 @@ async function verifyCharacterFeatures(browser, url) {
     }
     await page.locator("#race").selectOption("elf");
     await page.locator("#class").selectOption("");
-    assert.equal(await page.locator("#classCreationInfo").textContent(), "無資料", "clearing class removes stale creation data");
+    assert.equal(await page.locator("#classCreationInfo").textContent(), "請先選擇職業", "clearing class removes stale creation data");
     await page.locator("#class").selectOption("rogue");
     assert.equal(await page.locator("[data-feature-panel] > details").count(), 0, "tabs replace outer headings and disclosure controls");
     assert.equal(await page.locator("#tab-basic #classFeatures, #tab-basic #backgroundFeatures, #tab-basic #raceFeatures, #tab-basic #metamagicOptions, #tab-basic #eldritch-invocations-output").count(), 0);
@@ -718,6 +791,7 @@ async function main() {
     if (all || sections.has("--dialogs-only")) {
       await verifyToasts(browser);
       await verifyAboutRoutes(browser, url);
+      await verifyFeatureChoiceDisclosures(browser, url);
       await verifyCharacterFeatures(browser, url);
       await verifyFeatureReferences(browser, url);
     }
