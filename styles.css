@@ -4279,10 +4279,26 @@ html[data-ui-theme="warm"][data-theme="dark"] .circle-checkbox:checked {
 }
 
 .character-features-info-icon {
-  font-size: 1.35em;
-  font-weight: 400;
+  display: inline-grid;
+  place-items: center;
+  width: 1.05em;
+  height: 1.05em;
+  margin-left: 0.16em;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  box-sizing: border-box;
+  font-family: Arial, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+  font-size: 0.82em;
+  font-weight: 700;
+  font-style: normal;
   line-height: 1;
-  vertical-align: -0.05em;
+  vertical-align: 0.02em;
+}
+
+.character-features-info-icon--hint {
+  margin-left: 0.12em;
+  margin-right: 0.12em;
+  vertical-align: 0;
 }
 
 .character-features-hint {
