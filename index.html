@@ -25,12 +25,25 @@
 	 <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-M8L0F03EGD"></script>
   <script>
+    const analyticsRoleKey = "twd20.analyticsRole.v1";
+    const analyticsMode = new URLSearchParams(location.search).get("analytics");
+    if (analyticsMode === "owner") window.dndStorage.setItem(analyticsRoleKey, "owner");
+    else if (analyticsMode === "user") window.dndStorage.removeItem(analyticsRoleKey);
+    if (analyticsMode === "owner" || analyticsMode === "user") {
+      const cleanUrl = new URL(location.href);
+      cleanUrl.searchParams.delete("analytics");
+      history.replaceState(null, "", `${cleanUrl.pathname}${cleanUrl.search}${cleanUrl.hash}`);
+    }
+    window.twAnalyticsDisabled = window.dndStorage.getItem(analyticsRoleKey) === "owner";
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
+    if (!window.twAnalyticsDisabled) {
+      gtag('js', new Date());
 
-    gtag('config', 'G-M8L0F03EGD', {page_path: location.pathname});
+      gtag('config', 'G-M8L0F03EGD', {page_path: location.pathname});
+    }
   </script>
+  <script src="analytics.js?v=20261006-usage-events"></script>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -48,7 +61,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="styles.css?v=20261006-toast-swipe-no-close">
   <script src="scroll-to-top.js?v=20261001-character-features-modal" defer></script>
-  <script src="dice-roller.js?v=20261006-toast-interaction" defer></script>
+  <script src="dice-roller.js?v=20261006-usage-analytics" defer></script>
   <script src="monster.js?v=20260912-druid-controls" defer></script>
     <script src="class-features.js?v=20261006-wizard-feature-copy" defer></script>
   <script src="race.js?v=20261003-race-flavor" defer></script>
@@ -62,15 +75,15 @@
   <script src="character-rules.js?v=20260922-rest" defer></script>
   <script src="app-dialog.js?v=20261006-toast-swipe-no-close" defer></script>
   <script src="custom-background.js?v=20261006-custom-background-sync" defer></script>
-  <script src="adventure-journal.js?v=20261006-toast-interaction" defer></script>
-  <script src="tabletop-mode.js?v=20261006-toast-interaction" defer></script>
+  <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
+  <script src="tabletop-mode.js?v=20261006-usage-analytics" defer></script>
   <script src="tabletop-druid.js?v=20260915-main2-shield" defer></script>
-<script src="tabletop-resources.js?v=20261001-rest-hit-dice-inline" defer></script>
+<script src="tabletop-resources.js?v=20261006-usage-analytics" defer></script>
 <script src="tabletop-actions.js?v=20261005-feat-eligibility-warning" defer></script>
   <script src="tabletop-spells.js?v=20260923-persistent-spells" defer></script>
   <script src="legal-modal.js?v=20260923-legal-about" defer></script>
   <script src="onboarding-tour.js?v=20261006-toast-interaction" defer></script>
-  <script src="quick-build.js?v=20261006-toast-interaction" defer></script>
+  <script src="quick-build.js?v=20261006-usage-analytics" defer></script>
   <script src="spellbook.js?v=20261005-spell-name-labels" defer></script>
   <script src="deity-info.js" defer></script>
 
@@ -8620,7 +8633,10 @@ async function copyShareUrl() {
         }
       ]
     });
-    if (typeof shareUrl === "string") await copyResolvedShareUrl(shareUrl);
+    if (typeof shareUrl === "string") {
+      await copyResolvedShareUrl(shareUrl);
+      window.twAnalytics?.track?.("character_shared");
+    }
   } catch (error) {
     window.AppDialog.notify("分享網址產生失敗，請稍後再試。", { tone: "error" });
   } finally {
@@ -8662,6 +8678,7 @@ function downloadStateAsJson() {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+  window.twAnalytics?.track?.("character_json_export");
 }
 
 async function importStateFromJsonFile(file) {
@@ -8683,6 +8700,7 @@ async function importStateFromJsonFile(file) {
     }
     saveAllFields();
     window.AppDialog.notify("JSON 匯入成功，已套用角色資料並儲存到本機。", { tone: "success" });
+    window.twAnalytics?.track?.("character_json_import");
   } catch (e) {
     await window.AppDialog.showMessage({
       title: "JSON 匯入失敗",
@@ -9115,6 +9133,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
           ? `角色名稱將以 ${nameMeasurement.fontSize.toFixed(1)} pt 輸出，製作中…`
           : '匯出中，請稍候…');
         await window.exportCharacterPdfFromState(state,exportOptions);
+        window.twAnalytics?.track?.("pdf_export");
         close({ ...exportOptions, skipExport:true });
       } catch (error) {
         console.warn('PDF 匯出失敗：', error);
@@ -9455,6 +9474,7 @@ async function downloadQuickBuildCompactPdf() {
     window.AppDialog.notify("正在製作角色卡 PDF，請保持頁面開啟。", { duration: 8000 });
     await window.preloadPdfExportAssets?.(exportOptions);
     await window.exportCharacterPdfFromState(state, exportOptions);
+    window.twAnalytics?.track?.("pdf_export");
   } catch (error) {
     console.warn("創角小幫手 PDF 匯出失敗：", error);
     await window.AppDialog.showMessage({
@@ -10013,6 +10033,7 @@ window.addEventListener("DOMContentLoaded", async function() {
     control.title = "分享模式不提供此功能";
   });
   applyStateObject(sharedData);
+  window.twAnalytics?.track?.("shared_character_opened");
   const shareModeTip = document.getElementById("share-mode-tip");
   if (shareModeTip) shareModeTip.style.display = "block";
 } else {
@@ -10057,6 +10078,7 @@ window.addEventListener("DOMContentLoaded", async function() {
   else updateWeaponAutomationUI();
   setupAutomaticKeyStats();
   window.TabletopMode?.refresh?.();
+  window.twAnalytics?.observeHp?.(document.getElementById("hp"));
   // 4. 啟用自動儲存
   setupVisibilityAutoSave();
   setupClosePageAutoSave();
