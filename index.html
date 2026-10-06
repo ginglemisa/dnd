@@ -43,7 +43,7 @@
       gtag('config', 'G-M8L0F03EGD', {page_path: location.pathname});
     }
   </script>
-  <script src="analytics.js?v=20261006-usage-events"></script>
+  <script src="analytics.js?v=20261006-deep-usage"></script>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9326,7 +9326,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
           );
         }
         const note=document.createElement('p'); note.className='pdf-export-format-note';
-        note.append('想下載「可填寫、檔案也較小」的空白 PDF？請 ',Object.assign(document.createElement('a'),{href:'https://drive.google.com/file/d/1Tu7rAyjfKBl6wagkuRiSNgpQW5LCBP6J/view',target:'_blank',rel:'noopener noreferrer',textContent:'點此下載'}));
+        note.append('想下載「可填寫、檔案也較小」的空白 PDF？請 ',Object.assign(document.createElement('a'),{href:'https://drive.google.com/file/d/1Tu7rAyjfKBl6wagkuRiSNgpQW5LCBP6J/view',target:'_blank',rel:'noopener noreferrer',textContent:'點此下載',dataset:{analyticsEvent:'blank_character_sheet_download'}}));
         d.append(wait,options,note);
         if(formatError){
           const back=document.createElement('button');back.type='button';back.className='pdf-export-flow-modal__button pdf-export-flow-modal__button--secondary';back.textContent='返回修改名稱';back.onclick=()=>{formatError='';idx=steps.indexOf('name');render();};a.append(back);a.hidden=false;back.focus();
@@ -10198,7 +10198,7 @@ window.addEventListener("DOMContentLoaded", async function() {
     <a href="https://kh-calendar.vercel.app/" target="_blank" rel="noopener">高雄跑團月曆</a>
     <a href="https://linktr.ee/trpg.kh" target="_blank" rel="noopener">TRPG在高雄</a>
   </div>
-  <div><a href="https://twD20.com/">twD20.com</a> | <a href="ddals1.html">官方免費冒險劇本</a> | <a href="https://tinyurl.com/srd5etw" target="_blank" rel="noopener">空白角卡下載</a> | <a href="mailto:tsai.reggie428@gmail.com">bug回報</a></div>
+  <div><a href="https://twD20.com/">twD20.com</a> | <a href="ddals1.html">官方免費冒險劇本</a> | <a href="https://tinyurl.com/srd5etw" target="_blank" rel="noopener" data-analytics-event="blank_character_sheet_download">空白角卡下載</a> | <a href="mailto:tsai.reggie428@gmail.com">bug回報</a></div>
 </footer>
 
 <button type="button" id="dice-roller-fab" class="is-hidden" aria-label="開啟擲骰功能" aria-controls="dice-roller-modal" aria-expanded="false">🎲</button>
