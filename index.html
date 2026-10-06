@@ -7318,53 +7318,40 @@ document.getElementById("spell-clear-prepared")?.addEventListener("click", async
   window.AppDialog.notify("已清空手動準備的法術，灰階法術已保留。");
 });
 
-function getPreparedSpellSelectionStatus(classValue = document.getElementById("class")?.value || "", levelValue = document.getElementById("level")?.value || "0") {
-  const level = Number.parseInt(levelValue, 10) || 0;
-  const isSpellcasterClass = Object.values(SPELLCASTING_CLASS_GROUPS).some(classes => classes.includes(classValue));
-  const slotCounts = getSpellSlotCounts(classValue, level);
-  const highestRing = slotCounts.reduce(
-    (highest, count, index) => count > 0 ? index + 1 : highest,
-    0
-  );
-  if (!isSpellcasterClass || !level || !highestRing) return null;
-
-  const counts = Array.from({ length: highestRing }, (_, index) => {
-    const area = document.getElementById(`level${index + 1}spells-area`);
-    return Array.from(area?.querySelectorAll(":scope > .spell-entry:not([data-spell-source]) select[id*='-spell-']") || [])
-      .filter(select => Boolean(select.value)).length;
-  });
-  return {
-    counts,
-    total: counts.reduce((sum, count) => sum + count, 0),
-    preparedLimit: window.getPreparedSpellLimit(classValue, level)
-  };
-}
-
 function updatePreparedSpellCounts() {
   const target = document.getElementById("spell-prepared-counts");
   if (!target) return;
   const summary = document.getElementById("spell-prepared-summary");
   const clearButton = document.getElementById("spell-clear-prepared");
   if (clearButton) clearButton.disabled = !getClearablePreparedSpellSelects().length;
-
   const classValue = document.getElementById("class")?.value || "";
   const level = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
-  const status = getPreparedSpellSelectionStatus(classValue, level);
-  if (!status) {
+  const isSpellcasterClass = Object.values(SPELLCASTING_CLASS_GROUPS).some(classes => classes.includes(classValue));
+  const slotCounts = getSpellSlotCounts(classValue, level);
+  const highestRing = slotCounts.reduce(
+    (highest, count, index) => count > 0 ? index + 1 : highest,
+    0
+  );
+  if (!isSpellcasterClass || !level || !highestRing) {
     if (summary) summary.hidden = true;
     target.hidden = true;
     target.textContent = "";
-    updateClassFeatureChoiceReminder();
     return;
   }
 
+  const counts = Array.from({ length: highestRing }, (_, index) => {
+    const area = document.getElementById(`level${index + 1}spells-area`);
+    return Array.from(area?.querySelectorAll(":scope > .spell-entry:not([data-spell-source]) select[id*='-spell-']") || [])
+      .filter(select => Boolean(select.value)).length;
+  });
+  const total = counts.reduce((sum, count) => sum + count, 0);
   const ringLabels = ["一環", "二環", "三環", "四環"];
-  const parts = status.counts.map((count, index) => `${ringLabels[index]} ${count}`);
+  const parts = counts.map((count, index) => `${ringLabels[index]} ${count}`);
+  const preparedLimit = window.getPreparedSpellLimit(classValue, level);
   const classLabel = document.getElementById("class")?.selectedOptions[0]?.textContent?.trim() || classValue;
-  target.innerText = `已準備 ${status.total} 個法術\n${parts.join(" | ")}${status.preparedLimit === null ? "" : `\n${classLabel} LV${level}｜最多可準備 ${status.preparedLimit} 個`}`;
+  target.innerText = `已準備 ${total} 個法術\n${parts.join(" | ")}${preparedLimit === null ? "" : `\n${classLabel} LV${level}｜最多可準備 ${preparedLimit} 個`}`;
   target.hidden = false;
   if (summary) summary.hidden = false;
-  updateClassFeatureChoiceReminder();
 }
 
 
@@ -8843,17 +8830,6 @@ function getClassFeatureChoiceIssues() {
         tab: "basic",
         selector: "#bard-magical-discoveries",
         focusSelector: "#bard-magical-discoveries select"
-      });
-    }
-  }
-
-  if (selectedClass === "bard") {
-    const prepared = getPreparedSpellSelectionStatus(selectedClass, selectedLevel);
-    if (prepared?.preparedLimit !== null && prepared.total < prepared.preparedLimit) {
-      pushGeneral({
-        message: `吟遊詩人準備法術尚未選完（${prepared.total}/${prepared.preparedLimit}）。`,
-        tab: "spells",
-        selector: "#spell-prepared-summary"
       });
     }
   }
