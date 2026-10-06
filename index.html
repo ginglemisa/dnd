@@ -671,6 +671,7 @@
       </select>
     </span>
     </div>
+    <p id="class-feature-choice-reminder" class="character-features-hint" role="status" aria-live="polite" hidden></p>
     </div>
   </div>
 
@@ -1859,32 +1860,31 @@ function updateExpertiseVisibility() {
 }
 
 
+const CLERIC_MISSION_CHOICE_IDS = Object.freeze(["cleric-guardian", "cleric-trickster"]);
+const DRUID_MISSION_CHOICE_IDS = Object.freeze(["druid-shaman", "druid-sentinel"]);
+const FIGHTING_STYLE_TYPE_CHOICE_GROUPS = Object.freeze([
+  Object.freeze(["paladin-fighting-style", "paladin-blessed-warrior"]),
+  Object.freeze(["ranger-fighting-style", "ranger-druidic-warrior"])
+]);
+
+function enforceExclusiveCheckboxChoice(ids, changedId) {
+  const changed = document.getElementById(changedId);
+  if (!ids.includes(changedId) || !changed?.checked) return;
+  ids.filter(id => id !== changedId).forEach(id => {
+    const input = document.getElementById(id);
+    if (input) input.checked = false;
+  });
+}
+
 // 牧師神聖使命選項（守護者/奇術使）互斥
 function enforceClericMissionExclusivity(changedId) {
-  const guardian = document.getElementById("cleric-guardian");
-  const trickster = document.getElementById("cleric-trickster");
-  if (!guardian || !trickster) return;
-
-  if (changedId === "cleric-guardian" && guardian.checked) {
-    trickster.checked = false;
-  }
-  if (changedId === "cleric-trickster" && trickster.checked) {
-    guardian.checked = false;
-  }
+  enforceExclusiveCheckboxChoice(CLERIC_MISSION_CHOICE_IDS, changedId);
 }
 
 function enforceDruidMissionExclusivity(changedId) {
-  const shaman = document.getElementById("druid-shaman");
-  const sentinel = document.getElementById("druid-sentinel");
-  if (!shaman || !sentinel) return;
-
-  if (changedId === "druid-shaman" && shaman.checked) {
-    sentinel.checked = false;
-  }
-  if (changedId === "druid-sentinel" && sentinel.checked) {
-    shaman.checked = false;
-  }
+  enforceExclusiveCheckboxChoice(DRUID_MISSION_CHOICE_IDS, changedId);
 }
+
 
 const ADVANCED_CLASS_FEATURE_CHOICE_GROUPS = Object.freeze([
   Object.freeze(["ranger-hunters-prey-colossus-slayer", "ranger-hunters-prey-horde-breaker"]),
@@ -1911,6 +1911,33 @@ const ADVANCED_CLASS_FEATURE_AVAILABILITY = Object.freeze({
   "ranger-defensive-tactics-multiattack-defense": Object.freeze({ className: "ranger", minimumLevel: 7 }),
   "sorcerer-elemental-affinity-damage-type": Object.freeze({ className: "sorcerer", minimumLevel: 6 })
 });
+function appendGeneralClassFeatureReminder(reminder) {
+  reminder.append("請確認職業 ");
+  const icon = document.createElement("span");
+  icon.className = "character-features-info-icon character-features-info-icon--hint";
+  icon.setAttribute("aria-hidden", "true");
+  icon.textContent = "i";
+  reminder.append(icon, " 資訊，您有職業選項未勾選。");
+}
+
+function updateClassFeatureChoiceReminder() {
+  const reminder = document.getElementById("class-feature-choice-reminder");
+  if (!reminder) return;
+
+  const reminderTypes = new Set(getClassFeatureChoiceIssues().map(issue => issue.reminderType));
+  reminder.replaceChildren();
+
+  const appendLine = callback => {
+    if (reminder.childNodes.length) reminder.append(document.createElement("br"));
+    callback();
+  };
+  if (reminderTypes.has("general")) appendLine(() => appendGeneralClassFeatureReminder(reminder));
+  if (reminderTypes.has("metamagic")) appendLine(() => reminder.append("超魔法尚未勾選至最大數量。"));
+  if (reminderTypes.has("invocations")) appendLine(() => reminder.append("魔能祈喚尚未勾選至最大數量。"));
+
+  reminder.hidden = reminderTypes.size === 0;
+}
+
 const CLERIC_DIVINE_STRIKE_ATTACK_NOTE = "+1d8光/黯傷害";
 
 function isAdvancedClassFeatureControlAvailable(id) {
@@ -2579,6 +2606,7 @@ async function handleEldritchInvocationChange(el, event, output) {
   syncOriginAndSubclassDerivedSpellRows();
   syncAgonizingBlastSelections();
   if (typeof scheduleSaveAllFields === "function") scheduleSaveAllFields();
+  updateClassFeatureChoiceReminder();
 }
 
 function getInvocationCheckboxInputs(index) {
@@ -2712,6 +2740,7 @@ function updateEldritchInvocationSectionVisibility() {
     populateHandAttacks();
   }
   syncDerivedFeatRows();
+  updateClassFeatureChoiceReminder();
 }
 
 // The ability controls stay in the document; only their container moves.
@@ -2890,6 +2919,7 @@ function updateClassFeature() {
     if (metamagicSummary) metamagicSummary.innerHTML = "尚未勾選超魔法";
     syncAdvancedClassFeatureControls();
     syncCharacterFeatureTabs();
+    updateClassFeatureChoiceReminder();
     return;
   }
 
@@ -2934,6 +2964,7 @@ function updateClassFeature() {
   }
   syncAdvancedClassFeatureControls();
   syncCharacterFeatureTabs();
+  updateClassFeatureChoiceReminder();
 }
 
 
@@ -3152,19 +3183,10 @@ function updateBackgroundFeature() {
 }
 
 function enforceFightingStyleChoiceExclusivity(changedId) {
-  const pairs = [
-    ["paladin-fighting-style", "paladin-blessed-warrior"],
-    ["ranger-fighting-style", "ranger-druidic-warrior"]
-  ];
-  const pair = pairs.find(ids => ids.includes(changedId));
-  if (!pair) return;
-  const changed = document.getElementById(changedId);
-  if (!changed?.checked) return;
-  pair.filter(id => id !== changedId).forEach(id => {
-    const checkbox = document.getElementById(id);
-    if (checkbox) checkbox.checked = false;
-  });
+  const pair = FIGHTING_STYLE_TYPE_CHOICE_GROUPS.find(ids => ids.includes(changedId));
+  if (pair) enforceExclusiveCheckboxChoice(pair, changedId);
 }
+
 
 function syncClassFeatureDerivedChoices() {
   syncDerivedFeatRows();
@@ -3996,6 +4018,12 @@ function createMagicInitiateControls(rowDiv) {
 
 function getMagicInitiateSelect(row, field) {
   return row?.querySelector?.(`[data-magic-initiate-field="${field}"]`) || null;
+}
+
+function getIncompleteMagicInitiateControl(row) {
+  return ["class", "cantrip1", "cantrip2", "level1"]
+    .map(field => getMagicInitiateSelect(row, field))
+    .find(select => !(select?.value || "").trim()) || null;
 }
 
 function syncMagicInitiateClassOptions(changedSelect) {
@@ -7326,6 +7354,7 @@ function updatePreparedSpellCounts() {
   if (summary) summary.hidden = false;
 }
 
+
 let pickedSpellLayoutFrame = 0;
 
 function schedulePickedSpellLayout() {
@@ -7981,6 +8010,12 @@ document.addEventListener("change", (e) => {
     syncClassFeatureDerivedChoices();
     scheduleSaveAllFields();
   }
+
+  if (target.id === "manual-feat-management"
+      || target.id === "druid-land"
+      || target.closest("#classFeatures, #metamagicOptions, #eldritch-invocations-output, #feats-area, #cantrips-area")) {
+    updateClassFeatureChoiceReminder();
+  }
 });
 
 // ====== 通用 localStorage 儲存/還原 ======
@@ -8470,6 +8505,7 @@ function applyStateObject(data) {
   syncMain2ShieldControl({ legalize: true });
   updateACDisplay();
   updateSpeedDisplay();
+  updateClassFeatureChoiceReminder();
 }
 
 function getShortShareUnavailableReason(hash) {
@@ -8706,6 +8742,159 @@ async function ensurePdfExportReady() {
   await pdfExportLoaderPromise;
 }
 
+function getClassFeatureChoiceIssues() {
+  const issues = [];
+  const selectedClass = (document.getElementById("class")?.value || "").trim();
+  const selectedLevel = Number.parseInt(document.getElementById("level")?.value || "", 10);
+  if (!selectedClass || !Number.isInteger(selectedLevel)) return issues;
+
+  const pushGeneral = issue => issues.push({ reminderType: "general", ...issue });
+  const checkboxGroupLabels = {
+    "cleric-guardian": "牧師神聖使命",
+    "druid-shaman": "德魯伊原初使命",
+    "paladin-fighting-style": "聖騎士戰鬥風格類型",
+    "ranger-fighting-style": "遊俠戰鬥風格類型",
+    "ranger-hunters-prey-colossus-slayer": "遊俠狩獵目標",
+    "cleric-blessed-strikes-divine-strike": "牧師神佑打擊",
+    "druid-elemental-fury-primal-strike": "德魯伊元素狂怒",
+    "ranger-defensive-tactics-escape-the-horde": "遊俠防守戰術"
+  };
+  const checkboxGroups = [
+    CLERIC_MISSION_CHOICE_IDS,
+    DRUID_MISSION_CHOICE_IDS,
+    ...FIGHTING_STYLE_TYPE_CHOICE_GROUPS,
+    ...ADVANCED_CLASS_FEATURE_CHOICE_GROUPS
+  ];
+  checkboxGroups.forEach(ids => {
+    const availability = ADVANCED_CLASS_FEATURE_AVAILABILITY[ids[0]];
+    if (!availability || availability.className !== selectedClass || selectedLevel < availability.minimumLevel) return;
+    if (isManualFeatManagementEnabled() && FIGHTING_STYLE_TYPE_CHOICE_GROUPS.includes(ids)) return;
+    if (ids.some(id => document.getElementById(id)?.checked)) return;
+    pushGeneral({
+      message: `${checkboxGroupLabels[ids[0]] || "職業選項"}尚未選擇。`,
+      tab: "basic",
+      selector: ids.map(id => `#${id}`).join(", "),
+      focusSelector: `#${ids[0]}`
+    });
+  });
+
+  if (selectedClass === "druid" && selectedLevel >= 3 && !(document.getElementById("druid-land")?.value || "").trim()) {
+    pushGeneral({
+      message: "大地結社地貌尚未選擇。",
+      tab: "basic",
+      selector: "#druid-land",
+      focusSelector: "#druid-land"
+    });
+  }
+
+  const affinityId = "sorcerer-elemental-affinity-damage-type";
+  if (isAdvancedClassFeatureControlAvailable(affinityId) && !(document.getElementById(affinityId)?.value || "").trim()) {
+    pushGeneral({
+      message: "術士元素親和傷害類型尚未選擇。",
+      tab: "basic",
+      selector: `#${affinityId}`,
+      focusSelector: `#${affinityId}`
+    });
+  }
+
+  if (!isManualFeatManagementEnabled()) {
+    getFeatChoiceSpecs()
+      .filter(spec => spec.active && (spec.source === "class" || spec.source === "invocation"))
+      .forEach(spec => {
+        const id = getFeatChoiceId(spec.key);
+        if (!(document.getElementById(id)?.value || "").trim()) {
+          pushGeneral({ message: `${spec.label}尚未選擇。`, tab: "basic", selector: `#${id}` });
+        }
+      });
+
+    document.querySelectorAll('#feats-area .feat-entry--derived[data-feat-source="class"], #feats-area .feat-entry--derived[data-feat-source="invocation"]').forEach(row => {
+      if (getFeatSelectFromRow(row)?.value !== MAGIC_INITIATE_FEAT_NAME) return;
+      const missingControl = getIncompleteMagicInitiateControl(row);
+      if (!missingControl) return;
+      pushGeneral({
+        message: "職業取得的魔法學徒法術尚未選完。",
+        tab: "basic",
+        selector: row.id ? `#${row.id}` : "#feats-area",
+        focusSelector: `#${missingControl.id}`
+      });
+    });
+  }
+
+  if (selectedClass === "bard" && selectedLevel >= 6) {
+    const magicalDiscoveryIncomplete = getBardMagicalDiscoverySelection().some(selection =>
+      !selection.classValue || !selection.ring || !selection.spellId
+    );
+    if (magicalDiscoveryIncomplete) {
+      pushGeneral({
+        message: "吟遊詩人魔法發現法術尚未選完。",
+        tab: "basic",
+        selector: "#bard-magical-discoveries",
+        focusSelector: "#bard-magical-discoveries select"
+      });
+    }
+  }
+
+  if (["paladin", "ranger"].includes(selectedClass) && selectedLevel >= 2) {
+    const magicId = selectedClass === "paladin" ? "paladin-blessed-warrior" : "ranger-druidic-warrior";
+    if (document.getElementById(magicId)?.checked) {
+      const sourceFragment = selectedClass === "paladin" ? "blessed-warrior" : "druidic-warrior";
+      const rows = Array.from(document.querySelectorAll(`.spell-entry[data-source-key*="${sourceFragment}-cantrip-"]`));
+      const missingRow = rows.find(row => !(row.querySelector("select[id*='-spell-']")?.value || "").trim());
+      if (rows.length < 2 || missingRow) {
+        pushGeneral({
+          message: `${selectedClass === "paladin" ? "受祝福的勇士" : "德魯伊教戰士"}戲法尚未選完。`,
+          tab: "spells",
+          selector: "#cantrips-area",
+          focusSelector: missingRow ? `#${missingRow.querySelector("select[id*='-spell-']")?.id}` : "#cantrips-area select[id*='-spell-']"
+        });
+      }
+    }
+  }
+
+  if (selectedClass === "warlock") {
+    const missingAgonizingTarget = getAgonizingBlastSelects().find(select => {
+      const checkbox = document.getElementById(select.dataset.checkboxId || "");
+      return checkbox?.checked && !checkbox.disabled && !select.value;
+    });
+    if (missingAgonizingTarget) {
+      pushGeneral({
+        message: "苦痛魔爆套用的戲法尚未選擇。",
+        tab: "basic",
+        selector: `#${missingAgonizingTarget.id}`,
+        focusSelector: `#${missingAgonizingTarget.id}`
+      });
+    }
+  }
+
+  if (selectedClass === "sorcerer" && selectedLevel >= 2) {
+    const metamagicCount = getCheckedMetamagicNames().length;
+    const metamagicLimit = getMetamagicSelectionLimit();
+    if (metamagicCount < metamagicLimit) issues.push({
+      reminderType: "metamagic",
+      message: `術士超魔法尚未選完（${metamagicCount}/${metamagicLimit}）。`,
+      tab: "basic",
+      selector: "#metamagicOptions input[data-metamagic-name]:not(:checked)",
+      focusSelector: "#metamagicOptions input[data-metamagic-name]:not(:checked)"
+    });
+  }
+
+  if (selectedClass === "warlock" && selectedLevel >= 1) {
+    const invocationInputs = Array.from(document.querySelectorAll("#eldritch-invocations-output input[data-invocation-name]"));
+    const invocationCount = invocationInputs.filter(input => input.checked).length;
+    const invocationLimit = getWarlockInvocationSelectionLimit();
+    if (invocationInputs.length && invocationCount < invocationLimit) issues.push({
+      reminderType: "invocations",
+      message: `契術師魔能祈喚尚未選完（${invocationCount}/${invocationLimit}）。`,
+      tab: "basic",
+      selector: "#eldritch-invocations-output input[data-invocation-name]:not(:checked)",
+      focusSelector: "#eldritch-invocations-output input[data-invocation-name]:not(:checked)"
+    });
+  }
+
+  return issues;
+}
+
+
 function buildPdfPrecheckMessages() {
   const reminders = [];
   const requiredSelectIds = [
@@ -8753,75 +8942,8 @@ function buildPdfPrecheckMessages() {
     });
   }
 
-  const classFeatureChoiceRequirements = {
-    cleric: {
-      minimumLevel: 1,
-      ids: ["cleric-guardian", "cleric-trickster"],
-      message: "牧師神聖使命尚未選擇。"
-    },
-    druid: {
-      minimumLevel: 1,
-      ids: ["druid-shaman", "druid-sentinel"],
-      message: "德魯伊原初使命尚未選擇。"
-    }
-  };
-  const classFeatureChoice = classFeatureChoiceRequirements[selectedClass];
-  if (classFeatureChoice && selectedLevel >= classFeatureChoice.minimumLevel) {
-    const hasChoice = classFeatureChoice.ids.some(id => document.getElementById(id)?.checked);
-    if (!hasChoice) reminders.push({
-      message: classFeatureChoice.message,
-      tab: "basic",
-      selector: classFeatureChoice.ids.map(id => `#${id}`).join(", "),
-      focusSelector: `#${classFeatureChoice.ids[0]}`
-    });
-  }
+  reminders.push(...getClassFeatureChoiceIssues());
 
-  const advancedClassFeatureRequirements = {
-    cleric: {
-      minimumLevel: 7,
-      ids: ["cleric-blessed-strikes-divine-strike", "cleric-blessed-strikes-potent-spellcasting"],
-      message: "牧師神佑打擊尚未選擇。"
-    },
-    druid: {
-      minimumLevel: 7,
-      ids: ["druid-elemental-fury-primal-strike", "druid-elemental-fury-potent-spellcasting"],
-      message: "德魯伊元素狂怒尚未選擇。"
-    },
-    ranger: {
-      minimumLevel: 7,
-      ids: ["ranger-defensive-tactics-escape-the-horde", "ranger-defensive-tactics-multiattack-defense"],
-      message: "遊俠防守戰術尚未選擇。"
-    }
-  };
-  const advancedRequirement = advancedClassFeatureRequirements[selectedClass];
-  if (advancedRequirement && selectedLevel >= advancedRequirement.minimumLevel) {
-    const hasChoice = advancedRequirement.ids.some(id => document.getElementById(id)?.checked);
-    if (!hasChoice) reminders.push({
-      message: advancedRequirement.message,
-      tab: "basic",
-      selector: advancedRequirement.ids.map(id => `#${id}`).join(", "),
-      focusSelector: `#${advancedRequirement.ids[0]}`
-    });
-  }
-  if (selectedClass === "sorcerer" && selectedLevel >= 6 && !(document.getElementById("sorcerer-elemental-affinity-damage-type")?.value || "").trim()) {
-    reminders.push({
-      message: "術士元素親和傷害類型尚未選擇。",
-      tab: "basic",
-      selector: "#sorcerer-elemental-affinity-damage-type",
-      focusSelector: "#sorcerer-elemental-affinity-damage-type"
-    });
-  }
-
-  if (selectedClass === "druid" && selectedLevel >= 3 && !(document.getElementById("druid-land")?.value || "").trim()) {
-    reminders.push({
-      message: "大地結社地貌尚未選擇。",
-      tab: "basic",
-      selector: "#druid-land",
-      focusSelector: "#druid-land"
-    });
-  }
-
-  const fightingStyleSelect = selectedClass ? document.getElementById(`derived-feat-fighting-style-${selectedClass}`) : null;
   getFeatUsageEntries().filter(entry => entry.value && !entry.usable).forEach(entry => {
     reminders.push({
       message: `${entry.value}：角色未達專長使用條件（不套用自動計算加值）。`,
@@ -8830,73 +8952,19 @@ function buildPdfPrecheckMessages() {
       focusSelector: `#${entry.select.id}`
     });
   });
-  getFeatChoiceSpecs().filter(spec => !isManualFeatManagementEnabled() && spec.active && spec.type !== "style").forEach(spec => {
-    const id = getFeatChoiceId(spec.key);
-    if (!document.getElementById(id)?.value) reminders.push({ message: `${spec.label}尚未選擇。`, tab: "basic", selector: `#${id}` });
-  });
-  if (!isManualFeatManagementEnabled() && selectedClass === "fighter" && selectedLevel >= 1 && !fightingStyleSelect?.value) {
-    reminders.push({ message: "戰士戰鬥風格尚未選擇。", tab: "basic", selector: "#feat-choice-fighting-style-fighter" });
-  }
-  const additionalFightingStyleSelect = document.getElementById("derived-feat-fighting-style-fighter-2");
-  if (!isManualFeatManagementEnabled() && selectedClass === "fighter" && selectedLevel >= 7 && !additionalFightingStyleSelect?.value) {
-    reminders.push({ message: "戰士額外戰鬥風格尚未選擇。", tab: "basic", selector: "#feat-choice-fighting-style-fighter-2" });
-  }
-  if (["paladin", "ranger"].includes(selectedClass) && selectedLevel >= 2) {
-    const styleId = `${selectedClass}-fighting-style`;
-    const magicId = selectedClass === "paladin" ? "paladin-blessed-warrior" : "ranger-druidic-warrior";
-    const styleChecked = Boolean(document.getElementById(styleId)?.checked);
-    const magicChecked = Boolean(document.getElementById(magicId)?.checked);
-    if (!isManualFeatManagementEnabled() && !styleChecked && !magicChecked) reminders.push({
-      message: `${selectedClass === "paladin" ? "聖騎士" : "遊俠"}戰鬥風格類型尚未選擇。`,
-      tab: "basic",
-      selector: `#${styleId}, #${magicId}`,
-      focusSelector: `#${styleId}`
+  getFeatChoiceSpecs()
+    .filter(spec => !isManualFeatManagementEnabled() && spec.active && spec.source === "race")
+    .forEach(spec => {
+      const id = getFeatChoiceId(spec.key);
+      if (!(document.getElementById(id)?.value || "").trim()) {
+        reminders.push({ message: `${spec.label}尚未選擇。`, tab: "basic", selector: `#${id}` });
+      }
     });
-    if (!isManualFeatManagementEnabled() && styleChecked && !fightingStyleSelect?.value) reminders.push({
-      message: `${selectedClass === "paladin" ? "聖騎士" : "遊俠"}戰鬥風格尚未選擇。`,
-      tab: "basic",
-      selector: `#feat-choice-fighting-style-${selectedClass}`
-    });
-    if (magicChecked) {
-      const sourceFragment = selectedClass === "paladin" ? "blessed-warrior" : "druidic-warrior";
-      const rows = Array.from(document.querySelectorAll(`.spell-entry[data-source-key*="${sourceFragment}-cantrip-"]`));
-      const missingRow = rows.find(row => !(row.querySelector("select[id*='-spell-']")?.value || "").trim());
-      if (rows.length < 2 || missingRow) reminders.push({
-        message: `${selectedClass === "paladin" ? "受祝福的勇士" : "德魯伊教戰士"}戲法尚未選完。`,
-        tab: "spells",
-        selector: "#cantrips-area",
-        focusSelector: missingRow ? `#${missingRow.querySelector("select[id*='-spell-']")?.id}` : "#cantrips-area select[id*='-spell-']"
-      });
-    }
-  }
 
-  if (selectedClass === "sorcerer" && selectedLevel >= 2) {
-    const metamagicInputs = Array.from(document.querySelectorAll("#metamagicOptions input[data-metamagic-name]"));
-    const metamagicCount = metamagicInputs.filter(input => input.checked).length;
-    const metamagicLimit = getMetamagicSelectionLimit();
-    if (metamagicCount < metamagicLimit) reminders.push({
-      message: `術士超魔法尚未選完（${metamagicCount}/${metamagicLimit}）。`,
-      tab: "basic",
-      selector: "#metamagicOptions input[data-metamagic-name]:not(:checked)",
-      focusSelector: "#metamagicOptions input[data-metamagic-name]:not(:checked)"
-    });
-  }
-
-  if (selectedClass === "warlock" && selectedLevel >= 1) {
-    const invocationInputs = Array.from(document.querySelectorAll("#eldritch-invocations-output input[data-invocation-name]"));
-    const invocationCount = invocationInputs.filter(input => input.checked).length;
-    const invocationLimit = getWarlockInvocationSelectionLimit();
-    if (invocationCount < invocationLimit) reminders.push({
-      message: `契術師魔能祈喚尚未選完（${invocationCount}/${invocationLimit}）。`,
-      tab: "basic",
-      selector: "#eldritch-invocations-output input[data-invocation-name]:not(:checked)",
-      focusSelector: "#eldritch-invocations-output input[data-invocation-name]:not(:checked)"
-    });
-  }
 
   const backgroundMagicRow = document.querySelector('#feats-area .feat-entry--derived[data-source-key="background"]');
   if (backgroundMagicRow && getFeatSelectFromRow(backgroundMagicRow)?.value === MAGIC_INITIATE_FEAT_NAME) {
-    const missingControl = ["class", "cantrip1", "cantrip2", "level1"].map(field => getMagicInitiateSelect(backgroundMagicRow, field)).find(select => !(select?.value || "").trim());
+    const missingControl = getIncompleteMagicInitiateControl(backgroundMagicRow);
     if (missingControl) reminders.push({
       message: "背景魔法學徒的法術尚未選完。",
       tab: "basic",
