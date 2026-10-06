@@ -43,7 +43,7 @@
       gtag('config', 'G-M8L0F03EGD', {page_path: location.pathname});
     }
   </script>
-  <script src="analytics.js?v=20261006-deep-usage"></script>
+  <script src="analytics.js?v=20261006-hp-restore"></script>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8404,6 +8404,7 @@ function applyStateObject(data) {
 
   const prevAutosaveSuspended = autosaveSuspended;
   autosaveSuspended = true;
+  const resumeHpTracking = window.twAnalytics?.suspendHpTracking?.();
 
   try {
     if (data.__shareStateVersion === SHARE_STATE_VERSION) {
@@ -8512,6 +8513,7 @@ function applyStateObject(data) {
     window.TabletopMode?.applyState?.(data);
     window.Spellbook?.restoreState(data);
   } finally {
+    resumeHpTracking?.();
     autosaveSuspended = prevAutosaveSuspended;
   }
   syncDerivedFeatRows();

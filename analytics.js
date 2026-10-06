@@ -14,6 +14,7 @@
   let hpInput = null;
   let hpChangeCount = 0;
   let lastHpValue = null;
+  let hpTrackingSuspensions = 0;
   let meaningfulInteractionCount = 0;
   const distinctMeaningfulControls = new WeakSet();
   let distinctMeaningfulControlCount = 0;
@@ -110,7 +111,7 @@
   function handleHpChange() {
     if (!hpInput) return;
     const nextValue = parseHpValue(hpInput.value);
-    if (lastHpValue !== null && nextValue !== null && nextValue !== lastHpValue) {
+    if (!hpTrackingSuspensions && lastHpValue !== null && nextValue !== null && nextValue !== lastHpValue) {
       hpChangeCount += 1;
       if (hpChangeCount >= QUALIFIED_HP_CHANGES) {
         trackOnce("hp_changed_4");
@@ -118,6 +119,18 @@
       evaluateUsage();
     }
     lastHpValue = nextValue;
+  }
+
+  function suspendHpTracking() {
+    hpTrackingSuspensions += 1;
+    let resumed = false;
+    return function resumeHpTracking() {
+      if (resumed) return;
+      resumed = true;
+      hpTrackingSuspensions -= 1;
+      // Restored HP becomes the baseline; keep prior gameplay changes counted.
+      if (hpInput) lastHpValue = parseHpValue(hpInput.value);
+    };
   }
 
   function isMeaningfulControl(element) {
@@ -182,7 +195,8 @@
   globalScope.twAnalytics = Object.freeze({
     track,
     trackOnce,
-    observeHp
+    observeHp,
+    suspendHpTracking
   });
 
   evaluateUsage();
