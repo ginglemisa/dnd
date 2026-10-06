@@ -2861,6 +2861,8 @@
       mobileImportWarning(`匯入流程中斷：${error?.message || "未知錯誤"}`, warnings);
     }
     closeWizard();
+    if (completed) window.twAnalytics?.track?.("quick_build_complete");
+    if (completed && warnings.length) window.twAnalytics?.track?.("quick_build_with_warnings");
     const warningText = warnings.length ? `\n\n以下項目未完成匯入：\n${warnings.map(item => `• ${item}`).join("\n")}` : "";
     const classSkillBonusText = ["druid", "cleric"].includes(draft.choices.class)
       ? "；巫祝與魔術使的技能額外加值也已納入計算。"
@@ -3914,6 +3916,7 @@
   }
 
   function openWizard() {
+    window.twAnalytics?.track?.("quick_build_start");
     const modal = ensureWizard();
     const wizardShell = modal.querySelector(".quick-build-shell");
     const spellDetail = document.getElementById("quick-build-spell-detail");
