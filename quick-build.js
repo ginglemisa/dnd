@@ -3865,7 +3865,7 @@
     const modal = activeModal || ensureWizard();
     const scrollY = window.scrollY;
     const inertElements = [...document.body.children]
-      .filter(element => element !== modal && element.id !== "quick-build-spell-detail" && element.id !== "skillPopup" && element.id !== "weaponRulePopup")
+      .filter(element => element !== modal && element.id !== "app-toast" && element.id !== "quick-build-spell-detail" && element.id !== "skillPopup" && element.id !== "weaponRulePopup")
       .map(element => ({ element, inert: element.inert }));
     inertElements.forEach(({ element }) => { element.inert = true; });
     pageLock = {

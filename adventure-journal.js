@@ -406,7 +406,7 @@
     draft = null;
     opened = true;
     root.hidden = false;
-    background = [...document.body.children].filter(element => element !== root && !["SCRIPT", "STYLE"].includes(element.tagName))
+    background = [...document.body.children].filter(element => element !== root && element.id !== "app-toast" && !["SCRIPT", "STYLE"].includes(element.tagName))
       .map(element => ({ element, inert: element.inert }));
     background.forEach(({ element }) => { element.inert = true; });
     document.documentElement.classList.add("journal-open");
