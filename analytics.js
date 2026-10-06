@@ -152,7 +152,7 @@
       const eventName = analyticsTarget.dataset.analyticsEvent;
       if (eventName) track(eventName);
     }
-    const control = event.target.closest?.("button, summary, a[href], [role=\"tab\"], [role=\"button\"]");
+    const control = event.target.closest?.("button, summary, [role=\"tab\"], [role=\"button\"]");
     if (control) recordMeaningfulInteraction(control);
   }
 
