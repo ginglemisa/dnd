@@ -15,7 +15,7 @@
     if (inert) {
       const states = new Map();
       document.querySelectorAll("body > *").forEach((element) => {
-        if (!(element instanceof HTMLElement) || element === dialogRoot) return;
+        if (!(element instanceof HTMLElement) || element === dialogRoot || element.id === "app-toast") return;
         states.set(element, element.inert);
         element.inert = true;
       });
@@ -38,6 +38,10 @@
     stack.className = "app-toast-stack";
     stack.setAttribute("aria-live", "polite");
     stack.setAttribute("aria-relevant", "additions text");
+    // Toasts own their pointer interactions; do not trigger delegated page actions.
+    ["pointerdown", "pointerup", "click", "dblclick", "contextmenu"].forEach(type => {
+      stack.addEventListener(type, event => event.stopPropagation());
+    });
     document.body.appendChild(stack);
     return stack;
   }
@@ -74,11 +78,7 @@
     clearToastTimer(toast);
     if (!toast.isConnected) return;
     const stack = toast.parentElement;
-    const restoreFocus = toast.contains(document.activeElement);
-    const nextButton = toast.nextElementSibling?.querySelector(".app-toast__close")
-      || toast.previousElementSibling?.querySelector(".app-toast__close");
     reflowToasts(stack, () => toast.remove());
-    if (restoreFocus) nextButton?.focus({ preventScroll: true });
   }
 
   function scheduleToastRemoval(toast, duration) {
@@ -92,7 +92,7 @@
   function enableToastSwipe(toast) {
     let gesture = null;
     toast.addEventListener("pointerdown", event => {
-      if (event.pointerType === "mouse" || event.target.closest("button") || gesture || toast.dataset.dismissing) return;
+      if ((event.pointerType === "mouse" && event.button !== 0) || event.isPrimary === false || gesture || toast.dataset.dismissing) return;
       const timer = clearToastTimer(toast);
       gesture = {
         pointerId: event.pointerId,
@@ -148,6 +148,7 @@
     };
     toast.addEventListener("pointerup", finish);
     toast.addEventListener("pointercancel", finish);
+    toast.addEventListener("lostpointercapture", finish);
   }
 
   function notify(message, options = {}) {
@@ -161,25 +162,16 @@
     toast.dataset.variant = options.variant || "default";
     const text = document.createElement("span");
     text.className = "app-toast__message";
-    const closeButton = document.createElement("button");
-    closeButton.type = "button";
-    closeButton.className = "app-toast__close";
-    closeButton.setAttribute("aria-label", `關閉提示：${normalizedMessage}`);
-    closeButton.textContent = "×";
-    closeButton.addEventListener("click", () => removeToast(toast));
-    toast.append(text, closeButton);
+    toast.appendChild(text);
     enableToastSwipe(toast);
-    let restoreFocus = false;
     reflowToasts(stack, () => {
       if (stack.children.length >= MAX_TOASTS) {
         const oldest = stack.firstElementChild;
-        restoreFocus = oldest.contains(document.activeElement);
         clearToastTimer(oldest);
         oldest.remove();
       }
       stack.appendChild(toast);
     });
-    if (restoreFocus) stack.firstElementChild?.querySelector(".app-toast__close")?.focus({ preventScroll: true });
     if (!prefersReducedToastMotion()) {
       toast.animate([{ opacity: 0 }, { opacity: 1 }], { duration: TOAST_MOTION_MS, easing: "ease-out" });
     }

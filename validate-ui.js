@@ -323,11 +323,23 @@ async function swipeToast(page, index, direction, distance) {
   await cdp.detach();
 }
 
+async function dragToast(page, index, distance) {
+  const box = await page.locator(".app-toast__message").nth(index).boundingBox();
+  assert(box);
+  const x = box.x + box.width / 2;
+  const y = box.y + box.height / 2;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x + distance, y, { steps: 8 });
+  await page.mouse.up();
+}
+
 async function verifyToasts(browser) {
   const desktop = await newUiPage(browser, { viewport: { width: 1280, height: 800 } });
   const errors = [];
   desktop.on("pageerror", error => errors.push(String(error)));
   await prepareToastFixture(desktop);
+  await verifyToastPointerIsolation(desktop, false);
   await desktop.evaluate(() => {
     AppDialog.notify("第一則", { duration: 10000 });
     AppDialog.notify("第二則", { duration: 10000, variant: "dice-roll" });
@@ -340,10 +352,7 @@ async function verifyToasts(browser) {
     const rect = stack.getBoundingClientRect();
     return rect.top > window.innerHeight / 2 && rect.bottom > window.innerHeight - 20;
   }), true, "Toast stack should open at the bottom of the viewport");
-  assert.equal(await desktop.locator(".app-toast__close").first().evaluate(button => {
-    const rect = button.getBoundingClientRect();
-    return rect.width >= 44 && rect.height >= 44;
-  }), true, "Toast close button should provide at least a 44px pointer target");
+  assert.equal(await desktop.locator(".app-toast button").count(), 0, "Toasts have no close button");
   assert.equal(await desktop.locator('.app-toast[data-variant="dice-roll"]').count(), 1);
   assert.equal(await desktop.locator(".app-toast").evaluateAll(toasts =>
     toasts[1].getBoundingClientRect().left < toasts[2].getBoundingClientRect().left
@@ -352,14 +361,13 @@ async function verifyToasts(browser) {
   await desktop.waitForTimeout(250);
   assert.deepEqual(await toastMessages(desktop), ["第二則", "第三則", "第四則"]);
   await assertStackOrder(desktop);
-  await desktop.locator(".app-toast__close").nth(1).focus();
-  await desktop.keyboard.press("Enter");
+  await dragToast(desktop, 1, -160);
+  await desktop.waitForFunction(() => document.querySelectorAll("#app-toast .app-toast").length === 2);
   assert.equal(await desktop.locator(".app-toast").last().evaluate(toast =>
     toast.getAnimations().some(animation => animation.effect.getKeyframes().some(frame => frame.translate))
   ), true, "Remaining toast should animate into the empty space");
   await desktop.waitForTimeout(250);
   assert.deepEqual(await toastMessages(desktop), ["第二則", "第四則"]);
-  assert.equal(await desktop.locator(".app-toast__close").last().evaluate(element => document.activeElement === element), true);
   await assertStackOrder(desktop);
   assert.deepEqual(errors, []);
   await desktop.close();
@@ -367,6 +375,8 @@ async function verifyToasts(browser) {
   const mobile = await newUiPage(browser, { viewport: { width: 390, height: 844 }, hasTouch: true });
   mobile.on("pageerror", error => errors.push(String(error)));
   await prepareToastFixture(mobile);
+  await verifyToastPointerIsolation(mobile, true);
+  await verifyToastHold(mobile);
   await mobile.evaluate(() => {
     AppDialog.notify("甲", { duration: 10000 });
     AppDialog.notify("乙", { duration: 10000 });
@@ -403,7 +413,73 @@ async function verifyToasts(browser) {
   assert.deepEqual(await toastMessages(reduced), ["低動態二"]);
   await reduced.close();
 
-  console.log("AppDialog toast stack, timeout, keyboard dismiss, and touch swipes passed.");
+  console.log("AppDialog toast stack, timeout, mouse drag, hold timeout, and touch swipes passed.");
+}
+
+async function verifyToastPointerIsolation(page, touch) {
+  // Exercise the important order: existing toast, then background-inert dialog.
+  await page.evaluate(() => {
+    AppDialog.notify("隔離測試", { duration: 10000 });
+    window.toastPageEvents = 0;
+    window.toastUnderlyingClicks = 0;
+    window.toastPageListener = () => { window.toastPageEvents++; };
+    for (const type of ["pointerdown", "pointerup", "click"]) {
+      document.addEventListener(type, window.toastPageListener);
+    }
+    AppDialog.open({ title: "Toast 隔離測試", allowNested: true });
+    const button = document.createElement("button");
+    button.id = "toast-underlying-button";
+    button.textContent = "下方操作";
+    button.style.cssText = "position:fixed;inset:0;width:100%;height:100%;z-index:12800";
+    button.addEventListener("click", () => { window.toastUnderlyingClicks++; });
+    document.body.append(button);
+  });
+  const message = page.locator(".app-toast__message").last();
+  assert.equal(await message.evaluate(el => {
+    const rect = el.getBoundingClientRect();
+    return !el.closest("[inert]") && el.contains(document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2));
+  }), true, "Toast must remain above the overlay and accept pointer input");
+  if (touch) await message.tap();
+  else await message.click();
+  assert.deepEqual(await page.evaluate(() => [window.toastPageEvents, window.toastUnderlyingClicks]), [0, 0]);
+  await page.evaluate(() => AppDialog.open({ title: "巢狀測試" }));
+  assert.equal(await page.locator("#app-toast").evaluate(el => el.inert), false, "Nested dialogs must not disable existing toasts");
+  await page.evaluate(() => AppDialog.notify("視窗內提示", { duration: 10000 }));
+  if (touch) await swipeToast(page, 1, 1, 160);
+  else await dragToast(page, 1, 160);
+  await page.waitForFunction(() => document.querySelectorAll(".app-toast").length === 1);
+  assert.equal((await toastMessages(page)).includes("視窗內提示"), false);
+  assert.deepEqual(await page.evaluate(() => [window.toastPageEvents, window.toastUnderlyingClicks]), [0, 0], "Closing a toast must not activate page actions");
+  await page.evaluate(() => {
+    for (const type of ["pointerdown", "pointerup", "click"]) {
+      document.removeEventListener(type, window.toastPageListener);
+    }
+    document.getElementById("toast-underlying-button").remove();
+  });
+  await page.locator(".app-dialog__close").last().click();
+  await page.locator(".app-dialog__close").last().click();
+  assert.equal(await page.locator("#app-toast").evaluate(el => el.inert), false);
+  if (touch) await swipeToast(page, 0, -1, 160);
+  else await dragToast(page, 0, -160);
+  await page.waitForFunction(() => !document.querySelector(".app-toast"));
+}
+
+async function verifyToastHold(page) {
+  const selector = ".app-toast__message";
+  await page.evaluate(() => AppDialog.notify("按住保留", { duration: 800 }));
+  const box = await page.locator(selector).boundingBox();
+  assert(box);
+  const cdp = await page.context().newCDPSession(page);
+  try {
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: box.x + box.width / 2, y: box.y + box.height / 2 }] });
+    await page.waitForTimeout(1000);
+    assert.deepEqual(await toastMessages(page), ["按住保留"], "Holding any part of the toast must pause its timeout");
+    // Cancellation must resume the remaining timer.
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchCancel", touchPoints: [] });
+    await page.waitForTimeout(100);
+    assert.deepEqual(await toastMessages(page), ["按住保留"], "Release must resume the remaining time, not expire immediately");
+    await page.waitForFunction(() => !document.querySelector(".app-toast"));
+  } finally { await cdp.detach(); }
 }
 
 async function verifyFeatureChoiceDisclosures(browser, url) {

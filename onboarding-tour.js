@@ -1557,6 +1557,7 @@
 
     handleTourPointerDownCapture(event) {
       if (!this.active || this.isInternalTourAction) return;
+      if (event.target instanceof Element && event.target.closest("#app-toast")) return;
       this.suppressTooltipDragClick = false;
       if (this.abilityMenuGuideActive || (this.kind === "tabletop" && this.steps[this.currentIndex]?.menuIntro)) {
         if (this.tooltip?.contains(event.target)) this.handleTooltipPointerDown(event);
@@ -1589,6 +1590,7 @@
       if (!this.active || this.isInternalTourAction) return;
       const target = event.target instanceof Element ? event.target : null;
       if (!target) return;
+      if (target.closest("#app-toast")) return;
       if (this.suppressTooltipDragClick) {
         this.suppressTooltipDragClick = false;
         event.preventDefault();
@@ -1683,7 +1685,7 @@
     lockBackgroundInteraction() {
       if (this.backgroundInertSnapshot) return;
       this.backgroundInertSnapshot = Array.from(document.body.children)
-        .filter((element) => element !== this.overlay)
+        .filter((element) => element !== this.overlay && element.id !== "app-toast")
         .map((element) => ({ element, inert: element.inert }));
       this.backgroundInertSnapshot.forEach(({ element }) => {
         element.inert = true;

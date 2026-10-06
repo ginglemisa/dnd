@@ -102,7 +102,7 @@
 | 導覽屬性引導／觸控；創角匯入銜接／PDF 載入取消；跑團模式法術與資源教學預覽；共用導覽流程 | 分別優先使用 `node validate-onboarding.js --touch-only`、`node validate-onboarding.js --imports-only`；影響共用導覽或分項不足以涵蓋時執行完整 `node validate-onboarding.js` |
 | 短休／長休、休息後選項同步與還原、生命骰（含擲骰關閉時的單顆／連續回血）、資源恢復或最佳旅伴 | `node validate-tabletop-rest.js` |
 | 冒險日誌 IndexedDB 遷移／失敗復原／跨分頁衝突、JSON 相容、全文搜尋／IME／儲存與跳頁、角色資料隔離及桌機／手機版面 | `node validate-ui.js --journal-only`；IME 與手機觸控為瀏覽器模擬，不代表實機輸入法驗證 |
-| 共用 UI：主題／保存／素材、工具選單與技能版面、Legal／About、AppDialog／toast、角色能力頁籤視窗（含創角／表格顯示移位、子視窗、法術／技能／動物參考浮層、選項保存、焦點與補填入口）、PDF 欄位與實際可編輯匯出 | `node validate-ui.js`；可用 `--appearance-only`、`--dialogs-only`（含角色能力視窗與自訂背景的編輯／專長與工具同步／PDF 名稱／資料還原）、`--pdf-only` 或 `--pdf-fields-only` 選擇分項。局部 UI 依上方原則驗證，不自動連帶驗證 PDF 或導覽 |
+| 共用 UI：主題／保存／素材、工具選單與技能版面、Legal／About、AppDialog／toast（含最高層級、背景 inert 排除、點擊／觸控隔離及按住暫停）、角色能力頁籤視窗（含創角／表格顯示移位、子視窗、法術／技能／動物參考浮層、選項保存、焦點與補填入口）、PDF 欄位與實際可編輯匯出 | `node validate-ui.js`；可用 `--appearance-only`、`--dialogs-only`（含角色能力視窗與自訂背景的編輯／專長與工具同步／PDF 名稱／資料還原）、`--pdf-only` 或 `--pdf-fields-only` 選擇分項。局部 UI 依上方原則驗證，不自動連帶驗證 PDF 或導覽 |
 
 離線成品屬於建置驗證，不列為產品 regression suite。明確要求建立、測試或更新離線角色卡時執行 `build-offline-nopdf.ps1`；建置完成會自動檢查產物語法與離線分享／離開流程，失敗時回報建置失敗。環境需求與模擬限制見 README。
 

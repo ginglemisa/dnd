@@ -3699,6 +3699,7 @@ function getRogueReliableTalentEntry() {
       .forEach((element) => {
         if (
           !(element instanceof HTMLElement)
+          || element.id === "app-toast"
           || element
             === elements.conditionModal
         ) {
