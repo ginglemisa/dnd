@@ -70,6 +70,7 @@
       }
     };
     const historyEntries = loadHistory();
+    let analyticsRollCount = 0;
     let backgroundInertStates = new Map();
     let previousBodyOverflow = "";
     let previousBodyPaddingRight = "";
@@ -312,6 +313,8 @@
       if (historyEntries.length > HISTORY_LIMIT) historyEntries.length = HISTORY_LIMIT;
       saveHistory();
       updateHistoryButton();
+      analyticsRollCount += 1;
+      if (analyticsRollCount > 10) window.twAnalytics?.trackOnce?.("dice_used_10_plus");
     };
 
     const recordRoll = (rollCounts, results, note = "") => {

@@ -937,7 +937,12 @@
       }
     });
 
-    if (typeof nextName === "string") setCharacterName(nextName);
+    if (typeof nextName === "string") {
+      const changed = setCharacterName(nextName);
+      if (changed && normalizeCharacterName(nextName)) {
+        globalScope.twAnalytics?.track?.("tabletop_name_set");
+      }
+    }
   }
 
   function setConcentrationSpellId(spellId, message = "") {
@@ -4463,6 +4468,7 @@ function getRogueReliableTalentEntry() {
       mode === "tabletop"
         ? "tabletop"
         : "sheet";
+    const modeChanged = currentMode !== nextMode;
 
     if (
       restoreScroll
@@ -4474,6 +4480,9 @@ function getRogueReliableTalentEntry() {
     }
 
     currentMode = nextMode;
+    if (modeChanged && nextMode === "tabletop") {
+      globalScope.twAnalytics?.track?.("tabletop_enter");
+    }
 
     document.documentElement
       .dataset.viewMode =
@@ -5438,6 +5447,7 @@ function getRogueReliableTalentEntry() {
         return;
       }
       setSavedAvatar(elements, dataUrl);
+      globalScope.twAnalytics?.track?.("avatar_set");
       closeCropper(elements);
     });
 

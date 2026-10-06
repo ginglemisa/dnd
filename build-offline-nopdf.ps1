@@ -171,7 +171,20 @@ $html = [System.Text.RegularExpressions.Regex]::Replace(
 
 $html = [System.Text.RegularExpressions.Regex]::Replace(
   $html,
-  '<!-- Google Analytics -->\s*<script async src="https://www\.googletagmanager\.com/gtag/js\?id=G-M8L0F03EGD"></script>\s*<script>[\s\S]*?</script>',
+  '<!-- Google Analytics -->\s*<script async src="https://www\.googletagmanager\.com/gtag/js\?id=G-M8L0F03EGD"></script>\s*<script>[\s\S]*?</script>\s*(?:<script src="analytics\.js(?:\?[^\"]*)?"></script>)?',
+  '',
+  [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
+)
+
+# Offline builds must not contain analytics hooks or analytics-only attributes.
+$html = [System.Text.RegularExpressions.Regex]::Replace(
+  $html,
+  '(?m)^.*(?:window|globalScope)\.twAnalytics\?\..*\r?\n?',
+  ''
+)
+$html = [System.Text.RegularExpressions.Regex]::Replace(
+  $html,
+  '\s+data-analytics-event="[^"]*"',
   '',
   [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
 )
@@ -227,6 +240,19 @@ foreach ($match in $scriptTags) {
   # Read the JavaScript source so local binary assets referenced from JS
   # (for example dice.webp) can also be embedded into the offline build.
   $scriptContent = Get-Content -Raw -Encoding UTF8 $assetPath
+
+  # Analytics belongs only to the live website. Keep the offline bundle free
+  # of tracking hooks, event names and analytics-only counters.
+  $scriptContent = [System.Text.RegularExpressions.Regex]::Replace(
+    $scriptContent,
+    '(?m)^.*(?:window|globalScope)\.twAnalytics\?\..*\r?\n?',
+    ''
+  )
+  $scriptContent = [System.Text.RegularExpressions.Regex]::Replace(
+    $scriptContent,
+    '(?m)^\s*(?:let analyticsRollCount = 0;|analyticsRollCount \+= 1;|const modeChanged = currentMode !== nextMode;)\s*\r?\n?',
+    ''
+  )
 
   # The normal site offers a compact-PDF action when Quick Build finishes.
   # This build intentionally contains no PDF runtime, so remove that action
@@ -441,6 +467,22 @@ if ($remainingLocalAssets.Count -gt 0) {
   throw "build-offline-nopdf.ps1: local assets were not embedded: $missingAssets"
 }
 
+# Analytics is online-only. Fail the build rather than silently shipping tracking code offline.
+$analyticsMarkers = @(
+  "analytics.js",
+  "twAnalytics",
+  "googletagmanager.com",
+  "G-M8L0F03EGD",
+  "play_session_qualified",
+  "meaningful_interaction_40",
+  "blank_character_sheet_download",
+  "dice_used_10_plus"
+)
+foreach ($marker in $analyticsMarkers) {
+  if ($html.Contains($marker)) {
+    throw "build-offline-nopdf.ps1: analytics marker remained in offline output: $marker"
+  }
+}
 $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 [System.IO.File]::WriteAllText($outputHtmlPath, $html, $utf8NoBom)
 # Verify the generated artifact, including sharing code rewritten by this build.

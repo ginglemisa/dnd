@@ -431,6 +431,7 @@
       });
       if (!completed) return;
       globalScope.AppDialog.notify(`${name}完成。`, { tone: "success" });
+      globalScope.twAnalytics?.track?.(isLong ? "long_rest_used" : "short_rest_used");
       if (!isLong) await openRestHitDice(trigger);
     } finally {
       restDialogOpen = false;
