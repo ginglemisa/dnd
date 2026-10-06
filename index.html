@@ -9326,7 +9326,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
           );
         }
         const note=document.createElement('p'); note.className='pdf-export-format-note';
-        note.append('想下載「可填寫、檔案也較小」的空白 PDF？請 ',Object.assign(document.createElement('a'),{href:'https://drive.google.com/file/d/1Tu7rAyjfKBl6wagkuRiSNgpQW5LCBP6J/view',target:'_blank',rel:'noopener noreferrer',textContent:'點此下載',dataset:{analyticsEvent:'blank_character_sheet_download'}}));
+        note.append('想下載「可填寫、檔案也較小」的空白 PDF？請 ',Object.assign(document.createElement('a'),{href:'https://drive.google.com/file/d/1Tu7rAyjfKBl6wagkuRiSNgpQW5LCBP6J/view',target:'_blank',rel:'noopener noreferrer',textContent:'點此下載',onclick:()=>window.twAnalytics?.track?.('blank_character_sheet_download')}));
         d.append(wait,options,note);
         if(formatError){
           const back=document.createElement('button');back.type='button';back.className='pdf-export-flow-modal__button pdf-export-flow-modal__button--secondary';back.textContent='返回修改名稱';back.onclick=()=>{formatError='';idx=steps.indexOf('name');render();};a.append(back);a.hidden=false;back.focus();
