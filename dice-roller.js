@@ -324,6 +324,7 @@
     };
 
     const rollDie = sides => {
+      window.twAnalytics?.trackOnce?.("dice_used");
       if (window.crypto?.getRandomValues) {
         const values = new Uint32Array(1);
         const range = 0x100000000;
