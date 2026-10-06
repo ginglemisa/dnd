@@ -8966,7 +8966,7 @@ function buildPdfPrecheckMessages() {
     });
   }
 
-reminders.push(...getClassFeatureChoiceIssues());
+  reminders.push(...getClassFeatureChoiceIssues());
 
   getFeatUsageEntries().filter(entry => entry.value && !entry.usable).forEach(entry => {
     reminders.push({
