@@ -671,6 +671,7 @@
       </select>
     </span>
     </div>
+    <p id="class-feature-choice-reminder" class="character-features-hint" role="status" aria-live="polite" hidden>請確認職業 <span class="character-features-info-icon character-features-info-icon--hint" aria-hidden="true">i</span> 資訊，您有職業選項未勾選。</p>
     </div>
   </div>
 
@@ -1911,6 +1912,47 @@ const ADVANCED_CLASS_FEATURE_AVAILABILITY = Object.freeze({
   "ranger-defensive-tactics-multiattack-defense": Object.freeze({ className: "ranger", minimumLevel: 7 }),
   "sorcerer-elemental-affinity-damage-type": Object.freeze({ className: "sorcerer", minimumLevel: 6 })
 });
+const CLASS_FEATURE_CHECKBOX_REQUIREMENTS = Object.freeze({
+  cleric: Object.freeze([
+    Object.freeze({ minimumLevel: 1, ids: Object.freeze(["cleric-guardian", "cleric-trickster"]) }),
+    Object.freeze({ minimumLevel: 7, ids: Object.freeze(["cleric-blessed-strikes-divine-strike", "cleric-blessed-strikes-potent-spellcasting"]) })
+  ]),
+  druid: Object.freeze([
+    Object.freeze({ minimumLevel: 1, ids: Object.freeze(["druid-shaman", "druid-sentinel"]) }),
+    Object.freeze({ minimumLevel: 7, ids: Object.freeze(["druid-elemental-fury-primal-strike", "druid-elemental-fury-potent-spellcasting"]) })
+  ]),
+  paladin: Object.freeze([
+    Object.freeze({ minimumLevel: 2, ids: Object.freeze(["paladin-fighting-style", "paladin-blessed-warrior"]) })
+  ]),
+  ranger: Object.freeze([
+    Object.freeze({ minimumLevel: 2, ids: Object.freeze(["ranger-fighting-style", "ranger-druidic-warrior"]) }),
+    Object.freeze({ minimumLevel: 3, ids: Object.freeze(["ranger-hunters-prey-colossus-slayer", "ranger-hunters-prey-horde-breaker"]) }),
+    Object.freeze({ minimumLevel: 7, ids: Object.freeze(["ranger-defensive-tactics-escape-the-horde", "ranger-defensive-tactics-multiattack-defense"]) })
+  ])
+});
+const CLASS_FEATURE_CHECKBOX_IDS = new Set(
+  Object.values(CLASS_FEATURE_CHECKBOX_REQUIREMENTS)
+    .flatMap(requirements => requirements)
+    .flatMap(requirement => requirement.ids)
+);
+
+function hasIncompleteClassFeatureCheckboxChoice() {
+  const classValue = document.getElementById("class")?.value || "";
+  const level = Number.parseInt(document.getElementById("level")?.value || "", 10);
+  if (!classValue || !Number.isInteger(level)) return false;
+
+  return (CLASS_FEATURE_CHECKBOX_REQUIREMENTS[classValue] || []).some(requirement =>
+    level >= requirement.minimumLevel
+      && !requirement.ids.some(id => document.getElementById(id)?.checked)
+  );
+}
+
+function updateClassFeatureChoiceReminder() {
+  const reminder = document.getElementById("class-feature-choice-reminder");
+  if (!reminder) return;
+  reminder.hidden = !hasIncompleteClassFeatureCheckboxChoice();
+}
+
 const CLERIC_DIVINE_STRIKE_ATTACK_NOTE = "+1d8光/黯傷害";
 
 function isAdvancedClassFeatureControlAvailable(id) {
@@ -2890,6 +2932,7 @@ function updateClassFeature() {
     if (metamagicSummary) metamagicSummary.innerHTML = "尚未勾選超魔法";
     syncAdvancedClassFeatureControls();
     syncCharacterFeatureTabs();
+    updateClassFeatureChoiceReminder();
     return;
   }
 
@@ -2934,6 +2977,7 @@ function updateClassFeature() {
   }
   syncAdvancedClassFeatureControls();
   syncCharacterFeatureTabs();
+  updateClassFeatureChoiceReminder();
 }
 
 
@@ -7981,6 +8025,10 @@ document.addEventListener("change", (e) => {
     syncClassFeatureDerivedChoices();
     scheduleSaveAllFields();
   }
+
+  if (target.type === "checkbox" && CLASS_FEATURE_CHECKBOX_IDS.has(target.id)) {
+    updateClassFeatureChoiceReminder();
+  }
 });
 
 // ====== 通用 localStorage 儲存/還原 ======
@@ -8470,6 +8518,7 @@ function applyStateObject(data) {
   syncMain2ShieldControl({ legalize: true });
   updateACDisplay();
   updateSpeedDisplay();
+  updateClassFeatureChoiceReminder();
 }
 
 function getShortShareUnavailableReason(hash) {
