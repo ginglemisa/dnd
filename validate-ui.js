@@ -465,6 +465,157 @@ async function verifyFeatureChoiceDisclosures(browser, url) {
   console.log("Feature choice disclosures: keyboard, chosen summaries, rerender, reload, clear and desktop/mobile passed.");
 }
 
+async function verifyCustomBackground(browser, url) {
+  const page = await newUiPage(browser, { viewport: { width: 1280, height: 900 }, reducedMotion: "reduce" });
+  try {
+    await page.goto(url);
+    await page.locator("#legal-close-btn").click();
+    await page.locator("#class").selectOption("fighter");
+    await page.locator("#level").selectOption("1");
+    await page.locator("#con").fill("10");
+    await page.locator("#background").selectOption("soldier");
+    await page.locator('[data-character-features-tab="background"]').click();
+    assert.equal(await page.locator("#background-features-section").isVisible(), true, "background heading has a working delegated event binding");
+    await page.keyboard.press("Escape");
+    const original = await page.evaluate(() => collectStateObject());
+    const dialog = page.locator('.app-dialog[data-variant="custom-background"]');
+    await page.locator("#background").selectOption("custom");
+    await dialog.waitFor();
+    assert.equal(await page.inputValue("#background"), "soldier", "background switch is atomic");
+    assert.deepEqual(await page.evaluate(() => collectStateObject()), original, "draft fields stay outside character state");
+    await page.keyboard.press("Escape");
+    assert.deepEqual(await page.evaluate(() => collectStateObject()), original, "cancelled creation preserves the original choices");
+    await page.locator("#background").selectOption("custom");
+    await dialog.getByRole("button", { name: "儲存背景" }).click();
+    assert.match(await dialog.locator("#custom-background-error").textContent(), /請填寫/);
+    assert.equal(await page.evaluate(() => document.activeElement.id), "custom-background-name");
+    await page.locator("#custom-background-name").fill("自訂冒險");
+    assert.equal(await page.locator("#custom-background-name").getAttribute("maxlength"), "4");
+    for (const [id, value] of Object.entries({
+      "ability-0": "力量", "ability-1": "力量", "ability-2": "體質",
+      feat: "強韌體魄", "skill-0": "運動", "skill-1": "隱匿", tool: "里拉琴"
+    })) await page.locator(`#custom-background-${id}`).selectOption(value);
+    assert.equal(await page.locator("#custom-background-tool option").count(), await page.evaluate(() => ToolProficiencyCatalog.allTools.length + 1));
+    assert.equal(await page.locator("#custom-background-feat option").count(), await page.evaluate(() => FEAT_OPTIONS.filter(option => FEAT_RULES[option.value]?.type === "origin").length + 1));
+    await dialog.getByRole("button", { name: "儲存背景" }).click();
+    assert.equal(await page.evaluate(() => document.activeElement.id), "custom-background-ability-1", "duplicate ability focuses the correction");
+    await page.locator("#custom-background-ability-1").selectOption("敏捷");
+    await page.locator("#custom-background-skill-1").selectOption("運動");
+    await dialog.getByRole("button", { name: "儲存背景" }).click();
+    assert.equal(await page.evaluate(() => document.activeElement.id), "custom-background-skill-1");
+    await page.locator("#custom-background-skill-1").selectOption("隱匿");
+    const description = '<img src=x onerror="window.customBackgroundInjected=true">\n我的背景描述';
+    await page.locator("#custom-background-description").fill(description);
+    await dialog.getByRole("button", { name: "儲存背景" }).click();
+    await dialog.waitFor({ state: "detached" });
+    const state = await page.evaluate(() => collectStateObject());
+    assert.deepEqual(state.__customBackground, {
+      名稱: "自訂冒險", 擴充: true, 屬性: "力量,敏捷,體質", 專長: "強韌體魄",
+      技能熟練: "運動,隱匿", 工具熟練: "里拉琴", 裝備B: "50 金幣", 描述: description
+    });
+    assert.equal(state.background, "custom");
+    assert.equal(await page.locator('#background option[value="custom"]').count(), 1);
+    assert.equal(await page.locator('#point-buy-background option[value="custom"]').count(), 0);
+    assert.equal(await page.locator('#custom-background-edit').count(), 0, "no separate edit button or container");
+    assert.equal(await page.inputValue("#derived-feat-background"), "強韌體魄", "custom feat follows the existing fixed background source");
+    assert.equal(await page.locator("#derived-feat-background").isDisabled(), true);
+    assert.equal(await page.evaluate(() => hasSelectedFeat("強韌體魄")), true, "custom feat is active in the existing calculations");
+    assert.equal(await page.inputValue("#hp-display"), "12", "background Tough adds the existing level-based HP bonus");
+    assert.equal(await page.inputValue("#tool-proficiency-0"), "里拉琴", "custom tool follows the existing fixed background row");
+    assert.equal(await page.locator("#tool-proficiency-0").isDisabled(), true);
+    assert.equal(await page.locator("#backgroundFeatures img").count(), 0, "description is escaped text");
+    assert.equal(await page.evaluate(() => window.customBackgroundInjected), undefined);
+    assert.equal(await page.locator(".custom-background-description").textContent(), description);
+    const reopen = async () => {
+      await page.locator("#background").selectOption("soldier");
+      await page.locator("#background").selectOption("custom");
+    };
+    await reopen();
+    assert.equal(await page.inputValue("#custom-background-feat"), "強韌體魄");
+    await page.locator("#custom-background-name").fill("取消修改");
+    await page.keyboard.press("Escape");
+    assert.deepEqual(await page.evaluate(() => CustomBackground.getState()), state.__customBackground);
+    assert.equal(await page.evaluate(() => document.activeElement.id), "background");
+    assert.equal(await page.inputValue("#background"), "soldier");
+    await page.locator("#background").selectOption("sage");
+    await page.locator("#background").selectOption("custom");
+    assert.equal(await page.inputValue("#custom-background-name"), "自訂冒險", "one saved definition survives switching backgrounds");
+    await dialog.getByRole("button", { name: "取消", exact: true }).click();
+    assert.equal(await page.inputValue("#background"), "sage");
+    assert.equal(await page.inputValue("#tool-proficiency-0"), "書法工具", "cancel preserves existing background rules");
+    await page.locator("#background").selectOption("custom");
+    await dialog.getByRole("button", { name: "儲存背景" }).click();
+    await page.addScriptTag({ url: "/pdf-field-map.js" });
+    const pdf = await page.evaluate(() => {
+      const current = collectStateObject();
+      return { actual: buildPdfFieldPayload(current), withoutCustom: buildPdfFieldPayload({ ...current, __customBackground: undefined }) };
+    });
+    assert.equal(pdf.actual.Background2, "自訂冒險");
+    delete pdf.actual.Background2;
+    delete pdf.withoutCustom.Background2;
+    assert.deepEqual(pdf.actual, pdf.withoutCustom, "PDF adds only the custom name");
+    await page.evaluate(() => saveAllFields());
+    await page.reload();
+    await page.locator("#legal-close-btn").click();
+    assert.equal(await dialog.count(), 0, "restoration never opens the editor");
+    assert.equal(await page.inputValue("#background"), "custom");
+    assert.deepEqual(await page.evaluate(() => CustomBackground.getState()), state.__customBackground, "autosave restoration");
+    assert.equal(await page.inputValue("#derived-feat-background"), "強韌體魄");
+    assert.equal(await page.inputValue("#tool-proficiency-0"), "里拉琴");
+    await page.evaluate(() => applyStateObject(JSON.parse(JSON.stringify(collectStateObject()))));
+    assert.deepEqual(await page.evaluate(() => CustomBackground.getState()), state.__customBackground, "JSON restoration");
+    await page.evaluate(() => applyStateObject(Object.fromEntries(Object.entries(collectStateObject()).reverse())));
+    assert.deepEqual(await page.evaluate(() => CustomBackground.getState()), state.__customBackground, "JSON field order is irrelevant");
+    await page.evaluate(() => applyStateObject({ hp: "10" }));
+    assert.deepEqual(await page.evaluate(() => CustomBackground.getState()), state.__customBackground, "unrelated partial state preserves the definition");
+    const hash = await page.evaluate(async () => encodeStateToHash(collectShareState()));
+    const shared = await newUiPage(browser);
+    try {
+      await shared.goto(url + hash);
+      await shared.locator("#legal-close-btn").click();
+      assert.equal(await shared.inputValue("#background"), "custom");
+      assert.deepEqual(await shared.evaluate(() => CustomBackground.getState()), state.__customBackground, "share restoration");
+      assert.equal(await shared.inputValue("#derived-feat-background"), "強韌體魄");
+      assert.equal(await shared.inputValue("#tool-proficiency-0"), "里拉琴");
+      assert.equal(await shared.locator('[data-variant="custom-background"]').count(), 0);
+    } finally { await shared.close(); }
+    await page.setViewportSize({ width: 320, height: 568 });
+    await reopen();
+    const geometry = await dialog.evaluate(root => {
+      const surface = root.querySelector(".app-dialog__surface").getBoundingClientRect();
+      const body = root.querySelector(".app-dialog__body");
+      const actions = root.querySelector(".app-dialog__actions").getBoundingClientRect();
+      return { fits: surface.left >= 0 && surface.right <= innerWidth && actions.bottom <= innerHeight, scrolls: body.scrollHeight > body.clientHeight, overflows: body.scrollWidth > body.clientWidth };
+    });
+    assert.deepEqual(geometry, { fits: true, scrolls: true, overflows: false });
+    await page.locator("#custom-background-name").focus();
+    await page.keyboard.press("Shift+Tab");
+    assert.equal(await page.evaluate(() => Boolean(document.activeElement.closest('.app-dialog[data-variant="custom-background"]'))), true);
+    await page.keyboard.press("Escape");
+    await reopen();
+    await page.locator("#custom-background-name").fill("新背景");
+    await page.locator("#custom-background-feat").selectOption("魔法學徒");
+    await page.locator("#custom-background-tool").selectOption("盜賊工具");
+    await dialog.getByRole("button", { name: "儲存背景" }).click();
+    assert.equal(await page.evaluate(() => CustomBackground.getState().名稱), "新背景", "editing replaces the single definition");
+    assert.equal(await page.locator('#background option[value="custom"]').count(), 1);
+    assert.equal(await page.inputValue("#derived-feat-background"), "魔法學徒", "editing updates the existing background feat row");
+    assert.equal(await page.inputValue("#tool-proficiency-0"), "盜賊工具");
+    assert.equal(await page.evaluate(() => hasSelectedFeat("強韌體魄")), false, "previous custom feat effects are removed");
+    const magicClass = page.locator("#derived-feat-background-magic-initiate-class");
+    assert.equal(await magicClass.isDisabled(), false, "custom Magic Initiate can choose its spell class");
+    await magicClass.selectOption("druid");
+    await page.evaluate(() => applyStateObject(Object.fromEntries(Object.entries(collectStateObject()).reverse())));
+    assert.equal(await magicClass.inputValue(), "druid", "custom Magic Initiate class survives JSON restoration");
+    await page.evaluate(() => applyStateObject({ background: "soldier" }));
+    assert.equal(await page.evaluate(() => CustomBackground.getState()), null, "legacy JSON needs no custom field");
+    assert.equal(await page.inputValue("#background"), "soldier");
+    await page.evaluate(() => applyStateObject({ background: "custom", __customBackground: { 名稱: "無效" } }));
+    assert.equal(await page.inputValue("#background"), "", "invalid imported custom data is ignored");
+    console.log("Custom background: atomic editing, validation, cancellation, existing feat/tool synchronization, Magic Initiate, PDF name, autosave/JSON/share restoration and narrow dialog passed.");
+  } finally { await page.close(); }
+}
+
 async function verifyCharacterFeatures(browser, url) {
   const page = await newUiPage(browser, { viewport: { width: 1280, height: 900 }, reducedMotion: "reduce" });
   try {
@@ -759,9 +910,257 @@ async function verifyFeatureReferences(browser, url) {
   } finally { await page.close(); }
 }
 
+async function verifyAdventureJournal(browser, url) {
+  const legacyKey = "dnd.adventureJournal.v1";
+  const fixture = { kind: "twd20-adventure-journal", version: 1, entries: [
+    { id: "internal-only-id", characterName: "角色甲", classLevel: "遊俠 3 級", race: "精靈", adventureDate: "2026-10-01", adventureName: "森林調查", dmName: "DM Alpha", notes: "遇見銀龍與商人", gold: 123, downtime: 2, magicItems: "月光之劍" },
+    { id: "second", characterName: "角色乙", classLevel: "法師 5 級", race: "人類", adventureDate: "", adventureName: "", dmName: "DM Beta", notes: "沒有龍", gold: null, downtime: null, magicItems: "", alFormat: true, totalGold: 567, totalDowntime: 8, totalMagicItems: 1, storyRewards: [{ title: "銀龍盟友", content: "獲得港口通行權" }] }
+  ] };
+  const open = async page => {
+    if (await page.locator("#legal-close-btn").isVisible()) await page.locator("#legal-close-btn").click();
+    if (!await page.locator("#adventure-journal-btn").isVisible()) await page.locator("#utility-menu-toggle").click();
+    await page.locator("#adventure-journal-btn").click();
+    await page.waitForFunction(() => document.querySelector("#adventure-journal")?.getAttribute("aria-busy") === "false");
+  };
+  const action = (page, name) => page.locator(`#adventure-journal [data-journal-action="${name}"]`);
+  const readBook = page => page.evaluate(() => new Promise((resolve, reject) => {
+    const request = indexedDB.open("twd20-adventure-journal", 1);
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      const db = request.result;
+      const tx = db.transaction("books", "readonly");
+      const read = tx.objectStore("books").get("main");
+      tx.oncomplete = () => { db.close(); resolve(read.result); };
+      tx.onabort = () => { db.close(); reject(tx.error); };
+    };
+  }));
+  const seed = async page => {
+    await page.goto(url);
+    await page.evaluate(({ key, data }) => dndStorage.setItem(key, JSON.stringify(data)), { key: legacyKey, data: fixture });
+  };
+  const search = async (page, value, enter = false) => {
+    await page.locator("#journal-search").fill(value);
+    if (enter) await page.locator("#journal-search").press("Enter");
+    else await page.locator(".journal-search-controls button[type=submit]").click();
+  };
+  const download = async page => {
+    const pending = page.waitForEvent("download");
+    await action(page, "export").click();
+    const file = await pending;
+    const text = fs.readFileSync(await file.path(), "utf8");
+    await file.delete();
+    return text;
+  };
+  const page = await newUiPage(browser, { viewport: { width: 1280, height: 900 }, reducedMotion: "reduce" });
+  try {
+    await seed(page);
+    const character = await page.evaluate(() => ({ state: collectStateObject(), share: collectShareState() }));
+    await open(page);
+    assert.equal(await page.evaluate(key => dndStorage.getItem(key), legacyKey), null, "migration removes legacy only after commit");
+    const migrated = await readBook(page);
+    assert.equal(migrated.book.version, 1);
+    assert.equal(migrated.book.entries[0].notes, fixture.entries[0].notes);
+    assert.deepEqual(migrated.book.entries[0].storyRewards, [], "old JSON without AL fields remains compatible");
+    await action(page, "toggle-search").click();
+    assert.equal(await page.locator("#journal-search").evaluate(el => el === document.activeElement), true);
+    await search(page, "銀龍", true);
+    assert.equal(await page.locator(".journal-search-summary").textContent(), "找到 2 頁");
+    assert.deepEqual(await page.locator(".journal-search-result").allTextContents(), ["1 | 2026-10-01 | 森林調查", "2 | 未填日期 | 未命名冒險"]);
+    await page.locator(".journal-search-result").nth(1).click();
+    assert.match(await page.locator(".journal-page-count").textContent(), /第 2 頁/);
+    assert.equal(await page.locator("#journal-search-panel").isVisible(), false);
+    await action(page, "toggle-search").click();
+    assert.equal(await page.locator("#journal-search").inputValue(), "銀龍");
+    assert.equal(await page.locator(".journal-search-result").count(), 2);
+    for (const [query, count] of [[" ALPHA ", 1], ["港口", 1], ["123", 1], ["567", 1], ["遊俠", 1], ["月光", 1], ["2026-10", 1], ["internal-only-id", 0], ["adventureName", 0]]) {
+      await search(page, query);
+      assert.equal(await page.locator(".journal-search-result").count(), count, `full-text search: ${query}`);
+    }
+    await search(page, "銀龍");
+    for (const width of [1280, 390, 320]) {
+      await page.setViewportSize({ width, height: width === 320 ? 568 : 844 });
+      for (const theme of ["light", "dark"]) {
+        await page.evaluate(theme => { document.documentElement.dataset.theme = theme; }, theme);
+        assert.equal(await page.locator(".journal-shell").evaluate(el => el.scrollWidth <= el.clientWidth), true, `journal fits ${width} ${theme}`);
+        assert.equal(await page.locator(".journal-body").evaluate(el => el.scrollWidth <= el.clientWidth), true);
+        assert.equal(await page.locator(".journal-header").evaluate(el => [...el.querySelectorAll("button")].every(button => button.getBoundingClientRect().right <= el.getBoundingClientRect().right)), true, "toolbar fits");
+        assert.equal(await page.locator("#journal-search").evaluate(el => el.getBoundingClientRect().width >= 160), true, "search button must leave usable input width");
+        if (process.env.DND_UI_SCREENSHOT_DIR && theme === "light") {
+          fs.mkdirSync(process.env.DND_UI_SCREENSHOT_DIR, { recursive: true });
+          await page.locator(".journal-shell").screenshot({ path: path.join(process.env.DND_UI_SCREENSHOT_DIR, `journal-${width}.png`) });
+        }
+      }
+    }
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.locator(".journal-search-result").first().click();
+    await action(page, "edit").click();
+    await page.locator("#journal-notes").fill("編輯中新增的關鍵字");
+    await action(page, "toggle-search").click();
+    await page.locator(".journal-search-clear").click();
+    assert.equal(await page.locator("#journal-search").inputValue(), "");
+    assert.equal(await page.locator("#journal-search").evaluate(el => el === document.activeElement), true);
+    assert.equal(await page.locator(".journal-form").count(), 1, "clear preserves editing");
+    await search(page, "   ", true);
+    assert.equal(await page.locator(".journal-form").count(), 1, "empty search does not save");
+    await page.locator("#journal-search").fill("關鍵字");
+    await page.locator("#journal-search").dispatchEvent("compositionstart");
+    await page.locator("#journal-search").press("Enter");
+    assert.equal(await page.locator(".journal-form").count(), 1, "IME Enter does not save");
+    await page.locator("#journal-search").dispatchEvent("compositionend");
+    await page.waitForTimeout(70);
+    await page.locator("#journal-search").press("Enter");
+    await page.locator(".journal-form").waitFor({ state: "detached" });
+    assert.equal((await readBook(page)).book.entries[0].notes, "編輯中新增的關鍵字");
+    assert.equal(await page.locator(".journal-search-result").count(), 1);
+    await action(page, "add").click();
+    await page.locator("#journal-adventureName").fill("新頁關鍵字");
+    await search(page, "關鍵字", true);
+    await page.locator(".journal-form").waitFor({ state: "detached" });
+    assert.equal((await readBook(page)).book.entries.length, 3, "search commits a new page");
+    assert.equal(await page.locator(".journal-search-result").count(), 2);
+    const saved = (await readBook(page)).book;
+    assert.deepEqual(JSON.parse(await download(page)), saved, "export has only compatible v1 JSON, no storage metadata");
+    assert.deepEqual(await page.evaluate(() => ({ state: collectStateObject(), share: collectShareState() })), character, "journal/search excluded from character JSON and sharing");
+    assert.equal(await page.evaluate(() => Object.keys(JSON.parse(dndStorage.getItem("dndchar_autosave_v1") || "{}")).some(key => key.startsWith("journal-"))), false, "journal inputs excluded from autosave");
+    await action(page, "close").click();
+    await open(page);
+    await action(page, "toggle-search").click();
+    assert.equal(await page.locator("#journal-search").inputValue(), "", "close clears search state");
+    await page.reload();
+    await open(page);
+    assert.equal((await readBook(page)).book.entries.length, 3, "IndexedDB survives reload");
+    await page.locator("#journal-import-file").setInputFiles({ name: "old.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(fixture)) });
+    await page.getByRole("button", { name: "取代整本日誌", exact: true }).click();
+    await page.waitForFunction(() => document.querySelector(".journal-page-count").textContent.includes("共 2 頁"));
+    await action(page, "toggle-search").click();
+    await search(page, "銀龍");
+    await action(page, "delete").click();
+    await page.getByRole("button", { name: "刪除此頁", exact: true }).click();
+    await page.waitForFunction(() => document.querySelector(".journal-page-count").textContent.includes("共 1 頁"));
+    assert.equal(await page.locator(".journal-search-result").textContent(), "1 | 未填日期 | 未命名冒險", "deletion refreshes result page numbers");
+    await action(page, "edit").click();
+    await page.locator("#journal-notes").fill("失敗時必須保留");
+    await page.evaluate(() => {
+      window.journalOriginalPut = IDBObjectStore.prototype.put;
+      IDBObjectStore.prototype.put = function (...args) {
+        const request = window.journalOriginalPut.apply(this, args);
+        if (this.name === "books") this.transaction.abort();
+        return request;
+      };
+    });
+    await search(page, "失敗", true);
+    await page.waitForFunction(() => document.querySelector("#adventure-journal").getAttribute("aria-busy") === "false");
+    assert.equal(await page.locator("#journal-notes").inputValue(), "失敗時必須保留");
+    assert.equal((await readBook(page)).book.entries[0].notes, "沒有龍", "aborted write does not change persisted book");
+    await page.evaluate(() => { IDBObjectStore.prototype.put = window.journalOriginalPut; });
+    await search(page, "失敗", true);
+    await page.locator(".journal-form").waitFor({ state: "detached" });
+    assert.equal((await readBook(page)).book.entries[0].notes, "失敗時必須保留", "save can retry after failure");
+    await action(page, "edit").click();
+    await page.locator("#journal-adventureDate").fill("10000-01-01");
+    await search(page, "失敗", true);
+    assert.equal(await page.locator(".journal-form").count(), 1, "invalid date prevents search/save");
+    assert.equal((await readBook(page)).book.entries[0].adventureDate, "");
+    await page.locator("#journal-adventureDate").fill("2026-10-06");
+    await search(page, "失敗", true);
+    await page.locator(".journal-form").waitFor({ state: "detached" });
+    console.log("Journal: migration, JSON roundtrip, full-text/IME search, save-before-search, navigation, deletion, isolation, responsive layout and write failure/retry passed.");
+  } finally { await page.close(); }
+
+  for (const failure of ["unavailable", "migration", "invalid"]) {
+    const page = await newUiPage(browser);
+    try {
+      await seed(page);
+      if (failure === "unavailable") await page.evaluate(() => {
+        window.journalOriginalOpen = IDBFactory.prototype.open;
+        IDBFactory.prototype.open = () => { throw new DOMException("denied", "SecurityError"); };
+      });
+      if (failure === "migration") await page.evaluate(() => {
+        window.journalOriginalPut = IDBObjectStore.prototype.put;
+        IDBObjectStore.prototype.put = function (...args) {
+          const request = window.journalOriginalPut.apply(this, args);
+          if (this.name === "books") this.transaction.abort();
+          return request;
+        };
+      });
+      if (failure === "invalid") await page.evaluate(key => dndStorage.setItem(key, "{broken JSON"), legacyKey);
+      await open(page);
+      assert.equal(await page.evaluate(key => dndStorage.getItem(key), legacyKey), failure === "invalid" ? "{broken JSON" : JSON.stringify(fixture), `${failure}: original preserved`);
+      assert.equal(await action(page, "add").isDisabled(), true);
+      const backup = await download(page);
+      if (failure === "invalid") assert.equal(backup, "{broken JSON", "invalid data can be exported verbatim");
+      else assert.equal(JSON.parse(backup).entries[0].notes, fixture.entries[0].notes);
+      if (failure === "invalid") {
+        await page.locator("#journal-import-file").setInputFiles({ name: "recovery.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(fixture)) });
+        await page.getByRole("button", { name: "取代整本日誌", exact: true }).click();
+      } else {
+        await page.evaluate(() => {
+          if (window.journalOriginalOpen) IDBFactory.prototype.open = window.journalOriginalOpen;
+          if (window.journalOriginalPut) IDBObjectStore.prototype.put = window.journalOriginalPut;
+        });
+        await action(page, "retry-load").click();
+      }
+      await page.waitForFunction(() => !document.querySelector('[data-journal-action="add"]').disabled);
+      assert.equal((await readBook(page)).book.entries.length, 2);
+      assert.equal(await page.evaluate(key => dndStorage.getItem(key), legacyKey), null);
+    } finally { await page.close(); }
+  }
+  console.log("Journal: unavailable IndexedDB, aborted migration and malformed legacy backup/recovery passed.");
+
+  const concurrentContext = await browser.newContext();
+  const concurrent = await concurrentContext.newPage();
+  concurrent.setDefaultTimeout(10000);
+  concurrent.on("pageerror", error => browserErrors.push(String(error)));
+  try {
+    await seed(concurrent);
+    const other = await concurrent.context().newPage();
+    other.setDefaultTimeout(10000);
+    other.on("pageerror", error => browserErrors.push(String(error)));
+    try {
+      await other.goto(url);
+      await Promise.all([open(concurrent), open(other)]);
+      assert.equal((await readBook(concurrent)).revision, 1, "concurrent migration writes once");
+      await action(concurrent, "edit").click();
+      await concurrent.locator("#journal-notes").fill("先完成儲存");
+      await action(concurrent, "save").click();
+      await concurrent.locator(".journal-form").waitFor({ state: "detached" });
+      await action(other, "edit").click();
+      await other.locator("#journal-notes").fill("另一分頁尚未儲存");
+      await action(other, "save").click();
+      await other.waitForFunction(() => document.querySelector("#adventure-journal").getAttribute("aria-busy") === "false");
+      assert.equal(await other.locator("#journal-notes").inputValue(), "另一分頁尚未儲存");
+      assert.equal((await readBook(other)).book.entries[0].notes, "先完成儲存", "stale tab cannot overwrite a newer book");
+    } finally { await other.close(); }
+  } finally { await concurrentContext.close(); }
+
+  const large = await newUiPage(browser, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  try {
+    await large.goto(url);
+    const bulk = { ...fixture, entries: Array.from({ length: 1000 }, (_, index) => ({ ...fixture.entries[0], id: `bulk-${index}`, adventureName: `第${index + 1}場冒險：${"長名稱".repeat(12)}`, notes: `${"旅途紀錄".repeat(250)}共同關鍵字` })) };
+    await large.evaluate(({ key, data }) => dndStorage.setItem(key, JSON.stringify(data)), { key: legacyKey, data: bulk });
+    await open(large);
+    await action(large, "toggle-search").tap();
+    assert.equal(await large.locator("#journal-search").getAttribute("enterkeyhint"), "search");
+    await large.locator("#journal-search").fill("共同關鍵字");
+    const duration = await large.evaluate(() => {
+      const start = performance.now();
+      document.querySelector(".journal-search-controls").requestSubmit();
+      return performance.now() - start;
+    });
+    assert.equal(await large.locator(".journal-search-summary").textContent(), "找到 1000 頁");
+    assert.equal(await large.locator(".journal-search-result").count(), 50, "large results render in batches");
+    assert.equal(await large.locator(".journal-body").evaluate(el => el.scrollWidth <= el.clientWidth), true, "long result names wrap on mobile");
+    await action(large, "search-more").tap();
+    assert.equal(await large.locator(".journal-search-result").count(), 100);
+    await large.locator(".journal-search-result").nth(70).tap();
+    assert.match(await large.locator(".journal-page-count").textContent(), /第 71 頁/);
+    console.log(`Journal: concurrent migration/conflict protection and mobile 1,000-page search passed (${duration.toFixed(1)} ms for initial scan/render in this desktop browser).`);
+  } finally { await large.close(); }
+}
+
 async function main() {
   const sections = new Set(process.argv.slice(2));
-  for (const flag of sections) assert(["--appearance-only", "--dialogs-only", "--pdf-only", "--pdf-fields-only"].includes(flag), `Unknown option: ${flag}`);
+  for (const flag of sections) assert(["--appearance-only", "--dialogs-only", "--journal-only", "--pdf-only", "--pdf-fields-only"].includes(flag), `Unknown option: ${flag}`);
   assert(sections.size <= 1, "Choose at most one UI section");
   const all = sections.size === 0;
   const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
@@ -792,9 +1191,11 @@ async function main() {
       await verifyToasts(browser);
       await verifyAboutRoutes(browser, url);
       await verifyFeatureChoiceDisclosures(browser, url);
+      await verifyCustomBackground(browser, url);
       await verifyCharacterFeatures(browser, url);
       await verifyFeatureReferences(browser, url);
     }
+    if (all || sections.has("--journal-only")) await verifyAdventureJournal(browser, url);
     if (all || sections.has("--pdf-only") || sections.has("--pdf-fields-only")) {
       const page = await newUiPage(browser);
       try {

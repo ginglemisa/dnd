@@ -46,7 +46,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261006-info-icon-css">
+  <link rel="stylesheet" href="styles.css?v=20261006-custom-background-sync">
   <script src="scroll-to-top.js?v=20261001-character-features-modal" defer></script>
   <script src="dice-roller.js?v=20261001-roll-equations" defer></script>
   <script src="monster.js?v=20260912-druid-controls" defer></script>
@@ -61,7 +61,8 @@
   <script src="action-panel.js?v=20260913-class-tabletop" defer></script>
   <script src="character-rules.js?v=20260922-rest" defer></script>
   <script src="app-dialog.js?v=20261001-features-reference-layers" defer></script>
-  <script src="adventure-journal.js?v=20261002-journal-reading-summary" defer></script>
+  <script src="custom-background.js?v=20261006-custom-background-sync" defer></script>
+  <script src="adventure-journal.js?v=20261006-search-indexeddb" defer></script>
   <script src="tabletop-mode.js?v=20261006-tabletop-return" defer></script>
   <script src="tabletop-druid.js?v=20260915-main2-shield" defer></script>
 <script src="tabletop-resources.js?v=20261001-rest-hit-dice-inline" defer></script>
@@ -185,7 +186,7 @@
       <div class="equipment-toolbar-row">
         <form id="equipment-search-form" class="spell-search-controls" role="search" novalidate>
           <div class="equipment-search-input-wrap">
-            <input type="text" id="equipment-search" inputmode="search" enterkeyhint="search" placeholder="搜尋全部裝備" aria-label="搜尋全部裝備資料">
+            <input type="text" id="equipment-search" inputmode="search" enterkeyhint="search" placeholder="輸入&quot;短劍&quot;或&quot;聖水&quot;" aria-label="搜尋全部裝備資料">
             <button type="button" id="equipment-search-clear" class="equipment-search-clear is-hidden" aria-label="清除裝備搜尋" style="transform:translateY(-50%); transition:none; animation:none;">×</button>
           </div>
           <button type="submit" id="equipment-search-button" class="spell-search-button" aria-label="執行裝備搜尋">搜尋</button>
@@ -574,6 +575,7 @@
           <option value="soldier">士兵</option>
           <option value="fieldhand">耕者(擴充)</option>
           <option value="seeker">孤芳(擴充)</option>
+          <option value="custom">自訂</option>
         </select>
       </div>
       <div class="basic-pair-field">
@@ -1383,7 +1385,7 @@ function bindCoreCharacterEvents() {
   bindEventById("class", "change", updateAutomaticInitiative);
   bindEventById("race", "change", () => { syncCharacterSizeFromRace(); updateRaceFeature(); syncDerivedFeatRows(); updateRaceOptionVisibility(); updateSpeedDisplay(); syncOriginAndSubclassDerivedSpellRows(); updateSpellsByClassLevel(); updateBaseLanguageOptions(); });
   bindEventById("character-size-select", "change", event => setCharacterSize(event.target.value));
-  bindEventById("background", "change", () => { updateBackgroundFeature(); updateSpellsByClassLevel(); updateBackgroundToolRow(); });
+  bindEventById("background", "change", () => { window.CustomBackground?.handleSelection(autosaveSuspended); updateBackgroundFeature(); updateSpellsByClassLevel(); updateBackgroundToolRow(); });
   bindEventById("manual-feat-management", "change", updateFeatManagementMode);
   bindEventById("armor", "change", () => { updateACDisplay(); updateSpeedDisplay(); populateHandAttacks(); });
   bindEventById("str", "input", populateHandAttacks);
@@ -1764,7 +1766,8 @@ function updateBackgroundToolRow(preferredValue = "") {
   const select = document.getElementById("tool-proficiency-0");
   if (!select) return;
   const background = document.getElementById("background")?.value || "";
-  const backgroundData = (typeof detailedBackgroundFeatures !== "undefined" ? detailedBackgroundFeatures : globalThis.detailedBackgroundFeatures)?.[background];
+  const backgroundData = background === "custom" ? window.CustomBackground?.getState()
+    : (typeof detailedBackgroundFeatures !== "undefined" ? detailedBackgroundFeatures : globalThis.detailedBackgroundFeatures)?.[background];
   const backgroundToolText = String(backgroundData?.工具熟練 || "").trim();
   const fixedTool = backgroundToolText && !/[：:,，]/u.test(backgroundToolText) && !/(?:擇一|任選|自選)/u.test(backgroundToolText)
     ? backgroundToolText
@@ -3113,6 +3116,12 @@ function updateBackgroundFeature() {
 
   const el = document.getElementById("backgroundFeatures");
 
+  if (value === "custom") {
+    window.CustomBackground?.render(el);
+    syncDerivedFeatRows();
+    return;
+  }
+
   if (!bg) {
     el.innerText = "請先選擇背景";
     syncDerivedFeatRows();
@@ -3363,7 +3372,8 @@ function getManualFeatRows() {
 
 function getDerivedBackgroundFeatSpec() {
   const background = document.getElementById("background")?.value || "";
-  const backgroundData = (typeof detailedBackgroundFeatures !== "undefined" ? detailedBackgroundFeatures : globalThis.detailedBackgroundFeatures)?.[background];
+  const backgroundData = background === "custom" ? window.CustomBackground?.getState()
+    : (typeof detailedBackgroundFeatures !== "undefined" ? detailedBackgroundFeatures : globalThis.detailedBackgroundFeatures)?.[background];
   const backgroundFeat = FEAT_OPTIONS.find(option => backgroundData?.專長?.startsWith(option.value));
   return backgroundFeat ? {
     key: "background",
@@ -4761,7 +4771,8 @@ function updateFeatControlStates() {
     }
     row.classList.toggle("feat-entry--derived", !enabled);
     const magicClass = getMagicInitiateSelect(row, "class");
-    if (magicClass) magicClass.disabled = !enabled && row.dataset.featSource === "background";
+    if (magicClass) magicClass.disabled = !enabled && row.dataset.featSource === "background"
+      && Boolean(getMagicInitiateClassFromBackgroundFeature(getDerivedBackgroundFeatSpec()?.backgroundData?.專長));
     const controls = row.querySelector(".feat-row-controls");
     if (controls) controls.hidden = !enabled;
     const delBtn = row.querySelector(".feat-icon-btn[data-feat-action='delete']");
@@ -5073,12 +5084,13 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
 
   function syncPointBuyBackgroundSelect() {
     if (!backgroundSelect || !pointBuyBackgroundSelect) return;
-    const optionSignature = (select) => Array.from(select.options)
+    const supportedOptions = (select) => Array.from(select.options).filter(option => option.value !== "custom");
+    const optionSignature = (select) => supportedOptions(select)
       .map((option) => `${option.value}:${option.textContent}`)
       .join("|");
     if (optionSignature(pointBuyBackgroundSelect) !== optionSignature(backgroundSelect)) {
       pointBuyBackgroundSelect.replaceChildren(
-        ...Array.from(backgroundSelect.options, (option) => option.cloneNode(true))
+        ...supportedOptions(backgroundSelect).map(option => option.cloneNode(true))
       );
     }
   }
@@ -8121,6 +8133,8 @@ function collectStateObject(options = {}) {
     data[el.id] = el.type === "checkbox" ? el.checked : el.value;
   });
   data[CHARACTER_SIZE_STATE_KEY] = characterSize;
+  const customBackground = window.CustomBackground?.getState();
+  if (customBackground) data.__customBackground = customBackground;
   if (isManualFeatManagementEnabled()) data.__managedFeatRows = collectManagedFeatRows();
   collectSpellRowsIntoState(data, includeDerivedSpellRows);
   getDynamicAreaConfigs().forEach(area => {
@@ -8348,6 +8362,10 @@ function applyStateObject(data) {
     if (data.__shareStateVersion === SHARE_STATE_VERSION) {
       resetOmittedShareCheckboxes(data);
     }
+    if (Object.hasOwn(data, "background") || Object.hasOwn(data, "__customBackground")) {
+      window.CustomBackground?.restore(data.__customBackground);
+    }
+    if (data.background === "custom" && !window.CustomBackground?.getState()) data = { ...data, background: "" };
     const managementControl = document.getElementById("manual-feat-management");
     const hasManagementState = Object.hasOwn(data, "manual-feat-management");
     const legacyFeatState = !hasManagementState && Number(data["feats-area-count"]) >= 1;
@@ -8679,7 +8697,7 @@ async function ensurePdfExportReady() {
     pdfExportLoaderPromise = (async () => {
       await loadScriptOnce("pdf-lib.custom.min.js");
       await loadScriptOnce("fontkit.custom.min.js");
-      await loadScriptOnce("pdf-field-map.js?v=20261001-skill-notes");
+      await loadScriptOnce("pdf-field-map.js?v=20261006-custom-background");
       await loadScriptOnce("pdf-export.js?v=20261002-editable-appearance-fit");
     })().catch((error) => {
       pdfExportLoaderPromise = null;

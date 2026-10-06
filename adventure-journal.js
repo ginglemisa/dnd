@@ -2,6 +2,7 @@
 (function () {
   "use strict";
   const STORAGE_KEY = "dnd.adventureJournal.v1";
+  const DATABASE_NAME = "twd20-adventure-journal";
   const KIND = "twd20-adventure-journal";
   const fields = [
     ["characterName", "角色名稱", "text"],
@@ -23,6 +24,7 @@
   const icons = {
     add: '<path d="M14 2H5v20h14V7zM14 2v5h5M8 14h8M12 10v8"/>',
     delete: '<path d="M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7"/>',
+    search: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',
     import: '<path d="M12 16V3M7 8l5-5 5 5M4 14v7h16v-7"/>',
     export: '<path d="M12 3v13M7 11l5 5 5-5M4 14v7h16v-7"/>',
     close: '<path d="M6 6l12 12M18 6L6 18"/>'
@@ -38,6 +40,15 @@
   let background = [];
   let storedRaw = null;
   let loadError = false;
+  let storageUnavailable = false;
+  let revision = 0;
+  let searchPanel, searchInput, searchClear, searchSummary, searchResults;
+  let searchOpen = false;
+  let searchQuery = "";
+  let searchIndex = null;
+  let searchLimit = 50;
+  let composing = false;
+  let compositionEndedAt = -Infinity;
   let longPressTimer = null;
   let longPressPointer = null;
   let suppressNavigationClick = false;
@@ -94,29 +105,135 @@
       Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value;
   }
 
-  function load() {
+  // Each operation opens and closes its own connection. Resolve only on transaction
+  // completion: request success alone does not guarantee a durable write.
+  function accessBook(mode, operation) {
+    return new Promise((resolve, reject) => {
+      let db, transaction, result, failure, settled = false;
+      const finish = error => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timer);
+        db?.close();
+        if (error) reject(error); else resolve(result);
+      };
+      const timer = window.setTimeout(() => {
+        transaction?.abort();
+        finish(new Error("日誌資料庫回應逾時，請重試。"));
+      }, 10000);
+      let request;
+      try { request = window.indexedDB.open(DATABASE_NAME, 1); }
+      catch (error) { finish(error); return; }
+      request.onblocked = () => finish(new Error("請關閉其他舊版日誌分頁後重試。"));
+      request.onerror = () => finish(request.error);
+      request.onupgradeneeded = () => {
+        if (settled) { request.transaction.abort(); return; }
+        request.result.createObjectStore("books");
+      };
+      request.onsuccess = () => {
+        db = request.result;
+        if (settled) { db.close(); return; }
+        db.onversionchange = () => db.close();
+        try {
+          transaction = db.transaction("books", mode);
+          transaction.oncomplete = () => finish();
+          transaction.onabort = () => finish(failure || transaction.error || new Error("日誌儲存已中止。"));
+          const store = transaction.objectStore("books");
+          const read = store.get("main");
+          read.onsuccess = () => {
+            try { result = operation(read.result, store); }
+            catch (error) { failure = error; transaction.abort(); }
+          };
+        } catch (error) { finish(error); }
+      };
+    });
+  }
+
+  function setStoragePending(pending) {
+    root.querySelector(".journal-shell").inert = pending;
+    root.setAttribute("aria-busy", String(pending));
+  }
+
+  async function load() {
     storedRaw = window.dndStorage.getItem(STORAGE_KEY);
     loadError = false;
+    storageUnavailable = false;
+    revision = 0;
+    searchIndex = null;
     book = emptyBook();
-    if (!storedRaw) return;
-    try { book = validateBook(JSON.parse(storedRaw)); }
-    catch (_error) {
+    let record;
+    try {
+      record = await accessBook("readonly", value => value);
+    } catch (_error) {
+      storageUnavailable = true;
+      // Keep the legacy copy available for backup; never overwrite an unread DB.
+      if (storedRaw) {
+        try { book = validateBook(JSON.parse(storedRaw)); } catch (_invalid) { loadError = true; }
+      }
+      window.AppDialog.notify("日誌儲存空間暫時無法讀取。原始資料仍保留，請重試；舊日誌可先下載備份。", { tone: "error" });
+      return;
+    }
+    if (record !== undefined) {
+      revision = record?.revision ?? 0;
+      storedRaw = JSON.stringify(record?.book ?? record);
+    }
+    try {
+      if (storedRaw !== null) book = validateBook(JSON.parse(storedRaw));
+    } catch (_error) {
       loadError = true;
       window.AppDialog.notify("本機日誌無法讀取，原始資料仍保留。請先匯出備份，再匯入有效日誌。", { tone: "error" });
+      return;
+    }
+    if (record === undefined && storedRaw !== null) {
+      const legacyRaw = storedRaw;
+      try {
+        // The second check and initial write share a transaction, so two tabs
+        // migrating simultaneously cannot replace one another's newer book.
+        record = await accessBook("readwrite", (current, store) => {
+          if (current !== undefined) return current;
+          const migrated = { revision: 1, book };
+          store.put(migrated, "main");
+          return migrated;
+        });
+        revision = record.revision;
+        storedRaw = JSON.stringify(record.book ?? record);
+        book = validateBook(record.book);
+        if (window.dndStorage.getItem(STORAGE_KEY) === legacyRaw) window.dndStorage.removeItem(STORAGE_KEY);
+      } catch (_error) {
+        storageUnavailable = true;
+        window.AppDialog.notify("舊日誌尚未完成轉存，原始資料仍保留。請重試，或先下載備份。", { tone: "error" });
+      }
     }
   }
 
-  function persist(next) {
-    const raw = JSON.stringify(next);
+  async function persist(next) {
+    if (storageUnavailable) return false;
+    const focus = document.activeElement;
+    setStoragePending(true);
     try {
-      if (!window.dndStorage.setItem(STORAGE_KEY, raw)) throw new Error("storage unavailable");
-    } catch (_error) {
-      window.AppDialog.notify("日誌未儲存：本機空間不足或瀏覽器禁止儲存。修改仍保留在編輯區，請重試。", { tone: "error" });
+      const record = await accessBook("readwrite", (current, store) => {
+        if ((current?.revision ?? 0) !== revision) {
+          throw new Error("其他分頁已更新日誌。修改仍保留；請先複製編輯內容，再重新開啟日誌。");
+        }
+        const updated = { revision: (Number.isSafeInteger(revision) ? revision : 0) + 1, book: next };
+        store.put(updated, "main");
+        return updated;
+      });
+      revision = record.revision;
+    } catch (error) {
+      const message = error.message.startsWith("其他分頁") ? error.message
+        : "日誌未儲存：本機空間不足或瀏覽器禁止儲存。原始日誌與編輯內容仍保留，請重試。";
+      window.AppDialog.notify(message, { tone: "error" });
       return false;
+    } finally {
+      setStoragePending(false);
+      if (focus?.isConnected) focus.focus({ preventScroll: true });
     }
-    storedRaw = raw;
+    storedRaw = JSON.stringify(next);
     book = next;
+    searchIndex = null;
     loadError = false;
+    window.dndStorage.removeItem(STORAGE_KEY);
     return true;
   }
 
@@ -133,6 +250,66 @@
     return element;
   }
 
+  function createSearch() {
+    searchPanel = document.createElement("section");
+    searchPanel.id = "journal-search-panel";
+    searchPanel.className = "journal-search";
+    searchPanel.hidden = true;
+    searchPanel.innerHTML = '<form class="journal-search-controls" role="search" aria-label="搜尋冒險日誌" novalidate><div class="journal-search-input-wrap"><input id="journal-search" type="text" inputmode="search" enterkeyhint="search" placeholder="搜尋整本日誌" aria-label="搜尋整本日誌" data-state-transient="true"><button type="button" class="journal-search-clear" aria-label="清除日誌搜尋" hidden>×</button></div><button type="submit">搜尋</button></form><p class="journal-search-summary" role="status" aria-live="polite"></p><div class="journal-search-results" role="list" aria-label="日誌搜尋結果"></div>';
+    searchInput = searchPanel.querySelector("input");
+    searchClear = searchPanel.querySelector(".journal-search-clear");
+    searchSummary = searchPanel.querySelector(".journal-search-summary");
+    searchResults = searchPanel.querySelector(".journal-search-results");
+    searchInput.addEventListener("input", () => { searchClear.hidden = !searchInput.value; });
+    searchInput.addEventListener("compositionstart", () => { composing = true; });
+    searchInput.addEventListener("compositionend", () => { composing = false; compositionEndedAt = performance.now(); });
+    searchInput.addEventListener("keydown", event => {
+      if (event.key === "Enter" && (event.isComposing || composing || event.keyCode === 229)) event.preventDefault();
+    });
+    searchPanel.querySelector("form").addEventListener("submit", event => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!composing && performance.now() - compositionEndedAt > 50) run("search");
+    });
+    searchClear.addEventListener("click", () => {
+      searchInput.value = "";
+      searchQuery = "";
+      updateSearch();
+      searchInput.focus();
+    });
+  }
+
+  function updateSearch() {
+    searchPanel.hidden = !searchOpen;
+    const toggle = root.querySelector('[data-journal-action="toggle-search"]');
+    toggle.setAttribute("aria-expanded", String(searchOpen));
+    searchClear.hidden = !searchInput.value;
+    searchResults.replaceChildren();
+    searchSummary.textContent = "";
+    if (!searchQuery) return;
+    if (!searchIndex) searchIndex = book.entries.map((entry, index) => ({
+      entry, index,
+      text: [...fields, ...alFields].map(([key]) => entry[key] ?? "")
+        .concat(entry.storyRewards.flatMap(reward => [reward.title, reward.content])).join("\n").toLowerCase()
+    }));
+    const matches = searchIndex.filter(item => item.text.includes(searchQuery.toLowerCase()));
+    searchSummary.textContent = matches.length ? `找到 ${matches.length} 頁` : `找不到包含「${searchQuery}」的日誌`;
+    matches.slice(0, searchLimit).forEach(({ entry, index }) => {
+      const row = document.createElement("div");
+      row.setAttribute("role", "listitem");
+      const result = button(`${index + 1} | ${entry.adventureDate || "未填日期"} | ${entry.adventureName.trim() || "未命名冒險"}`, "search-result");
+      result.dataset.journalEntryId = entry.id;
+      result.className = "journal-search-result";
+      result.setAttribute("aria-label", `前往第 ${index + 1} 頁：${entry.adventureDate || "未填日期"}，${entry.adventureName.trim() || "未命名冒險"}`);
+      row.appendChild(result);
+      searchResults.appendChild(row);
+    });
+    if (matches.length > searchLimit) {
+      const more = button("顯示更多結果", "search-more");
+      searchResults.appendChild(more);
+    }
+  }
+
   function createModal() {
     root = document.createElement("div");
     root.id = "adventure-journal";
@@ -144,7 +321,10 @@
     toolbar.className = "journal-toolbar";
     toolbar.setAttribute("role", "group");
     toolbar.setAttribute("aria-label", "日誌工具");
-    toolbar.append(button("新增", "add", "add"), button("刪除", "delete", "delete"), button("上傳", "import", "import"), button("下載", "export", "export"));
+    const searchToggle = button("搜尋日誌", "toggle-search", "search");
+    searchToggle.setAttribute("aria-controls", "journal-search-panel");
+    searchToggle.setAttribute("aria-expanded", "false");
+    toolbar.append(button("新增", "add", "add"), button("刪除", "delete", "delete"), searchToggle, button("上傳", "import", "import"), button("下載", "export", "export"));
     header.append(toolbar, button("關閉冒險日誌", "close", "close"));
     const file = document.createElement("input");
     file.id = "journal-import-file";
@@ -156,6 +336,7 @@
     body = root.querySelector(".journal-body");
     footer = root.querySelector(".journal-navigation");
     pageCount = root.querySelector(".journal-page-count");
+    createSearch();
     root.addEventListener("click", event => {
       if (event.target === root) run("close");
       const target = event.target.closest("[data-journal-action]");
@@ -163,11 +344,11 @@
         suppressNavigationClick = false;
         return;
       }
-      if (target && !target.disabled) run(target.dataset.journalAction);
+      if (target && !target.disabled) run(target.dataset.journalAction, target.dataset.journalEntryId);
     });
     root.addEventListener("pointerdown", event => {
       const target = event.target.closest('[data-journal-action="previous"], [data-journal-action="next"]');
-      if (!target || target.disabled || draft || longPressTimer) return;
+      if (!target || target.disabled || draft || busy || longPressTimer) return;
       longPressPointer = { id: event.pointerId, target, x: event.clientX, y: event.clientY };
       longPressTimer = window.setTimeout(() => {
         longPressTimer = null;
@@ -199,8 +380,8 @@
     });
     document.body.appendChild(root);
     document.addEventListener("keydown", event => {
-      if (!opened || root.inert || busy || event.defaultPrevented) return;
-      if (event.key === "Escape") {
+      if (!opened || root.inert || event.defaultPrevented || event.isComposing || composing) return;
+      if (event.key === "Escape" && !busy) {
         event.preventDefault();
         event.stopImmediatePropagation();
         run("close");
@@ -219,11 +400,9 @@
     });
   }
 
-  function open() {
-    if (opened) return;
+  async function open() {
+    if (opened || busy) return;
     if (!root) createModal();
-    load();
-    pageIndex = Math.min(pageIndex, Math.max(0, book.entries.length - 1));
     draft = null;
     opened = true;
     root.hidden = false;
@@ -231,12 +410,28 @@
       .map(element => ({ element, inert: element.inert }));
     background.forEach(({ element }) => { element.inert = true; });
     document.documentElement.classList.add("journal-open");
-    render();
+    busy = true;
+    body.textContent = "正在讀取日誌…";
+    footer.replaceChildren();
+    pageCount.textContent = "正在讀取日誌…";
+    setStoragePending(true);
+    try {
+      await load();
+      pageIndex = Math.min(pageIndex, Math.max(0, book.entries.length - 1));
+      render();
+    } finally { setStoragePending(false); busy = false; }
     root.querySelector('[data-journal-action="close"]').focus();
   }
 
   function close() {
     draft = null;
+    searchOpen = false;
+    searchQuery = "";
+    searchInput.value = "";
+    searchLimit = 50;
+    composing = false;
+    compositionEndedAt = -Infinity;
+    updateSearch();
     root.hidden = true;
     opened = false;
     background.forEach(({ element, inert }) => { if (element.isConnected) element.inert = inert; });
@@ -304,17 +499,20 @@
     const entry = draft || book.entries[pageIndex];
     pageCount.textContent = draft && newPage ? `新增第 ${book.entries.length + 1} 頁（尚未儲存）`
       : `第 ${book.entries.length ? pageIndex + 1 : 0} 頁 / 共 ${book.entries.length} 頁`;
-    root.querySelector('[data-journal-action="delete"]').disabled = !book.entries.length || (draft !== null && newPage) || loadError;
-    root.querySelector('[data-journal-action="add"]').disabled = loadError;
+    root.querySelector('[data-journal-action="delete"]').disabled = !book.entries.length || (draft !== null && newPage) || loadError || storageUnavailable;
+    root.querySelector('[data-journal-action="add"]').disabled = loadError || storageUnavailable;
+    root.querySelector('[data-journal-action="import"]').disabled = storageUnavailable;
+    root.querySelector('[data-journal-action="export"]').disabled = storageUnavailable && storedRaw === null;
+    root.querySelector('[data-journal-action="toggle-search"]').disabled = loadError || storageUnavailable;
     if (!entry) {
       const empty = document.createElement("div");
       empty.className = "journal-empty";
       const heading = document.createElement("h3");
-      heading.textContent = loadError ? "日誌暫時無法讀取" : "從第一段冒險開始";
+      heading.textContent = loadError || storageUnavailable ? "日誌暫時無法讀取" : "從第一段冒險開始";
       const message = document.createElement("p");
       message.textContent = loadError ? "原始資料仍保留。請先匯出備份，再匯入有效的日誌 JSON。" : "寫下旅途中的故事，留住每一次相聚。";
       empty.append(heading, message);
-      if (!loadError) empty.appendChild(button("新增一頁", "add"));
+      if (!loadError && !storageUnavailable) empty.appendChild(button("新增一頁", "add"));
       body.appendChild(empty);
     } else if (draft) {
       form = document.createElement("form");
@@ -422,10 +620,18 @@
       next.disabled = !book.entries.length || pageIndex >= book.entries.length - 1;
       footer.appendChild(previous);
       const modify = button("修改", "edit");
-      modify.disabled = !book.entries.length;
+      modify.disabled = !book.entries.length || storageUnavailable;
       footer.appendChild(modify);
       footer.appendChild(next);
     }
+    body.prepend(searchPanel);
+    if (storageUnavailable) {
+      const warning = document.createElement("p");
+      warning.textContent = "日誌儲存空間暫時無法使用，原始資料仍保留。";
+      warning.append(" ", button("重試讀取", "retry-load"));
+      body.prepend(warning);
+    }
+    updateSearch();
     body.scrollTop = 0;
   }
 
@@ -531,15 +737,15 @@
     list.appendChild(group);
   }
 
-  function save() {
+  async function save() {
     if (!draft || !form.reportValidity()) return false;
-    const entry = { ...draft };
+    const entry = { ...draft, storyRewards: draft.storyRewards.map(reward => ({ ...reward })) };
     fields.filter(([, , type]) => type === "number").forEach(([key]) => { entry[key] = entry[key] === "" ? null : Number(entry[key]); });
     alFields.forEach(([key]) => { entry[key] = entry[key] === "" ? null : Number(entry[key]); });
     const entries = book.entries.slice();
     if (newPage) entries.push(entry);
     else entries[pageIndex] = entry;
-    if (!persist({ kind: KIND, version: 1, entries })) return false;
+    if (!await persist({ kind: KIND, version: 1, entries })) return false;
     if (newPage) pageIndex = entries.length - 1;
     draft = null;
     render();
@@ -582,7 +788,7 @@
       message: `將以 ${imported.entries.length} 頁的匯入日誌取代本機整本日誌。建議先取消並匯出 JSON 備份。${dirty() ? "尚未儲存的編輯內容也會被取代。" : ""}`,
       cancelLabel: "取消，保留日誌", confirmLabel: "取代整本日誌", intent: "danger"
     });
-    if (!confirmed || !persist(imported)) return;
+    if (!confirmed || !await persist(imported)) return;
     draft = null;
     pageIndex = 0;
     render();
@@ -593,6 +799,48 @@
     if (busy) return;
     busy = true;
     try {
+      if (action === "retry-load") {
+        setStoragePending(true);
+        try { await load(); } finally { setStoragePending(false); }
+        pageIndex = Math.min(pageIndex, Math.max(0, book.entries.length - 1));
+        render();
+        return;
+      }
+      if (action === "toggle-search") {
+        searchOpen = !searchOpen;
+        updateSearch();
+        if (searchOpen) { searchInput.focus(); searchPanel.scrollIntoView({ block: "nearest" }); }
+        return;
+      }
+      if (action === "search") {
+        const query = searchInput.value.trim();
+        if (query && draft && !await save()) return;
+        searchQuery = query;
+        searchLimit = 50;
+        updateSearch();
+        searchPanel.scrollIntoView({ block: "nearest" });
+        searchPanel.querySelector('[type="submit"]').focus({ preventScroll: true });
+        return;
+      }
+      if (action === "search-more") {
+        const previousLimit = searchLimit;
+        searchLimit += 50;
+        const scroll = searchResults.scrollTop;
+        updateSearch();
+        searchResults.querySelectorAll(".journal-search-result")[previousLimit]?.focus({ preventScroll: true });
+        searchResults.scrollTop = scroll;
+        return;
+      }
+      if (action === "search-result") {
+        if (!await leaveDraft()) return;
+        const index = book.entries.findIndex(entry => entry.id === file);
+        if (index < 0) { updateSearch(); return; }
+        pageIndex = index;
+        searchOpen = false;
+        render();
+        body.focus({ preventScroll: true });
+        return;
+      }
       if (action === "add-story") {
         draft.storyRewards.push({ title: "", content: "" });
         render();
@@ -611,14 +859,14 @@
       }
       if (action === "import") { root.querySelector("#journal-import-file").click(); return; }
       if (action === "import-file") { await importFile(file); return; }
-      if (action === "save") { save(); return; }
+      if (action === "save") { await save(); return; }
       if (action === "edit") { edit(false); return; }
       if (action === "delete") {
         const confirmed = await window.AppDialog.requestDecision({
           title: "刪除此頁日誌？", message: "此頁及尚未儲存的修改將被刪除，無法復原。其他頁面仍會保留。",
           cancelLabel: "保留此頁", confirmLabel: "刪除此頁", intent: "danger"
         });
-        if (!confirmed || !persist({ ...book, entries: book.entries.filter((_, index) => index !== pageIndex) })) return;
+        if (!confirmed || !await persist({ ...book, entries: book.entries.filter((_, index) => index !== pageIndex) })) return;
         draft = null;
         pageIndex = Math.max(0, Math.min(pageIndex, book.entries.length - 1));
         render();

@@ -1131,6 +1131,7 @@ html.journal-open { overflow: hidden; }
   box-shadow: var(--qb-shadow);
 }
 .journal-header {
+  --journal-tool-size: 44px;
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
@@ -1141,11 +1142,33 @@ html.journal-open { overflow: hidden; }
 }
 .journal-header h2 {
   flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
   margin: 0;
   font-size: var(--fs-2xl);
   color: var(--qb-text);
 }
-.journal-toolbar { display: flex; flex-wrap: nowrap; gap: 6px; margin-left: auto; }
+.journal-toolbar {
+  display: flex;
+  flex: 0 1 auto;
+  flex-wrap: nowrap;
+  gap: 6px;
+  /* Keep 1.5 buttons visible, plus one gap and focus-ring padding. */
+  min-width: calc(var(--journal-tool-size) * 1.5 + 16px);
+  margin-left: auto;
+  padding: 5px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scroll-padding-inline: 5px;
+  /* Local covers hide each edge shadow when that end is reached. */
+  background:
+    linear-gradient(to right, var(--qb-surface-elevated) 50%, transparent) left / 24px 100% local,
+    linear-gradient(to left, var(--qb-surface-elevated) 50%, transparent) right / 24px 100% local,
+    linear-gradient(to right, var(--qb-border-strong), transparent) left / 12px 100% scroll,
+    linear-gradient(to left, var(--qb-border-strong), transparent) right / 12px 100% scroll;
+  background-repeat: no-repeat;
+}
 .adventure-journal button {
   min-width: 0;
   min-height: 44px;
@@ -1179,6 +1202,52 @@ html.journal-open { overflow: hidden; }
   flex: 0 0 44px;
 }
 .journal-icon-button svg { width: 22px; height: 22px; }
+.journal-search { margin-bottom: 24px; }
+.journal-search[hidden], .journal-search-clear[hidden] { display: none; }
+.journal-search-controls { display: flex; align-items: stretch; gap: 8px; }
+.adventure-journal .journal-search-controls > button { width: auto; flex: 0 0 auto; }
+.journal-search-input-wrap { position: relative; flex: 1; min-width: 0; }
+.journal-search-input-wrap input {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  margin: 0;
+  padding: 10px 44px 10px 12px;
+  box-sizing: border-box;
+  border: 1px solid var(--qb-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--qb-input);
+  color: var(--qb-text);
+  font: inherit;
+  font-size: 16px;
+}
+.journal-search-input-wrap input::placeholder { color: var(--qb-text-muted); }
+.adventure-journal .journal-search-clear {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: var(--fs-xl);
+}
+.journal-search-summary { margin: 12px 0 8px; font-size: var(--fs-sm); color: var(--qb-text-muted); }
+.journal-search-summary:empty { display: none; }
+.journal-search-results { max-height: min(240px, 30dvh); overflow-y: auto; overscroll-behavior: contain; }
+.adventure-journal .journal-search-result {
+  width: 100%;
+  text-align: left;
+  font-weight: 500;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  border: 0;
+  border-bottom: 1px solid var(--qb-border);
+  border-radius: 0;
+  color: var(--qb-accent);
+  background: transparent;
+}
 .journal-body {
   flex: 1 1 auto;
   min-height: 0;
@@ -1310,7 +1379,7 @@ html.journal-open { overflow: hidden; }
 .journal-empty p { line-height: 1.75; }
 :where(html[data-ui-theme="warm"]) .journal-prose { border-left: 2px solid var(--qb-border); padding-left: 16px; }
 @media (max-width: 540px) {
-  .journal-header { padding: 12px; }
+  .journal-header { --journal-tool-size: 40px; padding: 12px; }
   .journal-header h2 { font-size: var(--fs-xl); }
   .adventure-journal .journal-icon-button { width: 40px; height: 40px; padding: 9px; flex-basis: 40px; }
   .journal-body { padding: 16px; }
@@ -1326,9 +1395,6 @@ html.journal-open { overflow: hidden; }
   .journal-navigation button { padding: 8px 4px; }
 }
 @media (max-width: 374px) {
-  .journal-header { flex-wrap: wrap; }
-  .journal-header h2 { flex-basis: calc(100% - 48px); }
-  .journal-toolbar { order: 1; flex-basis: 100%; margin-left: 0; }
   .journal-fields { grid-template-columns: minmax(0, 1fr); }
   .journal-al-totals { grid-template-columns: minmax(0, 1fr); }
 }
@@ -4281,16 +4347,18 @@ html[data-ui-theme="warm"][data-theme="dark"] .circle-checkbox:checked {
 .character-features-info-icon {
   display: inline-grid;
   place-items: center;
-  width: 1.05em;
-  height: 1.05em;
+  width: 1.25em;
+  height: 1.25em;
   margin-left: 0.16em;
   border: 1.5px solid currentColor;
   border-radius: 50%;
   box-sizing: border-box;
   font-family: Arial, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
-  font-size: 0.82em;
+  font-size: var(--fs-sm);
   font-weight: 700;
   font-style: normal;
+  text-transform: none;
+  letter-spacing: 0;
   line-height: 1;
   vertical-align: 0.02em;
 }
@@ -12613,6 +12681,29 @@ html.tabletop-avatar-modal-open { overflow: hidden; }
 
 .app-dialog[data-variant="number"] .app-dialog__surface {
   width: min(100%, 24rem);
+}
+
+.custom-background-form {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.custom-background-form input,
+.custom-background-form select,
+.custom-background-form textarea {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+
+.custom-background-form textarea {
+  resize: vertical;
+}
+
+.custom-background-description {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .tabletop-condition-modal__header,

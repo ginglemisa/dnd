@@ -1602,7 +1602,9 @@ function isWeaponRowEmpty(payload, slot) {
     payload.Class1 = (Number.isFinite(levelNumber) && levelNumber >= 3)
       ? (SUBCLASS_LABELS[classKey] || '')
       : '';
-    payload.Background2 = BACKGROUND_LABELS[backgroundKey] || payload.Background2;
+    payload.Background2 = backgroundKey === 'custom'
+      ? normalizeText(state.__customBackground?.名稱)
+      : (BACKGROUND_LABELS[backgroundKey] || payload.Background2);
     payload.Specie1 = RACE_LABELS[normalizeText(state.race)] || payload.Specie1;
     payload.alignment1 = ALIGNMENT_LABELS[normalizeText(state.alignment)] || payload.alignment1;
     payload.spell_cast_attri1 = SPELL_CAST_ABILITY_LABELS[normalizeText(state['spellcasting-ability'])] || payload.spell_cast_attri1;

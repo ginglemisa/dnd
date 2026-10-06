@@ -9,7 +9,7 @@ twD20 是 Reggie Tsai / 瑞基製作的手機創角工具，協助新手、DM �
 - **創角與角色卡**：數值、技能、裝備、動作、法術；支援 27 點購買、屬性擲骰、職業範本、自動計算、創角小幫手及新手導覽。
 - **跑團模式操作**：HP、臨時 HP、狀態、死亡豁免、專注、武器攻擊、法術位與職業資源；可隱藏或自訂行動，管理法術書與儀式施法。
 - **紀錄與輸出**：本機自動儲存、JSON 匯入／匯出、分享網址、QR Code、PDF 角色卡及單檔離線版；可選用擲骰與歷史紀錄。
-- **冒險日誌**：獨立書頁閱讀與編輯、分頁及整本 JSON 匯入／匯出；手動記錄角色資訊、團錄與獎勵，使用 `dnd.adventureJournal.v1` 保存，不包含在角色 JSON、分享或角色自動存檔中，清除角色紀錄也會保留日誌。匯入會經確認後取代整本日誌，請先匯出備份。
+- **冒險日誌**：獨立書頁閱讀與編輯、全文搜尋跳頁及整本 JSON 匯入／匯出；手動記錄角色資訊、團錄與獎勵，使用 IndexedDB 保存，不包含在角色 JSON、分享或角色自動存檔中，清除角色紀錄也會保留日誌。匯入會經確認後取代整本日誌，請先匯出備份。
 - **外觀**：工具選單切換暖紙／經典，🌓 切換亮色／暗色；預設暖紙並沿用既有明暗偏好。兩項設定各自保存，不包含在角色 JSON 或分享網址中。
 
 ## 資料保存與分享
@@ -52,7 +52,11 @@ python -m http.server 8000
 | `validate-*.js`、`build-offline-nopdf.ps1` | 系統級回歸；離線版本產製與成品驗證 |
 | `cloudflare/twd20-url/` | 短網址 Worker，與網站分開部署；API、KV、限流與維護見 [Worker README](cloudflare/twd20-url/README.md) |
 
-角色選擇由既有表單／DOM 提供；跑團模式模組共用 `TabletopMode`、`SpellCatalog`、`CharacterRules`、`DiceRoller`，儲存統一使用 `window.dndStorage`。非施法動作以穩定 key、分類、等級及角色選擇條件定義，沿用主要規則資料。
+角色選擇由既有表單／DOM 提供；跑團模式模組共用 `TabletopMode`、`SpellCatalog`、`CharacterRules`、`DiceRoller`，角色儲存使用 `window.dndStorage`。非施法動作以穩定 key、分類、等級及角色選擇條件定義，沿用主要規則資料。
+
+冒險日誌獨立使用 IndexedDB `twd20-adventure-journal`（資料庫版本 1、`books` store 的 `main` record），以 `{ revision, book }` 保存整本資料；revision 僅供同時開啟的分頁避免覆寫較新的日誌，不加入對外 JSON。JSON 繼續使用 `kind: "twd20-adventure-journal"`、`version: 1`、`entries`，相容缺少 AL 欄位的舊檔。首次開啟時讀取舊 LocalStorage `dnd.adventureJournal.v1`，驗證並完成 IndexedDB transaction 後才移除舊資料；既有 IndexedDB 資料優先。無法讀取或遷移時保留原始資料，提供重試及可讀取資料的下載備份，不退回另一份可寫入的 LocalStorage 日誌。清除瀏覽器網站資料仍會刪除 IndexedDB，請定期匯出備份。
+
+日誌搜尋只在日誌視窗內操作：放大鏡展開／收起欄位，搜尋按鈕、Enter 與手機搜尋鍵共用提交入口，中文選字期間不提交。非空搜尋會先儲存編輯中的頁面，成功後進入閱讀模式；格式或儲存錯誤保留編輯內容，空白搜尋及清除不儲存。比對所有日誌填寫欄位與故事獎勵（含數字），排除內部 ID／版本／欄位名稱；英文不分大小寫，依頁碼每頁列一次，每批顯示 50 筆。結果以固定頁面 ID 跳轉，顯示「頁數 | 日期 | 冒險名稱」；點選後收起搜尋，保留查詢直到關閉日誌。儲存、刪除及匯入會更新搜尋結果，搜尋狀態不寫入角色或日誌存檔。
 
 ### 在類似專案整合搜尋
 
@@ -97,7 +101,17 @@ npx --no-install playwright install chromium
 
 `validate-ability-roll.js` 可加 `--point-buy-only` 只驗證 27 購點未用滿時的提醒、確認、套用與還原，或加 `--dice-only` 只跑一般擲骰備註、取消與歷史相容性。`validate-onboarding.js` 可加 `--imports-only` 只跑匯入與 PDF 生命週期，或加 `--touch-only` 只跑觸控流程；不加參數才是完整驗證。
 
-`validate-ui.js` 內部分項共用同一個瀏覽器／伺服器生命週期，案例以獨立 context 隔離資料。不加參數執行全部，或擇一使用 `--appearance-only`（四種外觀、Legal／About 主題與焦點、保存及共用版面）、`--dialogs-only`（toast、About 載入重試／網址定位，以及角色能力頁籤視窗的創角／表格顯示移位、頁籤條件、選項保存、子視窗、法術／技能／動物參考浮層、焦點與補填入口）、`--pdf-only`（欄位及實際匯出）、`--pdf-fields-only`（僅盾牌受訓及精靈／魔人血統提示欄位，不需 PDF／字型素材）。局部內容或互動依實際影響選分項或最小必要流程，不因共用 UI 檔案改動而連帶跑完整矩陣。
+`validate-ui.js` 內部分項共用同一個瀏覽器／伺服器生命週期，案例以獨立 context 隔離資料。不加參數執行全部，或擇一使用 `--appearance-only`（四種外觀、Legal／About 主題與焦點、保存及共用版面）、`--dialogs-only`（toast、About 載入重試／網址定位，以及角色能力頁籤視窗的創角／表格顯示移位、頁籤條件、選項保存、子視窗、法術／技能／動物參考浮層、焦點與補填入口；自訂背景一次填妥／取消／重新編輯、背景專長／工具同步、魔法學徒選項、PDF 名稱、JSON／分享／自動儲存及窄螢幕）、`--journal-only`（日誌 IndexedDB 遷移／失敗復原／跨分頁衝突、JSON 相容、搜尋／IME／自動儲存／跳頁、角色資料隔離及桌機／手機版面）、`--pdf-only`（欄位及實際匯出）、`--pdf-fields-only`（僅盾牌受訓及精靈／魔人血統提示欄位，不需 PDF／字型素材）。局部內容或互動依實際影響選分項或最小必要流程，不因共用 UI 檔案改動而連帶跑完整矩陣。
+
+日誌 IME 以 composition 事件模擬、手機以瀏覽器觸控模擬驗證，不代表手機實體鍵盤／輸入法已完成實機測試。
+
+通用前端靜態稽核須依實際程式與瀏覽器行為判讀，以下僅記錄已查證項目，不代表其他報告一律無效：
+
+| 稽核項目 | 判讀與證據 |
+| --- | --- |
+| `affordance.actionless-button`：背景資訊標題 | **已確認誤報**。[index.html](index.html) 的 `bindCharacterFeatureDialog()` 透過 `[data-character-features-tab]` 與 `addEventListener("click", …)` 開啟資訊視窗；[validate-ui.js](validate-ui.js) 的 `verifyCustomBackground()` 已在 Chromium 驗證背景標題可開啟背景頁籤，Escape 可關閉。保留既有事件綁定，不改 inline handler 或重複綁定。 |
+| `ownership.native-select-undecided` | 保留原生 `<select>`。已查閱稽核器的 `load_manifest()`／`inspect_source()`，它正式讀取根目錄 [premium-ui.json](premium-ui.json) 的 `ownership["Select/Listbox"]`；已宣告 `"native"`，不使用稽核器不支援的例外欄位。 |
+| `form.textarea-resize-missing`：要求禁止 resize | **不適用的通用建議**。依 [專案稽核判讀](AGENTS.md#自動稽核判讀) 保留 `resize: vertical`；自訂背景窄螢幕視窗的捲動區與操作按鈕已經瀏覽器驗證。只有實際拖曳造成遮擋或溢出時才修正版面。 |
 
 有意新增、移除或更名法術 ID 時，須同步檢查並更新 `spell-id-baseline.json`。
 
