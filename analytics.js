@@ -4,6 +4,8 @@
   const ACTIVE_MILESTONES_MINUTES = Object.freeze([15, 30, 60, 120]);
   const QUALIFIED_ACTIVE_MS = 30 * 60 * 1000;
   const QUALIFIED_HP_CHANGES = 4;
+  const DEEP_USAGE_INTERACTIONS = 40;
+  const DEEP_USAGE_DISTINCT_CONTROLS = 8;
 
   const emitted = new Set();
   let visibleStartedAt = document.visibilityState === "visible" ? performance.now() : null;
@@ -12,6 +14,9 @@
   let hpInput = null;
   let hpChangeCount = 0;
   let lastHpValue = null;
+  let meaningfulInteractionCount = 0;
+  const distinctMeaningfulControls = new WeakSet();
+  let distinctMeaningfulControlCount = 0;
 
   function trackingAvailable() {
     return globalScope.twAnalyticsDisabled !== true && typeof globalScope.gtag === "function";
@@ -115,6 +120,47 @@
     lastHpValue = nextValue;
   }
 
+  function isMeaningfulControl(element) {
+    if (!(element instanceof Element)) return false;
+    if (element.closest(".site-footer")) return false;
+    if (element.closest("[data-analytics-ignore]")) return false;
+    return true;
+  }
+
+  function recordMeaningfulInteraction(control) {
+    if (!isMeaningfulControl(control)) return;
+    meaningfulInteractionCount += 1;
+    if (!distinctMeaningfulControls.has(control)) {
+      distinctMeaningfulControls.add(control);
+      distinctMeaningfulControlCount += 1;
+    }
+    if (
+      meaningfulInteractionCount >= DEEP_USAGE_INTERACTIONS
+      && distinctMeaningfulControlCount >= DEEP_USAGE_DISTINCT_CONTROLS
+    ) {
+      trackOnce("meaningful_interaction_40", {
+        interaction_count: meaningfulInteractionCount,
+        distinct_control_count: distinctMeaningfulControlCount
+      });
+    }
+  }
+
+  function handleTrackedClick(event) {
+    if (!event.isTrusted) return;
+    const analyticsTarget = event.target.closest?.("[data-analytics-event]");
+    if (analyticsTarget) {
+      const eventName = analyticsTarget.dataset.analyticsEvent;
+      if (eventName) track(eventName);
+    }
+    const control = event.target.closest?.("button, summary, a[href], [role=\"tab\"], [role=\"button\"]");
+    if (control) recordMeaningfulInteraction(control);
+  }
+
+  function handleTrackedChange(event) {
+    if (!event.isTrusted) return;
+    const control = event.target.closest?.("select, input, textarea");
+    if (control) recordMeaningfulInteraction(control);
+  }
   function observeHp(input) {
     if (!(input instanceof HTMLInputElement) || input === hpInput) return false;
     if (hpInput) hpInput.removeEventListener("change", handleHpChange);
@@ -123,6 +169,9 @@
     hpInput.addEventListener("change", handleHpChange);
     return true;
   }
+
+  document.addEventListener("click", handleTrackedClick, true);
+  document.addEventListener("change", handleTrackedChange, true);
 
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") pauseVisibleTimer();
