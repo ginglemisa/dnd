@@ -20,7 +20,7 @@
   let distinctMeaningfulControlCount = 0;
 
   function trackingAvailable() {
-    return globalScope.twAnalyticsDisabled !== true && typeof globalScope.gtag === "function";
+    return globalScope.twAnalyticsDisabled === false && typeof globalScope.gtag === "function";
   }
 
   function track(eventName, parameters = {}) {

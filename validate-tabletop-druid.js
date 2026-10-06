@@ -125,7 +125,7 @@ async function main() {
     const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
     const errors = [];
     page.on("pageerror", error => errors.push(String(error)));
-    await page.goto(`http://127.0.0.1:${server.address().port}/index.html`);
+    await page.goto(`http://127.0.0.1:${server.address().port}/index.html?analytics=owner`);
     await page.waitForFunction(() => Boolean(window.TabletopDruid));
     await page.check("#legal-dismiss");
     await page.click("#legal-close-btn");

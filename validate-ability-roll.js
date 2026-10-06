@@ -178,7 +178,8 @@ async function main() {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });
     const errors = [];
     page.on("pageerror", error => errors.push(String(error)));
-    await page.goto(`http://127.0.0.1:${server.address().port}/`);
+    const url = `http://127.0.0.1:${server.address().port}/?analytics=owner`;
+    await page.goto(url);
     await page.locator("#legal-ack-btn").click();
     if (process.argv.includes("--point-buy-only")) {
       await validatePointBuy(page);
@@ -186,7 +187,6 @@ async function main() {
       console.log("Point buy: under-budget reminder, cancellation, confirmed apply, autosave and last allocation restore passed.");
       return;
     }
-    const url = page.url();
     await validateDiceHistory(browser, url);
     if (process.argv.includes("--dice-only")) {
       assert.deepEqual(errors, []);

@@ -343,7 +343,7 @@ async function main() {
     const errors = [];
     page.on("pageerror", error => errors.push(String(error)));
     // Enable the normally hidden third format only inside this browser test.
-    await page.route("**/index.html", async route => {
+    await page.route(url => url.pathname === "/index.html", async route => {
       const response = await route.fetch();
       await route.fulfill({ response, body: (await response.text()).replace(
         "const ENABLE_EDITABLE_NO_FONT_PDF_EXPORT = false;", "const ENABLE_EDITABLE_NO_FONT_PDF_EXPORT = true;") });
@@ -374,7 +374,7 @@ async function main() {
         window.quickBuild = {`);
       await route.fulfill({ response, body: source });
     });
-    await page.goto(`http://127.0.0.1:${server.address().port}/index.html`);
+    await page.goto(`http://127.0.0.1:${server.address().port}/index.html?analytics=owner`);
     await page.waitForFunction(() => window.Spellbook && document.querySelector("#cantrips-area select"));
     await verifyRecommendedSpellbookEntry(page);
     await verifyClearPreparedSpells(page);

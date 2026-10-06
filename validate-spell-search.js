@@ -35,7 +35,7 @@ async function main() {
     const page = await browser.newPage({ viewport: { width: 1100, height: 850 } });
     const errors = [];
     page.on("pageerror", error => errors.push(String(error)));
-    await page.goto(`http://127.0.0.1:${server.address().port}/`);
+    await page.goto(`http://127.0.0.1:${server.address().port}/?analytics=owner`);
     assert.deepEqual(await page.evaluate(() => [
       typeof window.searchAllSpells, typeof window.clearSpellSearchResults, typeof window.applyEquipmentFilter
     ]), ["function", "function", "function"], "toolbar and onboarding compatibility APIs are available");

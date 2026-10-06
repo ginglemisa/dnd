@@ -9,6 +9,74 @@ const { chromium } = require("playwright");
 
 // Shared presentation, dialogs and PDF output. Domain rules stay in their suites.
 const browserErrors = [];
+function verifyAnalyticsIsolation(html) {
+  const inlineScripts = [...html.matchAll(/<script\b(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)].map(match => match[1]);
+  const bootstrap = inlineScripts.find(source => source.includes('const analyticsRoleKey ='));
+  assert(bootstrap, "analytics bootstrap exists");
+  assert(!/<script\b[^>]*\bsrc=["']https:\/\/www\.googletagmanager\.com/i.test(html), "Google script must not load unconditionally");
+  const analytics = fs.readFileSync(path.join(__dirname, "analytics.js"), "utf8");
+  // These are virtual locations: scripts and events are captured in memory, never sent to Google.
+  const run = (href, { owner = false, blockedStorage = false, blockedHistory = false, storage = new Map() } = {}) => {
+    if (owner) storage.set("twd20.analyticsRole.v1", "owner");
+    const scripts = [];
+    const context = vm.createContext({
+      URL, URLSearchParams, location: new URL(href), performance: { now: () => 0 },
+      localStorage: {
+        getItem(key) { return blockedStorage ? null : storage.get(key) ?? null; },
+        setItem(key, value) { if (blockedStorage) throw new Error("storage blocked"); storage.set(key, value); },
+        removeItem(key) { if (blockedStorage) throw new Error("storage blocked"); storage.delete(key); }
+      },
+      history: { replaceState(_state, _title, url) { if (blockedHistory) throw new Error("history blocked"); context.location = new URL(url, context.location); } },
+      document: {
+        visibilityState: "visible", documentElement: { dataset: {} },
+        createElement: () => ({}), head: { appendChild: script => scripts.push(script.src) }, addEventListener() {}
+      },
+      setTimeout: () => 1, clearTimeout() {}, addEventListener() {}
+    });
+    context.window = context;
+    vm.runInContext(inlineScripts[0], context);
+    vm.runInContext(bootstrap, context);
+    vm.runInContext(analytics, context);
+    const tracked = context.twAnalytics.track("isolation_probe");
+    context.gtag("event", "direct_probe");
+    return { context, scripts, tracked, storage };
+  };
+  for (const host of ["twd20.com", "www.twd20.com"]) {
+    const allowed = run(`https://${host}/`);
+    assert.equal(allowed.tracked, true, host);
+    assert.equal(allowed.scripts.length, 1);
+    assert.equal(allowed.context.dataLayer.length, 4, "config and both event paths allowed");
+  }
+  const disabledCases = [
+    ["http://localhost:8000/?analytics=user"], ["http://127.0.0.1:8000/"],
+    ["file:///C:/Git/dnd/index.html?analytics=owner"], ["file://twd20.com/index.html"],
+    ["https://twd20.com.example.org/"], ["https://www.twd20.com.example.org/"],
+    ["https://preview.twd20.com/"], ["https://twd20.com@example.org/"],
+    ["https://example.org/?site=twd20.com"],
+    ["https://twd20.com/?analytics=owner"], ["https://www.twd20.com/", { owner: true }],
+    ["https://twd20.com/?analytics=owner", { blockedStorage: true }],
+    ["file:///C:/Git/dnd/index.html?analytics=owner", { blockedHistory: true }]
+  ];
+  for (const [href, options] of disabledCases) {
+    const result = run(href, options);
+    assert.equal(result.context.twAnalyticsDisabled, true, href);
+    assert.equal(result.tracked, false, href);
+    assert.equal(result.scripts.length, 0, href);
+    assert.equal(result.context.dataLayer.length, 0, href);
+  }
+  const saved = run("https://twd20.com/?embed=1&analytics=owner#s2=fixture");
+  assert.equal(saved.context.location.href, "https://twd20.com/?embed=1#s2=fixture", "query and share hash preserved");
+  assert.equal(run(saved.context.location.href, { storage: saved.storage }).tracked, false, "owner survives reload");
+  assert.equal(run("https://twd20.com/?analytics=user", { owner: true }).tracked, true, "explicit opt-in clears owner");
+  assert.equal(run("http://localhost:8000/?analytics=user", { owner: true }).tracked, false, "opt-in cannot bypass host gate");
+  const blocked = run("https://twd20.com/?analytics=owner#s2=fixture", { blockedStorage: true });
+  assert.equal(blocked.context.location.search, "?analytics=owner", "failed persistence retains owner for reload");
+  const uninitialized = run("https://twd20.com/?analytics=owner");
+  delete uninitialized.context.twAnalyticsDisabled;
+  assert.equal(uninitialized.context.twAnalytics.track("uninitialized_probe"), false, "custom events fail closed before initialization");
+  console.log("Analytics isolation: exact hosts, owner persistence, blocked storage/history and both event paths passed (no network).");
+}
+
 async function newUiPage(browser, options = {}) {
   const page = await browser.newPage(options);
   page.setDefaultTimeout(10000);
@@ -1240,6 +1308,7 @@ async function main() {
   assert(sections.size <= 1, "Choose at most one UI section");
   const all = sections.size === 0;
   const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
+  verifyAnalyticsIsolation(html);
   for (const match of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)) {
     if (match[1].trim()) new vm.Script(match[1]);
   }
@@ -1257,7 +1326,7 @@ async function main() {
   let browser;
   try {
     browser = await chromium.launch({ headless: true, ...(process.env.DND_BROWSER_CHANNEL ? { channel: process.env.DND_BROWSER_CHANNEL } : {}) });
-    const url = `http://127.0.0.1:${server.address().port}/index.html`;
+    const url = `http://127.0.0.1:${server.address().port}/index.html?analytics=owner`;
     if (all || sections.has("--appearance-only")) {
       const page = await newUiPage(browser, { viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });
       try { await verifyAppearanceAndLayout(browser, page, url); }

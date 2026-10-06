@@ -23,27 +23,34 @@
 	  })();
 	</script>
 	 <!-- Google Analytics -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-M8L0F03EGD"></script>
   <script>
     const analyticsRoleKey = "twd20.analyticsRole.v1";
     const analyticsMode = new URLSearchParams(location.search).get("analytics");
-    if (analyticsMode === "owner") window.dndStorage.setItem(analyticsRoleKey, "owner");
-    else if (analyticsMode === "user") window.dndStorage.removeItem(analyticsRoleKey);
-    if (analyticsMode === "owner" || analyticsMode === "user") {
+    let analyticsPreferenceSaved = true;
+    if (analyticsMode === "owner") analyticsPreferenceSaved = window.dndStorage.setItem(analyticsRoleKey, "owner");
+    else if (analyticsMode === "user") analyticsPreferenceSaved = window.dndStorage.removeItem(analyticsRoleKey);
+    const analyticsHostAllowed = ["http:", "https:"].includes(location.protocol)
+      && ["twd20.com", "www.twd20.com"].includes(location.hostname);
+    window.twAnalyticsDisabled = !analyticsHostAllowed || analyticsMode === "owner"
+      || window.dndStorage.getItem(analyticsRoleKey) === "owner";
+    if (analyticsPreferenceSaved && (analyticsMode === "owner" || analyticsMode === "user")) {
       const cleanUrl = new URL(location.href);
       cleanUrl.searchParams.delete("analytics");
-      history.replaceState(null, "", `${cleanUrl.pathname}${cleanUrl.search}${cleanUrl.hash}`);
+      try { history.replaceState(null, "", cleanUrl.href); } catch (_error) { /* Keep the opt-out URL on restricted file origins. */ }
     }
-    window.twAnalyticsDisabled = window.dndStorage.getItem(analyticsRoleKey) === "owner";
     window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
+    function gtag(){ if (!window.twAnalyticsDisabled) dataLayer.push(arguments); }
     if (!window.twAnalyticsDisabled) {
+      const analyticsScript = document.createElement("script");
+      analyticsScript.async = true;
+      analyticsScript.src = "https://www.googletagmanager.com/gtag/js?id=G-M8L0F03EGD";
+      document.head.appendChild(analyticsScript);
       gtag('js', new Date());
 
       gtag('config', 'G-M8L0F03EGD', {page_path: location.pathname});
     }
   </script>
-  <script src="analytics.js?v=20261006-hp-restore"></script>
+  <script src="analytics.js?v=20261007-host-owner-gate"></script>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">

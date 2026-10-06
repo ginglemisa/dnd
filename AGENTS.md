@@ -102,7 +102,7 @@
 | 導覽屬性引導／觸控；創角匯入銜接／PDF 載入取消；跑團模式法術與資源教學預覽；共用導覽流程 | 分別優先使用 `node validate-onboarding.js --touch-only`、`node validate-onboarding.js --imports-only`；影響共用導覽或分項不足以涵蓋時執行完整 `node validate-onboarding.js` |
 | 短休／長休、休息後選項同步與還原、生命骰（含擲骰關閉時的單顆／連續回血）、資源恢復或最佳旅伴 | `node validate-tabletop-rest.js` |
 | 冒險日誌 IndexedDB 遷移／失敗復原／跨分頁衝突、JSON 相容、全文搜尋／IME／儲存與跳頁、角色資料隔離及桌機／手機版面 | `node validate-ui.js --journal-only`；IME 與手機觸控為瀏覽器模擬，不代表實機輸入法驗證 |
-| 共用 UI：主題／保存／素材、工具選單與技能版面、Legal／About、AppDialog／toast（含最高層級、背景 inert 排除、點擊／觸控隔離及按住暫停）、角色能力頁籤視窗（含創角／表格顯示移位、子視窗、法術／技能／動物參考浮層、選項保存、焦點與補填入口）、PDF 欄位與實際可編輯匯出 | `node validate-ui.js`；可用 `--appearance-only`、`--dialogs-only`（含角色能力視窗與自訂背景的編輯／專長與工具同步／PDF 名稱／資料還原）、`--pdf-only` 或 `--pdf-fields-only` 選擇分項。局部 UI 依上方原則驗證，不自動連帶驗證 PDF 或導覽 |
+| 共用 UI：GA4 網域／owner 隔離（純模擬、不連線）、主題／保存／素材、工具選單與技能版面、Legal／About、AppDialog／toast（含最高層級、背景 inert 排除、點擊／觸控隔離及按住暫停）、角色能力頁籤視窗（含創角／表格顯示移位、子視窗、法術／技能／動物參考浮層、選項保存、焦點與補填入口）、PDF 欄位與實際可編輯匯出 | `node validate-ui.js`；可用 `--appearance-only`、`--dialogs-only`（含角色能力視窗與自訂背景的編輯／專長與工具同步／PDF 名稱／資料還原）、`--pdf-only` 或 `--pdf-fields-only` 選擇分項。局部 UI 依上方原則驗證，不自動連帶驗證 PDF 或導覽 |
 
 離線成品屬於建置驗證，不列為產品 regression suite。明確要求建立、測試或更新離線角色卡時執行 `build-offline-nopdf.ps1`；建置完成會自動檢查產物語法與離線分享／離開流程，失敗時回報建置失敗。環境需求與模擬限制見 README。
 
@@ -114,6 +114,8 @@
 * 同一程式版本已有可確認通過紀錄的檢查可沿用；只有後續修改影響該檢查的程式、依賴或測試前提時才重跑。既有腳本已涵蓋的流程不再用臨時瀏覽器重做，除非需要補足視覺、未涵蓋的互動或排查失敗。
 * 失敗後先縮小到失敗情境，確認是本次回歸、測試／環境問題或既有問題；必要時用修改前版本對照。修正本次造成的失敗，再重跑受修正影響的範圍，不反覆執行無關的完整流程直到偶然通過。確認與本次無關後回報證據及未通過範圍，不擅自擴大修復，也不能將失敗算作通過。
 * 沿用專案或環境已有的 Playwright 與瀏覽器，不為測試新增框架或依賴。
+* **測試流量排除**：使用 Playwright（CLI 或一般 API）、任何 agent 瀏覽器、人工瀏覽器測試或程式回歸測試時，凡載入本站頁面的網址都必須加入 `analytics=owner`，不論正式站、localhost／127.0.0.1 或直接開啟 `index.html`（`file://`）。沒有 query 時用 `?analytics=owner`，已有 query 時用 `&analytics=owner`（既有 analytics 值須替換），參數必須放在 `#s=`／`#s2=` 等 hash 之前；程式組合網址使用 `URL.searchParams.set("analytics", "owner")`。新分頁、獨立 browser context 與分享網址也須帶入，不依賴別的分頁已保存 owner；頁面清理參數後，不可直接以 `page.url()` 作為新測試入口。重新整理前若清除了網站儲存，須重新帶入 owner 參數。
+* GA4 僅允許 HTTP(S) 且 hostname 精確等於 `twd20.com` 或 `www.twd20.com` 時啟用，owner 排除優先；非正式網域的程式阻擋不能取代上述測試規範。驗證 GA4 啟用分支時，使用隔離模擬與追蹤替身，禁止向真實 GA4 傳送測試事件。
 * 涉及 DOM 互動、responsive layout、焦點、modal、事件、LocalStorage、autosave 或跨頁狀態，且靜態檢查不足時，驗證最小必要 UI 流程；僅在需要瀏覽器驗證時啟動本機伺服器。
 * 需要臨時瀏覽器檢查時，先讀取 [.agents/skills/playwright-cli/SKILL.md](.agents/skills/playwright-cli/SKILL.md)，使用既有 dependency 的 `npx --no-install playwright cli`。沿用現有 regression scripts，不另建 Playwright Test 或 Test Agents。
 * Browser workflow 優先採用 `open → snapshot/find → interact → assertion`，僅操作本次驗證所需元素；唯讀確認可省略 interact。完成後關閉本次 browser session 與本機伺服器，不為單一修改自由探索整個網站。

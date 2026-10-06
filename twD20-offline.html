@@ -8489,7 +8489,6 @@ function applyStateObject(data) {
     window.TabletopMode?.applyState?.(data);
     window.Spellbook?.restoreState(data);
   } finally {
-    resumeHpTracking?.();
     autosaveSuspended = prevAutosaveSuspended;
   }
   syncDerivedFeatRows();

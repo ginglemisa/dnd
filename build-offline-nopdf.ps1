@@ -171,7 +171,7 @@ $html = [System.Text.RegularExpressions.Regex]::Replace(
 
 $html = [System.Text.RegularExpressions.Regex]::Replace(
   $html,
-  '<!-- Google Analytics -->\s*<script async src="https://www\.googletagmanager\.com/gtag/js\?id=G-M8L0F03EGD"></script>\s*<script>[\s\S]*?</script>\s*(?:<script src="analytics\.js(?:\?[^\"]*)?"></script>)?',
+  '<!-- Google Analytics -->\s*(?:<script async src="https://www\.googletagmanager\.com/gtag/js\?id=G-M8L0F03EGD"></script>\s*)?<script>[\s\S]*?</script>\s*(?:<script src="analytics\.js(?:\?[^\"]*)?"></script>)?',
   '',
   [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
 )
@@ -179,7 +179,7 @@ $html = [System.Text.RegularExpressions.Regex]::Replace(
 # Offline builds must not contain analytics hooks or analytics-only attributes.
 $html = [System.Text.RegularExpressions.Regex]::Replace(
   $html,
-  '(?m)^.*(?:window|globalScope)\.twAnalytics\?\..*\r?\n?',
+  '(?m)^(?:.*(?:window|globalScope)\.twAnalytics\?\..*|\s*resumeHpTracking\?\.\(\);)\r?\n?',
   ''
 )
 $html = [System.Text.RegularExpressions.Regex]::Replace(
@@ -507,12 +507,12 @@ const end = html.indexOf("function downloadStateAsJson()", start);
 assert(start >= 0 && end > start, "offline lifecycle and sharing functions retained");
 const script = new vm.Script(html.slice(start, end));
 const paths = [
-  "file:///C:/Characters/TWD20-offline.html",
-  "file:///home/player/TWD20-offline.html",
-  "file:///Users/player/My%20Characters/TWD20-offline.html",
-  "file:///storage/emulated/0/Download/TWD20-offline.html",
-  "file:///private/var/mobile/Containers/Data/Application/example/TWD20-offline.html",
-  "content://com.android.externalstorage.documents/document/primary%3ADownload%2FTWD20-offline.html"
+  "file:///C:/Characters/TWD20-offline.html?analytics=owner",
+  "file:///home/player/TWD20-offline.html?analytics=owner",
+  "file:///Users/player/My%20Characters/TWD20-offline.html?analytics=owner",
+  "file:///storage/emulated/0/Download/TWD20-offline.html?analytics=owner",
+  "file:///private/var/mobile/Containers/Data/Application/example/TWD20-offline.html?analytics=owner",
+  "content://com.android.externalstorage.documents/document/primary%3ADownload%2FTWD20-offline.html?analytics=owner"
 ];
 
 (async () => {

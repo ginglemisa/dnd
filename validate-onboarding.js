@@ -345,18 +345,19 @@ async function main() {
     const page = await browser.newPage();
     const errors = [];
     page.on("pageerror", error => errors.push(String(error)));
-    await page.goto(`http://127.0.0.1:${server.address().port}/index.html`);
+    const url = `http://127.0.0.1:${server.address().port}/index.html?analytics=owner`;
+    await page.goto(url);
     await page.waitForFunction(() => window.onboardingTour && window.quickBuild && window.TabletopMode);
     await page.locator("#legal-ack-btn").click();
     if (process.argv.includes("--imports-only")) {
-      await verifyImports(browser, page.url());
-      await verifyImports(browser, page.url(), { width: 390, height: 844 });
-      await verifyPdfLifecycle(browser, page.url());
+      await verifyImports(browser, url);
+      await verifyImports(browser, url, { width: 390, height: 844 });
+      await verifyPdfLifecycle(browser, url);
       return;
     }
     if (process.argv.includes("--touch-only")) {
-      await verifyAbilityGuidance(browser, page.url());
-      await verifyTouch(browser, page.url());
+      await verifyAbilityGuidance(browser, url);
+      await verifyTouch(browser, url);
       return;
     }
     await page.setViewportSize({ width: 1280, height: 800 });
@@ -504,11 +505,11 @@ async function main() {
     await page.evaluate(() => quickBuild.open());
     assert.deepEqual(await page.evaluate(() => quickBuild.getDraft()), draft);
     await page.evaluate(() => quickBuild.close());
-    await verifyImports(browser, page.url());
-    await verifyImports(browser, page.url(), { width: 390, height: 844 });
-    await verifyPdfLifecycle(browser, page.url());
-    await verifyAbilityGuidance(browser, page.url());
-    await verifyTouch(browser, page.url());
+    await verifyImports(browser, url);
+    await verifyImports(browser, url, { width: 390, height: 844 });
+    await verifyPdfLifecycle(browser, url);
+    await verifyAbilityGuidance(browser, url);
+    await verifyTouch(browser, url);
     assert.deepEqual(errors, []);
     console.log("Cancellation races, failed positioning, turn dialog, legacy ability/point-buy branches, target jump and quick-build draft reopen passed.");
   } finally {
@@ -699,7 +700,7 @@ async function verifyImports(browser, url, viewport = { width: 1280, height: 800
     }
     await page.locator(".app-dialog__actions .app-dialog__button--danger").click();
     await page.waitForFunction(() => document.querySelector(".app-dialog__header h2")?.textContent.includes("角色卡"));
-    const firstTable = page.getByRole("button", { name: "第一次上桌", exact: true });
+    const firstTable = page.getByRole("button", { name: "初次遊玩教學", exact: true });
     assert.equal(await firstTable.count(), ["warning", "failure"].includes(scenario) ? 0 : 1, await page.locator(".app-dialog__body").innerText());
     assert.equal(await page.evaluate(() => onboardingTour.active), false);
     if (scenario !== "failure") {

@@ -72,6 +72,10 @@ python -m http.server 8000
 
 從專案根目錄執行下列命令，依修改範圍選擇相關腳本即可。修改 JavaScript 時，另執行 `node --check <受影響檔案.js>`；只修改 Markdown 時，核對檔名、連結、命令與說明，不需執行功能驗證。
 
+所有瀏覽器測試（Playwright CLI／API、agent 瀏覽器、人工測試）與程式回歸載入本站時，網址必須帶 `analytics=owner`：例如 `http://localhost:8000/?analytics=owner`、`https://twd20.com/?analytics=owner` 或 `file:///C:/Git/dnd/index.html?analytics=owner`。已有 query 時以 `&` 合併，參數放在分享 hash 前（如 `?analytics=owner#s2=…`）；新分頁與獨立 context 同樣適用。程式應保留含 owner 的測試入口，不使用頁面清理參數後的 `page.url()` 傳給其他測試。owner 儲存成功後網址參數會移除，原 context 重新整理仍維持排除；清除網站儲存後需重新加參數。詳細限制見 [AGENTS.md：執行與停止條件](AGENTS.md#執行與停止條件)。
+
+GA4 僅在 HTTP(S) 且 hostname 精確為 `twd20.com`／`www.twd20.com`、並且未設定 owner 時載入 Google 追蹤腳本及送出事件。localhost、IP、其他網域及 `file://` 均停用；`analytics=user` 僅解除該瀏覽器的 owner 設定，不能繞過網域限制。LocalStorage 寫入失敗時，當次 owner 仍生效並保留網址參數。GA4 啟用分支只能以隔離模擬／追蹤替身驗證，不向正式 GA4 傳送測試事件。
+
 必要的永久 regression case 優先加入最接近的既有系統級 suite，不為單次修改、單一 bug 或 UI 細節另建 validator。小型、低風險、可逆修改優先使用既有 regression、build／check 命令或不提交的臨時驗證，臨時腳本須於收尾前清除。只有獨立、長期存在且容易回歸的子系統，並且既有 suite 無法合理承接時，才新增永久 suite；完整判斷原則見 [AGENTS.md](AGENTS.md#驗證條件)。
 
 ### 執行環境
@@ -97,7 +101,7 @@ npx --no-install playwright install chromium
 | `node validate-tabletop-druid.js` | 荒野形態、野獸攻擊、德魯伊資源、持續法術效果（含一般／野獸 AC 與速度）、專注、儲存與版面 | 瀏覽器 |
 | `node validate-tabletop-rest.js` | 短休／長休、休息後選項同步與還原、生命骰（含擲骰關閉時的單顆／連續回血）、職業與種族資源恢復、最佳旅伴、可選恢復、取消與自動儲存 | 瀏覽器 |
 | `node validate-tabletop-spellcasting.js` | 法術 metadata、施法條件、法術位、專注與自動擲骰 | 純 Node.js；以 `spell-id-baseline.json` 比對既有法術 ID |
-| `node validate-ui.js` | 共用 UI：四種外觀／保存／素材、工具選單與技能版面、跑團模式／創角 UI、Legal／About 載入與焦點、AppDialog toast 堆疊／倒數／滑鼠拖曳／觸控滑除／按住暫停／背景 inert 與點擊隔離，以及 PDF 欄位與匯出 | 瀏覽器；完整執行會實際匯出並重新讀取可編輯 PDF，需專案 PDF 與字型素材 |
+| `node validate-ui.js` | 共用 UI：GA4 網域／owner 隔離（純模擬、不連線）、四種外觀／保存／素材、工具選單與技能版面、跑團模式／創角 UI、Legal／About 載入與焦點、AppDialog toast 堆疊／倒數／滑鼠拖曳／觸控滑除／按住暫停／背景 inert 與點擊隔離，以及 PDF 欄位與匯出 | 瀏覽器；完整執行會實際匯出並重新讀取可編輯 PDF，需專案 PDF 與字型素材 |
 
 `validate-ability-roll.js` 可加 `--point-buy-only` 只驗證 27 購點未用滿時的提醒、確認、套用與還原，或加 `--dice-only` 只跑一般擲骰備註、取消與歷史相容性。`validate-onboarding.js` 可加 `--imports-only` 只跑匯入與 PDF 生命週期，或加 `--touch-only` 只跑觸控流程；不加參數才是完整驗證。
 
