@@ -750,6 +750,7 @@
     draft = null;
     render();
     window.AppDialog.notify("日誌已儲存到本機。", { tone: "success" });
+    window.twAnalytics?.track?.("journal_written");
     return true;
   }
 
