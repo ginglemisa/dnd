@@ -710,6 +710,7 @@
     return globalScope.SpellCatalog.resolveCastOutcomes(entry.spellId, {
       effectiveLevel: castResult.effectiveLevel,
       characterLevel: getCharacterLevel(),
+      maximizeDice: Boolean(castResult.fiendishVigor),
       damageType: castResult.damageType,
       spellcastingModifier,
       proficiencyBonus: globalScope.getProficiencyBonus?.() || 0,
@@ -730,7 +731,7 @@
         expression: outcome.expression,
         fixed: outcome.fixed,
         label: `${entry.spell.nameZh}｜${formatCastLevel(castResult.effectiveLevel)}｜${kindLabel}${typeLabel}${repeatLabel ? `｜${repeatLabel}` : ""}`,
-        detail: `${outcome.context || "依術文處理"}${modifierText}`
+        detail: `${castResult.fiendishVigor ? "邪魔活力：2d4 視為 8；" : ""}${outcome.context || "依術文處理"}${modifierText}`
       });
       if (outcome.attack !== "spell") return [result];
       const attackBonus = parseModifier(getFieldValue("spell-attack-bonus"));
@@ -811,6 +812,17 @@
       return;
     }
     if (!globalScope.DiceRoller?.isEnabled?.()) {
+      if (castResult.fiendishVigor && entry.spellId === "false-life") {
+        const applied = globalScope.TabletopMode?.grantTemporaryHitPoints?.(
+          rolls[0].fixed, { sourceLabel: "邪魔活力：" }
+        );
+        globalScope.AppDialog?.notify(applied?.ok
+          ? `${successPrefix}；邪魔活力將 2d4 視為 8，獲得 ${rolls[0].fixed} 點臨時生命值，目前臨時 HP ${applied.temporaryHp}。`
+          : `${successPrefix}；請手動設定 ${rolls[0].fixed} 點臨時生命值。`,
+        { tone: applied?.ok ? "success" : "warning" });
+        restoreStableFocus(entry.spellId, stableTrigger, entry.sourceKey);
+        return;
+      }
       globalScope.AppDialog?.notify(`${successPrefix}；擲骰系統已停用，請依上方術文手動擲骰。`, { tone: "warning", duration: 7200 });
       restoreStableFocus(entry.spellId, stableTrigger, entry.sourceKey);
       return;
@@ -827,6 +839,15 @@
         trigger: stableTrigger
       });
       if (!rolled?.ok) throw new Error(rolled?.reason || "roll failed");
+      if (entry.spellId === "false-life") {
+        const applied = globalScope.TabletopMode?.grantTemporaryHitPoints?.(
+          rolled.results?.[0]?.total,
+          { sourceLabel: `${entry.spell.nameZh}：` }
+        );
+        if (!applied?.ok) {
+          globalScope.AppDialog?.notify(`${successPrefix}；請依擲骰結果手動設定臨時生命值。`, { tone: "warning", duration: 7200 });
+        }
+      }
     } catch (error) {
       console.error("Spell auto-roll failed after cast commit.", error);
       globalScope.AppDialog?.notify(`${successPrefix}；擲骰視窗發生錯誤，資源不會回滾，請手動擲骰。`, { tone: "warning", duration: 7200 });

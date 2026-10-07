@@ -4906,7 +4906,7 @@ globalThis.SpellCatalog = (() => {
     "hunters-mark": freezeOutcomeList([{ kind: "damage", formula: "1d6", damageType: "force", autoOnCast: false, context: "之後攻擊命中標記目標時" }]),
     "burning-hands": freezeOutcomeList([{ kind: "damage", formula: "3d6", upcastDice: "1d6", damageType: "fire", autoOnCast: true, context: "區域傷害擲一次；豁免依規則處理" }]),
     "chromatic-orb": freezeOutcomeList([{ kind: "damage", attack: "spell", formula: "3d8", upcastDice: "1d8", damageTypes: OPTIONAL_ELEMENTAL_TYPES, autoOnCast: true, context: "命中時傷害；跳轉後的額外攻擊依術文手動處理" }]),
-    "false-life": freezeOutcomeList([{ kind: "temporary-hp", formula: "2d4+4", autoOnCast: false, context: "臨時生命值；特殊來源可能改以最大值處理" }]),
+    "false-life": freezeOutcomeList([{ kind: "temporary-hp", formula: "2d4+4", maximizedFixed: 12, upcastFixed: 5, autoOnCast: true, context: "自動套用臨時生命值，與既有值取較高者，不相加" }]),
     "magic-missile": freezeOutcomeList([{ kind: "damage", formula: "1d4+1", damageType: "force", repeat: 3, repeatPerSlot: 1, autoOnCast: true, context: "每枚飛彈分開呈現", repeatLabel: "飛彈" }]),
     "ray-of-sickness": freezeOutcomeList([{ kind: "damage", attack: "spell", formula: "2d8", upcastDice: "1d8", damageType: "poison", autoOnCast: true, context: "命中時傷害" }]),
     "hellish-rebuke": freezeOutcomeList([{ kind: "damage", formula: "2d10", upcastDice: "1d10", damageType: "fire", autoOnCast: true, context: "豁免依規則處理" }]),
@@ -5013,6 +5013,13 @@ globalThis.SpellCatalog = (() => {
         expression = appendNumericModifier(expression, effectiveLevel);
       }
       let fixed = Number.isFinite(outcome.fixed) ? Number(outcome.fixed) : null;
+      if (options.maximizeDice && Number.isFinite(outcome.maximizedFixed)) {
+        expression = "";
+        fixed = outcome.maximizedFixed;
+      }
+      if (expression && Number.isFinite(outcome.upcastFixed)) {
+        expression = appendNumericModifier(expression, slotDifference * Number(outcome.upcastFixed));
+      }
       if (fixed !== null && Number.isFinite(outcome.upcastFixed)) {
         fixed += slotDifference * Number(outcome.upcastFixed);
       }

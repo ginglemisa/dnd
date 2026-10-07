@@ -26,6 +26,14 @@ function canParseDiceExpression(expression) {
 
 const spellSource = fs.readFileSync("spell-list.js", "utf8");
 const catalog = loadSpellCatalog(spellSource);
+for (let level = 1; level <= 9; level += 1) {
+  const outcome = catalog.resolveCastOutcomes("false-life", { effectiveLevel: level })[0];
+  assert.equal(outcome.autoOnCast, true, "虛假生命必須在施法後自動擲骰");
+  assert.equal(outcome.expression, level === 1 ? "2d4+4" : `2d4+4+${5 * (level - 1)}`, "虛假生命每升一環增加 5 點臨時生命值");
+  const maximized = catalog.resolveCastOutcomes("false-life", { effectiveLevel: level, maximizeDice: true })[0];
+  assert.equal(maximized.expression, "", "邪魔活力不應擲隨機骰");
+  assert.equal(maximized.fixed, 12 + 5 * (level - 1), "邪魔活力擲滿並套用升環加值");
+}
 const spells = [...catalog.getAllSpells()];
 const spellIds = spells.map(spell => spell.spellId);
 const spellsByLevel = Object.fromEntries([0, 1, 2, 3, 4].map(level => [
@@ -162,6 +170,16 @@ assertSameValues(candidatesWithoutOutcome, [
 ], "只有明確排除或非傷害／治療結果的數字法術可沒有 outcome metadata");
 
 require("./tabletop-mode.js");
+const rulesSandbox = { window: {} };
+vm.runInNewContext(fs.readFileSync("character-rules.js", "utf8"), rulesSandbox);
+globalThis.getSpellSlotCounts = rulesSandbox.window.getSpellSlotCounts;
+const vigorLevel = globalThis.TabletopMode.logic.getFiendishVigorCastLevel;
+for (let level = 2; level <= 8; level += 1) {
+  assert.equal(vigorLevel({ spellId: "false-life", className: "warlock", characterLevel: level, selected: true }), Math.ceil(level / 2));
+}
+for (const override of [{ className: "wizard" }, { selected: false }, { characterLevel: 1 }, { spellId: "hex" }]) {
+  assert.equal(vigorLevel({ spellId: "false-life", className: "warlock", characterLevel: 5, selected: true, ...override }), 0);
+}
 assert.equal(typeof globalThis.TabletopMode.restoreHitPoints, "function", "TabletopMode 必須提供共用 HP 回復 API");
 const {
   applyHealingState,

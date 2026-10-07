@@ -298,6 +298,21 @@
     });
   }
 
+  function getFiendishVigorCastLevel({ spellId, className, characterLevel, selected } = {}) {
+    if (spellId !== "false-life" || className !== "warlock" || characterLevel < 2 || !selected) return 0;
+    const slots = globalScope.getSpellSlotCounts?.("warlock", characterLevel) || [];
+    return slots.reduce((level, count, index) => count > 0 ? index + 1 : level, 0);
+  }
+
+  function getCurrentFiendishVigorCastLevel(entry) {
+    return getFiendishVigorCastLevel({
+      spellId: entry.spellId,
+      className: typeof document !== "undefined" ? document.getElementById("class")?.value : "",
+      characterLevel: typeof document !== "undefined" ? Number(document.getElementById("level")?.value) : 0,
+      selected: globalScope.hasWarlockInvocation?.("邪魔活力")
+    });
+  }
+
   function getSpellCastOptions(entry = {}) {
     if (entry.spellSource === "wizard-spellbook") {
       const current = globalScope.Spellbook?.getRitualEntries().find(item => item.sourceKey === entry.sourceKey);
@@ -312,10 +327,11 @@
     const latestFreeControls = discoveredFreeControls.length
       ? discoveredFreeControls
       : Array.isArray(entry.freeUseControls) ? entry.freeUseControls : [];
+    const fiendishVigorLevel = getCurrentFiendishVigorCastLevel(entry);
     return buildSpellCastOptions({
       baseLevel: spell.level,
-      castMode: entry.castMode,
-      fixedCastLevel: entry.fixedCastLevel,
+      castMode: fiendishVigorLevel ? "at-will" : entry.castMode,
+      fixedCastLevel: fiendishVigorLevel || entry.fixedCastLevel,
       ritual: metadata.ritual,
       ritualAllowed: entry.ritualAllowed,
       ritualExtraTime: metadata.ritualExtraTime,
@@ -388,7 +404,7 @@
       dispatchCanonicalCastUpdate(canonical);
     }
 
-    return validated;
+    return Object.freeze({ ...validated, fiendishVigor: Boolean(getCurrentFiendishVigorCastLevel(entry)) });
   }
 
   function createCustomResourceId() {
@@ -3239,6 +3255,18 @@ function getRogueReliableTalentEntry() {
     );
   }
 
+  function grantTemporaryHitPoints(amount, { sourceLabel = "" } = {}) {
+    if (!Number.isSafeInteger(amount) || amount <= 0) {
+      return Object.freeze({ ok: false, reason: "invalid-amount" });
+    }
+    const previousTemporaryHp = combatState.temporaryHp;
+    const temporaryHp = Math.max(previousTemporaryHp, amount);
+    undoSnapshot = createLifeSnapshot();
+    combatState.temporaryHp = temporaryHp;
+    markStateChanged(`${sourceLabel}臨時 HP 已設為 ${temporaryHp}（與既有值取較高者，不相加）。`);
+    return Object.freeze({ ok: true, previousTemporaryHp, temporaryHp });
+  }
+
   function handleTemporaryHpSubmit(
     event
   ) {
@@ -5202,6 +5230,7 @@ function getRogueReliableTalentEntry() {
     getCharacterName,
     setCharacterName,
     restoreHitPoints,
+    grantTemporaryHitPoints,
     getSpellCastOptions,
     getBlessedHealerEntry,
     getConditionRuleEntries,
@@ -5244,6 +5273,7 @@ function getRogueReliableTalentEntry() {
       normalizeActiveConditions,
       buildSorcererElementalAffinityEntry,
       buildSpellCastOptions,
+      getFiendishVigorCastLevel,
       validateSpellCastSelection,
       normalizeBuiltInResourceUsage,
       normalizeConcentrationSpellId,
