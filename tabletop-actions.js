@@ -2,10 +2,10 @@
   "use strict";
 
   const MODE_PREFERENCE_KEY = "dnd.tabletopActionMode.v1";
-  const MODES = Object.freeze(["basic", "action", "bonus", "reaction", "movement"]);
+  const BASIC_EXPANDED_KEY = "dnd.tabletopBasicExpanded.v1";
+  const MODES = Object.freeze(["action", "bonus", "movement", "reaction"]);
   const MODE_LABELS = Object.freeze({
-    basic: "動作",
-    action: "特殊",
+    action: "動作",
     bonus: "附贈",
     reaction: "反應",
     movement: "移動"
@@ -23,9 +23,10 @@
     "解除荒野形態": "解除形態"
   });
   const selectedOptionKeys = new Map(MODES.map(mode => [mode, ""]));
-  const spellGroupExpanded = new Map(["action", "bonus", "reaction"].map(mode => [mode, false]));
   const elements = {};
-  let currentMode = "basic";
+  let currentMode = "action";
+  let basicExpanded = false;
+  let finishDisclosureMotion = null;
   let scheduledRender = 0;
   let initialized = false;
 
@@ -52,12 +53,24 @@
   }
 
   function getModeOptionSet(mode) {
+    // Merge only the tabletop presentation. Persisted keys keep their original
+    // category, including legacy custom buttons from the basic category.
+    if (mode === "action") {
+      const basic = getSourceModeOptionSet("basic");
+      const action = getSourceModeOptionSet("action");
+      return { all: [...basic.all, ...action.all], visible: [...basic.visible, ...action.visible] };
+    }
+    return getSourceModeOptionSet(mode);
+  }
+
+  function getSourceModeOptionSet(mode) {
     const api = globalScope.ActionPanel;
     const preferences = getActionPreferences();
     const hiddenKeys = new Set(preferences.hiddenKeys || []);
     const officialOptions = api
       ? (api.getTabletopOptions || api.getOptions)(mode).map(option => ({
           ...option,
+          isBasic: mode === "basic",
           preferenceKey: getOfficialHiddenKey(mode, option.key),
           customActionId: ""
         }))
@@ -73,7 +86,9 @@
         preferenceKey: getCustomHiddenKey(action.id),
         customActionId: action.id
       }));
-    const all = [...officialOptions, ...(globalScope.TabletopDruid?.getActionOptions?.(mode) || []), ...customOptions];
+    const spellSource = api?.getSourceLabels?.().spell || "法術";
+    const all = [...officialOptions, ...(globalScope.TabletopDruid?.getActionOptions?.(mode) || []), ...customOptions]
+      .filter(option => option.source !== spellSource && !option.spellId);
     return {
       all,
       visible: all.filter(option => !hiddenKeys.has(option.preferenceKey)
@@ -82,12 +97,12 @@
   }
 
   function getHiddenCountForMode(mode, preferences = getActionPreferences()) {
+    const modes = mode === "action" ? ["basic", "action"] : [mode];
     const customIds = new Set(
-      (preferences.customActions || []).filter(action => action.mode === mode).map(action => action.id)
+      (preferences.customActions || []).filter(action => modes.includes(action.mode)).map(action => action.id)
     );
-    const officialPrefix = `official:${mode}:`;
     return (preferences.hiddenKeys || []).filter(key => (
-      key.startsWith(officialPrefix)
+      modes.some(sourceMode => key.startsWith(`official:${sourceMode}:`))
       || (key.startsWith("custom:") && customIds.has(key.slice("custom:".length)))
     )).length;
   }
@@ -614,7 +629,7 @@
           option.textContent = MODE_LABELS[mode];
           modeSelect.appendChild(option);
         });
-        modeSelect.value = MODES.includes(action?.mode) ? action.mode : currentMode;
+        modeSelect.value = action?.mode === "basic" ? "action" : MODES.includes(action?.mode) ? action.mode : currentMode;
         modeSelect.setAttribute("aria-describedby", errorId);
         modeField.appendChild(modeSelect);
 
@@ -852,17 +867,96 @@
     });
   }
 
-  function renderActionPanel(mode) {
+  function captureDisclosureLayout(panel) {
+    const list = panel?.querySelector(".tabletop-action-options");
+    if (!list) return null;
+    return {
+      height: list.getBoundingClientRect().height,
+      buttons: new Map(Array.from(list.querySelectorAll(".tabletop-action-option:not(.tabletop-action-ghost)"), button => [
+        button.dataset.actionOptionKey || "disclosure",
+        { rect: button.getBoundingClientRect(), clone: button.cloneNode(true), basic: button.dataset.basicAction === "true" }
+      ]))
+    };
+  }
+
+  function animateDisclosure(list, before) {
+    if (!before || globalScope.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+      || typeof list.animate !== "function" || !list.getBoundingClientRect().width) return;
+    const animations = [];
+    const ghosts = [];
+    const duration = 390;
+    const timing = { duration, easing: "cubic-bezier(.22,.8,.3,1)" };
+    const anchor = list.querySelector(".tabletop-basic-toggle").getBoundingClientRect();
+    const oldAnchor = before.buttons.get("disclosure")?.rect || anchor;
+    const listRect = list.getBoundingClientRect();
+    let basicIndex = 0;
+    list.querySelectorAll(".tabletop-action-option").forEach(button => {
+      const key = button.dataset.actionOptionKey || "disclosure";
+      const rect = button.getBoundingClientRect();
+      const previous = before.buttons.get(key);
+      const from = previous?.rect || oldAnchor;
+      const transform = `translate(${from.left - rect.left}px, ${from.top - rect.top}px)`;
+      if (!previous && button.dataset.basicAction === "true") {
+        animations.push(button.animate([
+          { transform: `${transform} scale(.75) rotateX(18deg)`, opacity: 0 },
+          { transform: "translate(0, -2px) scale(1.02)", opacity: 1, offset: .82 },
+          { transform: "none", opacity: 1 }
+        ], { ...timing, duration: 250, delay: basicIndex++ * 9, fill: "backwards" }));
+      } else {
+        animations.push(button.animate([{ transform }, { transform: "none" }], timing));
+      }
+    });
+    if (!basicExpanded) {
+      const departing = [...before.buttons.values()].filter(item => item.basic);
+      departing.forEach(({ rect, clone }, index) => {
+        // Departing cards are visual copies only; live remaining buttons stay usable.
+        clone.removeAttribute("id");
+        clone.removeAttribute("data-action-option-key");
+        clone.removeAttribute("data-basic-action");
+        clone.classList.add("tabletop-action-ghost");
+        clone.inert = true;
+        clone.setAttribute("aria-hidden", "true");
+        Object.assign(clone.style, {
+          left: `${rect.left - listRect.left}px`, top: `${rect.top - listRect.top}px`,
+          width: `${rect.width}px`, height: `${rect.height}px`
+        });
+        list.appendChild(clone);
+        ghosts.push(clone);
+        animations.push(clone.animate([
+          { transform: "none", opacity: 1 },
+          { transform: `translate(${anchor.left - rect.left}px, ${anchor.top - rect.top}px) scale(.75)`, opacity: 0 }
+        ], { ...timing, duration: 250, delay: (departing.length - index - 1) * 9, fill: "both" }));
+      });
+    }
+    animations.push(list.animate([{ height: `${before.height}px` }, { height: `${listRect.height}px` }], timing));
+    const cleanup = () => {
+      animations.forEach(animation => animation.cancel());
+      ghosts.forEach(ghost => ghost.remove());
+      if (finishDisclosureMotion === cleanup) finishDisclosureMotion = null;
+    };
+    finishDisclosureMotion = cleanup;
+    Promise.allSettled(animations.map(animation => animation.finished)).then(cleanup);
+  }
+
+  function renderActionPanel(mode, { animate = false, focusToggle = false } = {}) {
     const panel = elements.panels?.find(candidate => candidate.dataset.tabletopActionPanel === mode);
     const api = globalScope.ActionPanel;
     if (!panel || !api) return;
-    const meta = api.getModeMeta(mode);
-    const optionSet = getModeOptionSet(mode);
-    const options = optionSet.visible;
+    const before = animate ? captureDisclosureLayout(panel) : null;
+    const focused = panel.contains(document.activeElement) ? document.activeElement : null;
+    const focusKey = focused?.dataset.actionOptionKey;
+    const restoreToggle = focusToggle || focused?.classList.contains("tabletop-basic-toggle");
+    finishDisclosureMotion?.();
+    const meta = mode === "action" ? {
+      timing: "動作",
+      summary: "選擇基本動作或角色能力；能力的使用時機與消耗請見各項說明。",
+      prompt: "請選擇一項行動查看說明。"
+    } : api.getModeMeta(mode);
+    const options = getModeOptionSet(mode).visible;
     if (!meta) return;
-
+    const displayedOptions = options.filter(option => !option.isBasic || basicExpanded);
     let selectedKey = selectedOptionKeys.get(mode) || "";
-    let selected = options.find(option => option.key === selectedKey) || null;
+    const selected = displayedOptions.find(option => option.key === selectedKey) || null;
     if (!selected) {
       selectedKey = "";
       selectedOptionKeys.set(mode, "");
@@ -870,116 +964,73 @@
 
     const context = createElement("div", "tabletop-action-context");
     const contextCopy = createElement("div");
-    contextCopy.append(
-      createElement("strong", "", meta.timing),
-      createElement("span", "", meta.summary)
-    );
+    contextCopy.append(createElement("strong", "", meta.timing), createElement("span", "", meta.summary));
     context.append(contextCopy);
-
     const layout = createElement("div", "tabletop-action-layout");
     const optionList = createElement("div", "tabletop-action-options");
     optionList.setAttribute("aria-label", "可用選項");
     optionList.dataset.actionMode = mode;
-    const spellSourceLabel = api.getSourceLabels?.().spell || "法術";
-    const spellOptions = options.filter(option => option.source === spellSourceLabel);
-    const regularOptions = options.filter(option => option.source !== spellSourceLabel);
 
     function createOptionButton(option) {
-      const opensSpellDialog = option.source === spellSourceLabel && Boolean(option.spellId);
       const button = createElement("button", "tabletop-action-option");
       button.type = "button";
       button.dataset.actionOptionKey = option.key;
-      if (opensSpellDialog) {
-        button.dataset.spellId = option.spellId;
-        button.dataset.spellSourceKey = option.spellSourceKey || "";
-        button.setAttribute("aria-haspopup", "dialog");
-      } else {
-        button.setAttribute("aria-pressed", String(option.key === selectedKey));
-        if (option.key === selectedKey) button.classList.add("is-selected");
-      }
+      if (option.isBasic) button.dataset.basicAction = "true";
+      button.setAttribute("aria-pressed", String(option.key === selectedKey));
+      if (option.key === selectedKey) button.classList.add("is-selected");
       let buttonLabel = api.getButtonLabel(option);
-      if (option.source === "職業" || option.source === "種族") {
-        buttonLabel = OPTION_BUTTON_LABELS[buttonLabel] || buttonLabel;
-      }
+      if (option.source === "職業" || option.source === "種族") buttonLabel = OPTION_BUTTON_LABELS[buttonLabel] || buttonLabel;
       button.appendChild(createElement("span", "", option.source === "職業"
-        ? buttonLabel.replace(/（[^（）]+子職）$/u, "")
-        : buttonLabel));
+        ? buttonLabel.replace(/（[^（）]+子職）$/u, "") : buttonLabel));
       const buttonTag = option.buttonTag || option.source;
       if (buttonTag) button.appendChild(createElement("span", "tabletop-source-tag", buttonTag));
       button.addEventListener("click", () => {
-        if (opensSpellDialog) {
-          selectedOptionKeys.set(mode, "");
-          optionList.querySelectorAll(".tabletop-action-option.is-selected").forEach(selectedButton => {
-            selectedButton.classList.remove("is-selected");
-            selectedButton.setAttribute("aria-pressed", "false");
-          });
-          layout.querySelector(".tabletop-action-description")
-            ?.replaceWith(createActionDescription(null, meta.prompt));
-          const matchingEntries = globalScope.TabletopSpells?.getSelectedSpellEntries?.()
-            .filter(entry => entry.spellId === option.spellId) || [];
-          const spellEntry = matchingEntries.find(entry => entry.sourceKey === option.spellSourceKey)
-            || (matchingEntries.length === 1 ? matchingEntries[0] : null);
-          globalScope.TabletopSpells?.showSpellDetail(spellEntry || option.spellId, button);
-          return;
-        }
         selectedOptionKeys.set(mode, option.key);
         renderActionPanel(mode);
       });
       return button;
     }
 
-    regularOptions.forEach(option => optionList.appendChild(createOptionButton(option)));
-
-    if (!options.length) {
-      const empty = createElement(
-        "p",
-        "tabletop-action-options__empty",
-        "目前分類的按鈕都已隱藏，可從「管理」恢復。"
-      );
-      optionList.appendChild(empty);
-    }
-
-    if (spellOptions.length && spellGroupExpanded.has(mode)) {
-      const expanded = spellGroupExpanded.get(mode) === true;
-      const groupId = `tabletop-action-spells-${mode}`;
-      const toggle = createElement("button", "tabletop-action-spell-toggle");
+    if (mode === "action") {
+      const toggle = createElement("button", "tabletop-action-option tabletop-basic-toggle");
       toggle.type = "button";
-      toggle.setAttribute("aria-expanded", String(expanded));
-      toggle.setAttribute("aria-controls", groupId);
-      toggle.setAttribute(
-        "aria-label",
-        `法術，共 ${spellOptions.length} 個，目前${expanded ? "展開" : "收合"}，點擊${expanded ? "收合" : "展開"}`
-      );
-      toggle.append(
-        createElement("strong", "", "法術"),
-        createElement("span", "tabletop-action-spell-toggle__hint", `${expanded ? "點擊收合" : "點擊展開"} · ${spellOptions.length} 個`),
-        createElement("span", "tabletop-action-spell-toggle__icon", "⌄")
-      );
+      toggle.id = "tabletop-basic-toggle";
+      toggle.setAttribute("aria-expanded", String(basicExpanded));
+      toggle.setAttribute("aria-controls", "tabletop-basic-options");
+      toggle.setAttribute("aria-label", basicExpanded ? "收合基本動作" : "展開基本動作");
+      const icon = createElement("span", "tabletop-basic-toggle__icon", basicExpanded ? "-" : "+");
+      icon.setAttribute("aria-hidden", "true");
+      toggle.append(createElement("span", "", basicExpanded ? "收合" : "基本動作"), document.createTextNode(" "), icon);
       toggle.addEventListener("click", () => {
-        spellGroupExpanded.set(mode, !expanded);
-        renderActionPanel(mode);
+        basicExpanded = !basicExpanded;
+        if (globalScope.dndStorage?.setItem(BASIC_EXPANDED_KEY, String(basicExpanded)) === false) {
+          globalScope.AppDialog?.notify("無法儲存收合偏好，本次仍可使用。", { tone: "warning" });
+        }
+        renderActionPanel(mode, { animate: true, focusToggle: true });
       });
-
-      const spellGroup = createElement("div", "tabletop-action-spell-options");
-      spellGroup.id = groupId;
-      spellGroup.hidden = !expanded;
-      spellOptions.forEach(option => spellGroup.appendChild(createOptionButton(option)));
-      optionList.append(toggle, spellGroup);
+      const basics = createElement("div", "tabletop-basic-options");
+      basics.id = "tabletop-basic-options";
+      basics.setAttribute("role", "group");
+      basics.setAttribute("aria-label", "基本動作");
+      basics.hidden = !basicExpanded;
+      if (basicExpanded) {
+        const basicOptions = options.filter(option => option.isBasic);
+        basics.append(...basicOptions.map(createOptionButton));
+        if (!basicOptions.length) basics.appendChild(createElement("p", "tabletop-action-options__empty", "基本動作都已隱藏，可從「管理」恢復。"));
+      }
+      optionList.append(toggle, basics);
+    }
+    options.filter(option => !option.isBasic).forEach(option => optionList.appendChild(createOptionButton(option)));
+    if (!options.length && mode !== "action") {
+      optionList.appendChild(createElement("p", "tabletop-action-options__empty", "目前分類的按鈕都已隱藏，可從「管理」恢復。"));
     }
     layout.append(optionList, createActionDescription(selected, meta.prompt));
     panel.replaceChildren(context, layout);
+    if (restoreToggle) panel.querySelector(".tabletop-basic-toggle")?.focus({ preventScroll: true });
+    else if (focusKey) Array.from(optionList.querySelectorAll("[data-action-option-key]"))
+      .find(button => button.dataset.actionOptionKey === focusKey)?.focus({ preventScroll: true });
+    if (animate) animateDisclosure(optionList, before);
   }
-
-function updateTabVisibility() {
-  const api = globalScope.ActionPanel;
-  if (!api || !elements.tabs?.length) return;
-
-  elements.tabs.forEach(tab => {
-    const mode = tab.dataset.tabletopActionTab;
-    const hasOptions = getModeOptionSet(mode).all.length > 0;
-    tab.hidden = !hasOptions;
-  });
-}
 
   function renderMetamagic() {
     const section = document.getElementById("tabletop-metamagic-section");
@@ -1042,7 +1093,6 @@ function render() {
   renderNotice();
   renderWeapons();
   renderWeaponRules();
-  updateTabVisibility();
   renderActionPanel(currentMode);
   renderMetamagic();
 }
@@ -1058,7 +1108,7 @@ function render() {
   function setMode(mode, { persist = true, focusTab = false } = {}) {
   const api = globalScope.ActionPanel;
 
-  let nextMode = MODES.includes(mode) ? mode : "basic";
+  let nextMode = MODES.includes(mode) ? mode : "action";
 
   if (api && getModeOptionSet(nextMode).all.length === 0) {
     const fallbackTab = elements.tabs?.find(tab => {
@@ -1155,11 +1205,14 @@ function render() {
       });
     }
 
+    basicExpanded = globalScope.dndStorage?.getItem(BASIC_EXPANDED_KEY) === "true";
     setMode(globalScope.dndStorage?.getItem(MODE_PREFERENCE_KEY), {
       persist: false
     });
     render();
   }
+
+  globalScope.TabletopActions = Object.freeze({ getMode: () => currentMode, setMode });
 
   if (typeof document !== "undefined") {
     document.addEventListener("DOMContentLoaded", init);

@@ -698,12 +698,12 @@
       return Object.freeze({ ok: false, reason: "invalid" });
     }
     const current = getTabletopActionPreferencesState();
+    const modes = mode === "action" ? ["basic", "action"] : [mode];
     const customIds = new Set(
-      current.customActions.filter(action => action.mode === mode).map(action => action.id)
+      current.customActions.filter(action => modes.includes(action.mode)).map(action => action.id)
     );
-    const officialPrefix = `official:${mode}:`;
     const hiddenKeys = current.hiddenKeys.filter(key => (
-      !key.startsWith(officialPrefix)
+      !modes.some(sourceMode => key.startsWith(`official:${sourceMode}:`))
       && !(key.startsWith("custom:") && customIds.has(key.slice("custom:".length)))
     ));
     const restored = current.hiddenKeys.length - hiddenKeys.length;
@@ -2355,6 +2355,10 @@ function getRogueReliableTalentEntry() {
     }
     const rogueReliableTalent = getRogueReliableTalentEntry();
     if (rogueReliableTalent) entries.push(rogueReliableTalent);
+    if (Array.from(document.querySelectorAll("#tool-proficiency-list .tool-proficiency-select"))
+      .some(select => select.value === "盜賊工具")) {
+      entries.push({ label: "盜賊工具", detail: "可以開鎖或解除陷阱。" });
+    }
     if (selectedClass === "paladin" && characterLevel >= 6) {
       entries.push({ label: "守護靈氣", detail: "額外豁免加值已自動計算。" });
     }

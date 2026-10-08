@@ -267,7 +267,72 @@ async function validateToolProficiencyDetails(page) {
   assert.equal(await rowFor("tool-proficiency-1").locator(".tool-proficiency-view").isDisabled(), true);
   await page.locator("#tool-proficiency-1").selectOption("草藥工具");
   await view("tool-proficiency-1", "草藥工具");
-  console.log("Tool details passed: all four row sources, empty/fixed/changed selections, instrument/gaming variants, add/delete, keyboard, close/focus and desktop/narrow layout.");
+  await rowFor("tool-proficiency-1").locator(".tool-proficiency-remove").click();
+  await tab("basic");
+  await page.locator("#class").selectOption("druid");
+  await page.locator("#background").selectOption("sage");
+  await tab("skills");
+  assert.equal(await page.locator("#rogue-fixed-tool-proficiency").count(), 0);
+  assert.equal(await page.locator("#druid-fixed-tool-proficiency").inputValue(), "草藥工具");
+  assert.equal(await page.locator("#druid-fixed-tool-proficiency").isDisabled(), true);
+  assert.equal(await rowFor("druid-fixed-tool-proficiency").locator("label").textContent(), "職業提供 #1");
+  await view("druid-fixed-tool-proficiency", "草藥工具");
+  await tab("basic");
+  await page.locator("#background").selectOption("seeker");
+  await tab("skills");
+  assert.equal(await page.locator("#tool-proficiency-0").inputValue(), "草藥工具");
+  assert.equal(await page.locator("#druid-fixed-tool-proficiency").count(), 0, "fixed background and class tools stay unique");
+  await tab("basic");
+  await page.locator("#background").selectOption("sage");
+  await page.locator("#class").selectOption("monk");
+  await tab("skills");
+  const monk = page.locator("#monk-tool-proficiency-1");
+  assert.equal(await monk.isDisabled(), false);
+  assert.deepEqual(await monk.locator("option").evaluateAll(options => options.filter(o => o.value).map(o => o.value)),
+    await page.evaluate(() => [...ToolProficiencyCatalog.artisanTools, ...ToolProficiencyCatalog.instruments]));
+  assert.equal(await monk.locator('option[value="書法工具"]').isDisabled(), true, "background tool excluded from other choices");
+  await monk.selectOption("木匠工具");
+  await view("monk-tool-proficiency-1", "木匠工具");
+  await monk.selectOption("長笛");
+  await view("monk-tool-proficiency-1", "樂器");
+  await checkLayout();
+  const state = await page.evaluate(() => collectStateObject());
+  await page.evaluate(state => {
+    applyStateObject({ class: "fighter" });
+    // 選項先於職業的 JSON 仍須還原；沿用舊手動工具欄位。
+    applyStateObject({ "monk-tool-proficiency-1": state["monk-tool-proficiency-1"], ...state,
+      "tool-proficiency-list-count": 2, "tool-proficiency-1": "骰子" });
+  }, state);
+  assert.equal(await monk.inputValue(), "長笛", "JSON restores class choice regardless of key order");
+  assert.equal(await page.locator("#tool-proficiency-1").inputValue(), "骰子", "legacy manual rows preserved");
+  const shareUrl = new URL(await page.evaluate(async () => {
+    const state = collectShareState();
+    return new URL(await encodeStateToHash(state), location.href).href;
+  }));
+  shareUrl.searchParams.set("analytics", "owner");
+  const shared = await page.context().browser().newPage();
+  try {
+    await shared.goto(shareUrl.href);
+    await shared.waitForFunction(() => document.getElementById("monk-tool-proficiency-1")?.value === "長笛");
+    assert.equal(await shared.locator("#tool-proficiency-1").inputValue(), "骰子");
+  } finally { await shared.close(); }
+  await page.evaluate(() => flushPendingAutosave());
+  const reloadUrl = new URL(shareUrl.href);
+  reloadUrl.hash = "";
+  await page.goto(reloadUrl.href);
+  await page.waitForFunction(() => document.getElementById("monk-tool-proficiency-1")?.value === "長笛");
+  if (await page.locator("#legal-ack-btn").isVisible()) await page.locator("#legal-ack-btn").click();
+  await tab("skills");
+  assert.equal(await page.locator("#tool-proficiency-1").inputValue(), "骰子", "autosave restores tool rows");
+  await page.evaluate(() => replaceToolProficiencies(["書法工具", "木匠工具", "骰子"]));
+  assert.equal(await monk.inputValue(), "木匠工具", "quick build writes eligible class tool into its own slot");
+  assert.equal(await page.locator("#tool-proficiency-1").inputValue(), "骰子");
+  await tab("basic");
+  await page.locator("#class").selectOption("fighter");
+  await tab("skills");
+  assert.equal(await list.locator('[data-tool-source="class"]').count(), 0, "class changes remove derived tools only");
+  assert.equal(await page.locator("#tool-proficiency-1").inputValue(), "骰子");
+  console.log("Tool details and automation passed: bard/rogue/druid/monk sources, allowed choices, deduplication, JSON/share/autosave/quick-build compatibility, keyboard/focus and desktop/narrow layout.");
 }
 
 async function validateEquipmentSearch(page) {

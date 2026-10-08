@@ -61,13 +61,17 @@
     useControls.forEach(({ canonical, label, title }) => {
       const mirror = document.createElement("input");
       mirror.type = "checkbox";
+      mirror.dataset.spellUseId = canonical.id;
+      mirror.dataset.spellSourceKey = entry.sourceKey;
       mirror.checked = canonical.checked;
       mirror.setAttribute("aria-label", label || `${entry.spell.nameZh}免費施法已使用`);
       mirror.title = title || "免費施法";
       mirror.addEventListener("change", () => {
         globalScope.TabletopResources?.setCanonicalCheckbox?.(canonical, mirror.checked);
       });
-      controls.appendChild(mirror);
+      const target = createElement("label", "tabletop-spell-card__use");
+      target.appendChild(mirror);
+      controls.appendChild(target);
     });
     return controls;
   }
@@ -134,6 +138,9 @@
 
   function renderSelectedSpells(entries) {
     if (!elements.selectedSpells) return;
+    const focused = elements.selectedSpells.contains(document.activeElement) ? document.activeElement : null;
+    const focusedUseId = focused?.dataset.spellUseId;
+    const focusedSourceKey = focused?.dataset.spellSourceKey;
     const groups = LEVEL_LABELS.flatMap((label, level) => {
       const spells = entries.filter(entry => entry.spell.level === level);
       if (!spells.length) return [];
@@ -152,17 +159,39 @@
           createElement("strong", "", entry.spell.nameZh),
           createElement("span", "", entry.spell.nameEn)
         );
-        button.append(names, createElement("span", "tabletop-source-tag", entry.source));
+        const timing = createElement("span", "tabletop-spell-button__timing");
+        const timingLabels = getSpellTimingLabels(entry.spell);
+        timingLabels.forEach(label => timing.appendChild(createElement("span", "", label)));
+        button.setAttribute("aria-label", [entry.spell.nameZh, entry.spell.nameEn, ...timingLabels, entry.source].join(" "));
+        button.append(names, timing);
         button.addEventListener("click", () => showSpellDetail(entry, button));
-        card.appendChild(button);
+        const source = createElement("div", "tabletop-spell-card__source tabletop-source-tag");
+        source.appendChild(createElement("span", "tabletop-spell-card__source-label", entry.source));
         const useMirrors = createSpellUseMirrors(entry);
-        if (useMirrors) card.appendChild(useMirrors);
+        if (useMirrors) source.appendChild(useMirrors);
+        card.append(button, source);
         list.appendChild(card);
       });
       section.appendChild(list);
       return [section];
     });
     elements.selectedSpells.replaceChildren(...groups);
+    if (focusedUseId) {
+      Array.from(elements.selectedSpells.querySelectorAll("input[data-spell-use-id]"))
+        .find(input => input.dataset.spellUseId === focusedUseId && input.dataset.spellSourceKey === focusedSourceKey)
+        ?.focus({ preventScroll: true });
+    }
+  }
+
+  function getSpellTimingLabels(spell) {
+    // Casting time still lives in the catalog's rule text, as in ActionPanel.
+    // Limit parsing to that field so effect timings do not become casting tags.
+    const field = String(spell.desc || "").match(/施法時間\s*[:：]([\s\S]*?)(?=\r?\n(?:射程|距離)\s*[:：]|$)/u)?.[1] || "";
+    const labels = Array.from(field.matchAll(/附贈動作|反應動作|動作|\d+\s*(?:分鐘|小時)/gu), match => (
+      match[0].replace("附贈動作", "附贈").replace("反應動作", "反應").replace(/\s+/gu, "")
+    ));
+    if (globalScope.SpellCatalog?.isRitual(spell)) labels.push("儀式");
+    return [...new Set(labels)];
   }
 
   function createSpellDetailContent(spell, entry = null) {

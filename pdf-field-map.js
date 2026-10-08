@@ -805,11 +805,13 @@
   function collectToolProficiencyNames(state) {
     const seen = new Set();
     return Object.keys(state)
-      .filter((key) => /^tool-proficiency-\d+$/.test(key) || /^bard-instrument-\d+$/.test(key))
+      .filter((key) => /^(?:tool-proficiency|bard-instrument|monk-tool-proficiency)-\d+$/.test(key)
+        || /^(?:druid|rogue)-fixed-tool-proficiency$/.test(key))
       .sort((a, b) => {
         const aGroup = a.startsWith('tool-proficiency-') ? 0 : 1;
         const bGroup = b.startsWith('tool-proficiency-') ? 0 : 1;
-        return aGroup - bGroup || Number.parseInt(a.split('-').at(-1), 10) - Number.parseInt(b.split('-').at(-1), 10);
+        const slot = key => Number.parseInt(key.split('-').at(-1), 10) || 1;
+        return aGroup - bGroup || slot(a) - slot(b);
       })
       .map((key) => normalizeText(state[key]))
       .filter((value) => {

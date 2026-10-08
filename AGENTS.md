@@ -94,15 +94,15 @@
 | 系統級責任 | 驗證 |
 | --- | --- |
 | 施法 metadata、跑團模式施法條件、法術位、專注或施法自動擲骰 | `node validate-tabletop-spellcasting.js` |
-| 非施法動作定義／摘要、角色卡與跑團操作、自訂／隱藏偏好及持久化；狀態／危害連動與專注中斷、危害檢定及分頁提示；專長來源雙向選擇、自動同步、固定來源灰階鎖定、資格警示／數值停用／PDF 提醒、自行管理增刪與新舊資料／分享還原；武器裝備互動、衝突確認、AC／摘要與 PDF 對應 | `node validate-action-metadata.js` |
+| 非施法動作定義／摘要、角色卡與跑團操作、基本動作收合／記憶／清除、合併分類的自訂／隱藏偏好及持久化、法術單一入口與施法時間標記；狀態／危害連動與專注中斷、危害檢定及分頁提示；專長來源雙向選擇、自動同步、固定來源灰階鎖定、資格警示／數值停用／PDF 提醒、自行管理增刪與新舊資料／分享還原；武器裝備互動、衝突確認、AC／摘要與 PDF 對應 | `node validate-action-metadata.js` |
 | 德魯伊荒野形態、野獸資料與攻擊／資源操作、荒野夥伴、野性復甦、自然恢復、原初打擊及其狀態／持久化 | `node validate-tabletop-druid.js` |
 | 法術書管理（含法師六個推薦法術的專屬寫入入口）、準備法術總數、清空已準備／固定來源保留、儀式施法、法術書匯入／持久化 | `node validate-spellbook.js` |
-| 法術頁籤全文／職業別名／環位搜尋及排序；`search.js` 的裝備搜尋／詳情／規則關鍵字／購買入口、四種工具熟練列的查看按鈕、搜尋切頁及導覽還原 | `node validate-spell-search.js`（含 Artificer 無資料／模擬資料、外部搜尋模組與主頁內嵌語法）；僅裝備搜尋與工具查看可加 `--equipment-only` |
+| 法術頁籤全文／職業別名／環位搜尋及排序；`search.js` 的裝備搜尋／詳情／規則關鍵字／購買入口、四種工具熟練列的查看按鈕、職業工具自動化與 JSON／分享／自動存檔還原、搜尋切頁及導覽還原 | `node validate-spell-search.js`（含 Artificer 無資料／模擬資料、外部搜尋模組與主頁內嵌語法）；僅裝備搜尋、工具查看與職業工具自動化可加 `--equipment-only` |
 | 屬性產生與共用擲骰：購點、結果分配、背景加值、備註／取消／鍵盤／觸控、歷史相容性及自動儲存 | `node validate-ability-roll.js`；可用 `--point-buy-only` 或 `--dice-only` 選擇購點或一般擲骰／歷史分項 |
 | 導覽屬性引導／觸控；創角匯入銜接／PDF 載入取消；跑團模式法術與資源教學預覽；共用導覽流程 | 分別優先使用 `node validate-onboarding.js --touch-only`、`node validate-onboarding.js --imports-only`；影響共用導覽或分項不足以涵蓋時執行完整 `node validate-onboarding.js` |
 | 短休／長休、休息後選項同步與還原、生命骰（含擲骰關閉時的單顆／連續回血）、資源恢復或最佳旅伴 | `node validate-tabletop-rest.js` |
 | 冒險日誌 IndexedDB 遷移／失敗復原／跨分頁衝突、JSON 相容、全文搜尋／IME／儲存與跳頁、角色資料隔離及桌機／手機版面 | `node validate-ui.js --journal-only`；IME 與手機觸控為瀏覽器模擬，不代表實機輸入法驗證 |
-| 共用 UI：GA4 網域／owner 隔離（純模擬、不連線）、主題／保存／素材、工具選單與技能版面、Legal／About、AppDialog／toast（含最高層級、背景 inert 排除、點擊／觸控隔離及按住暫停）、角色能力頁籤視窗（含創角／表格顯示移位、子視窗、法術／技能／動物參考浮層、選項保存、焦點與補填入口）、PDF 欄位與實際可編輯匯出 | `node validate-ui.js`；可用 `--appearance-only`、`--dialogs-only`（含角色能力視窗與自訂背景的編輯／專長與工具同步／PDF 名稱／資料還原）、`--pdf-only` 或 `--pdf-fields-only` 選擇分項。局部 UI 依上方原則驗證，不自動連帶驗證 PDF 或導覽 |
+| 共用 UI：GA4 網域／owner 隔離（純模擬、不連線）、主題／保存／素材、工具選單與技能版面、Legal／About、AppDialog／toast（含最高層級、背景 inert 排除、點擊／觸控隔離及按住暫停）、角色能力頁籤視窗（含創角／表格顯示移位、子視窗、法術／技能／動物參考浮層、選項保存、焦點與補填入口）、PDF 欄位（含職業工具）與實際可編輯匯出 | `node validate-ui.js`；可用 `--appearance-only`、`--dialogs-only`（含角色能力視窗與自訂背景的編輯／專長與工具同步／PDF 名稱／資料還原）、`--pdf-only` 或 `--pdf-fields-only` 選擇分項。局部 UI 依上方原則驗證，不自動連帶驗證 PDF 或導覽 |
 
 離線成品屬於建置驗證，不列為產品 regression suite。明確要求建立、測試或更新離線角色卡時執行 `build-offline-nopdf.ps1`；建置完成會自動檢查產物語法與離線分享／離開流程，失敗時回報建置失敗。環境需求與模擬限制見 README。
 

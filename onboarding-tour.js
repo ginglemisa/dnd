@@ -225,14 +225,22 @@
         { ...step("actions", "在你的回合中採取行動",
           "你的回合通常包含移動與一次動作；若能力或規則允許，也可以使用一次附贈。\n\n移動不一定要一次完成，也不需要固定在動作之前。\n例如，你可以先移動 2 格、進行攻擊，再移動剩下的 3 格。\n\n反應則需要符合特定的觸發條件才能使用，通常在其他角色的回合中發生。", ".tabletop-action-browser", ["移動", "動作", "附贈", "移動", "動作", "移動", "移動", "反應"]),
           placement: "action-corner",
+          beforePosition: () => {
+            this.tabletopActionMode = window.TabletopActions?.getMode();
+            window.TabletopActions?.setMode("action", { persist: false });
+          },
+          afterLeave: () => {
+            if (this.tabletopActionMode) window.TabletopActions?.setMode(this.tabletopActionMode, { persist: false });
+            this.tabletopActionMode = null;
+          },
           getHoles: () => [
             this.getHoleFromElements([
               document.querySelector(".tabletop-action-browser .tabletop-section-heading"),
               document.querySelector(".tabletop-action-browser .tabletop-action-tabs")
             ], 8),
-            this.getHoleForSelector('#tabletop-action-panel-basic [data-action-option-key="attack"]', 8)
+            this.getHoleForSelector('#tabletop-basic-toggle', 8)
           ].filter(Boolean) },
-        { ...step("actions", "如果你想施放魔法",
+        { ...step("spells", "如果你想施放魔法",
           "先告訴 DM 你要用什麼法術，閱讀文字確認條件滿足後，就可以選擇目標。\n\n部分法術需要維持專注。\n一般情況下，玩家無法同時維持兩個需要專注的法術。", '.app-dialog[data-tour-spell-preview] .tabletop-spell-detail__copy'),
           placement: "spell-details-bottom",
           getHoles: () => [this.getSpellMetadataHole()].filter(Boolean),

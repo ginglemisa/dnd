@@ -66,14 +66,14 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261006-toast-swipe-no-close">
+  <link rel="stylesheet" href="styles.css?v=20261008-tools-spell-primer">
   <script src="scroll-to-top.js?v=20261001-character-features-modal" defer></script>
   <script src="dice-roller.js?v=20261006-usage-analytics" defer></script>
   <script src="monster.js?v=20260912-druid-controls" defer></script>
     <script src="class-features.js?v=20261006-wizard-feature-copy" defer></script>
   <script src="race.js?v=20261003-race-flavor" defer></script>
   <script src="backgrounds.js?v=20261003-background-flavor" defer></script>
-  <script src="tool-data.js?v=20260908-personalized-actions" defer></script>
+  <script src="tool-data.js?v=20261008-class-tools" defer></script>
   <script src="feats.js?v=20261001-automatic-feat-grants" defer></script>
   <script src="equipment-notes.js?v=20260813-weapon-rule-popups-2" defer></script>
   <script src="spell-list.js?v=20261007-false-life-vigor" defer></script>
@@ -83,14 +83,14 @@
   <script src="app-dialog.js?v=20261006-toast-swipe-no-close" defer></script>
   <script src="custom-background.js?v=20261006-custom-background-sync" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
-  <script src="tabletop-mode.js?v=20261007-false-life-vigor" defer></script>
+  <script src="tabletop-mode.js?v=20261007-tabletop-actions-redesign" defer></script>
   <script src="tabletop-druid.js?v=20260915-main2-shield" defer></script>
 <script src="tabletop-resources.js?v=20261006-usage-analytics" defer></script>
-<script src="tabletop-actions.js?v=20261005-feat-eligibility-warning" defer></script>
-  <script src="tabletop-spells.js?v=20261007-false-life-vigor" defer></script>
+<script src="tabletop-actions.js?v=20261008-tabletop-inline-controls" defer></script>
+  <script src="tabletop-spells.js?v=20261008-tabletop-inline-controls" defer></script>
   <script src="legal-modal.js?v=20260923-legal-about" defer></script>
-  <script src="onboarding-tour.js?v=20261006-toast-interaction" defer></script>
-  <script src="quick-build.js?v=20261006-usage-analytics" defer></script>
+  <script src="onboarding-tour.js?v=20261007-tabletop-actions-redesign" defer></script>
+  <script src="quick-build.js?v=20261007-fixed-size" defer></script>
   <script src="spellbook.js?v=20261005-spell-name-labels" defer></script>
   <script src="deity-info.js" defer></script>
 
@@ -240,7 +240,7 @@
     <div class="tabletop-primary-tabs" role="tablist" aria-label="跑團模式主視圖" data-visible-tab-count="5">
       <button type="button" id="tabletop-tab-overview" role="tab" aria-selected="true" aria-controls="tabletop-panel-overview" data-tabletop-tab="overview">總覽</button>
       <button type="button" id="tabletop-tab-skills" role="tab" aria-selected="false" aria-controls="tabletop-panel-skills" data-tabletop-tab="skills" tabindex="-1">技能</button>
-      <button type="button" id="tabletop-tab-actions" role="tab" aria-selected="false" aria-controls="tabletop-panel-actions" data-tabletop-tab="actions" tabindex="-1">動作</button>
+      <button type="button" id="tabletop-tab-actions" role="tab" aria-selected="false" aria-controls="tabletop-panel-actions" data-tabletop-tab="actions" tabindex="-1">行動</button>
       <button type="button" id="tabletop-tab-spells" role="tab" aria-selected="false" aria-controls="tabletop-panel-spells" data-tabletop-tab="spells" tabindex="-1">法術</button>
       <button type="button" id="tabletop-tab-resources" role="tab" aria-selected="false" aria-controls="tabletop-panel-resources" data-tabletop-tab="resources" tabindex="-1">資源</button>
     </div>
@@ -409,17 +409,15 @@
           </div>
         </div>
         <div class="tabletop-action-tabs" role="tablist" aria-label="行動類型">
-          <button type="button" id="tabletop-action-tab-basic" role="tab" aria-selected="true" aria-controls="tabletop-action-panel-basic" data-tabletop-action-tab="basic">動作</button>
-          <button type="button" id="tabletop-action-tab-action" role="tab" aria-selected="false" aria-controls="tabletop-action-panel-action" data-tabletop-action-tab="action" tabindex="-1">特殊</button>
+          <button type="button" id="tabletop-action-tab-action" role="tab" aria-selected="true" aria-controls="tabletop-action-panel-action" data-tabletop-action-tab="action">動作</button>
           <button type="button" id="tabletop-action-tab-bonus" role="tab" aria-selected="false" aria-controls="tabletop-action-panel-bonus" data-tabletop-action-tab="bonus" tabindex="-1">附贈</button>
-          <button type="button" id="tabletop-action-tab-reaction" role="tab" aria-selected="false" aria-controls="tabletop-action-panel-reaction" data-tabletop-action-tab="reaction" tabindex="-1">反應</button>
           <button type="button" id="tabletop-action-tab-movement" role="tab" aria-selected="false" aria-controls="tabletop-action-panel-movement" data-tabletop-action-tab="movement" tabindex="-1">移動</button>
+          <button type="button" id="tabletop-action-tab-reaction" role="tab" aria-selected="false" aria-controls="tabletop-action-panel-reaction" data-tabletop-action-tab="reaction" tabindex="-1">反應</button>
         </div>
-        <section id="tabletop-action-panel-basic" class="tabletop-action-panel" role="tabpanel" aria-labelledby="tabletop-action-tab-basic" data-tabletop-action-panel="basic"></section>
-        <section id="tabletop-action-panel-action" class="tabletop-action-panel" role="tabpanel" aria-labelledby="tabletop-action-tab-action" data-tabletop-action-panel="action" hidden></section>
+        <section id="tabletop-action-panel-action" class="tabletop-action-panel" role="tabpanel" aria-labelledby="tabletop-action-tab-action" data-tabletop-action-panel="action"></section>
         <section id="tabletop-action-panel-bonus" class="tabletop-action-panel" role="tabpanel" aria-labelledby="tabletop-action-tab-bonus" data-tabletop-action-panel="bonus" hidden></section>
-        <section id="tabletop-action-panel-reaction" class="tabletop-action-panel" role="tabpanel" aria-labelledby="tabletop-action-tab-reaction" data-tabletop-action-panel="reaction" hidden></section>
         <section id="tabletop-action-panel-movement" class="tabletop-action-panel" role="tabpanel" aria-labelledby="tabletop-action-tab-movement" data-tabletop-action-panel="movement" hidden></section>
+        <section id="tabletop-action-panel-reaction" class="tabletop-action-panel" role="tabpanel" aria-labelledby="tabletop-action-tab-reaction" data-tabletop-action-panel="reaction" hidden></section>
       </section>
 
       <div id="tabletop-actions-metamagic-mount"></div>
@@ -894,7 +892,6 @@
   <div class="section language-card">
     <h3>語言</h3>
     <div class="language-section">
-      <label>你會說通用語及兩種語言：</label>
       <div class="language-base-grid">
         <div class="language-field">
           <label for="language1">語言 1：</label>
@@ -932,15 +929,15 @@
       </div>
 
       <div id="extra-language-container" class="language-extra-container"></div>
+      <p class="character-features-hint">你會說通用語及兩種語言：</p>
     </div>
   </div>
 
   <div class="section tool-card">
-    <h3>工具熟練</h3>
     <div class="tool-section">
       <div id="tool-proficiency-list" class="tool-proficiency-list">
         <div class="tool-proficiency-row tool-proficiency-row--background">
-          <label for="tool-proficiency-0">背景工具：</label>
+          <label for="tool-proficiency-0">背景提供</label>
           <div class="tool-proficiency-control">
             <select id="tool-proficiency-0" class="tool-proficiency-select" disabled>
               <option value="">-- 請先選擇背景 --</option>
@@ -1246,19 +1243,10 @@
 
   <div class="spell-meta-row">
     <div id="spell-list-status-note" class="spell-note-muted" role="status" aria-live="polite">本頁僅提供免費基本規則法術；部分 PHB 專屬內容未列入。</div>
-    <details class="spell-primer">
-      <summary id="spell-primer-trigger">
+    <button type="button" id="spell-primer-trigger" class="spell-primer" aria-haspopup="dialog" onclick="openSpellPrimer(this)">
         <span class="spell-primer__info" aria-hidden="true">i</span>
         <span>法術入門</span>
-        <span class="spell-primer__chevron" aria-hidden="true">⌄</span>
-      </summary>
-      <div class="spell-primer__popover" role="note" aria-labelledby="spell-primer-trigger">
-        <div class="spell-primer__heading">
-          <span class="spell-primer__eyebrow">快速指南</span>
-        </div>
-        <p>魔法分為戲法與 1～9 環法術：戲法不消耗法術位，可反覆施放；環位法術通常需消耗相應的法術位，也可能用更高環法術位施放以增強效果。法術標示的 <strong>V、S、M</strong> 分別代表言語、姿勢、材料成分，表示施法時需要說出咒語、做出手勢或使用指定材料。部分帶有儀式標籤的法術，若已準備，可以多花 10 分鐘以儀式方式施放，且不消耗法術位。除此之外，法術還有施法時間、距離、持續時間與專注等限制；專注法術通常同一時間只能維持一個。</p>
-      </div>
-    </details>
+    </button>
   </div>
 </div>
 
@@ -1293,6 +1281,40 @@
   </div>
 
   <script>
+function openSpellPrimer(trigger) {
+  return window.AppDialog.showMessage({
+    title: "法術入門",
+    variant: "spell-primer",
+    trigger,
+    renderContent(body) {
+      body.innerHTML = `<div class="spell-primer-content">
+        <p>法術分為<strong>戲法（0環）</strong>及<strong>1～9環法術</strong>。</p>
+        <p><strong>戲法</strong>：不消耗法術位，施放次數不限。</p>
+        <p><strong>環位法術</strong>：通常需要消耗對應環數或更高環數的「法術位」（也稱法術格）。</p>
+        <p>環數越高，通常代表法術越強。低環法術也能使用高環法術位施放，部分法術會因此增強效果。</p>
+        <h3>施法成分：V、S、M</h3>
+        <ul>
+          <li><strong>V（言語）</strong>：必須以正常說話的音量唸出咒語，不能只在心中默唸。被封口或處於「沉默術」範圍時，無法施展需要 V 的法術。</li>
+          <li><strong>S（姿勢）</strong>：需要至少一隻能自由活動的手做出施法手勢。</li>
+          <li><strong>M（材料）#1</strong>：施法時需要指定材料。沒有標價且不會消耗的材料，可用「材料包」替代；符合職業條件時，也可以使用「法器」替代。</li>
+          <li><strong>M（材料）#2</strong>：標有價格或會被消耗的材料，必須實際備妥，不能用材料包或法器替代。施法時須有一隻手能取用材料。</li>
+        </ul>
+        <h3>手部使用規則</h3>
+        <p>同一隻手可以同時滿足 S、M 條件，例如拿著材料或法器的手也能做出施法手勢。</p>
+        <p>但如果法術只有 S、沒有 M，就必須有一隻手完全空出來，不能拿著武器、盾牌或其他物品。</p>
+        <h3>儀式施法</h3>
+        <p>具有「儀式」標籤的法術，若已準備，可以額外花費 10 分鐘以儀式方式施放，不消耗法術位。</p>
+        <h3>其他施法限制</h3>
+        <ul>
+          <li>每回合最多只能消耗 1 個法術位施法。不消耗法術位的施法方式（如魔法物品、法術卷軸）不受此限制。</li>
+          <li>法術還有施法時間、射程、持續時間及目標條件等限制，部分法術需要看見目標。</li>
+          <li><strong>專注</strong>：同一時間只能維持一個專注效果。受到傷害時須通過體質豁免才能維持專注；陷入「失能」、死亡或開始施展其他專注法術時，原本的專注立即中斷。</li>
+        </ul>
+      </div>`;
+    }
+  });
+}
+
 function updateHPDisplay() {
   if (!isAutomaticKeyStatsEnabled()) return;
   const classValue = document.getElementById("class").value;
@@ -1415,7 +1437,7 @@ function bindCoreCharacterEvents() {
   bindEventById("cha", "input", updateACDisplay);
   ["str", "dex", "con", "int", "wis", "cha"].forEach(id => bindEventById(id, "change", syncDerivedFeatRows));
   bindEventById("armor", "change", updateArmorInfo);
-  bindEventById("class", "change", () => {updateHitDieLabel();resetSpellSlotsAfterCharacterChange();refreshWeaponSelections();updateClassFeature();updateClassFeatureOptionVisibility();syncDerivedFeatRows();syncBardInstrumentRows();updateACDisplay();updateSpeedDisplay();updateEldritchInvocationSectionVisibility();populateHandAttacks();syncOriginAndSubclassDerivedSpellRows();updateSpellsByClassLevel();updateExpertiseVisibility();updateExtraLanguageFields();});
+  bindEventById("class", "change", () => {updateHitDieLabel();resetSpellSlotsAfterCharacterChange();refreshWeaponSelections();updateClassFeature();updateClassFeatureOptionVisibility();syncDerivedFeatRows();syncClassToolRows();updateACDisplay();updateSpeedDisplay();updateEldritchInvocationSectionVisibility();populateHandAttacks();syncOriginAndSubclassDerivedSpellRows();updateSpellsByClassLevel();updateExpertiseVisibility();updateExtraLanguageFields();});
   bindEventById("level", "change", () => {syncHitDiceCountToLevel();syncProficiencyUseChecks();updateAutomaticInitiative();resetSpellSlotsAfterCharacterChange();refreshWeaponSelections();updateClassFeature();updateClassFeatureOptionVisibility();syncDerivedFeatRows();updateACDisplay();updateSpeedDisplay();updateEldritchInvocationSectionVisibility();populateHandAttacks();syncOriginAndSubclassDerivedSpellRows();updateSpellsByClassLevel();updateExtraLanguageFields();});
   bindEventById("speed-input", "input", updateSpeedDisplay);
   bindEventById("elf-lineage", "change", () => { updateSpeedDisplay(); updateHighElfCantripVisibility(); });
@@ -1630,17 +1652,17 @@ function getManualToolProficiencyRows() {
 
 function refreshToolProficiencyRows() {
   let manualIndex = 0;
+  let classIndex = 0;
   getToolProficiencyRows().forEach((row) => {
     const select = row.querySelector("select");
     const label = row.querySelector("label");
     if (!select || !label) return;
     if (isDerivedToolProficiencyRow(row)) {
-      const slot = row.dataset.toolSlot;
-      select.id = `bard-instrument-${slot}`;
-      label.textContent = `職業工具熟練 ${slot}：`;
+      classIndex += 1;
+      label.textContent = `職業提供 #${classIndex}`;
     } else {
       select.id = `tool-proficiency-${manualIndex}`;
-      label.textContent = manualIndex === 0 ? "背景工具：" : `工具 ${manualIndex + 1}：`;
+      label.textContent = manualIndex === 0 ? "背景提供" : `工具 ${manualIndex + 1}：`;
       manualIndex += 1;
     }
     label.htmlFor = select.id;
@@ -1699,15 +1721,20 @@ function removeDuplicateToolProficiencies() {
   });
 }
 
-function createBardInstrumentRow(slot) {
+function createClassToolRow(classValue, spec, slot) {
   const list = document.getElementById("tool-proficiency-list");
   if (!list) return null;
   const row = document.createElement("div");
   row.className = "tool-proficiency-row tool-proficiency-row--derived";
   row.dataset.toolSource = "class";
   row.dataset.toolSlot = String(slot);
-  const instruments = getToolProficiencyCatalog().instruments || [];
-  row.innerHTML = `<label></label><div class="tool-proficiency-control"><select class="tool-proficiency-select">${createToolOptionsHtml(instruments)}</select></div>`;
+  row.dataset.toolClass = classValue;
+  if (spec.fixedTool) row.dataset.fixedClassTool = classValue;
+  const options = spec.fixedTool
+    ? `<option value="${spec.fixedTool}">${spec.fixedTool}</option>`
+    : createToolOptionsHtml(spec.options);
+  row.innerHTML = `<label></label><div class="tool-proficiency-control"><select class="tool-proficiency-select"${spec.fixedTool ? " disabled" : ""}>${options}</select></div>`;
+  row.querySelector("select").id = spec.fixedTool ? spec.idPrefix : `${spec.idPrefix}${slot}`;
   row.querySelector("select")?.addEventListener("change", () => {
     removeDuplicateToolProficiencies();
     syncToolProficiencyOptions();
@@ -1719,23 +1746,25 @@ function createBardInstrumentRow(slot) {
   return row;
 }
 
-function syncBardInstrumentRows() {
+function syncClassToolRows() {
   const list = document.getElementById("tool-proficiency-list");
   if (!list) return;
-  const shouldExist = document.getElementById("class")?.value === "bard";
-  const existing = new Map(getToolProficiencyRows()
-    .filter(isDerivedToolProficiencyRow)
-    .map(row => [Number(row.dataset.toolSlot), row]));
-  if (!shouldExist) {
-    existing.forEach(row => row.remove());
-  } else {
-    for (let slot = 1; slot <= 3; slot += 1) {
-      if (!existing.has(slot)) createBardInstrumentRow(slot);
-    }
-    const firstManualExtra = getManualToolProficiencyRows()[1] || null;
-    for (let slot = 1; slot <= 3; slot += 1) {
-      const row = getToolProficiencyRows().find(candidate => Number(candidate.dataset.toolSlot) === slot);
-      if (row) list.insertBefore(row, firstManualExtra);
+  const classValue = document.getElementById("class")?.value || "";
+  const spec = getToolProficiencyCatalog().classProficiencies?.[classValue];
+  // 固定工具若已由背景或手動列提供，沿用既有盜賊的去重行為。
+  const fixedAlreadyPresent = spec?.fixedTool && getManualToolProficiencyRows()
+    .some(row => row.querySelector("select")?.value === spec.fixedTool);
+  const count = fixedAlreadyPresent ? 0 : spec?.count || 0;
+  getToolProficiencyRows().filter(isDerivedToolProficiencyRow).forEach(row => {
+    if (row.dataset.toolClass !== classValue || Number(row.dataset.toolSlot) > count) row.remove();
+  });
+  const firstManualExtra = getManualToolProficiencyRows()[1] || null;
+  for (let slot = 1; slot <= count; slot += 1) {
+    const row = getToolProficiencyRows().find(candidate => isDerivedToolProficiencyRow(candidate)
+      && Number(candidate.dataset.toolSlot) === slot) || createClassToolRow(classValue, spec, slot);
+    if (row) {
+      if (spec.fixedTool) row.querySelector("select").value = spec.fixedTool;
+      list.insertBefore(row, firstManualExtra);
     }
   }
   refreshToolProficiencyRows();
@@ -1752,12 +1781,13 @@ function createToolProficiencyRow(value = "") {
   const select = row.querySelector("select");
   if (getToolProficiencyCatalog().isTool(value)) select.value = value;
   select.addEventListener("change", () => {
+    syncClassToolRows();
     removeDuplicateToolProficiencies();
     syncToolProficiencyOptions();
   });
   row.querySelector(".tool-proficiency-remove").addEventListener("click", () => {
     row.remove();
-    refreshToolProficiencyRows();
+    syncClassToolRows();
     syncToolProficiencyOptions();
     if (typeof scheduleStructuralSaveAllFields === "function") scheduleStructuralSaveAllFields();
   });
@@ -1809,29 +1839,28 @@ function updateBackgroundToolRow(preferredValue = "") {
     select.disabled = true;
   }
 
-  removeDuplicateToolProficiencies();
-  syncToolProficiencyOptions();
+  syncClassToolRows();
 }
 
 function replaceToolProficiencies(values, options = {}) {
   const catalog = getToolProficiencyCatalog();
   const uniqueValues = [...new Set((Array.isArray(values) ? values : []).filter(value => catalog.isTool(value)))];
   updateBackgroundToolRow(options.backgroundTool || "");
-  syncBardInstrumentRows();
+  syncClassToolRows();
   const backgroundValue = document.getElementById("tool-proficiency-0")?.value || "";
-  const bardInstrumentValues = document.getElementById("class")?.value === "bard"
-    ? uniqueValues.filter(value => (catalog.instruments || []).includes(value)).slice(0, 3)
+  const spec = catalog.classProficiencies?.[document.getElementById("class")?.value];
+  const classToolValues = spec?.fixedTool ? [spec.fixedTool] : spec
+    ? uniqueValues.filter(value => value !== backgroundValue && spec.options.includes(value)).slice(0, spec.count)
     : [];
   getToolProficiencyRows().filter(isDerivedToolProficiencyRow).forEach((row, index) => {
-    row.querySelector("select").value = bardInstrumentValues[index] || "";
+    row.querySelector("select").value = classToolValues[index] || "";
   });
-  const additionalValues = uniqueValues.filter(value => value !== backgroundValue && !bardInstrumentValues.includes(value));
+  const additionalValues = uniqueValues.filter(value => value !== backgroundValue && !classToolValues.includes(value));
   setToolProficiencyRowCount(1 + additionalValues.length);
   getManualToolProficiencyRows().slice(1).forEach((row, index) => {
     row.querySelector("select").value = additionalValues[index] || "";
   });
-  removeDuplicateToolProficiencies();
-  syncToolProficiencyOptions();
+  syncClassToolRows();
   if (typeof setupAutoSave === "function") setupAutoSave(document.querySelector(".tool-card"));
 }
 
@@ -8053,6 +8082,8 @@ const APP_STORAGE_KEYS = Object.freeze([
   "dnd.quickBuildDraft.v1",
   POINT_BUY_LAST_APPLIED_KEY,
   "dnd.tabletopActionPreferences.v1",
+  "dnd.tabletopBasicExpanded.v1",
+  "dnd.tabletopActionMode.v1",
   "dnd.tabletopAvatar.v1",
   "dnd.tabletopIntroSeen.v1",
   ...LEGACY_LEGAL_DISMISS_KEYS
@@ -8289,6 +8320,8 @@ function isShareFieldRelevant(id, data) {
   if (id === "paladin-fighting-style" || id === "paladin-blessed-warrior") return classValue === "paladin" && level >= 2;
   if (id.startsWith("cleric-")) return classValue === "cleric";
   if (id.startsWith("druid-")) return classValue === "druid";
+  if (id.startsWith("monk-tool-proficiency-")) return classValue === "monk";
+  if (id === "rogue-fixed-tool-proficiency") return classValue === "rogue";
   if (id === "sorcerer-elemental-affinity-damage-type" || id.startsWith("metamagic-option-")) return classValue === "sorcerer";
   if (id.startsWith("eldritch-invocation-") || id.startsWith("bard-instrument-")) {
     return id.startsWith("eldritch-invocation-") ? classValue === "warlock" : classValue === "bard";
@@ -8469,7 +8502,14 @@ function applyStateObject(data) {
     syncCharacterSizeFromRace(data[CHARACTER_SIZE_STATE_KEY]);
     applySpellRowsState(data);
     syncDerivedFeatRows();
-    syncBardInstrumentRows();
+    syncClassToolRows();
+    // 職業來源列建立後再補還原，避免 JSON／分享欄位順序遺失選擇。
+    getToolProficiencyRows().filter(isDerivedToolProficiencyRow).forEach(row => {
+      const select = row.querySelector("select");
+      if (!row.dataset.fixedClassTool && Object.hasOwn(data, select.id)) select.value = data[select.id];
+    });
+    removeDuplicateToolProficiencies();
+    syncToolProficiencyOptions();
     syncMagicInitiateDerivedSpellRows();
     syncOriginAndSubclassDerivedSpellRows();
     Object.entries(data.__classFeatureCantrips || {}).forEach(([key, spellId]) => {
@@ -8759,7 +8799,7 @@ async function ensurePdfExportReady() {
     pdfExportLoaderPromise = (async () => {
       await loadScriptOnce("pdf-lib.custom.min.js");
       await loadScriptOnce("fontkit.custom.min.js");
-      await loadScriptOnce("pdf-field-map.js?v=20261006-custom-background");
+      await loadScriptOnce("pdf-field-map.js?v=20261008-class-tools");
       await loadScriptOnce("pdf-export.js?v=20261002-editable-appearance-fit");
     })().catch((error) => {
       pdfExportLoaderPromise = null;
@@ -10069,7 +10109,7 @@ window.addEventListener("DOMContentLoaded", async function() {
   updateHitDieLabel();
   syncHitDiceCountToLevel({ preserveCurrent: true });
   syncDerivedFeatRows();
-  syncBardInstrumentRows();
+  syncClassToolRows();
   syncOriginAndSubclassDerivedSpellRows();
   updateSpeedDisplay();
   updateAutomaticInitiative();

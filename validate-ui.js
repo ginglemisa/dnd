@@ -294,6 +294,17 @@ async function verifyAboutRoutes(browser, url) {
 async function verifyPdf(page, fieldsOnly) {
   await page.addScriptTag({ url: "/pdf-field-map.js" });
   await page.evaluate(() => {
+    for (const [cls, id, name] of [
+      ["druid", "druid-fixed-tool-proficiency", "草藥工具"],
+      ["monk", "monk-tool-proficiency-1", "長笛"],
+      ["rogue", "rogue-fixed-tool-proficiency", "盜賊工具"],
+      ["bard", "bard-instrument-1", "里拉琴"]
+    ]) {
+      const state = { class: cls, level: "1", "tool-proficiency-0": "書法工具", [id]: name };
+      if (buildPdfFieldPayload(state).toolsProficiency1 !== `書法工具、${name}`) throw new Error(`Class tool PDF: ${cls}`);
+      state["tool-proficiency-0"] = name;
+      if (buildPdfFieldPayload(state).toolsProficiency1 !== name) throw new Error(`Class tool PDF deduplication: ${cls}`);
+    }
     const expected = new Set(["barbarian", "cleric", "druid", "fighter", "paladin", "ranger"]);
     for (const cls of Object.keys(ARMOR_TRAINING_BY_CLASS)) {
       if (buildPdfFieldPayload({ class: cls, level: "1" }).chk_shld1 !== expected.has(cls)) throw new Error(`Shield proficiency: ${cls}`);
@@ -303,7 +314,7 @@ async function verifyPdf(page, fieldsOnly) {
       if (payload.specie_features1.includes("長休後環法恢復") !== (level >= 3)) throw new Error(`Lineage recovery: ${race}/${level}`);
     }
   });
-  console.log("PDF fields: class shield training and 8 lineage level cases passed.");
+  console.log("PDF fields: four class tool sources/deduplication, class shield training and 8 lineage level cases passed.");
   if (fieldsOnly) return;
   await page.addScriptTag({ url: "/pdf-lib.custom.min.js" });
   await page.addScriptTag({ url: "/fontkit.custom.min.js" });

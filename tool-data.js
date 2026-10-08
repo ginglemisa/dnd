@@ -22,7 +22,16 @@
   const allTools = Object.freeze(groups.flatMap(group => group.options));
   const allToolSet = new Set(allTools);
 
+  // 職業創角規則見 class-features.js；選項沿用同一份工具目錄。
+  const classProficiencies = Object.freeze({
+    bard: Object.freeze({ count: 3, options: instruments, idPrefix: "bard-instrument-" }),
+    monk: Object.freeze({ count: 1, options: Object.freeze([...artisanTools, ...instruments]), idPrefix: "monk-tool-proficiency-" }),
+    druid: Object.freeze({ count: 1, fixedTool: "草藥工具", idPrefix: "druid-fixed-tool-proficiency" }),
+    rogue: Object.freeze({ count: 1, fixedTool: "盜賊工具", idPrefix: "rogue-fixed-tool-proficiency" })
+  });
+
   globalThis.ToolProficiencyCatalog = Object.freeze({
+    classProficiencies,
     artisanTools,
     otherTools,
     instruments,
@@ -34,80 +43,4 @@
     }
   });
 
-  if (typeof document === "undefined") return;
-
-  const ROGUE_TOOL = "盜賊工具";
-  let syncScheduled = false;
-
-  function syncRogueToolProficiency() {
-    const list = document.getElementById("tool-proficiency-list");
-    if (!list) return;
-
-    let fixedRow = list.querySelector(':scope > .tool-proficiency-row[data-fixed-class-tool="rogue"]');
-    const isRogue = document.getElementById("class")?.value === "rogue";
-    const alreadyPresent = Array.from(list.querySelectorAll(":scope > .tool-proficiency-row"))
-      .some(row => row !== fixedRow && row.querySelector("select")?.value === ROGUE_TOOL);
-
-    if (!isRogue || alreadyPresent) {
-      fixedRow?.remove();
-      globalThis.syncToolProficiencyOptions?.();
-      return;
-    }
-
-    if (!fixedRow) {
-      fixedRow = document.createElement("div");
-      fixedRow.className = "tool-proficiency-row tool-proficiency-row--derived";
-      fixedRow.dataset.toolSource = "class";
-      fixedRow.dataset.toolSlot = "固定";
-      fixedRow.dataset.fixedClassTool = "rogue";
-      fixedRow.innerHTML = `<label></label><div class="tool-proficiency-control"><select class="tool-proficiency-select" disabled><option value="${ROGUE_TOOL}">${ROGUE_TOOL}</option></select></div>`;
-      const firstManualExtra = Array.from(list.children).find(row =>
-        !row.dataset.toolSource && row.querySelector("select")?.id !== "tool-proficiency-0"
-      ) || null;
-      list.insertBefore(fixedRow, firstManualExtra);
-    }
-
-    const select = fixedRow.querySelector("select");
-    const label = fixedRow.querySelector("label");
-    select.id = "rogue-fixed-tool-proficiency";
-    select.disabled = true;
-    label.htmlFor = select.id;
-    label.textContent = "職業工具熟練：";
-    globalThis.syncToolProficiencyOptions?.();
-  }
-
-  function scheduleRogueToolSync() {
-    if (syncScheduled) return;
-    syncScheduled = true;
-    queueMicrotask(() => {
-      syncScheduled = false;
-      syncRogueToolProficiency();
-    });
-  }
-
-  const replaceToolProficiencies = globalThis.replaceToolProficiencies;
-  if (typeof replaceToolProficiencies === "function") {
-    globalThis.replaceToolProficiencies = function (values, options = {}) {
-      const nextValues = document.getElementById("class")?.value === "rogue" && Array.isArray(values)
-        ? values.filter(value => value !== ROGUE_TOOL)
-        : values;
-      const result = replaceToolProficiencies.call(this, nextValues, options);
-      syncRogueToolProficiency();
-      return result;
-    };
-  }
-
-  document.addEventListener("change", event => {
-    if (
-      event.target?.id === "class"
-      || event.target?.id === "background"
-      || event.target?.classList?.contains("tool-proficiency-select")
-    ) scheduleRogueToolSync();
-  });
-
-  const list = document.getElementById("tool-proficiency-list");
-  if (list && typeof MutationObserver === "function") {
-    new MutationObserver(scheduleRogueToolSync).observe(list, { childList: true });
-  }
-  document.addEventListener("DOMContentLoaded", scheduleRogueToolSync, { once: true });
 })();

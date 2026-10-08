@@ -231,14 +231,14 @@ async function verifyTour(page, { width, height, caster, mode, complete }) {
         const holes = onboardingTour.activeHoles;
         const bar = [".tabletop-action-browser .tabletop-section-heading", ".tabletop-action-browser .tabletop-action-tabs"]
           .map(selector => document.querySelector(selector).getBoundingClientRect());
-        const attack = document.querySelector('#tabletop-action-panel-basic [data-action-option-key="attack"]').getBoundingClientRect();
+        const attack = document.querySelector('#tabletop-basic-toggle').getBoundingClientRect();
         const tip = document.getElementById("tour-tooltip").getBoundingClientRect();
         const expectedTop = Math.min(Math.max(10, holes[0].bottom + 10), Math.max(10, innerHeight - tip.height - 10));
         return holes.length === 2
           && bar.every(rect => holes[0].left <= rect.left && holes[0].right >= rect.right && holes[0].top <= rect.top && holes[0].bottom >= rect.bottom)
           && holes[1].left <= attack.left && holes[1].right >= attack.right && holes[1].top <= attack.top && holes[1].bottom >= attack.bottom
           && Math.abs(tip.top - expectedTop) <= 1;
-      }), true, "action step highlights the controls and attack button, with the tooltip below the controls");
+      }), true, "action step highlights the controls and basic-action disclosure, with the tooltip below the controls");
       if (process.env.DND_ONBOARDING_SCREENSHOT_DIR && width === 390 && !caster && mode === "sheet" && !complete) {
         await page.screenshot({ path: path.join(process.env.DND_ONBOARDING_SCREENSHOT_DIR, "actions-mobile.png") });
       }

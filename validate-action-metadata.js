@@ -558,7 +558,7 @@ async function verifyUiAndPersistence(page) {
   await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("actions"); });
   await page.click("#tabletop-action-tab-bonus");
   const bardKey = "dynamic-bonus-class-r7asqs";
-  const bardButton = page.locator(`[data-action-option-key="${bardKey}"]`);
+  const bardButton = page.locator(`#tabletop-action-panel-bonus [data-action-option-key="${bardKey}"]`);
   // Compact button labels differ from canonical metadata and detail headings.
   assert.equal(await bardButton.locator("span").first().textContent(), "詩人激勵");
   await bardButton.click();
@@ -705,7 +705,7 @@ async function verifyUiAndPersistence(page) {
     await page.screenshot({path:path.join(process.env.DND_SCREENSHOT_DIR,"actions-mobile.png")});
     await page.setViewportSize({width:1280,height:720});
   }
-  for (const mode of ["basic","action","bonus","reaction","movement"]) {
+  for (const mode of ["action","bonus","movement","reaction"]) {
     await page.click(`#tabletop-action-tab-${mode}`);
     assert.equal(await page.locator(`#tabletop-action-panel-${mode}`).isVisible(), true);
   }
@@ -848,7 +848,7 @@ async function verifyManualWeaponVisibility(page) {
       TabletopMode.setMode("tabletop");
       TabletopMode.setPanel("actions");
     }, equipment);
-    await page.click("#tabletop-action-tab-basic");
+    await page.click("#tabletop-action-tab-action");
     await page.waitForFunction(expected => document.querySelectorAll('#tabletop-weapon-summary .tabletop-weapon-attack-card').length === expected,
       equipment.offHandAsMain && equipment.offHand ? 2 : equipment.mainHand ? 1 : 0, { timeout: 5000 });
     assert.equal(await page.textContent("#atk-off-title-text"), equipment.offHandAsMain ? "主手攻擊2" : "副手攻擊");
@@ -1449,11 +1449,11 @@ async function verifyConditionEffects(browser, url) {
       const applied = await state();
       assert.ok(applied.activeConditions.includes("incapacitated"), `${key} links incapacitated`);
       assert.equal(applied.concentrationSpellId, "", `${key} ends concentration`);
-      assert.ok((await page.locator(".app-toast__message").allTextContents()).some(text => /失能失去專注/.test(text)));
+      await expectToast(/失能失去專注/);
       assert.equal(applied.activeConditions.includes("poisoned"), key !== "petrified");
       if (key === "unconscious") {
         assert.ok(applied.activeConditions.includes("prone"));
-        assert.ok((await page.locator(".app-toast__message").allTextContents()).includes("你手上的東西因昏迷掉落。"));
+        await expectToast(/^你手上的東西因昏迷掉落。$/);
       }
       await page.click("#tabletop-condition-manage");
       assert.equal(await option("incapacitated").isChecked(), true);
@@ -1640,6 +1640,151 @@ async function verifyConditionEffects(browser, url) {
   }
 }
 
+async function verifyMergedActionUi(browser, url) {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  const errors = [];
+  page.on("pageerror", error => errors.push(String(error)));
+  const expandKey = "dnd.tabletopBasicExpanded.v1";
+  try {
+    await page.goto(url);
+    await page.locator("#legal-dismiss").check();
+    await page.locator("#legal-ack-btn").click();
+    await page.evaluate(() => {
+      applyStateObject({ class: "wizard", level: "5" });
+      TabletopMode.setMode("tabletop");
+      TabletopMode.setPanel("actions");
+    });
+    assert.equal(await page.locator("#tabletop-tab-actions").textContent(), "行動");
+    assert.deepEqual(await page.locator("[data-tabletop-action-tab]").allTextContents(), ["動作", "附贈", "移動", "反應"]);
+    const toggle = page.locator("#tabletop-basic-toggle");
+    const basics = page.locator("#tabletop-basic-options [data-basic-action]");
+    assert.equal(await toggle.getAttribute("aria-expanded"), "false");
+    assert.equal(await basics.count(), 0);
+    await toggle.click();
+    assert.equal(await basics.count(), 15);
+    assert.equal(await toggle.locator("span").first().textContent(), "收合");
+    await page.locator('#tabletop-basic-options [data-action-option-key="attack"]').click();
+    assert.match(await page.locator("#tabletop-action-panel-action .tabletop-action-description").innerText(), /攻擊/);
+    await page.locator("#tabletop-action-tab-bonus").click();
+    await page.locator("#tabletop-action-tab-action").click();
+    assert.equal(await basics.count(), 15);
+    await page.evaluate(() => saveAllFields());
+    await page.goto(url);
+    await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("actions"); });
+    assert.equal(await toggle.getAttribute("aria-expanded"), "true", "disclosure persists across page loads");
+    await toggle.focus();
+    await page.keyboard.press("Enter");
+    assert.equal(await toggle.getAttribute("aria-expanded"), "false");
+    assert.equal(await toggle.evaluate(el => document.activeElement === el), true, "keyboard focus stays on disclosure");
+    await page.waitForFunction(() => !document.querySelector(".tabletop-action-ghost"));
+
+    // Old basic/action preference keys survive the merged presentation.
+    const legacy = await page.evaluate(() => {
+      const custom = TabletopMode.addCustomTabletopAction({ mode: "basic", label: "舊版自訂", description: "舊版說明" });
+      TabletopMode.setTabletopActionHidden("official:basic:attack", true);
+      const ability = ActionPanel.getTabletopOptions("action").find(option => option.source !== "法術");
+      if (ability) TabletopMode.setTabletopActionHidden(`official:action:${ability.key}`, true);
+      return { customId: custom.action.id, abilityKey: ability?.key };
+    });
+    await page.locator(`[data-action-option-key="custom:${legacy.customId}"]`).click();
+    assert.match(await page.locator("#tabletop-action-panel-action .tabletop-action-description").innerText(), /舊版說明/);
+    await toggle.click();
+    assert.equal(await basics.count(), 14);
+    await page.locator("#tabletop-action-manage").click();
+    await page.getByRole("button", { name: "全部恢復", exact: true }).click();
+    await page.getByRole("button", { name: "完成", exact: true }).click();
+    assert.equal(await basics.count(), 15);
+    if (legacy.abilityKey) assert.equal(await page.locator(`[data-action-option-key="${legacy.abilityKey}"]`).isVisible(), true);
+    assert.equal(await page.evaluate(() => TabletopMode.getTabletopActionPreferences().hiddenKeys.length), 0);
+
+    for (const width of [390, 320]) {
+      await page.setViewportSize({ width, height: 844 });
+      await toggle.click();
+      await toggle.click();
+      await page.waitForFunction(() => document.querySelector(".tabletop-action-options").getAnimations({ subtree: true }).length === 0);
+      assert.equal(await basics.count(), 15);
+      assert.equal(await page.evaluate(() => {
+        const list = document.querySelector(".tabletop-action-options").getBoundingClientRect();
+        return [...document.querySelectorAll(".tabletop-action-options button")].every(button => {
+          const rect = button.getBoundingClientRect();
+          return rect.left >= list.left - 1 && rect.right <= list.right + 1 && rect.width >= 44 && rect.height >= 44;
+        });
+      }), true, "all actions fit the narrow grid and retain usable targets");
+    }
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await toggle.click();
+    assert.equal(await page.locator(".tabletop-action-ghost").count(), 0);
+    assert.equal(await toggle.evaluate(el => el.closest(".tabletop-action-options").getAnimations({ subtree: true }).length), 0);
+    await page.evaluate(key => {
+      window.originalDisclosureStorage = dndStorage;
+      window.dndStorage = { ...dndStorage, setItem: (name, value) => name === key ? false : originalDisclosureStorage.setItem(name, value) };
+    }, expandKey);
+    await toggle.click();
+    assert.equal(await basics.count(), 15, "storage failure does not prevent disclosure");
+    assert.equal(await page.evaluate(key => dndStorage.getItem(key), expandKey), "false", "failed save keeps the last persisted choice");
+    await page.getByText("無法儲存收合偏好，本次仍可使用。", { exact: true }).waitFor();
+    await page.evaluate(() => { window.dndStorage = originalDisclosureStorage; });
+
+    const spells = [
+      ["color-spray", "wizard", 1, ["動作"]],
+      ["healing-word", "bard", 1, ["附贈"]],
+      ["shield", "wizard", 1, ["反應"]],
+      ["find-familiar", "wizard", 1, ["1小時", "儀式"]],
+      ["plant-growth", "druid", 3, ["動作", "8小時"]]
+    ];
+    await page.evaluate(spells => {
+      for (const [spellValue, classValue, level] of spells) {
+        createSingleSpellRow(`level${level}spells-area`, String(level), null, { classValue, spellValue });
+      }
+      document.dispatchEvent(new Event("change", { bubbles: true }));
+    }, spells);
+    for (const mode of ["action", "bonus", "movement", "reaction"]) {
+      await page.locator(`#tabletop-action-tab-${mode}`).click();
+      assert.equal(await page.locator(`#tabletop-action-panel-${mode} [data-spell-id]`).count(), 0);
+      assert.equal(await page.locator(`#tabletop-action-panel-${mode} .tabletop-action-spell-toggle`).count(), 0);
+    }
+    await page.locator("#tabletop-tab-spells").click();
+    for (const [id, , , labels] of spells) {
+      const button = page.locator(`.tabletop-spell-button[data-spell-id="${id}"]`).first();
+      assert.deepEqual(await button.locator(".tabletop-spell-button__timing > span").allTextContents(), labels);
+      assert.equal(await button.evaluate(el => {
+        const names = el.querySelector(".tabletop-spell-button__names").getBoundingClientRect();
+        const timing = el.querySelector(".tabletop-spell-button__timing").getBoundingClientRect();
+        return names.right <= timing.left && el.scrollWidth <= el.clientWidth + 1;
+      }), true, "spell labels do not overlap names");
+    }
+    const shield = page.locator('.tabletop-spell-button[data-spell-id="shield"]').first();
+    await shield.click();
+    await page.locator(".tabletop-spell-detail").waitFor();
+    await page.keyboard.press("Escape");
+    await page.waitForFunction(() => document.activeElement?.dataset.spellId === "shield");
+    const isolated = await page.evaluate(async key => {
+      const json = collectStateObject();
+      const share = collectShareState();
+      return !Object.hasOwn(json, key) && !Object.hasOwn(share, key)
+        && !Object.hasOwn(json, "basicExpanded") && !Object.hasOwn(share, "basicExpanded");
+    }, expandKey);
+    assert.equal(isolated, true, "disclosure preference stays outside character/share data");
+    await page.evaluate(({ url, key }) => {
+      dndStorage.setItem(key, "true");
+      history.replaceState(null, "", url);
+    }, { url, key: expandKey });
+    await page.locator("#utility-menu-toggle").click();
+    await page.locator("#clear-storage-btn").click();
+    await page.getByRole("button", { name: "清除紀錄", exact: true }).click();
+    await page.waitForFunction(key => dndStorage.getItem(key) === null, expandKey);
+    await page.goto(url);
+    await page.locator("#legal-ack-btn").click();
+    await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("actions"); });
+    assert.equal(await toggle.getAttribute("aria-expanded"), "false", "clear records resets disclosure");
+    assert.deepEqual(errors, []);
+    console.log("Merged actions: disclosure, keyboard, narrow layout, legacy preferences, clearing, spell timing and sole spell entry passed.");
+  } finally {
+    await context.close();
+  }
+}
+
 async function main() {
   const root = __dirname;
   const server = http.createServer((req, res) => {
@@ -1661,6 +1806,7 @@ async function main() {
     const url = `http://127.0.0.1:${server.address().port}/index.html?analytics=owner`;
     await page.goto(url);
     await page.waitForFunction(() => !!window.ActionPanel && !!window.TabletopMode);
+    await verifyMergedActionUi(browser, url);
     const assertions = await verifyCoverage(page);
     console.log(`Action metadata: ${assertions} coverage assertions passed.`);
     await verifyUiAndPersistence(page);
