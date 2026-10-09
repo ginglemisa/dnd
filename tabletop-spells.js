@@ -22,6 +22,7 @@
         const spell = globalScope.SpellCatalog.getSpell(spellId);
         if (!spell) return [];
         const row = select.closest(".spell-entry");
+        if (globalScope.SpellManagement && !globalScope.SpellManagement.isRowAvailable(row)) return [];
         const classSelect = row?.querySelector('select[id*="-class-"]');
         const source = typeof globalScope.getPickedSpellSourceTag === "function"
           ? globalScope.getPickedSpellSourceTag(row)

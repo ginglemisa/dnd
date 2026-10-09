@@ -8,12 +8,13 @@ const http = require("node:http");
 const { chromium } = require("playwright");
 
 const TABLETOP_COPY = [
+  ["從這裡進入跑團模式", "角色準備好了，就可以開始冒險！\n\n打開右上角選單，找到「跑團模式」。這裡會集中顯示遊玩時常用的數值、動作與資源。\n\n按「下一步」，一起看看遊戲如何進行。", ["右上角選單", "跑團模式", "下一步"]],
   ["描述你的行動", "DM 會描述目前的情況，你只需要告訴 DM，你的角色打算採取什麼行動。\n\n例如：「我靠近木門，聽聽裡面有沒有聲音。」", []],
   ["需要判定時，再進行擲骰", "當 DM 要求進行檢定時，找到對應的數字加值，擲出 D20，再將兩者相加。\n\n如果手邊沒有骰子，可以從右上角選單開啟擲骰功能。", ["開啟擲骰功能"]],
-  ["戰鬥開始時，決定行動順序", "當 DM 說請擲先攻時，擲出 D20 + 先攻加值，決定角色在戰鬥中的行動順序。\n\n你也可以開啟擲骰功能，點擊角色卡上的先攻數值進行擲骰。\n\n角色的速度代表一個回合中可以移動的距離。\n\n使用格線地圖時，通常 5 呎 = 1 格。", ["請擲先攻", "擲骰功能", "速度", "5 呎 = 1 格"]],
+  ["戰鬥開始時，決定行動順序", "當 DM 說請擲先攻時，擲出 D20 + 先攻加值，決定角色在戰鬥中的行動順序。\n\n你也可以開啟擲骰功能，點擊角色卡上的先攻數值進行擲骰。\n\n角色的速度代表一個回合中可以移動的距離。\n\n使用格線地圖時，通常 5 呎 = 1 格。", ["請擲先攻", "開啟擲骰功能", "速度", "5 呎 = 1 格"]],
   ["在你的回合中採取行動", "你的回合通常包含移動與一次動作；若能力或規則允許，也可以使用一次附贈。\n\n移動不一定要一次完成，也不需要固定在動作之前。\n例如，你可以先移動 2 格、進行攻擊，再移動剩下的 3 格。\n\n反應則需要符合特定的觸發條件才能使用，通常在其他角色的回合中發生。", ["移動", "動作", "附贈", "移動", "動作", "移動", "移動", "反應"]],
-  ["施放法術前，確認施法條件", "先告訴 DM 你要施放的法術，以及預計影響的目標，再確認法術的施法時間、距離與其他施法條件。\n\n部分法術需要維持專注。一般情況下，一名角色無法同時維持兩個需要專注的法術。", []],
-  ["記錄角色狀態的變化", "使用具有次數限制的能力或施放法術後，記得更新角色目前的使用狀態，確認還剩下多少可用次數。\n\n受到傷害、恢復生命值，或獲得其他狀態時，也應同步記錄角色的變化。\n\n基本遊戲流程\n了解情況 → 描述行動 → 必要時進行判定 → 記錄結果", ["法術"]]
+  ["如果你想施放魔法", "先告訴 DM 你要用什麼法術，閱讀文字確認條件滿足後，就可以選擇目標。\n\n部分法術需要維持專注。\n一般情況下，玩家無法同時維持兩個需要專注的法術。", []],
+  ["記錄角色狀態", "使用具有次數限制的能力或施放法術後，記得更新資源的數字，確認還剩下多少可用次數。\n\n受到傷害、恢復生命值，或罹患狀態時，也應立即記錄。\n\n基本遊戲流程：了解情況 → 描述行動 → 進行判定 → 記錄結果 → 開心玩遊戲！", ["法術"]]
 ];
 
 const SHEET_COPY = [
@@ -96,6 +97,9 @@ async function assertLayout(page) {
   });
   assert(layout.tip.left >= 0 && layout.tip.top >= 0 && layout.tip.right <= layout.width && layout.tip.bottom <= layout.height, JSON.stringify(layout));
   if (layout.index === 0) {
+    assert.equal(layout.holes.length, 1, "mode introduction highlights the menu button");
+    assert(layout.highlightVisible, JSON.stringify(layout));
+  } else if (layout.index === 1) {
     assert.equal(layout.holes.length, 0, "the introduction does not highlight any page content");
     assert.equal(await page.locator("#tour-focus-ring").isVisible(), false);
     assert.equal(await page.locator("#tour-focus-ring-secondary").isVisible(), false);
@@ -106,10 +110,8 @@ async function assertLayout(page) {
   } else {
     assert(layout.highlightVisible, JSON.stringify(layout));
     if (!layout.dragged) {
-      const expectedLeft = layout.index === 3
-        ? Math.min(layout.width - (layout.tip.right - layout.tip.left) - 10, Math.max(10, layout.holes[1].right + 10))
-        : Math.min(layout.width - (layout.tip.right - layout.tip.left) - 10, Math.max(10,
-          layout.index === 5 ? layout.holes[1].left : layout.ring.left));
+      const expectedLeft = Math.min(layout.width - (layout.tip.right - layout.tip.left) - 10, Math.max(10,
+        layout.index === 6 ? layout.holes[1].left : layout.ring.left));
       assert(Math.abs(layout.tip.left - expectedLeft) <= 1, `tooltip aligns with the highlight's left edge: ${JSON.stringify(layout)}`);
     }
   }
@@ -198,10 +200,22 @@ async function verifyTour(page, { width, height, caster, mode, complete }) {
   await page.evaluate(() => { window.scrollTo(0, 130); window.flushPendingAutosave?.(); });
   const before = await snapshot(page);
   await enter(page);
-  assert.equal(await page.evaluate(() => onboardingTour.steps.length), 6);
+  assert.equal(await page.evaluate(() => onboardingTour.steps.length), 7);
+  await assertTourCopy(page, 0);
+  await assertLayout(page);
+  assert.equal(await page.evaluate(() => onboardingTour.tabletopMenuGuidePhase), "button");
+  assert.equal(await page.locator("#utility-menu-toggle").getAttribute("aria-expanded"), "true");
+  assert.equal(await page.evaluate(() => {
+    const hole = onboardingTour.activeHoles[0];
+    const button = document.getElementById("tabletop-mode-toggle").getBoundingClientRect();
+    return hole && hole.left <= button.left && hole.right >= button.right
+      && hole.top <= button.top && hole.bottom >= button.bottom;
+  }), true, "introduction highlights the mode button after opening the menu");
+  await page.locator("#tour-next-btn").click();
+  await ready(page, 1);
   const examples = page.locator("#tour-step-text details");
   assert.equal(await examples.evaluate(el => el.open), false);
-  await assertTourCopy(page, 0, caster);
+  await assertTourCopy(page, 1, caster);
   assert.equal(await examples.locator("summary").textContent(), "查看更多範例");
   assert.deepEqual(await examples.locator("p").allTextContents(), [
     "探索：「我檢查雕像後方，看看是否藏有機關。」",
@@ -220,25 +234,25 @@ async function verifyTour(page, { width, height, caster, mode, complete }) {
     await page.screenshot({ path: path.join(process.env.DND_ONBOARDING_SCREENSHOT_DIR, "examples-mobile.png") });
   }
   await page.keyboard.press("Enter");
-  for (let index = 1; index < 6; index++) {
+  for (let index = 2; index < 7; index++) {
     await page.locator("#tour-next-btn").click();
     await ready(page, index);
     await assertLayout(page);
     await assertTourCopy(page, index, caster);
-    if (index === 1) await verifyTooltipDrag(page);
-    if (index === 3) {
+    if (index === 2) await verifyTooltipDrag(page);
+    if (index === 4) {
       assert.equal(await page.evaluate(() => {
         const holes = onboardingTour.activeHoles;
         const bar = [".tabletop-action-browser .tabletop-section-heading", ".tabletop-action-browser .tabletop-action-tabs"]
           .map(selector => document.querySelector(selector).getBoundingClientRect());
         const attack = document.querySelector('#tabletop-basic-toggle').getBoundingClientRect();
         const tip = document.getElementById("tour-tooltip").getBoundingClientRect();
-        const expectedTop = Math.min(Math.max(10, holes[0].bottom + 10), Math.max(10, innerHeight - tip.height - 10));
+        const expectedTop = Math.min(Math.max(10, holes[1].bottom + 10), Math.max(10, innerHeight - tip.height - 10));
         return holes.length === 2
           && bar.every(rect => holes[0].left <= rect.left && holes[0].right >= rect.right && holes[0].top <= rect.top && holes[0].bottom >= rect.bottom)
           && holes[1].left <= attack.left && holes[1].right >= attack.right && holes[1].top <= attack.top && holes[1].bottom >= attack.bottom
           && Math.abs(tip.top - expectedTop) <= 1;
-      }), true, "action step highlights the controls and basic-action disclosure, with the tooltip below the controls");
+      }), true, "action step highlights the controls and basic-action disclosure, with the tooltip below the disclosure");
       if (process.env.DND_ONBOARDING_SCREENSHOT_DIR && width === 390 && !caster && mode === "sheet" && !complete) {
         await page.screenshot({ path: path.join(process.env.DND_ONBOARDING_SCREENSHOT_DIR, "actions-mobile.png") });
       }
@@ -247,7 +261,7 @@ async function verifyTour(page, { width, height, caster, mode, complete }) {
       await page.locator("#tour-next-btn").click();
       await ready(page, index);
     }
-    if (index === 4) {
+    if (index === 5) {
       const spellPreview = await page.evaluate(() => {
         const dialog = document.querySelector('.app-dialog[data-tour-spell-preview]');
         const copy = dialog?.querySelector('.tabletop-spell-detail__copy');
@@ -273,13 +287,13 @@ async function verifyTour(page, { width, height, caster, mode, complete }) {
         await page.keyboard.press("Tab");
         assert.equal(await page.evaluate(() => document.getElementById("tour-tooltip").contains(document.activeElement)), true);
         await page.locator("#tour-prev-btn").click();
-        await ready(page, 3);
+        await ready(page, 4);
         assert.equal(await page.locator('.app-dialog[data-tour-spell-preview]').count(), 0);
         await page.locator("#tour-next-btn").click();
-        await ready(page, 4);
+        await ready(page, 5);
       }
     }
-    if (index === 5) {
+    if (index === 6) {
       const resourcePreview = await page.evaluate(() => {
         const preview = document.getElementById('tabletop-tour-resource-preview');
         const rows = [...(preview?.querySelectorAll(':scope > .tabletop-resource-row') || [])];
@@ -308,11 +322,11 @@ async function verifyTour(page, { width, height, caster, mode, complete }) {
       `resource step previews and highlights hit dice and Bardic Inspiration: ${JSON.stringify(resourcePreview)}`);
       if (width === 1280 && !caster && mode === "sheet" && !complete) {
         await page.locator("#tour-prev-btn").click();
-        await ready(page, 4);
+        await ready(page, 5);
         assert.equal(await page.locator('#tabletop-tour-resource-preview').count(), 0);
         assert.equal(await page.locator('.app-dialog[data-tour-spell-preview]').count(), 1);
         await page.locator("#tour-next-btn").click();
-        await ready(page, 5);
+        await ready(page, 6);
       }
     }
   }
@@ -380,8 +394,8 @@ async function main() {
     console.log("First-table tour: desktop/mobile, both modes, spell and resource previews for all classes, examples, back/next, completion/Escape and data/storage/focus/scroll preservation passed.");
 
     const beforeSpellCancel = await snapshot(page);
-    await page.evaluate(() => onboardingTour.start(4, "tabletop"));
-    await ready(page, 4);
+    await page.evaluate(() => onboardingTour.start(5, "tabletop"));
+    await ready(page, 5);
     await page.keyboard.press("Escape");
     await closed(page);
     assert.deepEqual(await snapshot(page), beforeSpellCancel, "Escape from the spell preview restores the previous view and data");
@@ -604,6 +618,10 @@ async function verifyTouch(browser, url) {
   await page.locator("#utility-menu-toggle").tap();
   await page.locator("#first-table-tour-btn").tap();
   await ready(page, 0);
+  await assertLayout(page);
+  assert.equal(await page.evaluate(() => onboardingTour.tabletopMenuGuidePhase), "button");
+  await page.locator("#tour-next-btn").tap();
+  await ready(page, 1);
   await assertLayout(page);
   const cdp = await page.context().newCDPSession(page);
   const heading = await page.locator(".tour-heading-row").boundingBox();

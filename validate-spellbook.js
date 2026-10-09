@@ -27,6 +27,7 @@ async function verifyClearPreparedSpells(page) {
     applyStateObject(state);
     showTab("spells");
     document.getElementById("spellslot1-1").checked = true;
+    document.getElementById("spellslot3-3").checked = true;
     const freeUse = document.querySelector(".free-spell-use-check");
     if (freeUse) freeUse.checked = true;
   }, state);
@@ -41,6 +42,10 @@ async function verifyClearPreparedSpells(page) {
     freeUses: [...document.querySelectorAll(".free-spell-use-check")].map(box => [box.id, box.checked])
   }));
   const original = await snapshot();
+  assert.deepEqual(await page.evaluate(() => TabletopMode.getCanonicalSpellSlotGroups()
+    .find(group => group.level === 3)?.controls.map(control => [control.id, control.checked, control.disabled])),
+  [["spellslot3-1", false, false], ["spellslot3-2", false, false], ["spellslot3-3", true, false]],
+  "third level-three slot is available to both character-sheet and tabletop management");
   for (const source of ["race", "class", "subclass", "magic-initiate"]) {
     assert(original.derived.some(row => row.source === source && row.spell && row.disabled), `${source} fixed spells exist`);
   }
@@ -129,6 +134,404 @@ async function verifyClearPreparedSpells(page) {
   assert.equal(await page.evaluate(() => Spellbook.getRitualEntries().some(entry => entry.spellId === "detect-magic")), true);
   await page.setViewportSize({ width: 1100, height: 850 });
   console.log("Clear preparation: confirmation/cancel/focus, four rings, protected origins/cantrips/book, consumed uses, JSON/share/autosave and adaptive text/button layout in four themes passed.");
+}
+
+async function verifySpellManagement(page) {
+  const setState = state => page.evaluate(state => { applyStateObject(state); showTab("spells"); }, state);
+  const sectionVisible = id => page.locator(`#${id}`).evaluate(el => !el.closest("details").hidden);
+  const snapshot = () => page.evaluate(() => ({
+    rows: getSpellAreaConfigs().map(({ id }) => [...document.querySelectorAll(`#${id} .spell-entry`)]
+      .map(row => [row.querySelector("select[id*='-class-']").value, row.querySelector("select[id*='-spell-']").value, row.dataset.sourceKey || ""])),
+    book: Spellbook.getState()
+  }));
+  const selected = () => page.evaluate(() => [...document.querySelectorAll("#tab-spells select[id*='-spell-']")].map(el => el.value).filter(Boolean));
+  const toggle = page.locator("#manual-spell-management");
+  const enableWarning = page.getByRole("alertdialog", { name: "啟用手動法術管理" });
+  const disableWarning = page.getByRole("alertdialog", { name: "清除手動法術並恢復自動管理？" });
+  const enable = async () => {
+    await toggle.click();
+    await enableWarning.getByRole("button", { name: "啟用手動管理", exact: true }).click();
+  };
+  const disable = async () => {
+    await toggle.click();
+    await disableWarning.getByRole("button", { name: "清除全部法術並恢復自動管理", exact: true }).click();
+  };
+
+  await setState({ class: "ranger", level: "8", background: "soldier", race: "human",
+    "ranger-druidic-warrior": false, "paladin-blessed-warrior": false });
+  assert.equal(await sectionVisible("cantrips-area"), false);
+  assert.equal(await sectionVisible("level2spells-area"), true);
+  assert.equal(await sectionVisible("level3spells-area"), false);
+  assert.equal(await sectionVisible("level4spells-area"), false);
+  await setState({ class: "paladin", level: "2", background: "soldier", race: "human", "paladin-blessed-warrior": true });
+  assert.equal(await sectionVisible("cantrips-area"), true, "unfilled granted cantrip choices remain visible");
+  await setState({ class: "fighter", level: "1", background: "soldier", race: "gnome", "gnome-lineage": "forest_gnome" });
+  assert.equal(await sectionVisible("cantrips-area"), true);
+  assert.equal(await sectionVisible("level1spells-area"), true, "racial spells remain visible without class slots");
+  assert.equal(await page.locator("#spell-slot-management-wrap").isVisible(), false);
+  await page.evaluate(() => {
+    document.getElementById("race").value = "human";
+    document.getElementById("race").dispatchEvent(new Event("change"));
+  });
+  assert.equal((await selected()).length, 0, "lost automatic sources are removed instead of archived as unavailable rows");
+  assert.equal(await page.locator("#tab-spells .spell-entry--unavailable").count(), 0);
+  assert.equal(await sectionVisible("cantrips-area"), false);
+  assert.equal(await sectionVisible("level1spells-area"), false);
+  await page.evaluate(() => applyStateObject(JSON.parse(JSON.stringify(collectStateObject()))));
+  assert.equal(await page.evaluate(() => TabletopSpells.getSelectedSpellEntries().length), 0);
+  assert.equal(await page.evaluate(() => Object.hasOwn(collectStateObject(), "__retainedSpells")), false);
+  await page.evaluate(() => {
+    document.getElementById("race").value = "gnome";
+    document.getElementById("race").dispatchEvent(new Event("change"));
+  });
+  assert.equal(await page.locator("#tab-spells .spell-entry--unavailable").count(), 0);
+  assert.equal((await selected()).length, 2, "reacquiring a source creates only its current automatic spells");
+
+  const originalState = { class: "wizard", level: "8", background: "sage", race: "human",
+    "derived-feat-background-magic-initiate-cantrip-1": "mage-hand",
+    "derived-feat-background-magic-initiate-cantrip-2": "ray-of-frost",
+    "derived-feat-background-magic-initiate-level-1": "shield",
+    "spellcasting-ability": "int", "spell-notes": "original notes",
+    "level1spells-area-count": 1, "level1spells-area-class-0": "wizard", "level1spells-area-spell-0": "mage-armor",
+    "level4spells-area-count": 1, "level4spells-area-class-0": "wizard", "level4spells-area-spell-0": "ice-storm",
+    __wizardSpellbook: { version: 1, spellIds: ["detect-magic", "mage-armor"] } };
+  await setState(originalState);
+  assert.deepEqual(await page.evaluate(() => getAvailableSpellSourceClasses(1).map(option => option.value)), ["wizard"]);
+  assert.equal(await page.locator('#level2spells-area select[id*="-class-"]').inputValue(), "wizard", "new rows automatically select the primary class");
+  assert.equal(await page.locator('#level2spells-area select[id*="-class-"]').isDisabled(), true);
+  await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("spells"); TabletopSpells.refresh(); });
+  const thirdSlot = page.locator('#tabletop-spell-slots input[aria-label="三環法術位 3/3，勾選表示已消耗"]');
+  await thirdSlot.check();
+  assert.equal(await page.locator("#spellslot3-3").isChecked(), true);
+  await thirdSlot.uncheck();
+  assert.equal(await page.locator("#spellslot3-3").isChecked(), false);
+  await page.evaluate(() => {
+    TabletopMode.setMode("sheet"); showTab("spells");
+    document.getElementById("level").value = "1";
+    document.getElementById("level").dispatchEvent(new Event("change"));
+  });
+  assert.equal(await page.locator('#level4spells-area select[id*="-class-"]').inputValue(), "wizard");
+  assert.equal(await page.locator('#level4spells-area select[id*="-spell-"]').inputValue(), "ice-storm");
+  assert.equal(await page.locator('#level4spells-area select[id*="-spell-"]').isDisabled(), true);
+  assert.equal(await sectionVisible("level4spells-area"), true);
+  assert.equal(await page.locator("#level4spells-area .spell-row-availability").isVisible(), true);
+  assert.equal(await page.evaluate(() => TabletopSpells.getSelectedSpellEntries().some(entry => entry.spellId === "ice-storm")), false);
+  assert.equal(await page.evaluate(() => collectStateObject({ includeDerivedSpellRows: true })["level4spells-area-count"]), 0, "PDF preparation omits unavailable rows");
+  await page.evaluate(() => {
+    document.getElementById("level").value = "8";
+    document.getElementById("level").dispatchEvent(new Event("change"));
+  });
+  assert.equal(await page.locator('#level4spells-area select[id*="-spell-"]').inputValue(), "ice-storm");
+  assert.equal(await page.locator('#level4spells-area select[id*="-spell-"]').isDisabled(), false, "raising the level makes the saved choice usable again");
+  await setState({ ...originalState, level: "1" });
+  assert.equal(await page.locator('#level4spells-area select[id*="-spell-"]').inputValue(), "ice-storm", "old automatic imports retain unavailable rings");
+
+  await setState(originalState);
+  await page.locator(".free-spell-use-check").first().evaluate(box => { box.checked = true; });
+  const original = await snapshot();
+  const originalSpells = await selected();
+  await toggle.click();
+  await enableWarning.getByRole("button", { name: "取消", exact: true }).click();
+  assert.equal(await toggle.isChecked(), false);
+  assert.deepEqual(await snapshot(), original);
+  await enable();
+  assert.deepEqual(await selected(), originalSpells, "automatic to manual carries forward all current selections");
+  assert.equal(await page.locator("#spell-prepared-counts").isVisible(), false);
+  assert.equal(await page.locator("#spellbook-card").isVisible(), true);
+  assert.equal(await page.locator("#tab-spells .spell-entry[data-spell-source]").count(), 0);
+  await page.evaluate(() => {
+    const before = [...document.querySelectorAll("#tab-spells .spell-entry")].map(row => row.outerHTML).join("");
+    syncMagicInitiateDerivedSpellRows(); syncOriginAndSubclassDerivedSpellRows();
+    if (before !== [...document.querySelectorAll("#tab-spells .spell-entry")].map(row => row.outerHTML).join("")) throw Error("manual sources must not resynchronize");
+    const selectedRow = [...document.querySelectorAll("#level1spells-area .spell-entry")]
+      .find(row => row.querySelector("select[id*='-spell-']").value === "mage-armor");
+    const select = selectedRow.querySelector("select[id*='-spell-']");
+    select.value = "magic-missile"; select.dispatchEvent(new Event("change"));
+    const row = createSingleSpellRow("cantrips-area", "cantrips", null, { classValue: "druid", spellValue: "guidance" });
+    createSingleSpellRow("level2spells-area", 2, null, { classValue: "wizard", spellValue: "misty-step" });
+    createSingleSpellRow("level3spells-area", 3, null, { classValue: "wizard", spellValue: "fireball" });
+    const highRow = document.querySelector("#level4spells-area .spell-entry");
+    const source = highRow.querySelector("select[id*='-class-']");
+    source.value = "druid"; source.dispatchEvent(new Event("change"));
+    const high = highRow.querySelector("select[id*='-spell-']");
+    high.value = "blight"; high.dispatchEvent(new Event("change"));
+    document.getElementById("spellslot3-3").checked = true;
+    document.getElementById("spellcasting-ability").value = "wis";
+    document.getElementById("spellcasting-ability").dispatchEvent(new Event("change"));
+    document.getElementById("spell-notes").value = "manual notes";
+  });
+  await page.locator("#spellbook-manage").click();
+  const manager = page.getByRole("dialog", { name: "管理法術書", exact: true });
+  await manager.locator('input[value="cure-wounds"]').check();
+  await manager.getByRole("button", { name: "儲存", exact: true }).click();
+  await page.evaluate(() => saveAllFields());
+  const manualState = await page.evaluate(() => collectStateObject());
+  assert.equal(manualState["manual-spell-management"], true);
+  assert.equal(Object.keys(manualState).some(key => /backup/i.test(key)), false);
+  assert.equal(await page.evaluate(() => dndStorage.getItem("dnd.spellManagementBackup.v1")), null);
+  const share = await page.evaluate(async () => {
+    const hash = await encodeStateToHash(collectShareState());
+    history.replaceState(null, "", hash);
+    const result = (await decodeStateFromHash()).data;
+    history.replaceState(null, "", location.pathname);
+    return result;
+  });
+  assert.equal(share["manual-spell-management"], true);
+  assert.equal(share.__wizardSpellbook.spellIds.includes("cure-wounds"), true);
+  await page.evaluate(() => dndStorage.setItem("dnd.spellManagementBackup.v1", JSON.stringify({ version: 1, areas: [], book: { spellIds: [] } })));
+  await page.reload();
+  await page.waitForFunction(() => window.SpellManagement?.isManual());
+  if (await page.locator("#legal-ack-btn").isVisible()) await page.locator("#legal-ack-btn").click();
+  await page.evaluate(() => { window.onboardingTour?.finish?.(); showTab("spells"); });
+  assert.equal(await page.evaluate(() => dndStorage.getItem("dnd.spellManagementBackup.v1")), null, "obsolete snapshots are removed without restoring them");
+  const currentManual = await snapshot();
+  await toggle.click();
+  assert.match(await disableWarning.innerText(), /全部戲法、一至四環準備清單與法術書將清除，且無法還原/);
+  assert.equal(/\d+\s*(?:筆|個)/.test(await disableWarning.innerText()), false, "the warning contains no deletion counts");
+  assert.equal(await disableWarning.getByRole("button", { name: "繼續手動管理", exact: true }).evaluate(el => el === document.activeElement), true);
+  assert.equal(await disableWarning.getByRole("button", { name: "清除全部法術並恢復自動管理", exact: true }).evaluate(el => el.classList.contains("app-dialog__button--danger")), true);
+  await disableWarning.getByRole("button", { name: "繼續手動管理", exact: true }).click();
+  assert.equal(await toggle.isChecked(), true);
+  assert.deepEqual(await snapshot(), currentManual, "cancel leaves current manual choices untouched");
+  assert.equal(await toggle.evaluate(el => el === document.activeElement), true);
+  await page.setViewportSize({ width: 320, height: 700 });
+  await toggle.click();
+  assert.equal(await disableWarning.evaluate(el => {
+    const rect = el.getBoundingClientRect();
+    return rect.left >= 0 && rect.right <= innerWidth && el.scrollWidth <= el.clientWidth
+      && [...el.querySelectorAll("button")].every(button => button.getBoundingClientRect().right <= rect.right);
+  }), true, "the explicit destructive action and warning fit a narrow viewport");
+  await page.keyboard.press("Escape");
+  assert.deepEqual(await snapshot(), currentManual, "Escape cancels the reset and preserves the book");
+  await page.setViewportSize({ width: 1100, height: 850 });
+  await disable();
+  assert.equal(await toggle.isChecked(), false);
+  assert.deepEqual((await selected()).sort(), ["mage-hand", "ray-of-frost", "shield"], "all manual choices are cleared and only configured automatic origins return");
+  assert.equal(await page.locator('#tab-spells .spell-entry--unavailable').count(), 0);
+  assert.equal(await page.evaluate(() => getClearablePreparedSpellSelects().length), 0);
+  assert.equal(await page.evaluate(() => collectStateObject({ includeDerivedSpellRows: true })["level4spells-area-spell-0"]), "", "the PDF preparation data contains no cleared fourth-ring spell");
+  assert.equal(await page.locator('#level1spells-area .spell-entry:not([data-spell-source]) select[id*="-class-"]').inputValue(), "wizard");
+  assert.equal(await page.locator('#level1spells-area .spell-entry:not([data-spell-source]) select[id*="-spell-"]').inputValue(), "");
+  assert.equal(await page.locator("#spellslot3-3").isChecked(), true);
+  assert.equal(await page.locator(".free-spell-use-check").first().isChecked(), true, "mode changes do not refund current source resources");
+  assert.equal(await page.locator("#spellcasting-ability").inputValue(), "wis");
+  assert.equal(await page.locator("#spell-notes").inputValue(), "manual notes");
+  assert.deepEqual(await page.evaluate(() => Spellbook.getState().spellIds), [], "the entire book is cleared, including original wizard entries");
+  assert.deepEqual(await page.evaluate(() => collectStateObject().__deletedSpellRowCache), {}, "cleared choices cannot be restored by adding a row");
+  await setState(share);
+  await disable();
+  assert.deepEqual((await selected()).sort(), ["mage-hand", "ray-of-frost", "shield"], "shared manual imports follow the same destructive reset");
+  await page.evaluate(() => { saveAllFields(); });
+  await page.reload();
+  await page.waitForFunction(() => window.SpellManagement && !window.SpellManagement.isManual());
+  if (await page.locator("#legal-ack-btn").isVisible()) await page.locator("#legal-ack-btn").click();
+  await page.evaluate(() => { window.onboardingTour?.finish?.(); showTab("spells"); });
+  assert.deepEqual((await selected()).sort(), ["mage-hand", "ray-of-frost", "shield"], "autosave reload does not resurrect cleared spells");
+  assert.deepEqual(await page.evaluate(() => Spellbook.getState().spellIds), [], "explicit empty wizard book remains empty after reload");
+  await page.evaluate(() => applyStateObject(JSON.parse(JSON.stringify(collectStateObject()))));
+  assert.deepEqual(await page.evaluate(() => Spellbook.getState().spellIds), []);
+
+  await setState({ class: "fighter", level: "4", background: "soldier", race: "human",
+    "feat-choice-fighter-level-4": "魔法學徒" });
+  await enable();
+  await page.evaluate(() => {
+    ["cantrips-area", "level1spells-area"].forEach(id => document.getElementById(id).replaceChildren());
+    createSingleSpellRow("cantrips-area", "cantrips", null, { classValue: "druid", spellValue: "guidance" });
+    createSingleSpellRow("cantrips-area", "cantrips", null, { classValue: "druid", spellValue: "mending" });
+    createSingleSpellRow("level1spells-area", 1, null, { classValue: "druid", spellValue: "cure-wounds" });
+  });
+  await disable();
+  const originChoices = await page.evaluate(() => [...document.querySelectorAll('#tab-spells .spell-entry[data-spell-source="magic-initiate"]')]
+    .map(row => [row.querySelector("select[id*='-class-']").value, row.querySelector("select[id*='-spell-']").value]));
+  assert.deepEqual(originChoices, [["", ""], ["", ""], ["", ""]], "unselected source options remain blank after clearing manual spells");
+  assert.equal((await selected()).length, 0);
+  assert.equal(await page.locator('#tab-spells .spell-entry--unavailable').count(), 0);
+  assert.equal(await page.evaluate(() => TabletopSpells.getSelectedSpellEntries().length), 0);
+  assert.deepEqual(await page.locator('#tab-spells .spell-entry:visible .spell-row-index').allTextContents(), ["#1", "#2", "#3"]);
+
+  // Ability choices remain independent of the editable manual spell list.
+  for (const [cls, ability, key] of [["paladin", "paladin-blessed-warrior", "class-paladin-blessed-warrior-cantrip-"],
+    ["ranger", "ranger-druidic-warrior", "class-ranger-druidic-warrior-cantrip-"]]) {
+    await setState({ class: cls, level: "2", background: "soldier", race: "human", [ability]: true,
+      __classFeatureCantrips: { [`${key}1`]: "guidance", [`${key}2`]: "mending" } });
+    await enable();
+    await page.evaluate(() => {
+      const row = [...document.querySelectorAll('#cantrips-area .spell-entry')].find(row => row.querySelector('select[id*="-spell-"]').value === "guidance");
+      const select = row.querySelector('select[id*="-spell-"]');
+      select.value = "light"; select.dispatchEvent(new Event("change"));
+      Spellbook.setState({ spellIds: ["cure-wounds"] });
+      saveAllFields();
+    });
+    const abilityChoices = { [`${key}1`]: "guidance", [`${key}2`]: "mending" };
+    assert.deepEqual(await page.evaluate(() => collectStateObject().__classFeatureCantrips), abilityChoices);
+    await page.reload();
+    await page.waitForFunction(() => window.SpellManagement?.isManual());
+    if (await page.locator("#legal-ack-btn").isVisible()) await page.locator("#legal-ack-btn").click();
+    await page.evaluate(() => { window.onboardingTour?.finish?.(); showTab("spells"); });
+    await page.evaluate(async () => {
+      history.replaceState(null, "", await encodeStateToHash(collectShareState()));
+      applyStateObject((await decodeStateFromHash()).data);
+      history.replaceState(null, "", location.pathname);
+    });
+    assert.deepEqual(await page.evaluate(() => collectStateObject().__classFeatureCantrips), abilityChoices, "source choices survive manual autosave and sharing");
+    await disable();
+    assert.equal(await page.locator(`#${ability}`).isChecked(), true);
+    assert.deepEqual(await page.locator('#cantrips-area .spell-entry[data-spell-source="class"] select[id*="-spell-"]').evaluateAll(selects => selects.map(select => select.value)), ["guidance", "mending"]);
+    assert.deepEqual(await page.evaluate(() => Spellbook.getState().spellIds), []);
+  }
+  await setState({ class: "paladin", level: "2", background: "soldier", race: "human",
+    "paladin-blessed-warrior": true, "manual-spell-management": true,
+    "cantrips-area-count": 1, "cantrips-area-class-0": "cleric", "cantrips-area-spell-0": "guidance",
+    __retainedSpells: [{ areaId: "cantrips-area", index: 0, key: "class-paladin-blessed-warrior-cantrip-1" }],
+    __wizardSpellbook: { version: 1, spellIds: ["cure-wounds"] } });
+  await disable();
+  assert.equal(await page.locator('#cantrips-area [data-source-key="class-paladin-blessed-warrior-cantrip-1"] select[id*="-spell-"]').inputValue(), "guidance", "older manual source markers migrate to ability choices before the manual list is cleared");
+  assert.deepEqual(await page.evaluate(() => Spellbook.getState().spellIds), []);
+  console.log("Spell management: destructive manual-to-automatic reset, cancellation/focus/no counts, empty book, preserved source choices/resources and JSON/share/autosave passed.");
+}
+
+async function verifyAutomaticSourceCleanup(page) {
+  const setState = state => page.evaluate(state => { applyStateObject(state); showTab("spells"); }, state);
+  const change = (id, value) => page.evaluate(({ id, value }) => {
+    const input = document.getElementById(id); input.value = value; input.dispatchEvent(new Event("change", { bubbles: true }));
+  }, { id, value });
+  const selected = () => page.evaluate(() => [...document.querySelectorAll('#tab-spells select[id*="-spell-"]')].map(select => select.value).filter(Boolean));
+  const noRemnants = async () => assert.equal(await page.locator('#tab-spells .spell-entry--unavailable, #tab-spells [data-retained-source-key]').count(), 0, "automatic sources do not accumulate gray remnants");
+
+  await setState({ class: "fighter", level: "1", background: "soldier", race: "gnome", "gnome-lineage": "forest_gnome" });
+  assert.deepEqual((await selected()).sort(), ["minor-illusion", "speak-with-animals"]);
+  await change("gnome-lineage", "rock_gnome");
+  assert.deepEqual((await selected()).sort(), ["mending", "prestidigitation"]);
+  await change("race", "human");
+  assert.deepEqual(await selected(), []);
+  await noRemnants();
+
+  await setState({ class: "fighter", level: "4", background: "sage", race: "human",
+    "derived-feat-background-magic-initiate-cantrip-1": "mage-hand",
+    "derived-feat-background-magic-initiate-cantrip-2": "ray-of-frost",
+    "derived-feat-background-magic-initiate-level-1": "shield" });
+  assert.deepEqual((await selected()).sort(), ["mage-hand", "ray-of-frost", "shield"]);
+  await change("background", "soldier");
+  assert.deepEqual(await selected(), []);
+  await noRemnants();
+  await setState({ class: "fighter", level: "4", background: "soldier", race: "human",
+    "feat-choice-fighter-level-4": "魔法學徒",
+    "derived-feat-fighter-level-4-magic-initiate-class": "wizard",
+    "derived-feat-fighter-level-4-magic-initiate-cantrip-1": "mage-hand",
+    "derived-feat-fighter-level-4-magic-initiate-cantrip-2": "ray-of-frost",
+    "derived-feat-fighter-level-4-magic-initiate-level-1": "shield" });
+  assert.deepEqual((await selected()).sort(), ["mage-hand", "ray-of-frost", "shield"]);
+  await change("feat-choice-fighter-level-4", "警覺");
+  assert.deepEqual(await selected(), []);
+  await noRemnants();
+
+  await setState({ class: "druid", level: "8", background: "soldier", race: "human", "druid-land": "polar" });
+  assert((await selected()).includes("ice-storm"));
+  await change("druid-land", "arid");
+  assert(!(await selected()).includes("ice-storm"), "changing a subclass choice removes its previous spells");
+  await change("level", "1");
+  assert.deepEqual(await selected(), ["speak-with-animals"]);
+  await change("class", "paladin");
+  assert.deepEqual(await selected(), []);
+  await change("level", "8");
+  assert((await selected()).includes("divine-smite"));
+  await change("class", "ranger");
+  assert.deepEqual(await selected(), ["hunters-mark"]);
+  await change("class", "fighter");
+  assert.deepEqual(await selected(), []);
+  await noRemnants();
+
+  // Older saves can identify automatic remnants; ordinary player content still survives.
+  await setState({ class: "fighter", level: "1", background: "soldier", race: "human",
+    "cantrips-area-count": 2, "cantrips-area-class-0": "wizard", "cantrips-area-spell-0": "minor-illusion",
+    "cantrips-area-class-1": "druid", "cantrips-area-spell-1": "guidance",
+    __retainedSpells: [{ areaId: "cantrips-area", index: 0, key: "race-gnome-forest_gnome-cantrips-minor-illusion-0", label: "來源：森林侏儒" }] });
+  assert.deepEqual(await selected(), ["guidance"]);
+  const saved = await page.evaluate(() => collectStateObject());
+  assert.equal(Object.hasOwn(saved, "__retainedSpells"), false);
+  await setState(JSON.parse(JSON.stringify(saved)));
+  assert.deepEqual(await selected(), ["guidance"], "legacy cleanup preserves unrelated unavailable player choices");
+  console.log("Automatic sources: race/lineage, background, feat, class/level and subclass changes remove stale spells; legacy cleanup preserves player choices.");
+}
+
+async function verifyUnavailableSpellRows(page) {
+  const setState = state => page.evaluate(state => { applyStateObject(state); showTab("spells"); }, state);
+  const changeField = (id, value) => page.evaluate(({ id, value }) => {
+    const input = document.getElementById(id); input.value = value; input.dispatchEvent(new Event("change"));
+  }, { id, value });
+  const rowFor = id => page.locator("#tab-spells .spell-entry").filter({ has: page.locator(`select[id*="-spell-"] option[value="${id}"]:checked`) });
+  await setState({ class: "druid", level: "1", background: "soldier", race: "human",
+    "level1spells-area-count": 2, "level1spells-area-class-0": "druid", "level1spells-area-spell-0": "cure-wounds",
+    "level1spells-area-class-1": "druid", "level1spells-area-spell-1": "jump" });
+  await changeField("class", "cleric");
+  assert.equal(await rowFor("cure-wounds").locator('select[id*="-class-"]').inputValue(), "cleric", "shared spells follow the new primary class");
+  assert.equal(await rowFor("cure-wounds").locator('select[id*="-spell-"]').isDisabled(), false);
+  assert.equal(await rowFor("jump").locator('select[id*="-class-"]').inputValue(), "druid");
+  assert.equal(await rowFor("jump").locator('select[id*="-spell-"]').isDisabled(), true);
+  assert.equal(await page.evaluate(() => getClearablePreparedSpellSelects().map(select => select.value).includes("jump")), false);
+  assert.match(await page.locator("#spell-prepared-counts").innerText(), /^已準備 1 個法術/);
+  await changeField("class", "druid");
+  assert.equal(await rowFor("jump").locator('select[id*="-spell-"]').isDisabled(), false);
+  assert.equal(await rowFor("speak-with-animals").count(), 1);
+
+  await setState({ class: "paladin", level: "2", background: "soldier", race: "human", "paladin-blessed-warrior": true,
+    __classFeatureCantrips: { "class-paladin-blessed-warrior-cantrip-1": "guidance" } });
+  await changeField("level", "1");
+  assert.equal(await rowFor("guidance").count(), 0, "lost class-granted cantrips are removed instead of kept gray");
+  await page.evaluate(() => applyStateObject(JSON.parse(JSON.stringify(collectStateObject()))));
+  await changeField("level", "2");
+  await page.evaluate(() => {
+    const choice = document.getElementById("paladin-blessed-warrior");
+    choice.checked = true; choice.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  assert.equal(await rowFor("guidance").count(), 0);
+  assert.deepEqual(await page.locator('#cantrips-area .spell-entry[data-spell-source="class"] select[id*="-spell-"]').evaluateAll(selects => selects.map(select => select.value)), ["", ""], "re-enabled source provides fresh choices without restoring deleted source spells");
+
+  const unknown = "legacy-unknown-spell";
+  await setState({ class: "wizard", level: "1", background: "soldier", race: "human",
+    "level1spells-area-count": 1, "level1spells-area-class-0": "wizard", "level1spells-area-spell-0": unknown });
+  assert.equal(await rowFor(unknown).locator('select[id*="-spell-"]').inputValue(), unknown);
+  assert.match(await rowFor(unknown).locator(".spell-row-availability").textContent(), /找不到此法術的資料/);
+  await page.evaluate(async () => {
+    history.replaceState(null, "", await encodeStateToHash(collectShareState()));
+    applyStateObject((await decodeStateFromHash()).data);
+    history.replaceState(null, "", location.pathname);
+    saveAllFields();
+  });
+  await page.reload();
+  await page.waitForFunction(() => document.querySelector('#level1spells-area select[id*="-spell-"]')?.value === "legacy-unknown-spell");
+  if (await page.locator("#legal-ack-btn").isVisible()) await page.locator("#legal-ack-btn").click();
+  await page.evaluate(() => { window.onboardingTour?.finish?.(); showTab("spells"); });
+  assert.equal(await page.evaluate(() => collectStateObject()["level1spells-area-spell-0"]), unknown);
+  assert.equal(await page.evaluate(() => collectStateObject({ includeDerivedSpellRows: true })["level1spells-area-count"]), 0);
+  assert.equal(await page.evaluate(() => TabletopSpells.getSelectedSpellEntries().length), 0);
+  for (const width of [1100, 320]) {
+    await page.setViewportSize({ width, height: 850 });
+    for (const theme of ["classic", "warm"]) for (const brightness of ["light", "dark"]) {
+      await page.evaluate(({ theme, brightness }) => {
+        document.documentElement.dataset.uiTheme = theme; document.documentElement.dataset.theme = brightness;
+      }, { theme, brightness });
+      assert.equal(await rowFor(unknown).evaluate(row => {
+        const notice = row.querySelector(".spell-row-availability");
+        const desc = row.querySelector(".output");
+        return getComputedStyle(notice).color === getComputedStyle(desc).color
+          && notice.getBoundingClientRect().right <= innerWidth
+          && !row.querySelector("[data-spell-action='delete']").disabled
+          && document.documentElement.scrollWidth <= innerWidth;
+      }), true, "unavailable spell stays readable and deletable in every theme and viewport");
+    }
+  }
+  await rowFor(unknown).locator("[data-spell-action='delete']").click();
+  assert.equal(await rowFor(unknown).count(), 0, "the last unavailable row can be deleted");
+  assert.equal(await page.evaluate(() => JSON.stringify(collectStateObject()).includes("legacy-unknown-spell")), false, "deleted unavailable content is not kept in the deleted-row cache");
+  assert.equal(await page.locator('#level1spells-area select[id*="-class-"]').inputValue(), "wizard");
+  await page.setViewportSize({ width: 1100, height: 850 });
+
+  await setState({ class: "wizard", level: "1", background: "soldier", race: "human",
+    "level4spells-area-count": 1, "level4spells-area-class-0": "wizard", "level4spells-area-spell-0": "ice-storm" });
+  await rowFor("ice-storm").locator("[data-spell-action='delete']").click();
+  assert.equal(await page.locator("#level4spells-area").evaluate(area => area.closest("details").hidden), true, "deleting the last saved spell hides an unopened ring");
+  console.log("Unavailable spells: player-selection retention/reactivation, class source removal, unknown legacy IDs, JSON/share/autosave, PDF/tabletop exclusion, four-theme desktop/narrow layout and deleting final rows passed.");
 }
 
 async function verifyRecommendedSpellbookEntry(page) {
@@ -251,6 +654,9 @@ async function verifyRecommendedSpellbookEntry(page) {
 async function verifyPdfSpellbookOptions(page) {
   await page.addScriptTag({ url: "/pdf-field-map.js" });
   await page.addScriptTag({ url: "/pdf-export.js" });
+  assert.equal(await page.evaluate(() => buildPdfFieldPayload({ class: "fighter", "manual-spell-management": true,
+    __wizardSpellbook: { version: 1, spellIds: ["cure-wounds"] } }, { includeSpellbook: true }).extra1.includes("療傷術(1環)")), true,
+  "manual all-class spellbook is included in PDF notes");
   const results = await page.evaluate(async () => {
     const originalNotes = "玩家原有筆記第一行\n玩家原有筆記第二行";
     const state = { class: "wizard", level: "1", "spell-notes": originalNotes,
@@ -378,6 +784,9 @@ async function main() {
     await page.waitForFunction(() => window.Spellbook && document.querySelector("#cantrips-area select"));
     await verifyRecommendedSpellbookEntry(page);
     await verifyClearPreparedSpells(page);
+    await verifySpellManagement(page);
+    await verifyAutomaticSourceCleanup(page);
+    await verifyUnavailableSpellRows(page);
     await page.evaluate(() => {
       document.getElementById("legal-modal")?.style.setProperty("display", "none");
       window.onboardingTour?.finish?.();
@@ -421,7 +830,7 @@ async function main() {
     await page.locator('.spellbook-options input[value="shield"]').check();
     await page.locator('.app-dialog__button--primary').click();
     assert.deepEqual(await page.evaluate(() => Spellbook.getState().spellIds), ["detect-magic", "mage-armor", "shield"]);
-    // Keep the existing unrestricted manual source selectors.
+    // Preparation can select a class spell without writing it into the book.
     assert.equal(await page.evaluate(() => {
       const row = findEmptySpellRow("level1spells-area") || createSingleSpellRow("level1spells-area", 1);
       const source = row.querySelector('select[id*="-class-"]');

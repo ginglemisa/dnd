@@ -48,6 +48,29 @@ async function main() {
     }
     await page.locator('[aria-controls="tab-spells"]').click();
     await page.locator("#spell-search-fab").click();
+    const beforeBrowse = await page.evaluate(() => JSON.stringify(collectStateObject()));
+    const browse = page.locator("#spell-browse-button");
+    for (const width of [1100, 320]) {
+      await page.setViewportSize({ width, height: 850 });
+      await browse.click();
+      const dialog = page.getByRole("dialog", { name: "查閱法術", exact: true });
+      assert.equal(await dialog.isVisible(), true);
+      await dialog.locator("#spell-browse-class").selectOption("wizard");
+      await dialog.locator("#spell-browse-ring").selectOption("4");
+      await dialog.locator("#spell-browse-name").selectOption("ice-storm");
+      assert.match(await dialog.locator(".spell-browser-detail").innerText(), /學派/);
+      assert.equal(await page.evaluate(() => JSON.stringify(collectStateObject())), beforeBrowse, "reading higher spells does not change character data");
+      assert.equal(await dialog.evaluate(el => el.scrollWidth <= el.clientWidth && el.getBoundingClientRect().right <= innerWidth), true);
+      await dialog.locator("#spell-browse-class").selectOption("paladin");
+      assert.equal(await dialog.locator("#spell-browse-name").isDisabled(), true);
+      await dialog.locator(".app-dialog__close").click();
+      assert.equal(await browse.evaluate(el => el === document.activeElement), true);
+      await browse.click();
+      await page.keyboard.press("Escape");
+      assert.equal(await dialog.isVisible(), false);
+      assert.equal(await browse.evaluate(el => el === document.activeElement), true);
+    }
+    await page.setViewportSize({ width: 1100, height: 850 });
     const input = page.locator("#spell-search");
     const results = page.locator("#spell-search-results");
     const buttons = page.locator("#spell-search-result-list button");

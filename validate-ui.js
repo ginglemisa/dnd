@@ -505,7 +505,7 @@ async function verifyToastPointerIsolation(page, touch) {
     for (const type of ["pointerdown", "pointerup", "click"]) {
       document.addEventListener(type, window.toastPageListener);
     }
-    AppDialog.open({ title: "Toast 隔離測試", allowNested: true });
+    AppDialog.showContent({ title: "Toast 隔離測試", allowNested: true });
     const button = document.createElement("button");
     button.id = "toast-underlying-button";
     button.textContent = "下方操作";
@@ -521,7 +521,7 @@ async function verifyToastPointerIsolation(page, touch) {
   if (touch) await message.tap();
   else await message.click();
   assert.deepEqual(await page.evaluate(() => [window.toastPageEvents, window.toastUnderlyingClicks]), [0, 0]);
-  await page.evaluate(() => AppDialog.open({ title: "巢狀測試" }));
+  await page.evaluate(() => { void AppDialog.showContent({ title: "巢狀測試" }); });
   assert.equal(await page.locator("#app-toast").evaluate(el => el.inert), false, "Nested dialogs must not disable existing toasts");
   await page.evaluate(() => AppDialog.notify("視窗內提示", { duration: 10000 }));
   if (touch) await swipeToast(page, 1, 1, 160);
@@ -828,19 +828,29 @@ async function verifyCharacterFeatures(browser, url) {
       const output = page.locator("#raceFeatures");
       assert((await output.locator(testCase.all).allTextContents()).some(text => text.includes(testCase.rejected)), `${testCase.race} shows every option before a choice`);
       await page.locator(testCase.control).selectOption(testCase.value);
+      await page.locator('[data-character-features-tab="race"]').click();
       assert((await output.locator(testCase.all).filter({ visible: true }).allTextContents()).some(text => text.includes(testCase.chosen)), `${testCase.race} keeps the selected option visible`);
-      assert.equal(await output.getByText(testCase.rejected, { exact: false }).filter({ visible: true }).count(), 0, `${testCase.race} hides unselected options`);
+      assert.equal((await output.locator(testCase.all).filter({ visible: true }).allTextContents()).some(text => text.includes(testCase.rejected)), false, `${testCase.race} hides unselected option details`);
+      await page.keyboard.press("Escape");
       await page.locator(testCase.control).selectOption("");
+      await page.locator('[data-character-features-tab="race"]').click();
       assert((await output.locator(testCase.all).filter({ visible: true }).allTextContents()).some(text => text.includes(testCase.rejected)), `${testCase.race} restores every option when cleared`);
+      await page.keyboard.press("Escape");
     }
     await page.locator("#race").selectOption("elf");
     await page.locator("#class").selectOption("");
     assert.equal(await page.locator("#classCreationInfo").textContent(), "請先選擇職業", "clearing class removes stale creation data");
     await page.locator("#class").selectOption("rogue");
-    assert.equal(await page.locator("[data-feature-panel] > details").count(), 0, "tabs replace outer headings and disclosure controls");
+    assert.equal(await page.locator("[data-feature-panel] > details:not(.feature-choice-disclosure)").count(), 0, "tabs replace outer headings while retaining ability option disclosures");
     assert.equal(await page.locator("#tab-basic #classFeatures, #tab-basic #backgroundFeatures, #tab-basic #raceFeatures, #tab-basic #metamagicOptions, #tab-basic #eldritch-invocations-output").count(), 0);
     assert.equal(await page.evaluate(() => Boolean(document.getElementById("feats-area").closest(".section").nextElementSibling?.querySelector("#class-extra"))), true);
-    assert.equal(await page.locator(".basic-row--origin .character-features-hint").textContent(), "＊點擊職業、種族、背景標題或旁邊的 🛈，可查看詳細資訊。");
+    for (const tab of ["class", "race", "background"]) {
+      const entry = page.locator(`[data-character-features-tab="${tab}"]`);
+      assert.equal(await entry.isVisible(), true, `${tab} details retain a visible entry`);
+      assert.equal(await entry.getAttribute("aria-haspopup"), "dialog");
+      assert.equal(await entry.getAttribute("aria-controls"), "character-features-modal");
+      assert(await entry.getAttribute("aria-label"), `${tab} details entry has an accessible label`);
+    }
     const state = await page.evaluate(() => {
       window.featureControlNodes = ["classFeatures", "backgroundFeatures", "raceFeatures"].map(id => document.getElementById(id));
       return collectStateObject();
@@ -937,8 +947,12 @@ async function verifyCharacterFeatures(browser, url) {
     await page.keyboard.press("Escape");
     await page.locator("#level").selectOption("2");
     await page.evaluate(() => showTab("spells"));
-    await page.locator('#cantrips-area select[id*="-class-"]').first().selectOption("warlock");
-    await page.locator('#cantrips-area select[id*="-spell-"]').first().selectOption("eldritch-blast");
+    // Retained spells from prior class choices stay unavailable; edit the current class row.
+    const cantripRow = page.locator('#cantrips-area .spell-entry:not([data-spell-source]):not(.spell-entry--unavailable)').first();
+    const spellClass = cantripRow.locator('select[id*="-class-"]');
+    assert.equal(await spellClass.inputValue(), "warlock", "automatic spell rows use the character class");
+    assert.equal(await spellClass.isDisabled(), true, "automatic spell source stays fixed");
+    await cantripRow.locator('select[id*="-spell-"]').selectOption("eldritch-blast");
     await page.evaluate(() => showTab("basic"));
     await opener.click();
     assert.deepEqual(await tabs.allTextContents(), ["創角/表格", "職業", "魔能祈喚", "背景", "種族"]);
@@ -946,7 +960,7 @@ async function verifyCharacterFeatures(browser, url) {
     assert.equal(await invocation("邪魔活力").isEnabled(), true, "level 2 invocation unlocks at level 2");
     assert.equal(await invocation("星移步法").isDisabled(), true, "level 5 invocation remains unavailable at level 2");
     for (const name of ["幽影護甲", "魔能意志", "邪魔活力"]) await invocation(name).check();
-    await invocation("千面之臉").check();
+    await invocation("千面之臉").click();
     assert.equal(await modal.locator("#eldritch-invocations-output input[data-invocation-name]:checked").count(), 3, "level 2 invocation limit is enforced");
     assert.equal(await invocation("千面之臉").isChecked(), false, "the invocation exceeding the level limit is reverted");
     for (const name of ["幽影護甲", "魔能意志", "邪魔活力"]) await invocation(name).uncheck();
@@ -995,8 +1009,200 @@ async function verifyCharacterFeatures(browser, url) {
     assert.equal(await modal.locator('[role="tab"][aria-selected="true"]').textContent(), "魔能祈喚");
     assert.equal(await modal.locator('input[data-invocation-name="苦痛魔爆"]').first().evaluate(el => el === document.activeElement), true);
     await page.keyboard.press("Escape");
+    const choiceAlertCases = [
+      ["sorcerer", "5", "超魔法", "metamagic", 1280, "Enter"],
+      ["warlock", "5", "魔能祈喚", "invocations", 320, " "],
+      ["cleric", "8", "神聖使命", "class", 1280],
+      ["druid", "7", "原初使命", "class", 320],
+      ["paladin", "5", "戰鬥風格", "class", 1280],
+      ["ranger", "7", "防守戰術", "class", 320]
+    ];
+    for (const [cls, level, label, panel, width, key] of choiceAlertCases) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.emulateMedia({ reducedMotion: cls === "sorcerer" ? "no-preference" : "reduce" });
+      await page.locator("#class").selectOption(cls);
+      await page.locator("#level").selectOption(level);
+      const beforeJump = await page.evaluate(() => collectStateObject());
+      await page.evaluate(() => {
+        document.querySelectorAll(".feature-choice-disclosure").forEach(details => { details.open = false; });
+        TabletopMode.setMode("tabletop");
+        TabletopMode.setPanel("overview");
+      });
+      await page.evaluate(dark => {
+        document.documentElement.dataset.uiTheme = dark ? "classic" : "warm";
+        document.documentElement.dataset.theme = dark ? "dark" : "light";
+      }, cls === "warlock");
+      const alert = page.locator("button.tabletop-class-choice-alert").filter({ hasText: label }).first();
+      await alert.waitFor({ state: "visible" });
+      assert.match(await alert.getAttribute("aria-label"), /前往補填/);
+      assert.equal(await alert.evaluate(el => el.scrollWidth <= el.clientWidth), true, `${label} prompt wraps at ${width}px`);
+      if (key) {
+        await alert.focus();
+        await page.keyboard.press(key);
+      } else await alert.click();
+      await page.waitForFunction(panel => document.documentElement.dataset.viewMode === "sheet"
+        && document.activeElement?.closest("[data-feature-panel]")?.dataset.featurePanel === panel
+        && document.querySelector(`[data-feature-panel="${panel}"] .onboarding-jump-target`), panel);
+      assert.equal(await modal.locator('[role="tab"][aria-selected="true"]').getAttribute("data-feature-tab"), panel);
+      assert.equal(await modal.locator(`[data-feature-panel="${panel}"] .onboarding-jump-target`).evaluate(el => {
+        const body = el.closest(".app-dialog__body").getBoundingClientRect();
+        const rect = el.getBoundingClientRect();
+        return rect.top >= body.top && rect.bottom <= body.bottom;
+      }), true, `${label} target is scrolled into view`);
+      assert.deepEqual(await page.evaluate(() => collectStateObject()), beforeJump, "navigation preserves character choices");
+      await page.waitForFunction(() => !document.querySelector(".onboarding-jump-target"));
+      await page.keyboard.press("Escape");
+      assert.equal(await modal.count(), 0);
+      await page.evaluate(() => TabletopMode.setMode("tabletop"));
+      await alert.waitFor({ state: "visible" });
+      await page.evaluate(() => TabletopMode.setMode("sheet"));
+    }
     console.log("Character abilities: creation/table relocation for all classes, tab conditions, controls, nested settings, saved state, focus, reminders and responsive layout passed.");
   } finally { await page.close(); }
+}
+
+async function verifyClassFeatureChoicePrompt(browser, url) {
+  const page = await newUiPage(browser, { viewport: { width: 1280, height: 900 }, reducedMotion: "reduce" });
+  const modal = page.locator("#class-feature-choices-modal");
+  const chooseAsPlayer = async (id, value) => {
+    const key = await page.evaluate(({ id, value }) => {
+      const select = document.getElementById(id);
+      const index = Array.from(select.options).findIndex(option => option.value === value);
+      if (index < 0) throw new Error(`Missing option ${id}: ${value}`);
+      select.selectedIndex = index === 0 ? 1 : index - 1;
+      return index === 0 ? "ArrowUp" : "ArrowDown";
+    }, { id, value });
+    await page.locator(`#${id}`).focus();
+    await page.keyboard.press(key);
+    assert.equal(await page.locator(`#${id}`).inputValue(), value, "native keyboard commits the player choice");
+  };
+  const closePrompt = async () => {
+    await modal.getByRole("button", { name: "關閉", exact: true }).click();
+    await modal.waitFor({ state: "detached" });
+  };
+  try {
+    await page.goto(url);
+    await page.locator("#legal-close-btn").click();
+    await page.evaluate(() => applyStateObject({ class: "cleric", level: "7" }));
+    await page.waitForTimeout(200);
+    assert.equal(await modal.count(), 0, "JSON/restoration changes do not auto-open the prompt");
+    await chooseAsPlayer("level", "8");
+    await modal.waitFor();
+    assert.deepEqual(await modal.locator("section[data-feature-level]:visible h3").allTextContents(), ["等級 1：神聖使命", "等級 7：神佑打擊"], "all earlier missing groups appear together");
+    assert.equal(await modal.locator(".app-dialog__close").count(), 0, "the completion dialog has only its footer close button");
+    await modal.locator("#cleric-guardian").check();
+    await modal.locator("#cleric-trickster").check();
+    assert.equal(await page.locator("#cleric-guardian").isChecked(), false, "mission exclusivity still uses the live controls");
+    await modal.locator("#cleric-blessed-strikes-divine-strike").check();
+    assert.equal(await page.evaluate(() => collectStateObject()["cleric-trickster"]), true, "selection applies immediately while open");
+    assert.equal(await modal.locator("section[data-feature-level]:visible").count(), 2, "completed sections stay in place until closed");
+    await closePrompt();
+    assert.equal(await page.locator("#level").evaluate(el => el === document.activeElement), true, "close returns focus to the level selector");
+    assert.equal(await page.locator("#class-abilities-panel #classFeatures").count(), 1, "original controls return to their original parent");
+    await chooseAsPlayer("level", "7");
+    await page.waitForTimeout(200);
+    assert.equal(await modal.count(), 0, "complete choices do not prompt at later levels");
+
+    await chooseAsPlayer("class", "druid");
+    await modal.waitFor();
+    assert.deepEqual(await modal.locator("section[data-feature-level]:visible h3").allTextContents(), ["等級 1：原初使命", "等級 7：元素狂怒"]);
+    await modal.locator("#druid-sentinel").check();
+    await modal.locator("#druid-elemental-fury-primal-strike").check();
+    await page.keyboard.press("Escape");
+    await modal.waitFor({ state: "detached" });
+    assert.equal(await page.evaluate(() => collectShareState()["druid-elemental-fury-primal-strike"]), true, "Escape preserves choices in share state");
+
+    await chooseAsPlayer("class", "ranger");
+    await modal.waitFor();
+    assert.deepEqual(await modal.locator("section[data-feature-level]:visible h3").allTextContents(), ["等級 2：戰鬥風格", "等級 3：狩獵目標（獵人子職）", "等級 7：防守戰術（獵人子職）"]);
+    await modal.locator("#ranger-fighting-style").check();
+    const style = modal.locator("#feat-choice-fighting-style-ranger");
+    const view = style.locator("..").locator(".feat-choice-view");
+    assert.equal(await view.isDisabled(), true, "empty choice cannot open details");
+    await closePrompt();
+    await page.waitForTimeout(200);
+    assert.equal(await modal.count(), 0, "closing an incomplete prompt does not re-open it");
+    await chooseAsPlayer("level", "8");
+    await modal.waitFor();
+    assert.equal(await style.isEnabled(), true, "checked style with no feat still prompts");
+    await style.selectOption("防禦");
+    await view.click();
+    const detail = page.locator('.app-dialog[data-variant="feat-detail"]');
+    assert.equal(await detail.locator(".feat-desc-title").textContent(), "防禦");
+    assert.equal(await modal.evaluate(el => el.inert), true, "feat details lock the parent prompt");
+    await page.keyboard.press("Escape");
+    await detail.waitFor({ state: "detached" });
+    assert.equal(await view.evaluate(el => el === document.activeElement), true, "feat detail returns to its view button");
+    await modal.locator("#ranger-druidic-warrior").check();
+    await closePrompt();
+    await chooseAsPlayer("level", "2");
+    await page.waitForTimeout(200);
+    assert.equal(await modal.count(), 0, "caster alternative completes the choice without requiring cantrips");
+
+    await chooseAsPlayer("class", "paladin");
+    await modal.waitFor();
+    await modal.locator("#paladin-fighting-style").check();
+    await modal.locator("#feat-choice-fighting-style-paladin").selectOption("防禦");
+    await modal.locator("#class-feature-prompt-disabled").check();
+    const selected = await page.evaluate(() => ({ state: collectStateObject(), share: collectShareState() }));
+    assert.equal(Object.hasOwn(selected.state, "class-feature-prompt-disabled"), false, "preference stays out of character JSON");
+    assert.equal(Object.hasOwn(selected.share, "class-feature-prompt-disabled"), false, "preference stays out of shares");
+    await closePrompt();
+    await page.waitForFunction(() => JSON.parse(dndStorage.getItem(AUTO_SAVE_KEY) || "{}")["paladin-fighting-style"] === true);
+    assert.equal(await page.evaluate(() => Object.hasOwn(JSON.parse(dndStorage.getItem(AUTO_SAVE_KEY)), "class-feature-prompt-disabled")), false, "preference stays out of autosave");
+    await page.goto(url);
+    await page.locator("#legal-close-btn").click();
+    assert.equal(await modal.count(), 0, "loading incomplete autosave does not prompt");
+    await chooseAsPlayer("class", "cleric");
+    await page.waitForTimeout(200);
+    assert.equal(await modal.count(), 0, "disabled preference survives page reload");
+    await page.evaluate(() => {
+      dndStorage.removeItem(CLASS_FEATURE_PROMPT_DISABLED_KEY);
+      classFeaturePromptDisabled = false;
+      document.getElementById("manual-feat-management").checked = true;
+      updateFeatManagementMode();
+    });
+    await chooseAsPlayer("class", "paladin");
+    await page.waitForTimeout(200);
+    assert.equal(await modal.count(), 0, "manual feat management retains its existing behavior");
+    await page.evaluate(() => { document.getElementById("manual-feat-management").checked = false; updateFeatManagementMode(); });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await chooseAsPlayer("level", "3");
+    await modal.waitFor();
+    await modal.locator("#paladin-blessed-warrior").check();
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, "narrow prompt has no page overflow");
+    await closePrompt();
+    await chooseAsPlayer("level", "4");
+    await page.locator('[data-character-features-tab="class"]').click();
+    const original = page.locator("#character-features-modal");
+    await original.locator("#paladin-fighting-style").check();
+    await original.locator("#feat-choice-fighting-style-paladin").selectOption("防禦");
+    await original.locator('[data-feat-choice="fighting-style-paladin"] .feat-choice-view').click();
+    await detail.waitFor();
+    await detail.getByRole("button", { name: "關閉", exact: true }).click();
+    assert.equal(await original.isVisible(), true, "original class dialog also supports nested feat lookup");
+    await original.locator("#feat-choice-paladin-level-4").selectOption("警覺");
+    await original.locator('[data-feat-choice="paladin-level-4"] .feat-choice-view').click();
+    assert.equal(await detail.locator(".feat-desc-title").textContent(), "警覺", "ordinary class feats also have lookup");
+    await page.keyboard.press("Escape");
+    await page.keyboard.press("Escape");
+    const hash = await page.evaluate(() => encodeStateToHash(collectShareState()));
+    await page.goto(`${url}${hash}`);
+    assert.equal(await modal.count(), 0, "opening a share does not prompt or receive the preference");
+    await page.goto(url);
+    await page.locator("#legal-close-btn").click();
+    await page.evaluate(() => dndStorage.setItem(CLASS_FEATURE_PROMPT_DISABLED_KEY, "true"));
+    await page.locator("#utility-menu-toggle").click();
+    await page.locator("#clear-storage-btn").click();
+    await page.getByRole("button", { name: "清除紀錄", exact: true }).click();
+    await page.waitForFunction(() => dndStorage.getItem(CLASS_FEATURE_PROMPT_DISABLED_KEY) === null);
+    await page.locator("#legal-close-btn").click();
+    await chooseAsPlayer("level", "1");
+    await chooseAsPlayer("class", "cleric");
+    await modal.waitFor();
+    await closePrompt();
+  } finally { await page.close(); }
+  console.log("Class option completion: thresholds, live choices, nested feat lookup, dismissal, local preference, clear, share and narrow layout passed.");
 }
 
 async function verifyFeatureReferences(browser, url) {
@@ -1138,7 +1344,26 @@ async function verifyAdventureJournal(browser, url) {
         await page.evaluate(theme => { document.documentElement.dataset.theme = theme; }, theme);
         assert.equal(await page.locator(".journal-shell").evaluate(el => el.scrollWidth <= el.clientWidth), true, `journal fits ${width} ${theme}`);
         assert.equal(await page.locator(".journal-body").evaluate(el => el.scrollWidth <= el.clientWidth), true);
-        assert.equal(await page.locator(".journal-header").evaluate(el => [...el.querySelectorAll("button")].every(button => button.getBoundingClientRect().right <= el.getBoundingClientRect().right)), true, "toolbar fits");
+        assert.equal(await page.locator(".journal-header").evaluate(el => {
+          const header = el.getBoundingClientRect();
+          const toolbar = el.querySelector(".journal-toolbar").getBoundingClientRect();
+          const close = el.querySelector('[data-journal-action="close"]').getBoundingClientRect();
+          const size = parseFloat(getComputedStyle(el).getPropertyValue("--journal-tool-size"));
+          return toolbar.left >= header.left && toolbar.right <= close.left
+            && close.right <= header.right && size >= 40 && close.width >= size && close.height >= size;
+        }), true, "scrollable toolbar fits beside the fixed close button");
+        for (const tool of ["add", "delete", "toggle-search", "import", "export"]) {
+          await action(page, tool).focus();
+          await action(page, tool).evaluate(button => button.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "instant" }));
+          await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+          assert.equal(await action(page, tool).evaluate(button => {
+            const rect = button.getBoundingClientRect();
+            const toolbar = button.closest(".journal-toolbar").getBoundingClientRect();
+            const size = parseFloat(getComputedStyle(button.closest(".journal-header")).getPropertyValue("--journal-tool-size"));
+            return document.activeElement === button && size >= 40 && rect.width >= size && rect.height >= size
+              && rect.left >= toolbar.left && rect.right <= toolbar.right;
+          }), true, `${tool} retains focus and fits after scrolling the toolbar`);
+        }
         assert.equal(await page.locator("#journal-search").evaluate(el => el.getBoundingClientRect().width >= 160), true, "search button must leave usable input width");
         if (process.env.DND_UI_SCREENSHOT_DIR && theme === "light") {
           fs.mkdirSync(process.env.DND_UI_SCREENSHOT_DIR, { recursive: true });
@@ -1349,6 +1574,7 @@ async function main() {
       await verifyFeatureChoiceDisclosures(browser, url);
       await verifyCustomBackground(browser, url);
       await verifyCharacterFeatures(browser, url);
+      await verifyClassFeatureChoicePrompt(browser, url);
       await verifyFeatureReferences(browser, url);
     }
     if (all || sections.has("--journal-only")) await verifyAdventureJournal(browser, url);

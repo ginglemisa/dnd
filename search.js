@@ -170,6 +170,66 @@
     searchAllSpells();
   });
 
+  function openSpellBrowser(trigger) {
+    const body = document.createElement("div");
+    body.className = "spell-browser";
+    const fields = document.createElement("div");
+    fields.className = "spell-browser-fields";
+    const createSelect = (field, labelText) => {
+      const label = document.createElement("label");
+      label.textContent = labelText;
+      const select = document.createElement("select");
+      select.id = `spell-browse-${field}`;
+      select.dataset.stateTransient = "true";
+      label.appendChild(select);
+      fields.appendChild(label);
+      return select;
+    };
+    const option = (value, label) => {
+      const node = document.createElement("option");
+      node.value = value;
+      node.textContent = label;
+      return node;
+    };
+    const classSelect = createSelect("class", "職業");
+    const ringSelect = createSelect("ring", "環位");
+    const nameSelect = createSelect("name", "法術名稱");
+    const allSpells = SpellCatalog.getAllSpells().filter(spell => spell.level >= 0 && spell.level <= 4);
+    const classes = new Set(allSpells.flatMap(spell => SpellCatalog.getClassIds(spell.spellId)));
+    classSelect.append(option("", "全部職業"), ...Object.entries(SPELL_SEARCH_CLASS_LABELS)
+      .filter(([id]) => classes.has(id)).map(([id, label]) => option(id, label)));
+    ringSelect.append(option("", "所有環位"), ...[0, 1, 2, 3, 4]
+      .map(level => option(String(level), SPELL_SEARCH_LEVEL_LABELS[level === 0 ? "cantrips" : String(level)])));
+    const detail = document.createElement("div");
+    detail.className = "spell-browser-detail output small-text";
+    detail.setAttribute("aria-live", "polite");
+    const showDetail = () => {
+      const spell = SpellCatalog.getSpell(nameSelect.value);
+      if (spell) detail.innerHTML = globalScope.renderSpellDescHtml(spell.desc);
+      else detail.textContent = "請選擇法術，查看完整描述。";
+    };
+    const refreshOptions = () => {
+      const previous = nameSelect.value;
+      const spells = allSpells.filter(spell => (!classSelect.value || SpellCatalog.getClassIds(spell.spellId).includes(classSelect.value))
+        && (!ringSelect.value || spell.level === Number(ringSelect.value)))
+        .sort((a, b) => a.level - b.level || a.nameZh.localeCompare(b.nameZh, "zh-Hant"));
+      nameSelect.replaceChildren(option("", spells.length ? "請選擇法術" : "此職業沒有該環位法術"),
+        ...spells.map(spell => option(spell.spellId, SpellCatalog.getDisplayName(spell.spellId))));
+      nameSelect.disabled = spells.length === 0;
+      nameSelect.value = spells.some(spell => spell.spellId === previous) ? previous : "";
+      showDetail();
+    };
+    classSelect.addEventListener("change", refreshOptions);
+    ringSelect.addEventListener("change", refreshOptions);
+    nameSelect.addEventListener("change", showDetail);
+    body.append(fields, detail);
+    refreshOptions();
+    return globalScope.AppDialog.showContent({ title: "查閱法術", content: body, variant: "spell-browser",
+      confirmLabel: "關閉", trigger });
+  }
+
+  document.getElementById("spell-browse-button")?.addEventListener("click", event => openSpellBrowser(event.currentTarget));
+
   // 裝備搜尋與結果詳情
   function splitEquipmentSearchText(text) {
     return String(text || "")

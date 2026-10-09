@@ -1758,7 +1758,7 @@ function isWeaponRowEmpty(payload, slot) {
     }
 
     const spellNotesText = normalizeText(state['spell-notes']);
-    if (options.includeSpellbook !== false && state.class === 'wizard' && Array.isArray(state.__wizardSpellbook?.spellIds)) {
+    if (options.includeSpellbook !== false && (state.class === 'wizard' || state['manual-spell-management'] === true) && Array.isArray(state.__wizardSpellbook?.spellIds)) {
       const bookSpells = [...new Set(state.__wizardSpellbook.spellIds)].map(getCanonicalSpell).filter(Boolean);
       if (bookSpells.length) extraNotes.push(`法術書：${bookSpells.map(spell => `${spell.nameZh}(${spell.level}環)${getSpellCatalog()?.isRitual(spell) ? '*' : ''}`).join('、')}。* 為儀式法術。`);
     }

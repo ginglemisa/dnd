@@ -211,7 +211,8 @@
     closeButton.className = "app-dialog__close";
     closeButton.setAttribute("aria-label", "關閉訊息");
     closeButton.textContent = "×";
-    header.append(title, closeButton);
+    header.appendChild(title);
+    if (options.showCloseButton !== false) header.appendChild(closeButton);
 
     const body = document.createElement("div");
     body.className = "app-dialog__body";

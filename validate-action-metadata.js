@@ -1726,6 +1726,12 @@ async function verifyMergedActionUi(browser, url) {
     await page.getByText("無法儲存收合偏好，本次仍可使用。", { exact: true }).waitFor();
     await page.evaluate(() => { window.dndStorage = originalDisclosureStorage; });
 
+    // Timing examples span several class lists, so explicitly enable manual management.
+    await page.evaluate(() => { TabletopMode.setMode("sheet"); showTab("spells"); });
+    await page.locator("#manual-spell-management").click();
+    await page.getByRole("button", { name: "啟用手動管理", exact: true }).click();
+    assert.equal(await page.evaluate(() => SpellManagement.isManual()), true);
+    await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("actions"); });
     const spells = [
       ["color-spray", "wizard", 1, ["動作"]],
       ["healing-word", "bard", 1, ["附贈"]],

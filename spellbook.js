@@ -4,11 +4,12 @@
   let spellIds = [];
   const levels = ["戲法", "一環", "二環", "三環", "四環"];
   const catalog = () => globalScope.SpellCatalog;
+  const isManual = () => globalScope.SpellManagement?.isManual() === true;
   const isWizard = () => document.getElementById("class")?.value === "wizard";
-  const isTome = () => document.getElementById("class")?.value === "warlock"
+  const isTome = () => !isManual() && document.getElementById("class")?.value === "warlock"
     && globalScope.hasWarlockInvocation?.("書之魔契");
   const wizardSpells = () => catalog().getAllSpells().filter(spell => spell.level > 0
-    && catalog().getClassIds(spell.spellId).includes("wizard"));
+    && spell.level <= 4 && (isManual() || catalog().getClassIds(spell.spellId).includes("wizard")));
 
   function node(tag, className = "", text = "") {
     const element = document.createElement(tag);
@@ -18,7 +19,7 @@
   }
 
   function normalize(value) {
-    const allowed = new Set(wizardSpells().map(spell => spell.spellId));
+    const allowed = new Set(catalog().getAllSpells().filter(spell => spell.level >= 1 && spell.level <= 4).map(spell => spell.spellId));
     return [...new Set((Array.isArray(value) ? value : []).filter(id => allowed.has(id)))];
   }
 
@@ -42,7 +43,8 @@
 
   function preparedRows(id) {
     return Array.from(document.querySelectorAll('#tab-spells .spell-entry:not([data-spell-source])'))
-      .filter(row => row.querySelector('select[id*="-class-"]')?.value === "wizard"
+      .filter(row => !globalScope.SpellManagement || globalScope.SpellManagement.isRowAvailable(row))
+      .filter(row => (isManual() || row.querySelector('select[id*="-class-"]')?.value === "wizard")
         && (!id || row.querySelector('select[id*="-spell-"]')?.value === id));
   }
 
@@ -63,7 +65,7 @@
   function render() {
     const card = document.getElementById("spellbook-card");
     if (!card) return;
-    card.hidden = !isWizard() && !isTome();
+    card.hidden = !isManual() && !isWizard() && !isTome();
     if (card.hidden) return;
     const tome = isTome();
     document.getElementById("spellbook-title").textContent = tome ? "影之書（書之魔契）" : "法術書";
@@ -104,7 +106,7 @@
       confirmLabel: prepared ? "取消準備" : "準備法術",
       cancelLabel: "關閉"
     });
-    if (!confirmed || !isWizard()) return;
+    if (!confirmed || (!isWizard() && !isManual())) return;
     if (prepared) {
       preparedRows(spell.spellId).forEach(row => {
         const select = row.querySelector('select[id*="-spell-"]');
@@ -113,14 +115,18 @@
       });
     } else {
       const level = Number(document.getElementById("level")?.value);
-      if (!globalScope.classCanAccessSpellLevel("wizard", level, spell.level)) {
+      if (!isManual() && !catalog().getClassIds(spell.spellId).includes("wizard")) {
+        globalScope.AppDialog.notify("此法術不在法師法表中；書內紀錄已保留。可切換手動管理後準備。");
+        return;
+      }
+      if (!isManual() && !globalScope.classCanAccessSpellLevel("wizard", level, spell.level)) {
         globalScope.AppDialog.notify("目前法師等級尚未開放此環階。書內法術已保留。");
         return;
       }
       const areaId = `level${spell.level}spells-area`;
       const row = globalScope.findEmptySpellRow(areaId) || globalScope.createSingleSpellRow(areaId, spell.level);
       const classSelect = row.querySelector('select[id*="-class-"]');
-      classSelect.value = "wizard";
+      classSelect.value = isManual() ? catalog().getClassIds(spell.spellId)[0] : "wizard";
       classSelect.dispatchEvent(new Event("change", { bubbles: true }));
       const select = row.querySelector('select[id*="-spell-"]');
       select.value = spell.spellId;
@@ -133,10 +139,11 @@
   }
 
   function getRitualEntries() {
-    if (!isWizard()) return [];
+    if (!isWizard() || isManual()) return [];
     const level = Number(document.getElementById("level")?.value);
     return spellIds.flatMap(id => {
       const spell = catalog().getSpell(id);
+      if (!catalog().getClassIds(id).includes("wizard")) return [];
       if (!catalog().isRitual(spell) || preparedRows(id).length
         || !globalScope.classCanAccessSpellLevel("wizard", level, spell.level)) return [];
       return [{ spellId: id, spell, spellSource: "wizard-spellbook", spellClass: "wizard",
@@ -203,7 +210,7 @@
     draw();
     const saved = await globalScope.AppDialog.showContent({ title: "管理法術書", content: body,
       variant: "spellbook", confirmLabel: "儲存", cancelLabel: "取消", trigger });
-    if (saved && isWizard()) setState({ spellIds: [...selected] });
+    if (saved && (isWizard() || isManual())) setState({ spellIds: [...selected] });
   }
 
   async function openTomeSelection(options = {}) {
@@ -251,7 +258,7 @@
       if (isTome()) {
         const selection = await openTomeSelection({ trigger: event.currentTarget });
         if (selection && isTome()) { globalScope.setPactTomeSpellSelection(selection); changed(); }
-      } else if (isWizard()) await manageWizard(event.currentTarget);
+      } else if (isWizard() || isManual()) await manageWizard(event.currentTarget);
     });
     render();
   }

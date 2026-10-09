@@ -95,9 +95,9 @@ npx --no-install playwright install chromium
 | --- | --- | --- |
 | `node validate-ability-roll.js` | 屬性產生與共用擲骰：27 購點、去最低骰、結果分配、背景加值、備註、長按／鍵盤／觸控與取消、焦點、舊歷史相容性、自動儲存及擲骰版面 | 瀏覽器；完整執行包含購點與一般擲骰分項 |
 | `node validate-action-metadata.js` | 非施法動作定義、角色卡／跑團模式行動、基本動作收合／記憶／清除、合併分類的自訂與隱藏偏好、法術單一入口與施法時間標記、狀態／危害連動與專注中斷、危害檢定及分頁提示、專長來源雙向選擇／自動同步／固定來源灰階鎖定／資格警示與數值停用／自行管理增刪與新舊資料／分享還原、武器裝備互動（含主手2／盾牌／雙手衝突、AC、摘要、還原與 PDF 對應）、JSON／分享／自動儲存 | 瀏覽器；PDF 檢查欄位資料及資格提醒後繼續輸出（匯出函式使用替身） |
-| `node validate-onboarding.js` | 新手／跑團模式導覽（含第 3 步自動開啟選單、雙高亮與按鈕點擊、法術與資源教學預覽、減少動態效果）、創角小幫手匯入、觸控、取消、資料與焦點保留、PDF 載入及取消流程 | 瀏覽器；PDF 繪製以替身驗證，未測實際成品 |
-| `node validate-spellbook.js` | 法術書（含法師六個推薦法術的專屬寫入入口）、準備數量、清空已準備／固定來源保留、書內儀式、創角匯入、PDF 法術書選項、JSON／分享／自動儲存及版面 | 瀏覽器 |
-| `node validate-spell-search.js` | 法術全文搜尋、職業全名／別名與指定環位、排序、空結果／清空、鍵盤、窄螢幕與詳情／焦點保留；含 Artificer 無資料與模擬資料案例，以及裝備索引、詳情／規則關鍵字說明／購買取消、四種工具熟練列的查看按鈕、職業工具自動化與 JSON／分享／自動存檔還原、切頁及導覽還原 | 瀏覽器；可加 `--equipment-only` 僅驗證裝備搜尋與工具查看／職業工具自動化，含桌機／窄螢幕、說明開關及焦點還原；同時檢查 `search.js` 與主頁內嵌 JavaScript 語法 |
+| `node validate-onboarding.js` | 新手／跑團模式導覽（含認識角卡第 3 步自動開啟選單、雙高亮與按鈕點擊，以及七步跑團導覽的選單入口、法術與資源教學預覽、減少動態效果）、創角小幫手匯入、觸控、取消、資料與焦點保留、PDF 載入及取消流程 | 瀏覽器；PDF 繪製以替身驗證，未測實際成品 |
+| `node validate-spellbook.js` | 法術書（含法師六個推薦法術的專屬寫入入口）、準備數量、清空已準備／固定來源保留、本職自動選定／共同法術沿用、未適用玩家法術灰色保留／恢復／最後一列刪除、自動來源隨角色選項移除及舊殘留清理、手動法術管理雙向確認／取消與清空清單及法術書／保留能力選項與資源、無切換備份的 JSON／分享／自動存檔與舊法術編號相容、第三個三環法術位、書內儀式、創角匯入、PDF 法術書選項及版面 | 瀏覽器 |
+| `node validate-spell-search.js` | 法術全文搜尋、職業全名／別名與指定環位、排序、空結果／清空、獨立查閱視窗的篩選／資料隔離／關閉與焦點、鍵盤、窄螢幕與詳情／焦點保留；含 Artificer 無資料與模擬資料案例，以及裝備索引、詳情／規則關鍵字說明／購買取消、四種工具熟練列的查看按鈕、職業工具自動化與 JSON／分享／自動存檔還原、切頁及導覽還原 | 瀏覽器；可加 `--equipment-only` 僅驗證裝備搜尋與工具查看／職業工具自動化，含桌機／窄螢幕、說明開關及焦點還原；同時檢查 `search.js` 與主頁內嵌 JavaScript 語法 |
 | `node validate-tabletop-druid.js` | 荒野形態、野獸攻擊、德魯伊資源、持續法術效果（含一般／野獸 AC 與速度）、專注、儲存與版面 | 瀏覽器 |
 | `node validate-tabletop-rest.js` | 短休／長休、休息後選項同步與還原、生命骰（含擲骰關閉時的單顆／連續回血）、職業與種族資源恢復、最佳旅伴、可選恢復、取消與自動儲存 | 瀏覽器 |
 | `node validate-tabletop-spellcasting.js` | 法術 metadata、施法條件、法術位、專注與自動擲骰 | 純 Node.js；以 `spell-id-baseline.json` 比對既有法術 ID |
@@ -105,7 +105,7 @@ npx --no-install playwright install chromium
 
 `validate-ability-roll.js` 可加 `--point-buy-only` 只驗證 27 購點未用滿時的提醒、確認、套用與還原，或加 `--dice-only` 只跑一般擲骰備註、取消與歷史相容性。`validate-onboarding.js` 可加 `--imports-only` 只跑匯入與 PDF 生命週期，或加 `--touch-only` 只跑觸控流程；不加參數才是完整驗證。
 
-`validate-ui.js` 內部分項共用同一個瀏覽器／伺服器生命週期，案例以獨立 context 隔離資料。不加參數執行全部，或擇一使用 `--appearance-only`（四種外觀、Legal／About 主題與焦點、保存及共用版面）、`--dialogs-only`（toast、About 載入重試／網址定位，以及角色能力頁籤視窗的創角／表格顯示移位、頁籤條件、選項保存、子視窗、法術／技能／動物參考浮層、焦點與補填入口；自訂背景一次填妥／取消／重新編輯、背景專長／工具同步、魔法學徒選項、PDF 名稱、JSON／分享／自動儲存及窄螢幕）、`--journal-only`（日誌 IndexedDB 遷移／失敗復原／跨分頁衝突、JSON 相容、搜尋／IME／自動儲存／跳頁、角色資料隔離及桌機／手機版面）、`--pdf-only`（欄位及實際匯出）、`--pdf-fields-only`（僅盾牌受訓及精靈／魔人血統提示欄位，不需 PDF／字型素材）。局部內容或互動依實際影響選分項或最小必要流程，不因共用 UI 檔案改動而連帶跑完整矩陣。
+`validate-ui.js` 內部分項共用同一個瀏覽器／伺服器生命週期，案例以獨立 context 隔離資料。不加參數執行全部，或擇一使用 `--appearance-only`（四種外觀、Legal／About 主題與焦點、保存及共用版面）、`--dialogs-only`（toast、About 載入重試／網址定位，以及角色能力頁籤視窗的創角／表格顯示移位、頁籤條件、選項保存、子視窗、法術／技能／動物參考浮層、焦點、補填入口、跑團職業缺項跳轉與短暫高亮、職業缺項自動補選與專長查看；自訂背景一次填妥／取消／重新編輯、背景專長／工具同步、魔法學徒選項、PDF 名稱、JSON／分享／自動儲存及窄螢幕）、`--journal-only`（日誌 IndexedDB 遷移／失敗復原／跨分頁衝突、JSON 相容、搜尋／IME／自動儲存／跳頁、角色資料隔離及桌機／手機版面）、`--pdf-only`（欄位及實際匯出）、`--pdf-fields-only`（僅盾牌受訓及精靈／魔人血統提示欄位，不需 PDF／字型素材）。局部內容或互動依實際影響選分項或最小必要流程，不因共用 UI 檔案改動而連帶跑完整矩陣。
 
 日誌 IME 以 composition 事件模擬、手機以瀏覽器觸控模擬驗證，不代表手機實體鍵盤／輸入法已完成實機測試。
 
@@ -116,6 +116,16 @@ npx --no-install playwright install chromium
 | `affordance.actionless-button`：背景資訊標題 | **已確認誤報**。[index.html](index.html) 的 `bindCharacterFeatureDialog()` 透過 `[data-character-features-tab]` 與 `addEventListener("click", …)` 開啟資訊視窗；[validate-ui.js](validate-ui.js) 的 `verifyCustomBackground()` 已在 Chromium 驗證背景標題可開啟背景頁籤，Escape 可關閉。保留既有事件綁定，不改 inline handler 或重複綁定。 |
 | `ownership.native-select-undecided` | 保留原生 `<select>`。已查閱稽核器的 `load_manifest()`／`inspect_source()`，它正式讀取根目錄 [premium-ui.json](premium-ui.json) 的 `ownership["Select/Listbox"]`；已宣告 `"native"`，不使用稽核器不支援的例外欄位。 |
 | `form.textarea-resize-missing`：要求禁止 resize | **不適用的通用建議**。依 [專案稽核判讀](AGENTS.md#自動稽核判讀) 保留 `resize: vertical`；自訂背景窄螢幕視窗的捲動區與操作按鈕已經瀏覽器驗證。只有實際拖曳造成遮擋或溢出時才修正版面。 |
+
+2026-10-09 移除離線衍生產物 `twD20-offline.html` 後，使用 frontend-design-premium 1.4.0 的 `audit_project.py`，以 `--mode strict --no-write` 重新掃描專案根目錄，目前報告數量如下（僅代表當次工作區快照）：
+
+| 掃描來源 | `affordance.actionless-button` | `form.textarea-resize-missing` | 合計 |
+| --- | ---: | ---: | ---: |
+| [index.html](index.html) | 116 | 6 | 122 |
+| [quick-build.js](quick-build.js) | 10 | 0 | 10 |
+| 合計 | 126 | 6 | 132 |
+
+稽核器將這 132 筆列為 `error`／`violation`，strict 回傳碼仍為 `1`，不可記為通過。按鈕規則只辨識標籤上的 `onclick`／`@click`／`v-on:click`，不追蹤 `addEventListener`；textarea 規則只檢查標籤上的 `resize-none`／`resize: none`，不解析外部 CSS。背景按鈕已實測可開啟、Escape 關閉並還原焦點，主頁六個 textarea 的 computed style 均為 `resize: vertical`；其他按鈕未逐一操作，不能將全部命中一律判為誤報。此數量已不包含離線產物，重新建置或修改來源後須以重跑結果為準。
 
 有意新增、移除或更名法術 ID 時，須同步檢查並更新 `spell-id-baseline.json`。
 

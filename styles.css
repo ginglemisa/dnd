@@ -2168,7 +2168,7 @@ details > summary::-webkit-details-marker,
   display: none;
 }
 
-:is(#tab-basic, #character-features) .output {
+:is(#tab-basic, #character-features, #class-feature-choices-modal) .output {
   max-width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
@@ -2332,23 +2332,23 @@ details > summary::-webkit-details-marker,
   white-space: normal;
 }
 
-:is(#tab-basic, #character-features) .output .class-feature-content {
+:is(#tab-basic, #character-features, #class-feature-choices-modal) .output .class-feature-content {
   width: min(100%, 38rem);
   margin-top: 0.85rem;
   color: var(--text-body);
   white-space: normal;
 }
 
-:is(#tab-basic, #character-features) .output .class-feature-section {
+:is(#tab-basic, #character-features, #class-feature-choices-modal) .output .class-feature-section {
   padding: 1rem 0 1.05rem;
   border-top: 1px solid var(--border);
 }
 
-:is(#tab-basic, #character-features) .output .class-feature-section:first-child {
+:is(#tab-basic, #character-features, #class-feature-choices-modal) .output .class-feature-section:first-child {
   border-top-color: var(--border-strong);
 }
 
-:is(#tab-basic, #character-features) #classFeatures .class-feature-section:first-child {
+:is(#tab-basic, #character-features, #class-feature-choices-modal) #classFeatures .class-feature-section:first-child {
   border-top: 0;
 }
 
@@ -2356,15 +2356,15 @@ details > summary::-webkit-details-marker,
   padding-top: 0.25rem;
 }
 
-:is(#tab-basic, #character-features) .output .class-feature-section:last-child {
+:is(#tab-basic, #character-features, #class-feature-choices-modal) .output .class-feature-section:last-child {
   padding-bottom: 0;
 }
 
-:is(#tab-basic, #character-features) .output .class-feature-section:last-child > :last-child {
+:is(#tab-basic, #character-features, #class-feature-choices-modal) .output .class-feature-section:last-child > :last-child {
   margin-bottom: 0;
 }
 
-:is(#tab-basic, #character-features) .output .class-feature-section > h3 {
+:is(#tab-basic, #character-features, #class-feature-choices-modal) .output .class-feature-section > h3 {
   margin: 0 0 0.62rem;
   padding-left: 0.7rem;
   border-left: 3px solid var(--accent);
@@ -2374,41 +2374,41 @@ details > summary::-webkit-details-marker,
   line-height: 1.35;
 }
 
-:is(#tab-basic, #character-features) .output .class-feature-section p {
+:is(#tab-basic, #character-features, #class-feature-choices-modal) .output .class-feature-section p {
   margin: 0.48rem 0;
   line-height: 1.62;
 }
 
-:is(#tab-basic, #character-features) .output .class-rule-list {
+:is(#tab-basic, #character-features, #class-feature-choices-modal) .output .class-rule-list {
   margin: 0.5rem 0 0;
   padding-left: 1.35rem;
 }
 
-:is(#tab-basic, #character-features) .output .class-rule-list li {
+:is(#tab-basic, #character-features, #class-feature-choices-modal) .output .class-rule-list li {
   padding-left: 0.08rem;
   line-height: 1.58;
 }
 
-:is(#tab-basic, #character-features) .output .class-rule-list li::marker {
+:is(#tab-basic, #character-features, #class-feature-choices-modal) .output .class-rule-list li::marker {
   color: var(--accent);
 }
 
-:is(#tab-basic, #character-features) .output .class-rule-list li + li {
+:is(#tab-basic, #character-features, #class-feature-choices-modal) .output .class-rule-list li + li {
   margin-top: 0.34rem;
 }
 
-:is(#tab-basic, #character-features) .output .class-rule-list ul {
+:is(#tab-basic, #character-features, #class-feature-choices-modal) .output .class-rule-list ul {
   margin: 0.32rem 0 0.18rem;
   padding-left: 1.25rem;
   color: var(--text-body);
   list-style-type: circle;
 }
 
-:is(#tab-basic, #character-features) .output .class-rule-list ul li + li {
+:is(#tab-basic, #character-features, #class-feature-choices-modal) .output .class-rule-list ul li + li {
   margin-top: 0.22rem;
 }
 
-:is(#tab-basic, #character-features) .output .class-rule-list ul ul {
+:is(#tab-basic, #character-features, #class-feature-choices-modal) .output .class-rule-list ul ul {
   color: var(--text-muted);
   font-size: var(--fs-sm);
   list-style-type: square;
@@ -2433,31 +2433,31 @@ details > summary::-webkit-details-marker,
   line-height: 1.5;
 }
 
-:is(#tab-basic, #character-features) .output .druid-mission-options {
+:is(#tab-basic, #character-features, #class-feature-choices-modal) .output .druid-mission-options {
   margin: 0.65rem 0 0.2rem 0.15rem;
   border-left: 2px solid var(--border-strong);
 }
 
-:is(#tab-basic, #character-features) .output .druid-mission-option {
+:is(#tab-basic, #character-features, #class-feature-choices-modal) .output .druid-mission-option {
   padding: 0.2rem 0 0.45rem 0.85rem;
 }
 
-:is(#tab-basic, #character-features) .output .druid-mission-option + .druid-mission-option {
+:is(#tab-basic, #character-features, #class-feature-choices-modal) .output .druid-mission-option + .druid-mission-option {
   padding-top: 0.65rem;
   border-top: 1px solid var(--border);
 }
 
-:is(#tab-basic, #character-features) .output .druid-mission-option__heading {
+:is(#tab-basic, #character-features, #class-feature-choices-modal) .output .druid-mission-option__heading {
   color: var(--text-body);
   line-height: 1.58;
 }
 
-:is(#tab-basic, #character-features) .output .druid-mission-option__heading label {
+:is(#tab-basic, #character-features, #class-feature-choices-modal) .output .druid-mission-option__heading label {
   color: var(--text);
   font-weight: 800;
 }
 
-:is(#tab-basic, #character-features) .output .druid-mission-option .class-rule-list {
+:is(#tab-basic, #character-features, #class-feature-choices-modal) .output .druid-mission-option .class-rule-list {
   margin-top: 0.35rem;
 }
 
@@ -4284,8 +4284,91 @@ html[data-ui-theme="warm"][data-theme="dark"] .circle-checkbox:checked {
 }
 
 /* Keep legacy skill/beast popups (9999) and spell details (10030) above abilities. */
-.app-dialog[data-variant="character-features"] {
+.app-dialog[data-variant="character-features"],
+.app-dialog[data-variant="class-feature-choices"] {
   z-index: 9998;
+}
+
+.feat-choice-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  flex: 1 1 100%;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.feat-choice-control > select {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+
+.feat-choice-view {
+  width: auto;
+  min-height: 44px;
+  padding-inline: 0.7rem;
+  white-space: nowrap;
+}
+
+.feat-choice-view:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.app-dialog[data-variant="class-feature-choices"] .app-dialog__surface {
+  width: min(100%, 38rem);
+}
+
+#class-feature-choices-modal #classFeatures {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+#class-feature-choices-modal #classFeatures .class-feature-content {
+  width: 100%;
+  margin: 0;
+}
+
+#class-feature-choices-modal #classFeatures .class-feature-section {
+  margin-bottom: 0.85rem;
+  padding: 0.85rem;
+  border: 0;
+  background: var(--surface-muted);
+}
+
+#class-feature-choices-modal .class-feature-section[hidden] {
+  display: none !important;
+}
+
+#class-feature-choices-modal #classFeatures .class-feature-section:last-child {
+  margin-bottom: 0;
+}
+
+#class-feature-choices-modal .app-dialog__actions {
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.class-feature-choices-preference {
+  display: flex;
+  flex: 1 1 12rem;
+  align-items: center;
+  gap: 0.5rem;
+  width: auto;
+  min-width: 0;
+  min-height: 44px;
+  margin: 0;
+  color: var(--text-body);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+
+.class-feature-choices-preference > input {
+  flex-shrink: 0;
+  margin: 0;
 }
 
 .app-dialog[data-variant="character-features"] .app-dialog__surface {
@@ -6648,6 +6731,50 @@ html.equipment-detail-open body {
 }
 
 #spellbook-card[hidden] { display: none; }
+.spell-manual-management {
+  margin-top: 1rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--border-strong);
+}
+.spell-manual-management label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin: 0;
+  font-size: var(--fs-sm);
+  line-height: 1.65;
+  cursor: pointer;
+}
+.spell-manual-management input[type="checkbox"] {
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  margin: 0.2rem 0 0;
+}
+.spell-entry--unavailable .spell-row-top > select,
+.spell-entry--unavailable > .output,
+.spell-row-availability {
+  color: var(--text-muted);
+}
+.spell-row-availability { margin: 0.4rem 0 0; }
+.spell-browser-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+}
+.spell-browser-fields label {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+  font-size: var(--fs-sm);
+}
+.spell-browser-fields label:last-child { grid-column: 1 / -1; }
+.spell-browser-fields select { width: 100%; min-width: 0; margin: 0; }
+.spell-browser-detail { margin-top: 1rem; }
+@media (min-width: 600px) {
+  .spell-browser-fields { grid-template-columns: 1fr 0.8fr 2fr; }
+  .spell-browser-fields label:last-child { grid-column: auto; }
+}
 #spellbook-card > summary { display: flex; align-items: center; gap: 10px; }
 #spellbook-card > summary::before { flex-shrink: 0; }
 
@@ -8038,6 +8165,32 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] :is(#scrollToTopBtn, #scro
   font-size: 1.5rem;
   line-height: 1;
   box-shadow: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  #dice-roller-fab::after {
+    position: absolute;
+    left: calc(100% + 0.45rem);
+    bottom: 50%;
+    padding: 0.35rem 0.55rem;
+    border-radius: 0.45rem;
+    background: var(--surface-elevated, var(--surface));
+    color: var(--text);
+    box-shadow: var(--shadow-soft);
+    content: "點我擲骰";
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    line-height: 1.3;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(50%);
+    transition: opacity 120ms ease;
+  }
+
+  #dice-roller-fab:hover::after {
+    opacity: 1;
+  }
 }
 
 #dice-roller-fab.is-hidden {
@@ -17014,6 +17167,27 @@ html[data-theme="dark"] .feat-icon-btn--add {
 
 html[data-theme="dark"] .utility-menu {
   background: var(--surface-strong);
+}
+
+.tabletop-class-choice-alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  text-align: left;
+  font-family: inherit;
+  font-weight: inherit;
+  box-shadow: none;
+}
+
+.tabletop-class-choice-alert__action {
+  flex-shrink: 0;
+  font-weight: 700;
+}
+
+.tabletop-class-choice-alert:hover {
+  border-color: var(--warning);
+  box-shadow: inset 0 0 0 1px var(--warning-border);
 }
 
 :where(html:not([data-ui-theme="warm"])) .tabletop-class-choice-alert {

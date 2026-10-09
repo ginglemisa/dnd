@@ -2289,7 +2289,7 @@
         details.open = true;
         await waitForLayoutStability();
       }
-      if (featurePanel) target.scrollIntoView({ block: "nearest" });
+      if (featurePanel) target.scrollIntoView({ block: "center", inline: "nearest" });
       else await this.scrollElementIntoView(target, 120);
       const focusTarget = Array.from(document.querySelectorAll(focusSelector)).find((element) => {
         return isElementVisible(element) && !element.disabled;

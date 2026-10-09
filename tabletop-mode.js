@@ -2382,7 +2382,7 @@ function getRogueReliableTalentEntry() {
     if (!["cleric", "druid", "paladin", "ranger", "warlock", "sorcerer"].includes(selectedClass)) return [];
     return (globalScope.buildPdfPrecheckMessages?.() || [])
       .filter(entry => /神聖使命|原初使命|神佑打擊|元素狂怒|防守戰術|戰鬥風格|受祝福的勇士|德魯伊教戰士|魔能祈喚|超魔法/.test(entry.message))
-      .map(entry => ({ label: "職業選項", detail: entry.message, warning: true }));
+      .map(entry => ({ label: "職業選項", detail: entry.message, warning: true, choiceTarget: entry }));
   }
 
   function getOverviewRuleEntries() {
@@ -2459,17 +2459,28 @@ function getRogueReliableTalentEntry() {
   }
 
   function createDefenseSummaryItem(entry) {
-    const item = document.createElement("p");
+    const item = document.createElement(entry.choiceTarget ? "button" : "p");
     item.className = "tabletop-defense-summary__item";
     if (entry.warning) {
       item.classList.add("tabletop-class-choice-alert");
-      item.setAttribute("role", "status");
+      if (!entry.choiceTarget) item.setAttribute("role", "status");
+    }
+    if (entry.choiceTarget) {
+      item.type = "button";
+      item.setAttribute("aria-label", `${entry.detail}，前往補填`);
+      item.addEventListener("click", () => {
+        Promise.resolve(globalScope.onboardingTour?.jumpToTarget?.(entry.choiceTarget)).catch(error => {
+          console.warn("無法前往職業選項：", error);
+        });
+      });
     }
     const heading = entry.value ? `${entry.label}：${entry.value}` : entry.label;
-    const copy = entry.negative ? document.createElement("span") : item;
+    const copy = entry.negative || entry.choiceTarget ? document.createElement("span") : item;
     if (entry.negative) {
       copy.className = "tabletop-condition-warning";
       item.dataset.conditionHint = entry.conditionKey;
+    }
+    if (copy !== item) {
       item.appendChild(copy);
     }
 
@@ -2479,6 +2490,13 @@ function getRogueReliableTalentEntry() {
 
     if (entry.detail) {
       copy.appendChild(document.createTextNode(entry.detail));
+    }
+    if (entry.choiceTarget) {
+      const action = document.createElement("span");
+      action.className = "tabletop-class-choice-alert__action";
+      action.textContent = "前往";
+      action.setAttribute("aria-hidden", "true");
+      item.appendChild(action);
     }
 
     return item;
