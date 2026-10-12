@@ -812,6 +812,10 @@ async function verifySeparateModeBooks(page) {
   assert.equal(await page.locator("#spellbook-card").isVisible(), true);
   assert.deepEqual((await book()).spellIds, ["cure-wounds"]);
   assert.equal(await page.locator('#spellbook-list [data-spell-id="detect-magic"]').count(), 0);
+  assert.equal(await page.evaluate(() => Spellbook.addWizardSpell("mage-armor")), true);
+  assert.deepEqual((await book()).manualSpellIds, ["cure-wounds", "mage-armor"],
+    "wizard recommendation writes to the active manual archive");
+  assert.deepEqual((await book()).wizardSpellIds, ["detect-magic"]);
   await page.evaluate(() => Spellbook.setState({ spellIds: ["bless"] }));
   assert.deepEqual((await book()).wizardSpellIds, ["detect-magic"], "editing manual book does not alter wizard book");
   const saved = await page.evaluate(() => collectStateObject());
