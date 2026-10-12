@@ -40,6 +40,27 @@
     return entries.map(normalizeEntry).filter(Boolean);
   };
 
+  function uniqueSpells(entries) {
+    const seen = new Set();
+    return normalizeEntries(entries).filter(entry => {
+      if (seen.has(entry.spellId)) return false;
+      seen.add(entry.spellId); return true;
+    });
+  }
+  function restoreNeedsManual(data, entries) {
+    const saved = data.__spellManagement;
+    if (saved?.version >= VERSION && saved.manual === true) return true;
+    if ((!saved || Number(saved.version) < VERSION) && entries.some(entry => !entry.spellSource
+      && (!catalog()?.getSpell(entry.spellId) || !catalog().getClassIds(entry.spellId).includes(data.class)
+        || (entry.spellClass && entry.spellClass !== data.class)))) return true;
+    const book = data.__wizardSpellbook;
+    return Boolean(book && !(book.version >= 2) && Array.isArray(book.spellIds) && book.spellIds.some(id => {
+      const spell = catalog()?.getSpell(id);
+      return data.class !== "wizard" || !spell || spell.level < 1 || spell.level > 4
+        || !catalog().getClassIds(id).includes("wizard");
+    }));
+  }
+
   function getLimits(options = {}) {
     const className = options.className ?? options.class ?? currentClass();
     const level = Number(options.level ?? currentLevel());
@@ -86,13 +107,14 @@
             initialized: true, level: Number(record.level) || 0, entries: normalizeEntries(record.entries).filter(entry => !entry.spellSource) };
         });
         if (saved.manual && Array.isArray(saved.manual.entries)) memories.manual = {
-          initialized: true, entries: normalizeEntries(saved.manual.entries), freeUses: clone(saved.manual.freeUses || {}) };
+          initialized: true, entries: uniqueSpells(saved.manual.entries), freeUses: clone(saved.manual.freeUses || {}) };
       }
     } catch (_error) { /* Retain the original data until a deliberate user change. */ }
     return memories;
   }
   function writeMemories(next) {
     if (inShareMode()) return true;
+    if (hooks.isPersistenceBlocked?.()) return false;
     const success = globalScope.dndStorage?.setItem(MEMORY_KEY, JSON.stringify(next)) === true;
     if (success) memories = next;
     return success;
@@ -105,7 +127,7 @@
       initialized: true, level: Number(currentLevel()) || next.classes[ownerClass]?.level || 0, entries: clone(players) };
     else return true;
     const persisted = writeMemories(next);
-    if (persisted && migrationPending && manual) {
+    if (persisted && migrationPending) {
       migrationPending = false;
       if (globalScope.saveAllFields?.() === false) migrationPending = true;
       else showMigrationNotice();
@@ -114,7 +136,7 @@
   }
 
   function syncFreeUsesFromControls() {
-    if (isRestoring()) return;
+    if (isRestoring() || manual) return;
     (manual ? players : [...sources, ...players]).forEach(entry => {
       const key = sourceKeyOf(entry);
       if (!key) return;
@@ -127,11 +149,13 @@
     });
   }
   function currentFreeUses() {
+    if (manual) return clone(freeUses);
     syncFreeUsesFromControls();
     const keys = new Set((manual ? players : [...sources, ...players]).map(sourceKeyOf).filter(Boolean));
     return Object.fromEntries(Object.entries(freeUses).filter(([key]) => keys.has(key)).map(([key, values]) => [key, clone(values)]));
   }
   function applyFreeUsesToControls() {
+    if (manual) return;
     (manual ? players : [...sources, ...players]).forEach(entry => {
       const key = sourceKeyOf(entry);
       (freeUses[key] || []).forEach((checked, index) => {
@@ -142,10 +166,11 @@
   }
   function getFreeUse(key, index) {
     const box = field(freeUseId(key, index));
-    if (!isRestoring() && box && "checked" in box) (freeUses[key] ||= [])[index] = box.checked === true;
+    if (!manual && !isRestoring() && box && "checked" in box) (freeUses[key] ||= [])[index] = box.checked === true;
     return freeUses[key]?.[index] === true;
   }
   function setFreeUse(key, index, checked, options = {}) {
+    if (manual) return false;
     if (!key || !Number.isInteger(Number(index)) || Number(index) < 0) return false;
     (freeUses[key] ||= [])[Number(index)] = checked === true;
     const box = field(freeUseId(key, index));
@@ -161,7 +186,7 @@
     globalScope.dispatchEvent(new CustomEvent("spellmanagementchange", { detail }));
   }
   function setPlayerEntries(entries, options = {}) {
-    players = normalizeEntries(entries).filter(entry => manual || !entry.spellSource);
+    players = manual ? uniqueSpells(entries) : normalizeEntries(entries).filter(entry => !entry.spellSource);
     if (!manual && !ownerClass && CLASS_IDS.has(currentClass())) ownerClass = currentClass();
     if (options.sync !== false) changed({ players: true });
     return clone(players);
@@ -240,7 +265,7 @@
     try {
       if (options.confirm !== false) {
         const confirmed = await globalScope.AppDialog.requestDecision(next ? {
-          title: "啟用手動法術管理", message: "手動管理會使用獨立清單，開放目前支援的法表與戲法至四環，不套用準備數量限制。首次啟用會沿用目前全部法術；各職業原有的準備清單與法術書都會保留。",
+          title: "啟用手動法術管理", message: "手動管理會使用獨立清單，開放目前支援的法表與戲法至四環，不套用準備數量限制。種族、背景、專長與職業不再更動法術清單，相關選法術表單會隱藏；來源及免費施法次數請自行記錄。首次啟用會沿用目前全部法術；各職業原有的準備清單與法術書都會保留。",
           confirmLabel: "啟用手動管理", cancelLabel: "取消", trigger: options.trigger
         } : {
           title: "恢復自動法術管理", message: "將載入目前職業自己的準備清單，並依角色選項重新計算來源法術。手動清單與法術書都會保留，之後可再切回手動管理。",
@@ -251,7 +276,7 @@
       syncFreeUsesFromControls();
       const initial = getEntries(); rememberCurrent(); const memory = readMemories();
       const target = next ? memory.manual?.entries || initial : currentClass() ? memory.classes[currentClass()]?.entries || [] : [];
-      manual = next; players = normalizeEntries(target); ownerClass = CLASS_IDS.has(currentClass()) ? currentClass() : "";
+      manual = next; players = manual ? uniqueSpells(target) : normalizeEntries(target); ownerClass = CLASS_IDS.has(currentClass()) ? currentClass() : "";
       if (next && memory.manual?.freeUses) {
         freeUses = { ...freeUses, ...clone(memory.manual.freeUses) };
         applyFreeUsesToControls();
@@ -296,16 +321,26 @@
   }
   function restoreState(data = pendingData || {}) {
     const saved = data.__spellManagement;
-    if (saved?.version >= VERSION) { manual = saved.manual === true; players = normalizeEntries(saved.entries).filter(entry => manual || !entry.spellSource); }
-    else {
+    const legacy = !saved || Number(saved.version) < VERSION;
+    const incoming = normalizeEntries(legacy ? (hooks.parseLegacyEntries?.(data) || players) : saved.entries);
+    manual = restoreNeedsManual(data, incoming);
+    // Retained source records that cannot be rebuilt must remain editable.
+    if (legacy && incoming.some(entry => entry.spellSource && !sources.some(source =>
+      source.sourceKey === entry.sourceKey && source.spellId === entry.spellId))) manual = true;
+    migrationPending ||= legacy || manual !== (saved?.manual === true);
+    if (legacy) {
       const full = normalizeEntries(hooks.parseLegacyEntries?.(data) || players);
       sources.forEach(entry => {
         const index = full.findIndex(item => item.spellSource && item.sourceKey === entry.sourceKey && item.spellId === entry.spellId);
         if (index < 0) full.push(entry);
         else full[index] = { ...full[index], ...entry };
       });
-      manual = true; players = full;
-    }
+      const tome = data.__pactTomeSpellSelection;
+      if (manual && tome) [...(tome.cantrips || []), ...(tome.rituals || [])].forEach(spellId => {
+        if (!full.some(entry => entry.spellId === spellId)) full.push(normalizeEntry({ spellId, spellClass: "warlock" }));
+      });
+      players = manual ? uniqueSpells(full) : uniqueSpells(incoming.filter(entry => !entry.spellSource));
+    } else players = manual ? uniqueSpells([...incoming, ...sources]) : incoming.filter(entry => !entry.spellSource);
     getEntries().forEach(entry => {
       const key = sourceKeyOf(entry); if (!key) return;
       const prefix = `free-spell-use-${safeKey(key)}-`;
@@ -341,15 +376,16 @@
         globalScope.AppDialog.notify("舊版法術已保留在本頁，但瀏覽器無法保存遷移結果；原本的本機存檔仍保留。", { tone: "warning" });
         return;
       }
-      showMigrationNotice();
+      if (!hooks.deferMigrationNotice?.()) showMigrationNotice();
     }
   }
   function showMigrationNotice() {
-    void globalScope.AppDialog.showContent({ title: "已偵測到您的角色存檔為舊版",
-      message: "現在切換職業時，不同職業的法術列表會分別儲存。",
+    if (!manual) return;
+    void globalScope.AppDialog.showContent({ title: "舊版法術資料已轉為手動管理",
+      message: "新版法術系統已支援自動管理，並會分別保存不同職業的法術清單。",
       renderContent(body) {
-        ["為避免遺失舊資料，您原有的法術列表（包含自動準備）都已保留，並已啟用「手動管理法術」。",
-          "手動管理啟用後法術不會自動準備，請自行確認列表是否符合規則。"].forEach(text => {
+        ["您的舊版法術資料包含不同職業或特殊來源，無法安全轉換為自動管理。因此，系統已啟用「手動管理」，盡可能保留原有法術。",
+          "同名法術會合併，法術來源與免費施法次數請自行確認。"].forEach(text => {
           const paragraph = document.createElement("p");
           paragraph.textContent = text;
           body.appendChild(paragraph);
@@ -357,7 +393,7 @@
         const recommendation = document.createElement("p");
         const label = document.createElement("strong");
         label.textContent = "建議：";
-        recommendation.append(label, " 先匯出 JSON 備份並記下目前的角色資料，再使用「清除紀錄」重建新版角色存檔。");
+        recommendation.append(label, " 先匯出 JSON 備份。您可以直接繼續使用手動管理；若想啟用自動管理法術，請先記下角色選項，再清除紀錄並重新創角。");
         body.appendChild(recommendation);
       },
       confirmLabel: "知道了", dismissOnBackdrop: false });
@@ -367,7 +403,11 @@
     return { version: VERSION, manual, entries: getEntries().map(entry => ({ ...entry, unavailable: !isEntryAvailable(entry) })),
       freeUses: currentFreeUses(), classFeatureCantrips: collectClassFeatureCantrips() };
   }
-  function refreshVisibility() { const control = field("manual-spell-management"); if (control) control.checked = manual; }
+  function refreshVisibility() {
+    const control = field("manual-spell-management");
+    if (control) control.checked = manual;
+    globalScope.syncManualSpellSourceControls?.();
+  }
   function clearMemories() {
     if (inShareMode()) return;
     [MEMORY_KEY, NOTICE_KEY, "dnd.spellManagementBackup.v1"].forEach(key => globalScope.dndStorage?.removeItem(key));
@@ -390,7 +430,7 @@
     configure(options = {}) { hooks = { ...hooks, ...options }; }, isManual: () => manual, isSwitching: () => switching, canManage, getLimits,
     normalizeEntry, normalizeEntries, entryKey, getEntries, getPlayerEntries: () => clone(players), getSourceEntries: () => manual ? [] : clone(sources),
     setPlayerEntries, replaceSources, addPlayerSpell, removePlayerSpell, getAvailabilityReason, isEntryAvailable, getFreeUse, setFreeUse,
-    getState, beforeApplyState, restoreState, finishRestore, clearMemories, setManual,
+    getState, beforeApplyState, restoreState, finishRestore, clearMemories, setManual, showMigrationNotice,
     canPersistCurrentState: () => !migrationPending,
     beginRestoreBatch, endRestoreBatch, withRestoreBatch, collectClassFeatureCantrips, getClassFeatureCantripControl, refreshVisibility });
   document.addEventListener("change", changeCharacterSelection, true);

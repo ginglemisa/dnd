@@ -184,7 +184,8 @@ async function verifyAppearanceAndLayout(browser, page, url) {
     assert.equal(await page.locator("#utility-menu-toggle").evaluate(el => el === document.activeElement), true);
 
     const bg = await page.locator("html").evaluate(el => getComputedStyle(el).backgroundImage);
-    assert.equal(bg.includes("paper002"), family === "warm" && mode === "light");
+    assert.equal(bg.includes("url("), false, "page backgrounds must not load image assets");
+    if (family === "warm" && mode === "light") assert.equal(bg, "none", "warm light uses a solid page background");
     await page.locator("#utility-menu-toggle").click();
     await screenshot(`${family}-${mode}-menu`);
     await page.locator("#color-mode-toggle").waitFor({ state: "visible" });
@@ -320,6 +321,20 @@ async function verifyPdf(page, fieldsOnly) {
       "derived-feat-human-origin-magic-initiate-level-1": "shield"
     }).feats1;
     if ((mirrored.match(/魔法學徒/gu) || []).length !== 1 || !mirrored.includes("法師魔法學徒") || !mirrored.includes("光亮術") || !mirrored.includes("護盾術")) throw new Error("PDF derived Magic Initiate choices and mirror exclusion");
+    for (const manualFeats of [true, false]) {
+      const text = buildPdfFieldPayload({
+        "manual-feat-management": manualFeats,
+        __spellManagement: { version: 2, manual: true, entries: [] },
+        "derived-feat-background": "魔法學徒",
+        "derived-feat-background-magic-initiate-class": "wizard",
+        "derived-feat-background-magic-initiate-cantrip-1": "light",
+        "derived-feat-background-magic-initiate-cantrip-2": "mage-hand",
+        "derived-feat-background-magic-initiate-level-1": "shield"
+      }).feats1;
+      if (!/魔法學徒/.test(text) || /光亮術|魔法伎倆|護盾術|◇|選1職業法表|2戲法/.test(text)) {
+        throw new Error("manual spell PDFs retain the feat name without hidden automatic choices or free-use marks");
+      }
+    }
     const combined = buildPdfFieldPayload({ "derived-feat-background": "強韌體魄", "derived-feat-human-origin": "熟習", "derived-feat-fighting-style-fighter": "防禦", "feat-choice-human-origin": "熟習" }).feats1;
     if (!combined.includes("強韌體魄") || !combined.includes("熟習") || !combined.includes("防禦") || (combined.match(/熟習\(/gu) || []).length !== 1) throw new Error("PDF combined automatic feat sources");
     for (const [cls, id, name] of [
@@ -333,6 +348,40 @@ async function verifyPdf(page, fieldsOnly) {
       state["tool-proficiency-0"] = name;
       if (buildPdfFieldPayload(state).toolsProficiency1 !== name) throw new Error(`Class tool PDF deduplication: ${cls}`);
     }
+    const materialFlag = (spell, legacy = false) => {
+      const state = legacy ? {
+        [spell.level === 0 ? "cantrips-area-class-0" : `level${spell.level}spells-area-class-0`]: "wizard",
+        [spell.level === 0 ? "cantrips-area-spell-0" : `level${spell.level}spells-area-spell-0`]: spell.spellId
+      } : { __spellManagement: { version: 2, manual: true, entries: [{ spellId: spell.spellId }] } };
+      return buildPdfFieldPayload(state)["sp-m-1"];
+    };
+    for (const spell of SpellCatalog.getAllSpells()) {
+      const componentLine = spell.desc.split("\n").find(line => line.startsWith("成分:"));
+      if (!componentLine || /^材料: (?:null|無)\s*$/mu.test(spell.desc)) throw new Error(`Spell components/empty materials: ${spell.spellId}`);
+      const needsMaterial = componentLine.slice(3).trim().split(/[、,\s]+/u).includes("M");
+      for (const legacy of [false, true]) {
+        if (materialFlag(spell, legacy) !== needsMaterial) throw new Error(`PDF material component: ${spell.spellId}/legacy=${legacy}`);
+      }
+    }
+    const originalCatalog = window.SpellCatalog;
+    const guidance = originalCatalog.getSpell("guidance");
+    try {
+      for (const [desc, expectedMaterial] of [
+        ["成分: V、S\n材料: null\n效果: 使用材料和 M 字樣。", false],
+        ["成分: V、S\n材料: 無", false],
+        ["成分: V、S、M\n材料: 一點磷", true],
+        ["成分：S, M", true],
+        ["成分: S\n效果: M", false],
+        ["成分: \nM", false],
+        ["效果: 材料成分: M", false],
+        ["成分: SOMATIC", false]
+      ]) {
+        window.SpellCatalog = { ...originalCatalog, getSpell: id => id === guidance.spellId ? { ...guidance, desc } : originalCatalog.getSpell(id) };
+        for (const legacy of [false, true]) {
+          if (materialFlag(guidance, legacy) !== expectedMaterial) throw new Error(`PDF component field isolation: ${desc}/legacy=${legacy}`);
+        }
+      }
+    } finally { window.SpellCatalog = originalCatalog; }
     const expected = new Set(["barbarian", "cleric", "druid", "fighter", "paladin", "ranger"]);
     for (const cls of Object.keys(ARMOR_TRAINING_BY_CLASS)) {
       if (buildPdfFieldPayload({ class: cls, level: "1" }).chk_shld1 !== expected.has(cls)) throw new Error(`Shield proficiency: ${cls}`);
@@ -342,7 +391,7 @@ async function verifyPdf(page, fieldsOnly) {
       if (payload.specie_features1.includes("長休後環法恢復") !== (level >= 3)) throw new Error(`Lineage recovery: ${race}/${level}`);
     }
   });
-  console.log("PDF fields: four class tool sources/deduplication, class shield training and 8 lineage level cases passed.");
+  console.log("PDF fields: 215 spell material flags (current/legacy), component field isolation, class tools/shields and lineage levels passed.");
   if (fieldsOnly) return;
   await page.addScriptTag({ url: "/pdf-lib.custom.min.js" });
   await page.addScriptTag({ url: "/fontkit.custom.min.js" });
@@ -840,15 +889,19 @@ async function verifyCharacterFeatures(browser, url) {
       const state = await page.evaluate(() => collectStateObject());
       await warningToggle.focus();
       await page.keyboard.press("Enter");
-      assert.equal(await warningToggle.textContent(), "顯示警告");
+      assert.equal(await warningToggle.isVisible(), false, "dismissal also hides its control");
       assert.equal(await warningToggle.getAttribute("aria-expanded"), "false");
       assert.equal(await reminders.isVisible(), false);
       assert.deepEqual(await fieldRects(), originalRects, "hiding reminders preserves field heights");
       assert.deepEqual(await page.evaluate(() => collectStateObject()), state, "hiding warnings preserves character data");
       await page.locator("#level").selectOption("7");
       assert.equal(await reminders.isVisible(), false, "choice updates keep warnings hidden");
-      await warningToggle.click();
+      assert.equal(await warningToggle.isVisible(), false, "choice updates keep the dismiss control hidden");
+      await page.evaluate(() => saveAllFields());
+      await page.goto(url);
+      if (await page.locator("#legal-close-btn").isVisible()) await page.locator("#legal-close-btn").click();
       assert.equal(await warningToggle.textContent(), "隱藏警告");
+      assert.equal(await warningToggle.isVisible(), true, "reload restores the dismiss control");
       assert.equal(await warningToggle.getAttribute("aria-expanded"), "true");
       assert.equal(await reminders.isVisible(), true);
       assert.equal((await reminders.textContent()).includes("等級 8"), false, "restored warnings reflect current choices");
@@ -1520,15 +1573,19 @@ async function verifyClassFeatureSupplementalChoices(browser, url) {
     assert.equal(await page.evaluate(() => getAgonizingBlastSelects()[0].value), "eldritch-blast", "invocation target can be completed inline");
     await close();
 
-    await open({ class: "paladin", level: "2", "manual-spell-management": true, "paladin-blessed-warrior": true, __classFeatureCantrips: {} });
-    await modal.getByLabel("戲法 #1", { exact: true }).selectOption("guidance");
-    await modal.getByLabel("戲法 #2", { exact: true }).selectOption("sacred-flame");
-    assert.deepEqual(await page.evaluate(() => SpellManagement.collectClassFeatureCantrips()), {
-      "class-paladin-blessed-warrior-cantrip-1": "guidance", "class-paladin-blessed-warrior-cantrip-2": "sacred-flame"
-    }, "manual spell lists retain independently editable class choices");
-    assert.equal(await page.evaluate(() => SpellManagement.getEntries().filter(entry => entry.sourceKey.includes("blessed-warrior")).length), 0,
-      "editing ability choices does not change a manual spell list");
-    await close();
+    const retainedChoices = { "class-paladin-blessed-warrior-cantrip-1": "guidance", "class-paladin-blessed-warrior-cantrip-2": "sacred-flame" };
+    await page.evaluate(choices => {
+      applyStateObject({ class: "paladin", level: "2", __spellManagement: { version: 2, manual: true, entries: [] },
+        "paladin-blessed-warrior": true, __classFeatureCantrips: choices });
+      openClassFeatureChoicePrompt(getMissingClassFeatureChoiceSections(), document.getElementById("level"));
+    }, retainedChoices);
+    assert.equal(await modal.count(), 0, "manual spell management does not prompt for hidden cantrip choices");
+    await page.evaluate(() => openCharacterFeatures("class"));
+    assert.equal(await page.locator("#character-features-modal .class-feature-additional-choices:visible").count(), 0);
+    assert.equal(await page.locator("#character-features-modal .manual-spell-source-hint").count(), 0);
+    await page.keyboard.press("Escape");
+    assert.deepEqual(await page.evaluate(() => SpellManagement.collectClassFeatureCantrips()), retainedChoices, "manual mode retains hidden automatic choices");
+    assert.equal(await page.evaluate(() => SpellManagement.getEntries().filter(entry => entry.sourceKey.includes("blessed-warrior")).length), 0);
     await roundTrip(async () => assert.equal(await page.evaluate(() => SpellManagement.collectClassFeatureCantrips()["class-paladin-blessed-warrior-cantrip-2"]), "sacred-flame"));
   } finally { await page.close(); }
   console.log("Class supplemental choices: live feat forms, all four class cantrip grants, discoveries, other class options, JSON/share/autosave, nested lookup and narrow layout passed.");
@@ -1959,7 +2016,8 @@ async function verifyCharacterDataSafety(browser, url) {
       assert.equal(await page.evaluate(() => autosaveDirty), false, "failed file selection must not schedule a replacement autosave");
       assert.equal(await page.evaluate(() => dndStorage.getItem("dndchar_autosave_v1")), saved);
     }
-    await page.locator("#import-json-file").setInputFiles({ name: "safe-text.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(state)) });
+    await page.evaluate(() => { const entry = new URL(location.href); entry.searchParams.set("analytics", "owner"); history.replaceState(null, "", entry); });
+    await Promise.all([page.waitForEvent("load"), page.locator("#import-json-file").setInputFiles({ name: "safe-text.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(state)) })]);
     await assertSafeTag(page);
     await page.goto(url);
     await assertSafeTag(page);
@@ -1972,7 +2030,8 @@ async function verifyCharacterDataSafety(browser, url) {
     await page.waitForFunction(() => document.querySelector(".app-toast")?.textContent?.includes("原始存檔仍保留"));
     assert.equal(await page.evaluate(() => saveAllFields()), false);
     assert.equal(await page.evaluate(() => dndStorage.getItem("dndchar_autosave_v1")), invalidRaw);
-    await page.locator("#import-json-file").setInputFiles({ name: "recovery.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(state)) });
+    await page.evaluate(() => { const entry = new URL(location.href); entry.searchParams.set("analytics", "owner"); history.replaceState(null, "", entry); });
+    await Promise.all([page.waitForEvent("load"), page.locator("#import-json-file").setInputFiles({ name: "recovery.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(state)) })]);
     await page.waitForFunction(() => document.getElementById("class").value === "wizard" && !autosaveRestoreBlocked);
     await assertSafeTag(page);
     assert.equal(await page.evaluate(() => saveAllFields()), true);
@@ -1984,6 +2043,133 @@ async function verifyCharacterDataSafety(browser, url) {
     assert.equal(await page.evaluate(() => saveAllFields()), false);
     assert.equal(await page.evaluate(() => dndStorage.getItem("dndchar_autosave_v1")), beforeBadShare);
     console.log("Character input safety: XSS text rendering, JSON/share/autosave, preflight limits, gzip bomb cancellation and rejected-data preservation passed.");
+  } finally { await page.close(); }
+}
+
+async function verifyJsonImportTransaction(browser, url) {
+  const page = await newUiPage(browser);
+  await page.addInitScript(() => {
+    const get = Storage.prototype.getItem, set = Storage.prototype.setItem, remove = Storage.prototype.removeItem;
+    Storage.prototype.getItem = function(key) {
+      if (this === sessionStorage && key === "dnd.pendingJsonImport.v1" && get.call(sessionStorage, "test-import-failure") === "read") throw new Error("session read blocked");
+      return get.call(this, key);
+    };
+    Storage.prototype.setItem = function(key, value) {
+      const fail = get.call(sessionStorage, "test-import-failure");
+      if ((this === sessionStorage && key === "dnd.pendingJsonImport.v1" && fail === "stage")
+        || (this === localStorage && key === "dndchar_autosave_v1" && fail === "save")) throw new Error("import storage blocked");
+      return set.call(this, key, value);
+    };
+    Storage.prototype.removeItem = function(key) {
+      if (this === sessionStorage && key === "dnd.pendingJsonImport.v1" && get.call(sessionStorage, "test-import-failure") === "cleanup") throw new Error("session cleanup blocked");
+      return remove.call(this, key);
+    };
+    window.addEventListener("DOMContentLoaded", () => {
+      if (get.call(sessionStorage, "test-import-failure") === "apply") {
+        const apply = window.applyStateObject;
+        window.applyStateObject = data => { if (data["gear-extra"] === "Imported") throw new Error("import apply blocked"); return apply(data); };
+      }
+    });
+  });
+  const pendingKey = "dnd.pendingJsonImport.v1", autoKey = "dndchar_autosave_v1", memoryKey = "dnd.spellManagementMemories.v1";
+  const incoming = { class: "wizard", level: "5", race: "human", background: "soldier", "gear-extra": "Imported",
+    __spellManagement: { version: 2, manual: false, entries: [{ spellId: "detect-magic", spellClass: "wizard" }] },
+    __wizardSpellbook: { version: 2, wizardSpellIds: ["detect-magic"], manualSpellIds: [] } };
+  const seed = async () => {
+    await page.goto(url); await page.waitForFunction(() => window.SpellManagement?.getEntries);
+    return page.evaluate(({ incoming, autoKey, memoryKey }) => {
+      applyStateObject({ ...incoming, "gear-extra": "Original", __spellManagement: { version: 2, manual: false, entries: [{ spellId: "mage-armor", spellClass: "wizard" }] } });
+      saveAllFields();
+      const memories = JSON.parse(dndStorage.getItem(memoryKey));
+      memories.classes.cleric = { initialized: true, entries: [{ spellId: "cure-wounds", spellClass: "cleric" }] };
+      dndStorage.setItem(memoryKey, JSON.stringify(memories));
+      for (const key of ["dnd.tabletopAvatar.v1", "dnd.quickBuildDraft.v1", "dnd.tabletopActionPreferences.v1"]) dndStorage.setItem(key, "old-import-fixture");
+      dndStorage.setItem("dnd.tabletopActionPreferences.v1", JSON.stringify({ version: 1, notes: "OLD ACTION NOTES", hiddenKeys: [], customActions: [] }));
+      return { autosave: dndStorage.getItem(autoKey), memories: dndStorage.getItem(memoryKey) };
+    }, { incoming, autoKey, memoryKey });
+  };
+  const upload = async () => {
+    await page.evaluate(() => { const entry = new URL(location.href); entry.searchParams.set("analytics", "owner"); history.replaceState(null, "", entry); });
+    await page.locator("#import-json-file").setInputFiles({ name: "import.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(incoming)) });
+  };
+  const assertImported = async () => {
+    await page.waitForFunction(() => document.getElementById("gear-extra").value === "Imported" && !autosaveRestoreBlocked && !autosaveClearing);
+    assert.deepEqual(await page.evaluate(() => SpellManagement.getPlayerEntries().map(e => e.spellId)), ["detect-magic"]);
+    assert.equal(await page.evaluate(key => JSON.parse(dndStorage.getItem(key)).classes.cleric, memoryKey), undefined);
+    assert.deepEqual(await page.evaluate(() => ["dnd.tabletopAvatar.v1", "dnd.quickBuildDraft.v1", "dnd.tabletopActionPreferences.v1"].map(key => dndStorage.getItem(key))), [null, null, null]);
+    assert.equal(await page.evaluate(() => TabletopMode.getTabletopActionPreferences().notes), "", "old in-memory action preferences are cleared too");
+  };
+  try {
+    const before = await seed();
+    await page.evaluate(() => {
+      document.getElementById("legal-modal").style.display = "none";
+      window.onboardingTour?.finish?.();
+    });
+    let chooserCount = 0;
+    const recordChooser = () => { chooserCount += 1; };
+    page.on("filechooser", recordChooser);
+    const warning = page.getByRole("alertdialog", { name: "匯入 JSON 將取代目前角色", exact: true });
+    const openWarning = async () => {
+      if (await page.locator("#utility-menu-toggle").getAttribute("aria-expanded") !== "true") await page.locator("#utility-menu-toggle").click();
+      await page.locator("#import-json-btn").click();
+      assert.equal(await warning.isVisible(), true);
+      assert.match(await warning.innerText(), /請先匯出 JSON 備份目前角色/);
+      assert.equal(await warning.getByRole("button", { name: "取消", exact: true }).evaluate(el => el === document.activeElement), true);
+    };
+    for (const cancel of ["button", "escape"]) {
+      await openWarning();
+      if (cancel === "button") await warning.getByRole("button", { name: "取消", exact: true }).click();
+      else await page.keyboard.press("Escape");
+      assert.equal(await warning.count(), 0);
+      assert.equal(chooserCount, 0, "cancel does not open the file chooser");
+      assert.equal(await page.evaluate(key => dndStorage.getItem(key), autoKey), before.autosave);
+      assert.equal(await page.locator("#utility-menu-toggle").evaluate(el => el === document.activeElement), true, "cancel returns focus to the visible menu trigger");
+    }
+    await openWarning();
+    await Promise.all([page.waitForEvent("filechooser"), warning.getByRole("button", { name: "選擇 JSON 檔案", exact: true }).click()]);
+    assert.equal(chooserCount, 1, "confirmation opens the file chooser once");
+    assert.equal(await page.evaluate(key => dndStorage.getItem(key), autoKey), before.autosave, "choosing a file has not replaced the character yet");
+    page.off("filechooser", recordChooser);
+    await page.evaluate(() => sessionStorage.setItem("test-import-failure", "stage")); await upload();
+    await page.getByRole("dialog", { name: "JSON 匯入失敗", exact: true }).getByRole("button", { name: "關閉", exact: true }).click();
+    assert.equal(await page.locator("#gear-extra").inputValue(), "Original");
+    assert.equal(await page.evaluate(key => dndStorage.getItem(key), autoKey), before.autosave);
+    await page.evaluate(() => sessionStorage.removeItem("test-import-failure"));
+    await Promise.all([page.waitForEvent("load"), upload()]); await assertImported();
+    assert.equal(await page.evaluate(key => sessionStorage.getItem(key), pendingKey), null);
+    for (const failure of ["apply", "save"]) {
+      const old = await seed();
+      await page.evaluate(failure => sessionStorage.setItem("test-import-failure", failure), failure);
+      await Promise.all([page.waitForEvent("load"), upload()]);
+      await page.waitForFunction(() => autosaveRestoreBlocked === true);
+      const kept = await page.evaluate(({ pendingKey, autoKey, memoryKey }) => ({ staged: JSON.parse(sessionStorage.getItem(pendingKey)), autosave: dndStorage.getItem(autoKey), memories: dndStorage.getItem(memoryKey) }), { pendingKey, autoKey, memoryKey });
+      assert.equal(kept.staged.data["gear-extra"], "Imported");
+      assert.equal(kept.staged.previous[autoKey], old.autosave);
+      assert.equal(kept.memories, old.memories);
+      if (failure === "apply") assert.equal(kept.autosave, old.autosave);
+      await page.evaluate(() => sessionStorage.removeItem("test-import-failure"));
+      await page.goto(url); await assertImported();
+      assert.equal(await page.evaluate(key => sessionStorage.getItem(key), pendingKey), null);
+    }
+    await seed(); await page.evaluate(() => sessionStorage.setItem("test-import-failure", "cleanup"));
+    await Promise.all([page.waitForEvent("load"), upload()]); await assertImported();
+    assert(await page.evaluate(key => sessionStorage.getItem(key), pendingKey));
+    await page.evaluate(() => { document.getElementById("gear-extra").value = "After import edit"; saveAllFields(); });
+    await page.goto(url);
+    await page.waitForFunction(() => document.getElementById("gear-extra").value === "After import edit");
+    await page.evaluate(() => { sessionStorage.removeItem("test-import-failure"); sessionStorage.removeItem("dnd.pendingJsonImport.v1"); sessionStorage.setItem("test-import-failure", "read"); });
+    await page.goto(url);
+    await page.waitForFunction(() => document.getElementById("gear-extra").value === "After import edit");
+    assert.equal(await page.evaluate(() => saveAllFields()), true, "session read failure does not block ordinary autosave");
+    await page.evaluate(() => sessionStorage.removeItem("test-import-failure"));
+    await seed(); await page.evaluate(() => sessionStorage.setItem("test-import-failure", "cleanup"));
+    await Promise.all([page.waitForEvent("load"), upload()]); await assertImported();
+    await page.evaluate(() => { const entry = new URL(location.href); entry.searchParams.set("analytics", "owner"); history.replaceState(null, "", entry); });
+    await Promise.all([page.waitForEvent("load"), page.evaluate(() => clearAppStateAndReload())]);
+    await page.waitForFunction(() => !autosaveClearing && document.readyState === "complete");
+    assert.equal(await page.locator("#gear-extra").inputValue(), "", "explicit clear cannot resurrect a completed import when session cleanup is blocked");
+    assert.equal(await page.locator("#class").inputValue(), "");
+    console.log("JSON clean import: incoming precedence, cleanup, stage/apply/save failures, retained backups, retry, completion marker and denied session access passed.");
   } finally { await page.close(); }
 }
 
@@ -2012,7 +2198,7 @@ async function main() {
   try {
     browser = await chromium.launch({ headless: true, ...(process.env.DND_BROWSER_CHANNEL ? { channel: process.env.DND_BROWSER_CHANNEL } : {}) });
     const url = `http://127.0.0.1:${server.address().port}/index.html?analytics=owner`;
-    if (all || sections.has("--data-only")) await verifyCharacterDataSafety(browser, url);
+    if (all || sections.has("--data-only")) { await verifyJsonImportTransaction(browser, url); await verifyCharacterDataSafety(browser, url); }
     if (all || sections.has("--appearance-only")) {
       const page = await newUiPage(browser, { viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });
       try { await verifyAppearanceAndLayout(browser, page, url); }

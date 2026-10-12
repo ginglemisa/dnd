@@ -704,6 +704,7 @@ async function verifyImports(browser, url, viewport = { width: 1280, height: 800
       if (scenario === "failure") window.fillSaves = () => { throw new Error("test import failure"); };
       if (scenario === "pdf") window.downloadQuickBuildCompactPdf = async () => { window.pdfRequested = true; };
     }, scenario);
+    if (scenario === "complete") await page.evaluate(() => SpellManagement.setManual(true, { confirm: false }));
     if (scenario === "complete") {
       await page.locator("#legal-onboarding-btn").click();
     } else {
@@ -722,10 +723,11 @@ async function verifyImports(browser, url, viewport = { width: 1280, height: 800
     }
     await page.locator(".app-dialog__actions .app-dialog__button--danger").click();
     await page.waitForFunction(() => document.querySelector(".app-dialog__header h2")?.textContent.includes("角色卡"));
-    const firstTable = page.getByRole("button", { name: "初次遊玩教學", exact: true });
+    const firstTable = page.getByRole("button", { name: "初次遊玩", exact: true });
     assert.equal(await firstTable.count(), ["warning", "failure"].includes(scenario) ? 0 : 1, await page.locator(".app-dialog__body").innerText());
     assert.equal(await page.evaluate(() => onboardingTour.active), false);
     if (scenario !== "failure") {
+      assert.equal(await page.evaluate(() => SpellManagement.isManual()), false, "quick build imports always activate automatic spell management");
       const hp = await page.evaluate(() => ({
         current: document.getElementById("hp").value,
         maximum: document.getElementById("hp-display").value

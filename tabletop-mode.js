@@ -319,21 +319,23 @@
       if (!current) return buildSpellCastOptions({ baseLevel: 1 });
       entry = current;
     }
-    if (getDruidForm() || entry.sourceKey === "class-druid-wild-companion-find-familiar") return buildSpellCastOptions({ baseLevel: 1 });
+    if (getDruidForm() || (!globalScope.SpellManagement?.isManual()
+      && entry.sourceKey === "class-druid-wild-companion-find-familiar")) return buildSpellCastOptions({ baseLevel: 1 });
     const spell = entry.spell || globalScope.SpellCatalog?.getSpell?.(entry.spellId);
     const metadata = globalScope.SpellCatalog?.getCastMetadata?.(spell?.spellId);
     if (!spell || spell.level < 1 || !metadata) return buildSpellCastOptions({ baseLevel: 1 });
     const discoveredFreeControls = globalScope.getSpellFreeUseControls?.(entry) || [];
-    const latestFreeControls = discoveredFreeControls.length
+    const manualSpell = globalScope.SpellManagement?.isManual() && entry.spellSource !== "wizard-spellbook";
+    const latestFreeControls = manualSpell ? [] : discoveredFreeControls.length
       ? discoveredFreeControls
       : Array.isArray(entry.freeUseControls) ? entry.freeUseControls : [];
     const fiendishVigorLevel = getCurrentFiendishVigorCastLevel(entry);
     return buildSpellCastOptions({
       baseLevel: spell.level,
-      castMode: fiendishVigorLevel ? "at-will" : entry.castMode,
+      castMode: fiendishVigorLevel ? "at-will" : manualSpell && !["at-will", "ritual-only"].includes(entry.castMode) ? "slot" : entry.castMode,
       fixedCastLevel: fiendishVigorLevel || entry.fixedCastLevel,
       ritual: metadata.ritual,
-      ritualAllowed: entry.ritualAllowed,
+      ritualAllowed: manualSpell ? true : entry.ritualAllowed,
       ritualExtraTime: metadata.ritualExtraTime,
       hasUpcastEffect: metadata.hasUpcastEffect,
       freeControls: latestFreeControls.map(control => ({

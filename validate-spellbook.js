@@ -46,12 +46,205 @@ async function selectPicker(page, spellId, checked = true) {
   }
 }
 async function closeMigration(page) {
-  const dialog = page.getByRole("dialog", { name: "已偵測到您的角色存檔為舊版", exact: true });
+  const dialog = page.getByRole("dialog", { name: "舊版法術資料已轉為手動管理", exact: true });
+  if (!await page.evaluate(() => SpellManagement.isManual())) {
+    assert.equal(await dialog.count(), 0, "safe automatic migration stays quiet");
+  }
   if (await dialog.isVisible()) {
-    assert.match(await dialog.innerText(), /現在切換職業時，不同職業的法術列表會分別儲存。/);
-    assert.match(await dialog.innerText(), /已啟用「手動管理法術」/);
+    assert.match(await dialog.innerText(), /新版法術系統已支援自動管理，並會分別保存不同職業的法術清單。/);
+    assert.match(await dialog.innerText(), /無法安全轉換為自動管理/);
+    assert.match(await dialog.innerText(), /同名法術會合併，法術來源與免費施法次數請自行確認。/);
+    assert.match(await dialog.innerText(), /先匯出 JSON 備份。.*再清除紀錄並重新創角。/s);
     await dialog.getByRole("button", { name: "知道了", exact: true }).click();
   }
+}
+
+async function verifyMigrationRules(browser, url) {
+  const page = await browser.newPage();
+  await page.addInitScript(() => localStorage.setItem("dnd.classFeaturePromptDisabled.v1", "true"));
+  try {
+    await page.goto(url);
+    await page.waitForFunction(() => window.SpellManagement?.getEntries);
+    const base = { class: "wizard", level: "5", background: "soldier", race: "human" };
+    const legacy = { ...base, "level1spells-area-spell-0": "detect-magic", "level1spells-area-class-0": "wizard",
+      __wizardSpellbook: { version: 1, spellIds: ["detect-magic", "ice-storm"] } };
+    await apply(page, modern(base, [player("mage-armor", "wizard")]));
+    await apply(page, legacy); await closeMigration(page);
+    assert.equal(await page.evaluate(() => SpellManagement.isManual()), false);
+    assert.deepEqual(await playerIds(page), ["detect-magic"], "incoming legacy choices override local class memory");
+    assert.deepEqual(await page.evaluate(() => Spellbook.getState().wizardSpellIds), ["detect-magic", "ice-storm"]);
+    assert.deepEqual(await page.evaluate(() => Spellbook.getState().manualSpellIds), []);
+    for (const bookId of ["cure-wounds", "unknown-old-book"]) {
+      await apply(page, { ...legacy, __wizardSpellbook: { version: 1, spellIds: [bookId] } }); await closeMigration(page);
+      assert.equal(await page.evaluate(() => SpellManagement.isManual()), true, "foreign or unknown legacy book forces manual mode");
+      assert.deepEqual(await page.evaluate(() => Spellbook.getState().wizardSpellIds), []);
+      assert.deepEqual(await page.evaluate(() => Spellbook.getState().manualSpellIds), [bookId]);
+    }
+    const mixed = { ...legacy, "level1spells-area-spell-1": "cure-wounds", "level1spells-area-class-1": "cleric" };
+    await apply(page, mixed);
+    assert.equal(await page.getByRole("dialog", { name: "舊版法術資料已轉為手動管理", exact: true }).isVisible(), true);
+    await closeMigration(page);
+    assert.equal(await page.evaluate(() => SpellManagement.isManual()), true);
+    assert.deepEqual(await page.evaluate(() => Spellbook.getState().manualSpellIds), ["detect-magic", "ice-storm"]);
+    assert.deepEqual(await page.evaluate(() => Spellbook.getState().wizardSpellIds), []);
+    assert(await page.evaluate(() => Spellbook.getRitualEntries().some(e => e.spellId === "detect-magic") === false),
+      "prepared ritual is not duplicated from the manual book");
+    await page.evaluate(() => SpellManagement.removePlayerSpell("detect-magic"));
+    assert(await page.evaluate(() => Spellbook.getRitualEntries().some(e => e.spellId === "detect-magic")),
+      "tabletop rituals read the migrated manual book");
+    const migrated = await page.evaluate(() => collectStateObject());
+    await apply(page, migrated);
+    assert.equal(await page.evaluate(() => SpellManagement.isManual()), true, "new manual preference survives restore");
+    assert.equal(await page.getByRole("dialog", { name: "舊版法術資料已轉為手動管理", exact: true }).count(), 0, "modern manual data does not repeat the migration notice");
+    await apply(page, { ...base, background: "acolyte", "derived-feat-background-magic-initiate-level-1": "cure-wounds",
+      "level1spells-area-spell-0": "detect-magic", "level1spells-area-class-0": "wizard" });
+    await closeMigration(page);
+    assert.equal(await page.evaluate(() => SpellManagement.isManual()), false, "Magic Initiate sources do not count as foreign player selections");
+    assert(await page.evaluate(() => SpellManagement.getSourceEntries().some(e => e.spellId === "cure-wounds")));
+    const free = await page.evaluate(() => {
+      const entry = SpellManagement.getSourceEntries().find(e => e.spellId === "cure-wounds");
+      SpellManagement.setFreeUse(entry.sourceKey, 0, true);
+      return { entry, key: entry.sourceKey };
+    });
+    await page.evaluate(async () => { SpellManagement.clearMemories(); await SpellManagement.setManual(true, { confirm: false }); });
+    const manualState = await page.evaluate(() => collectStateObject());
+    manualState.__spellManagement.entries.push({ ...free.entry, sourceKey: "second-source", freeUses: 2 });
+    manualState.__spellManagement.freeUses["second-source"] = [false, true];
+    await apply(page, manualState);
+    assert.equal((await activeIds(page)).filter(id => id === "cure-wounds").length, 1, "manual spells deduplicate across sources");
+    assert.equal(await page.locator(".free-spell-use-check").count(), 0);
+    const result = await page.evaluate(key => {
+      TabletopMode.setMode("tabletop"); TabletopMode.setPanel("spells");
+      const entry = TabletopSpells.getSelectedSpellEntries().find(e => e.spellId === "cure-wounds");
+      const before = JSON.stringify(SpellManagement.getState().freeUses);
+      const options = TabletopMode.getSpellCastOptions({ ...entry, freeUseControls: [{ canonical: { id: "stale-free", checked: false } }] });
+      const cast = TabletopMode.commitSpellCastResource(entry, { method: "free", resourceId: "stale-free" });
+      return { methods: options.methods.map(m => m.id), rejected: !cast.ok, unchanged: before === JSON.stringify(SpellManagement.getState().freeUses),
+        used: SpellManagement.getFreeUse(key, 0), archived: SpellManagement.getState().freeUses["second-source"] };
+    }, free.key);
+    assert(!result.methods.includes("free")); assert(result.methods.includes("slot"));
+    assert.equal(result.rejected, true); assert.equal(result.unchanged, true); assert.equal(result.used, true);
+    assert.deepEqual(result.archived, [false, true]);
+    assert.equal(await page.locator(".tabletop-spell-card__uses").count(), 0);
+    await page.evaluate(() => SpellManagement.setManual(false, { confirm: false }));
+    assert(await page.locator(".free-spell-use-check").count() > 0, "automatic mode restores source controls");
+    assert.equal(await page.evaluate(key => SpellManagement.getFreeUse(key, 0), free.key), true);
+    for (const [data, expectedManual] of [[legacy, false], [mixed, true]]) {
+      for (const method of ["autosave", "json"]) {
+        const incoming = { ...data, "gear-extra": `migration-${method}-${expectedManual}` };
+        if (method === "autosave") {
+          await page.evaluate(data => {
+            cancelPendingAutosaveForClear(); localStorage.setItem("dndchar_autosave_v1", JSON.stringify(data));
+          }, incoming);
+          await page.goto(url);
+        } else {
+          await page.evaluate(url => history.replaceState(null, "", url), url);
+          await page.locator("#import-json-file").setInputFiles({ name: "legacy.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(incoming)) });
+        }
+        await page.waitForFunction(({ marker, expectedManual }) => window.SpellManagement
+          && document.getElementById("gear-extra").value === marker
+          && !sessionStorage.getItem("dnd.pendingJsonImport.v1")
+          && SpellManagement.isManual() === expectedManual, { marker: incoming["gear-extra"], expectedManual });
+        const notice = page.getByRole("dialog", { name: "舊版法術資料已轉為手動管理", exact: true });
+        assert.equal(await notice.count(), expectedManual ? 1 : 0, `${method} warns only for forced manual migration`);
+        await closeMigration(page);
+        await page.goto(url); await page.waitForFunction(() => window.SpellManagement?.getEntries);
+        assert.equal(await notice.count(), 0, `${method} migration notice does not repeat after reload`);
+      }
+    }
+    console.log("Migration policy: auto/manual classification, book ownership, incoming precedence, source deduplication and manual free-use isolation passed.");
+  } finally { await page.close(); }
+}
+
+async function verifyManualSourceIsolation(browser, url) {
+  const page = await browser.newPage();
+  const errors = [];
+  page.on("pageerror", error => errors.push(String(error)));
+  await page.addInitScript(() => localStorage.setItem("dnd.classFeaturePromptDisabled.v1", "true"));
+  try {
+    await page.goto(url); await page.waitForFunction(() => window.SpellManagement?.getEntries);
+    const base = { class: "wizard", level: "5", background: "sage", race: "elf", "elf-lineage": "high_elf",
+      "high-elf-cantrip": "light", "manual-spell-management": true,
+      "derived-feat-background-magic-initiate-cantrip-1": "mage-hand",
+      "derived-feat-background-magic-initiate-level-1": "shield" };
+    await apply(page, modern(base, [player("detect-magic", "wizard")]));
+    assert.equal(await page.locator("#high-elf-cantrip").isDisabled(), true);
+    for (const background of ["sage", "acolyte"]) {
+      await selectCharacter(page, "background", background);
+      await page.evaluate(() => showTab("basic"));
+      const controls = page.locator("#feats-area .magic-initiate-controls");
+      assert(await controls.count() > 0);
+      for (const control of await controls.all()) assert.equal(await control.isVisible(), false);
+      assert(await page.locator("#manual-spell-hint-basic").isVisible());
+      assert.equal(await page.evaluate(() => buildPdfPrecheckMessages().some(i => /魔法學徒.*法術/.test(i.message))), false);
+    }
+    await page.locator("#manual-feat-management").check();
+    assert.equal(await page.locator("#feats-area .magic-initiate-controls:visible").count(), 0);
+    assert(await page.locator('#feats-area select:not([id*="magic-initiate"]):enabled').count() > 0, "manual feats remain editable");
+    for (const [race, option, lineage] of [["elf", "elf-lineage", "wood_elf"], ["tiefling", "tiefling-legacy", "infernal"], ["gnome", "gnome-lineage", "forest_gnome"], ["human", null, null]]) {
+      await selectCharacter(page, "race", race);
+      if (option) await page.evaluate(({ option, lineage }) => { const control = document.getElementById(option); control.value = lineage; control.dispatchEvent(new Event("change", { bubbles: true })); }, { option, lineage });
+      for (const level of ["1", "3", "5"]) await selectCharacter(page, "level", level);
+      assert.deepEqual(await activeIds(page), ["detect-magic"], `${race} and level changes leave manual spells alone`);
+    }
+    for (const state of [
+      { class: "cleric", "cleric-trickster": true },
+      { class: "druid", "druid-shaman": true },
+      { class: "bard", level: "6" },
+      { class: "paladin", "paladin-blessed-warrior": true },
+      { class: "ranger", "ranger-druidic-warrior": true },
+      { class: "fighter", "feat-choice-fighter-level-4": "魔法學徒" },
+      { class: "warlock" }
+    ]) {
+      await apply(page, modern({ ...base, ...state }, [player("detect-magic", "wizard")]));
+      await page.evaluate(() => { showTab("basic"); openCharacterFeatures("class"); });
+      const modal = page.locator("#character-features-modal");
+      assert.equal(await modal.locator(".class-feature-mission-cantrip:visible, #bard-magical-discoveries:visible, .class-feature-additional-choices:visible").count(), 0);
+      assert.equal(await modal.locator(".manual-spell-source-hint").count(), 0);
+      assert.equal(await page.evaluate(() => getClassFeatureChoiceIssues().some(i => /(?:戲法|魔法發現法術|魔法學徒法術).*尚未/.test(i.message))), false);
+      if (state.class === "warlock") {
+        await modal.locator('[data-feature-tab="invocations"]').click();
+        await modal.locator('input[data-invocation-name="書之魔契"]').check();
+        assert.equal(await page.locator(".spellbook-tome-manager").count(), 0, "manual Tome selection never opens an automatic spell picker");
+        assert.equal(await modal.locator("[data-agonizing-blast-settings]:visible").count(), 0);
+        await modal.locator('input[data-invocation-name="苦痛魔爆"]').first().check();
+        assert.equal(await page.evaluate(() => {
+          const select = getAgonizingBlastSelects()[0];
+          select.value = "fire-bolt"; // A former Tome cantrip need not be on the warlock list.
+          SpellManagement.setPlayerEntries(SpellManagement.getPlayerEntries());
+          const saved = collectStateObject(); applyStateObject(saved);
+          return getAgonizingBlastSelects()[0].value;
+        }), "fire-bolt", "hidden invocation targets survive manual list edits and restore");
+        const restored = await page.evaluate(() => {
+          const checked = collectStateObject();
+          applyStateObject(checked);
+          const input = document.querySelector('input[data-invocation-name="書之魔契"]');
+          const selected = input.checked;
+          input.checked = false; input.dispatchEvent(new Event("change", { bubbles: true }));
+          setPactTomeSpellSelection({ cantrips: ["light", "mage-hand", "guidance"], rituals: ["detect-magic", "identify"] });
+          const share = collectShareState();
+          applyStateObject(share);
+          return { selected, unchecked: !document.querySelector('input[data-invocation-name="書之魔契"]').checked,
+            savedFalse: share.__pactTomeInvocationSelected === false };
+        });
+        assert.deepEqual(restored, { selected: true, unchecked: true, savedFalse: true }, "Tome checkbox is independent from hidden spell choices and survives sharing");
+      }
+      await page.keyboard.press("Escape");
+      assert.deepEqual(await activeIds(page), ["detect-magic"]);
+    }
+    await apply(page, modern(base, [player("detect-magic", "wizard")]));
+    const saved = await page.evaluate(() => { saveAllFields(); return collectStateObject(); });
+    await page.goto(url); await page.waitForFunction(() => SpellManagement.isManual()); await closeMigration(page);
+    assert.equal(await page.locator("#high-elf-cantrip").isDisabled(), true);
+    await apply(page, saved);
+    await page.evaluate(() => SpellManagement.setManual(false, { confirm: false }));
+    assert.equal(await page.locator("#high-elf-cantrip").isDisabled(), false);
+    assert.equal(await page.locator("#high-elf-cantrip").inputValue(), "light");
+    assert.equal(await page.locator("#derived-feat-background-magic-initiate-level-1").inputValue(), "shield");
+    assert((await activeIds(page)).includes("shield"), "returning to automatic mode restores source spells");
+    assert.deepEqual(errors, []);
+    console.log("Manual source isolation: race/level, both feat modes, background, class/Tome controls, reminders, persistence and automatic restoration passed.");
+  } finally { await page.close(); }
 }
 
 async function verifySynchronousRestore(browser, url) {
@@ -118,7 +311,7 @@ async function verifyClearPreparedSpells(page) {
     "derived-feat-background-magic-initiate-cantrip-1": "light",
     "derived-feat-background-magic-initiate-cantrip-2": "guidance",
     "derived-feat-background-magic-initiate-level-1": "bless",
-    __wizardSpellbook: { version: 1, spellIds: ["detect-magic", "mage-armor"] }
+    __wizardSpellbook: { version: 2, wizardSpellIds: ["detect-magic", "mage-armor"], manualSpellIds: [] }
   }, ["mending", "cure-wounds", "lesser-restoration", "dispel-magic", "blight"].map(id => player(id, "druid"))));
   await page.evaluate(() => {
     document.getElementById("spellslot1-1").checked = true; document.getElementById("spellslot3-3").checked = true;
@@ -348,7 +541,7 @@ async function verifySpellManagement(page) {
   assert.equal(await notice.count(), 0, "first class switch does not interrupt with a notice");
   assert.equal(await page.inputValue("#class"), "cleric");
   assert.deepEqual(await playerIds(page), []);
-  assert.match(await page.locator("#spell-current-list").innerText(), /目前職業：牧師/);
+  assert.match(await page.locator("#spell-current-list").innerText(), /法術清單：牧師/);
   assert.equal(await page.locator("#spell-prepared-empty").isVisible(), false, "automatic domain spells keep the list non-empty");
   await selectCharacter(page, "level", "1");
   assert.equal(await page.locator("#spell-prepared-empty").isVisible(), true);
@@ -364,14 +557,14 @@ async function verifySpellManagement(page) {
   assert.equal(await page.evaluate(key => dndStorage.getItem(key), NOTICE_KEY), null, "switching needs no notice preference");
   await selectCharacter(page, "class", "ranger"); assert.equal(await notice.count(), 0);
   await selectCharacter(page, "class", "wizard");
-  assert.match(await page.locator("#spell-current-list").innerText(), /目前職業：法師/);
+  assert.match(await page.locator("#spell-current-list").innerText(), /法術清單：法師/);
   assert.equal(await page.locator("#spell-prepared-empty").isVisible(), false);
   const original = await activeIds(page), toggle = page.locator("#manual-spell-management");
   await toggle.click(); await page.getByRole("button", { name: "取消", exact: true }).click();
   assert.equal(await toggle.isChecked(), false); assert.deepEqual(await activeIds(page), original);
   await toggle.click(); await page.keyboard.press("Escape"); assert.deepEqual(await activeIds(page), original);
   await toggle.click(); await page.getByRole("button", { name: "啟用手動管理", exact: true }).click();
-  assert.equal(await page.locator("#spell-current-list").innerText(), "目前職業：手動管理");
+  assert.equal(await page.locator("#spell-current-list").innerText(), "法術清單：手動管理");
   assert.deepEqual(await activeIds(page), original); assert.equal(await page.locator("#spellbook-card").isVisible(), true, "manual wizard keeps its independent spellbook");
   await page.evaluate(() => { SpellManagement.addPlayerSpell("cure-wounds", { spellClass: "cleric" }); SpellManagement.addPlayerSpell("ice-storm", { spellClass: "wizard" }); });
   const manual = await activeIds(page);
@@ -599,7 +792,7 @@ async function verifyPreparedPicker(page) {
 
 async function verifyWizardBookPicker(page) {
   const bookIds = ["mage-armor", "misty-step", "fireball", "ice-storm", "unknown-book-entry"];
-  await apply(page, modern({ class: "wizard", level: "8", __wizardSpellbook: { version: 1, spellIds: bookIds } }, [player("mage-armor", "wizard")]));
+  await apply(page, modern({ class: "wizard", level: "8", __wizardSpellbook: { version: 2, wizardSpellIds: bookIds, manualSpellIds: [] } }, [player("mage-armor", "wizard")]));
   const before = await page.evaluate(() => collectStateObject());
   const dialog = page.getByRole("dialog", { name: "管理法術書", exact: true });
   const search = dialog.getByRole("searchbox", { name: "搜尋法術名稱" });
@@ -619,12 +812,19 @@ async function verifyWizardBookPicker(page) {
       const search = rect('input[type="search"]'), school = rect('select'), selected = rect('.spell-picker-selected-toggle');
       const header = el.querySelector(".app-dialog__header"), title = rect(".app-dialog__header h2"), browse = rect(".spell-prepared-browse");
       const body = el.querySelector(".app-dialog__body");
+      const row = el.querySelector(".spell-picker-option");
+      const check = row.querySelector("input").getBoundingClientRect(), level = row.querySelector(".spell-picker-ring").getBoundingClientRect();
+      const name = row.querySelector(".spell-picker-name").getBoundingClientRect();
       return { equalHeight: Math.abs(search.height - school.height) < 1 && Math.abs(search.height - selected.height) < 1,
         sameLine: Math.abs(search.top - school.top) < 1 && Math.abs(search.top - selected.top) < 1,
         order: search.right <= school.left && school.right <= selected.left,
         browseInHeader: header.contains(el.querySelector(".spell-prepared-browse")) && browse.top >= title.bottom - 1,
+        levelAboveCheck: level.bottom <= check.top + 1,
+        nameBesideControls: name.left >= Math.max(level.right, check.right) && name.top < check.bottom,
+        checkboxSize: Math.abs(check.width - 20) < 1 && Math.abs(check.height - 20) < 1,
         overflow: body.scrollWidth > body.clientWidth || el.getBoundingClientRect().right > innerWidth };
-    }), { equalHeight: true, sameLine: true, order: true, browseInHeader: true, overflow: false }, `book filters fit ${width}px`);
+    }), { equalHeight: true, sameLine: true, order: true, browseInHeader: true,
+      levelAboveCheck: true, nameBesideControls: true, checkboxSize: true, overflow: false }, `book filters and rows fit ${width}px`);
     if (width !== 320 && process.env.DND_SPELLBOOK_SCREENSHOTS) await dialog.screenshot({ path: path.join(process.env.DND_SPELLBOOK_SCREENSHOTS, `spellbook-filters-${width}.png`) });
   }
   await page.setViewportSize({ width: 1100, height: 850 });
@@ -689,7 +889,7 @@ async function verifyWizardRitualGroup(page) {
     .filter(spell => SpellCatalog.getClassIds(spell.spellId).includes("wizard") && SpellCatalog.isRitual(spell))
     .map(spell => spell.spellId));
   const state = modern({ class: "wizard", level: "1", "spellcasting-ability": "int",
-    __wizardSpellbook: { version: 1, spellIds: [...ritualIds, "mage-armor", "unknown-book-entry"] }
+    __wizardSpellbook: { version: 2, wizardSpellIds: [...ritualIds, "mage-armor", "unknown-book-entry"], manualSpellIds: [] }
   }, [player("fire-bolt", "wizard"), player("mage-armor", "wizard"), player("detect-magic", "wizard")]);
   await apply(page, state);
   await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("spells"); });
@@ -831,23 +1031,29 @@ async function verifySeparateModeBooks(page) {
   assert.deepEqual((await book()).spellIds, ["detect-magic"], "restored wizard book remains independent");
   await apply(page, modern({ class: "wizard", level: "5",
     __wizardSpellbook: { version: 1, spellIds: ["detect-magic", "cure-wounds"] } }));
-  assert.deepEqual((await book()).wizardSpellIds, ["detect-magic", "cure-wounds"], "legacy book is retained");
-  await toggle.click();
-  await page.getByRole("button", { name: "啟用手動管理", exact: true }).click();
-  assert.deepEqual((await book()).manualSpellIds, ["detect-magic", "cure-wounds"], "legacy shared book is copied into both modes");
+  await closeMigration(page);
+  assert.deepEqual((await book()).wizardSpellIds, [], "legacy mixed book does not enter automatic wizard archive");
+  assert.equal(await toggle.isChecked(), true);
+  assert.deepEqual((await book()).manualSpellIds, ["detect-magic", "cure-wounds"], "legacy mixed book belongs only to manual mode");
   const prior = await page.evaluate(() => collectStateObject());
   assert.equal(prior.__wizardSpellbook.version, 2);
 
-  await page.setViewportSize({ width: 390, height: 850 });
-  const layout = await page.evaluate(() => {
-    const first = document.getElementById("spell-primer-trigger").getBoundingClientRect();
-    const second = document.getElementById("spell-prepare").getBoundingClientRect();
-    const current = document.getElementById("spell-current-list").getBoundingClientRect();
-    return { sameHeight: Math.abs(first.height - second.height) < 1,
-      sameLine: Math.abs(first.top - current.top) < first.height };
-  });
-  assert.deepEqual(layout, { sameHeight: true, sameLine: true },
-    "spell action buttons align and current class uses remaining row width");
+  for (const [width, sameLine] of [[390, false], [480, true]]) {
+    await page.setViewportSize({ width, height: 850 });
+    const layout = await page.evaluate(() => {
+      const first = document.getElementById("spell-primer-trigger").getBoundingClientRect();
+      const second = document.getElementById("spell-prepare").getBoundingClientRect();
+      const current = document.getElementById("spell-current-list").getBoundingClientRect();
+      const summary = document.getElementById("spell-prepared-summary");
+      return { sameHeight: Math.abs(first.height - second.height) < 1,
+        buttonsSameLine: Math.abs(first.top - second.top) < 1,
+        sameLine: Math.abs(first.top - current.top) < first.height,
+        overflow: summary.scrollWidth > summary.clientWidth || current.right > innerWidth };
+    });
+    assert.deepEqual(layout, { sameHeight: true, buttonsSameLine: true, sameLine, overflow: false },
+      `spell actions stay aligned and current class wraps only when needed at ${width}px`);
+  }
+  await page.setViewportSize({ width: 1100, height: 850 });
   console.log("Separate spellbooks: mode isolation, class visibility, v1 migration, restore, and mobile button layout passed.");
 }
 
@@ -958,7 +1164,7 @@ async function verifyLevelChangesAndMigration(page, url) {
   await closeMigration(page);
   const saved = await page.evaluate(() => { saveAllFields(); return collectStateObject(); });
   assert.equal(saved.__spellManagement.version, 2);
-  await page.evaluate(data => applyStateObject(data), saved); assert.equal(await page.getByText("已偵測到您的角色存檔為舊版", { exact: true }).count(), 0);
+  await page.evaluate(data => applyStateObject(data), saved); assert.equal(await page.getByText("舊版法術資料已轉為手動管理", { exact: true }).count(), 0);
   const hash = await page.evaluate(() => encodeStateToHash(collectShareState()));
   const memoryBefore = await page.evaluate(key => dndStorage.getItem(key), MEMORY_KEY);
   const sharedUrl = new URL(url); sharedUrl.searchParams.set("analytics", "owner"); sharedUrl.hash = hash;
@@ -1004,7 +1210,7 @@ async function verifyLegacyPersistenceEdges(page, url) {
   }, { key: grant.key, autoKey });
   for (const id of ["fire-bolt", "712345", "old-unknown-id", "ice-storm", "speak-with-animals"]) assert(migrated.ids.includes(id));
   assert.equal(migrated.ids.includes("detect-magic"), false);
-  assert.equal(migrated.source.castMode, "free-or-slot"); assert(migrated.count >= 2); assert.equal(migrated.used, true);
+  assert.equal(migrated.source.castMode, "free-or-slot"); assert.equal(migrated.count, undefined, "manual migration preserves archived uses without exposing free-use controls"); assert.equal(migrated.used, true);
   assert.equal(migrated.saved.__spellManagement.version, 2); assert.equal(migrated.saved.__spellManagement.manual, true);
   assert.equal(migrated.notes, "old autosave notes"); assert.equal(migrated.slot, true);
   if (await page.locator("#legal-ack-btn").isVisible()) await page.locator("#legal-ack-btn").click();
@@ -1014,7 +1220,7 @@ async function verifyLegacyPersistenceEdges(page, url) {
   await retainedControl.uncheck(); await page.keyboard.press("Escape");
   assert.equal(await page.evaluate(key => SpellManagement.getEntries().some(e => e.sourceKey === key), grant.key), true);
   await page.goto(owner.href); await page.waitForFunction(() => window.SpellManagement?.isManual());
-  assert.equal(await page.getByRole("dialog", { name: "已偵測到您的角色存檔為舊版", exact: true }).count(), 0);
+  assert.equal(await page.getByRole("dialog", { name: "舊版法術資料已轉為手動管理", exact: true }).count(), 0);
   const storageBefore = await page.evaluate(keys => keys.map(key => [key, dndStorage.getItem(key)]), [MEMORY_KEY, NOTICE_KEY, autoKey]);
   const bytes = Buffer.from(raw, "utf8");
   for (const hash of [`#s=${bytes.toString("base64")}`, `#s2=${require("node:zlib").gzipSync(bytes).toString("base64url")}`]) {
@@ -1035,7 +1241,7 @@ async function verifyLegacyPersistenceEdges(page, url) {
     }, { legacy, raw, autoKey, failedKey });
     assert.equal(await page.evaluate(key => dndStorage.getItem(key), autoKey), raw, "failed migration preserves original autosave");
     assert.equal(await page.evaluate(() => SpellManagement.canPersistCurrentState()), false);
-    assert.equal(await page.getByRole("dialog", { name: "已偵測到您的角色存檔為舊版", exact: true }).count(), 0);
+    assert.equal(await page.getByRole("dialog", { name: "舊版法術資料已轉為手動管理", exact: true }).count(), 0);
     assert((await activeIds(page)).includes("712345"));
     await page.evaluate(() => { window.dndStorage = window.__reviewStorage; delete window.__reviewStorage;
       SpellManagement.setPlayerEntries(SpellManagement.getPlayerEntries()); });
@@ -1300,6 +1506,8 @@ async function main() {
     browser = await chromium.launch({ headless: true, ...(process.env.DND_BROWSER_CHANNEL ? { channel: process.env.DND_BROWSER_CHANNEL } : {}) });
     const restoreUrl = new URL(`http://127.0.0.1:${server.address().port}/index.html`);
     restoreUrl.searchParams.set("analytics", "owner");
+    await verifyMigrationRules(browser, restoreUrl.href);
+    await verifyManualSourceIsolation(browser, restoreUrl.href);
     await verifySynchronousRestore(browser, restoreUrl.href);
     const page = await browser.newPage({ viewport: { width: 1100, height: 850 } });
     await page.addInitScript(() => {
@@ -1437,7 +1645,9 @@ async function main() {
     await page.goto(restoreUrl.href);
     await page.waitForFunction(() => window.Spellbook?.getState().spellIds.includes("shield"));
 
+    await page.evaluate(() => SpellManagement.setManual(true, { confirm: false }));
     const imported = await page.evaluate(() => __testSpellbookImport("wizard"));
+    assert.equal(await page.evaluate(() => SpellManagement.isManual()), false, "quick build forces automatic spell management");
     assert.equal(imported.content.spellbookSpells.length, 6);
     assert.equal(imported.content.preparedSpells.length, 4);
     assert.deepEqual(await page.evaluate(() => Spellbook.getState().spellIds), imported.content.spellbookSpells);

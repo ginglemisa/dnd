@@ -544,6 +544,13 @@ async function verifyCoverage(page) {
   }, { baseline, additions, personalizedClasses });
 }
 
+async function importCharacterJson(page, name, data) {
+  await page.evaluate(() => { const entry = new URL(location.href); entry.searchParams.set("analytics", "owner"); history.replaceState(null, "", entry); });
+  await Promise.all([page.waitForEvent("load"), page.setInputFiles("#import-json-file", { name, mimeType: "application/json", buffer: Buffer.from(JSON.stringify(data)) })]);
+  await page.waitForFunction(() => !autosaveClearing && !sessionStorage.getItem("dnd.pendingJsonImport.v1") && document.readyState === "complete");
+  await page.evaluate(() => { document.getElementById("legal-modal")?.style.setProperty("display", "none"); window.onboardingTour?.finish?.(); });
+}
+
 async function verifyUiAndPersistence(page, url) {
   await page.goto(url);
   await page.waitForFunction(() => !!window.TabletopMode);
@@ -586,10 +593,6 @@ async function verifyUiAndPersistence(page, url) {
   assert.equal(exported.class, "bard"); assert.equal(exported["goliath-ancestry"], "cloud");
   assert.equal(Object.hasOwn(exported,"hiddenKeys"), false);
   assert.equal(Object.hasOwn(exported,"customActions"), false);
-  await page.evaluate(() => { document.getElementById("class").value = "fighter"; updateClassFeature(); });
-  await page.setInputFiles("#import-json-file", {name:"action-regression.json",mimeType:"application/json",buffer:Buffer.from(JSON.stringify(exported))});
-  await page.waitForFunction(() => document.getElementById("class").value === "bard");
-  assert.deepEqual(await page.evaluate(() => TabletopMode.getTabletopActionPreferences()), preferences);
   const shareState = await page.evaluate(async () => {
     const originalUrl = location.href;
     history.replaceState(null, "", await encodeStateToHash(collectShareState()));
@@ -743,6 +746,10 @@ async function verifyUiAndPersistence(page, url) {
   assert.deepEqual(unrelatedInput, { sameButton: true, focused: true, sameDescription: true, updates: 0 }, "spell search preserves the static action panel without invalidating dynamic actions");
   await page.evaluate(id => TabletopMode.removeCustomTabletopAction(id), customId);
   assert.equal((await page.evaluate(() => TabletopMode.getTabletopActionPreferences())).customActions.length, 0);
+  await importCharacterJson(page, "action-regression.json", exported);
+  assert.equal(await page.inputValue("#class"), "bard");
+  assert.deepEqual(await page.evaluate(() => TabletopMode.getTabletopActionPreferences()),
+    { version: 1, customActions: [], hiddenKeys: [], notes: "" }, "explicit JSON import clears old local action preferences");
 }
 
 async function verifyClassTabletopUpdates(page) {
@@ -1093,7 +1100,7 @@ async function verifyAutomaticFeatRows(browser, url) {
     assert.equal(await page.inputValue("#derived-feat-fighter-level-8"), "強韌體魄", "autosave level feat");
     await page.selectOption("#level", "6");
     assert.equal(await page.locator("#derived-feat-fighter-level-8").count(), 0, "lower level removes grant");
-    await page.setInputFiles("#import-json-file", { name: "feat-regression.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(saved)) });
+    await importCharacterJson(page, "feat-regression.json", saved);
     await page.waitForFunction(() => document.getElementById("derived-feat-fighter-level-8")?.value === "強韌體魄");
     assert.equal(await page.isChecked("#manual-feat-management"), false, "new JSON keeps explicit automation");
     const beforeManual = await page.evaluate(() => getFeatSelects().map(select => select.value));
@@ -1122,7 +1129,7 @@ async function verifyAutomaticFeatRows(browser, url) {
     assert.deepEqual(await page.evaluate(() => collectManagedFeatRows().map(row => row.value)), managedValues, "manual edits/deletions survive autosave");
     assert.equal(await page.locator("#derived-feat-fighter-level-8").count(), 0, "deleted derived row stays deleted");
     await page.selectOption("#feat-1", "防禦");
-    await page.setInputFiles("#import-json-file", { name: "manual-feats.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(manualSaved)) });
+    await importCharacterJson(page, "manual-feats.json", manualSaved);
     await page.waitForFunction(() => document.getElementById("feat-1")?.value === "箭術");
     assert.deepEqual(await page.evaluate(() => collectManagedFeatRows().map(row => row.value)), managedValues, "manual JSON round trip");
     const manualHash = await page.evaluate(() => encodeStateToHash(collectShareState()));
@@ -1138,16 +1145,16 @@ async function verifyAutomaticFeatRows(browser, url) {
     assert.equal(await page.evaluate(() => getManualFeatRows().some(row => getFeatSelectFromRow(row).value === "醫療兵")), true, "manual override retained as custom row");
     await page.evaluate(saved => applyStateObject(saved), saved);
     const legacy = { class: "fighter", level: "1", race: "elf", "feats-area-count": 2, "feat-0": "熟習", "feat-1": "警覺", "derived-feat-fighting-style-fighter": "箭術" };
-    await page.setInputFiles("#import-json-file", { name: "legacy-feats.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(legacy)) });
+    await importCharacterJson(page, "legacy-feats.json", legacy);
     await page.waitForFunction(() => document.getElementById("manual-feat-management").checked && document.getElementById("feat-1")?.value === "警覺");
     await page.getByRole("dialog", { name: "已偵測到您的角色存檔為舊版", exact: true }).getByRole("button", { name: "知道了", exact: true }).click();
-    assert.equal(await page.evaluate(() => SpellManagement.isManual()), true, "legacy feat import also preserves its original spells in manual management");
+    assert.equal(await page.evaluate(() => SpellManagement.isManual()), false, "legacy feats without foreign player spells remain in automatic spell management");
     assert.equal(await page.inputValue("#feat-choice-fighting-style-fighter"), "箭術", "legacy style migrates to source");
     assert.equal(await rows.count(), 2, "legacy selections retained");
     assert.equal(await page.locator("#feat-1").isDisabled(), false, "legacy feat editable");
     assert.equal(await rows.last().locator('[data-feat-action="delete"]').isVisible(), true);
     assert.equal(await rows.last().locator('[data-feat-action="add"]').isVisible(), true);
-    await page.evaluate(legacy => dndStorage.setItem("dndchar_autosave_v1", JSON.stringify(legacy)), legacy);
+    await page.evaluate(legacy => { cancelPendingAutosaveForClear(); dndStorage.setItem("dndchar_autosave_v1", JSON.stringify(legacy)); }, legacy);
     await page.goto(url);
     await page.waitForFunction(() => document.getElementById("manual-feat-management").checked);
     await page.getByRole("dialog", { name: "已偵測到您的角色存檔為舊版", exact: true }).getByRole("button", { name: "知道了", exact: true }).click();
@@ -1482,11 +1489,11 @@ async function verifyLegacyEmptyFeatRows(browser, url) {
     const normalized = await page.evaluate(data => normalizeLegacyFeatState(data), legacy);
     assert.equal(normalized.__managedFeatRows.length, 4);
     assert.equal(normalized.__managedFeatRows.at(-1).legacyNote, "keep this row", "unknown raw properties keep their row eligible for restoration");
-    await page.setInputFiles("#import-json-file", { name: "legacy-empty-feats.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(legacy)) });
-    await page.waitForFunction(() => window.SpellManagement.isManual()); await closeNotice();
+    await importCharacterJson(page, "legacy-empty-feats.json", legacy);
+    await page.waitForFunction(() => window.SpellManagement?.getEntries); await closeNotice();
     await checkManaged("JSON");
     await page.evaluate(data => { cancelPendingAutosaveForClear(); dndStorage.setItem("dndchar_autosave_v1", JSON.stringify(data)); }, legacy);
-    await page.goto(url); await page.waitForFunction(() => window.SpellManagement?.isManual()); await closeNotice();
+    await page.goto(url); await page.waitForFunction(() => window.SpellManagement?.getEntries); await closeNotice();
     await page.evaluate(() => { document.getElementById("legal-modal")?.style.setProperty("display", "none"); window.onboardingTour?.finish?.(); });
     await checkManaged("autosave startup");
     const flat = { class: "fighter", level: "1", background: "", race: "elf", "manual-feat-management": true,
@@ -1732,7 +1739,7 @@ async function verifyConditionEffects(browser, url) {
     const exported = JSON.parse(fs.readFileSync(await (await downloadEvent).path(), "utf8"));
     assert.deepEqual(exported.activeConditions, persisted.activeConditions);
     await page.evaluate(() => TabletopMode.applyState({}));
-    await page.setInputFiles("#import-json-file", { name: "condition-regression.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(exported)) });
+    await importCharacterJson(page, "condition-regression.json", exported);
     await page.waitForFunction(() => TabletopMode.collectState().activeConditions.includes("unconscious"));
     assert.deepEqual((await state()).activeConditions, persisted.activeConditions);
     assert.equal((await state()).exhaustionLevel, 2);

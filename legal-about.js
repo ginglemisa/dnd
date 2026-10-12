@@ -15,8 +15,8 @@
         <li>需要快速帶新手創角的 DM</li>
         <li>推廣活動、體驗場、收費團</li>
 
-        <li>本工具以手機操作為主，並預設現場有主持人進行口頭教學。</li>
-        <li>本工具不附帶朋友和地下城主，找團請洽詢 TRPG 網路或在地社群 ^_^ </li>
+        <li>本網站以手機操作為主，並預設現場有主持人進行口頭教學。</li>
+        <li>本網站不附帶朋友和主持人，找團歡迎洽詢<a href="https://linktr.ee/trpg.kh" target="_blank" rel="noopener">TRPG在高雄</a></li>
       </ul>
 
       <h2>注意事項</h2>
@@ -25,7 +25,7 @@
 
       <h2>資料怎麼保存？</h2>
       <p>角色資料只存在你自己的裝置裡。</p>
-      <p>若清除瀏覽器資料、更換 APP 或裝置，都可能讓紀錄消失。</p>
+      <p>若清除瀏覽器資料、更換裝置，都可能讓紀錄消失。</p>
       <p>可使用網站提供的 JSON 匯入匯出功能備份角色。</p>
 
       <h2>流量統計</h2>
@@ -40,11 +40,12 @@
         <li><a href="https://drive.google.com/drive/folders/1brrzdbRcxMvxHcYYjyzs2N_8aPaQewW6?usp=sharing" target="_blank" rel="noopener">無表格 PDF／原 PNG 檔下載</a></li>
         <li>PDF 使用字型：<a href="https://fonts.google.com/download?family=Noto%20Sans%20TC" target="_blank" rel="noopener">Noto Sans TC</a>、<a href="https://github.com/adobe-fonts/source-han-serif/tree/release/OTF/TraditionalChinese" target="_blank" rel="noopener">思源宋體 SourceHanSerifTC-Bold.otf</a></li>
       </ul>
-      <p>角色紙、字型、第三方素材之權利，仍依各自原始授權條件處理。</p>
+      <p>歡迎下載、填寫、列印與分享角色紙。</p>
+      <p>請尊重創作者，保留作者署名與原始排版，勿擅自刪除或修改。</p>
 
-      <h2>作者</h2>
+      <h2>網站作者</h2>
       <p>Reggie Tsai / 瑞基</p>
-      <p>twD20 是獨立製作的第三方工具，與 Wizards of the Coast LLC 、 D&D 或其他官方品牌無關。</p>
+      <p>twD20 是獨立製作的跑團工具，與 WotC 官方品牌無關。</p>
 
       <hr class="legal-divider">
 
@@ -59,27 +60,17 @@
           <li><a href="https://www.dndbeyond.com/srd" target="_blank" rel="noopener">System Reference Document 5.2.1</a></li>
           <li><a href="https://creativecommons.org/licenses/by/4.0/legalcode" target="_blank" rel="noopener">Creative Commons Attribution 4.0 International</a></li>
         </ul>
-
         <h3>專案原始程式碼</h3>
-        <p>除另有標示的第三方內容外，本專案中由專案作者創作、修改或有權授權的原始程式碼，以 MIT License 提供。</p>
-        <p>MIT License 允許使用、複製、修改、合併、發布、散布、再授權及商業使用相關程式碼，但應依授權條款保留必要的著作權與授權聲明。</p>
-        <p>MIT License 僅適用於本專案有權以該授權提供的內容，不將 SRD 內容、第三方字型、角色紙、圖像、函式庫或其他外部作品重新授權為 MIT License。</p>
+        <p>twD20 自有程式碼採 MIT License 開源，歡迎使用、修改及商業使用。重新散布時，請保留原有著作權與授權聲明。</p>
 
         <h3>AI 協作開發</h3>
-        <p>twD20 的程式碼與文字使用生成式 AI 協助撰寫、檢查除錯，並由專案作者進行需求設計、測試整合。</p>
-        <p>本專案所提供的 MIT License，以專案作者依法具有著作權或其他授權權限的範圍為限。若部分內容依法不受著作權保護、涉及第三方權利，或另受其他授權條款拘束，本專案不主張透過 MIT License 取得或授予超出依法可授權範圍的權利。</p>
+        <p>本站使用生成式 AI 輔助程式開發、文字整理與除錯，並由專案作者負責需求設計、測試及整合。</p>
 
         <h3>第三方內容</h3>
-        <p>暖紙亮色背景使用 <a href="https://ambientcg.com/view?id=Paper002" target="_blank" rel="noopener">ambientCG Paper 002</a> 的 Color 素材（<a href="https://docs.ambientcg.com/license/" target="_blank" rel="noopener">CC0</a>）。本專案沿用縮放、接縫處理後的 512×512 WebP，並以 CSS 淡化紙紋。</p>
-        <p>本專案包含若干第三方內容，例如 SRD 5.2.1、Noto Sans TC、Source Han Serif／思源宋體、中文角色紙及其排版素材、第三方 JavaScript 函式庫，以及其他另有標示來源或授權的素材。</p>
-        <p>這些內容仍分別依其原始授權、著作權或使用條件處理。</p>
-        <p>若要重新散布、修改或商業使用本專案，請自行確認實際使用內容所適用的授權。</p>
+        <p>SRD 5.2.1、字型、角色紙、圖像及第三方函式庫等，不適用上述 MIT License，請依各自授權使用。</p>
 
         <h3>免責聲明</h3>
-        <p>twD20 以方便創角、跑團使用與新手理解為主要目的，不保證所有規則摘要、翻譯、計算結果或程式功能在任何情況下皆完全正確或完整。</p>
-        <p>本站部分規則文字經過縮寫或重新整理，不應取代完整規則來源。若規則內容出現疑義，請以相應的正式規則來源及實際團務裁定為準。</p>
-        <p>使用者如欲重製、修改、重新散布或商業使用本專案或其中內容，應自行確認所在地法律、使用平台規範及相關第三方授權條件。</p>
-
+        <p>twD20 以方便創角、跑團及新手理解為目的。規則摘要、翻譯、計算與程式功能可能存在疏漏，若有疑義，請以正式規則及團務裁定為準。</p>
         <h3>SRD Attribution</h3>
         <p>This work includes material from the System Reference Document 5.2.1 (“SRD 5.2.1”) by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode.</p>
       </section>

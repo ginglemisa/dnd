@@ -1459,6 +1459,9 @@ function isWeaponRowEmpty(payload, slot) {
   }
 
   function getMagicInitiateFeatLines(state, featKey) {
+    const manual = state.__spellManagement?.version === 2
+      ? state.__spellManagement.manual === true : state['manual-spell-management'] === true;
+    if (manual) return ['魔法學徒(起源)'];
     const classValue = normalizeText(state[`${featKey}-magic-initiate-class`]);
     const cantrip1 = normalizeText(state[`${featKey}-magic-initiate-cantrip-1`]);
     const cantrip2 = normalizeText(state[`${featKey}-magic-initiate-cantrip-2`]);
@@ -1739,7 +1742,8 @@ function isWeaponRowEmpty(payload, slot) {
           : rangeRaw;
         payload[`sp-c-${xx}`] = /專注/.test(durationRaw);
         payload[`sp-r-${xx}`] = /儀式/.test(castTimeRaw);
-        payload[`sp-m-${xx}`] = /材料|成分\s*:\s*.*M/i.test(desc);
+        const components = desc.match(/^成分[ \t]*[:：][ \t]*([^\r\n]*)/mu)?.[1] || '';
+        payload[`sp-m-${xx}`] = /\bM\b/i.test(components);
         // Keep spell notes unwrapped here. The two PDF modes use different
         // fonts and field heights, so pdf-export.js measures the real glyph
         // widths and chooses either the comfortable or smaller single-line

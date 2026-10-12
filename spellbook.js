@@ -74,12 +74,11 @@
     if (saved?.version >= 2) {
       setState(saved, { sync: false });
     } else {
-      // v1 shared a single book across modes. Preserve all legacy entries in
-      // both books; subsequent changes are independent and saved as v2.
+      // The restored management mode owns the legacy book; do not duplicate it.
       const legacy = normalize(saved?.spellIds ?? (data.class === "wizard"
         ? preparedEntries().map(entry => entry.spellId) : []));
-      books.wizard = [...legacy];
-      books.manual = [...legacy];
+      books.wizard = isManual() ? [] : [...legacy];
+      books.manual = isManual() ? [...legacy] : [];
     }
     render();
   }
