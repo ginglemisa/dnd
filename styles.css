@@ -7913,7 +7913,6 @@ button.spell-picked-jump:active {
   }
 
   .spell-primer {
-    min-height: 2rem;
     padding-inline: 0.42rem 0.5rem;
   }
 }
@@ -13849,7 +13848,8 @@ html.tabletop-avatar-modal-open { overflow: hidden; }
 }
 
 .spell-current-list {
-  flex: 1 1 140px;
+  flex: 0 1 auto;
+  white-space: nowrap;
   margin: 0;
   color: var(--accent-strong);
   font-size: var(--fs-sm);
@@ -13867,6 +13867,12 @@ html.tabletop-avatar-modal-open { overflow: hidden; }
   align-items: center;
   gap: 0.5rem;
   justify-content: flex-start;
+}
+
+#spell-primer-trigger,
+#spell-prepare {
+  box-sizing: border-box;
+  min-height: 2.15rem;
 }
 
 #spell-prepared-requirements,

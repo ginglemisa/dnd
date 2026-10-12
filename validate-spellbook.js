@@ -789,9 +789,66 @@ async function verifyManualSpellbook(page) {
   assert.match(await page.locator('.app-dialog[data-variant="spell-readonly"]').innerText(), /unknown-book-entry/);
   await page.keyboard.press("Escape");
   await page.evaluate(() => Spellbook.setState({ spellIds: [] }));
-  assert.equal(await page.locator("#spellbook-card").isVisible(), false, "non-wizard without a book has no empty book card");
+  assert.equal(await page.locator("#spellbook-card").isVisible(), true, "manual mode keeps an editable empty book");
   await selectCharacter(page, "class", "wizard"); assert.equal(await page.locator("#spellbook-card").isVisible(), true, "wizard can manage an empty book in manual mode");
   console.log("Manual spellbook: existing books, shared all-class drafts, quick preparation, unknown records and wizard-only rituals passed.");
+}
+
+async function verifySeparateModeBooks(page) {
+  await apply(page, modern({ class: "wizard", level: "5",
+    __wizardSpellbook: { version: 2, wizardSpellIds: ["detect-magic"], manualSpellIds: ["cure-wounds"] } }));
+  const toggle = page.locator("#manual-spell-management");
+  const book = () => page.evaluate(() => Spellbook.getState());
+  assert.deepEqual((await book()).spellIds, ["detect-magic"]);
+  assert.equal(await page.locator('#spellbook-list [data-spell-id="cure-wounds"]').count(), 0);
+  await selectCharacter(page, "class", "cleric");
+  assert.equal(await page.locator("#spellbook-card").isVisible(), false, "other automatic classes never display wizard's saved book");
+  assert.deepEqual((await book()).wizardSpellIds, ["detect-magic"]);
+  await selectCharacter(page, "class", "warlock");
+  assert.equal(await page.locator("#spellbook-card").isVisible(), false, "warlock without Tome does not display either book");
+  await selectCharacter(page, "class", "wizard");
+  await toggle.click();
+  await page.getByRole("button", { name: "啟用手動管理", exact: true }).click();
+  assert.equal(await page.locator("#spellbook-card").isVisible(), true);
+  assert.deepEqual((await book()).spellIds, ["cure-wounds"]);
+  assert.equal(await page.locator('#spellbook-list [data-spell-id="detect-magic"]').count(), 0);
+  assert.equal(await page.evaluate(() => Spellbook.addWizardSpell("mage-armor")), true);
+  assert.deepEqual((await book()).manualSpellIds, ["cure-wounds", "mage-armor"],
+    "wizard recommendation writes to the active manual archive");
+  assert.deepEqual((await book()).wizardSpellIds, ["detect-magic"]);
+  await page.evaluate(() => Spellbook.setState({ spellIds: ["bless"] }));
+  assert.deepEqual((await book()).wizardSpellIds, ["detect-magic"], "editing manual book does not alter wizard book");
+  const saved = await page.evaluate(() => collectStateObject());
+  assert.deepEqual(saved.__wizardSpellbook.manualSpellIds, ["bless"]);
+  assert.deepEqual(saved.__wizardSpellbook.wizardSpellIds, ["detect-magic"]);
+  await toggle.click();
+  await page.getByRole("button", { name: "恢復自動管理", exact: true }).click();
+  assert.deepEqual((await book()).spellIds, ["detect-magic"]);
+  await page.evaluate(state => applyStateObject(state), saved);
+  assert.deepEqual((await book()).spellIds, ["bless"], "restoring character recovers the active manual book");
+  await toggle.click();
+  await page.getByRole("button", { name: "恢復自動管理", exact: true }).click();
+  assert.deepEqual((await book()).spellIds, ["detect-magic"], "restored wizard book remains independent");
+  await apply(page, modern({ class: "wizard", level: "5",
+    __wizardSpellbook: { version: 1, spellIds: ["detect-magic", "cure-wounds"] } }));
+  assert.deepEqual((await book()).wizardSpellIds, ["detect-magic", "cure-wounds"], "legacy book is retained");
+  await toggle.click();
+  await page.getByRole("button", { name: "啟用手動管理", exact: true }).click();
+  assert.deepEqual((await book()).manualSpellIds, ["detect-magic", "cure-wounds"], "legacy shared book is copied into both modes");
+  const prior = await page.evaluate(() => collectStateObject());
+  assert.equal(prior.__wizardSpellbook.version, 2);
+
+  await page.setViewportSize({ width: 390, height: 850 });
+  const layout = await page.evaluate(() => {
+    const first = document.getElementById("spell-primer-trigger").getBoundingClientRect();
+    const second = document.getElementById("spell-prepare").getBoundingClientRect();
+    const current = document.getElementById("spell-current-list").getBoundingClientRect();
+    return { sameHeight: Math.abs(first.height - second.height) < 1,
+      sameLine: Math.abs(first.top - current.top) < first.height };
+  });
+  assert.deepEqual(layout, { sameHeight: true, sameLine: true },
+    "spell action buttons align and current class uses remaining row width");
+  console.log("Separate spellbooks: mode isolation, class visibility, v1 migration, restore, and mobile button layout passed.");
 }
 
 async function verifyLevelChangesAndMigration(page, url) {
@@ -1121,6 +1178,18 @@ async function verifyPdfSpellbookOptions(page) {
     __spellManagement: { version: 2, manual: true, entries: [] },
     __wizardSpellbook: { version: 1, spellIds: ["cure-wounds"] } }, { includeSpellbook: true }).extra1?.includes("療傷術(1環)") === true), true,
   "manual non-wizard's existing book remains exportable");
+  const dual = { version: 2, wizardSpellIds: ["detect-magic"], manualSpellIds: ["cure-wounds"] };
+  const notesFor = (classId, manual) => page.evaluate(({ classId, manual, dual }) =>
+    buildPdfFieldPayload({ class: classId, __spellManagement: { version: 2, manual, entries: [] },
+      __wizardSpellbook: dual }, { includeSpellbook: true }).extra1 || "", { classId, manual, dual });
+  assert.match(await notesFor("wizard", false), /偵測魔法/, "automatic wizard exports wizard book");
+  assert.doesNotMatch(await notesFor("wizard", false), /療傷術/);
+  assert.match(await notesFor("wizard", true), /療傷術/, "manual wizard exports manual book");
+  assert.doesNotMatch(await notesFor("wizard", true), /偵測魔法/);
+  assert.match(await notesFor("fighter", true), /療傷術/, "manual non-wizard exports manual book");
+  assert.doesNotMatch(await notesFor("fighter", true), /偵測魔法/);
+  assert.doesNotMatch(await notesFor("cleric", false), /法術書：/, "automatic other classes cannot export wizard book");
+
   const results = await page.evaluate(async () => {
     const originalNotes = "玩家原有筆記第一行\n玩家原有筆記第二行";
     const state = { class: "wizard", level: "1", "spell-notes": originalNotes,
@@ -1288,6 +1357,7 @@ async function main() {
     await verifyPreparedPicker(page);
     await verifyWizardBookPicker(page);
     await verifyManualSpellbook(page);
+    await verifySeparateModeBooks(page);
     await verifyWizardRitualGroup(page);
     await verifyLevelChangesAndMigration(page, restoreUrl.href);
     await page.goto(restoreUrl.href);

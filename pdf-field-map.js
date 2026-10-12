@@ -1770,11 +1770,15 @@ function isWeaponRowEmpty(payload, slot) {
     }
 
     const spellNotesText = normalizeText(state['spell-notes']);
-    const showWizardSpellbook = state.__spellManagement?.version === 2
-      ? state.class === 'wizard' || Boolean(state.__wizardSpellbook?.spellIds?.length)
-      : state.class === 'wizard' || state['manual-spell-management'] === true;
-    if (options.includeSpellbook !== false && showWizardSpellbook && Array.isArray(state.__wizardSpellbook?.spellIds)) {
-      const bookSpells = [...new Set(state.__wizardSpellbook.spellIds)].map(getCanonicalSpell).filter(Boolean);
+    const manualSpellbook = state.__spellManagement?.version === 2
+      ? state.__spellManagement.manual === true : state['manual-spell-management'] === true;
+    const showSpellbook = manualSpellbook || state.class === 'wizard';
+    const bookState = state.__wizardSpellbook;
+    const bookIds = bookState?.version >= 2
+      ? (manualSpellbook ? bookState.manualSpellIds : bookState.wizardSpellIds)
+      : bookState?.spellIds;
+    if (options.includeSpellbook !== false && showSpellbook && Array.isArray(bookIds)) {
+      const bookSpells = [...new Set(bookIds)].map(getCanonicalSpell).filter(Boolean);
       if (bookSpells.length) extraNotes.push(`法術書：${bookSpells.map(spell => `${spell.nameZh}(${spell.level}環)${getSpellCatalog()?.isRitual(spell) ? '*' : ''}`).join('、')}。* 為儀式法術。`);
     }
     if (spellNotesText) {
