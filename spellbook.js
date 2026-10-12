@@ -54,9 +54,10 @@
 
   function addWizardSpell(spellId) {
     const spell = catalog()?.getSpell(spellId);
+    const ids = activeBookIds();
     if (!isWizard() || !spell || spell.level < 1
-      || !catalog().getClassIds(spellId).includes("wizard") || books.wizard.includes(spellId)) return false;
-    books.wizard.push(spellId);
+      || !catalog().getClassIds(spellId).includes("wizard") || ids.includes(spellId)) return false;
+    ids.push(spellId);
     changed();
     return true;
   }
