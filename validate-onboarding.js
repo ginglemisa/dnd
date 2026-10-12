@@ -357,6 +357,7 @@ async function main() {
   try {
     browser = await chromium.launch({ headless: true, ...(process.env.DND_BROWSER_CHANNEL ? { channel: process.env.DND_BROWSER_CHANNEL } : {}) });
     const page = await browser.newPage();
+    await page.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
     const errors = [];
     page.on("pageerror", error => errors.push(String(error)));
     const url = `http://127.0.0.1:${server.address().port}/index.html?analytics=owner`;
@@ -535,6 +536,7 @@ async function main() {
 async function verifyAbilityGuidance(browser, url) {
   for (const reducedMotion of ["no-preference", "reduce"]) {
     const page = await browser.newPage({ viewport: { width: 320, height: 568 }, isMobile: true, hasTouch: true, reducedMotion });
+    await page.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
     await page.goto(url);
     await page.waitForFunction(() => window.onboardingTour);
     await page.locator("#legal-ack-btn").tap();
@@ -597,6 +599,7 @@ async function verifyAbilityGuidance(browser, url) {
 
 async function verifyTouch(browser, url) {
   const page = await browser.newPage({ viewport: { width: 320, height: 568 }, isMobile: true, hasTouch: true });
+  await page.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
   await page.goto(url);
   await page.waitForFunction(() => window.onboardingTour && window.DiceRoller);
   await page.locator("#legal-ack-btn").tap();
@@ -670,6 +673,7 @@ async function verifyTouch(browser, url) {
 
 async function verifyImports(browser, url, viewport = { width: 1280, height: 800 }) {
   const page = await browser.newPage({ viewport });
+  await page.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
   // Exercise the real private importer using a deterministic draft, retaining its
   // confirmation and result dialogs; no extra production API is needed.
   await page.route("**/quick-build.js?*", async route => {
@@ -761,6 +765,7 @@ async function assertPageInteractive(page) {
 
 async function verifyPdfLifecycle(browser, url) {
   const page = await browser.newPage();
+  await page.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
   await page.goto(url);
   await page.waitForFunction(() => window.quickBuild && window.onboardingTour);
   await page.locator("#legal-ack-btn").click();

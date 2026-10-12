@@ -29,6 +29,7 @@
   let finishDisclosureMotion = null;
   let scheduledRender = 0;
   let initialized = false;
+  let actionPreferencesKey = "";
 
   function createElement(tagName, className = "", text = "") {
     const element = document.createElement(tagName);
@@ -1088,21 +1089,37 @@ return [{
     elements.notice.textContent = "請先在角色卡的數值頁選擇職業與等級；基本動作仍可查閱，角色能力會在完成選擇後加入。";
   }
 
+  function isVisible() {
+    return globalScope.TabletopMode?.getMode?.() === "tabletop"
+      && ["actions", "spells"].includes(globalScope.TabletopMode.getPanel());
+  }
+
 function render() {
-  if (!initialized) return;
+  if (!initialized || !isVisible()) return;
+  renderMetamagic();
+  if (globalScope.TabletopMode.getPanel() !== "actions") return;
   renderNotice();
   renderWeapons();
   renderWeaponRules();
   renderActionPanel(currentMode);
-  renderMetamagic();
 }
 
-  function scheduleRender() {
-    if (scheduledRender) cancelAnimationFrame(scheduledRender);
+  function scheduleRender(event) {
+    if ((event?.type === "input" || event?.type === "change")
+      && !globalScope.TabletopMode.isCharacterFieldEvent(event)) return;
+    if (!isVisible() || scheduledRender) return;
     scheduledRender = requestAnimationFrame(() => {
       scheduledRender = 0;
       render();
     });
+  }
+
+  function handleActionPreferencesChange(event) {
+    const preferences = event.detail || getActionPreferences();
+    const key = JSON.stringify([preferences.customActions, preferences.hiddenKeys]);
+    if (key === actionPreferencesKey) return;
+    actionPreferencesKey = key;
+    scheduleRender();
   }
 
   function setMode(mode, { persist = true, focusTab = false } = {}) {
@@ -1142,7 +1159,7 @@ function render() {
     globalScope.dndStorage?.setItem(MODE_PREFERENCE_KEY, currentMode);
   }
 
-  renderActionPanel(currentMode);
+  if (isVisible() && globalScope.TabletopMode.getPanel() === "actions") renderActionPanel(currentMode);
 }
 
   function handleTabKeydown(event) {
@@ -1173,6 +1190,8 @@ function render() {
     });
     if (!elements.weaponSummary || !elements.panels.length || !globalScope.ActionPanel) return;
     initialized = true;
+    const preferences = getActionPreferences();
+    actionPreferencesKey = JSON.stringify([preferences.customActions, preferences.hiddenKeys]);
 
     elements.tabs.forEach(tab => {
       tab.addEventListener("click", () => setMode(tab.dataset.tabletopActionTab));
@@ -1189,10 +1208,11 @@ function render() {
     document.addEventListener("change", scheduleRender);
     globalScope.addEventListener("actionpanelchange", scheduleRender);
     globalScope.addEventListener("tabletopstatechange", scheduleRender);
-    globalScope.addEventListener("tabletopactionpreferenceschange", scheduleRender);
+    globalScope.addEventListener("tabletopactionpreferenceschange", handleActionPreferencesChange);
     globalScope.addEventListener("dicerollmodechange", scheduleRender);
+    globalScope.addEventListener("modechange", scheduleRender);
     globalScope.addEventListener("tabletop-panelchange", event => {
-      if (event.detail?.panel === "actions") scheduleRender();
+      if (event.detail?.panel === "actions" || event.detail?.panel === "spells") scheduleRender();
     });
 
     const sourcePanel = document.getElementById("tab-actions");

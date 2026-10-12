@@ -309,7 +309,7 @@
       const summary = createElement("ul", "tabletop-rest-summary");
       if (isLong) {
         summary.appendChild(createElement("li", "", "HP、生命骰與長休資源回滿；力竭減 1。"));
-        summary.appendChild(createElement("li", "", "清空臨時 HP。"));
+        summary.appendChild(createElement("li", "", "清空臨時 HP，結束法術專注。"));
         if (context.specs.some(spec => spec.key === "druid-wild-shape")) {
           summary.appendChild(createElement("li", "", "結束荒野形態與荒野夥伴。"));
         }
@@ -430,9 +430,9 @@
         }
       });
       if (!completed) return;
-      globalScope.AppDialog.notify(`${name}完成。`, { tone: "success" });
       globalScope.twAnalytics?.track?.(isLong ? "long_rest_used" : "short_rest_used");
       if (!isLong) await openRestHitDice(trigger);
+      globalScope.AppDialog.notify(`${name}完成。`, { tone: "success" });
     } finally {
       restDialogOpen = false;
       if (!document.querySelector(".app-dialog")) document.querySelector(`[data-rest="${kind}"]`)?.focus();
@@ -941,13 +941,17 @@
   }
 
   function render() {
-    if (!initialized) return;
+    if (!initialized || globalScope.TabletopMode.getMode() !== "tabletop"
+      || globalScope.TabletopMode.getPanel() !== "resources") return;
     renderBuiltInResources();
     renderCustomResources();
   }
 
-  function scheduleRender() {
-    if (scheduledRender) cancelAnimationFrame(scheduledRender);
+  function scheduleRender(event) {
+    if ((event?.type === "input" || event?.type === "change")
+      && !globalScope.TabletopMode.isCharacterFieldEvent(event)) return;
+    if (globalScope.TabletopMode?.getMode?.() !== "tabletop"
+      || globalScope.TabletopMode.getPanel() !== "resources" || scheduledRender) return;
     scheduledRender = requestAnimationFrame(() => {
       scheduledRender = 0;
       render();
@@ -980,8 +984,10 @@
     elements.customForm.addEventListener("submit", handleCustomResourceSubmit);
     document.addEventListener("change", scheduleRender);
     globalScope.addEventListener("tabletopstatechange", scheduleRender);
+    globalScope.addEventListener("spellmanagementchange", scheduleRender);
+    globalScope.addEventListener("modechange", scheduleRender);
     globalScope.addEventListener("tabletop-panelchange", event => {
-      if (event.detail?.panel === "resources" || event.detail?.panel === "spells") scheduleRender();
+      if (event.detail?.panel === "resources") scheduleRender();
     });
 
     [document.getElementById("tab-basic"), document.getElementById("tab-spells")]

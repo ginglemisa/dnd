@@ -323,7 +323,7 @@
     const spell = entry.spell || globalScope.SpellCatalog?.getSpell?.(entry.spellId);
     const metadata = globalScope.SpellCatalog?.getCastMetadata?.(spell?.spellId);
     if (!spell || spell.level < 1 || !metadata) return buildSpellCastOptions({ baseLevel: 1 });
-    const discoveredFreeControls = globalScope.getSpellFreeUseControls?.(entry.spellSelect) || [];
+    const discoveredFreeControls = globalScope.getSpellFreeUseControls?.(entry) || [];
     const latestFreeControls = discoveredFreeControls.length
       ? discoveredFreeControls
       : Array.isArray(entry.freeUseControls) ? entry.freeUseControls : [];
@@ -552,6 +552,7 @@
 
   let undoSnapshot = null;
   let initialized = false;
+  let scheduledRender = 0;
   let isUpdatingHp = false;
   let currentMode = "sheet";
   let currentPanel = "overview";
@@ -568,6 +569,19 @@
   );
 
   const elements = {};
+
+  // Canonical character controls can move into the character-features dialog.
+  // Search fields, notes and operation drafts do not change tabletop rules.
+  function isCharacterFieldEvent(event) {
+    const field = event?.target;
+    return Boolean(field?.matches?.("input[id], select[id]")
+      && field.dataset.stateTransient !== "true"
+      && field.type !== "file"
+      && (field.id === "auto-calculate-key-stats-toggle"
+        || field.id === "druid-natural-recovery-used"
+        || field.closest(".tab-content, #character-features-mount, #character-features-modal, #classFeatures"))
+      && !field.closest('form[role="search"], #spell-search-results, #equipment-search-results, .money-section, .money-modal'));
+  }
 
   function getTabletopActionPreferencesState() {
     if (tabletopActionPreferences) return tabletopActionPreferences;
@@ -1096,12 +1110,12 @@
     const value = id => document.getElementById(id)?.value || "";
     const slots = getCanonicalSpellSlotGroups().map(group => ({ ...group,
       controls: group.controls.filter(control => !control.disabled) }));
-    const freeSpellUses = Array.from(document.querySelectorAll('.spell-entry select[id*="-spell-"]')).flatMap(select => {
-      const source = globalScope.getFreeSpellUseSpec?.(select);
-      if (!select.value || !source) return [];
-      const ids = (globalScope.getSpellFreeUseControls?.(select) || [])
+    const freeSpellUses = (globalScope.SpellManagement?.getEntries({ availableOnly: true }) || []).flatMap(entry => {
+      const source = globalScope.getFreeSpellUseSpec?.(entry);
+      if (!entry.spellId || !source) return [];
+      const ids = (globalScope.getSpellFreeUseControls?.(entry) || [])
         .map(item => item.canonical.id).filter(id => id !== "druid-natural-recovery-used");
-      return ids.length ? [{ key: source.key, label: select.selectedOptions[0]?.textContent || "免費施法", ids }] : [];
+      return ids.length ? [{ key: source.key, label: globalScope.SpellCatalog?.getDisplayName?.(entry.spellId) || "免費施法", ids }] : [];
     });
     const options = {
       className: value("class"), race: value("race"), level: value("level"),
@@ -1233,6 +1247,7 @@
     combatState.builtInResourceUsage = usage;
     combatState.temporaryHp = temporaryHp;
     if (kind === "longRest") {
+      combatState.concentrationSpellId = "";
       combatState.exhaustionLevel = Math.max(0, combatState.exhaustionLevel - 1);
       if (combatState.druid) {
         combatState.druid.formKey = "";
@@ -1407,6 +1422,7 @@
   }
 
   function getDruidForm() {
+    if (!combatState.druid?.formKey) return null;
     const context = getDruidContext();
     const form = globalScope.DruidBeastForms?.find(item => item.key === context.druid.formKey);
     if (context.incapacitated || !globalScope.isDruidBeastAllowed?.(form, context.level)) return null;
@@ -2967,7 +2983,7 @@ function getRogueReliableTalentEntry() {
     );
   }
 
-  function render() {
+  function synchronizeCharacterState() {
     if (!initialized) {
       return;
     }
@@ -2990,11 +3006,40 @@ function getRogueReliableTalentEntry() {
       announce("已穿著護甲，法師護甲結束。");
       emitStateChange();
     }
+  }
+
+  function renderDisplay() {
+    if (!initialized || currentMode !== "tabletop") return;
     renderSummary();
     renderKeyStats();
     renderHealth();
     renderConditions();
     renderDeathSaves();
+  }
+
+  function render() {
+    synchronizeCharacterState();
+    if (scheduledRender) {
+      globalScope.cancelAnimationFrame(scheduledRender);
+      scheduledRender = 0;
+    }
+    renderDisplay();
+  }
+
+  function scheduleRender() {
+    if (!initialized || currentMode !== "tabletop" || scheduledRender) return;
+    scheduledRender = globalScope.requestAnimationFrame(() => {
+      scheduledRender = 0;
+      renderDisplay();
+    });
+  }
+
+  function handleCharacterFieldChange(event) {
+    if (!isCharacterFieldEvent(event)) return;
+    // Keep state correction synchronous for immediate saves and API reads;
+    // only the mirrored tabletop DOM waits until the next frame.
+    synchronizeCharacterState();
+    scheduleRender();
   }
 
   function applyState(data) {
@@ -5181,18 +5226,19 @@ function getRogueReliableTalentEntry() {
 
     document.addEventListener(
       "input",
-      render
+      handleCharacterFieldChange
     );
 
     document.addEventListener(
       "change",
-      render
+      handleCharacterFieldChange
     );
 
     globalScope.addEventListener(
       "dicerollmodechange",
-      render
+      scheduleRender
     );
+    globalScope.addEventListener("spellmanagementchange", scheduleRender);
   }
 
   function init() {
@@ -5237,6 +5283,7 @@ function getRogueReliableTalentEntry() {
     recordDeathSaveRoll,
 
     refresh: render,
+    isCharacterFieldEvent,
     syncSpellPanelAvailability,
     setMode: applyModeVisibility,
     getMode: () => currentMode,

@@ -22,6 +22,7 @@ async function main() {
   try {
     browser = await chromium.launch({ headless: true, ...(process.env.DND_BROWSER_CHANNEL ? { channel: process.env.DND_BROWSER_CHANNEL } : {}) });
     const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+    await page.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
     const errors = [];
     page.on("pageerror", error => errors.push(String(error)));
     await page.goto(`http://127.0.0.1:${server.address().port}/index.html?analytics=owner`);
@@ -40,9 +41,11 @@ async function main() {
       const context = () => TabletopMode.getRestContext();
       const rest = (kind, choices = {}) => TabletopMode.commitRest(kind, choices, context().token);
       const prepare = (className, level = 8, race = "human") => {
-        field("class", className); field("level", level); field("race", race);
-        for (const [id, value] of Object.entries({ con: 14, wis: 16, cha: 18, hp: 0 })) field(id, value);
-        TabletopMode.applyState({});
+        SpellManagement.withRestoreBatch(() => {
+          field("class", className); field("level", level); field("race", race);
+          for (const [id, value] of Object.entries({ con: 14, wis: 16, cha: 18, hp: 0 })) field(id, value);
+          TabletopMode.applyState({});
+        });
       };
       const spendSlots = () => TabletopMode.getCanonicalSpellSlotGroups().forEach(group => group.controls.forEach(control => { document.getElementById(control.id).checked = true; }));
       const shortCases = [
@@ -66,7 +69,9 @@ async function main() {
         const specs = context().specs.filter(spec => spec.target.type === "builtIn");
         specs.forEach(spec => TabletopMode.setBuiltInResourceSpent(spec.key, spec.maximum, spec.maximum));
         spendSlots(); field("lifedicen", 0);
+        TabletopMode.setConcentrationSpellId("entangle");
         check(rest("longRest").ok, `${className}: long rest`);
+        check(state().concentrationSpellId === "", `${className}: long rest ends concentration`);
         check(specs.every(spec => TabletopMode.getBuiltInResourceSpent(spec.key) === 0), `${className}: all built-in pools refilled`);
         check(context().slots.every(group => group.controls.every(control => !control.checked)), `${className}: slots refilled`);
         check(context().hitDice === 8 && context().hp === context().maximumHp, `${className}: HP and all dice restored`);
@@ -81,11 +86,11 @@ async function main() {
       prepare("ranger");
       document.getElementById("ranger-hunters-prey-horde-breaker").checked = true;
       document.getElementById("ranger-defensive-tactics-multiattack-defense").checked = true;
-      const prepared = Array.from(document.querySelectorAll('.spell-entry select[id*="-spell-"]'), control => control.value);
+      const prepared = SpellManagement.getEntries().map(entry => entry.spellId);
       check(rest("shortRest").ok && rest("longRest").ok, "ranger rests complete");
       check(document.getElementById("ranger-hunters-prey-horde-breaker").checked
         && document.getElementById("ranger-defensive-tactics-multiattack-defense").checked, "rest preserves hunter choices");
-      check(JSON.stringify(Array.from(document.querySelectorAll('.spell-entry select[id*="-spell-"]'), control => control.value)) === JSON.stringify(prepared), "rest preserves prepared spell selections");
+      check(JSON.stringify(SpellManagement.getEntries().map(entry => entry.spellId)) === JSON.stringify(prepared), "rest preserves prepared spell selections");
       check(context().optionGroups.length === 2, "both hunter choices available at level eight");
       check(rest("shortRest", { options: { "ranger-hunters-prey": ["ranger-hunters-prey-colossus-slayer"],
         "ranger-defensive-tactics": ["ranger-defensive-tactics-escape-the-horde"] } }).ok, "short rest can replace hunter choices");
@@ -107,7 +112,7 @@ async function main() {
         && document.getElementById("high-elf-cantrip").value === oldCantrip, "high elf cantrip requires long rest");
       check(rest("longRest", { options: { "high-elf-cantrip": "mage-hand" } }).ok
         && document.getElementById("high-elf-cantrip").value === "mage-hand", "high elf cantrip replaced on long rest");
-      check(Array.from(document.querySelectorAll('.spell-entry select[id*="-spell-"]')).some(select => select.value === "mage-hand"), "high elf spell source synchronizes");
+      check(SpellManagement.getEntries({ availableOnly: true }).some(entry => entry.spellId === "mage-hand"), "high elf spell source synchronizes");
       const elfSaved = JSON.parse(JSON.stringify(collectStateObject()));
       const elfShare = collectShareState();
       field("high-elf-cantrip", "prestidigitation"); applyStateObject(elfSaved);
@@ -201,11 +206,12 @@ async function main() {
       document.getElementById("druid-natural-recovery-used").checked = true;
       const stateBefore = state();
       check(stateBefore.druid.formKey === "wolf" && stateBefore.concentrationSpellId === "entangle", "druid rest starts in active form with concentration");
+      check(rest("shortRest").ok && state().concentrationSpellId === "entangle", "short rest retains concentration");
       check(rest("longRest").ok, "druid long rest");
       check(!state().druid.formKey && !state().druid.companion, "long rest ends form and companion");
       check(state().druid.knownForms[0] === "wolf" && state().druid.beastUsed[0] === "octopus:ink", "known forms and daily beast tracking retained");
       check(state().temporaryHp === 0 && state().exhaustionLevel === 2, "temporary HP cleared and exhaustion reduced once");
-      check(state().concentrationSpellId === "entangle" && JSON.stringify(state().activeConditions) === JSON.stringify(stateBefore.activeConditions), "concentration and conditions retained");
+      check(state().concentrationSpellId === "" && JSON.stringify(state().activeConditions) === JSON.stringify(stateBefore.activeConditions), "long rest ends concentration and retains conditions");
       check(state().customResources[0].current === 1 && !document.getElementById("druid-natural-recovery-used").checked, "custom note not parsed; canonical free use restored");
       check(document.getElementById("druid-land").value === "arid", "land selection retained");
       const savedRest = JSON.parse(JSON.stringify(collectStateObject()));
@@ -213,7 +219,7 @@ async function main() {
       check(!share.builtInResourceUsage && !share.temporaryHp && !share.druid.formKey, "share retains existing combat-state omission policy");
       TabletopMode.applyState({ temporaryHp: 90, exhaustionLevel: 5 });
       applyStateObject(savedRest);
-      check(state().temporaryHp === 0 && state().exhaustionLevel === 2 && !state().druid.companion, "JSON restores rested state");
+      check(state().temporaryHp === 0 && state().exhaustionLevel === 2 && !state().druid.companion && !state().concentrationSpellId, "JSON restores rested state");
 
       prepare("fighter", 8, "orc"); field("feat-0", "最佳旅伴");
       TabletopMode.applyState({ temporaryHp: 20 });
@@ -252,21 +258,33 @@ async function main() {
 
     const dialog = page.getByRole("dialog");
     await page.evaluate(() => {
+      const original = AppDialog;
+      window.restCompletionNotices = [];
+      window.AppDialog = { ...original, notify(message, options) {
+        if (message === "短休完成。") restCompletionNotices.push({ dialogOpen: Boolean(document.querySelector(".app-dialog")) });
+        return original.notify(message, options);
+      } };
+    });
+    await page.evaluate(() => SpellManagement.withRestoreBatch(() => {
       restTestField("class", "ranger"); restTestField("level", 7); restTestField("race", "human");
       document.getElementById("ranger-defensive-tactics-multiattack-defense").checked = true;
       TabletopMode.setMode("tabletop"); TabletopMode.setPanel("resources");
-    });
+    }));
     await page.locator('[data-rest="shortRest"]').click();
     await dialog.getByLabel("衝出重圍", { exact: true }).check();
     assert.equal(await dialog.getByLabel("多重防禦", { exact: true }).isChecked(), false, "modal choices stay exclusive");
     await page.keyboard.press("Escape");
     assert.equal(await page.locator("#ranger-defensive-tactics-multiattack-defense").isChecked(), true, "cancel keeps canonical hunter selection");
+    assert.equal(await page.evaluate(() => restCompletionNotices.length), 0, "cancel does not report short-rest completion");
     await page.locator('[data-rest="shortRest"]').click();
     await dialog.getByLabel("衝出重圍", { exact: true }).check();
     await dialog.getByRole("button", { name: "完成短休", exact: true }).click();
     await page.getByRole("heading", { name: "短休：生命骰", exact: true }).waitFor();
     assert.equal(await page.locator("#ranger-defensive-tactics-escape-the-horde").isChecked(), true);
+    assert.equal(await page.evaluate(() => restCompletionNotices.length), 0, "completion toast waits while hit-dice dialog is open");
     await dialog.getByRole("button", { name: "結束", exact: true }).click();
+    await page.waitForFunction(() => restCompletionNotices.length === 1);
+    assert.equal(await page.evaluate(() => restCompletionNotices[0].dialogOpen), false, "finish shows completion only after closing");
     await page.locator('[data-rest="longRest"]').click();
     await dialog.getByLabel("多重防禦", { exact: true }).check();
     await dialog.getByRole("button", { name: "完成長休", exact: true }).click();
@@ -276,14 +294,24 @@ async function main() {
     await page.getByRole("heading", { name: "短休：生命骰", exact: true }).waitFor();
     assert.equal(await dialog.getByRole("button", { name: "擲骰", exact: true }).isDisabled(), true, "full HP prevents spending dice");
     assert.equal(await dialog.getByRole("button", { name: "結束", exact: true }).evaluate(el => el === document.activeElement), true, "finished healing focuses exit");
+    assert.equal(await page.evaluate(() => restCompletionNotices.length), 1, "no new completion toast inside full-HP dialog");
     await page.keyboard.press("Escape");
-    await page.evaluate(() => {
+    await page.waitForFunction(() => restCompletionNotices.length === 2);
+    assert.equal(await page.evaluate(() => restCompletionNotices[1].dialogOpen), false, "Escape shows completion only after closing");
+    await page.locator('[data-rest="shortRest"]').click();
+    await dialog.getByRole("button", { name: "完成短休", exact: true }).click();
+    await page.getByRole("heading", { name: "短休：生命骰", exact: true }).waitFor();
+    assert.equal(await page.evaluate(() => restCompletionNotices.length), 2, "completion still waits before header close");
+    await dialog.getByRole("button", { name: "關閉訊息", exact: true }).click();
+    await page.waitForFunction(() => restCompletionNotices.length === 3);
+    assert.equal(await page.evaluate(() => restCompletionNotices[2].dialogOpen), false, "header close shows completion only after closing");
+    await page.evaluate(() => SpellManagement.withRestoreBatch(() => {
       restTestField("class", "wizard"); restTestField("level", 8); restTestField("race", "elf"); restTestField("elf-lineage", "high_elf");
       restTestField("feat-0", "最佳旅伴"); restTestField("hp", 2); restTestField("lifedicen", 3);
-      TabletopMode.applyState({ exhaustionLevel: 2, temporaryHp: 9 });
+      TabletopMode.applyState({ exhaustionLevel: 2, temporaryHp: 9, concentrationSpellId: "entangle" });
       TabletopMode.setMode("tabletop"); TabletopMode.setPanel("resources");
       TabletopMode.getCanonicalSpellSlotGroups().forEach(group => group.controls.forEach(control => { document.getElementById(control.id).checked = true; }));
-    });
+    }));
     const beforeCancel = await page.evaluate(() => JSON.stringify(collectStateObject()));
     await page.locator('[data-rest="longRest"]').click();
     assert.match(await dialog.innerText(), /傳思 4 小時/);
@@ -322,6 +350,7 @@ async function main() {
     await page.waitForFunction(() => window.TabletopMode?.getBuiltInResourceSpent("wizard-arcane-recovery") === 1);
     assert.equal(await page.locator("#lifedicen").inputValue(), "2", "rest dice survive autosave");
     assert.equal(await page.evaluate(() => TabletopMode.collectState().temporaryHp), 11, "companion survives autosave");
+    assert.equal(await page.evaluate(() => TabletopMode.getConcentrationSpellId()), "entangle", "short-rest concentration survives autosave");
     await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("resources"); });
     await page.setViewportSize({ width: 360, height: 800 });
     await page.locator('[data-rest="longRest"]').click();
@@ -335,12 +364,14 @@ async function main() {
     assert.equal(await page.locator("#high-elf-cantrip").inputValue(), "mage-hand");
     assert.equal(await page.evaluate(() => TabletopMode.collectState().temporaryHp), 14);
     assert.equal(await page.evaluate(() => TabletopMode.collectState().exhaustionLevel), 1);
+    assert.equal(await page.evaluate(() => TabletopMode.getConcentrationSpellId()), "", "confirmed long rest clears concentration");
     assert.equal(await page.evaluate(() => TabletopMode.getBuiltInResourceSpent("wizard-arcane-recovery")), 0);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, "mobile resources do not overflow");
     assert.equal(await page.locator('[data-rest="longRest"]').evaluate(el => el === document.activeElement), true, "focus survives resource redraw");
     await page.waitForFunction(() => JSON.parse(dndStorage.getItem(AUTO_SAVE_KEY) || "{}")["high-elf-cantrip"] === "mage-hand");
     await page.reload();
     await page.waitForFunction(() => document.getElementById("high-elf-cantrip")?.value === "mage-hand");
+    assert.equal(await page.evaluate(() => TabletopMode.getConcentrationSpellId()), "", "cleared concentration survives autosave");
     await page.evaluate(() => {
       TabletopMode.setMode("tabletop"); TabletopMode.setPanel("resources");
       for (const [id, value] of [["hp", "1"], ["lifedicen", "3"]]) {

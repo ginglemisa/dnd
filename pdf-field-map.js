@@ -1188,6 +1188,17 @@
   }
 
   function buildSpellRows(state) {
+    if (state.__spellManagement?.version === 2 && Array.isArray(state.__spellManagement.entries)) {
+      return state.__spellManagement.entries.flatMap((entry, idx) => {
+        const spellId = resolveStateSpellId(entry.spellId);
+        const spell = getCanonicalSpell(spellId);
+        if (!spell || spell.level > 4) return [];
+        if (typeof globalScope.SpellManagement?.isEntryAvailable === 'function'
+          && !globalScope.SpellManagement.isEntryAvailable(entry, { state })) return [];
+        return [{ idx, level: spell.level, classKey: entry.spellClass || state.class || '', spellId }];
+      }).sort((a, b) => a.level - b.level || a.idx - b.idx);
+    }
+    // Legacy saved characters remain readable by the standalone PDF mapper.
     const rows = [];
     const areaConfig = [
       { area: 'cantrips-area', level: 0 },
@@ -1431,7 +1442,8 @@ function isWeaponRowEmpty(payload, slot) {
 
   function getSelectedFeatEntries(state) {
     return Object.keys(state)
-      .filter((key) => /^feat-\d+$/.test(key) || /^derived-feat-(?:background|fighting-style-[a-z]+)$/.test(key))
+      // Match source rows only, excluding feat-choice mirrors and Magic Initiate subfields.
+      .filter((key) => /^feat-\d+$/.test(key) || /^derived-feat-(?:background|human-origin|fighting-style-[a-z]+(?:-\d+)?|[a-z]+-level-\d+|lessons-\d+)$/.test(key))
       .sort((a, b) => {
         const aDerived = a.startsWith('derived-feat-') ? 0 : 1;
         const bDerived = b.startsWith('derived-feat-') ? 0 : 1;
@@ -1758,7 +1770,10 @@ function isWeaponRowEmpty(payload, slot) {
     }
 
     const spellNotesText = normalizeText(state['spell-notes']);
-    if (options.includeSpellbook !== false && (state.class === 'wizard' || state['manual-spell-management'] === true) && Array.isArray(state.__wizardSpellbook?.spellIds)) {
+    const showWizardSpellbook = state.__spellManagement?.version === 2
+      ? state.class === 'wizard' || Boolean(state.__wizardSpellbook?.spellIds?.length)
+      : state.class === 'wizard' || state['manual-spell-management'] === true;
+    if (options.includeSpellbook !== false && showWizardSpellbook && Array.isArray(state.__wizardSpellbook?.spellIds)) {
       const bookSpells = [...new Set(state.__wizardSpellbook.spellIds)].map(getCanonicalSpell).filter(Boolean);
       if (bookSpells.length) extraNotes.push(`法術書：${bookSpells.map(spell => `${spell.nameZh}(${spell.level}環)${getSpellCatalog()?.isRitual(spell) ? '*' : ''}`).join('、')}。* 為儀式法術。`);
     }

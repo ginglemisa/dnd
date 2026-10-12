@@ -710,7 +710,7 @@
   });
 
   // 公開相容入口；索引與其餘輔助函式保留於模組內。
-  Object.assign(globalScope, { searchAllSpells, clearSpellSearchResults, applyEquipmentFilter, openEquipmentDetailByName });
+  Object.assign(globalScope, { searchAllSpells, clearSpellSearchResults, openSpellBrowser, applyEquipmentFilter, openEquipmentDetailByName });
 
   // 保留法術索引的載入時預建；裝備說明在 DOMContentLoaded 產生，仍延後到搜尋時建立。
   if (document.readyState === "complete") {

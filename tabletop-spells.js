@@ -16,33 +16,29 @@
 
   function getSelectedSpellEntries() {
     if (!globalScope.SpellCatalog) return [];
-    return Array.from(document.querySelectorAll('#tab-spells .spell-entry select[id*="-spell-"]'))
-      .flatMap(select => {
-        const spellId = select.value || "";
+    return (globalScope.SpellManagement?.getEntries({ availableOnly: true }) || [])
+      .flatMap(entry => {
+        const spellId = entry.spellId || "";
         const spell = globalScope.SpellCatalog.getSpell(spellId);
         if (!spell) return [];
-        const row = select.closest(".spell-entry");
-        if (globalScope.SpellManagement && !globalScope.SpellManagement.isRowAvailable(row)) return [];
-        const classSelect = row?.querySelector('select[id*="-class-"]');
         const source = typeof globalScope.getPickedSpellSourceTag === "function"
-          ? globalScope.getPickedSpellSourceTag(row)
+          ? globalScope.getPickedSpellSourceTag(entry)
           : "";
-        const spellSource = row?.dataset.spellSource || "manual";
-        const sourceClassLabel = classSelect?.selectedOptions?.[0]?.textContent?.trim() || "";
-        const freeUseControls = globalScope.getSpellFreeUseControls?.(select) || [];
+        const spellSource = entry.spellSource || "manual";
+        const freeUseControls = globalScope.getSpellFreeUseControls?.(entry) || [];
         return [{
+          ...entry,
           spellId,
           spell,
-          spellSelect: select,
           spellSource,
-          spellClass: row?.dataset.spellClass || classSelect?.value || "",
-          source: source || (row?.dataset.spellSource ? "能力" : "職業"),
-          sourceLabel: row?.dataset.sourceLabel || (sourceClassLabel ? `來源：${sourceClassLabel}法表` : "來源：職業法表"),
-          sourceKey: row?.dataset.sourceKey || select.id,
-          castMode: row?.dataset.castMode || (spell.level === 0 ? "cantrip" : "slot"),
-          spellUse: row?.dataset.castMode || (spell.level === 0 ? "cantrip" : "slot"),
-          fixedCastLevel: Number.parseInt(row?.dataset.fixedCastLevel || "", 10) || spell.level,
-          ritualAllowed: row?.dataset.ritualAllowed === "true" || spellSource === "manual",
+          spellClass: entry.spellClass || "",
+          source: source || (entry.spellSource ? "能力" : "職業"),
+          sourceLabel: entry.sourceLabel || "來源：職業法表",
+          sourceKey: entry.sourceKey,
+          castMode: entry.castMode || entry.spellUse || (spell.level === 0 ? "cantrip" : "slot"),
+          spellUse: entry.spellUse || entry.castMode || (spell.level === 0 ? "cantrip" : "slot"),
+          fixedCastLevel: Number.parseInt(entry.fixedCastLevel || "", 10) || spell.level,
+          ritualAllowed: entry.ritualAllowed === true || entry.ritualAllowed === "true" || spellSource === "manual",
           freeUseControls
         }];
       }).concat(globalScope.Spellbook?.getRitualEntries() || []);
@@ -53,7 +49,7 @@
   }
 
   function createSpellUseMirrors(entry) {
-    const useControls = globalScope.getSpellFreeUseControls?.(entry.spellSelect) || [];
+    const useControls = globalScope.getSpellFreeUseControls?.(entry) || [];
     if (!useControls.length) return null;
 
     const controls = createElement("span", "tabletop-spell-card__uses");
@@ -142,8 +138,15 @@
     const focused = elements.selectedSpells.contains(document.activeElement) ? document.activeElement : null;
     const focusedUseId = focused?.dataset.spellUseId;
     const focusedSourceKey = focused?.dataset.spellSourceKey;
-    const groups = LEVEL_LABELS.flatMap((label, level) => {
-      const spells = entries.filter(entry => entry.spell.level === level);
+    const spellGroups = LEVEL_LABELS.map((label, level) => ({
+      label,
+      spells: entries.filter(entry => entry.spellSource !== "wizard-spellbook" && entry.spell.level === level)
+    }));
+    spellGroups.splice(1, 0, {
+      label: "儀式",
+      spells: entries.filter(entry => entry.spellSource === "wizard-spellbook")
+    });
+    const groups = spellGroups.flatMap(({ label, spells }) => {
       if (!spells.length) return [];
       const section = createElement("section", "tabletop-spell-level");
       section.appendChild(createElement("h4", "", label));
@@ -1108,6 +1111,13 @@
 
   function render() {
     if (!initialized) return;
+    if (globalScope.TabletopMode.getMode() !== "tabletop") return;
+    const panel = globalScope.TabletopMode.getPanel();
+    if (panel !== "overview" && panel !== "spells") return;
+    if (panel === "overview") {
+      renderConcentrationSummaries();
+      return;
+    }
     const entries = getSelectedSpellEntries();
     const emptyMessage = getEmptyMessage(entries);
     elements.empty.hidden = !emptyMessage;
@@ -1119,8 +1129,12 @@
     renderConcentrationSummaries();
   }
 
-  function scheduleRender() {
-    if (scheduledRender) cancelAnimationFrame(scheduledRender);
+  function scheduleRender(event) {
+    if ((event?.type === "input" || event?.type === "change")
+      && !globalScope.TabletopMode.isCharacterFieldEvent(event)) return;
+    if (globalScope.TabletopMode?.getMode?.() !== "tabletop"
+      || !["overview", "spells"].includes(globalScope.TabletopMode.getPanel())
+      || scheduledRender) return;
     scheduledRender = requestAnimationFrame(() => {
       scheduledRender = 0;
       render();
@@ -1201,19 +1215,22 @@
     document.addEventListener("input", scheduleRender);
     document.addEventListener("change", scheduleRender);
     globalScope.addEventListener("tabletopstatechange", scheduleRender);
+    globalScope.addEventListener("spellmanagementchange", scheduleRender);
     globalScope.addEventListener("dicerollmodechange", scheduleRender);
+    globalScope.addEventListener("modechange", scheduleRender);
     globalScope.addEventListener("tabletop-panelchange", event => {
       if (event.detail?.panel === "overview" || event.detail?.panel === "spells") scheduleRender();
     });
 
-    const spellPanel = document.getElementById("tab-spells");
-    if (spellPanel && globalScope.MutationObserver) {
-      new MutationObserver(scheduleRender).observe(spellPanel, {
+    if (globalScope.MutationObserver) {
+      const observer = new MutationObserver(scheduleRender);
+      ["spell-slot-management-wrap"]
+        .map(id => document.getElementById(id)).filter(Boolean).forEach(root => observer.observe(root, {
         childList: true,
         subtree: true,
         attributes: true,
         characterData: true
-      });
+      }));
     }
     render();
   }

@@ -123,6 +123,7 @@ async function main() {
   try {
     browser = await chromium.launch({ headless: true, ...(process.env.DND_BROWSER_CHANNEL ? { channel: process.env.DND_BROWSER_CHANNEL } : {}) });
     const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+    await page.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
     const errors = [];
     page.on("pageerror", error => errors.push(String(error)));
     await page.goto(`http://127.0.0.1:${server.address().port}/index.html?analytics=owner`);
@@ -132,6 +133,7 @@ async function main() {
     await page.selectOption("#class", "druid");
     await page.selectOption("#level", "8");
     await page.selectOption("#race", "human");
+    await page.selectOption("#background", "soldier");
     await page.selectOption("#druid-land", "arid");
     await page.evaluate(() => {
       for (const [id, value] of Object.entries({ str: "8", dex: "14", con: "14", int: "12", wis: "18", cha: "10", hp: "40" })) {
@@ -198,9 +200,8 @@ async function main() {
       check(run("recover", { slotIds: [levelOne] }).ok && !document.getElementById(levelOne).checked, "recovery restores selected slot");
       check(c().remaining === 1, "natural recovery must not alter wild shape uses");
       check(!document.getElementById("druid-natural-recovery-used").checked, "recovery independent of free casting");
-      const landSelect = Array.from(document.querySelectorAll('.spell-entry[data-source-key^="subclass-druid-"] select[id*="-spell-"]')).find(select => SpellCatalog.getSpell(select.value)?.level > 0);
-      const landRow = landSelect.closest(".spell-entry");
-      const entry = { spellId: landSelect.value, spellSelect: landSelect, sourceKey: landRow.dataset.sourceKey };
+      const entry = SpellManagement.getEntries({ availableOnly: true })
+        .find(entry => entry.sourceKey.startsWith("subclass-druid-") && SpellCatalog.getSpell(entry.spellId)?.level > 0);
       const free = TabletopMode.getSpellCastOptions(entry).methods.find(method => method.id === "free");
       check(Boolean(free), "natural recovery free method available");
       check(TabletopMode.commitSpellCastResource(entry, { method: "free", resourceId: free.resourceId }).ok, "free cast");
@@ -325,11 +326,7 @@ async function main() {
     }
 
     const flameModes = await page.evaluate(() => {
-      const select = document.querySelector('#cantrips-area .spell-entry:not([data-spell-source]) select[id*="-spell-"]');
-      const row = select.closest(".spell-entry");
-      const classSelect = row.querySelector('select[id*="-class-"]');
-      classSelect.value = "druid"; classSelect.dispatchEvent(new Event("change", { bubbles: true }));
-      select.value = "produce-flame"; select.dispatchEvent(new Event("change", { bubbles: true }));
+      if (!SpellManagement.addPlayerSpell("produce-flame", { spellClass: "druid" })) throw new Error("Produce Flame must prepare through the shared spell API");
       return ["action", "bonus", "reaction"].map(mode => ActionPanel.getTabletopOptions(mode).filter(option => option.spellId === "produce-flame").length);
     });
     assert.deepEqual(flameModes, [1, 1, 0], "produce flame appears in special and bonus, once per source");

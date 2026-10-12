@@ -409,11 +409,12 @@
   }
 
   function render() {
-    if (!api()) return;
+    if (!api() || api().getMode() !== "tabletop") return;
     const c = context(), beast = form();
     for (const id of ["tabletop-druid-overview", "tabletop-druid-actions", "tabletop-druid-resources"]) {
       const mount = document.getElementById(id);
       if (!mount) continue;
+      if (mount.closest("[data-tabletop-panel]")?.dataset.tabletopPanel !== api().getPanel()) continue;
       mount.hidden = c.level < 2;
       mount.replaceChildren();
       if (c.level < 2) continue;
@@ -440,8 +441,10 @@
     }
   }
 
-  function scheduleRender() {
-    if (scheduled) cancelAnimationFrame(scheduled);
+  function scheduleRender(event) {
+    if ((event?.type === "input" || event?.type === "change")
+      && !api()?.isCharacterFieldEvent(event)) return;
+    if (api()?.getMode() !== "tabletop" || scheduled) return;
     scheduled = requestAnimationFrame(() => { scheduled = 0; render(); });
   }
 
@@ -449,5 +452,5 @@
   document.addEventListener("DOMContentLoaded", render);
   document.addEventListener("input", scheduleRender);
   document.addEventListener("change", scheduleRender);
-  for (const event of ["tabletopstatechange", "tabletopmodechange", "dicerollmodechange"]) globalScope.addEventListener(event, scheduleRender);
+  for (const event of ["tabletopstatechange", "tabletopmodechange", "modechange", "tabletop-panelchange", "dicerollmodechange"]) globalScope.addEventListener(event, scheduleRender);
 })(window);
