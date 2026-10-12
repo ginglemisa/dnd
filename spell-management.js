@@ -1,265 +1,404 @@
 (function attachSpellManagement(globalScope) {
   "use strict";
+  const VERSION = 2;
+  const MEMORY_KEY = "dnd.spellManagementMemories.v1";
+  const NOTICE_KEY = "dnd.spellManagementClassNoticeDisabled.v1";
+  const CLASS_IDS = new Set(["barbarian", "bard", "cleric", "druid", "fighter", "monk", "paladin", "ranger", "rogue", "sorcerer", "warlock", "wizard"]);
+  let manual = false, players = [], sources = [], freeUses = {}, memories = null;
+  let ownerClass = "", activeClass = "", activeLevel = "", activeBackground = "", activeRace = "";
+  let switching = false, replaying = false, restoring = false, batchDepth = 0;
+  let pendingData = null, migrationPending = false, migrationNotice = false, hooks = {};
+  const clone = value => JSON.parse(JSON.stringify(value));
+  const field = id => document.getElementById(id);
+  const currentClass = () => field("class")?.value || "";
+  const currentLevel = () => field("level")?.value || "";
+  const inShareMode = () => globalScope.SHARE_MODE === true;
+  const isRestoring = () => restoring || batchDepth > 0 || hooks.isRestoring?.() === true;
+  const catalog = () => globalScope.SpellCatalog;
+  const sourceKeyOf = entry => String(entry?.sourceKey || entry?.key || "");
+  const safeKey = value => String(value).replace(/[^A-Za-z0-9_-]/g, char => `u${char.codePointAt(0).toString(16)}`);
+  const freeUseId = (key, index) => `free-spell-use-${safeKey(key)}-${Number(index) + 1}`;
+  const entryKey = entry => `${entry?.spellId || ""}\u0000${sourceKeyOf(entry)}\u0000${entry?.spellClass || ""}`;
 
-  let manual = false;
-  let switching = false;
-  let rebuilding = false;
-  let reconciling = false;
-  const configs = () => globalScope.getSpellAreaConfigs();
-  const spellSelect = row => row.querySelector("select[id*='-spell-']");
-  const classSelect = row => row.querySelector("select[id*='-class-']");
-  const areaRows = id => Array.from(document.querySelectorAll(`#${id} .spell-entry`));
-  const ringOf = row => configs().find(area => area.id === row.parentElement?.id)?.level;
-  const classLabel = value => Array.from(document.getElementById("class")?.options || []).find(option => option.value === value)?.textContent || value;
-
-  function captureRows() {
-    return configs().map(({ id }) => ({ id, rows: areaRows(id).map(row => {
-      const item = globalScope.captureSpellRowState(row);
-      if (row.dataset.spellSource) {
-        const classes = globalScope.SpellCatalog.getClassIds(item.spellValue);
-        if (!classes.includes(item.classValue)) item.classValue = row.dataset.spellClass || classes[0] || "";
-      }
-      return { classValue: item.classValue, spellValue: item.spellValue };
-    }) }));
+  function normalizeEntry(value) {
+    if (!value || typeof value !== "object") return null;
+    let spellId = String(value.spellId ?? value.spellValue ?? "");
+    if (!spellId) return null;
+    spellId = catalog()?.getSpell(spellId) ? spellId : catalog()?.resolveSpellId?.(spellId) || spellId;
+    const spell = catalog()?.getSpell(spellId);
+    const rawLevel = value.ring === "cantrips" || value.level === "cantrips" ? 0 : Number(value.level ?? value.ring ?? spell?.level ?? 0);
+    const retained = clone(value);
+    delete retained.unavailable;
+    return { ...retained, spellId, spellClass: String(value.spellClass ?? value.classValue ?? ""),
+      level: spell?.level ?? (Number.isInteger(rawLevel) && rawLevel >= 0 ? rawLevel : 0),
+      spellSource: String(value.spellSource ?? value.source ?? ""), sourceKey: sourceKeyOf(value),
+      sourceLabel: String(value.sourceLabel ?? value.label ?? ""), spellUse: String(value.spellUse ?? value.castMode ?? "") };
   }
+  const normalizeEntries = value => {
+    const entries = Array.isArray(value) ? value : [];
+    globalScope.validateCharacterState?.({ __spellManagement: { entries } });
+    return entries.map(normalizeEntry).filter(Boolean);
+  };
 
-  // Current resource controls stay canonical while the manual list is editable.
-  function sourceUses() {
-    let area = document.getElementById("spell-source-use-state");
-    if (!area) {
-      area = document.createElement("div");
-      area.id = "spell-source-use-state";
-      area.hidden = true;
-      document.getElementById("tab-spells").appendChild(area);
-    }
-    return area;
+  function getLimits(options = {}) {
+    const className = options.className ?? options.class ?? currentClass();
+    const level = Number(options.level ?? currentLevel());
+    const accessible = globalScope.CharacterRules?.classCanAccessSpellLevel || globalScope.classCanAccessSpellLevel;
+    let maxLevel = 0;
+    for (let ring = 1; ring <= 4; ring += 1) if (accessible?.(className, level, ring)) maxLevel = ring;
+    const getPrepared = globalScope.CharacterRules?.getPreparedSpellLimit || globalScope.getPreparedSpellLimit;
+    return { cantrips: globalScope.getClassCantripLimit?.(className, level) || 0,
+      prepared: getPrepared?.(className, level) ?? 0, maxLevel };
   }
-
-  function collectClassFeatureCantrips() {
-    const choices = Array.from(sourceUses().querySelectorAll("[data-class-cantrip-key]"))
-      .map(input => [input.dataset.classCantripKey, input.value]);
-    document.querySelectorAll('.spell-entry[data-spell-source="class"]').forEach(row => {
-      if (row.dataset.sourceKey?.includes("-warrior-cantrip-")) choices.push([row.dataset.sourceKey, spellSelect(row)?.value || ""]);
-    });
-    return Object.fromEntries(choices);
-  }
-
-  function keepClassFeatureCantrips(choices) {
-    const area = sourceUses();
-    area.querySelectorAll("[data-class-cantrip-key]").forEach(input => input.remove());
-    Object.entries(choices || {}).forEach(([key, value]) => {
-      if (!/^class-(?:paladin-blessed|ranger-druidic)-warrior-cantrip-[12]$/.test(key) || typeof value !== "string") return;
-      const input = document.createElement("input");
-      input.type = "hidden";
-      input.dataset.classCantripKey = key;
-      input.dataset.stateTransient = "true";
-      input.value = value;
-      area.appendChild(input);
-    });
-  }
-
-  function option(value, label) {
-    const element = document.createElement("option");
-    element.value = value;
-    element.textContent = label;
-    return element;
-  }
-
-  function setOptions(select, entries, selected) {
-    const signature = JSON.stringify(entries);
-    if (select.dataset.spellOptions !== signature) {
-      select.replaceChildren(...entries.map(([value, label]) => option(value, label)));
-      select.dataset.spellOptions = signature;
-    }
-    select.value = selected;
-  }
-
-  function reasonFor(row, spellId = spellSelect(row)?.value || "") {
-    if (!spellId) return "";
-    const spell = globalScope.SpellCatalog.getSpell(spellId);
-    if (!spell) return "找不到此法術的資料，保留原法術編號供查看與刪除。";
-    const ring = ringOf(row);
-    if (spell.level !== (ring === "cantrips" ? 0 : Number(ring))) return "法術環階與此列不符。";
-    if (manual || row.dataset.spellSource) return "";
-    if (row.dataset.retainedSourceKey) return `${row.dataset.retainedSourceLabel || "原取得來源"}目前不適用。`;
-    const cls = document.getElementById("class")?.value || "";
-    if (!globalScope.SpellCatalog.getClassIds(spellId).includes(cls)) return "目前職業法表不包含此法術。";
-    if (!globalScope.classCanAccessSpellLevel(cls, Number(document.getElementById("level")?.value), spell.level)) return `目前等級尚未開放${globalScope.getSpellLevelLabel(ring)}。`;
+  const canManage = () => ["class", "level", "background", "race"].every(id => Boolean(field(id)?.value));
+  function getAvailabilityReason(value, options = {}) {
+    const entry = normalizeEntry(value);
+    if (!entry) return "尚未選擇法術。";
+    const state = options.state;
+    const mode = state ? (state.__spellManagement ? state.__spellManagement.manual === true : state["manual-spell-management"] === true) : manual;
+    const spell = catalog()?.getSpell(entry.spellId);
+    if (!spell) return "找不到此法術的資料，已保留原法術編號。";
+    if (mode || entry.spellSource) return "";
+    const automatic = state?.__spellManagement?.entries || sources;
+    if (automatic.some(item => item.spellSource && item.spellId === entry.spellId)) return "已由來源準備此法術；原玩家選擇仍保留。";
+    const cls = state?.class ?? currentClass(), level = Number(state?.level ?? currentLevel());
+    if (!catalog().getClassIds(entry.spellId).includes(cls)) return "目前職業法表不包含此法術。";
+    const accessible = globalScope.CharacterRules?.classCanAccessSpellLevel || globalScope.classCanAccessSpellLevel;
+    if (!level || !accessible?.(cls, level, spell.level)) return "目前等級尚未開放此法術環階。";
     return "";
   }
-
-  function setRowState(row, state = globalScope.captureSpellRowState(row)) {
-    if (row.dataset.spellSource) return;
-    const ring = ringOf(row);
-    const spellId = state.spellValue || "";
-    const reason = reasonFor(row, spellId);
-    let selectedClass = state.classValue || "";
-    if (!manual && !reason) selectedClass = globalScope.getAvailableSpellSourceClasses(ring)[0]?.value || "";
-    const classEntries = [["", "--職業--"], ...globalScope.getAvailableSpellSourceClasses(ring).map(item => [item.value, item.text])];
-    if (selectedClass && !classEntries.some(([value]) => value === selectedClass)) classEntries.push([selectedClass, classLabel(selectedClass)]);
-    setOptions(classSelect(row), classEntries, selectedClass);
-    const spells = globalScope.getClassSpells(selectedClass, ring);
-    const spellEntries = [["", "--法術--"], ...spells.map(spell => [spell.spellId, globalScope.SpellCatalog.getDisplayName(spell.spellId)])];
-    if (spellId && !spellEntries.some(([value]) => value === spellId)) spellEntries.push([spellId, globalScope.SpellCatalog.getDisplayName(spellId) || `未知法術（${spellId}）`]);
-    setOptions(spellSelect(row), spellEntries, spellId);
-    classSelect(row).disabled = !manual;
-    spellSelect(row).disabled = !manual && Boolean(reason);
-    row.classList.toggle("spell-entry--unavailable", Boolean(reason));
-    row.dataset.spellUnavailable = String(Boolean(reason));
-    const desc = row.querySelector(":scope > .output");
-    const description = globalScope.SpellCatalog.getSpell(spellId)?.desc || (spellId ? `找不到法術資料：${spellId}` : "—");
-    if (desc && desc.dataset.spellDescription !== description) {
-      desc.innerHTML = globalScope.renderSpellDescHtml(description);
-      desc.dataset.spellDescription = description;
-    }
-    let notice = row.querySelector(".spell-row-availability");
-    if (reason && !notice) {
-      notice = document.createElement("p");
-      notice.className = "spell-row-availability spell-note-muted";
-      row.appendChild(notice);
-    }
-    if (notice) {
-      notice.hidden = !reason;
-      notice.textContent = `已保存但目前不可用：${reason}不列入準備或跑團施法。`;
-    }
+  const isEntryAvailable = (entry, options = {}) => Boolean(entry?.spellId) && !getAvailabilityReason(entry, options);
+  function getEntries(options = {}) {
+    const entries = manual ? players : [...sources, ...players];
+    return clone(options.availableOnly ? entries.filter(entry => isEntryAvailable(entry, options)) : entries);
   }
 
-  function rebuildRows(areas) {
-    rebuilding = true;
+  function readMemories() {
+    if (memories) return memories;
+    memories = { version: 1, classes: {}, manual: null };
+    if (inShareMode()) return memories;
     try {
-      configs().forEach(({ id, level }) => {
-        document.getElementById(id).replaceChildren();
-        const rows = areas.find(area => area.id === id)?.rows || [];
-        rows.forEach(item => globalScope.createSingleSpellRow(id, level, null, item));
-        if (!rows.length) globalScope.createSingleSpellRow(id, level);
-        globalScope.refreshSpellRows(id);
-      });
-    } finally { rebuilding = false; }
+      const raw = globalScope.dndStorage?.getItem(MEMORY_KEY);
+      const saved = raw ? globalScope.parseCharacterStateJson(raw) : null;
+      if (saved?.version === 1) {
+        Object.entries(saved.classes || {}).forEach(([cls, record]) => {
+          if (CLASS_IDS.has(cls) && record && Array.isArray(record.entries)) memories.classes[cls] = {
+            initialized: true, level: Number(record.level) || 0, entries: normalizeEntries(record.entries).filter(entry => !entry.spellSource) };
+        });
+        if (saved.manual && Array.isArray(saved.manual.entries)) memories.manual = {
+          initialized: true, entries: normalizeEntries(saved.manual.entries), freeUses: clone(saved.manual.freeUses || {}) };
+      }
+    } catch (_error) { /* Retain the original data until a deliberate user change. */ }
+    return memories;
   }
-
-  // Migrate previously saved automatic-source remnants without removing player selections.
-  function reconcileSourceRows() {
-    if (manual || rebuilding || reconciling) return;
-    reconciling = true;
-    try {
-      configs().forEach(({ id, level }) => {
-        const oldSources = areaRows(id).filter(row => row.dataset.retainedSourceKey);
-        if (!oldSources.length) return;
-        oldSources.forEach(row => row.remove());
-        if (!globalScope.getSpellRowsForState(id).length) globalScope.createSingleSpellRow(id, level);
-        globalScope.refreshSpellRows(id);
-      });
-    } finally { reconciling = false; }
+  function writeMemories(next) {
+    if (inShareMode()) return true;
+    const success = globalScope.dndStorage?.setItem(MEMORY_KEY, JSON.stringify(next)) === true;
+    if (success) memories = next;
+    return success;
   }
-
-  function restoreRetainedRows(value) {
-    if (manual || !Array.isArray(value)) return;
-    value.forEach(item => {
-      if (!configs().some(area => area.id === item?.areaId) || !Number.isInteger(item.index) || typeof item.key !== "string") return;
-      const row = globalScope.getSpellRowsForState(item.areaId)[item.index];
-      if (!row) return;
-      row.dataset.retainedSourceKey = item.key;
-      row.dataset.retainedSourceLabel = typeof item.label === "string" ? item.label : "";
-    });
-  }
-
-  function isRowAvailable(row) {
-    return Boolean(row) && !reasonFor(row);
-  }
-
-  function refreshVisibility() {
-    const cls = document.getElementById("class")?.value || "";
-    const level = Number(document.getElementById("level")?.value);
-    configs().forEach(({ id, level: ring }) => {
-      const area = document.getElementById(id);
-      const rows = areaRows(id);
-      rows.forEach(row => setRowState(row));
-      const classAccess = globalScope.classCanAccessSpellLevel(cls, level, ring === "cantrips" ? 0 : ring);
-      const sourceAccess = rows.some(row => row.dataset.spellSource);
-      const hasSaved = rows.some(row => Boolean(spellSelect(row)?.value));
-      const section = area?.closest("details.spell-level-section");
-      if (section) section.hidden = !manual && !classAccess && !sourceAccess && !hasSaved;
-      rows.forEach(row => { row.hidden = !manual && !classAccess && !row.dataset.spellSource && !spellSelect(row)?.value; });
-      globalScope.updateSpellControlStates(id);
-    });
-    globalScope.updateGlobalSpellSequenceNumbers();
-  }
-
-  function beforeApplyState(data) {
-    manual = data["manual-spell-management"] === true;
-    document.getElementById("manual-spell-management").checked = manual;
-    const uses = sourceUses();
-    uses.replaceChildren();
-    if (manual) {
-      const choices = { ...data.__classFeatureCantrips };
-      // Earlier manual saves recorded these ability choices as source-marked rows.
-      if (Array.isArray(data.__retainedSpells)) data.__retainedSpells.forEach(item => {
-        if (item?.areaId !== "cantrips-area" || !Number.isInteger(item.index) || Object.hasOwn(choices, item.key)) return;
-        if (!/^class-(?:paladin-blessed|ranger-druidic)-warrior-cantrip-[12]$/.test(item.key)) return;
-        choices[item.key] = data[`cantrips-area-spell-${item.index}`] || "";
-      });
-      keepClassFeatureCantrips(choices);
+  function rememberCurrent() {
+    if (inShareMode() || isRestoring() || !canManage()) return true;
+    const next = clone(readMemories());
+    if (manual) next.manual = { initialized: true, entries: clone(players), freeUses: currentFreeUses() };
+    else if (CLASS_IDS.has(ownerClass)) next.classes[ownerClass] = {
+      initialized: true, level: Number(currentLevel()) || next.classes[ownerClass]?.level || 0, entries: clone(players) };
+    else return true;
+    const persisted = writeMemories(next);
+    if (persisted && migrationPending && manual) {
+      migrationPending = false;
+      if (globalScope.saveAllFields?.() === false) migrationPending = true;
+      else showMigrationNotice();
     }
-    if (manual) Object.entries(data).forEach(([id, checked]) => {
-      if (!/^free-spell-use-[a-z0-9_-]+-\d+$/i.test(id)) return;
-      const input = document.createElement("input");
-      input.type = "checkbox";
-      input.id = id;
-      input.className = "free-spell-use-check";
-      input.checked = checked === true;
-      uses.appendChild(input);
-    });
-    rebuildRows([]);
-    if (!globalScope.SHARE_MODE) globalScope.dndStorage.removeItem("dnd.spellManagementBackup.v1");
+    return persisted;
   }
 
-  async function toggle(event) {
-    const input = event.currentTarget;
-    if (switching) { input.checked = manual; return; }
-    const next = input.checked;
-    input.checked = manual;
+  function syncFreeUsesFromControls() {
+    if (isRestoring()) return;
+    (manual ? players : [...sources, ...players]).forEach(entry => {
+      const key = sourceKeyOf(entry);
+      if (!key) return;
+      const prefix = `free-spell-use-${safeKey(key)}-`;
+      document.querySelectorAll(".free-spell-use-check[id]").forEach(box => {
+        if (!box.id.startsWith(prefix)) return;
+        const index = Number(box.id.slice(prefix.length)) - 1;
+        if (Number.isInteger(index) && index >= 0) (freeUses[key] ||= [])[index] = box.checked === true;
+      });
+    });
+  }
+  function currentFreeUses() {
+    syncFreeUsesFromControls();
+    const keys = new Set((manual ? players : [...sources, ...players]).map(sourceKeyOf).filter(Boolean));
+    return Object.fromEntries(Object.entries(freeUses).filter(([key]) => keys.has(key)).map(([key, values]) => [key, clone(values)]));
+  }
+  function applyFreeUsesToControls() {
+    (manual ? players : [...sources, ...players]).forEach(entry => {
+      const key = sourceKeyOf(entry);
+      (freeUses[key] || []).forEach((checked, index) => {
+        const control = field(freeUseId(key, index));
+        if (control && "checked" in control) control.checked = checked === true;
+      });
+    });
+  }
+  function getFreeUse(key, index) {
+    const box = field(freeUseId(key, index));
+    if (!isRestoring() && box && "checked" in box) (freeUses[key] ||= [])[index] = box.checked === true;
+    return freeUses[key]?.[index] === true;
+  }
+  function setFreeUse(key, index, checked, options = {}) {
+    if (!key || !Number.isInteger(Number(index)) || Number(index) < 0) return false;
+    (freeUses[key] ||= [])[Number(index)] = checked === true;
+    const box = field(freeUseId(key, index));
+    if (box && "checked" in box) box.checked = checked === true;
+    if (!options.silent) changed({ resources: true });
+    return true;
+  }
+  function changed(detail = {}) {
+    refreshVisibility();
+    if (isRestoring()) return;
+    rememberCurrent();
+    hooks.onChange?.(detail);
+    globalScope.dispatchEvent(new CustomEvent("spellmanagementchange", { detail }));
+  }
+  function setPlayerEntries(entries, options = {}) {
+    players = normalizeEntries(entries).filter(entry => manual || !entry.spellSource);
+    if (!manual && !ownerClass && CLASS_IDS.has(currentClass())) ownerClass = currentClass();
+    if (options.sync !== false) changed({ players: true });
+    return clone(players);
+  }
+  function replaceSources(entries, options = {}) {
+    if (manual) return;
+    syncFreeUsesFromControls();
+    const seen = new Set();
+    sources = normalizeEntries(entries).filter(entry => {
+      if (!entry.spellSource) return false;
+      const key = entryKey(entry);
+      if (seen.has(key)) return false;
+      seen.add(key); return true;
+    });
+    if (options.sync !== false && !isRestoring()) globalScope.dispatchEvent(new CustomEvent("spellmanagementchange", { detail: { sources: true } }));
+  }
+  function addPlayerSpell(spellId, options = {}) {
+    if (!canManage()) return false;
+    const entry = normalizeEntry({ ...options, spellId, spellClass: options.spellClass || currentClass() });
+    if (!entry || !catalog()?.getSpell(entry.spellId) || getEntries().some(item => item.spellId === entry.spellId)) return false;
+    if (!manual) {
+      if (!isEntryAvailable(entry)) return false;
+      const limits = getLimits();
+      const count = players.filter(item => isEntryAvailable(item) && (entry.level === 0 ? item.level === 0 : item.level > 0)).length;
+      if (count >= (entry.level === 0 ? limits.cantrips : limits.prepared)) return false;
+    }
+    players.push(entry); changed({ players: true }); return true;
+  }
+  function removePlayerSpell(value) {
+    const index = typeof value === "string" ? players.findIndex(entry => entry.spellId === value)
+      : players.findIndex(entry => entryKey(entry) === entryKey(normalizeEntry(value)));
+    if (index < 0) return false;
+    players.splice(index, 1); changed({ players: true }); return true;
+  }
+
+  function replayChange(input, userChange = false) {
+    replaying = true;
+    try {
+      const event = new Event("change", { bubbles: true });
+      event.dndCharacterSelectionCommitted = userChange;
+      input.dispatchEvent(event);
+    }
+    finally { replaying = false; }
+  }
+  function changeCharacterSelection(event) {
+    const input = event.target;
+    if (!input || !["class", "level", "background", "race"].includes(input.id) || replaying || isRestoring()) return;
+    const previous = { class: activeClass, level: activeLevel, background: activeBackground, race: activeRace };
+    const oldValue = previous[input.id], nextValue = input.value;
+    if (nextValue === oldValue) return;
+    event.stopImmediatePropagation();
+    syncFreeUsesFromControls(); rememberCurrent();
+    const nextClass = input.id === "class" ? nextValue : activeClass, nextLevel = input.id === "level" ? nextValue : activeLevel;
+    const memory = readMemories(), isNewClass = input.id === "class" && CLASS_IDS.has(nextClass) && !memory.classes[nextClass];
+    const target = !manual && input.id === "class" && CLASS_IDS.has(nextClass) ? memory.classes[nextClass]?.entries || [] : players;
+    const nextBackground = input.id === "background" ? nextValue : field("background")?.value;
+    const nextRace = input.id === "race" ? nextValue : field("race")?.value;
+    if (isNewClass) {
+      const nextMemory = clone(memory);
+      nextMemory.classes[nextClass] = { initialized: true, level: Number(nextLevel) || 0, entries: [] };
+      if (!writeMemories(nextMemory) && !inShareMode()) {
+        memories = nextMemory;
+        globalScope.AppDialog.notify("瀏覽器無法保存職業法術記憶；目前清單仍保留在本頁。", { tone: "warning" });
+      }
+    }
+    // Keep all saved selections when class or level changes. Availability is
+    // evaluated separately, so higher-level spells can become usable again.
+    if (!manual && nextClass) { players = normalizeEntries(target); ownerClass = nextClass; }
+    activeClass = nextClass; activeLevel = nextLevel; activeBackground = nextBackground; activeRace = nextRace;
+    replayChange(input, event.isTrusted); changed({ character: true });
+  }
+  async function setManual(next, options = {}) {
+    next = next === true;
+    if (switching || next === manual) { refreshVisibility(); return next === manual; }
     switching = true;
     try {
-      const confirmed = await globalScope.AppDialog.requestDecision(next ? {
-        title: "啟用手動法術管理",
-        message: "沿用目前的法術選項，將所有來源列改為可編輯清單，停止來源自動同步，並開放所有法表與法術書。切回自動管理時，全部戲法、一至四環準備清單與法術書將清除，且無法還原。",
-        confirmLabel: "啟用手動管理", cancelLabel: "取消", trigger: input
-      } : {
-        title: "清除手動法術並恢復自動管理？",
-        message: "目前的全部戲法、一至四環準備清單與法術書將清除，且無法還原。系統會依目前角色選項重新帶入來源法術，其餘準備法術與法師法術書需重新選擇。角色能力中的來源選項、法術位消耗、施法屬性及筆記會保留。",
-        confirmLabel: "清除全部法術並恢復自動管理", cancelLabel: "繼續手動管理", intent: "danger", trigger: input
-      });
-      if (!confirmed) return;
-      const areas = next ? captureRows() : [];
-      const classCantrips = collectClassFeatureCantrips();
-      const uses = sourceUses();
-      document.querySelectorAll(".free-spell-use-check").forEach(box => uses.appendChild(box));
-      manual = next;
-      input.checked = next;
-      globalScope.restoreDeletedSpellRowCache({});
-      if (next) keepClassFeatureCantrips(classCantrips);
-      else globalScope.Spellbook.setState({ spellIds: [] }, { sync: false });
-      rebuildRows(areas);
-      if (!next) {
-        globalScope.syncMagicInitiateDerivedSpellRows();
-        globalScope.syncOriginAndSubclassDerivedSpellRows();
-        globalScope.applyClassFeatureCantrips(classCantrips);
+      if (options.confirm !== false) {
+        const confirmed = await globalScope.AppDialog.requestDecision(next ? {
+          title: "啟用手動法術管理", message: "手動管理會使用獨立清單，開放目前支援的法表與戲法至四環，不套用準備數量限制。首次啟用會沿用目前全部法術；各職業原有的準備清單與法術書都會保留。",
+          confirmLabel: "啟用手動管理", cancelLabel: "取消", trigger: options.trigger
+        } : {
+          title: "恢復自動法術管理", message: "將載入目前職業自己的準備清單，並依角色選項重新計算來源法術。手動清單與法術書都會保留，之後可再切回手動管理。",
+          confirmLabel: "恢復自動管理", cancelLabel: "繼續手動管理", trigger: options.trigger
+        });
+        if (!confirmed) return false;
       }
-      globalScope.updateSpellCastingStatsVisibility();
-      globalScope.updateSpellsByClassLevel();
-      globalScope.updatePickedSpellBoxes();
-      if (!next) uses.replaceChildren();
-      globalScope.Spellbook.render();
-      globalScope.TabletopSpells?.refresh();
-      globalScope.saveAllFields();
-    } finally { switching = false; input.checked = manual; }
+      syncFreeUsesFromControls();
+      const initial = getEntries(); rememberCurrent(); const memory = readMemories();
+      const target = next ? memory.manual?.entries || initial : currentClass() ? memory.classes[currentClass()]?.entries || [] : [];
+      manual = next; players = normalizeEntries(target); ownerClass = CLASS_IDS.has(currentClass()) ? currentClass() : "";
+      if (next && memory.manual?.freeUses) {
+        freeUses = { ...freeUses, ...clone(memory.manual.freeUses) };
+        applyFreeUsesToControls();
+      }
+      changed({ mode: true }); return true;
+    } finally { switching = false; refreshVisibility(); }
   }
 
-  globalScope.SpellManagement = Object.freeze({ isManual: () => manual, refreshVisibility, isRowAvailable, beforeApplyState,
-    setRowState, reconcileSourceRows, restoreRetainedRows, collectClassFeatureCantrips });
+  function sourceChoiceArea() {
+    let area = field("spell-source-use-state");
+    if (!area) { area = document.createElement("div"); area.id = "spell-source-use-state"; area.hidden = true; field("tab-spells")?.appendChild(area); }
+    return area;
+  }
+  function getClassFeatureCantripControl(key) {
+    if (!/^class-(?:paladin-blessed|ranger-druidic)-warrior-cantrip-[12]$/.test(key)) return null;
+    const area = sourceChoiceArea();
+    let input = Array.from(area.querySelectorAll("[data-class-cantrip-key]")).find(candidate => candidate.dataset.classCantripKey === key);
+    if (!input) {
+      input = document.createElement("input"); input.type = "hidden"; input.dataset.classCantripKey = key; input.dataset.stateTransient = "true";
+      input.addEventListener("change", () => { hooks.onSourceChoiceChange?.(key, input.value); changed({ sourceChoice: true }); }); area.appendChild(input);
+    }
+    return input;
+  }
+  const collectClassFeatureCantrips = () => Object.fromEntries(Array.from(sourceChoiceArea().querySelectorAll("[data-class-cantrip-key]"), input => [input.dataset.classCantripKey, input.value]));
+  function applyClassFeatureChoices(choices) {
+    sourceChoiceArea().querySelectorAll("[data-class-cantrip-key]").forEach(input => input.remove());
+    Object.entries(choices || {}).forEach(([key, value]) => { const input = getClassFeatureCantripControl(key); if (input && typeof value === "string") input.value = value; });
+  }
+  function beforeApplyState(data = {}) {
+    restoring = true; pendingData = data; migrationPending = !data.__spellManagement || Number(data.__spellManagement.version) < VERSION;
+    document.querySelectorAll(".free-spell-use-check").forEach(control => control.remove());
+    const saved = data.__spellManagement;
+    manual = saved?.version >= VERSION ? saved.manual === true : false;
+    players = saved?.version >= VERSION ? normalizeEntries(saved.entries).filter(entry => manual || !entry.spellSource) : normalizeEntries(hooks.parseLegacyEntries?.(data) || []);
+    sources = []; freeUses = saved?.freeUses && typeof saved.freeUses === "object" ? clone(saved.freeUses) : {};
+    applyClassFeatureChoices(saved?.classFeatureCantrips || data.__classFeatureCantrips || {});
+    (Array.isArray(data.__retainedSpells) ? data.__retainedSpells : []).forEach(item => {
+      const input = getClassFeatureCantripControl(item?.key);
+      if (input && !input.value && Number.isInteger(item.index)) input.value = String(data[`${item.areaId}-spell-${item.index}`] || "");
+    });
+    refreshVisibility();
+  }
+  function restoreState(data = pendingData || {}) {
+    const saved = data.__spellManagement;
+    if (saved?.version >= VERSION) { manual = saved.manual === true; players = normalizeEntries(saved.entries).filter(entry => manual || !entry.spellSource); }
+    else {
+      const full = normalizeEntries(hooks.parseLegacyEntries?.(data) || players);
+      sources.forEach(entry => {
+        const index = full.findIndex(item => item.spellSource && item.sourceKey === entry.sourceKey && item.spellId === entry.spellId);
+        if (index < 0) full.push(entry);
+        else full[index] = { ...full[index], ...entry };
+      });
+      manual = true; players = full;
+    }
+    getEntries().forEach(entry => {
+      const key = sourceKeyOf(entry); if (!key) return;
+      const prefix = `free-spell-use-${safeKey(key)}-`;
+      Object.entries(data).forEach(([id, checked]) => {
+        if (!id.startsWith(prefix)) return;
+        const index = Number(id.slice(prefix.length)) - 1;
+        if (Number.isInteger(index) && index >= 0) (freeUses[key] ||= [])[index] = checked === true;
+      });
+    });
+    if (!saved || Number(saved.version) < VERSION) players.forEach(entry => {
+      if (entry.sourceKey && !entry.freeUses && freeUses[entry.sourceKey]?.length) {
+        entry.freeUses = freeUses[entry.sourceKey].length;
+        entry.castMode ||= "free-or-slot";
+      }
+    });
+    applyFreeUsesToControls();
+    ownerClass = CLASS_IDS.has(currentClass()) ? currentClass() : ""; syncActiveSelection();
+    const next = clone(readMemories());
+    if (manual) next.manual = { initialized: true, entries: clone(players), freeUses: currentFreeUses() };
+    else if (ownerClass) next.classes[ownerClass] = { initialized: true, level: Number(currentLevel()) || 0, entries: clone(players) };
+    const persisted = inShareMode() || writeMemories(next), legacyMigrated = migrationPending && persisted;
+    migrationNotice = legacyMigrated;
+    if (persisted) migrationPending = false;
+    pendingData = null; refreshVisibility(); return { legacyMigrated, persisted };
+  }
+  function finishRestore() {
+    restoring = false; syncActiveSelection(); refreshVisibility();
+    globalScope.dispatchEvent(new CustomEvent("spellmanagementchange", { detail: { restored: true } }));
+    if (migrationNotice) {
+      migrationNotice = false;
+      if (!inShareMode() && globalScope.saveAllFields?.() === false) {
+        migrationPending = true;
+        globalScope.AppDialog.notify("舊版法術已保留在本頁，但瀏覽器無法保存遷移結果；原本的本機存檔仍保留。", { tone: "warning" });
+        return;
+      }
+      showMigrationNotice();
+    }
+  }
+  function showMigrationNotice() {
+    void globalScope.AppDialog.showContent({ title: "已偵測到您的角色存檔為舊版",
+      message: "現在切換職業時，不同職業的法術列表會分別儲存。",
+      renderContent(body) {
+        ["為避免遺失舊資料，您原有的法術列表（包含自動準備）都已保留，並已啟用「手動管理法術」。",
+          "手動管理啟用後法術不會自動準備，請自行確認列表是否符合規則。"].forEach(text => {
+          const paragraph = document.createElement("p");
+          paragraph.textContent = text;
+          body.appendChild(paragraph);
+        });
+        const recommendation = document.createElement("p");
+        const label = document.createElement("strong");
+        label.textContent = "建議：";
+        recommendation.append(label, " 先匯出 JSON 備份並記下目前的角色資料，再使用「清除紀錄」重建新版角色存檔。");
+        body.appendChild(recommendation);
+      },
+      confirmLabel: "知道了", dismissOnBackdrop: false });
+  }
+  function getState() {
+    syncFreeUsesFromControls();
+    return { version: VERSION, manual, entries: getEntries().map(entry => ({ ...entry, unavailable: !isEntryAvailable(entry) })),
+      freeUses: currentFreeUses(), classFeatureCantrips: collectClassFeatureCantrips() };
+  }
+  function refreshVisibility() { const control = field("manual-spell-management"); if (control) control.checked = manual; }
+  function clearMemories() {
+    if (inShareMode()) return;
+    [MEMORY_KEY, NOTICE_KEY, "dnd.spellManagementBackup.v1"].forEach(key => globalScope.dndStorage?.removeItem(key));
+    memories = { version: 1, classes: {}, manual: null };
+  }
+  function beginRestoreBatch() { batchDepth += 1; }
+  function syncActiveSelection() {
+    activeClass = currentClass(); activeLevel = currentLevel(); activeBackground = field("background")?.value || ""; activeRace = field("race")?.value || "";
+  }
+  function endRestoreBatch() {
+    batchDepth = Math.max(0, batchDepth - 1);
+    if (!batchDepth) { syncActiveSelection(); ownerClass = CLASS_IDS.has(activeClass) ? activeClass : ""; }
+  }
+  function withRestoreBatch(callback) {
+    beginRestoreBatch();
+    try { const result = callback(); if (result?.then) return result.finally(endRestoreBatch); endRestoreBatch(); return result; }
+    catch (error) { endRestoreBatch(); throw error; }
+  }
+  globalScope.SpellManagement = Object.freeze({ version: VERSION, storageKeys: Object.freeze([MEMORY_KEY, NOTICE_KEY]),
+    configure(options = {}) { hooks = { ...hooks, ...options }; }, isManual: () => manual, isSwitching: () => switching, canManage, getLimits,
+    normalizeEntry, normalizeEntries, entryKey, getEntries, getPlayerEntries: () => clone(players), getSourceEntries: () => manual ? [] : clone(sources),
+    setPlayerEntries, replaceSources, addPlayerSpell, removePlayerSpell, getAvailabilityReason, isEntryAvailable, getFreeUse, setFreeUse,
+    getState, beforeApplyState, restoreState, finishRestore, clearMemories, setManual,
+    canPersistCurrentState: () => !migrationPending,
+    beginRestoreBatch, endRestoreBatch, withRestoreBatch, collectClassFeatureCantrips, getClassFeatureCantripControl, refreshVisibility });
+  document.addEventListener("change", changeCharacterSelection, true);
   document.addEventListener("DOMContentLoaded", () => {
-    if (!globalScope.SHARE_MODE) globalScope.dndStorage.removeItem("dnd.spellManagementBackup.v1");
-    document.getElementById("manual-spell-management")?.addEventListener("change", toggle);
+    syncActiveSelection(); if (!ownerClass && CLASS_IDS.has(activeClass)) ownerClass = activeClass;
+    field("manual-spell-management")?.addEventListener("change", event => {
+      const next = event.currentTarget.checked; event.currentTarget.checked = manual; void setManual(next, { trigger: event.currentTarget });
+    });
     refreshVisibility();
   });
 })(window);

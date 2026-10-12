@@ -489,7 +489,12 @@ assert(tabletopModeSource.includes("resourceId !== String(selection.resourceId")
 assert(diceSource.includes("rollExpressionsInModal"), "DiceRoller 必須提供公開自動擲骰 modal API");
 assert(diceSource.includes("if (!toggle.checked)"), "自動擲骰不得繞過停用狀態");
 assert(indexSource.includes("SpellCatalog.isRitual(spell)"), "儀式選項不得由描述文字臨時猜測");
-assert(indexSource.includes('row.dataset.ritualAllowed = String(spec.level === 1)'), "魔法學徒一環法術必須保留永遠準備的儀式能力");
+const sourceEntryMatch = indexSource.match(/function spellEntryFromSourceSpec\(spec\) \{([\s\S]*?)\n\}/);
+assert(sourceEntryMatch, "自動來源必須轉成結構化法術資料");
+const sourceEntry = vm.runInNewContext(`(function(spec) { ${sourceEntryMatch[1]} })`, { MAGIC_INITIATE_SOURCE: "magic-initiate" });
+assert.equal(sourceEntry({ spellValue: "detect-magic", ring: 1, key: "feat-ritual" }).ritualAllowed, true,
+  "魔法學徒一環法術必須保留永遠準備的儀式能力");
+assert.equal(sourceEntry({ spellValue: "light", ring: "cantrips", key: "feat-cantrip" }).ritualAllowed, false);
 assert(indexSource.includes("getAgonizingBlastSelectId"), "苦痛魔爆每個祈喚項目必須有穩定下拉 ID");
 assert(indexSource.includes("accepted.has(previous)"), "苦痛魔爆必須清除重複戲法選擇");
 assert(indexSource.includes("isAgonizingBlastSelectId(id)"), "匯入時必須延後還原苦痛魔爆下拉值");

@@ -61,6 +61,15 @@
   function getPreparedSpellLimit(className, level) {
     return Number.isInteger(Number(level)) ? PREPARED_SPELLS_BY_CLASS[className]?.[Number(level) - 1] ?? null : null;
   }
+  const CLASS_CANTRIP_BASE = Object.freeze({ bard: 2, cleric: 3, druid: 2, sorcerer: 4, warlock: 2, wizard: 3 });
+  function getClassCantripLimit(className, level) {
+    const numericLevel = Number(level);
+    const base = CLASS_CANTRIP_BASE[className] || 0;
+    if (!Number.isInteger(numericLevel) || numericLevel < 1 || !base) return 0;
+    // Supported class growth tables cover levels 1–8; origin/ability cantrips
+    // are independent sources and do not enlarge the spellcasting allowance.
+    return base + (numericLevel >= 4 ? 1 : 0);
+  }
   const STANDARD_SPELL_SLOTS = Object.freeze({
     1: Object.freeze([2, 0, 0, 0]),
     2: Object.freeze([3, 0, 0, 0]),
@@ -565,6 +574,7 @@
     getShillelaghWeaponEffect,
     getSpellSlotCounts,
     getPreparedSpellLimit,
+    getClassCantripLimit,
     hasSpellcastingCapabilityForSelections,
     normalizeCharacterSize,
     parseSignedValue

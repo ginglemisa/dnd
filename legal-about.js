@@ -5,16 +5,13 @@
   const content = `
     <article class="legal-about-content">
 <h2>關於 twD20</h2>
-      <p>twD20 是為繁體中文玩家製作的 DND 手機角色卡與創角工具，
-      用於遊玩 Dungeons & Dragons 2024 規則版本，
-      也常稱為 D&D 2024、5.5e、5R。</p>
-      <p>這是一個給 TRPG 新手的禮物。</p>
-      <p>目標：在短時間內完成創角，並確保所需規則都能查閱。</p>
-      <p>支援 1～8 級角色，提供擲骰、儲存、分享網址、PDF 匯出功能。</p>
+      <p>這是給 TRPG 新手的禮物。</p>
+      <p>短時間完成創角，提供簡易規則與表格。</p>
+      <p>支援 1～8 級，PDF匯出，角色分享。</p>
 
       <h2>目標對象</h2>
       <ul>
-        <li>初次接觸 5.5e 劍魔奇幻遊戲的玩家</li>
+        <li>初次接觸 5.5e 奇幻遊戲的玩家</li>
         <li>需要快速帶新手創角的 DM</li>
         <li>推廣活動、體驗場、收費團</li>
 
@@ -24,19 +21,15 @@
 
       <h2>注意事項</h2>
       <p>本網站的規則經過大量刪減整理，並非完整規則。</p>
-      <p>如需更高等級或其他子職、背景、種族，請購買 WotC 官方規則書。</p>
+      <p>更高等級或其他種族職業資訊請參閱官方書籍。</p>
 
       <h2>資料怎麼保存？</h2>
       <p>角色資料只存在你自己的裝置裡。</p>
       <p>若清除瀏覽器資料、更換 APP 或裝置，都可能讓紀錄消失。</p>
-      <p>建議使用網站提供的 JSON 匯入匯出功能備份角色。</p>
-
-      <h2>分享角色</h2>
-      <p>你可以產生分享網址，把角色卡給其他人看。</p>
-      <p>透過分享網址開啟時會進入分享模式，不會存檔。</p>
+      <p>可使用網站提供的 JSON 匯入匯出功能備份角色。</p>
 
       <h2>流量統計</h2>
-      <p>本站使用 Google Analytics 觀察整體使用情況，作為後續更新參考。</p>
+      <p>本站使用 GA4 查核使用人數與操作行為。</p>
       <p>相關統計不會用於商業行為。</p>
 
       <h2 id="character-sheet-download">中文化角色紙下載</h2>
@@ -47,11 +40,11 @@
         <li><a href="https://drive.google.com/drive/folders/1brrzdbRcxMvxHcYYjyzs2N_8aPaQewW6?usp=sharing" target="_blank" rel="noopener">無表格 PDF／原 PNG 檔下載</a></li>
         <li>PDF 使用字型：<a href="https://fonts.google.com/download?family=Noto%20Sans%20TC" target="_blank" rel="noopener">Noto Sans TC</a>、<a href="https://github.com/adobe-fonts/source-han-serif/tree/release/OTF/TraditionalChinese" target="_blank" rel="noopener">思源宋體 SourceHanSerifTC-Bold.otf</a></li>
       </ul>
-      <p>相關角色紙、字型與其他第三方素材的權利及授權，仍依各自原始授權條件處理。</p>
+      <p>角色紙、字型、第三方素材之權利，仍依各自原始授權條件處理。</p>
 
       <h2>作者</h2>
       <p>Reggie Tsai / 瑞基</p>
-      <p>twD20 是獨立製作的第三方工具，與 Wizards of the Coast LLC 或其他官方品牌無關。</p>
+      <p>twD20 是獨立製作的第三方工具，與 Wizards of the Coast LLC 、 D&D 或其他官方品牌無關。</p>
 
       <hr class="legal-divider">
 
@@ -70,8 +63,7 @@
         <h3>專案原始程式碼</h3>
         <p>除另有標示的第三方內容外，本專案中由專案作者創作、修改或有權授權的原始程式碼，以 MIT License 提供。</p>
         <p>MIT License 允許使用、複製、修改、合併、發布、散布、再授權及商業使用相關程式碼，但應依授權條款保留必要的著作權與授權聲明。</p>
-        <p>MIT License 僅適用於本專案有權以該授權提供的內容，不會將 SRD 內容、第三方字型、角色紙、圖像、函式庫或其他外部作品重新授權為 MIT License。</p>
-        <p>完整條款請見 GitHub repository 中的 <a href="https://github.com/ginglemisa/dnd/blob/main/LICENSE" target="_blank" rel="noopener">LICENSE</a> 文件。</p>
+        <p>MIT License 僅適用於本專案有權以該授權提供的內容，不將 SRD 內容、第三方字型、角色紙、圖像、函式庫或其他外部作品重新授權為 MIT License。</p>
 
         <h3>AI 協作開發</h3>
         <p>twD20 的程式碼與文字使用生成式 AI 協助撰寫、檢查除錯，並由專案作者進行需求設計、測試整合。</p>
@@ -84,7 +76,7 @@
         <p>若要重新散布、修改或商業使用本專案，請自行確認實際使用內容所適用的授權。</p>
 
         <h3>免責聲明</h3>
-        <p>twD20 以現況（AS IS）提供。本工具以方便創角、跑團使用與新手理解為主要目的，不保證所有規則摘要、翻譯、計算結果或程式功能在任何情況下皆完全正確或完整。</p>
+        <p>twD20 以方便創角、跑團使用與新手理解為主要目的，不保證所有規則摘要、翻譯、計算結果或程式功能在任何情況下皆完全正確或完整。</p>
         <p>本站部分規則文字經過縮寫或重新整理，不應取代完整規則來源。若規則內容出現疑義，請以相應的正式規則來源及實際團務裁定為準。</p>
         <p>使用者如欲重製、修改、重新散布或商業使用本專案或其中內容，應自行確認所在地法律、使用平台規範及相關第三方授權條件。</p>
 

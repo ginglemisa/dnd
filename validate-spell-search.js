@@ -33,6 +33,7 @@ async function main() {
   try {
     browser = await chromium.launch({ headless: true, ...(process.env.DND_BROWSER_CHANNEL ? { channel: process.env.DND_BROWSER_CHANNEL } : {}) });
     const page = await browser.newPage({ viewport: { width: 1100, height: 850 } });
+    await page.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
     const errors = [];
     page.on("pageerror", error => errors.push(String(error)));
     await page.goto(`http://127.0.0.1:${server.address().port}/?analytics=owner`);
@@ -138,7 +139,7 @@ async function main() {
     assert.equal(await results.isVisible(), false);
     await checkClass("法師戲法", "wizard", 0);
     const namesBeforeDetail = await buttons.allTextContents();
-    const selectedBeforeDetail = await page.locator('#tab-spells select[id*="-spell-"]').evaluateAll(elements => elements.map(el => el.value));
+    const selectedBeforeDetail = await page.evaluate(() => SpellManagement.getEntries());
     await buttons.first().click();
     assert.equal(await page.locator("#quick-build-spell-detail").isVisible(), true);
     assert.ok((await page.locator("#quick-build-spell-detail-content").textContent()).includes(namesBeforeDetail[0]));
@@ -146,7 +147,7 @@ async function main() {
     assert.equal(await page.locator("#quick-build-spell-detail").isVisible(), false);
     assert.equal(await buttons.first().evaluate(el => el === document.activeElement), true, "detail close restores focus");
     assert.deepEqual(await buttons.allTextContents(), namesBeforeDetail, "detail close preserves results");
-    assert.deepEqual(await page.locator('#tab-spells select[id*="-spell-"]').evaluateAll(elements => elements.map(el => el.value)), selectedBeforeDetail, "viewing detail does not prepare spells");
+    assert.deepEqual(await page.evaluate(() => SpellManagement.getEntries()), selectedBeforeDetail, "viewing detail does not prepare spells");
     // Exercise the real tour start/stop lifecycle, which clears then restores search via the public APIs.
     await page.evaluate(() => window.onboardingTour.start());
     await page.locator("#tour-skip-btn").click();
@@ -165,6 +166,7 @@ async function main() {
 // Synthetic catalog verifies cross-project Artificer support without adding game rules or production spells.
 async function validateArtificerCatalog(browser) {
   const page = await browser.newPage();
+  await page.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
   const errors = [];
   page.on("pageerror", error => errors.push(String(error)));
   try {
@@ -321,9 +323,9 @@ async function validateToolProficiencyDetails(page) {
   await checkLayout();
   const state = await page.evaluate(() => collectStateObject());
   await page.evaluate(state => {
-    applyStateObject({ class: "fighter" });
+    applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] }, class: "fighter" });
     // 選項先於職業的 JSON 仍須還原；沿用舊手動工具欄位。
-    applyStateObject({ "monk-tool-proficiency-1": state["monk-tool-proficiency-1"], ...state,
+    applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] }, "monk-tool-proficiency-1": state["monk-tool-proficiency-1"], ...state,
       "tool-proficiency-list-count": 2, "tool-proficiency-1": "骰子" });
   }, state);
   assert.equal(await monk.inputValue(), "長笛", "JSON restores class choice regardless of key order");
@@ -334,6 +336,7 @@ async function validateToolProficiencyDetails(page) {
   }));
   shareUrl.searchParams.set("analytics", "owner");
   const shared = await page.context().browser().newPage();
+  await shared.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
   try {
     await shared.goto(shareUrl.href);
     await shared.waitForFunction(() => document.getElementById("monk-tool-proficiency-1")?.value === "長笛");

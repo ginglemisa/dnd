@@ -844,7 +844,7 @@ const classFeatures = {
   <p>當你使用驅散不死生物時，可額外擲等同感知調整值數量的 d8（最少 1d8），將總值作為光耀傷害，套用到每個該次豁免失敗的不死生物。</p>
   <p>這個傷害不會中止驅散效果。</p>
 </section>
-<section class="cleric-feature class-feature-section" data-feature-level="6"><h3>等級 6：神佑醫者（生命子職）</h3><p>當你使用法術位施展一個使一名或更多其他生物恢復生命值的法術後，你立即恢復等同於2＋該法術環階的生命值。</p></section>
+<section class="cleric-feature class-feature-section" data-feature-level="6"><h3>等級 6：神佑醫者（生命子職）</h3><p>當你消耗法術位施展會恢復其他生物 HP 的法術後，你立即恢復 2＋該法術位環階的 HP。</p></section>
 <section class="cleric-feature class-feature-section" data-feature-level="7"><h3>等級 7：神佑打擊</h3><p>選擇下列一項。即使你已從舊書中的牧師子職業獲得其中一項，也只能使用透過本特性選擇的選項。</p><div class="druid-mission-options"><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="cleric-blessed-strikes-divine-strike" data-feature-choice-group="cleric-blessed-strikes"> 神聖打擊</label>：在你的每個回合中一次，當你使用武器發動攻擊檢定並命中一個生物時，可以使目標額外受到1d8黯蝕或光耀傷害（由你選擇）。</div></div><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="cleric-blessed-strikes-potent-spellcasting" data-feature-choice-group="cleric-blessed-strikes"> 強力施法</label>：你將感知調整值加入所有你以牧師戲法造成的傷害中。</div></div></div></section>
 <section class="cleric-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p></section>
 </div>

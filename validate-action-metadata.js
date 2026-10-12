@@ -378,7 +378,7 @@ async function verifyCoverage(page) {
       const wholeness = classOption("bonus", "混元體").description;
       check(wholeness.includes("使用次數＝感知調整值（至少 1 次），長休後全部恢復"), "Wholeness retains its use limit even with low/unset Wisdom");
     }
-    check(options("bonus").find(o => o.key === "offhand-attack").description.includes("在自己的回合以輕型武器執行攻擊動作後"), "Offhand attack requires the Attack action on your turn");
+    check(/^在(?:自己的|自身)回合以「?輕型」?武器執行攻擊動作後/.test(options("bonus").find(o => o.key === "offhand-attack").description), "Offhand attack requires the Attack action with a Light weapon on your turn");
     for (const level of [2, 3, 5, 8]) {
       setClass("monk", level); el("wis").value = "16"; el("dex").value = "18";
       check(classOption("bonus", "聚氣凝神").description.includes("散打技巧") === (level >= 3), "Open Hand is folded into Focus at level 3");
@@ -525,14 +525,13 @@ async function verifyCoverage(page) {
     check(options("bonus", "超魔法").length === 0, "stale metamagic selections leaked to other class");
     setClass("", 8);
     // Selected-spell timing stays independent of non-spell metadata.
-    const spellArea = el("tab-spells"); spellArea.replaceChildren();
     const spellCases = [["fire-bolt", "action"], ["healing-word", "bonus"], ["shield", "reaction"]];
-    for (const [id] of spellCases) {
-      for (const source of ["class", "feat"]) {
-        const row = document.createElement("div"); row.className = "spell-entry"; row.dataset.sourceKey = `${source}-${id}`;
-        const select = document.createElement("select"); select.id = `${source}-spell-${id}`; select.add(new Option(id, id)); row.append(select); spellArea.append(row);
-      }
-    }
+    const spellEntries = spellCases.flatMap(([spellId]) => ["class", "feat"].map(source => ({
+      spellId, spellClass: SpellCatalog.getClassIds(spellId)[0], level: SpellCatalog.getSpell(spellId).level,
+      sourceKey: `${source}-${spellId}`, sourceLabel: `來源：${source}`
+    })));
+    const originalSpellManagement = window.SpellManagement;
+    window.SpellManagement = { ...originalSpellManagement, getEntries: () => spellEntries };
     for (const mode of modes) {
       const expectedId = spellCases.find(([, timing]) => timing === mode)?.[0];
       const actual = options(mode, "法術");
@@ -540,12 +539,13 @@ async function verifyCoverage(page) {
       check(actual.every(e => e.spellId === expectedId), `wrong spell in ${mode}`);
       unique(mode);
     }
+    window.SpellManagement = originalSpellManagement;
     return assertions;
   }, { baseline, additions, personalizedClasses });
 }
 
-async function verifyUiAndPersistence(page) {
-  await page.reload();
+async function verifyUiAndPersistence(page, url) {
+  await page.goto(url);
   await page.waitForFunction(() => !!window.TabletopMode);
   await page.check("#legal-dismiss");
   await page.click("#legal-close-btn");
@@ -599,7 +599,7 @@ async function verifyUiAndPersistence(page) {
   });
   assert.equal(shareState.class, "bard"); assert.equal(shareState["goliath-ancestry"], "cloud");
   await page.evaluate(() => saveAllFields());
-  await page.reload();
+  await page.goto(url);
   await page.waitForFunction(() => document.getElementById("class").value === "bard");
   assert.deepEqual(await page.evaluate(() => TabletopMode.getTabletopActionPreferences()), preferences);
   await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("actions"); });
@@ -637,11 +637,11 @@ async function verifyUiAndPersistence(page) {
   assert.equal(await undeadButton.count(), 0, "upgrade keeps the hidden preference key");
   await page.evaluate(() => TabletopMode.setTabletopActionHidden("official:action:dynamic-action-cleric-xonbxu", false));
   await undeadButton.waitFor({state:"visible"});
-  await page.evaluate(() => {
+  await page.evaluate(() => SpellManagement.withRestoreBatch(() => {
     document.getElementById("class").value = "monk";
     document.getElementById("level").value = "3";
     document.getElementById("class").dispatchEvent(new Event("change", {bubbles:true}));
-  });
+  }));
   await page.click("#tabletop-action-tab-bonus");
   const focusButton = page.locator('[data-action-option-key="dynamic-bonus-monk-curated-focused-aim"]');
   await focusButton.click();
@@ -650,11 +650,11 @@ async function verifyUiAndPersistence(page) {
   await focusButton.waitFor({state:"detached"});
   await page.evaluate(() => TabletopMode.restoreTabletopActionCategory("bonus"));
   await focusButton.waitFor({state:"visible"});
-  await page.evaluate(() => {
+  await page.evaluate(() => SpellManagement.withRestoreBatch(() => {
     document.getElementById("class").value = "cleric";
     document.getElementById("level").value = "7";
     document.getElementById("class").dispatchEvent(new Event("change", {bubbles:true}));
-  });
+  }));
   await page.click("#tabletop-action-tab-action");
   const strikeButton = page.locator('[data-action-option-key="dynamic-action-cleric-sxx32"]');
   assert.equal(await strikeButton.count(), 0);
@@ -681,7 +681,7 @@ async function verifyUiAndPersistence(page) {
     }, score);
     assert.match(await page.locator("#tabletop-action-panel-action .tabletop-action-description").innerText(), /該武器攻擊檢定加上你的魅力調整值（至少 \+1）。/);
   }
-  await page.evaluate(() => {
+  await page.evaluate(() => SpellManagement.withRestoreBatch(() => {
     document.getElementById("class").value = "ranger";
     document.getElementById("level").value = "6";
     document.getElementById("class").dispatchEvent(new Event("change", {bubbles:true}));
@@ -690,7 +690,7 @@ async function verifyUiAndPersistence(page) {
     document.getElementById("goliath-ancestry").value = "stone";
     document.getElementById("con").value = "8";
     document.getElementById("goliath-ancestry").dispatchEvent(new Event("change", {bubbles:true}));
-  });
+  }));
   await page.click("#tabletop-action-tab-reaction");
   await page.locator('[data-action-option-key="dynamic-reaction-race-16nfphm"]').click();
   const stoneCopy = await page.locator("#tabletop-action-panel-reaction .tabletop-action-description").innerText();
@@ -718,6 +718,29 @@ async function verifyUiAndPersistence(page) {
   await page.locator('.action-mode-tab[data-action-mode="bonus"]').click();
   await page.locator('#action-option-grid [data-action-option-key="drink-potion"]').click();
   assert.match(await page.locator("#action-description").innerText(), /2d4/);
+  const unrelatedInput = await page.evaluate(async () => {
+    const settle = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    await settle();
+    const button = document.querySelector('#action-option-grid [data-action-option-key="drink-potion"]');
+    button.focus();
+    const description = document.getElementById("action-description").textContent;
+    let updates = 0;
+    const countUpdate = () => { updates += 1; };
+    window.addEventListener("actionpanelchange", countUpdate);
+    try {
+      document.getElementById("spell-search").dispatchEvent(new Event("input", { bubbles: true }));
+      await settle();
+      return {
+        sameButton: button === document.querySelector('#action-option-grid [data-action-option-key="drink-potion"]'),
+        focused: document.activeElement === button,
+        sameDescription: document.getElementById("action-description").textContent === description,
+        updates
+      };
+    } finally {
+      window.removeEventListener("actionpanelchange", countUpdate);
+    }
+  });
+  assert.deepEqual(unrelatedInput, { sameButton: true, focused: true, sameDescription: true, updates: 0 }, "spell search preserves the static action panel without invalidating dynamic actions");
   await page.evaluate(id => TabletopMode.removeCustomTabletopAction(id), customId);
   assert.equal((await page.evaluate(() => TabletopMode.getTabletopActionPreferences())).customActions.length, 0);
 }
@@ -725,10 +748,12 @@ async function verifyUiAndPersistence(page) {
 async function verifyClassTabletopUpdates(page) {
   const setCharacter = async (name, level) => {
     await page.evaluate(({name, level}) => {
-      document.getElementById("class").value = name;
-      document.getElementById("level").value = String(level);
-      document.getElementById("wis").value = "18";
-      document.getElementById("class").dispatchEvent(new Event("change", {bubbles:true}));
+      SpellManagement.withRestoreBatch(() => {
+        document.getElementById("class").value = name;
+        document.getElementById("level").value = String(level);
+        document.getElementById("wis").value = "18";
+        document.getElementById("class").dispatchEvent(new Event("change", {bubbles:true}));
+      });
       TabletopMode.applyState({});
       TabletopMode.setMode("tabletop");
       TabletopMode.setPanel("actions");
@@ -740,14 +765,18 @@ async function verifyClassTabletopUpdates(page) {
   };
   await setCharacter("wizard", 5);
   assert.equal(await page.evaluate(() => ActionPanel.getTabletopOptions("movement").some(option => option.key === "flying")), false);
-  await page.evaluate(() => {
-    createSingleSpellRow("level3spells-area", "3", null, {classValue:"wizard", spellValue:"fly"});
-    const row = document.querySelector("#level3spells-area .spell-entry:last-child");
-    const spell = row.querySelector('select[id*="-spell-"]');
-    spell.value = "fly"; spell.dispatchEvent(new Event("change", {bubbles:true}));
-  });
+  assert.equal(await page.evaluate(() => SpellManagement.addPlayerSpell("fly", { spellClass: "wizard" })), true, "movement fixture prepares through the shared API");
   assert.equal(await page.evaluate(() => TabletopSpells.isSpellCurrentlySelected("fly")), true);
   assert.equal(await page.evaluate(() => ActionPanel.getTabletopOptions("movement").some(option => option.key === "flying")), true);
+  await page.evaluate(() => { TabletopMode.setMode("sheet"); showTab("basic"); });
+  await page.selectOption("#class", "fighter");
+  assert.equal(await page.evaluate(() => TabletopSpells.isSpellCurrentlySelected("fly")), false, "running spells ignore another class's remembered preparation");
+  assert.equal(await page.evaluate(() => ActionPanel.getTabletopOptions("movement").some(option => option.key === "flying")), false, "movement only reads the active preparation");
+  await page.selectOption("#class", "wizard");
+  assert.equal(await page.evaluate(() => TabletopSpells.isSpellCurrentlySelected("fly")), true, "returning to the class restores its prepared spell");
+  assert.equal(await page.evaluate(() => ActionPanel.getTabletopOptions("movement").some(option => option.key === "flying")), true, "restored preparation updates movement actions");
+  assert.equal(await page.evaluate(() => SpellManagement.removePlayerSpell("fly")), true);
+  assert.equal(await page.evaluate(() => ActionPanel.getTabletopOptions("movement").some(option => option.key === "flying")), false, "removing through the shared API invalidates movement actions");
   await setCharacter("druid", 8);
   await page.evaluate(() => {
     const run = (op, data) => TabletopMode.commitDruidOperation(op, data, TabletopMode.getDruidContext().token);
@@ -826,8 +855,8 @@ async function verifyClassTabletopUpdates(page) {
   await page.waitForFunction(() => document.querySelector("#dice-roller-stage")?.textContent.includes("混元體"));
 }
 
-async function verifyManualWeaponVisibility(page) {
-  await page.reload();
+async function verifyManualWeaponVisibility(page, url) {
+  await page.goto(url);
   await page.waitForFunction(() => !!window.TabletopMode);
   const secondary = page.locator('#tabletop-weapon-summary section[aria-label="副手武器攻擊"], #tabletop-weapon-summary section[aria-label="主手2武器攻擊"]');
   for (const equipment of [
@@ -844,7 +873,7 @@ async function verifyManualWeaponVisibility(page) {
         }
       }
       document.getElementById("weapon-attack-automation").checked = true;
-      applyStateObject({ class: "fighter", level: "1", main2Shield: false, ...equipment, "weapon-attack-automation": true });
+      applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] }, class: "fighter", level: "1", main2Shield: false, ...equipment, "weapon-attack-automation": true });
       TabletopMode.setMode("tabletop");
       TabletopMode.setPanel("actions");
     }, equipment);
@@ -881,6 +910,7 @@ async function verifyManualWeaponVisibility(page) {
 async function verifyEquipmentLoadout(browser, url) {
   // Fresh storage and default scores keep the AC and restore fixtures independent.
   const page = await browser.newPage();
+  await page.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
   const errors = [];
   page.on("pageerror", error => errors.push(String(error)));
   try {
@@ -913,11 +943,11 @@ async function verifyEquipmentLoadout(browser, url) {
     assert.equal(await page.isChecked("#main2Shield"), false);
     assert.equal(await page.locator("#main2ShieldOption").isVisible(), false);
 
-    await page.evaluate(() => applyStateObject({ class: "fighter", mainHand: "長劍", offHand: "標槍", offHandAsMain: true, main2Shield: true }));
+    await page.evaluate(() => applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] }, class: "fighter", mainHand: "長劍", offHand: "標槍", offHandAsMain: true, main2Shield: true }));
     assert.equal(await page.isChecked("#main2Shield"), true);
     await page.addScriptTag({ path: path.join(__dirname, "pdf-field-map.js") });
     assert.equal(await page.evaluate(() => buildPdfFieldPayload(collectStateObject()).AC1), "12");
-    await page.evaluate(() => applyStateObject({ class: "fighter", mainHand: "巨劍", offHand: "標槍", offHandAsMain: true, main2Shield: true }));
+    await page.evaluate(() => applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] }, class: "fighter", mainHand: "巨劍", offHand: "標槍", offHandAsMain: true, main2Shield: true }));
     assert.equal(await page.isChecked("#main2Shield"), false);
 
     await page.uncheck("#offHandAsMain");
@@ -931,6 +961,7 @@ async function verifyEquipmentLoadout(browser, url) {
 
 async function verifyAutomaticFeatRows(browser, url) {
   const page = await browser.newPage();
+  await page.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
   const selectFeatWithoutScrolling = async (id, value) => {
     const before = await page.locator(`#${id}`).evaluate(async select => {
       select.focus({ preventScroll: true });
@@ -988,7 +1019,7 @@ async function verifyAutomaticFeatRows(browser, url) {
         await page.selectOption("#level", level);
         const expected = (classValue === "fighter" ? [4, 6, 8] : [4, 8]).filter(n => n <= Number(level)).length;
         assert.equal(await page.locator('#classFeatures [data-feat-choice] select[id*="-level-"]').count(), expected, `${classValue} ${level}: granted slots`);
-        assert.equal(await page.locator('#feats-area [data-source-key*="-level-"] > select:enabled').count(), expected, `${classValue} ${level}: main card grants selectable`);
+        assert.equal(await page.locator('#feats-area [data-source-key*="-level-"] > .feat-row-head > select:enabled').count(), expected, `${classValue} ${level}: main card grants selectable`);
         assert.equal(await rows.count(), 1, "no new manual rows");
       }
     }
@@ -1000,7 +1031,9 @@ async function verifyAutomaticFeatRows(browser, url) {
     await page.selectOption("#class", "fighter");
     await page.selectOption("#race", "human");
     await page.fill("#dex", "10");
+    assert.equal(await page.locator('#feats-area label[for="derived-feat-human-origin"]').textContent(), "靈活人才", "only the main-card human source label is shortened");
     await page.evaluate(() => openCharacterFeatures("race"));
+    assert.equal(await page.locator('label[for="feat-choice-human-origin"]').textContent(), "靈活人才：起源專長", "race source keeps its full label");
     await page.selectOption("#feat-choice-human-origin", "警覺");
     assert.equal(await page.inputValue("#derived-feat-human-origin"), "警覺");
     assert.equal(await page.locator("#derived-feat-human-origin").isDisabled(), false);
@@ -1051,10 +1084,10 @@ async function verifyAutomaticFeatRows(browser, url) {
     await page.press("#dex", "Tab");
     assert.equal(await page.locator('#feat-choice-fighter-level-8 option[value="警覺"]').isDisabled(), false);
     const saved = await page.evaluate(() => collectStateObject());
-    await page.evaluate(() => applyStateObject({ hp: "10" }));
+    await page.evaluate(() => applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] }, hp: "10" }));
     assert.equal(await page.inputValue("#derived-feat-fighter-level-8"), "強韌體魄", "partial state keeps feat choices");
     await page.evaluate(() => saveAllFields());
-    await page.reload();
+    await page.goto(url);
     await page.waitForFunction(() => document.getElementById("level").value === "8");
     assert.equal(await page.inputValue("#derived-feat-human-origin"), "警覺", "autosave human feat");
     assert.equal(await page.inputValue("#derived-feat-fighter-level-8"), "強韌體魄", "autosave level feat");
@@ -1081,10 +1114,10 @@ async function verifyAutomaticFeatRows(browser, url) {
     assert.equal(await page.inputValue("#derived-feat-fighting-style-fighter"), "熟習", "manual class not overwritten");
     const manualSaved = await page.evaluate(() => collectStateObject());
     const managedValues = manualSaved.__managedFeatRows.map(row => row.value);
-    await page.evaluate(() => applyStateObject({ hp: "10" }));
+    await page.evaluate(() => applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] }, hp: "10" }));
     assert.deepEqual(await page.evaluate(() => collectManagedFeatRows().map(row => row.value)), managedValues, "partial updates preserve manual rows");
     await page.evaluate(() => saveAllFields());
-    await page.reload();
+    await page.goto(url);
     await page.waitForFunction(() => document.getElementById("manual-feat-management").checked);
     assert.deepEqual(await page.evaluate(() => collectManagedFeatRows().map(row => row.value)), managedValues, "manual edits/deletions survive autosave");
     assert.equal(await page.locator("#derived-feat-fighter-level-8").count(), 0, "deleted derived row stays deleted");
@@ -1094,7 +1127,7 @@ async function verifyAutomaticFeatRows(browser, url) {
     assert.deepEqual(await page.evaluate(() => collectManagedFeatRows().map(row => row.value)), managedValues, "manual JSON round trip");
     const manualHash = await page.evaluate(() => encodeStateToHash(collectShareState()));
     await page.goto(new URL(manualHash, url).href);
-    await page.reload();
+    await page.goto(new URL(manualHash, url).href);
     await page.waitForFunction(() => window.SHARE_MODE && document.getElementById("manual-feat-management").checked);
     assert.deepEqual(await page.evaluate(() => collectManagedFeatRows().map(row => row.value)), managedValues, "manual share round trip");
     await page.goto(url);
@@ -1107,22 +1140,33 @@ async function verifyAutomaticFeatRows(browser, url) {
     const legacy = { class: "fighter", level: "1", race: "elf", "feats-area-count": 2, "feat-0": "熟習", "feat-1": "警覺", "derived-feat-fighting-style-fighter": "箭術" };
     await page.setInputFiles("#import-json-file", { name: "legacy-feats.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(legacy)) });
     await page.waitForFunction(() => document.getElementById("manual-feat-management").checked && document.getElementById("feat-1")?.value === "警覺");
+    await page.getByRole("dialog", { name: "已偵測到您的角色存檔為舊版", exact: true }).getByRole("button", { name: "知道了", exact: true }).click();
+    assert.equal(await page.evaluate(() => SpellManagement.isManual()), true, "legacy feat import also preserves its original spells in manual management");
     assert.equal(await page.inputValue("#feat-choice-fighting-style-fighter"), "箭術", "legacy style migrates to source");
     assert.equal(await rows.count(), 2, "legacy selections retained");
     assert.equal(await page.locator("#feat-1").isDisabled(), false, "legacy feat editable");
     assert.equal(await rows.last().locator('[data-feat-action="delete"]').isVisible(), true);
     assert.equal(await rows.last().locator('[data-feat-action="add"]').isVisible(), true);
     await page.evaluate(legacy => dndStorage.setItem("dndchar_autosave_v1", JSON.stringify(legacy)), legacy);
-    await page.reload();
+    await page.goto(url);
     await page.waitForFunction(() => document.getElementById("manual-feat-management").checked);
+    await page.getByRole("dialog", { name: "已偵測到您的角色存檔為舊版", exact: true }).getByRole("button", { name: "知道了", exact: true }).click();
     assert.equal(await page.inputValue("#feat-1"), "警覺", "legacy local save retains feat");
     await page.evaluate(saved => applyStateObject(saved), saved);
     await page.selectOption("#class", "warlock");
     await page.evaluate(() => openCharacterFeatures("invocations"));
     const lessons = page.locator('#eldritch-invocations-output input[data-invocation-name="原初之一教習"]');
     await lessons.first().check();
+    assert.equal(await page.locator('#feats-area label[for="derived-feat-lessons-1"]').textContent(), "原初教習", "one lesson hides the number");
+    assert.equal(await page.locator('label[for="feat-choice-lessons-1"]').textContent(), "原初之一教習 1：起源專長", "invocation source keeps its full label");
     await page.selectOption("#feat-choice-lessons-1", "熟習");
     await lessons.nth(1).check();
+    assert.equal(await page.locator('#feats-area label[for="derived-feat-lessons-1"]').textContent(), "原初教習1");
+    assert.equal(await page.locator('#feats-area label[for="derived-feat-lessons-2"]').textContent(), "原初教習2");
+    await lessons.nth(2).check();
+    assert.equal(await page.locator('#feats-area label[for="derived-feat-lessons-3"]').textContent(), "原初教習3", "additional lessons are numbered");
+    await lessons.nth(2).uncheck();
+    assert.equal(await page.evaluate(() => collectManagedFeatRows().find(row => row.key === "lessons-1").label), "原初之一教習 1起源專長", "display abbreviation does not change saved source labels");
     assert.equal(await page.locator('#feat-choice-lessons-2 option[value="熟習"]').isDisabled(), false, "lessons duplicates remain selectable");
     await page.selectOption("#feat-choice-lessons-2", "醫療兵");
     await page.click("#character-features-modal .app-dialog__close");
@@ -1136,6 +1180,7 @@ async function verifyAutomaticFeatRows(browser, url) {
     await page.evaluate(() => openCharacterFeatures("invocations"));
     await lessons.first().uncheck();
     assert.equal(await page.locator("#derived-feat-lessons-1").count(), 0, "uncheck removes invocation feat");
+    assert.equal(await page.locator('#feats-area label[for="derived-feat-lessons-2"]').textContent(), "原初教習", "remaining lesson hides its number without changing its key");
     await page.selectOption("#level", "1");
     assert.equal(await page.locator('#eldritch-invocations-output [data-feat-choice]').count(), 0, "lower level removes unavailable invocation choices");
     await page.selectOption("#level", "8");
@@ -1201,7 +1246,7 @@ async function verifyAutomaticFeatRows(browser, url) {
     await page.evaluate(saved => applyStateObject(saved), saved);
     const shareUrl = await page.evaluate(async () => encodeStateToHash(collectShareState()));
     await page.goto(new URL(shareUrl, url).href);
-    await page.reload();
+    await page.goto(new URL(shareUrl, url).href);
     await page.waitForFunction(() => window.SHARE_MODE === true && document.getElementById("level").value === "8");
     assert.equal(await page.isChecked("#manual-feat-management"), false, "new share keeps explicit automation");
     assert.equal(await page.inputValue("#derived-feat-human-origin"), "警覺", "share human feat");
@@ -1213,12 +1258,13 @@ async function verifyAutomaticFeatRows(browser, url) {
 async function verifyFeatEligibilityWarnings(browser, url) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
+  await page.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
   try {
     await page.goto(url);
     await page.waitForFunction(() => !!window.TabletopMode);
     await page.check("#legal-dismiss");
     await page.click("#legal-close-btn");
-    await page.evaluate(() => applyStateObject({
+    await page.evaluate(() => applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] },
       class: "fighter", level: "8", background: "soldier", race: "human",
       str: "10", dex: "10", con: "10", int: "10", wis: "10", cha: "10",
       "speed-input": "30", "manual-feat-management": false,
@@ -1270,14 +1316,14 @@ async function verifyFeatEligibilityWarnings(browser, url) {
     await page.uncheck("#manual-feat-management");
     assert.equal(await page.inputValue("#speed-display"), "30", "automatic mode restores numeric gating");
     await page.evaluate(() => saveAllFields());
-    await page.reload();
+    await page.goto(url);
     await page.waitForFunction(() => document.getElementById("derived-feat-fighter-level-4")?.value === "迅捷步法");
     assert.equal(await warning.count(), 1, "autosave retains invalid choice and warning");
     await page.evaluate(state => applyStateObject(Object.fromEntries(Object.entries(state).reverse())), invalid);
     assert.equal(await warning.count(), 1, "JSON state restores invalid choice independent of field order");
     const hash = await page.evaluate(() => encodeStateToHash(collectShareState()));
     await page.goto(new URL(hash, url).href);
-    await page.reload();
+    await page.goto(new URL(hash, url).href);
     await page.waitForFunction(() => window.SHARE_MODE && document.getElementById("derived-feat-fighter-level-4")?.value === "迅捷步法");
     assert.equal(await warning.count(), 1, "share restores invalid choice and warning");
     assert.equal(await page.inputValue("#speed-display"), "30", "share restores inactive numeric effect");
@@ -1325,6 +1371,7 @@ async function verifyLegacyShareFeatCompatibility(browser, url) {
   const localSave = JSON.stringify({ class: "rogue", level: "1", race: "orc", background: "soldier",
     "feats-area-count": 1, "feat-0": "強韌體魄", "manual-feat-management": false });
   const encoder = await browser.newPage();
+  await encoder.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
   try {
     await encoder.goto(url);
     await encoder.waitForFunction(() => !!window.TabletopMode);
@@ -1343,11 +1390,13 @@ async function verifyLegacyShareFeatCompatibility(browser, url) {
           if (localStorage.getItem("dndchar_autosave_v1") === null) localStorage.setItem("dndchar_autosave_v1", localSave);
         }, localSave);
         const page = await context.newPage();
+        await page.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
         page.on("pageerror", error => errors.push(String(error)));
         const label = `${hash.startsWith("#s2=") ? "#s2" : "#s"} ${versioned ? "versioned" : "unversioned"}`;
         try {
           await page.goto(new URL(hash, url).href);
           await page.waitForFunction(() => window.SHARE_MODE && document.getElementById("manual-feat-management").checked);
+          await page.getByRole("dialog", { name: "已偵測到您的角色存檔為舊版", exact: true }).getByRole("button", { name: "知道了", exact: true }).click();
           assert.equal(await page.inputValue("#class"), "fighter", `${label}: share overrides local character`);
           for (const [id, value] of Object.entries(legacy).filter(([id]) => id.startsWith("feat-") || id.startsWith("derived-feat-"))) {
             assert.equal(await page.inputValue(`#${id}`), value, `${label}: preserves ${id}`);
@@ -1360,7 +1409,7 @@ async function verifyLegacyShareFeatCompatibility(browser, url) {
           assert.equal(upgraded["manual-feat-management"], true, `${label}: new share records migrated mode`);
           const upgradedHash = await page.evaluate(data => encodeStateToHash(data), upgraded);
           await page.goto(new URL(upgradedHash, url).href);
-          await page.reload();
+          await page.goto(new URL(upgradedHash, url).href);
           await page.waitForFunction(() => window.SHARE_MODE && document.getElementById("manual-feat-management").checked);
           assert.deepEqual(await page.evaluate(() => collectManagedFeatRows().map(row => ({ key: row.key, value: row.value, magic: row.magic }))), values, `${label}: re-share preserves all feats and spell choices`);
           if (!versioned && hash.startsWith("#s=")) {
@@ -1372,7 +1421,7 @@ async function verifyLegacyShareFeatCompatibility(browser, url) {
             assert.equal(automatic["manual-feat-management"], false, "migrated share can explicitly return to automation");
             const automaticHash = await page.evaluate(data => encodeStateToHash(data), automatic);
             await page.goto(new URL(automaticHash, url).href);
-            await page.reload();
+            await page.goto(new URL(automaticHash, url).href);
             await page.waitForFunction(() => window.SHARE_MODE && document.getElementById("level").value === "7");
             assert.equal(await page.isChecked("#manual-feat-management"), false, "re-shared automation does not trigger legacy migration again");
             assert.equal(await page.inputValue("#feat-0"), "魔法學徒", "return to automation keeps legacy manual feat");
@@ -1394,9 +1443,87 @@ async function verifyLegacyShareFeatCompatibility(browser, url) {
   } finally { await encoder.close(); }
 }
 
+async function verifyLegacyEmptyFeatRows(browser, url) {
+  const context = await browser.newContext();
+  await context.addInitScript(() => {
+    localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true");
+    localStorage.setItem("dnd.classFeaturePromptDisabled.v1", "true");
+  });
+  const page = await context.newPage(), errors = [];
+  page.on("pageerror", error => errors.push(String(error)));
+  const emptyMagic = { class: "", cantrip1: "", cantrip2: "", level1: "" };
+  const blank = { source: "", key: "", label: "專長：", value: "", magic: emptyMagic };
+  const legacy = { class: "fighter", level: "1", background: "", race: "elf", "manual-feat-management": true,
+    "feats-area-count": 4, "feat-0": "", "feat-1": "legacy-unknown-feat", "feat-2": "", "feat-3": "",
+    "feat-2-magic-initiate-class": "wizard", "feat-2-magic-initiate-cantrip-1": "light", "feat-2-magic-initiate-level-1": "shield",
+    "feat-3-legacy-note": "keep this row",
+    __managedFeatRows: [blank,
+      { source: "class", key: "fighter-level-4", label: "第4級專長：", value: "", magic: emptyMagic },
+      { ...blank, value: "legacy-unknown-feat" },
+      { ...blank, magic: { class: "wizard", cantrip1: "light", cantrip2: "", level1: "shield" } },
+      { ...blank, legacyNote: "keep this row" }] };
+  const closeNotice = async () => {
+    const dialog = page.getByRole("dialog", { name: "已偵測到您的角色存檔為舊版", exact: true });
+    if (await dialog.isVisible()) await dialog.getByRole("button", { name: "知道了", exact: true }).click();
+  };
+  const read = () => page.evaluate(() => collectManagedFeatRows().map(row => ({ source: row.source, key: row.key, value: row.value, magic: row.magic })));
+  const checkManaged = async label => {
+    const rows = await read();
+    assert.equal(rows.length, 4, `${label}: only the truly empty player placeholder is removed`);
+    assert.equal(rows[0].source, "class"); assert.equal(rows[0].key, "fighter-level-4"); assert.equal(rows[0].value, "", `${label}: source still awaiting a feat choice is preserved`);
+    assert.equal(rows[1].value, "legacy-unknown-feat", `${label}: stale flat indices do not overwrite structured unknown selections`);
+    assert.deepEqual(rows[2].magic, { class: "wizard", cantrip1: "light", cantrip2: "", level1: "shield" }, `${label}: partial magic choices survive empty feat value`);
+    assert.equal(rows[3].value, "", `${label}: unknown content is not mistaken for an empty placeholder`);
+    assert.equal(await page.locator('#feat-0 option[value="legacy-unknown-feat"]').count(), 1);
+  };
+  try {
+    await page.goto(url); await page.waitForFunction(() => window.SpellManagement && window.TabletopMode);
+    await page.evaluate(() => { document.getElementById("legal-modal")?.style.setProperty("display", "none"); window.onboardingTour?.finish?.(); });
+    const normalized = await page.evaluate(data => normalizeLegacyFeatState(data), legacy);
+    assert.equal(normalized.__managedFeatRows.length, 4);
+    assert.equal(normalized.__managedFeatRows.at(-1).legacyNote, "keep this row", "unknown raw properties keep their row eligible for restoration");
+    await page.setInputFiles("#import-json-file", { name: "legacy-empty-feats.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(legacy)) });
+    await page.waitForFunction(() => window.SpellManagement.isManual()); await closeNotice();
+    await checkManaged("JSON");
+    await page.evaluate(data => { cancelPendingAutosaveForClear(); dndStorage.setItem("dndchar_autosave_v1", JSON.stringify(data)); }, legacy);
+    await page.goto(url); await page.waitForFunction(() => window.SpellManagement?.isManual()); await closeNotice();
+    await page.evaluate(() => { document.getElementById("legal-modal")?.style.setProperty("display", "none"); window.onboardingTour?.finish?.(); });
+    await checkManaged("autosave startup");
+    const flat = { class: "fighter", level: "1", background: "", race: "elf", "manual-feat-management": true,
+      "feat-2-magic-initiate-level-1": "shield", "feat-2-magic-initiate-cantrip-1": "light", "feat-2-magic-initiate-class": "wizard",
+      "feats-area-count": 5, "feat-0": "", "feat-1": "醫療兵", "feat-2": "", "feat-3": "", "feat-4": "legacy-flat-feat" };
+    await page.evaluate(data => applyStateObject(data), flat); await closeNotice();
+    const flatRows = await read();
+    const flatPlayers = flatRows.filter(row => !row.source);
+    assert.deepEqual(flatPlayers.map(row => row.value), ["醫療兵", "", "legacy-flat-feat"], "flat legacy rows remove only raw empty player placeholders and reindex all meaningful records");
+    assert.deepEqual(flatPlayers[1].magic, { class: "wizard", cantrip1: "light", cantrip2: "", level1: "shield" });
+    assert.deepEqual(flatRows.filter(row => row.source).map(row => [row.source, row.key, row.value]), [["class", "fighting-style-fighter", ""]], "the fighter's source still awaiting a fighting style is retained");
+    const emptyLegacy = { class: "", level: "", background: "", race: "", "manual-feat-management": true,
+      "feats-area-count": 2, "feat-0": "", "feat-1": "" };
+    await page.evaluate(data => { applyStateObject(data); TabletopMode.setMode("sheet"); showTab("basic"); }, emptyLegacy); await closeNotice();
+    assert.equal(await page.locator("#feats-area > .form-row").count(), 0, "empty legacy data restores no player placeholder rows");
+    assert.equal(await page.locator("#feat-add-empty").isVisible(), true, "zero rows retain an explicit add entry");
+    await page.locator("#feat-add-empty").click();
+    assert.equal(await page.locator("#feats-area > .form-row").count(), 1);
+    assert.equal(await page.locator("#feat-add-empty").isVisible(), false);
+    assert.equal(await page.locator("#feat-0").evaluate(el => document.activeElement === el), true);
+    await page.locator("#feat-0").selectOption("醫療兵"); assert.equal(await page.inputValue("#feat-0"), "醫療兵");
+    const version2 = { ...emptyLegacy, "feats-area-count": 1, "feat-0": "", __managedFeatRows: [blank],
+      __spellManagement: { version: 2, manual: true, entries: [] } };
+    await page.evaluate(data => applyStateObject(data), version2);
+    assert.equal(await page.locator("#feats-area > .form-row").count(), 1, "version 2 deliberate empty rows are preserved");
+    const saved = await page.evaluate(() => collectStateObject());
+    await page.evaluate(data => applyStateObject(data), JSON.parse(JSON.stringify(saved)));
+    assert.equal(await page.locator("#feats-area > .form-row").count(), 1, "new JSON does not repeat legacy placeholder cleanup");
+    assert.deepEqual(errors, []);
+    console.log("Legacy empty feats: raw-only cleanup, JSON/autosave, source placeholders, unknown selections/properties, magic choices, reindexing and zero-row add entry passed.");
+  } finally { await context.close(); }
+}
+
 async function verifyConditionEffects(browser, url) {
   const context = await browser.newContext();
   const page = await context.newPage();
+  await page.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
   const errors = [];
   page.on("pageerror", error => errors.push(String(error)));
   try {
@@ -1617,7 +1744,7 @@ async function verifyConditionEffects(browser, url) {
       assert.equal(share.keys.includes(key), false, `normal sharing omits live ${key}`);
     }
     await page.evaluate(() => { saveAllFields(); flushPendingAutosave(); });
-    await page.reload();
+    await page.goto(url);
     await page.waitForFunction(() => TabletopMode?.collectState().activeConditions.includes("unconscious"));
     assert.deepEqual((await state()).activeConditions, persisted.activeConditions);
     assert.equal((await state()).concentrationSpellId, "");
@@ -1643,6 +1770,7 @@ async function verifyConditionEffects(browser, url) {
 async function verifyMergedActionUi(browser, url) {
   const context = await browser.newContext();
   const page = await context.newPage();
+  await page.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
   const errors = [];
   page.on("pageerror", error => errors.push(String(error)));
   const expandKey = "dnd.tabletopBasicExpanded.v1";
@@ -1651,7 +1779,7 @@ async function verifyMergedActionUi(browser, url) {
     await page.locator("#legal-dismiss").check();
     await page.locator("#legal-ack-btn").click();
     await page.evaluate(() => {
-      applyStateObject({ class: "wizard", level: "5" });
+      applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] }, class: "wizard", level: "5", race: "orc", background: "soldier" });
       TabletopMode.setMode("tabletop");
       TabletopMode.setPanel("actions");
     });
@@ -1740,9 +1868,7 @@ async function verifyMergedActionUi(browser, url) {
       ["plant-growth", "druid", 3, ["動作", "8小時"]]
     ];
     await page.evaluate(spells => {
-      for (const [spellValue, classValue, level] of spells) {
-        createSingleSpellRow(`level${level}spells-area`, String(level), null, { classValue, spellValue });
-      }
+      for (const [spellId, spellClass] of spells) if (!SpellManagement.addPlayerSpell(spellId, { spellClass })) throw new Error(`Unable to prepare timing fixture: ${spellId}`);
       document.dispatchEvent(new Event("change", { bubbles: true }));
     }, spells);
     for (const mode of ["action", "bonus", "movement", "reaction"]) {
@@ -1753,6 +1879,12 @@ async function verifyMergedActionUi(browser, url) {
     await page.locator("#tabletop-tab-spells").click();
     for (const [id, , , labels] of spells) {
       const button = page.locator(`.tabletop-spell-button[data-spell-id="${id}"]`).first();
+      // Switching panels schedules rendering on the next animation frame.
+      await page.waitForFunction(({ id, labels }) => {
+        const button = document.querySelector(`.tabletop-spell-button[data-spell-id="${id}"]`);
+        const actual = Array.from(button?.querySelectorAll(".tabletop-spell-button__timing > span") || [], span => span.textContent);
+        return actual.length === labels.length && actual.every((label, index) => label === labels[index]);
+      }, { id, labels });
       assert.deepEqual(await button.locator(".tabletop-spell-button__timing > span").allTextContents(), labels);
       assert.equal(await button.evaluate(el => {
         const names = el.querySelector(".tabletop-spell-button__names").getBoundingClientRect();
@@ -1808,6 +1940,7 @@ async function main() {
   try {
     browser = await chromium.launch({headless:true, ...(process.env.DND_BROWSER_CHANNEL ? {channel:process.env.DND_BROWSER_CHANNEL} : {})});
     const page = await browser.newPage();
+    await page.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
     const errors = []; page.on("pageerror", error => errors.push(String(error)));
     const url = `http://127.0.0.1:${server.address().port}/index.html?analytics=owner`;
     await page.goto(url);
@@ -1815,14 +1948,15 @@ async function main() {
     await verifyMergedActionUi(browser, url);
     const assertions = await verifyCoverage(page);
     console.log(`Action metadata: ${assertions} coverage assertions passed.`);
-    await verifyUiAndPersistence(page);
+    await verifyUiAndPersistence(page, url);
     await verifyClassTabletopUpdates(page);
     await verifyConditionEffects(browser, url);
-    await verifyManualWeaponVisibility(page);
+    await verifyManualWeaponVisibility(page, url);
     await verifyEquipmentLoadout(browser, url);
     await verifyAutomaticFeatRows(browser, url);
     await verifyFeatEligibilityWarnings(browser, url);
     await verifyLegacyShareFeatCompatibility(browser, url);
+    await verifyLegacyEmptyFeatRows(browser, url);
     console.log("Class tabletop descriptions, alerts, choices, resource conversion and recovery passed.");
     assert.deepEqual(errors, [], "browser runtime errors");
     console.log("Tabletop + legacy UI, custom/hidden actions, JSON/share/autosave round trips passed.");

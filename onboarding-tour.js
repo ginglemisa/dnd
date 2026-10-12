@@ -116,7 +116,6 @@
       this.identityPreviewSnapshot = null;
       this.abilityPreviewSnapshot = null;
       this.equipmentPreviewSnapshot = null;
-      this.spellControlSnapshot = null;
       this.spellSearchControlSnapshot = null;
       this.spellSearchPreviewOpened = false;
       this.tooltipDragPosition = null;
@@ -459,7 +458,7 @@
         {
           tab: "spells",
           title: "✨ 選擇與管理法術",
-          text: "如果角色具有施法能力，可以在這裡選擇與管理戲法及法術。\n\n先選擇職業，再選擇想查看的法術，即可確認詳細說明、施法時間、距離資料等資料。",
+          text: "選好職業、等級、背景與種族後，按「準備法術」管理戲法與準備清單；儲存才會套用選擇。\n\n點擊法術名稱可閱讀詳細說明。搜尋與查閱隨時都能使用。",
           placement: "top",
           getHoles: () => [this.getHoleForSelector("#spells-tab-button", 6)].filter(Boolean),
           beforeTab: () => this.ensureSpellPreview(),
@@ -742,7 +741,6 @@
       this.restoreIdentityPreview();
       this.restoreAbilityPreview();
       this.restoreEquipmentPreview();
-      this.restoreSpellControlPreview();
       this.restoreSpellPreviewState();
       this.closeTabletopSpellPreview();
       this.closeTabletopResourcePreview();
@@ -980,105 +978,6 @@
       this.equipmentPreviewSnapshot = null;
     }
 
-    prepareSpellControlPreview() {
-      if (this.spellControlSnapshot) return;
-      const area = document.getElementById("cantrips-area");
-      const row = area?.querySelector(".spell-entry:not(.spell-entry--derived)");
-      const classSelect = row?.querySelector("select[id*='-class-']");
-      const spellSelect = row?.querySelector("select[id*='-spell-']");
-      if (!row || !classSelect || !spellSelect) return;
-      const description = row.querySelector(".output.small-text");
-      const marker = row.querySelector(".spell-row-index");
-      this.spellControlSnapshot = {
-        row,
-        classSelect,
-        spellSelect,
-        classHtml: classSelect.innerHTML,
-        classValue: classSelect.value,
-        classDisabled: classSelect.disabled,
-        classAriaDisabled: classSelect.getAttribute("aria-disabled"),
-        spellHtml: spellSelect.innerHTML,
-        spellValue: spellSelect.value,
-        spellDisabled: spellSelect.disabled,
-        spellAriaDisabled: spellSelect.getAttribute("aria-disabled"),
-        description,
-        descriptionHtml: description?.innerHTML || "",
-        marker,
-        markerText: marker?.textContent || "",
-        rowDisplays: Array.from(area.children).map((element) => ({
-          element,
-          display: element.style.display
-        }))
-      };
-      classSelect.innerHTML = [
-        '<option value="">--職業--</option>',
-        '<option value="cleric">牧師</option>',
-        '<option value="wizard">法師</option>'
-      ].join("");
-      classSelect.disabled = false;
-      classSelect.removeAttribute("aria-disabled");
-      spellSelect.disabled = false;
-      spellSelect.removeAttribute("aria-disabled");
-      if (marker) marker.textContent = "#1";
-      classSelect.value = "";
-      this.populateTourSpellOptions("");
-      this.spellControlSnapshot.rowDisplays.forEach(({ element }) => {
-        element.style.display = element === row ? "" : "none";
-      });
-    }
-
-    populateTourSpellOptions(classValue) {
-      const snapshot = this.spellControlSnapshot;
-      if (!snapshot?.spellSelect) return;
-      const spellIdsByClass = {
-        cleric: ["spare-the-dying", "guidance"],
-        wizard: ["fire-bolt", "mending"]
-      };
-      const spellIds = spellIdsByClass[classValue] || [];
-      snapshot.spellSelect.replaceChildren();
-      const placeholder = document.createElement("option");
-      placeholder.value = "";
-      placeholder.textContent = "--法術--";
-      snapshot.spellSelect.appendChild(placeholder);
-      spellIds.forEach((spellId) => {
-        const option = document.createElement("option");
-        option.value = spellId;
-        option.textContent = window.SpellCatalog?.getDisplayName?.(spellId)
-          || ({ guidance: "神導術", "spare-the-dying": "維生術", "fire-bolt": "火焰箭", mending: "修復術" })[spellId];
-        snapshot.spellSelect.appendChild(option);
-      });
-      snapshot.spellSelect.value = "";
-      if (snapshot.description) snapshot.description.textContent = "—";
-    }
-
-    updateTourSpellDescription() {
-      const snapshot = this.spellControlSnapshot;
-      if (!snapshot?.description || !snapshot.spellSelect) return;
-      const spell = window.SpellCatalog?.getSpell?.(snapshot.spellSelect.value);
-      snapshot.description.textContent = spell?.desc || "—";
-    }
-
-    restoreSpellControlPreview() {
-      const snapshot = this.spellControlSnapshot;
-      if (!snapshot) return;
-      snapshot.classSelect.innerHTML = snapshot.classHtml;
-      snapshot.classSelect.value = snapshot.classValue;
-      snapshot.classSelect.disabled = snapshot.classDisabled;
-      if (snapshot.classAriaDisabled === null) snapshot.classSelect.removeAttribute("aria-disabled");
-      else snapshot.classSelect.setAttribute("aria-disabled", snapshot.classAriaDisabled);
-      snapshot.spellSelect.innerHTML = snapshot.spellHtml;
-      snapshot.spellSelect.value = snapshot.spellValue;
-      snapshot.spellSelect.disabled = snapshot.spellDisabled;
-      if (snapshot.spellAriaDisabled === null) snapshot.spellSelect.removeAttribute("aria-disabled");
-      else snapshot.spellSelect.setAttribute("aria-disabled", snapshot.spellAriaDisabled);
-      if (snapshot.description) snapshot.description.innerHTML = snapshot.descriptionHtml;
-      if (snapshot.marker) snapshot.marker.textContent = snapshot.markerText;
-      snapshot.rowDisplays.forEach(({ element, display }) => {
-        element.style.display = display;
-      });
-      this.spellControlSnapshot = null;
-    }
-
     captureSpellPreviewState() {
       if (this.spellPreviewSnapshot) return;
       const spellTabButton = document.getElementById("spells-tab-button");
@@ -1092,11 +991,6 @@
         toolbarClassName: toolbar?.className || "",
         managementClassName: management?.className || "",
         noSlotsClassName: noSlots?.className || "",
-        sections: Array.from(document.querySelectorAll("#tab-spells details.spell-level-section")).map((section) => ({
-          element: section,
-          open: section.open,
-          display: section.style.display
-        })),
         slotRows: [1, 2, 3].map((ring) => {
           const row = document.getElementById(`spellslot${ring}-row`);
           return {
@@ -1168,10 +1062,6 @@
       if (spellTab) spellTab.style.display = "";
       document.getElementById("spell-slot-management-wrap")?.classList.remove("is-hidden");
       document.getElementById("no-spell-slots-message")?.classList.add("is-hidden");
-      document.querySelectorAll("#tab-spells details.spell-level-section").forEach((section) => {
-        section.style.display = "";
-        section.open = true;
-      });
       [1, 2, 3].forEach((ring) => {
         const row = document.getElementById(`spellslot${ring}-row`);
         if (row) row.style.display = "";
@@ -1195,10 +1085,6 @@
       if (toolbar) toolbar.className = snapshot.toolbarClassName;
       if (management) management.className = snapshot.managementClassName;
       if (noSlots) noSlots.className = snapshot.noSlotsClassName;
-      snapshot.sections.forEach(({ element, open, display }) => {
-        element.open = open;
-        element.style.display = display;
-      });
       snapshot.slotRows.forEach(({ element, display, boxes }) => {
         if (element) element.style.display = display;
         boxes.forEach(({ element: box, display: boxDisplay, disabled }) => {
@@ -1431,9 +1317,6 @@
         return ["mainHand", "offHand", "armor"]
           .map((id) => document.getElementById(id))
           .filter(Boolean);
-      }
-      if (this.currentIndex === 4 && this.spellControlSnapshot) {
-        return [this.spellControlSnapshot.classSelect, this.spellControlSnapshot.spellSelect];
       }
       return [];
     }
@@ -1677,16 +1560,6 @@
         this.refreshEquipmentPreviewOutputs();
         this.renderStep();
         return;
-      }
-      if (this.currentIndex === 4 && this.spellControlSnapshot) {
-        if (target === this.spellControlSnapshot.classSelect) {
-          this.populateTourSpellOptions(target.value);
-          this.renderStep();
-        }
-        if (target === this.spellControlSnapshot.spellSelect) {
-          this.updateTourSpellDescription();
-          this.renderStep();
-        }
       }
     }
 

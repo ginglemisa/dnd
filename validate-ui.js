@@ -16,7 +16,7 @@ function verifyAnalyticsIsolation(html) {
   assert(!/<script\b[^>]*\bsrc=["']https:\/\/www\.googletagmanager\.com/i.test(html), "Google script must not load unconditionally");
   const analytics = fs.readFileSync(path.join(__dirname, "analytics.js"), "utf8");
   // These are virtual locations: scripts and events are captured in memory, never sent to Google.
-  const run = (href, { owner = false, blockedStorage = false, blockedHistory = false, storage = new Map() } = {}) => {
+  const run = (href, { owner = false, blockedStorage = false, blockedHistory = false, storage = new Map(), referrer = "" } = {}) => {
     if (owner) storage.set("twd20.analyticsRole.v1", "owner");
     const scripts = [];
     const context = vm.createContext({
@@ -28,8 +28,8 @@ function verifyAnalyticsIsolation(html) {
       },
       history: { replaceState(_state, _title, url) { if (blockedHistory) throw new Error("history blocked"); context.location = new URL(url, context.location); } },
       document: {
-        visibilityState: "visible", documentElement: { dataset: {} },
-        createElement: () => ({}), head: { appendChild: script => scripts.push(script.src) }, addEventListener() {}
+        visibilityState: "visible", referrer, documentElement: { dataset: {} },
+        createElement: () => ({}), head: { appendChild: script => scripts.push(script) }, addEventListener() {}
       },
       setTimeout: () => 1, clearTimeout() {}, addEventListener() {}
     });
@@ -46,6 +46,10 @@ function verifyAnalyticsIsolation(html) {
     assert.equal(allowed.tracked, true, host);
     assert.equal(allowed.scripts.length, 1);
     assert.equal(allowed.context.dataLayer.length, 4, "config and both event paths allowed");
+    const config = allowed.context.dataLayer.find(args => args[0] === "config")[2];
+    assert.equal(config.page_location, `https://${host}/`);
+    assert.equal(config.page_referrer, "");
+    assert.equal(allowed.scripts[0].referrerPolicy, "no-referrer");
   }
   const disabledCases = [
     ["http://localhost:8000/?analytics=user"], ["http://127.0.0.1:8000/"],
@@ -55,7 +59,13 @@ function verifyAnalyticsIsolation(html) {
     ["https://example.org/?site=twd20.com"],
     ["https://twd20.com/?analytics=owner"], ["https://www.twd20.com/", { owner: true }],
     ["https://twd20.com/?analytics=owner", { blockedStorage: true }],
-    ["file:///C:/Git/dnd/index.html?analytics=owner", { blockedHistory: true }]
+    ["file:///C:/Git/dnd/index.html?analytics=owner", { blockedHistory: true }],
+    ["https://twd20.com/?api_key=synthetic"],
+    ["https://twd20.com/?analytics=user&token=synthetic"],
+    ["https://twd20.com/?q=synthetic"],
+    ["https://twd20.com/?analytics=synthetic"],
+    ["https://twd20.com/#s=synthetic"], ["https://twd20.com/#s2=synthetic"],
+    ["https://twd20.com/?analytics=user#access_token=synthetic"]
   ];
   for (const [href, options] of disabledCases) {
     const result = run(href, options);
@@ -74,11 +84,15 @@ function verifyAnalyticsIsolation(html) {
   const uninitialized = run("https://twd20.com/?analytics=owner");
   delete uninitialized.context.twAnalyticsDisabled;
   assert.equal(uninitialized.context.twAnalytics.track("uninitialized_probe"), false, "custom events fail closed before initialization");
-  console.log("Analytics isolation: exact hosts, owner persistence, blocked storage/history and both event paths passed (no network).");
+  const referral = run("https://twd20.com/", { referrer: "https://example.org/private/synthetic?token=synthetic#secret" });
+  assert.equal(referral.context.dataLayer.find(args => args[0] === "config")[2].page_referrer, "https://example.org/");
+  assert(!JSON.stringify(referral.context.dataLayer).includes("synthetic"), "referrer credentials must not enter the event queue");
+  console.log("Analytics isolation: hosts, owner persistence, query/share URL exclusion, sanitized location/referrer and both event paths passed (no network).");
 }
 
 async function newUiPage(browser, options = {}) {
   const page = await browser.newPage(options);
+  await page.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
   page.setDefaultTimeout(10000);
   page.on("pageerror", error => browserErrors.push(String(error)));
   return page;
@@ -294,6 +308,20 @@ async function verifyAboutRoutes(browser, url) {
 async function verifyPdf(page, fieldsOnly) {
   await page.addScriptTag({ url: "/pdf-field-map.js" });
   await page.evaluate(() => {
+    for (const key of ["derived-feat-human-origin", "derived-feat-lessons-1", "derived-feat-lessons-2", "derived-feat-fighter-level-4", "derived-feat-warlock-level-8", "feat-0"]) {
+      if (!buildPdfFieldPayload({ [key]: "強韌體魄" }).feats1.includes("HP上限+等級×2")) throw new Error(`PDF feat source: ${key}`);
+    }
+    if (!buildPdfFieldPayload({ "derived-feat-fighting-style-fighter-2": "防禦" }).feats1.includes("穿護甲時AC+1")) throw new Error("PDF second fighting style");
+    const mirrored = buildPdfFieldPayload({
+      "derived-feat-human-origin": "魔法學徒", "feat-choice-human-origin": "魔法學徒",
+      "derived-feat-human-origin-magic-initiate-class": "wizard",
+      "derived-feat-human-origin-magic-initiate-cantrip-1": "light",
+      "derived-feat-human-origin-magic-initiate-cantrip-2": "mage-hand",
+      "derived-feat-human-origin-magic-initiate-level-1": "shield"
+    }).feats1;
+    if ((mirrored.match(/魔法學徒/gu) || []).length !== 1 || !mirrored.includes("法師魔法學徒") || !mirrored.includes("光亮術") || !mirrored.includes("護盾術")) throw new Error("PDF derived Magic Initiate choices and mirror exclusion");
+    const combined = buildPdfFieldPayload({ "derived-feat-background": "強韌體魄", "derived-feat-human-origin": "熟習", "derived-feat-fighting-style-fighter": "防禦", "feat-choice-human-origin": "熟習" }).feats1;
+    if (!combined.includes("強韌體魄") || !combined.includes("熟習") || !combined.includes("防禦") || (combined.match(/熟習\(/gu) || []).length !== 1) throw new Error("PDF combined automatic feat sources");
     for (const [cls, id, name] of [
       ["druid", "druid-fixed-tool-proficiency", "草藥工具"],
       ["monk", "monk-tool-proficiency-1", "長笛"],
@@ -337,9 +365,15 @@ async function verifyPdf(page, fieldsOnly) {
     let blob;
     URL.createObjectURL = value => { blob = value; return create(value); };
     try {
-      for (const cls of ["fighter", "wizard"]) {
-        await exportCharacterPdfFromState({ class: cls, level: "1" }, { outputMode: "editable", characterName: "UI regression" });
+      for (const [cls, level, feats] of [
+        ["fighter", "7", { "derived-feat-human-origin": "熟習", "derived-feat-fighting-style-fighter-2": "防禦" }],
+        ["wizard", "4", { "derived-feat-wizard-level-4": "強韌體魄" }],
+        ["warlock", "2", { "derived-feat-lessons-1": "強韌體魄", "derived-feat-lessons-2": "熟習" }]
+      ]) {
+        const state = { class: cls, level, ...feats };
+        await exportCharacterPdfFromState(state, { outputMode: "editable", characterName: "UI regression" });
         const document = await PDFLib.PDFDocument.load(await blob.arrayBuffer());
+        if (document.getForm().getTextField('feats1').getText() !== buildPdfFieldPayload(state).feats1) throw new Error(`Serialized automatic feats: ${cls}`);
         if (document.getForm().getCheckBox("chk_shld1").isChecked() !== expected.has(cls)) throw new Error(`Serialized shield checkbox: ${cls}`);
         checkNames(document.getForm(), 'editable');
         if (document.getForm().getTextField('Name1').getText() !== 'UI regression') throw new Error('Serialized character name');
@@ -370,7 +404,7 @@ async function verifyPdf(page, fieldsOnly) {
       } finally { PDFLib.PDFForm.prototype.flatten = flatten; }
     } finally { URL.createObjectURL = create; }
   });
-  console.log("PDF export: 4 actual PDFs checked, including shared name centering in all 3 modes.");
+  console.log("PDF export: 5 actual PDFs checked, including automatic feat sources and shared name centering in all 3 modes.");
 }
 
 async function prepareToastFixture(page) {
@@ -568,8 +602,8 @@ async function verifyFeatureChoiceDisclosures(browser, url) {
       await page.goto(url);
       await page.locator("#legal-close-btn").click();
       for (const [cls, level, tab, disclosureId, outputId, summaryId, inputSelector] of [
-        ["sorcerer", "2", "超魔法", "metamagic-options-disclosure", "metamagicOptions", "metamagic-summary", "input[data-metamagic-name]"],
-        ["warlock", "1", "魔能祈喚", "invocation-options-disclosure", "eldritch-invocations-output", "warlock-invocation-summary", 'input[data-invocation-name="魔能意志"]']
+        ["sorcerer", "2", "超魔", "metamagic-options-disclosure", "metamagicOptions", "metamagic-summary", "input[data-metamagic-name]"],
+        ["warlock", "1", "魔祈", "invocation-options-disclosure", "eldritch-invocations-output", "warlock-invocation-summary", 'input[data-invocation-name="魔能意志"]']
       ]) {
         await page.locator("#class").selectOption(cls);
         await page.locator("#level").selectOption(level);
@@ -721,7 +755,7 @@ async function verifyCustomBackground(browser, url) {
     assert.deepEqual(await page.evaluate(() => CustomBackground.getState()), state.__customBackground, "JSON restoration");
     await page.evaluate(() => applyStateObject(Object.fromEntries(Object.entries(collectStateObject()).reverse())));
     assert.deepEqual(await page.evaluate(() => CustomBackground.getState()), state.__customBackground, "JSON field order is irrelevant");
-    await page.evaluate(() => applyStateObject({ hp: "10" }));
+    await page.evaluate(() => applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] }, hp: "10" }));
     assert.deepEqual(await page.evaluate(() => CustomBackground.getState()), state.__customBackground, "unrelated partial state preserves the definition");
     const hash = await page.evaluate(async () => encodeStateToHash(collectShareState()));
     const shared = await newUiPage(browser);
@@ -762,10 +796,10 @@ async function verifyCustomBackground(browser, url) {
     await magicClass.selectOption("druid");
     await page.evaluate(() => applyStateObject(Object.fromEntries(Object.entries(collectStateObject()).reverse())));
     assert.equal(await magicClass.inputValue(), "druid", "custom Magic Initiate class survives JSON restoration");
-    await page.evaluate(() => applyStateObject({ background: "soldier" }));
+    await page.evaluate(() => applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] }, background: "soldier" }));
     assert.equal(await page.evaluate(() => CustomBackground.getState()), null, "legacy JSON needs no custom field");
     assert.equal(await page.inputValue("#background"), "soldier");
-    await page.evaluate(() => applyStateObject({ background: "custom", __customBackground: { 名稱: "無效" } }));
+    await page.evaluate(() => applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] }, background: "custom", __customBackground: { 名稱: "無效" } }));
     assert.equal(await page.inputValue("#background"), "", "invalid imported custom data is ignored");
     console.log("Custom background: atomic editing, validation, cancellation, existing feat/tool synchronization, Magic Initiate, PDF name, autosave/JSON/share restoration and narrow dialog passed.");
   } finally { await page.close(); }
@@ -776,6 +810,51 @@ async function verifyCharacterFeatures(browser, url) {
   try {
     await page.goto(url);
     await page.locator("#legal-close-btn").click();
+    assert.equal(await page.locator("#character-choice-warning-toggle").isVisible(), false, "no missing choices keeps the warning toggle hidden");
+    await page.locator("#class").selectOption("druid");
+    await page.locator("#level").selectOption("8");
+    await page.locator("#background").selectOption("seeker");
+    await page.locator("#race").selectOption("dwarf");
+    const warningToggle = page.locator("#character-choice-warning-toggle");
+    const reminders = page.locator("#class-feature-choice-reminder");
+    assert.equal(await warningToggle.isVisible(), true, "missing choices reveal the warning toggle");
+    for (const width of [1280, 390, 320]) {
+      await page.setViewportSize({ width, height: 900 });
+      const fieldRects = () => page.locator(".basic-row--origin .basic-pair-field").evaluateAll(fields =>
+        fields.map(field => {
+          const rect = field.getBoundingClientRect();
+          return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+        }));
+      await warningToggle.evaluate(el => { el.hidden = true; });
+      const originalRects = await fieldRects();
+      await warningToggle.evaluate(el => { el.hidden = false; });
+      assert.deepEqual(await fieldRects(), originalRects, `toggle preserves origin field geometry at ${width}px`);
+      assert.equal(await warningToggle.evaluate(el => {
+        const toggle = el.getBoundingClientRect();
+        const label = el.previousElementSibling.getBoundingClientRect();
+        const field = el.parentElement.getBoundingClientRect();
+        return toggle.left >= label.right && Math.abs(toggle.right - field.right) < 1
+          && toggle.top >= label.top && toggle.bottom <= label.bottom + 1;
+      }), true, `toggle sits to the far right of the race label at ${width}px`);
+      assert.equal(await reminders.isVisible(), true);
+      const state = await page.evaluate(() => collectStateObject());
+      await warningToggle.focus();
+      await page.keyboard.press("Enter");
+      assert.equal(await warningToggle.textContent(), "顯示警告");
+      assert.equal(await warningToggle.getAttribute("aria-expanded"), "false");
+      assert.equal(await reminders.isVisible(), false);
+      assert.deepEqual(await fieldRects(), originalRects, "hiding reminders preserves field heights");
+      assert.deepEqual(await page.evaluate(() => collectStateObject()), state, "hiding warnings preserves character data");
+      await page.locator("#level").selectOption("7");
+      assert.equal(await reminders.isVisible(), false, "choice updates keep warnings hidden");
+      await warningToggle.click();
+      assert.equal(await warningToggle.textContent(), "隱藏警告");
+      assert.equal(await warningToggle.getAttribute("aria-expanded"), "true");
+      assert.equal(await reminders.isVisible(), true);
+      assert.equal((await reminders.textContent()).includes("等級 8"), false, "restored warnings reflect current choices");
+      await page.locator("#level").selectOption("8");
+    }
+    await page.setViewportSize({ width: 1280, height: 900 });
     await page.locator("#class").selectOption("rogue");
     await page.locator("#level").selectOption("1");
     await page.locator("#background").selectOption("soldier");
@@ -861,7 +940,7 @@ async function verifyCharacterFeatures(browser, url) {
     await page.keyboard.press("Enter");
     const modal = page.locator("#character-features-modal");
     const tabs = modal.locator('[role="tab"]:visible');
-    assert.deepEqual(await tabs.allTextContents(), ["創角/表格", "職業", "背景", "種族"]);
+    assert.deepEqual(await tabs.allTextContents(), ["表格", "職業", "背景", "種族"]);
     assert.equal(await page.evaluate(() => scrollY), scroll, "opening details must not jump down the sheet");
     assert.equal(await modal.evaluate(el => {
       const body = el.querySelector(".app-dialog__body");
@@ -909,12 +988,12 @@ async function verifyCharacterFeatures(browser, url) {
     await page.locator("#class").selectOption("sorcerer");
     await page.locator("#level").selectOption("1");
     await opener.click();
-    assert.deepEqual(await tabs.allTextContents(), ["創角/表格", "職業", "背景", "種族"]);
+    assert.deepEqual(await tabs.allTextContents(), ["表格", "職業", "背景", "種族"]);
     await page.keyboard.press("Escape");
     await page.locator("#level").selectOption("2");
     await opener.click();
-    assert.deepEqual(await tabs.allTextContents(), ["創角/表格", "職業", "超魔法", "背景", "種族"]);
-    await modal.getByRole("tab", { name: "超魔法", exact: true }).click();
+    assert.deepEqual(await tabs.allTextContents(), ["表格", "職業", "超魔", "背景", "種族"]);
+    await modal.getByRole("tab", { name: "超魔", exact: true }).click();
     const metamagic = modal.locator("#metamagicOptions input[data-metamagic-name]").first();
     await metamagic.check();
     const choiceId = await metamagic.getAttribute("id");
@@ -927,13 +1006,13 @@ async function verifyCharacterFeatures(browser, url) {
     await page.reload();
     await page.locator("#legal-close-btn").click();
     await opener.click();
-    await modal.getByRole("tab", { name: "超魔法", exact: true }).click();
+    await modal.getByRole("tab", { name: "超魔", exact: true }).click();
     assert.equal(await page.locator(`#${choiceId}`).isChecked(), true, "metamagic survives autosave and reload while its panel is closed");
     await page.keyboard.press("Escape");
     await page.locator("#class").selectOption("warlock");
     await page.locator("#level").selectOption("1");
     await opener.click();
-    await modal.getByRole("tab", { name: "魔能祈喚", exact: true }).click();
+    await modal.getByRole("tab", { name: "魔祈", exact: true }).click();
     const invocation = name => modal.locator(`input[data-invocation-name="${name}"]`).first();
     assert.equal(await invocation("魔能意志").isEnabled(), true, "level 1 invocation remains selectable");
     for (const name of ["邪魔活力", "千面之臉", "幻象迷蹤", "超凡跳躍", "魔鬼視界", "原初之一教習", "苦痛魔爆", "魔能長槍", "斥力魔爆"]) {
@@ -947,16 +1026,13 @@ async function verifyCharacterFeatures(browser, url) {
     await page.keyboard.press("Escape");
     await page.locator("#level").selectOption("2");
     await page.evaluate(() => showTab("spells"));
-    // Retained spells from prior class choices stay unavailable; edit the current class row.
-    const cantripRow = page.locator('#cantrips-area .spell-entry:not([data-spell-source]):not(.spell-entry--unavailable)').first();
-    const spellClass = cantripRow.locator('select[id*="-class-"]');
-    assert.equal(await spellClass.inputValue(), "warlock", "automatic spell rows use the character class");
-    assert.equal(await spellClass.isDisabled(), true, "automatic spell source stays fixed");
-    await cantripRow.locator('select[id*="-spell-"]').selectOption("eldritch-blast");
+    assert.equal(await page.evaluate(() => SpellManagement.addPlayerSpell("eldritch-blast", { spellClass: "warlock" })), true);
+    assert.equal(await page.evaluate(() => SpellManagement.getEntries({ availableOnly: true })
+      .find(entry => entry.spellId === "eldritch-blast")?.spellClass), "warlock", "automatic preparation uses the character class");
     await page.evaluate(() => showTab("basic"));
     await opener.click();
-    assert.deepEqual(await tabs.allTextContents(), ["創角/表格", "職業", "魔能祈喚", "背景", "種族"]);
-    await modal.getByRole("tab", { name: "魔能祈喚", exact: true }).click();
+    assert.deepEqual(await tabs.allTextContents(), ["表格", "職業", "魔祈", "背景", "種族"]);
+    await modal.getByRole("tab", { name: "魔祈", exact: true }).click();
     assert.equal(await invocation("邪魔活力").isEnabled(), true, "level 2 invocation unlocks at level 2");
     assert.equal(await invocation("星移步法").isDisabled(), true, "level 5 invocation remains unavailable at level 2");
     for (const name of ["幽影護甲", "魔能意志", "邪魔活力"]) await invocation(name).check();
@@ -986,7 +1062,7 @@ async function verifyCharacterFeatures(browser, url) {
     assert.equal(await modal.isVisible(), true, "canceling Tome selection keeps ability details open");
     for (const width of [1280, 320]) {
       await page.setViewportSize({ width, height: 900 });
-      for (const tab of ["創角/表格", "職業", "魔能祈喚", "背景", "種族"]) {
+      for (const tab of ["表格", "職業", "魔祈", "背景", "種族"]) {
         await modal.getByRole("tab", { name: tab, exact: true }).click();
         assert.equal(await modal.evaluate(el => {
           const surface = el.querySelector(".app-dialog__surface").getBoundingClientRect();
@@ -1006,7 +1082,7 @@ async function verifyCharacterFeatures(browser, url) {
     await page.evaluate(async () => {
       await onboardingTour.jumpToTarget({ selector: '#eldritch-invocations-output input[data-invocation-name="苦痛魔爆"]' });
     });
-    assert.equal(await modal.locator('[role="tab"][aria-selected="true"]').textContent(), "魔能祈喚");
+    assert.equal(await modal.locator('[role="tab"][aria-selected="true"]').textContent(), "魔祈");
     assert.equal(await modal.locator('input[data-invocation-name="苦痛魔爆"]').first().evaluate(el => el === document.activeElement), true);
     await page.keyboard.press("Escape");
     const choiceAlertCases = [
@@ -1023,6 +1099,14 @@ async function verifyCharacterFeatures(browser, url) {
       await page.locator("#class").selectOption(cls);
       await page.locator("#level").selectOption(level);
       const beforeJump = await page.evaluate(() => collectStateObject());
+      const sheetReminder = page.locator("#class-feature-choice-reminder button").filter({ hasText: label }).first();
+      await sheetReminder.focus();
+      await page.keyboard.press(key || "Enter");
+      await page.waitForFunction(panel => document.activeElement?.closest("[data-feature-panel]")?.dataset.featurePanel === panel
+        && document.querySelector(`[data-feature-panel="${panel}"] .onboarding-jump-target`), panel);
+      assert.equal(await modal.locator('[role="tab"][aria-selected="true"]').getAttribute("data-feature-tab"), panel);
+      assert.deepEqual(await page.evaluate(() => collectStateObject()), beforeJump, "sheet reminder navigation preserves character choices");
+      await page.keyboard.press("Escape");
       await page.evaluate(() => {
         document.querySelectorAll(".feature-choice-disclosure").forEach(details => { details.open = false; });
         TabletopMode.setMode("tabletop");
@@ -1083,19 +1167,57 @@ async function verifyClassFeatureChoicePrompt(browser, url) {
   try {
     await page.goto(url);
     await page.locator("#legal-close-btn").click();
-    await page.evaluate(() => applyStateObject({ class: "cleric", level: "7" }));
+    const classes = await page.locator('#class option[value]:not([value=""])').evaluateAll(options => options.map(option => option.value));
+    assert.equal(classes.length, 12, "completion covers every supported class");
+    const levelChoices = modal.locator('[data-feat-choice] select[id*="-level-"]:visible');
+    const missingLevelChoices = () => page.evaluate(() => Array.from(getMissingClassFeatureChoiceSections())
+      .flatMap(section => Array.from(section.querySelectorAll('[data-feat-choice] select[id*="-level-"]'), select => select.id)));
+    for (const cls of classes) {
+      await page.evaluate(cls => applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] },
+        class: cls, level: "3",
+        [`feat-choice-${cls}-level-4`]: "",
+        [`feat-choice-${cls}-level-6`]: "",
+        [`feat-choice-${cls}-level-8`]: ""
+      }), cls);
+      assert.deepEqual(await missingLevelChoices(), [], `${cls}: no improvement before level 4`);
+      for (const level of cls === "fighter" ? [4, 6, 8] : [4, 8]) {
+        await chooseAsPlayer("level", String(level));
+        await modal.waitFor();
+        const id = `feat-choice-${cls}-level-${level}`;
+        assert.deepEqual(await levelChoices.evaluateAll(selects => selects.map(select => select.id)), [id], `${cls} ${level}: only the new improvement is missing`);
+        assert.equal(await modal.locator(`#${id}`).evaluate(select => select.closest("section").querySelector("h3").textContent), `等級 ${level}：屬性值提升`);
+        await modal.locator(`#${id}`).selectOption("屬性值提升");
+        assert.deepEqual(await missingLevelChoices(), [], `${cls} ${level}: live selection completes the improvement`);
+        assert.equal(await modal.locator(`#${id}`).isVisible(), true, "completed improvement stays visible until dismissal");
+        assert.equal(await page.evaluate(id => collectStateObject()[id], id), "屬性值提升", "completion uses the existing character field");
+        await closePrompt();
+      }
+      assert.deepEqual(await missingLevelChoices(), [], `${cls}: completed earlier improvements stay complete at level 8`);
+      await page.evaluate(cls => { document.getElementById(`feat-choice-${cls}-level-4`).value = ""; syncDerivedFeatRows(); }, cls);
+      await chooseAsPlayer("level", "7");
+      await modal.waitFor();
+      assert.deepEqual(await levelChoices.evaluateAll(selects => selects.map(select => select.id)), [`feat-choice-${cls}-level-4`], `${cls}: earlier missing improvement is included without completed levels`);
+      await page.keyboard.press("Escape");
+      await modal.waitFor({ state: "detached" });
+      assert.equal(await page.inputValue(`#feat-choice-${cls}-level-4`), "", "Escape leaves the earlier improvement available for later completion");
+      if (cls === "fighter") assert.equal(await page.inputValue("#feat-choice-fighter-level-6"), "屬性值提升", "Escape preserves the completed fighter improvement");
+    }
+    await page.evaluate(() => applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] }, class: "cleric", level: "7" }));
     await page.waitForTimeout(200);
     assert.equal(await modal.count(), 0, "JSON/restoration changes do not auto-open the prompt");
     await chooseAsPlayer("level", "8");
     await modal.waitFor();
-    assert.deepEqual(await modal.locator("section[data-feature-level]:visible h3").allTextContents(), ["等級 1：神聖使命", "等級 7：神佑打擊"], "all earlier missing groups appear together");
+    assert.deepEqual(await modal.locator("section[data-feature-level]:visible h3").allTextContents(), ["等級 1：神聖使命", "等級 4：屬性值提升", "等級 7：神佑打擊", "等級 8：屬性值提升"], "all earlier missing groups and improvements appear together");
     assert.equal(await modal.locator(".app-dialog__close").count(), 0, "the completion dialog has only its footer close button");
     await modal.locator("#cleric-guardian").check();
     await modal.locator("#cleric-trickster").check();
+    await modal.locator("#cleric-trickster-cantrip").selectOption("guidance");
     assert.equal(await page.locator("#cleric-guardian").isChecked(), false, "mission exclusivity still uses the live controls");
     await modal.locator("#cleric-blessed-strikes-divine-strike").check();
+    await modal.locator("#feat-choice-cleric-level-4").selectOption("屬性值提升");
+    await modal.locator("#feat-choice-cleric-level-8").selectOption("警覺");
     assert.equal(await page.evaluate(() => collectStateObject()["cleric-trickster"]), true, "selection applies immediately while open");
-    assert.equal(await modal.locator("section[data-feature-level]:visible").count(), 2, "completed sections stay in place until closed");
+    assert.equal(await modal.locator("section[data-feature-level]:visible").count(), 4, "completed sections stay in place until closed");
     await closePrompt();
     assert.equal(await page.locator("#level").evaluate(el => el === document.activeElement), true, "close returns focus to the level selector");
     assert.equal(await page.locator("#class-abilities-panel #classFeatures").count(), 1, "original controls return to their original parent");
@@ -1105,16 +1227,18 @@ async function verifyClassFeatureChoicePrompt(browser, url) {
 
     await chooseAsPlayer("class", "druid");
     await modal.waitFor();
-    assert.deepEqual(await modal.locator("section[data-feature-level]:visible h3").allTextContents(), ["等級 1：原初使命", "等級 7：元素狂怒"]);
+    assert.deepEqual(await modal.locator("section[data-feature-level]:visible h3").allTextContents(), ["等級 1：原初使命", "等級 4：屬性值提升", "等級 7：元素狂怒"]);
     await modal.locator("#druid-sentinel").check();
     await modal.locator("#druid-elemental-fury-primal-strike").check();
+    await modal.locator("#feat-choice-druid-level-4").selectOption("屬性值提升");
     await page.keyboard.press("Escape");
     await modal.waitFor({ state: "detached" });
     assert.equal(await page.evaluate(() => collectShareState()["druid-elemental-fury-primal-strike"]), true, "Escape preserves choices in share state");
 
     await chooseAsPlayer("class", "ranger");
     await modal.waitFor();
-    assert.deepEqual(await modal.locator("section[data-feature-level]:visible h3").allTextContents(), ["等級 2：戰鬥風格", "等級 3：狩獵目標（獵人子職）", "等級 7：防守戰術（獵人子職）"]);
+    assert.deepEqual(await modal.locator("section[data-feature-level]:visible h3").allTextContents(), ["等級 2：戰鬥風格", "等級 3：狩獵目標（獵人子職）", "等級 4：屬性值提升", "等級 7：防守戰術（獵人子職）"]);
+    await modal.locator("#feat-choice-ranger-level-4").selectOption("屬性值提升");
     await modal.locator("#ranger-fighting-style").check();
     const style = modal.locator("#feat-choice-fighting-style-ranger");
     const view = style.locator("..").locator(".feat-choice-view");
@@ -1134,10 +1258,12 @@ async function verifyClassFeatureChoicePrompt(browser, url) {
     await detail.waitFor({ state: "detached" });
     assert.equal(await view.evaluate(el => el === document.activeElement), true, "feat detail returns to its view button");
     await modal.locator("#ranger-druidic-warrior").check();
+    await modal.getByLabel("戲法 #1", { exact: true }).selectOption("guidance");
+    await modal.getByLabel("戲法 #2", { exact: true }).selectOption("starry-wisp");
     await closePrompt();
     await chooseAsPlayer("level", "2");
     await page.waitForTimeout(200);
-    assert.equal(await modal.count(), 0, "caster alternative completes the choice without requiring cantrips");
+    assert.equal(await modal.count(), 0, "caster alternative completes the choice after selecting both cantrips");
 
     await chooseAsPlayer("class", "paladin");
     await modal.waitFor();
@@ -1165,7 +1291,41 @@ async function verifyClassFeatureChoicePrompt(browser, url) {
     await chooseAsPlayer("class", "paladin");
     await page.waitForTimeout(200);
     assert.equal(await modal.count(), 0, "manual feat management retains its existing behavior");
+    await chooseAsPlayer("level", "8");
+    await page.waitForTimeout(200);
+    assert.equal(await modal.count(), 0, "manual feat management also skips missing improvements");
+    const details = page.locator("#character-features-modal");
+    for (const [tab, width] of [["class", 1280], ["background", 390], ["race", 390]]) {
+      await page.setViewportSize({ width, height: 900 });
+      const before = await page.evaluate(() => collectStateObject());
+      await page.locator(`[data-character-features-tab="${tab}"]`).click();
+      const panel = details.locator(`[data-feature-panel="${tab}"]`);
+      assert.equal(await panel.locator("[data-feat-choice] select:visible").count(), 0, "manual mode hides source feat/style/improvement selectors");
+      const guidance = panel.locator(".manual-feat-guidance:visible").first();
+      assert.match(await guidance.innerText(), /請至首頁最下方自行管理專長。/);
+      if (tab !== "class") assert.equal(await panel.evaluate(el => el.lastElementChild.classList.contains("manual-feat-guidance")), true);
+      for (const theme of ["classic", "warm"]) {
+        for (const mode of ["light", "dark"]) {
+          await page.evaluate(({ theme, mode }) => { document.documentElement.dataset.uiTheme = theme; document.documentElement.dataset.theme = mode; }, { theme, mode });
+          assert.equal(await guidance.evaluate(el => getComputedStyle(el).color !== getComputedStyle(document.body).color), true, "guidance uses theme accent text");
+          assert.equal(await guidance.locator("p").evaluate(el => getComputedStyle(el).color === getComputedStyle(el.parentElement).color), true, "dialog paragraph styles preserve the guidance accent");
+          assert.equal(await details.locator(".app-dialog__surface").evaluate(el => el.scrollWidth <= el.clientWidth), true);
+        }
+      }
+      const forward = guidance.getByRole("button", { name: "前往自行管理", exact: true });
+      await forward.focus();
+      await page.keyboard.press("Enter");
+      await page.waitForFunction(() => !document.getElementById("character-features-modal")
+        && document.getElementById("feat-management-section").classList.contains("onboarding-jump-target")
+        && (document.activeElement?.closest("#feats-area") || document.activeElement?.id === "feat-add-empty"));
+      assert.deepEqual(await page.evaluate(() => collectStateObject()), before, "manual guidance navigation preserves all selections");
+    }
     await page.evaluate(() => { document.getElementById("manual-feat-management").checked = false; updateFeatManagementMode(); });
+    await page.locator('[data-character-features-tab="class"]').click();
+    assert.equal(await details.locator("[data-feature-panel='class'] .manual-feat-guidance:visible").count(), 0, "automatic mode removes manual guidance");
+    assert(await details.locator("[data-feature-panel='class'] [data-feat-choice] select:visible").count() > 0, "automatic mode restores source selectors");
+    await page.keyboard.press("Escape");
+    await page.locator("#level").selectOption("2");
     await page.setViewportSize({ width: 390, height: 844 });
     await chooseAsPlayer("level", "3");
     await modal.waitFor();
@@ -1173,6 +1333,9 @@ async function verifyClassFeatureChoicePrompt(browser, url) {
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, "narrow prompt has no page overflow");
     await closePrompt();
     await chooseAsPlayer("level", "4");
+    await modal.waitFor();
+    assert.deepEqual(await levelChoices.evaluateAll(selects => selects.map(select => select.id)), ["feat-choice-paladin-level-4"]);
+    await closePrompt();
     await page.locator('[data-character-features-tab="class"]').click();
     const original = page.locator("#character-features-modal");
     await original.locator("#paladin-fighting-style").check();
@@ -1202,7 +1365,173 @@ async function verifyClassFeatureChoicePrompt(browser, url) {
     await modal.waitFor();
     await closePrompt();
   } finally { await page.close(); }
-  console.log("Class option completion: thresholds, live choices, nested feat lookup, dismissal, local preference, clear, share and narrow layout passed.");
+  console.log("Class option completion: all 12 classes' improvements (including fighter level 6), earlier missing levels, live choices, nested feat lookup, dismissal, manual management, local preference, clear, share and narrow layout passed.");
+}
+
+async function verifyClassFeatureSupplementalChoices(browser, url) {
+  const page = await newUiPage(browser, { viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });
+  const modal = page.locator("#class-feature-choices-modal");
+  const open = async state => {
+    await page.evaluate(state => {
+      applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] }, __spellManagement: { version: 2, manual: state["manual-spell-management"] === true, entries: [] }, ...state });
+      openClassFeatureChoicePrompt(getMissingClassFeatureChoiceSections(), document.getElementById("level"));
+    }, state);
+    await modal.waitFor();
+  };
+  const close = async () => {
+    await modal.getByRole("button", { name: "關閉", exact: true }).click();
+    await modal.waitFor({ state: "detached" });
+  };
+  const roundTrip = async check => {
+    const data = await page.evaluate(() => { saveAllFields(); return collectStateObject(); });
+    assert.equal(Object.keys(data).some(key => key.startsWith("class-feature-linked-")), false, "linked fields never enter character JSON");
+    await page.evaluate(data => applyStateObject(Object.fromEntries(Object.entries(JSON.parse(JSON.stringify(data))).reverse())), data);
+    await check();
+    const hash = await page.evaluate(() => encodeStateToHash(collectShareState()));
+    await page.goto(`${url}${hash}`);
+    await check();
+    assert.equal(await modal.count(), 0, "share restoration never auto-opens completion");
+    await page.goto(url);
+    await page.locator("#legal-close-btn").click();
+    await check();
+  };
+  try {
+    await page.goto(url);
+    await page.locator("#legal-close-btn").click();
+    await open({ class: "fighter", level: "4", "feat-choice-fighter-level-4": "" });
+    await modal.locator("#feat-choice-fighter-level-4").selectOption("魔法學徒");
+    const magic = modal.locator('[data-class-feature-additional="fighter-level-4"]');
+    await magic.getByLabel("魔法學徒法表", { exact: true }).selectOption("wizard");
+    await magic.getByLabel("戲法 #1", { exact: true }).selectOption("light");
+    await magic.getByLabel("戲法 #2", { exact: true }).selectOption("mage-hand");
+    await magic.getByLabel("一環法術", { exact: true }).selectOption("shield");
+    for (const label of ["戲法 #1", "戲法 #2", "一環法術"]) {
+      const select = magic.getByLabel(label, { exact: true });
+      const selected = await select.inputValue();
+      assert.equal(await select.locator(`option[value="${selected}"]`).textContent(), await page.evaluate(id => SpellCatalog.getSpell(id).nameZh, selected), `${label}: the current choice shows only Chinese without its own prepared marker`);
+    }
+    assert.equal(await magic.getByLabel("戲法 #2", { exact: true }).locator('option[value="light"]').textContent(), "光亮術（已準備）", "other prepared choices retain the marker without English");
+    assert.equal(await page.inputValue("#derived-feat-fighter-level-4-magic-initiate-level-1"), "shield", "linked selection updates the canonical feat immediately");
+    await magic.getByRole("button", { name: "查看一環法術詳情" }).click();
+    const detail = page.locator("#quick-build-spell-detail");
+    await detail.waitFor();
+    await page.keyboard.press("Escape");
+    assert.equal(await magic.getByRole("button", { name: "查看一環法術詳情" }).evaluate(el => el === document.activeElement), true);
+    assert.equal(await modal.evaluate(el => el.scrollWidth <= el.clientWidth), true, "supplemental fields fit the narrow dialog");
+    assert.equal(await modal.locator(".app-dialog__body").evaluate(el => el.scrollWidth <= el.clientWidth), true, "supplemental fields do not add horizontal body scrolling");
+    await close();
+    await roundTrip(async () => assert.equal(await page.inputValue("#derived-feat-fighter-level-4-magic-initiate-level-1"), "shield"));
+
+    // An already chosen feat with an unfinished form is still a missing section.
+    await open({ class: "fighter", level: "4", "feat-choice-fighter-level-4": "魔法學徒", "derived-feat-fighter-level-4-magic-initiate-level-1": "" });
+    assert.equal(await magic.isVisible(), true);
+    await modal.locator("#feat-choice-fighter-level-4").selectOption("警覺");
+    assert.equal(await magic.count(), 0, "changing feat removes the supplemental form");
+    await close();
+
+    for (const [cls, id, spellId, other] of [
+      ["cleric", "cleric-trickster", "guidance", "cleric-guardian"],
+      ["druid", "druid-shaman", "starry-wisp", "druid-sentinel"]
+    ]) {
+      await open({ class: cls, level: "1", [id]: false, [other]: false, [`${id}-cantrip`]: "",
+        __spellManagement: { version: 2, manual: false, entries: [{ spellId: "mending", spellClass: cls, level: 0 }] } });
+      assert.match(await modal.locator(`#${id}-cantrip option[value="mending"]`).textContent(), /（已準備）$/u, "existing prepared spells are marked before choosing an extra cantrip");
+      assert.equal(await modal.locator(`#${id}-cantrip`).isVisible(), false);
+      await modal.locator(`#${id}`).check();
+      await modal.locator(`#${id}-cantrip`).selectOption(spellId);
+      assert.equal(await modal.locator(`#${id}-cantrip option[value="${spellId}"]`).textContent(), await page.evaluate(id => SpellCatalog.getSpell(id).nameZh, spellId));
+      const sourceSpell = () => page.evaluate(key => SpellManagement.getEntries()
+        .find(entry => entry.sourceKey === key)?.spellId || "", `class-${id}-cantrip`);
+      assert.equal(await sourceSpell(), spellId);
+      await modal.locator(`#${other}`).check();
+      assert.doesNotMatch(await modal.locator(`#${id}-cantrip option[value="${spellId}"]`).textContent(), /（已準備）$/u, "removing the mission source updates the marker");
+      assert.equal(await modal.locator(`#${id}-cantrip`).isVisible(), false);
+      assert.equal(await sourceSpell(), "", "switching mission removes its automatic spell");
+      await modal.locator(`#${id}`).check();
+      assert.equal(await modal.locator(`#${id}-cantrip`).inputValue(), spellId, "switching back preserves the ability choice");
+      await close();
+      await page.evaluate(() => { showTab("basic"); });
+      await page.locator('[data-character-features-tab="class"]').click();
+      const classModal = page.locator("#character-features-modal");
+      await classModal.waitFor();
+      assert.equal(await classModal.locator(`#${id}-cantrip option[value="${spellId}"]`).textContent(), await page.evaluate(id => SpellCatalog.getSpell(id).nameZh, spellId), "the class dialog also hides English and the current choice marker");
+      assert.equal(await classModal.locator(`#${id}-cantrip option[value="mending"]`).textContent(), "修復術（已準備）");
+      await page.keyboard.press("Escape");
+      await roundTrip(async () => {
+        assert.equal(await page.inputValue(`#${id}-cantrip`), spellId);
+        assert.equal(await sourceSpell(), spellId);
+      });
+    }
+
+    for (const [cls, id, prefix, spells] of [
+      ["paladin", "paladin-blessed-warrior", "class-paladin-blessed-warrior", ["guidance", "sacred-flame"]],
+      ["ranger", "ranger-druidic-warrior", "class-ranger-druidic-warrior", ["guidance", "starry-wisp"]]
+    ]) {
+      await open({ class: cls, level: "2", [id]: false, [`${cls}-fighting-style`]: false });
+      await modal.locator(`#${id}`).check();
+      await modal.getByLabel("戲法 #1", { exact: true }).selectOption(spells[0]);
+      assert.match(await modal.getByLabel("戲法 #2", { exact: true }).locator(`option[value="${spells[0]}"]`).textContent(), /（已準備）$/u, "other fields also mark the prepared spell");
+      assert.equal(await modal.getByLabel("戲法 #2", { exact: true }).locator(`option[value="${spells[0]}"]`).isDisabled(), true, "sibling cantrips remain distinct");
+      await modal.getByLabel("戲法 #2", { exact: true }).selectOption(spells[1]);
+      await close();
+      await roundTrip(async () => {
+        for (const [index, spellId] of spells.entries()) assert.equal(await page.evaluate(key => SpellManagement.getEntries()
+          .find(entry => entry.sourceKey === key)?.spellId, `${prefix}-cantrip-${index + 1}`), spellId);
+      });
+      await open({ class: cls, level: "2", [id]: true, __classFeatureCantrips: { [`${prefix}-cantrip-1`]: "" } });
+      assert.equal(await modal.getByLabel("戲法 #1", { exact: true }).isVisible(), true, "unfinished alternative reappears without an unchecked ability");
+      await close();
+    }
+
+    await open({ class: "bard", level: "6", "feat-choice-bard-level-4": "屬性值提升", __bardMagicalDiscoverySelection: [] });
+    for (const [slot, cls, ring, spellId] of [[1, "wizard", "1", "shield"], [2, "cleric", "cantrips", "guidance"]]) {
+      await modal.locator(`#bard-magical-discovery-${slot}-class`).selectOption(cls);
+      await modal.locator(`#bard-magical-discovery-${slot}-ring`).selectOption(ring);
+      await modal.locator(`#bard-magical-discovery-${slot}-spell`).selectOption(spellId);
+      assert.equal(await modal.locator(`#bard-magical-discovery-${slot}-spell option[value="${spellId}"]`).textContent(), await page.evaluate(id => SpellCatalog.getSpell(id).nameZh, spellId));
+    }
+    await close();
+    await roundTrip(async () => assert.equal(await page.inputValue("#bard-magical-discovery-1-spell"), "shield"));
+    await open({ class: "druid", level: "3", "druid-land": "" });
+    await modal.locator("#druid-land").selectOption("polar");
+    await close();
+    assert.equal(await page.locator("#druid-land-control #druid-land").inputValue(), "polar", "external class controls return to their original location");
+    await open({ class: "sorcerer", level: "6", "sorcerer-elemental-affinity-damage-type": "" });
+    await modal.locator("#sorcerer-elemental-affinity-damage-type").selectOption("fire");
+    assert.equal(await modal.locator("#metamagic-options-section").isVisible(), true);
+    await modal.locator('input[data-metamagic-name]:enabled').nth(0).check();
+    await modal.locator('input[data-metamagic-name]:enabled').nth(1).check();
+    assert.equal(await page.evaluate(() => getClassFeatureChoiceIssues().some(issue => issue.reminderType === "metamagic")), false);
+    await close();
+    assert.equal(await page.locator("#character-features #metamagic-options-section").count(), 1);
+    await open({ class: "warlock", level: "2" });
+    assert.equal(await modal.locator("#eldritch-invocations-section").isVisible(), true);
+    await modal.locator('input[data-invocation-name="原初之一教習"]').first().check();
+    await modal.locator('#feat-choice-lessons-1').selectOption("魔法學徒");
+    await modal.locator('[data-class-feature-additional="lessons-1"]').getByLabel("魔法學徒法表", { exact: true }).selectOption("wizard");
+    assert.equal(await modal.locator('[data-class-feature-additional="lessons-1"]').getByLabel("一環法術", { exact: true }).isEnabled(), true, "invocation origin feats use the same live supplemental form");
+    await close();
+    assert.equal(await page.locator("#character-features #eldritch-invocations-section").count(), 1);
+
+    await open({ class: "warlock", level: "2", __spellManagement: { version: 2, manual: false,
+      entries: [{ spellId: "eldritch-blast", spellClass: "warlock", level: 0 }] } });
+    await modal.locator('input[data-invocation-name="苦痛魔爆"]').first().check();
+    await modal.getByLabel("苦痛魔爆：戲法 #1", { exact: true }).selectOption("eldritch-blast");
+    assert.equal(await page.evaluate(() => getAgonizingBlastSelects()[0].value), "eldritch-blast", "invocation target can be completed inline");
+    await close();
+
+    await open({ class: "paladin", level: "2", "manual-spell-management": true, "paladin-blessed-warrior": true, __classFeatureCantrips: {} });
+    await modal.getByLabel("戲法 #1", { exact: true }).selectOption("guidance");
+    await modal.getByLabel("戲法 #2", { exact: true }).selectOption("sacred-flame");
+    assert.deepEqual(await page.evaluate(() => SpellManagement.collectClassFeatureCantrips()), {
+      "class-paladin-blessed-warrior-cantrip-1": "guidance", "class-paladin-blessed-warrior-cantrip-2": "sacred-flame"
+    }, "manual spell lists retain independently editable class choices");
+    assert.equal(await page.evaluate(() => SpellManagement.getEntries().filter(entry => entry.sourceKey.includes("blessed-warrior")).length), 0,
+      "editing ability choices does not change a manual spell list");
+    await close();
+    await roundTrip(async () => assert.equal(await page.evaluate(() => SpellManagement.collectClassFeatureCantrips()["class-paladin-blessed-warrior-cantrip-2"]), "sacred-flame"));
+  } finally { await page.close(); }
+  console.log("Class supplemental choices: live feat forms, all four class cantrip grants, discoveries, other class options, JSON/share/autosave, nested lookup and narrow layout passed.");
 }
 
 async function verifyFeatureReferences(browser, url) {
@@ -1226,7 +1555,7 @@ async function verifyFeatureReferences(browser, url) {
     for (const width of [1280, 320]) {
       await page.setViewportSize({ width, height: 900 });
       await opener.click();
-      await modal.getByRole("tab", { name: "創角/表格", exact: true }).click();
+      await modal.getByRole("tab", { name: "表格", exact: true }).click();
       await modal.locator("#classCreationInfo .skill-tip").first().click();
       await assertOnTop(page.locator("#skillPopup"));
       await page.locator("#skillPopup .close").click();
@@ -1538,9 +1867,129 @@ async function verifyAdventureJournal(browser, url) {
   } finally { await large.close(); }
 }
 
+async function verifyCharacterDataSafety(browser, url) {
+  const page = await newUiPage(browser);
+  const sourceTag = '<img src="data:image/png,invalid" onerror="window.__unsafeCharacterScript=true">';
+  const state = { class: "wizard", level: "1", race: "human", background: "soldier", characterName: "安全測試",
+    __spellManagement: { version: 2, manual: true, entries: [{ spellId: "light", level: 0, sourceTag }] } };
+  const assertSafeTag = async target => {
+    await target.locator(".spell-picked-source-tag").waitFor({ state: "attached" });
+    assert.equal(await target.locator(".spell-picked-source-tag").textContent(), `[${sourceTag}]`);
+    assert.equal(await target.locator(".spell-picked-source-tag img").count(), 0);
+    assert.equal(await target.evaluate(() => Boolean(window.__unsafeCharacterScript)), false);
+  };
+  try {
+    await page.goto(url);
+    await page.waitForFunction(() => window.SpellManagement && window.TabletopMode);
+    await page.evaluate(state => { applyStateObject(state); saveAllFields(); }, state);
+    await assertSafeTag(page);
+    await page.goto(url);
+    await assertSafeTag(page);
+
+    const hashes = await page.evaluate(async state => [
+      await encodeStateToHash(state),
+      "#s=" + btoa(unescape(encodeURIComponent(JSON.stringify(state))))
+    ], state);
+    for (const hash of hashes) {
+      const shared = await newUiPage(browser);
+      try {
+        const sharedUrl = new URL(url); sharedUrl.searchParams.set("analytics", "owner"); sharedUrl.hash = hash;
+        await shared.goto(sharedUrl.href);
+        await assertSafeTag(shared);
+        assert.equal(await shared.evaluate(() => window.SHARE_MODE), true);
+      } finally { await shared.close(); }
+    }
+
+    const safety = await page.evaluate(async () => {
+      const before = JSON.stringify(collectStateObject());
+      const rejects = data => { try { applyStateObject(data); return false; } catch (_) { return JSON.stringify(collectStateObject()) === before; } };
+      const bad = [
+        { class: "fighter", "tool-proficiency-list-count": 1000000 },
+        { class: "fighter", "feats-area-count": 1000000 },
+        { "feats-area-count": "101" }, { "tool-proficiency-list-count": "100junk" },
+        { __managedFeatRows: Array.from({ length: 101 }, () => ({})) },
+        { __spellManagement: { version: 2, manual: true, entries: Array.from({ length: 513 }, () => ({ spellId: "light" })) } },
+        { __spellManagement: { entries: [{ spellId: "light", freeUses: 1000000, sourceKey: "probe" }] } },
+        { __spellManagement: { entries: Array.from({ length: 17 }, () => ({ spellId: "light", freeUses: 64 })) } },
+        Object.fromEntries(Array.from({ length: 513 }, (_, i) => [`cantrips-area-spell-${i}`, "light"])),
+        { "free-spell-use-probe-100000000": true }, { "free-spell-use-probe-1e8": true },
+        Object.fromEntries(Array.from({ length: 17 }, (_, i) => [`free-spell-use-probe${i}-64`, true])),
+        { __spellManagement: { entries: [{ spellId: "light", sourceKey: "__proto__" }] } },
+        { __spellManagement: { freeUses: { probe: Array(65).fill(false) } } },
+        { __spellManagement: { entries: [{ spellId: "light", sourceTag: {} }] } },
+        { note: "x".repeat(256 * 1024 + 1) }, [],
+        JSON.parse('{"__proto__":{"polluted":true}}')
+      ];
+      let nested = {}; for (let i = 0; i < 22; i++) nested = { child: nested }; bad.push(nested);
+      const rejected = bad.map(rejects);
+      validateCharacterState({ "feats-area-count": 100, "tool-proficiency-list-count": "100",
+        __spellManagement: { entries: [{ spellId: "light", freeUses: 64 }, { spellId: "guidance", freeUses: "proficiency" }] } });
+      let directCountRejected = 0;
+      for (const setter of [setFeatRowCount, setToolProficiencyRowCount]) {
+        try { setter(1000000); } catch (_) { directCountRejected++; }
+      }
+      let utf8Rejected = false;
+      try { parseCharacterStateJson(JSON.stringify(Object.fromEntries(Array.from({ length: 8 }, (_, i) => [i, "字".repeat(100000)])))); }
+      catch (_) { utf8Rejected = true; }
+      const bomb = await compressJson(JSON.stringify({ note: "x".repeat(2 * 1024 * 1024) }));
+      let decompressionRejected = false;
+      try { await decompressJson(bomb); } catch (_) { decompressionRejected = true; }
+      const originalUrl = new URL(location.href);
+      const bombUrl = new URL(originalUrl); bombUrl.searchParams.set("analytics", "owner"); bombUrl.hash = "#s2=" + bytesToBase64Url(bomb);
+      history.replaceState(null, "", bombUrl);
+      const bombResult = await decodeStateFromHash();
+      history.replaceState(null, "", originalUrl);
+      return { rejected, directCountRejected, utf8Rejected, decompressionRejected, compressedBytes: bomb.length,
+        bombShareRejected: bombResult.data === null && Boolean(bombResult.error), bombHash: bombUrl.hash };
+    });
+    assert(safety.rejected.every(Boolean), "invalid data is rejected before changing any character fields");
+    assert.equal(safety.directCountRejected, 2);
+    assert.equal(safety.utf8Rejected, true);
+    assert.equal(safety.decompressionRejected, true);
+    assert.equal(safety.bombShareRejected, true);
+    assert(safety.compressedBytes < 10000, "small compressed input exercises the decompressed size limit");
+
+    const saved = await page.evaluate(() => { saveAllFields(); return dndStorage.getItem("dndchar_autosave_v1"); });
+    for (const buffer of [Buffer.from(JSON.stringify({ class: "fighter", "tool-proficiency-list-count": 1000000 })), Buffer.alloc(2 * 1024 * 1024 + 1, 32)]) {
+      await page.locator("#import-json-file").setInputFiles({ name: "invalid.json", mimeType: "application/json", buffer });
+      const dialog = page.getByRole("dialog", { name: "JSON 匯入失敗", exact: true });
+      await dialog.getByRole("button", { name: "關閉", exact: true }).click();
+      await page.waitForFunction(() => document.getElementById("import-json-file").value === "");
+      assert.equal(await page.locator("#class").inputValue(), "wizard");
+      assert.equal(await page.evaluate(() => autosaveDirty), false, "failed file selection must not schedule a replacement autosave");
+      assert.equal(await page.evaluate(() => dndStorage.getItem("dndchar_autosave_v1")), saved);
+    }
+    await page.locator("#import-json-file").setInputFiles({ name: "safe-text.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(state)) });
+    await assertSafeTag(page);
+    await page.goto(url);
+    await assertSafeTag(page);
+
+    const invalidRaw = JSON.stringify({ class: "fighter", "feats-area-count": 1000000 });
+    assert.equal(await page.locator("#class").inputValue(), "wizard", "actual file import restores the complete character after reload");
+    assert.equal(await page.evaluate(() => saveAllFields()), true);
+    await page.evaluate(raw => dndStorage.setItem("dndchar_autosave_v1", raw), invalidRaw);
+    await page.goto(url);
+    await page.waitForFunction(() => document.querySelector(".app-toast")?.textContent?.includes("原始存檔仍保留"));
+    assert.equal(await page.evaluate(() => saveAllFields()), false);
+    assert.equal(await page.evaluate(() => dndStorage.getItem("dndchar_autosave_v1")), invalidRaw);
+    await page.locator("#import-json-file").setInputFiles({ name: "recovery.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(state)) });
+    await page.waitForFunction(() => document.getElementById("class").value === "wizard" && !autosaveRestoreBlocked);
+    await assertSafeTag(page);
+    assert.equal(await page.evaluate(() => saveAllFields()), true);
+
+    const shareUrl = new URL(url); shareUrl.searchParams.set("analytics", "owner"); shareUrl.hash = safety.bombHash;
+    const beforeBadShare = await page.evaluate(() => dndStorage.getItem("dndchar_autosave_v1"));
+    await page.goto(shareUrl.href);
+    await page.getByRole("dialog", { name: "分享連結讀取失敗", exact: true }).getByRole("button", { name: "知道了", exact: true }).click();
+    assert.equal(await page.evaluate(() => saveAllFields()), false);
+    assert.equal(await page.evaluate(() => dndStorage.getItem("dndchar_autosave_v1")), beforeBadShare);
+    console.log("Character input safety: XSS text rendering, JSON/share/autosave, preflight limits, gzip bomb cancellation and rejected-data preservation passed.");
+  } finally { await page.close(); }
+}
+
 async function main() {
   const sections = new Set(process.argv.slice(2));
-  for (const flag of sections) assert(["--appearance-only", "--dialogs-only", "--journal-only", "--pdf-only", "--pdf-fields-only"].includes(flag), `Unknown option: ${flag}`);
+  for (const flag of sections) assert(["--appearance-only", "--dialogs-only", "--journal-only", "--pdf-only", "--pdf-fields-only", "--data-only"].includes(flag), `Unknown option: ${flag}`);
   assert(sections.size <= 1, "Choose at most one UI section");
   const all = sections.size === 0;
   const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
@@ -1563,6 +2012,7 @@ async function main() {
   try {
     browser = await chromium.launch({ headless: true, ...(process.env.DND_BROWSER_CHANNEL ? { channel: process.env.DND_BROWSER_CHANNEL } : {}) });
     const url = `http://127.0.0.1:${server.address().port}/index.html?analytics=owner`;
+    if (all || sections.has("--data-only")) await verifyCharacterDataSafety(browser, url);
     if (all || sections.has("--appearance-only")) {
       const page = await newUiPage(browser, { viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });
       try { await verifyAppearanceAndLayout(browser, page, url); }
@@ -1575,6 +2025,7 @@ async function main() {
       await verifyCustomBackground(browser, url);
       await verifyCharacterFeatures(browser, url);
       await verifyClassFeatureChoicePrompt(browser, url);
+      await verifyClassFeatureSupplementalChoices(browser, url);
       await verifyFeatureReferences(browser, url);
     }
     if (all || sections.has("--journal-only")) await verifyAdventureJournal(browser, url);

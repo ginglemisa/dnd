@@ -743,9 +743,19 @@
   }
 
   function duplicateWarningsForReview() {
+    const fixedToolOverlap = {
+      criminal: { class: "rogue", tool: "盜賊工具" },
+      seeker: { class: "druid", tool: "草藥工具" }
+    }[draft.choices.background];
     return crossSourceDuplicateGroups(draft, "skills")
       .concat(crossSourceDuplicateGroups(draft, "spells"))
-      .concat(crossSourceDuplicateGroups(draft, "tools"));
+      .concat(crossSourceDuplicateGroups(draft, "tools").filter(group => !(
+        fixedToolOverlap && draft.choices.class === fixedToolOverlap.class && group.name === fixedToolOverlap.tool &&
+        group.items.every(item =>
+          (item.sourceType === "background" && item.sourceId === draft.choices.background) ||
+          (item.sourceType === "class" && item.sourceId === draft.choices.class && item.content?.fixed)
+        )
+      )));
   }
 
   function duplicateReviewWarning() {
@@ -1471,7 +1481,8 @@
       #quick-build-spell-detail .quick-build-spell-prepare.has-spellbook-action {flex-wrap:wrap}
       .has-spellbook-action .quick-build-spell-prepare-actions {margin-left:auto}
       .quick-build-spell-prepare-actions button[hidden] {display:none}
-      .quick-build-spell-prepare-actions .quick-build-spell-prepare-confirm {white-space:nowrap}
+      .quick-build-spell-prepare-actions .quick-build-spell-prepare-confirm,
+      .quick-build-spell-prepare-actions .quick-build-spellbook-write {white-space:nowrap}
       .quick-build-spell-prepare-actions .quick-build-spellbook-write:disabled {opacity:.55;cursor:not-allowed;background:var(--qb-surface-elevated);border-color:var(--qb-border-strong);color:var(--qb-text);translate:none;box-shadow:none}
       @media(max-width:620px) {.has-spellbook-action .quick-build-spellbook-write {grid-column:1 / -1}}
       .quick-build-ability-heading {display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin:0 0 16px}.quick-build-ability-heading h3 {margin:0!important}.quick-build-ability-status {display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px}:where(html:not([data-ui-theme="warm"])) .quick-build-status-pill {padding:6px 10px;border:1px solid var(--qb-border);border-radius:999px;background:var(--qb-surface-soft);color:var(--qb-text-muted);font-size:.82rem;line-height:1.2}:where(html[data-ui-theme="warm"]) .quick-build-status-pill {padding:6px 10px;border:1px solid var(--qb-border);border-radius:var(--radius-md);background:var(--qb-surface-soft);color:var(--qb-text-muted);font-size:.82rem;line-height:1.2}.quick-build-status-pill strong {color:var(--qb-text)}.quick-build-status-pill.is-complete {border-color:var(--qb-success-border);background:var(--qb-success-bg);color:var(--qb-success-text)}.quick-build-ability-grid {display:grid;gap:12px;padding:14px}:where(html:not([data-ui-theme="warm"])) .quick-build-ability-row {display:grid;grid-template-columns:minmax(92px,.7fr) minmax(0,2fr) minmax(74px,.55fr);gap:16px;align-items:center;padding:14px 16px;border:1px solid var(--qb-border);border-radius:10px;background:var(--qb-surface-muted)}:where(html[data-ui-theme="warm"]) .quick-build-ability-row {display:grid;grid-template-columns:minmax(92px,.7fr) minmax(0,2fr) minmax(74px,.55fr);gap:16px;align-items:center;padding:14px 16px;border:1px solid var(--qb-border);border-radius:var(--radius-md);background:var(--qb-surface-muted)}.quick-build-ability-name {display:flex;flex-direction:column;gap:3px}.quick-build-ability-name strong {font-size:1.05rem;color:var(--qb-text)}.quick-build-ability-name small {color:var(--qb-text-muted);font-size:.76rem}.quick-build-ability-controls {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.quick-build-ability-field {display:grid;gap:6px;min-width:0;color:var(--qb-text-muted);font-size:.82rem}:where(html:not([data-ui-theme="warm"])) .quick-build-ability-field select {width:100%;min-width:0;min-height:44px;margin:0;padding:8px 34px 8px 12px;border:1px solid var(--qb-border-strong);border-radius:8px;background:var(--qb-input);color:var(--qb-text);font:inherit;font-size:1rem}:where(html[data-ui-theme="warm"]) .quick-build-ability-field select {width:100%;min-width:0;min-height:44px;margin:0;padding:8px 34px 8px 12px;border:1px solid var(--qb-border-strong);border-radius:var(--radius-md);background:var(--qb-input);color:var(--qb-text);font:inherit;font-size:1rem}.quick-build-ability-field select:focus-visible {border-color:var(--qb-accent);outline:2px solid var(--qb-accent);outline-offset:1px}.quick-build-ability-field select:disabled {border-color:var(--qb-border);background:var(--qb-disabled);color:var(--qb-disabled-text);opacity:1}.quick-build-ability-total {display:grid;gap:2px;justify-items:end}.quick-build-ability-total span {color:var(--qb-text-muted);font-size:.75rem}.quick-build-ability-total strong {color:var(--qb-accent-text);font-size:1.45rem;line-height:1}.quick-build-ability-help {display:flex;flex-wrap:wrap;gap:6px 16px;margin:0 0 18px;color:var(--qb-text-muted);font-size:.88rem}.quick-build-ability-help strong {color:var(--qb-text-body)}:where(html:not([data-ui-theme="warm"])) .quick-build-complete {padding:18px;border-left:4px solid var(--qb-success-border);border-radius:8px;background:var(--qb-success-bg);color:var(--qb-success-text)}:where(html[data-ui-theme="warm"]) .quick-build-complete {padding:18px;border-left:4px solid var(--qb-success-border);border-radius:var(--radius-md);background:var(--qb-success-bg);color:var(--qb-success-text)}.quick-build-plan {margin:20px 0 0;padding-left:1.4rem;line-height:1.8;color:var(--qb-text-body)}.quick-build-plan li.current {color:var(--qb-accent-text);font-weight:700}
@@ -1492,6 +1503,7 @@
 :where(html[data-ui-theme="warm"]) #quick-build-wizard .quick-build-footer button.is-incomplete:focus-visible {box-shadow:var(--shadow-control)}:where(html:not([data-ui-theme="warm"])) #quick-build-wizard .quick-build-footer button.is-ready {animation:quick-build-next-ready .52s cubic-bezier(.22,1,.36,1)}:where(html[data-ui-theme="warm"]) #quick-build-wizard .quick-build-footer button.is-ready {animation:none}#quick-build-wizard .quick-build-footer button:disabled {cursor:not-allowed;opacity:.55;box-shadow:none}
       :where(html[data-ui-theme="warm"]) #quick-build-wizard .quick-build-footer button:not(:disabled):active {box-shadow:none;translate:1px 1px}
       #quick-build-wizard .quick-build-previous {grid-column:1}#quick-build-wizard .quick-build-modify {grid-column:2;border-color:var(--qb-accent);color:var(--qb-accent-text);font-weight:800}#quick-build-wizard .quick-build-next {grid-column:3}
+      #quick-build-wizard .quick-build-review-footer {grid-template-columns:repeat(2,minmax(0,1fr))}
       .quick-build-summary-list .quick-build-summary-full-label {grid-column:1/-1}.quick-build-summary-list .quick-build-summary-full-value {grid-column:1/-1;padding-inline-start:1em;text-align:left}.quick-build-review-panel .quick-build-source-groups {white-space:pre-line}
       :where(html:not([data-ui-theme="warm"])) #quick-build-wizard .quick-build-equipment-actions button.is-selected {border-color:var(--qb-accent);background:var(--qb-accent-hover);color:#fff;box-shadow:inset 0 0 0 1px var(--qb-accent)}
       :where(html[data-ui-theme="warm"]) #quick-build-wizard .quick-build-equipment-actions button.is-selected {border-color:var(--qb-accent);background:var(--qb-accent-hover);color:var(--on-accent);box-shadow:inset 0 0 0 1px var(--qb-accent)}
@@ -1517,6 +1529,7 @@
         <header class="quick-build-header"><div><div class="quick-build-title-row"><h2 id="quick-build-title">快速創角</h2><button type="button" class="quick-build-reset" aria-label="重置快速創角">重置</button></div><p class="quick-build-progress" aria-live="polite"></p></div><button type="button" class="quick-build-close" aria-label="關閉快速創角">✕</button></header>
         <main class="quick-build-body"></main>
         <footer class="quick-build-footer"><button type="button" class="quick-build-previous">上一步</button><button type="button" class="quick-build-modify" hidden>↑修改↑</button><button type="button" class="quick-build-next">下一步</button></footer>
+        <footer class="quick-build-footer quick-build-review-footer" hidden><button type="button" data-review-return>返回修改</button><button type="button" class="primary" data-import-mobile-card>匯入手機角卡</button></footer>
       </section>`;
     document.body.appendChild(modal);
     modal.querySelector(".quick-build-reset").addEventListener("click", discardDraft);
@@ -1524,6 +1537,12 @@
     modal.querySelector(".quick-build-previous").addEventListener("click", goPreviousStep);
     modal.querySelector(".quick-build-modify").addEventListener("click", editCurrentStep);
     modal.querySelector(".quick-build-next").addEventListener("click", goNextStep);
+    modal.querySelector("[data-review-return]").addEventListener("click", () => {
+      draft.ui = { ...draft.ui, currentStepId: "level-one", view: viewForStep("level-one") };
+      saveDraft();
+      render();
+    });
+    modal.querySelector("[data-import-mobile-card]").addEventListener("click", importDraftToMobileCard);
     modal.addEventListener("click", event => { if (event.target === modal) closeWizard(); });
     modal.addEventListener("keydown", trapWizardKeyboard);
     window.addEventListener("resize", () => syncAbilitySummaryWrapping(modal));
@@ -2442,14 +2461,7 @@
       <section class="quick-build-choice-panel quick-build-review-panel"><h4>裝備選擇</h4><dl class="quick-build-summary-list">
         ${summaryField("背景裝備", formatEquipmentSelection(draft.selections.backgroundEquipment))}
         ${summaryField("職業裝備", formatEquipmentSelection(draft.selections.classEquipment))}
-      </dl></section>
-      <div class="quick-build-substep-actions quick-build-inline-actions"><button type="button" data-review-return>返回修改</button><button type="button" class="primary" data-import-mobile-card>匯入手機角卡</button></div>`;
-    body.querySelector("[data-review-return]")?.addEventListener("click", () => {
-      draft.ui = { ...draft.ui, currentStepId: "level-one", view: viewForStep("level-one") };
-      saveDraft();
-      render();
-    });
-    body.querySelector("[data-import-mobile-card]")?.addEventListener("click", importDraftToMobileCard);
+      </dl></section>`;
   }
 
   const MOBILE_RACE_OPTION_VALUES = {
@@ -2509,17 +2521,6 @@
   }
 
   function trimDynamicMobileRows() {
-    if (typeof removeMagicInitiateDerivedSpellRows === "function") removeMagicInitiateDerivedSpellRows();
-    if (typeof getSpellAreaConfigs === "function") {
-      getSpellAreaConfigs().forEach(({ id, level }) => {
-        const area = document.getElementById(id);
-        if (!area) return;
-        const manualRows = [...area.querySelectorAll(":scope > .spell-entry")].filter(row => !row.dataset.spellSource);
-        const defaultCount = typeof level === "number" && level >= 4 ? 0 : 1;
-        manualRows.slice(defaultCount).forEach(row => row.remove());
-        if (typeof refreshSpellRows === "function") refreshSpellRows(id);
-      });
-    }
     const featArea = document.getElementById("feats-area");
     [...(featArea?.children || [])].slice(2).forEach(row => row.remove());
     if (typeof refreshFeatRows === "function") refreshFeatRows();
@@ -2538,20 +2539,10 @@
       else if (element.tagName === "SELECT") blankState[element.id] = [...element.options].find(option => option.defaultSelected)?.value ?? element.options[0]?.value ?? "";
       else blankState[element.id] = element.defaultValue;
     });
-    if (typeof getSpellAreaConfigs === "function") {
-      getSpellAreaConfigs().forEach(({ id, level }) => {
-        const defaultCount = typeof level === "number" && level >= 4 ? 0 : 1;
-        blankState[`${id}-count`] = defaultCount;
-        if (defaultCount) {
-          blankState[`${id}-class-0`] = "";
-          blankState[`${id}-spell-0`] = "";
-        }
-      });
-    }
+    blankState.__spellManagement = { version: 2, manual: false, entries: [] };
     blankState["feats-area-count"] = 2;
     blankState["tool-proficiency-list-count"] = 1;
     blankState["tool-proficiency-0"] = "";
-    blankState.__deletedSpellRowCache = {};
     applyStateObject(blankState);
     const highLevelSpells = document.getElementById("highlevel-spells");
     if (highLevelSpells) highLevelSpells.style.display = "none";
@@ -2565,35 +2556,15 @@
   }
 
   function addManualMobileSpell({ spellId, level, classId }, warnings) {
-    const areaId = level === "cantrips" ? "cantrips-area" : `level${level}spells-area`;
-    const area = document.getElementById(areaId);
     const sourceClass = chooseMobileSpellClass(level, spellId, classId);
-    if (!area || !sourceClass) {
+    if (!sourceClass) {
       mobileImportWarning(`法術「${spellNameZh(spellId)}」：找不到可匯入的職業或環位選項`, warnings);
       return false;
     }
-    let row = [...area.querySelectorAll(":scope > .spell-entry")].find(candidate => {
-      if (candidate.dataset.spellSource) return false;
-      return !candidate.querySelector("select[id*='-spell-']")?.value;
-    });
-    if (!row && typeof createSingleSpellRow === "function") row = createSingleSpellRow(areaId, level);
-    const classSelect = row?.querySelector("select[id*='-class-']");
-    const spellSelect = row?.querySelector("select[id*='-spell-']");
-    if (!classSelect || !spellSelect) {
-      mobileImportWarning(`法術「${spellNameZh(spellId)}」：無法建立法術列`, warnings);
+    if (!window.SpellManagement?.addPlayerSpell?.(spellId, { spellClass: sourceClass })) {
+      mobileImportWarning(`法術「${spellNameZh(spellId)}」：無法加入目前準備清單`, warnings);
       return false;
     }
-    classSelect.value = sourceClass;
-    dispatchMobileField(classSelect);
-    const option = [...spellSelect.options].find(item => item.value === spellId);
-    if (!option) {
-      mobileImportWarning(`法術「${spellNameZh(spellId)}」：手機角卡目前的法術清單沒有這個選項`, warnings);
-      classSelect.value = "";
-      dispatchMobileField(classSelect);
-      return false;
-    }
-    spellSelect.value = option.value;
-    dispatchMobileField(spellSelect);
     return true;
   }
 
@@ -2780,7 +2751,13 @@
 
   function importMobileSpells(warnings) {
     const content = draft.selections.levelOne?.content || {};
-    (content.cantrips || []).forEach(spellId => addManualMobileSpell({ spellId, level: "cantrips", classId: draft.choices.class }, warnings));
+    const cantrips = [...(content.cantrips || [])];
+    const missionId = { cleric: "cleric-trickster", druid: "druid-shaman" }[draft.choices.class];
+    if (missionId && document.getElementById(missionId)?.checked
+        && cantrips.length > LEVEL_ONE_DEFINITIONS[draft.choices.class].cantrips) {
+      setMobileField(`${missionId}-cantrip`, cantrips.pop(), warnings, "使命額外戲法");
+    }
+    cantrips.forEach(spellId => addManualMobileSpell({ spellId, level: "cantrips", classId: draft.choices.class }, warnings));
     if (draft.choices.class === "wizard") {
       window.Spellbook.setState({ spellIds: content.spellbookSpells || [] }, { sync: false });
     }
@@ -2819,7 +2796,9 @@
     if (!confirmed) return;
     saveDraft();
     const warnings = [];
+    window.SpellManagement?.beginRestoreBatch();
     if (!resetMobileCardForImport(warnings)) {
+      window.SpellManagement?.endRestoreBatch();
       await window.AppDialog.showMessage({
         title: "匯入失敗",
         message: warnings.join("\n") || "無法重置目前角色卡。",
@@ -2859,6 +2838,9 @@
     } catch (error) {
       console.warn("創角小幫手匯入角色卡時發生錯誤：", error);
       mobileImportWarning(`匯入流程中斷：${error?.message || "未知錯誤"}`, warnings);
+    } finally {
+      window.SpellManagement?.endRestoreBatch();
+      window.SpellManagement?.setPlayerEntries(window.SpellManagement.getPlayerEntries());
     }
     closeWizard();
     if (completed) window.twAnalytics?.track?.("quick_build_complete");
@@ -3284,6 +3266,7 @@
     const modify = modal.querySelector(".quick-build-modify");
     const next = nextButton;
     modal.querySelector(".quick-build-footer").hidden = stepMeta.id === "level-one-review";
+    modal.querySelector(".quick-build-review-footer").hidden = stepMeta.id !== "level-one-review";
     previous.disabled = stepIndex === 0;
     modify.hidden = draft.ui.view !== "review";
     const nextIsIncomplete = draft.ui.view === "edit" && !stepIsComplete(step);

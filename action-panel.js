@@ -24,7 +24,7 @@
     ]),
     bonus: Object.freeze([
       { key: "drink-potion", label: "喝藥水", description: "以附贈動作喝下一瓶治療藥水，恢復 2d4 + 2 點生命值。" },
-      { key: "offhand-attack", label: "二次攻擊", description: "在自己的回合以輕型武器執行攻擊動作後，可用附贈動作持另一把輕型武器再攻擊一次。除非具備特定專長，這次攻擊的傷害不加正值屬性調整值。" }
+      { key: "offhand-attack", label: "二次攻擊", description: "在自身回合以「輕型」武器執行攻擊動作後，可用「附贈」以另一把輕型武器再攻擊一次。這次攻擊的傷害不加屬性調整值（負值仍須計入）。" }
     ]),
     reaction: Object.freeze([
       { key: "opportunity-attack", label: "藉機攻擊", description: "當你能看見的生物離開你的觸及範圍時，你可以使用反應，對該生物進行一次近戰攻擊。" },
@@ -418,21 +418,17 @@
       : mode === "bonus"
         ? /施法時間\s*[：:]\s*附贈動作/u
         : /施法時間\s*[：:]\s*反應動作/u;
-    return Array.from(document.querySelectorAll('#tab-spells .spell-entry select[id*="-spell-"]')).flatMap(select => {
-      const spellId = select.value || "";
+    return (globalScope.SpellManagement?.getEntries({ availableOnly: true }) || []).flatMap(entry => {
+      const spellId = entry.spellId || "";
       const spell = SpellCatalog.getSpell(spellId);
       // 燃火術以附贈動作施法，也能以魔法動作投擲現有火焰。
       const isProduceFlameAction = spellId === "produce-flame" && mode === "action";
       if (!spell || (!isProduceFlameAction && !timingPattern.test(spell.desc || ""))) return [];
-      const row = select.closest(".spell-entry");
-      const classSelect = row?.querySelector('select[id*="-class-"]');
       const sourceTag = typeof globalScope.getPickedSpellSourceTag === "function"
-        ? globalScope.getPickedSpellSourceTag(row)
+        ? globalScope.getPickedSpellSourceTag(entry)
         : "";
-      const sourceClassLabel = classSelect?.selectedOptions?.[0]?.textContent?.trim() || "";
-      const sourceKey = row?.dataset.sourceKey || select.id;
-      const sourceLabel = row?.dataset.sourceLabel
-        || (sourceClassLabel ? `來源：${sourceClassLabel}法表` : "來源：職業法表");
+      const sourceKey = entry.sourceKey;
+      const sourceLabel = entry.sourceLabel || "來源：職業法表";
       const levelTag = spell.level === 0
         ? "戲法"
         : `${["", "一", "二", "三", "四", "五", "六", "七", "八", "九"][spell.level] || spell.level}環`;
@@ -904,11 +900,27 @@ function renderMode(mode, preserveSelection = false) {
   }
 
   function scheduleDynamicRefresh() {
-    if (scheduledRefresh) cancelAnimationFrame(scheduledRefresh);
+    if (scheduledRefresh) return;
     scheduledRefresh = requestAnimationFrame(() => {
       scheduledRefresh = 0;
-      if (currentMode === "action" || currentMode === "bonus" || currentMode === "reaction" || currentMode === "movement") renderMode(currentMode, true);
+      // The legacy panel displays fixed rules. Character changes only invalidate
+      // its dynamic consumers; keep the static buttons, selection and focus intact.
+      // getTabletopOptions still reads canonical controls synchronously.
+      if (currentMode === "action" || currentMode === "bonus" || currentMode === "reaction" || currentMode === "movement") {
+        globalScope.dispatchEvent?.(new CustomEvent("actionpanelchange", {
+          detail: { mode: currentMode, source: "character" }
+        }));
+      }
     });
+  }
+
+  function handleDynamicSourceChange(event) {
+    const target = event.target;
+    if (!target?.matches) return;
+    if (target.matches("#class, #race, #level, #str, #dex, #con, #int, #wis, #cha")
+      || target.closest("#classFeatures, #raceFeatures, #feats-area, #eldritch-invocations-output, #metamagicOptions")) {
+      scheduleDynamicRefresh();
+    }
   }
 
   function bindTabKeyboardNavigation(event) {
@@ -928,12 +940,15 @@ function renderMode(mode, preserveSelection = false) {
 
   function observeDynamicSources() {
     const observer = new MutationObserver(scheduleDynamicRefresh);
-    ["classFeatures", "raceFeatures", "feats-area", "tab-spells"].forEach(id => {
+    [
+      "classFeatures", "raceFeatures", "feats-area", "eldritch-invocations-output", "metamagicOptions"
+    ].forEach(id => {
       const target = document.getElementById(id);
       if (target) observer.observe(target, { childList: true, subtree: true, characterData: true });
     });
-    document.addEventListener("change", scheduleDynamicRefresh);
-    document.addEventListener("input", scheduleDynamicRefresh);
+    document.addEventListener("change", handleDynamicSourceChange);
+    document.addEventListener("input", handleDynamicSourceChange);
+    globalScope.addEventListener("spellmanagementchange", scheduleDynamicRefresh);
   }
 
   function initializeActionPanel() {

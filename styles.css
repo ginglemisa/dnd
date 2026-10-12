@@ -2908,6 +2908,10 @@ details > summary::-webkit-details-marker,
   transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
 }
 
+:where(html:not([data-ui-theme="warm"]):not([data-theme="dark"])) select:disabled {
+  background: #dfe4ec;
+}
+
 /* 基本資料四個下拉改為一般方角樣式 */
 select,
 input[type="text"],
@@ -4085,18 +4089,12 @@ html[data-ui-theme="warm"] .skill-brand-wordmark {
 
 .skill-legend {
   display: flex;
-  align-items: center;
-  justify-content: flex-start;
   flex-wrap: wrap;
-  gap: 14px;
-  margin-top: 0.6rem;
-  padding: 0.8rem 0.95rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface-soft);
-  font-size: var(--fs-md);
-  font-weight: 800;
+  align-items: center;
+  column-gap: 0.25em;
 }
+
+.skill-legend :is(.legend-box, .legend-circle) { box-sizing: border-box; flex: 0 0 20px; }
 
 .skill-action-hint {
   margin: 0.6rem 0 0;
@@ -4108,7 +4106,8 @@ html[data-ui-theme="warm"] .skill-brand-wordmark {
 .legend-badge {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
+  vertical-align: middle;
 }
 
 :where(html:not([data-ui-theme="warm"])) .legend-box,
@@ -4371,6 +4370,35 @@ html[data-ui-theme="warm"][data-theme="dark"] .circle-checkbox:checked {
   margin: 0;
 }
 
+.class-feature-additional-choices {
+  display: grid;
+  flex: 1 1 100%;
+  width: 100%;
+  min-width: 0;
+  gap: 0.65rem;
+}
+
+.class-feature-linked-field,
+.class-feature-mission-cantrip {
+  min-width: 0;
+  margin-top: 0.65rem;
+}
+
+.class-feature-linked-field > label,
+.class-feature-mission-cantrip > label {
+  display: block;
+  margin-bottom: 0.3rem;
+}
+
+.class-feature-mission-cantrip[hidden] {
+  display: none;
+}
+
+#class-feature-choices-modal :is(#metamagic-options-section, #eldritch-invocations-section) {
+  margin: 0.85rem 0 0;
+  min-width: 0;
+}
+
 .app-dialog[data-variant="character-features"] .app-dialog__surface {
   width: min(100%, 52rem);
 }
@@ -4458,6 +4486,48 @@ html[data-ui-theme="warm"][data-theme="dark"] .circle-checkbox:checked {
   color: var(--text-muted);
   font-size: var(--fs-xs);
   line-height: 1.5;
+}
+
+.class-feature-choice-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 44px;
+  margin: 0.35rem 0 0;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--warning-border);
+  background: var(--warning-soft);
+  color: var(--warning);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  text-align: left;
+  box-shadow: none;
+}
+
+.class-feature-choice-link > span:last-child { flex: 0 0 auto; }
+.class-feature-choice-link:hover { border-color: var(--warning); }
+
+.manual-feat-guidance {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.75rem;
+  margin-top: 0.65rem;
+  color: var(--accent-strong);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+
+.manual-feat-guidance > p,
+.app-dialog__body .manual-feat-guidance > p { margin: 0; color: inherit; }
+.manual-feat-guidance > button {
+  width: auto;
+  min-height: 44px;
+  margin: 0;
+  padding: 0.35rem 0.6rem;
+  font-size: inherit;
 }
 
 .feat-management-toggle {
@@ -4901,58 +4971,37 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   margin-bottom: 0.75rem;
 }
 
-:where(html:not([data-ui-theme="warm"])) .weapon-automation-toggle {
+.weapon-attack-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.8rem;
-  margin: 0 0 0.9rem;
-  padding: 0.9rem 0.95rem;
-  border: 1px solid rgba(151, 168, 201, 0.26);
-  border-radius: 1.25rem;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(241, 246, 255, 0.88) 100%);
-  box-shadow: 0 4px 14px rgba(18, 33, 68, 0.05);
-  cursor: pointer;
+  margin-bottom: 0.75rem;
 }
 
-:where(html[data-ui-theme="warm"]) .weapon-automation-toggle {
+.weapon-attack-heading h4 {
+  flex: 1;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.weapon-automation-toggle {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.8rem;
-  margin: 0 0 0.9rem;
-  padding: 0.9rem 0.95rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface-soft);
-  box-shadow: none;
+  flex: 0 0 auto;
+  width: auto;
+  gap: 0.5rem;
+  margin: 0;
   cursor: pointer;
-}
-
-.weapon-automation-toggle > span {
-  display: grid;
-  gap: 0.15rem;
-  min-width: 0;
-}
-
-.weapon-automation-toggle strong {
-  color: var(--text);
-  font-size: var(--fs-md);
-  font-weight: 900;
-}
-
-.weapon-automation-toggle small {
-  color: var(--text-muted);
-  font-size: var(--fs-xs);
-  font-weight: 700;
 }
 
 :where(html:not([data-ui-theme="warm"])) .weapon-automation-toggle input {
   appearance: none;
   position: relative;
   flex: 0 0 auto;
-  width: 2.8rem;
-  height: 1.55rem;
+  width: 33px;
+  height: 16px;
+  padding: 0;
   margin: 0;
   border: 1px solid rgba(126, 148, 198, 0.4);
   border-radius: 999px;
@@ -4965,8 +5014,9 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   appearance: none;
   position: relative;
   flex: 0 0 auto;
-  width: 2.8rem;
-  height: 1.55rem;
+  width: 33px;
+  height: 16px;
+  padding: 0;
   margin: 0;
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -4978,10 +5028,10 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
 :where(html:not([data-ui-theme="warm"])) .weapon-automation-toggle input::after {
   content: "";
   position: absolute;
-  top: 0.17rem;
-  left: 0.18rem;
-  width: 1.08rem;
-  height: 1.08rem;
+  top: 0.5px;
+  left: 0.5px;
+  width: 13px;
+  height: 13px;
   border-radius: 50%;
   background: #fff;
   box-shadow: 0 1px 4px rgba(18, 33, 68, 0.2);
@@ -4991,10 +5041,10 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
 :where(html[data-ui-theme="warm"]) .weapon-automation-toggle input::after {
   content: "";
   position: absolute;
-  top: 0.17rem;
-  left: 0.18rem;
-  width: 1.08rem;
-  height: 1.08rem;
+  top: 0.5px;
+  left: 0.5px;
+  width: 13px;
+  height: 13px;
   border-radius: 50%;
   background: var(--surface-strong);
   box-shadow: var(--shadow-soft);
@@ -5004,7 +5054,7 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
 :where(html:not([data-ui-theme="warm"])) .weapon-automation-toggle input:checked { border-color: var(--accent); background: var(--accent); }
 
 :where(html[data-ui-theme="warm"]) .weapon-automation-toggle input:checked { border-color: var(--accent); background: var(--action-fill); }
-.weapon-automation-toggle input:checked::after { transform: translateX(1.22rem); }
+.weapon-automation-toggle input:checked::after { transform: translateX(17px); }
 :where(html:not([data-ui-theme="warm"])) .weapon-automation-toggle input:focus-visible { outline: 3px solid rgba(36, 93, 255, 0.3); outline-offset: 2px; }
 :where(html[data-ui-theme="warm"]) .weapon-automation-toggle input:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
 
@@ -5034,12 +5084,18 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
 }
 
 .weapon-attack-card h4,
-.equipment-loadout-summary h4 {
+.equipment-loadout-summary h4,
+.weapon-automation-toggle {
   margin: 0 0 0.75rem;
   color: var(--text-muted);
   font-size: var(--fs-sm);
   font-weight: 900;
   letter-spacing: 0.04em;
+}
+
+.weapon-attack-heading h4,
+.weapon-attack-heading .weapon-automation-toggle {
+  margin: 0;
 }
 
 .weapon-attack-card h4 {
@@ -5207,9 +5263,23 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   grid-column: 1 / -1;
 }
 
+.equipment-loadout-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.75rem;
+  margin-bottom: 0.9rem;
+}
+
+.equipment-loadout-heading h3 {
+  flex: 0 0 auto;
+  font-size: var(--fs-lg);
+  font-weight: 850;
+}
+
 .equipment-loadout-intro {
   max-width: 34rem;
-  margin: -0.15rem 0 0.9rem;
+  margin: 0;
   color: var(--text-body);
   font-size: var(--fs-sm);
   line-height: 1.55;
@@ -5254,6 +5324,7 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   gap: 0.55rem;
   min-height: 2rem;
   margin-top: 0.05rem;
+  margin-bottom: 0;
   color: var(--text-body);
   font-size: var(--fs-sm);
   font-weight: 750;
@@ -5274,7 +5345,7 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
 }
 
 .equipment-loadout-summary {
-  margin-top: 0.9rem;
+  margin-top: 0.75rem;
 }
 
 .equipment-loadout-summary-content {
@@ -6683,14 +6754,20 @@ html.equipment-detail-open body {
   line-height: 1.55;
 }
 
-.spell-capability-warning:not([hidden]) + #spell-slot-management-wrap:not(.is-hidden) {
+.spell-capability-warning:not([hidden]) ~ #spell-slot-management-wrap:not(.is-hidden),
+.spell-capability-warning:not([hidden]) + .spell-picked-box:not([hidden]) {
   margin-top: 0.9rem;
+}
+
+#spell-overview-management-wrap > .spell-picked-box:not([hidden]) + #spell-slot-management-wrap:not(.is-hidden) {
+  margin-top: 1.1rem;
 }
 
 .spell-slot-heading {
   display: flex;
   align-items: baseline;
   gap: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .spell-slot-heading h3,
@@ -6778,7 +6855,7 @@ html.equipment-detail-open body {
 #spellbook-card > summary { display: flex; align-items: center; gap: 10px; }
 #spellbook-card > summary::before { flex-shrink: 0; }
 
-:where(html:not([data-ui-theme="warm"])) :is(#spellbook-manage, #spell-clear-prepared) {
+:where(html:not([data-ui-theme="warm"])) :is(#spellbook-manage, #spell-prepare) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -6799,7 +6876,7 @@ html.equipment-detail-open body {
   transition: border-color 160ms ease, background 160ms ease, color 160ms ease, transform 160ms ease;
 }
 
-:where(html[data-ui-theme="warm"]) :is(#spellbook-manage, #spell-clear-prepared) {
+:where(html[data-ui-theme="warm"]) :is(#spellbook-manage, #spell-prepare) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -6820,19 +6897,19 @@ html.equipment-detail-open body {
   transition: border-color 160ms ease, background 160ms ease, color 160ms ease, transform 160ms ease;
 }
 
-:is(#spellbook-manage, #spell-clear-prepared):hover:not(:disabled) {
+:is(#spellbook-manage, #spell-prepare):hover:not(:disabled) {
   border-color: var(--accent);
   background: var(--control-hover-bg);
   color: var(--accent);
   transform: translateY(-1px);
 }
 
-:is(#spellbook-manage, #spell-clear-prepared):focus-visible {
+:is(#spellbook-manage, #spell-prepare):focus-visible {
   outline: 3px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
-#spell-clear-prepared:disabled {
+#spell-prepare:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
@@ -6859,7 +6936,7 @@ html.equipment-detail-open body {
 .spellbook-toolbar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 :where(html:not([data-ui-theme="warm"])) .spellbook-toolbar input { flex: 1 1 140px; min-width: 0; min-height: 34px; padding: 5px 8px; border: 1px solid var(--border-color, #8886); border-radius: 8px; background: transparent; color: var(--text-body); font: inherit; font-size: .85rem; }
 :where(html[data-ui-theme="warm"]) .spellbook-toolbar input { flex: 1 1 140px; min-width: 0; min-height: 34px; padding: 5px 8px; border: 1px solid var(--border-color, var(--border)); border-radius: var(--radius-sm); background: transparent; color: var(--text-body); font: inherit; font-size: .85rem; }
-.spellbook-toolbar select { width: auto; }
+.spellbook-toolbar select { flex: 0 1 auto; min-width: 0; max-width: 100%; width: auto; }
 .spellbook-toolbar button { width: auto; margin: 0; padding: 5px 8px; }
 .spellbook-manager .spell-note-muted { font-size: .78rem; margin: 6px 0; }
 .spellbook-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; max-height: 52dvh; overflow: auto; }
@@ -6867,11 +6944,114 @@ html.equipment-detail-open body {
 :where(html[data-ui-theme="warm"]) .spellbook-option { display: grid; grid-template-columns: 18px 28px minmax(0, 1fr) auto; align-items: center; gap: 5px; min-height: 32px; padding: 3px 0; border-bottom: 1px solid var(--border-color, var(--border)); cursor: pointer; font-size: .88rem; }
 .spellbook-option input { width: 16px; height: 16px; margin: 0; }
 .spellbook-option small { font-size: .72rem; color: var(--text-muted); }
+.spell-picker-option.spellbook-option {
+  grid-template-columns: 28px 28px minmax(0, 1fr);
+  align-items: center;
+  min-height: 48px;
+  cursor: default;
+}
+.spell-picker-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  margin: 0;
+  cursor: pointer;
+}
+.spell-picker-name,
+.spell-readonly-reference {
+  width: auto;
+  margin: 0;
+  padding: 3px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--accent-strong);
+  box-shadow: none;
+  font: inherit;
+  line-height: 1.45;
+  text-align: left;
+  cursor: pointer;
+  transform: none;
+}
+.spell-picker-name { display: grid; justify-items: start; min-width: 0; }
+.spell-picker-name small { display: block; overflow-wrap: anywhere; font-weight: 400; }
+button.spell-picker-name:hover,
+button.spell-readonly-reference:hover {
+  color: var(--accent);
+  background: transparent;
+  box-shadow: none;
+  text-decoration: underline;
+  transform: none;
+}
+.spell-picker-name:focus-visible,
+.spell-readonly-reference:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+button.spell-picker-name:active,
+button.spell-readonly-reference:active { translate: none; transform: none; box-shadow: none; }
+.spell-picker-note { grid-column: 2 / -1; line-height: 1.5; }
+.spell-picker-option.is-unavailable .spell-picker-name,
+.spell-picker-option.is-unavailable .spell-picker-ring { color: var(--text-muted); }
+.spell-picker-option.is-unavailable .spell-picker-name:hover,
+.spell-picker-option.is-unavailable .spell-picker-name:focus-visible { color: var(--accent-strong); }
+.spell-picker-count { min-height: 1.2em; font-variant-numeric: tabular-nums; }
+.spell-picker-results-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 0 12px; margin: 6px 0; }
+.spell-picker-results-summary .spell-picker-count { margin: 0; }
+.spell-picker-levels { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: .78rem; }
+.spell-picker-level { display: inline-flex; align-items: center; gap: 4px; width: auto; min-height: 28px; margin: 0; font: inherit; white-space: nowrap; cursor: pointer; }
+.spell-picker-level input { flex: none; width: 18px; height: 18px; margin: 0; cursor: pointer; }
+.spell-picker-level:has(input:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.spell-picker-more { width: auto; margin: 10px 0 0; }
+.spell-prepared-count-summary { min-width: 0; margin: 8px 0; font-size: var(--fs-sm); font-variant-numeric: tabular-nums; line-height: 1.5; }
+.spell-prepared-count-summary p { margin: 0; }
+.spell-prepared-draft-counts { font-weight: 750; }
+.spell-prepared-manager .spell-prepared-draft-counts.is-over-limit { color: var(--warning); }
+.spell-prepared-limit-warning:not([hidden]) { margin: 8px 0 12px; }
+.app-dialog[data-variant="spellbook"] .app-dialog__actions:has(.spell-prepared-clear) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.spell-prepared-title-group { display: grid; min-width: 0; }
+.app-dialog__header.spell-prepared-header h2 { line-height: 1.2; }
+.spell-prepared-header .spell-prepared-browse-hint { margin: 0; font-size: .75rem; line-height: 1.2; }
+button.spell-prepared-browse { width: auto; min-height: 22px; margin: 0; padding: 0; border: 0; background: transparent; color: var(--accent-strong); box-shadow: none; font: inherit; text-decoration: underline; text-underline-offset: 3px; }
+button.spell-prepared-browse:is(:hover, :active) { background: transparent; color: var(--accent); box-shadow: none; transform: none; translate: none; }
+.spellbook-toolbar.spell-picker-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px; }
+.spell-picker-search-field { position: relative; min-width: 0; }
+.spell-picker-toolbar :is(input[type="search"], select, .spell-picker-selected-toggle) { box-sizing: border-box; height: 36px; min-height: 36px; min-width: 0; margin: 0; padding: 5px 6px; font-size: .85rem; line-height: 1.4; }
+.spell-picker-toolbar input[type="search"] { width: 100%; padding-right: 28px; }
+.spell-picker-search-field .spell-picker-clear { position: absolute; inset: 0 0 0 auto; width: 28px; min-height: 36px; margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--text-muted); box-shadow: none; }
+.spell-picker-toolbar .spell-picker-selected-toggle { width: auto; white-space: nowrap; }
+.spell-picker-toolbar .spell-picker-import { grid-column: 1 / -1; justify-self: start; }
+.spell-picker-selected-toggle[aria-pressed="true"] { border-color: var(--accent-strong); background: var(--accent-strong); color: var(--on-accent); }
+.spellbook-manager .spellbook-options { grid-template-columns: minmax(0, 1fr); }
+.spell-prepared-manager .spell-picker-option { grid-template-columns: 32px minmax(0, 1fr); grid-template-rows: auto 1fr; align-items: start; gap: 0 7px; padding: 7px 0; }
+.spell-prepared-manager .spell-picker-ring { grid-column: 1; grid-row: 1; text-align: center; line-height: 1.4; }
+.spell-prepared-manager .spell-picker-option > .spell-picker-check { grid-column: 1; grid-row: 2; align-items: flex-start; min-height: 28px; padding-top: 3px; }
+.spell-prepared-manager .spell-picker-option input { width: 20px; height: 20px; }
+.spell-prepared-manager .spell-picker-option > .spell-picker-name { grid-column: 2; grid-row: 1 / 3; overflow-wrap: anywhere; }
+.spell-prepared-manager .spell-picker-note { grid-column: 2; grid-row: 3; }
+@media (min-width: 320px) {
+  .spellbook-manager .spellbook-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 480px) {
+  .spellbook-manager .spellbook-options { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width: 720px) {
+  .spellbook-manager .spellbook-options { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+.spell-prepared-sources { margin-bottom: 12px; }
+.spell-prepared-source { display: grid; grid-template-columns: 28px minmax(0, 1fr); align-items: center; gap: 5px; min-height: 32px; padding: 2px 0; }
+.spell-prepared-source input { width: 20px; height: 20px; margin: 0; }
+.spell-prepared-source .spell-picker-check:has(input:disabled) { cursor: default; }
+.spell-prepared-source-name { min-width: 0; overflow-wrap: anywhere; }
+.spell-prepared-source-name .spell-picker-name { display: inline; min-height: 28px; padding: 0; }
+.app-dialog[data-variant="spell-readonly"] .app-dialog__surface { width: min(700px, 100%); }
+.spell-readonly-name { margin: 0 0 12px; color: var(--accent-strong); font-size: var(--fs-lg); line-height: 1.5; }
+.spell-readonly-description, .spell-readonly-beast { line-height: 1.7; overflow-wrap: anywhere; }
+.spell-readonly-reference { display: inline; text-decoration: underline; text-underline-offset: 3px; }
 .spellbook-tome-manager { display: grid; gap: 8px; }
 .spellbook-tome-field { display: grid; grid-template-columns: 76px minmax(0, 1fr); align-items: center; gap: 8px; }
 .spellbook-tome-field select { min-width: 0; width: 100%; }
 @media (max-width: 520px) {
   .spellbook-grid, .spellbook-options { grid-template-columns: 1fr; }
+  .spellbook-toolbar input[type="search"] { flex-basis: calc(100% - 58px); }
   #spellbook-card > summary { gap: 6px; }
 }
 
@@ -6923,8 +7103,8 @@ div[id$="spells-area"] .form-row > .output {
 
 .spell-picked-content {
   display: grid;
-  grid-template-columns: repeat(var(--spell-picked-columns, 1), minmax(0, 1fr));
-  gap: 0.12rem 1rem;
+  grid-template-columns: var(--picked-spell-tracks, minmax(0, 1fr));
+  gap: 0.12rem 1.2em;
   font-size: var(--fs-md);
   line-height: 1.45;
   color: var(--text-body);
@@ -6934,13 +7114,143 @@ div[id$="spells-area"] .form-row > .output {
   min-width: 0;
 }
 
+.spell-picked-content.is-measuring-spells .spell-picked-item {
+  width: max-content;
+  white-space: nowrap;
+}
+
+.spell-picked-content[data-spell-columns]:not([data-spell-columns="1"]) .spell-picked-item {
+  white-space: nowrap;
+}
+
+.spell-picked-content[data-spell-columns="1"] .spell-picked-source-tag {
+  white-space: normal;
+}
+
 .spell-picked-source-tag {
   white-space: nowrap;
 }
 
-.is-measuring-spells .spell-picked-item {
-  width: max-content;
-  white-space: nowrap;
+.spell-overview-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.spell-overview-card {
+  grid-column: auto;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+}
+
+.spell-overview-card-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.2rem;
+  margin-bottom: 0.3rem;
+}
+
+.spell-overview-card .spell-picked-heading {
+  margin: 0;
+}
+
+.spell-overview-card-heading .spell-picked-heading {
+  font-size: 0.875rem;
+}
+
+.spell-overview-card > .spell-picked-content:not([hidden]) {
+  margin-top: 0.3rem;
+}
+
+.spell-overview-card:has(.spell-picked-content[hidden]) .spell-overview-card-heading {
+  margin-bottom: 0;
+}
+
+button.spell-overview-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  width: auto;
+  min-height: 1.75rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  box-shadow: none;
+  font: inherit;
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+}
+
+button.spell-overview-toggle:hover,
+button.spell-overview-toggle:focus-visible {
+  background: transparent;
+  color: var(--accent-strong);
+  box-shadow: none;
+  transform: none;
+}
+
+button.spell-overview-toggle:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 3px;
+}
+
+button.spell-overview-toggle:active {
+  color: var(--accent);
+  transform: none;
+  translate: none;
+}
+
+.spell-overview-arrow {
+  display: inline-block;
+  font-size: 0.8em;
+}
+
+[aria-expanded="true"] > .spell-overview-arrow {
+  transform: rotate(90deg);
+}
+
+.spell-overview-slot-checks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.1rem;
+}
+
+#spell-slot-management-wrap .spell-overview-slot-checks input[type="checkbox"] {
+  flex: 0 0 20px;
+  width: 20px;
+  min-width: 20px;
+  height: 20px;
+  margin: 0;
+}
+
+.spell-overview-card .spell-picked-item {
+  overflow-wrap: anywhere;
+}
+
+.spell-picked-content--empty {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
+@media (min-width: 400px) {
+  .spell-overview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 720px) {
+  .spell-overview-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 .free-spell-use-checks {
@@ -7156,21 +7466,29 @@ html:not([data-view-mode="tabletop"]) .free-spell-use-checks {
 .feat-row-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
   margin-bottom: 6px;
 }
 
 .feat-row-head label {
-  flex: 1 1 auto;
+  flex: 0 0 auto;
+  width: auto;
+  max-width: 6em;
   min-width: 0;
   margin: 0;
   font-size: var(--fs-lg);
   font-weight: 850;
   color: var(--text);
   letter-spacing: -0.01em;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+}
+
+.feat-row-head > select { flex: 1 1 0; min-width: 0; width: 0; margin: 0; }
+.feat-row-head > .feat-row-controls { width: auto; margin: 0; gap: 4px; }
+@media (max-width: 400px) {
+  .feat-row-head { gap: 5px; }
+  .feat-row-head label { max-width: 5em; font-size: var(--fs-base); }
 }
 
 .feat-row-controls {
@@ -7369,7 +7687,7 @@ html:not([data-view-mode="tabletop"]) .free-spell-use-checks {
   color: var(--accent-strong);
 }
 
-#tab-basic button.mini-stat-label--features {
+#tab-basic button:is(.mini-stat-label--features, .character-choice-warning-toggle) {
   display: block;
   width: fit-content;
   min-width: 0;
@@ -7386,35 +7704,68 @@ html:not([data-view-mode="tabletop"]) .free-spell-use-checks {
   text-decoration: none;
 }
 
-#tab-basic button.mini-stat-label--features:hover,
-#tab-basic button.mini-stat-label--features:focus-visible {
+#tab-basic button:is(.mini-stat-label--features, .character-choice-warning-toggle):hover,
+#tab-basic button:is(.mini-stat-label--features, .character-choice-warning-toggle):focus-visible {
   background: transparent;
   box-shadow: none;
   transform: none;
   color: var(--accent-strong);
 }
 
+.basic-pair-field--race { position: relative; }
+
+#tab-basic button.character-choice-warning-toggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  margin: 0;
+  color: var(--text-muted);
+  font-weight: 400;
+  white-space: nowrap;
+  text-decoration: underline;
+  text-underline-offset: 0.14em;
+}
+
+#tab-basic button.character-choice-warning-toggle:is(:hover, :focus-visible) {
+  color: var(--accent-strong);
+}
+
+#tab-basic button.character-choice-warning-toggle:active {
+  transform: none;
+  opacity: 0.8;
+}
+
 .spell-picked-jump {
+  display: inline;
+  width: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  box-shadow: none;
+  font: inherit;
+  line-height: inherit;
+  text-align: left;
   cursor: pointer;
   text-decoration: underline dotted;
   text-underline-offset: 0.14em;
 }
 
-.spell-picked-jump:hover,
-.spell-picked-jump:focus-visible {
+button.spell-picked-jump:hover,
+button.spell-picked-jump:focus-visible {
+  background: transparent;
+  box-shadow: none;
+  transform: none;
   color: var(--accent-strong);
 }
 
-:where(html:not([data-ui-theme="warm"])) .spell-select-jump-highlight {
-  outline: 2px solid rgba(78, 122, 255, 0.42);
-  outline-offset: 2px;
-  transition: outline-color 0.28s ease;
-}
-
-:where(html[data-ui-theme="warm"]) .spell-select-jump-highlight {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 2px;
-  transition: outline-color 0.28s ease;
+button.spell-picked-jump:active {
+  translate: none;
+  transform: none;
+  box-shadow: none;
 }
 
 .spell-slot-placeholder {
@@ -11174,6 +11525,11 @@ html[data-theme="dark"] .brand-logo-crop .legal-modal-logo-dark {
   text-underline-offset: 0.14em;
 }
 
+:where(html:not([data-view-mode="tabletop"])) :is(.weapon-rule-link, .spell-highlight-action, .spell-picked-jump),
+:where(html:not([data-view-mode="tabletop"])) .weapon-attack-fields input.is-calculation-enabled {
+  text-decoration-style: solid;
+}
+
 @media (prefers-reduced-motion: reduce) {
   :where(html:not([data-ui-theme="warm"])) *,
 :where(html:not([data-ui-theme="warm"])) *::before,
@@ -13485,31 +13841,39 @@ html.tabletop-avatar-modal-open { overflow: hidden; }
 .spell-prepared-summary {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.5rem 1rem;
   margin: 0.85rem 0 0;
   padding-top: 0.65rem;
   border-top: 1px solid var(--border);
 }
 
-.spell-prepared-counts {
-  flex: 1 0 auto;
-  width: max-content;
-  max-width: 100%;
+.spell-current-list {
+  flex: 1 1 140px;
   margin: 0;
-  color: var(--text-muted);
+  color: var(--accent-strong);
   font-size: var(--fs-sm);
   font-weight: 750;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.5;
-  letter-spacing: 0.01em;
+}
+
+#spell-prepared-empty {
+  flex: 1 0 100%;
+  margin: 0;
 }
 
 .spell-prepared-actions {
   display: flex;
   flex: 0 0 auto;
-  justify-content: flex-end;
-  margin-left: auto;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: flex-start;
+}
+
+#spell-prepared-requirements,
+#spell-prepared-status {
+  flex: 1 0 100%;
+  order: 2;
+  box-sizing: border-box;
 }
 
 .tabletop-metamagic-options {
@@ -13976,8 +14340,8 @@ html.tabletop-avatar-modal-open { overflow: hidden; }
 
 .tabletop-spell-card__uses input {
   flex: 0 0 auto;
-  width: 1em;
-  height: 1em;
+  width: 1.5625em;
+  height: 1.5625em;
   margin: 0;
   font: inherit;
   cursor: pointer;
@@ -15792,6 +16156,11 @@ html[data-theme="dark"] .tabletop-skill-value[data-skill-rank="expertise"] .tabl
     border-color: var(--accent);
     background: var(--accent-soft);
   }
+
+  .tabletop-spell-card > .tabletop-spell-button:hover {
+    /* The card owns the hover background, including its source and use controls. */
+    background: transparent;
+  }
 }
 
 @media (max-width: 379px) {
@@ -16783,9 +17152,7 @@ html[data-theme="dark"] .selection-summary,
 html[data-theme="dark"] .selection-summary-card,
 html[data-theme="dark"] .ability,
 html[data-theme="dark"] .modifier,
-html[data-theme="dark"] .skill-legend,
 html[data-theme="dark"] .action-help table,
-html[data-theme="dark"] .weapon-automation-toggle,
 html[data-theme="dark"] .weapon-attack-card,
 html[data-theme="dark"] .equipment-loadout-summary,
 html[data-theme="dark"] .weapon-attack-fields input.is-automated,
