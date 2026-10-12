@@ -2857,7 +2857,7 @@
       message: `${resultText}${warningText}`,
       actions: completed ? [
         { label: "下載角色卡 PDF", intent: "primary", value: "download-compact-pdf" },
-        ...(warnings.length === 0 ? [{ label: "初次遊玩教學", intent: "secondary", value: "first-table" }] : []),
+        ...(warnings.length === 0 ? [{ label: "初次遊玩", intent: "secondary", value: "first-table" }] : []),
         { label: "知道了", intent: "secondary", value: "close" }
       ] : undefined,
       confirmLabel: "知道了"
