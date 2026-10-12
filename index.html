@@ -9293,8 +9293,13 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
       tiefling: { key:"tieflingLegacy", title:"請選擇邪魔遺贈", options:[["abyssal","深淵血統"],["chthonic","冥界血統"],["infernal","煉獄血統"]] }
     };
     const steps=["precheck","name","equipment"];
-    const includeSpellbookStep = state?.class === "wizard" || (state?.__spellManagement?.version === 2
-      ? state.__spellManagement.manual === true : state?.["manual-spell-management"] === true);
+    const manualBook = state?.__spellManagement?.version === 2
+      ? state.__spellManagement.manual === true : state?.["manual-spell-management"] === true;
+    const savedBook = state?.__wizardSpellbook;
+    const activeBookIds = savedBook?.version >= 2
+      ? (manualBook ? savedBook.manualSpellIds : savedBook.wizardSpellIds)
+      : savedBook?.spellIds;
+    const includeSpellbookStep = state?.class === "wizard" || (manualBook && activeBookIds?.length > 0);
     if (includeSpellbookStep) steps.push("spellbook");
     const result={
       characterName:window.TabletopMode?.getCharacterName?.() || "",
