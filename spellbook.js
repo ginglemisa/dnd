@@ -1,7 +1,7 @@
 (function attachSpellbook(globalScope) {
   "use strict";
 
-  let spellIds = [];
+  const books = { wizard: [], manual: [] };
   const levels = ["戲法", "一環", "二環", "三環", "四環"];
   const catalog = () => globalScope.SpellCatalog;
   const isManual = () => globalScope.SpellManagement?.isManual() === true;
@@ -12,7 +12,8 @@
     && spell.level <= 4 && catalog().getClassIds(spell.spellId).includes("wizard"));
   const management = () => globalScope.SpellManagement;
   const playerEntries = () => management()?.getPlayerEntries() || [];
-  const canManageBook = () => isWizard() || (isManual() && spellIds.length > 0);
+  const activeBookIds = () => isManual() ? books.manual : books.wizard;
+  const canManageBook = () => isWizard() || isManual();
 
   function supportedSpells(minLevel = 0) {
     const classes = new Set();
@@ -37,19 +38,25 @@
   }
 
   function getState() {
-    return { version: 1, spellIds: [...spellIds] };
+    return { version: 2, spellIds: [...activeBookIds()],
+      wizardSpellIds: [...books.wizard], manualSpellIds: [...books.manual] };
   }
 
   function setState(value, options = {}) {
-    spellIds = normalize(value?.spellIds);
+    if (value?.version >= 2) {
+      books.wizard = normalize(value.wizardSpellIds);
+      books.manual = normalize(value.manualSpellIds);
+    } else {
+      books[isManual() ? "manual" : "wizard"] = normalize(value?.spellIds);
+    }
     if (options.sync !== false) changed();
   }
 
   function addWizardSpell(spellId) {
     const spell = catalog()?.getSpell(spellId);
     if (!isWizard() || !spell || spell.level < 1
-      || !catalog().getClassIds(spellId).includes("wizard") || spellIds.includes(spellId)) return false;
-    spellIds.push(spellId);
+      || !catalog().getClassIds(spellId).includes("wizard") || books.wizard.includes(spellId)) return false;
+    books.wizard.push(spellId);
     changed();
     return true;
   }
@@ -62,8 +69,17 @@
   function restoreState(data) {
     // Missing legacy data can seed the book from existing wizard preparation;
     // an explicitly empty new book must stay empty.
-    setState(data.__wizardSpellbook || { spellIds: data.class === "wizard"
-      ? preparedEntries().map(entry => entry.spellId) : [] }, { sync: false });
+    const saved = data.__wizardSpellbook;
+    if (saved?.version >= 2) {
+      setState(saved, { sync: false });
+    } else {
+      // v1 shared a single book across modes. Preserve all legacy entries in
+      // both books; subsequent changes are independent and saved as v2.
+      const legacy = normalize(saved?.spellIds ?? (data.class === "wizard"
+        ? preparedEntries().map(entry => entry.spellId) : []));
+      books.wizard = [...legacy];
+      books.manual = [...legacy];
+    }
     render();
   }
 
@@ -76,7 +92,7 @@
   function render() {
     const card = document.getElementById("spellbook-card");
     if (!card) return;
-    card.hidden = !isWizard() && !spellIds.length && !isTome();
+    card.hidden = !isManual() && !isWizard() && !isTome();
     if (card.hidden) return;
     const tome = isTome();
     document.getElementById("spellbook-title").textContent = tome ? "影之書（書之魔契）" : "法術書";
@@ -86,7 +102,7 @@
       manageButton.title = manageButton.disabled ? "手動管理或法師職業可編輯保留的法術書。" : "";
     }
     const selection = globalScope.getPactTomeSpellSelection?.() || {};
-    const ids = tome ? [...(selection.cantrips || []), ...(selection.rituals || [])] : spellIds;
+    const ids = tome ? [...(selection.cantrips || []), ...(selection.rituals || [])] : activeBookIds();
     const grid = document.getElementById("spellbook-list");
     grid.replaceChildren();
     levels.forEach((label, level) => {
@@ -180,7 +196,7 @@
   function getRitualEntries() {
     if (!isWizard()) return [];
     const preparedIds = new Set((management()?.getEntries({ availableOnly: true }) || []).map(entry => entry.spellId));
-    return spellIds.flatMap(id => {
+    return activeBookIds().flatMap(id => {
       const spell = catalog().getSpell(id);
       if (!catalog().getClassIds(id).includes("wizard")) return [];
       if (!catalog().isRitual(spell) || preparedIds.has(id)) return [];
@@ -383,7 +399,7 @@
     if (!canManageBook()) return;
     const manual = isManual();
     const currentClass = document.getElementById("class")?.value;
-    const selected = new Set(spellIds);
+    const selected = new Set(activeBookIds());
     const picker = createSpellPicker({ minLevel: 1, getSpells: () => [...new Map([...(manual ? supportedSpells(1) : wizardSpells()), ...[...selected]
       .map(id => catalog().getSpell(id) || { spellId: id, level: -1, nameZh: "", nameEn: "" })]
       .map(spell => [spell.spellId, spell])).values()],
