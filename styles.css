@@ -15896,6 +15896,38 @@ html[data-theme="dark"] .tabletop-skill-value[data-skill-rank="expertise"] .tabl
   padding: 0.35rem 0;
 }
 
+.tabletop-resource-help {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 1.3rem;
+  height: 1.3rem;
+  padding: 0;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.tabletop-resource-help:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+#skillPopup .skill-popup-paragraph {
+  margin: 0;
+}
+
+#skillPopup .skill-popup-paragraph + .skill-popup-paragraph {
+  margin-top: 0.7rem;
+}
+
 .tabletop-rest-heading,
 .tabletop-rest-actions {
   display: flex;
