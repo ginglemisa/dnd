@@ -80,10 +80,10 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261013-class-table-layer">
+  <link rel="stylesheet" href="styles.css?v=20261014-heroic-help">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261006-usage-analytics" defer></script>
-  <script src="monster.js?v=20260912-druid-controls" defer></script>
+  <script src="monster.js?v=20261014-heroic-help" defer></script>
     <script src="class-features.js?v=20261006-wizard-feature-copy" defer></script>
   <script src="race.js?v=20261003-race-flavor" defer></script>
   <script src="backgrounds.js?v=20261003-background-flavor" defer></script>
@@ -99,7 +99,7 @@
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
   <script src="tabletop-mode.js?v=20261012-manual-spell-uses" defer></script>
   <script src="tabletop-druid.js?v=20261010-mobile-performance" defer></script>
-<script src="tabletop-resources.js?v=20261011-rest-feedback" defer></script>
+<script src="tabletop-resources.js?v=20261014-heroic-help" defer></script>
 <script src="tabletop-actions.js?v=20261013-action-copy" defer></script>
   <script src="tabletop-spells.js?v=20261012-wizard-ritual-group" defer></script>
   <script src="legal-modal.js?v=20260923-legal-about" defer></script>
@@ -7867,9 +7867,14 @@ function renderSkillPopupHtml(skillLabel) {
   const text = skills_example_uses[normalizedKey];
   if (!text) return "";
 
+  const description = text.includes("\n\n")
+    ? text.split(/\n\s*\n/).map(paragraph =>
+        `<p class="skill-popup-paragraph">${escapeHtml(paragraph).replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")}</p>`
+      ).join("")
+    : escapeHtml(text);
   return `
     <div class="title">${escapeHtml(skillLabel)}</div>
-    <div class="monster-detail-line monster-detail-line--first">${escapeHtml(text)}</div>
+    <div class="monster-detail-line monster-detail-line--first">${description}</div>
   `;
 }
 
