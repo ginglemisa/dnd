@@ -248,6 +248,12 @@
       recoveryNote || "與角色卡數值頁同步。",
       [canonical]
     );
+    const help = createElement("button", "tabletop-resource-help skill-tip", "?");
+    help.type = "button";
+    help.dataset.skill = "英雄激勵";
+    help.setAttribute("aria-label", "英雄激勵規則說明");
+    help.setAttribute("aria-controls", "skillPopup");
+    row.querySelector('input[type="checkbox"]')?.before(help);
     const wrapper = createElement("div", "tabletop-resource-row tabletop-rest-row");
     const copy = createElement("div", "tabletop-resource-row__copy");
     const heading = createElement("div", "tabletop-rest-heading");
@@ -511,7 +517,7 @@
       document.getElementById("class")?.value || ""
     )?.Y) || 0;
     if (!hitDieSize) return null;
-    const { row, controls } = createResourceRow("", "手動追蹤目前剩餘顆數。") ;
+    const { row, controls } = createResourceRow("", "短休時可消耗生命骰恢復 HP，長休後數量回滿。") ;
     row.classList.add("tabletop-resource-row--counter");
     const heading = row.querySelector(".tabletop-resource-row__copy h4");
     const rollHitDie = createElement("button", "tabletop-inline-roll");
@@ -730,7 +736,7 @@
         preview.querySelectorAll("input, button").forEach(control => { control.disabled = true; });
         return preview;
       }
-      const { row, controls } = createResourceRow("生命骰", "手動追蹤目前剩餘顆數。");
+      const { row, controls } = createResourceRow("生命骰", "短休時可消耗生命骰恢復 HP，長休後數量回滿。");
       row.classList.add("tabletop-resource-row--counter");
       const value = createElement("output", "tabletop-number-stepper__value", "1／1");
       value.setAttribute("aria-label", "生命骰 1/1（教學示例）");
