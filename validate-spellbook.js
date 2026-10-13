@@ -616,6 +616,13 @@ async function verifyAutomaticSourceCleanup(page) {
   await page.locator("#spell-prepare").click();
   const dialog = pickerDialog(page);
   assert.equal(await dialog.locator('.spell-prepared-source input[data-source-key]').count(), (await page.evaluate(() => SpellManagement.getSourceEntries().length)));
+  const showSources = dialog.getByRole("checkbox", { name: "顯示來源", exact: true });
+  assert.equal(await showSources.isChecked(), false);
+  await showSources.check();
+  assert.deepEqual(await dialog.locator(".spell-prepared-source-name .spell-picked-source-tag").allTextContents(),
+    await page.evaluate(() => SpellManagement.getSourceEntries().map(entry => `[${entry.sourceLabel || entry.source || entry.spellSource || "來源能力"}]`)),
+    "each automatic grant shows its own source, including duplicate spells");
+  assert.equal(await dialog.locator(".spell-prepared-source input").evaluateAll(inputs => inputs.every(input => input.checked && input.disabled)), true);
   await dialog.getByRole("searchbox", { name: "搜尋法術名稱" }).fill("Speak with Animals");
   const option = dialog.locator('.spell-picker-option input[value="speak-with-animals"]');
   assert.equal(await option.isDisabled(), true);
@@ -706,7 +713,10 @@ async function verifyPreparedPicker(page) {
   const countSuffix = (await dialog.locator(".spell-picker-count").innerText()).split(" | ").slice(1).join(" | ");
   const sourceIds = await dialog.locator(".spell-prepared-source input").evaluateAll(inputs => inputs.map(input => input.dataset.sourceKey));
   assert(sourceIds.length > 0);
-  assert.equal(await dialog.locator(".spell-prepared-source-name small").count(), 0, "source names are hidden without removing source identities");
+  const showSources = dialog.getByRole("checkbox", { name: "顯示來源", exact: true });
+  const sourceTags = dialog.locator(".spell-prepared-source-name .spell-picked-source-tag");
+  assert.equal(await showSources.isChecked(), false);
+  assert.equal(await sourceTags.evaluateAll(tags => tags.every(tag => tag.hidden)), true, "sources start hidden");
   assert.equal(await dialog.locator(".spell-prepared-source").evaluateAll(rows => rows.every(row => {
     const check = row.querySelector("input").getBoundingClientRect(), name = row.querySelector(".spell-prepared-source-name").getBoundingClientRect();
     return name.left >= check.right && name.top < check.bottom && name.bottom > check.top;
@@ -716,6 +726,12 @@ async function verifyPreparedPicker(page) {
   assert.equal(await dialog.locator(".spell-prepared-source-options").isVisible(), false);
   await disclosure.click();
   assert.equal(await dialog.locator(".spell-prepared-source-options").isVisible(), true);
+  await showSources.focus();
+  await page.keyboard.press("Space");
+  assert.equal(await showSources.isChecked(), true);
+  assert.equal(await showSources.evaluate(el => el === document.activeElement), true, "visibility toggle preserves keyboard focus");
+  assert.equal(await sourceTags.evaluateAll(tags => tags.every(tag => !tag.hidden && tag.textContent.length > 2)), true);
+  assert.deepEqual(await page.evaluate(() => collectStateObject()), before, "showing sources does not alter character data");
   for (const [width, columns] of [[1100, 4], [720, 4], [719, 3], [480, 3], [479, 2], [320, 2], [319, 1]]) {
     await page.setViewportSize({ width, height: 850 });
     assert.equal(await dialog.locator(".spellbook-options").evaluate(el => getComputedStyle(el).gridTemplateColumns.split(" ").length), columns);
@@ -726,7 +742,7 @@ async function verifyPreparedPicker(page) {
       const check = row.querySelector("input").getBoundingClientRect(), level = row.querySelector(".spell-picker-ring").getBoundingClientRect();
       const clear = rect(".spell-prepared-clear"), cancel = rect(".app-dialog__actions button:nth-child(2)"), save = rect(".app-dialog__button--primary");
       const header = el.querySelector(".app-dialog__header"), headerRect = header.getBoundingClientRect(), headerStyle = getComputedStyle(header);
-      const title = rect(".app-dialog__header h2"), browse = rect(".spell-prepared-browse"), close = rect(".app-dialog__close");
+      const title = rect(".app-dialog__header h2"), browse = rect(".spell-prepared-browse");
       const footer = el.querySelector(".app-dialog__actions");
       return { overflow: el.querySelector(".app-dialog__body").scrollWidth > el.querySelector(".app-dialog__body").clientWidth,
         equalFields: Math.abs(search.height - ring.height) < 1 && Math.abs(search.height - selected.height) < 1,
@@ -736,11 +752,13 @@ async function verifyPreparedPicker(page) {
         sameFooterLine: Math.abs(clear.top - cancel.top) < 1 && Math.abs(cancel.top - save.top) < 1,
         footerFits: footer.scrollWidth <= footer.clientWidth,
         browseInHeader: header.contains(el.querySelector(".spell-prepared-browse")) && browse.top >= title.bottom - 1 && browse.bottom < headerRect.bottom,
-        compactHeader: headerRect.height <= close.height + parseFloat(headerStyle.paddingTop) + parseFloat(headerStyle.paddingBottom) + parseFloat(headerStyle.borderBottomWidth) + 1 };
+        centeredHeaderLink: Math.abs((browse.top - title.bottom) - (headerRect.bottom - parseFloat(headerStyle.borderBottomWidth) - browse.bottom)) < 1 };
     });
-    assert.deepEqual(geometry, { overflow: false, equalFields: true, sameLine: true, levelAboveCheck: true, footerOrder: true, sameFooterLine: true, footerFits: true, browseInHeader: true, compactHeader: true });
+    assert.deepEqual(geometry, { overflow: false, equalFields: true, sameLine: true, levelAboveCheck: true, footerOrder: true, sameFooterLine: true, footerFits: true, browseInHeader: true, centeredHeaderLink: true });
   }
   await page.setViewportSize({ width: 1100, height: 850 });
+  await showSources.uncheck();
+  assert.equal(await sourceTags.evaluateAll(tags => tags.every(tag => tag.hidden)), true, "unchecking hides sources again");
   await ringFilter.selectOption("1");
   await selectedOnly.click();
   assert.equal(await selectedOnly.getAttribute("aria-pressed"), "true");
@@ -764,9 +782,36 @@ async function verifyPreparedPicker(page) {
   assert.equal(await ringFilter.inputValue(), "1", "lookup preserves manager filters");
   assert.equal(await selectedOnly.getAttribute("aria-pressed"), "true");
   assert.deepEqual(await dialog.locator(".spell-picker-option input").evaluateAll(inputs => inputs.filter(input => input.checked).map(input => input.value)), ["mage-armor"]);
+  const classTable = dialog.getByRole("button", { name: "職業特性表", exact: true });
+  await classTable.focus();
+  await page.keyboard.press("Enter");
+  const featureDialog = page.getByRole("dialog", { name: "角色能力", exact: true });
+  assert.equal(await featureDialog.getByRole("tab", { name: "表格", exact: true }).getAttribute("aria-selected"), "true");
+  assert.equal(await featureDialog.locator('[data-class-feature-table="druid"]').isVisible(), true);
+  assert.equal(await featureDialog.evaluate(el => {
+    const child = el.closest(".app-dialog"), parent = document.querySelector('.app-dialog[data-variant="spellbook"]');
+    const childZ = Number(getComputedStyle(child).zIndex), parentZ = Number(getComputedStyle(parent).zIndex);
+    return childZ > parentZ || (childZ === parentZ && Boolean(parent.compareDocumentPosition(child) & Node.DOCUMENT_POSITION_FOLLOWING));
+  }), true, "class table paints above its parent manager even though inert parents do not block hit testing");
+  assert.equal(await dialog.evaluate(el => el.closest(".app-dialog").inert), true, "class table isolates its parent manager");
+  await page.keyboard.press("Escape");
+  await featureDialog.waitFor({ state: "detached" });
+  assert.equal(await dialog.evaluate(el => getComputedStyle(el.closest(".app-dialog")).zIndex === getComputedStyle(document.documentElement).getPropertyValue("--z-dialog").trim()), true, "closing the class table restores the spell manager layer");
+  assert.equal(await classTable.evaluate(el => el === document.activeElement), true);
+  assert.equal(await ringFilter.inputValue(), "1", "class table preserves manager filters");
+  assert.equal(await selectedOnly.getAttribute("aria-pressed"), "true");
+  assert.deepEqual(await dialog.locator(".spell-picker-option input").evaluateAll(inputs => inputs.filter(input => input.checked).map(input => input.value)), ["mage-armor"]);
   assert.deepEqual(await page.evaluate(() => collectStateObject()), before, "filtering never changes character or spell selections");
   await dialog.getByRole("button", { name: "儲存", exact: true }).click();
   assert.deepEqual(await page.evaluate(() => collectStateObject()), before, "saving a filtered view preserves hidden draft selections");
+  await page.locator("#spell-prepare").click();
+  assert.equal(await showSources.isChecked(), false, "reopening resets the transient visibility setting");
+  await showSources.check();
+  await dialog.locator(".spell-prepared-source input").first().uncheck();
+  assert.equal(await showSources.isChecked(), true, "draft refresh preserves source visibility");
+  assert.equal(await sourceTags.evaluateAll(tags => tags.every(tag => !tag.hidden)), true);
+  await page.keyboard.press("Escape");
+  assert.deepEqual(await page.evaluate(() => collectStateObject()), before, "canceling preserves retained sources");
   await apply(page, modern({ class: "wizard", level: "3" }, [player("mage-armor", "wizard")]));
   await page.locator("#spell-prepare").click();
   assert.equal(await dialog.locator('.spell-picker-option input[value="cure-wounds"]').count(), 0, "automatic class filter does not open another class's spell list");
@@ -776,6 +821,7 @@ async function verifyPreparedPicker(page) {
   await page.locator("#spell-prepare").click();
   assert.equal(await disclosure.getAttribute("aria-expanded"), "true");
   assert.equal(await dialog.getByRole("button", { name: "永久準備", exact: true }).count(), 1);
+  assert.equal(await showSources.isChecked(), false, "reopening resets the transient visibility setting");
   assert.match(await dialog.locator(".spell-picker-count").innerText(), /\| 1環 1 \| 2環 0 \| 3環 0 \| 4環 1 \|$/u, "unavailable selected rings remain in the draft counts");
   await dialog.getByRole("searchbox", { name: "搜尋法術名稱" }).fill("Ice Storm");
   assert.equal(await dialog.locator(".spell-picker-note").innerText(), "目前不可用：目前等級尚未開放此法術環階。");
@@ -819,11 +865,12 @@ async function verifyWizardBookPicker(page) {
         sameLine: Math.abs(search.top - school.top) < 1 && Math.abs(search.top - selected.top) < 1,
         order: search.right <= school.left && school.right <= selected.left,
         browseInHeader: header.contains(el.querySelector(".spell-prepared-browse")) && browse.top >= title.bottom - 1,
+        centeredHeaderLink: Math.abs((browse.top - title.bottom) - (header.getBoundingClientRect().bottom - parseFloat(getComputedStyle(header).borderBottomWidth) - browse.bottom)) < 1,
         levelAboveCheck: level.bottom <= check.top + 1,
         nameBesideControls: name.left >= Math.max(level.right, check.right) && name.top < check.bottom,
         checkboxSize: Math.abs(check.width - 20) < 1 && Math.abs(check.height - 20) < 1,
         overflow: body.scrollWidth > body.clientWidth || el.getBoundingClientRect().right > innerWidth };
-    }), { equalHeight: true, sameLine: true, order: true, browseInHeader: true,
+    }), { equalHeight: true, sameLine: true, order: true, browseInHeader: true, centeredHeaderLink: true,
       levelAboveCheck: true, nameBesideControls: true, checkboxSize: true, overflow: false }, `book filters and rows fit ${width}px`);
     if (width !== 320 && process.env.DND_SPELLBOOK_SCREENSHOTS) await dialog.screenshot({ path: path.join(process.env.DND_SPELLBOOK_SCREENSHOTS, `spellbook-filters-${width}.png`) });
   }

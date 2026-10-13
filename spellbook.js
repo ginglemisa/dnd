@@ -379,7 +379,7 @@
     return { body, toolbar, redraw: draw };
   }
 
-  function attachSpellBrowserHeader(body) {
+  function attachSpellBrowserHeader(body, includeClassTable = false) {
     const header = body.closest(".app-dialog").querySelector(".app-dialog__header");
     header.classList.add("spell-prepared-header");
     const title = header.querySelector("h2");
@@ -391,6 +391,16 @@
     browse.title = "查閱法術";
     browse.addEventListener("click", () => globalScope.openSpellBrowser(browse));
     browseHint.appendChild(browse);
+    if (includeClassTable) {
+      const classTable = node("button", "spell-prepared-browse spell-prepared-class-table", "職業特性表");
+      classTable.type = "button";
+      classTable.setAttribute("aria-haspopup", "dialog");
+      classTable.setAttribute("aria-controls", "character-features-modal");
+      classTable.addEventListener("click", () => globalScope.openCharacterFeatures("creation", classTable));
+      const space = node("span", "", "\u3000");
+      space.setAttribute("aria-hidden", "true");
+      browseHint.append(space, classTable);
+    }
     title.before(titleGroup);
     titleGroup.append(title, browseHint);
   }
@@ -439,6 +449,7 @@
     const body = node("div", "spell-prepared-manager");
     const sourceList = node("div", "spell-prepared-sources spell-overview-card");
     sourceList.dataset.expanded = "true";
+    let showSources = false;
     const countSummary = node("div", "spell-prepared-count-summary");
     countSummary.setAttribute("role", "status");
     const counts = node("p", "spell-prepared-draft-counts");
@@ -474,6 +485,19 @@
       arrow.setAttribute("aria-hidden", "true");
       toggle.append(arrow, node("span", "", manual ? "保留的來源法術" : "永久準備"));
       heading.appendChild(toggle);
+      const sourceVisibility = node("label", "spell-picker-level spell-prepared-source-visibility");
+      const sourceVisibilityInput = node("input");
+      sourceVisibilityInput.type = "checkbox";
+      sourceVisibilityInput.checked = showSources;
+      sourceVisibilityInput.dataset.stateTransient = "true";
+      sourceVisibilityInput.setAttribute("aria-controls", "spell-prepared-source-options");
+      sourceVisibilityInput.addEventListener("change", () => {
+        showSources = sourceVisibilityInput.checked;
+        sourceList.querySelectorAll(".spell-picked-source-tag").forEach(tag => { tag.hidden = !showSources; });
+        globalScope.schedulePickedSpellLayout?.();
+      });
+      sourceVisibility.append(sourceVisibilityInput, "顯示來源");
+      heading.appendChild(sourceVisibility);
       sourceList.appendChild(heading);
       const list = node("div", "spell-picked-content spell-prepared-source-options");
       list.id = "spell-prepared-source-options";
@@ -509,6 +533,9 @@
         name.addEventListener("click", () => openReadOnly(entry.spellId, name));
         const text = node("span", "spell-prepared-source-name");
         text.appendChild(name);
+        const sourceTag = node("span", "spell-picked-source-tag", `[${entry.sourceLabel || entry.source || entry.spellSource || "來源能力"}]`);
+        sourceTag.hidden = !showSources;
+        text.appendChild(sourceTag);
         check.appendChild(input);
         row.append(check, text);
         list.appendChild(row);
@@ -589,7 +616,7 @@
         } });
       const dialog = body.closest(".app-dialog");
       dialog.querySelector(".app-dialog__actions").prepend(clear);
-      attachSpellBrowserHeader(body);
+      attachSpellBrowserHeader(body, true);
       return await decision;
     } finally { sourceObserver?.disconnect(); }
   }

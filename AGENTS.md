@@ -2,25 +2,31 @@
 
 ## 範圍與工作邊界
 
-本檔適用於整個專案；使用者當次明確指示優先。只保留長期有效的專案限制、資料入口與驗證條件，不累積歷史交接、暫時性限制或通用操作教學。
+本檔適用於整個專案，使用者當次明確指示優先；僅維護長期規範、資料入口與驗證條件，不累積交接、暫時限制或通用教學。
 
-* 以完成當次需求為範圍，優先維持穩定性、資料與行為相容性、可預測行為，再考量可維護性、修改範圍與美觀。保留仍適用的既有設計，避免無關重構。
+* 限於當次需求，優先穩定性、資料／行為相容與可預測性，再考量維護性及美觀；保留適用設計，避免無關重構。
 * 依任務選讀下列入口，追蹤受影響的實際資料流與依賴即可；不需每次通讀全部模組或文件。
-* 實作任務應持續到修改、適用驗證及本次變更造成的失敗都已處理，不停在計畫或第一版等待批准。低風險、可逆且不改變產品意義的細節可自行決定。
+* 持續到修改、適用驗證與本次造成的失敗已處理，不停在計畫／第一版待批；低風險、可逆且不改產品意義的細節自行決定。
 * 只有當多個合理選擇會實質影響玩家行為、規則、持久化資料或相容性，且專案證據不足以判定時，才詢問使用者。先完成不依賴該決策的工作。
 * 若本檔與 repository 不符，以實際程式、資料與呼叫路徑確認現況，採取完成需求的最小相容修改，並回報已確認的衝突。
 
 ## 前端架構與相容性
 
-* 網頁使用原生 HTML、CSS、JavaScript，`index.html` 以傳統 `<script defer>` 依序載入全域模組，沒有前端框架或打包流程。一般功能沿用此架構，不新增框架、build pipeline 或第三方 runtime dependency；驗證使用既有 Node.js／Playwright 環境。
-* `index.html` 包含主要角色卡 DOM、初始化、表單串接、持久化、分享及 PDF 延遲載入。只有任務需要時才拆分 inline 邏輯或模組，不因檔案大小、形式一致性而重寫架構。
+* 原生 HTML／CSS／JavaScript 靜態網站；`index.html` 以傳統 `<script defer>` 依序載入全域模組，不新增前端框架、build pipeline 或 runtime dependency。驗證沿用 Node.js／Playwright，不新增測試框架或依賴。
+* `index.html` 負責角色卡 DOM、初始化、表單串接、持久化、分享與 PDF 延遲載入；僅依任務需要拆分，不因檔案大小／一致性重寫架構。樣式以 `styles.css` 為準，外觀／互動先查 [DESIGN.md](DESIGN.md)。
 * 變更全域 API、DOM ID、data attribute、檔名或載入／初始化順序時，搜尋並同步處理受影響的 JavaScript、CSS 與呼叫端。
 * 表單控制項與結構化 DOM 可作為角色目前選擇的 canonical state，無需另建中央 store。純顯示文字不作為主要規則資料來源，除非該解析本身是明確保留的設計。
 * LocalStorage 沿用 `window.dndStorage`。變更持久化欄位或意義時，檢查 LocalStorage、自動存檔、JSON 匯入／匯出與分享網址的還原相容性；UI 調整不應意外改變資料格式。
-* 冒險日誌由 `adventure-journal.js` 獨立使用 IndexedDB `twd20-adventure-journal`，對外 JSON 維持版本 1；舊 LocalStorage `dnd.adventureJournal.v1` 僅在遷移 transaction 完成後移除。搜尋／日誌資料不加入角色 JSON、分享或 autosave；失敗保留原資料與編輯，不以 LocalStorage 建立第二份可寫入狀態。
+* 角色 JSON／分享／autosave 的安全預檢集中於 `index.html`；輸入、解壓、文字、結構及動態控制項須沿用共用安全上限，不以角色規則代替資源限制。套用前完整驗證；拒絕或損壞資料不得覆寫原存檔，必要時停止 autosave。檔案欄位不保存／還原，來源標籤以純文字顯示。
+* JSON 匯入取代角色，清理範圍以 `index.html` 的 `APP_STORAGE_KEYS` 為準：含 autosave、其他職業／手動法術記憶、頭像、創角／購點、跑團偏好與角色 UI／導覽記憶；不得清空網站儲存，須保留日誌（含待遷移資料）、主題、擲骰歷史。匯出僅含目前角色與兩份法術書，不是完整本機備份；變更清理範圍須核對匯出與使用者提示。
+* 匯入預檢後，須確認新資料與舊紀錄副本已寫入 sessionStorage 才清理／套用；新角色與完成標記存妥後重載，清除模組記憶體舊偏好，再移除暫存。完成標記防止暫存刪除失敗造成重複匯入；暫存失敗保留角色與未存編輯，套用／存檔失敗停止 autosave、保留副本並嘗試復原，提示保留分頁與重試。清除紀錄前須取消／作廢待套用匯入。
+* `adventure-journal.js` 獨立使用 IndexedDB `twd20-adventure-journal`；對外 JSON 維持版本 1、相容舊欄位且不含內部 revision。既有 IndexedDB 優先；舊 LocalStorage `dnd.adventureJournal.v1` 僅在遷移 transaction 完成後移除。寫入須在同一 transaction 核對 revision，衝突不覆寫；讀取／遷移／儲存失敗保留原資料與編輯、提供重試／可讀資料備份，不另建可寫入的 LocalStorage 日誌。日誌／搜尋不加入角色 JSON、分享或 autosave，角色清理不刪日誌；搜尋需存檔時成功後才跳頁，IME 選字不提交。
 * 修改正式部署載入的 CSS／JavaScript 時，依 `index.html` 既有查詢字串策略更新對應快取版本，只處理本次變動資源。
 * 分享流程入口為 `index.html` 的 `copyShareUrl()`，對話框沿用 `AppDialog`。短網址只在使用者明確選擇後建立，傳送當次編碼產生的區域變數 `hash`，不可改用可能過期的 `location.hash`；保留 `#s=`／`#s2=` 格式相容性與永久網址的複製 fallback。
 * 短網址僅供正式 Origin `https://twd20.com`、`#s2=` 且 hash 長度 ≤10000 使用，離線頁不得呼叫服務。90 天有效期由 Worker／KV 管理；建立失敗須明確提示並保留改選永久網址的操作，不可悄悄改複製長網址，也不可自動重試建立請求。
+* 分享模式不 autosave 角色修改、不得再次分享或匯入 JSON；離開須確認、移除分享資料並重載本機存檔。角色／法術還原不得被本機其他角色記憶覆蓋；跑團動作偏好仍屬本機保存，不加入角色 JSON／分享。主題與擲骰歷史同樣不隨角色傳送。
+* GA4 啟用閘門在 `index.html`，事件入口在 `analytics.js`。只允許 HTTP(S) 且 hostname 精確為 `twd20.com`／`www.twd20.com`，owner 排除優先；除已識別的 `analytics=owner`／`analytics=user` 外，任何 query 或 fragment（含 `#s=`／`#s2=`）均不得載入 Google 追蹤腳本或送出事件。`analytics=user` 僅解除 owner 偏好，不能繞過網址限制；儲存失敗時當次 owner 仍生效並保留參數。
+* 追蹤不得傳送角色／日誌文字或分享資料；`page_location` 不含 query／fragment，`page_referrer` 僅保留 HTTP(S) origin，Google 腳本使用 `no-referrer`。測試流量與 GA4 模擬限制見下方「執行與停止條件」。
 
 ## Cloudflare 短網址服務
 
@@ -39,9 +45,14 @@
 | 野獸／怪物 | `monster.js` |
 | 裝備 | `equipment-data.js`、`equipment-notes.js` |
 | 法術、狀態、神祇 | `spell-list.js`／`SpellCatalog`、`condition.js`、`deity-info.js` |
-| 創角與角色選項串接 | `index.html`、`quick-build.js`，並核對上述規則來源 |
+| 創角與角色選項串接／自訂背景 | `index.html`、`quick-build.js`、`custom-background.js`，並核對上述規則來源 |
+| 法術目前清單、來源、自動／手動管理與遷移 | `spell-management.js`／`SpellManagement`；法術書與管理視窗為 `spellbook.js`／`Spellbook` |
+| 法術／裝備搜尋與獨立查閱 | `search.js`；保留工具列與導覽使用的全域入口 |
+| 新手與跑團導覽 | `onboarding-tour.js`，並核對創角／匯入／PDF 生命週期 |
+| PDF 匯出與欄位 | `pdf-export.js`、`pdf-field-map.js`；按需載入 `pdf-lib.custom.min.js`／`fontkit.custom.min.js`，部署須包含 PDF 與字型素材 |
 
 * UI 模組沿用主要資料與公開 API，不複製平行規則。若任務涉及的 UI 與明確規則來源不符，修正實作；既有錯誤行為不是規格。
+* `spellId` 是持久化與引用識別，不隨顯示名稱改動。確需新增、移除或更名時，須同步更新 `spell-id-baseline.json` 並核對引用及舊資料相容性；基準檔不得用來掩蓋意外遺失。
 * 規則來源互相矛盾時，先查實際使用路徑；仍無法判定且會改變角色規則或計算結果時，列出差異與建議交由使用者決定。
 
 ## 動作、擲骰與跑團模式
@@ -56,71 +67,78 @@
 | `tabletop-resources.js` | 資源呈現與操作 |
 | `dice-roller.js`／`DiceRoller` | 擲骰啟用狀態、骰式解析、結果與歷史紀錄的唯一入口 |
 
-* 非法術能力使用結構化動作定義，保留穩定 key、分類、等級與角色選擇條件。調整識別或分類時，維持自訂動作、玩家隱藏偏好、過濾及其持久化相容性。
-* 按鈕拆分、合併、升級替換與摘要可能是產品設計，修改前同時核對規則與 UI 定義。法術施法時間沿用現有分類機制，其他已有結構化欄位的施法規則以 `SpellCatalog` 為準。
+* 非法術能力沿用結構化定義的穩定 key、分類、等級及角色條件；識別／分類變更須相容自訂動作、隱藏偏好、過濾與持久化。
+* 按鈕拆合、升級替換與摘要須先核對規則及 UI 設計；法術時間沿用既有分類，其他結構化施法規則以 `SpellCatalog` 為準。
 * 跑團模式子模組透過 `TabletopMode`、`SpellCatalog`、`CharacterRules`、`DiceRoller` 協作；不另建競爭的共用狀態、持久化、亂數或擲骰歷史。必要的內部拆分保持 `window.TabletopMode` 公開 API 相容。
-* `action-panel.js` 與 `tabletop-actions.js` 保留各自責任及公開 API。
 * 自動管理專長保留來源分類及固定背景來源，來源選項不以先決條件或重複取得限制停用／清空；不合格的已選專長顯示主題警示，數值計算與衍生法術使用共用資格判斷。PDF 前置檢查只提醒，仍可繼續輸出。自行管理不套用資格限制或警示，保留既有計算行為。
 
 ## 對話框與資訊頁
 
 * 新 dialog／toast 沿用 `app-dialog.js`；除特殊平台限制或使用者要求外，不改用原生 `alert`、`confirm`、`prompt`。
-* Legal／About 網站內容維護於按需載入的 `legal-about.js`，入口為 `index.html#legal-about-modal`；README 整合必要說明與素材連結，SRD Attribution 必須完整保留。
+* Legal／About 網站內容維護於按需載入的 `legal-about.js`，入口為 `index.html#legal-about-modal`；README 保留對外授權、素材來源與完整 SRD Attribution。`LICENSE.txt` 的 MIT 僅涵蓋有權授權的原始程式碼；SRD 5.2.1／CC BY 4.0、字型、角色紙、圖像與第三方函式庫各依原授權，不可混為 MIT。AGENTS 不取代授權檔或網站法律聲明。
 * `info-pages.css` 負責獨立資訊頁樣式；`legal-modal.js` 控制歡迎視窗與 About 按需載入，About 沿用 `AppDialog` 與主頁主題。`ddals1.html` 是官方免費冒險外部連結整理頁，不是規則來源。
 
 ## 離線角色卡
 
 * 一般任務只更新來源檔案。只有使用者明確要求建立、測試或更新離線角色卡時，才執行 `build-offline-nopdf.ps1` 並驗證產製結果。
-* `TWD20-offline.html` 是衍生產物，不能作為 source of truth 或只修改它。產生腳本內嵌本機 CSS、JavaScript、圖片與 About 模組，並停用 PDF 匯出。
+* `twD20-offline.html` 是衍生產物，不能作為 source of truth 或只修改它。產生腳本內嵌本機 CSS、JavaScript、圖片與 About 模組，並停用 PDF 匯出。離線分享須產生正式站的永久網址，不含本機路徑或呼叫短網址服務；完全離線交換使用 JSON。
+* 根目錄以 PowerShell／Node.js 20 以上執行 `.\build-offline-nopdf.ps1`；自動驗證產物語法、離線分享／複製 fallback、分享限制與離開流程，失敗即建置失敗。成品驗證不另列產品 regression；Node.js 模擬 URL／瀏覽器 API 不代表手機權限／儲存實機驗證。
 
 ## 驗證條件
 
-依本次 diff、實際呼叫路徑與改變的行為選擇驗證，不以檔名、關鍵字或腳本數量決定。`index.html`、`styles.css`、`tabletop-mode.js` 等共用檔案被修改，不代表其中所有功能都受影響；工作區既有且非本次修改也不自動納入。執行環境、命令、選項與限制統一維護於 [README：維護與驗證](README.md#維護與驗證)；新增或調整驗證腳本時同步更新兩處。
+依本次 diff、實際呼叫路徑與行為選擇驗證，不按檔名／關鍵字／腳本數量決定；共用檔案變更不代表所有功能受影響，既有修改不自動納入。環境、命令、分項與限制統一維護於本節，腳本入口／責任變更須同步更新。
 
 ### 選擇驗證範圍
 
-* **文件、純文案或局部排版**：僅修改 Markdown 時核對連結、命令與描述，不執行 JavaScript 或功能驗證；畫面文案與排版驗證受影響區域即可，不預設啟動整支功能回歸。先確認文字未被規則、動作摘要或 PDF 解析使用，且未改變控制項、事件與持久化資料。種族／職業的標題、行距、列表樣式可採此方式；修改原始規則文字或 HTML 結構時須追查其消費端。
-* **局部 UI 互動**：僅影響單一對話框、區域或流程，且不改變角色規則、共用機制或資料格式時，優先使用涵蓋該行為的既有分項驗證；沒有合適分項時，可用最小必要瀏覽器流程取代夾帶無關功能的整支腳本。按實際變更涵蓋開啟／操作／關閉，以及相關的取消、失敗重試、焦點或狀態保留，不能只確認元素出現。
-* **規則、計算、資料或共用機制**：執行下表對應的回歸；修改共用狀態、事件分派、初始化或持久化時，沿實際受影響的呼叫端追加驗證。持久化變更須涵蓋相關 LocalStorage／autosave、JSON 與分享還原相容性；不以局部畫面成功代替資料驗證，也不因多支腳本都測存檔就刪除不同資料的案例。
-* **語法與外觀**：修改 JavaScript 時對受影響檔案執行 `node --check <檔案>`；修改 HTML 內嵌 JavaScript 時檢查該程式區塊語法，單純更新 script URL 不需重跑全部 JS 語法。排版先選受影響區域的桌機／窄螢幕與必要主題；只有共用斷點、主題切換／變數或多處共用樣式改變時才擴大矩陣。局部使用既有主題色不等於修改主題系統。
+* **文件、文案或局部排版**：Markdown 僅核對連結、命令與描述，不跑功能驗證。畫面文案／排版驗證受影響區域；先確認未被規則、動作摘要或 PDF 解析使用，且未改變控制項、事件或持久化。規則原文與 HTML 結構變更須追查消費端。
+* **局部 UI 互動**：未改規則、共用機制或資料格式時，優先用既有分項；無合適分項可用最小瀏覽器流程。須涵蓋開啟／操作／關閉及受影響的取消、重試、焦點、狀態保留，不能只確認元素出現。
+* **規則、計算、資料或共用機制**：執行下表對應回歸；共用狀態、事件、初始化或持久化變更須沿受影響呼叫端追加驗證。持久化涵蓋 LocalStorage／autosave、JSON、分享還原相容性，不以局部畫面代替資料驗證，不因多支腳本測存檔而刪除不同資料案例。
+* **語法與外觀**：JavaScript 變更執行 `node --check <檔案>`，HTML 內嵌 JS 檢查該區塊；僅改 script URL 不需全查。版面選受影響區域的桌機／窄螢幕及必要主題；共用斷點、主題機制或多處共用樣式改變才擴大矩陣，局部沿用主題色不算主題系統變更。
 * **執行前簡述選擇**：用一句話交代本次影響的行為及要跑的檢查，不需逐項列出所有不跑的腳本或等待批准。
-* **永久案例與 suite 邊界**：不得只為證明本次修改正確就新增永久的 `validate-*.js`、`check-*.js` 或 test file。小型、低風險、可逆修改優先使用既有 regression、既有 build／check 命令，或不提交的臨時驗證；低風險文案／排版不為形式完整而新增永久測試。
-* **補足 regression coverage**：新增功能或修正 bug 時，保護有實際回歸風險的重要行為，必要案例優先補進最接近的既有系統級 suite。沒有適合 suite 時先考慮最小必要臨時驗證；「沒有既有 testcase」不等於需要新檔。只有真正獨立、長期存在且容易回歸的子系統，併入既有 suite 又會明顯破壞責任邊界時，才依專案慣例新增永久 suite。單一 bugfix、UI 元件、欄位、PDF 文案或 edge case 原則上不足以成立獨立 suite。臨時 debug／verification script 不得提交，收尾前須清除。
+* **永久案例與 suite 邊界**：新增功能／修正 bug 需保護重要回歸風險，優先補進最接近的既有系統級 suite。低風險可逆修改用既有檢查或不提交的臨時驗證，不為形式完整新增測試；沒有 testcase 不等於需要新檔。只有獨立、長期且易回歸的子系統、併入既有 suite 會破壞責任邊界時才新增永久 suite。單一 bug、UI、欄位、文案或 edge case 原則上不足以新增 `validate-*.js`／`check-*.js`／test file；臨時腳本收尾前清除。
 
 ### 回歸腳本對照
 
-下表是行為與腳本的對照，不是關鍵字命中即全部執行的清單；局部文案、排版與 UI 互動先適用上述範圍判斷。
+依上述範圍判斷選擇對應責任，不以關鍵字命中整套執行。
 
 | 系統級責任 | 驗證 |
 | --- | --- |
-| 施法 metadata、跑團模式施法條件、法術位、專注或施法自動擲骰 | `node validate-tabletop-spellcasting.js` |
-| 非施法動作定義／摘要、角色卡與跑團操作、基本動作收合／記憶／清除、無關搜尋不重建靜態動作、合併分類的自訂／隱藏偏好及持久化、法術單一入口與施法時間標記；狀態／危害連動與專注中斷、危害檢定及分頁提示；專長來源雙向選擇、自動同步、固定來源灰階鎖定、資格警示／數值停用／PDF 提醒、自行管理增刪與新舊資料／分享還原、舊檔空白玩家專長清理與零列新增入口；武器裝備互動、衝突確認、AC／摘要與 PDF 對應 | `node validate-action-metadata.js` |
-| 德魯伊荒野形態、野獸資料與攻擊／資源操作、荒野夥伴、野性復甦、自然恢復、原初打擊及其狀態／持久化 | `node validate-tabletop-druid.js` |
-| 法術書（含法師推薦寫入、書內儀式與匯入、跑團儀式分組／準備去重／僅限儀式施法）、結構化目前清單與舊表單移除、角色卡各環主題框／獨立收合與瀏覽器記憶／來源排序／戲法與各環名稱自適應分欄／1.2em 間距與長名稱對齊及單欄換行／角卡實線連結與跑團隔離／無法術位顯示／隱藏免費次數與資料保留／720px／400px 四二一欄自適應、純閱讀與草稿管理／搜尋與環階／已選切換、法術書學派與多環階交集／查閱焦點及準備清單保留、查閱子視窗層級／焦點／草稿保留、永久準備收合／含不可用草稿的各環數量、管理清單320／480／720px一至四欄／法術書與準備清單共用環階在勾選格上方的配置／主頁按鈕等高與職業文字依空間換行／同列等高控制項／標頭查詢與底部清空、四項開啟條件、戲法／共用準備上限與限定來源、多重來源及免費使用、12 職業與手動記憶／無打斷切換／舊資料單次提醒／清除、非破壞模式切換、降級與低等級載入保留／超額限制及高環復原、手動法術書與法師儀式、舊 autosave／JSON 的自動或手動判定、法術書歸屬、載入資料優先、手動來源表單與免費次數隔離、快速創角強制自動、書之魔契勾選還原及新版還原、未知法術編號、分享隔離、批次還原後立即讀取／收集／儲存、跑團與 PDF 使用端、第三個三環法術位及桌機／窄螢幕／主題 | `node validate-spellbook.js` |
-| 法術頁籤全文／職業別名／環位搜尋及排序、獨立查閱視窗的篩選／資料隔離／關閉與焦點；`search.js` 的裝備搜尋／詳情／規則關鍵字／購買入口、四種工具熟練列的查看按鈕、職業工具自動化與 JSON／分享／自動存檔還原、搜尋切頁及導覽還原 | `node validate-spell-search.js`（含 Artificer 無資料／模擬資料、外部搜尋模組與主頁內嵌語法）；僅裝備搜尋、工具查看與職業工具自動化可加 `--equipment-only` |
-| 屬性產生與共用擲骰：購點、結果分配、背景加值、備註／取消／鍵盤／觸控、歷史相容性及自動儲存 | `node validate-ability-roll.js`；可用 `--point-buy-only` 或 `--dice-only` 選擇購點或一般擲骰／歷史分項 |
-| 導覽屬性引導／觸控；創角匯入銜接／PDF 載入取消；跑團模式七步導覽、選單入口及法術與資源教學預覽；共用導覽流程 | 分別優先使用 `node validate-onboarding.js --touch-only`、`node validate-onboarding.js --imports-only`；影響共用導覽或分項不足以涵蓋時執行完整 `node validate-onboarding.js` |
-| 短休／長休（含生命骰視窗關閉後的完成提示、長休清除專注與還原）、休息後選項同步與還原、生命骰（含擲骰關閉時的單顆／連續回血）、資源恢復或最佳旅伴 | `node validate-tabletop-rest.js` |
-| 冒險日誌 IndexedDB 遷移／失敗復原／跨分頁衝突、JSON 相容、全文搜尋／IME／儲存與跳頁、角色資料隔離及桌機／手機版面 | `node validate-ui.js --journal-only`；IME 與手機觸控為瀏覽器模擬，不代表實機輸入法驗證 |
-| 共用 UI：GA4 網域／owner／敏感網址隔離（純模擬、不連線）、角色 JSON／分享／autosave 輸入安全與拒絕資料保留、主題／保存／素材、工具選單與技能版面、Legal／About、AppDialog／toast（含最高層級、背景 inert 排除、點擊／觸控隔離及按住暫停）、角色能力頁籤視窗（含創角／表格顯示移位、子視窗、法術／技能／動物參考浮層、選項保存、焦點、補填入口、角色卡／跑團職業缺項跳轉與短暫高亮、自行管理專長提示與跳轉、職業缺項自動補選（含所有職業各等級屬性值提升、魔法學徒追加表單、使命／戰鬥風格戲法、魔法發現與其他職業選項、法術選單已準備標示，以及 JSON／分享／自動存檔還原）與專長查看）、PDF 欄位（含全部 215 筆法術的材料成分勾選／新舊資料與描述文字隔離、職業工具、自動專長來源及魔法學徒子選項／手動法術模式僅保留專長名稱）與實際可編輯匯出 | `node validate-ui.js`；可用 `--data-only`（XSS 防護、輸入／解壓與數量上限、JSON／分享／autosave 相容、JSON 乾淨匯入與清理記憶體偏好、暫存／套用／存檔失敗副本與重試及失敗保留）、`--appearance-only`、`--dialogs-only`（含角色能力視窗與自訂背景的編輯／專長與工具同步／PDF 名稱／資料還原）、`--pdf-only` 或 `--pdf-fields-only` 選擇分項。局部 UI 依上方原則驗證，不自動連帶驗證 PDF 或導覽 |
+| 法術 ID／metadata、跑團施法條件、法術位、專注與自動擲骰 | `node validate-tabletop-spellcasting.js`（純 Node.js，含 ID baseline） |
+| 動作定義／摘要與角色卡／跑團操作、收合／記憶／清除、搜尋不重建靜態動作、合併分類偏好與還原、法術入口／時間標記；狀態／危害檢定與專注中斷／分頁提示；專長來源同步／鎖定、資格／計算／PDF、自行管理與新舊還原／空白列清理／新增；武器衝突、AC／摘要、還原／PDF | `node validate-action-metadata.js`；PDF 匯出使用替身 |
+| 德魯伊荒野形態、野獸攻擊、荒野夥伴、野性復甦、自然恢復、原初打擊與資源／狀態保存 | `node validate-tabletop-druid.js` |
+| 法術書推薦／儀式／匯入、跑團儀式分組／去重／施法；結構化清單與各環顯示／收合／排序／分欄／免費次數／無法術位、跑團隔離；閱讀／草稿管理與篩選、來源／不可用項計數、子視窗／焦點／草稿保留；準備限制／來源／免費使用；職業／手動記憶與切換、降級／超額／高環保留；舊資料遷移／提醒／清除、書籍歸屬／載入優先／手動來源隔離、快速創角／書之魔契／未知 ID；批次還原立即讀存、JSON／autosave／分享、跑團／PDF、法術位與響應式／主題版面 | `node validate-spellbook.js` |
+| 法術全文／職業別名／環位搜尋與排序（含 Artificer 無資料／模擬資料）、獨立查閱篩選／隔離／關閉／焦點；裝備詳情／規則說明／購買、各工具列查看與職業工具自動化／JSON／分享／autosave 還原、切頁及導覽還原 | `node validate-spell-search.js`；含搜尋模組與主頁內嵌語法。僅裝備／工具可加 `--equipment-only` |
+| 屬性產生、購點／結果分配／背景加值、共用擲骰備註／取消／鍵盤／觸控、歷史相容與 autosave | `node validate-ability-roll.js`；可擇一加 `--point-buy-only` 或 `--dice-only` |
+| 導覽屬性引導／觸控、創角匯入與 PDF 載入取消、七步跑團導覽／選單／法術與資源預覽、共用導覽與減少動態效果 | `node validate-onboarding.js`；優先選 `--touch-only` 或 `--imports-only`，影響共用流程再完整執行；PDF 繪製使用替身 |
+| 短休／長休與取消、生命骰回血／關閉後完成提示、專注清除、休息後選項同步、各來源資源恢復／最佳旅伴／可選恢復及 autosave 還原 | `node validate-tabletop-rest.js` |
+| 日誌 IndexedDB 遷移／失敗復原／跨分頁衝突、JSON 相容、全文搜尋／IME／儲存／跳頁、角色隔離與桌機／手機版面 | `node validate-ui.js --journal-only`；IME／手機觸控為瀏覽器模擬 |
+| GA4 隔離（純模擬、不連線）、共用 UI 與 PDF；各分項責任如下 | `node validate-ui.js` 完整執行，或擇一使用下列分項 |
 
-離線成品屬於建置驗證，不列為產品 regression suite。明確要求建立、測試或更新離線角色卡時執行 `build-offline-nopdf.ps1`；建置完成會自動檢查產物語法與離線分享／離開流程，失敗時回報建置失敗。環境需求與模擬限制見 README。
+`validate-ui.js` 分項：
+
+* `--data-only`：JSON／分享／autosave 的 XSS、輸入／解壓／數量上限、拒絕資料保留、乾淨匯入與記憶體偏好隔離、暫存／套用／存檔失敗副本、復原與重試。
+* `--appearance-only`：四種外觀、保存／素材、工具選單／技能等共用版面、Legal／About 主題與焦點。
+* `--dialogs-only`：AppDialog／toast 層級／inert／倒數／滑鼠與觸控手勢／暫停／事件隔離；About 載入／重試／網址；角色能力頁籤與創角／表格顯示、子視窗／法術技能動物參考、焦點／選項保存、缺項補填／跳轉／高亮、各職業等級選項自動補選、專長／準備標示與還原；自訂背景編輯／取消、專長／工具同步、PDF 名稱與還原。
+* `--pdf-only`：欄位與實際可編輯 PDF 匯出；`--pdf-fields-only` 僅驗欄位、不需 PDF／字型素材。涵蓋全部法術材料成分、新舊資料與描述隔離、職業工具、專長／魔法學徒子選項、手動法術模式、盾牌受訓與血統提示。
 
 持續法術效果改變一般角色或野獸的 AC／速度計算、施法操作或狀態保存時，也需執行 `node validate-tabletop-druid.js`；僅調整其顯示字色、字級或間距不因此觸發整套德魯伊回歸。
 
+### 執行環境
+
+* 從專案根目錄執行，使用 Node.js 20 以上。`validate-tabletop-spellcasting.js` 為純 Node.js，其餘上表腳本使用 Playwright／Chromium，會自行啟動並關閉本機伺服器與瀏覽器；不需另外啟動網站。完整 `validate-ui.js`／`--pdf-only` 需專案 PDF 與字型素材。
+* 沿用既有依賴；新環境使用 `npm ci`、`npx --no-install playwright install chromium`。可用 `$env:DND_BROWSER_CHANNEL = "msedge"` 選擇已安裝的 Edge，以 `Remove-Item Env:DND_BROWSER_CHANNEL` 恢復預設；環境提供套件時可將 `NODE_PATH` 指向其 `node_modules`。
+* 截圖輸出參數由各腳本內的 `DND_*SCREENSHOT*` 環境變數維護，只在需要視覺檢查時使用；先建立輸出目錄，不提交產物。IME／觸控模擬不代表實機輸入法驗證；離線成品模擬限制見「離線角色卡」。
+
 ### 執行與停止條件
 
-* 先用既有分項或最小重現驗證修改，再依影響範圍決定是否需要完整腳本；分項已充分涵蓋時不自動補跑完整版本。腳本沒有分項不代表必須重構測試或跑遍所有功能，但規則、資料與共用機制仍須完成對應回歸，不得以節省時間為由略過。
-* 同一程式版本已有可確認通過紀錄的檢查可沿用；只有後續修改影響該檢查的程式、依賴或測試前提時才重跑。既有腳本已涵蓋的流程不再用臨時瀏覽器重做，除非需要補足視覺、未涵蓋的互動或排查失敗。
-* 失敗後先縮小到失敗情境，確認是本次回歸、測試／環境問題或既有問題；必要時用修改前版本對照。修正本次造成的失敗，再重跑受修正影響的範圍，不反覆執行無關的完整流程直到偶然通過。確認與本次無關後回報證據及未通過範圍，不擅自擴大修復，也不能將失敗算作通過。
-* 沿用專案或環境已有的 Playwright 與瀏覽器，不為測試新增框架或依賴。
+* 先用既有分項／最小重現，充分涵蓋時不補跑完整版本。腳本無分項不等於要重構測試或跑遍功能，但規則、資料、共用機制仍須完成對應回歸，不因省時略過。
+* 同版本已有確認通過紀錄可沿用，後續修改影響程式、依賴或測試前提才重跑；不以臨時瀏覽器重做已涵蓋流程，除非補視覺／互動或排查失敗。
+* 失敗先縮小情境，必要時對照修改前版本，區分本次回歸、環境／測試或既有問題。修正本次失敗並重跑相關範圍，不反覆跑無關完整流程求偶然通過；無關問題回報證據與未通過範圍，不擴大修復或算作通過。
 * **測試流量排除**：使用 Playwright（CLI 或一般 API）、任何 agent 瀏覽器、人工瀏覽器測試或程式回歸測試時，凡載入本站頁面的網址都必須加入 `analytics=owner`，不論正式站、localhost／127.0.0.1 或直接開啟 `index.html`（`file://`）。沒有 query 時用 `?analytics=owner`，已有 query 時用 `&analytics=owner`（既有 analytics 值須替換），參數必須放在 `#s=`／`#s2=` 等 hash 之前；程式組合網址使用 `URL.searchParams.set("analytics", "owner")`。新分頁、獨立 browser context 與分享網址也須帶入，不依賴別的分頁已保存 owner；頁面清理參數後，不可直接以 `page.url()` 作為新測試入口。重新整理前若清除了網站儲存，須重新帶入 owner 參數。
-* GA4 僅允許 HTTP(S) 且 hostname 精確等於 `twd20.com` 或 `www.twd20.com` 時啟用，owner 排除優先；非正式網域的程式阻擋不能取代上述測試規範。驗證 GA4 啟用分支時，使用隔離模擬與追蹤替身，禁止向真實 GA4 傳送測試事件。
+* 非正式網域的 GA4 阻擋不能取代上述 owner 規範；GA4 啟用分支只用隔離模擬與追蹤替身驗證，禁止向真實 GA4 傳送測試事件。
 * 涉及 DOM 互動、responsive layout、焦點、modal、事件、LocalStorage、autosave 或跨頁狀態，且靜態檢查不足時，驗證最小必要 UI 流程；僅在需要瀏覽器驗證時啟動本機伺服器。
 * 需要臨時瀏覽器檢查時，先讀取 [.agents/skills/playwright-cli/SKILL.md](.agents/skills/playwright-cli/SKILL.md)，使用既有 dependency 的 `npx --no-install playwright cli`。沿用現有 regression scripts，不另建 Playwright Test 或 Test Agents。
-* Browser workflow 優先採用 `open → snapshot/find → interact → assertion`，僅操作本次驗證所需元素；唯讀確認可省略 interact。完成後關閉本次 browser session 與本機伺服器，不為單一修改自由探索整個網站。
-* 優先讀取局部 snapshot、locator、console 或 network 資訊；使用 `find`、`snapshot <target>`／`--depth`、`--raw` 等限制輸出，避免輸出整頁大型 DOM。
-* DOM、文字或狀態足以判斷時，不使用 screenshot，包括只確認 DOM／文字結果的 CSS 修改。只有真正的視覺、排版問題，或 snapshot 無法判斷時才截圖，並限於相關區域與 viewport。
+* 瀏覽器依 `open → snapshot/find → interact → assertion` 操作必要元素，唯讀可省略 interact；優先局部 snapshot／locator／console／network，限制輸出。DOM／文字／狀態足以判斷時不截圖；視覺問題才截相關區域與 viewport。完成後關閉本次 session／伺服器，不自由探索無關功能。
 * 發現產品 bug 時，修正產品或回報問題，不得藉由削弱、跳過或移除測試條件讓 regression test 通過。
 * 適用檢查通過後即可收尾；只有新修改、失敗或未解疑慮才擴大或重複驗證。環境缺少條件時完成其餘可執行檢查，明確回報未驗證範圍。
 

@@ -4,163 +4,48 @@ twD20 是 Reggie Tsai / 瑞基製作的手機創角工具，協助新手、DM �
 
 [正式網站](https://twd20.com) · [Legal & About](https://twd20.com/#legal-about-modal) · [GitHub](https://github.com/ginglemisa/dnd)
 
-## 功能
+## 主要功能
 
-- **創角與角色卡**：數值、技能、裝備、動作、法術；支援 27 點購買、屬性擲骰、職業範本、自動計算、快速創角及認識角卡導覽。
-- **跑團模式操作**：HP、臨時 HP、狀態、死亡豁免、專注、武器攻擊、法術位與職業資源；可隱藏或自訂行動，管理法術與儀式施法。
-- **紀錄與輸出**：本機自動儲存、JSON 匯入／匯出、分享網址、QR Code、PDF 角色卡及單檔離線版；可選用擲骰與歷史紀錄。
-- **冒險日誌**：獨立書頁閱讀與編輯、全文搜尋跳頁及整本 JSON 匯入／匯出；手動記錄角色資訊、團錄與獎勵，使用 IndexedDB 保存，不包含在角色 JSON、分享或角色自動存檔中，清除角色紀錄也會保留日誌。匯入會經確認後取代整本日誌，請先匯出備份。
-- **外觀**：工具選單切換暖紙／經典，🌓 切換亮色／暗色；預設暖紙並沿用既有明暗偏好。兩項設定各自保存，不包含在角色 JSON 或分享網址中。
+- **創角與角色卡**：27 點購買、屬性擲骰、職業範本、快速創角與導覽，自動整理數值、技能、裝備、動作及法術。
+- **跑團模式**：管理生命值、狀態、死亡豁免、專注、法術位與職業資源，操作武器攻擊、施法及擲骰。
+- **保存與輸出**：本機自動儲存、JSON 匯入／匯出、分享網址、QR Code 與 PDF 角色卡。
+- **冒險日誌**：記錄團錄與獎勵，支援書頁閱讀、全文搜尋及整本匯入／匯出。
+- **外觀與離線使用**：暖紙／經典主題、亮色／暗色，以及不含 PDF 匯出的單檔離線版。
 
 ## 資料保存與分享
 
-一般模式將角色存於目前瀏覽器的 LocalStorage。清除瀏覽器資料、更換 App 或裝置可能遺失紀錄，請定期匯出 JSON 備份。本站使用 Google Analytics 觀察整體使用情況，供更新參考，不用於商業行為。
+角色與冒險日誌保存在目前瀏覽器。清除網站資料、更換瀏覽器、App 或裝置可能遺失紀錄，請定期匯出 JSON 備份。**角色與日誌須分別匯出**；角色 JSON 不包含日誌、頭像及所有本機偏好，也不是整個網站資料的備份。
 
-「分享角卡」提供：
+匯入角色 JSON 會取代目前角色，並重設相關本機紀錄與偏好；日誌及外觀設定會保留。匯入日誌則會經確認後取代整本日誌，請先備份。若角色匯入失敗並提示保留分頁，請保持該分頁開啟，排除儲存問題後重新整理重試；分頁暫存不能取代永久備份。
 
-- **永久網址**：角色資料直接包含於網址中，不受短網址服務期限影響；超過 4000 字元會提醒。
-- **TWD20 短網址**：選擇後才建立，保存 **90 天**。僅限正式 Origin `https://twd20.com`、`#s2=` 格式及 hash ≤10000 字元；本機與離線版不呼叫服務。
+「分享角卡」可選擇資料直接包含在網址中的**永久網址**，或保存 **90 天**的 **TWD20 短網址**。短網址只在正式網站、符合格式與長度限制且使用者選擇後建立；失敗時可自行重試或改選永久網址。分享網址含角色資料，請只交給願意分享的對象。
 
-建立短網址失敗會明確提示，可自行重試或改選永久網址，不自動重試或改複製長網址。兩種方式均保留剪貼簿失敗時的手動複製。
+分享模式不自動儲存角色修改，並停用再次分享與 JSON 匯入；請匯出 JSON 或 PDF 保存。離開分享模式需確認，之後回到本機存檔。日誌不隨角色分享，清除角色紀錄也不會刪除日誌。
 
-分享模式不自動儲存角色修改，且停用再次分享與 JSON 匯入；可匯出 JSON 或 PDF 保存。「離開分享模式」經確認後移除分享資料、重新載入目前頁面並還原本機存檔。跑團模式隱藏／自訂動作及動作筆記屬於瀏覽器偏好，分享模式仍會保存，但不包含在角色 JSON 或分享網址中。
+離線版能否保存資料取決於瀏覽器或檔案 App。離線版產生的分享網址仍需接收者連網開啟；完全離線交換請使用 JSON。
 
-## 本機執行與架構
+本站使用 Google Analytics 觀察整體使用情況，供更新參考，不用於商業行為；分享網址停用追蹤。
 
-原生 HTML、CSS、JavaScript 靜態網站，不需前端框架或編譯。以靜態 HTTP 伺服器提供專案目錄，例如：
+## 本機啟動與參與
+
+這是原生 HTML、CSS、JavaScript 靜態網站，不需編譯。在專案目錄執行：
 
 ```powershell
 python -m http.server 8000
 ```
 
-開啟 `http://localhost:8000/`。多數功能也可直接開啟 HTML；PDF 匯出須透過 HTTP 載入素材。
+開啟 `http://localhost:8000/?analytics=owner`，其中 `analytics=owner` 用於排除開發／測試流量。PDF 匯出須透過 HTTP 載入素材。
 
-| 入口 | 責任 |
-| --- | --- |
-| `index.html`、`styles.css` | 角色卡 DOM、依序載入全域模組、初始化、持久化、分享及主題；外觀規格見 [DESIGN.md](DESIGN.md) |
-| `character-rules.js` | 共用角色計算與規則 |
-| `class-features.js`、`race.js`、`backgrounds.js`、`feats.js`、`tool-data.js`、`monster.js`、`equipment-data.js`、`equipment-notes.js`、`spell-list.js`、`condition.js`、`deity-info.js` | 職業、種族、背景、專長、工具、野獸、裝備、法術、狀態及神祇資料 |
-| `action-panel.js`、`spellbook.js`、`quick-build.js`、`onboarding-tour.js` | 動作選項、法術書、創角及導覽 |
-| `adventure-journal.js` | 獨立冒險日誌、版本化 JSON、本機保存與匯入／匯出 |
-| `search.js` | 法術全文／職業／環位搜尋、裝備搜尋與結果詳情；保留工具列與導覽使用的全域入口 |
-| `tabletop-mode.js` | 跑團模式共用狀態與 `TabletopMode` API |
-| `tabletop-actions.js`、`tabletop-druid.js`、`tabletop-spells.js`、`tabletop-resources.js` | 跑團模式動作、德魯伊形態／能力、施法及資源操作 |
-| `dice-roller.js`、`app-dialog.js`、`scroll-to-top.js` | 擲骰與歷史、共用對話框、頁面捲動 |
-| `legal-modal.js`、`legal-about.js` | 歡迎視窗與按需載入的 About 內容；`#legal-about-modal` 可直接開啟，使用主頁主題 |
-| `ddals1.html`、`info-pages.css` | 官方免費冒險外部連結頁及獨立資訊頁樣式 |
-| `pdf-export.js`、`pdf-field-map.js`、`pdf-lib.custom.min.js`、`fontkit.custom.min.js` | 按需載入的 PDF 匯出；部署需包含角色紙與字型素材 |
-| `validate-*.js`、`build-offline-nopdf.ps1` | 系統級回歸；離線版本產製與成品驗證 |
-| `cloudflare/twd20-url/` | 短網址 Worker，與網站分開部署；API、KV、限流與維護見 [Worker README](cloudflare/twd20-url/README.md) |
-
-角色選擇由既有表單／DOM 提供；跑團模式模組共用 `TabletopMode`、`SpellCatalog`、`CharacterRules`、`DiceRoller`，角色儲存使用 `window.dndStorage`。非施法動作以穩定 key、分類、等級及角色選擇條件定義，沿用主要規則資料。
-
-冒險日誌獨立使用 IndexedDB `twd20-adventure-journal`（資料庫版本 1、`books` store 的 `main` record），以 `{ revision, book }` 保存整本資料；revision 僅供同時開啟的分頁避免覆寫較新的日誌，不加入對外 JSON。JSON 繼續使用 `kind: "twd20-adventure-journal"`、`version: 1`、`entries`，相容缺少 AL 欄位的舊檔。首次開啟時讀取舊 LocalStorage `dnd.adventureJournal.v1`，驗證並完成 IndexedDB transaction 後才移除舊資料；既有 IndexedDB 資料優先。無法讀取或遷移時保留原始資料，提供重試及可讀取資料的下載備份，不退回另一份可寫入的 LocalStorage 日誌。清除瀏覽器網站資料仍會刪除 IndexedDB，請定期匯出備份。
-
-日誌搜尋只在日誌視窗內操作：放大鏡展開／收起欄位，搜尋按鈕、Enter 與手機搜尋鍵共用提交入口，中文選字期間不提交。非空搜尋會先儲存編輯中的頁面，成功後進入閱讀模式；格式或儲存錯誤保留編輯內容，空白搜尋及清除不儲存。比對所有日誌填寫欄位與故事獎勵（含數字），排除內部 ID／版本／欄位名稱；英文不分大小寫，依頁碼每頁列一次，每批顯示 50 筆。結果以固定頁面 ID 跳轉，顯示「頁數 | 日期 | 冒險名稱」；點選後收起搜尋，保留查詢直到關閉日誌。儲存、刪除及匯入會更新搜尋結果，搜尋狀態不寫入角色或日誌存檔。
-
-## 維護與驗證
-
-從專案根目錄執行下列命令，依修改範圍選擇相關腳本即可。修改 JavaScript 時，另執行 `node --check <受影響檔案.js>`；只修改 Markdown 時，核對檔名、連結、命令與說明，不需執行功能驗證。
-
-所有瀏覽器測試（Playwright CLI／API、agent 瀏覽器、人工測試）與程式回歸載入本站時，網址必須帶 `analytics=owner`：例如 `http://localhost:8000/?analytics=owner`、`https://twd20.com/?analytics=owner` 或 `file:///C:/Git/dnd/index.html?analytics=owner`。已有 query 時以 `&` 合併，參數放在分享 hash 前（如 `?analytics=owner#s2=…`）；新分頁與獨立 context 同樣適用。程式應保留含 owner 的測試入口，不使用頁面清理參數後的 `page.url()` 傳給其他測試。owner 儲存成功後網址參數會移除，原 context 重新整理仍維持排除；清除網站儲存後需重新加參數。詳細限制見 [AGENTS.md：執行與停止條件](AGENTS.md#執行與停止條件)。
-
-GA4 僅在 HTTP(S) 且 hostname 精確為 `twd20.com`／`www.twd20.com`、未設定 owner，而且網址沒有額外查詢參數或 fragment 時載入 Google 追蹤腳本及送出事件。已識別的 `analytics=owner`／`analytics=user` 不算額外參數；其他查詢參數、分享網址 `#s=`／`#s2=` 及其他 fragment 均停用追蹤，`analytics=user` 也不能繞過。一般頁面只傳送不含 query／fragment 的 `page_location`，`page_referrer` 僅保留 HTTP(S) origin；Google 腳本使用 `no-referrer`。localhost、IP、其他網域及 `file://` 均停用；`analytics=user` 僅解除該瀏覽器的 owner 設定，不能繞過網域限制。LocalStorage 寫入失敗時，當次 owner 仍生效並保留網址參數。GA4 啟用分支只能以隔離模擬／追蹤替身驗證，不向正式 GA4 傳送測試事件。
-
-角色資料安全限制集中在 `index.html`：JSON 與解壓後資料最多 2 MiB、單一文字最多 262,144 個 UTF-16 碼元、專長／工具各最多 100 列、單一法術清單最多 512 筆、單筆免費施法次數最多 64、單一清單的次數控制項總數最多 1,024；另限制結構深度 20、節點數 20,000 與一般陣列長度 1,024。這些是防止惡意資料耗盡資源的安全上限，不改變角色規則。匯入先完整預檢再套用；超限或損壞的本機角色存檔保留原始內容並停止自動覆寫，使用者可匯入有效 JSON 或明確清除紀錄重建。檔案選擇器的暫時路徑不寫入角色資料，舊檔內的檔案欄位會被忽略。法術來源標籤始終作為純文字顯示。
-
-JSON 角色匯入以檔案內容取代目前角色，會清除 `APP_STORAGE_KEYS` 列出的角色相關本機紀錄：自動存檔、其他職業與手動法術記憶、角色頭像、快速創角草稿、購點套用紀錄、跑團動作偏好（含自訂動作與戰鬥筆記）、頁籤／收合／角色選項及部分導覽提醒。這不是清空整個網站儲存：冒險日誌（IndexedDB 與待遷移舊日誌）、主題、擲骰歷史等不在清理清單內。JSON 匯出包含目前角色與兩份法術書，不包含其他職業記憶、頭像或創角草稿；匯出目前 JSON 不等於備份所有本機紀錄。
-
-匯入流程先驗證 JSON 並在 sessionStorage 留存匯入資料與舊紀錄副本，確認新角色儲存與完成標記成功後才清除暫存；重新載入讓各模組放棄記憶體中的舊偏好。暫存失敗不清除舊資料；重載套用／儲存失敗停止自動儲存，保留副本並嘗試還原舊紀錄。遇到失敗請保持原分頁開啟，排除儲存問題後重新整理重試，勿將 sessionStorage 副本當作永久備份；刪除暫存失敗時完成標記會避免重複匯入覆蓋後續編輯。
-
-必要的永久 regression case 優先加入最接近的既有系統級 suite，不為單次修改、單一 bug 或 UI 細節另建 validator。小型、低風險、可逆修改優先使用既有 regression、build／check 命令或不提交的臨時驗證，臨時腳本須於收尾前清除。只有獨立、長期存在且容易回歸的子系統，並且既有 suite 無法合理承接時，才新增永久 suite；完整判斷原則見 [AGENTS.md](AGENTS.md#驗證條件)。
-
-### 執行環境
-
-使用 Node.js 20 以上。標示「瀏覽器」的腳本需要 Playwright 與 Chromium，會自行啟動及關閉本機伺服器，不需手動啟動網站。新環境可執行：
-
-```powershell
-npm ci
-npx --no-install playwright install chromium
-```
-
-已有可用依賴與瀏覽器時不需重裝。瀏覽器腳本皆可用 `$env:DND_BROWSER_CHANNEL = "msedge"` 選用已安裝的 Edge；執行 `Remove-Item Env:DND_BROWSER_CHANNEL` 可恢復預設。使用環境提供的 Playwright 套件時，可設定 `NODE_PATH` 指向其 `node_modules`。
-
-### 驗證腳本
-
-| 執行命令 | 用途與檢查範圍 | 額外需求／限制 |
-| --- | --- | --- |
-| `node validate-ability-roll.js` | 屬性產生與共用擲骰：27 購點、去最低骰、結果分配、背景加值、備註、長按／鍵盤／觸控與取消、焦點、舊歷史相容性、自動儲存及擲骰版面 | 瀏覽器；完整執行包含購點與一般擲骰分項 |
-| `node validate-action-metadata.js` | 非施法動作定義、角色卡／跑團模式行動、基本動作收合／記憶／清除、無關搜尋不重建靜態動作、合併分類的自訂與隱藏偏好、法術單一入口與施法時間標記、狀態／危害連動與專注中斷、危害檢定及分頁提示、專長來源雙向選擇／來源標籤與編號／自動同步／固定來源灰階鎖定／資格警示與數值停用／自行管理增刪與新舊資料／分享還原、舊檔空白玩家專長清理與零列新增入口、武器裝備互動（含主手2／盾牌／雙手衝突、AC、摘要、還原與 PDF 對應）、JSON／分享／自動儲存 | 瀏覽器；PDF 檢查欄位資料及資格提醒後繼續輸出（匯出函式使用替身） |
-| `node validate-onboarding.js` | 新手／跑團模式導覽（含認識角卡第 3 步自動開啟選單、雙高亮與按鈕點擊，以及七步跑團導覽的選單入口、法術與資源教學預覽、減少動態效果）、創角小幫手匯入、觸控、取消、資料與焦點保留、PDF 載入及取消流程 | 瀏覽器；PDF 繪製以替身驗證，未測實際成品 |
-| `node validate-spellbook.js` | 法術書（含法師推薦寫入、書內儀式與匯入、跑團儀式分組／準備去重／僅限儀式施法）、結構化目前清單與舊表單移除、角色卡各環主題框／獨立收合與瀏覽器記憶／來源排序／戲法與各環名稱自適應分欄／1.2em 間距與長名稱對齊及單欄換行／角卡實線連結與跑團隔離／無法術位顯示／隱藏免費次數與資料保留／720px／400px 四二一欄自適應、純閱讀與草稿管理／搜尋與環階／已選切換、法術書學派與多環階交集／查閱焦點及準備清單保留、查閱子視窗層級／焦點／草稿保留、永久準備收合／含不可用草稿的各環數量、管理清單320／480／720px一至四欄／法術書與準備清單共用環階在勾選格上方的配置／主頁按鈕等高與職業文字依空間換行／同列等高控制項／標頭查詢與底部清空、四項開啟條件、戲法／共用準備上限與限定來源、多重來源及免費使用、12 職業與手動記憶／無打斷切換／舊資料單次提醒／清除、非破壞模式切換、降級與低等級載入保留／超額限制及高環復原、手動法術書與法師儀式、舊 autosave／JSON 的自動或手動判定、法術書歸屬、載入資料優先、手動來源表單與免費次數隔離、快速創角強制自動、書之魔契勾選還原及新版還原、未知法術編號、分享隔離、批次還原後立即讀取／收集／儲存、跑團與 PDF 使用端、第三個三環法術位及桌機／窄螢幕／主題 | 瀏覽器 |
-| `node validate-spell-search.js` | 法術全文搜尋、職業全名／別名與指定環位、排序、空結果／清空、獨立查閱視窗的篩選／資料隔離／關閉與焦點、鍵盤、窄螢幕與詳情／焦點保留；含 Artificer 無資料與模擬資料案例，以及裝備索引、詳情／規則關鍵字說明／購買取消、四種工具熟練列的查看按鈕、職業工具自動化與 JSON／分享／自動存檔還原、切頁及導覽還原 | 瀏覽器；可加 `--equipment-only` 僅驗證裝備搜尋與工具查看／職業工具自動化，含桌機／窄螢幕、說明開關及焦點還原；同時檢查 `search.js` 與主頁內嵌 JavaScript 語法 |
-| `node validate-tabletop-druid.js` | 荒野形態、野獸攻擊、德魯伊資源、持續法術效果（含一般／野獸 AC 與速度）、專注、儲存與版面 | 瀏覽器 |
-| `node validate-tabletop-rest.js` | 短休／長休（含生命骰視窗關閉後的完成提示、長休清除專注與還原）、休息後選項同步與還原、生命骰（含擲骰關閉時的單顆／連續回血）、職業與種族資源恢復、最佳旅伴、可選恢復、取消與自動儲存 | 瀏覽器 |
-| `node validate-tabletop-spellcasting.js` | 法術 metadata、施法條件、法術位、專注與自動擲骰 | 純 Node.js；以 `spell-id-baseline.json` 比對既有法術 ID |
-| `node validate-ui.js` | 共用 UI：GA4 網域／owner／敏感網址隔離（純模擬、不連線）、角色匯入／分享／存檔安全、四種外觀／保存／素材、工具選單與技能版面、跑團模式／創角 UI、Legal／About 載入與焦點、AppDialog toast 堆疊／倒數／滑鼠拖曳／觸控滑除／按住暫停／背景 inert 與點擊隔離，以及 PDF 欄位（含職業工具、自動專長來源及魔法學徒子選項／手動法術模式僅保留專長名稱）與匯出 | 瀏覽器；完整執行會實際匯出並重新讀取可編輯 PDF，需專案 PDF 與字型素材 |
-
-`validate-ability-roll.js` 可加 `--point-buy-only` 只驗證 27 購點未用滿時的提醒、確認、套用與還原，或加 `--dice-only` 只跑一般擲骰備註、取消與歷史相容性。`validate-onboarding.js` 可加 `--imports-only` 只跑匯入與 PDF 生命週期，或加 `--touch-only` 只跑觸控流程；不加參數才是完整驗證。
-
-`validate-ui.js` 內部分項共用同一個瀏覽器／伺服器生命週期，案例以獨立 context 隔離資料。不加參數執行全部，或擇一使用 `--data-only`（分享／JSON／autosave 的 XSS 防護、匯入預檢與數量／UTF-8 大小限制、gzip 解壓上限、拒絕資料保留、JSON 乾淨匯入與清理記憶體偏好、暫存／套用／存檔失敗副本及重試）、`--appearance-only`（四種外觀、Legal／About 主題與焦點、保存及共用版面）、`--dialogs-only`（toast、About 載入重試／網址定位，以及角色能力頁籤視窗的創角／表格顯示移位、頁籤條件、選項保存、子視窗、法術／技能／動物參考浮層、焦點、補填入口、角色卡／跑團職業缺項跳轉與短暫高亮、自行管理專長提示與跳轉、職業缺項自動補選（含所有職業各等級屬性值提升、魔法學徒追加表單、使命／戰鬥風格戲法、魔法發現與其他職業選項、法術選單已準備標示，以及 JSON／分享／自動存檔還原）與專長查看；自訂背景一次填妥／取消／重新編輯、背景專長／工具同步、魔法學徒選項、PDF 名稱、JSON／分享／自動儲存及窄螢幕）、`--journal-only`（日誌 IndexedDB 遷移／失敗復原／跨分頁衝突、JSON 相容、搜尋／IME／自動儲存／跳頁、角色資料隔離及桌機／手機版面）、`--pdf-only`（欄位及實際匯出）、`--pdf-fields-only`（含全部 215 筆法術的材料成分勾選／新舊資料與描述文字隔離，以及自動專長來源／魔法學徒子選項、職業工具、盾牌受訓及精靈／魔人血統提示欄位，不需 PDF／字型素材）。局部內容或互動依實際影響選分項或最小必要流程，不因共用 UI 檔案改動而連帶跑完整矩陣。
-
-日誌 IME 以 composition 事件模擬、手機以瀏覽器觸控模擬驗證，不代表手機實體鍵盤／輸入法已完成實機測試。
-
-通用前端靜態稽核須依實際程式與瀏覽器行為判讀，以下僅記錄已查證項目，不代表其他報告一律無效：
-
-| 稽核項目 | 判讀與證據 |
-| --- | --- |
-| `affordance.actionless-button`：背景資訊標題 | **已確認誤報**。[index.html](index.html) 的 `bindCharacterFeatureDialog()` 透過 `[data-character-features-tab]` 與 `addEventListener("click", …)` 開啟資訊視窗；[validate-ui.js](validate-ui.js) 的 `verifyCustomBackground()` 已在 Chromium 驗證背景標題可開啟背景頁籤，Escape 可關閉。保留既有事件綁定，不改 inline handler 或重複綁定。 |
-| `affordance.actionless-button`：戲法／環位收合標題 | **已確認誤報**。[index.html](index.html) 的 `initSpellOverviewDisclosures()` 以 `addEventListener("click", …)` 綁定 `.spell-overview-toggle`；[validate-spellbook.js](validate-spellbook.js) 的 `verifySpellOverview()` 驗證五個框的點擊、Enter／Space、獨立收合、法術位操作及重新整理後的記憶。 |
-| `ownership.native-select-undecided` | 保留原生 `<select>`。已查閱稽核器的 `load_manifest()`／`inspect_source()`，它正式讀取根目錄 [premium-ui.json](premium-ui.json) 的 `ownership["Select/Listbox"]`；已宣告 `"native"`，不使用稽核器不支援的例外欄位。 |
-| `form.textarea-resize-missing`：要求禁止 resize | **不適用的通用建議**。依 [專案稽核判讀](AGENTS.md#自動稽核判讀) 保留 `resize: vertical`；自訂背景窄螢幕視窗的捲動區與操作按鈕已經瀏覽器驗證。只有實際拖曳造成遮擋或溢出時才修正版面。 |
-
-2026-10-09 移除離線衍生產物 `twD20-offline.html` 後，使用 frontend-design-premium 1.4.0 的 `audit_project.py`，以 `--mode strict --no-write` 重新掃描專案根目錄，目前報告數量如下（僅代表當次工作區快照）：
-
-| 掃描來源 | `affordance.actionless-button` | `form.textarea-resize-missing` | 合計 |
-| --- | ---: | ---: | ---: |
-| [index.html](index.html) | 116 | 6 | 122 |
-| [quick-build.js](quick-build.js) | 10 | 0 | 10 |
-| 合計 | 126 | 6 | 132 |
-
-稽核器將這 132 筆列為 `error`／`violation`，strict 回傳碼仍為 `1`，不可記為通過。按鈕規則只辨識標籤上的 `onclick`／`@click`／`v-on:click`，不追蹤 `addEventListener`；textarea 規則只檢查標籤上的 `resize-none`／`resize: none`，不解析外部 CSS。背景按鈕已實測可開啟、Escape 關閉並還原焦點，主頁六個 textarea 的 computed style 均為 `resize: vertical`；其他按鈕未逐一操作，不能將全部命中一律判為誤報。此數量已不包含離線產物，重新建置或修改來源後須以重跑結果為準。
-
-有意新增、移除或更名法術 ID 時，須同步檢查並更新 `spell-id-baseline.json`。
-
-需要檢查視覺版面時，部分腳本可透過下列環境變數輸出截圖；一般驗證不需設定。請先建立輸出目錄，避免將截圖加入版本控制。
-
-| 腳本 | 截圖目錄環境變數 |
-| --- | --- |
-| `validate-ability-roll.js` | `DND_ABILITY_SCREENSHOT_DIR` |
-| `validate-action-metadata.js`、`validate-tabletop-druid.js` | `DND_SCREENSHOT_DIR` |
-| `validate-onboarding.js` | `DND_ONBOARDING_SCREENSHOT_DIR` |
-| `validate-spellbook.js` | `DND_SPELLBOOK_SCREENSHOTS` |
-| `validate-ui.js` | `DND_UI_SCREENSHOT_DIR` |
-
-完整變更與驗證條件見 [AGENTS.md](AGENTS.md)。臨時瀏覽器檢查沿用 [Playwright CLI skill](.agents/skills/playwright-cli/SKILL.md) 與 `npx --no-install playwright cli`。
-
-## 離線版本
-
-`TWD20-offline.html` 是衍生的單檔精簡版，內嵌本機 CSS、JavaScript、圖片與 About 模組，不包含 PDF 匯出。建置需 PowerShell 與 Node.js 20 以上；只有需要同步或驗證成品時才執行：
-
-```powershell
-.\build-offline-nopdf.ps1
-```
-
-建置腳本會自動執行 offline build verification：檢查產物 inline JavaScript 語法、排除短網址 API、六種本機 URL 形式下的永久分享、剪貼簿失敗 fallback、分享模式限制，以及取消／確認離開流程；任一檢查失敗即回報建置失敗。這是建置後的成品驗證，不另列為產品 regression suite。URL 與瀏覽器 API 使用 Node.js 模擬，不能取代手機檔案權限或本機儲存的實機驗證。
-
-先修改來源檔，不直接修改成品；一般來源變更不會自動更新離線版。離線分享在本機編碼，產生 `https://twd20.com/#s2=...`（相容 `#s=...`）永久網址，不含本機路徑，也不呼叫短網址服務；接收者需連網，完全離線交換請使用 JSON。
-
-離線分享模式保留讀取與離開流程。JavaScript、本機儲存及重新載入能否運作，取決於瀏覽器／檔案 App；手機預覽與 `content://` 權限不等同完整瀏覽器，尚不能視為所有平台皆已實機驗證。
+歡迎回報問題、提出修改、fork 或分享網站。參與開發前請閱讀 [AGENTS.md](AGENTS.md)，了解專案限制與驗證方式。
 
 ## 授權、素材與法律聲明
 
-本專案有權授權的原始程式碼採 [MIT License](LICENSE)，使用與散布時須保留其著作權及授權聲明；第三方內容仍依各自原始條件處理，不因本專案而改授權為 MIT。
+本專案有權授權的原始程式碼採 [MIT License](LICENSE.txt)，使用與散布時須保留其著作權及授權聲明；第三方內容仍依各自原始條件處理，不因本專案而改授權為 MIT。
 
 規則內容改編自 [SRD 5.2.1](https://www.dndbeyond.com/srd)，採 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/legalcode)，經翻譯、縮寫、整理與重新呈現。摘要不取代完整規則；更高等級、其他角色選項或規則疑義，請查正式來源並依實際團務裁定。
 
 使用素材：
 
-- [ambientCG Paper 002](https://ambientcg.com/view?id=Paper002)（[CC0](https://docs.ambientcg.com/license/)）
 - [Noto Sans TC](https://fonts.google.com/noto/specimen/Noto+Sans+TC)、[Source Han Serif](https://github.com/adobe-fonts/source-han-serif)
 - [SRD 中文角色紙](https://tinyurl.com/srd5etw)，排版：[赤赤@AkaA](https://x.com/AkaAAkaAka)；[無表格 PDF／原 PNG](https://drive.google.com/drive/folders/1brrzdbRcxMvxHcYYjyzs2N_8aPaQewW6?usp=sharing)
 - [pdf-lib](https://github.com/Hopding/pdf-lib)、[fontkit](https://github.com/Hopding/fontkit)
@@ -173,8 +58,6 @@ twD20 是獨立第三方相容工具，並非 Wizards of the Coast LLC 製作、
 
 This work includes material from the System Reference Document 5.2.1 (“SRD 5.2.1”) by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode.
 
-## 聯絡與參與
+## 聯絡
 
 Email：[tsai.reggie428@gmail.com](mailto:tsai.reggie428@gmail.com) · 巴哈姆特站內信：`reggietsai`
-
-歡迎回報問題、fork、分享網站或按 Star 鼓勵。

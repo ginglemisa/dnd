@@ -4288,9 +4288,15 @@ html[data-ui-theme="warm"][data-theme="dark"] .circle-checkbox:checked {
 }
 
 /* Keep legacy skill/beast popups (9999) and spell details (10030) above abilities. */
+:root { --z-character-features: 9998; }
 .app-dialog[data-variant="character-features"],
 .app-dialog[data-variant="class-feature-choices"] {
-  z-index: 9998;
+  z-index: var(--z-character-features);
+}
+
+/* The later ability dialog paints above its inert spell manager at the same layer. */
+.app-dialog[data-variant="spellbook"][inert]:has(~ #character-features-modal) {
+  z-index: var(--z-character-features);
 }
 
 .feat-choice-control {
@@ -7013,11 +7019,13 @@ button.spell-readonly-reference:active { translate: none; transform: none; box-s
 .spell-prepared-manager .spell-prepared-draft-counts.is-over-limit { color: var(--warning); }
 .spell-prepared-limit-warning:not([hidden]) { margin: 8px 0 12px; }
 .app-dialog[data-variant="spellbook"] .app-dialog__actions:has(.spell-prepared-clear) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.spell-prepared-title-group { display: grid; min-width: 0; }
+.spell-prepared-title-group { display: grid; min-width: 0; gap: 8px; }
+.app-dialog__header.spell-prepared-header { padding-bottom: 8px; }
 .app-dialog__header.spell-prepared-header h2 { line-height: 1.2; }
-.spell-prepared-header .spell-prepared-browse-hint { margin: 0; font-size: .75rem; line-height: 1.2; }
+.spell-prepared-header .spell-prepared-browse-hint { display: flex; flex-wrap: wrap; align-items: center; margin: 0; font-size: .75rem; line-height: 1.2; white-space: pre-wrap; }
 button.spell-prepared-browse { width: auto; min-height: 22px; margin: 0; padding: 0; border: 0; background: transparent; color: var(--accent-strong); box-shadow: none; font: inherit; text-decoration: underline; text-underline-offset: 3px; }
 button.spell-prepared-browse:is(:hover, :active) { background: transparent; color: var(--accent); box-shadow: none; transform: none; translate: none; }
+button.spell-prepared-browse:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 .spellbook-toolbar.spell-picker-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px; }
 .spell-picker-search-field { position: relative; min-width: 0; }
 .spell-picker-toolbar :is(input[type="search"], select, .spell-picker-selected-toggle) { box-sizing: border-box; height: 36px; min-height: 36px; min-width: 0; margin: 0; padding: 5px 6px; font-size: .85rem; line-height: 1.4; }
@@ -7043,6 +7051,7 @@ button.spell-prepared-browse:is(:hover, :active) { background: transparent; colo
   .spellbook-manager .spellbook-options { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 .spell-prepared-sources { margin-bottom: 12px; }
+.spell-prepared-source-visibility { margin-left: auto; font-size: .78rem; }
 .spell-prepared-source { display: grid; grid-template-columns: 28px minmax(0, 1fr); align-items: center; gap: 5px; min-height: 32px; padding: 2px 0; }
 .spell-prepared-source input { width: 20px; height: 20px; margin: 0; }
 .spell-prepared-source .spell-picker-check:has(input:disabled) { cursor: default; }
