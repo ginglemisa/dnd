@@ -14,7 +14,6 @@
     "移動與動作的順序通常可以交錯\n例如先走 2 格，攻擊，再走 3 格",
     "「反應」要符合條件才能使用，\n可以在別人的回合宣告觸發。"
   ].join("\n\n");
-  const COMMON_ACTION_KEYS = ["attack", "dash", "disengage", "dodge", "help", "hide", "ready", "search", "study", "influence"];
 
   function isElementVisible(element) {
     if (!element) return false;
@@ -185,11 +184,9 @@
       document.getElementById("first-table-tour-btn")?.addEventListener("click", () => this.startTabletop());
       document.getElementById("help-quick-build-btn")?.addEventListener("click", () => window.quickBuild?.open());
       document.getElementById("tabletop-turn-help")?.addEventListener("click", (event) => {
-        const options = window.ActionPanel?.getOptions("basic") || [];
-        const names = COMMON_ACTION_KEYS.map(key => options.find(option => option.key === key)?.label).filter(Boolean);
         window.AppDialog?.showMessage({
           title: "我的回合",
-          message: `${TURN_GUIDANCE}\n\n常見動作：${names.join("、")}。\n\n也可以直接告訴 DM，你想嘗試什麼。`,
+          message: `${TURN_GUIDANCE}\n\n也可以直接告訴 DM，你想嘗試什麼。`,
           trigger: event.currentTarget,
           confirmLabel: "知道了"
         });

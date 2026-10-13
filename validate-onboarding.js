@@ -25,7 +25,7 @@ const SHEET_COPY = [
   ["🎲 配置基礎屬性", "使用 27 點購點時，每項屬性可以設定在 8～15 之間。\n\n屬性越高，需要消耗的點數越多。調整數值時，可以從下方確認剩餘點數。\n\n完成配置前，總花費不得超過 27 點。", 4, ["27 點購點", "剩餘點數"]],
   ["🎲 套用背景加值", "選擇背景後，將提供的屬性加值分配至角色屬性。\n\n你也可以選擇職業範本，快速套用適合該職業的建議配置。\n\n確認所有數值後，點擊套用完成屬性設定。", 5, ["背景", "職業範本", "套用"]],
   ["🛡️ 選擇武器與護甲", "選擇武器或護甲時，下方會顯示傷害、防禦與相關特性。\n\n遇到不熟悉的規則名詞，可以直接點擊摘要中的名稱查看詳細說明。", 6, []],
-  ["✨ 選擇與管理法術", "如果角色具有施法能力，可以在這裡選擇與管理戲法及法術。\n\n先選擇職業，再選擇想查看的法術，即可確認詳細說明、施法時間、距離資料等資料。", 7, []],
+  ["✨ 選擇與管理法術", "選好職業、等級、背景與種族後，按「準備法術」管理戲法與準備清單；儲存才會套用選擇。\n\n點擊法術名稱可閱讀詳細說明。搜尋與查閱隨時都能使用。", 7, []],
   ["🔎 搜尋規則資料", "法術與裝備頁面都提供搜尋功能。\n\n輸入名稱或關鍵字即可快速找到相關規則內容。", 8, []]
 ];
 
@@ -429,7 +429,9 @@ async function main() {
 
     await page.evaluate(() => { TabletopMode.setMode("tabletop", { restoreScroll: false }); TabletopMode.setPanel("actions"); });
     await page.locator("#tabletop-turn-help").click();
-    assert.match(await page.locator(".app-dialog__body").innerText(), /攻擊、衝刺、撤離、閃避、協助、躲藏、準備、搜索、研究、影響/);
+    const turnHelp = await page.locator(".app-dialog__body").innerText();
+    assert.equal(turnHelp.includes("常見動作："), false);
+    assert.match(turnHelp, /可以在別人的回合宣告觸發。\n\n也可以直接告訴 DM，你想嘗試什麼。/);
     await page.keyboard.press("Escape");
     assert.equal(await page.evaluate(() => document.activeElement.id), "tabletop-turn-help");
 

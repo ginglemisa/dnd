@@ -74,6 +74,14 @@
     ])
   });
 
+  const TABLETOP_ACTION_OPTIONS = Object.freeze([
+    { key: "natural-20", label: "擲出２０", description: "攻擊時擲出 20 必定命中，造成重擊。\n傷害骰擲兩次，固定加值只加一次。\n\n例如長劍傷害為 1d8＋3\n一般命中：1d8＋3\n重擊傷害：2d8＋3\n額外傷害骰（如偷襲）也會加倍\n\n攻擊時擲出 1 則必定失手" }
+  ]);
+
+  const TABLETOP_MOVEMENT_OPTIONS = Object.freeze([
+    { key: "cover", label: "遮蔽", description: "半身遮蔽：AC 與敏捷豁免獲得 +2\n\n3／4遮蔽：AC 與敏捷豁免獲得 +5\n\n完全遮蔽：通常無法被指定為目標" }
+  ]);
+
   const MODE_META = Object.freeze({
     basic: { timing: "每回合一次", summary: "執行主要行動，例如攻擊或閃避。", prompt: "請選擇一個動作查看說明。" },
     action: { timing: "每回合一次", summary: "執行專屬行動，例如魯莽攻擊。", prompt: "請選擇一個專屬動作查看說明。" },
@@ -817,7 +825,7 @@ function getModeOptions(mode) {
 
   function getPublicTabletopModeOptions(mode) {
     return Object.freeze(
-      [...getModeOptions(mode), ...(mode === "action" && document.getElementById("class")?.value === "bard"
+      [...(mode === "action" ? TABLETOP_ACTION_OPTIONS : []), ...(mode === "movement" ? TABLETOP_MOVEMENT_OPTIONS : []), ...getModeOptions(mode), ...(mode === "action" && document.getElementById("class")?.value === "bard"
         ? getModeOptions("bonus").filter(option => option.key === "dynamic-bonus-class-r7asqs") : [])]
         .filter(option => {
           if (["dynamic-bonus-barbarian-1iw4zkg", "dynamic-movement-barbarian-1iw4zkg"].includes(option.key)) return false;

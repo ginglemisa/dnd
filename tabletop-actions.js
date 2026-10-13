@@ -949,8 +949,7 @@
     const restoreToggle = focusToggle || focused?.classList.contains("tabletop-basic-toggle");
     finishDisclosureMotion?.();
     const meta = mode === "action" ? {
-      timing: "動作",
-      summary: "選擇基本動作或角色能力；能力的使用時機與消耗請見各項說明。",
+      summary: "點擊[基本動作]按鈕可展開／收合，角色能力的使用時機與次數限制請參照各項說明。",
       prompt: "請選擇一項行動查看說明。"
     } : api.getModeMeta(mode);
     const options = getModeOptionSet(mode).visible;
@@ -965,7 +964,7 @@
 
     const context = createElement("div", "tabletop-action-context");
     const contextCopy = createElement("div");
-    contextCopy.append(createElement("strong", "", meta.timing), createElement("span", "", meta.summary));
+    contextCopy.append(createElement("span", "", meta.summary));
     context.append(contextCopy);
     const layout = createElement("div", "tabletop-action-layout");
     const optionList = createElement("div", "tabletop-action-options");

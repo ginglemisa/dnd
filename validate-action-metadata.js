@@ -1147,7 +1147,7 @@ async function verifyAutomaticFeatRows(browser, url) {
     const legacy = { class: "fighter", level: "1", race: "elf", "feats-area-count": 2, "feat-0": "熟習", "feat-1": "警覺", "derived-feat-fighting-style-fighter": "箭術" };
     await importCharacterJson(page, "legacy-feats.json", legacy);
     await page.waitForFunction(() => document.getElementById("manual-feat-management").checked && document.getElementById("feat-1")?.value === "警覺");
-    await page.getByRole("dialog", { name: "已偵測到您的角色存檔為舊版", exact: true }).getByRole("button", { name: "知道了", exact: true }).click();
+    assert.equal(await page.getByRole("dialog", { name: "舊版法術資料已轉為手動管理", exact: true }).count(), 0, "safe automatic JSON migration stays quiet");
     assert.equal(await page.evaluate(() => SpellManagement.isManual()), false, "legacy feats without foreign player spells remain in automatic spell management");
     assert.equal(await page.inputValue("#feat-choice-fighting-style-fighter"), "箭術", "legacy style migrates to source");
     assert.equal(await rows.count(), 2, "legacy selections retained");
@@ -1157,7 +1157,8 @@ async function verifyAutomaticFeatRows(browser, url) {
     await page.evaluate(legacy => { cancelPendingAutosaveForClear(); dndStorage.setItem("dndchar_autosave_v1", JSON.stringify(legacy)); }, legacy);
     await page.goto(url);
     await page.waitForFunction(() => document.getElementById("manual-feat-management").checked);
-    await page.getByRole("dialog", { name: "已偵測到您的角色存檔為舊版", exact: true }).getByRole("button", { name: "知道了", exact: true }).click();
+    assert.equal(await page.evaluate(() => SpellManagement.isManual()), false, "legacy autosave keeps automatic spell management");
+    assert.equal(await page.getByRole("dialog", { name: "舊版法術資料已轉為手動管理", exact: true }).count(), 0, "safe automatic autosave migration stays quiet");
     assert.equal(await page.inputValue("#feat-1"), "警覺", "legacy local save retains feat");
     await page.evaluate(saved => applyStateObject(saved), saved);
     await page.selectOption("#class", "warlock");
@@ -1403,7 +1404,7 @@ async function verifyLegacyShareFeatCompatibility(browser, url) {
         try {
           await page.goto(new URL(hash, url).href);
           await page.waitForFunction(() => window.SHARE_MODE && document.getElementById("manual-feat-management").checked);
-          await page.getByRole("dialog", { name: "已偵測到您的角色存檔為舊版", exact: true }).getByRole("button", { name: "知道了", exact: true }).click();
+          assert.equal(await page.getByRole("dialog", { name: "舊版法術資料已轉為手動管理", exact: true }).count(), 0, `${label}: shared migration stays quiet`);
           assert.equal(await page.inputValue("#class"), "fighter", `${label}: share overrides local character`);
           for (const [id, value] of Object.entries(legacy).filter(([id]) => id.startsWith("feat-") || id.startsWith("derived-feat-"))) {
             assert.equal(await page.inputValue(`#${id}`), value, `${label}: preserves ${id}`);
@@ -1470,7 +1471,7 @@ async function verifyLegacyEmptyFeatRows(browser, url) {
       { ...blank, magic: { class: "wizard", cantrip1: "light", cantrip2: "", level1: "shield" } },
       { ...blank, legacyNote: "keep this row" }] };
   const closeNotice = async () => {
-    const dialog = page.getByRole("dialog", { name: "已偵測到您的角色存檔為舊版", exact: true });
+    const dialog = page.getByRole("dialog", { name: "舊版法術資料已轉為手動管理", exact: true });
     if (await dialog.isVisible()) await dialog.getByRole("button", { name: "知道了", exact: true }).click();
   };
   const read = () => page.evaluate(() => collectManagedFeatRows().map(row => ({ source: row.source, key: row.key, value: row.value, magic: row.magic })));
@@ -1792,6 +1793,61 @@ async function verifyMergedActionUi(browser, url) {
     });
     assert.equal(await page.locator("#tabletop-tab-actions").textContent(), "行動");
     assert.deepEqual(await page.locator("[data-tabletop-action-tab]").allTextContents(), ["動作", "附贈", "移動", "反應"]);
+    for (const mode of ["action", "bonus", "movement", "reaction"]) {
+      await page.locator(`#tabletop-action-tab-${mode}`).click();
+      assert.equal(await page.locator(`#tabletop-action-panel-${mode} .tabletop-action-context strong`).count(), 0, `${mode} omits the timing heading`);
+    }
+    await page.locator("#tabletop-action-tab-action").click();
+    assert.equal(await page.locator("#tabletop-action-panel-action .tabletop-action-context").innerText(), "點擊[基本動作]按鈕可展開／收合，角色能力的使用時機與次數限制請參照各項說明。");
+    const coverCopy = "半身遮蔽：AC 與敏捷豁免獲得 +2\n\n3／4遮蔽：AC 與敏捷豁免獲得 +5\n\n完全遮蔽：通常無法被指定為目標";
+    const natural20Copy = "攻擊時擲出 20 必定命中，造成重擊。\n傷害骰擲兩次，固定加值只加一次。\n\n例如長劍傷害為 1d8＋3\n一般命中：1d8＋3\n重擊傷害：2d8＋3\n額外傷害骰（如偷襲）也會加倍\n\n攻擊時擲出 1 則必定失手";
+    for (const width of [1280, 320]) {
+      await page.setViewportSize({ width, height: 844 });
+      const natural20 = page.locator('#tabletop-action-panel-action [data-action-option-key="natural-20"]');
+      assert.equal(await page.locator("#tabletop-basic-toggle").getAttribute("aria-expanded"), "false");
+      assert.equal(await natural20.innerText(), "擲出２０", "natural 20 is available while basic actions are collapsed");
+      const actionOrder = () => page.locator("#tabletop-action-panel-action .tabletop-action-options button:not(.tabletop-action-ghost)")
+        .evaluateAll(buttons => buttons.map(button => button.dataset.actionOptionKey || button.id));
+      assert.deepEqual((await actionOrder()).slice(0, 2), ["tabletop-basic-toggle", "natural-20"], "collapsed natural 20 follows basic actions");
+      assert.equal(await natural20.evaluate(el => {
+        const basic = document.getElementById("tabletop-basic-toggle").getBoundingClientRect();
+        const rect = el.getBoundingClientRect();
+        return rect.left > basic.left && Math.abs(rect.top - basic.top) <= 1;
+      }), true, "collapsed natural 20 appears to the right of basic actions");
+      await page.locator("#tabletop-basic-toggle").click();
+      const expandedOrder = await actionOrder();
+      assert.equal(expandedOrder.indexOf("natural-20"), expandedOrder.indexOf("utilize") + 1, "expanded natural 20 follows Utilize");
+      await page.locator("#tabletop-basic-toggle").click();
+      await page.waitForFunction(() => !document.querySelector(".tabletop-action-ghost"));
+      assert.deepEqual((await actionOrder()).slice(0, 2), ["tabletop-basic-toggle", "natural-20"], "collapsing restores the normal button order");
+      await natural20.focus();
+      await page.keyboard.press("Enter");
+      assert.equal(await natural20.getAttribute("aria-pressed"), "true");
+      assert.equal(await page.locator("#tabletop-action-panel-action .tabletop-action-description__copy").innerText(), natural20Copy);
+      assert.equal(await natural20.evaluate(el => {
+        const rect = el.getBoundingClientRect();
+        return rect.left >= 0 && rect.right <= innerWidth && rect.width >= 44 && rect.height >= 44;
+      }), true, "natural 20 remains within the viewport with a usable target");
+      await page.locator("#tabletop-action-tab-movement").click();
+      const cover = page.locator('#tabletop-action-panel-movement [data-action-option-key="cover"]');
+      assert.equal(await cover.innerText(), "遮蔽");
+      assert.deepEqual(await page.locator("#tabletop-action-panel-movement .tabletop-action-options button")
+        .evaluateAll(buttons => buttons.slice(0, 2).map(button => button.dataset.actionOptionKey)), ["cover", "climbing"], "cover immediately precedes climbing");
+      await cover.focus();
+      await page.keyboard.press("Enter");
+      assert.equal(await cover.getAttribute("aria-pressed"), "true");
+      assert.equal(await page.locator("#tabletop-action-panel-movement .tabletop-action-description__copy").innerText(), coverCopy);
+      assert.equal(await cover.evaluate(el => {
+        const rect = el.getBoundingClientRect();
+        return rect.left >= 0 && rect.right <= innerWidth && rect.width >= 44 && rect.height >= 44;
+      }), true, "cover remains within the viewport with a usable target");
+      await page.locator("#tabletop-action-tab-reaction").click();
+      await page.locator("#tabletop-action-tab-movement").click();
+      assert.equal(await cover.getAttribute("aria-pressed"), "true", "switching tabs preserves cover selection");
+      await page.locator("#tabletop-action-tab-action").click();
+      assert.equal(await natural20.getAttribute("aria-pressed"), "true", "switching tabs preserves natural 20 selection");
+    }
+    await page.setViewportSize({ width: 1280, height: 800 });
     const toggle = page.locator("#tabletop-basic-toggle");
     const basics = page.locator("#tabletop-basic-options [data-basic-action]");
     assert.equal(await toggle.getAttribute("aria-expanded"), "false");
