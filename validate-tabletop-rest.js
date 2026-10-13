@@ -273,6 +273,7 @@ async function main() {
     const resourceRoot = page.locator("#tabletop-built-in-resources");
     const help = resourceRoot.getByRole("button", { name: "英雄激勵規則說明" });
     const mirror = resourceRoot.locator(".tabletop-resource-inline-checks input[type=checkbox]");
+    await help.waitFor({ state: "visible" });
     assert.equal(await help.count(), 1, "heroic inspiration help is next to its checkbox");
     assert.equal(await resourceRoot.getByText("短休時可消耗生命骰恢復 HP，長休後數量回滿。", { exact: true }).count(), 1, "hit dice uses the current short explanation");
     const wasChecked = await mirror.isChecked();
