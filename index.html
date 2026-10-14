@@ -2055,6 +2055,14 @@ function updateClassFeatureChoiceReminder() {
     action.textContent = "前往";
     button.append(copy, action);
     button.addEventListener("click", () => {
+      if (issue.expandFeatSelector) {
+        const row = document.querySelector(issue.expandFeatSelector)?.closest("#feats-area .form-row");
+        if (row) {
+          row.dataset.featDisclosureTouched = "true";
+          row.dataset.featExpanded = "true";
+          syncFeatRowDisclosure(row);
+        }
+      }
       Promise.resolve(window.onboardingTour?.jumpToTarget(issue)).catch(error => console.warn("無法前往職業選項：", error));
     });
     reminder.appendChild(button);
@@ -4090,6 +4098,10 @@ function createDerivedFeatRow(spec) {
   const magicControls = createMagicInitiateControls(row);
   select.addEventListener("change", () => {
     const previousValue = select.dataset.previousValue || "";
+    if (!autosaveSuspended) {
+      row.dataset.featDisclosureTouched = "true";
+      row.dataset.featExpanded = "true";
+    }
     const choice = document.getElementById(getFeatChoiceId(row.dataset.sourceKey));
     if (choice && !isManualFeatManagementEnabled()) {
       const scrollPosition = autosaveSuspended ? null : { left: window.scrollX, top: window.scrollY, behavior: "instant" };
@@ -4267,6 +4279,51 @@ function getFeatEligibilityWarningHtml(warningId) {
   return `<div id="${warningId}" class="feat-eligibility-warning" role="status">角色未達專長使用條件</div>`;
 }
 
+function syncFeatRowDisclosure(row) {
+  if (!row || !row.matches("#feats-area > .form-row")) return;
+  const head = row.querySelector(".feat-row-head");
+  const select = getFeatSelectFromRow(row);
+  const label = head?.querySelector("label");
+  if (!head || !select || !label) return;
+
+  let toggle = head.querySelector(":scope > .feat-disclosure-toggle");
+  if (!toggle) {
+    toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "feat-disclosure-toggle";
+    toggle.addEventListener("click", () => {
+      row.dataset.featDisclosureTouched = "true";
+      row.dataset.featExpanded = String(row.dataset.featExpanded !== "true");
+      syncFeatRowDisclosure(row);
+    });
+    head.prepend(toggle);
+  }
+  let name = head.querySelector(":scope > .feat-selected-name");
+  if (!name) {
+    name = document.createElement("span");
+    name.className = "feat-selected-name";
+    label.after(name);
+  }
+  let warning = head.querySelector(":scope > .feat-disclosure-warning");
+  if (!warning) {
+    warning = document.createElement("span");
+    warning.className = "feat-disclosure-warning";
+    warning.textContent = "角色未達專長使用條件";
+    name.after(warning);
+  }
+
+  const expanded = row.dataset.featDisclosureTouched === "true"
+    ? row.dataset.featExpanded === "true" : !select.value;
+  row.dataset.featExpanded = String(expanded);
+  row.classList.toggle("feat-entry--collapsed", !expanded);
+  name.textContent = select.value || "尚未選擇";
+  name.hidden = expanded;
+  warning.hidden = expanded || !row.querySelector(":scope > .output .feat-eligibility-warning");
+  toggle.textContent = expanded ? "▾" : "▸";
+  toggle.setAttribute("aria-expanded", String(expanded));
+  toggle.setAttribute("aria-label", `${expanded ? "收合" : "展開"}${label.textContent.trim()}：${name.textContent}`);
+}
+
 function updateFeatDesc(selectId, descId) {
   const select = document.getElementById(selectId);
   const v = select.value;
@@ -4280,6 +4337,7 @@ function updateFeatDesc(selectId, descId) {
   setCharacterHtml(el,
     (unmet ? getFeatEligibilityWarningHtml(warningId) : "") +
     formatFeatDescription(raw));
+  syncFeatRowDisclosure(select.closest("#feats-area .form-row"));
 }
 
 function formatFeatDescription(raw) {
@@ -5391,6 +5449,10 @@ function createSingleFeatRow(afterRow = null) {
 
   featSel.addEventListener("change", () => {
     const previousFeatValue = featSel.dataset.previousValue || "";
+    if (!autosaveSuspended) {
+      rowDiv.dataset.featDisclosureTouched = "true";
+      rowDiv.dataset.featExpanded = "true";
+    }
     updateFeatDesc(featSel.id, descDiv.id);
     updateMagicInitiateControlsForRow(rowDiv);
     if (typeof updateACDisplay === "function") updateACDisplay();
@@ -9018,9 +9080,23 @@ function getClassFeatureChoiceIssues() {
   const manualSpells = window.SpellManagement?.isManual() === true;
   const selectedClass = (document.getElementById("class")?.value || "").trim();
   const selectedLevel = Number.parseInt(document.getElementById("level")?.value || "", 10);
+  const pushGeneral = issue => issues.push({ reminderType: "general", ...issue });
+  const incompleteMagicRow = Array.from(document.querySelectorAll("#feats-area > .form-row"))
+    .find(row => getFeatSelectFromRow(row)?.value === MAGIC_INITIATE_FEAT_NAME
+      && getIncompleteMagicInitiateControl(row));
+  if (incompleteMagicRow) {
+    const missing = getIncompleteMagicInitiateControl(incompleteMagicRow);
+    const featSelect = getFeatSelectFromRow(incompleteMagicRow);
+    pushGeneral({
+      message: "魔法學徒專長：法術未選擇",
+      tab: "basic",
+      selector: "#feats-area",
+      focusSelector: `#${missing.id}`,
+      expandFeatSelector: `#${featSelect.id}`
+    });
+  }
   if (!selectedClass || !Number.isInteger(selectedLevel)) return issues;
 
-  const pushGeneral = issue => issues.push({ reminderType: "general", ...issue });
   const checkboxGroupLabels = {
     "cleric-guardian": "牧師神聖使命",
     "druid-shaman": "德魯伊原初使命",
@@ -9079,17 +9155,6 @@ function getClassFeatureChoiceIssues() {
         }
       });
 
-    document.querySelectorAll('#feats-area .feat-entry--derived[data-feat-source="class"], #feats-area .feat-entry--derived[data-feat-source="invocation"]').forEach(row => {
-      if (getFeatSelectFromRow(row)?.value !== MAGIC_INITIATE_FEAT_NAME) return;
-      const missingControl = getIncompleteMagicInitiateControl(row);
-      if (!missingControl) return;
-      pushGeneral({
-        message: "職業取得的魔法學徒法術尚未選完。",
-        tab: "basic",
-        selector: row.id ? `#${row.id}` : "#feats-area",
-        focusSelector: `#${missingControl.id}`
-      });
-    });
   }
 
   if (!manualSpells && selectedClass === "bard" && selectedLevel >= 6) {
@@ -9241,17 +9306,6 @@ function buildPdfPrecheckMessages() {
       }
     });
 
-
-  const backgroundMagicRow = document.querySelector('#feats-area .feat-entry--derived[data-source-key="background"]');
-  if (backgroundMagicRow && getFeatSelectFromRow(backgroundMagicRow)?.value === MAGIC_INITIATE_FEAT_NAME) {
-    const missingControl = getIncompleteMagicInitiateControl(backgroundMagicRow);
-    if (missingControl) reminders.push({
-      message: "背景魔法學徒的法術尚未選完。",
-      tab: "basic",
-      selector: "#feats-area",
-      focusSelector: `#${missingControl.id}`
-    });
-  }
 
   const selectedRace = (document.getElementById("race")?.value || "").trim();
   const raceOptionRequirements = {
