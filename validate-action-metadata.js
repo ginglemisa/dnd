@@ -1076,7 +1076,7 @@ async function verifyAutomaticFeatRows(browser, url) {
     assert.equal(await page.evaluate(() => JSON.stringify(collectStateObject())), collapsedState, "disclosure never changes character JSON");
     await chooseFeat("#derived-feat-human-origin", "魔法學徒");
     await humanFeatRow.locator(".feat-disclosure-toggle").click();
-    const magicReminder = page.locator("#class-feature-choice-reminder").getByRole("button", { name: "魔法學徒專長：法術未選擇前往補填" });
+    const magicReminder = page.locator("#class-feature-choice-reminder").getByRole("button", { name: "魔法學徒法術尚未選完前往補填" });
     assert.equal(await magicReminder.isVisible(), true, "Magic Initiate warning appears below race/background");
     await magicReminder.click();
     await page.waitForFunction(() => document.getElementById("derived-feat-human-origin")?.closest(".form-row")?.dataset.featExpanded === "true"
@@ -1132,20 +1132,20 @@ async function verifyAutomaticFeatRows(browser, url) {
     assert.equal(await page.locator("#derived-feat-background").isDisabled(), false, "background unlocked");
     assert.equal(await page.locator("#derived-feat-fighting-style-fighter").isDisabled(), false, "style unlocked");
     await chooseFeat("#derived-feat-background", "魔法學徒");
-    assert.equal(await page.evaluate(() => getClassFeatureChoiceIssues().some(issue => issue.message === "魔法學徒專長：法術未選擇")), true,
+    assert.equal(await page.evaluate(() => getClassFeatureChoiceIssues().some(issue => issue.message === "魔法學徒法術尚未選完")), true,
       "manual Magic Initiate participates in the shared missing-choice warning");
     await chooseFeat("#derived-feat-fighting-style-fighter-2", "防禦");
     assert.equal(await page.inputValue("#derived-feat-fighting-style-fighter-2"), "防禦", "self-management removes automatic option restrictions");
     await chooseFeat("#derived-feat-background", "醫療兵");
     await chooseFeat("#derived-feat-fighting-style-fighter", "熟習");
-    await page.locator("#derived-feat-fighter-level-8").locator("xpath=../..").locator(".feat-disclosure-toggle").click();
+    const deleteSourceToggle = page.locator("#derived-feat-fighter-level-8").locator("xpath=../..").locator(".feat-disclosure-toggle");
+    if (await deleteSourceToggle.getAttribute("aria-expanded") === "false") await deleteSourceToggle.click();
     await page.locator('#derived-feat-fighter-level-8').locator('..').locator('[data-feat-action="delete"]').click();
     await rows.last().locator('[data-feat-action="add"]').click();
     await chooseFeat("#feat-1", "箭術");
     const manualFeatRow = page.locator("#feat-1").locator("xpath=../..");
     await manualFeatRow.locator(".feat-disclosure-toggle").click();
     assert.equal(await manualFeatRow.locator(".feat-selected-name").textContent(), "箭術", "manual feat collapses with its name");
-    await manualFeatRow.locator(".feat-disclosure-toggle").click();
     await page.selectOption("#class", "bard");
     await page.selectOption("#background", "criminal");
     assert.equal(await page.inputValue("#derived-feat-background"), "醫療兵", "manual background not overwritten");
@@ -1159,7 +1159,7 @@ async function verifyAutomaticFeatRows(browser, url) {
     await page.waitForFunction(() => document.getElementById("manual-feat-management").checked);
     assert.deepEqual(await page.evaluate(() => collectManagedFeatRows().map(row => row.value)), managedValues, "manual edits/deletions survive autosave");
     assert.equal(await page.locator("#feat-1").locator("xpath=../..").locator(".feat-selected-name").textContent(), "箭術",
-      "autosaved manual feat defaults collapsed but retains its name");
+      "autosaved manual feat remembers collapse and retains its name");
     assert.equal(await page.locator("#derived-feat-fighter-level-8").count(), 0, "deleted derived row stays deleted");
     await chooseFeat("#feat-1", "防禦");
     await importCharacterJson(page, "manual-feats.json", manualSaved);
@@ -1185,7 +1185,8 @@ async function verifyAutomaticFeatRows(browser, url) {
     assert.equal(await page.inputValue("#feat-choice-fighting-style-fighter"), "箭術", "legacy style migrates to source");
     assert.equal(await rows.count(), 2, "legacy selections retained");
     assert.equal(await page.locator("#feat-1").isDisabled(), false, "legacy feat editable");
-    await rows.last().locator(".feat-disclosure-toggle").click();
+    const legacyLastToggle = rows.last().locator(".feat-disclosure-toggle");
+    if (await legacyLastToggle.getAttribute("aria-expanded") === "false") await legacyLastToggle.click();
     assert.equal(await rows.last().locator('[data-feat-action="delete"]').isVisible(), true);
     assert.equal(await rows.last().locator('[data-feat-action="add"]').isVisible(), true);
     await page.evaluate(legacy => { cancelPendingAutosaveForClear(); dndStorage.setItem("dndchar_autosave_v1", JSON.stringify(legacy)); }, legacy);
@@ -1313,6 +1314,8 @@ async function verifyFeatEligibilityWarnings(browser, url) {
       "feat-choice-fighter-level-4": "迅捷步法", "feat-choice-fighter-level-8": "臨陣施法"
     }));
     const collapsedWarningRow = page.locator("#derived-feat-fighter-level-4").locator("xpath=../..");
+    assert.equal(await collapsedWarningRow.locator(".feat-disclosure-toggle").getAttribute("aria-expanded"), "true", "ineligible feat starts expanded");
+    await collapsedWarningRow.locator(".feat-disclosure-toggle").click();
     assert.equal(await collapsedWarningRow.locator(".feat-disclosure-warning").isVisible(), true, "collapsed ineligible feat still displays warning");
     await collapsedWarningRow.locator(".feat-disclosure-toggle").click();
     const warning = page.locator("#derived-feat-fighter-level-4-desc .feat-eligibility-warning");
@@ -1475,7 +1478,8 @@ async function verifyLegacyShareFeatCompatibility(browser, url) {
             assert.equal(await page.locator("#derived-feat-fighting-style-fighter").isDisabled(), false, "migrated automatic source supports bidirectional selection");
             assert.equal(await page.locator("#feat-0").isDisabled(), true, "legacy custom feats remain fixed in automation");
             if (await page.locator("#legal-close-btn").isVisible()) await page.click("#legal-close-btn");
-            await page.locator("#derived-feat-fighting-style-fighter").locator("xpath=../..").locator(".feat-disclosure-toggle").click();
+            const restoredStyleToggle = page.locator("#derived-feat-fighting-style-fighter").locator("xpath=../..").locator(".feat-disclosure-toggle");
+            if (await restoredStyleToggle.getAttribute("aria-expanded") === "false") await restoredStyleToggle.click();
             await page.selectOption("#derived-feat-fighting-style-fighter", "巨武器戰鬥");
             assert.equal(await page.inputValue("#feat-choice-fighting-style-fighter"), "巨武器戰鬥", "migrated share main style updates source");
           }
