@@ -968,6 +968,86 @@ async function verifyEquipmentLoadout(browser, url) {
   } finally { await page.close(); }
 }
 
+async function verifyFeatDisclosureMemory(browser, url) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await context.addInitScript(() => {
+    localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true");
+    localStorage.setItem("dnd.classFeaturePromptDisabled.v1", "true");
+  });
+  const page = await context.newPage();
+  const errors = [];
+  page.on("pageerror", error => errors.push(String(error)));
+  const toggleFor = id => page.locator(`#${id}`).locator("xpath=../..").locator(".feat-disclosure-toggle");
+  try {
+    await page.goto(url);
+    await page.waitForFunction(() => !!window.TabletopMode);
+    if (await page.locator("#legal-close-btn").isVisible()) await page.locator("#legal-close-btn").click();
+    await page.evaluate(() => applyStateObject({
+      __spellManagement: { version: 2, manual: false, entries: [] },
+      class: "fighter", level: "8", race: "human", background: "soldier",
+      "manual-feat-management": false, "feat-choice-human-origin": "警覺",
+      "feat-choice-fighter-level-4": "強韌體魄"
+    }));
+    assert.equal(await page.evaluate(() => dndStorage.getItem(FEAT_DISCLOSURE_STATE_KEY)), null, "first load has no stored feat disclosure");
+    assert.equal(await page.locator("#feats-area > .form-row .feat-disclosure-toggle[aria-expanded='false']").count(), 0,
+      "all feats start expanded, whether selected or not");
+    const original = await page.evaluate(() => JSON.stringify(collectStateObject()));
+    await toggleFor("derived-feat-human-origin").click();
+    await toggleFor("derived-feat-fighter-level-4").click();
+    assert.equal(await page.locator("#derived-feat-human-origin").locator("xpath=../..").locator(".feat-selected-name").textContent(), "警覺");
+    assert.equal(await page.evaluate(() => JSON.stringify(collectStateObject())), original, "disclosure does not alter character JSON");
+    assert.equal(await page.evaluate(() => {
+      const state = collectStateObject(), share = collectShareState(), saved = JSON.parse(dndStorage.getItem(FEAT_DISCLOSURE_STATE_KEY));
+      return APP_STORAGE_KEYS.includes(FEAT_DISCLOSURE_STATE_KEY)
+        && !Object.hasOwn(state, FEAT_DISCLOSURE_STATE_KEY)
+        && !Object.hasOwn(share, FEAT_DISCLOSURE_STATE_KEY)
+        && saved.derived["human-origin"] === false && saved.derived["fighter-level-4"] === false;
+    }), true, "separate local key stores stable source identities but not JSON or shares");
+    await page.evaluate(() => saveAllFields());
+    await page.goto(url);
+    if (await page.locator("#legal-close-btn").isVisible()) await page.locator("#legal-close-btn").click();
+    assert.equal(await toggleFor("derived-feat-human-origin").getAttribute("aria-expanded"), "false",
+      "human source collapse survives reload");
+    assert.equal(await toggleFor("derived-feat-fighter-level-4").getAttribute("aria-expanded"), "false",
+      "class level source collapse survives reload");
+    await page.evaluate(() => {
+      document.getElementById("level").value = "1";
+      syncDerivedFeatRows();
+      document.getElementById("level").value = "8";
+      syncDerivedFeatRows();
+    });
+    assert.equal(await toggleFor("derived-feat-fighter-level-4").getAttribute("aria-expanded"), "false",
+      "source collapse survives removal and recreation");
+    await page.check("#manual-feat-management");
+    assert.equal(await toggleFor("feat-0").getAttribute("aria-expanded"), "true", "new manual feat starts expanded");
+    await page.selectOption("#feat-0", "醫療兵");
+    await page.locator("#feat-0").locator("xpath=../..").locator('[data-feat-action="add"]').click();
+    assert.equal(await toggleFor("feat-1").getAttribute("aria-expanded"), "true", "newly inserted feat does not inherit another row's state");
+    await page.selectOption("#feat-1", "警覺");
+    await toggleFor("feat-1").click();
+    await page.locator("#feat-0").locator("xpath=../..").locator('[data-feat-action="delete"]').click();
+    assert.equal(await page.inputValue("#feat-0"), "警覺", "manual rows reindex when deleted");
+    assert.equal(await toggleFor("feat-0").getAttribute("aria-expanded"), "false", "collapse follows shifted manual row");
+    assert.deepEqual(await page.evaluate(() => JSON.parse(dndStorage.getItem(FEAT_DISCLOSURE_STATE_KEY)).manual), [false],
+      "local manual preferences are realigned after deletion");
+    await page.evaluate(() => saveAllFields());
+    await page.goto(url);
+    if (await page.locator("#legal-close-btn").isVisible()) await page.locator("#legal-close-btn").click();
+    assert.equal(await page.inputValue("#feat-0"), "警覺");
+    assert.equal(await toggleFor("feat-0").getAttribute("aria-expanded"), "false", "manual collapse survives autosave restore");
+    await page.locator("#utility-menu-toggle").click();
+    await page.locator("#clear-storage-btn").click();
+    await page.getByRole("button", { name: "清除紀錄", exact: true }).click();
+    await page.waitForFunction(() => dndStorage.getItem("dnd.featDisclosure.v1") === null);
+    if (await page.locator("#legal-close-btn").isVisible()) await page.locator("#legal-close-btn").click();
+    await page.evaluate(() => applyStateObject({ background: "soldier", class: "fighter", level: "1" }));
+    assert.equal(await toggleFor("derived-feat-background").getAttribute("aria-expanded"), "true",
+      "clearing records resets feat disclosure to expanded");
+    assert.deepEqual(errors, []);
+    console.log("Feat disclosure: default open, per-source and manual persistence, removal/reindex, JSON/share isolation and clearing passed.");
+  } finally { await context.close(); }
+}
+
 async function verifyAutomaticFeatRows(browser, url) {
   const page = await browser.newPage();
   await page.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
@@ -2075,6 +2155,7 @@ async function main() {
     await verifyManualWeaponVisibility(page, url);
     await verifyEquipmentLoadout(browser, url);
     await verifyAutomaticFeatRows(browser, url);
+    await verifyFeatDisclosureMemory(browser, url);
     await verifyFeatEligibilityWarnings(browser, url);
     await verifyLegacyShareFeatCompatibility(browser, url);
     await verifyLegacyEmptyFeatRows(browser, url);
