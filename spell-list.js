@@ -4721,6 +4721,14 @@ globalThis.SpellCatalog = (() => {
     ]),
   });
 
+  const classIdsBySpellId = new Map();
+  for (const [classId, spellIds] of Object.entries(fullSpellIdsByClass)) {
+    for (const spellId of new Set(spellIds)) {
+      if (!classIdsBySpellId.has(spellId)) classIdsBySpellId.set(spellId, []);
+      classIdsBySpellId.get(spellId).push(classId);
+    }
+  }
+
   const DAMAGE_TYPE_LABELS = Object.freeze({
     acid: "強酸",
     bludgeoning: "鈍擊",
@@ -5093,7 +5101,7 @@ globalThis.SpellCatalog = (() => {
 
   function getClassIds(spellId) {
     if (typeof spellId !== "string" || !spellsById[spellId]) return [];
-    return Object.keys(fullSpellIdsByClass).filter(classId => fullSpellIdsByClass[classId].includes(spellId));
+    return (classIdsBySpellId.get(spellId) || []).slice();
   }
 
   function getDisplayName(spellId) {

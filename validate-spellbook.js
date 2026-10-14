@@ -290,7 +290,17 @@ async function verifySynchronousRestore(browser, url) {
       const saved = JSON.parse(dndStorage.getItem("dndchar_autosave_v1"));
       const pick = data => ({ management: data.__spellManagement,
         fields: Object.fromEntries([...ids, "spellslot1-1", "spellslot3-3", "mainHand", "str", "dex", "atk-main-name", "atk-main-hit", "atk-main-dmg"].map(id => [id, data[id]])) });
-      return { expected, immediate, missing, state: pick(state), collected: pick(collected), saved: pick(saved) };
+      const nested = withCharacterUpdateBatch(() => withCharacterUpdateBatch(() => {
+        applyStateObject({ class: "wizard", level: "1", background: "soldier", race: "human",
+          __spellManagement: { version: 2, manual: false, entries: [] } });
+        applyStateObject(state);
+        updateSpellsByClassLevel(); updatePickedSpellBoxes();
+        // Collection and saving inside an outer batch must settle the display
+        // and preserve consumed slots/uses before that outer callback returns.
+        const collected = collectStateObject(); saveAllFields();
+        return { immediate: read(), collected: pick(collected), saved: pick(JSON.parse(dndStorage.getItem("dndchar_autosave_v1"))) };
+      }));
+      return { expected, immediate, missing, state: pick(state), collected: pick(collected), saved: pick(saved), nested };
     });
     assert(result.missing.length > 0, "fixture removes source-use controls before restoring sources");
     assert.deepEqual(result.expected.slots, [true, true]);
@@ -300,6 +310,9 @@ async function verifySynchronousRestore(browser, url) {
     assert.deepEqual(result.immediate, result.expected, "reverse-order restore completes all derived values synchronously");
     assert.deepEqual(result.collected, result.state);
     assert.deepEqual(result.saved, result.state);
+    assert.deepEqual(result.nested.immediate, result.expected, "nested batch remains immediately readable");
+    assert.deepEqual(result.nested.collected, result.state);
+    assert.deepEqual(result.nested.saved, result.state);
     assert.deepEqual(errors, []);
     console.log("Synchronous restore: reversed sources, consumed uses/slots, derived attacks, collection and autosave passed.");
   } finally { await page.close(); }

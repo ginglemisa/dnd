@@ -103,6 +103,7 @@
     }
     const selection = globalScope.getPactTomeSpellSelection?.() || {};
     const ids = tome ? [...(selection.cantrips || []), ...(selection.rituals || [])] : activeBookIds();
+    const preparedIds = new Set(tome || !ids.length ? [] : preparedEntries().map(entry => entry.spellId));
     const grid = document.getElementById("spellbook-list");
     grid.replaceChildren();
     levels.forEach((label, level) => {
@@ -112,7 +113,7 @@
       group.appendChild(node("h4", "", label));
       const list = node("div", "spellbook-names");
       spells.forEach(spell => {
-        const prepared = tome || preparedEntries(spell.spellId).length > 0;
+        const prepared = tome || preparedIds.has(spell.spellId);
         const button = node("button", `spellbook-spell${prepared ? " is-prepared" : ""}`,
           `${spell.nameZh}${catalog().isRitual(spell) ? "*" : ""}`);
         button.type = "button";
@@ -317,6 +318,7 @@
     let visibleCount = batchSize;
     let composing = false;
     function draw(reset = false) {
+      options.beforeDraw?.();
       if (reset) { visibleCount = batchSize; list.scrollTop = 0; }
       clear.hidden = !search.value;
       const selectedRings = ringInputs.filter(input => input.checked).map(input => Number(input.value));
@@ -410,7 +412,8 @@
     const manual = isManual();
     const currentClass = document.getElementById("class")?.value;
     const selected = new Set(activeBookIds());
-    const picker = createSpellPicker({ minLevel: 1, getSpells: () => [...new Map([...(manual ? supportedSpells(1) : wizardSpells()), ...[...selected]
+    const candidates = manual ? supportedSpells(1) : wizardSpells();
+    const picker = createSpellPicker({ minLevel: 1, getSpells: () => [...new Map([...candidates, ...[...selected]
       .map(id => catalog().getSpell(id) || { spellId: id, level: -1, nameZh: "", nameEn: "" })]
       .map(spell => [spell.spellId, spell])).values()],
       getState: spell => ({ checked: selected.has(spell.spellId),
@@ -460,13 +463,35 @@
     const clear = node("button", "spell-prepared-clear app-dialog__button app-dialog__button--secondary", "清空準備");
     clear.type = "button";
     body.append(sourceList, countSummary, limitWarning);
-    const retainedSelected = () => retained.filter(entry => draft.includes(entry));
-    const blockingSources = () => manual ? retainedSelected() : sources;
-    const sourceLabels = id => [...new Set(blockingSources().filter(entry => entry.spellId === id)
-      .map(entry => entry.sourceLabel || entry.source || entry.spellSource || "來源能力"))];
-    const editable = () => draft.filter(entry => !entry.spellSource);
-    const countAt = cantrip => editable().filter(entry => (Number(entry.level) === 0) === cantrip
-      && (manual || api.isEntryAvailable(entry)) && !sourceLabels(entry.spellId).length).length;
+    let draftSnapshot;
+    function refreshDraftSnapshot() {
+      const editable = draft.filter(entry => !entry.spellSource);
+      const labels = new Map();
+      (manual ? retained.filter(entry => draft.includes(entry)) : sources).forEach(entry => {
+        if (!labels.has(entry.spellId)) labels.set(entry.spellId, new Set());
+        labels.get(entry.spellId).add(entry.sourceLabel || entry.source || entry.spellSource || "來源能力");
+      });
+      const ringCounts = [0, 0, 0, 0, 0];
+      editable.forEach(entry => {
+        const level = Number(entry.level);
+        if (Number.isInteger(level) && level >= 0 && level <= 4) ringCounts[level] += 1;
+      });
+      draftSnapshot = { editable, selected: new Set(editable.map(entry => entry.spellId)),
+        sourceLabels: labels, ringCounts, cantrips: 0, prepared: 0 };
+      refreshAvailableCounts();
+    }
+    function refreshAvailableCounts() {
+      // Nested character choices can change availability without editing this draft.
+      draftSnapshot.cantrips = 0;
+      draftSnapshot.prepared = 0;
+      draftSnapshot.editable.forEach(entry => {
+        if ((!manual && !api.isEntryAvailable(entry)) || draftSnapshot.sourceLabels.has(entry.spellId)) return;
+        draftSnapshot[Number(entry.level) === 0 ? "cantrips" : "prepared"] += 1;
+      });
+    }
+    const sourceLabels = id => draftSnapshot.sourceLabels.get(id);
+    const countAt = cantrip => draftSnapshot[cantrip ? "cantrips" : "prepared"];
+    refreshDraftSnapshot();
     const canClear = entry => Number(entry.level) >= 1 && Number(entry.level) <= 4
       && (manual || (!entry.spellSource && api.isEntryAvailable(entry)));
     const limitAt = cantrip => Number.isFinite(cantrip ? limits.cantrips : limits.prepared)
@@ -524,7 +549,7 @@
         input.addEventListener("change", () => {
           if (input.checked) { if (!draft.includes(entry)) draft.push(entry); }
           else draft = draft.filter(item => item !== entry);
-          refresh();
+          refresh(true, true);
           sourceList.querySelector(`[data-source-index="${index}"]`)?.focus({ preventScroll: true });
         });
         const name = node("button", "spell-picker-name", spell?.nameZh || `未知法術（${entry.spellId}）`);
@@ -543,25 +568,31 @@
       sourceList.appendChild(list);
       globalScope.schedulePickedSpellLayout?.();
     }
+    let candidateContext = "", baseCandidates = new Map();
     function candidateSpells() {
-      const candidates = new Map();
-      for (let level = 0; level <= 4; level += 1) {
-        const ring = level === 0 ? "cantrips" : level;
-        (globalScope.getAvailableSpellSourceClasses?.(ring) || []).forEach(option => {
-          globalScope.getClassSpells(option.value, ring).forEach(spell => candidates.set(spell.spellId, spell));
-        });
+      const context = `${isManual()}\u0000${document.getElementById("class").value}\u0000${document.getElementById("level").value}`;
+      if (context !== candidateContext) {
+        candidateContext = context;
+        baseCandidates = new Map();
+        for (let level = 0; level <= 4; level += 1) {
+          const ring = level === 0 ? "cantrips" : level;
+          (globalScope.getAvailableSpellSourceClasses?.(ring) || []).forEach(option => {
+            globalScope.getClassSpells(option.value, ring).forEach(spell => baseCandidates.set(spell.spellId, spell));
+          });
+        }
       }
+      const candidates = new Map(baseCandidates);
       // Preserve unknown imported IDs and selections that became unavailable.
-      editable().forEach(entry => candidates.set(entry.spellId, catalog().getSpell(entry.spellId)
+      draftSnapshot.editable.forEach(entry => candidates.set(entry.spellId, catalog().getSpell(entry.spellId)
         || { spellId: entry.spellId, level: Number(entry.level), nameZh: "", nameEn: "" }));
       return [...candidates.values()];
     }
     const picker = createSpellPicker({ mode: "prepared", getSpells: candidateSpells,
-      getCountSuffix: () => ` | ${[1, 2, 3, 4].map(ring => `${ring}環 ${editable().filter(entry => Number(entry.level) === ring).length}`).join(" | ")} |`,
+      beforeDraw: refreshAvailableCounts,
+      getCountSuffix: () => ` | ${[1, 2, 3, 4].map(ring => `${ring}環 ${draftSnapshot.ringCounts[ring]}`).join(" | ")} |`,
       getState(spell) {
-        const selected = editable().some(entry => entry.spellId === spell.spellId);
-        const labels = sourceLabels(spell.spellId);
-        if (labels.length) return { checked: true, disabled: true };
+        const selected = draftSnapshot.selected.has(spell.spellId);
+        if (sourceLabels(spell.spellId)) return { checked: true, disabled: true };
         const unavailable = !manual && !api.isEntryAvailable({ spellId: spell.spellId, spellClass: currentClass, level: spell.level });
         const full = !manual && !selected && countAt(spell.level === 0) >= limitAt(spell.level === 0);
         const reason = unavailable && api.getAvailabilityReason?.({ spellId: spell.spellId, spellClass: currentClass, level: spell.level });
@@ -569,8 +600,9 @@
           note: reason === "目前等級尚未開放此法術環階。" ? `目前不可用：${reason}` : "" };
       },
       onToggle(spell, checked) {
+        refreshAvailableCounts();
         if (!checked) draft = draft.filter(entry => entry.spellSource || entry.spellId !== spell.spellId);
-        else if (!editable().some(entry => entry.spellId === spell.spellId) && !sourceLabels(spell.spellId).length
+        else if (!draftSnapshot.selected.has(spell.spellId) && !sourceLabels(spell.spellId)
           && (manual || (api.isEntryAvailable({ spellId: spell.spellId, spellClass: currentClass, level: spell.level })
             && countAt(spell.level === 0) < limitAt(spell.level === 0)))) {
           const classes = catalog().getClassIds(spell.spellId);
@@ -580,7 +612,8 @@
       }, onChange: () => refresh(false) });
     body.appendChild(picker.body);
     picker.toolbar.before(node("p", "spell-note-muted", "勾選要準備的法術，點法術名稱可閱讀。儲存後才會套用變更。"));
-    function refresh(redraw = true) {
+    function refresh(redraw = true, redrawSources = false) {
+      refreshDraftSnapshot();
       const cantripExcess = manual ? 0 : Math.max(0, countAt(true) - limitAt(true));
       const preparedExcess = manual ? 0 : Math.max(0, countAt(false) - limitAt(false));
       counts.textContent = manual ? "手動管理：不限制法表、環階與準備數量。"
@@ -591,14 +624,14 @@
         preparedExcess ? `一至四環共用準備超過上限 ${preparedExcess} 個` : ""].filter(Boolean).join("；")
         + (limitWarning.hidden ? "" : "。仍可取消選取或儲存目前清單；新增前請先減少選取。");
       clear.disabled = !draft.some(canClear);
-      drawSources();
+      if (redrawSources) drawSources();
       if (redraw) picker.redraw();
     }
     clear.addEventListener("click", () => {
       draft = draft.filter(entry => !canClear(entry));
-      refresh();
+      refresh(true, manual);
     });
-    refresh();
+    refresh(false, true);
     const sourceObserver = globalScope.ResizeObserver
       ? new globalScope.ResizeObserver(() => globalScope.schedulePickedSpellLayout?.()) : null;
     sourceObserver?.observe(sourceList);

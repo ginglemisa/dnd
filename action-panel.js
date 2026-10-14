@@ -11,7 +11,7 @@
       { key: "disengage", label: "撤離", description: "在本回合剩餘時間內，你的移動不會引發藉機攻擊。" },
       { key: "dodge", label: "閃避", description: "直到你下一回合開始前，對你的攻擊擲骰具有劣勢，且你的敏捷豁免具有優勢。若你陷入失能狀態或速度為 0，便失去此效果。" },
       { key: "help", label: "協助", description: "協助另一個生物進行屬性檢定或攻擊擲骰，也可以對其施予急救。" },
-      { key: "hide", label: "躲藏", description: "進行一次敏捷（隱匿）檢定，嘗試避開其他生物的注意。" },
+      { key: "hide", label: "躲藏", description: "進行一次敏捷（隱匿）檢定，難度 15，嘗試避開其他生物的注意。" },
       { key: "influence", label: "影響", description: "進行魅力（欺瞞、威嚇、表演或遊說）或感知（馴獸）檢定，嘗試改變生物的態度。" },
       { key: "magic", label: "魔法", description: "施放施法時間為動作的法術、使用魔法物品，或啟動需要魔法動作的特性。" },
       { key: "ready", label: "準備", description: "設定一個可感知的觸發條件，並指定條件發生時要執行的動作。觸發後，你使用反應執行該動作。" },
@@ -75,11 +75,11 @@
   });
 
   const TABLETOP_ACTION_OPTIONS = Object.freeze([
-    { key: "natural-20", label: "擲出２０", description: "攻擊時擲出 20 必定命中，造成重擊。\n傷害骰擲兩次，固定加值只加一次。\n\n例如長劍傷害為 1d8＋3\n一般命中：1d8＋3\n重擊傷害：2d8＋3\n額外傷害骰（如偷襲）也會加倍\n\n攻擊時擲出 1 則必定失手" }
+    { key: "natural-20", label: "擲出２０", buttonTag: "規則", description: "攻擊骰子出 20 必中，造成重擊。\n傷害骰擲兩次，固定加值只加一次。\n\n例如長劍一般傷害為 1d8＋3\n重擊傷害則是 2d8＋3\n額外傷害骰（如至聖斬）也會加倍" }
   ]);
 
   const TABLETOP_MOVEMENT_OPTIONS = Object.freeze([
-    { key: "cover", label: "遮蔽", description: "半身遮蔽：AC 與敏捷豁免獲得 +2\n\n3／4遮蔽：AC 與敏捷豁免獲得 +5\n\n完全遮蔽：通常無法被指定為目標" }
+    { key: "cover", label: "遮蔽", buttonTag: "規則", description: "半身遮蔽：AC 與敏捷豁免獲得 +2，例如躲在齊腰高的矮牆後，或有其他生物擋在前方。\n\n3／4遮蔽：AC 與敏捷豁免獲得 +5，例如躲在城牆射箭孔或粗大樹幹後方。\n\n完全遮蔽：視線完全看不到，通常無法被指定為目標。" }
   ]);
 
   const MODE_META = Object.freeze({

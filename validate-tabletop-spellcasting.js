@@ -45,6 +45,20 @@ assert.equal(spells.length, 215, "法術總數應為 215");
 assert.deepEqual(spellsByLevel, { 0: 28, 1: 56, 2: 55, 3: 42, 4: 34 });
 assert.equal(new Set(spellIds).size, spellIds.length, "spellId 不得重複");
 
+const spellClasses = Object.keys(catalog.compatSpellList);
+spells.forEach(spell => {
+  const expected = spellClasses.filter(classId => catalog.getSpellIds(classId, spell.level).includes(spell.spellId));
+  assert.deepEqual([...catalog.getClassIds(spell.spellId)], expected, `${spell.spellId} 法表歸屬與職業順序必須一致`);
+});
+assert.deepEqual([...catalog.getClassIds("light")], ["bard", "cleric", "sorcerer", "wizard"], "多職業法術保留法表順序");
+assert.deepEqual([...catalog.getClassIds("eldritch-blast")], ["warlock"], "專屬法術僅屬於原職業");
+const mutatedClasses = catalog.getClassIds("light");
+mutatedClasses.splice(0, mutatedClasses.length, "invalid");
+assert.deepEqual([...catalog.getClassIds("light")], ["bard", "cleric", "sorcerer", "wizard"], "呼叫端改動結果不得污染法表索引");
+["", "unknown-spell", "toString", null, undefined, 0, {}].forEach(value => {
+  assert.deepEqual([...catalog.getClassIds(value)], [], "未知或非法法術編號不得有法表歸屬");
+});
+
 const baselineSpellIds = JSON.parse(fs.readFileSync("spell-id-baseline.json", "utf8"));
 assertSameValues(
   spellIds,

@@ -90,9 +90,9 @@
   <script src="tool-data.js?v=20261008-class-tools" defer></script>
   <script src="feats.js?v=20261001-automatic-feat-grants" defer></script>
   <script src="equipment-notes.js?v=20260813-weapon-rule-popups-2" defer></script>
-  <script src="spell-list.js?v=20261013-material-cleanup" defer></script>
+  <script src="spell-list.js?v=20261014-class-lookup" defer></script>
   <script src="condition.js?v=20261002-condition-effects" defer></script>
-  <script src="action-panel.js?v=20261013-action-order" defer></script>
+  <script src="action-panel.js?v=20261014-action-rule-copy" defer></script>
   <script src="character-rules.js?v=20261010-spell-lists-v2" defer></script>
   <script src="app-dialog.js?v=20261009-class-choice-prompt" defer></script>
   <script src="custom-background.js?v=20261006-custom-background-sync" defer></script>
@@ -105,7 +105,7 @@
   <script src="legal-modal.js?v=20260923-legal-about" defer></script>
   <script src="onboarding-tour.js?v=20261014-advantage-disadvantage" defer></script>
   <script src="quick-build.js?v=20261012-first-play-label-refresh" defer></script>
-  <script src="spellbook.js?v=20261013-spell-manager-header" defer></script>
+  <script src="spellbook.js?v=20261014-picker-performance" defer></script>
   <script src="spell-management.js?v=20261013-manual-migration-notice" defer></script>
   <script src="deity-info.js" defer></script>
 
@@ -2901,10 +2901,14 @@ function selectCharacterFeatureTab(tab) {
     panel.hidden = !active;
     panel.inert = !active;
   });
-  const tabRect = selected.getBoundingClientRect();
-  const stripRect = tabs.getBoundingClientRect();
-  if (tabRect.left < stripRect.left) tabs.scrollLeft += tabRect.left - stripRect.left;
-  else if (tabRect.right > stripRect.right) tabs.scrollLeft += tabRect.right - stripRect.right;
+  // Hidden mounted controls have no usable tab-strip geometry. Opening the
+  // dialog selects again after mounting, preserving visible tab scrolling.
+  if (tabs.closest("#character-features-modal")) {
+    const tabRect = selected.getBoundingClientRect();
+    const stripRect = tabs.getBoundingClientRect();
+    if (tabRect.left < stripRect.left) tabs.scrollLeft += tabRect.left - stripRect.left;
+    else if (tabRect.right > stripRect.right) tabs.scrollLeft += tabRect.right - stripRect.right;
+  }
 }
 
 function syncCharacterFeatureTabs() {
@@ -3042,12 +3046,19 @@ function highlightSpellNamesInClassFeature(html, options = {}) {
 // Only explicit synchronous initialization/restore batches defer these updates.
 // Structural controls and their change events remain synchronous throughout.
 let characterUpdateDepth = 0;
+let spellDisplayPending = false;
 let pickedSpellsPending = false;
 let handAttacksPending = false;
 let handAttacksForcePending = false;
 function flushCharacterUpdates() {
   const previousDepth = characterUpdateDepth;
   try {
+    // Slots/counts settle before summaries, consumed uses and collection.
+    characterUpdateDepth = 0;
+    if (spellDisplayPending) {
+      spellDisplayPending = false;
+      updateSpellsByClassLevel();
+    }
     if (pickedSpellsPending) {
       pickedSpellsPending = false;
       characterUpdateDepth = 1;
@@ -3107,9 +3118,8 @@ function getMissingClassFeatureChoiceSections() {
   return missingSections;
 }
 
-function markPreparedSpellOptions(root = document) {
-  const preparedIds = new Set((window.SpellManagement?.getEntries({ availableOnly: true }) || [])
-    .map(entry => entry.spellId));
+function markPreparedSpellOptions(root = document, preparedIds = new Set(
+  (window.SpellManagement?.getEntries({ availableOnly: true }) || []).map(entry => entry.spellId))) {
   const selects = root.matches?.("select") ? [root] : root.querySelectorAll("select");
   selects.forEach(select => {
     const classChoice = Boolean(select.closest("#classFeatures, #eldritch-invocations-output, .class-feature-additional-choices"));
@@ -4086,15 +4096,17 @@ function createDerivedFeatRow(spec) {
     const previousValue = select.dataset.previousValue || "";
     const choice = document.getElementById(getFeatChoiceId(row.dataset.sourceKey));
     if (choice && !isManualFeatManagementEnabled()) {
-      const scrollPosition = { left: window.scrollX, top: window.scrollY, behavior: "instant" };
+      const scrollPosition = autosaveSuspended ? null : { left: window.scrollX, top: window.scrollY, behavior: "instant" };
       // 兩處共用來源選項；選後由共用資格判斷控制警示及計算。
       const option = Array.from(choice.options).find(option => option.value === select.value);
       if (!choice.disabled && option && !option.disabled) choice.value = select.value;
       syncDerivedFeatRows();
       syncInitiativeAfterFeatSelectionChange(select, previousValue);
       // 同步說明時的暫時高度變化可能觸發瀏覽器捲動錨定，完成後還原位置。
-      window.scrollTo(scrollPosition);
-      requestAnimationFrame(() => window.scrollTo(scrollPosition));
+      if (scrollPosition) {
+        window.scrollTo(scrollPosition);
+        requestAnimationFrame(() => window.scrollTo(scrollPosition));
+      }
       scheduleSaveAllFields();
       return;
     }
@@ -4107,6 +4119,17 @@ function createDerivedFeatRow(spec) {
   row.append(rowHead, desc, magicControls);
   area.insertBefore(row, getManualFeatRows()[0] || null);
   return row;
+}
+
+// Compare both requested markup and current DOM: restored unknown options and
+// other callers' changes must invalidate this local write cache.
+const characterHtmlWrites = new WeakMap();
+function setCharacterHtml(element, html) {
+  const previous = characterHtmlWrites.get(element);
+  const current = element.innerHTML;
+  if (previous?.html === html && previous.rendered === current) return;
+  if (current !== html) element.innerHTML = html;
+  characterHtmlWrites.set(element, { html, rendered: element.innerHTML });
 }
 
 function setDerivedFeatRowValues(row, spec) {
@@ -4127,7 +4150,7 @@ function setDerivedFeatRowValues(row, spec) {
     label.textContent = `原初教習${lessons.length > 1 && index >= 0 ? index + 1 : ""}`;
   }
   desc.id = `${select.id}-desc`;
-  select.innerHTML = choice ? choice.innerHTML : getFeatOptionsHtml();
+  setCharacterHtml(select, choice ? choice.innerHTML : getFeatOptionsHtml());
   select.value = spec.value;
   select.disabled = !choice || choice.disabled;
   select.dataset.previousValue = select.value;
@@ -4259,9 +4282,9 @@ function updateFeatDesc(selectId, descId) {
   const warningId = `${descId}-warning`;
   if (unmet) select.setAttribute("aria-describedby", warningId);
   else select.removeAttribute("aria-describedby");
-  el.innerHTML =
+  setCharacterHtml(el,
     (unmet ? getFeatEligibilityWarningHtml(warningId) : "") +
-    formatFeatDescription(raw);
+    formatFeatDescription(raw));
 }
 
 function formatFeatDescription(raw) {
@@ -4739,6 +4762,7 @@ function renderSpellOptionsForMagicInitiate(classValue, level, placeholder, prev
 
 function updateMagicInitiateSpellOptions(row) {
   const classValue = getMagicInitiateSelect(row, "class")?.value || "";
+  const preparedIds = new Set((window.SpellManagement?.getEntries({ availableOnly: true }) || []).map(entry => entry.spellId));
   [
     { field: "cantrip1", level: "cantrips" },
     { field: "cantrip2", level: "cantrips" },
@@ -4758,7 +4782,7 @@ function updateMagicInitiateSpellOptions(row) {
     if (preserveUnknown) restoreFeatSelectValue(select, previousValue);
     else select.value = rendered.value;
     syncMagicInitiateSpellDetailButton(select);
-    markPreparedSpellOptions(select);
+    markPreparedSpellOptions(select, preparedIds);
   });
 }
 
@@ -5256,7 +5280,7 @@ function updateFeatControlStates() {
       select.disabled = !enabled && (!choice || choice.disabled);
       if (enabled) {
         const value = select.value;
-        select.innerHTML = getFeatOptionsHtml();
+        setCharacterHtml(select, getFeatOptionsHtml());
         restoreFeatSelectValue(select, value);
       }
     }
@@ -5412,16 +5436,15 @@ document.addEventListener("DOMContentLoaded", () => withCharacterUpdateBatch(() 
     isPersistenceBlocked: () => autosaveRestoreBlocked,
     deferMigrationNotice: () => jsonImportInProgress,
     parseLegacyEntries: parseLegacySpellEntries,
-    onChange: () => {
+    onChange: () => withCharacterUpdateBatch(() => {
       syncCurrentSpellSources();
       updateSpellCastingStatsVisibility();
       updateSpellsByClassLevel();
       updatePickedSpellBoxes();
-      window.Spellbook?.render();
       window.TabletopSpells?.refresh();
       updateClassFeatureChoiceReminder();
       scheduleStructuralSaveAllFields();
-    }
+    })
   });
   initFeatureChoiceDisclosures();
   fillEldritchInvocationTextsFromClassFeatures();
@@ -7612,8 +7635,9 @@ function renderPickedSpellBoxes() {
   updatePreparedSpellCounts();
   updateSpellOverviewManagementVisibility();
   updateSpellListStatusNote();
+  const preparedIds = new Set(entries.map(entry => entry.spellId));
   ["classFeatures", "eldritch-invocations-output", "feats-area", "character-features", "class-feature-choices-modal"]
-    .forEach(id => { const root = document.getElementById(id); if (root) markPreparedSpellOptions(root); });
+    .forEach(id => { const root = document.getElementById(id); if (root) markPreparedSpellOptions(root, preparedIds); });
   schedulePickedSpellLayout();
   window.Spellbook?.render();
   if (typeof populateHandAttacks === "function") populateHandAttacks();
@@ -7686,6 +7710,10 @@ function updateSpellSlotRows(slotCounts) {
 }
 
 function updateSpellsByClassLevel() {
+  if (characterUpdateDepth) {
+    spellDisplayPending = true;
+    return;
+  }
   const cls = document.getElementById("class")?.value || "";
   const lvl = document.getElementById("level")?.value || "";
   const complete = hasCompletePrimaryCharacterSelections();

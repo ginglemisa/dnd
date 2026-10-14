@@ -718,6 +718,8 @@ async function verifyUiAndPersistence(page, url) {
   await page.locator('.action-mode-tab[data-action-mode="basic"]').click();
   await page.locator('#action-option-grid [data-action-option-key="attack"]').click();
   assert.match(await page.locator("#action-description").innerText(), /武器/);
+  await page.locator('#action-option-grid [data-action-option-key="hide"]').click();
+  assert.equal(await page.locator("#action-description .action-description-copy").innerText(), "進行一次敏捷（隱匿）檢定，難度 15，嘗試避開其他生物的注意。", "legacy Hide uses the shared DC 15 description");
   await page.locator('.action-mode-tab[data-action-mode="bonus"]').click();
   await page.locator('#action-option-grid [data-action-option-key="drink-potion"]').click();
   assert.match(await page.locator("#action-description").innerText(), /2d4/);
@@ -1799,13 +1801,23 @@ async function verifyMergedActionUi(browser, url) {
     }
     await page.locator("#tabletop-action-tab-action").click();
     assert.equal(await page.locator("#tabletop-action-panel-action .tabletop-action-context").innerText(), "點擊[基本動作]按鈕可展開／收合，角色能力的使用時機與次數限制請參照各項說明。");
-    const coverCopy = "半身遮蔽：AC 與敏捷豁免獲得 +2\n\n3／4遮蔽：AC 與敏捷豁免獲得 +5\n\n完全遮蔽：通常無法被指定為目標";
-    const natural20Copy = "攻擊時擲出 20 必定命中，造成重擊。\n傷害骰擲兩次，固定加值只加一次。\n\n例如長劍傷害為 1d8＋3\n一般命中：1d8＋3\n重擊傷害：2d8＋3\n額外傷害骰（如偷襲）也會加倍\n\n攻擊時擲出 1 則必定失手";
+    const coverCopy = "半身遮蔽：AC 與敏捷豁免獲得 +2，例如躲在齊腰高的矮牆後，或有其他生物擋在前方。\n\n3／4遮蔽：AC 與敏捷豁免獲得 +5，例如躲在城牆射箭孔或粗大樹幹後方。\n\n完全遮蔽：視線完全看不到，通常無法被指定為目標。";
+    const natural20Copy = "攻擊骰子出 20 必中，造成重擊。\n傷害骰擲兩次，固定加值只加一次。\n\n例如長劍一般傷害為 1d8＋3\n重擊傷害則是 2d8＋3\n額外傷害骰（如至聖斬）也會加倍";
+    const hideCopy = "進行一次敏捷（隱匿）檢定，難度 15，嘗試避開其他生物的注意。";
+    const assertRuleTag = async button => {
+      assert.equal(await button.locator(".tabletop-source-tag").innerText(), "規則");
+      assert.equal(await button.evaluate(el => {
+        const label = el.firstElementChild.getBoundingClientRect();
+        const tag = el.querySelector(".tabletop-source-tag").getBoundingClientRect();
+        return tag.top >= label.bottom && tag.left >= el.getBoundingClientRect().left && tag.right <= el.getBoundingClientRect().right;
+      }), true, "rule tag appears below the label within the button");
+    };
     for (const width of [1280, 320]) {
       await page.setViewportSize({ width, height: 844 });
       const natural20 = page.locator('#tabletop-action-panel-action [data-action-option-key="natural-20"]');
       assert.equal(await page.locator("#tabletop-basic-toggle").getAttribute("aria-expanded"), "false");
-      assert.equal(await natural20.innerText(), "擲出２０", "natural 20 is available while basic actions are collapsed");
+      assert.equal(await natural20.locator("span").first().innerText(), "擲出２０", "natural 20 is available while basic actions are collapsed");
+      await assertRuleTag(natural20);
       const actionOrder = () => page.locator("#tabletop-action-panel-action .tabletop-action-options button:not(.tabletop-action-ghost)")
         .evaluateAll(buttons => buttons.map(button => button.dataset.actionOptionKey || button.id));
       assert.deepEqual((await actionOrder()).slice(0, 2), ["tabletop-basic-toggle", "natural-20"], "collapsed natural 20 follows basic actions");
@@ -1817,6 +1829,10 @@ async function verifyMergedActionUi(browser, url) {
       await page.locator("#tabletop-basic-toggle").click();
       const expandedOrder = await actionOrder();
       assert.equal(expandedOrder.indexOf("natural-20"), expandedOrder.indexOf("utilize") + 1, "expanded natural 20 follows Utilize");
+      const hide = page.locator('#tabletop-basic-options [data-action-option-key="hide"]');
+      await hide.click();
+      assert.equal(await hide.getAttribute("aria-pressed"), "true");
+      assert.equal(await page.locator("#tabletop-action-panel-action .tabletop-action-description__copy").innerText(), hideCopy);
       await page.locator("#tabletop-basic-toggle").click();
       await page.waitForFunction(() => !document.querySelector(".tabletop-action-ghost"));
       assert.deepEqual((await actionOrder()).slice(0, 2), ["tabletop-basic-toggle", "natural-20"], "collapsing restores the normal button order");
@@ -1830,7 +1846,8 @@ async function verifyMergedActionUi(browser, url) {
       }), true, "natural 20 remains within the viewport with a usable target");
       await page.locator("#tabletop-action-tab-movement").click();
       const cover = page.locator('#tabletop-action-panel-movement [data-action-option-key="cover"]');
-      assert.equal(await cover.innerText(), "遮蔽");
+      assert.equal(await cover.locator("span").first().innerText(), "遮蔽");
+      await assertRuleTag(cover);
       assert.deepEqual(await page.locator("#tabletop-action-panel-movement .tabletop-action-options button")
         .evaluateAll(buttons => buttons.slice(0, 2).map(button => button.dataset.actionOptionKey)), ["cover", "climbing"], "cover immediately precedes climbing");
       await cover.focus();
