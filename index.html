@@ -3700,7 +3700,7 @@ function createManualFeatGuidance() {
     button.closest(".app-dialog")?.querySelector(".app-dialog__close")?.click();
     Promise.resolve(window.onboardingTour?.jumpToTarget({
       tab: "basic", selector: "#feat-management-section",
-      focusSelector: "#feats-area select:not(:disabled), #feat-add-empty"
+      focusSelector: "#feats-area select:not(:disabled), #feats-area .feat-disclosure-toggle, #feat-add-empty"
     })).catch(error => console.warn("無法前往自行管理專長：", error));
   });
   guidance.append(message, button);
