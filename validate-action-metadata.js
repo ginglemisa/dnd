@@ -1037,7 +1037,10 @@ async function verifyFeatDisclosureMemory(browser, url) {
     assert.equal(await toggleFor("feat-0").getAttribute("aria-expanded"), "false", "manual collapse survives autosave restore");
     await page.locator("#utility-menu-toggle").click();
     await page.locator("#clear-storage-btn").click();
-    await page.getByRole("button", { name: "清除紀錄", exact: true }).click();
+    await Promise.all([
+      page.waitForEvent("domcontentloaded"),
+      page.getByRole("button", { name: "清除紀錄", exact: true }).click()
+    ]);
     await page.waitForFunction(() => dndStorage.getItem("dnd.featDisclosure.v1") === null);
     if (await page.locator("#legal-close-btn").isVisible()) await page.locator("#legal-close-btn").click();
     await page.evaluate(() => applyStateObject({ background: "soldier", class: "fighter", level: "1" }));
