@@ -1131,6 +1131,9 @@ async function verifyAutomaticFeatRows(browser, url) {
     assert.deepEqual(await page.evaluate(() => getFeatSelects().map(select => select.value)), beforeManual, "unlock keeps all selections");
     assert.equal(await page.locator("#derived-feat-background").isDisabled(), false, "background unlocked");
     assert.equal(await page.locator("#derived-feat-fighting-style-fighter").isDisabled(), false, "style unlocked");
+    await chooseFeat("#derived-feat-background", "魔法學徒");
+    assert.equal(await page.evaluate(() => getClassFeatureChoiceIssues().some(issue => issue.message === "魔法學徒專長：法術未選擇")), true,
+      "manual Magic Initiate participates in the shared missing-choice warning");
     await chooseFeat("#derived-feat-fighting-style-fighter-2", "防禦");
     assert.equal(await page.inputValue("#derived-feat-fighting-style-fighter-2"), "防禦", "self-management removes automatic option restrictions");
     await chooseFeat("#derived-feat-background", "醫療兵");
@@ -1155,6 +1158,8 @@ async function verifyAutomaticFeatRows(browser, url) {
     await page.goto(url);
     await page.waitForFunction(() => document.getElementById("manual-feat-management").checked);
     assert.deepEqual(await page.evaluate(() => collectManagedFeatRows().map(row => row.value)), managedValues, "manual edits/deletions survive autosave");
+    assert.equal(await page.locator("#feat-1").locator("xpath=../..").locator(".feat-selected-name").textContent(), "箭術",
+      "autosaved manual feat defaults collapsed but retains its name");
     assert.equal(await page.locator("#derived-feat-fighter-level-8").count(), 0, "deleted derived row stays deleted");
     await chooseFeat("#feat-1", "防禦");
     await importCharacterJson(page, "manual-feats.json", manualSaved);
