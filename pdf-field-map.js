@@ -1507,25 +1507,49 @@ function isWeaponRowEmpty(payload, slot) {
     return FEAT_PDF_LINES[entry.name] || [getFeatPdfDisplayLabel(entry.name)];
   }
 
-  function applyFeatPdfLineLimit(lineGroups, maxLines) {
-    const allLines = lineGroups.flat();
-    if (allLines.length <= maxLines) return allLines;
-
-    const output = [];
-    const reserveLinesForNotice = 1;
-    const maxContentLines = Math.max(0, maxLines - reserveLinesForNotice);
-    for (const group of lineGroups) {
-      if ((output.length + group.length) > maxContentLines) break;
-      output.push(...group);
-    }
-    output.push('另有專長未列出');
-    return output;
+  function getFeatPdfTitle(entry) {
+    // Magic Initiate's detailed heading includes the selected class; the
+    // title-only fallback must omit choices as well as the chosen spells.
+    if (entry.name === '魔法學徒') return '魔法學徒(起源)';
+    return (FEAT_PDF_LINES[entry.name] || [getFeatPdfDisplayLabel(entry.name)])[0];
   }
 
   function buildFeatPdfText(state) {
-    const lineGroups = getSelectedFeatEntries(state).map((entry) => getFeatPdfLineGroup(state, entry));
-    const lines = applyFeatPdfLineLimit(lineGroups, PDF_TEXT_SPECS.feats1.maxLines);
-    return wrapTextForPdf(lines.join('\n'), PDF_TEXT_SPECS.feats1);
+    const entries = getSelectedFeatEntries(state);
+    const detailedLines = entries.flatMap((entry) => getFeatPdfLineGroup(state, entry));
+    const detailedResult = wrapTextForPdfWithOverflow(
+      detailedLines.join('\n'), PDF_TEXT_SPECS.feats1
+    );
+    if (!detailedResult.truncated) {
+      return { text: detailedResult.text, overflowTitles: [] };
+    }
+
+    // When any detailed feat would be omitted, switch the entire field to
+    // titles before deciding whether anything needs the secondary field.
+    const titles = entries.map(getFeatPdfTitle);
+    const titleResult = wrapTextForPdfWithOverflow(titles.join('\n'), PDF_TEXT_SPECS.feats1);
+    if (!titleResult.truncated) {
+      return { text: titleResult.text, overflowTitles: [] };
+    }
+
+    // Count actual wrapped PDF lines, keeping each title intact and reserving
+    // the final line for the existing overflow notice.
+    const shownLines = [];
+    const maxContentLines = PDF_TEXT_SPECS.feats1.maxLines - 1;
+    let shownCount = 0;
+    for (const title of titles) {
+      const titleLines = wrapTextForPdf(title, {
+        ...PDF_TEXT_SPECS.feats1,
+        maxLines: Number.MAX_SAFE_INTEGER
+      }).split('\n');
+      if (shownLines.length + titleLines.length > maxContentLines) break;
+      shownLines.push(...titleLines);
+      shownCount++;
+    }
+    return {
+      text: [...shownLines, '另有專長未列出'].join('\n'),
+      overflowTitles: titles.slice(shownCount)
+    };
   }
 
   function getSelectedMetamagicNames(state) {
@@ -1701,7 +1725,17 @@ function isWeaponRowEmpty(payload, slot) {
         ? `${payload.classFeatures2}\n${extraClassLines.join('\n')}`
         : extraClassLines.join('\n');
     }
-    payload.classFeatures2 = options.outputMode === 'compact'
+    const featResult = buildFeatPdfText(state);
+    payload.feats1 = featResult.text;
+    if (featResult.overflowTitles.length) {
+      const remainingFeats = `其餘專長:${featResult.overflowTitles.join(', ')}`;
+      payload.classFeatures2 = payload.classFeatures2
+        ? `${payload.classFeatures2}\n${remainingFeats}`
+        : remainingFeats;
+    }
+    // Compact normally limits this visible field to ten lines, but must not
+    // truncate either existing content or appended feat titles when they spill.
+    payload.classFeatures2 = options.outputMode === 'compact' && !featResult.overflowTitles.length
       ? wrapTextForPdfWithEllipsis(payload.classFeatures2, {
         ...PDF_TEXT_SPECS.classFeatures2,
         maxLines: 10
@@ -1717,7 +1751,6 @@ function isWeaponRowEmpty(payload, slot) {
     payload.chk_medium1 = /中甲/.test(armorTraining);
     payload.chk_heavy1 = /重甲/.test(armorTraining);
 
-    payload.feats1 = buildFeatPdfText(state);
 
     // The replacement character sheet supplies rows 1-19 only. Preserve any
     // remaining prepared spells as a compact summary in the notes field.
