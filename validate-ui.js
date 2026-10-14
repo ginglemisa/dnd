@@ -335,6 +335,40 @@ async function verifyPdf(page, fieldsOnly) {
         throw new Error("manual spell PDFs retain the feat name without hidden automatic choices or free-use marks");
       }
     }
+    const crowdedFeats = {
+      "feat-0": "魔法學徒",
+      "feat-0-magic-initiate-class": "wizard",
+      "feat-0-magic-initiate-cantrip-1": "light",
+      "feat-0-magic-initiate-cantrip-2": "mage-hand",
+      "feat-0-magic-initiate-level-1": "shield",
+      "feat-1": "警覺",
+      "feat-2": "強韌體魄",
+      "feat-3": "防禦"
+    };
+    for (const outputMode of ["editable", "compact"]) {
+      const shortened = buildPdfFieldPayload(crowdedFeats, { outputMode });
+      const featTitles = ["魔法學徒(起源)", "警覺(起源)", "強韌體魄(起源)", "防禦(戰鬥風格)"];
+      if (shortened.feats1 !== featTitles.join("\n") || /光亮術|護盾術|先攻可加熟練|另有專長未列出/u.test(shortened.feats1)) {
+        throw new Error(`PDF title-only feat fallback: ${outputMode}`);
+      }
+      if (shortened.classFeatures2.includes("其餘專長:")) throw new Error("PDF titles all fit without overflow");
+
+      const manyFeats = { class: "sorcerer", level: "5", "class-extra": "原有職業內容", "skill-extra": "原有技能內容" };
+      for (let i = 0; i < 13; i++) manyFeats[`feat-${i}`] = "強韌體魄";
+      const overflow = buildPdfFieldPayload(manyFeats, { outputMode });
+      const displayedTitles = (overflow.feats1.match(/強韌體魄\(起源\)/gu) || []).length;
+      const trailingTitles = `其餘專長:${Array(4).fill("強韌體魄(起源)").join(", ")}`;
+      const unwrappedExtra = overflow.classFeatures2.replace(/\n/g, "");
+      if (displayedTitles !== 9 || !overflow.feats1.endsWith("另有專長未列出")) {
+        throw new Error(`PDF feat overflow notice and nine intact titles: ${outputMode}`);
+      }
+      if (!unwrappedExtra.endsWith(trailingTitles) ||
+          !unwrappedExtra.includes("原有職業內容") ||
+          !unwrappedExtra.includes("原有技能內容") ||
+          unwrappedExtra.indexOf("原有技能內容") > unwrappedExtra.indexOf("其餘專長:")) {
+        throw new Error(`PDF feat spill preserves existing class features and appends all remaining titles: ${outputMode}`);
+      }
+    }
     const combined = buildPdfFieldPayload({ "derived-feat-background": "強韌體魄", "derived-feat-human-origin": "熟習", "derived-feat-fighting-style-fighter": "防禦", "feat-choice-human-origin": "熟習" }).feats1;
     if (!combined.includes("強韌體魄") || !combined.includes("熟習") || !combined.includes("防禦") || (combined.match(/熟習\(/gu) || []).length !== 1) throw new Error("PDF combined automatic feat sources");
     for (const [cls, id, name] of [
