@@ -11184,10 +11184,6 @@ html[data-theme="dark"] .brand-logo-crop .legal-modal-logo-dark {
   line-height: 1.45;
 }
 
-.feat-combat-note .selection-summary-body {
-  font-size: var(--fs-sm);
-}
-
 .monster-detail-line + .monster-detail-line {
   margin-top: 6px;
 }

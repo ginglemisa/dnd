@@ -80,7 +80,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261014-heroic-help">
+  <link rel="stylesheet" href="styles.css?v=20261014-action-note-cleanup">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261006-usage-analytics" defer></script>
   <script src="monster.js?v=20261014-heroic-help" defer></script>
@@ -1011,10 +1011,6 @@
     </div>
   </section>
 </div>
-</div>
-<div id="feat-combat-notes-wrap" class="section is-hidden">
-  <strong>專長戰鬥註記：</strong>
-  <div id="feat-combat-notes" class="selection-summary"></div>
 </div>
     <section class="section action-command-card" aria-labelledby="action-command-title">
       <div class="action-command-heading">
@@ -4241,7 +4237,6 @@ function refreshFeatDerivedEffects() {
   if (typeof updateAutomaticInitiative === "function") updateAutomaticInitiative();
   if (typeof updateExpertiseVisibility === "function") updateExpertiseVisibility();
   if (typeof populateHandAttacks === "function") populateHandAttacks();
-  if (typeof updateFeatCombatNotes === "function") updateFeatCombatNotes();
   if (typeof updateEquipmentLoadoutSummary === "function") updateEquipmentLoadoutSummary();
 }
 
@@ -6783,65 +6778,6 @@ function hasMeaningfulEquipmentValue(value) {
   return Boolean(normalized) && normalized !== "--" && normalized !== "-";
 }
 
-function updateFeatCombatNotes() {
-  const wrap = document.getElementById("feat-combat-notes-wrap");
-  const content = document.getElementById("feat-combat-notes");
-  if (!wrap || !content) return;
-
-  const notes = [];
-  const addNote = (title, body) => notes.push({ title, body });
-
-  if (hasSelectedFeat("兇蠻打手")) {
-    addNote("兇蠻打手", "每回合 1 次，武器命中時傷害骰擲 2 次，取其一。");
-  }
-  if (hasSelectedFeat("擒抱者")) {
-    addNote("擒抱者", "徒手命中時可同時造成傷害並擒抱（每回合 1 次）。對被你擒抱的目標攻擊具有優勢。移動體型不大於你的被擒抱目標時，不消耗額外速度。");
-  }
-  if (hasSelectedFeat("巨武器戰鬥")) {
-    addNote("巨武器戰鬥", "將「雙手」或「兩用」武器的傷害骰 1 或 2 視為 3。");
-  }
-  if (hasSelectedFeat("衝鋒猛擊")) {
-    addNote("衝鋒猛擊", "「衝刺」比平常再多 10 呎。朝目標直線移動 10 呎再以近戰攻擊命中，可擇一（每回合一次）： +1d8 傷害；或將體型至多大你一級的目標推開最多 10 呎。");
-  }
-  if (hasSelectedFeat("雙持追擊")) {
-    addNote("雙持追擊", "使用輕型武器攻擊後，可消耗「附贈」以另一把非雙手近戰武器再攻擊 1 次；可與「迅切」武器精通並用。若無「雙武器戰鬥」，這次額外攻擊不加正值屬性調整。每次原本可拔出或收納 1 把武器時，可改為同時處理 2 把非雙手武器。");
-  }
-  if (hasSelectedFeat("重甲減傷")) {
-    addNote("重甲減傷", "穿重甲被攻擊命中時，可減少揮砍、穿刺、鈍擊「熟練加值」傷害。");
-  }
-  if (hasSelectedFeat("封鎖者")) {
-    addNote("封鎖者", "你可以藉機攻擊 5 呎內進行「撤離」行動或攻擊命中他人的生物；命中後，目標在你的下一回合之前速度為 0。");
-  }
-  if (hasSelectedFeat("迅捷步法")) {
-    addNote("迅捷步法", "速度增加 10 呎。自身回合使用「衝刺」後，本回合移動可無視困難地形。針對你的藉機攻擊丟二取低。");
-  }
-  if (hasSelectedFeat("臨陣施法")) {
-    addNote("臨陣施法", "維持專注的體質豁免丟二取高。當生物因離開你觸發藉機攻擊時，你可改用反應施放目標為單體且施法時間為「動作」的法術。施放需要成分「S」的法術時，不必為了完成施法動作放開手中的武器或盾牌。");
-  }
-
-  wrap.classList.toggle("is-hidden", notes.length === 0);
-  if (!notes.length) {
-    content.replaceChildren();
-    return;
-  }
-
-  const list = document.createElement("div");
-  list.className = "selection-summary-list";
-  notes.forEach(note => {
-    const card = document.createElement("div");
-    card.className = "selection-summary-card feat-combat-note";
-    const title = document.createElement("div");
-    title.className = "selection-summary-title";
-    title.textContent = note.title;
-    const body = document.createElement("div");
-    body.className = "selection-summary-body";
-    body.textContent = note.body;
-    card.append(title, body);
-    list.appendChild(card);
-  });
-  content.replaceChildren(list);
-}
-
 function buildEquipmentSummaryRow(label, name, details = [], options = {}) {
   const row = document.createElement("div");
   row.className = "equipment-summary-row";
@@ -6941,7 +6877,6 @@ function updateEquipmentLoadoutSummary() {
   const untrainedConsequence = document.getElementById("equipment-untrained-consequence");
   if (untrainedConsequence) untrainedConsequence.hidden = !(hasUntrainedShield || armorWarning);
   updateWeaponMasteryBadges();
-  updateFeatCombatNotes();
 }
 
 
