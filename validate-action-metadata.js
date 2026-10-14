@@ -1061,6 +1061,20 @@ async function verifyAutomaticFeatRows(browser, url) {
     const alertInitiative = await page.inputValue("#initiative-input");
     await page.selectOption("#derived-feat-human-origin", "熟習");
     assert.equal(Number(alertInitiative) - Number(await page.inputValue("#initiative-input")), 3, "main choice removes alert initiative bonus");
+    const humanFeatRow = page.locator("#derived-feat-human-origin").locator("xpath=../..");
+    await humanFeatRow.locator(".feat-disclosure-toggle").click();
+    assert.equal(await humanFeatRow.locator(".feat-selected-name").textContent(), "熟習", "collapsed automatic feat retains its name");
+    const collapsedState = await page.evaluate(() => JSON.stringify(collectStateObject()));
+    await humanFeatRow.locator(".feat-disclosure-toggle").click();
+    assert.equal(await page.evaluate(() => JSON.stringify(collectStateObject())), collapsedState, "disclosure never changes character JSON");
+    await page.selectOption("#derived-feat-human-origin", "魔法學徒");
+    await humanFeatRow.locator(".feat-disclosure-toggle").click();
+    const magicReminder = page.locator("#class-feature-choice-reminder").getByRole("button", { name: "魔法學徒專長：法術未選擇前往補填" });
+    assert.equal(await magicReminder.isVisible(), true, "Magic Initiate warning appears below race/background");
+    await magicReminder.click();
+    await page.waitForFunction(() => document.getElementById("derived-feat-human-origin")?.closest(".form-row")?.dataset.featExpanded === "true"
+      && document.activeElement?.id === "derived-feat-human-origin-magic-initiate-class");
+    await page.selectOption("#derived-feat-human-origin", "熟習");
     await page.evaluate(() => openCharacterFeatures("race"));
     assert.equal(await page.inputValue("#feat-choice-human-origin"), "熟習", "reopening race shows main choice");
     await page.selectOption("#feat-choice-human-origin", "警覺");
@@ -1117,6 +1131,10 @@ async function verifyAutomaticFeatRows(browser, url) {
     await page.locator('#derived-feat-fighter-level-8').locator('..').locator('[data-feat-action="delete"]').click();
     await rows.last().locator('[data-feat-action="add"]').click();
     await page.selectOption("#feat-1", "箭術");
+    const manualFeatRow = page.locator("#feat-1").locator("xpath=../..");
+    await manualFeatRow.locator(".feat-disclosure-toggle").click();
+    assert.equal(await manualFeatRow.locator(".feat-selected-name").textContent(), "箭術", "manual feat collapses with its name");
+    await manualFeatRow.locator(".feat-disclosure-toggle").click();
     await page.selectOption("#class", "bard");
     await page.selectOption("#background", "criminal");
     assert.equal(await page.inputValue("#derived-feat-background"), "醫療兵", "manual background not overwritten");
@@ -1485,6 +1503,7 @@ async function verifyLegacyEmptyFeatRows(browser, url) {
     assert.deepEqual(rows[2].magic, { class: "wizard", cantrip1: "light", cantrip2: "", level1: "shield" }, `${label}: partial magic choices survive empty feat value`);
     assert.equal(rows[3].value, "", `${label}: unknown content is not mistaken for an empty placeholder`);
     assert.equal(await page.locator('#feat-0 option[value="legacy-unknown-feat"]').count(), 1);
+    assert.equal(await page.locator("#feat-0").locator("xpath=../..").locator(".feat-selected-name").textContent(), "legacy-unknown-feat", `${label}: unknown old name remains visible`);
   };
   try {
     await page.goto(url); await page.waitForFunction(() => window.SpellManagement && window.TabletopMode);
