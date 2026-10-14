@@ -1463,7 +1463,7 @@ function bindCoreCharacterEvents() {
   bindEventById("manual-feat-management", "change", updateFeatManagementMode);
   bindEventById("feat-add-empty", "click", () => {
     if (!isManualFeatManagementEnabled()) return;
-    const row = createSingleFeatRow();
+    const row = createSingleFeatRow(null, { freshDisclosure: true });
     getFeatSelectFromRow(row)?.focus();
     scheduleStructuralSaveAllFields();
   });
@@ -2058,9 +2058,10 @@ function updateClassFeatureChoiceReminder() {
       if (issue.expandFeatSelector) {
         const row = document.querySelector(issue.expandFeatSelector)?.closest("#feats-area .form-row");
         if (row) {
-          row.dataset.featDisclosureTouched = "true";
+          row.dataset.featDisclosureInitialized = "true";
           row.dataset.featExpanded = "true";
           syncFeatRowDisclosure(row);
+          saveFeatDisclosurePreferences();
         }
       }
       Promise.resolve(window.onboardingTour?.jumpToTarget(issue)).catch(error => console.warn("無法前往職業選項：", error));
@@ -3816,7 +3817,7 @@ function updateFeatManagementMode() {
       const value = getFeatSelectFromRow(row)?.value || "";
       if (!value || specs.get(row.dataset.sourceKey)?.value === value) return;
       const entry = collectManagedFeatRows().find(entry => entry.key === row.dataset.sourceKey);
-      const manual = createSingleFeatRow();
+      const manual = createSingleFeatRow(null, { freshDisclosure: !autosaveSuspended });
       getFeatSelectFromRow(manual).value = value;
       updateMagicInitiateControlsForRow(manual, { sync: false });
       ["class", "cantrip1", "cantrip2", "level1"].forEach(field => {
@@ -4098,10 +4099,6 @@ function createDerivedFeatRow(spec) {
   const magicControls = createMagicInitiateControls(row);
   select.addEventListener("change", () => {
     const previousValue = select.dataset.previousValue || "";
-    if (!autosaveSuspended) {
-      row.dataset.featDisclosureTouched = "true";
-      row.dataset.featExpanded = "true";
-    }
     const choice = document.getElementById(getFeatChoiceId(row.dataset.sourceKey));
     if (choice && !isManualFeatManagementEnabled()) {
       const scrollPosition = autosaveSuspended ? null : { left: window.scrollX, top: window.scrollY, behavior: "instant" };
@@ -4279,8 +4276,45 @@ function getFeatEligibilityWarningHtml(warningId) {
   return `<div id="${warningId}" class="feat-eligibility-warning" role="status">角色未達專長使用條件</div>`;
 }
 
+const FEAT_DISCLOSURE_STATE_KEY = "dnd.featDisclosure.v1";
+let featDisclosurePreferences = null;
+
+function getFeatDisclosurePreferences() {
+  if (featDisclosurePreferences) return featDisclosurePreferences;
+  let saved = null;
+  try { saved = JSON.parse(window.dndStorage.getItem(FEAT_DISCLOSURE_STATE_KEY) || "null"); }
+  catch (_error) { /* Invalid or unavailable preference storage defaults to expanded. */ }
+  const derived = saved?.derived && typeof saved.derived === "object" && !Array.isArray(saved.derived)
+    ? Object.fromEntries(Object.entries(saved.derived).filter(([key, expanded]) =>
+      /^[a-z0-9-]+$/u.test(key) && typeof expanded === "boolean").slice(0, 100))
+    : {};
+  const manual = Array.isArray(saved?.manual) ? saved.manual.slice(0, 100).map(value => value === false ? false : true) : [];
+  featDisclosurePreferences = { derived, manual };
+  return featDisclosurePreferences;
+}
+
+function saveFeatDisclosurePreferences() {
+  if (SHARE_MODE || autosaveSuspended || autosaveClearing) return;
+  const preferences = getFeatDisclosurePreferences();
+  document.querySelectorAll("#feats-area > .form-row[data-source-key]").forEach(row => {
+    if (row.dataset.featDisclosureInitialized === "true") {
+      preferences.derived[row.dataset.sourceKey] = row.dataset.featExpanded !== "false";
+    }
+  });
+  preferences.manual = getManualFeatRows().map(row => row.dataset.featExpanded !== "false");
+  window.dndStorage.setItem(FEAT_DISCLOSURE_STATE_KEY, JSON.stringify(preferences));
+}
+
 function syncFeatRowDisclosure(row) {
   if (!row || !row.matches("#feats-area > .form-row")) return;
+  if (row.dataset.featDisclosureInitialized !== "true") {
+    const preferences = getFeatDisclosurePreferences();
+    const sourceKey = row.dataset.sourceKey;
+    const manualIndex = sourceKey ? -1 : getManualFeatRows().indexOf(row);
+    const stored = sourceKey ? preferences.derived[sourceKey] : preferences.manual[manualIndex];
+    row.dataset.featExpanded = String(typeof stored === "boolean" ? stored : true);
+    row.dataset.featDisclosureInitialized = "true";
+  }
   const head = row.querySelector(".feat-row-head");
   const select = getFeatSelectFromRow(row);
   const label = head?.querySelector("label");
@@ -4292,9 +4326,9 @@ function syncFeatRowDisclosure(row) {
     toggle.type = "button";
     toggle.className = "feat-disclosure-toggle";
     toggle.addEventListener("click", () => {
-      row.dataset.featDisclosureTouched = "true";
       row.dataset.featExpanded = String(row.dataset.featExpanded !== "true");
       syncFeatRowDisclosure(row);
+      saveFeatDisclosurePreferences();
     });
     head.prepend(toggle);
   }
@@ -4312,8 +4346,7 @@ function syncFeatRowDisclosure(row) {
     name.after(warning);
   }
 
-  const expanded = row.dataset.featDisclosureTouched === "true"
-    ? row.dataset.featExpanded === "true" : !select.value;
+  const expanded = row.dataset.featExpanded === "true";
   row.dataset.featExpanded = String(expanded);
   row.classList.toggle("feat-entry--collapsed", !expanded);
   name.textContent = select.value || "尚未選擇";
@@ -5395,7 +5428,7 @@ function createFeatRowControls(rowDiv) {
   addBtn.dataset.featAction = "add";
   addBtn.addEventListener("click", () => {
     if (!isManualFeatManagementEnabled()) return;
-    createSingleFeatRow(rowDiv);
+    createSingleFeatRow(rowDiv, { freshDisclosure: true });
     scheduleStructuralSaveAllFields();
   });
 
@@ -5409,8 +5442,10 @@ function createFeatRowControls(rowDiv) {
   delBtn.addEventListener("click", () => {
     if (!isManualFeatManagementEnabled()) return;
     const hadAlertFeat = hasAlertFeatSelectedWithOverride();
+    if (rowDiv.dataset.sourceKey) delete getFeatDisclosurePreferences().derived[rowDiv.dataset.sourceKey];
     rowDiv.remove();
     refreshFeatRows();
+    saveFeatDisclosurePreferences();
     syncInitiativeForAlertFeatPresenceChange(hadAlertFeat, hasAlertFeatSelectedWithOverride());
     refreshFeatDerivedEffects();
     scheduleStructuralSaveAllFields();
@@ -5421,12 +5456,16 @@ function createFeatRowControls(rowDiv) {
   return controls;
 }
 
-function createSingleFeatRow(afterRow = null) {
+function createSingleFeatRow(afterRow = null, { freshDisclosure = false } = {}) {
   const area = document.getElementById("feats-area");
   if (!area) return;
   const idx = getManualFeatRows().length;
   const rowDiv = document.createElement("div");
   rowDiv.className = "form-row";
+  if (freshDisclosure) {
+    rowDiv.dataset.featDisclosureInitialized = "true";
+    rowDiv.dataset.featExpanded = "true";
+  }
   const rowHead = document.createElement("div");
   rowHead.className = "feat-row-head";
   const label = document.createElement("label");
@@ -5449,10 +5488,6 @@ function createSingleFeatRow(afterRow = null) {
 
   featSel.addEventListener("change", () => {
     const previousFeatValue = featSel.dataset.previousValue || "";
-    if (!autosaveSuspended) {
-      rowDiv.dataset.featDisclosureTouched = "true";
-      rowDiv.dataset.featExpanded = "true";
-    }
     updateFeatDesc(featSel.id, descDiv.id);
     updateMagicInitiateControlsForRow(rowDiv);
     if (typeof updateACDisplay === "function") updateACDisplay();
@@ -5473,6 +5508,7 @@ function createSingleFeatRow(afterRow = null) {
   }
 
   refreshFeatRows();
+  if (freshDisclosure) saveFeatDisclosurePreferences();
   return rowDiv;
 }
 
@@ -8300,6 +8336,7 @@ const APP_STORAGE_KEYS = Object.freeze([
   CLASS_FEATURE_TABLE_STATE_KEY,
   CLASS_CORE_CREATION_INFO_STATE_KEY,
   FEATURE_CHOICE_DISCLOSURE_STATE_KEY,
+  FEAT_DISCLOSURE_STATE_KEY,
   SPELL_OVERVIEW_DISCLOSURE_STATE_KEY,
   CLASS_FEATURE_PROMPT_DISABLED_KEY,
   "dnd.quickBuildDraft.v1",
@@ -9088,7 +9125,7 @@ function getClassFeatureChoiceIssues() {
     const missing = getIncompleteMagicInitiateControl(incompleteMagicRow);
     const featSelect = getFeatSelectFromRow(incompleteMagicRow);
     pushGeneral({
-      message: "魔法學徒專長：法術未選擇",
+      message: "魔法學徒法術尚未選完",
       tab: "basic",
       selector: "#feats-area",
       focusSelector: `#${missing.id}`,
@@ -10493,7 +10530,7 @@ window.addEventListener("DOMContentLoaded", async function() {
       }
       const confirmed = await window.AppDialog.requestDecision({
         title: "清除本機角色紀錄",
-        message: "這會清除角色欄位、角色圖片、版權提醒、分頁狀態、職業選項提醒、所有職業及手動法術記憶、法術提醒偏好與跑團模式動作偏好，並重新載入預設角色卡。此操作無法復原。",
+        message: "這會清除角色欄位、角色圖片、版權提醒、分頁狀態、職業選項提醒、所有職業及手動法術記憶、法術提醒偏好、專長展開／收合記憶與跑團模式動作偏好，並重新載入預設角色卡。此操作無法復原。",
         cancelLabel: "保留紀錄",
         confirmLabel: "清除紀錄",
         intent: "danger"
