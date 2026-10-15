@@ -1138,6 +1138,7 @@ async function verifyAutomaticFeatRows(browser, url) {
     assert.equal(await page.locator("#derived-feat-human-origin").isDisabled(), false);
     await page.evaluate(() => selectCharacterFeatureTab("class"));
     await page.selectOption("#feat-choice-fighting-style-fighter", "防禦");
+    assert.equal(await page.locator('label[for="feat-choice-fighting-style-fighter-2"]').textContent(), "戰鬥風格2", "shortened style label keeps its selector under the original class heading");
     await page.selectOption("#feat-choice-fighting-style-fighter-2", "箭術");
     assert.equal(await page.locator('#feat-choice-fighting-style-fighter-2 option[value="防禦"]').isDisabled(), false, "duplicate style remains selectable");
     assert.equal(await page.locator("#derived-feat-fighting-style-fighter").isDisabled(), false);

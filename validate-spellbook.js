@@ -313,8 +313,48 @@ async function verifySynchronousRestore(browser, url) {
     assert.deepEqual(result.nested.immediate, result.expected, "nested batch remains immediately readable");
     assert.deepEqual(result.nested.collected, result.state);
     assert.deepEqual(result.nested.saved, result.state);
+
+    await apply(page, modern({ class: "warlock", level: "8", background: "acolyte",
+      __pactTomeInvocationSelected: true,
+      __pactTomeSpellSelection: { cantrips: ["fire-bolt", "light", "guidance"], rituals: ["detect-magic", "identify"] },
+      "derived-feat-background-magic-initiate-cantrip-1": "light",
+      "derived-feat-background-magic-initiate-cantrip-2": "guidance",
+      "derived-feat-background-magic-initiate-level-1": "bless"
+    }, [player("eldritch-blast", "warlock")]));
+    const tome = await page.evaluate(() => {
+      const checkbox = document.querySelector('input[data-invocation-name="苦痛魔爆"]');
+      checkbox.checked = true; checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+      const target = getAgonizingBlastSelects()[0];
+      target.value = "fire-bolt"; syncAgonizingBlastSelections({ notify: false });
+      const checkboxId = checkbox.id, targetId = target.id;
+      const pick = data => ({ target: data[targetId], invocation: data[checkboxId],
+        backgroundClass: data["derived-feat-background-magic-initiate-class"],
+        backgroundChoices: ["cantrip-1", "cantrip-2", "level-1"].map(key => data[`derived-feat-background-magic-initiate-${key}`]),
+        sources: data.__spellManagement.entries.filter(entry => ["pact-tome", "magic-initiate"].includes(entry.spellSource))
+          .map(entry => [entry.spellSource, entry.sourceKey, entry.spellId, entry.spellClass]) });
+      const state = collectStateObject(), expected = pick(state);
+      applyStateObject({ class: "wizard", level: "1", background: "soldier", race: "human",
+        __spellManagement: { version: 2, manual: false, entries: [] } });
+      const restored = withCharacterUpdateBatch(() => {
+        applyStateObject(Object.fromEntries(Object.entries(state).reverse()));
+        const immediate = pick(collectStateObject()), shared = pick(collectShareState());
+        saveAllFields();
+        return { immediate, shared, saved: pick(JSON.parse(dndStorage.getItem("dndchar_autosave_v1"))) };
+      });
+      return { expected, restored, after: pick(collectStateObject()) };
+    });
+    assert.equal(tome.expected.target, "fire-bolt", "fixture uses a Tome cantrip as the automatic invocation target");
+    assert.equal(tome.expected.invocation, true);
+    assert.equal(tome.expected.backgroundClass, "cleric", "background establishes its default Magic Initiate spell list");
+    assert.deepEqual(tome.expected.backgroundChoices, ["light", "guidance", "bless"]);
+    assert.equal(tome.expected.sources.filter(entry => entry[0] === "pact-tome").length, 5);
+    assert.equal(tome.expected.sources.filter(entry => entry[0] === "magic-initiate").length, 3);
+    for (const [operation, snapshot] of Object.entries(tome.restored)) {
+      assert.deepEqual(snapshot, tome.expected, `Tome sources and invocation target are complete for immediate ${operation} inside an outer batch`);
+    }
+    assert.deepEqual(tome.after, tome.expected, "outer-batch completion preserves the restored invocation target");
     assert.deepEqual(errors, []);
-    console.log("Synchronous restore: reversed sources, consumed uses/slots, derived attacks, collection and autosave passed.");
+    console.log("Synchronous restore: reversed sources, consumed uses/slots, derived attacks, Tome invocation targets, immediate collection/share and autosave passed.");
   } finally { await page.close(); }
 }
 

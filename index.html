@@ -76,11 +76,12 @@
   <meta property="og:image" content="https://twD20.com/og-image.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="twD20.com 免費手機角色卡宣傳圖，標語「別讓厚重的規則書阻礙你的第一場冒險」，介紹快速創角、規則查閱與法術管理；背景為燭光下的皮革書、藥水瓶與紫色魔法球。">
   <meta name="twitter:card" content="summary_large_image">
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261014-feat-disclosures">
+  <link rel="stylesheet" href="styles.css?v=20261015-custom-background">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261006-usage-analytics" defer></script>
   <script src="monster.js?v=20261014-heroic-help" defer></script>
@@ -95,7 +96,7 @@
   <script src="action-panel.js?v=20261014-action-rule-copy" defer></script>
   <script src="character-rules.js?v=20261010-spell-lists-v2" defer></script>
   <script src="app-dialog.js?v=20261009-class-choice-prompt" defer></script>
-  <script src="custom-background.js?v=20261006-custom-background-sync" defer></script>
+  <script src="custom-background.js?v=20261015-custom-background" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
   <script src="tabletop-mode.js?v=20261012-manual-spell-uses" defer></script>
   <script src="tabletop-druid.js?v=20261010-mobile-performance" defer></script>
@@ -613,6 +614,7 @@
           <option value="custom">自訂</option>
         </select>
       </div>
+      <button type="button" id="custom-background-edit" class="custom-background-edit" aria-haspopup="dialog" hidden>修改背景</button>
       <div class="basic-pair-field basic-pair-field--race">
         <button type="button" class="mini-stat-label mini-stat-label--features" data-character-features-tab="race" aria-haspopup="dialog" aria-controls="character-features-modal" aria-label="查看種族能力">種族 <span class="character-features-info-icon" aria-hidden="true">i</span></button>
         <button type="button" id="character-choice-warning-toggle" class="character-choice-warning-toggle" aria-controls="class-feature-choice-reminder" aria-expanded="true" hidden>隱藏警告</button>
@@ -1460,6 +1462,7 @@ function bindCoreCharacterEvents() {
   bindEventById("race", "change", () => { syncCharacterSizeFromRace(); updateRaceFeature(); syncDerivedFeatRows(); updateRaceOptionVisibility(); updateSpeedDisplay(); syncOriginAndSubclassDerivedSpellRows(); updateSpellsByClassLevel(); updateBaseLanguageOptions(); });
   bindEventById("character-size-select", "change", event => setCharacterSize(event.target.value));
   bindEventById("background", "change", () => { window.CustomBackground?.handleSelection(autosaveSuspended); updateBackgroundFeature(); updateSpellsByClassLevel(); updateBackgroundToolRow(); });
+  bindEventById("custom-background-edit", "click", event => { void window.CustomBackground?.open(event.currentTarget); });
   bindEventById("manual-feat-management", "change", updateFeatManagementMode);
   bindEventById("feat-add-empty", "click", () => {
     if (!isManualFeatManagementEnabled()) return;
@@ -3840,7 +3843,7 @@ function getFeatChoiceSpecs() {
   }
   if (cls === "fighter" && level >= 1) {
     specs.push({ key: "fighting-style-fighter", source: "class", label: "戰鬥風格", type: "style", level: 1, active: true });
-    if (level >= 7) specs.push({ key: "fighting-style-fighter-2", source: "class", label: "額外戰鬥風格", type: "style", level: 7, active: true });
+    if (level >= 7) specs.push({ key: "fighting-style-fighter-2", source: "class", label: "戰鬥風格2", headingLabel: "額外戰鬥風格", type: "style", level: 7, active: true });
   }
   if (["paladin", "ranger"].includes(cls) && level >= 2) {
     specs.push({ key: `fighting-style-${cls}`, source: "class", label: "戰鬥風格", type: "style", level: 2, active: Boolean(document.getElementById(`${cls}-fighting-style`)?.checked) });
@@ -3903,7 +3906,8 @@ function appendFeatChoice(container, spec, previousValue = "") {
 function renderClassFeatChoices() {
   const output = document.getElementById("classFeatures");
   getFeatChoiceSpecs().filter(spec => spec.source === "class").forEach(spec => {
-    const heading = Array.from(output.querySelectorAll("h3")).find(heading => heading.textContent.trim().startsWith(`等級 ${spec.level}：${spec.type === "style" ? spec.label : "屬性值提升"}`));
+    const headingLabel = spec.type === "style" ? (spec.headingLabel || spec.label) : "屬性值提升";
+    const heading = Array.from(output.querySelectorAll("h3")).find(heading => heading.textContent.trim().startsWith(`等級 ${spec.level}：${headingLabel}`));
     appendFeatChoice(heading?.parentElement, spec);
   });
 }
@@ -4162,7 +4166,8 @@ function setDerivedFeatRowValues(row, spec) {
   updateFeatDesc(select.id, desc.id);
   updateMagicInitiateControlIds(row, select.id);
   updateMagicInitiateControlsForRow(row, { sync: false });
-  if (spec.fixed && spec.backgroundData && !isManualFeatManagementEnabled()) applyMagicInitiateBackgroundDefault(select, spec.backgroundData);
+  // refreshFeatRows reconciles sources once all derived rows are ready.
+  if (spec.fixed && spec.backgroundData && !isManualFeatManagementEnabled()) applyMagicInitiateBackgroundDefault(select, spec.backgroundData, { sync: false });
 }
 
 function syncDerivedFeatRows() {
@@ -4917,7 +4922,7 @@ function updateMagicInitiateControlsForRow(row, options = {}) {
   }
 }
 
-function applyMagicInitiateBackgroundDefault(featSelect, backgroundData) {
+function applyMagicInitiateBackgroundDefault(featSelect, backgroundData, options = {}) {
   const row = featSelect?.closest?.(".form-row");
   if (!row) return;
 
@@ -4930,9 +4935,11 @@ function applyMagicInitiateBackgroundDefault(featSelect, backgroundData) {
     classSelect.disabled = isDerivedFeatRow(row);
   }
 
-  syncMagicInitiateDerivedSpellRows();
-  updateSpellCastingStatsVisibility();
-  updateSpellsByClassLevel();
+  if (options.sync !== false) {
+    syncMagicInitiateDerivedSpellRows();
+    updateSpellCastingStatsVisibility();
+    updateSpellsByClassLevel();
+  }
 }
 
 function getMagicInitiateConfigs() {
@@ -8797,8 +8804,8 @@ function applyStateObjectNow(data) {
     });
     removeDuplicateToolProficiencies();
     syncToolProficiencyOptions();
+    // Both legacy source helpers reconcile the complete source list.
     syncMagicInitiateDerivedSpellRows();
-    syncOriginAndSubclassDerivedSpellRows();
     applyClassFeatureCantrips(data.__classFeatureCantrips);
     syncOriginAndSubclassDerivedSpellRows();
     renderEldritchInvocations({ state: data });

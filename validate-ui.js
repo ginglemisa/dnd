@@ -751,6 +751,9 @@ async function verifyCustomBackground(browser, url) {
     await page.keyboard.press("Escape");
     const original = await page.evaluate(() => collectStateObject());
     const dialog = page.locator('.app-dialog[data-variant="custom-background"]');
+    const editButton = page.locator("#custom-background-edit");
+    assert.equal(await editButton.isVisible(), false);
+    assert.equal(await page.locator('#background option[value="custom"]').textContent(), "自訂");
     await page.locator("#background").selectOption("custom");
     await dialog.waitFor();
     assert.equal(await page.inputValue("#background"), "soldier", "background switch is atomic");
@@ -763,12 +766,21 @@ async function verifyCustomBackground(browser, url) {
     assert.equal(await page.evaluate(() => document.activeElement.id), "custom-background-name");
     await page.locator("#custom-background-name").fill("自訂冒險");
     assert.equal(await page.locator("#custom-background-name").getAttribute("maxlength"), "4");
+    assert.equal(await page.locator("#custom-background-equipment-a").getAttribute("maxlength"), "100");
+    assert.equal(await page.locator("#custom-background-description").getAttribute("maxlength"), "500");
+    assert.match(await dialog.textContent(), /填妥名稱、選項、裝備\(A\)的內容之後才能存檔/);
+    const equipmentA = '<img src=x onerror="window.customEquipmentInjected=true">\n長棍、旅行者服裝、剩餘金幣';
+    await page.locator("#custom-background-equipment-a").fill(equipmentA);
     for (const [id, value] of Object.entries({
       "ability-0": "力量", "ability-1": "力量", "ability-2": "體質",
       feat: "強韌體魄", "skill-0": "運動", "skill-1": "隱匿", tool: "里拉琴"
     })) await page.locator(`#custom-background-${id}`).selectOption(value);
     assert.equal(await page.locator("#custom-background-tool option").count(), await page.evaluate(() => ToolProficiencyCatalog.allTools.length + 1));
     assert.equal(await page.locator("#custom-background-feat option").count(), await page.evaluate(() => FEAT_OPTIONS.filter(option => FEAT_RULES[option.value]?.type === "origin").length + 1));
+    assert.equal(await page.locator(".custom-background-field-group").evaluateAll(groups => groups.every(group => {
+      const boxes = Array.from(group.querySelectorAll("select"), el => el.getBoundingClientRect());
+      return boxes.every(box => Math.abs(box.top - boxes[0].top) < 1);
+    })), true, "desktop abilities and skills each share a row");
     await dialog.getByRole("button", { name: "儲存背景" }).click();
     assert.equal(await page.evaluate(() => document.activeElement.id), "custom-background-ability-1", "duplicate ability focuses the correction");
     await page.locator("#custom-background-ability-1").selectOption("敏捷");
@@ -776,6 +788,19 @@ async function verifyCustomBackground(browser, url) {
     await dialog.getByRole("button", { name: "儲存背景" }).click();
     assert.equal(await page.evaluate(() => document.activeElement.id), "custom-background-skill-1");
     await page.locator("#custom-background-skill-1").selectOption("隱匿");
+    await page.locator("#custom-background-equipment-a").fill("   ");
+    await dialog.getByRole("button", { name: "儲存背景" }).click();
+    assert.equal(await page.evaluate(() => document.activeElement.id), "custom-background-equipment-a", "equipment A is required");
+    for (const [id, length] of [["equipment-a", 101], ["description", 501], ["name", 5]]) {
+      await page.locator("#custom-background-equipment-a").fill(equipmentA);
+      await page.locator(`#custom-background-${id}`).evaluate((input, length) => { input.value = "字".repeat(length); }, length);
+      await dialog.getByRole("button", { name: "儲存背景" }).click();
+      assert.equal(await page.evaluate(() => document.activeElement.id), `custom-background-${id}`, "overlong fields are rejected even if maxlength is bypassed");
+      assert.equal(await page.locator(`#custom-background-${id}`).getAttribute("aria-invalid"), "true");
+      assert.deepEqual(await page.evaluate(() => collectStateObject()), original, "invalid drafts do not change the character");
+      await page.locator(`#custom-background-${id}`).fill(id === "name" ? "自訂冒險" : "");
+    }
+    await page.locator("#custom-background-equipment-a").fill(equipmentA);
     const description = '<img src=x onerror="window.customBackgroundInjected=true">\n我的背景描述';
     await page.locator("#custom-background-description").fill(description);
     await dialog.getByRole("button", { name: "儲存背景" }).click();
@@ -783,12 +808,20 @@ async function verifyCustomBackground(browser, url) {
     const state = await page.evaluate(() => collectStateObject());
     assert.deepEqual(state.__customBackground, {
       名稱: "自訂冒險", 擴充: true, 屬性: "力量,敏捷,體質", 專長: "強韌體魄",
-      技能熟練: "運動,隱匿", 工具熟練: "里拉琴", 裝備B: "50 金幣", 描述: description
+      技能熟練: "運動,隱匿", 工具熟練: "里拉琴", 裝備: "A、B 二擇一", 裝備A: equipmentA, 裝備B: "50 金幣", 描述: description
     });
     assert.equal(state.background, "custom");
     assert.equal(await page.locator('#background option[value="custom"]').count(), 1);
     assert.equal(await page.locator('#point-buy-background option[value="custom"]').count(), 0);
-    assert.equal(await page.locator('#custom-background-edit').count(), 0, "no separate edit button or container");
+    assert.equal(await editButton.isVisible(), true);
+    assert.equal(await page.locator('#background option[value="custom"]').textContent(), "自訂冒險");
+    assert.match(await page.locator("#backgroundFeatures").textContent(), /背景：自訂冒險/);
+    assert.equal(await page.locator(".custom-background-equipment").textContent(), `裝備：A、B 二擇一(A) ${equipmentA}(B) 50 金幣`);
+    assert.equal(await page.locator("#background").evaluate(select => {
+      const edit = document.getElementById("custom-background-edit").getBoundingClientRect();
+      const bg = select.getBoundingClientRect(), race = document.getElementById("race").getBoundingClientRect();
+      return bg.right <= edit.left && edit.right <= race.left;
+    }), true, "desktop edit button sits between background and race");
     assert.equal(await page.inputValue("#derived-feat-background"), "強韌體魄", "custom feat follows the existing fixed background source");
     assert.equal(await page.locator("#derived-feat-background").isDisabled(), true);
     assert.equal(await page.evaluate(() => hasSelectedFeat("強韌體魄")), true, "custom feat is active in the existing calculations");
@@ -797,26 +830,27 @@ async function verifyCustomBackground(browser, url) {
     assert.equal(await page.locator("#tool-proficiency-0").isDisabled(), true);
     assert.equal(await page.locator("#backgroundFeatures img").count(), 0, "description is escaped text");
     assert.equal(await page.evaluate(() => window.customBackgroundInjected), undefined);
+    assert.equal(await page.evaluate(() => window.customEquipmentInjected), undefined);
     assert.equal(await page.locator(".custom-background-description").textContent(), description);
-    const reopen = async () => {
-      await page.locator("#background").selectOption("soldier");
-      await page.locator("#background").selectOption("custom");
-    };
+    const reopen = async () => { await editButton.click(); await dialog.waitFor(); };
     await reopen();
     assert.equal(await page.inputValue("#custom-background-feat"), "強韌體魄");
+    assert.equal(await page.inputValue("#custom-background-equipment-a"), equipmentA);
     await page.locator("#custom-background-name").fill("取消修改");
     await page.keyboard.press("Escape");
     assert.deepEqual(await page.evaluate(() => CustomBackground.getState()), state.__customBackground);
-    assert.equal(await page.evaluate(() => document.activeElement.id), "background");
-    assert.equal(await page.inputValue("#background"), "soldier");
+    assert.equal(await page.evaluate(() => document.activeElement.id), "custom-background-edit");
+    assert.equal(await page.inputValue("#background"), "custom");
     await page.locator("#background").selectOption("sage");
+    assert.equal(await editButton.isVisible(), false);
+    assert.equal(await page.inputValue("#tool-proficiency-0"), "書法工具");
     await page.locator("#background").selectOption("custom");
+    assert.equal(await dialog.count(), 0, "selecting a saved custom background does not open the editor");
+    await reopen();
     assert.equal(await page.inputValue("#custom-background-name"), "自訂冒險", "one saved definition survives switching backgrounds");
     await dialog.getByRole("button", { name: "取消", exact: true }).click();
-    assert.equal(await page.inputValue("#background"), "sage");
-    assert.equal(await page.inputValue("#tool-proficiency-0"), "書法工具", "cancel preserves existing background rules");
-    await page.locator("#background").selectOption("custom");
-    await dialog.getByRole("button", { name: "儲存背景" }).click();
+    assert.equal(await page.inputValue("#background"), "custom");
+    assert.equal(await page.inputValue("#tool-proficiency-0"), "里拉琴", "cancel preserves existing background rules");
     await page.addScriptTag({ url: "/pdf-field-map.js" });
     const pdf = await page.evaluate(() => {
       const current = collectStateObject();
@@ -827,10 +861,12 @@ async function verifyCustomBackground(browser, url) {
     delete pdf.withoutCustom.Background2;
     assert.deepEqual(pdf.actual, pdf.withoutCustom, "PDF adds only the custom name");
     await page.evaluate(() => saveAllFields());
-    await page.reload();
+    await page.goto(url);
     await page.locator("#legal-close-btn").click();
     assert.equal(await dialog.count(), 0, "restoration never opens the editor");
     assert.equal(await page.inputValue("#background"), "custom");
+    assert.equal(await editButton.isVisible(), true);
+    assert.equal(await page.locator('#background option[value="custom"]').textContent(), "自訂冒險");
     assert.deepEqual(await page.evaluate(() => CustomBackground.getState()), state.__customBackground, "autosave restoration");
     assert.equal(await page.inputValue("#derived-feat-background"), "強韌體魄");
     assert.equal(await page.inputValue("#tool-proficiency-0"), "里拉琴");
@@ -843,6 +879,12 @@ async function verifyCustomBackground(browser, url) {
     const hash = await page.evaluate(async () => encodeStateToHash(collectShareState()));
     const shared = await newUiPage(browser);
     try {
+      await shared.goto(url);
+      await shared.evaluate(state => {
+        applyStateObject({ ...state, __customBackground: { ...state.__customBackground, 名稱: "本機背景", 裝備A: "本機裝備" } });
+        saveAllFields();
+      }, state);
+      const localSave = await shared.evaluate(() => dndStorage.getItem("dndchar_autosave_v1"));
       await shared.goto(url + hash);
       await shared.locator("#legal-close-btn").click();
       assert.equal(await shared.inputValue("#background"), "custom");
@@ -850,6 +892,14 @@ async function verifyCustomBackground(browser, url) {
       assert.equal(await shared.inputValue("#derived-feat-background"), "強韌體魄");
       assert.equal(await shared.inputValue("#tool-proficiency-0"), "里拉琴");
       assert.equal(await shared.locator('[data-variant="custom-background"]').count(), 0);
+      assert.equal(await shared.locator('#background option[value="custom"]').textContent(), "自訂冒險");
+      assert.equal(await shared.locator(".custom-background-equipment").textContent(), `裝備：A、B 二擇一(A) ${equipmentA}(B) 50 金幣`);
+      await shared.locator("#custom-background-edit").click();
+      await shared.locator("#custom-background-name").fill("分享修改");
+      await shared.getByRole("button", { name: "儲存背景", exact: true }).click();
+      await shared.evaluate(() => saveAllFields());
+      assert.equal(await shared.locator('#background option[value="custom"]').textContent(), "分享修改");
+      assert.equal(await shared.evaluate(() => dndStorage.getItem("dndchar_autosave_v1")), localSave, "share editing never overwrites the local custom background");
     } finally { await shared.close(); }
     await page.setViewportSize({ width: 320, height: 568 });
     await reopen();
@@ -868,8 +918,16 @@ async function verifyCustomBackground(browser, url) {
     await page.locator("#custom-background-name").fill("新背景");
     await page.locator("#custom-background-feat").selectOption("魔法學徒");
     await page.locator("#custom-background-tool").selectOption("盜賊工具");
+    await page.locator("#custom-background-description").fill("");
+    await page.locator("#custom-background-equipment-a").fill("裝".repeat(100));
     await dialog.getByRole("button", { name: "儲存背景" }).click();
     assert.equal(await page.evaluate(() => CustomBackground.getState().名稱), "新背景", "editing replaces the single definition");
+    assert.equal(await page.evaluate(() => CustomBackground.getState().描述), "", "description remains optional");
+    assert.equal(await page.locator('#background option[value="custom"]').textContent(), "新背景");
+    await reopen();
+    await page.locator("#custom-background-description").fill("述".repeat(500));
+    await dialog.getByRole("button", { name: "儲存背景" }).click();
+    assert.equal(await page.evaluate(() => CustomBackground.getState().描述.length), 500, "both text limits accept their boundary");
     assert.equal(await page.locator('#background option[value="custom"]').count(), 1);
     assert.equal(await page.inputValue("#derived-feat-background"), "魔法學徒", "editing updates the existing background feat row");
     assert.equal(await page.inputValue("#tool-proficiency-0"), "盜賊工具");
@@ -879,12 +937,35 @@ async function verifyCustomBackground(browser, url) {
     await magicClass.selectOption("druid");
     await page.evaluate(() => applyStateObject(Object.fromEntries(Object.entries(collectStateObject()).reverse())));
     assert.equal(await magicClass.inputValue(), "druid", "custom Magic Initiate class survives JSON restoration");
+    await page.evaluate(() => {
+      const current = collectStateObject();
+      delete current.__customBackground.裝備A;
+      delete current.__customBackground.裝備;
+      current.__customBackground.描述 = "舊".repeat(501);
+      applyStateObject(current);
+    });
+    assert.equal(await page.evaluate(() => CustomBackground.getState().裝備A), "", "legacy custom backgrounds remain readable without equipment A");
+    assert.equal(await page.evaluate(() => CustomBackground.getState().描述.length), 501, "legacy descriptions are preserved until explicitly edited");
+    await reopen();
+    assert.equal(await page.inputValue("#custom-background-equipment-a"), "");
+    await dialog.getByRole("button", { name: "儲存背景" }).click();
+    assert.equal(await page.evaluate(() => document.activeElement.id), "custom-background-equipment-a");
+    await page.keyboard.press("Escape");
     await page.evaluate(() => applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] }, background: "soldier" }));
     assert.equal(await page.evaluate(() => CustomBackground.getState()), null, "legacy JSON needs no custom field");
     assert.equal(await page.inputValue("#background"), "soldier");
+    assert.equal(await page.locator('#background option[value="custom"]').textContent(), "自訂");
+    assert.equal(await editButton.isVisible(), false);
     await page.evaluate(() => applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] }, background: "custom", __customBackground: { 名稱: "無效" } }));
     assert.equal(await page.inputValue("#background"), "", "invalid imported custom data is ignored");
-    console.log("Custom background: atomic editing, validation, cancellation, existing feat/tool synchronization, Magic Initiate, PDF name, autosave/JSON/share restoration and narrow dialog passed.");
+    await page.evaluate(state => { applyStateObject(state); saveAllFields(); }, state);
+    await page.evaluate(() => { const entry = new URL(location.href); entry.searchParams.set("analytics", "owner"); history.replaceState(null, "", entry); });
+    await Promise.all([page.waitForNavigation(), page.evaluate(() => clearAppStateAndReload())]);
+    assert.equal(await page.evaluate(() => CustomBackground.getState()), null, "clear records removes the saved definition");
+    assert.equal(await page.locator('#background option[value="custom"]').textContent(), "自訂");
+    assert.equal(await editButton.isVisible(), false);
+    assert.equal(await page.evaluate(() => collectStateObject().__customBackground), undefined);
+    console.log("Custom background: named selection/edit button, required equipment, text limits, responsive groups, cancellation, feat/tool sync, PDF, autosave/JSON/share, legacy restoration and clear passed.");
   } finally { await page.close(); }
 }
 
@@ -2106,13 +2187,16 @@ async function verifyJsonImportTransaction(browser, url) {
     });
   });
   const pendingKey = "dnd.pendingJsonImport.v1", autoKey = "dndchar_autosave_v1", memoryKey = "dnd.spellManagementMemories.v1";
-  const incoming = { class: "wizard", level: "5", race: "human", background: "soldier", "gear-extra": "Imported",
+  const incoming = { class: "wizard", level: "5", race: "human", background: "custom", "gear-extra": "Imported",
+    __customBackground: { 名稱: "匯入背景", 擴充: true, 屬性: "力量,敏捷,體質", 專長: "強韌體魄",
+      技能熟練: "運動,隱匿", 工具熟練: "里拉琴", 裝備: "A、B 二擇一", 裝備A: "長棍、旅行者服裝、49金幣", 裝備B: "50 金幣", 描述: "匯入的背景描述" },
     __spellManagement: { version: 2, manual: false, entries: [{ spellId: "detect-magic", spellClass: "wizard" }] },
     __wizardSpellbook: { version: 2, wizardSpellIds: ["detect-magic"], manualSpellIds: [] } };
   const seed = async () => {
     await page.goto(url); await page.waitForFunction(() => window.SpellManagement?.getEntries);
     return page.evaluate(({ incoming, autoKey, memoryKey }) => {
-      applyStateObject({ ...incoming, "gear-extra": "Original", __spellManagement: { version: 2, manual: false, entries: [{ spellId: "mage-armor", spellClass: "wizard" }] } });
+      applyStateObject({ ...incoming, "gear-extra": "Original", __customBackground: { ...incoming.__customBackground, 名稱: "舊背景", 裝備A: "舊裝備", 描述: "舊描述" },
+        __spellManagement: { version: 2, manual: false, entries: [{ spellId: "mage-armor", spellClass: "wizard" }] } });
       saveAllFields();
       const memories = JSON.parse(dndStorage.getItem(memoryKey));
       memories.classes.cleric = { initialized: true, entries: [{ spellId: "cure-wounds", spellClass: "cleric" }] };
@@ -2132,6 +2216,10 @@ async function verifyJsonImportTransaction(browser, url) {
     assert.equal(await page.evaluate(key => JSON.parse(dndStorage.getItem(key)).classes.cleric, memoryKey), undefined);
     assert.deepEqual(await page.evaluate(() => ["dnd.tabletopAvatar.v1", "dnd.quickBuildDraft.v1", "dnd.tabletopActionPreferences.v1"].map(key => dndStorage.getItem(key))), [null, null, null]);
     assert.equal(await page.evaluate(() => TabletopMode.getTabletopActionPreferences().notes), "", "old in-memory action preferences are cleared too");
+    assert.deepEqual(await page.evaluate(() => CustomBackground.getState()), incoming.__customBackground, "file import replaces the old custom definition after both reloads");
+    assert.equal(await page.locator('#background option[value="custom"]').textContent(), "匯入背景");
+    assert.equal(await page.locator("#custom-background-edit").getAttribute("hidden"), null);
+    assert.equal(await page.locator(".custom-background-equipment").textContent(), `裝備：A、B 二擇一(A) ${incoming.__customBackground.裝備A}(B) 50 金幣`);
   };
   try {
     const before = await seed();
@@ -2203,6 +2291,8 @@ async function verifyJsonImportTransaction(browser, url) {
     await page.waitForFunction(() => !autosaveClearing && document.readyState === "complete");
     assert.equal(await page.locator("#gear-extra").inputValue(), "", "explicit clear cannot resurrect a completed import when session cleanup is blocked");
     assert.equal(await page.locator("#class").inputValue(), "");
+    assert.equal(await page.evaluate(() => CustomBackground.getState()), null);
+    assert.equal(await page.locator('#background option[value="custom"]').textContent(), "自訂");
     console.log("JSON clean import: incoming precedence, cleanup, stage/apply/save failures, retained backups, retry, completion marker and denied session access passed.");
   } finally { await page.close(); }
 }
