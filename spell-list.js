@@ -2354,7 +2354,7 @@ globalThis.SpellCatalog = (() => {
       "nameZh": "熾焰法球",
       "nameEn": "Flaming Sphere",
       get name() { return `${this.nameZh} ${this.nameEn}`; },
-      "desc": `學派: 咒法
+      "desc": `學派: 塑能
 施法時間: 動作
 射程: 60呎
 成分: V、S、M
