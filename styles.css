@@ -13445,6 +13445,33 @@ html.tabletop-avatar-modal-open { overflow: hidden; }
   gap: 0.85rem;
 }
 
+/* Keep manual spell mode changes scannable on narrow screens. */
+.app-dialog[data-variant="manual-spell-management"] .manual-spell-management__heading {
+  font-weight: 700;
+}
+
+.manual-spell-management__changes {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.manual-spell-management__changes li {
+  display: grid;
+  grid-template-columns: 1.6rem minmax(0, 1fr);
+  gap: 0.3rem;
+  align-items: start;
+  color: var(--text-body);
+  line-height: 1.6;
+}
+
+.manual-spell-management__marker {
+  line-height: inherit;
+  text-align: center;
+}
+
 .app-dialog__copy-label {
   display: grid;
   gap: 0.4rem;
