@@ -267,6 +267,12 @@ html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] {
     linear-gradient(180deg, #09111f 0%, #0c1627 46%, #0a1321 100%);
   --nav-surface: rgba(15, 27, 45, 0.92);
   --nav-hover: rgba(68, 89, 116, 0.38);
+  --primary-nav-selected-bg: #c5a46c;
+  --primary-nav-selected-text: #0c1729;
+  --primary-nav-hover-bg: rgba(197, 164, 108, 0.14);
+  --primary-nav-hover-border: rgba(197, 164, 108, 0.35);
+  --primary-nav-focus: #e2c995;
+  --primary-nav-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
   --input-bg: #0f1b2d;
   --control-bg: linear-gradient(180deg, #1b2b43 0%, #15243a 100%);
   --control-hover-bg: linear-gradient(180deg, #243953 0%, #1a2d46 100%);
@@ -14887,6 +14893,36 @@ html.app-dialog-open {
   background: var(--surface-strong);
   color: var(--accent-strong);
   box-shadow: inset 0 -3px 0 var(--accent);
+}
+
+/* Brass identifies primary navigation only in classic dark mode. */
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .tabletop-primary-tabs button:not(:disabled) {
+  color: var(--text-muted);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .tabs-shell .tab-button:hover:not(.active):not(:disabled),
+  html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .tabletop-primary-tabs button:hover:not(.is-active):not(:disabled) {
+    background: var(--primary-nav-hover-bg);
+    color: var(--text);
+    border-color: var(--primary-nav-hover-border);
+    box-shadow: inset 0 0 0 1px var(--primary-nav-hover-border);
+  }
+}
+
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .tabs-shell .tab-button.active:not(:disabled),
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .tabs-shell .tab-button.active:hover:not(:disabled),
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .tabletop-primary-tabs button.is-active:not(:disabled) {
+  background: var(--primary-nav-selected-bg);
+  color: var(--primary-nav-selected-text);
+  border-color: transparent;
+  box-shadow: var(--primary-nav-shadow);
+}
+
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .tabs-shell .tab-button:focus-visible,
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .tabletop-primary-tabs button:focus-visible {
+  outline: 3px solid var(--primary-nav-focus);
+  outline-offset: 2px;
 }
 
 .tabletop-key-stats {

@@ -267,6 +267,16 @@
     human: { size: ["中型", "小型"] },
     tiefling: { size: ["中型", "小型"], legacy: ["深淵血統", "冥界血統", "煉獄血統"] }
   };
+  const RACE_LINEAGE_DESCRIPTIONS = {
+    "木精靈血統": "祖輩與古林有緣，身手矯健，熟悉自然環境。",
+    "高等精靈血統": "給人優雅高貴的印象，天生具有奧術天賦。",
+    "卓爾血統": "又稱黑暗精靈，多居地底，擅長幽暗魔法。",
+    "森林侏儒": "與森林生靈淵源深厚，擅長幻術，能與動物交談。",
+    "岩石侏儒": "以巧思機關聞名，擅長修補物品、製作魔法小玩意。",
+    "深淵血統": "源自混亂扭曲的異界，擅長毒素魔法。",
+    "冥界血統": "與陰鬱的死亡之境相關，有削弱生命之能。",
+    "煉獄血統": "重視秩序與契約的地獄勢力，天生能操縱火焰。"
+  };
   const RACE_LINEAGE_SPELLS = {
     elf: {
       "卓爾血統": [["dancing-lights", "cantrip", 1], ["faerie-fire", 1, 3], ["darkness", 2, 5]],
@@ -1740,12 +1750,12 @@
     const fields = [];
     if (key === "dragonborn") fields.push(raceSelect("ancestry", "龍族血統", RACE_OPTION_DEFINITIONS.dragonborn.ancestry));
     if (key === "elf") {
-      fields.push(raceSelect("lineage", "精靈傳承", RACE_OPTION_DEFINITIONS.elf.lineage));
+      fields.push(raceSelect("lineage", "精靈傳承", RACE_OPTION_DEFINITIONS.elf.lineage, { note: RACE_LINEAGE_DESCRIPTIONS[options.lineage] }));
       fields.push(raceSelect("skill", "敏銳感官技能熟練", RACE_OPTION_DEFINITIONS.elf.skill, { disabled: backgroundSkills, note: "其他來源已熟練的技能會標示來源，但仍可選擇。" }));
       if (options.lineage === "高等精靈血統") fields.push(raceSelectWithDetail("cantrip", "法師戲法", SpellCatalog.getSpells("wizard", "cantrips").map(spell => spell.spellId), { showSpellView: true, formatOption: spellNameZh }));
     }
     if (key === "gnome") {
-      fields.push(raceSelect("lineage", "侏儒血統", RACE_OPTION_DEFINITIONS.gnome.lineage));
+      fields.push(raceSelect("lineage", "侏儒血統", RACE_OPTION_DEFINITIONS.gnome.lineage, { note: RACE_LINEAGE_DESCRIPTIONS[options.lineage] }));
     }
     if (key === "goliath") fields.push(raceSelectWithDetail("ancestry", "巨人血統恩賜", RACE_OPTION_DEFINITIONS.goliath.ancestry));
     if (key === "human") {
@@ -1755,7 +1765,7 @@
     }
     if (key === "tiefling") {
       fields.push(raceSelect("size", "體型", RACE_OPTION_DEFINITIONS.tiefling.size));
-      fields.push(raceSelect("legacy", "邪魔遺贈", RACE_OPTION_DEFINITIONS.tiefling.legacy));
+      fields.push(raceSelect("legacy", "邪魔遺贈", RACE_OPTION_DEFINITIONS.tiefling.legacy, { note: RACE_LINEAGE_DESCRIPTIONS[options.legacy] }));
     }
     const humanFeatPanel = key === "human" && options.feat === "魔法學徒" ? renderHumanMagicFeatOptions() : key === "human" && options.feat === "熟習" ? renderHumanSkilledFeatOptions() : "";
     const goliathDetail = key === "goliath" && GOLIATH_ANCESTRY_DETAILS[options.ancestry]
