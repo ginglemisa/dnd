@@ -173,8 +173,8 @@ async function verifyAppearanceAndLayout(browser, page, url) {
       return { background: surface.backgroundColor, text: body.color };
     });
     assert.deepEqual(aboutColors, {
-      background: { "classic-light": "rgba(255, 255, 255, 0.96)", "classic-dark": "rgb(23, 36, 58)", "warm-light": "rgb(255, 249, 239)", "warm-dark": "rgb(33, 28, 24)" }[`${family}-${mode}`],
-      text: { "classic-light": "rgb(51, 65, 93)", "classic-dark": "rgb(213, 226, 239)", "warm-light": "rgb(61, 48, 39)", "warm-dark": "rgb(204, 189, 165)" }[`${family}-${mode}`]
+      background: { "classic-light": "rgba(255, 255, 255, 0.96)", "classic-dark": "rgb(32, 40, 51)", "warm-light": "rgb(255, 249, 239)", "warm-dark": "rgb(38, 33, 29)" }[`${family}-${mode}`],
+      text: { "classic-light": "rgb(51, 65, 93)", "classic-dark": "rgb(205, 208, 213)", "warm-light": "rgb(61, 48, 39)", "warm-dark": "rgb(204, 189, 165)" }[`${family}-${mode}`]
     });
     assert.equal(await about.locator(".app-dialog__body").evaluate(el => el.scrollWidth <= el.clientWidth), true);
     await page.keyboard.press("Shift+Tab");
@@ -186,6 +186,21 @@ async function verifyAppearanceAndLayout(browser, page, url) {
     const bg = await page.locator("html").evaluate(el => getComputedStyle(el).backgroundImage);
     assert.equal(bg.includes("url("), false, "page backgrounds must not load image assets");
     if (family === "warm" && mode === "light") assert.equal(bg, "none", "warm light uses a solid page background");
+    if (family === "classic" && mode === "dark") {
+      assert.equal(bg, "none", "classic dark uses a solid navy canvas without blue light effects");
+      const colors = await page.evaluate(() => {
+        const paint = selector => {
+          const style = getComputedStyle(document.querySelector(selector));
+          return [style.backgroundColor, style.color];
+        };
+        return { canvas: getComputedStyle(document.documentElement).backgroundColor,
+          primary: paint("#legal-onboarding-btn"), navigation: paint(".tab-button.active"),
+          identity: getComputedStyle(document.querySelector('[data-character-features-tab="class"]')).color };
+      });
+      assert.deepEqual(colors, { canvas: "rgb(12, 23, 41)", primary: ["rgb(197, 164, 108)", "rgb(12, 23, 41)"],
+        navigation: ["rgb(197, 164, 108)", "rgb(12, 23, 41)"], identity: "rgb(226, 201, 149)" },
+      "classic dark uses brass actions with dark ink and pale gold identity labels");
+    }
     await page.locator("#utility-menu-toggle").click();
     await screenshot(`${family}-${mode}-menu`);
     await page.locator("#color-mode-toggle").waitFor({ state: "visible" });

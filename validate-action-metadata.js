@@ -1128,15 +1128,27 @@ async function verifyAutomaticFeatRows(browser, url) {
       assert.equal(await page.locator("#derived-feat-background").isDisabled(), true);
     }
     await page.selectOption("#class", "fighter");
+    for (const race of ["human", "tiefling"]) {
+      await page.selectOption("#race", race);
+      assert.equal(await page.locator("#race-options-control #character-size-select").isVisible(), true, `${race} size is beside race options`);
+      await page.selectOption("#character-size-select", "小型");
+      assert.equal(await page.evaluate(() => collectStateObject()["character-size"]), "小型", `${race} size still uses the existing saved field`);
+    }
+    await page.selectOption("#race", "dragonborn");
+    assert.equal(await page.locator("#character-size-select").isVisible(), false, "fixed-size races hide the size choice");
     await page.selectOption("#race", "human");
     await page.fill("#dex", "10");
     assert.equal(await page.locator('#feats-area label[for="derived-feat-human-origin"]').textContent(), "靈活人才", "only the main-card human source label is shortened");
+    assert.equal(await page.locator("#race-options-control #feat-choice-human-origin").isVisible(), true, "human origin choice is on the main card with other race options");
+    assert.equal(await page.locator('label[for="feat-choice-human-origin"]').count(), 0, "human origin choice omits the repeated visible label");
+    assert.equal(await page.locator("#feat-choice-human-origin").getAttribute("aria-label"), "靈活人才：起源專長", "human origin choice retains its accessible name");
     await page.evaluate(() => openCharacterFeatures("race"));
-    assert.equal(await page.locator('label[for="feat-choice-human-origin"]').textContent(), "靈活人才：起源專長", "race source keeps its full label");
+    assert.equal(await page.locator("#raceFeatures [data-feat-choice]").count(), 0, "human details contain rules without duplicating the external choice");
+    await page.click("#character-features-modal .app-dialog__close");
     await page.selectOption("#feat-choice-human-origin", "警覺");
     assert.equal(await page.inputValue("#derived-feat-human-origin"), "警覺");
     assert.equal(await page.locator("#derived-feat-human-origin").isDisabled(), false);
-    await page.evaluate(() => selectCharacterFeatureTab("class"));
+    await page.evaluate(() => openCharacterFeatures("class"));
     await page.selectOption("#feat-choice-fighting-style-fighter", "防禦");
     assert.equal(await page.locator('label[for="feat-choice-fighting-style-fighter-2"]').textContent(), "戰鬥風格2", "shortened style label keeps its selector under the original class heading");
     await page.selectOption("#feat-choice-fighting-style-fighter-2", "箭術");
@@ -1168,9 +1180,9 @@ async function verifyAutomaticFeatRows(browser, url) {
     await chooseFeat("#derived-feat-human-origin", "熟習");
     await page.evaluate(() => openCharacterFeatures("race"));
     assert.equal(await page.inputValue("#feat-choice-human-origin"), "熟習", "reopening race shows main choice");
+    await page.click("#character-features-modal .app-dialog__close");
     await page.selectOption("#feat-choice-human-origin", "警覺");
     assert.equal(await page.inputValue("#initiative-input"), alertInitiative, "source choice restores alert initiative bonus");
-    await page.click("#character-features-modal .app-dialog__close");
     await selectFeatWithoutScrolling("derived-feat-fighter-level-8", "強韌體魄");
     assert.equal(await page.inputValue("#feat-choice-fighter-level-8"), "強韌體魄", "main level feat updates class source");
     assert.equal(await page.locator('#derived-feat-fighter-level-8 option[value="警覺"]').isDisabled(), false, "duplicate feats remain selectable");

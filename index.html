@@ -68,7 +68,7 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="免費繁體中文《龍與地下城》（D&amp;D）手機角色卡，整合快速創角、規則查閱與法術管理，讓你的第一場冒險更好上手。">
+  <meta name="description" content="免費繁體中文《龍與地下城》（D&D）手機角色卡，整合快速創角、規則查閱與法術管理，讓你的第一場冒險更好上手。">
   <meta property="og:title" content="twD20 | 5.5版手機角卡">
   <meta property="og:description" content="免費繁體中文手機角色卡，整合快速創角、規則查閱與法術管理，讓你的第一場冒險更好上手。">
   <meta property="og:type" content="website">
@@ -81,7 +81,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261017-brass-navigation">
+  <link rel="stylesheet" href="styles.css?v=20261018-race-option-layout">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261006-usage-analytics" defer></script>
   <script src="monster.js?v=20261014-heroic-help" defer></script>
@@ -100,12 +100,12 @@
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
   <script src="tabletop-mode.js?v=20261012-manual-spell-uses" defer></script>
   <script src="tabletop-druid.js?v=20261010-mobile-performance" defer></script>
-<script src="tabletop-resources.js?v=20261014-heroic-help" defer></script>
-<script src="tabletop-actions.js?v=20261013-action-copy" defer></script>
+  <script src="tabletop-resources.js?v=20261014-heroic-help" defer></script>
+  <script src="tabletop-actions.js?v=20261013-action-copy" defer></script>
   <script src="tabletop-spells.js?v=20261012-wizard-ritual-group" defer></script>
   <script src="legal-modal.js?v=20260923-legal-about" defer></script>
   <script src="onboarding-tour.js?v=20261014-advantage-disadvantage" defer></script>
-  <script src="quick-build.js?v=20261017-lineage-descriptions" defer></script>
+  <script src="quick-build.js?v=20261018-classic-navy-gold" defer></script>
   <script src="spellbook.js?v=20261014-picker-performance" defer></script>
   <script src="spell-management.js?v=20261017-manual-modal-copy" defer></script>
   <script src="deity-info.js" defer></script>
@@ -631,13 +631,11 @@
           <option value="orc">獸人</option>
           <option value="tiefling">提夫林</option>
         </select>
-          <select id="character-size-select" class="race-size-select is-hidden" aria-label="角色體型">
-            <option value="中型">中</option>
-            <option value="小型">小</option>
-          </select>
         </div>
       </div>
     <div id="race-options-control" class="race-options is-hidden">
+    <div class="race-option-choices">
+    <div id="human-origin-row" class="race-option-row is-hidden" data-race-option-for="human"></div>
     <span id="dragonborn-ancestry-row" class="race-option-row is-hidden" data-race-option-for="dragonborn">
       <select id="dragonborn-ancestry" aria-label="龍族血統">
         <option value="">--請選擇龍族血統--</option>
@@ -708,6 +706,11 @@
         <option value="infernal">煉獄血統</option>
       </select>
     </span>
+    </div>
+    <select id="character-size-select" class="race-size-select is-hidden" aria-label="角色體型">
+      <option value="中型">中型</option>
+      <option value="小型">小型</option>
+    </select>
     </div>
     <div id="class-feature-choice-reminder" class="character-features-hint" role="status" aria-live="polite" hidden></div>
     </div>
@@ -3714,7 +3717,7 @@ function createManualFeatGuidance() {
 function syncManualFeatGuidance() {
   const manual = isManualFeatManagementEnabled();
   document.querySelectorAll("[data-feat-choice]").forEach(wrap => {
-    const raceChoice = wrap.closest("#raceFeatures");
+    const raceChoice = wrap.dataset.featChoice === "human-origin";
     wrap.hidden = manual && Boolean(raceChoice);
     wrap.querySelector(".feat-choice-control").hidden = manual;
     const label = wrap.querySelector(":scope > label");
@@ -3894,8 +3897,9 @@ function appendFeatChoice(container, spec, previousValue = "") {
   view.textContent = "查看";
   view.addEventListener("click", () => showFeatChoiceDetail(select, view));
   field.append(select, view);
-  if (spec.type === "level") {
+  if (spec.type === "level" || spec.source === "race") {
     select.setAttribute("aria-label", spec.label);
+    if (spec.source === "race") select.options[0].textContent = "起源專長";
     wrap.append(field);
   } else {
     wrap.append(label, field);
@@ -3960,9 +3964,11 @@ function syncMissionCantripChoices() {
 }
 
 function renderRaceFeatChoice(previousValue = "") {
+  const container = document.getElementById("human-origin-row");
+  container.replaceChildren();
   const spec = getFeatChoiceSpecs().find(spec => spec.source === "race");
   if (!spec) return;
-  appendFeatChoice(document.getElementById("raceFeatures"), spec, previousValue);
+  appendFeatChoice(container, spec, previousValue);
 }
 
 function renderInvocationFeatChoices(previousValues = new Map()) {
