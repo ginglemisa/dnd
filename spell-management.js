@@ -265,7 +265,32 @@
     try {
       if (options.confirm !== false) {
         const confirmed = await globalScope.AppDialog.requestDecision(next ? {
-          title: "啟用手動法術管理", message: "手動管理會使用獨立清單，開放目前支援的法表與戲法至四環，不套用準備數量限制。種族、背景、專長與職業不再更動法術清單，相關選法術表單會隱藏；來源及免費施法次數請自行記錄。首次啟用會沿用目前全部法術；各職業原有的準備清單與法術書都會保留。",
+          title: "啟用手動法術管理",
+          variant: "manual-spell-management",
+          message: "啟用後，你可以自行決定角色擁有哪些法術，不再受到職業或準備數量的限制。",
+          renderContent(body) {
+            const heading = document.createElement("p");
+            heading.className = "manual-spell-management__heading";
+            heading.textContent = "啟用後會有以下改變：";
+
+            const list = document.createElement("ul");
+            list.className = "manual-spell-management__changes";
+            [
+              ["✅", "可自由選擇網站支援的戲法及一至四環法術。"],
+              ["✅", "目前的法術會保留，不必重新輸入。"],
+              ["❗", "網站不再依職業、種族等條件自動管理法術。"],
+              ["❗", "免費施法次數與法術來源需要自行記錄。"]
+            ].forEach(([icon, message]) => {
+              const item = document.createElement("li");
+              const marker = document.createElement("span");
+              marker.className = "manual-spell-management__marker";
+              marker.textContent = icon;
+              marker.setAttribute("aria-hidden", "true");
+              item.append(marker, document.createTextNode(message));
+              list.appendChild(item);
+            });
+            body.append(heading, list);
+          },
           confirmLabel: "啟用手動管理", cancelLabel: "取消", trigger: options.trigger
         } : {
           title: "恢復自動法術管理", message: "將載入目前職業自己的準備清單，並依角色選項重新計算來源法術。手動清單與法術書都會保留，之後可再切回手動管理。",
