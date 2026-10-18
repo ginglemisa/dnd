@@ -9178,7 +9178,7 @@ async function ensurePdfExportReady() {
       await loadScriptOnce("pdf-lib.custom.min.js");
       await loadScriptOnce("fontkit.custom.min.js");
       await loadScriptOnce("pdf-field-map.js?v=20261014-feat-overflow-titles");
-      await loadScriptOnce("pdf-export.js?v=20261002-editable-appearance-fit");
+      await loadScriptOnce("pdf-export.js?v=20261019-remove-no-font");
     })().catch((error) => {
       pdfExportLoaderPromise = null;
       throw error;
@@ -9489,11 +9489,6 @@ function buildPdfPrecheckMessages() {
 
 
 
-// 第三種「可編輯表單版(精簡版)」預設關閉。
-// 如要開啟，請把下面兩行交換註解；不需要改其他 PDF 匯出程式。
-const ENABLE_EDITABLE_NO_FONT_PDF_EXPORT = false;
-// const ENABLE_EDITABLE_NO_FONT_PDF_EXPORT = true;
-
 function showPdfExportModal(state, reminders, exportPdfBtn) {
   return new Promise((resolve) => {
     const prevFocus = document.activeElement;
@@ -9749,16 +9744,6 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
           createOption('editable','可編輯表單版','約 5 MB','使用 Noto Sans TC；保留文字輸入區，下載後仍可填寫或修改，檔案較大。'),
           createOption('compact','美觀易讀版','輸出約 2 MB','使用思源宋體，文字固定、下載後無法編輯。','首次輸出需額外載入約 26 MB 字型資源。')
         );
-        if(ENABLE_EDITABLE_NO_FONT_PDF_EXPORT){
-          options.append(
-            createOption(
-              'editable_no_font',
-              '可編輯表單版(精簡版)',
-              '約 2 MB',
-              '保留 PDF 表單且不嵌入字型，檔案較小；顯示效果由 PDF 閱讀器決定，不保證支援所有 PDF 閱讀器。建議使用 Adobe Reader、Chrome 或 Firefox。'
-            )
-          );
-        }
         const note=document.createElement('p'); note.className='pdf-export-format-note';
         note.append('想下載「可填寫、檔案也較小」的空白 PDF？請 ',Object.assign(document.createElement('a'),{href:'https://drive.google.com/file/d/1Tu7rAyjfKBl6wagkuRiSNgpQW5LCBP6J/view',target:'_blank',rel:'noopener noreferrer',textContent:'點此下載',onclick:()=>window.twAnalytics?.track?.('blank_character_sheet_download')}));
         d.append(wait,options,note);

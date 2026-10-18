@@ -276,7 +276,6 @@
       fontPath: 'NotoSansTC-Regular-IdentityCID.otf',
       subsetFont: false,
       flattenForm: false,
-      writeValuesOnly: false,
       layoutId: 'editable'
     }),
     compact: Object.freeze({
@@ -284,16 +283,7 @@
       fontPath: 'SourceHanSerifTC-Bold.otf',
       subsetFont: true,
       flattenForm: true,
-      writeValuesOnly: false,
       layoutId: 'compact'
-    }),
-    editable_no_font: Object.freeze({
-      sourcePdfPath: SHARED_PDF_SOURCE_PATH,
-      fontPath: null,
-      subsetFont: false,
-      flattenForm: false,
-      writeValuesOnly: true,
-      layoutId: 'editable'
     })
   });
   const DEFAULT_PDF_EXPORT_MODE = 'editable';
@@ -439,9 +429,10 @@
 
   async function preloadPdfExportAssets(exportOptions = {}) {
     const profile = getPdfExportProfile(exportOptions);
-    const assetPromises = [getSourcePdfBytes(profile.sourcePdfPath)];
-    if (profile.fontPath) assetPromises.push(getCjkFontBytes(profile.fontPath));
-    await Promise.all(assetPromises);
+    await Promise.all([
+      getSourcePdfBytes(profile.sourcePdfPath),
+      getCjkFontBytes(profile.fontPath)
+    ]);
   }
 
   function measureTextWidth(cjkFont, text, fontSize) {
@@ -455,7 +446,6 @@
   }
 
   async function getValidationFont(profile) {
-    if (!profile.fontPath) return null;
     if (!globalScope.fontkit?.create) throw new Error('fontkit 尚未載入');
     if (!validationFontPromises.has(profile.fontPath)) {
       const fontPromise = getCjkFontBytes(profile.fontPath)
@@ -495,7 +485,6 @@
 
   async function validatePdfCharacterName(value, outputMode = DEFAULT_PDF_EXPORT_MODE) {
     const profile = getPdfExportProfile({ outputMode });
-    if (!profile.fontPath) return null;
     return measurePdfCharacterName(await getValidationFont(profile), value, outputMode);
   }
 
@@ -581,30 +570,6 @@
     return missingFields;
   }
 
-  function prepareValueOnlyAcroForm(pdfLib, form, payload) {
-    const { PDFBool, PDFName } = pdfLib;
-    const appearanceKey = PDFName.of('AP');
-
-    // 只移除文字欄位的舊外觀。Checkbox 仍需保留範本提供的
-    // on/off 外觀，否則即使 /V 正確，勾選記號也可能無法顯示。
-    Object.entries(payload).forEach(([fieldName, value]) => {
-      if (typeof value === 'boolean') return;
-      try {
-        const field = form.getTextField(fieldName);
-        field.acroField?.dict?.delete?.(appearanceKey);
-        field.acroField?.getWidgets?.().forEach((widget) => {
-          widget?.dict?.delete?.(appearanceKey);
-        });
-      } catch (error) {
-        // 非文字欄位與不存在的欄位已由 applyPayloadToForm 回報。
-      }
-    });
-
-    // 告訴閱讀器：欄位已有 /V，但沒有網站產生的 /AP，請依範本
-    // 的 /DA 與 /DR 自行建立外觀。各閱讀器的支援程度可能不同。
-    form.acroForm?.dict?.set?.(PDFName.of('NeedAppearances'), PDFBool.True);
-  }
-
   function decodeDefaultAppearance(daObject) {
     if (!daObject) return '';
     if (typeof daObject.decodeText === 'function') return daObject.decodeText();
@@ -682,16 +647,6 @@
       return Number.isFinite(fontSize) && fontSize > 0 ? fontSize : fallback;
     } catch (error) {
       return fallback;
-    }
-  }
-
-  function matchLanguageFontSizeToAlignment(form) {
-    try {
-      const alignmentField = form.getTextField('alignment1');
-      const languageField = form.getTextField('language1');
-      languageField.setFontSize(getFieldDefaultFontSize(alignmentField));
-    } catch (error) {
-      // Both fields are optional for compatibility with alternative templates.
     }
   }
 
@@ -1174,59 +1129,53 @@
       console.info('以下欄位未成功寫入 PDF（可能不存在或型別不符）：', missingFields);
     }
 
-    if (profile.writeValuesOnly) {
-      alignNameFields(form);
-      matchLanguageFontSizeToAlignment(form);
-      prepareValueOnlyAcroForm(globalScope.PDFLib, form, payload);
-    } else {
-      const layoutSettings = getPdfLayoutSettings(profile);
-      const defaultAppearanceFontAlias = profile.flattenForm ? 'Noto' : 'NotoMono';
-      normalizeProblematicFieldDA(globalScope.PDFLib, pdfDoc, form, undefined, defaultAppearanceFontAlias);
-      applyTemplateFieldSettings(form, layoutSettings);
-      applyFieldAdjustments(form, layoutSettings);
-      alignNameFields(form);
+    const layoutSettings = getPdfLayoutSettings(profile);
+    const defaultAppearanceFontAlias = profile.flattenForm ? 'Noto' : 'NotoMono';
+    normalizeProblematicFieldDA(globalScope.PDFLib, pdfDoc, form, undefined, defaultAppearanceFontAlias);
+    applyTemplateFieldSettings(form, layoutSettings);
+    applyFieldAdjustments(form, layoutSettings);
+    alignNameFields(form);
 
-      if (!profile.flattenForm) {
-        configureEditableMultilineFields(form);
-      }
+    if (!profile.flattenForm) {
+      configureEditableMultilineFields(form);
+    }
 
-      const fontEmbedResult = await embedCjkFont(pdfDoc, profile);
-      const characterNameMeasurement = measurePdfCharacterName(
-        fontEmbedResult.font,
-        characterName,
-        exportOptions.outputMode || DEFAULT_PDF_EXPORT_MODE
-      );
-      if (!characterNameMeasurement.fits) {
-        throw new Error(`角色名稱在 ${characterNameMeasurement.minimumFontSize} pt 的可讀下限仍超出 Name1 欄位，請縮短後再試。`);
+    const fontEmbedResult = await embedCjkFont(pdfDoc, profile);
+    const characterNameMeasurement = measurePdfCharacterName(
+      fontEmbedResult.font,
+      characterName,
+      exportOptions.outputMode || DEFAULT_PDF_EXPORT_MODE
+    );
+    if (!characterNameMeasurement.fits) {
+      throw new Error(`角色名稱在 ${characterNameMeasurement.minimumFontSize} pt 的可讀下限仍超出 Name1 欄位，請縮短後再試。`);
+    }
+    if (profile.layoutId === 'compact') {
+      const englishNameMeasurement = measureCompactEnglishName(fontEmbedResult.font, englishName);
+      if (!englishNameMeasurement.fits) {
+        throw new Error('英文名超出 Name2 欄位在 12 pt 可容納的寬度，請縮短後再試。');
       }
-      if (profile.layoutId === 'compact') {
-        const englishNameMeasurement = measureCompactEnglishName(fontEmbedResult.font, englishName);
-        if (!englishNameMeasurement.fits) {
-          throw new Error('英文名超出 Name2 欄位在 12 pt 可容納的寬度，請縮短後再試。');
-        }
-        // Damage type is rules-significant, so preserve it at the compact
-        // attack-row minimum instead of replacing its tail with an ellipsis.
-        // Borrow only the required space from the adjacent note widget.
-        expandCompactDamageFields(form, fontEmbedResult.font, layoutSettings);
-      }
-      fitPayloadTextFields(form, payload, fontEmbedResult.font, layoutSettings);
-      if (profile.flattenForm) markAllTextFieldsDirtyForFlattening(form);
-      form.updateFieldAppearances(fontEmbedResult.font);
-      normalizeProblematicFieldDA(
-        globalScope.PDFLib,
-        pdfDoc,
-        form,
-        profile.flattenForm ? fontEmbedResult.font.ref : undefined,
-        defaultAppearanceFontAlias
-      );
-      if (profile.layoutId === 'editable') {
-        applyEditableAppearanceFontSizes(form, fontEmbedResult.font, layoutSettings);
-      }
+      // Damage type is rules-significant, so preserve it at the compact
+      // attack-row minimum instead of replacing its tail with an ellipsis.
+      // Borrow only the required space from the adjacent note widget.
+      expandCompactDamageFields(form, fontEmbedResult.font, layoutSettings);
+    }
+    fitPayloadTextFields(form, payload, fontEmbedResult.font, layoutSettings);
+    if (profile.flattenForm) markAllTextFieldsDirtyForFlattening(form);
+    form.updateFieldAppearances(fontEmbedResult.font);
+    normalizeProblematicFieldDA(
+      globalScope.PDFLib,
+      pdfDoc,
+      form,
+      profile.flattenForm ? fontEmbedResult.font.ref : undefined,
+      defaultAppearanceFontAlias
+    );
+    if (profile.layoutId === 'editable') {
+      applyEditableAppearanceFontSizes(form, fontEmbedResult.font, layoutSettings);
+    }
 
-      if (profile.flattenForm) {
-        form.flatten({ updateFieldAppearances: false });
-        pdfDoc.catalog.delete(globalScope.PDFLib.PDFName.of('AcroForm'));
-      }
+    if (profile.flattenForm) {
+      form.flatten({ updateFieldAppearances: false });
+      pdfDoc.catalog.delete(globalScope.PDFLib.PDFName.of('AcroForm'));
     }
 
     const removedObjectGenerations = removeSupersededObjectGenerations(pdfDoc);

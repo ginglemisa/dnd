@@ -476,10 +476,6 @@ async function verifyPdf(page, fieldsOnly) {
         checkNames(document.getForm(), 'editable');
         if (document.getForm().getTextField('Name1').getText() !== 'UI regression') throw new Error('Serialized character name');
       }
-      await exportCharacterPdfFromState({ class: 'fighter', level: '1' }, { outputMode: 'editable_no_font', characterName: '無嵌入字型' });
-      const noFont = await PDFLib.PDFDocument.load(await blob.arrayBuffer());
-      checkNames(noFont.getForm(), 'editable_no_font');
-      if (noFont.getForm().getTextField('Name1').getText() !== '無嵌入字型') throw new Error('Value-only character name');
       // Compact removes the form, so inspect the generated appearances just
       // before flattening, then verify the saved document has no AcroForm.
       const flatten = PDFLib.PDFForm.prototype.flatten;
@@ -502,7 +498,7 @@ async function verifyPdf(page, fieldsOnly) {
       } finally { PDFLib.PDFForm.prototype.flatten = flatten; }
     } finally { URL.createObjectURL = create; }
   });
-  console.log("PDF export: 5 actual PDFs checked, including automatic feat sources and shared name centering in all 3 modes.");
+  console.log("PDF export: 4 actual PDFs checked, including automatic feat sources and shared name centering in both modes.");
 }
 
 async function prepareToastFixture(page) {

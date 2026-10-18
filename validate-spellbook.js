@@ -1506,7 +1506,7 @@ async function verifyPdfSpellbookOptions(page) {
       // Stop at the real exporter's payload boundary; this test does not author PDFs.
       window.fetch = async () => new Response(new Uint8Array([0]));
       window.PDFLib = { PDFDocument: { load: async () => ({ getForm: () => ({}) }) } };
-      for (const outputMode of ["editable", "compact", "editable_no_font"]) {
+      for (const outputMode of ["editable", "compact"]) {
         for (const includeSpellbook of [true, false]) {
           window.buildPdfFieldPayload = (data, options) => {
             const payload = original.mapper(data, options);
@@ -1533,10 +1533,10 @@ async function verifyPdfSpellbookOptions(page) {
     window.exportCharacterPdfFromState = async (_state, options) => { window.__pdfTestOptions = options; };
     return results;
   });
-  assert.deepEqual(results, ["editable", "compact", "editable_no_font"].flatMap(outputMode => [true, false].map(includeSpellbook => ({
+  assert.deepEqual(results, ["editable", "compact"].flatMap(outputMode => [true, false].map(includeSpellbook => ({
     outputMode, includeSpellbook, book: includeSpellbook, notes: true, orderAndNewline: true, noAddedPrefix: true, sourceUnchanged: true
   }))));
-  const titles = { editable: "可編輯表單版", compact: "美觀易讀版", editable_no_font: "可編輯表單版(精簡版)" };
+  const titles = { editable: "可編輯表單版", compact: "美觀易讀版" };
   for (const [mode, title] of Object.entries(titles)) {
     for (const include of [true, false]) {
       await page.evaluate(() => { window.__pdfTestOptions = null; window.__pdfTestDone = showPdfExportModal(__pdfTestState, [], null); });
@@ -1586,7 +1586,7 @@ async function verifyPdfSpellbookOptions(page) {
   await page.getByRole('button', { name: '下載 PDF', exact: true }).click();
   await page.evaluate(() => __pdfTestDone);
   assert.deepEqual(await page.evaluate(() => ({mode: __pdfTestOptions.outputMode, include: __pdfTestOptions.includeSpellbook})), {mode: "compact", include: true});
-  console.log("PDF spellbook option: yes/no in all three formats, exporter/notes mapping, and quick-build default passed.");
+  console.log("PDF spellbook option: yes/no in both formats, exporter/notes mapping, and quick-build default passed.");
 }
 
 async function main() {
@@ -1619,12 +1619,6 @@ async function main() {
     });
     const errors = [];
     page.on("pageerror", error => errors.push(String(error)));
-    // Enable the normally hidden third format only inside this browser test.
-    await page.route(url => url.pathname === "/index.html", async route => {
-      const response = await route.fetch();
-      await route.fulfill({ response, body: (await response.text()).replace(
-        "const ENABLE_EDITABLE_NO_FONT_PDF_EXPORT = false;", "const ENABLE_EDITABLE_NO_FONT_PDF_EXPORT = true;") });
-    });
     // Exercise private quick-build import boundaries without adding a production API.
     await page.route("**/quick-build.js?*", async route => {
       const response = await route.fetch();
@@ -1757,7 +1751,7 @@ async function main() {
     assert.equal(await page.evaluate(() => {
       const state = collectStateObject({includeDerivedSpellRows: true});
       const original = JSON.stringify(state);
-      return ["editable", "compact", "editable_no_font"].every(outputMode => {
+      return ["editable", "compact"].every(outputMode => {
         const options = {outputMode, includeSpellbook: true};
         const first = buildPdfFieldPayload(state, options).extra1;
         const second = buildPdfFieldPayload(state, options).extra1;
