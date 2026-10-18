@@ -81,7 +81,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261018-race-option-layout">
+  <link rel="stylesheet" href="styles.css?v=20261018-share-dialog-options">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261006-usage-analytics" defer></script>
   <script src="monster.js?v=20261014-heroic-help" defer></script>
@@ -8964,41 +8964,101 @@ async function copyShareUrl() {
     let status;
     const shareUrl = await window.AppDialog.showContent({
       title: "分享角色卡",
-      message: "請選擇分享方式",
+      variant: "share-character",
+      message: "選擇分享方式，讓其他人查看你的角色卡。",
       trigger: document.getElementById("utility-menu-toggle"),
       renderContent(body) {
+        const iconPaths = {
+          link: '<path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+          clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+          info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/>'
+        };
+        const makeIcon = name => {
+          const icon = document.createElement("span");
+          icon.className = "share-dialog__icon";
+          icon.setAttribute("aria-hidden", "true");
+          icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + iconPaths[name] + "</svg>";
+          return icon;
+        };
+        const options = document.createElement("div");
+        options.className = "share-dialog__options";
         [
-          "永久網址：包含完整角色資料，網址很長，約 1000 到 2000 字元，但永久有效。",
-          "TWD20 短網址：網址較短、方便傳送；短網址僅保存 90 天。",
-          unavailableReason
-        ].filter(Boolean).forEach(text => {
-          const paragraph = document.createElement("p");
-          paragraph.textContent = text;
-          body.appendChild(paragraph);
+          {
+            title: "短網址",
+            description: "網址簡短，方便傳送到 LINE、Discord 或其他聊天室。",
+            detail: "有效期限 90 天",
+            detailIcon: "clock"
+          },
+          {
+            title: "完整資料網址",
+            description: "角色資料直接包含在網址中，不受 90 天期限限制。",
+            detail: "網址可能長達 1,000～2,000 字元",
+            detailIcon: "info"
+          }
+        ].forEach((option, index) => {
+          const card = document.createElement("section");
+          card.className = "share-dialog__option";
+
+          const heading = document.createElement("h3");
+          heading.className = "share-dialog__heading";
+          heading.append(makeIcon("link"), document.createTextNode(option.title));
+
+          const description = document.createElement("p");
+          description.className = "share-dialog__description";
+          description.textContent = option.description;
+
+          const detail = document.createElement("p");
+          detail.className = "share-dialog__detail";
+          detail.append(makeIcon(option.detailIcon), document.createTextNode(option.detail));
+
+          card.append(heading, description, detail);
+          if (index === 0 && unavailableReason) {
+            const unavailable = document.createElement("p");
+            unavailable.className = "share-dialog__unavailable";
+            unavailable.textContent = unavailableReason;
+            card.appendChild(unavailable);
+          }
+          options.appendChild(card);
         });
+
+        const privacy = document.createElement("p");
+        privacy.className = "share-dialog__privacy";
+        privacy.append(
+          makeIcon("info"),
+          document.createTextNode("取得分享網址的人都能查看其中的角色資料，請勿填寫個人隱私或敏感資訊。")
+        );
+
         status = document.createElement("p");
+        status.className = "share-dialog__status";
         status.setAttribute("role", "status");
         status.setAttribute("aria-live", "polite");
-        status.style.minHeight = "3em";
-        body.appendChild(status);
+        status.hidden = true;
+        body.append(options, privacy, status);
       },
       actions: [
-        { label: "永久網址", value: permanentUrl, intent: "primary" },
+        { label: "完整資料網址", value: permanentUrl },
         {
-          label: "TWD20 短網址",
+          label: "產生短網址",
+          intent: "primary",
           disabled: Boolean(unavailableReason),
           busyLabel: "建立中…",
           async resolve(signal) {
+            status.hidden = false;
+            status.classList.remove("is-error");
             status.textContent = "正在建立短網址…";
             try {
               return await createShortShareUrl(hash, signal);
             } catch (error) {
-              if (!signal.aborted) status.textContent = "短網址建立失敗，請稍後再試，或改用永久網址。";
+              if (!signal.aborted) {
+                status.textContent = "短網址建立失敗，請稍後再試，或改用完整資料網址。";
+                status.classList.add("is-error");
+              }
               return false;
             }
           }
         }
-      ]
+      ],
+      initialFocus: unavailableReason ? undefined : "primary"
     });
     if (typeof shareUrl === "string") {
       await copyResolvedShareUrl(shareUrl);
