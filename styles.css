@@ -9831,6 +9831,11 @@ html[data-theme="dark"] .dice-roller-roll::after {
   font-weight: 800;
 }
 
+/* 職業描述中只供跑團動作說明使用的補充文字（見 action-panel.js 的 data-tabletop-only）。 */
+[data-tabletop-only] {
+  display: none !important;
+}
+
 .beast-tip,
 .skill-tip {
   cursor: pointer;

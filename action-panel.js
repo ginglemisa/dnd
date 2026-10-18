@@ -620,6 +620,21 @@ ${formatDiceWithModifier("1d10", dexterityModifier + level)}
   }
 
 
+  // class-features.js 是職業描述的唯一文字來源；跑團擷取段落時只處理下列標記：
+  // - data-tabletop-value="key"：內文是職業詳情的通用文字，跑團改顯示 TABLETOP_VALUE_RESOLVERS[key]() 的結果；
+  //   無對應函式或無值時保留通用文字。
+  // - data-tabletop-hide：只在職業詳情顯示，跑團擷取時移除。
+  // - data-tabletop-only：只在跑團顯示，職業詳情由 styles.css 隱藏。
+  const TABLETOP_VALUE_RESOLVERS = Object.freeze({
+    "character-level": () => String(getCharacterLevel()),
+    "proficiency-bonus": () => String(getProficiencyBonus())
+  });
+
+  // 由說明函式組合、未寫在 CLASS_ACTION_RULES 的段落，納入完整性檢查。
+  const HELPER_DESCRIPTION_IDS = Object.freeze({
+    cleric: Object.freeze(["cleric-divine-spark", "cleric-turn-undead", "cleric-sear-undead"])
+  });
+
   const classDescriptionCache = new Map();
 
   function getClericChannelDescription(descriptionId) {
@@ -636,22 +651,75 @@ ${formatDiceWithModifier("1d10", dexterityModifier + level)}
     return `${base}\n\n${getClassActionDescription("cleric", "cleric-sear-undead")}\n\n額外光耀傷害骰：${damageDice}。`;
   }
 
-  function getClassActionDescription(className, descriptionId) {
-    if (typeof classFeatures === "undefined") return "";
-    const raw = classFeatures[className] || "";
+  function getClassDescriptionSource(className) {
+    const raw = typeof classFeatures === "undefined" ? "" : String(classFeatures[className] || "");
     let cached = classDescriptionCache.get(className);
     if (!cached || cached.raw !== raw) {
       const holder = document.createElement("div");
       holder.innerHTML = raw;
-      const descriptions = new Map(Array.from(holder.querySelectorAll("[data-action-id]"), block => {
-        const copy = block.cloneNode(true);
-        copy.querySelectorAll("h3").forEach(heading => heading.remove());
-        return [block.dataset.actionId, sourceToPlainText(copy.innerHTML)];
-      }));
-      cached = { raw, descriptions };
+      const blocks = new Map(Array.from(holder.querySelectorAll("[data-action-id]"), block => [block.dataset.actionId, block]));
+      cached = { raw, holder, blocks };
       classDescriptionCache.set(className, cached);
     }
-    return cached.descriptions.get(descriptionId) || "";
+    return cached;
+  }
+
+  function getTabletopValueResolver(key) {
+    return Object.hasOwn(TABLETOP_VALUE_RESOLVERS, key) ? TABLETOP_VALUE_RESOLVERS[key] : null;
+  }
+
+  function resolveTabletopValue(element) {
+    const resolver = getTabletopValueResolver(element.dataset.tabletopValue);
+    if (!resolver) return;
+    let value = null;
+    try {
+      value = resolver();
+    } catch (error) {
+      value = null;
+    }
+    if (value !== null && value !== undefined && String(value).trim()) element.textContent = String(value);
+  }
+
+  // descriptionIds 為 "id" 或 ["id", { id, level }]；已達等級的段落依序以空行串接。
+  // 任一需要的段落缺少時回傳空字串：按鈕不出現，並由回歸檢查回報。
+  function getClassActionDescription(className, descriptionIds) {
+    const level = getCharacterLevel();
+    const { blocks } = getClassDescriptionSource(className);
+    const parts = [];
+    for (const item of [].concat(descriptionIds || [])) {
+      const isGated = Boolean(item) && typeof item === "object";
+      if (isGated && level < (Number(item.level) || 0)) continue;
+      const block = blocks.get(isGated ? item.id : item);
+      if (!block) return "";
+      const copy = block.cloneNode(true);
+      copy.querySelectorAll("h3, [data-tabletop-hide]").forEach(element => element.remove());
+      copy.querySelectorAll("[data-tabletop-only][hidden]").forEach(element => element.removeAttribute("hidden"));
+      copy.querySelectorAll("[data-tabletop-value]").forEach(resolveTabletopValue);
+      parts.push(sourceToPlainText(copy.innerHTML));
+    }
+    return parts.filter(Boolean).join("\n\n");
+  }
+
+  function getClassDescriptionIssues() {
+    const issues = [];
+    const classNames = new Set([
+      ...(typeof classFeatures === "undefined" ? [] : Object.keys(classFeatures)),
+      ...Object.keys(CLASS_ACTION_RULES)
+    ]);
+    classNames.forEach(className => {
+      const { holder, blocks } = getClassDescriptionSource(className);
+      const ids = [
+        ...(CLASS_ACTION_RULES[className] || []).flatMap(rule => [].concat(rule.descriptionIds || rule.descriptionId || [])),
+        ...(HELPER_DESCRIPTION_IDS[className] || [])
+      ].map(item => (item && typeof item === "object" ? item.id : item));
+      new Set(ids).forEach(id => {
+        if (!blocks.has(id)) issues.push(`${className}: 找不到 data-action-id="${id || ""}" 的職業描述段落`);
+      });
+      new Set(Array.from(holder.querySelectorAll("[data-tabletop-value]"), element => element.dataset.tabletopValue)).forEach(key => {
+        if (!getTabletopValueResolver(key)) issues.push(`${className}: data-tabletop-value="${key}" 沒有對應的計算函式`);
+      });
+    });
+    return issues;
   }
 
   // Exact named-rule lookup is display-only; metadata supplies every mode and gate.
@@ -693,7 +761,7 @@ ${formatDiceWithModifier("1d10", dexterityModifier + level)}
   function getExplicitClassEntries(mode) {
     const className = document.getElementById("class")?.value || "";
     return resolveFeatureRules(CLASS_ACTION_RULES[className] || [], mode, "class",
-      rule => getClassActionDescription(className, rule.descriptionId));
+      rule => getClassActionDescription(className, rule.descriptionIds || rule.descriptionId));
   }
 
   function getExplicitRaceEntries(mode) {
@@ -992,6 +1060,8 @@ function renderMode(mode, preserveSelection = false) {
       return Object.freeze({ ...FEATURE_SOURCE_LABELS });
     },
     getButtonLabel,
+    getClassDescription: getClassActionDescription,
+    getClassDescriptionIssues,
     requestRefresh: scheduleDynamicRefresh
   });
 
