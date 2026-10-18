@@ -62,9 +62,22 @@ Body：
 
 ## Redirect 與保存期限
 
-`GET /xxxxxxx` → 驗證 7 碼格式及 HMAC → 查 KV → HTTP **302** 導向 `https://twd20.com/#s2=原始資料`。
+`GET /s/xxxxxxx`（以及舊版 `GET /xxxxxxx`）→ 驗證 7 碼格式及 HMAC → 查 KV：
+
+- 一般瀏覽器維持 HTTP **302** 導向 `https://twd20.com/#s2=原始資料`。
+- 已辨識的分享預覽爬蟲回傳 HTTP **200** HTML，直接提供首頁相同的 OG 圖片、標題與描述；`og:url` 與 canonical 使用正式短網址，不使用首頁或包含角色資料的長網址。
+- 預覽頁不載入 JavaScript、分析追蹤或角色卡，只提供前往原分享角色卡的連結；角色內容不加入預覽 metadata。
+- 目前辨識 `facebookexternalhit`（含帶此標記的 LINE 預覽）、`Facebot`、`Twitterbot`、`LinkedInBot`、`Slackbot-LinkExpanding`、`Discordbot`、`TelegramBot`、`WhatsApp`、`SkypeUriPreview`。單獨的 `Line/` 為 App 瀏覽器標記，不當作爬蟲。
+- 200 預覽與 302 轉址均設定 `Cache-Control: no-store` 與 `Vary: User-Agent`，避免兩種內容混用。未辨識爬蟲仍走原本轉址；各平台是否顯示預覽、何時重新擷取，仍由平台決定。
+- OG 圖片使用 `https://twd20.com/og-image.jpg`；日後更換首頁的 OG 圖片或文案時，需同步更新 `worker.js` 的 `sharePreviewHtml()`。
 
 建立 KV 資料時使用 `expirationTtl: 60 * 60 * 24 * 90`，保存 **90 天**，到期後自動刪除。前端不自行計時或儲存到期日。
+
+## 更新分享預覽
+
+1. 將本目錄的 [worker.js](worker.js) 更新至 Cloudflare 的既有 `twd20-url` Worker 並部署；可使用 Dashboard 程式碼編輯器，或既有 Wrangler 部署流程。只修改 repository 不會使線上 Worker 更新。
+2. 沿用既有 routes、`URLS`、`CREATE_RATE_LIMITER` 與 `HMAC_SECRET`，不需更換 Secret、遷移 KV 或重建短網址。尚未到期的既有短網址部署後即使用新回應。
+3. 以一般瀏覽器確認仍正常開啟角色卡，再用分享平台檢查預覽。若平台已快取舊結果，需等候其更新或使用平台提供的重新擷取工具；Worker 的 `no-store` 不會清除平台既有預覽快取。
 
 ## 前端整合
 

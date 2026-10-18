@@ -3,6 +3,46 @@ const BASE62 =
 
 const TWD20_ORIGIN = "https://twd20.com";
 
+// 僅辨識分享預覽爬蟲；不要用 Line/ 等 App 內建瀏覽器的標記。
+const SHARE_PREVIEW_AGENT = /\b(?:facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot-LinkExpanding|Discordbot|TelegramBot|WhatsApp|SkypeUriPreview)\b/i;
+
+function escapeHtml(text) {
+  return text.replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  })[character]);
+}
+
+function sharePreviewHtml(code, destination) {
+  const shortUrl = `${TWD20_ORIGIN}/s/${code}`;
+
+  // 靜態 OG 資料沿用首頁；不將角色內容放入預覽 metadata。
+  return `<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>twD20 | 5.5版手機角卡</title>
+  <meta property="og:title" content="twD20 | 5.5版手機角卡">
+  <meta property="og:description" content="免費繁體中文手機角色卡，整合快速創角、規則查閱與法術管理，讓你的第一場冒險更好上手。">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="${shortUrl}">
+  <meta property="og:image" content="${TWD20_ORIGIN}/og-image.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="twD20.com 免費手機角色卡宣傳圖，標語「別讓厚重的規則書阻礙你的第一場冒險」，介紹快速創角、規則查閱與法術管理；背景為燭光下的皮革書、藥水瓶與紫色魔法球。">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="${TWD20_ORIGIN}/og-image.jpg">
+  <link rel="canonical" href="${shortUrl}">
+  <meta name="referrer" content="no-referrer">
+</head>
+<body><a href="${escapeHtml(destination)}">開啟分享角色卡</a></body>
+</html>`;
+}
+
 function isBase62(text) {
   return /^[0-9A-Za-z]+$/.test(text);
 }
@@ -277,9 +317,29 @@ if (!code) {
       });
     }
 
-    return Response.redirect(
-      `${TWD20_ORIGIN}/${hash}`,
-      302
-    );
+    const destination = `${TWD20_ORIGIN}/${hash}`;
+    // 同一網址依 UA 回傳不同內容，避免快取讓一般使用者讀到爬蟲頁面。
+    const headers = {
+      "Cache-Control": "no-store",
+      "Vary": "User-Agent",
+    };
+
+    if (SHARE_PREVIEW_AGENT.test(request.headers.get("User-Agent") || "")) {
+      return new Response(sharePreviewHtml(code, destination), {
+        headers: {
+          ...headers,
+          "Content-Type": "text/html; charset=utf-8",
+          "X-Content-Type-Options": "nosniff",
+        },
+      });
+    }
+
+    return new Response(null, {
+      status: 302,
+      headers: {
+        ...headers,
+        "Location": new URL(destination).href,
+      },
+    });
   },
 };
