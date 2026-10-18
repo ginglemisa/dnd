@@ -697,7 +697,7 @@ async function verifyImports(browser, url, viewport = { width: 1280, height: 800
       window.quickBuild = {`);
     await route.fulfill({ response, body: source });
   });
-  for (const scenario of ["cancel", "complete", "warning", "failure", "pdf", "close"]) {
+  for (const scenario of ["cancel", "complete", "warning", "failure", "pdf", "share", "close"]) {
     await page.goto(url);
     await page.waitForFunction(() => window.prepareOnboardingImport && window.onboardingTour);
     await page.evaluate(scenario => {
@@ -705,6 +705,7 @@ async function verifyImports(browser, url, viewport = { width: 1280, height: 800
       if (scenario === "warning") document.getElementById("calculate-skills-button").remove();
       if (scenario === "failure") window.fillSaves = () => { throw new Error("test import failure"); };
       if (scenario === "pdf") window.downloadQuickBuildCompactPdf = async () => { window.pdfRequested = true; };
+      if (scenario === "share") window.copyShareUrl = async () => { window.shareRequested = true; };
     }, scenario);
     if (scenario === "complete") await page.evaluate(() => SpellManagement.setManual(true, { confirm: false }));
     if (scenario === "complete") {
@@ -726,7 +727,25 @@ async function verifyImports(browser, url, viewport = { width: 1280, height: 800
     await page.locator(".app-dialog__actions .app-dialog__button--danger").click();
     await page.waitForFunction(() => document.querySelector(".app-dialog__header h2")?.textContent.includes("角色卡"));
     const firstTable = page.getByRole("button", { name: "初次遊玩", exact: true });
-    assert.equal(await firstTable.count(), ["warning", "failure"].includes(scenario) ? 0 : 1, await page.locator(".app-dialog__body").innerText());
+    assert.equal(await firstTable.count(), scenario === "failure" ? 0 : 1, await page.locator(".app-dialog__body").innerText());
+    if (scenario !== "failure") {
+      const dialog = page.locator('.app-dialog[data-variant="quick-build-complete"]');
+      assert.equal(await dialog.locator("strong").textContent(), "角色完成，可以開始冒險了！");
+      assert.deepEqual(await dialog.locator("li").allTextContents(), [
+        "下載PDF：下載可列印的角色卡，方便面團使用。",
+        "分享角卡：取得網址連結，將角色卡分享給 DM 查看。",
+        "初次遊玩：透過導覽，認識手機跑團模式的基本操作。"
+      ]);
+      assert.deepEqual(await dialog.locator(".app-dialog__actions button").allTextContents(), ["下載PDF", "分享角卡", "初次遊玩"]);
+      assert.equal(await dialog.locator(".app-dialog__button--primary").textContent(), "初次遊玩");
+      assert.equal(await firstTable.isDisabled(), scenario === "warning", "incomplete imports keep the tour unavailable");
+      const boxes = await dialog.locator(".app-dialog__actions button").evaluateAll(buttons => buttons.map(button => {
+        const { x, y, width } = button.getBoundingClientRect();
+        return { x, y, width, clipped: button.scrollWidth > button.clientWidth };
+      }));
+      assert(boxes.every(box => box.y === boxes[0].y && box.width > 0 && !box.clipped), "all three actions fit on one row");
+      assert(boxes[0].x < boxes[1].x && boxes[1].x < boxes[2].x, "action order matches the descriptions");
+    }
     assert.equal(await page.evaluate(() => onboardingTour.active), false);
     if (scenario !== "failure") {
       assert.equal(await page.evaluate(() => SpellManagement.isManual()), false, "quick build imports always activate automatic spell management");
@@ -743,16 +762,21 @@ async function verifyImports(browser, url, viewport = { width: 1280, height: 800
       await page.locator("#tour-skip-btn").click();
       await closed(page);
     } else if (scenario === "pdf") {
-      await page.getByRole("button", { name: "下載角色卡 PDF", exact: true }).click();
+      await page.getByRole("button", { name: "下載PDF", exact: true }).click();
       assert.equal(await page.evaluate(() => window.pdfRequested), true);
-    } else {
+    } else if (scenario === "share") {
+      await page.getByRole("button", { name: "分享角卡", exact: true }).click();
+      assert.equal(await page.evaluate(() => window.shareRequested), true);
+    } else if (scenario === "failure") {
       await page.getByRole("button", { name: "知道了", exact: true }).click();
+    } else {
+      await page.keyboard.press("Escape");
       assert.equal(await page.evaluate(() => onboardingTour.active), false);
     }
     await assertPageInteractive(page);
   }
   await page.close();
-  console.log(`Quick-build import (${viewport.width}px): confirmation cancellation, complete-only first-table entry, warning/exception exclusion, PDF dispatch and close passed.`);
+  console.log(`Quick-build import (${viewport.width}px): confirmation cancellation, completion copy/action order/layout, tour emphasis, warning/exception guards, PDF/share dispatch and close passed.`);
 }
 
 async function assertPageInteractive(page) {

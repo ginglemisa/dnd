@@ -1422,6 +1422,12 @@ async function verifyClassFeatureChoicePrompt(browser, url) {
     await modal.waitFor();
     assert.deepEqual(await modal.locator("section[data-feature-level]:visible h3").allTextContents(), ["等級 2：戰鬥風格", "等級 3：狩獵目標（獵人子職）", "等級 4：屬性值提升", "等級 7：防守戰術（獵人子職）"]);
     await modal.locator("#feat-choice-ranger-level-4").selectOption("屬性值提升");
+    const styleRow = modal.locator('[data-feat-choice="fighting-style-ranger"]');
+    assert.equal(await styleRow.isVisible(), false, "unchecked ranger style hides its label, selector and view button");
+    await modal.locator("#ranger-fighting-style").check();
+    assert.equal(await styleRow.isVisible(), true, "checking ranger style reveals the complete field");
+    await modal.locator("#ranger-fighting-style").uncheck();
+    assert.equal(await styleRow.isVisible(), false, "unchecking ranger style hides the complete field again");
     await modal.locator("#ranger-fighting-style").check();
     const style = modal.locator("#feat-choice-fighting-style-ranger");
     const view = style.locator("..").locator(".feat-choice-view");
@@ -1441,6 +1447,7 @@ async function verifyClassFeatureChoicePrompt(browser, url) {
     await detail.waitFor({ state: "detached" });
     assert.equal(await view.evaluate(el => el === document.activeElement), true, "feat detail returns to its view button");
     await modal.locator("#ranger-druidic-warrior").check();
+    assert.equal(await styleRow.isVisible(), false, "the caster alternative hides the fighting style field");
     await modal.getByLabel("戲法 #1", { exact: true }).selectOption("guidance");
     await modal.getByLabel("戲法 #2", { exact: true }).selectOption("starry-wisp");
     await closePrompt();

@@ -2553,54 +2553,33 @@ const classFeatures = {
 <div class="class-feature-content" data-class-feature-panel="class">
 <section class="sorcerer-feature class-feature-section" data-feature-level="1">
   <h3>等級 1：施法</h3>
-  <p>你靠天生魔力施法，使用「術士法術列表」。</p>
-  <div class="class-rule-subsection">
-    <h4>戲法</h4>
-    <ul class="class-rule-list">
-      <li>起始學會 4 個術士戲法（推薦：光亮術,魔法伎倆,電爪,術法衝擊）。</li>
-      <li>每次升術士等級，可把 1 個由此特性取得的戲法換成另一個術士戲法。</li>
-      <li>4 級與 10 級時，各再學 1 個術士戲法。</li>
-    </ul>
-  </div>
-  <p>法術位：見「術士特性」表，長休後全回復。</p>
-  <div class="class-rule-subsection">
-    <h4>準備法術</h4>
-    <ul class="class-rule-list">
-      <li>起始可準備 2 個 1 環術士法術（建議：燃燒之手,偵測魔法）。</li>
-      <li>你可準備的法術數量會隨術士等級提升，見「術士特性」表。</li>
-      <li>每當這個數量提高時，從術士法術列表再選法術，直到你的準備數量與表格一致。</li>
-      <li>你選擇的法術必須是你目前有法術位能施放的環級。</li>
-    </ul>
-  </div>
-  <p>若其他術士特性給你額外已準備法術，這些法術不計入上述準備上限，但仍算術士法術。</p>
-  <p>每次升術士等級時，可把準備清單中的 1 個法術換成另一個符合條件的術士法術。</p>
-  <p>施法屬性：魅力。</p>
-  <p>施法法器：可用奧術法器。</p>
+  <p>你使用<strong>魅力</strong>施展「術士法術列表」中的法術，並可用奧術法器作為施法法器。</p>
+  <ul class="class-rule-list">
+    <li><strong>戲法：</strong>起始學會 4 個術士戲法。每提升 1 級術士，可將 1 個透過此特性取得的戲法換成另一個術士戲法。<br>推薦：光亮術、魔法伎倆、電爪、術法衝擊。</li>
+    <li><strong>準備法術：</strong>起始準備 2 個 1 環術士法術，之後依「術士特性」表增加。數量提高時，從術士法術列表補選至表列數量；只能選擇你目前有對應環階法術位的法術。<br>推薦：燃燒之手、偵測魔法。</li>
+    <li><strong>升級替換：</strong>每提升 1 級術士，可將準備清單中的 1 個法術換成另一個符合條件的術士法術。</li>
+    <li><strong>法術位：</strong>數量見「術士特性」表，長休後全部恢復。</li>
+    <li><strong>額外法術：</strong>其他術士特性給予的額外準備法術不計入上限，仍視為你的術士法術。</li>
+  </ul>
 </section>
 
 <section class="sorcerer-feature class-feature-section" data-feature-level="1">
   <h3>等級 1：天生術法</h3>
-  <p>你體內的魔力可被短暫解放。作為附贈動作啟動後，持續 1 分鐘並獲得：</p>
+  <p>以<strong>附贈動作</strong>啟動體內魔力，持續 1 分鐘。期間獲得以下效果：</p>
   <ul class="class-rule-list">
-    <li>你的術士法術豁免 DC +1。</li>
-    <li>你的術士法術攻擊檢定具有優勢。</li>
+    <li><strong>法術豁免：</strong>你的術士法術豁免 DC +1。</li>
+    <li><strong>法術攻擊：</strong>你的術士法術攻擊檢定具有優勢。</li>
   </ul>
-  <p>使用次數：2 次；長休後全回復。</p>
+  <p><strong>使用次數：</strong>2 次，長休後全部恢復。</p>
 </section>
 
 <section class="sorcerer-feature class-feature-section" data-feature-level="2">
   <h3>等級 2：魔力泉湧</h3>
+  <p>你可消耗術法點啟動魔法效果，也能在術法點與法術位之間轉換。</p>
   <ul class="class-rule-list">
-    <li>你可運用術法點來啟動魔法效果。</li>
-    <li>起始術法點為 2 點；高等級時依「術士特性」表提升。</li>
-    <li>你持有的術法點不可超過目前等級上限；長休後全回復。</li>
-    <li>你可使用以下轉換：
-      <ul>
-        <li>將法術位轉為術法點：消耗 1 個法術位，獲得等同該環階的術法點（無需動作）。</li>
-        <li>創造法術位：附贈動作消耗術法點換成法術位（見下表），且不能創造 6 環以上法術位。</li>
-      </ul>
-    </li>
-    <li>以此特性創造的法術位會在長休後消散。</li>
+    <li><strong>術法點：</strong>起始為 2 點，之後依「術士特性」表增加。持有點數不能超過目前等級上限，長休後全部恢復。</li>
+    <li><strong>法術位轉為術法點：</strong>消耗 1 個法術位，獲得等同該法術位環階的術法點，<strong>無需動作</strong>。</li>
+    <li><strong>生成法術位：</strong>以<strong>附贈動作</strong>消耗術法點，依下表生成法術位。不能生成 6 環以上法術位，生成的法術位會在長休後消散。</li>
   </ul>
   <div class="class-rule-subsection">
     <h4>生成法術位</h4>
@@ -2629,6 +2608,11 @@ const classFeatures = {
       <td>5</td>
       <td>5</td>
     </tr>
+    <tr>
+      <td>4</td>
+      <td>6</td>
+      <td>7</td>
+    </tr>
   </tbody>
 </table>
 </div>
@@ -2637,54 +2621,55 @@ const classFeatures = {
 
 <section class="sorcerer-feature class-feature-section" data-feature-level="2">
   <h3>等級 2：超魔法</h3>
+  <p>選擇 2 個超魔法選項，消耗術法點調整法術效果。完整內容請見「超魔」頁籤的「超魔法選項」。</p>
   <ul class="class-rule-list">
-    <li>你獲得 2 個「超魔法選項」（見後方）。</li>
-    <li>使用超魔法需消耗對應術法點。</li>
-    <li>除非選項另有註明，單次施法只能套用 1 個超魔法。</li>
-    <li>每次升術士等級時，可把 1 個已知超魔法換成另一個未習得選項。</li>
+    <li><strong>使用限制：</strong>消耗所選超魔法要求的術法點。除非另有註明，單次施法只能套用 1 個超魔法。</li>
+    <li><strong>升級替換：</strong>每提升 1 級術士，可將 1 個已知超魔法換成另一個未習得的選項。</li>
   </ul>
 </section>
 
 <section class="sorcerer-feature class-feature-section" data-feature-level="3">
   <h3>等級 3：術士子職</h3>
-  <ul class="class-rule-list">
-    <li>你可選擇一個術士子職；基本規則僅提供「龍族術法」。</li>
-    <li>隨等級提升，你會陸續獲得子職特性。</li>
-  </ul>
+  <p>選擇一個術士子職，並隨等級提升獲得子職能力。基本規則僅提供「龍族術法」。</p>
 </section>
 
 <section class="sorcerer-feature class-feature-section" data-feature-level="3">
   <h3>等級 3：龍族體魄（龍族子職）</h3>
+  <p>你的皮膚浮現龍鱗特徵，並獲得以下增益：</p>
   <ul class="class-rule-list">
-    <li>生命值上限提高 3，且此後每升 1 級術士再提高 1。</li>
-    <li>你的皮膚浮現龍鱗特徵；未穿護甲時，護甲等級為 10＋敏捷調整值＋魅力調整值。</li>
+    <li><strong>生命值：</strong>生命值上限提高 3，此後每提升 1 級術士，再提高 1。</li>
+    <li><strong>護甲等級：</strong>未穿護甲時，AC 為「10＋敏捷調整值＋魅力調整值」。</li>
   </ul>
 </section>
 
 <section class="sorcerer-feature class-feature-section" data-feature-level="3">
   <h3>等級 3：龍族法術（龍族子職）</h3>
+  <p>達到下列術士等級後，你始終準備對應法術：</p>
   <ul class="class-rule-list">
-    <li>當你達到對應術士等級後，會始終準備下列法術。</li>
-    <li>（等級 3）：變造自身,繁彩球,命令術,龍息術。</li>
-    <li>（等級 5）：恐懼術，飛行術。</li>
-    <li>（等級 7）：秘法眼，魅惑怪物。</li>
+    <li><strong>3 級：</strong>變造自身、繁彩球、命令術、龍息術。</li>
+    <li><strong>5 級：</strong>恐懼術、飛行術。</li>
+    <li><strong>7 級：</strong>秘法眼、魅惑怪物。</li>
   </ul>
 </section>
 
 <section class="sorcerer-feature class-feature-section" data-feature-level="4">
   <h3>等級 4：屬性值提升</h3>
-  <p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p>
+  <p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p>
+  <p><strong>施法補充：</strong>術士達到 4 級時，你也會透過「施法」特性額外學會 1 個術士戲法。</p>
 </section>
 
 <section class="sorcerer-feature class-feature-section" data-feature-level="5">
   <h3>等級 5：術法復甦</h3>
+  <p>完成短休時，可恢復部分已消耗的術法點。</p>
   <ul class="class-rule-list">
-    <li>完成短休時，你可回復已消耗術法點，最多為「術士等級一半（捨去小數點）」。</li>
-    <li>使用後需完成長休才能再用。</li>
+    <li><strong>恢復點數：</strong>最多為術士等級的一半（無條件捨去）。</li>
+    <li><strong>使用次數：</strong>使用後，須完成長休才能再次使用。</li>
   </ul>
 </section>
 
-<section class="sorcerer-feature class-feature-section" data-feature-level="6"><h3>等級 6：元素親和（龍族子職）</h3><p>選擇一種傷害類型：強酸、冷凍、火焰、閃電或毒素。</p><article class="feature-choice-card"><select id="sorcerer-elemental-affinity-damage-type"><option value="">--請選擇傷害類型--</option><option value="acid">強酸</option><option value="cold">冷凍</option><option value="fire">火焰</option><option value="lightning">閃電</option><option value="poison">毒素</option></select><div class="feature-choice-card__body"><p>你對所選傷害類型具有抗性。當你施展造成該類型傷害的法術時，可以將魅力調整值加到該法術的一次傷害擲骰中。</p></div></article></section><section class="sorcerer-feature class-feature-section" data-feature-level="7" data-action-id="sorcerer-sorcery-incarnate"><h3>等級 7：術法化身</h3><p>當天生術法的使用次數耗盡時，你可以執行附贈動作並消耗2術法點來激活它。</p><p>此外，在天生術法激活期間，你可以在施展的每道法術上應用至多兩個超魔法選項。</p></section><section class="sorcerer-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p></section>
+<section class="sorcerer-feature class-feature-section" data-feature-level="6"><h3>等級 6：元素親和（龍族子職）</h3><p>選擇一種傷害類型：強酸、冷凍、火焰、閃電或毒素。</p><article class="feature-choice-card"><select id="sorcerer-elemental-affinity-damage-type"><option value="">--請選擇傷害類型--</option><option value="acid">強酸</option><option value="cold">冷凍</option><option value="fire">火焰</option><option value="lightning">閃電</option><option value="poison">毒素</option></select><div class="feature-choice-card__body"><p><strong>傷害抗性：</strong>你對所選傷害類型具有抗性。</p><p><strong>傷害加值：</strong>施放造成該類型傷害的法術時，可將魅力調整值加到該法術的<strong>一次傷害擲骰</strong>中。</p></div></article></section>
+<section class="sorcerer-feature class-feature-section" data-feature-level="7" data-action-id="sorcerer-sorcery-incarnate"><h3>等級 7：術法化身</h3><ul class="class-rule-list"><li><strong>額外啟動：</strong>天生術法的使用次數耗盡時，仍可用附贈動作消耗 2 術法點來啟動它。</li><li><strong>超魔法強化：</strong>天生術法啟動期間，每道法術最多可套用 2 個超魔法選項。</li></ul></section>
+<section class="sorcerer-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p></section>
 <section class="sorcerer-feature class-feature-section">
   <h3>超魔法選項</h3>
   <div class="class-rule-subsection">
@@ -2914,22 +2899,33 @@ const classFeatures = {
 <div class="class-feature-content" data-class-feature-panel="class">
 <section class="warlock-feature class-feature-section" data-feature-level="1">
   <h3>等級 1：魔能祈喚</h3>
-  <ul class="class-rule-list"><li>你從禁忌知識獲得超自然能力，先選 1 個魔能祈喚（例如：書之魔契）。</li><li>完整內容請見後方「魔能祈喚選項」。</li><li>先決條件：若祈喚有先決條件，你必須符合才能選（例如要求契術師等級 5+）。</li><li>升級調整：每次獲得契術師等級時，你可把 1 個已知祈喚換成另一個符合條件的祈喚；但若該祈喚是其他祈喚的前置，則不能替換。</li><li>祈喚數量會隨等級提升（見「契術師特性」表的「祈喚」欄）。除非特別註明，同一祈喚只能選 1 次。</li></ul>
+  <p>你從禁忌知識獲得超自然能力。起始選擇 1 個魔能祈喚，例如「書之魔契」。</p>
+  <ul class="class-rule-list">
+    <li><strong>先決條件：</strong>必須符合祈喚列出的條件才能選擇。</li>
+    <li><strong>祈喚數量：</strong>隨契術師等級提升，見「契術師特性」表的「魔能祈喚」欄。除非特別註明，同一祈喚只能選擇 1 次。</li>
+    <li><strong>升級替換：</strong>每提升 1 級契術師，可將 1 個已知祈喚換成另一個符合條件的祈喚；作為其他祈喚先決條件的祈喚不能替換。</li>
+  </ul>
+  <p>完整內容請見「魔祈」頁籤的「魔能祈喚選項」。</p>
 </section>
 <section class="warlock-feature class-feature-section" data-feature-level="1">
-  <h3>等級 1：契約魔法</h3><p>你與神秘存在締結契約並獲得施法能力，使用「契術師法術列表」。</p>
-  <div class="class-rule-subsection"><h4>戲法</h4><ul class="class-rule-list"><li>起始學會 2 個契術師戲法（推薦：魔能爆,魔法伎倆）。</li><li>每次升契術師等級時，可把 1 個由此特性取得的戲法換成另一個契術師戲法。</li><li>4 級與 10 級時，各再學 1 個戲法。</li></ul></div>
-  <div class="class-rule-subsection"><h4>法術位</h4><ul class="class-rule-list"><li>法術位數量與環階見「契術師特性」表。</li><li>你的契約魔法法術位全部都是同一環。</li><li>短休或長休後全部回復。</li><li>例：5 級契術師有 2 個 3 環法術位；就算施放 1 環法術，也會以 3 環施放。</li></ul></div>
-  <div class="class-rule-subsection"><h4>準備法術</h4><ul class="class-rule-list"><li>起始先準備 2 個 1 環契術師法術（推薦：魅惑人類,脆弱詛咒）。</li><li>你可準備的法術數量會隨契術師等級提升，見「契術師特性」表。</li><li>每當這個數量提高時，從契術師法術列表再選法術，直到你的準備數量與表格一致。</li><li>你可準備的法術環級，不得高於你目前的法術位環級（例如 6 級時可準備 1～3 環法術）。</li></ul></div>
-  <p>若其他契術師特性給你額外已準備法術，這些法術不計入上述準備數量，但仍算你的契術師法術。</p><p>每次升契術師等級時，可把準備清單中的 1 個法術換成另一個符合條件的契術師法術。</p><p>施法屬性：魅力。</p><p>施法法器：可用奧術法器。</p>
+  <h3>等級 1：契約魔法</h3><p>你使用<strong>魅力</strong>施展「契術師法術列表」中的法術，並可用奧術法器作為施法法器。</p>
+  <ul class="class-rule-list">
+    <li><strong>戲法：</strong>起始學會 2 個契術師戲法。每提升 1 級契術師，可將 1 個透過此特性取得的戲法換成另一個契術師戲法。<br>推薦：魔能爆、魔法伎倆。</li>
+    <li><strong>準備法術：</strong>起始準備 2 個 1 環契術師法術，之後依「契術師特性」表增加。數量提高時，從契術師法術列表補選至表列數量；所選法術的環階不得高於你目前的法術位環階。<br>推薦：魅惑人類、脆弱詛咒。</li>
+    <li><strong>升級替換：</strong>每提升 1 級契術師，可將準備清單中的 1 個法術換成另一個符合條件的契術師法術。</li>
+    <li><strong>法術位：</strong>數量與環階見「契術師特性」表。契約魔法法術位全部為同一環階，<strong>短休或長休後全部恢復</strong>。</li>
+    <li><strong>額外法術：</strong>其他契術師特性給予的額外準備法術不計入上限，仍視為你的契術師法術。</li>
+  </ul>
+  <p>例如 5 級契術師有 2 個 3 環法術位，使用這些法術位施放 1 環法術時，也會以 3 環施放。</p>
 </section>
-<section class="warlock-feature class-feature-section" data-feature-level="2" data-action-id="warlock-magical-cunning"><h3>等級 2：秘法回流</h3><ul class="class-rule-list"><li>你可進行 1 分鐘神秘儀式，結束時回復已消耗的契約魔法法術位。</li><li>回復上限為「法術位最大值的一半（小數無條件進位）」。</li><li>使用後需完成長休才能再用。</li></ul></section>
-<section class="warlock-feature class-feature-section" data-feature-level="3"><h3>等級 3：契術師子職</h3><ul class="class-rule-list"><li>你可選擇一個契術師子職；基本規則僅提供「邪魔宗主」。</li><li>隨等級提升可獲得對應子職特性。</li></ul></section>
-<section class="warlock-feature class-feature-section" data-feature-level="3"><h3>等級 3：黑暗之賜（邪魔子職）</h3><ul class="class-rule-list"><li>當你將 10 呎內敵對生物生命值降到 0 時，你獲得等同「魅力調整值＋契術師等級」的臨時生命值（至少 1）。</li><li>若是其他生物把你 10 呎內的敵對生物降到 0，你也會獲得此增益。</li></ul></section>
-<section class="warlock-feature class-feature-section" data-feature-level="3"><h3>等級 3：邪魔法術（邪魔子職）</h3><ul class="class-rule-list"><li>你會始終準備下列法術（達到對應契術師等級後生效）：</li><li>邪魔法術（等級 3）：燃燒之手,命令術,灼熱射線,暗示術。</li><li>（等級 5）：火球術,臭雲術。</li><li>（等級 7）：火焰護盾，火牆術。</li></ul></section>
-<section class="warlock-feature class-feature-section" data-feature-level="4"><h3>等級 4：屬性值提升</h3><p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p></section>
-<section class="warlock-feature class-feature-section" data-feature-level="5"><h3>等級 5：無</h3><ul class="class-rule-list"><li>魔能祈喚數量增加，請查看契術師特性表。</li></ul></section>
-<section class="warlock-feature class-feature-section" data-feature-level="6"><h3>等級 6：黑暗強運（邪魔子職）</h3><p>當你進行屬性檢定或豁免檢定時，可以使用該特性將1d10加到擲骰結果中。你可以在看到擲骰結果後、結果生效前使用該特性。</p><p>你可以使用該特性的次數等同於你的魅力調整值（至少一次），但每次擲骰只能使用一次。完成長休時，你恢復所有已消耗的使用次數。</p></section><section class="warlock-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p></section>
+<section class="warlock-feature class-feature-section" data-feature-level="2" data-action-id="warlock-magical-cunning"><h3>等級 2：秘法回流</h3><p>進行 1 分鐘的神秘儀式，結束時恢復已消耗的契約魔法法術位。</p><ul class="class-rule-list"><li><strong>恢復數量：</strong>最多為契約魔法法術位上限的一半（無條件進位）。</li><li><strong>使用次數：</strong>使用後，須完成長休才能再次使用。</li></ul></section>
+<section class="warlock-feature class-feature-section" data-feature-level="3"><h3>等級 3：契術師子職</h3><p>選擇一個契術師子職，並隨等級提升獲得子職能力。基本規則僅提供「邪魔宗主」。</p></section>
+<section class="warlock-feature class-feature-section" data-feature-level="3"><h3>等級 3：黑暗之賜（邪魔子職）</h3><p>當你或其他生物將<strong>你 10 呎內敵對生物的生命值降至 0</strong>時，你獲得等同「魅力調整值＋契術師等級」的臨時生命值（至少 1）。</p></section>
+<section class="warlock-feature class-feature-section" data-feature-level="3"><h3>等級 3：邪魔法術（邪魔子職）</h3><p>達到下列契術師等級後，你始終準備對應法術：</p><ul class="class-rule-list"><li><strong>3 級：</strong>燃燒之手、命令術、灼熱射線、暗示術。</li><li><strong>5 級：</strong>火球術、臭雲術。</li><li><strong>7 級：</strong>火焰護盾、火牆術。</li></ul></section>
+<section class="warlock-feature class-feature-section" data-feature-level="4"><h3>等級 4：屬性值提升</h3><p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p><p><strong>契約魔法補充：</strong>契術師達到 4 級時，你也會透過「契約魔法」特性額外學會 1 個契術師戲法。</p></section>
+<section class="warlock-feature class-feature-section" data-feature-level="5"><p><strong>魔能祈喚補充：</strong>契術師達到 5 級時，可選擇的魔能祈喚數量增加至 5 個，詳見「契術師特性」表。</p></section>
+<section class="warlock-feature class-feature-section" data-feature-level="6"><h3>等級 6：黑暗強運（邪魔子職）</h3><p>進行屬性檢定或豁免檢定時，可在<strong>看到擲骰結果後、結果生效前</strong>，將 1d10 加到結果中。</p><ul class="class-rule-list"><li><strong>使用次數：</strong>等同魅力調整值（至少 1 次），每次擲骰限用 1 次。</li><li><strong>恢復時機：</strong>長休後恢復所有已消耗的使用次數。</li></ul></section>
+<section class="warlock-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p></section>
 <section class="warlock-feature class-feature-section"><h3>魔能祈喚選項</h3><p>以下依先決條件與功能分組說明。</p>
   <div class="class-rule-subsection"><h4>刃之魔契</h4><p>你可用附贈動作：</p><ul class="class-rule-list"><li>召喚一把簡易/軍用近戰武器，或</li><li>與你觸碰的魔法武器建立聯結</li></ul><p>（武器若已被他人聯結或同調，則聯結失敗）</p><p>聯結期間：</p><ul class="class-rule-list"><li>你熟練該武器。</li><li>你可把它當施法法器。</li></ul><p>聯結武器可用魅力計算命中與傷害加值。</p><p>傷害可改為黯蝕,心靈或光耀。</p><p>聯結結束條件：</p><ul class="class-rule-list"><li>你再次使用本特性的附贈動作。</li><li>武器離你超過 5 呎並持續 1 分鐘。</li><li>你死亡。</li></ul><p>若是召喚武器，聯結結束時武器會一併消失。</p></div>
   <div class="class-rule-subsection"><h4>鏈之魔契</h4><p>你學會獲得魔寵，施法不耗法術位。</p><p>魔寵可選一般形態或以下特殊形態：<hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;"><span class="beast-tip" data-beast="imp">小魔鬼</span>,<span class="beast-tip" data-beast="pseudodragon">偽龍</span>,<span class="beast-tip" data-beast="quasit">誇賽魔</span>,<span class="beast-tip" data-beast="skeleton">骷髏</span>,<span class="beast-tip" data-beast="sphinx_of_wonder">神奇斯芬克斯</span>,<span class="beast-tip" data-beast="sprite">小妖精</span> 或 <span class="beast-tip" data-beast="venomous_snake">毒蛇</span>。</p><hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;"><p>當你攻擊，可放棄其中 1 次攻擊，改讓魔寵用反應發動 1 次攻擊。</p></div>
@@ -3103,21 +3099,31 @@ const classFeatures = {
 </div>
 </section>
 </section>
-<div class="class-feature-content" data-class-feature-panel="class"><section class="wizard-feature class-feature-section" data-feature-level="1"><h3>等級 1：施法</h3><p>你透過奧術研究施展「法師法術列表」中的法術。</p>
-<ul class="class-rule-list"><li>戲法：起始學會 3 個法師戲法（推薦：光亮術、法師之手、冷凍射線）。每次長休後，可替換其中 1 個。4 級時，再學會 1 個。</li><li>法術書：起始記錄 6 個 1 環法師法術（推薦：<span data-wizard-spellbook-recommendations>偵測魔法、羽落術、法師護甲、魔法飛彈、睡眠術、雷鳴波</span>）。每提升 1 級法師，再加入 2 個你目前能準備環階的法師法術。法術書只有你能直接閱讀；施展「鑑定術」也能辨讀。</li><li>法術位：數量見「法師特性」表，長休後全部恢復。</li><li>準備法術：起始從法術書準備 4 個法術，之後依「法師特性」表增加。只能準備你目前擁有對應環階法術位的法術；例如 3 級時，可準備共 6 個 1～2 環法術。</li><li>每次長休後，可任意更換已準備法術。</li><li>其他法師特性給予的額外準備法術不計入上限，但仍視為你的法師法術。</li><li>施法屬性：智力。</li><li>施法法器：奧術法器或法術書。</li></ul>
-<div class="class-rule-subsection"><h4>擴充與替換法術書</h4>
-<p>冒險中發現新的法師法術（如法術卷軸）時，你可將其抄入法術書。</p>
-<ul class="class-rule-list"><li>抄錄法術：你必須能準備該法術。每環需花費 2 小時與 50 金幣。</li><li>複製法術書：將已知法術抄到新書時，每環需花費 1 小時與 10 金幣。</li></ul></div>
-<p>若法術書遺失，可先將目前已準備的法術抄入新書，再重新取得其餘法術。因此許多法師會準備備用法術書。</p></section>
-<section class="wizard-feature class-feature-section" data-feature-level="1"><h3>等級 1：儀式精通</h3><p>法術書中具有「儀式」標籤的法術，即使未準備，也可用儀式方式施放；施法時必須閱讀法術書。</p></section>
-<section class="wizard-feature class-feature-section" data-feature-level="1"><h3>等級 1：奧術回想</h3><p>完成短休時，可恢復部分已消耗的法術位：</p><ul class="class-rule-list"><li>恢復的法術位合計環階不得超過法師等級的一半（無條件進位）。</li><li>單一法術位最高為 5 環。</li><li>例如 4 級法師可恢復合計 2 環，如 1 個 2 環或 2 個 1 環。</li><li>使用後，完成長休才能再次使用。</li></ul></section>
-<section class="wizard-feature class-feature-section" data-feature-level="2"><h3>等級 2：學者</h3><p>從${skillTip("奧秘")}、${skillTip("歷史")}、${skillTip("調查")}、${skillTip("醫藥")}、${skillTip("自然")}、${skillTip("宗教")}中，選擇 1 個你已熟練的技能，使其獲得專精。</p></section>
-<section class="wizard-feature class-feature-section" data-feature-level="3"><h3>等級 3：法師子職</h3><p>選擇一個法師子職；基本規則僅提供「塑能師」。隨等級提升，你會獲得相應的子職特性。</p></section>
-<section class="wizard-feature class-feature-section" data-feature-level="3"><h3>等級 3：塑能學者（塑能師）</h3><p>選擇 2 個不高於 2 環的塑能系法師法術，免費抄入法術書。</p><p>之後每當你首次獲得更高環階的法術位時，可再免費抄入 1 個不高於該環階的塑能系法師法術。</p></section>
-<section class="wizard-feature class-feature-section" data-feature-level="3"><h3>等級 3：強力戲法（塑能師）</h3><p>當你對生物施放會造成傷害的戲法時，即使攻擊失手或目標豁免成功，仍會受到一半傷害，但不受該戲法的其他效果影響。</p></section>
-<section class="wizard-feature class-feature-section" data-feature-level="4"><h3>等級 4：屬性值提升</h3><p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p></section>
-<section class="wizard-feature class-feature-section" data-feature-level="5"><h3>等級 5：記憶法術</h3><p>每次短休後，可研讀法術書，將 1 個透過「施法」準備的 1 環以上法師法術，換成書中另一個 1 環以上法師法術。</p></section>
-<section class="wizard-feature class-feature-section" data-feature-level="6"><h3>等級 6：法術塑形（塑能師）</h3><p>當你施展會影響其他可見生物的塑能系法術時，可選擇至多「1＋法術環階」名生物。</p><p>這些生物對該法術的豁免自動成功，且不會受到豁免成功時原本仍會承受的傷害。</p></section>
-<section class="wizard-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p></section></div>
+<div class="class-feature-content" data-class-feature-panel="class"><section class="wizard-feature class-feature-section" data-feature-level="1"><h3>等級 1：施法</h3><p>你使用<strong>智力</strong>施展「法師法術列表」中的法術，並以奧術法器或法術書作為施法法器。</p>
+<ul class="class-rule-list">
+<li><strong>戲法：</strong>起始學會 3 個法師戲法，每次長休後可替換 1 個。<br>推薦：光亮術、法師之手、冷凍射線。</li>
+<li><strong>法術書：</strong>起始記錄 6 個 1 環法師法術，每提升 1 級法師，可再加入 2 個目前能準備環階的法師法術。<br>推薦：<span data-wizard-spellbook-recommendations>偵測魔法、羽落術、法師護甲、魔法飛彈、睡眠術、雷鳴波</span>。</li>
+<li><strong>準備法術：</strong>起始從法術書準備 4 個，之後依「法師特性」表增加。只能準備你有對應環階法術位的法術，每次長休後可全部更換。</li>
+<li><strong>法術位：</strong>數量見「法師特性」表，長休後全部恢復。</li>
+<li><strong>額外法術：</strong>其他法師特性給予的額外準備法術不計入上限，仍視為你的法師法術。</li>
+</ul>
+<details class="class-rule-subsection"><summary><strong>擴充與替換法術書</strong></summary>
+<p>你可以將找到的法師法術抄入法術書，也能製作備份。</p>
+<ul class="class-rule-list">
+<li><strong>抄錄新法術：</strong>必須是你能準備的法術，每環花費 2 小時與 50 金幣。</li>
+<li><strong>複製至另一冊法術書：</strong>將已知法術抄入另一冊書，每環花費 1 小時與 10 金幣。</li>
+<li><strong>遺失法術書：</strong>可先將目前已準備的法術抄入新書，其餘法術需重新取得。</li>
+</ul>
+<p>法術書只有你能直接閱讀，施展「鑑定術」也能辨讀。</p></details></section>
+<section class="wizard-feature class-feature-section" data-feature-level="1"><h3>等級 1：儀式精通</h3><p>法術書中有「儀式」標籤的法術，<strong>即使未準備，也能以儀式施放</strong>，但施法時必須閱讀法術書。</p></section>
+<section class="wizard-feature class-feature-section" data-feature-level="1"><h3>等級 1：奧術回想</h3><p>完成短休時，可恢復部分已消耗的法術位。使用後，須完成長休才能再次使用。</p><ul class="class-rule-list"><li><strong>恢復總環階：</strong>最多為法師等級的一半（無條件進位）。</li><li><strong>單一法術位：</strong>最高只能恢復 5 環。</li></ul><p>例如 4 級法師可恢復 1 個 2 環，或 2 個 1 環法術位。</p></section>
+<section class="wizard-feature class-feature-section" data-feature-level="2"><h3>等級 2：學者</h3><p>從${skillTip("奧秘")}、${skillTip("歷史")}、${skillTip("調查")}、${skillTip("醫藥")}、${skillTip("自然")}、${skillTip("宗教")}中，選擇 1 個<strong>已熟練</strong>的技能，獲得專精。</p></section>
+<section class="wizard-feature class-feature-section" data-feature-level="3"><h3>等級 3：法師子職</h3><p>選擇一個法師子職，並隨等級提升獲得子職能力。基本規則僅提供「塑能師」。</p></section>
+<section class="wizard-feature class-feature-section" data-feature-level="3"><h3>等級 3：塑能學者（塑能師）</h3><p>選擇 2 個不高於 2 環的塑能系法師法術，免費加入法術書。</p><p>之後每次首次獲得更高環階的法術位時，可再免費加入 1 個不高於該環階的塑能系法師法術。</p></section>
+<section class="wizard-feature class-feature-section" data-feature-level="3"><h3>等級 3：強力戲法（塑能師）</h3><p>對生物施放傷害戲法時，即使<strong>攻擊失手或目標豁免成功</strong>，目標仍受到一半傷害，但不受該戲法的其他效果影響。</p></section>
+<section class="wizard-feature class-feature-section" data-feature-level="4"><h3>等級 4：屬性值提升</h3><p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p><p><strong>施法補充：</strong>法師達到 4 級時，你也會透過「施法」特性額外學會 1 個法師戲法。</p></section>
+<section class="wizard-feature class-feature-section" data-feature-level="5"><h3>等級 5：記憶法術</h3><p>每次短休後，可研讀法術書，將 1 個透過「施法」準備的 1 環以上法師法術，換成書中另一個你能準備的 1 環以上法師法術。</p></section>
+<section class="wizard-feature class-feature-section" data-feature-level="6"><h3>等級 6：法術塑形（塑能師）</h3><p>施放會影響其他可見生物的塑能系法術時，可從這些生物中選擇最多<strong>「法術環階＋1」名</strong>。</p><p>這些生物對該法術的豁免自動成功，且不承受豁免成功時原本仍會受到的傷害。</p></section>
+<section class="wizard-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p></section></div>
 `
 };

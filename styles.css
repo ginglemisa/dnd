@@ -13356,6 +13356,27 @@ html.tabletop-avatar-modal-open { overflow: hidden; }
   white-space: pre-line;
 }
 
+.app-dialog[data-variant="quick-build-complete"] .app-dialog__body ul {
+  margin: 0;
+  padding-inline-start: 1.4em;
+  color: var(--text-body);
+  line-height: 1.65;
+}
+
+.app-dialog[data-variant="quick-build-complete"] .app-dialog__body li + li {
+  margin-top: 0.4rem;
+}
+
+.app-dialog[data-variant="quick-build-complete"] .app-dialog__actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.app-dialog[data-variant="quick-build-complete"] .app-dialog__actions button {
+  min-width: 0;
+  padding-inline: 0.5rem;
+}
+
 .tabletop-condition-fieldset {
   min-width: 0;
   margin: 1rem 0 0;

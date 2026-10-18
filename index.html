@@ -81,11 +81,11 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261018-share-dialog-options">
+  <link rel="stylesheet" href="styles.css?v=20261018-quick-build-complete">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261006-usage-analytics" defer></script>
   <script src="monster.js?v=20261014-heroic-help" defer></script>
-    <script src="class-features.js?v=20261006-wizard-feature-copy" defer></script>
+    <script src="class-features.js?v=20261018-sorcerer-feature-copy" defer></script>
   <script src="race.js?v=20261003-race-flavor" defer></script>
   <script src="backgrounds.js?v=20261003-background-flavor" defer></script>
   <script src="tool-data.js?v=20261008-class-tools" defer></script>
@@ -105,7 +105,7 @@
   <script src="tabletop-spells.js?v=20261012-wizard-ritual-group" defer></script>
   <script src="legal-modal.js?v=20260923-legal-about" defer></script>
   <script src="onboarding-tour.js?v=20261014-advantage-disadvantage" defer></script>
-  <script src="quick-build.js?v=20261018-classic-navy-gold" defer></script>
+  <script src="quick-build.js?v=20261018-completion-actions" defer></script>
   <script src="spellbook.js?v=20261014-picker-performance" defer></script>
   <script src="spell-management.js?v=20261017-manual-modal-copy" defer></script>
   <script src="deity-info.js" defer></script>
@@ -3718,7 +3718,9 @@ function syncManualFeatGuidance() {
   const manual = isManualFeatManagementEnabled();
   document.querySelectorAll("[data-feat-choice]").forEach(wrap => {
     const raceChoice = wrap.dataset.featChoice === "human-origin";
-    wrap.hidden = manual && Boolean(raceChoice);
+    const inactiveRangerStyle = wrap.dataset.featChoice === "fighting-style-ranger"
+      && !document.getElementById("ranger-fighting-style")?.checked;
+    wrap.hidden = (manual && Boolean(raceChoice)) || inactiveRangerStyle;
     wrap.querySelector(".feat-choice-control").hidden = manual;
     const label = wrap.querySelector(":scope > label");
     if (label) label.hidden = manual;

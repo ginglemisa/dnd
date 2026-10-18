@@ -2856,24 +2856,34 @@
     if (completed) window.twAnalytics?.track?.("quick_build_complete");
     if (completed && warnings.length) window.twAnalytics?.track?.("quick_build_with_warnings");
     const warningText = warnings.length ? `\n\n以下項目未完成匯入：\n${warnings.map(item => `• ${item}`).join("\n")}` : "";
-    const classSkillBonusText = ["druid", "cleric"].includes(draft.choices.class)
-      ? "；巫祝與魔術使的技能額外加值也已納入計算。"
-      : "。";
-    const resultText = completed
-      ? `角色卡匯入完成。已計算屬性豁免與技能加值、匯入技能熟練與專精，並開啟武器攻擊自動化${classSkillBonusText}`
-      : "角色卡只完成部分匯入，請依下列問題檢查。";
     const completionAction = await window.AppDialog.showMessage({
       title: completed ? "角色卡匯入完成" : "角色卡部分匯入",
-      message: `${resultText}${warningText}`,
+      variant: completed ? "quick-build-complete" : undefined,
+      message: completed ? "" : `角色卡只完成部分匯入，請依下列問題檢查。${warningText}`,
+      renderContent: completed ? body => {
+        body.innerHTML = `<p><strong>角色完成，可以開始冒險了！</strong></p>
+          <ul>
+            <li>下載PDF：下載可列印的角色卡，方便面團使用。</li>
+            <li>分享角卡：取得網址連結，將角色卡分享給 DM 查看。</li>
+            <li>初次遊玩：透過導覽，認識手機跑團模式的基本操作。</li>
+          </ul>`;
+        if (warningText) {
+          const warning = document.createElement("p");
+          warning.textContent = warningText.trim();
+          body.appendChild(warning);
+        }
+      } : undefined,
       actions: completed ? [
-        { label: "下載角色卡 PDF", intent: "primary", value: "download-compact-pdf" },
-        ...(warnings.length === 0 ? [{ label: "初次遊玩", intent: "secondary", value: "first-table" }] : []),
-        { label: "知道了", intent: "secondary", value: "close" }
+        { label: "下載PDF", intent: "secondary", value: "download-compact-pdf" },
+        { label: "分享角卡", intent: "secondary", value: "share-card" },
+        { label: "初次遊玩", intent: "primary", value: "first-table", disabled: warnings.length > 0 }
       ] : undefined,
       confirmLabel: "知道了"
     });
     if (completionAction === "download-compact-pdf") {
       await window.downloadQuickBuildCompactPdf?.();
+    } else if (completionAction === "share-card" && completed) {
+      await window.copyShareUrl?.();
     } else if (completionAction === "first-table" && completed && warnings.length === 0) {
       await window.onboardingTour?.startTabletop?.();
     }
