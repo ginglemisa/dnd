@@ -1453,7 +1453,10 @@ async function verifyClassFeatureChoicePrompt(browser, url) {
 
     await chooseAsPlayer("class", "paladin");
     await modal.waitFor();
+    const paladinStyleRow = modal.locator('[data-feat-choice="fighting-style-paladin"]');
+    assert.equal(await paladinStyleRow.isVisible(), false, "unchecked paladin style hides its label, selector and view button");
     await modal.locator("#paladin-fighting-style").check();
+    assert.equal(await paladinStyleRow.isVisible(), true, "checking paladin style reveals the complete field");
     await modal.locator("#feat-choice-fighting-style-paladin").selectOption("防禦");
     await modal.locator("#class-feature-prompt-disabled").check();
     const selected = await page.evaluate(() => ({ state: collectStateObject(), share: collectShareState() }));
@@ -1729,6 +1732,69 @@ async function verifyFeatureReferences(browser, url) {
   try {
     await page.goto(url);
     await page.locator("#legal-close-btn").click();
+    const ruleCoverage = await page.evaluate(() => {
+      const skills = ["體操", "馴獸", "奧秘", "運動", "欺瞞", "歷史", "洞悉", "威嚇", "調查",
+        "醫藥", "自然", "察覺", "表演", "遊說", "宗教", "巧手", "隱匿", "生存", "求生", "醫學", "說服", "優勢", "劣勢"];
+      const failures = [];
+      const sources = [...Object.entries(classFeatures), ...Object.entries(raceFeatureDisplay),
+        ["all skill references", `<p>${skills.map(skillTip).join("、")}</p>`],
+        ["plain prose", `<p>${skills.filter(term => !["優勢", "劣勢"].includes(term)).join("、")}</p>`]];
+      for (const [name, html] of sources) {
+        const before = document.createElement("template");
+        const after = document.createElement("template");
+        before.innerHTML = html;
+        after.innerHTML = highlightFeatureRuleTerms(html);
+        if (before.content.textContent !== after.content.textContent) failures.push(`${name}: text changed`);
+        const controls = root => Array.from(root.querySelectorAll("input, select, textarea"), el => el.outerHTML);
+        if (JSON.stringify(controls(before.content)) !== JSON.stringify(controls(after.content))) failures.push(`${name}: controls changed`);
+        if (after.content.querySelector("button button, select .skill-tip, .skill-tip .skill-tip")) failures.push(`${name}: nested control`);
+        const skillLabels = root => Array.from(root.querySelectorAll(".skill-tip"), tip => tip.dataset.skill)
+          .filter(term => !["優勢", "劣勢"].includes(term));
+        if (JSON.stringify(skillLabels(before.content)) !== JSON.stringify(skillLabels(after.content))) failures.push(`${name}: skill references changed`);
+        const walker = document.createTreeWalker(after.content, NodeFilter.SHOW_TEXT);
+        while (walker.nextNode()) {
+          const node = walker.currentNode;
+          if (!node.parentElement?.closest('a, button, select, textarea, .skill-tip, .beast-tip, [role="button"]')
+            && /優勢|劣勢/.test(node.textContent)) failures.push(`${name}: unlinked advantage/disadvantage`);
+        }
+        for (const tip of after.content.querySelectorAll(".feature-rule-tip")) {
+          if (!renderSkillPopupHtml(tip.dataset.skill)) failures.push(`${name}: missing explanation`);
+        }
+      }
+      const cleric = document.createElement("template");
+      cleric.innerHTML = highlightSpellNamesInClassFeature(classFeatures.cleric);
+      const mission = cleric.content.querySelector("#cleric-trickster").closest(".druid-mission-option");
+      for (const skill of ["奧秘", "宗教"]) {
+        if (!mission.querySelector(`button[data-skill="${skill}"]`)) failures.push(`cleric: missing ${skill} reference`);
+      }
+      const proseExamples = {
+        bard: ["話語、音樂或表演"],
+        druid: ["德魯伊操使自然魔法", "將心交給自然", "察覺與解讀", "檢定察覺訊息", "自然精魂", "自然恢復"],
+        fighter: ["運動健將"],
+        ranger: ["自然魔法", "察覺危險"],
+        warlock: ["超自然契約", "超自然能力"],
+        elf: ["自然與生命", "超自然的能力"],
+        orc: ["其歷史"],
+        tiefling: ["歷史印象"]
+      };
+      for (const [name, examples] of Object.entries(proseExamples)) {
+        const template = document.createElement("template");
+        template.innerHTML = highlightSpellNamesInClassFeature(classFeatures[name] || raceFeatureDisplay[name]);
+        for (const phrase of examples) {
+          const walker = document.createTreeWalker(template.content, NodeFilter.SHOW_TEXT);
+          let found = false;
+          while (walker.nextNode()) {
+            if (walker.currentNode.textContent.includes(phrase)
+              && !walker.currentNode.parentElement?.closest(".skill-tip")) found = true;
+          }
+          if (!found) failures.push(`${name}: prose must remain unlinked: ${phrase}`);
+        }
+      }
+      const once = highlightFeatureRuleTerms('<p>優勢與隱匿</p><button>劣勢</button><select><option>自然</option></select>');
+      if (highlightFeatureRuleTerms(once) !== once) failures.push("duplicate decoration");
+      return failures;
+    });
+    assert.deepEqual(ruleCoverage, [], "all class/race descriptions link explicit skills and preserve non-skill prose, text and controls");
     await page.locator("#class").selectOption("druid");
     await page.locator("#level").selectOption("3");
     const opener = page.locator('[data-character-features-tab="class"]');
@@ -1785,6 +1851,34 @@ async function verifyFeatureReferences(browser, url) {
       await assertOnTop(page.locator("#skillPopup"));
       await page.locator("#skillPopup .close").click();
       await page.evaluate(() => showTab("basic"));
+    }
+    for (const width of [1280, 320]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.evaluate(() => applyStateObject({ class: "rogue", level: "3", race: "elf" }));
+      await opener.click();
+      await modal.getByRole("tab", { name: "職業", exact: true }).click();
+      for (const [term, expected] of [["優勢", "取較高的結果"], ["劣勢", "取較低的結果"], ["巧手", "扒竊"]]) {
+        const trigger = modal.locator(`#classFeatures button[data-skill="${term}"]`).first();
+        await trigger.focus();
+        assert.equal(await trigger.evaluate(el => getComputedStyle(el).textDecorationLine), "underline");
+        await trigger.press("Enter");
+        await assertOnTop(page.locator("#skillPopup"));
+        assert.match(await page.locator("#skillPopup .content").textContent(), new RegExp(expected));
+        const bounds = await page.locator("#skillPopup").boundingBox();
+        assert(bounds.x >= 0 && bounds.x + bounds.width <= width, "rule popup fits viewport");
+        await page.keyboard.press("Escape");
+        assert.equal(await page.locator("#skillPopup").isVisible(), false);
+        assert.equal(await modal.isVisible(), true);
+        assert.equal(await trigger.evaluate(el => el === document.activeElement), true);
+      }
+      await modal.getByRole("tab", { name: "種族", exact: true }).click();
+      await modal.locator('#raceFeatures button[data-skill="優勢"]').first().click();
+      await assertOnTop(page.locator("#skillPopup"));
+      await page.locator("#skillPopup .close").click();
+      await modal.locator('#raceFeatures button[data-skill="求生"]').click();
+      assert.match(await page.locator("#skillPopup .content").textContent(), /追蹤足跡/);
+      await modal.locator(".app-dialog__close").click();
+      assert.equal(await page.locator("#skillPopup").isVisible(), false);
     }
     console.log("Ability references: spells, skills and druid beasts stay above the dialog; close, Escape, focus and reused popups passed on desktop/mobile.");
   } finally { await page.close(); }

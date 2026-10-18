@@ -889,6 +889,66 @@ async function verifyPreparedPicker(page) {
   console.log("Prepared picker: toggle/search/ring filters, 1–4 columns, source collapse, draft counts, nested lookup and eligibility passed.");
 }
 
+async function verifyLevelUpCantripChoice(page) {
+  const choice = () => page.evaluate(() => {
+    const select = document.getElementById("class-level-up-cantrip");
+    const field = select?.closest(".class-feature-level-up-cantrip");
+    return field ? { hidden: field.hidden, value: select.value, label: field.querySelector("label").textContent,
+      afterNote: field.previousElementSibling?.matches("[data-after-feat-choice]") === true,
+      disabled: Array.from(select.options).filter(option => option.disabled).map(option => option.value) } : null;
+  });
+  const missing = () => page.evaluate(() => getClassFeatureChoiceIssues().map(issue => issue.message).filter(message => message.includes("額外戲法")));
+  const bard = entries => modern({ class: "bard", level: "4" }, entries.map(id => player(id, "bard")));
+  await apply(page, modern({ class: "bard", level: "3" }, [player("vicious-mockery", "bard")]));
+  assert.equal(await choice(), null, "the extra cantrip appears from level 4");
+
+  await apply(page, bard(["vicious-mockery", "minor-illusion"]));
+  assert.deepEqual(await choice(), { hidden: false, value: "", label: "施法補充：額外吟遊詩人戲法", afterNote: true, disabled: ["minor-illusion", "vicious-mockery"] });
+  assert.deepEqual(await missing(), ["吟遊詩人 4 級額外戲法尚未選擇。"]);
+  await page.evaluate(() => showTab("basic"));
+  await page.locator("#class-feature-choice-reminder button").filter({ hasText: "額外戲法" }).click();
+  const modalSelect = page.locator("#character-features-modal #class-level-up-cantrip");
+  await modalSelect.waitFor();
+  for (let attempt = 0; attempt < 50 && !await page.evaluate(() => document.activeElement?.id === "class-level-up-cantrip"); attempt += 1) await page.waitForTimeout(100);
+  assert.equal(await page.evaluate(() => document.activeElement?.id), "class-level-up-cantrip", "the reminder focuses the dropdown");
+  await modalSelect.selectOption("light");
+  await page.keyboard.press("Escape");
+  const saved = await page.evaluate(() => collectStateObject());
+  assert.deepEqual(saved.__spellManagement.entries.map(entry => [entry.spellId, entry.classFeatureCantrip || ""]),
+    [["vicious-mockery", ""], ["minor-illusion", ""], ["light", "class-level-4"]], "the dropdown edits the shared class cantrip list");
+  assert.equal(Object.hasOwn(saved, "class-level-up-cantrip"), false, "the dropdown carries no field of its own");
+  assert.deepEqual(await missing(), []);
+  await apply(page, modern({ class: "wizard", level: "1" }));
+  await apply(page, saved);
+  assert.equal((await choice()).value, "light", "JSON/share restoration keeps the level 4 choice");
+  await page.evaluate(() => SpellManagement.removePlayerSpell("light"));
+  assert.equal((await choice()).value, "");
+
+  // Older full lists have no marker: the last class cantrip fills the level 4 choice and is replaced in place.
+  await apply(page, bard(["vicious-mockery", "minor-illusion", "mage-hand"]));
+  assert.equal((await choice()).value, "mage-hand");
+  assert.deepEqual(await missing(), []);
+  await page.evaluate(() => { const select = document.getElementById("class-level-up-cantrip"); select.value = "light"; select.dispatchEvent(new Event("change", { bubbles: true })); });
+  assert.deepEqual(await playerIds(page), ["vicious-mockery", "minor-illusion", "light"]);
+
+  for (const [cls, label] of [["cleric", "施法補充：額外牧師戲法"], ["druid", "施法補充：額外德魯伊戲法"],
+    ["sorcerer", "施法補充：額外術士戲法"], ["warlock", "契約魔法補充：額外契術師戲法"], ["wizard", "施法補充：額外法師戲法"]]) {
+    await apply(page, modern({ class: cls, level: "4" }));
+    assert.equal((await choice())?.label, label, `${cls} offers its level 4 cantrip`);
+    assert.equal((await missing()).length, 1, `${cls} reminds the missing cantrip`);
+  }
+  for (const cls of ["paladin", "ranger"]) {
+    await apply(page, modern({ class: cls, level: "4" }));
+    assert.equal(await choice(), null, `${cls} has no class cantrip growth`);
+  }
+  await apply(page, modern({ class: "bard", level: "4", "manual-spell-management": true }));
+  assert.equal((await choice())?.hidden, true, "manual management hides the dropdown");
+  assert.deepEqual(await missing(), []);
+  await page.evaluate(() => SpellManagement.setManual(false, { confirm: false }));
+  assert.equal((await choice())?.hidden, false, "automatic management shows it again");
+  console.log("Level 4 cantrip: class detail dropdown, shared cantrip cap, reminder/jump, legacy full lists, manual mode and JSON/share restore passed.");
+}
+
 async function verifyWizardBookPicker(page) {
   const bookIds = ["mage-armor", "misty-step", "fireball", "ice-storm", "unknown-book-entry"];
   await apply(page, modern({ class: "wizard", level: "8", __wizardSpellbook: { version: 2, wizardSpellIds: bookIds, manualSpellIds: [] } }, [player("mage-armor", "wizard")]));
@@ -1657,6 +1717,7 @@ async function main() {
     await verifyAutomaticSourceCleanup(page);
     await verifyUnavailableSpellRows(page);
     await verifyPreparedPicker(page);
+    await verifyLevelUpCantripChoice(page);
     await verifyWizardBookPicker(page);
     await verifyManualSpellbook(page);
     await verifySeparateModeBooks(page);

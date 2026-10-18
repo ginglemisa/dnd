@@ -220,106 +220,124 @@ const classFeatures = {
 <div class="class-feature-content" data-class-feature-panel="class">
 <section class="barbarian-feature class-feature-section" data-feature-level="1">
   <h3>等級 1：狂暴</h3>
-  <p>你可以用附贈動作進入狂暴（未穿重甲時）。</p>
+  <p>你<strong>未穿重甲</strong>時，可以用<strong>附贈動作</strong>進入狂暴。</p>
+  <ul class="class-rule-list">
+    <li><strong>使用次數：</strong>見「野蠻人特性」表的「狂暴次數」欄。<strong>短休後恢復 1 次</strong>，<strong>長休後全部恢復</strong>。</li>
+  </ul>
   <div class="class-rule-subsection barbarian-rule-subsection">
-    <h4>狂暴期間：</h4>
+    <h4>狂暴期間</h4>
     <ul class="class-rule-list">
-      <li>你對鈍擊,穿刺,揮砍傷害有抗性。</li>
-      <li>你用力量造成的傷害可加上狂暴傷害（數值見特性表）。</li>
-      <li>你的力量檢定與力量豁免有優勢。</li>
-      <li>你不能施法，也不能維持專注。</li>
+      <li><strong>抗性：</strong>你對鈍擊、穿刺、揮砍傷害具有抗性。</li>
+      <li><strong>狂暴傷害：</strong>你用力量造成的傷害可加上狂暴傷害，數值見「野蠻人特性」表。</li>
+      <li><strong>力量優勢：</strong>你的力量檢定與力量豁免具有<strong>優勢</strong>。</li>
+      <li><strong>施法限制：</strong>你不能施法，也不能維持專注。</li>
     </ul>
   </div>
   <div class="class-rule-subsection barbarian-rule-subsection">
-    <h4>持續時間：到你下個回合結束。若要延長，每回合至少做一項：</h4>
+    <h4>持續與延長</h4>
+    <p>狂暴持續到你的下個回合結束。若要延長，每回合至少做到下列一項：</p>
     <ul class="class-rule-list">
-      <li>對敵人做攻擊檢定，或</li>
-      <li>讓敵人做豁免檢定，或</li>
-      <li>再用一次附贈動作延長狂暴。</li>
+      <li><strong>攻擊：</strong>對敵人進行攻擊檢定。</li>
+      <li><strong>迫使豁免：</strong>讓敵人進行豁免檢定。</li>
+      <li><strong>附贈動作：</strong>再用一次<strong>附贈動作</strong>延長狂暴。</li>
     </ul>
   </div>
-  <p>若你穿上重甲,陷入失能，或超過 10 分鐘，狂暴會結束。</p>
-  <p>使用次數見特性表：短休回 1 次,長休全回。</p>
+  <p><strong>結束條件：</strong>你穿上重甲、陷入失能，或狂暴超過 10 分鐘時，狂暴結束。</p>
 </section>
 
 <section class="barbarian-feature class-feature-section" data-feature-level="1">
   <h3>等級 1：無甲防禦</h3>
   <p>你沒穿護甲時，AC = 10 + 敏捷調整值 + 體質調整值。</p>
-  <p>你仍可持盾。</p>
+  <ul class="class-rule-list">
+    <li><strong>盾牌：</strong>使用此特性時仍可持盾。</li>
+  </ul>
 </section>
 
 <section class="barbarian-feature class-feature-section" data-feature-level="1">
   <h3>等級 1：武器精通</h3>
-  <p>從你熟練的武器中選 2 種，獲得其精通屬性（例如巨斧,手斧）。</p>
-  <p>每次長休後可改其中 1 種。</p>
+  <p>從你熟練的武器中選擇 2 種，取得其精通屬性，例如巨斧、手斧。</p>
+  <ul class="class-rule-list">
+    <li><strong>改選時機：</strong>每次長休後可替換其中 1 種。</li>
+    <li><strong>數量提升：</strong>可選數量隨野蠻人等級增加，見「野蠻人特性」表的「武器精通」欄。</li>
+  </ul>
 </section>
 
 <section class="barbarian-feature class-feature-section" data-feature-level="2">
   <h3>等級 2：險境感知</h3>
-  <p>只要你沒失能，你的敏捷豁免有優勢。</p>
+  <p>只要你未陷入<strong>失能</strong>狀態，你的敏捷豁免就具有<strong>優勢</strong>。</p>
 </section>
 
 <section class="barbarian-feature class-feature-section" data-feature-level="2" data-action-id="barbarian-reckless-attack">
   <h3>等級 2：魯莽攻擊</h3>
-  <p>在你回合內第一次用力量攻擊前可宣告魯莽攻擊：</p>
+  <p>在你的回合中，第一次用力量攻擊前可以宣告魯莽攻擊。</p>
   <ul class="class-rule-list">
-    <li>你本回合用力量的近戰攻擊有優勢。</li>
-    <li>直到你下回合開始前，攻擊你的人也有優勢。</li>
+    <li><strong>你的優勢：</strong>本回合你用力量進行的近戰攻擊具有<strong>優勢</strong>。</li>
+    <li><strong>代價：</strong>直到你的下個回合開始前，攻擊你的檢定也具有<strong>優勢</strong>。</li>
   </ul>
 </section>
 
 <section class="barbarian-feature class-feature-section" data-feature-level="3">
   <h3>等級 3：野蠻人子職</h3>
-  <p>你可選擇一個野蠻人子職；基本規則僅提供「狂戰士道途」。</p>
+  <p>選擇一個野蠻人子職，並隨等級提升獲得子職能力。基本規則僅提供「狂戰士道途」。</p>
 </section>
 
 <section class="barbarian-feature class-feature-section" data-feature-level="3">
   <h3>等級 3：狂怒（狂戰子職）</h3>
-  <p>當你在狂暴中使用魯莽攻擊，且用力量攻擊命中本回合第一個目標時，
-可額外造成若干 d6 傷害（骰數 = 狂暴傷害加值），類型同該次攻擊。</p>
+  <p>你在狂暴中使用魯莽攻擊，且用力量攻擊命中本回合第一個目標時，可造成額外傷害。</p>
+  <ul class="class-rule-list">
+    <li><strong>額外傷害：</strong>若干 d6，骰數等於狂暴傷害加值。</li>
+    <li><strong>傷害類型：</strong>與該次攻擊相同。</li>
+  </ul>
 </section>
 
 <section class="barbarian-feature class-feature-section" data-feature-level="3">
   <h3>等級 3：先祖學識</h3>
-  <p>你從野蠻人初始技能列表中再獲得 1 項技能熟練。</p>
-  <p>此外，狂暴期間，你可用力量來做以下技能檢定：</p>
-  <p>${skillTip("體操")},${skillTip("威嚇")},${skillTip("察覺")},${skillTip("隱匿")},${skillTip("求生")}。</p>
+  <p>你額外獲得 1 項技能熟練，並能在狂暴時以力量進行部分技能檢定。</p>
+  <ul class="class-rule-list">
+    <li><strong>額外熟練：</strong>從野蠻人初始技能列表中選擇 1 項技能，獲得熟練。</li>
+    <li><strong>狂暴期間：</strong>你可用力量進行${skillTip("體操")}、${skillTip("威嚇")}、${skillTip("察覺")}、${skillTip("隱匿")}、${skillTip("求生")}檢定。</li>
+  </ul>
 </section>
+<section class="barbarian-feature class-feature-section" data-feature-level="3"><p><strong>狂暴補充：</strong>野蠻人達到 3 級時，狂暴次數提升為 3 次，詳見「野蠻人特性」表。</p></section>
 
 <section class="barbarian-feature class-feature-section" data-feature-level="4">
   <h3>等級 4：屬性值提升</h3>
-  <p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p>
-  <p>另外依特性表提升武器精通可選數量。</p>
+  <p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p>
 </section>
+<section class="barbarian-feature class-feature-section" data-feature-level="4"><p><strong>武器精通補充：</strong>野蠻人達到 4 級時，武器精通可選數量提升為 3 種，詳見「野蠻人特性」表。</p></section>
 
 <section class="barbarian-feature class-feature-section" data-feature-level="5">
   <h3>等級 5：額外攻擊</h3>
-  <p>你在自己回合使用攻擊動作時，可以攻擊 2 次。</p>
+  <p>你在自己的回合執行<strong>攻擊動作</strong>時，可以攻擊 2 次。</p>
 </section>
 
 <section class="barbarian-feature class-feature-section" data-feature-level="5">
   <h3>等級 5：快速移動</h3>
-  <p>若你未穿重甲，速度 +10 呎。</p>
+  <p>你<strong>未穿重甲</strong>時，速度增加 10 呎。</p>
 </section>
 
 <section class="barbarian-feature class-feature-section" data-feature-level="6">
   <h3>等級 6：無我狂暴（狂戰子職）</h3>
-  <p>狂暴期間，你免疫魅惑與恐慌狀態。若你進入狂暴時正處於其中一種狀態，該狀態立即終止。</p>
+  <p>狂暴期間，你<strong>免疫魅惑與恐慌</strong>狀態。</p>
+  <ul class="class-rule-list">
+    <li><strong>進入狂暴時：</strong>若你正處於其中一種狀態，該狀態立即終止。</li>
+  </ul>
 </section>
+<section class="barbarian-feature class-feature-section" data-feature-level="6"><p><strong>狂暴補充：</strong>野蠻人達到 6 級時，狂暴次數提升為 4 次，詳見「野蠻人特性」表。</p></section>
 
 <section class="barbarian-feature class-feature-section" data-feature-level="7">
   <h3>等級 7：野性本能</h3>
-  <p>你的先攻擲骰具有優勢。</p>
+  <p>你的先攻擲骰具有<strong>優勢</strong>。</p>
 </section>
 
 <section class="barbarian-feature class-feature-section" data-feature-level="7">
   <h3>等級 7：直覺猛撲</h3>
-  <p>當你以附贈動作進入狂暴時，可以在該附贈動作中移動至多等同於你速度一半的距離。</p>
+  <p>你以<strong>附贈動作</strong>進入狂暴時，可以在同一個附贈動作中移動，距離至多為你速度的一半。</p>
 </section>
 
 <section class="barbarian-feature class-feature-section" data-feature-level="8">
   <h3>等級 8：屬性值提升</h3>
-  <p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p>
+  <p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p>
 </section>
 </div>
 `,
@@ -729,7 +747,7 @@ const classFeatures = {
       <div class="druid-mission-option__heading"><label><input type="checkbox" id="cleric-guardian"> 守護者</label>：獲得<strong>軍用武器</strong>熟練，並接受<strong>重甲</strong>訓練。</div>
     </div>
     <div class="druid-mission-option">
-      <div class="druid-mission-option__heading"><label><input type="checkbox" id="cleric-trickster"> 魔術使</label>：額外學會 1 個牧師戲法；進行智力（奧秘）或智力（宗教）檢定時，額外加上感知調整值（至少 +1）。</div>
+      <div class="druid-mission-option__heading"><label><input type="checkbox" id="cleric-trickster"> 魔術使</label>：額外學會 1 個牧師戲法；進行智力（${skillTip("奧秘")}）或智力（${skillTip("宗教")}）檢定時，額外加上感知調整值（至少 +1）。</div>
     </div>
   </div>
 </section>
@@ -980,74 +998,47 @@ const classFeatures = {
 <div class="class-feature-content" data-class-feature-panel="class">
 <section class="druid-feature class-feature-section" data-feature-level="1">
   <h3>等級 1：德魯伊語</h3>
+  <p>你學會德魯伊的祕密語言「德魯伊語」，並<strong>始終準備</strong>法術「動物交談」。</p>
   <ul class="class-rule-list">
-    <li>你學會德魯伊的祕密語言「德魯伊語」，並始終準備法術「動物交談」。</li>
-    <li>你可用德魯伊語留下隱藏訊息：
-      <ul>
-        <li>看得懂德魯伊語的人會自動發現。</li>
-      </ul>
-    </li>
-    <li>看不懂的人可做 DC 15 智力（${skillTip("調查")}）檢定察覺有訊息，但無法用非魔法方式解讀。</li>
+    <li><strong>隱藏訊息：</strong>你可用德魯伊語留下隱藏訊息，看得懂德魯伊語的人會自動發現。</li>
+    <li><strong>察覺與解讀：</strong>看不懂的人可通過 DC 15 智力（${skillTip("調查")}）檢定察覺訊息，但無法用非魔法方式解讀。</li>
   </ul>
 </section>
 
 <section class="druid-feature class-feature-section" data-feature-level="1">
   <h3>等級 1：原初使命</h3>
-  <p>你在下列使命擇一：</p>
+  <p>從下列原初使命中選擇 1 項：</p>
   <div class="druid-mission-options">
     <div class="druid-mission-option">
-      <div class="druid-mission-option__heading"><label><input type="checkbox" id="druid-shaman"> 巫祝</label>：</div>
-      <ul class="class-rule-list">
-        <li>額外學會 1 個德魯伊戲法。</li>
-      </ul>
-      <p>你的智力（${skillTip("奧秘")}／${skillTip("自然")}）檢定可額外加上感知調整值（至少 +1）。</p>
+      <div class="druid-mission-option__heading"><label><input type="checkbox" id="druid-shaman"> 巫祝</label>：額外學會 1 個德魯伊戲法。</div>
+      <p>你的智力（${skillTip("奧秘")}／${skillTip("自然")}）檢定可額外加上<strong>感知調整值</strong>（至少 +1）。</p>
     </div>
     <div class="druid-mission-option">
-      <div class="druid-mission-option__heading"><label><input type="checkbox" id="druid-sentinel"> 哨衛</label>：獲得軍用武器熟練，並接受中甲訓練。</div>
+      <div class="druid-mission-option__heading"><label><input type="checkbox" id="druid-sentinel"> 哨衛</label>：獲得<strong>軍用武器</strong>熟練，並接受<strong>中甲</strong>訓練。</div>
     </div>
   </div>
 </section>
 
 <section class="druid-feature class-feature-section" data-feature-level="1">
   <h3>等級 1：施法</h3>
+  <p>你使用<strong>感知</strong>施展「德魯伊法術列表」中的法術，並可用德魯伊法器作為施法法器。</p>
   <ul class="class-rule-list">
-    <li>你向自然借力施法，使用「德魯伊法術列表」。</li>
-    <li>戲法：
-      <ul>
-        <li>起始學會 2 個德魯伊戲法（推薦：德魯伊伎倆,燃火術）。</li>
-        <li>每次升德魯伊等級可替換 1 個戲法。</li>
-        <li>4 級時再多學 1 個戲法。</li>
-      </ul>
-    </li>
-    <li>法術位：見「德魯伊特性」表，長休後全回復。</li>
-    <li>準備法術：
-      <ul>
-        <li>起始先準備 4 個 1 環法術（推薦：化獸為友,療傷術,妖火,雷鳴波）。</li>
-        <li>之後可準備數量依表提升。</li>
-        <li>每當這個數量提高時，從德魯伊法術列表再選法術，直到準備數量與表格一致。</li>
-        <li>你只能準備目前有法術位環階的法術（例如 3 級時可準備 1～2 環法術）。</li>
-      </ul>
-    </li>
-    <li>若其他德魯伊特性提供額外已準備法術，這些法術不計入你平常的準備上限，但仍算德魯伊法術。</li>
-    <li>每次長休後可重整準備法術清單。</li>
-    <li>施法屬性：感知。</li>
-    <li>施法法器：可用德魯伊法器。</li>
+    <li><strong>戲法：</strong>起始學會 2 個德魯伊戲法。每提升 1 級德魯伊，可將 1 個戲法換成另一個德魯伊戲法。<br>推薦：德魯伊伎倆、燃火術。</li>
+    <li><strong>準備法術：</strong>起始準備 4 個 1 環德魯伊法術，之後依「德魯伊特性」表增加。數量提高時，從德魯伊法術列表補選至表列數量；只能準備你有對應環階法術位的法術，<strong>每次長休後可全部更換</strong>。<br>推薦：化獸為友、療傷術、妖火、雷鳴波。</li>
+    <li><strong>法術位：</strong>數量見「德魯伊特性」表，長休後全部恢復。</li>
+    <li><strong>額外法術：</strong>其他德魯伊特性給予的額外準備法術不計入上限，仍視為你的德魯伊法術。</li>
   </ul>
+  <p>例如 3 級德魯伊可準備共 6 個 1～2 環法術。</p>
 </section>
 
 <section class="druid-feature class-feature-section" data-feature-level="2" data-action-id="druid-wild-shape">
   <h3>等級 2：荒野形態</h3>
+  <p>以<strong>附贈動作</strong>變成已知的野獸形態，見下方「已知形態」。</p>
   <ul class="class-rule-list">
-    <li>你可用附贈動作變成已知的野獸形態（見下方「已知形態」）。</li>
-    <li>單次變形持續時間：最多「德魯伊等級一半（捨去小數點）」小時。</li>
-    <li>變形會提前結束的情況：
-      <ul>
-        <li>你再次使用荒野形態。</li>
-        <li>你陷入失能或死亡。</li>
-        <li>你用附贈動作主動解除。</li>
-      </ul>
-    </li>
-    <li>使用次數：起始 2 次；短休回復 1 次，長休回滿。高等級可用次數依表提升。</li>
+    <li><strong>持續時間：</strong>最多為德魯伊等級的一半（無條件捨去）小時。</li>
+    <li><strong>提前結束：</strong>再次使用荒野形態、陷入失能或死亡時結束；也可用附贈動作主動解除。</li>
+    <li><strong>使用次數：</strong>起始 2 次，之後依「德魯伊特性」表增加。</li>
+    <li><strong>恢復時機：</strong><strong>短休後恢復 1 次，長休後全部恢復</strong>。</li>
   </ul>
   <div class="class-rule-subsection druid-rule-subsection">
     <h4>野獸形態</h4>
@@ -1086,49 +1077,47 @@ const classFeatures = {
   </div>
 <section class="wild-shape-known-forms" aria-labelledby="wild-shape-known-forms-heading">
   <h4 id="wild-shape-known-forms-heading">已知形態</h4>
-  <p class="wild-shape-known-forms__intro">你起始已知 4 種野獸形態，需從「挑戰等級 1/4 以下且無飛行速度」的野獸中挑選。</p>
-  <p class="wild-shape-known-forms__recommendation"><strong>推薦：</strong><span class="beast-tip" data-beast="rat">老鼠</span>,<span class="beast-tip" data-beast="riding_horse">馱用馬</span>,<span class="beast-tip" data-beast="spider">蜘蛛</span>,<span class="beast-tip" data-beast="wolf">狼</span>。</p>
+  <p class="wild-shape-known-forms__intro">起始已知 4 種野獸形態，從<strong>挑戰等級 1/4 以下且無飛行速度</strong>的野獸中挑選。</p>
+  <p class="wild-shape-known-forms__recommendation"><strong>推薦：</strong><span class="beast-tip" data-beast="rat">老鼠</span>、<span class="beast-tip" data-beast="riding_horse">馱用馬</span>、<span class="beast-tip" data-beast="spider">蜘蛛</span>、<span class="beast-tip" data-beast="wolf">狼</span>。</p>
   <ul class="wild-shape-known-forms__rules">
-    <li>每次長休可替換 1 種已知形態。</li>
-    <li>隨德魯伊等級提高，你可學更多形態，且可選最大挑戰等級會提升。</li>
-    <li>8 級後可選有飛行速度的野獸。</li>
-    <li>經 DM 同意，也可參考《怪物圖鑑》或其他來源的合適野獸。</li>
+    <li><strong>長休替換：</strong>每次長休可替換 1 種已知形態。</li>
+    <li><strong>等級提升：</strong>已知形態數量與最大挑戰等級依上表提高；達到 8 級後，可選有飛行速度的野獸。</li>
+    <li><strong>其他來源：</strong>經 DM 同意，也可參考《怪物圖鑑》或其他來源的合適野獸。</li>
   </ul>
   ${DRUID_WILD_SHAPE_BEAST_LIST_HTML}
 </section>
   <div class="class-rule-subsection druid-rule-subsection druid-rule-subsection--transformation">
-    <h4>變形規則（重點）：</h4>
+    <h4>變形規則</h4>
     <ul class="class-rule-list">
-      <li>臨時生命值：變形時獲得等同德魯伊等級的臨時生命值。</li>
-      <li>遊戲數據：改用野獸數據，但保留你的生物類型,生命值,生命骰,智力/感知/魅力,職業特性,語言與專長。技能與豁免熟練仍保留，若野獸該數值更高可改用野獸值。</li>
-      <li>施法限制：變形期間不能施法，但不會中斷你已施放法術的專注或既有效果。</li>
-      <li>裝備互動：裝備可掉落,融入或由新形態穿戴；是否能穿戴由 DM 依體型與構造判定。無法穿戴者會掉落或融入，融入的裝備在變形期間不生效。</li>
+      <li><strong>臨時生命值：</strong>變形時獲得等同德魯伊等級的臨時生命值。</li>
+      <li><strong>遊戲數據：</strong>改用野獸數據，但保留你的生物類型、生命值、生命骰、智力／感知／魅力、職業特性、語言與專長。</li>
+      <li><strong>熟練項：</strong>保留技能與豁免熟練；若野獸的對應數值更高，可改用野獸值。</li>
+      <li><strong>施法限制：</strong>變形期間<strong>不能施法</strong>，但不會中斷你已施放法術的專注或既有效果。</li>
+      <li><strong>裝備互動：</strong>裝備可掉落、融入或由新形態穿戴；是否能穿戴由 DM 依體型與構造判定。無法穿戴者會掉落或融入，融入的裝備在變形期間不生效。</li>
     </ul>
   </div>
 </section>
 
 <section class="druid-feature class-feature-section" data-feature-level="2" data-action-id="druid-wild-companion">
   <h3>等級 2：荒野夥伴</h3>
+  <p>你可召喚動物外型的自然精魂，作為你的魔寵。</p>
   <ul class="class-rule-list">
-    <li>你可召喚動物外型的自然精魂。</li>
-    <li>作為魔法動作，消耗 1 個法術位或 1 次荒野形態使用次數，可施放一次不需材料成分的「獲得魔寵」。</li>
-    <li>以此方式召喚的魔寵類型為精類，並在你完成長休後消失。</li>
+    <li><strong>使用方式：</strong>以<strong>魔法動作</strong>消耗 1 個法術位或 1 次荒野形態，施放 1 次<strong>不需材料成分</strong>的「獲得魔寵」。</li>
+    <li><strong>魔寵類型：</strong>以此方式召喚的魔寵為精類。</li>
+    <li><strong>持續時間：</strong>在你完成長休後消失。</li>
   </ul>
 </section>
 
 <section class="druid-feature class-feature-section" data-feature-level="3">
   <h3>等級 3：德魯伊子職</h3>
-  <ul class="class-rule-list">
-    <li>你可選擇一個德魯伊子職；基本規則僅提供「大地結社」。</li>
-    <li>隨等級提升，你會陸續取得子職特性。</li>
-  </ul>
+  <p>選擇一個德魯伊子職，並隨等級提升獲得子職能力。基本規則僅提供「大地結社」。</p>
 </section>
 
 <section class="druid-feature class-feature-section" data-feature-level="3">
   <h3>等級 3：大地結社法術（大地子職）</h3>
   <ul class="class-rule-list">
-    <li>每次長休後，從旱地,極地,溫帶,熱帶擇一地貌。</li>
-    <li>你會始終準備該地貌對應,且目前等級可用的法術：</li>
+    <li><strong>選擇地貌：</strong>每次長休後，從旱地、極地、溫帶或熱帶中選擇 1 種地貌。</li>
+    <li><strong>始終準備：</strong>你始終準備所選地貌對應、且目前德魯伊等級可用的法術，詳見下表。</li>
   </ul>
   <div class="rule-table-shell rule-table-shell--druid-terrain-spells">
     <table class="rule-reference-table druid-terrain-spells" aria-label="大地結社地貌法術">
@@ -1172,41 +1161,48 @@ const classFeatures = {
 
 <section class="druid-feature class-feature-section" data-feature-level="3" data-action-id="druid-lands-aid">
   <h3>等級 3：大地之援（大地子職）</h3>
+  <p>以<strong>魔法動作</strong>消耗 1 次荒野形態，在 60 呎內選一點，產生 10 呎球形花荊區域。</p>
   <ul class="class-rule-list">
-    <li>作為魔法動作，你可消耗 1 次荒野形態，在 60 呎內選一點，產生 10 呎球形花荊區域。</li>
-    <li>區域內你指定的每個生物需做體質豁免（對抗你的法術豁免 DC）：
-      <ul>
-        <li>失敗：受 2d6 黯蝕傷害。</li>
-        <li>成功：傷害減半。</li>
-      </ul>
-    </li>
-    <li>同時你可指定其中 1 名生物回復 2d6 生命值。</li>
-    <li>此特性的傷害與治療會隨等級提升：德魯伊 10 級為 3d6，14 級為 4d6。</li>
+    <li><strong>傷害：</strong>區域內你指定的每個生物進行體質豁免，對抗你的法術豁免 DC；失敗時受到 2d6 黯蝕傷害，成功時傷害減半。</li>
+    <li><strong>治療：</strong>同時可指定區域內 1 名生物恢復 2d6 生命值。</li>
+    <li><strong>等級提升：</strong>傷害與治療在德魯伊 10 級時提升為 3d6，14 級時提升為 4d6。</li>
   </ul>
 </section>
 
 <section class="druid-feature class-feature-section" data-feature-level="4">
   <h3>等級 4：屬性值提升</h3>
-  <p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p>
+  <p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p>
+  <p data-after-feat-choice><strong>施法補充：</strong>德魯伊達到 4 級時，你也會透過「施法」特性額外學會 1 個德魯伊戲法。</p>
 </section>
 
 <section class="druid-feature class-feature-section" data-feature-level="5">
   <h3>等級 5：野性復甦</h3>
-  <p>每回合一次，若你沒有剩餘荒野形態次數：</p>
+  <p>你可在荒野形態與法術位之間轉換，以下兩種用法都<strong>不需動作</strong>。</p>
   <ul class="class-rule-list">
-    <li>你可消耗 1 個法術位，立刻回復 1 次荒野形態（無需動作）。</li>
+    <li><strong>恢復荒野形態：</strong>每回合 1 次，若你沒有剩餘荒野形態次數，可消耗 1 個法術位，立即恢復 1 次荒野形態。</li>
+    <li><strong>恢復法術位：</strong>消耗 1 次荒野形態，恢復 1 個 1 環法術位。此用法每次長休前只能使用 1 次。</li>
   </ul>
-  <div class="class-rule-subsection druid-rule-subsection">
-    <h4>另外：</h4>
-    <ul class="class-rule-list">
-      <li>你可消耗 1 次荒野形態，回復 1 個 1 環法術位（無需動作）。</li>
-      <li>這個回復法術位的用法，在每次長休前只能使用 1 次。</li>
-    </ul>
+</section>
+<section class="druid-feature class-feature-section" data-feature-level="6">
+  <h3>等級 6：自然恢復（大地子職）</h3>
+  <ul class="class-rule-list">
+    <li><strong>免費施法：</strong>可不消耗法術位，施放 1 次透過「大地結社法術」準備的 1 環以上法術。使用後，須完成長休才能再次使用。</li>
+    <li><strong>短休恢復：</strong>完成短休時，可恢復部分已消耗的法術位，環階總和等於德魯伊等級的一半（無條件進位），單一法術位最高為 5 環。使用後，須完成長休才能再次恢復法術位。</li>
+  </ul>
+</section>
+<section class="druid-feature class-feature-section" data-feature-level="7">
+  <h3>等級 7：元素狂怒</h3>
+  <p>選擇並獲得下列 1 項：</p>
+  <div class="druid-mission-options">
+    <div class="druid-mission-option">
+      <div class="druid-mission-option__heading"><label><input type="checkbox" id="druid-elemental-fury-potent-spellcasting" data-feature-choice-group="druid-elemental-fury"> 強力施法</label>：以德魯伊戲法造成傷害時，將<strong>感知調整值</strong>加到傷害中。</div>
+    </div>
+    <div class="druid-mission-option">
+      <div class="druid-mission-option__heading"><label><input type="checkbox" id="druid-elemental-fury-primal-strike" data-feature-choice-group="druid-elemental-fury"> 原初打擊</label>：在你的每個回合中 1 次，以武器或荒野形態的野獸形態攻擊命中生物時，可使目標額外受到 <strong>1d8 冷凍、火焰、閃電或雷鳴傷害</strong>（由你選擇）。</div>
+    </div>
   </div>
 </section>
-<section class="druid-feature class-feature-section" data-feature-level="6"><h3>等級 6：自然恢復（大地子職）</h3><p>你可以在不消耗法術位的情況下，施展一次透過結社法術特性準備的1+環法術。使用後，你必須完成長休才能再次這麼做。</p><p>此外，當你完成短休時，可以恢復部分已消耗的法術位。恢復的法術位環階總和等於你德魯伊職業等級的一半（小數無條件進位），且每個法術位都不能是6+環。使用此效果後，你必須完成長休才能再次恢復法術位。</p></section>
-<section class="druid-feature class-feature-section" data-feature-level="7"><h3>等級 7：元素狂怒</h3><p>選擇並獲得下列一項：</p><div class="druid-mission-options"><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="druid-elemental-fury-potent-spellcasting" data-feature-choice-group="druid-elemental-fury"> 強力施法</label>：你將感知調整值加入所有你以德魯伊戲法造成的傷害中。</div></div><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="druid-elemental-fury-primal-strike" data-feature-choice-group="druid-elemental-fury"> 原初打擊</label>：在你的每個回合中一次，當你使用武器或荒野形態的野獸形態發動攻擊並命中一個生物時，可以使目標額外受到1d8冷凍、火焰、閃電或雷鳴傷害（由你選擇）。</div></div></div></section>
-<section class="druid-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p></section>
+<section class="druid-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p></section>
 </div>
 `,
   fighter: `<section class="class-creation-content" data-class-feature-panel="creation">
@@ -1338,67 +1334,95 @@ const classFeatures = {
 <div class="class-feature-content" data-class-feature-panel="class">
 <section class="fighter-feature class-feature-section" data-feature-level="1">
   <h3>等級 1：戰鬥風格</h3>
-  <p>你磨練你的戰鬥技藝。你可以獲得所選的一種 戰鬥風格 專長。推薦選擇 防禦。</p>
-  <p>每當你獲得戰士等級時，你可以將原專長替換成另一個 戰鬥風格 專長。</p>
+  <p>你磨練戰鬥技藝，獲得 1 個自選的「戰鬥風格」專長。推薦：防禦。</p>
+  <ul class="class-rule-list">
+    <li><strong>升級替換：</strong>每提升 1 級戰士，可將此專長換成另一個「戰鬥風格」專長。</li>
+  </ul>
 </section>
 
 <section class="fighter-feature class-feature-section" data-feature-level="1" data-action-id="fighter-second-wind">
   <h3>等級 1：回氣</h3>
-  <p>你的身心都儲有底力，關鍵時刻尤為重要。作為一個附贈動作，你恢復 1d10+你戰士等級的生命值。</p>
-  <p>你可以使用該特性兩次。你在完成短休時恢復一次已消耗的使用次數，並在完成長休時重獲所有已消耗的使用次數。</p>
-  <p>當你達到特定的戰士等級後，你會獲得更多該特性的使用次數，如“戰士特性”表中的”回氣”一欄所示。</p>
+  <p>你的身心儲有底力，可在關鍵時刻以<strong>附贈動作</strong>恢復「1d10 + 戰士等級」的生命值。</p>
+  <ul class="class-rule-list">
+    <li><strong>使用次數：</strong>起始 2 次，之後依「戰士特性」表的「回氣」欄增加。<strong>短休後恢復 1 次</strong>，長休後全部恢復。</li>
+  </ul>
 </section>
 
 <section class="fighter-feature class-feature-section" data-feature-level="1">
   <h3>等級 1：武器精通</h3>
-  <p>你任選三種軍用或簡易武器並獲得其精通屬性。每當你完成長休後，你可以進行武器練習從而更改其中一種武器的選擇。</p>
-  <p>你可以掌握精通的武器數量將隨著戰士職業到達特定等級而增加，如“戰士特性”表中“武器精通”一欄所示。</p>
+  <p>任選 3 種簡易或軍用武器，取得其精通屬性。</p>
+  <ul class="class-rule-list">
+    <li><strong>改選時機：</strong>每次長休後，可透過武器練習替換其中 1 種。</li>
+    <li><strong>數量提升：</strong>可選數量隨戰士等級增加，見「戰士特性」表的「武器精通」欄。</li>
+  </ul>
 </section>
 
 <section class="fighter-feature class-feature-section" data-feature-level="2" data-action-id="fighter-action-surge">
   <h3>等級 2：動作如潮</h3>
-  <p>你可以在短時間內突破極限。在你的回合中，你可以執行一個額外的動作，但不能用於魔法動作。</p>
-  <p>一旦使用了該特性，你將無法在完成短休或長休前再次使用。</p>
+  <p>你可以短暫突破極限，在自己的回合中執行 1 個<strong>額外動作</strong>，但不能用於魔法動作。</p>
+  <ul class="class-rule-list">
+    <li><strong>使用次數：</strong>1 次，<strong>短休或長休後恢復</strong>。</li>
+  </ul>
 </section>
 
 <section class="fighter-feature class-feature-section" data-feature-level="2">
   <h3>等級 2：戰術思維</h3>
-  <p>無論在戰場內外，你都具有卓越的戰術思維。當你屬性檢定失敗時，你可以消耗一次 回氣 使用次數讓自己更接近成功。你擲 1d10 並將結果加入屬性檢定中而非恢復生命值，從而可能使結果變為成功。如果檢定依舊失敗，回氣 的使用次數將不會被消耗。</p>
+  <p>你在戰場內外都具有卓越的戰術思維。<strong>屬性檢定失敗</strong>時，可消耗 1 次回氣使用次數，改為擲 1d10 加入該次檢定，而非恢復生命值，使結果可能變為成功。</p>
+  <ul class="class-rule-list">
+    <li><strong>仍然失敗：</strong>若檢定依舊失敗，不會消耗回氣使用次數。</li>
+  </ul>
 </section>
 
 <section class="fighter-feature class-feature-section" data-feature-level="3">
   <h3>等級 3：戰士子職</h3>
-  <p>你可選擇一個戰士子職；基本規則僅提供「勇士」。</p>
+  <p>選擇一個戰士子職，並隨等級提升獲得子職能力。基本規則僅提供「勇士」。</p>
 </section>
 
 <section class="fighter-feature class-feature-section" data-feature-level="3">
   <h3>等級 3：精通重擊(勇士子職)</h3>
-  <p>你使用武器和徒手打擊的攻擊檢定在擲出 19 或 20 時即可造成重擊。</p>
+  <p>你使用武器和徒手打擊的攻擊檢定，擲出 <strong>19 或 20</strong> 時即可造成重擊。</p>
 </section>
 
 <section class="fighter-feature class-feature-section" data-feature-level="3">
   <h3>等級 3：運動健將(勇士子職)</h3>
-  <p>平日的訓練鍛打出堅實的體能，你的先攻和力量（${skillTip("運動")}）檢定具有優勢。</p>
-  <p>此外，當你造成重擊後，你可以立即移動至多等同於速度一半的距離，且不會引發藉機攻擊。</p>
+  <p>平日的訓練鍛打出堅實的體能，你獲得以下效果：</p>
+  <ul class="class-rule-list">
+    <li><strong>先攻與運動：</strong>你的先攻和力量（${skillTip("運動")}）檢定具有<strong>優勢</strong>。</li>
+    <li><strong>重擊後移動：</strong>造成重擊後，可立即移動至多等同於速度一半的距離，且不會引發藉機攻擊。</li>
+  </ul>
 </section>
 
 <section class="fighter-feature class-feature-section" data-feature-level="4">
   <h3>等級 4：屬性值提升</h3>
-  <p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p>
+  <p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p>
 </section>
+<section class="fighter-feature class-feature-section" data-feature-level="4"><p><strong>回氣補充：</strong>戰士達到 4 級時，回氣使用次數提升為 3 次，詳見「戰士特性」表。</p></section>
+<section class="fighter-feature class-feature-section" data-feature-level="4"><p><strong>武器精通補充：</strong>戰士達到 4 級時，武器精通可選數量提升為 4 種，詳見「戰士特性」表。</p></section>
 
 <section class="fighter-feature class-feature-section" data-feature-level="5">
   <h3>等級 5：額外攻擊</h3>
-  <p>你在自己回合執行攻擊動作時可以發動兩次攻擊。</p>
+  <p>你在自己的回合執行<strong>攻擊動作</strong>時，可以攻擊 2 次。</p>
 </section>
 
 <section class="fighter-feature class-feature-section" data-feature-level="5" data-action-id="fighter-tactical-shift">
   <h3>等級 5：戰術轉移</h3>
-  <p>當你以附贈動作使用 回氣 時，你可以移動至多等同於你速度一半的距離，且不會引發藉機攻擊。</p>
+  <p>以<strong>附贈動作</strong>使用回氣時，你可以移動至多等同於你速度一半的距離，且不會引發藉機攻擊。</p>
 </section>
-<section class="fighter-feature class-feature-section" data-feature-level="6"><h3>等級 6：屬性值提升</h3><p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p></section>
-<section class="fighter-feature class-feature-section" data-feature-level="7"><h3>等級 7：額外戰鬥風格（勇士子職）</h3><p>你再獲得一個自選的戰鬥風格專長。</p></section>
-<section class="fighter-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p></section>
+
+<section class="fighter-feature class-feature-section" data-feature-level="6">
+  <h3>等級 6：屬性值提升</h3>
+  <p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p>
+</section>
+
+<section class="fighter-feature class-feature-section" data-feature-level="7">
+  <h3>等級 7：額外戰鬥風格（勇士子職）</h3>
+  <p>你再獲得 1 個自選的「戰鬥風格」專長。</p>
+</section>
+
+<section class="fighter-feature class-feature-section" data-feature-level="8">
+  <h3>等級 8：屬性值提升</h3>
+  <p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p>
+</section>
 </div>
 `,
   monk: `<section class="class-creation-content" data-class-feature-panel="creation">
@@ -1539,99 +1563,112 @@ const classFeatures = {
 <div class="class-feature-content" data-class-feature-panel="class">
 <section class="monk-feature class-feature-section" data-feature-level="1" data-action-id="monk-martial-arts">
   <h3>等級 1：武藝</h3>
-  <p>你在「未穿護甲,未持盾，且只用徒手或武僧武器」時，獲得以下效果：</p>
+  <p>你在<strong>未穿護甲、未持盾</strong>，且只使用徒手或武僧武器時，獲得下列效果。</p>
   <ul class="class-rule-list">
-    <li>附贈動作可再打 1 次徒手。</li>
-    <li>徒手與武僧武器可用武藝骰（初始 1d6）取代原本傷害骰，骰值依等級提升（見武僧特性表）。</li>
-    <li>徒手與武僧武器的攻擊與傷害可用敏捷取代力量；徒手推撞／擒抱的豁免 DC 也可用敏捷計算。</li>
+    <li><strong>附贈攻擊：</strong>可用<strong>附贈動作</strong>再進行 1 次徒手攻擊。</li>
+    <li><strong>武藝骰：</strong>徒手與武僧武器可用武藝骰取代原本的傷害骰。起始為 1d6，之後依「武僧特性」表提升。</li>
+    <li><strong>敏捷取代力量：</strong>徒手與武僧武器的攻擊與傷害可用敏捷取代力量；徒手推撞／擒抱的豁免 DC 也可用敏捷計算。</li>
+    <li><strong>武僧武器：</strong>簡易近戰武器，以及具有輕型屬性的軍用近戰武器。</li>
   </ul>
-  <p>武僧武器包含：簡易近戰武器，以及具有輕型屬性的軍用近戰武器。</p>
 </section>
 
 <section class="monk-feature class-feature-section" data-feature-level="1">
   <h3>等級 1：無甲防禦</h3>
-  <p>未穿護甲,未持盾時，AC = 10 + 敏捷調整值 + 感知調整值。</p>
+  <p>你<strong>未穿護甲、未持盾</strong>時，AC = 10 + 敏捷調整值 + 感知調整值。</p>
 </section>
 
 <section class="monk-feature class-feature-section" data-feature-level="2">
   <h3>等級 2：聚氣凝神</h3>
-  <p>你可使用「專注點」施展武僧技巧。專注點上限見武僧特性表，短休或長休後全回復。</p>
+  <p>你可以消耗「專注點」施展武僧技巧，起始可使用下列 3 種用法。</p>
+  <ul class="class-rule-list">
+    <li><strong>專注點：</strong>上限見「武僧特性」表的「專注點」欄，<strong>短休或長休後全部恢復</strong>。</li>
+    <li><strong>豁免 DC：</strong>特性要求豁免時，DC = 8 + 熟練加值 + 感知調整值。</li>
+  </ul>
   <div class="class-rule-subsection">
-    <h4>你一開始有 3 種用法：</h4>
+    <h4>起始用法</h4>
     <ul class="class-rule-list">
-      <li>疾風連擊（1 點）：附贈動作打 2 次徒手。</li>
-      <li>閃轉騰挪：附贈動作可撤離；再花 1 點可同時撤離 + 回避。</li>
-      <li>疾步如風：附贈動作可衝刺；再花 1 點可同時撤離 + 衝刺，且本回合跳躍距離加倍。</li>
+      <li><strong>疾風連擊：</strong>消耗 1 點專注點，以<strong>附贈動作</strong>進行 2 次徒手攻擊。</li>
+      <li><strong>閃轉騰挪：</strong>以<strong>附贈動作</strong>撤離；消耗 1 點專注點時，可同時撤離並回避。</li>
+      <li><strong>疾步如風：</strong>以<strong>附贈動作</strong>衝刺；消耗 1 點專注點時，可同時撤離並衝刺，且本回合跳躍距離加倍。</li>
     </ul>
   </div>
-  <p>若特性要求豁免，DC = 8 + 熟練加值 + 感知調整值。</p>
 </section>
 
 <section class="monk-feature class-feature-section" data-feature-level="2">
   <h3>等級 2：無甲移動</h3>
-  <p>未穿護甲,未持盾時，速度 +10 呎（後續依等級再提升）。</p>
+  <p>你<strong>未穿護甲、未持盾</strong>時，速度增加 10 呎，之後依「武僧特性」表的「無甲移動」欄提升。</p>
 </section>
 
 <section class="monk-feature class-feature-section" data-feature-level="2">
   <h3>等級 2：吐故納新</h3>
-  <p>擲先攻時，你可回滿已消耗的專注點，並回復「武藝骰 + 武僧等級」生命值。</p>
-  <p>此能力每次長休只能用 1 次。</p>
+  <p>擲先攻時，你可以恢復所有已消耗的專注點，並恢復「武藝骰 + 武僧等級」生命值。</p>
+  <ul class="class-rule-list">
+    <li><strong>使用次數：</strong>1 次，<strong>長休後恢復</strong>。</li>
+  </ul>
 </section>
 
 <section class="monk-feature class-feature-section" data-feature-level="3" data-action-id="monk-deflect-attacks">
   <h3>等級 3：撥擋化勁</h3>
-  <p>當攻擊命中你，且傷害含鈍擊／穿刺／揮砍時，你可用反應減傷：</p>
-  <p>1d10 + 敏捷調整值 + 武僧等級。</p>
+  <p>攻擊命中你，且傷害包含鈍擊、穿刺或揮砍時，你可以用<strong>反應</strong>減少傷害。</p>
+  <ul class="class-rule-list">
+    <li><strong>減傷：</strong>1d10 + 敏捷調整值 + 武僧等級。</li>
+  </ul>
   <div class="class-rule-subsection">
-    <h4>若減到 0，你可再花 1 點專注點反擊：</h4>
+    <h4>反擊</h4>
+    <p>若傷害減至 0，你可再消耗 1 點專注點反擊：</p>
     <ul class="class-rule-list">
-      <li>擋近戰：選 5 呎內生物。</li>
-      <li>擋遠程：選 60 呎內,你看得到且不在全身掩護後的生物。</li>
+      <li><strong>擋近戰：</strong>選擇 5 呎內的生物。</li>
+      <li><strong>擋遠程：</strong>選擇 60 呎內你看得到、且不在全身掩護後的生物。</li>
     </ul>
-    <p>目標需過敏捷豁免，失敗則受到 2 枚武藝骰 + 你的敏捷調整值傷害（同原攻擊類型）。</p>
+    <p>受到反擊的目標進行敏捷豁免，失敗時受到 2 枚武藝骰 + 你的敏捷調整值傷害（同原攻擊類型）。</p>
   </div>
 </section>
 
 <section class="monk-feature class-feature-section" data-feature-level="3">
   <h3>等級 3：武僧子職</h3>
-  <p>你可選擇一個武僧子職；基本規則僅提供散打鬥士。</p>
+  <p>選擇一個武僧子職，並隨等級提升獲得子職能力。基本規則僅提供「散打鬥士」。</p>
 </section>
 
 <section class="monk-feature class-feature-section" data-feature-level="3">
   <h3>等級 3：散打技巧（散打子職）</h3>
-  <p>當你用「疾風連擊」命中時，可讓目標承受 1 種效果：</p>
+  <p>你用「疾風連擊」命中時，可使目標承受下列 1 種效果。</p>
   <ul class="class-rule-list">
-    <li>截擊：到你下回合結束前，目標不能發動藉機攻擊。</li>
-    <li>擊退：目標力量豁免失敗則被推離你最多 15 呎。</li>
-    <li>擊倒：目標敏捷豁免失敗則倒地。</li>
+    <li><strong>截擊：</strong>到你的下回合結束前，目標不能發動藉機攻擊。</li>
+    <li><strong>擊退：</strong>目標力量豁免失敗時，被推離你最多 15 呎。</li>
+    <li><strong>擊倒：</strong>目標敏捷豁免失敗時倒地。</li>
   </ul>
 </section>
 
 <section class="monk-feature class-feature-section" data-feature-level="4">
   <h3>等級 4：屬性值提升</h3>
-  <p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p>
+  <p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p>
 </section>
 
 <section class="monk-feature class-feature-section" data-feature-level="4" data-action-id="monk-slow-fall">
   <h3>等級 4：輕身墜</h3>
-  <p>當你墜落時，可用「反應」減少武僧等級×5傷害。</p>
+  <p>你墜落時，可以用<strong>反應</strong>減少「武僧等級 × 5」點傷害。</p>
 </section>
 
 <section class="monk-feature class-feature-section" data-feature-level="5">
   <h3>等級 5：額外攻擊</h3>
-  <p>你在自己回合使用攻擊動作時，可以攻擊 2 次。</p>
+  <p>你在自己的回合執行<strong>攻擊動作</strong>時，可以攻擊 2 次。</p>
 </section>
 
 <section class="monk-feature class-feature-section" data-feature-level="5">
   <h3>等級 5：震懾擊</h3>
-  <p>每回合 1 次，當你用武僧武器或徒手命中時，可花 1 點專注點發動震懾打擊。</p>
-  <p>目標需做體質豁免：</p>
+  <p>你用武僧武器或徒手命中時，可消耗 1 點專注點發動震懾打擊，目標需進行體質豁免。</p>
   <ul class="class-rule-list">
-    <li>失敗：震懾到你下回合開始。</li>
-    <li>成功：速度減半，且到你下回合開始前，下一次對它的攻擊有優勢。</li>
+    <li><strong>使用次數：</strong><strong>每回合 1 次</strong>。</li>
+    <li><strong>豁免失敗：</strong>目標陷入震懾，直到你的下回合開始。</li>
+    <li><strong>豁免成功：</strong>目標速度減半，且到你的下回合開始前，下一次對它的攻擊具有優勢。</li>
   </ul>
 </section>
-<section class="monk-feature class-feature-section" data-feature-level="6"><h3>等級 6：真力駐拳</h3><p>當你的徒手打擊造成傷害時，可以將其傷害類型替換為力場傷害。</p></section><section class="monk-feature class-feature-section" data-feature-level="6" data-action-id="monk-wholeness-of-body"><h3>等級 6：混元體（散打子職）</h3><p>作為附贈動作，你可以擲出武藝骰，恢復等同於擲骰結果＋你的感知調整值的生命值（最少恢復1點）。</p><p>你可以使用該特性的次數等同於你的感知調整值（最少一次），並在完成長休時恢復所有已消耗的使用次數。</p></section><section class="monk-feature class-feature-section" data-feature-level="7"><h3>等級 7：反射閃避</h3><p>當你受到允許進行敏捷豁免以使傷害減半的效應影響時，豁免成功則不受傷害，豁免失敗則僅受一半傷害。</p><p>你在失能狀態下無法從該特性中獲益。</p></section><section class="monk-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p></section>
+<section class="monk-feature class-feature-section" data-feature-level="5"><p><strong>武藝補充：</strong>武僧達到 5 級時，武藝骰提升為 1d8，詳見「武僧特性」表。</p></section>
+<section class="monk-feature class-feature-section" data-feature-level="6"><h3>等級 6：真力駐拳</h3><p>你的徒手打擊造成傷害時，可以將傷害類型改為力場傷害。</p></section>
+<section class="monk-feature class-feature-section" data-feature-level="6" data-action-id="monk-wholeness-of-body"><h3>等級 6：混元體（散打子職）</h3><p>你可以用<strong>附贈動作</strong>擲武藝骰，恢復等同「擲骰結果＋感知調整值」的生命值（至少 1 點）。</p><ul class="class-rule-list"><li><strong>使用次數：</strong>等同感知調整值（至少 1 次），<strong>長休後全部恢復</strong>。</li></ul></section>
+<section class="monk-feature class-feature-section" data-feature-level="6"><p><strong>無甲移動補充：</strong>武僧達到 6 級時，無甲移動的速度加值提升為 15 呎，詳見「武僧特性」表。</p></section>
+<section class="monk-feature class-feature-section" data-feature-level="7"><h3>等級 7：反射閃避</h3><p>你受到允許進行<strong>敏捷豁免</strong>使傷害減半的效應影響時，豁免成功則不受傷害，豁免失敗則只受一半傷害。</p><ul class="class-rule-list"><li><strong>限制：</strong>你處於<strong>失能</strong>狀態時，無法獲得此特性的效益。</li></ul></section>
+<section class="monk-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p></section>
 </div>
 `,
   paladin: `<section class="class-creation-content" data-class-feature-panel="creation">
@@ -1781,123 +1818,137 @@ const classFeatures = {
 <div class="class-feature-content" data-class-feature-panel="class">
 <section class="paladin-feature class-feature-section" data-feature-level="1" data-action-id="paladin-lay-on-hands">
   <h3>等級 1：聖療</h3>
-  <p>你有一個治療能量池，總量 = 聖騎士等級 × 5，長休後回滿。</p>
-  <p>附贈動作觸碰一個生物（可包含自己）時，你可從能量池分配治療量來回復生命值。</p>
-  <p>你也可改花 5 點能量，移除目標的中毒狀態（不回生命）。</p>
+  <p>你擁有一個治療能量池，總量為「聖騎士等級 × 5」，<strong>長休後全部恢復</strong>。</p>
+  <ul class="class-rule-list">
+    <li><strong>治療：</strong>以<strong>附贈動作</strong>觸碰 1 個生物（可以是自己），從能量池分配治療量，使目標恢復等量生命值。</li>
+    <li><strong>移除中毒：</strong>觸碰時也可改為消耗 5 點能量，移除目標的中毒狀態；此用法不恢復生命值。</li>
+  </ul>
 </section>
 
 <section class="paladin-feature class-feature-section" data-feature-level="1">
   <h3>等級 1：施法</h3>
-  <p>你透過祈禱與冥想施法，法術請看「聖騎士法術列表」。</p>
-  <p>法術位：見「聖騎士特性」表，長休後回滿。</p>
-  <div class="class-rule-subsection">
-    <h4>準備法術：你要先準備法術才能施放。</h4>
-    <ul class="class-rule-list">
-      <li>起始可準備 2 個 1 環聖騎士法術（建議：英雄氣概,熾焰斬）。</li>
-      <li>你可準備的法術數量會隨聖騎士等級提升，見「聖騎士特性」表。</li>
-      <li>每當這個數量提高時，從聖騎士法術列表再選法術，直到你的準備數量與表格一致。</li>
-      <li>你選擇的法術必須是你目前有法術位能施放的環級。</li>
-      <li>例如 5 級可準備共 6 個 1 或 2 環法術。</li>
-    </ul>
-  </div>
-  <p>若其他特性給你額外已準備法術，不占用上述數量。</p>
-  <p>每次長休後，可替換 1 個已準備法術。</p>
-  <p>施法屬性：魅力。</p>
-  <p>施法法器：可用聖徽。</p>
+  <p>你使用<strong>魅力</strong>施展「聖騎士法術列表」中的法術，並可用聖徽作為施法法器。</p>
+  <ul class="class-rule-list">
+    <li><strong>準備法術：</strong>起始準備 2 個 1 環聖騎士法術，之後依「聖騎士特性」表增加。數量提高時，從聖騎士法術列表補選至表列數量；只能準備你有對應環階法術位的法術。<br>推薦：英雄氣概、熾焰斬。</li>
+    <li><strong>長休替換：</strong><strong>每次長休後</strong>，可替換 1 個已準備法術。</li>
+    <li><strong>法術位：</strong>數量見「聖騎士特性」表，長休後全部恢復。</li>
+    <li><strong>額外法術：</strong>其他特性給予的額外準備法術不計入上限。</li>
+  </ul>
+  <p>例如 5 級聖騎士可準備共 6 個 1～2 環法術。</p>
 </section>
 
 <section class="paladin-feature class-feature-section" data-feature-level="1">
   <h3>等級 1：武器精通</h3>
-  <p>從你熟練的武器中選 2 種，取得其精通屬性（例如長劍,標槍）。</p>
-  <p>每次長休後可改選。</p>
+  <p>從你熟練的武器中選擇 2 種，取得其精通屬性，例如長劍、標槍。</p>
+  <ul class="class-rule-list">
+    <li><strong>改選時機：</strong>每次長休後可改選。</li>
+  </ul>
 </section>
 
 <section class="paladin-feature class-feature-section" data-feature-level="2">
   <h3>等級 2：戰鬥風格</h3>
-  <p>以下二選一：</p>
+  <p>從下列選項中選擇 1 項：</p>
   <ul class="class-rule-list">
     <li><label><input type="checkbox" id="paladin-fighting-style"> 選 1 個「戰鬥風格」專長</label></li>
-    <li><label><input type="checkbox" id="paladin-blessed-warrior"> 選「受祝福的勇士」</label>：學 2 個牧師戲法（建議：神導術,聖火術）。<br>這些戲法視為你的聖騎士法術，施法屬性是魅力；每升 1 級可替換其中 1 個戲法。</li>
+    <li><label><input type="checkbox" id="paladin-blessed-warrior"> 選「受祝福的勇士」</label>：學會 2 個牧師戲法，這些戲法視為你的聖騎士法術，施法屬性為<strong>魅力</strong>。每提升 1 級聖騎士，可替換其中 1 個戲法。<br>推薦：神導術、聖火術。</li>
   </ul>
 </section>
 
 <section class="paladin-feature class-feature-section" data-feature-level="2">
   <h3>等級 2：聖騎士斬技</h3>
-  <p>你永遠準備好「至聖斬」。</p>
-  <p>另外你可在不耗法術位下施放它 1 次，用完需長休才恢復。</p>
+  <p>你<strong>始終準備</strong>法術「至聖斬」。</p>
+  <ul class="class-rule-list">
+    <li><strong>免費施放：</strong>可不消耗法術位施放 1 次，<strong>長休後恢復</strong>。</li>
+  </ul>
 </section>
 
 <section class="paladin-feature class-feature-section" data-feature-level="3" data-action-id="paladin-divine-sense">
   <h3>等級 3：引導神力</h3>
-  <p>你可使用「引導神力」製造神聖效果。你先獲得「神聖感知」，之後可由其他特性追加新效果。</p>
-  <p>每次使用時，從你已知的引導神力效果中選 1 個發動。</p>
+  <p>你可引導神力產生神聖效果，起始可使用「神聖感知」，之後可由其他特性追加新效果。每次使用時，從你已知的效果中選擇 1 個發動。</p>
+  <ul class="class-rule-list">
+    <li><strong>使用次數：</strong>2 次。<strong>短休後恢復 1 次</strong>，長休後全部恢復。</li>
+    <li><strong>豁免 DC：</strong>效果需要豁免時，使用你的聖騎士法術豁免 DC。</li>
+  </ul>
   <div class="class-rule-subsection">
-    <h4>你有 2 次使用次數：</h4>
+    <h4>神聖感知（附贈動作）</h4>
+    <p>啟動後持續 10 分鐘，或直到你陷入失能狀態。期間獲得以下能力：</p>
     <ul class="class-rule-list">
-      <li>短休回 1 次</li>
-      <li>長休回滿</li>
+      <li><strong>感知生物：</strong>感知 60 呎內天界生物、邪魔、不死生物的位置與類型。</li>
+      <li><strong>偵測地點：</strong>偵測同範圍內受「聖居」祝福或褻瀆的地點與物件。</li>
     </ul>
-  </div>
-  <p>若效果需要豁免，DC 用你聖騎士施法 DC。</p>
-  <div class="class-rule-subsection">
-    <h4>神聖感知</h4>
-    <p>附贈動作啟動後，持續 10 分鐘（或你失能前）。</p>
-    <p>期間你可感知 60 呎內天界生物,邪魔,不死生物的位置與類型，並可偵測同範圍內受「聖居」祝福或褻瀆的地點／物件。</p>
   </div>
 </section>
 
 <section class="paladin-feature class-feature-section" data-feature-level="3">
   <h3>等級 3：聖騎士子職</h3>
-  <p>你可選擇一個聖騎士子職；基本規則僅提供「奉獻之誓」。</p>
-  <div class="class-rule-subsection">
-    <h4>奉獻之誓重視正義,秩序與榮譽，常見信條包括：</h4>
-    <ul class="class-rule-list">
-      <li>不誑語不欺騙，言出必行。</li>
-      <li>鋤強扶弱，無畏躬行。</li>
-      <li>以榮譽為世人樹立典範。</li>
-    </ul>
-  </div>
+  <p>選擇一個聖騎士子職，並隨等級提升獲得子職能力。基本規則僅提供「奉獻之誓」。</p>
+  <p>奉獻之誓重視正義、秩序與榮譽，常見信條包括：</p>
+  <ul class="class-rule-list">
+    <li><strong>誠信：</strong>不誑語不欺騙，言出必行。</li>
+    <li><strong>扶弱：</strong>鋤強扶弱，無畏躬行。</li>
+    <li><strong>榮譽：</strong>以榮譽為世人樹立典範。</li>
+  </ul>
 </section>
 
 <section class="paladin-feature class-feature-section" data-feature-level="3">
   <h3>等級 3：奉獻之誓法術（奉獻子職）</h3>
-  <p>你會自動準備以下法術：</p>
+  <p>達到下列聖騎士等級後，你始終準備對應法術：</p>
   <ul class="class-rule-list">
-    <li>3 級：防護善惡（1）,虔誠護盾（1）</li>
-    <li>5 級：援助術（2）,誠實之域（2）</li>
+    <li><strong>3 級：</strong>防護善惡、虔誠護盾。</li>
+    <li><strong>5 級：</strong>援助術、誠實之域。</li>
   </ul>
 </section>
 
 <section class="paladin-feature class-feature-section" data-feature-level="3" data-action-id="paladin-sacred-weapon">
   <h3>等級 3：祝聖武器（奉獻子職）</h3>
-  <p>當你執行攻擊動作時，可消耗 1 次引導神力，為手上一把近戰武器注入神聖力量，持續 10 分鐘（或你再次使用本特性）。</p>
-  <div class="class-rule-subsection">
-    <h4>效果期間：</h4>
-    <ul class="class-rule-list">
-      <li>該武器攻擊檢定加上你的魅力調整值（至少 +1）。</li>
-      <li>命中時可選擇造成原本傷害類型或光耀傷害。</li>
-      <li>武器發出 20 呎明亮光照 + 再外圈 20 呎微光。</li>
-    </ul>
-  </div>
-  <p>你可隨時無動作提前結束；若不再持有該武器，效果也會結束。</p>
+  <p>執行<strong>攻擊動作</strong>時，可消耗 1 次引導神力，為手上一把近戰武器注入神聖力量，持續 10 分鐘，或直到你再次使用本特性。期間獲得以下效果：</p>
+  <ul class="class-rule-list">
+    <li><strong>攻擊加值：</strong>該武器攻擊檢定加上你的魅力調整值（至少 +1）。</li>
+    <li><strong>傷害類型：</strong>命中時可選擇造成原本傷害類型或光耀傷害。</li>
+    <li><strong>光照：</strong>武器發出 20 呎明亮光照，再往外 20 呎為微光。</li>
+  </ul>
+  <p><strong>提前結束：</strong>你可隨時結束效果，<strong>無需動作</strong>；若不再持有該武器，效果也會結束。</p>
 </section>
 
 <section class="paladin-feature class-feature-section" data-feature-level="4">
   <h3>等級 4：屬性值提升</h3>
-  <p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p>
+  <p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p>
 </section>
 
 <section class="paladin-feature class-feature-section" data-feature-level="5">
   <h3>等級 5：額外攻擊</h3>
-  <p>你在自己回合使用攻擊動作時，可以攻擊 2 次。</p>
+  <p>你在自己的回合執行<strong>攻擊動作</strong>時，可以攻擊 2 次。</p>
 </section>
 
 <section class="paladin-feature class-feature-section" data-feature-level="5">
   <h3>等級 5：忠誠坐騎</h3>
-  <p>你永遠準備好「召喚坐騎」。</p>
-  <p>你可不耗法術位施放 1 次，長休後恢復。</p>
+  <p>你<strong>始終準備</strong>法術「召喚坐騎」。</p>
+  <ul class="class-rule-list">
+    <li><strong>免費施放：</strong>可不消耗法術位施放 1 次，<strong>長休後恢復</strong>。</li>
+  </ul>
 </section>
-<section class="paladin-feature class-feature-section" data-feature-level="6"><h3>等級 6：守護靈氣&#x20;</h3><p>你以自身為原點放射出10呎的無形保護性靈氣。你處於失能狀態時，靈氣失效。&#x20;</p><p>你和靈氣內的盟友進行豁免檢定時，獲得等同於你魅力調整值的加值（至少＋1）。&#x20;</p><p>一個生物同一時間只能從一道守護靈氣中獲益；處於多道靈氣重疊區域時，由該生物選擇使用哪一道。&#x20;</p></section><section class="paladin-feature class-feature-section" data-feature-level="7"><h3>等級 7：奉獻靈氣（奉獻子職）&#x20;</h3><p>守護靈氣使你和其中的盟友免疫魅惑狀態。若正被魅惑的盟友進入靈氣範圍，該狀態會暫時失效。&#x20;</p></section><section class="paladin-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p></section>
+
+<section class="paladin-feature class-feature-section" data-feature-level="6">
+  <h3>等級 6：守護靈氣&#x20;</h3>
+  <p>你以自身為原點，散發 10 呎的無形保護靈氣。你陷入<strong>失能</strong>狀態時，靈氣失效。</p>
+  <ul class="class-rule-list">
+    <li><strong>豁免加值：</strong>你和靈氣內的盟友進行豁免檢定時，獲得等同你魅力調整值的加值（至少 +1）。</li>
+    <li><strong>靈氣重疊：</strong>一個生物同一時間只能從一道守護靈氣獲益；位於多道靈氣重疊處時，由該生物選擇使用哪一道。</li>
+  </ul>
+</section>
+
+<section class="paladin-feature class-feature-section" data-feature-level="7">
+  <h3>等級 7：奉獻靈氣（奉獻子職）&#x20;</h3>
+  <p>你的守護靈氣使你和其中的盟友<strong>免疫魅惑</strong>狀態。</p>
+  <ul class="class-rule-list">
+    <li><strong>已受魅惑：</strong>若正被魅惑的盟友進入靈氣範圍，該狀態會暫時失效。</li>
+  </ul>
+</section>
+
+<section class="paladin-feature class-feature-section" data-feature-level="8">
+  <h3>等級 8：屬性值提升</h3>
+  <p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p>
+</section>
 </div>
 `,
   ranger: `<section class="class-creation-content" data-class-feature-panel="creation">
@@ -2047,98 +2098,99 @@ const classFeatures = {
 <div class="class-feature-content" data-class-feature-panel="class">
 <section class="ranger-feature class-feature-section" data-feature-level="1">
   <h3>等級 1：施法</h3>
-  <p>你透過自然魔法施法，法術請看「遊俠法術列表」。</p>
-  <p>法術位：看「遊俠特性」表，長休後全回復。</p>
-  <div class="class-rule-subsection">
-    <h4>準備法術</h4>
-    <ul class="class-rule-list">
-      <li>起始可準備 2 個 1 環遊俠法術（建議：療傷術,誘捕打擊）。</li>
-      <li>你可準備的法術數量會隨遊俠等級提升，見「遊俠特性」表。</li>
-      <li>每當這個數量提高時，從遊俠法術列表再選法術，直到你的準備數量與表格一致。</li>
-      <li>你選擇的法術必須是你目前有法術位能施放的環級。</li>
-    </ul>
-  </div>
-  <p>若其他特性給你額外已準備法術，不占用上述數量。</p>
-  <p>每次長休後可替換 1 個已準備法術。</p>
-  <p>施法屬性：感知。</p>
-  <p>施法法器：可用德魯伊法器。</p>
+  <p>你使用<strong>感知</strong>施展「遊俠法術列表」中的法術，並可用德魯伊法器作為施法法器。</p>
+  <ul class="class-rule-list">
+    <li><strong>準備法術：</strong>起始準備 2 個 1 環遊俠法術，之後依「遊俠特性」表增加。數量提高時，從遊俠法術列表補選至表列數量；只能準備你有對應環階法術位的法術。<br>推薦：療傷術、誘捕打擊。</li>
+    <li><strong>長休替換：</strong><strong>每次長休後</strong>，可替換 1 個已準備法術。</li>
+    <li><strong>法術位：</strong>數量見「遊俠特性」表，長休後全部恢復。</li>
+    <li><strong>額外法術：</strong>其他特性給予的額外準備法術不計入上限。</li>
+  </ul>
 </section>
 
 <section class="ranger-feature class-feature-section" data-feature-level="1">
   <h3>等級 1：宿敵</h3>
-  <p>你永遠準備好「獵人印記」。</p>
-  <p>可不耗法術位施放 2 次，長休後恢復。</p>
-  <p>這個免費次數會隨等級提升增加（見「遊俠特性」表「宿敵」欄）。</p>
+  <p>你<strong>始終準備</strong>法術「獵人印記」。</p>
+  <ul class="class-rule-list">
+    <li><strong>免費施放：</strong>可不消耗法術位施放 2 次，<strong>長休後恢復</strong>。</li>
+    <li><strong>次數提升：</strong>免費施放次數隨遊俠等級增加，見「遊俠特性」表的「宿敵」欄。</li>
+  </ul>
 </section>
 
 <section class="ranger-feature class-feature-section" data-feature-level="1">
   <h3>等級 1：武器精通</h3>
-  <p>從你熟練的武器中選 2 種，取得其精通屬性（例如長弓,短劍）。</p>
-  <p>每次長休後可改選。</p>
+  <p>從你熟練的武器中選擇 2 種，取得其精通屬性，例如長弓、短劍。</p>
+  <ul class="class-rule-list">
+    <li><strong>改選時機：</strong>每次長休後可改選。</li>
+  </ul>
 </section>
 
 <section class="ranger-feature class-feature-section" data-feature-level="2">
   <h3>等級 2：熟練探險家</h3>
-  <p>你獲得：</p>
+  <p>你的技能與語言能力更加精進，獲得以下能力：</p>
   <ul class="class-rule-list">
-    <li>專精：選 1 項你已熟練但尚未專精的技能，改為專精。</li>
-    <li>語言：再學 2 種語言。</li>
+    <li><strong>專精：</strong>選擇 1 項你已熟練但尚未專精的技能，改為<strong>專精</strong>。</li>
+    <li><strong>語言：</strong>額外學會 2 種語言。</li>
   </ul>
 </section>
 
 <section class="ranger-feature class-feature-section" data-feature-level="2">
   <h3>等級 2：戰鬥風格</h3>
-  <p>你可以：</p>
+  <p>從下列選項中選擇 1 項：</p>
   <ul class="class-rule-list">
-    <li><label><input type="checkbox" id="ranger-fighting-style"> 選 1 個「戰鬥風格」專長</label>，或</li>
-    <li><label><input type="checkbox" id="ranger-druidic-warrior"> 選「德魯伊教戰士」</label>：
-      <ul>
-        <li>學 2 個德魯伊戲法（建議：神導術,流光閃靈）。</li>
-        <li>這些戲法視為你的遊俠法術，施法屬性是感知。</li>
-        <li>每升 1 級可替換其中 1 個戲法。</li>
-      </ul>
-    </li>
+    <li><label><input type="checkbox" id="ranger-fighting-style"> 選 1 個「戰鬥風格」專長</label></li>
+    <li><label><input type="checkbox" id="ranger-druidic-warrior"> 選「德魯伊教戰士」</label>：學會 2 個德魯伊戲法，這些戲法視為你的遊俠法術，施法屬性為<strong>感知</strong>。每提升 1 級遊俠，可替換其中 1 個戲法。<br>推薦：神導術、流光閃靈。</li>
   </ul>
 </section>
 
 <section class="ranger-feature class-feature-section" data-feature-level="3">
   <h3>等級 3：遊俠子職</h3>
-  <p>你可選擇一個遊俠子職；基本規則僅提供獵人。</p>
+  <p>選擇一個遊俠子職，並隨等級提升獲得子職能力。基本規則僅提供「獵人」。</p>
 </section>
 
 <section class="ranger-feature class-feature-section" data-feature-level="3">
   <h3>等級 3：獵人學識（獵人子職）</h3>
-  <p>目標被你的「獵人印記」標記時，你會知道它的傷害免疫,抗性與易傷。</p>
+  <p>目標被你的「獵人印記」標記時，你會知道它的傷害免疫、抗性與易傷。</p>
 </section>
 
 <section class="ranger-feature class-feature-section" data-feature-level="3" data-rest-change="either">
   <h3>等級 3：狩獵目標（獵人子職）</h3>
-  <p>從下列擇一；每次短休或長休後可改選：</p>
+  <p>從下列選項中選擇 1 項，<strong>每次短休或長休後</strong>可改選：</p>
   <ul class="class-rule-list">
-    <li><label><input type="checkbox" id="ranger-hunters-prey-colossus-slayer" data-feature-choice-group="ranger-hunters-prey"> 斬殺者</label>：每回合 1 次，你用武器命中且目標先前已失去生命值時，額外造成 1d8 傷害。</li>
-    <li><label><input type="checkbox" id="ranger-hunters-prey-horde-breaker" data-feature-choice-group="ranger-hunters-prey"> 破陣者</label>：每回合 1 次，當你用武器攻擊時，可用同一把武器再攻擊 5 呎內另一個你本回合尚未攻擊過的目標。</li>
+    <li><label><input type="checkbox" id="ranger-hunters-prey-colossus-slayer" data-feature-choice-group="ranger-hunters-prey"> 斬殺者</label>：<strong>每回合 1 次</strong>，你用武器命中先前已失去生命值的目標時，額外造成 1d8 傷害。</li>
+    <li><label><input type="checkbox" id="ranger-hunters-prey-horde-breaker" data-feature-choice-group="ranger-hunters-prey"> 破陣者</label>：<strong>每回合 1 次</strong>，你用武器攻擊時，可用同一把武器再攻擊 5 呎內另一個本回合尚未被你攻擊過的目標。</li>
   </ul>
 </section>
 
 <section class="ranger-feature class-feature-section" data-feature-level="4">
   <h3>等級 4：屬性值提升</h3>
-  <p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p>
+  <p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p>
 </section>
 
 <section class="ranger-feature class-feature-section" data-feature-level="5">
   <h3>等級 5：額外攻擊</h3>
-  <p>你在自己回合使用攻擊動作時，可以攻擊 2 次。</p>
+  <p>你在自己的回合執行<strong>攻擊動作</strong>時，可以攻擊 2 次。</p>
 </section>
+<section class="ranger-feature class-feature-section" data-feature-level="5"><p><strong>宿敵補充：</strong>遊俠達到 5 級時，宿敵的免費施放次數提升為 3 次，詳見「遊俠特性」表。</p></section>
+
 <section class="ranger-feature class-feature-section" data-feature-level="6">
   <h3>等級 6：越野</h3>
+  <p>你獲得新的移動方式，並提升步行速度。</p>
   <ul class="class-rule-list">
-    <li>你獲得攀爬速度與游泳速度，數值與速度一樣。</li>
-    <li>未穿重甲時，你的速度增加 10 呎。</li>
+    <li><strong>攀爬與游泳：</strong>獲得攀爬速度與游泳速度，數值等於你的速度。</li>
+    <li><strong>速度加值：</strong><strong>未穿重甲</strong>時，你的速度增加 10 呎。</li>
   </ul>
-</section><section class="ranger-feature class-feature-section" data-feature-level="7" data-rest-change="either">
+</section>
+
+<section class="ranger-feature class-feature-section" data-feature-level="7" data-rest-change="either">
 <h3>等級 7：防守戰術（獵人子職）</h3>
-<p>選擇並獲得下列一項。每當你完成短休或長休時，可以用另一項替換目前的選擇。</p>
-<div class="druid-mission-options"><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="ranger-defensive-tactics-escape-the-horde" data-feature-choice-group="ranger-defensive-tactics"> 衝出重圍</label>：以你為目標的藉機攻擊具有劣勢。</div></div><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="ranger-defensive-tactics-multiattack-defense" data-feature-choice-group="ranger-defensive-tactics"> 多重防禦</label>：當一個生物的攻擊檢定命中你時，該生物在本回合內對你發動的所有後續攻擊檢定均具有劣勢。</div></div></div></section><section class="ranger-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p></section>
+<p>從下列選項中選擇 1 項，<strong>每次短休或長休後</strong>可改選：</p>
+<div class="druid-mission-options"><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="ranger-defensive-tactics-escape-the-horde" data-feature-choice-group="ranger-defensive-tactics"> 衝出重圍</label>：以你為目標的藉機攻擊具有<strong>劣勢</strong>。</div></div><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="ranger-defensive-tactics-multiattack-defense" data-feature-choice-group="ranger-defensive-tactics"> 多重防禦</label>：一個生物的攻擊檢定命中你時，該生物本回合內對你發動的後續攻擊檢定都具有<strong>劣勢</strong>。</div></div></div>
+</section>
+
+<section class="ranger-feature class-feature-section" data-feature-level="8">
+  <h3>等級 8：屬性值提升</h3>
+  <p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p>
+</section>
 </div>
 `,
   rogue: `<section class="class-creation-content" data-class-feature-panel="creation">
@@ -2261,78 +2313,89 @@ const classFeatures = {
 <div class="class-feature-content" data-class-feature-panel="class">
 <section class="rogue-feature class-feature-section" data-feature-level="1">
   <h3>等級 1：專精</h3>
-  <p>選 2 項你已熟練的技能，改為專精（常見選擇：${skillTip("巧手")}、${skillTip("隱匿")}）。</p>
-  <p>到 6 級時，再選 2 項已熟練技能獲得專精。</p>
+  <p>選擇 2 項<strong>已熟練</strong>的技能，獲得專精。<br>推薦：${skillTip("巧手")}、${skillTip("隱匿")}。</p>
 </section>
 
 <section class="rogue-feature class-feature-section" data-feature-level="1">
   <h3>等級 1：偷襲</h3>
-  <p>你每回合可觸發 1 次偷襲。</p>
-  <p>當你用靈巧武器或遠程武器命中時，若符合以下任一條件，就可多造成 1d6 傷害（同武器傷害類型）：</p>
+  <p><strong>每回合 1 次</strong>，以靈巧武器或遠程武器命中時，若符合下列任一條件，可額外造成 1d6 傷害（與武器傷害類型相同）。</p>
   <ul class="class-rule-list">
-    <li>這次攻擊有優勢，或</li>
-    <li>目標 5 呎內有至少 1 名未失能的友方，且你的攻擊沒有劣勢。</li>
+    <li><strong>具有優勢：</strong>這次攻擊檢定具有優勢。</li>
+    <li><strong>友方在旁：</strong>目標 5 呎內有至少 1 名未失能的友方，且這次攻擊檢定沒有劣勢。</li>
   </ul>
-  <p>偷襲傷害會隨等級提升（見盜賊特性表）。</p>
+  <p>偷襲傷害骰隨盜賊等級增加，見「盜賊特性」表的「偷襲」欄。</p>
 </section>
 
 <section class="rogue-feature class-feature-section" data-feature-level="1">
   <h3>等級 1：盜賊黑話</h3>
-  <p>你學會盜賊黑話，並再學 1 種語言。</p>
+  <p>你學會盜賊黑話，並額外學會 1 種語言。</p>
 </section>
 
 <section class="rogue-feature class-feature-section" data-feature-level="1">
   <h3>等級 1：武器精通</h3>
-  <p>從你熟練的武器中選 2 種，取得其精通屬性（例如匕首,短弓）。</p>
-  <p>每次長休後可改選。</p>
+  <p>從你熟練的武器中選擇 2 種，取得其精通屬性，例如匕首、短弓。</p>
+  <ul class="class-rule-list">
+    <li><strong>改選時機：</strong>每次長休後可改選。</li>
+  </ul>
 </section>
 
 <section class="rogue-feature class-feature-section" data-feature-level="2" data-action-id="rogue-cunning-action">
   <h3>等級 2：靈巧動作</h3>
-  <p>你的回合中，可把以下其中一項當附贈動作使用：衝刺、撤離、躲藏。</p>
+  <p>在你的回合中，可用<strong>附贈動作</strong>執行下列其中一項：衝刺、撤離、躲藏。</p>
 </section>
 
 <section class="rogue-feature class-feature-section" data-feature-level="3">
   <h3>等級 3：盜賊子職</h3>
-  <p>你可選擇一個盜賊子職；基本規則僅提「妙手」。</p>
+  <p>選擇一個盜賊子職，並隨等級提升獲得子職能力。基本規則僅提供「妙手」。</p>
 </section>
 
 <section class="rogue-feature class-feature-section" data-feature-level="3" data-action-id="rogue-fast-hands">
   <h3>等級 3：快手（妙手子職）</h3>
-  <p>你可用附贈動作進行以下其中一項：</p>
+  <p>你可用<strong>附贈動作</strong>執行下列其中一項：</p>
   <ul class="class-rule-list">
-    <li>${skillTip("巧手")}：做敏捷（${skillTip("巧手")}）檢定來開鎖,解除陷阱或扒竊。</li>
-    <li>使用物品：執行使用動作，或用魔法動作啟動需要該動作的魔法物品。</li>
+    <li><strong>${skillTip("巧手")}：</strong>進行敏捷（${skillTip("巧手")}）檢定來開鎖、解除陷阱或扒竊。</li>
+    <li><strong>使用物品：</strong>執行使用動作，或用魔法動作啟動需要該動作的魔法物品。</li>
   </ul>
 </section>
 
 <section class="rogue-feature class-feature-section" data-feature-level="3" data-action-id="rogue-steady-aim">
   <h3>等級 3：手穩就準</h3>
-  <p>附贈動作啟動後，你本回合下一次攻擊檢定有優勢。</p>
-  <p>但你必須在本回合尚未移動，且啟動後速度變為 0（到回合結束）。</p>
+  <p>以<strong>附贈動作</strong>啟動，你本回合的下一次攻擊檢定具有優勢。</p>
+  <ul class="class-rule-list">
+    <li><strong>使用條件：</strong>你本回合尚未移動。</li>
+    <li><strong>代價：</strong>啟動後，你的速度變為 0，直到回合結束。</li>
+  </ul>
 </section>
 
 <section class="rogue-feature class-feature-section" data-feature-level="4">
   <h3>等級 4：屬性值提升</h3>
-  <p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p>
+  <p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p>
 </section>
 
 <section class="rogue-feature class-feature-section" data-feature-level="5">
   <h3>等級 5：靈巧打擊</h3>
-  <p>當你造成偷襲傷害時，可套用 1 種靈巧打擊效果。</p>
-  <p>每種效果都要先放棄部分偷襲傷害骰；若需要豁免，DC = 8 + 熟練加值 + 敏捷調整值。</p>
+  <p>造成偷襲傷害時，可放棄部分偷襲傷害骰，套用 1 種靈巧打擊效果。</p>
   <ul class="class-rule-list">
-    <li>淬毒（消耗 1d6）：目標體質豁免失敗則中毒 1 分鐘；其每回合結束可再豁免，成功即結束。使用此效果時你需攜帶製毒師工具。</li>
-    <li>摔絆（消耗 1d6）：大型或更小目標敏捷豁免失敗則倒地。</li>
-    <li>撤步（消耗 1d6）：攻擊後你可立刻移動至多一半速度，且不引發藉機攻擊。</li>
+    <li><strong>豁免 DC：</strong>效果需要豁免時，DC＝8＋熟練加值＋敏捷調整值。</li>
   </ul>
+  <div class="class-rule-subsection">
+    <h4>靈巧打擊效果</h4>
+    <ul class="class-rule-list">
+      <li><strong>淬毒（消耗 1d6）：</strong>目標進行體質豁免，失敗時中毒 1 分鐘；它可在每個回合結束時重新豁免，成功即結束。使用此效果時，你必須攜帶製毒師工具。</li>
+      <li><strong>摔絆（消耗 1d6）：</strong>大型或更小的目標進行敏捷豁免，失敗時倒地。</li>
+      <li><strong>撤步（消耗 1d6）：</strong>攻擊後，你可立刻移動最多一半速度，且不引發藉機攻擊。</li>
+    </ul>
+  </div>
 </section>
 
 <section class="rogue-feature class-feature-section" data-feature-level="5" data-action-id="rogue-uncanny-dodge">
   <h3>等級 5：直覺閃避</h3>
-  <p>當你看得見的攻擊者命中你時，你可用反應讓該次攻擊傷害減半（捨去小數點）。</p>
+  <p>當你看得見的攻擊者以攻擊命中你時，你可用<strong>反應</strong>讓該次攻擊的傷害減半（無條件捨去）。</p>
 </section>
-<section class="rogue-feature class-feature-section" data-feature-level="6"><h3>等級 6：專精</h3><p>再選擇兩項你已有熟練的技能，並獲得其專精。</p></section><section class="rogue-feature class-feature-section" data-feature-level="7"><h3>等級 7：反射閃避</h3><p>當你受到允許進行敏捷豁免以使傷害減半的效應影響時，豁免成功則不受傷害，豁免失敗則僅受一半傷害。你在失能狀態下無法使用該特性。</p></section><section class="rogue-feature class-feature-section" data-feature-level="7"><h3>等級 7：可靠才能</h3><p>每當你使用技能或工具熟練項進行屬性檢定時，可以將d20骰中9或以下的結果視為10。</p></section><section class="rogue-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p></section>
+<section class="rogue-feature class-feature-section" data-feature-level="6"><h3>等級 6：專精</h3><p>再選擇 2 項<strong>已熟練</strong>的技能，獲得專精。</p></section>
+<section class="rogue-feature class-feature-section" data-feature-level="7"><h3>等級 7：反射閃避</h3><p>受到允許進行<strong>敏捷豁免以使傷害減半</strong>的效應影響時：</p><ul class="class-rule-list"><li><strong>豁免成功：</strong>不受傷害。</li><li><strong>豁免失敗：</strong>只受一半傷害。</li><li><strong>使用限制：</strong>你處於失能狀態時無法使用。</li></ul></section>
+<section class="rogue-feature class-feature-section" data-feature-level="7"><h3>等級 7：可靠才能</h3><p>使用<strong>有熟練的技能或工具</strong>進行屬性檢定時，可將 d20 擲出 9 或以下的結果視為 10。</p></section>
+<section class="rogue-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p></section>
 </div>
 `,
   sorcerer: `<section class="class-creation-content" data-class-feature-panel="creation">

@@ -9838,6 +9838,37 @@ html[data-theme="dark"] .dice-roller-roll::after {
   text-underline-offset: 2px;
 }
 
+button.feature-rule-tip {
+  display: inline;
+  width: auto;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  vertical-align: baseline;
+  text-decoration: underline solid;
+}
+
+button.feature-rule-tip:hover,
+button.feature-rule-tip:active {
+  background: transparent;
+  color: var(--accent-strong);
+  box-shadow: none;
+  transform: none;
+}
+
+button.feature-rule-tip:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+}
+
 #spell-qr-modal,
 #deity-info-modal,
 #ability-choice-modal,

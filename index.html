@@ -81,11 +81,11 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261018-quick-build-complete">
+  <link rel="stylesheet" href="styles.css?v=20261019-feature-rule-tips">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261006-usage-analytics" defer></script>
-  <script src="monster.js?v=20261014-heroic-help" defer></script>
-    <script src="class-features.js?v=20261019-bard-feature-copy" defer></script>
+  <script src="monster.js?v=20261019-explicit-skill-tips" defer></script>
+    <script src="class-features.js?v=20261019-rogue-monk-wording" defer></script>
   <script src="race.js?v=20261003-race-flavor" defer></script>
   <script src="backgrounds.js?v=20261003-background-flavor" defer></script>
   <script src="tool-data.js?v=20261008-class-tools" defer></script>
@@ -2043,6 +2043,7 @@ let characterChoiceWarningsHidden = false;
 function updateClassFeatureChoiceReminder() {
   syncManualSpellSourceControls();
   syncMissionCantripChoices();
+  syncLevelUpCantripChoice();
   const reminder = document.getElementById("class-feature-choice-reminder");
   if (!reminder) return;
 
@@ -3044,14 +3045,15 @@ function getSpellNameIndex() {
 function getSpellAliasToId() { return new Map(getSpellNameIndex().aliases); }
 function highlightSpellNamesInClassFeature(html, options = {}) {
   const { aliases, regex } = getSpellNameIndex();
-  if (!regex) return html;
+  if (!regex) return highlightFeatureRuleTerms(html);
   const skip = new Set(options.skipClickableNames || []);
   const decorate = match => skip.has(match) ? match
     : '<strong class="spell-highlight spell-highlight-action" role="button" tabindex="0" data-spell-id="' + escapeHtml(aliases.get(match)) + '">' + match + '</strong>';
   regex.lastIndex = 0;
-  return html.split(/(<[^>]+>)/g)
+  const highlighted = html.split(/(<[^>]+>)/g)
     .map(part => part.startsWith('<') && part.endsWith('>') ? part : part.replace(regex, decorate)).join('')
     .replace(/<strong>([^<]+)<\/strong>/g, (all, text) => aliases.has(text) ? decorate(text) : all);
+  return highlightFeatureRuleTerms(highlighted);
 }
 
 // Only explicit synchronous initialization/restore batches defer these updates.
@@ -3436,6 +3438,7 @@ function updateClassFeature() {
   renderBardMagicalDiscoveryControls();
   renderClassFeatChoices();
   renderMissionCantripChoices();
+  renderLevelUpCantripChoice();
   preservedControlStates.forEach((value, id) => {
     const control = document.getElementById(id);
     if (!control) return;
@@ -3443,6 +3446,7 @@ function updateClassFeature() {
     else if (Array.from(control.options || []).some(option => option.value === value)) control.value = value;
   });
   syncMissionCantripChoices();
+  syncLevelUpCantripChoice();
 
   if (selectedClass === "sorcerer" && level !== "1" && metamagicRaw) {
     metamagicSection.style.display = "block";
@@ -3718,9 +3722,9 @@ function syncManualFeatGuidance() {
   const manual = isManualFeatManagementEnabled();
   document.querySelectorAll("[data-feat-choice]").forEach(wrap => {
     const raceChoice = wrap.dataset.featChoice === "human-origin";
-    const inactiveRangerStyle = wrap.dataset.featChoice === "fighting-style-ranger"
-      && !document.getElementById("ranger-fighting-style")?.checked;
-    wrap.hidden = (manual && Boolean(raceChoice)) || inactiveRangerStyle;
+    const styleClass = ["ranger", "paladin"].find(cls => wrap.dataset.featChoice === `fighting-style-${cls}`);
+    const inactiveClassStyle = Boolean(styleClass) && !document.getElementById(`${styleClass}-fighting-style`)?.checked;
+    wrap.hidden = (manual && Boolean(raceChoice)) || inactiveClassStyle;
     wrap.querySelector(".feat-choice-control").hidden = manual;
     const label = wrap.querySelector(":scope > label");
     if (label) label.hidden = manual;
@@ -3966,6 +3970,107 @@ function syncMissionCantripChoices() {
     field.querySelector("button").disabled = !SpellCatalog.getSpell(select.value);
   });
 }
+
+// 4 級透過施法／契約魔法額外學會的職業戲法屬於職業戲法共用上限。
+// 選單只編輯自動管理的準備清單，並以標記辨識；舊資料戲法已選滿時視為已選。
+const LEVEL_UP_CANTRIP_LEVEL = 4;
+const LEVEL_UP_CANTRIP_TAG = "class-level-4";
+const LEVEL_UP_CANTRIP_SELECT_ID = "class-level-up-cantrip";
+
+function getLevelUpCantripClass() {
+  const cantripLimit = window.getClassCantripLimit;
+  const className = document.getElementById("class")?.value || "";
+  const level = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
+  const classLabel = classOptions.find(option => option.value === className)?.text || "";
+  if (typeof cantripLimit !== "function" || !classLabel || level < LEVEL_UP_CANTRIP_LEVEL
+      || cantripLimit(className, LEVEL_UP_CANTRIP_LEVEL) <= cantripLimit(className, LEVEL_UP_CANTRIP_LEVEL - 1)) return null;
+  return { className, classLabel, limit: cantripLimit(className, level) };
+}
+
+function getLevelUpCantripState() {
+  const api = window.SpellManagement;
+  const cantripClass = getLevelUpCantripClass();
+  if (!api || api.isManual() || !cantripClass) return null;
+  const { className, classLabel, limit } = cantripClass;
+  const cantrips = api.getPlayerEntries().filter(entry => entry.level === 0 && api.isEntryAvailable(entry));
+  const entry = cantrips.find(item => item.classFeatureCantrip === LEVEL_UP_CANTRIP_TAG)
+    || (cantrips.length >= limit ? cantrips[cantrips.length - 1] : null);
+  return { className, classLabel, entry };
+}
+
+function setLevelUpCantrip(spellId) {
+  const api = window.SpellManagement;
+  const state = getLevelUpCantripState();
+  if (!state || !api.canManage()) return false;
+  if (spellId && (!SpellCatalog.getSpell(spellId) || api.getEntries().some(entry => entry.spellId === spellId && entry.spellId !== state.entry?.spellId))) return false;
+  const players = api.getPlayerEntries();
+  const index = state.entry ? players.findIndex(entry => api.entryKey(entry) === api.entryKey(state.entry)) : -1;
+  players.forEach(entry => { delete entry.classFeatureCantrip; });
+  const next = spellId ? { spellId, spellClass: state.className, classFeatureCantrip: LEVEL_UP_CANTRIP_TAG } : null;
+  if (index >= 0) players.splice(index, 1, ...(next ? [next] : []));
+  else if (next) players.push(next);
+  api.setPlayerEntries(players);
+  return true;
+}
+
+function renderLevelUpCantripChoice() {
+  const paragraph = document.querySelector(`#classFeatures section[data-feature-level="${LEVEL_UP_CANTRIP_LEVEL}"] > [data-after-feat-choice]`);
+  const cantripClass = getLevelUpCantripClass();
+  if (!paragraph || !cantripClass) return;
+  const labelText = `${paragraph.querySelector("strong")?.textContent.replace(/[：:]\s*$/, "") || "施法補充"}：額外${cantripClass.classLabel}戲法`;
+  const field = document.createElement("div");
+  field.className = "class-feature-mission-cantrip class-feature-level-up-cantrip";
+  const label = document.createElement("label");
+  label.textContent = labelText;
+  label.htmlFor = LEVEL_UP_CANTRIP_SELECT_ID;
+  const controls = document.createElement("div");
+  controls.className = "feat-choice-control";
+  const select = document.createElement("select");
+  select.id = LEVEL_UP_CANTRIP_SELECT_ID;
+  select.dataset.stateTransient = "true";
+  const view = document.createElement("button");
+  view.type = "button";
+  view.className = "feat-choice-view";
+  view.textContent = "查看";
+  view.setAttribute("aria-label", `查看${labelText}詳情`);
+  view.addEventListener("click", () => {
+    const spell = SpellCatalog.getSpell(select.value);
+    if (spell) window.quickBuild?.openSpellDetail?.(spell, view);
+  });
+  select.addEventListener("change", () => {
+    if (!setLevelUpCantrip(select.value)) syncLevelUpCantripChoice();
+  });
+  controls.append(select, view);
+  field.append(label, controls);
+  paragraph.after(field);
+  syncLevelUpCantripChoice();
+}
+
+function syncLevelUpCantripChoice() {
+  const select = document.getElementById(LEVEL_UP_CANTRIP_SELECT_ID);
+  const field = select?.closest(".class-feature-level-up-cantrip");
+  if (!field) return;
+  const state = getLevelUpCantripState();
+  field.hidden = !state;
+  if (!state) return;
+  const current = state.entry?.spellId || "";
+  const taken = new Set((window.SpellManagement.getEntries() || []).map(entry => entry.spellId));
+  taken.delete(current);
+  const spells = getClassSpells(state.className, "cantrips");
+  const optionsKey = `${state.className}\u0000${spells.map(spell => `${spell.spellId}${taken.has(spell.spellId) ? "!" : ""}`).join(",")}`;
+  if (select.dataset.optionsKey !== optionsKey) {
+    select.innerHTML = '<option value="">-- 請選擇額外戲法 --</option>' + spells.map(spell =>
+      `<option value="${escapeHtml(spell.spellId)}"${taken.has(spell.spellId) ? " disabled" : ""}>${escapeHtml(spell.nameZh)}</option>`
+    ).join("");
+    select.dataset.optionsKey = optionsKey;
+  }
+  select.value = current;
+  select.disabled = !window.SpellManagement.canManage();
+  select.title = select.disabled ? "請先選好職業、等級、背景與種族，才能選擇戲法。" : "";
+  markPreparedSpellOptions(select);
+  field.querySelector("button").disabled = !SpellCatalog.getSpell(select.value);
+}
+window.addEventListener("spellmanagementchange", syncLevelUpCantripChoice);
 
 function renderRaceFeatChoice(previousValue = "") {
   const container = document.getElementById("human-origin-row");
@@ -9289,6 +9394,14 @@ function getClassFeatureChoiceIssues() {
     const id = `${checkboxId}-cantrip`;
     if (manualSpells || selectedClass !== className || !document.getElementById(checkboxId)?.checked || document.getElementById(id)?.value) return;
     pushGeneral({ message: `${label}尚未選擇。`, tab: "basic", selector: `#${id}`, focusSelector: `#${id}` });
+  });
+
+  const levelUpCantrip = manualSpells ? null : getLevelUpCantripState();
+  if (levelUpCantrip && !levelUpCantrip.entry && window.SpellManagement.canManage()) pushGeneral({
+    message: `${levelUpCantrip.classLabel} ${LEVEL_UP_CANTRIP_LEVEL} 級額外戲法尚未選擇。`,
+    tab: "basic",
+    selector: `#${LEVEL_UP_CANTRIP_SELECT_ID}`,
+    focusSelector: `#${LEVEL_UP_CANTRIP_SELECT_ID}`
   });
 
   if (!manualSpells && ["paladin", "ranger"].includes(selectedClass) && selectedLevel >= 2) {

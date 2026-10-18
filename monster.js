@@ -5,6 +5,8 @@ const skills_example_uses = {
   "為什麼預設裝備要選兩次？ ℹ️": "角色的職業和背景各自提供不同的預設裝備，冒險者可以按照需求選擇，新手建議兩套預設裝備一起取得。",
   "什麼是武器精通？ ℹ️": "武器精通是給像是戰士這類職業的專屬被動技能，讓你在使用特定武器攻擊時，能免費附加像是「推開」、「擊倒」或「減速」敵人等額外的戰術效果，讓選擇武器不再只是看傷害數字。",
   英雄激勵: "消耗**英雄激勵**可以重新擲出自己剛擲過的一顆骰子，並採用新結果。\n\n如果你在遊戲中表現精采，也許主持人會獎勵你一次英雄激勵。",
+  優勢: "當一次 D20 檢定具有優勢時，擲兩次 D20，取較高的結果，再加上原本的數字加值。\n\n例如擲出 7 和 16，就採用 16，再加上該次檢定的加值。",
+  劣勢: "當一次 D20 檢定具有劣勢時，擲兩次 D20，取較低的結果，再加上原本的數字加值。\n\n例如擲出 7 和 16，就採用 7，再加上該次檢定的加值。",
   目前HP: "在此填寫目前HP，再進入跑團模式。",
   體操: "站穩不跌倒，或做出各種特技動作。",
   馴獸: "安撫、訓練動物，或讓牠照你的意思行動。",
@@ -39,6 +41,47 @@ function normalizeSkillKey(skillName) {
 function skillTip(skillName) {
   const safeLabel = String(skillName ?? "");
   return `<span class="skill-tip" data-skill="${safeLabel}">${safeLabel}</span>`;
+}
+
+// 僅處理職業／種族的顯示 HTML，不改寫供規則、摘要與 PDF 使用的原始資料。
+function highlightFeatureRuleTerms(html) {
+  // 技能只接受來源中的 skillTip() 標記；同名動詞、風味敘述與能力名稱不是技能引用。
+  const pattern = /優勢|劣勢/g;
+  const template = document.createElement("template");
+  template.innerHTML = html;
+  const makeTip = label => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "skill-tip feature-rule-tip";
+    button.dataset.skill = label;
+    button.textContent = label;
+    button.setAttribute("aria-controls", "skillPopup");
+    return button;
+  };
+  // 已有的技能連結也使用相同的鍵盤可操作入口，避免重複包裝。
+  template.content.querySelectorAll("span.skill-tip").forEach(tip => {
+    if (!tip.closest('a, button, select, [role="button"]')) tip.replaceWith(makeTip(tip.dataset.skill));
+  });
+  const walker = document.createTreeWalker(template.content, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  while (walker.nextNode()) {
+    const node = walker.currentNode;
+    if (!node.parentElement?.closest('a, button, select, option, textarea, script, style, .skill-tip, .beast-tip, [role="button"], [contenteditable]')) nodes.push(node);
+  }
+  nodes.forEach(node => {
+    const text = node.textContent;
+    const matches = [...text.matchAll(pattern)];
+    if (!matches.length) return;
+    const fragment = document.createDocumentFragment();
+    let offset = 0;
+    matches.forEach(match => {
+      fragment.append(text.slice(offset, match.index), makeTip(match[0]));
+      offset = match.index + match[0].length;
+    });
+    fragment.append(text.slice(offset));
+    node.replaceWith(fragment);
+  });
+  return template.innerHTML;
 }
 
 const BEAST_STATS = {
