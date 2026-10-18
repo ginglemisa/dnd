@@ -729,124 +729,98 @@ const classFeatures = {
 <div class="class-feature-content" data-class-feature-panel="class">
 <section class="cleric-feature class-feature-section" data-feature-level="1">
   <h3>等級 1：施法</h3>
-  <p>你透過祈禱與冥想施法，法術請看「牧師法術列表」。</p>
-  <div class="class-rule-subsection">
-    <h4>戲法</h4>
-    <ul class="class-rule-list">
-      <li>起始學 3 個（建議：神導術,聖火術,奇術）。</li>
-      <li>每次升級可替換 1 個戲法。</li>
-      <li>4 級再多學 1 個。</li>
-    </ul>
-  </div>
-  <p>法術位：見「牧師特性」表，長休後全回復。</p>
-  <div class="class-rule-subsection">
-    <h4>準備法術</h4>
-    <ul class="class-rule-list">
-      <li>起始先準備 4 個 1 環法術（建議：祝福術,療傷術,光導箭,虔誠護盾）。</li>
-      <li>可準備數量隨等級增加（見表中「準備法術」欄）。</li>
-      <li>每當這個數量提高時，從牧師法術列表再選法術，直到準備數量與表格一致。</li>
-      <li>只能準備你目前有法術位可施放的環級。</li>
-      <li>例如 3 級可準備共 6 個 1 或 2 環法術。</li>
-    </ul>
-  </div>
-  <p>其他特性給你的額外已準備法術，不占上述數量。</p>
-  <p>每次長休後，你可重整準備列表。</p>
-  <p>施法屬性：感知。</p>
-  <p>施法法器：可用聖徽。</p>
+  <p>你使用<strong>感知</strong>施展「牧師法術列表」中的法術，並可用聖徽作為施法法器。</p>
+  <ul class="class-rule-list">
+    <li><strong>戲法：</strong>起始學會 3 個牧師戲法。每提升 1 級牧師，可將 1 個戲法換成另一個牧師戲法。<br>推薦：神導術、聖火術、奇術。</li>
+    <li><strong>準備法術：</strong>起始準備 4 個 1 環牧師法術，之後依「牧師特性」表增加。數量提高時，從牧師法術列表補選至表列數量；只能準備你有對應環階法術位的法術，<strong>每次長休後可全部更換</strong>。<br>推薦：祝福術、療傷術、光導箭、虔誠護盾。</li>
+    <li><strong>法術位：</strong>數量見「牧師特性」表，長休後全部恢復。</li>
+    <li><strong>額外法術：</strong>其他特性給予的額外準備法術不計入上限。</li>
+  </ul>
+  <p>例如 3 級牧師可準備共 6 個 1～2 環法術。</p>
 </section>
 
 <section class="cleric-feature class-feature-section" data-feature-level="1">
   <h3>等級 1：神聖使命</h3>
-  <p>你擇一：</p>
+  <p>從下列神聖使命中選擇 1 項：</p>
   <div class="druid-mission-options">
     <div class="druid-mission-option">
-      <div class="druid-mission-option__heading"><label><input type="checkbox" id="cleric-guardian"> 守護者</label>：獲得軍用武器熟練，並接受重甲訓練。</div>
+      <div class="druid-mission-option__heading"><label><input type="checkbox" id="cleric-guardian"> 守護者</label>：獲得<strong>軍用武器</strong>熟練，並接受<strong>重甲</strong>訓練。</div>
     </div>
     <div class="druid-mission-option">
-      <div class="druid-mission-option__heading"><label><input type="checkbox" id="cleric-trickster"> 魔術使</label>：額外學 1 個牧師戲法；你的智力（奧秘／宗教）檢定再加上感知調整值（至少 +1）。</div>
+      <div class="druid-mission-option__heading"><label><input type="checkbox" id="cleric-trickster"> 魔術使</label>：額外學會 1 個牧師戲法；進行智力（奧秘）或智力（宗教）檢定時，額外加上感知調整值（至少 +1）。</div>
     </div>
   </div>
 </section>
 
 <section class="cleric-feature class-feature-section" data-feature-level="2">
   <h3>等級 2：引導神力</h3>
-  <p>你可用引導神力產生神聖效果，起始有 2 種：</p>
+  <p>你可引導神力產生神聖效果，起始可使用「神聖火花」與「驅散不死生物」。</p>
   <ul class="class-rule-list">
-    <li>神聖火花</li>
-    <li>驅散不死生物</li>
+    <li><strong>使用次數：</strong>起始 2 次，之後依「牧師特性」表增加。<strong>短休後恢復 1 次</strong>，長休後全部恢復。</li>
+    <li><strong>豁免 DC：</strong>效果需要豁免時，使用你的牧師法術豁免 DC。</li>
   </ul>
-  <div class="class-rule-subsection">
-    <h4>使用次數</h4>
-    <ul class="class-rule-list">
-      <li>起始 2 次</li>
-      <li>短休回 1 次</li>
-      <li>長休全回</li>
-      <li>高等級時會增加上限（見特性表）</li>
-    </ul>
-  </div>
-  <p>若效果需要豁免，DC 用你的牧師法術豁免 DC。</p>
   <div class="class-rule-subsection" data-action-id="cleric-divine-spark">
     <h4>神聖火花（魔法動作）</h4>
+    <p>指定 30 呎內 1 個你看得見的生物，擲 1d8 + 感知調整值，再選擇一種效果：</p>
     <ul class="class-rule-list">
-      <li>指定 30 呎內你看得到的生物。</li>
-      <li>擲 1d8 + 感知調整值。</li>
-      <li>你可選擇：
-        <ul>
-          <li>讓目標回復等同結果的生命值，或</li>
-          <li>讓目標做體質豁免，失敗受等同結果的光耀／黯蝕傷害（你選），成功受一半（捨去小數點）。</li>
-        </ul>
-      </li>
+      <li><strong>治療：</strong>目標恢復等同擲骰結果的生命值。</li>
+      <li><strong>傷害：</strong>目標進行體質豁免，失敗時受到等同擲骰結果的光耀或黯蝕傷害（由你選擇），成功時傷害減半（無條件捨去）。</li>
     </ul>
   </div>
   <div class="class-rule-subsection" data-action-id="cleric-turn-undead">
     <h4>驅散不死生物（魔法動作）</h4>
+    <p>30 呎內每個不死生物進行感知豁免。</p>
     <ul class="class-rule-list">
-      <li>30 呎內每個不死生物做感知豁免。</li>
-      <li>失敗者在 1 分鐘內陷入恐慌與失能，並會在回合中盡量遠離你。</li>
-      <li>若其受傷,你失能或死亡，效果提前結束。</li>
+      <li><strong>豁免失敗：</strong>1 分鐘內陷入恐慌與失能，並在自己的回合中盡量遠離你。</li>
+      <li><strong>提前結束：</strong>該生物受到傷害，或你失能、死亡時，效果結束。</li>
     </ul>
   </div>
 </section>
 
 <section class="cleric-feature class-feature-section" data-feature-level="3">
   <h3>等級 3：牧師子職</h3>
-  <p>你可選擇一個牧師子職；基本規則僅提供「生命領域」。</p>
+  <p>選擇一個牧師子職，並隨等級提升獲得子職能力。基本規則僅提供「生命領域」。</p>
 </section>
 
 <section class="cleric-feature class-feature-section" data-feature-level="3">
   <h3>等級 3：生命領域法術（生命子職）</h3>
-  <p>你會自動準備以下法術：</p>
+  <p>達到下列牧師等級後，你始終準備對應法術：</p>
   <ul class="class-rule-list">
-    <li>3 級：援助術,祝福術,療傷術,次級復原術。</li>
-    <li>5 級：群體治癒真言,回生術。</li>
-    <li>7 級：生命靈氣，防死結界。</li>
+    <li><strong>3 級：</strong>援助術、祝福術、療傷術、次級復原術。</li>
+    <li><strong>5 級：</strong>群體治癒真言、回生術。</li>
+    <li><strong>7 級：</strong>生命靈氣、防死結界。</li>
   </ul>
 </section>
 
 <section class="cleric-feature class-feature-section" data-feature-level="3">
   <h3>等級 3：生命門徒（生命子職）</h3>
-  <p>你用法術位施放回復法術時，目標在本回合額外回復「2 + 法術環級」生命值。</p>
+  <p>使用<strong>法術位</strong>施放恢復生命值的法術時，目標在本回合額外恢復「2＋法術環階」生命值。</p>
 </section>
 
 <section class="cleric-feature class-feature-section" data-feature-level="3" data-action-id="cleric-preserve-life">
   <h3>等級 3：維持生命（生命子職）</h3>
-  <p>你可用魔法動作展示聖徽並消耗 1 次引導神力，分配總共「牧師等級 × 5」點治療量給 30 呎內任意數量重傷生物。</p>
-  <p>此特性不能把目標回到超過其生命值上限一半。</p>
+  <p>以<strong>魔法動作</strong>展示聖徽並消耗 1 次引導神力，治療 30 呎內任意數量的重傷生物。</p>
+  <ul class="class-rule-list">
+    <li><strong>治療總量：</strong>共「牧師等級 × 5」點，可自由分配給這些生物。</li>
+    <li><strong>恢復上限：</strong>不能使目標的生命值超過其生命值上限的一半。</li>
+  </ul>
 </section>
 
 <section class="cleric-feature class-feature-section" data-feature-level="4">
   <h3>等級 4：屬性值提升</h3>
-  <p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p>
+  <p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p>
+  <p data-after-feat-choice><strong>施法補充：</strong>牧師達到 4 級時，你也會透過「施法」特性額外學會 1 個牧師戲法。</p>
 </section>
 
 <section class="cleric-feature class-feature-section" data-feature-level="5" data-action-id="cleric-sear-undead">
   <h3>等級 5：焚燒不死生物</h3>
-  <p>當你使用驅散不死生物時，可額外擲等同感知調整值數量的 d8（最少 1d8），將總值作為光耀傷害，套用到每個該次豁免失敗的不死生物。</p>
-  <p>這個傷害不會中止驅散效果。</p>
+  <p>使用驅散不死生物時，可額外擲<strong>等同感知調整值數量的 d8</strong>（至少 1d8），每個該次豁免失敗的不死生物都受到等同總值的光耀傷害。</p>
+  <p>此傷害不會中止驅散效果。</p>
 </section>
-<section class="cleric-feature class-feature-section" data-feature-level="6"><h3>等級 6：神佑醫者（生命子職）</h3><p>當你消耗法術位施展會恢復其他生物 HP 的法術後，你立即恢復 2＋該法術位環階的 HP。</p></section>
-<section class="cleric-feature class-feature-section" data-feature-level="7"><h3>等級 7：神佑打擊</h3><p>選擇下列一項。即使你已從舊書中的牧師子職業獲得其中一項，也只能使用透過本特性選擇的選項。</p><div class="druid-mission-options"><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="cleric-blessed-strikes-divine-strike" data-feature-choice-group="cleric-blessed-strikes"> 神聖打擊</label>：在你的每個回合中一次，當你使用武器發動攻擊檢定並命中一個生物時，可以使目標額外受到1d8黯蝕或光耀傷害（由你選擇）。</div></div><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="cleric-blessed-strikes-potent-spellcasting" data-feature-choice-group="cleric-blessed-strikes"> 強力施法</label>：你將感知調整值加入所有你以牧師戲法造成的傷害中。</div></div></div></section>
-<section class="cleric-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p></section>
+<section class="cleric-feature class-feature-section" data-feature-level="6"><h3>等級 6：神佑醫者（生命子職）</h3><p>消耗法術位施放法術並恢復其他生物的生命值後，你立即恢復「2＋該法術位環階」生命值。</p></section>
+<section class="cleric-feature class-feature-section" data-feature-level="6"><p><strong>引導神力補充：</strong>牧師達到 6 級時，引導神力使用次數增加至 3 次，詳見「牧師特性」表。</p></section>
+<section class="cleric-feature class-feature-section" data-feature-level="7"><h3>等級 7：神佑打擊</h3><p>選擇下列 1 項。即使你已從舊書的牧師子職獲得其中一項，也只能使用透過此特性選擇的選項。</p><div class="druid-mission-options"><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="cleric-blessed-strikes-divine-strike" data-feature-choice-group="cleric-blessed-strikes"> 神聖打擊</label>：每回合 1 次，以武器攻擊檢定命中生物時，可使目標額外受到 1d8 黯蝕或光耀傷害（由你選擇）。</div></div><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="cleric-blessed-strikes-potent-spellcasting" data-feature-choice-group="cleric-blessed-strikes"> 強力施法</label>：以牧師戲法造成傷害時，將感知調整值加到傷害中。</div></div></div></section>
+<section class="cleric-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p></section>
 </div>
 `,
   druid: `<section class="class-creation-content" data-class-feature-panel="creation">
@@ -2655,7 +2629,7 @@ const classFeatures = {
 <section class="sorcerer-feature class-feature-section" data-feature-level="4">
   <h3>等級 4：屬性值提升</h3>
   <p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p>
-  <p><strong>施法補充：</strong>術士達到 4 級時，你也會透過「施法」特性額外學會 1 個術士戲法。</p>
+  <p data-after-feat-choice><strong>施法補充：</strong>術士達到 4 級時，你也會透過「施法」特性額外學會 1 個術士戲法。</p>
 </section>
 
 <section class="sorcerer-feature class-feature-section" data-feature-level="5">
@@ -2922,7 +2896,7 @@ const classFeatures = {
 <section class="warlock-feature class-feature-section" data-feature-level="3"><h3>等級 3：契術師子職</h3><p>選擇一個契術師子職，並隨等級提升獲得子職能力。基本規則僅提供「邪魔宗主」。</p></section>
 <section class="warlock-feature class-feature-section" data-feature-level="3"><h3>等級 3：黑暗之賜（邪魔子職）</h3><p>當你或其他生物將<strong>你 10 呎內敵對生物的生命值降至 0</strong>時，你獲得等同「魅力調整值＋契術師等級」的臨時生命值（至少 1）。</p></section>
 <section class="warlock-feature class-feature-section" data-feature-level="3"><h3>等級 3：邪魔法術（邪魔子職）</h3><p>達到下列契術師等級後，你始終準備對應法術：</p><ul class="class-rule-list"><li><strong>3 級：</strong>燃燒之手、命令術、灼熱射線、暗示術。</li><li><strong>5 級：</strong>火球術、臭雲術。</li><li><strong>7 級：</strong>火焰護盾、火牆術。</li></ul></section>
-<section class="warlock-feature class-feature-section" data-feature-level="4"><h3>等級 4：屬性值提升</h3><p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p><p><strong>契約魔法補充：</strong>契術師達到 4 級時，你也會透過「契約魔法」特性額外學會 1 個契術師戲法。</p></section>
+<section class="warlock-feature class-feature-section" data-feature-level="4"><h3>等級 4：屬性值提升</h3><p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p><p data-after-feat-choice><strong>契約魔法補充：</strong>契術師達到 4 級時，你也會透過「契約魔法」特性額外學會 1 個契術師戲法。</p></section>
 <section class="warlock-feature class-feature-section" data-feature-level="5"><p><strong>魔能祈喚補充：</strong>契術師達到 5 級時，可選擇的魔能祈喚數量增加至 5 個，詳見「契術師特性」表。</p></section>
 <section class="warlock-feature class-feature-section" data-feature-level="6"><h3>等級 6：黑暗強運（邪魔子職）</h3><p>進行屬性檢定或豁免檢定時，可在<strong>看到擲骰結果後、結果生效前</strong>，將 1d10 加到結果中。</p><ul class="class-rule-list"><li><strong>使用次數：</strong>等同魅力調整值（至少 1 次），每次擲骰限用 1 次。</li><li><strong>恢復時機：</strong>長休後恢復所有已消耗的使用次數。</li></ul></section>
 <section class="warlock-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p></section>
@@ -3121,7 +3095,7 @@ const classFeatures = {
 <section class="wizard-feature class-feature-section" data-feature-level="3"><h3>等級 3：法師子職</h3><p>選擇一個法師子職，並隨等級提升獲得子職能力。基本規則僅提供「塑能師」。</p></section>
 <section class="wizard-feature class-feature-section" data-feature-level="3"><h3>等級 3：塑能學者（塑能師）</h3><p>選擇 2 個不高於 2 環的塑能系法師法術，免費加入法術書。</p><p>之後每次首次獲得更高環階的法術位時，可再免費加入 1 個不高於該環階的塑能系法師法術。</p></section>
 <section class="wizard-feature class-feature-section" data-feature-level="3"><h3>等級 3：強力戲法（塑能師）</h3><p>對生物施放傷害戲法時，即使<strong>攻擊失手或目標豁免成功</strong>，目標仍受到一半傷害，但不受該戲法的其他效果影響。</p></section>
-<section class="wizard-feature class-feature-section" data-feature-level="4"><h3>等級 4：屬性值提升</h3><p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p><p><strong>施法補充：</strong>法師達到 4 級時，你也會透過「施法」特性額外學會 1 個法師戲法。</p></section>
+<section class="wizard-feature class-feature-section" data-feature-level="4"><h3>等級 4：屬性值提升</h3><p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p><p data-after-feat-choice><strong>施法補充：</strong>法師達到 4 級時，你也會透過「施法」特性額外學會 1 個法師戲法。</p></section>
 <section class="wizard-feature class-feature-section" data-feature-level="5"><h3>等級 5：記憶法術</h3><p>每次短休後，可研讀法術書，將 1 個透過「施法」準備的 1 環以上法師法術，換成書中另一個你能準備的 1 環以上法師法術。</p></section>
 <section class="wizard-feature class-feature-section" data-feature-level="6"><h3>等級 6：法術塑形（塑能師）</h3><p>施放會影響其他可見生物的塑能系法術時，可從這些生物中選擇最多<strong>「法術環階＋1」名</strong>。</p><p>這些生物對該法術的豁免自動成功，且不承受豁免成功時原本仍會受到的傷害。</p></section>
 <section class="wizard-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p></section></div>
