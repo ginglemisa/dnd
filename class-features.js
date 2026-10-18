@@ -497,93 +497,75 @@ const classFeatures = {
 
 <section class="bard-feature class-feature-section" data-feature-level="1">
   <h3>等級 1：吟遊詩人激勵</h3>
-  <p>你可以用話語,音樂或表演鼓舞同伴，給對方 1 顆激勵骰（初始 d6）。</p>
-  <div class="class-rule-subsection">
-    <h4>使用方式：</h4>
-    <ul class="class-rule-list">
-      <li>附贈動作。</li>
-      <li>目標在你 60 呎內，且聽得到你或看得到你。</li>
-      <li>同一時間一個生物只能持有 1 顆你的激勵骰。</li>
-    </ul>
-  </div>
-  <div class="class-rule-subsection">
-    <h4>效果：</h4>
-    <ul class="class-rule-list">
-      <li>持續 1 小時。</li>
-      <li>目標在 d20 檢定失敗後，可擲這顆激勵骰加上去；擲出後骰子消耗。</li>
-    </ul>
-  </div>
-  <p>使用次數 = 你的魅力調整值（至少 1）。長休全回。</p>
-  <p>到 5 級時，激勵骰升為 d8（見特性表）。</p>
+  <p>你可以用話語、音樂或表演鼓舞同伴，給予對方 1 顆激勵骰。</p>
+  <ul class="class-rule-list">
+    <li><strong>使用方式：</strong>以<strong>附贈動作</strong>指定你 60 呎內聽得到或看得到你的 1 個生物。同一生物同時只能持有 1 顆你的激勵骰。</li>
+    <li><strong>效果：</strong>激勵骰持續 1 小時。目標在 <strong>d20 檢定失敗</strong>後，可擲這顆激勵骰並加到結果上；擲出後骰子消耗。</li>
+    <li><strong>激勵骰：</strong>起始為 d6，之後依「吟遊詩人特性」表提升。</li>
+    <li><strong>使用次數：</strong>等同魅力調整值（至少 1 次），<strong>長休後全部恢復</strong>。</li>
+  </ul>
 </section>
 
 <section class="bard-feature class-feature-section" data-feature-level="1">
   <h3>等級 1：施法</h3>
-  <p>你可施放吟遊詩人法術（見吟遊詩人法術列表）。</p>
-  <div class="class-rule-subsection">
-    <h4>戲法：</h4>
-    <ul class="class-rule-list">
-      <li>起始學 2 個（建議：舞光術,惡言相加）。</li>
-      <li>升級時可換 1 個。</li>
-      <li>4 級再多學 1 個。</li>
-    </ul>
-  </div>
-  <p>法術位：看特性表，長休後全回復。</p>
-  <div class="class-rule-subsection">
-    <h4>準備法術：</h4>
-    <ul class="class-rule-list">
-      <li>起始準備 4 個 1 環法術（推薦：魅惑人類,七彩噴射,不諧低語,治癒真言）。</li>
-      <li>可準備總數隨等級增加（看「準備法術」欄）。</li>
-      <li>每當可準備數量提高時，你要從「吟遊詩人法術清單」再選新法術補上，直到數量和特性表一致。</li>
-      <li>只能準備你目前有法術位可施放的環級。</li>
-      <li>例如 3 級時可準備共 6 個 1 或 2 環法術。</li>
-    </ul>
-  </div>
-  <p>其他特性給的額外已準備法術，不占用上述數量。</p>
-  <p>每次升級時，你可把 1 個已準備法術換成另一個你可施放的吟遊詩人法術。</p>
-  <p>施法屬性：魅力。</p>
-  <p>施法法器：可用樂器。</p>
+  <p>你使用<strong>魅力</strong>施展「吟遊詩人法術列表」中的法術，並可用樂器作為施法法器。</p>
+  <ul class="class-rule-list">
+    <li><strong>戲法：</strong>起始學會 2 個吟遊詩人戲法。每提升 1 級吟遊詩人，可將 1 個戲法換成另一個吟遊詩人戲法。<br>推薦：舞光術、惡言相加。</li>
+    <li><strong>準備法術：</strong>起始準備 4 個 1 環吟遊詩人法術，之後依「吟遊詩人特性」表增加。數量提高時，從吟遊詩人法術列表補選至表列數量；只能準備你有對應環階法術位的法術。<br>推薦：魅惑人類、七彩噴射、不諧低語、治癒真言。</li>
+    <li><strong>升級替換：</strong>每提升 1 級吟遊詩人，可將 1 個已準備法術換成另一個你可施放的吟遊詩人法術。</li>
+    <li><strong>法術位：</strong>數量見「吟遊詩人特性」表，長休後全部恢復。</li>
+    <li><strong>額外法術：</strong>其他特性給予的額外準備法術不計入上限。</li>
+  </ul>
+  <p>例如 3 級吟遊詩人可準備共 6 個 1～2 環法術。</p>
 </section>
 
 <section class="bard-feature class-feature-section" data-feature-level="2">
   <h3>等級 2：專精</h3>
-  <p>選 2 項你已熟練的技能，改為專精（熟練加值加倍）。</p>
+  <p>選擇 2 項你已熟練的技能改為<strong>專精</strong>，這些技能的熟練加值加倍。</p>
 </section>
 
 <section class="bard-feature class-feature-section" data-feature-level="2">
   <h3>等級 2：萬事通</h3>
-  <p>你對所有「未熟練」能力檢定，額外加上一半熟練加值（捨去小數點）。</p>
+  <p>進行<strong>未熟練</strong>的能力檢定時，額外加上熟練加值的一半（無條件捨去）。</p>
 </section>
 
 <section class="bard-feature class-feature-section" data-feature-level="3">
   <h3>等級 3：吟遊詩人子職</h3>
-  <p>你可選擇一個吟遊詩人子職；基本規則僅提供「逸聞學院」。</p>
+  <p>選擇一個吟遊詩人子職，並隨等級提升獲得子職能力。基本規則僅提供「逸聞學院」。</p>
 </section>
 
 <section class="bard-feature class-feature-section" data-feature-level="3">
-  <h3>等級 3：附贈熟練項（逸聞子職）</h3>
-  <p>你獲得任意三個自選技能的熟練項。</p>
+  <h3>等級 3：額外熟練項（逸聞子職）</h3>
+  <p>你獲得 3 項自選技能的熟練。</p>
 </section>
 
 <section class="bard-feature class-feature-section" data-feature-level="3" data-action-id="bard-cutting-words">
   <h3>等級 3：語出驚人（逸聞子職）</h3>
-  <p>當你 60 呎內看得到的生物在傷害擲骰,能力檢定或攻擊檢定成功時，
-你可用反應並消耗 1 次激勵干擾它，降低成果（依特性敘述判定）。</p>
+  <p>你 60 呎內看得到的生物在傷害擲骰、能力檢定或攻擊檢定成功時，你可以干擾它並降低結果。</p>
+  <ul class="class-rule-list">
+    <li><strong>動作類型：</strong>反應。</li>
+    <li><strong>消耗：</strong>每次使用消耗 1 次吟遊詩人激勵。</li>
+  </ul>
 </section>
 
 <section class="bard-feature class-feature-section" data-feature-level="4">
   <h3>等級 4：屬性值提升</h3>
-  <p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p>
+  <p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p>
+  <p data-after-feat-choice><strong>施法補充：</strong>吟遊詩人達到 4 級時，你也會透過「施法」特性額外學會 1 個吟遊詩人戲法。</p>
 </section>
 
 <section class="bard-feature class-feature-section" data-feature-level="5">
   <h3>等級 5：激勵之源</h3>
-  <p>你在短休或長休後都能回復已消耗的激勵次數。</p>
-  <p>此外，你可消耗 1 個法術位換回 1 次激勵使用次數（不耗動作）。</p>
+  <p>吟遊詩人激勵的恢復變得更快，也能用法術位換回使用次數。</p>
+  <ul class="class-rule-list">
+    <li><strong>恢復時機：</strong><strong>短休或長休後</strong>恢復所有已消耗的激勵使用次數。</li>
+    <li><strong>法術位轉換：</strong>可消耗 1 個法術位恢復 1 次激勵使用次數，<strong>不需動作</strong>。</li>
+  </ul>
 </section>
-<section class="bard-feature class-feature-section" data-feature-level="6"><h3>等級 6：魔法發現（逸聞子職）</h3><p>你從牧師、德魯伊或法師的法術列表中選擇並學會兩個法術；兩者可以來自不同列表。所選法術必須是戲法，或是你已有對應法術位的法術。</p><p>你始終準備所選法術。每當你獲得一個吟遊詩人等級時，可以將其中一個替換為另一個符合條件的法術。</p><div id="bard-magical-discoveries" class="bard-magical-discoveries" aria-label="魔法發現法術選擇"></div></section>
-<section class="bard-feature class-feature-section" data-feature-level="7" data-action-id="bard-countercharm"><h3>等級 7：反迷惑</h3><p>當你或你30呎內的一個生物在抵抗魅惑或恐慌狀態的豁免檢定中失敗時，你可以執行反應，使失敗者重新進行該豁免，且新的檢定具有優勢。</p></section>
-<section class="bard-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇一個你符合條件的專長；你也可以選擇「屬性值提升」。</p></section>
+<section class="bard-feature class-feature-section" data-feature-level="5"><p><strong>吟遊詩人激勵補充：</strong>吟遊詩人達到 5 級時，激勵骰提升為 d8，詳見「吟遊詩人特性」表。</p></section>
+<section class="bard-feature class-feature-section" data-feature-level="6"><h3>等級 6：魔法發現（逸聞子職）</h3><p>你從牧師、德魯伊或法師法術列表中選擇並學會 2 個法術，兩者可以來自不同列表。</p><ul class="class-rule-list"><li><strong>選擇條件：</strong>所選法術必須是戲法，或是你已有對應法術位的法術。</li><li><strong>始終準備：</strong>你始終準備所選法術。</li><li><strong>升級替換：</strong>每提升 1 級吟遊詩人，可將其中 1 個換成另一個符合條件的法術。</li></ul><div id="bard-magical-discoveries" class="bard-magical-discoveries" aria-label="魔法發現法術選擇"></div></section>
+<section class="bard-feature class-feature-section" data-feature-level="7" data-action-id="bard-countercharm"><h3>等級 7：反迷惑</h3><p>你或你 30 呎內的 1 個生物在對抗魅惑或恐慌狀態的豁免檢定中失敗時，你可以使失敗者重新進行該豁免。</p><ul class="class-rule-list"><li><strong>動作類型：</strong>反應。</li><li><strong>重新豁免：</strong>新的檢定具有<strong>優勢</strong>。</li></ul></section>
+<section class="bard-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p></section>
 </div>
 `,
   cleric: `<section class="class-creation-content" data-class-feature-panel="creation">
