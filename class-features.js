@@ -1342,9 +1342,9 @@ const classFeatures = {
 
 <section class="fighter-feature class-feature-section" data-feature-level="1" data-action-id="fighter-second-wind">
   <h3>等級 1：回氣</h3>
-  <p>你的身心儲有底力，可在關鍵時刻以<strong>附贈動作</strong>恢復「1d10 + 戰士等級」的生命值。</p>
+  <p>你的身心儲有底力，可在關鍵時刻以<strong>附贈動作</strong>恢復「<span data-tabletop-value="fighter-second-wind-healing">1d10 + 戰士等級</span>」的生命值。</p>
   <ul class="class-rule-list">
-    <li><strong>使用次數：</strong>起始 2 次，之後依「戰士特性」表的「回氣」欄增加。<strong>短休後恢復 1 次</strong>，長休後全部恢復。</li>
+    <li><strong>使用次數：</strong><span data-tabletop-value="fighter-second-wind-uses">起始 2 次，之後依「戰士特性」表的「回氣」欄增加</span>。<strong>短休後恢復 1 次</strong>，長休後全部恢復。</li>
   </ul>
 </section>
 
@@ -1383,7 +1383,7 @@ const classFeatures = {
   <p>你使用武器和徒手打擊的攻擊檢定，擲出 <strong>19 或 20</strong> 時即可造成重擊。</p>
 </section>
 
-<section class="fighter-feature class-feature-section" data-feature-level="3">
+<section class="fighter-feature class-feature-section" data-feature-level="3" data-action-id="fighter-remarkable-athlete">
   <h3>等級 3：運動健將(勇士子職)</h3>
   <p>平日的訓練鍛打出堅實的體能，你獲得以下效果：</p>
   <ul class="class-rule-list">
@@ -1399,14 +1399,14 @@ const classFeatures = {
 <section class="fighter-feature class-feature-section" data-feature-level="4"><p><strong>回氣補充：</strong>戰士達到 4 級時，回氣使用次數提升為 3 次，詳見「戰士特性」表。</p></section>
 <section class="fighter-feature class-feature-section" data-feature-level="4"><p><strong>武器精通補充：</strong>戰士達到 4 級時，武器精通可選數量提升為 4 種，詳見「戰士特性」表。</p></section>
 
-<section class="fighter-feature class-feature-section" data-feature-level="5">
+<section class="fighter-feature class-feature-section" data-feature-level="5" data-action-id="fighter-extra-attack">
   <h3>等級 5：額外攻擊</h3>
   <p>你在自己的回合執行<strong>攻擊動作</strong>時，可以攻擊 2 次。</p>
 </section>
 
 <section class="fighter-feature class-feature-section" data-feature-level="5" data-action-id="fighter-tactical-shift">
   <h3>等級 5：戰術轉移</h3>
-  <p>以<strong>附贈動作</strong>使用回氣時，你可以移動至多等同於你速度一半的距離，且不會引發藉機攻擊。</p>
+  <p><strong data-tabletop-only hidden>戰術轉移：</strong>以<strong>附贈動作</strong>使用回氣時，你可以移動至多等同於你速度一半的距離，且不會引發藉機攻擊。</p>
 </section>
 
 <section class="fighter-feature class-feature-section" data-feature-level="6">
@@ -2316,14 +2316,14 @@ const classFeatures = {
   <p>選擇 2 項<strong>已熟練</strong>的技能，獲得專精。<br>推薦：${skillTip("巧手")}、${skillTip("隱匿")}。</p>
 </section>
 
-<section class="rogue-feature class-feature-section" data-feature-level="1">
+<section class="rogue-feature class-feature-section" data-feature-level="1" data-action-id="rogue-sneak-attack">
   <h3>等級 1：偷襲</h3>
-  <p><strong>每回合 1 次</strong>，以靈巧武器或遠程武器命中時，若符合下列任一條件，可額外造成 1d6 傷害（與武器傷害類型相同）。</p>
+  <p><strong>每回合 1 次</strong>，以靈巧武器或遠程武器命中時，若符合下列任一條件，可額外造成 <span data-tabletop-value="rogue-sneak-attack-dice">1d6</span> 傷害（與武器傷害類型相同）。</p>
   <ul class="class-rule-list">
     <li><strong>具有優勢：</strong>這次攻擊檢定具有優勢。</li>
     <li><strong>友方在旁：</strong>目標 5 呎內有至少 1 名未失能的友方，且這次攻擊檢定沒有劣勢。</li>
   </ul>
-  <p>偷襲傷害骰隨盜賊等級增加，見「盜賊特性」表的「偷襲」欄。</p>
+  <p data-tabletop-hide>偷襲傷害骰隨盜賊等級增加，見「盜賊特性」表的「偷襲」欄。</p>
 </section>
 
 <section class="rogue-feature class-feature-section" data-feature-level="1">
@@ -2372,11 +2372,11 @@ const classFeatures = {
   <p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p>
 </section>
 
-<section class="rogue-feature class-feature-section" data-feature-level="5">
+<section class="rogue-feature class-feature-section" data-feature-level="5" data-action-id="rogue-cunning-strike">
   <h3>等級 5：靈巧打擊</h3>
-  <p>造成偷襲傷害時，可放棄部分偷襲傷害骰，套用 1 種靈巧打擊效果。</p>
+  <p><strong data-tabletop-only hidden>靈巧打擊：</strong>造成偷襲傷害時，可放棄部分偷襲傷害骰，套用 1 種靈巧打擊效果。</p>
   <ul class="class-rule-list">
-    <li><strong>豁免 DC：</strong>效果需要豁免時，DC＝8＋熟練加值＋敏捷調整值。</li>
+    <li><strong>豁免 DC：</strong>效果需要豁免時，DC＝<span data-tabletop-value="rogue-cunning-strike-dc">8＋熟練加值＋敏捷調整值</span>。</li>
   </ul>
   <div class="class-rule-subsection">
     <h4>靈巧打擊效果</h4>
