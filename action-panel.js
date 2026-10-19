@@ -189,18 +189,12 @@
       { id: "lands-aid", mode: "action", level: 3, label: "等級 3：大地之援（大地子職）", descriptionId: "druid-lands-aid", druidOperation: "aid" }
     ]),
     fighter: Object.freeze([
-      { mode: "bonus", level: 1, label: "等級 1：回氣", resourceKey: "fighter-second-wind", description: () => {
-        const level = getCharacterLevel();
-        const uses = level >= 4 ? 3 : 2;
-        const tacticalShift = level >= 5
-          ? "\n- 戰術轉移：使用回氣時，可移動至多等同於速度一半的距離，且不會引發藉機攻擊。"
-          : "";
-        return `使用附贈動作，恢復 1d10 + ${level} 生命值。\n\n- 使用次數：${uses} 次；短休回復 1 次，長休全部回復。${tacticalShift}`;
-      }, key: "dynamic-bonus-fighter-qmmfue", id: "second-wind", legacyKeys: ["dynamic-bonus-class-fj2om2"] },
-      { mode: "action", level: 2, label: "等級 2：動作如潮", description: "你的回合中，可以獲得 1 個額外動作。\n\n- 此額外動作不能用於魔法動作。\n- 使用後，短休或長休才能再次使用。", key: "dynamic-action-fighter-1870147", id: "action-surge", resourceKey: "fighter-action-surge", legacyKeys: ["dynamic-action-class-action-surge"] },
-      { mode: "movement", level: 3, label: "等級 3：運動健將", description: "造成重擊後，可立即移動至多等同於速度一半的距離，且不會引發藉機攻擊。", key: "dynamic-movement-fighter-1s26hvz", id: "remarkable-athlete" },
-      { mode: "action", level: 5, label: "等級 5：額外攻擊", description: "你在自己回合使用攻擊動作時，可以攻擊 2 次。", key: "dynamic-action-fighter-113ebtz", id: "extra-attack" },
-      { mode: "movement", level: 5, label: "等級 5：戰術轉移", description: "當你以附贈動作使用回氣時，可以移動至多等同於你速度一半的距離，且不會引發藉機攻擊。", key: "dynamic-movement-fighter-1liysqo", id: "tactical-shift" }
+      // 5 級起戰術轉移併入回氣說明；移動頁仍保留獨立的戰術轉移按鈕。
+      { mode: "bonus", level: 1, label: "等級 1：回氣", resourceKey: "fighter-second-wind", descriptionIds: ["fighter-second-wind", { id: "fighter-tactical-shift", level: 5 }], key: "dynamic-bonus-fighter-qmmfue", id: "second-wind", legacyKeys: ["dynamic-bonus-class-fj2om2"] },
+      { mode: "action", level: 2, label: "等級 2：動作如潮", descriptionId: "fighter-action-surge", key: "dynamic-action-fighter-1870147", id: "action-surge", resourceKey: "fighter-action-surge", legacyKeys: ["dynamic-action-class-action-surge"] },
+      { mode: "movement", level: 3, label: "等級 3：運動健將", descriptionId: "fighter-remarkable-athlete", key: "dynamic-movement-fighter-1s26hvz", id: "remarkable-athlete" },
+      { mode: "action", level: 5, label: "等級 5：額外攻擊", descriptionId: "fighter-extra-attack", key: "dynamic-action-fighter-113ebtz", id: "extra-attack" },
+      { mode: "movement", level: 5, label: "等級 5：戰術轉移", descriptionId: "fighter-tactical-shift", key: "dynamic-movement-fighter-1liysqo", id: "tactical-shift" }
     ]),
     paladin: Object.freeze([
       { id: "lay-on-hands", mode: "bonus", level: 1, label: "等級 1：聖療", description: "以附贈動作觸碰自己或一個生物，從「聖療」池分配任意點數，使其恢復等量 HP。\n\n也可消耗 5 點聖療，移除目標的中毒狀態；此時不恢復 HP。", key: "dynamic-bonus-paladin-curated-lay-on-hands", legacyKeys: ["dynamic-bonus-class-1ol2xxh"] },
@@ -209,9 +203,10 @@
       { id: "extra-attack", mode: "action", level: 5, label: "等級 5：額外攻擊", description: "你在自己回合使用攻擊動作時，可以攻擊 2 次。", key: "dynamic-action-paladin-curated-extra-attack" }
     ]),
     rogue: Object.freeze([
-      { id: "sneak-attack", mode: "action", level: 1, label: "等級 1：偷襲", description: getRogueSneakAttackDescription, key: "dynamic-action-rogue-curated-sneak-attack" },
-      { id: "fast-hands", mode: "bonus", level: 3, label: "等級 3：快手", description: "你可用附贈動作進行以下其中一項：\n\n- 巧手：做敏捷（巧手）檢定來開鎖、解除陷阱或扒竊。\n- 使用物品：執行使用動作，或用魔法動作啟動需要該動作的魔法物品。", key: "dynamic-bonus-rogue-curated-fast-hands", legacyKeys: ["dynamic-bonus-class-84ttm1"] },
-      { id: "steady-aim", mode: "bonus", level: 3, label: "等級 3：手穩就準", description: "附贈動作啟動後，你本回合下一次攻擊檢定有優勢。\n\n但你必須在本回合尚未移動，且啟動後速度變為 0（直到回合結束）。", key: "dynamic-bonus-rogue-curated-steady-aim", legacyKeys: ["dynamic-bonus-class-kwgie8"] },
+      // 5 級起靈巧打擊併入偷襲說明，不另設按鈕。
+      { id: "sneak-attack", mode: "action", level: 1, label: "等級 1：偷襲", descriptionIds: ["rogue-sneak-attack", { id: "rogue-cunning-strike", level: 5 }], key: "dynamic-action-rogue-curated-sneak-attack" },
+      { id: "fast-hands", mode: "bonus", level: 3, label: "等級 3：快手", descriptionId: "rogue-fast-hands", key: "dynamic-bonus-rogue-curated-fast-hands", legacyKeys: ["dynamic-bonus-class-84ttm1"] },
+      { id: "steady-aim", mode: "bonus", level: 3, label: "等級 3：手穩就準", descriptionId: "rogue-steady-aim", key: "dynamic-bonus-rogue-curated-steady-aim", legacyKeys: ["dynamic-bonus-class-kwgie8"] },
       { id: "cunning-action", mode: "bonus", level: 2, label: "等級 2：靈巧動作", key: "dynamic-bonus-class-1vms7ce", descriptionId: "rogue-cunning-action" },
       { id: "uncanny-dodge", mode: "reaction", level: 5, label: "等級 5：直覺閃避", key: "dynamic-reaction-class-5f9k5x", descriptionId: "rogue-uncanny-dodge" }
     ]),
@@ -566,31 +561,6 @@ ${formatDiceWithModifier("1d10", dexterityModifier + level)}
     return `以附贈動作恢復 ${formatDiceWithModifier(getMonkMartialArtsDie(), getMonkAbilityModifier("wis"))} HP，最少恢復 1 點。\n\n使用次數＝感知調整值（至少 1 次），長休後全部恢復。`;
   }
 
-  function getRogueSneakAttackDescription() {
-  const level = getCharacterLevel();
-  const sneakAttackDice = Math.max(1, Math.ceil(level / 2));
-  const base = `你每回合可在用靈巧或遠程武器命中時觸發 1 次偷襲，造成額外 ${sneakAttackDice}d6 傷害（同武器傷害類型）。
-
-偷襲必須滿足以下條件其中之一：
-
-- 這次攻擊有優勢，或
-- 目標 5 呎內有至少 1 名未失能的友方，且你的攻擊沒有劣勢。`;
-  if (level < 5) return base;
-  const dexterityModifier = getAbilityModifier("dex") ?? 0;
-  const saveDc = 8 + getProficiencyBonus() + dexterityModifier;
-  return `${base}
-
-等級 5：靈巧打擊
-
-當你造成偷襲傷害時，可套用 1 種靈巧打擊效果。
-
-每種效果都要先放棄部分偷襲傷害骰；若需要豁免，DC = ${saveDc}。
-
-淬毒（消耗 1d6）：目標體質豁免失敗則中毒 1 分鐘；其每回合結束可再豁免，成功即結束。使用此效果時你需攜帶製毒師工具。
-摔絆（消耗 1d6）：大型或更小目標敏捷豁免失敗則倒地。
-撤步（消耗 1d6）：攻擊後你可立刻移動至多一半速度，且不引發藉機攻擊。`;
-}
-
   function hasSelectedEldritchInvocation(invocationName) {
     if (!invocationName) return true;
     return Array.from(
@@ -617,7 +587,16 @@ ${formatDiceWithModifier("1d10", dexterityModifier + level)}
     // 恢復方式跟隨 CharacterRules 的資源設定，與休息實際恢復一致；未升級時保留通用文字。
     "bard-inspiration-recovery": () => (getClassResourceSpec("bard", "bard-inspiration")?.recovery?.shortRest === "all"
       ? "短休或長休後全部恢復"
-      : null)
+      : null),
+    // fighter
+    "fighter-second-wind-healing": () => `1d10 + ${getCharacterLevel()}`,
+    "fighter-second-wind-uses": () => {
+      const maximum = getClassResourceSpec("fighter", "fighter-second-wind")?.maximum;
+      return Number.isFinite(maximum) ? `${maximum} 次` : null;
+    },
+    // rogue
+    "rogue-sneak-attack-dice": () => `${Math.max(1, Math.ceil(getCharacterLevel() / 2))}d6`,
+    "rogue-cunning-strike-dc": () => String(8 + getProficiencyBonus() + (getAbilityModifier("dex") ?? 0))
   });
 
   function getClassResourceSpec(className, key) {

@@ -420,12 +420,14 @@ async function verifyCoverage(page) {
       setClass("rogue", level);
       const sneak = classOption("action", "偷襲").description;
       check(sneak.includes(`${Math.ceil(level / 2)}d6`), "Sneak Attack scales with level");
-      check(sneak.includes("命中時") && sneak.includes("同武器傷害類型"), "Sneak Attack retains hit requirement and damage type");
+      check(sneak.includes("命中時") && sneak.includes("與武器傷害類型相同"), "Sneak Attack retains hit requirement and damage type");
       check(sneak.includes("靈巧打擊") === (level >= 5), "Cunning Strike is folded into Sneak Attack at level 5");
+      check(sneak.includes(`DC＝${level >= 5 ? 15 : 14}`) === (level >= 5), "Cunning Strike shows the current save DC");
       check(!classOption("action", "靈巧打擊"), "no standalone Cunning Strike duplicate");
       setClass("fighter", level);
       const wind = classOption("bonus", "回氣").description;
       check(wind.includes(`1d10 + ${level}`) && wind.includes("戰術轉移") === (level >= 5), "Second Wind scales and includes Tactical Shift at level 5");
+      check(wind.includes(`使用次數：${level >= 4 ? 3 : 2} 次`), "Second Wind shows current uses");
       check(!classOption("bonus", "戰術轉移") && !!classOption("movement", "戰術轉移") === (level >= 5), "Tactical Shift uses Movement shortcut");
     }
     setClass("paladin", 5);
