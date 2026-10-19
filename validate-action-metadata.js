@@ -404,6 +404,13 @@ async function verifyCoverage(page) {
       check(rage.includes("穿上重甲") && rage.includes("陷入失能") && rage.includes("超過 10 分鐘"), "Rage retains termination conditions");
       check(rage.includes("目前 +2") && !rage.includes("直覺猛撲"), "Rage shows current damage bonus; Instinctive Pounce waits for level 7");
     }
+    for (const [level, uses, hours] of [[2, 2, 1], [6, 3, 3], [8, 3, 4]]) {
+      setClass("druid", level);
+      const wildShape = classOption("bonus", "荒野形態").description;
+      check(wildShape.includes(`使用次數：${uses} 次`) && wildShape.includes(`（目前 ${hours} 小時）`) && wildShape.includes(`（目前 ${level} 點）`), "Wild Shape shows current uses, duration and temporary HP");
+      check(["提前結束", "短休後恢復 1 次", "變形規則", "遊戲數據", "熟練項", "施法限制", "裝備互動"].every(text => wildShape.includes(text)), "Wild Shape retains ending, recovery and transformation rules");
+      check(!/最大挑戰等級|推薦：|查看其他動物|見下方/.test(wildShape), "Wild Shape hides form tables and known-form lists");
+    }
     setClass("monk", 6);
     for (const score of ["16", "8", ""]) {
       el("wis").value = score;
