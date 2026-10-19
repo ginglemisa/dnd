@@ -427,6 +427,7 @@ async function verifyCoverage(page) {
       check(!classOption("bonus", "散打技巧"), "no standalone Open Hand duplicate");
       check(classOption("action", "武藝").description === classOption("bonus", "武藝").description, "Martial Arts shares its Action/Bonus summary");
       if (level >= 4) check(classOption("reaction", "輕身墜").description.includes(`${level * 5}`), "Slow Fall uses current level");
+      if (level >= 4) check(ActionPanel.getClassOverviewDescription("monk", "monk-slow-fall").includes(` ${level * 5} 點傷害`), "Slow Fall overview reads the same scaled source");
       setClass("rogue", level);
       const sneak = classOption("action", "偷襲").description;
       check(sneak.includes(`${Math.ceil(level / 2)}d6`), "Sneak Attack scales with level");
@@ -466,6 +467,16 @@ async function verifyCoverage(page) {
     check(classOption("action", "狩獵目標").description.startsWith("破陣者：") && !classOption("action", "狩獵目標").description.includes("斬殺者"), "Hunter's Prey shows the other selected choice only");
     el("ranger-hunters-prey-horde-breaker").checked = false;
     check(/^衝出重圍：/mu.test(classOption("action", "防守戰術").description) && /^多重防禦：/mu.test(classOption("action", "防守戰術").description), "Defensive Tactics contains both named choices");
+    // 總覽一句話提醒與按鈕讀同一段落：只在總覽移除 data-overview-hide，清單併為一行。
+    const roving = ActionPanel.getClassOverviewDescription("ranger", "ranger-roving");
+    check(!/\n|^- /u.test(roving) &&roving.includes("攀爬速度與游泳速度") && roving.includes("速度增加 10 呎")
+      && !roving.includes("新的移動方式") && classOption("movement", "越野").description.includes("新的移動方式"), "Roving overview is one line without the button lead-in");
+    const escape = ActionPanel.getClassOverviewDescription("ranger", "ranger-escape-the-horde");
+    const multiattack = ActionPanel.getClassOverviewDescription("ranger", "ranger-multiattack-defense");
+    check(escape.startsWith("以你為目標") && multiattack.startsWith("一個生物的攻擊檢定命中你時") && !multiattack.includes("衝出重圍"), "Defensive Tactics overview shows one choice without its name");
+    setClass("fighter", 3);
+    const athlete = ActionPanel.getClassOverviewDescription("fighter", "fighter-remarkable-athlete");
+    check(!athlete.includes("\n") &&athlete.includes("運動") && athlete.includes("不會引發藉機攻擊") && !athlete.includes("平日的訓練"), "Remarkable Athlete overview is one line from the class source");
     for (const [level, points] of [[2, 2], [5, 5]]) {
       setClass("sorcerer", level);
       const fontOfMagic = classOption("bonus", "魔力泉湧").description;
@@ -899,6 +910,8 @@ async function verifyClassTabletopUpdates(page) {
   await page.evaluate(() => TabletopMode.setPanel("overview"));
   await page.waitForFunction(() => document.getElementById("tabletop-overview-rule-summary").textContent.includes("多重防禦"));
   assert.match(await page.locator("#tabletop-overview-rule-summary").innerText(), /攀爬速度與游泳速度/);
+  assert.match(await page.locator("#tabletop-overview-rule-summary").innerText(), /多重防禦：一個生物的攻擊檢定命中你時/);
+  assert.doesNotMatch(await page.locator("#tabletop-overview-rule-summary").innerText(), /新的移動方式|衝出重圍/);
   for (const name of ["cleric", "druid", "paladin", "ranger", "warlock", "sorcerer"]) {
     await setCharacter(name, 7);
     await page.evaluate(() => TabletopMode.setPanel("overview"));

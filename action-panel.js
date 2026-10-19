@@ -500,6 +500,7 @@
   //   無對應函式或無值時保留通用文字。
   // - data-tabletop-hide：只在職業詳情顯示，跑團擷取時移除。
   // - data-tabletop-only：只在跑團顯示，職業詳情由 styles.css 隱藏。
+  // - data-overview-hide：跑團總覽的一句話提醒另外移除（引言、選項名稱）；動作按鈕仍顯示。
   const TABLETOP_VALUE_RESOLVERS = Object.freeze({
     "character-level": () => String(getCharacterLevel()),
     "proficiency-bonus": () => String(getProficiencyBonus()),
@@ -642,9 +643,9 @@
     }).join("");
   }
 
-  // 由說明函式組合、未寫在 CLASS_ACTION_RULES 的段落，納入完整性檢查。
+  // 由說明函式或跑團總覽組合、未寫在 CLASS_ACTION_RULES 的段落，納入完整性檢查。
   const HELPER_DESCRIPTION_IDS = Object.freeze({
-    ranger: Object.freeze(["ranger-colossus-slayer", "ranger-horde-breaker"])
+    ranger: Object.freeze(["ranger-colossus-slayer", "ranger-horde-breaker", "ranger-escape-the-horde", "ranger-multiattack-defense"])
   });
 
   const classDescriptionCache = new Map();
@@ -678,6 +679,14 @@
     if (value !== null && value !== undefined && String(value).trim()) element.textContent = String(value);
   }
 
+  function getTabletopBlockText(block, removedSelector) {
+    const copy = block.cloneNode(true);
+    copy.querySelectorAll(removedSelector).forEach(element => element.remove());
+    copy.querySelectorAll("[data-tabletop-only][hidden]").forEach(element => element.removeAttribute("hidden"));
+    copy.querySelectorAll("[data-tabletop-value]").forEach(resolveTabletopValue);
+    return classDescriptionToPlainText(copy);
+  }
+
   // descriptionIds 為 "id" 或 ["id", { id, level }]；已達等級的段落依序以空行串接。
   // 任一需要的段落缺少時回傳空字串：按鈕不出現，並由回歸檢查回報。
   function getClassActionDescription(className, descriptionIds) {
@@ -689,13 +698,21 @@
       if (isGated && level < (Number(item.level) || 0)) continue;
       const block = blocks.get(isGated ? item.id : item);
       if (!block) return "";
-      const copy = block.cloneNode(true);
-      copy.querySelectorAll("h3, [data-tabletop-hide]").forEach(element => element.remove());
-      copy.querySelectorAll("[data-tabletop-only][hidden]").forEach(element => element.removeAttribute("hidden"));
-      copy.querySelectorAll("[data-tabletop-value]").forEach(resolveTabletopValue);
-      parts.push(classDescriptionToPlainText(copy));
+      parts.push(getTabletopBlockText(block, "h3, [data-tabletop-hide]"));
     }
     return parts.filter(Boolean).join("\n\n");
+  }
+
+  // 跑團總覽是一句話提醒：與動作按鈕同一段落，另移除 data-overview-hide，清單併為一行。
+  // 顯示條件與等級門檻由呼叫端決定；段落缺少時回傳空字串。
+  function getClassOverviewDescription(className, descriptionId) {
+    const block = getClassDescriptionSource(className).blocks.get(descriptionId);
+    if (!block) return "";
+    return getTabletopBlockText(block, "h3, [data-tabletop-hide], [data-overview-hide]")
+      .split("\n")
+      .map(line => line.replace(/^- /u, "").trim())
+      .filter(Boolean)
+      .join("");
   }
 
   function getClassDescriptionIssues() {
@@ -1044,6 +1061,7 @@ function renderMode(mode, preserveSelection = false) {
     },
     getButtonLabel,
     getClassDescription: getClassActionDescription,
+    getClassOverviewDescription,
     getClassDescriptionIssues,
     requestRefresh: scheduleDynamicRefresh
   });

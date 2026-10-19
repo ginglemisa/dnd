@@ -2215,14 +2215,17 @@
     };
   }
 
+  // 與跑團動作按鈕重複的總覽提醒改讀 class-features.js 同一段落；段落缺少時不顯示，並由回歸檢查回報。
+  function getClassOverviewEntry(label, className, descriptionId, extra = {}) {
+    const detail = globalScope.ActionPanel?.getClassOverviewDescription?.(className, descriptionId) || "";
+    return detail ? { label, detail, ...extra } : null;
+  }
+
   function getMonkSlowFallOverviewEntry() {
     const selectedClass = document.getElementById("class")?.value || "";
     const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
     if (selectedClass !== "monk" || characterLevel < 4) return null;
-    return {
-      label: "輕身墜",
-      detail: `當你墜落時，可用「反應」減少 ${characterLevel * 5} 傷害。`
-    };
+    return getClassOverviewEntry("輕身墜", "monk", "monk-slow-fall");
   }
 
   function isDevotionPaladin() {
@@ -2255,10 +2258,7 @@
   const selectedClass = document.getElementById("class")?.value || "";
   const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
   if (selectedClass !== "rogue" || characterLevel < 5) return null;
-  return {
-    label: "直覺閃避",
-    detail: "當你看見攻擊者命中你時，可用反應讓傷害減半（捨去小數）。"
-  };
+  return getClassOverviewEntry("直覺閃避", "rogue", "rogue-uncanny-dodge");
 }
 
 function getRogueReliableTalentEntry() {
@@ -2335,7 +2335,7 @@ function getRogueReliableTalentEntry() {
       barbarianDefenses.push({ label: "先祖學識", detail: "狂暴時你可用力量做以下技能檢定：體操,威嚇,察覺,隱匿,求生。" });
     }
     if (isBarbarian && characterLevel >= 5) {
-      barbarianDefenses.push({ label: "快速移動", detail: "若你未穿重甲，速度 +10 呎。", summaryPanel: "overview" });
+      barbarianDefenses.push(getClassOverviewEntry("快速移動", "barbarian", "barbarian-fast-movement", { summaryPanel: "overview" }));
     }
     if (isBarbarian && characterLevel >= 6) {
       barbarianDefenses.push({ label: "無我狂暴", detail: "狂暴期間，你免疫魅惑與恐慌狀態；進入狂暴時，若你正處於其中一種狀態，該狀態立即終止。", summaryPanel: "overview" });
@@ -2344,13 +2344,9 @@ function getRogueReliableTalentEntry() {
       barbarianDefenses.push({ label: "野性本能", detail: "你的先攻擲骰具有優勢。", summaryPanel: "overview" });
     }
     if (isFighter && characterLevel >= 3) {
-      fighterSummaries.push({
-        label: "運動健將",
-        detail: "先攻與力量（運動）檢定具有優勢；造成重擊後，可立即移動至多等同於速度一半的距離，且不會引發藉機攻擊。",
-        summaryPanel: "overview"
-      });
+      fighterSummaries.push(getClassOverviewEntry("運動健將", "fighter", "fighter-remarkable-athlete", { summaryPanel: "overview" }));
     }
-    return entries.concat(racialDefenses[race] || [], barbarianDefenses, fighterSummaries);
+    return entries.concat(racialDefenses[race] || [], barbarianDefenses.filter(Boolean), fighterSummaries.filter(Boolean));
   }
 
   function isDamageRelatedEntry(entry) {
@@ -2412,9 +2408,9 @@ function getRogueReliableTalentEntry() {
     if (healer) entries.push(healer);
     if (document.getElementById("class")?.value === "ranger") {
       const level = Number(document.getElementById("level")?.value);
-      if (level >= 6) entries.push({ label: "越野", detail: "你獲得等同於你速度的攀爬速度與游泳速度。未穿重甲時，你的速度增加 10 呎。" });
-      if (level >= 7 && document.getElementById("ranger-defensive-tactics-escape-the-horde")?.checked) entries.push({ label: "衝出重圍", detail: "以你為目標的藉機攻擊具有劣勢。" });
-      if (level >= 7 && document.getElementById("ranger-defensive-tactics-multiattack-defense")?.checked) entries.push({ label: "多重防禦", detail: "一個生物的攻擊命中你後，該生物本回合內對你的後續攻擊檢定都具有劣勢。" });
+      if (level >= 6) entries.push(getClassOverviewEntry("越野", "ranger", "ranger-roving"));
+      if (level >= 7 && document.getElementById("ranger-defensive-tactics-escape-the-horde")?.checked) entries.push(getClassOverviewEntry("衝出重圍", "ranger", "ranger-escape-the-horde"));
+      if (level >= 7 && document.getElementById("ranger-defensive-tactics-multiattack-defense")?.checked) entries.push(getClassOverviewEntry("多重防禦", "ranger", "ranger-multiattack-defense"));
     }
     const tacticalMind = getFighterTacticalMindEntry();
     if (tacticalMind) entries.unshift(tacticalMind);
@@ -2440,7 +2436,7 @@ function getRogueReliableTalentEntry() {
     if (monkSlowFall) entries.push(monkSlowFall);
     const paladinAura = getPaladinAuraOverviewEntry();
     if (paladinAura) entries.push(paladinAura);
-    return entries.concat(getConditionRuleEntries("overview"));
+    return entries.filter(Boolean).concat(getConditionRuleEntries("overview"));
   }
 
   function getSpellRuleEntries() {

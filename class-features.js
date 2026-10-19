@@ -1385,10 +1385,10 @@ const classFeatures = {
 
 <section class="fighter-feature class-feature-section" data-feature-level="3" data-action-id="fighter-remarkable-athlete">
   <h3>等級 3：運動健將(勇士子職)</h3>
-  <p>平日的訓練鍛打出堅實的體能，你獲得以下效果：</p>
+  <p data-overview-hide>平日的訓練鍛打出堅實的體能，你獲得以下效果：</p>
   <ul class="class-rule-list">
-    <li><strong>先攻與運動：</strong>你的先攻和力量（${skillTip("運動")}）檢定具有<strong>優勢</strong>。</li>
-    <li><strong>重擊後移動：</strong>造成重擊後，可立即移動至多等同於速度一半的距離，且不會引發藉機攻擊。</li>
+    <li><strong data-overview-hide>先攻與運動：</strong>你的先攻和力量（${skillTip("運動")}）檢定具有<strong>優勢</strong>。</li>
+    <li><strong data-overview-hide>重擊後移動：</strong>造成重擊後，可立即移動至多等同於速度一半的距離，且不會引發藉機攻擊。</li>
   </ul>
 </section>
 
@@ -2174,17 +2174,17 @@ const classFeatures = {
 
 <section class="ranger-feature class-feature-section" data-feature-level="6" data-action-id="ranger-roving">
   <h3>等級 6：越野</h3>
-  <p>你獲得新的移動方式，並提升步行速度。</p>
+  <p data-overview-hide>你獲得新的移動方式，並提升步行速度。</p>
   <ul class="class-rule-list">
-    <li><strong>攀爬與游泳：</strong>獲得攀爬速度與游泳速度，數值等於你的速度。</li>
-    <li><strong>速度加值：</strong><strong>未穿重甲</strong>時，你的速度增加 10 呎。</li>
+    <li><strong data-overview-hide>攀爬與游泳：</strong>獲得攀爬速度與游泳速度，數值等於你的速度。</li>
+    <li><strong data-overview-hide>速度加值：</strong><strong>未穿重甲</strong>時，你的速度增加 10 呎。</li>
   </ul>
 </section>
 
 <section class="ranger-feature class-feature-section" data-feature-level="7" data-rest-change="either" data-action-id="ranger-defensive-tactics">
 <h3>等級 7：防守戰術（獵人子職）</h3>
 <p>從下列選項中選擇 1 項，<strong>每次短休或長休後</strong>可改選：</p>
-<div class="druid-mission-options"><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="ranger-defensive-tactics-escape-the-horde" data-feature-choice-group="ranger-defensive-tactics"> 衝出重圍</label><span data-tabletop-value="ranger-escape-the-horde-name">：</span>以你為目標的藉機攻擊具有<strong>劣勢</strong>。</div></div><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="ranger-defensive-tactics-multiattack-defense" data-feature-choice-group="ranger-defensive-tactics"> 多重防禦</label><span data-tabletop-value="ranger-multiattack-defense-name">：</span>一個生物的攻擊檢定命中你時，該生物本回合內對你發動的後續攻擊檢定都具有<strong>劣勢</strong>。</div></div></div>
+<div class="druid-mission-options"><div class="druid-mission-option" data-action-id="ranger-escape-the-horde"><div class="druid-mission-option__heading"><label><input type="checkbox" id="ranger-defensive-tactics-escape-the-horde" data-feature-choice-group="ranger-defensive-tactics"> 衝出重圍</label><span data-tabletop-value="ranger-escape-the-horde-name" data-overview-hide>：</span>以你為目標的藉機攻擊具有<strong>劣勢</strong>。</div></div><div class="druid-mission-option" data-action-id="ranger-multiattack-defense"><div class="druid-mission-option__heading"><label><input type="checkbox" id="ranger-defensive-tactics-multiattack-defense" data-feature-choice-group="ranger-defensive-tactics"> 多重防禦</label><span data-tabletop-value="ranger-multiattack-defense-name" data-overview-hide>：</span>一個生物的攻擊檢定命中你時，該生物本回合內對你發動的後續攻擊檢定都具有<strong>劣勢</strong>。</div></div></div>
 </section>
 
 <section class="ranger-feature class-feature-section" data-feature-level="8">
