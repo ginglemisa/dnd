@@ -461,6 +461,28 @@ async function verifyCoverage(page) {
       check(turn.description.includes(expectedDice) && turn.description.includes("不會中止驅散效果"), "Sear Undead adds damage without losing Turn Undead");
       check(turn.description.includes("感知豁免") && turn.description.includes("恐慌與失能"), "Sear Undead retains base conditions");
     }
+    for (const level of [2, 5]) {
+      setClass("cleric", level); el("wis").value = "18";
+      const dc = level >= 5 ? 15 : 14;
+      const spark = classOption("action", "神聖火花").description;
+      const turn = options("action", "職業").find(e => e.key === "dynamic-action-cleric-xonbxu").description;
+      check(spark.includes("1d8 + 4") && spark.includes(`體質豁免（DC ${dc}）`) && turn.includes(`感知豁免（DC ${dc}）`), "Channel Divinity shows the current roll and save DC");
+      check([spark, turn].every(text => text.includes("魔法動作") && text.includes("消耗 1 次引導神力")), "Channel Divinity retains action type and cost");
+      check(turn.includes("焚燒不死生物：") === (level >= 5), "Sear Undead joins Turn Undead at level 5");
+    }
+    setClass("cleric", 7);
+    check(classOption("action", "維持生命").description.includes("共「35」點") && classOption("action", "維持生命").description.includes("消耗 1 次引導神力"), "Preserve Life shows the current healing total");
+    el("level").value = "";
+    check(ActionPanel.getClassDescription("cleric", "cleric-preserve-life").includes("共「牧師等級 × 5」點"), "Preserve Life keeps the formula without a level");
+    for (const [level, pool] of [[1, 5], [5, 25]]) {
+      setClass("paladin", level);
+      const lay = classOption("bonus", "聖療").description;
+      check(lay.includes(`「${pool}」點`) && lay.includes("附贈動作") && lay.includes("消耗 5 點") && lay.includes("中毒"), "Lay on Hands shows the current pool and poison cure");
+    }
+    setClass("paladin", 3);
+    const sense = classOption("bonus", "神聖感知").description;
+    check(sense.includes("附贈動作") && sense.includes("消耗 1 次引導神力") && sense.includes("10 分鐘") && sense.includes("60 呎") && sense.includes("聖居"), "Divine Sense retains activation, cost, duration and range");
+    check(sense.includes("引導神力使用次數：2 次") && !sense.includes("豁免 DC") && !sense.includes("選擇 1 個發動"), "Divine Sense hides the general Channel Divinity rules");
     setClass("", 8);
     for (const [race, scenarios] of Object.entries(baseline.races)) {
       el("race").value = race; updateRaceFeature();
@@ -662,7 +684,7 @@ async function verifyUiAndPersistence(page, url) {
   });
   await page.waitForFunction(() => document.querySelector('[data-action-option-key="dynamic-action-cleric-xonbxu"] > span')?.textContent === "驅散不死");
   await undeadButton.click();
-  assert.doesNotMatch(await page.locator("#tabletop-action-panel-action .tabletop-action-description").innerText(), /額外光耀傷害骰|焚燒/);
+  assert.doesNotMatch(await page.locator("#tabletop-action-panel-action .tabletop-action-description").innerText(), /光耀傷害|焚燒/);
   await page.evaluate(() => TabletopMode.setTabletopActionHidden("official:action:dynamic-action-cleric-xonbxu", true));
   await undeadButton.waitFor({state:"detached"});
   assert.equal(await sparkButton.count(), 1, "the two Channel Divinity buttons have independent visibility");

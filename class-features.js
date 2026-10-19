@@ -760,16 +760,16 @@ const classFeatures = {
     <li><strong>豁免 DC：</strong>效果需要豁免時，使用你的牧師法術豁免 DC。</li>
   </ul>
   <div class="class-rule-subsection" data-action-id="cleric-divine-spark">
-    <h4>神聖火花（魔法動作）</h4>
-    <p>指定 30 呎內 1 個你看得見的生物，擲 1d8 + 感知調整值，再選擇一種效果：</p>
+    <h4>神聖火花（魔法動作<span data-tabletop-only hidden>，消耗 1 次引導神力</span>）</h4>
+    <p>指定 30 呎內 1 個你看得見的生物，擲 <span data-tabletop-value="cleric-divine-spark-roll">1d8 + 感知調整值</span>，再選擇一種效果：</p>
     <ul class="class-rule-list">
       <li><strong>治療：</strong>目標恢復等同擲骰結果的生命值。</li>
-      <li><strong>傷害：</strong>目標進行體質豁免，失敗時受到等同擲骰結果的光耀或黯蝕傷害（由你選擇），成功時傷害減半（無條件捨去）。</li>
+      <li><strong>傷害：</strong>目標進行體質豁免<span data-tabletop-only hidden data-tabletop-value="cleric-spell-save-dc">（使用牧師法術豁免 DC）</span>，失敗時受到等同擲骰結果的光耀或黯蝕傷害（由你選擇），成功時傷害減半（無條件捨去）。</li>
     </ul>
   </div>
   <div class="class-rule-subsection" data-action-id="cleric-turn-undead">
-    <h4>驅散不死生物（魔法動作）</h4>
-    <p>30 呎內每個不死生物進行感知豁免。</p>
+    <h4>驅散不死生物（魔法動作<span data-tabletop-only hidden>，消耗 1 次引導神力</span>）</h4>
+    <p>30 呎內每個不死生物進行感知豁免<span data-tabletop-only hidden data-tabletop-value="cleric-spell-save-dc">（使用牧師法術豁免 DC）</span>。</p>
     <ul class="class-rule-list">
       <li><strong>豁免失敗：</strong>1 分鐘內陷入恐慌與失能，並在自己的回合中盡量遠離你。</li>
       <li><strong>提前結束：</strong>該生物受到傷害，或你失能、死亡時，效果結束。</li>
@@ -792,7 +792,7 @@ const classFeatures = {
   </ul>
 </section>
 
-<section class="cleric-feature class-feature-section" data-feature-level="3">
+<section class="cleric-feature class-feature-section" data-feature-level="3" data-action-id="cleric-disciple-of-life">
   <h3>等級 3：生命門徒（生命子職）</h3>
   <p>使用<strong>法術位</strong>施放恢復生命值的法術時，目標在本回合額外恢復「2＋法術環階」生命值。</p>
 </section>
@@ -801,7 +801,7 @@ const classFeatures = {
   <h3>等級 3：維持生命（生命子職）</h3>
   <p>以<strong>魔法動作</strong>展示聖徽並消耗 1 次引導神力，治療 30 呎內任意數量的重傷生物。</p>
   <ul class="class-rule-list">
-    <li><strong>治療總量：</strong>共「牧師等級 × 5」點，可自由分配給這些生物。</li>
+    <li><strong>治療總量：</strong>共<span data-tabletop-value="cleric-preserve-life-total">「牧師等級 × 5」</span>點，可自由分配給這些生物。</li>
     <li><strong>恢復上限：</strong>不能使目標的生命值超過其生命值上限的一半。</li>
   </ul>
 </section>
@@ -814,7 +814,7 @@ const classFeatures = {
 
 <section class="cleric-feature class-feature-section" data-feature-level="5" data-action-id="cleric-sear-undead">
   <h3>等級 5：焚燒不死生物</h3>
-  <p>使用驅散不死生物時，可額外擲<strong>等同感知調整值數量的 d8</strong>（至少 1d8），每個該次豁免失敗的不死生物都受到等同總值的光耀傷害。</p>
+  <p><strong data-tabletop-only hidden>焚燒不死生物：</strong>使用驅散不死生物時，可額外擲<span data-tabletop-value="cleric-sear-undead-dice"><strong>等同感知調整值數量的 d8</strong>（至少 1d8）</span>，每個該次豁免失敗的不死生物都受到等同總值的光耀傷害。</p>
   <p>此傷害不會中止驅散效果。</p>
 </section>
 <section class="cleric-feature class-feature-section" data-feature-level="6"><h3>等級 6：神佑醫者（生命子職）</h3><p>消耗法術位施放法術並恢復其他生物的生命值後，你立即恢復「2＋該法術位環階」生命值。</p></section>
@@ -1818,7 +1818,7 @@ const classFeatures = {
 <div class="class-feature-content" data-class-feature-panel="class">
 <section class="paladin-feature class-feature-section" data-feature-level="1" data-action-id="paladin-lay-on-hands">
   <h3>等級 1：聖療</h3>
-  <p>你擁有一個治療能量池，總量為「聖騎士等級 × 5」，<strong>長休後全部恢復</strong>。</p>
+  <p>你擁有一個治療能量池，總量為<span data-tabletop-value="paladin-lay-on-hands-pool">「聖騎士等級 × 5」</span>，<strong>長休後全部恢復</strong>。</p>
   <ul class="class-rule-list">
     <li><strong>治療：</strong>以<strong>附贈動作</strong>觸碰 1 個生物（可以是自己），從能量池分配治療量，使目標恢復等量生命值。</li>
     <li><strong>移除中毒：</strong>觸碰時也可改為消耗 5 點能量，移除目標的中毒狀態；此用法不恢復生命值。</li>
@@ -1864,13 +1864,13 @@ const classFeatures = {
 
 <section class="paladin-feature class-feature-section" data-feature-level="3" data-action-id="paladin-divine-sense">
   <h3>等級 3：引導神力</h3>
-  <p>你可引導神力產生神聖效果，起始可使用「神聖感知」，之後可由其他特性追加新效果。每次使用時，從你已知的效果中選擇 1 個發動。</p>
+  <p data-tabletop-hide>你可引導神力產生神聖效果，起始可使用「神聖感知」，之後可由其他特性追加新效果。每次使用時，從你已知的效果中選擇 1 個發動。</p>
   <ul class="class-rule-list">
-    <li><strong>使用次數：</strong>2 次。<strong>短休後恢復 1 次</strong>，長休後全部恢復。</li>
-    <li><strong>豁免 DC：</strong>效果需要豁免時，使用你的聖騎士法術豁免 DC。</li>
+    <li><strong><span data-tabletop-only hidden>引導神力</span>使用次數：</strong><span data-tabletop-value="paladin-channel-divinity-uses">2 次</span>。<strong>短休後恢復 1 次</strong>，長休後全部恢復。</li>
+    <li data-tabletop-hide><strong>豁免 DC：</strong>效果需要豁免時，使用你的聖騎士法術豁免 DC。</li>
   </ul>
   <div class="class-rule-subsection">
-    <h4>神聖感知（附贈動作）</h4>
+    <h4>神聖感知（附贈動作<span data-tabletop-only hidden>，消耗 1 次引導神力</span>）</h4>
     <p>啟動後持續 10 分鐘，或直到你陷入失能狀態。期間獲得以下能力：</p>
     <ul class="class-rule-list">
       <li><strong>感知生物：</strong>感知 60 呎內天界生物、邪魔、不死生物的位置與類型。</li>
@@ -1915,7 +1915,7 @@ const classFeatures = {
   <p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p>
 </section>
 
-<section class="paladin-feature class-feature-section" data-feature-level="5">
+<section class="paladin-feature class-feature-section" data-feature-level="5" data-action-id="paladin-extra-attack">
   <h3>等級 5：額外攻擊</h3>
   <p>你在自己的回合執行<strong>攻擊動作</strong>時，可以攻擊 2 次。</p>
 </section>

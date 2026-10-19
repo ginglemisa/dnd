@@ -154,18 +154,14 @@
       { id: "countercharm", mode: "reaction", level: 7, label: "等級 7：反迷惑", key: "dynamic-reaction-class-ul9dq", descriptionId: "bard-countercharm" }
     ]),
     cleric: Object.freeze([
-      { id: "divine-spark", mode: "action", level: 2, label: "等級 2：神聖火花", key: "dynamic-action-cleric-1c18bru", resourceKey: "cleric-channel-divinity", description: () => getClericChannelDescription("cleric-divine-spark") },
+      { id: "divine-spark", mode: "action", level: 2, label: "等級 2：神聖火花", key: "dynamic-action-cleric-1c18bru", resourceKey: "cleric-channel-divinity", descriptionId: "cleric-divine-spark" },
       {
         id: "turn-undead", mode: "action", level: 2, key: "dynamic-action-cleric-xonbxu",
         label: () => getCharacterLevel() >= 5 ? "等級 5：焚燒不死生物" : "等級 2：驅散不死生物", resourceKey: "cleric-channel-divinity",
-        description: getClericTurnUndeadDescription
+        descriptionIds: ["cleric-turn-undead", { id: "cleric-sear-undead", level: 5 }]
       },
-      { mode: "action", level: 3, label: "等級 3：生命門徒（生命）", description: "你用法術位施放回復法術時，目標在本回合額外回復「2 + 法術環級」生命值。", key: "dynamic-action-cleric-1ocjvx6", id: "disciple-of-life" },
-      { mode: "action", level: 3, label: "等級 3：維持生命（生命）", description: () => {
-        const rawLevel = String(document.getElementById("level")?.value || "").trim();
-        const healingTotal = rawLevel ? String(getCharacterLevel() * 5) : "牧師等級 × 5";
-        return `這會消耗引導神力，視為魔法動作。\n\n你展示聖徽，分配總共「${healingTotal}」點治療量給 30 呎內任意數量重傷生物。\n\n此特性不能把目標回到超過其生命值上限一半。`;
-      }, key: "dynamic-action-cleric-aoatsu", id: "preserve-life", resourceKey: "cleric-channel-divinity", legacyKeys: ["dynamic-action-class-preserve-life"] },
+      { mode: "action", level: 3, label: "等級 3：生命門徒（生命）", descriptionId: "cleric-disciple-of-life", key: "dynamic-action-cleric-1ocjvx6", id: "disciple-of-life" },
+      { mode: "action", level: 3, label: "等級 3：維持生命（生命）", descriptionId: "cleric-preserve-life", key: "dynamic-action-cleric-aoatsu", id: "preserve-life", resourceKey: "cleric-channel-divinity", legacyKeys: ["dynamic-action-class-preserve-life"] },
       { id: "divine-strike", mode: "action", level: 7, label: "等級 7：神聖打擊", description: "在你的每個回合中一次，當你使用武器發動攻擊檢定並命中一個生物時，可以使目標額外受到1d8黯蝕或光耀傷害（由你選擇）。", key: "dynamic-action-cleric-sxx32", checkedId: "cleric-blessed-strikes-divine-strike" }
     ]),
     druid: Object.freeze([
@@ -203,10 +199,10 @@
       { mode: "movement", level: 5, label: "等級 5：戰術轉移", description: "當你以附贈動作使用回氣時，可以移動至多等同於你速度一半的距離，且不會引發藉機攻擊。", key: "dynamic-movement-fighter-1liysqo", id: "tactical-shift" }
     ]),
     paladin: Object.freeze([
-      { id: "lay-on-hands", mode: "bonus", level: 1, label: "等級 1：聖療", description: "以附贈動作觸碰自己或一個生物，從「聖療」池分配任意點數，使其恢復等量 HP。\n\n也可消耗 5 點聖療，移除目標的中毒狀態；此時不恢復 HP。", key: "dynamic-bonus-paladin-curated-lay-on-hands", legacyKeys: ["dynamic-bonus-class-1ol2xxh"] },
-      { id: "divine-sense", mode: "bonus", level: 3, label: "等級 3：神聖感知", description: "消耗 1 次引導神力，以附贈動作啟動，持續 10 分鐘或直到你失能。\n\n期間你能感知 60 呎內天界生物、邪魔與不死生物的位置與類型，也能察覺範圍內受「聖居」祝福或褻瀆的地點與物件。", key: "dynamic-bonus-paladin-curated-divine-sense", resourceKey: "paladin-channel-divinity", legacyKeys: ["dynamic-bonus-class-1axs7np"] },
+      { id: "lay-on-hands", mode: "bonus", level: 1, label: "等級 1：聖療", descriptionId: "paladin-lay-on-hands", key: "dynamic-bonus-paladin-curated-lay-on-hands", legacyKeys: ["dynamic-bonus-class-1ol2xxh"] },
+      { id: "divine-sense", mode: "bonus", level: 3, label: "等級 3：神聖感知", descriptionId: "paladin-divine-sense", key: "dynamic-bonus-paladin-curated-divine-sense", resourceKey: "paladin-channel-divinity", legacyKeys: ["dynamic-bonus-class-1axs7np"] },
       { id: "sacred-weapon", mode: "action", level: 3, label: "等級 3：祝聖武器", descriptionId: "paladin-sacred-weapon", key: "dynamic-action-paladin-curated-sacred-weapon", resourceKey: "paladin-channel-divinity", legacyKeys: ["dynamic-action-class-sacred-weapon"] },
-      { id: "extra-attack", mode: "action", level: 5, label: "等級 5：額外攻擊", description: "你在自己回合使用攻擊動作時，可以攻擊 2 次。", key: "dynamic-action-paladin-curated-extra-attack" }
+      { id: "extra-attack", mode: "action", level: 5, label: "等級 5：額外攻擊", descriptionId: "paladin-extra-attack", key: "dynamic-action-paladin-curated-extra-attack" }
     ]),
     rogue: Object.freeze([
       { id: "sneak-attack", mode: "action", level: 1, label: "等級 1：偷襲", description: getRogueSneakAttackDescription, key: "dynamic-action-rogue-curated-sneak-attack" },
@@ -617,7 +613,30 @@ ${formatDiceWithModifier("1d10", dexterityModifier + level)}
     // 恢復方式跟隨 CharacterRules 的資源設定，與休息實際恢復一致；未升級時保留通用文字。
     "bard-inspiration-recovery": () => (getClassResourceSpec("bard", "bard-inspiration")?.recovery?.shortRest === "all"
       ? "短休或長休後全部恢復"
-      : null)
+      : null),
+    // cleric
+    "cleric-divine-spark-roll": () => formatDiceWithModifier("1d8", getMonkAbilityModifier("wis")),
+    "cleric-spell-save-dc": () => `（DC ${8 + getProficiencyBonus() + getMonkAbilityModifier("wis")}）`,
+    // 職業詳情原文「擲」與骰數之間沒有空格，前置空格讓跑團顯示「擲 4d8」。
+    "cleric-sear-undead-dice": () => {
+      const wisdomModifier = getAbilityModifier("wis");
+      return wisdomModifier === null
+        ? " Xd8（X＝感知調整值，至少 1d8）"
+        : ` ${Math.max(1, wisdomModifier)}d8（感知調整值，至少 1d8）`;
+    },
+    // 未填等級時保留通用公式。
+    "cleric-preserve-life-total": () => (String(document.getElementById("level")?.value || "").trim()
+      ? `「${getCharacterLevel() * 5}」`
+      : null),
+    // paladin
+    "paladin-lay-on-hands-pool": () => {
+      const maximum = getClassResourceSpec("paladin", "paladin-lay-on-hands")?.maximum;
+      return Number.isFinite(maximum) ? `「${maximum}」點` : null;
+    },
+    "paladin-channel-divinity-uses": () => {
+      const maximum = getClassResourceSpec("paladin", "paladin-channel-divinity")?.maximum;
+      return Number.isFinite(maximum) ? `${maximum} 次` : null;
+    }
   });
 
   function getClassResourceSpec(className, key) {
@@ -666,25 +685,9 @@ ${formatDiceWithModifier("1d10", dexterityModifier + level)}
   }
 
   // 由說明函式組合、未寫在 CLASS_ACTION_RULES 的段落，納入完整性檢查。
-  const HELPER_DESCRIPTION_IDS = Object.freeze({
-    cleric: Object.freeze(["cleric-divine-spark", "cleric-turn-undead", "cleric-sear-undead"])
-  });
+  const HELPER_DESCRIPTION_IDS = Object.freeze({});
 
   const classDescriptionCache = new Map();
-
-  function getClericChannelDescription(descriptionId) {
-    return `消耗 1 次引導神力，視為魔法動作。\n\n${getClassActionDescription("cleric", descriptionId)}`;
-  }
-
-  function getClericTurnUndeadDescription() {
-    const base = getClericChannelDescription("cleric-turn-undead");
-    if (getCharacterLevel() < 5) return base;
-    const wisdomModifier = getAbilityModifier("wis");
-    const damageDice = wisdomModifier === null
-      ? "Xd8（X＝感知調整值，最少 1d8）"
-      : `${Math.max(1, wisdomModifier)}d8`;
-    return `${base}\n\n${getClassActionDescription("cleric", "cleric-sear-undead")}\n\n額外光耀傷害骰：${damageDice}。`;
-  }
 
   function getClassDescriptionSource(className) {
     const raw = typeof classFeatures === "undefined" ? "" : String(classFeatures[className] || "");
@@ -908,10 +911,6 @@ function getModeOptions(mode) {
     }
     if (option.key === "dynamic-action-monk-curated-stunning-strike") {
       description = description.replace("體質豁免", `體質豁免（DC ${dc}）`);
-    }
-    if (option.key === "dynamic-action-cleric-1c18bru") {
-      description = description.replace("1d8 + 感知調整值", formatDiceWithModifier("1d8", getMonkAbilityModifier("wis")))
-        .replace("體質豁免", `體質豁免（DC ${dc}）`);
     }
     if (option.key === "dynamic-action-ranger-vdr4tc") {
       description = document.getElementById("ranger-hunters-prey-colossus-slayer")?.checked
