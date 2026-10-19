@@ -272,7 +272,7 @@ async function main() {
     await page.locator('[data-action-option-key="dynamic-bonus-class-3u4zp1"]').click();
     const shapeDescription = page.locator("#tabletop-action-panel-bonus .tabletop-action-description");
     assert.equal(await shapeDescription.locator("ul").count(), 2, "shape rules have two real bullet lists");
-    assert.equal(await shapeDescription.locator("li").count(), 7);
+    assert.equal(await shapeDescription.locator("li").count(), 9, "four Wild Shape usage rules and five transformation rules");
     assert.equal(await shapeDescription.getByRole("button", { name: "變形所選形態", exact: true }).count(), 1);
     assert.doesNotMatch(await shapeDescription.innerText(), /最大挑戰等級|推薦：|查看其他動物/);
     if (process.env.DND_SCREENSHOT_DIR) {

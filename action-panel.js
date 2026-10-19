@@ -170,22 +170,7 @@
       { id: "divine-strike", mode: "action", level: 7, label: "等級 7：神聖打擊", description: "在你的每個回合中一次，當你使用武器發動攻擊檢定並命中一個生物時，可以使目標額外受到1d8黯蝕或光耀傷害（由你選擇）。", key: "dynamic-action-cleric-sxx32", checkedId: "cleric-blessed-strikes-divine-strike" }
     ]),
     druid: Object.freeze([
-      { id: "wild-shape", mode: "bonus", level: 2, label: "等級 2：荒野形態", key: "dynamic-bonus-class-3u4zp1", druidOperation: "shape", description: `你可用附贈動作變成已知野獸形態，起始 2 次；短休回 1 次，長休回滿。
-
-單次變形持續時間：最多「德魯伊等級一半（捨去小數點）」小時。
-
-以下情況會提前結束變形：
-
-- 你再次使用荒野形態。
-- 你陷入失能或死亡。
-- 你用附贈動作主動解除。
-
-變形規則
-
-- 臨時生命值：變形時獲得等同德魯伊等級的臨時生命值。
-- 遊戲數據：改用野獸數據，但保留你的生物類型,生命值,生命骰,智力/感知/魅力,職業特性,語言與專長。技能與豁免熟練仍保留，若野獸該數值更高可改用野獸值。
-- 施法限制：變形期間不能施法，但不會中斷你已施放法術的專注或既有效果。
-- 裝備互動：裝備可掉落,融入或由新形態穿戴；是否能穿戴由 DM 依體型與構造判定。無法穿戴者會掉落或融入，融入的裝備在變形期間不生效。` },
+      { id: "wild-shape", mode: "bonus", level: 2, label: "等級 2：荒野形態", key: "dynamic-bonus-class-3u4zp1", druidOperation: "shape", descriptionId: "druid-wild-shape" },
       { id: "wild-companion", mode: "action", level: 2, label: "等級 2：荒野夥伴", descriptionId: "druid-wild-companion", druidOperation: "companion" },
       { id: "lands-aid", mode: "action", level: 3, label: "等級 3：大地之援（大地子職）", descriptionId: "druid-lands-aid", druidOperation: "aid" }
     ]),
@@ -553,7 +538,20 @@
     },
     // rogue
     "rogue-sneak-attack-dice": () => `${Math.max(1, Math.ceil(getCharacterLevel() / 2))}d6`,
-    "rogue-cunning-strike-dc": () => String(8 + getProficiencyBonus() + (getAbilityModifier("dex") ?? 0))
+    "rogue-cunning-strike-dc": () => String(8 + getProficiencyBonus() + (getAbilityModifier("dex") ?? 0)),
+    // druid
+    "druid-wild-shape-uses": () => {
+      const maximum = getClassResourceSpec("druid", "druid-wild-shape")?.maximum;
+      return Number.isFinite(maximum) ? `${maximum} 次` : null;
+    },
+    "druid-wild-shape-hours": () => {
+      const hours = globalScope.getDruidWildShapeRules?.(getCharacterLevel())?.hours;
+      return hours > 0 ? `（目前 ${hours} 小時）` : null;
+    },
+    "druid-wild-shape-temp-hp": () => {
+      const level = getCharacterLevel();
+      return level > 0 ? `（目前 ${level} 點）` : null;
+    }
   });
 
   function getClassResourceSpec(className, key) {

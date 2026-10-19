@@ -1033,14 +1033,14 @@ const classFeatures = {
 
 <section class="druid-feature class-feature-section" data-feature-level="2" data-action-id="druid-wild-shape">
   <h3>等級 2：荒野形態</h3>
-  <p>以<strong>附贈動作</strong>變成已知的野獸形態，見下方「已知形態」。</p>
+  <p>以<strong>附贈動作</strong>變成已知的野獸形態<span data-tabletop-hide>，見下方「已知形態」</span>。</p>
   <ul class="class-rule-list">
-    <li><strong>持續時間：</strong>最多為德魯伊等級的一半（無條件捨去）小時。</li>
+    <li><strong>持續時間：</strong>最多為德魯伊等級的一半（無條件捨去）小時<span data-tabletop-only data-tabletop-value="druid-wild-shape-hours" hidden></span>。</li>
     <li><strong>提前結束：</strong>再次使用荒野形態、陷入失能或死亡時結束；也可用附贈動作主動解除。</li>
-    <li><strong>使用次數：</strong>起始 2 次，之後依「德魯伊特性」表增加。</li>
+    <li><strong>使用次數：</strong><span data-tabletop-value="druid-wild-shape-uses">起始 2 次，之後依「德魯伊特性」表增加</span>。</li>
     <li><strong>恢復時機：</strong><strong>短休後恢復 1 次，長休後全部恢復</strong>。</li>
   </ul>
-  <div class="class-rule-subsection druid-rule-subsection">
+  <div class="class-rule-subsection druid-rule-subsection" data-tabletop-hide>
     <h4>野獸形態</h4>
     <div class="rule-table-shell rule-table-shell--wild-shape">
 <table class="rule-reference-table rule-progress-table rule-progress-table--wild-shape" aria-label="德魯伊野獸形態進程">
@@ -1075,7 +1075,7 @@ const classFeatures = {
 </table>
 </div>
   </div>
-<section class="wild-shape-known-forms" aria-labelledby="wild-shape-known-forms-heading">
+<section class="wild-shape-known-forms" aria-labelledby="wild-shape-known-forms-heading" data-tabletop-hide>
   <h4 id="wild-shape-known-forms-heading">已知形態</h4>
   <p class="wild-shape-known-forms__intro">起始已知 4 種野獸形態，從<strong>挑戰等級 1/4 以下且無飛行速度</strong>的野獸中挑選。</p>
   <p class="wild-shape-known-forms__recommendation"><strong>推薦：</strong><span class="beast-tip" data-beast="rat">老鼠</span>、<span class="beast-tip" data-beast="riding_horse">馱用馬</span>、<span class="beast-tip" data-beast="spider">蜘蛛</span>、<span class="beast-tip" data-beast="wolf">狼</span>。</p>
@@ -1089,7 +1089,7 @@ const classFeatures = {
   <div class="class-rule-subsection druid-rule-subsection druid-rule-subsection--transformation">
     <h4>變形規則</h4>
     <ul class="class-rule-list">
-      <li><strong>臨時生命值：</strong>變形時獲得等同德魯伊等級的臨時生命值。</li>
+      <li><strong>臨時生命值：</strong>變形時獲得等同德魯伊等級的臨時生命值<span data-tabletop-only data-tabletop-value="druid-wild-shape-temp-hp" hidden></span>。</li>
       <li><strong>遊戲數據：</strong>改用野獸數據，但保留你的生物類型、生命值、生命骰、智力／感知／魅力、職業特性、語言與專長。</li>
       <li><strong>熟練項：</strong>保留技能與豁免熟練；若野獸的對應數值更高，可改用野獸值。</li>
       <li><strong>施法限制：</strong>變形期間<strong>不能施法</strong>，但不會中斷你已施放法術的專注或既有效果。</li>
