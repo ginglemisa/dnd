@@ -408,12 +408,15 @@ async function verifyCoverage(page) {
     for (const score of ["16", "8", ""]) {
       el("wis").value = score;
       const wholeness = classOption("bonus", "混元體").description;
-      check(wholeness.includes("使用次數＝感知調整值（至少 1 次），長休後全部恢復"), "Wholeness retains its use limit even with low/unset Wisdom");
+      check(wholeness.includes("使用次數：等同感知調整值（至少 1 次），長休後全部恢復"), "Wholeness retains its use limit even with low/unset Wisdom");
     }
     check(/^在(?:自己的|自身)回合以「?輕型」?武器執行攻擊動作後/.test(options("bonus").find(o => o.key === "offhand-attack").description), "Offhand attack requires the Attack action with a Light weapon on your turn");
     for (const level of [2, 3, 5, 8]) {
       setClass("monk", level); el("wis").value = "16"; el("dex").value = "18";
       check(classOption("bonus", "聚氣凝神").description.includes("散打技巧") === (level >= 3), "Open Hand is folded into Focus at level 3");
+      check(classOption("bonus", "聚氣凝神").description.includes(`DC = ${level >= 5 ? 14 : 13}`), "Focus shows the current save DC");
+      check(classOption("action", "武藝").description.includes(`目前為 1d${level >= 5 ? 8 : 6}`), "Martial Arts shows the current die");
+      if (level >= 3) check(classOption("reaction", "撥擋化勁").description.includes(`1d10 + ${4 + level}`), "Deflect Attacks shows current reduction");
       check(!classOption("bonus", "散打技巧"), "no standalone Open Hand duplicate");
       check(classOption("action", "武藝").description === classOption("bonus", "武藝").description, "Martial Arts shares its Action/Bonus summary");
       if (level >= 4) check(classOption("reaction", "輕身墜").description.includes(`${level * 5}`), "Slow Fall uses current level");

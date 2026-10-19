@@ -138,15 +138,16 @@
       { id: "instinctive-pounce", mode: "bonus", level: 7, label: "等級 7：直覺猛撲", key: "dynamic-bonus-barbarian-1iw4zkg", descriptionId: "barbarian-instinctive-pounce" },
     ]),
     monk: Object.freeze([
-      { id: "martial-arts-action", mode: "action", level: 1, label: "等級 1：武藝", description: getMonkMartialArtsDescription, key: "dynamic-action-monk-curated-martial-arts-action" },
-      { id: "martial-arts-bonus", mode: "bonus", level: 1, label: "等級 1：武藝", description: getMonkMartialArtsDescription, key: "dynamic-bonus-monk-curated-martial-arts-bonus", legacyKeys: ["dynamic-bonus-class-muonvc"] },
-      { id: "focused-aim", mode: "bonus", level: 2, label: "等級 2：聚氣凝神", description: getMonkFocusDescription, key: "dynamic-bonus-monk-curated-focused-aim", legacyKeys: ["dynamic-bonus-class-ricpmu"] },
-      { id: "uncanny-metabolism", mode: "action", level: 2, label: "等級 2：吐故納新", description: "擲先攻時，你可回滿已消耗的專注點，並回復「武藝骰 + 武僧等級」生命值。\n\n此能力每次長休只能用 1 次。", key: "dynamic-action-monk-curated-uncanny-metabolism", resourceKey: "monk-uncanny-metabolism" },
-      { id: "deflect-attacks", mode: "reaction", level: 3, label: "等級 3：撥擋化勁", description: getMonkDeflectAttacksDescription, key: "dynamic-reaction-monk-curated-deflect-attacks", legacyKeys: ["dynamic-reaction-class-5l2yua"] },
-      { id: "slow-fall", mode: "reaction", level: 4, label: "等級 4：輕身墜", description: getMonkSlowFallDescription, key: "dynamic-reaction-monk-curated-slow-fall", legacyKeys: ["dynamic-reaction-class-1l1lc9s"] },
-      { id: "stunning-strike", mode: "action", level: 5, label: "等級 5：震懾擊", description: "每回合 1 次，當你用武僧武器或徒手命中時，可花 1 點專注點發動震懾打擊。目標需做體質豁免：\n\n- 失敗：震懾到你下回合開始。\n- 成功：速度減半，且到你下回合開始前，下一次對它的攻擊有優勢。", key: "dynamic-action-monk-curated-stunning-strike", legacyKeys: ["dynamic-action-class-1g9j8ui"] },
-      { id: "extra-attack", mode: "action", level: 5, label: "等級 5：額外攻擊", description: "你在自己回合使用攻擊動作時，可以攻擊 2 次。", key: "dynamic-action-monk-curated-extra-attack" },
-      { id: "wholeness-of-body", mode: "bonus", level: 6, label: "等級 6：混元體", description: getMonkWholenessDescription, key: "dynamic-bonus-monk-curated-wholeness-of-body", resourceKey: "monk-wholeness", legacyKeys: ["dynamic-bonus-class-3mzm48"] }
+      { id: "martial-arts-action", mode: "action", level: 1, label: "等級 1：武藝", descriptionId: "monk-martial-arts", key: "dynamic-action-monk-curated-martial-arts-action" },
+      { id: "martial-arts-bonus", mode: "bonus", level: 1, label: "等級 1：武藝", descriptionId: "monk-martial-arts", key: "dynamic-bonus-monk-curated-martial-arts-bonus", legacyKeys: ["dynamic-bonus-class-muonvc"] },
+      // 3 級起散打技巧併入聚氣凝神說明。
+      { id: "focused-aim", mode: "bonus", level: 2, label: "等級 2：聚氣凝神", descriptionIds: ["monk-focus", { id: "monk-open-hand-technique", level: 3 }], key: "dynamic-bonus-monk-curated-focused-aim", legacyKeys: ["dynamic-bonus-class-ricpmu"] },
+      { id: "uncanny-metabolism", mode: "action", level: 2, label: "等級 2：吐故納新", descriptionId: "monk-uncanny-metabolism", key: "dynamic-action-monk-curated-uncanny-metabolism", resourceKey: "monk-uncanny-metabolism" },
+      { id: "deflect-attacks", mode: "reaction", level: 3, label: "等級 3：撥擋化勁", descriptionId: "monk-deflect-attacks", key: "dynamic-reaction-monk-curated-deflect-attacks", legacyKeys: ["dynamic-reaction-class-5l2yua"] },
+      { id: "slow-fall", mode: "reaction", level: 4, label: "等級 4：輕身墜", descriptionId: "monk-slow-fall", key: "dynamic-reaction-monk-curated-slow-fall", legacyKeys: ["dynamic-reaction-class-1l1lc9s"] },
+      { id: "stunning-strike", mode: "action", level: 5, label: "等級 5：震懾擊", descriptionId: "monk-stunning-strike", key: "dynamic-action-monk-curated-stunning-strike", legacyKeys: ["dynamic-action-class-1g9j8ui"] },
+      { id: "extra-attack", mode: "action", level: 5, label: "等級 5：額外攻擊", descriptionId: "monk-extra-attack", key: "dynamic-action-monk-curated-extra-attack" },
+      { id: "wholeness-of-body", mode: "bonus", level: 6, label: "等級 6：混元體", descriptionId: "monk-wholeness-of-body", key: "dynamic-bonus-monk-curated-wholeness-of-body", resourceKey: "monk-wholeness", legacyKeys: ["dynamic-bonus-class-3mzm48"] }
     ]),
     bard: Object.freeze([
       { id: "inspiration", mode: "bonus", level: 1, label: "等級 1：吟遊詩人激勵", key: "dynamic-bonus-class-r7asqs", resourceKey: "bard-inspiration", descriptionIds: ["bard-inspiration", { id: "bard-font-of-inspiration", level: 5 }] },
@@ -509,63 +510,6 @@
     return `${dice} ${formatSignedModifier(modifier)}`;
   }
 
-  function getMonkMartialArtsDescription() {
-    return `你在未穿護甲、未持盾，且只使用徒手攻擊或武僧武器時，獲得以下效果：
-
-武僧武器：簡易近戰武器，以及具有輕型屬性的軍用近戰武器。
-
-- 附贈動作可再進行 1 次徒手攻擊。
-- 徒手攻擊與武僧武器可使用武藝骰作為傷害骰，目前為 ${getMonkMartialArtsDie()}。
-- 徒手攻擊與武僧武器的攻擊與傷害可用敏捷取代力量。
-- 徒手推撞／擒抱的豁免 DC 也可用敏捷計算。`;
-  }
-
-  function getMonkFocusDescription() {
-    const saveDc = 8 + getProficiencyBonus() + getMonkAbilityModifier("wis");
-    const base = `你可消耗「專注點」施展武僧技巧。
-
-你一開始有 3 種用法：
-
-- 疾風連擊（1 點）：附贈動作打 2 次徒手。
-- 閃轉騰挪：附贈動作可撤離；再花 1 點可同時撤離 + 回避。
-- 疾步如風：附贈動作可衝刺；再花 1 點可同時撤離 + 衝刺，且本回合跳躍距離加倍。
-
-若特性要求豁免，DC = ${saveDc}。`;
-    if (getCharacterLevel() < 3) return base;
-    return `${base}
-
-等級 3：散打技巧
-
-當「疾風連擊」命中時，可讓目標承受 1 種效果：
-
-- 截擊：到你下回合結束前，目標不能發動借機攻擊。
-- 擊退：目標力量豁免失敗則被推離你最多 15 呎。
-- 擊倒：目標敏捷豁免失敗則倒地。`;
-  }
-
-  function getMonkDeflectAttacksDescription() {
-    const level = getCharacterLevel();
-    const dexterityModifier = getMonkAbilityModifier("dex");
-    return `當攻擊命中你，且傷害含鈍擊／穿刺／揮砍時，你可用反應減傷：
-
-${formatDiceWithModifier("1d10", dexterityModifier + level)}
-
-若減到 0，你可再花 1 點專注點反擊：
-
-- 擋近戰：選 5 呎內生物。
-- 擋遠程：選 60 呎內你看得到，且不在全身掩護後的生物。
-
-目標需過敏捷豁免；失敗則受到 ${formatDiceWithModifier(getDoubleMonkMartialArtsDice(), dexterityModifier)} 傷害（同原攻擊類型）。`;
-  }
-
-  function getMonkSlowFallDescription() {
-    return `當你墜落時，可用「反應」減少 ${getCharacterLevel() * 5} 傷害。`;
-  }
-
-  function getMonkWholenessDescription() {
-    return `以附贈動作恢復 ${formatDiceWithModifier(getMonkMartialArtsDie(), getMonkAbilityModifier("wis"))} HP，最少恢復 1 點。\n\n使用次數＝感知調整值（至少 1 次），長休後全部恢復。`;
-  }
-
   function getRogueSneakAttackDescription() {
   const level = getCharacterLevel();
   const sneakAttackDice = Math.max(1, Math.ceil(level / 2));
@@ -617,7 +561,19 @@ ${formatDiceWithModifier("1d10", dexterityModifier + level)}
     // 恢復方式跟隨 CharacterRules 的資源設定，與休息實際恢復一致；未升級時保留通用文字。
     "bard-inspiration-recovery": () => (getClassResourceSpec("bard", "bard-inspiration")?.recovery?.shortRest === "all"
       ? "短休或長休後全部恢復"
-      : null)
+      : null),
+    // monk（插槽前後緊鄰中文時補空白，與數值區隔）
+    "monk-martial-arts-die": () => `目前為 ${getMonkMartialArtsDie()}`,
+    "monk-focus-points": () => {
+      const maximum = getClassResourceSpec("monk", "monk-focus-points")?.maximum;
+      return Number.isFinite(maximum) ? ` ${maximum} 點` : null;
+    },
+    "monk-save-dc": () => String(8 + getProficiencyBonus() + getMonkAbilityModifier("wis")),
+    "monk-uncanny-metabolism-healing": () => ` ${getMonkMartialArtsDie()} + ${getCharacterLevel()} `,
+    "monk-deflect-attacks-reduction": () => formatDiceWithModifier("1d10", getMonkAbilityModifier("dex") + getCharacterLevel()),
+    "monk-deflect-attacks-damage": () => `${formatDiceWithModifier(getDoubleMonkMartialArtsDice(), getMonkAbilityModifier("dex"))} `,
+    "monk-slow-fall-reduction": () => ` ${getCharacterLevel() * 5} `,
+    "monk-wholeness-healing": () => ` ${formatDiceWithModifier(getMonkMartialArtsDie(), getMonkAbilityModifier("wis"))} `
   });
 
   function getClassResourceSpec(className, key) {
@@ -901,14 +857,7 @@ function getModeOptions(mode) {
 
   function getTabletopDescription(option) {
     let description = option.description;
-    const level = Number(document.getElementById("level")?.value) || 0;
     const dc = 8 + getProficiencyBonus() + getMonkAbilityModifier("wis");
-    if (option.resourceKey === "monk-uncanny-metabolism" && level > 0) {
-      description = description.replace("「武藝骰 + 武僧等級」", `${getMonkMartialArtsDie()} + ${level}`);
-    }
-    if (option.key === "dynamic-action-monk-curated-stunning-strike") {
-      description = description.replace("體質豁免", `體質豁免（DC ${dc}）`);
-    }
     if (option.key === "dynamic-action-cleric-1c18bru") {
       description = description.replace("1d8 + 感知調整值", formatDiceWithModifier("1d8", getMonkAbilityModifier("wis")))
         .replace("體質豁免", `體質豁免（DC ${dc}）`);

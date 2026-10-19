@@ -1566,7 +1566,7 @@ const classFeatures = {
   <p>你在<strong>未穿護甲、未持盾</strong>，且只使用徒手或武僧武器時，獲得下列效果。</p>
   <ul class="class-rule-list">
     <li><strong>附贈攻擊：</strong>可用<strong>附贈動作</strong>再進行 1 次徒手攻擊。</li>
-    <li><strong>武藝骰：</strong>徒手與武僧武器可用武藝骰取代原本的傷害骰。起始為 1d6，之後依「武僧特性」表提升。</li>
+    <li><strong>武藝骰：</strong>徒手與武僧武器可用武藝骰取代原本的傷害骰。<span data-tabletop-value="monk-martial-arts-die">起始為 1d6，之後依「武僧特性」表提升</span>。</li>
     <li><strong>敏捷取代力量：</strong>徒手與武僧武器的攻擊與傷害可用敏捷取代力量；徒手推撞／擒抱的豁免 DC 也可用敏捷計算。</li>
     <li><strong>武僧武器：</strong>簡易近戰武器，以及具有輕型屬性的軍用近戰武器。</li>
   </ul>
@@ -1577,12 +1577,12 @@ const classFeatures = {
   <p>你<strong>未穿護甲、未持盾</strong>時，AC = 10 + 敏捷調整值 + 感知調整值。</p>
 </section>
 
-<section class="monk-feature class-feature-section" data-feature-level="2">
+<section class="monk-feature class-feature-section" data-feature-level="2" data-action-id="monk-focus">
   <h3>等級 2：聚氣凝神</h3>
   <p>你可以消耗「專注點」施展武僧技巧，起始可使用下列 3 種用法。</p>
   <ul class="class-rule-list">
-    <li><strong>專注點：</strong>上限見「武僧特性」表的「專注點」欄，<strong>短休或長休後全部恢復</strong>。</li>
-    <li><strong>豁免 DC：</strong>特性要求豁免時，DC = 8 + 熟練加值 + 感知調整值。</li>
+    <li><strong>專注點：</strong>上限<span data-tabletop-value="monk-focus-points">見「武僧特性」表的「專注點」欄</span>，<strong>短休或長休後全部恢復</strong>。</li>
+    <li><strong>豁免 DC：</strong>特性要求豁免時，DC = <span data-tabletop-value="monk-save-dc">8 + 熟練加值 + 感知調整值</span>。</li>
   </ul>
   <div class="class-rule-subsection">
     <h4>起始用法</h4>
@@ -1599,9 +1599,9 @@ const classFeatures = {
   <p>你<strong>未穿護甲、未持盾</strong>時，速度增加 10 呎，之後依「武僧特性」表的「無甲移動」欄提升。</p>
 </section>
 
-<section class="monk-feature class-feature-section" data-feature-level="2">
+<section class="monk-feature class-feature-section" data-feature-level="2" data-action-id="monk-uncanny-metabolism">
   <h3>等級 2：吐故納新</h3>
-  <p>擲先攻時，你可以恢復所有已消耗的專注點，並恢復「武藝骰 + 武僧等級」生命值。</p>
+  <p>擲先攻時，你可以恢復所有已消耗的專注點，並恢復<span data-tabletop-value="monk-uncanny-metabolism-healing">「武藝骰 + 武僧等級」</span>生命值。</p>
   <ul class="class-rule-list">
     <li><strong>使用次數：</strong>1 次，<strong>長休後恢復</strong>。</li>
   </ul>
@@ -1611,7 +1611,7 @@ const classFeatures = {
   <h3>等級 3：撥擋化勁</h3>
   <p>攻擊命中你，且傷害包含鈍擊、穿刺或揮砍時，你可以用<strong>反應</strong>減少傷害。</p>
   <ul class="class-rule-list">
-    <li><strong>減傷：</strong>1d10 + 敏捷調整值 + 武僧等級。</li>
+    <li><strong>減傷：</strong><span data-tabletop-value="monk-deflect-attacks-reduction">1d10 + 敏捷調整值 + 武僧等級</span>。</li>
   </ul>
   <div class="class-rule-subsection">
     <h4>反擊</h4>
@@ -1620,7 +1620,7 @@ const classFeatures = {
       <li><strong>擋近戰：</strong>選擇 5 呎內的生物。</li>
       <li><strong>擋遠程：</strong>選擇 60 呎內你看得到、且不在全身掩護後的生物。</li>
     </ul>
-    <p>受到反擊的目標進行敏捷豁免，失敗時受到 2 枚武藝骰 + 你的敏捷調整值傷害（同原攻擊類型）。</p>
+    <p>受到反擊的目標進行敏捷豁免，失敗時受到 <span data-tabletop-value="monk-deflect-attacks-damage">2 枚武藝骰 + 你的敏捷調整值</span>傷害（同原攻擊類型）。</p>
   </div>
 </section>
 
@@ -1629,9 +1629,9 @@ const classFeatures = {
   <p>選擇一個武僧子職，並隨等級提升獲得子職能力。基本規則僅提供「散打鬥士」。</p>
 </section>
 
-<section class="monk-feature class-feature-section" data-feature-level="3">
+<section class="monk-feature class-feature-section" data-feature-level="3" data-action-id="monk-open-hand-technique">
   <h3>等級 3：散打技巧（散打子職）</h3>
-  <p>你用「疾風連擊」命中時，可使目標承受下列 1 種效果。</p>
+  <p><strong data-tabletop-only hidden>散打技巧：</strong>你用「疾風連擊」命中時，可使目標承受下列 1 種效果。</p>
   <ul class="class-rule-list">
     <li><strong>截擊：</strong>到你的下回合結束前，目標不能發動藉機攻擊。</li>
     <li><strong>擊退：</strong>目標力量豁免失敗時，被推離你最多 15 呎。</li>
@@ -1646,17 +1646,17 @@ const classFeatures = {
 
 <section class="monk-feature class-feature-section" data-feature-level="4" data-action-id="monk-slow-fall">
   <h3>等級 4：輕身墜</h3>
-  <p>你墜落時，可以用<strong>反應</strong>減少「武僧等級 × 5」點傷害。</p>
+  <p>你墜落時，可以用<strong>反應</strong>減少<span data-tabletop-value="monk-slow-fall-reduction">「武僧等級 × 5」</span>點傷害。</p>
 </section>
 
-<section class="monk-feature class-feature-section" data-feature-level="5">
+<section class="monk-feature class-feature-section" data-feature-level="5" data-action-id="monk-extra-attack">
   <h3>等級 5：額外攻擊</h3>
   <p>你在自己的回合執行<strong>攻擊動作</strong>時，可以攻擊 2 次。</p>
 </section>
 
-<section class="monk-feature class-feature-section" data-feature-level="5">
+<section class="monk-feature class-feature-section" data-feature-level="5" data-action-id="monk-stunning-strike">
   <h3>等級 5：震懾擊</h3>
-  <p>你用武僧武器或徒手命中時，可消耗 1 點專注點發動震懾打擊，目標需進行體質豁免。</p>
+  <p>你用武僧武器或徒手命中時，可消耗 1 點專注點發動震懾打擊，目標需進行體質豁免<span data-tabletop-only hidden>（DC <span data-tabletop-value="monk-save-dc">8 + 熟練加值 + 感知調整值</span>）</span>。</p>
   <ul class="class-rule-list">
     <li><strong>使用次數：</strong><strong>每回合 1 次</strong>。</li>
     <li><strong>豁免失敗：</strong>目標陷入震懾，直到你的下回合開始。</li>
@@ -1665,7 +1665,7 @@ const classFeatures = {
 </section>
 <section class="monk-feature class-feature-section" data-feature-level="5"><p><strong>武藝補充：</strong>武僧達到 5 級時，武藝骰提升為 1d8，詳見「武僧特性」表。</p></section>
 <section class="monk-feature class-feature-section" data-feature-level="6"><h3>等級 6：真力駐拳</h3><p>你的徒手打擊造成傷害時，可以將傷害類型改為力場傷害。</p></section>
-<section class="monk-feature class-feature-section" data-feature-level="6" data-action-id="monk-wholeness-of-body"><h3>等級 6：混元體（散打子職）</h3><p>你可以用<strong>附贈動作</strong>擲武藝骰，恢復等同「擲骰結果＋感知調整值」的生命值（至少 1 點）。</p><ul class="class-rule-list"><li><strong>使用次數：</strong>等同感知調整值（至少 1 次），<strong>長休後全部恢復</strong>。</li></ul></section>
+<section class="monk-feature class-feature-section" data-feature-level="6" data-action-id="monk-wholeness-of-body"><h3>等級 6：混元體（散打子職）</h3><p>你可以用<strong>附贈動作</strong>擲武藝骰，恢復等同<span data-tabletop-value="monk-wholeness-healing">「擲骰結果＋感知調整值」</span>的生命值（至少 1 點）。</p><ul class="class-rule-list"><li><strong>使用次數：</strong>等同感知調整值（至少 1 次），<strong>長休後全部恢復</strong>。</li></ul></section>
 <section class="monk-feature class-feature-section" data-feature-level="6"><p><strong>無甲移動補充：</strong>武僧達到 6 級時，無甲移動的速度加值提升為 15 呎，詳見「武僧特性」表。</p></section>
 <section class="monk-feature class-feature-section" data-feature-level="7"><h3>等級 7：反射閃避</h3><p>你受到允許進行<strong>敏捷豁免</strong>使傷害減半的效應影響時，豁免成功則不受傷害，豁免失敗則只受一半傷害。</p><ul class="class-rule-list"><li><strong>限制：</strong>你處於<strong>失能</strong>狀態時，無法獲得此特性的效益。</li></ul></section>
 <section class="monk-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p></section>
