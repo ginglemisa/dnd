@@ -819,7 +819,7 @@ const classFeatures = {
 </section>
 <section class="cleric-feature class-feature-section" data-feature-level="6"><h3>等級 6：神佑醫者（生命子職）</h3><p>消耗法術位施放法術並恢復其他生物的生命值後，你立即恢復「2＋該法術位環階」生命值。</p></section>
 <section class="cleric-feature class-feature-section" data-feature-level="6"><p><strong>引導神力補充：</strong>牧師達到 6 級時，引導神力使用次數增加至 3 次，詳見「牧師特性」表。</p></section>
-<section class="cleric-feature class-feature-section" data-feature-level="7"><h3>等級 7：神佑打擊</h3><p>選擇下列 1 項。即使你已從舊書的牧師子職獲得其中一項，也只能使用透過此特性選擇的選項。</p><div class="druid-mission-options"><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="cleric-blessed-strikes-divine-strike" data-feature-choice-group="cleric-blessed-strikes"> 神聖打擊</label>：每回合 1 次，以武器攻擊檢定命中生物時，可使目標額外受到 1d8 黯蝕或光耀傷害（由你選擇）。</div></div><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="cleric-blessed-strikes-potent-spellcasting" data-feature-choice-group="cleric-blessed-strikes"> 強力施法</label>：以牧師戲法造成傷害時，將感知調整值加到傷害中。</div></div></div></section>
+<section class="cleric-feature class-feature-section" data-feature-level="7"><h3>等級 7：神佑打擊</h3><p>選擇下列 1 項。即使你已從舊書的牧師子職獲得其中一項，也只能使用透過此特性選擇的選項。</p><div class="druid-mission-options"><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="cleric-blessed-strikes-divine-strike" data-feature-choice-group="cleric-blessed-strikes"> 神聖打擊</label>：<span data-action-id="cleric-divine-strike">在自己的回合中限 1 次，以武器攻擊檢定命中生物時，可使目標額外受到 1d8 黯蝕或光耀傷害（由你選擇）。</span></div></div><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="cleric-blessed-strikes-potent-spellcasting" data-feature-choice-group="cleric-blessed-strikes"> 強力施法</label>：以牧師戲法造成傷害時，將感知調整值加到傷害中。</div></div></div></section>
 <section class="cleric-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p></section>
 </div>
 `,
@@ -1198,7 +1198,7 @@ const classFeatures = {
       <div class="druid-mission-option__heading"><label><input type="checkbox" id="druid-elemental-fury-potent-spellcasting" data-feature-choice-group="druid-elemental-fury"> 強力施法</label>：以德魯伊戲法造成傷害時，將<strong>感知調整值</strong>加到傷害中。</div>
     </div>
     <div class="druid-mission-option">
-      <div class="druid-mission-option__heading"><label><input type="checkbox" id="druid-elemental-fury-primal-strike" data-feature-choice-group="druid-elemental-fury"> 原初打擊</label>：在你的每個回合中 1 次，以武器或荒野形態的野獸形態攻擊命中生物時，可使目標額外受到 <strong>1d8 冷凍、火焰、閃電或雷鳴傷害</strong>（由你選擇）。</div>
+      <div class="druid-mission-option__heading"><label><input type="checkbox" id="druid-elemental-fury-primal-strike" data-feature-choice-group="druid-elemental-fury"> 原初打擊</label>：在自己的回合中限 1 次，以武器或荒野形態的野獸形態攻擊命中生物時，可使目標額外受到 <strong>1d8 冷凍、火焰、閃電或雷鳴傷害</strong>（由你選擇）。</div>
     </div>
   </div>
 </section>

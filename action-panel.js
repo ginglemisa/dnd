@@ -163,7 +163,7 @@
       },
       { mode: "action", level: 3, label: "等級 3：生命門徒（生命）", descriptionId: "cleric-disciple-of-life", key: "dynamic-action-cleric-1ocjvx6", id: "disciple-of-life" },
       { mode: "action", level: 3, label: "等級 3：維持生命（生命）", descriptionId: "cleric-preserve-life", key: "dynamic-action-cleric-aoatsu", id: "preserve-life", resourceKey: "cleric-channel-divinity", legacyKeys: ["dynamic-action-class-preserve-life"] },
-      { id: "divine-strike", mode: "action", level: 7, label: "等級 7：神聖打擊", description: "在你的每個回合中一次，當你使用武器發動攻擊檢定並命中一個生物時，可以使目標額外受到1d8黯蝕或光耀傷害（由你選擇）。", key: "dynamic-action-cleric-sxx32", checkedId: "cleric-blessed-strikes-divine-strike" }
+      { id: "divine-strike", mode: "action", level: 7, label: "等級 7：神聖打擊", descriptionId: "cleric-divine-strike", key: "dynamic-action-cleric-sxx32", checkedId: "cleric-blessed-strikes-divine-strike" }
     ]),
     druid: Object.freeze([
       { id: "wild-shape", mode: "bonus", level: 2, label: "等級 2：荒野形態", key: "dynamic-bonus-class-3u4zp1", druidOperation: "shape", descriptionId: "druid-wild-shape" },
