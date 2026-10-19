@@ -309,6 +309,10 @@
     if (selectedClass === "fighter" && characterLevel >= 3) {
       entries.push(["精通重擊", "武器與徒手打擊的攻擊檢定擲出 19 或 20 時即可造成重擊。"]);
     }
+    if (selectedClass === "monk" && characterLevel >= 6) {
+      const empoweredStrikes = globalScope.ActionPanel?.getClassOverviewDescription?.("monk", "monk-empowered-strikes");
+      if (empoweredStrikes) entries.push(["真力駐拳", empoweredStrikes]);
+    }
     if (hasSelectedFeat("兇蠻打手")) {
       entries.push(["受訓善戰", "每回合 1 次，武器命中時傷害骰擲 2 次，取其一。"]);
     }

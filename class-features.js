@@ -1664,7 +1664,7 @@ const classFeatures = {
   </ul>
 </section>
 <section class="monk-feature class-feature-section" data-feature-level="5"><p><strong>武藝補充：</strong>武僧達到 5 級時，武藝骰提升為 1d8，詳見「武僧特性」表。</p></section>
-<section class="monk-feature class-feature-section" data-feature-level="6"><h3>等級 6：真力駐拳</h3><p>你的徒手打擊造成傷害時，可以將傷害類型改為力場傷害。</p></section>
+<section class="monk-feature class-feature-section" data-feature-level="6" data-action-id="monk-empowered-strikes"><h3>等級 6：真力駐拳</h3><p>你的徒手打擊造成傷害時，可以將傷害類型改為力場傷害。</p></section>
 <section class="monk-feature class-feature-section" data-feature-level="6" data-action-id="monk-wholeness-of-body"><h3>等級 6：混元體（散打子職）</h3><p>你可以用<strong>附贈動作</strong>擲武藝骰，恢復等同<span data-tabletop-value="monk-wholeness-healing">「擲骰結果＋感知調整值」</span>的生命值（至少 1 點）。</p><ul class="class-rule-list"><li><strong>使用次數：</strong>等同感知調整值（至少 1 次），<strong>長休後全部恢復</strong>。</li></ul></section>
 <section class="monk-feature class-feature-section" data-feature-level="6"><p><strong>無甲移動補充：</strong>武僧達到 6 級時，無甲移動的速度加值提升為 15 呎，詳見「武僧特性」表。</p></section>
 <section class="monk-feature class-feature-section" data-feature-level="7"><h3>等級 7：反射閃避</h3><p>你受到允許進行<strong>敏捷豁免</strong>使傷害減半的效應影響時，豁免成功則不受傷害，豁免失敗則只受一半傷害。</p><ul class="class-rule-list"><li><strong>限制：</strong>你處於<strong>失能</strong>狀態時，無法獲得此特性的效益。</li></ul></section>

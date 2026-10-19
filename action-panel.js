@@ -645,6 +645,7 @@
 
   // 由說明函式或跑團總覽組合、未寫在 CLASS_ACTION_RULES 的段落，納入完整性檢查。
   const HELPER_DESCRIPTION_IDS = Object.freeze({
+    monk: Object.freeze(["monk-empowered-strikes"]),
     ranger: Object.freeze(["ranger-colossus-slayer", "ranger-horde-breaker", "ranger-escape-the-horde", "ranger-multiattack-defense"])
   });
 

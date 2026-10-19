@@ -428,6 +428,7 @@ async function verifyCoverage(page) {
       check(classOption("action", "武藝").description === classOption("bonus", "武藝").description, "Martial Arts shares its Action/Bonus summary");
       if (level >= 4) check(classOption("reaction", "輕身墜").description.includes(`${level * 5}`), "Slow Fall uses current level");
       if (level >= 4) check(ActionPanel.getClassOverviewDescription("monk", "monk-slow-fall").includes(` ${level * 5} 點傷害`), "Slow Fall overview reads the same scaled source");
+      if (level >= 6) check(ActionPanel.getClassOverviewDescription("monk", "monk-empowered-strikes").includes("力場傷害"), "Empowered Strikes reminder reads the class source");
       setClass("rogue", level);
       const sneak = classOption("action", "偷襲").description;
       check(sneak.includes(`${Math.ceil(level / 2)}d6`), "Sneak Attack scales with level");
