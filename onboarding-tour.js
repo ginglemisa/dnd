@@ -485,6 +485,8 @@
     }
 
     async start(initialIndex = 0, kind = "sheet") {
+      // Tour previews re-enable the share-locked identity selects.
+      if (window.SHARE_MODE === true) return;
       if (this.active) this.stop({ resetView: false });
       this.kind = kind;
       this.transitionId++;

@@ -966,10 +966,11 @@ async function verifyLevelUpCantripChoice(page) {
   await apply(page, modern({ class: "cleric", level: "4", background: "", race: "" }));
   assert.equal(await page.evaluate(() => SpellManagement.canManage()), false, "prepared spells stay locked");
   assert.equal(await page.locator("#class-level-up-cantrip").isDisabled(), false, "the level 4 cantrip can be chosen early");
-  assert.deepEqual(await missing(), ["牧師 4 級額外戲法尚未選擇。"], "the reminder only needs class and level");
+  assert.deepEqual(await missing(), [], "the missing-cantrip notice waits for background and race");
+  assert.equal(await page.locator("#class-feature-choice-reminder").isHidden(), true, "class reminders wait for all four selections");
   await page.evaluate(() => { const select = document.getElementById("class-level-up-cantrip"); select.value = "light"; select.dispatchEvent(new Event("change", { bubbles: true })); });
   assert.deepEqual(await playerIds(page), ["light"]);
-  assert.deepEqual(await missing(), []);
+  assert.equal(await page.locator(".class-feature-level-up-cantrip .feat-choice-view").isDisabled(), false, "the chosen cantrip can be viewed early");
   assert.equal(await page.evaluate(() => SpellManagement.addPlayerSpell("guidance")), false, "other prepared spell entry points keep the full gate");
   await chooseAsPlayer(page, "class", "wizard");
   await chooseAsPlayer(page, "class", "cleric");

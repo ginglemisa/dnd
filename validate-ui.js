@@ -183,6 +183,28 @@ async function verifyAppearanceAndLayout(browser, page, url) {
     assert.equal(await about.count(), 0);
     assert.equal(await page.locator("#utility-menu-toggle").evaluate(el => el === document.activeElement), true);
 
+    // Share mode locks identity selects; every appearance must show them gray yet readable.
+    const lockedSelect = await page.evaluate(() => {
+      const select = document.getElementById("class");
+      const channels = color => color.match(/[\d.]+/g).slice(0, 3).map(Number);
+      const luminance = color => {
+        const [r, g, b] = channels(color).map(value => { value /= 255; return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4; });
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      };
+      select.style.transition = "none";
+      const enabledBackground = getComputedStyle(select).backgroundColor;
+      select.disabled = true;
+      const style = getComputedStyle(select);
+      const [light, dark] = [luminance(style.color), luminance(style.backgroundColor)].sort((a, b) => b - a);
+      const result = { gray: style.backgroundColor !== enabledBackground, opacity: style.opacity, contrast: (light + 0.05) / (dark + 0.05) };
+      select.disabled = false;
+      select.style.removeProperty("transition");
+      return result;
+    });
+    assert.equal(lockedSelect.gray, true, `${family}-${mode} disabled select uses a gray background`);
+    assert.equal(lockedSelect.opacity, "1", `${family}-${mode} disabled select is not faded`);
+    assert(lockedSelect.contrast >= 4.5, `${family}-${mode} disabled select contrast ${lockedSelect.contrast.toFixed(2)}`);
+
     const bg = await page.locator("html").evaluate(el => getComputedStyle(el).backgroundImage);
     assert.equal(bg.includes("url("), false, "page backgrounds must not load image assets");
     if (family === "warm" && mode === "light") assert.equal(bg, "none", "warm light uses a solid page background");
@@ -905,12 +927,30 @@ async function verifyCustomBackground(browser, url) {
       assert.equal(await shared.locator('[data-variant="custom-background"]').count(), 0);
       assert.equal(await shared.locator('#background option[value="custom"]').textContent(), "自訂冒險");
       assert.equal(await shared.locator(".custom-background-equipment").textContent(), `裝備：A、B 二擇一(A) ${equipmentA}(B) 50 金幣`);
+      // Share mode opens the definition read-only: inspect, but never change it.
+      assert.equal(await shared.locator("#custom-background-edit").textContent(), "查看背景");
       await shared.locator("#custom-background-edit").click();
-      await shared.locator("#custom-background-name").fill("分享修改");
-      await shared.getByRole("button", { name: "儲存背景", exact: true }).click();
+      const sharedDialog = shared.locator('.app-dialog[data-variant="custom-background"]');
+      await sharedDialog.waitFor();
+      assert.equal(await shared.inputValue("#custom-background-name"), "自訂冒險", "read-only view shows the shared definition");
+      assert.equal(await shared.inputValue("#custom-background-equipment-a"), equipmentA);
+      assert.deepEqual(await sharedDialog.locator("input, textarea").evaluateAll(fields => fields.map(field => field.readOnly)), [true, true, true]);
+      assert.equal(await sharedDialog.locator("select").evaluateAll(selects => selects.every(select => select.disabled)), true, "share view selects are locked");
+      assert.match(await sharedDialog.textContent(), /分享模式：自訂背景僅供查看/);
+      assert.equal(await sharedDialog.getByRole("button", { name: "儲存背景", exact: true }).count(), 0, "share view has no save action");
+      await shared.locator("#custom-background-name").focus();
+      await shared.keyboard.type("改");
+      await shared.locator("#custom-background-description").focus();
+      await shared.keyboard.press("Backspace");
+      assert.equal(await shared.inputValue("#custom-background-name"), "自訂冒險", "typing cannot change the shared name");
+      assert.equal(await shared.inputValue("#custom-background-description"), description);
+      await sharedDialog.getByRole("button", { name: "關閉", exact: true }).click();
+      await sharedDialog.waitFor({ state: "detached" });
+      assert.equal(await shared.evaluate(() => document.activeElement.id), "custom-background-edit");
+      assert.deepEqual(await shared.evaluate(() => CustomBackground.getState()), state.__customBackground, "closing the view keeps the definition");
+      assert.equal(await shared.inputValue("#background"), "custom");
       await shared.evaluate(() => saveAllFields());
-      assert.equal(await shared.locator('#background option[value="custom"]').textContent(), "分享修改");
-      assert.equal(await shared.evaluate(() => dndStorage.getItem("dndchar_autosave_v1")), localSave, "share editing never overwrites the local custom background");
+      assert.equal(await shared.evaluate(() => dndStorage.getItem("dndchar_autosave_v1")), localSave, "share viewing never overwrites the local custom background");
     } finally { await shared.close(); }
     await page.setViewportSize({ width: 320, height: 568 });
     await reopen();
@@ -1348,15 +1388,21 @@ async function verifyClassFeatureChoicePrompt(browser, url) {
     await page.locator("#legal-close-btn").click();
     const classes = await page.locator('#class option[value]:not([value=""])').evaluateAll(options => options.map(option => option.value));
     assert.equal(classes.length, 12, "completion covers every supported class");
+    // Class reminders and the prompt wait until class, level, background and race are all chosen.
+    await page.evaluate(() => applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] }, class: "fighter", level: "3", background: "", race: "" }));
+    await chooseAsPlayer("level", "4");
+    await page.waitForTimeout(200);
+    assert.equal(await modal.count(), 0, "incomplete core selections do not prompt");
+    assert.equal(await page.locator("#class-feature-choice-reminder").isHidden(), true, "incomplete core selections hide class reminders");
     const levelChoices = modal.locator('[data-feat-choice] select[id*="-level-"]:visible');
     const missingLevelChoices = () => page.evaluate(() => Array.from(getMissingClassFeatureChoiceSections())
       .flatMap(section => Array.from(section.querySelectorAll('[data-feat-choice] select[id*="-level-"]'), select => select.id)));
     for (const cls of classes) {
-      // The level 4 class cantrip only needs class and level, so pre-fill it to isolate feat completion.
+      // The level 4 class cantrip is pre-filled so only feature and feat groups are prompted.
       await page.evaluate(cls => applyStateObject({ __spellManagement: { version: 2, manual: false,
         entries: getClassCantripLimit(cls, 4) > getClassCantripLimit(cls, 3)
           ? [{ spellId: getClassSpells(cls, "cantrips")[0].spellId, spellClass: cls, classFeatureCantrip: "class-level-4" }] : [] },
-        class: cls, level: "3",
+        background: "soldier", race: "human", class: cls, level: "3",
         [`feat-choice-${cls}-level-4`]: "",
         [`feat-choice-${cls}-level-6`]: "",
         [`feat-choice-${cls}-level-8`]: ""
@@ -1385,9 +1431,10 @@ async function verifyClassFeatureChoicePrompt(browser, url) {
       if (cls === "fighter") assert.equal(await page.inputValue("#feat-choice-fighter-level-6"), "屬性值提升", "Escape preserves the completed fighter improvement");
     }
     // A fresh character: earlier player level changes left cleric choices in the class option memory.
-    // The level 4 class cantrip is pre-filled so only feature and feat groups are prompted.
+    // A fresh character: earlier player level changes left cleric choices in the class option memory.
     await page.evaluate(() => { ClassOptionMemory.clearMemories(); applyStateObject({ __spellManagement: { version: 2, manual: false,
-      entries: [{ spellId: getClassSpells("cleric", "cantrips").at(-1).spellId, spellClass: "cleric", classFeatureCantrip: "class-level-4" }] }, class: "cleric", level: "7" }); });
+      entries: [{ spellId: getClassSpells("cleric", "cantrips").at(-1).spellId, spellClass: "cleric", classFeatureCantrip: "class-level-4" }] },
+    background: "soldier", race: "human", class: "cleric", level: "7" }); });
     await page.waitForTimeout(200);
     assert.equal(await modal.count(), 0, "JSON/restoration changes do not auto-open the prompt");
     await chooseAsPlayer("level", "8");
@@ -1555,6 +1602,8 @@ async function verifyClassFeatureChoicePrompt(browser, url) {
     await page.getByRole("button", { name: "清除紀錄", exact: true }).click();
     await page.waitForFunction(() => dndStorage.getItem(CLASS_FEATURE_PROMPT_DISABLED_KEY) === null);
     await page.locator("#legal-close-btn").click();
+    await chooseAsPlayer("background", "soldier");
+    await chooseAsPlayer("race", "human");
     await chooseAsPlayer("level", "1");
     await chooseAsPlayer("class", "cleric");
     await modal.waitFor();
@@ -2377,6 +2426,18 @@ async function verifyCharacterDataSafety(browser, url) {
         await shared.goto(sharedUrl.href);
         await assertSafeTag(shared);
         assert.equal(await shared.evaluate(() => window.SHARE_MODE), true);
+        // A decoded share locks the identity selects; values still flow through state collection.
+        const identity = await shared.evaluate(() => ["class", "level", "race", "background"].map(id => {
+          const select = document.getElementById(id);
+          return [select.value, select.disabled];
+        }));
+        assert.deepEqual(identity, [["wizard", true], ["1", true], ["human", true], ["soldier", true]], "share locks identity selects");
+        const collected = await shared.evaluate(() => collectStateObject());
+        assert.deepEqual([collected.class, collected.level, collected.race, collected.background], ["wizard", "1", "human", "soldier"], "disabled selects stay in state collection");
+        assert.match(await shared.locator("#share-mode-tip").innerText(), /分享模式：職業、等級、種族、背景不可更改/);
+        assert.equal(await shared.locator("#share-mode-tip").isVisible(), true);
+        assert.equal(await shared.evaluate(() => saveAllFields()), false);
+        assert.equal(await shared.evaluate(() => dndStorage.getItem("dndchar_autosave_v1")), null, "share restoration never autosaves");
       } finally { await shared.close(); }
     }
 
@@ -2463,6 +2524,8 @@ async function verifyCharacterDataSafety(browser, url) {
     const beforeBadShare = await page.evaluate(() => dndStorage.getItem("dndchar_autosave_v1"));
     await page.goto(shareUrl.href);
     await page.getByRole("dialog", { name: "分享連結讀取失敗", exact: true }).getByRole("button", { name: "知道了", exact: true }).click();
+    assert.equal(await page.locator("#class, #level, #race, #background").evaluateAll(selects => selects.some(select => select.disabled)), false, "failed share leaves the blank card unlocked");
+    assert.equal(await page.locator("#share-mode-tip").isVisible(), false);
     assert.equal(await page.evaluate(() => saveAllFields()), false);
     assert.equal(await page.evaluate(() => dndStorage.getItem("dndchar_autosave_v1")), beforeBadShare);
     console.log("Character input safety: XSS text rendering, JSON/share/autosave, preflight limits, gzip bomb cancellation and rejected-data preservation passed.");

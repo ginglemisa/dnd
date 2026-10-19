@@ -365,6 +365,7 @@ async function main() {
     await page.waitForFunction(() => window.onboardingTour && window.quickBuild && window.TabletopMode);
     await page.locator("#legal-ack-btn").click();
     if (process.argv.includes("--imports-only")) {
+      await verifyShareModeEntries(browser, url);
       await verifyImports(browser, url);
       await verifyImports(browser, url, { width: 390, height: 844 });
       await verifyPdfLifecycle(browser, url);
@@ -522,6 +523,7 @@ async function main() {
     await page.evaluate(() => quickBuild.open());
     assert.deepEqual(await page.evaluate(() => quickBuild.getDraft()), draft);
     await page.evaluate(() => quickBuild.close());
+    await verifyShareModeEntries(browser, url);
     await verifyImports(browser, url);
     await verifyImports(browser, url, { width: 390, height: 844 });
     await verifyPdfLifecycle(browser, url);
@@ -671,6 +673,75 @@ async function verifyTouch(browser, url) {
   for (const key of ["data", "storage", "dice", "mode", "panel", "scroll", "focus"]) assert.deepEqual(after[key], before[key], `touch ${key}`);
   await page.close();
   console.log("Touch: collapsed examples, internal swipe, visible controls, blocked background operation and existing HP/resource/dice state preservation passed.");
+}
+
+// Quick build and both tours rewrite the identity selects, so share mode closes
+// their entries rather than relying on the locked controls.
+async function verifyShareModeEntries(browser, url) {
+  const entries = ["#help-quick-build-btn", "#restart-onboarding-btn", "#first-table-tour-btn"];
+  const identity = page => page.evaluate(() => ["class", "level", "race", "background"].map(id => {
+    const select = document.getElementById(id);
+    return [select.value, select.disabled];
+  }));
+  const errors = [];
+  const openPage = async () => {
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    await page.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
+    page.on("pageerror", error => errors.push(String(error)));
+    return page;
+  };
+  const source = await openPage();
+  let hash;
+  try {
+    await source.goto(url);
+    await source.waitForFunction(() => window.onboardingTour && window.quickBuild);
+    hash = await source.evaluate(() => {
+      applyStateObject({ class: "fighter", level: "3", race: "dwarf", background: "soldier" });
+      return encodeStateToHash(collectShareState());
+    });
+  } finally { await source.close(); }
+
+  const shared = await openPage();
+  try {
+    const shareUrl = new URL(url); shareUrl.searchParams.set("analytics", "owner"); shareUrl.hash = hash;
+    await shared.goto(shareUrl.href);
+    await shared.waitForFunction(() => window.SHARE_MODE === true && window.onboardingTour && window.quickBuild);
+    const locked = [["fighter", true], ["3", true], ["dwarf", true], ["soldier", true]];
+    assert.deepEqual(await identity(shared), locked, "share locks the identity selects");
+    assert.equal(await shared.locator("#legal-onboarding-btn").isVisible(), false, "share welcome has no quick-build entry");
+    assert.equal(await shared.locator("#legal-onboarding-btn").isDisabled(), true);
+    await shared.locator("#legal-ack-btn").click();
+    await shared.locator("#utility-menu-toggle").click();
+    for (const selector of entries) {
+      assert.equal(await shared.locator(selector).isDisabled(), true, `${selector} is closed in share mode`);
+      assert.equal(await shared.locator(selector).getAttribute("title"), "分享模式不提供此功能");
+    }
+    await shared.locator("#utility-menu-toggle").click();
+    // Programmatic entries are refused as well, so nothing can re-enable the selects.
+    await shared.evaluate(async () => {
+      quickBuild.open();
+      await onboardingTour.start();
+      await onboardingTour.startTabletop();
+    });
+    assert.equal(await shared.locator("#quick-build-wizard.open").count(), 0, "quick build never opens in share mode");
+    assert.equal(await shared.evaluate(() => onboardingTour.active), false, "tours never start in share mode");
+    assert.equal(await shared.locator("#tour-overlay").getAttribute("aria-hidden"), "true");
+    assert.equal(await shared.evaluate(() => window.SHARE_MODE), true, "share mode is never dropped");
+    assert.deepEqual(await identity(shared), locked, "identity stays locked after refused entries");
+  } finally { await shared.close(); }
+
+  const failed = await openPage();
+  try {
+    const failedUrl = new URL(url); failedUrl.searchParams.set("analytics", "owner"); failedUrl.hash = "#s2=not-a-valid-share";
+    await failed.goto(failedUrl.href);
+    await failed.getByRole("dialog", { name: "分享連結讀取失敗", exact: true }).getByRole("button", { name: "知道了", exact: true }).click();
+    assert.equal((await identity(failed)).some(([, disabled]) => disabled), false, "a failed share leaves the blank card unlocked");
+    for (const selector of entries) assert.equal(await failed.locator(selector).isDisabled(), true, `${selector} stays closed after a failed share`);
+    await failed.evaluate(() => quickBuild.open());
+    assert.equal(await failed.locator("#quick-build-wizard.open").count(), 0);
+  } finally { await failed.close(); }
+  assert.deepEqual(errors, [], "share mode entry browser errors");
+  console.log("Share mode: identity selects locked, quick-build and both tour entries closed (buttons and APIs), failed share left unlocked.");
 }
 
 async function verifyImports(browser, url, viewport = { width: 1280, height: 800 }) {

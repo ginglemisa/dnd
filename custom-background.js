@@ -78,6 +78,8 @@
   async function open(trigger = document.getElementById("background")) {
     if (editing) return;
     editing = true;
+    // Share mode can inspect the shared background but never change it.
+    const readOnly = globalScope.SHARE_MODE === true;
     const returnSelection = previousSelection;
     const fields = {};
     const content = document.createElement("div");
@@ -105,6 +107,10 @@
         input.autocomplete = "off";
       }
       input.value = value;
+      if (readOnly) {
+        if (options) input.disabled = true;
+        else input.readOnly = true;
+      }
       wrapper.appendChild(input);
       parent.appendChild(wrapper);
       fields[id] = input;
@@ -138,6 +144,16 @@
     error.className = "app-dialog__number-error";
     error.setAttribute("role", "alert");
     content.appendChild(error);
+
+    if (readOnly) {
+      await globalScope.AppDialog.showContent({
+        title: "自訂背景", variant: "custom-background", trigger,
+        message: "分享模式：自訂背景僅供查看，不可更改。",
+        content, initialFocus: "content", confirmLabel: "關閉"
+      });
+      editing = false;
+      return;
+    }
 
     let draft = null;
     const saved = await globalScope.AppDialog.showContent({

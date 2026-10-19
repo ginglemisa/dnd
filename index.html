@@ -81,7 +81,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261019-class-description-source">
+  <link rel="stylesheet" href="styles.css?v=20261020-share-identity-lock">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261006-usage-analytics" defer></script>
   <script src="monster.js?v=20261019-explicit-skill-tips" defer></script>
@@ -96,7 +96,7 @@
   <script src="action-panel.js?v=20261020-empowered-strikes" defer></script>
   <script src="character-rules.js?v=20261010-spell-lists-v2" defer></script>
   <script src="app-dialog.js?v=20261009-class-choice-prompt" defer></script>
-  <script src="custom-background.js?v=20261015-custom-background" defer></script>
+  <script src="custom-background.js?v=20261020-share-identity-lock" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
   <script src="tabletop-mode.js?v=20261019-class-overview-source" defer></script>
   <script src="tabletop-druid.js?v=20261010-mobile-performance" defer></script>
@@ -104,8 +104,8 @@
   <script src="tabletop-actions.js?v=20261020-empowered-strikes" defer></script>
   <script src="tabletop-spells.js?v=20261012-wizard-ritual-group" defer></script>
   <script src="legal-modal.js?v=20260923-legal-about" defer></script>
-  <script src="onboarding-tour.js?v=20261014-advantage-disadvantage" defer></script>
-  <script src="quick-build.js?v=20261020-class-option-memory" defer></script>
+  <script src="onboarding-tour.js?v=20261020-share-identity-lock" defer></script>
+  <script src="quick-build.js?v=20261020-share-identity-lock" defer></script>
   <script src="spellbook.js?v=20261014-picker-performance" defer></script>
   <script src="spell-management.js?v=20261020-class-option-memory" defer></script>
   <script src="class-option-memory.js?v=20261020-class-option-memory" defer></script>
@@ -244,6 +244,7 @@
 <div id="share-mode-tip" class="share-mode-tip is-hidden" role="status">
   <strong>分享模式｜修改不會自動儲存</strong>
   <span>可修改後輸出 PDF，或匯出 JSON 保存。此模式不提供再次分享與匯入 JSON。</span>
+  <span>分享模式：職業、等級、種族、背景不可更改。</span>
 </div>
 
 <section id="tabletop-mode" class="tabletop-mode" aria-labelledby="tabletop-title" hidden>
@@ -2043,6 +2044,10 @@ const ADVANCED_CLASS_FEATURE_AVAILABILITY = Object.freeze({
 });
 let characterChoiceWarningsHidden = false;
 
+function isCharacterCoreSelectionComplete() {
+  return ["class", "level", "background", "race"].every(id => Boolean(document.getElementById(id)?.value));
+}
+
 function updateClassFeatureChoiceReminder() {
   syncManualSpellSourceControls();
   syncMissionCantripChoices();
@@ -2050,7 +2055,8 @@ function updateClassFeatureChoiceReminder() {
   const reminder = document.getElementById("class-feature-choice-reminder");
   if (!reminder) return;
 
-  const issues = getClassFeatureChoiceIssues();
+  // 職業缺項提醒等職業、等級、背景與種族都選好才顯示。
+  const issues = isCharacterCoreSelectionComplete() ? getClassFeatureChoiceIssues() : [];
   const warningToggle = document.getElementById("character-choice-warning-toggle");
   if (warningToggle) warningToggle.hidden = characterChoiceWarningsHidden || issues.length === 0;
   reminder.replaceChildren();
@@ -3282,8 +3288,9 @@ function scheduleClassFeatureChoicePrompt(event) {
   const trigger = event.currentTarget;
   classFeaturePromptTimer = setTimeout(() => {
     classFeaturePromptTimer = null;
+    // 與職業缺項提醒相同：職業、等級、背景與種族都選好才自動跳出。
     if (classFeaturePromptDisabled || window.dndStorage.getItem(CLASS_FEATURE_PROMPT_DISABLED_KEY) === "true"
-        || autosaveSuspended || autosaveClearing || document.querySelector(".app-dialog")) return;
+        || autosaveSuspended || autosaveClearing || document.querySelector(".app-dialog") || !isCharacterCoreSelectionComplete()) return;
     const missingSections = getMissingClassFeatureChoiceSections();
     if (missingSections.size) openClassFeatureChoicePrompt(missingSections, trigger);
   }, 120);
@@ -3979,7 +3986,7 @@ function syncMissionCantripChoices() {
 
 // 4 級透過施法／契約魔法額外學會的職業戲法屬於職業戲法共用上限。
 // 選單只編輯自動管理的準備清單，並以標記辨識；舊資料戲法已選滿時視為已選。
-// 例外：只需職業與等級即可預選，不等背景／種族開放「準備法術」。
+// 例外：只需職業與等級即可預選與查看，不等背景／種族開放「準備法術」；未選提示仍需四項都選好。
 const LEVEL_UP_CANTRIP_LEVEL = 4;
 const LEVEL_UP_CANTRIP_TAG = "class-level-4";
 const LEVEL_UP_CANTRIP_SELECT_ID = "class-level-up-cantrip";
@@ -9364,6 +9371,29 @@ async function createShortShareUrl(hash, signal) {
   }
 }
 
+// Quick build and guided tours rewrite the identity selects, so share mode
+// closes their entries instead of relying on the locked controls.
+function closeShareModeGuideEntries() {
+  ["help-quick-build-btn", "legal-onboarding-btn", "restart-onboarding-btn", "first-table-tour-btn"].forEach(id => {
+    const control = document.getElementById(id);
+    if (!control) return;
+    control.disabled = true;
+    control.title = "分享模式不提供此功能";
+  });
+}
+
+// Only a successfully decoded share is locked; state collection ignores disabled.
+function lockShareModeIdentitySelects() {
+  ["class", "level", "race", "background"].forEach(id => {
+    const select = document.getElementById(id);
+    if (!select) return;
+    select.disabled = true;
+    select.title = "分享模式：職業、等級、種族、背景不可更改";
+  });
+  const customBackgroundEdit = document.getElementById("custom-background-edit");
+  if (customBackgroundEdit) customBackgroundEdit.textContent = "查看背景";
+}
+
 let shareDialogPending = false;
 let exitShareDialogPending = false;
 async function exitShareMode(event) {
@@ -9725,8 +9755,9 @@ function getClassFeatureChoiceIssues() {
     pushGeneral({ message: `${label}尚未選擇。`, tab: "basic", selector: `#${id}`, focusSelector: `#${id}` });
   });
 
+  // 下拉選單只需職業與等級即可預選；未選提示仍等四項角色選擇都完成才出現。
   const levelUpCantrip = manualSpells ? null : getLevelUpCantripState();
-  if (levelUpCantrip && !levelUpCantrip.entry) pushGeneral({
+  if (levelUpCantrip && !levelUpCantrip.entry && isCharacterCoreSelectionComplete()) pushGeneral({
     message: `${levelUpCantrip.classLabel} ${LEVEL_UP_CANTRIP_LEVEL} 級額外戲法尚未選擇。`,
     tab: "basic",
     selector: `#${LEVEL_UP_CANTRIP_SELECT_ID}`,
@@ -10969,7 +11000,9 @@ window.addEventListener("DOMContentLoaded", async function() {
     control.disabled = true;
     control.title = "分享模式不提供此功能";
   });
+  closeShareModeGuideEntries();
   applyStateObject(sharedData);
+  lockShareModeIdentitySelects();
   window.twAnalytics?.track?.("shared_character_opened");
   const shareModeTip = document.getElementById("share-mode-tip");
   if (shareModeTip) shareModeTip.style.display = "block";
@@ -10981,6 +11014,7 @@ window.addEventListener("DOMContentLoaded", async function() {
   if (hasShareHash) {
     SHARE_MODE = true;
     window.SHARE_MODE = true;
+    closeShareModeGuideEntries();
     await window.AppDialog.showMessage({
       title: "分享連結讀取失敗",
       message: "網址可能過長、遭到截斷、瀏覽器不支援壓縮分享，或資料已損壞。為避免顯示錯誤角色，本頁不會讀取本機角色紀錄。",
@@ -11324,9 +11358,9 @@ window.addEventListener("DOMContentLoaded", async function() {
     <div class="legal-share-copy" hidden>
       <h3 class="legal-modal-title">你正在查看分享的角色卡</h3>
       <p>你原本的角色存檔仍然保留，<strong>不會被這份分享角色卡覆蓋</strong>。</p>
-      <p>你可以修改這份角色卡的內容，也可以將目前內容輸出為 PDF。</p>
+      <p>你可以修改這份角色卡的其他內容，也可以將目前內容輸出為 PDF；<strong>職業、等級、種族、背景不可更改</strong>。</p>
       <p><strong>修改不會自動儲存，關閉或重新整理頁面後就會消失。</strong><br>若要保存修改後的角色資料，供日後匯入並繼續編輯，請使用<strong>「匯出 JSON」</strong>。</p>
-      <p>注意：分享模式下，<strong>「分享角卡」與「匯入 JSON」按鈕將停用</strong>。</p>
+      <p>注意：分享模式下，<strong>「分享角卡」、「匯入 JSON」、快速創角與導覽將停用</strong>。</p>
       <a href="#legal-about-modal" class="legal-about-trigger">Legal &amp; About</a>
     </div>
     <div class="legal-modal-copy">

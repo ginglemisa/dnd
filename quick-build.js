@@ -2798,6 +2798,7 @@
   }
 
   async function importDraftToMobileCard(event) {
+    if (window.SHARE_MODE === true) return;
     const confirmed = await window.AppDialog.requestDecision({
       title: "匯入至角色卡",
       message: "這會刪除目前手機角色卡中的所有角色資料，且無法復原。",
@@ -2818,13 +2819,6 @@
         confirmLabel: "關閉"
       });
       return;
-    }
-    if (typeof SHARE_MODE !== "undefined") {
-      SHARE_MODE = false;
-      window.SHARE_MODE = false;
-    }
-    if (location.hash.startsWith("#s=") || location.hash.startsWith("#s2=")) {
-      history.replaceState(null, "", `${location.pathname}${location.search}`);
     }
     let completed = false;
     try {
@@ -3922,6 +3916,8 @@
   }
 
   function openWizard() {
+    // Share mode keeps the shared identity and never imports a draft over it.
+    if (window.SHARE_MODE === true) return;
     window.twAnalytics?.track?.("quick_build_start");
     const modal = ensureWizard();
     const wizardShell = modal.querySelector(".quick-build-shell");

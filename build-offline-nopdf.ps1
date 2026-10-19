@@ -432,8 +432,8 @@ $html = $html.Replace(
   '可修改後輸出 PDF，或匯出 JSON 保存。此模式不提供再次分享與匯入 JSON。',
   '可修改後匯出 JSON 保存。此模式不提供再次分享與匯入 JSON。'
 ).Replace(
-  '你可以修改這份角色卡的內容，也可以將目前內容輸出為 PDF。',
-  '你可以修改這份角色卡的內容，並使用「匯出 JSON」保存。此離線版不提供 PDF 匯出。'
+  '你可以修改這份角色卡的其他內容，也可以將目前內容輸出為 PDF；',
+  '你可以修改這份角色卡的其他內容，並使用「匯出 JSON」保存（此離線版不提供 PDF 匯出）；'
 ).Replace(
   'window.AppDialog.notify("分享網址已複製。", { tone: "success" });',
   'window.AppDialog.notify("分享網址已複製，接收者需連網開啟 twd20.com；完全離線交換請使用 JSON。", { tone: "success" });'

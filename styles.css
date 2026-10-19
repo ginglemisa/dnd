@@ -2944,8 +2944,19 @@ details > summary::-webkit-details-marker,
   transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
 }
 
+/* 停用下拉（含分享模式鎖定的職業、等級、種族、背景）：四種外觀皆以灰底區分，值維持 4.5:1 以上可讀；暗色見檔尾。 */
+select:disabled {
+  opacity: 1;
+  cursor: not-allowed;
+}
+
 :where(html:not([data-ui-theme="warm"]):not([data-theme="dark"])) select:disabled {
   background: #dfe4ec;
+  color: var(--text-body);
+}
+
+:where(html[data-ui-theme="warm"]:not([data-theme="dark"])) select:disabled {
+  color: var(--text-body);
 }
 
 /* 基本資料四個下拉改為一般方角樣式 */
@@ -17829,12 +17840,16 @@ html[data-theme="dark"] .pdf-export-flow-modal__card .pdf-export-format-note {
 }
 
 html[data-theme="dark"] .point-buy-row--bonus-locked,
-html[data-theme="dark"] select:disabled,
 html[data-theme="dark"] input:disabled,
 html[data-theme="dark"] textarea:disabled,
 html[data-theme="dark"] button:disabled {
   background: var(--disabled-bg);
   color: var(--disabled-text);
+}
+
+html[data-theme="dark"] select:disabled {
+  background: var(--disabled-bg);
+  color: var(--text-muted);
 }
 
 html[data-theme="dark"] #tour-tooltip {
