@@ -2147,17 +2147,17 @@ const classFeatures = {
   <p>選擇一個遊俠子職，並隨等級提升獲得子職能力。基本規則僅提供「獵人」。</p>
 </section>
 
-<section class="ranger-feature class-feature-section" data-feature-level="3">
+<section class="ranger-feature class-feature-section" data-feature-level="3" data-action-id="ranger-hunters-lore">
   <h3>等級 3：獵人學識（獵人子職）</h3>
   <p>目標被你的「獵人印記」標記時，你會知道它的傷害免疫、抗性與易傷。</p>
 </section>
 
-<section class="ranger-feature class-feature-section" data-feature-level="3" data-rest-change="either">
+<section class="ranger-feature class-feature-section" data-feature-level="3" data-rest-change="either" data-action-id="ranger-hunters-prey">
   <h3>等級 3：狩獵目標（獵人子職）</h3>
   <p>從下列選項中選擇 1 項，<strong>每次短休或長休後</strong>可改選：</p>
   <ul class="class-rule-list">
-    <li><label><input type="checkbox" id="ranger-hunters-prey-colossus-slayer" data-feature-choice-group="ranger-hunters-prey"> 斬殺者</label>：<strong>每回合 1 次</strong>，你用武器命中先前已失去生命值的目標時，額外造成 1d8 傷害。</li>
-    <li><label><input type="checkbox" id="ranger-hunters-prey-horde-breaker" data-feature-choice-group="ranger-hunters-prey"> 破陣者</label>：<strong>每回合 1 次</strong>，你用武器攻擊時，可用同一把武器再攻擊 5 呎內另一個本回合尚未被你攻擊過的目標。</li>
+    <li data-action-id="ranger-colossus-slayer"><label><input type="checkbox" id="ranger-hunters-prey-colossus-slayer" data-feature-choice-group="ranger-hunters-prey"> 斬殺者</label><span data-tabletop-value="ranger-colossus-slayer-name">：</span><strong>每回合 1 次</strong>，你用武器命中先前已失去生命值的目標時，額外造成 1d8 傷害。</li>
+    <li data-action-id="ranger-horde-breaker"><label><input type="checkbox" id="ranger-hunters-prey-horde-breaker" data-feature-choice-group="ranger-hunters-prey"> 破陣者</label><span data-tabletop-value="ranger-horde-breaker-name">：</span><strong>每回合 1 次</strong>，你用武器攻擊時，可用同一把武器再攻擊 5 呎內另一個本回合尚未被你攻擊過的目標。</li>
   </ul>
 </section>
 
@@ -2166,13 +2166,13 @@ const classFeatures = {
   <p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p>
 </section>
 
-<section class="ranger-feature class-feature-section" data-feature-level="5">
+<section class="ranger-feature class-feature-section" data-feature-level="5" data-action-id="ranger-extra-attack">
   <h3>等級 5：額外攻擊</h3>
   <p>你在自己的回合執行<strong>攻擊動作</strong>時，可以攻擊 2 次。</p>
 </section>
 <section class="ranger-feature class-feature-section" data-feature-level="5"><p><strong>宿敵補充：</strong>遊俠達到 5 級時，宿敵的免費施放次數提升為 3 次，詳見「遊俠特性」表。</p></section>
 
-<section class="ranger-feature class-feature-section" data-feature-level="6">
+<section class="ranger-feature class-feature-section" data-feature-level="6" data-action-id="ranger-roving">
   <h3>等級 6：越野</h3>
   <p>你獲得新的移動方式，並提升步行速度。</p>
   <ul class="class-rule-list">
@@ -2181,10 +2181,10 @@ const classFeatures = {
   </ul>
 </section>
 
-<section class="ranger-feature class-feature-section" data-feature-level="7" data-rest-change="either">
+<section class="ranger-feature class-feature-section" data-feature-level="7" data-rest-change="either" data-action-id="ranger-defensive-tactics">
 <h3>等級 7：防守戰術（獵人子職）</h3>
 <p>從下列選項中選擇 1 項，<strong>每次短休或長休後</strong>可改選：</p>
-<div class="druid-mission-options"><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="ranger-defensive-tactics-escape-the-horde" data-feature-choice-group="ranger-defensive-tactics"> 衝出重圍</label>：以你為目標的藉機攻擊具有<strong>劣勢</strong>。</div></div><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="ranger-defensive-tactics-multiattack-defense" data-feature-choice-group="ranger-defensive-tactics"> 多重防禦</label>：一個生物的攻擊檢定命中你時，該生物本回合內對你發動的後續攻擊檢定都具有<strong>劣勢</strong>。</div></div></div>
+<div class="druid-mission-options"><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="ranger-defensive-tactics-escape-the-horde" data-feature-choice-group="ranger-defensive-tactics"> 衝出重圍</label><span data-tabletop-value="ranger-escape-the-horde-name">：</span>以你為目標的藉機攻擊具有<strong>劣勢</strong>。</div></div><div class="druid-mission-option"><div class="druid-mission-option__heading"><label><input type="checkbox" id="ranger-defensive-tactics-multiattack-defense" data-feature-choice-group="ranger-defensive-tactics"> 多重防禦</label><span data-tabletop-value="ranger-multiattack-defense-name">：</span>一個生物的攻擊檢定命中你時，該生物本回合內對你發動的後續攻擊檢定都具有<strong>劣勢</strong>。</div></div></div>
 </section>
 
 <section class="ranger-feature class-feature-section" data-feature-level="8">
@@ -2582,7 +2582,7 @@ const classFeatures = {
   </ul>
 </section>
 
-<section class="sorcerer-feature class-feature-section" data-feature-level="1">
+<section class="sorcerer-feature class-feature-section" data-feature-level="1" data-action-id="sorcerer-innate-sorcery">
   <h3>等級 1：天生術法</h3>
   <p>以<strong>附贈動作</strong>啟動體內魔力，持續 1 分鐘。期間獲得以下效果：</p>
   <ul class="class-rule-list">
@@ -2592,11 +2592,11 @@ const classFeatures = {
   <p><strong>使用次數：</strong>2 次，長休後全部恢復。</p>
 </section>
 
-<section class="sorcerer-feature class-feature-section" data-feature-level="2">
+<section class="sorcerer-feature class-feature-section" data-feature-level="2" data-action-id="sorcerer-font-of-magic">
   <h3>等級 2：魔力泉湧</h3>
   <p>你可消耗術法點啟動魔法效果，也能在術法點與法術位之間轉換。</p>
   <ul class="class-rule-list">
-    <li><strong>術法點：</strong>起始為 2 點，之後依「術士特性」表增加。持有點數不能超過目前等級上限，長休後全部恢復。</li>
+    <li><strong>術法點：</strong><span data-tabletop-value="sorcerer-sorcery-points">起始為 2 點，之後依「術士特性」表增加</span>。持有點數不能超過目前等級上限，長休後全部恢復。</li>
     <li><strong>法術位轉為術法點：</strong>消耗 1 個法術位，獲得等同該法術位環階的術法點，<strong>無需動作</strong>。</li>
     <li><strong>生成法術位：</strong>以<strong>附贈動作</strong>消耗術法點，依下表生成法術位。不能生成 6 環以上法術位，生成的法術位會在長休後消散。</li>
   </ul>
@@ -2635,6 +2635,7 @@ const classFeatures = {
   </tbody>
 </table>
 </div>
+    <p data-tabletop-only hidden><span data-tabletop-value="sorcerer-slot-creation-costs">見上表</span></p>
   </div>
 </section>
 
@@ -2943,7 +2944,7 @@ const classFeatures = {
 <section class="warlock-feature class-feature-section" data-feature-level="3"><h3>等級 3：邪魔法術（邪魔子職）</h3><p>達到下列契術師等級後，你始終準備對應法術：</p><ul class="class-rule-list"><li><strong>3 級：</strong>燃燒之手、命令術、灼熱射線、暗示術。</li><li><strong>5 級：</strong>火球術、臭雲術。</li><li><strong>7 級：</strong>火焰護盾、火牆術。</li></ul></section>
 <section class="warlock-feature class-feature-section" data-feature-level="4"><h3>等級 4：屬性值提升</h3><p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p><p data-after-feat-choice><strong>契約魔法補充：</strong>契術師達到 4 級時，你也會透過「契約魔法」特性額外學會 1 個契術師戲法。</p></section>
 <section class="warlock-feature class-feature-section" data-feature-level="5"><p><strong>魔能祈喚補充：</strong>契術師達到 5 級時，可選擇的魔能祈喚數量增加至 5 個，詳見「契術師特性」表。</p></section>
-<section class="warlock-feature class-feature-section" data-feature-level="6"><h3>等級 6：黑暗強運（邪魔子職）</h3><p>進行屬性檢定或豁免檢定時，可在<strong>看到擲骰結果後、結果生效前</strong>，將 1d10 加到結果中。</p><ul class="class-rule-list"><li><strong>使用次數：</strong>等同魅力調整值（至少 1 次），每次擲骰限用 1 次。</li><li><strong>恢復時機：</strong>長休後恢復所有已消耗的使用次數。</li></ul></section>
+<section class="warlock-feature class-feature-section" data-feature-level="6" data-action-id="warlock-dark-ones-own-luck"><h3>等級 6：黑暗強運（邪魔子職）</h3><p>進行屬性檢定或豁免檢定時，可在<strong>看到擲骰結果後、結果生效前</strong>，將 1d10 加到結果中。</p><ul class="class-rule-list"><li><strong>使用次數：</strong>等同魅力調整值（至少 1 次），每次擲骰限用 1 次。</li><li><strong>恢復時機：</strong>長休後恢復所有已消耗的使用次數。</li></ul></section>
 <section class="warlock-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p></section>
 <section class="warlock-feature class-feature-section"><h3>魔能祈喚選項</h3><p>以下依先決條件與功能分組說明。</p>
   <div class="class-rule-subsection"><h4>刃之魔契</h4><p>你可用附贈動作：</p><ul class="class-rule-list"><li>召喚一把簡易/軍用近戰武器，或</li><li>與你觸碰的魔法武器建立聯結</li></ul><p>（武器若已被他人聯結或同調，則聯結失敗）</p><p>聯結期間：</p><ul class="class-rule-list"><li>你熟練該武器。</li><li>你可把它當施法法器。</li></ul><p>聯結武器可用魅力計算命中與傷害加值。</p><p>傷害可改為黯蝕,心靈或光耀。</p><p>聯結結束條件：</p><ul class="class-rule-list"><li>你再次使用本特性的附贈動作。</li><li>武器離你超過 5 呎並持續 1 分鐘。</li><li>你死亡。</li></ul><p>若是召喚武器，聯結結束時武器會一併消失。</p></div>
@@ -2951,7 +2952,7 @@ const classFeatures = {
   <div class="class-rule-subsection"><h4>書之魔契</h4><p>你短休或長休結束時可召喚<strong>影之書</strong>。</p><p>只有你能使用其中魔法。</p><p>消失條件：再召一本；或你死亡。</p><h4>戲法與儀式（持有書時）</h4><ul class="class-rule-list"><li>選 3 個戲法與 2 個儀式一環法術。</li><li>可選任一職業法術。</li><li>等同你已準備，且視為契術師法術。</li></ul><p>你可用這本書作為施法法器。</p></div>
   <div class="class-rule-subsection"><h4>幽影護甲</h4><p>你可隨意施展法師護甲，不耗法術位。</p></div><div class="class-rule-subsection"><h4>魔能意志</h4><p>你進行維持專注的體質豁免時具有優勢。</p></div><div class="class-rule-subsection"><h4>邪魔活力（先決條件：契術師等級 2+）</h4><p>你可隨意施展虛假生命且不耗法術位；</p><p>不擲臨時生命骰，視為擲滿。</p></div><div class="class-rule-subsection"><h4>千面之臉（先決條件：契術師等級 2+）</h4><p>你可隨意施展易容術且不耗法術位。</p></div><div class="class-rule-subsection"><h4>幻象迷蹤（先決條件：契術師等級 2+）</h4><p>你可隨意施展無聲幻影且不耗法術位。</p></div><div class="class-rule-subsection"><h4>超凡跳躍（先決條件：契術師等級 2+）</h4><p>你可隨意施展跳躍術且不耗法術位。</p></div><div class="class-rule-subsection"><h4>魔鬼視界（先決條件：契術師等級 2+）</h4><p>可在 120 呎內的魔法黑暗,非魔法黑暗與微光中正常視物。</p></div>
   <div class="class-rule-subsection"><h4>原初之一教習（先決條件：契術師等級 2+）</h4><p>你獲得 1 個起源專長。</p><hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;"><p>可重複：可多次選此祈喚，但每次必須選不同的起源專長。</p></div><div class="class-rule-subsection"><h4>苦痛魔爆（先決條件：契術師等級 2+，已知可造成傷害的契術師戲法）</h4><p>選 1 個你已知,可造成傷害的契術師戲法；你可將魅力調整值加到該戲法的傷害骰。</p><hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;"><p>可重複：可多次選此祈喚，但每次要選不同戲法。</p></div><div class="class-rule-subsection"><h4>魔能長槍（先決條件：契術師等級 2+，已知可造成傷害的契術師戲法）</h4><p>選 1 個你已知,射程至少 10 呎且可造成傷害的契術師戲法。施放時，該法術射程額外增加「契術師等級 × 30 呎」。</p><hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;"><p>可重複：可多次選此祈喚，但每次要選不同戲法。</p></div><div class="class-rule-subsection"><h4>斥力魔爆（先決條件：契術師等級 2+，通過攻擊檢定造成傷害的契術師戲法）</h4><p>選 1 個你已知,需要攻擊檢定的契術師戲法。當你用該戲法命中大型或更小生物時，可將其往遠離你的方向推開 10 呎。</p><hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;"><p>可重複：可多次選此祈喚，但每次要選不同戲法。</p></div>
-  <div class="class-rule-subsection"><h4>星移步法（先決條件：契術師等級 5+）</h4><p>你可隨意對自己施展浮空術，且不耗法術位。</p></div><div class="class-rule-subsection"><h4>萬形之主（先決條件：契術師等級 5+）</h4><p>你可隨意施展變造自身，且不耗法術位。</p></div><div class="class-rule-subsection"><h4>融身入影（先決條件：契術師等級 5+）</h4><p>當你在微光或黑暗中時，可隨意對自己施展隱形術，且不耗法術位。</p></div><div class="class-rule-subsection"><h4>深海饋贈（先決條件：契術師等級 5+）</h4><p>你可在水中呼吸，並獲得等同自身速度的游泳速度。</p><p>你也可不耗法術位施展 1 次水下呼吸，此用法在長休後恢復。</p></div><div class="class-rule-subsection"><h4>共視感官（先決條件：契術師等級 5+）</h4><p>你可用附贈動作觸碰 1 名自願生物，建立感官連結至你下回合結束。只要你們在同一位面，你可在後續回合再用附贈動作延長連結到下回合結束；未延長則連結終止。</p><p>連結期間，你可獲得該生物所有特殊感官；若你們距離在 60 呎內，你可視同身在該生物位置施法。</p></div><div class="class-rule-subsection"><h4>魔能斬擊（先決條件：契術師等級 5+,刃之魔契祈喚）</h4><p>每回合一次，當你用契約武器命中生物時，可消耗 1 個契術師法術位，造成額外力場傷害：1d8＋該法術位每環階再加 1d8，並可使大型或更小目標倒地。</p></div><div class="class-rule-subsection"><h4>饑渴魔刃（先決條件：契術師等級 5+,刃之魔契祈喚）</h4><p>你在使用契約武器時獲得額外攻擊：在你回合以該武器執行攻擊動作時，可攻擊 2 次而非 1 次。</p></div><div class="class-rule-subsection"><h4>鏈主賦能（先決條件：契術師等級 5+,鏈之魔契祈喚）</h4><p>你施展獲得魔寵時，可對魔寵灌注魔能，獲得以下增益：</p><ul class="class-rule-list"><li>飛行或游泳：魔寵獲得 40 呎飛行或游泳速度（擇一）。</li><li>快速攻擊：你可用附贈動作命令魔寵執行攻擊動作。</li><li>傷害轉換：魔寵造成鈍擊／穿刺／揮砍傷害時，你可改為黯蝕或光耀傷害。</li><li>豁免：若魔寵要求目標做豁免，使用你的法術豁免 DC。</li><li>抗性：當魔寵受傷時，你可用反應讓該次傷害有抗性。</li></ul></div>
+  <div class="class-rule-subsection"><h4>星移步法（先決條件：契術師等級 5+）</h4><p>你可隨意對自己施展浮空術，且不耗法術位。</p></div><div class="class-rule-subsection"><h4>萬形之主（先決條件：契術師等級 5+）</h4><p>你可隨意施展變造自身，且不耗法術位。</p></div><div class="class-rule-subsection"><h4>融身入影（先決條件：契術師等級 5+）</h4><p>當你在微光或黑暗中時，可隨意對自己施展隱形術，且不耗法術位。</p></div><div class="class-rule-subsection"><h4>深海饋贈（先決條件：契術師等級 5+）</h4><p>你可在水中呼吸，並獲得等同自身速度的游泳速度。</p><p>你也可不耗法術位施展 1 次水下呼吸，此用法在長休後恢復。</p></div><div class="class-rule-subsection"><h4>共視感官（先決條件：契術師等級 5+）</h4><p>你可用附贈動作觸碰 1 名自願生物，建立感官連結至你下回合結束。只要你們在同一位面，你可在後續回合再用附贈動作延長連結到下回合結束；未延長則連結終止。</p><p>連結期間，你可獲得該生物所有特殊感官；若你們距離在 60 呎內，你可視同身在該生物位置施法。</p></div><div class="class-rule-subsection" data-action-id="warlock-eldritch-smite"><h4>魔能斬擊（先決條件：契術師等級 5+,刃之魔契祈喚）</h4><p>每回合一次，當你用契約武器命中生物時，可消耗 1 個契術師法術位，造成額外力場傷害：1d8＋該法術位每環階再加 1d8，並可使大型或更小目標倒地。</p></div><div class="class-rule-subsection" data-action-id="warlock-thirsting-blade"><h4>饑渴魔刃（先決條件：契術師等級 5+,刃之魔契祈喚）</h4><p>你在使用契約武器時獲得額外攻擊：在你回合以該武器執行攻擊動作時，可攻擊 2 次而非 1 次。</p></div><div class="class-rule-subsection"><h4>鏈主賦能（先決條件：契術師等級 5+,鏈之魔契祈喚）</h4><p>你施展獲得魔寵時，可對魔寵灌注魔能，獲得以下增益：</p><ul class="class-rule-list"><li>飛行或游泳：魔寵獲得 40 呎飛行或游泳速度（擇一）。</li><li>快速攻擊：你可用附贈動作命令魔寵執行攻擊動作。</li><li>傷害轉換：魔寵造成鈍擊／穿刺／揮砍傷害時，你可改為黯蝕或光耀傷害。</li><li>豁免：若魔寵要求目標做豁免，使用你的法術豁免 DC。</li><li>抗性：當魔寵受傷時，你可用反應讓該次傷害有抗性。</li></ul></div>
   <div class="class-rule-subsection"><h4>墳墓低語（先決條件：契術師等級7+）</h4><p>你可以隨意施展死者交談，且不消耗法術位。</p></div>
 </section>
 </div>
@@ -3139,10 +3140,10 @@ const classFeatures = {
 <section class="wizard-feature class-feature-section" data-feature-level="2"><h3>等級 2：學者</h3><p>從${skillTip("奧秘")}、${skillTip("歷史")}、${skillTip("調查")}、${skillTip("醫藥")}、${skillTip("自然")}、${skillTip("宗教")}中，選擇 1 個<strong>已熟練</strong>的技能，獲得專精。</p></section>
 <section class="wizard-feature class-feature-section" data-feature-level="3"><h3>等級 3：法師子職</h3><p>選擇一個法師子職，並隨等級提升獲得子職能力。基本規則僅提供「塑能師」。</p></section>
 <section class="wizard-feature class-feature-section" data-feature-level="3"><h3>等級 3：塑能學者（塑能師）</h3><p>選擇 2 個不高於 2 環的塑能系法師法術，免費加入法術書。</p><p>之後每次首次獲得更高環階的法術位時，可再免費加入 1 個不高於該環階的塑能系法師法術。</p></section>
-<section class="wizard-feature class-feature-section" data-feature-level="3"><h3>等級 3：強力戲法（塑能師）</h3><p>對生物施放傷害戲法時，即使<strong>攻擊失手或目標豁免成功</strong>，目標仍受到一半傷害，但不受該戲法的其他效果影響。</p></section>
+<section class="wizard-feature class-feature-section" data-feature-level="3" data-action-id="wizard-potent-cantrip"><h3>等級 3：強力戲法（塑能師）</h3><p>對生物施放傷害戲法時，即使<strong>攻擊失手或目標豁免成功</strong>，目標仍受到一半傷害，但不受該戲法的其他效果影響。</p></section>
 <section class="wizard-feature class-feature-section" data-feature-level="4"><h3>等級 4：屬性值提升</h3><p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p><p data-after-feat-choice><strong>施法補充：</strong>法師達到 4 級時，你也會透過「施法」特性額外學會 1 個法師戲法。</p></section>
-<section class="wizard-feature class-feature-section" data-feature-level="5"><h3>等級 5：記憶法術</h3><p>每次短休後，可研讀法術書，將 1 個透過「施法」準備的 1 環以上法師法術，換成書中另一個你能準備的 1 環以上法師法術。</p></section>
-<section class="wizard-feature class-feature-section" data-feature-level="6"><h3>等級 6：法術塑形（塑能師）</h3><p>施放會影響其他可見生物的塑能系法術時，可從這些生物中選擇最多<strong>「法術環階＋1」名</strong>。</p><p>這些生物對該法術的豁免自動成功，且不承受豁免成功時原本仍會受到的傷害。</p></section>
+<section class="wizard-feature class-feature-section" data-feature-level="5" data-action-id="wizard-memorize-spell"><h3>等級 5：記憶法術</h3><p>每次短休後，可研讀法術書，將 1 個透過「施法」準備的 1 環以上法師法術，換成書中另一個你能準備的 1 環以上法師法術。</p></section>
+<section class="wizard-feature class-feature-section" data-feature-level="6" data-action-id="wizard-sculpt-spells"><h3>等級 6：法術塑形（塑能師）</h3><p>施放會影響其他可見生物的塑能系法術時，可從這些生物中選擇最多<strong>「法術環階＋1」名</strong>。</p><p>這些生物對該法術的豁免自動成功，且不承受豁免成功時原本仍會受到的傷害。</p></section>
 <section class="wizard-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p></section></div>
 `
 };

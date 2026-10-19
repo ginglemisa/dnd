@@ -2298,7 +2298,7 @@ function getRogueReliableTalentEntry() {
     const signedBonus = bonus >= 0 ? `+${bonus}` : String(bonus);
     return {
       label: "元素親和",
-      detail: `施展${damageType}類型法術時，可 ${signedBonus} 點傷害。`
+      detail: `施放造成${damageType}傷害的法術時，可在其中一次傷害擲骰 ${signedBonus}。`
     };
   }
 
@@ -2414,7 +2414,7 @@ function getRogueReliableTalentEntry() {
       const level = Number(document.getElementById("level")?.value);
       if (level >= 6) entries.push({ label: "越野", detail: "你獲得等同於你速度的攀爬速度與游泳速度。未穿重甲時，你的速度增加 10 呎。" });
       if (level >= 7 && document.getElementById("ranger-defensive-tactics-escape-the-horde")?.checked) entries.push({ label: "衝出重圍", detail: "以你為目標的藉機攻擊具有劣勢。" });
-      if (level >= 7 && document.getElementById("ranger-defensive-tactics-multiattack-defense")?.checked) entries.push({ label: "多重防禦", detail: "一個生物攻擊命中過你之後，本回合內後續攻擊都帶劣勢。" });
+      if (level >= 7 && document.getElementById("ranger-defensive-tactics-multiattack-defense")?.checked) entries.push({ label: "多重防禦", detail: "一個生物的攻擊命中你後，該生物本回合內對你的後續攻擊檢定都具有劣勢。" });
     }
     const tacticalMind = getFighterTacticalMindEntry();
     if (tacticalMind) entries.unshift(tacticalMind);

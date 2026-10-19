@@ -216,27 +216,27 @@
       { id: "uncanny-dodge", mode: "reaction", level: 5, label: "等級 5：直覺閃避", key: "dynamic-reaction-class-5f9k5x", descriptionId: "rogue-uncanny-dodge" }
     ]),
     sorcerer: Object.freeze([
-      { id: "innate-sorcery", mode: "bonus", level: 1, label: "等級 1：天生術法", key: "dynamic-bonus-class-1lqwnvp", resourceKey: "sorcerer-innate-sorcery", description: "你體內的魔力可被短暫解放。作為附贈動作啟動後，持續 1 分鐘並獲得：\n\n- 你的術士法術豁免 DC +1。\n- 你的術士法術攻擊檢定具有優勢。\n\n使用次數：2 次；長休後全回復。" },
-      { id: "font-of-magic", mode: "bonus", level: 2, label: "魔力泉湧", key: "dynamic-bonus-class-i5lemn", description: "你可運用術法點來啟動魔法效果。\n起始術法點為 2 點；高等級時依「術士特性」表提升。\n你持有的術法點不可超過目前等級上限；長休後全回復。\n\n你可使用以下轉換：\n- 將法術位轉為術法點：消耗 1 個法術位，獲得等同該環階的術法點，無需動作。\n- 創造法術位：以附贈動作消耗術法點換成法術位，且不能創造 6 環以上法術位。\n\n消耗與最低術士等級如下：\n1 環法術位消耗 2 點術法點，最低術士等級 2\n2 環法術位消耗 3 點，最低術士等級 3\n3 環法術位消耗 5 點，最低術士等級 5\n4 環法術位消耗 6 點，最低術士等級 7\n\n以此特性創造的法術位會在長休後消散。" },
+      { id: "innate-sorcery", mode: "bonus", level: 1, label: "等級 1：天生術法", key: "dynamic-bonus-class-1lqwnvp", resourceKey: "sorcerer-innate-sorcery", descriptionId: "sorcerer-innate-sorcery" },
+      { id: "font-of-magic", mode: "bonus", level: 2, label: "魔力泉湧", key: "dynamic-bonus-class-i5lemn", descriptionId: "sorcerer-font-of-magic" },
       { id: "sorcery-incarnate", mode: "bonus", level: 7, label: "等級 7：術法化身", key: "dynamic-bonus-class-1lfxnv8", descriptionId: "sorcerer-sorcery-incarnate" }
     ]),
     ranger: Object.freeze([
-      { mode: "bonus", level: 3, label: "等級 3：獵人學識", description: "目標被你的「獵人印記」標記時，你會知道它的傷害免疫、抗性與易傷。", key: "dynamic-bonus-ranger-we5ttw", id: "hunters-lore" },
-      { mode: "action", level: 3, label: "等級 3：狩獵目標", description: "從下列擇一；每次短休或長休後可改選：\n\n- 斬殺者：每回合 1 次，你用武器命中且目標先前已失去生命值時，額外造成 1d8 傷害。\n- 破陣者：每回合 1 次，當你用武器攻擊時，可用同一把武器再攻擊 5 呎內另一個你本回合尚未攻擊過的目標。", key: "dynamic-action-ranger-vdr4tc", id: "hunters-prey" },
-      { mode: "action", level: 5, label: "等級 5：額外攻擊", description: "你在自己回合使用攻擊動作時，可以攻擊 2 次。", key: "dynamic-action-ranger-113ebtz", id: "extra-attack" },
-      { mode: "movement", level: 6, label: "等級 6：越野", description: "你獲得等同於你速度的攀爬速度與游泳速度。\n\n未穿重甲時，你的速度增加 10 呎。", key: "dynamic-movement-ranger-bulhou", id: "roving" },
-      { mode: "action", level: 7, label: "等級 7：防守戰術", description: "選擇並獲得下列一項。每當你完成短休或長休時，可以用另一項替換目前的選擇。\n\n- 衝出重圍：以你為目標的藉機攻擊具有劣勢。\n- 多重防禦：當一個生物的攻擊檢定命中你時，該生物在本回合內對你發動的所有後續攻擊檢定均具有劣勢。", key: "dynamic-action-ranger-p55ifk", id: "defensive-tactics" }
+      { mode: "bonus", level: 3, label: "等級 3：獵人學識", descriptionId: "ranger-hunters-lore", key: "dynamic-bonus-ranger-we5ttw", id: "hunters-lore" },
+      { mode: "action", level: 3, label: "等級 3：狩獵目標", descriptionId: "ranger-hunters-prey", key: "dynamic-action-ranger-vdr4tc", id: "hunters-prey" },
+      { mode: "action", level: 5, label: "等級 5：額外攻擊", descriptionId: "ranger-extra-attack", key: "dynamic-action-ranger-113ebtz", id: "extra-attack" },
+      { mode: "movement", level: 6, label: "等級 6：越野", descriptionId: "ranger-roving", key: "dynamic-movement-ranger-bulhou", id: "roving" },
+      { mode: "action", level: 7, label: "等級 7：防守戰術", descriptionId: "ranger-defensive-tactics", key: "dynamic-action-ranger-p55ifk", id: "defensive-tactics" }
     ]),
     warlock: Object.freeze([
       { id: "arcane-recovery", mode: "action", level: 2, label: "等級 2：秘法回流", key: "dynamic-action-warlock-curated-arcane-recovery", resourceKey: "warlock-magical-cunning", descriptionId: "warlock-magical-cunning" },
-      { id: "thirsting-blade", mode: "action", level: 5, invocation: "饑渴魔刃", label: "饑渴魔刃", description: "先決條件：契術師等級 5+,刃之魔契祈喚\n你在使用契約武器時獲得額外攻擊：在你回合以該武器執行攻擊動作時，可攻擊 2 次而非 1 次。", key: "dynamic-action-warlock-curated-thirsting-blade", requiresInvocation: "刃之魔契" },
-      { id: "eldritch-smite", mode: "action", level: 5, invocation: "魔能斬擊", label: "魔能斬擊", description: "先決條件：契術師等級 5+,刃之魔契祈喚\n每回合一次，當你用契約武器命中生物時，可消耗 1 個契術師法術位，造成額外力場傷害：1d8＋該法術位每環階再加 1d8，並可使大型或更小目標倒地。", key: "dynamic-action-warlock-curated-eldritch-smite", requiresInvocation: "刃之魔契" },
-      { id: "dark-ones-own-luck", mode: "action", level: 6, label: "等級 6：黑暗強運（邪魔子職）", description: "當你進行屬性檢定或豁免檢定時，可以使用該特性將1d10加到擲骰結果中。你可以在看到擲骰結果後、結果生效前使用該特性。\n\n你可以使用該特性的次數等同於你的魅力調整值（至少一次），但每次擲骰只能使用一次。完成長休時，你恢復所有已消耗的使用次數。", key: "dynamic-action-warlock-curated-dark-ones-own-luck", resourceKey: "warlock-dark-ones-own-luck" }
+      { id: "thirsting-blade", mode: "action", level: 5, invocation: "饑渴魔刃", label: "饑渴魔刃", descriptionId: "warlock-thirsting-blade", key: "dynamic-action-warlock-curated-thirsting-blade", requiresInvocation: "刃之魔契" },
+      { id: "eldritch-smite", mode: "action", level: 5, invocation: "魔能斬擊", label: "魔能斬擊", descriptionId: "warlock-eldritch-smite", key: "dynamic-action-warlock-curated-eldritch-smite", requiresInvocation: "刃之魔契" },
+      { id: "dark-ones-own-luck", mode: "action", level: 6, label: "等級 6：黑暗強運（邪魔子職）", descriptionId: "warlock-dark-ones-own-luck", key: "dynamic-action-warlock-curated-dark-ones-own-luck", resourceKey: "warlock-dark-ones-own-luck" }
     ]),
     wizard: Object.freeze([
-      { id: "potent-cantrip", mode: "action", level: 3, label: "等級 3：強力戲法（塑能子職）", description: "當你對生物施放會造成傷害的戲法時：\n\n- 若攻擊檢定失手，或\n- 目標在該戲法豁免成功，\n- 目標仍會受到一半傷害（若該戲法有傷害），但不受其他效果影響。", key: "dynamic-action-wizard-curated-potent-cantrip" },
-      { id: "memorize-spell", mode: "action", level: 5, label: "等級 5：記憶法術", description: "每次短休後，你可研讀法術書。\n\n你可把 1 個由「施法」特性準備中的 1+環法師法術，替換成法術書中的另一個 1+環法師法術。", key: "dynamic-action-wizard-curated-memorize-spell" },
-      { id: "sculpt-spells", mode: "action", level: 6, label: "等級 6：法術塑形（塑能子職）", description: "當你施展會影響你所能看見之其他生物的塑能系法術時，可以從中選擇1＋該法術環階名生物。所選生物對抗該法術的豁免檢定自動成功，且不會受到通常在豁免成功時仍會承受的一半傷害。", key: "dynamic-action-wizard-curated-sculpt-spells" }
+      { id: "potent-cantrip", mode: "action", level: 3, label: "等級 3：強力戲法（塑能子職）", descriptionId: "wizard-potent-cantrip", key: "dynamic-action-wizard-curated-potent-cantrip" },
+      { id: "memorize-spell", mode: "action", level: 5, label: "等級 5：記憶法術", descriptionId: "wizard-memorize-spell", key: "dynamic-action-wizard-curated-memorize-spell" },
+      { id: "sculpt-spells", mode: "action", level: 6, label: "等級 6：法術塑形（塑能子職）", descriptionId: "wizard-sculpt-spells", key: "dynamic-action-wizard-curated-sculpt-spells" }
     ])
   });
 
@@ -617,8 +617,32 @@ ${formatDiceWithModifier("1d10", dexterityModifier + level)}
     // 恢復方式跟隨 CharacterRules 的資源設定，與休息實際恢復一致；未升級時保留通用文字。
     "bard-inspiration-recovery": () => (getClassResourceSpec("bard", "bard-inspiration")?.recovery?.shortRest === "all"
       ? "短休或長休後全部恢復"
-      : null)
+      : null),
+    // sorcerer
+    "sorcerer-sorcery-points": () => {
+      const maximum = getClassResourceSpec("sorcerer", "sorcerer-sorcery-points")?.maximum;
+      return Number.isFinite(maximum) ? `目前上限 ${maximum} 點` : null;
+    },
+    // 跑團不顯示表格：在「生成法術位」小標題下，由同段落的表格組成一行。
+    "sorcerer-slot-creation-costs": () => {
+      const rows = getClassDescriptionSource("sorcerer").blocks.get("sorcerer-font-of-magic")?.querySelectorAll("table tbody tr") || [];
+      const costs = Array.from(rows, row => Array.from(row.cells, cell => cell.textContent.trim()))
+        .filter(cells => cells.length >= 3 && cells.every(Boolean))
+        .map(([slotLevel, points, minimumLevel]) => `${slotLevel} 環消耗 ${points} 點（術士等級 ${minimumLevel} 起）`);
+      return costs.length ? `${costs.join("；")}。` : null;
+    },
+    // ranger
+    // 選項名稱在職業詳情是勾選框標籤（跑團擷取時略過），跑團改顯示「名稱：」。
+    "ranger-colossus-slayer-name": () => getClassChoiceLabelPrefix("ranger", "ranger-hunters-prey-colossus-slayer"),
+    "ranger-horde-breaker-name": () => getClassChoiceLabelPrefix("ranger", "ranger-hunters-prey-horde-breaker"),
+    "ranger-escape-the-horde-name": () => getClassChoiceLabelPrefix("ranger", "ranger-defensive-tactics-escape-the-horde"),
+    "ranger-multiattack-defense-name": () => getClassChoiceLabelPrefix("ranger", "ranger-defensive-tactics-multiattack-defense")
   });
+
+  function getClassChoiceLabelPrefix(className, inputId) {
+    const label = getClassDescriptionSource(className).holder.querySelector(`#${inputId}`)?.closest("label")?.textContent.trim();
+    return label ? `${label}：` : null;
+  }
 
   function getClassResourceSpec(className, key) {
     const specs = globalScope.getCharacterResourceSpecs?.({ className, level: getCharacterLevel() }) || [];
@@ -667,7 +691,8 @@ ${formatDiceWithModifier("1d10", dexterityModifier + level)}
 
   // 由說明函式組合、未寫在 CLASS_ACTION_RULES 的段落，納入完整性檢查。
   const HELPER_DESCRIPTION_IDS = Object.freeze({
-    cleric: Object.freeze(["cleric-divine-spark", "cleric-turn-undead", "cleric-sear-undead"])
+    cleric: Object.freeze(["cleric-divine-spark", "cleric-turn-undead", "cleric-sear-undead"]),
+    ranger: Object.freeze(["ranger-colossus-slayer", "ranger-horde-breaker"])
   });
 
   const classDescriptionCache = new Map();
@@ -914,11 +939,11 @@ function getModeOptions(mode) {
         .replace("體質豁免", `體質豁免（DC ${dc}）`);
     }
     if (option.key === "dynamic-action-ranger-vdr4tc") {
-      description = document.getElementById("ranger-hunters-prey-colossus-slayer")?.checked
-        ? "斬殺者：每回合 1 次，你用武器命中 HP 不是全滿的敵人，額外造成 1d8 傷害。"
-        : document.getElementById("ranger-hunters-prey-horde-breaker")?.checked
-          ? "破陣者：每回合 1 次，你用武器攻擊時，可用同一把再攻擊 5 呎內另一個你本回合尚未攻擊過的目標。"
-          : "請在職業能力中選擇狩獵目標。";
+      // 跑團只顯示目前勾選的狩獵目標選項。
+      const choiceId = document.getElementById("ranger-hunters-prey-colossus-slayer")?.checked
+        ? "ranger-colossus-slayer"
+        : document.getElementById("ranger-hunters-prey-horde-breaker")?.checked ? "ranger-horde-breaker" : "";
+      description = (choiceId && getClassActionDescription("ranger", choiceId)) || "請在職業能力中選擇狩獵目標。";
     }
     return { ...option, description };
   }
