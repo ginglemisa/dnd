@@ -2550,6 +2550,9 @@
       else blankState[element.id] = element.defaultValue;
     });
     blankState.__spellManagement = { version: 2, manual: false, entries: [] };
+    // 重置角色卡時一併清掉各職業的法術與職業選項記憶；舊版遷移備份與提醒偏好保留。
+    window.SpellManagement?.clearMemories?.({ memoriesOnly: true });
+    window.ClassOptionMemory?.clearMemories?.();
     blankState["feats-area-count"] = 2;
     blankState["tool-proficiency-list-count"] = 1;
     blankState["tool-proficiency-0"] = "";

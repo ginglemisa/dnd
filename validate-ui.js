@@ -1352,7 +1352,10 @@ async function verifyClassFeatureChoicePrompt(browser, url) {
     const missingLevelChoices = () => page.evaluate(() => Array.from(getMissingClassFeatureChoiceSections())
       .flatMap(section => Array.from(section.querySelectorAll('[data-feat-choice] select[id*="-level-"]'), select => select.id)));
     for (const cls of classes) {
-      await page.evaluate(cls => applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] },
+      // The level 4 class cantrip only needs class and level, so pre-fill it to isolate feat completion.
+      await page.evaluate(cls => applyStateObject({ __spellManagement: { version: 2, manual: false,
+        entries: getClassCantripLimit(cls, 4) > getClassCantripLimit(cls, 3)
+          ? [{ spellId: getClassSpells(cls, "cantrips")[0].spellId, spellClass: cls, classFeatureCantrip: "class-level-4" }] : [] },
         class: cls, level: "3",
         [`feat-choice-${cls}-level-4`]: "",
         [`feat-choice-${cls}-level-6`]: "",
@@ -1381,7 +1384,10 @@ async function verifyClassFeatureChoicePrompt(browser, url) {
       assert.equal(await page.inputValue(`#feat-choice-${cls}-level-4`), "", "Escape leaves the earlier improvement available for later completion");
       if (cls === "fighter") assert.equal(await page.inputValue("#feat-choice-fighter-level-6"), "屬性值提升", "Escape preserves the completed fighter improvement");
     }
-    await page.evaluate(() => applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] }, class: "cleric", level: "7" }));
+    // A fresh character: earlier player level changes left cleric choices in the class option memory.
+    // The level 4 class cantrip is pre-filled so only feature and feat groups are prompted.
+    await page.evaluate(() => { ClassOptionMemory.clearMemories(); applyStateObject({ __spellManagement: { version: 2, manual: false,
+      entries: [{ spellId: getClassSpells("cleric", "cantrips").at(-1).spellId, spellClass: "cleric", classFeatureCantrip: "class-level-4" }] }, class: "cleric", level: "7" }); });
     await page.waitForTimeout(200);
     assert.equal(await modal.count(), 0, "JSON/restoration changes do not auto-open the prompt");
     await chooseAsPlayer("level", "8");
@@ -2151,6 +2157,196 @@ async function verifyAdventureJournal(browser, url) {
   } finally { await large.close(); }
 }
 
+// Other classes' choices live only in dnd.classOptionMemories.v1; the sheet, autosave, JSON and share keep the current class.
+async function verifyClassOptionMemory(browser, url) {
+  const page = await newUiPage(browser, { viewport: { width: 1280, height: 900 } });
+  const MEMORY = "dnd.classOptionMemories.v1";
+  const blank = { __spellManagement: { version: 2, manual: false, entries: [] }, background: "soldier", race: "human", dex: "14" };
+  const apply = state => page.evaluate(state => applyStateObject(state), { ...blank, ...state });
+  const memory = () => page.evaluate(key => JSON.parse(localStorage.getItem(key) || "null"), MEMORY);
+  const saved = () => page.evaluate(() => collectStateObject());
+  const set = (id, value) => page.evaluate(({ id, value }) => {
+    const control = document.getElementById(id);
+    if (control.type === "checkbox") control.checked = value;
+    else control.value = value;
+    control.dispatchEvent(new Event("change", { bubbles: true }));
+  }, { id, value });
+  const value = id => page.evaluate(id => {
+    const control = document.getElementById(id);
+    return control ? (control.type === "checkbox" ? control.checked : control.value) : null;
+  }, id);
+  // Native keyboard selection is a trusted player change, unlike selectOption.
+  const chooseAsPlayer = async (id, next) => {
+    await page.evaluate(() => showTab("basic"));
+    const key = await page.evaluate(({ id, next }) => {
+      const select = document.getElementById(id);
+      const index = Array.from(select.options).findIndex(option => option.value === next);
+      if (index < 0) throw new Error(`Missing option ${id}: ${next}`);
+      select.selectedIndex = index === 0 ? 1 : index - 1;
+      return index === 0 ? "ArrowUp" : "ArrowDown";
+    }, { id, next });
+    await page.locator(`#${id}`).focus();
+    await page.keyboard.press(key);
+    assert.equal(await page.locator(`#${id}`).inputValue(), next, "native keyboard commits the player choice");
+  };
+  try {
+    await page.addInitScript(() => { try { localStorage.setItem("dnd.classFeaturePromptDisabled.v1", "true"); } catch {} });
+    await page.goto(url);
+    await page.locator("#legal-close-btn").click();
+    await page.evaluate(() => window.onboardingTour?.finish?.());
+
+    // Feature checkboxes, mission cantrips, level feats and their Magic Initiate sub-options.
+    // Distinct cantrips: a source granting the same spell would make the level 4 choice unavailable.
+    const levelCantrip = "sacred-flame";
+    await apply({ class: "cleric", level: "4", "cleric-trickster": true, "cleric-trickster-cantrip": "thaumaturgy", "feat-choice-cleric-level-4": "魔法學徒",
+      __spellManagement: { version: 2, manual: false, entries: [{ spellId: levelCantrip, spellClass: "cleric", classFeatureCantrip: "class-level-4" }] } });
+    const magic = await page.evaluate(() => {
+      const prefix = "derived-feat-cleric-level-4-magic-initiate-";
+      const pick = (field, skip = []) => {
+        const select = document.getElementById(`${prefix}${field}`);
+        const option = Array.from(select.options).find(option => option.value && !option.disabled && !skip.includes(option.value));
+        select.value = option.value;
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+        return option.value;
+      };
+      const result = { class: pick("class") };
+      result.cantrip1 = pick("cantrip-1", ["sacred-flame", "thaumaturgy"]);
+      result.cantrip2 = pick("cantrip-2", ["sacred-flame", "thaumaturgy", result.cantrip1]);
+      result.level1 = pick("level-1");
+      return result;
+    });
+    await chooseAsPlayer("class", "wizard");
+    const wizardState = await saved();
+    assert.deepEqual(Object.keys(wizardState).filter(id => /^(?:cleric-|feat-choice-cleric|derived-feat-cleric)/u.test(id)), [], "other classes stay out of autosave/JSON");
+    assert.equal(JSON.stringify(await page.evaluate(() => collectShareState())).includes("cleric-trickster"), false, "share data keeps only the current class");
+    const clericMemory = (await memory()).classes.cleric;
+    assert.equal(clericMemory.level, 4);
+    assert.deepEqual([clericMemory.values["cleric-trickster"], clericMemory.values["cleric-trickster-cantrip"], clericMemory.values["feat-choice-cleric-level-4"]],
+      [true, "thaumaturgy", "魔法學徒"]);
+    await chooseAsPlayer("class", "cleric");
+    assert.deepEqual(await Promise.all(["cleric-trickster", "cleric-trickster-cantrip", "feat-choice-cleric-level-4", "derived-feat-cleric-level-4"].map(value)),
+      [true, "thaumaturgy", "魔法學徒", "魔法學徒"], "returning restores feature choices and derived feat rows");
+    assert.deepEqual(await Promise.all(["class", "cantrip-1", "cantrip-2", "level-1"].map(field => value(`derived-feat-cleric-level-4-magic-initiate-${field}`))),
+      [magic.class, magic.cantrip1, magic.cantrip2, magic.level1], "Magic Initiate sub-options restore after their feat");
+    assert.deepEqual(await page.evaluate(() => Array.from(getMissingClassFeatureChoiceSections())
+      .filter(section => section.querySelector("#cleric-trickster, #feat-choice-cleric-level-4")).map(section => section.querySelector("h3")?.textContent)),
+    [], "restored choices are not listed as missing");
+
+    // Lower levels keep higher-level choices in memory and raising the level restores them.
+    await chooseAsPlayer("level", "3");
+    assert.equal(await value("feat-choice-cleric-level-4"), null);
+    await chooseAsPlayer("level", "4");
+    assert.equal(await value("feat-choice-cleric-level-4"), "魔法學徒", "raising the level restores the retained feat");
+
+    // Leaving a class clears its residue outside the class detail; returning restores it.
+    await apply({ class: "druid", level: "3", "druid-land": "arid" });
+    await chooseAsPlayer("class", "wizard");
+    assert.equal((await saved())["druid-land"], "");
+    await chooseAsPlayer("class", "druid");
+    assert.equal(await value("druid-land"), "arid");
+
+    const tomeIndex = await page.evaluate(() => eldritchInvocations.findIndex(option => option.name === "書之魔契"));
+    const tome = { cantrips: ["light", "mage-hand", "guidance"], rituals: ["detect-magic", "identify"] };
+    await apply({ class: "warlock", level: "3", [`eldritch-invocation-${tomeIndex}-1`]: true, __pactTomeInvocationSelected: true, __pactTomeSpellSelection: tome });
+    await chooseAsPlayer("class", "wizard");
+    const afterWarlock = await saved();
+    assert.equal(Object.entries(afterWarlock).some(([id, checked]) => id.startsWith("eldritch-invocation-") && checked === true), false);
+    assert.deepEqual([afterWarlock.__pactTomeSpellSelection, afterWarlock.__pactTomeInvocationSelected], [{ cantrips: [], rituals: [] }, false]);
+    await chooseAsPlayer("class", "warlock");
+    assert.equal(await value(`eldritch-invocation-${tomeIndex}-1`), true);
+    assert.deepEqual(await page.evaluate(() => getPactTomeSpellSelection()), tome);
+
+    await apply({ class: "sorcerer", level: "3" });
+    const metamagic = await page.evaluate(() => Array.from(document.querySelectorAll("#metamagicOptions input[data-metamagic-name]")).slice(1, 3).map(input => {
+      input.checked = true; input.dispatchEvent(new Event("change", { bubbles: true })); return input.dataset.metamagicName;
+    }));
+    await chooseAsPlayer("class", "wizard");
+    await chooseAsPlayer("class", "sorcerer");
+    assert.deepEqual(await page.evaluate(() => getCheckedMetamagicNames()), metamagic, "metamagic restores by name");
+
+    await apply({ class: "paladin", level: "2", "paladin-blessed-warrior": true,
+      __classFeatureCantrips: { "class-paladin-blessed-warrior-cantrip-1": "guidance", "class-paladin-blessed-warrior-cantrip-2": "sacred-flame" } });
+    await chooseAsPlayer("class", "wizard");
+    assert.deepEqual(Object.values((await saved()).__classFeatureCantrips).filter(Boolean), []);
+    await chooseAsPlayer("class", "paladin");
+    assert.deepEqual(await page.evaluate(() => SpellManagement.collectClassFeatureCantrips()),
+      { "class-paladin-blessed-warrior-cantrip-1": "guidance", "class-paladin-blessed-warrior-cantrip-2": "sacred-flame" });
+
+    await apply({ class: "bard", level: "6", __bardMagicalDiscoverySelection: [{ classValue: "wizard", ring: "cantrips", spellId: "mage-hand" }, { classValue: "cleric", ring: "cantrips", spellId: "guidance" }] });
+    const instruments = await page.evaluate(() => [1, 2, 3].map(slot => {
+      const select = document.getElementById(`bard-instrument-${slot}`);
+      select.value = Array.from(select.options).filter(option => option.value && !option.disabled)[slot - 1].value;
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+      return select.value;
+    }));
+    await set("prof-隱匿", false);
+    await set("exp-隱匿", true);
+    await chooseAsPlayer("class", "fighter");
+    const afterBard = await saved();
+    assert.equal(afterBard.__bardMagicalDiscoverySelection.some(item => item.spellId), false, "magical discovery leaves non-bard data");
+    assert.equal(afterBard["exp-隱匿"], false);
+    // A tool chosen elsewhere meanwhile is never overwritten or duplicated.
+    const manualTool = await page.evaluate(tool => createToolProficiencyRow(tool).querySelector("select").id, instruments[0]);
+    await chooseAsPlayer("class", "bard");
+    assert.deepEqual(await Promise.all(["bard-instrument-1", "bard-instrument-2", "bard-instrument-3", manualTool].map(value)),
+      ["", instruments[1], instruments[2], instruments[0]], "class tools restore without duplicating other rows");
+    assert.deepEqual([await value("exp-隱匿"), await value("prof-隱匿")], [true, false], "expertise is added back");
+    assert.deepEqual(await page.evaluate(() => getBardMagicalDiscoverySelection().map(item => item.spellId)), ["mage-hand", "guidance"]);
+
+    // Extra languages are scoped per class instead of following a shared control ID.
+    await apply({ class: "rogue", level: "2" });
+    await set("language-extra-2", "elvish");
+    await chooseAsPlayer("class", "ranger");
+    assert.equal(await value("language-extra-2"), "", "ranger does not inherit the rogue language");
+    await chooseAsPlayer("class", "rogue");
+    assert.equal(await value("language-extra-2"), "elvish");
+
+    // Manual feat management neither remembers nor restores feat choices.
+    await page.evaluate(() => ClassOptionMemory.clearMemories());
+    await apply({ class: "fighter", level: "4", "manual-feat-management": true, __managedFeatRows: [], "feat-choice-fighter-level-4": "警覺" });
+    await chooseAsPlayer("class", "wizard");
+    assert.equal(Object.keys((await memory()).classes.fighter.values).some(id => /^(?:feat-choice-|derived-feat-)/u.test(id)), false);
+
+    // Loading never applies memory; legacy residue from another class moves into memory instead.
+    await page.evaluate(key => localStorage.removeItem(key), MEMORY);
+    await page.evaluate(() => { ClassOptionMemory.clearMemories(); });
+    await apply({ class: "wizard", level: "3", "druid-land": "polar" });
+    assert.equal(await value("druid-land"), "");
+    assert.equal((await memory()).classes.druid.values["druid-land"], "polar", "legacy residue is kept for its class");
+    await apply({ class: "druid", level: "3" });
+    assert.equal(await value("druid-land"), "", "loading data takes precedence over memory");
+
+    // Share mode neither reads nor writes memory.
+    const beforeShare = await memory();
+    await page.evaluate(() => { SHARE_MODE = true; window.SHARE_MODE = true; });
+    await chooseAsPlayer("class", "wizard");
+    await chooseAsPlayer("class", "druid");
+    assert.equal(await value("druid-land"), "");
+    await page.evaluate(() => { SHARE_MODE = false; window.SHARE_MODE = false; });
+    assert.deepEqual(await memory(), beforeShare, "share mode leaves memory untouched");
+
+    // Corrupt or hostile memory is ignored or sanitized without breaking class changes.
+    await page.evaluate(key => localStorage.setItem(key, JSON.stringify({ version: 1, classes: {
+      evil: { values: { x: true } }, druid: { level: 3, values: { "druid-land": "arid", "<img>": true, long: "x".repeat(201) }, lists: { expertise: [1, "隱匿"] } } } })), MEMORY);
+    await page.goto(url);
+    await page.waitForFunction(() => window.ClassOptionMemory);
+    assert.deepEqual(await page.evaluate(() => ClassOptionMemory.get("druid")), { level: 3, values: { "druid-land": "arid" }, lists: { expertise: ["隱匿"] } });
+    assert.equal(await page.evaluate(() => ClassOptionMemory.get("evil")), null);
+    await page.evaluate(key => localStorage.setItem(key, "{broken"), MEMORY);
+    await page.goto(url);
+    await page.waitForFunction(() => window.ClassOptionMemory);
+    assert.equal(await page.evaluate(() => ClassOptionMemory.get("druid")), null);
+    await chooseAsPlayer("class", "wizard");
+
+    // Clearing records removes the memory with the other character storage.
+    assert.equal(await page.evaluate(() => APP_STORAGE_KEYS.includes("dnd.classOptionMemories.v1")), true);
+    await page.evaluate(() => clearAppStateAndReload());
+    await page.waitForFunction(() => window.ClassOptionMemory);
+    assert.equal(await memory(), null);
+    console.log("Class option memory: class/level round trips, feats and Magic Initiate, residue cleanup, invocations/tome, metamagic, class cantrips, discovery, tools, expertise, languages, manual feats, legacy residue, share mode, sanitizing and clear passed.");
+  } finally { await page.close(); }
+}
+
 async function verifyCharacterDataSafety(browser, url) {
   const page = await newUiPage(browser);
   const sourceTag = '<img src="data:image/png,invalid" onerror="window.__unsafeCharacterScript=true">';
@@ -2434,7 +2630,7 @@ async function main() {
   try {
     browser = await chromium.launch({ headless: true, ...(process.env.DND_BROWSER_CHANNEL ? { channel: process.env.DND_BROWSER_CHANNEL } : {}) });
     const url = `http://127.0.0.1:${server.address().port}/index.html?analytics=owner`;
-    if (all || sections.has("--data-only")) { await verifyJsonImportTransaction(browser, url); await verifyCharacterDataSafety(browser, url); }
+    if (all || sections.has("--data-only")) { await verifyJsonImportTransaction(browser, url); await verifyCharacterDataSafety(browser, url); await verifyClassOptionMemory(browser, url); }
     if (all || sections.has("--appearance-only")) {
       const page = await newUiPage(browser, { viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });
       try { await verifyAppearanceAndLayout(browser, page, url); }

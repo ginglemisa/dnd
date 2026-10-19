@@ -72,6 +72,8 @@
       prepared: getPrepared?.(className, level) ?? 0, maxLevel };
   }
   const canManage = () => ["class", "level", "background", "race"].every(id => Boolean(field(id)?.value));
+  // 職業記憶只需職業與等級；準備法術等完整管理仍需 canManage。
+  const hasClassAndLevel = () => ["class", "level"].every(id => Boolean(field(id)?.value));
   function getAvailabilityReason(value, options = {}) {
     const entry = normalizeEntry(value);
     if (!entry) return "尚未選擇法術。";
@@ -120,7 +122,7 @@
     return success;
   }
   function rememberCurrent() {
-    if (inShareMode() || isRestoring() || !canManage()) return true;
+    if (inShareMode() || isRestoring() || !hasClassAndLevel()) return true;
     const next = clone(readMemories());
     if (manual) next.manual = { initialized: true, entries: clone(players), freeUses: currentFreeUses() };
     else if (CLASS_IDS.has(ownerClass)) next.classes[ownerClass] = {
@@ -433,9 +435,11 @@
     if (control) control.checked = manual;
     globalScope.syncManualSpellSourceControls?.();
   }
-  function clearMemories() {
+  function clearMemories(options = {}) {
     if (inShareMode()) return;
-    [MEMORY_KEY, NOTICE_KEY, "dnd.spellManagementBackup.v1"].forEach(key => globalScope.dndStorage?.removeItem(key));
+    // memoriesOnly 只清職業／手動法術記憶本體，保留舊版遷移備份與提醒偏好。
+    (options.memoriesOnly ? [MEMORY_KEY] : [MEMORY_KEY, NOTICE_KEY, "dnd.spellManagementBackup.v1"])
+      .forEach(key => globalScope.dndStorage?.removeItem(key));
     memories = { version: 1, classes: {}, manual: null };
   }
   function beginRestoreBatch() { batchDepth += 1; }

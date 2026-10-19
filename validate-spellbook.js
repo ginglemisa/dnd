@@ -30,6 +30,21 @@ async function selectCharacter(page, id, value) {
   } else await page.locator(`#${id}`).selectOption(value);
   await page.evaluate(() => showTab("spells"));
 }
+// Native keyboard selection is a trusted player change, unlike selectOption.
+async function chooseAsPlayer(page, id, value) {
+  await page.evaluate(() => showTab("basic"));
+  const key = await page.evaluate(({ id, value }) => {
+    const select = document.getElementById(id);
+    const index = Array.from(select.options).findIndex(option => option.value === value);
+    if (index < 0) throw new Error(`Missing option ${id}: ${value}`);
+    select.selectedIndex = index === 0 ? 1 : index - 1;
+    return index === 0 ? "ArrowUp" : "ArrowDown";
+  }, { id, value });
+  await page.locator(`#${id}`).focus();
+  await page.keyboard.press(key);
+  assert.equal(await page.locator(`#${id}`).inputValue(), value, "native keyboard commits the player choice");
+  await page.evaluate(() => showTab("spells"));
+}
 async function selectPicker(page, spellId, checked = true) {
   const dialog = pickerDialog(page);
   await dialog.getByRole("searchbox", { name: "搜尋法術名稱" }).fill(spellId.replaceAll("-", " "));
@@ -946,7 +961,21 @@ async function verifyLevelUpCantripChoice(page) {
   assert.deepEqual(await missing(), []);
   await page.evaluate(() => SpellManagement.setManual(false, { confirm: false }));
   assert.equal((await choice())?.hidden, false, "automatic management shows it again");
-  console.log("Level 4 cantrip: class detail dropdown, shared cantrip cap, reminder/jump, legacy full lists, manual mode and JSON/share restore passed.");
+
+  // The dropdown is the one exception to the background/race gate: class and level are enough.
+  await apply(page, modern({ class: "cleric", level: "4", background: "", race: "" }));
+  assert.equal(await page.evaluate(() => SpellManagement.canManage()), false, "prepared spells stay locked");
+  assert.equal(await page.locator("#class-level-up-cantrip").isDisabled(), false, "the level 4 cantrip can be chosen early");
+  assert.deepEqual(await missing(), ["牧師 4 級額外戲法尚未選擇。"], "the reminder only needs class and level");
+  await page.evaluate(() => { const select = document.getElementById("class-level-up-cantrip"); select.value = "light"; select.dispatchEvent(new Event("change", { bubbles: true })); });
+  assert.deepEqual(await playerIds(page), ["light"]);
+  assert.deepEqual(await missing(), []);
+  assert.equal(await page.evaluate(() => SpellManagement.addPlayerSpell("guidance")), false, "other prepared spell entry points keep the full gate");
+  await chooseAsPlayer(page, "class", "wizard");
+  await chooseAsPlayer(page, "class", "cleric");
+  assert.equal((await choice()).value, "light", "class memory keeps an early choice across class changes");
+  assert.deepEqual(await playerIds(page), ["light"]);
+  console.log("Level 4 cantrip: class detail dropdown, shared cantrip cap, reminder/jump, legacy full lists, manual mode, early choice before background/race and JSON/share restore passed.");
 }
 
 async function verifyWizardBookPicker(page) {
@@ -1297,7 +1326,8 @@ async function verifyLevelChangesAndMigration(page, url) {
   const completeMemory = await page.evaluate(key => JSON.parse(dndStorage.getItem(key)).classes.wizard, MEMORY_KEY);
   await selectCharacter(page, "level", "1");
   assert.deepEqual(await playerIds(page), ["fireball", "mage-armor"], "incomplete character keeps its list");
-  assert.deepEqual(await page.evaluate(key => JSON.parse(dndStorage.getItem(key)).classes.wizard, MEMORY_KEY), completeMemory);
+  // Class memory only needs class and level, so an incomplete character records its level but keeps the list.
+  assert.deepEqual(await page.evaluate(key => JSON.parse(dndStorage.getItem(key)).classes.wizard, MEMORY_KEY), { ...completeMemory, level: 1 });
   await selectCharacter(page, "background", "soldier");
   assert.equal(await removedDialog.count(), 0); assert.equal(await page.inputValue("#background"), "soldier");
   assert.deepEqual(await playerIds(page), ["fireball", "mage-armor"], "completing required fields does not trim the retained low-level list");

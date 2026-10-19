@@ -105,9 +105,10 @@
   <script src="tabletop-spells.js?v=20261012-wizard-ritual-group" defer></script>
   <script src="legal-modal.js?v=20260923-legal-about" defer></script>
   <script src="onboarding-tour.js?v=20261014-advantage-disadvantage" defer></script>
-  <script src="quick-build.js?v=20261018-completion-actions" defer></script>
+  <script src="quick-build.js?v=20261020-class-option-memory" defer></script>
   <script src="spellbook.js?v=20261014-picker-performance" defer></script>
-  <script src="spell-management.js?v=20261017-manual-modal-copy" defer></script>
+  <script src="spell-management.js?v=20261020-class-option-memory" defer></script>
+  <script src="class-option-memory.js?v=20261020-class-option-memory" defer></script>
   <script src="deity-info.js" defer></script>
 
 </head>
@@ -1481,8 +1482,8 @@ function bindCoreCharacterEvents() {
   bindEventById("cha", "input", updateACDisplay);
   ["str", "dex", "con", "int", "wis", "cha"].forEach(id => bindEventById(id, "change", syncDerivedFeatRows));
   bindEventById("armor", "change", updateArmorInfo);
-  bindEventById("class", "change", () => {updateHitDieLabel();resetSpellSlotsAfterCharacterChange();refreshWeaponSelections();updateClassFeature();updateClassFeatureOptionVisibility();syncDerivedFeatRows();syncClassToolRows();updateACDisplay();updateSpeedDisplay();updateEldritchInvocationSectionVisibility();populateHandAttacks();syncOriginAndSubclassDerivedSpellRows();updateSpellsByClassLevel();updateExpertiseVisibility();updateExtraLanguageFields();});
-  bindEventById("level", "change", () => {syncHitDiceCountToLevel();syncProficiencyUseChecks();updateAutomaticInitiative();resetSpellSlotsAfterCharacterChange();refreshWeaponSelections();updateClassFeature();updateClassFeatureOptionVisibility();syncDerivedFeatRows();updateACDisplay();updateSpeedDisplay();updateEldritchInvocationSectionVisibility();populateHandAttacks();syncOriginAndSubclassDerivedSpellRows();updateSpellsByClassLevel();updateExtraLanguageFields();});
+  bindEventById("class", "change", event => {beginClassOptionTransition(event);updateHitDieLabel();resetSpellSlotsAfterCharacterChange();refreshWeaponSelections();updateClassFeature();updateClassFeatureOptionVisibility();syncDerivedFeatRows();syncClassToolRows();updateACDisplay();updateSpeedDisplay();updateEldritchInvocationSectionVisibility();populateHandAttacks();syncOriginAndSubclassDerivedSpellRows();updateSpellsByClassLevel();updateExpertiseVisibility();updateExtraLanguageFields();finishClassOptionTransition();});
+  bindEventById("level", "change", event => {beginClassOptionTransition(event);syncHitDiceCountToLevel();syncProficiencyUseChecks();updateAutomaticInitiative();resetSpellSlotsAfterCharacterChange();refreshWeaponSelections();updateClassFeature();updateClassFeatureOptionVisibility();syncDerivedFeatRows();updateACDisplay();updateSpeedDisplay();updateEldritchInvocationSectionVisibility();populateHandAttacks();syncOriginAndSubclassDerivedSpellRows();updateSpellsByClassLevel();updateExtraLanguageFields();finishClassOptionTransition();});
   ["class", "level"].forEach(id => bindEventById(id, "change", scheduleClassFeatureChoicePrompt));
   bindEventById("speed-input", "input", updateSpeedDisplay);
   bindEventById("elf-lineage", "change", () => { updateSpeedDisplay(); updateHighElfCantripVisibility(); });
@@ -1646,9 +1647,11 @@ function updateExtraLanguageFields() {
   const container = document.getElementById("extra-language-container");
   if (!container) return;
 
-  const previousValues = new Map([...container.querySelectorAll("select")].map(select => [select.id, select.value]));
-
   const classValue = document.getElementById("class")?.value || "";
+  // 額外語言以職業為範圍：換職業不沿用同 ID 的值，其他職業的選擇由職業選項記憶保存。
+  const previousValues = container.dataset.languageClass === classValue
+    ? new Map([...container.querySelectorAll("select")].map(select => [select.id, select.value])) : new Map();
+  container.dataset.languageClass = classValue;
   const levelValue = parseInt(document.getElementById("level")?.value || "", 10);
   const rangerUnlocked = Number.isInteger(levelValue) && levelValue >= 2;
 
@@ -3412,6 +3415,7 @@ function updateClassFeature() {
     syncAdvancedClassFeatureControls();
     syncCharacterFeatureTabs();
     updateClassFeatureChoiceReminder();
+    syncClassOptionOwner();
     return;
   }
 
@@ -3461,6 +3465,8 @@ function updateClassFeature() {
   syncAdvancedClassFeatureControls();
   syncCharacterFeatureTabs();
   updateClassFeatureChoiceReminder();
+  // 職業詳情現在屬於這組職業與等級；下一次切換由此擷取記憶。
+  syncClassOptionOwner();
 }
 
 
@@ -3973,6 +3979,7 @@ function syncMissionCantripChoices() {
 
 // 4 級透過施法／契約魔法額外學會的職業戲法屬於職業戲法共用上限。
 // 選單只編輯自動管理的準備清單，並以標記辨識；舊資料戲法已選滿時視為已選。
+// 例外：只需職業與等級即可預選，不等背景／種族開放「準備法術」。
 const LEVEL_UP_CANTRIP_LEVEL = 4;
 const LEVEL_UP_CANTRIP_TAG = "class-level-4";
 const LEVEL_UP_CANTRIP_SELECT_ID = "class-level-up-cantrip";
@@ -4001,7 +4008,7 @@ function getLevelUpCantripState() {
 function setLevelUpCantrip(spellId) {
   const api = window.SpellManagement;
   const state = getLevelUpCantripState();
-  if (!state || !api.canManage()) return false;
+  if (!state) return false;
   if (spellId && (!SpellCatalog.getSpell(spellId) || api.getEntries().some(entry => entry.spellId === spellId && entry.spellId !== state.entry?.spellId))) return false;
   const players = api.getPlayerEntries();
   const index = state.entry ? players.findIndex(entry => api.entryKey(entry) === api.entryKey(state.entry)) : -1;
@@ -4065,12 +4072,309 @@ function syncLevelUpCantripChoice() {
     select.dataset.optionsKey = optionsKey;
   }
   select.value = current;
-  select.disabled = !window.SpellManagement.canManage();
-  select.title = select.disabled ? "請先選好職業、等級、背景與種族，才能選擇戲法。" : "";
   markPreparedSpellOptions(select);
   field.querySelector("button").disabled = !SpellCatalog.getSpell(select.value);
 }
 window.addEventListener("spellmanagementchange", syncLevelUpCantripChoice);
+
+// 職業選項記憶：玩家親自切換職業或等級時，把離開前的職業選項存入 ClassOptionMemory，
+// 換回時靜默還原。畫面與角色資料仍只含目前職業；還原、匯入、快速創角與分享模式不讀寫記憶。
+let classOptionOwner = { className: "", level: 0 };
+let classOptionTransition = null;
+const CLASS_OPTION_FEAT_ID_PATTERN = /^(?:feat-choice-|derived-feat-)/u;
+const CLASS_OPTION_FEATURE_CONTROLS = "#classFeatures input[id], #classFeatures select[id], #classCreationInfo input[id], #classCreationInfo select[id]";
+const CLASS_FEATURE_CANTRIP_CLASSES = Object.freeze({ paladin: "class-paladin-blessed-warrior-cantrip-", ranger: "class-ranger-druidic-warrior-cantrip-" });
+
+function getCurrentClassOptionOwner() {
+  return {
+    className: document.getElementById("class")?.value || "",
+    level: Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0
+  };
+}
+
+function syncClassOptionOwner() { classOptionOwner = getCurrentClassOptionOwner(); }
+
+function isClassOptionFeatIdAllowed(id) {
+  return !(isManualFeatManagementEnabled() && CLASS_OPTION_FEAT_ID_PATTERN.test(id));
+}
+
+function getClassOptionFeatureControls() {
+  return Array.from(document.querySelectorAll(CLASS_OPTION_FEATURE_CONTROLS)).filter(control =>
+    control.dataset.stateTransient !== "true" && (control.type === "checkbox" || control.tagName === "SELECT"));
+}
+
+function getClassOptionToolSelects() {
+  return getToolProficiencyRows().filter(row => isDerivedToolProficiencyRow(row) && !row.dataset.fixedClassTool)
+    .map(row => row.querySelector("select")).filter(select => select?.id);
+}
+
+function getBardMagicalDiscoveryMemoryValues(selection) {
+  const values = {};
+  selection.forEach((item, index) => {
+    values[`bard-magical-discovery-${index + 1}-class`] = item.classValue;
+    values[`bard-magical-discovery-${index + 1}-ring`] = item.ring;
+    values[`bard-magical-discovery-${index + 1}-spell`] = item.spellId;
+  });
+  return values;
+}
+
+// 合併式擷取：只記錄目前畫面上存在的控制項，等級不足而暫時移除的選擇留在記憶中。
+function collectClassOptionSnapshot(className, level) {
+  const values = {};
+  const lists = {};
+  const put = (id, value) => { if (id && isClassOptionFeatIdAllowed(id)) values[id] = value; };
+  getClassOptionFeatureControls().forEach(control => put(control.id, control.type === "checkbox" ? control.checked : control.value));
+  if (!isManualFeatManagementEnabled()) {
+    document.querySelectorAll('#feats-area > [data-feat-source="class"] [data-magic-initiate-field], #feats-area > [data-feat-source="invocation"] [data-magic-initiate-field]')
+      .forEach(select => put(select.id, select.value));
+  }
+  if (className === "druid") put("druid-land", document.getElementById("druid-land")?.value || "");
+  const cantripPrefix = CLASS_FEATURE_CANTRIP_CLASSES[className];
+  if (cantripPrefix) {
+    Object.entries(window.SpellManagement?.collectClassFeatureCantrips?.() || {})
+      .filter(([key]) => key.startsWith(cantripPrefix)).forEach(([key, value]) => put(key, value));
+  }
+  if (className === "bard") {
+    captureBardMagicalDiscoverySelectionFromControls();
+    Object.entries(getBardMagicalDiscoveryMemoryValues(getBardMagicalDiscoverySelection())).forEach(([id, value]) => put(id, value));
+  }
+  if (className === "warlock") {
+    document.querySelectorAll("#eldritch-invocations-output input[data-invocation-name]:not(:disabled)").forEach(input => put(input.id, input.checked));
+    document.querySelectorAll("#eldritch-invocations-output select[id]").forEach(select => put(select.id, select.value));
+    put("pact-tome-invocation", pactTomeInvocationRemembered);
+    const tome = getPactTomeSpellSelection();
+    lists["pact-tome-cantrips"] = tome.cantrips;
+    lists["pact-tome-rituals"] = tome.rituals;
+  }
+  const metamagicInputs = Array.from(document.querySelectorAll("#metamagicOptions input[data-metamagic-name]"));
+  if (className === "sorcerer" && metamagicInputs.some(input => !input.disabled)) lists.metamagic = getCheckedMetamagicNames();
+  document.querySelectorAll("#extra-language-container select:not(:disabled)").forEach(select => put(select.id, select.value));
+  getClassOptionToolSelects().forEach(select => put(select.id, select.value));
+  lists.expertise = Array.from(document.querySelectorAll(".circle-checkbox:checked"), checkbox => checkbox.dataset.skillRank).filter(Boolean);
+  return { level, values, lists };
+}
+
+// 離開職業時先存入記憶，再靜默清掉不在職業詳情內的殘留值，避免其他職業的選擇留在存檔、PDF 或跑團。
+function clearLeftClassOptionResidue(className) {
+  if (className === "druid") {
+    const land = document.getElementById("druid-land");
+    if (land) land.value = "";
+  }
+  const cantripPrefix = CLASS_FEATURE_CANTRIP_CLASSES[className];
+  if (cantripPrefix) {
+    Object.keys(window.SpellManagement?.collectClassFeatureCantrips?.() || {}).filter(key => key.startsWith(cantripPrefix)).forEach(key => {
+      const control = window.SpellManagement.getClassFeatureCantripControl(key);
+      if (control) control.value = "";
+    });
+  }
+  if (className === "bard") {
+    // updateClassFeature 重繪前會再讀一次控制項，所以控制項也要一起清空。
+    document.querySelectorAll("#bard-magical-discoveries select").forEach(select => { select.value = ""; });
+    setBardMagicalDiscoverySelection([], { sync: false });
+  }
+  if (className === "warlock") {
+    setPactTomeSpellSelection({}, { sync: false });
+    pactTomeInvocationRemembered = false;
+    document.querySelectorAll("#eldritch-invocations-output input[data-invocation-name]").forEach(input => { input.checked = false; });
+    document.querySelectorAll("#eldritch-invocations-output select[data-agonizing-blast-slot]").forEach(select => { select.value = ""; });
+    renderEldritchInvocations();
+  }
+}
+
+function isCommittedCharacterSelectionChange(event) {
+  return Boolean(event && (event.isTrusted || event.dndCharacterSelectionCommitted));
+}
+
+function canUseClassOptionMemory() {
+  return Boolean(window.ClassOptionMemory) && !SHARE_MODE && !autosaveSuspended && !autosaveClearing && !jsonImportInProgress;
+}
+
+// 在職業／等級 handler 重繪職業詳情之前呼叫；此時畫面仍屬於前一個職業與等級。
+function beginClassOptionTransition(event) {
+  classOptionTransition = null;
+  if (!isCommittedCharacterSelectionChange(event) || !canUseClassOptionMemory()) return;
+  const from = { ...classOptionOwner };
+  const to = getCurrentClassOptionOwner();
+  if (from.className === to.className && from.level === to.level) return;
+  if (from.className) {
+    window.ClassOptionMemory.remember(from.className, collectClassOptionSnapshot(from.className, from.level));
+    if (from.className !== to.className) clearLeftClassOptionResidue(from.className);
+  }
+  classOptionTransition = { from, to };
+}
+
+function setClassOptionControlValue(control, value) {
+  if (!control) return false;
+  if (control.type === "checkbox") {
+    control.checked = value === true;
+    return true;
+  }
+  if (typeof value !== "string" || !Array.from(control.options || []).some(option => option.value === value)) return false;
+  control.value = value;
+  return true;
+}
+
+function restoreClassOptionMemory(className, record) {
+  const values = record.values || {};
+  const lists = record.lists || {};
+  const has = id => Object.hasOwn(values, id) && isClassOptionFeatIdAllowed(id);
+  const dispatchRestoreChange = control => control.dispatchEvent(new Event("change"));
+
+  // 與載入存檔相同：先還原勾選，再還原會依勾選顯示的選單，最後建立衍生專長列。
+  const featureControls = getClassOptionFeatureControls();
+  featureControls.filter(control => control.type === "checkbox" && has(control.id)).forEach(control => {
+    if (setClassOptionControlValue(control, values[control.id])) dispatchRestoreChange(control);
+  });
+  getClassOptionFeatureControls().filter(control => control.tagName === "SELECT" && has(control.id) && !control.id.startsWith("feat-choice-")).forEach(control => {
+    if (setClassOptionControlValue(control, values[control.id])) dispatchRestoreChange(control);
+  });
+  if (className === "druid" && has("druid-land")) {
+    const land = document.getElementById("druid-land");
+    if (setClassOptionControlValue(land, values["druid-land"])) dispatchRestoreChange(land);
+  }
+  if (className === "warlock") {
+    const state = { __pactTomeInvocationSelected: values["pact-tome-invocation"] === true };
+    Object.entries(values).forEach(([id, value]) => {
+      if (isEldritchInvocationCheckboxId(id) || isAgonizingBlastSelectId(id)) state[id] = value;
+    });
+    setPactTomeSpellSelection({ cantrips: lists["pact-tome-cantrips"] || [], rituals: lists["pact-tome-rituals"] || [] }, { sync: false });
+    renderEldritchInvocations({ state });
+    syncWarlockInvocationSelectionLimit();
+    renderEldritchInvocations();
+    applyAgonizingBlastState(state);
+    document.querySelectorAll("#eldritch-invocations-output [data-feat-choice] select[id]").forEach(select => {
+      if (has(select.id)) setClassOptionControlValue(select, values[select.id]);
+    });
+  }
+  getClassOptionFeatureControls().filter(control => control.id.startsWith("feat-choice-") && has(control.id)).forEach(control => {
+    setClassOptionControlValue(control, values[control.id]);
+  });
+  syncDerivedFeatRows();
+  Object.entries(values).filter(([id]) => /^derived-feat-.*-magic-initiate-/u.test(id) && has(id))
+    .sort(([a], [b]) => Number(!a.endsWith("-class")) - Number(!b.endsWith("-class")))
+    .forEach(([id, value]) => {
+      const control = document.getElementById(id);
+      if (setClassOptionControlValue(control, value)) dispatchRestoreChange(control);
+    });
+  const cantripPrefix = CLASS_FEATURE_CANTRIP_CLASSES[className];
+  if (cantripPrefix) {
+    applyClassFeatureCantrips(Object.fromEntries(Object.entries(values)
+      .filter(([key, value]) => key.startsWith(cantripPrefix) && typeof value === "string")));
+  }
+  if (className === "bard") {
+    setBardMagicalDiscoverySelection(Array.from({ length: BARD_MAGICAL_DISCOVERY_SLOT_COUNT }, (_, index) => ({
+      classValue: values[`bard-magical-discovery-${index + 1}-class`] || "",
+      ring: values[`bard-magical-discovery-${index + 1}-ring`] || "",
+      spellId: values[`bard-magical-discovery-${index + 1}-spell`] || ""
+    })), { sync: false });
+    renderBardMagicalDiscoveryControls();
+  }
+  if (className === "sorcerer" && Array.isArray(lists.metamagic)) {
+    const names = new Set(lists.metamagic);
+    document.querySelectorAll("#metamagicOptions input[data-metamagic-name]:not(:disabled)").forEach(input => {
+      input.checked = names.has(input.dataset.metamagicName);
+    });
+    syncMetamagicSelectionLimit();
+    updateMetamagicSummary();
+  }
+  // 職業工具：略過已在其他列出現的工具，不覆蓋玩家目前的選擇。
+  syncClassToolRows();
+  getClassOptionToolSelects().forEach(select => {
+    const value = values[select.id];
+    if (!has(select.id) || !value || select.value) return;
+    if (getToolProficiencyRows().some(row => row.querySelector("select") !== select && row.querySelector("select")?.value === value)) return;
+    setClassOptionControlValue(select, value);
+  });
+  removeDuplicateToolProficiencies();
+  syncToolProficiencyOptions();
+  updateExtraLanguageFields();
+  document.querySelectorAll("#extra-language-container select:not(:disabled)").forEach(select => {
+    const value = values[select.id];
+    if (has(select.id) && value && Array.from(select.options).some(option => option.value === value && !option.disabled)) select.value = value;
+  });
+  // 專精只補回、不取消：無法區分專精來源，玩家目前已勾的專精一律保留。
+  updateExpertiseVisibility();
+  let expertiseChanged = false;
+  (lists.expertise || []).forEach(skill => {
+    const expertise = Array.from(document.querySelectorAll(".circle-checkbox")).find(checkbox => checkbox.dataset.skillRank === skill);
+    if (!expertise || expertise.disabled || expertise.checked) return;
+    expertise.checked = true;
+    const proficiency = document.getElementById(`prof-${skill}`);
+    if (proficiency) proficiency.checked = false;
+    expertiseChanged = true;
+  });
+  if (expertiseChanged) fillSkills();
+}
+
+// 在職業／等級 handler 的最後呼叫：所有依職業重建的控制項都已就緒。
+function finishClassOptionTransition() {
+  const transition = classOptionTransition;
+  classOptionTransition = null;
+  syncClassOptionOwner();
+  if (!transition || !canUseClassOptionMemory()) return;
+  const { className } = transition.to;
+  const record = className ? window.ClassOptionMemory.get(className) : null;
+  if (!record) return;
+  const previousAutosaveSuspended = autosaveSuspended;
+  autosaveSuspended = true;
+  try {
+    withCharacterUpdateBatch(() => {
+      restoreClassOptionMemory(className, record);
+      syncMissionCantripChoices();
+      syncDerivedFeatRows();
+      syncOriginAndSubclassDerivedSpellRows();
+      updateSpellsByClassLevel();
+      updateClassFeatureOptionVisibility();
+      updateEldritchInvocationSectionVisibility();
+      syncAdvancedClassFeatureControls();
+      syncLevelUpCantripChoice();
+      refreshWeaponSelections();
+      updateACDisplay();
+      updateSpeedDisplay();
+      populateHandAttacks();
+    });
+  } finally {
+    autosaveSuspended = previousAutosaveSuspended;
+  }
+  updateClassFeatureChoiceReminder();
+  scheduleStructuralSaveAllFields();
+}
+
+// 舊存檔可能留有非目前職業的殘留值；載入後靜默搬進該職業的記憶（不覆蓋既有記憶）並清空。
+function migrateLegacyClassOptionResidue() {
+  if (!window.ClassOptionMemory || SHARE_MODE) return false;
+  const currentClass = document.getElementById("class")?.value || "";
+  const moves = [];
+  const land = document.getElementById("druid-land");
+  if (currentClass !== "druid" && land?.value) moves.push(["druid", { values: { "druid-land": land.value } }]);
+  Object.entries(CLASS_FEATURE_CANTRIP_CLASSES).forEach(([className, prefix]) => {
+    if (className === currentClass) return;
+    const cantrips = Object.fromEntries(Object.entries(window.SpellManagement?.collectClassFeatureCantrips?.() || {})
+      .filter(([key, value]) => key.startsWith(prefix) && value));
+    if (Object.keys(cantrips).length) moves.push([className, { values: cantrips }]);
+  });
+  const discovery = getBardMagicalDiscoverySelection();
+  if (currentClass !== "bard" && discovery.some(item => item.classValue || item.ring || item.spellId)) {
+    moves.push(["bard", { values: getBardMagicalDiscoveryMemoryValues(discovery) }]);
+  }
+  const tome = getPactTomeSpellSelection();
+  const invocations = Array.from(document.querySelectorAll("#eldritch-invocations-output input[data-invocation-name]:checked"));
+  if (currentClass !== "warlock" && (tome.cantrips.length || tome.rituals.length || pactTomeInvocationRemembered || invocations.length)) {
+    moves.push(["warlock", {
+      values: { "pact-tome-invocation": pactTomeInvocationRemembered, ...Object.fromEntries(invocations.map(input => [input.id, true])) },
+      lists: { "pact-tome-cantrips": tome.cantrips, "pact-tome-rituals": tome.rituals }
+    }]);
+  }
+  if (!moves.length) return false;
+  moves.forEach(([className, snapshot]) => {
+    const existing = window.ClassOptionMemory.get(className);
+    const values = Object.fromEntries(Object.entries(snapshot.values || {}).filter(([key]) => !Object.hasOwn(existing?.values || {}, key)));
+    const lists = Object.fromEntries(Object.entries(snapshot.lists || {}).filter(([key]) => !Object.hasOwn(existing?.lists || {}, key)));
+    window.ClassOptionMemory.remember(className, { level: existing?.level || 0, values, lists });
+    clearLeftClassOptionResidue(className);
+  });
+  return true;
+}
 
 function renderRaceFeatChoice(previousValue = "") {
   const container = document.getElementById("human-origin-row");
@@ -5661,6 +5965,7 @@ function escapeHtml(s) {
 
 
 document.addEventListener("DOMContentLoaded", () => withCharacterUpdateBatch(() => {
+  window.ClassOptionMemory?.configure({ isPersistenceBlocked: () => autosaveRestoreBlocked });
   window.SpellManagement?.configure({
     isRestoring: () => autosaveSuspended || autosaveClearing,
     isPersistenceBlocked: () => autosaveRestoreBlocked,
@@ -8486,6 +8791,7 @@ const APP_STORAGE_KEYS = Object.freeze([
   "dnd.spellManagementBackup.v1",
   "dnd.spellManagementMemories.v1",
   "dnd.spellManagementClassNoticeDisabled.v1",
+  "dnd.classOptionMemories.v1",
   ...LEGACY_LEGAL_DISMISS_KEYS
 ]);
 let SHARE_MODE = false;
@@ -8512,6 +8818,7 @@ function clearAppStateAndReload() {
   cancelPendingAutosaveForClear();
   if (!pendingCanceled) window.dndStorage.removeItem(COMPLETED_JSON_IMPORT_KEY);
   window.SpellManagement?.clearMemories();
+  window.ClassOptionMemory?.clearMemories();
   APP_STORAGE_KEYS.forEach((key) => window.dndStorage.removeItem(key));
   location.replace(`${location.pathname}${location.search}`);
 }
@@ -9010,6 +9317,13 @@ function applyStateObjectNow(data) {
   updateACDisplay();
   updateSpeedDisplay();
   updateClassFeatureChoiceReminder();
+  // 載入資料優先：不從職業選項記憶套用，只搬走舊存檔裡其他職業的殘留值。
+  syncClassOptionOwner();
+  if (migrateLegacyClassOptionResidue()) {
+    syncOriginAndSubclassDerivedSpellRows();
+    updateSpellsByClassLevel();
+    scheduleStructuralSaveAllFields();
+  }
 }
 
 function getShortShareUnavailableReason(hash) {
@@ -9412,7 +9726,7 @@ function getClassFeatureChoiceIssues() {
   });
 
   const levelUpCantrip = manualSpells ? null : getLevelUpCantripState();
-  if (levelUpCantrip && !levelUpCantrip.entry && window.SpellManagement.canManage()) pushGeneral({
+  if (levelUpCantrip && !levelUpCantrip.entry) pushGeneral({
     message: `${levelUpCantrip.classLabel} ${LEVEL_UP_CANTRIP_LEVEL} 級額外戲法尚未選擇。`,
     tab: "basic",
     selector: `#${LEVEL_UP_CANTRIP_SELECT_ID}`,
@@ -10145,6 +10459,7 @@ function restoreAllFields() {
           if (!window.dndStorage.removeItem(key)) throw new Error("無法清理舊角色紀錄");
         }
         window.SpellManagement?.clearMemories();
+        window.ClassOptionMemory?.clearMemories();
         jsonImportInProgress = true;
         applyStateObject(imported);
         if (!saveAllFields()) throw new Error("新角色儲存失敗");

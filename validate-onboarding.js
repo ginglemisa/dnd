@@ -700,6 +700,16 @@ async function verifyImports(browser, url, viewport = { width: 1280, height: 800
   for (const scenario of ["cancel", "complete", "warning", "failure", "pdf", "share", "close"]) {
     await page.goto(url);
     await page.waitForFunction(() => window.prepareOnboardingImport && window.onboardingTour);
+    if (scenario === "complete") {
+      // Seed other-class memories before load so the card reset is observable.
+      await page.evaluate(() => {
+        localStorage.setItem("dnd.classOptionMemories.v1", JSON.stringify({ version: 1, classes: { druid: { level: 3, values: { "druid-land": "arid" }, lists: {} } } }));
+        localStorage.setItem("dnd.spellManagementMemories.v1", JSON.stringify({ version: 1, classes: { wizard: { level: 3, entries: [{ spellId: "light", spellClass: "wizard" }] } }, manual: null }));
+        localStorage.setItem("dnd.spellManagementBackup.v1", "{\"kept\":true}");
+      });
+      await page.goto(url);
+      await page.waitForFunction(() => window.prepareOnboardingImport && window.onboardingTour);
+    }
     await page.evaluate(scenario => {
       prepareOnboardingImport();
       if (scenario === "warning") document.getElementById("calculate-skills-button").remove();
@@ -726,6 +736,14 @@ async function verifyImports(browser, url, viewport = { width: 1280, height: 800
     }
     await page.locator(".app-dialog__actions .app-dialog__button--danger").click();
     await page.waitForFunction(() => document.querySelector(".app-dialog__header h2")?.textContent.includes("角色卡"));
+    if (scenario === "complete") {
+      const storage = await page.evaluate(() => ({ options: localStorage.getItem("dnd.classOptionMemories.v1"),
+        spells: JSON.parse(localStorage.getItem("dnd.spellManagementMemories.v1") || "{}").classes || {},
+        backup: localStorage.getItem("dnd.spellManagementBackup.v1"), notice: localStorage.getItem("dnd.spellManagementClassNoticeDisabled.v1") }));
+      assert.equal(storage.options, null, "quick build clears class option memory");
+      assert.equal(Object.hasOwn(storage.spells, "wizard"), false, "quick build clears other-class spell memory");
+      assert.deepEqual([storage.backup, storage.notice], ['{"kept":true}', "true"], "legacy backup and notice preference are kept");
+    }
     const firstTable = page.getByRole("button", { name: "初次遊玩", exact: true });
     assert.equal(await firstTable.count(), scenario === "failure" ? 0 : 1, await page.locator(".app-dialog__body").innerText());
     if (scenario !== "failure") {
@@ -776,7 +794,7 @@ async function verifyImports(browser, url, viewport = { width: 1280, height: 800
     await assertPageInteractive(page);
   }
   await page.close();
-  console.log(`Quick-build import (${viewport.width}px): confirmation cancellation, completion copy/action order/layout, tour emphasis, warning/exception guards, PDF/share dispatch and close passed.`);
+  console.log(`Quick-build import (${viewport.width}px): confirmation cancellation, memory reset, completion copy/action order/layout, tour emphasis, warning/exception guards, PDF/share dispatch and close passed.`);
 }
 
 async function assertPageInteractive(page) {
