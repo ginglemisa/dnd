@@ -455,12 +455,23 @@ async function verifyCoverage(page) {
       check(/自己的?回合/u.test(classOption("action", "額外攻擊").description), `${name}: Extra Attack retains own-turn restriction`);
     }
     setClass("ranger", 7);
-    check(classOption("movement", "越野").description === "你獲得等同於你速度的攀爬速度與游泳速度。\n\n未穿重甲時，你的速度增加 10 呎。", "Roving restricts only the +10 speed bonus by armor");
+    const rovingLines = classOption("movement", "越野").description.split("\n");
+    check(rovingLines.some(line => line.includes("攀爬速度與游泳速度") && line.includes("等於你的速度") && !line.includes("重甲"))
+      && rovingLines.some(line => line.includes("未穿重甲") && line.includes("速度增加 10 呎")), "Roving restricts only the +10 speed bonus by armor");
     check(classOption("action", "狩獵目標").description.includes("請在職業能力"), "Hunter's Prey asks for a choice");
     el("ranger-hunters-prey-colossus-slayer").checked = true;
     check(classOption("action", "狩獵目標").description.startsWith("斬殺者：") && !classOption("action", "狩獵目標").description.includes("破陣者"), "Hunter's Prey shows selected choice only");
     el("ranger-hunters-prey-colossus-slayer").checked = false;
-    check(classOption("action", "防守戰術").description.includes("衝出重圍") && classOption("action", "防守戰術").description.includes("多重防禦"), "Defensive Tactics contains both choices");
+    el("ranger-hunters-prey-horde-breaker").checked = true;
+    check(classOption("action", "狩獵目標").description.startsWith("破陣者：") && !classOption("action", "狩獵目標").description.includes("斬殺者"), "Hunter's Prey shows the other selected choice only");
+    el("ranger-hunters-prey-horde-breaker").checked = false;
+    check(/^衝出重圍：/mu.test(classOption("action", "防守戰術").description) && /^多重防禦：/mu.test(classOption("action", "防守戰術").description), "Defensive Tactics contains both named choices");
+    for (const [level, points] of [[2, 2], [5, 5]]) {
+      setClass("sorcerer", level);
+      const fontOfMagic = classOption("bonus", "魔力泉湧").description;
+      check(fontOfMagic.includes(`術法點：目前上限 ${points} 點`), "Font of Magic shows current sorcery point maximum");
+      check(fontOfMagic.includes("1 環消耗 2 點（術士等級 2 起）") && fontOfMagic.includes("4 環消耗 6 點（術士等級 7 起）"), "Font of Magic keeps slot creation costs without the table");
+    }
     setClass("cleric", 7);
     check(!classOption("action", "神聖打擊"), "Divine Strike requires a selection");
     el("cleric-blessed-strikes-divine-strike").checked = true;
@@ -767,7 +778,7 @@ async function verifyUiAndPersistence(page, url) {
   assert.match(stoneCopy, /使用次數＝熟練加值，長休後恢復/);
   await page.click("#tabletop-action-tab-movement");
   await page.locator('[data-action-option-key="dynamic-movement-ranger-bulhou"]').click();
-  assert.match(await page.locator("#tabletop-action-panel-movement .tabletop-action-description").innerText(), /你獲得等同於你速度的攀爬速度與游泳速度。\s+未穿重甲時，你的速度增加 10 呎。/);
+  assert.match(await page.locator("#tabletop-action-panel-movement .tabletop-action-description").innerText(), /獲得攀爬速度與游泳速度，數值等於你的速度。\s+- 速度加值：未穿重甲時，你的速度增加 10 呎。/);
   if (process.env.DND_SCREENSHOT_DIR) {
     await page.screenshot({path:path.join(process.env.DND_SCREENSHOT_DIR,"actions-desktop.png")});
     await page.setViewportSize({width:390,height:844});
