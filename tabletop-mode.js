@@ -2335,10 +2335,10 @@ function getRogueReliableTalentEntry() {
       barbarianDefenses.push({ label: "先祖學識", detail: "狂暴時你可用力量做以下技能檢定：體操,威嚇,察覺,隱匿,求生。" });
     }
     if (isBarbarian && characterLevel >= 5) {
-      barbarianDefenses.push({ label: "快速移動", detail: "若你若你未穿重甲，速度 +10 呎。", summaryPanel: "overview" });
+      barbarianDefenses.push({ label: "快速移動", detail: "若你未穿重甲，速度 +10 呎。", summaryPanel: "overview" });
     }
     if (isBarbarian && characterLevel >= 6) {
-      barbarianDefenses.push({ label: "無我狂暴", detail: "狂暴期間，你免疫魅惑與恐慌狀態。", summaryPanel: "overview" });
+      barbarianDefenses.push({ label: "無我狂暴", detail: "狂暴期間，你免疫魅惑與恐慌狀態；進入狂暴時，若你正處於其中一種狀態，該狀態立即終止。", summaryPanel: "overview" });
     }
     if (isBarbarian && characterLevel >= 7) {
       barbarianDefenses.push({ label: "野性本能", detail: "你的先攻擲骰具有優勢。", summaryPanel: "overview" });

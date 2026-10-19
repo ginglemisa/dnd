@@ -129,33 +129,13 @@
   const CLASS_ACTION_RULES = Object.freeze({
     barbarian: Object.freeze([
       { id: "reckless-attack", mode: "action", level: 2, label: "魯莽", key: "dynamic-action-class-8jjnkp", descriptionId: "barbarian-reckless-attack" },
-      { id: "rage", mode: "bonus", level: 1, label: "等級 1：狂暴", key: "dynamic-bonus-barbarian-3te1cj", resourceKey: "barbarian-rage", description: () => {
-        const resource = globalScope.getCharacterResourceSpecs({ className: "barbarian", level: getCharacterLevel() })
-          .find(spec => spec.key === "barbarian-rage");
-        return `你可以用附贈動作進入狂暴（未穿重甲時）。
-
-狂暴期間：
-
-- 你對鈍擊,穿刺,揮砍傷害有抗性。
-- 你用力量造成的傷害 +${getBarbarianRageDamageBonus()}
-- 你的力量檢定與力量豁免有優勢。
-- 你不能施法，也不能維持專注。
-
-持續時間：到你下個回合結束。若要延長，每回合至少做一項：
-
-- 對敵人做攻擊檢定，或
-- 讓敵人做豁免檢定，或
-- 再用一次附贈動作延長狂暴。
-
-若你穿上重甲、陷入失能，或超過 10 分鐘，狂暴會結束。
-
-使用次數：${resource.maximum} 次；${resource.recoveryNote}`;
-      } },
-      { id: "frenzy", mode: "action", level: 3, label: "等級 3：狂怒（狂戰子職）", key: "dynamic-action-barbarian-ekb4kt", description: () => `在狂暴中使用魯莽攻擊，且用力量攻擊命中本回合第一個目標時，可額外造成 ${getBarbarianRageDamageBonus()}d6 傷害（骰數＝狂暴傷害加值），類型同該次攻擊。` },
-      { id: "extra-attack", mode: "action", level: 5, label: "等級 5：額外攻擊", key: "dynamic-action-barbarian-113ebtz", description: "你在自己回合使用攻擊動作時，可以攻擊 2 次。" },
-      { id: "fast-movement", mode: "movement", level: 5, label: "等級 5：快速移動", key: "dynamic-movement-barbarian-18h2p2v", description: "若你未穿重甲，速度 +10 呎。" },
-      { id: "instinctive-pounce", mode: "movement", level: 7, label: "等級 7：直覺猛撲", key: "dynamic-movement-barbarian-1iw4zkg", description: "當你以附贈動作進入狂暴時，可以在該附贈動作中移動至多等同於你速度一半的距離。" },
-      { id: "instinctive-pounce", mode: "bonus", level: 7, label: "等級 7：直覺猛撲", key: "dynamic-bonus-barbarian-1iw4zkg", description: "當你以附贈動作進入狂暴時，可以在該附贈動作中移動至多等同於你速度一半的距離。" },
+      // 7 級起直覺猛撲併入狂暴說明；獨立的直覺猛撲按鈕只保留 key，跑團不顯示。
+      { id: "rage", mode: "bonus", level: 1, label: "等級 1：狂暴", key: "dynamic-bonus-barbarian-3te1cj", resourceKey: "barbarian-rage", descriptionIds: ["barbarian-rage", { id: "barbarian-instinctive-pounce", level: 7 }] },
+      { id: "frenzy", mode: "action", level: 3, label: "等級 3：狂怒（狂戰子職）", key: "dynamic-action-barbarian-ekb4kt", descriptionId: "barbarian-frenzy" },
+      { id: "extra-attack", mode: "action", level: 5, label: "等級 5：額外攻擊", key: "dynamic-action-barbarian-113ebtz", descriptionId: "barbarian-extra-attack" },
+      { id: "fast-movement", mode: "movement", level: 5, label: "等級 5：快速移動", key: "dynamic-movement-barbarian-18h2p2v", descriptionId: "barbarian-fast-movement" },
+      { id: "instinctive-pounce", mode: "movement", level: 7, label: "等級 7：直覺猛撲", key: "dynamic-movement-barbarian-1iw4zkg", descriptionId: "barbarian-instinctive-pounce" },
+      { id: "instinctive-pounce", mode: "bonus", level: 7, label: "等級 7：直覺猛撲", key: "dynamic-bonus-barbarian-1iw4zkg", descriptionId: "barbarian-instinctive-pounce" },
     ]),
     monk: Object.freeze([
       { id: "martial-arts-action", mode: "action", level: 1, label: "等級 1：武藝", description: getMonkMartialArtsDescription, key: "dynamic-action-monk-curated-martial-arts-action" },
@@ -169,12 +149,7 @@
       { id: "wholeness-of-body", mode: "bonus", level: 6, label: "等級 6：混元體", description: getMonkWholenessDescription, key: "dynamic-bonus-monk-curated-wholeness-of-body", resourceKey: "monk-wholeness", legacyKeys: ["dynamic-bonus-class-3mzm48"] }
     ]),
     bard: Object.freeze([
-      { id: "inspiration", mode: "bonus", level: 1, label: "等級 1：吟遊詩人激勵", key: "dynamic-bonus-class-r7asqs", resourceKey: "bard-inspiration", description: () => `選擇 1 名 60 呎內看得到你或聽得到你的生物，使其獲得 1 顆激勵骰（d${getCharacterLevel() >= 5 ? 8 : 6}）。
-
-- 目標在 d20 檢定失敗後，可擲激勵骰並加到結果上。
-- 激勵骰使用後消耗，未使用則持續 1 小時。
-- 同一生物同時只能持有 1 顆你的激勵骰。
-- 可用次數＝魅力調整值（至少 1 次），${getCharacterLevel() >= 5 ? "短休或長休後全部恢復。\n- 激勵之源：你可無需動作消耗 1 個法術位，恢復 1 次激勵使用次數。" : "長休後全部恢復。"}` },
+      { id: "inspiration", mode: "bonus", level: 1, label: "等級 1：吟遊詩人激勵", key: "dynamic-bonus-class-r7asqs", resourceKey: "bard-inspiration", descriptionIds: ["bard-inspiration", { id: "bard-font-of-inspiration", level: 5 }] },
       { id: "cutting-words", mode: "reaction", level: 3, label: "等級 3：語出驚人", key: "dynamic-reaction-class-1y0uv3b", resourceKey: "bard-inspiration", descriptionId: "bard-cutting-words" },
       { id: "countercharm", mode: "reaction", level: 7, label: "等級 7：反迷惑", key: "dynamic-reaction-class-ul9dq", descriptionId: "bard-countercharm" }
     ]),
@@ -331,6 +306,10 @@
     if (level >= 16) return 4;
     if (level >= 9) return 3;
     return 2;
+  }
+
+  function getBardInspirationDie() {
+    return getCharacterLevel() >= 5 ? 8 : 6;
   }
 
   function getSelectedFeatNames() {
@@ -627,8 +606,64 @@ ${formatDiceWithModifier("1d10", dexterityModifier + level)}
   // - data-tabletop-only：只在跑團顯示，職業詳情由 styles.css 隱藏。
   const TABLETOP_VALUE_RESOLVERS = Object.freeze({
     "character-level": () => String(getCharacterLevel()),
-    "proficiency-bonus": () => String(getProficiencyBonus())
+    "proficiency-bonus": () => String(getProficiencyBonus()),
+    "barbarian-rage-uses": () => {
+      const maximum = getClassResourceSpec("barbarian", "barbarian-rage")?.maximum;
+      return Number.isFinite(maximum) ? `${maximum} 次` : null;
+    },
+    "barbarian-rage-damage": () => `目前 +${getBarbarianRageDamageBonus()}`,
+    "barbarian-frenzy-dice": () => `${getBarbarianRageDamageBonus()}d6`,
+    "bard-inspiration-die": () => `目前為 d${getBardInspirationDie()}`,
+    // 恢復方式跟隨 CharacterRules 的資源設定，與休息實際恢復一致；未升級時保留通用文字。
+    "bard-inspiration-recovery": () => (getClassResourceSpec("bard", "bard-inspiration")?.recovery?.shortRest === "all"
+      ? "短休或長休後全部恢復"
+      : null)
   });
+
+  function getClassResourceSpec(className, key) {
+    const specs = globalScope.getCharacterResourceSpecs?.({ className, level: getCharacterLevel() }) || [];
+    return specs.find(spec => spec.key === key) || null;
+  }
+
+  // 職業描述段落轉為跑團純文字：忽略原始碼縮排，區塊之間空一行，清單項目以「- 」開頭並連續排列。
+  const CLASS_DESCRIPTION_SKIPPED = "table, input, button, select, label, [hidden], .is-hidden, script, style";
+  const CLASS_DESCRIPTION_BLOCKS = new Set(["P", "DIV", "SECTION", "UL", "OL", "H4", "H5", "H6", "BLOCKQUOTE", "DETAILS", "SUMMARY"]);
+
+  function classDescriptionToPlainText(root) {
+    const lines = [];
+    let text = "";
+    let inListItem = false;
+    const flush = () => {
+      const line = text.replace(/[ \t]+/g, " ").replace(/ *\n */g, "\n").trim();
+      if (line) lines.push({ line: inListItem ? `- ${line}` : line, listItem: inListItem });
+      text = "";
+    };
+    const walk = node => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        text += node.nodeValue.replace(/ /g, " ").replace(/[ \t\r]*\n\s*/g, "");
+        return;
+      }
+      if (node.nodeType !== Node.ELEMENT_NODE || node.matches(CLASS_DESCRIPTION_SKIPPED)) return;
+      if (node.tagName === "BR") {
+        text += "\n";
+        return;
+      }
+      const isListItem = node.tagName === "LI";
+      const isBlock = isListItem || CLASS_DESCRIPTION_BLOCKS.has(node.tagName);
+      const outerListItem = inListItem;
+      if (isBlock) flush();
+      if (isListItem) inListItem = true;
+      node.childNodes.forEach(walk);
+      if (isBlock) flush();
+      inListItem = outerListItem;
+    };
+    root.childNodes.forEach(walk);
+    flush();
+    return lines.map((entry, index) => {
+      if (!index) return entry.line;
+      return `${entry.listItem && lines[index - 1].listItem ? "\n" : "\n\n"}${entry.line}`;
+    }).join("");
+  }
 
   // 由說明函式組合、未寫在 CLASS_ACTION_RULES 的段落，納入完整性檢查。
   const HELPER_DESCRIPTION_IDS = Object.freeze({
@@ -695,7 +730,7 @@ ${formatDiceWithModifier("1d10", dexterityModifier + level)}
       copy.querySelectorAll("h3, [data-tabletop-hide]").forEach(element => element.remove());
       copy.querySelectorAll("[data-tabletop-only][hidden]").forEach(element => element.removeAttribute("hidden"));
       copy.querySelectorAll("[data-tabletop-value]").forEach(resolveTabletopValue);
-      parts.push(sourceToPlainText(copy.innerHTML));
+      parts.push(classDescriptionToPlainText(copy));
     }
     return parts.filter(Boolean).join("\n\n");
   }
@@ -868,9 +903,6 @@ function getModeOptions(mode) {
     let description = option.description;
     const level = Number(document.getElementById("level")?.value) || 0;
     const dc = 8 + getProficiencyBonus() + getMonkAbilityModifier("wis");
-    if (option.resourceKey === "barbarian-rage" && level >= 7) {
-      description += "\n\n直覺猛撲：當你以附贈動作進入狂暴時，可以在該附贈動作中移動至多等同於你速度一半的距離。";
-    }
     if (option.resourceKey === "monk-uncanny-metabolism" && level > 0) {
       description = description.replace("「武藝骰 + 武僧等級」", `${getMonkMartialArtsDie()} + ${level}`);
     }

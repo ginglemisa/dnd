@@ -377,7 +377,7 @@ async function verifyCoverage(page) {
       check(ActionPanel.getClassDescription("rogue", ["rogue-cunning-action", "rogue-missing"]) === "", "Missing description block yields no partial description");
       setClass("rogue", 5);
       const joined = ActionPanel.getClassDescription("rogue", upgraded);
-      check(joined.includes("加值 3；") && joined.endsWith("只在跑團\n跑團補充\n\n五級補充"), "Level-gated description blocks join in order with current values");
+      check(joined.includes("加值 3；") && joined.endsWith("只在跑團\n\n跑團補充\n\n五級補充"), "Level-gated description blocks join in order with current values");
       const fixtureIssues = ActionPanel.getClassDescriptionIssues();
       check(fixtureIssues.some(issue => issue.includes('"rogue-uncanny-dodge"')) && fixtureIssues.some(issue => issue.includes('"unknown-test-value"')), "Description issues report missing blocks and unknown value slots");
       const probe = document.createElement("p");
@@ -394,13 +394,15 @@ async function verifyCoverage(page) {
       setClass("bard", level);
       const inspiration = classOption("bonus", "吟遊詩人激勵").description;
       check(inspiration.includes("短休或長休後全部恢復") === (level >= 5), "Inspiration recovery upgrades at level 5");
-      check(inspiration.includes("無需動作消耗 1 個法術位") === (level >= 5), "Font of Inspiration conversion has a level gate");
+      check((inspiration.includes("消耗 1 個法術位恢復 1 次激勵使用次數") && inspiration.includes("不需動作")) === (level >= 5), "Font of Inspiration conversion has a level gate");
+      check(inspiration.includes(`激勵骰：目前為 d${level >= 5 ? 8 : 6}`), "Inspiration shows the current die");
     }
     for (const [level, uses] of [[1, 2], [3, 3], [6, 4]]) {
       setClass("barbarian", level);
       const rage = classOption("bonus", "狂暴").description;
-      check(rage.includes(`使用次數：${uses} 次`) && rage.includes("短休回 1 次") && rage.includes("長休全回"), "Rage shows current uses and recovery");
-      check(rage.includes("穿上重甲、陷入失能，或超過 10 分鐘"), "Rage retains termination conditions");
+      check(rage.includes(`使用次數：${uses} 次`) && rage.includes("短休後恢復 1 次") && rage.includes("長休後全部恢復"), "Rage shows current uses and recovery");
+      check(rage.includes("穿上重甲") && rage.includes("陷入失能") && rage.includes("超過 10 分鐘"), "Rage retains termination conditions");
+      check(rage.includes("目前 +2") && !rage.includes("直覺猛撲"), "Rage shows current damage bonus; Instinctive Pounce waits for level 7");
     }
     setClass("monk", 6);
     for (const score of ["16", "8", ""]) {
@@ -435,10 +437,10 @@ async function verifyCoverage(page) {
     }
     setClass("barbarian", 3);
     const frenzy = classOption("action", "狂怒").description;
-    check(frenzy.includes("2d6") && frenzy.includes("骰數＝狂暴傷害加值") && frenzy.includes("類型同該次攻擊"), "Frenzy retains dice source and damage type");
+    check(frenzy.includes("2d6") && frenzy.includes("骰數等於狂暴傷害加值") && frenzy.includes("與該次攻擊相同"), "Frenzy retains dice source and damage type");
     for (const name of ["barbarian", "fighter", "monk", "paladin", "ranger"]) {
       setClass(name, 5);
-      check(classOption("action", "額外攻擊").description.includes("自己回合"), `${name}: Extra Attack retains own-turn restriction`);
+      check(/自己的?回合/u.test(classOption("action", "額外攻擊").description), `${name}: Extra Attack retains own-turn restriction`);
     }
     setClass("ranger", 7);
     check(classOption("movement", "越野").description === "你獲得等同於你速度的攀爬速度與游泳速度。\n\n未穿重甲時，你的速度增加 10 呎。", "Roving restricts only the +10 speed bonus by armor");

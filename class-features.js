@@ -218,17 +218,17 @@ const classFeatures = {
 </section>
 </section>
 <div class="class-feature-content" data-class-feature-panel="class">
-<section class="barbarian-feature class-feature-section" data-feature-level="1">
+<section class="barbarian-feature class-feature-section" data-feature-level="1" data-action-id="barbarian-rage">
   <h3>等級 1：狂暴</h3>
   <p>你<strong>未穿重甲</strong>時，可以用<strong>附贈動作</strong>進入狂暴。</p>
   <ul class="class-rule-list">
-    <li><strong>使用次數：</strong>見「野蠻人特性」表的「狂暴次數」欄。<strong>短休後恢復 1 次</strong>，<strong>長休後全部恢復</strong>。</li>
+    <li><strong>使用次數：</strong><span data-tabletop-value="barbarian-rage-uses">見「野蠻人特性」表的「狂暴次數」欄</span>。<strong>短休後恢復 1 次</strong>，<strong>長休後全部恢復</strong>。</li>
   </ul>
   <div class="class-rule-subsection barbarian-rule-subsection">
     <h4>狂暴期間</h4>
     <ul class="class-rule-list">
       <li><strong>抗性：</strong>你對鈍擊、穿刺、揮砍傷害具有抗性。</li>
-      <li><strong>狂暴傷害：</strong>你用力量造成的傷害可加上狂暴傷害，數值見「野蠻人特性」表。</li>
+      <li><strong>狂暴傷害：</strong>你用力量造成的傷害可加上狂暴傷害，<span data-tabletop-value="barbarian-rage-damage">數值見「野蠻人特性」表</span>。</li>
       <li><strong>力量優勢：</strong>你的力量檢定與力量豁免具有<strong>優勢</strong>。</li>
       <li><strong>施法限制：</strong>你不能施法，也不能維持專注。</li>
     </ul>
@@ -281,11 +281,11 @@ const classFeatures = {
   <p>選擇一個野蠻人子職，並隨等級提升獲得子職能力。基本規則僅提供「狂戰士道途」。</p>
 </section>
 
-<section class="barbarian-feature class-feature-section" data-feature-level="3">
+<section class="barbarian-feature class-feature-section" data-feature-level="3" data-action-id="barbarian-frenzy">
   <h3>等級 3：狂怒（狂戰子職）</h3>
   <p>你在狂暴中使用魯莽攻擊，且用力量攻擊命中本回合第一個目標時，可造成額外傷害。</p>
   <ul class="class-rule-list">
-    <li><strong>額外傷害：</strong>若干 d6，骰數等於狂暴傷害加值。</li>
+    <li><strong>額外傷害：</strong><span data-tabletop-value="barbarian-frenzy-dice">若干 d6</span>，骰數等於狂暴傷害加值。</li>
     <li><strong>傷害類型：</strong>與該次攻擊相同。</li>
   </ul>
 </section>
@@ -306,12 +306,12 @@ const classFeatures = {
 </section>
 <section class="barbarian-feature class-feature-section" data-feature-level="4"><p><strong>武器精通補充：</strong>野蠻人達到 4 級時，武器精通可選數量提升為 3 種，詳見「野蠻人特性」表。</p></section>
 
-<section class="barbarian-feature class-feature-section" data-feature-level="5">
+<section class="barbarian-feature class-feature-section" data-feature-level="5" data-action-id="barbarian-extra-attack">
   <h3>等級 5：額外攻擊</h3>
   <p>你在自己的回合執行<strong>攻擊動作</strong>時，可以攻擊 2 次。</p>
 </section>
 
-<section class="barbarian-feature class-feature-section" data-feature-level="5">
+<section class="barbarian-feature class-feature-section" data-feature-level="5" data-action-id="barbarian-fast-movement">
   <h3>等級 5：快速移動</h3>
   <p>你<strong>未穿重甲</strong>時，速度增加 10 呎。</p>
 </section>
@@ -330,9 +330,9 @@ const classFeatures = {
   <p>你的先攻擲骰具有<strong>優勢</strong>。</p>
 </section>
 
-<section class="barbarian-feature class-feature-section" data-feature-level="7">
+<section class="barbarian-feature class-feature-section" data-feature-level="7" data-action-id="barbarian-instinctive-pounce">
   <h3>等級 7：直覺猛撲</h3>
-  <p>你以<strong>附贈動作</strong>進入狂暴時，可以在同一個附贈動作中移動，距離至多為你速度的一半。</p>
+  <p><strong data-tabletop-only hidden>直覺猛撲：</strong>你以<strong>附贈動作</strong>進入狂暴時，可以在同一個附贈動作中移動，距離至多為你速度的一半。</p>
 </section>
 
 <section class="barbarian-feature class-feature-section" data-feature-level="8">
@@ -513,14 +513,14 @@ const classFeatures = {
 </section>
 <div class="class-feature-content" data-class-feature-panel="class">
 
-<section class="bard-feature class-feature-section" data-feature-level="1">
+<section class="bard-feature class-feature-section" data-feature-level="1" data-action-id="bard-inspiration">
   <h3>等級 1：吟遊詩人激勵</h3>
   <p>你可以用話語、音樂或表演鼓舞同伴，給予對方 1 顆激勵骰。</p>
   <ul class="class-rule-list">
     <li><strong>使用方式：</strong>以<strong>附贈動作</strong>指定你 60 呎內聽得到或看得到你的 1 個生物。同一生物同時只能持有 1 顆你的激勵骰。</li>
     <li><strong>效果：</strong>激勵骰持續 1 小時。目標在 <strong>d20 檢定失敗</strong>後，可擲這顆激勵骰並加到結果上；擲出後骰子消耗。</li>
-    <li><strong>激勵骰：</strong>起始為 d6，之後依「吟遊詩人特性」表提升。</li>
-    <li><strong>使用次數：</strong>等同魅力調整值（至少 1 次），<strong>長休後全部恢復</strong>。</li>
+    <li><strong>激勵骰：</strong><span data-tabletop-value="bard-inspiration-die">起始為 d6，之後依「吟遊詩人特性」表提升</span>。</li>
+    <li><strong>使用次數：</strong>等同魅力調整值（至少 1 次），<strong data-tabletop-value="bard-inspiration-recovery">長休後全部恢復</strong>。</li>
   </ul>
 </section>
 
@@ -572,11 +572,11 @@ const classFeatures = {
   <p data-after-feat-choice><strong>施法補充：</strong>吟遊詩人達到 4 級時，你也會透過「施法」特性額外學會 1 個吟遊詩人戲法。</p>
 </section>
 
-<section class="bard-feature class-feature-section" data-feature-level="5">
+<section class="bard-feature class-feature-section" data-feature-level="5" data-action-id="bard-font-of-inspiration">
   <h3>等級 5：激勵之源</h3>
-  <p>吟遊詩人激勵的恢復變得更快，也能用法術位換回使用次數。</p>
+  <p><strong data-tabletop-only hidden>激勵之源：</strong>吟遊詩人激勵的恢復變得更快，也能用法術位換回使用次數。</p>
   <ul class="class-rule-list">
-    <li><strong>恢復時機：</strong><strong>短休或長休後</strong>恢復所有已消耗的激勵使用次數。</li>
+    <li data-tabletop-hide><strong>恢復時機：</strong><strong>短休或長休後</strong>恢復所有已消耗的激勵使用次數。</li>
     <li><strong>法術位轉換：</strong>可消耗 1 個法術位恢復 1 次激勵使用次數，<strong>不需動作</strong>。</li>
   </ul>
 </section>
