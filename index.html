@@ -4154,11 +4154,12 @@ function syncFeatChoiceWarnings() {
   document.querySelectorAll("[data-feat-choice]").forEach(wrap => {
     const select = wrap.querySelector("select");
     if (!select) return;
-    const unmet = entries.some(entry => entry.row.dataset.sourceKey === wrap.dataset.featChoice && entry.value && !entry.usable);
+    const unmet = entries.find(entry => entry.row.dataset.sourceKey === wrap.dataset.featChoice && entry.value && !entry.usable);
     const warningId = `${select.id}-warning`;
     const warning = document.getElementById(warningId);
     if (unmet) {
-      if (!warning) wrap.insertAdjacentHTML("beforeend", getFeatEligibilityWarningHtml(warningId));
+      if (!warning) wrap.insertAdjacentHTML("beforeend", getFeatEligibilityWarningHtml(warningId, unmet));
+      else warning.textContent = getFeatUnusableMessage(unmet);
       select.setAttribute("aria-describedby", warningId);
     } else {
       warning?.remove();
@@ -4346,8 +4347,12 @@ function getFeatUsageEntries(changedSelect = null, overrideValue = "") {
     const duplicate = (!FEAT_RULES[value]?.repeatable && claimed.has(value))
       || (spec.source === "invocation" && lessons.has(value))
       || (value === MAGIC_INITIATE_FEAT_NAME && magicFeatCount >= MAGIC_INITIATE_CLASS_OPTIONS.length);
-    entry.usable = Boolean(value && spec.active && isFeatChoiceEligible(value, spec) && !duplicate);
-    if (!entry.usable) return;
+    const eligible = Boolean(spec.active && isFeatChoiceEligible(value, spec));
+    entry.usable = Boolean(value && eligible && !duplicate);
+    if (!entry.usable) {
+      if (value) entry.unusableReasons = { ineligible: !eligible, duplicate };
+      return;
+    }
     claimed.add(value);
     if (spec.source === "invocation") lessons.add(value);
     if (value === MAGIC_INITIATE_FEAT_NAME) magicFeatCount += 1;
@@ -4392,8 +4397,17 @@ function syncInitiativeAfterFeatSelectionChange(changedSelect, previousValue = "
   changedSelect.dataset.previousValue = currentValue;
 }
 
-function getFeatEligibilityWarningHtml(warningId) {
-  return `<div id="${warningId}" class="feat-eligibility-warning" role="status">角色未達專長使用條件</div>`;
+// 依不可用原因組合警示；未標明原因時沿用資格警示。
+function getFeatUnusableMessage(entry) {
+  const reasons = entry?.unusableReasons || {};
+  const messages = [];
+  if (reasons.ineligible || !reasons.duplicate) messages.push("角色未達專長使用條件");
+  if (reasons.duplicate) messages.push("專長不可重複選擇");
+  return messages.join("；");
+}
+
+function getFeatEligibilityWarningHtml(warningId, entry) {
+  return `<div id="${warningId}" class="feat-eligibility-warning" role="status">${getFeatUnusableMessage(entry)}</div>`;
 }
 
 const FEAT_DISCLOSURE_STATE_KEY = "dnd.featDisclosure.v1";
@@ -4462,7 +4476,6 @@ function syncFeatRowDisclosure(row) {
   if (!warning) {
     warning = document.createElement("span");
     warning.className = "feat-disclosure-warning";
-    warning.textContent = "角色未達專長使用條件";
     name.after(warning);
   }
 
@@ -4471,7 +4484,9 @@ function syncFeatRowDisclosure(row) {
   row.classList.toggle("feat-entry--collapsed", !expanded);
   name.textContent = select.value || "尚未選擇";
   name.hidden = expanded;
-  warning.hidden = expanded || !row.querySelector(":scope > .output .feat-eligibility-warning");
+  const descWarning = row.querySelector(":scope > .output .feat-eligibility-warning");
+  warning.textContent = descWarning?.textContent || "";
+  warning.hidden = expanded || !descWarning;
   toggle.textContent = expanded ? "▾" : "▸";
   toggle.setAttribute("aria-expanded", String(expanded));
   toggle.setAttribute("aria-label", `${expanded ? "收合" : "展開"}${label.textContent.trim()}：${name.textContent}`);
@@ -4483,12 +4498,12 @@ function updateFeatDesc(selectId, descId) {
   const raw = featsDesc[v] || "—";
   const el = document.getElementById(descId);
 
-  const unmet = getFeatUsageEntries().some(entry => entry.select === select && entry.value && !entry.usable);
+  const unmet = getFeatUsageEntries().find(entry => entry.select === select && entry.value && !entry.usable);
   const warningId = `${descId}-warning`;
   if (unmet) select.setAttribute("aria-describedby", warningId);
   else select.removeAttribute("aria-describedby");
   setCharacterHtml(el,
-    (unmet ? getFeatEligibilityWarningHtml(warningId) : "") +
+    (unmet ? getFeatEligibilityWarningHtml(warningId, unmet) : "") +
     formatFeatDescription(raw));
   syncFeatRowDisclosure(select.closest("#feats-area .form-row"));
 }
@@ -9518,7 +9533,7 @@ function buildPdfPrecheckMessages() {
 
   getFeatUsageEntries().filter(entry => entry.value && !entry.usable).forEach(entry => {
     reminders.push({
-      message: `${entry.value}：角色未達專長使用條件（不套用自動計算加值）。`,
+      message: `${entry.value}：${getFeatUnusableMessage(entry)}（不套用自動計算加值）。`,
       tab: "basic",
       selector: `#${entry.select.id}`,
       focusSelector: `#${entry.select.id}`

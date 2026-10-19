@@ -1288,7 +1288,7 @@ async function verifyAutomaticFeatRows(browser, url) {
       select.dispatchEvent(new Event("change"));
     });
     assert.equal(await page.inputValue("#derived-feat-fighting-style-fighter-2"), "巨武器戰鬥", "invalid selection is retained");
-    assert.equal(await page.locator("#derived-feat-fighting-style-fighter-2-desc .feat-eligibility-warning").textContent(), "角色未達專長使用條件", "duplicate selection warns");
+    assert.equal(await page.locator("#derived-feat-fighting-style-fighter-2-desc .feat-eligibility-warning").textContent(), "專長不可重複選擇", "duplicate selection warns");
     await chooseFeat("#derived-feat-fighting-style-fighter", "防禦");
     assert.equal(await page.locator("#derived-feat-fighting-style-fighter-2-desc .feat-eligibility-warning").count(), 0, "released duplicate becomes usable");
     assert.equal(await page.locator('#derived-feat-fighting-style-fighter-2 option[value="巨武器戰鬥"]').isDisabled(), false, "changing main style releases previous choice");
@@ -1506,6 +1506,19 @@ async function verifyFeatEligibilityWarnings(browser, url) {
     await collapsedWarningRow.locator(".feat-disclosure-toggle").click();
     const warning = page.locator("#derived-feat-fighter-level-4-desc .feat-eligibility-warning");
     assert.equal(await warning.textContent(), "角色未達專長使用條件");
+    await page.selectOption("#derived-feat-fighter-level-4", "兇蠻打手");
+    assert.equal(await warning.textContent(), "專長不可重複選擇", "background duplicate names duplicate cause");
+    assert.equal(await page.locator("#derived-feat-background-desc .feat-eligibility-warning").count(), 0, "background keeps duplicate priority");
+    assert.equal(await page.evaluate(() => buildPdfPrecheckMessages().some(entry => entry.message === "兇蠻打手：專長不可重複選擇（不套用自動計算加值）。")), true, "PDF precheck names duplicate cause");
+    await collapsedWarningRow.locator(".feat-disclosure-toggle").click();
+    assert.equal(await collapsedWarningRow.locator(".feat-disclosure-warning").textContent(), "專長不可重複選擇", "collapsed duplicate shows duplicate cause");
+    await collapsedWarningRow.locator(".feat-disclosure-toggle").click();
+    await page.evaluate(() => openCharacterFeatures("class"));
+    assert.equal(await page.locator("#feat-choice-fighter-level-4-warning").textContent(), "專長不可重複選擇", "class detail choice names duplicate cause");
+    await page.click("#character-features-modal .app-dialog__close");
+    assert.equal(await page.evaluate(() => getFeatUnusableMessage({ unusableReasons: { ineligible: true, duplicate: true } })), "角色未達專長使用條件；專長不可重複選擇", "combined causes show both messages");
+    await page.selectOption("#derived-feat-fighter-level-4", "迅捷步法");
+    assert.equal(await warning.textContent(), "角色未達專長使用條件", "prerequisite cause restores original message");
     assert.equal(await page.inputValue("#speed-display"), "30", "ineligible speedy feat adds no speed");
     assert.equal(await page.evaluate(() => hasSelectedFeat("臨陣施法")), false, "ineligible caster feat is inactive");
     await page.evaluate(() => TabletopMode.setMode("tabletop"));
