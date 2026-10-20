@@ -9823,7 +9823,8 @@ html[data-theme="dark"] .dice-roller-roll::after {
   cursor: pointer;
 }
 
-#weaponRulePopup .close {
+#weaponRulePopup .close,
+#skillPopup .close {
   width: auto;
   min-width: 0;
   min-height: 0;
@@ -9848,6 +9849,7 @@ html[data-theme="dark"] .dice-roller-roll::after {
 }
 
 .beast-tip,
+.condition-tip,
 .skill-tip {
   cursor: pointer;
   text-decoration: underline;
@@ -9883,6 +9885,24 @@ button.feature-rule-tip:active {
 button.feature-rule-tip:focus-visible {
   outline: 2px solid var(--accent-strong);
   outline-offset: 2px;
+}
+
+#skillPopup.condition-reference-popup {
+  cursor: auto;
+  touch-action: auto;
+  user-select: text;
+}
+
+#skillPopup.condition-reference-popup .title {
+  cursor: grab;
+  touch-action: none;
+}
+
+#skillPopup .condition-popup-effects {
+  max-height: calc(100vh - 100px);
+  max-height: calc(100dvh - 100px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 #spell-qr-modal,

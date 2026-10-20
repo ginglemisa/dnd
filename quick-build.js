@@ -3693,7 +3693,10 @@
     modal.querySelector("#quick-build-spell-detail-title").textContent = title;
     modal.querySelector(".quick-build-spell-prepare").hidden = true;
     settleSpellPrepareDecision(false);
-    if (description) {
+    const featTitle = String(description || "").split(/\r?\n/)[0];
+    if (description && typeof featsDesc === "object" && featsDesc[featTitle] === description) {
+      content.innerHTML = formatFeatDescription(description);
+    } else if (description) {
       const lines = String(description).replace(/\r\n/g, "\n").split("\n");
       const noticeIndex = lines.findIndex(line => line.trim().startsWith("「擴充」為本站"));
       if (noticeIndex >= 0) {

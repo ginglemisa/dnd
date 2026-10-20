@@ -81,18 +81,18 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261020-share-identity-lock">
+  <link rel="stylesheet" href="styles.css?v=20261020-condition-tips">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261006-usage-analytics" defer></script>
-  <script src="monster.js?v=20261019-explicit-skill-tips" defer></script>
-    <script src="class-features.js?v=20261020-empowered-strikes" defer></script>
-  <script src="race.js?v=20261003-race-flavor" defer></script>
+  <script src="monster.js?v=20261020-beast-action-terms" defer></script>
+    <script src="class-features.js?v=20261020-condition-tips" defer></script>
+  <script src="race.js?v=20261020-condition-tips" defer></script>
   <script src="backgrounds.js?v=20261003-background-flavor" defer></script>
   <script src="tool-data.js?v=20261008-class-tools" defer></script>
-  <script src="feats.js?v=20261001-automatic-feat-grants" defer></script>
+  <script src="feats.js?v=20261020-condition-tips" defer></script>
   <script src="equipment-notes.js?v=20260813-weapon-rule-popups-2" defer></script>
   <script src="spell-list.js?v=20261014-class-lookup" defer></script>
-  <script src="condition.js?v=20261002-condition-effects" defer></script>
+  <script src="condition.js?v=20261020-condition-tips" defer></script>
   <script src="action-panel.js?v=20261020-empowered-strikes" defer></script>
   <script src="character-rules.js?v=20261010-spell-lists-v2" defer></script>
   <script src="app-dialog.js?v=20261009-class-choice-prompt" defer></script>
@@ -105,7 +105,7 @@
   <script src="tabletop-spells.js?v=20261012-wizard-ritual-group" defer></script>
   <script src="legal-modal.js?v=20260923-legal-about" defer></script>
   <script src="onboarding-tour.js?v=20261020-share-identity-lock" defer></script>
-  <script src="quick-build.js?v=20261020-share-identity-lock" defer></script>
+  <script src="quick-build.js?v=20261020-condition-tips" defer></script>
   <script src="spellbook.js?v=20261014-picker-performance" defer></script>
   <script src="spell-management.js?v=20261020-class-option-memory" defer></script>
   <script src="class-option-memory.js?v=20261020-class-option-memory" defer></script>
@@ -4454,10 +4454,18 @@ function showFeatChoiceDetail(select, trigger) {
   const content = document.createElement("div");
   content.className = "output feat-choice-detail";
   content.innerHTML = formatFeatDescription(featsDesc[select.value] || "—");
+  const popup = document.getElementById("skillPopup");
+  const popupParent = popup.parentElement;
   window.AppDialog.showContent({
     title: "專長詳情", variant: "feat-detail", content, trigger,
-    confirmLabel: "關閉", initialFocus: "primary"
+    confirmLabel: "關閉", initialFocus: "primary",
+    onClose() {
+      hideSkillPopup();
+      popupParent.appendChild(popup);
+    }
   });
+  content.closest(".app-dialog").appendChild(popup);
+  popup.inert = false;
 }
 
 function syncFeatChoiceWarnings() {
@@ -4866,7 +4874,10 @@ function formatFeatDescription(raw) {
       if (idx > 0) {
         const head = line.slice(0, idx).trim();
         const tail = line.slice(idx + 1).trim();
-        return `<div><strong>${escapeHtml(head)}</strong>：${escapeHtml(tail)}</div>`;
+        const reference = FEAT_CONDITION_REFERENCES[title]?.[head];
+        const tip = reference && createDndConditionTip(reference.key, reference.label);
+        const text = tip ? tail.split(reference.label).map(escapeHtml).join(tip.outerHTML) : escapeHtml(tail);
+        return `<div><strong>${escapeHtml(head)}</strong>：${text}</div>`;
       }
 
       return `<div>${escapeHtml(t)}</div>`;
@@ -8346,19 +8357,27 @@ function hideBeastPopup() {
   if (popup) popup.style.display = "none";
 }
 
+let conditionPopupTrigger = null;
 (function setupSkillPopup() {
   if (document.getElementById("skillPopup")) return;
 
   const popup = document.createElement("div");
   popup.id = "skillPopup";
-  popup.innerHTML = `<span class="close" title="關閉">✕</span><div class="content"></div>`;
+  popup.innerHTML = `<button type="button" class="close" aria-label="關閉說明">✕</button><div class="content"></div>`;
   document.body.appendChild(popup);
 
-  popup.querySelector(".close").addEventListener("click", () => hideSkillPopup());
+  popup.querySelector(".close").addEventListener("click", () => hideSkillPopup({ restoreFocus: true }));
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") hideSkillPopup(); });
+  // 狀態說明可從角色能力、專長子視窗或創角開啟；Escape 先關閉此浮層。
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape" || !conditionPopupTrigger || popup.style.display !== "block") return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    hideSkillPopup({ restoreFocus: true });
+  }, true);
 
   document.addEventListener("click", (e) => {
-    const clickedTip = e.target.closest(".skill-tip");
+    const clickedTip = e.target.closest(".skill-tip, .condition-tip");
     const clickedPopup = e.target.closest("#skillPopup");
 
     if (clickedTip) {
@@ -8372,7 +8391,14 @@ function hideBeastPopup() {
   }, true);
 })();
 
-function renderSkillPopupHtml(skillLabel) {
+function renderSkillPopupHtml(skillLabel, conditionKey) {
+  if (conditionKey) {
+    const condition = getDndCondition(conditionKey);
+    if (!condition) return "";
+    return `<div class="title">${escapeHtml(condition.zh)} ${escapeHtml(condition.en)}</div>` +
+      `<div class="condition-popup-effects">${condition.effects.map(effect =>
+        `<p class="skill-popup-paragraph">${escapeHtml(effect)}</p>`).join("")}</div>`;
+  }
   const normalizedKey = normalizeSkillKey(skillLabel);
   const text = skills_example_uses[normalizedKey];
   if (!text) return "";
@@ -8389,12 +8415,23 @@ function renderSkillPopupHtml(skillLabel) {
 }
 
 function showSkillPopup(skillLabel, anchorEl) {
-  const normalizedKey = normalizeSkillKey(skillLabel);
-  if (!skills_example_uses[normalizedKey]) return;
+  const conditionKey = anchorEl.dataset.condition;
+  const html = renderSkillPopupHtml(skillLabel, conditionKey);
+  if (!html) return;
 
   const popup = document.getElementById("skillPopup");
   const content = popup.querySelector(".content");
-  content.innerHTML = renderSkillPopupHtml(skillLabel);
+  hideSkillPopup();
+  conditionPopupTrigger = conditionKey ? anchorEl : null;
+  popup.classList.toggle("condition-reference-popup", !!conditionKey);
+  if (conditionKey) {
+    popup.setAttribute("role", "dialog");
+    popup.setAttribute("aria-label", `${getDndCondition(conditionKey).zh}狀態說明`);
+  } else {
+    popup.removeAttribute("role");
+    popup.removeAttribute("aria-label");
+  }
+  content.innerHTML = html;
 
   const r = anchorEl.getBoundingClientRect();
   popup.style.display = "block";
@@ -8407,11 +8444,15 @@ function showSkillPopup(skillLabel, anchorEl) {
 
   popup.style.left = `${left}px`;
   popup.style.top = `${top}px`;
+  if (conditionKey) popup.querySelector(".close").focus({ preventScroll: true });
 }
 
-function hideSkillPopup() {
+function hideSkillPopup({ restoreFocus = false } = {}) {
   const popup = document.getElementById("skillPopup");
   if (popup) popup.style.display = "none";
+  const trigger = conditionPopupTrigger;
+  conditionPopupTrigger = null;
+  if (restoreFocus && trigger?.isConnected && !trigger.closest("[inert]")) trigger.focus({ preventScroll: true });
 }
 
 // 讓共用說明浮層可用滑鼠或觸控拖移；事件委派也能涵蓋稍後建立的浮層。
@@ -8428,6 +8469,7 @@ function hideSkillPopup() {
       !popup ||
       event.button !== 0 ||
       event.target.closest("button, a, input, select, textarea, .close")
+      || (popup.classList.contains("condition-reference-popup") && !event.target.closest(".title"))
     ) {
       return;
     }

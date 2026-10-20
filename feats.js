@@ -181,6 +181,16 @@ ${EXPANSION_NOTICE}`,
 幫撐十秒：使用「輕型」武器進行副手攻擊時，可用屬性加值提升傷害`
 };
 
+// 僅在指定效果的內文加上狀態說明；featsDesc 保持純文字，供摘要、創角與匯出共用。
+const FEAT_CONDITION_REFERENCES = {
+  "警覺": { "先攻互換": { key: "incapacitated", label: "失能" } },
+  "擒抱者": {
+    "重拳擒抱": { key: "grappled", label: "擒抱" },
+    "攻擊優勢": { key: "grappled", label: "擒抱" },
+    "迅捷摔技": { key: "grappled", label: "擒抱" }
+  }
+};
+
 const FEAT_OPTIONS = [
   { value: "警覺", label: "警覺(起源)" },
   { value: "魔法學徒", label: "魔法學徒(起源)" },

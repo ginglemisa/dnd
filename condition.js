@@ -289,6 +289,31 @@
     return HAZARDS_BY_KEY.get(String(hazardOrKey || "")) || null;
   }
 
+  // 明確標記引用，以穩定 key 對應規則；label 可保留原文別名，不自動掃描同名敘述。
+  function createConditionTip(key, label) {
+    const condition = getCondition(key);
+    if (!condition || typeof document === "undefined") return null;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "condition-tip feature-rule-tip";
+    button.dataset.condition = condition.key;
+    button.textContent = label ?? condition.zh;
+    button.setAttribute("aria-controls", "skillPopup");
+    button.setAttribute("aria-haspopup", "dialog");
+    return button;
+  }
+
+  function decorateConditionTips(html) {
+    const template = document.createElement("template");
+    template.innerHTML = html;
+    template.content.querySelectorAll("span.condition-tip[data-condition]").forEach(tip => {
+      if (tip.closest('a, button, select, [role="button"]')) return;
+      const button = createConditionTip(tip.dataset.condition, tip.textContent);
+      if (button) tip.replaceWith(button);
+    });
+    return template.innerHTML;
+  }
+
   function createConditionDescription(conditionOrKey) {
     const condition = getCondition(conditionOrKey);
     if (!condition || typeof document === "undefined") return null;
@@ -402,6 +427,8 @@
     DND_HAZARDS: HAZARDS,
     getDndCondition: getCondition,
     getDndHazard: getHazard,
+    createDndConditionTip: createConditionTip,
+    decorateDndConditionTips: decorateConditionTips,
     createDndConditionDescription: createConditionDescription,
     createDndHazardDescription: createHazardDescription,
     renderDndConditionDescription: renderConditionDescription,

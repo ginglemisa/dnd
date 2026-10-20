@@ -227,7 +227,7 @@ const classFeatures = {
   <div class="class-rule-subsection barbarian-rule-subsection">
     <h4>狂暴期間</h4>
     <ul class="class-rule-list">
-      <li><strong>抗性：</strong>你對鈍擊、穿刺、揮砍傷害具有抗性。</li>
+      <li><strong>抗性：</strong>你對鈍擊、穿刺、揮砍傷害具有${skillTip("抗性")}。</li>
       <li><strong>狂暴傷害：</strong>你用力量造成的傷害可加上狂暴傷害，<span data-tabletop-value="barbarian-rage-damage">數值見「野蠻人特性」表</span>。</li>
       <li><strong>力量優勢：</strong>你的力量檢定與力量豁免具有<strong>優勢</strong>。</li>
       <li><strong>施法限制：</strong>你不能施法，也不能維持專注。</li>
@@ -242,7 +242,7 @@ const classFeatures = {
       <li><strong>附贈動作：</strong>再用一次<strong>附贈動作</strong>延長狂暴。</li>
     </ul>
   </div>
-  <p><strong>結束條件：</strong>你穿上重甲、陷入失能，或狂暴超過 10 分鐘時，狂暴結束。</p>
+  <p><strong>結束條件：</strong>你穿上重甲、陷入<span class="condition-tip" data-condition="incapacitated">失能</span>，或狂暴超過 10 分鐘時，狂暴結束。</p>
 </section>
 
 <section class="barbarian-feature class-feature-section" data-feature-level="1">
@@ -264,14 +264,14 @@ const classFeatures = {
 
 <section class="barbarian-feature class-feature-section" data-feature-level="2">
   <h3>等級 2：險境感知</h3>
-  <p>只要你未陷入<strong>失能</strong>狀態，你的敏捷豁免就具有<strong>優勢</strong>。</p>
+  <p>只要你未陷入<strong><span class="condition-tip" data-condition="incapacitated">失能</span></strong>狀態，你的敏捷豁免就具有<strong>優勢</strong>。</p>
 </section>
 
 <section class="barbarian-feature class-feature-section" data-feature-level="2" data-action-id="barbarian-reckless-attack">
   <h3>等級 2：魯莽攻擊</h3>
   <p>在你的回合中，第一次用力量攻擊前可以宣告魯莽攻擊。</p>
   <ul class="class-rule-list">
-    <li><strong>你的優勢：</strong>本回合你用力量進行的近戰攻擊具有<strong>優勢</strong>。</li>
+    <li><strong>好處：</strong>本回合你用力量進行的近戰攻擊具有<strong>優勢</strong>。</li>
     <li><strong>代價：</strong>直到你的下個回合開始前，攻擊你的檢定也具有<strong>優勢</strong>。</li>
   </ul>
 </section>
@@ -318,7 +318,7 @@ const classFeatures = {
 
 <section class="barbarian-feature class-feature-section" data-feature-level="6">
   <h3>等級 6：無我狂暴（狂戰子職）</h3>
-  <p>狂暴期間，你<strong>免疫魅惑與恐慌</strong>狀態。</p>
+  <p>狂暴期間，你<strong>免疫<span class="condition-tip" data-condition="charmed">魅惑</span>與<span class="condition-tip" data-condition="frightened">恐慌</span></strong>狀態。</p>
   <ul class="class-rule-list">
     <li><strong>進入狂暴時：</strong>若你正處於其中一種狀態，該狀態立即終止。</li>
   </ul>
@@ -582,7 +582,7 @@ const classFeatures = {
 </section>
 <section class="bard-feature class-feature-section" data-feature-level="5"><p><strong>吟遊詩人激勵補充：</strong>吟遊詩人達到 5 級時，激勵骰提升為 d8，詳見「吟遊詩人特性」表。</p></section>
 <section class="bard-feature class-feature-section" data-feature-level="6"><h3>等級 6：魔法發現（逸聞子職）</h3><p>你從牧師、德魯伊或法師法術列表中選擇並學會 2 個法術，兩者可以來自不同列表。</p><ul class="class-rule-list"><li><strong>選擇條件：</strong>所選法術必須是戲法，或是你已有對應法術位的法術。</li><li><strong>始終準備：</strong>你始終準備所選法術。</li><li><strong>升級替換：</strong>每提升 1 級吟遊詩人，可將其中 1 個換成另一個符合條件的法術。</li></ul><div id="bard-magical-discoveries" class="bard-magical-discoveries" aria-label="魔法發現法術選擇"></div></section>
-<section class="bard-feature class-feature-section" data-feature-level="7" data-action-id="bard-countercharm"><h3>等級 7：反迷惑</h3><p>你或你 30 呎內的 1 個生物在對抗魅惑或恐慌狀態的豁免檢定中失敗時，你可以使失敗者重新進行該豁免。</p><ul class="class-rule-list"><li><strong>動作類型：</strong>反應。</li><li><strong>重新豁免：</strong>新的檢定具有<strong>優勢</strong>。</li></ul></section>
+<section class="bard-feature class-feature-section" data-feature-level="7" data-action-id="bard-countercharm"><h3>等級 7：反迷惑</h3><p>你或你 30 呎內的 1 個生物在對抗<span class="condition-tip" data-condition="charmed">魅惑</span>或<span class="condition-tip" data-condition="frightened">恐慌</span>狀態的豁免檢定中失敗時，你可以使失敗者重新進行該豁免。</p><ul class="class-rule-list"><li><strong>使用：</strong>反應。</li><li><strong>重新豁免：</strong>新的檢定具有<strong>優勢</strong>。</li></ul></section>
 <section class="bard-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p></section>
 </div>
 `,
@@ -771,8 +771,8 @@ const classFeatures = {
     <h4>驅散不死生物（魔法動作<span data-tabletop-only hidden>，消耗 1 次引導神力</span>）</h4>
     <p>30 呎內每個不死生物進行感知豁免<span data-tabletop-only hidden data-tabletop-value="cleric-spell-save-dc">（使用牧師法術豁免 DC）</span>。</p>
     <ul class="class-rule-list">
-      <li><strong>豁免失敗：</strong>1 分鐘內陷入恐慌與失能，並在自己的回合中盡量遠離你。</li>
-      <li><strong>提前結束：</strong>該生物受到傷害，或你失能、死亡時，效果結束。</li>
+      <li><strong>豁免失敗：</strong>1 分鐘內陷入<span class="condition-tip" data-condition="frightened">恐慌</span>與<span class="condition-tip" data-condition="incapacitated">失能</span>，並在自己的回合中盡量遠離你。</li>
+      <li><strong>提前結束：</strong>該生物受到傷害，或你<span class="condition-tip" data-condition="incapacitated">失能</span>、死亡時，效果結束。</li>
     </ul>
   </div>
 </section>
@@ -1036,7 +1036,7 @@ const classFeatures = {
   <p>以<strong>附贈動作</strong>變成已知的野獸形態<span data-tabletop-hide>，見下方「已知形態」</span>。</p>
   <ul class="class-rule-list">
     <li><strong>持續時間：</strong>最多為德魯伊等級的一半（無條件捨去）小時<span data-tabletop-only data-tabletop-value="druid-wild-shape-hours" hidden></span>。</li>
-    <li><strong>提前結束：</strong>再次使用荒野形態、陷入失能或死亡時結束；也可用附贈動作主動解除。</li>
+    <li><strong>提前結束：</strong>再次使用荒野形態、陷入<span class="condition-tip" data-condition="incapacitated">失能</span>或死亡時結束；也可用附贈動作主動解除。</li>
     <li><strong>使用次數：</strong><span data-tabletop-value="druid-wild-shape-uses">起始 2 次，之後依「德魯伊特性」表增加</span>。</li>
     <li><strong>恢復時機：</strong><strong>短休後恢復 1 次，長休後全部恢復</strong>。</li>
   </ul>
@@ -1567,7 +1567,7 @@ const classFeatures = {
   <ul class="class-rule-list">
     <li><strong>附贈攻擊：</strong>可用<strong>附贈動作</strong>再進行 1 次徒手攻擊。</li>
     <li><strong>武藝骰：</strong>徒手與武僧武器可用武藝骰取代原本的傷害骰。<span data-tabletop-value="monk-martial-arts-die">起始為 1d6，之後依「武僧特性」表提升</span>。</li>
-    <li><strong>敏捷取代力量：</strong>徒手與武僧武器的攻擊與傷害可用敏捷取代力量；徒手推撞／擒抱的豁免 DC 也可用敏捷計算。</li>
+    <li><strong>敏捷取代力量：</strong>徒手與武僧武器的攻擊與傷害可用敏捷取代力量；徒手推撞／<span class="condition-tip" data-condition="grappled">擒抱</span>的豁免 DC 也可用敏捷計算。</li>
     <li><strong>武僧武器：</strong>簡易近戰武器，以及具有輕型屬性的軍用近戰武器。</li>
   </ul>
 </section>
@@ -1635,7 +1635,7 @@ const classFeatures = {
   <ul class="class-rule-list">
     <li><strong>截擊：</strong>到你的下回合結束前，目標不能發動藉機攻擊。</li>
     <li><strong>擊退：</strong>目標力量豁免失敗時，被推離你最多 15 呎。</li>
-    <li><strong>擊倒：</strong>目標敏捷豁免失敗時倒地。</li>
+    <li><strong>擊倒：</strong>目標敏捷豁免失敗時<span class="condition-tip" data-condition="prone">倒地</span>。</li>
   </ul>
 </section>
 
@@ -1659,7 +1659,7 @@ const classFeatures = {
   <p>你用武僧武器或徒手命中時，可消耗 1 點專注點發動震懾打擊，目標需進行體質豁免<span data-tabletop-only hidden>（DC <span data-tabletop-value="monk-save-dc">8 + 熟練加值 + 感知調整值</span>）</span>。</p>
   <ul class="class-rule-list">
     <li><strong>使用次數：</strong><strong>每回合 1 次</strong>。</li>
-    <li><strong>豁免失敗：</strong>目標陷入震懾，直到你的下回合開始。</li>
+    <li><strong>豁免失敗：</strong>目標陷入<span class="condition-tip" data-condition="stunned">震懾</span>，直到你的下回合開始。</li>
     <li><strong>豁免成功：</strong>目標速度減半，且到你的下回合開始前，下一次對它的攻擊具有優勢。</li>
   </ul>
 </section>
@@ -1667,7 +1667,7 @@ const classFeatures = {
 <section class="monk-feature class-feature-section" data-feature-level="6" data-action-id="monk-empowered-strikes"><h3>等級 6：真力駐拳</h3><p>你的徒手打擊造成傷害時，可以將傷害類型改為力場傷害。</p></section>
 <section class="monk-feature class-feature-section" data-feature-level="6" data-action-id="monk-wholeness-of-body"><h3>等級 6：混元體（散打子職）</h3><p>你可以用<strong>附贈動作</strong>擲武藝骰，恢復等同<span data-tabletop-value="monk-wholeness-healing">「擲骰結果＋感知調整值」</span>的生命值（至少 1 點）。</p><ul class="class-rule-list"><li><strong>使用次數：</strong>等同感知調整值（至少 1 次），<strong>長休後全部恢復</strong>。</li></ul></section>
 <section class="monk-feature class-feature-section" data-feature-level="6"><p><strong>無甲移動補充：</strong>武僧達到 6 級時，無甲移動的速度加值提升為 15 呎，詳見「武僧特性」表。</p></section>
-<section class="monk-feature class-feature-section" data-feature-level="7"><h3>等級 7：反射閃避</h3><p>你受到允許進行<strong>敏捷豁免</strong>使傷害減半的效應影響時，豁免成功則不受傷害，豁免失敗則只受一半傷害。</p><ul class="class-rule-list"><li><strong>限制：</strong>你處於<strong>失能</strong>狀態時，無法獲得此特性的效益。</li></ul></section>
+<section class="monk-feature class-feature-section" data-feature-level="7"><h3>等級 7：反射閃避</h3><p>你受到允許進行<strong>敏捷豁免</strong>使傷害減半的效應影響時，豁免成功則不受傷害，豁免失敗則只受一半傷害。</p><ul class="class-rule-list"><li><strong>限制：</strong>你處於<strong><span class="condition-tip" data-condition="incapacitated">失能</span></strong>狀態時，無法獲得此特性的效益。</li></ul></section>
 <section class="monk-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p></section>
 </div>
 `,
@@ -1821,7 +1821,7 @@ const classFeatures = {
   <p>你擁有一個治療能量池，總量為<span data-tabletop-value="paladin-lay-on-hands-pool">「聖騎士等級 × 5」</span>，<strong>長休後全部恢復</strong>。</p>
   <ul class="class-rule-list">
     <li><strong>治療：</strong>以<strong>附贈動作</strong>觸碰 1 個生物（可以是自己），從能量池分配治療量，使目標恢復等量生命值。</li>
-    <li><strong>移除中毒：</strong>觸碰時也可改為消耗 5 點能量，移除目標的中毒狀態；此用法不恢復生命值。</li>
+    <li><strong>移除中毒：</strong>觸碰時也可改為消耗 5 點能量，移除目標的<span class="condition-tip" data-condition="poisoned">中毒</span>狀態；此用法不恢復生命值。</li>
   </ul>
 </section>
 
@@ -1871,7 +1871,7 @@ const classFeatures = {
   </ul>
   <div class="class-rule-subsection">
     <h4>神聖感知（附贈動作<span data-tabletop-only hidden>，消耗 1 次引導神力</span>）</h4>
-    <p>啟動後持續 10 分鐘，或直到你陷入失能狀態。期間獲得以下能力：</p>
+    <p>啟動後持續 10 分鐘，或直到你陷入<span class="condition-tip" data-condition="incapacitated">失能</span>狀態。期間獲得以下能力：</p>
     <ul class="class-rule-list">
       <li><strong>感知生物：</strong>感知 60 呎內天界生物、邪魔、不死生物的位置與類型。</li>
       <li><strong>偵測地點：</strong>偵測同範圍內受「聖居」祝福或褻瀆的地點與物件。</li>
@@ -1930,7 +1930,7 @@ const classFeatures = {
 
 <section class="paladin-feature class-feature-section" data-feature-level="6">
   <h3>等級 6：守護靈氣&#x20;</h3>
-  <p>你以自身為原點，散發 10 呎的無形保護靈氣。你陷入<strong>失能</strong>狀態時，靈氣失效。</p>
+  <p>你以自身為原點，散發 10 呎的無形保護靈氣。你陷入<strong><span class="condition-tip" data-condition="incapacitated">失能</span></strong>狀態時，靈氣失效。</p>
   <ul class="class-rule-list">
     <li><strong>豁免加值：</strong>你和靈氣內的盟友進行豁免檢定時，獲得等同你魅力調整值的加值（至少 +1）。</li>
     <li><strong>靈氣重疊：</strong>一個生物同一時間只能從一道守護靈氣獲益；位於多道靈氣重疊處時，由該生物選擇使用哪一道。</li>
@@ -1939,9 +1939,9 @@ const classFeatures = {
 
 <section class="paladin-feature class-feature-section" data-feature-level="7">
   <h3>等級 7：奉獻靈氣（奉獻子職）&#x20;</h3>
-  <p>你的守護靈氣使你和其中的盟友<strong>免疫魅惑</strong>狀態。</p>
+  <p>你的守護靈氣使你和其中的盟友<strong>免疫<span class="condition-tip" data-condition="charmed">魅惑</span></strong>狀態。</p>
   <ul class="class-rule-list">
-    <li><strong>已受魅惑：</strong>若正被魅惑的盟友進入靈氣範圍，該狀態會暫時失效。</li>
+    <li><strong>已受魅惑：</strong>若正被<span class="condition-tip" data-condition="charmed">魅惑</span>的盟友進入靈氣範圍，該狀態會暫時失效。</li>
   </ul>
 </section>
 
@@ -2149,7 +2149,7 @@ const classFeatures = {
 
 <section class="ranger-feature class-feature-section" data-feature-level="3" data-action-id="ranger-hunters-lore">
   <h3>等級 3：獵人學識（獵人子職）</h3>
-  <p>目標被你的「獵人印記」標記時，你會知道它的傷害免疫、抗性與易傷。</p>
+  <p>目標被你的「獵人印記」標記時，你會知道它的傷害免疫、${skillTip("抗性")}與易傷。</p>
 </section>
 
 <section class="ranger-feature class-feature-section" data-feature-level="3" data-rest-change="either" data-action-id="ranger-hunters-prey">
@@ -2321,7 +2321,7 @@ const classFeatures = {
   <p><strong>每回合 1 次</strong>，以靈巧武器或遠程武器命中時，若符合下列任一條件，可額外造成 <span data-tabletop-value="rogue-sneak-attack-dice">1d6</span> 傷害（與武器傷害類型相同）。</p>
   <ul class="class-rule-list">
     <li><strong>具有優勢：</strong>這次攻擊檢定具有優勢。</li>
-    <li><strong>友方在旁：</strong>目標 5 呎內有至少 1 名未失能的友方，且這次攻擊檢定沒有劣勢。</li>
+    <li><strong>友方在旁：</strong>目標 5 呎內有至少 1 名未<span class="condition-tip" data-condition="incapacitated">失能</span>的友方，且這次攻擊檢定沒有劣勢。</li>
   </ul>
   <p data-tabletop-hide>偷襲傷害骰隨盜賊等級增加，見「盜賊特性」表的「偷襲」欄。</p>
 </section>
@@ -2353,7 +2353,7 @@ const classFeatures = {
   <h3>等級 3：快手（妙手子職）</h3>
   <p>你可用<strong>附贈動作</strong>執行下列其中一項：</p>
   <ul class="class-rule-list">
-    <li><strong>${skillTip("巧手")}：</strong>進行敏捷（${skillTip("巧手")}）檢定來開鎖、解除陷阱或扒竊。</li>
+    <li><strong>巧手：</strong>進行敏捷（${skillTip("巧手")}）檢定來開鎖、解除陷阱或扒竊。</li>
     <li><strong>使用物品：</strong>執行使用動作，或用魔法動作啟動需要該動作的魔法物品。</li>
   </ul>
 </section>
@@ -2381,8 +2381,8 @@ const classFeatures = {
   <div class="class-rule-subsection">
     <h4>靈巧打擊效果</h4>
     <ul class="class-rule-list">
-      <li><strong>淬毒（消耗 1d6）：</strong>目標進行體質豁免，失敗時中毒 1 分鐘；它可在每個回合結束時重新豁免，成功即結束。使用此效果時，你必須攜帶製毒師工具。</li>
-      <li><strong>摔絆（消耗 1d6）：</strong>大型或更小的目標進行敏捷豁免，失敗時倒地。</li>
+      <li><strong>淬毒（消耗 1d6）：</strong>目標進行體質豁免，失敗時<span class="condition-tip" data-condition="poisoned">中毒</span> 1 分鐘；它可在每個回合結束時重新豁免，成功即結束。使用此效果時，你必須攜帶製毒師工具。</li>
+      <li><strong>摔絆（消耗 1d6）：</strong>大型或更小的目標進行敏捷豁免，失敗時<span class="condition-tip" data-condition="prone">倒地</span>。</li>
       <li><strong>撤步（消耗 1d6）：</strong>攻擊後，你可立刻移動最多一半速度，且不引發藉機攻擊。</li>
     </ul>
   </div>
@@ -2393,7 +2393,7 @@ const classFeatures = {
   <p>當你看得見的攻擊者以攻擊命中你時，你可用<strong>反應</strong>讓該次攻擊的傷害減半（無條件捨去）。</p>
 </section>
 <section class="rogue-feature class-feature-section" data-feature-level="6"><h3>等級 6：專精</h3><p>再選擇 2 項<strong>已熟練</strong>的技能，獲得專精。</p></section>
-<section class="rogue-feature class-feature-section" data-feature-level="7"><h3>等級 7：反射閃避</h3><p>受到允許進行<strong>敏捷豁免以使傷害減半</strong>的效應影響時：</p><ul class="class-rule-list"><li><strong>豁免成功：</strong>不受傷害。</li><li><strong>豁免失敗：</strong>只受一半傷害。</li><li><strong>使用限制：</strong>你處於失能狀態時無法使用。</li></ul></section>
+<section class="rogue-feature class-feature-section" data-feature-level="7"><h3>等級 7：反射閃避</h3><p>受到允許進行<strong>敏捷豁免以使傷害減半</strong>的效應影響時：</p><ul class="class-rule-list"><li><strong>豁免成功：</strong>不受傷害。</li><li><strong>豁免失敗：</strong>只受一半傷害。</li><li><strong>使用限制：</strong>你處於<span class="condition-tip" data-condition="incapacitated">失能</span>狀態時無法使用。</li></ul></section>
 <section class="rogue-feature class-feature-section" data-feature-level="7"><h3>等級 7：可靠才能</h3><p>使用<strong>有熟練的技能或工具</strong>進行屬性檢定時，可將 d20 擲出 9 或以下的結果視為 10。</p></section>
 <section class="rogue-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p></section>
 </div>
@@ -2687,7 +2687,7 @@ const classFeatures = {
   </ul>
 </section>
 
-<section class="sorcerer-feature class-feature-section" data-feature-level="6"><h3>等級 6：元素親和（龍族子職）</h3><p>選擇一種傷害類型：強酸、冷凍、火焰、閃電或毒素。</p><article class="feature-choice-card"><select id="sorcerer-elemental-affinity-damage-type"><option value="">--請選擇傷害類型--</option><option value="acid">強酸</option><option value="cold">冷凍</option><option value="fire">火焰</option><option value="lightning">閃電</option><option value="poison">毒素</option></select><div class="feature-choice-card__body"><p><strong>傷害抗性：</strong>你對所選傷害類型具有抗性。</p><p><strong>傷害加值：</strong>施放造成該類型傷害的法術時，可將魅力調整值加到該法術的<strong>一次傷害擲骰</strong>中。</p></div></article></section>
+<section class="sorcerer-feature class-feature-section" data-feature-level="6"><h3>等級 6：元素親和（龍族子職）</h3><p>選擇一種傷害類型：強酸、冷凍、火焰、閃電或毒素。</p><article class="feature-choice-card"><select id="sorcerer-elemental-affinity-damage-type"><option value="">--請選擇傷害類型--</option><option value="acid">強酸</option><option value="cold">冷凍</option><option value="fire">火焰</option><option value="lightning">閃電</option><option value="poison">毒素</option></select><div class="feature-choice-card__body"><p><strong>傷害抗性：</strong>你對所選傷害類型具有${skillTip("抗性")}。</p><p><strong>傷害加值：</strong>施放造成該類型傷害的法術時，可將魅力調整值加到該法術的<strong>一次傷害擲骰</strong>中。</p></div></article></section>
 <section class="sorcerer-feature class-feature-section" data-feature-level="7" data-action-id="sorcerer-sorcery-incarnate"><h3>等級 7：術法化身</h3><ul class="class-rule-list"><li><strong>額外啟動：</strong>天生術法的使用次數耗盡時，仍可用附贈動作消耗 2 術法點來啟動它。</li><li><strong>超魔法強化：</strong>天生術法啟動期間，每道法術最多可套用 2 個超魔法選項。</li></ul></section>
 <section class="sorcerer-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p></section>
 <section class="sorcerer-feature class-feature-section">
@@ -2952,7 +2952,7 @@ const classFeatures = {
   <div class="class-rule-subsection"><h4>書之魔契</h4><p>你短休或長休結束時可召喚<strong>影之書</strong>。</p><p>只有你能使用其中魔法。</p><p>消失條件：再召一本；或你死亡。</p><h4>戲法與儀式（持有書時）</h4><ul class="class-rule-list"><li>選 3 個戲法與 2 個儀式一環法術。</li><li>可選任一職業法術。</li><li>等同你已準備，且視為契術師法術。</li></ul><p>你可用這本書作為施法法器。</p></div>
   <div class="class-rule-subsection"><h4>幽影護甲</h4><p>你可隨意施展法師護甲，不耗法術位。</p></div><div class="class-rule-subsection"><h4>魔能意志</h4><p>你進行維持專注的體質豁免時具有優勢。</p></div><div class="class-rule-subsection"><h4>邪魔活力（先決條件：契術師等級 2+）</h4><p>你可隨意施展虛假生命且不耗法術位；</p><p>不擲臨時生命骰，視為擲滿。</p></div><div class="class-rule-subsection"><h4>千面之臉（先決條件：契術師等級 2+）</h4><p>你可隨意施展易容術且不耗法術位。</p></div><div class="class-rule-subsection"><h4>幻象迷蹤（先決條件：契術師等級 2+）</h4><p>你可隨意施展無聲幻影且不耗法術位。</p></div><div class="class-rule-subsection"><h4>超凡跳躍（先決條件：契術師等級 2+）</h4><p>你可隨意施展跳躍術且不耗法術位。</p></div><div class="class-rule-subsection"><h4>魔鬼視界（先決條件：契術師等級 2+）</h4><p>可在 120 呎內的魔法黑暗,非魔法黑暗與微光中正常視物。</p></div>
   <div class="class-rule-subsection"><h4>原初之一教習（先決條件：契術師等級 2+）</h4><p>你獲得 1 個起源專長。</p><hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;"><p>可重複：可多次選此祈喚，但每次必須選不同的起源專長。</p></div><div class="class-rule-subsection"><h4>苦痛魔爆（先決條件：契術師等級 2+，已知可造成傷害的契術師戲法）</h4><p>選 1 個你已知,可造成傷害的契術師戲法；你可將魅力調整值加到該戲法的傷害骰。</p><hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;"><p>可重複：可多次選此祈喚，但每次要選不同戲法。</p></div><div class="class-rule-subsection"><h4>魔能長槍（先決條件：契術師等級 2+，已知可造成傷害的契術師戲法）</h4><p>選 1 個你已知,射程至少 10 呎且可造成傷害的契術師戲法。施放時，該法術射程額外增加「契術師等級 × 30 呎」。</p><hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;"><p>可重複：可多次選此祈喚，但每次要選不同戲法。</p></div><div class="class-rule-subsection"><h4>斥力魔爆（先決條件：契術師等級 2+，通過攻擊檢定造成傷害的契術師戲法）</h4><p>選 1 個你已知,需要攻擊檢定的契術師戲法。當你用該戲法命中大型或更小生物時，可將其往遠離你的方向推開 10 呎。</p><hr style="border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;"><p>可重複：可多次選此祈喚，但每次要選不同戲法。</p></div>
-  <div class="class-rule-subsection"><h4>星移步法（先決條件：契術師等級 5+）</h4><p>你可隨意對自己施展浮空術，且不耗法術位。</p></div><div class="class-rule-subsection"><h4>萬形之主（先決條件：契術師等級 5+）</h4><p>你可隨意施展變造自身，且不耗法術位。</p></div><div class="class-rule-subsection"><h4>融身入影（先決條件：契術師等級 5+）</h4><p>當你在微光或黑暗中時，可隨意對自己施展隱形術，且不耗法術位。</p></div><div class="class-rule-subsection"><h4>深海饋贈（先決條件：契術師等級 5+）</h4><p>你可在水中呼吸，並獲得等同自身速度的游泳速度。</p><p>你也可不耗法術位施展 1 次水下呼吸，此用法在長休後恢復。</p></div><div class="class-rule-subsection"><h4>共視感官（先決條件：契術師等級 5+）</h4><p>你可用附贈動作觸碰 1 名自願生物，建立感官連結至你下回合結束。只要你們在同一位面，你可在後續回合再用附贈動作延長連結到下回合結束；未延長則連結終止。</p><p>連結期間，你可獲得該生物所有特殊感官；若你們距離在 60 呎內，你可視同身在該生物位置施法。</p></div><div class="class-rule-subsection" data-action-id="warlock-eldritch-smite"><h4>魔能斬擊（先決條件：契術師等級 5+,刃之魔契祈喚）</h4><p>每回合一次，當你用契約武器命中生物時，可消耗 1 個契術師法術位，造成額外力場傷害：1d8＋該法術位每環階再加 1d8，並可使大型或更小目標倒地。</p></div><div class="class-rule-subsection" data-action-id="warlock-thirsting-blade"><h4>饑渴魔刃（先決條件：契術師等級 5+,刃之魔契祈喚）</h4><p>你在使用契約武器時獲得額外攻擊：在你回合以該武器執行攻擊動作時，可攻擊 2 次而非 1 次。</p></div><div class="class-rule-subsection"><h4>鏈主賦能（先決條件：契術師等級 5+,鏈之魔契祈喚）</h4><p>你施展獲得魔寵時，可對魔寵灌注魔能，獲得以下增益：</p><ul class="class-rule-list"><li>飛行或游泳：魔寵獲得 40 呎飛行或游泳速度（擇一）。</li><li>快速攻擊：你可用附贈動作命令魔寵執行攻擊動作。</li><li>傷害轉換：魔寵造成鈍擊／穿刺／揮砍傷害時，你可改為黯蝕或光耀傷害。</li><li>豁免：若魔寵要求目標做豁免，使用你的法術豁免 DC。</li><li>抗性：當魔寵受傷時，你可用反應讓該次傷害有抗性。</li></ul></div>
+  <div class="class-rule-subsection"><h4>星移步法（先決條件：契術師等級 5+）</h4><p>你可隨意對自己施展浮空術，且不耗法術位。</p></div><div class="class-rule-subsection"><h4>萬形之主（先決條件：契術師等級 5+）</h4><p>你可隨意施展變造自身，且不耗法術位。</p></div><div class="class-rule-subsection"><h4>融身入影（先決條件：契術師等級 5+）</h4><p>當你在微光或黑暗中時，可隨意對自己施展隱形術，且不耗法術位。</p></div><div class="class-rule-subsection"><h4>深海饋贈（先決條件：契術師等級 5+）</h4><p>你可在水中呼吸，並獲得等同自身速度的游泳速度。</p><p>你也可不耗法術位施展 1 次水下呼吸，此用法在長休後恢復。</p></div><div class="class-rule-subsection"><h4>共視感官（先決條件：契術師等級 5+）</h4><p>你可用附贈動作觸碰 1 名自願生物，建立感官連結至你下回合結束。只要你們在同一位面，你可在後續回合再用附贈動作延長連結到下回合結束；未延長則連結終止。</p><p>連結期間，你可獲得該生物所有特殊感官；若你們距離在 60 呎內，你可視同身在該生物位置施法。</p></div><div class="class-rule-subsection" data-action-id="warlock-eldritch-smite"><h4>魔能斬擊（先決條件：契術師等級 5+,刃之魔契祈喚）</h4><p>每回合一次，當你用契約武器命中生物時，可消耗 1 個契術師法術位，造成額外力場傷害：1d8＋該法術位每環階再加 1d8，並可使大型或更小目標<span class="condition-tip" data-condition="prone">倒地</span>。</p></div><div class="class-rule-subsection" data-action-id="warlock-thirsting-blade"><h4>饑渴魔刃（先決條件：契術師等級 5+,刃之魔契祈喚）</h4><p>你在使用契約武器時獲得額外攻擊：在你回合以該武器執行攻擊動作時，可攻擊 2 次而非 1 次。</p></div><div class="class-rule-subsection"><h4>鏈主賦能（先決條件：契術師等級 5+,鏈之魔契祈喚）</h4><p>你施展獲得魔寵時，可對魔寵灌注魔能，獲得以下增益：</p><ul class="class-rule-list"><li>飛行或游泳：魔寵獲得 40 呎飛行或游泳速度（擇一）。</li><li>快速攻擊：你可用附贈動作命令魔寵執行攻擊動作。</li><li>傷害轉換：魔寵造成鈍擊／穿刺／揮砍傷害時，你可改為黯蝕或光耀傷害。</li><li>豁免：若魔寵要求目標做豁免，使用你的法術豁免 DC。</li><li>抗性：當魔寵受傷時，你可用反應讓該次傷害有${skillTip("抗性")}。</li></ul></div>
   <div class="class-rule-subsection"><h4>墳墓低語（先決條件：契術師等級7+）</h4><p>你可以隨意施展死者交談，且不消耗法術位。</p></div>
 </section>
 </div>

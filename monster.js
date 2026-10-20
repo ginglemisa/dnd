@@ -7,6 +7,7 @@ const skills_example_uses = {
   英雄激勵: "消耗**英雄激勵**可以重新擲出自己剛擲過的一顆骰子，並採用新結果。\n\n如果你在遊戲中表現精采，也許主持人會獎勵你一次英雄激勵。",
   優勢: "當一次 D20 檢定具有優勢時，擲兩次 D20，取較高的結果，再加上原本的數字加值。\n\n例如擲出 7 和 16，就採用 16，再加上該次檢定的加值。",
   劣勢: "當一次 D20 檢定具有劣勢時，擲兩次 D20，取較低的結果，再加上原本的數字加值。\n\n例如擲出 7 和 16，就採用 7，再加上該次檢定的加值。",
+  抗性: "對某種傷害具有抗性時，你受到的該類型傷害減半。\n\n例如你具有火焰傷害抗性，原本會受到 10 點火焰傷害，就只受到 5 點。抗性只適用於說明指定的傷害類型或該次傷害。",
   目前HP: "在此填寫目前HP，再進入跑團模式。",
   體操: "站穩不跌倒，或做出各種特技動作。",
   馴獸: "安撫、訓練動物，或讓牠照你的意思行動。",
@@ -45,7 +46,7 @@ function skillTip(skillName) {
 
 // 僅處理職業／種族的顯示 HTML，不改寫供規則、摘要與 PDF 使用的原始資料。
 function highlightFeatureRuleTerms(html) {
-  // 技能只接受來源中的 skillTip() 標記；同名動詞、風味敘述與能力名稱不是技能引用。
+  // 技能與抗性只接受來源中的 skillTip() 標記，避免把一般敘述或標題當成引用。
   const pattern = /優勢|劣勢/g;
   const template = document.createElement("template");
   template.innerHTML = html;
@@ -66,7 +67,9 @@ function highlightFeatureRuleTerms(html) {
   const nodes = [];
   while (walker.nextNode()) {
     const node = walker.currentNode;
-    if (!node.parentElement?.closest('a, button, select, option, textarea, script, style, .skill-tip, .beast-tip, [role="button"], [contenteditable]')) nodes.push(node);
+    const boldLabel = node.parentElement?.closest("strong, b");
+    if (boldLabel && /[：:]\s*$/.test(boldLabel.textContent)) continue;
+    if (!node.parentElement?.closest('h1, h2, h3, h4, h5, h6, a, button, select, option, textarea, script, style, .skill-tip, .beast-tip, [role="button"], [contenteditable]')) nodes.push(node);
   }
   nodes.forEach(node => {
     const text = node.textContent;
@@ -81,7 +84,7 @@ function highlightFeatureRuleTerms(html) {
     fragment.append(text.slice(offset));
     node.replaceWith(fragment);
   });
-  return template.innerHTML;
+  return decorateDndConditionTips(template.innerHTML);
 }
 
 const BEAST_STATS = {
@@ -310,7 +313,7 @@ const BEAST_STATS = {
     ability: "力3(-4), 敏13(+1), 體8(-1), 智2(-4), 感12(+1), 魅7(-2)",
     senses: "黑暗視覺120呎, 被動感知15",
     skills: "感知+5, 隱匿+5",
-    traits: "飛掠：飛行離開敵人威脅範圍不引發借機攻擊",
+    traits: "飛掠：飛行離開敵人威脅範圍不引發藉機攻擊",
     attacks: "爪擊：近戰攻擊檢定+3, 觸及5呎；命中：揮砍傷害1。"
   },
   raven: {
@@ -454,7 +457,7 @@ const BEAST_STATS = {
     ability: "力11(+0), 敏16(+3), 體11(+0), 智2(-4), 感14(+2), 魅5(-3)",
     senses: "黑暗視覺60呎, 被動感知14",
     skills: "感知+4",
-    traits: "靈巧：離開敵人威脅範圍時不引發借機攻擊",
+    traits: "靈巧：離開敵人威脅範圍時不引發藉機攻擊",
     attacks: "頂撞：近戰攻擊檢定+2, 觸及5呎；命中：鈍擊傷害2(1d4)。"
   },
   draft_horse: {
@@ -659,7 +662,7 @@ const BEAST_STATS = {
     senses: "黑暗視覺60呎, 被動感知14",
     skills: "感知+4, 隱匿+7",
     traits: "—",
-    attacks: "撕裂：近戰攻擊檢定+5, 觸及5呎；命中：揮砍傷害6(1d6+3)。附贈動作─靈巧脫逃：執行脫離或躲藏。"
+    attacks: "撕裂：近戰攻擊檢定+5, 觸及5呎；命中：揮砍傷害6(1d6+3)。附贈動作─靈巧脫逃：執行撤離或躲藏。"
   },
   piranha: {
     name: "食人魚 (Piranha) CR:0",
@@ -719,7 +722,7 @@ const BEAST_STATS = {
     senses: "被動感知12",
     skills: "感知+2, 隱匿+5",
     traits: "水下呼吸：僅能在水下呼吸",
-    attacks: "泡泡衝刺：在水下可移動至多其游泳速度，且不引發借機攻擊。"
+    attacks: "泡泡衝刺：在水下可移動至多其游泳速度，且不引發藉機攻擊。"
   },
   swarm_of_insects: {
     name: "昆蟲群 (Swarm of Insects) CR:1/2",
@@ -790,7 +793,7 @@ const BEAST_STATS = {
     ability: "力10(+0), 敏14(+2), 體10(+0), 智1(-5), 感10(+0), 魅3(-4)",
     senses: "被動感知10",
     skills: "—",
-    traits: "陣營：無陣營；語言：無；飛掠：巨蜂飛行離開敵人的觸及範圍時，不會引發借機攻擊。",
+    traits: "陣營：無陣營；語言：無；飛掠：巨蜂飛行離開敵人的觸及範圍時，不會引發藉機攻擊。",
     attacks: "螫刺：近戰攻擊檢定+4, 觸及5呎；命中：刺傷5(1d6+2)外加毒傷5(2d4)。"
   },
   pteranodon: {
@@ -802,7 +805,7 @@ const BEAST_STATS = {
     ability: "力12(+1), 敏15(+2), 體10(+0), 智2(-4), 感9(-1), 魅5(-3)",
     senses: "被動感知11",
     skills: "感知+1",
-    traits: "陣營：無陣營；語言：無；飛掠：翼手龍飛行離開敵人的觸及範圍時，不會引發借機攻擊。",
+    traits: "陣營：無陣營；語言：無；飛掠：翼手龍飛行離開敵人的觸及範圍時，不會引發藉機攻擊。",
     attacks: "咬擊：近戰攻擊檢定+4, 觸及5呎；命中：刺傷6(1d8+2)。"
   },
   swarm_of_bats: {
@@ -947,7 +950,7 @@ const BEAST_STATS = {
     senses: "黑暗視覺60呎, 被動感知13",
     skills: "感知+3, 隱匿+7",
     traits: "陣營：無陣營；語言：無",
-    attacks: "撕裂：近戰攻擊檢定+5, 觸及5呎；命中：揮砍傷害10(2d6+3)。若目標為大型或更小生物，目標倒地。附贈動作─靈巧脫逃：老虎執行脫離或躲藏動作。"
+    attacks: "撕裂：近戰攻擊檢定+5, 觸及5呎；命中：揮砍傷害10(2d6+3)。若目標為大型或更小生物，目標倒地。附贈動作─靈巧脫逃：老虎執行撤離或躲藏動作。"
   }
 };
 

@@ -1783,13 +1783,13 @@ async function verifyClassFeatureSupplementalChoices(browser, url) {
 }
 
 async function verifyFeatureReferences(browser, url) {
-  const page = await newUiPage(browser, { viewport: { width: 1280, height: 900 }, reducedMotion: "reduce" });
+  const page = await newUiPage(browser, { viewport: { width: 1280, height: 900 }, reducedMotion: "reduce", hasTouch: true });
   try {
     await page.goto(url);
     await page.locator("#legal-close-btn").click();
     const ruleCoverage = await page.evaluate(() => {
       const skills = ["體操", "馴獸", "奧秘", "運動", "欺瞞", "歷史", "洞悉", "威嚇", "調查",
-        "醫藥", "自然", "察覺", "表演", "遊說", "宗教", "巧手", "隱匿", "生存", "求生", "醫學", "說服", "優勢", "劣勢"];
+        "醫藥", "自然", "察覺", "表演", "遊說", "宗教", "巧手", "隱匿", "生存", "求生", "醫學", "說服", "優勢", "劣勢", "抗性"];
       const failures = [];
       const sources = [...Object.entries(classFeatures), ...Object.entries(raceFeatureDisplay),
         ["all skill references", `<p>${skills.map(skillTip).join("、")}</p>`],
@@ -1809,13 +1809,67 @@ async function verifyFeatureReferences(browser, url) {
         const walker = document.createTreeWalker(after.content, NodeFilter.SHOW_TEXT);
         while (walker.nextNode()) {
           const node = walker.currentNode;
-          if (!node.parentElement?.closest('a, button, select, textarea, .skill-tip, .beast-tip, [role="button"]')
+          const boldLabel = node.parentElement?.closest("strong, b");
+          if (boldLabel && /[：:]\s*$/.test(boldLabel.textContent)) continue;
+          if (!node.parentElement?.closest('h1, h2, h3, h4, h5, h6, a, button, select, textarea, .skill-tip, .beast-tip, [role="button"]')
             && /優勢|劣勢/.test(node.textContent)) failures.push(`${name}: unlinked advantage/disadvantage`);
         }
+        for (const heading of after.content.querySelectorAll("h1, h2, h3, h4, h5, h6, strong, b")) {
+          if ((/^H[1-6]$/.test(heading.tagName) || /[：:]\s*$/.test(heading.textContent))
+            && heading.querySelector(".skill-tip")) failures.push(`${name}: linked heading ${heading.textContent}`);
+        }
         for (const tip of after.content.querySelectorAll(".feature-rule-tip")) {
-          if (!renderSkillPopupHtml(tip.dataset.skill)) failures.push(`${name}: missing explanation`);
+          if (!renderSkillPopupHtml(tip.dataset.skill, tip.dataset.condition)) failures.push(`${name}: missing explanation`);
         }
       }
+      const conditionCounts = {
+        barbarian: 4, bard: 2, cleric: 3, druid: 1, fighter: 0, monk: 4,
+        paladin: 5, ranger: 0, rogue: 4, sorcerer: 0, warlock: 1, wizard: 0,
+        dragonborn: 1, dwarf: 1, elf: 1, gnome: 0, goliath: 2, halfling: 1, human: 0, orc: 0, tiefling: 0
+      };
+      for (const [name, expected] of Object.entries(conditionCounts)) {
+        const html = highlightSpellNamesInClassFeature(classFeatures[name] || raceFeatureDisplay[name]);
+        const template = document.createElement("template");
+        template.innerHTML = html;
+        const tips = template.content.querySelectorAll("button.condition-tip");
+        if (tips.length !== expected) failures.push(`${name}: condition coverage ${tips.length}/${expected}`);
+        if (template.content.querySelector("h3 .condition-tip, h4 .condition-tip, button button")) failures.push(`${name}: condition in heading/nested control`);
+        if (highlightFeatureRuleTerms(html) !== html) failures.push(`${name}: repeated condition decoration`);
+        for (const tip of tips) {
+          const condition = getDndCondition(tip.dataset.condition);
+          if (!condition || tip.textContent !== condition.zh) failures.push(`${name}: wrong condition key`);
+        }
+      }
+      for (const [name, raw] of Object.entries(featsDesc)) {
+        const template = document.createElement("template");
+        template.innerHTML = formatFeatDescription(raw);
+        const expected = name === "警覺" ? 1 : name === "擒抱者" ? 3 : 0;
+        if (template.content.querySelectorAll("button.condition-tip").length !== expected) failures.push(`${name}: feat condition coverage`);
+        if (template.content.querySelector("strong .condition-tip, .feat-desc-title .condition-tip")) failures.push(`${name}: linked feat heading`);
+        if (/<[^>]+>/.test(raw)) failures.push(`${name}: feat source must remain plain text`);
+      }
+      for (const condition of DND_CONDITIONS) {
+        const tip = createDndConditionTip(condition.key);
+        const template = document.createElement("template");
+        template.innerHTML = renderSkillPopupHtml(null, condition.key);
+        const effects = Array.from(template.content.querySelectorAll(".skill-popup-paragraph"), p => p.textContent);
+        if (!tip || JSON.stringify(effects) !== JSON.stringify(condition.effects)) failures.push(`${condition.key}: canonical rules unavailable`);
+      }
+      if (createDndConditionTip("unknown") !== null || renderSkillPopupHtml(null, "unknown") !== "") failures.push("unknown condition key");
+      if (createDndConditionTip("frightened", "恐懼").textContent !== "恐懼") failures.push("condition alias label");
+      for (const [name, html, count] of [
+        ["barbarian", classFeatures.barbarian, 1], ["ranger", classFeatures.ranger, 1],
+        ["sorcerer", classFeatures.sorcerer, 1], ["warlock", classFeatures.warlock, 1],
+        ["dragonborn", raceFeatureDisplay.dragonborn, 1], ["tiefling", raceFeatureDisplay.tiefling, 3]
+      ]) {
+        const template = document.createElement("template");
+        template.innerHTML = highlightSpellNamesInClassFeature(html);
+        if (template.content.querySelectorAll('button[data-skill="抗性"]').length !== count) failures.push(`${name}: resistance body links`);
+      }
+      if (!classFeatures.barbarian.includes("<strong>好處：</strong>")) failures.push("reckless attack label");
+      const bard = document.createElement("template");
+      bard.innerHTML = classFeatures.bard;
+      if (!bard.content.querySelector('[data-action-id="bard-countercharm"]').textContent.includes("使用：反應")) failures.push("countercharm label");
       const cleric = document.createElement("template");
       cleric.innerHTML = highlightSpellNamesInClassFeature(classFeatures.cleric);
       const mission = cleric.content.querySelector("#cleric-trickster").closest(".druid-mission-option");
@@ -1934,8 +1988,89 @@ async function verifyFeatureReferences(browser, url) {
       assert.match(await page.locator("#skillPopup .content").textContent(), /追蹤足跡/);
       await modal.locator(".app-dialog__close").click();
       assert.equal(await page.locator("#skillPopup").isVisible(), false);
+      await page.evaluate(() => applyStateObject({ class: "barbarian", level: "2", race: "dragonborn" }));
+      await opener.click();
+      for (const [tab, container] of [["職業", "#classFeatures"], ["種族", "#raceFeatures"]]) {
+        await modal.getByRole("tab", { name: tab, exact: true }).click();
+        const trigger = modal.locator(`${container} button[data-skill="抗性"]`).first();
+        await trigger.focus();
+        await trigger.press("Enter");
+        await assertOnTop(page.locator("#skillPopup"));
+        assert.match(await page.locator("#skillPopup .content").textContent(), /傷害減半/);
+        await page.keyboard.press("Escape");
+        assert.equal(await page.locator("#skillPopup").isVisible(), false);
+        assert.equal(await trigger.evaluate(el => el === document.activeElement), true);
+      }
+      await modal.locator(".app-dialog__close").click();
     }
-    console.log("Ability references: spells, skills and druid beasts stay above the dialog; close, Escape, focus and reused popups passed on desktop/mobile.");
+    for (const width of [1280, 320]) {
+      await page.setViewportSize({ width, height: 600 });
+      await page.evaluate(() => applyStateObject({ class: "barbarian", level: "6", race: "halfling" }));
+      await opener.click();
+      for (const [tab, key] of [["職業", "incapacitated"], ["職業", "charmed"], ["職業", "frightened"], ["種族", "frightened"]]) {
+        await modal.getByRole("tab", { name: tab, exact: true }).click();
+        const trigger = modal.locator(`button.condition-tip[data-condition="${key}"]:visible`).first();
+        await trigger.focus();
+        await trigger.press("Enter");
+        const popup = page.locator("#skillPopup");
+        await assertOnTop(popup);
+        assert.deepEqual(await popup.locator(".skill-popup-paragraph").allTextContents(),
+          await page.evaluate(key => getDndCondition(key).effects, key));
+        const bounds = await popup.boundingBox();
+        assert(bounds.x >= 0 && bounds.x + bounds.width <= width && bounds.y >= 0 && bounds.y + bounds.height <= 600);
+        await page.keyboard.press("Escape");
+        assert.equal(await popup.isVisible(), false);
+        assert.equal(await modal.isVisible(), true);
+        assert.equal(await trigger.evaluate(el => el === document.activeElement), true);
+        await trigger.press("Space");
+        await popup.getByRole("button", { name: "關閉說明" }).click();
+        assert.equal(await trigger.evaluate(el => el === document.activeElement), true);
+      }
+      await modal.getByRole("tab", { name: "職業", exact: true }).click();
+      await modal.locator("#feat-choice-barbarian-level-4").selectOption("擒抱者");
+      const featView = modal.locator('[data-feat-choice="barbarian-level-4"] .feat-choice-view');
+      await featView.click();
+      const feat = page.locator('.app-dialog[data-variant="feat-detail"]');
+      const trigger = feat.locator("button.condition-tip").first();
+      if (width === 320) await trigger.tap();
+      else await trigger.click();
+      await assertOnTop(page.locator("#skillPopup"));
+      await page.keyboard.press("Escape");
+      assert.equal(await feat.isVisible(), true);
+      assert.equal(await trigger.evaluate(el => el === document.activeElement), true);
+      await trigger.click();
+      await feat.locator(".app-dialog__close").click();
+      assert.equal(await page.locator("#skillPopup").isVisible(), false);
+      assert.equal(await featView.evaluate(el => el === document.activeElement), true);
+      assert.equal(await page.locator("#skillPopup").evaluate(el => el.parentElement.id === "character-features-modal" && !el.closest("[inert]")), true);
+      await modal.locator(".app-dialog__close").click();
+      assert.equal(await page.locator("#skillPopup").evaluate(el => el.parentElement === document.body && !el.inert), true);
+      const mainTrigger = page.locator('#feats-area button.condition-tip[data-condition="grappled"]').first();
+      await mainTrigger.click();
+      await assertOnTop(page.locator("#skillPopup"));
+      await page.locator("#skillPopup .close").click();
+      assert.equal(await mainTrigger.evaluate(el => el === document.activeElement), true);
+    }
+    await page.evaluate(() => {
+      const draft = quickBuild.createDraft();
+      draft.choices.background = "soldier";
+      draft.choices.race = "human";
+      draft.choices.raceOptions = { feat: "警覺" };
+      draft.ui.currentStepId = "race";
+      dndStorage.setItem(quickBuild.storageKey, JSON.stringify(draft));
+      quickBuild.open();
+    });
+    await page.locator("[data-race-feat-view]").click();
+    const quickDetail = page.locator("#quick-build-spell-detail");
+    const quickTip = quickDetail.locator("button.condition-tip");
+    await quickTip.tap();
+    await assertOnTop(page.locator("#skillPopup"));
+    await page.keyboard.press("Escape");
+    assert.equal(await quickDetail.isVisible(), true);
+    assert.equal(await quickTip.evaluate(el => el === document.activeElement), true);
+    await quickDetail.locator(".quick-build-spell-detail-close").click();
+    await page.locator("#quick-build-wizard .quick-build-close").click();
+    console.log("Ability references: canonical condition coverage, spells, skills and druid beasts; close, Escape, keyboard, focus and reused popups passed on desktop/mobile.");
   } finally { await page.close(); }
 }
 

@@ -8,7 +8,7 @@ const raceFeatures = {
 
 作為龍裔，你有以下特質。
 
-龍族血統：你有巨龍血統。下表擇一，按照龍種決定吐息傷害類型,傷害抗性類型。
+龍族血統：你有巨龍血統。下表擇一，按照龍種決定吐息傷害類型,傷害${skillTip("抗性")}類型。
 <table class="dragon-ancestry-table" aria-label="龍裔龍族血統選項">
   <tbody>
     <tr>
@@ -42,7 +42,7 @@ const raceFeatures = {
 
 龍翔天際：５級後可用，使用<strong>附贈</strong>展開光譜龍翼短暫飛行，持續１０分鐘。
   - 可隨時收回（免動作）
-  - <strong>失能狀態</strong>解除
+  - <strong><span class="condition-tip" data-condition="incapacitated">失能</span>狀態</strong>解除
   - 獲得飛行速度
   - 每長休限１次
 `,
@@ -56,7 +56,7 @@ dwarf: `生物類型：類人生物
 
 黑暗視覺： 120 英呎黑暗視覺。
 
-矮人體魄：對<strong>中毒狀態</strong>的豁免具有優勢，毒素傷害減半。
+矮人體魄：對<strong><span class="condition-tip" data-condition="poisoned">中毒</span>狀態</strong>的豁免具有優勢，毒素傷害減半。
 
 矮人剛毅： HP 上限 +1，每次升級 +1。
 
@@ -105,7 +105,7 @@ dwarf: `生物類型：類人生物
 </table>
 你始終準備血統法術，可免費施展環位法術各一次，之後需消耗環位，長休後免費次數恢復。選擇智力,感知,魅力其一為施法屬性（選擇血統時決定）。
 
-精類血統：對<strong>魅惑狀態</strong>的豁免具有優勢。
+精類血統：對<strong><span class="condition-tip" data-condition="charmed">魅惑</span>狀態</strong>的豁免具有優勢。
 
 敏銳感官：${skillTip("洞悉")},${skillTip("察覺")},${skillTip("求生")}；三擇一獲得熟練項。
 
@@ -139,7 +139,7 @@ dwarf: `生物類型：類人生物
 
 巨人血統：你是巨人後裔，以下先祖恩賜選擇一項增益; 使用次數＝熟練加值（長休恢復）。
 
-身強力壯：掙脫<strong>擒抱狀態</strong>的屬性檢定具有優勢。計算可攜重量時視為大型體型。
+身強力壯：掙脫<strong><span class="condition-tip" data-condition="grappled">擒抱</span>狀態</strong>的屬性檢定具有優勢。計算可攜重量時視為大型體型。
 
 巨化形體：等級５能力，空間足夠時，使用<strong>附贈</strong>變成大體型(2*2格)，速度增加 10 英呎，力量檢定具有優勢，持續 10 分鐘直到你主動結束（無需動作），長休前不能再次使用。
 
@@ -149,7 +149,7 @@ dwarf: `生物類型：類人生物
  
 凜若冰霜（霜巨人）：攻擊命中目標時增加 1d6 冷凍傷害，在你下回合開始前，目標速度降低 10 英呎。
 
-地動山搖（山丘巨人）：攻擊命中大型以下的生物可令其陷入<strong>倒地狀態</strong>。
+地動山搖（山丘巨人）：攻擊命中大型以下的生物可令其陷入<strong><span class="condition-tip" data-condition="prone">倒地</span>狀態</strong>。
 
 堅若磐石（石巨人）：受傷時可用<strong>反應</strong>扣除傷害，擲 1d12 + 體質調整值。
 
@@ -164,7 +164,7 @@ dwarf: `生物類型：類人生物
 
 作為半身人，你有以下特質。
 
-勇氣：避免或終止<strong>恐慌狀態</strong>的豁免具有優勢。
+勇氣：避免或終止<strong><span class="condition-tip" data-condition="frightened">恐慌</span>狀態</strong>的豁免具有優勢。
 
 半身人靈巧：移動時可穿過體型比你大的生物，但不能在同一格內停留。
 
@@ -231,9 +231,9 @@ tiefling: `生物類型：類人生物
   <tbody>
     <tr>
       <th scope="row">1</th>
-      <td>毒素傷害抗性<br><strong>毒氣噴濺</strong></td>
-      <td>黯蝕傷害抗性<br><strong>凍寒之觸</strong></td>
-      <td>火焰傷害抗性<br><strong>火焰箭</strong></td>
+      <td>毒素傷害${skillTip("抗性")}<br><strong>毒氣噴濺</strong></td>
+      <td>黯蝕傷害${skillTip("抗性")}<br><strong>凍寒之觸</strong></td>
+      <td>火焰傷害${skillTip("抗性")}<br><strong>火焰箭</strong></td>
     </tr>
     <tr>
       <th scope="row">3</th>
