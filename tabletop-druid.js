@@ -391,7 +391,9 @@
     if (!beast) return false;
     const c = context();
     const card = el("section", "", "tabletop-section druid-beast-attacks");
-    card.append(el("h3", `${nameOf(beast.key)}的攻擊`), el("p", beast.attacks));
+    const attackText = el("p", "", "druid-beast-attack-text");
+    attackText.append(...String(beast.attacks || "").replace(/。(?!\n|$)/gu, "。\n").split("\n").filter(Boolean).map(line => el("span", line)));
+    card.append(el("h3", `${nameOf(beast.key)}的攻擊`), attackText);
     for (const action of beast.actions.filter(item => Number.isFinite(item.hit))) {
       const section = el("div");
       section.append(el("strong", action.name));
@@ -424,11 +426,11 @@
         row.append(button(beast ? "更換形態" : "荒野形態", trigger => openOperation("shape", trigger), !c.remaining || c.incapacitated), button("已知形態", trigger => openOperation("known", trigger)));
         if (beast) row.append(button("查看形態", showFormDetail), button("解除形態", trigger => openOperation("end", trigger)));
         if (!c.remaining && c.level >= 5) row.append(button("野性復甦", trigger => openOperation("resurge-shape", trigger), c.incapacitated));
+        if (id === "tabletop-druid-actions" && c.level >= 7 && document.getElementById("druid-elemental-fury-primal-strike")?.checked) {
+          row.append(button("原初打擊：命中後 +1d8", primalStrike, !globalScope.DiceRoller?.isEnabled?.()));
+        }
         mount.appendChild(row);
         if (c.druid.companion) mount.append(el("p", "荒野夥伴已召喚 · 精類 · 長休後消失"), button("移除夥伴", trigger => openOperation("end-companion", trigger)));
-        if (id === "tabletop-druid-actions" && c.level >= 7 && document.getElementById("druid-elemental-fury-primal-strike")?.checked) {
-          mount.append(button("原初打擊：命中後 +1d8", primalStrike, !globalScope.DiceRoller?.isEnabled?.()));
-        }
       } else {
         mount.append(el("h3", "德魯伊資源操作"));
         if (c.level >= 5) mount.append(button("野性復甦：法術位 → 荒野形態", trigger => openOperation("resurge-shape", trigger), c.remaining !== 0 || c.incapacitated), button("野性復甦：荒野形態 → 一環法術位", trigger => openOperation("resurge-slot", trigger), !c.remaining || Boolean(api().getBuiltInResourceSpent("druid-wild-resurgence-spell-slot")) || c.incapacitated));

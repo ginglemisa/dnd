@@ -18012,6 +18012,8 @@ html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .tabs-shell.utility-
 :where(html[data-ui-theme="warm"]) .druid-error { color: var(--danger, var(--warning)); font-weight: 600; }
 .druid-beast-attacks { grid-column: 1 / -1; min-width: 0; }
 .druid-beast-attacks > p { line-height: 1.7; }
+.druid-beast-attack-text > span { display: block; }
+.druid-beast-attack-text > span + span { margin-top: .2em; }
 #tabletop-druid-resources { margin-top: 1rem; }
 
 :where(html:not([data-ui-theme="warm"])) .utility-menu {
