@@ -362,7 +362,7 @@
       lightning: "電",
       fire: "火",
       poison: "毒",
-      cold: "冰"
+      cold: "冷凍"
     };
     return damageTypes[ancestry.split("_").at(-1)] || "";
   }
@@ -826,7 +826,11 @@
 
     const copy = document.createElement("div");
     copy.className = "action-description-copy";
-    copy.textContent = option.description;
+    if (option.spellId && typeof globalScope.appendSpellDescContent === "function") {
+      globalScope.appendSpellDescContent(copy, option.description);
+    } else {
+      copy.textContent = option.description;
+    }
     description.append(heading, copy);
   }
 

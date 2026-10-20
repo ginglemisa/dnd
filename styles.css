@@ -14720,6 +14720,27 @@ html.tabletop-avatar-modal-open { overflow: hidden; }
   overflow-wrap: anywhere;
 }
 
+/* 法術描述中由「- 」轉成的項目清單 */
+.spell-desc-list {
+  margin: 0.5em 0;
+  padding-left: 1.35em;
+  list-style-type: disc;
+  text-align: start;
+}
+
+.spell-desc-list .spell-desc-list {
+  margin: 0.15em 0;
+  list-style-type: circle;
+}
+
+.spell-desc-list > li + li {
+  margin-top: 0.2em;
+}
+
+.spell-desc-list:last-child {
+  margin-bottom: 0;
+}
+
 .tabletop-warning-text {
   color: var(--warning) !important;
   font-weight: 750;

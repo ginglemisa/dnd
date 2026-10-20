@@ -207,6 +207,16 @@
     }
     const copy = createElement("div", "tabletop-spell-detail__copy");
     const description = String(spell.desc || "");
+    if (typeof globalScope.appendSpellDescContent === "function") {
+      globalScope.appendSpellDescContent(copy, description, (target, text) => appendDiceText(target, text, spell));
+    } else {
+      appendDiceText(copy, description, spell);
+    }
+    content.appendChild(copy);
+    return content;
+  }
+
+  function appendDiceText(copy, description, spell) {
     let cursor = 0;
     for (const match of description.matchAll(DICE_TOKEN_PATTERN)) {
       const expression = match[0].replace(/\s+/g, "").toLowerCase();
@@ -227,8 +237,6 @@
       cursor = match.index + match[0].length;
     }
     copy.appendChild(document.createTextNode(description.slice(cursor)));
-    content.appendChild(copy);
-    return content;
   }
 
   function parseModifier(value) {

@@ -302,16 +302,16 @@
     "金龍-火": { ancestry: "金龍", damage: "火焰" },
     "綠龍-毒": { ancestry: "綠龍", damage: "毒素" },
     "紅龍-火": { ancestry: "紅龍", damage: "火焰" },
-    "銀龍-冰": { ancestry: "銀龍", damage: "寒冰" },
-    "白龍-冰": { ancestry: "白龍", damage: "寒冰" }
+    "銀龍-冰": { ancestry: "銀龍", damage: "冷凍" },
+    "白龍-冰": { ancestry: "白龍", damage: "冷凍" }
   };
   const GOLIATH_ANCESTRY_DETAILS = {
-    "雲遊四方（雲巨人）": "使用附贈魔法傳送 30 英呎內你能看見的未佔據空間。",
-    "星火燎原（火巨人）": "攻擊命中目標時增加 1d10 火焰傷害。",
-    "凜若冰霜（霜巨人）": "攻擊命中目標時增加 1d6 冷凍傷害，在你下回合開始前，目標速度降低 10 英呎。",
-    "地動山搖（山丘巨人）": "攻擊命中大型以下的生物可令其陷入倒地狀態。",
-    "堅若磐石（石巨人）": "受傷時可用反應扣除傷害，擲 1d12 + 體質調整值。",
-    "轟雷掣電（風暴巨人）": "使用反應對 60 英呎內傷害你的生物造成 1d8 雷鳴傷害。"
+    "雲遊四方（雲巨人）": "使用附贈，以魔法傳送到 30 呎內你能看見的未佔據空間。",
+    "星火燎原（火巨人）": "攻擊命中時，目標額外受到 1d10 火焰傷害。",
+    "凜若冰霜（霜巨人）": "攻擊命中時，目標額外受到 1d6 冷凍傷害，且直到你的下個回合開始前，目標速度降低 10 呎。",
+    "地動山搖（山丘巨人）": "攻擊命中大型或更小的生物時，可使其陷入倒地狀態。",
+    "堅若磐石（石巨人）": "受到傷害時，可使用反應擲 1d12＋體質調整值，從該次傷害中扣除。",
+    "轟雷掣電（風暴巨人）": "60 呎內的生物對你造成傷害時，可使用反應對其造成 1d8 雷鳴傷害。"
   };
   const TIEFLING_SUMMARY = {
     "深淵血統": { legacy: "深淵", resistance: "毒素", spells: ["奇術", "毒氣噴濺", "致病射線（3 級）", "人類定身術（5 級）"] },
@@ -3616,7 +3616,9 @@
     prepareFooter.classList.toggle("has-spellbook-action", Boolean(spellbookWriteAction));
     spellDetailTrigger = trigger || document.activeElement;
     const record = typeof spell === "string" ? canonicalSpell(spell) : spell;
-    content.innerHTML = record ? `<strong>${escapeHtml(spellDisplayName(record.spellId))}</strong>${escapeHtml(record.desc)}` : "<span>你還沒有選擇法術喔！</span>";
+    content.innerHTML = record ? `<strong>${escapeHtml(spellDisplayName(record.spellId))}</strong>` : "<span>你還沒有選擇法術喔！</span>";
+    if (record && typeof window.appendSpellDescContent === "function") window.appendSpellDescContent(content, record.desc);
+    else if (record) content.append(record.desc || "");
     if (options.stateNote) {
       const note = document.createElement("p");
       note.textContent = options.stateNote;

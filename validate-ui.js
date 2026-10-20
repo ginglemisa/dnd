@@ -462,7 +462,7 @@ async function verifyPdf(page, fieldsOnly) {
       if (payload.specie_features1.includes("長休後環法恢復") !== (level >= 3)) throw new Error(`Lineage recovery: ${race}/${level}`);
     }
   });
-  console.log("PDF fields: 215 spell material flags (current/legacy), component field isolation, class tools/shields and lineage levels passed.");
+  console.log("PDF fields: 214 spell material flags (current/legacy), component field isolation, class tools/shields and lineage levels passed.");
   if (fieldsOnly) return;
   await page.addScriptTag({ url: "/pdf-lib.custom.min.js" });
   await page.addScriptTag({ url: "/fontkit.custom.min.js" });

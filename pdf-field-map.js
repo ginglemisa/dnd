@@ -1241,7 +1241,6 @@
     'sacred-flame': Object.freeze({ name: '聖火術', mode: 'save', dmg: '1d8 光耀', dmg5: '2d8 光耀', note: '60呎/敏捷豁免' }),
     'shocking-grasp': Object.freeze({ name: '電爪', mode: 'attack', dmg: '1d8 閃電', dmg5: '2d8 閃電', note: '觸及/不能藉機' }),
     'acid-splash': Object.freeze({ name: '酸液飛濺', mode: 'save', dmg: '1d6 強酸', dmg5: '2d6 強酸', note: '60呎/敏捷豁免' }),
-    'thunderclap': Object.freeze({ name: '鳴雷破', mode: 'save', dmg: '1d6 雷鳴', dmg5: '2d6 雷鳴', note: '自身5呎內體質豁免' }),
     'shillelagh': Object.freeze({ name: '橡棍術', mode: 'attack', dmg: '1d8 自選', dmg5: '1d10 自選', note: '力場or鈍擊/附贈/1分', usesSpellAdjustment: true }),
     'produce-flame': Object.freeze({ name: '燃火術', mode: 'attack', dmg: '1d8 火焰', dmg5: '2d8 火焰', note: '60呎/附贈/可照明' }),
     'eldritch-blast': Object.freeze({ name: '魔能爆', mode: 'attack', dmg: '1d10 力場', note: '120呎', note5: '120呎/2束分別攻擊' })

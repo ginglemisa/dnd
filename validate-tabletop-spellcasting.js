@@ -41,8 +41,8 @@ const spellsByLevel = Object.fromEntries([0, 1, 2, 3, 4].map(level => [
   spells.filter(spell => spell.level === level).length
 ]));
 
-assert.equal(spells.length, 215, "法術總數應為 215");
-assert.deepEqual(spellsByLevel, { 0: 28, 1: 56, 2: 55, 3: 42, 4: 34 });
+assert.equal(spells.length, 214, "法術總數應為 214");
+assert.deepEqual(spellsByLevel, { 0: 27, 1: 56, 2: 55, 3: 42, 4: 34 });
 assert.equal(new Set(spellIds).size, spellIds.length, "spellId 不得重複");
 
 const spellClasses = Object.keys(catalog.compatSpellList);
@@ -68,7 +68,6 @@ assertSameValues(
 
 const expectedCantripIds = [
   "starry-wisp",
-  "thunderclap",
   "vicious-mockery",
   "sacred-flame",
   "poison-spray",
@@ -177,6 +176,7 @@ const candidatesWithoutOutcome = numericOutcomeCandidates
 assertSameValues(candidatesWithoutOutcome, [
   "guidance",
   "resistance",
+  "bane",
   "bless",
   "blink",
   "ray-of-enfeeblement",
