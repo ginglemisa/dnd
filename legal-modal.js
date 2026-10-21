@@ -39,7 +39,7 @@
           if (error) { script.remove(); reject(error); }
           else resolve();
         };
-        script.src = "legal-about.js?v=20261021-map-link";
+        script.src = "legal-about.js?v=20261021-mapfog-about";
         script.onload = () => finish(window.LegalAbout ? null : new Error("About module unavailable"));
         script.onerror = () => finish(new Error("About module failed to load"));
         timer = setTimeout(() => finish(new Error("About module timed out")), 15000);

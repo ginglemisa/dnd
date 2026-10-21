@@ -2369,7 +2369,7 @@ details > summary::-webkit-details-marker,
 }
 
 :is(#tab-basic, #character-features, #class-feature-choices-modal) .output .class-feature-content {
-  width: min(100%, 38rem);
+  width: 100%;
   margin-top: 0.85rem;
   color: var(--text-body);
   white-space: normal;
