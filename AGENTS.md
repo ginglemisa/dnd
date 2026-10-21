@@ -18,13 +18,13 @@
 * 表單控制項與結構化 DOM 可作為角色目前選擇的 canonical state，無需另建中央 store。純顯示文字不作為主要規則資料來源，除非該解析本身是明確保留的設計。
 * LocalStorage 沿用 `window.dndStorage`。變更持久化欄位或意義時，檢查 LocalStorage、自動存檔、JSON 匯入／匯出與分享網址的還原相容性；UI 調整不應意外改變資料格式。
 * 角色 JSON／分享／autosave 的安全預檢集中於 `index.html`；輸入、解壓、文字、結構及動態控制項須沿用共用安全上限，不以角色規則代替資源限制。套用前完整驗證；拒絕或損壞資料不得覆寫原存檔，必要時停止 autosave。檔案欄位不保存／還原，來源標籤以純文字顯示。
-* JSON 匯入取代角色，清理範圍以 `index.html` 的 `APP_STORAGE_KEYS` 為準：含 autosave、其他職業／手動法術記憶、頭像、創角／購點、跑團偏好與角色 UI／導覽記憶；不得清空網站儲存，須保留日誌（含待遷移資料）、主題、擲骰歷史。匯出僅含目前角色與兩份法術書，不是完整本機備份；變更清理範圍須核對匯出與使用者提示。
+* JSON 匯入取代角色，清理範圍以 `index.html` 的 `APP_STORAGE_KEYS` 為準：含 autosave、其他職業／手動法術記憶、頭像、創角／購點、跑團偏好與角色 UI／導覽記憶；不得清空網站儲存，須保留日誌（含待遷移資料）、主題、擲骰歷史。匯出僅含目前角色、兩份法術書、跑團動作偏好（`__tabletopActionPreferences`）與頭像（`__tabletopAvatar`，超過 2 MiB 時省略並提示），不是完整本機備份；後兩者不進 autosave／分享，匯入檔有該欄位才於清理後寫回。變更清理範圍須核對匯出與使用者提示。
 * 匯入預檢後，須確認新資料與舊紀錄副本已寫入 sessionStorage 才清理／套用；新角色與完成標記存妥後重載，清除模組記憶體舊偏好，再移除暫存。完成標記防止暫存刪除失敗造成重複匯入；暫存失敗保留角色與未存編輯，套用／存檔失敗停止 autosave、保留副本並嘗試復原，提示保留分頁與重試。清除紀錄前須取消／作廢待套用匯入。
 * `adventure-journal.js` 獨立使用 IndexedDB `twd20-adventure-journal`；對外 JSON 維持版本 1、相容舊欄位且不含內部 revision。既有 IndexedDB 優先；舊 LocalStorage `dnd.adventureJournal.v1` 僅在遷移 transaction 完成後移除。寫入須在同一 transaction 核對 revision，衝突不覆寫；讀取／遷移／儲存失敗保留原資料與編輯、提供重試／可讀資料備份，不另建可寫入的 LocalStorage 日誌。日誌／搜尋不加入角色 JSON、分享或 autosave，角色清理不刪日誌；搜尋需存檔時成功後才跳頁，IME 選字不提交。
 * 修改正式部署載入的 CSS／JavaScript 時，依 `index.html` 既有查詢字串策略更新對應快取版本，只處理本次變動資源。
 * 分享流程入口為 `index.html` 的 `copyShareUrl()`，對話框沿用 `AppDialog`。短網址只在使用者明確選擇後建立，傳送當次編碼產生的區域變數 `hash`，不可改用可能過期的 `location.hash`；保留 `#s=`／`#s2=` 格式相容性與永久網址的複製 fallback。
 * 短網址僅供正式 Origin `https://twd20.com`、`#s2=` 且 hash 長度 ≤10000 使用，離線頁不得呼叫服務。90 天有效期由 Worker／KV 管理；建立失敗須明確提示並保留改選永久網址的操作，不可悄悄改複製長網址，也不可自動重試建立請求。
-* 分享模式不 autosave 角色修改、不得再次分享或匯入 JSON；成功載入時鎖定職業、等級、種族、背景，並關閉快速創角與兩種導覽入口（含程式入口），自訂背景僅供查看；解碼失敗的空白卡不鎖定。離開須確認、移除分享資料並重載本機存檔。角色／法術還原不得被本機其他角色記憶覆蓋；跑團動作偏好仍屬本機保存，不加入角色 JSON／分享。主題與擲骰歷史同樣不隨角色傳送。
+* 分享模式不 autosave 角色修改、不得再次分享或匯入 JSON；成功載入時鎖定職業、等級、種族、背景，並關閉快速創角與兩種導覽入口（含程式入口），自訂背景僅供查看；解碼失敗的空白卡不鎖定。離開須確認、移除分享資料並重載本機存檔。角色／法術還原不得被本機其他角色記憶覆蓋；跑團動作偏好與頭像仍屬本機保存，不加入分享。主題與擲骰歷史同樣不隨角色傳送。
 * GA4 啟用閘門在 `index.html`，事件入口在 `analytics.js`。只允許 HTTP(S) 且 hostname 精確為 `twd20.com`／`www.twd20.com`，owner 排除優先；除已識別的 `analytics=owner`／`analytics=user` 外，任何 query 或 fragment（含 `#s=`／`#s2=`）均不得載入 Google 追蹤腳本或送出事件。`analytics=user` 僅解除 owner 偏好，不能繞過網址限制；儲存失敗時當次 owner 仍生效並保留參數。
 * 追蹤不得傳送角色／日誌文字或分享資料；`page_location` 不含 query／fragment，`page_referrer` 僅保留 HTTP(S) origin，Google 腳本使用 `no-referrer`。測試流量與 GA4 模擬限制見下方「執行與停止條件」。
 

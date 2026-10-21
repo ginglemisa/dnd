@@ -863,7 +863,7 @@
     renderActionManagerContent(content);
     await globalScope.AppDialog.showContent({
       title: `管理${MODE_LABELS[currentMode]}按鈕`,
-      message: "這些設定只保留在目前裝置，不會寫入角色或分享資料。",
+      message: "這些設定保存在目前裝置，會隨「匯出 JSON」一起備份，但不會加入分享網址。",
       content,
       variant: "action-manager",
       confirmLabel: "完成",

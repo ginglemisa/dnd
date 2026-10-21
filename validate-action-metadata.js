@@ -673,8 +673,8 @@ async function verifyUiAndPersistence(page, url) {
   }, {bardKey,customId});
   await bardButton.waitFor({state:"detached"}); await customButton.waitFor({state:"detached"});
   const preferences = await page.evaluate(() => TabletopMode.getTabletopActionPreferences());
-  // JSON uses the existing character schema. Action preferences are intentionally
-  // browser-local in the current product and must not be added to exported data.
+  // Exported JSON carries the browser-local action preferences in one namespaced
+  // field; share data and the flat character schema stay free of them.
   const downloadEvent = page.waitForEvent("download");
   await page.evaluate(() => downloadStateAsJson());
   const download = await downloadEvent;
@@ -682,6 +682,7 @@ async function verifyUiAndPersistence(page, url) {
   assert.equal(exported.class, "bard"); assert.equal(exported["goliath-ancestry"], "cloud");
   assert.equal(Object.hasOwn(exported,"hiddenKeys"), false);
   assert.equal(Object.hasOwn(exported,"customActions"), false);
+  assert.deepEqual(exported.__tabletopActionPreferences, preferences);
   const shareState = await page.evaluate(async () => {
     const originalUrl = location.href;
     history.replaceState(null, "", await encodeStateToHash(collectShareState()));
@@ -690,6 +691,7 @@ async function verifyUiAndPersistence(page, url) {
     return decoded.data;
   });
   assert.equal(shareState.class, "bard"); assert.equal(shareState["goliath-ancestry"], "cloud");
+  assert.equal(Object.hasOwn(shareState, "__tabletopActionPreferences"), false);
   await page.evaluate(() => saveAllFields());
   await page.goto(url);
   await page.waitForFunction(() => document.getElementById("class").value === "bard");
@@ -837,10 +839,15 @@ async function verifyUiAndPersistence(page, url) {
   assert.deepEqual(unrelatedInput, { sameButton: true, focused: true, sameDescription: true, updates: 0 }, "spell search preserves the static action panel without invalidating dynamic actions");
   await page.evaluate(id => TabletopMode.removeCustomTabletopAction(id), customId);
   assert.equal((await page.evaluate(() => TabletopMode.getTabletopActionPreferences())).customActions.length, 0);
-  await importCharacterJson(page, "action-regression.json", exported);
+  await page.evaluate(() => TabletopMode.setTabletopActionNotes("LOCAL ONLY"));
+  const { __tabletopActionPreferences: _omitted, ...legacyExport } = exported;
+  await importCharacterJson(page, "action-regression-legacy.json", legacyExport);
   assert.equal(await page.inputValue("#class"), "bard");
   assert.deepEqual(await page.evaluate(() => TabletopMode.getTabletopActionPreferences()),
-    { version: 1, customActions: [], hiddenKeys: [], notes: "" }, "explicit JSON import clears old local action preferences");
+    { version: 1, customActions: [], hiddenKeys: [], notes: "" }, "JSON without action preferences clears old local action preferences");
+  await importCharacterJson(page, "action-regression.json", exported);
+  assert.deepEqual(await page.evaluate(() => TabletopMode.getTabletopActionPreferences()), preferences,
+    "JSON with action preferences restores the exported buttons and hidden keys");
 }
 
 async function verifyClassTabletopUpdates(page) {

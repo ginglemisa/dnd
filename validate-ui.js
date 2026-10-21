@@ -2817,7 +2817,54 @@ async function verifyJsonImportTransaction(browser, url) {
     assert.equal(await page.locator("#class").inputValue(), "");
     assert.equal(await page.evaluate(() => CustomBackground.getState()), null);
     assert.equal(await page.locator('#background option[value="custom"]').textContent(), "自訂");
-    console.log("JSON clean import: incoming precedence, cleanup, stage/apply/save failures, retained backups, retry, completion marker and denied session access passed.");
+
+    const avatar = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+    const preferences = { version: 1, notes: "EXPORTED NOTES", hiddenKeys: ["custom:custom-action-export"],
+      customActions: [{ id: "custom-action-export", label: "匯出按鈕", mode: "bonus", description: "隨 JSON 還原" }] };
+    const uploadText = async (name, text) => {
+      await page.evaluate(() => { const entry = new URL(location.href); entry.searchParams.set("analytics", "owner"); history.replaceState(null, "", entry); });
+      await page.locator("#import-json-file").setInputFiles({ name, mimeType: "application/json", buffer: Buffer.from(text) });
+    };
+    await seed();
+    await page.evaluate(({ avatar, preferences }) => {
+      dndStorage.setItem("dnd.tabletopAvatar.v1", avatar);
+      dndStorage.setItem("dnd.tabletopActionPreferences.v1", JSON.stringify(preferences));
+    }, { avatar, preferences });
+    await page.goto(url);
+    await page.waitForFunction(() => document.getElementById("gear-extra").value === "Original");
+    const exported = await page.evaluate(() => {
+      document.getElementById("gear-extra").value = "Exported";
+      TabletopMode.setCharacterName("匯出角色");
+      saveAllFields();
+      return { ...collectJsonExportText(), autosave: dndStorage.getItem("dndchar_autosave_v1"), share: collectShareState() };
+    });
+    const exportedData = JSON.parse(exported.text);
+    assert.equal(exported.avatarOmitted, false);
+    assert.equal(exportedData.__tabletopAvatar, avatar);
+    assert.deepEqual(exportedData.__tabletopActionPreferences, preferences);
+    assert.equal(exportedData.characterName, "匯出角色");
+    for (const key of ["__tabletopAvatar", "__tabletopActionPreferences"]) {
+      assert.equal(Object.hasOwn(JSON.parse(exported.autosave), key), false, `${key} stays out of autosave`);
+      assert.equal(Object.hasOwn(exported.share, key), false, `${key} stays out of share data`);
+    }
+    await seed();
+    await Promise.all([page.waitForEvent("load"), uploadText("tabletop-settings.json", exported.text)]);
+    await page.waitForFunction(() => document.getElementById("gear-extra").value === "Exported" && !autosaveRestoreBlocked && !autosaveClearing);
+    const restored = await page.evaluate(() => ({
+      avatar: dndStorage.getItem("dnd.tabletopAvatar.v1"),
+      preferences: JSON.parse(dndStorage.getItem("dnd.tabletopActionPreferences.v1")),
+      label: TabletopMode.getTabletopActionPreferences().customActions[0]?.label,
+      name: TabletopMode.getCharacterName(),
+      image: document.getElementById("tabletop-avatar-image").getAttribute("src")
+    }));
+    assert.deepEqual(restored, { avatar, preferences, label: "匯出按鈕", name: "匯出角色", image: avatar },
+      "exported JSON restores tabletop buttons, avatar and character name after the clean import");
+
+    await uploadText("bad-avatar.json", JSON.stringify({ ...incoming, __tabletopAvatar: "data:text/html;base64,PHNjcmlwdD4=" }));
+    await page.getByRole("dialog", { name: "JSON 匯入失敗", exact: true }).getByRole("button", { name: "關閉", exact: true }).click();
+    assert.equal(await page.locator("#gear-extra").inputValue(), "Exported");
+    assert.equal(await page.evaluate(() => dndStorage.getItem("dnd.tabletopAvatar.v1")), avatar, "a non-image avatar is rejected before any cleanup");
+    console.log("JSON clean import: incoming precedence, cleanup, stage/apply/save failures, retained backups, retry, completion marker, denied session access and tabletop button/avatar round trip passed.");
   } finally { await page.close(); }
 }
 

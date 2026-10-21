@@ -101,7 +101,7 @@
   <script src="tabletop-mode.js?v=20261021-feat-rule-tips" defer></script>
   <script src="tabletop-druid.js?v=20261021-bonus-wording" defer></script>
   <script src="tabletop-resources.js?v=20261014-heroic-help" defer></script>
-  <script src="tabletop-actions.js?v=20261021-feat-rule-tips" defer></script>
+  <script src="tabletop-actions.js?v=20261021-json-tabletop-settings" defer></script>
   <script src="tabletop-spells.js?v=20261020-spell-desc-lists" defer></script>
   <script src="legal-modal.js?v=20260923-legal-about" defer></script>
   <script src="onboarding-tour.js?v=20261020-share-identity-lock" defer></script>
@@ -8797,6 +8797,14 @@ document.addEventListener("change", (e) => {
 const AUTO_SAVE_KEY = "dndchar_autosave_v1";
 // Safety ceilings, not character rules. Reject before changing the current sheet.
 const CHARACTER_DATA_LIMITS = Object.freeze({ bytes: 2 * 1024 * 1024, rows: 100, entries: 512, freeUses: 64, freeUseControls: 1024 });
+// Device-local tabletop settings travel only in exported JSON, never in autosave or share data.
+const TABLETOP_ACTION_PREFERENCES_STORAGE_KEY = "dnd.tabletopActionPreferences.v1";
+const TABLETOP_AVATAR_STORAGE_KEY = "dnd.tabletopAvatar.v1";
+const TABLETOP_AVATAR_MAX_LENGTH = 1024 * 1024;
+function isValidTabletopAvatar(value) {
+  return typeof value === "string" && value.length <= TABLETOP_AVATAR_MAX_LENGTH
+    && /^data:image\/(?:webp|png|jpeg);base64,[A-Za-z0-9+/]+={0,2}$/.test(value);
+}
 function assertCharacterDataCount(value, maximum) {
   if (value === undefined || value === null || value === "") return;
   if (!["number", "string"].includes(typeof value) || !/^\d+$/.test(String(value))
@@ -8824,6 +8832,15 @@ function validateCharacterState(data) {
         if (["__proto__", "constructor", "prototype"].includes(key)) throw new TypeError("角色資料包含不允許的欄位");
         textLength += key.length;
         if (textLength > CHARACTER_DATA_LIMITS.bytes) throw new RangeError("角色資料過大");
+        if (depth === 0 && key === "__tabletopAvatar") {
+          // The avatar is the only string allowed past the per-text ceiling, and only as an image data URL.
+          if (!isValidTabletopAvatar(child)) throw new TypeError("角色圖片格式不正確或過大");
+          textLength += child.length;
+          if (textLength > CHARACTER_DATA_LIMITS.bytes) throw new RangeError("角色資料過大");
+          continue;
+        }
+        if (depth === 0 && key === "__tabletopActionPreferences"
+            && (!child || typeof child !== "object" || Array.isArray(child) || child.version !== 1)) throw new TypeError("跑團按鈕設定格式不正確");
         if (key === "sourceTag" && (typeof child !== "string" || child.length > 256)) throw new TypeError("法術來源標籤格式不正確");
         if (key === "entries" && Array.isArray(child)) {
           if (child.length > CHARACTER_DATA_LIMITS.entries) throw new RangeError("角色清單項目過多");
@@ -8887,10 +8904,10 @@ const APP_STORAGE_KEYS = Object.freeze([
   CLASS_FEATURE_PROMPT_DISABLED_KEY,
   "dnd.quickBuildDraft.v1",
   POINT_BUY_LAST_APPLIED_KEY,
-  "dnd.tabletopActionPreferences.v1",
+  TABLETOP_ACTION_PREFERENCES_STORAGE_KEY,
   "dnd.tabletopBasicExpanded.v1",
   "dnd.tabletopActionMode.v1",
-  "dnd.tabletopAvatar.v1",
+  TABLETOP_AVATAR_STORAGE_KEY,
   "dnd.tabletopIntroSeen.v1",
   "dnd.spellManagementBackup.v1",
   "dnd.spellManagementMemories.v1",
@@ -9658,9 +9675,38 @@ async function copyResolvedShareUrl(shareUrl) {
   }
 }
 
-function downloadStateAsJson() {
+function collectJsonExportText() {
   const data = collectStateObject();
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const actionPreferences = window.TabletopMode?.getTabletopActionPreferences?.();
+  if (actionPreferences) data.__tabletopActionPreferences = actionPreferences;
+  const avatar = window.dndStorage.getItem(TABLETOP_AVATAR_STORAGE_KEY);
+  if (isValidTabletopAvatar(avatar)) data.__tabletopAvatar = avatar;
+  let text = JSON.stringify(data, null, 2);
+  let avatarOmitted = false;
+  // Keep the file importable: drop the avatar before exceeding the character size ceiling.
+  if (data.__tabletopAvatar && new TextEncoder().encode(text).byteLength > CHARACTER_DATA_LIMITS.bytes) {
+    delete data.__tabletopAvatar;
+    text = JSON.stringify(data, null, 2);
+    avatarOmitted = true;
+  }
+  return { text, avatarOmitted };
+}
+
+function restoreImportedTabletopSettings(data) {
+  if (Object.hasOwn(data, "__tabletopActionPreferences")) {
+    const preferences = window.TabletopMode?.logic?.normalizeTabletopActionPreferences?.(data.__tabletopActionPreferences);
+    if (!preferences || !window.dndStorage.setItem(TABLETOP_ACTION_PREFERENCES_STORAGE_KEY, JSON.stringify(preferences))) {
+      throw new Error("無法還原跑團按鈕設定");
+    }
+  }
+  if (Object.hasOwn(data, "__tabletopAvatar") && !window.dndStorage.setItem(TABLETOP_AVATAR_STORAGE_KEY, data.__tabletopAvatar)) {
+    throw new Error("無法還原角色圖片");
+  }
+}
+
+function downloadStateAsJson() {
+  const { text, avatarOmitted } = collectJsonExportText();
+  const blob = new Blob([text], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const ts = new Date().toISOString().replace(/[:.]/g, "-");
   const a = document.createElement("a");
@@ -9670,6 +9716,7 @@ function downloadStateAsJson() {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+  if (avatarOmitted) window.AppDialog.notify("角色資料加上角色圖片會超過 2 MiB，這次匯出未包含角色圖片。", { tone: "warning" });
   window.twAnalytics?.track?.("character_json_export");
 }
 
@@ -10591,6 +10638,7 @@ function restoreAllFields() {
         jsonImportInProgress = true;
         applyStateObject(imported);
         if (!saveAllFields()) throw new Error("新角色儲存失敗");
+        restoreImportedTabletopSettings(imported);
         if (!window.dndStorage.setItem(COMPLETED_JSON_IMPORT_KEY, staged.id)) throw new Error("無法確認匯入完成");
         window.twAnalytics?.track?.("character_json_import");
         // Modules may already hold old avatar/action/draft preferences in memory.
