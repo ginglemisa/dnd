@@ -43,6 +43,9 @@ twD20 是 Reggie Tsai / 瑞基製作的手機角卡網站，協助新手快速�
 - [Noto Sans TC](https://fonts.google.com/noto/specimen/Noto+Sans+TC)、[Source Han Serif](https://github.com/adobe-fonts/source-han-serif)
 - [SRD 中文角色紙](https://tinyurl.com/srd5etw)，排版：[赤赤@AkaA](https://x.com/AkaAAkaAka)；[無表格 PDF／原 PNG](https://drive.google.com/drive/folders/1brrzdbRcxMvxHcYYjyzs2N_8aPaQewW6?usp=sharing)
 - [pdf-lib](https://github.com/Hopding/pdf-lib)、[fontkit](https://github.com/Hopding/fontkit)
+- 職業圖示：[game-icons.net](https://game-icons.net/)，採 [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)；已移除背景並改為隨主題變色的單色圖示
+  - Lorc：Battle axe（野蠻人）、Music spell（吟遊詩人）、Holy symbol（牧師）、Sprout disc（德魯伊）、Sword wound（戰士）、Fulguro punch（武僧）、Winged sword（聖騎士）、Target arrows（遊俠）、Cloak and Dagger（盜賊）、Fireball（術士）、Transfuse（契術師）
+  - Delapouite：Spell book（法師）
 
 大部分程式碼與文字由生成式 AI 協助產生；MIT 授權僅限作者依法有權授予的範圍，不涵蓋第三方權利或另有授權的內容。
 

@@ -68,6 +68,14 @@
 
         <h3>第三方內容</h3>
         <p>SRD 5.2.1、字型、角色紙、圖像及第三方函式庫等，不適用上述 MIT License，請依各自授權使用。</p>
+        <ul>
+          <li>職業圖示：<a href="https://game-icons.net/" target="_blank" rel="noopener">game-icons.net</a>，採 <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">CC BY 3.0</a> 授權；已移除背景並改為隨主題變色的單色圖示。
+            <ul>
+              <li>Lorc：Battle axe（野蠻人）、Music spell（吟遊詩人）、Holy symbol（牧師）、Sprout disc（德魯伊）、Sword wound（戰士）、Fulguro punch（武僧）、Winged sword（聖騎士）、Target arrows（遊俠）、Cloak and Dagger（盜賊）、Fireball（術士）、Transfuse（契術師）</li>
+              <li>Delapouite：Spell book（法師）</li>
+            </ul>
+          </li>
+        </ul>
 
         <h3>免責聲明</h3>
         <p>twD20 以方便創角、跑團及新手理解為目的。規則摘要、翻譯、計算與程式功能可能存在疏漏，若有疑義，請以正式規則及團務裁定為準。</p>
