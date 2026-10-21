@@ -64,6 +64,15 @@ async function main() {
       assert.equal(await dialog.evaluate(el => el.scrollWidth <= el.clientWidth && el.getBoundingClientRect().right <= innerWidth), true);
       await dialog.locator("#spell-browse-class").selectOption("paladin");
       assert.equal(await dialog.locator("#spell-browse-name").isDisabled(), true);
+      assert.equal(await dialog.locator('#spell-browse-ring option[value="0"]').count(), 0, "paladin omits cantrips");
+      assert.equal(await dialog.locator("#spell-browse-ring").inputValue(), "4", "valid ring selection survives class changes");
+      await dialog.locator("#spell-browse-class").selectOption("ranger");
+      assert.equal(await dialog.locator('#spell-browse-ring option[value="0"]').count(), 0, "ranger omits cantrips");
+      await dialog.locator("#spell-browse-class").selectOption("wizard");
+      assert.equal(await dialog.locator('#spell-browse-ring option[value="0"]').count(), 1, "other classes retain cantrips");
+      await dialog.locator("#spell-browse-ring").selectOption("0");
+      await dialog.locator("#spell-browse-class").selectOption("paladin");
+      assert.equal(await dialog.locator("#spell-browse-ring").inputValue(), "", "invalid cantrip level clears on paladin switch");
       await dialog.locator(".app-dialog__close").click();
       assert.equal(await browse.evaluate(el => el === document.activeElement), true);
       await browse.click();
