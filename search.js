@@ -198,8 +198,14 @@
     const classes = new Set(allSpells.flatMap(spell => SpellCatalog.getClassIds(spell.spellId)));
     classSelect.append(option("", "全部職業"), ...Object.entries(SPELL_SEARCH_CLASS_LABELS)
       .filter(([id]) => classes.has(id)).map(([id, label]) => option(id, label)));
-    ringSelect.append(option("", "所有環位"), ...[0, 1, 2, 3, 4]
-      .map(level => option(String(level), SPELL_SEARCH_LEVEL_LABELS[level === 0 ? "cantrips" : String(level)])));
+    const refreshRingOptions = () => {
+      const previous = ringSelect.value;
+      ringSelect.replaceChildren(option("", "所有環位"), ...[0, 1, 2, 3, 4]
+        .filter(level => level !== 0 || !["paladin", "ranger"].includes(classSelect.value))
+        .map(level => option(String(level), SPELL_SEARCH_LEVEL_LABELS[level === 0 ? "cantrips" : String(level)])));
+      ringSelect.value = [...ringSelect.options].some(item => item.value === previous) ? previous : "";
+    };
+    refreshRingOptions();
     const detail = document.createElement("div");
     detail.className = "spell-browser-detail output small-text";
     detail.setAttribute("aria-live", "polite");
@@ -219,7 +225,10 @@
       nameSelect.value = spells.some(spell => spell.spellId === previous) ? previous : "";
       showDetail();
     };
-    classSelect.addEventListener("change", refreshOptions);
+    classSelect.addEventListener("change", () => {
+      refreshRingOptions();
+      refreshOptions();
+    });
     ringSelect.addEventListener("change", refreshOptions);
     nameSelect.addEventListener("change", showDetail);
     body.append(fields, detail);
