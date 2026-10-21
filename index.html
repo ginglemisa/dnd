@@ -84,24 +84,24 @@
   <link rel="stylesheet" href="styles.css?v=20261020-druid-attack-lines">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261006-usage-analytics" defer></script>
-  <script src="monster.js?v=20261020-beast-action-terms" defer></script>
-    <script src="class-features.js?v=20261020-condition-tips" defer></script>
-  <script src="race.js?v=20261020-race-text" defer></script>
+  <script src="monster.js?v=20261021-feat-rule-tips" defer></script>
+    <script src="class-features.js?v=20261021-feat-rule-tips" defer></script>
+  <script src="race.js?v=20261021-condition-plain" defer></script>
   <script src="backgrounds.js?v=20261003-background-flavor" defer></script>
   <script src="tool-data.js?v=20261008-class-tools" defer></script>
-  <script src="feats.js?v=20261020-condition-tips" defer></script>
-  <script src="equipment-notes.js?v=20260813-weapon-rule-popups-2" defer></script>
+  <script src="feats.js?v=20261021-feat-rule-tips" defer></script>
+  <script src="equipment-notes.js?v=20261021-bonus-wording" defer></script>
   <script src="spell-list.js?v=20261014-class-lookup" defer></script>
-  <script src="condition.js?v=20261020-condition-tips" defer></script>
-  <script src="action-panel.js?v=20261020-race-text" defer></script>
+  <script src="condition.js?v=20261021-bonus-wording" defer></script>
+  <script src="action-panel.js?v=20261021-bonus-wording" defer></script>
   <script src="character-rules.js?v=20261010-spell-lists-v2" defer></script>
   <script src="app-dialog.js?v=20261009-class-choice-prompt" defer></script>
   <script src="custom-background.js?v=20261020-share-identity-lock" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
-  <script src="tabletop-mode.js?v=20261019-class-overview-source" defer></script>
-  <script src="tabletop-druid.js?v=20261020-primal-strike-row" defer></script>
+  <script src="tabletop-mode.js?v=20261021-feat-rule-tips" defer></script>
+  <script src="tabletop-druid.js?v=20261021-bonus-wording" defer></script>
   <script src="tabletop-resources.js?v=20261014-heroic-help" defer></script>
-  <script src="tabletop-actions.js?v=20261020-empowered-strikes" defer></script>
+  <script src="tabletop-actions.js?v=20261021-feat-rule-tips" defer></script>
   <script src="tabletop-spells.js?v=20261020-spell-desc-lists" defer></script>
   <script src="legal-modal.js?v=20260923-legal-about" defer></script>
   <script src="onboarding-tour.js?v=20261020-share-identity-lock" defer></script>
@@ -4827,6 +4827,21 @@ function updateFeatDesc(selectId, descId) {
   syncFeatRowDisclosure(select.closest("#feats-area .form-row"));
 }
 
+// 專長原文維持純文字，只在顯示時把狀態、指定技能與規則名詞換成說明按鈕；小標不連結。
+function formatFeatRuleText(text, featTitle, head) {
+  const tips = new Map();
+  const condition = head ? FEAT_CONDITION_REFERENCES[featTitle]?.[head] : null;
+  if (condition) tips.set(condition.label, () => createDndConditionTip(condition.key, condition.label));
+  const skills = head ? FEAT_SKILL_REFERENCES[featTitle]?.[head] || [] : [];
+  [...skills, ...FEAT_RULE_TERMS].forEach(label => {
+    if (!tips.has(label)) tips.set(label, () => createFeatureRuleTip(label));
+  });
+  const labels = [...tips.keys()].sort((a, b) => b.length - a.length).map(escapeRegExp);
+  return text.split(new RegExp(`(${labels.join("|")})`, "u"))
+    .map((part, index) => index % 2 ? tips.get(part)()?.outerHTML ?? escapeHtml(part) : escapeHtml(part))
+    .join("");
+}
+
 function formatFeatDescription(raw) {
   // 共用角色卡與查看視窗的規則內容與排版。
   if (typeof raw !== "string") {
@@ -4874,13 +4889,10 @@ function formatFeatDescription(raw) {
       if (idx > 0) {
         const head = line.slice(0, idx).trim();
         const tail = line.slice(idx + 1).trim();
-        const reference = FEAT_CONDITION_REFERENCES[title]?.[head];
-        const tip = reference && createDndConditionTip(reference.key, reference.label);
-        const text = tip ? tail.split(reference.label).map(escapeHtml).join(tip.outerHTML) : escapeHtml(tail);
-        return `<div><strong>${escapeHtml(head)}</strong>：${text}</div>`;
+        return `<div><strong>${escapeHtml(head)}</strong>：${formatFeatRuleText(tail, title, head)}</div>`;
       }
 
-      return `<div>${escapeHtml(t)}</div>`;
+      return `<div>${formatFeatRuleText(t, title, "")}</div>`;
     })
     .join("");
 
@@ -9728,7 +9740,7 @@ async function ensurePdfExportReady() {
     pdfExportLoaderPromise = (async () => {
       await loadScriptOnce("pdf-lib.custom.min.js");
       await loadScriptOnce("fontkit.custom.min.js");
-      await loadScriptOnce("pdf-field-map.js?v=20261014-feat-overflow-titles");
+      await loadScriptOnce("pdf-field-map.js?v=20261021-feat-rule-tips");
       await loadScriptOnce("pdf-export.js?v=20261019-remove-no-font");
     })().catch((error) => {
       pdfExportLoaderPromise = null;

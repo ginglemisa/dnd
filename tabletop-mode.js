@@ -2377,7 +2377,7 @@ function getRogueReliableTalentEntry() {
       entries.push({ label: "守護靈氣", detail: "額外豁免加值已自動計算。" });
     }
     if (hasSelectedFeat("臨陣施法")) {
-      entries.push({ label: "穩住專注", detail: "維持專注的體質豁免丟二取高。" });
+      entries.push({ label: "穩住專注", detail: "維持專注的體質豁免具有優勢。" });
     }
     return entries.concat(getConditionRuleEntries("skills"));
   }
@@ -2420,13 +2420,13 @@ function getRogueReliableTalentEntry() {
     if (hasSelectedFeat("重甲減傷") && isWearingHeavyArmor()) {
       const proficiencyBonus = getCharacterProficiencyBonus();
       const reduction = proficiencyBonus === null ? "「熟練加值」" : `${proficiencyBonus} 點`;
-      entries.push({ label: "裝甲吸收", detail: `穿重甲被攻擊命中時，可減少揮砍、穿刺、鈍擊 ${reduction}傷害。` });
+      entries.push({ label: "裝甲吸收", detail: `穿重甲被攻擊命中時，受到的揮砍、穿刺、鈍擊傷害減少 ${reduction}。` });
     }
     if (hasSelectedFeat("迅捷步法")) {
-      entries.push({ label: "閃避反擊", detail: "針對你的藉機攻擊丟二取低。" });
+      entries.push({ label: "閃避反擊", detail: "針對你的藉機攻擊具有劣勢。" });
     }
     if (hasSelectedFeat("醫療兵")) {
-      entries.push({ label: "醫療兵", detail: "法術或照護的恢復骰出 1 可重丟一次。" });
+      entries.push({ label: "醫療兵", detail: "以法術或照護恢復 HP 時，恢復骰擲出 1 可重擲一次。" });
     }
     const warlockDarkOnesBlessing = getWarlockDarkOnesBlessingOverviewEntry();
     if (warlockDarkOnesBlessing) entries.push(warlockDarkOnesBlessing);
@@ -2446,10 +2446,10 @@ function getRogueReliableTalentEntry() {
     const sorcererElementalAffinity = getSorcererElementalAffinitySpellEntry();
     if (sorcererElementalAffinity) entries.push(sorcererElementalAffinity);
     if (hasSelectedFeat("臨陣施法")) {
-      entries.push({ label: "穩住專注", detail: "維持專注的體質豁免丟二取高。" });
+      entries.push({ label: "穩住專注", detail: "維持專注的體質豁免具有優勢。" });
     }
     if (hasSelectedFeat("醫療兵")) {
-      entries.push({ label: "醫療兵", detail: "法術或照護的恢復骰出 1 可重丟一次。" });
+      entries.push({ label: "醫療兵", detail: "以法術或照護恢復 HP 時，恢復骰擲出 1 可重擲一次。" });
     }
     return entries.concat(getConditionRuleEntries("spells"));
   }

@@ -1789,7 +1789,7 @@ async function verifyFeatureReferences(browser, url) {
     await page.locator("#legal-close-btn").click();
     const ruleCoverage = await page.evaluate(() => {
       const skills = ["體操", "馴獸", "奧秘", "運動", "欺瞞", "歷史", "洞悉", "威嚇", "調查",
-        "醫藥", "自然", "察覺", "表演", "遊說", "宗教", "巧手", "隱匿", "生存", "求生", "醫學", "說服", "優勢", "劣勢", "抗性"];
+        "醫藥", "自然", "察覺", "表演", "遊說", "宗教", "巧手", "隱匿", "生存", "求生", "醫學", "說服", "優勢", "劣勢", "抗性", "藉機攻擊"];
       const failures = [];
       const sources = [...Object.entries(classFeatures), ...Object.entries(raceFeatureDisplay),
         ["all skill references", `<p>${skills.map(skillTip).join("、")}</p>`],
@@ -1845,8 +1845,26 @@ async function verifyFeatureReferences(browser, url) {
         template.innerHTML = formatFeatDescription(raw);
         const expected = name === "警覺" ? 1 : name === "擒抱者" ? 3 : 0;
         if (template.content.querySelectorAll("button.condition-tip").length !== expected) failures.push(`${name}: feat condition coverage`);
-        if (template.content.querySelector("strong .condition-tip, .feat-desc-title .condition-tip")) failures.push(`${name}: linked feat heading`);
+        if (template.content.querySelector("strong .feature-rule-tip, .feat-desc-title .feature-rule-tip, .feat-desc-subtitle .feature-rule-tip")) failures.push(`${name}: linked feat heading`);
         if (/<[^>]+>/.test(raw)) failures.push(`${name}: feat source must remain plain text`);
+        if (template.content.textContent.replace(/\s/g, "") !== raw.replace(/\s/g, "")) failures.push(`${name}: feat text changed`);
+        for (const tip of template.content.querySelectorAll(".feature-rule-tip")) {
+          if (!renderSkillPopupHtml(tip.dataset.skill, tip.dataset.condition)) failures.push(`${name}: missing explanation for ${tip.textContent}`);
+        }
+        const walker = document.createTreeWalker(template.content.querySelector(".feat-desc-body"), NodeFilter.SHOW_TEXT);
+        while (walker.nextNode()) {
+          const node = walker.currentNode;
+          if (!node.parentElement.closest("strong, button") && /優勢|劣勢|藉機攻擊/.test(node.textContent)) failures.push(`${name}: unlinked rule term`);
+        }
+      }
+      const finder = document.createElement("template");
+      finder.innerHTML = formatFeatDescription(featsDesc["尋物好手"]);
+      const finderSkills = Array.from(finder.content.querySelectorAll("button.skill-tip"), tip => tip.dataset.skill);
+      if (JSON.stringify(finderSkills) !== JSON.stringify(["洞悉", "調查", "察覺"])) failures.push(`尋物好手: skill links ${finderSkills}`);
+      for (const [name, count] of [["fighter", 2], ["monk", 1], ["ranger", 1], ["rogue", 1]]) {
+        const template = document.createElement("template");
+        template.innerHTML = highlightSpellNamesInClassFeature(classFeatures[name]);
+        if (template.content.querySelectorAll('button[data-skill="藉機攻擊"]').length !== count) failures.push(`${name}: opportunity attack links`);
       }
       for (const condition of DND_CONDITIONS) {
         const tip = createDndConditionTip(condition.key);

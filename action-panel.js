@@ -23,11 +23,11 @@
 
     ]),
     bonus: Object.freeze([
-      { key: "drink-potion", label: "喝藥水", description: "以附贈動作喝下一瓶治療藥水，恢復 2d4 + 2 點生命值。" },
+      { key: "drink-potion", label: "喝藥水", description: "以附贈喝下一瓶治療藥水，恢復 2d4 + 2 點生命值。" },
       { key: "offhand-attack", label: "二次攻擊", description: "在自身回合以「輕型」武器執行攻擊動作後，可用「附贈」以另一把輕型武器再攻擊一次。這次攻擊的傷害不加屬性調整值（負值仍須計入）。" }
     ]),
     reaction: Object.freeze([
-      { key: "opportunity-attack", label: "藉機攻擊", description: "當你能看見的生物離開你的觸及範圍時，你可以使用反應，對該生物進行一次近戰攻擊。" },
+      { key: "opportunity-attack", label: "藉機攻擊", description: "當你能看見的生物自行離開你的觸及範圍時，你可以使用反應，對該生物進行一次近戰攻擊。" },
       { key: "execute-ready", label: "執行準備", description: "先前使用「準備」且指定觸發條件成立時發生" }
     ]),
     movement: Object.freeze([
@@ -85,7 +85,7 @@
   const MODE_META = Object.freeze({
     basic: { timing: "每回合一次", summary: "執行主要行動，例如攻擊或閃避。", prompt: "請選擇一個動作查看說明。" },
     action: { timing: "每回合一次", summary: "執行專屬行動，例如魯莽攻擊。", prompt: "請選擇一個專屬動作查看說明。" },
-    bonus: { timing: "每回合最多一次", summary: "執行有條件的額外動作，只有規則或能力允許時才能使用。", prompt: "請選擇一個附贈動作查看說明。" },
+    bonus: { timing: "每回合最多一次", summary: "執行有條件的額外動作，只有規則或能力允許時才能使用。", prompt: "請選擇一個附贈查看說明。" },
     reaction: { timing: "每輪最多一次", summary: "在自己或別人的回合符合觸發條件時使用。", prompt: "請選擇一個反應查看說明。" },
     movement: { timing: "自己的回合中", summary: "改變你的位置，移動可分段穿插在動作前後。", prompt: "請選擇一項移動規則查看說明。" }
   });

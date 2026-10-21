@@ -329,7 +329,7 @@
       hasSelectedFeat("雙武器戰鬥")
       && equippedWeapons.some(weapon => weaponHasProperty(weapon, "輕型"))
     ) {
-      entries.push(["幫撐十秒", "使用「輕型」武器進行副手攻擊時，可用屬性加值提升傷害。"]);
+      entries.push(["幫撐十秒", "以「輕型」武器進行額外攻擊時，傷害可加上屬性調整值。"]);
     }
     return entries;
   }

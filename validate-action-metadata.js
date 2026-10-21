@@ -512,11 +512,11 @@ async function verifyCoverage(page) {
     for (const [level, pool] of [[1, 5], [5, 25]]) {
       setClass("paladin", level);
       const lay = classOption("bonus", "聖療").description;
-      check(lay.includes(`「${pool}」點`) && lay.includes("附贈動作") && lay.includes("消耗 5 點") && lay.includes("中毒"), "Lay on Hands shows the current pool and poison cure");
+      check(lay.includes(`「${pool}」點`) && lay.includes("附贈") && lay.includes("消耗 5 點") && lay.includes("中毒"), "Lay on Hands shows the current pool and poison cure");
     }
     setClass("paladin", 3);
     const sense = classOption("bonus", "神聖感知").description;
-    check(sense.includes("附贈動作") && sense.includes("消耗 1 次引導神力") && sense.includes("10 分鐘") && sense.includes("60 呎") && sense.includes("聖居"), "Divine Sense retains activation, cost, duration and range");
+    check(sense.includes("附贈") && sense.includes("消耗 1 次引導神力") && sense.includes("10 分鐘") && sense.includes("60 呎") && sense.includes("聖居"), "Divine Sense retains activation, cost, duration and range");
     check(sense.includes("引導神力使用次數：2 次") && !sense.includes("豁免 DC") && !sense.includes("選擇 1 個發動"), "Divine Sense hides the general Channel Divinity rules");
     setClass("", 8);
     for (const [race, scenarios] of Object.entries(baseline.races)) {

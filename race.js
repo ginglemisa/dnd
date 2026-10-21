@@ -40,7 +40,7 @@ const raceFeatures = {
 
 龍翔天際：5 級起，可使用<strong>附贈</strong>展開光譜龍翼，獲得飛行速度，持續 10 分鐘。
   - 可隨時收起龍翼（免動作）
-  - 陷入<strong><span class="condition-tip" data-condition="incapacitated">失能</span>狀態</strong>時龍翼消失
+  - 陷入<span class="condition-tip" data-condition="incapacitated">失能</span>狀態時龍翼消失
   - 每次長休限用 1 次
 `,
   dwarf: `生物類型：類人生物
@@ -53,7 +53,7 @@ const raceFeatures = {
 
 黑暗視覺：你擁有 120 呎黑暗視覺。
 
-矮人體魄：對抗<strong><span class="condition-tip" data-condition="poisoned">中毒</span>狀態</strong>的豁免具有優勢，受到的毒素傷害減半。
+矮人體魄：對抗<span class="condition-tip" data-condition="poisoned">中毒</span>狀態的豁免具有優勢，受到的毒素傷害減半。
 
 矮人剛毅：HP 上限 +1，之後每升 1 級再 +1。
 
@@ -102,7 +102,7 @@ const raceFeatures = {
 </table>
 血統法術始終準備。3 級與 5 級取得的法術各可免費施展 1 次，之後須消耗法術位；免費次數長休後恢復。施法屬性在選擇血統時從智力、感知、魅力中選定。
 
-精類血統：對抗<strong><span class="condition-tip" data-condition="charmed">魅惑</span>狀態</strong>的豁免具有優勢。
+精類血統：對抗<span class="condition-tip" data-condition="charmed">魅惑</span>狀態的豁免具有優勢。
 
 敏銳感官：從${skillTip("洞悉")}、${skillTip("察覺")}、${skillTip("求生")}中選擇一項獲得熟練。
 
@@ -146,13 +146,13 @@ const raceFeatures = {
 
 凜若冰霜（霜巨人）：攻擊命中時，目標額外受到 1d6 冷凍傷害，且直到你的下個回合開始前，目標速度降低 10 呎。
 
-地動山搖（山丘巨人）：攻擊命中大型或更小的生物時，可使其陷入<strong><span class="condition-tip" data-condition="prone">倒地</span>狀態</strong>。
+地動山搖（山丘巨人）：攻擊命中大型或更小的生物時，可使其陷入<span class="condition-tip" data-condition="prone">倒地</span>狀態。
 
 堅若磐石（石巨人）：受到傷害時，可使用<strong>反應</strong>擲 1d12＋體質調整值，從該次傷害中扣除。
 
 轟雷掣電（風暴巨人）：60 呎內的生物對你造成傷害時，可使用<strong>反應</strong>對其造成 1d8 雷鳴傷害。
 
-身強力壯：掙脫<strong><span class="condition-tip" data-condition="grappled">擒抱</span>狀態</strong>的屬性檢定具有優勢。計算可攜重量時，你視為大型。
+身強力壯：掙脫<span class="condition-tip" data-condition="grappled">擒抱</span>狀態的屬性檢定具有優勢。計算可攜重量時，你視為大型。
 
 巨化形體：5 級起，若空間足夠，可使用<strong>附贈</strong>變為大型（2×2 格），持續 10 分鐘或直到你結束（免動作）。
   - 速度增加 10 呎
@@ -167,7 +167,7 @@ const raceFeatures = {
 
 作為半身人，你有以下特質。
 
-勇氣：避免或終止<strong><span class="condition-tip" data-condition="frightened">恐慌</span>狀態</strong>的豁免具有優勢。
+勇氣：避免或終止<span class="condition-tip" data-condition="frightened">恐慌</span>狀態的豁免具有優勢。
 
 半身人靈巧：移動時可穿過體型比你大的生物，但不能停留在其所在的格子。
 

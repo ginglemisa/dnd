@@ -8,6 +8,7 @@ const skills_example_uses = {
   優勢: "當一次 D20 檢定具有優勢時，擲兩次 D20，取較高的結果，再加上原本的數字加值。\n\n例如擲出 7 和 16，就採用 16，再加上該次檢定的加值。",
   劣勢: "當一次 D20 檢定具有劣勢時，擲兩次 D20，取較低的結果，再加上原本的數字加值。\n\n例如擲出 7 和 16，就採用 7，再加上該次檢定的加值。",
   抗性: "對某種傷害具有抗性時，你受到的該類型傷害減半。\n\n例如你具有火焰傷害抗性，原本會受到 10 點火焰傷害，就只受到 5 點。抗性只適用於說明指定的傷害類型或該次傷害。",
+  藉機攻擊: "當你能看見的生物自行離開你的觸及範圍時，你可以使用反應，對該生物進行一次近戰攻擊。\n\n生物執行「撤離」後，本回合的移動不會引發藉機攻擊。",
   目前HP: "在此填寫目前HP，再進入跑團模式。",
   體操: "站穩不跌倒，或做出各種特技動作。",
   馴獸: "安撫、訓練動物，或讓牠照你的意思行動。",
@@ -44,21 +45,24 @@ function skillTip(skillName) {
   return `<span class="skill-tip" data-skill="${safeLabel}">${safeLabel}</span>`;
 }
 
+// 規則說明的鍵盤可操作入口；label 須對應 skills_example_uses 的鍵。
+function createFeatureRuleTip(label) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "skill-tip feature-rule-tip";
+  button.dataset.skill = label;
+  button.textContent = label;
+  button.setAttribute("aria-controls", "skillPopup");
+  return button;
+}
+
 // 僅處理職業／種族的顯示 HTML，不改寫供規則、摘要與 PDF 使用的原始資料。
 function highlightFeatureRuleTerms(html) {
-  // 技能與抗性只接受來源中的 skillTip() 標記，避免把一般敘述或標題當成引用。
+  // 技能、抗性與藉機攻擊只接受來源中的 skillTip() 標記，避免把一般敘述或標題當成引用。
   const pattern = /優勢|劣勢/g;
   const template = document.createElement("template");
   template.innerHTML = html;
-  const makeTip = label => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "skill-tip feature-rule-tip";
-    button.dataset.skill = label;
-    button.textContent = label;
-    button.setAttribute("aria-controls", "skillPopup");
-    return button;
-  };
+  const makeTip = createFeatureRuleTip;
   // 已有的技能連結也使用相同的鍵盤可操作入口，避免重複包裝。
   template.content.querySelectorAll("span.skill-tip").forEach(tip => {
     if (!tip.closest('a, button, select, [role="button"]')) tip.replaceWith(makeTip(tip.dataset.skill));
@@ -98,7 +102,7 @@ const BEAST_STATS = {
     senses: "被動感知11",
     skills: "—",
     traits: "生命連結：你因1環以上法術恢復HP時，若在坐騎5呎內，它也恢復等量HP；語言：心靈感應1哩（限與你）；PB=你的PB",
-    attacks: "異界撞擊：近戰攻擊檢定（加值=你的法術攻擊加值）, 觸及5呎；命中：1d8+法術環階點光耀（天界）/心靈（精類）/黯蝕（邪魔）傷害。\n附贈動作\n兇惡凝視（邪魔限定；長休後恢復）：60呎內坐騎可見1生物進行感知豁免（DC=你的法術DC）；失敗：恐慌至你下回合結束。\n精類步伐（精類限定；長休後恢復）：坐騎與騎者傳送至坐騎60呎內你選的未佔空間。\n治癒之觸（天界限定；長休後恢復）：坐騎5呎內1生物恢復2d8+法術環階點生命值。"
+    attacks: "異界撞擊：近戰攻擊檢定（加值=你的法術攻擊加值）, 觸及5呎；命中：1d8+法術環階點光耀（天界）/心靈（精類）/黯蝕（邪魔）傷害。\n附贈\n兇惡凝視（邪魔限定；長休後恢復）：60呎內坐騎可見1生物進行感知豁免（DC=你的法術DC）；失敗：恐慌至你下回合結束。\n精類步伐（精類限定；長休後恢復）：坐騎與騎者傳送至坐騎60呎內你選的未佔空間。\n治癒之觸（天界限定；長休後恢復）：坐騎5呎內1生物恢復2d8+法術環階點生命值。"
   },
   rat: {
     name: "老鼠 (Rat) CR:0",
@@ -662,7 +666,7 @@ const BEAST_STATS = {
     senses: "黑暗視覺60呎, 被動感知14",
     skills: "感知+4, 隱匿+7",
     traits: "—",
-    attacks: "撕裂：近戰攻擊檢定+5, 觸及5呎；命中：揮砍傷害6(1d6+3)。附贈動作─靈巧脫逃：執行撤離或躲藏。"
+    attacks: "撕裂：近戰攻擊檢定+5, 觸及5呎；命中：揮砍傷害6(1d6+3)。附贈─靈巧脫逃：執行撤離或躲藏。"
   },
   piranha: {
     name: "食人魚 (Piranha) CR:0",
@@ -878,7 +882,7 @@ const BEAST_STATS = {
     senses: "黑暗視覺60呎, 被動感知13",
     skills: "感知+3",
     traits: "陣營：無陣營；語言：無",
-    attacks: "咬擊：近戰攻擊檢定+5, 觸及5呎；命中：刺傷10(2d6+3)。附贈動作─暴走（每天1次）：巨鬣狗對一名原本已處於受創的生物造成傷害後，可立即移動至多其一半速度，並進行一次咬擊。"
+    attacks: "咬擊：近戰攻擊檢定+5, 觸及5呎；命中：刺傷10(2d6+3)。附贈─暴走（每天1次）：巨鬣狗對一名原本已處於受創的生物造成傷害後，可立即移動至多其一半速度，並進行一次咬擊。"
   },
   giant_octopus: {
     name: "巨章魚 (Giant Octopus) CR:1",
@@ -950,7 +954,7 @@ const BEAST_STATS = {
     senses: "黑暗視覺60呎, 被動感知13",
     skills: "感知+3, 隱匿+7",
     traits: "陣營：無陣營；語言：無",
-    attacks: "撕裂：近戰攻擊檢定+5, 觸及5呎；命中：揮砍傷害10(2d6+3)。若目標為大型或更小生物，目標倒地。附贈動作─靈巧脫逃：老虎執行撤離或躲藏動作。"
+    attacks: "撕裂：近戰攻擊檢定+5, 觸及5呎；命中：揮砍傷害10(2d6+3)。若目標為大型或更小生物，目標倒地。附贈─靈巧脫逃：老虎執行撤離或躲藏動作。"
   }
 };
 

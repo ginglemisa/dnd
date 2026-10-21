@@ -222,7 +222,7 @@
       selection = () => ({ keys: checks.filter(item => item.input.checked).map(item => item.key) });
     } else if (operation === "shape") {
       confirmLabel = "消耗 1 次並變形";
-      content.append(el("p", `附贈動作 · 荒野形態剩餘 ${c.remaining}／${c.rules.maximum}。更換形態同樣消耗 1 次。`));
+      content.append(el("p", `附贈 · 荒野形態剩餘 ${c.remaining}／${c.rules.maximum}。更換形態同樣消耗 1 次。`));
       const known = availableForms(c).filter(item => c.druid.knownForms.includes(item.key));
       const choice = selectField(content, "選擇已知形態", known.map(item => ({ value: item.key, label: item.label })), c.druid.formKey);
       const preview = el("div");
@@ -275,7 +275,7 @@
     } else if (operation === "aid") {
       content.append(el("p", `魔法動作 · 消耗 1 次荒野形態（剩餘 ${c.remaining}）。60 呎內選一點，10 呎球形；指定生物對抗法術 DC ${document.getElementById("spell-save-dc")?.value || document.getElementById("spell-dc")?.value || "見法術頁"} 進行體質豁免，失敗受 ${c.rules.aidDice} 黯蝕傷害，成功減半；另指定其中一名生物回復 ${c.rules.aidDice} HP。`));
     } else if (operation === "end") {
-      content.append(el("p", "以附贈動作主動解除；也可用此入口記錄遊戲時間到期。恢復原形數據，不退還使用次數，不清除臨時 HP。掉落的裝備仍需自行拾回。"));
+      content.append(el("p", "以附贈主動解除；也可用此入口記錄遊戲時間到期。恢復原形數據，不退還使用次數，不清除臨時 HP。掉落的裝備仍需自行拾回。"));
     } else if (operation === "end-companion") {
       content.append(el("p", "記錄荒野夥伴已消失；不退還已消耗的資源。"));
     }
@@ -325,7 +325,7 @@
 
   function getActionOptions(mode) {
     const c = context(), beast = form(), options = [];
-    if (beast && mode === "bonus") options.push({ key: "druid-end-wild-shape", label: "解除荒野形態", description: "以附贈動作恢復原形，不退還使用次數。", druidOperation: "end", source: "職業" });
+    if (beast && mode === "bonus") options.push({ key: "druid-end-wild-shape", label: "解除荒野形態", description: "以附贈恢復原形，不退還使用次數。", druidOperation: "end", source: "職業" });
     for (const action of beast?.actions || []) {
       if (action.mode !== mode) continue;
       options.push({ key: `druid-beast-${beast.key}-${action.id}`, label: `${nameOf(beast.key)}：${action.name}`, description: beast.attacks,
