@@ -11214,7 +11214,14 @@ window.addEventListener("DOMContentLoaded", async function() {
       }
       const confirmed = await window.AppDialog.requestDecision({
         title: "清除本機角色紀錄",
-        message: "這會清除角色欄位、角色圖片、版權提醒、分頁狀態、職業選項提醒、所有職業及手動法術記憶、法術提醒偏好、專長展開／收合記憶與跑團模式動作偏好，並重新載入預設角色卡。此操作無法復原。",
+        message: "這會清除此瀏覽器中的目前角色，並重新載入空白角色卡：\n"
+          + "• 角色卡內容與角色圖片\n"
+          + "• 各職業的選項與法術記憶（含手動法術）\n"
+          + "• 快速創角草稿與購點紀錄\n"
+          + "• 跑團模式的動作偏好與介面狀態\n"
+          + "• 分頁、展開／收合與各種「不再顯示」設定\n\n"
+          + "冒險日誌、外觀主題與擲骰歷史會保留。\n"
+          + "此操作無法復原，建議先匯出 JSON 備份。",
         cancelLabel: "保留紀錄",
         confirmLabel: "清除紀錄",
         intent: "danger"
