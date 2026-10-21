@@ -4481,7 +4481,7 @@ html[data-ui-theme="warm"][data-theme="dark"] .circle-checkbox:checked {
 }
 
 .app-dialog[data-variant="character-features"] .app-dialog__header {
-  align-items: center;
+  align-items: start;
   gap: 0.6rem;
   padding: 0.8rem;
 }
@@ -4509,8 +4509,197 @@ html[data-ui-theme="warm"][data-theme="dark"] .circle-checkbox:checked {
 }
 
 .character-features-tabs > button[hidden],
-.character-feature-panel[hidden] {
+.character-feature-panel[hidden],
+.character-features-picker[hidden],
+.character-features-picker__group[hidden] {
   display: none !important;
+}
+
+/* 標題列：頁籤與關閉鈕同列，快速選擇列在下一列延伸到關閉鈕下方。 */
+.app-dialog[data-variant="character-features"] .app-dialog__header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  row-gap: 0.45rem;
+}
+
+.app-dialog[data-variant="character-features"] .character-features-nav {
+  display: contents;
+}
+
+.app-dialog[data-variant="character-features"] .character-features-tabs {
+  grid-row: 1;
+  grid-column: 1;
+}
+
+.app-dialog[data-variant="character-features"] .app-dialog__close {
+  grid-row: 1;
+  grid-column: 2;
+}
+
+.character-features-picker {
+  grid-row: 2;
+  grid-column: 1 / -1;
+  min-width: 0;
+  container-type: inline-size;
+}
+
+.character-features-picker__group {
+  --picker-columns: 12;
+  display: grid;
+  grid-template-columns: repeat(var(--picker-columns), minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-soft);
+}
+
+.character-features-picker__group--background { --picker-columns: 7; }
+.character-features-picker__group--race { --picker-columns: 9; }
+
+.character-features-picker .character-features-picker__option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  width: auto;
+  min-width: 0;
+  min-height: 2.75rem;
+  margin: 0;
+  padding: 0.35rem 0.1rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-muted);
+  font-size: var(--fs-md);
+  font-weight: 750;
+  line-height: 1.2;
+  white-space: nowrap;
+  transform: none;
+  translate: none;
+}
+
+.character-features-picker .character-features-picker__option + .character-features-picker__option {
+  border-left: 1px solid var(--border);
+}
+
+.character-features-picker__icon {
+  display: block;
+  flex: none;
+  width: 1.9rem;
+  height: 1.9rem;
+}
+
+@media (hover: hover) {
+  .character-features-picker .character-features-picker__option:not(:disabled):hover {
+    background: var(--accent-soft);
+    color: var(--text-body);
+  }
+}
+
+.character-features-picker .character-features-picker__option[aria-pressed="true"] {
+  background: var(--accent-soft);
+  box-shadow: inset 0 -3px 0 var(--accent);
+  color: var(--accent);
+}
+
+.character-features-picker .character-features-picker__option:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+}
+
+.character-features-picker .character-features-picker__option:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.character-features-picker .character-features-picker__option[aria-pressed="true"]:disabled {
+  opacity: 1;
+}
+
+@media (max-width: 640px) {
+  .character-features-picker__group--class { --picker-columns: 6; }
+
+  .character-features-picker .character-features-picker__group--class .character-features-picker__option:nth-child(7) {
+    border-left: 0;
+  }
+
+  .character-features-picker .character-features-picker__group--class .character-features-picker__option:nth-child(n + 7) {
+    border-top: 1px solid var(--border);
+  }
+
+  .character-features-picker .character-features-picker__option {
+    font-size: var(--fs-sm);
+  }
+
+  .character-features-picker__icon {
+    width: 1.6rem;
+    height: 1.6rem;
+  }
+}
+
+/* 選擇列寬度低於 340px：背景 3＋4、種族 4＋5 兩列。 */
+@container (max-width: 339.98px) {
+  .character-features-picker__group--background { --picker-columns: 12; }
+  .character-features-picker__group--race { --picker-columns: 20; }
+
+  .character-features-picker .character-features-picker__group--background .character-features-picker__option:nth-child(-n + 3) { grid-column: span 4; }
+  .character-features-picker .character-features-picker__group--background .character-features-picker__option:nth-child(n + 4) { grid-column: span 3; }
+  .character-features-picker .character-features-picker__group--race .character-features-picker__option:nth-child(-n + 4) { grid-column: span 5; }
+  .character-features-picker .character-features-picker__group--race .character-features-picker__option:nth-child(n + 5) { grid-column: span 4; }
+
+  .character-features-picker .character-features-picker__group--background .character-features-picker__option:nth-child(4),
+  .character-features-picker .character-features-picker__group--race .character-features-picker__option:nth-child(5) {
+    border-left: 0;
+  }
+
+  .character-features-picker .character-features-picker__group--background .character-features-picker__option:nth-child(n + 4),
+  .character-features-picker .character-features-picker__group--race .character-features-picker__option:nth-child(n + 5) {
+    border-top: 1px solid var(--border);
+  }
+}
+
+/* 職業／種族詳情標題：圖示＋中文名稱，英文名以斜體作為副標。 */
+.character-feature-panel > .character-feature-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 0.6rem;
+  row-gap: 0.1rem;
+  margin: 0 0 1.1rem;
+  padding: 0 0 0.7rem;
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 0 var(--surface-strong), 0 3px 0 -1px var(--accent-soft);
+  color: var(--text);
+  font-size: var(--fs-2xl);
+  font-weight: 900;
+  line-height: 1.2;
+  letter-spacing: 0.06em;
+}
+
+.character-feature-panel > .character-feature-title[hidden] {
+  display: none;
+}
+
+.character-feature-title__icon {
+  flex: none;
+  width: 2.6rem;
+  height: 2.6rem;
+  color: var(--accent);
+}
+
+.character-feature-title__name {
+  min-width: 0;
+}
+
+.character-feature-title__en {
+  color: var(--accent);
+  font-size: var(--fs-md);
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .character-features > .character-feature-panel {

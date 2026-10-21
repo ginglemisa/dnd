@@ -258,7 +258,7 @@
     // evaluated separately, so higher-level spells can become usable again.
     if (!manual && nextClass) { players = normalizeEntries(target); ownerClass = nextClass; }
     activeClass = nextClass; activeLevel = nextLevel; activeBackground = nextBackground; activeRace = nextRace;
-    replayChange(input, event.isTrusted); changed({ character: true });
+    replayChange(input, event.isTrusted || event.dndCharacterSelectionCommitted === true); changed({ character: true });
   }
   async function setManual(next, options = {}) {
     next = next === true;
