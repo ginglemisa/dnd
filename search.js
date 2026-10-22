@@ -200,8 +200,9 @@
       .filter(([id]) => classes.has(id)).map(([id, label]) => option(id, label)));
     const refreshRingOptions = () => {
       const previous = ringSelect.value;
+      const limitedToSecondLevel = ["paladin", "ranger"].includes(classSelect.value);
       ringSelect.replaceChildren(option("", "所有環位"), ...[0, 1, 2, 3, 4]
-        .filter(level => level !== 0 || !["paladin", "ranger"].includes(classSelect.value))
+        .filter(level => !limitedToSecondLevel || (level >= 1 && level <= 2))
         .map(level => option(String(level), SPELL_SEARCH_LEVEL_LABELS[level === 0 ? "cantrips" : String(level)])));
       ringSelect.value = [...ringSelect.options].some(item => item.value === previous) ? previous : "";
     };
