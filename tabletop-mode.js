@@ -555,6 +555,8 @@
   let undoSnapshot = null;
   let initialized = false;
   let scheduledRender = 0;
+  // Onboarding-only example values; never written to character data or storage.
+  let onboardingKeyStatPreview = false;
   let isUpdatingHp = false;
   let currentMode = "sheet";
   let currentPanel = "overview";
@@ -2669,8 +2671,12 @@ function getRogueReliableTalentEntry() {
       ]);
     }
 
-    const initiative = getDruidEffectiveValue("initiative-input", getDisplayValue("initiative-input"));
-    const initiativeModifier = parseRollModifier(initiative);
+    let initiative = getDruidEffectiveValue("initiative-input", getDisplayValue("initiative-input"));
+    let initiativeModifier = parseRollModifier(initiative);
+    if (onboardingKeyStatPreview && initiativeModifier === null) {
+      initiative = "+2";
+      initiativeModifier = 2;
+    }
     elements.initiative.replaceChildren(createQuickRollButton(
       initiative,
       "先攻",
@@ -2695,6 +2701,9 @@ function getRogueReliableTalentEntry() {
         ? Object.entries(beast.speeds).map(([label, feet]) => `${label} ${feet + (hasSelectedFeat("迅捷步法") ? 10 : 0) + 10} 呎`).join("、")
         : baseSpeed && Number.isFinite(Number(baseSpeed)) ? `${Number(baseSpeed) + 10} 呎` : "—";
       renderEffectStat(elements.speed, speed, ["(大步)"]);
+    }
+    if (onboardingKeyStatPreview && !/\d/.test(elements.speed.textContent)) {
+      elements.speed.textContent = "30 呎";
     }
 
     elements.passivePerception.textContent = getDruidEffectiveValue("passive-perception",
@@ -5281,6 +5290,10 @@ function getRogueReliableTalentEntry() {
     recordDeathSaveRoll,
 
     refresh: render,
+    setOnboardingKeyStatPreview(active) {
+      onboardingKeyStatPreview = Boolean(active);
+      renderDisplay();
+    },
     isCharacterFieldEvent,
     syncSpellPanelAvailability,
     setMode: applyModeVisibility,

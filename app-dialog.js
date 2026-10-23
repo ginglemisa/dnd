@@ -181,6 +181,15 @@
     scheduleToastRemoval(toast, Number(options.duration) > 0 ? Number(options.duration) : 5200);
   }
 
+  // Removes matching toasts at once, without the exit motion.
+  function dismissToasts({ variant } = {}) {
+    document.getElementById("app-toast")?.querySelectorAll(":scope > .app-toast").forEach(toast => {
+      if (variant && toast.dataset.variant !== variant) return;
+      clearToastTimer(toast);
+      toast.remove();
+    });
+  }
+
   function open(options = {}) {
     if (typeof document === "undefined") return Promise.resolve(false);
     const parentDialog = activeDialog?.allowNested ? activeDialog : activeDialog?.parentDialog || null;
@@ -500,6 +509,7 @@
   Object.assign(globalScope, {
     AppDialog: Object.freeze({
       notify,
+      dismissToasts,
       showMessage(options) {
         return open(options);
       },

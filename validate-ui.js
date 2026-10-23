@@ -849,6 +849,7 @@ async function verifyCustomBackground(browser, url) {
     assert.equal(await editButton.isVisible(), true);
     assert.equal(await page.locator('#background option[value="custom"]').textContent(), "自訂冒險");
     assert.match(await page.locator("#backgroundFeatures").textContent(), /背景：自訂冒險/);
+    assert.equal(await page.locator('[data-feature-title="background"]').textContent(), "自訂冒險自訂背景", "custom background title uses its name and a fixed subtitle");
     assert.equal(await page.locator(".custom-background-equipment").textContent(), `裝備：A、B 二擇一(A) ${equipmentA}(B) 50 金幣`);
     assert.equal(await page.locator("#background").evaluate(select => {
       const edit = document.getElementById("custom-background-edit").getBoundingClientRect();
@@ -1215,16 +1216,22 @@ async function verifyCharacterFeatures(browser, url) {
     assert.equal(await page.locator("#class").inputValue(), "rogue");
     await pickerOptions("class").filter({ hasText: "法" }).click();
     assert.equal(await page.locator("#class").inputValue(), "wizard", "picker changes the class selector");
-    assert.equal(await modal.locator('[data-feature-title="class"]').textContent(), "法師Wizard", "class panel title follows the picked class");
+    assert.equal(await modal.locator('#class-creation-panel [data-feature-title="class"]').textContent(), "法師Wizard", "table panel title follows the picked class");
     assert.equal(await picker.locator('[data-feature-picker="class"] [aria-pressed="true"]').getAttribute("aria-label"), "法師");
     assert.equal((await modal.locator("#classCreationInfo").textContent()).includes("法師"), true, "open table follows the picked class");
     await pickerOptions("class").filter({ hasText: "盜" }).click();
     assert.equal(await page.locator("#class").inputValue(), "rogue");
     await modal.getByRole("tab", { name: "背景", exact: true }).click();
     assert.deepEqual(await pickerOptions("background").allTextContents(), ["侍僧", "罪犯", "賢者", "士兵", "耕者", "孤芳", "自訂"]);
+    const previousBackground = await page.locator("#background").inputValue();
+    await picker.locator('[data-feature-picker="background"] [data-picker-value="seeker"]').click();
+    assert.equal(await modal.locator('[data-feature-title="background"]').textContent(), "孤芳Seeker", "background panel title follows the picked background");
+    assert.equal(await modal.locator("#backgroundFeatures strong", { hasText: "背景：" }).isHidden(), true, "title replaces the background name row");
+    if (previousBackground) await picker.locator(`[data-feature-picker="background"] [data-picker-value="${previousBackground}"]`).click();
+    else await page.locator("#background").selectOption("");
     assert.equal(await pickerOptions("class").first().isVisible(), false);
     await modal.getByRole("tab", { name: "種族", exact: true }).click();
-    assert.deepEqual(await pickerOptions("race").allTextContents(), ["龍", "矮", "精", "侏", "壯", "半", "人", "獸", "魔"]);
+    assert.deepEqual(await pickerOptions("race").allTextContents(), ["龍", "矮", "精", "儒", "巨", "半", "人", "獸", "魔"]);
     const previousRace = await page.locator("#race").inputValue();
     const nextRace = previousRace === "elf" ? "dwarf" : "elf";
     await pickerOptions("race").and(picker.locator(`[data-picker-value="${nextRace}"]`)).click();

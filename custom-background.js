@@ -58,6 +58,8 @@
       const heading = document.createElement("strong");
       heading.textContent = `${label}：`;
       row.append(heading, document.createTextNode(text));
+      // The panel title already names the background; keep the row in the details for consumers.
+      row.hidden = label === "背景";
       block.appendChild(row);
     }
     const equipment = document.createElement("div");

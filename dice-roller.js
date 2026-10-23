@@ -117,6 +117,7 @@
     )).filter(element => !element.hidden && element.getClientRects().length > 0);
 
     const updateControls = () => {
+      const focusedControl = document.activeElement;
       dieButtons.forEach(button => {
         const sides = Number.parseInt(button.dataset.die || "0", 10);
         const count = counts.get(sides) || 0;
@@ -130,6 +131,11 @@
       rollButton.disabled = isRolling || getTotalDice() === 0;
       rollButton.setAttribute("aria-busy", String(isRolling));
       updateHistoryButton();
+      // Disabling the focused control drops focus to <body>, where Escape and Tab
+      // no longer reach the modal; keep focus on the card instead.
+      if (isOpen && focusedControl instanceof HTMLButtonElement && focusedControl.disabled && card.contains(focusedControl)) {
+        card.focus({ preventScroll: true });
+      }
     };
 
     const renderEmptyStage = (message = "選取骰子後按 ROLL") => {
@@ -555,7 +561,7 @@
       window.AppDialog?.notify(equation, {
         tone: "info",
         variant: "dice-roll",
-        duration: 4700
+        duration: 3600
       });
     };
 
@@ -927,6 +933,7 @@
       modal.setAttribute("aria-hidden", "false");
       fab.setAttribute("aria-expanded", "true");
       setBackgroundInert();
+      window.dispatchEvent(new CustomEvent("dicerollermodalchange", { detail: Object.freeze({ open: true }) }));
       window.requestAnimationFrame(() => {
         modal.classList.add("is-open");
         closeButton.focus({ preventScroll: true });
@@ -945,6 +952,7 @@
 
       if (opener?.isConnected && !opener.closest("[inert]")) opener.focus({ preventScroll: true });
       opener = null;
+      window.dispatchEvent(new CustomEvent("dicerollermodalchange", { detail: Object.freeze({ open: false }) }));
 
       closeTimer = window.setTimeout(() => {
         modal.inert = true;
@@ -952,10 +960,23 @@
       }, reduceMotion.matches ? 100 : 180);
     };
 
-    const setEnabled = (enabled, { persist = true } = {}) => {
+    // Glows once so a newly shown dice button is easy to spot.
+    const announceFab = () => {
+      fab.classList.remove("dice-roller-fab--announce");
+      void fab.offsetWidth;
+      fab.classList.add("dice-roller-fab--announce");
+    };
+    fab.addEventListener("animationend", event => {
+      if (event.animationName.startsWith("dice-roller-fab-announce")) fab.classList.remove("dice-roller-fab--announce");
+    });
+
+    const setEnabled = (enabled, { persist = true, announce } = {}) => {
       const nextEnabled = Boolean(enabled);
+      const wasShown = !fab.classList.contains("is-hidden");
       toggle.checked = nextEnabled;
       fab.classList.toggle("is-hidden", !nextEnabled);
+      if (!nextEnabled) fab.classList.remove("dice-roller-fab--announce");
+      else if (announce ?? (persist && !wasShown)) announceFab();
       if (!nextEnabled) closeModal();
       if (persist) window.dndStorage?.setItem(STORAGE_KEY, String(nextEnabled));
       window.dispatchEvent?.(new CustomEvent("dicerollmodechange", {
@@ -965,6 +986,7 @@
 
     window.DiceRoller = Object.freeze({
       isEnabled: () => toggle.checked,
+      setEnabled: (enabled, { announce } = {}) => setEnabled(enabled, { announce }),
       canRollExpression: expression => Boolean(parseExpression(expression)),
       roll: performQuickRoll,
       rollExpression,

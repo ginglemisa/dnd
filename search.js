@@ -72,6 +72,7 @@
   const SPELL_SEARCH_CLASS_ALIASES = {
     ...Object.fromEntries(Object.entries(SPELL_SEARCH_CLASS_LABELS).map(([classId, label]) => [label, classId])),
     "詩人": "bard",
+    "吟遊": "bard",
     "小D": "druid",
     "小德": "druid",
     "聖騎": "paladin",

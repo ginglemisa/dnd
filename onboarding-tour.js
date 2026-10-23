@@ -105,6 +105,7 @@
       this.tabletopSpellPreviewDialog = null;
       this.tabletopResourcePreview = null;
       this.tabletopResourceDisplaySnapshot = null;
+      this.tabletopResourceSpacer = null;
       this.currentIndex = -1;
       this.stepPhase = 0;
       this.active = false;
@@ -113,6 +114,7 @@
       this.searchStateSnapshot = null;
       this.backgroundInertSnapshot = null;
       this.identityPreviewSnapshot = null;
+      this.identityDetailsOpen = false;
       this.abilityPreviewSnapshot = null;
       this.equipmentPreviewSnapshot = null;
       this.spellSearchControlSnapshot = null;
@@ -150,6 +152,7 @@
       this.handleTooltipPointerDown = this.handleTooltipPointerDown.bind(this);
       this.handleTooltipPointerMove = this.handleTooltipPointerMove.bind(this);
       this.handleTooltipPointerUp = this.handleTooltipPointerUp.bind(this);
+      this.handleDiceRollerModalChange = this.handleDiceRollerModalChange.bind(this);
     }
 
     init() {
@@ -171,6 +174,10 @@
       window.addEventListener("pointermove", this.handleTooltipPointerMove);
       window.addEventListener("pointerup", this.handleTooltipPointerUp);
       window.addEventListener("pointercancel", this.handleTooltipPointerUp);
+      window.addEventListener("dicerollermodalchange", this.handleDiceRollerModalChange);
+      document.getElementById("tabletop-initiative")?.addEventListener("animationend", (event) => {
+        if (event.animationName.startsWith("tour-roll-pulse")) this.stopTourInitiativePulse();
+      });
       if (this.tooltip) {
         this.tooltip.style.touchAction = "none";
         this.tooltip.style.cursor = "grab";
@@ -198,6 +205,7 @@
         tab, title, text, selector, highlights, placement: "bottom",
         getHoles: () => [this.getHoleForSelector(selector)].filter(Boolean)
       });
+      const diceAction = { "開啟擲骰功能": () => this.enableTourDiceRoller() };
       return [
         { menuIntro: true, title: "從這裡進入跑團模式",
           text: "角色準備好了，就可以開始冒險！\n\n打開右上角選單，找到「跑團模式」。這裡會集中顯示遊玩時常用的數值、動作與資源。\n\n按「下一步」，一起看看遊戲如何進行。",
@@ -214,10 +222,25 @@
         { tab: "overview", title: "描述你的行動",
           text: "DM 會描述目前的情況，你只需要告訴 DM，你的角色打算採取什麼行動。\n\n例如：「我靠近木門，聽聽裡面有沒有聲音。」",
           placement: "center", getHoles: () => [], examples: true },
-        step("skills", "需要判定時，再進行擲骰",
-          "當 DM 要求進行檢定時，找到對應的數字加值，擲出 D20，再將兩者相加。\n\n如果 DM 說這次檢定有「優勢」或「劣勢」，就擲兩次 D20，優勢取高、劣勢取低，再加上原本的數字加值。\n\n如果手邊沒有骰子，可以從右上角選單開啟擲骰功能。", ".tabletop-skills", ["開啟擲骰功能"]),
-        step("overview", "戰鬥開始時，決定行動順序",
+        { ...step("skills", "需要判定時，再進行擲骰",
+          "當 DM 要求進行檢定時，找到對應的數字加值，擲出 D20，再將兩者相加。\n\n如果手邊沒有骰子，可以從右上角選單開啟擲骰功能。", ".tabletop-skills", ["開啟擲骰功能"]),
+          textActions: diceAction,
+          rollSelector: ".tabletop-skills" },
+        { ...step("overview", "戰鬥開始時，決定行動順序",
           "當 DM 說請擲先攻時，擲出 D20 + 先攻加值，決定角色在戰鬥中的行動順序。\n\n你也可以開啟擲骰功能，點擊角色卡上的先攻數值進行擲骰。\n\n角色的速度代表一個回合中可以移動的距離。\n\n使用格線地圖時，通常 5 呎 = 1 格。", ".tabletop-key-stat:nth-child(2), .tabletop-key-stat:nth-child(3)", ["請擲先攻", "開啟擲骰功能", "速度", "5 呎 = 1 格"]),
+          textActions: diceAction,
+          rollSelector: "#tabletop-initiative",
+          // Example values exist only in TabletopMode memory, so closing or
+          // reloading the page always falls back to the character's own data.
+          beforePosition: () => window.TabletopMode.setOnboardingKeyStatPreview(true),
+          // With dice already on, show the clickable initiative right away;
+          // otherwise wait for the link so it pulses together with the dice button.
+          afterPresent: () => this.pulseTourInitiative(),
+          onDiceEnabled: () => this.pulseTourInitiative(),
+          afterLeave: () => {
+            this.stopTourInitiativePulse();
+            window.TabletopMode.setOnboardingKeyStatPreview(false);
+          } },
         { ...step("actions", "在你的回合中採取行動",
           "你的回合通常包含移動與一次動作；若能力或規則允許，也可以使用一次附贈。\n\n移動不一定要一次完成，也不需要固定在動作之前。\n例如，你可以先移動 2 格、進行攻擊，再移動剩下的 3 格。\n\n反應則需要符合特定的觸發條件才能使用，通常在其他角色的回合中發生。", ".tabletop-action-browser", ["移動", "動作", "附贈", "移動", "動作", "移動", "移動", "反應"]),
           placement: "action-corner",
@@ -239,18 +262,34 @@
         { ...step("spells", "如果你想施放魔法",
           "先告訴 DM 你要用什麼法術，閱讀文字確認條件滿足後，就可以選擇目標。\n\n部分法術需要維持專注。\n一般情況下，玩家無法同時維持兩個需要專注的法術。", '.app-dialog[data-tour-spell-preview] .tabletop-spell-detail__copy'),
           placement: "spell-details-bottom",
-          getHoles: () => [this.getSpellMetadataHole()].filter(Boolean),
+          getHoles: () => [
+            this.getSpellMetadataHole(),
+            this.getTextHole([this.tabletopSpellPreviewDialog?.querySelector(".app-dialog__header h2")])
+          ].filter(Boolean),
           beforePosition: () => this.openTabletopSpellPreview(),
           afterLeave: () => this.closeTabletopSpellPreview() },
         { ...step("resources", "記錄角色狀態",
-          "使用具有次數限制的能力或施放法術後，記得更新資源的數字，確認還剩下多少可用次數。\n\n受到傷害、恢復生命值，或罹患狀態時，也應立即記錄。\n\n基本遊戲流程：了解情況 → 描述行動 → 進行判定 → 記錄結果 → 開心玩遊戲！", "#tabletop-tour-resource-preview", ["法術"]),
-          tooltipHoleIndex: 1,
+          "使用具有次數限制的能力或施放法術後，記得更新資源的數字，確認還剩下多少可用次數。\n\n受到傷害、恢復生命值，或罹患狀態時，也應立即記錄。", "#tabletop-tour-resource-preview", ["法術"]),
+          // Narrow layouts stack the checkbox below the text; keep both visible.
+          placement: "holes-bottom",
+          // On phones, put the highlighted card at the top to leave room for the guidance.
+          getScrollTarget: () => {
+            if (!window.matchMedia("(max-width: 600px)").matches) return null;
+            const element = document.querySelector("#tabletop-tour-resource-preview > .tabletop-resource-row:last-child");
+            return element ? { element, offset: 16 } : null;
+          },
           getHoles: () => [
-            this.getHoleForSelector("#tabletop-tour-resource-preview > .tabletop-resource-row:first-child", 6),
-            this.getHoleForSelector("#tabletop-tour-resource-preview > .tabletop-resource-row:last-child", 6)
+            this.getTextHole(Array.from(document.querySelectorAll(
+              "#tabletop-tour-resource-preview > .tabletop-resource-row:last-child .tabletop-resource-row__copy > *"
+            ))),
+            this.getHoleForSelector("#tabletop-tour-resource-preview > .tabletop-resource-row:last-child .tabletop-resource-check", 6)
           ].filter(Boolean),
           beforePosition: () => this.openTabletopResourcePreview(),
-          afterLeave: () => this.closeTabletopResourcePreview() }
+          afterLeave: () => this.closeTabletopResourcePreview() },
+        { tab: "overview", title: "基本遊戲流程",
+          text: "了解情況 → 描述行動 → 進行判定 → 記錄結果 → 開心遊戲！",
+          placement: "center", getHoles: () => [],
+          beforePosition: () => this.animateScrollTo(0) }
       ];
     }
 
@@ -272,6 +311,65 @@
         right: Math.max(...rects.map(rect => rect.right)) + 6,
         bottom: Math.max(...rects.map(rect => rect.bottom)) + 6
       };
+    }
+
+    // Uses the real dice preference, so it stays on after the tour like the menu switch.
+    async enableTourDiceRoller() {
+      if (!this.active || this.kind !== "tabletop" || !window.DiceRoller) return;
+      const transitionId = this.transitionId;
+      const isCurrent = () => this.active && transitionId === this.transitionId && !this.isTransitioning;
+      // The glowing dice button replaces a toast, which could cover the tour buttons.
+      window.DiceRoller.setEnabled(true, { announce: true });
+      // Started in the same frame as the glow so both pulse together.
+      this.steps[this.currentIndex]?.onDiceEnabled?.();
+      // Close the dice spotlight on whichever step is shown when the glow ends.
+      document.getElementById("dice-roller-fab")?.addEventListener("animationend", () => {
+        if (this.active && !this.isTransitioning) this.renderStep({ animate: false, ensureFocus: false });
+      }, { once: true });
+      // Tabletop re-renders the now-enabled roll buttons on the next frame.
+      await waitForLayoutStability();
+      if (isCurrent()) this.renderStep({ animate: false, ensureFocus: false });
+    }
+
+    // Dice-practice steps let the dice button open the roller above the tour.
+    getTourDiceButton() {
+      const fab = document.getElementById("dice-roller-fab");
+      if (this.kind !== "tabletop" || !this.steps[this.currentIndex]?.rollSelector
+        || !window.DiceRoller?.isEnabled?.() || !isElementVisible(fab)) return null;
+      return fab;
+    }
+
+    isDiceRollerOpen() {
+      return document.getElementById("dice-roller-fab")?.getAttribute("aria-expanded") === "true";
+    }
+
+    // Shows the glowing or usable dice button undimmed.
+    getDiceButtonHole() {
+      const fab = document.getElementById("dice-roller-fab");
+      if (!fab?.classList.contains("dice-roller-fab--announce") && !this.getTourDiceButton()) return null;
+      return this.getHoleFromElements([fab], 12);
+    }
+
+    pulseTourInitiative() {
+      const stat = document.getElementById("tabletop-initiative");
+      if (!stat || !window.DiceRoller?.isEnabled?.()) return;
+      stat.classList.remove("tour-roll-pulse");
+      void stat.offsetWidth;
+      stat.classList.add("tour-roll-pulse");
+    }
+
+    stopTourInitiativePulse() {
+      document.getElementById("tabletop-initiative")?.classList.remove("tour-roll-pulse");
+    }
+
+    handleDiceRollerModalChange(event) {
+      // Resume the paused tour once the roller closes and restores the background.
+      if (!this.active || event.detail?.open) return;
+      // Leftover roll results would cover the tour buttons and the dice button.
+      if (this.kind === "tabletop") window.AppDialog?.dismissToasts?.({ variant: "dice-roll" });
+      requestAnimationFrame(() => {
+        if (this.active && !this.isTransitioning && !this.isDiceRollerOpen()) this.renderStep({ animate: false });
+      });
     }
 
     async openTabletopSpellPreview() {
@@ -313,9 +411,19 @@
       builtIn.before(preview);
       this.tabletopResourcePreview = preview;
       this.overlay.classList.add("onboarding-resource-preview");
+      // Short pages cannot otherwise scroll the card to the top on phones.
+      if (window.matchMedia("(max-width: 600px)").matches) {
+        const spacer = document.createElement("div");
+        spacer.setAttribute("aria-hidden", "true");
+        spacer.style.height = `${window.innerHeight}px`;
+        document.getElementById("tabletop-panel-resources")?.append(spacer);
+        this.tabletopResourceSpacer = spacer;
+      }
     }
 
     closeTabletopResourcePreview() {
+      this.tabletopResourceSpacer?.remove();
+      this.tabletopResourceSpacer = null;
       this.tabletopResourcePreview?.remove();
       this.tabletopResourcePreview = null;
       this.overlay.classList.remove("onboarding-resource-preview");
@@ -332,12 +440,16 @@
       return [
         {
           tab: "basic",
-          title: "⚔️ 建立你的冒險角色",
-          text: "背景描述過往經歷，\n種族提供不同特性，\n職業則決定擅長的能力，以及在冒險中解決問題的方式。\n\n完成選擇後，速度、專長與其他角色資料會自動更新。",
-          highlights: ["背景", "種族", "職業"],
+          title: "⚔️ 建立你的角色",
+          text: () => this.stepPhase === 1 ? "點此查看職業、種族等詳情。"
+            : "背景描述過往經歷，\n種族提供不同特性，\n職業則決定擅長的能力，以及在冒險中解決問題的方式。\n\n完成選擇後，速度、專長與其他角色資料會自動更新。",
+          highlights: () => this.stepPhase === 1 ? [] : ["背景", "種族", "職業"],
           placement: "bottom",
           tooltipHoleIndex: 1,
           getHoles: () => {
+            if (this.stepPhase === 1) return [
+              this.getHoleForSelector('.basic-row--class-level [data-character-features-tab="class"]', 8)
+            ].filter(Boolean);
             return [
               this.getHoleForSelector(".basic-row--class-level", 8),
               this.getHoleForSelector(".basic-row--origin", 8)
@@ -455,9 +567,12 @@
         {
           tab: "spells",
           title: "✨ 選擇與管理法術",
-          text: "選好職業、等級、背景與種族後，按「準備法術」管理戲法與準備清單；儲存才會套用選擇。\n\n點擊法術名稱可閱讀詳細說明。搜尋與查閱隨時都能使用。",
+          text: "選好職業、等級、背景與種族後，可按「準備法術」管理法術清單。",
           placement: "top",
-          getHoles: () => [this.getHoleForSelector("#spells-tab-button", 6)].filter(Boolean),
+          getHoles: () => [
+            this.getHoleForSelector("#spells-tab-button", 6),
+            this.getHoleForSelector("#spell-prepare", 6)
+          ].filter(Boolean),
           beforeTab: () => this.ensureSpellPreview(),
           beforePosition: async () => {
             await this.animateScrollTo(0);
@@ -534,8 +649,12 @@
     }
 
     async next() {
-      if (!this.active || this.isTransitioning) return;
+      if (!this.active || this.isTransitioning || this.identityDetailsOpen) return;
       this.hidePointBuyPresetTooltip();
+      if (this.kind === "sheet" && this.currentIndex === 0 && this.stepPhase === 0) {
+        await this.showIdentityPhase(1);
+        return;
+      }
       if (this.kind === "sheet" && this.currentIndex === 1) {
         await this.goTo(2);
         return;
@@ -607,8 +726,16 @@
     }
 
     async prev() {
-      if (!this.active || this.isTransitioning) return;
+      if (!this.active || this.isTransitioning || this.identityDetailsOpen) return;
       this.hidePointBuyPresetTooltip();
+      if (this.kind === "sheet" && this.currentIndex === 0 && this.stepPhase === 1) {
+        await this.showIdentityPhase(0);
+        return;
+      }
+      if (this.kind === "sheet" && this.currentIndex === 1) {
+        await this.goTo(0, { phase: 1 });
+        return;
+      }
       if (this.kind === "sheet" && this.currentIndex === 2 && this.stepPhase === 2) {
         this.stepPhase = 1;
         this.tooltipDragPosition = null;
@@ -627,8 +754,20 @@
       await this.goTo(this.currentIndex - 1);
     }
 
-    async goTo(index, { openAbilityChoiceDirectly = false } = {}) {
-      if (!this.active || this.isTransitioning) return;
+    async showIdentityPhase(phase) {
+      const transitionId = ++this.transitionId;
+      this.isTransitioning = true;
+      this.stepPhase = phase;
+      this.tooltipDragPosition = null;
+      try {
+        await this.renderStep();
+      } finally {
+        if (transitionId === this.transitionId) this.isTransitioning = false;
+      }
+    }
+
+    async goTo(index, { openAbilityChoiceDirectly = false, phase = 0 } = {}) {
+      if (!this.active || this.isTransitioning || this.identityDetailsOpen) return;
       if (this.kind === "tabletop") return this.goToTabletop(index);
       const transitionId = ++this.transitionId;
       this.hidePointBuyPresetTooltip();
@@ -638,23 +777,32 @@
 
       this.currentIndex = index;
       this.abilityMenuGuideActive = index === 2 && !openAbilityChoiceDirectly;
-      this.stepPhase = 0;
+      this.stepPhase = phase;
       this.tooltipDragPosition = null;
       this.activeHoles = [];
       this.lastTourScrollY = window.scrollY;
       const step = this.steps[index];
-      if (typeof step.beforeTab === "function") step.beforeTab();
-      this.showTab(step.tab);
-      await waitForLayoutStability();
-      if (!this.active || transitionId !== this.transitionId) return;
-      if (typeof step.beforePosition === "function") {
-        await step.beforePosition();
-        if (!this.active || transitionId !== this.transitionId) return;
+      try {
+        if (typeof step.beforeTab === "function") step.beforeTab();
+        this.showTab(step.tab);
         await waitForLayoutStability();
+        if (!this.active || transitionId !== this.transitionId) return;
+        if (typeof step.beforePosition === "function") {
+          await step.beforePosition();
+          if (!this.active || transitionId !== this.transitionId) return;
+          await waitForLayoutStability();
+        }
+        if (!this.active || transitionId !== this.transitionId) return;
+        await this.renderStep();
+      } catch (error) {
+        if (this.active && transitionId === this.transitionId) {
+          this.stop();
+          window.AppDialog?.notify("暫時無法定位導覽內容，已回到原來畫面。請稍後重試。");
+          console.warn("認識角卡導覽定位失敗：", error);
+        }
+      } finally {
+        if (transitionId === this.transitionId) this.isTransitioning = false;
       }
-      if (!this.active || transitionId !== this.transitionId) return;
-      await this.renderStep();
-      if (transitionId === this.transitionId) this.isTransitioning = false;
     }
 
     async showTabletopMenuIntro() {
@@ -713,13 +861,17 @@
           if (!isElementVisible(target)) throw new Error("找不到導覽目標");
           const header = document.querySelector(".tabs-shell")?.getBoundingClientRect().bottom || 0;
           if (step.placement !== "spell-details-bottom") {
-            await this.animateScrollTo(window.scrollY + target.getBoundingClientRect().top - Math.max(80, header + 16));
+            const scrollTarget = step.getScrollTarget?.();
+            await this.animateScrollTo(scrollTarget
+              ? window.scrollY + scrollTarget.element.getBoundingClientRect().top - scrollTarget.offset
+              : window.scrollY + target.getBoundingClientRect().top - Math.max(80, header + 16));
           }
           await waitForLayoutStability();
           if (!this.active || transitionId !== this.transitionId) return;
           if (!step.getHoles().some(hole => this.getVisibleHole(hole))) throw new Error("導覽目標不在可見範圍");
         }
         await this.renderStep();
+        if (this.active && transitionId === this.transitionId) step.afterPresent?.();
       } catch (error) {
         if (this.active && transitionId === this.transitionId) {
           this.stop();
@@ -734,6 +886,29 @@
     stop({ resetView = true, completed = false } = {}) {
       if (!this.active) return;
       this.transitionId++;
+      if (this.identityDetailsOpen) {
+        // Close the dialog first so its inert snapshot cannot re-lock the page
+        // after the tour restores the original background state.
+        this.isInternalTourAction = true;
+        try {
+          const dialogs = Array.from(document.querySelectorAll(".app-dialog"));
+          const parentIndex = dialogs.findIndex(dialog => dialog.id === "character-features-modal");
+          if (parentIndex >= 0) dialogs.slice(parentIndex).reverse().forEach(dialog => {
+            dialog.querySelector(".app-dialog__close")?.click();
+          });
+        } finally {
+          this.isInternalTourAction = false;
+        }
+      }
+      if (this.isDiceRollerOpen()) {
+        // Same reason: the roller restores its own background snapshot on close.
+        this.isInternalTourAction = true;
+        try {
+          document.getElementById("dice-roller-close")?.click();
+        } finally {
+          this.isInternalTourAction = false;
+        }
+      }
       this.hidePointBuyPresetTooltip();
       const currentStep = this.steps[this.currentIndex];
       if (currentStep && typeof currentStep.afterLeave === "function") currentStep.afterLeave();
@@ -1274,11 +1449,55 @@
       }
     }
 
+    openIdentityDetails(trigger) {
+      if (!this.active || this.isTransitioning || this.identityDetailsOpen) return;
+      const transitionId = this.transitionId;
+      this.identityDetailsOpen = true;
+      this.restoreIdentityPreview();
+      this.restoreSpellPreviewState();
+      if (this.autosaveSuspendedSnapshot !== null) autosaveSuspended = this.autosaveSuspendedSnapshot;
+      this.cancelPresentation();
+      this.overlay.style.display = "none";
+      this.unlockUserScroll();
+      const resume = () => {
+        this.identityDetailsOpen = false;
+        if (!this.active || transitionId !== this.transitionId) return;
+        if (this.autosaveSuspendedSnapshot === false) window.flushPendingAutosave?.();
+        if (this.autosaveSuspendedSnapshot !== null) autosaveSuspended = true;
+        this.captureSpellPreviewState();
+        this.prepareIdentityPreview();
+        this.lockUserScroll();
+        this.overlay.style.display = "block";
+        // AppDialog restores its background and focus before we reposition.
+        requestAnimationFrame(() => {
+          if (this.active && transitionId === this.transitionId) this.renderStep({ animate: false });
+        });
+      };
+      try {
+        if (!window.openCharacterFeatures?.("class", trigger, { onClose: resume })) resume();
+      } catch (error) {
+        resume();
+        console.warn("無法開啟導覽中的角色能力：", error);
+        window.AppDialog?.notify("暫時無法開啟角色能力，請稍後重試。");
+      }
+    }
+
     getAllowedTourElements() {
       if (!this.active) return [];
       if (this.abilityMenuGuideActive) return [document.getElementById("set-default-abilities")].filter(Boolean);
-      if (this.kind === "tabletop") return [];
+      if (this.kind === "tabletop") {
+        const rollSelector = this.steps[this.currentIndex]?.rollSelector;
+        if (!rollSelector || !window.DiceRoller?.isEnabled?.()) return [];
+        return [
+          ...Array.from(document.querySelectorAll(`${rollSelector} .tabletop-inline-roll`))
+            .filter((button) => !button.disabled && isElementVisible(button)),
+          this.getTourDiceButton()
+        ].filter(Boolean);
+      }
       if (this.currentIndex === 0) {
+        if (this.stepPhase === 1) return [
+          document.querySelector('.basic-row--class-level [data-character-features-tab="class"]')
+        ].filter(Boolean);
         return ["class", "level", "background", "race"]
           .map((id) => document.getElementById(id))
           .filter(Boolean);
@@ -1432,7 +1651,7 @@
     }
 
     refreshTourInteractionRoots() {
-      if (!this.backgroundInertSnapshot) return;
+      if (!this.backgroundInertSnapshot || this.isDiceRollerOpen()) return;
       this.backgroundInertSnapshot.forEach(({ element }) => {
         element.inert = true;
       });
@@ -1446,7 +1665,7 @@
     }
 
     handleTourPointerDownCapture(event) {
-      if (!this.active || this.isInternalTourAction) return;
+      if (!this.active || this.isInternalTourAction || this.identityDetailsOpen || this.isDiceRollerOpen()) return;
       if (event.target instanceof Element && event.target.closest("#app-toast")) return;
       this.suppressTooltipDragClick = false;
       if (this.abilityMenuGuideActive || (this.kind === "tabletop" && this.steps[this.currentIndex]?.menuIntro)) {
@@ -1477,7 +1696,7 @@
     }
 
     handleTourClickCapture(event) {
-      if (!this.active || this.isInternalTourAction) return;
+      if (!this.active || this.isInternalTourAction || this.identityDetailsOpen || this.isDiceRollerOpen()) return;
       const target = event.target instanceof Element ? event.target : null;
       if (!target) return;
       if (target.closest("#app-toast")) return;
@@ -1501,8 +1720,16 @@
       }
       if (this.tooltip?.contains(target)) return;
       if (this.kind === "tabletop") {
+        if (this.getAllowedTourElements().some((element) => element.contains(target))) return;
         event.preventDefault();
         event.stopImmediatePropagation();
+        return;
+      }
+
+      if (this.currentIndex === 0 && this.stepPhase === 1 && target.closest('.basic-row--class-level [data-character-features-tab="class"]')) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        this.openIdentityDetails(target.closest("[data-character-features-tab]"));
         return;
       }
 
@@ -1549,7 +1776,7 @@
     }
 
     handleTourFormEventCapture(event) {
-      if (!this.active || this.isInternalTourAction) return;
+      if (!this.active || this.isInternalTourAction || this.identityDetailsOpen || this.isDiceRollerOpen()) return;
       const target = event.target;
       if (!(target instanceof HTMLSelectElement) || !this.isAllowedTourInteraction(target)) return;
       if (this.currentIndex === 2 && target.id === "point-buy-background") return;
@@ -1600,6 +1827,22 @@
       };
     }
 
+    // Hugs rendered text lines instead of full-width block boxes.
+    getTextHole(elements, padding = 6) {
+      const rects = elements.filter(isElementVisible).flatMap((element) => {
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        return Array.from(range.getClientRects());
+      }).filter((rect) => rect.width > 0 && rect.height > 0);
+      if (!rects.length) return null;
+      return {
+        left: Math.min(...rects.map((rect) => rect.left)) - padding,
+        top: Math.min(...rects.map((rect) => rect.top)) - padding,
+        right: Math.max(...rects.map((rect) => rect.right)) + padding,
+        bottom: Math.max(...rects.map((rect) => rect.bottom)) + padding
+      };
+    }
+
     getPointBuyHole(elements, padding = 8) {
       const hole = this.getHoleFromElements(elements, padding);
       const scrollContainer = document.querySelector("#point-buy-modal .point-buy-modal-card");
@@ -1641,15 +1884,21 @@
         return;
       }
 
+      const actions = this.getStepValue(step, "textActions", {});
       const fragment = document.createDocumentFragment();
       let offset = 0;
       highlights.forEach((word) => {
         const index = content.indexOf(word, offset);
         if (index < 0) return;
         fragment.append(document.createTextNode(content.slice(offset, index)));
-        const strong = document.createElement("strong");
-        strong.className = "tour-step-emphasis";
+        const action = actions[word];
+        const strong = document.createElement(action ? "button" : "strong");
+        strong.className = action ? "tour-step-emphasis tour-step-action" : "tour-step-emphasis";
         strong.textContent = word;
+        if (action) {
+          strong.type = "button";
+          strong.addEventListener("click", action);
+        }
         fragment.append(strong);
         offset = index + word.length;
       });
@@ -1658,7 +1907,8 @@
     }
 
     async renderStep({ refreshInteractionRoots = true, ensureFocus = true, animate = true } = {}) {
-      if (!this.active) return;
+      // The open dice roller owns focus and the background lock until it closes.
+      if (!this.active || this.identityDetailsOpen || this.isDiceRollerOpen()) return;
       const step = this.steps[this.currentIndex];
       if (!step) return;
       this.cancelPresentation();
@@ -1711,7 +1961,7 @@
       const progressTotal = this.kind === "sheet" ? 8 : this.steps.length;
       this.progress.textContent = `${progressIndex}/${progressTotal}`;
       this.progress.setAttribute("aria-label", `導覽進度：第 ${progressIndex} 步，共 ${progressTotal} 步`);
-      this.prevBtn.disabled = this.currentIndex === 0;
+      this.prevBtn.disabled = this.currentIndex === 0 && this.stepPhase === 0;
       this.skipBtn.hidden = this.kind !== "tabletop" && this.currentIndex === this.steps.length - 1;
       this.skipBtn.textContent = this.kind === "tabletop" ? "關閉" : "跳過";
       this.nextBtn.textContent = this.getNextButtonText();
@@ -1759,6 +2009,7 @@
       const from = Array.from({ length: count }, (_, i) => previousHoles[i] || collapse(holes[i]));
       const to = Array.from({ length: count }, (_, i) => holes[i] || collapse(previousHoles[i]));
       const startPosition = previousPosition || position;
+      const maskOnlyHoles = [this.getDiceButtonHole()].filter(Boolean);
       const paint = progress => {
         const lerp = (a, b) => a + (b - a) * progress;
         const currentHoles = progress === 1 ? holes : from.map((hole, i) => ({
@@ -1766,7 +2017,7 @@
           top: lerp(hole.top, to[i].top), bottom: lerp(hole.bottom, to[i].bottom)
         }));
         this.presentedHoles = currentHoles;
-        this.applyMasksForHoles(currentHoles);
+        this.applyMasksForHoles([...currentHoles, ...maskOnlyHoles]);
         this.focusRings.forEach((ring, i) => this.setFocusRing(ring, currentHoles[i]));
         if (this.tooltipDragPointerId === null && !this.tooltipDragPosition) {
           this.tooltip.style.left = `${lerp(startPosition.left, position.left)}px`;
@@ -1800,7 +2051,9 @@
       if (this.abilityMenuGuideActive) return "開啟決定屬性";
       if (this.kind === "tabletop") return this.currentIndex === this.steps.length - 1 ? "開始使用跑團模式" : "下一步";
       if (this.currentIndex === this.steps.length - 1) return "導覽完成";
-      if (this.currentIndex === 2 && this.stepPhase === 1) return "繼續";
+      // 「下一步」會推進進度數字；同一進度內的分段改用「繼續」。
+      if (this.currentIndex === 0 && this.stepPhase === 0) return "繼續";
+      if (this.currentIndex === 1) return "繼續";
       return "下一步";
     }
 
@@ -1817,33 +2070,19 @@
       });
     }
 
-    setMaskRect(mask, left, top, width, height) {
-      if (!mask || width <= 0 || height <= 0) {
-        if (mask) mask.style.display = "none";
-        return;
-      }
-      mask.style.cssText = `display:block;left:${left}px;top:${top}px;width:${width}px;height:${height}px;transition:none;`;
-      mask.style.pointerEvents = this.maskPointerEvents || "";
-    }
-
     applyMasksForHoles(holes) {
       // Paint the complement of the holes in disjoint horizontal bands. Unlike
       // switching between horizontal/vertical splits, this stays continuous
       // when moving spotlights overlap or a second spotlight appears/disappears.
+      // All bands share one clip path: separate elements leave light seams
+      // along their shared edges on scaled displays.
       const visible = holes.map(hole => this.getVisibleHole(hole)).filter(Boolean);
       const edges = [...new Set([0, window.innerHeight, ...visible.flatMap(hole => [hole.top, hole.bottom])])]
         .sort((a, b) => a - b);
-      let used = 0;
+      const bands = [];
       const place = (left, top, right, bottom) => {
         if (right <= left || bottom <= top) return;
-        if (!this.masks[used]) {
-          // Two disjoint holes can require nine rectangles during a transition.
-          const mask = document.createElement("div");
-          mask.className = "tour-mask";
-          this.overlay.insertBefore(mask, this.focusRings[0]);
-          this.masks.push(mask);
-        }
-        this.setMaskRect(this.masks[used++], left, top, right - left, bottom - top);
+        bands.push(`M${left} ${top}H${right}V${bottom}H${left}Z`);
       };
       for (let i = 0; i < edges.length - 1; i++) {
         const top = edges[i];
@@ -1857,7 +2096,16 @@
         });
         place(left, top, window.innerWidth, bottom);
       }
-      this.masks.slice(used).forEach(mask => { mask.style.display = "none"; });
+      const [mask, ...unused] = this.masks;
+      unused.forEach(extra => { extra.style.display = "none"; });
+      if (!mask) return holes;
+      if (!bands.length) {
+        mask.style.display = "none";
+        return holes;
+      }
+      mask.style.cssText = `display:block;left:0;top:0;width:${window.innerWidth}px;height:${window.innerHeight}px;`
+        + `transition:none;clip-path:path("${bands.join("")}");`;
+      mask.style.pointerEvents = this.maskPointerEvents || "";
       return holes;
     }
 
@@ -1896,6 +2144,14 @@
       if (placement === "action-corner") {
         const attackHole = holes[1] || hole;
         const position = this.clampTooltipPosition(attackHole.left, attackHole.bottom + margin);
+        this.tooltip.style.left = `${position.left}px`;
+        this.tooltip.style.top = `${position.top}px`;
+        return;
+      }
+
+      if (placement === "holes-bottom") {
+        const bottom = Math.max(...holes.map(target => target.bottom), hole.bottom);
+        const position = this.clampTooltipPosition(hole.left, bottom + margin);
         this.tooltip.style.left = `${position.left}px`;
         this.tooltip.style.top = `${position.top}px`;
         return;
@@ -2043,8 +2299,11 @@
     }
 
     handleKeydown(event) {
-      if (!this.active) return;
-      if (event.target instanceof Element && event.target.closest(".app-dialog:not([data-tour-spell-preview])")) return;
+      if (!this.active || this.isDiceRollerOpen()) return;
+      // A closing dialog can move its focused content back into the page before
+      // this bubbling handler runs. The original path still identifies its key.
+      if (event.composedPath().some(node => node instanceof Element
+        && node.matches(".app-dialog:not([data-tour-spell-preview]), #dice-roller-modal"))) return;
       if (event.key === "Escape") {
         event.preventDefault();
         this.stop();
@@ -2060,7 +2319,7 @@
     }
 
     handleFocusIn(event) {
-      if (!this.active || this.isAllowedTourInteraction(event.target)) return;
+      if (!this.active || this.isDiceRollerOpen() || this.isAllowedTourInteraction(event.target)) return;
       this.nextBtn?.focus({ preventScroll: true });
     }
 
@@ -2100,7 +2359,7 @@
     }
 
     preventScrollEvent(event) {
-      if (!this.active) return;
+      if (!this.active || this.isDiceRollerOpen()) return;
       if (this.kind === "tabletop" && this.tooltip?.contains(event.target)) return;
       if (event.type === "touchmove" && this.highlightDragState) {
         const point = this.getEventViewportPoint(event);

@@ -10,22 +10,23 @@ const { chromium } = require("playwright");
 const TABLETOP_COPY = [
   ["從這裡進入跑團模式", "角色準備好了，就可以開始冒險！\n\n打開右上角選單，找到「跑團模式」。這裡會集中顯示遊玩時常用的數值、動作與資源。\n\n按「下一步」，一起看看遊戲如何進行。", ["右上角選單", "跑團模式", "下一步"]],
   ["描述你的行動", "DM 會描述目前的情況，你只需要告訴 DM，你的角色打算採取什麼行動。\n\n例如：「我靠近木門，聽聽裡面有沒有聲音。」", []],
-  ["需要判定時，再進行擲骰", "當 DM 要求進行檢定時，找到對應的數字加值，擲出 D20，再將兩者相加。\n\n如果 DM 說這次檢定有「優勢」或「劣勢」，就擲兩次 D20，優勢取高、劣勢取低，再加上原本的數字加值。\n\n如果手邊沒有骰子，可以從右上角選單開啟擲骰功能。", ["開啟擲骰功能"]],
+  ["需要判定時，再進行擲骰", "當 DM 要求進行檢定時，找到對應的數字加值，擲出 D20，再將兩者相加。\n\n如果手邊沒有骰子，可以從右上角選單開啟擲骰功能。", ["開啟擲骰功能"]],
   ["戰鬥開始時，決定行動順序", "當 DM 說請擲先攻時，擲出 D20 + 先攻加值，決定角色在戰鬥中的行動順序。\n\n你也可以開啟擲骰功能，點擊角色卡上的先攻數值進行擲骰。\n\n角色的速度代表一個回合中可以移動的距離。\n\n使用格線地圖時，通常 5 呎 = 1 格。", ["請擲先攻", "開啟擲骰功能", "速度", "5 呎 = 1 格"]],
   ["在你的回合中採取行動", "你的回合通常包含移動與一次動作；若能力或規則允許，也可以使用一次附贈。\n\n移動不一定要一次完成，也不需要固定在動作之前。\n例如，你可以先移動 2 格、進行攻擊，再移動剩下的 3 格。\n\n反應則需要符合特定的觸發條件才能使用，通常在其他角色的回合中發生。", ["移動", "動作", "附贈", "移動", "動作", "移動", "移動", "反應"]],
   ["如果你想施放魔法", "先告訴 DM 你要用什麼法術，閱讀文字確認條件滿足後，就可以選擇目標。\n\n部分法術需要維持專注。\n一般情況下，玩家無法同時維持兩個需要專注的法術。", []],
-  ["記錄角色狀態", "使用具有次數限制的能力或施放法術後，記得更新資源的數字，確認還剩下多少可用次數。\n\n受到傷害、恢復生命值，或罹患狀態時，也應立即記錄。\n\n基本遊戲流程：了解情況 → 描述行動 → 進行判定 → 記錄結果 → 開心玩遊戲！", ["法術"]]
+  ["記錄角色狀態", "使用具有次數限制的能力或施放法術後，記得更新資源的數字，確認還剩下多少可用次數。\n\n受到傷害、恢復生命值，或罹患狀態時，也應立即記錄。", ["法術"]],
+  ["基本遊戲流程", "了解情況 → 描述行動 → 進行判定 → 記錄結果 → 開心遊戲！", []]
 ];
 
 const SHEET_COPY = [
-  ["⚔️ 建立你的冒險角色", "背景描述過往經歷，\n種族提供不同特性，\n職業則決定擅長的能力，以及在冒險中解決問題的方式。\n\n完成選擇後，速度、專長與其他角色資料會自動更新。", 1, ["背景", "種族", "職業"]],
+  ["⚔️ 建立你的角色", "背景描述過往經歷，\n種族提供不同特性，\n職業則決定擅長的能力，以及在冒險中解決問題的方式。\n\n完成選擇後，速度、專長與其他角色資料會自動更新。", 1, ["背景", "種族", "職業"]],
   ["🎲 決定角色屬性", "六項屬性代表角色的基本能力，並會影響攻擊、技能與各種檢定。\n\n你可以直接輸入屬性數值，也可以從右上角選單開啟決定屬性功能。", 2, ["六項屬性", "決定屬性"]],
   ["🎲 選擇屬性產生方式", "接下來，選擇角色的屬性產生方式。\n\n點擊決定屬性開始設定。", 2, ["決定屬性"]],
   ["🎲 選擇購點或擲骰", "27 點購點讓你自行分配屬性，角色能力較為穩定。\n\n屬性擲骰則具有較高的隨機性，通常在 DM 同意使用時採用。\n\n選擇適合目前遊戲的方式後，即可開始配置屬性。", 3, ["27 點購點", "屬性擲骰", "DM 同意"]],
   ["🎲 配置基礎屬性", "使用 27 點購點時，每項屬性可以設定在 8～15 之間。\n\n屬性越高，需要消耗的點數越多。調整數值時，可以從下方確認剩餘點數。\n\n完成配置前，總花費不得超過 27 點。", 4, ["27 點購點", "剩餘點數"]],
   ["🎲 套用背景加值", "選擇背景後，將提供的屬性加值分配至角色屬性。\n\n你也可以選擇職業範本，快速套用適合該職業的建議配置。\n\n確認所有數值後，點擊套用完成屬性設定。", 5, ["背景", "職業範本", "套用"]],
   ["🛡️ 選擇武器與護甲", "選擇武器或護甲時，下方會顯示傷害、防禦與相關特性。\n\n遇到不熟悉的規則名詞，可以直接點擊摘要中的名稱查看詳細說明。", 6, []],
-  ["✨ 選擇與管理法術", "選好職業、等級、背景與種族後，按「準備法術」管理戲法與準備清單；儲存才會套用選擇。\n\n點擊法術名稱可閱讀詳細說明。搜尋與查閱隨時都能使用。", 7, []],
+  ["✨ 選擇與管理法術", "選好職業、等級、背景與種族後，可按「準備法術」管理法術清單。", 7, []],
   ["🔎 搜尋規則資料", "法術與裝備頁面都提供搜尋功能。\n\n輸入名稱或關鍵字即可快速找到相關規則內容。", 8, []]
 ];
 
@@ -67,6 +68,25 @@ async function ready(page, index) {
   await page.waitForFunction(index => onboardingTour.active && !onboardingTour.isTransitioning && onboardingTour.currentIndex === index, index);
 }
 
+async function identityDetailsReady(page) {
+  await page.waitForFunction(() => onboardingTour.active && !onboardingTour.isTransitioning
+    && onboardingTour.currentIndex === 0 && onboardingTour.stepPhase === 1);
+  assert.equal(await page.locator("#tour-step-title").textContent(), "⚔️ 建立你的角色");
+  assert.equal(await page.locator("#tour-step-text").textContent(), "點此查看職業、種族等詳情。");
+  assert.equal(await page.locator("#tour-step-progress").textContent(), "1/8");
+  assert.equal(await page.locator("#tour-prev-btn").isEnabled(), true);
+  assert.equal(await page.evaluate(() => {
+    const holes = onboardingTour.activeHoles;
+    const button = document.querySelector('.basic-row--class-level [data-character-features-tab="class"]').getBoundingClientRect();
+    const tip = document.getElementById("tour-tooltip").getBoundingClientRect();
+    return holes.length === 1 && Math.abs(holes[0].left - (button.left - 8)) < 1
+      && Math.abs(holes[0].right - (button.right + 8)) < 1
+      && Math.abs(holes[0].top - (button.top - 8)) < 1
+      && Math.abs(holes[0].bottom - (button.bottom + 8)) < 1
+      && tip.left >= 0 && tip.top >= 0 && tip.right <= innerWidth && tip.bottom <= innerHeight;
+  }), true, "1/8 details highlights only the class info label, with the tooltip inside the viewport");
+}
+
 async function closed(page) {
   await page.waitForFunction(() => !onboardingTour.active);
   // Include outstanding layout/animation callbacks and the autosave debounce.
@@ -99,8 +119,8 @@ async function assertLayout(page) {
   if (layout.index === 0) {
     assert.equal(layout.holes.length, 1, "mode introduction highlights the menu button");
     assert(layout.highlightVisible, JSON.stringify(layout));
-  } else if (layout.index === 1) {
-    assert.equal(layout.holes.length, 0, "the introduction does not highlight any page content");
+  } else if (layout.index === 1 || layout.index === 7) {
+    assert.equal(layout.holes.length, 0, "centered steps do not highlight any page content");
     assert.equal(await page.locator("#tour-focus-ring").isVisible(), false);
     assert.equal(await page.locator("#tour-focus-ring-secondary").isVisible(), false);
     if (!await page.evaluate(() => onboardingTour.tooltipDragPosition)) {
@@ -110,8 +130,7 @@ async function assertLayout(page) {
   } else {
     assert(layout.highlightVisible, JSON.stringify(layout));
     if (!layout.dragged) {
-      const expectedLeft = Math.min(layout.width - (layout.tip.right - layout.tip.left) - 10, Math.max(10,
-        layout.index === 6 ? layout.holes[1].left : layout.ring.left));
+      const expectedLeft = Math.min(layout.width - (layout.tip.right - layout.tip.left) - 10, Math.max(10, layout.ring.left));
       assert(Math.abs(layout.tip.left - expectedLeft) <= 1, `tooltip aligns with the highlight's left edge: ${JSON.stringify(layout)}`);
     }
   }
@@ -200,7 +219,7 @@ async function verifyTour(page, { width, height, caster, mode, complete }) {
   await page.evaluate(() => { window.scrollTo(0, 130); window.flushPendingAutosave?.(); });
   const before = await snapshot(page);
   await enter(page);
-  assert.equal(await page.evaluate(() => onboardingTour.steps.length), 7);
+  assert.equal(await page.evaluate(() => onboardingTour.steps.length), 8);
   await assertTourCopy(page, 0);
   await assertLayout(page);
   assert.equal(await page.evaluate(() => onboardingTour.tabletopMenuGuidePhase), "button");
@@ -234,7 +253,7 @@ async function verifyTour(page, { width, height, caster, mode, complete }) {
     await page.screenshot({ path: path.join(process.env.DND_ONBOARDING_SCREENSHOT_DIR, "examples-mobile.png") });
   }
   await page.keyboard.press("Enter");
-  for (let index = 2; index < 7; index++) {
+  for (let index = 2; index < 8; index++) {
     await page.locator("#tour-next-btn").click();
     await ready(page, index);
     await assertLayout(page);
@@ -266,6 +285,11 @@ async function verifyTour(page, { width, height, caster, mode, complete }) {
         const dialog = document.querySelector('.app-dialog[data-tour-spell-preview]');
         const copy = dialog?.querySelector('.tabletop-spell-detail__copy');
         const hole = onboardingTour.activeHoles[0];
+        const titleHole = onboardingTour.activeHoles[1];
+        const title = dialog?.querySelector('.app-dialog__header h2');
+        const titleRange = document.createRange();
+        if (title) titleRange.selectNodeContents(title);
+        const titleText = titleRange.getBoundingClientRect();
         const tip = document.getElementById('tour-tooltip').getBoundingClientRect();
         const expected = [
           '學派: 惑控', '施法時間: 動作', '射程: 30呎', '成分: V、S、M',
@@ -274,6 +298,10 @@ async function verifyTour(page, { width, height, caster, mode, complete }) {
         return {
           dialog: Boolean(dialog), copy: Boolean(copy), lines: expected.map(line => copy?.textContent.includes(line)),
           hole, copyRect: copy?.getBoundingClientRect().toJSON(), tipTop: tip.top,
+          title: title?.textContent, titleHole, titleText: titleText.toJSON(),
+          titleCovered: Boolean(titleHole) && titleHole.left <= titleText.left && titleHole.right >= titleText.right
+            && titleHole.top <= titleText.top && titleHole.bottom >= titleText.bottom
+            && titleHole.right - titleHole.left <= titleText.width + 13,
           overlayInert: document.getElementById('tour-overlay').inert
         };
       });
@@ -281,8 +309,9 @@ async function verifyTour(page, { width, height, caster, mode, complete }) {
         && spellPreview.hole?.top >= spellPreview.copyRect.top - 6
         && spellPreview.hole.bottom < spellPreview.copyRect.bottom
         && spellPreview.tipTop >= spellPreview.hole.bottom - 1
+        && spellPreview.title === "狂笑術" && spellPreview.titleCovered
         && !spellPreview.overlayInert,
-      `spell step previews Hideous Laughter and highlights its metadata: ${JSON.stringify(spellPreview)}`);
+      `spell step previews Hideous Laughter and highlights its metadata and name: ${JSON.stringify(spellPreview)}`);
       if (width === 1280 && !caster && mode === "sheet" && !complete) {
         await page.keyboard.press("Tab");
         assert.equal(await page.evaluate(() => document.getElementById("tour-tooltip").contains(document.activeElement)), true);
@@ -299,14 +328,21 @@ async function verifyTour(page, { width, height, caster, mode, complete }) {
         const rows = [...(preview?.querySelectorAll(':scope > .tabletop-resource-row') || [])];
         const holes = onboardingTour.activeHoles;
         const tip = document.getElementById('tour-tooltip').getBoundingClientRect();
+        const contains = (hole, rect) => Boolean(hole) && hole.left <= rect.left && hole.right >= rect.right
+          && hole.top <= rect.top && hole.bottom >= rect.bottom;
+        const textRects = [...(rows[1]?.querySelectorAll('.tabletop-resource-row__copy > *') || [])].map(element => {
+          const range = document.createRange();
+          range.selectNodeContents(element);
+          return range.getBoundingClientRect();
+        });
+        const checks = [...(rows[1]?.querySelectorAll('.tabletop-resource-check') || [])].map(check => check.getBoundingClientRect());
         return {
           rows: rows.map(row => ({ title: row.querySelector('h4')?.textContent, rect: row.getBoundingClientRect().toJSON() })),
           holes,
-          covers: rows.every((row, i) => {
-            const rect = row.getBoundingClientRect();
-            return holes[i]?.left <= rect.left && holes[i]?.right >= rect.right
-              && holes[i]?.top <= rect.top && holes[i]?.bottom >= rect.bottom;
-          }),
+          covers: textRects.length === 2 && textRects.every(rect => contains(holes[0], rect))
+            && checks.length > 0 && checks.every(rect => contains(holes[1], rect))
+            && !contains(holes[0], rows[1].getBoundingClientRect())
+            && !contains(holes[0], rows[0].getBoundingClientRect()),
           tipTop: tip.top,
           tipHeight: tip.height,
           viewportHeight: innerHeight,
@@ -317,9 +353,11 @@ async function verifyTour(page, { width, height, caster, mode, complete }) {
         && resourcePreview.rows[0].title.includes('生命骰')
         && resourcePreview.rows[1].title.includes('吟遊詩人激勵')
         && resourcePreview.covers && !resourcePreview.dialog
-        && (resourcePreview.tipTop >= resourcePreview.holes[1].bottom - 1
-          || resourcePreview.holes[1].bottom + 10 + resourcePreview.tipHeight > resourcePreview.viewportHeight - 10),
-      `resource step previews and highlights hit dice and Bardic Inspiration: ${JSON.stringify(resourcePreview)}`);
+        && (resourcePreview.tipTop >= Math.max(resourcePreview.holes[0].bottom, resourcePreview.holes[1].bottom) - 1
+          || Math.max(resourcePreview.holes[0].bottom, resourcePreview.holes[1].bottom) + 10 + resourcePreview.tipHeight > resourcePreview.viewportHeight - 10),
+      `resource step previews both cards and highlights the Bardic Inspiration text and checkbox: ${JSON.stringify(resourcePreview)}`);
+      if (width <= 600) assert(resourcePreview.holes[0].top <= 40,
+        `phones scroll the Bardic Inspiration card to the top: ${JSON.stringify(resourcePreview.holes)}`);
       if (width === 1280 && !caster && mode === "sheet" && !complete) {
         await page.locator("#tour-prev-btn").click();
         await ready(page, 5);
@@ -327,6 +365,19 @@ async function verifyTour(page, { width, height, caster, mode, complete }) {
         assert.equal(await page.locator('.app-dialog[data-tour-spell-preview]').count(), 1);
         await page.locator("#tour-next-btn").click();
         await ready(page, 6);
+      }
+      assert.equal(await page.locator("#tour-next-btn").textContent(), "下一步");
+    }
+    if (index === 7) {
+      assert.equal(await page.locator("#tabletop-tour-resource-preview").count(), 0, "the closing step removes the resource preview");
+      assert.equal(await page.locator("#tour-step-progress").textContent(), "8/8");
+      assert.equal(await page.locator("#tour-next-btn").textContent(), "開始使用跑團模式");
+      if (width === 1280 && !caster && mode === "sheet" && !complete) {
+        await page.locator("#tour-prev-btn").click();
+        await ready(page, 6);
+        assert.equal(await page.locator("#tabletop-tour-resource-preview").count(), 1);
+        await page.locator("#tour-next-btn").click();
+        await ready(page, 7);
       }
     }
   }
@@ -372,10 +423,13 @@ async function main() {
       return;
     }
     if (process.argv.includes("--touch-only")) {
+      await verifyIdentityGuidance(browser, url);
       await verifyAbilityGuidance(browser, url);
       await verifyTouch(browser, url);
       return;
     }
+    await verifyIdentityGuidance(browser, url);
+    await verifySheetExitSafety(browser, url);
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.evaluate(() => onboardingTour.start());
     await ready(page, 0);
@@ -394,6 +448,7 @@ async function main() {
       }
     }
     console.log("First-table tour: desktop/mobile, both modes, spell and resource previews for all classes, examples, back/next, completion/Escape and data/storage/focus/scroll preservation passed.");
+    await verifyTabletopDiceAndKeyStats(browser, url);
 
     const beforeSpellCancel = await snapshot(page);
     await page.evaluate(() => onboardingTour.start(5, "tabletop"));
@@ -455,6 +510,8 @@ async function main() {
         && (tip.top >= holes[1].bottom || holes[1].bottom + 10 + tip.height > innerHeight - 10);
     }), true, "step 1 places its instruction below the origin row when it fits");
     await page.locator("#tour-next-btn").click();
+    await identityDetailsReady(page);
+    await page.locator("#tour-next-btn").click();
     await ready(page, 1);
     await assertSheetCopy(page, 1);
     assert.equal(await page.evaluate(() => {
@@ -479,36 +536,48 @@ async function main() {
     await page.locator("#ability-choice-point-buy").click();
     await page.waitForFunction(() => onboardingTour.stepPhase === 1);
     await assertSheetCopy(page, 4);
+    assert.equal(await page.locator("#tour-next-btn").textContent(), "下一步", "4/8 advances to 5/8");
     await page.locator("#tour-next-btn").click();
     await page.waitForFunction(() => onboardingTour.stepPhase === 2);
     await assertSheetCopy(page, 5);
     await page.keyboard.press("Escape");
     await closed(page);
     // Complete all original steps, including equipment, spells and search.
+    // 「下一步」advances the progress number; staying on the same number uses 「繼續」.
+    const nextLabel = () => page.locator("#tour-next-btn").textContent();
     await page.evaluate(() => onboardingTour.start());
     await ready(page, 0);
     await assertSheetCopy(page, 0);
+    assert.equal(await nextLabel(), "繼續");
+    await page.locator("#tour-next-btn").click();
+    await identityDetailsReady(page);
+    assert.equal(await nextLabel(), "下一步");
     await page.locator("#tour-next-btn").click();
     await ready(page, 1);
     await assertSheetCopy(page, 1);
+    assert.equal(await nextLabel(), "繼續");
     await page.locator("#tour-next-btn").click();
     await ready(page, 2);
     await assertSheetCopy(page, 2);
+    assert.equal(await nextLabel(), "開啟決定屬性");
     await page.locator("#tour-next-btn").click();
     await ready(page, 2);
     await assertSheetCopy(page, 3);
+    assert.equal(await nextLabel(), "下一步");
     for (let index = 3; index < 6; index++) {
       await page.locator("#tour-next-btn").click();
       await ready(page, index);
       await assertSheetCopy(page, index + 3);
+      assert.equal(await nextLabel(), index === 5 ? "導覽完成" : "下一步");
       if (index === 4) {
         assert.equal(await page.evaluate(() => {
-          const hole = onboardingTour.activeHoles[0];
-          const rect = document.getElementById("spells-tab-button").getBoundingClientRect();
-          return onboardingTour.activeHoles.length === 1 && scrollY === 0
-            && hole.left <= rect.left && hole.right >= rect.right
-            && hole.top <= rect.top && hole.bottom >= rect.bottom;
-        }), true, "step 5 scrolls to and highlights only the Spells tab button");
+          const holes = onboardingTour.activeHoles;
+          return holes.length === 2 && scrollY === 0 && ["spells-tab-button", "spell-prepare"].every((id, index) => {
+            const rect = document.getElementById(id).getBoundingClientRect();
+            return holes[index].left <= rect.left && holes[index].right >= rect.right
+              && holes[index].top <= rect.top && holes[index].bottom >= rect.bottom;
+          });
+        }), true, "spells step scrolls to top and highlights the Spells tab and Prepare Spells buttons");
       }
     }
     await page.locator("#tour-next-btn").click();
@@ -535,6 +604,354 @@ async function main() {
     await browser?.close();
     await new Promise(resolve => server.close(resolve));
   }
+}
+
+async function verifyIdentityGuidance(browser, url) {
+  for (const viewport of [{ width: 1280, height: 800 }, { width: 390, height: 844 }, { width: 320, height: 568 }]) {
+    for (const reducedMotion of ["no-preference", "reduce"]) {
+      const touch = viewport.width < 500;
+      const page = await browser.newPage({ viewport, isMobile: touch, hasTouch: touch, reducedMotion });
+      const activate = selector => page.locator(selector)[touch ? "tap" : "click"]();
+      await page.goto(url);
+      await page.waitForFunction(() => window.onboardingTour);
+      await activate("#legal-ack-btn");
+      await page.waitForTimeout(650);
+      await page.evaluate(() => window.flushPendingAutosave?.());
+      const before = await snapshot(page);
+      await page.evaluate(() => onboardingTour.start());
+      await ready(page, 0);
+      await assertSheetCopy(page, 0);
+      assert.equal(await page.locator("#tour-prev-btn").isDisabled(), true);
+      if (reducedMotion === "no-preference") {
+        const animation = await page.evaluate(async () => {
+          const width = () => onboardingTour.presentedHoles[0].right - onboardingTour.presentedHoles[0].left;
+          const from = width();
+          const transition = onboardingTour.next();
+          // Repeated activation while moving must not skip the new explanation.
+          onboardingTour.next();
+          onboardingTour.prev();
+          await new Promise(resolve => setTimeout(resolve, 120));
+          const middle = width();
+          const moving = onboardingTour.isTransitioning;
+          await transition;
+          return { from, middle, to: width(), moving, index: onboardingTour.currentIndex, phase: onboardingTour.stepPhase };
+        });
+        assert(animation.from > animation.middle && animation.middle > animation.to && animation.moving,
+          `spotlight shrinks smoothly: ${JSON.stringify(animation)}`);
+        assert.equal(animation.index, 0);
+        assert.equal(animation.phase, 1);
+      } else await activate("#tour-next-btn");
+      await identityDetailsReady(page);
+      const infoSelector = '.basic-row--class-level [data-character-features-tab="class"]';
+      for (const close of ["button", "Escape", "backdrop"]) {
+        await activate(infoSelector);
+        assert.equal(await page.locator("#character-features-modal").isVisible(), true);
+        assert.equal(await page.locator("#tour-overlay").isVisible(), false);
+        assert.equal(await page.evaluate(() => autosaveSuspended), false, "normal detail controls retain autosave while the tour is paused");
+        await activate('#character-features-modal [data-feature-tab="race"]');
+        assert.equal(await page.locator('#character-features-modal [data-feature-tab="race"]').getAttribute("aria-selected"), "true");
+        await page.keyboard.press("Tab");
+        assert.equal(await page.evaluate(() => Boolean(document.activeElement.closest("#character-features-modal"))), true);
+        if (close === "Escape") await page.keyboard.press("Escape");
+        else if (close === "backdrop") await page.locator("#character-features-modal").click({ position: { x: 2, y: 2 } });
+        else await activate("#character-features-modal .app-dialog__close");
+        await page.waitForFunction(() => !document.getElementById("character-features-modal")
+          && !onboardingTour.identityDetailsOpen && onboardingTour.presentationFrame === null);
+        await identityDetailsReady(page);
+        assert.equal(await page.locator("#tour-overlay").isVisible(), true);
+        assert.equal(await page.evaluate(() => autosaveSuspended), true, "tour previews suspend autosave again on resume");
+        assert.equal(await page.evaluate(() => document.activeElement.matches('.basic-row--class-level [data-character-features-tab="class"]')), true);
+      }
+      if (process.env.DND_ONBOARDING_SCREENSHOT_DIR && reducedMotion === "no-preference") {
+        await page.screenshot({ path: path.join(process.env.DND_ONBOARDING_SCREENSHOT_DIR, `identity-details-${viewport.width}.png`) });
+      }
+      await verifyTooltipDrag(page);
+      await activate("#tour-prev-btn");
+      await ready(page, 0);
+      await assertSheetCopy(page, 0);
+      await activate("#tour-next-btn");
+      await identityDetailsReady(page);
+      await activate("#tour-next-btn");
+      await ready(page, 1);
+      await assertSheetCopy(page, 1);
+      await activate("#tour-prev-btn");
+      await identityDetailsReady(page);
+      await page.keyboard.press("Tab");
+      assert.equal(await page.evaluate(() => onboardingTour.isAllowedTourInteraction(document.activeElement)), true);
+      await activate("#tour-skip-btn");
+      await closed(page);
+      const after = await snapshot(page);
+      for (const key of ["data", "storage", "hash"]) assert.deepEqual(after[key], before[key], `identity guidance preserves ${key}`);
+      await assertPageInteractive(page);
+      await page.evaluate(async () => { await onboardingTour.start(); await onboardingTour.next(); });
+      await activate(infoSelector);
+      await page.evaluate(() => { AppDialog.showMessage({ title: "巢狀詳情", message: "關閉導覽時一起釋放鎖定" }); });
+      await page.evaluate(() => onboardingTour.stop());
+      await closed(page);
+      await assertPageInteractive(page);
+      // Cancellation while the spotlight is shrinking must also release all locks.
+      await page.evaluate(async () => {
+        await onboardingTour.start();
+        onboardingTour.next();
+        onboardingTour.stop();
+      });
+      await closed(page);
+      await assertPageInteractive(page);
+      await page.close();
+    }
+  }
+  console.log("Identity guidance: both 1/8 phases, animation, repeated activation, back/next, skip, dragging, keyboard, narrow touch layouts and reduced motion passed.");
+}
+
+async function verifyTabletopDiceAndKeyStats(browser, url) {
+  const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  await page.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
+  await page.goto(url);
+  await page.waitForFunction(() => window.onboardingTour && window.TabletopMode && window.DiceRoller);
+  await page.locator("#legal-ack-btn").click();
+  const keyStats = () => page.evaluate(() => [
+    document.getElementById("tabletop-initiative").textContent,
+    document.getElementById("tabletop-speed").textContent
+  ]);
+  const persisted = () => page.evaluate(() => {
+    window.flushPendingAutosave?.();
+    return JSON.stringify([collectStateObject(), Object.keys(localStorage).sort().map(key => [key, localStorage.getItem(key)])]);
+  });
+  const toast = () => page.evaluate(() => document.getElementById("app-toast")?.innerText || "");
+
+  // Empty sheet values receive example 先攻／速度 only while step 4 is shown.
+  await page.evaluate(() => {
+    document.getElementById("initiative-input").value = "";
+    document.getElementById("speed-display").value = "";
+    TabletopMode.setMode("tabletop", { restoreScroll: false });
+    TabletopMode.refresh();
+  });
+  assert.deepEqual(await keyStats(), ["—", "—"]);
+  assert.equal(await page.evaluate(() => DiceRoller.isEnabled()), false);
+  const beforeTour = await persisted();
+  await page.evaluate(() => onboardingTour.start(3, "tabletop"));
+  await ready(page, 3);
+  assert.deepEqual(await keyStats(), ["+2", "30 呎"], "step 4 fills missing initiative and speed with examples");
+  assert.equal(await persisted(), beforeTour, "example values never reach character data or storage");
+  await page.locator("#tour-prev-btn").click();
+  await ready(page, 2);
+  assert.deepEqual(await keyStats(), ["—", "—"], "leaving step 4 restores the original values");
+  await page.locator("#tour-next-btn").click();
+  await ready(page, 3);
+  await page.keyboard.press("Escape");
+  await closed(page);
+  assert.deepEqual(await keyStats(), ["—", "—"], "closing the tour restores the original values");
+  await page.evaluate(() => onboardingTour.start(3, "tabletop"));
+  await ready(page, 3);
+  await page.reload();
+  await page.waitForFunction(() => window.onboardingTour && window.TabletopMode);
+  await page.locator("#legal-ack-btn").click();
+  await page.evaluate(() => TabletopMode.setMode("tabletop", { restoreScroll: false }));
+  assert.notEqual((await keyStats())[0], "+2", "reloading mid-tour shows no example initiative");
+  assert.equal(await page.evaluate(() => onboardingTour.active), false);
+
+  // Existing numbers are kept, and the clickable link enables real dice rolls inside the tour.
+  await page.evaluate(() => {
+    document.getElementById("initiative-input").value = "+5";
+    document.getElementById("speed-display").value = "25";
+    document.querySelector('#tab-skills .skill-grid input[id^="skill-"]').value = "+3";
+    TabletopMode.setMode("tabletop", { restoreScroll: false });
+    TabletopMode.refresh();
+  });
+  await page.evaluate(() => onboardingTour.start(2, "tabletop"));
+  await ready(page, 2);
+  const skillRoll = page.locator(".tabletop-skills .tabletop-inline-roll").first();
+  assert.equal(await skillRoll.isDisabled(), true);
+  await page.locator("#tour-step-text .tour-step-action").click();
+  await page.waitForFunction(() => DiceRoller.isEnabled() && !document.querySelector(".tabletop-skills .tabletop-inline-roll").disabled);
+  // The dice button glows undimmed instead of a toast.
+  assert.equal(await page.locator("#dice-roller-fab").evaluate(el => el.classList.contains("dice-roller-fab--announce")), true);
+  assert.doesNotMatch(await toast(), /擲骰功能開啟/);
+  // The glowing dice button is not dimmed.
+  await page.waitForFunction(() => {
+    const fab = document.getElementById("dice-roller-fab").getBoundingClientRect();
+    const x = (fab.left + fab.right) / 2;
+    const y = (fab.top + fab.bottom) / 2;
+    return onboardingTour.activeHoles.length === 1
+      && document.elementsFromPoint(x, y).every(element => !element.classList.contains("tour-mask"));
+  }, null, { timeout: 2000 });
+  assert.equal(await page.evaluate(() => localStorage.getItem("dnd.diceSystemEnabled.v1")), "true",
+    "the link uses the real dice switch");
+  await skillRoll.click();
+  await page.waitForFunction(() => /技能檢定：.*\+ 3 =/.test(document.getElementById("app-toast").innerText));
+  assert.deepEqual(await page.evaluate(() => [onboardingTour.active, onboardingTour.currentIndex]), [true, 2]);
+  await page.locator("#tour-next-btn").click();
+  await ready(page, 3);
+  assert.deepEqual(await keyStats(), ["+5", "25 呎"], "real values are not replaced by examples");
+  assert.equal(await page.locator("#tabletop-initiative").evaluate(el => el.classList.contains("tour-roll-pulse")), true,
+    "with dice already on, step 4 pulses the initiative on entry");
+  await page.locator("#tabletop-initiative .tabletop-inline-roll").click({ force: true });
+  await page.waitForFunction(() => /先攻：.*\+ 5 =/.test(document.getElementById("app-toast").innerText));
+  // Other page controls stay blocked while rolling is available.
+  await page.locator("#tabletop-ac").click({ force: true });
+  assert.deepEqual(await page.evaluate(() => [onboardingTour.active, onboardingTour.currentIndex]), [true, 3]);
+
+  // Steps 3 and 4 let the dice button open the roller above the tour; closing it returns to the tour.
+  const fabIsMasked = () => page.evaluate(() => {
+    const rect = document.getElementById("dice-roller-fab").getBoundingClientRect();
+    return document.elementsFromPoint((rect.left + rect.right) / 2, (rect.top + rect.bottom) / 2)
+      .some(element => element.classList.contains("tour-mask"));
+  });
+  const rollerState = () => page.evaluate(() => ({
+    open: document.getElementById("dice-roller-fab").getAttribute("aria-expanded") === "true",
+    active: onboardingTour.active,
+    index: onboardingTour.currentIndex,
+    aboveTour: Number(getComputedStyle(document.getElementById("dice-roller-modal")).zIndex)
+      > Number(getComputedStyle(document.getElementById("tour-overlay")).zIndex),
+    tourInert: document.getElementById("tour-overlay").inert
+  }));
+  for (const [index, close] of [[3, "escape"], [2, "button"]]) {
+    if (index === 2) {
+      await page.locator("#tour-prev-btn").click();
+      await ready(page, 2);
+    }
+    assert.equal(await fabIsMasked(), false, `step ${index + 1} keeps the dice button usable`);
+    // Earlier roll results can briefly cover the dice button.
+    await page.waitForFunction(() => {
+      const rect = document.getElementById("dice-roller-fab").getBoundingClientRect();
+      return !document.elementsFromPoint((rect.left + rect.right) / 2, (rect.top + rect.bottom) / 2)
+        .some(element => element.closest("#app-toast"));
+    }, null, { timeout: 10000 });
+    await page.locator("#dice-roller-fab").click({ force: true });
+    await page.waitForFunction(() => document.getElementById("dice-roller-modal").classList.contains("is-open"));
+    assert.deepEqual(await rollerState(), { open: true, active: true, index, aboveTour: true, tourInert: true });
+    await page.locator('#dice-roller-modal [data-die="20"]').click();
+    await page.locator("#dice-roller-roll").click();
+    await page.waitForFunction(() => /\d/.test(document.getElementById("dice-roller-total-value")?.textContent || ""));
+    // Rolling disables the focused ROLL button; focus must stay in the roller so Escape still works.
+    assert.equal(await page.evaluate(() => document.getElementById("dice-roller-modal").contains(document.activeElement)), true);
+    // Closing the roller in the tour clears roll results at once, but keeps other messages.
+    await page.evaluate(() => {
+      DiceRoller.roll({ count: 1, sides: 20, modifier: 0, label: "測試" });
+      AppDialog.notify("一般訊息");
+    });
+    if (close === "escape") await page.keyboard.press("Escape");
+    else await page.locator("#dice-roller-close").click();
+    assert.deepEqual(await page.evaluate(() => [...document.querySelectorAll("#app-toast > .app-toast")].map(toast => toast.dataset.variant)),
+      ["default"], `closing by ${close} removes roll results immediately`);
+    await page.evaluate(() => AppDialog.dismissToasts());
+    await page.waitForFunction(() => document.getElementById("dice-roller-modal").hidden);
+    assert.deepEqual(await rollerState(), { open: false, active: true, index, aboveTour: true, tourInert: false },
+      `${close} closes only the roller on step ${index + 1}`);
+    assert.equal(await page.evaluate(() => getComputedStyle(document.getElementById("tour-tooltip")).visibility), "visible");
+  }
+  await page.locator("#dice-roller-fab").click({ force: true });
+  await page.waitForFunction(() => document.getElementById("dice-roller-modal").classList.contains("is-open"));
+  await page.evaluate(() => onboardingTour.stop());
+  await closed(page);
+  assert.equal(await page.evaluate(() => document.getElementById("dice-roller-fab").getAttribute("aria-expanded")), "false",
+    "stopping the tour also closes the roller");
+
+  // Without dice, step 4 waits for the link, then pulses the initiative together with the dice button.
+  await page.evaluate(() => DiceRoller.setEnabled(false));
+  await page.evaluate(() => onboardingTour.start(3, "tabletop"));
+  await ready(page, 3);
+  assert.equal(await page.locator("#tabletop-initiative").evaluate(el => el.classList.contains("tour-roll-pulse")), false);
+  await page.locator("#tour-step-text .tour-step-action").click();
+  const pulses = await page.evaluate(() => Promise.all(["tabletop-initiative", "dice-roller-fab"].map(async id => {
+    const animation = document.getElementById(id).getAnimations().find(item => /announce|pulse/.test(item.animationName));
+    await animation?.ready;
+    return animation?.startTime ?? null;
+  })));
+  assert(pulses.every(time => time !== null) && Math.abs(pulses[0] - pulses[1]) <= 20,
+    `the initiative and dice button pulse together: ${JSON.stringify(pulses)}`);
+  // Later steps keep the dice button dimmed and closed once its glow ends.
+  await page.locator("#tour-next-btn").click();
+  await ready(page, 4);
+  await page.waitForFunction(() => !document.getElementById("dice-roller-fab").classList.contains("dice-roller-fab--announce"), null, { timeout: 8000 });
+  await page.waitForFunction(() => {
+    const rect = document.getElementById("dice-roller-fab").getBoundingClientRect();
+    return document.elementsFromPoint((rect.left + rect.right) / 2, (rect.top + rect.bottom) / 2)
+      .some(element => element.classList.contains("tour-mask"));
+  });
+  await page.locator("#dice-roller-fab").click({ force: true });
+  assert.equal(await page.locator("#dice-roller-modal").isHidden(), true, "step 5 does not open the roller");
+  await page.keyboard.press("Escape");
+  await closed(page);
+  assert.equal(await page.evaluate(() => DiceRoller.isEnabled()), true);
+  // The menu switch uses the same glow; restoring a saved setting on load does not.
+  await page.evaluate(() => {
+    const toggle = document.getElementById("dice-system-toggle");
+    toggle.click();
+    toggle.click();
+  });
+  assert.equal(await page.locator("#dice-roller-fab").evaluate(el => el.classList.contains("dice-roller-fab--announce")), true);
+  await page.reload();
+  await page.waitForFunction(() => window.DiceRoller?.isEnabled());
+  assert.equal(await page.locator("#dice-roller-fab").evaluate(el => el.classList.contains("dice-roller-fab--announce")), false);
+  await page.close();
+  console.log("First-table tour dice link, synced initiative/dice pulse, in-tour skill/initiative rolls, roller trial above the tour and temporary initiative/speed examples passed.");
+}
+
+async function verifySheetExitSafety(browser, url) {
+  const page = await browser.newPage();
+  const errors = [];
+  page.on("pageerror", error => errors.push(String(error)));
+  await page.goto(url);
+  await page.waitForFunction(() => window.onboardingTour);
+  await page.locator("#legal-ack-btn").click();
+  const stages = ["identity", "details", "abilities", "menu", "choice", "points", "background", "equipment", "spells", "search"];
+  for (const stage of stages) {
+    for (const exit of ["button", "Escape"]) {
+      const index = { identity: 0, details: 0, abilities: 1, menu: 2, choice: 2, points: 2, background: 2, equipment: 3, spells: 4, search: 5 }[stage];
+      await page.evaluate(index => onboardingTour.start(index), index);
+      await ready(page, index);
+      if (stage === "details") { await page.locator("#tour-next-btn").click(); await identityDetailsReady(page); }
+      if (["choice", "points", "background"].includes(stage)) {
+        await page.locator("#tour-next-btn").click();
+        await ready(page, 2);
+      }
+      if (["points", "background"].includes(stage)) {
+        await page.locator("#ability-choice-point-buy").click();
+        await page.waitForFunction(() => onboardingTour.stepPhase === 1 && onboardingTour.presentationFrame === null);
+      }
+      if (stage === "background") {
+        await page.locator("#tour-next-btn").click();
+        await page.waitForFunction(() => onboardingTour.stepPhase === 2 && onboardingTour.presentationFrame === null);
+        await page.locator("#tour-prev-btn").click();
+        await page.waitForFunction(() => onboardingTour.stepPhase === 1 && onboardingTour.presentationFrame === null);
+        await page.locator("#tour-prev-btn").click();
+        await page.waitForFunction(() => onboardingTour.stepPhase === 0 && onboardingTour.presentationFrame === null);
+      }
+      if (exit === "Escape") await page.keyboard.press("Escape");
+      else await page.locator(stage === "search" ? "#tour-next-btn" : "#tour-skip-btn").click();
+      await closed(page);
+      assert.equal(await page.locator("#ability-choice-modal").isVisible(), false, stage);
+      assert.equal(await page.locator("#point-buy-modal").isVisible(), false, stage);
+      await assertPageInteractive(page);
+    }
+  }
+  // Stop and restart across each awaited layout/scroll boundary.
+  for (let index = 0; index < 6; index++) {
+    for (const delay of [0, 90, 200]) {
+      await page.evaluate(({ index, delay }) => {
+        onboardingTour.start(index);
+        setTimeout(() => onboardingTour.stop(), delay);
+      }, { index, delay });
+      await closed(page);
+      await assertPageInteractive(page);
+    }
+  }
+  await page.evaluate(async () => {
+    const original = onboardingTour.getSteps;
+    onboardingTour.getSteps = function() {
+      const steps = original.call(this);
+      steps[0].beforePosition = async () => { throw new Error("test sheet positioning failure"); };
+      return steps;
+    };
+    try { await onboardingTour.start(); }
+    finally { onboardingTour.getSteps = original; }
+  });
+  await closed(page);
+  await assertPageInteractive(page);
+  assert.deepEqual(errors, []);
+  await page.close();
+  console.log("Sheet exit safety: every phase via skip/completion/Escape, point-buy backtracking, async cancellation and usable page after exit passed.");
 }
 
 async function verifyAbilityGuidance(browser, url) {

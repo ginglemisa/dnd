@@ -4660,7 +4660,7 @@ html[data-ui-theme="warm"][data-theme="dark"] .circle-checkbox:checked {
   }
 }
 
-/* 職業／種族詳情標題：圖示＋中文名稱，英文名以斜體作為副標。 */
+/* 表格／職業／背景／種族詳情標題：圖示＋中文名稱，英文名（自訂背景為「自訂背景」）以斜體作為副標。 */
 .character-feature-panel > .character-feature-title {
   display: flex;
   flex-wrap: wrap;
@@ -8867,6 +8867,39 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] :is(#scrollToTopBtn, #scro
   display: none;
 }
 
+#dice-roller-fab.dice-roller-fab--announce {
+  animation: dice-roller-fab-announce 1.2s ease-in-out 3;
+}
+
+@keyframes dice-roller-fab-announce {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 0 rgba(255, 196, 64, 0));
+    transform: scale(1);
+  }
+
+  50% {
+    filter: drop-shadow(0 0 4px rgba(255, 214, 92, 0.95)) drop-shadow(0 0 12px rgba(255, 170, 30, 0.85));
+    transform: scale(1.2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #dice-roller-fab.dice-roller-fab--announce {
+    animation: dice-roller-fab-announce-static 3.6s step-end 1;
+  }
+
+  @keyframes dice-roller-fab-announce-static {
+    0% {
+      filter: drop-shadow(0 0 4px rgba(255, 214, 92, 0.95)) drop-shadow(0 0 12px rgba(255, 170, 30, 0.85));
+    }
+
+    100% {
+      filter: none;
+    }
+  }
+}
+
 #dice-roller-fab:hover,
 #dice-roller-fab:focus-visible,
 #dice-roller-fab:active {
@@ -9873,6 +9906,64 @@ html[data-theme="dark"] .dice-roller-roll::after {
 #tour-step-text .tour-step-emphasis {
   color: var(--warning);
   font-weight: 800;
+}
+
+/* Same timing as the dice button glow, so both pulse together. */
+#tabletop-initiative.tour-roll-pulse {
+  animation: tour-roll-pulse 1.2s ease-in-out 3;
+}
+
+@keyframes tour-roll-pulse {
+  0%,
+  100% {
+    text-shadow: none;
+    transform: scale(1);
+  }
+
+  50% {
+    text-shadow: 0 0 6px rgba(255, 196, 64, 0.9);
+    transform: scale(1.35);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #tabletop-initiative.tour-roll-pulse {
+    animation: tour-roll-pulse-static 3.6s step-end 1;
+  }
+
+  @keyframes tour-roll-pulse-static {
+    0% {
+      text-shadow: 0 0 6px rgba(255, 196, 64, 0.9);
+    }
+
+    100% {
+      text-shadow: none;
+    }
+  }
+}
+
+#tour-step-text .tour-step-action {
+  display: inline;
+  width: auto;
+  min-height: 0;
+  vertical-align: baseline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  background: none;
+  box-shadow: none;
+  font: inherit;
+  font-weight: 800;
+  line-height: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+#tour-step-text .tour-step-action:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
 }
 
 :where(html:not([data-ui-theme="warm"])) #tour-step-text {

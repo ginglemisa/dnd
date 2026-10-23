@@ -90,7 +90,7 @@ async function main() {
     const input = page.locator("#spell-search");
     const results = page.locator("#spell-search-results");
     const buttons = page.locator("#spell-search-result-list button");
-    assert.equal(await input.getAttribute("placeholder"), '輸入"火球"或"牧師法術"');
+    assert.equal(await input.getAttribute("placeholder"), '輸入"火球"或"牧師法術"、"詩人二環"');
     const catalog = await page.evaluate(() => SpellCatalog.getAllSpells().map(spell => ({
       id: spell.spellId, level: spell.level, name: spell.nameEn,
       display: SpellCatalog.getDisplayName(spell.spellId), classes: SpellCatalog.getClassIds(spell.spellId),
@@ -122,7 +122,7 @@ async function main() {
       assert.equal(await results.isVisible(), true);
     };
     for (const [alias, classId] of Object.entries({
-      "吟遊詩人": "bard", "詩人": "bard", "牧師": "cleric", "德魯伊": "druid", "小D": "druid", "小德": "druid",
+      "吟遊詩人": "bard", "詩人": "bard", "吟遊": "bard", "牧師": "cleric", "德魯伊": "druid", "小D": "druid", "小德": "druid",
       "聖騎士": "paladin", "聖騎": "paladin", "遊俠": "ranger", "術士": "sorcerer",
       "契術師": "warlock", "契術": "warlock", "法師": "wizard",
       "邪術": "warlock", "邪術師": "warlock", "魔導": "warlock", "魔導師": "warlock", "魔導士": "warlock",
