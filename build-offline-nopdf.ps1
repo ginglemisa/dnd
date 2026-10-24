@@ -250,7 +250,7 @@ foreach ($match in $scriptTags) {
   )
   $scriptContent = [System.Text.RegularExpressions.Regex]::Replace(
     $scriptContent,
-    '(?m)^\s*(?:let analyticsRollCount = 0;|analyticsRollCount \+= 1;|const modeChanged = currentMode !== nextMode;)\s*\r?\n?',
+    '(?m)^\s*(?:let analyticsRollCount = 0;|analyticsRollCount \+= 1;)\s*\r?\n?',
     ''
   )
 
