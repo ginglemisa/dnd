@@ -14,7 +14,7 @@
 
 * 原生 HTML／CSS／JavaScript 靜態網站；`index.html` 以傳統 `<script defer>` 依序載入全域模組，不新增前端框架、build pipeline 或 runtime dependency。驗證沿用 Node.js／Playwright，不新增測試框架或依賴。
 * `index.html` 負責角色卡 DOM、初始化、表單串接、持久化與分享；僅依任務需要拆分，不因檔案大小／一致性重寫架構。樣式以 `styles.css` 為準，外觀／互動先查 [DESIGN.md](DESIGN.md)。
-* 自 `index.html` 搬出的角色卡程式（`sheet-utils.js`、`feat-ui.js`、`pdf-launcher.js`）以不加 defer／async 的本機 `<script src>` 留在原位置同步載入，維持全域名稱，只放函式與狀態宣告；驗證腳本以此辨識並一併檢查，離線建置保留各標籤的 defer 與否。搬移與功能修改分開提交。
+* 自 `index.html` 搬出的角色卡程式（`sheet-utils.js`、`feat-ui.js`、`spell-sources.js`、`sheet-spells.js`、`pdf-launcher.js`）以不加 defer／async 的本機 `<script src>` 同步載入（`sheet-spells.js`、`pdf-launcher.js` 在原區塊位置，其餘只含宣告者提前於第一段內嵌 script），維持全域名稱；除 `sheet-spells.js` 保留原有頂層初始化外只放函式與狀態宣告，頂層程式不得依賴後載入 script 的宣告；驗證腳本以此辨識並一併檢查，離線建置保留各標籤的 defer 與否。搬移與功能修改分開提交。
 * 變更全域 API、DOM ID、data attribute、檔名或載入／初始化順序時，搜尋並同步處理受影響的 JavaScript、CSS 與呼叫端。
 * 表單控制項與結構化 DOM 可作為角色目前選擇的 canonical state，無需另建中央 store。純顯示文字不作為主要規則資料來源，除非該解析本身是明確保留的設計。
 * LocalStorage 沿用 `window.dndStorage`。變更持久化欄位或意義時，檢查 LocalStorage、自動存檔、JSON 匯入／匯出與分享網址的還原相容性；UI 調整不應意外改變資料格式。
@@ -47,7 +47,8 @@
 | 裝備 | `equipment-data.js`、`equipment-notes.js` |
 | 法術、狀態、神祇 | `spell-list.js`／`SpellCatalog`、`condition.js`、`deity-info.js` |
 | 創角與角色選項串接／自訂背景 | `index.html`、`quick-build.js`、`custom-background.js`，並核對上述規則來源 |
-| 專長列 UI、自動／自行管理、資格警示、收合記憶、衍生專長列 | `feat-ui.js`；專長資料為 `feats.js`，魔法學徒子選項與衍生法術仍在 `index.html` |
+| 專長列 UI、自動／自行管理、資格警示、收合記憶、衍生專長列 | `feat-ui.js`；專長資料為 `feats.js`，魔法學徒子選項與衍生法術在 `spell-sources.js` |
+| 角色卡法術頁：法表與準備、已選清單、法術位、免費次數、法術描述 | `sheet-spells.js`；魔法學徒、書之魔契、魔法發現與種族／子職／職業／祈喚衍生法術為 `spell-sources.js` |
 | 法術目前清單、來源、自動／手動管理與遷移 | `spell-management.js`／`SpellManagement`；法術書與管理視窗為 `spellbook.js`／`Spellbook` |
 | 法術／裝備搜尋與獨立查閱 | `search.js`；保留工具列與導覽使用的全域入口 |
 | 新手與跑團導覽 | `onboarding-tour.js`，並核對創角／匯入／PDF 生命週期 |

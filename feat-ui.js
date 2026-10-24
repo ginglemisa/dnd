@@ -4,7 +4,7 @@
  *
  * - 自 index.html 原封搬出，於第一段內嵌角色卡 script 之前同步載入，
  *   維持全域函式名稱供 index.html、quick-build.js、tabletop-mode.js 等呼叫。
- * - 魔法學徒子選項與衍生法術仍留在 index.html 的法術來源區段。
+ * - 魔法學徒子選項與衍生法術在 spell-sources.js。
  * - 只放函式與狀態宣告，不在頂層執行任何初始化。
  */
 function getFeatOptionsHtml() {
