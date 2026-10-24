@@ -25,6 +25,13 @@
       && catalog().getClassIds(spell.spellId).some(id => classes.has(id)));
   }
 
+  // The shared 1st-4th preparation limit only covers rings the class can use now.
+  function preparedRingLabel(className, level, shared = false) {
+    if (typeof globalScope.classCanAccessSpellLevel !== "function") return `一至四環${shared ? "共用" : ""}`;
+    const highest = [4, 3, 2].find(ring => globalScope.classCanAccessSpellLevel(className, Number(level), ring));
+    return highest ? `一至${levels[highest]}${shared ? "共用" : ""}` : levels[1];
+  }
+
   function node(tag, className = "", text = "") {
     const element = document.createElement(tag);
     element.className = className;
@@ -183,7 +190,7 @@
       const count = playerEntries().filter(entry => Number(entry.level) >= 1 && Number(entry.level) <= 4 && api.isEntryAvailable(entry)).length;
       const limit = api.getLimits().prepared;
       if (!manual && Number.isFinite(limit) && count >= limit) {
-        globalScope.AppDialog.notify("已達一至四環共用準備上限；請先取消準備其他法術。");
+        globalScope.AppDialog.notify(`已達${preparedRingLabel("wizard", level, true)}準備上限；請先取消準備其他法術。`);
         return;
       }
       api.addPlayerSpell(spell.spellId, { spellClass: manual
@@ -364,7 +371,8 @@
         if (state.note) row.appendChild(node("small", "spell-picker-note", state.note));
         list.appendChild(row);
       });
-      if (!spells.length) list.appendChild(node("p", "spell-note-muted", "沒有符合條件的法術。"));
+      if (!spells.length) list.appendChild(node("p", "spell-note-muted",
+        options.getEmptyMessage?.(filter.value) || "沒有符合條件的法術，請調整搜尋或篩選條件。"));
       more.hidden = spells.length <= visibleCount;
     }
     search.addEventListener("compositionstart", () => { composing = true; });
@@ -590,6 +598,13 @@
     const picker = createSpellPicker({ mode: "prepared", getSpells: candidateSpells,
       beforeDraw: refreshAvailableCounts,
       getCountSuffix: () => ` | ${[1, 2, 3, 4].map(ring => `${ring}環 ${draftSnapshot.ringCounts[ring]}`).join(" | ")} |`,
+      // Explain an empty ring filter that the class or level cannot use yet.
+      getEmptyMessage(filterValue) {
+        if (manual || filterValue === "" || typeof globalScope.classCanAccessSpellLevel !== "function") return "";
+        const ring = Number(filterValue);
+        if (globalScope.classCanAccessSpellLevel(currentClass, Number(currentLevel), ring)) return "";
+        return ring === 0 ? "此職業沒有職業戲法。" : `目前職業等級尚未開放${levels[ring]}法術。`;
+      },
       getState(spell) {
         const selected = draftSnapshot.selected.has(spell.spellId);
         if (sourceLabels(spell.spellId)) return { checked: true, disabled: true };
@@ -617,11 +632,11 @@
       const cantripExcess = manual ? 0 : Math.max(0, countAt(true) - limitAt(true));
       const preparedExcess = manual ? 0 : Math.max(0, countAt(false) - limitAt(false));
       counts.textContent = manual ? "手動管理：不限制法表、環階與準備數量。"
-        : `戲法 ${countAt(true)}／${limits.cantrips ?? 0}｜一至四環 ${countAt(false)}／${limits.prepared ?? 0}`;
+        : `戲法 ${countAt(true)}／${limits.cantrips ?? 0}｜${preparedRingLabel(currentClass, currentLevel)} ${countAt(false)}／${limits.prepared ?? 0}`;
       counts.classList.toggle("is-over-limit", cantripExcess > 0 || preparedExcess > 0);
       limitWarning.hidden = !cantripExcess && !preparedExcess;
       limitWarning.textContent = [cantripExcess ? `戲法超過上限 ${cantripExcess} 個` : "",
-        preparedExcess ? `一至四環共用準備超過上限 ${preparedExcess} 個` : ""].filter(Boolean).join("；")
+        preparedExcess ? `${preparedRingLabel(currentClass, currentLevel, true)}準備超過上限 ${preparedExcess} 個` : ""].filter(Boolean).join("；")
         + (limitWarning.hidden ? "" : "。仍可取消選取或儲存目前清單；新增前請先減少選取。");
       clear.disabled = !draft.some(canClear);
       if (redrawSources) drawSources();

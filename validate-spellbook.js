@@ -1055,7 +1055,7 @@ async function verifyWizardBookPicker(page) {
   await page.keyboard.press("Escape");
   assert.equal(await dialog.getByRole("button", { name: "閱讀解除魔法", exact: true }).evaluate(el => el === document.activeElement), true);
   await search.fill("no matching spell");
-  assert.equal(await dialog.locator(".spellbook-options").innerText(), "沒有符合條件的法術。");
+  assert.equal(await dialog.locator(".spellbook-options").innerText(), "沒有符合條件的法術，請調整搜尋或篩選條件。");
   await dialog.getByRole("button", { name: "清除法術搜尋", exact: true }).click();
   assert.equal(await search.evaluate(el => el === document.activeElement), true);
   assert.deepEqual((await visibleIds()).sort(), ["dispel-magic", "mage-armor"]);
@@ -1277,6 +1277,8 @@ async function verifyLevelChangesAndMigration(page, url) {
   assert.equal(await manager.locator(".spell-prepared-draft-counts").evaluate(el => el.classList.contains("is-over-limit")), true);
   assert.match(await manager.locator(".spell-prepared-draft-counts").innerText(), /4\s*[/／]\s*3/);
   assert.match(await manager.locator(".spell-prepared-draft-counts").innerText(), /5\s*[/／]\s*4/);
+  assert.match(await manager.locator(".spell-prepared-draft-counts").innerText(), /｜一環 5／4$/u, "level 1 shows only the 1st ring");
+  assert.match(await manager.locator(".spell-prepared-limit-warning").innerText(), /一環準備超過上限 1 個/u);
   await manager.getByRole("button", { name: "儲存", exact: true }).click();
   assert.deepEqual(await playerIds(page), spells, "saving an untouched over-limit draft never trims selections");
   await prepare.click();
@@ -1759,6 +1761,24 @@ async function main() {
     await page.evaluate(() => {
       document.getElementById("legal-modal")?.style.setProperty("display", "none");
       window.onboardingTour?.finish?.();
+      applyStateObject({ class: "ranger", level: "8", background: "soldier", race: "human", "spellcasting-ability": "wis",
+        __spellManagement: { version: 2, manual: false, entries: [] } });
+      showTab("spells", document.getElementById("spells-tab-button"));
+    });
+    await page.locator("#spell-prepare").click();
+    assert.match(await pickerDialog(page).locator(".spell-prepared-draft-counts").innerText(), /^戲法 0／0｜一至二環 0／\d+$/u);
+    const rangerRings = pickerDialog(page).getByRole("combobox", { name: "篩選環階" });
+    await rangerRings.selectOption("0");
+    assert.equal(await pickerDialog(page).locator(".spellbook-options").innerText(), "此職業沒有職業戲法。");
+    await rangerRings.selectOption("3");
+    assert.equal(await pickerDialog(page).locator(".spellbook-options").innerText(), "目前職業等級尚未開放三環法術。");
+    await page.keyboard.press("Escape");
+    await pickerDialog(page).waitFor({ state: "detached" });
+    await page.goto(restoreUrl.href);
+    await page.waitForFunction(() => window.Spellbook && window.SpellManagement?.getEntries);
+    await page.evaluate(() => {
+      document.getElementById("legal-modal")?.style.setProperty("display", "none");
+      window.onboardingTour?.finish?.();
       applyStateObject({ class: "wizard", level: "1", background: "soldier", race: "human", "spellcasting-ability": "int",
         __spellManagement: { version: 2, manual: false, entries: [{ spellId: "mage-armor", spellClass: "wizard", level: 1 }] },
         __wizardSpellbook: { version: 1, spellIds: ["detect-magic", "mage-armor", "sleep"] } });
@@ -1769,8 +1789,12 @@ async function main() {
     assert.equal(await page.locator("#spellbook-list .is-prepared").count(), 1);
     assert.equal(await page.locator("#spell-prepared-counts").count(), 0);
     await page.locator("#spell-prepare").click();
-    assert.equal(await pickerDialog(page).locator(".spell-prepared-draft-counts").innerText(), "戲法 0／3｜一至四環 1／4");
+    assert.equal(await pickerDialog(page).locator(".spell-prepared-draft-counts").innerText(), "戲法 0／3｜一環 1／4");
     assert.match(await pickerDialog(page).locator(".spell-picker-count").innerText(), /^\d+ 個法術，已顯示 \d+ 個 \| 1環 1 \| 2環 0 \| 3環 0 \| 4環 0 \|$/u);
+    const ringFilter = pickerDialog(page).getByRole("combobox", { name: "篩選環階" });
+    await ringFilter.selectOption("3");
+    assert.equal(await pickerDialog(page).locator(".spellbook-options").innerText(), "目前職業等級尚未開放三環法術。");
+    await ringFilter.selectOption("");
     await page.keyboard.press("Escape");
     await page.locator('#spellbook-list [data-spell-id="detect-magic"]').click();
     await page.locator(".quick-build-spell-prepare-confirm").click();
