@@ -1281,6 +1281,13 @@ async function verifyLevelChangesAndMigration(page, url) {
   assert.match(await manager.locator(".spell-prepared-limit-warning").innerText(), /一環準備超過上限 1 個/u);
   await manager.getByRole("button", { name: "儲存", exact: true }).click();
   assert.deepEqual(await playerIds(page), spells, "saving an untouched over-limit draft never trims selections");
+  await page.evaluate(() => { window.__limitPrepare = autoPrepareSpellFromFeature("sleep", null); });
+  await page.locator(".quick-build-spell-prepare-confirm").click();
+  const limitMessage = page.getByRole("dialog", { name: "已達準備上限", exact: true });
+  assert.match(await limitMessage.innerText(), /一環最多可準備 4 個法術，請先取消其他法術。/u, "level 1 limit names only the 1st ring");
+  await limitMessage.getByRole("button", { name: "關閉", exact: true }).click();
+  await page.evaluate(() => window.__limitPrepare);
+  assert.deepEqual(await playerIds(page), spells);
   await prepare.click();
   const disabledCandidate = async (id, expected) => {
     const name = await page.evaluate(id => SpellCatalog.getSpell(id).nameEn, id);

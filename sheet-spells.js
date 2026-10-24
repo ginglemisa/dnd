@@ -87,7 +87,8 @@ async function autoPrepareSpellFromFeature(spellId, triggerEl) {
   if (!result) {
     const limits = window.SpellManagement.getLimits();
     const eligible = window.SpellManagement.isEntryAvailable({ spellId, level: spell.level, spellClass: document.getElementById("class").value });
-    const warning = eligible ? { title: "已達準備上限", message: spell.level === 0 ? `最多可選 ${limits.cantrips} 個職業戲法，請先取消其他戲法。` : `一至四環合計最多可準備 ${limits.prepared} 個法術，請先取消其他法術。` }
+    const rings = window.Spellbook?.getPreparedRingLabel?.(document.getElementById("class").value, document.getElementById("level").value) || "一至四環";
+    const warning = eligible ? { title: "已達準備上限", message: spell.level === 0 ? `最多可選 ${limits.cantrips} 個職業戲法，請先取消其他戲法。` : `${rings}${rings === "一環" ? "" : "合計"}最多可準備 ${limits.prepared} 個法術，請先取消其他法術。` }
       : getSpellPrepareWarning(spellId, document.getElementById("class").value);
     await window.AppDialog.showMessage({ ...warning, confirmLabel: "關閉", trigger: triggerEl });
   }

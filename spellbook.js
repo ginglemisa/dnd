@@ -722,6 +722,6 @@
   }
 
   globalScope.Spellbook = Object.freeze({ getState, setState, addWizardSpell, restoreState, render, getRitualEntries,
-    openTomeSelection, openReadOnly, openPreparedManager });
+    openTomeSelection, openReadOnly, openPreparedManager, getPreparedRingLabel: preparedRingLabel });
   document.addEventListener("DOMContentLoaded", init);
 })(window);
