@@ -2125,7 +2125,7 @@
       label: "黑暗視覺",
       value: `${range} 呎`,
       detail: hasDevilsSight
-        ? "魔鬼視界：可在 120 呎內的魔法黑暗、非魔法黑暗與微光中正常視物。"
+        ? "可在魔法黑暗、非魔法黑暗與微光中正常視物。"
         : ""
     };
   }
@@ -2142,8 +2142,8 @@
     }[ancestry.split("_").pop()] || "";
     if (!damageType) return null;
     return {
-      label: "龍族血統",
-      detail: `抗性：${damageType}傷害減半。`
+      label: "抗性",
+      detail: `${damageType}傷害減半。`
     };
   }
 
@@ -2158,8 +2158,8 @@
     }[damageType] || "";
     if (className !== "sorcerer" || level < 6 || !damageTypeLabel) return null;
     return {
-      label: "元素親和",
-      detail: `抗性：${damageTypeLabel}傷害減半。`
+      label: "抗性",
+      detail: `${damageTypeLabel}傷害減半。`
     };
   }
 
@@ -2174,23 +2174,23 @@
   function getTieflingResistanceEntry() {
     if (getSelectedRace() !== "tiefling") return null;
     const legacy = document.getElementById("tiefling-legacy")?.value || "";
-    const resistance = {
-      abyssal: { label: "深淵血統抗性", damageType: "毒素" },
-      chthonic: { label: "冥界血統抗性", damageType: "黯蝕" },
-      infernal: { label: "煉獄血統抗性", damageType: "火焰" }
+    const damageType = {
+      abyssal: "毒素",
+      chthonic: "黯蝕",
+      infernal: "火焰"
     }[legacy];
-    if (!resistance) return null;
+    if (!damageType) return null;
     return {
-      label: resistance.label,
-      detail: `抗性：${resistance.damageType}傷害減半。`
+      label: "抗性",
+      detail: `${damageType}傷害減半。`
     };
   }
 
   function getDwarfResistanceEntry() {
     if (getSelectedRace() !== "dwarf") return null;
     return {
-      label: "矮人體魄",
-      detail: "抗性：毒素傷害減半。"
+      label: "抗性",
+      detail: "毒素傷害減半。"
     };
   }
 
@@ -2220,7 +2220,7 @@
     if (!isFighter || characterLevel < 2) return null;
     return {
       label: "戰術思維",
-      detail: "屬性檢定失敗時可嘗試消耗「回氣」+1d10 使其成功，如果檢定依舊失敗，回氣次數不消耗。"
+      detail: "屬性檢定失敗時，可消耗 1 次回氣，在該檢定加上 1d10；若仍失敗，不消耗回氣。"
     };
   }
 
@@ -2258,8 +2258,9 @@
     return {
       label: "守護靈氣",
       detail: characterLevel >= 7 && isDevotionPaladin()
-        ? `你與 10 呎內盟友的豁免 +${bonus}，並免疫魅惑（已有的魅惑會暫停）；失能時無效。`
-        : `你與 10 呎內盟友的豁免 +${bonus}；失能時無效。`
+        ? `你與 10 呎內盟友的豁免 +${bonus}，並免疫魅惑（已有的魅惑會暫停）。`
+        : `你與 10 呎內盟友的豁免 +${bonus}。`,
+      hiddenWhenIncapacitated: true
     };
   }
 
@@ -2289,7 +2290,7 @@ function getRogueReliableTalentEntry() {
     const temporaryHp = Math.max(1, characterLevel + (Number.isFinite(charismaModifier) ? charismaModifier : 0));
     return {
       label: "黑暗之賜",
-      detail: `在你 10 呎內的敵對生物生命值降到 0 時，你獲得 ${temporaryHp} 點臨時生命值（至少 1）。`
+      detail: `在你 10 呎內的敵對生物 HP 降到 0 時，你獲得 ${temporaryHp} 點臨時 HP（至少 1）。`
     };
   }
 
@@ -2317,31 +2318,33 @@ function getRogueReliableTalentEntry() {
     const selectedClass = document.getElementById("class")?.value || "";
     const isBarbarian = selectedClass === "barbarian";
     const isFighter = selectedClass === "fighter";
+    // 每個條目明確指定頁籤（總覽或技能），不依文字內容推斷。
+    const inPanel = (entry, summaryPanel) => entry ? { ...entry, summaryPanel } : null;
     const entries = [
-      getDarkvisionEntry(),
-      getDragonbornResistanceEntry(),
-      getTieflingResistanceEntry(),
-      getDwarfResistanceEntry(),
-      getSorcererElementalAffinityEntry()
+      inPanel(getDarkvisionEntry(), "skills"),
+      inPanel(getDragonbornResistanceEntry(), "overview"),
+      inPanel(getTieflingResistanceEntry(), "overview"),
+      inPanel(getDwarfResistanceEntry(), "overview"),
+      inPanel(getSorcererElementalAffinityEntry(), "overview")
     ].filter(Boolean);
     const racialDefenses = {
-      dwarf: [{ label: "矮人體魄", detail: "對中毒狀態的豁免具有優勢。" }],
-      elf: [{ label: "精類血統", detail: "對魅惑狀態的豁免具有優勢。" }],
-      gnome: [{ label: "侏儒狡黠", detail: "智力、感知、魅力豁免時具有優勢。" }],
+      dwarf: [{ label: "矮人體魄", detail: "對中毒狀態的豁免有優勢。", summaryPanel: "skills" }],
+      elf: [{ label: "精類血統", detail: "對魅惑狀態的豁免有優勢。", summaryPanel: "skills" }],
+      gnome: [{ label: "侏儒狡黠", detail: "智力、感知、魅力豁免有優勢。", summaryPanel: "skills" }],
       halfling: [
-        { label: "勇氣", detail: "避免或終止恐慌狀態的豁免具有優勢。" },
-        { label: "吉運", detail: "D20 檢定中擲出 1 時，可以重擲一次。" }
+        { label: "勇氣", detail: "避免或終止恐慌狀態的豁免有優勢。", summaryPanel: "skills" },
+        { label: "吉運", detail: "D20 檢定中擲出 1 時，可以重擲一次。", summaryPanel: "skills" }
       ],
-      goliath: [{ label: "身強力壯", detail: "掙脫擒抱狀態的屬性檢定具有優勢。" }],
-      orc: [{ label: "堅韌不屈", detail: "若 HP 被傷害至 0 且沒有即死，可強制 HP=1。" }]
+      goliath: [{ label: "身強力壯", detail: "掙脫擒抱狀態的屬性檢定有優勢。", summaryPanel: "skills" }],
+      orc: [{ label: "堅韌不屈", detail: "若 HP 被傷害至 0 且沒有即死，可強制 HP=1。", summaryPanel: "overview" }]
     };
     const barbarianDefenses = [];
     const fighterSummaries = [];
     if (isBarbarian && characterLevel >= 2) {
-      barbarianDefenses.push({ label: "險境感知", detail: "只要你沒失能，你的敏捷豁免有優勢。" });
+      barbarianDefenses.push({ label: "險境感知", detail: "你的敏捷豁免有優勢。", summaryPanel: "skills", hiddenWhenIncapacitated: true });
     }
     if (isBarbarian && characterLevel >= 3) {
-      barbarianDefenses.push({ label: "先祖學識", detail: "狂暴時你可用力量做以下技能檢定：體操,威嚇,察覺,隱匿,求生。" });
+      barbarianDefenses.push({ label: "先祖學識", detail: "狂暴時你可用力量做以下技能檢定，體操,威嚇,察覺,隱匿,求生。", summaryPanel: "skills" });
     }
     if (isBarbarian && characterLevel >= 5) {
       barbarianDefenses.push(getClassOverviewEntry("快速移動", "barbarian", "barbarian-fast-movement", { summaryPanel: "overview" }));
@@ -2350,7 +2353,7 @@ function getRogueReliableTalentEntry() {
       barbarianDefenses.push({ label: "無我狂暴", detail: "狂暴期間，你免疫魅惑與恐慌狀態；進入狂暴時，若你正處於其中一種狀態，該狀態立即終止。", summaryPanel: "overview" });
     }
     if (isBarbarian && characterLevel >= 7) {
-      barbarianDefenses.push({ label: "野性本能", detail: "你的先攻擲骰具有優勢。", summaryPanel: "overview" });
+      barbarianDefenses.push({ label: "野性本能", detail: "你的先攻擲骰有優勢。", summaryPanel: "overview" });
     }
     if (isFighter && characterLevel >= 3) {
       fighterSummaries.push(getClassOverviewEntry("運動健將", "fighter", "fighter-remarkable-athlete", { summaryPanel: "overview" }));
@@ -2358,37 +2361,53 @@ function getRogueReliableTalentEntry() {
     return entries.concat(racialDefenses[race] || [], barbarianDefenses.filter(Boolean), fighterSummaries.filter(Boolean));
   }
 
-  function isDamageRelatedEntry(entry) {
-    return /(?:傷害|抗性)/u.test(`${entry?.label || ""} ${entry?.detail || ""}`);
+  // 失能（含麻痺、石化、震懾、昏迷帶入的失能）期間，失效的能力提醒直接隱藏。
+  function isIncapacitated() {
+    return combatState.activeConditions.includes("incapacitated");
+  }
+
+  function withoutIncapacitatedEntries(entries) {
+    return isIncapacitated() ? entries.filter(entry => !entry?.hiddenWhenIncapacitated) : entries;
+  }
+
+  // 跑團模式的豁免值：沿用荒野形態換算；角色卡不含守護靈氣，未失能時在此加上靈氣加值。
+  function getTabletopSaveValue(ability) {
+    const id = `save-${ability}`;
+    const value = getDruidEffectiveValue(id, getReadOnlySourceValue(document.getElementById(id)));
+    if (isIncapacitated()) return value;
+    const auraBonus = Number(globalScope.getPaladinAuraSavingThrowBonus?.(
+      document.getElementById("class")?.value || "",
+      document.getElementById("level")?.value || "0",
+      document.getElementById("cha")?.value || "10"
+    )) || 0;
+    const modifier = parseRollModifier(value);
+    if (!auraBonus || modifier === null) return value;
+    return globalScope.formatSignedValue(modifier + auraBonus);
   }
 
   function getDefenseEntries() {
-    const entries = getCharacterDefenseEntries().filter(entry => (
-      !isDamageRelatedEntry(entry) && entry.summaryPanel !== "overview"
-    ));
+    const entries = getCharacterDefenseEntries().filter(entry => entry.summaryPanel === "skills");
     const tacticalMind = getFighterTacticalMindEntry();
     if (tacticalMind) entries.push(tacticalMind);
     const selectedClass = document.getElementById("class")?.value || "";
     const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
-    if (selectedClass === "monk" && characterLevel >= 7) {
+    // 武僧與盜賊 7 級的反射閃避規則相同。
+    if ((selectedClass === "monk" || selectedClass === "rogue") && characterLevel >= 7) {
       entries.push({
         label: "反射閃避",
-        detail: "敏捷豁免原可使傷害減半時：成功則不受傷害，失敗則傷害減半；失能時無效。"
+        detail: "敏捷豁免原可使傷害減半時，成功則不受傷害，失敗則傷害減半。",
+        hiddenWhenIncapacitated: true
       });
     }
     const rogueReliableTalent = getRogueReliableTalentEntry();
     if (rogueReliableTalent) entries.push(rogueReliableTalent);
-    if (Array.from(document.querySelectorAll("#tool-proficiency-list .tool-proficiency-select"))
-      .some(select => select.value === "盜賊工具")) {
-      entries.push({ label: "盜賊工具", detail: "可以開鎖或解除陷阱。" });
-    }
     if (selectedClass === "paladin" && characterLevel >= 6) {
-      entries.push({ label: "守護靈氣", detail: "額外豁免加值已自動計算。" });
+      entries.push({ label: "守護靈氣", detail: "額外豁免加值已自動計算。", hiddenWhenIncapacitated: true });
     }
     if (hasSelectedFeat("臨陣施法")) {
-      entries.push({ label: "穩住專注", detail: "維持專注的體質豁免具有優勢。" });
+      entries.push({ label: "穩住專注", detail: "維持專注的體質豁免有優勢。" });
     }
-    return entries.concat(getConditionRuleEntries("skills"));
+    return withoutIncapacitatedEntries(entries).concat(getConditionRuleEntries("skills"));
   }
 
   function getBlessedHealerEntry() {
@@ -2409,9 +2428,7 @@ function getRogueReliableTalentEntry() {
   }
 
   function getOverviewRuleEntries() {
-    const entries = getCharacterDefenseEntries().filter(entry => (
-      isDamageRelatedEntry(entry) || entry.summaryPanel === "overview"
-    ));
+    const entries = getCharacterDefenseEntries().filter(entry => entry.summaryPanel === "overview");
     entries.push(...getClassChoiceAlerts());
     const healer = getBlessedHealerEntry();
     if (healer) entries.push(healer);
@@ -2424,7 +2441,7 @@ function getRogueReliableTalentEntry() {
     const tacticalMind = getFighterTacticalMindEntry();
     if (tacticalMind) entries.unshift(tacticalMind);
     if (hasSelectedFeat("警覺")) {
-      entries.push({ label: "警覺", detail: "擲先攻後，可與指定隊友互換順序，失能無效。" });
+      entries.push({ label: "警覺", detail: "擲先攻後，可與指定隊友互換順序。", hiddenWhenIncapacitated: true });
     }
     if (hasSelectedFeat("重甲減傷") && isWearingHeavyArmor()) {
       const proficiencyBonus = getCharacterProficiencyBonus();
@@ -2432,7 +2449,7 @@ function getRogueReliableTalentEntry() {
       entries.push({ label: "裝甲吸收", detail: `穿重甲被攻擊命中時，受到的揮砍、穿刺、鈍擊傷害減少 ${reduction}。` });
     }
     if (hasSelectedFeat("迅捷步法")) {
-      entries.push({ label: "閃避反擊", detail: "針對你的藉機攻擊具有劣勢。" });
+      entries.push({ label: "閃避反擊", detail: "針對你的藉機攻擊有劣勢。" });
     }
     if (hasSelectedFeat("醫療兵")) {
       entries.push({ label: "醫療兵", detail: "以法術或照護恢復 HP 時，恢復骰擲出 1 可重擲一次。" });
@@ -2445,7 +2462,7 @@ function getRogueReliableTalentEntry() {
     if (monkSlowFall) entries.push(monkSlowFall);
     const paladinAura = getPaladinAuraOverviewEntry();
     if (paladinAura) entries.push(paladinAura);
-    return entries.filter(Boolean).concat(getConditionRuleEntries("overview"));
+    return withoutIncapacitatedEntries(entries.filter(Boolean)).concat(getConditionRuleEntries("overview"));
   }
 
   function getSpellRuleEntries() {
@@ -2455,7 +2472,7 @@ function getRogueReliableTalentEntry() {
     const sorcererElementalAffinity = getSorcererElementalAffinitySpellEntry();
     if (sorcererElementalAffinity) entries.push(sorcererElementalAffinity);
     if (hasSelectedFeat("臨陣施法")) {
-      entries.push({ label: "穩住專注", detail: "維持專注的體質豁免具有優勢。" });
+      entries.push({ label: "穩住專注", detail: "維持專注的體質豁免有優勢。" });
     }
     if (hasSelectedFeat("醫療兵")) {
       entries.push({ label: "醫療兵", detail: "以法術或照護恢復 HP 時，恢復骰擲出 1 可重擲一次。" });
@@ -2469,7 +2486,8 @@ function getRogueReliableTalentEntry() {
     return getTrackableStatusData().filter(condition => keys.has(condition.key)).flatMap(condition => {
       const indexes = condition.summaryPanels?.[panel] || [];
       return indexes.map(index => {
-        let detail = condition.effects[index];
+        // 提醒前已有狀態名，略去原文開頭的小標；完整原文仍由狀態說明顯示。
+        let detail = String(condition.effects[index] || "").replace(/^[^：]{1,16}：/u, "");
         if (condition.key === "exhaustion") {
           const effects = getExhaustionEffects(combatState.exhaustionLevel);
           if (index === 0) detail = `目前力竭 ${effects.level} 級；達到 6 級時，你死亡。`;
@@ -2497,7 +2515,6 @@ function getRogueReliableTalentEntry() {
         });
       });
     }
-    const heading = entry.value ? `${entry.label}：${entry.value}` : entry.label;
     const copy = entry.negative || entry.choiceTarget ? document.createElement("span") : item;
     if (entry.negative) {
       copy.className = "tabletop-condition-warning";
@@ -2507,12 +2524,14 @@ function getRogueReliableTalentEntry() {
       item.appendChild(copy);
     }
 
+    // 只有標籤粗體；數值與說明以逗號相接，避免「標籤：數值：說明」連續冒號。
     const title = document.createElement("strong");
-    title.textContent = entry.detail ? `${heading}：` : heading;
+    title.textContent = entry.value || entry.detail ? `${entry.label}：` : entry.label;
     copy.appendChild(title);
 
-    if (entry.detail) {
-      copy.appendChild(document.createTextNode(entry.detail));
+    const text = [entry.value, entry.detail].filter(Boolean).join("，");
+    if (text) {
+      copy.appendChild(document.createTextNode(text));
     }
     if (entry.choiceTarget) {
       const action = document.createElement("span");
@@ -2567,7 +2586,7 @@ function getRogueReliableTalentEntry() {
         const label = getAbilityLabel(ability);
         return createReadOnlyValue(
           label,
-          getDruidEffectiveValue(`save-${ability}`, getReadOnlySourceValue(document.getElementById(`save-${ability}`))),
+          getTabletopSaveValue(ability),
           "tabletop-saving-throw",
           "",
           `${label}豁免`
@@ -3937,7 +3956,7 @@ function getRogueReliableTalentEntry() {
     const readModifier = id => parseRollModifier(getDruidEffectiveValue(id,
       getReadOnlySourceValue(document.getElementById(id))));
     let label = "體質豁免";
-    let modifier = readModifier("save-con");
+    let modifier = parseRollModifier(getTabletopSaveValue("con"));
     let dc = 10;
     if (conditionKey === "falling") {
       const athletics = readModifier("skill-運動");
@@ -5340,6 +5359,7 @@ function getRogueReliableTalentEntry() {
     getDruidContext,
     getDruidForm,
     getDruidEffectiveValue,
+    getTabletopSaveValue,
     canApplyMageArmor,
     getMageArmorEffect,
     getPersistentSpellEffects,

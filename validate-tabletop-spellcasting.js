@@ -207,7 +207,7 @@ assert.deepEqual(
     characterLevel: 6,
     damageType: "lightning"
   }),
-  { label: "元素親和", detail: "抗性：閃電傷害減半。" },
+  { label: "抗性", detail: "閃電傷害減半。" },
   "6 級術士選擇元素親和傷害類型後，跑團模式總覽必須顯示對應抗性"
 );
 assert.equal(

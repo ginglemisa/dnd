@@ -317,7 +317,7 @@
       entries.push(["受訓善戰", "每回合 1 次，武器命中時傷害骰擲 2 次，取其一。"]);
     }
     if (hasSelectedFeat("擒抱者")) {
-      entries.push(["攻擊優勢", "對被你擒抱的目標攻擊具有優勢。"]);
+      entries.push(["攻擊優勢", "對被你擒抱的目標攻擊有優勢。"]);
     }
     if (
       hasSelectedFeat("巨武器戰鬥")

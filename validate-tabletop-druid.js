@@ -244,7 +244,7 @@ async function main() {
     await dialog.getByRole("button", { name: "狼", exact: true }).click();
     await dialog.locator(".druid-beast-tooltip").getByText(/Wolf/).waitFor();
     assert.doesNotMatch(await dialog.locator(".druid-beast-tooltip").innerText(), /\[object Object\]/);
-    assert.match(await dialog.locator(".druid-beast-tooltip").innerText(), /感知\+5, 隱匿\+4/);
+    assert.match(await dialog.locator(".druid-beast-tooltip").innerText(), /察覺\+5, 隱匿\+4/);
     assert.equal(await wolfCheckbox.isChecked(), true, "tooltip must not toggle known form");
     await page.keyboard.press("Escape");
     assert.equal(await dialog.isVisible(), true, "Escape closes tooltip before dialog");

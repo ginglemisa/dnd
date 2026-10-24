@@ -84,7 +84,7 @@
   <link rel="stylesheet" href="styles.css?v=20261024-action-english">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261023-escape-focus" defer></script>
-  <script src="monster.js?v=20261024-untrained-tips" defer></script>
+  <script src="monster.js?v=20261025-beast-perception" defer></script>
     <script src="class-features.js?v=20261024-druid-land-choice" defer></script>
   <script src="race.js?v=20261021-condition-plain" defer></script>
   <script src="backgrounds.js?v=20261003-background-flavor" defer></script>
@@ -98,11 +98,11 @@
   <script src="app-dialog.js?v=20261023-dismiss-toasts" defer></script>
   <script src="custom-background.js?v=20261023-feature-title" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
-  <script src="tabletop-mode.js?v=20261024-untrained-tips" defer></script>
+  <script src="tabletop-mode.js?v=20261025-reminder-readability" defer></script>
   <script src="tabletop-druid.js?v=20261021-bonus-wording" defer></script>
   <script src="tabletop-resources.js?v=20261014-heroic-help" defer></script>
-  <script src="tabletop-actions.js?v=20261021-json-tabletop-settings" defer></script>
-  <script src="tabletop-spells.js?v=20261020-spell-desc-lists" defer></script>
+  <script src="tabletop-actions.js?v=20261025-reminder-readability" defer></script>
+  <script src="tabletop-spells.js?v=20261025-incapacitated-saves" defer></script>
   <script src="legal-modal.js?v=20261022-game-icons" defer></script>
   <script src="onboarding-tour.js?v=20261024-tour-layout" defer></script>
   <script src="quick-build.js?v=20261020-race-text" defer></script>
@@ -3063,18 +3063,14 @@ function fillSaves() {
   const abilities = ["str", "dex", "con", "int", "wis", "cha"];
   const selectedClass = document.getElementById("class")?.value || "";
   const profSaves = new Set(getClassSaveProficiencies(selectedClass));
-  const auraBonus = getPaladinAuraSavingThrowBonus(
-    selectedClass,
-    document.getElementById("level")?.value || "0",
-    document.getElementById("cha")?.value || "10"
-  );
 
+  // 守護靈氣的豁免加值只在跑團模式顯示（失能時移除），角色卡保留一般數值。
   abilities.forEach(ab => {
     const profCheckbox = document.getElementById("prof-" + ab);
     if (profCheckbox) profCheckbox.checked = profSaves.has(ab);
 
     const mod = getModifier(ab);
-    const total = mod + (profSaves.has(ab) ? pb : 0) + auraBonus;
+    const total = mod + (profSaves.has(ab) ? pb : 0);
     document.getElementById("save-" + ab).value = formatSignedValue(total);
   });
 }

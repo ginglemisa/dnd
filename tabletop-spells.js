@@ -247,7 +247,7 @@
   }
 
   function rollConcentrationSave(spellName) {
-    const modifier = parseModifier(globalScope.TabletopMode?.getDruidEffectiveValue?.("save-con", getFieldValue("save-con")) ?? getFieldValue("save-con"));
+    const modifier = parseModifier(globalScope.TabletopMode?.getTabletopSaveValue?.("con") ?? getFieldValue("save-con"));
     if (modifier === null) return null;
     return globalScope.DiceRoller?.roll?.({
       count: 1,

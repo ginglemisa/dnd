@@ -1984,9 +1984,12 @@ async function verifyConditionEffects(browser, url) {
     await page.evaluate(() => TabletopMode.setPanel("skills"));
     const blindedSkill = await page.locator('#tabletop-panel-skills [data-condition-hint="blinded"]').innerText();
     assert.match(blindedSkill, /需要視覺.*自動失敗/);
-    assert.doesNotMatch(blindedSkill, /攻擊受影響/);
+    assert.doesNotMatch(blindedSkill, /他人攻擊你/);
+    assert.doesNotMatch(blindedSkill, /無法視物/);
     await page.evaluate(() => TabletopMode.setPanel("actions"));
-    assert.match(await page.locator('#tabletop-panel-actions [data-condition-hint="blinded"]').innerText(), /攻擊受影響/);
+    const blindedAction = await page.locator('#tabletop-panel-actions [data-condition-hint="blinded"]').innerText();
+    assert.match(blindedAction, /^失明：他人攻擊你具有優勢/);
+    assert.doesNotMatch(blindedAction, /攻擊受影響/);
     assert.match(await page.locator('#tabletop-panel-actions [data-condition-hint="exhaustion"]').innerText(), /減去 4/);
     for (const ui of ["classic", "warm"]) for (const theme of ["light", "dark"]) {
       await page.evaluate(({ ui, theme }) => { document.documentElement.dataset.uiTheme = ui; document.documentElement.dataset.theme = theme; }, { ui, theme });
@@ -2010,6 +2013,41 @@ async function verifyConditionEffects(browser, url) {
       await page.evaluate(panel => TabletopMode.setPanel(panel), panel);
       await page.locator(`#tabletop-panel-${panel} [data-condition-hint="petrified"]`).first().waitFor();
     }
+
+    // Aura of Protection adds its save bonus in tabletop only; incapacitation removes it and hides its reminders.
+    const setFields = values => page.evaluate(values => {
+      for (const [id, value] of Object.entries(values)) {
+        const field = document.getElementById(id);
+        field.value = value;
+        field.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    }, values);
+    const originalCha = await page.inputValue("#cha");
+    await setFields({ class: "paladin", level: "6", cha: "16" });
+    const tabletopSaves = () => page.evaluate(() => Array.from(
+      document.querySelectorAll("#tabletop-panel-skills .tabletop-saving-throw__value"), item => item.textContent));
+    const sheetSaves = () => page.evaluate(() => ["str", "dex", "con", "int", "wis", "cha"].map(key => document.getElementById(`save-${key}`).value));
+    const auraHints = () => page.evaluate(() => Array.from(
+      document.querySelectorAll("#tabletop-overview-rule-summary, #tabletop-panel-skills .tabletop-defense-summary__list"),
+      list => list.textContent.includes("守護靈氣")));
+    await page.evaluate(() => { fillSaves(); TabletopMode.applyState({ activeConditions: [] }); TabletopMode.setPanel("skills"); });
+    const sheetBase = await sheetSaves();
+    assert.deepEqual(sheetBase, await page.evaluate(() => {
+      const profSaves = new Set(getClassSaveProficiencies("paladin"));
+      return ["str", "dex", "con", "int", "wis", "cha"].map(key =>
+        formatSignedValue(getModifier(key) + (profSaves.has(key) ? getProficiencyBonus() : 0)));
+    }), "sheet saves exclude the aura bonus");
+    const withAura = await page.evaluate(values => values.map(value => formatSignedValue(Number(value) + 3)), sheetBase);
+    assert.deepEqual(await tabletopSaves(), withAura, "tabletop saves include aura while active");
+    assert.deepEqual(await auraHints(), [true, true], "aura reminders show while active");
+    await page.evaluate(() => TabletopMode.applyState({ activeConditions: ["stunned"] }));
+    assert.deepEqual(await tabletopSaves(), sheetBase, "incapacitated tabletop saves drop the aura bonus");
+    assert.deepEqual(await auraHints(), [false, false], "aura reminders hide while incapacitated");
+    await page.evaluate(() => TabletopMode.applyState({ activeConditions: [] }));
+    assert.deepEqual(await tabletopSaves(), withAura, "aura bonus returns after incapacitation ends");
+    assert.deepEqual(await sheetSaves(), sheetBase, "tabletop aura never changes sheet saves");
+    await setFields({ class: "wizard", level: "5", cha: originalCha });
+    await page.evaluate(() => { fillSaves(); TabletopMode.applyState({ activeConditions: [] }); });
 
     // HP-driven unconsciousness uses the same concentration and linked-state path.
     await page.evaluate(() => {
