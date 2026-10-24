@@ -277,7 +277,7 @@ function getBardMagicalDiscoveryDerivedSpellSpecs() {
       source: CLASS_SPELL_SOURCE,
       sourceName: "吟遊詩人",
       spellClass: "bard",
-      sourceLabel: `來源：吟遊詩人等級 6：魔法發現（${sourceClass.text}法表）`,
+      sourceLabel: `來源：魔法發現（${sourceClass.text}）`,
       sourcePriority: 25,
       sourceTag: "職業",
       castMode: ring === "cantrips" ? "cantrip" : "slot",
@@ -629,7 +629,7 @@ const SUBCLASS_DERIVED_SPELLS = Object.freeze({
     { level: 5, ring: 3, spellId: "fear" }, { level: 5, ring: 3, spellId: "fly" },
     { level: 7, ring: 4, spellId: "arcane-eye" }, { level: 7, ring: 4, spellId: "charm-monster" }
   ]) }),
-  warlock: Object.freeze({ name: "邪魔", spells: Object.freeze([
+  warlock: Object.freeze({ name: "邪魔", label: "邪魔宗主", spells: Object.freeze([
     { level: 3, ring: 1, spellId: "burning-hands" }, { level: 3, ring: 1, spellId: "command" },
     { level: 3, ring: 2, spellId: "scorching-ray" }, { level: 3, ring: 2, spellId: "suggestion" },
     { level: 5, ring: 3, spellId: "fireball" }, { level: 5, ring: 3, spellId: "stinking-cloud" },
@@ -710,12 +710,12 @@ function getClassAlwaysPreparedSpellSpecs() {
   const classValue = document.getElementById("class")?.value || "";
   const level = Number.parseInt(levelValue || "0", 10) || 0;
   if (!level) return [];
-  const missionCantrips = MISSION_CANTRIP_CHOICES.flatMap(({ checkboxId, className, label }) => {
+  const missionCantrips = MISSION_CANTRIP_CHOICES.flatMap(({ checkboxId, className, label, sourceLabel }) => {
     const spellId = document.getElementById(`${checkboxId}-cantrip`)?.value || "";
     if (classValue !== className || level < 1 || !document.getElementById(checkboxId)?.checked || !spellId) return [];
     return [{
       level: 1, ring: "cantrips", spellId, key: `class-${checkboxId}-cantrip`,
-      source: CLASS_SPELL_SOURCE, sourceName: label, sourceLabel: `來源：${label}`,
+      source: CLASS_SPELL_SOURCE, sourceName: label, sourceLabel,
       sourcePriority: 25, spellClass: className, castMode: "cantrip", areaId: "cantrips-area"
     }];
   });
@@ -730,7 +730,7 @@ function getClassAlwaysPreparedSpellSpecs() {
       source: CLASS_SPELL_SOURCE,
       sourceName: "德魯伊",
       spellClass: "druid",
-      sourceLabel: "來源：德魯伊等級 1：德魯伊語",
+      sourceLabel: "來源：德魯伊語",
       sourcePriority: 25,
       ritualAllowed: true,
       areaId: "level1spells-area"
@@ -743,7 +743,7 @@ function getClassAlwaysPreparedSpellSpecs() {
       source: CLASS_SPELL_SOURCE,
       sourceName: "德魯伊",
       spellClass: "druid",
-      sourceLabel: "來源：德魯伊等級 2：荒野夥伴",
+      sourceLabel: "來源：荒野夥伴",
       sourcePriority: 25,
       ritualAllowed: false,
       areaId: "level1spells-area"
@@ -797,7 +797,7 @@ function getClassAlwaysPreparedSpellSpecs() {
           key,
           source: CLASS_SPELL_SOURCE,
           sourceName: "牧師",
-          sourceLabel: "聖騎2等:祝福勇士",
+          sourceLabel: "受祝福的勇士",
           sourcePriority: 25,
           sourceTag: "職業",
           selectableSpellClass: "cleric",
@@ -818,7 +818,7 @@ function getClassAlwaysPreparedSpellSpecs() {
     source: CLASS_SPELL_SOURCE,
     sourceName: "遊俠",
     spellClass: "ranger",
-    sourceLabel: "來源：遊俠等級 1：宿敵",
+    sourceLabel: "來源：宿敵",
     sourcePriority: 25,
     areaId: "level1spells-area",
     freeUses,
@@ -837,7 +837,7 @@ function getClassAlwaysPreparedSpellSpecs() {
         key,
         source: CLASS_SPELL_SOURCE,
         sourceName: "德魯伊",
-        sourceLabel: "遊俠2等:德魯伊教",
+        sourceLabel: "德魯伊教",
         sourcePriority: 25,
         sourceTag: "職業",
         selectableSpellClass: "druid",
@@ -868,7 +868,7 @@ function getSubclassDerivedSpellSpecs() {
     source: SUBCLASS_SPELL_SOURCE,
     sourceName: className,
     spellClass: classValue,
-    sourceLabel: `來源：${className}（${subclass.name}）`,
+    sourceLabel: `來源：${subclass.label || subclass.name}`,
     sourcePriority: 30,
     ritualAllowed: true,
     areaId: getAreaIdForSpellRing(spell.ring)
