@@ -557,6 +557,12 @@
   let scheduledRender = 0;
   // Onboarding-only example values; never written to character data or storage.
   let onboardingKeyStatPreview = false;
+  let onboardingSkillPreview = false;
+  const ONBOARDING_SKILL_PREVIEW = {
+    abilities: { 力量: 18, 敏捷: 16, 智力: 12, 感知: 14, 魅力: 8 },
+    proficient: new Set(["運動", "奧秘", "自然", "威嚇"]),
+    proficiencyBonus: 2
+  };
   let isUpdatingHp = false;
   let currentMode = "sheet";
   let currentPanel = "overview";
@@ -2584,14 +2590,24 @@ function getRogueReliableTalentEntry() {
         || input.id.replace("skill-", "");
 
       const skillKey = input.id.replace("skill-", "");
-      const hasExpertise = document.getElementById(`exp-${skillKey}`)?.checked;
-      const hasProficiency = document.getElementById(`prof-${skillKey}`)?.checked;
-      const beastSkill = Number.isFinite(getDruidForm()?.skills[skillKey]);
+      let value = getDruidEffectiveValue(input.id, getReadOnlySourceValue(input));
+      let hasExpertise = document.getElementById(`exp-${skillKey}`)?.checked;
+      let hasProficiency = document.getElementById(`prof-${skillKey}`)?.checked;
+      let beastSkill = Number.isFinite(getDruidForm()?.skills[skillKey]);
+      if (onboardingSkillPreview) {
+        const ability = cell.querySelector(".skill-ability")?.textContent.replace(/[()（）]/g, "").trim();
+        const score = ONBOARDING_SKILL_PREVIEW.abilities[ability] ?? 10;
+        hasExpertise = false;
+        hasProficiency = ONBOARDING_SKILL_PREVIEW.proficient.has(skillKey);
+        beastSkill = false;
+        const modifier = Math.floor((score - 10) / 2) + (hasProficiency ? ONBOARDING_SKILL_PREVIEW.proficiencyBonus : 0);
+        value = modifier >= 0 ? `+${modifier}` : String(modifier);
+      }
       const rank = hasExpertise ? "expertise" : hasProficiency || beastSkill ? "proficient" : "untrained";
       const rankLabel = hasExpertise ? "專精" : hasProficiency ? "熟練" : beastSkill ? "野獸技能" : "未熟練";
       const item = createReadOnlyValue(
         label,
-        getDruidEffectiveValue(input.id, getReadOnlySourceValue(input)),
+        value,
         "tabletop-skill-value",
         "listitem",
         `${label}技能檢定`
@@ -5292,6 +5308,10 @@ function getRogueReliableTalentEntry() {
     refresh: render,
     setOnboardingKeyStatPreview(active) {
       onboardingKeyStatPreview = Boolean(active);
+      renderDisplay();
+    },
+    setOnboardingSkillPreview(active) {
+      onboardingSkillPreview = Boolean(active);
       renderDisplay();
     },
     isCharacterFieldEvent,

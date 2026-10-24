@@ -9683,11 +9683,18 @@ html[data-theme="dark"] .dice-roller-roll::after {
   inset: 0;
   z-index: 12000;
   display: none;
+  /* Read by the tour as the top limit for dragging its window. */
+  padding-top: env(safe-area-inset-top, 0px);
   pointer-events: none;
 }
 
 #tour-overlay.onboarding-spell-preview {
   z-index: 12700;
+}
+
+/* Some tour steps use the whole viewport for their highlighted content. */
+html.onboarding-app-bar-hidden .tabs-shell {
+  visibility: hidden;
 }
 
 #tour-overlay[data-tour-kind="tabletop"].onboarding-spell-preview #tour-tooltip,
@@ -9698,40 +9705,6 @@ html[data-theme="dark"] .dice-roller-roll::after {
 #point-buy-modal.onboarding-tour-preview .point-buy-modal-card {
   pointer-events: none;
   user-select: none;
-}
-
-:where(html:not([data-ui-theme="warm"])) .tour-branch-tooltip {
-  position: fixed;
-  z-index: 12020;
-  width: min(290px, calc(100vw - 20px));
-  box-sizing: border-box;
-  padding: 10px 12px;
-  border: 1px solid rgba(126, 157, 218, 0.72);
-  border-radius: 10px;
-  background: var(--surface-strong);
-  color: var(--text-body);
-  box-shadow: 0 10px 28px rgba(10, 20, 46, 0.3);
-  font-size: var(--fs-sm);
-  font-weight: 650;
-  line-height: 1.55;
-  pointer-events: none;
-}
-
-:where(html[data-ui-theme="warm"]) .tour-branch-tooltip {
-  position: fixed;
-  z-index: 12020;
-  width: min(290px, calc(100vw - 20px));
-  box-sizing: border-box;
-  padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface-strong);
-  color: var(--text-body);
-  box-shadow: var(--shadow-strong);
-  font-size: var(--fs-sm);
-  font-weight: 650;
-  line-height: 1.55;
-  pointer-events: none;
 }
 
 :where(html:not([data-ui-theme="warm"])) .tour-mask {
@@ -9795,7 +9768,6 @@ html[data-theme="dark"] .dice-roller-roll::after {
   display: flex;
   flex-direction: column;
   max-height: min(32dvh, calc(100dvh - 20px));
-  touch-action: pan-y !important;
 }
 
 #tour-overlay[data-tour-kind="sheet"] #tour-step-text {
@@ -9814,15 +9786,9 @@ html[data-theme="dark"] .dice-roller-roll::after {
   display: flex;
   flex-direction: column;
   max-height: min(55dvh, calc(100dvh - 32px));
-  touch-action: pan-y !important;
-}
-
-#tour-overlay[data-tour-kind="tabletop"] .tour-heading-row {
-  touch-action: none;
 }
 
 #tour-overlay[data-tour-kind="tabletop"] #tour-step-text {
-  cursor: auto;
   overflow-y: auto;
   overscroll-behavior: contain;
   min-height: 0;
@@ -9901,6 +9867,12 @@ html[data-theme="dark"] .dice-roller-roll::after {
 
 #tour-step-text {
   white-space: pre-line;
+  /* The whole window drags; overflowing guidance scrolls vertically instead. */
+  touch-action: none;
+}
+
+#tour-step-text.is-scrollable {
+  touch-action: pan-y;
 }
 
 #tour-step-text .tour-step-emphasis {

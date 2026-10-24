@@ -19,12 +19,12 @@ const TABLETOP_COPY = [
 ];
 
 const SHEET_COPY = [
-  ["⚔️ 建立你的角色", "背景描述過往經歷，\n種族提供不同特性，\n職業則決定擅長的能力，以及在冒險中解決問題的方式。\n\n完成選擇後，速度、專長與其他角色資料會自動更新。", 1, ["背景", "種族", "職業"]],
+  ["⚔️ 建立你的角色", "背景描述過往經歷，種族提供不同特性，\n職業則決定擅長的能力，以及在冒險中解決問題的方式。\n\n完成選擇後，速度、專長與其他角色資料會自動更新。", 1, ["背景", "種族", "職業"]],
   ["🎲 決定角色屬性", "六項屬性代表角色的基本能力，並會影響攻擊、技能與各種檢定。\n\n你可以直接輸入屬性數值，也可以從右上角選單開啟決定屬性功能。", 2, ["六項屬性", "決定屬性"]],
   ["🎲 選擇屬性產生方式", "接下來，選擇角色的屬性產生方式。\n\n點擊決定屬性開始設定。", 2, ["決定屬性"]],
   ["🎲 選擇購點或擲骰", "27 點購點讓你自行分配屬性，角色能力較為穩定。\n\n屬性擲骰則具有較高的隨機性，通常在 DM 同意使用時採用。\n\n選擇適合目前遊戲的方式後，即可開始配置屬性。", 3, ["27 點購點", "屬性擲骰", "DM 同意"]],
   ["🎲 配置基礎屬性", "使用 27 點購點時，每項屬性可以設定在 8～15 之間。\n\n屬性越高，需要消耗的點數越多。調整數值時，可以從下方確認剩餘點數。\n\n完成配置前，總花費不得超過 27 點。", 4, ["27 點購點", "剩餘點數"]],
-  ["🎲 套用背景加值", "選擇背景後，將提供的屬性加值分配至角色屬性。\n\n你也可以選擇職業範本，快速套用適合該職業的建議配置。\n\n確認所有數值後，點擊套用完成屬性設定。", 5, ["背景", "職業範本", "套用"]],
+  ["🎲 套用背景加值", "選擇背景後，將提供的屬性加值分配至角色屬性。\n\n確認所有數值後，點擊套用完成屬性設定。", 5, ["背景", "套用"]],
   ["🛡️ 選擇武器與護甲", "選擇武器或護甲時，下方會顯示傷害、防禦與相關特性。\n\n遇到不熟悉的規則名詞，可以直接點擊摘要中的名稱查看詳細說明。", 6, []],
   ["✨ 選擇與管理法術", "選好職業、等級、背景與種族後，可按「準備法術」管理法術清單。", 7, []],
   ["🔎 搜尋規則資料", "法術與裝備頁面都提供搜尋功能。\n\n輸入名稱或關鍵字即可快速找到相關規則內容。", 8, []]
@@ -64,6 +64,35 @@ async function snapshot(page) {
   }));
 }
 
+async function assertSkillPreview(page) {
+  const state = await page.evaluate(() => {
+    const items = [...document.querySelectorAll("#tabletop-skill-values > .tabletop-skill-value")];
+    const tops = [...new Set(items.map(item => Math.round(item.getBoundingClientRect().top)))].sort((a, b) => a - b);
+    const hole = onboardingTour.activeHoles[0];
+    const inside = item => {
+      const rect = item.getBoundingClientRect();
+      return hole.left <= rect.left && hole.right >= rect.right && hole.top <= rect.top && hole.bottom >= rect.bottom;
+    };
+    const heading = document.querySelector(".tabletop-skills .tabletop-section-heading").getBoundingClientRect();
+    const values = Object.fromEntries(items.map(item => [
+      item.querySelector(".tabletop-skill-value__label").textContent,
+      [item.querySelector(".tabletop-skill-value__value").textContent, item.dataset.skillRank]
+    ]));
+    return {
+      holes: onboardingTour.activeHoles.length,
+      headingCovered: hole.top <= heading.top && hole.bottom >= heading.bottom,
+      firstRowsCovered: items.filter(item => Math.round(item.getBoundingClientRect().top) <= tops[1]).every(inside),
+      laterRowsCovered: items.some(item => Math.round(item.getBoundingClientRect().top) > tops[1] && inside(item)),
+      values: ["運動", "體操", "奧秘", "自然", "洞悉", "威嚇", "欺瞞"].map(name => values[name])
+    };
+  });
+  assert.deepEqual(state, {
+    holes: 1, headingCovered: true, firstRowsCovered: true, laterRowsCovered: false,
+    values: [["+6", "proficient"], ["+3", "untrained"], ["+3", "proficient"], ["+3", "proficient"],
+      ["+2", "untrained"], ["+1", "proficient"], ["-1", "untrained"]]
+  }, "skills step highlights the first two rows and shows the example scores and proficiencies");
+}
+
 async function ready(page, index) {
   await page.waitForFunction(index => onboardingTour.active && !onboardingTour.isTransitioning && onboardingTour.currentIndex === index, index);
 }
@@ -96,6 +125,19 @@ async function closed(page) {
   assert.equal(await page.locator('#tabletop-tour-resource-preview').count(), 0);
   assert.equal(await page.locator("#main-content").evaluate(el => el.inert), false);
   assert.equal(await page.evaluate(() => document.body.style.touchAction), "");
+  assert.equal(await page.locator(".tabs-shell").evaluate(el => getComputedStyle(el).visibility), "visible");
+}
+
+// 2/8, 6/8 and the first-table action step hide the fixed tab bar and put the highlight at the top.
+async function assertBarHiddenWithTargetAtTop(page, selector, message) {
+  await page.waitForFunction(() => !onboardingTour.isTransitioning);
+  const state = await page.evaluate(selector => ({
+    bar: getComputedStyle(document.querySelector(".tabs-shell")).visibility,
+    top: document.querySelector(selector).getBoundingClientRect().top,
+    canScroll: document.body.scrollHeight - innerHeight > scrollY + 1
+  }), selector);
+  assert.equal(state.bar, "hidden", message);
+  assert(Math.abs(state.top - 8) <= 1 || (state.top > 8 && !state.canScroll), `${message}: ${JSON.stringify(state)}`);
 }
 
 async function enter(page) {
@@ -158,6 +200,47 @@ async function verifyTooltipDrag(page) {
     `heading drags the tooltip: ${JSON.stringify({ before, after, deltaY })}`);
   await page.evaluate(() => onboardingTour.renderStep({ ensureFocus: false }));
   assert.deepEqual(await page.locator("#tour-tooltip").boundingBox(), after, "render preserves dragged position");
+}
+
+// Any non-control part drags the window; up to 75% may leave the left, right
+// or bottom edge, while the heading stays below the top edge.
+async function verifyTooltipDragLimits(page) {
+  const tip = () => page.locator("#tour-tooltip").boundingBox();
+  const drag = async (from, dx, dy) => {
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    await page.mouse.move(from.x + dx, from.y + dy, { steps: 4 });
+    await page.mouse.up();
+  };
+  const viewport = await page.evaluate(() => ({ width: innerWidth, height: innerHeight }));
+  const text = await page.locator("#tour-step-text").boundingBox();
+  const start = await tip();
+  await drag({ x: text.x + 6, y: text.y + 6 }, 2, 1);
+  assert.deepEqual(await tip(), start, "a slightly unsteady tap does not move the window");
+  await drag({ x: text.x + 6, y: text.y + 6 }, 0, 20);
+  assert(Math.abs((await tip()).y - (start.y + 20)) <= 1, "dragging the guidance text moves the window");
+  // Each drag grabs a visible, non-button point and stays inside the viewport.
+  let box = await tip();
+  await drag({ x: box.x + box.width / 2, y: box.y + 12 }, 0, viewport.height - 1 - (box.y + 12));
+  box = await tip();
+  assert(Math.abs(box.y - (viewport.height - box.height * 0.25)) <= 1, `bottom keeps 25% visible: ${JSON.stringify(box)}`);
+  await drag({ x: box.x + box.width / 2, y: box.y + 12 }, 0, 1 - (box.y + 12));
+  box = await tip();
+  assert(Math.abs(box.y - 10) <= 1, `the heading never leaves the top: ${JSON.stringify(box)}`);
+  await drag({ x: box.x + box.width - 4, y: box.y + 12 }, 1 - (box.x + box.width - 4), 0);
+  box = await tip();
+  assert(Math.abs(box.x + box.width * 0.75) <= 1, `left keeps 25% visible: ${JSON.stringify(box)}`);
+  const grab = box.x + box.width * 0.875;
+  await drag({ x: grab, y: box.y + 12 }, 10 - box.x, 0);
+  box = await tip();
+  assert(box.x >= 0 && box.x + box.width <= viewport.width, `the visible part drags the window back: ${JSON.stringify(box)}`);
+  await drag({ x: box.x + 4, y: box.y + 12 }, viewport.width - 1 - (box.x + 4), 0);
+  box = await tip();
+  assert(Math.abs(box.x - (viewport.width - box.width * 0.25)) <= 1, `right keeps 25% visible: ${JSON.stringify(box)}`);
+  await page.evaluate(() => {
+    onboardingTour.tooltipDragPosition = null;
+    return onboardingTour.renderStep({ ensureFocus: false, animate: false });
+  });
 }
 
 async function assertAbilityMenuGuide(page) {
@@ -258,29 +341,58 @@ async function verifyTour(page, { width, height, caster, mode, complete }) {
     await ready(page, index);
     await assertLayout(page);
     await assertTourCopy(page, index, caster);
-    if (index === 2) await verifyTooltipDrag(page);
+    if (index === 2) {
+      await verifyTooltipDrag(page);
+      await verifyTooltipDragLimits(page);
+      await assertSkillPreview(page);
+    }
+    if (index === 3) {
+      await page.locator("#tour-prev-btn").click();
+      await ready(page, 2);
+      await assertSkillPreview(page);
+      await page.locator("#tour-next-btn").click();
+      await ready(page, 3);
+      assert.equal(await page.evaluate(() => document.querySelector(".tabletop-skill-value__value").textContent
+        === (document.getElementById("skill-運動").value.trim() || "—")), true,
+        "leaving the skills step restores the character's own values");
+    }
     if (index === 4) {
       assert.equal(await page.evaluate(() => {
         const holes = onboardingTour.activeHoles;
         const bar = [".tabletop-action-browser .tabletop-section-heading", ".tabletop-action-browser .tabletop-action-tabs"]
           .map(selector => document.querySelector(selector).getBoundingClientRect());
-        const attack = document.querySelector('#tabletop-basic-toggle').getBoundingClientRect();
+        const preview = document.getElementById("tabletop-tour-action-preview");
+        const [attack, potion] = [...preview.querySelectorAll(".tabletop-action-option")];
+        const copies = [...preview.querySelectorAll(".tabletop-action-description__copy")];
         const tip = document.getElementById("tour-tooltip").getBoundingClientRect();
         const expectedTop = Math.min(Math.max(10, holes[1].bottom + 10), Math.max(10, innerHeight - tip.height - 10));
-        return holes.length === 2
+        const covered = element => {
+          const rect = element.getBoundingClientRect();
+          return holes[1].left <= rect.left && holes[1].right >= rect.right && holes[1].top <= rect.top && holes[1].bottom >= rect.bottom;
+        };
+        return holes.length === 2 && preview.inert
+          && attack.textContent === "攻擊" && potion.textContent === "喝藥水"
+          && copies.map(copy => copy.textContent).join("|") === "拾取或拔出一把武器進行攻擊。|使用附贈，喝下一瓶治療藥水，恢復生命。"
+          && getComputedStyle(document.getElementById("tabletop-action-panel-action")).display === "none"
+          && Math.abs(holes[0].top) <= 1
           && bar.every(rect => holes[0].left <= rect.left && holes[0].right >= rect.right && holes[0].top <= rect.top && holes[0].bottom >= rect.bottom)
-          && holes[1].left <= attack.left && holes[1].right >= attack.right && holes[1].top <= attack.top && holes[1].bottom >= attack.bottom
+          && [attack, potion, ...copies].every(covered)
           && Math.abs(tip.top - expectedTop) <= 1;
-      }), true, "action step highlights the controls and basic-action disclosure, with the tooltip below the disclosure");
+      }), true, "action step puts 可用選項 at the top and highlights the tabs and the attack/potion example, with the tooltip below");
+      assert.equal(await page.locator(".tabs-shell").evaluate(el => getComputedStyle(el).visibility), "hidden",
+        "action step hides the menu button");
       if (process.env.DND_ONBOARDING_SCREENSHOT_DIR && width === 390 && !caster && mode === "sheet" && !complete) {
         await page.screenshot({ path: path.join(process.env.DND_ONBOARDING_SCREENSHOT_DIR, "actions-mobile.png") });
       }
       await page.locator("#tour-prev-btn").click();
       await ready(page, index - 1);
+      assert.equal(await page.locator("#tabletop-tour-action-preview").count(), 0);
+      assert.equal(await page.locator(".tabs-shell").evaluate(el => getComputedStyle(el).visibility), "visible");
       await page.locator("#tour-next-btn").click();
       await ready(page, index);
     }
     if (index === 5) {
+      assert.equal(await page.locator("#tabletop-tour-action-preview").count(), 0, "leaving the action step removes the example");
       const spellPreview = await page.evaluate(() => {
         const dialog = document.querySelector('.app-dialog[data-tour-spell-preview]');
         const copy = dialog?.querySelector('.tabletop-spell-detail__copy');
@@ -522,8 +634,10 @@ async function main() {
         && hole.left < rect.left && hole.right > rect.right
         && hole.top < rect.top && hole.bottom > rect.bottom;
     }), true, "step 2 initially highlights only the ability grid");
-    await page.locator("#utility-menu-toggle").click();
+    await assertBarHiddenWithTargetAtTop(page, "#tab-basic .ability-grid", "step 2 hides the tab bar and puts the ability grid at the top");
+    await page.locator("#tour-next-btn").click();
     await ready(page, 2);
+    assert.equal(await page.locator(".tabs-shell").evaluate(el => getComputedStyle(el).visibility), "visible", "step 3 shows the tab bar again");
     await assertSheetCopy(page, 2);
     await assertAbilityMenuGuide(page);
     await page.mouse.click(15, 200);
@@ -540,6 +654,21 @@ async function main() {
     await page.locator("#tour-next-btn").click();
     await page.waitForFunction(() => onboardingTour.stepPhase === 2);
     await assertSheetCopy(page, 5);
+    assert.equal(await page.evaluate(() => {
+      const [background, bonus] = onboardingTour.activeHoles;
+      const contains = (hole, element) => {
+        const rect = element.getBoundingClientRect();
+        return hole.left <= rect.left && hole.right >= rect.right && hole.top <= rect.top && hole.bottom >= rect.bottom;
+      };
+      const head = document.querySelector("#point-buy-modal .point-buy-table-head > :nth-child(3)");
+      return onboardingTour.activeHoles.length === 2
+        && contains(background, document.querySelector("#point-buy-modal .point-buy-background"))
+        && contains(background, document.getElementById("point-buy-hint"))
+        && !contains(background, document.querySelector("#point-buy-modal .point-buy-preset"))
+        && contains(bonus, document.querySelector('#point-buy-rows .point-buy-row[data-ability="str"] .point-buy-control-group--bonus'))
+        && (!head.getClientRects().length || contains(bonus, head))
+        && !contains(bonus, document.querySelector('#point-buy-rows .point-buy-row[data-ability="dex"] .point-buy-control-group--bonus'));
+    }), true, "5/8 highlights the background choice and the first background bonus control");
     await page.keyboard.press("Escape");
     await closed(page);
     // Complete all original steps, including equipment, spells and search.
@@ -569,7 +698,12 @@ async function main() {
       await ready(page, index);
       await assertSheetCopy(page, index + 3);
       assert.equal(await nextLabel(), index === 5 ? "導覽完成" : "下一步");
+      if (index === 3) {
+        await assertBarHiddenWithTargetAtTop(page, "#tab-equipment .equipment-loadout-controls", "step 6 hides the tab bar and puts the loadout at the top");
+        await verifyTooltipDragLimits(page);
+      }
       if (index === 4) {
+        assert.equal(await page.locator(".tabs-shell").evaluate(el => getComputedStyle(el).visibility), "visible", "step 7 shows the tab bar again");
         assert.equal(await page.evaluate(() => {
           const holes = onboardingTour.activeHoles;
           return holes.length === 2 && scrollY === 0 && ["spells-tab-button", "spell-prepare"].every((id, index) => {
@@ -778,7 +912,7 @@ async function verifyTabletopDiceAndKeyStats(browser, url) {
   assert.equal(await page.evaluate(() => localStorage.getItem("dnd.diceSystemEnabled.v1")), "true",
     "the link uses the real dice switch");
   await skillRoll.click();
-  await page.waitForFunction(() => /技能檢定：.*\+ 3 =/.test(document.getElementById("app-toast").innerText));
+  await page.waitForFunction(() => /技能檢定：.*\+ 6 =/.test(document.getElementById("app-toast").innerText));
   assert.deepEqual(await page.evaluate(() => [onboardingTour.active, onboardingTour.currentIndex]), [true, 2]);
   await page.locator("#tour-next-btn").click();
   await ready(page, 3);
@@ -1062,12 +1196,25 @@ async function verifyTouch(browser, url) {
   assert(Math.abs((await page.locator("#tour-tooltip").boundingBox()).y - (initialTip.y - 40)) <= 1, "touch dragging moves the heading");
   // Separate the drag gesture from the subsequent tap in Chromium's touch recognizer.
   await page.waitForTimeout(350);
+  assert.equal(await page.locator("#tour-step-text").evaluate(el => el.classList.contains("is-scrollable")), false);
+  const shortText = await page.locator("#tour-step-text").boundingBox();
+  const beforeTextDrag = await page.locator("#tour-tooltip").boundingBox();
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: shortText.x + 8, y: shortText.y + 8 }] });
+  for (let offset = 10; offset <= 30; offset += 10) {
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: shortText.x + 8, y: shortText.y + 8 + offset }] });
+    await page.waitForTimeout(35);
+  }
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  assert(Math.abs((await page.locator("#tour-tooltip").boundingBox()).y - (beforeTextDrag.y + 30)) <= 1, "touch dragging short guidance moves the window");
+  await page.waitForTimeout(350);
   await page.locator("#tour-step-text summary").tap();
   await page.waitForFunction(() => document.querySelector("#tour-step-text details").open);
   assert.equal(await page.locator("#tour-step-text details").evaluate(el => el.open), true);
   const content = page.locator("#tour-step-text");
   const box = await content.boundingBox();
   const windowScroll = await page.evaluate(() => scrollY);
+  const tipBeforeSwipe = await page.locator("#tour-tooltip").boundingBox();
+  assert.equal(await content.evaluate(el => el.classList.contains("is-scrollable")), true);
   const x = box.x + box.width / 2;
   const startY = box.y + box.height - 12;
   await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y: startY }] });
@@ -1079,6 +1226,7 @@ async function verifyTouch(browser, url) {
   await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
   await page.waitForTimeout(200);
   assert(await content.evaluate(el => el.scrollTop > 0), "touch scroll reaches the remaining examples");
+  assert.deepEqual(await page.locator("#tour-tooltip").boundingBox(), tipBeforeSwipe, "scrolling long guidance does not drag the window");
   assert.equal(await page.evaluate(() => scrollY), windowScroll, "touching the tooltip does not scroll its background");
   await assertLayout(page);
   // Background operations are blocked even if dispatched directly at a control.
