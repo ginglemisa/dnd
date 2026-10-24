@@ -1113,7 +1113,7 @@ const classFeatures = {
   <p>選擇一個德魯伊子職，並隨等級提升獲得子職能力。基本規則僅提供「大地結社」。</p>
 </section>
 
-<section class="druid-feature class-feature-section" data-feature-level="3">
+<section class="druid-feature class-feature-section" data-feature-level="3" data-druid-land-choice>
   <h3>等級 3：大地結社法術（大地子職）</h3>
   <ul class="class-rule-list">
     <li><strong>選擇地貌：</strong>每次長休後，從旱地、極地、溫帶或熱帶中選擇 1 種地貌。</li>

@@ -4423,6 +4423,15 @@ html[data-ui-theme="warm"][data-theme="dark"] .circle-checkbox:checked {
   margin-bottom: 0;
 }
 
+#class-feature-choices-modal #druid-land-control {
+  margin: 0.75rem 0 0;
+}
+
+#class-feature-choices-modal #druid-land-control select {
+  width: 100%;
+  font-weight: 800;
+}
+
 #class-feature-choices-modal .app-dialog__actions {
   align-items: center;
   flex-wrap: wrap;

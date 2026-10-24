@@ -1523,7 +1523,8 @@ async function verifyClassFeatureChoicePrompt(browser, url) {
 
     await chooseAsPlayer("class", "druid");
     await modal.waitFor();
-    assert.deepEqual(await modal.locator("section[data-feature-level]:visible h3").allTextContents(), ["等級 1：原初使命", "等級 4：屬性值提升", "等級 7：元素狂怒"]);
+    assert.deepEqual(await modal.locator("section[data-feature-level]:visible h3").allTextContents(), ["等級 1：原初使命", "等級 3：大地結社法術（大地子職）", "等級 4：屬性值提升", "等級 7：元素狂怒"], "land terrain is chosen in its level 3 section between levels 1 and 4");
+    assert.equal(await modal.locator("section[data-druid-land-choice] #druid-land-control #druid-land").isVisible(), true);
     await modal.locator("#druid-sentinel").check();
     await modal.locator("#druid-elemental-fury-primal-strike").check();
     await modal.locator("#feat-choice-druid-level-4").selectOption("屬性值提升");
