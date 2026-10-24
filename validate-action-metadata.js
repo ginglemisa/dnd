@@ -809,11 +809,21 @@ async function verifyUiAndPersistence(page, url) {
   await page.locator('.action-mode-tab[data-action-mode="basic"]').click();
   await page.locator('#action-option-grid [data-action-option-key="attack"]').click();
   assert.match(await page.locator("#action-description").innerText(), /武器/);
+  assert.equal(await page.locator("#action-description .action-description-english").innerText(), "Attack", "legacy action shows its English name");
+  assert.equal(await page.locator("#action-description .action-description-english").getAttribute("lang"), "en");
+  await page.locator('#action-option-grid [data-action-option-key="unarmed"]').click();
+  assert.equal(await page.locator("#action-description .action-description-english").innerText(), "Unarmed Strike");
   await page.locator('#action-option-grid [data-action-option-key="hide"]').click();
   assert.equal(await page.locator("#action-description .action-description-copy").innerText(), "進行一次敏捷（隱匿）檢定，難度 15，嘗試避開其他生物的注意。", "legacy Hide uses the shared DC 15 description");
   await page.locator('.action-mode-tab[data-action-mode="bonus"]').click();
   await page.locator('#action-option-grid [data-action-option-key="drink-potion"]').click();
   assert.match(await page.locator("#action-description").innerText(), /2d4/);
+  assert.equal(await page.locator("#action-description .action-description-english").count(), 0, "actions without an English name omit the label");
+  await page.locator('.action-mode-tab[data-action-mode="reaction"]').click();
+  await page.locator('#action-option-grid [data-action-option-key="opportunity-attack"]').click();
+  assert.equal(await page.locator("#action-description .action-description-english").innerText(), "Opportunity Attack");
+  await page.locator('.action-mode-tab[data-action-mode="bonus"]').click();
+  await page.locator('#action-option-grid [data-action-option-key="drink-potion"]').click();
   const unrelatedInput = await page.evaluate(async () => {
     const settle = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     await settle();
@@ -1061,8 +1071,38 @@ async function verifyEquipmentLoadout(browser, url) {
     await page.selectOption("#mainHand", "長劍");
     await page.selectOption("#offHand", "盾牌");
     assert.equal(await page.inputValue("#ac-display"), "12");
+
+    // 未熟練盾牌不加 AC；警告依武器／盾牌／護甲開啟不同說明，隱匿與劣勢沿用技能說明。
+    await page.evaluate(() => applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] }, class: "wizard", mainHand: "長劍", offHand: "盾牌", offHandAsMain: false, armor: "環甲" }));
+    assert.equal(await page.inputValue("#ac-display"), "14", "untrained shield adds no AC");
+    const summary = page.locator("#equipment-loadout-summary-content");
+    assert.deepEqual(
+      await summary.locator(".equipment-proficiency-warning").evaluateAll(tips => tips.map(tip => [tip.dataset.skill, tip.textContent])),
+      [["武器未熟練", "警告：未熟練"], ["盾牌未熟練", "警告：未熟練"], ["護甲未熟練", "警告：未熟練"]]
+    );
+    assert.equal(await page.locator("#equipment-untrained-consequence").isVisible(), true);
+    await summary.locator(".equipment-proficiency-warning[data-skill='盾牌未熟練']").click();
+    assert.match(await page.locator("#skillPopup").innerText(), /盾牌未熟練[\s\S]*無法獲得盾牌提供的 AC 加值/);
+    await summary.locator(".feature-rule-tip[data-skill='隱匿']").click();
+    assert.match(await page.locator("#skillPopup").innerText(), /隱匿[\s\S]*安靜移動/);
+    assert.equal(await summary.locator(".feature-rule-tip[data-skill='劣勢']").count(), 1);
+    await page.keyboard.press("Escape");
+
+    // 精通與武器屬性一致，只在點擊時開啟說明。
+    const mastery = summary.locator("[data-weapon-rule-kind='mastery']").first();
+    await mastery.hover();
+    assert.equal(await page.locator("#weaponRulePopup").isVisible(), false, "mastery hover does not open popup");
+    await mastery.click();
+    assert.equal(await page.locator("#weaponRulePopup").isVisible(), true);
+    await page.mouse.move(0, 0);
+    assert.equal(await page.locator("#weaponRulePopup").isVisible(), true, "mastery popup stays after pointer leaves");
+    await page.keyboard.press("Escape");
+
+    await page.evaluate(() => applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] }, class: "wizard", mainHand: "長劍", offHand: "盾牌", offHandAsMain: false, armor: "" }));
+    assert.equal(await page.inputValue("#ac-display"), "10");
+    assert.equal(await page.locator("#equipment-untrained-consequence").isVisible(), false, "untrained shield alone has no armor consequence");
     assert.deepEqual(errors, [], "equipment browser errors");
-    console.log("Equipment loadout: main2/shield, two-handed cancel/confirm, AC, summary, restore and PDF mapping passed.");
+    console.log("Equipment loadout: main2/shield, two-handed cancel/confirm, AC, untrained shield/tooltips, click-only mastery, summary, restore and PDF mapping passed.");
   } finally { await page.close(); }
 }
 

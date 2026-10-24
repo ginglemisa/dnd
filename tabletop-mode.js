@@ -1469,8 +1469,9 @@
       if (state.acOverride !== null) return String(state.acOverride);
       const armorName = read("armor");
       const armor = state.equipment.armor === "wear" ? globalScope.armors?.find(item => item.名稱 === armorName) : null;
-      const shield = (state.equipment.off === "wear" && globalScope.isEffectiveEquippedShield?.())
-        || (state.equipment.armor === "wear" && armorName === "盾牌");
+      const shield = ((state.equipment.off === "wear" && globalScope.isEffectiveEquippedShield?.())
+        || (state.equipment.armor === "wear" && armorName === "盾牌"))
+        && globalScope.isShieldProficient?.() !== false;
       if (armor) return String(globalScope.calculateArmorClass({ armor, hasArmor: true, className: "druid",
         dexterityScore: score("dex"), constitutionScore: score("con"), wisdomScore: score("wis"), charismaScore: score("cha"),
         hasShield: shield, hasDefenseFightingStyle: globalScope.hasDefenseFightingStyleFeat?.() }));

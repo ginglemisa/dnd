@@ -9,6 +9,9 @@ const skills_example_uses = {
   劣勢: "當一次 D20 檢定具有劣勢時，擲兩次 D20，取較低的結果，再加上原本的數字加值。\n\n例如擲出 7 和 16，就採用 7，再加上該次檢定的加值。",
   抗性: "對某種傷害具有抗性時，你受到的該類型傷害減半。\n\n例如你具有火焰傷害抗性，原本會受到 10 點火焰傷害，就只受到 5 點。抗性只適用於說明指定的傷害類型或該次傷害。",
   藉機攻擊: "當你能看見的生物自行離開你的觸及範圍時，你可以使用反應，對該生物進行一次近戰攻擊。\n\n生物執行「撤離」後，本回合的移動不會引發藉機攻擊。",
+  武器未熟練: "使用此武器攻擊時，命中檢定不加入熟練加值，傷害正常計算。",
+  盾牌未熟練: "裝備此盾牌時，無法獲得盾牌提供的 AC 加值。",
+  護甲未熟練: "護甲 AC 正常生效，但力量與敏捷相關的 D20 檢定具有劣勢，且無法施放法術。",
   目前HP: "在此填寫目前HP，再進入跑團模式。",
   體操: "站穩不跌倒，或做出各種特技動作。",
   馴獸: "安撫、訓練動物，或讓牠照你的意思行動。",
@@ -45,13 +48,13 @@ function skillTip(skillName) {
   return `<span class="skill-tip" data-skill="${safeLabel}">${safeLabel}</span>`;
 }
 
-// 規則說明的鍵盤可操作入口；label 須對應 skills_example_uses 的鍵。
-function createFeatureRuleTip(label) {
+// 規則說明的鍵盤可操作入口；label 須對應 skills_example_uses 的鍵，text 可另訂顯示文字。
+function createFeatureRuleTip(label, text = label) {
   const button = document.createElement("button");
   button.type = "button";
   button.className = "skill-tip feature-rule-tip";
   button.dataset.skill = label;
-  button.textContent = label;
+  button.textContent = text;
   button.setAttribute("aria-controls", "skillPopup");
   return button;
 }

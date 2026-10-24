@@ -3,21 +3,21 @@
 
   const STATIC_OPTIONS = Object.freeze({
     basic: Object.freeze([
-      { key: "attack", label: "攻擊", description: "拾取或拔出一把武器進行攻擊。" },
-      { key: "unarmed", label: "徒手", description: "對 5 呎內的目標拳打、踢擊或以其他方式徒手攻擊。命中加值為力量調整值加熟練加值；命中時造成 1 加力量調整值的鈍擊傷害。" },
-      { key: "grapple", label: "擒抱", description: "以一次擒抱替代一次攻擊，以空手抓住 5 呎內、且體型不超過你一級的目標。目標進行力量或敏捷豁免（DC = 8 + 力量調整值 + 熟練加值）；失敗時陷入擒抱狀態。" },
-      { key: "shove", label: "推撞", description: "以一次推撞替代一次攻擊，選擇 5 呎內、且體型不超過你一級的目標。目標進行力量或敏捷豁免（DC = 8 + 力量調整值 + 熟練加值）；失敗時由你將其推開 5 呎或擊倒。" },
-      { key: "dash", label: "衝刺", description: "在本回合剩餘時間內，獲得等同於你速度的額外移動力。" },
-      { key: "disengage", label: "撤離", description: "在本回合剩餘時間內，你的移動不會引發藉機攻擊。" },
-      { key: "dodge", label: "閃避", description: "直到你下一回合開始前，對你的攻擊擲骰具有劣勢，且你的敏捷豁免具有優勢。若你陷入失能狀態或速度為 0，便失去此效果。" },
-      { key: "help", label: "協助", description: "協助另一個生物進行屬性檢定或攻擊擲骰，也可以對其施予急救。" },
-      { key: "hide", label: "躲藏", description: "進行一次敏捷（隱匿）檢定，難度 15，嘗試避開其他生物的注意。" },
-      { key: "influence", label: "影響", description: "進行魅力（欺瞞、威嚇、表演或遊說）或感知（馴獸）檢定，嘗試改變生物的態度。" },
-      { key: "magic", label: "魔法", description: "施放施法時間為動作的法術、使用魔法物品，或啟動需要魔法動作的特性。" },
-      { key: "ready", label: "準備", description: "設定一個可感知的觸發條件，並指定條件發生時要執行的動作。觸發後，你使用反應執行該動作。" },
-      { key: "search", label: "搜索", description: "進行感知（洞悉、醫藥、察覺或生存）檢定，尋找隱藏的生物、物品或線索。" },
-      { key: "study", label: "研究", description: "進行智力（奧秘、歷史、調查、自然或宗教）檢定，回想或分析相關資訊。" },
-      { key: "utilize", label: "使用", description: "操作或使用需要動作的非魔法物品。" }
+      { key: "attack", label: "攻擊", englishLabel: "Attack", description: "拾取或拔出一把武器進行攻擊。" },
+      { key: "unarmed", label: "徒手", englishLabel: "Unarmed Strike", description: "對 5 呎內的目標拳打、踢擊或以其他方式徒手攻擊。命中加值為力量調整值加熟練加值；命中時造成 1 加力量調整值的鈍擊傷害。" },
+      { key: "grapple", label: "擒抱", englishLabel: "Grapple", description: "以一次擒抱替代一次攻擊，以空手抓住 5 呎內、且體型不超過你一級的目標。目標進行力量或敏捷豁免（DC = 8 + 力量調整值 + 熟練加值）；失敗時陷入擒抱狀態。" },
+      { key: "shove", label: "推撞", englishLabel: "Shove", description: "以一次推撞替代一次攻擊，選擇 5 呎內、且體型不超過你一級的目標。目標進行力量或敏捷豁免（DC = 8 + 力量調整值 + 熟練加值）；失敗時由你將其推開 5 呎或擊倒。" },
+      { key: "dash", label: "衝刺", englishLabel: "Dash", description: "在本回合剩餘時間內，獲得等同於你速度的額外移動力。" },
+      { key: "disengage", label: "撤離", englishLabel: "Disengage", description: "在本回合剩餘時間內，你的移動不會引發藉機攻擊。" },
+      { key: "dodge", label: "閃避", englishLabel: "Dodge", description: "直到你下一回合開始前，對你的攻擊擲骰具有劣勢，且你的敏捷豁免具有優勢。若你陷入失能狀態或速度為 0，便失去此效果。" },
+      { key: "help", label: "協助", englishLabel: "Help", description: "協助另一個生物進行屬性檢定或攻擊擲骰，也可以對其施予急救。" },
+      { key: "hide", label: "躲藏", englishLabel: "Hide", description: "進行一次敏捷（隱匿）檢定，難度 15，嘗試避開其他生物的注意。" },
+      { key: "influence", label: "影響", englishLabel: "Influence", description: "進行魅力（欺瞞、威嚇、表演或遊說）或感知（馴獸）檢定，嘗試改變生物的態度。" },
+      { key: "magic", label: "魔法", englishLabel: "Magic", description: "施放施法時間為動作的法術、使用魔法物品，或啟動需要魔法動作的特性。" },
+      { key: "ready", label: "準備", englishLabel: "Ready", description: "設定一個可感知的觸發條件，並指定條件發生時要執行的動作。觸發後，你使用反應執行該動作。" },
+      { key: "search", label: "搜索", englishLabel: "Search", description: "進行感知（洞悉、醫藥、察覺或生存）檢定，尋找隱藏的生物、物品或線索。" },
+      { key: "study", label: "研究", englishLabel: "Study", description: "進行智力（奧秘、歷史、調查、自然或宗教）檢定，回想或分析相關資訊。" },
+      { key: "utilize", label: "使用", englishLabel: "Utilize", description: "操作或使用需要動作的非魔法物品。" }
     ]),
     action: Object.freeze([
 
@@ -27,7 +27,7 @@
       { key: "offhand-attack", label: "二次攻擊", description: "在自身回合以「輕型」武器執行攻擊動作後，可用「附贈」以另一把輕型武器再攻擊一次。這次攻擊的傷害不加屬性調整值（負值仍須計入）。" }
     ]),
     reaction: Object.freeze([
-      { key: "opportunity-attack", label: "藉機攻擊", description: "當你能看見的生物自行離開你的觸及範圍時，你可以使用反應，對該生物進行一次近戰攻擊。" },
+      { key: "opportunity-attack", label: "藉機攻擊", englishLabel: "Opportunity Attack", description: "當你能看見的生物自行離開你的觸及範圍時，你可以使用反應，對該生物進行一次近戰攻擊。" },
       { key: "execute-ready", label: "執行準備", description: "先前使用「準備」且指定觸發條件成立時發生" }
     ]),
     movement: Object.freeze([
@@ -815,9 +815,19 @@
 
     const heading = document.createElement("div");
     heading.className = "action-description-heading";
+    const titleGroup = document.createElement("div");
+    titleGroup.className = "action-description-title";
     const title = document.createElement("strong");
     title.textContent = option.label;
-    heading.appendChild(title);
+    titleGroup.appendChild(title);
+    if (option.englishLabel) {
+      const english = document.createElement("span");
+      english.className = "action-description-english";
+      english.lang = "en";
+      english.textContent = option.englishLabel;
+      titleGroup.appendChild(english);
+    }
+    heading.appendChild(titleGroup);
     if (option.source) {
       const source = document.createElement("span");
       source.textContent = option.source;

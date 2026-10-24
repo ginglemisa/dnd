@@ -81,24 +81,24 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261024-druid-land-table">
+  <link rel="stylesheet" href="styles.css?v=20261024-action-english">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261023-escape-focus" defer></script>
-  <script src="monster.js?v=20261021-feat-rule-tips" defer></script>
+  <script src="monster.js?v=20261024-untrained-tips" defer></script>
     <script src="class-features.js?v=20261024-druid-land-choice" defer></script>
   <script src="race.js?v=20261021-condition-plain" defer></script>
   <script src="backgrounds.js?v=20261003-background-flavor" defer></script>
   <script src="tool-data.js?v=20261008-class-tools" defer></script>
   <script src="feats.js?v=20261021-feat-rule-tips" defer></script>
-  <script src="equipment-notes.js?v=20261021-bonus-wording" defer></script>
+  <script src="equipment-notes.js?v=20261024-untrained-tips" defer></script>
   <script src="spell-list.js?v=20261014-class-lookup" defer></script>
   <script src="condition.js?v=20261021-bonus-wording" defer></script>
-  <script src="action-panel.js?v=20261021-bonus-wording" defer></script>
+  <script src="action-panel.js?v=20261024-action-english" defer></script>
   <script src="character-rules.js?v=20261010-spell-lists-v2" defer></script>
   <script src="app-dialog.js?v=20261023-dismiss-toasts" defer></script>
   <script src="custom-background.js?v=20261023-feature-title" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
-  <script src="tabletop-mode.js?v=20261024-tour-skills" defer></script>
+  <script src="tabletop-mode.js?v=20261024-untrained-tips" defer></script>
   <script src="tabletop-druid.js?v=20261021-bonus-wording" defer></script>
   <script src="tabletop-resources.js?v=20261014-heroic-help" defer></script>
   <script src="tabletop-actions.js?v=20261021-json-tabletop-settings" defer></script>
@@ -1096,7 +1096,7 @@
       <div id="equipment-loadout-summary-content" class="equipment-loadout-summary-content" aria-live="polite"></div>
       <div class="equipment-current-ac">
         <div id="equipment-untrained-consequence" class="equipment-untrained-consequence" role="status" hidden>
-          裝備不熟練防具時力敏擲骰劣勢且不能施法。
+          穿著不熟練護甲時力敏擲骰劣勢且不能施法。
         </div>
         <span>目前 AC</span><strong id="equipment-current-ac-value">10</strong>
       </div>
@@ -2003,8 +2003,10 @@ function updateACDisplay() {
   const className = document.getElementById("class")?.value;
   const armor = hasArmor ? armors.find(item => item.名稱 === armorName) : null;
   const hasOffHandShield = isEffectiveEquippedShield();
+  // 未受盾牌訓練仍算持盾（影響無甲防禦），但不獲得盾牌的 AC 加值。
   const hasShield = (hasOffHandShield || hasArmorShield)
-    && !(hasOffHandShield && hasArmorShield);
+    && !(hasOffHandShield && hasArmorShield)
+    && isShieldProficient();
   const armorClass = calculateArmorClass({
     armor,
     hasArmor,
@@ -3704,14 +3706,14 @@ function buildEquipmentSummaryRow(label, name, details = [], options = {}) {
         link.dataset.weaponRule = detail.ruleName;
         detailEl.appendChild(link);
       } else {
-        detailEl.append(detail?.text ?? detail);
+        detailEl.append(detail instanceof Node ? detail : detail?.text ?? detail);
       }
     });
-    if (options.warning) {
+    if (options.warningKey) {
       detailEl.append("、");
-      const warningEl = document.createElement("span");
-      warningEl.className = "equipment-proficiency-warning";
-      warningEl.textContent = options.warning;
+      // 顯示文字相同，說明依武器、盾牌或護甲對應 skills_example_uses 的鍵。
+      const warningEl = createFeatureRuleTip(options.warningKey, "警告：未熟練");
+      warningEl.classList.add("equipment-proficiency-warning");
       detailEl.appendChild(warningEl);
     }
     row.appendChild(detailEl);
@@ -3721,6 +3723,14 @@ function buildEquipmentSummaryRow(label, name, details = [], options = {}) {
     row.appendChild(emptyEl);
   }
   return row;
+}
+
+// 隱匿與劣勢沿用共用技能／規則說明。
+function buildStealthPenaltyDetail(penalty) {
+  const value = String(penalty).trim();
+  const fragment = document.createDocumentFragment();
+  fragment.append(createFeatureRuleTip("隱匿"), "懲罰：", value === "劣勢" ? createFeatureRuleTip("劣勢") : value);
+  return fragment;
 }
 
 function updateEquipmentLoadoutSummary() {
@@ -3757,32 +3767,28 @@ function updateEquipmentLoadoutSummary() {
   const armorDetails = armor ? [
     `AC ${armor.AC}`,
     hasMeaningfulEquipmentValue(armor.力量需求) ? `力量需求 ${String(armor.力量需求).replace(/^力量\s*/u, "")}` : "",
-    hasMeaningfulEquipmentValue(armor.隱匿懲罰) ? `隱匿懲罰：${armor.隱匿懲罰}` : ""
+    hasMeaningfulEquipmentValue(armor.隱匿懲罰) ? buildStealthPenaltyDetail(armor.隱匿懲罰) : ""
   ].filter(Boolean) : [];
-  const untrainedWarning = "警告：未熟練";
   const weaponWarning = weapon => {
     if (!weapon) return "";
-    if (weapon.名稱 === "盾牌") return isShieldProficient() ? "" : untrainedWarning;
-    return isWeaponProficient(weapon) ? "" : untrainedWarning;
+    if (weapon.名稱 === "盾牌") return isShieldProficient() ? "" : "盾牌未熟練";
+    return isWeaponProficient(weapon) ? "" : "武器未熟練";
   };
   const mainWeaponWarning = weaponWarning(mainWeapon);
   const offWeaponWarning = weaponWarning(offWeapon);
-  const armorWarning = armor && !isArmorProficient(armor) ? untrainedWarning : "";
-  const hasUntrainedShield = [mainWeapon, offWeapon].some(weapon =>
-    weapon?.名稱 === "盾牌" && !isShieldProficient()
-  );
+  const armorWarning = armor && !isArmorProficient(armor) ? "護甲未熟練" : "";
 
   const summaryRows = [
-    mainName && buildEquipmentSummaryRow("主手", mainName, weaponDetails(mainWeapon), { warning: mainWeaponWarning }),
-    offName && buildEquipmentSummaryRow(isOffHandAlternateMain() ? "主手2" : "副手", offName, weaponDetails(offWeapon), { warning: offWeaponWarning }),
+    mainName && buildEquipmentSummaryRow("主手", mainName, weaponDetails(mainWeapon), { warningKey: mainWeaponWarning }),
+    offName && buildEquipmentSummaryRow(isOffHandAlternateMain() ? "主手2" : "副手", offName, weaponDetails(offWeapon), { warningKey: offWeaponWarning }),
     isOffHandAlternateMain() && isEffectiveEquippedShield() && buildEquipmentSummaryRow("盾牌", "盾牌", ["AC+2 (裝備/卸除需 1 個動作)"]),
-    armorName && buildEquipmentSummaryRow("護甲", armorName, armorDetails, { warning: armorWarning })
+    armorName && buildEquipmentSummaryRow("護甲", armorName, armorDetails, { warningKey: armorWarning })
   ].filter(Boolean);
   content.replaceChildren(...summaryRows);
   const acValue = document.getElementById("equipment-current-ac-value");
   if (acValue) acValue.textContent = document.getElementById("ac-display")?.value?.trim() || "—";
   const untrainedConsequence = document.getElementById("equipment-untrained-consequence");
-  if (untrainedConsequence) untrainedConsequence.hidden = !(hasUntrainedShield || armorWarning);
+  if (untrainedConsequence) untrainedConsequence.hidden = !armorWarning;
   updateWeaponMasteryBadges();
 }
 

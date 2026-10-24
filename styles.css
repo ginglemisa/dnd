@@ -5152,6 +5152,20 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   font-weight: 800;
 }
 
+.action-description-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.55rem;
+  min-width: 0;
+}
+
+.action-description-heading .action-description-english {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
 .action-description-copy {
   white-space: pre-line;
 }

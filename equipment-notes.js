@@ -48,7 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
   </details>
 
 <h3>防具</h3>
-<p class="armor-proficiency-note">若裝備不熟練防具，力敏相關 D20 檢定劣勢，且不能施法。</p>
+<p class="armor-proficiency-note">若穿著不熟練護甲，力敏相關 D20 檢定劣勢，且不能施法；裝備不熟練盾牌則無法獲得 AC 加值。</p>
   <details class="equipment-catalog-details">
     <summary class="equipment-note-summary">輕甲列表</summary>
     <div class="small-text equipment-note-body equipment-catalog-body" data-armor-catalog="輕甲"></div>
@@ -884,14 +884,6 @@ DC 25 力量（運動）：掙斷鐐銬
   rulePopup.querySelector(".close").addEventListener("click", hideRulePopup);
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") hideRulePopup();
-  });
-  document.addEventListener("mouseover", (event) => {
-    const trigger = event.target.closest?.("#equipment-loadout-summary-content [data-weapon-rule-kind='mastery'][data-weapon-rule]");
-    if (trigger) showRulePopup(trigger);
-  });
-  document.addEventListener("mouseout", (event) => {
-    const trigger = event.target.closest?.("#equipment-loadout-summary-content [data-weapon-rule-kind='mastery'][data-weapon-rule]");
-    if (trigger && !event.relatedTarget?.closest?.("#weaponRulePopup")) hideRulePopup();
   });
   document.addEventListener("click", (event) => {
     const trigger = event.target.closest?.("[data-weapon-rule-kind][data-weapon-rule]");
