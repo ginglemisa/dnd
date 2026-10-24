@@ -81,7 +81,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261024-druid-land-choice">
+  <link rel="stylesheet" href="styles.css?v=20261024-druid-land-table">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261023-escape-focus" defer></script>
   <script src="monster.js?v=20261021-feat-rule-tips" defer></script>
@@ -3278,7 +3278,9 @@ function getMissingClassFeatureChoiceSections() {
     let control = document.querySelector(issue.choiceSelector || issue.focusSelector || issue.selector);
     const featRow = control?.closest("#feats-area [data-feat-source]");
     if (featRow) control = document.getElementById(getFeatChoiceId(featRow.dataset.sourceKey));
-    const section = control?.closest("#classFeatures section[data-feature-level], #metamagic-options-section, #eldritch-invocations-section, #druid-land-control");
+    let section = control?.closest("#classFeatures section[data-feature-level], #metamagic-options-section, #eldritch-invocations-section, #druid-land-control");
+    // 地貌選單留在數值頁，提示改列出等級 3 大地結社法術區段並在其中連動選擇。
+    if (section?.id === "druid-land-control") section = document.querySelector("#classFeatures section[data-druid-land-choice]") || section;
     if (section) missingSections.add(section);
   });
   return missingSections;
@@ -3303,7 +3305,7 @@ function markPreparedSpellOptions(root = document, preparedIds = new Set(
 
 // These fields edit the existing canonical controls. They carry no character
 // state of their own, and resolve the source again after spell rows are rebuilt.
-function appendClassFeatureLinkedSelect(container, labelText, getSource, links, getOptions) {
+function appendClassFeatureLinkedSelect(container, labelText, getSource, links, getOptions, showView = true) {
   const field = document.createElement("div");
   field.className = "class-feature-linked-field";
   const label = document.createElement("label");
@@ -3339,7 +3341,7 @@ function appendClassFeatureLinkedSelect(container, labelText, getSource, links, 
     if (typeof html === "string" && select.innerHTML !== html) select.innerHTML = html;
     select.value = source?.value || "";
     select.disabled = !source || source.disabled;
-    view.hidden = labelText === "魔法學徒法表";
+    view.hidden = !showView || labelText === "魔法學徒法表";
     view.disabled = !SpellCatalog.getSpell(select.value);
     markPreparedSpellOptions(select);
   });
@@ -3349,8 +3351,8 @@ function createClassFeatureAdditionalChoices(content) {
   const mounts = new Map();
   const refresh = () => {
     const desired = new Set();
-    const add = (key, parent, fields) => {
-      if (!parent || window.SpellManagement?.isManual()) return;
+    const add = (key, parent, fields, spellChoice = true) => {
+      if (!parent || (spellChoice && window.SpellManagement?.isManual())) return;
       desired.add(key);
       let entry = mounts.get(key);
       if (entry && entry.mount.parentNode !== parent) {
@@ -3364,7 +3366,7 @@ function createClassFeatureAdditionalChoices(content) {
         mount.dataset.classFeatureAdditional = key;
         parent.appendChild(mount);
         const links = [];
-        fields.forEach(({ label, getSource, getOptions }) => appendClassFeatureLinkedSelect(mount, label, getSource, links, getOptions));
+        fields.forEach(({ label, getSource, getOptions, showView }) => appendClassFeatureLinkedSelect(mount, label, getSource, links, getOptions, showView));
         entry = { mount, links };
         mounts.set(key, entry);
       }
@@ -3407,6 +3409,12 @@ function createClassFeatureAdditionalChoices(content) {
           };
         }));
       });
+    // 地貌不是法術選擇，手動管理法術時仍需選擇；選單本體留在數值頁職業欄。
+    if (!document.getElementById("druid-land-control")?.classList.contains("is-hidden")) {
+      add("druid-land", content.querySelector("#classFeatures section[data-druid-land-choice]"), [{
+        label: "大地結社地貌", getSource: () => document.getElementById("druid-land"), showView: false
+      }], false);
+    }
     mounts.forEach((entry, key) => {
       if (!desired.has(key)) { entry.mount.remove(); mounts.delete(key); }
     });
@@ -3463,13 +3471,7 @@ function openClassFeatureChoicePrompt(missingSections, trigger) {
     section.hidden = false;
     section.inert = false;
     section.removeAttribute("role");
-    // 地貌選單併入等級 3 大地結社法術區段，依等級順序與地貌法術表一起呈現。
-    const host = section.id === "druid-land-control" && output.querySelector("section[data-druid-land-choice]");
-    if (host) {
-      host.hidden = false;
-      host.inert = false;
-      host.appendChild(section);
-    } else content.appendChild(section);
+    content.appendChild(section);
   });
   let removeAdditionalChoices = () => {};
   const contextPopups = ["skillPopup", "beastPopup"].map(id => document.getElementById(id)).filter(Boolean);
