@@ -8894,7 +8894,7 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] :is(#scrollToTopBtn, #scro
 
   50% {
     filter: drop-shadow(0 0 4px rgba(255, 214, 92, 0.95)) drop-shadow(0 0 12px rgba(255, 170, 30, 0.85));
-    transform: scale(1.2);
+    transform: scale(1.6);
   }
 }
 
@@ -9908,7 +9908,7 @@ html.onboarding-app-bar-hidden .tabs-shell {
 
   50% {
     text-shadow: 0 0 6px rgba(255, 196, 64, 0.9);
-    transform: scale(1.35);
+    transform: scale(1.9);
   }
 }
 
