@@ -13,7 +13,8 @@
 ## 前端架構與相容性
 
 * 原生 HTML／CSS／JavaScript 靜態網站；`index.html` 以傳統 `<script defer>` 依序載入全域模組，不新增前端框架、build pipeline 或 runtime dependency。驗證沿用 Node.js／Playwright，不新增測試框架或依賴。
-* `index.html` 負責角色卡 DOM、初始化、表單串接、持久化、分享與 PDF 延遲載入；僅依任務需要拆分，不因檔案大小／一致性重寫架構。樣式以 `styles.css` 為準，外觀／互動先查 [DESIGN.md](DESIGN.md)。
+* `index.html` 負責角色卡 DOM、初始化、表單串接、持久化與分享；僅依任務需要拆分，不因檔案大小／一致性重寫架構。樣式以 `styles.css` 為準，外觀／互動先查 [DESIGN.md](DESIGN.md)。
+* 自 `index.html` 搬出的角色卡程式（`sheet-utils.js`、`pdf-launcher.js`）以不加 defer／async 的本機 `<script src>` 留在原位置同步載入，維持全域名稱，只放函式與狀態宣告；驗證腳本以此辨識並一併檢查，離線建置保留各標籤的 defer 與否。搬移與功能修改分開提交。
 * 變更全域 API、DOM ID、data attribute、檔名或載入／初始化順序時，搜尋並同步處理受影響的 JavaScript、CSS 與呼叫端。
 * 表單控制項與結構化 DOM 可作為角色目前選擇的 canonical state，無需另建中央 store。純顯示文字不作為主要規則資料來源，除非該解析本身是明確保留的設計。
 * LocalStorage 沿用 `window.dndStorage`。變更持久化欄位或意義時，檢查 LocalStorage、自動存檔、JSON 匯入／匯出與分享網址的還原相容性；UI 調整不應意外改變資料格式。
@@ -49,7 +50,7 @@
 | 法術目前清單、來源、自動／手動管理與遷移 | `spell-management.js`／`SpellManagement`；法術書與管理視窗為 `spellbook.js`／`Spellbook` |
 | 法術／裝備搜尋與獨立查閱 | `search.js`；保留工具列與導覽使用的全域入口 |
 | 新手與跑團導覽 | `onboarding-tour.js`，並核對創角／匯入／PDF 生命週期 |
-| PDF 匯出與欄位 | `pdf-export.js`、`pdf-field-map.js`；按需載入 `pdf-lib.custom.min.js`／`fontkit.custom.min.js`，部署須包含 PDF 與字型素材 |
+| PDF 匯出與欄位 | 前置檢查／輸出視窗／延遲載入為 `pdf-launcher.js`；`pdf-export.js`、`pdf-field-map.js`；按需載入 `pdf-lib.custom.min.js`／`fontkit.custom.min.js`，部署須包含 PDF 與字型素材 |
 
 * UI 模組沿用主要資料與公開 API，不複製平行規則。若任務涉及的 UI 與明確規則來源不符，修正實作；既有錯誤行為不是規格。
 * `spellId` 是持久化與引用識別，不隨顯示名稱改動。確需新增、移除或更名時，須同步更新 `spell-id-baseline.json` 並核對引用及舊資料相容性；基準檔不得用來掩蓋意外遺失。

@@ -7,6 +7,11 @@ const http = require("node:http");
 const vm = require("node:vm");
 const { chromium } = require("playwright");
 
+// Code moved out of index.html loads in place as local scripts without defer/async.
+function getExtractedPageScriptFiles(html) {
+  return [...html.matchAll(/<script\b(?![^>]*\b(?:defer|async)\b)[^>]*\bsrc="(?!https?:|\/\/|data:)([^"?#]+)[^"]*"[^>]*>\s*<\/script>/gi)].map(match => match[1]);
+}
+
 async function main() {
   const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
   const searchScripts = [...html.matchAll(/<script\b[^>]*\bsrc="(search\.js(?:\?[^\"]*)?)"[^>]*>\s*<\/script>/gi)];
@@ -17,6 +22,9 @@ async function main() {
     if (!/\bsrc\s*=|application\/ld\+json/i.test(match[1])) {
       new vm.Script(match[2], { filename: `index.html:inline-${index}` });
     }
+  }
+  for (const file of getExtractedPageScriptFiles(html)) {
+    new vm.Script(fs.readFileSync(path.join(__dirname, file), "utf8"), { filename: file });
   }
   const server = http.createServer((req, res) => {
     const pathname = new URL(req.url, "http://localhost").pathname;

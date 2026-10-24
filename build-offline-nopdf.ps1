@@ -266,6 +266,26 @@ foreach ($match in $scriptTags) {
     )
   }
 
+  # Keep the PDF prechecks (also used by tabletop mode), but replace the loader
+  # so nothing tries to fetch the PDF runtime that this build leaves out.
+  if ([System.IO.Path]::GetFileName($assetPath).Equals("pdf-launcher.js", [System.StringComparison]::OrdinalIgnoreCase)) {
+    $pdfLoaderPattern = 'let\s+pdfExportLoaderPromise\s*=\s*null;[\s\S]*?function\s+buildPdfPrecheckMessages\(\)\s*\{'
+    if ([System.Text.RegularExpressions.Regex]::Matches($scriptContent, $pdfLoaderPattern).Count -ne 1) {
+      throw "build-offline-nopdf.ps1: expected one PDF loader section to replace; check pdf-launcher.js."
+    }
+    $scriptContent = [System.Text.RegularExpressions.Regex]::Replace(
+      $scriptContent,
+      $pdfLoaderPattern,
+      [System.Text.RegularExpressions.MatchEvaluator]{ param($pdfLoaderMatch) @'
+async function ensurePdfExportReady() {
+  throw new Error("此離線精簡版不包含 PDF 匯出功能");
+}
+
+function buildPdfPrecheckMessages() {
+'@ }
+    )
+  }
+
   $embeddedBinaryReferences = [System.Text.RegularExpressions.Regex]::Matches(
     $scriptContent,
     '(?<quote>["''`])(?<binaryReference>(?!data:|https?:|//)[^"''`]*?\.(?:gif|jpeg|jpg|png|svg|webp)(?:\?[^"''`]*)?)(?<endquote>["''`])',
@@ -316,9 +336,13 @@ foreach ($match in $scriptTags) {
 
   $scriptDataUrl = "data:text/javascript;charset=utf-8;base64,$scriptBase64"
 
+  # Scripts moved out of index.html run in place without defer; keep each tag's timing.
+  $scriptAttributes = $match.Value -replace '\bsrc="[^"]*"', ''
+  $deferAttribute = if ($scriptAttributes -match '\bdefer\b') { "defer " } else { "" }
+
   $html = $html.Replace(
     $match.Value,
-    "<script defer src=`"$scriptDataUrl`" data-offline-source=`"$reference`"></script>"
+    "<script $($deferAttribute)src=`"$scriptDataUrl`" data-offline-source=`"$reference`"></script>"
   )
 }
 
@@ -377,19 +401,6 @@ foreach ($match in $iframeTags) {
   $replacementTag = $match.Value.Replace("src=`"$reference`"", "src=`"$iframeDataUrl`" data-offline-source=`"$reference`"")
   $html = $html.Replace($match.Value, $replacementTag)
 }
-
-$html = [System.Text.RegularExpressions.Regex]::Replace(
-  $html,
-  'let\s+pdfExportLoaderPromise\s*=\s*null;[\s\S]*?function\s+buildPdfPrecheckMessages\(\)\s*\{',
-  @'
-async function ensurePdfExportReady() {
-  throw new Error("此離線精簡版不包含 PDF 匯出功能");
-}
-
-function buildPdfPrecheckMessages() {
-'@,
-  [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
-)
 
 $html = [System.Text.RegularExpressions.Regex]::Replace(
   $html,
@@ -500,6 +511,10 @@ assert(!html.includes("async function createShortShareUrl("));
 assert(!html.includes("可修改後輸出 PDF，或匯出 JSON 保存。"));
 for (const match of html.matchAll(/<script\b(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)) {
   new vm.Script(match[1]);
+}
+// Embedded scripts were rewritten above (for example the PDF loader stub).
+for (const match of html.matchAll(/<script\b[^>]*\bsrc="data:text\/javascript;charset=utf-8;base64,([^"]+)"[^>]*\bdata-offline-source="([^"]+)"/gi)) {
+  new vm.Script(Buffer.from(match[1], "base64").toString("utf8"), { filename: match[2] });
 }
 
 const start = html.indexOf("let exitShareDialogPending = false;");

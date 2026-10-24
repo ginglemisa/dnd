@@ -7,6 +7,11 @@ const http = require("node:http");
 const vm = require("node:vm");
 const { chromium } = require("playwright");
 
+// Code moved out of index.html loads in place as local scripts without defer/async.
+function getExtractedPageScriptFiles(html) {
+  return [...html.matchAll(/<script\b(?![^>]*\b(?:defer|async)\b)[^>]*\bsrc="(?!https?:|\/\/|data:)([^"?#]+)[^"]*"[^>]*>\s*<\/script>/gi)].map(match => match[1]);
+}
+
 // Shared presentation, dialogs and PDF output. Domain rules stay in their suites.
 const browserErrors = [];
 function verifyAnalyticsIsolation(html) {
@@ -2965,6 +2970,9 @@ async function main() {
   verifyAnalyticsIsolation(html);
   for (const match of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)) {
     if (match[1].trim()) new vm.Script(match[1]);
+  }
+  for (const file of getExtractedPageScriptFiles(html)) {
+    new vm.Script(fs.readFileSync(path.join(__dirname, file), "utf8"), { filename: file });
   }
   const server = http.createServer((req, res) => {
     const pathname = decodeURIComponent(new URL(req.url, "http://localhost").pathname);

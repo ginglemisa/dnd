@@ -493,7 +493,10 @@ assert.throws(() => buildRolls("fire-bolt"), /Missing spell attack bonus/);
 
 const tabletopModeSource = fs.readFileSync("tabletop-mode.js", "utf8");
 const diceSource = fs.readFileSync("dice-roller.js", "utf8");
-const indexSource = fs.readFileSync("index.html", "utf8");
+const indexHtml = fs.readFileSync("index.html", "utf8");
+// Code moved out of index.html loads in place as local scripts without defer/async.
+const indexSource = [indexHtml, ...[...indexHtml.matchAll(/<script\b(?![^>]*\b(?:defer|async)\b)[^>]*\bsrc="(?!https?:|\/\/|data:)([^"?#]+)[^"]*"[^>]*>\s*<\/script>/gi)]
+  .map(match => fs.readFileSync(match[1], "utf8"))].join("\n");
 assert(!/window\.(?:confirm|prompt)\s*\(/.test(tabletopSpellSource), "施法流程不得使用瀏覽器原生對話框");
 assert(tabletopSpellSource.includes("commitSpellCastResource"), "跑團模式法術必須透過 TabletopMode 提交資源");
 assert(tabletopSpellSource.includes('entry.spellClass === "cleric"'), "牧師強力施法必須核對實際法表來源");

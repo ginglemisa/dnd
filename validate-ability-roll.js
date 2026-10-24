@@ -7,6 +7,11 @@ const http = require("node:http");
 const vm = require("node:vm");
 const { chromium } = require("playwright");
 
+// Code moved out of index.html loads in place as local scripts without defer/async.
+function getExtractedPageScriptFiles(html) {
+  return [...html.matchAll(/<script\b(?![^>]*\b(?:defer|async)\b)[^>]*\bsrc="(?!https?:|\/\/|data:)([^"?#]+)[^"]*"[^>]*>\s*<\/script>/gi)].map(match => match[1]);
+}
+
 async function validatePointBuy(page) {
   const sheetValues = () => page.evaluate(() => ["str", "dex", "con", "int", "wis", "cha"].map(key => document.getElementById(key).value));
   const originalValues = await sheetValues();
@@ -158,8 +163,12 @@ async function validateDiceHistory(browser, url) {
 }
 
 async function main() {
-  for (const match of fs.readFileSync(path.join(__dirname, "index.html"), "utf8").matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)) {
+  const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
+  for (const match of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)) {
     if (match[1].trim()) new vm.Script(match[1]);
+  }
+  for (const file of getExtractedPageScriptFiles(html)) {
+    new vm.Script(fs.readFileSync(path.join(__dirname, file), "utf8"), { filename: file });
   }
   const server = http.createServer((req, res) => {
     const pathname = decodeURIComponent(new URL(req.url, "http://localhost").pathname);
