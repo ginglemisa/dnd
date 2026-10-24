@@ -5,7 +5,7 @@
  *   ensurePdfExportReady、buildPdfPrecheckMessages、showPdfExportModal、
  *   downloadQuickBuildCompactPdf 等仍為全域函式，供 index.html、quick-build.js、
  *   tabletop-mode.js 與回歸腳本呼叫。
- * - 職業缺項檢查 getClassFeatureChoiceIssues 屬職業選項，仍留在 index.html。
+ * - 職業缺項檢查 getClassFeatureChoiceIssues 屬職業選項，在 class-features-ui.js。
  * - build-offline-nopdf.ps1 會把本檔 pdfExportLoaderPromise 到
  *   buildPdfPrecheckMessages 之間的載入器換成停用替身，調整時須同步。
  * - 只放函式與狀態宣告；頂層只登記 window.downloadQuickBuildCompactPdf。

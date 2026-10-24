@@ -1,7 +1,7 @@
 (function attachClassOptionMemory(globalScope) {
   "use strict";
   // 其他職業的職業選項只存在這份本機副本；畫面、autosave、JSON、分享與 PDF
-  // 仍只含目前職業。index.html 負責擷取與還原，此模組只負責保存與驗證。
+  // 仍只含目前職業。class-features-ui.js 負責擷取與還原，此模組只負責保存與驗證。
   const VERSION = 1;
   const MEMORY_KEY = "dnd.classOptionMemories.v1";
   const CLASS_IDS = new Set(["barbarian", "bard", "cleric", "druid", "fighter", "monk", "paladin", "ranger", "rogue", "sorcerer", "warlock", "wizard"]);
