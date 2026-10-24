@@ -417,6 +417,47 @@ async function validateEquipmentSearch(page) {
     assert.equal(await detail.isVisible(), false);
     assert.equal(await button.evaluate(el => el === document.activeElement), true, "equipment detail restores focus");
   }
+  // English names are searchable (including table rows and tool variants) and shown only beside the detail title.
+  for (const [query, name, english, mastery] of [
+    ["FLAIL", "連枷", "Flail", "Sap"],
+    ["alchemist's supplies", "煉金師工具", "Alchemist's Supplies"],
+    ["crystal", "奧術法器", "Arcane Focus"],
+    ["lute", "樂器", "Musical Instrument"],
+    ["chain mail", "鎖子甲", "Chain Mail"]
+  ]) {
+    await submit(query);
+    const button = buttons.filter({ hasText: new RegExp(`^${name}$`, "u") });
+    assert.equal(await button.count(), 1, `${query}: finds ${name}`);
+    assert.doesNotMatch((await buttons.allTextContents()).join(""), /[A-Za-z]/u, "result names stay Chinese");
+    await button.click();
+    assert.equal(await page.locator("#equipment-detail-title").textContent(), name);
+    assert.equal(await page.locator("#equipment-detail-title-en").textContent(), english);
+    if (mastery) {
+      assert.equal(await detail.locator(".equipment-detail-stats .equipment-detail-english").textContent(), mastery, "mastery English");
+    }
+    await page.keyboard.press("Escape");
+  }
+  // Table rows and tool variants are their own results; they open the shared detail with that item preselected.
+  for (const [query, name, parent, english] of [["orb", "寶珠", "奧術法器", "Orb"], ["魯特琴", "魯特琴", "樂器", "Lute"]]) {
+    await submit(query);
+    const row = page.locator("#equipment-search-result-list .equipment-search-result-item")
+      .filter({ has: page.locator(".equipment-search-result-name", { hasText: new RegExp(`^${name}$`, "u") }) });
+    assert.equal(await row.count(), 1, `${query}: variant result`);
+    assert.equal(await row.locator(".equipment-search-result-category").textContent(), parent);
+    await row.getByRole("button").click();
+    assert.equal(await page.locator("#equipment-detail-title").textContent(), parent);
+    const select = detail.locator(".equipment-detail-modal__actions select");
+    assert.match(await select.evaluate(el => el.selectedOptions[0].textContent), new RegExp(`^${name}，`, "u"), `${name}: preselected`);
+    if (parent === "奧術法器") {
+      assert.deepEqual(await detail.locator(".equipment-detail-table tbody td:first-child .equipment-detail-english").allTextContents(),
+        ["Crystal", "Orb", "Rod", "Staff", "Wand"], "table item English");
+    }
+    await detail.getByRole("button", { name: "購買", exact: true }).click();
+    const purchaseDialog = page.locator(".equipment-purchase-modal");
+    assert.match(await purchaseDialog.locator(".equipment-purchase-description").textContent(), new RegExp(`^${name}（`, "u"));
+    assert.equal(await purchaseDialog.locator(".equipment-purchase-english").textContent(), english, "purchase English line");
+    await purchaseDialog.locator(".equipment-purchase-cancel").click();
+  }
   // Rule descriptions overlay the current detail without changing search or equipment state.
   for (const width of [1100, 390]) {
     await page.setViewportSize({ width, height: 850 });

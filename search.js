@@ -412,6 +412,42 @@
   let equipmentSearchIndex = null;
   let equipmentDetailTrigger = null;
 
+  function getEquipmentEnglishName(name) {
+    return globalThis.EQUIPMENT_ENGLISH_NAMES?.[String(name || "").trim()] || "";
+  }
+
+  // 多種品項：表格列與樂器／賭具變體，沿用整組說明。
+  function getEquipmentVariantNames(entry) {
+    const names = entry.kind === "tool"
+      ? globalScope.ToolProficiencyCatalog?.groups.find(group => group.label === entry.name)?.options || []
+      : [];
+    const tableNames = [];
+    if (entry.tableHtml) {
+      const template = document.createElement("template");
+      template.innerHTML = entry.tableHtml;
+      template.content.querySelectorAll("tbody tr").forEach(row => tableNames.push(row.cells[0]?.textContent?.trim() || ""));
+    }
+    return [...names, ...tableNames].filter(Boolean);
+  }
+
+  function withEquipmentEnglishSearchText(entry) {
+    const englishNames = [entry.name, ...getEquipmentVariantNames(entry)].map(getEquipmentEnglishName).filter(Boolean);
+    if (englishNames.length) entry.searchText += `\n${englishNames.join("\n").toLowerCase()}`;
+    return entry;
+  }
+
+  // 個別品項列在所屬項目之後，點擊時開啟所屬詳情並預選該品項。
+  function withEquipmentVariantEntries(entry) {
+    return [entry, ...getEquipmentVariantNames(entry).map(name => ({
+      name,
+      category: entry.name,
+      subtype: entry.subtype,
+      kind: entry.kind,
+      parent: entry,
+      searchText: `${name}\n${getEquipmentEnglishName(name)}`.toLowerCase()
+    }))];
+  }
+
   function equipmentTextEntry(segment, category, kind) {
     const text = String(segment?.text || "").trim();
     const firstLine = text.split("\n", 1)[0].trim();
@@ -471,6 +507,7 @@
       ...getEquipmentNoteEntries("其他工具", "工具", "tool"),
       ...getEquipmentNoteEntries("冒險用品", "冒險用品", "adventuring-gear")
     );
+    equipmentSearchIndex = equipmentSearchIndex.map(withEquipmentEnglishSearchText).flatMap(withEquipmentVariantEntries);
   }
 
   function ensureEquipmentDetailModal() {
@@ -481,9 +518,9 @@
     modal.inert = true;
     modal.setAttribute("aria-hidden", "true");
     modal.innerHTML = `
-      <section class="equipment-detail-modal__card" role="dialog" aria-modal="true" aria-labelledby="equipment-detail-title">
+      <section class="equipment-detail-modal__card" role="dialog" aria-modal="true" aria-labelledby="equipment-detail-title equipment-detail-title-en">
         <header class="equipment-detail-modal__header">
-          <div><span id="equipment-detail-category" class="equipment-detail-modal__category"></span><h2 id="equipment-detail-title"></h2></div>
+          <div><span id="equipment-detail-category" class="equipment-detail-modal__category"></span><div class="equipment-detail-modal__title"><h2 id="equipment-detail-title"></h2><span id="equipment-detail-title-en" class="equipment-detail-english" lang="en"></span></div></div>
           <button type="button" class="equipment-detail-modal__close" aria-label="關閉裝備詳情">×</button>
         </header>
         <div id="equipment-detail-content" class="equipment-detail-modal__content" tabindex="0"></div>
@@ -537,7 +574,11 @@
   }
 
   function renderEquipmentField(key, value) {
-    if (key === "精通") return renderEquipmentRuleLink(value, "mastery");
+    if (key === "精通") {
+      const english = globalThis.WEAPON_MASTERY_ENGLISH_NAMES?.[String(value).trim()];
+      return renderEquipmentRuleLink(value, "mastery")
+        + (english ? ` <span class="equipment-detail-english" lang="en">${escapeHtml(english)}</span>` : "");
+    }
     if (key === "力量需求" && value !== "-") return renderEquipmentRuleLink(value, "armor", "力量需求");
     if (key === "隱匿懲罰" && value === "劣勢") return renderEquipmentRuleLink(value, "armor", "隱匿劣勢");
     return escapeHtml(String(value));
@@ -567,7 +608,7 @@
       ${entry.tableHtml ? `<div class="equipment-detail-table">${entry.tableHtml}</div>` : ""}`;
   }
 
-  function renderEquipmentPurchaseActions(entry, modal) {
+  function renderEquipmentPurchaseActions(entry, modal, selectedName = "") {
     const actions = modal.querySelector(".equipment-detail-modal__actions");
     actions.replaceChildren();
     const sourceLinks = [...document.querySelectorAll("#equipment-notes-section .equipment-purchase-link")];
@@ -596,6 +637,8 @@
         option.textContent = link.getAttribute("aria-label")?.replace(/^購買/u, "") || link.textContent;
         select.appendChild(option);
       });
+      const selectedIndex = links.findIndex(link => link.textContent.trim() === selectedName);
+      if (selectedIndex >= 0) select.value = String(selectedIndex);
       actions.appendChild(select);
     }
     const button = document.createElement("button");
@@ -609,14 +652,27 @@
     });
   }
 
-  function openEquipmentDetail(entry, trigger) {
+  function openEquipmentDetail(resultEntry, trigger) {
+    const entry = resultEntry.parent || resultEntry;
     const modal = ensureEquipmentDetailModal();
     equipmentDetailTrigger = trigger || document.activeElement;
     modal.querySelector("#equipment-detail-category").textContent = entry.subtype || entry.category;
     modal.querySelector("#equipment-detail-title").textContent = entry.name;
+    const englishTitle = modal.querySelector("#equipment-detail-title-en");
+    englishTitle.textContent = getEquipmentEnglishName(entry.name);
+    englishTitle.hidden = !englishTitle.textContent;
     const content = modal.querySelector("#equipment-detail-content");
     content.innerHTML = entry.data ? renderEquipmentDataDetail(entry) : renderEquipmentTextDetail(entry);
-    renderEquipmentPurchaseActions(entry, modal);
+    content.querySelectorAll(".equipment-detail-table tbody tr").forEach(row => {
+      const english = getEquipmentEnglishName(row.cells[0]?.textContent);
+      if (!english) return;
+      const label = document.createElement("span");
+      label.className = "equipment-detail-english";
+      label.lang = "en";
+      label.textContent = english;
+      row.cells[0].append(" ", label);
+    });
+    renderEquipmentPurchaseActions(entry, modal, resultEntry.parent ? resultEntry.name : "");
     content.scrollTop = 0;
     modal.inert = false;
     modal.classList.add("open");

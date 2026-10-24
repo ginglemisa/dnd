@@ -6324,6 +6324,17 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   font-weight: 700;
 }
 
+.equipment-purchase-english {
+  margin: -0.85rem 0 1rem;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.equipment-purchase-english[hidden] {
+  display: none;
+}
+
 :where(html:not([data-ui-theme="warm"])) .equipment-purchase-balance {
   margin: -0.35rem 0 1rem;
   padding: 0.55rem 0.7rem;
@@ -6791,6 +6802,23 @@ html.equipment-detail-open body {
   margin: 0.2rem 0 0;
   color: var(--text);
   font-size: var(--fs-xl);
+}
+
+.equipment-detail-modal__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.5rem;
+}
+
+.equipment-detail-english {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.equipment-detail-english[hidden] {
+  display: none;
 }
 
 .equipment-detail-modal__category {
