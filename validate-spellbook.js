@@ -1629,7 +1629,7 @@ async function verifyPdfSpellbookOptions(page) {
     window.ensurePdfExportReady = async () => {};
     window.preloadPdfExportAssets = async () => {};
     window.validatePdfCharacterName = async () => ({ fits: true });
-    window.validateCompactEnglishName = async () => ({ fits: true });
+    window.validatePdfEnglishName = async (_value, outputMode) => { window.__pdfTestEnglishMode = outputMode; return { fits: true }; };
     window.exportCharacterPdfFromState = async (_state, options) => { window.__pdfTestOptions = options; };
     return results;
   });
@@ -1642,14 +1642,16 @@ async function verifyPdfSpellbookOptions(page) {
       await page.evaluate(() => { window.__pdfTestOptions = null; window.__pdfTestDone = showPdfExportModal(__pdfTestState, [], null); });
       const modal = page.locator('.pdf-export-flow-modal');
       await modal.getByRole('button', { name: '繼續', exact: true }).click();
+      assert.equal(await modal.locator('.pdf-export-name-field__optional').count(), 2, "both names are marked optional");
+      await modal.locator('#pdf-export-english-name').fill("Enix Zakarum");
       await modal.getByRole('button', { name: '下一步', exact: true }).click();
       await modal.locator('.pdf-export-choice-option').first().click();
       assert.equal(await modal.locator('#pdf-export-title').innerText(), "是否將法術書寫入法術 notes？");
       await modal.locator('.pdf-export-choice-option').nth(include ? 0 : 1).click();
       await modal.locator('.pdf-export-format-option').filter({ has: page.getByText(title, { exact: true }) }).click();
-      if (mode === "compact") await modal.getByRole('button', { name: '製作美觀易讀版', exact: true }).click();
       await page.evaluate(() => __pdfTestDone);
-      assert.deepEqual(await page.evaluate(() => ({ mode: __pdfTestOptions.outputMode, include: __pdfTestOptions.includeSpellbook })), { mode, include });
+      assert.deepEqual(await page.evaluate(() => ({ mode: __pdfTestOptions.outputMode, include: __pdfTestOptions.includeSpellbook,
+        englishName: __pdfTestOptions.englishName, checkedMode: __pdfTestEnglishMode })), { mode, include, englishName: "Enix Zakarum", checkedMode: mode });
     }
   }
   for (const classId of ["warlock", "cleric", "fighter"]) {

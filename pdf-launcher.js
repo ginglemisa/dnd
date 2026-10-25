@@ -49,8 +49,8 @@ async function ensurePdfExportReady() {
     pdfExportLoaderPromise = (async () => {
       await loadScriptOnce("pdf-lib.custom.min.js");
       await loadScriptOnce("fontkit.custom.min.js");
-      await loadScriptOnce("pdf-field-map.js?v=20261021-feat-rule-tips");
-      await loadScriptOnce("pdf-export.js?v=20261019-remove-no-font");
+      await loadScriptOnce("pdf-field-map.js?v=20261025-english-name");
+      await loadScriptOnce("pdf-export.js?v=20261025-english-name");
     })().catch((error) => {
       pdfExportLoaderPromise = null;
       throw error;
@@ -248,7 +248,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
     })();
     if (raceChoice && !result[raceChoice.key]) steps.push("race");
     steps.push("format");
-    let idx=0, busy=false, lastMode=null, formatError='', selectedNameMeasurement=null;
+    let idx=0, busy=false, lastMode=null, formatError='', selectedNameMeasurement=null, invalidNameField='';
 
     function close(v, restoreFocus=true){ document.removeEventListener('keydown', onKeyDown, true); overlay.remove(); if(restoreFocus)(exportPdfBtn||prevFocus)?.focus?.(); resolve(v); }
     function getFocusable(){ return Array.from(card.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')).filter(el=>!el.disabled); }
@@ -283,8 +283,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
       const step=type ? '' : steps[idx];
       const stepTitles={
         precheck:['匯出前檢查','確認角色資料是否還有需要補填的地方。'],
-        name:['角色名稱','名稱會寫入角色卡中；不需要時也可以留空。'],
-        englishName:['英文名','英文名會以 12 pt 置中寫入美觀易讀版，與角色名稱共用相同的欄位寬度及中心。'],
+        name:['角色名稱','中文與英文名稱會寫入角色卡；兩個欄位都可以留空。'],
         equipment:quickBuildEquipmentIncluded
           ? ['預設裝備已加入','快速創角已將實際選擇寫入「攜帶物品」。']
           : ['加入預設裝備','決定是否把職業與背景提供的起始裝備一併寫入。'],
@@ -346,16 +345,28 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
         const n=document.createElement('button'); n.type='button'; n.className='pdf-export-flow-modal__button pdf-export-flow-modal__button--primary'; n.textContent='繼續'; n.onclick=()=>{idx++; render();}; a.append(n); n.focus();
       }
       else if(step==='name'){
-        const field=document.createElement('div'); field.className='pdf-export-name-field';
-        const label=document.createElement('label'); label.htmlFor='pdf-export-character-name'; label.textContent='角色名稱';
-        const i=document.createElement('input'); i.id='pdf-export-character-name'; i.className='pdf-export-name-field__input'; i.placeholder='例如：艾尼克斯・薩卡蘭姆'; i.value=result.characterName; i.autocomplete='off'; i.spellcheck=false; i.enterKeyHint='next';
-        const meta=document.createElement('div'); meta.className='pdf-export-name-field__meta'; meta.id='pdf-export-name-hint';
-        const hint=document.createElement('span'); hint.textContent='選擇格式後，會依實際字型、字級與欄位寬度檢查';
-        i.setAttribute('aria-describedby','pdf-export-name-hint');
-        meta.append(hint); field.append(label,i,meta); d.appendChild(field);
-        const submitName=()=>{result.characterName=i.value.trim();idx++;render();};
-        i.addEventListener('keydown',(event)=>{if(event.key==='Enter'){event.preventDefault();submitName();}});
-        const n=document.createElement('button'); n.type='button'; n.className='pdf-export-flow-modal__button pdf-export-flow-modal__button--primary'; n.textContent='下一步'; n.onclick=submitName; a.append(n); i.focus();
+        const createNameField=(id,labelText,placeholder,value,hintText)=>{
+          const field=document.createElement('div'); field.className='pdf-export-name-field';
+          const label=document.createElement('label'); label.htmlFor=id; label.append(labelText);
+          const optional=document.createElement('span'); optional.className='pdf-export-name-field__optional'; optional.textContent='可留空'; label.appendChild(optional);
+          const input=document.createElement('input'); input.id=id; input.className='pdf-export-name-field__input'; input.placeholder=placeholder; input.value=value; input.autocomplete='off'; input.spellcheck=false;
+          const meta=document.createElement('div'); meta.className='pdf-export-name-field__meta'; meta.id=`${id}-hint`;
+          const hint=document.createElement('span'); hint.textContent=hintText;
+          input.setAttribute('aria-describedby',meta.id);
+          input.addEventListener('input',()=>input.removeAttribute('aria-invalid'));
+          meta.append(hint); field.append(label,input,meta); d.appendChild(field);
+          return input;
+        };
+        const nameInput=createNameField('pdf-export-character-name','角色名稱','例如：艾尼克斯・薩卡蘭姆',result.characterName,'選擇格式後，會依實際字型、字級與欄位寬度檢查');
+        const englishInput=createNameField('pdf-export-english-name','英文名','例如：Enix Zakarum',result.englishName,'以 12 pt 置中寫在角色名稱下方');
+        nameInput.enterKeyHint='next'; englishInput.enterKeyHint='next'; englishInput.lang='en';
+        const submitName=()=>{result.characterName=nameInput.value.trim();result.englishName=englishInput.value.trim();invalidNameField='';idx++;render();};
+        nameInput.addEventListener('keydown',(event)=>{if(event.key==='Enter'&&!event.isComposing){event.preventDefault();englishInput.focus();}});
+        englishInput.addEventListener('keydown',(event)=>{if(event.key==='Enter'&&!event.isComposing){event.preventDefault();submitName();}});
+        const n=document.createElement('button'); n.type='button'; n.className='pdf-export-flow-modal__button pdf-export-flow-modal__button--primary'; n.textContent='下一步'; n.onclick=submitName; a.append(n);
+        const invalidInput=invalidNameField==='englishName' ? englishInput : invalidNameField==='characterName' ? nameInput : null;
+        invalidInput?.setAttribute('aria-invalid','true');
+        (invalidInput||nameInput).focus();
       }
       else if(step==='equipment'){
         if(quickBuildEquipmentIncluded){
@@ -422,26 +433,29 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
           heading.append(name,tag); button.append(heading,detail); button.onclick=async()=>{
             formatError='';
             options.querySelectorAll('button').forEach((option)=>{option.disabled=true;});
-            waitTitle.textContent='正在依實際字型檢查角色名稱…';
+            waitTitle.textContent='正在依實際字型檢查名稱…';
             try{
               await ensurePdfExportReady();
               if(typeof window.validatePdfCharacterName!=='function') throw new Error('角色名字寬檢查函式不存在');
               const measurement=await window.validatePdfCharacterName(result.characterName,mode);
               if(measurement && !measurement.fits){
                 formatError=`角色名稱即使縮小至 ${measurement.minimumFontSize.toFixed(1)} pt 仍超出欄位，請縮短後再輸出。`;
+                invalidNameField='characterName';
+                render();
+                return;
+              }
+              if(typeof window.validatePdfEnglishName!=='function') throw new Error('英文名字寬檢查函式不存在');
+              const englishMeasurement=await window.validatePdfEnglishName(result.englishName,mode);
+              if(englishMeasurement && !englishMeasurement.fits){
+                formatError='英文名超出欄位在 12 pt 可容納的寬度，請縮短後再輸出。';
+                invalidNameField='englishName';
                 render();
                 return;
               }
               selectedNameMeasurement=measurement;
-              if(mode!=='compact'){
-                startExport(mode,measurement);
-                return;
-              }
-              if(!steps.includes('englishName')) steps.push('englishName');
-              idx++;
-              render();
+              startExport(mode,measurement);
             }catch(error){
-              formatError=`無法檢查角色名稱：${error?.message||'未知錯誤'}`;
+              formatError=`無法檢查名稱：${error?.message||'未知錯誤'}`;
               render();
             }
           };
@@ -459,41 +473,6 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
         }else{
           a.hidden=true;options.querySelector('button')?.focus();
         }
-      }
-      else if(step==='englishName'){
-        if(selectedNameMeasurement?.shrinks){const fit=document.createElement('p');fit.className='pdf-export-step-copy';fit.textContent=`角色名稱將由 ${selectedNameMeasurement.preferredFontSize.toFixed(1)} pt 縮小至 ${selectedNameMeasurement.fontSize.toFixed(1)} pt。`;d.appendChild(fit);}
-        const field=document.createElement('div'); field.className='pdf-export-name-field';
-        const label=document.createElement('label'); label.htmlFor='pdf-export-english-name'; label.textContent='英文名';
-        const i=document.createElement('input'); i.id='pdf-export-english-name'; i.className='pdf-export-name-field__input'; i.placeholder='例如：Enix Zakarum'; i.value=result.englishName; i.autocomplete='off'; i.spellcheck=false; i.enterKeyHint='done'; i.lang='en';
-        const meta=document.createElement('div'); meta.className='pdf-export-name-field__meta'; meta.id='pdf-export-english-name-hint';
-        const hint=document.createElement('span'); hint.textContent='可留空；依思源宋體 12 pt 的實際字寬檢查';
-        const err=document.createElement('p'); err.id='pdf-export-english-name-error'; err.className='pdf-export-flow-modal__error'; err.setAttribute('aria-live','polite');
-        i.setAttribute('aria-describedby','pdf-export-english-name-hint pdf-export-english-name-error');
-        i.addEventListener('input',()=>{if(err.textContent){err.textContent='';i.removeAttribute('aria-invalid');}});
-        meta.append(hint); field.append(label,i,meta,err); d.appendChild(field);
-        const submitEnglishName=async()=>{
-          const value=i.value.trim();
-          i.disabled=true; n.disabled=true; n.textContent='檢查字寬中…';
-          try{
-            await ensurePdfExportReady();
-            if(typeof window.validateCompactEnglishName!=='function') throw new Error('英文名字寬檢查函式不存在');
-            const measurement=await window.validateCompactEnglishName(value);
-            if(!measurement.fits){
-              err.textContent='英文名超出欄位在 12 pt 可容納的寬度，請縮短。';
-              i.setAttribute('aria-invalid','true');
-              i.disabled=false; n.disabled=false; n.textContent='製作美觀易讀版'; i.focus();
-              return;
-            }
-            result.englishName=value;
-            await startExport('compact');
-          }catch(error){
-            err.textContent=`無法檢查英文名：${error?.message||'未知錯誤'}`;
-            i.setAttribute('aria-invalid','true');
-            i.disabled=false; n.disabled=false; n.textContent='製作美觀易讀版'; i.focus();
-          }
-        };
-        i.addEventListener('keydown',(event)=>{if(event.key==='Enter'){event.preventDefault();submitEnglishName();}});
-        const n=document.createElement('button'); n.type='button'; n.className='pdf-export-flow-modal__button pdf-export-flow-modal__button--primary'; n.textContent='製作美觀易讀版'; n.onclick=submitEnglishName; a.append(n); i.focus();
       }
     }
 

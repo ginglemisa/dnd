@@ -62,6 +62,7 @@
         equipment1: 9
       },
       fixedFontSizes: {
+        Name2: 12,
         classFeatures1: 9,
         classFeatures2: 9,
         specie_features1: 8.5,
@@ -287,7 +288,7 @@
     })
   });
   const DEFAULT_PDF_EXPORT_MODE = 'editable';
-  const COMPACT_ENGLISH_NAME_FONT_SIZE = 12;
+  const ENGLISH_NAME_FONT_SIZE = 12;
   // Verified against the first-page Name1 widget in 5e_char_sheet.pdf:
   // [112.61348, 528.512085, 245.080856, 561.848206].
   const EDITABLE_CHARACTER_NAME_FIELD_WIDTH = 245.080856 - 112.61348;
@@ -488,17 +489,24 @@
     return measurePdfCharacterName(await getValidationFont(profile), value, outputMode);
   }
 
-  function measureCompactEnglishName(cjkFont, value) {
+  function measurePdfEnglishName(cjkFont, value, outputMode) {
     const text = String(value || '').trim();
-    const maxWidth = PDF_LAYOUT_SETTINGS.compact.fieldAdjustments.Name1.width
-      - PDF_LAYOUT_SETTINGS.compact.horizontalPadding;
-    const width = measureTextWidth(cjkFont, text, COMPACT_ENGLISH_NAME_FONT_SIZE);
+    const layoutSettings = getPdfLayoutSettings(getPdfExportProfile({ outputMode }));
+    // Name2 shares Name1's horizontal bounds in both modes.
+    const fieldWidth = layoutSettings.fieldAdjustments.Name1?.width
+      || EDITABLE_CHARACTER_NAME_FIELD_WIDTH;
+    const maxWidth = fieldWidth - layoutSettings.horizontalPadding;
+    const width = measureTextWidth(cjkFont, text, ENGLISH_NAME_FONT_SIZE);
     return { fits: width <= maxWidth, width, maxWidth };
   }
 
+  async function validatePdfEnglishName(value, outputMode = DEFAULT_PDF_EXPORT_MODE) {
+    const profile = getPdfExportProfile({ outputMode });
+    return measurePdfEnglishName(await getValidationFont(profile), value, outputMode);
+  }
+
   async function validateCompactEnglishName(value) {
-    const profile = PDF_EXPORT_PROFILES.compact;
-    return measureCompactEnglishName(await getValidationFont(profile), value);
+    return validatePdfEnglishName(value, 'compact');
   }
 
   function setCheckboxField(form, fieldName, checked) {
@@ -1149,11 +1157,15 @@
     if (!characterNameMeasurement.fits) {
       throw new Error(`角色名稱在 ${characterNameMeasurement.minimumFontSize} pt 的可讀下限仍超出 Name1 欄位，請縮短後再試。`);
     }
+    const englishNameMeasurement = measurePdfEnglishName(
+      fontEmbedResult.font,
+      englishName,
+      exportOptions.outputMode || DEFAULT_PDF_EXPORT_MODE
+    );
+    if (!englishNameMeasurement.fits) {
+      throw new Error('英文名超出 Name2 欄位在 12 pt 可容納的寬度，請縮短後再試。');
+    }
     if (profile.layoutId === 'compact') {
-      const englishNameMeasurement = measureCompactEnglishName(fontEmbedResult.font, englishName);
-      if (!englishNameMeasurement.fits) {
-        throw new Error('英文名超出 Name2 欄位在 12 pt 可容納的寬度，請縮短後再試。');
-      }
       // Damage type is rules-significant, so preserve it at the compact
       // attack-row minimum instead of replacing its tail with an ellipsis.
       // Borrow only the required space from the adjacent note widget.
@@ -1199,5 +1211,6 @@
   globalScope.exportCharacterPdfFromState = exportCharacterPdfFromState;
   globalScope.preloadPdfExportAssets = preloadPdfExportAssets;
   globalScope.validatePdfCharacterName = validatePdfCharacterName;
+  globalScope.validatePdfEnglishName = validatePdfEnglishName;
   globalScope.validateCompactEnglishName = validateCompactEnglishName;
 })(window);

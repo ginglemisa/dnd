@@ -12418,6 +12418,23 @@ html[data-theme="dark"] .brand-logo-crop .legal-modal-logo-dark {
   font-weight: 850;
 }
 
+.pdf-export-name-field + .pdf-export-name-field {
+  margin-top: 18px;
+}
+
+.pdf-export-name-field__optional {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 800;
+  line-height: 1.4;
+  vertical-align: 1px;
+}
+
 :where(html:not([data-ui-theme="warm"])) .pdf-export-name-field__input {
   width: 100%;
   min-height: 50px;

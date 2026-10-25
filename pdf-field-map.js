@@ -152,6 +152,8 @@
     wizard: '塑能學派'
   });
 
+  // A selected option is appended to its heading as "／選項"; nextLine specs
+  // print "選擇：選項" below instead. Unselected options leave the heading as is.
   const CLASS_FEATURE_CHOICE_SPECS = Object.freeze({
     cleric: Object.freeze([
       Object.freeze({
@@ -185,22 +187,28 @@
         ])
       })
     ]),
+    fighter: Object.freeze([
+      Object.freeze({ heading: '等級 1：戰鬥風格', featStateKey: 'derived-feat-fighting-style-fighter' }),
+      Object.freeze({ heading: '等級 7：額外戰鬥風格（勇士）', featStateKey: 'derived-feat-fighting-style-fighter-2', nextLine: true })
+    ]),
     paladin: Object.freeze([
       Object.freeze({
         heading: '等級 2：戰鬥風格',
-        choices: Object.freeze([
-          Object.freeze({ stateKey: 'paladin-fighting-style', label: '戰鬥風格專長' }),
-          Object.freeze({ stateKey: 'paladin-blessed-warrior', label: '受祝福的勇士' })
-        ])
+        styleStateKey: 'paladin-fighting-style',
+        featStateKey: 'derived-feat-fighting-style-paladin',
+        magicStateKey: 'paladin-blessed-warrior',
+        magicHeading: '等級 2：受祝福的勇士',
+        cantripKeyPrefix: 'class-paladin-blessed-warrior-cantrip-'
       })
     ]),
     ranger: Object.freeze([
       Object.freeze({
         heading: '等級 2：戰鬥風格',
-        choices: Object.freeze([
-          Object.freeze({ stateKey: 'ranger-fighting-style', label: '戰鬥風格專長' }),
-          Object.freeze({ stateKey: 'ranger-druidic-warrior', label: '德魯伊教戰士' })
-        ])
+        styleStateKey: 'ranger-fighting-style',
+        featStateKey: 'derived-feat-fighting-style-ranger',
+        magicStateKey: 'ranger-druidic-warrior',
+        magicHeading: '等級 2：德魯伊教戰士',
+        cantripKeyPrefix: 'class-ranger-druidic-warrior-cantrip-'
       })
     ]),
     sorcerer: Object.freeze([
@@ -216,6 +224,21 @@
         })
       })
     ])
+  });
+
+  // Same-level headings that share one PDF line, joined in the listed order.
+  const CLASS_FEATURE_MERGED_HEADINGS = Object.freeze({
+    barbarian: [[1, ['狂暴', '無甲防禦']], [2, ['險境感知', '魯莽攻擊']], [5, ['額外攻擊', '快速移動']], [7, ['野性本能', '直覺猛撲']]],
+    bard: [[1, ['吟遊詩人激勵', '施法']], [2, ['專精', '萬事通']]],
+    druid: [[1, ['德魯伊語', '施法']]],
+    fighter: [[1, ['回氣', '武器精通']], [2, ['動作如潮', '戰術思維']], [5, ['額外攻擊', '戰術轉移']]],
+    monk: [[1, ['武藝', '無甲防禦']], [2, ['無甲移動', '吐故納新']], [5, ['額外攻擊', '震懾擊']]],
+    paladin: [[1, ['聖療', '施法', '武器精通']], [5, ['額外攻擊', '忠誠坐騎']]],
+    ranger: [[1, ['施法', '宿敵', '武器精通']]],
+    rogue: [[1, ['專精', '偷襲', '武器精通']], [5, ['靈巧打擊', '直覺閃避']], [7, ['反射閃避', '可靠才能']]],
+    sorcerer: [[1, ['施法', '天生術法']], [2, ['魔力泉湧', '超魔法']]],
+    warlock: [[1, ['魔能祈喚', '契約魔法']]],
+    wizard: [[1, ['施法', '儀式精通']]]
   });
 
   const BACKGROUND_LABELS = Object.freeze({
@@ -1065,6 +1088,9 @@
       if (!matched) return;
       const lv = Number.parseInt(matched[1], 10);
       if (Number.isFinite(limit) && lv > limit) return;
+      // The bare "XX子職" heading only announces the choice; the PDF already
+      // has a Subclass1 field and lists each subclass feature separately.
+      if (/^[^（(]*子職$/.test(matched[2].trim())) return;
       const title = removeSubclassTextInsideParentheses(matched[2].trim());
       const entry = `等級 ${matched[1]}：${title}`;
       if (seen.has(entry)) return;
@@ -1079,21 +1105,58 @@
     if (spec.selectStateKey) {
       return spec.labels?.[normalizeText(state[spec.selectStateKey])] || '';
     }
+    if (spec.featStateKey) {
+      return normalizeText(state[spec.featStateKey]);
+    }
     return spec.choices?.find((choice) => Boolean(state[choice.stateKey]))?.label || '';
+  }
+
+  function getClassFeatureCantripNames(state, keyPrefix) {
+    const saved = state.__spellManagement?.classFeatureCantrips || state.__classFeatureCantrips || {};
+    return [1, 2]
+      .map((slot) => getCanonicalSpell(resolveStateSpellId(normalizeText(saved[`${keyPrefix}${slot}`])))?.nameZh)
+      .filter(Boolean);
+  }
+
+  function getClassFeatureChoiceLines(spec, state) {
+    // Paladin/ranger level 2: the magic option replaces the fighting style
+    // heading; the style feat is shown only while Fighting Style is chosen.
+    if (spec.magicStateKey && state[spec.magicStateKey]) {
+      const cantrips = getClassFeatureCantripNames(state, spec.cantripKeyPrefix);
+      return cantrips.length ? [spec.magicHeading, `選擇：${cantrips.join('、')}`] : [spec.magicHeading];
+    }
+    if (spec.styleStateKey && !state[spec.styleStateKey]) return [spec.heading];
+    const label = getSelectedClassFeatureChoiceLabel(spec, state);
+    if (!label) return [spec.heading];
+    return spec.nextLine ? [spec.heading, `選擇：${label}`] : [`${spec.heading}／${label}`];
   }
 
   function insertSelectedClassFeatureChoices(lines, classKey, state) {
     const specs = CLASS_FEATURE_CHOICE_SPECS[classKey] || [];
     if (!specs.length) return lines;
 
-    const choiceByHeading = new Map(specs.map((spec) => [
-      spec.heading,
-      getSelectedClassFeatureChoiceLabel(spec, state)
-    ]));
+    const specByHeading = new Map(specs.map((spec) => [spec.heading, spec]));
     return lines.flatMap((line) => {
-      const label = choiceByHeading.get(line);
-      return label ? [line, `選擇：${label}`] : [line];
+      const spec = specByHeading.get(line);
+      return spec ? getClassFeatureChoiceLines(spec, state) : [line];
     });
+  }
+
+  function mergeClassFeatureHeadings(lines, classKey) {
+    let output = [...lines];
+    (CLASS_FEATURE_MERGED_HEADINGS[classKey] || []).forEach(([level, titles]) => {
+      const presentTitles = titles.filter((title) => output.includes(`等級 ${level}：${title}`));
+      if (presentTitles.length < 2) return;
+      const presentHeadings = new Set(presentTitles.map((title) => `等級 ${level}：${title}`));
+      let placed = false;
+      output = output.flatMap((line) => {
+        if (!presentHeadings.has(line)) return [line];
+        if (placed) return [];
+        placed = true;
+        return [`等級 ${level}：${presentTitles.join('、')}`];
+      });
+    });
+    return output;
   }
 
   function removeSubclassTextInsideParentheses(text) {
@@ -1428,8 +1491,14 @@ function isWeaponRowEmpty(payload, slot) {
         .filter(Boolean)
         .join('、');
     } else if (classKey === 'rogue') {
-      heading = '等級 1：盜賊黑話';
-      languageText = getLanguageLabelByValue(state['language-extra-2']);
+      // Thieves' Cant and the extra language share one line without a level.
+      const headingIndex = lines.indexOf('等級 1：盜賊黑話');
+      if (headingIndex >= 0) {
+        lines[headingIndex] = ['盜賊黑話', getLanguageLabelByValue(state['language-extra-2'])]
+          .filter(Boolean)
+          .join('、');
+      }
+      return lines;
     }
 
     if (!languageText) return lines;
@@ -1561,11 +1630,11 @@ function isWeaponRowEmpty(payload, slot) {
   function getSelectedEldritchInvocationNames(state) {
     const picks = [];
     ELDRITCH_INVOCATION_OPTIONS.forEach((option, index) => {
+      let count = 0;
       for (let slot = 1; slot <= option.max; slot++) {
-        if (state[`eldritch-invocation-${index}-${slot}`]) {
-          picks.push(option.name);
-        }
+        if (state[`eldritch-invocation-${index}-${slot}`]) count++;
       }
+      if (count) picks.push(count > 1 ? `${option.name}×${count}` : option.name);
     });
     return picks;
   }
@@ -1682,10 +1751,13 @@ function isWeaponRowEmpty(payload, slot) {
       .join(', ');
 
     const classFeatureLines = insertClassLanguageLines(
-      insertSelectedClassFeatureChoices(
-        extractClassFeatureHeadings(getClassFeaturesMap()[classKey] || '', level),
-        classKey,
-        state
+      mergeClassFeatureHeadings(
+        insertSelectedClassFeatureChoices(
+          extractClassFeatureHeadings(getClassFeaturesMap()[classKey] || '', level),
+          classKey,
+          state
+        ),
+        classKey
       ),
       classKey,
       state
@@ -1824,7 +1896,7 @@ function isWeaponRowEmpty(payload, slot) {
     if (options.characterName) {
       payload.Name1 = normalizeText(options.characterName);
     }
-    if (options.outputMode === 'compact' && options.englishName) {
+    if (options.englishName) {
       payload.Name2 = normalizeText(options.englishName);
     }
 

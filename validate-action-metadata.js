@@ -1625,6 +1625,7 @@ async function verifyFeatEligibilityWarnings(browser, url) {
     await page.click("#legal-close-btn");
     await page.evaluate(() => {
       window.validatePdfCharacterName = async () => ({ fits: true });
+      window.validatePdfEnglishName = async () => ({ fits: true });
       window.exportCharacterPdfFromState = async state => { window.__featWarningPdfExport = state; };
     });
     await page.click("#utility-menu-toggle");

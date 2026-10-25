@@ -85,6 +85,7 @@
 ## 離線角色卡
 
 * 一般任務只更新來源檔案。只有使用者明確要求建立、測試或更新離線角色卡時，才執行 `build-offline-nopdf.ps1` 並驗證產製結果。
+* 例外：每次 push `main` 至 `origin` 前，先執行 `.\build-offline-nopdf.ps1` 重新產生 `twD20-offline.html`；產物有變更時另建 commit 與本次 push 一併送出。此為常規操作，不需另行報備或詢問；建置或驗證失敗則停止 push 並回報。
 * `twD20-offline.html` 是衍生產物，不能作為 source of truth 或只修改它。產生腳本內嵌本機 CSS、JavaScript、圖片與 About 模組，並停用 PDF 匯出。離線分享須產生正式站的永久網址，不含本機路徑或呼叫短網址服務；完全離線交換使用 JSON。
 * 根目錄以 PowerShell／Node.js 20 以上執行 `.\build-offline-nopdf.ps1`；自動驗證產物語法、離線分享／複製 fallback、分享限制與離開流程，失敗即建置失敗。成品驗證不另列產品 regression；Node.js 模擬 URL／瀏覽器 API 不代表手機權限／儲存實機驗證。
 

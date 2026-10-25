@@ -424,6 +424,41 @@ async function verifyPdf(page, fieldsOnly) {
       state["tool-proficiency-0"] = name;
       if (buildPdfFieldPayload(state).toolsProficiency1 !== name) throw new Error(`Class tool PDF deduplication: ${cls}`);
     }
+    for (const cls of Object.keys(ARMOR_TRAINING_BY_CLASS)) {
+      const payload = buildPdfFieldPayload({ class: cls, level: "20" });
+      const features = `${payload.classFeatures1}\n${payload.classFeatures2}`.replace(/\n(?!等級|選擇|語言)/gu, "");
+      if (/^等級 \d+：[^（(\n]*子職$/mu.test(features) || !/^等級 3：.+[（(].*[）)]$/mu.test(features)) throw new Error(`PDF omits bare subclass heading only: ${cls}`);
+    }
+    const classFeatureLines = state => {
+      const payload = buildPdfFieldPayload({ level: "8", ...state });
+      return `${payload.classFeatures1}\n${payload.classFeatures2}`.split("\n");
+    };
+    for (const [state, expected, absent = []] of [
+      [{ class: "barbarian" }, ["等級 1：狂暴、無甲防禦", "等級 1：武器精通", "等級 5：額外攻擊、快速移動", "等級 7：野性本能、直覺猛撲"]],
+      [{ class: "cleric", "cleric-trickster": true }, ["等級 1：神聖使命／魔術使", "等級 7：神佑打擊"], ["選擇：魔術使"]],
+      [{ class: "druid", "druid-elemental-fury-primal-strike": true }, ["等級 1：德魯伊語、施法", "等級 1：原初使命", "等級 7：元素狂怒／原初打擊"]],
+      [{ class: "fighter", "derived-feat-fighting-style-fighter": "雙武器戰鬥", "derived-feat-fighting-style-fighter-2": "防禦" },
+        ["等級 1：戰鬥風格／雙武器戰鬥", "等級 1：回氣、武器精通", "等級 7：額外戰鬥風格（勇士）", "選擇：防禦"]],
+      [{ class: "paladin", "paladin-fighting-style": true, "derived-feat-fighting-style-paladin": "防禦" }, ["等級 1：聖療、施法、武器精通", "等級 2：戰鬥風格／防禦", "等級 5：額外攻擊、忠誠坐騎"]],
+      [{ class: "paladin", "paladin-blessed-warrior": true, __spellManagement: { version: 2, manual: false, entries: [],
+        classFeatureCantrips: { "class-paladin-blessed-warrior-cantrip-1": "guidance", "class-paladin-blessed-warrior-cantrip-2": "sacred-flame" } } },
+        ["等級 2：受祝福的勇士", `選擇：${SpellCatalog.getSpell("guidance").nameZh}、${SpellCatalog.getSpell("sacred-flame").nameZh}`], ["等級 2：戰鬥風格"]],
+      [{ class: "ranger", "derived-feat-fighting-style-ranger": "防禦" }, ["等級 1：施法、宿敵、武器精通", "等級 2：戰鬥風格"]],
+      [{ class: "ranger", "ranger-druidic-warrior": true }, ["等級 2：德魯伊教戰士"], ["等級 2：戰鬥風格"]],
+      [{ class: "rogue", "language-extra-2": "common-sign" }, ["等級 1：專精、偷襲、武器精通", "盜賊黑話、通用手語", "等級 7：反射閃避、可靠才能"]],
+      [{ class: "rogue" }, ["盜賊黑話"]],
+      [{ class: "sorcerer", "sorcerer-elemental-affinity-damage-type": "acid" }, ["等級 2：魔力泉湧、超魔法", "等級 6：元素親和（龍族）／強酸"]],
+      [{ class: "warlock", "eldritch-invocation-10-1": true, "eldritch-invocation-10-2": true, "eldritch-invocation-10-3": true, "eldritch-invocation-0-1": true },
+        ["等級 1：魔能祈喚、契約魔法", "魔能祈喚：刃之魔契,原初之一教習×3"]],
+      [{ class: "wizard" }, ["等級 1：施法、儀式精通"]]
+    ]) {
+      const lines = classFeatureLines(state);
+      const joined = lines.join("");
+      for (const line of expected) {
+        if (!lines.includes(line) && !joined.includes(line)) throw new Error(`PDF class feature line: ${state.class}/${line}`);
+      }
+      for (const line of absent) if (lines.includes(line)) throw new Error(`PDF class feature extra line: ${state.class}/${line}`);
+    }
     const materialFlag = (spell, legacy = false) => {
       const state = legacy ? {
         [spell.level === 0 ? "cantrips-area-class-0" : `level${spell.level}spells-area-class-0`]: "wizard",
@@ -496,12 +531,13 @@ async function verifyPdf(page, fieldsOnly) {
         ["warlock", "2", { "derived-feat-lessons-1": "強韌體魄", "derived-feat-lessons-2": "熟習" }]
       ]) {
         const state = { class: cls, level, ...feats };
-        await exportCharacterPdfFromState(state, { outputMode: "editable", characterName: "UI regression" });
+        await exportCharacterPdfFromState(state, { outputMode: "editable", characterName: "UI regression", englishName: "Enix Zakarum" });
         const document = await PDFLib.PDFDocument.load(await blob.arrayBuffer());
         if (document.getForm().getTextField('feats1').getText() !== buildPdfFieldPayload(state).feats1) throw new Error(`Serialized automatic feats: ${cls}`);
         if (document.getForm().getCheckBox("chk_shld1").isChecked() !== expected.has(cls)) throw new Error(`Serialized shield checkbox: ${cls}`);
         checkNames(document.getForm(), 'editable');
         if (document.getForm().getTextField('Name1').getText() !== 'UI regression') throw new Error('Serialized character name');
+        if (document.getForm().getTextField('Name2').getText() !== 'Enix Zakarum') throw new Error('Serialized editable English name');
       }
       // Compact removes the form, so inspect the generated appearances just
       // before flattening, then verify the saved document has no AcroForm.
@@ -522,7 +558,10 @@ async function verifyPdf(page, fieldsOnly) {
         if (!checkedCompact || compact.catalog.has(PDFLib.PDFName.of('AcroForm'))) throw new Error('Compact flattening');
         const measurement = await validateCompactEnglishName('Enix Zakarum');
         if (Math.abs(measurement.maxWidth - (140.47 - 3)) > 0.001) throw new Error('English name validation width');
+        const editableMeasurement = await validatePdfEnglishName('Enix Zakarum', 'editable');
+        if (!editableMeasurement.fits || Math.abs(editableMeasurement.maxWidth - (245.080856 - 112.61348 - 4)) > 0.001) throw new Error('Editable English name validation width');
       } finally { PDFLib.PDFForm.prototype.flatten = flatten; }
+
     } finally { URL.createObjectURL = create; }
   });
   console.log("PDF export: 4 actual PDFs checked, including automatic feat sources and shared name centering in both modes.");
