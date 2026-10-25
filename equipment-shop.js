@@ -692,6 +692,7 @@
    * 開啟商店。addKey 先把該品項加入購物清單；focusName 捲到該品項（如法術卷軸）。
    * wallet：{ id, readTotal(), purchaseItems(items), formatAmount?, balanceLabel?, checkoutNotice? }，
    * 省略時使用角色卡的 MoneyTracker；id 改變時捨棄先前未結帳的暫存購物清單。
+   * 呼叫端重置錢包時可用 clearWalletCart(id) 立即清空，不影響角色卡的購物清單。
    */
   function open({ trigger = null, addKey = "", focusName = "", wallet: requestedWallet = null } = {}) {
     if (view || !globalScope.AppDialog) return Promise.resolve(false);
@@ -746,5 +747,11 @@
     open({ trigger });
   });
 
-  globalScope.EquipmentShop = Object.freeze({ open });
+  function clearWalletCart(id) {
+    if (walletCart.id !== id) return;
+    walletCart.lines.clear();
+    if (wallet?.id === id) renderCartState();
+  }
+
+  globalScope.EquipmentShop = Object.freeze({ open, clearWalletCart });
 })(window);

@@ -1026,7 +1026,69 @@ async function validateQuickBuildShop(page) {
   await wizard.locator('[data-wealth="default"]').click();
   assert.doesNotMatch(await panelRows(), /已購買/u, "changing the background equipment resets the purchases");
   assert.equal(await page.evaluate(() => quickBuild.getDraft().choices.shop), null);
+  // A -> B -> A without opening the intermediate wallet must not revive its cart,
+  // even when there are no paid purchases left in choices.shop.
+  await openButton.click();
+  await buy(["繩索"]);
+  await page.keyboard.press("Escape");
+  await wizard.locator('[data-wealth="gold"]').click();
+  await wizard.locator('[data-wealth="default"]').click();
+  await openButton.click();
+  assert.equal(await badge.isHidden(), true, "changing funding away and back clears the unpaid cart immediately");
+  await page.keyboard.press("Escape");
+  await page.evaluate(() => { window.EquipmentShop.open(); });
+  assert.equal(await badge.textContent(), "1", "resetting the draft wallet preserves the sheet cart");
+  await shop.locator(".equipment-shop__cart-button").click();
+  assert.equal(await cartDialog.locator(".equipment-shop__cart-name").textContent(), "火把");
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("Escape");
   assert.deepEqual(await cardSnapshot(), before, "quick-build shopping never writes the card");
+  await wizard.locator(".quick-build-close").click();
+
+  // Removing the equipped instrument from bard proficiencies temporarily makes
+  // equipment incomplete, but does not change either source of starting money.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => {
+    const draft = quickBuild.createDraft();
+    Object.assign(draft.choices, {
+      background: "soldier", race: "dwarf", class: "bard", backgroundWealth: "gold",
+      classEquipmentMethod: "default", classEquipmentOptions: { instrument: "風笛" },
+      classOptions: { skills: ["察覺", "求生", "表演"], tools: ["風笛", "鼓", "揚琴"] }
+    });
+    draft.ui.currentStepId = "equipment";
+    dndStorage.setItem(quickBuild.storageKey, JSON.stringify(draft));
+    quickBuild.open();
+  });
+  await openButton.click();
+  await buy(["繩索"]);
+  await shop.getByRole("button", { name: "結帳", exact: true }).click();
+  await shop.waitFor({ state: "detached" });
+  const bardPurchases = await page.evaluate(() => quickBuild.getDraft().choices.shop);
+  await openButton.click();
+  await buy(["火把"]);
+  await page.keyboard.press("Escape");
+  await wizard.locator(".quick-build-previous").click();
+  await wizard.getByRole("combobox", { name: "工具 1", exact: true }).selectOption("長笛");
+  assert.deepEqual(await page.evaluate(() => ({
+    pending: quickBuild.getDraft().selections.classEquipment.content.pendingChoices,
+    purchases: quickBuild.getDraft().choices.shop,
+    saved: JSON.parse(dndStorage.getItem(quickBuild.storageKey)).choices.shop
+  })), { pending: ["樂器"], purchases: bardPurchases, saved: bardPurchases }, "incomplete instrument selection preserves paid purchases in memory and storage");
+  await wizard.locator(".quick-build-close").click();
+  await page.evaluate(() => quickBuild.open());
+  assert.deepEqual(await page.evaluate(() => quickBuild.getDraft().choices.shop), bardPurchases, "loading an incomplete equipment draft preserves purchases");
+  await wizard.locator(".quick-build-next").click();
+  await wizard.locator(".quick-build-next").click();
+  assert.equal(await openButton.count(), 0, "the shop stays hidden until the instrument is reselected");
+  await wizard.locator("#quick-build-equipment-instrument").selectOption("鼓");
+  assert.equal(await panelRows(), "起始金額|69 金幣|已購買|繩索|剩餘金額|68 金幣");
+  await openButton.click();
+  assert.equal(await badge.textContent(), "1", "changing instrument proficiency preserves the unpaid cart too");
+  await shop.locator(".equipment-shop__cart-button").click();
+  assert.equal(await cartDialog.locator(".equipment-shop__cart-name").textContent(), "火把");
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("Escape");
+  assert.deepEqual(await cardSnapshot(), before, "instrument reselection still leaves character data untouched");
   await wizard.locator(".quick-build-close").click();
 }
 

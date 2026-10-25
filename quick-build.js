@@ -420,6 +420,7 @@
   }
 
   let draft = loadDraft();
+  let shopCartFunding = shopFundingSignature(draft);
   let previouslyFocused = null;
   let spellDetailTrigger = null;
   let spellDetailOpenedOutsideWizard = false;
@@ -442,6 +443,7 @@
 
   function saveDraft() {
     reconcileDraft(draft);
+    syncShopCartFunding();
     draft.updatedAt = new Date().toISOString();
     try {
       return storage.setItem(STORAGE_KEY, JSON.stringify(draft));
@@ -2002,6 +2004,15 @@
     });
   }
 
+  // 未結帳清單不在草稿內；資金來源改變時立即清掉，不能等到下一次開店才比較。
+  function syncShopCartFunding() {
+    const funding = shopFundingSignature();
+    if (funding !== shopCartFunding) {
+      window.EquipmentShop?.clearWalletCart?.(`quick-build:${shopCartFunding}`);
+      shopCartFunding = funding;
+    }
+  }
+
   function shopStartingCopper(target = draft) {
     return [target.selections.backgroundEquipment, target.selections.classEquipment].filter(Boolean)
       .reduce((sum, selection) => sum + Object.entries({ cp: 1, sp: 10, gp: 100, pp: 1000 })
@@ -2023,7 +2034,8 @@
   function reconcileShopDraft(target) {
     const saved = isPlainObject(target.choices.shop) ? target.choices.shop : null;
     const items = saved ? normalizeShopItems(saved.items) : null;
-    const funding = equipmentComplete(target) ? shopFundingSignature(target) : null;
+    // 套裝選項暫時失效（例如移除已選樂器的熟練）不代表起始資金改變。
+    const funding = shopFundingSignature(target);
     target.choices.shop = funding && items?.length && saved.funding === funding && shopItemsCopper(items) <= shopStartingCopper(target)
       ? { funding, items }
       : null;
@@ -4096,6 +4108,7 @@
       abilityChoiceModal.setAttribute("aria-hidden", "true");
     }
     draft = loadDraft();
+    syncShopCartFunding();
     expandedChoiceGroups.clear();
     pendingChoiceCardScrollGroup = null;
     render();
@@ -4118,6 +4131,7 @@
     if (!confirmed) return;
     storage.removeItem(STORAGE_KEY);
     draft = createDraft();
+    syncShopCartFunding();
     expandedChoiceGroups.clear();
     pendingChoiceCardScrollGroup = null;
     closeWizard(false);
