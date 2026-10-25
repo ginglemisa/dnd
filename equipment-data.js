@@ -11,3 +11,67 @@ globalThis.weapons_martial_ranged = [{"名稱":"吹箭筒","傷害":"1 穿刺","
 globalThis.armors = [{"名稱":"布甲","AC":"11","力量需求":"--","隱匿懲罰":"劣勢","重量":"8 磅","價格":"5 金幣","分類":"輕甲"},{"名稱":"皮甲","AC":"11","力量需求":"--","隱匿懲罰":"--","重量":"10 磅","價格":"10金幣","分類":"輕甲"},{"名稱":"鑲釘皮甲","AC":"12","力量需求":"--","隱匿懲罰":"--","重量":"13 磅","價格":"45金幣","分類":"輕甲"},{"名稱":"獸皮甲","AC":"12","力量需求":"--","隱匿懲罰":"--","重量":"12 磅","價格":"10金幣","分類":"中甲"},{"名稱":"半身鎖甲","AC":"13","力量需求":"--","隱匿懲罰":"--","重量":"20 磅","價格":"50金幣","分類":"中甲"},{"名稱":"鱗甲","AC":"14","力量需求":"--","隱匿懲罰":"劣勢","重量":"45 磅","價格":"50金幣","分類":"中甲"},{"名稱":"胸甲","AC":"14","力量需求":"--","隱匿懲罰":"--","重量":"20 磅","價格":"400金幣","分類":"中甲"},{"名稱":"半身板甲","AC":"15","力量需求":"--","隱匿懲罰":"劣勢","重量":"40 磅","價格":"750金幣","分類":"中甲"},{"名稱":"環甲","AC":"14","力量需求":"-","隱匿懲罰":"劣勢","重量":"40 磅","價格":"30金幣","分類":"重甲"},{"名稱":"鎖子甲","AC":"16","力量需求":"力量 13","隱匿懲罰":"劣勢","重量":"55 磅","價格":"75金幣","分類":"重甲"},{"名稱":"條板甲","AC":"17","力量需求":"力量 15","隱匿懲罰":"劣勢","重量":"60 磅","價格":"200金幣","分類":"重甲"},{"名稱":"全身板甲","AC":"18","力量需求":"力量 15","隱匿懲罰":"劣勢","重量":"65 磅","價格":"1500金幣","分類":"重甲"}];
 
 globalThis.shield = [{"名稱":"盾牌","AC":"2","力量需求":"--","隱匿懲罰":"--","重量":"6 磅","價格":"10金幣","分類":"盾牌"}];
+
+// 中文裝備名稱對應 SRD 英文名稱；僅供裝備詳情標題與搜尋使用，不寫入角色資料。
+globalThis.EQUIPMENT_ENGLISH_NAMES = Object.freeze({
+  // 簡易武器
+  "短棒": "Club", "匕首": "Dagger", "巨棒": "Greatclub", "手斧": "Handaxe", "標槍": "Javelin",
+  "輕錘": "Light Hammer", "硬頭錘": "Mace", "長棍": "Quarterstaff", "鐮刀": "Sickle", "短矛": "Spear",
+  "飛鏢": "Dart", "輕弩": "Light Crossbow", "短弓": "Shortbow", "投石索": "Sling",
+  // 軍用武器
+  "戰斧": "Battleaxe", "連枷": "Flail", "長柄刀": "Glaive", "巨斧": "Greataxe", "巨劍": "Greatsword",
+  "長戟": "Halberd", "騎槍": "Lance", "長劍": "Longsword", "巨錘": "Maul", "釘頭錘": "Morningstar",
+  "長矛": "Pike", "刺劍": "Rapier", "彎刀": "Scimitar", "短劍": "Shortsword", "三叉戟": "Trident",
+  "戰錘": "Warhammer", "戰鎬": "War Pick", "鞭": "Whip",
+  "吹箭筒": "Blowgun", "手弩": "Hand Crossbow", "重弩": "Heavy Crossbow", "長弓": "Longbow",
+  "火繩槍": "Musket", "手槍": "Pistol",
+  // 護甲與盾牌
+  "布甲": "Padded Armor", "皮甲": "Leather Armor", "鑲釘皮甲": "Studded Leather Armor",
+  "獸皮甲": "Hide Armor", "半身鎖甲": "Chain Shirt", "鱗甲": "Scale Mail", "胸甲": "Breastplate",
+  "半身板甲": "Half Plate Armor", "環甲": "Ring Mail", "鎖子甲": "Chain Mail", "條板甲": "Splint Armor",
+  "全身板甲": "Plate Armor", "盾牌": "Shield",
+  // 工匠工具
+  "煉金師工具": "Alchemist's Supplies", "釀酒師工具": "Brewer's Supplies", "書法工具": "Calligrapher's Supplies",
+  "木匠工具": "Carpenter's Tools", "製圖師工具": "Cartographer's Tools", "鞋匠工具": "Cobbler's Tools",
+  "廚師工具": "Cook's Utensils", "玻璃匠工具": "Glassblower's Tools", "珠寶匠工具": "Jeweler's Tools",
+  "皮匠工具": "Leatherworker's Tools", "石匠工具": "Mason's Tools", "畫家工具": "Painter's Supplies",
+  "陶匠工具": "Potter's Tools", "鐵匠工具": "Smith's Tools", "修補匠工具": "Tinker's Tools",
+  "裁縫工具": "Weaver's Tools", "木雕師工具": "Woodcarver's Tools",
+  // 其他工具、賭具與樂器
+  "易容工具": "Disguise Kit", "文書偽造工具": "Forgery Kit", "賭具": "Gaming Set", "草藥工具": "Herbalism Kit",
+  "樂器": "Musical Instrument", "領航員工具": "Navigator's Tools", "製毒師工具": "Poisoner's Kit",
+  "盜賊工具": "Thieves' Tools",
+  "骰子": "Dice", "龍棋": "Dragonchess", "紙牌": "Playing Cards", "三龍牌": "Three-Dragon Ante",
+  "風笛": "Bagpipes", "鼓": "Drum", "揚琴": "Dulcimer", "長笛": "Flute", "角號": "Horn", "魯特琴": "Lute",
+  "里拉琴": "Lyre", "排簫": "Pan Flute", "蘆笛": "Shawm", "提琴": "Viol",
+  // 冒險用品
+  "強酸": "Acid", "煉金火焰": "Alchemist's Fire", "彈藥": "Ammunition", "抗毒劑": "Antitoxin",
+  "奧術法器": "Arcane Focus", "背包": "Backpack", "滾珠": "Ball Bearings", "木桶": "Barrel", "籃子": "Basket",
+  "睡袋": "Bedroll", "鈴鐺": "Bell", "毯子": "Blanket", "滑輪組": "Block and Tackle", "書籍": "Book",
+  "玻璃瓶": "Bottle, Glass", "手提桶": "Bucket", "竊賊套組": "Burglar's Pack", "鐵蒺藜": "Caltrops",
+  "蠟燭": "Candle", "弩矢匣": "Case, Crossbow Bolt", "地圖或捲軸盒": "Case, Map or Scroll", "鏈條": "Chain",
+  "箱子": "Chest", "攀爬工具": "Climber's Kit", "高檔服裝": "Clothes, Fine", "旅行者服裝": "Clothes, Traveler's",
+  "材料包": "Component Pouch", "戲服": "Costume", "撬棍": "Crowbar", "大使套組": "Diplomat's Pack",
+  "德魯伊法器": "Druidic Focus", "地城套組": "Dungeoneer's Pack", "藝人套組": "Entertainer's Pack",
+  "探索套組": "Explorer's Pack", "扁瓶": "Flask", "抓鉤": "Grappling Hook", "醫療包": "Healer's Kit",
+  "聖徽": "Holy Symbol", "聖水": "Holy Water", "狩獵陷阱": "Hunting Trap", "墨水": "Ink", "墨水筆": "Ink Pen",
+  "壺": "Jug", "爬梯": "Ladder", "油燈": "Lamp", "牛眼提燈": "Lantern, Bullseye", "附蓋提燈": "Lantern, Hooded",
+  "鎖": "Lock", "放大鏡": "Magnifying Glass", "鐐銬": "Manacles", "地圖": "Map", "鏡子": "Mirror", "捕網": "Net",
+  "油": "Oil", "紙": "Paper", "羊皮紙": "Parchment", "香水": "Perfume", "基礎毒藥": "Poison, Basic",
+  "長桿": "Pole", "鐵鍋": "Pot, Iron", "治療藥水": "Potion of Healing", "小包": "Pouch",
+  "祭司套組": "Priest's Pack", "箭袋": "Quiver", "便攜式攻城錘": "Ram, Portable", "口糧": "Rations",
+  "長袍": "Robe", "繩索": "Rope", "麻袋": "Sack", "學者套組": "Scholar's Pack", "鏟子": "Shovel",
+  "信號笛": "Signal Whistle", "法術卷軸": "Spell Scroll", "長鐵釘": "Spikes, Iron", "望遠鏡": "Spyglass",
+  "弦線": "String", "帳篷": "Tent", "火絨盒": "Tinderbox", "火把": "Torch", "藥瓶": "Vial", "水袋": "Waterskin",
+  // 冒險用品表格內的品項
+  "箭矢": "Arrows", "弩矢": "Bolts", "子彈，火器": "Bullets, Firearm", "彈丸，投石索": "Bullets, Sling",
+  "針": "Needles", "水晶": "Crystal", "寶珠": "Orb", "權杖": "Rod", "法杖（可作為長棍）": "Staff",
+  "魔杖": "Wand", "槲寄生樹枝": "Sprig of Mistletoe", "木制法杖（可作為長棍）": "Wooden Staff",
+  "紫杉魔杖": "Yew Wand", "護身符（佩戴或手持）": "Amulet", "徽章（附在布料或盾牌上）": "Emblem",
+  "聖物匣（手持）": "Reliquary"
+});
+
+globalThis.WEAPON_MASTERY_ENGLISH_NAMES = Object.freeze({
+  "順劈": "Cleave", "劃傷": "Graze", "迅切": "Nick", "推離": "Push",
+  "削弱": "Sap", "緩速": "Slow", "失衡": "Topple", "侵擾": "Vex"
+});

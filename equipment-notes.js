@@ -733,6 +733,7 @@ DC 25 力量（運動）：掙斷鐐銬
     <div class="equipment-purchase-card" role="dialog" aria-modal="true" aria-labelledby="equipment-purchase-title">
       <h3 id="equipment-purchase-title">是否購買？</h3>
       <p class="equipment-purchase-description"></p>
+      <p class="equipment-purchase-english" lang="en" hidden></p>
       <p class="equipment-purchase-balance" aria-live="polite"></p>
       <label class="equipment-purchase-quantity-label" for="equipment-purchase-quantity">
         購買數量
@@ -747,6 +748,7 @@ DC 25 力量（運動）：掙斷鐐銬
   document.body.appendChild(purchaseModal);
 
   const purchaseDescription = purchaseModal.querySelector(".equipment-purchase-description");
+  const purchaseEnglish = purchaseModal.querySelector(".equipment-purchase-english");
   const confirmPurchaseButton = purchaseModal.querySelector(".equipment-purchase-confirm");
   const cancelPurchaseButton = purchaseModal.querySelector(".equipment-purchase-cancel");
   const freePurchaseButton = purchaseModal.querySelector(".equipment-purchase-free");
@@ -771,6 +773,8 @@ DC 25 力量（運動）：掙斷鐐銬
     pendingPurchase = item;
     purchaseQuantityInput.value = "1";
     purchaseDescription.textContent = `${item.name}（${item.amount} ${item.currency}）`;
+    purchaseEnglish.textContent = globalThis.EQUIPMENT_ENGLISH_NAMES?.[item.name] || "";
+    purchaseEnglish.hidden = !purchaseEnglish.textContent;
     purchaseBalance.textContent = document.getElementById("money-summary")?.textContent || "目前財產：尚未載入";
     purchaseModal.inert = false;
     purchaseModal.classList.add("open");

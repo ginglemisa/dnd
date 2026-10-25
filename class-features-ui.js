@@ -18,8 +18,8 @@ function updateClassFeatureOptionVisibility() {
 const CLERIC_MISSION_CHOICE_IDS = Object.freeze(["cleric-guardian", "cleric-trickster"]);
 const DRUID_MISSION_CHOICE_IDS = Object.freeze(["druid-shaman", "druid-sentinel"]);
 const MISSION_CANTRIP_CHOICES = Object.freeze([
-  { checkboxId: "cleric-trickster", className: "cleric", label: "魔術使：額外牧師戲法" },
-  { checkboxId: "druid-shaman", className: "druid", label: "巫祝：額外德魯伊戲法" }
+  { checkboxId: "cleric-trickster", className: "cleric", label: "魔術使：額外牧師戲法", sourceLabel: "來源：魔術使" },
+  { checkboxId: "druid-shaman", className: "druid", label: "巫祝：額外德魯伊戲法", sourceLabel: "來源：巫祝" }
 ]);
 const FIGHTING_STYLE_TYPE_CHOICE_GROUPS = Object.freeze([
   Object.freeze(["paladin-fighting-style", "paladin-blessed-warrior"]),
