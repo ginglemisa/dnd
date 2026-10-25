@@ -736,6 +736,147 @@
     return Math.max(layoutSettings.minFontSize, Math.floor(Math.min(preferredSize, fittedSize) * 10) / 10);
   }
 
+  // Player-authored notes keep only their source line breaks in the field
+  // value. Their appearance is wrapped here by measured glyph widths, so a
+  // reader can still reflow the value after the player edits it.
+  const MEASURED_WRAP_FIELDS = Object.freeze(['equipment1', 'extra1']);
+  const NO_LINE_START_PATTERN = /^[、，。；：！？）」』】〉》…・,.;:!?)\]%×]/u;
+  const NO_LINE_END_PATTERN = /[（「『【〈《(\[]$/u;
+  const OPENING_BRACKET_PATTERN = /^[（「『【〈《(\[]/u;
+
+  function hasUnclosedBracket(text) {
+    const opened = (text.match(/[（「『【〈《(\[]/gu) || []).length;
+    return opened > (text.match(/[）」』】〉》)\]]/gu) || []).length;
+  }
+
+  function getPdfWrapSegments(line) {
+    const Segmenter = globalScope.Intl?.Segmenter;
+    return Segmenter
+      ? Array.from(new Segmenter('zh-Hant', { granularity: 'word' }).segment(line), ({ segment }) => segment)
+      : Array.from(line);
+  }
+
+  // Each unit is the smallest run that may end a line. Closing punctuation
+  // stays with the preceding word, bracketed text with the word before it,
+  // and a number with what follows it ("8 金幣", "羊皮紙 ×10").
+  function getPdfWrapUnits(line) {
+    const units = [];
+    getPdfWrapSegments(line).forEach((segment) => {
+      const previous = units.at(-1);
+      const previousText = previous?.trimEnd() || '';
+      const spaced = previous !== undefined && previousText !== previous;
+      const keepTogether = previous !== undefined && (
+        /^\s+$/u.test(segment)
+        || NO_LINE_START_PATTERN.test(segment)
+        || NO_LINE_END_PATTERN.test(previousText)
+        || hasUnclosedBracket(previousText)
+        || /[\d×]$/u.test(previousText)
+        || (!spaced && OPENING_BRACKET_PATTERN.test(segment))
+      );
+      if (keepTogether) units[units.length - 1] += segment;
+      else units.push(segment);
+    });
+    return units;
+  }
+
+  // Fills each line with whole units. "、" always ends a unit, so a list item
+  // is split only at the end of a line and only between words; a unit wider
+  // than a full line is split by character.
+  function wrapPdfTextToWidth(text, measureWidth, maxWidth) {
+    const fits = (value) => measureWidth(value) < maxWidth;
+    const lines = [];
+    String(text || '').split('\n').forEach((sourceLine) => {
+      const line = sourceLine.trim();
+      if (!line) {
+        lines.push('');
+        return;
+      }
+      let current = '';
+      getPdfWrapUnits(line).forEach((unit) => {
+        const candidate = `${current}${unit}`;
+        if (fits(candidate.trimEnd())) {
+          current = candidate;
+          return;
+        }
+        if (current.trim()) lines.push(current.trimEnd());
+        current = '';
+        Array.from(unit.trimStart()).forEach((character) => {
+          if (current && !fits(`${current}${character}`.trimEnd())) {
+            lines.push(current.trimEnd());
+            current = character.trimStart();
+          } else {
+            current += character;
+          }
+        });
+      });
+      if (current.trim()) lines.push(current.trimEnd());
+    });
+    return lines;
+  }
+
+  function getMeasuredWrapWidth(field, layoutSettings) {
+    const widget = field.acroField.getWidgets()[0];
+    const width = widget.getRectangle().width;
+    const borderWidth = widget.getBorderStyle?.()?.getWidth?.() ?? 0;
+    // pdf-lib lays out multiline text inside the border plus 1 pt of padding
+    // and re-splits any line that is not strictly narrower than that.
+    return Math.min(width - layoutSettings.horizontalPadding, width - 2 * (borderWidth + 1));
+  }
+
+  function layoutMeasuredWrapField(field, cjkFont, preferredSize, layoutSettings) {
+    const text = field.getText?.() || '';
+    const rectangle = getTextFieldRectangle(field);
+    if (!text || !rectangle) return { fontSize: preferredSize, lines: text ? text.split('\n') : [] };
+
+    const fieldName = field.getName();
+    const minimumTenths = Math.round((layoutSettings.fieldMinFontSizes[fieldName] || layoutSettings.minFontSize) * 10);
+    const maxWidth = getMeasuredWrapWidth(field, layoutSettings);
+    const usableHeight = Math.max(1, rectangle.height - layoutSettings.verticalPadding);
+    const lineHeightFactor = layoutSettings.fieldLineHeightFactors[fieldName] || layoutSettings.lineHeightFactor;
+    // Wrapping depends on the font size, so rewrap at each 0.1 pt step until
+    // the lines fit the height or the field minimum is reached.
+    for (let tenths = Math.round(preferredSize * 10); ; tenths -= 1) {
+      const fontSize = tenths / 10;
+      const lines = wrapPdfTextToWidth(text, (value) => cjkFont.widthOfTextAtSize(value, fontSize), maxWidth);
+      const height = lines.length * cjkFont.heightAtSize(fontSize) * lineHeightFactor;
+      if (height <= usableHeight || tenths <= minimumTenths) return { fontSize, lines };
+    }
+  }
+
+  function applyMeasuredWrapAppearances(form, cjkFont, layoutSettings, appearanceFontSizes = {}) {
+    const PDFLib = globalScope.PDFLib;
+    const appearanceKey = PDFLib.PDFName.of('DA');
+    MEASURED_WRAP_FIELDS.forEach((fieldName) => {
+      let field;
+      try {
+        field = form.getTextField(fieldName);
+      } catch (error) {
+        return;
+      }
+      const preferredSize = appearanceFontSizes[fieldName] || getPreferredFontSize(fieldName, field, layoutSettings);
+      const { fontSize, lines } = layoutMeasuredWrapField(field, cjkFont, preferredSize, layoutSettings);
+      const wrappedText = lines.join('\n');
+      const defaults = [field.acroField.dict, ...field.acroField.getWidgets().map(widget => widget.dict)]
+        .map(dict => ({ dict, value: dict.get(appearanceKey) }));
+      try {
+        // Draw the measured lines with pdf-lib's own text field appearance
+        // while the stored value keeps only the player's line breaks.
+        field.setFontSize(fontSize);
+        field.updateAppearances(cjkFont, (textField, widget, font) => (
+          PDFLib.defaultTextFieldAppearanceProvider(Object.create(textField, {
+            getText: { value: () => wrappedText },
+            isMultiline: { value: () => true }
+          }), widget, font)
+        ));
+      } finally {
+        defaults.forEach(({ dict, value }) => {
+          if (value) dict.set(appearanceKey, value);
+          else dict.delete(appearanceKey);
+        });
+      }
+    });
+  }
+
   function truncateTextToWidth(text, cjkFont, fontSize, usableWidth) {
     const normalizedText = String(text || '').replace(/\r?\n/g, ' ').trim();
     if (cjkFont.widthOfTextAtSize(normalizedText, fontSize) <= usableWidth) return normalizedText;
@@ -960,6 +1101,8 @@
         if (/^note\d+$/.test(fieldName) && fitSpellNoteField(field, cjkFont, layoutSettings)) {
           return;
         }
+        // Sized together with their wrapped lines in applyMeasuredWrapAppearances().
+        if (MEASURED_WRAP_FIELDS.includes(fieldName)) return;
         const preferredSize = getPreferredFontSize(fieldName, field, layoutSettings);
         const matchingRule = getMatchingPatternFontRule(fieldName, layoutSettings);
         const fontSize = layoutSettings.fixedFontSizes[fieldName] || matchingRule?.fixed
@@ -1064,6 +1207,7 @@
   function applyEditableAppearanceFontSizes(form, cjkFont, layoutSettings) {
     const appearanceKey = globalScope.PDFLib.PDFName.of('DA');
     for (const [fieldName, preferredSize] of Object.entries(EDITABLE_APPEARANCE_FONT_SIZES)) {
+      if (MEASURED_WRAP_FIELDS.includes(fieldName)) continue;
       let field;
       try {
         field = form.getTextField(fieldName);
@@ -1184,6 +1328,12 @@
     if (profile.layoutId === 'editable') {
       applyEditableAppearanceFontSizes(form, fontEmbedResult.font, layoutSettings);
     }
+    applyMeasuredWrapAppearances(
+      form,
+      fontEmbedResult.font,
+      layoutSettings,
+      profile.layoutId === 'editable' ? EDITABLE_APPEARANCE_FONT_SIZES : {}
+    );
 
     if (profile.flattenForm) {
       form.flatten({ updateFieldAppearances: false });

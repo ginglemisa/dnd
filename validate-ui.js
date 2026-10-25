@@ -501,6 +501,12 @@ async function verifyPdf(page, fieldsOnly) {
       const payload = buildPdfFieldPayload({ race, level: String(level) }, { elfLineage: "high_elf", tieflingLegacy: "infernal" });
       if (payload.specie_features1.includes("長休後環法恢復") !== (level >= 3)) throw new Error(`Lineage recovery: ${race}/${level}`);
     }
+    for (const outputMode of ["editable", "compact"]) {
+      const notes = buildPdfFieldPayload({ "gear-notes": " 購買物品：箭矢(20)、 、法杖（長棍）\n\n\t長劍 ", "spell-notes": "第一段\n\n\n第二段" }, { outputMode });
+      if (notes.equipment1 !== "購買物品：箭矢(20)、法杖（長棍）\n長劍" || !notes.extra1.endsWith("第一段\n\n第二段")) {
+        throw new Error(`PDF equipment and notes keep only source line breaks: ${outputMode}`);
+      }
+    }
   });
   console.log("PDF fields: 214 spell material flags (current/legacy), component field isolation, class tools/shields and lineage levels passed.");
   if (fieldsOnly) return;
@@ -562,9 +568,53 @@ async function verifyPdf(page, fieldsOnly) {
         if (!editableMeasurement.fits || Math.abs(editableMeasurement.maxWidth - (245.080856 - 112.61348 - 4)) > 0.001) throw new Error('Editable English name validation width');
       } finally { PDFLib.PDFForm.prototype.flatten = flatten; }
 
+      // equipment1/extra1 appearances use measured lines that pdf-lib keeps
+      // as drawn; the editable value keeps only the player's line breaks.
+      const gear = "書法工具、書籍（禱文）、聖徽、羊皮紙 ×10、祭祀長袍、8 金幣、探索套組、繩索、火把 ×10、口糧 ×5\n長劍";
+      const spellNotes = `${"法術書：火球術(3環)、魔法飛彈(1環)、".repeat(4)}Thieves' Cant`;
+      const provider = PDFLib.defaultTextFieldAppearanceProvider;
+      try {
+        for (const outputMode of ["editable", "compact"]) {
+          const drawn = {};
+          PDFLib.defaultTextFieldAppearanceProvider = (field, widget, font) => {
+            const name = field.getName();
+            if (name === "equipment1" || name === "extra1") {
+              const lines = field.getText().split("\n");
+              const fontSize = Number(/([\d.]+)\s+Tf/.exec(field.acroField.getDefaultAppearance())[1]);
+              const rectangle = widget.getRectangle();
+              const width = rectangle.width - 2 * ((widget.getBorderStyle()?.getWidth() ?? 0) + 1);
+              const layout = PDFLib.layoutMultilineText(lines.join("\n"), { alignment: PDFLib.TextAlignment.Left, fontSize, font, bounds: { x: 0, y: 0, width, height: rectangle.height } });
+              if (lines.some(line => font.widthOfTextAtSize(line, fontSize) >= width) || layout.lines.length !== lines.length) throw new Error(`Measured wrap fits without pdf-lib re-split: ${outputMode}/${name}`);
+              drawn[name] = { lines, fontSize, value: Object.getPrototypeOf(field).getText() };
+            }
+            return provider(field, widget, font);
+          };
+          const state = { class: "wizard", level: "1", "gear-notes": gear, "spell-notes": spellNotes };
+          await exportCharacterPdfFromState(state, { outputMode, characterName: "UI regression" });
+          const { equipment1, extra1 } = drawn;
+          if (!equipment1 || !extra1) throw new Error(`Measured wrap appearances drawn: ${outputMode}`);
+          const compactText = text => text.replace(/\s/g, "");
+          if (compactText(equipment1.lines.join("")) !== compactText(gear) || equipment1.lines.at(-1) !== "長劍") throw new Error(`Measured wrap keeps equipment content and source breaks: ${outputMode}`);
+          if (equipment1.lines.some(line => /羊皮紙$|、8$|（[^）]*$|^[×、）]|^金幣/u.test(line))) throw new Error(`Measured wrap keeps quantities and brackets intact: ${outputMode}`);
+          if (!compactText(extra1.lines.join("")).endsWith(compactText(spellNotes))) throw new Error(`Measured wrap keeps notes content: ${outputMode}`);
+          const sizes = outputMode === "editable" ? [9, 9, 9, 10] : [9, 11, 9, 11];
+          if (equipment1.fontSize < sizes[0] || equipment1.fontSize > sizes[1] || extra1.fontSize < sizes[2] || extra1.fontSize > sizes[3]) throw new Error(`Measured wrap font sizes: ${outputMode}`);
+          if (outputMode === "editable") {
+            // pdf-lib's old re-split broke this line at the space before "×10".
+            if (!equipment1.lines[0].includes("羊皮紙 ×10")) throw new Error("Measured wrap fills the editable line");
+            const form = (await PDFLib.PDFDocument.load(await blob.arrayBuffer())).getForm();
+            const payload = buildPdfFieldPayload(state, { outputMode });
+            for (const name of ["equipment1", "extra1"]) {
+              const field = form.getTextField(name);
+              if (field.getText() !== payload[name] || drawn[name].value !== payload[name]) throw new Error(`Editable value keeps source breaks only: ${name}`);
+              if (!/\s9\s+Tf/.test(field.acroField.getDefaultAppearance())) throw new Error(`Editable editing font size restored: ${name}`);
+            }
+          }
+        }
+      } finally { PDFLib.defaultTextFieldAppearanceProvider = provider; }
     } finally { URL.createObjectURL = create; }
   });
-  console.log("PDF export: 4 actual PDFs checked, including automatic feat sources and shared name centering in both modes.");
+  console.log("PDF export: 6 actual PDFs checked, including automatic feat sources, shared name centering and measured equipment/notes wrapping in both modes.");
 }
 
 async function prepareToastFixture(page) {

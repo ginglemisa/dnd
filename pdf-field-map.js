@@ -88,16 +88,14 @@
   // rendering has some headroom for punctuation and mixed-width text.
   const PDF_TEXT_SPECS = Object.freeze({
     classFeatures1: Object.freeze({ maxUnitsPerLine: 28, maxLines: 10 }),
-    // classFeatures2 / extra1 / equipment1 map to player-authored textarea
-    // content. These PDF fields are multiline, scrollable, and have no MaxLen,
-    // so we preserve the full text instead of truncating it during export.
+    // classFeatures2 maps to player-authored textarea content. The PDF field
+    // is multiline, scrollable, and has no MaxLen, so we preserve the full
+    // text instead of truncating it during export.
     classFeatures2: Object.freeze({ maxUnitsPerLine: 28, maxLines: Number.MAX_SAFE_INTEGER }),
     // 14 display units fit seven CJK glyphs per line. Ten lines keep these
     // narrow columns readable when printed on A4 paper.
     specie_features1: Object.freeze({ maxUnitsPerLine: 14, maxLines: 10, maxTotalUnits: 140 }),
-    feats1: Object.freeze({ maxUnitsPerLine: 14, maxLines: 10, maxTotalUnits: 140 }),
-    extra1: Object.freeze({ maxUnitsPerLine: 52, maxLines: Number.MAX_SAFE_INTEGER }),
-    equipment1: Object.freeze({ maxUnitsPerLine: 52, maxLines: Number.MAX_SAFE_INTEGER })
+    feats1: Object.freeze({ maxUnitsPerLine: 14, maxLines: 10, maxTotalUnits: 140 })
   });
   const MAX_PDF_SPELL_ROWS = 19;
 
@@ -885,107 +883,24 @@
     return wrapped.slice(0, maxLines).join('\n');
   }
 
-  function splitPdfTokenToLines(token, maxUnitsPerLine) {
+  // equipment1 / extra1 keep only source line breaks here. pdf-export.js wraps
+  // them by measured glyph widths when it draws the field appearance.
+  function normalizeUserTextForPdf(rawText) {
     const lines = [];
-    let chunk = '';
-    Array.from(token).forEach((character) => {
-      const next = `${chunk}${character}`;
-      if (chunk && countDisplayUnits(next) > maxUnitsPerLine) {
-        lines.push(chunk);
-        chunk = character;
-      } else {
-        chunk = next;
-      }
-    });
-    if (chunk) lines.push(chunk);
-    return lines;
-  }
-
-  function getUserTextWrapTokens(line) {
-    const Segmenter = globalScope.Intl?.Segmenter;
-    const segments = Segmenter
-      ? Array.from(new Segmenter('zh-Hant', { granularity: 'word' }).segment(line), ({ segment }) => segment)
-      : Array.from(line);
-    const tokens = [];
-    const closingPunctuationPattern = /^[、，。；：！？,.;:!?]+$/u;
-
-    segments.forEach((segment) => {
-      if (closingPunctuationPattern.test(segment) && tokens.length > 0) {
-        tokens[tokens.length - 1] += segment;
-      } else {
-        tokens.push(segment);
-      }
-    });
-    return tokens;
-  }
-
-  function wrapUserTextLineForPdf(line, maxUnitsPerLine) {
-    const wrapped = [];
-    let chunk = '';
-
-    getUserTextWrapTokens(line).forEach((rawToken) => {
-      const token = chunk ? rawToken : rawToken.trimStart();
-      if (!token) return;
-      const next = `${chunk}${token}`;
-      if (countDisplayUnits(next) <= maxUnitsPerLine) {
-        chunk = next;
-        return;
-      }
-
-      if (chunk.trim()) wrapped.push(chunk.trimEnd());
-      const tokenLines = splitPdfTokenToLines(token.trimStart(), maxUnitsPerLine);
-      if (tokenLines.length > 1) wrapped.push(...tokenLines.slice(0, -1));
-      chunk = tokenLines.at(-1) || '';
-    });
-
-    if (chunk.trim()) wrapped.push(chunk.trimEnd());
-    return wrapped;
-  }
-
-  function wrapUserTextForPdf(rawText, options = {}) {
-    const text = normalizeText(rawText).replace(/\r/g, '').replace(/\t/g, ' ');
-    if (!text) return '';
-    const maxUnitsPerLine = options.maxUnitsPerLine || 40;
-    const maxLines = options.maxLines || 3;
-    const wrapped = [];
-
-    text.split('\n').forEach((line) => {
+    normalizeText(rawText).replace(/\r/g, '').replace(/\t/g, ' ').split('\n').forEach((line) => {
       const trimmedLine = line.trim();
-      if (!trimmedLine) {
-        if (wrapped.length > 0 && wrapped.at(-1) !== '') wrapped.push('');
-        return;
-      }
-      wrapped.push(...wrapUserTextLineForPdf(trimmedLine, maxUnitsPerLine));
+      if (trimmedLine) lines.push(trimmedLine);
+      else if (lines.length > 0 && lines.at(-1) !== '') lines.push('');
     });
-
-    return wrapped.slice(0, maxLines).join('\n');
+    return lines.join('\n');
   }
 
-  function wrapEquipmentListForPdf(rawText, options = {}) {
-    const text = normalizeText(rawText).replace(/\r/g, '').replace(/\t/g, ' ');
-    if (!text) return '';
-    const maxUnitsPerLine = options.maxUnitsPerLine || 40;
-    const maxLines = options.maxLines || 3;
-    const wrapped = [];
-
-    text.split(/\n+/).forEach((sourceLine) => {
-      let chunk = '';
-      sourceLine.split('、').map((item) => item.trim()).filter(Boolean).forEach((item) => {
-        const next = chunk ? `${chunk}、${item}` : item;
-        if (countDisplayUnits(next) <= maxUnitsPerLine) {
-          chunk = next;
-          return;
-        }
-
-        if (chunk) wrapped.push(chunk);
-        const itemLines = wrapUserTextLineForPdf(item, maxUnitsPerLine);
-        if (itemLines.length > 1) wrapped.push(...itemLines.slice(0, -1));
-        chunk = itemLines.at(-1) || '';
-      });
-      if (chunk) wrapped.push(chunk);
-    });
-
-    return wrapped.slice(0, maxLines).join('\n');
+  function normalizeEquipmentListForPdf(rawText) {
+    return normalizeText(rawText).replace(/\r/g, '').replace(/\t/g, ' ')
+      .split(/\n+/)
+      .map((line) => line.split('、').map((item) => item.trim()).filter(Boolean).join('、'))
+      .filter(Boolean)
+      .join('\n');
   }
 
   const PDF_BASE_LANGUAGE_LABELS = Object.freeze({
@@ -1669,14 +1584,6 @@ function isWeaponRowEmpty(payload, slot) {
     const classKey = normalizeText(state.class);
     const backgroundKey = normalizeText(state.background);
     const level = normalizeText(state.level);
-    // Compact gives these wide author-entered fields a larger preferred size.
-    // Reflow before exporting so editable-width lines do not force the entire
-    // compact field to shrink.
-    const compactLongTextSpec = (fieldName) => (
-      options.outputMode === 'compact'
-        ? { ...PDF_TEXT_SPECS[fieldName], maxUnitsPerLine: 34 }
-        : PDF_TEXT_SPECS[fieldName]
-    );
 
     Object.entries(DIRECT_FIELD_MAP).forEach(([stateKey, pdfFieldName]) => {
       payload[pdfFieldName] = normalizeText(state[stateKey]);
@@ -1906,18 +1813,17 @@ function isWeaponRowEmpty(payload, slot) {
     }
 
     if (extraNotes.length) {
-      payload.extra1 = wrapUserTextForPdf(extraNotes.join('\n'), compactLongTextSpec('extra1'));
+      payload.extra1 = normalizeUserTextForPdf(extraNotes.join('\n'));
     }
 
     if (options.includeDefaultEquipment && !hasQuickBuildInitialEquipment(state)) {
       const classEq = parseClassDefaultEquipment(classKey);
       const bgEq = parseBackgroundDefaultEquipment(backgroundKey);
-      payload.equipment1 = wrapEquipmentListForPdf(
-        [classEq, bgEq, payload.equipment1].filter(Boolean).join('\n'),
-        compactLongTextSpec('equipment1')
+      payload.equipment1 = normalizeEquipmentListForPdf(
+        [classEq, bgEq, payload.equipment1].filter(Boolean).join('\n')
       );
     } else {
-      payload.equipment1 = wrapEquipmentListForPdf(payload.equipment1, compactLongTextSpec('equipment1'));
+      payload.equipment1 = normalizeEquipmentListForPdf(payload.equipment1);
     }
 
     for (let slot = 1; slot <= 7; slot++) {
