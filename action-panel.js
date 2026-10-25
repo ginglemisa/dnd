@@ -161,8 +161,8 @@
         label: () => getCharacterLevel() >= 5 ? "等級 5：焚燒不死生物" : "等級 2：驅散不死生物", resourceKey: "cleric-channel-divinity",
         descriptionIds: ["cleric-turn-undead", { id: "cleric-sear-undead", level: 5 }]
       },
-      { mode: "action", level: 3, label: "等級 3：生命門徒（生命）", descriptionId: "cleric-disciple-of-life", key: "dynamic-action-cleric-1ocjvx6", id: "disciple-of-life" },
-      { mode: "action", level: 3, label: "等級 3：維持生命（生命）", descriptionId: "cleric-preserve-life", key: "dynamic-action-cleric-aoatsu", id: "preserve-life", resourceKey: "cleric-channel-divinity", legacyKeys: ["dynamic-action-class-preserve-life"] },
+      { mode: "action", level: 3, label: "等級 3：生命門徒（生命子職）", descriptionId: "cleric-disciple-of-life", key: "dynamic-action-cleric-1ocjvx6", id: "disciple-of-life" },
+      { mode: "action", level: 3, label: "等級 3：維持生命（生命子職）", descriptionId: "cleric-preserve-life", key: "dynamic-action-cleric-aoatsu", id: "preserve-life", resourceKey: "cleric-channel-divinity", legacyKeys: ["dynamic-action-class-preserve-life"] },
       { id: "divine-strike", mode: "action", level: 7, label: "等級 7：神聖打擊", descriptionId: "cleric-divine-strike", key: "dynamic-action-cleric-sxx32", checkedId: "cleric-blessed-strikes-divine-strike" }
     ]),
     druid: Object.freeze([

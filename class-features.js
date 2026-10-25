@@ -1379,12 +1379,12 @@ const classFeatures = {
 </section>
 
 <section class="fighter-feature class-feature-section" data-feature-level="3">
-  <h3>等級 3：精通重擊(勇士子職)</h3>
+  <h3>等級 3：精通重擊（勇士子職）</h3>
   <p>你使用武器和徒手打擊的攻擊檢定，擲出 <strong>19 或 20</strong> 時即可造成重擊。</p>
 </section>
 
 <section class="fighter-feature class-feature-section" data-feature-level="3" data-action-id="fighter-remarkable-athlete">
-  <h3>等級 3：運動健將(勇士子職)</h3>
+  <h3>等級 3：運動健將（勇士子職）</h3>
   <p data-overview-hide>平日的訓練鍛打出堅實的體能，你獲得以下效果：</p>
   <ul class="class-rule-list">
     <li><strong data-overview-hide>先攻與運動：</strong>你的先攻和力量（${skillTip("運動")}）檢定具有<strong>優勢</strong>。</li>
@@ -3139,11 +3139,11 @@ const classFeatures = {
 <section class="wizard-feature class-feature-section" data-feature-level="1"><h3>等級 1：奧術回想</h3><p>完成短休時，可恢復部分已消耗的法術位。使用後，須完成長休才能再次使用。</p><ul class="class-rule-list"><li><strong>恢復總環階：</strong>最多為法師等級的一半（無條件進位）。</li><li><strong>單一法術位：</strong>最高只能恢復 5 環。</li></ul><p>例如 4 級法師可恢復 1 個 2 環，或 2 個 1 環法術位。</p></section>
 <section class="wizard-feature class-feature-section" data-feature-level="2"><h3>等級 2：學者</h3><p>從${skillTip("奧秘")}、${skillTip("歷史")}、${skillTip("調查")}、${skillTip("醫藥")}、${skillTip("自然")}、${skillTip("宗教")}中，選擇 1 個<strong>已熟練</strong>的技能，獲得專精。</p></section>
 <section class="wizard-feature class-feature-section" data-feature-level="3"><h3>等級 3：法師子職</h3><p>選擇一個法師子職，並隨等級提升獲得子職能力。基本規則僅提供「塑能師」。</p></section>
-<section class="wizard-feature class-feature-section" data-feature-level="3"><h3>等級 3：塑能學者（塑能師）</h3><p>選擇 2 個不高於 2 環的塑能系法師法術，免費加入法術書。</p><p>之後每次首次獲得更高環階的法術位時，可再免費加入 1 個不高於該環階的塑能系法師法術。</p></section>
-<section class="wizard-feature class-feature-section" data-feature-level="3" data-action-id="wizard-potent-cantrip"><h3>等級 3：強力戲法（塑能師）</h3><p>對生物施放傷害戲法時，即使<strong>攻擊失手或目標豁免成功</strong>，目標仍受到一半傷害，但不受該戲法的其他效果影響。</p></section>
+<section class="wizard-feature class-feature-section" data-feature-level="3"><h3>等級 3：塑能學者（塑能子職）</h3><p>選擇 2 個不高於 2 環的塑能系法師法術，免費加入法術書。</p><p>之後每次首次獲得更高環階的法術位時，可再免費加入 1 個不高於該環階的塑能系法師法術。</p></section>
+<section class="wizard-feature class-feature-section" data-feature-level="3" data-action-id="wizard-potent-cantrip"><h3>等級 3：強力戲法（塑能子職）</h3><p>對生物施放傷害戲法時，即使<strong>攻擊失手或目標豁免成功</strong>，目標仍受到一半傷害，但不受該戲法的其他效果影響。</p></section>
 <section class="wizard-feature class-feature-section" data-feature-level="4"><h3>等級 4：屬性值提升</h3><p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p><p data-after-feat-choice><strong>施法補充：</strong>法師達到 4 級時，你也會透過「施法」特性額外學會 1 個法師戲法。</p></section>
 <section class="wizard-feature class-feature-section" data-feature-level="5" data-action-id="wizard-memorize-spell"><h3>等級 5：記憶法術</h3><p>每次短休後，可研讀法術書，將 1 個透過「施法」準備的 1 環以上法師法術，換成書中另一個你能準備的 1 環以上法師法術。</p></section>
-<section class="wizard-feature class-feature-section" data-feature-level="6" data-action-id="wizard-sculpt-spells"><h3>等級 6：法術塑形（塑能師）</h3><p>施放會影響其他可見生物的塑能系法術時，可從這些生物中選擇最多<strong>「法術環階＋1」名</strong>。</p><p>這些生物對該法術的豁免自動成功，且不承受豁免成功時原本仍會受到的傷害。</p></section>
+<section class="wizard-feature class-feature-section" data-feature-level="6" data-action-id="wizard-sculpt-spells"><h3>等級 6：法術塑形（塑能子職）</h3><p>施放會影響其他可見生物的塑能系法術時，可從這些生物中選擇最多<strong>「法術環階＋1」名</strong>。</p><p>這些生物對該法術的豁免自動成功，且不承受豁免成功時原本仍會受到的傷害。</p></section>
 <section class="wizard-feature class-feature-section" data-feature-level="8"><h3>等級 8：屬性值提升</h3><p>選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。</p></section></div>
 `
 };

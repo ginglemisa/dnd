@@ -308,8 +308,8 @@ const personalizedClasses = {
   cleric: [
     ["action",2,"等級 2：神聖火花","dynamic-action-cleric-1c18bru"],
     ["action",2,"等級 2：驅散不死生物","dynamic-action-cleric-xonbxu"],
-    ["action",3,"等級 3：生命門徒（生命）","dynamic-action-cleric-1ocjvx6"],
-    ["action",3,"等級 3：維持生命（生命）","dynamic-action-cleric-aoatsu"]
+    ["action",3,"等級 3：生命門徒（生命子職）","dynamic-action-cleric-1ocjvx6"],
+    ["action",3,"等級 3：維持生命（生命子職）","dynamic-action-cleric-aoatsu"]
   ]
 };
 

@@ -49,7 +49,7 @@ async function ensurePdfExportReady() {
     pdfExportLoaderPromise = (async () => {
       await loadScriptOnce("pdf-lib.custom.min.js");
       await loadScriptOnce("fontkit.custom.min.js");
-      await loadScriptOnce("pdf-field-map.js?v=20261025-pdf-text-wrap");
+      await loadScriptOnce("pdf-field-map.js?v=20261026-subclass-names");
       await loadScriptOnce("pdf-export.js?v=20261025-pdf-text-wrap");
     })().catch((error) => {
       pdfExportLoaderPromise = null;

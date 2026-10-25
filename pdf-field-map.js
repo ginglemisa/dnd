@@ -136,18 +136,18 @@
   });
 
   const SUBCLASS_LABELS = Object.freeze({
-    barbarian: '狂戰道途',
+    barbarian: '狂戰士道途',
     bard: '逸聞學院',
     cleric: '生命領域',
     druid: '大地結社',
     fighter: '勇士',
     monk: '散打鬥士',
-    paladin: '奉獻誓言',
+    paladin: '奉獻之誓',
     ranger: '獵人',
     rogue: '妙手',
     sorcerer: '龍族術法',
     warlock: '邪魔宗主',
-    wizard: '塑能學派'
+    wizard: '塑能師'
   });
 
   // A selected option is appended to its heading as "／選項"; nextLine specs
