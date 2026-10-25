@@ -36,10 +36,6 @@ document.addEventListener("DOMContentLoaded", () => {
   container.innerHTML = `
 
 <div class="section">
-  <div class="equipment-shop-entry">
-    <p>點選物品名稱可查看詳情；購買請使用商店。</p>
-    <button type="button" class="equipment-shop-entry__button" data-equipment-shop-open aria-haspopup="dialog">開啟商店</button>
-  </div>
   <h3>武器</h3>
   <details class="equipment-catalog-details">
     <summary class="equipment-note-summary">簡易武器列表</summary>

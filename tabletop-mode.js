@@ -4729,6 +4729,7 @@ function getRogueReliableTalentEntry() {
   function moveSharedNotesToCurrentMode(mode) {
     [
       [elements.gearNotes, elements.gearNotesSheetMount, elements.gearNotesTabletopMount],
+      [elements.equipmentShopOpen, elements.gearNotesSheetMount, elements.gearNotesTabletopMount],
       [elements.classExtra, elements.classExtraSheetMount, elements.classExtraTabletopMount],
       [elements.skillExtra, elements.skillExtraSheetMount, elements.skillExtraTabletopMount],
       [elements.spellNotes, elements.spellNotesSheetMount, elements.spellNotesTabletopMount]
@@ -4776,6 +4777,11 @@ function getRogueReliableTalentEntry() {
         gearNotesTabletopMount:
           document.getElementById(
             "tabletop-gear-notes-mount"
+          ),
+
+        equipmentShopOpen:
+          document.getElementById(
+            "equipment-shop-open"
           ),
 
         classExtra:

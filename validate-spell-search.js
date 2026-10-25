@@ -616,7 +616,23 @@ async function validateEquipmentShop(page) {
     document.getElementById("money-balance-gp").dispatchEvent(new Event("change"));
     document.getElementById("gear-notes").value = "購買物品：繩索\n自由備註";
   });
-  const shopButton = page.locator("#money-shop-open");
+  const shopButton = page.locator("#equipment-shop-open");
+  // The full-width shop entry sits right under the carried-items notes, outside the money card.
+  assert.deepEqual(await page.evaluate(() => {
+    const button = document.getElementById("equipment-shop-open");
+    const notes = document.getElementById("gear-notes");
+    const money = document.querySelector(".money-section");
+    const box = button.getBoundingClientRect();
+    return {
+      text: button.textContent.trim(),
+      icon: Boolean(button.querySelector("svg")),
+      afterNotes: notes.nextElementSibling === button && box.top >= notes.getBoundingClientRect().bottom,
+      beforeMoney: box.bottom <= money.getBoundingClientRect().top && !money.contains(button),
+      fullWidth: Math.abs(box.width - notes.getBoundingClientRect().width) < 1,
+      oldEntries: document.querySelectorAll(".money-section [data-equipment-shop-open], #equipment-notes-section [data-equipment-shop-open]").length
+    };
+  }), { text: "開啟商店", icon: true, afterNotes: true, beforeMoney: true, fullWidth: true, oldEntries: 0 }, "shop entry under carried items");
+  assert.equal(await page.locator("#equipment-notes-section").innerText().then(text => text.includes("購買請使用商店")), false, "reference list hint removed");
   const shop = page.locator('.app-dialog[data-variant="equipment-shop"]');
   const cartDialog = page.locator('.app-dialog[data-variant="equipment-shop-cart"]');
   const cartButton = shop.locator(".equipment-shop__cart-button");
@@ -864,6 +880,7 @@ async function validateEquipmentShop(page) {
   assert.equal(await shop.count(), 0);
 
   // Narrow money cards put the actions above the title, aligned left.
+  await page.setViewportSize({ width: 320, height: 760 });
   const header = await page.evaluate(() => {
     const title = document.querySelector(".money-title").getBoundingClientRect();
     const actions = document.querySelector(".money-header-actions").getBoundingClientRect();
@@ -877,6 +894,20 @@ async function validateEquipmentShop(page) {
     const actions = document.querySelector(".money-header-actions").getBoundingClientRect();
     return Math.abs((title.top + title.bottom) / 2 - (actions.top + actions.bottom) / 2) < 4;
   }), true, "wide money header keeps one row");
+
+  // In tabletop mode the shop entry travels with the carried-items notes.
+  await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("resources"); });
+  assert.equal(await page.evaluate(() => {
+    const mount = document.getElementById("tabletop-gear-notes-mount");
+    return [...mount.children].map(child => child.id).join();
+  }), "gear-notes,equipment-shop-open", "tabletop mount holds the notes then the shop entry");
+  await shopButton.click();
+  assert.equal(await shop.isVisible(), true, "tabletop shop entry opens the shop");
+  await page.keyboard.press("Escape");
+  assert.equal(await shopButton.evaluate(el => el === document.activeElement), true);
+  await page.evaluate(() => TabletopMode.setMode("sheet"));
+  assert.equal(await page.evaluate(() => [...document.getElementById("gear-notes-sheet-mount").children].map(child => child.id).join()),
+    "gear-notes,equipment-shop-open", "sheet mode restores the notes and shop entry in order");
 }
 
 main().catch(error => { console.error(error); process.exitCode = 1; });

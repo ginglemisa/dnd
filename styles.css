@@ -5961,11 +5961,10 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   white-space: nowrap;
 }
 
-#money-shop-open,
 #money-adjust-toggle,
 #money-log-toggle { flex: 0 0 auto; }
 
-@container money-section (max-width: 18.5rem) {
+@container money-section (max-width: 14.5rem) {
   .money-balance-header {
     flex-direction: column-reverse;
     align-items: flex-start;
@@ -6301,28 +6300,17 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   color: var(--accent);
 }
 
-.equipment-shop-entry {
+/* The shop entry sits under the carried-items notes, full width like the other main sheet actions; it moves with the notes in tabletop mode. */
+.equipment-shop-launch {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem 0.75rem;
-  margin-bottom: 0.75rem;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
 }
 
-.equipment-shop-entry p {
-  margin: 0;
-  color: var(--text-muted);
-  font-size: var(--fs-sm);
-}
-
-.equipment-shop-entry__button {
-  width: auto;
-  min-height: 2.4rem;
-  margin: 0;
-  padding: 0.45rem 0.9rem;
-  font-size: var(--fs-sm);
-  font-weight: 800;
+.equipment-shop-launch svg {
+  flex: 0 0 auto;
 }
 
 /* Shop and cart share one frame, so the cart reads as another page of the same window; 48.5rem fits all twelve categories on one row. */
