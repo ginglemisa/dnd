@@ -1008,33 +1008,63 @@ async function validateQuickBuildShop(page) {
   await wizard.locator(".quick-build-previous").click();
   assert.match(await wizard.locator(".quick-build-complete").innerText(), /已購買：繩索 ×2、火把/u, "going back does not reset the shop");
 
-  // Changing where the starting gold comes from resets the money, the records and the cart.
+  // Changing where the starting gold comes from resets the money and the records; paid items
+  // return to the unpaid cart of the new wallet and must be bought again with its money.
+  const cartLines = () => cartDialog.locator(".equipment-shop__cart-line").evaluateAll(lines => lines.map(line =>
+    `${line.querySelector(".equipment-shop__cart-name").textContent}×${line.querySelector(".equipment-shop__quantity-input").value}`).join("、"));
+  const waitForToast = text => page.waitForFunction(expected => [...document.querySelectorAll("#app-toast .app-toast__message")]
+    .some(message => message.textContent === expected), text);
+  const clearToasts = () => page.evaluate(() => document.querySelectorAll("#app-toast .app-toast").forEach(toast => toast.remove()));
+  await clearToasts();
   await wizard.locator(".quick-build-modify").click();
   await wizard.locator('[data-class-equipment-method="default"]').click();
+  await waitForToast("起始資金已變更，已購買的繩索 ×2、火把退回購物清單，可在商店重新結帳。");
   assert.equal(await openButton.count(), 0, "the shop hides until the new package is configured");
   await wizard.locator("#quick-build-equipment-main").selectOption("巨斧");
   assert.equal(await panelRows(), "起始金額|65 金幣|剩餘金額|65 金幣", "switching to the class package resets the purchases");
   await openButton.click();
-  assert.equal(await badge.isHidden(), true, "a reset also drops the unpaid cart");
-  await buy(["繩索"]);
-  await shop.getByRole("button", { name: "結帳", exact: true }).click();
+  assert.equal(await badge.textContent(), "4", "paid items join the unpaid cart after a reset");
+  await shop.locator(".equipment-shop__cart-button").click();
+  assert.equal(await cartLines(), `${costly}×1、繩索×2、火把×1`, "returned items join the unpaid lines");
+  assert.equal(await cartDialog.getByRole("button", { name: "結帳", exact: true }).isDisabled(), true, "returned items still need enough money");
+  await cartDialog.getByRole("button", { name: `從購物清單移除${costly}`, exact: true }).click();
+  await cartDialog.getByRole("button", { name: "結帳", exact: true }).click();
   await shop.waitFor({ state: "detached" });
   // Options inside the same package keep the records.
   await wizard.locator("#quick-build-equipment-main").selectOption("手斧");
-  assert.equal(await panelRows(), "起始金額|65 金幣|已購買|繩索|剩餘金額|64 金幣", "changing the main hand keeps the purchases");
+  assert.equal(await panelRows(), "起始金額|65 金幣|已購買|繩索 ×2、火把|剩餘金額|62 金幣 9 銀幣 9 銅幣", "changing the main hand keeps the purchases");
   assert.equal(await page.evaluate(() => Object.keys(collectStateObject()).some(key => key.startsWith("quick-build-"))), false, "wizard controls stay out of character data");
+  await clearToasts();
   await wizard.locator('[data-wealth="default"]').click();
+  await waitForToast("起始資金已變更，已購買的繩索 ×2、火把退回購物清單，可在商店重新結帳。");
   assert.doesNotMatch(await panelRows(), /已購買/u, "changing the background equipment resets the purchases");
   assert.equal(await page.evaluate(() => quickBuild.getDraft().choices.shop), null);
-  // A -> B -> A without opening the intermediate wallet must not revive its cart,
-  // even when there are no paid purchases left in choices.shop.
+  // A -> B -> A without opening the intermediate wallet moves the cart along once;
+  // the earlier wallet's cart is not revived on top of it.
   await openButton.click();
   await buy(["繩索"]);
   await page.keyboard.press("Escape");
   await wizard.locator('[data-wealth="gold"]').click();
   await wizard.locator('[data-wealth="default"]').click();
   await openButton.click();
-  assert.equal(await badge.isHidden(), true, "changing funding away and back clears the unpaid cart immediately");
+  assert.equal(await badge.textContent(), "4", "changing funding away and back keeps one copy of the unpaid cart");
+  await shop.locator(".equipment-shop__cart-button").click();
+  assert.equal(await cartLines(), "繩索×3、火把×1");
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("Escape");
+  // Items that no longer map to the catalog are reported instead of returned; spell scrolls map back.
+  const scroll = await page.evaluate(() => {
+    const item = window.EQUIPMENT_SHOP_ITEMS.find(candidate => candidate.spellLevel === 0);
+    const spell = SpellCatalog.getAllSpells().find(candidate => candidate.level === 0 && SpellCatalog.getClassIds(candidate.spellId).length);
+    return { name: `${spell.nameZh}法術卷軸`, gearName: `${spell.nameZh}法術卷軸`, amount: item.amount, currency: item.currency, quantity: 1 };
+  });
+  assert.deepEqual(await page.evaluate(scrollItem => window.EquipmentShop.moveWalletCart("validate:none", "validate:scroll", [
+    scrollItem, { name: "已移除的物品", gearName: "", amount: 1, currency: "金幣", quantity: 1 }
+  ]).map(item => item.name), scroll), ["已移除的物品"]);
+  await page.evaluate(() => { window.EquipmentShop.open({ wallet: { id: "validate:scroll", readTotal: () => 0, purchaseItems: async () => false } }); });
+  await shop.locator(".equipment-shop__cart-button").click();
+  assert.equal(await cartLines(), `${scroll.name}×1`, "spell scrolls return as their scroll line");
+  await page.keyboard.press("Escape");
   await page.keyboard.press("Escape");
   await page.evaluate(() => { window.EquipmentShop.open(); });
   assert.equal(await badge.textContent(), "1", "resetting the draft wallet preserves the sheet cart");
@@ -1089,6 +1119,21 @@ async function validateQuickBuildShop(page) {
   await page.keyboard.press("Escape");
   await page.keyboard.press("Escape");
   assert.deepEqual(await cardSnapshot(), before, "instrument reselection still leaves character data untouched");
+
+  // Resetting quick build discards purchases and the unpaid cart instead of returning them.
+  const bardDraft = await page.evaluate(() => dndStorage.getItem(quickBuild.storageKey));
+  await wizard.locator(".quick-build-reset").click();
+  await page.locator(".app-dialog").getByRole("button", { name: "重置快速創角", exact: true }).click();
+  await wizard.waitFor({ state: "hidden" });
+  await page.evaluate(saved => {
+    const draft = JSON.parse(saved);
+    delete draft.choices.shop;
+    dndStorage.setItem(quickBuild.storageKey, JSON.stringify(draft));
+    quickBuild.open();
+  }, bardDraft);
+  await openButton.click();
+  assert.equal(await badge.isHidden(), true, "resetting quick build clears the cart for the same choices");
+  await page.keyboard.press("Escape");
   await wizard.locator(".quick-build-close").click();
 }
 

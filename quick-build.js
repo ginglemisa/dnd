@@ -442,8 +442,10 @@
   }
 
   function saveDraft() {
+    const previousShopItems = shopItems();
     reconcileDraft(draft);
-    syncShopCartFunding();
+    // 只有這次被歸零的已購品項才退回購物清單。
+    syncShopCartFunding(draft.choices.shop ? [] : normalizeShopItems(previousShopItems) || []);
     draft.updatedAt = new Date().toISOString();
     try {
       return storage.setItem(STORAGE_KEY, JSON.stringify(draft));
@@ -1979,7 +1981,8 @@
   /*
    * 裝備步驟的商店只暫存在 draft.choices.shop：{ funding, items }，items 為合併後的購買清單，
    * 剩餘金額＝起始金額－清單總價。funding 記錄起始金額的來源（背景、職業、職業裝備方式、背景財富）；
-   * 任何一項改變就整份歸零，主手、樂器等套裝內選項與只切換步驟都不算。匯入手機角卡前不經過角色卡的 MoneyTracker。
+   * 任何一項改變就整份歸零（已購品項退回記憶體中的購物清單，見 syncShopCartFunding），主手、樂器等套裝內選項
+   * 與只切換步驟都不算。匯入手機角卡前不經過角色卡的 MoneyTracker。
    */
   function normalizeShopItems(items) {
     if (!Array.isArray(items) || items.length > SHOP_ITEM_LIMIT) return null;
@@ -2004,13 +2007,25 @@
     });
   }
 
-  // 未結帳清單不在草稿內；資金來源改變時立即清掉，不能等到下一次開店才比較。
-  function syncShopCartFunding() {
+  // 未結帳清單不在草稿內；資金來源改變時立即處理，不能等到下一次開店才比較。
+  // 玩家改選項（傳入改選前的已購品項）時，已購品項退回購物清單、未結帳清單保留，
+  // 都只留在記憶體並須重新結帳；載入或重新開始草稿則整份清空。
+  function syncShopCartFunding(previousItems = null) {
     const funding = shopFundingSignature();
-    if (funding !== shopCartFunding) {
-      window.EquipmentShop?.clearWalletCart?.(`quick-build:${shopCartFunding}`);
-      shopCartFunding = funding;
+    if (funding === shopCartFunding) return;
+    const fromId = `quick-build:${shopCartFunding}`;
+    shopCartFunding = funding;
+    if (!previousItems) {
+      window.EquipmentShop?.clearWalletCart?.(fromId);
+      return;
     }
+    const missing = window.EquipmentShop?.moveWalletCart?.(fromId, `quick-build:${funding}`, previousItems) ?? previousItems;
+    if (!previousItems.length) return;
+    const returned = previousItems.filter(item => !missing.includes(item));
+    window.AppDialog?.notify?.([
+      returned.length && `起始資金已變更，已購買的${formatShopItems(returned)}退回購物清單，可在商店重新結帳。`,
+      missing.length && `${formatShopItems(missing)}已不在商店，無法退回。`
+    ].filter(Boolean).join(""), { tone: missing.length ? "warning" : "info" });
   }
 
   function shopStartingCopper(target = draft) {
@@ -2132,7 +2147,7 @@
 
   function renderEquipmentShop(body) {
     const items = shopItems();
-    body.innerHTML = `<h3>商店</h3><p class="quick-build-lead">可用職業與背景提供的金錢購買其他物品。購買紀錄只暫存在快速創角，匯入手機角卡時才寫入財產與攜帶物品；變更背景、職業，或改選預設裝備／金幣時會歸零。</p><section class="quick-build-choice-panel"><dl class="quick-build-summary-list"><dt>起始金額</dt><dd>${escapeHtml(formatCopperAmount(shopStartingCopper()))}</dd>${items.length ? `<dt>已購買</dt><dd>${escapeHtml(formatShopItems(items))}</dd>` : ""}<dt>剩餘金額</dt><dd>${escapeHtml(formatCopperAmount(shopBalanceCopper()))}</dd></dl><div class="quick-build-choice-actions quick-build-shop-actions"><button type="button" id="quick-build-shop-open" class="primary quick-build-choice-action-full quick-build-shop-open" aria-haspopup="dialog">${SHOP_CART_ICON}<span>開啟商店</span></button></div></section>`;
+    body.innerHTML = `<h3>商店</h3><p class="quick-build-lead">可用職業與背景提供的金錢購買其他物品。購買紀錄只暫存在快速創角，匯入手機角卡時才寫入財產與攜帶物品；變更背景、職業，或改選預設裝備／金幣時會歸零，已購物品退回購物清單，可重新結帳。</p><section class="quick-build-choice-panel"><dl class="quick-build-summary-list"><dt>起始金額</dt><dd>${escapeHtml(formatCopperAmount(shopStartingCopper()))}</dd>${items.length ? `<dt>已購買</dt><dd>${escapeHtml(formatShopItems(items))}</dd>` : ""}<dt>剩餘金額</dt><dd>${escapeHtml(formatCopperAmount(shopBalanceCopper()))}</dd></dl><div class="quick-build-choice-actions quick-build-shop-actions"><button type="button" id="quick-build-shop-open" class="primary quick-build-choice-action-full quick-build-shop-open" aria-haspopup="dialog">${SHOP_CART_ICON}<span>開啟商店</span></button></div></section>`;
     body.querySelector("#quick-build-shop-open").addEventListener("click", openDraftShop);
   }
 

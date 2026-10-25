@@ -189,15 +189,26 @@
     });
   }
 
-  function addToCart(item, { spell = null, quantity = 1 } = {}) {
+  function addToCart(item, { spell = null, quantity = 1, lines = cart } = {}) {
     if (!item) return null;
     const key = spell ? `${item.key}|${spell.spellId}` : item.key;
     const name = spell ? `${spell.nameZh}法術卷軸` : item.name;
-    const existing = cart.get(key);
+    const existing = lines.get(key);
     const line = existing || { key, itemKey: item.key, name, label: spell ? name : getItemLabel(item), gearName: spell ? name : "", amount: item.amount, currency: item.currency, copper: item.copper, quantity: 0 };
     line.quantity = Math.min(QUANTITY_MAX, line.quantity + quantity);
-    cart.set(key, line);
+    lines.set(key, line);
     return line;
+  }
+
+  // 結帳品項 { name, gearName, amount, currency } 依名稱與價格對回商店品項；卷軸再對回法術。
+  function findPurchasedItem({ name, gearName, amount, currency }) {
+    const samePrice = getItems().filter(item => item.amount === amount && item.currency === currency);
+    for (const item of samePrice.filter(candidate => Number.isInteger(candidate.spellLevel))) {
+      const spell = gearName && getSpellOptions(item.spellLevel).find(candidate => `${candidate.nameZh}法術卷軸` === gearName);
+      if (spell) return { item, spell };
+    }
+    const item = samePrice.find(candidate => candidate.name === name && !Number.isInteger(candidate.spellLevel));
+    return item ? { item, spell: null } : null;
   }
 
   function createItemNameButton(item) {
@@ -692,7 +703,8 @@
    * 開啟商店。addKey 先把該品項加入購物清單；focusName 捲到該品項（如法術卷軸）。
    * wallet：{ id, readTotal(), purchaseItems(items), formatAmount?, balanceLabel?, checkoutNotice? }，
    * 省略時使用角色卡的 MoneyTracker；id 改變時捨棄先前未結帳的暫存購物清單。
-   * 呼叫端重置錢包時可用 clearWalletCart(id) 立即清空，不影響角色卡的購物清單。
+   * 呼叫端重置錢包時可用 clearWalletCart(id) 立即清空，或用 moveWalletCart(fromId, toId, items)
+   * 把未結帳清單連同退回的已購品項移到新錢包；兩者都不影響角色卡的購物清單。
    */
   function open({ trigger = null, addKey = "", focusName = "", wallet: requestedWallet = null } = {}) {
     if (view || !globalScope.AppDialog) return Promise.resolve(false);
@@ -753,5 +765,22 @@
     if (wallet?.id === id) renderCartState();
   }
 
-  globalScope.EquipmentShop = Object.freeze({ open, clearWalletCart });
+  // 只是放回購物清單，仍須以新錢包餘額結帳；對不回商店品項者回傳給呼叫端提示。
+  function moveWalletCart(fromId, toId, items = []) {
+    const lines = walletCart.id === fromId ? walletCart.lines : new Map();
+    const missing = [];
+    for (const purchased of items) {
+      const match = findPurchasedItem(purchased);
+      if (match) addToCart(match.item, { spell: match.spell, quantity: purchased.quantity, lines });
+      else missing.push(purchased);
+    }
+    walletCart = { id: toId, lines };
+    if (wallet?.id === toId) {
+      cart = lines;
+      renderCartState();
+    }
+    return missing;
+  }
+
+  globalScope.EquipmentShop = Object.freeze({ open, clearWalletCart, moveWalletCart });
 })(window);
