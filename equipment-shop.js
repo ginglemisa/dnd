@@ -222,12 +222,13 @@
     const row = createElement("li", "equipment-shop__item");
     row.dataset.shopItemKey = item.key;
     const name = createElement("div", "equipment-shop__item-name");
-    name.append(createItemNameButton(item), createElement("span", "equipment-shop__price", formatPrice(item)));
+    name.appendChild(createItemNameButton(item));
+    const price = createElement("span", "equipment-shop__price", formatPrice(item));
     const count = createElement("span", "equipment-shop__in-cart");
     count.dataset.shopCount = item.key;
     const add = createAddButton(getItemLabel(item));
     add.addEventListener("click", () => handleAdded(addToCart(item)));
-    row.append(name, count, add);
+    row.append(name, price, count, add);
     return row;
   }
 
@@ -340,8 +341,8 @@
   function createCartLine(line) {
     const item = createElement("li", "equipment-shop__cart-line");
     item.dataset.shopCartKey = line.key;
-    const name = createElement("div", "equipment-shop__cart-name");
-    name.append(createElement("span", "", line.label), createElement("span", "equipment-shop__subtotal", `${line.amount * line.quantity} ${line.currency}`));
+    const name = createElement("span", "equipment-shop__cart-name", line.label);
+    const subtotal = createElement("span", "equipment-shop__subtotal", `${line.amount * line.quantity} ${line.currency}`);
     const controls = createElement("div", "equipment-shop__quantity");
     const minus = createButton("equipment-shop__step", "−");
     minus.dataset.shopControl = "minus";
@@ -374,7 +375,7 @@
       announce(`已移除${line.label}。`);
       (cartView?.list.querySelector(".equipment-shop__remove") || cartView?.back)?.focus();
     });
-    item.append(name, controls, remove);
+    item.append(name, subtotal, controls, remove);
     return item;
   }
 
