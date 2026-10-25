@@ -131,7 +131,7 @@ const classFeatures = {
       <td>75 金幣</td>
     </tr>
   </tbody>
-</table><p class="class-core-equipment-note"><strong>探索套組：</strong>背包、床卷、油瓶 ×2、單日口糧 ×10、繩索、火絨盒、火把 ×10、水袋。</p>
+</table><p class="class-core-equipment-note"><strong>探索套組：</strong>背包、睡袋、油瓶 ×2、單日口糧 ×10、繩索、火絨盒、火把 ×10、水袋。</p>
 </section>
 <section class="class-feature-table-details" data-class-feature-table="barbarian">
 <h3>野蠻人特性表格</h3>
@@ -871,7 +871,7 @@ const classFeatures = {
       <td>50 金幣</td>
     </tr>
   </tbody>
-</table><p class="class-core-equipment-note"><strong>探索套組：</strong>背包、床卷、油瓶 ×2、單日口糧 ×10、繩索、火絨盒、火把 ×10、水袋。</p>
+</table><p class="class-core-equipment-note"><strong>探索套組：</strong>背包、睡袋、油瓶 ×2、單日口糧 ×10、繩索、火絨盒、火把 ×10、水袋。</p>
 </section>
 <section class="class-feature-table-details" data-class-feature-table="druid">
 <h3>德魯伊特性表格</h3>
@@ -1474,7 +1474,7 @@ const classFeatures = {
     </tr>
   </tbody>
 </table>
-<strong>探索套組：</strong>背包、床卷、油瓶 ×2、單日口糧 ×10、繩索、火絨盒、10 根火把、水袋
+<strong>探索套組：</strong>背包、睡袋、油瓶 ×2、單日口糧 ×10、繩索、火絨盒、10 根火把、水袋
 </section>
 <section class="class-feature-table-details" data-class-feature-table="monk">
 <h3>武僧特性表格</h3>
@@ -2000,7 +2000,7 @@ const classFeatures = {
     </tr>
   </tbody>
 </table>
-<strong>探索套組：</strong>背包、床卷、油瓶 ×2、單日口糧 ×10、繩索、火絨盒、火把 ×10、水袋
+<strong>探索套組：</strong>背包、睡袋、油瓶 ×2、單日口糧 ×10、繩索、火絨盒、火把 ×10、水袋
 </section>
 <section class="class-feature-table-details" data-class-feature-table="ranger">
 <h3>遊俠特性表格</h3>
