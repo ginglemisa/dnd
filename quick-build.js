@@ -54,6 +54,12 @@
   const TOOL_OPTIONS = TOOL_CATALOG_AVAILABLE ? [...TOOL_CATALOG.artisanTools, ...TOOL_CATALOG.otherTools] : [];
   const GAME_TOOL_OPTIONS = TOOL_CATALOG_AVAILABLE ? [...TOOL_CATALOG.gamingSets] : [];
   const INSTRUMENT_TOOL_OPTIONS = TOOL_CATALOG_AVAILABLE ? [...TOOL_CATALOG.instruments] : [];
+  // 裝備步驟商店的暫存購買；載入草稿時即用於驗證。
+  const SHOP_CURRENCY_COPPER = { 銅幣: 1, 銀幣: 10, 金幣: 100, 白金幣: 1000 };
+  const SHOP_ITEM_LIMIT = 200;
+  const SHOP_TEXT_LIMIT = 120;
+  const SHOP_QUANTITY_MAX = 999;
+  const SHOP_CART_ICON = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M3 4h2.2l2.1 10.2a1.5 1.5 0 0 0 1.5 1.2h8.4a1.5 1.5 0 0 0 1.5-1.1L20.5 8H6.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="19.5" r="1.5" fill="currentColor"/><circle cx="17" cy="19.5" r="1.5" fill="currentColor"/></svg>';
 
   function skillOptionLabel(name) {
     return SKILL_ABILITY_LABELS[name] ? `${name}(${SKILL_ABILITY_LABELS[name]})` : name;
@@ -346,6 +352,7 @@
         classEquipment: [],
         defaultWeapon: null,
         classEquipmentOptions: {},
+        shop: null,
         levelOne: {},
         alignment: "",
         targetLevel: 1,
@@ -428,6 +435,7 @@
     reconcileRaceDraft(target);
     reconcileClassDraft(target);
     reconcileEquipmentDraft(target);
+    reconcileShopDraft(target);
     reconcileLevelOneDraft(target);
     return normalizeDraft(target);
   }
@@ -1468,6 +1476,7 @@
       :where(html[data-ui-theme="warm"]) .quick-build-choice-panel {padding:18px;border:1px solid var(--qb-border);border-radius:var(--radius-md);background:var(--qb-surface-soft)}.quick-build-review-panel+ .quick-build-review-panel {margin-top:14px}.quick-build-review-panel>h4 {margin:0 0 14px;color:var(--qb-text)}:where(html:not([data-ui-theme="warm"])) .quick-build-equipment-list {margin:12px 0 20px;padding:14px;border-radius:8px;background:var(--qb-surface-muted);line-height:1.7;color:var(--qb-text-body)}:where(html[data-ui-theme="warm"]) .quick-build-equipment-list {margin:12px 0 20px;padding:14px;border-radius:var(--radius-md);background:var(--qb-surface-muted);line-height:1.7;color:var(--qb-text-body)}.quick-build-equipment-help {margin:12px 0 0;color:var(--qb-accent-text);font-size:.92rem;font-weight:800}.quick-build-equipment-help .skill-tip {color:inherit}.quick-build-equipment-help .skill-tip:hover,.quick-build-equipment-help .skill-tip:focus-visible {color:var(--qb-accent);text-decoration-thickness:2px}:where(html:not([data-ui-theme="warm"])) .quick-build-equipment-help .skill-tip:focus-visible {outline:2px solid var(--qb-accent);outline-offset:3px;border-radius:3px}:where(html[data-ui-theme="warm"]) .quick-build-equipment-help .skill-tip:focus-visible {outline:2px solid var(--qb-accent);outline-offset:3px;border-radius:var(--radius-md)}
       .quick-build-race-options {display:grid;gap:16px}.quick-build-option-note {margin:6px 0 0;color:var(--qb-text-muted);font-size:.9rem}:where(html:not([data-ui-theme="warm"])) .quick-build-ancestry-detail {margin:0;padding:14px;border:1px solid var(--qb-border);border-radius:9px;background:var(--qb-surface-muted);color:var(--qb-text-body);line-height:1.65}:where(html[data-ui-theme="warm"]) .quick-build-ancestry-detail {margin:0;padding:14px;border:1px solid var(--qb-border);border-radius:var(--radius-md);background:var(--qb-surface-muted);color:var(--qb-text-body);line-height:1.65}.quick-build-ancestry-detail strong {display:block;margin-bottom:5px;color:var(--qb-accent-text)}:where(html:not([data-ui-theme="warm"])) .quick-build-warning {margin:14px 0;padding:12px;border-left:4px solid var(--qb-warning-border);border-radius:7px;background:var(--qb-warning-bg);color:var(--qb-warning-text)}:where(html[data-ui-theme="warm"]) .quick-build-warning {margin:14px 0;padding:12px;border-left:4px solid var(--qb-warning-border);border-radius:var(--radius-md);background:var(--qb-warning-bg);color:var(--qb-warning-text)}:where(html:not([data-ui-theme="warm"])) .quick-build-pending {margin-top:14px;padding:12px;border-radius:7px;background:var(--qb-pending-bg);color:var(--qb-pending-text)}:where(html[data-ui-theme="warm"]) .quick-build-pending {margin-top:14px;padding:12px;border-radius:var(--radius-md);background:var(--qb-pending-bg);color:var(--qb-pending-text)}
       .quick-build-choice-actions {display:grid;grid-template-columns:1fr 1fr;gap:12px}:where(html:not([data-ui-theme="warm"])) .quick-build-choice-actions button {min-height:48px;padding:10px;border:1px solid var(--qb-border-strong);border-radius:8px;background:var(--qb-surface-elevated);color:var(--qb-text);cursor:pointer}:where(html[data-ui-theme="warm"]) .quick-build-choice-actions button {min-height:48px;padding:10px;border:1px solid var(--qb-border-strong);border-radius:var(--radius-md);background:var(--qb-surface-elevated);color:var(--qb-text);cursor:pointer}:where(html:not([data-ui-theme="warm"])) .quick-build-choice-actions button.primary {border-color:var(--qb-accent);background:var(--qb-accent-hover);color:var(--on-accent)}:where(html[data-ui-theme="warm"]) .quick-build-choice-actions button.primary {border-color:var(--qb-accent);background:var(--qb-accent-hover);color:var(--on-accent)}.quick-build-choice-actions .quick-build-choice-action-full {grid-column:1/-1}
+      .quick-build-shop-actions {margin-top:16px}#quick-build-wizard .quick-build-shop-open {display:flex;align-items:center;justify-content:center;gap:8px;font-weight:700}#quick-build-wizard .quick-build-shop-open svg {flex:0 0 auto}
       .quick-build-spell-layout {display:grid;gap:16px}
       .quick-build-spell-fields {display:flex;flex-direction:column;gap:14px}.quick-build-field label {display:block;margin-bottom:6px;color:var(--qb-text-muted)}.quick-build-field-control {display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}:where(html:not([data-ui-theme="warm"])) .quick-build-field select {width:100%;min-height:44px;padding:8px;border:1px solid var(--qb-border-strong);border-radius:7px;background:var(--qb-input);color:var(--qb-text)}:where(html[data-ui-theme="warm"]) .quick-build-field select {width:100%;min-height:44px;padding:8px;border:1px solid var(--qb-border-strong);border-radius:var(--radius-md);background:var(--qb-input);color:var(--qb-text)}:where(html:not([data-ui-theme="warm"])) .quick-build-spell-view,
 :where(html:not([data-ui-theme="warm"])) .quick-build-skill-info {min-width:64px;margin:0;padding:8px 12px;border:1px solid var(--qb-border-strong);border-radius:7px;background:var(--qb-surface-elevated);color:var(--qb-text);cursor:pointer}:where(html[data-ui-theme="warm"]) .quick-build-spell-view,
@@ -1965,6 +1974,74 @@
     return classEquipmentComplete(target) && ["default", "gold"].includes(target.choices.backgroundWealth);
   }
 
+  /*
+   * 裝備步驟的商店只暫存在 draft.choices.shop：{ funding, items }，items 為合併後的購買清單，
+   * 剩餘金額＝起始金額－清單總價。funding 記錄起始金額的來源（背景、職業、職業裝備方式、背景財富）；
+   * 任何一項改變就整份歸零，主手、樂器等套裝內選項與只切換步驟都不算。匯入手機角卡前不經過角色卡的 MoneyTracker。
+   */
+  function normalizeShopItems(items) {
+    if (!Array.isArray(items) || items.length > SHOP_ITEM_LIMIT) return null;
+    const normalized = items.map(item => {
+      const name = String(item?.name || "").trim();
+      const gearName = String(item?.gearName || "").trim();
+      const amount = Number(item?.amount);
+      const quantity = Number(item?.quantity);
+      if (!name || name.length > SHOP_TEXT_LIMIT || gearName.length > SHOP_TEXT_LIMIT || !Object.hasOwn(SHOP_CURRENCY_COPPER, item?.currency)
+        || !Number.isSafeInteger(amount) || amount < 1 || !Number.isInteger(quantity) || quantity < 1 || quantity > SHOP_QUANTITY_MAX) return null;
+      return { name, gearName, amount, currency: item.currency, quantity };
+    });
+    return normalized.includes(null) ? null : normalized;
+  }
+
+  function shopFundingSignature(target = draft) {
+    return stableSignature({
+      background: target.choices.background || null,
+      class: target.choices.class || null,
+      classEquipmentMethod: target.choices.classEquipmentMethod || null,
+      backgroundWealth: target.choices.backgroundWealth || null
+    });
+  }
+
+  function shopStartingCopper(target = draft) {
+    return [target.selections.backgroundEquipment, target.selections.classEquipment].filter(Boolean)
+      .reduce((sum, selection) => sum + Object.entries({ cp: 1, sp: 10, gp: 100, pp: 1000 })
+        .reduce((subtotal, [key, rate]) => subtotal + (Number(selection.content?.currency?.[key]) || 0) * rate, 0), 0);
+  }
+
+  function shopItemsCopper(items) {
+    return items.reduce((sum, item) => sum + item.amount * SHOP_CURRENCY_COPPER[item.currency] * item.quantity, 0);
+  }
+
+  function shopItems(target = draft) {
+    return target.choices.shop?.items || [];
+  }
+
+  function shopBalanceCopper(target = draft) {
+    return shopStartingCopper(target) - shopItemsCopper(shopItems(target));
+  }
+
+  function reconcileShopDraft(target) {
+    const saved = isPlainObject(target.choices.shop) ? target.choices.shop : null;
+    const items = saved ? normalizeShopItems(saved.items) : null;
+    const funding = equipmentComplete(target) ? shopFundingSignature(target) : null;
+    target.choices.shop = funding && items?.length && saved.funding === funding && shopItemsCopper(items) <= shopStartingCopper(target)
+      ? { funding, items }
+      : null;
+    return target;
+  }
+
+  // 創角的金額以金幣為主，不像角色卡財產摘要把十枚金幣進位成白金幣。
+  function formatCopperAmount(copper) {
+    const value = Math.abs(copper);
+    const parts = [[Math.floor(value / 100), "金幣"], [Math.floor(value % 100 / 10), "銀幣"], [value % 10, "銅幣"]]
+      .filter(([amount]) => amount).map(([amount, label]) => `${amount} ${label}`);
+    return `${copper < 0 ? "-" : ""}${parts.join(" ") || "0 銅幣"}`;
+  }
+
+  function formatShopItems(items) {
+    return items.map(item => item.quantity > 1 ? `${item.name} ×${item.quantity}` : item.name).join("、");
+  }
+
   function equipmentItemText(equipmentPackage) {
     const items = equipmentPackage.items.map(([name, quantity]) => `${name}${quantity > 1 ? ` ×${quantity}` : ""}`);
     if (equipmentPackage.instrument) items.push("自選一個樂器");
@@ -2035,7 +2112,54 @@
   function renderEquipmentComplete(body) {
     const key = draft.choices.class;
     const selection = draft.selections.classEquipment;
-    body.innerHTML = `<h3>${CLASS_LABELS[key]}：裝備選擇完成</h3><div class="quick-build-complete"><strong>職業裝備</strong><br>${classEquipmentCompleteSummary(selection)}<br><br><strong>背景裝備</strong><br>${escapeHtml(formatEquipmentSelection(draft.selections.backgroundEquipment))}</div>`;
+    const shopSummary = shopItems().length
+      ? `<br><br><strong>商店</strong><br>已購買：${escapeHtml(formatShopItems(shopItems()))}<br>剩餘金額：${escapeHtml(formatCopperAmount(shopBalanceCopper()))}`
+      : "";
+    body.innerHTML = `<h3>${CLASS_LABELS[key]}：裝備選擇完成</h3><div class="quick-build-complete"><strong>職業裝備</strong><br>${classEquipmentCompleteSummary(selection)}<br><br><strong>背景裝備</strong><br>${escapeHtml(formatEquipmentSelection(draft.selections.backgroundEquipment))}${shopSummary}</div>`;
+  }
+
+  function renderEquipmentShop(body) {
+    const items = shopItems();
+    body.innerHTML = `<h3>商店</h3><p class="quick-build-lead">可用職業與背景提供的金錢購買其他物品。購買紀錄只暫存在快速創角，匯入手機角卡時才寫入財產與攜帶物品；變更背景、職業，或改選預設裝備／金幣時會歸零。</p><section class="quick-build-choice-panel"><dl class="quick-build-summary-list"><dt>起始金額</dt><dd>${escapeHtml(formatCopperAmount(shopStartingCopper()))}</dd>${items.length ? `<dt>已購買</dt><dd>${escapeHtml(formatShopItems(items))}</dd>` : ""}<dt>剩餘金額</dt><dd>${escapeHtml(formatCopperAmount(shopBalanceCopper()))}</dd></dl><div class="quick-build-choice-actions quick-build-shop-actions"><button type="button" id="quick-build-shop-open" class="primary quick-build-choice-action-full quick-build-shop-open" aria-haspopup="dialog">${SHOP_CART_ICON}<span>開啟商店</span></button></div></section>`;
+    body.querySelector("#quick-build-shop-open").addEventListener("click", openDraftShop);
+  }
+
+  // 商店只在合計不超過剩餘金額時允許結帳；這裡再檢查一次，並把同名同價的品項合併數量。
+  function purchaseDraftShopItems(requestedItems) {
+    const purchased = normalizeShopItems(requestedItems);
+    if (!purchased?.length || !equipmentComplete() || shopItemsCopper(purchased) > shopBalanceCopper()) return false;
+    const items = shopItems().map(item => ({ ...item }));
+    for (const item of purchased) {
+      const existing = items.find(entry => entry.name === item.name && entry.gearName === item.gearName && entry.amount === item.amount && entry.currency === item.currency);
+      if (existing) existing.quantity += item.quantity;
+      else items.push(item);
+    }
+    if (items.length > SHOP_ITEM_LIMIT || items.some(item => item.quantity > SHOP_QUANTITY_MAX)) return false;
+    draft.choices.shop = { funding: shopFundingSignature(), items };
+    saveDraft();
+    return true;
+  }
+
+  async function openDraftShop(event) {
+    const trigger = event.currentTarget;
+    if (!equipmentComplete()) return;
+    if (typeof window.EquipmentShop?.open !== "function") {
+      await window.AppDialog.showMessage({ title: "商店無法開啟", message: "商店尚未載入，請重新載入頁面後再試。", trigger });
+      return;
+    }
+    await window.EquipmentShop.open({
+      trigger,
+      wallet: {
+        id: `quick-build:${shopFundingSignature()}`,
+        readTotal: () => shopBalanceCopper(),
+        formatAmount: formatCopperAmount,
+        purchaseItems: async items => purchaseDraftShopItems(items),
+        balanceLabel: "剩餘金額",
+        checkoutNotice: "已暫存於快速創角，匯入手機角卡時寫入。"
+      }
+    });
+    // 商店開啟期間只更新 draft；關閉後才重繪，焦點依 id 回到開啟商店按鈕。
+    render(true);
   }
 
   function renderEquipmentConfiguration(body) {
@@ -2167,6 +2291,7 @@
         const ritualFields = Array.from({ length: 2 }, (_, index) => spellSelectControl(`pact-tome-ritual-${index}`, `魔契書儀式 ${index + 1}`, allSpellOptions("1", isRitualSpell), selection.rituals[index], selection.rituals, knownSources, "data-pact-tome-ritual")).join("");
         body.innerHTML = `<h3>選擇魔契書法術</h3><p class="quick-build-lead">選擇 3 個任一職業戲法與 2 個任一職業的一環儀式法術；五個法術都選好後才能確認。</p><section class="quick-build-choice-panel"><div class="quick-build-spell-fields">${cantripFields}${ritualFields}</div></section>`;
         body.querySelectorAll(".quick-build-spell-view").forEach(button => button.remove());
+        markTransientControls(body);
         body.querySelectorAll("[data-pact-tome-cantrip]").forEach((select, index) => select.addEventListener("change", () => { selection.cantrips[index] = select.value || ""; renderSelection(select.id); }));
         body.querySelectorAll("[data-pact-tome-ritual]").forEach((select, index) => select.addEventListener("change", () => { selection.rituals[index] = select.value || ""; renderSelection(select.id); }));
         modal.querySelector("[data-pact-tome-confirm]").disabled = !pactTomeSelectionComplete(selection);
@@ -2471,6 +2596,8 @@
       <section class="quick-build-choice-panel quick-build-review-panel"><h4>裝備選擇</h4><dl class="quick-build-summary-list">
         ${summaryField("背景裝備", formatEquipmentSelection(draft.selections.backgroundEquipment))}
         ${summaryField("職業裝備", formatEquipmentSelection(draft.selections.classEquipment))}
+        ${summaryField("商店購買", formatShopItems(shopItems()) || "無")}
+        ${shopItems().length ? summaryField("匯入後財產", formatCopperAmount(shopBalanceCopper())) : ""}
       </dl></section>`;
   }
 
@@ -2659,6 +2786,20 @@
     });
   }
 
+  // 起始財產寫入後，把暫存的購買清單一次交給角色卡的結帳入口，留下交易紀錄並合併攜帶物品。
+  async function importMobileShopPurchases(warnings) {
+    const items = shopItems();
+    if (!items.length) return;
+    const label = formatShopItems(items);
+    if (typeof window.MoneyTracker?.purchaseItems !== "function") {
+      mobileImportWarning(`商店購買「${label}」：找不到角色卡的結帳介面`, warnings);
+    } else if (shopItemsCopper(items) > (window.MoneyTracker.readTotal?.() ?? 0)) {
+      mobileImportWarning(`商店購買「${label}」：角色卡財產不足，未匯入`, warnings);
+    } else if (!(await window.MoneyTracker.purchaseItems(items))) {
+      mobileImportWarning(`商店購買「${label}」：無法寫入角色卡`, warnings);
+    }
+  }
+
   function importMobileRaceOptions(warnings) {
     const raceId = draft.choices.race;
     const mapping = MOBILE_RACE_OPTION_VALUES[raceId];
@@ -2839,6 +2980,7 @@
       importMobileFeats(warnings);
       importMobileSkillsAndLanguages(warnings);
       importMobileEquipment(warnings);
+      await importMobileShopPurchases(warnings);
       importMobileSpells(warnings);
       finishMobileImport(warnings);
       completed = true;
@@ -3000,6 +3142,8 @@
     }
     if (!classEquipmentComplete()) return;
     appendFlowSection(body, renderBackgroundEquipment, "equipment-background");
+    if (!equipmentComplete()) return;
+    appendFlowSection(body, renderEquipmentShop, "equipment-shop");
   }
 
   function levelOneStageComplete(stage) {
@@ -3223,6 +3367,11 @@
     body.innerHTML = `<h3>${step.title}</h3><p class="quick-build-lead">此等級步驟尚未提供規則內容。</p><ol class="quick-build-plan">${steps.map(item => `<li class="${item.id === draft.ui.currentStepId ? "current" : ""}">${item.title}</li>`).join("")}</ol>`;
   }
 
+  // 快速創角視窗內的控制項只用來編輯 draft；標成 transient，角色卡的 autosave、JSON 與分享不收集也不還原它們。
+  function markTransientControls(root) {
+    root.querySelectorAll("input, select, textarea").forEach(control => { control.dataset.stateTransient = "true"; });
+  }
+
   function render(preserveBodyScroll = false) {
     const modal = ensureWizard();
     const nextButton = modal.querySelector(".quick-build-next");
@@ -3255,6 +3404,7 @@
         '<div class="quick-build-warning" role="alert"><strong>工具資料載入失敗</strong><br>快速創角仍可使用，但士兵賭具、吟遊詩人與武僧的工具選擇，以及「熟習」的工具選項目前不可用。請重新載入頁面；若問題持續，請確認 tool-data.js 可正常載入。</div>'
       );
     }
+    markTransientControls(modal);
     body.scrollTop = preserveBodyScroll ? previousScrollTop : 0;
     if (focusedFieldId) {
       const field = body.querySelector(`#${CSS.escape(focusedFieldId)}`);

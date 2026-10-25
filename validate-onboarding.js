@@ -1326,6 +1326,11 @@ async function verifyImports(browser, url, viewport = { width: 1280, height: 800
           levelOne: { languages: ['矮人語', '精靈語'], weaponMastery: ['巨斧', '手斧'] }
         });
         reconcileDraft(draft);
+        draft.choices.shop = { funding: shopFundingSignature(draft), items: [
+          { name: '繩索', gearName: '', amount: 1, currency: '金幣', quantity: 2 },
+          { name: '火把', gearName: '', amount: 1, currency: '銅幣', quantity: 1 }
+        ] };
+        reconcileDraft(draft);
         draft.ui.currentStepId = 'level-one-review';
         draft.ui.view = 'review';
         saveDraft();
@@ -1379,6 +1384,12 @@ async function verifyImports(browser, url, viewport = { width: 1280, height: 800
       assert.equal(storage.options, null, "quick build clears class option memory");
       assert.equal(Object.hasOwn(storage.spells, "wizard"), false, "quick build clears other-class spell memory");
       assert.deepEqual([storage.backup, storage.notice], ['{"kept":true}', "true"], "legacy backup and notice preference are kept");
+      // Temporary quick-build purchases are paid from the starting gold only during the import.
+      assert.deepEqual(await page.evaluate(() => ({
+        money: ["pp", "gp", "sp", "cp"].map(id => document.getElementById(`money-balance-${id}`).value),
+        log: JSON.parse(document.getElementById("money-log-data").value).map(entry => entry.note),
+        gear: document.getElementById("gear-notes").value.split(/\r?\n/u)[0]
+      })), { money: ["0", "122", "9", "9"], log: ["購買繩索 ×2、火把"], gear: "購買物品：繩索 ×2、火把" }, "quick-build shop purchases are applied on import");
     }
     const firstTable = page.getByRole("button", { name: "初次遊玩", exact: true });
     assert.equal(await firstTable.count(), scenario === "failure" ? 0 : 1, await page.locator(".app-dialog__body").innerText());
