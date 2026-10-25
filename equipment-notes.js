@@ -36,10 +36,6 @@ document.addEventListener("DOMContentLoaded", () => {
   container.innerHTML = `
 
 <div class="section">
-  <div class="equipment-shop-entry">
-    <p>點選物品名稱可查看詳情；購買請使用商店。</p>
-    <button type="button" class="equipment-shop-entry__button" data-equipment-shop-open aria-haspopup="dialog">開啟商店</button>
-  </div>
   <h3>武器</h3>
   <details class="equipment-catalog-details">
     <summary class="equipment-note-summary">簡易武器列表</summary>
@@ -321,7 +317,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <td style="border:1px solid #aaa; padding:3px;">10 金幣</td>
     </tr>
     <tr>
-      <td style="border:1px solid #aaa; padding:3px;">法杖（可作為長棍）</td>
+      <td style="border:1px solid #aaa; padding:3px;">法杖（長棍）</td>
       <td style="border:1px solid #aaa; padding:3px;">4 磅</td>
       <td style="border:1px solid #aaa; padding:3px;">5 金幣</td>
     </tr>
@@ -429,7 +425,7 @@ DC 20 力量（運動）：掙斷鏈條
       <td style="border:1px solid #aaa; padding:3px;">1 金幣</td>
     </tr>
     <tr>
-      <td style="border:1px solid #aaa; padding:3px;">木制法杖（可作為長棍）</td>
+      <td style="border:1px solid #aaa; padding:3px;">木製法杖（長棍）</td>
       <td style="border:1px solid #aaa; padding:3px;">4 磅</td>
       <td style="border:1px solid #aaa; padding:3px;">5 金幣</td>
     </tr>
@@ -474,12 +470,12 @@ DC 20 力量（運動）：掙斷鏈條
   </thead>
   <tbody>
     <tr>
-      <td style="border:1px solid #aaa; padding:3px;">護身符（佩戴或手持）</td>
+      <td style="border:1px solid #aaa; padding:3px;">護身符（佩戴／手持）</td>
       <td style="border:1px solid #aaa; padding:3px;">1 磅</td>
       <td style="border:1px solid #aaa; padding:3px;">5 金幣</td>
     </tr>
     <tr>
-      <td style="border:1px solid #aaa; padding:3px;">徽章（附在布料或盾牌上）</td>
+      <td style="border:1px solid #aaa; padding:3px;">徽章（附於布料／盾牌）</td>
       <td style="border:1px solid #aaa; padding:3px;">--</td>
       <td style="border:1px solid #aaa; padding:3px;">5 金幣</td>
     </tr>

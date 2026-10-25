@@ -81,7 +81,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261025-shop-alignment">
+  <link rel="stylesheet" href="styles.css?v=20261025-shop-launch">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261023-escape-focus" defer></script>
   <script src="monster.js?v=20261025-beast-perception" defer></script>
@@ -90,7 +90,7 @@
   <script src="backgrounds.js?v=20261003-background-flavor" defer></script>
   <script src="tool-data.js?v=20261008-class-tools" defer></script>
   <script src="feats.js?v=20261021-feat-rule-tips" defer></script>
-  <script src="equipment-notes.js?v=20261025-shop-categories" defer></script>
+  <script src="equipment-notes.js?v=20261025-focus-names" defer></script>
   <script src="spell-list.js?v=20261014-class-lookup" defer></script>
   <script src="condition.js?v=20261021-bonus-wording" defer></script>
   <script src="action-panel.js?v=20261024-action-english" defer></script>
@@ -98,7 +98,7 @@
   <script src="app-dialog.js?v=20261023-dismiss-toasts" defer></script>
   <script src="custom-background.js?v=20261023-feature-title" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
-  <script src="tabletop-mode.js?v=20261025-reminder-readability" defer></script>
+  <script src="tabletop-mode.js?v=20261025-shop-launch" defer></script>
   <script src="tabletop-druid.js?v=20261021-bonus-wording" defer></script>
   <script src="tabletop-resources.js?v=20261014-heroic-help" defer></script>
   <script src="tabletop-actions.js?v=20261025-reminder-readability" defer></script>
@@ -1108,12 +1108,12 @@
 
   <div class="section">
     <h3>攜帶物品</h3>
-    <div id="gear-notes-sheet-mount"><textarea id="gear-notes" rows="4" placeholder="請輸入角色攜帶的其他裝備,補給品,雜物等..."></textarea></div>
+    <!-- 商店按鈕跟著攜帶物品文字框在角色卡與跑團模式之間搬移（tabletop-mode.js）。 -->
+    <div id="gear-notes-sheet-mount"><textarea id="gear-notes" rows="4" placeholder="請輸入角色攜帶的其他裝備,補給品,雜物等..."></textarea><button type="button" id="equipment-shop-open" class="equipment-shop-launch" data-equipment-shop-open aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M3 4h2.2l2.1 10.2a1.5 1.5 0 0 0 1.5 1.2h8.4a1.5 1.5 0 0 0 1.5-1.1L20.5 8H6.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="19.5" r="1.5" fill="currentColor"/><circle cx="17" cy="19.5" r="1.5" fill="currentColor"/></svg><span>開啟商店</span></button></div>
     <div class="money-section" aria-label="錢財管理">
       <div class="money-balance-header">
         <h4 class="money-title">總財產</h4>
         <div class="money-header-actions">
-          <button type="button" id="money-shop-open" class="money-secondary-btn" data-equipment-shop-open aria-haspopup="dialog">商店</button>
           <button type="button" id="money-adjust-toggle" class="money-secondary-btn">調整餘額</button>
           <button type="button" id="money-log-toggle" class="money-secondary-btn">最近交易</button>
         </div>
@@ -2978,7 +2978,7 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
   globalThis.armors = globalThis.armors || [];
   globalThis.shield = globalThis.shield || [];
 </script>
-<script src="equipment-data.js?v=20261024-equipment-english" defer></script>
+<script src="equipment-data.js?v=20261025-focus-names" defer></script>
 <script src="search.js?v=20261025-equipment-shop" defer></script>
 <script src="equipment-shop.js?v=20261025-shop-alignment" defer></script>
 
@@ -5973,8 +5973,8 @@ function setupMoneyTracker() {
   // 商店結帳入口：整張購物清單記一筆交易，再把品項合併進攜帶物品的「購買物品：」行。
   const purchaseCurrencyIds = { 銅幣: "cp", 銀幣: "sp", 金幣: "gp", 白金幣: "pp" };
   const gearNameOverrides = {
-    "聖物匣（手持）": "聖物匣", "徽章（附在布料或盾牌上）": "徽章", "護身符（佩戴或手持）": "護身符",
-    "法杖（可作為長棍）": "法杖（長棍）", "木制法杖（可作為長棍）": "法杖（長棍）", "箭矢": "箭矢(20)",
+    "聖物匣（手持）": "聖物匣", "徽章（附於布料／盾牌）": "徽章", "護身符（佩戴／手持）": "護身符",
+    "木製法杖（長棍）": "法杖（長棍）", "箭矢": "箭矢(20)",
     "弩矢": "弩矢(20)", "子彈，火器": "子彈(10)", "彈丸，投石索": "彈丸(20)", "針": "針(50)"
   };
   const describePurchasedItems = (items) => items
