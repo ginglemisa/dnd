@@ -1929,7 +1929,7 @@ const classFeatures = {
 </section>
 
 <section class="paladin-feature class-feature-section" data-feature-level="6">
-  <h3>等級 6：守護靈氣&#x20;</h3>
+  <h3>等級 6：守護靈氣</h3>
   <p>你以自身為原點，散發 10 呎的無形保護靈氣。你陷入<span class="condition-tip" data-condition="incapacitated">失能</span>狀態時，靈氣失效。</p>
   <ul class="class-rule-list">
     <li><strong>豁免加值：</strong>你和靈氣內的盟友進行豁免檢定時，獲得等同你魅力調整值的加值（至少 +1）。</li>
@@ -1938,7 +1938,7 @@ const classFeatures = {
 </section>
 
 <section class="paladin-feature class-feature-section" data-feature-level="7">
-  <h3>等級 7：奉獻靈氣（奉獻子職）&#x20;</h3>
+  <h3>等級 7：奉獻靈氣（奉獻子職）</h3>
   <p>你的守護靈氣使你和其中的盟友<strong>免疫</strong><span class="condition-tip" data-condition="charmed">魅惑</span>狀態。</p>
   <ul class="class-rule-list">
     <li><strong>已受魅惑：</strong>若正被<span class="condition-tip" data-condition="charmed">魅惑</span>的盟友進入靈氣範圍，該狀態會暫時失效。</li>
