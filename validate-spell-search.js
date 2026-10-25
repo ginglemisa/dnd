@@ -552,11 +552,16 @@ async function emptyCartAndCloseShop(page) {
   const cartDialog = page.locator('.app-dialog[data-variant="equipment-shop-cart"]');
   await shop.locator(".equipment-shop__cart-button").click();
   await cartDialog.getByRole("button", { name: "清空", exact: true }).click();
+  await page.getByRole("alertdialog", { name: "清空購物清單？" }).getByRole("button", { name: "清空", exact: true }).click();
   await page.keyboard.press("Escape");
   assert.equal(await cartDialog.count(), 0);
   await page.keyboard.press("Escape");
   assert.equal(await shop.count(), 0);
 }
+
+const shopCategoryText = locator => locator.innerText().then(text => text.replace(/\s+/gu, ""));
+const shopSectionTitles = shop => shop.locator(".equipment-shop__section-title").allTextContents();
+const shopItemNames = shop => shop.locator(".equipment-shop__detail").allTextContents();
 
 // Reference names only open details; buying goes through the shop's cart and one checkout.
 async function validateEquipmentShop(page) {
@@ -569,12 +574,19 @@ async function validateEquipmentShop(page) {
       scroll: items.filter(item => item.name === "法術卷軸").map(item => [item.variant, item.amount, item.spellLevel]),
       shields: items.filter(item => item.name === "盾牌").length,
       groups: [find("水晶")?.group, find("骰子")?.group, find("箭矢")?.category, find("探索套組")?.category, find("長笛")?.group],
+      bundles: ["箭矢", "弩矢", "子彈，火器", "彈丸，投石索", "針", "箭袋"].map(name => find(name)?.bundle ?? 0),
+      storage: (() => {
+        const table = [...document.querySelectorAll("#equipment-notes-section table")].find(candidate => candidate.querySelector("th")?.textContent === "類型");
+        return [...(table?.querySelectorAll("tbody td:nth-child(3)") || [])].map(cell => cell.textContent);
+      })(),
       links: document.querySelectorAll("#equipment-notes-section .equipment-item-link").length
     };
   });
   assert.deepEqual(catalog.scroll, [["戲法", 30, 0], ["1 環", 50, 1]], "spell scroll prices split by level");
   assert.equal(catalog.shields, 1, "shield is listed once");
   assert.deepEqual(catalog.groups, ["奧術法器", "賭具", "ammo", "pack", "樂器"]);
+  assert.deepEqual(catalog.bundles, [20, 20, 10, 20, 50, 0], "ammunition bundle sizes come from the ammunition table");
+  assert.deepEqual(catalog.storage, ["箭袋", "弩矢匣", "小包", "小包", "小包"], "ammunition storage names match purchasable items");
   assert.equal(catalog.links, 189, "every priced or multi-variant name links to details");
 
   await page.locator("#equipment-notes-section details").evaluateAll(nodes => nodes.forEach(node => { node.open = true; }));
@@ -600,35 +612,73 @@ async function validateEquipmentShop(page) {
   assert.equal(await shop.locator(".equipment-shop__search").evaluate(el => el === document.activeElement), true, "shop focuses search");
   assert.equal(await shop.locator(".equipment-shop__balance").textContent(), "目前財產：1 白金幣", "balance sits under the title");
   assert.equal(await shop.getByRole("button", { name: "關閉", exact: true }).count(), 0, "the corner close button replaces the footer close");
-  assert.deepEqual(await shop.locator(".equipment-shop__header-actions button").evaluateAll(buttons => buttons.map(button => button.className)),
+  assert.deepEqual(await shop.locator(".equipment-shop__header-actions button").evaluateAll(buttons => buttons.map(button => button.classList[button.classList.length - 1])),
     ["equipment-shop__cart-button", "app-dialog__close"], "cart button sits left of the close button");
   assert.equal(await badge.isHidden(), true, "empty cart hides the badge");
 
   // The category button keeps the chosen filter after collapsing.
   const toggle = shop.locator(".equipment-shop__category-toggle");
   const categories = shop.locator(".equipment-shop__categories");
-  assert.equal((await toggle.innerText()).replace(/\s+/gu, ""), "類別▾");
+  const chooseCategory = async name => {
+    await toggle.click();
+    await categories.getByRole("button", { name, exact: true }).click();
+    await toggle.click();
+    await categories.waitFor({ state: "hidden" });
+  };
+  assert.equal(await shopCategoryText(toggle), "類別▾");
   assert.equal(await categories.isHidden(), true, "categories start collapsed");
   await toggle.click();
   assert.equal(await toggle.getAttribute("aria-expanded"), "true");
-  assert.deepEqual(await categories.locator("button").allTextContents(), ["全部", "武器", "護甲", "工具", "冒險用品", "彈藥", "法器", "套組"]);
+  assert.deepEqual(await categories.locator("button").allTextContents(),
+    ["全部", "武器", "護甲", "工具", "冒險用品", "照明", "容器", "服裝", "彈藥", "法器", "魔法", "套組"]);
   await categories.getByRole("button", { name: "武器", exact: true }).click();
-  assert.equal(await shop.locator(".equipment-shop__section-title").allTextContents().then(titles => titles.join()), "簡易武器,軍用武器");
+  assert.equal((await shopSectionTitles(shop)).join(), "簡易武器,軍用武器");
   await toggle.click();
   await categories.waitFor({ state: "hidden" });
-  assert.equal((await toggle.innerText()).replace(/\s+/gu, ""), "武器▾", "collapsed button names the active filter");
+  assert.equal(await shopCategoryText(toggle), "武器▾", "collapsed button names the active filter");
   assert.equal(await toggle.evaluate(el => el.classList.contains("is-filtered")), true);
-  assert.equal(await shop.locator(".equipment-shop__section-title").allTextContents().then(titles => titles.join()), "簡易武器,軍用武器", "collapsing keeps the filter");
+  assert.equal((await shopSectionTitles(shop)).join(), "簡易武器,軍用武器", "collapsing keeps the filter");
   assert.equal(await toggle.evaluate(el => el === document.activeElement), true);
   const searchBox = await shop.locator(".equipment-shop__search").boundingBox();
   const toggleBox = await toggle.boundingBox();
   assert.ok(Math.abs(searchBox.y + searchBox.height / 2 - (toggleBox.y + toggleBox.height / 2)) < 2 && toggleBox.x > searchBox.x, "search and category share one row");
-  await toggle.click();
-  await categories.getByRole("button", { name: "冒險用品", exact: true }).click();
-  await toggle.click();
 
+  // Curated categories list items in the agreed order; shared items appear in each category.
+  for (const [category, names] of [
+    ["照明", ["火把", "蠟燭", "油燈", "附蓋提燈", "牛眼提燈", "油", "火絨盒"]],
+    ["容器", ["背包", "小包", "麻袋", "籃子", "箱子", "木桶", "手提桶", "鐵鍋", "壺", "水袋", "玻璃瓶", "扁瓶", "藥瓶", "地圖或捲軸盒"]],
+    ["服裝", ["旅行者服裝", "高檔服裝", "戲服", "長袍"]],
+    ["彈藥", ["箭矢 (20)", "箭袋", "弩矢 (20)", "弩矢匣", "子彈，火器 (10)", "彈丸，投石索 (20)", "針 (50)", "小包"]],
+    ["魔法", ["法術卷軸", "治療藥水", "材料包"]]
+  ]) {
+    await chooseCategory(category);
+    assert.deepEqual(await shopItemNames(shop), names, `${category}: items and order`);
+    assert.deepEqual(await shopSectionTitles(shop), [category]);
+  }
+  await chooseCategory("法器");
+  assert.deepEqual(await shop.locator(".equipment-shop__group").allTextContents(), ["奧術法器", "德魯伊法器", "聖徽"]);
+  assert.equal((await shopItemNames(shop)).includes("材料包"), false, "the component pouch is not a focus");
+  await chooseCategory("冒險用品");
+  assert.deepEqual(await shop.locator(".equipment-shop__group").allTextContents(),
+    ["野營與生活", "醫療與藥劑", "攀爬與探索", "戰鬥與陷阱", "束縛與上鎖", "觀察與信號", "書寫與學識"], "adventuring gear groups by use");
+  const gearNames = await shopItemNames(shop);
+  assert.equal(gearNames.length, 43);
+  assert.ok(["油", "火絨盒", "治療藥水"].every(name => gearNames.includes(name)), "shared items also stay in adventuring gear");
+  assert.ok(["法術卷軸", "材料包", "背包", "火把"].every(name => !gearNames.includes(name)), "moved items leave adventuring gear");
+  await chooseCategory("全部");
+  assert.equal(await shopCategoryText(toggle), "類別▾", "choosing all restores the category label");
+  assert.deepEqual(await shopSectionTitles(shop), ["簡易武器", "軍用武器", "盾牌", "輕甲", "中甲", "重甲", "工匠工具", "其他工具",
+    "冒險用品", "照明", "容器", "服裝", "彈藥", "法器", "魔法", "套組"], "all follows the category order");
+  const allNames = await shopItemNames(shop);
+  for (const [name, section] of [["小包", "容器"], ["油", "照明"], ["火絨盒", "照明"], ["治療藥水", "魔法"]]) {
+    assert.equal(allNames.filter(item => item === name).length, 1, `${name} appears once in all`);
+    assert.equal(await shop.locator(".equipment-shop__section", { has: page.getByRole("button", { name: `查看${name}的詳情`, exact: true }) })
+      .locator(".equipment-shop__section-title").textContent(), section, `${name} lives in ${section} within all`);
+  }
+
+  await chooseCategory("冒險用品");
   await shop.locator(".equipment-shop__search").fill("rope");
-  assert.deepEqual(await shop.locator(".equipment-shop__detail").allTextContents(), ["繩索"], "English search matches without showing English");
+  assert.deepEqual(await shopItemNames(shop), ["繩索"], "English search matches without showing English");
   assert.doesNotMatch(await shop.locator(".equipment-shop__list").innerText(), /[A-Za-z]/u, "shop shows no English names");
   const ropeRow = shop.locator('[data-shop-item-key="繩索"]');
   assert.deepEqual(await ropeRow.evaluate(row => [...row.children].map(child => child.className)),
@@ -641,9 +691,13 @@ async function validateEquipmentShop(page) {
   assert.equal(await badge.textContent(), "2");
   assert.equal(await shop.locator(".equipment-shop__footer-text").textContent(), "合計 2 金幣", "shop footer shows the total");
   await shop.locator(".equipment-shop__search").fill("");
+  await chooseCategory("魔法");
   const scroll = shop.locator(".equipment-shop__item--scroll");
   const scrollAdd = scroll.getByRole("button", { name: "加入購物清單：法術卷軸" });
   assert.equal(await scrollAdd.isDisabled(), true, "scroll needs a spell");
+  const [levelWidth, spellWidth] = await Promise.all([".equipment-shop__scroll-level", ".equipment-shop__scroll-spell"]
+    .map(selector => scroll.locator(selector).evaluate(el => el.getBoundingClientRect().width)));
+  assert.ok(spellWidth > levelWidth * 1.5, "the spell choice gets most of the row");
   const spellNames = () => scroll.locator(".equipment-shop__scroll-spell option").allTextContents();
   assert.ok((await spellNames()).includes("火焰箭"), "cantrip scrolls list cantrips");
   await scroll.locator(".equipment-shop__scroll-level").selectOption({ label: "1 環（50 金幣）" });
@@ -659,10 +713,20 @@ async function validateEquipmentShop(page) {
     .map(surface => JSON.stringify(surface.getBoundingClientRect())));
   assert.equal(frames[0], frames[1], "cart and shop share the same frame");
   assert.equal(await cartDialog.evaluate(el => getComputedStyle(el).backgroundColor), "rgba(0, 0, 0, 0)", "cart adds no second backdrop");
-  assert.deepEqual(await cartDialog.locator(".app-dialog__header button").evaluateAll(buttons => buttons.map(button => button.textContent)), ["清空", "×"]);
+  const cartTitleRow = cartDialog.locator(".equipment-shop__title-row");
+  assert.deepEqual(await cartTitleRow.evaluate(row => [...row.children].map(child => child.textContent)), ["購物清單（3 個）", "清空"], "clear sits beside the title");
+  const [titleBox, clearBox] = await Promise.all(["h2", ".equipment-shop__clear"].map(selector => cartTitleRow.locator(selector).boundingBox()));
+  assert.ok(Math.abs(titleBox.height - clearBox.height) < 1, "clear matches the title height");
+  assert.equal(await cartDialog.locator(".equipment-shop__balance").textContent(), "合計金額：5 白金幣 2 金幣");
+  const back = cartDialog.getByRole("button", { name: "返回商店" });
+  assert.deepEqual(await cartDialog.locator(".equipment-shop__header-actions button").evaluateAll(buttons => buttons.map(button => button.getAttribute("aria-label"))),
+    ["返回商店", "關閉購物清單與商店"]);
+  const [backBox, cartBox] = [await back.boundingBox(), await shop.evaluate(root => JSON.parse(JSON.stringify(root.querySelector(".equipment-shop__cart-button").getBoundingClientRect())))];
+  assert.ok(Math.abs(backBox.x - cartBox.x) < 1 && Math.abs(backBox.width - cartBox.width) < 1, "back takes the cart button's place and size");
   assert.deepEqual(await cartNames(), ["繩索", "命令術法術卷軸"]);
   const ropeLine = cartDialog.locator('[data-shop-cart-key="繩索"]');
   assert.equal(await ropeLine.locator(".equipment-shop__subtotal").textContent(), "2 金幣", "cart shows subtotals");
+  assert.equal(await ropeLine.locator("input").evaluate(el => getComputedStyle(el).appearance), "textfield", "native spinners are hidden");
   await ropeLine.getByRole("button", { name: "增加繩索數量" }).click();
   assert.equal(await ropeLine.locator("input").inputValue(), "3");
   assert.equal(await cartDialog.getByRole("button", { name: "增加繩索數量" }).evaluate(el => el === document.activeElement), true, "quantity step keeps focus");
@@ -671,13 +735,26 @@ async function validateEquipmentShop(page) {
   const summary = cartDialog.locator(".equipment-shop__footer-text");
   assert.equal(await summary.textContent(), "財產不足，尚缺 4 白金幣 2 金幣");
   assert.equal(await summary.evaluate(el => el.classList.contains("is-shortfall")), true);
+
+  // Clearing asks first; cancelling keeps the cart.
+  await cartDialog.getByRole("button", { name: "清空", exact: true }).click();
+  const clearPrompt = page.getByRole("alertdialog", { name: "清空購物清單？" });
+  await clearPrompt.getByRole("button", { name: "取消", exact: true }).click();
+  assert.deepEqual(await cartNames(), ["繩索", "命令術法術卷軸"], "cancelled clear keeps the cart");
+
   await page.keyboard.press("Escape");
-  assert.equal(await cartDialog.count(), 0, "Escape closes only the cart");
+  assert.equal(await cartDialog.count(), 0, "Escape returns to the shop");
   assert.equal(await shop.isVisible(), true);
   assert.equal(await cartButton.evaluate(el => el === document.activeElement), true);
   assert.equal(await badge.textContent(), "3", "cart edits sync the badge");
+  await cartButton.click();
+  await back.click();
+  assert.equal(await cartDialog.count(), 0, "back returns to the shop");
+  assert.equal(await shop.isVisible(), true);
+  assert.equal(await cartButton.evaluate(el => el === document.activeElement), true);
 
   // Details stack over the shop and return to it.
+  await chooseCategory("冒險用品");
   const ropeName = shop.getByRole("button", { name: "查看繩索的詳情" });
   await ropeName.click();
   const nestedDetail = page.locator('.app-dialog[data-variant="equipment-detail"]');
@@ -708,21 +785,44 @@ async function validateEquipmentShop(page) {
 
   await shopButton.click();
   assert.equal(await badge.isHidden(), true, "checkout empties the cart");
-  assert.equal((await toggle.innerText()).replace(/\s+/gu, ""), "冒險用品▾", "the filter is remembered while the page is open");
-  await toggle.click();
-  await categories.getByRole("button", { name: "全部", exact: true }).click();
-  await toggle.click();
-  assert.equal((await toggle.innerText()).replace(/\s+/gu, ""), "類別▾", "choosing all restores the category label");
+  assert.equal(await shopCategoryText(toggle), "冒險用品▾", "the filter is remembered while the page is open");
+  await chooseCategory("全部");
+  await shop.locator(".equipment-shop__search").fill("箭矢");
+  await shop.getByRole("button", { name: "加入購物清單：箭矢 (20)" }).click();
   await shop.locator(".equipment-shop__search").fill("火把");
   await shop.getByRole("button", { name: "加入購物清單：火把" }).click();
-  await shop.locator(".equipment-shop__search").fill("油燈");
-  await shop.getByRole("button", { name: "加入購物清單：油燈" }).click();
+  await cartButton.click();
+  assert.deepEqual(await cartNames(), ["箭矢 (20)", "火把"], "cart shows bundle sizes");
+  assert.equal(await summary.textContent(), "結帳後 8 金幣 9 銀幣 9 銅幣", "enough money shows the balance after checkout");
+  assert.equal(await summary.evaluate(el => el.classList.contains("is-shortfall")), false);
+  await page.keyboard.press("Escape");
   await shop.getByRole("button", { name: "結帳", exact: true }).click();
   await shop.waitFor({ state: "detached" });
-  assert.equal(await page.locator("#money-summary").textContent(), "9 金幣 4 銀幣 9 銅幣", "one payment across currencies");
-  assert.equal(await page.evaluate(() => JSON.parse(document.getElementById("money-log-data").value)[0].note), "購買火把、油燈");
-  assert.match(await page.locator("#gear-notes").inputValue(), /^購買物品：繩索 ×3、命令術法術卷軸、火把、油燈\n/u);
+  assert.equal(await page.locator("#money-summary").textContent(), "8 金幣 9 銀幣 9 銅幣", "one payment across currencies");
+  assert.equal(await page.evaluate(() => JSON.parse(document.getElementById("money-log-data").value)[0].note), "購買箭矢、火把");
+  assert.match(await page.locator("#gear-notes").inputValue(), /^購買物品：繩索 ×3、命令術法術卷軸、箭矢\(20\)、火把\n/u, "gear notes keep the compact bundle name");
   assert.equal(await page.evaluate(() => Object.keys(collectStateObject()).some(key => /shop/u.test(key))), false, "shop controls stay out of character data");
+
+  // The cart close button closes the shop too.
+  await shopButton.click();
+  await shop.getByRole("button", { name: "加入購物清單：火把" }).click();
+  await cartButton.click();
+  await cartDialog.getByRole("button", { name: "關閉購物清單與商店" }).click();
+  await shop.waitFor({ state: "detached" });
+  assert.equal(await cartDialog.count(), 0);
+  assert.equal(await shopButton.evaluate(el => el === document.activeElement), true, "closing both restores opener focus");
+
+  // Clearing after confirmation empties the cart and keeps focus in the cart.
+  await shopButton.click();
+  await cartButton.click();
+  await cartDialog.getByRole("button", { name: "清空", exact: true }).click();
+  await clearPrompt.getByRole("button", { name: "清空", exact: true }).click();
+  assert.equal(await cartDialog.locator(".equipment-shop__cart-line").count(), 0);
+  assert.equal(await cartDialog.locator(".equipment-shop__balance").textContent(), "合計金額：0 銅幣");
+  assert.equal(await back.evaluate(el => el === document.activeElement), true);
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("Escape");
+  assert.equal(await shop.count(), 0);
 
   // Spell scroll details send players to the scroll row.
   await page.locator("#equipment-notes-section .equipment-item-link", { hasText: /^法術卷軸$/u }).click();
