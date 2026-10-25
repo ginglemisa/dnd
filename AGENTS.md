@@ -52,6 +52,7 @@
 | 角色卡法術頁：法表與準備、已選清單、法術位、免費次數、法術描述 | `sheet-spells.js`；魔法學徒、書之魔契、魔法發現與種族／子職／職業／祈喚衍生法術為 `spell-sources.js` |
 | 法術目前清單、來源、自動／手動管理與遷移 | `spell-management.js`／`SpellManagement`；法術書與管理視窗為 `spellbook.js`／`Spellbook` |
 | 法術／裝備搜尋與獨立查閱 | `search.js`；保留工具列與導覽使用的全域入口 |
+| 商店：分類、購物清單、法術卷軸與結帳 | `equipment-shop.js`；品項由 `equipment-notes.js` 依說明原文整理為 `EQUIPMENT_SHOP_ITEMS`，結帳入口為 `index.html` 的 `MoneyTracker.purchaseItems()` |
 | 新手與跑團導覽 | `onboarding-tour.js`，並核對創角／匯入／PDF 生命週期 |
 | PDF 匯出與欄位 | 前置檢查／輸出視窗／延遲載入為 `pdf-launcher.js`；`pdf-export.js`、`pdf-field-map.js`；按需載入 `pdf-lib.custom.min.js`／`fontkit.custom.min.js`，部署須包含 PDF 與字型素材 |
 
@@ -112,7 +113,7 @@
 | 動作定義／摘要與角色卡／跑團操作、收合／記憶／清除、搜尋不重建靜態動作、合併分類偏好與還原、法術入口／時間標記；狀態／危害檢定與專注中斷／分頁提示；專長來源同步／鎖定、資格／計算／PDF、自行管理與新舊還原／空白列清理／新增；武器衝突、AC／摘要、還原／PDF | `node validate-action-metadata.js`；PDF 匯出使用替身 |
 | 德魯伊荒野形態、野獸攻擊、荒野夥伴、野性復甦、自然恢復、原初打擊與資源／狀態保存 | `node validate-tabletop-druid.js` |
 | 法術書推薦／儀式／匯入、跑團儀式分組／去重／施法；結構化清單與各環顯示／收合／排序／分欄／免費次數／無法術位、跑團隔離；閱讀／草稿管理與篩選、來源／不可用項計數、子視窗／焦點／草稿保留；準備限制／來源／免費使用；職業／手動記憶與切換、降級／超額／高環保留；舊資料遷移／提醒／清除、書籍歸屬／載入優先／手動來源隔離、快速創角／書之魔契／未知 ID；批次還原立即讀存、JSON／autosave／分享、跑團／PDF、法術位與響應式／主題版面 | `node validate-spellbook.js` |
-| 法術全文／職業別名／環位搜尋與排序（含 Artificer 無資料／模擬資料）、獨立查閱篩選／隔離／關閉／焦點；裝備詳情／規則說明／購買、各工具列查看與職業工具自動化／JSON／分享／autosave 還原、切頁及導覽還原 | `node validate-spell-search.js`；含搜尋模組與主頁內嵌語法。僅裝備／工具可加 `--equipment-only` |
+| 法術全文／職業別名／環位搜尋與排序（含 Artificer 無資料／模擬資料）、獨立查閱篩選／隔離／關閉／焦點；裝備詳情／規則說明、商店購物清單／法術卷軸／結帳、各工具列查看與職業工具自動化／JSON／分享／autosave 還原、切頁及導覽還原 | `node validate-spell-search.js`；含搜尋模組與主頁內嵌語法。僅裝備／工具可加 `--equipment-only` |
 | 屬性產生、購點／結果分配／背景加值、共用擲骰備註／取消／鍵盤／觸控、歷史相容與 autosave | `node validate-ability-roll.js`；可擇一加 `--point-buy-only` 或 `--dice-only` |
 | 導覽身分雙段提示／詳情返回、屬性引導／觸控、各段退出／非同步取消與定位失敗解鎖、創角匯入與 PDF 載入取消、分享模式關閉創角／導覽入口、八步跑團導覽／選單／擲骰開啟與導覽內擲骰／骰子試用與關閉清除結果／先攻強調與速度示例／法術與資源預覽、導覽按鈕文字、共用導覽與減少動態效果 | `node validate-onboarding.js`；優先選 `--touch-only`（含身分詳情提示）或 `--imports-only`，影響共用流程再完整執行；PDF 繪製使用替身 |
 | 短休／長休與取消、生命骰回血／關閉後完成提示、專注清除、休息後選項同步、各來源資源恢復／最佳旅伴／可選恢復及 autosave 還原 | `node validate-tabletop-rest.js` |

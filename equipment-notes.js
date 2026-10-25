@@ -36,6 +36,10 @@ document.addEventListener("DOMContentLoaded", () => {
   container.innerHTML = `
 
 <div class="section">
+  <div class="equipment-shop-entry">
+    <p>點選物品名稱可查看詳情；購買請使用商店。</p>
+    <button type="button" class="equipment-shop-entry__button" data-equipment-shop-open aria-haspopup="dialog">開啟商店</button>
+  </div>
   <h3>武器</h3>
   <details class="equipment-catalog-details">
     <summary class="equipment-note-summary">簡易武器列表</summary>
@@ -725,139 +729,122 @@ DC 25 力量（運動）：掙斷鐐銬
     catalog.innerHTML = renderCatalogTable(["名稱", "AC", "力量需求", "隱匿", "重量", "價格"], rows);
   });
 
-  const purchaseModal = document.createElement("div");
-  purchaseModal.className = "equipment-purchase-modal";
-  purchaseModal.inert = true;
-  purchaseModal.setAttribute("aria-hidden", "true");
-  purchaseModal.innerHTML = `
-    <div class="equipment-purchase-card" role="dialog" aria-modal="true" aria-labelledby="equipment-purchase-title">
-      <h3 id="equipment-purchase-title">是否購買？</h3>
-      <p class="equipment-purchase-description"></p>
-      <p class="equipment-purchase-english" lang="en" hidden></p>
-      <p class="equipment-purchase-balance" aria-live="polite"></p>
-      <label class="equipment-purchase-quantity-label" for="equipment-purchase-quantity">
-        購買數量
-        <input type="number" id="equipment-purchase-quantity" class="equipment-purchase-quantity" min="1" max="999" step="1" inputmode="numeric" value="1">
-      </label>
-      <div class="equipment-purchase-actions">
-        <button type="button" class="equipment-purchase-confirm">是</button>
-        <button type="button" class="equipment-purchase-cancel">否</button>
-        <button type="button" class="equipment-purchase-free">免費取得</button>
-      </div>
-    </div>`;
-  document.body.appendChild(purchaseModal);
+  // 參考清單的品名只開啟物品詳情；同一次解析整理出商店品項，價格與分類皆取自本頁內容。
+  const SHOP_SECTIONS = Object.freeze({
+    "簡易武器列表": { category: "weapon", section: "簡易武器" },
+    "軍用武器列表": { category: "weapon", section: "軍用武器" },
+    "輕甲列表": { category: "armor", section: "輕甲" },
+    "中甲列表": { category: "armor", section: "中甲" },
+    "重甲列表": { category: "armor", section: "重甲" },
+    "工匠工具": { category: "tool", section: "工匠工具" },
+    "其他工具": { category: "tool", section: "其他工具" },
+    "冒險用品": { category: "gear", section: "冒險用品" }
+  });
+  const SHOP_GROUP_CATEGORIES = Object.freeze({ 彈藥: "ammo", 奧術法器: "focus", 德魯伊法器: "focus", 聖徽: "focus" });
+  const COPPER_RATES = Object.freeze({ 銅幣: 1, 銀幣: 10, 金幣: 100 });
+  const shopItems = [];
+  const shopItemKeys = new Set();
 
-  const purchaseDescription = purchaseModal.querySelector(".equipment-purchase-description");
-  const purchaseEnglish = purchaseModal.querySelector(".equipment-purchase-english");
-  const confirmPurchaseButton = purchaseModal.querySelector(".equipment-purchase-confirm");
-  const cancelPurchaseButton = purchaseModal.querySelector(".equipment-purchase-cancel");
-  const freePurchaseButton = purchaseModal.querySelector(".equipment-purchase-free");
-  const purchaseQuantityInput = purchaseModal.querySelector(".equipment-purchase-quantity");
-  const purchaseBalance = purchaseModal.querySelector(".equipment-purchase-balance");
-  let pendingPurchase = null;
-  let purchaseModalOpener = null;
-
-  const closePurchaseModal = () => {
-    if (purchaseModal.contains(document.activeElement)) {
-      purchaseModalOpener?.isConnected ? purchaseModalOpener.focus() : document.activeElement.blur();
+  const addShopItem = (name, amount, currency, sectionInfo, group, variant = "") => {
+    if (!sectionInfo) return;
+    const key = variant ? `${name}|${variant}` : name;
+    if (shopItemKeys.has(key)) return;
+    shopItemKeys.add(key);
+    const section = name === "盾牌" ? "盾牌" : sectionInfo.section;
+    let category = sectionInfo.category;
+    if (category === "gear") {
+      category = SHOP_GROUP_CATEGORIES[group]
+        || (name.endsWith("套組") ? "pack" : "")
+        || (variant ? "scroll" : "gear");
     }
-    purchaseModal.inert = true;
-    purchaseModal.classList.remove("open");
-    purchaseModal.setAttribute("aria-hidden", "true");
-    pendingPurchase = null;
-    purchaseModalOpener = null;
+    const item = { key, name, variant, amount: Number(amount), currency, copper: Number(amount) * COPPER_RATES[currency], category, section, group };
+    // 多種價格的標題（如法術卷軸）依環階拆成品項，環階供商店選擇對應法術。
+    const spellLevel = variant === "戲法" ? 0 : Number(variant.match(/^(\d+)\s*環$/u)?.[1]);
+    if (variant && Number.isInteger(spellLevel)) item.spellLevel = spellLevel;
+    shopItems.push(Object.freeze(item));
   };
 
-  const openPurchaseModal = (item) => {
-    purchaseModalOpener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    pendingPurchase = item;
-    purchaseQuantityInput.value = "1";
-    purchaseDescription.textContent = `${item.name}（${item.amount} ${item.currency}）`;
-    purchaseEnglish.textContent = globalThis.EQUIPMENT_ENGLISH_NAMES?.[item.name] || "";
-    purchaseEnglish.hidden = !purchaseEnglish.textContent;
-    purchaseBalance.textContent = document.getElementById("money-summary")?.textContent || "目前財產：尚未載入";
-    purchaseModal.inert = false;
-    purchaseModal.classList.add("open");
-    purchaseModal.setAttribute("aria-hidden", "false");
-    confirmPurchaseButton.focus();
-  };
-
-  const makePurchaseLink = (name, amount, currency) => {
+  const makeItemLink = (name) => {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "equipment-purchase-link";
-    button.textContent = name.trim();
-    button.setAttribute("aria-label", `購買${name.trim()}，${amount}${currency}`);
-    button.addEventListener("click", () => openPurchaseModal({
-      name: name.trim(),
-      amount: Number(amount),
-      currency
-    }));
+    button.className = "equipment-item-link";
+    button.textContent = name;
+    button.setAttribute("aria-haspopup", "dialog");
+    button.setAttribute("aria-label", `查看${name}的詳情`);
+    button.addEventListener("click", () => {
+      if (!globalThis.openEquipmentDetailByName?.(name, button)) {
+        globalThis.AppDialog?.showMessage({ title: "物品詳情", message: "暫時無法讀取此物品的說明，請重新載入頁面後再試。", trigger: button });
+      }
+    });
     return button;
   };
 
-  // Each priced heading is plain text in the reference content. Replace only its
+  // Each heading is plain text in the reference content. Replace only its
   // item-name portion so all descriptions and prices remain exactly as authored.
+  const pricedNamePattern = /(^|[\n：，；])([ \t]*)([^（\n：，；]+?)（(?:(\d+)\s*(金幣|銀幣|銅幣)(?=[，；）])|((?:[^（）\n；]+?\s*\d+\s*(?:金幣|銀幣|銅幣)；)+[^（）\n；]+?\s*\d+\s*(?:金幣|銀幣|銅幣))(?=）)|(多種)(?=）))/gu;
   container.querySelectorAll("details .equipment-note-body").forEach((body) => {
-    const walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT);
-    const textNodes = [];
-    while (walker.nextNode()) textNodes.push(walker.currentNode);
+    const sectionInfo = SHOP_SECTIONS[body.closest("details")?.querySelector(":scope > summary")?.textContent?.trim()] || null;
+    // 「X（多種）」之後的變體行與表格屬於 X，直到下一個獨立品項標題。
+    let currentGroup = "";
 
-    textNodes.forEach((textNode) => {
+    const linkTextNode = (textNode) => {
       const text = textNode.nodeValue || "";
-      const pattern = /(^|[\n：，；])([ \t]*)([^（\n：，；]+?)（(\d+)\s*(金幣|銀幣|銅幣)(?=[，；）])/gu;
       let match;
       let lastIndex = 0;
       let changed = false;
       const fragment = document.createDocumentFragment();
+      pricedNamePattern.lastIndex = 0;
 
-      while ((match = pattern.exec(text))) {
+      while ((match = pricedNamePattern.exec(text))) {
+        const name = match[3].trim();
+        const lineStart = text.lastIndexOf("\n", match.index + match[1].length - 1) + 1;
+        const isVariantLine = text.slice(lineStart).trimStart().startsWith("變體：");
+        const isLineStart = match[1] === "\n" || match[1] === "";
+        if (match[7] && !isLineStart) continue;
         changed = true;
         fragment.append(text.slice(lastIndex, match.index), match[1], match[2]);
-        fragment.appendChild(makePurchaseLink(match[3], match[4], match[5]));
-        fragment.append(`（${match[4]} ${match[5]}`);
-        lastIndex = pattern.lastIndex;
+        fragment.appendChild(makeItemLink(name));
+        if (match[7]) {
+          currentGroup = name;
+          fragment.append("（多種");
+        } else if (match[6]) {
+          currentGroup = "";
+          match[6].split("；").forEach((part) => {
+            const variant = part.trim().match(/^(.+?)\s*(\d+)\s*(金幣|銀幣|銅幣)$/u);
+            if (variant) addShopItem(name, variant[2], variant[3], sectionInfo, "", variant[1].trim());
+          });
+          fragment.append(`（${match[6]}`);
+        } else {
+          if (!isVariantLine) currentGroup = "";
+          addShopItem(name, match[4], match[5], sectionInfo, isVariantLine ? currentGroup : "");
+          fragment.append(`（${match[4]} ${match[5]}`);
+        }
+        lastIndex = pricedNamePattern.lastIndex;
       }
       if (!changed) return;
       fragment.append(text.slice(lastIndex));
       textNode.replaceWith(fragment);
-    });
+    };
 
-    body.querySelectorAll("tbody tr").forEach((row) => {
+    const linkTableRow = (row) => {
       const cells = row.querySelectorAll("td");
       const nameCell = cells[0];
       const priceText = cells[cells.length - 1]?.textContent?.trim() || "";
       const priceMatch = priceText.match(/^(\d+)\s*(金幣|銀幣|銅幣)$/u);
-      if (!nameCell || !priceMatch || nameCell.querySelector(".equipment-purchase-link")) return;
+      if (!nameCell || !priceMatch || nameCell.querySelector(".equipment-item-link")) return;
       const name = nameCell.textContent.trim();
       nameCell.textContent = "";
-      nameCell.appendChild(makePurchaseLink(name, priceMatch[1], priceMatch[2]));
+      nameCell.appendChild(makeItemLink(name));
+      addShopItem(name, priceMatch[1], priceMatch[2], sectionInfo, currentGroup);
+    };
+
+    [...body.childNodes].forEach((node) => {
+      if (node.nodeType === Node.TEXT_NODE) linkTextNode(node);
+      else if (node.nodeType === Node.ELEMENT_NODE) node.querySelectorAll("tbody tr").forEach(linkTableRow);
     });
   });
 
-  confirmPurchaseButton.addEventListener("click", () => {
-    if (!pendingPurchase) return;
-    const quantity = Math.min(999, Math.max(1, parseInt(purchaseQuantityInput.value, 10) || 1));
-    document.dispatchEvent(new CustomEvent("equipment:purchase", {
-      detail: { ...pendingPurchase, quantity }
-    }));
-    closePurchaseModal();
-  });
-  freePurchaseButton.addEventListener("click", () => {
-    if (!pendingPurchase) return;
-    const quantity = Math.min(999, Math.max(1, parseInt(purchaseQuantityInput.value, 10) || 1));
-    document.dispatchEvent(new CustomEvent("equipment:purchase", {
-      detail: { ...pendingPurchase, quantity, free: true }
-    }));
-    closePurchaseModal();
-  });
-  cancelPurchaseButton.addEventListener("click", closePurchaseModal);
-  purchaseModal.addEventListener("click", (event) => {
-    if (event.target === purchaseModal) closePurchaseModal();
-  });
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && purchaseModal.classList.contains("open")) closePurchaseModal();
-  });
+  globalThis.EQUIPMENT_SHOP_ITEMS = Object.freeze(shopItems);
 
   const rulePopup = document.createElement("div");
   rulePopup.id = "weaponRulePopup";
