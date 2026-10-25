@@ -18,6 +18,7 @@ async function main() {
   assert.equal(searchScripts.length, 1, "load the extracted search module exactly once");
   assert.match(searchScripts[0][0], /\bdefer\b/, "search uses the existing deferred loading strategy");
   new vm.Script(fs.readFileSync(path.join(__dirname, "search.js"), "utf8"), { filename: "search.js" });
+  new vm.Script(fs.readFileSync(path.join(__dirname, "equipment-shop.js"), "utf8"), { filename: "equipment-shop.js" });
   for (const [index, match] of [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)].entries()) {
     if (!/\bsrc\s*=|application\/ld\+json/i.test(match[1])) {
       new vm.Script(match[2], { filename: `index.html:inline-${index}` });
@@ -52,7 +53,7 @@ async function main() {
     if (process.argv.includes("--equipment-only")) {
       await validateEquipmentSearch(page);
       assert.deepEqual(errors, [], "no browser errors");
-      console.log("Equipment search passed: syntax, catalogs, details, rule links, keyboard/focus, desktop/narrow viewport, purchase cancellation and search state restoration.");
+      console.log("Equipment search passed: syntax, catalogs, details, rule links, keyboard/focus, desktop/narrow viewport, shop cart/checkout/spell scrolls and search state restoration.");
       return;
     }
     await page.locator('[aria-controls="tab-spells"]').click();
@@ -179,7 +180,7 @@ async function main() {
     await validateEquipmentSearch(page);
     await validateArtificerCatalog(browser);
     assert.deepEqual(errors, [], "no browser errors");
-    console.log("Search passed: search.js and inline syntax, compatibility APIs, class aliases including Warlock variants and Artificer (absent and fixture data), levels, ordering, full-text fallback, empty/clear, keyboard, narrow viewport, spell detail/focus, equipment catalogs/details/rule links/purchase cancellation and tour state restoration.");
+    console.log("Search passed: search.js and inline syntax, compatibility APIs, class aliases including Warlock variants and Artificer (absent and fixture data), levels, ordering, full-text fallback, empty/clear, keyboard, narrow viewport, spell detail/focus, equipment catalogs/details/rule links/shop checkout and tour state restoration.");
   } finally {
     if (browser) await browser.close();
     await new Promise(resolve => server.close(resolve));
@@ -452,11 +453,10 @@ async function validateEquipmentSearch(page) {
       assert.deepEqual(await detail.locator(".equipment-detail-table tbody td:first-child .equipment-detail-english").allTextContents(),
         ["Crystal", "Orb", "Rod", "Staff", "Wand"], "table item English");
     }
-    await detail.getByRole("button", { name: "購買", exact: true }).click();
-    const purchaseDialog = page.locator(".equipment-purchase-modal");
-    assert.match(await purchaseDialog.locator(".equipment-purchase-description").textContent(), new RegExp(`^${name}（`, "u"));
-    assert.equal(await purchaseDialog.locator(".equipment-purchase-english").textContent(), english, "purchase English line");
-    await purchaseDialog.locator(".equipment-purchase-cancel").click();
+    assert.equal(await detail.locator(".equipment-detail-table .equipment-item-link").count(), 0, "detail tables show plain item names");
+    await detail.getByRole("button", { name: "加入購物清單", exact: true }).click();
+    assert.equal(await page.locator(`.app-dialog[data-variant="equipment-shop"] [data-shop-count="${name}"]`).textContent(), "已選 1", `${english}: selected variant added to cart`);
+    await emptyCartAndCloseShop(page);
   }
   // Rule descriptions overlay the current detail without changing search or equipment state.
   for (const width of [1100, 390]) {
@@ -514,15 +514,14 @@ async function validateEquipmentSearch(page) {
   const names = await buttons.allTextContents();
   const acid = buttons.filter({ hasText: /^強酸$/u });
   await acid.click();
-  await detail.getByRole("button", { name: "購買", exact: true }).click();
-  const purchase = page.locator(".equipment-purchase-modal");
-  assert.equal(await purchase.isVisible(), true, "search delegates to the existing purchase dialog");
+  await detail.getByRole("button", { name: "加入購物清單", exact: true }).click();
+  const shop = page.locator('.app-dialog[data-variant="equipment-shop"]');
+  assert.equal(await shop.isVisible(), true, "search detail opens the shop");
   assert.equal(await detail.isVisible(), false);
-  assert.match(await purchase.locator(".equipment-purchase-description").textContent(), /強酸/u);
-  await purchase.locator(".equipment-purchase-cancel").click();
-  assert.equal(await purchase.isVisible(), false);
-  assert.deepEqual(await buttons.allTextContents(), names, "purchase cancellation preserves results");
-  assert.equal(await acid.evaluate(el => el === document.activeElement), true, "purchase cancellation restores result focus");
+  assert.equal(await shop.locator(".equipment-shop__badge").textContent(), "1");
+  await emptyCartAndCloseShop(page);
+  assert.deepEqual(await buttons.allTextContents(), names, "closing the shop preserves results");
+  assert.equal(await acid.evaluate(el => el === document.activeElement), true, "closing the shop restores result focus");
 
   await page.evaluate(() => window.onboardingTour.start());
   await page.locator("#tour-skip-btn").click();
@@ -545,6 +544,216 @@ async function validateEquipmentSearch(page) {
   await page.locator("#equipment-search-fab").click();
   assert.equal(await input.inputValue(), "", "switching tabs clears equipment search");
   assert.equal(await results.isVisible(), false);
+  await validateEquipmentShop(page);
+}
+
+async function emptyCartAndCloseShop(page) {
+  const shop = page.locator('.app-dialog[data-variant="equipment-shop"]');
+  const cartDialog = page.locator('.app-dialog[data-variant="equipment-shop-cart"]');
+  await shop.locator(".equipment-shop__cart-button").click();
+  await cartDialog.getByRole("button", { name: "清空", exact: true }).click();
+  await page.keyboard.press("Escape");
+  assert.equal(await cartDialog.count(), 0);
+  await page.keyboard.press("Escape");
+  assert.equal(await shop.count(), 0);
+}
+
+// Reference names only open details; buying goes through the shop's cart and one checkout.
+async function validateEquipmentShop(page) {
+  await page.setViewportSize({ width: 1100, height: 850 });
+  await page.locator('[aria-controls="tab-equipment"]').click();
+  const catalog = await page.evaluate(() => {
+    const items = window.EQUIPMENT_SHOP_ITEMS;
+    const find = (name, variant = "") => items.find(item => item.name === name && item.variant === variant);
+    return {
+      scroll: items.filter(item => item.name === "法術卷軸").map(item => [item.variant, item.amount, item.spellLevel]),
+      shields: items.filter(item => item.name === "盾牌").length,
+      groups: [find("水晶")?.group, find("骰子")?.group, find("箭矢")?.category, find("探索套組")?.category, find("長笛")?.group],
+      links: document.querySelectorAll("#equipment-notes-section .equipment-item-link").length
+    };
+  });
+  assert.deepEqual(catalog.scroll, [["戲法", 30, 0], ["1 環", 50, 1]], "spell scroll prices split by level");
+  assert.equal(catalog.shields, 1, "shield is listed once");
+  assert.deepEqual(catalog.groups, ["奧術法器", "賭具", "ammo", "pack", "樂器"]);
+  assert.equal(catalog.links, 189, "every priced or multi-variant name links to details");
+
+  await page.locator("#equipment-notes-section details").evaluateAll(nodes => nodes.forEach(node => { node.open = true; }));
+  const detail = page.locator("#equipment-detail-modal");
+  const acidLink = page.locator("#equipment-notes-section .equipment-item-link", { hasText: /^強酸$/u });
+  await acidLink.click();
+  assert.equal(await page.locator("#equipment-detail-title").textContent(), "強酸", "reference names open details");
+  await page.keyboard.press("Escape");
+  assert.equal(await acidLink.evaluate(el => el === document.activeElement), true);
+
+  await page.evaluate(() => {
+    ["pp", "gp", "sp", "cp"].forEach(id => { document.getElementById(`money-balance-${id}`).value = id === "gp" ? "10" : "0"; });
+    document.getElementById("money-balance-gp").dispatchEvent(new Event("change"));
+    document.getElementById("gear-notes").value = "購買物品：繩索\n自由備註";
+  });
+  const shopButton = page.locator("#money-shop-open");
+  const shop = page.locator('.app-dialog[data-variant="equipment-shop"]');
+  const cartDialog = page.locator('.app-dialog[data-variant="equipment-shop-cart"]');
+  const cartButton = shop.locator(".equipment-shop__cart-button");
+  const badge = shop.locator(".equipment-shop__badge");
+  const cartNames = () => cartDialog.locator(".equipment-shop__cart-name > span:first-child").allTextContents();
+  await shopButton.click();
+  assert.equal(await shop.locator(".equipment-shop__search").evaluate(el => el === document.activeElement), true, "shop focuses search");
+  assert.equal(await shop.locator(".equipment-shop__balance").textContent(), "目前財產：1 白金幣", "balance sits under the title");
+  assert.equal(await shop.getByRole("button", { name: "關閉", exact: true }).count(), 0, "the corner close button replaces the footer close");
+  assert.deepEqual(await shop.locator(".equipment-shop__header-actions button").evaluateAll(buttons => buttons.map(button => button.className)),
+    ["equipment-shop__cart-button", "app-dialog__close"], "cart button sits left of the close button");
+  assert.equal(await badge.isHidden(), true, "empty cart hides the badge");
+
+  // The category button keeps the chosen filter after collapsing.
+  const toggle = shop.locator(".equipment-shop__category-toggle");
+  const categories = shop.locator(".equipment-shop__categories");
+  assert.equal((await toggle.innerText()).replace(/\s+/gu, ""), "類別▾");
+  assert.equal(await categories.isHidden(), true, "categories start collapsed");
+  await toggle.click();
+  assert.equal(await toggle.getAttribute("aria-expanded"), "true");
+  assert.deepEqual(await categories.locator("button").allTextContents(), ["全部", "武器", "護甲", "工具", "冒險用品", "彈藥", "法器", "套組"]);
+  await categories.getByRole("button", { name: "武器", exact: true }).click();
+  assert.equal(await shop.locator(".equipment-shop__section-title").allTextContents().then(titles => titles.join()), "簡易武器,軍用武器");
+  await toggle.click();
+  await categories.waitFor({ state: "hidden" });
+  assert.equal((await toggle.innerText()).replace(/\s+/gu, ""), "武器▾", "collapsed button names the active filter");
+  assert.equal(await toggle.evaluate(el => el.classList.contains("is-filtered")), true);
+  assert.equal(await shop.locator(".equipment-shop__section-title").allTextContents().then(titles => titles.join()), "簡易武器,軍用武器", "collapsing keeps the filter");
+  assert.equal(await toggle.evaluate(el => el === document.activeElement), true);
+  const searchBox = await shop.locator(".equipment-shop__search").boundingBox();
+  const toggleBox = await toggle.boundingBox();
+  assert.ok(Math.abs(searchBox.y + searchBox.height / 2 - (toggleBox.y + toggleBox.height / 2)) < 2 && toggleBox.x > searchBox.x, "search and category share one row");
+  await toggle.click();
+  await categories.getByRole("button", { name: "冒險用品", exact: true }).click();
+  await toggle.click();
+
+  await shop.locator(".equipment-shop__search").fill("rope");
+  assert.deepEqual(await shop.locator(".equipment-shop__detail").allTextContents(), ["繩索"], "English search matches without showing English");
+  assert.doesNotMatch(await shop.locator(".equipment-shop__list").innerText(), /[A-Za-z]/u, "shop shows no English names");
+  const ropeRow = shop.locator('[data-shop-item-key="繩索"]');
+  assert.deepEqual(await ropeRow.evaluate(row => [...row.children].map(child => child.className)),
+    ["equipment-shop__item-name", "equipment-shop__in-cart", "equipment-shop__add"]);
+  assert.equal(await ropeRow.locator(".equipment-shop__item-name .equipment-shop__price").textContent(), "1 金幣", "price follows the name");
+  const addRope = shop.getByRole("button", { name: "加入購物清單：繩索" });
+  await addRope.click();
+  await addRope.click();
+  assert.equal(await shop.locator('[data-shop-count="繩索"]').textContent(), "已選 2");
+  assert.equal(await badge.textContent(), "2");
+  assert.equal(await shop.locator(".equipment-shop__footer-text").textContent(), "合計 2 金幣", "shop footer shows the total");
+  await shop.locator(".equipment-shop__search").fill("");
+  const scroll = shop.locator(".equipment-shop__item--scroll");
+  const scrollAdd = scroll.getByRole("button", { name: "加入購物清單：法術卷軸" });
+  assert.equal(await scrollAdd.isDisabled(), true, "scroll needs a spell");
+  const spellNames = () => scroll.locator(".equipment-shop__scroll-spell option").allTextContents();
+  assert.ok((await spellNames()).includes("火焰箭"), "cantrip scrolls list cantrips");
+  await scroll.locator(".equipment-shop__scroll-level").selectOption({ label: "1 環（50 金幣）" });
+  assert.ok(!(await spellNames()).includes("火焰箭") && (await spellNames()).includes("命令術"), "level 1 scrolls list level 1 spells");
+  await scroll.locator(".equipment-shop__scroll-spell").selectOption({ label: "命令術" });
+  await scrollAdd.click();
+  assert.equal(await badge.textContent(), "3");
+
+  // The cart opens in the same frame as the shop.
+  await cartButton.click();
+  await cartDialog.waitFor();
+  const frames = await page.evaluate(() => [...document.querySelectorAll(".app-dialog[data-variant^='equipment-shop'] .app-dialog__surface")]
+    .map(surface => JSON.stringify(surface.getBoundingClientRect())));
+  assert.equal(frames[0], frames[1], "cart and shop share the same frame");
+  assert.equal(await cartDialog.evaluate(el => getComputedStyle(el).backgroundColor), "rgba(0, 0, 0, 0)", "cart adds no second backdrop");
+  assert.deepEqual(await cartDialog.locator(".app-dialog__header button").evaluateAll(buttons => buttons.map(button => button.textContent)), ["清空", "×"]);
+  assert.deepEqual(await cartNames(), ["繩索", "命令術法術卷軸"]);
+  const ropeLine = cartDialog.locator('[data-shop-cart-key="繩索"]');
+  assert.equal(await ropeLine.locator(".equipment-shop__subtotal").textContent(), "2 金幣", "cart shows subtotals");
+  await ropeLine.getByRole("button", { name: "增加繩索數量" }).click();
+  assert.equal(await ropeLine.locator("input").inputValue(), "3");
+  assert.equal(await cartDialog.getByRole("button", { name: "增加繩索數量" }).evaluate(el => el === document.activeElement), true, "quantity step keeps focus");
+  await ropeLine.locator("input").fill("2");
+  await ropeLine.locator("input").press("Tab");
+  const summary = cartDialog.locator(".equipment-shop__footer-text");
+  assert.equal(await summary.textContent(), "財產不足，尚缺 4 白金幣 2 金幣");
+  assert.equal(await summary.evaluate(el => el.classList.contains("is-shortfall")), true);
+  await page.keyboard.press("Escape");
+  assert.equal(await cartDialog.count(), 0, "Escape closes only the cart");
+  assert.equal(await shop.isVisible(), true);
+  assert.equal(await cartButton.evaluate(el => el === document.activeElement), true);
+  assert.equal(await badge.textContent(), "3", "cart edits sync the badge");
+
+  // Details stack over the shop and return to it.
+  const ropeName = shop.getByRole("button", { name: "查看繩索的詳情" });
+  await ropeName.click();
+  const nestedDetail = page.locator('.app-dialog[data-variant="equipment-detail"]');
+  assert.equal(await nestedDetail.locator("h2").textContent(), "繩索");
+  await page.keyboard.press("Escape");
+  assert.equal(await nestedDetail.count(), 0);
+  assert.equal(await shop.isVisible(), true, "closing details keeps the shop");
+  assert.equal(await ropeName.evaluate(el => el === document.activeElement), true);
+
+  // Declining debt keeps both windows, the cart and money unchanged.
+  await cartButton.click();
+  await cartDialog.getByRole("button", { name: "結帳", exact: true }).click();
+  const debt = page.getByRole("alertdialog", { name: "目前財產不足" });
+  await debt.waitFor();
+  await debt.getByRole("button", { name: "取消交易" }).click();
+  assert.equal(await cartDialog.isVisible(), true);
+  assert.equal(await shop.count(), 1);
+  assert.deepEqual(await cartNames(), ["繩索", "命令術法術卷軸"]);
+  assert.equal(await page.locator("#money-balance-gp").inputValue(), "10");
+
+  await cartDialog.getByRole("button", { name: "免費取得", exact: true }).click();
+  await shop.waitFor({ state: "detached" });
+  assert.equal(await cartDialog.count(), 0, "checkout from the cart closes both windows");
+  assert.equal(await page.locator("#gear-notes").inputValue(), "購買物品：繩索 ×3、命令術法術卷軸\n自由備註", "checkout merges gear once");
+  assert.equal(await page.evaluate(() => JSON.parse(document.getElementById("money-log-data").value)[0].note), "免費取得繩索 ×2、命令術法術卷軸");
+  assert.equal(await page.locator("#money-balance-gp").inputValue(), "10");
+  assert.equal(await shopButton.evaluate(el => el === document.activeElement), true, "checkout restores opener focus");
+
+  await shopButton.click();
+  assert.equal(await badge.isHidden(), true, "checkout empties the cart");
+  assert.equal((await toggle.innerText()).replace(/\s+/gu, ""), "冒險用品▾", "the filter is remembered while the page is open");
+  await toggle.click();
+  await categories.getByRole("button", { name: "全部", exact: true }).click();
+  await toggle.click();
+  assert.equal((await toggle.innerText()).replace(/\s+/gu, ""), "類別▾", "choosing all restores the category label");
+  await shop.locator(".equipment-shop__search").fill("火把");
+  await shop.getByRole("button", { name: "加入購物清單：火把" }).click();
+  await shop.locator(".equipment-shop__search").fill("油燈");
+  await shop.getByRole("button", { name: "加入購物清單：油燈" }).click();
+  await shop.getByRole("button", { name: "結帳", exact: true }).click();
+  await shop.waitFor({ state: "detached" });
+  assert.equal(await page.locator("#money-summary").textContent(), "9 金幣 4 銀幣 9 銅幣", "one payment across currencies");
+  assert.equal(await page.evaluate(() => JSON.parse(document.getElementById("money-log-data").value)[0].note), "購買火把、油燈");
+  assert.match(await page.locator("#gear-notes").inputValue(), /^購買物品：繩索 ×3、命令術法術卷軸、火把、油燈\n/u);
+  assert.equal(await page.evaluate(() => Object.keys(collectStateObject()).some(key => /shop/u.test(key))), false, "shop controls stay out of character data");
+
+  // Spell scroll details send players to the scroll row.
+  await page.locator("#equipment-notes-section .equipment-item-link", { hasText: /^法術卷軸$/u }).click();
+  await detail.getByRole("button", { name: "前往商店選擇法術" }).click();
+  assert.equal(await shop.locator(".equipment-shop__scroll-spell").evaluate(el => el === document.activeElement), true);
+
+  await page.setViewportSize({ width: 375, height: 812 });
+  assert.equal(await shop.locator(".app-dialog__surface").evaluate(el => el.scrollWidth <= el.clientWidth && el.getBoundingClientRect().right <= innerWidth), true, "narrow shop fits");
+  assert.equal(await shop.locator(".equipment-shop__list").evaluate(el => el.clientHeight >= 250), true, "narrow shop keeps a usable list");
+  await cartButton.click();
+  const narrowFrames = await page.evaluate(() => [...document.querySelectorAll(".app-dialog[data-variant^='equipment-shop'] .app-dialog__surface")]
+    .map(surface => JSON.stringify(surface.getBoundingClientRect())));
+  assert.equal(narrowFrames[0], narrowFrames[1], "narrow cart keeps the shop frame");
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("Escape");
+  assert.equal(await shop.count(), 0);
+
+  // Narrow money cards put the actions above the title, aligned left.
+  const header = await page.evaluate(() => {
+    const title = document.querySelector(".money-title").getBoundingClientRect();
+    const actions = document.querySelector(".money-header-actions").getBoundingClientRect();
+    const card = document.querySelector(".money-section").getBoundingClientRect();
+    return { actionsAbove: actions.bottom <= title.top, leftAligned: Math.abs(actions.left - title.left) < 2, inside: actions.right <= card.right };
+  });
+  assert.deepEqual(header, { actionsAbove: true, leftAligned: true, inside: true }, "narrow money header stacks actions above the title");
+  await page.setViewportSize({ width: 1100, height: 850 });
+  assert.equal(await page.evaluate(() => {
+    const title = document.querySelector(".money-title").getBoundingClientRect();
+    const actions = document.querySelector(".money-header-actions").getBoundingClientRect();
+    return Math.abs((title.top + title.bottom) / 2 - (actions.top + actions.bottom) / 2) < 4;
+  }), true, "wide money header keeps one row");
 }
 
 main().catch(error => { console.error(error); process.exitCode = 1; });

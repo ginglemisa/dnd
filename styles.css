@@ -5859,6 +5859,10 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   font-weight: 850;
 }
 
+.money-section {
+  container: money-section / inline-size;
+}
+
 .money-balance-header {
   display: flex;
   align-items: center;
@@ -5869,6 +5873,7 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
 
 .money-header-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
   gap: 0.55rem;
@@ -5956,8 +5961,20 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   white-space: nowrap;
 }
 
+#money-shop-open,
 #money-adjust-toggle,
 #money-log-toggle { flex: 0 0 auto; }
+
+@container money-section (max-width: 18.5rem) {
+  .money-balance-header {
+    flex-direction: column-reverse;
+    align-items: flex-start;
+  }
+
+  .money-header-actions {
+    justify-content: flex-start;
+  }
+}
 
 .money-quick-actions {
   display: flex;
@@ -6232,7 +6249,7 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   text-align: center;
 }
 
-:where(html:not([data-ui-theme="warm"])) .equipment-purchase-link {
+:where(html:not([data-ui-theme="warm"])) .equipment-item-link {
   display: inline;
   width: auto;
   min-height: 0;
@@ -6251,7 +6268,7 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   vertical-align: baseline;
 }
 
-:where(html[data-ui-theme="warm"]) .equipment-purchase-link {
+:where(html[data-ui-theme="warm"]) .equipment-item-link {
   display: inline;
   width: auto;
   min-height: 0;
@@ -6270,134 +6287,498 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   vertical-align: baseline;
 }
 
-:where(html:not([data-ui-theme="warm"])) .equipment-purchase-link:hover,
-:where(html:not([data-ui-theme="warm"])) .equipment-purchase-link:focus-visible {
+:where(html:not([data-ui-theme="warm"])) .equipment-item-link:hover,
+:where(html:not([data-ui-theme="warm"])) .equipment-item-link:focus-visible {
   background: transparent;
   box-shadow: none;
   color: #173c94;
 }
 
-:where(html[data-ui-theme="warm"]) .equipment-purchase-link:hover,
-:where(html[data-ui-theme="warm"]) .equipment-purchase-link:focus-visible {
+:where(html[data-ui-theme="warm"]) .equipment-item-link:hover,
+:where(html[data-ui-theme="warm"]) .equipment-item-link:focus-visible {
   background: transparent;
   box-shadow: none;
   color: var(--accent);
 }
 
-:where(html:not([data-ui-theme="warm"])) .equipment-purchase-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 10020;
-  display: none;
-  place-items: center;
-  padding: 1rem;
-  background: rgba(15, 24, 48, 0.55);
+.equipment-shop-entry {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
 }
 
-:where(html[data-ui-theme="warm"]) .equipment-purchase-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 10020;
-  display: none;
-  place-items: center;
-  padding: 1rem;
-  background: var(--overlay);
+.equipment-shop-entry p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
 }
 
-.equipment-purchase-modal.open {
+.equipment-shop-entry__button {
+  width: auto;
+  min-height: 2.4rem;
+  margin: 0;
+  padding: 0.45rem 0.9rem;
+  font-size: var(--fs-sm);
+  font-weight: 800;
+}
+
+/* Shop and cart share one frame, so the cart reads as another page of the same window. */
+.app-dialog[data-variant="equipment-shop"] .app-dialog__surface,
+.app-dialog[data-variant="equipment-shop-cart"] .app-dialog__surface {
+  width: min(100%, 44rem);
+  height: min(90vh, 48rem);
+  height: min(90dvh, 48rem);
+}
+
+.app-dialog[data-variant="equipment-shop-cart"] {
+  background: transparent;
+}
+
+/* Surface tokens are translucent in classic light; stack them on the opaque input colour so the shop never shows through. */
+.app-dialog[data-variant="equipment-shop-cart"] .app-dialog__surface,
+.app-dialog[data-variant="equipment-shop-cart"] .app-dialog__actions {
+  background: linear-gradient(var(--surface-soft), var(--surface-soft)), linear-gradient(var(--surface-strong), var(--surface-strong)), var(--input-bg);
+}
+
+.app-dialog[data-variant="equipment-shop"] .app-dialog__body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+}
+
+.app-dialog[data-variant="equipment-shop-cart"] .app-dialog__body {
+  flex: 1 1 auto;
+  align-content: start;
+}
+
+.equipment-shop__heading {
   display: grid;
+  gap: 0.2rem;
+  min-width: 0;
 }
 
-:where(html:not([data-ui-theme="warm"])) .equipment-purchase-card {
-  width: min(22rem, 100%);
-  padding: 1.25rem;
-  border: 1px solid rgba(126, 148, 198, 0.45);
-  border-radius: 1rem;
-  background: #fff;
-  box-shadow: 0 18px 45px rgba(18, 32, 70, 0.24);
-  text-align: center;
-}
-
-:where(html[data-ui-theme="warm"]) .equipment-purchase-card {
-  width: min(22rem, 100%);
-  padding: 1.25rem;
-  border: 2px solid var(--border-strong);
-  border-radius: var(--radius-lg);
-  background: var(--surface-strong);
-  box-shadow: var(--shadow-strong);
-  text-align: center;
-}
-
-.equipment-purchase-card h3 {
-  margin: 0 0 0.55rem;
-}
-
-.equipment-purchase-description {
-  margin: 0 0 1rem;
-  color: var(--text-body);
+.app-dialog__header .equipment-shop__balance {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
   font-weight: 700;
 }
 
-.equipment-purchase-english {
-  margin: -0.85rem 0 1rem;
-  color: var(--text-muted);
-  font-size: var(--fs-sm);
-  font-weight: 600;
+.equipment-shop__header-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.equipment-purchase-english[hidden] {
+.equipment-shop__cart-button {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 44px;
+  width: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  margin: 0;
+  padding: 0;
+}
+
+.equipment-shop__badge {
+  position: absolute;
+  top: -0.4rem;
+  right: -0.4rem;
+  min-width: 1.3rem;
+  height: 1.3rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  color: var(--on-accent);
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  line-height: 1.3rem;
+  text-align: center;
+  pointer-events: none;
+}
+
+.equipment-shop__badge[hidden],
+.equipment-shop__categories[hidden],
+.equipment-shop__cart-empty[hidden] {
   display: none;
 }
 
-:where(html:not([data-ui-theme="warm"])) .equipment-purchase-balance {
-  margin: -0.35rem 0 1rem;
-  padding: 0.55rem 0.7rem;
-  border-radius: 0.7rem;
-  background: rgba(232, 240, 255, 0.9);
-  color: var(--text);
+.equipment-shop__header-actions .equipment-shop__clear {
+  width: auto;
+  min-height: 44px;
+  margin: 0;
+  padding: 0 0.85rem;
   font-size: var(--fs-sm);
-  font-weight: 800;
 }
 
-:where(html[data-ui-theme="warm"]) .equipment-purchase-balance {
-  margin: -0.35rem 0 1rem;
-  padding: 0.55rem 0.7rem;
-  border-radius: var(--radius-sm);
-  background: var(--surface-soft);
-  color: var(--text);
-  font-size: var(--fs-sm);
-  font-weight: 800;
+.equipment-shop {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
 }
 
-.equipment-purchase-quantity-label {
-  display: grid;
-  grid-template-columns: 1fr minmax(5rem, 7rem);
+.equipment-shop__toolbar {
+  display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin: 0 0 1rem;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+}
+
+.equipment-shop__search {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  min-height: 2.5rem;
+  margin: 0;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--input-bg);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-base);
+}
+
+.equipment-shop__search:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+.equipment-shop__category-toggle {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.35rem;
+  width: auto;
+  min-height: 2.5rem;
+  margin: 0;
+  padding: 0.35rem 0.8rem;
+  font-size: var(--fs-sm);
+  white-space: nowrap;
+}
+
+.equipment-shop__category-arrow {
+  font-size: 0.8em;
+}
+
+.equipment-shop .equipment-shop__category-toggle.is-expanded {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+}
+
+.equipment-shop__categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0 1rem 0.75rem;
+}
+
+.equipment-shop__category {
+  width: auto;
+  min-height: 2.2rem;
+  margin: 0;
+  padding: 0.3rem 0.7rem;
+  font-size: var(--fs-sm);
+}
+
+/* Selected category, active filter and cart count share the primary action colour. */
+:where(html:not([data-ui-theme="warm"])) .equipment-shop .equipment-shop__category[aria-pressed="true"],
+:where(html:not([data-ui-theme="warm"])) .equipment-shop .equipment-shop__category-toggle.is-filtered,
+:where(html:not([data-ui-theme="warm"])) .equipment-shop__badge {
+  border-color: var(--accent-strong);
+  background: var(--accent-strong);
+  color: var(--on-accent);
+}
+
+:where(html[data-ui-theme="warm"]) .equipment-shop .equipment-shop__category[aria-pressed="true"],
+:where(html[data-ui-theme="warm"]) .equipment-shop .equipment-shop__category-toggle.is-filtered,
+:where(html[data-ui-theme="warm"]) .equipment-shop__badge {
+  border-color: var(--border-strong);
+  background: var(--action-fill);
+  color: var(--on-accent);
+}
+
+.equipment-shop__list {
+  flex: 1 1 auto;
+  min-height: 8rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 1rem 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.equipment-shop__section-title {
+  margin: 0.85rem 0 0.3rem;
+  color: var(--accent-strong);
+  font-size: var(--fs-base);
+}
+
+.equipment-shop__items,
+.equipment-shop__cart-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.equipment-shop__group {
+  padding: 0.55rem 0 0.15rem;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  font-weight: 800;
+}
+
+.equipment-shop__item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.equipment-shop__item--scroll {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.equipment-shop__item-name,
+.equipment-shop__cart-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.15rem 0.6rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.equipment-shop__cart-name {
+  font-weight: 700;
+}
+
+.equipment-shop__detail {
+  display: inline;
+  width: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text);
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.equipment-shop__detail:hover,
+.equipment-shop__detail:focus-visible {
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+  color: var(--accent-strong);
+}
+
+.equipment-shop__price,
+.equipment-shop__subtotal {
+  color: var(--text-body);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.equipment-shop__in-cart {
+  color: var(--accent-strong);
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.equipment-shop__add {
+  width: auto;
+  min-width: 3.5rem;
+  min-height: 2.4rem;
+  margin: 0;
+  padding: 0.3rem 0.75rem;
+  font-size: var(--fs-sm);
+}
+
+.equipment-shop__scroll-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.equipment-shop__scroll-options select {
+  flex: 1 1 9rem;
+  width: auto;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 2.4rem;
+  margin: 0;
+  padding: 0.35rem 0.6rem;
+}
+
+.app-dialog__body .equipment-shop__empty,
+.app-dialog__body .equipment-shop__cart-empty {
+  margin: 0.75rem 0;
+  color: var(--text-muted);
+}
+
+.equipment-shop__cart-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.equipment-shop__quantity {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.equipment-shop__step {
+  width: 2.2rem;
+  min-width: 2.2rem;
+  min-height: 2.2rem;
+  margin: 0;
+  padding: 0;
+  line-height: 1;
+}
+
+.equipment-shop input.equipment-shop__quantity-input {
+  flex: 0 0 3.6rem;
+  width: 3.6rem;
+  min-height: 2.2rem;
+  margin: 0;
+  padding: 0.2rem;
+  font-size: var(--fs-base);
+  text-align: center;
+}
+
+.equipment-shop__remove {
+  width: auto;
+  min-height: 2.2rem;
+  margin: 0;
+  padding: 0.25rem 0.6rem;
+  font-size: var(--fs-sm);
+}
+
+/* Footer: total or shortfall on the left, narrow action buttons on the right; the text wraps above when space runs out. */
+.app-dialog[data-variant="equipment-shop"] .app-dialog__actions,
+.app-dialog[data-variant="equipment-shop-cart"] .app-dialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.app-dialog[data-variant="equipment-shop"] .app-dialog__actions button,
+.app-dialog[data-variant="equipment-shop-cart"] .app-dialog__actions button {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 5.5rem;
+  padding-inline: 0.9rem;
+}
+
+.equipment-shop__footer-buttons {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.55rem;
+  margin-left: auto;
+}
+
+.equipment-shop__footer-text {
+  flex: 1 1 13rem;
+  min-width: 0;
+  margin: 0;
   color: var(--text);
   font-weight: 800;
   text-align: left;
 }
 
-.equipment-purchase-quantity {
-  min-height: 2.5rem;
-  margin: 0;
-  text-align: center;
+.equipment-shop__footer-text:empty {
+  flex-basis: 0;
 }
 
-.equipment-purchase-actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.65rem;
+.equipment-shop__footer-text.is-shortfall {
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--warning-border);
+  border-radius: var(--radius-sm);
+  background: var(--warning-soft);
+  color: var(--warning);
+  font-size: var(--fs-sm);
+  font-weight: 700;
 }
 
-.equipment-purchase-actions button {
-  margin: 0;
+.app-dialog[data-variant="equipment-detail"] .app-dialog__surface {
+  width: min(100%, 40rem);
 }
 
-.equipment-purchase-free {
-  grid-column: 1 / -1;
+.app-dialog__body .equipment-detail-dialog__meta {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+
+@media (max-width: 520px) {
+  .app-dialog[data-variant="equipment-shop"] .app-dialog__surface,
+  .app-dialog[data-variant="equipment-shop-cart"] .app-dialog__surface {
+    height: 92vh;
+    height: 92dvh;
+  }
+
+  .equipment-shop__toolbar,
+  .equipment-shop__list {
+    padding-inline: 0.8rem;
+  }
+
+  .equipment-shop__categories {
+    padding-inline: 0.8rem;
+  }
+
+  .equipment-shop__item--scroll {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .equipment-shop__item--scroll .equipment-shop__scroll-options {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .equipment-shop__item--scroll .equipment-shop__add {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
+
+@media (max-width: 340px) {
+  .equipment-shop__cart-line {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "name name"
+      "quantity remove";
+  }
+
+  .equipment-shop__cart-name { grid-area: name; }
+  .equipment-shop__quantity { grid-area: quantity; }
+  .equipment-shop__remove { grid-area: remove; }
 }
 
 #tab-actions .form-row.small-text {
@@ -17926,7 +18307,6 @@ html[data-theme="dark"] .circle-checkbox,
 html[data-theme="dark"] .weapon-attack-fields input,
 html[data-theme="dark"] .weapon-attack-fields .weapon-attack-free-note,
 html[data-theme="dark"] #attack-calculation-popup,
-html[data-theme="dark"] .equipment-purchase-card,
 html[data-theme="dark"] #tab-actions .form-row.small-text input,
 html[data-theme="dark"] .spell-search-results,
 html[data-theme="dark"] .equipment-search-results,
@@ -17946,12 +18326,6 @@ html[data-theme="dark"] .pdf-export-flow-modal__card .pdf-export-format-option,
 html[data-theme="dark"] .pdf-export-flow-modal__button--secondary {
   border-color: var(--border-strong);
   background: var(--input-bg);
-  color: var(--text);
-}
-
-html[data-theme="dark"] .equipment-purchase-balance {
-  border: 1px solid var(--border-strong);
-  background: var(--surface-muted);
   color: var(--text);
 }
 
@@ -18053,7 +18427,6 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] .pdf-export-check-success 
 }
 
 html[data-theme="dark"] .money-modal,
-html[data-theme="dark"] .equipment-purchase-modal,
 html[data-theme="dark"] #equipment-detail-modal,
 html[data-theme="dark"] #ability-choice-modal,
 html[data-theme="dark"] #point-buy-modal,
@@ -18233,7 +18606,7 @@ html[data-theme="dark"] #tour-prev-btn {
 }
 
 html[data-theme="dark"] .site-footer a,
-html[data-theme="dark"] .equipment-purchase-link,
+html[data-theme="dark"] .equipment-item-link,
 html[data-theme="dark"] .feat-icon-btn--add {
   color: var(--accent);
 }

@@ -81,7 +81,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261025-pdf-names">
+  <link rel="stylesheet" href="styles.css?v=20261025-equipment-shop">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261023-escape-focus" defer></script>
   <script src="monster.js?v=20261025-beast-perception" defer></script>
@@ -90,7 +90,7 @@
   <script src="backgrounds.js?v=20261003-background-flavor" defer></script>
   <script src="tool-data.js?v=20261008-class-tools" defer></script>
   <script src="feats.js?v=20261021-feat-rule-tips" defer></script>
-  <script src="equipment-notes.js?v=20261025-item-names" defer></script>
+  <script src="equipment-notes.js?v=20261025-equipment-shop" defer></script>
   <script src="spell-list.js?v=20261014-class-lookup" defer></script>
   <script src="condition.js?v=20261021-bonus-wording" defer></script>
   <script src="action-panel.js?v=20261024-action-english" defer></script>
@@ -1113,6 +1113,7 @@
       <div class="money-balance-header">
         <h4 class="money-title">總財產</h4>
         <div class="money-header-actions">
+          <button type="button" id="money-shop-open" class="money-secondary-btn" data-equipment-shop-open aria-haspopup="dialog">商店</button>
           <button type="button" id="money-adjust-toggle" class="money-secondary-btn">調整餘額</button>
           <button type="button" id="money-log-toggle" class="money-secondary-btn">最近交易</button>
         </div>
@@ -2978,7 +2979,8 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
   globalThis.shield = globalThis.shield || [];
 </script>
 <script src="equipment-data.js?v=20261024-equipment-english" defer></script>
-<script src="search.js?v=20261024-equipment-english" defer></script>
+<script src="search.js?v=20261025-equipment-shop" defer></script>
+<script src="equipment-shop.js?v=20261025-equipment-shop" defer></script>
 
 <script>
 function getModifier(statId) {
@@ -4834,7 +4836,6 @@ const SHARE_OMITTED_IDS = new Set([
   "dice-system-toggle",
   "spell-search",
   "equipment-search",
-  "equipment-purchase-quantity",
 
   "lifedicen",
   "heroic-inspiration",
@@ -5494,7 +5495,7 @@ let autosaveDirty = false;
 let autosaveSuspended = false;
 let autosaveClearing = false;
 let autosaveRestoreBlocked = false;
-const AUTOSAVE_EXCLUDED_IDS = new Set(["spell-search", "equipment-search", "equipment-purchase-quantity", "dice-system-toggle"]);
+const AUTOSAVE_EXCLUDED_IDS = new Set(["spell-search", "equipment-search", "dice-system-toggle"]);
 
 function getAutosaveElements(root = document) {
   return Array.from(root.querySelectorAll("input, select, textarea"))
@@ -5969,40 +5970,62 @@ function setupMoneyTracker() {
     document.querySelectorAll(".money-modal:not([hidden])").forEach(closeModal);
   });
 
-  document.addEventListener("equipment:purchase", async (event) => {
-    const { name, amount, currency, quantity = 1, free = false } = event.detail || {};
-    const currencyIds = { 銅幣: "cp", 銀幣: "sp", 金幣: "gp", 白金幣: "pp" };
-    const currencyId = currencyIds[currency];
-    if (!name || !Number.isFinite(amount) || !Number.isInteger(quantity) || quantity < 1 || (!free && !currencyId)) return;
-    const totalAmount = amount * quantity;
-    const purchaseParts = currencyId ? Object.fromEntries(ids.map((id) => [id, id === currencyId ? totalAmount : 0])) : null;
-    if (!free && !(await recordTransaction({ type: "expense", note: `購買${quantity === 1 ? name : `${name} ×${quantity}`}`, amountCopper: totalAmount * rates[currencyId], amountParts: purchaseParts }))) return;
-    if (free) appendLog({ type: "adjustment", note: `免費取得${quantity === 1 ? name : `${name} ×${quantity}`}`, amountCopper: 0, balanceAfterCopper: readTotal(), createdAt: new Date().toISOString() });
-
-    const gearNameOverrides = {
-      "聖物匣（手持）": "聖物匣", "徽章（附在布料或盾牌上）": "徽章", "護身符（佩戴或手持）": "護身符",
-      "法杖（可作為長棍）": "法杖（長棍）", "木制法杖（可作為長棍）": "法杖（長棍）", "箭矢": "箭矢(20)",
-      "弩矢": "弩矢(20)", "子彈，火器": "子彈(10)", "彈丸，投石索": "彈丸(20)", "針": "針(50)"
-    };
-    const gearName = gearNameOverrides[name] || name;
+  // 商店結帳入口：整張購物清單記一筆交易，再把品項合併進攜帶物品的「購買物品：」行。
+  const purchaseCurrencyIds = { 銅幣: "cp", 銀幣: "sp", 金幣: "gp", 白金幣: "pp" };
+  const gearNameOverrides = {
+    "聖物匣（手持）": "聖物匣", "徽章（附在布料或盾牌上）": "徽章", "護身符（佩戴或手持）": "護身符",
+    "法杖（可作為長棍）": "法杖（長棍）", "木制法杖（可作為長棍）": "法杖（長棍）", "箭矢": "箭矢(20)",
+    "弩矢": "弩矢(20)", "子彈，火器": "子彈(10)", "彈丸，投石索": "彈丸(20)", "針": "針(50)"
+  };
+  const describePurchasedItems = (items) => items
+    .map(({ label, quantity }) => (quantity === 1 ? label : `${label} ×${quantity}`))
+    .join("、");
+  const mergePurchasedGear = (items) => {
     const gearNotes = byId("gear-notes");
-    if (gearNotes) {
-      const lines = gearNotes.value.split("\n");
-      const existingItems = lines[0]?.startsWith("購買物品：") ? lines.shift().slice("購買物品：".length).split("、").filter(Boolean) : [];
+    if (!gearNotes) return;
+    const lines = gearNotes.value.split("\n");
+    const existingItems = lines[0]?.startsWith("購買物品：") ? lines.shift().slice("購買物品：".length).split("、").filter(Boolean) : [];
+    const merged = items.reduce((entries, { gearName, quantity }) => {
       let combinedQuantity = quantity;
-      const remaining = existingItems.filter((item) => {
+      const remaining = entries.filter((item) => {
         const match = item.match(/^(.*?) ×(\d+)$/u);
         if ((match ? match[1] : item) !== gearName) return true;
         combinedQuantity += match ? Number(match[2]) : 1;
         return false;
       });
       remaining.push(combinedQuantity === 1 ? gearName : `${gearName} ×${combinedQuantity}`);
-      lines.unshift(`購買物品：${remaining.join("、")}`);
-      gearNotes.value = lines.join("\n");
-      gearNotes.dispatchEvent(new Event("input", { bubbles: true }));
+      return remaining;
+    }, existingItems);
+    lines.unshift(`購買物品：${merged.join("、")}`);
+    gearNotes.value = lines.join("\n");
+    gearNotes.dispatchEvent(new Event("input", { bubbles: true }));
+  };
+  const purchaseItems = async (requestedItems, { free = false } = {}) => {
+    const items = (Array.isArray(requestedItems) ? requestedItems : []).map((item) => {
+      const label = String(item?.name || "").trim();
+      const currencyId = purchaseCurrencyIds[item?.currency];
+      const amount = Number(item?.amount);
+      const quantity = Number(item?.quantity);
+      if (!label || !currencyId || !Number.isSafeInteger(amount) || amount < 1
+        || !Number.isInteger(quantity) || quantity < 1 || quantity > 999) return null;
+      const gearName = String(item.gearName || gearNameOverrides[label] || label).trim();
+      return { label, gearName, quantity, currencyId, total: amount * quantity };
+    });
+    if (!items.length || items.includes(null)) return false;
+    const note = describePurchasedItems(items);
+    if (free) {
+      appendLog({ type: "adjustment", note: `免費取得${note}`, amountCopper: 0, balanceAfterCopper: readTotal(), createdAt: new Date().toISOString() });
+    } else {
+      const amountParts = Object.fromEntries(ids.map((id) => [id, items
+        .filter((item) => item.currencyId === id)
+        .reduce((sum, item) => sum + item.total, 0)]));
+      if (!(await recordTransaction({ type: "expense", note: `購買${note}`, amountCopper: toCopperValue(amountParts), amountParts }))) return false;
     }
+    mergePurchasedGear(items);
     scheduleSaveAllFields();
-  });
+    return true;
+  };
+  window.MoneyTracker = Object.freeze({ readTotal, formatAmount, purchaseItems });
 
   renderLogList();
   updateSummary();

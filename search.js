@@ -8,8 +8,11 @@
  *   結果點擊交給 window.autoPrepareSpellFromFeature(spellId, trigger)，
  *   由宿主負責詳情、準備法術與角色資料保存。
  * - 裝備來源：equipment-data.js 的 globalThis 陣列，及 equipment-notes.js
- *   產生的 #equipment-notes-section（summary、小文字區、購買連結結構需相容）。
+ *   產生的 #equipment-notes-section（summary、小文字區、品名連結結構需相容）。
  *   索引於首次搜尋建立；務必等資料與說明 DOM 就緒再開放操作。
+ * - 詳情的「加入購物清單」讀取 equipment-notes.js 的 EQUIPMENT_SHOP_ITEMS，
+ *   交給 equipment-shop.js 的 window.EquipmentShop；商店內改用
+ *   openEquipmentDetailDialog() 以 AppDialog 疊在商店視窗上。
  * - 此檔放在 equipment-data.js 之後，以帶版本的 <script defer src> 載入。
  *   HTML 與 CSS 不由此檔產生；搜尋開關／切頁由 scroll-to-top.js 負責。
  * - 保留 window.searchAllSpells、clearSpellSearchResults、applyEquipmentFilter，
@@ -608,47 +611,67 @@
       ${entry.tableHtml ? `<div class="equipment-detail-table">${entry.tableHtml}</div>` : ""}`;
   }
 
-  function renderEquipmentPurchaseActions(entry, modal, selectedName = "") {
+  // 商店品項由 equipment-notes.js 依說明原文整理；此處只挑出屬於該詳情的品項。
+  function getEquipmentShopItems(entry) {
+    return (globalThis.EQUIPMENT_SHOP_ITEMS || []).filter(item => item.name === entry.name || item.group === entry.name);
+  }
+
+  function formatShopItemLabel(item) {
+    return `${item.variant ? `${item.name}（${item.variant}）` : item.name}，${item.amount} ${item.currency}`;
+  }
+
+  function renderEquipmentShopActions(entry, modal, selectedName = "") {
     const actions = modal.querySelector(".equipment-detail-modal__actions");
     actions.replaceChildren();
-    const sourceLinks = [...document.querySelectorAll("#equipment-notes-section .equipment-purchase-link")];
-    const directLink = sourceLinks.find(link => link.textContent.trim() === entry.name);
-    // 多種品項沿用原卡片已建立的購買連結，不另行解析價格或維護交易資料。
-    const tableNames = new Set([...modal.querySelectorAll(".equipment-detail-table .equipment-purchase-link")]
-      .map(link => link.textContent.trim()));
-    const links = directLink ? [directLink] : sourceLinks.filter(link => {
-      const name = link.textContent.trim();
-      return tableNames.has(name) || new RegExp(`(?:^|[\\n：，；])\\s*${escapeRegExp(name)}（`, "u").test(entry.text || "");
-    });
-    actions.hidden = !links.length;
-    if (!links.length) return;
+    const items = getEquipmentShopItems(entry);
+    actions.hidden = !items.length || !globalScope.EquipmentShop;
+    if (actions.hidden) return;
 
-    const purchase = (link) => {
+    const openShop = (options) => {
+      const trigger = equipmentDetailTrigger;
       closeEquipmentDetail();
-      link.click();
+      globalScope.EquipmentShop.open({ ...options, trigger });
     };
+    const button = document.createElement("button");
+    button.type = "button";
+    // 法術卷軸須在商店選擇環階與法術，其他品項直接加入購物清單。
+    if (items.some(item => Number.isInteger(item.spellLevel))) {
+      button.textContent = "前往商店選擇法術";
+      button.addEventListener("click", () => openShop({ focusName: entry.name }));
+      actions.appendChild(button);
+      return;
+    }
     let select;
-    if (links.length > 1) {
+    if (items.length > 1) {
       select = document.createElement("select");
       select.setAttribute("aria-label", "選擇購買品項");
-      links.forEach((link, index) => {
+      items.forEach((item, index) => {
         const option = document.createElement("option");
         option.value = String(index);
-        option.textContent = link.getAttribute("aria-label")?.replace(/^購買/u, "") || link.textContent;
+        option.textContent = formatShopItemLabel(item);
         select.appendChild(option);
       });
-      const selectedIndex = links.findIndex(link => link.textContent.trim() === selectedName);
+      const selectedIndex = items.findIndex(item => item.name === selectedName);
       if (selectedIndex >= 0) select.value = String(selectedIndex);
       actions.appendChild(select);
     }
-    const button = document.createElement("button");
-    button.type = "button";
-    button.textContent = "購買";
-    button.addEventListener("click", () => purchase(links[select ? Number(select.value) : 0]));
+    button.textContent = "加入購物清單";
+    button.addEventListener("click", () => openShop({ addKey: items[select ? Number(select.value) : 0].key }));
     actions.appendChild(button);
-    modal.querySelectorAll(".equipment-detail-table .equipment-purchase-link").forEach(link => {
-      const sourceLink = links.find(source => source.textContent.trim() === link.textContent.trim());
-      if (sourceLink) link.addEventListener("click", () => purchase(sourceLink));
+  }
+
+  // 詳情表格是說明原文的複本：品名連結改回純文字，並補上英文名稱。
+  function renderEquipmentDetailContent(content, entry) {
+    content.innerHTML = entry.data ? renderEquipmentDataDetail(entry) : renderEquipmentTextDetail(entry);
+    content.querySelectorAll(".equipment-detail-table .equipment-item-link").forEach(link => link.replaceWith(link.textContent));
+    content.querySelectorAll(".equipment-detail-table tbody tr").forEach(row => {
+      const english = getEquipmentEnglishName(row.cells[0]?.textContent);
+      if (!english) return;
+      const label = document.createElement("span");
+      label.className = "equipment-detail-english";
+      label.lang = "en";
+      label.textContent = english;
+      row.cells[0].append(" ", label);
     });
   }
 
@@ -662,17 +685,8 @@
     englishTitle.textContent = getEquipmentEnglishName(entry.name);
     englishTitle.hidden = !englishTitle.textContent;
     const content = modal.querySelector("#equipment-detail-content");
-    content.innerHTML = entry.data ? renderEquipmentDataDetail(entry) : renderEquipmentTextDetail(entry);
-    content.querySelectorAll(".equipment-detail-table tbody tr").forEach(row => {
-      const english = getEquipmentEnglishName(row.cells[0]?.textContent);
-      if (!english) return;
-      const label = document.createElement("span");
-      label.className = "equipment-detail-english";
-      label.lang = "en";
-      label.textContent = english;
-      row.cells[0].append(" ", label);
-    });
-    renderEquipmentPurchaseActions(entry, modal, resultEntry.parent ? resultEntry.name : "");
+    renderEquipmentDetailContent(content, entry);
+    renderEquipmentShopActions(entry, modal, resultEntry.parent ? resultEntry.name : "");
     content.scrollTop = 0;
     modal.inert = false;
     modal.classList.add("open");
@@ -681,16 +695,63 @@
     modal.querySelector(".equipment-detail-modal__close")?.focus();
   }
 
-  function openEquipmentDetailByName(value, trigger) {
+  function findEquipmentEntryByName(value) {
     const name = String(value || "").trim();
-    if (!name) return false;
+    if (!name) return null;
     initializeEquipmentSearchIndex();
     // 樂器、賭具的個別選項沿用搜尋中的整組說明，不另複製規則文本。
     const toolGroup = globalScope.ToolProficiencyCatalog?.groups.find(group => group.options.includes(name));
-    const entry = equipmentSearchIndex.find(candidate => candidate.name === name)
-      || equipmentSearchIndex.find(candidate => candidate.kind === "tool" && candidate.name === toolGroup?.label);
+    return equipmentSearchIndex.find(candidate => candidate.name === name)
+      || equipmentSearchIndex.find(candidate => candidate.kind === "tool" && candidate.name === toolGroup?.label)
+      || null;
+  }
+
+  function openEquipmentDetailByName(value, trigger) {
+    const entry = findEquipmentEntryByName(value);
     if (!entry) return false;
     openEquipmentDetail(entry, trigger);
+    return true;
+  }
+
+  // 商店視窗內的詳情：以可疊加的 AppDialog 呈現同一份內容，關閉後回到商店。
+  function openEquipmentDetailDialog(value, trigger) {
+    const resultEntry = findEquipmentEntryByName(value);
+    if (!resultEntry) return false;
+    const entry = resultEntry.parent || resultEntry;
+    window.AppDialog.showMessage({
+      title: entry.name,
+      variant: "equipment-detail",
+      allowNested: true,
+      trigger,
+      confirmLabel: "關閉",
+      renderContent(body) {
+        const meta = document.createElement("p");
+        meta.className = "equipment-detail-dialog__meta";
+        meta.textContent = entry.subtype || entry.category;
+        const english = getEquipmentEnglishName(entry.name);
+        if (english) {
+          const label = document.createElement("span");
+          label.className = "equipment-detail-english";
+          label.lang = "en";
+          label.textContent = english;
+          meta.append("｜", label);
+        }
+        const content = document.createElement("div");
+        content.className = "equipment-detail-dialog__content";
+        renderEquipmentDetailContent(content, entry);
+        content.addEventListener("click", (event) => {
+          const ruleTrigger = event.target.closest?.("[data-equipment-rule-kind][data-equipment-rule]");
+          if (!ruleTrigger) return;
+          const kind = ruleTrigger.dataset.equipmentRuleKind;
+          const name = ruleTrigger.dataset.equipmentRule;
+          const description = globalThis.WEAPON_RULE_DESCRIPTIONS?.[kind]?.[name];
+          if (!description) return;
+          const category = kind === "mastery" ? "精通" : kind === "armor" ? "防具規則" : "武器屬性";
+          window.AppDialog.showMessage({ title: `${category}：${name}`, message: description, trigger: ruleTrigger });
+        });
+        body.append(meta, content);
+      }
+    });
     return true;
   }
 
@@ -777,7 +838,7 @@
   });
 
   // 公開相容入口；索引與其餘輔助函式保留於模組內。
-  Object.assign(globalScope, { searchAllSpells, clearSpellSearchResults, openSpellBrowser, applyEquipmentFilter, openEquipmentDetailByName });
+  Object.assign(globalScope, { searchAllSpells, clearSpellSearchResults, openSpellBrowser, applyEquipmentFilter, openEquipmentDetailByName, openEquipmentDetailDialog });
 
   // 保留法術索引的載入時預建；裝備說明在 DOMContentLoaded 產生，仍延後到搜尋時建立。
   if (document.readyState === "complete") {
