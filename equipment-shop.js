@@ -4,7 +4,10 @@
  * - 品項：equipment-notes.js 依說明原文整理的 EQUIPMENT_SHOP_ITEMS；不另存價格或分類。
  * - 結帳：index.html 的 window.MoneyTracker.purchaseItems() 記一筆交易並寫入攜帶物品。
  * - 詳情：search.js 的 openEquipmentDetailDialog()，以 AppDialog 疊在商店上。
- * - 購物清單：標題列購物車按鈕開啟的 AppDialog，與商店同尺寸疊放，結帳成功時兩者一起關閉。
+ * - 分類：武器、護甲、工具、法器與套組沿用說明原文的區塊；冒險用品、照明、容器、服裝、彈藥與魔法
+ *   依 CURATED_CATEGORIES 排列，同一品項可列在多個類別，「全部」只在 ALL_VIEW_HOMES 指定處出現一次。
+ * - 購物清單：標題列購物車按鈕開啟的 AppDialog，與商店同尺寸疊放；返回與 Escape 只關閉清單，
+ *   關閉鈕與結帳成立時連同商店一起關閉。
  * - 法術卷軸：環階與法術取自 SpellCatalog，名稱寫成「法術名稱法術卷軸」。
  * - 購物清單、分類、展開狀態與搜尋只留在記憶體，不進角色 JSON、分享或 autosave。
  */
@@ -12,9 +15,31 @@
   "use strict";
 
   const CATEGORIES = Object.freeze([
-    ["all", "全部"], ["weapon", "武器"], ["armor", "護甲"], ["tool", "工具"],
-    ["gear", "冒險用品"], ["ammo", "彈藥"], ["focus", "法器"], ["pack", "套組"]
+    ["all", "全部"], ["weapon", "武器"], ["armor", "護甲"], ["tool", "工具"], ["gear", "冒險用品"],
+    ["light", "照明"], ["container", "容器"], ["clothing", "服裝"], ["ammo", "彈藥"],
+    ["focus", "法器"], ["magic", "魔法"], ["pack", "套組"]
   ]);
+  // 冒險用品依用途分組，其餘類別依此順序列出；品名對應 equipment-notes.js 的說明原文。
+  const CURATED_CATEGORIES = Object.freeze({
+    gear: [
+      ["野營與生活", ["口糧", "睡袋", "毯子", "帳篷", "火絨盒", "油", "香水"]],
+      ["醫療與藥劑", ["醫療包", "抗毒劑", "治療藥水"]],
+      ["攀爬與探索", ["繩索", "弦線", "抓鉤", "攀爬工具", "爬梯", "長桿", "長鐵釘", "滑輪組", "撬棍", "鏟子", "便攜式攻城錘"]],
+      ["戰鬥與陷阱", ["強酸", "煉金火焰", "聖水", "基礎毒藥", "捕網", "鐵蒺藜", "滾珠", "狩獵陷阱"]],
+      ["束縛與上鎖", ["鏈條", "鐐銬", "鎖"]],
+      ["觀察與信號", ["放大鏡", "望遠鏡", "鏡子", "信號笛", "鈴鐺"]],
+      ["書寫與學識", ["紙", "羊皮紙", "墨水", "墨水筆", "書籍", "地圖"]]
+    ],
+    light: [["", ["火把", "蠟燭", "油燈", "附蓋提燈", "牛眼提燈", "油", "火絨盒"]]],
+    container: [["", ["背包", "小包", "麻袋", "籃子", "箱子", "木桶", "手提桶", "鐵鍋", "壺", "水袋", "玻璃瓶", "扁瓶", "藥瓶", "地圖或捲軸盒"]]],
+    clothing: [["", ["旅行者服裝", "高檔服裝", "戲服", "長袍"]]],
+    ammo: [["", ["箭矢", "箭袋", "弩矢", "弩矢匣", "子彈，火器", "彈丸，投石索", "針", "小包"]]],
+    magic: [["", ["法術卷軸", "治療藥水", "材料包"]]]
+  });
+  // 列在多個類別的品項，在「全部」只出現在這裡指定的類別。
+  const ALL_VIEW_HOMES = Object.freeze({ 小包: "container", 油: "light", 火絨盒: "light", 治療藥水: "magic" });
+  const BACK_ICON = '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="M9 14 4 9l5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const CART_ICON = '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="M3 4h2.2l2.1 10.2a1.5 1.5 0 0 0 1.5 1.2h8.4a1.5 1.5 0 0 0 1.5-1.1L20.5 8H6.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="19.5" r="1.5" fill="currentColor"/><circle cx="17" cy="19.5" r="1.5" fill="currentColor"/></svg>';
   const QUANTITY_MAX = 999;
   const DISCLOSURE_MS = 390;
   const cart = new Map();
@@ -44,12 +69,13 @@
     return Array.isArray(globalScope.EQUIPMENT_SHOP_ITEMS) ? globalScope.EQUIPMENT_SHOP_ITEMS : [];
   }
 
-  function getItemCategory(item) {
-    return item.category === "scroll" ? "gear" : item.category;
-  }
-
   function getCategoryLabel(id) {
     return CATEGORIES.find(([categoryId]) => categoryId === id)?.[1] || "全部";
+  }
+
+  // 彈藥在名稱後標示每份數量，例如「箭矢 (20)」。
+  function getItemLabel(item) {
+    return item.bundle ? `${item.name} (${item.bundle})` : item.name;
   }
 
   function formatPrice(item) {
@@ -86,15 +112,51 @@
     return spellOptionsByLevel.get(level);
   }
 
-  function matchesKeyword(item) {
+  function matchesKeyword(item, section, group) {
     if (!keyword) return true;
     const english = globalScope.EQUIPMENT_ENGLISH_NAMES?.[item.name] || "";
-    return [item.name, item.variant, item.section, item.group, english]
+    return [getItemLabel(item), item.variant, section.title, group.name, english]
       .some(value => String(value || "").toLowerCase().includes(keyword));
   }
 
-  function getVisibleItems() {
-    return getItems().filter(item => (activeCategory === "all" || getItemCategory(item) === activeCategory) && matchesKeyword(item));
+  // 一個類別的分段：[{ title, groups: [{ name, items }] }]。
+  function getCategorySections(categoryId) {
+    const items = getItems();
+    const curated = CURATED_CATEGORIES[categoryId];
+    if (curated) {
+      const groups = curated.map(([name, names]) => ({ name, items: names.flatMap(itemName => items.filter(item => item.name === itemName)) }));
+      if (categoryId === "gear") {
+        // 說明原文日後新增、尚未分類的冒險用品列在最後，避免商店漏掉。
+        const placed = new Set(Object.values(CURATED_CATEGORIES).flatMap(layout => layout.flatMap(([, names]) => names)));
+        const others = items.filter(item => ["gear", "scroll", "ammo"].includes(item.category) && !placed.has(item.name));
+        if (others.length) groups.push({ name: "其他", items: others });
+      }
+      return [{ title: getCategoryLabel(categoryId), groups }];
+    }
+    // 武器、護甲、工具、法器與套組沿用說明原文的區塊、「多種」群組與順序。
+    const sections = [];
+    items.filter(item => item.category === categoryId).forEach(item => {
+      const title = categoryId === "focus" || categoryId === "pack" ? getCategoryLabel(categoryId) : item.section;
+      let section = sections.at(-1);
+      if (section?.title !== title) sections.push(section = { title, groups: [] });
+      let group = section.groups.at(-1);
+      if (group?.name !== item.group) section.groups.push(group = { name: item.group, items: [] });
+      group.items.push(item);
+    });
+    return sections;
+  }
+
+  // 「全部」依類別順序接續，跨類別品項只留在 ALL_VIEW_HOMES 指定的類別。
+  function getVisibleSections() {
+    const categoryIds = activeCategory === "all" ? CATEGORIES.slice(1).map(([id]) => id) : [activeCategory];
+    return categoryIds.flatMap(categoryId => getCategorySections(categoryId).map(section => ({
+      ...section,
+      groups: section.groups.map(group => ({
+        ...group,
+        items: group.items.filter(item => (activeCategory !== "all" || (ALL_VIEW_HOMES[item.name] || categoryId) === categoryId)
+          && matchesKeyword(item, section, group))
+      })).filter(group => group.items.length)
+    }))).filter(section => section.groups.length);
   }
 
   function getCartLines() {
@@ -127,14 +189,14 @@
     const key = spell ? `${item.key}|${spell.spellId}` : item.key;
     const name = spell ? `${spell.nameZh}法術卷軸` : item.name;
     const existing = cart.get(key);
-    const line = existing || { key, itemKey: item.key, name, gearName: spell ? name : "", amount: item.amount, currency: item.currency, copper: item.copper, quantity: 0 };
+    const line = existing || { key, itemKey: item.key, name, label: spell ? name : getItemLabel(item), gearName: spell ? name : "", amount: item.amount, currency: item.currency, copper: item.copper, quantity: 0 };
     line.quantity = Math.min(QUANTITY_MAX, line.quantity + quantity);
     cart.set(key, line);
     return line;
   }
 
   function createItemNameButton(item) {
-    const button = createButton("equipment-shop__detail", item.name);
+    const button = createButton("equipment-shop__detail", getItemLabel(item));
     button.setAttribute("aria-haspopup", "dialog");
     button.setAttribute("aria-label", `查看${item.name}的詳情`);
     button.addEventListener("click", () => {
@@ -153,7 +215,7 @@
 
   function handleAdded(line) {
     renderCartState();
-    announce(`已加入${line.name}，購物清單共 ${line.quantity} 個。`);
+    announce(`已加入${line.label}，購物清單共 ${line.quantity} 個。`);
   }
 
   function createItemRow(item) {
@@ -163,7 +225,7 @@
     name.append(createItemNameButton(item), createElement("span", "equipment-shop__price", formatPrice(item)));
     const count = createElement("span", "equipment-shop__in-cart");
     count.dataset.shopCount = item.key;
-    const add = createAddButton(item.name);
+    const add = createAddButton(getItemLabel(item));
     add.addEventListener("click", () => handleAdded(addToCart(item)));
     row.append(name, count, add);
     return row;
@@ -212,38 +274,30 @@
     return row;
   }
 
-  // 依說明原文的區塊（簡易武器、工匠工具…）與「多種」群組分段，順序沿用原文。
   function renderList() {
     if (!view) return;
-    const items = getVisibleItems();
+    const sections = getVisibleSections();
     const fragment = document.createDocumentFragment();
-    let sectionList = null;
-    let sectionName = "";
-    let groupName = "";
-    const renderedScrolls = new Set();
-    items.forEach(item => {
-      if (item.section !== sectionName) {
-        sectionName = item.section;
-        groupName = "";
-        const section = createElement("section", "equipment-shop__section");
-        section.appendChild(createElement("h3", "equipment-shop__section-title", sectionName));
-        sectionList = createElement("ul", "equipment-shop__items");
-        section.appendChild(sectionList);
-        fragment.appendChild(section);
-      }
-      if (item.group !== groupName) {
-        groupName = item.group;
-        if (groupName) sectionList.appendChild(createElement("li", "equipment-shop__group", groupName));
-      }
-      if (Number.isInteger(item.spellLevel)) {
-        if (renderedScrolls.has(item.name)) return;
-        renderedScrolls.add(item.name);
-        sectionList.appendChild(createScrollRow(items.filter(candidate => candidate.name === item.name && Number.isInteger(candidate.spellLevel))));
-        return;
-      }
-      sectionList.appendChild(createItemRow(item));
+    sections.forEach(({ title, groups }) => {
+      const section = createElement("section", "equipment-shop__section");
+      section.appendChild(createElement("h3", "equipment-shop__section-title", title));
+      const list = createElement("ul", "equipment-shop__items");
+      groups.forEach(({ name, items }) => {
+        if (name) list.appendChild(createElement("li", "equipment-shop__group", name));
+        const renderedScrolls = new Set();
+        items.forEach(item => {
+          if (!Number.isInteger(item.spellLevel)) {
+            list.appendChild(createItemRow(item));
+          } else if (!renderedScrolls.has(item.name)) {
+            renderedScrolls.add(item.name);
+            list.appendChild(createScrollRow(items.filter(candidate => candidate.name === item.name && Number.isInteger(candidate.spellLevel))));
+          }
+        });
+      });
+      section.appendChild(list);
+      fragment.appendChild(section);
     });
-    if (!items.length) fragment.appendChild(createElement("p", "equipment-shop__empty", keyword ? `找不到包含「${keywordText.trim()}」的物品。` : "此分類沒有物品。"));
+    if (!sections.length) fragment.appendChild(createElement("p", "equipment-shop__empty", keyword ? `找不到包含「${keywordText.trim()}」的物品。` : "此分類沒有物品。"));
     view.list.replaceChildren(fragment);
     view.list.scrollTop = 0;
     updateItemCounts();
@@ -287,11 +341,11 @@
     const item = createElement("li", "equipment-shop__cart-line");
     item.dataset.shopCartKey = line.key;
     const name = createElement("div", "equipment-shop__cart-name");
-    name.append(createElement("span", "", line.name), createElement("span", "equipment-shop__subtotal", `${line.amount * line.quantity} ${line.currency}`));
+    name.append(createElement("span", "", line.label), createElement("span", "equipment-shop__subtotal", `${line.amount * line.quantity} ${line.currency}`));
     const controls = createElement("div", "equipment-shop__quantity");
     const minus = createButton("equipment-shop__step", "−");
     minus.dataset.shopControl = "minus";
-    minus.setAttribute("aria-label", `減少${line.name}數量`);
+    minus.setAttribute("aria-label", `減少${line.label}數量`);
     minus.disabled = line.quantity <= 1;
     minus.addEventListener("click", () => setLineQuantity(line, line.quantity - 1));
     const input = createElement("input", "equipment-shop__quantity-input");
@@ -303,22 +357,22 @@
     input.value = String(line.quantity);
     input.dataset.stateTransient = "true";
     input.dataset.shopControl = "quantity";
-    input.setAttribute("aria-label", `${line.name}數量`);
+    input.setAttribute("aria-label", `${line.label}數量`);
     input.addEventListener("change", () => setLineQuantity(line, input.value));
     const plus = createButton("equipment-shop__step", "＋");
     plus.dataset.shopControl = "plus";
-    plus.setAttribute("aria-label", `增加${line.name}數量`);
+    plus.setAttribute("aria-label", `增加${line.label}數量`);
     plus.disabled = line.quantity >= QUANTITY_MAX;
     plus.addEventListener("click", () => setLineQuantity(line, line.quantity + 1));
     controls.append(minus, input, plus);
     const remove = createButton("equipment-shop__remove", "移除");
     remove.dataset.shopControl = "remove";
-    remove.setAttribute("aria-label", `從購物清單移除${line.name}`);
+    remove.setAttribute("aria-label", `從購物清單移除${line.label}`);
     remove.addEventListener("click", () => {
       cart.delete(line.key);
       renderCartState();
-      announce(`已移除${line.name}。`);
-      (cartView?.list.querySelector(".equipment-shop__remove") || cartView?.clear)?.focus();
+      announce(`已移除${line.label}。`);
+      (cartView?.list.querySelector(".equipment-shop__remove") || cartView?.back)?.focus();
     });
     item.append(name, controls, remove);
     return item;
@@ -332,6 +386,7 @@
     const total = getCartTotal();
     const balance = readBalance();
     cartView.title.textContent = quantity ? `購物清單（${quantity} 個）` : "購物清單";
+    cartView.total.textContent = `合計金額：${formatCopper(total)}`;
     cartView.list.replaceChildren(...lines.map(createCartLine));
     cartView.empty.hidden = lines.length > 0;
     cartView.clear.disabled = !lines.length;
@@ -339,7 +394,7 @@
     cartView.summary.classList.toggle("is-shortfall", lines.length > 0 && shortfall > 0);
     cartView.summary.textContent = !lines.length ? ""
       : shortfall > 0 ? `財產不足，尚缺 ${formatCopper(shortfall)}`
-        : `合計 ${formatCopper(total)}｜結帳後 ${formatCopper(balance - total)}`;
+        : `結帳後 ${formatCopper(balance - total)}`;
     setCheckoutDisabled(cartView.checkoutActions, cartView.root, !lines.length);
     if (focusedKey && focusedControl) {
       const selector = `[data-shop-cart-key="${CSS.escape(focusedKey)}"]`;
@@ -359,7 +414,7 @@
       renderCartState();
       return false;
     }
-    const summary = lines.map(line => (line.quantity === 1 ? line.name : `${line.name} ×${line.quantity}`)).join("、");
+    const summary = lines.map(line => (line.quantity === 1 ? line.label : `${line.label} ×${line.quantity}`)).join("、");
     cart.clear();
     globalScope.AppDialog.notify(`${free ? "已免費取得" : "已購買"}：${summary}，已加入攜帶物品。`, { tone: "success" });
     return true;
@@ -393,9 +448,61 @@
     group.append(...buttons, close);
   }
 
+  async function confirmClearCart() {
+    if (!cart.size || !cartView) return;
+    const confirmed = await globalScope.AppDialog.requestDecision({
+      title: "清空購物清單？",
+      message: "購物清單中的物品會全部移除。",
+      cancelLabel: "取消",
+      confirmLabel: "清空",
+      intent: "danger",
+      trigger: cartView.clear
+    });
+    if (!confirmed || !cartView) return;
+    cart.clear();
+    renderCartState();
+    announce("已清空購物清單。");
+    cartView.back.focus();
+  }
+
+  // 標題列：清空緊接在標題文字右側、下方為合計金額；右側依序為返回與關閉。
+  function decorateCartHeader(closeShop) {
+    const header = cartView.root.querySelector(".app-dialog__header");
+    const title = header.querySelector("h2");
+    const heading = createElement("div", "equipment-shop__heading");
+    const titleRow = createElement("div", "equipment-shop__title-row");
+    title.replaceWith(heading);
+    cartView.clear = createButton("equipment-shop__clear", "清空");
+    cartView.clear.setAttribute("aria-haspopup", "dialog");
+    cartView.clear.addEventListener("click", confirmClearCart);
+    titleRow.append(title, cartView.clear);
+    cartView.total = createElement("p", "equipment-shop__balance");
+    heading.append(titleRow, cartView.total);
+    cartView.title = title;
+
+    const close = header.querySelector(".app-dialog__close");
+    close.setAttribute("aria-label", "關閉購物清單與商店");
+    const back = createButton("equipment-shop__icon-button equipment-shop__back");
+    back.setAttribute("aria-label", "返回商店");
+    back.innerHTML = BACK_ICON;
+    let returning = false;
+    back.addEventListener("click", () => {
+      returning = true;
+      close.click();
+    });
+    // 在 AppDialog 關閉購物清單前（標題列的 capture 階段）記下要一併關閉商店；
+    // 使用者點擊時 Promise 回呼會在監聽器之間執行，太晚設定就趕不上。
+    header.addEventListener("click", event => {
+      if (event.target.closest?.(".app-dialog__close") === close && !returning) closeShop();
+    }, { capture: true });
+    createHeaderActions(cartView.root, [back]);
+    cartView.back = back;
+  }
+
   function openCartDialog(trigger) {
     if (cartView || !view) return;
     const checkoutActions = createCheckoutActions();
+    let closeShopAfter = false;
     const dialog = globalScope.AppDialog.showMessage({
       title: "購物清單",
       variant: "equipment-shop-cart",
@@ -420,23 +527,15 @@
       }
     });
     cartView.root = cartView.list.closest(".app-dialog");
-    cartView.title = cartView.root.querySelector(".app-dialog__header h2");
-    cartView.clear = createButton("equipment-shop__clear", "清空");
-    cartView.clear.addEventListener("click", () => {
-      cart.clear();
-      renderCartState();
-      announce("已清空購物清單。");
-      cartView?.root.querySelector(".app-dialog__close")?.focus();
-    });
-    createHeaderActions(cartView.root, [cartView.clear]);
+    decorateCartHeader(() => { closeShopAfter = true; });
     cartView.summary = createElement("p", "equipment-shop__footer-text");
     cartView.summary.setAttribute("aria-live", "polite");
     decorateActions(cartView.root, cartView.summary);
     renderCartState();
-    if (!cart.size) cartView.root.querySelector(".app-dialog__close")?.focus();
-    // 結帳成立後購物清單先關閉，再一併關閉商店，焦點回到開啟商店的按鈕。
+    if (!cart.size) cartView.back.focus();
+    // 購物清單關閉後，若是結帳成立或按下關閉鈕，再一併關閉商店，焦點回到開啟商店的按鈕。
     dialog.then(result => {
-      if (result === true) view?.root.querySelector(".app-dialog__close")?.click();
+      if (result === true || closeShopAfter) view?.root.querySelector(".app-dialog__close")?.click();
     });
   }
 
@@ -556,9 +655,9 @@
     view.balance = createElement("p", "equipment-shop__balance");
     heading.append(title, view.balance);
 
-    const cartButton = createButton("equipment-shop__cart-button");
+    const cartButton = createButton("equipment-shop__icon-button equipment-shop__cart-button");
     cartButton.setAttribute("aria-haspopup", "dialog");
-    cartButton.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="M3 4h2.2l2.1 10.2a1.5 1.5 0 0 0 1.5 1.2h8.4a1.5 1.5 0 0 0 1.5-1.1L20.5 8H6.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="19.5" r="1.5" fill="currentColor"/><circle cx="17" cy="19.5" r="1.5" fill="currentColor"/></svg>';
+    cartButton.innerHTML = CART_ICON;
     const badge = createElement("span", "equipment-shop__badge");
     badge.setAttribute("aria-hidden", "true");
     cartButton.appendChild(badge);

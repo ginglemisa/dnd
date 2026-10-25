@@ -6376,7 +6376,7 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   gap: 0.5rem;
 }
 
-.equipment-shop__cart-button {
+.equipment-shop__icon-button {
   position: relative;
   display: inline-grid;
   place-items: center;
@@ -6410,12 +6410,26 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   display: none;
 }
 
-.equipment-shop__header-actions .equipment-shop__clear {
-  width: auto;
-  min-height: 44px;
+/* Clear sits beside the cart title at text height, away from the corner buttons. */
+.equipment-shop__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.equipment-shop__title-row h2 {
   margin: 0;
-  padding: 0 0.85rem;
+}
+
+.equipment-shop__title-row .equipment-shop__clear {
+  width: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0 0.6rem;
   font-size: var(--fs-sm);
+  line-height: 1;
 }
 
 .equipment-shop {
@@ -6623,13 +6637,18 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
 }
 
 .equipment-shop__scroll-options select {
-  flex: 1 1 9rem;
+  flex: 1 1 10rem;
   width: auto;
   min-width: 0;
   max-width: 100%;
   min-height: 2.4rem;
   margin: 0;
   padding: 0.35rem 0.6rem;
+}
+
+/* The level choice only needs room for "1 環（50 金幣）"; the spell name takes the rest. */
+.equipment-shop__scroll-options .equipment-shop__scroll-level {
+  flex: 0 0 auto;
 }
 
 .app-dialog__body .equipment-shop__empty,
@@ -6662,7 +6681,10 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   line-height: 1;
 }
 
+/* − and ＋ already adjust the amount, so the native spinner is hidden and the field keeps its width for digits. */
 .equipment-shop input.equipment-shop__quantity-input {
+  appearance: textfield;
+  -moz-appearance: textfield;
   flex: 0 0 3.6rem;
   width: 3.6rem;
   min-height: 2.2rem;
@@ -6670,6 +6692,12 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   padding: 0.2rem;
   font-size: var(--fs-base);
   text-align: center;
+}
+
+.equipment-shop input.equipment-shop__quantity-input::-webkit-inner-spin-button,
+.equipment-shop input.equipment-shop__quantity-input::-webkit-outer-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
 }
 
 .equipment-shop__remove {

@@ -262,28 +262,28 @@ document.addEventListener("DOMContentLoaded", () => {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">弩矢</td>
       <td style="border:1px solid #aaa; padding:3px;">20</td>
-      <td style="border:1px solid #aaa; padding:3px;">匣子</td>
+      <td style="border:1px solid #aaa; padding:3px;">弩矢匣</td>
       <td style="border:1px solid #aaa; padding:3px;">1.5 磅</td>
       <td style="border:1px solid #aaa; padding:3px;">1 金幣</td>
     </tr>
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">子彈，火器</td>
       <td style="border:1px solid #aaa; padding:3px;">10</td>
-      <td style="border:1px solid #aaa; padding:3px;">袋子</td>
+      <td style="border:1px solid #aaa; padding:3px;">小包</td>
       <td style="border:1px solid #aaa; padding:3px;">2 磅</td>
       <td style="border:1px solid #aaa; padding:3px;">3 金幣</td>
     </tr>
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">彈丸，投石索</td>
       <td style="border:1px solid #aaa; padding:3px;">20</td>
-      <td style="border:1px solid #aaa; padding:3px;">袋子</td>
+      <td style="border:1px solid #aaa; padding:3px;">小包</td>
       <td style="border:1px solid #aaa; padding:3px;">1.5 磅</td>
       <td style="border:1px solid #aaa; padding:3px;">4 銅幣</td>
     </tr>
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">針</td>
       <td style="border:1px solid #aaa; padding:3px;">50</td>
-      <td style="border:1px solid #aaa; padding:3px;">袋子</td>
+      <td style="border:1px solid #aaa; padding:3px;">小包</td>
       <td style="border:1px solid #aaa; padding:3px;">1 磅</td>
       <td style="border:1px solid #aaa; padding:3px;">1 金幣</td>
     </tr>
@@ -745,7 +745,7 @@ DC 25 力量（運動）：掙斷鐐銬
   const shopItems = [];
   const shopItemKeys = new Set();
 
-  const addShopItem = (name, amount, currency, sectionInfo, group, variant = "") => {
+  const addShopItem = (name, amount, currency, sectionInfo, group, variant = "", bundle = 0) => {
     if (!sectionInfo) return;
     const key = variant ? `${name}|${variant}` : name;
     if (shopItemKeys.has(key)) return;
@@ -761,6 +761,8 @@ DC 25 力量（運動）：掙斷鐐銬
     // 多種價格的標題（如法術卷軸）依環階拆成品項，環階供商店選擇對應法術。
     const spellLevel = variant === "戲法" ? 0 : Number(variant.match(/^(\d+)\s*環$/u)?.[1]);
     if (variant && Number.isInteger(spellLevel)) item.spellLevel = spellLevel;
+    // 彈藥表的「數量」是每份價格包含的發數，例如箭矢 20 支。
+    if (bundle > 0) item.bundle = bundle;
     shopItems.push(Object.freeze(item));
   };
 
@@ -835,7 +837,9 @@ DC 25 力量（運動）：掙斷鐐銬
       const name = nameCell.textContent.trim();
       nameCell.textContent = "";
       nameCell.appendChild(makeItemLink(name));
-      addShopItem(name, priceMatch[1], priceMatch[2], sectionInfo, currentGroup);
+      const quantityColumn = [...(row.closest("table")?.querySelectorAll("thead th") || [])].findIndex(cell => cell.textContent.trim() === "數量");
+      const bundle = quantityColumn > 0 ? Number.parseInt(cells[quantityColumn]?.textContent, 10) : 0;
+      addShopItem(name, priceMatch[1], priceMatch[2], sectionInfo, currentGroup, "", bundle);
     };
 
     [...body.childNodes].forEach((node) => {
