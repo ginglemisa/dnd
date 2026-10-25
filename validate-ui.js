@@ -3029,6 +3029,15 @@ async function verifyJsonImportTransaction(browser, url) {
       assert.equal(Object.hasOwn(JSON.parse(exported.autosave), key), false, `${key} stays out of autosave`);
       assert.equal(Object.hasOwn(exported.share, key), false, `${key} stays out of share data`);
     }
+    const shareHash = await page.evaluate(() => encodeStateToHash(collectShareState()));
+    await page.goto(`${url}${shareHash}`);
+    await page.waitForFunction(() => window.SHARE_MODE === true && TabletopMode.getCharacterName() === "匯出角色");
+    const sharedExport = await page.evaluate(() => { const result = collectJsonExportText(); downloadStateAsJson(); return JSON.parse(result.text); });
+    for (const key of ["__tabletopAvatar", "__tabletopActionPreferences"]) {
+      assert.equal(Object.hasOwn(sharedExport, key), false, `share-mode JSON export omits the viewer's local ${key}`);
+    }
+    assert.equal(sharedExport.characterName, "匯出角色", "share-mode JSON export keeps the shared character");
+    await page.getByText("分享模式匯出的檔案不含角色圖片與跑團按鈕設定。").waitFor();
     await seed();
     await Promise.all([page.waitForEvent("load"), uploadText("tabletop-settings.json", exported.text)]);
     await page.waitForFunction(() => document.getElementById("gear-extra").value === "Exported" && !autosaveRestoreBlocked && !autosaveClearing);

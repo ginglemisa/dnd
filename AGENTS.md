@@ -19,7 +19,7 @@
 * 表單控制項與結構化 DOM 可作為角色目前選擇的 canonical state，無需另建中央 store。純顯示文字不作為主要規則資料來源，除非該解析本身是明確保留的設計。
 * LocalStorage 沿用 `window.dndStorage`。變更持久化欄位或意義時，檢查 LocalStorage、自動存檔、JSON 匯入／匯出與分享網址的還原相容性；UI 調整不應意外改變資料格式。
 * 角色 JSON／分享／autosave 的安全預檢集中於 `index.html`；輸入、解壓、文字、結構及動態控制項須沿用共用安全上限，不以角色規則代替資源限制。套用前完整驗證；拒絕或損壞資料不得覆寫原存檔，必要時停止 autosave。檔案欄位不保存／還原，來源標籤以純文字顯示。
-* JSON 匯入取代角色，清理範圍以 `index.html` 的 `APP_STORAGE_KEYS` 為準：含 autosave、其他職業／手動法術記憶、頭像、創角／購點、跑團偏好與角色 UI／導覽記憶；不得清空網站儲存，須保留日誌（含待遷移資料）、主題、擲骰歷史。匯出僅含目前角色、兩份法術書、跑團動作偏好（`__tabletopActionPreferences`）與頭像（`__tabletopAvatar`，超過 2 MiB 時省略並提示），不是完整本機備份；後兩者不進 autosave／分享，匯入檔有該欄位才於清理後寫回。變更清理範圍須核對匯出與使用者提示。
+* JSON 匯入取代角色，清理範圍以 `index.html` 的 `APP_STORAGE_KEYS` 為準：含 autosave、其他職業／手動法術記憶、頭像、創角／購點、跑團偏好與角色 UI／導覽記憶；不得清空網站儲存，須保留日誌（含待遷移資料）、主題、擲骰歷史。匯出僅含目前角色、兩份法術書、跑團動作偏好（`__tabletopActionPreferences`）與頭像（`__tabletopAvatar`，超過 2 MiB 時省略並提示），不是完整本機備份；後兩者不進 autosave／分享，分享模式匯出時省略並提示，匯入檔有該欄位才於清理後寫回。變更清理範圍須核對匯出與使用者提示。
 * 匯入預檢後，須確認新資料與舊紀錄副本已寫入 sessionStorage 才清理／套用；新角色與完成標記存妥後重載，清除模組記憶體舊偏好，再移除暫存。完成標記防止暫存刪除失敗造成重複匯入；暫存失敗保留角色與未存編輯，套用／存檔失敗停止 autosave、保留副本並嘗試復原，提示保留分頁與重試。清除紀錄前須取消／作廢待套用匯入。
 * `adventure-journal.js` 獨立使用 IndexedDB `twd20-adventure-journal`；對外 JSON 維持版本 1、相容舊欄位且不含內部 revision。既有 IndexedDB 優先；舊 LocalStorage `dnd.adventureJournal.v1` 僅在遷移 transaction 完成後移除。寫入須在同一 transaction 核對 revision，衝突不覆寫；讀取／遷移／儲存失敗保留原資料與編輯、提供重試／可讀資料備份，不另建可寫入的 LocalStorage 日誌。日誌／搜尋不加入角色 JSON、分享或 autosave，角色清理不刪日誌；搜尋需存檔時成功後才跳頁，IME 選字不提交。
 * 修改正式部署載入的 CSS／JavaScript 時，依 `index.html` 既有查詢字串策略更新對應快取版本，只處理本次變動資源。

@@ -5416,10 +5416,13 @@ async function copyResolvedShareUrl(shareUrl) {
 
 function collectJsonExportText() {
   const data = collectStateObject();
-  const actionPreferences = window.TabletopMode?.getTabletopActionPreferences?.();
-  if (actionPreferences) data.__tabletopActionPreferences = actionPreferences;
-  const avatar = window.dndStorage.getItem(TABLETOP_AVATAR_STORAGE_KEY);
-  if (isValidTabletopAvatar(avatar)) data.__tabletopAvatar = avatar;
+  // Share mode only holds the viewer's own local avatar/action preferences, not the shared character's.
+  if (!SHARE_MODE) {
+    const actionPreferences = window.TabletopMode?.getTabletopActionPreferences?.();
+    if (actionPreferences) data.__tabletopActionPreferences = actionPreferences;
+    const avatar = window.dndStorage.getItem(TABLETOP_AVATAR_STORAGE_KEY);
+    if (isValidTabletopAvatar(avatar)) data.__tabletopAvatar = avatar;
+  }
   let text = JSON.stringify(data, null, 2);
   let avatarOmitted = false;
   // Keep the file importable: drop the avatar before exceeding the character size ceiling.
@@ -5455,7 +5458,8 @@ function downloadStateAsJson() {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  if (avatarOmitted) window.AppDialog.notify("角色資料加上角色圖片會超過 2 MiB，這次匯出未包含角色圖片。", { tone: "warning" });
+  if (SHARE_MODE) window.AppDialog.notify("分享模式匯出的檔案不含角色圖片與跑團按鈕設定。", { tone: "info" });
+  else if (avatarOmitted) window.AppDialog.notify("角色資料加上角色圖片會超過 2 MiB，這次匯出未包含角色圖片。", { tone: "warning" });
   window.twAnalytics?.track?.("character_json_export");
 }
 
