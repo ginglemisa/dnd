@@ -10155,6 +10155,17 @@ html.onboarding-app-bar-hidden .tabs-shell {
   user-select: none;
 }
 
+/* The tour scrolls its targets to the top, so the card uses the full height. */
+@media (max-width: 499px) {
+  #point-buy-modal.onboarding-tour-point-buy {
+    align-items: flex-start;
+  }
+
+  #point-buy-modal.onboarding-tour-point-buy .point-buy-modal-card {
+    max-height: 100%;
+  }
+}
+
 :where(html:not([data-ui-theme="warm"])) .tour-mask {
   position: fixed;
   background: rgba(10, 16, 30, 0.72);

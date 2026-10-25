@@ -97,6 +97,11 @@ async function ready(page, index) {
   await page.waitForFunction(index => onboardingTour.active && !onboardingTour.isTransitioning && onboardingTour.currentIndex === index, index);
 }
 
+async function pointBuyReady(page, phase) {
+  await page.waitForFunction(phase => onboardingTour.active && !onboardingTour.isTransitioning
+    && onboardingTour.currentIndex === 2 && onboardingTour.stepPhase === phase && onboardingTour.presentationFrame === null, phase);
+}
+
 async function identityDetailsReady(page) {
   await page.waitForFunction(() => onboardingTour.active && !onboardingTour.isTransitioning
     && onboardingTour.currentIndex === 0 && onboardingTour.stepPhase === 1);
@@ -537,6 +542,7 @@ async function main() {
     if (process.argv.includes("--touch-only")) {
       await verifyIdentityGuidance(browser, url);
       await verifyAbilityGuidance(browser, url);
+      await verifyPointBuyGuidance(browser, url);
       await verifyTouch(browser, url);
       return;
     }
@@ -648,11 +654,11 @@ async function main() {
     assert.equal(await page.locator("#ability-choice-modal").isVisible(), true, "pressing 決定屬性 opens the choice modal");
     await assertSheetCopy(page, 3);
     await page.locator("#ability-choice-point-buy").click();
-    await page.waitForFunction(() => onboardingTour.stepPhase === 1);
+    await pointBuyReady(page, 1);
     await assertSheetCopy(page, 4);
     assert.equal(await page.locator("#tour-next-btn").textContent(), "下一步", "4/8 advances to 5/8");
     await page.locator("#tour-next-btn").click();
-    await page.waitForFunction(() => onboardingTour.stepPhase === 2);
+    await pointBuyReady(page, 2);
     await assertSheetCopy(page, 5);
     assert.equal(await page.evaluate(() => {
       const [background, bonus] = onboardingTour.activeHoles;
@@ -660,15 +666,13 @@ async function main() {
         const rect = element.getBoundingClientRect();
         return hole.left <= rect.left && hole.right >= rect.right && hole.top <= rect.top && hole.bottom >= rect.bottom;
       };
-      const head = document.querySelector("#point-buy-modal .point-buy-table-head > :nth-child(3)");
       return onboardingTour.activeHoles.length === 2
         && contains(background, document.querySelector("#point-buy-modal .point-buy-background"))
         && contains(background, document.getElementById("point-buy-hint"))
         && !contains(background, document.querySelector("#point-buy-modal .point-buy-preset"))
-        && contains(bonus, document.querySelector('#point-buy-rows .point-buy-row[data-ability="str"] .point-buy-control-group--bonus'))
-        && (!head.getClientRects().length || contains(bonus, head))
-        && !contains(bonus, document.querySelector('#point-buy-rows .point-buy-row[data-ability="dex"] .point-buy-control-group--bonus'));
-    }), true, "5/8 highlights the background choice and the first background bonus control");
+        && contains(bonus, document.querySelector('#point-buy-rows .point-buy-row[data-ability="dex"] .point-buy-control-group--bonus'))
+        && !contains(bonus, document.querySelector('#point-buy-rows .point-buy-row[data-ability="str"] .point-buy-control-group--bonus'));
+    }), true, "5/8 highlights the background choice and DEX's background bonus control");
     await page.keyboard.press("Escape");
     await closed(page);
     // Complete all original steps, including equipment, spells and search.
@@ -731,6 +735,7 @@ async function main() {
     await verifyImports(browser, url, { width: 390, height: 844 });
     await verifyPdfLifecycle(browser, url);
     await verifyAbilityGuidance(browser, url);
+    await verifyPointBuyGuidance(browser, url);
     await verifyTouch(browser, url);
     assert.deepEqual(errors, []);
     console.log("Cancellation races, failed positioning, turn dialog, legacy ability/point-buy branches, target jump and quick-build draft reopen passed.");
@@ -1042,13 +1047,13 @@ async function verifySheetExitSafety(browser, url) {
       }
       if (["points", "background"].includes(stage)) {
         await page.locator("#ability-choice-point-buy").click();
-        await page.waitForFunction(() => onboardingTour.stepPhase === 1 && onboardingTour.presentationFrame === null);
+        await pointBuyReady(page, 1);
       }
       if (stage === "background") {
         await page.locator("#tour-next-btn").click();
-        await page.waitForFunction(() => onboardingTour.stepPhase === 2 && onboardingTour.presentationFrame === null);
+        await pointBuyReady(page, 2);
         await page.locator("#tour-prev-btn").click();
-        await page.waitForFunction(() => onboardingTour.stepPhase === 1 && onboardingTour.presentationFrame === null);
+        await pointBuyReady(page, 1);
         await page.locator("#tour-prev-btn").click();
         await page.waitForFunction(() => onboardingTour.stepPhase === 0 && onboardingTour.presentationFrame === null);
       }
@@ -1150,6 +1155,118 @@ async function verifyAbilityGuidance(browser, url) {
     await page.close();
   }
   console.log("Ability guidance: open-menu dual highlights, button tap, tooltip placement and dragging, reduced motion, back, cancellation and state preservation passed.");
+}
+
+// 4/8 and 5/8 put their first target at the top and lock the card only when
+// both targets and the guidance fit; the demo background never persists.
+async function verifyPointBuyGuidance(browser, url) {
+  for (const viewport of [{ width: 375, height: 667, pointsLocked: false }, { width: 390, height: 844, pointsLocked: true }]) {
+    const page = await browser.newPage({ viewport, isMobile: true, hasTouch: true });
+    await page.addInitScript(() => { try { localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true"); } catch {} });
+    await page.goto(url);
+    await page.waitForFunction(() => window.onboardingTour);
+    await page.locator("#legal-ack-btn").tap();
+    await page.waitForTimeout(650);
+    await page.evaluate(() => window.flushPendingAutosave?.());
+    const before = await snapshot(page);
+    const cdp = await page.context().newCDPSession(page);
+    const swipe = async (x, y, distance) => {
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] });
+      for (let offset = 15; offset <= distance; offset += 15) {
+        await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x, y: y - offset }] });
+        await page.waitForTimeout(35);
+      }
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+      await page.waitForTimeout(350);
+    };
+    const layout = () => page.evaluate(() => {
+      const element = document.querySelector("#point-buy-modal .point-buy-modal-card");
+      const card = element.getBoundingClientRect();
+      const tip = document.getElementById("tour-tooltip").getBoundingClientRect();
+      const holes = onboardingTour.activeHoles;
+      const select = document.getElementById("point-buy-background");
+      return {
+        locked: onboardingTour.pointBuyScrollLocked,
+        // Tall screens run out of card to scroll before the target reaches the top.
+        firstAtTop: holes[0].top - card.top <= 12 || element.scrollTop >= element.scrollHeight - element.clientHeight - 1,
+        holes: holes.length,
+        between: holes.length === 2 && tip.top >= holes[0].bottom && tip.bottom <= holes[1].top,
+        covers: holes.some(hole => tip.top < hole.bottom && tip.bottom > hole.top),
+        scrollTop: document.querySelector("#point-buy-modal .point-buy-modal-card").scrollTop,
+        background: select.value,
+        choices: [...select.options].filter(option => !option.hidden && !option.disabled).map(option => option.value)
+      };
+    });
+    const cardPoint = () => page.evaluate(() => {
+      const card = document.querySelector("#point-buy-modal .point-buy-modal-card").getBoundingClientRect();
+      return { x: card.left + 12, y: card.top + card.height * 0.75 };
+    });
+    await page.evaluate(() => onboardingTour.start(2));
+    await ready(page, 2);
+    await page.locator("#tour-next-btn").tap();
+    await page.waitForFunction(() => !onboardingTour.isTransitioning && !onboardingTour.abilityMenuGuideActive);
+    await page.locator("#ability-choice-point-buy").tap();
+    await pointBuyReady(page, 1);
+    const points = await layout();
+    assert.deepEqual({ ...points, scrollTop: undefined }, {
+      locked: viewport.pointsLocked, firstAtTop: true, holes: viewport.pointsLocked ? 2 : 1,
+      between: viewport.pointsLocked, covers: false, scrollTop: undefined,
+      background: "soldier", choices: ["criminal", "soldier"]
+    }, `4/8 layout at ${viewport.width}x${viewport.height}`);
+    const pointsPoint = await cardPoint();
+    await swipe(pointsPoint.x, pointsPoint.y, 120);
+    const swiped = await layout();
+    if (viewport.pointsLocked) assert.equal(swiped.scrollTop, points.scrollTop, "4/8 does not scroll once both targets fit");
+    else {
+      assert(swiped.scrollTop > points.scrollTop, "4/8 scrolls when both targets cannot fit");
+      assert.equal(swiped.covers, false, "4/8 guidance moves away from the scrolled targets");
+    }
+
+    await page.locator("#tour-next-btn").tap();
+    await pointBuyReady(page, 2);
+    const bonus = await layout();
+    assert.deepEqual({ ...bonus, scrollTop: undefined }, {
+      locked: true, firstAtTop: true, holes: 2, between: true, covers: false, scrollTop: undefined,
+      background: "soldier", choices: ["criminal", "soldier"]
+    }, `5/8 layout at ${viewport.width}x${viewport.height}`);
+    const bonusPoint = await cardPoint();
+    await swipe(bonusPoint.x, bonusPoint.y, 120);
+    assert.equal((await layout()).scrollTop, bonus.scrollTop, "5/8 does not scroll once both targets fit");
+    const bonusValue = ability => page.locator(`#point-buy-rows .point-buy-row[data-ability="${ability}"] .point-buy-value--bonus`).textContent();
+    await page.locator('#point-buy-rows .point-buy-row[data-ability="dex"] [data-action="bonus-inc"]').tap();
+    assert.equal(await bonusValue("dex"), "+1", "5/8 allows DEX's bonus buttons");
+    await page.evaluate(() => {
+      document.querySelector('#point-buy-rows .point-buy-row[data-ability="str"] [data-action="bonus-inc"]').click();
+      document.querySelector('#point-buy-rows .point-buy-row[data-ability="dex"] [data-action="base-inc"]').click();
+      document.getElementById("point-buy-reset").click();
+    });
+    assert.equal(await bonusValue("str"), "+0", "5/8 blocks other bonus buttons");
+    assert.equal(await bonusValue("dex"), "+1", "5/8 blocks base values and reset");
+    await page.locator("#point-buy-background").selectOption("criminal");
+    assert.equal(await bonusValue("dex"), "+1", "switching to the other demo background keeps DEX's bonus");
+
+    await page.locator("#tour-skip-btn").tap();
+    await closed(page);
+    assert.deepEqual(await page.evaluate(() => {
+      const select = document.getElementById("point-buy-background");
+      return {
+        modal: document.getElementById("point-buy-modal").className,
+        hidden: [...select.options].filter(option => option.hidden || option.disabled).length,
+        empty: [...select.options].some(option => option.value === "")
+      };
+    }), { modal: "", hidden: 0, empty: true }, "leaving restores the point-buy background choices");
+    const after = await snapshot(page);
+    for (const key of ["data", "storage", "hash"]) assert.deepEqual(after[key], before[key], `point-buy guidance preserves ${key}`);
+    await page.locator("#utility-menu-toggle").tap();
+    await page.locator("#set-default-abilities").tap();
+    await page.locator("#ability-choice-point-buy").tap();
+    assert.deepEqual(await page.evaluate(() => ({
+      background: document.getElementById("point-buy-background").value,
+      scrollTop: document.querySelector("#point-buy-modal .point-buy-modal-card").scrollTop
+    })), { background: "", scrollTop: 0 }, "the next point buy opens without the demo choice");
+    await page.close();
+  }
+  console.log("Point-buy guidance: targets at the top, fit-based scroll lock, guidance between highlights, demo backgrounds, DEX-only bonus and restore passed.");
 }
 
 async function verifyTouch(browser, url) {

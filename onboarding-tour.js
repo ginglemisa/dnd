@@ -57,6 +57,31 @@
     });
   }
 
+  function animateElementScrollTo(element, targetTop, durationMs = SCROLL_DURATION, isCurrent = () => true, onFrame = () => {}) {
+    return new Promise((resolve) => {
+      const startTop = element.scrollTop;
+      const maxScroll = Math.max(0, element.scrollHeight - element.clientHeight);
+      const distance = Math.max(0, Math.min(targetTop, maxScroll)) - startTop;
+      if (Math.abs(distance) < 1 || prefersReducedMotion()) {
+        element.scrollTop = startTop + distance;
+        onFrame();
+        resolve();
+        return;
+      }
+
+      const startedAt = performance.now();
+      const tick = (now) => {
+        if (!isCurrent()) { resolve(); return; }
+        const progress = Math.min(1, (now - startedAt) / durationMs);
+        element.scrollTop = startTop + distance * progress * progress * (3 - 2 * progress);
+        onFrame();
+        if (progress < 1) requestAnimationFrame(tick);
+        else resolve();
+      };
+      requestAnimationFrame(tick);
+    });
+  }
+
   function getUnionRect(elements) {
     const rects = elements
       .filter(isElementVisible)
@@ -136,6 +161,8 @@
       this.activeHoles = [];
       this.scrollRenderPending = false;
       this.pointBuyScrollRenderPending = false;
+      this.pointBuyPreviewSnapshot = null;
+      this.pointBuyScrollLocked = false;
       this.lastTourScrollY = window.scrollY;
       this.bodyTouchActionSnapshot = null;
       this.quickBuildDecisionPending = false;
@@ -583,7 +610,7 @@
             if (this.stepPhase === 2) return ["背景", "套用"];
             return ["27 點購點", "屬性擲骰", "DM 同意"];
           },
-          placement: () => this.abilityMenuGuideActive ? "bottom" : this.stepPhase > 0 ? "overlay-bottom" : "highlight-bottom-left",
+          placement: () => this.abilityMenuGuideActive ? "bottom" : this.stepPhase > 0 ? "free-band" : "highlight-bottom-left",
           getHoles: () => {
             if (this.abilityMenuGuideActive) {
               return [
@@ -591,27 +618,10 @@
                 this.getHoleForSelector("#set-default-abilities", 6)
               ].filter(Boolean);
             }
-            if (this.stepPhase === 1) {
-              return [
-                this.getPointBuyHole([
-                  document.querySelector('#point-buy-rows .point-buy-row[data-ability="str"]'),
-                  document.querySelector('#point-buy-rows .point-buy-row[data-ability="dex"]')
-                ], 6),
-                this.getPointBuyHole([document.querySelector("#point-buy-modal .point-buy-summary")], 6)
-              ].filter(Boolean);
-            }
-            if (this.stepPhase === 2) {
-              return [
-                this.getPointBuyHole([
-                  document.querySelector("#point-buy-modal .point-buy-background"),
-                  document.getElementById("point-buy-hint")
-                ], 6),
-                // Wide layouts label the column in the table head; narrow rows label the control itself.
-                this.getPointBuyHole([
-                  document.querySelector("#point-buy-modal .point-buy-table-head > :nth-child(3)"),
-                  document.querySelector('#point-buy-rows .point-buy-row[data-ability="str"] .point-buy-control-group--bonus')
-                ], 6)
-              ].filter(Boolean);
+            if (this.stepPhase > 0) {
+              return this.getPointBuyTargetGroups(this.stepPhase)
+                .map((elements) => this.getPointBuyHole(elements, 6))
+                .filter(Boolean);
             }
             return [this.getHoleForSelector("#ability-choice-modal .ability-choice-card", 6)].filter(Boolean);
           },
@@ -755,9 +765,7 @@
         return;
       }
       if (this.kind === "sheet" && this.currentIndex === 2 && this.stepPhase === 1) {
-        this.stepPhase = 2;
-        this.tooltipDragPosition = null;
-        await this.renderStep();
+        await this.showPointBuyPhase(2);
         return;
       }
       if (this.currentIndex >= this.steps.length - 1) {
@@ -827,9 +835,7 @@
         return;
       }
       if (this.kind === "sheet" && this.currentIndex === 2 && this.stepPhase === 2) {
-        this.stepPhase = 1;
-        this.tooltipDragPosition = null;
-        await this.renderStep();
+        await this.showPointBuyPhase(1);
         return;
       }
       if (this.kind === "sheet" && this.currentIndex === 2 && this.stepPhase === 1) {
@@ -850,6 +856,33 @@
       this.stepPhase = phase;
       this.tooltipDragPosition = null;
       try {
+        await this.renderStep();
+      } finally {
+        if (transitionId === this.transitionId) this.isTransitioning = false;
+      }
+    }
+
+    // The card moves to the next phase's targets while the current spotlight
+    // follows it, then the spotlight changes.
+    async showPointBuyPhase(phase, { animateScroll = true } = {}) {
+      const transitionId = ++this.transitionId;
+      const isCurrent = () => this.active && transitionId === this.transitionId;
+      this.isTransitioning = true;
+      this.tooltipDragPosition = null;
+      try {
+        const card = document.querySelector("#point-buy-modal.open .point-buy-modal-card");
+        const targetTop = this.getPointBuyTutorialLayout(phase)?.idealScrollTop;
+        if (card && Number.isFinite(targetTop)) {
+          if (animateScroll) {
+            await animateElementScrollTo(card, targetTop, SCROLL_DURATION, isCurrent, () => {
+              if (isCurrent()) this.renderStep({ refreshInteractionRoots: false, ensureFocus: false, animate: false });
+            });
+          } else {
+            card.scrollTop = targetTop;
+          }
+          if (!isCurrent()) return;
+        }
+        this.stepPhase = phase;
         await this.renderStep();
       } finally {
         if (transitionId === this.transitionId) this.isTransitioning = false;
@@ -1085,9 +1118,9 @@
       return animateWindowScrollTo(targetY, SCROLL_DURATION, () => transitionId === this.transitionId);
     }
 
-    captureRestrictedSelect(select, allowedValues) {
+    captureRestrictedSelect(select, allowedValues, { allowEmpty = true } = {}) {
       if (!select) return null;
-      const allowed = new Set(["", ...allowedValues]);
+      const allowed = new Set([...(allowEmpty ? [""] : []), ...allowedValues]);
       const snapshot = {
         element: select,
         value: select.value,
@@ -1104,7 +1137,7 @@
         option.disabled = !permitted;
       });
       select.disabled = false;
-      if (!allowed.has(select.value)) select.value = "";
+      if (!allowed.has(select.value)) select.value = allowEmpty ? "" : allowedValues[0];
       return snapshot;
     }
 
@@ -1390,14 +1423,47 @@
 
     async enterPointBuyTutorial() {
       if (!this.active || this.kind !== "sheet" || this.currentIndex !== 2) return;
-      this.stepPhase = 1;
-      this.tooltipDragPosition = null;
+      this.preparePointBuyPreview();
       await waitForLayoutStability();
-      this.refreshTourInteractionRoots();
-      await this.renderStep();
+      if (!this.active || this.currentIndex !== 2) return;
+      await this.showPointBuyPhase(1, { animateScroll: false });
+    }
+
+    // Demo only: the tour never applies the point buy, and leaving restores the
+    // background choices and scroll position the next opening starts from.
+    preparePointBuyPreview() {
+      const modal = document.getElementById("point-buy-modal");
+      const card = modal?.querySelector(".point-buy-modal-card");
+      const select = document.getElementById("point-buy-background");
+      if (this.pointBuyPreviewSnapshot || !modal?.classList.contains("open") || !card || !select) return;
+      this.pointBuyPreviewSnapshot = {
+        scrollTop: card.scrollTop,
+        select: this.captureRestrictedSelect(select, ["soldier", "criminal"], { allowEmpty: false })
+      };
+      modal.classList.add("onboarding-tour-point-buy");
+      select.value = "soldier";
+      this.isInternalTourAction = true;
+      try {
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+      } finally {
+        this.isInternalTourAction = false;
+      }
+    }
+
+    restorePointBuyPreview() {
+      const snapshot = this.pointBuyPreviewSnapshot;
+      this.pointBuyPreviewSnapshot = null;
+      this.pointBuyScrollLocked = false;
+      if (!snapshot) return;
+      const modal = document.getElementById("point-buy-modal");
+      modal?.classList.remove("onboarding-tour-point-buy");
+      const card = modal?.querySelector(".point-buy-modal-card");
+      if (card) card.scrollTop = snapshot.scrollTop;
+      this.restoreRestrictedSelect(snapshot.select);
     }
 
     closePointBuyPreview() {
+      this.restorePointBuyPreview();
       const modal = document.getElementById("point-buy-modal");
       if (!modal?.classList.contains("open")) return;
       this.isInternalTourAction = true;
@@ -1553,8 +1619,7 @@
         if (this.stepPhase === 2) {
           return [
             document.getElementById("point-buy-background"),
-            document.getElementById("point-buy-rows"),
-            document.getElementById("point-buy-reset")
+            ...document.querySelectorAll('#point-buy-rows .point-buy-row[data-ability="dex"] .point-buy-control-group--bonus button')
           ].filter((element) => element && isElementVisible(element));
         }
         return [
@@ -1586,8 +1651,45 @@
       return { x: clientX, y: clientY };
     }
 
+    isPointBuyTutorialPhase() {
+      return this.active && this.kind === "sheet" && this.currentIndex === 2 && this.stepPhase > 0 && !this.abilityMenuGuideActive;
+    }
+
+    isPointBuyScrollLocked() {
+      return this.pointBuyScrollLocked && this.isPointBuyTutorialPhase();
+    }
+
+    getPointBuyTargetGroups(phase) {
+      const row = (ability) => document.querySelector(`#point-buy-rows .point-buy-row[data-ability="${ability}"]`);
+      if (phase === 1) return [[row("str"), row("dex")], [document.querySelector("#point-buy-modal .point-buy-summary")]];
+      if (phase === 2) return [
+        [document.querySelector("#point-buy-modal .point-buy-background"), document.getElementById("point-buy-hint")],
+        [row("dex")?.querySelector(".point-buy-control-group--bonus")]
+      ];
+      return [];
+    }
+
+    // Measures the phase as if its first target were scrolled to the top of the
+    // card; the result does not depend on where the card is scrolled now.
+    getPointBuyTutorialLayout(phase = this.stepPhase) {
+      const card = document.querySelector("#point-buy-modal.open .point-buy-modal-card");
+      const holes = this.getPointBuyTargetGroups(phase).map((elements) => this.getHoleFromElements(elements, 6));
+      if (!card || !holes.length || holes.some((hole) => !hole)) return null;
+      const cardRect = card.getBoundingClientRect();
+      const maxScroll = Math.max(0, card.scrollHeight - card.clientHeight);
+      const idealScrollTop = Math.round(Math.max(0, Math.min(maxScroll, card.scrollTop + holes[0].top - cardRect.top - 8)));
+      const shift = card.scrollTop - idealScrollTop;
+      const idealHoles = holes.map((hole) => ({ ...hole, top: hole.top + shift, bottom: hole.bottom + shift }));
+      const visibleTop = Math.max(0, cardRect.top);
+      const visibleBottom = Math.min(window.innerHeight, cardRect.bottom);
+      const tooltipSpace = (this.tooltip?.offsetHeight || 0) + 20;
+      const fits = idealHoles.every((hole) => hole.top >= visibleTop - 1 && hole.bottom <= visibleBottom + 1)
+        && this.getTooltipBands(idealHoles).some((band) => band.bottom - band.top >= tooltipSpace);
+      return { card, idealScrollTop, fits };
+    }
+
     getPointBuyTutorialScrollContainer(event) {
-      if (!this.active || this.kind !== "sheet" || this.currentIndex !== 2 || this.stepPhase === 0) return null;
+      if (!this.isPointBuyTutorialPhase() || this.isPointBuyScrollLocked()) return null;
       if (this.tooltip?.contains(event.target)) return null;
       const container = document.querySelector("#point-buy-modal.open .point-buy-modal-card");
       const point = this.getEventViewportPoint(event);
@@ -1719,7 +1821,8 @@
       const pointBuyScrollContainer = event.pointerType !== "mouse"
         ? this.getPointBuyTutorialScrollContainer(event)
         : null;
-      if (event.pointerType !== "mouse" && (pointBuyScrollContainer || this.isEventInsideActiveHole(event))) {
+      if (event.pointerType !== "mouse" && !this.isPointBuyScrollLocked()
+        && (pointBuyScrollContainer || this.isEventInsideActiveHole(event))) {
         this.highlightDragState = {
           pointerId: event.pointerId,
           startY: event.clientY,
@@ -1988,7 +2091,10 @@
       const placement = this.getStepValue(step, "placement", "bottom");
       this.tooltip.style.cursor = this.tooltipDragPointerId === null ? "grab" : "grabbing";
       const tooltipHole = visibleHoles[this.getStepValue(step, "tooltipHoleIndex", this.abilityMenuGuideActive ? 1 : 0)] || visibleHoles[0];
-      if (tooltipHole) this.positionTooltip(tooltipHole, placement, visibleHoles);
+      if (this.isPointBuyTutorialPhase()) this.pointBuyScrollLocked = Boolean(this.getPointBuyTutorialLayout()?.fits);
+      // Re-renders of the same guidance keep the window where it is when possible.
+      const previousTop = contentChanged ? null : previousPosition?.top ?? null;
+      if (tooltipHole) this.positionTooltip(tooltipHole, placement, visibleHoles, previousTop);
       else this.positionTooltipWithoutHighlight();
       this.applyTooltipDragPosition();
       const position = {
@@ -2144,7 +2250,41 @@
       this.tooltip.style.top = `${Math.max(margin, Math.floor((window.innerHeight - height) / 2))}px`;
     }
 
-    positionTooltip(hole, placement, holes = []) {
+    // Free vertical bands around the highlights, labelled by where they sit.
+    getTooltipBands(holes) {
+      const sorted = holes.slice().sort((a, b) => a.top - b.top);
+      const bands = [];
+      let top = 0;
+      sorted.forEach((hole, index) => {
+        bands.push({ top, bottom: hole.top, kind: index === 0 ? "above" : "between" });
+        top = Math.max(top, hole.bottom);
+      });
+      bands.push({ top, bottom: window.innerHeight, kind: "below" });
+      return bands.filter((band) => band.bottom > band.top);
+    }
+
+    positionTooltipInFreeBand(holes, previousTop) {
+      const margin = 10;
+      const height = this.tooltip.offsetHeight || 170;
+      const bands = this.getTooltipBands(holes);
+      const fitting = bands.filter((band) => band.bottom - band.top >= height + margin * 2);
+      const clampToBand = (band, top) => Math.min(Math.max(top, band.top + margin), band.bottom - margin - height);
+      let top;
+      if (fitting.length && previousTop !== null) {
+        top = fitting
+          .map((band) => clampToBand(band, previousTop))
+          .reduce((best, candidate) => Math.abs(candidate - previousTop) < Math.abs(best - previousTop) ? candidate : best);
+      } else if (fitting.length) {
+        const band = ["between", "below", "above"].map((kind) => fitting.find((item) => item.kind === kind)).find(Boolean);
+        top = band.kind === "above" ? band.bottom - margin - height : band.top + margin;
+      } else {
+        const band = bands.reduce((best, item) => item.bottom - item.top > best.bottom - best.top ? item : best, bands[0]);
+        top = band ? band.top + margin : margin;
+      }
+      this.tooltip.style.top = `${this.clampTooltipPosition(0, top).top}px`;
+    }
+
+    positionTooltip(hole, placement, holes = [], previousTop = null) {
       const margin = 10;
       const width = Math.min(360, window.innerWidth - margin * 2);
       this.tooltip.style.width = `${width}px`;
@@ -2189,8 +2329,8 @@
         return;
       }
 
-      if (placement === "overlay-bottom") {
-        this.tooltip.style.top = `${Math.max(margin, window.innerHeight - height - margin)}px`;
+      if (placement === "free-band") {
+        this.positionTooltipInFreeBand(holes, previousTop);
         return;
       }
 
@@ -2287,6 +2427,11 @@
       if (!this.active) return;
       requestAnimationFrame(() => {
         if (!this.active || (this.isTransitioning && this.presentationFrame === null)) return;
+        // A size that now fits both targets snaps back to the locked layout.
+        if (this.isPointBuyTutorialPhase()) {
+          const layout = this.getPointBuyTutorialLayout();
+          if (layout?.fits) layout.card.scrollTop = layout.idealScrollTop;
+        }
         this.renderStep({ animate: false });
       });
     }
@@ -2306,11 +2451,11 @@
     }
 
     handlePointBuyScroll() {
-      if (!this.active || this.isTransitioning || this.currentIndex !== 2 || this.stepPhase === 0 || this.pointBuyScrollRenderPending) return;
+      if (this.isTransitioning || !this.isPointBuyTutorialPhase() || this.pointBuyScrollRenderPending) return;
       this.pointBuyScrollRenderPending = true;
       requestAnimationFrame(() => {
         this.pointBuyScrollRenderPending = false;
-        if (!this.active || this.isTransitioning || this.currentIndex !== 2 || this.stepPhase === 0) return;
+        if (this.isTransitioning || !this.isPointBuyTutorialPhase()) return;
         this.renderStep({ refreshInteractionRoots: false, ensureFocus: false, animate: false });
       });
     }
@@ -2400,7 +2545,7 @@
         if (point && this.moveHighlightDrag(point.y)) event.preventDefault();
         return;
       }
-      if (event.type === "touchmove") {
+      if (event.type === "touchmove" || this.isPointBuyScrollLocked()) {
         event.preventDefault();
         return;
       }
