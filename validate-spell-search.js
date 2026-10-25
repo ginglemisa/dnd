@@ -639,7 +639,7 @@ async function validateEquipmentShop(page) {
   const badge = shop.locator(".equipment-shop__badge");
   const cartNames = () => cartDialog.locator(".equipment-shop__cart-name").allTextContents();
   await shopButton.click();
-  assert.equal(await shop.locator(".equipment-shop__search").evaluate(el => el === document.activeElement), true, "shop focuses search");
+  assert.equal(await shop.locator(".equipment-shop__category-toggle").evaluate(el => el === document.activeElement), true, "shop focuses the category button, not search, so phones keep the keyboard closed");
   assert.equal(await shop.locator(".equipment-shop__balance").textContent(), "目前財產：1 白金幣", "balance sits under the title");
   assert.equal(await shop.getByRole("button", { name: "關閉", exact: true }).count(), 0, "the corner close button replaces the footer close");
   assert.deepEqual(await shop.locator(".equipment-shop__header-actions button").evaluateAll(buttons => buttons.map(button => button.classList[button.classList.length - 1])),
@@ -919,6 +919,115 @@ async function validateEquipmentShop(page) {
     return { name, amount: item.amount, currency: item.currency, quantity: 1 };
   }), { free: true }), focusNames);
   assert.match(await page.locator("#gear-notes").inputValue(), /^購買物品：.*法杖（長棍） ×2、護身符、徽章\n/u, "renamed focuses keep compact carried-item names");
+  await validateQuickBuildShop(page);
+}
+
+// Quick build shops with a temporary wallet and its own cart; the card only changes on import.
+async function validateQuickBuildShop(page) {
+  await page.setViewportSize({ width: 1100, height: 850 });
+  const cardSnapshot = () => page.evaluate(() => ({ state: collectStateObject(), saved: localStorage.getItem("dndchar_autosave_v1") }));
+  const costly = await page.evaluate(() => window.EQUIPMENT_SHOP_ITEMS
+    .find(item => item.currency === "金幣" && item.amount >= 200 && !item.bundle && !Number.isInteger(item.spellLevel))?.name);
+  assert.ok(costly, "catalog has an item above the starting gold");
+  await page.evaluate(() => {
+    saveAllFields();
+    const draft = quickBuild.createDraft();
+    Object.assign(draft.choices, { background: "soldier", race: "dwarf", class: "barbarian", classEquipmentMethod: "gold", classOptions: { skills: ["察覺", "求生"] } });
+    draft.ui.currentStepId = "equipment";
+    dndStorage.setItem(quickBuild.storageKey, JSON.stringify(draft));
+    quickBuild.open();
+  });
+  const before = await cardSnapshot();
+  const wizard = page.locator("#quick-build-wizard");
+  const openButton = wizard.locator("#quick-build-shop-open");
+  const shopPanel = wizard.locator('[data-flow-section="equipment-shop"]');
+  const shop = page.locator('.app-dialog[data-variant="equipment-shop"]');
+  const cartDialog = page.locator('.app-dialog[data-variant="equipment-shop-cart"]');
+  const badge = shop.locator(".equipment-shop__badge");
+  const panelRows = () => shopPanel.locator(".quick-build-summary-list").evaluate(list => [...list.children].map(item => item.textContent).join("|"));
+  const buy = async names => {
+    for (const name of names) {
+      await shop.locator(".equipment-shop__search").fill(name);
+      await shop.getByRole("button", { name: `加入購物清單：${name}`, exact: true }).click();
+    }
+  };
+  assert.equal(await openButton.count(), 0, "the shop waits until the background equipment is chosen");
+  await wizard.locator('[data-wealth="gold"]').click();
+  await openButton.waitFor();
+  assert.deepEqual(await openButton.evaluate(button => {
+    const sections = [...button.closest(".quick-build-body").querySelectorAll("[data-flow-section]")];
+    return { last: sections.at(-1)?.contains(button), trailing: !button.nextElementSibling, text: button.textContent.trim(), icon: Boolean(button.querySelector("svg")) };
+  }), { last: true, trailing: true, text: "開啟商店", icon: true }, "open shop sits at the bottom of the equipment step");
+  assert.equal(await panelRows(), "起始金額|125 金幣|剩餘金額|125 金幣", "class and background gold fund the shop");
+
+  await openButton.click();
+  assert.equal(await shop.locator(".equipment-shop__balance").textContent(), "剩餘金額：125 金幣", "the shop reads the temporary wallet");
+  assert.equal(await shop.locator(".equipment-shop__category-toggle").evaluate(el => el === document.activeElement), true, "quick-build shop does not focus search");
+  assert.deepEqual(await shop.locator("[data-shop-checkout]").allTextContents(), ["結帳"], "quick build offers paid checkout only");
+  await shop.locator(".equipment-shop__category-toggle").click();
+  await shop.locator(".equipment-shop__categories").getByRole("button", { name: "全部", exact: true }).click();
+  await shop.locator(".equipment-shop__category-toggle").click();
+  await buy(["繩索", "繩索", "火把"]);
+  await shop.locator(".equipment-shop__cart-button").click();
+  assert.deepEqual(await cartDialog.locator("[data-shop-checkout]").allTextContents(), ["結帳"]);
+  assert.equal(await cartDialog.locator(".equipment-shop__footer-text").textContent(), "結帳後 122 金幣 9 銀幣 9 銅幣");
+  await cartDialog.getByRole("button", { name: "結帳", exact: true }).click();
+  await shop.waitFor({ state: "detached" });
+  assert.equal(await openButton.evaluate(el => el === document.activeElement), true, "closing the shop returns focus to its button");
+  assert.equal(await panelRows(), "起始金額|125 金幣|已購買|繩索 ×2、火把|剩餘金額|122 金幣 9 銀幣 9 銅幣");
+  assert.deepEqual(await cardSnapshot(), before, "checkout leaves the card and its autosave untouched");
+
+  // Without enough money the checkout stays disabled; there is no debt or free option.
+  await openButton.click();
+  assert.equal(await badge.isHidden(), true, "checkout empties the quick-build cart");
+  await buy([costly]);
+  assert.match(await shop.locator(".equipment-shop__footer-text").textContent(), /^合計 .+，尚缺 .+/u);
+  assert.equal(await shop.getByRole("button", { name: "結帳", exact: true }).isDisabled(), true, "the shop blocks checkout over budget");
+  await shop.locator(".equipment-shop__cart-button").click();
+  assert.match(await cartDialog.locator(".equipment-shop__footer-text").textContent(), /^金額不足，無法結帳，尚缺 /u);
+  assert.equal(await cartDialog.getByRole("button", { name: "結帳", exact: true }).isDisabled(), true, "the cart blocks checkout over budget");
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("Escape");
+  await shop.waitFor({ state: "detached" });
+
+  // The sheet shop keeps its own cart, money and free checkout.
+  await page.evaluate(() => { window.EquipmentShop.open(); });
+  assert.equal(await shop.locator(".equipment-shop__balance").textContent().then(text => text.startsWith("目前財產：")), true);
+  assert.deepEqual(await shop.locator("[data-shop-checkout]").allTextContents(), ["免費取得", "結帳"]);
+  assert.equal(await badge.isHidden(), true, "the quick-build cart does not leak into the sheet");
+  await buy(["火把"]);
+  await page.keyboard.press("Escape");
+  await openButton.click();
+  assert.equal(await badge.textContent(), "1", "the quick-build cart is kept for the same choices");
+  await page.keyboard.press("Escape");
+
+  // Moving between steps keeps the records.
+  await wizard.locator(".quick-build-next").click();
+  assert.match(await wizard.locator(".quick-build-complete").innerText(), /商店\n已購買：繩索 ×2、火把\n剩餘金額：122 金幣 9 銀幣 9 銅幣/u, "review lists the temporary purchases");
+  await wizard.locator(".quick-build-next").click();
+  await wizard.locator(".quick-build-previous").click();
+  assert.match(await wizard.locator(".quick-build-complete").innerText(), /已購買：繩索 ×2、火把/u, "going back does not reset the shop");
+
+  // Changing where the starting gold comes from resets the money, the records and the cart.
+  await wizard.locator(".quick-build-modify").click();
+  await wizard.locator('[data-class-equipment-method="default"]').click();
+  assert.equal(await openButton.count(), 0, "the shop hides until the new package is configured");
+  await wizard.locator("#quick-build-equipment-main").selectOption("巨斧");
+  assert.equal(await panelRows(), "起始金額|65 金幣|剩餘金額|65 金幣", "switching to the class package resets the purchases");
+  await openButton.click();
+  assert.equal(await badge.isHidden(), true, "a reset also drops the unpaid cart");
+  await buy(["繩索"]);
+  await shop.getByRole("button", { name: "結帳", exact: true }).click();
+  await shop.waitFor({ state: "detached" });
+  // Options inside the same package keep the records.
+  await wizard.locator("#quick-build-equipment-main").selectOption("手斧");
+  assert.equal(await panelRows(), "起始金額|65 金幣|已購買|繩索|剩餘金額|64 金幣", "changing the main hand keeps the purchases");
+  assert.equal(await page.evaluate(() => Object.keys(collectStateObject()).some(key => key.startsWith("quick-build-"))), false, "wizard controls stay out of character data");
+  await wizard.locator('[data-wealth="default"]').click();
+  assert.doesNotMatch(await panelRows(), /已購買/u, "changing the background equipment resets the purchases");
+  assert.equal(await page.evaluate(() => quickBuild.getDraft().choices.shop), null);
+  assert.deepEqual(await cardSnapshot(), before, "quick-build shopping never writes the card");
+  await wizard.locator(".quick-build-close").click();
 }
 
 main().catch(error => { console.error(error); process.exitCode = 1; });

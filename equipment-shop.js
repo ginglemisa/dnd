@@ -10,6 +10,8 @@
  *   關閉鈕與結帳成立時連同商店一起關閉。
  * - 法術卷軸：環階與法術取自 SpellCatalog，名稱寫成「法術名稱法術卷軸」。
  * - 購物清單、分類、展開狀態與搜尋只留在記憶體，不進角色 JSON、分享或 autosave。
+ * - 暫存錢包：open({ wallet }) 改用呼叫端的餘額與結帳（如快速創角），不讀寫角色卡的財產或攜帶物品；
+ *   只提供付款結帳，合計超過餘額時停用，不能免費取得或賒帳。購物清單只保留最近一個 wallet.id 的內容。
  */
 (function (globalScope) {
   "use strict";
@@ -42,7 +44,10 @@
   const CART_ICON = '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="M3 4h2.2l2.1 10.2a1.5 1.5 0 0 0 1.5 1.2h8.4a1.5 1.5 0 0 0 1.5-1.1L20.5 8H6.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="19.5" r="1.5" fill="currentColor"/><circle cx="17" cy="19.5" r="1.5" fill="currentColor"/></svg>';
   const QUANTITY_MAX = 999;
   const DISCLOSURE_MS = 390;
-  const cart = new Map();
+  const sheetCart = new Map();
+  let walletCart = { id: null, lines: new Map() };
+  let cart = sheetCart;
+  let wallet = null;
   let activeCategory = "all";
   let categoriesExpanded = false;
   let keyword = "";
@@ -83,11 +88,11 @@
   }
 
   function formatCopper(copper) {
-    return globalScope.MoneyTracker?.formatAmount?.(copper) || `${copper} 銅幣`;
+    return (wallet?.formatAmount || globalScope.MoneyTracker?.formatAmount)?.(copper) || `${copper} 銅幣`;
   }
 
   function readBalance() {
-    return globalScope.MoneyTracker?.readTotal?.() ?? 0;
+    return (wallet ? wallet.readTotal() : globalScope.MoneyTracker?.readTotal?.()) ?? 0;
   }
 
   function clampQuantity(value) {
@@ -311,6 +316,11 @@
     });
   }
 
+  // 暫存錢包不能賒帳：合計超過餘額時與空清單一樣停用結帳。
+  function isCheckoutBlocked() {
+    return !cart.size || Boolean(wallet && getCartTotal() > readBalance());
+  }
+
   function setCheckoutDisabled(actions, root, disabled) {
     actions.forEach(action => { action.disabled = disabled; });
     root?.querySelectorAll("[data-shop-checkout]").forEach(button => { button.disabled = disabled; });
@@ -325,9 +335,13 @@
       view.badge.textContent = quantity > 99 ? "99+" : String(quantity);
       view.badge.hidden = !quantity;
       view.cartButton.setAttribute("aria-label", quantity ? `購物清單，${quantity} 個物品` : "購物清單，尚未加入物品");
-      view.balance.textContent = `目前財產：${formatCopper(readBalance())}`;
-      view.total.textContent = lines.length ? `合計 ${formatCopper(total)}` : "";
-      setCheckoutDisabled(view.checkoutActions, view.root, !lines.length);
+      view.balance.textContent = `${wallet?.balanceLabel || "目前財產"}：${formatCopper(readBalance())}`;
+      const walletShortfall = wallet && lines.length ? total - readBalance() : 0;
+      view.total.textContent = !lines.length ? ""
+        : walletShortfall > 0 ? `合計 ${formatCopper(total)}，尚缺 ${formatCopper(walletShortfall)}`
+          : `合計 ${formatCopper(total)}`;
+      view.total.classList.toggle("is-shortfall", walletShortfall > 0);
+      setCheckoutDisabled(view.checkoutActions, view.root, isCheckoutBlocked());
       updateItemCounts();
     }
     if (cartView) renderCartDialog();
@@ -394,9 +408,9 @@
     const shortfall = total - balance;
     cartView.summary.classList.toggle("is-shortfall", lines.length > 0 && shortfall > 0);
     cartView.summary.textContent = !lines.length ? ""
-      : shortfall > 0 ? `財產不足，尚缺 ${formatCopper(shortfall)}`
+      : shortfall > 0 ? `${wallet ? "金額不足，無法結帳" : "財產不足"}，尚缺 ${formatCopper(shortfall)}`
         : `結帳後 ${formatCopper(balance - total)}`;
-    setCheckoutDisabled(cartView.checkoutActions, cartView.root, !lines.length);
+    setCheckoutDisabled(cartView.checkoutActions, cartView.root, isCheckoutBlocked());
     if (focusedKey && focusedControl) {
       const selector = `[data-shop-cart-key="${CSS.escape(focusedKey)}"]`;
       const control = cartView.list.querySelector(`${selector} [data-shop-control="${focusedControl}"]`);
@@ -406,8 +420,9 @@
 
   async function checkout(free) {
     const lines = getCartLines();
-    if (!lines.length || typeof globalScope.MoneyTracker?.purchaseItems !== "function") return false;
-    const purchased = await globalScope.MoneyTracker.purchaseItems(
+    const purchaseItems = wallet ? wallet.purchaseItems : globalScope.MoneyTracker?.purchaseItems;
+    if (isCheckoutBlocked() || (wallet && free) || typeof purchaseItems !== "function") return false;
+    const purchased = await purchaseItems(
       lines.map(({ name, gearName, amount, currency, quantity }) => ({ name, gearName, amount, currency, quantity })),
       { free }
     );
@@ -417,15 +432,13 @@
     }
     const summary = lines.map(line => (line.quantity === 1 ? line.label : `${line.label} ×${line.quantity}`)).join("、");
     cart.clear();
-    globalScope.AppDialog.notify(`${free ? "已免費取得" : "已購買"}：${summary}，已加入攜帶物品。`, { tone: "success" });
+    globalScope.AppDialog.notify(`${free ? "已免費取得" : "已購買"}：${summary}，${wallet?.checkoutNotice || "已加入攜帶物品。"}`, { tone: "success" });
     return true;
   }
 
   function createCheckoutActions() {
-    return [
-      { label: "免費取得", value: "free", resolve: () => checkout(true) },
-      { label: "結帳", intent: "primary", value: "paid", resolve: () => checkout(false) }
-    ];
+    const paid = { label: "結帳", intent: "primary", value: "paid", resolve: () => checkout(false) };
+    return wallet ? [paid] : [{ label: "免費取得", value: "free", resolve: () => checkout(true) }, paid];
   }
 
   // AppDialog 的動作列前方加入說明文字；兩顆結帳按鈕合為一組，換行時不被拆開，並在清單變動時停用。
@@ -677,9 +690,15 @@
 
   /**
    * 開啟商店。addKey 先把該品項加入購物清單；focusName 捲到該品項（如法術卷軸）。
+   * wallet：{ id, readTotal(), purchaseItems(items), formatAmount?, balanceLabel?, checkoutNotice? }，
+   * 省略時使用角色卡的 MoneyTracker；id 改變時捨棄先前未結帳的暫存購物清單。
    */
-  function open({ trigger = null, addKey = "", focusName = "" } = {}) {
+  function open({ trigger = null, addKey = "", focusName = "", wallet: requestedWallet = null } = {}) {
     if (view || !globalScope.AppDialog) return Promise.resolve(false);
+    if (requestedWallet && (typeof requestedWallet.readTotal !== "function" || typeof requestedWallet.purchaseItems !== "function")) return Promise.resolve(false);
+    wallet = requestedWallet;
+    if (wallet && walletCart.id !== wallet.id) walletCart = { id: wallet.id, lines: new Map() };
+    cart = wallet ? walletCart.lines : sheetCart;
     const items = getItems();
     const addedItem = items.find(item => item.key === addKey);
     const focusTarget = addedItem?.key || items.find(item => item.name === focusName)?.name || "";
@@ -695,7 +714,8 @@
       variant: "equipment-shop",
       allowNested: true,
       trigger,
-      initialFocus: "content",
+      // 不預設聚焦搜尋欄，以免手機一開商店就跳出鍵盤；開啟後改聚焦類別按鈕或指定品項。
+      initialFocus: "primary",
       actions: checkoutActions,
       renderContent(body) {
         view = { ...buildView(body), checkoutActions };
@@ -703,6 +723,8 @@
       onClose() {
         finishCategoryMotion?.();
         view = null;
+        wallet = null;
+        cart = sheetCart;
       }
     });
     view.root = view.shop.closest(".app-dialog");
@@ -712,7 +734,7 @@
     renderCategoryToggle();
     renderList();
     renderCartState();
-    if (focusTarget) focusItem(focusTarget);
+    if (!focusTarget || !focusItem(focusTarget)) view.categoryToggle.focus();
     if (addedItem) announce(`已加入${addedItem.name}。`);
     return dialog;
   }
