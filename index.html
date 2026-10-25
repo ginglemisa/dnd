@@ -90,7 +90,7 @@
   <script src="backgrounds.js?v=20261003-background-flavor" defer></script>
   <script src="tool-data.js?v=20261008-class-tools" defer></script>
   <script src="feats.js?v=20261021-feat-rule-tips" defer></script>
-  <script src="equipment-notes.js?v=20261025-shop-launch" defer></script>
+  <script src="equipment-notes.js?v=20261025-focus-names" defer></script>
   <script src="spell-list.js?v=20261014-class-lookup" defer></script>
   <script src="condition.js?v=20261021-bonus-wording" defer></script>
   <script src="action-panel.js?v=20261024-action-english" defer></script>
@@ -2978,7 +2978,7 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
   globalThis.armors = globalThis.armors || [];
   globalThis.shield = globalThis.shield || [];
 </script>
-<script src="equipment-data.js?v=20261024-equipment-english" defer></script>
+<script src="equipment-data.js?v=20261025-focus-names" defer></script>
 <script src="search.js?v=20261025-equipment-shop" defer></script>
 <script src="equipment-shop.js?v=20261025-shop-alignment" defer></script>
 
@@ -5973,8 +5973,8 @@ function setupMoneyTracker() {
   // 商店結帳入口：整張購物清單記一筆交易，再把品項合併進攜帶物品的「購買物品：」行。
   const purchaseCurrencyIds = { 銅幣: "cp", 銀幣: "sp", 金幣: "gp", 白金幣: "pp" };
   const gearNameOverrides = {
-    "聖物匣（手持）": "聖物匣", "徽章（附在布料或盾牌上）": "徽章", "護身符（佩戴或手持）": "護身符",
-    "法杖（可作為長棍）": "法杖（長棍）", "木制法杖（可作為長棍）": "法杖（長棍）", "箭矢": "箭矢(20)",
+    "聖物匣（手持）": "聖物匣", "徽章（附於布料／盾牌）": "徽章", "護身符（佩戴／手持）": "護身符",
+    "木製法杖（長棍）": "法杖（長棍）", "箭矢": "箭矢(20)",
     "弩矢": "弩矢(20)", "子彈，火器": "子彈(10)", "彈丸，投石索": "彈丸(20)", "針": "針(50)"
   };
   const describePurchasedItems = (items) => items

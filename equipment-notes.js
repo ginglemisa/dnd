@@ -317,7 +317,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <td style="border:1px solid #aaa; padding:3px;">10 金幣</td>
     </tr>
     <tr>
-      <td style="border:1px solid #aaa; padding:3px;">法杖（可作為長棍）</td>
+      <td style="border:1px solid #aaa; padding:3px;">法杖（長棍）</td>
       <td style="border:1px solid #aaa; padding:3px;">4 磅</td>
       <td style="border:1px solid #aaa; padding:3px;">5 金幣</td>
     </tr>
@@ -425,7 +425,7 @@ DC 20 力量（運動）：掙斷鏈條
       <td style="border:1px solid #aaa; padding:3px;">1 金幣</td>
     </tr>
     <tr>
-      <td style="border:1px solid #aaa; padding:3px;">木制法杖（可作為長棍）</td>
+      <td style="border:1px solid #aaa; padding:3px;">木製法杖（長棍）</td>
       <td style="border:1px solid #aaa; padding:3px;">4 磅</td>
       <td style="border:1px solid #aaa; padding:3px;">5 金幣</td>
     </tr>
@@ -470,12 +470,12 @@ DC 20 力量（運動）：掙斷鏈條
   </thead>
   <tbody>
     <tr>
-      <td style="border:1px solid #aaa; padding:3px;">護身符（佩戴或手持）</td>
+      <td style="border:1px solid #aaa; padding:3px;">護身符（佩戴／手持）</td>
       <td style="border:1px solid #aaa; padding:3px;">1 磅</td>
       <td style="border:1px solid #aaa; padding:3px;">5 金幣</td>
     </tr>
     <tr>
-      <td style="border:1px solid #aaa; padding:3px;">徽章（附在布料或盾牌上）</td>
+      <td style="border:1px solid #aaa; padding:3px;">徽章（附於布料／盾牌）</td>
       <td style="border:1px solid #aaa; padding:3px;">--</td>
       <td style="border:1px solid #aaa; padding:3px;">5 金幣</td>
     </tr>

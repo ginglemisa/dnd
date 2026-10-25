@@ -65,9 +65,9 @@ globalThis.EQUIPMENT_ENGLISH_NAMES = Object.freeze({
   "弦線": "String", "帳篷": "Tent", "火絨盒": "Tinderbox", "火把": "Torch", "藥瓶": "Vial", "水袋": "Waterskin",
   // 冒險用品表格內的品項
   "箭矢": "Arrows", "弩矢": "Bolts", "子彈，火器": "Bullets, Firearm", "彈丸，投石索": "Bullets, Sling",
-  "針": "Needles", "水晶": "Crystal", "寶珠": "Orb", "權杖": "Rod", "法杖（可作為長棍）": "Staff",
-  "魔杖": "Wand", "槲寄生樹枝": "Sprig of Mistletoe", "木制法杖（可作為長棍）": "Wooden Staff",
-  "紫杉魔杖": "Yew Wand", "護身符（佩戴或手持）": "Amulet", "徽章（附在布料或盾牌上）": "Emblem",
+  "針": "Needles", "水晶": "Crystal", "寶珠": "Orb", "權杖": "Rod", "法杖（長棍）": "Staff",
+  "魔杖": "Wand", "槲寄生樹枝": "Sprig of Mistletoe", "木製法杖（長棍）": "Wooden Staff",
+  "紫杉魔杖": "Yew Wand", "護身符（佩戴／手持）": "Amulet", "徽章（附於布料／盾牌）": "Emblem",
   "聖物匣（手持）": "Reliquary"
 });
 

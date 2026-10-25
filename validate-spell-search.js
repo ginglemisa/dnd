@@ -908,6 +908,17 @@ async function validateEquipmentShop(page) {
   await page.evaluate(() => TabletopMode.setMode("sheet"));
   assert.equal(await page.evaluate(() => [...document.getElementById("gear-notes-sheet-mount").children].map(child => child.id).join()),
     "gear-notes,equipment-shop-open", "sheet mode restores the notes and shop entry in order");
+
+  // Shortened focus names stay linked to their English names and compact carried-item names.
+  const focusNames = ["法杖（長棍）", "木製法杖（長棍）", "護身符（佩戴／手持）", "徽章（附於布料／盾牌）"];
+  assert.deepEqual(await page.evaluate(names => names.map(name => [
+    window.EQUIPMENT_SHOP_ITEMS.some(item => item.name === name), window.EQUIPMENT_ENGLISH_NAMES[name] || ""
+  ]), focusNames), [[true, "Staff"], [true, "Wooden Staff"], [true, "Amulet"], [true, "Emblem"]], "renamed focuses keep catalog and English names");
+  await page.evaluate(names => window.MoneyTracker.purchaseItems(names.map(name => {
+    const item = window.EQUIPMENT_SHOP_ITEMS.find(candidate => candidate.name === name);
+    return { name, amount: item.amount, currency: item.currency, quantity: 1 };
+  }), { free: true }), focusNames);
+  assert.match(await page.locator("#gear-notes").inputValue(), /^購買物品：.*法杖（長棍） ×2、護身符、徽章\n/u, "renamed focuses keep compact carried-item names");
 }
 
 main().catch(error => { console.error(error); process.exitCode = 1; });
