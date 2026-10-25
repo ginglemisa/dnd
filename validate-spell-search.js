@@ -562,6 +562,20 @@ async function emptyCartAndCloseShop(page) {
 const shopCategoryText = locator => locator.innerText().then(text => text.replace(/\s+/gu, ""));
 const shopSectionTitles = shop => shop.locator(".equipment-shop__section-title").allTextContents();
 const shopItemNames = shop => shop.locator(".equipment-shop__detail").allTextContents();
+// Each section lines prices up in one right-aligned column, one character past its longest name.
+const shopColumnsAligned = (root, listSelector, nameSelector, priceSelector) => root.locator(listSelector).evaluateAll((lists, [nameSelector, priceSelector]) => lists
+  .filter(list => list.querySelector(priceSelector))
+  .every(list => {
+    const names = [...list.querySelectorAll(nameSelector)].map(element => element.getBoundingClientRect());
+    const prices = [...list.querySelectorAll(priceSelector)].map(element => {
+      const rect = element.getBoundingClientRect();
+      return { left: rect.left + parseFloat(getComputedStyle(element).paddingLeft), right: rect.right };
+    });
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+    const nameRight = Math.max(...names.map(rect => rect.right));
+    return prices.every(rect => Math.abs(rect.right - prices[0].right) < 1)
+      && Math.abs(Math.min(...prices.map(rect => rect.left)) - nameRight - rem) < 2;
+  }), [nameSelector, priceSelector]);
 
 // Reference names only open details; buying goes through the shop's cart and one checkout.
 async function validateEquipmentShop(page) {
@@ -607,7 +621,7 @@ async function validateEquipmentShop(page) {
   const cartDialog = page.locator('.app-dialog[data-variant="equipment-shop-cart"]');
   const cartButton = shop.locator(".equipment-shop__cart-button");
   const badge = shop.locator(".equipment-shop__badge");
-  const cartNames = () => cartDialog.locator(".equipment-shop__cart-name > span:first-child").allTextContents();
+  const cartNames = () => cartDialog.locator(".equipment-shop__cart-name").allTextContents();
   await shopButton.click();
   assert.equal(await shop.locator(".equipment-shop__search").evaluate(el => el === document.activeElement), true, "shop focuses search");
   assert.equal(await shop.locator(".equipment-shop__balance").textContent(), "目前財產：1 白金幣", "balance sits under the title");
@@ -676,14 +690,22 @@ async function validateEquipmentShop(page) {
       .locator(".equipment-shop__section-title").textContent(), section, `${name} lives in ${section} within all`);
   }
 
-  await chooseCategory("冒險用品");
+  assert.equal(await shopColumnsAligned(shop, ".equipment-shop__items", ".equipment-shop__detail", ".equipment-shop__price"), true, "prices align per section in all");
+  await toggle.click();
+  await page.waitForTimeout(450);
+  assert.equal(await categories.evaluate(box => new Set([...box.querySelectorAll("button")].map(button => Math.round(button.getBoundingClientRect().top))).size), 1,
+    "desktop fits every category on one row");
+  await categories.getByRole("button", { name: "冒險用品", exact: true }).click();
+  await toggle.click();
+  await categories.waitFor({ state: "hidden" });
+  assert.equal(await shopColumnsAligned(shop, ".equipment-shop__items", ".equipment-shop__detail", ".equipment-shop__price"), true, "prices align across gear groups");
   await shop.locator(".equipment-shop__search").fill("rope");
   assert.deepEqual(await shopItemNames(shop), ["繩索"], "English search matches without showing English");
   assert.doesNotMatch(await shop.locator(".equipment-shop__list").innerText(), /[A-Za-z]/u, "shop shows no English names");
   const ropeRow = shop.locator('[data-shop-item-key="繩索"]');
   assert.deepEqual(await ropeRow.evaluate(row => [...row.children].map(child => child.className)),
-    ["equipment-shop__item-name", "equipment-shop__in-cart", "equipment-shop__add"]);
-  assert.equal(await ropeRow.locator(".equipment-shop__item-name .equipment-shop__price").textContent(), "1 金幣", "price follows the name");
+    ["equipment-shop__item-name", "equipment-shop__price", "equipment-shop__in-cart", "equipment-shop__add"]);
+  assert.equal(await ropeRow.locator(".equipment-shop__price").textContent(), "1 金幣", "price follows the name");
   const addRope = shop.getByRole("button", { name: "加入購物清單：繩索" });
   await addRope.click();
   await addRope.click();
@@ -726,6 +748,7 @@ async function validateEquipmentShop(page) {
   assert.deepEqual(await cartNames(), ["繩索", "命令術法術卷軸"]);
   const ropeLine = cartDialog.locator('[data-shop-cart-key="繩索"]');
   assert.equal(await ropeLine.locator(".equipment-shop__subtotal").textContent(), "2 金幣", "cart shows subtotals");
+  assert.equal(await shopColumnsAligned(cartDialog, ".equipment-shop__cart-list", ".equipment-shop__cart-name", ".equipment-shop__subtotal"), true, "cart subtotals align");
   assert.equal(await ropeLine.locator("input").evaluate(el => getComputedStyle(el).appearance), "textfield", "native spinners are hidden");
   await ropeLine.getByRole("button", { name: "增加繩索數量" }).click();
   assert.equal(await ropeLine.locator("input").inputValue(), "3");

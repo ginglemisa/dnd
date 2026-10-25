@@ -6325,10 +6325,10 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   font-weight: 800;
 }
 
-/* Shop and cart share one frame, so the cart reads as another page of the same window. */
+/* Shop and cart share one frame, so the cart reads as another page of the same window; 48.5rem fits all twelve categories on one row. */
 .app-dialog[data-variant="equipment-shop"] .app-dialog__surface,
 .app-dialog[data-variant="equipment-shop-cart"] .app-dialog__surface {
-  width: min(100%, 44rem);
+  width: min(100%, 48.5rem);
   height: min(90vh, 48rem);
   height: min(90dvh, 48rem);
 }
@@ -6536,11 +6536,21 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   font-size: var(--fs-base);
 }
 
+/* Rows of one section share columns: name (longest name + one character), right-aligned price, spacer, count and buttons. */
 .equipment-shop__items,
 .equipment-shop__cart-list {
+  display: grid;
+  grid-template-columns: fit-content(60%) auto minmax(0, 1fr) auto auto;
+  column-gap: 0.5rem;
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.equipment-shop__group,
+.equipment-shop__item,
+.equipment-shop__cart-line {
+  grid-column: 1 / -1;
 }
 
 .equipment-shop__group {
@@ -6550,32 +6560,41 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   font-weight: 800;
 }
 
-.equipment-shop__item {
+.equipment-shop__item,
+.equipment-shop__cart-line {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, max-content) auto minmax(0, 1fr) auto auto;
+  grid-template-columns: subgrid;
   align-items: center;
-  gap: 0.5rem;
+  row-gap: 0.4rem;
   min-height: 2.75rem;
   padding: 0.3rem 0;
   border-bottom: 1px solid var(--border);
 }
 
-.equipment-shop__item--scroll {
-  grid-template-columns: auto minmax(0, 1fr) auto;
-}
-
 .equipment-shop__item-name,
 .equipment-shop__cart-name {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.15rem 0.6rem;
+  grid-column: 1;
   min-width: 0;
   overflow-wrap: anywhere;
 }
 
 .equipment-shop__cart-name {
   font-weight: 700;
+}
+
+.equipment-shop__in-cart,
+.equipment-shop__quantity {
+  grid-column: 4;
+}
+
+.equipment-shop__add,
+.equipment-shop__remove {
+  grid-column: 5;
+}
+
+.equipment-shop__item--scroll .equipment-shop__scroll-options {
+  grid-column: 2 / 5;
 }
 
 .equipment-shop__detail {
@@ -6606,6 +6625,9 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
 
 .equipment-shop__price,
 .equipment-shop__subtotal {
+  grid-column: 2;
+  justify-self: end;
+  padding-left: 0.5rem;
   color: var(--text-body);
   font-size: var(--fs-sm);
   font-weight: 600;
@@ -6655,15 +6677,6 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
 .app-dialog__body .equipment-shop__cart-empty {
   margin: 0.75rem 0;
   color: var(--text-muted);
-}
-
-.equipment-shop__cart-line {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.45rem 0;
-  border-bottom: 1px solid var(--border);
 }
 
 .equipment-shop__quantity {
@@ -6781,17 +6794,12 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
     padding-inline: 0.8rem;
   }
 
-  .equipment-shop__item--scroll {
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
-
   .equipment-shop__item--scroll .equipment-shop__scroll-options {
     grid-column: 1 / -1;
     grid-row: 2;
   }
 
   .equipment-shop__item--scroll .equipment-shop__add {
-    grid-column: 2;
     grid-row: 1;
   }
 }
@@ -6800,11 +6808,12 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   .equipment-shop__cart-line {
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
-      "name name"
+      "name subtotal"
       "quantity remove";
   }
 
   .equipment-shop__cart-name { grid-area: name; }
+  .equipment-shop__subtotal { grid-area: subtotal; }
   .equipment-shop__quantity { grid-area: quantity; }
   .equipment-shop__remove { grid-area: remove; }
 }
