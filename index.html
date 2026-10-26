@@ -4039,7 +4039,8 @@ function setupWeaponAttackAutomation() {
     const results = calculateHandAttacks();
     const hasManualContent = ["atk-main-name", "atk-main-hit", "atk-main-dmg", "atk-off-name", "atk-off-hit", "atk-off-dmg"]
       .some(id => Boolean(document.getElementById(id)?.value));
-    if (hasManualContent && attackFieldsDifferFromCalculation(results)) {
+    // 還原／創角匯入已決定自動化狀態；欄位尚在逐一套用時，不以舊攻擊內容另開確認視窗。
+    if (!autosaveSuspended && hasManualContent && attackFieldsDifferFromCalculation(results)) {
       const confirmed = await window.AppDialog.requestDecision({
         title: "重新產生武器攻擊",
         message: "開啟自動化會以目前裝備重新產生名稱、命中與傷害，取代現有手動內容。",

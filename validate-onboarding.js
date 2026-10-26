@@ -1455,9 +1455,21 @@ async function verifyImports(browser, url, viewport = { width: 1280, height: 800
       window.quickBuild = {`);
     await route.fulfill({ response, body: source });
   });
-  for (const scenario of ["cancel", "complete", "warning", "failure", "pdf", "share", "close"]) {
+  for (const scenario of ["cancel", "complete", "warning", "failure", "pdf", "share", "close", "stored-manual-close", "stored-manual-escape"]) {
     await page.goto(url);
     await page.waitForFunction(() => window.prepareOnboardingImport && window.onboardingTour);
+    if (scenario.startsWith("stored-manual-")) {
+      await page.evaluate(() => {
+        document.getElementById("weapon-attack-automation").checked = false;
+        document.getElementById("atk-main-name").value = "舊角色的自訂攻擊";
+        document.getElementById("atk-main-hit").value = "+7";
+        document.getElementById("atk-main-dmg").value = "1d8+5";
+        saveAllFields();
+      });
+      await page.goto(url);
+      await page.waitForFunction(() => window.prepareOnboardingImport && window.onboardingTour);
+      assert.equal(await page.inputValue("#atk-main-name"), "舊角色的自訂攻擊");
+    }
     if (scenario === "complete") {
       // Seed other-class memories before load so the card reset is observable.
       await page.evaluate(() => {
@@ -1551,6 +1563,13 @@ async function verifyImports(browser, url, viewport = { width: 1280, height: 800
       assert.equal(await page.evaluate(() => window.shareRequested), true);
     } else if (scenario === "failure") {
       await page.getByRole("button", { name: "知道了", exact: true }).click();
+    } else if (scenario.startsWith("stored-manual-")) {
+      if (scenario === "stored-manual-close") await page.locator(".app-dialog__close").click();
+      else await page.keyboard.press("Escape");
+      assert.deepEqual(await page.evaluate(() => ({
+        inert: document.getElementById("main-content").inert,
+        automation: document.getElementById("weapon-attack-automation").checked
+      })), { inert: false, automation: true }, "import releases the page and keeps automation enabled after replacing old manual attacks");
     } else {
       await page.keyboard.press("Escape");
       assert.equal(await page.evaluate(() => onboardingTour.active), false);
@@ -1558,7 +1577,7 @@ async function verifyImports(browser, url, viewport = { width: 1280, height: 800
     await assertPageInteractive(page);
   }
   await page.close();
-  console.log(`Quick-build import (${viewport.width}px): confirmation cancellation, memory reset, completion copy/action order/layout, tour emphasis, warning/exception guards, PDF/share dispatch and close passed.`);
+  console.log(`Quick-build import (${viewport.width}px): stored manual attacks, close/Escape page unlock, confirmation cancellation, memory reset, completion copy/action order/layout, tour emphasis, warning/exception guards, PDF/share dispatch and close passed.`);
 }
 
 async function assertPageInteractive(page) {

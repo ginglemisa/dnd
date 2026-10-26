@@ -1037,6 +1037,21 @@ async function verifyEquipmentLoadout(browser, url) {
     await page.selectOption("#class", "fighter");
     await page.getByRole("tab", { name: "裝備", exact: true }).click();
     await page.selectOption("#mainHand", "長劍");
+    // Only an interactive opt-in asks to replace manual attacks; state restoration
+    // already specifies the desired mode and must not leave a pending dialog.
+    await page.getByRole("tab", { name: "動作", exact: true }).click();
+    await page.uncheck("#weapon-attack-automation");
+    await page.fill("#atk-main-name", "自訂長劍攻擊");
+    await page.check("#weapon-attack-automation");
+    const automationDialog = page.getByRole("alertdialog", { name: "重新產生武器攻擊", exact: true });
+    await automationDialog.getByRole("button", { name: "保留手動內容", exact: true }).click();
+    assert.equal(await page.isChecked("#weapon-attack-automation"), false);
+    assert.equal(await page.inputValue("#atk-main-name"), "自訂長劍攻擊");
+    await page.check("#weapon-attack-automation");
+    await automationDialog.getByRole("button", { name: "開啟自動化", exact: true }).click();
+    assert.equal(await page.isChecked("#weapon-attack-automation"), true);
+    assert.equal(await page.inputValue("#atk-main-name"), "長劍");
+    await page.getByRole("tab", { name: "裝備", exact: true }).click();
     await page.check("#offHandAsMain");
     await page.selectOption("#offHand", "標槍");
 
