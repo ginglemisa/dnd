@@ -328,7 +328,7 @@
   const GOLIATH_ANCESTRY_ABILITY_LINES = Object.freeze({
     cloud: Object.freeze(['附贈傳送30呎', '內可見無人空間']),
     fire: Object.freeze(['命中+1d10火傷']),
-    frost: Object.freeze(['命中+1d6冰傷', '目標速度-10呎']),
+    frost: Object.freeze(['命中+1d6冷凍', '目標速度-10呎']),
     hill: Object.freeze(['大型以下可擊倒']),
     stone: Object.freeze(['反應減1d12+C傷']),
     storm: Object.freeze(['受傷可反應反擊', '60呎內1d8雷鳴'])
@@ -343,8 +343,8 @@
     gold_fire: '金龍-火',
     green_poison: '綠龍-毒',
     red_fire: '紅龍-火',
-    silver_cold: '銀龍-寒',
-    white_cold: '白龍-寒'
+    silver_cold: '銀龍-冰',
+    white_cold: '白龍-冰'
   });
 
   const ELF_LINEAGE_LABELS = Object.freeze({

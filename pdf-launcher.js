@@ -49,7 +49,7 @@ async function ensurePdfExportReady() {
     pdfExportLoaderPromise = (async () => {
       await loadScriptOnce("pdf-lib.custom.min.js");
       await loadScriptOnce("fontkit.custom.min.js");
-      await loadScriptOnce("pdf-field-map.js?v=20261026-subclass-names");
+      await loadScriptOnce("pdf-field-map.js?v=20261026-cold-label");
       await loadScriptOnce("pdf-export.js?v=20261025-pdf-text-wrap");
     })().catch((error) => {
       pdfExportLoaderPromise = null;
@@ -212,7 +212,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
 
     const race = (state?.race || "").trim();
     const raceChoices = {
-      dragonborn: { key:"dragonbornAncestry", title:"請選擇龍族血統", options:[["black_acid","黑龍－酸"],["blue_lightning","藍龍－電"],["brass_fire","黃銅龍－火"],["bronze_lightning","青銅龍－電"],["copper_acid","赤銅龍－酸"],["gold_fire","金龍－火"],["green_poison","綠龍－毒"],["red_fire","紅龍－火"],["silver_cold","銀龍－寒"],["white_cold","白龍－寒"]] },
+      dragonborn: { key:"dragonbornAncestry", title:"請選擇龍族血統", options:[["black_acid","黑龍－酸"],["blue_lightning","藍龍－電"],["brass_fire","黃銅龍－火"],["bronze_lightning","青銅龍－電"],["copper_acid","赤銅龍－酸"],["gold_fire","金龍－火"],["green_poison","綠龍－毒"],["red_fire","紅龍－火"],["silver_cold","銀龍－冰"],["white_cold","白龍－冰"]] },
       elf: { key:"elfLineage", title:"請選擇精靈傳承", options:[["drow","卓爾"],["high_elf","高等精靈"],["wood_elf","木精靈"]] },
       gnome: { key:"gnomeLineage", title:"請選擇侏儒血統", options:[["forest_gnome","森林侏儒"],["rock_gnome","岩石侏儒"]] },
       goliath: { key:"goliathAncestry", title:"請選擇巨人裔祖源", options:[["cloud","雲裔"],["fire","火裔"],["frost","霜裔"],["hill","丘陵裔"],["stone","石裔"],["storm","風暴裔"]] },
