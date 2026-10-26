@@ -98,6 +98,27 @@
     feats1: Object.freeze({ maxUnitsPerLine: 14, maxLines: 10, maxTotalUnits: 140 })
   });
   const MAX_PDF_SPELL_ROWS = 19;
+  const MAX_PDF_WEAPON_ROWS = 7;
+
+  // The official sheet's multiline fields are wider and taller. Units assume
+  // a 9 pt appearance: each CJK glyph takes two units of 4.5 pt.
+  const OFFICIAL_PDF_TEXT_SPECS = Object.freeze({
+    classFeatures1: Object.freeze({ maxUnitsPerLine: 38, maxLines: 17 }),
+    classFeatures2: Object.freeze({ maxUnitsPerLine: 38, maxLines: Number.MAX_SAFE_INTEGER }),
+    specie_features1: Object.freeze({ maxUnitsPerLine: 36, maxLines: 14, maxTotalUnits: 36 * 14 }),
+    feats1: Object.freeze({ maxUnitsPerLine: 38, maxLines: 14, maxTotalUnits: 38 * 14 })
+  });
+  const OFFICIAL_MAX_PDF_SPELL_ROWS = 30;
+  const OFFICIAL_MAX_PDF_WEAPON_ROWS = 6;
+  const OFFICIAL_SPELL_ROW_SUFFIXES = Array.from('123456789abcdefghijklmnopqrstu');
+
+  function isOfficialSheet(options = {}) {
+    return options.sheetTemplate === 'official';
+  }
+
+  function getPdfTextSpecs(options = {}) {
+    return isOfficialSheet(options) ? OFFICIAL_PDF_TEXT_SPECS : PDF_TEXT_SPECS;
+  }
 
   const SKILL_ROWS = Object.freeze([
     { name: '運動', profId: 'prof-運動', expId: 'exp-運動', modId: 'skill-運動', chkField: 'athleticsChk1', modField: 'athleticsMod1' },
@@ -657,7 +678,7 @@
     const lines = typeof templateBuilder === 'function'
       ? templateBuilder(context)
       : buildFallbackRacePdfText();
-    return wrapTextForPdf(lines.join('\n'), PDF_TEXT_SPECS.specie_features1);
+    return wrapTextForPdf(lines.join('\n'), getPdfTextSpecs(options).specie_features1);
   }
 
   function normalizeText(value) {
@@ -1294,7 +1315,7 @@ function isWeaponRowEmpty(payload, slot) {
   return !weaponName && otherFieldsAreEmpty;
 }
 
-  function fillDamageCantripsToWeaponRows(payload, spellRows, state) {
+  function fillDamageCantripsToWeaponRows(payload, spellRows, state, maxSlots = MAX_PDF_WEAPON_ROWS) {
     const cantripRows = spellRows.filter((row) => row.level === 0);
     if (!cantripRows.length) return;
 
@@ -1309,7 +1330,7 @@ function isWeaponRowEmpty(payload, slot) {
     }
 
     for (const row of cantripRows) {
-      if (slot > 7) break;
+      if (slot > maxSlots) break;
       const config = DAMAGE_CANTRIP_EXPORT_MAP[row.spellId];
       if (!config) continue;
       const exportValues = getDamageCantripExportValues(config, row.spellId, state);
@@ -1392,6 +1413,20 @@ function isWeaponRowEmpty(payload, slot) {
     const lookup = getLanguageOptions();
     const found = lookup.find((item) => item.value === value);
     return found?.label || '';
+  }
+
+  // Languages a class grants once its feature heading is present: Thieves'
+  // Cant with the rogue's extra language, or the ranger's two languages.
+  function getClassLanguageLabels(classFeatureLines, classKey, state) {
+    if (classKey === 'ranger' && classFeatureLines.includes('等級 2：熟練探險家')) {
+      return [state['language-extra-1'], state['language-extra-2']]
+        .map(getLanguageLabelByValue)
+        .filter(Boolean);
+    }
+    if (classKey === 'rogue' && classFeatureLines.includes('等級 1：盜賊黑話')) {
+      return ['盜賊黑話', getLanguageLabelByValue(state['language-extra-2'])].filter(Boolean);
+    }
+    return [];
   }
 
   function insertClassLanguageLines(classFeatureLines, classKey, state) {
@@ -1497,11 +1532,12 @@ function isWeaponRowEmpty(payload, slot) {
     return (FEAT_PDF_LINES[entry.name] || [getFeatPdfDisplayLabel(entry.name)])[0];
   }
 
-  function buildFeatPdfText(state) {
+  function buildFeatPdfText(state, options = {}) {
+    const featSpec = getPdfTextSpecs(options).feats1;
     const entries = getSelectedFeatEntries(state);
     const detailedLines = entries.flatMap((entry) => getFeatPdfLineGroup(state, entry));
     const detailedResult = wrapTextForPdfWithOverflow(
-      detailedLines.join('\n'), PDF_TEXT_SPECS.feats1
+      detailedLines.join('\n'), featSpec
     );
     if (!detailedResult.truncated) {
       return { text: detailedResult.text, overflowTitles: [] };
@@ -1510,7 +1546,7 @@ function isWeaponRowEmpty(payload, slot) {
     // When any detailed feat would be omitted, switch the entire field to
     // titles before deciding whether anything needs the secondary field.
     const titles = entries.map(getFeatPdfTitle);
-    const titleResult = wrapTextForPdfWithOverflow(titles.join('\n'), PDF_TEXT_SPECS.feats1);
+    const titleResult = wrapTextForPdfWithOverflow(titles.join('\n'), featSpec);
     if (!titleResult.truncated) {
       return { text: titleResult.text, overflowTitles: [] };
     }
@@ -1518,11 +1554,11 @@ function isWeaponRowEmpty(payload, slot) {
     // Count actual wrapped PDF lines, keeping each title intact and reserving
     // the final line for the existing overflow notice.
     const shownLines = [];
-    const maxContentLines = PDF_TEXT_SPECS.feats1.maxLines - 1;
+    const maxContentLines = featSpec.maxLines - 1;
     let shownCount = 0;
     for (const title of titles) {
       const titleLines = wrapTextForPdf(title, {
-        ...PDF_TEXT_SPECS.feats1,
+        ...featSpec,
         maxLines: Number.MAX_SAFE_INTEGER
       }).split('\n');
       if (shownLines.length + titleLines.length > maxContentLines) break;
@@ -1584,12 +1620,14 @@ function isWeaponRowEmpty(payload, slot) {
     const classKey = normalizeText(state.class);
     const backgroundKey = normalizeText(state.background);
     const level = normalizeText(state.level);
+    const official = isOfficialSheet(options);
+    const textSpecs = getPdfTextSpecs(options);
 
     Object.entries(DIRECT_FIELD_MAP).forEach(([stateKey, pdfFieldName]) => {
       payload[pdfFieldName] = normalizeText(state[stateKey]);
     });
 
-    if (options.outputMode === 'compact') {
+    if (!official && options.outputMode === 'compact') {
       ['str', 'dex', 'con', 'int', 'wis', 'cha'].forEach((ability) => {
         const fieldName = `${ability}SaveMod1`;
         payload[fieldName] = formatCompactSavingThrowModifier(payload[fieldName]);
@@ -1636,7 +1674,8 @@ function isWeaponRowEmpty(payload, slot) {
     payload.proficiencyBonus1 = profBonus;
 
     const selectedToolNames = collectToolProficiencyNames(state);
-    payload.toolsProficiency1 = selectedToolNames.slice(0, 2).join('、');
+    // The official sheet's tool field is multiline and holds every tool.
+    payload.toolsProficiency1 = (official ? selectedToolNames : selectedToolNames.slice(0, 2)).join('、');
 
     Object.entries(CHECKBOX_FIELD_MAP).forEach(([stateKey, pdfFieldName]) => {
       payload[pdfFieldName] = Boolean(state[stateKey]);
@@ -1657,21 +1696,29 @@ function isWeaponRowEmpty(payload, slot) {
       .filter(Boolean)
       .join(', ');
 
-    const classFeatureLines = insertClassLanguageLines(
-      mergeClassFeatureHeadings(
-        insertSelectedClassFeatureChoices(
-          extractClassFeatureHeadings(getClassFeaturesMap()[classKey] || '', level),
-          classKey,
-          state
-        ),
-        classKey
+    const mergedClassFeatureLines = mergeClassFeatureHeadings(
+      insertSelectedClassFeatureChoices(
+        extractClassFeatureHeadings(getClassFeaturesMap()[classKey] || '', level),
+        classKey,
+        state
       ),
-      classKey,
-      state
+      classKey
     );
+    // The official language field holds Common and every class language, so
+    // class features keep only their own headings there.
+    const classFeatureLines = official
+      ? mergedClassFeatureLines
+      : insertClassLanguageLines(mergedClassFeatureLines, classKey, state);
+    if (official) {
+      payload.language1 = [...new Set([
+        '通用語',
+        ...[state.language1, state.language2].map(getBaseLanguageLabelForPdf),
+        ...getClassLanguageLabels(mergedClassFeatureLines, classKey, state)
+      ].filter(Boolean))].join('、');
+    }
     const classFeatureResult1 = wrapTextForPdfWithOverflow(
       classFeatureLines.join('\n'),
-      PDF_TEXT_SPECS.classFeatures1
+      textSpecs.classFeatures1
     );
     payload.classFeatures1 = classFeatureResult1.text;
     payload.classFeatures2 = classFeatureResult1.overflow;
@@ -1703,7 +1750,7 @@ function isWeaponRowEmpty(payload, slot) {
         ? `${payload.classFeatures2}\n${extraClassLines.join('\n')}`
         : extraClassLines.join('\n');
     }
-    const featResult = buildFeatPdfText(state);
+    const featResult = buildFeatPdfText(state, options);
     payload.feats1 = featResult.text;
     if (featResult.overflowTitles.length) {
       const remainingFeats = `其餘專長:${featResult.overflowTitles.join(', ')}`;
@@ -1711,14 +1758,15 @@ function isWeaponRowEmpty(payload, slot) {
         ? `${payload.classFeatures2}\n${remainingFeats}`
         : remainingFeats;
     }
-    // Compact normally limits this visible field to ten lines, but must not
-    // truncate either existing content or appended feat titles when they spill.
+    // Compact normally limits this visible field to the first column's line
+    // count, but must not truncate either existing content or appended feat
+    // titles when they spill.
     payload.classFeatures2 = options.outputMode === 'compact' && !featResult.overflowTitles.length
       ? wrapTextForPdfWithEllipsis(payload.classFeatures2, {
-        ...PDF_TEXT_SPECS.classFeatures2,
-        maxLines: 10
+        ...textSpecs.classFeatures2,
+        maxLines: textSpecs.classFeatures1.maxLines
       })
-      : wrapTextForPdf(payload.classFeatures2, PDF_TEXT_SPECS.classFeatures2);
+      : wrapTextForPdf(payload.classFeatures2, textSpecs.classFeatures2);
 
     payload.specie_features1 = buildRaceTemplateText(state, options);
     payload.speed1 = resolveSpeedForPdf(state, options);
@@ -1732,10 +1780,36 @@ function isWeaponRowEmpty(payload, slot) {
 
     // The replacement character sheet supplies rows 1-19 only. Preserve any
     // remaining prepared spells as a compact summary in the notes field.
+    // The official sheet marks a shield with its AC checkbox, so a bare
+    // shield attack row is dropped and attack cantrips move up into it.
+    if (official) {
+      let removedShieldRow = false;
+      for (let slot = 1; slot <= 2; slot++) {
+        const fields = [`attack-weap-name-${slot}`, `toHit${slot}`, `dmg_type_${slot}`, `wp-note-${slot}`];
+        const [name, hit, damage, note] = fields.map((fieldName) => normalizeText(payload[fieldName]));
+        if (name === '盾牌' && !hit && !damage && ['', '盾面繪有聖徽'].includes(note)) {
+          fields.forEach((fieldName) => { payload[fieldName] = ''; });
+          removedShieldRow = true;
+        }
+      }
+      if (removedShieldRow && isWeaponRowEmpty(payload, 1) && !isWeaponRowEmpty(payload, 2)) {
+        ['attack-weap-name-', 'toHit', 'dmg_type_', 'wp-note-'].forEach((prefix) => {
+          payload[`${prefix}1`] = payload[`${prefix}2`];
+          payload[`${prefix}2`] = '';
+        });
+      }
+    }
+
+    const maxSpellRows = official ? OFFICIAL_MAX_PDF_SPELL_ROWS : MAX_PDF_SPELL_ROWS;
     const allSpellRows = buildSpellRows(state);
-    const spellRows = allSpellRows.slice(0, MAX_PDF_SPELL_ROWS);
-    const remainingSpellRows = allSpellRows.slice(MAX_PDF_SPELL_ROWS);
-    fillDamageCantripsToWeaponRows(payload, spellRows, state);
+    const spellRows = allSpellRows.slice(0, maxSpellRows);
+    const remainingSpellRows = allSpellRows.slice(maxSpellRows);
+    fillDamageCantripsToWeaponRows(
+      payload,
+      spellRows,
+      state,
+      official ? OFFICIAL_MAX_PDF_WEAPON_ROWS : MAX_PDF_WEAPON_ROWS
+    );
     if (spellRows.length > 0) {
       spellRows.forEach((row, index) => {
         const xx = String(index + 1);
@@ -1746,7 +1820,11 @@ function isWeaponRowEmpty(payload, slot) {
         const rangeRaw = getSpellLine(desc, '射程');
 
         payload[`sp-level-${xx}`] = String(row.level);
-        payload[`sp-name-${xx}`] = wrapTextForPdf(getCanonicalSpell(row.spellId)?.nameZh || '', { maxUnitsPerLine: 14, maxLines: 2 });
+        const spellName = getCanonicalSpell(row.spellId)?.nameZh || '';
+        // Official spell-name fields are single-line and fit by width instead.
+        payload[`sp-name-${xx}`] = official
+          ? spellName
+          : wrapTextForPdf(spellName, { maxUnitsPerLine: 14, maxLines: 2 });
         payload[`sp-cast-time-${xx}`] = convertCastTimeText(castTimeRaw);
         payload[`sp-range-${xx}`] = row.spellId === 'spare-the-dying'
           ? getSpareTheDyingRangeForPdf(level)
@@ -1773,7 +1851,7 @@ function isWeaponRowEmpty(payload, slot) {
     payload['spell-level-4'] = slots.slot4;
 
     const extraNotes = [];
-    const overflowToolNames = selectedToolNames.slice(2);
+    const overflowToolNames = official ? [] : selectedToolNames.slice(2);
     if (overflowToolNames.length > 0) {
       extraNotes.push(`其他工具熟練：${overflowToolNames.join('、')}`);
     }
@@ -1833,7 +1911,138 @@ function isWeaponRowEmpty(payload, slot) {
       }
     }
 
-    return payload;
+    return official ? convertPayloadToOfficialSheet(payload, state) : payload;
+  }
+
+  const OFFICIAL_ABILITY_FIELD_PREFIXES = Object.freeze({
+    str: 'str', dex: 'dex', con: 'con', int: 'int', wis: 'wis', cha: 'chr'
+  });
+
+  const OFFICIAL_SKILL_FIELD_NAMES = Object.freeze({
+    athletics: 'str-ath',
+    acrobatics: 'dex-acr',
+    sleightOfHand: 'dex-soh',
+    stealth: 'dex-ste',
+    arcana: 'int-arc',
+    history: 'int-his',
+    investigation: 'int-inv',
+    nature: 'int-nat',
+    religion: 'int-rel',
+    animalHandling: 'wis-ah',
+    insight: 'wis-ins',
+    medicine: 'wis-med',
+    perception: 'wis-per',
+    survival: 'wis-sur',
+    deception: 'chr-dec',
+    intimidation: 'chr-thr',
+    performance: 'chr-per',
+    persuasion: 'chr-psu'
+  });
+
+  const OFFICIAL_DIRECT_FIELD_NAMES = Object.freeze({
+    Name1: 'name',
+    Background2: 'bg',
+    Specie1: 'spiece',
+    // The third-party template stores the class label in Subclass1 and the
+    // subclass label in Class1; the official sheet uses visible names.
+    Subclass1: 'class',
+    Class1: 'sub',
+    Level1: 'LV',
+    AC1: 'AC',
+    hp_max1: 'max',
+    initiative1: 'initiative',
+    speed1: 'speed',
+    passivePerception1: 'passiv-dcp',
+    proficiencyBonus1: 'pro',
+    heroInspiration1: 'hero insp',
+    chk_light1: 'light',
+    chk_medium1: 'medium',
+    chk_heavy1: 'heavy',
+    chk_shld1: 'shld_pro',
+    weaponsProficiency1: 'wp_pro',
+    toolsProficiency1: 'tool_pro',
+    classFeatures1: 'class-a-1',
+    classFeatures2: 'class-a-2',
+    specie_features1: 'speice-trat',
+    feats1: 'feat-trat',
+    spell_cast_attri1: 'cast_atri',
+    spell_cast_Mod1: 'cast_m',
+    spell_cast_DC1: 'cast_dc',
+    spell_cast_toHit1: 'cast_hit',
+    alignment1: 'Ali',
+    language1: 'Lang',
+    'cp-coin1': 'CP',
+    'sp-coin1': 'SP',
+    'gp-coin1': 'GP',
+    'pp-coin1': 'PP'
+  });
+
+  // Translate the shared payload into the official sheet's field names. The
+  // shared builder still owns every rule and text decision.
+  function convertPayloadToOfficialSheet(payload, state) {
+    const official = {};
+    const copy = (sourceName, targetName) => {
+      if (Object.prototype.hasOwnProperty.call(payload, sourceName)) {
+        official[targetName] = payload[sourceName];
+      }
+    };
+
+    Object.entries(OFFICIAL_DIRECT_FIELD_NAMES).forEach(([sourceName, targetName]) => {
+      copy(sourceName, targetName);
+    });
+
+    Object.entries(OFFICIAL_ABILITY_FIELD_PREFIXES).forEach(([ability, prefix]) => {
+      // Third-party names are swapped: `${ability}Mod1` holds the score.
+      copy(`${ability}Mod1`, prefix);
+      copy(`${ability}1`, `${prefix}-m`);
+      copy(`${ability}SaveMod1`, `${prefix}-st`);
+      copy(`${ability}SaveChk1`, `${prefix}-st-c`);
+    });
+
+    SKILL_ROWS.forEach((skill) => {
+      const key = skill.modField.replace(/Mod\d$/, '');
+      const targetName = OFFICIAL_SKILL_FIELD_NAMES[key];
+      if (!targetName) return;
+      copy(skill.modField, targetName);
+      copy(skill.chkField, `${targetName}-c`);
+    });
+
+    for (let slot = 1; slot <= OFFICIAL_MAX_PDF_WEAPON_ROWS; slot++) {
+      copy(`attack-weap-name-${slot}`, `attack-wp-name${slot}`);
+      copy(`toHit${slot}`, `tohit${slot}`);
+      copy(`dmg_type_${slot}`, `dmg-type${slot}`);
+      copy(`wp-note-${slot}`, `note${slot}`);
+    }
+
+    for (let level = 1; level <= 9; level++) {
+      copy(`spell-level-${level}`, `lvl-${level}`);
+    }
+
+    OFFICIAL_SPELL_ROW_SUFFIXES.forEach((suffix, index) => {
+      const row = index + 1;
+      copy(`sp-level-${row}`, `sp${suffix}`);
+      copy(`sp-name-${row}`, `spn-${suffix}`);
+      copy(`sp-cast-time-${row}`, `spt-${suffix}`);
+      // The template names only the first range field without a hyphen.
+      copy(`sp-range-${row}`, row === 1 ? 'spr1' : `spr-${suffix}`);
+      copy(`sp-c-${row}`, `chk-c${suffix}`);
+      copy(`sp-r-${row}`, `chk-r${suffix}`);
+      copy(`sp-m-${row}`, `chk-m${suffix}`);
+      copy(`note${row}`, `spnt-${suffix}`);
+    });
+
+    official.size = normalizeText(state['character-size']);
+    official.shld = hasEffectiveShieldForPdf(state);
+    const hitDie = normalizeText(payload.hp_dice_max1);
+    const levelNumber = getSelectedLevelNumber(state.level);
+    official['max-hd'] = hitDie ? `${levelNumber || ''}d${hitDie}` : '';
+    // The official sheet has no notes field, so notes follow the equipment.
+    official.Equip = [payload.equipment1, payload.extra1]
+      .map(normalizeText)
+      .filter(Boolean)
+      .join('\n');
+
+    return official;
   }
 
   globalScope.PDF_FIELD_MAP = {

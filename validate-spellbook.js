@@ -1642,6 +1642,7 @@ async function verifyPdfSpellbookOptions(page) {
       await page.evaluate(() => { window.__pdfTestOptions = null; window.__pdfTestDone = showPdfExportModal(__pdfTestState, [], null); });
       const modal = page.locator('.pdf-export-flow-modal');
       await modal.getByRole('button', { name: '繼續', exact: true }).click();
+      await modal.locator('.pdf-export-choice-option').filter({ hasText: '第三方角色卡' }).click();
       assert.equal(await modal.locator('.pdf-export-name-field__optional').count(), 2, "both names are marked optional");
       await modal.locator('#pdf-export-english-name').fill("Enix Zakarum");
       await modal.getByRole('button', { name: '下一步', exact: true }).click();
@@ -1654,10 +1655,43 @@ async function verifyPdfSpellbookOptions(page) {
         englishName: __pdfTestOptions.englishName, checkedMode: __pdfTestEnglishMode })), { mode, include, englishName: "Enix Zakarum", checkedMode: mode });
     }
   }
+  // The official sheet offers the device's avatar only when one is saved,
+  // unchecked by default, and links its own blank sheet.
+  const avatar = await page.evaluate(() => { const canvas = document.createElement("canvas"); canvas.width = canvas.height = 4; return canvas.toDataURL("image/png"); });
+  for (const savedAvatar of [false, true]) {
+    await page.evaluate(([savedAvatar, avatar]) => {
+      if (savedAvatar) window.dndStorage.setItem("dnd.tabletopAvatar.v1", avatar); else window.dndStorage.removeItem("dnd.tabletopAvatar.v1");
+      window.__pdfTestOptions = null; window.__pdfTestEnglishMode = null;
+      window.__pdfTestDone = showPdfExportModal({ ...__pdfTestState, class: "fighter" }, [], null);
+    }, [savedAvatar, avatar]);
+    const officialModal = page.locator('.pdf-export-flow-modal');
+    await officialModal.getByRole('button', { name: '繼續', exact: true }).click();
+    await officialModal.locator('.pdf-export-choice-option').filter({ hasText: '官方角色卡' }).click();
+    assert.equal(await officialModal.locator('#pdf-export-english-name').count(), 0, "official sheet omits the English name");
+    const avatarOption = officialModal.locator('#pdf-export-include-avatar');
+    assert.equal(await avatarOption.count(), savedAvatar ? 1 : 0, "avatar option follows the saved avatar");
+    if (savedAvatar) {
+      assert.equal(await avatarOption.isChecked(), false, "avatar option starts unchecked");
+      await avatarOption.check();
+    }
+    await officialModal.locator('#pdf-export-character-name').fill("官方角色");
+    await officialModal.locator('#pdf-export-character-name').press('Enter');
+    await officialModal.locator('.pdf-export-choice-option').first().click();
+    assert.deepEqual(await officialModal.locator('.pdf-export-format-option__heading strong').allInnerTexts(), ["可編輯版", "不可編輯版"]);
+    assert.equal(await officialModal.locator('.pdf-export-format-note a').getAttribute('href'), "https://drive.google.com/file/d/1g_t-5WBbZPvCWXFo4gM0s6ZoDQR7Djf1/view?usp=sharing");
+    await officialModal.locator('.pdf-export-format-option').filter({ has: page.getByText("不可編輯版", { exact: true }) }).click();
+    await page.evaluate(() => __pdfTestDone);
+    assert.deepEqual(await page.evaluate(() => ({ mode: __pdfTestOptions.outputMode, sheet: __pdfTestOptions.sheetTemplate,
+      characterName: __pdfTestOptions.characterName, englishName: __pdfTestOptions.englishName, checkedMode: __pdfTestEnglishMode,
+      avatar: __pdfTestOptions.avatarDataUrl, includeAvatar: "includeAvatar" in __pdfTestOptions })),
+    { mode: "compact", sheet: "official", characterName: "官方角色", englishName: "", checkedMode: "compact", avatar: savedAvatar ? avatar : "", includeAvatar: false });
+  }
+  await page.evaluate(() => window.dndStorage.removeItem("dnd.tabletopAvatar.v1"));
   for (const classId of ["warlock", "cleric", "fighter"]) {
     await page.evaluate(classId => { window.__pdfTestDone = showPdfExportModal({...__pdfTestState, class: classId}, [], null); }, classId);
     const modal = page.locator('.pdf-export-flow-modal');
     await modal.getByRole('button', {name: '繼續', exact: true}).click();
+    await modal.locator('.pdf-export-choice-option').filter({ hasText: '第三方角色卡' }).click();
     await modal.getByRole('button', {name: '下一步', exact: true}).click();
     await modal.locator('.pdf-export-choice-option').first().click();
     assert.equal(await modal.locator('#pdf-export-title').innerText(), "選擇 PDF 格式", `${classId} skips the wizard-only question`);
@@ -1669,6 +1703,7 @@ async function verifyPdfSpellbookOptions(page) {
       __spellManagement: { version: 2, manual: true, entries: [] } }, [], null); }, classId);
     const modal = page.locator('.pdf-export-flow-modal');
     await modal.getByRole('button', { name: '繼續', exact: true }).click();
+    await modal.locator('.pdf-export-choice-option').filter({ hasText: '第三方角色卡' }).click();
     await modal.getByRole('button', { name: '下一步', exact: true }).click();
     await modal.locator('.pdf-export-choice-option').first().click();
     assert.equal(await modal.locator('#pdf-export-title').innerText(), "是否將法術書寫入法術 notes？", `${classId} manual mode with an existing book keeps the book export choice`);
@@ -1680,6 +1715,7 @@ async function verifyPdfSpellbookOptions(page) {
     __spellManagement: { version: 2, manual: true, entries: [] }, __wizardSpellbook: { version: 1, spellIds: [] } }, [], null); });
   const emptyBookModal = page.locator('.pdf-export-flow-modal');
   await emptyBookModal.getByRole('button', { name: '繼續', exact: true }).click();
+  await emptyBookModal.locator('.pdf-export-choice-option').filter({ hasText: '第三方角色卡' }).click();
   await emptyBookModal.getByRole('button', { name: '下一步', exact: true }).click();
   await emptyBookModal.locator('.pdf-export-choice-option').first().click();
   assert.equal(await emptyBookModal.locator('#pdf-export-title').innerText(), "選擇 PDF 格式", "manual non-wizard without a book skips the irrelevant book question");
@@ -1687,7 +1723,7 @@ async function verifyPdfSpellbookOptions(page) {
   await page.evaluate(() => { window.__pdfTestOptions = null; window.__pdfTestDone = downloadQuickBuildCompactPdf(); });
   await page.getByRole('button', { name: '下載 PDF', exact: true }).click();
   await page.evaluate(() => __pdfTestDone);
-  assert.deepEqual(await page.evaluate(() => ({mode: __pdfTestOptions.outputMode, include: __pdfTestOptions.includeSpellbook})), {mode: "compact", include: true});
+  assert.deepEqual(await page.evaluate(() => ({mode: __pdfTestOptions.outputMode, sheet: __pdfTestOptions.sheetTemplate, include: __pdfTestOptions.includeSpellbook})), {mode: "compact", sheet: "official", include: true});
   console.log("PDF spellbook option: yes/no in both formats, exporter/notes mapping, and quick-build default passed.");
 }
 

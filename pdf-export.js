@@ -23,7 +23,115 @@
       spellNotes: Object.freeze({
         ...settings.spellNotes,
         fontSizes: Object.freeze([...(settings.spellNotes?.fontSizes || [])])
-      })
+      }),
+      spellNotePattern: settings.spellNotePattern === undefined ? /^note\d+$/ : settings.spellNotePattern,
+      measuredWrapFields: Object.freeze([...(settings.measuredWrapFields || ['equipment1', 'extra1'])]),
+      editableFixedMultilineFields: Object.freeze([
+        ...(settings.editableFixedMultilineFields || ['classFeatures1', 'specie_features1', 'feats1'])
+      ]),
+      editableScrollableFields: Object.freeze([
+        ...(settings.editableScrollableFields || ['classFeatures2', 'extra1', 'equipment1'])
+      ]),
+      avatarFieldSuffix: settings.avatarFieldSuffix || '',
+      nameField: settings.nameField || 'Name1',
+      nameFieldWidth: settings.nameFieldWidth || null,
+      hasEnglishName: settings.hasEnglishName !== false
+    });
+  }
+
+  // Official sheet field groups, named after the template's own fields.
+  const OFFICIAL_SPELL_ROW_SUFFIXES = Array.from('123456789abcdefghijklmnopqrstu');
+  const OFFICIAL_SPELL_NOTE_FIELDS = OFFICIAL_SPELL_ROW_SUFFIXES.map((suffix) => `spnt-${suffix}`);
+  const OFFICIAL_WEAPON_NOTE_FIELDS = Array.from({ length: 6 }, (_, index) => `note${index + 1}`);
+  const OFFICIAL_MEASURED_WRAP_FIELDS = Object.freeze([
+    'class-a-1', 'class-a-2', 'speice-trat', 'feat-trat', 'wp_pro', 'tool_pro', 'Lang', 'Equip',
+    ...OFFICIAL_WEAPON_NOTE_FIELDS,
+    ...OFFICIAL_SPELL_NOTE_FIELDS
+  ]);
+
+  function createOfficialPdfLayoutSettings(overrides = {}) {
+    return createPdfLayoutSettings({
+      minFontSize: 6,
+      fieldMinFontSizes: {
+        name: 8,
+        'class-a-1': 7,
+        'class-a-2': 7,
+        'speice-trat': 7,
+        'feat-trat': 7,
+        Equip: 7,
+        ...Object.fromEntries(OFFICIAL_SPELL_NOTE_FIELDS.map((fieldName) => [fieldName, 5.5])),
+        ...Object.fromEntries(OFFICIAL_WEAPON_NOTE_FIELDS.map((fieldName) => [fieldName, 5.5]))
+      },
+      horizontalPadding: 4,
+      verticalPadding: 2,
+      lineHeightFactor: 1.15,
+      namedFontSizes: {
+        name: 12,
+        bg: 10,
+        spiece: 10,
+        class: 10,
+        sub: 10,
+        LV: 14,
+        AC: 16,
+        max: 14,
+        'max-hd': 8,
+        initiative: 14,
+        speed: 12,
+        size: 12,
+        'passiv-dcp': 14,
+        pro: 18,
+        cast_atri: 12,
+        cast_m: 14,
+        cast_dc: 14,
+        cast_hit: 14,
+        Ali: 10,
+        Lang: 9,
+        Equip: 9,
+        wp_pro: 9,
+        tool_pro: 9,
+        'class-a-1': 9,
+        'class-a-2': 9,
+        'speice-trat': 9,
+        'feat-trat': 9,
+        CP: 10,
+        SP: 10,
+        GP: 10,
+        PP: 10
+      },
+      fixedFontSizes: {
+        str: 16, dex: 16, con: 16, int: 16, wis: 16, chr: 16,
+        'str-m': 22, 'dex-m': 22, 'con-m': 22, 'int-m': 22, 'wis-m': 22, 'chr-m': 22
+      },
+      patternFontSizes: [
+        { pattern: /^(?:str|dex|con|int|wis|chr)-[a-z]+$/, fontSize: 9 },
+        { pattern: /^lvl-\d$/, fontSize: 10 },
+        { pattern: /^attack-wp-name\d$/, fontSize: 10 },
+        { pattern: /^(?:tohit|dmg-type)\d$/, fontSize: 9 },
+        { pattern: /^note\d$/, fontSize: 8 },
+        { pattern: /^sp[1-9a-u]$/, fontSize: 10 },
+        { pattern: /^spn-[1-9a-u]$/, fontSize: 10 },
+        { pattern: /^(?:spt-[1-9a-u]|spr1|spr-[1-9a-u])$/, fontSize: 8 },
+        { pattern: /^spnt-[1-9a-u]$/, fontSize: 7.5 }
+      ],
+      centeredFields: [
+        'LV', 'AC', 'max', 'max-hd', 'initiative', 'speed', 'size', 'passiv-dcp', 'pro',
+        'cast_m', 'cast_dc', 'cast_hit', 'CP', 'SP', 'GP', 'PP'
+      ],
+      spellRows: { count: 0 },
+      spellNotes: { fontSizes: [] },
+      spellNotePattern: null,
+      measuredWrapFields: OFFICIAL_MEASURED_WRAP_FIELDS,
+      editableFixedMultilineFields: ['speice-trat', 'feat-trat', 'class-a-1'],
+      editableScrollableFields: ['class-a-2', 'wp_pro', 'tool_pro', 'Lang', 'Equip'],
+      // The appearance box's image button; its CJK prefix is stored in an
+      // encoding that decodes differently across readers.
+      avatarFieldSuffix: '_af_image',
+      nameField: 'name',
+      // Verified against the first-page name widget in 5e_char_sheet_off.pdf:
+      // [26.5402, 744.73, 250.029, 763.402].
+      nameFieldWidth: 250.029 - 26.5402,
+      hasEnglishName: false,
+      ...overrides
     });
   }
 
@@ -267,27 +375,61 @@
       },
       spellRows: { count: 19, fontSize: 11, alignment: 'right' },
       spellNotes: { fontSizes: [16, 13, 10], truncateAtMinimum: true }
-    })
+    }),
+    'official-editable': createOfficialPdfLayoutSettings(),
+    'official-compact': createOfficialPdfLayoutSettings()
   });
 
   const SHARED_PDF_SOURCE_PATH = '5e_char_sheet.pdf';
+  const OFFICIAL_PDF_SOURCE_PATH = '5e_char_sheet_off.pdf';
+  const OFFICIAL_PDF_FONT_PATH = 'AdobeFanHeitiStd-Bold.otf';
+  // The official template's own default appearance font. Keeping its alias
+  // lets an editing reader use the template's resource for new input.
+  const OFFICIAL_PDF_FONT_ALIAS = 'AdobeFanHeitiStd-Bold';
+  // Adobe Fan Heiti has no katakana middle dot, which names and feat text use.
+  const OFFICIAL_PDF_GLYPH_SUBSTITUTIONS = Object.freeze({ '・': '‧' });
   const PDF_EXPORT_PROFILES = Object.freeze({
-    editable: Object.freeze({
-      sourcePdfPath: SHARED_PDF_SOURCE_PATH,
-      fontPath: 'NotoSansTC-Regular-IdentityCID.otf',
-      subsetFont: false,
-      flattenForm: false,
-      layoutId: 'editable'
+    'third-party': Object.freeze({
+      editable: Object.freeze({
+        sourcePdfPath: SHARED_PDF_SOURCE_PATH,
+        fontPath: 'NotoSansTC-Regular-IdentityCID.otf',
+        subsetFont: false,
+        flattenForm: false,
+        layoutId: 'editable'
+      }),
+      compact: Object.freeze({
+        sourcePdfPath: SHARED_PDF_SOURCE_PATH,
+        fontPath: 'SourceHanSerifTC-Bold.otf',
+        subsetFont: true,
+        flattenForm: true,
+        layoutId: 'compact'
+      })
     }),
-    compact: Object.freeze({
-      sourcePdfPath: SHARED_PDF_SOURCE_PATH,
-      fontPath: 'SourceHanSerifTC-Bold.otf',
-      subsetFont: true,
-      flattenForm: true,
-      layoutId: 'compact'
+    official: Object.freeze({
+      editable: Object.freeze({
+        sourcePdfPath: OFFICIAL_PDF_SOURCE_PATH,
+        fontPath: OFFICIAL_PDF_FONT_PATH,
+        subsetFont: false,
+        flattenForm: false,
+        layoutId: 'official-editable',
+        appearanceFontAlias: OFFICIAL_PDF_FONT_ALIAS,
+        glyphSubstitutions: OFFICIAL_PDF_GLYPH_SUBSTITUTIONS,
+        completeCheckboxAppearances: true
+      }),
+      compact: Object.freeze({
+        sourcePdfPath: OFFICIAL_PDF_SOURCE_PATH,
+        fontPath: OFFICIAL_PDF_FONT_PATH,
+        subsetFont: true,
+        flattenForm: true,
+        layoutId: 'official-compact',
+        appearanceFontAlias: OFFICIAL_PDF_FONT_ALIAS,
+        glyphSubstitutions: OFFICIAL_PDF_GLYPH_SUBSTITUTIONS,
+        completeCheckboxAppearances: true
+      })
     })
   });
   const DEFAULT_PDF_EXPORT_MODE = 'editable';
+  const DEFAULT_PDF_SHEET_TEMPLATE = 'third-party';
   const ENGLISH_NAME_FONT_SIZE = 12;
   // Verified against the first-page Name1 widget in 5e_char_sheet.pdf:
   // [112.61348, 528.512085, 245.080856, 561.848206].
@@ -353,9 +495,68 @@
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
+  function getPdfSheetTemplate(exportOptions = {}) {
+    return PDF_EXPORT_PROFILES[exportOptions.sheetTemplate] ? exportOptions.sheetTemplate : DEFAULT_PDF_SHEET_TEMPLATE;
+  }
+
   function getPdfExportProfile(exportOptions = {}) {
+    const profiles = PDF_EXPORT_PROFILES[getPdfSheetTemplate(exportOptions)];
     const outputMode = exportOptions.outputMode || DEFAULT_PDF_EXPORT_MODE;
-    return PDF_EXPORT_PROFILES[outputMode] || PDF_EXPORT_PROFILES[DEFAULT_PDF_EXPORT_MODE];
+    return profiles[outputMode] || profiles[DEFAULT_PDF_EXPORT_MODE];
+  }
+
+  function applyGlyphSubstitutions(text, profile) {
+    const substitutions = profile.glyphSubstitutions;
+    if (!substitutions) return text;
+    return Array.from(String(text)).map((character) => substitutions[character] || character).join('');
+  }
+
+  // The official template draws only each checkbox's checked state and has
+  // no /Off entry. pdf-lib would then redraw the whole widget with its own
+  // square style, so add the empty /Off state a reader shows for unchecked.
+  function completeCheckboxOffAppearances(pdfDoc, form) {
+    const { PDFCheckBox, PDFDict, PDFName } = globalScope.PDFLib;
+    const offState = PDFName.of('Off');
+    form.getFields().forEach((field) => {
+      if (!(field instanceof PDFCheckBox)) return;
+      field.acroField.getWidgets().forEach((widget) => {
+        const normal = widget.getAppearances()?.normal;
+        if (!(normal instanceof PDFDict) || normal.has(offState)) return;
+        const { width, height } = widget.getRectangle();
+        const emptyAppearance = pdfDoc.context.formXObject([], { BBox: [0, 0, width, height] });
+        normal.set(offState, pdfDoc.context.register(emptyAppearance));
+      });
+    });
+  }
+
+  // The saved avatar may be WebP, which pdf-lib cannot embed. Redraw it as
+  // JPEG on a white background, matching how the avatar was cropped.
+  async function getAvatarJpegBytes(dataUrl) {
+    const image = new Image();
+    image.src = dataUrl;
+    await image.decode();
+    const canvas = document.createElement('canvas');
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    const context = canvas.getContext('2d');
+    context.fillStyle = '#fff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(image, 0, 0);
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+    if (!blob) throw new Error('角色圖片轉換失敗');
+    return new Uint8Array(await blob.arrayBuffer());
+  }
+
+  async function placeAvatarImage(pdfDoc, form, layoutSettings, avatarDataUrl) {
+    if (!avatarDataUrl || !layoutSettings.avatarFieldSuffix) return false;
+    const { PDFButton } = globalScope.PDFLib;
+    const button = form.getFields().find((field) => (
+      field instanceof PDFButton && field.getName().endsWith(layoutSettings.avatarFieldSuffix)
+    ));
+    if (!button) return false;
+    const image = await pdfDoc.embedJpg(await getAvatarJpegBytes(avatarDataUrl));
+    button.setImage(image);
+    return true;
   }
 
   function getPdfLayoutSettings(profile) {
@@ -460,13 +661,15 @@
     return validationFontPromises.get(profile.fontPath);
   }
 
-  function measurePdfCharacterName(cjkFont, value, outputMode) {
-    const text = String(value || '').trim();
-    const profile = getPdfExportProfile({ outputMode });
+  function measurePdfCharacterName(cjkFont, value, outputMode, sheetTemplate) {
+    const profile = getPdfExportProfile({ outputMode, sheetTemplate });
+    const text = applyGlyphSubstitutions(String(value || '').trim(), profile);
     const layoutSettings = getPdfLayoutSettings(profile);
-    const preferredFontSize = layoutSettings.namedFontSizes.Name1;
-    const minimumFontSize = layoutSettings.fieldMinFontSizes.Name1 || layoutSettings.minFontSize;
-    const fieldWidth = layoutSettings.fieldAdjustments.Name1?.width
+    const nameField = layoutSettings.nameField;
+    const preferredFontSize = layoutSettings.namedFontSizes[nameField];
+    const minimumFontSize = layoutSettings.fieldMinFontSizes[nameField] || layoutSettings.minFontSize;
+    const fieldWidth = layoutSettings.fieldAdjustments[nameField]?.width
+      || layoutSettings.nameFieldWidth
       || EDITABLE_CHARACTER_NAME_FIELD_WIDTH;
     const maxWidth = fieldWidth - layoutSettings.horizontalPadding;
     const width = measureTextWidth(cjkFont, text, preferredFontSize);
@@ -484,14 +687,16 @@
     };
   }
 
-  async function validatePdfCharacterName(value, outputMode = DEFAULT_PDF_EXPORT_MODE) {
-    const profile = getPdfExportProfile({ outputMode });
-    return measurePdfCharacterName(await getValidationFont(profile), value, outputMode);
+  async function validatePdfCharacterName(value, outputMode = DEFAULT_PDF_EXPORT_MODE, sheetTemplate) {
+    const profile = getPdfExportProfile({ outputMode, sheetTemplate });
+    return measurePdfCharacterName(await getValidationFont(profile), value, outputMode, sheetTemplate);
   }
 
-  function measurePdfEnglishName(cjkFont, value, outputMode) {
+  function measurePdfEnglishName(cjkFont, value, outputMode, sheetTemplate) {
     const text = String(value || '').trim();
-    const layoutSettings = getPdfLayoutSettings(getPdfExportProfile({ outputMode }));
+    const layoutSettings = getPdfLayoutSettings(getPdfExportProfile({ outputMode, sheetTemplate }));
+    // The sheet does not print an English name, so any value is accepted.
+    if (!layoutSettings.hasEnglishName) return { fits: true, width: 0, maxWidth: 0 };
     // Name2 shares Name1's horizontal bounds in both modes.
     const fieldWidth = layoutSettings.fieldAdjustments.Name1?.width
       || EDITABLE_CHARACTER_NAME_FIELD_WIDTH;
@@ -500,9 +705,10 @@
     return { fits: width <= maxWidth, width, maxWidth };
   }
 
-  async function validatePdfEnglishName(value, outputMode = DEFAULT_PDF_EXPORT_MODE) {
-    const profile = getPdfExportProfile({ outputMode });
-    return measurePdfEnglishName(await getValidationFont(profile), value, outputMode);
+  async function validatePdfEnglishName(value, outputMode = DEFAULT_PDF_EXPORT_MODE, sheetTemplate) {
+    const profile = getPdfExportProfile({ outputMode, sheetTemplate });
+    if (!getPdfLayoutSettings(profile).hasEnglishName) return measurePdfEnglishName(null, value, outputMode, sheetTemplate);
+    return measurePdfEnglishName(await getValidationFont(profile), value, outputMode, sheetTemplate);
   }
 
   async function validateCompactEnglishName(value) {
@@ -738,8 +944,8 @@
 
   // Player-authored notes keep only their source line breaks in the field
   // value. Their appearance is wrapped here by measured glyph widths, so a
-  // reader can still reflow the value after the player edits it.
-  const MEASURED_WRAP_FIELDS = Object.freeze(['equipment1', 'extra1']);
+  // reader can still reflow the value after the player edits it. Each layout
+  // lists these fields in measuredWrapFields.
   const NO_LINE_START_PATTERN = /^[、，。；：！？）」』】〉》…・,.;:!?)\]%×]/u;
   const NO_LINE_END_PATTERN = /[（「『【〈《(\[]$/u;
   const OPENING_BRACKET_PATTERN = /^[（「『【〈《(\[]/u;
@@ -846,7 +1052,7 @@
   function applyMeasuredWrapAppearances(form, cjkFont, layoutSettings, appearanceFontSizes = {}) {
     const PDFLib = globalScope.PDFLib;
     const appearanceKey = PDFLib.PDFName.of('DA');
-    MEASURED_WRAP_FIELDS.forEach((fieldName) => {
+    layoutSettings.measuredWrapFields.forEach((fieldName) => {
       let field;
       try {
         field = form.getTextField(fieldName);
@@ -973,11 +1179,8 @@
     return true;
   }
 
-  function configureEditableMultilineFields(form) {
-    const fixedVisibleFields = ['classFeatures1', 'specie_features1', 'feats1'];
-    const scrollableFields = ['classFeatures2', 'extra1', 'equipment1'];
-
-    fixedVisibleFields.forEach((fieldName) => {
+  function configureEditableMultilineFields(form, layoutSettings) {
+    layoutSettings.editableFixedMultilineFields.forEach((fieldName) => {
       try {
         const field = form.getTextField(fieldName);
         field.enableMultiline();
@@ -987,7 +1190,7 @@
       }
     });
 
-    scrollableFields.forEach((fieldName) => {
+    layoutSettings.editableScrollableFields.forEach((fieldName) => {
       try {
         const field = form.getTextField(fieldName);
         field.enableMultiline();
@@ -1032,7 +1235,9 @@
     }
   }
 
-  function alignNameFields(form) {
+  function alignNameFields(form, layoutSettings) {
+    // Only the third-party layout centers its name and shares bounds with Name2.
+    if (layoutSettings.nameField !== 'Name1') return;
     const nameField = form.getTextField('Name1');
     nameField.setAlignment(globalScope.PDFLib.TextAlignment.Center);
     try {
@@ -1098,11 +1303,11 @@
       if (typeof value === 'boolean') return;
       try {
         const field = form.getTextField(fieldName);
-        if (/^note\d+$/.test(fieldName) && fitSpellNoteField(field, cjkFont, layoutSettings)) {
+        if (layoutSettings.spellNotePattern?.test(fieldName) && fitSpellNoteField(field, cjkFont, layoutSettings)) {
           return;
         }
         // Sized together with their wrapped lines in applyMeasuredWrapAppearances().
-        if (MEASURED_WRAP_FIELDS.includes(fieldName)) return;
+        if (layoutSettings.measuredWrapFields.includes(fieldName)) return;
         const preferredSize = getPreferredFontSize(fieldName, field, layoutSettings);
         const matchingRule = getMatchingPatternFontRule(fieldName, layoutSettings);
         const fontSize = layoutSettings.fixedFontSizes[fieldName] || matchingRule?.fixed
@@ -1207,7 +1412,7 @@
   function applyEditableAppearanceFontSizes(form, cjkFont, layoutSettings) {
     const appearanceKey = globalScope.PDFLib.PDFName.of('DA');
     for (const [fieldName, preferredSize] of Object.entries(EDITABLE_APPEARANCE_FONT_SIZES)) {
-      if (MEASURED_WRAP_FIELDS.includes(fieldName)) continue;
+      if (layoutSettings.measuredWrapFields.includes(fieldName)) continue;
       let field;
       try {
         field = form.getTextField(fieldName);
@@ -1251,10 +1456,13 @@
     }
 
     const profile = getPdfExportProfile(exportOptions);
+    const sheetTemplate = getPdfSheetTemplate(exportOptions);
+    const outputMode = exportOptions.outputMode || DEFAULT_PDF_EXPORT_MODE;
 
     const sourceBytes = await getSourcePdfBytes(profile.sourcePdfPath);
     const pdfDoc = await globalScope.PDFLib.PDFDocument.load(sourceBytes);
     const form = pdfDoc.getForm();
+    if (profile.completeCheckboxAppearances) completeCheckboxOffAppearances(pdfDoc, form);
     const characterName = (exportOptions.characterName || '').trim();
     const englishName = (exportOptions.englishName || '').trim();
     const goliathAncestry = exportOptions.goliathAncestry || '';
@@ -1273,7 +1481,11 @@
       tieflingLegacy,
       includeDefaultEquipment,
       includeSpellbook: exportOptions.includeSpellbook !== false,
-      outputMode: exportOptions.outputMode || DEFAULT_PDF_EXPORT_MODE
+      outputMode,
+      sheetTemplate
+    });
+    Object.entries(payload).forEach(([fieldName, value]) => {
+      if (typeof value === 'string') payload[fieldName] = applyGlyphSubstitutions(value, profile);
     });
     const missingFields = applyPayloadToForm(form, payload);
 
@@ -1282,29 +1494,31 @@
     }
 
     const layoutSettings = getPdfLayoutSettings(profile);
-    const defaultAppearanceFontAlias = profile.flattenForm ? 'Noto' : 'NotoMono';
+    const defaultAppearanceFontAlias = profile.appearanceFontAlias || (profile.flattenForm ? 'Noto' : 'NotoMono');
     normalizeProblematicFieldDA(globalScope.PDFLib, pdfDoc, form, undefined, defaultAppearanceFontAlias);
     applyTemplateFieldSettings(form, layoutSettings);
     applyFieldAdjustments(form, layoutSettings);
-    alignNameFields(form);
+    alignNameFields(form, layoutSettings);
 
     if (!profile.flattenForm) {
-      configureEditableMultilineFields(form);
+      configureEditableMultilineFields(form, layoutSettings);
     }
 
     const fontEmbedResult = await embedCjkFont(pdfDoc, profile);
     const characterNameMeasurement = measurePdfCharacterName(
       fontEmbedResult.font,
       characterName,
-      exportOptions.outputMode || DEFAULT_PDF_EXPORT_MODE
+      outputMode,
+      sheetTemplate
     );
     if (!characterNameMeasurement.fits) {
-      throw new Error(`角色名稱在 ${characterNameMeasurement.minimumFontSize} pt 的可讀下限仍超出 Name1 欄位，請縮短後再試。`);
+      throw new Error(`角色名稱在 ${characterNameMeasurement.minimumFontSize} pt 的可讀下限仍超出 ${layoutSettings.nameField} 欄位，請縮短後再試。`);
     }
     const englishNameMeasurement = measurePdfEnglishName(
       fontEmbedResult.font,
       englishName,
-      exportOptions.outputMode || DEFAULT_PDF_EXPORT_MODE
+      outputMode,
+      sheetTemplate
     );
     if (!englishNameMeasurement.fits) {
       throw new Error('英文名超出 Name2 欄位在 12 pt 可容納的寬度，請縮短後再試。');
@@ -1334,6 +1548,7 @@
       layoutSettings,
       profile.layoutId === 'editable' ? EDITABLE_APPEARANCE_FONT_SIZES : {}
     );
+    const avatarPlaced = await placeAvatarImage(pdfDoc, form, layoutSettings, exportOptions.avatarDataUrl);
 
     if (profile.flattenForm) {
       form.flatten({ updateFieldAppearances: false });
@@ -1354,7 +1569,9 @@
     return {
       missingFields,
       filledFieldCount: Object.keys(payload).length,
-      outputMode: exportOptions.outputMode || DEFAULT_PDF_EXPORT_MODE
+      outputMode,
+      sheetTemplate,
+      avatarPlaced
     };
   }
 

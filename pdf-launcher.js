@@ -49,8 +49,8 @@ async function ensurePdfExportReady() {
     pdfExportLoaderPromise = (async () => {
       await loadScriptOnce("pdf-lib.custom.min.js");
       await loadScriptOnce("fontkit.custom.min.js");
-      await loadScriptOnce("pdf-field-map.js?v=20261026-cold-label");
-      await loadScriptOnce("pdf-export.js?v=20261025-pdf-text-wrap");
+      await loadScriptOnce("pdf-field-map.js?v=20261026-official-sheet");
+      await loadScriptOnce("pdf-export.js?v=20261026-official-sheet");
     })().catch((error) => {
       pdfExportLoaderPromise = null;
       throw error;
@@ -196,6 +196,12 @@ function buildPdfPrecheckMessages() {
 
 
 
+function getSavedAvatarForPdf() {
+  const key = typeof TABLETOP_AVATAR_STORAGE_KEY === "string" ? TABLETOP_AVATAR_STORAGE_KEY : "dnd.tabletopAvatar.v1";
+  const value = window.dndStorage?.getItem?.(key);
+  return typeof isValidTabletopAvatar === "function" && isValidTabletopAvatar(value) ? value : "";
+}
+
 function showPdfExportModal(state, reminders, exportPdfBtn) {
   return new Promise((resolve) => {
     const prevFocus = document.activeElement;
@@ -218,7 +224,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
       goliath: { key:"goliathAncestry", title:"請選擇巨人裔祖源", options:[["cloud","雲裔"],["fire","火裔"],["frost","霜裔"],["hill","丘陵裔"],["stone","石裔"],["storm","風暴裔"]] },
       tiefling: { key:"tieflingLegacy", title:"請選擇邪魔遺贈", options:[["abyssal","深淵血統"],["chthonic","冥界血統"],["infernal","煉獄血統"]] }
     };
-    const steps=["precheck","name","equipment"];
+    const steps=["precheck","sheet","name","equipment"];
     const manualBook = state?.__spellManagement?.version === 2
       ? state.__spellManagement.manual === true : state?.["manual-spell-management"] === true;
     const savedBook = state?.__wizardSpellbook;
@@ -230,6 +236,8 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
     const result={
       characterName:window.TabletopMode?.getCharacterName?.() || "",
       englishName:"",
+      sheetTemplate:"third-party",
+      includeAvatar:false,
       includeDefaultEquipment:false,
       includeSpellbook:true,
       dragonbornAncestry:(state?.["dragonborn-ancestry"] || "").trim(),
@@ -246,6 +254,9 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
       } catch(error) { void error; }
       return /^\s*初始裝備：\s*\S/um.test(String(gearNotes||''));
     })();
+    // The avatar is a local, per-device picture; a shared character is not the
+    // character it was set for.
+    const savedAvatar = window.SHARE_MODE ? "" : getSavedAvatarForPdf();
     if (raceChoice && !result[raceChoice.key]) steps.push("race");
     steps.push("format");
     let idx=0, busy=false, lastMode=null, formatError='', selectedNameMeasurement=null, invalidNameField='';
@@ -263,7 +274,8 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
       render('progress',nameFitMessage);
       try {
         await ensurePdfExportReady();
-        const exportOptions={...result,outputMode};
+        const {includeAvatar,...chosen}=result;
+        const exportOptions={...chosen,outputMode,avatarDataUrl:result.sheetTemplate==='official'&&includeAvatar?savedAvatar:''};
         await window.preloadPdfExportAssets?.(exportOptions);
         render('progress',nameMeasurement?.shrinks
           ? `角色名稱將以 ${nameMeasurement.fontSize.toFixed(1)} pt 輸出，製作中…`
@@ -283,7 +295,10 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
       const step=type ? '' : steps[idx];
       const stepTitles={
         precheck:['匯出前檢查','確認角色資料是否還有需要補填的地方。'],
-        name:['角色名稱','中文與英文名稱會寫入角色卡；兩個欄位都可以留空。'],
+        sheet:['選擇角色卡','選擇要輸出的角色紙版面。'],
+        name:result.sheetTemplate==='official'
+          ? ['角色名稱','名稱會寫入角色卡；可以留空。']
+          : ['角色名稱','中文與英文名稱會寫入角色卡；兩個欄位都可以留空。'],
         equipment:quickBuildEquipmentIncluded
           ? ['預設裝備已加入','快速創角已將實際選擇寫入「攜帶物品」。']
           : ['加入預設裝備','決定是否把職業與背景提供的起始裝備一併寫入。'],
@@ -344,6 +359,31 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
         }
         const n=document.createElement('button'); n.type='button'; n.className='pdf-export-flow-modal__button pdf-export-flow-modal__button--primary'; n.textContent='繼續'; n.onclick=()=>{idx++; render();}; a.append(n); n.focus();
       }
+      else if(step==='sheet'){
+        const choices=document.createElement('div'); choices.className='pdf-export-choice-options';
+        [
+          ['third-party','第三方角色卡','橫式雙頁版面；可編輯表單版約 5 MB，美觀易讀版約 2 MB。'],
+          ['official','官方角色卡','直式雙頁官方版面。檔案較大：可編輯版約 22 MB，不可編輯版約 17 MB。']
+        ].forEach(([value,title,description])=>{
+          const button=document.createElement('button'); button.type='button'; button.className='pdf-export-choice-option';
+          const strong=document.createElement('strong'); strong.textContent=title;
+          const detail=document.createElement('span'); detail.textContent=description;
+          button.append(strong,detail);
+          button.onclick=()=>{
+            result.sheetTemplate=value;
+            if(value==='official'){
+              // The official template and font are large; start fetching them
+              // while the player finishes the remaining steps.
+              ensurePdfExportReady()
+                .then(() => window.preloadPdfExportAssets?.({ outputMode: 'editable', sheetTemplate: 'official' }))
+                .catch((error) => console.warn('官方角色卡資源背景載入失敗：', error));
+            }
+            idx++; render();
+          };
+          choices.appendChild(button);
+        });
+        d.appendChild(choices); choices.querySelector('button')?.focus(); a.hidden=true;
+      }
       else if(step==='name'){
         const createNameField=(id,labelText,placeholder,value,hintText)=>{
           const field=document.createElement('div'); field.className='pdf-export-name-field';
@@ -358,13 +398,30 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
           return input;
         };
         const nameInput=createNameField('pdf-export-character-name','角色名稱','例如：艾尼克斯・薩卡蘭姆',result.characterName,'選擇格式後，會依實際字型、字級與欄位寬度檢查');
-        const englishInput=createNameField('pdf-export-english-name','英文名','例如：Enix Zakarum',result.englishName,'以 12 pt 置中寫在角色名稱下方');
-        nameInput.enterKeyHint='next'; englishInput.enterKeyHint='next'; englishInput.lang='en';
-        const submitName=()=>{result.characterName=nameInput.value.trim();result.englishName=englishInput.value.trim();invalidNameField='';idx++;render();};
-        nameInput.addEventListener('keydown',(event)=>{if(event.key==='Enter'&&!event.isComposing){event.preventDefault();englishInput.focus();}});
-        englishInput.addEventListener('keydown',(event)=>{if(event.key==='Enter'&&!event.isComposing){event.preventDefault();submitName();}});
+        // The official sheet has no English-name field.
+        const englishInput=result.sheetTemplate==='official'
+          ? null
+          : createNameField('pdf-export-english-name','英文名','例如：Enix Zakarum',result.englishName,'以 12 pt 置中寫在角色名稱下方');
+        nameInput.enterKeyHint=englishInput ? 'next' : 'done';
+        if(englishInput){ englishInput.enterKeyHint='next'; englishInput.lang='en'; }
+        let avatarCheckbox=null;
+        if(result.sheetTemplate==='official'&&savedAvatar){
+          const field=document.createElement('div'); field.className='pdf-export-name-field pdf-export-avatar-option';
+          const label=document.createElement('label'); label.htmlFor='pdf-export-include-avatar';
+          avatarCheckbox=document.createElement('input'); avatarCheckbox.type='checkbox'; avatarCheckbox.id='pdf-export-include-avatar'; avatarCheckbox.checked=result.includeAvatar;
+          const thumbnail=document.createElement('img'); thumbnail.className='pdf-export-avatar-option__image'; thumbnail.src=savedAvatar; thumbnail.alt='';
+          const text=document.createElement('span'); text.textContent='將角色圖片放入 PDF 外貌區';
+          label.append(avatarCheckbox,thumbnail,text);
+          const meta=document.createElement('div'); meta.className='pdf-export-name-field__meta'; meta.id='pdf-export-include-avatar-hint';
+          const hint=document.createElement('span'); hint.textContent='勾選後，這台裝置上設定的角色圖片會放在第二頁「外貌」框。'; meta.appendChild(hint);
+          avatarCheckbox.setAttribute('aria-describedby',meta.id);
+          field.append(label,meta); d.appendChild(field);
+        }
+        const submitName=()=>{result.characterName=nameInput.value.trim();result.englishName=englishInput?.value.trim()||'';result.includeAvatar=avatarCheckbox?.checked||false;invalidNameField='';idx++;render();};
+        nameInput.addEventListener('keydown',(event)=>{if(event.key==='Enter'&&!event.isComposing){event.preventDefault();if(englishInput)englishInput.focus();else submitName();}});
+        englishInput?.addEventListener('keydown',(event)=>{if(event.key==='Enter'&&!event.isComposing){event.preventDefault();submitName();}});
         const n=document.createElement('button'); n.type='button'; n.className='pdf-export-flow-modal__button pdf-export-flow-modal__button--primary'; n.textContent='下一步'; n.onclick=submitName; a.append(n);
-        const invalidInput=invalidNameField==='englishName' ? englishInput : invalidNameField==='characterName' ? nameInput : null;
+        const invalidInput=invalidNameField==='englishName' ? (englishInput||nameInput) : invalidNameField==='characterName' ? nameInput : null;
         invalidInput?.setAttribute('aria-invalid','true');
         (invalidInput||nameInput).focus();
       }
@@ -437,7 +494,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
             try{
               await ensurePdfExportReady();
               if(typeof window.validatePdfCharacterName!=='function') throw new Error('角色名字寬檢查函式不存在');
-              const measurement=await window.validatePdfCharacterName(result.characterName,mode);
+              const measurement=await window.validatePdfCharacterName(result.characterName,mode,result.sheetTemplate);
               if(measurement && !measurement.fits){
                 formatError=`角色名稱即使縮小至 ${measurement.minimumFontSize.toFixed(1)} pt 仍超出欄位，請縮短後再輸出。`;
                 invalidNameField='characterName';
@@ -445,7 +502,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
                 return;
               }
               if(typeof window.validatePdfEnglishName!=='function') throw new Error('英文名字寬檢查函式不存在');
-              const englishMeasurement=await window.validatePdfEnglishName(result.englishName,mode);
+              const englishMeasurement=await window.validatePdfEnglishName(result.englishName,mode,result.sheetTemplate);
               if(englishMeasurement && !englishMeasurement.fits){
                 formatError='英文名超出欄位在 12 pt 可容納的寬度，請縮短後再輸出。';
                 invalidNameField='englishName';
@@ -461,12 +518,23 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
           };
           return button;
         };
-        options.append(
-          createOption('editable','可編輯表單版','約 5 MB','使用 Noto Sans TC；保留文字輸入區，下載後仍可填寫或修改，檔案較大。'),
-          createOption('compact','美觀易讀版','輸出約 2 MB','使用思源宋體，文字固定、下載後無法編輯。','首次輸出需額外載入約 26 MB 字型資源。')
-        );
+        if(result.sheetTemplate==='official'){
+          const officialLoadNote='官方角色卡檔案較大，首次輸出需載入約 22 MB 範本與字型資源。';
+          options.append(
+            createOption('editable','可編輯版','約 22 MB','使用 Adobe 繁黑體；保留文字輸入區，下載後仍可填寫或修改。',officialLoadNote),
+            createOption('compact','不可編輯版','約 17 MB','使用 Adobe 繁黑體，文字固定、下載後無法編輯。',officialLoadNote)
+          );
+        } else {
+          options.append(
+            createOption('editable','可編輯表單版','約 5 MB','使用 Noto Sans TC；保留文字輸入區，下載後仍可填寫或修改，檔案較大。'),
+            createOption('compact','美觀易讀版','輸出約 2 MB','使用思源宋體，文字固定、下載後無法編輯。','首次輸出需額外載入約 26 MB 字型資源。')
+          );
+        }
         const note=document.createElement('p'); note.className='pdf-export-format-note';
-        note.append('想下載「可填寫、檔案也較小」的空白 PDF？請 ',Object.assign(document.createElement('a'),{href:'https://drive.google.com/file/d/1Tu7rAyjfKBl6wagkuRiSNgpQW5LCBP6J/view',target:'_blank',rel:'noopener noreferrer',textContent:'點此下載',onclick:()=>window.twAnalytics?.track?.('blank_character_sheet_download')}));
+        const blankSheetUrl=result.sheetTemplate==='official'
+          ? 'https://drive.google.com/file/d/1g_t-5WBbZPvCWXFo4gM0s6ZoDQR7Djf1/view?usp=sharing'
+          : 'https://drive.google.com/file/d/1Tu7rAyjfKBl6wagkuRiSNgpQW5LCBP6J/view';
+        note.append(result.sheetTemplate==='official' ? '想下載可填寫的空白官方角色卡 PDF？請 ' : '想下載「可填寫、檔案也較小」的空白 PDF？請 ',Object.assign(document.createElement('a'),{href:blankSheetUrl,target:'_blank',rel:'noopener noreferrer',textContent:'點此下載',onclick:()=>window.twAnalytics?.track?.('blank_character_sheet_download')}));
         d.append(wait,options,note);
         if(formatError){
           const back=document.createElement('button');back.type='button';back.className='pdf-export-flow-modal__button pdf-export-flow-modal__button--secondary';back.textContent='返回修改名稱';back.onclick=()=>{formatError='';idx=steps.indexOf('name');render();};a.append(back);a.hidden=false;back.focus();
@@ -497,7 +565,7 @@ async function downloadQuickBuildCompactPdf() {
   const currentName = window.TabletopMode?.getCharacterName?.() || "";
   const characterName = await window.AppDialog.showContent({
     title: "下載角色卡 PDF",
-    message: "輸入角色名稱後，將直接下載美觀易讀版 PDF。",
+    message: "輸入角色名稱後，將直接下載官方角色卡不可編輯版 PDF（約 17 MB）。",
     confirmLabel: "下載 PDF",
     cancelLabel: "取消",
     initialFocus: "content",
@@ -544,7 +612,7 @@ async function downloadQuickBuildCompactPdf() {
       try {
         await ensurePdfExportReady();
         if (typeof window.validatePdfCharacterName !== "function") throw new Error("角色名稱檢查功能尚未載入");
-        const measurement = await window.validatePdfCharacterName(value, "compact");
+        const measurement = await window.validatePdfCharacterName(value, "compact", "official");
         if (measurement && !measurement.fits) {
           nameError.textContent = `角色名稱即使縮小至 ${measurement.minimumFontSize.toFixed(1)} pt 仍超出欄位，請縮短後再下載。`;
           nameInput?.setAttribute("aria-invalid", "true");
@@ -574,7 +642,8 @@ async function downloadQuickBuildCompactPdf() {
       gnomeLineage: (state["gnome-lineage"] || "").trim(),
       goliathAncestry: (state["goliath-ancestry"] || "").trim(),
       tieflingLegacy: (state["tiefling-legacy"] || "").trim(),
-      outputMode: "compact"
+      outputMode: "compact",
+      sheetTemplate: "official"
     };
     window.AppDialog.notify("正在製作角色卡 PDF，請保持頁面開啟。", { duration: 8000 });
     await window.preloadPdfExportAssets?.(exportOptions);

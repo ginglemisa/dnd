@@ -507,8 +507,60 @@ async function verifyPdf(page, fieldsOnly) {
         throw new Error(`PDF equipment and notes keep only source line breaks: ${outputMode}`);
       }
     }
+    // The official sheet reuses the shared payload under its own field names,
+    // with 30 spell rows, 6 attack rows, every tool and notes after equipment.
+    const officialState = window.__officialPdfState = {
+      class: "wizard", level: "5", race: "elf", str: "8", int: "18", "save-int": "+7", "prof-int": true,
+      "prof-奧秘": true, "skill-奧秘": "+7", "character-size": "中型", "hp-display": "32",
+      "atk-main-name": "長棍", "atk-main-hit": "+2", "atk-main-dmg": "1d6-1 鈍擊",
+      "tool-proficiency-0": "書法工具", "tool-proficiency-1": "煉金工具", "tool-proficiency-2": "製圖工具",
+      "gear-notes": "長劍", "spell-notes": "筆記", "money-balance-gp": "15",
+      __spellManagement: { version: 2, manual: true, entries: SpellCatalog.getAllSpells().filter(spell => spell.level <= 1).slice(0, 34).map(({ spellId }) => ({ spellId })) }
+    };
+    for (const outputMode of ["editable", "compact"]) {
+      const shared = buildPdfFieldPayload(officialState, { outputMode });
+      const official = buildPdfFieldPayload(officialState, { outputMode, sheetTemplate: "official", characterName: "艾尼克斯", englishName: "Enix" });
+      const rowSuffixes = Array.from("123456789abcdefghijklmnopqrstu");
+      if (["Name1", "Name2", "equipment1", "extra1", "strMod1", "sp-name-1"].some(name => name in official)) throw new Error(`Official PDF keeps only official field names: ${outputMode}`);
+      if (official.name !== "艾尼克斯" || official.class !== "法師" || official.str !== "8" || official["str-m"] !== "-1" || official["int-st"] !== "+7" || official["int-st-c"] !== true) throw new Error(`Official PDF identity and abilities: ${outputMode}`);
+      if (official["int-arc"] !== "+7" || official["int-arc-c"] !== true || official.size !== "中型" || official.max !== "32" || official["max-hd"] !== "5d6") throw new Error(`Official PDF skills and stats: ${outputMode}`);
+      if (rowSuffixes.some(suffix => !official[`spn-${suffix}`]) || official["spn-1"] !== shared["sp-name-1"].replace(/\n/g, "")) throw new Error(`Official PDF fills 30 spell rows: ${outputMode}`);
+      if (!official.spr1 || !official["spr-u"] || typeof official["chk-cu"] !== "boolean") throw new Error(`Official PDF irregular spell field names: ${outputMode}`);
+      if (official.tool_pro !== "書法工具、煉金工具、製圖工具" || /其他工具熟練/u.test(official.Equip)) throw new Error(`Official PDF lists every tool: ${outputMode}`);
+      if (!official.Equip.startsWith("長劍\n") || !official.Equip.includes("其他準備法術") || !official.Equip.endsWith("筆記")) throw new Error(`Official PDF appends notes to equipment: ${outputMode}`);
+      if (Object.keys(official).some(name => /^(?:attack-wp-name|tohit|dmg-type|note)7$/.test(name))) throw new Error(`Official PDF has six attack rows: ${outputMode}`);
+      if (official["attack-wp-name1"] !== shared["attack-weap-name-1"] || official.GP !== "15") throw new Error(`Official PDF attacks and coins: ${outputMode}`);
+    }
+    // Official languages start with Common and take the rogue and ranger
+    // class languages out of class features; third-party output is unchanged.
+    for (const [state, languages, classLine] of [
+      [{ class: "rogue", level: "1", language1: "elvish", "language-extra-2": "common-sign" }, "通用語、精靈語、盜賊黑話、通用手語", "盜賊黑話、通用手語"],
+      [{ class: "ranger", level: "2", "language-extra-1": "elvish", "language-extra-2": "giant" }, "通用語、精靈語、巨人語", "精靈語、巨人語"],
+      [{ class: "ranger", level: "1", "language-extra-1": "elvish" }, "通用語", null]
+    ]) {
+      const official = buildPdfFieldPayload(state, { sheetTemplate: "official" });
+      const shared = buildPdfFieldPayload(state);
+      const officialFeatures = `${official["class-a-1"]}\n${official["class-a-2"]}`.split("\n");
+      if (official.Lang !== languages || (classLine && officialFeatures.includes(classLine))) throw new Error(`Official PDF languages: ${state.class}/${state.level}`);
+      if (classLine && !`${shared.classFeatures1}\n${shared.classFeatures2}`.split("\n").includes(classLine)) throw new Error(`Third-party class languages unchanged: ${state.class}`);
+    }
+    // A bare shield attack row is dropped on the official sheet only, and
+    // attack cantrips (or a following weapon) move up into it.
+    const shieldState = {
+      class: "cleric", level: "1", "spell-save-dc": "13",
+      "atk-main-name": "硬頭錘", "atk-main-hit": "+4", "atk-main-dmg": "1d6+2 鈍擊", "atk-off-name": "盾牌", "atk-off-note": "盾面繪有聖徽",
+      __spellManagement: { version: 2, manual: true, entries: [{ spellId: "sacred-flame" }] }
+    };
+    for (const note of ["盾面繪有聖徽", ""]) {
+      const official = buildPdfFieldPayload({ ...shieldState, "atk-off-note": note }, { sheetTemplate: "official" });
+      if (official["attack-wp-name1"] !== "硬頭錘" || official["attack-wp-name2"] !== "聖火術" || official.note2 === "盾面繪有聖徽") throw new Error(`Official PDF drops the shield row: ${note || "bare"}`);
+    }
+    if (buildPdfFieldPayload(shieldState)["attack-weap-name-2"] !== "盾牌") throw new Error("Third-party PDF keeps the shield row");
+    if (buildPdfFieldPayload({ ...shieldState, "atk-off-note": "盾擊" }, { sheetTemplate: "official" })["attack-wp-name2"] !== "盾牌") throw new Error("Official PDF keeps a shield row with other notes");
+    const shieldFirst = buildPdfFieldPayload({ "atk-main-name": "盾牌", "atk-off-name": "短劍", "atk-off-hit": "+4" }, { sheetTemplate: "official" });
+    if (shieldFirst["attack-wp-name1"] !== "短劍" || shieldFirst.tohit1 !== "+4" || shieldFirst["attack-wp-name2"]) throw new Error("Official PDF moves the weapon after a dropped shield row up");
   });
-  console.log("PDF fields: 217 spell material flags (current/legacy), component field isolation, class tools/shields and lineage levels passed.");
+  console.log("PDF fields: 217 spell material flags (current/legacy), component field isolation, class tools/shields, lineage levels and official sheet field names passed.");
   if (fieldsOnly) return;
   await page.addScriptTag({ url: "/pdf-lib.custom.min.js" });
   await page.addScriptTag({ url: "/fontkit.custom.min.js" });
@@ -612,9 +664,51 @@ async function verifyPdf(page, fieldsOnly) {
           }
         }
       } finally { PDFLib.defaultTextFieldAppearanceProvider = provider; }
+
+      // Official sheet: every payload value matches a template field of the
+      // same kind, template checkbox drawings survive, and compact flattens.
+      const officialTemplate = (await PDFLib.PDFDocument.load(await (await fetch('/5e_char_sheet_off.pdf')).arrayBuffer())).getForm();
+      const officialState = { ...window.__officialPdfState, "heroic-inspiration": true };
+      for (const outputMode of ["editable", "compact"]) {
+        for (const [name, value] of Object.entries(buildPdfFieldPayload(officialState, { outputMode, sheetTemplate: "official", characterName: "x" }))) {
+          if ((typeof value === "boolean") !== (officialTemplate.getField(name) instanceof PDFLib.PDFCheckBox)) throw new Error(`Official field kind: ${name}`);
+        }
+      }
+      const checkedAppearance = (form, name) => {
+        const normal = form.getCheckBox(name).acroField.getWidgets()[0].getAppearances().normal;
+        return Array.from(form.doc.context.lookup(normal.get(PDFLib.PDFName.of("0"))).getContents()).join(",");
+      };
+      await exportCharacterPdfFromState(officialState, { outputMode: "editable", sheetTemplate: "official", characterName: "艾尼克斯・薩卡蘭姆", englishName: "Enix" });
+      const officialForm = (await PDFLib.PDFDocument.load(await blob.arrayBuffer())).getForm();
+      if (officialForm.getTextField("name").getText() !== "艾尼克斯‧薩卡蘭姆") throw new Error("Official name uses a glyph the font has");
+      if (!officialForm.getCheckBox("hero insp").isChecked() || officialForm.getCheckBox("light").isChecked()) throw new Error("Official checkbox values");
+      for (const name of ["hero insp", "light", "ds1s", "chk-c1"]) {
+        if (checkedAppearance(officialForm, name) !== checkedAppearance(officialTemplate, name)) throw new Error(`Official checkbox keeps template drawing: ${name}`);
+      }
+      const avatarImageDrawn = form => {
+        const normal = form.getFields().find(field => field.getName().endsWith("_af_image")).acroField.getWidgets()[0].getAppearances()?.normal;
+        return Boolean(normal?.dict?.lookup(PDFLib.PDFName.of("Resources"))?.lookup(PDFLib.PDFName.of("XObject")));
+      };
+      if (avatarImageDrawn(officialForm)) throw new Error("Official avatar box stays empty without an avatar");
+      // A WebP avatar (the format the cropper saves) fills the appearance box.
+      const avatarCanvas = document.createElement("canvas");
+      avatarCanvas.width = avatarCanvas.height = 64;
+      avatarCanvas.getContext("2d").fillRect(0, 0, 32, 32);
+      const avatarDataUrl = avatarCanvas.toDataURL("image/webp", 0.82);
+      const avatarResult = await exportCharacterPdfFromState(officialState, { outputMode: "editable", sheetTemplate: "official", characterName: "艾尼克斯", avatarDataUrl });
+      const avatarForm = (await PDFLib.PDFDocument.load(await blob.arrayBuffer())).getForm();
+      if (!avatarResult.avatarPlaced || !avatarImageDrawn(avatarForm)) throw new Error("Official editable avatar");
+      const compactAvatar = await exportCharacterPdfFromState(officialState, { outputMode: "compact", sheetTemplate: "official", characterName: "艾尼克斯", avatarDataUrl });
+      const officialCompact = await PDFLib.PDFDocument.load(await blob.arrayBuffer());
+      if (!compactAvatar.avatarPlaced || officialCompact.catalog.has(PDFLib.PDFName.of("AcroForm")) || officialCompact.getPageCount() !== 2) throw new Error("Official compact flattening with avatar");
+      const thirdPartyAvatar = await exportCharacterPdfFromState({ class: "fighter", level: "1" }, { outputMode: "compact", characterName: "x", avatarDataUrl });
+      if (thirdPartyAvatar.avatarPlaced) throw new Error("Third-party sheet has no avatar box");
+      if (!(await validatePdfEnglishName("Enix".repeat(40), "editable", "official")).fits) throw new Error("Official sheet ignores the English name");
+      const officialName = await validatePdfCharacterName("艾尼克斯", "compact", "official");
+      if (!officialName.fits || Math.abs(officialName.maxWidth - (250.029 - 26.5402 - 4)) > 0.001) throw new Error("Official name validation width");
     } finally { URL.createObjectURL = create; }
   });
-  console.log("PDF export: 6 actual PDFs checked, including automatic feat sources, shared name centering and measured equipment/notes wrapping in both modes.");
+  console.log("PDF export: 8 actual PDFs checked, including automatic feat sources, shared name centering, measured equipment/notes wrapping in both modes and both official sheet versions.");
 }
 
 async function prepareToastFixture(page) {

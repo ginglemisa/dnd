@@ -1638,6 +1638,7 @@ async function verifyFeatEligibilityWarnings(browser, url) {
     if (await page.getAttribute("#utility-menu-toggle", "aria-expanded") === "false") await page.click("#utility-menu-toggle");
     await page.click("#export-pdf-btn");
     await dialog.getByRole("button", { name: "繼續", exact: true }).click();
+    await dialog.locator(".pdf-export-choice-option").filter({ hasText: "第三方角色卡" }).click();
     await page.fill("#pdf-export-character-name", "專長警示驗證");
     await dialog.getByRole("button", { name: "下一步", exact: true }).click();
     await dialog.getByRole("button", { name: "只使用目前裝備" }).click();
