@@ -2147,7 +2147,7 @@
 
   function renderEquipmentShop(body) {
     const items = shopItems();
-    body.innerHTML = `<h3>商店</h3><p class="quick-build-lead">可用職業與背景提供的金錢購買其他物品。購買紀錄只暫存在快速創角，匯入手機角卡時才寫入財產與攜帶物品；變更背景、職業，或改選預設裝備／金幣時會歸零，已購物品退回購物清單，可重新結帳。</p><section class="quick-build-choice-panel"><dl class="quick-build-summary-list"><dt>起始金額</dt><dd>${escapeHtml(formatCopperAmount(shopStartingCopper()))}</dd>${items.length ? `<dt>已購買</dt><dd>${escapeHtml(formatShopItems(items))}</dd>` : ""}<dt>剩餘金額</dt><dd>${escapeHtml(formatCopperAmount(shopBalanceCopper()))}</dd></dl><div class="quick-build-choice-actions quick-build-shop-actions"><button type="button" id="quick-build-shop-open" class="primary quick-build-choice-action-full quick-build-shop-open" aria-haspopup="dialog">${SHOP_CART_ICON}<span>開啟商店</span></button></div></section>`;
+    body.innerHTML = `<h3>商店</h3><p class="quick-build-lead">用起始金錢購買其他物品，匯入角卡時一併加入。</p><section class="quick-build-choice-panel"><dl class="quick-build-summary-list"><dt>起始金額</dt><dd>${escapeHtml(formatCopperAmount(shopStartingCopper()))}</dd>${items.length ? `<dt>已購買</dt><dd>${escapeHtml(formatShopItems(items))}</dd>` : ""}<dt>剩餘金額</dt><dd>${escapeHtml(formatCopperAmount(shopBalanceCopper()))}</dd></dl><div class="quick-build-choice-actions quick-build-shop-actions"><button type="button" id="quick-build-shop-open" class="primary quick-build-choice-action-full quick-build-shop-open" aria-haspopup="dialog">${SHOP_CART_ICON}<span>開啟商店</span></button></div></section>`;
     body.querySelector("#quick-build-shop-open").addEventListener("click", openDraftShop);
   }
 

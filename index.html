@@ -81,7 +81,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261026-tour-point-buy">
+  <link rel="stylesheet" href="styles.css?v=20261026-carry-capacity">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261023-escape-focus" defer></script>
   <script src="monster.js?v=20261025-beast-perception" defer></script>
@@ -90,7 +90,7 @@
   <script src="backgrounds.js?v=20261003-background-flavor" defer></script>
   <script src="tool-data.js?v=20261008-class-tools" defer></script>
   <script src="feats.js?v=20261021-feat-rule-tips" defer></script>
-  <script src="equipment-notes.js?v=20261025-focus-names" defer></script>
+  <script src="equipment-notes.js?v=20261026-shop-weight" defer></script>
   <script src="spell-list.js?v=20261014-class-lookup" defer></script>
   <script src="condition.js?v=20261021-bonus-wording" defer></script>
   <script src="action-panel.js?v=20261026-subclass-names" defer></script>
@@ -105,7 +105,7 @@
   <script src="tabletop-spells.js?v=20261025-incapacitated-saves" defer></script>
   <script src="legal-modal.js?v=20261022-game-icons" defer></script>
   <script src="onboarding-tour.js?v=20261026-tour-point-buy" defer></script>
-  <script src="quick-build.js?v=20261026-shop-return" defer></script>
+  <script src="quick-build.js?v=20261026-shop-lead" defer></script>
   <script src="spellbook.js?v=20261024-ring-label-api" defer></script>
   <script src="spell-management.js?v=20261022-feature-picker" defer></script>
   <script src="class-option-memory.js?v=20261024-class-split" defer></script>
@@ -1136,7 +1136,7 @@
           <div><span>銀幣</span><strong id="money-display-sp">0</strong></div>
           <div><span>銅幣</span><strong id="money-display-cp">0</strong></div>
         </div>
-        <p id="money-weight-summary" class="money-weight-summary">共 0 枚硬幣・0 磅</p>
+        <p id="money-weight-summary" class="money-weight-summary"><span id="money-coin-weight">共 0 枚硬幣・0 磅</span> | 角色可攜<button type="button" id="carry-capacity-rules-trigger" class="weapon-rule-link" aria-haspopup="dialog" onclick="openCarryCapacityRules(this)">負重</button> <span id="money-carry-capacity">0</span> 磅</p>
       </div>
       <div id="money-adjust-modal" class="money-modal is-hidden" role="dialog" aria-modal="true" aria-labelledby="money-adjust-title" aria-hidden="true" inert hidden>
         <div class="money-modal-card">
@@ -1337,6 +1337,35 @@
   <script src="spell-sources.js?v=20261024-source-labels"></script>
   <script src="class-features-ui.js?v=20261024-source-labels"></script>
   <script>
+function openCarryCapacityRules(trigger) {
+  return window.AppDialog.showMessage({
+    title: "負重規則（Carrying Capacity）",
+    variant: "carry-capacity-rules",
+    trigger,
+    renderContent(body) {
+      body.innerHTML = `<div class="spell-primer-content">
+        <h3>一、基本負重</h3>
+        <p>中型與小型角色的正常攜帶上限為<strong>力量值（STR）× 15 磅</strong>，推動、拖曳或舉起的重量上限則為<strong>STR × 30 磅</strong>。<strong>歌利亞</strong>種族負重為一般角色<strong>兩倍</strong>。</p>
+        <h3>二、負重與移動速度</h3>
+        <ul>
+          <li><strong>正常攜帶</strong>：未超過攜帶上限，可以正常移動，沒有負重懲罰。</li>
+          <li><strong>推動、拖曳、舉起</strong>：重量上限為正常攜帶能力的 <strong>2 倍</strong>。</li>
+          <li><strong>超過正常攜帶上限</strong>：推、拖、舉超重物品時，移動速度最高為 <strong>5 呎</strong>。</li>
+          <li><strong>超過推／拖／舉上限</strong>：超出一般規則允許的能力，須由 <strong>DM 裁定</strong>。</li>
+        </ul>
+        <p class="carry-capacity-example"><strong>範例</strong>：力量 16 的中型角色，可以正常攜帶 <strong>240 磅</strong>，並能推、拖或舉起最多 <strong>480 磅</strong>。搬運重量超過 240 磅時，速度最高為 5 呎。</p>
+        <h3>三、裝備與容器</h3>
+        <p>實際負重包含角色穿戴及攜帶的<strong>所有裝備、容器與內容物</strong>；容器有各自的容量限制，但<strong>不會減輕物品重量</strong>。</p>
+        <h3>四、金錢重量</h3>
+        <p>所有硬幣重量相同，不分幣值，<strong>每 50 枚硬幣重 1 磅</strong>。</p>
+        <h3>五、規則使用原則</h3>
+        <p>5.5e 採用簡化負重管理，<strong>通常不需要逐件計算裝備重量</strong>；只有攜帶異常沉重或大量物品時，DM 才可能要求嚴格計算。</p>
+        <p>正常負重<strong>不會</strong>造成速度降低、攻擊劣勢或屬性檢定劣勢；超過攜帶上限時，依推、拖、舉規則處理。</p>
+      </div>`;
+    }
+  });
+}
+
 function openSpellPrimer(trigger) {
   return window.AppDialog.showMessage({
     title: "法術入門",
@@ -2980,7 +3009,7 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
 </script>
 <script src="equipment-data.js?v=20261025-focus-names" defer></script>
 <script src="search.js?v=20261025-equipment-shop" defer></script>
-<script src="equipment-shop.js?v=20261026-shop-return" defer></script>
+<script src="equipment-shop.js?v=20261026-shop-weight" defer></script>
 
 <script>
 function getModifier(statId) {
@@ -5745,8 +5774,13 @@ function setupMoneyTracker() {
     if (details) details.hidden = !showDetails;
     const detailToggle = byId("money-count-weight");
     detailToggle?.setAttribute("aria-expanded", String(showDetails));
-    const weightSummary = byId("money-weight-summary");
-    if (weightSummary) weightSummary.textContent = `共 ${coinCount} 枚硬幣・${weight} 磅`;
+    // 可攜負重：力量值 ×15，歌利亞 ×30。
+    const carryMultiplier = byId("race")?.value === "goliath" ? 30 : 15;
+    const carryCapacity = toSafeInt(byId("str")?.value) * carryMultiplier;
+    const coinWeight = byId("money-coin-weight");
+    if (coinWeight) coinWeight.textContent = `共 ${coinCount} 枚硬幣・${weight} 磅`;
+    const carryCapacityEl = byId("money-carry-capacity");
+    if (carryCapacityEl) carryCapacityEl.textContent = String(carryCapacity);
   };
   const renderLogList = () => {
     const list = byId("money-log-list");
@@ -5963,6 +5997,8 @@ function setupMoneyTracker() {
   });
   byId("money-log-toggle")?.addEventListener("click", () => openModal(byId("money-log-modal")));
   byId("money-count-weight")?.addEventListener("change", updateSummary);
+  byId("str")?.addEventListener("input", updateSummary);
+  ["str", "race"].forEach((id) => byId(id)?.addEventListener("change", updateSummary));
   document.querySelectorAll(".money-modal").forEach((modal) => {
     modal.querySelector(".money-modal-close")?.addEventListener("click", () => closeModal(modal));
     modal.addEventListener("click", (event) => {

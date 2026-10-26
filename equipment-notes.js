@@ -741,7 +741,15 @@ DC 25 力量（運動）：掙斷鐐銬
   const shopItems = [];
   const shopItemKeys = new Set();
 
-  const addShopItem = (name, amount, currency, sectionInfo, group, variant = "", bundle = 0) => {
+  // 重量取自說明原文的「重量：」行、變體括號或表格「重量」欄；「無」與「--」為 0 磅，未列出則不設 weight。
+  const parseWeight = (text) => {
+    const value = String(text ?? "").trim();
+    if (/^(?:無|-+)$/u.test(value)) return 0;
+    const match = value.match(/^(\d+(?:\.\d+)?)(?:\/(\d+))?\s*磅$/u);
+    return match ? Number(match[1]) / Number(match[2] || 1) : null;
+  };
+
+  const addShopItem = (name, amount, currency, sectionInfo, group, variant = "", bundle = 0, weight = null) => {
     if (!sectionInfo) return;
     const key = variant ? `${name}|${variant}` : name;
     if (shopItemKeys.has(key)) return;
@@ -759,6 +767,7 @@ DC 25 力量（運動）：掙斷鐐銬
     if (variant && Number.isInteger(spellLevel)) item.spellLevel = spellLevel;
     // 彈藥表的「數量」是每份價格包含的發數，例如箭矢 20 支。
     if (bundle > 0) item.bundle = bundle;
+    if (Number.isFinite(weight)) item.weight = weight;
     shopItems.push(Object.freeze(item));
   };
 
@@ -784,6 +793,7 @@ DC 25 力量（運動）：掙斷鐐銬
     const sectionInfo = SHOP_SECTIONS[body.closest("details")?.querySelector(":scope > summary")?.textContent?.trim()] || null;
     // 「X（多種）」之後的變體行與表格屬於 X，直到下一個獨立品項標題。
     let currentGroup = "";
+    let currentGroupWeight = null;
 
     const linkTextNode = (textNode) => {
       const text = textNode.nodeValue || "";
@@ -800,21 +810,28 @@ DC 25 力量（運動）：掙斷鐐銬
         const isLineStart = match[1] === "\n" || match[1] === "";
         if (match[7] && !isLineStart) continue;
         changed = true;
+        // 品項段落到下一個空行為止；變體行的重量寫在價格後，例如「風笛（30 金幣，6磅）」，未寫則沿用群組。
+        const after = text.slice(pricedNamePattern.lastIndex);
+        const blockWeight = parseWeight(after.split(/\n\s*\n/u)[0].match(/^重量：(.+)$/mu)?.[1]);
         fragment.append(text.slice(lastIndex, match.index), match[1], match[2]);
         fragment.appendChild(makeItemLink(name));
         if (match[7]) {
           currentGroup = name;
+          currentGroupWeight = blockWeight;
           fragment.append("（多種");
         } else if (match[6]) {
           currentGroup = "";
           match[6].split("；").forEach((part) => {
             const variant = part.trim().match(/^(.+?)\s*(\d+)\s*(金幣|銀幣|銅幣)$/u);
-            if (variant) addShopItem(name, variant[2], variant[3], sectionInfo, "", variant[1].trim());
+            if (variant) addShopItem(name, variant[2], variant[3], sectionInfo, "", variant[1].trim(), 0, blockWeight);
           });
           fragment.append(`（${match[6]}`);
         } else {
           if (!isVariantLine) currentGroup = "";
-          addShopItem(name, match[4], match[5], sectionInfo, isVariantLine ? currentGroup : "");
+          const weight = isVariantLine
+            ? parseWeight(after.match(/^，([^，；）]+)）/u)?.[1]) ?? (currentGroup ? currentGroupWeight : null)
+            : blockWeight;
+          addShopItem(name, match[4], match[5], sectionInfo, isVariantLine ? currentGroup : "", "", 0, weight);
           fragment.append(`（${match[4]} ${match[5]}`);
         }
         lastIndex = pricedNamePattern.lastIndex;
@@ -833,9 +850,12 @@ DC 25 力量（運動）：掙斷鐐銬
       const name = nameCell.textContent.trim();
       nameCell.textContent = "";
       nameCell.appendChild(makeItemLink(name));
-      const quantityColumn = [...(row.closest("table")?.querySelectorAll("thead th") || [])].findIndex(cell => cell.textContent.trim() === "數量");
+      const headers = [...(row.closest("table")?.querySelectorAll("thead th") || [])].map(cell => cell.textContent.trim());
+      const quantityColumn = headers.indexOf("數量");
+      const weightColumn = headers.indexOf("重量");
       const bundle = quantityColumn > 0 ? Number.parseInt(cells[quantityColumn]?.textContent, 10) : 0;
-      addShopItem(name, priceMatch[1], priceMatch[2], sectionInfo, currentGroup, "", bundle);
+      const weight = weightColumn > 0 ? parseWeight(cells[weightColumn]?.textContent) : null;
+      addShopItem(name, priceMatch[1], priceMatch[2], sectionInfo, currentGroup, "", bundle, weight);
     };
 
     [...body.childNodes].forEach((node) => {

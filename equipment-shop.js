@@ -172,6 +172,14 @@
     return getCartLines().reduce((sum, line) => sum + line.copper * line.quantity, 0);
   }
 
+  // 說明原文未列重量的品項不計入總重，另標示項數。
+  function formatCartWeight() {
+    const lines = getCartLines();
+    const weight = lines.reduce((sum, line) => sum + (line.weight ?? 0) * line.quantity, 0);
+    const unknown = lines.filter(line => !Number.isFinite(line.weight)).length;
+    return `${Number(weight.toFixed(2))}lbs${unknown ? `（${unknown} 項未列重量）` : ""}`;
+  }
+
   function getCartQuantity() {
     return getCartLines().reduce((sum, line) => sum + line.quantity, 0);
   }
@@ -194,7 +202,7 @@
     const key = spell ? `${item.key}|${spell.spellId}` : item.key;
     const name = spell ? `${spell.nameZh}法術卷軸` : item.name;
     const existing = lines.get(key);
-    const line = existing || { key, itemKey: item.key, name, label: spell ? name : getItemLabel(item), gearName: spell ? name : "", amount: item.amount, currency: item.currency, copper: item.copper, quantity: 0 };
+    const line = existing || { key, itemKey: item.key, name, label: spell ? name : getItemLabel(item), gearName: spell ? name : "", amount: item.amount, currency: item.currency, copper: item.copper, weight: item.weight, quantity: 0 };
     line.quantity = Math.min(QUANTITY_MAX, line.quantity + quantity);
     lines.set(key, line);
     return line;
@@ -412,7 +420,7 @@
     const total = getCartTotal();
     const balance = readBalance();
     cartView.title.textContent = quantity ? `購物清單（${quantity} 個）` : "購物清單";
-    cartView.total.textContent = `合計金額：${formatCopper(total)}`;
+    cartView.total.textContent = `合計金額：${formatCopper(total)} | ${formatCartWeight()}`;
     cartView.list.replaceChildren(...lines.map(createCartLine));
     cartView.empty.hidden = lines.length > 0;
     cartView.clear.disabled = !lines.length;
@@ -490,7 +498,7 @@
     cartView.back.focus();
   }
 
-  // 標題列：清空緊接在標題文字右側、下方為合計金額；右側依序為返回與關閉。
+  // 標題列：清空緊接在標題文字右側、下方為合計金額與總重；右側依序為返回與關閉。
   function decorateCartHeader(closeShop) {
     const header = cartView.root.querySelector(".app-dialog__header");
     const title = header.querySelector("h2");

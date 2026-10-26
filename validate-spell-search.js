@@ -755,7 +755,7 @@ async function validateEquipmentShop(page) {
   assert.deepEqual(await cartTitleRow.evaluate(row => [...row.children].map(child => child.textContent)), ["購物清單（3 個）", "清空"], "clear sits beside the title");
   const [titleBox, clearBox] = await Promise.all(["h2", ".equipment-shop__clear"].map(selector => cartTitleRow.locator(selector).boundingBox()));
   assert.ok(Math.abs(titleBox.height - clearBox.height) < 1, "clear matches the title height");
-  assert.equal(await cartDialog.locator(".equipment-shop__balance").textContent(), "合計金額：5 白金幣 2 金幣");
+  assert.equal(await cartDialog.locator(".equipment-shop__balance").textContent(), "合計金額：5 白金幣 2 金幣 | 0lbs（2 項未列重量）", "unlisted weights are counted apart");
   const back = cartDialog.getByRole("button", { name: "返回商店" });
   assert.deepEqual(await cartDialog.locator(".equipment-shop__header-actions button").evaluateAll(buttons => buttons.map(button => button.getAttribute("aria-label"))),
     ["返回商店", "關閉購物清單與商店"]);
@@ -832,6 +832,7 @@ async function validateEquipmentShop(page) {
   await shop.getByRole("button", { name: "加入購物清單：火把" }).click();
   await cartButton.click();
   assert.deepEqual(await cartNames(), ["箭矢 (20)", "火把"], "cart shows bundle sizes");
+  assert.equal(await cartDialog.locator(".equipment-shop__balance").textContent(), "合計金額：1 金幣 1 銅幣 | 1lbs（1 項未列重量）", "cart totals listed weights");
   assert.equal(await summary.textContent(), "結帳後 8 金幣 9 銀幣 9 銅幣", "enough money shows the balance after checkout");
   assert.equal(await summary.evaluate(el => el.classList.contains("is-shortfall")), false);
   await page.keyboard.press("Escape");
@@ -857,7 +858,7 @@ async function validateEquipmentShop(page) {
   await cartDialog.getByRole("button", { name: "清空", exact: true }).click();
   await clearPrompt.getByRole("button", { name: "清空", exact: true }).click();
   assert.equal(await cartDialog.locator(".equipment-shop__cart-line").count(), 0);
-  assert.equal(await cartDialog.locator(".equipment-shop__balance").textContent(), "合計金額：0 銅幣");
+  assert.equal(await cartDialog.locator(".equipment-shop__balance").textContent(), "合計金額：0 銅幣 | 0lbs");
   assert.equal(await back.evaluate(el => el === document.activeElement), true);
   await page.keyboard.press("Escape");
   await page.keyboard.press("Escape");
@@ -970,6 +971,7 @@ async function validateQuickBuildShop(page) {
   await buy(["繩索", "繩索", "火把"]);
   await shop.locator(".equipment-shop__cart-button").click();
   assert.deepEqual(await cartDialog.locator("[data-shop-checkout]").allTextContents(), ["結帳"]);
+  assert.equal(await cartDialog.locator(".equipment-shop__balance").textContent(), "合計金額：2 金幣 1 銅幣 | 0lbs（2 項未列重量）", "the quick-build cart shows the total weight");
   assert.equal(await cartDialog.locator(".equipment-shop__footer-text").textContent(), "結帳後 122 金幣 9 銀幣 9 銅幣");
   await cartDialog.getByRole("button", { name: "結帳", exact: true }).click();
   await shop.waitFor({ state: "detached" });
