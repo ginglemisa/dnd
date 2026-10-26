@@ -8674,6 +8674,17 @@ button.spell-picked-jump:active {
   margin-bottom: 0;
 }
 
+.spell-primer-content > :first-child {
+  margin-top: 0;
+}
+
+.app-dialog__body .spell-primer-content .carry-capacity-example {
+  padding: 0.6rem 0.75rem;
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+}
+
 @media (max-width: 420px) {
   .spell-meta-row {
     align-items: flex-start;
