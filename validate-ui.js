@@ -757,6 +757,7 @@ async function verifyToasts(browser) {
   desktop.on("pageerror", error => errors.push(String(error)));
   await prepareToastFixture(desktop);
   await verifyToastPointerIsolation(desktop, false);
+  await verifyDialogBackgroundOwnership(desktop);
   await desktop.evaluate(() => {
     AppDialog.notify("第一則", { duration: 10000 });
     AppDialog.notify("第二則", { duration: 10000, variant: "dice-roll" });
@@ -879,6 +880,45 @@ async function verifyToastPointerIsolation(page, touch) {
   if (touch) await swipeToast(page, 0, -1, 160);
   else await dragToast(page, 0, -160);
   await page.waitForFunction(() => !document.querySelector(".app-toast"));
+}
+
+async function verifyDialogBackgroundOwnership(page) {
+  const inertState = () => page.evaluate(() => ["page", "locked"].map(id => document.getElementById(id).inert));
+  await page.evaluate(() => {
+    document.body.insertAdjacentHTML("beforeend", '<main id="page"></main><section id="locked"></section>');
+    document.getElementById("locked").inert = true;
+  });
+  // Another lock released while the dialog is open must stay released.
+  await page.evaluate(() => {
+    void AppDialog.showContent({ title: "外部鎖定" });
+    document.getElementById("locked").inert = false;
+  });
+  assert.deepEqual(await inertState(), [true, false]);
+  await page.locator(".app-dialog__close").click();
+  assert.deepEqual(await inertState(), [false, false], "closing a dialog must not restore a lock released by its owner");
+
+  // A dialog opened under another lock, then replaced, must not lock the page again.
+  await page.evaluate(() => {
+    document.getElementById("page").inert = true;
+    void AppDialog.showContent({ title: "被取代" });
+    document.getElementById("page").inert = false;
+    void AppDialog.showContent({ title: "取代者" });
+  });
+  assert.deepEqual(await inertState(), [true, true]);
+  await page.locator(".app-dialog__close").click();
+  assert.deepEqual(await inertState(), [false, false], "a replaced dialog must not restore an outdated lock");
+
+  // Nested dialogs release the page only when the parent closes.
+  await page.evaluate(() => {
+    void AppDialog.showContent({ title: "父視窗", allowNested: true });
+    void AppDialog.showContent({ title: "子視窗" });
+  });
+  assert.equal(await page.locator(".app-dialog").first().evaluate(el => el.inert), true);
+  await page.locator(".app-dialog__close").last().click();
+  assert.deepEqual([await page.locator(".app-dialog").evaluate(el => el.inert), ...await inertState()], [false, true, true]);
+  await page.locator(".app-dialog__close").click();
+  assert.deepEqual(await inertState(), [false, false]);
+  await page.evaluate(() => document.querySelectorAll("#page, #locked").forEach(el => el.remove()));
 }
 
 async function verifyToastHold(page) {

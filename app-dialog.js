@@ -11,22 +11,22 @@
       && element.getAttribute("aria-hidden") !== "true" && element.getClientRects().length > 0);
   }
 
-  function setBackgroundInert(dialogRoot, inert) {
-    if (inert) {
-      const states = new Map();
-      document.querySelectorAll("body > *").forEach((element) => {
-        if (!(element instanceof HTMLElement) || element === dialogRoot || element.id === "app-toast") return;
-        states.set(element, element.inert);
-        element.inert = true;
-      });
-      return states;
-    }
-    return new Map();
+  // Track only the elements this dialog made inert. Elements already inert belong
+  // to another lock (quick build, tour, a parent dialog) that may be released while
+  // this dialog is open; restoring a snapshot would lock them again.
+  function setBackgroundInert(dialogRoot) {
+    const changed = new Set();
+    document.querySelectorAll("body > *").forEach((element) => {
+      if (!(element instanceof HTMLElement) || element === dialogRoot || element.id === "app-toast" || element.inert) return;
+      element.inert = true;
+      changed.add(element);
+    });
+    return changed;
   }
 
-  function restoreBackground(states) {
-    states?.forEach((wasInert, element) => {
-      if (element.isConnected) element.inert = wasInert;
+  function restoreBackground(changed) {
+    changed?.forEach((element) => {
+      if (element.isConnected && element.inert) element.inert = false;
     });
   }
 
@@ -308,7 +308,7 @@
     surface.append(header, body, actions);
     root.appendChild(surface);
     document.body.appendChild(root);
-    const backgroundStates = setBackgroundInert(root, true);
+    const inertedBackground = setBackgroundInert(root);
     document.documentElement.classList.add("app-dialog-open");
 
     return new Promise((resolve) => {
@@ -317,7 +317,7 @@
         if (!root.isConnected) return;
         actionController?.abort();
         document.removeEventListener("keydown", onKeyDown, true);
-        restoreBackground(backgroundStates);
+        restoreBackground(inertedBackground);
         if (typeof options.onClose === "function") options.onClose(result);
         root.remove();
         activeDialog = parentDialog;
