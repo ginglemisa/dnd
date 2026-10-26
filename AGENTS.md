@@ -151,6 +151,7 @@
 ## 工作區與交付
 
 * 沿用環境提供的 task branch／worktree，不自行改寫 `main`。保留使用者既有修改，未受要求不 merge、force push、改寫歷史或刪除他人 branch；只要求工作區修改時不必額外 commit。
+* `private/` 開頭的 branch（目前為 `private/subclass`，本機 worktree 位於 `C:\Git\dnd-private`）含不可公開的資料，只保留在本機：不得 push 至 `origin` 或任何 remote、不得設定 upstream，也不得將其 commit 或檔案 merge、cherry-pick、複製到 `main`。同步方向只能由 `main` 帶入 private branch；在 private worktree 執行驗證時，以 `NODE_PATH` 指向 `C:\Git\dnd\node_modules`。
 * 完成代表需求已實作、受影響的呼叫端與資料相容性已處理、適用驗證已有結果。收尾檢查 diff 與 git status，清除本次產生的 debug code、臨時檔及無關修改。
 * 簡短回報修改內容、驗證結果及未驗證部分；任務外問題如需提及，列出但不順帶修復。
 
