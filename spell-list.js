@@ -3155,6 +3155,43 @@ globalThis.SpellCatalog = (() => {
 - 僅限一隻魔寵：你同時只能擁有一隻魔寵；已有魔寵時施放此法術，改為讓牠變成另一個符合條件的形態`,
       "level": 1
     }),
+    "floating-disk": Object.freeze({
+      "spellId": "floating-disk",
+      "nameZh": "漂浮碟",
+      "nameEn": "Floating Disk",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 咒法
+施法時間: 動作或儀式
+射程: 30呎
+成分: V、S、M
+材料: 一滴水銀
+持續時間: 1小時
+
+- 在射程內你能看見的一個未被佔據空間，創造一個直徑3呎、厚1吋的水平圓形力場平面，漂浮在離地3呎處，持續到法術結束
+- 圓盤至多可承載500磅；放上更多重量時，法術結束，圓盤上的所有東西都會掉到地面
+- 你位於圓盤20呎內時，圓盤保持不動；你移動到距離它超過20呎時，圓盤會跟隨你，保持在你20呎內
+- 圓盤可以越過不平坦地形、上下樓梯與斜坡等，但無法跨越10呎或以上的高度落差；例如它無法越過10呎深的坑洞，若在坑底創造也無法離開該坑洞
+- 你距離圓盤超過100呎時（通常是因為它無法繞過障礙物跟隨你），法術結束`,
+      "level": 1
+    }),
+    "acid-arrow": Object.freeze({
+      "spellId": "acid-arrow",
+      "nameZh": "強酸箭",
+      "nameEn": "Acid Arrow",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 塑能
+施法時間: 動作
+射程: 90呎
+成分: V、S、M
+材料: 磨成粉的大黃葉
+持續時間: 立即
+
+- 一支閃爍綠光的箭矢飛向射程內一個目標，並爆散成一陣酸液；對目標進行一次遠程法術攻擊
+- 命中時，目標受到4d4強酸傷害，並在它下個回合結束時再受到2d4強酸傷害
+- 未命中時，箭矢的酸液濺到目標，只造成初始傷害的一半
+- 使用更高環階法術位：每比2環高一環，初始傷害與後續傷害各增加1d4`,
+      "level": 2
+    }),
     "arcane-lock": Object.freeze({
       "spellId": "arcane-lock",
       "nameZh": "秘法鎖",
@@ -3171,6 +3208,25 @@ globalThis.SpellCatalog = (() => {
 - 此鎖無法以任何非魔法手段打開
 - 你與施法時你指定的任何生物，可以無視此鎖開啟與關閉該物體
 - 你也可以設定一個通行密語；在物體5呎內說出時，可解鎖1分鐘`,
+      "level": 2
+    }),
+    "arcanists-magic-aura": Object.freeze({
+      "spellId": "arcanists-magic-aura",
+      "nameZh": "魔法靈光",
+      "nameEn": "Arcanist's Magic Aura",
+      get name() { return `${this.nameZh} ${this.nameEn}`; },
+      "desc": `學派: 幻術
+施法時間: 動作
+射程: 觸及
+成分: V、S、M
+材料: 一小塊方形絲綢
+持續時間: 24小時
+
+- 觸碰一個自願生物，或一個未被穿戴或攜帶的物體，在其上施加幻象，持續到法術結束
+- 生物獲得下方的假面效果，物體獲得下方的虛假靈光效果
+- 若你連續30天每天都對同一目標施放此法術，幻象會持續到被解除
+- 假面（生物）：選擇一個並非目標實際生物類型的生物類型；法術及其他魔法效果會將目標視為所選類型的生物
+- 虛假靈光（物體）：改變目標在偵測魔法靈光的法術與魔法效果（例如偵測魔法）中呈現的樣子；可讓非魔法物體看起來帶有魔法、讓魔法物品看起來不具魔法，或改變物體的靈光，使其看起來屬於你選擇的某個魔法學派`,
       "level": 2
     }),
     "rope-trick": Object.freeze({
@@ -4323,6 +4379,7 @@ globalThis.SpellCatalog = (() => {
       "false-life",
       "feather-fall",
       "find-familiar",
+      "floating-disk",
       "fog-cloud",
       "grease",
       "identify",
@@ -4337,8 +4394,10 @@ globalThis.SpellCatalog = (() => {
       "sleep",
       "thunderwave",
       "unseen-servant",
+      "acid-arrow",
       "alter-self",
       "arcane-lock",
+      "arcanists-magic-aura",
       "augury",
       "blindness-deafness",
       "blur",
@@ -4472,7 +4531,7 @@ globalThis.SpellCatalog = (() => {
     "locate-animals-or-plants", "magic-mouth", "silence", "tiny-hut",
     "detect-poison-and-disease", "purify-food-and-drink", "augury",
     "gentle-repose", "meld-into-stone", "water-walk", "water-breathing",
-    "alarm", "find-familiar", "phantom-steed", "divination"
+    "alarm", "find-familiar", "floating-disk", "phantom-steed", "divination"
   ]);
 
   const upcastSpellIdSet = new Set([
@@ -4489,7 +4548,7 @@ globalThis.SpellCatalog = (() => {
     "divine-smite", "searing-smite", "find-steed", "magic-weapon",
     "shining-smite", "ensnaring-strike", "hunters-mark", "burning-hands",
     "chromatic-orb", "false-life", "magic-missile", "ray-of-sickness",
-    "dragons-breath", "mind-spike", "scorching-ray", "spider-climb",
+    "acid-arrow", "dragons-breath", "mind-spike", "scorching-ray", "spider-climb",
     "fireball", "fly", "gaseous-form", "lightning-bolt", "vampiric-touch",
     "hellish-rebuke", "hex", "banishment", "blight", "charm-monster",
     "confusion", "conjure-minor-elementals", "conjure-woodland-beings",
@@ -4569,6 +4628,10 @@ globalThis.SpellCatalog = (() => {
     "alter-self": freezeOutcomeList([{ kind: "damage", formula: "1d6", abilityModifier: "spellcasting", damageTypes: ["slashing", "piercing", "bludgeoning"], autoOnCast: false, context: "之後使用天生武器命中時" }]),
     "dragons-breath": freezeOutcomeList([{ kind: "damage", formula: "3d6", upcastDice: "1d6", damageTypes: ["acid", "cold", "fire", "lightning", "poison"], autoOnCast: false, context: "目標之後使用龍息時" }]),
     "mind-spike": freezeOutcomeList([{ kind: "damage", formula: "3d8", upcastDice: "1d8", damageType: "psychic", autoOnCast: true, context: "豁免依規則處理" }]),
+    "acid-arrow": freezeOutcomeList([
+      { kind: "damage", attack: "spell", formula: "4d4", upcastDice: "1d4", damageType: "acid", autoOnCast: true, context: "命中時初始傷害；未命中時只受初始傷害一半" },
+      { kind: "damage", formula: "2d4", upcastDice: "1d4", damageType: "acid", autoOnCast: false, context: "命中目標下個回合結束時" }
+    ]),
     "scorching-ray": freezeOutcomeList([{ kind: "damage", attack: "spell", formula: "2d6", damageType: "fire", repeat: 3, repeatPerSlot: 1, autoOnCast: true, context: "每道射線各自進行攻擊與傷害擲骰", repeatLabel: "射線" }]),
     "web": freezeOutcomeList([{ kind: "damage", formula: "2d4", damageType: "fire", autoOnCast: false, context: "之後在燃燒蛛網中開始回合時" }]),
 

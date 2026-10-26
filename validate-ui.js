@@ -508,7 +508,7 @@ async function verifyPdf(page, fieldsOnly) {
       }
     }
   });
-  console.log("PDF fields: 214 spell material flags (current/legacy), component field isolation, class tools/shields and lineage levels passed.");
+  console.log("PDF fields: 217 spell material flags (current/legacy), component field isolation, class tools/shields and lineage levels passed.");
   if (fieldsOnly) return;
   await page.addScriptTag({ url: "/pdf-lib.custom.min.js" });
   await page.addScriptTag({ url: "/fontkit.custom.min.js" });

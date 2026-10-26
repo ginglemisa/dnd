@@ -41,8 +41,8 @@ const spellsByLevel = Object.fromEntries([0, 1, 2, 3, 4].map(level => [
   spells.filter(spell => spell.level === level).length
 ]));
 
-assert.equal(spells.length, 214, "法術總數應為 214");
-assert.deepEqual(spellsByLevel, { 0: 27, 1: 56, 2: 55, 3: 42, 4: 34 });
+assert.equal(spells.length, 217, "法術總數應為 217");
+assert.deepEqual(spellsByLevel, { 0: 27, 1: 57, 2: 57, 3: 42, 4: 34 });
 assert.equal(new Set(spellIds).size, spellIds.length, "spellId 不得重複");
 
 const spellClasses = Object.keys(catalog.compatSpellList);
@@ -87,7 +87,7 @@ assertSameValues(catalog.tabletopDamageCantripIds, expectedCantripIds, "戲法�
 assertSameValues(castableCantripIds, [...expectedCantripIds, "true-strike"], "傷害戲法與克敵機先可顯示施法按鈕");
 assert.equal(
   spells.filter(spell => spell.level > 0 && catalog.canCastFromTabletop(spell.spellId)).length,
-  187,
+  190,
   "所有 1 環以上法術都必須可進入施法流程"
 );
 expectedCantripIds.forEach(spellId => {
@@ -464,7 +464,7 @@ const buildRolls = (spellId, effectiveLevel = 0) => [...rollSandbox.TabletopSpel
 const attackSpellIds = [
   "starry-wisp", "poison-spray", "produce-flame", "chill-touch", "fire-bolt",
   "ray-of-frost", "shocking-grasp", "sorcerous-burst", "eldritch-blast",
-  "guiding-bolt", "ice-knife", "chromatic-orb", "ray-of-sickness",
+  "guiding-bolt", "ice-knife", "chromatic-orb", "ray-of-sickness", "acid-arrow",
   "spiritual-weapon", "scorching-ray", "vampiric-touch"
 ];
 assertSameValues(spells.filter(spell => catalog.getCastMetadata(spell.spellId).outcomes
