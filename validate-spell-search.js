@@ -690,6 +690,11 @@ async function validateEquipmentShop(page) {
     assert.deepEqual(await shopItemNames(shop), names, `${category}: items and order`);
     assert.deepEqual(await shopSectionTitles(shop), [category]);
   }
+  // Ungrouped tools lead their section so none sits under the gaming set or instrument heading.
+  await chooseCategory("工具");
+  assert.deepEqual(await shop.locator(".equipment-shop__section").nth(1).locator(".equipment-shop__group, .equipment-shop__detail").allTextContents(),
+    ["易容工具", "文書偽造工具", "草藥工具", "領航員工具", "製毒師工具", "盜賊工具", "賭具", "骰子", "龍棋", "紙牌", "三龍牌",
+      "樂器", "風笛", "鼓", "揚琴", "長笛", "角號", "魯特琴", "里拉琴", "排簫", "蘆笛", "提琴"], "other tools: ungrouped items before groups");
   await chooseCategory("法器");
   assert.deepEqual(await shop.locator(".equipment-shop__group").allTextContents(), ["奧術法器", "德魯伊法器", "聖徽"]);
   assert.equal((await shopItemNames(shop)).includes("材料包"), false, "the component pouch is not a focus");
