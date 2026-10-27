@@ -383,23 +383,19 @@
   const SHARED_PDF_SOURCE_PATH = '5e_char_sheet.pdf';
   const OFFICIAL_PDF_SOURCE_PATH = '5e_char_sheet_of.pdf';
   const OFFICIAL_PDF_FONT_PATH = 'AdobeFanHeitiStd-Bold.otf';
-  // Both templates' own default appearance font: a non-embedded CNS1 font
-  // whose standard CMap readers can encode typed text with. Keeping its alias
-  // lets an editing reader use the template's resource for new input; the
-  // embedded font's Identity-H codes cannot, which leaves fields blank.
-  const TEMPLATE_FIELD_FONT_ALIAS = 'AdobeFanHeitiStd-Bold';
+  // The official template's own default appearance font. Keeping its alias
+  // lets an editing reader use the template's resource for new input.
+  const OFFICIAL_PDF_FONT_ALIAS = 'AdobeFanHeitiStd-Bold';
   // Adobe Fan Heiti has no katakana middle dot, which names and feat text use.
-  const TEMPLATE_FIELD_GLYPH_SUBSTITUTIONS = Object.freeze({ '・': '‧' });
+  const OFFICIAL_PDF_GLYPH_SUBSTITUTIONS = Object.freeze({ '・': '‧' });
   const PDF_EXPORT_PROFILES = Object.freeze({
     'third-party': Object.freeze({
       editable: Object.freeze({
         sourcePdfPath: SHARED_PDF_SOURCE_PATH,
-        fontPath: 'NotoSansTC-Bold-IdentityCID.otf',
+        fontPath: 'NotoSansTC-Regular-IdentityCID.otf',
         subsetFont: false,
         flattenForm: false,
-        layoutId: 'editable',
-        appearanceFontAlias: TEMPLATE_FIELD_FONT_ALIAS,
-        glyphSubstitutions: TEMPLATE_FIELD_GLYPH_SUBSTITUTIONS
+        layoutId: 'editable'
       }),
       compact: Object.freeze({
         sourcePdfPath: SHARED_PDF_SOURCE_PATH,
@@ -416,8 +412,8 @@
         subsetFont: false,
         flattenForm: false,
         layoutId: 'official-editable',
-        appearanceFontAlias: TEMPLATE_FIELD_FONT_ALIAS,
-        glyphSubstitutions: TEMPLATE_FIELD_GLYPH_SUBSTITUTIONS,
+        appearanceFontAlias: OFFICIAL_PDF_FONT_ALIAS,
+        glyphSubstitutions: OFFICIAL_PDF_GLYPH_SUBSTITUTIONS,
         completeCheckboxAppearances: true
       }),
       compact: Object.freeze({
@@ -426,8 +422,8 @@
         subsetFont: true,
         flattenForm: true,
         layoutId: 'official-compact',
-        appearanceFontAlias: TEMPLATE_FIELD_FONT_ALIAS,
-        glyphSubstitutions: TEMPLATE_FIELD_GLYPH_SUBSTITUTIONS,
+        appearanceFontAlias: OFFICIAL_PDF_FONT_ALIAS,
+        glyphSubstitutions: OFFICIAL_PDF_GLYPH_SUBSTITUTIONS,
         completeCheckboxAppearances: true
       })
     })
@@ -1498,7 +1494,7 @@
     }
 
     const layoutSettings = getPdfLayoutSettings(profile);
-    const defaultAppearanceFontAlias = profile.appearanceFontAlias || 'Noto';
+    const defaultAppearanceFontAlias = profile.appearanceFontAlias || (profile.flattenForm ? 'Noto' : 'NotoMono');
     normalizeProblematicFieldDA(globalScope.PDFLib, pdfDoc, form, undefined, defaultAppearanceFontAlias);
     applyTemplateFieldSettings(form, layoutSettings);
     applyFieldAdjustments(form, layoutSettings);
