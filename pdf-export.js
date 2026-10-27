@@ -392,7 +392,7 @@
     'third-party': Object.freeze({
       editable: Object.freeze({
         sourcePdfPath: SHARED_PDF_SOURCE_PATH,
-        fontPath: 'NotoSansTC-Regular-IdentityCID.otf',
+        fontPath: 'NotoSansTC-Bold-IdentityCID.otf',
         subsetFont: false,
         flattenForm: false,
         layoutId: 'editable'
