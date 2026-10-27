@@ -14101,7 +14101,7 @@ html.tabletop-avatar-modal-open { overflow: hidden; }
 .sheet-download {
   position: relative;
   width: min(100%, 30rem);
-  margin: 0.5rem auto 0;
+  margin: 0 auto;
 }
 
 .sheet-download__image {
@@ -14130,9 +14130,10 @@ html.tabletop-avatar-modal-open { overflow: hidden; }
   outline-offset: 1px;
 }
 
-.sheet-download__link--official { left: 12.5%; top: 77.8%; width: 32%; height: 7.4%; }
-.sheet-download__link--akaa { left: 56.9%; top: 77.8%; width: 28.7%; height: 7.4%; }
-.sheet-download__link--english { left: 19.4%; top: 88%; width: 61.4%; height: 4.2%; }
+.sheet-download__link--official-qr { left: 14.8%; top: 45.3%; width: 27.8%; height: 27.8%; }
+.sheet-download__link--akaa-qr { left: 57.4%; top: 45.3%; width: 27.8%; height: 27.8%; }
+.sheet-download__link--official { left: 17.8%; top: 77.6%; width: 21.3%; height: 7.4%; }
+.sheet-download__link--akaa { left: 57.6%; top: 77.6%; width: 27.4%; height: 7.4%; }
 .sheet-download__link--dndbeyond { left: 37.5%; top: 92.6%; width: 20%; height: 3.9%; }
 .sheet-download__link--wotc { left: 71.2%; top: 92.6%; width: 9.5%; height: 3.9%; }
 

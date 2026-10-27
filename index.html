@@ -81,7 +81,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261027-sheet-download">
+  <link rel="stylesheet" href="styles.css?v=20261027-sheet-download-webp">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261023-escape-focus" defer></script>
   <script src="monster.js?v=20261025-beast-perception" defer></script>
@@ -4421,7 +4421,6 @@ function setupSheetDownloadDialog() {
     });
     window.AppDialog?.showContent({
       title: "角色紙下載",
-      message: "掃描 QR Code，或點圖中的網址開啟下載頁。",
       variant: "sheet-download",
       content,
       confirmLabel: "關閉",
@@ -6437,11 +6436,13 @@ window.addEventListener("DOMContentLoaded", async function() {
 
 <template id="sheet-download-template">
   <figure class="sheet-download">
-    <img class="sheet-download__image" data-ui-theme-image="classic" src="sheet_dl_qr.svg" width="1080" height="1080" alt="D&amp;D 2024 中文角色紙下載 QR Code：官方直式中文版、赤赤AkaA設計橫版與英文可填寫表格版">
-    <img class="sheet-download__image" data-ui-theme-image="warm" src="sheet_dl_qr_warm.svg" width="1080" height="1080" alt="D&amp;D 2024 中文角色紙下載 QR Code：官方直式中文版、赤赤AkaA設計橫版與英文可填寫表格版">
-    <a class="sheet-download__link sheet-download__link--official" href="https://tinyurl.com/dnd2024tw" target="_blank" rel="noopener noreferrer" aria-label="官方直式中文版：tinyurl.com/dnd2024tw" title="tinyurl.com/dnd2024tw"></a>
-    <a class="sheet-download__link sheet-download__link--akaa" href="https://tinyurl.com/srd5etw" target="_blank" rel="noopener noreferrer" aria-label="赤赤AkaA設計橫版：tinyurl.com/srd5etw" title="tinyurl.com/srd5etw"></a>
-    <a class="sheet-download__link sheet-download__link--english" href="https://tinyurl.com/dnd2024en1" target="_blank" rel="noopener noreferrer" aria-label="英文可填寫表格版：tinyurl.com/dnd2024en1" title="tinyurl.com/dnd2024en1"></a>
+    <img class="sheet-download__image" data-ui-theme-image="classic" src="sheet_dl_qr.webp" width="1080" height="1080" alt="D&amp;D 2024 中文角色紙下載 QR Code：官方直式中文版與赤赤AkaA設計橫版">
+    <img class="sheet-download__image" data-ui-theme-image="warm" src="sheet_dl_qr_warm.webp" width="1080" height="1080" alt="D&amp;D 2024 中文角色紙下載 QR Code：官方直式中文版與赤赤AkaA設計橫版">
+    <!-- QR areas open the Drive page the QR encodes (the labels below link the short download URLs instead). -->
+    <a class="sheet-download__link sheet-download__link--official-qr" href="https://drive.google.com/file/d/1wUIh4xYY492I7htCnYAdNsYwyt7zJJbR/view?usp=sharing" target="_blank" rel="noopener noreferrer" aria-label="官方直式中文版 QR Code：Google Drive 檔案頁" title="Google Drive：官方直式中文版"></a>
+    <a class="sheet-download__link sheet-download__link--akaa-qr" href="https://drive.google.com/file/d/1Tu7rAyjfKBl6wagkuRiSNgpQW5LCBP6J/view?usp=sharing" target="_blank" rel="noopener noreferrer" aria-label="赤赤AkaA設計橫版 QR Code：Google Drive 檔案頁" title="Google Drive：赤赤AkaA設計橫版"></a>
+    <a class="sheet-download__link sheet-download__link--official" href="https://twd20.com/sheet" target="_blank" rel="noopener noreferrer" aria-label="官方直式中文版：twD20.com/sheet" title="twD20.com/sheet"></a>
+    <a class="sheet-download__link sheet-download__link--akaa" href="https://twd20.com/sheet-akaa" target="_blank" rel="noopener noreferrer" aria-label="赤赤AkaA設計橫版：twD20.com/sheet-akaa" title="twD20.com/sheet-akaa"></a>
     <a class="sheet-download__link sheet-download__link--dndbeyond" href="https://www.dndbeyond.com/" target="_blank" rel="noopener noreferrer" aria-label="DnD Beyond 官網" title="DnD Beyond"></a>
     <a class="sheet-download__link sheet-download__link--wotc" href="https://company.wizards.com/" target="_blank" rel="noopener noreferrer" aria-label="WotC 官網" title="Wizards of the Coast"></a>
   </figure>
