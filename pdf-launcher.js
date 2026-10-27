@@ -50,7 +50,7 @@ async function ensurePdfExportReady() {
       await loadScriptOnce("pdf-lib.custom.min.js");
       await loadScriptOnce("fontkit.custom.min.js");
       await loadScriptOnce("pdf-field-map.js?v=20261026-official-sheet");
-      await loadScriptOnce("pdf-export.js?v=20261027-noto-bold");
+      await loadScriptOnce("pdf-export.js?v=20261027-template-field-font");
     })().catch((error) => {
       pdfExportLoaderPromise = null;
       throw error;

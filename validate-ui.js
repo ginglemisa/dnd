@@ -620,6 +620,20 @@ async function verifyPdf(page, fieldsOnly) {
         if (!editableMeasurement.fits || Math.abs(editableMeasurement.maxWidth - (245.080856 - 112.61348 - 4)) > 0.001) throw new Error('Editable English name validation width');
       } finally { PDFLib.PDFForm.prototype.flatten = flatten; }
 
+      // Editable fields must name the template's non-embedded CNS1 font: a
+      // reader redrawing or editing with the embedded Identity-H font shows
+      // nothing, both for the filled value and for typed input.
+      const checkEditingFont = (form, label) => {
+        const { PDFDict, PDFName, PDFTextField } = PDFLib;
+        const fonts = form.acroForm.dict.lookup(PDFName.of("DR"), PDFDict).lookup(PDFName.of("Font"), PDFDict);
+        const descendant = fonts.lookup(PDFName.of("AdobeFanHeitiStd-Bold"), PDFDict).lookup(PDFName.of("DescendantFonts")).lookup(0, PDFDict);
+        const descriptor = descendant.lookup(PDFName.of("FontDescriptor"), PDFDict);
+        if (["FontFile", "FontFile2", "FontFile3"].some(key => descriptor.has(PDFName.of(key)))) throw new Error(`Editing font stays the template's own: ${label}`);
+        const aliases = new Set(form.getFields().filter(field => field instanceof PDFTextField)
+          .map(field => /\/([^\s/]+)\s+[\d.]+\s+Tf/.exec(field.acroField.getDefaultAppearance() || "")?.[1]));
+        if (aliases.size !== 1 || !aliases.has("AdobeFanHeitiStd-Bold")) throw new Error(`Editable fields use the template font alias: ${label} ${[...aliases].join(",")}`);
+      };
+
       // equipment1/extra1 appearances use measured lines that pdf-lib keeps
       // as drawn; the editable value keeps only the player's line breaks.
       const gear = "書法工具、書籍（禱文）、聖徽、羊皮紙 ×10、祭祀長袍、8 金幣、探索套組、繩索、火把 ×10、口糧 ×5\n長劍";
@@ -655,6 +669,7 @@ async function verifyPdf(page, fieldsOnly) {
             // pdf-lib's old re-split broke this line at the space before "×10".
             if (!equipment1.lines[0].includes("羊皮紙 ×10")) throw new Error("Measured wrap fills the editable line");
             const form = (await PDFLib.PDFDocument.load(await blob.arrayBuffer())).getForm();
+            checkEditingFont(form, "third-party");
             const payload = buildPdfFieldPayload(state, { outputMode });
             for (const name of ["equipment1", "extra1"]) {
               const field = form.getTextField(name);
@@ -680,6 +695,7 @@ async function verifyPdf(page, fieldsOnly) {
       };
       await exportCharacterPdfFromState(officialState, { outputMode: "editable", sheetTemplate: "official", characterName: "艾尼克斯・薩卡蘭姆", englishName: "Enix" });
       const officialForm = (await PDFLib.PDFDocument.load(await blob.arrayBuffer())).getForm();
+      checkEditingFont(officialForm, "official");
       if (officialForm.getTextField("name").getText() !== "艾尼克斯‧薩卡蘭姆") throw new Error("Official name uses a glyph the font has");
       if (!officialForm.getCheckBox("hero insp").isChecked() || officialForm.getCheckBox("light").isChecked()) throw new Error("Official checkbox values");
       for (const name of ["hero insp", "light", "ds1s", "chk-c1"]) {
