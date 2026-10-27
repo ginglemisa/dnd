@@ -913,10 +913,7 @@ html[data-view-mode="tabletop"] .utility-menu {
   min-width: 0;
 }
 
-.utility-menu__row--split {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
+.utility-menu__row--icon,
 .utility-menu__row--footer {
   grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr);
 }
@@ -14096,6 +14093,48 @@ html.tabletop-avatar-modal-open { overflow: hidden; }
   background: var(--surface-strong);
   box-shadow: var(--shadow-strong);
 }
+
+.app-dialog[data-variant="sheet-download"] .app-dialog__surface {
+  width: min(100%, 34rem);
+}
+
+.sheet-download {
+  position: relative;
+  width: min(100%, 30rem);
+  margin: 0.5rem auto 0;
+}
+
+.sheet-download__image {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-sm);
+}
+
+/* Link areas follow the text drawn at fixed positions in the 1080×1080 image. */
+.sheet-download__link {
+  position: absolute;
+  border-radius: 4px;
+}
+
+.sheet-download__link:hover {
+  background: rgba(0, 112, 192, 0.12);
+}
+
+:where(html[data-ui-theme="warm"]) .sheet-download__link:hover {
+  background: rgba(168, 47, 40, 0.12);
+}
+
+.sheet-download__link:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 1px;
+}
+
+.sheet-download__link--official { left: 12.5%; top: 77.8%; width: 32%; height: 7.4%; }
+.sheet-download__link--akaa { left: 56.9%; top: 77.8%; width: 28.7%; height: 7.4%; }
+.sheet-download__link--english { left: 19.4%; top: 88%; width: 61.4%; height: 4.2%; }
+.sheet-download__link--dndbeyond { left: 37.5%; top: 92.6%; width: 20%; height: 3.9%; }
+.sheet-download__link--wotc { left: 71.2%; top: 92.6%; width: 9.5%; height: 3.9%; }
 
 .app-dialog[data-variant="number"] .app-dialog__surface {
   width: min(100%, 24rem);

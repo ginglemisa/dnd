@@ -81,7 +81,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261026-pdf-avatar">
+  <link rel="stylesheet" href="styles.css?v=20261027-sheet-download">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261023-escape-focus" defer></script>
   <script src="monster.js?v=20261025-beast-perception" defer></script>
@@ -178,15 +178,21 @@
       <section class="utility-menu__section" aria-labelledby="utility-menu-data-title">
         <h2 id="utility-menu-data-title" class="utility-menu__section-title">角色資料</h2>
         <div class="utility-menu__grid">
-          <div class="utility-menu__row utility-menu__row--split">
+          <div class="utility-menu__row utility-menu__row--icon">
             <button type="button" id="import-json-btn" class="utility-menu__button">匯入JSON</button>
+            <button type="button" id="open-qr-btn" class="utility-menu__button utility-menu__qr-button" aria-label="開啟 QR Code" title="QR Code">
+              <svg class="utility-menu__qr-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 3h7v7H3V3Zm2 2v3h3V5H5Zm9-2h7v7h-7V3Zm2 2v3h3V5h-3ZM3 14h7v7H3v-7Zm2 2v3h3v-3H5Zm9-2h3v3h-3v-3Zm4 0h3v3h-3v-3Zm-4 4h3v3h-3v-3Zm4 0h3v3h-3v-3Z"/>
+              </svg>
+            </button>
             <button type="button" id="export-json-btn" class="utility-menu__button">匯出JSON</button>
           </div>
           <div class="utility-menu__row utility-menu__row--footer">
             <button type="button" id="export-pdf-btn" class="utility-menu__button">輸出PDF</button>
-            <button type="button" id="open-qr-btn" class="utility-menu__button utility-menu__qr-button" aria-label="開啟 QR Code" title="QR Code">
+            <button type="button" id="open-sheet-download-btn" class="utility-menu__button utility-menu__qr-button" aria-label="角色紙下載" title="角色紙下載">
               <svg class="utility-menu__qr-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M3 3h7v7H3V3Zm2 2v3h3V5H5Zm9-2h7v7h-7V3Zm2 2v3h3V5h-3ZM3 14h7v7H3v-7Zm2 2v3h3v-3H5Zm9-2h3v3h-3v-3Zm4 0h3v3h-3v-3Zm-4 4h3v3h-3v-3Zm4 0h3v3h-3v-3Z"/>
+                <path fill-rule="evenodd" d="M5 2h10l5 5v15H5V2Zm2 2v16h11V9h-5V4H7Zm8 .8V7h2.2L15 4.8Z"/>
+                <path d="M8.5 10.5h3.5v3.5H8.5v-3.5Zm5 .5h3v1.5h-3V11Zm0 2h3v1.5h-3V13Zm-5 3h8v1.5h-8V16Zm0 2.2h5.5v1.3H8.5v-1.3ZM8.5 6h3v1.5h-3V6Z"/>
               </svg>
             </button>
             <button type="button" class="utility-menu__button share-url-btn" onclick="copyShareUrl()" aria-label="複製分享連結">分享角卡</button>
@@ -4401,6 +4407,29 @@ function setupSpellQrModal() {
   });
 }
 
+function setupSheetDownloadDialog() {
+  const openBtn = document.getElementById("open-sheet-download-btn");
+  const template = document.getElementById("sheet-download-template");
+  if (!openBtn || !template) return;
+
+  openBtn.addEventListener("click", () => {
+    // Drop the other theme's image before it joins the page, so only one loads.
+    const content = template.content.cloneNode(true);
+    const uiTheme = document.documentElement.dataset.uiTheme === "warm" ? "warm" : "classic";
+    content.querySelectorAll("[data-ui-theme-image]").forEach((image) => {
+      if (image.dataset.uiThemeImage !== uiTheme) image.remove();
+    });
+    window.AppDialog?.showContent({
+      title: "角色紙下載",
+      message: "掃描 QR Code，或點圖中的網址開啟下載頁。",
+      variant: "sheet-download",
+      content,
+      confirmLabel: "關閉",
+      trigger: document.getElementById("utility-menu-toggle") || openBtn
+    });
+  });
+}
+
 function setupUtilityMenu() {
   const shell = document.querySelector(".tabs-shell");
   const toggle = document.getElementById("utility-menu-toggle");
@@ -6313,6 +6342,7 @@ window.addEventListener("DOMContentLoaded", async function() {
   initLegalModal();
   setupUtilityMenu();
   setupSpellQrModal();
+  setupSheetDownloadDialog();
 });
 </script>
 </main>
@@ -6404,6 +6434,18 @@ window.addEventListener("DOMContentLoaded", async function() {
     <p class="spell-qr-modal-note" style="text-align: center; font-weight: bold;">讓桌友掃 QR Code 打開 twD20.com</p>
   </div>
 </div>
+
+<template id="sheet-download-template">
+  <figure class="sheet-download">
+    <img class="sheet-download__image" data-ui-theme-image="classic" src="sheet_dl_qr.svg" width="1080" height="1080" alt="D&amp;D 2024 中文角色紙下載 QR Code：官方直式中文版、赤赤AkaA設計橫版與英文可填寫表格版">
+    <img class="sheet-download__image" data-ui-theme-image="warm" src="sheet_dl_qr_warm.svg" width="1080" height="1080" alt="D&amp;D 2024 中文角色紙下載 QR Code：官方直式中文版、赤赤AkaA設計橫版與英文可填寫表格版">
+    <a class="sheet-download__link sheet-download__link--official" href="https://tinyurl.com/dnd2024tw" target="_blank" rel="noopener noreferrer" aria-label="官方直式中文版：tinyurl.com/dnd2024tw" title="tinyurl.com/dnd2024tw"></a>
+    <a class="sheet-download__link sheet-download__link--akaa" href="https://tinyurl.com/srd5etw" target="_blank" rel="noopener noreferrer" aria-label="赤赤AkaA設計橫版：tinyurl.com/srd5etw" title="tinyurl.com/srd5etw"></a>
+    <a class="sheet-download__link sheet-download__link--english" href="https://tinyurl.com/dnd2024en1" target="_blank" rel="noopener noreferrer" aria-label="英文可填寫表格版：tinyurl.com/dnd2024en1" title="tinyurl.com/dnd2024en1"></a>
+    <a class="sheet-download__link sheet-download__link--dndbeyond" href="https://www.dndbeyond.com/" target="_blank" rel="noopener noreferrer" aria-label="DnD Beyond 官網" title="DnD Beyond"></a>
+    <a class="sheet-download__link sheet-download__link--wotc" href="https://company.wizards.com/" target="_blank" rel="noopener noreferrer" aria-label="WotC 官網" title="Wizards of the Coast"></a>
+  </figure>
+</template>
 
 <div id="deity-info-modal" aria-hidden="true" inert>
   <div class="deity-info-card" role="dialog" aria-modal="true" aria-labelledby="deity-info-title" aria-describedby="deity-info-disclaimer">
