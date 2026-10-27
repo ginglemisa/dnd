@@ -127,9 +127,9 @@
       // encoding that decodes differently across readers.
       avatarFieldSuffix: '_af_image',
       nameField: 'name',
-      // Verified against the first-page name widget in 5e_char_sheet_off.pdf:
-      // [26.5402, 744.73, 250.029, 763.402].
-      nameFieldWidth: 250.029 - 26.5402,
+      // Verified against the first-page name widget in 5e_char_sheet_of.pdf:
+      // [26.9363, 759.0692, 253.7608, 778.0199].
+      nameFieldWidth: 253.7608 - 26.9363,
       hasEnglishName: false,
       ...overrides
     });
@@ -381,7 +381,7 @@
   });
 
   const SHARED_PDF_SOURCE_PATH = '5e_char_sheet.pdf';
-  const OFFICIAL_PDF_SOURCE_PATH = '5e_char_sheet_off.pdf';
+  const OFFICIAL_PDF_SOURCE_PATH = '5e_char_sheet_of.pdf';
   const OFFICIAL_PDF_FONT_PATH = 'AdobeFanHeitiStd-Bold.otf';
   // The official template's own default appearance font. Keeping its alias
   // lets an editing reader use the template's resource for new input.
@@ -1532,11 +1532,14 @@
     fitPayloadTextFields(form, payload, fontEmbedResult.font, layoutSettings);
     if (profile.flattenForm) markAllTextFieldsDirtyForFlattening(form);
     form.updateFieldAppearances(fontEmbedResult.font);
+    // Fields name the alias in their DA, so a reader redrawing or editing one
+    // must find it in DR. The official alias already resolves to the
+    // template's own resource; register the embedded font for the others.
     normalizeProblematicFieldDA(
       globalScope.PDFLib,
       pdfDoc,
       form,
-      profile.flattenForm ? fontEmbedResult.font.ref : undefined,
+      profile.flattenForm || !profile.appearanceFontAlias ? fontEmbedResult.font.ref : undefined,
       defaultAppearanceFontAlias
     );
     if (profile.layoutId === 'editable') {

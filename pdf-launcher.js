@@ -50,7 +50,7 @@ async function ensurePdfExportReady() {
       await loadScriptOnce("pdf-lib.custom.min.js");
       await loadScriptOnce("fontkit.custom.min.js");
       await loadScriptOnce("pdf-field-map.js?v=20261026-official-sheet");
-      await loadScriptOnce("pdf-export.js?v=20261026-official-sheet");
+      await loadScriptOnce("pdf-export.js?v=20261027-official-letter");
     })().catch((error) => {
       pdfExportLoaderPromise = null;
       throw error;
@@ -362,8 +362,8 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
       else if(step==='sheet'){
         const choices=document.createElement('div'); choices.className='pdf-export-choice-options';
         [
-          ['third-party','第三方角色卡','橫式雙頁版面；可編輯表單版約 5 MB，美觀易讀版約 2 MB。'],
-          ['official','官方角色卡','直式雙頁官方版面。檔案較大：可編輯版約 22 MB，不可編輯版約 17 MB。']
+          ['third-party','第三方角色卡','橫式雙頁版面；可編輯表單版約 6 MB，美觀易讀版約 1 MB。'],
+          ['official','官方角色卡','直式雙頁官方版面；可編輯版約 6 MB，不可編輯版約 1 MB。']
         ].forEach(([value,title,description])=>{
           const button=document.createElement('button'); button.type='button'; button.className='pdf-export-choice-option';
           const strong=document.createElement('strong'); strong.textContent=title;
@@ -519,15 +519,15 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
           return button;
         };
         if(result.sheetTemplate==='official'){
-          const officialLoadNote='官方角色卡檔案較大，首次輸出需載入約 22 MB 範本與字型資源。';
+          const officialLoadNote='官方角色卡首次輸出需載入約 6 MB 範本與字型資源。';
           options.append(
-            createOption('editable','可編輯版','約 22 MB','使用 Adobe 繁黑體；保留文字輸入區，下載後仍可填寫或修改。',officialLoadNote),
-            createOption('compact','不可編輯版','約 17 MB','使用 Adobe 繁黑體，文字固定、下載後無法編輯。',officialLoadNote)
+            createOption('editable','可編輯版','約 6 MB','使用 Adobe 繁黑體；保留文字輸入區，下載後仍可填寫或修改。',officialLoadNote),
+            createOption('compact','不可編輯版','約 1 MB','使用 Adobe 繁黑體，文字固定、下載後無法編輯。',officialLoadNote)
           );
         } else {
           options.append(
-            createOption('editable','可編輯表單版','約 5 MB','使用 Noto Sans TC；保留文字輸入區，下載後仍可填寫或修改，檔案較大。'),
-            createOption('compact','美觀易讀版','輸出約 2 MB','使用思源宋體，文字固定、下載後無法編輯。','首次輸出需額外載入約 26 MB 字型資源。')
+            createOption('editable','可編輯表單版','約 6 MB','使用 Noto Sans TC；保留文字輸入區，下載後仍可填寫或修改，檔案較大。'),
+            createOption('compact','美觀易讀版','輸出約 1 MB','使用思源宋體，文字固定、下載後無法編輯。','首次輸出需額外載入約 26 MB 字型資源。')
           );
         }
         const note=document.createElement('p'); note.className='pdf-export-format-note';
@@ -565,7 +565,7 @@ async function downloadQuickBuildCompactPdf() {
   const currentName = window.TabletopMode?.getCharacterName?.() || "";
   const characterName = await window.AppDialog.showContent({
     title: "下載角色卡 PDF",
-    message: "輸入角色名稱後，將直接下載官方角色卡不可編輯版 PDF（約 17 MB）。",
+    message: "輸入角色名稱後，將直接下載官方角色卡不可編輯版 PDF（約 1 MB）。",
     confirmLabel: "下載 PDF",
     cancelLabel: "取消",
     initialFocus: "content",

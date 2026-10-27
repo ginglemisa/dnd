@@ -667,7 +667,7 @@ async function verifyPdf(page, fieldsOnly) {
 
       // Official sheet: every payload value matches a template field of the
       // same kind, template checkbox drawings survive, and compact flattens.
-      const officialTemplate = (await PDFLib.PDFDocument.load(await (await fetch('/5e_char_sheet_off.pdf')).arrayBuffer())).getForm();
+      const officialTemplate = (await PDFLib.PDFDocument.load(await (await fetch('/5e_char_sheet_of.pdf')).arrayBuffer())).getForm();
       const officialState = { ...window.__officialPdfState, "heroic-inspiration": true };
       for (const outputMode of ["editable", "compact"]) {
         for (const [name, value] of Object.entries(buildPdfFieldPayload(officialState, { outputMode, sheetTemplate: "official", characterName: "x" }))) {
@@ -705,7 +705,7 @@ async function verifyPdf(page, fieldsOnly) {
       if (thirdPartyAvatar.avatarPlaced) throw new Error("Third-party sheet has no avatar box");
       if (!(await validatePdfEnglishName("Enix".repeat(40), "editable", "official")).fits) throw new Error("Official sheet ignores the English name");
       const officialName = await validatePdfCharacterName("艾尼克斯", "compact", "official");
-      if (!officialName.fits || Math.abs(officialName.maxWidth - (250.029 - 26.5402 - 4)) > 0.001) throw new Error("Official name validation width");
+      if (!officialName.fits || Math.abs(officialName.maxWidth - (253.7608 - 26.9363 - 4)) > 0.001) throw new Error("Official name validation width");
     } finally { URL.createObjectURL = create; }
   });
   console.log("PDF export: 8 actual PDFs checked, including automatic feat sources, shared name centering, measured equipment/notes wrapping in both modes and both official sheet versions.");
