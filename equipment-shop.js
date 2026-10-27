@@ -139,13 +139,18 @@
       return [{ title: getCategoryLabel(categoryId), groups }];
     }
     // 武器、護甲、工具、法器與套組沿用說明原文的區塊、「多種」群組與順序。
+    // 群組標題下方只列該群組；未分組的品項依原文順序排在區塊開頭，避免接在前一個群組下方。
     const sections = [];
     items.filter(item => item.category === categoryId).forEach(item => {
       const title = categoryId === "focus" || categoryId === "pack" ? getCategoryLabel(categoryId) : item.section;
       let section = sections.at(-1);
       if (section?.title !== title) sections.push(section = { title, groups: [] });
-      let group = section.groups.at(-1);
-      if (group?.name !== item.group) section.groups.push(group = { name: item.group, items: [] });
+      let group = section.groups.find(candidate => candidate.name === item.group);
+      if (!group) {
+        group = { name: item.group, items: [] };
+        if (item.group) section.groups.push(group);
+        else section.groups.unshift(group);
+      }
       group.items.push(item);
     });
     return sections;
