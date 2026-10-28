@@ -1727,6 +1727,127 @@ async function verifyPdfSpellbookOptions(page) {
   console.log("PDF spellbook option: yes/no in both formats, exporter/notes mapping, and quick-build default passed.");
 }
 
+async function verifyCustomSpellPreparation(browser, url) {
+  const context = await browser.newContext({ viewport: { width: 1100, height: 850 }, reducedMotion: "reduce" });
+  const page = await context.newPage();
+  const errors = [];
+  page.on("pageerror", error => errors.push(String(error)));
+  try {
+    await page.goto(url);
+    await apply(page, modern({ class: "wizard", level: "1" }));
+    const records = await page.evaluate(() => {
+      const base = { nameZh: "僅跑團", level: 1, school: "塑能", castingTime: "action", castingTimeText: "", ritual: true,
+        rangeType: "60", rangeFeet: 10, rangeText: "", verbal: true, somatic: true, material: true, materials: "水晶",
+        duration: "minute", durationText: "", concentration: true, description: "造成 2d6 傷害", hidden: false };
+      return [base, { ...base, nameZh: "永久自創", level: 4, showOnSheet: true },
+        { ...base, nameZh: "計數自創", showOnSheet: true, countsAsPrepared: true },
+        { ...base, nameZh: "計數戲法", level: 0, showOnSheet: true, countsAsPrepared: true }]
+        .map(values => TabletopMode.saveCustomTabletopSpell("", values).spell);
+    });
+    const [local, permanent, prepared, cantrip] = records;
+    const sheetName = record => page.locator(`[data-spell-read="${record.spellId}"]`);
+    await sheetName(permanent).waitFor();
+    assert.equal(await sheetName(local).count(), 0);
+    assert.deepEqual(await page.evaluate(() => SpellManagement.getPreparationCounts()), { cantrips: 1, prepared: 1 });
+    await sheetName(permanent).click();
+    await page.getByRole("dialog", { name: permanent.nameZh, exact: true }).getByRole("button", { name: "關閉", exact: true }).click();
+    assert.equal(await sheetName(permanent).evaluate(node => document.activeElement === node), true);
+    await page.locator("#spell-prepare").click();
+    const picker = pickerDialog(page);
+    const source = picker.locator(".spell-prepared-source").filter({ has: page.locator(`[data-spell-id="${permanent.spellId}"]`) });
+    assert.equal(await source.locator("input").isChecked(), true);
+    assert.equal(await source.locator("input").isDisabled(), true);
+    assert.equal(await picker.locator(`.spell-prepared-source [data-spell-id="${prepared.spellId}"]`).count(), 0);
+    await picker.getByRole("combobox", { name: "篩選環階" }).selectOption("1");
+    const preparedCheck = picker.locator(`.spell-picker-option input[value="${prepared.spellId}"]`);
+    assert.equal(await preparedCheck.isChecked(), true);
+    assert.equal(await preparedCheck.isDisabled(), true);
+    assert.equal(await picker.locator(".spell-picker-option").last().locator("input").inputValue(), prepared.spellId);
+    await picker.locator(`[data-spell-id="${prepared.spellId}"]`).click();
+    await page.getByRole("dialog", { name: prepared.nameZh, exact: true }).getByRole("button", { name: "關閉", exact: true }).click();
+    assert.equal(await picker.isVisible(), true, "nested custom reader preserves picker");
+    assert.equal(await picker.getByRole("combobox", { name: "篩選環階" }).inputValue(), "1");
+    await picker.getByRole("button", { name: "取消", exact: true }).click();
+    const added = await page.evaluate(() => {
+      const ids = ["light", "mage-hand", "magic-missile", "shield", "mage-armor"];
+      return ids.map(id => SpellManagement.addPlayerSpell(id));
+    });
+    assert.deepEqual(added, [true, true, true, true, true]);
+    assert.deepEqual(await page.evaluate(() => SpellManagement.getPreparationCounts()), { cantrips: 3, prepared: 4 });
+    assert.equal(await page.evaluate(() => SpellManagement.addPlayerSpell("sleep")), false, "custom spell reserves a real preparation slot");
+    assert.equal(await page.evaluate(() => SpellManagement.addPlayerSpell("ray-of-frost")), false, "custom cantrip reserves a cantrip slot");
+    await page.locator("#spell-prepare").click();
+    assert.match(await picker.locator(".spell-prepared-draft-counts").innerText(), /戲法 3／3.*4／4/);
+    await picker.getByRole("button", { name: "清空準備", exact: true }).click();
+    assert.match(await picker.locator(".spell-prepared-draft-counts").innerText(), /戲法 3／3.*1／4/);
+    await picker.getByRole("button", { name: "儲存", exact: true }).click();
+    assert.deepEqual(await page.evaluate(() => SpellManagement.getPreparationCounts()), { cantrips: 3, prepared: 1 });
+    await page.evaluate(id => {
+      const record = TabletopMode.getTabletopActionPreferences().customSpells.find(item => item.spellId === id);
+      TabletopMode.saveCustomTabletopSpell(id, { ...record, countsAsPrepared: true, hidden: true });
+    }, permanent.spellId);
+    assert.equal(await sheetName(permanent).isVisible(), true, "tabletop hiding does not hide sheet spell");
+    assert.equal(await page.evaluate(() => SpellManagement.getPreparationCounts().prepared), 2, "higher-level custom spell counts regardless of class access");
+    await page.evaluate(() => SpellManagement.setManual(true, { confirm: false }));
+    await page.locator("#spell-prepare").click();
+    assert.match(await picker.locator(".spell-prepared-draft-counts").innerText(), /手動管理/);
+    await picker.getByRole("combobox", { name: "篩選環階" }).selectOption("4");
+    assert.equal(await picker.locator(`input[value="${permanent.spellId}"]`).isDisabled(), true);
+    await picker.getByRole("button", { name: "儲存", exact: true }).click();
+    assert.equal(await page.evaluate(() => JSON.stringify(SpellManagement.getState()).includes("custom-spell-")), false, "manual conversion does not absorb custom records");
+    await page.evaluate(() => SpellManagement.setManual(false, { confirm: false }));
+    await page.evaluate(() => saveAllFields());
+    const exported = await page.evaluate(() => JSON.parse(collectJsonExportText().text));
+    assert.equal(exported.__tabletopActionPreferences.customSpells.length, 4);
+    assert.equal(await page.evaluate(() => dndStorage.getItem("dndchar_autosave_v1").includes("custom-spell-")), false);
+    assert.equal(await page.evaluate(() => (dndStorage.getItem("dnd.spellManagementMemories.v1") || "").includes("custom-spell-")), false);
+    await page.goto(url);
+    await page.evaluate(() => { document.getElementById("legal-modal").style.display = "none"; TabletopMode.setMode("sheet"); showTab("spells"); });
+    await sheetName(permanent).waitFor();
+    assert.deepEqual(await page.evaluate(() => SpellManagement.getPreparationCounts()), { cantrips: 3, prepared: 2 });
+    await page.addScriptTag({ url: new URL("pdf-field-map.js", url).href });
+    const pdf = await page.evaluate(() => {
+      const state = collectStateObject();
+      const spells = TabletopCustomSpells.getPdfSpells();
+      return { custom: spells, plain: buildPdfFieldPayload(state),
+        official: buildPdfFieldPayload(state, { sheetTemplate: "official", customSpells: spells }),
+        shared: buildPdfFieldPayload(state, { customSpells: spells }) };
+    });
+    assert.equal(pdf.custom.length, 3);
+    for (const payload of [pdf.official, pdf.shared]) {
+      assert.match(JSON.stringify(payload), /永久自創/);
+      assert.match(JSON.stringify(payload), /計數自創/);
+      assert.doesNotMatch(JSON.stringify(payload), /僅跑團/);
+    }
+    assert.doesNotMatch(JSON.stringify(pdf.plain), /永久自創|計數自創/, "PDF mapping never implicitly reads local spells");
+    // A real JSON import clears the previous character before restoring these definitions.
+    await page.evaluate(id => TabletopMode.removeCustomTabletopSpell(id), prepared.spellId);
+    const owner = new URL(url); owner.searchParams.set("analytics", "owner");
+    await page.evaluate(url => history.replaceState(null, "", url), owner.href);
+    await Promise.all([page.waitForEvent("load"), page.setInputFiles("#import-json-file", {
+      name: "custom-preparation.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(exported))
+    })]);
+    await page.waitForFunction(() => !autosaveClearing && !sessionStorage.getItem("dnd.pendingJsonImport.v1"));
+    assert.equal(await page.evaluate(() => SpellManagement.getPreparationCounts().prepared), 2);
+    const hash = await page.evaluate(() => encodeStateToHash(collectShareState()));
+    await page.goto(`${url}${hash}`);
+    await page.waitForFunction(() => window.SHARE_MODE === true && !autosaveSuspended);
+    assert.equal(await page.locator('[data-spell-read^="custom-spell-"]').count(), 0);
+    assert.deepEqual(await page.evaluate(() => SpellManagement.getPreparationCounts()), { cantrips: 2, prepared: 0 });
+    assert.deepEqual(await page.evaluate(() => TabletopCustomSpells.getPdfSpells()), []);
+    await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("spells"); });
+    assert.equal(await page.locator("#tabletop-custom-spells-add").isVisible(), false);
+    assert.equal(await page.locator('#tabletop-selected-spells [data-spell-id^="custom-spell-"]').count(), 0);
+    assert.equal(await page.evaluate(() => TabletopCustomSpells.openEditor()), false);
+    assert.equal(await page.evaluate(id => TabletopMode.removeCustomTabletopSpell(id).ok, prepared.spellId), false);
+    await page.goto(url);
+    await page.waitForFunction(() => !autosaveSuspended);
+    assert.equal(await page.evaluate(() => SpellManagement.getPreparationCounts().prepared), 2, "share mode never overwrites local flags");
+    assert.deepEqual(errors, []);
+    console.log("Custom spell preparation: permanent/counted UI, limits, cantrips, manual/level behavior, local restore, JSON, autosave/share isolation and PDF passed.");
+  } finally { await context.close(); }
+}
+
 async function main() {
   const server = http.createServer((req, res) => {
     const pathname = new URL(req.url, "http://localhost").pathname;
@@ -1744,6 +1865,7 @@ async function main() {
     browser = await chromium.launch({ headless: true, ...(process.env.DND_BROWSER_CHANNEL ? { channel: process.env.DND_BROWSER_CHANNEL } : {}) });
     const restoreUrl = new URL(`http://127.0.0.1:${server.address().port}/index.html`);
     restoreUrl.searchParams.set("analytics", "owner");
+    await verifyCustomSpellPreparation(browser, restoreUrl.href);
     await verifyMigrationRules(browser, restoreUrl.href);
     await verifyManualSourceIsolation(browser, restoreUrl.href);
     await verifySynchronousRestore(browser, restoreUrl.href);

@@ -28,8 +28,9 @@
   // The shared 1st-4th preparation limit only covers rings the class can use now.
   function preparedRingLabel(className, level, shared = false) {
     if (typeof globalScope.classCanAccessSpellLevel !== "function") return `一至四環${shared ? "共用" : ""}`;
-    const highest = [4, 3, 2].find(ring => globalScope.classCanAccessSpellLevel(className, Number(level), ring));
-    return highest ? `一至${levels[highest]}${shared ? "共用" : ""}` : levels[1];
+    const highest = Math.max([4, 3, 2].find(ring => globalScope.classCanAccessSpellLevel(className, Number(level), ring)) || 1,
+      ...(management()?.getCustomEntries() || []).filter(entry => entry.countsAsPrepared).map(entry => entry.level));
+    return highest > 1 ? `一至${levels[highest]}${shared ? "共用" : ""}` : levels[1];
   }
 
   function node(tag, className = "", text = "") {
@@ -187,7 +188,7 @@
         globalScope.AppDialog.notify("目前法師等級尚未開放此環階。書內法術已保留。");
         return;
       }
-      const count = playerEntries().filter(entry => Number(entry.level) >= 1 && Number(entry.level) <= 4 && api.isEntryAvailable(entry)).length;
+      const count = api.getPreparationCounts().prepared;
       const limit = api.getLimits().prepared;
       if (!manual && Number.isFinite(limit) && count >= limit) {
         globalScope.AppDialog.notify(`已達${preparedRingLabel("wizard", level, true)}準備上限；請先取消準備其他法術。`);
@@ -224,6 +225,9 @@
   }
 
   function openReadOnly(spellId, trigger, options = {}) {
+    if (globalScope.TabletopCustomSpells?.getSpell(spellId)) {
+      return globalScope.TabletopCustomSpells.showDetail({ spellId }, trigger, { allowNested: true });
+    }
     const spell = catalog()?.getSpell(spellId);
     const body = node("div", "spell-readonly-detail");
     if (spell) {
@@ -335,7 +339,8 @@
           && (selectedRings.includes(spell.level) || (spell.level === -1 && selectedRings.length === ringInputs.length)))
         && (selectedOnly.getAttribute("aria-pressed") !== "true" || options.getState(spell).checked)
         && `${spell.nameZh || spell.spellId} ${spell.nameEn || ""}`.toLowerCase().includes(search.value.trim().toLowerCase()));
-      spells.sort((a, b) => a.level - b.level || (a.nameEn || a.spellId).localeCompare(b.nameEn || b.spellId, "en"));
+      spells.sort((a, b) => a.level - b.level || Number(Boolean(a.customSpell)) - Number(Boolean(b.customSpell))
+        || (a.customSpell && b.customSpell ? 0 : (a.nameEn || a.spellId).localeCompare(b.nameEn || b.spellId, "en")));
       count.textContent = `${spells.length} 個法術，已顯示 ${Math.min(visibleCount, spells.length)} 個${options.getCountSuffix?.() || ""}`;
       list.replaceChildren();
       spells.slice(0, visibleCount).forEach(spell => {
@@ -454,6 +459,9 @@
     const currentClass = document.getElementById("class").value;
     const currentLevel = document.getElementById("level").value;
     let draft = playerEntries().map(entry => ({ ...entry }));
+    const customEntries = api.getCustomEntries();
+    const permanent = customEntries.filter(entry => !entry.countsAsPrepared);
+    const counted = customEntries.filter(entry => entry.countsAsPrepared);
     const sources = manual ? [] : (api.getSourceEntries?.() || api.getEntries().filter(entry => entry.spellSource));
     const retained = manual ? draft.filter(entry => entry.spellSource) : [];
     const limits = api.getLimits();
@@ -475,12 +483,12 @@
     function refreshDraftSnapshot() {
       const editable = draft.filter(entry => !entry.spellSource);
       const labels = new Map();
-      (manual ? retained.filter(entry => draft.includes(entry)) : sources).forEach(entry => {
+      [...(manual ? retained.filter(entry => draft.includes(entry)) : sources), ...permanent].forEach(entry => {
         if (!labels.has(entry.spellId)) labels.set(entry.spellId, new Set());
         labels.get(entry.spellId).add(entry.sourceLabel || entry.source || entry.spellSource || "來源能力");
       });
       const ringCounts = [0, 0, 0, 0, 0];
-      editable.forEach(entry => {
+      [...editable, ...counted].forEach(entry => {
         const level = Number(entry.level);
         if (Number.isInteger(level) && level >= 0 && level <= 4) ringCounts[level] += 1;
       });
@@ -490,12 +498,9 @@
     }
     function refreshAvailableCounts() {
       // Nested character choices can change availability without editing this draft.
-      draftSnapshot.cantrips = 0;
-      draftSnapshot.prepared = 0;
-      draftSnapshot.editable.forEach(entry => {
-        if ((!manual && !api.isEntryAvailable(entry)) || draftSnapshot.sourceLabels.has(entry.spellId)) return;
-        draftSnapshot[Number(entry.level) === 0 ? "cantrips" : "prepared"] += 1;
-      });
+      const totals = api.getPreparationCounts(draftSnapshot.editable.filter(entry => !draftSnapshot.sourceLabels.has(entry.spellId)));
+      draftSnapshot.cantrips = totals.cantrips;
+      draftSnapshot.prepared = totals.prepared;
     }
     const sourceLabels = id => draftSnapshot.sourceLabels.get(id);
     const countAt = cantrip => draftSnapshot[cantrip ? "cantrips" : "prepared"];
@@ -506,7 +511,7 @@
       ? (cantrip ? limits.cantrips : limits.prepared) : Infinity;
     function drawSources() {
       sourceList.replaceChildren();
-      const entries = manual ? retained : sources;
+      const entries = [...(manual ? retained : sources), ...permanent];
       sourceList.hidden = !entries.length;
       if (!entries.length) return;
       const heading = node("div", "spell-overview-card-heading");
@@ -516,7 +521,7 @@
       toggle.setAttribute("aria-controls", "spell-prepared-source-options");
       const arrow = node("span", "spell-overview-arrow", "▶");
       arrow.setAttribute("aria-hidden", "true");
-      toggle.append(arrow, node("span", "", manual ? "保留的來源法術" : "永久準備"));
+      toggle.append(arrow, node("span", "", manual && retained.length ? (permanent.length ? "保留的來源法術／永久準備" : "保留的來源法術") : "永久準備"));
       heading.appendChild(toggle);
       const sourceVisibility = node("label", "spell-picker-level spell-prepared-source-visibility");
       const sourceVisibilityInput = node("input");
@@ -543,13 +548,13 @@
         globalScope.schedulePickedSpellLayout?.();
       });
       entries.forEach((entry, index) => {
-        const spell = catalog().getSpell(entry.spellId);
+        const spell = entry.customSpell ? globalScope.TabletopCustomSpells.getSpell(entry.spellId) : catalog().getSpell(entry.spellId);
         const row = node("div", "spell-picked-item spell-prepared-source");
         const check = node("label", "spell-picker-check");
         const input = node("input");
         input.type = "checkbox";
-        input.checked = !manual || draft.includes(entry);
-        input.disabled = !manual;
+        input.checked = entry.customSpell || !manual || draft.includes(entry);
+        input.disabled = entry.customSpell || !manual;
         input.dataset.stateTransient = "true";
         input.dataset.sourceKey = entry.sourceKey || entry.key || "";
         input.dataset.sourceIndex = String(index);
@@ -593,6 +598,7 @@
       // Preserve unknown imported IDs and selections that became unavailable.
       draftSnapshot.editable.forEach(entry => candidates.set(entry.spellId, catalog().getSpell(entry.spellId)
         || { spellId: entry.spellId, level: Number(entry.level), nameZh: "", nameEn: "" }));
+      counted.forEach(entry => candidates.set(entry.spellId, globalScope.TabletopCustomSpells.getSpell(entry.spellId)));
       return [...candidates.values()];
     }
     const picker = createSpellPicker({ mode: "prepared", getSpells: candidateSpells,
@@ -606,6 +612,7 @@
         return ring === 0 ? "此職業沒有職業戲法。" : `目前職業等級尚未開放${levels[ring]}法術。`;
       },
       getState(spell) {
+        if (spell.customSpell) return { checked: true, disabled: true, note: "自創法術：占準備名額，請到自創法術編輯區更改。" };
         const selected = draftSnapshot.selected.has(spell.spellId);
         if (sourceLabels(spell.spellId)) return { checked: true, disabled: true };
         const unavailable = !manual && !api.isEntryAvailable({ spellId: spell.spellId, spellClass: currentClass, level: spell.level });
@@ -615,6 +622,7 @@
           note: reason === "目前等級尚未開放此法術環階。" ? `目前不可用：${reason}` : "" };
       },
       onToggle(spell, checked) {
+        if (spell.customSpell) return;
         refreshAvailableCounts();
         if (!checked) draft = draft.filter(entry => entry.spellSource || entry.spellId !== spell.spellId);
         else if (!draftSnapshot.selected.has(spell.spellId) && !sourceLabels(spell.spellId)
@@ -637,7 +645,8 @@
       limitWarning.hidden = !cantripExcess && !preparedExcess;
       limitWarning.textContent = [cantripExcess ? `戲法超過上限 ${cantripExcess} 個` : "",
         preparedExcess ? `${preparedRingLabel(currentClass, currentLevel, true)}準備超過上限 ${preparedExcess} 個` : ""].filter(Boolean).join("；")
-        + (limitWarning.hidden ? "" : "。仍可取消選取或儲存目前清單；新增前請先減少選取。");
+        + (limitWarning.hidden ? "" : "。仍可取消選取或儲存目前清單；新增前請先減少選取。")
+        + (counted.length && !limitWarning.hidden ? "自創法術的名額請到自創法術編輯區調整。" : "");
       clear.disabled = !draft.some(canClear);
       if (redrawSources) drawSources();
       if (redraw) picker.redraw();

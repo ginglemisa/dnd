@@ -1801,7 +1801,12 @@ function isWeaponRowEmpty(payload, slot) {
     }
 
     const maxSpellRows = official ? OFFICIAL_MAX_PDF_SPELL_ROWS : MAX_PDF_SPELL_ROWS;
-    const allSpellRows = buildSpellRows(state);
+    // Explicit export-only snapshots keep local custom definitions out of the
+    // serialized character and prevent the mapper reading another local sheet.
+    const customRows = (Array.isArray(options.customSpells) ? options.customSpells : []).slice(0, 50)
+      .filter(spell => spell && /^custom-spell-/.test(spell.spellId) && Number.isInteger(spell.level) && spell.level >= 0 && spell.level <= 4)
+      .map((spell, idx) => ({ idx, spellId: spell.spellId, level: spell.level, customSpell: spell }));
+    const allSpellRows = [...buildSpellRows(state), ...customRows].sort((a, b) => a.level - b.level);
     const spellRows = allSpellRows.slice(0, maxSpellRows);
     const remainingSpellRows = allSpellRows.slice(maxSpellRows);
     fillDamageCantripsToWeaponRows(
@@ -1813,14 +1818,14 @@ function isWeaponRowEmpty(payload, slot) {
     if (spellRows.length > 0) {
       spellRows.forEach((row, index) => {
         const xx = String(index + 1);
-        const desc = findSpellDesc(row.spellId);
+        const desc = row.customSpell?.desc || findSpellDesc(row.spellId);
         const school = getSpellLine(desc, '學派');
         const castTimeRaw = getSpellLine(desc, '施法時間');
         const durationRaw = getSpellLine(desc, '持續時間');
         const rangeRaw = getSpellLine(desc, '射程');
 
         payload[`sp-level-${xx}`] = String(row.level);
-        const spellName = getCanonicalSpell(row.spellId)?.nameZh || '';
+        const spellName = row.customSpell?.nameZh || getCanonicalSpell(row.spellId)?.nameZh || '';
         // Official spell-name fields are single-line and fit by width instead.
         payload[`sp-name-${xx}`] = official
           ? spellName
@@ -1857,7 +1862,7 @@ function isWeaponRowEmpty(payload, slot) {
     }
     if (remainingSpellRows.length > 0) {
       const remainingSpellText = remainingSpellRows
-        .map((row) => `${getCanonicalSpell(row.spellId)?.nameZh || ''}(${row.level})`)
+        .map((row) => `${row.customSpell?.nameZh || getCanonicalSpell(row.spellId)?.nameZh || ''}(${row.level})`)
         .join('、');
       extraNotes.push(`其他準備法術：${remainingSpellText}。`);
     }

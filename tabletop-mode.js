@@ -14,6 +14,12 @@
   const CUSTOM_TABLETOP_ACTION_DESCRIPTION_MAX = 600;
   const TABLETOP_ACTION_NOTES_MAX = 50000;
   const HIDDEN_TABLETOP_ACTION_LIMIT = 500;
+  const CUSTOM_SPELL_OPTIONS = Object.freeze({
+    schools: Object.freeze(["防護", "咒法", "預言", "惑控", "塑能", "幻術", "死靈", "變化"]),
+    castingTimes: Object.freeze({ action: "動作", bonus: "附贈動作", reaction: "反應", custom: "自訂" }),
+    ranges: Object.freeze({ self: "自身", touch: "觸及", "30": "30 呎", "60": "60 呎", "120": "120 呎", emanation: "發散", custom: "自訂" }),
+    durations: Object.freeze({ instant: "立即", round: "1 輪", minute: "1 分鐘", tenMinutes: "10 分鐘", hour: "1 小時", eightHours: "8 小時", custom: "自訂" })
+  });
   const HEROIC_SACRIFICE_LABEL = "您已英勇犧牲";
   const DEFAULT_COMBAT_STATE = Object.freeze({
     characterName: "",
@@ -117,12 +123,71 @@
       return createDefaultTabletopActionPreferences();
     }
     const customActions = normalizeCustomTabletopActions(value.customActions);
+    const customSpells = normalizeCustomTabletopSpells(value.customSpells);
     return {
       version: TABLETOP_ACTION_PREFERENCES_VERSION,
       customActions,
+      ...(customSpells.length ? { customSpells } : {}),
       hiddenKeys: normalizeHiddenTabletopActionKeys(value.hiddenKeys, customActions),
       notes: String(value.notes ?? "").slice(0, TABLETOP_ACTION_NOTES_MAX)
     };
+  }
+
+  // Separate, versioned records reserve stable references and explicit casting
+  // fields for future automation. They never enter the built-in SpellCatalog.
+  function normalizeCustomTabletopSpells(value) {
+    if (!Array.isArray(value)) return [];
+    const ids = new Set();
+    return value.slice(0, 50).flatMap(raw => {
+      if (!raw || typeof raw !== "object" || Array.isArray(raw) || raw.version !== 1) return [];
+      if (typeof raw.spellId !== "string" || !/^custom-spell-[A-Za-z0-9_.:-]{1,80}$/.test(raw.spellId) || ids.has(raw.spellId)) return [];
+      const textFields = { nameZh: 80, castingTimeText: 120, rangeText: 120, materials: 600, durationText: 120, description: 6000 };
+      const text = {};
+      for (const [key, limit] of Object.entries(textFields)) {
+        if (typeof raw[key] !== "string" || raw[key].length > limit) return [];
+        text[key] = raw[key].trim();
+      }
+      if (!text.nameZh || !text.description || !Number.isInteger(raw.level) || raw.level < 0 || raw.level > 4
+        || !CUSTOM_SPELL_OPTIONS.schools.includes(raw.school)
+        || !Object.hasOwn(CUSTOM_SPELL_OPTIONS.castingTimes, raw.castingTime)
+        || !Object.hasOwn(CUSTOM_SPELL_OPTIONS.ranges, raw.rangeType)
+        || !Object.hasOwn(CUSTOM_SPELL_OPTIONS.durations, raw.duration)) return [];
+      for (const key of ["ritual", "verbal", "somatic", "material", "concentration", "hidden"]) {
+        if (typeof raw[key] !== "boolean") return [];
+      }
+      for (const key of ["showOnSheet", "countsAsPrepared"]) {
+        if (raw[key] !== undefined && typeof raw[key] !== "boolean") return [];
+      }
+      if ((raw.castingTime === "custom" && !text.castingTimeText)
+        || (raw.rangeType === "custom" && !text.rangeText)
+        || (raw.duration === "custom" && !text.durationText)
+        || !Number.isInteger(raw.rangeFeet) || raw.rangeFeet < 1 || raw.rangeFeet > 9999) return [];
+      ids.add(raw.spellId);
+      return [{ version: 1, spellId: raw.spellId, ...text, level: raw.level, school: raw.school,
+        castingTime: raw.castingTime, ritual: raw.ritual, rangeType: raw.rangeType, rangeFeet: raw.rangeFeet,
+        verbal: raw.verbal, somatic: raw.somatic, material: raw.material, duration: raw.duration,
+        concentration: raw.concentration, hidden: raw.hidden,
+        showOnSheet: raw.showOnSheet === true,
+        countsAsPrepared: raw.showOnSheet === true && raw.countsAsPrepared === true }];
+    });
+  }
+
+  function appendCustomDiceText(target, value, label) {
+    const text = String(value || "");
+    let cursor = 0;
+    for (const match of globalScope.DiceRoller?.findExpressions?.(text) || []) {
+      target.appendChild(document.createTextNode(text.slice(cursor, match.index)));
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "tabletop-dice-expression";
+      button.textContent = match.text;
+      button.disabled = !globalScope.DiceRoller.isEnabled();
+      button.setAttribute("aria-label", button.disabled ? `${match.text}；請先開啟擲骰系統` : `擲 ${label} ${match.text}`);
+      button.addEventListener("click", () => globalScope.DiceRoller.rollExpression(match.expression, { label: `${label} ${match.expression}` }));
+      target.appendChild(button);
+      cursor = match.index + match.text.length;
+    }
+    target.appendChild(document.createTextNode(text.slice(cursor)));
   }
 
   function createCustomTabletopActionId() {
@@ -321,6 +386,16 @@
     }
     if (getDruidForm() || (!globalScope.SpellManagement?.isManual()
       && entry.sourceKey === "class-druid-wild-companion-find-familiar")) return buildSpellCastOptions({ baseLevel: 1 });
+    // Custom spells only use the player's own slots or ritual casting.
+    const custom = entry.customSpell;
+    if (custom && typeof custom === "object") return buildSpellCastOptions({
+      baseLevel: custom.level,
+      ritual: custom.ritual === true,
+      ritualAllowed: true,
+      ritualExtraTime: "額外 10 分鐘",
+      hasUpcastEffect: true,
+      slotGroups: getCanonicalSpellSlotGroups()
+    });
     const spell = entry.spell || globalScope.SpellCatalog?.getSpell?.(entry.spellId);
     const metadata = globalScope.SpellCatalog?.getCastMetadata?.(spell?.spellId);
     if (!spell || spell.level < 1 || !metadata) return buildSpellCastOptions({ baseLevel: 1 });
@@ -637,6 +712,7 @@
       customActions: Object.freeze(
         preferences.customActions.map(action => Object.freeze({ ...action }))
       ),
+      ...(preferences.customSpells?.length ? { customSpells: Object.freeze(preferences.customSpells.map(spell => Object.freeze({ ...spell }))) } : {}),
       hiddenKeys: Object.freeze([...preferences.hiddenKeys]),
       notes: preferences.notes
     });
@@ -647,6 +723,30 @@
     const normalizedNotes = String(notes ?? "").slice(0, TABLETOP_ACTION_NOTES_MAX);
     if (normalizedNotes === current.notes) return true;
     return persistTabletopActionPreferences({ ...current, notes: normalizedNotes });
+  }
+
+  function saveCustomTabletopSpell(spellId, values) {
+    if (globalScope.SHARE_MODE) return { ok: false, reason: "share" };
+    const current = getTabletopActionPreferencesState();
+    const spells = current.customSpells || [];
+    if (spellId && !spells.some(spell => spell.spellId === spellId)) return { ok: false, reason: "not-found" };
+    if (!spellId && spells.length >= 50) return { ok: false, reason: "limit" };
+    const id = spellId || createCustomTabletopActionId().replace(/^custom-action-/, "custom-spell-");
+    const record = { ...values, version: 1, spellId: id };
+    const next = spellId ? spells.map(spell => spell.spellId === spellId ? record : spell) : [...spells, record];
+    const customSpells = normalizeCustomTabletopSpells(next);
+    if (customSpells.length !== next.length) return { ok: false, reason: "invalid" };
+    if (!persistTabletopActionPreferences({ ...current, customSpells })) return { ok: false, reason: "storage" };
+    return { ok: true, spell: Object.freeze({ ...customSpells.find(spell => spell.spellId === id) }) };
+  }
+
+  function removeCustomTabletopSpell(spellId) {
+    if (globalScope.SHARE_MODE) return { ok: false, reason: "share" };
+    const current = getTabletopActionPreferencesState();
+    const spells = current.customSpells || [];
+    if (!spells.some(spell => spell.spellId === spellId)) return { ok: false, reason: "not-found" };
+    if (!persistTabletopActionPreferences({ ...current, customSpells: spells.filter(spell => spell.spellId !== spellId) })) return { ok: false, reason: "storage" };
+    return { ok: true };
   }
 
   function addCustomTabletopAction(action = {}) {
@@ -5349,6 +5449,10 @@ function getRogueReliableTalentEntry() {
     getTabletopActionPreferences,
     setTabletopActionNotes,
     addCustomTabletopAction,
+    customSpellOptions: CUSTOM_SPELL_OPTIONS,
+    saveCustomTabletopSpell,
+    removeCustomTabletopSpell,
+    appendCustomDiceText,
     updateCustomTabletopAction,
     removeCustomTabletopAction,
     setTabletopActionHidden,
@@ -5406,6 +5510,7 @@ function getRogueReliableTalentEntry() {
       normalizeConcentrationSpellId,
       normalizeEndedConcentrations,
       normalizeTabletopActionPreferences,
+      normalizeCustomTabletopSpells,
       normalizeCustomResources
     })
   };

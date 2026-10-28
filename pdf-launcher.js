@@ -49,8 +49,8 @@ async function ensurePdfExportReady() {
     pdfExportLoaderPromise = (async () => {
       await loadScriptOnce("pdf-lib.custom.min.js");
       await loadScriptOnce("fontkit.custom.min.js");
-      await loadScriptOnce("pdf-field-map.js?v=20261026-official-sheet");
-      await loadScriptOnce("pdf-export.js?v=20261027-noto-regular");
+      await loadScriptOnce("pdf-field-map.js?v=20261028-custom-spells");
+      await loadScriptOnce("pdf-export.js?v=20261028-custom-spells");
     })().catch((error) => {
       pdfExportLoaderPromise = null;
       throw error;
@@ -275,7 +275,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
       try {
         await ensurePdfExportReady();
         const {includeAvatar,...chosen}=result;
-        const exportOptions={...chosen,outputMode,avatarDataUrl:result.sheetTemplate==='official'&&includeAvatar?savedAvatar:''};
+        const exportOptions={...chosen,outputMode,avatarDataUrl:result.sheetTemplate==='official'&&includeAvatar?savedAvatar:'',customSpells:window.TabletopCustomSpells?.getPdfSpells() || []};
         await window.preloadPdfExportAssets?.(exportOptions);
         render('progress',nameMeasurement?.shrinks
           ? `角色名稱將以 ${nameMeasurement.fontSize.toFixed(1)} pt 輸出，製作中…`
@@ -637,6 +637,7 @@ async function downloadQuickBuildCompactPdf() {
       englishName: "",
       includeDefaultEquipment: false,
       includeSpellbook: true,
+      customSpells: window.TabletopCustomSpells?.getPdfSpells() || [],
       dragonbornAncestry: (state["dragonborn-ancestry"] || "").trim(),
       elfLineage: (state["elf-lineage"] || "").trim(),
       gnomeLineage: (state["gnome-lineage"] || "").trim(),

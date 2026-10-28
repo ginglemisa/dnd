@@ -984,10 +984,19 @@
       }));
     };
 
+    // Read whole candidate tokens before validating: unsupported dice such as
+    // 1d200 / 1d2 must never become a clickable prefix of a different roll.
+    const findExpressions = text => Array.from(String(text || "").matchAll(
+      /(?<![A-Za-z0-9_.])\d+[ \t]*d[ \t]*\d+(?:[ \t]*[+−-][ \t]*(?:\d+[ \t]*d[ \t]*\d+|\d+))*(?![A-Za-z0-9_.])/gi
+    )).filter(match => parseExpression(match[0])).map(match => ({
+      index: match.index, text: match[0], expression: match[0].replace(/\s+/g, "").toLowerCase().replace(/−/g, "-")
+    }));
+
     window.DiceRoller = Object.freeze({
       isEnabled: () => toggle.checked,
       setEnabled: (enabled, { announce } = {}) => setEnabled(enabled, { announce }),
       canRollExpression: expression => Boolean(parseExpression(expression)),
+      findExpressions,
       roll: performQuickRoll,
       rollExpression,
       rollExpressions,

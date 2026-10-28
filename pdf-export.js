@@ -1481,6 +1481,7 @@
       tieflingLegacy,
       includeDefaultEquipment,
       includeSpellbook: exportOptions.includeSpellbook !== false,
+      customSpells: exportOptions.customSpells || [],
       outputMode,
       sheetTemplate
     });

@@ -234,10 +234,12 @@
       surface.setAttribute("aria-describedby", descriptionId);
     }
 
+    // Content-owned choices (for example share cards) resolve through close().
+    const contentControls = { close: () => {} };
     if (options.content instanceof Node) {
       body.appendChild(options.content);
     } else if (typeof options.renderContent === "function") {
-      options.renderContent(body);
+      options.renderContent(body, contentControls);
     }
 
     let copyArea = null;
@@ -355,6 +357,7 @@
       };
 
       activeDialog = { close, root, parentDialog, allowNested: Boolean(options.allowNested) };
+      contentControls.close = result => close(result);
       closeButton.addEventListener("click", () => close(false));
       cancelButton?.addEventListener("click", () => close(false));
       let resolvingConfirm = false;

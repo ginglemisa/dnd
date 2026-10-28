@@ -154,6 +154,7 @@
       spells.forEach(entry => {
         const card = createElement("div", "tabletop-spell-card");
         const button = createElement("button", "tabletop-spell-button");
+        if (entry.customSpell) button.classList.add("tabletop-spell-button--custom");
         button.type = "button";
         button.dataset.spellId = entry.spellId;
         button.dataset.spellSourceKey = entry.sourceKey;
@@ -164,14 +165,18 @@
           createElement("span", "", entry.spell.nameEn)
         );
         const timing = createElement("span", "tabletop-spell-button__timing");
-        const timingLabels = getSpellTimingLabels(entry.spell);
+        const timingLabels = entry.customSpell
+          ? globalScope.TabletopCustomSpells.getTimingLabels(entry.customSpell)
+          : getSpellTimingLabels(entry.spell);
         timingLabels.forEach(label => timing.appendChild(createElement("span", "", label)));
         button.setAttribute("aria-label", [entry.spell.nameZh, entry.spell.nameEn, ...timingLabels, entry.source].join(" "));
         button.append(names, timing);
-        button.addEventListener("click", () => showSpellDetail(entry, button));
+        button.addEventListener("click", () => entry.customSpell
+          ? globalScope.TabletopCustomSpells.showDetail(entry.customSpell, button, { castable: true })
+          : showSpellDetail(entry, button));
         const source = createElement("div", "tabletop-spell-card__source tabletop-source-tag");
         source.appendChild(createElement("span", "tabletop-spell-card__source-label", entry.source));
-        const useMirrors = createSpellUseMirrors(entry);
+        const useMirrors = entry.customSpell ? null : createSpellUseMirrors(entry);
         if (useMirrors) source.appendChild(useMirrors);
         card.append(button, source);
         list.appendChild(card);
@@ -258,8 +263,13 @@
     });
   }
 
+  // Concentration records may point at a local custom spell instead of the catalog.
+  function getConcentrationSpell(spellId) {
+    return globalScope.SpellCatalog?.getSpell(spellId) || globalScope.TabletopCustomSpells?.getSpell(spellId) || null;
+  }
+
   function getConcentrationName(spellId) {
-    const spell = globalScope.SpellCatalog?.getSpell(spellId);
+    const spell = getConcentrationSpell(spellId);
     return spell?.nameZh || `未知法術（${spellId}）`;
   }
 
@@ -923,6 +933,9 @@
       ? entryOrSpellId
       : null;
     const spellId = entry?.spellId || String(entryOrSpellId || "");
+    if (!entry && globalScope.TabletopCustomSpells?.getSpell(spellId)) {
+      return globalScope.TabletopCustomSpells.showDetail({ spellId }, trigger, { castable: true });
+    }
     const spell = entry?.spell || globalScope.SpellCatalog?.getSpell(spellId);
     if (!spell || !globalScope.AppDialog) return;
     if (entry?.sourceKey === "class-druid-wild-companion-find-familiar") {
@@ -961,6 +974,7 @@
     if (!spell) {
       return `匯入的 spellId「${spellId}」不在目前法術目錄中；記錄未被清除，可手動停止專注。`;
     }
+    if (spell.customSpell) return "";
     if (!globalScope.SpellCatalog.isConcentration(spell)) {
       return "這筆匯入記錄的來源法術不是專注法術；記錄未被清除，可手動停止專注。";
     }
@@ -972,9 +986,9 @@
 
   function createConcentrationCard(record, viewName, index) {
     const ended = record.status === "ended";
-    const spell = globalScope.SpellCatalog?.getSpell(record.spellId);
+    const spell = getConcentrationSpell(record.spellId);
     const replacementSpell = ended
-      ? globalScope.SpellCatalog?.getSpell(record.replacementSpellId)
+      ? getConcentrationSpell(record.replacementSpellId)
       : null;
     const card = createElement(
       "section",
@@ -1097,6 +1111,7 @@
   }
 
   function getEmptyMessage(entries) {
+    if (entries.some(entry => entry.customSpell)) return null;
     const hasClass = Boolean(document.getElementById("class")?.value);
     const hasLevel = Boolean(document.getElementById("level")?.value);
     if (!hasClass || !hasLevel) return {
@@ -1126,7 +1141,9 @@
       renderConcentrationSummaries();
       return;
     }
-    const entries = getSelectedSpellEntries();
+    const customTools = document.getElementById("tabletop-custom-spells-tools");
+    if (customTools) customTools.hidden = globalScope.SHARE_MODE === true;
+    const entries = getSelectedSpellEntries().concat(globalScope.TabletopCustomSpells?.getEntries() || []);
     const emptyMessage = getEmptyMessage(entries);
     elements.empty.hidden = !emptyMessage;
     elements.content.hidden = false;
@@ -1224,6 +1241,7 @@
     document.addEventListener("change", scheduleRender);
     globalScope.addEventListener("tabletopstatechange", scheduleRender);
     globalScope.addEventListener("spellmanagementchange", scheduleRender);
+    globalScope.addEventListener("tabletopactionpreferenceschange", scheduleRender);
     globalScope.addEventListener("dicerollmodechange", scheduleRender);
     globalScope.addEventListener("modechange", scheduleRender);
     globalScope.addEventListener("tabletop-panelchange", event => {

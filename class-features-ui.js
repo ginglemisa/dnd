@@ -1601,6 +1601,7 @@ function setLevelUpCantrip(spellId) {
   const index = state.entry ? players.findIndex(entry => api.entryKey(entry) === api.entryKey(state.entry)) : -1;
   players.forEach(entry => { delete entry.classFeatureCantrip; });
   const next = spellId ? { spellId, spellClass: state.className, classFeatureCantrip: LEVEL_UP_CANTRIP_TAG } : null;
+  if (next && index < 0 && api.getPreparationCounts().cantrips >= getLevelUpCantripClass().limit) return false;
   if (index >= 0) players.splice(index, 1, ...(next ? [next] : []));
   else if (next) players.push(next);
   api.setPlayerEntries(players);
@@ -1651,10 +1652,11 @@ function syncLevelUpCantripChoice() {
   const taken = new Set((window.SpellManagement.getEntries() || []).map(entry => entry.spellId));
   taken.delete(current);
   const spells = getClassSpells(state.className, "cantrips");
-  const optionsKey = `${state.className}\u0000${spells.map(spell => `${spell.spellId}${taken.has(spell.spellId) ? "!" : ""}`).join(",")}`;
+  const full = !state.entry && window.SpellManagement.getPreparationCounts().cantrips >= getLevelUpCantripClass().limit;
+  const optionsKey = `${state.className}\u0000${full}\u0000${spells.map(spell => `${spell.spellId}${taken.has(spell.spellId) ? "!" : ""}`).join(",")}`;
   if (select.dataset.optionsKey !== optionsKey) {
     select.innerHTML = '<option value="">-- 請選擇額外戲法 --</option>' + spells.map(spell =>
-      `<option value="${escapeHtml(spell.spellId)}"${taken.has(spell.spellId) ? " disabled" : ""}>${escapeHtml(spell.nameZh)}</option>`
+      `<option value="${escapeHtml(spell.spellId)}"${full || taken.has(spell.spellId) ? " disabled" : ""}>${escapeHtml(spell.nameZh)}</option>`
     ).join("");
     select.dataset.optionsKey = optionsKey;
   }

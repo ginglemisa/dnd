@@ -375,6 +375,8 @@
       } else {
         copy.textContent = description;
       }
+    } else if (option.customActionId) {
+      globalScope.TabletopMode.appendCustomDiceText(copy, option.description, option.label);
     } else if (option.druidOperation === "shape" && globalScope.TabletopDruid) {
       globalScope.TabletopDruid.renderShapeDescription(copy, option.description);
     } else {
@@ -590,7 +592,7 @@
 
     const result = await globalScope.AppDialog.showContent({
       title: action ? "編輯自訂按鈕" : "新增自訂按鈕",
-      message: "自訂按鈕只顯示文字說明，不會執行擲骰、消耗資源或其他自動化。",
+      message: "說明中的骰式（例如 2d6、1D8+3）可點擊擲骰；請先開啟擲骰功能。資源與生命值仍由你手動調整。",
       variant: "action-editor",
       cancelLabel: "取消",
       confirmLabel: action ? "儲存變更" : "新增按鈕",

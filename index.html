@@ -81,9 +81,9 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261027-sheet-download-webp">
+  <link rel="stylesheet" href="styles.css?v=20261028-custom-spells">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
-  <script src="dice-roller.js?v=20261023-escape-focus" defer></script>
+  <script src="dice-roller.js?v=20261028-custom-spells" defer></script>
   <script src="monster.js?v=20261025-beast-perception" defer></script>
     <script src="class-features.js?v=20261026-subclass-names" defer></script>
   <script src="race.js?v=20261021-condition-plain" defer></script>
@@ -95,19 +95,20 @@
   <script src="condition.js?v=20261021-bonus-wording" defer></script>
   <script src="action-panel.js?v=20261026-subclass-names" defer></script>
   <script src="character-rules.js?v=20261010-spell-lists-v2" defer></script>
-  <script src="app-dialog.js?v=20261027-inert-ownership" defer></script>
+  <script src="app-dialog.js?v=20261028-custom-spells" defer></script>
   <script src="custom-background.js?v=20261023-feature-title" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
-  <script src="tabletop-mode.js?v=20261025-shop-launch" defer></script>
+  <script src="tabletop-mode.js?v=20261028-custom-spells" defer></script>
   <script src="tabletop-druid.js?v=20261021-bonus-wording" defer></script>
   <script src="tabletop-resources.js?v=20261014-heroic-help" defer></script>
-  <script src="tabletop-actions.js?v=20261026-subclass-names" defer></script>
-  <script src="tabletop-spells.js?v=20261025-incapacitated-saves" defer></script>
+  <script src="tabletop-actions.js?v=20261028-custom-spells" defer></script>
+  <script src="tabletop-custom-spells.js?v=20261028-custom-spells" defer></script>
+  <script src="tabletop-spells.js?v=20261028-custom-spells" defer></script>
   <script src="legal-modal.js?v=20261022-game-icons" defer></script>
   <script src="onboarding-tour.js?v=20261026-tour-point-buy" defer></script>
   <script src="quick-build.js?v=20261026-shop-lead" defer></script>
-  <script src="spellbook.js?v=20261024-ring-label-api" defer></script>
-  <script src="spell-management.js?v=20261022-feature-picker" defer></script>
+  <script src="spellbook.js?v=20261028-custom-spells" defer></script>
+  <script src="spell-management.js?v=20261028-custom-spells" defer></script>
   <script src="class-option-memory.js?v=20261024-class-split" defer></script>
   <script src="deity-info.js" defer></script>
 
@@ -476,7 +477,18 @@
           <div id="tabletop-spell-slots" class="spell-slot-grid tabletop-spell-slot-grid"></div>
         </section>
         <section class="tabletop-section" aria-labelledby="tabletop-selected-spells-title">
-          <div class="tabletop-section-heading"><h3 id="tabletop-selected-spells-title">已選法術</h3></div>
+          <div class="tabletop-section-heading tabletop-custom-spell-heading">
+            <h3 id="tabletop-selected-spells-title">已選法術</h3>
+            <div id="tabletop-custom-spells-tools" class="tabletop-custom-spell-tools">
+              <div id="tabletop-custom-spells-actions" class="tabletop-action-manager__toolbar-actions" hidden>
+                <button type="button" id="tabletop-custom-spells-add" class="tabletop-compact-button" aria-haspopup="dialog">新增自創法術</button>
+                <button type="button" id="tabletop-custom-spells-manage" class="tabletop-compact-button" aria-haspopup="dialog">管理自創法術</button>
+              </div>
+              <button type="button" id="tabletop-custom-spells-toggle" class="tabletop-custom-spell-gear" aria-expanded="false" aria-controls="tabletop-custom-spells-actions" aria-label="顯示自創法術選項">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              </button>
+            </div>
+          </div>
           <div id="tabletop-selected-spells" class="tabletop-spell-levels"></div>
         </section>
 
@@ -1341,7 +1353,7 @@
   <script src="sheet-utils.js?v=20261024-index-split"></script>
   <script src="feat-ui.js?v=20261024-spell-split"></script>
   <script src="spell-sources.js?v=20261024-source-labels"></script>
-  <script src="class-features-ui.js?v=20261024-source-labels"></script>
+  <script src="class-features-ui.js?v=20261028-custom-spells"></script>
   <script>
 function openCarryCapacityRules(trigger) {
   return window.AppDialog.showMessage({
@@ -3213,7 +3225,7 @@ function fillSkills() {
   updateAutomaticInitiative();
 }
 </script>
-<script src="pdf-launcher.js?v=20261027-noto-regular"></script>
+<script src="pdf-launcher.js?v=20261028-custom-spells"></script>
 
 <script>
 // ====== 裝備,武器,法術相關工具 ======
@@ -4111,7 +4123,7 @@ function updateArmorInfo() {
   updateEquipmentLoadoutSummary();
 }
 </script>
-<script src="sheet-spells.js?v=20261024-ring-range-label"></script>
+<script src="sheet-spells.js?v=20261028-custom-spells"></script>
 <script>
 // ====== 德魯伊變身提示 =====
 // ✅ 四種動物（建議用「機制摘要」避免長篇敘述）
@@ -4663,6 +4675,12 @@ function validateCharacterState(data) {
     } else if (value !== null && value !== undefined && typeof value !== "boolean" && !(typeof value === "number" && Number.isFinite(value))) {
       throw new TypeError("角色資料包含無效值");
     }
+  }
+  const customSpells = data.__tabletopActionPreferences?.customSpells;
+  if (customSpells !== undefined && (!Array.isArray(customSpells)
+      || !window.TabletopMode?.logic?.normalizeCustomTabletopSpells
+      || window.TabletopMode.logic.normalizeCustomTabletopSpells(customSpells).length !== customSpells.length)) {
+    throw new TypeError("自創法術資料格式不正確或超過安全限制");
   }
   for (const key of ["feats-area-count", "tool-proficiency-list-count"]) assertCharacterDataCount(data[key], CHARACTER_DATA_LIMITS.rows);
   const legacyFreeUses = new Map();
@@ -5340,13 +5358,15 @@ async function copyShareUrl() {
     const hash = await encodeStateToHash(collectShareState());
     const permanentUrl = `${location.origin}${location.pathname}${location.search}${hash}`;
     const unavailableReason = getShortShareUnavailableReason(hash);
-    let status;
+    let shortUrlController = null;
     const shareUrl = await window.AppDialog.showContent({
       title: "分享角色卡",
       variant: "share-character",
-      message: "選擇分享方式，讓其他人查看你的角色卡。",
+      message: "分享角色卡無法分享跑團模式的自訂按鈕和自創法術，請注意。",
       trigger: document.getElementById("utility-menu-toggle"),
-      renderContent(body) {
+      // Closing while a short URL is pending cancels that single request.
+      onClose: () => shortUrlController?.abort(),
+      renderContent(body, dialog) {
         const iconPaths = {
           link: '<path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
           clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
@@ -5361,43 +5381,84 @@ async function copyShareUrl() {
         };
         const options = document.createElement("div");
         options.className = "share-dialog__options";
-        [
+        options.setAttribute("role", "group");
+        options.setAttribute("aria-label", "分享方式");
+        const status = document.createElement("p");
+        const cards = [
           {
             title: "短網址",
             description: "網址簡短，方便傳送到 LINE、Discord 或其他聊天室。",
             detail: "有效期限 90 天",
-            detailIcon: "clock"
+            detailIcon: "clock",
+            unavailable: unavailableReason,
+            async choose() {
+              shortUrlController = new AbortController();
+              const signal = shortUrlController.signal;
+              cards.forEach(card => { card.button.disabled = true; });
+              this.button.setAttribute("aria-busy", "true");
+              status.hidden = false;
+              status.classList.remove("is-error");
+              status.textContent = "正在建立短網址…";
+              try {
+                dialog.close(await createShortShareUrl(hash, signal));
+              } catch (error) {
+                if (signal.aborted) return;
+                status.textContent = "短網址建立失敗，請稍後再試，或改用完整資料網址。";
+                status.classList.add("is-error");
+                cards.forEach(card => { card.button.disabled = Boolean(card.unavailable); });
+                this.button.removeAttribute("aria-busy");
+                this.button.focus();
+              } finally {
+                shortUrlController = null;
+              }
+            }
           },
           {
             title: "完整資料網址",
             description: "角色資料直接包含在網址中，不受 90 天期限限制。",
             detail: "網址可能長達 1,000～2,000 字元",
-            detailIcon: "info"
+            detailIcon: "info",
+            choose: () => dialog.close(permanentUrl)
           }
-        ].forEach((option, index) => {
-          const card = document.createElement("section");
+        ];
+        cards.forEach(option => {
+          // Phrasing-only children keep the whole card a valid button.
+          const card = option.button = document.createElement("button");
+          card.type = "button";
           card.className = "share-dialog__option";
+          card.disabled = Boolean(option.unavailable);
 
-          const heading = document.createElement("h3");
+          const heading = document.createElement("span");
           heading.className = "share-dialog__heading";
           heading.append(makeIcon("link"), document.createTextNode(option.title));
 
-          const description = document.createElement("p");
+          const description = document.createElement("span");
           description.className = "share-dialog__description";
           description.textContent = option.description;
 
-          const detail = document.createElement("p");
+          const detail = document.createElement("span");
           detail.className = "share-dialog__detail";
           detail.append(makeIcon(option.detailIcon), document.createTextNode(option.detail));
 
           card.append(heading, description, detail);
-          if (index === 0 && unavailableReason) {
-            const unavailable = document.createElement("p");
+          if (option.unavailable) {
+            const unavailable = document.createElement("span");
             unavailable.className = "share-dialog__unavailable";
-            unavailable.textContent = unavailableReason;
+            unavailable.textContent = option.unavailable;
             card.appendChild(unavailable);
           }
+          card.addEventListener("click", () => {
+            if (!shortUrlController) option.choose();
+          });
           options.appendChild(card);
+        });
+        options.addEventListener("keydown", event => {
+          if (!["ArrowDown", "ArrowUp"].includes(event.key)) return;
+          const enabled = cards.map(card => card.button).filter(button => !button.disabled);
+          const index = enabled.indexOf(event.target.closest(".share-dialog__option"));
+          if (index < 0) return;
+          event.preventDefault();
+          enabled[(index + (event.key === "ArrowDown" ? 1 : enabled.length - 1)) % enabled.length].focus();
         });
 
         const privacy = document.createElement("p");
@@ -5407,37 +5468,14 @@ async function copyShareUrl() {
           document.createTextNode("取得分享網址的人都能查看其中的角色資料，請勿填寫個人隱私或敏感資訊。")
         );
 
-        status = document.createElement("p");
         status.className = "share-dialog__status";
         status.setAttribute("role", "status");
         status.setAttribute("aria-live", "polite");
         status.hidden = true;
-        body.append(options, privacy, status);
+        body.append(options, status, privacy);
       },
-      actions: [
-        { label: "完整資料網址", value: permanentUrl },
-        {
-          label: "產生短網址",
-          intent: "primary",
-          disabled: Boolean(unavailableReason),
-          busyLabel: "建立中…",
-          async resolve(signal) {
-            status.hidden = false;
-            status.classList.remove("is-error");
-            status.textContent = "正在建立短網址…";
-            try {
-              return await createShortShareUrl(hash, signal);
-            } catch (error) {
-              if (!signal.aborted) {
-                status.textContent = "短網址建立失敗，請稍後再試，或改用完整資料網址。";
-                status.classList.add("is-error");
-              }
-              return false;
-            }
-          }
-        }
-      ],
-      initialFocus: unavailableReason ? undefined : "primary"
+      actions: [{ label: "取消", value: false }],
+      initialFocus: "content"
     });
     if (typeof shareUrl === "string") {
       await copyResolvedShareUrl(shareUrl);
@@ -5516,7 +5554,7 @@ function downloadStateAsJson() {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  if (SHARE_MODE) window.AppDialog.notify("分享模式匯出的檔案不含角色圖片與跑團按鈕設定。", { tone: "info" });
+  if (SHARE_MODE) window.AppDialog.notify("分享模式匯出的檔案不含角色圖片、跑團按鈕與自創法術設定。", { tone: "info" });
   else if (avatarOmitted) window.AppDialog.notify("角色資料加上角色圖片會超過 2 MiB，這次匯出未包含角色圖片。", { tone: "warning" });
   window.twAnalytics?.track?.("character_json_export");
 }

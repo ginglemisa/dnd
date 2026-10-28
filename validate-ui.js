@@ -768,6 +768,64 @@ async function dragToast(page, index, distance) {
   await page.mouse.up();
 }
 
+// Share methods are whole choice cards; short URLs fail visibly and never retry.
+async function verifyShareDialog(browser, url) {
+  const page = await newUiPage(browser, { viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });
+  try {
+    await page.goto(url);
+    await page.locator("#legal-ack-btn").click();
+    await page.evaluate(() => { window.copiedShareUrls = []; navigator.clipboard.writeText = async value => { copiedShareUrls.push(value); }; });
+    const dialog = page.getByRole("dialog", { name: "分享角色卡", exact: true });
+    const cards = dialog.locator("button.share-dialog__option");
+    const open = async () => { await page.evaluate(() => { copyShareUrl(); }); await dialog.waitFor(); };
+    await open();
+    await dialog.getByText("分享角色卡無法分享跑團模式的自訂按鈕和自創法術，請注意。", { exact: true }).waitFor();
+    assert.deepEqual(await dialog.locator(".app-dialog__actions button").allInnerTexts(), ["取消"]);
+    assert.equal(await cards.count(), 2);
+    assert.equal(await cards.first().isDisabled(), true, "local origin disables short URL");
+    assert.match(await cards.first().innerText(), /短網址僅能在正式網站使用/);
+    assert.equal(await cards.last().evaluate(node => document.activeElement === node), true);
+    assert.equal(await dialog.evaluate(node => node.scrollWidth <= node.clientWidth + 1), true, "share cards fit 390px");
+    await dialog.getByRole("button", { name: "取消", exact: true }).click();
+    await dialog.waitFor({ state: "detached" });
+    await page.evaluate(() => {
+      window.getShortShareUnavailableReason = () => "";
+      window.shortShareCalls = 0;
+      window.createShortShareUrl = async () => { shortShareCalls += 1; throw new Error("offline"); };
+    });
+    await open();
+    await cards.first().focus();
+    await page.keyboard.press("ArrowDown");
+    assert.equal(await cards.last().evaluate(node => document.activeElement === node), true);
+    await cards.first().click();
+    await dialog.getByText("短網址建立失敗，請稍後再試，或改用完整資料網址。", { exact: true }).waitFor();
+    assert.equal(await page.evaluate(() => shortShareCalls), 1, "failed short URL is not retried");
+    assert.equal(await cards.last().isDisabled(), false);
+    assert.equal(await page.evaluate(() => copiedShareUrls.length), 0, "failure never copies the long URL");
+    await cards.last().click();
+    await dialog.waitFor({ state: "detached" });
+    assert.match(await page.evaluate(() => copiedShareUrls[0]), /#s2?=/);
+    await page.evaluate(() => {
+      window.createShortShareUrl = (hash, signal) => new Promise((resolve, reject) => {
+        signal.addEventListener("abort", () => { window.shortShareAborted = true; reject(new Error("aborted")); });
+      });
+    });
+    await open();
+    await cards.first().click();
+    assert.equal(await cards.first().getAttribute("aria-busy"), "true");
+    assert.equal(await cards.last().isDisabled(), true);
+    await page.keyboard.press("Escape");
+    await dialog.waitFor({ state: "detached" });
+    assert.equal(await page.evaluate(() => window.shortShareAborted), true, "closing cancels the pending request");
+    await page.evaluate(() => { window.createShortShareUrl = async () => "https://twd20.com/s/Abc1234"; });
+    await open();
+    await cards.first().click();
+    await dialog.waitFor({ state: "detached" });
+    assert.deepEqual(await page.evaluate(() => copiedShareUrls.slice(1)), ["https://twd20.com/s/Abc1234"]);
+    console.log("Share dialog: choice cards, unavailable reason, failure without retry, cancel and copy passed.");
+  } finally { await page.close(); }
+}
+
 async function verifyToasts(browser) {
   const desktop = await newUiPage(browser, { viewport: { width: 1280, height: 800 } });
   const errors = [];
@@ -3188,7 +3246,7 @@ async function verifyJsonImportTransaction(browser, url) {
       assert.equal(Object.hasOwn(sharedExport, key), false, `share-mode JSON export omits the viewer's local ${key}`);
     }
     assert.equal(sharedExport.characterName, "匯出角色", "share-mode JSON export keeps the shared character");
-    await page.getByText("分享模式匯出的檔案不含角色圖片與跑團按鈕設定。").waitFor();
+    await page.getByText("分享模式匯出的檔案不含角色圖片、跑團按鈕與自創法術設定。").waitFor();
     await seed();
     await Promise.all([page.waitForEvent("load"), uploadText("tabletop-settings.json", exported.text)]);
     await page.waitForFunction(() => document.getElementById("gear-extra").value === "Exported" && !autosaveRestoreBlocked && !autosaveClearing);
@@ -3246,6 +3304,7 @@ async function main() {
     }
     if (all || sections.has("--dialogs-only")) {
       await verifyToasts(browser);
+      await verifyShareDialog(browser, url);
       await verifyAboutRoutes(browser, url);
       await verifyFeatureChoiceDisclosures(browser, url);
       await verifyCustomBackground(browser, url);

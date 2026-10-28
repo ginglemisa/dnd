@@ -96,6 +96,17 @@
     return clone(options.availableOnly ? entries.filter(entry => isEntryAvailable(entry, options)) : entries);
   }
 
+  // Local custom spells are a projection, never part of players/sources or the
+  // character state serialized by getState(), class memories or sharing.
+  const getCustomEntries = () => globalScope.TabletopCustomSpells?.getSheetEntries() || [];
+  const getSheetEntries = (options = {}) => [...getEntries(options), ...getCustomEntries()];
+  function getPreparationCounts(entries = players) {
+    const available = entries.filter(entry => !entry.spellSource && isEntryAvailable(entry));
+    const counted = [...available, ...getCustomEntries().filter(entry => entry.countsAsPrepared)];
+    return { cantrips: counted.filter(entry => Number(entry.level) === 0).length,
+      prepared: counted.filter(entry => Number(entry.level) > 0).length };
+  }
+
   function readMemories() {
     if (memories) return memories;
     memories = { version: 1, classes: {}, manual: null };
@@ -212,7 +223,7 @@
     if (!manual) {
       if (!isEntryAvailable(entry)) return false;
       const limits = getLimits();
-      const count = players.filter(item => isEntryAvailable(item) && (entry.level === 0 ? item.level === 0 : item.level > 0)).length;
+      const count = getPreparationCounts()[entry.level === 0 ? "cantrips" : "prepared"];
       if (count >= (entry.level === 0 ? limits.cantrips : limits.prepared)) return false;
     }
     players.push(entry); changed({ players: true }); return true;
@@ -457,12 +468,21 @@
   }
   globalScope.SpellManagement = Object.freeze({ version: VERSION, storageKeys: Object.freeze([MEMORY_KEY, NOTICE_KEY]),
     configure(options = {}) { hooks = { ...hooks, ...options }; }, isManual: () => manual, isSwitching: () => switching, canManage, getLimits,
-    normalizeEntry, normalizeEntries, entryKey, getEntries, getPlayerEntries: () => clone(players), getSourceEntries: () => manual ? [] : clone(sources),
+    normalizeEntry, normalizeEntries, entryKey, getEntries, getCustomEntries, getSheetEntries, getPreparationCounts,
+    getPlayerEntries: () => clone(players), getSourceEntries: () => manual ? [] : clone(sources),
     setPlayerEntries, replaceSources, addPlayerSpell, removePlayerSpell, getAvailabilityReason, isEntryAvailable, getFreeUse, setFreeUse,
     getState, beforeApplyState, restoreState, finishRestore, clearMemories, setManual, showMigrationNotice,
     canPersistCurrentState: () => !migrationPending,
     beginRestoreBatch, endRestoreBatch, withRestoreBatch, collectClassFeatureCantrips, getClassFeatureCantripControl, refreshVisibility });
   document.addEventListener("change", changeCharacterSelection, true);
+  let customSignature = "";
+  globalScope.addEventListener("tabletopactionpreferenceschange", event => {
+    const signature = JSON.stringify(event.detail?.customSpells || []);
+    if (signature === customSignature || inShareMode()) return;
+    customSignature = signature;
+    hooks.onChange?.({ customSpells: true });
+    globalScope.dispatchEvent(new CustomEvent("spellmanagementchange", { detail: { customSpells: true } }));
+  });
   document.addEventListener("DOMContentLoaded", () => {
     syncActiveSelection(); if (!ownerClass && CLASS_IDS.has(activeClass)) ownerClass = activeClass;
     field("manual-spell-management")?.addEventListener("change", event => {

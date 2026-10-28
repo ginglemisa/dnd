@@ -2346,6 +2346,217 @@ async function verifyMergedActionUi(browser, url) {
   }
 }
 
+async function verifyCustomSpellUi(browser, url) {
+  const context = await browser.newContext({ reducedMotion: "reduce" });
+  const page = await context.newPage();
+  const errors = [];
+  page.on("pageerror", error => errors.push(String(error)));
+  try {
+    await page.goto(url);
+    await page.locator("#legal-ack-btn").click();
+    await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("spells"); });
+    const dialog = page.locator(".app-dialog");
+    const field = key => page.locator(`#tabletop-custom-spell-${key}`);
+    const customCards = page.locator('#tabletop-selected-spells button[data-spell-id^="custom-spell-"]');
+    const gear = page.locator("#tabletop-custom-spells-toggle");
+    // Entry buttons stay collapsed behind the borderless gear on every load.
+    assert.equal(await page.locator("#tabletop-custom-spells-add").isVisible(), false);
+    assert.equal(await gear.getAttribute("aria-expanded"), "false");
+    assert.equal(await gear.evaluate(node => getComputedStyle(node).borderTopStyle === "none" || getComputedStyle(node).borderTopWidth === "0px"), true);
+    await gear.click();
+    assert.equal(await gear.getAttribute("aria-expanded"), "true");
+    await gear.click();
+    assert.equal(await page.locator("#tabletop-custom-spells-manage").isVisible(), false);
+    await gear.click();
+    await page.locator("#tabletop-custom-spells-add").click();
+    await dialog.getByRole("button", { name: "新增法術", exact: true }).click();
+    assert.equal(await field("nameZh").getAttribute("aria-invalid"), "true");
+    assert.equal(await field("nameZh").evaluate(node => document.activeElement === node), true);
+    await field("nameZh").fill("自創霜火 <img src=x>");
+    await field("level").selectOption("2");
+    await field("school").selectOption("塑能");
+    await field("castingTime").selectOption("custom");
+    await field("castingTimeText").fill("1 分鐘");
+    await dialog.getByLabel("儀式", { exact: true }).check();
+    await field("rangeType").selectOption("emanation");
+    await field("rangeFeet").fill("15");
+    await field("duration").selectOption("custom");
+    await field("durationText").fill("直到解除");
+    await dialog.getByLabel("需要專注", { exact: true }).check();
+    await dialog.getByLabel("M 材料", { exact: true }).check();
+    await field("materials").fill("一塊冰晶 <script>alert(1)</script>");
+    await field("description").fill("造成2D6+3火焰傷害");
+    await field("description").press("Enter");
+    await field("description").pressSequentially("1d2 1d200 0d6 101d6 1d7 1d6foo");
+    await field("description").press("Enter");
+    await field("description").pressSequentially("1d4 1d8 1d10 1d12 1d20 1d100");
+    assert.equal(await dialog.count(), 1, "Enter edits description without saving");
+    assert.equal(await customCards.count(), 0);
+    assert.equal(await field("countsAsPrepared").isVisible(), false);
+    await field("showOnSheet").check();
+    await field("countsAsPrepared").check();
+    await field("showOnSheet").uncheck();
+    assert.equal(await field("countsAsPrepared").isVisible(), false);
+    assert.equal(await field("countsAsPrepared").isChecked(), false);
+    await field("showOnSheet").check();
+    assert.equal(await field("countsAsPrepared").isChecked(), false);
+    await field("showOnSheet").uncheck();
+    for (const width of [1280, 390]) {
+      await page.setViewportSize({ width, height: 900 });
+      assert.equal(await dialog.evaluate(node => node.scrollWidth <= node.clientWidth + 1), true, `editor fits ${width}`);
+      if (process.env.DND_SCREENSHOT_DIR) await dialog.screenshot({ path: path.join(process.env.DND_SCREENSHOT_DIR, `custom-spell-editor-${width}.png`) });
+    }
+    await dialog.getByRole("button", { name: "新增法術", exact: true }).click();
+    await customCards.waitFor();
+    const spell = await page.evaluate(() => TabletopMode.getTabletopActionPreferences().customSpells[0]);
+    assert.equal(spell.rangeFeet, 15);
+    assert.equal(spell.concentration, true);
+    assert.equal(spell.version, 1);
+    assert.equal(await customCards.locator(".tabletop-spell-button__timing").innerText(), "1 分鐘\n儀式");
+    assert.equal(await customCards.locator("xpath=ancestor::section[1]").locator("h4").innerText(), "二環");
+    const normalization = await page.evaluate(spell => {
+      const normalize = TabletopMode.logic.normalizeCustomTabletopSpells;
+      return [normalize([spell, spell]).length, normalize([{ ...spell, spellId: "fireball" }]).length,
+        normalize([{ ...spell, version: 2 }]).length, normalize([{ ...spell, description: "x".repeat(6001) }]).length];
+    }, spell);
+    assert.deepEqual(normalization, [1, 0, 0, 0], "stable custom namespace, schema version, duplicates and bounds");
+    await page.evaluate(spell => TabletopMode.saveCustomTabletopSpell(spell.spellId, {
+      ...spell, nameZh: "LongCustomSpellName".repeat(4), castingTimeText: "CustomCastingTime".repeat(6)
+    }), spell);
+    await page.waitForFunction(() => document.querySelector('.tabletop-spell-button--custom')?.textContent.includes("LongCustomSpellName"));
+    for (const width of [1280, 390]) {
+      await page.setViewportSize({ width, height: 900 });
+      assert.equal(await customCards.evaluate(node => node.scrollWidth <= node.clientWidth + 1), true, `long custom text fits ${width}`);
+    }
+    await page.evaluate(spell => TabletopMode.saveCustomTabletopSpell(spell.spellId, spell), spell);
+    await page.waitForFunction(name => document.querySelector('.tabletop-spell-button--custom')?.textContent.includes(name), spell.nameZh);
+    await customCards.click();
+    assert.equal(await dialog.locator("li").count(), 3);
+    assert.equal(await dialog.locator("img, script").count(), 0, "user text is never HTML");
+    assert.equal(await dialog.getByRole("button", { name: "施法", exact: true }).count(), 1);
+    assert.equal(await dialog.locator(".tabletop-dice-expression").count(), 7);
+    assert.equal(await dialog.locator(".tabletop-dice-expression:not(:disabled)").count(), 0);
+    if (process.env.DND_SCREENSHOT_DIR) await dialog.screenshot({ path: path.join(process.env.DND_SCREENSHOT_DIR, "custom-spell-detail-390.png") });
+    await dialog.getByRole("button", { name: "關閉", exact: true }).click();
+    assert.equal(await customCards.evaluate(node => document.activeElement === node), true);
+    const combatBefore = await page.evaluate(() => JSON.stringify(TabletopMode.collectState()));
+    await page.evaluate(() => DiceRoller.setEnabled(true));
+    await customCards.click();
+    await dialog.locator(".tabletop-dice-expression").first().click();
+    const history = await page.evaluate(() => JSON.parse(dndStorage.getItem("dnd.diceRollHistory.v1")));
+    assert.equal(history[0].expression, "2d6+3");
+    assert.equal(await page.evaluate(() => JSON.stringify(TabletopMode.collectState())), combatBefore, "custom rolls do not spend slots or alter combat");
+    await page.keyboard.press("Escape");
+    // Casting offers higher slots and ritual, then replaces concentration once.
+    await page.evaluate(() => {
+      SpellManagement.withRestoreBatch(() => {
+        document.getElementById("class").value = "wizard";
+        document.getElementById("level").value = "5";
+        document.getElementById("class").dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      TabletopMode.setConcentrationSpellId("detect-magic");
+      TabletopMode.setPanel("spells");
+    });
+    const slotsChecked = () => page.evaluate(() => [2, 3].map(level => document.querySelectorAll(`#spellslot${level}-row input:checked`).length));
+    const castDialog = page.getByRole("dialog", { name: `施放${spell.nameZh}`, exact: true });
+    await customCards.click();
+    await dialog.getByRole("button", { name: "施法", exact: true }).click();
+    assert.match(await castDialog.innerText(), /會取代目前專注：偵測魔法/);
+    assert.equal(await castDialog.getByRole("radio").count(), 2, "slot and ritual methods");
+    assert.deepEqual(await castDialog.getByLabel("使用環位").locator("option").evaluateAll(nodes => nodes.map(node => node.value)), ["2", "3"]);
+    await castDialog.getByLabel("使用環位").selectOption("3");
+    assert.match(await castDialog.innerText(), /有效環位\s*3 環/);
+    await castDialog.getByRole("button", { name: "施法", exact: true }).click();
+    await castDialog.waitFor({ state: "detached" });
+    assert.deepEqual(await slotsChecked(), [0, 1], "upcast spends the chosen higher slot");
+    assert.equal(await page.evaluate(() => TabletopMode.getConcentrationSpellId()), spell.spellId);
+    assert.deepEqual(await page.evaluate(() => TabletopMode.getEndedConcentrations().map(entry => entry.spellId)), ["detect-magic"]);
+    await page.locator("#tabletop-panel-spells .tabletop-concentration", { hasText: `專注：${spell.nameZh}` }).waitFor();
+    assert.equal(await page.evaluate(() => collectStateObject().concentrationSpellId), spell.spellId, "autosave keeps custom concentration");
+    assert.equal(await page.evaluate(() => Object.hasOwn(collectShareState(), "concentrationSpellId")), false, "share omits concentration");
+    await customCards.click();
+    await dialog.getByRole("button", { name: "施法", exact: true }).click();
+    assert.match(await castDialog.innerText(), /繼續專注於同一法術/);
+    await castDialog.getByRole("radio", { name: /儀式施法/ }).check();
+    await castDialog.getByRole("button", { name: "施法", exact: true }).click();
+    await castDialog.waitFor({ state: "detached" });
+    assert.deepEqual(await slotsChecked(), [0, 1], "ritual casting spends no slot");
+    await customCards.click();
+    await dialog.getByRole("button", { name: "停止專注", exact: true }).click();
+    assert.equal(await page.evaluate(() => TabletopMode.getConcentrationSpellId()), "");
+    await page.evaluate(() => TabletopMode.applyState({}));
+    await page.locator("#tabletop-custom-spells-manage").click();
+    await dialog.getByRole("button", { name: "編輯", exact: true }).click();
+    await field("nameZh").fill("取消的名稱");
+    await page.keyboard.press("Escape");
+    await dialog.getByRole("button", { name: "編輯", exact: true }).click();
+    assert.equal(await field("nameZh").inputValue(), spell.nameZh);
+    await field("nameZh").fill("自創霜火改名");
+    await page.evaluate(() => {
+      window.customSpellOriginalStorage = dndStorage;
+      window.dndStorage = { ...dndStorage, setItem: (key, value) => key === "dnd.tabletopActionPreferences.v1" ? false : customSpellOriginalStorage.setItem(key, value) };
+    });
+    await dialog.getByRole("button", { name: "儲存變更", exact: true }).click();
+    assert.match(await field("error").innerText(), /編輯內容已保留/);
+    assert.equal(await field("nameZh").inputValue(), "自創霜火改名");
+    assert.equal(await page.evaluate(() => TabletopMode.getTabletopActionPreferences().customSpells[0].nameZh), spell.nameZh);
+    await page.evaluate(() => { window.dndStorage = customSpellOriginalStorage; delete window.customSpellOriginalStorage; });
+    await dialog.getByRole("button", { name: "儲存變更", exact: true }).click();
+    await dialog.getByRole("checkbox").uncheck();
+    await customCards.waitFor({ state: "detached" });
+    await dialog.getByRole("button", { name: "完成", exact: true }).click();
+    await page.goto(url);
+    await page.locator("#legal-ack-btn").click();
+    await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("spells"); });
+    assert.equal(await gear.getAttribute("aria-expanded"), "false", "gear state is not remembered");
+    await gear.click();
+    await page.locator("#tabletop-custom-spells-manage").click();
+    assert.equal(await dialog.getByRole("checkbox").isChecked(), false);
+    await dialog.getByRole("checkbox").check();
+    await dialog.getByRole("button", { name: "刪除", exact: true }).click();
+    await dialog.getByRole("button", { name: "取消", exact: true }).click();
+    await dialog.getByRole("button", { name: "完成", exact: true }).click();
+    const exported = await page.evaluate(() => JSON.parse(collectJsonExportText().text));
+    const saved = exported.__tabletopActionPreferences.customSpells[0];
+    assert.equal(saved.spellId, spell.spellId, "editing preserves stable ID");
+    assert.equal(saved.nameZh, "自創霜火改名");
+    assert.equal(await page.evaluate(() => JSON.stringify(collectShareState()).includes("custom-spell-")), false);
+    assert.equal(await page.evaluate(() => JSON.stringify(collectStateObject()).includes("custom-spell-")), false);
+    assert.equal(await page.evaluate(() => TabletopSpells.getSelectedSpellEntries().some(entry => entry.spellId.startsWith("custom-spell-"))), false, "no automatic casting or spellbook entry");
+    // Invalid imports are rejected before changing local records.
+    await page.setInputFiles("#import-json-file", { name: "invalid-custom-spell.json", mimeType: "application/json",
+      buffer: Buffer.from(JSON.stringify({ ...exported, __tabletopActionPreferences: { ...exported.__tabletopActionPreferences, customSpells: [{ ...saved, level: 99 }] } })) });
+    await page.getByRole("dialog", { name: "JSON 匯入失敗", exact: true }).getByRole("button", { name: "關閉", exact: true }).click();
+    assert.deepEqual(await page.evaluate(() => TabletopMode.getTabletopActionPreferences().customSpells[0]), saved);
+    await importCharacterJson(page, "custom-spell.json", exported);
+    assert.deepEqual(await page.evaluate(() => TabletopMode.getTabletopActionPreferences().customSpells[0]), saved);
+    await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("spells"); });
+    await customCards.waitFor();
+    await gear.click();
+    await page.locator("#tabletop-custom-spells-manage").click();
+    await dialog.getByRole("button", { name: "刪除", exact: true }).click();
+    await dialog.getByRole("button", { name: "刪除法術", exact: true }).click();
+    await dialog.getByRole("button", { name: "完成", exact: true }).click();
+    assert.equal(await customCards.count(), 0);
+    await importCharacterJson(page, "custom-spell.json", exported);
+    const { __tabletopActionPreferences: omitted, ...legacy } = exported;
+    await importCharacterJson(page, "legacy.json", legacy);
+    assert.equal(await page.evaluate(() => TabletopMode.getTabletopActionPreferences().customSpells?.length || 0), 0, "legacy import clears custom spells");
+    // Custom actions share the exact same expression reader and roll history.
+    const action = await page.evaluate(() => {
+      TabletopMode.setMode("tabletop"); TabletopMode.setPanel("actions"); DiceRoller.setEnabled(true);
+      return TabletopMode.addCustomTabletopAction({ mode: "action", label: "自訂骰式", description: "傷害2D6+3，恢復1d4；1d2 1d200 101d6" }).action;
+    });
+    await page.locator(`[data-action-option-key="custom:${action.id}"]`).click();
+    const dice = page.locator("#tabletop-action-panel-action .tabletop-action-description .tabletop-dice-expression");
+    assert.equal(await dice.count(), 2);
+    await dice.last().click();
+    assert.equal(await page.evaluate(() => JSON.parse(dndStorage.getItem("dnd.diceRollHistory.v1"))[0].expression), "1d4");
+    assert.deepEqual(errors, []);
+    console.log("Custom actions/spells: gear entry, dice boundaries, editor, slot/ritual casting and concentration, persistence, failures, JSON isolation, deletion and responsive layout passed.");
+  } finally { await context.close(); }
+}
+
 async function main() {
   const root = __dirname;
   const server = http.createServer((req, res) => {
@@ -2369,6 +2580,7 @@ async function main() {
     await page.goto(url);
     await page.waitForFunction(() => !!window.ActionPanel && !!window.TabletopMode);
     await verifyMergedActionUi(browser, url);
+    await verifyCustomSpellUi(browser, url);
     const assertions = await verifyCoverage(page);
     console.log(`Action metadata: ${assertions} coverage assertions passed.`);
     await verifyUiAndPersistence(page, url);

@@ -265,7 +265,7 @@ function updatePreparedSpellCounts() {
   if (currentList) currentList.textContent = manual ? "法術清單：手動管理" : classValue ? `法術清單：${label}` : "法術清單：請先選擇職業";
   const empty = document.getElementById("spell-prepared-empty");
   if (empty) {
-    const entries = window.SpellManagement?.getEntries() || [];
+    const entries = window.SpellManagement?.getSheetEntries() || [];
     const limits = window.SpellManagement?.getLimits();
     empty.hidden = !complete || entries.length > 0 || (!manual && !limits?.cantrips && !limits?.prepared);
     empty.textContent = manual ? "手動管理清單尚無法術，請使用『準備法術』加入。" : "尚未準備此職業的法術，請使用『準備法術』加入。";
@@ -275,8 +275,7 @@ function updatePreparedSpellCounts() {
   const limit = window.getPreparedSpellLimit(classValue, level);
   const players = window.SpellManagement?.getPlayerEntries() || [];
   const entries = players.filter(entry => window.SpellManagement.isEntryAvailable(entry));
-  const prepared = entries.filter(entry => entry.level >= 1 && entry.level <= 4).length;
-  const cantrips = entries.filter(entry => entry.level === 0).length;
+  const { prepared = 0, cantrips = 0 } = window.SpellManagement?.getPreparationCounts() || {};
   const cantripLimit = window.SpellManagement?.getLimits().cantrips;
   const sourceIds = new Set((window.SpellManagement?.getSourceEntries() || []).map(entry => entry.spellId));
   const unavailable = players.filter(entry => !sourceIds.has(entry.spellId) && !window.SpellManagement.isEntryAvailable(entry)).length;
@@ -376,7 +375,7 @@ function updatePickedSpellBoxes() {
 }
 
 function renderPickedSpellBoxes() {
-  const entries = window.SpellManagement?.getEntries({ availableOnly: true }) || [];
+  const entries = window.SpellManagement?.getSheetEntries({ availableOnly: true }) || [];
   const checkedState = new Map(Array.from(document.querySelectorAll(".free-spell-use-check"), box => [box.id, box.checked]));
   SPELL_AREA_CONFIGS.forEach(({ level, pickedId }) => {
     const target = document.getElementById(pickedId);
@@ -394,7 +393,7 @@ function renderPickedSpellBoxes() {
       return;
     }
     target.innerHTML = spells.map(entry => {
-      const spell = SpellCatalog.getSpell(entry.spellId);
+      const spell = entry.customSpell ? window.TabletopCustomSpells.getSpell(entry.spellId) : SpellCatalog.getSpell(entry.spellId);
       const spec = getFreeSpellUseSpec(entry);
       if (spec) for (let index = 0; index < spec.count; index += 1) {
         const id = getFreeSpellUseInputId(spec, index);
@@ -444,7 +443,7 @@ function updateSpellOverviewManagementVisibility() {
   const slotManagement = document.getElementById("spell-slot-management-wrap");
   const grid = document.getElementById("spell-picked-grid-wrap");
   if (!overview) return;
-  const entries = window.SpellManagement?.getEntries({ availableOnly: true }) || [];
+  const entries = window.SpellManagement?.getSheetEntries({ availableOnly: true }) || [];
   const slots = hasCompletePrimaryCharacterSelections()
     ? getSpellSlotCounts(document.getElementById("class")?.value || "", Number(document.getElementById("level")?.value) || 0) : [];
   SPELL_RING_CONFIGS.forEach(({ ring, pickedId }) => {
