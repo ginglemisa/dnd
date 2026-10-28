@@ -305,9 +305,11 @@
         check(duration, "concentration", "需要專注");
         const components = element("fieldset", "tabletop-custom-spell-components");
         components.appendChild(element("legend", "", "成分"));
-        check(components, "verbal", "V 言語");
-        check(components, "somatic", "S 姿勢");
-        check(components, "material", "M 材料");
+        const componentOptions = element("div", "tabletop-custom-spell-component-options");
+        check(componentOptions, "verbal", "V 言語");
+        check(componentOptions, "somatic", "S 姿勢");
+        check(componentOptions, "material", "M 材料");
+        components.appendChild(componentOptions);
         const materials = field(components, "materials", "材料說明（選填）", null, 600);
         form.append(duration, components);
         const description = field(form, "description", "敘述（Enter 換行）", null, 6000);
