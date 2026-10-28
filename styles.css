@@ -16919,6 +16919,19 @@ button.tabletop-custom-spell-gear[aria-expanded="true"] svg {
   border: 0;
 }
 
+.tabletop-custom-spell-component-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 1rem;
+  min-width: 0;
+}
+
+.tabletop-custom-spell-component-options .tabletop-custom-spell-check {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
 .tabletop-custom-spell-components legend {
   margin-bottom: 0.32rem;
   font-size: var(--fs-sm);
