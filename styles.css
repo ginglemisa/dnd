@@ -16929,6 +16929,7 @@ button.tabletop-custom-spell-gear[aria-expanded="true"] svg {
 
 .tabletop-custom-spell-component-options .tabletop-custom-spell-check {
   flex: 0 0 auto;
+  width: auto;
   white-space: nowrap;
 }
 

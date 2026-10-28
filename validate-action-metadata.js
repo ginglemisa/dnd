@@ -2404,6 +2404,8 @@ async function verifyCustomSpellUi(browser, url) {
     for (const width of [1280, 390]) {
       await page.setViewportSize({ width, height: 900 });
       assert.equal(await dialog.evaluate(node => node.scrollWidth <= node.clientWidth + 1), true, `editor fits ${width}`);
+      assert.equal(await dialog.locator(".tabletop-custom-spell-component-options").evaluate(node =>
+        new Set([...node.children].map(child => Math.round(child.getBoundingClientRect().top))).size), 1, `V/S/M share one row at ${width}`);
       if (process.env.DND_SCREENSHOT_DIR) await dialog.screenshot({ path: path.join(process.env.DND_SCREENSHOT_DIR, `custom-spell-editor-${width}.png`) });
     }
     await dialog.getByRole("button", { name: "新增法術", exact: true }).click();
