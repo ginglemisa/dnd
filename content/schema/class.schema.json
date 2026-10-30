@@ -61,8 +61,8 @@
       "additionalProperties": false,
       "required": ["A", "B"],
       "properties": {
-        "A": { "type": "string", "minLength": 1, "description": "起始裝備（A）。PDF 取用此項。" },
-        "B": { "type": "string", "minLength": 1, "description": "起始裝備（B）。" },
+        "A": { "type": "string", "minLength": 1, "description": "起始裝備（A）。PDF 取用此項。可用行尾「\\」換行。" },
+        "B": { "type": "string", "minLength": 1, "description": "起始裝備（B）。可用行尾「\\」換行。" },
         "note": { "type": "string", "minLength": 1, "description": "裝備下方的套組內容說明。" }
       }
     },

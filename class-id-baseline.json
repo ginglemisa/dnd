@@ -1,10 +1,12 @@
 {
   "classes": [
     "barbarian",
+    "fighter",
     "ranger"
   ],
   "subclasses": [
     "barbarian/berserker",
+    "fighter/champion",
     "ranger/hunter"
   ],
   "options": [
@@ -19,17 +21,26 @@
     "dynamic-action-barbarian-113ebtz",
     "dynamic-action-barbarian-ekb4kt",
     "dynamic-action-class-8jjnkp",
+    "dynamic-action-class-action-surge",
+    "dynamic-action-fighter-113ebtz",
+    "dynamic-action-fighter-1870147",
     "dynamic-action-ranger-113ebtz",
     "dynamic-action-ranger-p55ifk",
     "dynamic-action-ranger-vdr4tc",
     "dynamic-bonus-barbarian-1iw4zkg",
     "dynamic-bonus-barbarian-3te1cj",
+    "dynamic-bonus-class-fj2om2",
+    "dynamic-bonus-fighter-qmmfue",
     "dynamic-bonus-ranger-we5ttw",
     "dynamic-movement-barbarian-18h2p2v",
     "dynamic-movement-barbarian-1iw4zkg",
+    "dynamic-movement-fighter-1liysqo",
+    "dynamic-movement-fighter-1s26hvz",
     "dynamic-movement-ranger-bulhou"
   ],
   "resourceKeys": [
-    "barbarian-rage"
+    "barbarian-rage",
+    "fighter-action-surge",
+    "fighter-second-wind"
   ]
 }

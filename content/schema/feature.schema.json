@@ -23,6 +23,7 @@
         "id": { "$ref": "#/definitions/id", "description": "能力 ID（全職業唯一）。已有的 data-action-id 照抄。" },
         "level": { "$ref": "#/definitions/level", "description": "取得此能力的等級。" },
         "name": { "type": "string", "minLength": 1, "description": "能力名稱；標題「等級 N：名稱」由等級自動組成。" },
+        "tableName": { "type": "string", "minLength": 1, "description": "特性表「職業特性」欄顯示的名稱，例如「動作如潮（一次使用）」；省略時使用 name。" },
         "type": { "enum": ["subclass"], "description": "subclass：此能力是「選擇子職」的入口，子職能力排在它後面。" },
         "text": { "$ref": "#/definitions/text", "description": "職業頁全文。" },
         "tabletop": { "$ref": "#/definitions/text", "description": "跑團動作按鈕說明的完整版本；只在和職業頁文字不同時才寫，省略時使用 text。" },
@@ -54,7 +55,7 @@
       "then": {
         "not": {
           "anyOf": [
-            { "required": ["id"] }, { "required": ["type"] }, { "required": ["tabletop"] }, { "required": ["summary"] }, { "required": ["choose"] },
+            { "required": ["id"] }, { "required": ["type"] }, { "required": ["tableName"] }, { "required": ["tabletop"] }, { "required": ["summary"] }, { "required": ["choose"] },
             { "required": ["changeOn"] }, { "required": ["optionStyle"] }, { "required": ["options"] },
             { "required": ["actions"] }, { "required": ["resource"] }, { "required": ["spells"] }
           ]

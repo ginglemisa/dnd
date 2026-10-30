@@ -12,21 +12,27 @@ const { ROOT, loadLegacyClassFeatures, loadTipTables, loadLegacyClassActionRules
 const FEATURE_SLUGS = Object.freeze({
   無甲防禦: "unarmored-defense", 武器精通: "weapon-mastery", 險境感知: "danger-sense", 先祖學識: "primal-knowledge",
   屬性值提升: "ability-score-improvement", 無我狂暴: "mindless-rage", 野性直覺: "feral-instinct",
-  施法: "spellcasting", 宿敵: "favored-enemy", 熟練探險家: "deft-explorer", 戰鬥風格: "fighting-style"
+  施法: "spellcasting", 宿敵: "favored-enemy", 熟練探險家: "deft-explorer", 戰鬥風格: "fighting-style",
+  戰術思維: "tactical-mind", 精通重擊: "improved-critical", 額外戰鬥風格: "additional-fighting-style"
 });
-const SUBCLASS_IDS = Object.freeze({ 狂戰士道途: "berserker", 獵人: "hunter" });
+const SUBCLASS_IDS = Object.freeze({ 狂戰士道途: "berserker", 獵人: "hunter", 勇士: "champion" });
 // 特性表欄位名稱（文字中以 {名稱|…} 引用）。
 const COLUMN_KEYS = Object.freeze({
   狂暴次數: "rageUses", 狂暴傷害: "rageDamage", 武器精通: "weaponMastery",
-  宿敵: "favoredEnemy", 準備法術: "preparedSpells", "１環": "spellSlots1", "２環": "spellSlots2"
+  宿敵: "favoredEnemy", 準備法術: "preparedSpells", "１環": "spellSlots1", "２環": "spellSlots2",
+  回氣: "secondWindUses"
 });
 // 舊版寫在 character-rules.js／action-panel.js 程式裡、HTML 沒有的機制；轉換時一併寫進內容檔。
 const FEATURE_EXTRAS = Object.freeze({
   "barbarian-rage": { resource: { key: "barbarian-rage", uses: "rageUses", recover: { short: 1, long: "all" } } },
   // spell-sources.js：宿敵始終準備獵人印記，免費施放次數同特性表「宿敵」欄。
-  "ranger-favored-enemy": { spells: [{ id: "hunters-mark", freeUses: "favoredEnemy" }] }
+  "ranger-favored-enemy": { spells: [{ id: "hunters-mark", freeUses: "favoredEnemy" }] },
+  // character-rules.js getCharacterResourceSpecs：回氣短休回 1 次；動作如潮短休或長休全回。
+  "fighter-second-wind": { resource: { key: "fighter-second-wind", uses: "secondWindUses", recover: { short: 1, long: "all" } } },
+  "fighter-action-surge": { resource: { key: "fighter-action-surge", uses: 1, recover: { short: "all", long: "all" } } }
 });
-const CLASS_VALUES = Object.freeze({ barbarian: { frenzyDice: "{rageDamage}d6" } });
+// action-panel.js TABLETOP_VALUE_RESOLVERS 的公式（「職業-名稱」key）。
+const CLASS_VALUES = Object.freeze({ barbarian: { frenzyDice: "{rageDamage}d6" }, fighter: { secondWindHealing: "1d10 + {level}" } });
 // 施法進度（舊版分散在 character-rules.js 的施法者集合與半施法者準備表）。
 const SPELLCASTING = Object.freeze({
   barbarian: "none", fighter: "none", monk: "none", rogue: "none", paladin: "half", ranger: "half", warlock: "pact",
@@ -356,10 +362,32 @@ function convertClass(classId, html) {
       if (option.compat !== Boolean(feature.actions)) fail(where, `${option.id} 的舊段落 ID 與該能力是否有跑團動作不一致`);
     }
   }
+  applyTableNames(features, creation.legacyFeatureColumn, where);
   return { creation, features, subclass };
 }
 
-const FEATURE_KEY_ORDER = ["id", "level", "name", "type", "choose", "changeOn", "optionStyle", "resource", "spells", "actions", "summary", "tabletop", "text", "options"];
+// 特性表「職業特性」欄與能力名稱不同（例如「動作如潮（一次使用）」）時寫成 tableName；順序不同或對不上則停止。
+function applyTableNames(features, legacyColumn, where) {
+  legacyColumn.forEach((cell, index) => {
+    const level = index + 1;
+    const own = features.filter(feature => feature.level === level && feature.name && !feature.subclass);
+    const names = own.map(feature => feature.name);
+    if (!own.length) {
+      const expected = features.some(feature => feature.level === level && feature.subclass) ? "子職特性" : "-";
+      if (cell !== expected) fail(where, `特性表第 ${level} 級「${cell}」應為「${expected}」`);
+      return;
+    }
+    const entries = cell.split("，");
+    if (entries.length !== own.length) fail(where, `特性表第 ${level} 級「${cell}」與能力名稱「${names.join("，")}」數量不同`);
+    own.forEach((feature, offset) => {
+      if (entries[offset] === feature.name) return;
+      if (names.includes(entries[offset])) fail(where, `特性表第 ${level} 級「${cell}」與能力順序不同`);
+      feature.tableName = entries[offset];
+    });
+  });
+}
+
+const FEATURE_KEY_ORDER = ["id", "level", "name", "tableName", "type", "choose", "changeOn", "optionStyle", "resource", "spells", "actions", "summary", "tabletop", "text", "options"];
 function cleanFeature(feature) {
   const out = {};
   for (const key of FEATURE_KEY_ORDER) {

@@ -1,0 +1,135 @@
+# yaml-language-server: $schema=../../schema/class.schema.json
+id: fighter
+name: 戰士
+maxLevel: 8
+subclassLevel: 3
+defaultSubclass: champion
+tagline: 戰士精通武器與戰技，能適應各種戰鬥方式。
+quote: 「鋼鐵碰撞聲在城牆上回響，他穩穩握住長劍，步伐不亂。無論敵人是盜匪還是訓練有素的士兵，他總能找到破綻。年輕時在軍團中摸爬滾打的他，早已習慣命令與混亂並存的戰場。當新兵在他身後顫抖，他只是簡短地說了一句：站穩，菜鳥，準備戰鬥。」
+primaryAbility:
+  any: [力量, 敏捷]
+spellcasting:
+  progression: none
+hitDie: 10
+saves: [力量, 體質]
+skills:
+  choose: 2
+  from: [體操, 馴獸, 運動, 歷史, 洞悉, 威嚇, 遊說, 察覺, 求生]
+weapons: 簡易武器和軍用武器
+tools: 無
+armor: 輕甲、中甲、重甲和盾牌
+equipment:
+  A: |-
+    鎖子甲、巨劍、連枷、標槍 ×8、地城套組和 4 金幣\
+    或鑲釘皮甲、彎刀、短劍、長弓、箭矢(20)、箭袋、地城套組、 11 金幣
+  B: 155 金幣
+  note: "**地城套組：**背包、鐵蒺藜、撬棍、油瓶 ×2、單日口糧 ×10、繩索、火絨盒、火把 ×10、水袋"
+progression:
+  secondWindUses:
+    label: 回氣
+    byLevel: {1: 2, 4: 3}
+  weaponMastery:
+    label: 武器精通
+    byLevel: {1: 3, 4: 4}
+values:
+  secondWindHealing: 1d10 + {level}
+features:
+  - id: fighter-fighting-style
+    level: 1
+    name: 戰鬥風格
+    text: |
+      你磨練戰鬥技藝，獲得 1 個自選的「戰鬥風格」專長。推薦：防禦。
+
+      - **升級替換：**每提升 1 級戰士，可將此專長換成另一個「戰鬥風格」專長。
+  - id: fighter-second-wind
+    level: 1
+    name: 回氣
+    resource:
+      key: fighter-second-wind
+      uses: secondWindUses
+      recover: {short: 1, long: all}
+    actions:
+      - mode: bonus
+        key: dynamic-bonus-fighter-qmmfue
+        legacyKeys: [dynamic-bonus-class-fj2om2]
+        resource: fighter-second-wind
+        append: [fighter-tactical-shift]
+    text: |
+      你的身心儲有底力，可在關鍵時刻以**附贈**恢復「{secondWindHealing|1d10 + 戰士等級}」的生命值。
+
+      - **使用次數：**{secondWindUses|起始 2 次，之後依「戰士特性」表的「回氣」欄增加}。**短休後恢復 1 次**，長休後全部恢復。
+  - id: fighter-weapon-mastery
+    level: 1
+    name: 武器精通
+    text: |
+      任選 3 種簡易或軍用武器，取得其精通屬性。
+
+      - **改選時機：**每次長休後，可透過武器練習替換其中 1 種。
+      - **數量提升：**可選數量隨戰士等級增加，見「戰士特性」表的「武器精通」欄。
+  - id: fighter-action-surge
+    level: 2
+    name: 動作如潮
+    tableName: 動作如潮（一次使用）
+    resource:
+      key: fighter-action-surge
+      uses: 1
+      recover: {short: all, long: all}
+    actions:
+      - mode: action
+        key: dynamic-action-fighter-1870147
+        legacyKeys: [dynamic-action-class-action-surge]
+        resource: fighter-action-surge
+    text: |
+      你可以短暫突破極限，在自己的回合中執行 1 個**額外動作**，但不能用於魔法動作。
+
+      - **使用次數：**1 次，**短休或長休後恢復**。
+  - id: fighter-tactical-mind
+    level: 2
+    name: 戰術思維
+    text: |
+      你在戰場內外都具有卓越的戰術思維。**屬性檢定失敗**時，可消耗 1 次回氣使用次數，改為擲 1d10 加入該次檢定，而非恢復生命值，使結果可能變為成功。
+
+      - **仍然失敗：**若檢定依舊失敗，不會消耗回氣使用次數。
+  - id: fighter-subclass
+    level: 3
+    name: 戰士子職
+    type: subclass
+    text: |
+      選擇一個戰士子職，並隨等級提升獲得子職能力。基本規則僅提供「勇士」。
+  - id: fighter-ability-score-improvement-4
+    level: 4
+    name: 屬性值提升
+    text: |
+      選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。
+  - level: 4
+    text: |
+      **回氣補充：**戰士達到 4 級時，回氣使用次數提升為 3 次，詳見「戰士特性」表。
+  - level: 4
+    text: |
+      **武器精通補充：**戰士達到 4 級時，武器精通可選數量提升為 4 種，詳見「戰士特性」表。
+  - id: fighter-extra-attack
+    level: 5
+    name: 額外攻擊
+    actions:
+      - mode: action
+        key: dynamic-action-fighter-113ebtz
+    text: |
+      你在自己的回合執行**攻擊動作**時，可以攻擊 2 次。
+  - id: fighter-tactical-shift
+    level: 5
+    name: 戰術轉移
+    actions:
+      - mode: movement
+        key: dynamic-movement-fighter-1liysqo
+    text: |
+      以**附贈**使用回氣時，你可以移動至多等同於你速度一半的距離，且不會引發[[藉機攻擊]]。
+  - id: fighter-ability-score-improvement-6
+    level: 6
+    name: 屬性值提升
+    text: |
+      選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。
+  - id: fighter-ability-score-improvement-8
+    level: 8
+    name: 屬性值提升
+    text: |
+      選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。

@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../schema/subclass.schema.json
+id: champion
+class: fighter
+name: 勇士
+shortName: 勇士
+features:
+  - id: fighter-improved-critical
+    level: 3
+    name: 精通重擊
+    text: |
+      你使用武器和徒手打擊的攻擊檢定，擲出 **19 或 20** 時即可造成重擊。
+  - id: fighter-remarkable-athlete
+    level: 3
+    name: 運動健將
+    actions:
+      - mode: movement
+        key: dynamic-movement-fighter-1s26hvz
+        label: 等級 3：運動健將
+    summary: 你的先攻和力量（[[運動]]）檢定具有**優勢**。造成重擊後，可立即移動至多等同於速度一半的距離，且不會引發[[藉機攻擊]]。
+    text: |
+      平日的訓練鍛打出堅實的體能，你獲得以下效果：
+
+      - **先攻與運動：**你的先攻和力量（[[運動]]）檢定具有**優勢**。
+      - **重擊後移動：**造成重擊後，可立即移動至多等同於速度一半的距離，且不會引發[[藉機攻擊]]。
+  - id: fighter-additional-fighting-style
+    level: 7
+    name: 額外戰鬥風格
+    text: |
+      你再獲得 1 個自選的「戰鬥風格」專長。

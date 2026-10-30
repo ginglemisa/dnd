@@ -58,7 +58,8 @@ function createRenderContext(classDef, subclass) {
 function renderCreation(context) {
   const { classDef } = context;
   const where = `${classDef.file} 創角資訊`;
-  const inline = text => renderInline(text, context, where);
+  // 行尾「\」換行輸出為 <br>（例如裝備的兩種組合）。
+  const inline = text => text.split("\\\n").map(line => renderInline(line, context, where)).join("<br>");
   const { skills } = classDef;
   const skillTips = skills.from === "any" ? null : skills.from.map(name => `[[${name}]]`);
   const skillText = skillTips
@@ -78,7 +79,7 @@ function renderCreation(context) {
   ];
   const progression = Object.values(classDef.progression || {});
   const featureNames = level => {
-    const own = classDef.features.filter(feature => feature.level === level && feature.name).map(feature => feature.name);
+    const own = classDef.features.filter(feature => feature.level === level && feature.name).map(feature => feature.tableName || feature.name);
     if (own.length) return own.join("，");
     return (context.subclass?.features || []).some(feature => feature.level === level) ? "子職特性" : "-";
   };
