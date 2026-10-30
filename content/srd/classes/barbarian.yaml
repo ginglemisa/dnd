@@ -152,7 +152,7 @@ features:
       你的先攻擲骰具有**優勢**。
   - id: barbarian-instinctive-pounce
     level: 7
-    name: 直覺猛撲
+    name: 本能飛撲
     actions:
       - mode: movement
         key: dynamic-movement-barbarian-1iw4zkg

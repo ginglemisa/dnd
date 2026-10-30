@@ -129,13 +129,13 @@
   const CLASS_ACTION_RULES = Object.freeze({
     barbarian: Object.freeze([
       { id: "reckless-attack", mode: "action", level: 2, label: "魯莽", key: "dynamic-action-class-8jjnkp", descriptionId: "barbarian-reckless-attack" },
-      // 7 級起直覺猛撲併入狂暴說明；獨立的直覺猛撲按鈕只保留 key，跑團不顯示。
+      // 7 級起本能飛撲併入狂暴說明；獨立的本能飛撲按鈕只保留 key，跑團不顯示。
       { id: "rage", mode: "bonus", level: 1, label: "等級 1：狂暴", key: "dynamic-bonus-barbarian-3te1cj", resourceKey: "barbarian-rage", descriptionIds: ["barbarian-rage", { id: "barbarian-instinctive-pounce", level: 7 }] },
       { id: "frenzy", mode: "action", level: 3, label: "等級 3：狂怒（狂戰子職）", key: "dynamic-action-barbarian-ekb4kt", descriptionId: "barbarian-frenzy" },
       { id: "extra-attack", mode: "action", level: 5, label: "等級 5：額外攻擊", key: "dynamic-action-barbarian-113ebtz", descriptionId: "barbarian-extra-attack" },
       { id: "fast-movement", mode: "movement", level: 5, label: "等級 5：快速移動", key: "dynamic-movement-barbarian-18h2p2v", descriptionId: "barbarian-fast-movement" },
-      { id: "instinctive-pounce", mode: "movement", level: 7, label: "等級 7：直覺猛撲", key: "dynamic-movement-barbarian-1iw4zkg", descriptionId: "barbarian-instinctive-pounce" },
-      { id: "instinctive-pounce", mode: "bonus", level: 7, label: "等級 7：直覺猛撲", key: "dynamic-bonus-barbarian-1iw4zkg", descriptionId: "barbarian-instinctive-pounce" },
+      { id: "instinctive-pounce", mode: "movement", level: 7, label: "等級 7：本能飛撲", key: "dynamic-movement-barbarian-1iw4zkg", descriptionId: "barbarian-instinctive-pounce" },
+      { id: "instinctive-pounce", mode: "bonus", level: 7, label: "等級 7：本能飛撲", key: "dynamic-bonus-barbarian-1iw4zkg", descriptionId: "barbarian-instinctive-pounce" },
     ]),
     monk: Object.freeze([
       { id: "martial-arts-action", mode: "action", level: 1, label: "等級 1：武藝", descriptionId: "monk-martial-arts", key: "dynamic-action-monk-curated-martial-arts-action" },

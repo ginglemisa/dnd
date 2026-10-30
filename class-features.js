@@ -199,7 +199,7 @@ const classFeatures = {
       <tr>
         <td style="border:1px solid #aaa; padding:3px;">7</td>
         <td style="border:1px solid #aaa; padding:3px;">+3</td>
-        <td style="border:1px solid #aaa; padding:3px;">野性直覺，直覺猛撲</td>
+        <td style="border:1px solid #aaa; padding:3px;">野性直覺，本能飛撲</td>
         <td style="border:1px solid #aaa; padding:3px;">4</td>
         <td style="border:1px solid #aaa; padding:3px;">+2</td>
         <td style="border:1px solid #aaa; padding:3px;">3</td>
@@ -331,8 +331,8 @@ const classFeatures = {
 </section>
 
 <section class="barbarian-feature class-feature-section" data-feature-level="7" data-action-id="barbarian-instinctive-pounce">
-  <h3>等級 7：直覺猛撲</h3>
-  <p><strong data-tabletop-only hidden>直覺猛撲：</strong>你以<strong>附贈</strong>進入狂暴時，可以同時移動，距離至多為你速度的一半。</p>
+  <h3>等級 7：本能飛撲</h3>
+  <p><strong data-tabletop-only hidden>本能飛撲：</strong>你以<strong>附贈</strong>進入狂暴時，可以同時移動，距離至多為你速度的一半。</p>
 </section>
 
 <section class="barbarian-feature class-feature-section" data-feature-level="8">
