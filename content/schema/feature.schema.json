@@ -1,0 +1,110 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "feature.schema.json",
+  "title": "twD20 職業／子職能力",
+  "definitions": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$",
+      "description": "小寫英文、數字與連字號。"
+    },
+    "level": { "type": "integer", "minimum": 1, "maximum": 20 },
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Markdown：段落、「- 」清單、**粗體**、行尾「\\」換行、「#### 標題」小節。[[運動]]、[[失能]] 產生提示框；{rageDamage|頁面文字} 在跑團模式換成目前數值。不可使用 HTML。"
+    },
+    "feature": {
+      "type": "object",
+      "description": "一項能力。有 name 時是一般能力；沒有 name 時是只顯示文字的等級補充說明。",
+      "additionalProperties": false,
+      "required": ["level", "text"],
+      "properties": {
+        "id": { "$ref": "#/definitions/id", "description": "能力 ID（全職業唯一）。已有的 data-action-id 照抄。" },
+        "level": { "$ref": "#/definitions/level", "description": "取得此能力的等級。" },
+        "name": { "type": "string", "minLength": 1, "description": "能力名稱；標題「等級 N：名稱」由等級自動組成。" },
+        "type": { "enum": ["subclass"], "description": "subclass：此能力是「選擇子職」的入口，子職能力排在它後面。" },
+        "text": { "$ref": "#/definitions/text", "description": "職業頁全文。" },
+        "tabletop": { "$ref": "#/definitions/text", "description": "跑團動作按鈕說明的完整版本；只在和職業頁文字不同時才寫，省略時使用 text。" },
+        "summary": { "type": "string", "minLength": 1, "description": "跑團總覽的一句話；省略時使用 text。" },
+        "choose": { "type": "integer", "minimum": 1, "description": "要從 options 選幾項。" },
+        "changeOn": { "enum": ["rest"], "description": "rest：短休或長休後可改選。" },
+        "optionStyle": { "enum": ["list", "cards"], "default": "list", "description": "選項顯示方式：list 為清單，cards 為卡片。" },
+        "options": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/option" },
+          "description": "可勾選的選項；勾選框、互斥與選項記憶由選項資料產生。"
+        },
+        "actions": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/action" },
+          "description": "跑團模式的動作按鈕。"
+        },
+        "resource": { "$ref": "#/definitions/resource" }
+      },
+      "if": { "not": { "required": ["name"] } },
+      "then": {
+        "not": {
+          "anyOf": [
+            { "required": ["id"] }, { "required": ["type"] }, { "required": ["tabletop"] }, { "required": ["summary"] }, { "required": ["choose"] },
+            { "required": ["changeOn"] }, { "required": ["optionStyle"] }, { "required": ["options"] },
+            { "required": ["actions"] }, { "required": ["resource"] }
+          ]
+        }
+      },
+      "else": { "required": ["id"] }
+    },
+    "option": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name"],
+      "properties": {
+        "id": { "$ref": "#/definitions/id", "description": "勾選框 ID，會寫進存檔與分享網址：不可改名。" },
+        "name": { "type": "string", "minLength": 1, "description": "選項名稱（勾選框文字）。" },
+        "text": { "type": "string", "minLength": 1, "description": "選項說明（單段文字，可用行尾「\\」換行）。" }
+      }
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "key"],
+      "properties": {
+        "mode": { "enum": ["action", "bonus", "reaction", "movement"], "description": "動作、附贈、反應或移動。" },
+        "key": { "type": "string", "pattern": "^[a-z0-9-]+$", "description": "跑團偏好記住的按鈕 key：不可改名。" },
+        "legacyKeys": { "type": "array", "items": { "type": "string" }, "description": "舊版按鈕 key，讀取舊偏好用。" },
+        "label": { "type": "string", "description": "按鈕文字；省略時為「等級 N：名稱（子職）」。" },
+        "level": { "$ref": "#/definitions/level", "description": "按鈕出現的等級；省略時同能力等級。" },
+        "resource": { "type": "string", "description": "按鈕消耗的資源 key。" },
+        "append": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/id" },
+          "description": "達到該能力等級後，接在此按鈕說明後面的其他能力 ID。"
+        }
+      }
+    },
+    "resource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "uses", "recover"],
+      "description": "此能力的使用次數資源。",
+      "properties": {
+        "key": { "type": "string", "pattern": "^[a-z0-9-]+$", "description": "資源 key，跑團模式記錄剩餘次數用：不可改名。" },
+        "uses": {
+          "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "string" }],
+          "description": "次數：固定數字，或特性表欄位／values 名稱。"
+        },
+        "recover": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["long"],
+          "properties": {
+            "short": { "anyOf": [{ "type": "integer", "minimum": 1 }, { "const": "all" }], "description": "短休恢復次數，all 為全部。" },
+            "long": { "anyOf": [{ "type": "integer", "minimum": 1 }, { "const": "all" }], "description": "長休恢復次數，all 為全部。" }
+          }
+        }
+      }
+    }
+  }
+}

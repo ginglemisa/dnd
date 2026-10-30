@@ -1,0 +1,58 @@
+# 職業內容檔（試行中）
+
+每個職業、子職各一個 YAML 檔。說明文字和機制（特性表、選項、跑團按鈕、資源）寫在同一份檔案。
+
+> 試行階段：目前只轉換了野蠻人與遊俠，網站仍讀取 `class-features.js`。格式確認後才逐步改由這裡產生。
+
+## 檔案位置
+
+| 內容 | 位置 |
+| --- | --- |
+| 公開職業 | `content/srd/classes/<職業 ID>.yaml` |
+| 公開子職 | `content/srd/subclasses/<職業 ID>-<子職 ID>.yaml` |
+| 私人內容包（不進公開 repo） | `content/private/classes/`、`content/private/subclasses/` |
+| 私人內容包補充既有職業（例如兼職） | `content/private/class-extensions/<職業 ID>.yaml` |
+| 私人內容包的兼職共用規則與法術位表 | `content/private/rules/multiclass.yaml` |
+| 格式定義（JSON Schema） | `content/schema/` |
+
+`content/private/` 整個資料夾被 git 忽略，只存在你的電腦；公開網站不會出現兼職等私人內容。
+
+VS Code 安裝 Red Hat 的「YAML」擴充套件後，會依檔案第一行的 `$schema` 自動補完欄位、標出錯誤，滑鼠停在欄位上可看說明。
+
+## 文字寫法
+
+`text` 一律用 `|` 開頭，下一行起縮排書寫。
+
+- 段落之間空一行；清單用 `- `；粗體用 `**粗體**`。
+- 同一段內要換行，在行尾加 `\`（清單項目的下一行再縮排兩格）。
+- `#### 標題` 開始一個小節，直到下一個 `####` 或文字結束。
+- `[[運動]]`、`[[抗性]]`、`[[失能]]`：提示框，名稱須存在於技能／規則提示表或狀態表。
+- `{rageDamage|數值見特性表}`：職業頁顯示 `|` 後的文字，跑團模式換成目前數值。名稱須是 `progression` 欄位、`values` 或內建的 `level`、`proficiencyBonus`。
+- 不可寫 HTML（出現 `<` 就報錯），也不可寫行內樣式。
+
+## 同一個能力的三種文字
+
+| 欄位 | 用在哪裡 | 什麼時候寫 |
+| --- | --- | --- |
+| `text` | 職業頁全文 | 一定要寫 |
+| `tabletop` | 跑團動作按鈕的說明 | 只在和 `text` 不同時，寫一份完整版本 |
+| `summary` | 跑團總覽的一句話 | 只在和 `text` 不同時 |
+
+## 職業層級的欄位
+
+- `primaryAbility`：`{ all: [敏捷, 感知] }` 顯示為「敏捷與感知」；`{ any: [力量, 敏捷] }` 顯示為「力量或敏捷」。
+- `spellcasting.progression`：`full`（全施法者）、`half`（半施法者）、`pact`（契約魔法）、`none`。
+
+## 不可改名的 ID
+
+選項的 `id`、動作的 `key`／`legacyKeys`、`resource.key`、子職 `id` 會寫進存檔、分享網址或跑團偏好。改顯示文字沒關係，這些 ID 不可改。
+
+## 檢查與預覽
+
+| 指令 | 用途 |
+| --- | --- |
+| `npm run dev` | 開本機預覽，存檔後自動重新檢查；畫面網址會顯示在終端機 |
+| `npm run build` | 檢查全部內容檔，有錯就列出檔案與位置 |
+| `npm run classes:check` | 逐項列出和現有 `class-features.js` 的差異 |
+
+刻意與舊版不同、已經確認過的地方，逐行列在 `tools/class-content/accepted-differences.json`。
