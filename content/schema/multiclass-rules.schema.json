@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "multiclass-rules.schema.json",
+  "title": "twD20 兼職規則",
+  "description": "放在 content/<內容包>/rules/multiclass.yaml；所有職業共用。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["minimumScore", "text", "spellSlots"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "minimumScore": { "type": "integer", "minimum": 1, "description": "主職業與所有兼職職業的關鍵屬性最低值。" },
+    "text": { "$ref": "feature.schema.json#/definitions/text", "description": "兼職規則說明。" },
+    "spellSlots": {
+      "type": "object",
+      "description": "兼職施法者等級 → 1～9 環法術位數量（只寫有法術位的環階）。",
+      "propertyNames": { "pattern": "^([1-9]|1[0-9]|20)$" },
+      "additionalProperties": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 9,
+        "items": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}

@@ -4,3 +4,5 @@ node_modules/
 .playwright-cli/
 # Local high-resolution OG source
 /og-image-original.jpg
+# Private content packs (copyrighted subclasses etc.) must never reach the public repo
+/content/private/

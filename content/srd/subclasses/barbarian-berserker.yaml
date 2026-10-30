@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=../../schema/subclass.schema.json
+id: berserker
+class: barbarian
+name: 狂戰士道途
+shortName: 狂戰
+features:
+  - id: barbarian-frenzy
+    level: 3
+    name: 狂怒
+    actions:
+      - mode: action
+        key: dynamic-action-barbarian-ekb4kt
+    text: |
+      你在狂暴中使用魯莽攻擊，且用力量攻擊命中本回合第一個目標時，可造成額外傷害。
+
+      - **額外傷害：**{frenzyDice|若干 d6}，骰數等於狂暴傷害加值。
+      - **傷害類型：**與該次攻擊相同。
+  - id: barbarian-mindless-rage
+    level: 6
+    name: 無我狂暴
+    text: |
+      狂暴期間，你**免疫**[[魅惑]]與[[恐慌]]狀態。
+
+      - **進入狂暴時：**若你正處於其中一種狀態，該狀態立即終止。

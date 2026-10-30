@@ -1,0 +1,167 @@
+# yaml-language-server: $schema=../../schema/class.schema.json
+id: barbarian
+name: 野蠻人
+maxLevel: 8
+subclassLevel: 3
+defaultSubclass: berserker
+tagline: 野蠻人以狂暴強化力量與韌性，是勇猛的前線戰士。
+quote: 「戰場邊緣的風帶著血腥味，他赤著上身踏入泥濘，胸口刻著古老圖紋。敵軍的長矛手還來不及列陣，他已怒吼著衝入人群，像暴風撕裂隊形。曾在部族被焚毀的夜裡失去一切的他，如今只信任手中的巨斧與心中翻騰的怒火。遠處的弓手艾琳顫聲呼喊他的名字，他卻已聽不見，只剩戰鬥的鼓動在血液裡轟鳴。」
+primaryAbility:
+  all: [力量]
+spellcasting:
+  progression: none
+hitDie: 12
+saves: [力量, 體質]
+skills:
+  choose: 2
+  from: [馴獸, 運動, 威嚇, 自然, 察覺, 求生]
+weapons: 簡易、軍用武器
+tools: 無
+armor: 輕甲、中甲、盾牌
+equipment:
+  A: 巨斧、手斧 ×4、探索套組、15 金幣
+  B: 75 金幣
+  note: "**探索套組：**背包、睡袋、油瓶 ×2、單日口糧 ×10、繩索、火絨盒、火把 ×10、水袋。"
+progression:
+  rageUses:
+    label: 狂暴次數
+    byLevel: {1: 2, 3: 3, 6: 4}
+  rageDamage:
+    label: 狂暴傷害
+    byLevel: {1: 2}
+    format: +{}
+  weaponMastery:
+    label: 武器精通
+    byLevel: {1: 2, 4: 3}
+values:
+  frenzyDice: "{rageDamage}d6"
+features:
+  - id: barbarian-rage
+    level: 1
+    name: 狂暴
+    resource:
+      key: barbarian-rage
+      uses: rageUses
+      recover: {short: 1, long: all}
+    actions:
+      - mode: bonus
+        key: dynamic-bonus-barbarian-3te1cj
+        resource: barbarian-rage
+        append: [barbarian-instinctive-pounce]
+    text: |
+      你**未穿重甲**時，可以用**附贈**進入狂暴。
+
+      - **使用次數：**{rageUses|見「野蠻人特性」表的「狂暴次數」欄}。**短休後恢復 1 次**，**長休後全部恢復**。
+
+      #### 狂暴期間
+
+      - **抗性：**你對鈍擊、穿刺、揮砍傷害具有[[抗性]]。
+      - **狂暴傷害：**你用力量造成的傷害可加上狂暴傷害，{rageDamage|數值見「野蠻人特性」表}。
+      - **力量優勢：**你的力量檢定與力量豁免具有**優勢**。
+      - **施法限制：**你不能施法，也不能維持專注。
+
+      #### 持續與延長
+
+      狂暴持續到你的下個回合結束。若要延長，每回合至少做到下列一項：
+
+      - **攻擊：**對敵人進行攻擊檢定。
+      - **迫使豁免：**讓敵人進行豁免檢定。
+      - **附贈：**再用一次**附贈**延長狂暴。
+
+      **結束條件：**你穿上重甲、陷入[[失能]]，或狂暴超過 10 分鐘時，狂暴結束。
+  - id: barbarian-unarmored-defense
+    level: 1
+    name: 無甲防禦
+    text: |
+      你沒穿護甲時，AC = 10 + 敏捷調整值 + 體質調整值。
+
+      - **盾牌：**使用此特性時仍可持盾。
+  - id: barbarian-weapon-mastery
+    level: 1
+    name: 武器精通
+    text: |
+      從你熟練的武器中選擇 2 種，取得其精通屬性，例如巨斧、手斧。
+
+      - **改選時機：**每次長休後可替換其中 1 種。
+      - **數量提升：**可選數量隨野蠻人等級增加，見「野蠻人特性」表的「武器精通」欄。
+  - id: barbarian-danger-sense
+    level: 2
+    name: 險境感知
+    text: |
+      只要你未陷入[[失能]]狀態，你的敏捷豁免就具有**優勢**。
+  - id: barbarian-reckless-attack
+    level: 2
+    name: 魯莽攻擊
+    actions:
+      - mode: action
+        key: dynamic-action-class-8jjnkp
+        label: 魯莽
+    text: |
+      在你的回合中，第一次用力量攻擊前可以宣告魯莽攻擊。
+
+      - **好處：**本回合你用力量進行的近戰攻擊具有**優勢**。
+      - **代價：**直到你的下個回合開始前，攻擊你的檢定也具有**優勢**。
+  - id: barbarian-subclass
+    level: 3
+    name: 野蠻人子職
+    type: subclass
+    text: |
+      選擇一個野蠻人子職，並隨等級提升獲得子職能力。基本規則僅提供「狂戰士道途」。
+  - id: barbarian-primal-knowledge
+    level: 3
+    name: 先祖學識
+    text: |
+      你額外獲得 1 項技能熟練，並能在狂暴時以力量進行部分技能檢定。
+
+      - **額外熟練：**從野蠻人初始技能列表中選擇 1 項技能，獲得熟練。
+      - **狂暴期間：**你可用力量進行[[體操]]、[[威嚇]]、[[察覺]]、[[隱匿]]、[[求生]]檢定。
+  - level: 3
+    text: |
+      **狂暴補充：**野蠻人達到 3 級時，狂暴次數提升為 3 次，詳見「野蠻人特性」表。
+  - id: barbarian-ability-score-improvement-4
+    level: 4
+    name: 屬性值提升
+    text: |
+      選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。
+  - level: 4
+    text: |
+      **武器精通補充：**野蠻人達到 4 級時，武器精通可選數量提升為 3 種，詳見「野蠻人特性」表。
+  - id: barbarian-extra-attack
+    level: 5
+    name: 額外攻擊
+    actions:
+      - mode: action
+        key: dynamic-action-barbarian-113ebtz
+    text: |
+      你在自己的回合執行**攻擊動作**時，可以攻擊 2 次。
+  - id: barbarian-fast-movement
+    level: 5
+    name: 快速移動
+    actions:
+      - mode: movement
+        key: dynamic-movement-barbarian-18h2p2v
+    text: |
+      你**未穿重甲**時，速度增加 10 呎。
+  - level: 6
+    text: |
+      **狂暴補充：**野蠻人達到 6 級時，狂暴次數提升為 4 次，詳見「野蠻人特性」表。
+  - id: barbarian-feral-instinct
+    level: 7
+    name: 野性直覺
+    text: |
+      你的先攻擲骰具有**優勢**。
+  - id: barbarian-instinctive-pounce
+    level: 7
+    name: 本能飛撲
+    actions:
+      - mode: movement
+        key: dynamic-movement-barbarian-1iw4zkg
+      - mode: bonus
+        key: dynamic-bonus-barbarian-1iw4zkg
+    text: |
+      你以**附贈**進入狂暴時，可以同時移動，距離至多為你速度的一半。
+  - id: barbarian-ability-score-improvement-8
+    level: 8
+    name: 屬性值提升
+    text: |
+      選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。

@@ -12,7 +12,9 @@
 
 ## 前端架構與相容性
 
-* 原生 HTML／CSS／JavaScript 靜態網站；`index.html` 以傳統 `<script defer>` 依序載入全域模組，不新增前端框架、build pipeline 或 runtime dependency。驗證沿用 Node.js／Playwright，不新增測試框架或依賴。
+* 原生 HTML／CSS／JavaScript 靜態網站；`index.html` 以傳統 `<script defer>` 依序載入全域模組，不新增前端框架或 runtime dependency。驗證沿用 Node.js／Playwright，不新增測試框架或依賴。
+* 唯一的建置流程是職業內容檔：`npm run build` 讀取 `content/` 的 YAML 做 schema 與跨檔檢查（`yaml`、`ajv`、`parse5` 僅為開發依賴，不進網站）。寫法見 [content/README.md](content/README.md)；轉換期網站仍載入 `class-features.js`，兩者須一致（`npm run classes:check`），刻意的差異逐行列在 `tools/class-content/accepted-differences.json`。
+* `content/private/` 是私人內容包（gitignore），可放有版權的子職、`class-extensions/`（補充既有職業，例如兼職）與 `rules/`；不得提交或複製到公開檔案。公開內容不得依賴私人內容包才能建置。
 * `index.html` 負責角色卡 DOM、初始化、表單串接、持久化與分享；僅依任務需要拆分，不因檔案大小／一致性重寫架構。樣式以 `styles.css` 為準，外觀／互動先查 [DESIGN.md](DESIGN.md)。
 * 自 `index.html` 搬出的角色卡程式（`sheet-utils.js`、`feat-ui.js`、`spell-sources.js`、`class-features-ui.js`、`sheet-spells.js`、`pdf-launcher.js`）以不加 defer／async 的本機 `<script src>` 同步載入（`sheet-spells.js`、`pdf-launcher.js` 在原區塊位置，其餘只含宣告者提前於第一段內嵌 script），維持全域名稱；除 `sheet-spells.js` 保留原有頂層初始化外只放函式與狀態宣告，頂層程式不得依賴後載入 script 的宣告；驗證腳本以此辨識並一併檢查，離線建置保留各標籤的 defer 與否。搬移與功能修改分開提交。
 * 變更全域 API、DOM ID、data attribute、檔名或載入／初始化順序時，搜尋並同步處理受影響的 JavaScript、CSS 與呼叫端。
@@ -87,7 +89,7 @@
 ## 離線角色卡
 
 * 一般任務只更新來源檔案。只有使用者明確要求建立、測試或更新離線角色卡時，才執行 `build-offline-nopdf.ps1` 並驗證產製結果。
-* 例外：每次 push `main` 至 `origin` 前，先執行 `.\build-offline-nopdf.ps1` 重新產生 `twD20-offline.html`；產物有變更時另建 commit 與本次 push 一併送出。此為常規操作，不需另行報備或詢問；建置或驗證失敗則停止 push 並回報。
+* 例外：每次 push `main` 至 `origin` 前，先執行 `npm run build:offline`（即 `.\build-offline-nopdf.ps1`）重新產生 `twD20-offline.html`；產物有變更時另建 commit 與本次 push 一併送出。此為常規操作，不需另行報備或詢問；建置或驗證失敗則停止 push 並回報。GitHub Actions 會在 Linux 重建並比對，repo 內的產物不是最新時不部署；腳本已將換行統一為 LF，Windows 與 Linux 產出逐位元相同。
 * `twD20-offline.html` 是衍生產物，不能作為 source of truth 或只修改它。產生腳本內嵌本機 CSS、JavaScript、圖片與 About 模組，並停用 PDF 匯出。離線分享須產生正式站的永久網址，不含本機路徑或呼叫短網址服務；完全離線交換使用 JSON。
 * 根目錄以 PowerShell／Node.js 20 以上執行 `.\build-offline-nopdf.ps1`；自動驗證產物語法、離線分享／複製 fallback、分享限制與離開流程，失敗即建置失敗。成品驗證不另列產品 regression；Node.js 模擬 URL／瀏覽器 API 不代表手機權限／儲存實機驗證。
 
@@ -131,6 +133,12 @@
 * `--pdf-only`：欄位與實際可編輯 PDF 匯出；`--pdf-fields-only` 僅驗欄位、不需 PDF／字型素材。涵蓋全部法術材料成分、新舊資料與描述隔離、職業工具、專長／魔法學徒子選項、手動法術模式、盾牌受訓與血統提示。
 
 持續法術效果改變一般角色或野獸的 AC／速度計算、施法操作或狀態保存時，也需執行 `node validate-tabletop-druid.js`；僅調整其顯示字色、字級或間距不因此觸發整套德魯伊回歸。
+
+### 建置、CI 與部署
+
+* `npm run build`：內容檔檢查；`npm run dev`：本機預覽（`http://127.0.0.1:8080/index.html?analytics=owner`），內容檔存檔時自動重新檢查；`npm test`：依序執行上表全部回歸腳本，可在後面接腳本名稱只跑指定項目。
+* `.github/workflows/site.yml`：每次 push 與 pull request 執行 `npm ci`、`npm run build`、`npm test`、重建離線角色卡並比對；只有 `main` 全部通過才以 GitHub Pages 原本的 Jekyll 建置此 commit 的 repo 檔案並部署，失敗時正式站維持上一版。GitHub Pages 來源須設定為 GitHub Actions。
+* CI 失敗先看是否為 Linux 環境差異（字型、路徑、換行），與本機結果對照；不得為了讓 CI 通過而放寬或跳過斷言。
 
 ### 執行環境
 

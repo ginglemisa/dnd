@@ -1,0 +1,110 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "class.schema.json",
+  "title": "twD20 職業內容檔",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id", "name", "maxLevel", "subclassLevel", "defaultSubclass", "tagline", "quote", "primaryAbility", "spellcasting",
+    "hitDie", "saves", "skills", "weapons", "tools", "armor", "equipment", "features"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "id": { "$ref": "feature.schema.json#/definitions/id", "description": "職業 key，與存檔的 class 值相同：不可改名。" },
+    "name": { "type": "string", "minLength": 1, "description": "職業名稱。" },
+    "maxLevel": { "$ref": "feature.schema.json#/definitions/level", "description": "內容收錄到的最高等級；特性表列數依此產生。" },
+    "subclassLevel": { "$ref": "feature.schema.json#/definitions/level", "description": "選擇子職的等級。" },
+    "defaultSubclass": { "$ref": "feature.schema.json#/definitions/id", "description": "舊存檔沒有子職欄位時使用的子職 ID。" },
+    "tagline": { "type": "string", "minLength": 1, "description": "創角頁籤的一句話簡介。" },
+    "quote": { "type": "string", "minLength": 1, "description": "創角頁籤的引文。" },
+    "primaryAbility": {
+      "description": "關鍵屬性。all：全部都是（顯示為「敏捷與感知」）；any：擇一（顯示為「力量或敏捷」）。",
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["all"], "properties": { "all": { "$ref": "#/definitions/abilities" } } },
+        { "type": "object", "additionalProperties": false, "required": ["any"], "properties": { "any": { "type": "array", "$ref": "#/definitions/abilities", "minItems": 2 } } }
+      ]
+    },
+    "spellcasting": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["progression"],
+      "description": "施法進度，決定法術位。",
+      "properties": {
+        "progression": {
+          "enum": ["full", "half", "pact", "none"],
+          "description": "full：全施法者；half：半施法者（兼職時等級除以 2 無條件進位）；pact：契約魔法（環位另計）；none：不施法。"
+        }
+      }
+    },
+    "hitDie": { "enum": [6, 8, 10, 12], "description": "生命骰面數。" },
+    "saves": { "type": "array", "$ref": "#/definitions/abilities", "minItems": 2, "maxItems": 2, "description": "豁免熟練項。" },
+    "skills": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["choose", "from"],
+      "properties": {
+        "choose": { "type": "integer", "minimum": 1, "maximum": 4, "description": "可選技能數。" },
+        "from": {
+          "anyOf": [
+            { "const": "any", "description": "任選。" },
+            { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string" } }
+          ],
+          "description": "可選技能清單（名稱須存在於技能提示表），或 any。"
+        }
+      }
+    },
+    "weapons": { "type": "string", "minLength": 1, "description": "武器熟練項（顯示與 PDF 文字）。" },
+    "tools": { "type": "string", "minLength": 1, "description": "工具熟練項（顯示文字）。" },
+    "armor": { "type": "string", "minLength": 1, "description": "護甲訓練（顯示與 PDF 文字）。" },
+    "equipment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["A", "B"],
+      "properties": {
+        "A": { "type": "string", "minLength": 1, "description": "起始裝備（A）。PDF 取用此項。" },
+        "B": { "type": "string", "minLength": 1, "description": "起始裝備（B）。" },
+        "note": { "type": "string", "minLength": 1, "description": "裝備下方的套組內容說明。" }
+      }
+    },
+    "progression": {
+      "type": "object",
+      "description": "特性表的職業專屬欄位（等級、熟練加值、職業特性三欄自動產生）。欄位名稱可在文字中以 {名稱|…} 引用。",
+      "propertyNames": { "pattern": "^[a-z][A-Za-z0-9]*$" },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["label", "byLevel"],
+        "properties": {
+          "label": { "type": "string", "minLength": 1, "description": "表頭文字。" },
+          "byLevel": {
+            "type": "object",
+            "description": "只寫數值有變化的等級；null 顯示為「-」。",
+            "propertyNames": { "pattern": "^[1-9][0-9]?$" },
+            "additionalProperties": { "anyOf": [{ "type": "number" }, { "type": "null" }] }
+          },
+          "format": { "type": "string", "pattern": "\\{\\}", "description": "顯示格式，{} 代入數值，例如 +{}。" }
+        }
+      }
+    },
+    "values": {
+      "type": "object",
+      "description": "其他可在文字中以 {名稱|…} 引用的數值，例如 \"{rageDamage}d6\"。",
+      "propertyNames": { "pattern": "^[a-z][A-Za-z0-9]*$" },
+      "additionalProperties": { "type": "string", "minLength": 1 }
+    },
+    "features": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "feature.schema.json#/definitions/feature" },
+      "description": "職業能力，依等級排列。"
+    }
+  },
+  "definitions": {
+    "abilities": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "enum": ["力量", "敏捷", "體質", "智力", "感知", "魅力"] }
+    }
+  }
+}

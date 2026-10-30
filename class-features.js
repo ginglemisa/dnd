@@ -100,15 +100,15 @@ const classFeatures = {
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="font-weight: bold;">豁免熟練項</td>
-      <td>力量，體質</td>
+      <td>力量、體質</td>
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="font-weight: bold;">技能熟練項</td>
-      <td>${skillTip("馴獸")},${skillTip("運動")},${skillTip("威嚇")},${skillTip("自然")},${skillTip("察覺")},${skillTip("求生")}當中擇二</td>
+      <td>${skillTip("馴獸")}、${skillTip("運動")}、${skillTip("威嚇")}、${skillTip("自然")}、${skillTip("察覺")}、${skillTip("求生")}當中擇二</td>
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="font-weight: bold;">武器熟練項</td>
-      <td>簡易，軍用武器</td>
+      <td>簡易、軍用武器</td>
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="font-weight: bold;">工具熟練項</td>
@@ -116,11 +116,11 @@ const classFeatures = {
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="width: 5em; font-weight: bold;">護甲訓練</td>
-      <td>輕甲，中甲，盾牌</td>
+      <td>輕甲、中甲、盾牌</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
-      <td>(A),(B) 二選一</td>
+      <td>(A)、(B) 二選一</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>
@@ -199,7 +199,7 @@ const classFeatures = {
       <tr>
         <td style="border:1px solid #aaa; padding:3px;">7</td>
         <td style="border:1px solid #aaa; padding:3px;">+3</td>
-        <td style="border:1px solid #aaa; padding:3px;">野性直覺，直覺猛撲</td>
+        <td style="border:1px solid #aaa; padding:3px;">野性直覺，本能飛撲</td>
         <td style="border:1px solid #aaa; padding:3px;">4</td>
         <td style="border:1px solid #aaa; padding:3px;">+2</td>
         <td style="border:1px solid #aaa; padding:3px;">3</td>
@@ -326,13 +326,13 @@ const classFeatures = {
 <section class="barbarian-feature class-feature-section" data-feature-level="6"><p><strong>狂暴補充：</strong>野蠻人達到 6 級時，狂暴次數提升為 4 次，詳見「野蠻人特性」表。</p></section>
 
 <section class="barbarian-feature class-feature-section" data-feature-level="7">
-  <h3>等級 7：野性本能</h3>
+  <h3>等級 7：野性直覺</h3>
   <p>你的先攻擲骰具有<strong>優勢</strong>。</p>
 </section>
 
 <section class="barbarian-feature class-feature-section" data-feature-level="7" data-action-id="barbarian-instinctive-pounce">
-  <h3>等級 7：直覺猛撲</h3>
-  <p><strong data-tabletop-only hidden>直覺猛撲：</strong>你以<strong>附贈</strong>進入狂暴時，可以同時移動，距離至多為你速度的一半。</p>
+  <h3>等級 7：本能飛撲</h3>
+  <p><strong data-tabletop-only hidden>本能飛撲：</strong>你以<strong>附贈</strong>進入狂暴時，可以同時移動，距離至多為你速度的一半。</p>
 </section>
 
 <section class="barbarian-feature class-feature-section" data-feature-level="8">
@@ -358,7 +358,7 @@ const classFeatures = {
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="font-weight: bold;">豁免熟練項</td>
-      <td>敏捷，魅力</td>
+      <td>敏捷、魅力</td>
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="font-weight: bold;">技能熟練項</td>
@@ -378,11 +378,11 @@ const classFeatures = {
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
-      <td>(A),(B) 二選一</td>
+      <td>(A)、(B) 二選一</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>
-      <td>皮甲、匕首 ×2、藝人套組、19 金幣<br>自選一個樂器（風笛,鼓,揚琴,長笛,角號,魯特琴,里拉琴,排簫,蘆笛,提琴）</td>
+      <td>皮甲、匕首 ×2、藝人套組、19 金幣<br>自選一個樂器（風笛、鼓、揚琴、長笛、角號、魯特琴、里拉琴、排簫、蘆笛、提琴）</td>
     </tr>
     <tr>
       <td style="font-weight: bold;">（B）</td>
@@ -603,11 +603,11 @@ const classFeatures = {
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="font-weight: bold;">豁免熟練項</td>
-      <td>感知，魅力</td>
+      <td>感知、魅力</td>
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="font-weight: bold;">技能熟練項</td>
-      <td>從${skillTip("歷史")},${skillTip("洞悉")},${skillTip("醫藥")},${skillTip("遊說")}或${skillTip("宗教")}中選擇兩項</td>
+      <td>從${skillTip("歷史")}、${skillTip("洞悉")}、${skillTip("醫藥")}、${skillTip("遊說")}或${skillTip("宗教")}中選擇兩項</td>
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="font-weight: bold;">武器熟練項</td>
@@ -619,11 +619,11 @@ const classFeatures = {
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="width: 5em; font-weight: bold;">護甲訓練</td>
-      <td>輕甲,中甲和盾牌</td>
+      <td>輕甲、中甲和盾牌</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
-      <td>(A),(B) 二選一</td>
+      <td>(A)、(B) 二選一</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>
@@ -840,11 +840,11 @@ const classFeatures = {
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="font-weight: bold;">豁免熟練項</td>
-      <td>智力，感知</td>
+      <td>智力、感知</td>
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="font-weight: bold;">技能熟練項</td>
-      <td>從${skillTip("奧秘")},${skillTip("馴獸")},${skillTip("洞悉")},${skillTip("醫藥")},${skillTip("自然")},${skillTip("察覺")},${skillTip("宗教")}或${skillTip("求生")}中選擇兩項</td>
+      <td>從${skillTip("奧秘")}、${skillTip("馴獸")}、${skillTip("洞悉")}、${skillTip("醫藥")}、${skillTip("自然")}、${skillTip("察覺")}、${skillTip("宗教")}或${skillTip("求生")}中選擇兩項</td>
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="font-weight: bold;">武器熟練項</td>
@@ -860,7 +860,7 @@ const classFeatures = {
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
-      <td>(A),(B) 二選一</td>
+      <td>(A)、(B) 二選一</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>
@@ -1222,11 +1222,11 @@ const classFeatures = {
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="font-weight: bold;">豁免熟練項</td>
-      <td>力量，體質</td>
+      <td>力量、體質</td>
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="font-weight: bold;">技能熟練項</td>
-      <td>從${skillTip("體操")},${skillTip("馴獸")},${skillTip("運動")},${skillTip("歷史")},${skillTip("洞悉")},${skillTip("威嚇")},${skillTip("遊說")},${skillTip("察覺")}或${skillTip("求生")}中選擇兩項</td>
+      <td>從${skillTip("體操")}、${skillTip("馴獸")}、${skillTip("運動")}、${skillTip("歷史")}、${skillTip("洞悉")}、${skillTip("威嚇")}、${skillTip("遊說")}、${skillTip("察覺")}或${skillTip("求生")}中選擇兩項</td>
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="font-weight: bold;">武器熟練項</td>
@@ -1238,11 +1238,11 @@ const classFeatures = {
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="width: 5em; font-weight: bold;">護甲訓練</td>
-      <td>輕甲,中甲,重甲和盾牌</td>
+      <td>輕甲、中甲、重甲和盾牌</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
-      <td>(A),(B) 二選一</td>
+      <td>(A)、(B) 二選一</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>
@@ -1442,11 +1442,11 @@ const classFeatures = {
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="font-weight: bold;">豁免熟練項</td>
-      <td>力量，敏捷</td>
+      <td>力量、敏捷</td>
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="font-weight: bold;">技能熟練項</td>
-      <td>從${skillTip("體操")},${skillTip("運動")},${skillTip("歷史")},${skillTip("洞悉")},${skillTip("宗教")}或${skillTip("隱匿")}中選擇兩項</td>
+      <td>從${skillTip("體操")}、${skillTip("運動")}、${skillTip("歷史")}、${skillTip("洞悉")}、${skillTip("宗教")}或${skillTip("隱匿")}中選擇兩項</td>
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="font-weight: bold;">武器熟練項</td>
@@ -1462,7 +1462,7 @@ const classFeatures = {
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
-      <td>(A),(B) 二選一</td>
+      <td>(A)、(B) 二選一</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>
@@ -1688,11 +1688,11 @@ const classFeatures = {
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="font-weight: bold;">豁免熟練項</td>
-      <td>感知，魅力</td>
+      <td>感知、魅力</td>
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="font-weight: bold;">技能熟練項</td>
-      <td>從${skillTip("運動")},${skillTip("洞悉")},${skillTip("威嚇")},${skillTip("醫藥")},${skillTip("遊說")},${skillTip("宗教")}中選兩項</td>
+      <td>從${skillTip("運動")}、${skillTip("洞悉")}、${skillTip("威嚇")}、${skillTip("醫藥")}、${skillTip("遊說")}、${skillTip("宗教")}中選兩項</td>
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="font-weight: bold;">武器熟練項</td>
@@ -1704,11 +1704,11 @@ const classFeatures = {
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="width: 5em; font-weight: bold;">護甲訓練</td>
-      <td>輕甲,中甲,重甲和盾牌</td>
+      <td>輕甲、中甲、重甲和盾牌</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
-      <td>(A),(B) 二選一</td>
+      <td>(A)、(B) 二選一</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>
@@ -1968,11 +1968,11 @@ const classFeatures = {
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="font-weight: bold;">豁免熟練項</td>
-      <td>力量，敏捷</td>
+      <td>力量、敏捷</td>
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="font-weight: bold;">技能熟練項</td>
-      <td>從${skillTip("馴獸")},${skillTip("運動")},${skillTip("洞悉")},${skillTip("調查")},${skillTip("自然")},${skillTip("察覺")},${skillTip("隱匿")}和${skillTip("求生")}中選擇三項</td>
+      <td>從${skillTip("馴獸")}、${skillTip("運動")}、${skillTip("洞悉")}、${skillTip("調查")}、${skillTip("自然")}、${skillTip("察覺")}、${skillTip("隱匿")}和${skillTip("求生")}中選擇三項</td>
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="font-weight: bold;">武器熟練項</td>
@@ -1984,11 +1984,11 @@ const classFeatures = {
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="width: 5em; font-weight: bold;">護甲訓練</td>
-      <td>輕甲,中甲和盾牌</td>
+      <td>輕甲、中甲和盾牌</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
-      <td>(A),(B) 二選一</td>
+      <td>(A)、(B) 二選一</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>
@@ -2210,11 +2210,11 @@ const classFeatures = {
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="font-weight: bold;">豁免熟練項</td>
-      <td>智力，敏捷</td>
+      <td>智力、敏捷</td>
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="font-weight: bold;">技能熟練項</td>
-      <td>從${skillTip("體操")},${skillTip("運動")},${skillTip("欺瞞")},${skillTip("洞悉")},${skillTip("威嚇")},${skillTip("調查")},${skillTip("察覺")},${skillTip("遊說")},${skillTip("巧手")},${skillTip("隱匿")}中選擇四項</td>
+      <td>從${skillTip("體操")}、${skillTip("運動")}、${skillTip("欺瞞")}、${skillTip("洞悉")}、${skillTip("威嚇")}、${skillTip("調查")}、${skillTip("察覺")}、${skillTip("遊說")}、${skillTip("巧手")}、${skillTip("隱匿")}中選擇四項</td>
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="font-weight: bold;">武器熟練項</td>
@@ -2230,7 +2230,7 @@ const classFeatures = {
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
-      <td>(A),(B) 二選一</td>
+      <td>(A)、(B) 二選一</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>
@@ -2415,11 +2415,11 @@ const classFeatures = {
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="font-weight: bold;">豁免熟練項</td>
-      <td>體質，魅力</td>
+      <td>體質、魅力</td>
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="font-weight: bold;">技能熟練項</td>
-      <td>從${skillTip("奧秘")},${skillTip("欺瞞")},${skillTip("洞悉")},${skillTip("威嚇")},${skillTip("遊說")}或${skillTip("宗教")}中選擇兩項</td>
+      <td>從${skillTip("奧秘")}、${skillTip("欺瞞")}、${skillTip("洞悉")}、${skillTip("威嚇")}、${skillTip("遊說")}或${skillTip("宗教")}中選擇兩項</td>
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="font-weight: bold;">武器熟練項</td>
@@ -2435,7 +2435,7 @@ const classFeatures = {
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
-      <td>(A),(B) 二選一</td>
+      <td>(A)、(B) 二選一</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>
@@ -2780,11 +2780,11 @@ const classFeatures = {
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="font-weight: bold;">豁免熟練項</td>
-      <td>感知，魅力</td>
+      <td>感知、魅力</td>
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="font-weight: bold;">技能熟練項</td>
-      <td>從${skillTip("奧秘")},${skillTip("欺瞞")},${skillTip("歷史")},${skillTip("威嚇")},${skillTip("調查")},${skillTip("自然")}或${skillTip("宗教")}中選擇兩項</td>
+      <td>從${skillTip("奧秘")}、${skillTip("欺瞞")}、${skillTip("歷史")}、${skillTip("威嚇")}、${skillTip("調查")}、${skillTip("自然")}或${skillTip("宗教")}中選擇兩項</td>
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="font-weight: bold;">武器熟練項</td>
@@ -2800,11 +2800,11 @@ const classFeatures = {
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
-      <td>(A),(B) 二選一</td>
+      <td>(A)、(B) 二選一</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>
-      <td>皮甲、鐮刀、匕首 ×2、奧術法器（寶珠）,書（玄秘學識）、學者套組、15 金幣</td>
+      <td>皮甲、鐮刀、匕首 ×2、奧術法器（寶珠）、書（玄秘學識）、學者套組、15 金幣</td>
     </tr>
     <tr>
       <td style="font-weight: bold;">（B）</td>
@@ -2974,11 +2974,11 @@ const classFeatures = {
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="font-weight: bold;">豁免熟練項</td>
-      <td>智力，感知</td>
+      <td>智力、感知</td>
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="font-weight: bold;">技能熟練項</td>
-      <td>從${skillTip("奧秘")},${skillTip("歷史")},${skillTip("洞悉")},${skillTip("調查")},${skillTip("醫藥")},${skillTip("自然")}或${skillTip("宗教")}中選擇兩項</td>
+      <td>從${skillTip("奧秘")}、${skillTip("歷史")}、${skillTip("洞悉")}、${skillTip("調查")}、${skillTip("醫藥")}、${skillTip("自然")}或${skillTip("宗教")}中選擇兩項</td>
     </tr>
     <tr style="border-top: 3px solid #444;">
       <td style="font-weight: bold;">武器熟練項</td>
@@ -2994,7 +2994,7 @@ const classFeatures = {
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">初始裝備</td>
-      <td>(A),(B) 二選一</td>
+      <td>(A)、(B) 二選一</td>
     </tr>
     <tr>
       <td style="padding-top: 6px; font-weight: bold;">（A）</td>

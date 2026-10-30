@@ -8,13 +8,21 @@ $sourceHtmlPath = Join-Path $root "index.html"
 $outputFileName = "twD20-offline.html"
 $outputHtmlPath = Join-Path $root $outputFileName
 
+function Read-SourceText {
+  param([Parameter(Mandatory = $true)][string]$Path)
+
+  # Windows checkouts use CRLF and Linux checkouts LF; normalize so both platforms
+  # produce byte-identical embedded assets.
+  return (Get-Content -Raw -Encoding UTF8 $Path) -replace "`r`n", "`n"
+}
+
 function Get-Base64TextDataUrl {
   param(
     [Parameter(Mandatory = $true)][string]$Path,
     [Parameter(Mandatory = $true)][string]$MimeType
   )
 
-  $content = Get-Content -Raw -Encoding UTF8 $Path
+  $content = Read-SourceText $Path
   $bytes = [System.Text.Encoding]::UTF8.GetBytes($content)
   $base64 = [Convert]::ToBase64String($bytes)
   return "data:$MimeType;base64,$base64"
@@ -139,14 +147,14 @@ function Convert-CssLocalAssetsToDataUrls {
 function Get-StylesheetDataUrl {
   param([Parameter(Mandatory = $true)][string]$Path)
 
-  $cssContent = Get-Content -Raw -Encoding UTF8 $Path
+  $cssContent = Read-SourceText $Path
   $cssContent = Convert-CssLocalAssetsToDataUrls -CssContent $cssContent -StylesheetPath $Path
-  $bytes = [System.Text.Encoding]::UTF8.GetBytes($cssContent)
+  $bytes = [System.Text.Encoding]::UTF8.GetBytes(($cssContent -replace "`r`n", "`n"))
   $base64 = [Convert]::ToBase64String($bytes)
   return "data:text/css;charset=utf-8;base64,$base64"
 }
 
-$html = Get-Content -Raw -Encoding UTF8 $sourceHtmlPath
+$html = Read-SourceText $sourceHtmlPath
 
 $html = $html.Replace(
   '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">',
@@ -239,7 +247,7 @@ foreach ($match in $scriptTags) {
 
   # Read the JavaScript source so local binary assets referenced from JS
   # (for example dice.webp) can also be embedded into the offline build.
-  $scriptContent = Get-Content -Raw -Encoding UTF8 $assetPath
+  $scriptContent = Read-SourceText $assetPath
 
   # Analytics belongs only to the live website. Keep the offline bundle free
   # of tracking hooks, event names and analytics-only counters.
@@ -331,7 +339,7 @@ function buildPdfPrecheckMessages() {
   }
 
   $scriptBase64 = [Convert]::ToBase64String(
-    [System.Text.Encoding]::UTF8.GetBytes($scriptContent)
+    [System.Text.Encoding]::UTF8.GetBytes(($scriptContent -replace "`r`n", "`n"))
   )
 
   $scriptDataUrl = "data:text/javascript;charset=utf-8;base64,$scriptBase64"
@@ -374,7 +382,7 @@ foreach ($match in $iframeTags) {
     throw "build-offline-nopdf.ps1: unsupported local iframe asset: $reference"
   }
 
-  $embeddedHtml = Get-Content -Raw -Encoding UTF8 $assetPath
+  $embeddedHtml = Read-SourceText $assetPath
   $embeddedStylesheetTags = [System.Text.RegularExpressions.Regex]::Matches(
     $embeddedHtml,
     '<link\b(?=[^>]*\brel="stylesheet")(?=[^>]*\bhref="([^"]+)")[^>]*>',
@@ -397,7 +405,7 @@ foreach ($match in $iframeTags) {
     )
   }
 
-  $iframeDataUrl = "data:text/html;charset=utf-8;base64,$([Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($embeddedHtml)))"
+  $iframeDataUrl = "data:text/html;charset=utf-8;base64,$([Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes(($embeddedHtml -replace "`r`n", "`n"))))"
   $replacementTag = $match.Value.Replace("src=`"$reference`"", "src=`"$iframeDataUrl`" data-offline-source=`"$reference`"")
   $html = $html.Replace($match.Value, $replacementTag)
 }
@@ -495,6 +503,8 @@ foreach ($marker in $analyticsMarkers) {
   }
 }
 $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+# Text blocks in this script follow its own line endings; write LF on every platform.
+$html = $html -replace "`r`n", "`n"
 [System.IO.File]::WriteAllText($outputHtmlPath, $html, $utf8NoBom)
 # Verify the generated artifact, including sharing code rewritten by this build.
 @'

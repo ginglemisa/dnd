@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "class-extension.schema.json",
+  "title": "twD20 職業附加內容（內容包補充既有職業）",
+  "description": "放在 content/<內容包>/class-extensions/<職業 ID>.yaml，補充其他內容包的職業；例如私人內容包為 SRD 職業加上兼職資料。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["class"],
+  "minProperties": 2,
+  "properties": {
+    "$schema": { "type": "string" },
+    "class": { "$ref": "feature.schema.json#/definitions/id", "description": "要補充的職業 ID。" },
+    "multiclass": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "兼職進入此職業的等級 1 時，從核心創角資訊取得的項目（生命骰一律取得，不必寫）；等級 1 特性另依特性表取得。",
+      "properties": {
+        "weapons": { "type": "string", "minLength": 1, "description": "取得的武器熟練項。" },
+        "armor": { "type": "string", "minLength": 1, "description": "取得的護甲訓練。" },
+        "skills": { "type": "integer", "minimum": 1, "description": "從本職業技能清單選擇的數量。" },
+        "tools": { "type": "string", "minLength": 1, "description": "取得的工具熟練項。" }
+      }
+    }
+  }
+}

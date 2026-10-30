@@ -19,8 +19,8 @@ const baseline = {
       ["action",3,"等級 3：狂怒（狂戰子職）","dynamic-action-barbarian-ekb4kt"],
       ["action",5,"等級 5：額外攻擊","dynamic-action-barbarian-113ebtz"],
       ["movement",5,"等級 5：快速移動","dynamic-movement-barbarian-18h2p2v"],
-      ["bonus",7,"等級 7：直覺猛撲","dynamic-bonus-barbarian-1iw4zkg"],
-      ["movement",7,"等級 7：直覺猛撲","dynamic-movement-barbarian-1iw4zkg"],
+      ["bonus",7,"等級 7：本能飛撲","dynamic-bonus-barbarian-1iw4zkg"],
+      ["movement",7,"等級 7：本能飛撲","dynamic-movement-barbarian-1iw4zkg"],
     ],
     "bard": [
       ["bonus",1,"等級 1：吟遊詩人激勵","dynamic-bonus-class-r7asqs"],
@@ -402,7 +402,7 @@ async function verifyCoverage(page) {
       const rage = classOption("bonus", "狂暴").description;
       check(rage.includes(`使用次數：${uses} 次`) && rage.includes("短休後恢復 1 次") && rage.includes("長休後全部恢復"), "Rage shows current uses and recovery");
       check(rage.includes("穿上重甲") && rage.includes("陷入失能") && rage.includes("超過 10 分鐘"), "Rage retains termination conditions");
-      check(rage.includes("目前 +2") && !rage.includes("直覺猛撲"), "Rage shows current damage bonus; Instinctive Pounce waits for level 7");
+      check(rage.includes("目前 +2") && !rage.includes("本能飛撲"), "Rage shows current damage bonus; Instinctive Pounce waits for level 7");
     }
     for (const [level, uses, hours] of [[2, 2, 1], [6, 3, 3], [8, 3, 4]]) {
       setClass("druid", level);
@@ -904,7 +904,7 @@ async function verifyClassTabletopUpdates(page) {
   });
   await setCharacter("barbarian", 7);
   await choose("bonus", "dynamic-bonus-barbarian-3te1cj");
-  assert.match(await page.locator("#tabletop-action-panel-bonus .tabletop-action-description").innerText(), /直覺猛撲/);
+  assert.match(await page.locator("#tabletop-action-panel-bonus .tabletop-action-description").innerText(), /本能飛撲/);
   assert.equal(await page.locator('[data-action-option-key*="1iw4zkg"]').count(), 0);
   await setCharacter("cleric", 6);
   await choose("action", "dynamic-action-cleric-1c18bru");

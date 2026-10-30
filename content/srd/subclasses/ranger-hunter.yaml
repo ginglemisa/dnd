@@ -1,0 +1,56 @@
+# yaml-language-server: $schema=../../schema/subclass.schema.json
+id: hunter
+class: ranger
+name: 獵人
+shortName: 獵人
+features:
+  - id: ranger-hunters-lore
+    level: 3
+    name: 獵人學識
+    actions:
+      - mode: bonus
+        key: dynamic-bonus-ranger-we5ttw
+        label: 等級 3：獵人學識
+    text: |
+      目標被你的「獵人印記」標記時，你會知道它的傷害免疫、[[抗性]]與易傷。
+  - id: ranger-hunters-prey
+    level: 3
+    name: 狩獵目標
+    choose: 1
+    changeOn: rest
+    actions:
+      - mode: action
+        key: dynamic-action-ranger-vdr4tc
+        label: 等級 3：狩獵目標
+    text: |
+      從下列選項中選擇 1 項，**每次短休或長休後**可改選：
+    options:
+      - id: ranger-hunters-prey-colossus-slayer
+        name: 斬殺者
+        text: |
+          **每回合 1 次**，你用武器命中先前已失去生命值的目標時，額外造成 1d8 傷害。
+      - id: ranger-hunters-prey-horde-breaker
+        name: 破陣者
+        text: |
+          **每回合 1 次**，你用武器攻擊時，可用同一把武器再攻擊 5 呎內另一個本回合尚未被你攻擊過的目標。
+  - id: ranger-defensive-tactics
+    level: 7
+    name: 防守戰術
+    choose: 1
+    changeOn: rest
+    optionStyle: cards
+    actions:
+      - mode: action
+        key: dynamic-action-ranger-p55ifk
+        label: 等級 7：防守戰術
+    text: |
+      從下列選項中選擇 1 項，**每次短休或長休後**可改選：
+    options:
+      - id: ranger-defensive-tactics-escape-the-horde
+        name: 衝出重圍
+        text: |
+          以你為目標的[[藉機攻擊]]具有**劣勢**。
+      - id: ranger-defensive-tactics-multiattack-defense
+        name: 多重防禦
+        text: |
+          一個生物的攻擊檢定命中你時，該生物本回合內對你發動的後續攻擊檢定都具有**劣勢**。

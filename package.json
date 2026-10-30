@@ -1,5 +1,16 @@
 {
+  "scripts": {
+    "build": "node tools/build.js",
+    "dev": "node tools/dev-server.js",
+    "test": "node tools/run-validations.js",
+    "build:offline": "pwsh -NoProfile -File build-offline-nopdf.ps1",
+    "classes:check": "node tools/class-content/compare.js",
+    "classes:convert": "node tools/class-content/convert-legacy.js"
+  },
   "devDependencies": {
-    "playwright": "^1.63.0"
+    "ajv": "^8.20.0",
+    "parse5": "^7.3.0",
+    "playwright": "^1.63.0",
+    "yaml": "^2.9.1"
   }
 }
