@@ -88,9 +88,27 @@
     },
     "values": {
       "type": "object",
-      "description": "其他可在文字中以 {名稱|…} 引用的數值，例如 \"{rageDamage}d6\"。公式只能用數字、d、四則運算與 {數值}；另可引用屬性調整值 {strModifier}…{chaModifier}（沒有屬性值時視為 0）。",
+      "description": "其他可在文字中以 {名稱|…} 引用的數值，例如 \"{rageDamage}d6\"。公式只能用數字、d、四則運算、max()／min() 與 {數值}；另可引用屬性調整值 {strModifier}…{chaModifier}（沒有屬性值時視為 0）。跑團顯示依等級變化的文字時寫 { byLevel: { 5: 文字 } }。",
       "propertyNames": { "pattern": "^[a-z][A-Za-z0-9]*$" },
-      "additionalProperties": { "type": "string", "minLength": 1 }
+      "additionalProperties": {
+        "anyOf": [
+          { "type": "string", "minLength": 1, "description": "數值公式，例如 \"max(1, {chaModifier})\"。" },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["byLevel"],
+            "description": "依等級的文字：從該等級起跑團模式改顯示此文字；未達最低等級時保留頁面文字。只能用在文字，不可用於公式或次數。",
+            "properties": {
+              "byLevel": {
+                "type": "object",
+                "minProperties": 1,
+                "propertyNames": { "pattern": "^[1-9][0-9]?$" },
+                "additionalProperties": { "type": "string", "minLength": 1 }
+              }
+            }
+          }
+        ]
+      }
     },
     "features": {
       "type": "array",

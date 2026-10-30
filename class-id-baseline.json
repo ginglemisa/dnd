@@ -1,6 +1,7 @@
 {
   "classes": [
     "barbarian",
+    "bard",
     "fighter",
     "paladin",
     "ranger",
@@ -8,6 +9,7 @@
   ],
   "subclasses": [
     "barbarian/berserker",
+    "bard/lore",
     "fighter/champion",
     "paladin/devotion",
     "ranger/hunter",
@@ -45,6 +47,7 @@
     "dynamic-bonus-class-84ttm1",
     "dynamic-bonus-class-fj2om2",
     "dynamic-bonus-class-kwgie8",
+    "dynamic-bonus-class-r7asqs",
     "dynamic-bonus-fighter-qmmfue",
     "dynamic-bonus-paladin-curated-divine-sense",
     "dynamic-bonus-paladin-curated-lay-on-hands",
@@ -56,10 +59,13 @@
     "dynamic-movement-fighter-1liysqo",
     "dynamic-movement-fighter-1s26hvz",
     "dynamic-movement-ranger-bulhou",
-    "dynamic-reaction-class-5f9k5x"
+    "dynamic-reaction-class-1y0uv3b",
+    "dynamic-reaction-class-5f9k5x",
+    "dynamic-reaction-class-ul9dq"
   ],
   "resourceKeys": [
     "barbarian-rage",
+    "bard-inspiration",
     "fighter-action-surge",
     "fighter-second-wind",
     "paladin-channel-divinity",

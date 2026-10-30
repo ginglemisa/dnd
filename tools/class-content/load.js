@@ -129,12 +129,19 @@ function checkClass(classDef, errors) {
     if (!levels.includes(1)) errors.push(`${classDef.file}：特性表欄位 ${name} 須包含 1 級`);
     levels.filter(level => level > classDef.maxLevel).forEach(level => errors.push(`${classDef.file}：特性表欄位 ${name} 的 ${level} 級超過 maxLevel`));
   }
-  for (const [name, formula] of Object.entries(classDef.values || {})) {
-    const stripped = formula.replace(/\{([A-Za-z][A-Za-z0-9]*)\}/g, (all, token) => {
-      if ((!valueNames.has(token) && !ABILITY_MODIFIERS.includes(token)) || token === name) errors.push(`${classDef.file}：values.${name} 引用了不存在的數值 {${token}}`);
+  // 依等級的文字值（values 的 byLevel）只能用在文字的 {名稱|…}，不可用於公式、次數。
+  const textValues = new Set(Object.entries(classDef.values || {}).filter(([, value]) => typeof value !== "string").map(([name]) => name));
+  for (const [name, value] of Object.entries(classDef.values || {})) {
+    if (textValues.has(name)) {
+      Object.keys(value.byLevel).map(Number).filter(level => level > classDef.maxLevel).forEach(level => errors.push(`${classDef.file}：values.${name} 的 ${level} 級超過 maxLevel`));
+      Object.values(value.byLevel).filter(text => /[<{}]|\*\*|\[\[/.test(text)).forEach(text => errors.push(`${classDef.file}：values.${name} 的文字不可含標記：${text}`));
+      continue;
+    }
+    const stripped = value.replace(/\{([A-Za-z][A-Za-z0-9]*)\}/g, (all, token) => {
+      if ((!valueNames.has(token) && !ABILITY_MODIFIERS.includes(token)) || token === name || textValues.has(token)) errors.push(`${classDef.file}：values.${name} 引用了不存在的數值 {${token}}`);
       return "1";
     });
-    if (!/^[0-9d+\-*/() ]+$/.test(stripped)) errors.push(`${classDef.file}：values.${name} 只能使用數字、d、四則運算與 {數值}`);
+    if (!/^[0-9d+\-*/(), ]+$/.test(stripped.replace(/\b(?:max|min)\(/g, "("))) errors.push(`${classDef.file}：values.${name} 只能使用數字、d、四則運算、max()／min() 與 {數值}`);
   }
   const sources = [{ owner: classDef, features: classDef.features }, ...classDef.subclasses.map(subclass => ({ owner: subclass, features: subclass.features }))];
   for (const { owner, features } of sources) {
@@ -157,14 +164,17 @@ function checkClass(classDef, errors) {
       });
       if (feature.resource) {
         claim(persistedIds, feature.resource.key, where, "資源 key");
-        if (typeof feature.resource.uses === "string" && !valueNames.has(feature.resource.uses)) errors.push(`${where}：resource.uses「${feature.resource.uses}」不是特性表欄位或 values`);
+        if (typeof feature.resource.uses === "string" && (!valueNames.has(feature.resource.uses) || textValues.has(feature.resource.uses))) errors.push(`${where}：resource.uses「${feature.resource.uses}」不是特性表欄位或數值公式`);
+        Object.keys(feature.resource.recoverByLevel || {}).map(Number).filter(level => level <= feature.level || level > classDef.maxLevel)
+          .forEach(level => errors.push(`${where}：resource.recoverByLevel 的 ${level} 級須高於能力等級且不超過 maxLevel`));
       }
+      if (feature.behavior && !fs.existsSync(path.join(__dirname, "behaviors", `${feature.behavior}.js`))) errors.push(`${where}：找不到 tools/class-content/behaviors/${feature.behavior}.js`);
       // spell-id-baseline.json 由 validate-tabletop-spellcasting.js 保證與 SpellCatalog 一致。
       for (const spell of feature.spells || []) {
         if (!getSpellIds().has(spell.id)) errors.push(`${where}：法術 ID「${spell.id}」不存在於 spell-id-baseline.json`);
-        if (typeof spell.freeUses === "string" && !valueNames.has(spell.freeUses)) errors.push(`${where}：法術 ${spell.id} 的 freeUses「${spell.freeUses}」不是特性表欄位或 values`);
+        if (typeof spell.freeUses === "string" && (!valueNames.has(spell.freeUses) || textValues.has(spell.freeUses))) errors.push(`${where}：法術 ${spell.id} 的 freeUses「${spell.freeUses}」不是特性表欄位或數值公式`);
       }
-      for (const text of [feature.text, feature.tabletop, feature.summary, ...(feature.options || []).map(option => option.text)].filter(Boolean)) {
+      for (const text of [feature.text, feature.tabletop, feature.summary, feature.afterFeatChoice, ...(feature.options || []).map(option => option.text)].filter(Boolean)) {
         for (const match of text.matchAll(/\{([A-Za-z][A-Za-z0-9]*)\|/g)) {
           if (!valueNames.has(match[1])) errors.push(`${where}：文字引用了不存在的數值 {${match[1]}|…}`);
         }

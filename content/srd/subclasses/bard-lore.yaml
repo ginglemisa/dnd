@@ -1,0 +1,34 @@
+# yaml-language-server: $schema=../../schema/subclass.schema.json
+id: lore
+class: bard
+name: 逸聞學院
+shortName: 逸聞
+features:
+  - id: bard-bonus-proficiencies
+    level: 3
+    name: 額外熟練項
+    text: |
+      你獲得 3 項自選技能的熟練。
+  - id: bard-cutting-words
+    level: 3
+    name: 語出驚人
+    actions:
+      - mode: reaction
+        key: dynamic-reaction-class-1y0uv3b
+        label: 等級 3：語出驚人
+        resource: bard-inspiration
+    text: |
+      你 60 呎內看得到的生物在傷害擲骰、能力檢定或攻擊檢定成功時，你可以干擾它並降低結果。
+
+      - **動作類型：**反應。
+      - **消耗：**每次使用消耗 1 次吟遊詩人激勵。
+  - id: bard-magical-discoveries
+    level: 6
+    name: 魔法發現
+    behavior: magical-discoveries
+    text: |
+      你從牧師、德魯伊或法師法術列表中選擇並學會 2 個法術，兩者可以來自不同列表。
+
+      - **選擇條件：**所選法術必須是戲法，或是你已有對應法術位的法術。
+      - **始終準備：**你始終準備所選法術。
+      - **升級替換：**每提升 1 級吟遊詩人，可將其中 1 個換成另一個符合條件的法術。

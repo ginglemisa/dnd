@@ -16,14 +16,18 @@ const FEATURE_SLUGS = Object.freeze({
   戰術思維: "tactical-mind", 精通重擊: "improved-critical", 額外戰鬥風格: "additional-fighting-style",
   專精: "expertise", 盜賊黑話: "thieves-cant", 反射閃避: "evasion", 可靠才能: "reliable-talent",
   聖騎士斬技: "paladins-smite", 奉獻之誓法術: "oath-of-devotion-spells", 忠誠坐騎: "faithful-steed",
-  守護靈氣: "aura-of-protection", 奉獻靈氣: "aura-of-devotion"
+  守護靈氣: "aura-of-protection", 奉獻靈氣: "aura-of-devotion",
+  萬事通: "jack-of-all-trades", 額外熟練項: "bonus-proficiencies", 魔法發現: "magical-discoveries"
 });
-const SUBCLASS_IDS = Object.freeze({ 狂戰士道途: "berserker", 獵人: "hunter", 勇士: "champion", 妙手: "thief", 奉獻之誓: "devotion" });
+const SUBCLASS_IDS = Object.freeze({ 狂戰士道途: "berserker", 獵人: "hunter", 勇士: "champion", 妙手: "thief", 奉獻之誓: "devotion", 逸聞學院: "lore" });
+// 舊 HTML 中由網站程式插入控制項的空白容器（以 id 辨識）→ behaviors/<名稱>.js；轉換時核對輸出與舊標記相同。
+const BEHAVIOR_MOUNTS = Object.freeze({ "bard-magical-discoveries": "magical-discoveries" });
 // 特性表欄位名稱（文字中以 {名稱|…} 引用）。
 const COLUMN_KEYS = Object.freeze({
   狂暴次數: "rageUses", 狂暴傷害: "rageDamage", 武器精通: "weaponMastery",
   宿敵: "favoredEnemy", 準備法術: "preparedSpells", "１環": "spellSlots1", "２環": "spellSlots2",
-  回氣: "secondWindUses", 偷襲: "sneakAttackDice", 引導神力: "channelDivinityUses"
+  回氣: "secondWindUses", 偷襲: "sneakAttackDice", 引導神力: "channelDivinityUses",
+  激勵骰: "inspirationDie", 戲法: "cantrips", "３環": "spellSlots3", "４環": "spellSlots4"
 });
 // 舊版寫在 character-rules.js／action-panel.js 程式裡、HTML 沒有的機制；轉換時一併寫進內容檔。
 const FEATURE_EXTRAS = Object.freeze({
@@ -38,12 +42,16 @@ const FEATURE_EXTRAS = Object.freeze({
   "paladin-divine-sense": { resource: { key: "paladin-channel-divinity", uses: "channelDivinityUses", recover: { short: 1, long: "all" } } },
   // spell-sources.js：至聖斬、召喚坐騎始終準備，各可免費施放 1 次。
   "paladin-paladins-smite": { spells: [{ id: "divine-smite", freeUses: 1 }] },
-  "paladin-faithful-steed": { spells: [{ id: "find-steed", freeUses: 1 }] }
+  "paladin-faithful-steed": { spells: [{ id: "find-steed", freeUses: 1 }] },
+  // character-rules.js：吟遊詩人激勵次數為魅力調整值（至少 1），長休全回；5 級起短休或長休全回。
+  "bard-inspiration": { resource: { key: "bard-inspiration", uses: "inspirationUses", recover: { long: "all" }, recoverByLevel: { 5: { short: "all", long: "all" } } } }
 });
-// action-panel.js TABLETOP_VALUE_RESOLVERS 的公式（「職業-名稱」key）。
+// action-panel.js TABLETOP_VALUE_RESOLVERS 的公式（「職業-名稱」key）；文字結果寫成 byLevel（未列的等級保留頁面文字）。
 const CLASS_VALUES = Object.freeze({
   barbarian: { frenzyDice: "{rageDamage}d6" }, fighter: { secondWindHealing: "1d10 + {level}" },
-  rogue: { cunningStrikeDc: "8 + {proficiencyBonus} + {dexModifier}" }, paladin: { layOnHandsPool: "{level} * 5" }
+  rogue: { cunningStrikeDc: "8 + {proficiencyBonus} + {dexModifier}" }, paladin: { layOnHandsPool: "{level} * 5" },
+  // 激勵次數取自 character-rules.js；恢復文字跟隨資源設定（5 級起短休也全回）。
+  bard: { inspirationUses: "max(1, {chaModifier})", inspirationRecovery: { byLevel: { 5: "短休或長休後全部恢復" } } }
 });
 // 施法進度（舊版分散在 character-rules.js 的施法者集合與半施法者準備表）。
 const SPELLCASTING = Object.freeze({
@@ -77,6 +85,12 @@ function inlineToText(nodes, context, where) {
       return text;
     }
     if (node.nodeName === "br") return "\\\n";
+    // 粗體的數值標記：寫成「**{名稱|文字}**」，渲染器合併回 <strong data-tabletop-value>。
+    if (node.nodeName === "strong" && has(node, "data-tabletop-value")) {
+      allowAttributes(node, ["data-tabletop-value"], where);
+      if (node.childNodes.some(child => child.nodeName !== "#text")) fail(where, "數值標記內只能有文字");
+      return `**{${context.valueToken(attr(node, "data-tabletop-value"), where)}|${textOf(node)}}**`;
+    }
     if (node.nodeName === "strong") {
       allowAttributes(node, [], where);
       return `**${inlineToText(node.childNodes, context, where)}**`;
@@ -158,8 +172,26 @@ function convertBody(nodes, feature, context, where) {
   };
   // 同一段行內內容的職業頁版本與跑團版本；總覽取跑團版本。
   const views = children => [inlineToText(children, { ...context, view: "page" }, where), inlineToText(children, { ...context, view: "tabletop" }, where)];
+  // 接在專長選單後的段落、網站程式插入控制項的容器：都須是能力的最後一個區塊。
+  let afterFeatChoice;
+  let behavior;
   for (const node of nodes) {
-    if (node.nodeName === "p" && has(node, "data-tabletop-hide")) {
+    if (afterFeatChoice !== undefined || behavior) fail(where, "data-after-feat-choice 段落或控制項容器之後不可再有區塊");
+    if (node.nodeName === "p" && has(node, "data-after-feat-choice")) {
+      allowAttributes(node, ["data-after-feat-choice"], where);
+      const [text, tabletop] = views(node.childNodes);
+      if (text !== tabletop) fail(where, "data-after-feat-choice 段落不支援跑團專用文字");
+      afterFeatChoice = text;
+      // 跑團說明與總覽照舊讀取此段落（tabletop／summary 須為完整版本）。
+      tabletopBlocks.push(text);
+      summaryParts.push(text);
+    } else if (node.nodeName === "div" && BEHAVIOR_MOUNTS[attr(node, "id")]) {
+      if (elements(node).length) fail(where, "控制項容器須為空白");
+      behavior = BEHAVIOR_MOUNTS[attr(node, "id")];
+      const expected = require(`./behaviors/${behavior}`).afterText();
+      const normalize = html => parse5.serialize(parse5.parseFragment(html));
+      if (normalize(expected) !== normalize(parse5.serialize({ nodeName: "#document-fragment", childNodes: [node] }))) fail(where, `控制項容器與 behaviors/${behavior}.js 的輸出不同`);
+    } else if (node.nodeName === "p" && has(node, "data-tabletop-hide")) {
       // 只在職業頁顯示的段落：不進跑團說明，也不進總覽。
       allowAttributes(node, ["data-tabletop-hide"], where);
       blocks.push(views(node.childNodes)[0]);
@@ -221,6 +253,7 @@ function convertBody(nodes, feature, context, where) {
       const [title, tabletopTitle] = views(heading.childNodes);
       pushBlock(`#### ${title}`, `#### ${tabletopTitle}`);
       const inner = convertBody(rest, feature, context, where);
+      if (inner.afterFeatChoice !== undefined || inner.behavior) fail(where, "小節內不支援 data-after-feat-choice 段落或控制項容器");
       blocks.push(...inner.blocks);
       tabletopBlocks.push(...inner.tabletopBlocks);
       tabletopUsed ||= inner.tabletopUsed;
@@ -241,7 +274,7 @@ function convertBody(nodes, feature, context, where) {
       fail(where, `未處理的區塊 <${node.nodeName} class="${attr(node, "class") || ""}">`);
     }
   }
-  return { blocks, tabletopBlocks, tabletopUsed, summaryParts, summaryUsed };
+  return { blocks, tabletopBlocks, tabletopUsed, summaryParts, summaryUsed, afterFeatChoice, behavior };
 }
 
 function convertCreation(root, classId, where) {
@@ -388,6 +421,8 @@ function convertClass(classId, html) {
     }
     const converted = convertBody(body, feature, { valueToken }, at);
     feature.text = converted.blocks.join("\n\n");
+    if (converted.afterFeatChoice !== undefined) feature.afterFeatChoice = converted.afterFeatChoice;
+    if (converted.behavior) feature.behavior = converted.behavior;
     if (converted.tabletopUsed) feature.tabletop = converted.tabletopBlocks.join("\n\n");
     if (converted.summaryUsed) feature.summary = converted.summaryParts.join("");
     if (feature.options) {
@@ -442,7 +477,7 @@ function applyTableNames(features, legacyColumn, where) {
   });
 }
 
-const FEATURE_KEY_ORDER = ["id", "level", "name", "tableName", "type", "choose", "changeOn", "optionStyle", "resource", "spells", "actions", "summary", "tabletop", "text", "options"];
+const FEATURE_KEY_ORDER = ["id", "level", "name", "tableName", "type", "choose", "changeOn", "optionStyle", "behavior", "resource", "spells", "actions", "summary", "tabletop", "text", "afterFeatChoice", "options"];
 function cleanFeature(feature) {
   const out = {};
   for (const key of FEATURE_KEY_ORDER) {
@@ -458,10 +493,10 @@ function toYaml(data, schemaFile) {
   YAML.visit(document, {
     Pair(key, pair) {
       const name = pair.key?.value;
-      if (["saves", "from", "all", "any", "byLevel", "recover", "append", "legacyKeys"].includes(name) && YAML.isCollection(pair.value)) pair.value.flow = true;
-      if (name === "byLevel") pair.value.items.forEach(item => { item.key.value = Number(item.key.value); });
+      if (["saves", "from", "all", "any", "byLevel", "recover", "recoverByLevel", "append", "legacyKeys"].includes(name) && YAML.isCollection(pair.value)) pair.value.flow = true;
+      if (["byLevel", "recoverByLevel"].includes(name)) pair.value.items.forEach(item => { item.key.value = Number(item.key.value); });
       // 內文一律用「|」區塊，行首的 **粗體** 不必加引號。
-      if (["text", "tabletop"].includes(name) && YAML.isScalar(pair.value) && typeof pair.value.value === "string") {
+      if (["text", "tabletop", "afterFeatChoice"].includes(name) && YAML.isScalar(pair.value) && typeof pair.value.value === "string") {
         if (!pair.value.value.endsWith("\n")) pair.value.value += "\n";
         pair.value.type = "BLOCK_LITERAL";
       }

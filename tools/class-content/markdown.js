@@ -22,7 +22,11 @@ function renderInline(source, options, where) {
   for (const match of text.matchAll(pattern)) {
     html += escapeHtml(text.slice(index, match.index));
     index = match.index + match[0].length;
-    if (match[1] !== undefined) {
+    // 粗體內只有一個數值標記（**{名稱|文字}**）時，數值標記直接加在 <strong> 上。
+    const boldValue = match[1]?.match(/^\{([A-Za-z][A-Za-z0-9]*)\|([^{}]*)\}$/);
+    if (boldValue) {
+      html += `<strong data-tabletop-value="${escapeHtml(options.resolveValue(boldValue[1], where))}">${escapeHtml(boldValue[2])}</strong>`;
+    } else if (match[1] !== undefined) {
       html += `<strong>${renderInline(match[1], options, where)}</strong>`;
     } else if (match[2] !== undefined) {
       const name = match[2];

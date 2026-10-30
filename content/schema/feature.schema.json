@@ -28,6 +28,8 @@
         "text": { "$ref": "#/definitions/text", "description": "職業頁全文。" },
         "tabletop": { "$ref": "#/definitions/text", "description": "跑團動作按鈕說明的完整版本；只在和職業頁文字不同時才寫，省略時使用 text。" },
         "summary": { "type": "string", "minLength": 1, "description": "跑團總覽的一句話；省略時使用 text。" },
+        "afterFeatChoice": { "$ref": "#/definitions/text", "description": "接在專長選單之後的文字（例如屬性值提升的「施法補充」）；4 級的額外戲法選單接在它後面。寫 tabletop／summary 時須一併包含。" },
+        "behavior": { "$ref": "#/definitions/id", "description": "特殊機制：tools/class-content/behaviors/<名稱>.js（例如 magical-discoveries 產生魔法發現的法術選擇區）。" },
         "choose": { "type": "integer", "minimum": 1, "description": "要從 options 選幾項。" },
         "changeOn": { "enum": ["rest"], "description": "rest：短休或長休後可改選。" },
         "optionStyle": { "enum": ["list", "cards"], "default": "list", "description": "選項顯示方式：list 為清單，cards 為卡片。" },
@@ -57,7 +59,7 @@
           "anyOf": [
             { "required": ["id"] }, { "required": ["type"] }, { "required": ["tableName"] }, { "required": ["tabletop"] }, { "required": ["summary"] }, { "required": ["choose"] },
             { "required": ["changeOn"] }, { "required": ["optionStyle"] }, { "required": ["options"] },
-            { "required": ["actions"] }, { "required": ["resource"] }, { "required": ["spells"] }
+            { "required": ["actions"] }, { "required": ["resource"] }, { "required": ["spells"] }, { "required": ["afterFeatChoice"] }, { "required": ["behavior"] }
           ]
         }
       },
@@ -115,15 +117,22 @@
           "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "string" }],
           "description": "次數（points 時為點數池總量）：固定數字，或特性表欄位／values 名稱。"
         },
-        "recover": {
+        "recover": { "$ref": "#/definitions/recover" },
+        "recoverByLevel": {
           "type": "object",
-          "additionalProperties": false,
-          "required": ["long"],
-          "properties": {
-            "short": { "anyOf": [{ "type": "integer", "minimum": 1 }, { "const": "all" }], "description": "短休恢復次數，all 為全部。" },
-            "long": { "anyOf": [{ "type": "integer", "minimum": 1 }, { "const": "all" }], "description": "長休恢復次數，all 為全部。" }
-          }
+          "description": "從指定等級起改用的恢復方式（整個取代 recover），例如吟遊詩人激勵 5 級起短休也全部恢復。",
+          "propertyNames": { "pattern": "^[1-9][0-9]?$" },
+          "additionalProperties": { "$ref": "#/definitions/recover" }
         }
+      }
+    },
+    "recover": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["long"],
+      "properties": {
+        "short": { "anyOf": [{ "type": "integer", "minimum": 1 }, { "const": "all" }], "description": "短休恢復次數，all 為全部。" },
+        "long": { "anyOf": [{ "type": "integer", "minimum": 1 }, { "const": "all" }], "description": "長休恢復次數，all 為全部。" }
       }
     }
   }

@@ -159,6 +159,10 @@ function renderFeature({ feature, owner }, context) {
   }
   if (feature.summary) context.summaries[feature.id] = renderInline(feature.summary, context, `${where} summary`);
   if (feature.options) body += renderOptions(feature, context, where);
+  // 專長選單插在此段落之前（feat-ui.js）；4 級額外戲法選單讀取它的粗體標籤（class-features-ui.js）。
+  if (feature.afterFeatChoice) body += renderMarkdown(feature.afterFeatChoice, { ...markdownOptions, blockAttributes: "data-after-feat-choice" }, `${where} afterFeatChoice`);
+  // behavior：特殊機制模組（behaviors/<名稱>.js，load.js 已確認存在），afterText() 回傳接在內文後的 HTML。
+  if (feature.behavior) body += require(`./behaviors/${feature.behavior}`).afterText?.(feature, context) || "";
   const attributes = [
     `class="${classDef.id}-feature class-feature-section"`,
     `data-feature-level="${feature.level}"`,
