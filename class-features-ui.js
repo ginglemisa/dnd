@@ -116,6 +116,8 @@ function updateClassFeatureChoiceReminder() {
 }
 
 const CLERIC_DIVINE_STRIKE_ATTACK_NOTE = "+1d8光/黯傷害";
+// 寫入攻擊備註並隨角色保存；移除時以完全相同的字串比對，修改會使舊存檔殘留舊備註。
+const DRUID_PRIMAL_STRIKE_ATTACK_NOTE = "+1d8冷凍/火焰/閃電/雷鳴傷害";
 
 function isAdvancedClassFeatureControlAvailable(id) {
   const requirement = ADVANCED_CLASS_FEATURE_AVAILABILITY[id];
@@ -133,15 +135,6 @@ function enforceAdvancedClassFeatureChoiceExclusivity(changedId) {
     const input = document.getElementById(id);
     if (input) input.checked = false;
   });
-}
-
-function getDruidPrimalStrikeAttackNote() {
-  const raw = String(classFeatures?.druid || "");
-  const match = raw.match(/原初打擊。[\s\S]*?額外受到1d8([^。]+?)傷害/u);
-  const damageTypes = (match?.[1] || "冷凍、火焰、閃電或雷鳴")
-    .replace(/、|或/gu, "/")
-    .replace(/\s+/gu, "");
-  return `+1d8${damageTypes}傷害`;
 }
 
 function removeManagedAttackNoteFragment(value, fragment) {
@@ -180,12 +173,11 @@ function syncClassFeatureAttackNotes() {
     && Boolean(document.getElementById(divineStrikeId)?.checked);
   const primalStrike = isAdvancedClassFeatureControlAvailable(primalStrikeId)
     && Boolean(document.getElementById(primalStrikeId)?.checked);
-  const primalStrikeNote = getDruidPrimalStrikeAttackNote();
   ["main", "off"].forEach(hand => {
     const noteInput = document.getElementById(`atk-${hand}-note`);
     const applicable = isApplicableWeaponAttack(hand);
     setManagedAttackNoteFragment(noteInput, CLERIC_DIVINE_STRIKE_ATTACK_NOTE, divineStrike && applicable);
-    setManagedAttackNoteFragment(noteInput, primalStrikeNote, primalStrike && applicable);
+    setManagedAttackNoteFragment(noteInput, DRUID_PRIMAL_STRIKE_ATTACK_NOTE, primalStrike && applicable);
   });
 }
 
