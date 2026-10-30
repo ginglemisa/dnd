@@ -662,7 +662,7 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">1</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
       <td style="border:1px solid #aaa; padding:3px;">施法，神聖使命</td>
-      <td style="border:1px solid #aaa; padding:3px;">--</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
@@ -897,8 +897,8 @@ const classFeatures = {
 <tr>
       <td style="border:1px solid #aaa; padding:3px;">1</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px;">施法，德魯伊語，原初使命</td>
-      <td style="border:1px solid #aaa; padding:3px;">--</td>
+      <td style="border:1px solid #aaa; padding:3px;">德魯伊語，原初使命，施法</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
@@ -1496,13 +1496,13 @@ const classFeatures = {
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
       <td style="border:1px solid #aaa; padding:3px;">武藝，無甲防禦</td>
       <td style="border:1px solid #aaa; padding:3px;">1d6</td>
-      <td style="border:1px solid #aaa; padding:3px;">--</td>
-      <td style="border:1px solid #aaa; padding:3px;">--</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
     </tr>
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">+2</td>
-      <td style="border:1px solid #aaa; padding:3px;">武僧心神，無甲移動，吐故納新</td>
+      <td style="border:1px solid #aaa; padding:3px;">聚氣凝神，無甲移動，吐故納新</td>
       <td style="border:1px solid #aaa; padding:3px;">1d6</td>
       <td style="border:1px solid #aaa; padding:3px;">2</td>
       <td style="border:1px solid #aaa; padding:3px;">+10呎</td>
@@ -2874,7 +2874,7 @@ const classFeatures = {
 <tr>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">+3</td>
-      <td style="border:1px solid #aaa; padding:3px;">--</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
       <td style="border:1px solid #aaa; padding:3px;">5</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">6</td>
@@ -2894,7 +2894,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">7</td>
       <td style="border:1px solid #aaa; padding:3px;">+3</td>
-      <td style="border:1px solid #aaa; padding:3px;">--</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
       <td style="border:1px solid #aaa; padding:3px;">6</td>
       <td style="border:1px solid #aaa; padding:3px;">3</td>
       <td style="border:1px solid #aaa; padding:3px;">8</td>
@@ -3095,7 +3095,7 @@ const classFeatures = {
     <tr>
       <td style="border:1px solid #aaa; padding:3px;">7</td>
       <td style="border:1px solid #aaa; padding:3px;">+3</td>
-      <td style="border:1px solid #aaa; padding:3px;">--</td>
+      <td style="border:1px solid #aaa; padding:3px;">-</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
       <td style="border:1px solid #aaa; padding:3px;">11</td>
       <td style="border:1px solid #aaa; padding:3px;">4</td>
