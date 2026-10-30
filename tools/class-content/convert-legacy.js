@@ -13,14 +13,15 @@ const FEATURE_SLUGS = Object.freeze({
   無甲防禦: "unarmored-defense", 武器精通: "weapon-mastery", 險境感知: "danger-sense", 先祖學識: "primal-knowledge",
   屬性值提升: "ability-score-improvement", 無我狂暴: "mindless-rage", 野性直覺: "feral-instinct",
   施法: "spellcasting", 宿敵: "favored-enemy", 熟練探險家: "deft-explorer", 戰鬥風格: "fighting-style",
-  戰術思維: "tactical-mind", 精通重擊: "improved-critical", 額外戰鬥風格: "additional-fighting-style"
+  戰術思維: "tactical-mind", 精通重擊: "improved-critical", 額外戰鬥風格: "additional-fighting-style",
+  專精: "expertise", 盜賊黑話: "thieves-cant", 反射閃避: "evasion", 可靠才能: "reliable-talent"
 });
-const SUBCLASS_IDS = Object.freeze({ 狂戰士道途: "berserker", 獵人: "hunter", 勇士: "champion" });
+const SUBCLASS_IDS = Object.freeze({ 狂戰士道途: "berserker", 獵人: "hunter", 勇士: "champion", 妙手: "thief" });
 // 特性表欄位名稱（文字中以 {名稱|…} 引用）。
 const COLUMN_KEYS = Object.freeze({
   狂暴次數: "rageUses", 狂暴傷害: "rageDamage", 武器精通: "weaponMastery",
   宿敵: "favoredEnemy", 準備法術: "preparedSpells", "１環": "spellSlots1", "２環": "spellSlots2",
-  回氣: "secondWindUses"
+  回氣: "secondWindUses", 偷襲: "sneakAttackDice"
 });
 // 舊版寫在 character-rules.js／action-panel.js 程式裡、HTML 沒有的機制；轉換時一併寫進內容檔。
 const FEATURE_EXTRAS = Object.freeze({
@@ -32,7 +33,10 @@ const FEATURE_EXTRAS = Object.freeze({
   "fighter-action-surge": { resource: { key: "fighter-action-surge", uses: 1, recover: { short: "all", long: "all" } } }
 });
 // action-panel.js TABLETOP_VALUE_RESOLVERS 的公式（「職業-名稱」key）。
-const CLASS_VALUES = Object.freeze({ barbarian: { frenzyDice: "{rageDamage}d6" }, fighter: { secondWindHealing: "1d10 + {level}" } });
+const CLASS_VALUES = Object.freeze({
+  barbarian: { frenzyDice: "{rageDamage}d6" }, fighter: { secondWindHealing: "1d10 + {level}" },
+  rogue: { cunningStrikeDc: "8 + {proficiencyBonus} + {dexModifier}" }
+});
 // 施法進度（舊版分散在 character-rules.js 的施法者集合與半施法者準備表）。
 const SPELLCASTING = Object.freeze({
   barbarian: "none", fighter: "none", monk: "none", rogue: "none", paladin: "half", ranger: "half", warlock: "pact",
@@ -122,14 +126,23 @@ function convertOption(node, feature, context, where) {
 // 能力內文區塊 → Markdown；選項另外收集。
 function convertBody(nodes, feature, context, where) {
   const blocks = [];
+  // 跑團動作說明的區塊（排除 data-tabletop-hide）；有排除時寫成 tabletop。
+  const tabletopBlocks = [];
+  let tabletopUsed = false;
   const summaryParts = [];
   let summaryUsed = false;
   const pushSummary = (node, text) => {
     if (has(node, "data-overview-hide")) summaryUsed = true;
     else summaryParts.push(text);
   };
+  const pushBlock = text => { blocks.push(text); tabletopBlocks.push(text); };
   for (const node of nodes) {
-    if (node.nodeName === "p") {
+    if (node.nodeName === "p" && has(node, "data-tabletop-hide")) {
+      // 只在職業頁顯示的段落：不進跑團說明，也不進總覽。
+      allowAttributes(node, ["data-tabletop-hide"], where);
+      blocks.push(inlineToText(node.childNodes, context, where));
+      tabletopUsed = true;
+    } else if (node.nodeName === "p") {
       allowAttributes(node, ["data-overview-hide"], where);
       const children = [...node.childNodes];
       const lead = children[0];
@@ -140,7 +153,7 @@ function convertBody(nodes, feature, context, where) {
         feature.appendedPrefix = true;
       }
       const text = inlineToText(children, context, where);
-      blocks.push(text);
+      pushBlock(text);
       pushSummary(node, text);
     } else if (node.nodeName === "ul" && classes(node).includes("class-rule-list")) {
       allowAttributes(node, ["class"], where);
@@ -169,13 +182,15 @@ function convertBody(nodes, feature, context, where) {
         summaryParts.push(inlineToText(summaryChildren, context, where));
         return `- ${indentContinuation(inlineToText(children, context, where))}`;
       });
-      blocks.push(lines.join("\n"));
+      pushBlock(lines.join("\n"));
     } else if (node.nodeName === "div" && classes(node).includes("class-rule-subsection")) {
       const [heading, ...rest] = elements(node);
       if (heading?.nodeName !== "h4") fail(where, "小節須以 <h4> 開頭");
-      blocks.push(`#### ${inlineToText(heading.childNodes, context, where)}`);
+      pushBlock(`#### ${inlineToText(heading.childNodes, context, where)}`);
       const inner = convertBody(rest, feature, context, where);
       blocks.push(...inner.blocks);
+      tabletopBlocks.push(...inner.tabletopBlocks);
+      tabletopUsed ||= inner.tabletopUsed;
       summaryParts.push(...inner.summaryParts);
       summaryUsed ||= inner.summaryUsed;
     } else if (node.nodeName === "div" && classes(node).includes("druid-mission-options")) {
@@ -193,7 +208,7 @@ function convertBody(nodes, feature, context, where) {
       fail(where, `未處理的區塊 <${node.nodeName} class="${attr(node, "class") || ""}">`);
     }
   }
-  return { blocks, summaryParts, summaryUsed };
+  return { blocks, tabletopBlocks, tabletopUsed, summaryParts, summaryUsed };
 }
 
 function convertCreation(root, classId, where) {
@@ -245,9 +260,15 @@ function convertCreation(root, classId, where) {
     let previous;
     bodyRows.forEach((row, index) => {
       const raw = row[offset + 3];
-      if (/^\+\d+$/.test(raw)) column.format = "+{}";
-      const value = raw === "-" ? null : Number(raw.replace(/^\+/, ""));
-      if (value !== null && !Number.isFinite(value)) fail(where, `特性表數值「${raw}」無法轉成數字`);
+      // 第一個數字是數值，前後文字為顯示格式（例如「+2」→ +{}、「1d6」→ {}d6）；同欄格式須一致。
+      const parts = raw === "-" ? null : raw.match(/^(\D*)(\d+)(.*)$/);
+      if (raw !== "-" && !parts) fail(where, `特性表數值「${raw}」無法轉成數字`);
+      const value = parts ? Number(parts[2]) : null;
+      if (parts) {
+        const format = `${parts[1]}{}${parts[3]}`;
+        if (format !== (column.format || "{}") && bodyRows.slice(0, index).some(other => other[offset + 3] !== "-")) fail(where, `特性表「${label}」欄的格式不一致：${raw}`);
+        if (format !== "{}") column.format = format;
+      }
       if (index === 0 || value !== previous) column.byLevel[index + 1] = value;
       previous = value;
     });
@@ -334,6 +355,7 @@ function convertClass(classId, html) {
     }
     const converted = convertBody(body, feature, { valueToken }, at);
     feature.text = converted.blocks.join("\n\n");
+    if (converted.tabletopUsed) feature.tabletop = converted.tabletopBlocks.join("\n\n");
     if (converted.summaryUsed) feature.summary = converted.summaryParts.join("");
     if (feature.options) {
       const choose = feature.text.match(/選擇 (\d+) 項/);
@@ -406,7 +428,7 @@ function toYaml(data, schemaFile) {
       if (["saves", "from", "all", "any", "byLevel", "recover", "append", "legacyKeys"].includes(name) && YAML.isCollection(pair.value)) pair.value.flow = true;
       if (name === "byLevel") pair.value.items.forEach(item => { item.key.value = Number(item.key.value); });
       // 內文一律用「|」區塊，行首的 **粗體** 不必加引號。
-      if (name === "text" && YAML.isScalar(pair.value) && typeof pair.value.value === "string") {
+      if (["text", "tabletop"].includes(name) && YAML.isScalar(pair.value) && typeof pair.value.value === "string") {
         if (!pair.value.value.endsWith("\n")) pair.value.value += "\n";
         pair.value.type = "BLOCK_LITERAL";
       }

@@ -2,12 +2,14 @@
   "classes": [
     "barbarian",
     "fighter",
-    "ranger"
+    "ranger",
+    "rogue"
   ],
   "subclasses": [
     "barbarian/berserker",
     "fighter/champion",
-    "ranger/hunter"
+    "ranger/hunter",
+    "rogue/thief"
   ],
   "options": [
     "ranger-defensive-tactics-escape-the-horde",
@@ -27,16 +29,23 @@
     "dynamic-action-ranger-113ebtz",
     "dynamic-action-ranger-p55ifk",
     "dynamic-action-ranger-vdr4tc",
+    "dynamic-action-rogue-curated-sneak-attack",
     "dynamic-bonus-barbarian-1iw4zkg",
     "dynamic-bonus-barbarian-3te1cj",
+    "dynamic-bonus-class-1vms7ce",
+    "dynamic-bonus-class-84ttm1",
     "dynamic-bonus-class-fj2om2",
+    "dynamic-bonus-class-kwgie8",
     "dynamic-bonus-fighter-qmmfue",
     "dynamic-bonus-ranger-we5ttw",
+    "dynamic-bonus-rogue-curated-fast-hands",
+    "dynamic-bonus-rogue-curated-steady-aim",
     "dynamic-movement-barbarian-18h2p2v",
     "dynamic-movement-barbarian-1iw4zkg",
     "dynamic-movement-fighter-1liysqo",
     "dynamic-movement-fighter-1s26hvz",
-    "dynamic-movement-ranger-bulhou"
+    "dynamic-movement-ranger-bulhou",
+    "dynamic-reaction-class-5f9k5x"
   ],
   "resourceKeys": [
     "barbarian-rage",

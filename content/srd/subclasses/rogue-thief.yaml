@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=../../schema/subclass.schema.json
+id: thief
+class: rogue
+name: 妙手
+shortName: 妙手
+features:
+  - id: rogue-fast-hands
+    level: 3
+    name: 快手
+    actions:
+      - mode: bonus
+        key: dynamic-bonus-rogue-curated-fast-hands
+        legacyKeys: [dynamic-bonus-class-84ttm1]
+        label: 等級 3：快手
+    text: |
+      你可用**附贈**執行下列其中一項：
+
+      - **巧手：**進行敏捷（[[巧手]]）檢定來開鎖、解除陷阱或扒竊。
+      - **使用物品：**執行使用動作，或用魔法動作啟動需要該動作的魔法物品。

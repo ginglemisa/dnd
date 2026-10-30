@@ -82,13 +82,13 @@
             "propertyNames": { "pattern": "^[1-9][0-9]?$" },
             "additionalProperties": { "anyOf": [{ "type": "number" }, { "type": "null" }] }
           },
-          "format": { "type": "string", "pattern": "\\{\\}", "description": "顯示格式，{} 代入數值，例如 +{}。" }
+          "format": { "type": "string", "pattern": "\\{\\}", "description": "顯示格式，{} 代入數值，例如 +{}、{}d6。" }
         }
       }
     },
     "values": {
       "type": "object",
-      "description": "其他可在文字中以 {名稱|…} 引用的數值，例如 \"{rageDamage}d6\"。",
+      "description": "其他可在文字中以 {名稱|…} 引用的數值，例如 \"{rageDamage}d6\"。公式只能用數字、d、四則運算與 {數值}；另可引用屬性調整值 {strModifier}…{chaModifier}（沒有屬性值時視為 0）。",
       "propertyNames": { "pattern": "^[a-z][A-Za-z0-9]*$" },
       "additionalProperties": { "type": "string", "minLength": 1 }
     },

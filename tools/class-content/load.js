@@ -12,6 +12,8 @@ const SCHEMA_DIR = path.join(CONTENT_DIR, "schema");
 // 公開內容包在前；私人內容包（gitignore）存在時一併載入。
 const PACKS = ["srd", "private"];
 const BUILT_IN_VALUES = Object.freeze({ level: "character-level", proficiencyBonus: "proficiency-bonus" });
+// 只能在 values 公式中引用的屬性調整值（沒有屬性值時視為 0）；文字不可直接寫 {dexModifier|…}。
+const ABILITY_MODIFIERS = Object.freeze(["strModifier", "dexModifier", "conModifier", "intModifier", "wisModifier", "chaModifier"]);
 
 let spellIds = null;
 function getSpellIds() {
@@ -129,7 +131,7 @@ function checkClass(classDef, errors) {
   }
   for (const [name, formula] of Object.entries(classDef.values || {})) {
     const stripped = formula.replace(/\{([A-Za-z][A-Za-z0-9]*)\}/g, (all, token) => {
-      if (!valueNames.has(token) || token === name) errors.push(`${classDef.file}：values.${name} 引用了不存在的數值 {${token}}`);
+      if ((!valueNames.has(token) && !ABILITY_MODIFIERS.includes(token)) || token === name) errors.push(`${classDef.file}：values.${name} 引用了不存在的數值 {${token}}`);
       return "1";
     });
     if (!/^[0-9d+\-*/() ]+$/.test(stripped)) errors.push(`${classDef.file}：values.${name} 只能使用數字、d、四則運算與 {數值}`);

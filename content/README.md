@@ -2,7 +2,7 @@
 
 每個職業、子職各一個 YAML 檔。說明文字和機制（特性表、選項、跑團按鈕、資源）寫在同一份檔案。
 
-> 試行階段：目前只轉換了野蠻人、遊俠與戰士，網站仍讀取 `class-features.js`。格式確認後才逐步改由這裡產生。
+> 試行階段：目前只轉換了野蠻人、遊俠、戰士與盜賊，網站仍讀取 `class-features.js`。格式確認後才逐步改由這裡產生。
 
 ## 檔案位置
 
@@ -44,6 +44,8 @@ VS Code 安裝 Red Hat 的「YAML」擴充套件後，會依檔案第一行的 `
 
 - `primaryAbility`：`{ all: [敏捷, 感知] }` 顯示為「敏捷與感知」；`{ any: [力量, 敏捷] }` 顯示為「力量或敏捷」。
 - `spellcasting.progression`：`full`（全施法者）、`half`（半施法者）、`pact`（契約魔法）、`none`。
+- `progression.<欄位>.format`：特性表顯示格式，`{}` 代入數值，例如 `+{}`（+2）、`{}d6`（1d6）。
+- `values`：公式只能用數字、`d`、四則運算與 `{數值}`，例如 `"{rageDamage}d6"`。公式中另可引用屬性調整值 `{strModifier}`、`{dexModifier}`、`{conModifier}`、`{intModifier}`、`{wisModifier}`、`{chaModifier}`（沒有屬性值時視為 0；文字中不可直接引用）。
 
 ## 不可改名的 ID
 

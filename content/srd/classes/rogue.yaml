@@ -1,0 +1,145 @@
+# yaml-language-server: $schema=../../schema/class.schema.json
+id: rogue
+name: 盜賊
+maxLevel: 8
+subclassLevel: 3
+defaultSubclass: thief
+tagline: 盜賊以技巧、機動與偷襲抓住破綻，是各種難題的專家。
+quote: 「夜色籠罩城市屋頂，她在瓦片間無聲移動。下方的守衛正交談著，她早已記住巡邏節奏。從貧民窟長大的她，學會用影子隱藏自己。當她輕巧落地，鎖扣發出微不可聞的聲響，寶箱緩緩開啟。遠方鐘聲響起，她已消失在巷弄深處。」
+primaryAbility:
+  all: [敏捷]
+spellcasting:
+  progression: none
+hitDie: 8
+saves: [智力, 敏捷]
+skills:
+  choose: 4
+  from: [體操, 運動, 欺瞞, 洞悉, 威嚇, 調查, 察覺, 遊說, 巧手, 隱匿]
+weapons: 簡易武器和具有靈巧或輕型屬性的軍用武器
+tools: 盜賊工具
+armor: 輕甲
+equipment:
+  A: 皮甲、匕首 ×2、短劍、短弓、箭矢(20)、箭袋、盜賊工具、竊賊套組、8 金幣
+  B: 100 金幣
+  note: "**竊賊套組：**背包、滾珠、鈴鐺、蠟燭 ×10、撬棍、附蓋提燈、油瓶 ×7、單日口糧 ×5、繩索、火絨盒、水袋"
+progression:
+  sneakAttackDice:
+    label: 偷襲
+    byLevel: {1: 1, 3: 2, 5: 3, 7: 4}
+    format: "{}d6"
+values:
+  cunningStrikeDc: 8 + {proficiencyBonus} + {dexModifier}
+features:
+  - id: rogue-expertise-1
+    level: 1
+    name: 專精
+    text: |
+      選擇 2 項**已熟練**的技能，獲得專精。\
+      推薦：[[巧手]]、[[隱匿]]。
+  - id: rogue-sneak-attack
+    level: 1
+    name: 偷襲
+    actions:
+      - mode: action
+        key: dynamic-action-rogue-curated-sneak-attack
+        append: [rogue-cunning-strike]
+    tabletop: |
+      **每回合 1 次**，以靈巧武器或遠程武器命中時，若符合下列任一條件，可額外造成 {sneakAttackDice|1d6} 傷害（與武器傷害類型相同）。
+
+      - **具有優勢：**這次攻擊檢定具有優勢。
+      - **友方在旁：**目標 5 呎內有至少 1 名未[[失能]]的友方，且這次攻擊檢定沒有劣勢。
+    text: |
+      **每回合 1 次**，以靈巧武器或遠程武器命中時，若符合下列任一條件，可額外造成 {sneakAttackDice|1d6} 傷害（與武器傷害類型相同）。
+
+      - **具有優勢：**這次攻擊檢定具有優勢。
+      - **友方在旁：**目標 5 呎內有至少 1 名未[[失能]]的友方，且這次攻擊檢定沒有劣勢。
+
+      偷襲傷害骰隨盜賊等級增加，見「盜賊特性」表的「偷襲」欄。
+  - id: rogue-thieves-cant
+    level: 1
+    name: 盜賊黑話
+    text: |
+      你學會盜賊黑話，並額外學會 1 種語言。
+  - id: rogue-weapon-mastery
+    level: 1
+    name: 武器精通
+    text: |
+      從你熟練的武器中選擇 2 種，取得其精通屬性，例如匕首、短弓。
+
+      - **改選時機：**每次長休後可改選。
+  - id: rogue-cunning-action
+    level: 2
+    name: 靈巧動作
+    actions:
+      - mode: bonus
+        key: dynamic-bonus-class-1vms7ce
+    text: |
+      在你的回合中，可用**附贈**執行下列其中一項：衝刺、撤離、躲藏。
+  - id: rogue-subclass
+    level: 3
+    name: 盜賊子職
+    type: subclass
+    text: |
+      選擇一個盜賊子職，並隨等級提升獲得子職能力。基本規則僅提供「妙手」。
+  - id: rogue-steady-aim
+    level: 3
+    name: 手穩就準
+    actions:
+      - mode: bonus
+        key: dynamic-bonus-rogue-curated-steady-aim
+        legacyKeys: [dynamic-bonus-class-kwgie8]
+    text: |
+      以**附贈**啟動，你本回合的下一次攻擊檢定具有優勢。
+
+      - **使用條件：**你本回合尚未移動。
+      - **代價：**啟動後，你的速度變為 0，直到回合結束。
+  - id: rogue-ability-score-improvement-4
+    level: 4
+    name: 屬性值提升
+    text: |
+      選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。
+  - id: rogue-cunning-strike
+    level: 5
+    name: 靈巧打擊
+    text: |
+      造成偷襲傷害時，可放棄部分偷襲傷害骰，套用 1 種靈巧打擊效果。
+
+      - **豁免 DC：**效果需要豁免時，DC＝{cunningStrikeDc|8＋熟練加值＋敏捷調整值}。
+
+      #### 靈巧打擊效果
+
+      - **淬毒（消耗 1d6）：**目標進行體質豁免，失敗時[[中毒]] 1 分鐘；它可在每個回合結束時重新豁免，成功即結束。使用此效果時，你必須攜帶製毒師工具。
+      - **摔絆（消耗 1d6）：**大型或更小的目標進行敏捷豁免，失敗時[[倒地]]。
+      - **撤步（消耗 1d6）：**攻擊後，你可立刻移動最多一半速度，且不引發[[藉機攻擊]]。
+  - id: rogue-uncanny-dodge
+    level: 5
+    name: 直覺閃避
+    actions:
+      - mode: reaction
+        key: dynamic-reaction-class-5f9k5x
+    text: |
+      當你看得見的攻擊者以攻擊命中你時，你可用**反應**讓該次攻擊的傷害減半（無條件捨去）。
+  - id: rogue-expertise-6
+    level: 6
+    name: 專精
+    text: |
+      再選擇 2 項**已熟練**的技能，獲得專精。
+  - id: rogue-evasion
+    level: 7
+    name: 反射閃避
+    text: |
+      受到允許進行**敏捷豁免以使傷害減半**的效應影響時：
+
+      - **豁免成功：**不受傷害。
+      - **豁免失敗：**只受一半傷害。
+      - **使用限制：**你處於[[失能]]狀態時無法使用。
+  - id: rogue-reliable-talent
+    level: 7
+    name: 可靠才能
+    text: |
+      使用**有熟練的技能或工具**進行屬性檢定時，可將 d20 擲出 9 或以下的結果視為 10。
+  - id: rogue-ability-score-improvement-8
+    level: 8
+    name: 屬性值提升
+    text: |
+      選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。
