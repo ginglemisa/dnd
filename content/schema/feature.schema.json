@@ -107,12 +107,13 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["key", "uses", "recover"],
-      "description": "此能力的使用次數資源。",
+      "description": "此能力的使用次數或點數池資源。",
       "properties": {
         "key": { "type": "string", "pattern": "^[a-z0-9-]+$", "description": "資源 key，跑團模式記錄剩餘次數用：不可改名。" },
+        "kind": { "enum": ["uses", "points"], "default": "uses", "description": "uses：使用次數（預設）；points：點數池，可分次消耗任意點數（例如聖療）。" },
         "uses": {
           "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "string" }],
-          "description": "次數：固定數字，或特性表欄位／values 名稱。"
+          "description": "次數（points 時為點數池總量）：固定數字，或特性表欄位／values 名稱。"
         },
         "recover": {
           "type": "object",

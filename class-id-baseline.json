@@ -2,16 +2,20 @@
   "classes": [
     "barbarian",
     "fighter",
+    "paladin",
     "ranger",
     "rogue"
   ],
   "subclasses": [
     "barbarian/berserker",
     "fighter/champion",
+    "paladin/devotion",
     "ranger/hunter",
     "rogue/thief"
   ],
   "options": [
+    "paladin-blessed-warrior",
+    "paladin-fighting-style",
     "ranger-defensive-tactics-escape-the-horde",
     "ranger-defensive-tactics-multiattack-defense",
     "ranger-druidic-warrior",
@@ -24,19 +28,26 @@
     "dynamic-action-barbarian-ekb4kt",
     "dynamic-action-class-8jjnkp",
     "dynamic-action-class-action-surge",
+    "dynamic-action-class-sacred-weapon",
     "dynamic-action-fighter-113ebtz",
     "dynamic-action-fighter-1870147",
+    "dynamic-action-paladin-curated-extra-attack",
+    "dynamic-action-paladin-curated-sacred-weapon",
     "dynamic-action-ranger-113ebtz",
     "dynamic-action-ranger-p55ifk",
     "dynamic-action-ranger-vdr4tc",
     "dynamic-action-rogue-curated-sneak-attack",
     "dynamic-bonus-barbarian-1iw4zkg",
     "dynamic-bonus-barbarian-3te1cj",
+    "dynamic-bonus-class-1axs7np",
+    "dynamic-bonus-class-1ol2xxh",
     "dynamic-bonus-class-1vms7ce",
     "dynamic-bonus-class-84ttm1",
     "dynamic-bonus-class-fj2om2",
     "dynamic-bonus-class-kwgie8",
     "dynamic-bonus-fighter-qmmfue",
+    "dynamic-bonus-paladin-curated-divine-sense",
+    "dynamic-bonus-paladin-curated-lay-on-hands",
     "dynamic-bonus-ranger-we5ttw",
     "dynamic-bonus-rogue-curated-fast-hands",
     "dynamic-bonus-rogue-curated-steady-aim",
@@ -50,6 +61,8 @@
   "resourceKeys": [
     "barbarian-rage",
     "fighter-action-surge",
-    "fighter-second-wind"
+    "fighter-second-wind",
+    "paladin-channel-divinity",
+    "paladin-lay-on-hands"
   ]
 }

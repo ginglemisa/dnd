@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=../../schema/subclass.schema.json
+id: devotion
+class: paladin
+name: 奉獻之誓
+shortName: 奉獻
+features:
+  - id: paladin-oath-of-devotion-spells
+    level: 3
+    name: 奉獻之誓法術
+    text: |
+      達到下列聖騎士等級後，你始終準備對應法術：
+
+      - **3 級：**防護善惡、虔誠護盾。
+      - **5 級：**援助術、誠實之域。
+  - id: paladin-sacred-weapon
+    level: 3
+    name: 祝聖武器
+    actions:
+      - mode: action
+        key: dynamic-action-paladin-curated-sacred-weapon
+        legacyKeys: [dynamic-action-class-sacred-weapon]
+        label: 等級 3：祝聖武器
+        resource: paladin-channel-divinity
+    text: |
+      執行**攻擊動作**時，可消耗 1 次引導神力，為手上一把近戰武器注入神聖力量，持續 10 分鐘，或直到你再次使用本特性。期間獲得以下效果：
+
+      - **攻擊加值：**該武器攻擊檢定加上你的魅力調整值（至少 +1）。
+      - **傷害類型：**命中時可選擇造成原本傷害類型或光耀傷害。
+      - **光照：**武器發出 20 呎明亮光照，再往外 20 呎為微光。
+
+      **提前結束：**你可隨時結束效果，**無需動作**；若不再持有該武器，效果也會結束。
+  - id: paladin-aura-of-devotion
+    level: 7
+    name: 奉獻靈氣
+    text: |
+      你的守護靈氣使你和其中的盟友**免疫**[[魅惑]]狀態。
+
+      - **已受魅惑：**若正被[[魅惑]]的盟友進入靈氣範圍，該狀態會暫時失效。

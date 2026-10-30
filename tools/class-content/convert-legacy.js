@@ -14,14 +14,16 @@ const FEATURE_SLUGS = Object.freeze({
   屬性值提升: "ability-score-improvement", 無我狂暴: "mindless-rage", 野性直覺: "feral-instinct",
   施法: "spellcasting", 宿敵: "favored-enemy", 熟練探險家: "deft-explorer", 戰鬥風格: "fighting-style",
   戰術思維: "tactical-mind", 精通重擊: "improved-critical", 額外戰鬥風格: "additional-fighting-style",
-  專精: "expertise", 盜賊黑話: "thieves-cant", 反射閃避: "evasion", 可靠才能: "reliable-talent"
+  專精: "expertise", 盜賊黑話: "thieves-cant", 反射閃避: "evasion", 可靠才能: "reliable-talent",
+  聖騎士斬技: "paladins-smite", 奉獻之誓法術: "oath-of-devotion-spells", 忠誠坐騎: "faithful-steed",
+  守護靈氣: "aura-of-protection", 奉獻靈氣: "aura-of-devotion"
 });
-const SUBCLASS_IDS = Object.freeze({ 狂戰士道途: "berserker", 獵人: "hunter", 勇士: "champion", 妙手: "thief" });
+const SUBCLASS_IDS = Object.freeze({ 狂戰士道途: "berserker", 獵人: "hunter", 勇士: "champion", 妙手: "thief", 奉獻之誓: "devotion" });
 // 特性表欄位名稱（文字中以 {名稱|…} 引用）。
 const COLUMN_KEYS = Object.freeze({
   狂暴次數: "rageUses", 狂暴傷害: "rageDamage", 武器精通: "weaponMastery",
   宿敵: "favoredEnemy", 準備法術: "preparedSpells", "１環": "spellSlots1", "２環": "spellSlots2",
-  回氣: "secondWindUses", 偷襲: "sneakAttackDice"
+  回氣: "secondWindUses", 偷襲: "sneakAttackDice", 引導神力: "channelDivinityUses"
 });
 // 舊版寫在 character-rules.js／action-panel.js 程式裡、HTML 沒有的機制；轉換時一併寫進內容檔。
 const FEATURE_EXTRAS = Object.freeze({
@@ -30,12 +32,18 @@ const FEATURE_EXTRAS = Object.freeze({
   "ranger-favored-enemy": { spells: [{ id: "hunters-mark", freeUses: "favoredEnemy" }] },
   // character-rules.js getCharacterResourceSpecs：回氣短休回 1 次；動作如潮短休或長休全回。
   "fighter-second-wind": { resource: { key: "fighter-second-wind", uses: "secondWindUses", recover: { short: 1, long: "all" } } },
-  "fighter-action-surge": { resource: { key: "fighter-action-surge", uses: 1, recover: { short: "all", long: "all" } } }
+  "fighter-action-surge": { resource: { key: "fighter-action-surge", uses: 1, recover: { short: "all", long: "all" } } },
+  // character-rules.js：聖療為點數池（addPoints），總量聖騎士等級 × 5，長休全回；引導神力短休回 1 次。
+  "paladin-lay-on-hands": { resource: { key: "paladin-lay-on-hands", kind: "points", uses: "layOnHandsPool", recover: { long: "all" } } },
+  "paladin-divine-sense": { resource: { key: "paladin-channel-divinity", uses: "channelDivinityUses", recover: { short: 1, long: "all" } } },
+  // spell-sources.js：至聖斬、召喚坐騎始終準備，各可免費施放 1 次。
+  "paladin-paladins-smite": { spells: [{ id: "divine-smite", freeUses: 1 }] },
+  "paladin-faithful-steed": { spells: [{ id: "find-steed", freeUses: 1 }] }
 });
 // action-panel.js TABLETOP_VALUE_RESOLVERS 的公式（「職業-名稱」key）。
 const CLASS_VALUES = Object.freeze({
   barbarian: { frenzyDice: "{rageDamage}d6" }, fighter: { secondWindHealing: "1d10 + {level}" },
-  rogue: { cunningStrikeDc: "8 + {proficiencyBonus} + {dexModifier}" }
+  rogue: { cunningStrikeDc: "8 + {proficiencyBonus} + {dexModifier}" }, paladin: { layOnHandsPool: "{level} * 5" }
 });
 // 施法進度（舊版分散在 character-rules.js 的施法者集合與半施法者準備表）。
 const SPELLCASTING = Object.freeze({
@@ -86,6 +94,13 @@ function inlineToText(nodes, context, where) {
       if (node.childNodes.some(child => child.nodeName !== "#text")) fail(where, "數值標記內只能有文字");
       return `{${context.valueToken(attr(node, "data-tabletop-value"), where)}|${textOf(node)}}`;
     }
+    // 只在跑團說明出現的文字：職業頁版本略過，跑團版本保留（寫成 tabletop）。
+    if (node.nodeName === "span" && has(node, "data-tabletop-only")) {
+      allowAttributes(node, ["data-tabletop-only", "hidden"], where);
+      if (!has(node, "hidden")) fail(where, "data-tabletop-only 須同時有 hidden");
+      if (!context.view) fail(where, "此處不支援跑團專用文字");
+      return context.view === "tabletop" ? inlineToText(node.childNodes, context, where) : "";
+    }
     return fail(where, `未處理的行內標記 <${node.nodeName} ${(node.attrs || []).map(item => item.name).join(" ")}>`);
   }).join("");
 }
@@ -135,12 +150,19 @@ function convertBody(nodes, feature, context, where) {
     if (has(node, "data-overview-hide")) summaryUsed = true;
     else summaryParts.push(text);
   };
-  const pushBlock = text => { blocks.push(text); tabletopBlocks.push(text); };
+  // 職業頁與跑團版本不同（含 data-tabletop-only 文字）時寫成 tabletop。
+  const pushBlock = (text, tabletop = text) => {
+    blocks.push(text);
+    tabletopBlocks.push(tabletop);
+    if (tabletop !== text) tabletopUsed = true;
+  };
+  // 同一段行內內容的職業頁版本與跑團版本；總覽取跑團版本。
+  const views = children => [inlineToText(children, { ...context, view: "page" }, where), inlineToText(children, { ...context, view: "tabletop" }, where)];
   for (const node of nodes) {
     if (node.nodeName === "p" && has(node, "data-tabletop-hide")) {
       // 只在職業頁顯示的段落：不進跑團說明，也不進總覽。
       allowAttributes(node, ["data-tabletop-hide"], where);
-      blocks.push(inlineToText(node.childNodes, context, where));
+      blocks.push(views(node.childNodes)[0]);
       tabletopUsed = true;
     } else if (node.nodeName === "p") {
       allowAttributes(node, ["data-overview-hide"], where);
@@ -152,9 +174,9 @@ function convertBody(nodes, feature, context, where) {
         children.shift();
         feature.appendedPrefix = true;
       }
-      const text = inlineToText(children, context, where);
-      pushBlock(text);
-      pushSummary(node, text);
+      const [text, tabletop] = views(children);
+      pushBlock(text, tabletop);
+      pushSummary(node, tabletop);
     } else if (node.nodeName === "ul" && classes(node).includes("class-rule-list")) {
       allowAttributes(node, ["class"], where);
       const items = elements(node);
@@ -169,9 +191,16 @@ function convertBody(nodes, feature, context, where) {
         continue;
       }
       if (items.some(isOptionItem)) fail(where, "清單混合了選項與一般項目");
-      const lines = items.map(item => {
-        allowAttributes(item, [], where);
+      const lines = [];
+      const tabletopLines = [];
+      for (const item of items) {
+        allowAttributes(item, ["data-tabletop-hide"], where);
         const children = [...item.childNodes];
+        // 只在職業頁顯示的項目：不進跑團說明，也不進總覽。
+        if (has(item, "data-tabletop-hide")) {
+          lines.push(`- ${indentContinuation(views(children)[0])}`);
+          continue;
+        }
         const lead = children.find(child => child.nodeName !== "#text" || child.value.trim());
         // 總覽隱藏的粗體標籤只影響 summary。
         const summaryChildren = lead?.nodeName === "strong" && has(lead, "data-overview-hide") ? children.filter(child => child !== lead) : children;
@@ -179,14 +208,18 @@ function convertBody(nodes, feature, context, where) {
           summaryUsed = true;
           lead.attrs = lead.attrs.filter(item => item.name !== "data-overview-hide");
         }
-        summaryParts.push(inlineToText(summaryChildren, context, where));
-        return `- ${indentContinuation(inlineToText(children, context, where))}`;
-      });
-      pushBlock(lines.join("\n"));
+        summaryParts.push(views(summaryChildren)[1]);
+        const [text, tabletop] = views(children);
+        lines.push(`- ${indentContinuation(text)}`);
+        tabletopLines.push(`- ${indentContinuation(tabletop)}`);
+      }
+      if (tabletopLines.length) pushBlock(lines.join("\n"), tabletopLines.join("\n"));
+      else { blocks.push(lines.join("\n")); tabletopUsed = true; }
     } else if (node.nodeName === "div" && classes(node).includes("class-rule-subsection")) {
       const [heading, ...rest] = elements(node);
       if (heading?.nodeName !== "h4") fail(where, "小節須以 <h4> 開頭");
-      pushBlock(`#### ${inlineToText(heading.childNodes, context, where)}`);
+      const [title, tabletopTitle] = views(heading.childNodes);
+      pushBlock(`#### ${title}`, `#### ${tabletopTitle}`);
       const inner = convertBody(rest, feature, context, where);
       blocks.push(...inner.blocks);
       tabletopBlocks.push(...inner.tabletopBlocks);
