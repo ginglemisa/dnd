@@ -49,7 +49,7 @@ async function ensurePdfExportReady() {
     pdfExportLoaderPromise = (async () => {
       await loadScriptOnce("pdf-lib.custom.min.js");
       await loadScriptOnce("fontkit.custom.min.js");
-      await loadScriptOnce("pdf-field-map.js?v=20261028-custom-spells");
+      await loadScriptOnce("pdf-field-map.js?v=20261031-feral-instinct");
       await loadScriptOnce("pdf-export.js?v=20261028-custom-spells");
     })().catch((error) => {
       pdfExportLoaderPromise = null;

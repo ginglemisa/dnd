@@ -434,7 +434,7 @@ async function verifyPdf(page, fieldsOnly) {
       return `${payload.classFeatures1}\n${payload.classFeatures2}`.split("\n");
     };
     for (const [state, expected, absent = []] of [
-      [{ class: "barbarian" }, ["等級 1：狂暴、無甲防禦", "等級 1：武器精通", "等級 5：額外攻擊、快速移動", "等級 7：野性本能、直覺猛撲"]],
+      [{ class: "barbarian" }, ["等級 1：狂暴、無甲防禦", "等級 1：武器精通", "等級 5：額外攻擊、快速移動", "等級 7：野性直覺、直覺猛撲"]],
       [{ class: "cleric", "cleric-trickster": true }, ["等級 1：神聖使命／魔術使", "等級 7：神佑打擊"], ["選擇：魔術使"]],
       [{ class: "druid", "druid-elemental-fury-primal-strike": true }, ["等級 1：德魯伊語、施法", "等級 1：原初使命", "等級 7：元素狂怒／原初打擊"]],
       [{ class: "fighter", "derived-feat-fighting-style-fighter": "雙武器戰鬥", "derived-feat-fighting-style-fighter-2": "防禦" },

@@ -2453,7 +2453,7 @@ function getRogueReliableTalentEntry() {
       barbarianDefenses.push({ label: "無我狂暴", detail: "狂暴期間，你免疫魅惑與恐慌狀態；進入狂暴時，若你正處於其中一種狀態，該狀態立即終止。", summaryPanel: "overview" });
     }
     if (isBarbarian && characterLevel >= 7) {
-      barbarianDefenses.push({ label: "野性本能", detail: "你的先攻擲骰有優勢。", summaryPanel: "overview" });
+      barbarianDefenses.push({ label: "野性直覺", detail: "你的先攻擲骰有優勢。", summaryPanel: "overview" });
     }
     if (isFighter && characterLevel >= 3) {
       fighterSummaries.push(getClassOverviewEntry("運動健將", "fighter", "fighter-remarkable-athlete", { summaryPanel: "overview" }));
