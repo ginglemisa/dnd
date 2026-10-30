@@ -22,7 +22,9 @@ const COLUMN_KEYS = Object.freeze({
 });
 // 舊版寫在 character-rules.js／action-panel.js 程式裡、HTML 沒有的機制；轉換時一併寫進內容檔。
 const FEATURE_EXTRAS = Object.freeze({
-  "barbarian-rage": { resource: { key: "barbarian-rage", uses: "rageUses", recover: { short: 1, long: "all" } } }
+  "barbarian-rage": { resource: { key: "barbarian-rage", uses: "rageUses", recover: { short: 1, long: "all" } } },
+  // spell-sources.js：宿敵始終準備獵人印記，免費施放次數同特性表「宿敵」欄。
+  "ranger-favored-enemy": { spells: [{ id: "hunters-mark", freeUses: "favoredEnemy" }] }
 });
 const CLASS_VALUES = Object.freeze({ barbarian: { frenzyDice: "{rageDamage}d6" } });
 // 施法進度（舊版分散在 character-rules.js 的施法者集合與半施法者準備表）。
@@ -357,7 +359,7 @@ function convertClass(classId, html) {
   return { creation, features, subclass };
 }
 
-const FEATURE_KEY_ORDER = ["id", "level", "name", "type", "choose", "changeOn", "optionStyle", "resource", "actions", "summary", "text", "options"];
+const FEATURE_KEY_ORDER = ["id", "level", "name", "type", "choose", "changeOn", "optionStyle", "resource", "spells", "actions", "summary", "tabletop", "text", "options"];
 function cleanFeature(feature) {
   const out = {};
   for (const key of FEATURE_KEY_ORDER) {

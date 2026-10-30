@@ -47,6 +47,16 @@ VS Code 安裝 Red Hat 的「YAML」擴充套件後，會依檔案第一行的 `
 
 選項的 `id`、動作的 `key`／`legacyKeys`、`resource.key`、子職 `id` 會寫進存檔、分享網址或跑團偏好。改顯示文字沒關係，這些 ID 不可改。
 
+這些 ID 都列在根目錄的 `class-id-baseline.json`（私人內容包另有 `content/private/class-id-baseline.json`）。ID 不見、改名或新增而基準檔沒更新時，建置會失敗。確定是刻意新增時執行：
+
+```bash
+npm run build -- --update-id-baseline
+```
+
+## 能力給予的法術
+
+`spells` 列出能力給予的法術（例如始終準備），`id` 是法術 ID，須存在於 `spell-id-baseline.json`；`freeUses` 是免費施放次數，可寫數字或特性表欄位名稱。
+
 ## 檢查與預覽
 
 | 指令 | 用途 |

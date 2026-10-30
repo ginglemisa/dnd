@@ -42,7 +42,13 @@
           "items": { "$ref": "#/definitions/action" },
           "description": "跑團模式的動作按鈕。"
         },
-        "resource": { "$ref": "#/definitions/resource" }
+        "resource": { "$ref": "#/definitions/resource" },
+        "spells": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/grantedSpell" },
+          "description": "此能力給予的法術（始終準備等）。法術 ID 須存在於 spell-id-baseline.json。"
+        }
       },
       "if": { "not": { "required": ["name"] } },
       "then": {
@@ -50,7 +56,7 @@
           "anyOf": [
             { "required": ["id"] }, { "required": ["type"] }, { "required": ["tabletop"] }, { "required": ["summary"] }, { "required": ["choose"] },
             { "required": ["changeOn"] }, { "required": ["optionStyle"] }, { "required": ["options"] },
-            { "required": ["actions"] }, { "required": ["resource"] }
+            { "required": ["actions"] }, { "required": ["resource"] }, { "required": ["spells"] }
           ]
         }
       },
@@ -81,6 +87,18 @@
           "type": "array",
           "items": { "$ref": "#/definitions/id" },
           "description": "達到該能力等級後，接在此按鈕說明後面的其他能力 ID。"
+        }
+      }
+    },
+    "grantedSpell": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "properties": {
+        "id": { "$ref": "#/definitions/id", "description": "法術 ID（spellId），例如 hunters-mark。" },
+        "freeUses": {
+          "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "string" }],
+          "description": "不耗法術位的免費施放次數：固定數字，或特性表欄位／values 名稱。"
         }
       }
     },

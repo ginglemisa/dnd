@@ -50,6 +50,9 @@ features:
   - id: ranger-favored-enemy
     level: 1
     name: 宿敵
+    spells:
+      - id: hunters-mark
+        freeUses: favoredEnemy
     text: |
       你**始終準備**法術「獵人印記」。
 

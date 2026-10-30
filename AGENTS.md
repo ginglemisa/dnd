@@ -13,7 +13,7 @@
 ## 前端架構與相容性
 
 * 原生 HTML／CSS／JavaScript 靜態網站；`index.html` 以傳統 `<script defer>` 依序載入全域模組，不新增前端框架或 runtime dependency。驗證沿用 Node.js／Playwright，不新增測試框架或依賴。
-* 唯一的建置流程是職業內容檔：`npm run build` 讀取 `content/` 的 YAML 做 schema 與跨檔檢查（`yaml`、`ajv`、`parse5` 僅為開發依賴，不進網站）。寫法見 [content/README.md](content/README.md)；轉換期網站仍載入 `class-features.js`，兩者須一致（`npm run classes:check`），刻意的差異逐行列在 `tools/class-content/accepted-differences.json`。
+* 唯一的建置流程是職業內容檔：`npm run build` 讀取 `content/` 的 YAML 做 schema 與跨檔檢查（`yaml`、`ajv`、`parse5` 僅為開發依賴，不進網站）。寫法見 [content/README.md](content/README.md)；轉換期網站仍載入 `class-features.js`，兩者須一致（`npm run classes:check`），刻意的差異逐行列在 `tools/class-content/accepted-differences.json`。內容檔的持久化 ID（職業、子職、選項、跑團動作 key、資源 key）以 `class-id-baseline.json` 把關，規則同 `spell-id-baseline.json`：只在確認刻意新增，或已處理舊資料相容的移除／改名後，才執行 `npm run build -- --update-id-baseline`；`spells` 的法術 ID 須存在於 `spell-id-baseline.json`。
 * `content/private/` 是私人內容包（gitignore），可放有版權的子職、`class-extensions/`（補充既有職業，例如兼職）與 `rules/`；不得提交或複製到公開檔案。公開內容不得依賴私人內容包才能建置。
 * `index.html` 負責角色卡 DOM、初始化、表單串接、持久化與分享；僅依任務需要拆分，不因檔案大小／一致性重寫架構。樣式以 `styles.css` 為準，外觀／互動先查 [DESIGN.md](DESIGN.md)。
 * 自 `index.html` 搬出的角色卡程式（`sheet-utils.js`、`feat-ui.js`、`spell-sources.js`、`class-features-ui.js`、`sheet-spells.js`、`pdf-launcher.js`）以不加 defer／async 的本機 `<script src>` 同步載入（`sheet-spells.js`、`pdf-launcher.js` 在原區塊位置，其餘只含宣告者提前於第一段內嵌 script），維持全域名稱；除 `sheet-spells.js` 保留原有頂層初始化外只放函式與狀態宣告，頂層程式不得依賴後載入 script 的宣告；驗證腳本以此辨識並一併檢查，離線建置保留各標籤的 defer 與否。搬移與功能修改分開提交。

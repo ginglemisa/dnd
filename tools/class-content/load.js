@@ -13,6 +13,12 @@ const SCHEMA_DIR = path.join(CONTENT_DIR, "schema");
 const PACKS = ["srd", "private"];
 const BUILT_IN_VALUES = Object.freeze({ level: "character-level", proficiencyBonus: "proficiency-bonus" });
 
+let spellIds = null;
+function getSpellIds() {
+  spellIds ||= new Set(JSON.parse(fs.readFileSync(path.join(ROOT, "spell-id-baseline.json"), "utf8")));
+  return spellIds;
+}
+
 function createValidators() {
   const ajv = new Ajv({ allErrors: true, strict: true, strictRequired: false, allowUnionTypes: true });
   const kinds = { class: "class", subclass: "subclass", extension: "class-extension", multiclassRules: "multiclass-rules" };
@@ -150,6 +156,11 @@ function checkClass(classDef, errors) {
       if (feature.resource) {
         claim(persistedIds, feature.resource.key, where, "資源 key");
         if (typeof feature.resource.uses === "string" && !valueNames.has(feature.resource.uses)) errors.push(`${where}：resource.uses「${feature.resource.uses}」不是特性表欄位或 values`);
+      }
+      // spell-id-baseline.json 由 validate-tabletop-spellcasting.js 保證與 SpellCatalog 一致。
+      for (const spell of feature.spells || []) {
+        if (!getSpellIds().has(spell.id)) errors.push(`${where}：法術 ID「${spell.id}」不存在於 spell-id-baseline.json`);
+        if (typeof spell.freeUses === "string" && !valueNames.has(spell.freeUses)) errors.push(`${where}：法術 ${spell.id} 的 freeUses「${spell.freeUses}」不是特性表欄位或 values`);
       }
       for (const text of [feature.text, feature.tabletop, feature.summary, ...(feature.options || []).map(option => option.text)].filter(Boolean)) {
         for (const match of text.matchAll(/\{([A-Za-z][A-Za-z0-9]*)\|/g)) {

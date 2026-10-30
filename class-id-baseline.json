@@ -1,0 +1,35 @@
+{
+  "classes": [
+    "barbarian",
+    "ranger"
+  ],
+  "subclasses": [
+    "barbarian/berserker",
+    "ranger/hunter"
+  ],
+  "options": [
+    "ranger-defensive-tactics-escape-the-horde",
+    "ranger-defensive-tactics-multiattack-defense",
+    "ranger-druidic-warrior",
+    "ranger-fighting-style",
+    "ranger-hunters-prey-colossus-slayer",
+    "ranger-hunters-prey-horde-breaker"
+  ],
+  "actionKeys": [
+    "dynamic-action-barbarian-113ebtz",
+    "dynamic-action-barbarian-ekb4kt",
+    "dynamic-action-class-8jjnkp",
+    "dynamic-action-ranger-113ebtz",
+    "dynamic-action-ranger-p55ifk",
+    "dynamic-action-ranger-vdr4tc",
+    "dynamic-bonus-barbarian-1iw4zkg",
+    "dynamic-bonus-barbarian-3te1cj",
+    "dynamic-bonus-ranger-we5ttw",
+    "dynamic-movement-barbarian-18h2p2v",
+    "dynamic-movement-barbarian-1iw4zkg",
+    "dynamic-movement-ranger-bulhou"
+  ],
+  "resourceKeys": [
+    "barbarian-rage"
+  ]
+}
