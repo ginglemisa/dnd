@@ -82,7 +82,7 @@
             "propertyNames": { "pattern": "^[1-9][0-9]?$" },
             "additionalProperties": { "anyOf": [{ "type": "number" }, { "type": "null" }] }
           },
-          "format": { "type": "string", "pattern": "\\{\\}", "description": "顯示格式，{} 代入數值，例如 +{}、{}d6。" }
+          "format": { "type": "string", "pattern": "\\{\\}", "description": "顯示格式，{} 代入數值，例如 +{}、{}d6、1d{}（數值是骰面）。" }
         }
       }
     },

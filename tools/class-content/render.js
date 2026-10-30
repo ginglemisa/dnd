@@ -78,10 +78,13 @@ function renderCreation(context) {
     ["（B）", inline(classDef.equipment.B)]
   ];
   const progression = Object.values(classDef.progression || {});
+  // 有子職能力的等級：只有子職能力時顯示「子職特性」；另有職業能力、但不是選擇子職的等級，接在職業能力之後。
   const featureNames = level => {
-    const own = classDef.features.filter(feature => feature.level === level && feature.name).map(feature => feature.tableName || feature.name);
-    if (own.length) return own.join("，");
-    return (context.subclass?.features || []).some(feature => feature.level === level) ? "子職特性" : "-";
+    const own = classDef.features.filter(feature => feature.level === level && feature.name);
+    const hasSubclassFeature = (context.subclass?.features || []).some(feature => feature.level === level);
+    const names = own.map(feature => feature.tableName || feature.name);
+    if (hasSubclassFeature && !own.some(feature => feature.type === "subclass")) names.push("子職特性");
+    return names.length ? names.join("，") : "-";
   };
   const tableRows = Array.from({ length: classDef.maxLevel }, (unused, index) => {
     const level = index + 1;

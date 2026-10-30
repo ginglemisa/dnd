@@ -17,9 +17,10 @@ const FEATURE_SLUGS = Object.freeze({
   專精: "expertise", 盜賊黑話: "thieves-cant", 反射閃避: "evasion", 可靠才能: "reliable-talent",
   聖騎士斬技: "paladins-smite", 奉獻之誓法術: "oath-of-devotion-spells", 忠誠坐騎: "faithful-steed",
   守護靈氣: "aura-of-protection", 奉獻靈氣: "aura-of-devotion",
-  萬事通: "jack-of-all-trades", 額外熟練項: "bonus-proficiencies", 魔法發現: "magical-discoveries"
+  萬事通: "jack-of-all-trades", 額外熟練項: "bonus-proficiencies", 魔法發現: "magical-discoveries",
+  無甲移動: "unarmored-movement"
 });
-const SUBCLASS_IDS = Object.freeze({ 狂戰士道途: "berserker", 獵人: "hunter", 勇士: "champion", 妙手: "thief", 奉獻之誓: "devotion", 逸聞學院: "lore" });
+const SUBCLASS_IDS = Object.freeze({ 狂戰士道途: "berserker", 獵人: "hunter", 勇士: "champion", 妙手: "thief", 奉獻之誓: "devotion", 逸聞學院: "lore", 散打鬥士: "open-hand" });
 // 舊 HTML 中由網站程式插入控制項的空白容器（以 id 辨識）→ behaviors/<名稱>.js；轉換時核對輸出與舊標記相同。
 const BEHAVIOR_MOUNTS = Object.freeze({ "bard-magical-discoveries": "magical-discoveries" });
 // 特性表欄位名稱（文字中以 {名稱|…} 引用）。
@@ -27,7 +28,8 @@ const COLUMN_KEYS = Object.freeze({
   狂暴次數: "rageUses", 狂暴傷害: "rageDamage", 武器精通: "weaponMastery",
   宿敵: "favoredEnemy", 準備法術: "preparedSpells", "１環": "spellSlots1", "２環": "spellSlots2",
   回氣: "secondWindUses", 偷襲: "sneakAttackDice", 引導神力: "channelDivinityUses",
-  激勵骰: "inspirationDie", 戲法: "cantrips", "３環": "spellSlots3", "４環": "spellSlots4"
+  激勵骰: "inspirationDie", 戲法: "cantrips", "３環": "spellSlots3", "４環": "spellSlots4",
+  武藝: "martialArtsDie", 專注點: "focusPoints", 無甲移動: "unarmoredMovement"
 });
 // 舊版寫在 character-rules.js／action-panel.js 程式裡、HTML 沒有的機制；轉換時一併寫進內容檔。
 const FEATURE_EXTRAS = Object.freeze({
@@ -44,14 +46,24 @@ const FEATURE_EXTRAS = Object.freeze({
   "paladin-paladins-smite": { spells: [{ id: "divine-smite", freeUses: 1 }] },
   "paladin-faithful-steed": { spells: [{ id: "find-steed", freeUses: 1 }] },
   // character-rules.js：吟遊詩人激勵次數為魅力調整值（至少 1），長休全回；5 級起短休或長休全回。
-  "bard-inspiration": { resource: { key: "bard-inspiration", uses: "inspirationUses", recover: { long: "all" }, recoverByLevel: { 5: { short: "all", long: "all" } } } }
+  "bard-inspiration": { resource: { key: "bard-inspiration", uses: "inspirationUses", recover: { long: "all" }, recoverByLevel: { 5: { short: "all", long: "all" } } } },
+  // character-rules.js：專注點為點數池（總量同特性表「專注點」欄），短休或長休全回；吐故納新 1 次、混元體感知調整值（至少 1）次，長休全回。
+  "monk-focus": { resource: { key: "monk-focus-points", kind: "points", uses: "focusPoints", recover: { short: "all", long: "all" } } },
+  "monk-uncanny-metabolism": { resource: { key: "monk-uncanny-metabolism", uses: 1, recover: { long: "all" } } },
+  "monk-wholeness-of-body": { resource: { key: "monk-wholeness", uses: "wholenessUses", recover: { long: "all" } } }
 });
 // action-panel.js TABLETOP_VALUE_RESOLVERS 的公式（「職業-名稱」key）；文字結果寫成 byLevel（未列的等級保留頁面文字）。
 const CLASS_VALUES = Object.freeze({
   barbarian: { frenzyDice: "{rageDamage}d6" }, fighter: { secondWindHealing: "1d10 + {level}" },
   rogue: { cunningStrikeDc: "8 + {proficiencyBonus} + {dexModifier}" }, paladin: { layOnHandsPool: "{level} * 5" },
   // 激勵次數取自 character-rules.js；恢復文字跟隨資源設定（5 級起短休也全回）。
-  bard: { inspirationUses: "max(1, {chaModifier})", inspirationRecovery: { byLevel: { 5: "短休或長休後全部恢復" } } }
+  bard: { inspirationUses: "max(1, {chaModifier})", inspirationRecovery: { byLevel: { 5: "短休或長休後全部恢復" } } },
+  // 武藝骰「1d{}」的數值是骰面；兩枚武藝骰為 2d{}。混元體次數取自 character-rules.js。
+  monk: {
+    saveDc: "8 + {proficiencyBonus} + {wisModifier}", uncannyMetabolismHealing: "1d{martialArtsDie} + {level}",
+    deflectAttacksReduction: "1d10 + {dexModifier} + {level}", deflectAttacksDamage: "2d{martialArtsDie} + {dexModifier}",
+    slowFallReduction: "{level} * 5", wholenessHealing: "1d{martialArtsDie} + {wisModifier}", wholenessUses: "max(1, {wisModifier})"
+  }
 });
 // 施法進度（舊版分散在 character-rules.js 的施法者集合與半施法者準備表）。
 const SPELLCASTING = Object.freeze({
@@ -323,18 +335,22 @@ function convertCreation(root, classId, where) {
   headers.slice(3).forEach((label, offset) => {
     const key = COLUMN_KEYS[label] || fail(where, `特性表欄位「${label}」沒有對應名稱，請加入 COLUMN_KEYS`);
     const column = { label, byLevel: {} };
+    // 格子拆成文字與數字（「1d6」→ ["", "1", "d", "6", ""]），同欄文字須一致。隨等級變化的那個數字是數值，
+    // 其餘為顯示格式（例如「+2」→ +{}、「2d6」→ {}d6、「1d8」→ 1d{}）；都不變時取第一個數字。
+    const cells = bodyRows.map(row => (row[offset + 3] === "-" ? null : row[offset + 3].split(/(\d+)/)));
+    const filled = cells.filter(Boolean);
+    filled.forEach(parts => {
+      if (parts.length < 3) fail(where, `特性表數值「${parts.join("")}」無法轉成數字`);
+      if (parts.length !== filled[0].length || parts.some((part, at) => at % 2 === 0 && part !== filled[0][at])) fail(where, `特性表「${label}」欄的格式不一致：${parts.join("")}`);
+    });
+    const varying = (filled[0] || []).map((part, at) => at).filter(at => at % 2 === 1 && filled.some(parts => parts[at] !== filled[0][at]));
+    if (varying.length > 1) fail(where, `特性表「${label}」欄有多個數字隨等級變化`);
+    const valueAt = varying[0] ?? 1;
+    const format = filled.length ? filled[0].map((part, at) => (at === valueAt ? "{}" : part)).join("") : "{}";
+    if (format !== "{}") column.format = format;
     let previous;
-    bodyRows.forEach((row, index) => {
-      const raw = row[offset + 3];
-      // 第一個數字是數值，前後文字為顯示格式（例如「+2」→ +{}、「1d6」→ {}d6）；同欄格式須一致。
-      const parts = raw === "-" ? null : raw.match(/^(\D*)(\d+)(.*)$/);
-      if (raw !== "-" && !parts) fail(where, `特性表數值「${raw}」無法轉成數字`);
-      const value = parts ? Number(parts[2]) : null;
-      if (parts) {
-        const format = `${parts[1]}{}${parts[3]}`;
-        if (format !== (column.format || "{}") && bodyRows.slice(0, index).some(other => other[offset + 3] !== "-")) fail(where, `特性表「${label}」欄的格式不一致：${raw}`);
-        if (format !== "{}") column.format = format;
-      }
+    cells.forEach((parts, index) => {
+      const value = parts ? Number(parts[valueAt]) : null;
       if (index === 0 || value !== previous) column.byLevel[index + 1] = value;
       previous = value;
     });
@@ -457,17 +473,22 @@ function convertClass(classId, html) {
 }
 
 // 特性表「職業特性」欄與能力名稱不同（例如「動作如潮（一次使用）」）時寫成 tableName；順序不同或對不上則停止。
+// 有子職能力、但沒有選擇子職入口的等級，職業能力之後須是「子職特性」（render.js 自動產生）。
 function applyTableNames(features, legacyColumn, where) {
   legacyColumn.forEach((cell, index) => {
     const level = index + 1;
     const own = features.filter(feature => feature.level === level && feature.name && !feature.subclass);
     const names = own.map(feature => feature.name);
+    const hasSubclassFeature = features.some(feature => feature.level === level && feature.subclass);
     if (!own.length) {
-      const expected = features.some(feature => feature.level === level && feature.subclass) ? "子職特性" : "-";
+      const expected = hasSubclassFeature ? "子職特性" : "-";
       if (cell !== expected) fail(where, `特性表第 ${level} 級「${cell}」應為「${expected}」`);
       return;
     }
     const entries = cell.split("，");
+    if (hasSubclassFeature && !own.some(feature => feature.type === "subclass")) {
+      if (entries.pop() !== "子職特性") fail(where, `特性表第 ${level} 級「${cell}」須以「子職特性」結尾`);
+    }
     if (entries.length !== own.length) fail(where, `特性表第 ${level} 級「${cell}」與能力名稱「${names.join("，")}」數量不同`);
     own.forEach((feature, offset) => {
       if (entries[offset] === feature.name) return;
