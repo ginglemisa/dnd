@@ -13,7 +13,7 @@
 ## 前端架構與相容性
 
 * 原生 HTML／CSS／JavaScript 靜態網站；`index.html` 以傳統 `<script defer>` 依序載入全域模組，不新增前端框架或 runtime dependency。驗證沿用 Node.js／Playwright，不新增測試框架或依賴。
-* 唯一的建置流程是職業內容檔：`npm run build` 讀取 `content/` 的 YAML 做 schema 與跨檔檢查（`yaml`、`ajv`、`parse5` 僅為開發依賴，不進網站）。寫法見 [content/README.md](content/README.md)；轉換期網站仍載入 `class-features.js`，兩者須一致（`npm run classes:check`），刻意的差異逐行列在 `tools/class-content/accepted-differences.json`。
+* 唯一的建置流程是職業內容檔：`npm run build` 讀取 `content/` 的 YAML 做 schema 與跨檔檢查（`yaml`、`ajv`、`parse5` 僅為開發依賴，不進網站）。寫法見 [content/README.md](content/README.md)。建置由公開內容包產生網站讀取的 `class-content.generated.js`（全域 `classFeatures` 職業頁 HTML 與 `classTabletopText` 跑團文字），這是衍生產物，不提交（`.gitignore`），不可手改；本機預覽、回歸腳本與離線建置前先 `npm run build`（`npm run dev`、`npm test` 會自動執行）。`index.html` 載入它的 `?v=` 只在上線建置（`npm run build -- --stamp-version`）時改為內容雜湊，本機建置不改 `index.html`。私人內容包不寫進產生檔。內容檔的持久化 ID（職業、子職、選項、跑團動作 key、資源 key）以 `class-id-baseline.json` 把關，規則同 `spell-id-baseline.json`：只在確認刻意新增，或已處理舊資料相容的移除／改名後，才執行 `npm run build -- --update-id-baseline`；`spells` 的法術 ID 須存在於 `spell-id-baseline.json`。
 * `content/private/` 是私人內容包（gitignore），可放有版權的子職、`class-extensions/`（補充既有職業，例如兼職）與 `rules/`；不得提交或複製到公開檔案。公開內容不得依賴私人內容包才能建置。
 * `index.html` 負責角色卡 DOM、初始化、表單串接、持久化與分享；僅依任務需要拆分，不因檔案大小／一致性重寫架構。樣式以 `styles.css` 為準，外觀／互動先查 [DESIGN.md](DESIGN.md)。
 * 自 `index.html` 搬出的角色卡程式（`sheet-utils.js`、`feat-ui.js`、`spell-sources.js`、`class-features-ui.js`、`sheet-spells.js`、`pdf-launcher.js`）以不加 defer／async 的本機 `<script src>` 同步載入（`sheet-spells.js`、`pdf-launcher.js` 在原區塊位置，其餘只含宣告者提前於第一段內嵌 script），維持全域名稱；除 `sheet-spells.js` 保留原有頂層初始化外只放函式與狀態宣告，頂層程式不得依賴後載入 script 的宣告；驗證腳本以此辨識並一併檢查，離線建置保留各標籤的 defer 與否。搬移與功能修改分開提交。
@@ -44,13 +44,13 @@
 | 任務涉及 | 優先查閱 |
 | --- | --- |
 | 共用角色計算與規則 | `character-rules.js`／`CharacterRules` |
-| 職業、種族、背景、專長、工具 | `class-features.js`、`race.js`、`backgrounds.js`、`feats.js`、`tool-data.js` |
+| 職業、種族、背景、專長、工具 | `content/srd/` 職業內容檔（網站讀取建置產生的 `class-content.generated.js`；荒野形態野獸清單為 `druid-wild-shape-beasts.js`）、`race.js`、`backgrounds.js`、`feats.js`、`tool-data.js` |
 | 野獸／怪物 | `monster.js` |
 | 裝備 | `equipment-data.js`、`equipment-notes.js` |
 | 法術、狀態、神祇 | `spell-list.js`／`SpellCatalog`、`condition.js`、`deity-info.js` |
 | 創角與角色選項串接／自訂背景 | `index.html`、`quick-build.js`、`custom-background.js`，並核對上述規則來源 |
 | 專長列 UI、自動／自行管理、資格警示、收合記憶、衍生專長列 | `feat-ui.js`；專長資料為 `feats.js`，魔法學徒子選項與衍生法術在 `spell-sources.js` |
-| 職業能力 UI：祈喚、超魔、苦痛魔爆、互斥／進階選項與攻擊備註、角色能力視窗、補齊職業選項提示與缺項檢查、使命／升級戲法、職業選項記憶接線 | `class-features-ui.js`；職業資料為 `class-features.js`，職業選項記憶儲存在 `class-option-memory.js`；種族／背景能力與初始化仍在 `index.html` |
+| 職業能力 UI：祈喚、超魔、苦痛魔爆、互斥／進階選項與攻擊備註、角色能力視窗、補齊職業選項提示與缺項檢查、使命／升級戲法、職業選項記憶接線 | `class-features-ui.js`；職業資料為 `content/srd/` 職業內容檔產生的 `class-content.generated.js`，職業選項記憶儲存在 `class-option-memory.js`；種族／背景能力與初始化仍在 `index.html` |
 | 角色卡法術頁：法表與準備、已選清單、法術位、免費次數、法術描述 | `sheet-spells.js`；魔法學徒、書之魔契、魔法發現與種族／子職／職業／祈喚衍生法術為 `spell-sources.js` |
 | 法術目前清單、來源、自動／手動管理與遷移 | `spell-management.js`／`SpellManagement`；法術書與管理視窗為 `spellbook.js`／`Spellbook` |
 | 法術／裝備搜尋與獨立查閱 | `search.js`；保留工具列與導覽使用的全域入口 |
@@ -88,9 +88,8 @@
 
 ## 離線角色卡
 
-* 一般任務只更新來源檔案。只有使用者明確要求建立、測試或更新離線角色卡時，才執行 `build-offline-nopdf.ps1` 並驗證產製結果。
-* 例外：每次 push `main` 至 `origin` 前，先執行 `npm run build:offline`（即 `.\build-offline-nopdf.ps1`）重新產生 `twD20-offline.html`；產物有變更時另建 commit 與本次 push 一併送出。此為常規操作，不需另行報備或詢問；建置或驗證失敗則停止 push 並回報。GitHub Actions 會在 Linux 重建並比對，repo 內的產物不是最新時不部署；腳本已將換行統一為 LF，Windows 與 Linux 產出逐位元相同。
-* `twD20-offline.html` 是衍生產物，不能作為 source of truth 或只修改它。產生腳本內嵌本機 CSS、JavaScript、圖片與 About 模組，並停用 PDF 匯出。離線分享須產生正式站的永久網址，不含本機路徑或呼叫短網址服務；完全離線交換使用 JSON。
+* 一般任務只更新來源檔案。只有使用者明確要求建立、測試或更新離線角色卡時，才在本機執行 `npm run build:offline`（即 `.\build-offline-nopdf.ps1`，需先 `npm run build`）並驗證產製結果。
+* `twD20-offline.html` 是衍生產物，不提交（`.gitignore`）：push 前不需要重建，上線時由 GitHub Actions 產生並部署到正式站 `twd20.com/twD20-offline.html`。腳本已將換行統一為 LF，Windows 與 Linux 產出逐位元相同。不能作為 source of truth 或只修改它。產生腳本內嵌本機 CSS、JavaScript、圖片與 About 模組，並停用 PDF 匯出。離線分享須產生正式站的永久網址，不含本機路徑或呼叫短網址服務；完全離線交換使用 JSON。
 * 根目錄以 PowerShell／Node.js 20 以上執行 `.\build-offline-nopdf.ps1`；自動驗證產物語法、離線分享／複製 fallback、分享限制與離開流程，失敗即建置失敗。成品驗證不另列產品 regression；Node.js 模擬 URL／瀏覽器 API 不代表手機權限／儲存實機驗證。
 
 ## 驗證條件
@@ -136,9 +135,9 @@
 
 ### 建置、CI 與部署
 
-* `npm run build`：內容檔檢查；`npm run dev`：本機預覽（`http://127.0.0.1:8080/index.html?analytics=owner`），內容檔存檔時自動重新檢查；`npm test`：依序執行上表全部回歸腳本，可在後面接腳本名稱只跑指定項目。
-* `.github/workflows/site.yml`：每次 push 與 pull request 執行 `npm ci`、`npm run build`、`npm test`、重建離線角色卡並比對；只有 `main` 全部通過才以 GitHub Pages 原本的 Jekyll 建置此 commit 的 repo 檔案並部署，失敗時正式站維持上一版。GitHub Pages 來源須設定為 GitHub Actions。
-* CI 失敗先看是否為 Linux 環境差異（字型、路徑、換行），與本機結果對照；不得為了讓 CI 通過而放寬或跳過斷言。
+* `npm run build`：內容檔檢查並產生 `class-content.generated.js`；`npm run dev`：本機預覽（`http://127.0.0.1:8080/index.html?analytics=owner`），內容檔存檔時自動重新建置；`npm test`：先建置，再依序執行上表全部回歸腳本，可在後面接腳本名稱只跑指定項目；單獨執行 `node validate-*.js` 前須先 `npm run build`。
+* 回歸測試在本機推送前完成；GitHub Actions 不跑回歸測試。
+* `.github/workflows/site.yml`：push 到 `main`（或手動執行）時執行 `npm ci`、`npm run build -- --stamp-version`、產生離線角色卡，再以 GitHub Pages 原本的 Jekyll 建置「此 commit 的 repo 檔案＋產生的檔案」並部署；任一步失敗不部署，正式站維持上一版。GitHub Pages 來源須設定為 GitHub Actions；改回從分支發布會缺少產生檔，網站無法使用。
 
 ### 執行環境
 

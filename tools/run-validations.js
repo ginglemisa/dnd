@@ -1,4 +1,4 @@
-// npm test：依序執行全部既有回歸腳本（與 AGENTS.md「回歸腳本對照」相同），任一失敗即結束碼 1。
+// npm test：先 npm run build 產生職業資料（package.json），再依序執行全部既有回歸腳本（與 AGENTS.md「回歸腳本對照」相同），任一失敗即結束碼 1。
 // 用法：npm test，或 npm test -- validate-ui.js validate-spellbook.js 只跑指定腳本。
 "use strict";
 const { spawnSync } = require("child_process");

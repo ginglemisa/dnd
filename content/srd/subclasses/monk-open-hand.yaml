@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=../../schema/subclass.schema.json
+id: open-hand
+class: monk
+name: 散打鬥士
+shortName: 散打
+features:
+  - id: monk-open-hand-technique
+    level: 3
+    name: 散打技巧
+    text: |
+      你用「疾風連擊」命中時，可使目標承受下列 1 種效果。
+
+      - **截擊：**到你的下回合結束前，目標不能發動[[藉機攻擊]]。
+      - **擊退：**目標力量豁免失敗時，被推離你最多 15 呎。
+      - **擊倒：**目標敏捷豁免失敗時[[倒地]]。
+  - id: monk-wholeness-of-body
+    level: 6
+    name: 混元體
+    resource:
+      key: monk-wholeness
+      uses: wholenessUses
+      recover: {long: all}
+    actions:
+      - mode: bonus
+        key: dynamic-bonus-monk-curated-wholeness-of-body
+        legacyKeys: [dynamic-bonus-class-3mzm48]
+        label: 等級 6：混元體
+        resource: monk-wholeness
+    text: |
+      你可以用**附贈**擲武藝骰，恢復等同{wholenessHealing|「擲骰結果＋感知調整值」}的生命值（至少 1 點）。
+
+      - **使用次數：**等同感知調整值（至少 1 次），**長休後全部恢復**。

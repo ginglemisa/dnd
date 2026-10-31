@@ -2324,7 +2324,7 @@
     };
   }
 
-  // 與跑團動作按鈕重複的總覽提醒改讀 class-features.js 同一段落；段落缺少時不顯示，並由回歸檢查回報。
+  // 與跑團動作按鈕重複的總覽提醒改讀職業描述（class-content.generated.js）同一段落；段落缺少時不顯示，並由回歸檢查回報。
   function getClassOverviewEntry(label, className, descriptionId, extra = {}) {
     const detail = globalScope.ActionPanel?.getClassOverviewDescription?.(className, descriptionId) || "";
     return detail ? { label, detail, ...extra } : null;

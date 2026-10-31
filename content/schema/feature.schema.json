@@ -12,7 +12,7 @@
     "text": {
       "type": "string",
       "minLength": 1,
-      "description": "Markdown：段落、「- 」清單、**粗體**、行尾「\\」換行、「#### 標題」小節。[[運動]]、[[失能]] 產生提示框；{rageDamage|頁面文字} 在跑團模式換成目前數值。不可使用 HTML。"
+      "description": "Markdown：段落、「- 」清單、**粗體**、行尾「\\」換行、「#### 標題」小節、「---」分隔線、GFM 表格（只用於能力的 text／tabletop，外框寫在 tables）。[[運動]]、[[失能]]、[[小魔鬼]] 產生提示框；{rageDamage|頁面文字} 在跑團模式換成目前數值。不可使用 HTML。"
     },
     "feature": {
       "type": "object",
@@ -23,13 +23,36 @@
         "id": { "$ref": "#/definitions/id", "description": "能力 ID（全職業唯一）。已有的 data-action-id 照抄。" },
         "level": { "$ref": "#/definitions/level", "description": "取得此能力的等級。" },
         "name": { "type": "string", "minLength": 1, "description": "能力名稱；標題「等級 N：名稱」由等級自動組成。" },
+        "tableName": { "type": "string", "minLength": 1, "description": "特性表「職業特性」欄顯示的名稱，例如「動作如潮（一次使用）」；省略時使用 name。" },
         "type": { "enum": ["subclass"], "description": "subclass：此能力是「選擇子職」的入口，子職能力排在它後面。" },
         "text": { "$ref": "#/definitions/text", "description": "職業頁全文。" },
         "tabletop": { "$ref": "#/definitions/text", "description": "跑團動作按鈕說明的完整版本；只在和職業頁文字不同時才寫，省略時使用 text。" },
         "summary": { "type": "string", "minLength": 1, "description": "跑團總覽的一句話；省略時使用 text。" },
+        "afterFeatChoice": { "$ref": "#/definitions/text", "description": "接在專長選單之後的文字（例如屬性值提升的「施法補充」）；4 級的額外戲法選單接在它後面。寫 tabletop／summary 時須一併包含。" },
+        "behavior": { "$ref": "#/definitions/id", "description": "特殊機制：tools/class-content/behaviors/<名稱>.js（例如 magical-discoveries 產生魔法發現的法術選擇區，wizard-spellbook-recommendations 標記法術書推薦，wild-shape-known-forms 產生已知形態區塊與野獸清單，druid-land-choice 標記大地結社地貌）。" },
         "choose": { "type": "integer", "minimum": 1, "description": "要從 options 選幾項。" },
         "changeOn": { "enum": ["rest"], "description": "rest：短休或長休後可改選。" },
+        "choiceGroup": { "const": true, "description": "選項的勾選框標記為同一選擇組（data-feature-choice-group），例如神佑打擊；changeOn 時自動標記，不必另寫。" },
         "optionStyle": { "enum": ["list", "cards"], "default": "list", "description": "選項顯示方式：list 為清單，cards 為卡片。" },
+        "tables": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/tableFrame" },
+          "description": "text（與 tabletop）中 GFM 表格的外框，依出現順序一一對應；表格數量須相同。"
+        },
+        "select": { "$ref": "#/definitions/select" },
+        "collapsible": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/collapsible" },
+          "description": "可收合小節（預設收合，例如施法的「擴充與替換法術書」），接在 text 之後、parts 之前。有此欄位時不可寫 tabletop／summary。"
+        },
+        "parts": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/part" },
+          "description": "子能力：各自有跑團按鈕的小節（例如引導神力的神聖火花、驅散不死生物），接在 text 之後。只是排版分段時照舊用「#### 標題」。"
+        },
         "options": {
           "type": "array",
           "minItems": 1,
@@ -42,15 +65,21 @@
           "items": { "$ref": "#/definitions/action" },
           "description": "跑團模式的動作按鈕。"
         },
-        "resource": { "$ref": "#/definitions/resource" }
+        "resource": { "$ref": "#/definitions/resource" },
+        "spells": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/grantedSpell" },
+          "description": "此能力給予的法術（始終準備等）。法術 ID 須存在於 spell-id-baseline.json。"
+        }
       },
       "if": { "not": { "required": ["name"] } },
       "then": {
         "not": {
           "anyOf": [
-            { "required": ["id"] }, { "required": ["type"] }, { "required": ["tabletop"] }, { "required": ["summary"] }, { "required": ["choose"] },
-            { "required": ["changeOn"] }, { "required": ["optionStyle"] }, { "required": ["options"] },
-            { "required": ["actions"] }, { "required": ["resource"] }
+            { "required": ["id"] }, { "required": ["type"] }, { "required": ["tableName"] }, { "required": ["tabletop"] }, { "required": ["summary"] }, { "required": ["choose"] },
+            { "required": ["changeOn"] }, { "required": ["choiceGroup"] }, { "required": ["optionStyle"] }, { "required": ["options"] },
+            { "required": ["actions"] }, { "required": ["resource"] }, { "required": ["spells"] }, { "required": ["afterFeatChoice"] }, { "required": ["behavior"] }, { "required": ["parts"] }, { "required": ["select"] }
           ]
         }
       },
@@ -63,7 +92,88 @@
       "properties": {
         "id": { "$ref": "#/definitions/id", "description": "勾選框 ID，會寫進存檔與分享網址：不可改名。" },
         "name": { "type": "string", "minLength": 1, "description": "選項名稱（勾選框文字）。" },
-        "text": { "type": "string", "minLength": 1, "description": "選項說明（單段文字，可用行尾「\\」換行）。" }
+        "text": { "type": "string", "minLength": 1, "description": "選項說明（可用行尾「\\」換行）。卡片選項（且沒有 actions）可空一行分成多段：第一段接在勾選框之後，其餘段落接在標題列下方。" },
+        "actions": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/action" },
+          "description": "此選項自己的跑團按鈕：勾選該選項且達到能力等級才出現，說明為選項文字；按鈕文字預設為「等級 N：選項名稱」。同一能力不可同時有能力層的 actions。"
+        },
+        "attackNote": { "type": "string", "minLength": 1, "description": "勾選後加進武器攻擊備註的文字，例如「+1d8光/黯傷害」。會存進角色資料、取消時靠相同字串移除：不可改字。" }
+      }
+    },
+    "tableFrame": {
+      "type": "object",
+      "description": "表格外框：輸出 <div class=\"rule-table-shell\"><table class=\"rule-reference-table\" aria-label>。",
+      "additionalProperties": false,
+      "required": ["label"],
+      "properties": {
+        "label": { "type": "string", "minLength": 1, "description": "表格的無障礙名稱（aria-label），例如「術士生成法術位換算」。" },
+        "style": { "$ref": "#/definitions/id", "description": "表格樣式，例如 spell-slot：外框加上 rule-table-shell--spell-slot，表格加上 rule-progress-table rule-progress-table--spell-slot（styles.css 依此設定寬度與欄位強調）。" },
+        "kind": { "enum": ["progress", "reference"], "default": "progress", "description": "有 style 時的表格種類：progress（預設）為進程表；reference 時表格只加上樣式名稱的 class（例如 druid-terrain-spells）。" },
+        "rowHeaders": { "const": true, "description": "表身每列第一格輸出 <th scope=\"row\">（列標題，例如地貌、德魯伊等級）。" },
+        "rowHeaderSuffix": { "type": "string", "minLength": 1, "description": "接在每個列標題後、只在窄螢幕顯示的文字（<span class=\"rule-level-suffix\">），例如「級」。須有 rowHeaders。" },
+        "cellLabels": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 },
+          "description": "表身資料欄（不含列標題）依序的 data-label，窄螢幕版面以此顯示欄位名稱；項數須等於資料欄數。"
+        }
+      }
+    },
+    "select": {
+      "type": "object",
+      "description": "下拉選擇卡片（例如元素親和的傷害類型），接在 text 與 options 之後。有此欄位時不可寫 tabletop／summary。",
+      "additionalProperties": false,
+      "required": ["id", "placeholder", "choices"],
+      "properties": {
+        "id": { "$ref": "#/definitions/id", "description": "下拉選單 ID，會寫進存檔與分享網址：不可改名。" },
+        "placeholder": { "type": "string", "minLength": 1, "description": "未選擇時顯示的提示文字（空值選項），例如「--請選擇傷害類型--」。" },
+        "choices": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["value", "name"],
+            "properties": {
+              "value": { "type": "string", "pattern": "^[a-z0-9-]+$", "description": "選項值，會寫進存檔：不可改名。" },
+              "name": { "type": "string", "minLength": 1, "description": "顯示文字。" }
+            }
+          },
+          "description": "可選的值。"
+        },
+        "text": { "$ref": "#/definitions/text", "description": "卡片說明（不可使用「#### 」小節）。" }
+      }
+    },
+    "collapsible": {
+      "type": "object",
+      "description": "可收合小節：標題為粗體，點選後展開內文。",
+      "additionalProperties": false,
+      "required": ["name", "text"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "description": "標題，例如「擴充與替換法術書」。" },
+        "text": { "$ref": "#/definitions/text", "description": "展開後的內文（不可使用「#### 」小節）。" }
+      }
+    },
+    "part": {
+      "type": "object",
+      "description": "子能力：輸出成外層能力裡帶 data-action-id 的小節。等級同外層能力；資源寫在外層能力。",
+      "additionalProperties": false,
+      "required": ["id", "name", "text"],
+      "properties": {
+        "id": { "$ref": "#/definitions/id", "description": "子能力 ID（與能力 ID 共用、全職業唯一）。已有的 data-action-id 照抄。" },
+        "name": { "type": "string", "minLength": 1, "description": "小節標題名稱，例如「神聖火花」。" },
+        "activation": { "type": "string", "minLength": 1, "description": "標題括弧內的使用方式，例如「魔法動作」、「附贈」。按鈕消耗資源時，跑團版標題自動加上「，消耗 1 次［資源名稱］」。" },
+        "text": { "$ref": "#/definitions/text", "description": "職業頁全文（不可使用「#### 」小節）。" },
+        "tabletop": { "$ref": "#/definitions/text", "description": "跑團按鈕說明的完整版本；只在和 text 不同時才寫。" },
+        "summary": { "type": "string", "minLength": 1, "description": "跑團總覽的一句話；省略時使用 text。" },
+        "actions": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/action" },
+          "description": "跑團按鈕；按鈕文字預設為「等級 N：子能力名稱（子職）」，N 為外層能力等級。"
+        }
       }
     },
     "action": {
@@ -74,9 +184,30 @@
         "mode": { "enum": ["action", "bonus", "reaction", "movement"], "description": "動作、附贈、反應或移動。" },
         "key": { "type": "string", "pattern": "^[a-z0-9-]+$", "description": "跑團偏好記住的按鈕 key：不可改名。" },
         "legacyKeys": { "type": "array", "items": { "type": "string" }, "description": "舊版按鈕 key，讀取舊偏好用。" },
-        "label": { "type": "string", "description": "按鈕文字；省略時為「等級 N：名稱（子職）」。" },
+        "label": {
+          "description": "按鈕文字；省略時為「等級 N：名稱（子職）」。依等級換名時寫 { byLevel: { 5: 等級 5：焚燒不死生物 } }：從該等級起改用此文字，低於最低等級時使用省略時的文字。",
+          "anyOf": [
+            { "type": "string" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["byLevel"],
+              "properties": {
+                "byLevel": {
+                  "type": "object",
+                  "minProperties": 1,
+                  "propertyNames": { "pattern": "^[1-9][0-9]?$" },
+                  "additionalProperties": { "type": "string", "minLength": 1 }
+                }
+              }
+            }
+          ]
+        },
         "level": { "$ref": "#/definitions/level", "description": "按鈕出現的等級；省略時同能力等級。" },
         "resource": { "type": "string", "description": "按鈕消耗的資源 key。" },
+        "druidOperation": { "enum": ["shape", "companion", "aid"], "description": "由 tabletop-druid.js 操作的按鈕：shape 荒野形態變形、companion 荒野夥伴、aid 大地之援。" },
+        "invocation": { "type": "string", "minLength": 1, "description": "須已選擇此魔能祈喚才出現，例如「饑渴魔刃」。" },
+        "requiresInvocation": { "type": "string", "minLength": 1, "description": "另須已選擇此魔能祈喚才出現（先決祈喚），例如「刃之魔契」。" },
         "append": {
           "type": "array",
           "items": { "$ref": "#/definitions/id" },
@@ -84,26 +215,46 @@
         }
       }
     },
+    "grantedSpell": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "properties": {
+        "id": { "$ref": "#/definitions/id", "description": "法術 ID（spellId），例如 hunters-mark。" },
+        "freeUses": {
+          "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "string" }],
+          "description": "不耗法術位的免費施放次數：固定數字，或特性表欄位／values 名稱。"
+        }
+      }
+    },
     "resource": {
       "type": "object",
       "additionalProperties": false,
       "required": ["key", "uses", "recover"],
-      "description": "此能力的使用次數資源。",
+      "description": "此能力的使用次數或點數池資源。",
       "properties": {
         "key": { "type": "string", "pattern": "^[a-z0-9-]+$", "description": "資源 key，跑團模式記錄剩餘次數用：不可改名。" },
+        "kind": { "enum": ["uses", "points"], "default": "uses", "description": "uses：使用次數（預設）；points：點數池，可分次消耗任意點數（例如聖療）。" },
         "uses": {
           "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "string" }],
-          "description": "次數：固定數字，或特性表欄位／values 名稱。"
+          "description": "次數（points 時為點數池總量）：固定數字，或特性表欄位／values 名稱。"
         },
-        "recover": {
+        "recover": { "$ref": "#/definitions/recover" },
+        "recoverByLevel": {
           "type": "object",
-          "additionalProperties": false,
-          "required": ["long"],
-          "properties": {
-            "short": { "anyOf": [{ "type": "integer", "minimum": 1 }, { "const": "all" }], "description": "短休恢復次數，all 為全部。" },
-            "long": { "anyOf": [{ "type": "integer", "minimum": 1 }, { "const": "all" }], "description": "長休恢復次數，all 為全部。" }
-          }
+          "description": "從指定等級起改用的恢復方式（整個取代 recover），例如吟遊詩人激勵 5 級起短休也全部恢復。",
+          "propertyNames": { "pattern": "^[1-9][0-9]?$" },
+          "additionalProperties": { "$ref": "#/definitions/recover" }
         }
+      }
+    },
+    "recover": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["long"],
+      "properties": {
+        "short": { "anyOf": [{ "type": "integer", "minimum": 1 }, { "const": "all" }], "description": "短休恢復次數，all 為全部。" },
+        "long": { "anyOf": [{ "type": "integer", "minimum": 1 }, { "const": "all" }], "description": "長休恢復次數，all 為全部。" }
       }
     }
   }

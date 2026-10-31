@@ -1,0 +1,175 @@
+# yaml-language-server: $schema=../../schema/class.schema.json
+id: paladin
+name: 聖騎士
+maxLevel: 8
+subclassLevel: 3
+defaultSubclass: devotion
+tagline: 聖騎士以神聖之力守護同伴，以斬技重創敵人。
+quote: 「戰火中的教堂前，他舉劍立誓，盔甲沾滿灰燼。當惡魔逼近時，他的劍燃起光芒。曾經迷失的他，在誓言中找回方向，願以生命守護弱者。受傷的孩童抓住他的披風，他沒有回頭，只是向前一步，擋在黑暗之前。」
+primaryAbility:
+  all: [力量, 魅力]
+spellcasting:
+  progression: half
+hitDie: 10
+saves: [感知, 魅力]
+skills:
+  choose: 2
+  from: [運動, 洞悉, 威嚇, 醫藥, 遊說, 宗教]
+weapons: 簡易武器和軍用武器
+tools: 無
+armor: 輕甲、中甲、重甲和盾牌
+equipment:
+  A: 鎖子甲、盾牌、長劍、標槍 ×6、聖徽、祭司套組、9 金幣
+  B: 150 金幣
+  note: "**祭司套組：**背包、毯子、聖水、油燈、單日口糧 ×7、長袍、火絨盒"
+progression:
+  channelDivinityUses:
+    label: 引導神力
+    byLevel: {1: null, 3: 2}
+  preparedSpells:
+    label: 準備法術
+    byLevel: {1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 7: 7}
+  spellSlots1:
+    label: １環
+    byLevel: {1: 2, 3: 3, 5: 4}
+  spellSlots2:
+    label: ２環
+    byLevel: {1: null, 5: 2, 7: 3}
+values:
+  layOnHandsPool: "{level} * 5"
+features:
+  - id: paladin-lay-on-hands
+    level: 1
+    name: 聖療
+    resource:
+      key: paladin-lay-on-hands
+      kind: points
+      uses: layOnHandsPool
+      recover: {long: all}
+    actions:
+      - mode: bonus
+        key: dynamic-bonus-paladin-curated-lay-on-hands
+        legacyKeys: [dynamic-bonus-class-1ol2xxh]
+    text: |
+      你擁有一個治療能量池，總量為{layOnHandsPool|「聖騎士等級 × 5」}，**長休後全部恢復**。
+
+      - **治療：**以**附贈**觸碰 1 個生物（可以是自己），從能量池分配治療量，使目標恢復等量生命值。
+      - **移除中毒：**觸碰時也可改為消耗 5 點能量，移除目標的[[中毒]]狀態；此用法不恢復生命值。
+  - id: paladin-spellcasting
+    level: 1
+    name: 施法
+    text: |
+      你使用**魅力**施展「聖騎士法術列表」中的法術，並可用聖徽作為施法法器。
+
+      - **準備法術：**起始準備 2 個 1 環聖騎士法術，之後依「聖騎士特性」表增加。數量提高時，從聖騎士法術列表補選至表列數量；只能準備你有對應環階法術位的法術。\
+        推薦：英雄氣概、熾焰斬。
+      - **長休替換：****每次長休後**，可替換 1 個已準備法術。
+      - **法術位：**數量見「聖騎士特性」表，長休後全部恢復。
+      - **額外法術：**其他特性給予的額外準備法術不計入上限。
+
+      例如 5 級聖騎士可準備共 6 個 1～2 環法術。
+  - id: paladin-weapon-mastery
+    level: 1
+    name: 武器精通
+    text: |
+      從你熟練的武器中選擇 2 種，取得其精通屬性，例如長劍、標槍。
+
+      - **改選時機：**每次長休後可改選。
+  - id: paladin-fighting-style
+    level: 2
+    name: 戰鬥風格
+    choose: 1
+    text: |
+      從下列選項中選擇 1 項：
+    options:
+      - id: paladin-fighting-style
+        name: 選 1 個「戰鬥風格」專長
+      - id: paladin-blessed-warrior
+        name: 選「受祝福的勇士」
+        text: |
+          學會 2 個牧師戲法，這些戲法視為你的聖騎士法術，施法屬性為**魅力**。每提升 1 級聖騎士，可替換其中 1 個戲法。\
+          推薦：神導術、聖火術。
+  - id: paladin-paladins-smite
+    level: 2
+    name: 聖騎士斬技
+    spells:
+      - id: divine-smite
+        freeUses: 1
+    text: |
+      你**始終準備**法術「至聖斬」。
+
+      - **免費施放：**可不消耗法術位施放 1 次，**長休後恢復**。
+  - id: paladin-channel-divinity
+    level: 3
+    name: 引導神力
+    resource:
+      key: paladin-channel-divinity
+      uses: channelDivinityUses
+      recover: {short: 1, long: all}
+    text: |
+      你可引導神力產生神聖效果，起始可使用「神聖感知」，之後可由其他特性追加新效果。每次使用時，從你已知的效果中選擇 1 個發動。
+
+      - **使用次數：**{channelDivinityUses|2 次}。**短休後恢復 1 次**，長休後全部恢復。
+      - **豁免 DC：**效果需要豁免時，使用你的聖騎士法術豁免 DC。
+    parts:
+      - id: paladin-divine-sense
+        name: 神聖感知
+        activation: 附贈
+        actions:
+          - mode: bonus
+            key: dynamic-bonus-paladin-curated-divine-sense
+            legacyKeys: [dynamic-bonus-class-1axs7np]
+            resource: paladin-channel-divinity
+        text: |
+          啟動後持續 10 分鐘，或直到你陷入[[失能]]狀態。期間獲得以下能力：
+
+          - **感知生物：**感知 60 呎內天界生物、邪魔、不死生物的位置與類型。
+          - **偵測地點：**偵測同範圍內受「聖居」祝福或褻瀆的地點與物件。
+  - id: paladin-subclass
+    level: 3
+    name: 聖騎士子職
+    type: subclass
+    text: |
+      選擇一個聖騎士子職，並隨等級提升獲得子職能力。基本規則僅提供「奉獻之誓」。
+
+      奉獻之誓重視正義、秩序與榮譽，常見信條包括：
+
+      - **誠信：**不誑語不欺騙，言出必行。
+      - **扶弱：**鋤強扶弱，無畏躬行。
+      - **榮譽：**以榮譽為世人樹立典範。
+  - id: paladin-ability-score-improvement-4
+    level: 4
+    name: 屬性值提升
+    text: |
+      選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。
+  - id: paladin-extra-attack
+    level: 5
+    name: 額外攻擊
+    actions:
+      - mode: action
+        key: dynamic-action-paladin-curated-extra-attack
+    text: |
+      你在自己的回合執行**攻擊動作**時，可以攻擊 2 次。
+  - id: paladin-faithful-steed
+    level: 5
+    name: 忠誠坐騎
+    spells:
+      - id: find-steed
+        freeUses: 1
+    text: |
+      你**始終準備**法術「召喚坐騎」。
+
+      - **免費施放：**可不消耗法術位施放 1 次，**長休後恢復**。
+  - id: paladin-aura-of-protection
+    level: 6
+    name: 守護靈氣
+    text: |
+      你以自身為原點，散發 10 呎的無形保護靈氣。你陷入[[失能]]狀態時，靈氣失效。
+
+      - **豁免加值：**你和靈氣內的盟友進行豁免檢定時，獲得等同你魅力調整值的加值（至少 +1）。
+      - **靈氣重疊：**一個生物同一時間只能從一道守護靈氣獲益；位於多道靈氣重疊處時，由該生物選擇使用哪一道。
+  - id: paladin-ability-score-improvement-8
+    level: 8
+    name: 屬性值提升
+    text: |
+      選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。

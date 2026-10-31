@@ -1,7 +1,7 @@
 /**
  * 職業能力 UI：職業選項（祈喚、超魔、苦痛魔爆、互斥與進階選項、職業攻擊備註）、
  * 角色能力視窗、補齊職業選項提示與缺項檢查、使命／升級戲法與職業選項記憶接線
- * （傳統 script，不使用 defer）。職業資料仍以 class-features.js 為準。
+ * （傳統 script，不使用 defer）。職業資料以 class-content.generated.js 為準（由 content/ 職業內容檔建置）。
  *
  * - 自 index.html 原封搬出，於第一段內嵌角色卡 script 之前同步載入，
  *   維持全域名稱供 index.html、pdf-launcher.js、spell-sources.js、spellbook.js、
@@ -1403,7 +1403,7 @@ function openClassFeatureChoicePrompt(missingSections, trigger) {
 function renderClassFeaturePanels(html, output, creationOutput) {
   const template = document.createElement("template");
   template.innerHTML = html;
-  // 頁籤歸屬由 class-features.js 的明確標記決定，不解析標題或改寫排版結構。
+  // 頁籤歸屬由職業 HTML（class-content.generated.js）的明確標記決定，不解析標題或改寫排版結構。
   const abilities = template.content.querySelector('[data-class-feature-panel="class"]');
   const creation = template.content.querySelector('[data-class-feature-panel="creation"]');
   output.replaceChildren(abilities || document.createTextNode("無資料"));

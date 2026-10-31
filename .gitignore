@@ -6,3 +6,6 @@ node_modules/
 /og-image-original.jpg
 # Private content packs (copyrighted subclasses etc.) must never reach the public repo
 /content/private/
+# Build outputs: generated locally by npm run build / npm run build:offline and by GitHub Actions on deploy
+/class-content.generated.js
+/twD20-offline.html

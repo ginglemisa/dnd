@@ -1,0 +1,197 @@
+# yaml-language-server: $schema=../../schema/class.schema.json
+id: monk
+name: 武僧
+maxLevel: 8
+subclassLevel: 3
+defaultSubclass: open-hand
+tagline: 武僧以高速移動、徒手或武器連擊制敵。
+quote: 「山間寺院的鐘聲回蕩，他在晨霧中緩緩收勢。當刺客翻牆而入，他未曾拔刀，只是側身避開，拳如閃電擊中對方要害。自幼修行的他，將身體與心志鍛鍊至極致。同行的旅人驚訝地看著這一切，他卻只是合掌，彷彿剛才的戰鬥不過是一場呼吸。」
+primaryAbility:
+  all: [敏捷, 感知]
+spellcasting:
+  progression: none
+hitDie: 8
+saves: [力量, 敏捷]
+skills:
+  choose: 2
+  from: [體操, 運動, 歷史, 洞悉, 宗教, 隱匿]
+weapons: 簡易武器和具有輕型屬性的軍用武器
+tools: 任選一種工匠工具或樂器
+armor: 無
+equipment:
+  A: 短矛、匕首 ×5、所選熟練項對應的工匠工具或樂器、探索套組、11 金幣
+  B: 50 金幣
+  note: "**探索套組：**背包、睡袋、油瓶 ×2、單日口糧 ×10、繩索、火絨盒、10 根火把、水袋"
+progression:
+  martialArtsDie:
+    label: 武藝
+    byLevel: {1: 6, 5: 8}
+    format: 1d{}
+  focusPoints:
+    label: 專注點
+    byLevel: {1: null, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8}
+  unarmoredMovement:
+    label: 無甲移動
+    byLevel: {1: null, 2: 10, 6: 15}
+    format: +{}呎
+values:
+  saveDc: 8 + {proficiencyBonus} + {wisModifier}
+  stunningStrikeDc:
+    formula: "{saveDc}"
+    format: （DC {}）
+  uncannyMetabolismHealing: 1d{martialArtsDie} + {level}
+  deflectAttacksReduction: 1d10 + {dexModifier} + {level}
+  deflectAttacksDamage: 2d{martialArtsDie} + {dexModifier}
+  slowFallReduction: "{level} * 5"
+  wholenessHealing: 1d{martialArtsDie} + {wisModifier}
+  wholenessUses: max(1, {wisModifier})
+features:
+  - id: monk-martial-arts
+    level: 1
+    name: 武藝
+    actions:
+      - mode: action
+        key: dynamic-action-monk-curated-martial-arts-action
+      - mode: bonus
+        key: dynamic-bonus-monk-curated-martial-arts-bonus
+        legacyKeys: [dynamic-bonus-class-muonvc]
+    text: |
+      你在**未穿護甲、未持盾**，且只使用徒手或武僧武器時，獲得下列效果。
+
+      - **附贈攻擊：**可用**附贈**再進行 1 次徒手攻擊。
+      - **武藝骰：**徒手與武僧武器可用武藝骰取代原本的傷害骰。{martialArtsDie|起始為 1d6，之後依「武僧特性」表提升}。
+      - **敏捷取代力量：**徒手與武僧武器的攻擊與傷害可用敏捷取代力量；徒手推撞／[[擒抱]]的豁免 DC 也可用敏捷計算。
+      - **武僧武器：**簡易近戰武器，以及具有輕型屬性的軍用近戰武器。
+  - id: monk-unarmored-defense
+    level: 1
+    name: 無甲防禦
+    text: |
+      你**未穿護甲、未持盾**時，AC = 10 + 敏捷調整值 + 感知調整值。
+  - id: monk-focus
+    level: 2
+    name: 聚氣凝神
+    resource:
+      key: monk-focus-points
+      kind: points
+      uses: focusPoints
+      recover: {short: all, long: all}
+    actions:
+      - mode: bonus
+        key: dynamic-bonus-monk-curated-focused-aim
+        legacyKeys: [dynamic-bonus-class-ricpmu]
+        append: [monk-open-hand-technique]
+    text: |
+      你可以消耗「專注點」施展武僧技巧，起始可使用下列 3 種用法。
+
+      - **專注點：**上限{focusPoints|見「武僧特性」表的「專注點」欄}，**短休或長休後全部恢復**。
+      - **豁免 DC：**特性要求豁免時，DC = {saveDc|8 + 熟練加值 + 感知調整值}。
+
+      #### 起始用法
+
+      - **疾風連擊：**消耗 1 點專注點，以**附贈**進行 2 次徒手攻擊。
+      - **閃轉騰挪：**以**附贈**撤離；消耗 1 點專注點時，可同時撤離並回避。
+      - **疾步如風：**以**附贈**衝刺；消耗 1 點專注點時，可同時撤離並衝刺，且本回合跳躍距離加倍。
+  - id: monk-unarmored-movement
+    level: 2
+    name: 無甲移動
+    text: |
+      你**未穿護甲、未持盾**時，速度增加 10 呎，之後依「武僧特性」表的「無甲移動」欄提升。
+  - id: monk-uncanny-metabolism
+    level: 2
+    name: 吐故納新
+    resource:
+      key: monk-uncanny-metabolism
+      uses: 1
+      recover: {long: all}
+    actions:
+      - mode: action
+        key: dynamic-action-monk-curated-uncanny-metabolism
+        resource: monk-uncanny-metabolism
+    text: |
+      擲先攻時，你可以恢復所有已消耗的專注點，並恢復{uncannyMetabolismHealing|「武藝骰 + 武僧等級」}生命值。
+
+      - **使用次數：**1 次，**長休後恢復**。
+  - id: monk-deflect-attacks
+    level: 3
+    name: 撥擋化勁
+    actions:
+      - mode: reaction
+        key: dynamic-reaction-monk-curated-deflect-attacks
+        legacyKeys: [dynamic-reaction-class-5l2yua]
+    text: |
+      攻擊命中你，且傷害包含鈍擊、穿刺或揮砍時，你可以用**反應**減少傷害。
+
+      - **減傷：**{deflectAttacksReduction|1d10 + 敏捷調整值 + 武僧等級}。
+
+      #### 反擊
+
+      若傷害減至 0，你可再消耗 1 點專注點反擊：
+
+      - **擋近戰：**選擇 5 呎內的生物。
+      - **擋遠程：**選擇 60 呎內你看得到、且不在全身掩護後的生物。
+
+      受到反擊的目標進行敏捷豁免，失敗時受到 {deflectAttacksDamage|2 枚武藝骰 + 你的敏捷調整值}傷害（同原攻擊類型）。
+  - id: monk-subclass
+    level: 3
+    name: 武僧子職
+    type: subclass
+    text: |
+      選擇一個武僧子職，並隨等級提升獲得子職能力。基本規則僅提供「散打鬥士」。
+  - id: monk-ability-score-improvement-4
+    level: 4
+    name: 屬性值提升
+    text: |
+      選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。
+  - id: monk-slow-fall
+    level: 4
+    name: 輕身墜
+    actions:
+      - mode: reaction
+        key: dynamic-reaction-monk-curated-slow-fall
+        legacyKeys: [dynamic-reaction-class-1l1lc9s]
+    text: |
+      你墜落時，可以用**反應**減少{slowFallReduction|「武僧等級 × 5」}點傷害。
+  - id: monk-extra-attack
+    level: 5
+    name: 額外攻擊
+    actions:
+      - mode: action
+        key: dynamic-action-monk-curated-extra-attack
+    text: |
+      你在自己的回合執行**攻擊動作**時，可以攻擊 2 次。
+  - id: monk-stunning-strike
+    level: 5
+    name: 震懾擊
+    actions:
+      - mode: action
+        key: dynamic-action-monk-curated-stunning-strike
+        legacyKeys: [dynamic-action-class-1g9j8ui]
+    text: |
+      你用武僧武器或徒手命中時，可消耗 1 點專注點發動震懾打擊，目標需進行體質豁免{stunningStrikeDc|}。
+
+      - **使用次數：****每回合 1 次**。
+      - **豁免失敗：**目標陷入[[震懾]]，直到你的下回合開始。
+      - **豁免成功：**目標速度減半，且到你的下回合開始前，下一次對它的攻擊具有優勢。
+  - level: 5
+    text: |
+      **武藝補充：**武僧達到 5 級時，武藝骰提升為 1d8，詳見「武僧特性」表。
+  - id: monk-empowered-strikes
+    level: 6
+    name: 真力駐拳
+    text: |
+      你的徒手打擊造成傷害時，可以將傷害類型改為力場傷害。
+  - level: 6
+    text: |
+      **無甲移動補充：**武僧達到 6 級時，無甲移動的速度加值提升為 15 呎，詳見「武僧特性」表。
+  - id: monk-evasion
+    level: 7
+    name: 反射閃避
+    text: |
+      你受到允許進行**敏捷豁免**使傷害減半的效應影響時，豁免成功則不受傷害，豁免失敗則只受一半傷害。
+
+      - **限制：**你處於[[失能]]狀態時，無法獲得此特性的效益。
+  - id: monk-ability-score-improvement-8
+    level: 8
+    name: 屬性值提升
+    text: |
+      選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。

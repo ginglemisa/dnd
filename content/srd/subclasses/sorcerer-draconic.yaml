@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=../../schema/subclass.schema.json
+id: draconic
+class: sorcerer
+name: 龍族術法
+shortName: 龍族
+features:
+  - id: sorcerer-draconic-resilience
+    level: 3
+    name: 龍族體魄
+    text: |
+      你的皮膚浮現龍鱗特徵，並獲得以下增益：
+
+      - **生命值：**生命值上限提高 3，此後每提升 1 級術士，再提高 1。
+      - **護甲等級：**未穿護甲時，AC 為「10＋敏捷調整值＋魅力調整值」。
+  - id: sorcerer-draconic-spells
+    level: 3
+    name: 龍族法術
+    text: |
+      達到下列術士等級後，你始終準備對應法術：
+
+      - **3 級：**變造自身、繁彩球、命令術、龍息術。
+      - **5 級：**恐懼術、飛行術。
+      - **7 級：**秘法眼、魅惑怪物。
+  - id: sorcerer-elemental-affinity
+    level: 6
+    name: 元素親和
+    text: |
+      選擇一種傷害類型：強酸、冷凍、火焰、閃電或毒素。
+    select:
+      id: sorcerer-elemental-affinity-damage-type
+      placeholder: --請選擇傷害類型--
+      choices:
+        - {value: acid, name: 強酸}
+        - {value: cold, name: 冷凍}
+        - {value: fire, name: 火焰}
+        - {value: lightning, name: 閃電}
+        - {value: poison, name: 毒素}
+      text: |
+        **傷害抗性：**你對所選傷害類型具有[[抗性]]。
+
+        **傷害加值：**施放造成該類型傷害的法術時，可將魅力調整值加到該法術的**一次傷害擲骰**中。

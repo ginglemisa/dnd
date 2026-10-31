@@ -1,0 +1,173 @@
+# yaml-language-server: $schema=../../schema/class.schema.json
+id: cleric
+name: 牧師
+maxLevel: 8
+subclassLevel: 3
+defaultSubclass: life
+tagline: 牧師是披甲持盾的神術施法者，能支援同伴，也能站上前線。
+quote: 「廢墟神殿中，火光閃爍，她跪在破碎的石像前低聲祈禱。傷痕累累的騎士倒在一旁，氣息微弱。她伸出手，光芒從掌心綻放，傷口逐漸癒合。她曾在信仰崩塌之際失去方向，如今卻在戰火中重新找回神的聲音。當黑暗生物自陰影中逼近，她站起身，舉起聖徽，毫不動搖。」
+primaryAbility:
+  all: [感知]
+spellcasting:
+  progression: full
+hitDie: 8
+saves: [感知, 魅力]
+skills:
+  choose: 2
+  from: [歷史, 洞悉, 醫藥, 遊說, 宗教]
+weapons: 簡易武器
+tools: 無
+armor: 輕甲、中甲和盾牌
+equipment:
+  A: 半身鎖甲、盾牌、硬頭錘、聖徽、祭司套組、7 金幣
+  B: 110 金幣
+  note: "**祭司套組：**背包、毯子、聖水、油燈、單日口糧 ×7、長袍、火絨盒。"
+progression:
+  channelDivinityUses:
+    label: 引導神力
+    byLevel: {1: null, 2: 2, 6: 3}
+  cantrips:
+    label: 戲法
+    byLevel: {1: 3, 4: 4}
+  preparedSpells:
+    label: 準備法術
+    byLevel: {1: 4, 2: 5, 3: 6, 4: 7, 5: 9, 6: 10, 7: 11, 8: 12}
+  spellSlots1:
+    label: １環
+    byLevel: {1: 2, 2: 3, 3: 4}
+  spellSlots2:
+    label: ２環
+    byLevel: {1: null, 3: 2, 4: 3}
+  spellSlots3:
+    label: ３環
+    byLevel: {1: null, 5: 2, 6: 3}
+  spellSlots4:
+    label: ４環
+    byLevel: {1: null, 7: 1, 8: 2}
+values:
+  divineSparkRoll: 1d8 + {wisModifier}
+  spellSaveDc:
+    formula: 8 + {proficiencyBonus} + {wisModifier}
+    format: （DC {}）
+  searUndeadDice: max(1, {wisModifier})d8
+  preserveLifeTotal: "{level} * 5"
+features:
+  - id: cleric-spellcasting
+    level: 1
+    name: 施法
+    text: |
+      你使用**感知**施展「牧師法術列表」中的法術，並可用聖徽作為施法法器。
+
+      - **戲法：**起始學會 3 個牧師戲法。每提升 1 級牧師，可將 1 個戲法換成另一個牧師戲法。\
+        推薦：神導術、聖火術、奇術。
+      - **準備法術：**起始準備 4 個 1 環牧師法術，之後依「牧師特性」表增加。數量提高時，從牧師法術列表補選至表列數量；只能準備你有對應環階法術位的法術，**每次長休後可全部更換**。\
+        推薦：祝福術、療傷術、光導箭、虔誠護盾。
+      - **法術位：**數量見「牧師特性」表，長休後全部恢復。
+      - **額外法術：**其他特性給予的額外準備法術不計入上限。
+
+      例如 3 級牧師可準備共 6 個 1～2 環法術。
+  - id: cleric-divine-order
+    level: 1
+    name: 神聖使命
+    choose: 1
+    optionStyle: cards
+    text: |
+      從下列神聖使命中選擇 1 項：
+    options:
+      - id: cleric-guardian
+        name: 守護者
+        text: |
+          獲得**軍用武器**熟練，並接受**重甲**訓練。
+      - id: cleric-trickster
+        name: 魔術使
+        text: |
+          額外學會 1 個牧師戲法；進行智力（[[奧秘]]）或智力（[[宗教]]）檢定時，額外加上感知調整值（至少 +1）。
+  - id: cleric-channel-divinity
+    level: 2
+    name: 引導神力
+    resource:
+      key: cleric-channel-divinity
+      uses: channelDivinityUses
+      recover: {short: 1, long: all}
+    text: |
+      你可引導神力產生神聖效果，起始可使用「神聖火花」與「驅散不死生物」。
+
+      - **使用次數：**起始 2 次，之後依「牧師特性」表增加。**短休後恢復 1 次**，長休後全部恢復。
+      - **豁免 DC：**效果需要豁免時，使用你的牧師法術豁免 DC。
+    parts:
+      - id: cleric-divine-spark
+        name: 神聖火花
+        activation: 魔法動作
+        actions:
+          - mode: action
+            key: dynamic-action-cleric-1c18bru
+            resource: cleric-channel-divinity
+        text: |
+          指定 30 呎內 1 個你看得見的生物，擲 {divineSparkRoll|1d8 + 感知調整值}，再選擇一種效果：
+
+          - **治療：**目標恢復等同擲骰結果的生命值。
+          - **傷害：**目標進行體質豁免{spellSaveDc|}，失敗時受到等同擲骰結果的光耀或黯蝕傷害（由你選擇），成功時傷害減半（無條件捨去）。
+      - id: cleric-turn-undead
+        name: 驅散不死生物
+        activation: 魔法動作
+        actions:
+          - mode: action
+            key: dynamic-action-cleric-xonbxu
+            label:
+              byLevel: {5: 等級 5：焚燒不死生物}
+            resource: cleric-channel-divinity
+            append: [cleric-sear-undead]
+        text: |
+          30 呎內每個不死生物進行感知豁免{spellSaveDc|}。
+
+          - **豁免失敗：**1 分鐘內陷入[[恐慌]]與[[失能]]，並在自己的回合中盡量遠離你。
+          - **提前結束：**該生物受到傷害，或你[[失能]]、死亡時，效果結束。
+  - id: cleric-subclass
+    level: 3
+    name: 牧師子職
+    type: subclass
+    text: |
+      選擇一個牧師子職，並隨等級提升獲得子職能力。基本規則僅提供「生命領域」。
+  - id: cleric-ability-score-improvement-4
+    level: 4
+    name: 屬性值提升
+    text: |
+      選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。
+    afterFeatChoice: |
+      **施法補充：**牧師達到 4 級時，你也會透過「施法」特性額外學會 1 個牧師戲法。
+  - id: cleric-sear-undead
+    level: 5
+    name: 焚燒不死生物
+    text: |
+      使用驅散不死生物時，可額外擲{searUndeadDice|**等同感知調整值數量的 d8**（至少 1d8）}，每個該次豁免失敗的不死生物都受到等同總值的光耀傷害。
+
+      此傷害不會中止驅散效果。
+  - level: 6
+    text: |
+      **引導神力補充：**牧師達到 6 級時，引導神力使用次數增加至 3 次，詳見「牧師特性」表。
+  - id: cleric-blessed-strikes
+    level: 7
+    name: 神佑打擊
+    choose: 1
+    choiceGroup: true
+    optionStyle: cards
+    text: |
+      選擇下列 1 項。即使你已從舊書的牧師子職獲得其中一項，也只能使用透過此特性選擇的選項。
+    options:
+      - id: cleric-blessed-strikes-divine-strike
+        name: 神聖打擊
+        attackNote: +1d8光/黯傷害
+        actions:
+          - mode: action
+            key: dynamic-action-cleric-sxx32
+        text: |
+          在自己的回合中限 1 次，以武器攻擊檢定命中生物時，可使目標額外受到 1d8 黯蝕或光耀傷害（由你選擇）。
+      - id: cleric-blessed-strikes-potent-spellcasting
+        name: 強力施法
+        text: |
+          以牧師戲法造成傷害時，將感知調整值加到傷害中。
+  - id: cleric-ability-score-improvement-8
+    level: 8
+    name: 屬性值提升
+    text: |
+      選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。

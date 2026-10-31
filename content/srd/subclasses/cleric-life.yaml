@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=../../schema/subclass.schema.json
+id: life
+class: cleric
+name: 生命領域
+shortName: 生命
+features:
+  - id: cleric-life-domain-spells
+    level: 3
+    name: 生命領域法術
+    text: |
+      達到下列牧師等級後，你始終準備對應法術：
+
+      - **3 級：**援助術、祝福術、療傷術、次級復原術。
+      - **5 級：**群體治癒真言、回生術。
+      - **7 級：**生命靈氣、防死結界。
+  - id: cleric-disciple-of-life
+    level: 3
+    name: 生命門徒
+    actions:
+      - mode: action
+        key: dynamic-action-cleric-1ocjvx6
+    text: |
+      使用**法術位**施放恢復生命值的法術時，目標在本回合額外恢復「2＋法術環階」生命值。
+  - id: cleric-preserve-life
+    level: 3
+    name: 維持生命
+    actions:
+      - mode: action
+        key: dynamic-action-cleric-aoatsu
+        legacyKeys: [dynamic-action-class-preserve-life]
+        resource: cleric-channel-divinity
+    text: |
+      以**魔法動作**展示聖徽並消耗 1 次引導神力，治療 30 呎內任意數量的重傷生物。
+
+      - **治療總量：**共{preserveLifeTotal|「牧師等級 × 5」}點，可自由分配給這些生物。
+      - **恢復上限：**不能使目標的生命值超過其生命值上限的一半。
+  - id: cleric-blessed-healer
+    level: 6
+    name: 神佑醫者
+    text: |
+      消耗法術位施放法術並恢復其他生物的生命值後，你立即恢復「2＋該法術位環階」生命值。

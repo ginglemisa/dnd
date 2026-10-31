@@ -47,7 +47,7 @@
   const SPELLCASTER_RACES = new Set(["elf", "gnome", "tiefling"]);
   const CLASS_CANTRIP_CLASSES = new Set(["bard", "cleric", "druid", "sorcerer", "warlock", "wizard"]);
   const SHILLELAGH_WEAPON_NAMES = new Set(["短棒", "長棍"]);
-  // Prepared-spell columns in class-features.js, for the supported levels 1–8.
+  // Prepared-spell columns of the class tables (content/srd/classes), for the supported levels 1–8.
   const STANDARD_PREPARED_SPELLS = Object.freeze([4, 5, 6, 7, 9, 10, 11, 12]);
   const HALF_CASTER_PREPARED_SPELLS = Object.freeze([2, 3, 4, 5, 6, 6, 7, 7]);
   const PREPARED_SPELLS_BY_CLASS = Object.freeze({

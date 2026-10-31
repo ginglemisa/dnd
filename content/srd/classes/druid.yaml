@@ -1,0 +1,225 @@
+# yaml-language-server: $schema=../../schema/class.schema.json
+id: druid
+name: 德魯伊
+maxLevel: 8
+subclassLevel: 3
+defaultSubclass: land
+tagline: 德魯伊操使自然魔法，也能化身野獸。
+quote: 「森林深處，霧氣繚繞，她赤足行走於濕潤的土地。狼群靜靜跟隨，樹葉在她身旁低語。當獵人踏入禁地，她的身影忽然消失，取而代之的是一頭巨熊自陰影中現身。她曾是城市的孩子，如今卻將心交給自然。遠方雷聲滾動，她抬頭，仿佛與天地共呼吸。」
+primaryAbility:
+  all: [感知]
+spellcasting:
+  progression: full
+hitDie: 8
+saves: [智力, 感知]
+skills:
+  choose: 2
+  from: [奧秘, 馴獸, 洞悉, 醫藥, 自然, 察覺, 宗教, 求生]
+weapons: 簡易武器
+tools: 草藥工具
+armor: 輕甲和盾牌
+equipment:
+  A: 皮甲、盾牌、鐮刀、德魯伊法器（長棍）、探索套組、草藥工具、9 金幣
+  B: 50 金幣
+  note: "**探索套組：**背包、睡袋、油瓶 ×2、單日口糧 ×10、繩索、火絨盒、火把 ×10、水袋。"
+progression:
+  wildShapeUses:
+    label: 荒野形態
+    byLevel: {1: null, 2: 2, 6: 3}
+  cantrips:
+    label: 戲法
+    byLevel: {1: 2, 4: 3}
+  preparedSpells:
+    label: 準備法術
+    byLevel: {1: 4, 2: 5, 3: 6, 4: 7, 5: 9, 6: 10, 7: 11, 8: 12}
+  spellSlots1:
+    label: １環
+    byLevel: {1: 2, 2: 3, 3: 4}
+  spellSlots2:
+    label: ２環
+    byLevel: {1: null, 3: 2, 4: 3}
+  spellSlots3:
+    label: ３環
+    byLevel: {1: null, 5: 2, 6: 3}
+  spellSlots4:
+    label: ４環
+    byLevel: {1: null, 7: 1, 8: 2}
+values:
+  wildShapeHours:
+    formula: floor({level} / 2)
+    format: （目前 {} 小時）
+  wildShapeTempHp:
+    formula: "{level}"
+    format: （目前 {} 點）
+features:
+  - id: druid-druidic
+    level: 1
+    name: 德魯伊語
+    spells:
+      - id: speak-with-animals
+    text: |
+      你學會德魯伊的祕密語言「德魯伊語」，並**始終準備**法術「動物交談」。
+
+      - **隱藏訊息：**你可用德魯伊語留下隱藏訊息，看得懂德魯伊語的人會自動發現。
+      - **察覺與解讀：**看不懂的人可通過 DC 15 智力（[[調查]]）檢定察覺訊息，但無法用非魔法方式解讀。
+  - id: druid-primal-order
+    level: 1
+    name: 原初使命
+    choose: 1
+    optionStyle: cards
+    text: |
+      從下列原初使命中選擇 1 項：
+    options:
+      - id: druid-shaman
+        name: 巫祝
+        text: |
+          額外學會 1 個德魯伊戲法。
+
+          你的智力（[[奧秘]]／[[自然]]）檢定可額外加上**感知調整值**（至少 +1）。
+      - id: druid-sentinel
+        name: 哨衛
+        text: |
+          獲得**軍用武器**熟練，並接受**中甲**訓練。
+  - id: druid-spellcasting
+    level: 1
+    name: 施法
+    text: |
+      你使用**感知**施展「德魯伊法術列表」中的法術，並可用德魯伊法器作為施法法器。
+
+      - **戲法：**起始學會 2 個德魯伊戲法。每提升 1 級德魯伊，可將 1 個戲法換成另一個德魯伊戲法。\
+        推薦：德魯伊伎倆、燃火術。
+      - **準備法術：**起始準備 4 個 1 環德魯伊法術，之後依「德魯伊特性」表增加。數量提高時，從德魯伊法術列表補選至表列數量；只能準備你有對應環階法術位的法術，**每次長休後可全部更換**。\
+        推薦：化獸為友、療傷術、妖火、雷鳴波。
+      - **法術位：**數量見「德魯伊特性」表，長休後全部恢復。
+      - **額外法術：**其他德魯伊特性給予的額外準備法術不計入上限，仍視為你的德魯伊法術。
+
+      例如 3 級德魯伊可準備共 6 個 1～2 環法術。
+  - id: druid-wild-shape
+    level: 2
+    name: 荒野形態
+    behavior: wild-shape-known-forms
+    resource:
+      key: druid-wild-shape
+      uses: wildShapeUses
+      recover: {short: 1, long: all}
+    actions:
+      - mode: bonus
+        key: dynamic-bonus-class-3u4zp1
+        druidOperation: shape
+    tabletop: |
+      以**附贈**變成已知的野獸形態。
+
+      - **持續時間：**最多為德魯伊等級的一半（無條件捨去）小時{wildShapeHours|}。
+      - **提前結束：**再次使用荒野形態、陷入[[失能]]或死亡時結束；也可用附贈主動解除。
+      - **使用次數：**{wildShapeUses|起始 2 次，之後依「德魯伊特性」表增加}。
+      - **恢復時機：****短休後恢復 1 次，長休後全部恢復**。
+
+      #### 變形規則
+
+      - **臨時生命值：**變形時獲得等同德魯伊等級的臨時生命值{wildShapeTempHp|}。
+      - **遊戲數據：**改用野獸數據，但保留你的生物類型、生命值、生命骰、智力／感知／魅力、職業特性、語言與專長。
+      - **熟練項：**保留技能與豁免熟練；若野獸的對應數值更高，可改用野獸值。
+      - **施法限制：**變形期間**不能施法**，但不會中斷你已施放法術的專注或既有效果。
+      - **裝備互動：**裝備可掉落、融入或由新形態穿戴；是否能穿戴由 DM 依體型與構造判定。無法穿戴者會掉落或融入，融入的裝備在變形期間不生效。
+    text: |
+      以**附贈**變成已知的野獸形態，見下方「已知形態」。
+
+      - **持續時間：**最多為德魯伊等級的一半（無條件捨去）小時{wildShapeHours|}。
+      - **提前結束：**再次使用荒野形態、陷入[[失能]]或死亡時結束；也可用附贈主動解除。
+      - **使用次數：**{wildShapeUses|起始 2 次，之後依「德魯伊特性」表增加}。
+      - **恢復時機：****短休後恢復 1 次，長休後全部恢復**。
+
+      #### 野獸形態
+
+      | 德魯伊等級 | 已知形態 | 最大挑戰等級 | 飛行速度 |
+      | --- | --- | --- | --- |
+      | 2 | 4 | 1/4 | 無 |
+      | 4 | 6 | 1/2 | 無 |
+      | 8 | 8 | 1 | 有 |
+
+      #### 已知形態
+
+      起始已知 4 種野獸形態，從**挑戰等級 1/4 以下且無飛行速度**的野獸中挑選。
+
+      **推薦：**[[老鼠]]、[[馱用馬]]、[[蜘蛛]]、[[狼]]。
+
+      - **長休替換：**每次長休可替換 1 種已知形態。
+      - **等級提升：**已知形態數量與最大挑戰等級依上表提高；達到 8 級後，可選有飛行速度的野獸。
+      - **其他來源：**經 DM 同意，也可參考《怪物圖鑑》或其他來源的合適野獸。
+
+      #### 變形規則
+
+      - **臨時生命值：**變形時獲得等同德魯伊等級的臨時生命值{wildShapeTempHp|}。
+      - **遊戲數據：**改用野獸數據，但保留你的生物類型、生命值、生命骰、智力／感知／魅力、職業特性、語言與專長。
+      - **熟練項：**保留技能與豁免熟練；若野獸的對應數值更高，可改用野獸值。
+      - **施法限制：**變形期間**不能施法**，但不會中斷你已施放法術的專注或既有效果。
+      - **裝備互動：**裝備可掉落、融入或由新形態穿戴；是否能穿戴由 DM 依體型與構造判定。無法穿戴者會掉落或融入，融入的裝備在變形期間不生效。
+    tables:
+      - label: 德魯伊野獸形態進程
+        style: wild-shape
+        rowHeaders: true
+        rowHeaderSuffix: 級
+        cellLabels: [已知形態, 最大 CR, 飛行]
+  - id: druid-wild-companion
+    level: 2
+    name: 荒野夥伴
+    spells:
+      - id: find-familiar
+    actions:
+      - mode: action
+        key: dynamic-action-class-wild-companion
+        druidOperation: companion
+    text: |
+      你可召喚動物外型的自然精魂，作為你的魔寵。
+
+      - **使用方式：**以**魔法動作**消耗 1 個法術位或 1 次荒野形態，施放 1 次**不需材料成分**的「獲得魔寵」。
+      - **魔寵類型：**以此方式召喚的魔寵為精類。
+      - **持續時間：**在你完成長休後消失。
+  - id: druid-subclass
+    level: 3
+    name: 德魯伊子職
+    type: subclass
+    text: |
+      選擇一個德魯伊子職，並隨等級提升獲得子職能力。基本規則僅提供「大地結社」。
+  - id: druid-ability-score-improvement-4
+    level: 4
+    name: 屬性值提升
+    text: |
+      選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。
+    afterFeatChoice: |
+      **施法補充：**德魯伊達到 4 級時，你也會透過「施法」特性額外學會 1 個德魯伊戲法。
+  - id: druid-wild-resurgence
+    level: 5
+    name: 野性復甦
+    resource:
+      key: druid-wild-resurgence-spell-slot
+      uses: 1
+      recover: {long: all}
+    text: |
+      你可在荒野形態與法術位之間轉換，以下兩種用法都**不需動作**。
+
+      - **恢復荒野形態：**每回合 1 次，若你沒有剩餘荒野形態次數，可消耗 1 個法術位，立即恢復 1 次荒野形態。
+      - **恢復法術位：**消耗 1 次荒野形態，恢復 1 個 1 環法術位。此用法每次長休前只能使用 1 次。
+  - id: druid-elemental-fury
+    level: 7
+    name: 元素狂怒
+    choose: 1
+    choiceGroup: true
+    optionStyle: cards
+    text: |
+      選擇並獲得下列 1 項：
+    options:
+      - id: druid-elemental-fury-potent-spellcasting
+        name: 強力施法
+        text: |
+          以德魯伊戲法造成傷害時，將**感知調整值**加到傷害中。
+      - id: druid-elemental-fury-primal-strike
+        name: 原初打擊
+        attackNote: +1d8冷凍/火焰/閃電/雷鳴傷害
+        text: |
+          在自己的回合中限 1 次，以武器或荒野形態的野獸形態攻擊命中生物時，可使目標額外受到 **1d8 冷凍、火焰、閃電或雷鳴傷害**（由你選擇）。
+  - id: druid-ability-score-improvement-8
+    level: 8
+    name: 屬性值提升
+    text: |
+      選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。

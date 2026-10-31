@@ -61,8 +61,8 @@
       "additionalProperties": false,
       "required": ["A", "B"],
       "properties": {
-        "A": { "type": "string", "minLength": 1, "description": "起始裝備（A）。PDF 取用此項。" },
-        "B": { "type": "string", "minLength": 1, "description": "起始裝備（B）。" },
+        "A": { "type": "string", "minLength": 1, "description": "起始裝備（A）。PDF 取用此項。可用行尾「\\」換行。" },
+        "B": { "type": "string", "minLength": 1, "description": "起始裝備（B）。可用行尾「\\」換行。" },
         "note": { "type": "string", "minLength": 1, "description": "裝備下方的套組內容說明。" }
       }
     },
@@ -82,24 +82,92 @@
             "propertyNames": { "pattern": "^[1-9][0-9]?$" },
             "additionalProperties": { "anyOf": [{ "type": "number" }, { "type": "null" }] }
           },
-          "format": { "type": "string", "pattern": "\\{\\}", "description": "顯示格式，{} 代入數值，例如 +{}。" }
+          "format": { "type": "string", "pattern": "\\{\\}", "description": "顯示格式，{} 代入數值，例如 +{}、{}d6、1d{}（數值是骰面）。" }
         }
       }
     },
     "values": {
       "type": "object",
-      "description": "其他可在文字中以 {名稱|…} 引用的數值，例如 \"{rageDamage}d6\"。",
+      "description": "其他可在文字中以 {名稱|…} 引用的數值，例如 \"{rageDamage}d6\"。公式只能用數字、d、四則運算、max()／min()／floor()（無條件捨去）與 {數值}；另可引用屬性調整值 {strModifier}…{chaModifier}（沒有屬性值時視為 0）。要套用顯示格式時寫 { formula, format }。跑團顯示依等級變化的文字時寫 { byLevel: { 5: 文字 } }。",
       "propertyNames": { "pattern": "^[a-z][A-Za-z0-9]*$" },
-      "additionalProperties": { "type": "string", "minLength": 1 }
+      "additionalProperties": {
+        "anyOf": [
+          { "type": "string", "minLength": 1, "description": "數值公式，例如 \"max(1, {chaModifier})\"。" },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["formula", "format"],
+            "description": "帶顯示格式的公式：{} 代入計算結果，例如 { formula: \"8 + {proficiencyBonus} + {wisModifier}\", format: （DC {}） } 顯示為「（DC 13）」。",
+            "properties": {
+              "formula": { "type": "string", "minLength": 1, "description": "數值公式，寫法同字串公式。" },
+              "format": { "type": "string", "pattern": "\\{\\}", "description": "顯示格式，{} 代入計算結果。" }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["byLevel"],
+            "description": "依等級的文字：從該等級起跑團模式改顯示此文字；未達最低等級時保留頁面文字。只能用在文字，不可用於公式或次數。",
+            "properties": {
+              "byLevel": {
+                "type": "object",
+                "minProperties": 1,
+                "propertyNames": { "pattern": "^[1-9][0-9]?$" },
+                "additionalProperties": { "type": "string", "minLength": 1 }
+              }
+            }
+          }
+        ]
+      }
     },
     "features": {
       "type": "array",
       "minItems": 1,
       "items": { "$ref": "feature.schema.json#/definitions/feature" },
       "description": "職業能力，依等級排列。"
+    },
+    "appendix": {
+      "type": "array",
+      "minItems": 1,
+      "description": "附錄：沒有等級的參考小節（例如術士的「超魔法選項」、契術師的「魔能祈喚選項」），接在所有能力之後。",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "text"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "description": "標題，例如「超魔法選項」。" },
+          "text": { "$ref": "feature.schema.json#/definitions/text", "description": "內文，可用「#### 標題」小節（不可有表格）；有 parts 時寫在小節之前的說明，不可再用「#### 」。" },
+          "parts": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "$ref": "#/definitions/appendixPart" },
+            "description": "附錄小節：依序接在 text 之後。有小節需要跑團按鈕（例如魔能斬擊）時，該附錄的小節全部寫在這裡以保留順序。"
+          }
+        }
+      }
     }
   },
   "definitions": {
+    "appendixPart": {
+      "type": "object",
+      "description": "附錄小節：輸出成通用小節，標題為「名稱（先決條件：…）」。沒有等級；按鈕須寫 level。",
+      "additionalProperties": false,
+      "required": ["name", "text"],
+      "properties": {
+        "id": { "$ref": "feature.schema.json#/definitions/id", "description": "小節 ID（與能力 ID 共用、全職業唯一），有 actions 時必填；已有的 data-action-id 照抄。" },
+        "name": { "type": "string", "minLength": 1, "description": "小節名稱，例如「刃之魔契」。網站以此名稱切割讀取，不可改字。" },
+        "prerequisite": { "type": "string", "minLength": 1, "description": "先決條件，顯示為標題後的「（先決條件：…）」，例如「契術師等級 5+,刃之魔契祈喚」。" },
+        "text": { "$ref": "feature.schema.json#/definitions/text", "description": "內文（不可有表格）；「#### 標題」只輸出標題，不另包小節。" },
+        "actions": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "feature.schema.json#/definitions/action" },
+          "description": "跑團按鈕：說明為此小節，按鈕文字預設為小節名稱，須寫 level。"
+        }
+      },
+      "if": { "required": ["actions"] },
+      "then": { "required": ["id"] }
+    },
     "abilities": {
       "type": "array",
       "minItems": 1,

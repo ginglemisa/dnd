@@ -22,7 +22,7 @@
   const allTools = Object.freeze(groups.flatMap(group => group.options));
   const allToolSet = new Set(allTools);
 
-  // 職業創角規則見 class-features.js；選項沿用同一份工具目錄。
+  // 職業創角規則見 content/srd 職業內容檔；選項沿用同一份工具目錄。
   const classProficiencies = Object.freeze({
     bard: Object.freeze({ count: 3, options: instruments, idPrefix: "bard-instrument-" }),
     monk: Object.freeze({ count: 1, options: Object.freeze([...artisanTools, ...instruments]), idPrefix: "monk-tool-proficiency-" }),

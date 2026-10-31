@@ -1,0 +1,118 @@
+# yaml-language-server: $schema=../../schema/class.schema.json
+id: wizard
+name: 法師
+maxLevel: 8
+subclassLevel: 3
+defaultSubclass: evoker
+tagline: 法師學習大量法術，靠知識與事前準備應付各種情況。
+quote: 「高塔書房中，他翻閱泛黃卷軸，燭光映出密密麻麻的筆記。多年苦讀讓他掌握了改變現實的知識。當同伴在外呼喊，他冷靜地合上書，口中念出精準的咒語。敵人尚未靠近，空間已被扭曲。對他而言，力量來自理解，而非本能。」
+primaryAbility:
+  all: [智力]
+spellcasting:
+  progression: full
+hitDie: 6
+saves: [智力, 感知]
+skills:
+  choose: 2
+  from: [奧秘, 歷史, 洞悉, 調查, 醫藥, 自然, 宗教]
+weapons: 簡易武器
+tools: 無
+armor: 無
+equipment:
+  A: 匕首 ×2、奧術法器（長棍）、長袍、法術書、學者套組、5 金幣
+  B: 55 金幣
+  note: "**學者套組：**背包、書籍、墨水、墨水筆、油燈、油瓶 ×10、羊皮紙 ×10、火絨盒"
+progression:
+  cantrips:
+    label: 戲法
+    byLevel: {1: 3, 4: 4}
+  preparedSpells:
+    label: 準備法術
+    byLevel: {1: 4, 2: 5, 3: 6, 4: 7, 5: 9, 6: 10, 7: 11, 8: 12}
+  spellSlots1:
+    label: １環
+    byLevel: {1: 2, 2: 3, 3: 4}
+  spellSlots2:
+    label: ２環
+    byLevel: {1: null, 3: 2, 4: 3}
+  spellSlots3:
+    label: ３環
+    byLevel: {1: null, 5: 2, 6: 3}
+  spellSlots4:
+    label: ４環
+    byLevel: {1: null, 7: 1, 8: 2}
+features:
+  - id: wizard-spellcasting
+    level: 1
+    name: 施法
+    behavior: wizard-spellbook-recommendations
+    text: |
+      你使用**智力**施展「法師法術列表」中的法術，並以奧術法器或法術書作為施法法器。
+
+      - **戲法：**起始學會 3 個法師戲法，每次長休後可替換 1 個。\
+        推薦：光亮術、法師之手、冷凍射線。
+      - **法術書：**起始記錄 6 個 1 環法師法術，每提升 1 級法師，可再加入 2 個目前能準備環階的法師法術。\
+        推薦：偵測魔法、羽落術、法師護甲、魔法飛彈、睡眠術、雷鳴波。
+      - **準備法術：**起始從法術書準備 4 個，之後依「法師特性」表增加。只能準備你有對應環階法術位的法術，每次長休後可全部更換。
+      - **法術位：**數量見「法師特性」表，長休後全部恢復。
+      - **額外法術：**其他法師特性給予的額外準備法術不計入上限，仍視為你的法師法術。
+    collapsible:
+      - name: 擴充與替換法術書
+        text: |
+          你可以將找到的法師法術抄入法術書，也能製作備份。
+
+          - **抄錄新法術：**必須是你能準備的法術，每環花費 2 小時與 50 金幣。
+          - **複製至另一冊法術書：**將已知法術抄入另一冊書，每環花費 1 小時與 10 金幣。
+          - **遺失法術書：**可先將目前已準備的法術抄入新書，其餘法術需重新取得。
+
+          法術書只有你能直接閱讀，施展「鑑定術」也能辨讀。
+  - id: wizard-ritual-adept
+    level: 1
+    name: 儀式精通
+    text: |
+      法術書中有「儀式」標籤的法術，**即使未準備，也能以儀式施放**，但施法時必須閱讀法術書。
+  - id: wizard-arcane-recovery
+    level: 1
+    name: 奧術回想
+    resource:
+      key: wizard-arcane-recovery
+      uses: 1
+      recover: {long: all}
+    text: |
+      完成短休時，可恢復部分已消耗的法術位。使用後，須完成長休才能再次使用。
+
+      - **恢復總環階：**最多為法師等級的一半（無條件進位）。
+      - **單一法術位：**最高只能恢復 5 環。
+
+      例如 4 級法師可恢復 1 個 2 環，或 2 個 1 環法術位。
+  - id: wizard-scholar
+    level: 2
+    name: 學者
+    text: |
+      從[[奧秘]]、[[歷史]]、[[調查]]、[[醫藥]]、[[自然]]、[[宗教]]中，選擇 1 個**已熟練**的技能，獲得專精。
+  - id: wizard-subclass
+    level: 3
+    name: 法師子職
+    type: subclass
+    text: |
+      選擇一個法師子職，並隨等級提升獲得子職能力。基本規則僅提供「塑能師」。
+  - id: wizard-ability-score-improvement-4
+    level: 4
+    name: 屬性值提升
+    text: |
+      選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。
+    afterFeatChoice: |
+      **施法補充：**法師達到 4 級時，你也會透過「施法」特性額外學會 1 個法師戲法。
+  - id: wizard-memorize-spell
+    level: 5
+    name: 記憶法術
+    actions:
+      - mode: action
+        key: dynamic-action-wizard-curated-memorize-spell
+    text: |
+      每次短休後，可研讀法術書，將 1 個透過「施法」準備的 1 環以上法師法術，換成書中另一個你能準備的 1 環以上法師法術。
+  - id: wizard-ability-score-improvement-8
+    level: 8
+    name: 屬性值提升
+    text: |
+      選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。
