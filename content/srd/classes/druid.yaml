@@ -45,6 +45,7 @@ progression:
     label: ４環
     byLevel: {1: null, 7: 1, 8: 2}
 values:
+  wildShapeUsesText: {formula: "{wildShapeUses}", format: "{} 次"}
   wildShapeHours:
     formula: floor({level} / 2)
     format: （目前 {} 小時）
@@ -111,7 +112,7 @@ features:
 
       - **持續時間：**最多為德魯伊等級的一半（無條件捨去）小時{wildShapeHours|}。
       - **提前結束：**再次使用荒野形態、陷入[[失能]]或死亡時結束；也可用附贈主動解除。
-      - **使用次數：**{wildShapeUses|起始 2 次，之後依「德魯伊特性」表增加}。
+      - **使用次數：**{wildShapeUsesText|起始 2 次，之後依「德魯伊特性」表增加}。
       - **恢復時機：****短休後恢復 1 次，長休後全部恢復**。
 
       #### 變形規則
@@ -126,7 +127,7 @@ features:
 
       - **持續時間：**最多為德魯伊等級的一半（無條件捨去）小時{wildShapeHours|}。
       - **提前結束：**再次使用荒野形態、陷入[[失能]]或死亡時結束；也可用附贈主動解除。
-      - **使用次數：**{wildShapeUses|起始 2 次，之後依「德魯伊特性」表增加}。
+      - **使用次數：**{wildShapeUsesText|起始 2 次，之後依「德魯伊特性」表增加}。
       - **恢復時機：****短休後恢復 1 次，長休後全部恢復**。
 
       #### 野獸形態

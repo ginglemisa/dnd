@@ -49,8 +49,8 @@ values:
   spellSaveDc:
     formula: 8 + {proficiencyBonus} + {wisModifier}
     format: （DC {}）
-  searUndeadDice: max(1, {wisModifier})d8
-  preserveLifeTotal: "{level} * 5"
+  searUndeadDice: {formula: "max(1, {wisModifier})d8", format: " {}（感知調整值，至少 1d8）", blank: " Xd8（X＝感知調整值，至少 1d8）"}
+  preserveLifeTotal: {formula: "{level} * 5", format: "「{}」", blank: "keep"}
 features:
   - id: cleric-spellcasting
     level: 1

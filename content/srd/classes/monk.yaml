@@ -35,15 +35,17 @@ progression:
     byLevel: {1: null, 2: 10, 6: 15}
     format: +{}呎
 values:
+  martialArtsDieText: {formula: "{martialArtsDie}", format: "目前為 1d{}"}
+  focusPointsText: {formula: "{focusPoints}", format: " {} 點"}
   saveDc: 8 + {proficiencyBonus} + {wisModifier}
   stunningStrikeDc:
     formula: "{saveDc}"
     format: （DC {}）
-  uncannyMetabolismHealing: 1d{martialArtsDie} + {level}
+  uncannyMetabolismHealing: {formula: "1d{martialArtsDie} + {level}", format: " {} "}
   deflectAttacksReduction: 1d10 + {dexModifier} + {level}
-  deflectAttacksDamage: 2d{martialArtsDie} + {dexModifier}
-  slowFallReduction: "{level} * 5"
-  wholenessHealing: 1d{martialArtsDie} + {wisModifier}
+  deflectAttacksDamage: {formula: "2d{martialArtsDie} + {dexModifier}", format: "{} "}
+  slowFallReduction: {formula: "{level} * 5", format: " {} "}
+  wholenessHealing: {formula: "1d{martialArtsDie} + {wisModifier}", format: " {} "}
   wholenessUses: max(1, {wisModifier})
 features:
   - id: monk-martial-arts
@@ -59,7 +61,7 @@ features:
       你在**未穿護甲、未持盾**，且只使用徒手或武僧武器時，獲得下列效果。
 
       - **附贈攻擊：**可用**附贈**再進行 1 次徒手攻擊。
-      - **武藝骰：**徒手與武僧武器可用武藝骰取代原本的傷害骰。{martialArtsDie|起始為 1d6，之後依「武僧特性」表提升}。
+      - **武藝骰：**徒手與武僧武器可用武藝骰取代原本的傷害骰。{martialArtsDieText|起始為 1d6，之後依「武僧特性」表提升}。
       - **敏捷取代力量：**徒手與武僧武器的攻擊與傷害可用敏捷取代力量；徒手推撞／[[擒抱]]的豁免 DC 也可用敏捷計算。
       - **武僧武器：**簡易近戰武器，以及具有輕型屬性的軍用近戰武器。
   - id: monk-unarmored-defense
@@ -84,7 +86,7 @@ features:
     text: |
       你可以消耗「專注點」施展武僧技巧，起始可使用下列 3 種用法。
 
-      - **專注點：**上限{focusPoints|見「武僧特性」表的「專注點」欄}，**短休或長休後全部恢復**。
+      - **專注點：**上限{focusPointsText|見「武僧特性」表的「專注點」欄}，**短休或長休後全部恢復**。
       - **豁免 DC：**特性要求豁免時，DC = {saveDc|8 + 熟練加值 + 感知調整值}。
 
       #### 起始用法

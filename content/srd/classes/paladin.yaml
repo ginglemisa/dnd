@@ -36,7 +36,8 @@ progression:
     label: ２環
     byLevel: {1: null, 5: 2, 7: 3}
 values:
-  layOnHandsPool: "{level} * 5"
+  layOnHandsPool: {formula: "{level} * 5", format: "「{}」點"}
+  channelDivinityUsesText: {formula: "{channelDivinityUses}", format: "{} 次"}
 features:
   - id: paladin-lay-on-hands
     level: 1
@@ -109,7 +110,7 @@ features:
     text: |
       你可引導神力產生神聖效果，起始可使用「神聖感知」，之後可由其他特性追加新效果。每次使用時，從你已知的效果中選擇 1 個發動。
 
-      - **使用次數：**{channelDivinityUses|2 次}。**短休後恢復 1 次**，長休後全部恢復。
+      - **使用次數：**{channelDivinityUsesText|2 次}。**短休後恢復 1 次**，長休後全部恢復。
       - **豁免 DC：**效果需要豁免時，使用你的聖騎士法術豁免 DC。
     parts:
       - id: paladin-divine-sense

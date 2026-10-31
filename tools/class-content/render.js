@@ -5,7 +5,6 @@ const { ContentError, escapeHtml, renderInline, renderMarkdown } = require("./ma
 const { BUILT_IN_VALUES, getActions } = require("./load");
 
 const NUMBER_WORDS = Object.freeze({ 1: "一", 2: "兩", 3: "三", 4: "四" });
-const kebab = name => name.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`);
 
 function getProficiencyBonus(level) {
   return Math.ceil(level / 4) + 1;
@@ -38,25 +37,16 @@ function mergeFeatures(classDef, subclass) {
 }
 
 function createRenderContext(classDef, subclass) {
-  const valueNames = new Set([...Object.keys(classDef.progression || {}), ...Object.keys(classDef.values || {})]);
+  const valueNames = new Set([...Object.keys(classDef.progression || {}), ...Object.keys(classDef.values || {}), ...Object.keys(BUILT_IN_VALUES)]);
   const merged = mergeFeatures(classDef, subclass);
   const appended = new Set(merged.flatMap(({ feature }) => getActions(feature).flatMap(action => action.append || [])));
   // 子能力標題的消耗字樣：資源名稱是定義該資源的能力名稱。
   const resourceNames = new Map(merged.filter(({ feature }) => feature.resource).map(({ feature }) => [feature.resource.key, feature.name]));
-  // 只引用另一個特性表欄位或 values 並帶 format 的值（例如 stunningStrikeDc: { formula: "{saveDc}", format: （DC {}） }）。
-  // 引用內建數值（例如 { formula: "{level}", format: （目前 {} 點） }）視為獨立的值，沿用自己的 key。
-  const aliasOf = token => {
-    const value = classDef.values?.[token];
-    const target = value?.format ? value.formula.match(/^\{([A-Za-z][A-Za-z0-9]*)\}$/)?.[1] : undefined;
-    return target && !Object.hasOwn(BUILT_IN_VALUES, target) ? target : undefined;
-  };
-  // 轉換期沿用 action-panel.js 的 TABLETOP_VALUE_RESOLVERS key：內建數值另有固定 key，其餘為「職業-欄位名」。
-  // 帶 format 的值：舊版計算函式已含外框時用自己的 key；只引用另一個數值時用被引用值的 key，外框由 valueFrame 輸出。
+  // data-tabletop-value 是數值名稱（特性表欄位、values 或內建的 level／proficiencyBonus）；
+  // 跑團模式由 character-rules.js 的 getClassValueText() 依 classRules 計算並套用 format。
   const resolveValue = (token, where) => {
-    if (Object.hasOwn(BUILT_IN_VALUES, token)) return BUILT_IN_VALUES[token];
     if (!valueNames.has(token)) throw new ContentError(`${where}：{${token}|…} 不是特性表欄位或 values`);
-    if (aliasOf(token)) return resolveValue(aliasOf(token), where);
-    return `${classDef.id}-${kebab(token)}`;
+    return token;
   };
   return {
     classDef,
@@ -64,10 +54,7 @@ function createRenderContext(classDef, subclass) {
     merged,
     appended,
     resourceNames,
-    resolveValue,
-    valueFrame(token) {
-      return aliasOf(token) ? classDef.values[token].format.split("{}") : null;
-    }
+    resolveValue
   };
 }
 
@@ -147,12 +134,12 @@ function renderOptions(feature, context, where) {
     const text = lines.map((line, index) => renderInline(index < lines.length - 1 ? line.replace(/\\$/, "") : line, context, at)).join("<br>");
     const group = feature.changeOn || feature.choiceGroup ? ` data-feature-choice-group="${feature.id}"` : "";
     const label = `<label><input type="checkbox" id="${option.id}"${group}> ${escapeHtml(option.name)}</label>`;
-    // 轉換期：跑團說明的「名稱：」沿用 TABLETOP_VALUE_RESOLVERS 的 -name key，段落 ID 為「職業-選項名」。
+    // 跑團說明略過勾選框，改在「：」前顯示選項名稱（跑團限定文字）；段落 ID 為「職業-選項名」。
     const suffix = option.id.startsWith(`${feature.id}-`) ? option.id.slice(feature.id.length + 1) : null;
     if (inTabletop && !suffix) throw new ContentError(`${at}：跑團動作的選項 ID 須以「${feature.id}-」開頭`);
     const actionId = inTabletop ? ` data-action-id="${classDef.id}-${suffix}"` : "";
     const separator = inTabletop
-      ? `<span data-tabletop-value="${classDef.id}-${suffix}-name"${cards ? " data-overview-hide" : ""}>：</span>`
+      ? `<span${cards ? " data-overview-hide" : ""}><span data-tabletop-only hidden>${escapeHtml(option.name)}</span>：</span>`
       : (text ? "：" : "");
     // 選項自己的按鈕：說明段落為選項文字（不含勾選框與「：」），段落 ID 同為「職業-選項名」。
     if (option.actions && !suffix) throw new ContentError(`${at}：有 actions 的選項 ID 須以「${feature.id}-」開頭`);

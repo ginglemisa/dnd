@@ -48,6 +48,7 @@ progression:
     label: ４環
     byLevel: {1: null, 7: 1, 8: 2}
 values:
+  inspirationDieText: {formula: "{inspirationDie}", format: "目前為 d{}"}
   inspirationUses: max(1, {chaModifier})
   inspirationRecovery:
     byLevel: {5: 短休或長休後全部恢復}
@@ -70,7 +71,7 @@ features:
 
       - **使用方式：**以**附贈**指定你 60 呎內聽得到或看得到你的 1 個生物。同一生物同時只能持有 1 顆你的激勵骰。
       - **效果：**激勵骰持續 1 小時。目標在 **d20 檢定失敗**後，可擲這顆激勵骰並加到結果上；擲出後骰子消耗。
-      - **激勵骰：**{inspirationDie|起始為 d6，之後依「吟遊詩人特性」表提升}。
+      - **激勵骰：**{inspirationDieText|起始為 d6，之後依「吟遊詩人特性」表提升}。
       - **使用次數：**等同魅力調整值（至少 1 次），**{inspirationRecovery|長休後全部恢復}**。
   - id: bard-spellcasting
     level: 1

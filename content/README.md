@@ -27,7 +27,7 @@ VS Code 安裝 Red Hat 的「YAML」擴充套件後，會依檔案第一行的 `
 - 同一段內要換行，在行尾加 `\`（清單項目的下一行再縮排兩格）。創角資訊的單行欄位（例如 `equipment.A`）也可用同樣寫法換行。
 - `#### 標題` 開始一個小節，直到下一個 `####` 或文字結束。只是排版分段時用它；小節有自己的跑團按鈕時改用子能力（見下方「子能力」），預設收合的小節改用 `collapsible`（見下方「可收合小節」）。
 - `[[運動]]`、`[[抗性]]`、`[[失能]]`、`[[小魔鬼]]`：提示框，名稱須存在於技能／規則提示表、狀態表或野獸表（`monster.js` 的 `BEAST_STATS`，取中文名）。
-- `{rageDamage|數值見特性表}`：職業頁顯示 `|` 後的文字，跑團模式換成目前數值。名稱須是 `progression` 欄位、`values` 或內建的 `level`、`proficiencyBonus`。整個數值標記要粗體時寫 `**{名稱|文字}**`；只有部分頁面文字粗體時寫在 `|` 後，例如 `{searUndeadDice|**等同感知調整值數量的 d8**（至少 1d8）}`。
+- `{rageDamageText|數值見特性表}`：職業頁顯示 `|` 後的文字，跑團模式換成目前數值（網站依目前等級與屬性值計算）。名稱須是 `progression` 欄位、`values` 或內建的 `level`、`proficiencyBonus`；特性表欄位套用欄位的 `format`，要另加跑團字樣（例如「3 次」「目前 +2」）時在 `values` 另取名稱並寫 `format`（見下方「職業層級的欄位」）。整個數值標記要粗體時寫 `**{名稱|文字}**`；只有部分頁面文字粗體時寫在 `|` 後，例如 `{searUndeadDice|**等同感知調整值數量的 d8**（至少 1d8）}`。
 - `{spellSaveDc|}`：`|` 後留空＝只在跑團出現。職業頁不顯示，跑團模式顯示目前數值（`values` 有 `format` 時套用格式，例如「（DC 13）」）。
 - 規則表格用標準 GFM 表格，見下方「表格」。
 - 分隔線：單獨一行 `---`，前後各空一行，輸出 `<hr class="class-rule-divider">`（樣式由 styles.css 設定）。
@@ -144,7 +144,8 @@ VS Code 安裝 Red Hat 的「YAML」擴充套件後，會依檔案第一行的 `
 - 網站依欄位名稱讀取的特性表欄位：`cantrips`（戲法數量）、`preparedSpells`（準備法術數量）、`spellSlots1`～`spellSlots4`（各環法術位）；契約魔法（`pact`）為 `spellSlots`（法術位數量）與 `spellSlotLevel`（法術位環階）；契術師的 `invocations`（魔能祈喚數量）。改名會讓網站讀不到。
 - `hitDie`、`saves`、`spellcasting.progression` 也供網站計算生命值、豁免熟練與是否具施法能力。
 - `values`：公式只能用數字、`d`、四則運算、`max()`／`min()`／`floor()`（無條件捨去，例如 `floor({level} / 2)`）與 `{數值}`，例如 `"{rageDamage}d6"`、`"max(1, {chaModifier})"`。公式中另可引用屬性調整值 `{strModifier}`、`{dexModifier}`、`{conModifier}`、`{intModifier}`、`{wisModifier}`、`{chaModifier}`（沒有屬性值時視為 0；文字中不可直接引用）。
-  要套用顯示格式時寫 `{ formula: "8 + {proficiencyBonus} + {wisModifier}", format: （DC {}） }`，`{}` 代入計算結果；公式只引用另一個特性表欄位或 `values` 時（例如 `{ formula: "{saveDc}", format: （DC {}） }`）可為同一數值另取帶格式的名稱；只引用內建的 `level`／`proficiencyBonus`（例如 `{ formula: "{level}", format: （目前 {} 點） }`）時是獨立的值。
+  跑團顯示要加字樣時寫 `{ formula: "8 + {proficiencyBonus} + {wisModifier}", format: "（DC {}）" }`，`{}` 代入計算結果；`format` 的前後空白也會保留（夾在中文之間時用來和數值區隔，例如 `" {} 點"`）。同一個數值要在不同地方顯示不同字樣時另取名稱，例如 `rageUsesText: { formula: "{rageUses}", format: "{} 次" }`；只引用一個特性表欄位且該等級為「-」時保留頁面文字。骰子公式顯示為「1d8 + 3」（有常數項時一律顯示正負號，0 顯示「+ 0」）。
+  屬性值或等級未填時，屬性調整值視為 0、等級視為 1；要改顯示其他文字時寫 `blank: "…"`，寫 `blank: keep` 則保留頁面文字。flow 寫法（`{ … }`）中含 `{}` 的字串須加引號。
   跑團顯示的是依等級變化的文字（不是數字）時寫 `{ byLevel: { 5: 短休或長休後全部恢復 } }`：從該等級起換成此文字，更低等級保留頁面文字；這種值只能用在文字，不可用於公式或次數。
 
 ## 不可改名的 ID

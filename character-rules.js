@@ -215,6 +215,9 @@
       for (const [from, item] of Object.entries(entry.byLevel)) if (Number(from) <= level) text = item;
       return text;
     }
+    // 只引用一個特性表欄位（例如 { formula: "{rageUses}", format: "{} 次" }）且該欄位為「-」時保留職業頁文字。
+    const onlyColumn = String(entry.formula ?? entry).match(/^\{([A-Za-z][A-Za-z0-9]*)\}$/)?.[1];
+    if (onlyColumn && Object.hasOwn(rules.progression || {}, onlyColumn) && getClassProgressionValue(className, onlyColumn, level) === null) return null;
     let value;
     try {
       value = scope.resolveName(name);

@@ -34,6 +34,8 @@ progression:
     label: 武器精通
     byLevel: {1: 2, 4: 3}
 values:
+  rageUsesText: {formula: "{rageUses}", format: "{} 次"}
+  rageDamageText: {formula: "{rageDamage}", format: "目前 +{}"}
   frenzyDice: "{rageDamage}d6"
 features:
   - id: barbarian-rage
@@ -51,12 +53,12 @@ features:
     text: |
       你**未穿重甲**時，可以用**附贈**進入狂暴。
 
-      - **使用次數：**{rageUses|見「野蠻人特性」表的「狂暴次數」欄}。**短休後恢復 1 次**，**長休後全部恢復**。
+      - **使用次數：**{rageUsesText|見「野蠻人特性」表的「狂暴次數」欄}。**短休後恢復 1 次**，**長休後全部恢復**。
 
       #### 狂暴期間
 
       - **抗性：**你對鈍擊、穿刺、揮砍傷害具有[[抗性]]。
-      - **狂暴傷害：**你用力量造成的傷害可加上狂暴傷害，{rageDamage|數值見「野蠻人特性」表}。
+      - **狂暴傷害：**你用力量造成的傷害可加上狂暴傷害，{rageDamageText|數值見「野蠻人特性」表}。
       - **力量優勢：**你的力量檢定與力量豁免具有**優勢**。
       - **施法限制：**你不能施法，也不能維持專注。
 

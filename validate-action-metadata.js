@@ -365,7 +365,7 @@ async function verifyCoverage(page) {
     const rogueSource = classFeatures.rogue;
     try {
       classFeatures.rogue = '<section data-action-id="rogue-cunning-action"><h3>等級 2：靈巧動作</h3>'
-        + '<p>加值 <span data-tabletop-value="proficiency-bonus">熟練加值</span>；未知 <span data-tabletop-value="unknown-test-value">保留通用文字</span>。</p>'
+        + '<p>加值 <span data-tabletop-value="proficiencyBonus">熟練加值</span>；未知 <span data-tabletop-value="unknown-test-value">保留通用文字</span>。</p>'
         + '<p data-tabletop-hide>只在職業詳情</p><p data-tabletop-only>只在跑團</p><p data-tabletop-only hidden>跑團補充</p></section>'
         + '<section data-action-id="rogue-test-upgrade"><p>五級補充</p></section>';
       const upgraded = ["rogue-cunning-action", { id: "rogue-test-upgrade", level: 5 }];

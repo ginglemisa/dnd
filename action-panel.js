@@ -278,17 +278,6 @@
     return globalScope.calculateProficiencyBonus?.(getCharacterLevel()) || 2;
   }
 
-  function getBarbarianRageDamageBonus() {
-    const level = getCharacterLevel();
-    if (level >= 16) return 4;
-    if (level >= 9) return 3;
-    return 2;
-  }
-
-  function getBardInspirationDie() {
-    return getCharacterLevel() >= 5 ? 8 : 6;
-  }
-
   function getSelectedFeatNames() {
     return new Set(Array.from(document.querySelectorAll("#feats-area select"), select => select.value).filter(Boolean));
   }
@@ -456,25 +445,6 @@
     });
   }
 
-  function getMonkAbilityModifier(abilityId) {
-    const field = document.getElementById(abilityId);
-    const rawScore = field && "value" in field ? String(field.value || "").trim() : "";
-    if (!rawScore) return 0;
-    const modifier = globalScope.calculateAbilityModifier?.(rawScore);
-    return Number.isFinite(modifier) ? modifier : 0;
-  }
-
-  function getMonkMartialArtsDie() {
-    return globalScope.getMonkMartialArtsDieByLevel(getCharacterLevel());
-  }
-
-  function getDoubleMonkMartialArtsDice() {
-    const martialArtsDie = getMonkMartialArtsDie();
-    if (String(martialArtsDie || "").startsWith("1d")) {
-      return `2d${String(martialArtsDie).slice(2)}`;
-    }
-    return `2 × ${martialArtsDie}`;
-  }
 
   function formatSignedModifier(value) {
     const modifier = Number(value);
@@ -497,111 +467,18 @@
 
   // 職業描述來自 class-content.generated.js（由 content/ 的職業內容檔建置）：classFeatures 為職業頁 HTML，
   // classTabletopText 為與職業頁不同的跑團說明（tabletop）與總覽一句話（summaries）。跑團擷取段落時只處理下列標記：
-  // - data-tabletop-value="key"：內文是職業詳情的通用文字，跑團改顯示 TABLETOP_VALUE_RESOLVERS[key]() 的結果；
-  //   無對應函式或無值時保留通用文字。
+  // - data-tabletop-value="名稱"：內文是職業詳情的通用文字，跑團改顯示該職業內容檔數值（特性表欄位、values）
+  //   依目前等級與屬性值算出的文字（character-rules.js 的 getClassValueText，套用 format）；無值時保留通用文字。
   // - data-tabletop-hide：只在職業詳情顯示，跑團擷取時移除。
   // - data-tabletop-only：只在跑團顯示，職業詳情由 styles.css 隱藏。
   // - data-overview-hide：跑團總覽的一句話提醒另外移除（引言、選項名稱）；動作按鈕仍顯示。
-  const TABLETOP_VALUE_RESOLVERS = Object.freeze({
-    "character-level": () => String(getCharacterLevel()),
-    "proficiency-bonus": () => String(getProficiencyBonus()),
-    "barbarian-rage-uses": () => {
-      const maximum = getClassResourceSpec("barbarian", "barbarian-rage")?.maximum;
-      return Number.isFinite(maximum) ? `${maximum} 次` : null;
-    },
-    "barbarian-rage-damage": () => `目前 +${getBarbarianRageDamageBonus()}`,
-    "barbarian-frenzy-dice": () => `${getBarbarianRageDamageBonus()}d6`,
-    "bard-inspiration-die": () => `目前為 d${getBardInspirationDie()}`,
-    // 恢復方式跟隨 CharacterRules 的資源設定，與休息實際恢復一致；未升級時保留通用文字。
-    "bard-inspiration-recovery": () => (getClassResourceSpec("bard", "bard-inspiration")?.recovery?.shortRest === "all"
-      ? "短休或長休後全部恢復"
-      : null),
-    // monk（插槽前後緊鄰中文時補空白，與數值區隔）
-    "monk-martial-arts-die": () => `目前為 ${getMonkMartialArtsDie()}`,
-    "monk-focus-points": () => {
-      const maximum = getClassResourceSpec("monk", "monk-focus-points")?.maximum;
-      return Number.isFinite(maximum) ? ` ${maximum} 點` : null;
-    },
-    "monk-save-dc": () => String(8 + getProficiencyBonus() + getMonkAbilityModifier("wis")),
-    "monk-uncanny-metabolism-healing": () => ` ${getMonkMartialArtsDie()} + ${getCharacterLevel()} `,
-    "monk-deflect-attacks-reduction": () => formatDiceWithModifier("1d10", getMonkAbilityModifier("dex") + getCharacterLevel()),
-    "monk-deflect-attacks-damage": () => `${formatDiceWithModifier(getDoubleMonkMartialArtsDice(), getMonkAbilityModifier("dex"))} `,
-    "monk-slow-fall-reduction": () => ` ${getCharacterLevel() * 5} `,
-    "monk-wholeness-healing": () => ` ${formatDiceWithModifier(getMonkMartialArtsDie(), getMonkAbilityModifier("wis"))} `,
-    // fighter
-    "fighter-second-wind-healing": () => `1d10 + ${getCharacterLevel()}`,
-    "fighter-second-wind-uses": () => {
-      const maximum = getClassResourceSpec("fighter", "fighter-second-wind")?.maximum;
-      return Number.isFinite(maximum) ? `${maximum} 次` : null;
-    },
-    // rogue
-    "rogue-sneak-attack-dice": () => `${Math.max(1, Math.ceil(getCharacterLevel() / 2))}d6`,
-    "rogue-cunning-strike-dc": () => String(8 + getProficiencyBonus() + (getAbilityModifier("dex") ?? 0)),
-    // druid
-    "druid-wild-shape-uses": () => {
-      const maximum = getClassResourceSpec("druid", "druid-wild-shape")?.maximum;
-      return Number.isFinite(maximum) ? `${maximum} 次` : null;
-    },
-    "druid-wild-shape-hours": () => {
-      const hours = globalScope.getDruidWildShapeRules?.(getCharacterLevel())?.hours;
-      return hours > 0 ? `（目前 ${hours} 小時）` : null;
-    },
-    "druid-wild-shape-temp-hp": () => {
-      const level = getCharacterLevel();
-      return level > 0 ? `（目前 ${level} 點）` : null;
-    },
-    // cleric
-    "cleric-divine-spark-roll": () => formatDiceWithModifier("1d8", getMonkAbilityModifier("wis")),
-    "cleric-spell-save-dc": () => `（DC ${8 + getProficiencyBonus() + getMonkAbilityModifier("wis")}）`,
-    // 職業詳情原文「擲」與骰數之間沒有空格，前置空格讓跑團顯示「擲 4d8」。
-    "cleric-sear-undead-dice": () => {
-      const wisdomModifier = getAbilityModifier("wis");
-      return wisdomModifier === null
-        ? " Xd8（X＝感知調整值，至少 1d8）"
-        : ` ${Math.max(1, wisdomModifier)}d8（感知調整值，至少 1d8）`;
-    },
-    // 未填等級時保留通用公式。
-    "cleric-preserve-life-total": () => (String(document.getElementById("level")?.value || "").trim()
-      ? `「${getCharacterLevel() * 5}」`
-      : null),
-    // paladin
-    "paladin-lay-on-hands-pool": () => {
-      const maximum = getClassResourceSpec("paladin", "paladin-lay-on-hands")?.maximum;
-      return Number.isFinite(maximum) ? `「${maximum}」點` : null;
-    },
-    "paladin-channel-divinity-uses": () => {
-      const maximum = getClassResourceSpec("paladin", "paladin-channel-divinity")?.maximum;
-      return Number.isFinite(maximum) ? `${maximum} 次` : null;
-    },
-    // sorcerer
-    "sorcerer-sorcery-points": () => {
-      const maximum = getClassResourceSpec("sorcerer", "sorcerer-sorcery-points")?.maximum;
-      return Number.isFinite(maximum) ? `目前上限 ${maximum} 點` : null;
-    },
-    // 跑團不顯示表格：在「生成法術位」小標題下，由同段落的表格組成一行。
-    "sorcerer-slot-creation-costs": () => {
-      const rows = getClassDescriptionSource("sorcerer").blocks.get("sorcerer-font-of-magic")?.querySelectorAll("table tbody tr") || [];
-      const costs = Array.from(rows, row => Array.from(row.cells, cell => cell.textContent.trim()))
-        .filter(cells => cells.length >= 3 && cells.every(Boolean))
-        .map(([slotLevel, points, minimumLevel]) => `${slotLevel} 環消耗 ${points} 點（術士等級 ${minimumLevel} 起）`);
-      return costs.length ? `${costs.join("；")}。` : null;
-    },
-    // ranger
-    // 選項名稱在職業詳情是勾選框標籤（跑團擷取時略過），跑團改顯示「名稱：」。
-    "ranger-colossus-slayer-name": () => getClassChoiceLabelPrefix("ranger", "ranger-hunters-prey-colossus-slayer"),
-    "ranger-horde-breaker-name": () => getClassChoiceLabelPrefix("ranger", "ranger-hunters-prey-horde-breaker"),
-    "ranger-escape-the-horde-name": () => getClassChoiceLabelPrefix("ranger", "ranger-defensive-tactics-escape-the-horde"),
-    "ranger-multiattack-defense-name": () => getClassChoiceLabelPrefix("ranger", "ranger-defensive-tactics-multiattack-defense")
-  });
-
-  function getClassChoiceLabelPrefix(className, inputId) {
-    const label = getClassDescriptionSource(className).holder.querySelector(`#${inputId}`)?.closest("label")?.textContent.trim();
-    return label ? `${label}：` : null;
-  }
-
-  function getClassResourceSpec(className, key) {
-    const specs = globalScope.getCharacterResourceSpecs?.({ className, level: getCharacterLevel() }) || [];
-    return specs.find(spec => spec.key === key) || null;
+  function getClassValueContext() {
+    const field = id => String(document.getElementById(id)?.value || "").trim();
+    return {
+      level: getCharacterLevel(),
+      levelBlank: !field("level"),
+      abilityScores: Object.fromEntries(["str", "dex", "con", "int", "wis", "cha"].map(id => [id, field(id)]))
+    };
   }
 
   // 職業描述段落轉為跑團純文字：忽略原始碼縮排，區塊之間空一行，清單項目以「- 」開頭並連續排列。
@@ -684,27 +561,22 @@
     return ["tabletop", "summaries"].flatMap(kind => Object.keys(entries[kind] || {}).map(id => getClassTextBlock(className, kind, id)));
   }
 
-  function getTabletopValueResolver(key) {
-    return Object.hasOwn(TABLETOP_VALUE_RESOLVERS, key) ? TABLETOP_VALUE_RESOLVERS[key] : null;
-  }
-
-  function resolveTabletopValue(element) {
-    const resolver = getTabletopValueResolver(element.dataset.tabletopValue);
-    if (!resolver) return;
+  function resolveTabletopValue(element, className, context) {
     let value = null;
     try {
-      value = resolver();
+      value = globalScope.getClassValueText?.(className, element.dataset.tabletopValue, context) ?? null;
     } catch (error) {
       value = null;
     }
-    if (value !== null && value !== undefined && String(value).trim()) element.textContent = String(value);
+    if (value !== null && String(value).trim()) element.textContent = String(value);
   }
 
-  function getTabletopBlockText(block, removedSelector) {
+  function getTabletopBlockText(block, removedSelector, className) {
     const copy = block.cloneNode(true);
     copy.querySelectorAll(removedSelector).forEach(element => element.remove());
     copy.querySelectorAll("[data-tabletop-only][hidden]").forEach(element => element.removeAttribute("hidden"));
-    copy.querySelectorAll("[data-tabletop-value]").forEach(resolveTabletopValue);
+    const context = getClassValueContext();
+    copy.querySelectorAll("[data-tabletop-value]").forEach(element => resolveTabletopValue(element, className, context));
     return classDescriptionToPlainText(copy);
   }
 
@@ -720,7 +592,7 @@
       const id = isGated ? item.id : item;
       const block = getClassTextBlock(className, "tabletop", id) || blocks.get(id);
       if (!block) return "";
-      parts.push(getTabletopBlockText(block, "h3, [data-tabletop-hide]"));
+      parts.push(getTabletopBlockText(block, "h3, [data-tabletop-hide]", className));
     }
     return parts.filter(Boolean).join("\n\n");
   }
@@ -732,7 +604,7 @@
       || getClassTextBlock(className, "tabletop", descriptionId)
       || getClassDescriptionSource(className).blocks.get(descriptionId);
     if (!block) return "";
-    return getTabletopBlockText(block, "h3, [data-tabletop-hide], [data-overview-hide]")
+    return getTabletopBlockText(block, "h3, [data-tabletop-hide], [data-overview-hide]", className)
       .split("\n")
       .map(line => line.replace(/^- /u, "").trim())
       .filter(Boolean)
@@ -755,7 +627,7 @@
         if (!blocks.has(id)) issues.push(`${className}: 找不到 data-action-id="${id || ""}" 的職業描述段落`);
       });
       new Set([holder, ...getClassTextBlocks(className)].flatMap(root => Array.from(root.querySelectorAll("[data-tabletop-value]"), element => element.dataset.tabletopValue))).forEach(key => {
-        if (!getTabletopValueResolver(key)) issues.push(`${className}: data-tabletop-value="${key}" 沒有對應的計算函式`);
+        if (!globalScope.hasClassValue?.(className, key)) issues.push(`${className}: data-tabletop-value="${key}" 不是此職業內容檔的數值`);
       });
     });
     return issues;
