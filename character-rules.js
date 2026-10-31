@@ -50,11 +50,11 @@
     });
   }
 
-  // 內容檔 values 公式：數字、NdM 骰子、四則運算、max()／min()／floor() 與 {數值}。
+  // 內容檔 values 公式：數字、NdM 骰子、四則運算、max()／min()／floor()／ceil() 與 {數值}。
   // 結果是數字，或骰子加常數（{ dice: [{ count, sides }], constant, hasConstant }），顯示為「1d8 + 3」。
   function tokenizeClassFormula(formula) {
     const tokens = [];
-    const pattern = /\s*(?:(\d+(?:\.\d+)?)|\{([A-Za-z][A-Za-z0-9]*)\}|(max|min|floor)\(|([-+*/(),d]))/gy;
+    const pattern = /\s*(?:(\d+(?:\.\d+)?)|\{([A-Za-z][A-Za-z0-9]*)\}|(max|min|floor|ceil)\(|([-+*/(),d]))/gy;
     let index = 0;
     let match;
     while (index < formula.length && (match = pattern.exec(formula))) {
@@ -133,7 +133,7 @@
           args.push(number(parseExpression()));
         }
         take(")");
-        return token.value === "floor" ? Math.floor(args[0]) : Math[token.value](...args);
+        return token.value === "floor" || token.value === "ceil" ? Math[token.value](args[0]) : Math[token.value](...args);
       }
       if (token.value === "(") {
         const value = parseExpression();
@@ -319,27 +319,23 @@
     return Math.floor(calculateProficiencyBonus(level) / 2);
   }
 
-  // 另有說明或短休特殊恢復（restChoice）的職業資源；次數、等級與恢復方式取自職業內容檔。
-  const CLASS_RESOURCE_DETAILS = Object.freeze({
-    "druid-wild-resurgence-spell-slot": () => ({
-      note: "無需動作；消耗 1 次荒野形態，恢復 1 個 1 環法術位。每次長休前只能使用 1 次；完成長休後恢復。"
-    }),
-    "druid-natural-recovery-spell-slots": level => ({
-      note: `完成短休時，可恢復環階總和 ${Math.ceil(level / 2)} 的已消耗法術位（德魯伊等級一半，進位；每個法術位須低於 6 環）。每次長休前只能使用 1 次；完成長休後恢復。`,
-      restChoice: { when: "shortRest", effect: "spellSlots", budget: Math.ceil(level / 2), maximumSlotLevel: 5 }
-    }),
-    "sorcerer-sorcerous-restoration": level => ({
-      note: `完成短休時，恢復最多 ${Math.floor(level / 2)} 點已消耗的術法點（術士等級一半，捨去）。每次長休前只能使用 1 次；完成長休後恢復。`,
-      restChoice: { when: "shortRest", effect: "points", targetKey: "sorcerer-sorcery-points", budget: Math.floor(level / 2) }
-    }),
-    "warlock-magical-cunning": level => ({
-      note: `進行 1 分鐘儀式；恢復最多 ${Math.ceil(Math.max(...getSpellSlotCounts("warlock", level)) / 2)} 個已消耗的契約魔法法術位（法術位最大值一半，進位）。每次長休前只能使用 1 次；完成長休後恢復。`
-    }),
-    "wizard-arcane-recovery": level => ({
-      note: `完成短休時，恢復環階總和最多 ${Math.ceil(level / 2)} 的已消耗法術位（法師等級一半，進位；單一法術位最高 5 環）。每次長休前只能使用 1 次；完成長休後恢復。`,
-      restChoice: { when: "shortRest", effect: "spellSlots", budget: Math.ceil(level / 2), maximumSlotLevel: 5 }
-    })
-  });
+  // 資源說明（resource.note）中的 {名稱} 換成目前數值。
+  function formatClassResourceNote(className, note, context) {
+    return note.replace(/\{([A-Za-z][A-Za-z0-9]*)\}/g, (all, name) => {
+      const value = evaluateClassValue(className, name, context);
+      return value === null ? all : formatClassFormulaValue(value);
+    });
+  }
+
+  // 短休特殊恢復（resource.restChoice，例如奧術回想、術法復甦、自然恢復）：恢復的內容與總量取自職業內容檔。
+  function getClassResourceRestChoice(className, restChoice, context) {
+    if (!restChoice) return null;
+    const budget = evaluateClassValue(className, restChoice.budget, context);
+    if (restChoice.restores === "points") {
+      return { when: restChoice.when, effect: "points", targetKey: restChoice.target, budget };
+    }
+    return { when: restChoice.when, effect: "spellSlots", budget, ...(restChoice.maxSlotLevel ? { maximumSlotLevel: restChoice.maxSlotLevel } : {}) };
+  }
 
   /** 依目前職業、種族、等級與屬性計算跑團模式應顯示的內建資源。 */
   function getCharacterResourceSpecs(options = {}) {
@@ -387,14 +383,13 @@
       let recover = resource.recover;
       for (const [from, entry] of Object.entries(resource.recoverByLevel || {})) if (Number(from) <= level) recover = entry;
       const shortRest = recover.short ?? null;
-      const details = CLASS_RESOURCE_DETAILS[resource.key]?.(level) || {};
       const fully = resource.uses === 1 ? "回復" : "全回復";
-      const recoveryNote = details.note || (shortRest === null
+      const recoveryNote = resource.note ? formatClassResourceNote(className, resource.note, valueContext) : (shortRest === null
         ? `長休後${fully}。`
         : (shortRest === "all" ? `短休或長休後${fully}。` : `短休回 ${shortRest} 次，長休全回。`));
       const label = resource.label || feature.name;
       if (resource.kind === "points") addPoints(resource.key, label, maximum, recoveryNote, shortRest);
-      else addUses(resource.key, label, maximum, recoveryNote, shortRest, details.restChoice || null);
+      else addUses(resource.key, label, maximum, recoveryNote, shortRest, getClassResourceRestChoice(className, resource.restChoice, valueContext));
     }
     // Canonical controls are described here; callers only supply existing spell-source identities.
     const addControls = (key, label, ids, shortRest = null) => resources.push({

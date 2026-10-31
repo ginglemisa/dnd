@@ -249,6 +249,20 @@
           "description": "次數（points 時為點數池總量）：固定數字，或特性表欄位／values 名稱。"
         },
         "recover": { "$ref": "#/definitions/recover" },
+        "note": { "type": "string", "minLength": 1, "description": "資源區的恢復說明，取代由 recover 自動產生的文字；{名稱} 換成目前數值（特性表欄位或 values），例如「恢復環階總和最多 {arcaneRecoveryBudget} 的已消耗法術位」。" },
+        "restChoice": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["when", "restores", "budget"],
+          "description": "休息時可選擇恢復其他資源（例如奧術回想、術法復甦、自然恢復），跑團模式的休息視窗依此提供選項並消耗此資源 1 次。",
+          "properties": {
+            "when": { "enum": ["shortRest"], "description": "shortRest：完成短休時。" },
+            "restores": { "enum": ["spellSlots", "points"], "description": "spellSlots：恢復已消耗的法術位，選擇的環階總和不超過 budget；points：恢復 target 資源的點數，最多 budget 點。" },
+            "budget": { "type": "string", "description": "可恢復的總量：特性表欄位或 values 名稱，例如 arcaneRecoveryBudget（ceil({level} / 2)）。" },
+            "maxSlotLevel": { "$ref": "#/definitions/level", "description": "恢復法術位時，單一法術位的最高環階。" },
+            "target": { "type": "string", "pattern": "^[a-z0-9-]+$", "description": "恢復點數時的資源 key，例如 sorcerer-sorcery-points。" }
+          }
+        },
         "recoverByLevel": {
           "type": "object",
           "description": "從指定等級起改用的恢復方式（整個取代 recover），例如吟遊詩人激勵 5 級起短休也全部恢復。",

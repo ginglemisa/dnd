@@ -41,6 +41,8 @@ progression:
   spellSlots4:
     label: ４環
     byLevel: {1: null, 7: 1, 8: 2}
+values:
+  arcaneRecoveryBudget: ceil({level} / 2)
 features:
   - id: wizard-spellcasting
     level: 1
@@ -80,6 +82,8 @@ features:
       key: wizard-arcane-recovery
       uses: 1
       recover: {long: all}
+      restChoice: {when: shortRest, restores: spellSlots, budget: arcaneRecoveryBudget, maxSlotLevel: 5}
+      note: 完成短休時，恢復環階總和最多 {arcaneRecoveryBudget} 的已消耗法術位（法師等級一半，進位；單一法術位最高 5 環）。每次長休前只能使用 1 次；完成長休後恢復。
     text: |
       完成短休時，可恢復部分已消耗的法術位。使用後，須完成長休才能再次使用。
 

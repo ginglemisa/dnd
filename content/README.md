@@ -155,7 +155,7 @@ VS Code 安裝 Red Hat 的「YAML」擴充套件後，會依檔案第一行的 `
 - `progression.<欄位>.format`：特性表顯示格式，`{}` 代入數值，例如 `+{}`（+2）、`{}d6`（1d6）、`1d{}`（1d8，數值是骰面）。
 - 網站依欄位名稱讀取的特性表欄位：`cantrips`（戲法數量）、`preparedSpells`（準備法術數量）、`spellSlots1`～`spellSlots4`（各環法術位）；契約魔法（`pact`）為 `spellSlots`（法術位數量）與 `spellSlotLevel`（法術位環階）；契術師的 `invocations`（魔能祈喚數量）。改名會讓網站讀不到。
 - `hitDie`、`saves`、`spellcasting.progression` 也供網站計算生命值、豁免熟練與是否具施法能力。
-- `values`：公式只能用數字、`d`、四則運算、`max()`／`min()`／`floor()`（無條件捨去，例如 `floor({level} / 2)`）與 `{數值}`，例如 `"{rageDamage}d6"`、`"max(1, {chaModifier})"`。公式中另可引用屬性調整值 `{strModifier}`、`{dexModifier}`、`{conModifier}`、`{intModifier}`、`{wisModifier}`、`{chaModifier}`（沒有屬性值時視為 0；文字中不可直接引用）。
+- `values`：公式只能用數字、`d`、四則運算、`max()`／`min()`／`floor()`（無條件捨去，例如 `floor({level} / 2)`）／`ceil()`（無條件進位）與 `{數值}`，例如 `"{rageDamage}d6"`、`"max(1, {chaModifier})"`。公式中另可引用屬性調整值 `{strModifier}`、`{dexModifier}`、`{conModifier}`、`{intModifier}`、`{wisModifier}`、`{chaModifier}`（沒有屬性值時視為 0；文字中不可直接引用）。
   跑團顯示要加字樣時寫 `{ formula: "8 + {proficiencyBonus} + {wisModifier}", format: "（DC {}）" }`，`{}` 代入計算結果；`format` 的前後空白也會保留（夾在中文之間時用來和數值區隔，例如 `" {} 點"`）。同一個數值要在不同地方顯示不同字樣時另取名稱，例如 `rageUsesText: { formula: "{rageUses}", format: "{} 次" }`；只引用一個特性表欄位且該等級為「-」時保留頁面文字。骰子公式顯示為「1d8 + 3」（有常數項時一律顯示正負號，0 顯示「+ 0」）。
   屬性值或等級未填時，屬性調整值視為 0、等級視為 1；要改顯示其他文字時寫 `blank: "…"`，寫 `blank: keep` 則保留頁面文字。flow 寫法（`{ … }`）中含 `{}` 的字串須加引號。
   跑團顯示的是依等級變化的文字（不是數字）時寫 `{ byLevel: { 5: 短休或長休後全部恢復 } }`：從該等級起換成此文字，更低等級保留頁面文字；這種值只能用在文字，不可用於公式或次數。
@@ -180,6 +180,20 @@ PDF 匯出讀取內容檔：職業與子職名稱、生命骰、`weapons`、`arm
 ## 能力的資源
 
 `resource` 定義能力的使用次數，跑團模式的資源區依此顯示與恢復（達到能力等級才出現）。`label` 是資源區顯示的名稱（例如聚氣凝神的「專注點」），省略時用能力名稱；恢復說明（例如「短休回 1 次，長休全回。」）由 `recover` 自動產生。`uses` 是次數（固定數字，或特性表欄位／`values` 名稱），`recover` 是短休（`short`）、長休（`long`）恢復的次數，`all` 為全部；恢復方式隨等級改變時，另寫 `recoverByLevel: { 5: { short: all, long: all } }`，從該等級起整個取代 `recover`。點數池（例如聖療，每次可消耗任意點數）另寫 `kind: points`，此時 `uses` 是點數池總量。
+
+自動產生的恢復說明不適用時寫 `note`，`{名稱}` 換成目前數值（特性表欄位或 `values`）。完成短休時可選擇恢復其他資源的能力（奧術回想、術法復甦、自然恢復）寫 `restChoice`，跑團模式的休息視窗依此提供選項：
+
+```yaml
+resource:
+  key: wizard-arcane-recovery
+  uses: 1
+  recover: {long: all}
+  restChoice: {when: shortRest, restores: spellSlots, budget: arcaneRecoveryBudget, maxSlotLevel: 5}
+  note: 完成短休時，恢復環階總和最多 {arcaneRecoveryBudget} 的已消耗法術位（法師等級一半，進位；單一法術位最高 5 環）。每次長休前只能使用 1 次；完成長休後恢復。
+```
+
+- `restores: spellSlots`：恢復法術位，環階總和不超過 `budget`（`values` 的公式，例如 `arcaneRecoveryBudget: ceil({level} / 2)`），`maxSlotLevel` 是單一法術位的最高環階。
+- `restores: points`：恢復 `target` 資源的點數，最多 `budget` 點（例如術法復甦的 `target: sorcerer-sorcery-points`）。
 
 ## 能力給予的法術
 

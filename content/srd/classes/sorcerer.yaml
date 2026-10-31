@@ -45,6 +45,7 @@ progression:
     label: ４環
     byLevel: {1: null, 7: 1, 8: 2}
 values:
+  sorcerousRestorationBudget: floor({level} / 2)
   sorceryPointsText: {formula: "{sorceryPoints}", format: "目前上限 {} 點"}
   slotCreationCosts:
     byLevel: {1: 1 環消耗 2 點（術士等級 2 起）；2 環消耗 3 點（術士等級 3 起）；3 環消耗 5 點（術士等級 5 起）；4 環消耗 6 點（術士等級 7 起）。}
@@ -161,6 +162,8 @@ features:
       key: sorcerer-sorcerous-restoration
       uses: 1
       recover: {long: all}
+      restChoice: {when: shortRest, restores: points, target: sorcerer-sorcery-points, budget: sorcerousRestorationBudget}
+      note: 完成短休時，恢復最多 {sorcerousRestorationBudget} 點已消耗的術法點（術士等級一半，捨去）。每次長休前只能使用 1 次；完成長休後恢復。
     text: |
       完成短休時，可恢復部分已消耗的術法點。
 

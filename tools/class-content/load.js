@@ -152,7 +152,7 @@ function checkClass(classDef, errors) {
       if ((!valueNames.has(token) && !ABILITY_MODIFIERS.includes(token)) || token === name || textValues.has(token)) errors.push(`${classDef.file}：values.${name} 引用了不存在的數值 {${token}}`);
       return "1";
     });
-    if (!/^[0-9d+\-*/(), ]+$/.test(stripped.replace(/\b(?:max|min|floor)\(/g, "("))) errors.push(`${classDef.file}：values.${name} 只能使用數字、d、四則運算、max()／min()／floor() 與 {數值}`);
+    if (!/^[0-9d+\-*/(), ]+$/.test(stripped.replace(/\b(?:max|min|floor|ceil)\(/g, "("))) errors.push(`${classDef.file}：values.${name} 只能使用數字、d、四則運算、max()／min()／floor()／ceil() 與 {數值}`);
   }
   const sources = [{ owner: classDef, features: classDef.features }, ...classDef.subclasses.map(subclass => ({ owner: subclass, features: subclass.features }))];
   for (const { owner, features } of sources) {
@@ -190,6 +190,13 @@ function checkClass(classDef, errors) {
       if (feature.resource) {
         claim(persistedIds, feature.resource.key, where, "資源 key");
         if (typeof feature.resource.uses === "string" && (!valueNames.has(feature.resource.uses) || textValues.has(feature.resource.uses))) errors.push(`${where}：resource.uses「${feature.resource.uses}」不是特性表欄位或數值公式`);
+        for (const match of (feature.resource.note || "").matchAll(/\{([A-Za-z][A-Za-z0-9]*)\}/g)) {
+          if (!valueNames.has(match[1]) || textValues.has(match[1])) errors.push(`${where}：resource.note 引用了不存在的數值 {${match[1]}}`);
+        }
+        const restChoice = feature.resource.restChoice;
+        if (restChoice && (!valueNames.has(restChoice.budget) || textValues.has(restChoice.budget))) errors.push(`${where}：resource.restChoice.budget「${restChoice.budget}」不是特性表欄位或數值公式`);
+        if (restChoice && (restChoice.restores === "points") !== Boolean(restChoice.target)) errors.push(`${where}：resource.restChoice 恢復點數（restores: points）時須寫 target，恢復法術位時不寫`);
+        if (restChoice?.maxSlotLevel && restChoice.restores !== "spellSlots") errors.push(`${where}：resource.restChoice.maxSlotLevel 只用於恢復法術位`);
         Object.keys(feature.resource.recoverByLevel || {}).map(Number).filter(level => level <= feature.level || level > classDef.maxLevel)
           .forEach(level => errors.push(`${where}：resource.recoverByLevel 的 ${level} 級須高於能力等級且不超過 maxLevel`));
       }

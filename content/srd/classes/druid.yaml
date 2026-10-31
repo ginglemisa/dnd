@@ -45,6 +45,7 @@ progression:
     label: ４環
     byLevel: {1: null, 7: 1, 8: 2}
 values:
+  naturalRecoveryBudget: ceil({level} / 2)
   wildShapeUsesText: {formula: "{wildShapeUses}", format: "{} 次"}
   wildShapeHours:
     formula: floor({level} / 2)
@@ -200,6 +201,7 @@ features:
       label: 野性復甦（法術位）
       uses: 1
       recover: {long: all}
+      note: 無需動作；消耗 1 次荒野形態，恢復 1 個 1 環法術位。每次長休前只能使用 1 次；完成長休後恢復。
     text: |
       你可在荒野形態與法術位之間轉換，以下兩種用法都**不需動作**。
 
