@@ -1,5 +1,5 @@
 // 職業內容檔的文字格式：標準 Markdown 的小子集，加上 [[提示]] 與 {數值|頁面文字} 兩種標記。
-// 支援：段落、「- 」清單、行尾「\」強制換行、**粗體**、「#### 標題」小節（到下一個 #### 或文字結束）、GFM 表格。
+// 支援：段落、「- 」清單、行尾「\」強制換行、**粗體**、「#### 標題」小節（到下一個 #### 或文字結束）、GFM 表格、「---」分隔線。
 // 內文出現「<」或其他不支援的寫法一律報錯，不靜默輸出。
 "use strict";
 
@@ -15,7 +15,7 @@ function escapeHtml(text) {
 function renderInline(source, options, where) {
   const text = String(source);
   if (text.includes("<")) throw new ContentError(`${where}：內文不可使用 HTML（出現「<」）`);
-  const { skills, conditions } = loadTipTables();
+  const { skills, conditions, beasts } = loadTipTables();
   let html = "";
   let index = 0;
   const pattern = /\*\*(.+?)\*\*|\[\[([^\]|]+)\]\]|\{([A-Za-z][A-Za-z0-9]*)\|([^{}]*)\}/g;
@@ -32,7 +32,8 @@ function renderInline(source, options, where) {
       const name = match[2];
       if (conditions.has(name)) html += `<span class="condition-tip" data-condition="${conditions.get(name)}">${escapeHtml(name)}</span>`;
       else if (skills.has(name)) html += `<span class="skill-tip" data-skill="${escapeHtml(name)}">${escapeHtml(name)}</span>`;
-      else throw new ContentError(`${where}：[[${name}]] 不是已知的技能、規則或狀態名稱`);
+      else if (beasts.has(name)) html += `<span class="beast-tip" data-beast="${beasts.get(name)}">${escapeHtml(name)}</span>`;
+      else throw new ContentError(`${where}：[[${name}]] 不是已知的技能、規則、狀態或野獸名稱`);
     } else {
       // 頁面文字可含粗體（{名稱|**粗體**其他文字}）；不可再含數值標記（[^{}] 已排除）。
       // 頁面文字留空（{名稱|}）＝只在跑團出現：輸出成跑團限定的數值 span。
@@ -50,7 +51,7 @@ function renderInline(source, options, where) {
   return html + escapeHtml(rest);
 }
 
-// 把一段內文切成區塊：{ type: "p" | "ul" | "h4" | "table", lines }。
+// 把一段內文切成區塊：{ type: "p" | "ul" | "h4" | "table" | "hr", lines }。
 function parseBlocks(source, where) {
   const lines = String(source ?? "").replace(/\r\n?/g, "\n").replace(/\n+$/, "").split("\n");
   const blocks = [];
@@ -69,6 +70,12 @@ function parseBlocks(source, where) {
       return;
     }
     if (current?.type === "table") throw new ContentError(`${at}：表格後須空一行`);
+    // 分隔線：單獨一行「---」，前後須空行（緊接段落的「---」在標準 Markdown 是標題寫法）。
+    if (line === "---") {
+      if (lines[number - 1]?.trim() || lines[number + 1]?.trim()) throw new ContentError(`${at}：分隔線前後須空一行`);
+      blocks.push({ type: "hr" });
+      return;
+    }
     if (/^#### /.test(line)) {
       close();
       blocks.push({ type: "h4", text: line.slice(5).trim() });
@@ -125,6 +132,8 @@ function renderTable(block, frame, options, where, attributes) {
 // blockAttributes 加在最外層區塊（段落、清單、表格、小節）的開頭標籤上。
 // options.tables：表格外框清單，依出現順序對應文字中的表格，數量須相同；沒有提供時文字不可有表格。
 // options.blockNewlines：區塊、清單項目與小節內的標籤之間換行（網站以字串切割讀取的附錄，換行會影響讀出的段落）。
+// options.plainHeadings：「#### 」只輸出 <h4>，不另包小節（文字本身已在小節內，例如附錄小節「書之魔契」的「戲法與儀式」）。
+// 分隔線「---」輸出 <hr class="class-rule-divider">（樣式由 styles.css 設定，不輸出行內 style）。
 function renderMarkdown(source, options, where) {
   const blocks = parseBlocks(source, where);
   const outer = options.blockAttributes ? ` ${options.blockAttributes}` : "";
@@ -135,6 +144,7 @@ function renderMarkdown(source, options, where) {
   let tableIndex = 0;
   const renderBlock = (block, attributes = "") => block.type === "p"
     ? `<p${attributes}>${joinHardBreaks(block.lines, options, where)}</p>`
+    : block.type === "hr" ? `<hr class="class-rule-divider"${attributes}>`
     : block.type === "table" ? renderTable(block, options.tables[tableIndex++], options, where, attributes)
     : `<ul class="class-rule-list"${attributes}>${newline}${block.items.map(item => `<li>${joinHardBreaks(item, options, where)}</li>`).join(newline)}${newline}</ul>`;
   const html = [];
@@ -144,7 +154,9 @@ function renderMarkdown(source, options, where) {
     subsection = null;
   };
   for (const block of blocks) {
-    if (block.type === "h4") {
+    if (block.type === "h4" && options.plainHeadings) {
+      html.push(`<h4>${renderInline(block.text, options, where)}</h4>`);
+    } else if (block.type === "h4") {
       closeSubsection();
       subsection = [`<h4>${renderInline(block.text, options, where)}</h4>`];
     } else if (subsection !== null) subsection.push(renderBlock(block));

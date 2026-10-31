@@ -170,10 +170,18 @@ function renderSelectCard(select, markdownOptions, where) {
 // 附錄：沒有等級的 section（例如術士的「超魔法選項」），接在所有能力之後；小節沿用舊版的通用 class。
 // class-features-ui.js 以字串切出各選項（fillMetamagicTextsFromClassFeatures），action-panel.js 再依換行分段，
 // 故標籤之間照舊版換行，讓切出的文字與舊版相同。
+// 附錄小節（parts）輸出成通用小節，帶 id 時加 data-action-id（跑團按鈕的說明段落）；標題為「名稱（先決條件：…）」。
+// class-features-ui.js／quick-build.js 以名稱切出各魔能祈喚的 HTML 字串，故小節之間與小節內不換行（同舊版同一行的寫法）。
 function renderAppendix(item, context) {
   const { classDef } = context;
   const where = `${classDef.file} 附錄 ${item.name}`;
-  return `<section class="${classDef.id}-feature class-feature-section">\n<h3>${escapeHtml(item.name)}</h3>\n${renderMarkdown(item.text, { ...context, blockNewlines: true }, where)}\n</section>`;
+  const parts = (item.parts || []).map(part => {
+    const id = part.id ? ` data-action-id="${part.id}"` : "";
+    const prerequisite = part.prerequisite ? `（先決條件：${escapeHtml(part.prerequisite)}）` : "";
+    const body = renderMarkdown(part.text, { ...context, plainHeadings: true }, `${where} 附錄小節 ${part.name}`);
+    return `<div class="class-rule-subsection"${id}><h4>${escapeHtml(part.name)}${prerequisite}</h4>${body}</div>`;
+  }).join("");
+  return `<section class="${classDef.id}-feature class-feature-section">\n<h3>${escapeHtml(item.name)}</h3>\n${renderMarkdown(item.text, { ...context, blockNewlines: true }, where)}${parts ? `\n${parts}` : ""}\n</section>`;
 }
 
 // 併入其他動作說明的能力：跑團說明前加「名稱：」，職業頁由 styles.css 隱藏。

@@ -12,7 +12,7 @@
     "text": {
       "type": "string",
       "minLength": 1,
-      "description": "Markdown：段落、「- 」清單、**粗體**、行尾「\\」換行、「#### 標題」小節、GFM 表格（只用於能力的 text／tabletop，外框寫在 tables）。[[運動]]、[[失能]] 產生提示框；{rageDamage|頁面文字} 在跑團模式換成目前數值。不可使用 HTML。"
+      "description": "Markdown：段落、「- 」清單、**粗體**、行尾「\\」換行、「#### 標題」小節、「---」分隔線、GFM 表格（只用於能力的 text／tabletop，外框寫在 tables）。[[運動]]、[[失能]]、[[小魔鬼]] 產生提示框；{rageDamage|頁面文字} 在跑團模式換成目前數值。不可使用 HTML。"
     },
     "feature": {
       "type": "object",
@@ -196,6 +196,8 @@
         },
         "level": { "$ref": "#/definitions/level", "description": "按鈕出現的等級；省略時同能力等級。" },
         "resource": { "type": "string", "description": "按鈕消耗的資源 key。" },
+        "invocation": { "type": "string", "minLength": 1, "description": "須已選擇此魔能祈喚才出現，例如「饑渴魔刃」。" },
+        "requiresInvocation": { "type": "string", "minLength": 1, "description": "另須已選擇此魔能祈喚才出現（先決祈喚），例如「刃之魔契」。" },
         "append": {
           "type": "array",
           "items": { "$ref": "#/definitions/id" },

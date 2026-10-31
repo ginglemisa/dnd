@@ -129,19 +129,45 @@
     "appendix": {
       "type": "array",
       "minItems": 1,
-      "description": "附錄：沒有等級的參考小節（例如術士的「超魔法選項」），接在所有能力之後。",
+      "description": "附錄：沒有等級的參考小節（例如術士的「超魔法選項」、契術師的「魔能祈喚選項」），接在所有能力之後。",
       "items": {
         "type": "object",
         "additionalProperties": false,
         "required": ["name", "text"],
         "properties": {
           "name": { "type": "string", "minLength": 1, "description": "標題，例如「超魔法選項」。" },
-          "text": { "$ref": "feature.schema.json#/definitions/text", "description": "內文，可用「#### 標題」小節（不可有表格）。" }
+          "text": { "$ref": "feature.schema.json#/definitions/text", "description": "內文，可用「#### 標題」小節（不可有表格）；有 parts 時寫在小節之前的說明，不可再用「#### 」。" },
+          "parts": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "$ref": "#/definitions/appendixPart" },
+            "description": "附錄小節：依序接在 text 之後。有小節需要跑團按鈕（例如魔能斬擊）時，該附錄的小節全部寫在這裡以保留順序。"
+          }
         }
       }
     }
   },
   "definitions": {
+    "appendixPart": {
+      "type": "object",
+      "description": "附錄小節：輸出成通用小節，標題為「名稱（先決條件：…）」。沒有等級；按鈕須寫 level。",
+      "additionalProperties": false,
+      "required": ["name", "text"],
+      "properties": {
+        "id": { "$ref": "feature.schema.json#/definitions/id", "description": "小節 ID（與能力 ID 共用、全職業唯一），有 actions 時必填；已有的 data-action-id 照抄。" },
+        "name": { "type": "string", "minLength": 1, "description": "小節名稱，例如「刃之魔契」。網站以此名稱切割讀取，不可改字。" },
+        "prerequisite": { "type": "string", "minLength": 1, "description": "先決條件，顯示為標題後的「（先決條件：…）」，例如「契術師等級 5+,刃之魔契祈喚」。" },
+        "text": { "$ref": "feature.schema.json#/definitions/text", "description": "內文（不可有表格）；「#### 標題」只輸出標題，不另包小節。" },
+        "actions": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "feature.schema.json#/definitions/action" },
+          "description": "跑團按鈕：說明為此小節，按鈕文字預設為小節名稱，須寫 level。"
+        }
+      },
+      "if": { "required": ["actions"] },
+      "then": { "required": ["id"] }
+    },
     "abilities": {
       "type": "array",
       "minItems": 1,

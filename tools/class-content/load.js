@@ -114,6 +114,11 @@ function getActions(feature) {
   return [...(feature.actions || []), ...(feature.parts || []).flatMap(part => part.actions || []), ...(feature.options || []).flatMap(option => option.actions || [])];
 }
 
+// 職業附錄小節的跑團按鈕（例如魔能祈喚的魔能斬擊）。
+function getAppendixActions(classDef) {
+  return (classDef.appendix || []).flatMap(item => (item.parts || []).flatMap(part => part.actions || []));
+}
+
 function checkClass(classDef, errors) {
   const featureIds = new Map();
   const persistedIds = new Map();
@@ -211,9 +216,33 @@ function checkClass(classDef, errors) {
       }
     });
   }
+  // 附錄小節：ID 與能力共用命名空間；沒有能力等級可沿用，按鈕須寫 level。
+  (classDef.appendix || []).forEach((item, index) => {
+    const where = `${classDef.file} appendix[${index}]（${item.name}）`;
+    if (item.parts && /^#/m.test(item.text)) errors.push(`${where}：有 parts 時 text 不可使用「#### 」小節（小節寫在 parts）`);
+    for (const part of item.parts || []) {
+      if (part.id) claim(featureIds, part.id, where, "附錄小節 ID");
+      for (const match of part.text.matchAll(/\{([A-Za-z][A-Za-z0-9]*)\|/g)) {
+        if (!valueNames.has(match[1])) errors.push(`${where} 附錄小節 ${part.name}：文字引用了不存在的數值 {${match[1]}|…}`);
+      }
+      for (const action of part.actions || []) {
+        claim(persistedIds, action.key, where, "動作 key");
+        (action.legacyKeys || []).forEach(key => claim(persistedIds, key, where, "舊動作 key"));
+        if (action.level === undefined) errors.push(`${where} 附錄小節 ${part.name}：動作 ${action.key} 須寫 level（附錄沒有等級）`);
+        if (action.append) errors.push(`${where} 附錄小節 ${part.name}：附錄小節的動作不支援 append`);
+        Object.keys(action.label?.byLevel || {}).map(Number).filter(level => level < (action.level ?? 1) || level > classDef.maxLevel)
+          .forEach(level => errors.push(`${where}：動作 ${action.key} 的 label.byLevel ${level} 級不可低於按鈕出現等級或超過 maxLevel`));
+      }
+    }
+  });
   // 動作的 append 與 resource 須指向本職業的能力與資源。
   const resourceKeys = new Set(sources.flatMap(({ features }) => features.map(feature => feature.resource?.key).filter(Boolean)));
-  const partIds = new Set(sources.flatMap(({ features }) => features.flatMap(feature => (feature.parts || []).map(part => part.id))));
+  getAppendixActions(classDef).filter(action => action.resource && !resourceKeys.has(action.resource))
+    .forEach(action => errors.push(`${classDef.file} appendix：動作消耗的資源「${action.resource}」沒有定義`));
+  const partIds = new Set([
+    ...sources.flatMap(({ features }) => features.flatMap(feature => (feature.parts || []).map(part => part.id))),
+    ...(classDef.appendix || []).flatMap(item => (item.parts || []).map(part => part.id).filter(Boolean))
+  ]);
   const appendedIds = new Set(sources.flatMap(({ features }) => features.flatMap(feature => getActions(feature).flatMap(action => action.append || []))));
   for (const { owner, features } of sources) {
     for (const feature of features) {
@@ -231,4 +260,4 @@ function checkClass(classDef, errors) {
   }
 }
 
-module.exports = { loadContent, getActions, BUILT_IN_VALUES, CONTENT_DIR };
+module.exports = { loadContent, getActions, getAppendixActions, BUILT_IN_VALUES, CONTENT_DIR };

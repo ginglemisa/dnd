@@ -15,7 +15,8 @@ function loadLegacyClassFeatures(file = path.join(ROOT, "class-features.js")) {
   return context.globalThis.__classFeatures;
 }
 
-// [[名稱]] 的查表來源：技能／規則用 monster.js 的 skills_example_uses（含別名），狀態用 condition.js 的 CONDITIONS。
+// [[名稱]] 的查表來源：技能／規則用 monster.js 的 skills_example_uses（含別名），狀態用 condition.js 的 CONDITIONS，
+// 野獸／怪物用 monster.js 的 BEAST_STATS（中文名取 name「小魔鬼 (Imp) CR:1」括號前的部分）。
 let tipTables = null;
 function loadTipTables() {
   if (tipTables) return tipTables;
@@ -27,7 +28,13 @@ function loadTipTables() {
   const conditionSource = read("condition.js");
   const conditionBlock = conditionSource.slice(conditionSource.indexOf("const CONDITIONS = "), conditionSource.indexOf("const HAZARDS = "));
   for (const match of conditionBlock.matchAll(/key: "([a-z_-]+)",\s*zh: "([^"]+)"/g)) conditions.set(match[2], match[1]);
-  tipTables = { skills: new Set([...Object.keys(skills), ...Object.keys(aliases)]), conditions };
+  const beasts = new Map();
+  for (const [key, beast] of Object.entries(vm.runInNewContext(`(${pick("BEAST_STATS")})`))) {
+    const name = beast.name.split(" (")[0];
+    if (beasts.has(name)) throw new Error(`monster.js BEAST_STATS 的中文名「${name}」重複`);
+    beasts.set(name, key);
+  }
+  tipTables = { skills: new Set([...Object.keys(skills), ...Object.keys(aliases)]), conditions, beasts };
   return tipTables;
 }
 

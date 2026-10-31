@@ -21,9 +21,10 @@ const FEATURE_SLUGS = Object.freeze({
   無甲移動: "unarmored-movement", 神聖使命: "divine-order", 引導神力: "channel-divinity", 生命領域法術: "life-domain-spells",
   神佑醫者: "blessed-healer", 神佑打擊: "blessed-strikes",
   儀式精通: "ritual-adept", 奧術回想: "arcane-recovery", 學者: "scholar", 塑能學者: "evocation-savant",
-  超魔法: "metamagic", 術法復甦: "sorcerous-restoration", 龍族體魄: "draconic-resilience", 龍族法術: "draconic-spells", 元素親和: "elemental-affinity"
+  超魔法: "metamagic", 術法復甦: "sorcerous-restoration", 龍族體魄: "draconic-resilience", 龍族法術: "draconic-spells", 元素親和: "elemental-affinity",
+  魔能祈喚: "eldritch-invocations", 契約魔法: "pact-magic", 黑暗之賜: "dark-ones-blessing", 邪魔法術: "fiend-spells"
 });
-const SUBCLASS_IDS = Object.freeze({ 狂戰士道途: "berserker", 獵人: "hunter", 勇士: "champion", 妙手: "thief", 奉獻之誓: "devotion", 逸聞學院: "lore", 散打鬥士: "open-hand", 生命領域: "life", 塑能師: "evoker", 龍族術法: "draconic" });
+const SUBCLASS_IDS = Object.freeze({ 狂戰士道途: "berserker", 獵人: "hunter", 勇士: "champion", 妙手: "thief", 奉獻之誓: "devotion", 逸聞學院: "lore", 散打鬥士: "open-hand", 生命領域: "life", 塑能師: "evoker", 龍族術法: "draconic", 邪魔宗主: "fiend" });
 // 整個 section 帶 data-action-id、但按鈕說明其實是其中唯一一個小節：外層能力改用新 ID，舊 ID 留給子能力。
 const SPLIT_SECTIONS = Object.freeze({ "paladin-divine-sense": "paladin-channel-divinity" });
 // 選項的攻擊備註：照抄 class-features-ui.js 的常數（存進角色資料，取消時以相同字串移除）。
@@ -38,7 +39,8 @@ const COLUMN_KEYS = Object.freeze({
   宿敵: "favoredEnemy", 準備法術: "preparedSpells", "１環": "spellSlots1", "２環": "spellSlots2",
   回氣: "secondWindUses", 偷襲: "sneakAttackDice", 引導神力: "channelDivinityUses",
   激勵骰: "inspirationDie", 戲法: "cantrips", "３環": "spellSlots3", "４環": "spellSlots4",
-  武藝: "martialArtsDie", 專注點: "focusPoints", 無甲移動: "unarmoredMovement", 術法點: "sorceryPoints"
+  武藝: "martialArtsDie", 專注點: "focusPoints", 無甲移動: "unarmoredMovement", 術法點: "sorceryPoints",
+  魔能祈喚: "invocations", 法術位: "spellSlots", 法術位環階: "spellSlotLevel"
 });
 // 舊版寫在 character-rules.js／action-panel.js 程式裡、HTML 沒有的機制；轉換時一併寫進內容檔。
 const FEATURE_EXTRAS = Object.freeze({
@@ -68,7 +70,10 @@ const FEATURE_EXTRAS = Object.freeze({
   // 術法復甦 1 次、長休後恢復（短休恢復術法點的 restChoice 內容檔尚無對應欄位）。
   "sorcerer-innate-sorcery": { resource: { key: "sorcerer-innate-sorcery", uses: 2, recover: { long: "all" } } },
   "sorcerer-font-of-magic": { resource: { key: "sorcerer-sorcery-points", kind: "points", uses: "sorceryPoints", recover: { long: "all" } } },
-  "sorcerer-sorcerous-restoration": { resource: { key: "sorcerer-sorcerous-restoration", uses: 1, recover: { long: "all" } } }
+  "sorcerer-sorcerous-restoration": { resource: { key: "sorcerer-sorcerous-restoration", uses: 1, recover: { long: "all" } } },
+  // character-rules.js：秘法回流 1 次、長休後恢復（恢復契約法術位的數量內容檔尚無對應欄位）；黑暗強運魅力調整值（至少 1）次，長休全回。
+  "warlock-magical-cunning": { resource: { key: "warlock-magical-cunning", uses: 1, recover: { long: "all" } } },
+  "warlock-dark-ones-own-luck": { resource: { key: "warlock-dark-ones-own-luck", uses: "darkOnesOwnLuckUses", recover: { long: "all" } } }
 });
 // action-panel.js TABLETOP_VALUE_RESOLVERS 的公式（「職業-名稱」key）；文字結果寫成 byLevel（未列的等級保留頁面文字）。
 const CLASS_VALUES = Object.freeze({
@@ -89,7 +94,9 @@ const CLASS_VALUES = Object.freeze({
     searUndeadDice: "max(1, {wisModifier})d8", preserveLifeTotal: "{level} * 5"
   },
   // 生成法術位的跑團文字：舊版由「生成法術位」表格逐列組成（與等級無關），這裡照抄組成結果。
-  sorcerer: { slotCreationCosts: { byLevel: { 1: "1 環消耗 2 點（術士等級 2 起）；2 環消耗 3 點（術士等級 3 起）；3 環消耗 5 點（術士等級 5 起）；4 環消耗 6 點（術士等級 7 起）。" } } }
+  sorcerer: { slotCreationCosts: { byLevel: { 1: "1 環消耗 2 點（術士等級 2 起）；2 環消耗 3 點（術士等級 3 起）；3 環消耗 5 點（術士等級 5 起）；4 環消耗 6 點（術士等級 7 起）。" } } },
+  // 黑暗強運次數取自 character-rules.js。
+  warlock: { darkOnesOwnLuckUses: "max(1, {chaModifier})" }
 });
 // 施法進度（舊版分散在 character-rules.js 的施法者集合與半施法者準備表）。
 const SPELLCASTING = Object.freeze({
@@ -97,6 +104,9 @@ const SPELLCASTING = Object.freeze({
   bard: "full", cleric: "full", druid: "full", sorcerer: "full", wizard: "full"
 });
 const NUMBER_WORDS = Object.freeze({ 一: 1, 二: 2, 兩: 2, 三: 3, 四: 4 });
+// 舊版分隔線的行內樣式；內容檔寫成「---」，渲染為 <hr class="class-rule-divider">（樣式改由 styles.css 提供）。
+const LEGACY_DIVIDER_STYLE = "border: none; height: 1px; background: linear-gradient(to right, transparent, #dfe5f0, transparent); margin: 10px 0;";
+const INLINE_NODES = new Set(["#text", "span", "strong", "br"]);
 
 class ConvertError extends Error {}
 const fail = (where, message) => { throw new ConvertError(`${where}：${message}`); };
@@ -115,7 +125,7 @@ function allowAttributes(node, allowed, where) {
 
 // 行內 HTML → 內容檔標記。options.valueToken(key) 把 data-tabletop-value 轉成 {名稱|…}。
 function inlineToText(nodes, context, where) {
-  const { conditions } = loadTipTables();
+  const { conditions, beasts } = loadTipTables();
   return nodes.map(node => {
     if (node.nodeName === "#text") {
       const text = node.value.replace(/[ \t]*\r?\n[ \t]*/g, "");
@@ -139,6 +149,12 @@ function inlineToText(nodes, context, where) {
     }
     if (node.nodeName === "span" && classes(node).includes("condition-tip")) {
       if (conditions.get(textOf(node)) !== attr(node, "data-condition")) fail(where, `狀態提示文字與 data-condition 不符：${textOf(node)}`);
+      return `[[${textOf(node)}]]`;
+    }
+    // 野獸提示：中文名須對應 monster.js BEAST_STATS 的同一隻野獸。
+    if (node.nodeName === "span" && classes(node).includes("beast-tip")) {
+      allowAttributes(node, ["class", "data-beast"], where);
+      if (attr(node, "class") !== "beast-tip" || beasts.get(textOf(node)) !== attr(node, "data-beast")) fail(where, `野獸提示文字與 data-beast 不符：${textOf(node)}`);
       return `[[${textOf(node)}]]`;
     }
     // 只在跑團說明出現的文字。數值（或「外框＋數值」）寫成空白頁面文字的 {名稱|}，兩種版本相同；
@@ -286,10 +302,27 @@ function convertBody(nodes, feature, context, where) {
   // 可收合小節（<details>）接在內文之後、子能力之前。
   const collapsible = [];
   let selectCard = false;
+  // 直接放在容器內的行內內容（舊版 <p> 內含 <hr>，瀏覽器提早關閉 <p>，其後文字落在 <p> 之外）視為一個段落；
+  // 原本的 </p> 會變成緊接其後的空白 <p>，一併略過。須是連續的同層節點，避免漏掉中間的空白。
+  let inlineRun = [];
+  const flushInlineRun = () => {
+    if (!inlineRun.length) return;
+    const siblings = inlineRun[0].parentNode.childNodes;
+    const start = siblings.indexOf(inlineRun[0]);
+    if (inlineRun.some((child, offset) => siblings[start + offset] !== child)) fail(where, "容器內的行內內容須連續");
+    const [text, tabletop] = views(inlineRun);
+    pushBlock(text, tabletop);
+    summaryParts.push(tabletop);
+    inlineRun = [];
+  };
   for (const node of nodes) {
     if (afterFeatChoice !== undefined || behavior) fail(where, "data-after-feat-choice 段落或控制項容器之後不可再有區塊");
     // 下拉選擇卡片由渲染器接在內文與選項之後，須是能力的最後一個區塊。
     if (selectCard) fail(where, "下拉選擇卡片之後不可再有區塊");
+    if (INLINE_NODES.has(node.nodeName)) { inlineRun.push(node); continue; }
+    if (node.nodeName === "p" && !node.childNodes.length && inlineRun.length) { flushInlineRun(); continue; }
+    if (node.nodeName === "p" && !node.childNodes.length) fail(where, "空白 <p> 只允許出現在 <p> 內含 <hr> 造成的位置");
+    flushInlineRun();
     const isSubsection = node.nodeName === "div" && classes(node).includes("class-rule-subsection");
     const partId = isSubsection ? attr(node, "data-action-id") || context.splitPartId : undefined;
     if (parts.length && !partId) fail(where, "子能力之後只能再有子能力");
@@ -393,6 +426,16 @@ function convertBody(nodes, feature, context, where) {
       tabletopUsed ||= inner.tabletopUsed;
       summaryParts.push(...inner.summaryParts);
       summaryUsed ||= inner.summaryUsed;
+    } else if (node.nodeName === "hr") {
+      // 分隔線：跑團說明不讀取（不產生文字），兩種版本相同。
+      allowAttributes(node, ["style"], where);
+      if (attr(node, "style") !== LEGACY_DIVIDER_STYLE) fail(where, `分隔線的樣式與既有寫法不同：${attr(node, "style")}`);
+      pushBlock("---");
+    } else if (node.nodeName === "h4" && context.plainHeadings) {
+      // 已在小節內的標題（例如附錄小節「書之魔契」的「戲法與儀式（持有書時）」）：只輸出 <h4>，不另包小節。
+      allowAttributes(node, [], where);
+      const [title, tabletopTitle] = views(node.childNodes);
+      pushBlock(`#### ${title}`, `#### ${tabletopTitle}`);
     } else if (node.nodeName === "div" && classes(node).includes("rule-table-shell")) {
       // 規則表格 → GFM 表格；外框（aria-label、樣式）依出現順序記在能力的 tables。跑團說明不讀表格，兩種版本相同。
       const table = convertTable(node, where);
@@ -417,6 +460,7 @@ function convertBody(nodes, feature, context, where) {
       fail(where, `未處理的區塊 <${node.nodeName} class="${attr(node, "class") || ""}">`);
     }
   }
+  flushInlineRun();
   // 跑團說明與總覽照舊讀取整段（含可收合小節）；寫成 tabletop／summary 會漏掉可收合小節，故不支援。
   if (collapsible.length && (tabletopUsed || summaryUsed)) fail(where, "有可收合小節的能力不支援跑團專用文字或總覽隱藏");
   if (selectCard && (tabletopUsed || summaryUsed)) fail(where, "有下拉選擇卡片的能力不支援跑團專用文字或總覽隱藏");
@@ -613,7 +657,7 @@ function convertCreation(root, classId, where) {
 function convertActions(rules, labelAt, blocks, featureById, classId, subclassShortName, maxLevel) {
   const appendedIds = new Set();
   for (const rule of rules) {
-    const known = ["id", "mode", "level", "label", "key", "legacyKeys", "resourceKey", "descriptionId", "descriptionIds", "checkedId"];
+    const known = ["id", "mode", "level", "label", "key", "legacyKeys", "resourceKey", "descriptionId", "descriptionIds", "checkedId", "invocation", "requiresInvocation"];
     Object.keys(rule).forEach(name => { if (!known.includes(name)) fail(`${classId} 動作 ${rule.key}`, `未處理的欄位 ${name}`); });
     const [hostId, ...appended] = [].concat(rule.descriptionIds || rule.descriptionId);
     const host = blocks.get(hostId) || fail(classId, `動作 ${rule.key} 的說明段落 ${hostId} 不存在`);
@@ -621,7 +665,8 @@ function convertActions(rules, labelAt, blocks, featureById, classId, subclassSh
     if (rule.checkedId !== host.checkedId) fail(classId, `動作 ${rule.key} 的 checkedId「${rule.checkedId || ""}」與說明段落所屬選項「${host.checkedId || ""}」不同`);
     const action = { mode: rule.mode, key: rule.key };
     if (rule.legacyKeys) action.legacyKeys = [...rule.legacyKeys];
-    const defaultLabel = `等級 ${host.level}：${host.name}${host.subclass ? `（${subclassShortName}子職）` : ""}`;
+    // 附錄小節沒有等級，預設按鈕文字為小節名稱。
+    const defaultLabel = host.level === undefined ? host.name : `等級 ${host.level}：${host.name}${host.subclass ? `（${subclassShortName}子職）` : ""}`;
     if (typeof rule.label === "function") {
       // 依等級換名的 label 寫成 { byLevel }：只列出文字改變的等級，低於最低等級時使用預設文字。
       const byLevel = {};
@@ -634,6 +679,9 @@ function convertActions(rules, labelAt, blocks, featureById, classId, subclassSh
       if (Object.keys(byLevel).length) action.label = { byLevel };
     } else if (rule.label !== defaultLabel) action.label = rule.label;
     if (rule.level !== host.level) action.level = rule.level;
+    // 依已選魔能祈喚顯示的按鈕：invocation（須已選此祈喚）、requiresInvocation（另須已選的祈喚）照抄。
+    if (rule.invocation) action.invocation = rule.invocation;
+    if (rule.requiresInvocation) action.requiresInvocation = rule.requiresInvocation;
     if (rule.resourceKey) action.resource = rule.resourceKey;
     if (appended.length) {
       action.append = appended.map(item => {
@@ -747,6 +795,8 @@ function convertClass(classId, html) {
     (feature.parts || []).forEach(part => blocks.set(part.id, { ...base, target: part, name: part.name }));
     (feature.options || []).filter(option => option.blockId).forEach(option => blocks.set(option.blockId, { ...base, target: option, name: option.name, checkedId: option.id }));
   }
+  // 附錄小節沒有等級：按鈕須寫 level，按鈕文字預設為小節名稱。
+  appendix.flatMap(item => item.parts || []).filter(part => part.id).forEach(part => blocks.set(part.id, { target: part, name: part.name }));
   const { rules, labelAt } = loadLegacyClassActionRules();
   convertActions(rules[classId] || [], labelAt, blocks, featureById, classId, subclass.shortName, creation.maxLevel);
   for (const feature of features) {
@@ -779,10 +829,36 @@ function convertAppendix(section, classId, where) {
   if (heading?.nodeName !== "h3" || heading.childNodes.some(child => child.nodeName !== "#text")) fail(where, "附錄須以純文字的 <h3> 開頭");
   const holder = { name: textOf(heading).trim() };
   const context = { valueToken: () => fail(where, "附錄不支援數值標記"), classId };
-  const inner = convertBody(rest, holder, context, where);
+  // 有小節帶 data-action-id（例如魔能祈喚的魔能斬擊）時，為保留順序，所有小節都寫成附錄小節 parts；
+  // 第一個小節之前的區塊照舊寫在 text。沒有時小節照舊寫成 text 的「#### 」。
+  const isSubsection = node => node.nodeName === "div" && classes(node).includes("class-rule-subsection");
+  const usesParts = rest.some(node => isSubsection(node) && has(node, "data-action-id"));
+  const firstPart = usesParts ? rest.findIndex(isSubsection) : rest.length;
+  const inner = convertBody(rest.slice(0, firstPart), holder, context, where);
   if (holder.options || holder.tables || holder.select || inner.afterFeatChoice !== undefined || inner.behavior || inner.parts.length || inner.collapsible.length) fail(where, "附錄不支援選項、表格、下拉選擇卡片、控制項容器、子能力或可收合小節");
   if (inner.tabletopUsed || inner.summaryUsed) fail(where, "附錄不支援跑團專用文字或總覽隱藏");
-  return { name: holder.name, text: inner.blocks.join("\n\n") };
+  const item = { name: holder.name, text: inner.blocks.join("\n\n") };
+  if (usesParts) item.parts = rest.slice(firstPart).map(node => (isSubsection(node) ? convertAppendixPart(node, context, where) : fail(where, "附錄小節之後只能再有附錄小節")));
+  return item;
+}
+
+// 附錄小節 <div class="class-rule-subsection"[ data-action-id]><h4>名稱[（先決條件：…）]</h4>…</div> → { id, name, prerequisite, text }。
+// 小節內的 <h4> 寫成「#### 」（渲染時只輸出標題，不另包小節）。
+function convertAppendixPart(node, context, where) {
+  allowAttributes(node, ["class", "data-action-id"], where);
+  if (attr(node, "class") !== "class-rule-subsection") fail(where, `附錄小節 class 須為 class-rule-subsection：${attr(node, "class")}`);
+  const [heading, ...rest] = elements(node);
+  if (heading?.nodeName !== "h4" || heading.childNodes.some(child => child.nodeName !== "#text")) fail(where, "附錄小節須以純文字的 <h4> 開頭");
+  const match = textOf(heading).trim().match(/^([^（）]+?)(?:（先決條件：(.+)）)?$/) || fail(where, `附錄小節標題格式不符：${textOf(heading)}`);
+  const at = `${where} 附錄小節 ${match[1]}`;
+  const part = { name: match[1] };
+  if (attr(node, "data-action-id")) part.id = attr(node, "data-action-id");
+  if (match[2]) part.prerequisite = match[2];
+  const inner = convertBody(rest, part, { ...context, plainHeadings: true }, at);
+  if (part.options || part.tables || part.select || inner.afterFeatChoice !== undefined || inner.behavior || inner.parts.length || inner.collapsible.length) fail(at, "附錄小節不支援選項、表格、下拉選擇卡片、控制項容器、子能力或可收合小節");
+  if (inner.tabletopUsed || inner.summaryUsed) fail(at, "附錄小節不支援跑團專用文字或總覽隱藏");
+  part.text = inner.blocks.join("\n\n");
+  return part;
 }
 
 // 特性表「職業特性」欄與能力名稱不同（例如「動作如潮（一次使用）」）時寫成 tableName；順序不同或對不上則停止。
@@ -814,6 +890,7 @@ function applyTableNames(features, legacyColumn, where) {
 const FEATURE_KEY_ORDER = ["id", "level", "name", "tableName", "type", "choose", "changeOn", "choiceGroup", "optionStyle", "behavior", "resource", "spells", "actions", "summary", "tabletop", "text", "tables", "collapsible", "parts", "afterFeatChoice", "options", "select"];
 const PART_KEY_ORDER = ["id", "name", "activation", "actions", "summary", "tabletop", "text"];
 const OPTION_KEY_ORDER = ["id", "name", "attackNote", "actions", "text"];
+const APPENDIX_PART_KEY_ORDER = ["id", "name", "prerequisite", "actions", "text"];
 const pick = (item, keys) => Object.fromEntries(keys.filter(key => item[key] !== undefined).map(key => [key, item[key]]));
 function cleanFeature(feature) {
   const out = {};
@@ -872,7 +949,7 @@ function writeClass(classId, html) {
     progression: creation.progression,
     ...(CLASS_VALUES[classId] ? { values: CLASS_VALUES[classId] } : {}),
     features: classFeatures.map(cleanFeature),
-    ...(appendix.length ? { appendix } : {})
+    ...(appendix.length ? { appendix: appendix.map(item => ({ ...item, ...(item.parts ? { parts: item.parts.map(part => pick(part, APPENDIX_PART_KEY_ORDER)) } : {}) })) } : {})
   };
   const legacyName = parse5.parseFragment(html);
   classData.name = textOf(findAll(legacyName, node => node.nodeName === "h3" && /特性表格$/.test(textOf(node)))[0]).replace(/特性表格$/, "");

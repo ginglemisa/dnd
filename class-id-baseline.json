@@ -9,6 +9,7 @@
     "ranger",
     "rogue",
     "sorcerer",
+    "warlock",
     "wizard"
   ],
   "subclasses": [
@@ -21,6 +22,7 @@
     "ranger/hunter",
     "rogue/thief",
     "sorcerer/draconic",
+    "warlock/fiend",
     "wizard/evoker"
   ],
   "options": [
@@ -62,6 +64,10 @@
     "dynamic-action-ranger-p55ifk",
     "dynamic-action-ranger-vdr4tc",
     "dynamic-action-rogue-curated-sneak-attack",
+    "dynamic-action-warlock-curated-arcane-recovery",
+    "dynamic-action-warlock-curated-dark-ones-own-luck",
+    "dynamic-action-warlock-curated-eldritch-smite",
+    "dynamic-action-warlock-curated-thirsting-blade",
     "dynamic-action-wizard-curated-memorize-spell",
     "dynamic-action-wizard-curated-potent-cantrip",
     "dynamic-action-wizard-curated-sculpt-spells",
@@ -116,6 +122,8 @@
     "sorcerer-innate-sorcery",
     "sorcerer-sorcerous-restoration",
     "sorcerer-sorcery-points",
+    "warlock-dark-ones-own-luck",
+    "warlock-magical-cunning",
     "wizard-arcane-recovery"
   ],
   "selects": [

@@ -5,7 +5,7 @@
 const fs = require("fs");
 const path = require("path");
 const { ROOT } = require("./legacy");
-const { CONTENT_DIR, getActions } = require("./load");
+const { CONTENT_DIR, getActions, getAppendixActions } = require("./load");
 
 const BASELINE_FILES = Object.freeze({
   srd: path.join(ROOT, "class-id-baseline.json"),
@@ -45,6 +45,7 @@ function collectPersistedIds(classes) {
   for (const classDef of classes.values()) {
     add(classDef.pack, "classes", classDef.id);
     addFeatures(classDef.pack, classDef.features);
+    getAppendixActions(classDef).forEach(action => [action.key, ...(action.legacyKeys || [])].forEach(key => add(classDef.pack, "actionKeys", key)));
     for (const subclass of classDef.subclasses) {
       add(subclass.pack, "subclasses", `${classDef.id}/${subclass.id}`);
       addFeatures(subclass.pack, subclass.features);
