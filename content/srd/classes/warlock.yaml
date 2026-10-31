@@ -110,7 +110,10 @@ appendix:
     text: |
       以下依先決條件與功能分組說明。
     parts:
-      - name: 刃之魔契
+      - id: warlock-pact-of-the-blade
+        name: 刃之魔契
+        actions:
+          - {mode: bonus, key: dynamic-bonus-invocation-olkvgk, level: 1, source: invocation}
         text: |
           你可用附贈：
 
@@ -135,8 +138,11 @@ appendix:
           - 你死亡。
 
           若是召喚武器，聯結結束時武器會一併消失。
-      - name: 鏈之魔契
+      - id: warlock-pact-of-the-chain
+        name: 鏈之魔契
         spell: {id: find-familiar, use: at-will}
+        actions:
+          - {mode: action, key: dynamic-action-invocation-c4a0ir, level: 1, source: invocation}
         text: |
           你學會獲得魔寵，施法不耗法術位。
 
@@ -268,9 +274,12 @@ appendix:
           你可在水中呼吸，並獲得等同自身速度的游泳速度。
 
           你也可不耗法術位施展 1 次水下呼吸，此用法在長休後恢復。
-      - name: 共視感官
+      - id: warlock-gaze-of-two-minds
+        name: 共視感官
         prerequisite: 契術師等級 5+
         level: 5
+        actions:
+          - {mode: bonus, key: dynamic-bonus-invocation-1mgtzqp, level: 5, source: invocation}
         text: |
           你可用附贈觸碰 1 名自願生物，建立感官連結至你下回合結束。只要你們在同一位面，你可在後續回合再用附贈延長連結到下回合結束；未延長則連結終止。
 
@@ -299,9 +308,13 @@ appendix:
             requiresInvocation: 刃之魔契
         text: |
           你在使用契約武器時獲得額外攻擊：在你回合以該武器執行攻擊動作時，可攻擊 2 次而非 1 次。
-      - name: 鏈主賦能
+      - id: warlock-investment-of-the-chain-master
+        name: 鏈主賦能
         prerequisite: 契術師等級 5+，鏈之魔契祈喚
         level: 5
+        actions:
+          - {mode: bonus, key: dynamic-bonus-invocation-remlxd, level: 5, source: invocation, requiresInvocation: 鏈之魔契}
+          - {mode: reaction, key: dynamic-reaction-invocation-remlxd, level: 5, source: invocation, requiresInvocation: 鏈之魔契}
         text: |
           你施展獲得魔寵時，可對魔寵灌注魔能，獲得以下增益：
 

@@ -178,6 +178,10 @@ function checkClass(classDef, errors) {
         if (new Set((part.actions || []).map(action => action.resource)).size > 1) errors.push(`${where} 子能力 ${part.name}：按鈕消耗的資源須相同（標題的消耗字樣只有一種）`);
       }
       getActions(feature).forEach(action => {
+        if (action.source) errors.push(`${where}：動作 ${action.key} 的 source 只用於魔能祈喚附錄的小節`);
+        if (action.selectedOptionOnly && !(feature.actions || []).includes(action)) errors.push(`${where}：selectedOptionOnly 只用於能力層的按鈕`);
+        if (action.selectedOptionOnly && !feature.options) errors.push(`${where}：selectedOptionOnly 的能力須有 options`);
+        if (action.tabletopAlso === action.mode) errors.push(`${where}：動作 ${action.key} 的 tabletopAlso 與 mode 相同`);
         claim(persistedIds, action.key, where, "動作 key");
         (action.legacyKeys || []).forEach(key => claim(persistedIds, key, where, "舊動作 key"));
         Object.keys(action.label?.byLevel || {}).map(Number).filter(level => level < (action.level ?? feature.level) || level > classDef.maxLevel)
@@ -235,6 +239,8 @@ function checkClass(classDef, errors) {
         if (!valueNames.has(match[1])) errors.push(`${where} 附錄小節 ${part.name}：文字引用了不存在的數值 {${match[1]}|…}`);
       }
       for (const action of part.actions || []) {
+        if (action.source === "invocation" && item.kind !== "invocations") errors.push(`${where} 附錄小節 ${part.name}：source: invocation 只用於 kind: invocations 的附錄`);
+        if (action.selectedOptionOnly) errors.push(`${where} 附錄小節 ${part.name}：附錄小節的動作不支援 selectedOptionOnly`);
         claim(persistedIds, action.key, where, "動作 key");
         (action.legacyKeys || []).forEach(key => claim(persistedIds, key, where, "舊動作 key"));
         if (action.level === undefined) errors.push(`${where} 附錄小節 ${part.name}：動作 ${action.key} 須寫 level（附錄沒有等級）`);

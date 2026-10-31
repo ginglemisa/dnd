@@ -39,10 +39,15 @@
     const rules = getClassRules(className);
     if (!rules) return [];
     const subclass = rules.subclasses.find(item => item.id === (subclassId || rules.defaultSubclass));
-    return [
-      ...rules.features.map(feature => ({ ...feature, subclass: null })),
-      ...(subclass?.features || []).map(feature => ({ ...feature, subclass: subclass.id }))
-    ].sort((a, b) => a.level - b.level);
+    // 排列同職業頁：各等級的子職能力接在「選擇子職」能力之後，其他等級接在該級職業能力之後。
+    const levels = [...new Set([...rules.features, ...(subclass?.features || [])].map(feature => feature.level))].sort((a, b) => a - b);
+    return levels.flatMap(level => {
+      const own = rules.features.filter(feature => feature.level === level).map(feature => ({ ...feature, subclass: null }));
+      const sub = (subclass?.features || []).filter(feature => feature.level === level).map(feature => ({ ...feature, subclass: subclass.id }));
+      const entryIndex = own.findIndex(feature => feature.type === "subclass");
+      const insertAt = entryIndex >= 0 ? entryIndex + 1 : own.length;
+      return [...own.slice(0, insertAt), ...sub, ...own.slice(insertAt)];
+    });
   }
 
   // 內容檔 values 公式：數字、NdM 骰子、四則運算、max()／min()／floor() 與 {數值}。

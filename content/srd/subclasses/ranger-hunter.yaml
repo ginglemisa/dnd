@@ -22,6 +22,7 @@ features:
       - mode: action
         key: dynamic-action-ranger-vdr4tc
         label: 等級 3：狩獵目標
+        selectedOptionOnly: true
     text: |
       從下列選項中選擇 1 項，**每次短休或長休後**可改選：
     options:

@@ -158,8 +158,10 @@ features:
     actions:
       - mode: movement
         key: dynamic-movement-barbarian-1iw4zkg
+        tabletopHidden: true
       - mode: bonus
         key: dynamic-bonus-barbarian-1iw4zkg
+        tabletopHidden: true
     text: |
       你以**附贈**進入狂暴時，可以同時移動，距離至多為你速度的一半。
   - id: barbarian-ability-score-improvement-8

@@ -65,6 +65,7 @@ features:
       - mode: bonus
         key: dynamic-bonus-class-r7asqs
         resource: bard-inspiration
+        tabletopAlso: action
         append: [bard-font-of-inspiration]
     text: |
       你可以用話語、音樂或表演鼓舞同伴，給予對方 1 顆激勵骰。

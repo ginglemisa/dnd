@@ -29,6 +29,7 @@ function getClassOptionRules() {
   const groups = [];
   const selects = [];
   const availability = new Map();
+  const attackNotes = [];
   Object.values(source || {}).forEach(rules => {
     [...rules.features, ...rules.subclasses.flatMap(subclass => subclass.features)].forEach(feature => {
       const requirement = Object.freeze({ className: rules.id, minimumLevel: feature.level });
@@ -36,6 +37,7 @@ function getClassOptionRules() {
       if (feature.options) {
         const ids = Object.freeze(feature.options.map(option => option.id));
         ids.forEach(id => availability.set(id, requirement));
+        feature.options.filter(option => option.attackNote).forEach(option => attackNotes.push(Object.freeze({ id: option.id, note: option.attackNote })));
         groups.push(Object.freeze({
           ...requirement,
           ids,
@@ -52,7 +54,7 @@ function getClassOptionRules() {
       }
     });
   });
-  classOptionRulesCache = { source, groups, selects, availability };
+  classOptionRulesCache = { source, groups, selects, availability, attackNotes };
   return classOptionRulesCache;
 }
 
@@ -128,10 +130,6 @@ function updateClassFeatureChoiceReminder() {
   reminder.hidden = characterChoiceWarningsHidden || issues.length === 0;
 }
 
-const CLERIC_DIVINE_STRIKE_ATTACK_NOTE = "+1d8光/黯傷害";
-// 寫入攻擊備註並隨角色保存；移除時以完全相同的字串比對，修改會使舊存檔殘留舊備註。
-const DRUID_PRIMAL_STRIKE_ATTACK_NOTE = "+1d8冷凍/火焰/閃電/雷鳴傷害";
-
 function isClassOptionControlAvailable(id) {
   const requirement = getClassOptionRules().availability.get(id);
   if (!requirement) return true;
@@ -169,18 +167,17 @@ function isApplicableWeaponAttack(hand) {
   return Boolean(weaponName) && weaponName !== "盾牌";
 }
 
+// 選項的攻擊備註（內容檔 options[].attackNote，例如神聖打擊的「+1d8光/黯傷害」）：勾選且可用時加進武器攻擊備註。
+// 備註隨角色保存，移除時以完全相同的字串比對，故內容檔不可改字（class-id-baseline.json 把關）。
 function syncClassFeatureAttackNotes() {
-  const divineStrikeId = "cleric-blessed-strikes-divine-strike";
-  const primalStrikeId = "druid-elemental-fury-primal-strike";
-  const divineStrike = isClassOptionControlAvailable(divineStrikeId)
-    && Boolean(document.getElementById(divineStrikeId)?.checked);
-  const primalStrike = isClassOptionControlAvailable(primalStrikeId)
-    && Boolean(document.getElementById(primalStrikeId)?.checked);
+  const notes = getClassOptionRules().attackNotes.map(({ id, note }) => ({
+    note,
+    enabled: isClassOptionControlAvailable(id) && Boolean(document.getElementById(id)?.checked)
+  }));
   ["main", "off"].forEach(hand => {
     const noteInput = document.getElementById(`atk-${hand}-note`);
     const applicable = isApplicableWeaponAttack(hand);
-    setManagedAttackNoteFragment(noteInput, CLERIC_DIVINE_STRIKE_ATTACK_NOTE, divineStrike && applicable);
-    setManagedAttackNoteFragment(noteInput, DRUID_PRIMAL_STRIKE_ATTACK_NOTE, primalStrike && applicable);
+    notes.forEach(({ note, enabled }) => setManagedAttackNoteFragment(noteInput, note, enabled && applicable));
   });
 }
 
