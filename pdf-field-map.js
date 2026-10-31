@@ -1,7 +1,12 @@
 (function attachPdfFieldMap(globalScope) {
-  function getClassFeaturesMap() {
-    if (typeof classFeatures !== 'undefined') return classFeatures;
-    return globalScope.classFeatures || {};
+  // 職業機制資料（class-content.generated.js 的 classRules，由 content/ 的職業內容檔產生）。
+  function getClassRules(classKey) {
+    const rules = typeof classRules !== 'undefined' ? classRules : (globalScope.classRules || {});
+    return Object.hasOwn(rules, classKey) ? rules[classKey] : null;
+  }
+
+  function getClassFeatureRules(classKey) {
+    return globalScope.getClassFeatureRules?.(classKey) || [];
   }
 
   function getRaceFeaturesMap() {
@@ -141,71 +146,21 @@
     { name: '遊說', profId: 'prof-遊說', expId: 'exp-遊說', modId: 'skill-遊說', chkField: 'persuasionChk1', modField: 'persuasionMod1' }
   ]);
 
-  const CLASS_LABELS = Object.freeze({
-    barbarian: '野蠻人',
-    bard: '吟遊詩人',
-    cleric: '牧師',
-    druid: '德魯伊',
-    fighter: '戰士',
-    monk: '武僧',
-    paladin: '聖騎士',
-    ranger: '遊俠',
-    rogue: '盜賊',
-    sorcerer: '術士',
-    warlock: '契術師',
-    wizard: '法師'
-  });
+  // 職業名稱與子職名稱（PDF 的 Subclass1／Class1 欄）取自職業內容檔；子職目前為各職業的預設子職。
+  function getClassLabel(classKey) {
+    return getClassRules(classKey)?.name || '';
+  }
 
-  const SUBCLASS_LABELS = Object.freeze({
-    barbarian: '狂戰士道途',
-    bard: '逸聞學院',
-    cleric: '生命領域',
-    druid: '大地結社',
-    fighter: '勇士',
-    monk: '散打鬥士',
-    paladin: '奉獻之誓',
-    ranger: '獵人',
-    rogue: '妙手',
-    sorcerer: '龍族術法',
-    warlock: '邪魔宗主',
-    wizard: '塑能師'
-  });
+  function getSubclassLabel(classKey) {
+    const rules = getClassRules(classKey);
+    return rules?.subclasses.find((subclass) => subclass.id === rules.defaultSubclass)?.name || '';
+  }
 
   // A selected option is appended to its heading as "／選項"; nextLine specs
   // print "選擇：選項" below instead. Unselected options leave the heading as is.
+  // 一般選項與下拉選擇卡片的選擇由職業內容檔推得（getClassFeatureChoiceSpecs）；
+  // 下列是給予專長或戲法的選擇（戰鬥風格、受祝福的勇士、德魯伊教戰士），另讀角色的專長與戲法。
   const CLASS_FEATURE_CHOICE_SPECS = Object.freeze({
-    cleric: Object.freeze([
-      Object.freeze({
-        heading: '等級 1：神聖使命',
-        choices: Object.freeze([
-          Object.freeze({ stateKey: 'cleric-guardian', label: '守護者' }),
-          Object.freeze({ stateKey: 'cleric-trickster', label: '魔術使' })
-        ])
-      }),
-      Object.freeze({
-        heading: '等級 7：神佑打擊',
-        choices: Object.freeze([
-          Object.freeze({ stateKey: 'cleric-blessed-strikes-divine-strike', label: '神聖打擊' }),
-          Object.freeze({ stateKey: 'cleric-blessed-strikes-potent-spellcasting', label: '強力施法' })
-        ])
-      })
-    ]),
-    druid: Object.freeze([
-      Object.freeze({
-        heading: '等級 1：原初使命',
-        choices: Object.freeze([
-          Object.freeze({ stateKey: 'druid-shaman', label: '巫祝' }),
-          Object.freeze({ stateKey: 'druid-sentinel', label: '哨衛' })
-        ])
-      }),
-      Object.freeze({
-        heading: '等級 7：元素狂怒',
-        choices: Object.freeze([
-          Object.freeze({ stateKey: 'druid-elemental-fury-potent-spellcasting', label: '強力施法' }),
-          Object.freeze({ stateKey: 'druid-elemental-fury-primal-strike', label: '原初打擊' })
-        ])
-      })
-    ]),
     fighter: Object.freeze([
       Object.freeze({ heading: '等級 1：戰鬥風格', featStateKey: 'derived-feat-fighting-style-fighter' }),
       Object.freeze({ heading: '等級 7：額外戰鬥風格（勇士）', featStateKey: 'derived-feat-fighting-style-fighter-2', nextLine: true })
@@ -229,36 +184,35 @@
         magicHeading: '等級 2：德魯伊教戰士',
         cantripKeyPrefix: 'class-ranger-druidic-warrior-cantrip-'
       })
-    ]),
-    sorcerer: Object.freeze([
-      Object.freeze({
-        heading: '等級 6：元素親和（龍族）',
-        selectStateKey: 'sorcerer-elemental-affinity-damage-type',
-        labels: Object.freeze({
-          acid: '強酸',
-          cold: '冷凍',
-          fire: '火焰',
-          lightning: '閃電',
-          poison: '毒素'
-        })
-      })
     ])
   });
 
-  // Same-level headings that share one PDF line, joined in the listed order.
-  const CLASS_FEATURE_MERGED_HEADINGS = Object.freeze({
-    barbarian: [[1, ['狂暴', '無甲防禦']], [2, ['險境感知', '魯莽攻擊']], [5, ['額外攻擊', '快速移動']], [7, ['野性直覺', '本能飛撲']]],
-    bard: [[1, ['吟遊詩人激勵', '施法']], [2, ['專精', '萬事通']]],
-    druid: [[1, ['德魯伊語', '施法']]],
-    fighter: [[1, ['回氣', '武器精通']], [2, ['動作如潮', '戰術思維']], [5, ['額外攻擊', '戰術轉移']]],
-    monk: [[1, ['武藝', '無甲防禦']], [2, ['無甲移動', '吐故納新']], [5, ['額外攻擊', '震懾擊']]],
-    paladin: [[1, ['聖療', '施法', '武器精通']], [5, ['額外攻擊', '忠誠坐騎']]],
-    ranger: [[1, ['施法', '宿敵', '武器精通']]],
-    rogue: [[1, ['專精', '偷襲', '武器精通']], [5, ['靈巧打擊', '直覺閃避']], [7, ['反射閃避', '可靠才能']]],
-    sorcerer: [[1, ['施法', '天生術法']], [2, ['魔力泉湧', '超魔法']]],
-    warlock: [[1, ['魔能祈喚', '契約魔法']]],
-    wizard: [[1, ['施法', '儀式精通']]]
-  });
+  // 職業特性欄的標題：「等級 N：能力名稱」，子職能力加上「（子職簡稱）」；依職業頁順序，略過「選擇子職」的入口。
+  function getClassFeatureHeading(feature, classKey) {
+    const rules = getClassRules(classKey);
+    const subclass = feature.subclass ? rules?.subclasses.find((item) => item.id === feature.subclass) : null;
+    return `等級 ${feature.level}：${feature.name}${subclass ? `（${subclass.shortName}）` : ''}`;
+  }
+
+  function getClassFeatureHeadings(classKey, levelLimit) {
+    const limit = Number.parseInt(levelLimit, 10);
+    return [...new Set(getClassFeatureRules(classKey)
+      .filter((feature) => feature.type !== 'subclass' && !(Number.isFinite(limit) && feature.level > limit))
+      .map((feature) => getClassFeatureHeading(feature, classKey)))];
+  }
+
+  // 選項與下拉選擇卡片：勾選的選項接在標題後（「／選項」）。短休或長休可改選的選項（changeOn）與給予專長的選項不列。
+  function getClassFeatureChoiceSpecs(classKey) {
+    const derived = getClassFeatureRules(classKey).flatMap((feature) => {
+      const heading = getClassFeatureHeading(feature, classKey);
+      if (feature.select) {
+        return [{ heading, selectStateKey: feature.select.id, labels: Object.fromEntries(feature.select.choices.map((choice) => [choice.value, choice.name])) }];
+      }
+      if (!feature.options || feature.changeOn || feature.options.some((option) => option.featChoice)) return [];
+      return [{ heading, choices: feature.options.map((option) => ({ stateKey: option.id, label: option.name })) }];
+    });
+    return [...derived, ...(CLASS_FEATURE_CHOICE_SPECS[classKey] || [])];
+  }
 
   const BACKGROUND_LABELS = Object.freeze({
     acolyte: '侍僧',
@@ -793,21 +747,8 @@
   }
 
   function getHitDieByClass(classKey) {
-    const map = {
-      barbarian: '12',
-      fighter: '10',
-      paladin: '10',
-      ranger: '10',
-      bard: '8',
-      cleric: '8',
-      druid: '8',
-      monk: '8',
-      rogue: '8',
-      warlock: '8',
-      sorcerer: '6',
-      wizard: '6'
-    };
-    return map[classKey] || '';
+    const hitDie = getClassRules(classKey)?.hitDie;
+    return hitDie ? String(hitDie) : '';
   }
 
   function hasShieldProficiencyForPdf(state) {
@@ -1012,31 +953,6 @@
     return lines.join('\n');
   }
 
-  function extractClassFeatureHeadings(rawText, levelLimit) {
-    const text = normalizeText(rawText).replace(/<[^>]+>/g, '\n');
-    const lines = text.split(/\n+/).map((line) => line.trim()).filter(Boolean);
-    const limit = Number.parseInt(levelLimit, 10);
-    const output = [];
-    const seen = new Set();
-
-    lines.forEach((line) => {
-      const matched = line.match(/^等級\s*(\d+)\s*[:：]?\s*(.+)$/);
-      if (!matched) return;
-      const lv = Number.parseInt(matched[1], 10);
-      if (Number.isFinite(limit) && lv > limit) return;
-      // The bare "XX子職" heading only announces the choice; the PDF already
-      // has a Subclass1 field and lists each subclass feature separately.
-      if (/^[^（(]*子職$/.test(matched[2].trim())) return;
-      const title = removeSubclassTextInsideParentheses(matched[2].trim());
-      const entry = `等級 ${matched[1]}：${title}`;
-      if (seen.has(entry)) return;
-      seen.add(entry);
-      output.push(entry);
-    });
-
-    return output;
-  }
-
   function getSelectedClassFeatureChoiceLabel(spec, state) {
     if (spec.selectStateKey) {
       return spec.labels?.[normalizeText(state[spec.selectStateKey])] || '';
@@ -1068,7 +984,7 @@
   }
 
   function insertSelectedClassFeatureChoices(lines, classKey, state) {
-    const specs = CLASS_FEATURE_CHOICE_SPECS[classKey] || [];
+    const specs = getClassFeatureChoiceSpecs(classKey);
     if (!specs.length) return lines;
 
     const specByHeading = new Map(specs.map((spec) => [spec.heading, spec]));
@@ -1078,9 +994,15 @@
     });
   }
 
+  // 同等級標記 pdfMerge 的能力（職業內容檔）合併成一行，依職業頁順序以「、」連接，放在第一個的位置。
   function mergeClassFeatureHeadings(lines, classKey) {
     let output = [...lines];
-    (CLASS_FEATURE_MERGED_HEADINGS[classKey] || []).forEach(([level, titles]) => {
+    const groups = new Map();
+    getClassFeatureRules(classKey).filter((feature) => feature.pdfMerge).forEach((feature) => {
+      if (!groups.has(feature.level)) groups.set(feature.level, []);
+      groups.get(feature.level).push(feature.name);
+    });
+    groups.forEach((titles, level) => {
       const presentTitles = titles.filter((title) => output.includes(`等級 ${level}：${title}`));
       if (presentTitles.length < 2) return;
       const presentHeadings = new Set(presentTitles.map((title) => `等級 ${level}：${title}`));
@@ -1093,12 +1015,6 @@
       });
     });
     return output;
-  }
-
-  function removeSubclassTextInsideParentheses(text) {
-    return normalizeText(text)
-      .replace(/（([^）]*)）/g, (_, inner) => `（${inner.replace(/子職/g, '')}）`)
-      .replace(/\(([^)]*)\)/g, (_, inner) => `(${inner.replace(/子職/g, '')})`);
   }
 
   function extractRaceFeatureHeadings(rawText) {
@@ -1367,27 +1283,13 @@ function isWeaponRowEmpty(payload, slot) {
     };
   }
 
-  function parseClassTableValue(classKey, label) {
-    const raw = getClassFeaturesMap()[classKey] || '';
-    if (!raw) return '';
-    const normalizedLabel = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(`${normalizedLabel}[\\s\\S]*?<\\/td>\\s*<td[^>]*>([\\s\\S]*?)<\\/td>`, 'i');
-    const match = raw.match(regex);
-    if (!match) return '';
-    return normalizeText(match[1].replace(/<br\s*\/?>/gi, ',').replace(/<[^>]+>/g, ''));
+  // 武器熟練項、護甲訓練與起始裝備（A）：職業內容檔的純文字（換行改為「,」）。
+  function getClassProfileText(classKey, field) {
+    return normalizeText(getClassRules(classKey)?.profile?.[field] || '');
   }
 
   function parseClassDefaultEquipment(classKey) {
-    const raw = getClassFeaturesMap()[classKey] || '';
-    if (!raw) return '';
-    const optionAMatch = raw.match(/（A）[\s\S]*?<\/td>\s*<td[^>]*>([\s\S]*?)<\/td>/);
-    if (optionAMatch) {
-      return normalizeText(optionAMatch[1].replace(/<br\s*\/?>/gi, ',').replace(/<[^>]+>/g, ''));
-    }
-
-    const fallbackMatch = raw.match(/裝備[\s\S]*?<\/td>\s*<td[^>]*>([\s\S]*?)<\/td>/);
-    if (!fallbackMatch) return '';
-    return normalizeText(fallbackMatch[1].replace(/<br\s*\/?>/gi, ',').replace(/<[^>]+>/g, ''));
+    return getClassProfileText(classKey, 'equipment');
   }
 
   function parseBackgroundDefaultEquipment(backgroundKey) {
@@ -1652,9 +1554,9 @@ function isWeaponRowEmpty(payload, slot) {
     if (hitDie) payload.hp_dice_max1 = String(hitDie);
 
     // The template's internal field names are opposite to their visible labels.
-    payload.Subclass1 = CLASS_LABELS[classKey] || payload.Class1;
-    payload.Class1 = (Number.isFinite(levelNumber) && levelNumber >= 3)
-      ? (SUBCLASS_LABELS[classKey] || '')
+    payload.Subclass1 = getClassLabel(classKey) || payload.Class1;
+    payload.Class1 = (Number.isFinite(levelNumber) && levelNumber >= (getClassRules(classKey)?.subclassLevel ?? 3))
+      ? getSubclassLabel(classKey)
       : '';
     payload.Background2 = backgroundKey === 'custom'
       ? normalizeText(state.__customBackground?.名稱)
@@ -1698,7 +1600,7 @@ function isWeaponRowEmpty(payload, slot) {
 
     const mergedClassFeatureLines = mergeClassFeatureHeadings(
       insertSelectedClassFeatureChoices(
-        extractClassFeatureHeadings(getClassFeaturesMap()[classKey] || '', level),
+        getClassFeatureHeadings(classKey, level),
         classKey,
         state
       ),
@@ -1771,8 +1673,8 @@ function isWeaponRowEmpty(payload, slot) {
     payload.specie_features1 = buildRaceTemplateText(state, options);
     payload.speed1 = resolveSpeedForPdf(state, options);
 
-    payload.weaponsProficiency1 = parseClassTableValue(classKey, '武器熟練項');
-    const armorTraining = parseClassTableValue(classKey, '護甲訓練');
+    payload.weaponsProficiency1 = getClassProfileText(classKey, 'weapons');
+    const armorTraining = getClassProfileText(classKey, 'armor');
     payload.chk_light1 = /輕甲/.test(armorTraining);
     payload.chk_medium1 = /中甲/.test(armorTraining);
     payload.chk_heavy1 = /重甲/.test(armorTraining);

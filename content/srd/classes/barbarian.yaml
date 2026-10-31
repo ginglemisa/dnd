@@ -41,6 +41,7 @@ features:
   - id: barbarian-rage
     level: 1
     name: 狂暴
+    pdfMerge: true
     resource:
       key: barbarian-rage
       uses: rageUses
@@ -74,6 +75,7 @@ features:
   - id: barbarian-unarmored-defense
     level: 1
     name: 無甲防禦
+    pdfMerge: true
     text: |
       你沒穿護甲時，AC = 10 + 敏捷調整值 + 體質調整值。
 
@@ -89,11 +91,13 @@ features:
   - id: barbarian-danger-sense
     level: 2
     name: 險境感知
+    pdfMerge: true
     text: |
       只要你未陷入[[失能]]狀態，你的敏捷豁免就具有**優勢**。
   - id: barbarian-reckless-attack
     level: 2
     name: 魯莽攻擊
+    pdfMerge: true
     actions:
       - mode: action
         key: dynamic-action-class-8jjnkp
@@ -131,6 +135,7 @@ features:
   - id: barbarian-extra-attack
     level: 5
     name: 額外攻擊
+    pdfMerge: true
     actions:
       - mode: action
         key: dynamic-action-barbarian-113ebtz
@@ -139,6 +144,7 @@ features:
   - id: barbarian-fast-movement
     level: 5
     name: 快速移動
+    pdfMerge: true
     actions:
       - mode: movement
         key: dynamic-movement-barbarian-18h2p2v
@@ -150,11 +156,13 @@ features:
   - id: barbarian-feral-instinct
     level: 7
     name: 野性直覺
+    pdfMerge: true
     text: |
       你的先攻擲骰具有**優勢**。
   - id: barbarian-instinctive-pounce
     level: 7
     name: 本能飛撲
+    pdfMerge: true
     actions:
       - mode: movement
         key: dynamic-movement-barbarian-1iw4zkg

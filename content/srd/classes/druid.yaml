@@ -56,6 +56,7 @@ features:
   - id: druid-druidic
     level: 1
     name: 德魯伊語
+    pdfMerge: true
     spells:
       - id: speak-with-animals
     text: |
@@ -84,6 +85,7 @@ features:
   - id: druid-spellcasting
     level: 1
     name: 施法
+    pdfMerge: true
     text: |
       你使用**感知**施展「德魯伊法術列表」中的法術，並可用德魯伊法器作為施法法器。
 

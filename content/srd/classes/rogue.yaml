@@ -33,12 +33,14 @@ features:
   - id: rogue-expertise-1
     level: 1
     name: 專精
+    pdfMerge: true
     text: |
       選擇 2 項**已熟練**的技能，獲得專精。\
       推薦：[[巧手]]、[[隱匿]]。
   - id: rogue-sneak-attack
     level: 1
     name: 偷襲
+    pdfMerge: true
     actions:
       - mode: action
         key: dynamic-action-rogue-curated-sneak-attack
@@ -63,6 +65,7 @@ features:
   - id: rogue-weapon-mastery
     level: 1
     name: 武器精通
+    pdfMerge: true
     text: |
       從你熟練的武器中選擇 2 種，取得其精通屬性，例如匕首、短弓。
 
@@ -101,6 +104,7 @@ features:
   - id: rogue-cunning-strike
     level: 5
     name: 靈巧打擊
+    pdfMerge: true
     text: |
       造成偷襲傷害時，可放棄部分偷襲傷害骰，套用 1 種靈巧打擊效果。
 
@@ -114,6 +118,7 @@ features:
   - id: rogue-uncanny-dodge
     level: 5
     name: 直覺閃避
+    pdfMerge: true
     actions:
       - mode: reaction
         key: dynamic-reaction-class-5f9k5x
@@ -127,6 +132,7 @@ features:
   - id: rogue-evasion
     level: 7
     name: 反射閃避
+    pdfMerge: true
     text: |
       受到允許進行**敏捷豁免以使傷害減半**的效應影響時：
 
@@ -136,6 +142,7 @@ features:
   - id: rogue-reliable-talent
     level: 7
     name: 可靠才能
+    pdfMerge: true
     text: |
       使用**有熟練的技能或工具**進行屬性檢定時，可將 d20 擲出 9 或以下的結果視為 10。
   - id: rogue-ability-score-improvement-8

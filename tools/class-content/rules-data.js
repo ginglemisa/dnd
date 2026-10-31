@@ -1,6 +1,7 @@
 // 網站讀取的職業機制資料（class-content.generated.js 的 classRules）：內容檔去掉說明文字後的結構化資料，
 // 由 character-rules.js 等網站程式計算資源次數、法術位、特性表數值、跑團數值、選項與動作。
 "use strict";
+const { renderInline } = require("./markdown");
 
 const ABILITY_CODES = Object.freeze({ 力量: "str", 敏捷: "dex", 體質: "con", 智力: "int", 感知: "wis", 魅力: "cha" });
 // 只供職業頁與跑團說明使用的文字欄位：機制資料不含這些欄位。
@@ -14,12 +15,17 @@ function stripText(value) {
     .map(([key, item]) => [key, stripText(item)]));
 }
 
-// 選項的 text 是勾選框說明，網站程式不需要；select 只保留 ID 與選項值。
+// 選項的 text 是勾選框說明，網站程式不需要；select 只保留 ID 與選項（值、名稱）。
 function featureRules(feature) {
   const rules = stripText(feature);
   if (rules.options) rules.options = rules.options.map(option => stripText(option));
-  if (rules.select) rules.select = { id: feature.select.id, values: feature.select.choices.map(choice => choice.value) };
+  if (rules.select) rules.select = { id: feature.select.id, choices: feature.select.choices };
   return rules;
+}
+
+// 創角資訊欄位的純文字（PDF 用）：行尾「\」換行改為「,」，提示框與粗體只留文字。
+function profileText(text, where) {
+  return text.split("\\\n").map(line => renderInline(line, {}, where)).join(",").replace(/<[^>]+>/g, "");
 }
 
 // 只有文字的等級補充說明（沒有 name）沒有機制，不輸出。
@@ -38,6 +44,11 @@ function classRules(classDef, appendixHtml = []) {
     hitDie: classDef.hitDie,
     saves: classDef.saves.map(name => ABILITY_CODES[name]),
     spellcasting: classDef.spellcasting.progression,
+    profile: {
+      weapons: profileText(classDef.weapons, `${classDef.file} weapons`),
+      armor: profileText(classDef.armor, `${classDef.file} armor`),
+      equipment: profileText(classDef.equipment.A, `${classDef.file} equipment.A`)
+    },
     progression: classDef.progression || {},
     values: classDef.values || {},
     features: namedFeatures(classDef.features),

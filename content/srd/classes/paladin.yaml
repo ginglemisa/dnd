@@ -42,6 +42,7 @@ features:
   - id: paladin-lay-on-hands
     level: 1
     name: 聖療
+    pdfMerge: true
     resource:
       key: paladin-lay-on-hands
       kind: points
@@ -59,6 +60,7 @@ features:
   - id: paladin-spellcasting
     level: 1
     name: 施法
+    pdfMerge: true
     text: |
       你使用**魅力**施展「聖騎士法術列表」中的法術，並可用聖徽作為施法法器。
 
@@ -72,6 +74,7 @@ features:
   - id: paladin-weapon-mastery
     level: 1
     name: 武器精通
+    pdfMerge: true
     text: |
       從你熟練的武器中選擇 2 種，取得其精通屬性，例如長劍、標槍。
 
@@ -148,6 +151,7 @@ features:
   - id: paladin-extra-attack
     level: 5
     name: 額外攻擊
+    pdfMerge: true
     actions:
       - mode: action
         key: dynamic-action-paladin-curated-extra-attack
@@ -156,6 +160,7 @@ features:
   - id: paladin-faithful-steed
     level: 5
     name: 忠誠坐騎
+    pdfMerge: true
     spells:
       - id: find-steed
         freeUses: 1

@@ -51,6 +51,7 @@ features:
   - id: monk-martial-arts
     level: 1
     name: 武藝
+    pdfMerge: true
     actions:
       - mode: action
         key: dynamic-action-monk-curated-martial-arts-action
@@ -67,6 +68,7 @@ features:
   - id: monk-unarmored-defense
     level: 1
     name: 無甲防禦
+    pdfMerge: true
     text: |
       你**未穿護甲、未持盾**時，AC = 10 + 敏捷調整值 + 感知調整值。
   - id: monk-focus
@@ -97,11 +99,13 @@ features:
   - id: monk-unarmored-movement
     level: 2
     name: 無甲移動
+    pdfMerge: true
     text: |
       你**未穿護甲、未持盾**時，速度增加 10 呎，之後依「武僧特性」表的「無甲移動」欄提升。
   - id: monk-uncanny-metabolism
     level: 2
     name: 吐故納新
+    pdfMerge: true
     resource:
       key: monk-uncanny-metabolism
       uses: 1
@@ -157,6 +161,7 @@ features:
   - id: monk-extra-attack
     level: 5
     name: 額外攻擊
+    pdfMerge: true
     actions:
       - mode: action
         key: dynamic-action-monk-curated-extra-attack
@@ -165,6 +170,7 @@ features:
   - id: monk-stunning-strike
     level: 5
     name: 震懾擊
+    pdfMerge: true
     actions:
       - mode: action
         key: dynamic-action-monk-curated-stunning-strike

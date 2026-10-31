@@ -45,6 +45,7 @@ features:
   - id: fighter-second-wind
     level: 1
     name: 回氣
+    pdfMerge: true
     resource:
       key: fighter-second-wind
       uses: secondWindUses
@@ -62,6 +63,7 @@ features:
   - id: fighter-weapon-mastery
     level: 1
     name: 武器精通
+    pdfMerge: true
     text: |
       任選 3 種簡易或軍用武器，取得其精通屬性。
 
@@ -70,6 +72,7 @@ features:
   - id: fighter-action-surge
     level: 2
     name: 動作如潮
+    pdfMerge: true
     tableName: 動作如潮（一次使用）
     resource:
       key: fighter-action-surge
@@ -87,6 +90,7 @@ features:
   - id: fighter-tactical-mind
     level: 2
     name: 戰術思維
+    pdfMerge: true
     text: |
       你在戰場內外都具有卓越的戰術思維。**屬性檢定失敗**時，可消耗 1 次回氣使用次數，改為擲 1d10 加入該次檢定，而非恢復生命值，使結果可能變為成功。
 
@@ -111,6 +115,7 @@ features:
   - id: fighter-extra-attack
     level: 5
     name: 額外攻擊
+    pdfMerge: true
     actions:
       - mode: action
         key: dynamic-action-fighter-113ebtz
@@ -119,6 +124,7 @@ features:
   - id: fighter-tactical-shift
     level: 5
     name: 戰術轉移
+    pdfMerge: true
     actions:
       - mode: movement
         key: dynamic-movement-fighter-1liysqo

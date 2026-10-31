@@ -56,6 +56,7 @@ features:
   - id: bard-inspiration
     level: 1
     name: 吟遊詩人激勵
+    pdfMerge: true
     resource:
       key: bard-inspiration
       uses: inspirationUses
@@ -77,6 +78,7 @@ features:
   - id: bard-spellcasting
     level: 1
     name: 施法
+    pdfMerge: true
     text: |
       你使用**魅力**施展「吟遊詩人法術列表」中的法術，並可用樂器作為施法法器。
 
@@ -92,11 +94,13 @@ features:
   - id: bard-expertise
     level: 2
     name: 專精
+    pdfMerge: true
     text: |
       選擇 2 項你已熟練的技能改為**專精**，這些技能的熟練加值加倍。
   - id: bard-jack-of-all-trades
     level: 2
     name: 萬事通
+    pdfMerge: true
     text: |
       進行**未熟練**的能力檢定時，額外加上熟練加值的一半（無條件捨去）。
   - id: bard-subclass

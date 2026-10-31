@@ -52,6 +52,7 @@ features:
   - id: sorcerer-spellcasting
     level: 1
     name: 施法
+    pdfMerge: true
     text: |
       你使用**魅力**施展「術士法術列表」中的法術，並可用奧術法器作為施法法器。
 
@@ -65,6 +66,7 @@ features:
   - id: sorcerer-innate-sorcery
     level: 1
     name: 天生術法
+    pdfMerge: true
     resource:
       key: sorcerer-innate-sorcery
       uses: 2
@@ -83,6 +85,7 @@ features:
   - id: sorcerer-font-of-magic
     level: 2
     name: 魔力泉湧
+    pdfMerge: true
     resource:
       key: sorcerer-sorcery-points
       label: 術法點
@@ -131,6 +134,7 @@ features:
   - id: sorcerer-metamagic
     level: 2
     name: 超魔法
+    pdfMerge: true
     text: |
       選擇 2 個超魔法選項，消耗術法點調整法術效果。完整內容請見「超魔」頁籤的「超魔法選項」。
 

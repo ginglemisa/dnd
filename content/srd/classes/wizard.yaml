@@ -45,6 +45,7 @@ features:
   - id: wizard-spellcasting
     level: 1
     name: 施法
+    pdfMerge: true
     behavior: wizard-spellbook-recommendations
     text: |
       你使用**智力**施展「法師法術列表」中的法術，並以奧術法器或法術書作為施法法器。
@@ -69,6 +70,7 @@ features:
   - id: wizard-ritual-adept
     level: 1
     name: 儀式精通
+    pdfMerge: true
     text: |
       法術書中有「儀式」標籤的法術，**即使未準備，也能以儀式施放**，但施法時必須閱讀法術書。
   - id: wizard-arcane-recovery
