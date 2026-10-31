@@ -19,15 +19,18 @@ const FEATURE_SLUGS = Object.freeze({
   守護靈氣: "aura-of-protection", 奉獻靈氣: "aura-of-devotion",
   萬事通: "jack-of-all-trades", 額外熟練項: "bonus-proficiencies", 魔法發現: "magical-discoveries",
   無甲移動: "unarmored-movement", 神聖使命: "divine-order", 引導神力: "channel-divinity", 生命領域法術: "life-domain-spells",
-  神佑醫者: "blessed-healer", 神佑打擊: "blessed-strikes"
+  神佑醫者: "blessed-healer", 神佑打擊: "blessed-strikes",
+  儀式精通: "ritual-adept", 奧術回想: "arcane-recovery", 學者: "scholar", 塑能學者: "evocation-savant"
 });
-const SUBCLASS_IDS = Object.freeze({ 狂戰士道途: "berserker", 獵人: "hunter", 勇士: "champion", 妙手: "thief", 奉獻之誓: "devotion", 逸聞學院: "lore", 散打鬥士: "open-hand", 生命領域: "life" });
+const SUBCLASS_IDS = Object.freeze({ 狂戰士道途: "berserker", 獵人: "hunter", 勇士: "champion", 妙手: "thief", 奉獻之誓: "devotion", 逸聞學院: "lore", 散打鬥士: "open-hand", 生命領域: "life", 塑能師: "evoker" });
 // 整個 section 帶 data-action-id、但按鈕說明其實是其中唯一一個小節：外層能力改用新 ID，舊 ID 留給子能力。
 const SPLIT_SECTIONS = Object.freeze({ "paladin-divine-sense": "paladin-channel-divinity" });
 // 選項的攻擊備註：照抄 class-features-ui.js 的常數（存進角色資料，取消時以相同字串移除）。
 const OPTION_ATTACK_NOTES = Object.freeze({ "cleric-blessed-strikes-divine-strike": "CLERIC_DIVINE_STRIKE_ATTACK_NOTE" });
 // 舊 HTML 中由網站程式插入控制項的空白容器（以 id 辨識）→ behaviors/<名稱>.js；轉換時核對輸出與舊標記相同。
 const BEHAVIOR_MOUNTS = Object.freeze({ "bard-magical-discoveries": "magical-discoveries" });
+// 舊 HTML 中由網站程式依屬性辨識的行內 span → behaviors/<名稱>.js；內容檔只留文字，轉換時核對 decorateText() 可還原舊標記。
+const BEHAVIOR_SPANS = Object.freeze({ "data-wizard-spellbook-recommendations": "wizard-spellbook-recommendations" });
 // 特性表欄位名稱（文字中以 {名稱|…} 引用）。
 const COLUMN_KEYS = Object.freeze({
   狂暴次數: "rageUses", 狂暴傷害: "rageDamage", 武器精通: "weaponMastery",
@@ -57,7 +60,9 @@ const FEATURE_EXTRAS = Object.freeze({
   "monk-uncanny-metabolism": { resource: { key: "monk-uncanny-metabolism", uses: 1, recover: { long: "all" } } },
   "monk-wholeness-of-body": { resource: { key: "monk-wholeness", uses: "wholenessUses", recover: { long: "all" } } },
   // character-rules.js：牧師引導神力次數同特性表「引導神力」欄，短休回 1 次、長休全回。
-  "cleric-channel-divinity": { resource: { key: "cleric-channel-divinity", uses: "channelDivinityUses", recover: { short: 1, long: "all" } } }
+  "cleric-channel-divinity": { resource: { key: "cleric-channel-divinity", uses: "channelDivinityUses", recover: { short: 1, long: "all" } } },
+  // character-rules.js：奧術回想 1 次，長休後恢復（短休恢復法術位的 restChoice 內容檔尚無對應欄位）。
+  "wizard-arcane-recovery": { resource: { key: "wizard-arcane-recovery", uses: 1, recover: { long: "all" } } }
 });
 // action-panel.js TABLETOP_VALUE_RESOLVERS 的公式（「職業-名稱」key）；文字結果寫成 byLevel（未列的等級保留頁面文字）。
 const CLASS_VALUES = Object.freeze({
@@ -145,6 +150,16 @@ function inlineToText(nodes, context, where) {
       context.optionBlock.id = attr(node, "data-action-id");
       return inlineToText(node.childNodes, context, where);
     }
+    // 網站程式依屬性辨識的行內 span（例如法術書推薦）：內容檔只留文字，由能力的 behavior 加回標記。
+    const behaviorAttribute = node.nodeName === "span" && Object.keys(BEHAVIOR_SPANS).find(name => has(node, name));
+    if (behaviorAttribute) {
+      allowAttributes(node, [behaviorAttribute], where);
+      if (!context.behaviors) fail(where, "此處不支援 behavior 行內標記（只支援能力本身的 text）");
+      const behavior = BEHAVIOR_SPANS[behaviorAttribute];
+      checkDecoratedSpan(node, behavior, where);
+      context.behaviors.add(behavior);
+      return inlineToText(node.childNodes, context, where);
+    }
     if (node.nodeName === "span" && has(node, "data-tabletop-value")) {
       allowAttributes(node, ["data-tabletop-value"], where);
       return valueMark(node, context, where);
@@ -180,6 +195,16 @@ function tabletopOnlyValueMark(node, context, where) {
 }
 // 轉換時捨棄的跑團後備文字（轉換結束時列出）。
 const droppedFallbacks = new Set();
+
+// behavior 行內 span：所在區塊拿掉 span 後交給 decorateText()，須還原成舊標記。
+const serializeNode = node => parse5.serialize({ nodeName: "#document-fragment", childNodes: [node] });
+const normalizeHtml = html => parse5.serialize(parse5.parseFragment(html));
+function checkDecoratedSpan(span, behavior, where) {
+  const block = span.parentNode;
+  const unwrapped = { ...block, childNodes: block.childNodes.flatMap(child => (child === span ? span.childNodes : [child])) };
+  const decorated = require(`./behaviors/${behavior}`).decorateText(serializeNode(unwrapped), where);
+  if (normalizeHtml(decorated) !== normalizeHtml(serializeNode(block))) fail(where, `behaviors/${behavior}.js 的 decorateText() 無法還原舊標記`);
+}
 
 const indentContinuation = text => text.replace(/\\\n/g, "\\\n  ");
 
@@ -250,6 +275,8 @@ function convertBody(nodes, feature, context, where) {
   let behavior;
   // 子能力（帶 data-action-id 的小節）接在內文之後，之後只能再有子能力。
   const parts = [];
+  // 可收合小節（<details>）接在內文之後、子能力之前。
+  const collapsible = [];
   for (const node of nodes) {
     if (afterFeatChoice !== undefined || behavior) fail(where, "data-after-feat-choice 段落或控制項容器之後不可再有區塊");
     const isSubsection = node.nodeName === "div" && classes(node).includes("class-rule-subsection");
@@ -261,7 +288,11 @@ function convertBody(nodes, feature, context, where) {
       parts.push(convertPart(node, partId, feature, context, where));
       continue;
     }
-    if (node.nodeName === "p" && has(node, "data-after-feat-choice")) {
+    const isCollapsible = node.nodeName === "details" && attr(node, "class") === "class-rule-subsection";
+    if (collapsible.length && !isCollapsible) fail(where, "可收合小節之後只能再有可收合小節或子能力");
+    if (isCollapsible) {
+      collapsible.push(convertCollapsible(node, feature, context, where));
+    } else if (node.nodeName === "p" && has(node, "data-after-feat-choice")) {
       allowAttributes(node, ["data-after-feat-choice"], where);
       const [text, tabletop] = views(node.childNodes);
       if (text !== tabletop) fail(where, "data-after-feat-choice 段落不支援跑團專用文字");
@@ -273,8 +304,7 @@ function convertBody(nodes, feature, context, where) {
       if (elements(node).length) fail(where, "控制項容器須為空白");
       behavior = BEHAVIOR_MOUNTS[attr(node, "id")];
       const expected = require(`./behaviors/${behavior}`).afterText();
-      const normalize = html => parse5.serialize(parse5.parseFragment(html));
-      if (normalize(expected) !== normalize(parse5.serialize({ nodeName: "#document-fragment", childNodes: [node] }))) fail(where, `控制項容器與 behaviors/${behavior}.js 的輸出不同`);
+      if (normalizeHtml(expected) !== normalizeHtml(serializeNode(node))) fail(where, `控制項容器與 behaviors/${behavior}.js 的輸出不同`);
     } else if (node.nodeName === "p" && has(node, "data-tabletop-hide")) {
       // 只在職業頁顯示的段落：不進跑團說明，也不進總覽。
       allowAttributes(node, ["data-tabletop-hide"], where);
@@ -338,7 +368,7 @@ function convertBody(nodes, feature, context, where) {
       const [title, tabletopTitle] = views(heading.childNodes);
       pushBlock(`#### ${title}`, `#### ${tabletopTitle}`);
       const inner = convertBody(rest, feature, context, where);
-      if (inner.afterFeatChoice !== undefined || inner.behavior) fail(where, "小節內不支援 data-after-feat-choice 段落或控制項容器");
+      if (inner.afterFeatChoice !== undefined || inner.behavior || inner.collapsible.length) fail(where, "小節內不支援 data-after-feat-choice 段落、控制項容器或可收合小節");
       blocks.push(...inner.blocks);
       tabletopBlocks.push(...inner.tabletopBlocks);
       tabletopUsed ||= inner.tabletopUsed;
@@ -359,7 +389,26 @@ function convertBody(nodes, feature, context, where) {
       fail(where, `未處理的區塊 <${node.nodeName} class="${attr(node, "class") || ""}">`);
     }
   }
-  return { blocks, tabletopBlocks, tabletopUsed, summaryParts, summaryUsed, afterFeatChoice, behavior, parts };
+  // 跑團說明與總覽照舊讀取整段（含可收合小節）；寫成 tabletop／summary 會漏掉可收合小節，故不支援。
+  if (collapsible.length && (tabletopUsed || summaryUsed)) fail(where, "有可收合小節的能力不支援跑團專用文字或總覽隱藏");
+  return { blocks, tabletopBlocks, tabletopUsed, summaryParts, summaryUsed, afterFeatChoice, behavior, parts, collapsible };
+}
+
+// <details class="class-rule-subsection"><summary><strong>名稱</strong></summary>…</details> → 可收合小節 { name, text }。
+function convertCollapsible(node, feature, context, where) {
+  allowAttributes(node, ["class"], where);
+  const [summary, ...rest] = elements(node);
+  const title = summary?.nodeName === "summary" && elements(summary).length === 1 ? elements(summary)[0] : null;
+  if (title?.nodeName !== "strong" || title.childNodes.some(child => child.nodeName !== "#text")) fail(where, "可收合小節須以 <summary><strong>名稱</strong></summary> 開頭");
+  allowAttributes(summary, [], where);
+  allowAttributes(title, [], where);
+  const at = `${where} 可收合小節 ${textOf(title)}`;
+  const options = feature.options;
+  const inner = convertBody(rest, feature, { ...context, behaviors: undefined }, at);
+  if (feature.options !== options || inner.afterFeatChoice !== undefined || inner.behavior || inner.parts.length || inner.collapsible.length) fail(at, "可收合小節內不支援選項、控制項容器、子能力或巢狀可收合小節");
+  if (inner.blocks.some(block => block.startsWith("#### "))) fail(at, "可收合小節內不支援小節");
+  if (inner.tabletopUsed || inner.summaryUsed) fail(at, "可收合小節內不支援跑團專用文字或總覽隱藏");
+  return { name: textOf(title).trim(), text: inner.blocks.join("\n\n") };
 }
 
 // 帶 data-action-id 的小節 → 子能力 { id, name, activation, text, tabletop, summary }。
@@ -377,8 +426,8 @@ function convertPart(node, id, feature, context, where) {
   const close = part.activation ? "）" : "";
   if (!tabletopTitle.startsWith(open) || !tabletopTitle.endsWith(close)) fail(at, `跑團版標題「${tabletopTitle}」與職業頁標題結構不同`);
   part.headingExtra = tabletopTitle.slice(open.length, tabletopTitle.length - close.length);
-  const inner = convertBody(rest, part, { ...context, splitPartId: undefined }, at);
-  if (inner.afterFeatChoice !== undefined || inner.behavior || inner.parts.length || part.options) fail(at, "子能力內不支援選項、控制項容器或子能力");
+  const inner = convertBody(rest, part, { ...context, splitPartId: undefined, behaviors: undefined }, at);
+  if (inner.afterFeatChoice !== undefined || inner.behavior || inner.parts.length || inner.collapsible.length || part.options) fail(at, "子能力內不支援選項、控制項容器、可收合小節或子能力");
   if (inner.blocks.some(block => block.startsWith("#### "))) fail(at, "子能力內不支援小節");
   part.text = inner.blocks.join("\n\n");
   if (inner.tabletopUsed) part.tabletop = inner.tabletopBlocks.join("\n\n");
@@ -550,13 +599,17 @@ function convertClass(classId, html) {
     }
     // 拆成外層能力與子能力的段落：舊 data-action-id 移到唯一的無 ID 小節。
     const splitPartId = SPLIT_SECTIONS[attr(section, "data-action-id")] ? attr(section, "data-action-id") : undefined;
-    const context = { valueToken, classId, splitPartId };
+    const context = { valueToken, classId, splitPartId, behaviors: new Set() };
     const converted = convertBody(body, feature, context, at);
     if (context.splitPartId) fail(at, `找不到要拆成子能力 ${splitPartId} 的小節`);
     feature.text = converted.blocks.join("\n\n");
+    if (converted.collapsible.length) feature.collapsible = converted.collapsible;
     if (converted.parts.length) feature.parts = converted.parts;
     if (converted.afterFeatChoice !== undefined) feature.afterFeatChoice = converted.afterFeatChoice;
-    if (converted.behavior) feature.behavior = converted.behavior;
+    // 控制項容器與行內 span 的 behavior 都寫在能力上，一個能力只能有一個。
+    const behaviors = [...context.behaviors, ...(converted.behavior ? [converted.behavior] : [])];
+    if (behaviors.length > 1) fail(at, `一個能力只支援一個 behavior：${behaviors.join("、")}`);
+    if (behaviors.length) feature.behavior = behaviors[0];
     // 拆分後外層能力沒有按鈕，舊版只在跑團顯示的文字（例如「引導神力使用次數」）不再使用。
     if (converted.tabletopUsed && !splitPartId) feature.tabletop = converted.tabletopBlocks.join("\n\n");
     if (converted.summaryUsed && !splitPartId) feature.summary = converted.summaryParts.join("");
@@ -639,7 +692,7 @@ function applyTableNames(features, legacyColumn, where) {
   });
 }
 
-const FEATURE_KEY_ORDER = ["id", "level", "name", "tableName", "type", "choose", "changeOn", "choiceGroup", "optionStyle", "behavior", "resource", "spells", "actions", "summary", "tabletop", "text", "parts", "afterFeatChoice", "options"];
+const FEATURE_KEY_ORDER = ["id", "level", "name", "tableName", "type", "choose", "changeOn", "choiceGroup", "optionStyle", "behavior", "resource", "spells", "actions", "summary", "tabletop", "text", "collapsible", "parts", "afterFeatChoice", "options"];
 const PART_KEY_ORDER = ["id", "name", "activation", "actions", "summary", "tabletop", "text"];
 const OPTION_KEY_ORDER = ["id", "name", "attackNote", "actions", "text"];
 const pick = (item, keys) => Object.fromEntries(keys.filter(key => item[key] !== undefined).map(key => [key, item[key]]));

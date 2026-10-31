@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=../../schema/subclass.schema.json
+id: evoker
+class: wizard
+name: 塑能師
+shortName: 塑能
+features:
+  - id: wizard-evocation-savant
+    level: 3
+    name: 塑能學者
+    text: |
+      選擇 2 個不高於 2 環的塑能系法師法術，免費加入法術書。
+
+      之後每次首次獲得更高環階的法術位時，可再免費加入 1 個不高於該環階的塑能系法師法術。
+  - id: wizard-potent-cantrip
+    level: 3
+    name: 強力戲法
+    actions:
+      - mode: action
+        key: dynamic-action-wizard-curated-potent-cantrip
+    text: |
+      對生物施放傷害戲法時，即使**攻擊失手或目標豁免成功**，目標仍受到一半傷害，但不受該戲法的其他效果影響。
+  - id: wizard-sculpt-spells
+    level: 6
+    name: 法術塑形
+    actions:
+      - mode: action
+        key: dynamic-action-wizard-curated-sculpt-spells
+    text: |
+      施放會影響其他可見生物的塑能系法術時，可從這些生物中選擇最多**「法術環階＋1」名**。
+
+      這些生物對該法術的豁免自動成功，且不承受豁免成功時原本仍會受到的傷害。

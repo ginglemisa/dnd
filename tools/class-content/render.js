@@ -188,19 +188,24 @@ function renderFeature({ feature, owner }, context) {
   const where = `${owner.file}（${feature.name || `等級 ${feature.level} 補充`}）`;
   const markdownOptions = { ...context, subsectionClass: `class-rule-subsection ${classDef.id}-rule-subsection` };
   const appended = context.appended.has(feature.id);
+  // behavior：特殊機制模組（behaviors/<名稱>.js，load.js 已確認存在）。decorateText() 在 text 的 HTML 加上網站程式辨識的標記，
+  // afterText() 回傳接在內文後的 HTML；兩者皆可省略。
+  const behavior = feature.behavior ? require(`./behaviors/${feature.behavior}`) : null;
   let body = renderMarkdown(feature.text, markdownOptions, where);
+  if (behavior?.decorateText) body = behavior.decorateText(body, where);
   if (appended && !feature.tabletop) body = addAppendedPrefix(body, feature, where);
   if (feature.tabletop) {
     const tabletop = renderMarkdown(feature.tabletop, markdownOptions, `${where} tabletop`);
     context.tabletop[feature.id] = appended ? addAppendedPrefix(tabletop, feature, `${where} tabletop`) : tabletop;
   }
   if (feature.summary) context.summaries[feature.id] = renderInline(feature.summary, context, `${where} summary`);
+  // 可收合小節：預設收合，標題為粗體。
+  if (feature.collapsible) body += feature.collapsible.map(item => `<details class="class-rule-subsection"><summary><strong>${escapeHtml(item.name)}</strong></summary>${renderMarkdown(item.text, markdownOptions, `${where} 可收合小節 ${item.name}`)}</details>`).join("");
   if (feature.parts) body += feature.parts.map(part => renderPart(part, feature, owner, context, where)).join("");
   if (feature.options) body += renderOptions(feature, context, where);
   // 專長選單插在此段落之前（feat-ui.js）；4 級額外戲法選單讀取它的粗體標籤（class-features-ui.js）。
   if (feature.afterFeatChoice) body += renderMarkdown(feature.afterFeatChoice, { ...markdownOptions, blockAttributes: "data-after-feat-choice" }, `${where} afterFeatChoice`);
-  // behavior：特殊機制模組（behaviors/<名稱>.js，load.js 已確認存在），afterText() 回傳接在內文後的 HTML。
-  if (feature.behavior) body += require(`./behaviors/${feature.behavior}`).afterText?.(feature, context) || "";
+  if (behavior?.afterText) body += behavior.afterText(feature, context);
   const attributes = [
     `class="${classDef.id}-feature class-feature-section"`,
     `data-feature-level="${feature.level}"`,

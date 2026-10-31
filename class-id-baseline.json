@@ -7,7 +7,8 @@
     "monk",
     "paladin",
     "ranger",
-    "rogue"
+    "rogue",
+    "wizard"
   ],
   "subclasses": [
     "barbarian/berserker",
@@ -17,7 +18,8 @@
     "monk/open-hand",
     "paladin/devotion",
     "ranger/hunter",
-    "rogue/thief"
+    "rogue/thief",
+    "wizard/evoker"
   ],
   "options": [
     "cleric-blessed-strikes-divine-strike",
@@ -58,6 +60,9 @@
     "dynamic-action-ranger-p55ifk",
     "dynamic-action-ranger-vdr4tc",
     "dynamic-action-rogue-curated-sneak-attack",
+    "dynamic-action-wizard-curated-memorize-spell",
+    "dynamic-action-wizard-curated-potent-cantrip",
+    "dynamic-action-wizard-curated-sculpt-spells",
     "dynamic-bonus-barbarian-1iw4zkg",
     "dynamic-bonus-barbarian-3te1cj",
     "dynamic-bonus-class-1axs7np",
@@ -102,7 +107,8 @@
     "monk-uncanny-metabolism",
     "monk-wholeness",
     "paladin-channel-divinity",
-    "paladin-lay-on-hands"
+    "paladin-lay-on-hands",
+    "wizard-arcane-recovery"
   ],
   "attackNotes": [
     "+1d8光/黯傷害"

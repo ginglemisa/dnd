@@ -189,8 +189,14 @@ function checkClass(classDef, errors) {
         if (!getSpellIds().has(spell.id)) errors.push(`${where}：法術 ID「${spell.id}」不存在於 spell-id-baseline.json`);
         if (typeof spell.freeUses === "string" && (!valueNames.has(spell.freeUses) || textValues.has(spell.freeUses))) errors.push(`${where}：法術 ${spell.id} 的 freeUses「${spell.freeUses}」不是特性表欄位或數值公式`);
       }
+      // 可收合小節：不可再有小節；跑團說明與總覽讀取整段，寫 tabletop／summary 會漏掉可收合小節。
+      for (const item of feature.collapsible || []) {
+        if (/^#/m.test(item.text)) errors.push(`${where} 可收合小節 ${item.name}：文字不可使用「#### 」小節`);
+      }
+      if (feature.collapsible && (feature.tabletop || feature.summary)) errors.push(`${where}：有 collapsible 的能力不可寫 tabletop／summary`);
       const partTexts = (feature.parts || []).flatMap(part => [part.text, part.tabletop, part.summary]);
-      for (const text of [feature.text, feature.tabletop, feature.summary, feature.afterFeatChoice, ...partTexts, ...(feature.options || []).map(option => option.text)].filter(Boolean)) {
+      const collapsibleTexts = (feature.collapsible || []).map(item => item.text);
+      for (const text of [feature.text, feature.tabletop, feature.summary, feature.afterFeatChoice, ...collapsibleTexts, ...partTexts, ...(feature.options || []).map(option => option.text)].filter(Boolean)) {
         for (const match of text.matchAll(/\{([A-Za-z][A-Za-z0-9]*)\|/g)) {
           if (!valueNames.has(match[1])) errors.push(`${where}：文字引用了不存在的數值 {${match[1]}|…}`);
         }
