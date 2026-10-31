@@ -1,8 +1,8 @@
-# 職業內容檔（試行中）
+# 職業內容檔
 
 每個職業、子職各一個 YAML 檔。說明文字和機制（特性表、選項、跑團按鈕、資源）寫在同一份檔案。
 
-> 試行階段：十二個職業（野蠻人、遊俠、戰士、盜賊、聖騎士、吟遊詩人、武僧、牧師、法師、術士、契術師與德魯伊）都已轉換，網站仍讀取 `class-features.js`。格式確認後才逐步改由這裡產生。
+> 十二個職業（野蠻人、遊俠、戰士、盜賊、聖騎士、吟遊詩人、武僧、牧師、法師、術士、契術師與德魯伊）的職業頁與跑團文字都由這裡產生：`npm run build` 輸出根目錄的 `class-content.generated.js`，網站直接載入這個檔案。部分機制（資源次數、選項清單、跑團數值計算等）仍寫在網站程式，之後逐步搬進內容檔。
 
 ## 檔案位置
 
@@ -167,8 +167,10 @@ npm run build -- --update-id-baseline
 
 | 指令 | 用途 |
 | --- | --- |
-| `npm run dev` | 開本機預覽，存檔後自動重新檢查；畫面網址會顯示在終端機 |
-| `npm run build` | 檢查全部內容檔，有錯就列出檔案與位置 |
-| `npm run classes:check` | 逐項列出和現有 `class-features.js` 的差異 |
+| `npm run dev` | 開本機預覽，存檔後自動重新建置，重新整理瀏覽器即可看到；畫面網址會顯示在終端機 |
+| `npm run build` | 檢查全部內容檔並產生 `class-content.generated.js`，有錯就列出檔案與位置 |
+| `npm run classes:check` | 轉換期工具：逐項列出和舊版 `class-features.js`（退役前最後一版的 git 紀錄）的差異 |
 
-刻意與舊版不同、已經確認過的地方，逐行列在 `tools/class-content/accepted-differences.json`。
+改完內容檔要執行 `npm run build`，再把內容檔、`class-content.generated.js` 與 `index.html`（快取版本）一起提交；產生檔不可手改。只有公開內容包會寫進產生檔。
+
+轉換時刻意與舊版不同、已經確認過的地方，逐行列在 `tools/class-content/accepted-differences.json`（只供 `npm run classes:check` 使用）。

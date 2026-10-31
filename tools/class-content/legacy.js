@@ -1,17 +1,21 @@
 // 讀取既有網站資料（舊版 classFeatures、提示框詞表、跑團動作定義），供轉換、建置檢查與比對使用。
 "use strict";
+const { execFileSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
 
 const ROOT = path.resolve(__dirname, "../..");
 const read = file => fs.readFileSync(path.join(ROOT, file), "utf8");
+// 舊版 class-features.js 已退役（網站改讀 class-content.generated.js）；轉換與比對工具改讀它退役前最後一版的 git 紀錄。
+const LEGACY_REF = "723eee6";
+const readLegacy = file => execFileSync("git", ["show", `${LEGACY_REF}:${file}`], { cwd: ROOT, encoding: "utf8", maxBuffer: 16 * 1024 * 1024 });
 
-function loadLegacyClassFeatures(file = path.join(ROOT, "class-features.js")) {
+function loadLegacyClassFeatures() {
   const skillTipSource = read("monster.js").match(/function skillTip\(skillName\) \{[\s\S]*?\r?\n\}/)[0];
   const context = { globalThis: {} };
   vm.createContext(context);
-  vm.runInContext(`${skillTipSource}\n${read("druid-wild-shape-beasts.js")}\n${fs.readFileSync(file, "utf8")}\nglobalThis.__classFeatures = classFeatures;`, context);
+  vm.runInContext(`${skillTipSource}\n${readLegacy("druid-wild-shape-beasts.js")}\n${readLegacy("class-features.js")}\nglobalThis.__classFeatures = classFeatures;`, context);
   return context.globalThis.__classFeatures;
 }
 

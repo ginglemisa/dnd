@@ -154,9 +154,9 @@
 ## 角色能力視窗
 
 - 「表格」依序顯示職業定位簡介、情境風味引文、核心創角資訊與完整職業成長表；「職業」從各等級能力開始，第一個能力上方不加分隔線。超魔法與魔能祈喚頁籤簡稱「超魔」「魔祈」，規則與摘要保留全名。
-- 頁籤歸屬以 `class-features.js` 的 `data-class-feature-panel="creation|class"` 標記，不依賴文字位置或執行時轉換。`.class-creation-content` 使用 `white-space: normal`，密度由 CSS 區塊間距控制。
+- 頁籤歸屬以職業內容檔產生的 `class-content.generated.js` 中 `data-class-feature-panel="creation|class"` 標記，不依賴文字位置或執行時轉換。`.class-creation-content` 使用 `white-space: normal`，密度由 CSS 區塊間距控制。
 - 所有職業能力的 `.class-feature-content` 填滿現有內容區，不另設內文寬度上限；文字與能力分隔線共用此寬度，內部規則表、已知形態區及視窗本身保留各自的尺寸限制。
-- 超魔法與魔能祈喚清單使用 details／summary，已選摘要留在容器外，預設展開；容器位於顯示層，不修改 `class-features.js` 原文。
+- 超魔法與魔能祈喚清單使用 details／summary，已選摘要留在容器外，預設展開；容器位於顯示層，不修改 `classFeatures` 原文。
 - 專長來源選單右側的「查看」以 `feat-detail` 子視窗顯示 `feats.js` 內容，關閉後返回按鈕；空選單時停用。
 - 職業補選與能力視窗中的法術選單只顯示中文；已在目前有效清單中的其他候選以 spellId 判斷，名稱後標示「（已準備）」，目前所選項目省略，保留原有值與停用限制。
 

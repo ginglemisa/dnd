@@ -35,6 +35,13 @@ jobs:
       - name: 建置內容檔
         run: npm run build
 
+      - name: 確認 repo 內的網站職業資料是最新版本
+        run: |
+          if ! git diff --exit-code -- class-content.generated.js index.html; then
+            echo "::error::class-content.generated.js 或 index.html 的快取版本不是最新：請在本機執行 npm run build，並提交產生的檔案。"
+            exit 1
+          fi
+
       - name: 安裝瀏覽器與中文字型
         run: |
           sudo apt-get update

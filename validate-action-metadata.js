@@ -359,7 +359,7 @@ async function verifyCoverage(page) {
       el("classFeatures").innerHTML = "<h3>等級 1：虛構特性</h3><p>你可使用附贈動作或反應攻擊。</p>";
       check(snapshot === JSON.stringify(modes.map(m => options(m, "職業"))), `${name}: still depends on rendered feature prose`);
     }
-    // class-features.js is the single prose source: every referenced block and value slot must resolve.
+    // class-content.generated.js (built from content/) is the single prose source: every referenced block and value slot must resolve.
     const descriptionIssues = ActionPanel.getClassDescriptionIssues();
     check(descriptionIssues.length === 0, `class description source issues:\n${descriptionIssues.join("\n")}`);
     const rogueSource = classFeatures.rogue;
@@ -517,7 +517,8 @@ async function verifyCoverage(page) {
     setClass("paladin", 3);
     const sense = classOption("bonus", "神聖感知").description;
     check(sense.includes("附贈") && sense.includes("消耗 1 次引導神力") && sense.includes("10 分鐘") && sense.includes("60 呎") && sense.includes("聖居"), "Divine Sense retains activation, cost, duration and range");
-    check(sense.includes("引導神力使用次數：2 次") && !sense.includes("豁免 DC") && !sense.includes("選擇 1 個發動"), "Divine Sense hides the general Channel Divinity rules");
+    // 使用次數由引導神力資源顯示，神聖感知說明不重複（使用者核准的內容檔差異）。
+    check(!sense.includes("引導神力使用次數") && !sense.includes("豁免 DC") && !sense.includes("選擇 1 個發動"), "Divine Sense hides the general Channel Divinity rules");
     setClass("", 8);
     for (const [race, scenarios] of Object.entries(baseline.races)) {
       el("race").value = race; updateRaceFeature();

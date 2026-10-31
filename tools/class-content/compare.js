@@ -1,4 +1,4 @@
-// 比對內容檔渲染的職業 HTML 與舊版 class-features.js：以正規化 DOM 與三種讀取方式（職業頁、跑團動作、跑團總覽）核對。
+// 轉換期工具：比對內容檔渲染的職業 HTML 與舊版 class-features.js（退役前最後一版的 git 紀錄，見 legacy.js）：以正規化 DOM 與三種讀取方式（職業頁、跑團動作、跑團總覽）核對。
 // 用法：node tools/class-content/compare.js [職業 ID…]（省略時比對所有已轉換的職業）
 "use strict";
 const fs = require("fs");
@@ -199,7 +199,7 @@ function printReport(report) {
 if (require.main === module) {
   const legacy = loadLegacyClassFeatures();
   const { classes } = loadContent();
-  // 使用者已核准、與舊版刻意不同的地方（逐行比對結果）；舊版 class-features.js 移除後此檔一併刪除。
+  // 使用者已核准、與舊版刻意不同的地方（逐行比對結果）；只供本工具使用。
   const acceptedDifferences = JSON.parse(fs.readFileSync(path.join(__dirname, "accepted-differences.json"), "utf8"));
   const ids = process.argv.slice(2).filter(arg => !arg.startsWith("--"));
   const strict = process.argv.includes("--strict");
