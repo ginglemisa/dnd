@@ -220,9 +220,17 @@ function checkClass(classDef, errors) {
   // 附錄小節：ID 與能力共用命名空間；沒有能力等級可沿用，按鈕須寫 level。
   (classDef.appendix || []).forEach((item, index) => {
     const where = `${classDef.file} appendix[${index}]（${item.name}）`;
-    if (item.parts && /^#/m.test(item.text)) errors.push(`${where}：有 parts 時 text 不可使用「#### 」小節（小節寫在 parts）`);
+    if (item.parts && /^#/m.test(item.text || "")) errors.push(`${where}：有 parts 時 text 不可使用「#### 」小節（小節寫在 parts）`);
+    if (item.kind && !item.parts) errors.push(`${where}：kind 附錄的選項須寫成 parts`);
+    if (item.kind && classDef.appendix.filter(other => other.kind === item.kind).length > 1) errors.push(`${where}：kind「${item.kind}」重複`);
+    const partNames = new Set();
     for (const part of item.parts || []) {
       if (part.id) claim(featureIds, part.id, where, "附錄小節 ID");
+      if (partNames.has(part.name)) errors.push(`${where}：附錄小節名稱「${part.name}」重複`);
+      partNames.add(part.name);
+      if (part.detail && part.prerequisite) errors.push(`${where} 附錄小節 ${part.name}：detail 與 prerequisite 只能擇一`);
+      if (part.level > classDef.maxLevel) errors.push(`${where} 附錄小節 ${part.name}：level 超過 maxLevel`);
+      if (part.spell && !getSpellIds().has(part.spell.id)) errors.push(`${where} 附錄小節 ${part.name}：法術 ID「${part.spell.id}」不存在於 spell-id-baseline.json`);
       for (const match of part.text.matchAll(/\{([A-Za-z][A-Za-z0-9]*)\|/g)) {
         if (!valueNames.has(match[1])) errors.push(`${where} 附錄小節 ${part.name}：文字引用了不存在的數值 {${match[1]}|…}`);
       }

@@ -206,58 +206,30 @@ function syncAdvancedClassFeatureControls() {
   syncClassFeatureAttackNotes();
 }
 
-const eldritchInvocations = [
-  { name: "刃之魔契" },
-  { name: "鏈之魔契", spellId: "find-familiar", spellUse: "at-will" },
-  { name: "書之魔契" },
-  { name: "幽影護甲", spellId: "mage-armor", spellUse: "at-will" },
-  { name: "魔能意志" },
-  { name: "邪魔活力", spellId: "false-life", spellUse: "at-will", minWarlockLevel: 2 },
-  { name: "千面之臉", spellId: "disguise-self", spellUse: "at-will", minWarlockLevel: 2 },
-  { name: "幻象迷蹤", spellId: "silent-image", spellUse: "at-will", minWarlockLevel: 2 },
-  { name: "超凡跳躍", spellId: "jump", spellUse: "at-will", minWarlockLevel: 2 },
-  { name: "魔鬼視界", minWarlockLevel: 2 },
-  { name: "原初之一教習", repeatable: true, minWarlockLevel: 2 },
-  { name: "苦痛魔爆", repeatable: true, minWarlockLevel: 2 },
-  { name: "魔能長槍", repeatable: true, minWarlockLevel: 2 },
-  { name: "斥力魔爆", repeatable: true, minWarlockLevel: 2 },
-  { name: "星移步法", spellId: "levitate", spellUse: "at-will", minWarlockLevel: 5 },
-  { name: "萬形之主", spellId: "alter-self", spellUse: "at-will", minWarlockLevel: 5 },
-  { name: "融身入影", spellId: "invisibility", spellUse: "at-will", minWarlockLevel: 5 },
-  { name: "深海饋贈", spellId: "water-breathing", spellUse: "once", minWarlockLevel: 5 },
-  { name: "共視感官", minWarlockLevel: 5 },
-  { name: "魔能斬擊", minWarlockLevel: 5 },
-  { name: "饑渴魔刃", minWarlockLevel: 5 },
-  { name: "鏈主賦能", minWarlockLevel: 5 },
-  { name: "墳墓低語", spellId: "speak-with-dead", spellUse: "at-will", minWarlockLevel: 7 }
-];
+// 魔能祈喚與超魔法選項：契術師、術士內容檔的附錄小節（classRules 的 appendix，kind 為 invocations／metamagic）。
+// 勾選框 ID 依小節順序編號並寫進存檔，故內容檔只能在最後新增小節。本檔早於產生檔載入，
+// 由 index.html 初始化時呼叫 loadEldritchInvocationOptions()／loadMetamagicOptions() 填入同一個陣列。
+const eldritchInvocations = [];
+const metamagicOptions = [];
 
-function fillEldritchInvocationTextsFromClassFeatures() {
-  const warlockRaw = classFeatures?.warlock || "";
-  const optionIndex = findNthIndex(warlockRaw, "魔能祈喚選項", 2);
-  if (optionIndex === -1) return;
+// text 為「標題中名稱之後的文字</h4>小節內文 HTML」，由 splitFeatureChoiceText() 拆成標題補充與內文。
+function getClassAppendixOptions(className, kind) {
+  const rules = typeof classRules === "undefined" ? null : classRules[className];
+  const appendix = (rules?.appendix || []).find(item => item.kind === kind);
+  return (appendix?.parts || []).map(part => ({
+    part,
+    text: `${part.prerequisite ? `（先決條件：${escapeHtml(part.prerequisite)}）` : escapeHtml(part.detail || "")}</h4>${part.html || ""}`
+  }));
+}
 
-  const invocationBlock = warlockRaw.slice(optionIndex);
-
-  eldritchInvocations.forEach((invocation, index) => {
-    const start = invocationBlock.indexOf(invocation.name);
-    if (start === -1) {
-      invocation.text = invocation.text || "";
-      return;
-    }
-
-    const endCandidates = [];
-    for (let i = index + 1; i < eldritchInvocations.length; i++) {
-      const nextName = eldritchInvocations[i].name;
-      const nextPos = invocationBlock.indexOf(nextName, start + invocation.name.length);
-      if (nextPos !== -1) endCandidates.push(nextPos);
-    }
-
-    const end = endCandidates.length ? Math.min(...endCandidates) : invocationBlock.length;
-    invocation.text = getNormalizedInvocationText(
-      invocationBlock.slice(start + invocation.name.length, end)
-    );
-  });
+function loadEldritchInvocationOptions() {
+  eldritchInvocations.splice(0, eldritchInvocations.length, ...getClassAppendixOptions("warlock", "invocations").map(({ part, text }) => ({
+    name: part.name,
+    text,
+    ...(part.spell ? { spellId: part.spell.id, spellUse: part.spell.use } : {}),
+    ...(part.repeatable ? { repeatable: true } : {}),
+    ...(part.level > 1 ? { minWarlockLevel: part.level } : {})
+  })));
 }
 
 function getInvocationCheckboxId(index, slot = 1) {
@@ -571,49 +543,12 @@ function syncWarlockInvocationSelectionLimit() {
   return enforceCheckboxSelectionLimit(inputs, getWarlockInvocationSelectionLimit(), null, "魔能祈喚勾選數量超過目前等級上限。", false);
 }
 
-const metamagicOptions = [
-  { name: "謹慎法術" },
-  { name: "遠程法術" },
-  { name: "強效法術" },
-  { name: "延效法術" },
-  { name: "升階法術" },
-  { name: "瞬發法術" },
-  { name: "追蹤法術" },
-  { name: "精妙法術" },
-  { name: "轉化法術" },
-  { name: "孿生法術" }
-];
-
 function getMetamagicCheckboxId(index) {
   return `metamagic-option-${index + 1}`;
 }
 
-function fillMetamagicTextsFromClassFeatures() {
-  const sorcererRaw = classFeatures?.sorcerer || "";
-  const blockStart = sorcererRaw.lastIndexOf("超魔法選項");
-  if (blockStart === -1) return;
-
-  const metamagicBlock = sorcererRaw.slice(blockStart);
-
-  metamagicOptions.forEach((option, index) => {
-    const start = metamagicBlock.indexOf(option.name);
-    if (start === -1) {
-      option.text = option.text || "";
-      return;
-    }
-
-    const endCandidates = [];
-    for (let i = index + 1; i < metamagicOptions.length; i++) {
-      const nextName = metamagicOptions[i].name;
-      const nextPos = metamagicBlock.indexOf(nextName, start + option.name.length);
-      if (nextPos !== -1) endCandidates.push(nextPos);
-    }
-
-    const end = endCandidates.length ? Math.min(...endCandidates) : metamagicBlock.length;
-    option.text = getNormalizedInvocationText(
-      metamagicBlock.slice(start + option.name.length, end)
-    );
-  });
+function loadMetamagicOptions() {
+  metamagicOptions.splice(0, metamagicOptions.length, ...getClassAppendixOptions("sorcerer", "metamagic").map(({ part, text }) => ({ name: part.name, text })));
 }
 
 function getCheckedMetamagicNames() {
@@ -1415,9 +1350,11 @@ function renderClassFeaturePanels(html, output, creationOutput) {
   creationOutput.replaceChildren(creation || document.createTextNode("無資料"));
 }
 
+// 職業能力頁籤：只列到目前等級；做成選擇卡片的附錄（超魔法、魔能祈喚，data-class-appendix）另在專屬區塊顯示。
 function getClassFeatureHtmlBeforeLevel(raw, nextLevel) {
   const template = document.createElement("template");
   template.innerHTML = raw;
+  template.content.querySelectorAll("[data-class-appendix]").forEach(section => section.remove());
   template.content.querySelectorAll("section[data-feature-level]").forEach(section => {
     if (Number(section.dataset.featureLevel) >= nextLevel) section.remove();
   });
@@ -1451,24 +1388,9 @@ function updateClassFeature() {
     return;
   }
 
-  let raw = classFeatures[selectedClass];
-  let metamagicRaw = "";
-  if (selectedClass === "warlock") {
-    const optionIndex = findNthIndex(raw, "魔能祈喚選項", 2);
-    if (optionIndex !== -1) raw = raw.slice(0, optionIndex).trim();
-  }
-  if (selectedClass === "sorcerer") {
-    const metamagicTitle = "超魔法選項";
-    const metamagicStartIndex = raw.lastIndexOf(metamagicTitle);
-    if (metamagicStartIndex !== -1) {
-      metamagicRaw = raw.slice(metamagicStartIndex).trim();
-      raw = raw.slice(0, metamagicStartIndex).trim();
-    }
-  }
-
-  const visibleHtml = level && !isNaN(level)
-    ? getClassFeatureHtmlBeforeLevel(raw, parseInt(level) + 1)
-    : raw;
+  const raw = classFeatures[selectedClass];
+  const hasMetamagic = getClassAppendixOptions(selectedClass, "metamagic").length > 0;
+  const visibleHtml = getClassFeatureHtmlBeforeLevel(raw, level && !isNaN(level) ? parseInt(level) + 1 : Infinity);
   renderClassFeaturePanels(highlightSpellNamesInClassFeature(visibleHtml), output, creationOutput);
 
   renderBardMagicalDiscoveryControls();
@@ -1485,7 +1407,7 @@ function updateClassFeature() {
   syncLevelUpCantripChoice();
 
   // 等級 2 前仍列出超魔法供查閱，syncMetamagicSelectionLimit 會停用勾選。
-  if (selectedClass === "sorcerer" && metamagicRaw) {
+  if (hasMetamagic) {
     metamagicSection.style.display = "block";
     renderMetamagicOptions();
     syncMetamagicSelectionLimit();

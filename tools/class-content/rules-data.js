@@ -27,7 +27,8 @@ function namedFeatures(features) {
   return features.filter(feature => feature.name).map(featureRules);
 }
 
-function classRules(classDef) {
+// appendixHtml：render.js 依附錄、小節順序產生的小節內文 HTML（選擇卡片與跑團說明使用）。
+function classRules(classDef, appendixHtml = []) {
   return {
     id: classDef.id,
     name: classDef.name,
@@ -46,9 +47,10 @@ function classRules(classDef) {
       shortName: subclass.shortName,
       features: namedFeatures(subclass.features)
     })),
-    appendix: (classDef.appendix || []).map(item => ({
+    appendix: (classDef.appendix || []).map((item, index) => ({
       name: item.name,
-      parts: (item.parts || []).map(part => stripText(part))
+      ...(item.kind ? { kind: item.kind } : {}),
+      parts: (item.parts || []).map((part, partIndex) => ({ ...stripText(part), html: appendixHtml[index]?.[partIndex] ?? "" }))
     }))
   };
 }

@@ -27,7 +27,7 @@ const textMap = (map, indent) => {
 function renderSiteData(classes) {
   const ids = [...classes.keys()].sort();
   const rendered = ids.map(id => [id, renderClass(classes.get(id))]);
-  const rules = ids.map(id => [id, classRules(classes.get(id))]);
+  const rules = ids.map((id, index) => [id, classRules(classes.get(id), rendered[index][1].appendix)]);
   const source = `// ${OUTPUT_NAME}：由 npm run build 從 content/srd 的職業內容檔產生，請勿手動修改。
 // classFeatures：各職業的職業頁 HTML（data-class-feature-panel="creation" 為創角頁籤，"class" 為各等級能力）。
 // classTabletopText：能力 ID → 行內 HTML。tabletop 取代該段落的跑團動作說明，summaries 取代跑團總覽的一句話；
