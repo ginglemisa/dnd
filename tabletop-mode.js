@@ -2440,7 +2440,7 @@ function getRogueReliableTalentEntry() {
       barbarianDefenses.push({ label: "險境感知", detail: "你的敏捷豁免有優勢。", summaryPanel: "skills", hiddenWhenIncapacitated: true });
     }
     if (isBarbarian && characterLevel >= 3) {
-      barbarianDefenses.push({ label: "先祖學識", detail: "狂暴時你可用力量做以下技能檢定，體操,威嚇,察覺,隱匿,求生。", summaryPanel: "skills" });
+      barbarianDefenses.push({ label: "先祖學識", detail: "狂暴時你可用力量做以下技能檢定，體操、威嚇、察覺、隱匿、求生。", summaryPanel: "skills" });
     }
     if (isBarbarian && characterLevel >= 5) {
       barbarianDefenses.push(getClassOverviewEntry("快速移動", "barbarian", "barbarian-fast-movement", { summaryPanel: "overview" }));
