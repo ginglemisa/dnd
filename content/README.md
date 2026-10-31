@@ -133,7 +133,7 @@ VS Code 安裝 Red Hat 的「YAML」擴充套件後，會依檔案第一行的 `
 
 - `magical-discoveries`：在內文之後產生魔法發現的法術選擇區。
 - `wizard-spellbook-recommendations`：把「**法術書：**」清單項目「推薦：」之後、句號之前的法術名稱標記為法術書推薦（可直接寫入法術書）；找不到這段文字時建置失敗。
-- `wild-shape-known-forms`：把荒野形態的「#### 已知形態」小節（說明段落、推薦段落、規則清單三個區塊）輸出成已知形態區塊（推薦框等排版），並在區塊末端接上「查看其他動物」的野獸清單；緊接其後的小節（變形規則）加上分隔樣式。野獸清單是另外整理的參考資料，不寫進內容檔，轉換期讀取 `class-features.js` 的 `DRUID_WILD_SHAPE_BEASTS`。找不到這段結構時建置失敗。
+- `wild-shape-known-forms`：把荒野形態的「#### 已知形態」小節（說明段落、推薦段落、規則清單三個區塊）輸出成已知形態區塊（推薦框等排版），並在區塊末端接上「查看其他動物」的野獸清單；緊接其後的小節（變形規則）加上分隔樣式。野獸清單是另外整理的參考資料，不寫進內容檔，讀取 `druid-wild-shape-beasts.js` 的 `DRUID_WILD_SHAPE_BEASTS`（跑團模式的 `DruidBeastForms` 也來自這份清單）。找不到這段結構時建置失敗。
 - `druid-land-choice`：在能力的 section 加上 `data-druid-land-choice`，網站以此找到大地結社地貌選擇所屬的能力（缺項檢查與跳轉）；地貌下拉選單在 index.html。
 
 ## 職業層級的欄位

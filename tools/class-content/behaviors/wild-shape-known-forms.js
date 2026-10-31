@@ -1,5 +1,5 @@
 // 荒野形態的「已知形態」（德魯伊）：styles.css 依 wild-shape-known-forms 系列 class 排版（推薦框、規則清單、野獸清單），
-// 「查看其他動物」的野獸清單是另外整理的參考資料，不寫進內容檔：轉換期直接讀取 class-features.js 的
+// 「查看其他動物」的野獸清單是另外整理的參考資料，不寫進內容檔：讀取 druid-wild-shape-beasts.js 的
 // DRUID_WILD_SHAPE_BEASTS／DRUID_WILD_SHAPE_CR_ORDER，照舊版範本產生。
 // 內容檔把「已知形態」寫成一般小節（說明段落、推薦段落、規則清單），這裡改回舊版的 <section> 標記並接上野獸清單；
 // 緊接其後的小節（變形規則）加上 druid-rule-subsection--transformation（與已知形態區塊之間的分隔樣式）。
@@ -12,8 +12,8 @@ const KNOWN_FORMS = /<div class="class-rule-subsection druid-rule-subsection"><h
 
 // 與舊版 class-features.js 的 DRUID_WILD_SHAPE_BEAST_LIST_HTML 相同的範本（含排版空白）。
 function beastListHtml() {
-  const beasts = loadLegacyArray("class-features.js", "DRUID_WILD_SHAPE_BEASTS");
-  const crOrder = loadLegacyArray("class-features.js", "DRUID_WILD_SHAPE_CR_ORDER");
+  const beasts = loadLegacyArray("druid-wild-shape-beasts.js", "DRUID_WILD_SHAPE_BEASTS");
+  const crOrder = loadLegacyArray("druid-wild-shape-beasts.js", "DRUID_WILD_SHAPE_CR_ORDER");
   return `<details class="wild-shape-beast-disclosure">
   <summary>
     <span class="wild-shape-beast-disclosure__show">查看其他動物</span>

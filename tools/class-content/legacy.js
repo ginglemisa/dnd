@@ -11,7 +11,7 @@ function loadLegacyClassFeatures(file = path.join(ROOT, "class-features.js")) {
   const skillTipSource = read("monster.js").match(/function skillTip\(skillName\) \{[\s\S]*?\r?\n\}/)[0];
   const context = { globalThis: {} };
   vm.createContext(context);
-  vm.runInContext(`${skillTipSource}\n${fs.readFileSync(file, "utf8")}\nglobalThis.__classFeatures = classFeatures;`, context);
+  vm.runInContext(`${skillTipSource}\n${read("druid-wild-shape-beasts.js")}\n${fs.readFileSync(file, "utf8")}\nglobalThis.__classFeatures = classFeatures;`, context);
   return context.globalThis.__classFeatures;
 }
 
@@ -64,7 +64,7 @@ function loadLegacyConstant(file, name) {
   return match[1];
 }
 
-// 網站程式中的陣列常數（例如 class-features.js 的 DRUID_WILD_SHAPE_BEASTS），供 behavior 照舊產生 HTML；只讀不複製。
+// 網站程式中的陣列常數（例如 druid-wild-shape-beasts.js 的 DRUID_WILD_SHAPE_BEASTS），供 behavior 照舊產生 HTML；只讀不複製。
 function loadLegacyArray(file, name) {
   const match = read(file).match(new RegExp(String.raw`const ${name} = (\[[\s\S]*?\]);`));
   if (!match) throw new Error(`${file} 找不到陣列常數 ${name}`);
