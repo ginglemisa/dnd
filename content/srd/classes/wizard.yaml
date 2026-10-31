@@ -72,6 +72,7 @@ features:
   - id: wizard-ritual-adept
     level: 1
     name: 儀式精通
+    hint: {panels: [spells]}
     pdfMerge: true
     text: |
       法術書中有「儀式」標籤的法術，**即使未準備，也能以儀式施放**，但施法時必須閱讀法術書。

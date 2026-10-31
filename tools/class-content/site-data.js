@@ -24,6 +24,9 @@ const textMap = (map, indent) => {
   return entries.length ? `{\n${entries.join(",\n")}\n${indent}}` : "{}";
 };
 
+// textMap 依 ID 排序輸出，比對時同樣排序。
+const sortKeys = map => Object.fromEntries(Object.keys(map).sort().map(key => [key, map[key]]));
+
 function renderSiteData(classes) {
   const ids = [...classes.keys()].sort();
   const rendered = ids.map(id => [id, renderClass(classes.get(id))]);
@@ -53,7 +56,7 @@ ${rules.map(([id, data]) => `  ${id}: ${JSON.stringify(data)}`).join(",\n")}
   }
   for (const [id, output] of rendered) {
     const same = context.result.classFeatures[id] === output.html
-      && JSON.stringify(context.result.classTabletopText[id]) === JSON.stringify({ tabletop: output.tabletop, summaries: output.summaries });
+      && JSON.stringify(context.result.classTabletopText[id]) === JSON.stringify({ tabletop: sortKeys(output.tabletop), summaries: sortKeys(output.summaries) });
     if (!same) throw new ContentError(`${OUTPUT_NAME}：${id} 的產生結果與渲染結果不同（樣板字串跳脫有誤）`);
   }
   return source;

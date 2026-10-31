@@ -153,6 +153,7 @@ features:
   - id: monk-slow-fall
     level: 4
     name: 輕身墜
+    hint: {panels: [overview]}
     actions:
       - mode: reaction
         key: dynamic-reaction-monk-curated-slow-fall
@@ -188,6 +189,7 @@ features:
   - id: monk-empowered-strikes
     level: 6
     name: 真力駐拳
+    hint: {panels: [weapons]}
     text: |
       你的徒手打擊造成傷害時，可以將傷害類型改為力場傷害。
   - level: 6
@@ -196,6 +198,8 @@ features:
   - id: monk-evasion
     level: 7
     name: 反射閃避
+    hint: {panels: [skills], hideWhenIncapacitated: true}
+    summary: 敏捷豁免原可使傷害減半時，成功則不受傷害，失敗則傷害減半。
     text: |
       你受到允許進行**敏捷豁免**使傷害減半的效應影響時，豁免成功則不受傷害，豁免失敗則只受一半傷害。
 

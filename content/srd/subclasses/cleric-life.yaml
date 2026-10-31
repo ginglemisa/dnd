@@ -37,5 +37,6 @@ features:
   - id: cleric-blessed-healer
     level: 6
     name: 神佑醫者
+    hint: {panels: [overview, spells, weapons]}
     text: |
       消耗法術位施放法術並恢復其他生物的生命值後，你立即恢復「2＋該法術位環階」生命值。

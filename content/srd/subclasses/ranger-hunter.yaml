@@ -49,9 +49,11 @@ features:
     options:
       - id: ranger-defensive-tactics-escape-the-horde
         name: 衝出重圍
+        hint: {panels: [overview]}
         text: |
           以你為目標的[[藉機攻擊]]具有**劣勢**。
       - id: ranger-defensive-tactics-multiattack-defense
         name: 多重防禦
+        hint: {panels: [overview]}
         text: |
           一個生物的攻擊檢定命中你時，該生物本回合內對你發動的後續攻擊檢定都具有**劣勢**。

@@ -91,6 +91,8 @@ features:
   - id: fighter-tactical-mind
     level: 2
     name: 戰術思維
+    hint: {panels: [overview, skills]}
+    summary: 屬性檢定失敗時，可消耗 1 次回氣，在該檢定加上 1d10；若仍失敗，不消耗回氣。
     pdfMerge: true
     text: |
       你在戰場內外都具有卓越的戰術思維。**屬性檢定失敗**時，可消耗 1 次回氣使用次數，改為擲 1d10 加入該次檢定，而非恢復生命值，使結果可能變為成功。

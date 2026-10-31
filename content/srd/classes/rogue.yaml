@@ -119,6 +119,7 @@ features:
   - id: rogue-uncanny-dodge
     level: 5
     name: 直覺閃避
+    hint: {panels: [overview]}
     pdfMerge: true
     actions:
       - mode: reaction
@@ -133,6 +134,8 @@ features:
   - id: rogue-evasion
     level: 7
     name: 反射閃避
+    hint: {panels: [skills], hideWhenIncapacitated: true}
+    summary: 敏捷豁免原可使傷害減半時，成功則不受傷害，失敗則傷害減半。
     pdfMerge: true
     text: |
       受到允許進行**敏捷豁免以使傷害減半**的效應影響時：
@@ -143,6 +146,8 @@ features:
   - id: rogue-reliable-talent
     level: 7
     name: 可靠才能
+    hint: {panels: [skills]}
+    summary: 當你使用有熟練的技能或工具進行屬性檢定時，可以將d20骰中9或以下的結果視為10。
     pdfMerge: true
     text: |
       使用**有熟練的技能或工具**進行屬性檢定時，可將 d20 擲出 9 或以下的結果視為 10。

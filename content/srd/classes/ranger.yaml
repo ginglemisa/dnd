@@ -118,6 +118,7 @@ features:
   - id: ranger-roving
     level: 6
     name: 越野
+    hint: {panels: [overview]}
     actions:
       - mode: movement
         key: dynamic-movement-ranger-bulhou

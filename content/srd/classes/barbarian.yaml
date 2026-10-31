@@ -91,6 +91,8 @@ features:
   - id: barbarian-danger-sense
     level: 2
     name: 險境感知
+    hint: {panels: [skills], hideWhenIncapacitated: true}
+    summary: 你的敏捷豁免有優勢。
     pdfMerge: true
     text: |
       只要你未陷入[[失能]]狀態，你的敏捷豁免就具有**優勢**。
@@ -116,6 +118,8 @@ features:
   - id: barbarian-primal-knowledge
     level: 3
     name: 先祖學識
+    hint: {panels: [skills]}
+    summary: 狂暴時你可用力量做以下技能檢定，體操、威嚇、察覺、隱匿、求生。
     text: |
       你額外獲得 1 項技能熟練，並能在狂暴時以力量進行部分技能檢定。
 
@@ -145,6 +149,7 @@ features:
   - id: barbarian-fast-movement
     level: 5
     name: 快速移動
+    hint: {panels: [overview]}
     pdfMerge: true
     actions:
       - mode: movement
@@ -157,6 +162,8 @@ features:
   - id: barbarian-feral-instinct
     level: 7
     name: 野性直覺
+    hint: {panels: [overview]}
+    summary: 你的先攻擲骰有優勢。
     pdfMerge: true
     text: |
       你的先攻擲骰具有**優勢**。
