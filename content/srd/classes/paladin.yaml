@@ -99,40 +99,32 @@ features:
       你**始終準備**法術「至聖斬」。
 
       - **免費施放：**可不消耗法術位施放 1 次，**長休後恢復**。
-  - id: paladin-divine-sense
+  - id: paladin-channel-divinity
     level: 3
     name: 引導神力
     resource:
       key: paladin-channel-divinity
       uses: channelDivinityUses
       recover: {short: 1, long: all}
-    actions:
-      - mode: bonus
-        key: dynamic-bonus-paladin-curated-divine-sense
-        legacyKeys: [dynamic-bonus-class-1axs7np]
-        label: 等級 3：神聖感知
-        resource: paladin-channel-divinity
-    tabletop: |
-      - **引導神力使用次數：**{channelDivinityUses|2 次}。**短休後恢復 1 次**，長休後全部恢復。
-
-      #### 神聖感知（附贈，消耗 1 次引導神力）
-
-      啟動後持續 10 分鐘，或直到你陷入[[失能]]狀態。期間獲得以下能力：
-
-      - **感知生物：**感知 60 呎內天界生物、邪魔、不死生物的位置與類型。
-      - **偵測地點：**偵測同範圍內受「聖居」祝福或褻瀆的地點與物件。
     text: |
       你可引導神力產生神聖效果，起始可使用「神聖感知」，之後可由其他特性追加新效果。每次使用時，從你已知的效果中選擇 1 個發動。
 
       - **使用次數：**{channelDivinityUses|2 次}。**短休後恢復 1 次**，長休後全部恢復。
       - **豁免 DC：**效果需要豁免時，使用你的聖騎士法術豁免 DC。
+    parts:
+      - id: paladin-divine-sense
+        name: 神聖感知
+        activation: 附贈
+        actions:
+          - mode: bonus
+            key: dynamic-bonus-paladin-curated-divine-sense
+            legacyKeys: [dynamic-bonus-class-1axs7np]
+            resource: paladin-channel-divinity
+        text: |
+          啟動後持續 10 分鐘，或直到你陷入[[失能]]狀態。期間獲得以下能力：
 
-      #### 神聖感知（附贈）
-
-      啟動後持續 10 分鐘，或直到你陷入[[失能]]狀態。期間獲得以下能力：
-
-      - **感知生物：**感知 60 呎內天界生物、邪魔、不死生物的位置與類型。
-      - **偵測地點：**偵測同範圍內受「聖居」祝福或褻瀆的地點與物件。
+          - **感知生物：**感知 60 呎內天界生物、邪魔、不死生物的位置與類型。
+          - **偵測地點：**偵測同範圍內受「聖居」祝福或褻瀆的地點與物件。
   - id: paladin-subclass
     level: 3
     name: 聖騎士子職

@@ -5,7 +5,7 @@
 const fs = require("fs");
 const path = require("path");
 const { ROOT } = require("./legacy");
-const { CONTENT_DIR } = require("./load");
+const { CONTENT_DIR, getActions } = require("./load");
 
 const BASELINE_FILES = Object.freeze({
   srd: path.join(ROOT, "class-id-baseline.json"),
@@ -16,7 +16,8 @@ const CATEGORIES = Object.freeze({
   subclasses: "子職 ID（職業/子職）",
   options: "選項 ID",
   actionKeys: "跑團動作 key",
-  resourceKeys: "資源 key"
+  resourceKeys: "資源 key",
+  attackNotes: "選項的攻擊備註（存進角色攻擊備註欄，取消勾選時以相同字串移除）"
 });
 
 function collectPersistedIds(classes) {
@@ -27,8 +28,11 @@ function collectPersistedIds(classes) {
   };
   const addFeatures = (pack, features) => {
     for (const feature of features) {
-      (feature.options || []).forEach(option => add(pack, "options", option.id));
-      (feature.actions || []).forEach(action => [action.key, ...(action.legacyKeys || [])].forEach(key => add(pack, "actionKeys", key)));
+      (feature.options || []).forEach(option => {
+        add(pack, "options", option.id);
+        if (option.attackNote) add(pack, "attackNotes", option.attackNote);
+      });
+      getActions(feature).forEach(action => [action.key, ...(action.legacyKeys || [])].forEach(key => add(pack, "actionKeys", key)));
       if (feature.resource) add(pack, "resourceKeys", feature.resource.key);
     }
   };
@@ -52,7 +56,10 @@ function checkIdBaseline(classes, { update = false } = {}) {
     const file = BASELINE_FILES[pack];
     const where = path.relative(ROOT, file).replace(/\\/g, "/");
     if (update) {
-      fs.writeFileSync(file, `${JSON.stringify(current, null, 2)}\n`);
+      // 內容沒變（舊基準檔缺少的分類視為空）時不改寫，避免只為新增分類而改動其他內容包的基準檔。
+      const baseline = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, "utf8")) : null;
+      const same = baseline && Object.keys(CATEGORIES).every(category => JSON.stringify(baseline[category] || []) === JSON.stringify(current[category]));
+      if (!same) fs.writeFileSync(file, `${JSON.stringify(current, null, 2)}\n`);
       continue;
     }
     if (!fs.existsSync(file)) {

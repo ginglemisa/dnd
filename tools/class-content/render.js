@@ -2,7 +2,7 @@
 // 讓 class-features-ui.js、action-panel.js、pdf-field-map.js 等暫時照舊讀取；不輸出行內 style。
 "use strict";
 const { ContentError, escapeHtml, renderInline, renderMarkdown } = require("./markdown");
-const { BUILT_IN_VALUES } = require("./load");
+const { BUILT_IN_VALUES, getActions } = require("./load");
 
 const NUMBER_WORDS = Object.freeze({ 1: "一", 2: "兩", 3: "三", 4: "四" });
 const kebab = name => name.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`);
@@ -40,17 +40,31 @@ function mergeFeatures(classDef, subclass) {
 function createRenderContext(classDef, subclass) {
   const valueNames = new Set([...Object.keys(classDef.progression || {}), ...Object.keys(classDef.values || {})]);
   const merged = mergeFeatures(classDef, subclass);
-  const appended = new Set(merged.flatMap(({ feature }) => (feature.actions || []).flatMap(action => action.append || [])));
+  const appended = new Set(merged.flatMap(({ feature }) => getActions(feature).flatMap(action => action.append || [])));
+  // 子能力標題的消耗字樣：資源名稱是定義該資源的能力名稱。
+  const resourceNames = new Map(merged.filter(({ feature }) => feature.resource).map(({ feature }) => [feature.resource.key, feature.name]));
+  // 只引用另一個數值並帶 format 的值（例如 stunningStrikeDc: { formula: "{saveDc}", format: （DC {}） }）。
+  const aliasOf = token => {
+    const value = classDef.values?.[token];
+    return value?.format ? value.formula.match(/^\{([A-Za-z][A-Za-z0-9]*)\}$/)?.[1] : undefined;
+  };
+  // 轉換期沿用 action-panel.js 的 TABLETOP_VALUE_RESOLVERS key：內建數值另有固定 key，其餘為「職業-欄位名」。
+  // 帶 format 的值：舊版計算函式已含外框時用自己的 key；只引用另一個數值時用被引用值的 key，外框由 valueFrame 輸出。
+  const resolveValue = (token, where) => {
+    if (Object.hasOwn(BUILT_IN_VALUES, token)) return BUILT_IN_VALUES[token];
+    if (!valueNames.has(token)) throw new ContentError(`${where}：{${token}|…} 不是特性表欄位或 values`);
+    if (aliasOf(token)) return resolveValue(aliasOf(token), where);
+    return `${classDef.id}-${kebab(token)}`;
+  };
   return {
     classDef,
     subclass,
     merged,
     appended,
-    // 轉換期沿用 action-panel.js 的 TABLETOP_VALUE_RESOLVERS key：內建數值另有固定 key，其餘為「職業-欄位名」。
-    resolveValue(token, where) {
-      if (Object.hasOwn(BUILT_IN_VALUES, token)) return BUILT_IN_VALUES[token];
-      if (!valueNames.has(token)) throw new ContentError(`${where}：{${token}|…} 不是特性表欄位或 values`);
-      return `${classDef.id}-${kebab(token)}`;
+    resourceNames,
+    resolveValue,
+    valueFrame(token) {
+      return aliasOf(token) ? classDef.values[token].format.split("{}") : null;
     }
   };
 }
@@ -125,7 +139,7 @@ function renderOptions(feature, context, where) {
     const at = `${where} 選項 ${option.name}`;
     const lines = option.text ? option.text.replace(/\n+$/, "").split("\n") : [];
     const text = lines.map((line, index) => renderInline(index < lines.length - 1 ? line.replace(/\\$/, "") : line, context, at)).join("<br>");
-    const group = feature.changeOn ? ` data-feature-choice-group="${feature.id}"` : "";
+    const group = feature.changeOn || feature.choiceGroup ? ` data-feature-choice-group="${feature.id}"` : "";
     const label = `<label><input type="checkbox" id="${option.id}"${group}> ${escapeHtml(option.name)}</label>`;
     // 轉換期：跑團說明的「名稱：」沿用 TABLETOP_VALUE_RESOLVERS 的 -name key，段落 ID 為「職業-選項名」。
     const suffix = option.id.startsWith(`${feature.id}-`) ? option.id.slice(feature.id.length + 1) : null;
@@ -134,7 +148,10 @@ function renderOptions(feature, context, where) {
     const separator = inTabletop
       ? `<span data-tabletop-value="${classDef.id}-${suffix}-name"${cards ? " data-overview-hide" : ""}>：</span>`
       : (text ? "：" : "");
-    const body = `${label}${separator}${text}`;
+    // 選項自己的按鈕：說明段落為選項文字（不含勾選框與「：」），段落 ID 同為「職業-選項名」。
+    if (option.actions && !suffix) throw new ContentError(`${at}：有 actions 的選項 ID 須以「${feature.id}-」開頭`);
+    const optionText = option.actions ? `<span data-action-id="${classDef.id}-${suffix}">${text}</span>` : text;
+    const body = `${label}${separator}${optionText}`;
     return cards
       ? `<div class="druid-mission-option"${actionId}><div class="druid-mission-option__heading">${body}</div></div>`
       : `<li${actionId}>${body}</li>`;
@@ -146,6 +163,23 @@ function renderOptions(feature, context, where) {
 function addAppendedPrefix(html, feature, where) {
   if (!/^<p[ >]/.test(html)) throw new ContentError(`${where}：被 append 的能力須以段落開頭`);
   return html.replace(/^<p([^>]*)>/, `<p$1><strong data-tabletop-only hidden>${escapeHtml(feature.name)}：</strong>`);
+}
+
+// 子能力：外層能力內帶 data-action-id 的小節。標題為「名稱（使用方式）」，按鈕消耗資源時跑團版加「，消耗 1 次［資源名稱］」。
+function renderPart(part, feature, owner, context, where) {
+  const { classDef } = context;
+  const at = `${where} 子能力 ${part.name}`;
+  const markdownOptions = { ...context, subsectionClass: `class-rule-subsection ${classDef.id}-rule-subsection` };
+  const resource = (part.actions || []).find(action => action.resource)?.resource;
+  const cost = resource ? `消耗 1 次${escapeHtml(context.resourceNames.get(resource) || "")}` : "";
+  if (resource && !context.resourceNames.has(resource)) throw new ContentError(`${at}：找不到定義資源 ${resource} 的能力`);
+  const activation = part.activation
+    ? `（${escapeHtml(part.activation)}${cost ? `<span data-tabletop-only hidden>，${cost}</span>` : ""}）`
+    : (cost ? `<span data-tabletop-only hidden>（${cost}）</span>` : "");
+  const heading = `<h4>${escapeHtml(part.name)}${activation}</h4>`;
+  if (part.tabletop) context.tabletop[part.id] = heading + renderMarkdown(part.tabletop, markdownOptions, `${at} tabletop`);
+  if (part.summary) context.summaries[part.id] = renderInline(part.summary, context, `${at} summary`);
+  return `<div class="class-rule-subsection ${classDef.id}-rule-subsection" data-action-id="${part.id}">${heading}${renderMarkdown(part.text, markdownOptions, at)}</div>`;
 }
 
 // tabletop（跑團動作說明）與 summary（跑團總覽一句話）不放進職業頁 HTML，另以資料輸出給 action-panel.js。
@@ -161,6 +195,7 @@ function renderFeature({ feature, owner }, context) {
     context.tabletop[feature.id] = appended ? addAppendedPrefix(tabletop, feature, `${where} tabletop`) : tabletop;
   }
   if (feature.summary) context.summaries[feature.id] = renderInline(feature.summary, context, `${where} summary`);
+  if (feature.parts) body += feature.parts.map(part => renderPart(part, feature, owner, context, where)).join("");
   if (feature.options) body += renderOptions(feature, context, where);
   // 專長選單插在此段落之前（feat-ui.js）；4 級額外戲法選單讀取它的粗體標籤（class-features-ui.js）。
   if (feature.afterFeatChoice) body += renderMarkdown(feature.afterFeatChoice, { ...markdownOptions, blockAttributes: "data-after-feat-choice" }, `${where} afterFeatChoice`);

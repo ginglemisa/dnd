@@ -32,15 +32,29 @@ function loadTipTables() {
 }
 
 // action-panel.js 的 CLASS_ACTION_RULES（僅轉換器使用；第 2 步改由內容檔提供後移除）。
+// 回傳 { rules, labelAt }：函式型 label 依角色等級變化，以 labelAt(rule, 等級) 取得指定等級的文字。
 function loadLegacyClassActionRules() {
   const source = read("action-panel.js");
   const start = source.indexOf("const CLASS_ACTION_RULES = Object.freeze({");
   const end = source.indexOf("const RACE_ACTION_RULES", start);
   const block = source.slice(start, end).replace("const CLASS_ACTION_RULES =", "globalThis.__rules =");
-  const context = { globalThis: {}, getCharacterLevel: () => 1 };
+  const context = { globalThis: {}, level: 1 };
+  context.getCharacterLevel = () => context.level;
   vm.createContext(context);
   vm.runInContext(block, context);
-  return context.globalThis.__rules;
+  const labelAt = (rule, level) => {
+    if (typeof rule.label !== "function") return rule.label;
+    context.level = level;
+    return rule.label();
+  };
+  return { rules: context.globalThis.__rules, labelAt };
 }
 
-module.exports = { ROOT, loadLegacyClassFeatures, loadTipTables, loadLegacyClassActionRules };
+// 網站程式中的字串常數（例如 class-features-ui.js 的攻擊備註），轉換時照抄。
+function loadLegacyConstant(file, name) {
+  const match = read(file).match(new RegExp(String.raw`const ${name} = "([^"\\]*)";`));
+  if (!match) throw new Error(`${file} 找不到字串常數 ${name}`);
+  return match[1];
+}
+
+module.exports = { ROOT, loadLegacyClassFeatures, loadTipTables, loadLegacyClassActionRules, loadLegacyConstant };

@@ -32,7 +32,14 @@
         "behavior": { "$ref": "#/definitions/id", "description": "特殊機制：tools/class-content/behaviors/<名稱>.js（例如 magical-discoveries 產生魔法發現的法術選擇區）。" },
         "choose": { "type": "integer", "minimum": 1, "description": "要從 options 選幾項。" },
         "changeOn": { "enum": ["rest"], "description": "rest：短休或長休後可改選。" },
+        "choiceGroup": { "const": true, "description": "選項的勾選框標記為同一選擇組（data-feature-choice-group），例如神佑打擊；changeOn 時自動標記，不必另寫。" },
         "optionStyle": { "enum": ["list", "cards"], "default": "list", "description": "選項顯示方式：list 為清單，cards 為卡片。" },
+        "parts": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/part" },
+          "description": "子能力：各自有跑團按鈕的小節（例如引導神力的神聖火花、驅散不死生物），接在 text 之後。只是排版分段時照舊用「#### 標題」。"
+        },
         "options": {
           "type": "array",
           "minItems": 1,
@@ -58,8 +65,8 @@
         "not": {
           "anyOf": [
             { "required": ["id"] }, { "required": ["type"] }, { "required": ["tableName"] }, { "required": ["tabletop"] }, { "required": ["summary"] }, { "required": ["choose"] },
-            { "required": ["changeOn"] }, { "required": ["optionStyle"] }, { "required": ["options"] },
-            { "required": ["actions"] }, { "required": ["resource"] }, { "required": ["spells"] }, { "required": ["afterFeatChoice"] }, { "required": ["behavior"] }
+            { "required": ["changeOn"] }, { "required": ["choiceGroup"] }, { "required": ["optionStyle"] }, { "required": ["options"] },
+            { "required": ["actions"] }, { "required": ["resource"] }, { "required": ["spells"] }, { "required": ["afterFeatChoice"] }, { "required": ["behavior"] }, { "required": ["parts"] }
           ]
         }
       },
@@ -72,7 +79,34 @@
       "properties": {
         "id": { "$ref": "#/definitions/id", "description": "勾選框 ID，會寫進存檔與分享網址：不可改名。" },
         "name": { "type": "string", "minLength": 1, "description": "選項名稱（勾選框文字）。" },
-        "text": { "type": "string", "minLength": 1, "description": "選項說明（單段文字，可用行尾「\\」換行）。" }
+        "text": { "type": "string", "minLength": 1, "description": "選項說明（單段文字，可用行尾「\\」換行）。" },
+        "actions": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/action" },
+          "description": "此選項自己的跑團按鈕：勾選該選項且達到能力等級才出現，說明為選項文字；按鈕文字預設為「等級 N：選項名稱」。同一能力不可同時有能力層的 actions。"
+        },
+        "attackNote": { "type": "string", "minLength": 1, "description": "勾選後加進武器攻擊備註的文字，例如「+1d8光/黯傷害」。會存進角色資料、取消時靠相同字串移除：不可改字。" }
+      }
+    },
+    "part": {
+      "type": "object",
+      "description": "子能力：輸出成外層能力裡帶 data-action-id 的小節。等級同外層能力；資源寫在外層能力。",
+      "additionalProperties": false,
+      "required": ["id", "name", "text"],
+      "properties": {
+        "id": { "$ref": "#/definitions/id", "description": "子能力 ID（與能力 ID 共用、全職業唯一）。已有的 data-action-id 照抄。" },
+        "name": { "type": "string", "minLength": 1, "description": "小節標題名稱，例如「神聖火花」。" },
+        "activation": { "type": "string", "minLength": 1, "description": "標題括弧內的使用方式，例如「魔法動作」、「附贈」。按鈕消耗資源時，跑團版標題自動加上「，消耗 1 次［資源名稱］」。" },
+        "text": { "$ref": "#/definitions/text", "description": "職業頁全文（不可使用「#### 」小節）。" },
+        "tabletop": { "$ref": "#/definitions/text", "description": "跑團按鈕說明的完整版本；只在和 text 不同時才寫。" },
+        "summary": { "type": "string", "minLength": 1, "description": "跑團總覽的一句話；省略時使用 text。" },
+        "actions": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/action" },
+          "description": "跑團按鈕；按鈕文字預設為「等級 N：子能力名稱（子職）」，N 為外層能力等級。"
+        }
       }
     },
     "action": {
@@ -83,7 +117,25 @@
         "mode": { "enum": ["action", "bonus", "reaction", "movement"], "description": "動作、附贈、反應或移動。" },
         "key": { "type": "string", "pattern": "^[a-z0-9-]+$", "description": "跑團偏好記住的按鈕 key：不可改名。" },
         "legacyKeys": { "type": "array", "items": { "type": "string" }, "description": "舊版按鈕 key，讀取舊偏好用。" },
-        "label": { "type": "string", "description": "按鈕文字；省略時為「等級 N：名稱（子職）」。" },
+        "label": {
+          "description": "按鈕文字；省略時為「等級 N：名稱（子職）」。依等級換名時寫 { byLevel: { 5: 等級 5：焚燒不死生物 } }：從該等級起改用此文字，低於最低等級時使用省略時的文字。",
+          "anyOf": [
+            { "type": "string" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["byLevel"],
+              "properties": {
+                "byLevel": {
+                  "type": "object",
+                  "minProperties": 1,
+                  "propertyNames": { "pattern": "^[1-9][0-9]?$" },
+                  "additionalProperties": { "type": "string", "minLength": 1 }
+                }
+              }
+            }
+          ]
+        },
         "level": { "$ref": "#/definitions/level", "description": "按鈕出現的等級；省略時同能力等級。" },
         "resource": { "type": "string", "description": "按鈕消耗的資源 key。" },
         "append": {

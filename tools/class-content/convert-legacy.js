@@ -6,7 +6,7 @@ const fs = require("fs");
 const path = require("path");
 const parse5 = require("parse5");
 const YAML = require("yaml");
-const { ROOT, loadLegacyClassFeatures, loadTipTables, loadLegacyClassActionRules } = require("./legacy");
+const { ROOT, loadLegacyClassFeatures, loadTipTables, loadLegacyClassActionRules, loadLegacyConstant } = require("./legacy");
 
 // 能力 ID 的英文名（舊 HTML 沒有 data-action-id 的能力才需要；已有的照抄）。
 const FEATURE_SLUGS = Object.freeze({
@@ -21,6 +21,10 @@ const FEATURE_SLUGS = Object.freeze({
   無甲移動: "unarmored-movement"
 });
 const SUBCLASS_IDS = Object.freeze({ 狂戰士道途: "berserker", 獵人: "hunter", 勇士: "champion", 妙手: "thief", 奉獻之誓: "devotion", 逸聞學院: "lore", 散打鬥士: "open-hand" });
+// 整個 section 帶 data-action-id、但按鈕說明其實是其中唯一一個小節：外層能力改用新 ID，舊 ID 留給子能力。
+const SPLIT_SECTIONS = Object.freeze({ "paladin-divine-sense": "paladin-channel-divinity" });
+// 選項的攻擊備註：照抄 class-features-ui.js 的常數（存進角色資料，取消時以相同字串移除）。
+const OPTION_ATTACK_NOTES = Object.freeze({});
 // 舊 HTML 中由網站程式插入控制項的空白容器（以 id 辨識）→ behaviors/<名稱>.js；轉換時核對輸出與舊標記相同。
 const BEHAVIOR_MOUNTS = Object.freeze({ "bard-magical-discoveries": "magical-discoveries" });
 // 特性表欄位名稱（文字中以 {名稱|…} 引用）。
@@ -41,7 +45,7 @@ const FEATURE_EXTRAS = Object.freeze({
   "fighter-action-surge": { resource: { key: "fighter-action-surge", uses: 1, recover: { short: "all", long: "all" } } },
   // character-rules.js：聖療為點數池（addPoints），總量聖騎士等級 × 5，長休全回；引導神力短休回 1 次。
   "paladin-lay-on-hands": { resource: { key: "paladin-lay-on-hands", kind: "points", uses: "layOnHandsPool", recover: { long: "all" } } },
-  "paladin-divine-sense": { resource: { key: "paladin-channel-divinity", uses: "channelDivinityUses", recover: { short: 1, long: "all" } } },
+  "paladin-channel-divinity": { resource: { key: "paladin-channel-divinity", uses: "channelDivinityUses", recover: { short: 1, long: "all" } } },
   // spell-sources.js：至聖斬、召喚坐騎始終準備，各可免費施放 1 次。
   "paladin-paladins-smite": { spells: [{ id: "divine-smite", freeUses: 1 }] },
   "paladin-faithful-steed": { spells: [{ id: "find-steed", freeUses: 1 }] },
@@ -60,7 +64,8 @@ const CLASS_VALUES = Object.freeze({
   bard: { inspirationUses: "max(1, {chaModifier})", inspirationRecovery: { byLevel: { 5: "短休或長休後全部恢復" } } },
   // 武藝骰「1d{}」的數值是骰面；兩枚武藝骰為 2d{}。混元體次數取自 character-rules.js。
   monk: {
-    saveDc: "8 + {proficiencyBonus} + {wisModifier}", uncannyMetabolismHealing: "1d{martialArtsDie} + {level}",
+    saveDc: "8 + {proficiencyBonus} + {wisModifier}", stunningStrikeDc: { formula: "{saveDc}", format: "（DC {}）" },
+    uncannyMetabolismHealing: "1d{martialArtsDie} + {level}",
     deflectAttacksReduction: "1d10 + {dexModifier} + {level}", deflectAttacksDamage: "2d{martialArtsDie} + {dexModifier}",
     slowFallReduction: "{level} * 5", wholenessHealing: "1d{martialArtsDie} + {wisModifier}", wholenessUses: "max(1, {wisModifier})"
   }
@@ -115,21 +120,58 @@ function inlineToText(nodes, context, where) {
       if (conditions.get(textOf(node)) !== attr(node, "data-condition")) fail(where, `狀態提示文字與 data-condition 不符：${textOf(node)}`);
       return `[[${textOf(node)}]]`;
     }
-    if (node.nodeName === "span" && has(node, "data-tabletop-value")) {
-      allowAttributes(node, ["data-tabletop-value"], where);
-      if (node.childNodes.some(child => child.nodeName !== "#text")) fail(where, "數值標記內只能有文字");
-      return `{${context.valueToken(attr(node, "data-tabletop-value"), where)}|${textOf(node)}}`;
-    }
-    // 只在跑團說明出現的文字：職業頁版本略過，跑團版本保留（寫成 tabletop）。
+    // 只在跑團說明出現的文字。數值（或「外框＋數值」）寫成空白頁面文字的 {名稱|}，兩種版本相同；
+    // 舊版的跑團後備文字（計算函式無值時才顯示）不保留，轉換時列出。其他文字只進跑團版本（寫成 tabletop）。
     if (node.nodeName === "span" && has(node, "data-tabletop-only")) {
-      allowAttributes(node, ["data-tabletop-only", "hidden"], where);
+      allowAttributes(node, ["data-tabletop-only", "hidden", "data-tabletop-value"], where);
       if (!has(node, "hidden")) fail(where, "data-tabletop-only 須同時有 hidden");
       if (!context.view) fail(where, "此處不支援跑團專用文字");
+      const tabletopOnlyValue = tabletopOnlyValueMark(node, context, where);
+      if (tabletopOnlyValue) return tabletopOnlyValue;
       return context.view === "tabletop" ? inlineToText(node.childNodes, context, where) : "";
+    }
+    // 選項自己的按鈕說明段落（例如神聖打擊）：只包住選項文字，由 convertOption 取出。
+    if (node.nodeName === "span" && has(node, "data-action-id") && context.optionBlock) {
+      allowAttributes(node, ["data-action-id"], where);
+      if (context.optionBlock.id) fail(where, "一個選項只支援一個說明段落");
+      context.optionBlock.id = attr(node, "data-action-id");
+      return inlineToText(node.childNodes, context, where);
+    }
+    if (node.nodeName === "span" && has(node, "data-tabletop-value")) {
+      allowAttributes(node, ["data-tabletop-value"], where);
+      return valueMark(node, context, where);
     }
     return fail(where, `未處理的行內標記 <${node.nodeName} ${(node.attrs || []).map(item => item.name).join(" ")}>`);
   }).join("");
 }
+
+// <span data-tabletop-value> → {名稱|頁面文字}；頁面文字只能有文字與粗體（例如「**等同感知調整值數量的 d8**（至少 1d8）」）。
+function valueMark(node, context, where) {
+  if (findAll(node, child => child !== node && (!["#text", "strong"].includes(child.nodeName) || has(child, "data-tabletop-value"))).length) fail(where, "數值標記內只能有文字或粗體");
+  return `{${context.valueToken(attr(node, "data-tabletop-value"), where)}|${inlineToText(node.childNodes, context, where)}}`;
+}
+
+// 跑團限定的數值 → {名稱|}：span 本身是數值（例如牧師法術豁免 DC），或只包住「外框文字＋數值」
+// （例如震懾擊「（DC <數值>）」，對應 values 中 { formula: "{saveDc}", format: （DC {}） } 的值）。不是這兩種時回傳 null。
+function tabletopOnlyValueMark(node, context, where) {
+  const report = fallback => { if (fallback && context.view === "page") droppedFallbacks.add(`${where}：${fallback}`); };
+  if (has(node, "data-tabletop-value")) {
+    report(textOf(node));
+    return `{${context.valueToken(attr(node, "data-tabletop-value"), where)}|}`;
+  }
+  const values = node.childNodes.filter(child => child.nodeName !== "#text");
+  if (values.length !== 1 || !has(values[0], "data-tabletop-value")) return null;
+  allowAttributes(values[0], ["data-tabletop-value"], where);
+  const index = node.childNodes.indexOf(values[0]);
+  const format = `${textOf({ childNodes: node.childNodes.slice(0, index) })}{}${textOf({ childNodes: node.childNodes.slice(index + 1) })}`;
+  const target = context.valueToken(attr(values[0], "data-tabletop-value"), where);
+  const alias = Object.entries(CLASS_VALUES[context.classId] || {}).find(([, value]) => value.formula === `{${target}}` && value.format === format)?.[0];
+  if (!alias) fail(where, `跑團限定的「${format.replace("{}", `{${target}}`)}」須在 CLASS_VALUES 加入 { formula: "{${target}}", format: "${format}" }`);
+  report(textOf(values[0]));
+  return `{${alias}|}`;
+}
+// 轉換時捨棄的跑團後備文字（轉換結束時列出）。
+const droppedFallbacks = new Set();
 
 const indentContinuation = text => text.replace(/\\\n/g, "\\\n  ");
 
@@ -147,7 +189,12 @@ function convertOption(node, feature, context, where) {
   allowAttributes(input, ["type", "id", "data-feature-choice-group"], where);
   const group = attr(input, "data-feature-choice-group");
   if (group && group !== feature.id) fail(where, `data-feature-choice-group「${group}」與能力 ID 不同`);
-  if (Boolean(group) !== Boolean(feature.changeOn)) fail(where, "data-feature-choice-group 與 data-rest-change 須同時出現");
+  if (feature.changeOn && !group) fail(where, "data-rest-change 的選項須有 data-feature-choice-group");
+  // 沒有 data-rest-change 的選擇組（例如神佑打擊）寫成 choiceGroup；同一能力的選項須一致。
+  if (!feature.changeOn) {
+    if (feature.choiceGroup !== undefined && feature.choiceGroup !== Boolean(group)) fail(where, "同一能力的選項 data-feature-choice-group 不一致");
+    feature.choiceGroup = Boolean(group);
+  }
   const option = { id: attr(input, "id"), name: textOf({ childNodes: labelRest }).trim() };
   // 「：」分隔：舊版跑團名稱以 data-tabletop-value="…-name" 的 span 顯示。
   const first = nodes[0];
@@ -159,8 +206,14 @@ function convertOption(node, feature, context, where) {
   } else if (first?.nodeName === "#text" && first.value.startsWith("：")) {
     nodes[0] = { ...first, value: first.value.slice(1) };
   } else if (nodes.length) fail(where, `選項「${option.name}」的說明須以「：」開頭`);
-  const text = inlineToText(nodes, context, where);
+  const optionBlock = {};
+  const text = inlineToText(nodes, { ...context, optionBlock }, where);
   if (text) option.text = text;
+  // 選項自己的說明段落須包住整段選項文字；按鈕由 convertActions 掛到選項上。
+  if (optionBlock.id) {
+    if (elements({ childNodes: nodes }).length !== 1 || option.tabletopName) fail(where, `選項「${option.name}」的說明段落須包住整段文字`);
+    option.blockId = optionBlock.id;
+  }
   return option;
 }
 
@@ -187,8 +240,19 @@ function convertBody(nodes, feature, context, where) {
   // 接在專長選單後的段落、網站程式插入控制項的容器：都須是能力的最後一個區塊。
   let afterFeatChoice;
   let behavior;
+  // 子能力（帶 data-action-id 的小節）接在內文之後，之後只能再有子能力。
+  const parts = [];
   for (const node of nodes) {
     if (afterFeatChoice !== undefined || behavior) fail(where, "data-after-feat-choice 段落或控制項容器之後不可再有區塊");
+    const isSubsection = node.nodeName === "div" && classes(node).includes("class-rule-subsection");
+    const partId = isSubsection ? attr(node, "data-action-id") || context.splitPartId : undefined;
+    if (parts.length && !partId) fail(where, "子能力之後只能再有子能力");
+    if (partId) {
+      allowAttributes(node, ["class", "data-action-id"], where);
+      if (!attr(node, "data-action-id")) context.splitPartId = undefined;
+      parts.push(convertPart(node, partId, feature, context, where));
+      continue;
+    }
     if (node.nodeName === "p" && has(node, "data-after-feat-choice")) {
       allowAttributes(node, ["data-after-feat-choice"], where);
       const [text, tabletop] = views(node.childNodes);
@@ -260,6 +324,7 @@ function convertBody(nodes, feature, context, where) {
       if (tabletopLines.length) pushBlock(lines.join("\n"), tabletopLines.join("\n"));
       else { blocks.push(lines.join("\n")); tabletopUsed = true; }
     } else if (node.nodeName === "div" && classes(node).includes("class-rule-subsection")) {
+      allowAttributes(node, ["class"], where);
       const [heading, ...rest] = elements(node);
       if (heading?.nodeName !== "h4") fail(where, "小節須以 <h4> 開頭");
       const [title, tabletopTitle] = views(heading.childNodes);
@@ -286,7 +351,31 @@ function convertBody(nodes, feature, context, where) {
       fail(where, `未處理的區塊 <${node.nodeName} class="${attr(node, "class") || ""}">`);
     }
   }
-  return { blocks, tabletopBlocks, tabletopUsed, summaryParts, summaryUsed, afterFeatChoice, behavior };
+  return { blocks, tabletopBlocks, tabletopUsed, summaryParts, summaryUsed, afterFeatChoice, behavior, parts };
+}
+
+// 帶 data-action-id 的小節 → 子能力 { id, name, activation, text, tabletop, summary }。
+// 標題「名稱（使用方式）」；跑團版標題多出的文字暫存在 headingExtra，掛上按鈕後再核對是否等於自動產生的消耗字樣。
+function convertPart(node, id, feature, context, where) {
+  const at = `${where} 子能力 ${id}`;
+  const [heading, ...rest] = elements(node);
+  if (heading?.nodeName !== "h4") fail(at, "小節須以 <h4> 開頭");
+  const title = inlineToText(heading.childNodes, { ...context, view: "page" }, at);
+  const tabletopTitle = inlineToText(heading.childNodes, { ...context, view: "tabletop" }, at);
+  const match = title.match(/^([^（）]+)(?:（([^（）]+)）)?$/) || fail(at, `標題格式不符：${title}`);
+  const part = { id, name: match[1], level: feature.level, subclass: feature.subclass };
+  if (match[2]) part.activation = match[2];
+  const open = part.activation ? `${part.name}（${part.activation}` : part.name;
+  const close = part.activation ? "）" : "";
+  if (!tabletopTitle.startsWith(open) || !tabletopTitle.endsWith(close)) fail(at, `跑團版標題「${tabletopTitle}」與職業頁標題結構不同`);
+  part.headingExtra = tabletopTitle.slice(open.length, tabletopTitle.length - close.length);
+  const inner = convertBody(rest, part, { ...context, splitPartId: undefined }, at);
+  if (inner.afterFeatChoice !== undefined || inner.behavior || inner.parts.length || part.options) fail(at, "子能力內不支援選項、控制項容器或子能力");
+  if (inner.blocks.some(block => block.startsWith("#### "))) fail(at, "子能力內不支援小節");
+  part.text = inner.blocks.join("\n\n");
+  if (inner.tabletopUsed) part.tabletop = inner.tabletopBlocks.join("\n\n");
+  if (inner.summaryUsed) part.summary = inner.summaryParts.join("");
+  return part;
 }
 
 function convertCreation(root, classId, where) {
@@ -325,6 +414,7 @@ function convertCreation(root, classId, where) {
   if (note) out.equipment.note = note;
 
   const featureTable = findAll(creation, node => attr(node, "data-class-feature-table") === classId)[0];
+  if (findAll(findAll(featureTable, node => node.nodeName === "thead")[0], node => node.nodeName === "tr").length !== 1) fail(where, "特性表表頭須為單一列");
   const headers = findAll(featureTable, node => node.nodeName === "th").map(node => textOf(node).trim());
   if (headers.slice(0, 3).join() !== "等級,熟練加值,職業特性") fail(where, "特性表前三欄不符");
   const bodyRows = findAll(findAll(featureTable, node => node.nodeName === "tbody")[0], node => node.nodeName === "tr")
@@ -362,16 +452,30 @@ function convertCreation(root, classId, where) {
   return out;
 }
 
-function convertActions(rules, featureById, classId, subclassShortName) {
+// blocks：說明段落 ID → { target（按鈕掛在哪裡）, level, name, subclass, checkedId }，含能力、子能力與選項自己的說明段落。
+function convertActions(rules, labelAt, blocks, featureById, classId, subclassShortName, maxLevel) {
+  const appendedIds = new Set();
   for (const rule of rules) {
-    const known = ["id", "mode", "level", "label", "key", "legacyKeys", "resourceKey", "descriptionId", "descriptionIds"];
+    const known = ["id", "mode", "level", "label", "key", "legacyKeys", "resourceKey", "descriptionId", "descriptionIds", "checkedId"];
     Object.keys(rule).forEach(name => { if (!known.includes(name)) fail(`${classId} 動作 ${rule.key}`, `未處理的欄位 ${name}`); });
     const [hostId, ...appended] = [].concat(rule.descriptionIds || rule.descriptionId);
-    const host = featureById.get(hostId) || fail(classId, `動作 ${rule.key} 的說明段落 ${hostId} 不存在`);
+    const host = blocks.get(hostId) || fail(classId, `動作 ${rule.key} 的說明段落 ${hostId} 不存在`);
+    // checkedId（勾選才出現）由「按鈕寫在選項底下」表達，須等於說明段落所屬的選項。
+    if (rule.checkedId !== host.checkedId) fail(classId, `動作 ${rule.key} 的 checkedId「${rule.checkedId || ""}」與說明段落所屬選項「${host.checkedId || ""}」不同`);
     const action = { mode: rule.mode, key: rule.key };
     if (rule.legacyKeys) action.legacyKeys = [...rule.legacyKeys];
     const defaultLabel = `等級 ${host.level}：${host.name}${host.subclass ? `（${subclassShortName}子職）` : ""}`;
-    if (rule.label !== defaultLabel) action.label = rule.label;
+    if (typeof rule.label === "function") {
+      // 依等級換名的 label 寫成 { byLevel }：只列出文字改變的等級，低於最低等級時使用預設文字。
+      const byLevel = {};
+      let previous = defaultLabel;
+      for (let level = rule.level; level <= maxLevel; level += 1) {
+        const label = labelAt(rule, level);
+        if (label !== previous) byLevel[level] = label;
+        previous = label;
+      }
+      if (Object.keys(byLevel).length) action.label = { byLevel };
+    } else if (rule.label !== defaultLabel) action.label = rule.label;
     if (rule.level !== host.level) action.level = rule.level;
     if (rule.resourceKey) action.resource = rule.resourceKey;
     if (appended.length) {
@@ -379,13 +483,14 @@ function convertActions(rules, featureById, classId, subclassShortName) {
         const target = featureById.get(item.id) || fail(classId, `append 的段落 ${item.id} 不存在`);
         if (item.level !== target.level) fail(classId, `append ${item.id} 的等級 ${item.level} 與能力等級 ${target.level} 不同`);
         if (!target.appendedPrefix) fail(classId, `${item.id} 沒有跑團「名稱：」前綴`);
+        appendedIds.add(item.id);
         return item.id;
       });
     }
-    (host.actions ||= []).push(action);
+    (host.target.actions ||= []).push(action);
   }
   for (const feature of featureById.values()) {
-    if (feature.appendedPrefix && ![...featureById.values()].some(item => (item.actions || []).some(action => action.append?.includes(feature.id)))) {
+    if (feature.appendedPrefix && !appendedIds.has(feature.id)) {
       fail(classId, `${feature.id} 有跑團前綴，但沒有動作 append 它`);
     }
   }
@@ -425,7 +530,7 @@ function convertClass(classId, html) {
       // 同名能力（例如屬性值提升）以等級區分。
       const headingName = node => textOf(node || {}).replace(/^等級 \d+：/, "");
       const repeated = sections.filter(other => elements(other)[0]?.nodeName === "h3" && headingName(elements(other)[0]) === headingName(first)).length > 1;
-      feature.id = attr(section, "data-action-id") || (slug ? `${classId}-${slug}${repeated ? `-${feature.level}` : ""}` : null);
+      feature.id = SPLIT_SECTIONS[attr(section, "data-action-id")] || attr(section, "data-action-id") || (slug ? `${classId}-${slug}${repeated ? `-${feature.level}` : ""}` : null);
       if (!feature.subclass && /子職$/.test(feature.name)) feature.type = "subclass";
       if (!feature.id && feature.type === "subclass") feature.id = `${classId}-subclass`;
       if (!feature.id) fail(at, `能力「${feature.name}」沒有 data-action-id，請加入 FEATURE_SLUGS`);
@@ -435,14 +540,20 @@ function convertClass(classId, html) {
       if (attr(section, "data-rest-change") !== "either") fail(at, "只支援 data-rest-change=\"either\"");
       feature.changeOn = "rest";
     }
-    const converted = convertBody(body, feature, { valueToken }, at);
+    // 拆成外層能力與子能力的段落：舊 data-action-id 移到唯一的無 ID 小節。
+    const splitPartId = SPLIT_SECTIONS[attr(section, "data-action-id")] ? attr(section, "data-action-id") : undefined;
+    const context = { valueToken, classId, splitPartId };
+    const converted = convertBody(body, feature, context, at);
+    if (context.splitPartId) fail(at, `找不到要拆成子能力 ${splitPartId} 的小節`);
     feature.text = converted.blocks.join("\n\n");
+    if (converted.parts.length) feature.parts = converted.parts;
     if (converted.afterFeatChoice !== undefined) feature.afterFeatChoice = converted.afterFeatChoice;
     if (converted.behavior) feature.behavior = converted.behavior;
-    if (converted.tabletopUsed) feature.tabletop = converted.tabletopBlocks.join("\n\n");
-    if (converted.summaryUsed) feature.summary = converted.summaryParts.join("");
+    // 拆分後外層能力沒有按鈕，舊版只在跑團顯示的文字（例如「引導神力使用次數」）不再使用。
+    if (converted.tabletopUsed && !splitPartId) feature.tabletop = converted.tabletopBlocks.join("\n\n");
+    if (converted.summaryUsed && !splitPartId) feature.summary = converted.summaryParts.join("");
     if (feature.options) {
-      const choose = feature.text.match(/選擇 (\d+) 項/);
+      const choose = feature.text.match(/選擇(?:下列)? (\d+) 項/);
       feature.choose = choose ? Number(choose[1]) : fail(at, "有選項但內文沒有「選擇 N 項」");
       for (const option of feature.options) {
         const suffix = option.id.startsWith(`${feature.id}-`) ? option.id.slice(feature.id.length + 1) : null;
@@ -450,6 +561,9 @@ function convertClass(classId, html) {
         if (option.legacyActionId && option.legacyActionId !== expectedAction) fail(at, `選項段落 ID ${option.legacyActionId} 不符命名規則`);
         if (option.tabletopName && option.tabletopName !== `${expectedAction}-name`) fail(at, `選項名稱 key ${option.tabletopName} 不符命名規則`);
         option.compat = Boolean(option.legacyActionId || option.tabletopName);
+        if (option.blockId && option.blockId !== expectedAction) fail(at, `選項說明段落 ID ${option.blockId} 不符命名規則`);
+        const attackNote = OPTION_ATTACK_NOTES[option.id];
+        if (attackNote) option.attackNote = loadLegacyConstant("class-features-ui.js", attackNote);
       }
     }
     return feature;
@@ -460,13 +574,32 @@ function convertClass(classId, html) {
   subclass = { id: SUBCLASS_IDS[subclassName] || fail(where, `子職「${subclassName}」沒有 ID，請加入 SUBCLASS_IDS`), name: subclassName, shortName: subclass.shortName };
 
   const featureById = new Map(features.filter(feature => feature.id).map(feature => [feature.id, feature]));
-  convertActions(loadLegacyClassActionRules()[classId] || [], featureById, classId, subclass.shortName);
+  const blocks = new Map();
+  for (const feature of featureById.values()) {
+    const base = { level: feature.level, subclass: feature.subclass };
+    blocks.set(feature.id, { ...base, target: feature, name: feature.name });
+    (feature.parts || []).forEach(part => blocks.set(part.id, { ...base, target: part, name: part.name }));
+    (feature.options || []).filter(option => option.blockId).forEach(option => blocks.set(option.blockId, { ...base, target: option, name: option.name, checkedId: option.id }));
+  }
+  const { rules, labelAt } = loadLegacyClassActionRules();
+  convertActions(rules[classId] || [], labelAt, blocks, featureById, classId, subclass.shortName, creation.maxLevel);
   for (const feature of features) {
     Object.assign(feature, FEATURE_EXTRAS[feature.id] || {});
+    for (const option of feature.options || []) {
+      if (option.blockId && !option.actions) fail(where, `選項說明段落 ${option.blockId} 沒有對應的跑團動作`);
+    }
     for (const option of feature.options || []) {
       // 轉換期 ID 規則只適用於有跑團動作的能力：選項的舊段落與名稱 key 由渲染器依規則產生。
       if (option.compat !== Boolean(feature.actions)) fail(where, `${option.id} 的舊段落 ID 與該能力是否有跑團動作不一致`);
     }
+  }
+  // 子能力跑團版標題多出的文字，須等於渲染器自動產生的消耗字樣（資源名稱為定義該資源的能力名稱）。
+  const resourceNames = new Map(features.filter(feature => feature.resource).map(feature => [feature.resource.key, feature.name]));
+  for (const part of features.flatMap(feature => feature.parts || [])) {
+    const resource = (part.actions || []).find(action => action.resource)?.resource;
+    const cost = resource ? `消耗 1 次${resourceNames.get(resource) || fail(where, `找不到定義資源 ${resource} 的能力`)}` : "";
+    const expected = cost ? (part.activation ? `，${cost}` : `（${cost}）`) : "";
+    if (part.headingExtra !== expected) fail(where, `子能力 ${part.id} 的跑團標題字樣「${part.headingExtra}」與自動產生的「${expected}」不同`);
   }
   applyTableNames(features, creation.legacyFeatureColumn, where);
   return { creation, features, subclass };
@@ -498,13 +631,17 @@ function applyTableNames(features, legacyColumn, where) {
   });
 }
 
-const FEATURE_KEY_ORDER = ["id", "level", "name", "tableName", "type", "choose", "changeOn", "optionStyle", "behavior", "resource", "spells", "actions", "summary", "tabletop", "text", "afterFeatChoice", "options"];
+const FEATURE_KEY_ORDER = ["id", "level", "name", "tableName", "type", "choose", "changeOn", "choiceGroup", "optionStyle", "behavior", "resource", "spells", "actions", "summary", "tabletop", "text", "parts", "afterFeatChoice", "options"];
+const PART_KEY_ORDER = ["id", "name", "activation", "actions", "summary", "tabletop", "text"];
+const OPTION_KEY_ORDER = ["id", "name", "attackNote", "actions", "text"];
+const pick = (item, keys) => Object.fromEntries(keys.filter(key => item[key] !== undefined).map(key => [key, item[key]]));
 function cleanFeature(feature) {
   const out = {};
   for (const key of FEATURE_KEY_ORDER) {
     if (feature[key] === undefined) continue;
-    if (key === "optionStyle" && feature[key] === "list") continue;
-    out[key] = key === "options" ? feature.options.map(({ id, name, text }) => (text ? { id, name, text } : { id, name })) : feature[key];
+    if ((key === "optionStyle" && feature[key] === "list") || (key === "choiceGroup" && !feature[key])) continue;
+    out[key] = key === "options" ? feature.options.map(option => pick(option, OPTION_KEY_ORDER))
+      : key === "parts" ? feature.parts.map(part => pick(part, PART_KEY_ORDER)) : feature[key];
   }
   return out;
 }
@@ -575,6 +712,7 @@ if (require.main === module) {
       const result = writeClass(id, legacy[id]);
       console.log(`已轉換 ${result.classId}（子職 ${result.subclassId}）`);
     });
+    droppedFallbacks.forEach(item => console.log(`ℹ 捨棄跑團後備文字（${item}）`));
   } catch (error) {
     if (!(error instanceof ConvertError)) throw error;
     console.error(`轉換失敗：${error.message}`);

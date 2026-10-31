@@ -34,8 +34,15 @@ function renderInline(source, options, where) {
       else if (skills.has(name)) html += `<span class="skill-tip" data-skill="${escapeHtml(name)}">${escapeHtml(name)}</span>`;
       else throw new ContentError(`${where}：[[${name}]] 不是已知的技能、規則或狀態名稱`);
     } else {
-      const key = options.resolveValue(match[3], where);
-      html += `<span data-tabletop-value="${escapeHtml(key)}">${escapeHtml(match[4])}</span>`;
+      // 頁面文字可含粗體（{名稱|**粗體**其他文字}）；不可再含數值標記（[^{}] 已排除）。
+      // 頁面文字留空（{名稱|}）＝只在跑團出現：輸出成跑團限定的數值 span。
+      // options.valueFrame(名稱) 回傳 [前綴, 後綴] 時（引用其他數值並帶 format），外框輸出成包住數值的跑團限定文字。
+      const key = escapeHtml(options.resolveValue(match[3], where));
+      const frame = options.valueFrame?.(match[3]);
+      if (frame && match[4]) throw new ContentError(`${where}：{${match[3]}|…} 的 format 外框只在跑團顯示，頁面文字須留空`);
+      if (frame) html += `<span data-tabletop-only hidden>${escapeHtml(frame[0])}<span data-tabletop-value="${key}"></span>${escapeHtml(frame[1])}</span>`;
+      else if (!match[4]) html += `<span data-tabletop-only hidden data-tabletop-value="${key}"></span>`;
+      else html += `<span data-tabletop-value="${key}">${renderInline(match[4], options, where)}</span>`;
     }
   }
   const rest = text.slice(index);

@@ -109,6 +109,11 @@ function getValueNames(classDef) {
   return new Set([...Object.keys(classDef.progression || {}), ...Object.keys(classDef.values || {}), ...Object.keys(BUILT_IN_VALUES)]);
 }
 
+// 能力的所有跑團按鈕：能力層、子能力（parts）與選項層。
+function getActions(feature) {
+  return [...(feature.actions || []), ...(feature.parts || []).flatMap(part => part.actions || []), ...(feature.options || []).flatMap(option => option.actions || [])];
+}
+
 function checkClass(classDef, errors) {
   const featureIds = new Map();
   const persistedIds = new Map();
@@ -130,14 +135,15 @@ function checkClass(classDef, errors) {
     levels.filter(level => level > classDef.maxLevel).forEach(level => errors.push(`${classDef.file}：特性表欄位 ${name} 的 ${level} 級超過 maxLevel`));
   }
   // 依等級的文字值（values 的 byLevel）只能用在文字的 {名稱|…}，不可用於公式、次數。
-  const textValues = new Set(Object.entries(classDef.values || {}).filter(([, value]) => typeof value !== "string").map(([name]) => name));
+  const textValues = new Set(Object.entries(classDef.values || {}).filter(([, value]) => value.byLevel).map(([name]) => name));
   for (const [name, value] of Object.entries(classDef.values || {})) {
     if (textValues.has(name)) {
       Object.keys(value.byLevel).map(Number).filter(level => level > classDef.maxLevel).forEach(level => errors.push(`${classDef.file}：values.${name} 的 ${level} 級超過 maxLevel`));
       Object.values(value.byLevel).filter(text => /[<{}]|\*\*|\[\[/.test(text)).forEach(text => errors.push(`${classDef.file}：values.${name} 的文字不可含標記：${text}`));
       continue;
     }
-    const stripped = value.replace(/\{([A-Za-z][A-Za-z0-9]*)\}/g, (all, token) => {
+    // { formula, format }：format 由 schema 確認含 {}，公式檢查同字串公式。
+    const stripped = (value.formula ?? value).replace(/\{([A-Za-z][A-Za-z0-9]*)\}/g, (all, token) => {
       if ((!valueNames.has(token) && !ABILITY_MODIFIERS.includes(token)) || token === name || textValues.has(token)) errors.push(`${classDef.file}：values.${name} 引用了不存在的數值 {${token}}`);
       return "1";
     });
@@ -156,11 +162,20 @@ function checkClass(classDef, errors) {
       if (feature.id) claim(featureIds, feature.id, where, "能力 ID");
       if (feature.options && !feature.choose) errors.push(`${where}：有 options 時須寫 choose`);
       if (feature.choose && (!feature.options || feature.choose > feature.options.length)) errors.push(`${where}：choose 超過選項數`);
-      if ((feature.changeOn || feature.optionStyle) && !feature.options) errors.push(`${where}：changeOn／optionStyle 只用於有 options 的能力`);
+      if ((feature.changeOn || feature.choiceGroup || feature.optionStyle) && !feature.options) errors.push(`${where}：changeOn／choiceGroup／optionStyle 只用於有 options 的能力`);
+      if (feature.changeOn && feature.choiceGroup) errors.push(`${where}：changeOn 已自動標記選擇組，不必再寫 choiceGroup`);
       (feature.options || []).forEach(option => claim(persistedIds, option.id, where, "選項 ID"));
-      (feature.actions || []).forEach(action => {
+      if (feature.actions && (feature.options || []).some(option => option.actions)) errors.push(`${where}：能力層與選項層的 actions 只能擇一`);
+      for (const part of feature.parts || []) {
+        claim(featureIds, part.id, where, "子能力 ID");
+        if (/^#/m.test(part.text) || /^#/m.test(part.tabletop || "")) errors.push(`${where} 子能力 ${part.name}：子能力的文字不可使用「#### 」小節`);
+        if (new Set((part.actions || []).map(action => action.resource)).size > 1) errors.push(`${where} 子能力 ${part.name}：按鈕消耗的資源須相同（標題的消耗字樣只有一種）`);
+      }
+      getActions(feature).forEach(action => {
         claim(persistedIds, action.key, where, "動作 key");
         (action.legacyKeys || []).forEach(key => claim(persistedIds, key, where, "舊動作 key"));
+        Object.keys(action.label?.byLevel || {}).map(Number).filter(level => level < (action.level ?? feature.level) || level > classDef.maxLevel)
+          .forEach(level => errors.push(`${where}：動作 ${action.key} 的 label.byLevel ${level} 級不可低於按鈕出現等級或超過 maxLevel`));
       });
       if (feature.resource) {
         claim(persistedIds, feature.resource.key, where, "資源 key");
@@ -174,7 +189,8 @@ function checkClass(classDef, errors) {
         if (!getSpellIds().has(spell.id)) errors.push(`${where}：法術 ID「${spell.id}」不存在於 spell-id-baseline.json`);
         if (typeof spell.freeUses === "string" && (!valueNames.has(spell.freeUses) || textValues.has(spell.freeUses))) errors.push(`${where}：法術 ${spell.id} 的 freeUses「${spell.freeUses}」不是特性表欄位或數值公式`);
       }
-      for (const text of [feature.text, feature.tabletop, feature.summary, feature.afterFeatChoice, ...(feature.options || []).map(option => option.text)].filter(Boolean)) {
+      const partTexts = (feature.parts || []).flatMap(part => [part.text, part.tabletop, part.summary]);
+      for (const text of [feature.text, feature.tabletop, feature.summary, feature.afterFeatChoice, ...partTexts, ...(feature.options || []).map(option => option.text)].filter(Boolean)) {
         for (const match of text.matchAll(/\{([A-Za-z][A-Za-z0-9]*)\|/g)) {
           if (!valueNames.has(match[1])) errors.push(`${where}：文字引用了不存在的數值 {${match[1]}|…}`);
         }
@@ -183,18 +199,22 @@ function checkClass(classDef, errors) {
   }
   // 動作的 append 與 resource 須指向本職業的能力與資源。
   const resourceKeys = new Set(sources.flatMap(({ features }) => features.map(feature => feature.resource?.key).filter(Boolean)));
-  const appendedIds = new Set(sources.flatMap(({ features }) => features.flatMap(feature => (feature.actions || []).flatMap(action => action.append || []))));
+  const partIds = new Set(sources.flatMap(({ features }) => features.flatMap(feature => (feature.parts || []).map(part => part.id))));
+  const appendedIds = new Set(sources.flatMap(({ features }) => features.flatMap(feature => getActions(feature).flatMap(action => action.append || []))));
   for (const { owner, features } of sources) {
     for (const feature of features) {
       if (feature.tabletop && !feature.actions && !appendedIds.has(feature.id)) {
         errors.push(`${owner.file}（${feature.name}）：有 tabletop 的能力須有 actions，或被其他動作 append`);
       }
-      for (const action of feature.actions || []) {
-        (action.append || []).forEach(id => { if (!featureIds.has(id)) errors.push(`${owner.file}（${feature.name}）：append 的能力「${id}」不存在`); });
+      (feature.parts || []).filter(part => part.tabletop && !part.actions).forEach(part => errors.push(`${owner.file}（${feature.name}）：子能力 ${part.name} 有 tabletop 時須有 actions`));
+      for (const action of getActions(feature)) {
+        (action.append || []).forEach(id => {
+          if (!featureIds.has(id) || partIds.has(id)) errors.push(`${owner.file}（${feature.name}）：append 的能力「${id}」不存在（子能力不可被 append）`);
+        });
         if (action.resource && !resourceKeys.has(action.resource)) errors.push(`${owner.file}（${feature.name}）：動作消耗的資源「${action.resource}」沒有定義`);
       }
     }
   }
 }
 
-module.exports = { loadContent, BUILT_IN_VALUES, CONTENT_DIR };
+module.exports = { loadContent, getActions, BUILT_IN_VALUES, CONTENT_DIR };

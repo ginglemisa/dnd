@@ -88,11 +88,21 @@
     },
     "values": {
       "type": "object",
-      "description": "其他可在文字中以 {名稱|…} 引用的數值，例如 \"{rageDamage}d6\"。公式只能用數字、d、四則運算、max()／min() 與 {數值}；另可引用屬性調整值 {strModifier}…{chaModifier}（沒有屬性值時視為 0）。跑團顯示依等級變化的文字時寫 { byLevel: { 5: 文字 } }。",
+      "description": "其他可在文字中以 {名稱|…} 引用的數值，例如 \"{rageDamage}d6\"。公式只能用數字、d、四則運算、max()／min() 與 {數值}；另可引用屬性調整值 {strModifier}…{chaModifier}（沒有屬性值時視為 0）。要套用顯示格式時寫 { formula, format }。跑團顯示依等級變化的文字時寫 { byLevel: { 5: 文字 } }。",
       "propertyNames": { "pattern": "^[a-z][A-Za-z0-9]*$" },
       "additionalProperties": {
         "anyOf": [
           { "type": "string", "minLength": 1, "description": "數值公式，例如 \"max(1, {chaModifier})\"。" },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["formula", "format"],
+            "description": "帶顯示格式的公式：{} 代入計算結果，例如 { formula: \"8 + {proficiencyBonus} + {wisModifier}\", format: （DC {}） } 顯示為「（DC 13）」。",
+            "properties": {
+              "formula": { "type": "string", "minLength": 1, "description": "數值公式，寫法同字串公式。" },
+              "format": { "type": "string", "pattern": "\\{\\}", "description": "顯示格式，{} 代入計算結果。" }
+            }
+          },
           {
             "type": "object",
             "additionalProperties": false,

@@ -36,6 +36,9 @@ progression:
     format: +{}呎
 values:
   saveDc: 8 + {proficiencyBonus} + {wisModifier}
+  stunningStrikeDc:
+    formula: "{saveDc}"
+    format: （DC {}）
   uncannyMetabolismHealing: 1d{martialArtsDie} + {level}
   deflectAttacksReduction: 1d10 + {dexModifier} + {level}
   deflectAttacksDamage: 2d{martialArtsDie} + {dexModifier}
@@ -163,14 +166,8 @@ features:
       - mode: action
         key: dynamic-action-monk-curated-stunning-strike
         legacyKeys: [dynamic-action-class-1g9j8ui]
-    tabletop: |
-      你用武僧武器或徒手命中時，可消耗 1 點專注點發動震懾打擊，目標需進行體質豁免（DC {saveDc|8 + 熟練加值 + 感知調整值}）。
-
-      - **使用次數：****每回合 1 次**。
-      - **豁免失敗：**目標陷入[[震懾]]，直到你的下回合開始。
-      - **豁免成功：**目標速度減半，且到你的下回合開始前，下一次對它的攻擊具有優勢。
     text: |
-      你用武僧武器或徒手命中時，可消耗 1 點專注點發動震懾打擊，目標需進行體質豁免。
+      你用武僧武器或徒手命中時，可消耗 1 點專注點發動震懾打擊，目標需進行體質豁免{stunningStrikeDc|}。
 
       - **使用次數：****每回合 1 次**。
       - **豁免失敗：**目標陷入[[震懾]]，直到你的下回合開始。
