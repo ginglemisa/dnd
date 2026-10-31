@@ -79,12 +79,14 @@ features:
   - id: paladin-fighting-style
     level: 2
     name: 戰鬥風格
+    choiceName: 戰鬥風格類型
     choose: 1
     text: |
       從下列選項中選擇 1 項：
     options:
       - id: paladin-fighting-style
         name: 選 1 個「戰鬥風格」專長
+        featChoice: true
       - id: paladin-blessed-warrior
         name: 選「受祝福的勇士」
         text: |

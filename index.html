@@ -1354,7 +1354,7 @@
   <script src="sheet-utils.js?v=20261024-index-split"></script>
   <script src="feat-ui.js?v=20261024-spell-split"></script>
   <script src="spell-sources.js?v=20261031-class-rules"></script>
-  <script src="class-features-ui.js?v=20261031-class-content"></script>
+  <script src="class-features-ui.js?v=20261031-class-options"></script>
   <script>
 function openCarryCapacityRules(trigger) {
   return window.AppDialog.showMessage({
@@ -4562,8 +4562,10 @@ document.addEventListener("change", (e) => {
     return;
   }
 
-  if (ADVANCED_CLASS_FEATURE_CHOICE_GROUPS.some(ids => ids.includes(target.id))) {
-    enforceAdvancedClassFeatureChoiceExclusivity(target.id);
+  // 職業選項（內容檔 options）：互斥的選項先取消同組其他勾選，再依選項同步相關欄位。
+  if (isClassOptionControl(target.id)) enforceClassOptionExclusivity(target.id);
+
+  if (isClassOptionChoiceGroupControl(target.id)) {
     syncClassFeatureAttackNotes();
     scheduleSaveAllFields();
   }
@@ -4573,7 +4575,6 @@ document.addEventListener("change", (e) => {
   }
 
   if (target.id === "cleric-guardian" || target.id === "cleric-trickster") {
-    enforceClericMissionExclusivity(target.id);
     syncMissionCantripChoices();
     syncOriginAndSubclassDerivedSpellRows();
     populateHandAttacks();
@@ -4582,7 +4583,6 @@ document.addEventListener("change", (e) => {
   }
 
   if (target.id === "druid-shaman" || target.id === "druid-sentinel") {
-    enforceDruidMissionExclusivity(target.id);
     syncMissionCantripChoices();
     syncOriginAndSubclassDerivedSpellRows();
     populateHandAttacks();
@@ -4590,7 +4590,6 @@ document.addEventListener("change", (e) => {
   }
 
   if (["paladin-fighting-style", "paladin-blessed-warrior", "ranger-fighting-style", "ranger-druidic-warrior"].includes(target.id)) {
-    enforceFightingStyleChoiceExclusivity(target.id);
     syncClassFeatureDerivedChoices();
     scheduleSaveAllFields();
   }

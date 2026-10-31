@@ -168,6 +168,7 @@ function checkClass(classDef, errors) {
       if (feature.options && !feature.choose) errors.push(`${where}：有 options 時須寫 choose`);
       if (feature.choose && (!feature.options || feature.choose > feature.options.length)) errors.push(`${where}：choose 超過選項數`);
       if ((feature.changeOn || feature.choiceGroup || feature.optionStyle) && !feature.options) errors.push(`${where}：changeOn／choiceGroup／optionStyle 只用於有 options 的能力`);
+      if (feature.choiceName && !feature.options && !feature.select) errors.push(`${where}：choiceName 只用於有 options 或 select 的能力`);
       if (feature.changeOn && feature.choiceGroup) errors.push(`${where}：changeOn 已自動標記選擇組，不必再寫 choiceGroup`);
       (feature.options || []).forEach(option => claim(persistedIds, option.id, where, "選項 ID"));
       if (feature.actions && (feature.options || []).some(option => option.actions)) errors.push(`${where}：能力層與選項層的 actions 只能擇一`);

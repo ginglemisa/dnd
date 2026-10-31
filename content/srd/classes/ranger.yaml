@@ -76,12 +76,14 @@ features:
   - id: ranger-fighting-style
     level: 2
     name: 戰鬥風格
+    choiceName: 戰鬥風格類型
     choose: 1
     text: |
       從下列選項中選擇 1 項：
     options:
       - id: ranger-fighting-style
         name: 選 1 個「戰鬥風格」專長
+        featChoice: true
       - id: ranger-druidic-warrior
         name: 選「德魯伊教戰士」
         text: |
