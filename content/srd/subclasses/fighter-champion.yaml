@@ -25,5 +25,6 @@ features:
   - id: fighter-additional-fighting-style
     level: 7
     name: 額外戰鬥風格
+    feat: style
     text: |
       你再獲得 1 個自選的「戰鬥風格」專長。

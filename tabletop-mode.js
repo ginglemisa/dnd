@@ -2337,15 +2337,11 @@
     return getClassOverviewEntry("輕身墜", "monk", "monk-slow-fall");
   }
 
-  function isDevotionPaladin() {
+  // 角色目前職業（含子職）在此等級已取得的能力，依職業內容檔的能力 ID 判斷，不讀職業頁標題。
+  function hasCurrentClassFeature(featureId) {
     const selectedClass = document.getElementById("class")?.value || "";
     const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
-    if (selectedClass !== "paladin" || characterLevel < 3) return false;
-    return Array.from(
-      document.querySelectorAll('#classFeatures .paladin-feature[data-feature-level="3"] h3')
-    ).some(heading => (
-      String(heading.textContent || "").trim() === "等級 3：祝聖武器（奉獻子職）"
-    ));
+    return (globalScope.getClassFeatureRules?.(selectedClass) || []).some(feature => feature.id === featureId && feature.level <= characterLevel);
   }
 
   function getPaladinAuraOverviewEntry() {
@@ -2357,7 +2353,7 @@
     const bonus = Math.max(1, Number.isFinite(charismaModifier) ? charismaModifier : 0);
     return {
       label: "守護靈氣",
-      detail: characterLevel >= 7 && isDevotionPaladin()
+      detail: hasCurrentClassFeature("paladin-aura-of-devotion")
         ? `你與 10 呎內盟友的豁免 +${bonus}，並免疫魅惑（已有的魅惑會暫停）。`
         : `你與 10 呎內盟友的豁免 +${bonus}。`,
       hiddenWhenIncapacitated: true
@@ -2511,10 +2507,10 @@ function getRogueReliableTalentEntry() {
   }
 
   function getBlessedHealerEntry() {
-    if (document.getElementById("class")?.value !== "cleric" || Number(document.getElementById("level")?.value) < 6) return null;
+    if (document.getElementById("class")?.value !== "cleric" || !hasCurrentClassFeature("cleric-blessed-healer")) return null;
     const source = document.createElement("div");
     source.innerHTML = typeof classFeatures !== "undefined" ? classFeatures.cleric || "" : "";
-    const section = source.querySelector('.cleric-feature[data-feature-level="6"]');
+    const section = source.querySelector('[data-action-id="cleric-blessed-healer"]');
     const detail = section?.querySelector("p")?.textContent?.trim();
     return detail ? { label: "神佑醫者", detail } : null;
   }

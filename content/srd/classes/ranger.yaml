@@ -101,6 +101,7 @@ features:
   - id: ranger-ability-score-improvement-4
     level: 4
     name: 屬性值提升
+    feat: level
     text: |
       選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。
   - id: ranger-extra-attack
@@ -129,5 +130,6 @@ features:
   - id: ranger-ability-score-improvement-8
     level: 8
     name: 屬性值提升
+    feat: level
     text: |
       選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。

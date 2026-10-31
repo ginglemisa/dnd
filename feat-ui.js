@@ -160,6 +160,19 @@ function updateFeatManagementMode() {
   scheduleStructuralSaveAllFields();
 }
 
+function getClassFeatGrantLevels(cls) {
+  return (window.getClassFeatureRules?.(cls) || []).filter(feature => feature.feat === "level").map(feature => feature.level);
+}
+
+// 專長選單接在給予專長的能力段落內：屬性值提升（feat: level）、戰鬥風格（feat: style，或勾選後給予專長的選項）。
+function getClassFeatChoiceSection(spec) {
+  const cls = document.getElementById("class")?.value || "";
+  const feature = (window.getClassFeatureRules?.(cls) || []).find(item => item.level === spec.level && (spec.type === "level"
+    ? item.feat === "level"
+    : item.feat === "style" || (item.options || []).some(option => option.featChoice)));
+  return feature ? document.querySelector(`#classFeatures [data-action-id="${feature.id}"]`) : null;
+}
+
 function getFeatChoiceSpecs() {
   const cls = document.getElementById("class")?.value || "";
   const level = Number(document.getElementById("level")?.value || 0);
@@ -174,7 +187,8 @@ function getFeatChoiceSpecs() {
   if (["paladin", "ranger"].includes(cls) && level >= 2) {
     specs.push({ key: `fighting-style-${cls}`, source: "class", label: "戰鬥風格", type: "style", level: 2, active: Boolean(document.getElementById(`${cls}-fighting-style`)?.checked) });
   }
-  (CLASS_FEAT_LEVELS[cls] || []).filter(grantLevel => level >= grantLevel).forEach(grantLevel => {
+  // 屬性值提升等給予專長的等級：職業內容檔中標記 feat: level 的能力。
+  getClassFeatGrantLevels(cls).filter(grantLevel => level >= grantLevel).forEach(grantLevel => {
     specs.push({ key: `${cls}-level-${grantLevel}`, source: "class", label: `等級 ${grantLevel} 專長`, type: "level", level: grantLevel, active: true });
   });
   if (cls === "warlock" && level >= 2) {
@@ -233,12 +247,7 @@ function appendFeatChoice(container, spec, previousValue = "") {
 }
 
 function renderClassFeatChoices() {
-  const output = document.getElementById("classFeatures");
-  getFeatChoiceSpecs().filter(spec => spec.source === "class").forEach(spec => {
-    const headingLabel = spec.type === "style" ? (spec.headingLabel || spec.label) : "屬性值提升";
-    const heading = Array.from(output.querySelectorAll("h3")).find(heading => heading.textContent.trim().startsWith(`等級 ${spec.level}：${headingLabel}`));
-    appendFeatChoice(heading?.parentElement, spec);
-  });
+  getFeatChoiceSpecs().filter(spec => spec.source === "class").forEach(spec => appendFeatChoice(getClassFeatChoiceSection(spec), spec));
 }
 
 function renderRaceFeatChoice(previousValue = "") {

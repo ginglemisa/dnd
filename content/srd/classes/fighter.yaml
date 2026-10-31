@@ -38,6 +38,7 @@ features:
   - id: fighter-fighting-style
     level: 1
     name: 戰鬥風格
+    feat: style
     text: |
       你磨練戰鬥技藝，獲得 1 個自選的「戰鬥風格」專長。推薦：防禦。
 
@@ -104,6 +105,7 @@ features:
   - id: fighter-ability-score-improvement-4
     level: 4
     name: 屬性值提升
+    feat: level
     text: |
       選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。
   - level: 4
@@ -133,10 +135,12 @@ features:
   - id: fighter-ability-score-improvement-6
     level: 6
     name: 屬性值提升
+    feat: level
     text: |
       選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。
   - id: fighter-ability-score-improvement-8
     level: 8
     name: 屬性值提升
+    feat: level
     text: |
       選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。
