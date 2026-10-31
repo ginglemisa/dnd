@@ -17,6 +17,8 @@ const CATEGORIES = Object.freeze({
   options: "選項 ID",
   actionKeys: "跑團動作 key",
   resourceKeys: "資源 key",
+  selects: "下拉選單 ID",
+  selectValues: "下拉選單的選項值（下拉選單 ID=值）",
   attackNotes: "選項的攻擊備註（存進角色攻擊備註欄，取消勾選時以相同字串移除）"
 });
 
@@ -34,6 +36,10 @@ function collectPersistedIds(classes) {
       });
       getActions(feature).forEach(action => [action.key, ...(action.legacyKeys || [])].forEach(key => add(pack, "actionKeys", key)));
       if (feature.resource) add(pack, "resourceKeys", feature.resource.key);
+      if (feature.select) {
+        add(pack, "selects", feature.select.id);
+        feature.select.choices.forEach(choice => add(pack, "selectValues", `${feature.select.id}=${choice.value}`));
+      }
     }
   };
   for (const classDef of classes.values()) {

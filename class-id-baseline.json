@@ -8,6 +8,7 @@
     "paladin",
     "ranger",
     "rogue",
+    "sorcerer",
     "wizard"
   ],
   "subclasses": [
@@ -19,6 +20,7 @@
     "paladin/devotion",
     "ranger/hunter",
     "rogue/thief",
+    "sorcerer/draconic",
     "wizard/evoker"
   ],
   "options": [
@@ -66,11 +68,14 @@
     "dynamic-bonus-barbarian-1iw4zkg",
     "dynamic-bonus-barbarian-3te1cj",
     "dynamic-bonus-class-1axs7np",
+    "dynamic-bonus-class-1lfxnv8",
+    "dynamic-bonus-class-1lqwnvp",
     "dynamic-bonus-class-1ol2xxh",
     "dynamic-bonus-class-1vms7ce",
     "dynamic-bonus-class-3mzm48",
     "dynamic-bonus-class-84ttm1",
     "dynamic-bonus-class-fj2om2",
+    "dynamic-bonus-class-i5lemn",
     "dynamic-bonus-class-kwgie8",
     "dynamic-bonus-class-muonvc",
     "dynamic-bonus-class-r7asqs",
@@ -108,7 +113,20 @@
     "monk-wholeness",
     "paladin-channel-divinity",
     "paladin-lay-on-hands",
+    "sorcerer-innate-sorcery",
+    "sorcerer-sorcerous-restoration",
+    "sorcerer-sorcery-points",
     "wizard-arcane-recovery"
+  ],
+  "selects": [
+    "sorcerer-elemental-affinity-damage-type"
+  ],
+  "selectValues": [
+    "sorcerer-elemental-affinity-damage-type=acid",
+    "sorcerer-elemental-affinity-damage-type=cold",
+    "sorcerer-elemental-affinity-damage-type=fire",
+    "sorcerer-elemental-affinity-damage-type=lightning",
+    "sorcerer-elemental-affinity-damage-type=poison"
   ],
   "attackNotes": [
     "+1d8光/黯傷害"

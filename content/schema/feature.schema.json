@@ -12,7 +12,7 @@
     "text": {
       "type": "string",
       "minLength": 1,
-      "description": "Markdown：段落、「- 」清單、**粗體**、行尾「\\」換行、「#### 標題」小節。[[運動]]、[[失能]] 產生提示框；{rageDamage|頁面文字} 在跑團模式換成目前數值。不可使用 HTML。"
+      "description": "Markdown：段落、「- 」清單、**粗體**、行尾「\\」換行、「#### 標題」小節、GFM 表格（只用於能力的 text／tabletop，外框寫在 tables）。[[運動]]、[[失能]] 產生提示框；{rageDamage|頁面文字} 在跑團模式換成目前數值。不可使用 HTML。"
     },
     "feature": {
       "type": "object",
@@ -34,6 +34,13 @@
         "changeOn": { "enum": ["rest"], "description": "rest：短休或長休後可改選。" },
         "choiceGroup": { "const": true, "description": "選項的勾選框標記為同一選擇組（data-feature-choice-group），例如神佑打擊；changeOn 時自動標記，不必另寫。" },
         "optionStyle": { "enum": ["list", "cards"], "default": "list", "description": "選項顯示方式：list 為清單，cards 為卡片。" },
+        "tables": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/tableFrame" },
+          "description": "text（與 tabletop）中 GFM 表格的外框，依出現順序一一對應；表格數量須相同。"
+        },
+        "select": { "$ref": "#/definitions/select" },
         "collapsible": {
           "type": "array",
           "minItems": 1,
@@ -72,7 +79,7 @@
           "anyOf": [
             { "required": ["id"] }, { "required": ["type"] }, { "required": ["tableName"] }, { "required": ["tabletop"] }, { "required": ["summary"] }, { "required": ["choose"] },
             { "required": ["changeOn"] }, { "required": ["choiceGroup"] }, { "required": ["optionStyle"] }, { "required": ["options"] },
-            { "required": ["actions"] }, { "required": ["resource"] }, { "required": ["spells"] }, { "required": ["afterFeatChoice"] }, { "required": ["behavior"] }, { "required": ["parts"] }
+            { "required": ["actions"] }, { "required": ["resource"] }, { "required": ["spells"] }, { "required": ["afterFeatChoice"] }, { "required": ["behavior"] }, { "required": ["parts"] }, { "required": ["select"] }
           ]
         }
       },
@@ -93,6 +100,41 @@
           "description": "此選項自己的跑團按鈕：勾選該選項且達到能力等級才出現，說明為選項文字；按鈕文字預設為「等級 N：選項名稱」。同一能力不可同時有能力層的 actions。"
         },
         "attackNote": { "type": "string", "minLength": 1, "description": "勾選後加進武器攻擊備註的文字，例如「+1d8光/黯傷害」。會存進角色資料、取消時靠相同字串移除：不可改字。" }
+      }
+    },
+    "tableFrame": {
+      "type": "object",
+      "description": "表格外框：輸出 <div class=\"rule-table-shell\"><table class=\"rule-reference-table\" aria-label>。",
+      "additionalProperties": false,
+      "required": ["label"],
+      "properties": {
+        "label": { "type": "string", "minLength": 1, "description": "表格的無障礙名稱（aria-label），例如「術士生成法術位換算」。" },
+        "style": { "$ref": "#/definitions/id", "description": "進程表樣式，例如 spell-slot：外框加上 rule-table-shell--spell-slot，表格加上 rule-progress-table rule-progress-table--spell-slot（styles.css 依此設定寬度與欄位強調）。" }
+      }
+    },
+    "select": {
+      "type": "object",
+      "description": "下拉選擇卡片（例如元素親和的傷害類型），接在 text 與 options 之後。有此欄位時不可寫 tabletop／summary。",
+      "additionalProperties": false,
+      "required": ["id", "placeholder", "choices"],
+      "properties": {
+        "id": { "$ref": "#/definitions/id", "description": "下拉選單 ID，會寫進存檔與分享網址：不可改名。" },
+        "placeholder": { "type": "string", "minLength": 1, "description": "未選擇時顯示的提示文字（空值選項），例如「--請選擇傷害類型--」。" },
+        "choices": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["value", "name"],
+            "properties": {
+              "value": { "type": "string", "pattern": "^[a-z0-9-]+$", "description": "選項值，會寫進存檔：不可改名。" },
+              "name": { "type": "string", "minLength": 1, "description": "顯示文字。" }
+            }
+          },
+          "description": "可選的值。"
+        },
+        "text": { "$ref": "#/definitions/text", "description": "卡片說明（不可使用「#### 」小節）。" }
       }
     },
     "collapsible": {

@@ -125,6 +125,20 @@
       "minItems": 1,
       "items": { "$ref": "feature.schema.json#/definitions/feature" },
       "description": "職業能力，依等級排列。"
+    },
+    "appendix": {
+      "type": "array",
+      "minItems": 1,
+      "description": "附錄：沒有等級的參考小節（例如術士的「超魔法選項」），接在所有能力之後。",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "text"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "description": "標題，例如「超魔法選項」。" },
+          "text": { "$ref": "feature.schema.json#/definitions/text", "description": "內文，可用「#### 標題」小節（不可有表格）。" }
+        }
+      }
     }
   },
   "definitions": {

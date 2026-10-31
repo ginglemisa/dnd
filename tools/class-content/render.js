@@ -159,6 +159,23 @@ function renderOptions(feature, context, where) {
   return cards ? `<div class="druid-mission-options">${items}</div>` : `<ul class="class-rule-list">${items}</ul>`;
 }
 
+// 下拉選擇卡片：選單（值存進角色資料）與卡片說明。第一個選項是空值的提示文字。
+function renderSelectCard(select, markdownOptions, where) {
+  const choices = [{ value: "", name: select.placeholder }, ...select.choices]
+    .map(choice => `<option value="${escapeHtml(choice.value)}">${escapeHtml(choice.name)}</option>`).join("");
+  const body = select.text ? `<div class="feature-choice-card__body">${renderMarkdown(select.text, markdownOptions, where)}</div>` : "";
+  return `<article class="feature-choice-card"><select id="${select.id}">${choices}</select>${body}</article>`;
+}
+
+// 附錄：沒有等級的 section（例如術士的「超魔法選項」），接在所有能力之後；小節沿用舊版的通用 class。
+// class-features-ui.js 以字串切出各選項（fillMetamagicTextsFromClassFeatures），action-panel.js 再依換行分段，
+// 故標籤之間照舊版換行，讓切出的文字與舊版相同。
+function renderAppendix(item, context) {
+  const { classDef } = context;
+  const where = `${classDef.file} 附錄 ${item.name}`;
+  return `<section class="${classDef.id}-feature class-feature-section">\n<h3>${escapeHtml(item.name)}</h3>\n${renderMarkdown(item.text, { ...context, blockNewlines: true }, where)}\n</section>`;
+}
+
 // 併入其他動作說明的能力：跑團說明前加「名稱：」，職業頁由 styles.css 隱藏。
 function addAppendedPrefix(html, feature, where) {
   if (!/^<p[ >]/.test(html)) throw new ContentError(`${where}：被 append 的能力須以段落開頭`);
@@ -191,11 +208,13 @@ function renderFeature({ feature, owner }, context) {
   // behavior：特殊機制模組（behaviors/<名稱>.js，load.js 已確認存在）。decorateText() 在 text 的 HTML 加上網站程式辨識的標記，
   // afterText() 回傳接在內文後的 HTML；兩者皆可省略。
   const behavior = feature.behavior ? require(`./behaviors/${feature.behavior}`) : null;
-  let body = renderMarkdown(feature.text, markdownOptions, where);
+  // 表格只出現在 text 與 tabletop，外框依出現順序取自 tables。
+  const tableOptions = { ...markdownOptions, tables: feature.tables || [] };
+  let body = renderMarkdown(feature.text, tableOptions, where);
   if (behavior?.decorateText) body = behavior.decorateText(body, where);
   if (appended && !feature.tabletop) body = addAppendedPrefix(body, feature, where);
   if (feature.tabletop) {
-    const tabletop = renderMarkdown(feature.tabletop, markdownOptions, `${where} tabletop`);
+    const tabletop = renderMarkdown(feature.tabletop, tableOptions, `${where} tabletop`);
     context.tabletop[feature.id] = appended ? addAppendedPrefix(tabletop, feature, `${where} tabletop`) : tabletop;
   }
   if (feature.summary) context.summaries[feature.id] = renderInline(feature.summary, context, `${where} summary`);
@@ -203,6 +222,7 @@ function renderFeature({ feature, owner }, context) {
   if (feature.collapsible) body += feature.collapsible.map(item => `<details class="class-rule-subsection"><summary><strong>${escapeHtml(item.name)}</strong></summary>${renderMarkdown(item.text, markdownOptions, `${where} 可收合小節 ${item.name}`)}</details>`).join("");
   if (feature.parts) body += feature.parts.map(part => renderPart(part, feature, owner, context, where)).join("");
   if (feature.options) body += renderOptions(feature, context, where);
+  if (feature.select) body += renderSelectCard(feature.select, markdownOptions, `${where} 下拉選擇卡片`);
   // 專長選單插在此段落之前（feat-ui.js）；4 級額外戲法選單讀取它的粗體標籤（class-features-ui.js）。
   if (feature.afterFeatChoice) body += renderMarkdown(feature.afterFeatChoice, { ...markdownOptions, blockAttributes: "data-after-feat-choice" }, `${where} afterFeatChoice`);
   if (behavior?.afterText) body += behavior.afterText(feature, context);
@@ -220,7 +240,7 @@ function renderFeature({ feature, owner }, context) {
 // 回傳 html（與舊版 classFeatures[classId] 對應）、tabletop 與 summaries（能力 ID → 行內 HTML）。
 function renderClass(classDef, subclass = classDef.subclasses.find(item => item.id === classDef.defaultSubclass)) {
   const context = { ...createRenderContext(classDef, subclass), tabletop: {}, summaries: {} };
-  const features = context.merged.map(item => renderFeature(item, context)).join("\n");
+  const features = [...context.merged.map(item => renderFeature(item, context)), ...(classDef.appendix || []).map(item => renderAppendix(item, context))].join("\n");
   const html = `${renderCreation(context)}
 <div class="class-feature-content" data-class-feature-panel="class">
 ${features}

@@ -194,9 +194,17 @@ function checkClass(classDef, errors) {
         if (/^#/m.test(item.text)) errors.push(`${where} 可收合小節 ${item.name}：文字不可使用「#### 」小節`);
       }
       if (feature.collapsible && (feature.tabletop || feature.summary)) errors.push(`${where}：有 collapsible 的能力不可寫 tabletop／summary`);
+      // 下拉選擇卡片：ID 與能力的選項 ID 共用命名空間；跑團說明與總覽讀取整段（含卡片說明），故不可寫 tabletop／summary。
+      if (feature.select) {
+        claim(persistedIds, feature.select.id, where, "下拉選單 ID");
+        const values = feature.select.choices.map(choice => choice.value);
+        if (new Set(values).size !== values.length) errors.push(`${where}：下拉選單 ${feature.select.id} 的選項值重複`);
+        if (/^#/m.test(feature.select.text || "")) errors.push(`${where}：下拉選擇卡片的文字不可使用「#### 」小節`);
+        if (feature.tabletop || feature.summary) errors.push(`${where}：有 select 的能力不可寫 tabletop／summary`);
+      }
       const partTexts = (feature.parts || []).flatMap(part => [part.text, part.tabletop, part.summary]);
       const collapsibleTexts = (feature.collapsible || []).map(item => item.text);
-      for (const text of [feature.text, feature.tabletop, feature.summary, feature.afterFeatChoice, ...collapsibleTexts, ...partTexts, ...(feature.options || []).map(option => option.text)].filter(Boolean)) {
+      for (const text of [feature.text, feature.tabletop, feature.summary, feature.afterFeatChoice, feature.select?.text, ...collapsibleTexts, ...partTexts, ...(feature.options || []).map(option => option.text)].filter(Boolean)) {
         for (const match of text.matchAll(/\{([A-Za-z][A-Za-z0-9]*)\|/g)) {
           if (!valueNames.has(match[1])) errors.push(`${where}：文字引用了不存在的數值 {${match[1]}|…}`);
         }
