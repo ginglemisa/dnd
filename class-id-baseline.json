@@ -2,6 +2,7 @@
   "classes": [
     "barbarian",
     "bard",
+    "cleric",
     "fighter",
     "monk",
     "paladin",
@@ -11,6 +12,7 @@
   "subclasses": [
     "barbarian/berserker",
     "bard/lore",
+    "cleric/life",
     "fighter/champion",
     "monk/open-hand",
     "paladin/devotion",
@@ -18,6 +20,10 @@
     "rogue/thief"
   ],
   "options": [
+    "cleric-blessed-strikes-divine-strike",
+    "cleric-blessed-strikes-potent-spellcasting",
+    "cleric-guardian",
+    "cleric-trickster",
     "paladin-blessed-warrior",
     "paladin-fighting-style",
     "ranger-defensive-tactics-escape-the-horde",
@@ -33,7 +39,13 @@
     "dynamic-action-class-1g9j8ui",
     "dynamic-action-class-8jjnkp",
     "dynamic-action-class-action-surge",
+    "dynamic-action-class-preserve-life",
     "dynamic-action-class-sacred-weapon",
+    "dynamic-action-cleric-1c18bru",
+    "dynamic-action-cleric-1ocjvx6",
+    "dynamic-action-cleric-aoatsu",
+    "dynamic-action-cleric-sxx32",
+    "dynamic-action-cleric-xonbxu",
     "dynamic-action-fighter-113ebtz",
     "dynamic-action-fighter-1870147",
     "dynamic-action-monk-curated-extra-attack",
@@ -83,6 +95,7 @@
   "resourceKeys": [
     "barbarian-rage",
     "bard-inspiration",
+    "cleric-channel-divinity",
     "fighter-action-surge",
     "fighter-second-wind",
     "monk-focus-points",
@@ -90,5 +103,8 @@
     "monk-wholeness",
     "paladin-channel-divinity",
     "paladin-lay-on-hands"
+  ],
+  "attackNotes": [
+    "+1d8光/黯傷害"
   ]
 }

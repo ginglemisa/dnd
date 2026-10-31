@@ -18,13 +18,14 @@ const FEATURE_SLUGS = Object.freeze({
   聖騎士斬技: "paladins-smite", 奉獻之誓法術: "oath-of-devotion-spells", 忠誠坐騎: "faithful-steed",
   守護靈氣: "aura-of-protection", 奉獻靈氣: "aura-of-devotion",
   萬事通: "jack-of-all-trades", 額外熟練項: "bonus-proficiencies", 魔法發現: "magical-discoveries",
-  無甲移動: "unarmored-movement"
+  無甲移動: "unarmored-movement", 神聖使命: "divine-order", 引導神力: "channel-divinity", 生命領域法術: "life-domain-spells",
+  神佑醫者: "blessed-healer", 神佑打擊: "blessed-strikes"
 });
-const SUBCLASS_IDS = Object.freeze({ 狂戰士道途: "berserker", 獵人: "hunter", 勇士: "champion", 妙手: "thief", 奉獻之誓: "devotion", 逸聞學院: "lore", 散打鬥士: "open-hand" });
+const SUBCLASS_IDS = Object.freeze({ 狂戰士道途: "berserker", 獵人: "hunter", 勇士: "champion", 妙手: "thief", 奉獻之誓: "devotion", 逸聞學院: "lore", 散打鬥士: "open-hand", 生命領域: "life" });
 // 整個 section 帶 data-action-id、但按鈕說明其實是其中唯一一個小節：外層能力改用新 ID，舊 ID 留給子能力。
 const SPLIT_SECTIONS = Object.freeze({ "paladin-divine-sense": "paladin-channel-divinity" });
 // 選項的攻擊備註：照抄 class-features-ui.js 的常數（存進角色資料，取消時以相同字串移除）。
-const OPTION_ATTACK_NOTES = Object.freeze({});
+const OPTION_ATTACK_NOTES = Object.freeze({ "cleric-blessed-strikes-divine-strike": "CLERIC_DIVINE_STRIKE_ATTACK_NOTE" });
 // 舊 HTML 中由網站程式插入控制項的空白容器（以 id 辨識）→ behaviors/<名稱>.js；轉換時核對輸出與舊標記相同。
 const BEHAVIOR_MOUNTS = Object.freeze({ "bard-magical-discoveries": "magical-discoveries" });
 // 特性表欄位名稱（文字中以 {名稱|…} 引用）。
@@ -54,7 +55,9 @@ const FEATURE_EXTRAS = Object.freeze({
   // character-rules.js：專注點為點數池（總量同特性表「專注點」欄），短休或長休全回；吐故納新 1 次、混元體感知調整值（至少 1）次，長休全回。
   "monk-focus": { resource: { key: "monk-focus-points", kind: "points", uses: "focusPoints", recover: { short: "all", long: "all" } } },
   "monk-uncanny-metabolism": { resource: { key: "monk-uncanny-metabolism", uses: 1, recover: { long: "all" } } },
-  "monk-wholeness-of-body": { resource: { key: "monk-wholeness", uses: "wholenessUses", recover: { long: "all" } } }
+  "monk-wholeness-of-body": { resource: { key: "monk-wholeness", uses: "wholenessUses", recover: { long: "all" } } },
+  // character-rules.js：牧師引導神力次數同特性表「引導神力」欄，短休回 1 次、長休全回。
+  "cleric-channel-divinity": { resource: { key: "cleric-channel-divinity", uses: "channelDivinityUses", recover: { short: 1, long: "all" } } }
 });
 // action-panel.js TABLETOP_VALUE_RESOLVERS 的公式（「職業-名稱」key）；文字結果寫成 byLevel（未列的等級保留頁面文字）。
 const CLASS_VALUES = Object.freeze({
@@ -68,6 +71,11 @@ const CLASS_VALUES = Object.freeze({
     uncannyMetabolismHealing: "1d{martialArtsDie} + {level}",
     deflectAttacksReduction: "1d10 + {dexModifier} + {level}", deflectAttacksDamage: "2d{martialArtsDie} + {dexModifier}",
     slowFallReduction: "{level} * 5", wholenessHealing: "1d{martialArtsDie} + {wisModifier}", wholenessUses: "max(1, {wisModifier})"
+  },
+  // 焚燒不死生物的骰數為感知調整值（至少 1）。
+  cleric: {
+    divineSparkRoll: "1d8 + {wisModifier}", spellSaveDc: { formula: "8 + {proficiencyBonus} + {wisModifier}", format: "（DC {}）" },
+    searUndeadDice: "max(1, {wisModifier})d8", preserveLifeTotal: "{level} * 5"
   }
 });
 // 施法進度（舊版分散在 character-rules.js 的施法者集合與半施法者準備表）。
