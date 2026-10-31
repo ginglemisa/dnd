@@ -1969,7 +1969,8 @@ async function verifyClassFeatureChoicePrompt(browser, url) {
     await page.locator("#utility-menu-toggle").click();
     await page.locator("#clear-storage-btn").click();
     await page.getByRole("button", { name: "清除紀錄", exact: true }).click();
-    await page.waitForFunction(() => dndStorage.getItem(CLASS_FEATURE_PROMPT_DISABLED_KEY) === null);
+    // 清除紀錄會重新載入頁面：載入中的頁面還沒有這個常數時繼續等待。
+    await page.waitForFunction(() => typeof CLASS_FEATURE_PROMPT_DISABLED_KEY !== "undefined" && dndStorage.getItem(CLASS_FEATURE_PROMPT_DISABLED_KEY) === null);
     await page.locator("#legal-close-btn").click();
     await chooseAsPlayer("background", "soldier");
     await chooseAsPlayer("race", "human");
