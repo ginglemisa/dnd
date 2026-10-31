@@ -495,7 +495,8 @@
   }
 
 
-  // class-features.js 是職業描述的唯一文字來源；跑團擷取段落時只處理下列標記：
+  // 職業描述來自 class-content.generated.js（由 content/ 的職業內容檔建置）：classFeatures 為職業頁 HTML，
+  // classTabletopText 為與職業頁不同的跑團說明（tabletop）與總覽一句話（summaries）。跑團擷取段落時只處理下列標記：
   // - data-tabletop-value="key"：內文是職業詳情的通用文字，跑團改顯示 TABLETOP_VALUE_RESOLVERS[key]() 的結果；
   //   無對應函式或無值時保留通用文字。
   // - data-tabletop-hide：只在職業詳情顯示，跑團擷取時移除。
@@ -658,10 +659,29 @@
       const holder = document.createElement("div");
       holder.innerHTML = raw;
       const blocks = new Map(Array.from(holder.querySelectorAll("[data-action-id]"), block => [block.dataset.actionId, block]));
-      cached = { raw, holder, blocks };
+      cached = { raw, holder, blocks, textBlocks: new Map() };
       classDescriptionCache.set(className, cached);
     }
     return cached;
+  }
+
+  // 內容檔另寫的跑團文字（kind 為 "tabletop" 或 "summaries"），包成與職業頁段落相同讀法的區塊；沒有時回傳 null。
+  function getClassTextBlock(className, kind, id) {
+    const map = typeof classTabletopText === "undefined" ? null : classTabletopText[className]?.[kind];
+    if (!map || !Object.hasOwn(map, id)) return null;
+    const { textBlocks } = getClassDescriptionSource(className);
+    const cacheKey = `${kind}:${id}`;
+    if (!textBlocks.has(cacheKey)) {
+      const block = document.createElement("div");
+      block.innerHTML = String(map[id]);
+      textBlocks.set(cacheKey, block);
+    }
+    return textBlocks.get(cacheKey);
+  }
+
+  function getClassTextBlocks(className) {
+    const entries = typeof classTabletopText === "undefined" ? {} : classTabletopText[className] || {};
+    return ["tabletop", "summaries"].flatMap(kind => Object.keys(entries[kind] || {}).map(id => getClassTextBlock(className, kind, id)));
   }
 
   function getTabletopValueResolver(key) {
@@ -697,7 +717,8 @@
     for (const item of [].concat(descriptionIds || [])) {
       const isGated = Boolean(item) && typeof item === "object";
       if (isGated && level < (Number(item.level) || 0)) continue;
-      const block = blocks.get(isGated ? item.id : item);
+      const id = isGated ? item.id : item;
+      const block = getClassTextBlock(className, "tabletop", id) || blocks.get(id);
       if (!block) return "";
       parts.push(getTabletopBlockText(block, "h3, [data-tabletop-hide]"));
     }
@@ -705,9 +726,11 @@
   }
 
   // 跑團總覽是一句話提醒：與動作按鈕同一段落，另移除 data-overview-hide，清單併為一行。
-  // 顯示條件與等級門檻由呼叫端決定；段落缺少時回傳空字串。
+  // 顯示條件與等級門檻由呼叫端決定；段落缺少時回傳空字串。依序讀取 summaries、tabletop、職業頁段落。
   function getClassOverviewDescription(className, descriptionId) {
-    const block = getClassDescriptionSource(className).blocks.get(descriptionId);
+    const block = getClassTextBlock(className, "summaries", descriptionId)
+      || getClassTextBlock(className, "tabletop", descriptionId)
+      || getClassDescriptionSource(className).blocks.get(descriptionId);
     if (!block) return "";
     return getTabletopBlockText(block, "h3, [data-tabletop-hide], [data-overview-hide]")
       .split("\n")
@@ -731,7 +754,7 @@
       new Set(ids).forEach(id => {
         if (!blocks.has(id)) issues.push(`${className}: 找不到 data-action-id="${id || ""}" 的職業描述段落`);
       });
-      new Set(Array.from(holder.querySelectorAll("[data-tabletop-value]"), element => element.dataset.tabletopValue)).forEach(key => {
+      new Set([holder, ...getClassTextBlocks(className)].flatMap(root => Array.from(root.querySelectorAll("[data-tabletop-value]"), element => element.dataset.tabletopValue))).forEach(key => {
         if (!getTabletopValueResolver(key)) issues.push(`${className}: data-tabletop-value="${key}" 沒有對應的計算函式`);
       });
     });
