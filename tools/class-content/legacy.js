@@ -64,4 +64,11 @@ function loadLegacyConstant(file, name) {
   return match[1];
 }
 
-module.exports = { ROOT, loadLegacyClassFeatures, loadTipTables, loadLegacyClassActionRules, loadLegacyConstant };
+// 網站程式中的陣列常數（例如 class-features.js 的 DRUID_WILD_SHAPE_BEASTS），供 behavior 照舊產生 HTML；只讀不複製。
+function loadLegacyArray(file, name) {
+  const match = read(file).match(new RegExp(String.raw`const ${name} = (\[[\s\S]*?\]);`));
+  if (!match) throw new Error(`${file} 找不到陣列常數 ${name}`);
+  return vm.runInNewContext(`(${match[1]})`);
+}
+
+module.exports = { ROOT, loadLegacyClassFeatures, loadTipTables, loadLegacyClassActionRules, loadLegacyConstant, loadLegacyArray };

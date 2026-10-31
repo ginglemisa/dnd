@@ -1,0 +1,49 @@
+# yaml-language-server: $schema=../../schema/subclass.schema.json
+id: land
+class: druid
+name: 大地結社
+shortName: 大地
+features:
+  - id: druid-circle-of-the-land-spells
+    level: 3
+    name: 大地結社法術
+    behavior: druid-land-choice
+    text: |
+      - **選擇地貌：**每次長休後，從旱地、極地、溫帶或熱帶中選擇 1 種地貌。
+      - **始終準備：**你始終準備所選地貌對應、且目前德魯伊等級可用的法術，詳見下表。
+
+      | 地貌 | 等級 3 | 等級 5 | 等級 7 |
+      | --- | --- | --- | --- |
+      | 旱地 | 朦朧術、燃燒之手、火焰箭 | 火球術 | 枯萎術 |
+      | 極地 | 雲霧術、人類定身術、冷凍射線 | 雪雨暴 | 冰風暴 |
+      | 溫帶 | 迷蹤步、電爪、睡眠術 | 閃電束 | 行動自如 |
+      | 熱帶 | 酸液飛濺、致病射線、蛛網術 | 臭雲術 | 變形術 |
+    tables:
+      - label: 大地結社地貌法術
+        style: druid-terrain-spells
+        kind: reference
+        rowHeaders: true
+        cellLabels: [等級 3, 等級 5, 等級 7]
+  - id: druid-lands-aid
+    level: 3
+    name: 大地之援
+    actions:
+      - mode: action
+        key: dynamic-action-class-lands-aid
+        druidOperation: aid
+    text: |
+      以**魔法動作**消耗 1 次荒野形態，在 60 呎內選一點，產生 10 呎球形花荊區域。
+
+      - **傷害：**區域內你指定的每個生物進行體質豁免，對抗你的法術豁免 DC；失敗時受到 2d6 黯蝕傷害，成功時傷害減半。
+      - **治療：**同時可指定區域內 1 名生物恢復 2d6 生命值。
+      - **等級提升：**傷害與治療在德魯伊 10 級時提升為 3d6，14 級時提升為 4d6。
+  - id: druid-natural-recovery
+    level: 6
+    name: 自然恢復
+    resource:
+      key: druid-natural-recovery-spell-slots
+      uses: 1
+      recover: {long: all}
+    text: |
+      - **免費施法：**可不消耗法術位，施放 1 次透過「大地結社法術」準備的 1 環以上法術。使用後，須完成長休才能再次使用。
+      - **短休恢復：**完成短休時，可恢復部分已消耗的法術位，環階總和等於德魯伊等級的一半（無條件進位），單一法術位最高為 5 環。使用後，須完成長休才能再次恢復法術位。

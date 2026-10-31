@@ -118,19 +118,33 @@ function joinHardBreaks(lines, options, where) {
   }).join("<br>");
 }
 
-// 表格外框：frame 為能力 tables 中對應的一項（{ label, style }）。表頭輸出 <th scope="col">，表身輸出 <td>。
+// 表格外框：frame 為能力 tables 中對應的一項（{ label, style, kind, rowHeaders, rowHeaderSuffix, cellLabels }）。
+// 表頭輸出 <th scope="col">，表身輸出 <td>；rowHeaders 時每列第一格輸出 <th scope="row">（rowHeaderSuffix 包成窄螢幕才顯示的
+// <span class="rule-level-suffix">），cellLabels 依序成為表身 <td> 的 data-label（窄螢幕的欄位名稱）。
+// style 預設是進程表（rule-progress-table rule-progress-table--樣式）；kind: reference 時表格只加樣式名稱的 class。
 function renderTable(block, frame, options, where, attributes) {
   const shell = frame.style ? `rule-table-shell rule-table-shell--${frame.style}` : "rule-table-shell";
-  const table = frame.style ? `rule-reference-table rule-progress-table rule-progress-table--${frame.style}` : "rule-reference-table";
-  const cells = (row, tag, extra = "") => row.map(cell => `<${tag}${extra}>${renderInline(cell, options, where)}</${tag}>`).join("");
+  const table = !frame.style ? "rule-reference-table"
+    : frame.kind === "reference" ? `rule-reference-table ${frame.style}` : `rule-reference-table rule-progress-table rule-progress-table--${frame.style}`;
+  const dataColumns = block.header.length - (frame.rowHeaders ? 1 : 0);
+  if (frame.cellLabels && frame.cellLabels.length !== dataColumns) throw new ContentError(`${where}：表格「${frame.label}」的 cellLabels 有 ${frame.cellLabels.length} 項，表身資料欄有 ${dataColumns} 欄`);
+  if (frame.rowHeaderSuffix && !frame.rowHeaders) throw new ContentError(`${where}：表格「${frame.label}」有 rowHeaderSuffix 時須寫 rowHeaders: true`);
+  const header = block.header.map(cell => `<th scope="col">${renderInline(cell, options, where)}</th>`).join("");
+  const row = cells => cells.map((cell, index) => {
+    const content = renderInline(cell, options, where);
+    if (frame.rowHeaders && index === 0) return `<th scope="row">${content}${frame.rowHeaderSuffix ? `<span class="rule-level-suffix">${escapeHtml(frame.rowHeaderSuffix)}</span>` : ""}</th>`;
+    const label = frame.cellLabels?.[index - (frame.rowHeaders ? 1 : 0)];
+    return `<td${label ? ` data-label="${escapeHtml(label)}"` : ""}>${content}</td>`;
+  }).join("");
   return `<div class="${shell}"${attributes}><table class="${table}" aria-label="${escapeHtml(frame.label)}">`
-    + `<thead><tr>${cells(block.header, "th", ' scope="col"')}</tr></thead>`
-    + `<tbody>${block.rows.map(row => `<tr>${cells(row, "td")}</tr>`).join("")}</tbody></table></div>`;
+    + `<thead><tr>${header}</tr></thead>`
+    + `<tbody>${block.rows.map(cells => `<tr>${row(cells)}</tr>`).join("")}</tbody></table></div>`;
 }
 
 // 輸出與舊版 class-features.js 相同的區塊標記；subsectionClass 為小節的 class，
 // blockAttributes 加在最外層區塊（段落、清單、表格、小節）的開頭標籤上。
 // options.tables：表格外框清單，依出現順序對應文字中的表格，數量須相同；沒有提供時文字不可有表格。
+// options.tablesOptional：文字可以完全沒有表格（tabletop 省略只在職業頁顯示的表格時）。
 // options.blockNewlines：區塊、清單項目與小節內的標籤之間換行（網站以字串切割讀取的附錄，換行會影響讀出的段落）。
 // options.plainHeadings：「#### 」只輸出 <h4>，不另包小節（文字本身已在小節內，例如附錄小節「書之魔契」的「戲法與儀式」）。
 // 分隔線「---」輸出 <hr class="class-rule-divider">（樣式由 styles.css 設定，不輸出行內 style）。
@@ -140,7 +154,7 @@ function renderMarkdown(source, options, where) {
   const newline = options.blockNewlines ? "\n" : "";
   const tableCount = blocks.filter(block => block.type === "table").length;
   if (tableCount && !options.tables) throw new ContentError(`${where}：表格只能寫在能力的 text／tabletop，並在 tables 列出外框`);
-  if (options.tables && tableCount !== options.tables.length) throw new ContentError(`${where}：文字有 ${tableCount} 個表格，tables 列了 ${options.tables.length} 個`);
+  if (options.tables && tableCount !== options.tables.length && !(options.tablesOptional && !tableCount)) throw new ContentError(`${where}：文字有 ${tableCount} 個表格，tables 列了 ${options.tables.length} 個`);
   let tableIndex = 0;
   const renderBlock = (block, attributes = "") => block.type === "p"
     ? `<p${attributes}>${joinHardBreaks(block.lines, options, where)}</p>`

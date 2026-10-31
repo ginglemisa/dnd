@@ -152,7 +152,7 @@ function checkClass(classDef, errors) {
       if ((!valueNames.has(token) && !ABILITY_MODIFIERS.includes(token)) || token === name || textValues.has(token)) errors.push(`${classDef.file}：values.${name} 引用了不存在的數值 {${token}}`);
       return "1";
     });
-    if (!/^[0-9d+\-*/(), ]+$/.test(stripped.replace(/\b(?:max|min)\(/g, "("))) errors.push(`${classDef.file}：values.${name} 只能使用數字、d、四則運算、max()／min() 與 {數值}`);
+    if (!/^[0-9d+\-*/(), ]+$/.test(stripped.replace(/\b(?:max|min|floor)\(/g, "("))) errors.push(`${classDef.file}：values.${name} 只能使用數字、d、四則運算、max()／min()／floor() 與 {數值}`);
   }
   const sources = [{ owner: classDef, features: classDef.features }, ...classDef.subclasses.map(subclass => ({ owner: subclass, features: subclass.features }))];
   for (const { owner, features } of sources) {

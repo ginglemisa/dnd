@@ -43,10 +43,12 @@ function createRenderContext(classDef, subclass) {
   const appended = new Set(merged.flatMap(({ feature }) => getActions(feature).flatMap(action => action.append || [])));
   // 子能力標題的消耗字樣：資源名稱是定義該資源的能力名稱。
   const resourceNames = new Map(merged.filter(({ feature }) => feature.resource).map(({ feature }) => [feature.resource.key, feature.name]));
-  // 只引用另一個數值並帶 format 的值（例如 stunningStrikeDc: { formula: "{saveDc}", format: （DC {}） }）。
+  // 只引用另一個特性表欄位或 values 並帶 format 的值（例如 stunningStrikeDc: { formula: "{saveDc}", format: （DC {}） }）。
+  // 引用內建數值（例如 { formula: "{level}", format: （目前 {} 點） }）視為獨立的值，沿用自己的 key。
   const aliasOf = token => {
     const value = classDef.values?.[token];
-    return value?.format ? value.formula.match(/^\{([A-Za-z][A-Za-z0-9]*)\}$/)?.[1] : undefined;
+    const target = value?.format ? value.formula.match(/^\{([A-Za-z][A-Za-z0-9]*)\}$/)?.[1] : undefined;
+    return target && !Object.hasOwn(BUILT_IN_VALUES, target) ? target : undefined;
   };
   // 轉換期沿用 action-panel.js 的 TABLETOP_VALUE_RESOLVERS key：內建數值另有固定 key，其餘為「職業-欄位名」。
   // 帶 format 的值：舊版計算函式已含外框時用自己的 key；只引用另一個數值時用被引用值的 key，外框由 valueFrame 輸出。
@@ -137,7 +139,11 @@ function renderOptions(feature, context, where) {
   const cards = feature.optionStyle === "cards";
   const items = feature.options.map(option => {
     const at = `${where} 選項 ${option.name}`;
-    const lines = option.text ? option.text.replace(/\n+$/, "").split("\n") : [];
+    // 卡片選項的第二段起（空一行分隔）接在標題列之後，寫法同 text（例如巫祝的檢定加值段落）。
+    const [lead, ...more] = option.text ? option.text.replace(/\n+$/, "").split(/\n[ \t]*\n/) : [];
+    if (more.length && (!cards || option.actions)) throw new ContentError(`${at}：只有卡片選項（且沒有 actions）的說明可分成多段`);
+    const details = more.length ? renderMarkdown(more.join("\n\n"), context, at) : "";
+    const lines = lead ? lead.split("\n") : [];
     const text = lines.map((line, index) => renderInline(index < lines.length - 1 ? line.replace(/\\$/, "") : line, context, at)).join("<br>");
     const group = feature.changeOn || feature.choiceGroup ? ` data-feature-choice-group="${feature.id}"` : "";
     const label = `<label><input type="checkbox" id="${option.id}"${group}> ${escapeHtml(option.name)}</label>`;
@@ -153,7 +159,7 @@ function renderOptions(feature, context, where) {
     const optionText = option.actions ? `<span data-action-id="${classDef.id}-${suffix}">${text}</span>` : text;
     const body = `${label}${separator}${optionText}`;
     return cards
-      ? `<div class="druid-mission-option"${actionId}><div class="druid-mission-option__heading">${body}</div></div>`
+      ? `<div class="druid-mission-option"${actionId}><div class="druid-mission-option__heading">${body}</div>${details}</div>`
       : `<li${actionId}>${body}</li>`;
   }).join("");
   return cards ? `<div class="druid-mission-options">${items}</div>` : `<ul class="class-rule-list">${items}</ul>`;
@@ -214,7 +220,7 @@ function renderFeature({ feature, owner }, context) {
   const markdownOptions = { ...context, subsectionClass: `class-rule-subsection ${classDef.id}-rule-subsection` };
   const appended = context.appended.has(feature.id);
   // behavior：特殊機制模組（behaviors/<名稱>.js，load.js 已確認存在）。decorateText() 在 text 的 HTML 加上網站程式辨識的標記，
-  // afterText() 回傳接在內文後的 HTML；兩者皆可省略。
+  // afterText() 回傳接在內文後的 HTML，sectionAttributes() 回傳加在能力 <section> 上的屬性；皆可省略。
   const behavior = feature.behavior ? require(`./behaviors/${feature.behavior}`) : null;
   // 表格只出現在 text 與 tabletop，外框依出現順序取自 tables。
   const tableOptions = { ...markdownOptions, tables: feature.tables || [] };
@@ -222,7 +228,8 @@ function renderFeature({ feature, owner }, context) {
   if (behavior?.decorateText) body = behavior.decorateText(body, where);
   if (appended && !feature.tabletop) body = addAppendedPrefix(body, feature, where);
   if (feature.tabletop) {
-    const tabletop = renderMarkdown(feature.tabletop, tableOptions, `${where} tabletop`);
+    // tabletop 可省略只在職業頁顯示的表格（例如荒野形態的野獸形態進程表）。
+    const tabletop = renderMarkdown(feature.tabletop, { ...tableOptions, tablesOptional: true }, `${where} tabletop`);
     context.tabletop[feature.id] = appended ? addAppendedPrefix(tabletop, feature, `${where} tabletop`) : tabletop;
   }
   if (feature.summary) context.summaries[feature.id] = renderInline(feature.summary, context, `${where} summary`);
@@ -238,6 +245,7 @@ function renderFeature({ feature, owner }, context) {
     `class="${classDef.id}-feature class-feature-section"`,
     `data-feature-level="${feature.level}"`,
     feature.changeOn ? `data-rest-change="either"` : "",
+    behavior?.sectionAttributes ? behavior.sectionAttributes(feature, context) : "",
     feature.id ? `data-action-id="${feature.id}"` : ""
   ].filter(Boolean).join(" ");
   const suffix = owner === classDef ? "" : `（${escapeHtml(owner.shortName)}子職）`;

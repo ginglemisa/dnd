@@ -2,7 +2,7 @@
 
 每個職業、子職各一個 YAML 檔。說明文字和機制（特性表、選項、跑團按鈕、資源）寫在同一份檔案。
 
-> 試行階段：目前只轉換了野蠻人、遊俠、戰士、盜賊、聖騎士、吟遊詩人、武僧、牧師、法師、術士與契術師，網站仍讀取 `class-features.js`。格式確認後才逐步改由這裡產生。
+> 試行階段：十二個職業（野蠻人、遊俠、戰士、盜賊、聖騎士、吟遊詩人、武僧、牧師、法師、術士、契術師與德魯伊）都已轉換，網站仍讀取 `class-features.js`。格式確認後才逐步改由這裡產生。
 
 ## 檔案位置
 
@@ -69,6 +69,8 @@ VS Code 安裝 Red Hat 的「YAML」擴充套件後，會依檔案第一行的 `
 - `options[].attackNote`：勾選後加進武器攻擊備註的文字（例如 `+1d8光/黯傷害`）。這段字串會存進角色資料、取消勾選時靠相同字串移除，列在 ID 基準檔，不可改字。
 - 依已選魔能祈喚出現的按鈕寫 `invocation`（須已選此祈喚，例如「饑渴魔刃」）與 `requiresInvocation`（另須已選的先決祈喚，例如「刃之魔契」）。
 - `actions[].label` 省略時為「等級 N：名稱（子職）」；按鈕名稱隨等級改變時寫 `label: { byLevel: { 5: 等級 5：焚燒不死生物 } }`，從該等級起改用此文字，更低等級使用省略時的文字。
+- 由 `tabletop-druid.js` 操作的按鈕寫 `druidOperation`：`shape`（荒野形態變形）、`companion`（荒野夥伴）、`aid`（大地之援）。
+- 卡片選項（`optionStyle: cards`，且沒有選項層 `actions`）的 `text` 可空一行分成多段：第一段接在勾選框之後，其餘段落接在卡片標題列下方（例如原初使命的巫祝）。
 
 ## 可收合小節
 
@@ -85,7 +87,15 @@ VS Code 安裝 Red Hat 的「YAML」擴充套件後，會依檔案第一行的 `
 ```
 
 - 第一列是表頭，第二列只能寫 `---`（不支援對齊冒號），儲存格不可空白，也不可含 `|`（因此不能放數值標記）。
-- 每個表格的外框依出現順序寫在能力的 `tables`：`label` 是表格的無障礙名稱（必填），`style` 是進程表樣式（例如 `spell-slot`，對應 styles.css 的 `rule-table-shell--spell-slot`、`rule-progress-table--spell-slot`）。`text` 與 `tabletop` 的表格數量都須等於 `tables` 的項數。
+- 每個表格的外框依出現順序寫在能力的 `tables`：`label` 是表格的無障礙名稱（必填），`style` 是進程表樣式（例如 `spell-slot`，對應 styles.css 的 `rule-table-shell--spell-slot`、`rule-progress-table--spell-slot`）。`text` 的表格數量須等於 `tables` 的項數；`tabletop` 也相同，或完全不寫表格（表格在只限職業頁的小節時，例如荒野形態的野獸形態進程表）。
+- 外框的其他欄位（皆可省略）：
+
+  | 欄位 | 說明 |
+  | --- | --- |
+  | `kind` | 有 `style` 時的表格種類：`progress`（預設，進程表）；`reference` 時表格只加樣式名稱的 class（例如大地結社的 `druid-terrain-spells`）。 |
+  | `rowHeaders` | `true`：表身每列第一格是列標題（`<th scope="row">`，例如地貌、德魯伊等級）。 |
+  | `rowHeaderSuffix` | 接在每個列標題後、只在窄螢幕顯示的文字，例如 `級`（儲存格只寫 `2`）。須有 `rowHeaders`。 |
+  | `cellLabels` | 表身資料欄（不含列標題）依序的欄位名稱，窄螢幕版面顯示在每格上方，例如 `[已知形態, 最大 CR, 飛行]`。 |
 - 跑團說明與總覽不顯示表格；需要的跑團文字寫在 `tabletop`（例如術士魔力泉湧的 `{slotCreationCosts|見上表}`，跑團模式顯示由表格組成的換算文字）。
 
 ## 下拉選擇卡片
@@ -123,14 +133,16 @@ VS Code 安裝 Red Hat 的「YAML」擴充套件後，會依檔案第一行的 `
 
 - `magical-discoveries`：在內文之後產生魔法發現的法術選擇區。
 - `wizard-spellbook-recommendations`：把「**法術書：**」清單項目「推薦：」之後、句號之前的法術名稱標記為法術書推薦（可直接寫入法術書）；找不到這段文字時建置失敗。
+- `wild-shape-known-forms`：把荒野形態的「#### 已知形態」小節（說明段落、推薦段落、規則清單三個區塊）輸出成已知形態區塊（推薦框等排版），並在區塊末端接上「查看其他動物」的野獸清單；緊接其後的小節（變形規則）加上分隔樣式。野獸清單是另外整理的參考資料，不寫進內容檔，轉換期讀取 `class-features.js` 的 `DRUID_WILD_SHAPE_BEASTS`。找不到這段結構時建置失敗。
+- `druid-land-choice`：在能力的 section 加上 `data-druid-land-choice`，網站以此找到大地結社地貌選擇所屬的能力（缺項檢查與跳轉）；地貌下拉選單在 index.html。
 
 ## 職業層級的欄位
 
 - `primaryAbility`：`{ all: [敏捷, 感知] }` 顯示為「敏捷與感知」；`{ any: [力量, 敏捷] }` 顯示為「力量或敏捷」。
 - `spellcasting.progression`：`full`（全施法者）、`half`（半施法者）、`pact`（契約魔法）、`none`。
 - `progression.<欄位>.format`：特性表顯示格式，`{}` 代入數值，例如 `+{}`（+2）、`{}d6`（1d6）、`1d{}`（1d8，數值是骰面）。
-- `values`：公式只能用數字、`d`、四則運算、`max()`／`min()` 與 `{數值}`，例如 `"{rageDamage}d6"`、`"max(1, {chaModifier})"`。公式中另可引用屬性調整值 `{strModifier}`、`{dexModifier}`、`{conModifier}`、`{intModifier}`、`{wisModifier}`、`{chaModifier}`（沒有屬性值時視為 0；文字中不可直接引用）。
-  要套用顯示格式時寫 `{ formula: "8 + {proficiencyBonus} + {wisModifier}", format: （DC {}） }`，`{}` 代入計算結果；公式只引用另一個數值時（例如 `{ formula: "{saveDc}", format: （DC {}） }`）可為同一數值另取帶格式的名稱。
+- `values`：公式只能用數字、`d`、四則運算、`max()`／`min()`／`floor()`（無條件捨去，例如 `floor({level} / 2)`）與 `{數值}`，例如 `"{rageDamage}d6"`、`"max(1, {chaModifier})"`。公式中另可引用屬性調整值 `{strModifier}`、`{dexModifier}`、`{conModifier}`、`{intModifier}`、`{wisModifier}`、`{chaModifier}`（沒有屬性值時視為 0；文字中不可直接引用）。
+  要套用顯示格式時寫 `{ formula: "8 + {proficiencyBonus} + {wisModifier}", format: （DC {}） }`，`{}` 代入計算結果；公式只引用另一個特性表欄位或 `values` 時（例如 `{ formula: "{saveDc}", format: （DC {}） }`）可為同一數值另取帶格式的名稱；只引用內建的 `level`／`proficiencyBonus`（例如 `{ formula: "{level}", format: （目前 {} 點） }`）時是獨立的值。
   跑團顯示的是依等級變化的文字（不是數字）時寫 `{ byLevel: { 5: 短休或長休後全部恢復 } }`：從該等級起換成此文字，更低等級保留頁面文字；這種值只能用在文字，不可用於公式或次數。
 
 ## 不可改名的 ID

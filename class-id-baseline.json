@@ -3,6 +3,7 @@
     "barbarian",
     "bard",
     "cleric",
+    "druid",
     "fighter",
     "monk",
     "paladin",
@@ -16,6 +17,7 @@
     "barbarian/berserker",
     "bard/lore",
     "cleric/life",
+    "druid/land",
     "fighter/champion",
     "monk/open-hand",
     "paladin/devotion",
@@ -30,6 +32,10 @@
     "cleric-blessed-strikes-potent-spellcasting",
     "cleric-guardian",
     "cleric-trickster",
+    "druid-elemental-fury-potent-spellcasting",
+    "druid-elemental-fury-primal-strike",
+    "druid-sentinel",
+    "druid-shaman",
     "paladin-blessed-warrior",
     "paladin-fighting-style",
     "ranger-defensive-tactics-escape-the-horde",
@@ -45,8 +51,10 @@
     "dynamic-action-class-1g9j8ui",
     "dynamic-action-class-8jjnkp",
     "dynamic-action-class-action-surge",
+    "dynamic-action-class-lands-aid",
     "dynamic-action-class-preserve-life",
     "dynamic-action-class-sacred-weapon",
+    "dynamic-action-class-wild-companion",
     "dynamic-action-cleric-1c18bru",
     "dynamic-action-cleric-1ocjvx6",
     "dynamic-action-cleric-aoatsu",
@@ -79,6 +87,7 @@
     "dynamic-bonus-class-1ol2xxh",
     "dynamic-bonus-class-1vms7ce",
     "dynamic-bonus-class-3mzm48",
+    "dynamic-bonus-class-3u4zp1",
     "dynamic-bonus-class-84ttm1",
     "dynamic-bonus-class-fj2om2",
     "dynamic-bonus-class-i5lemn",
@@ -112,6 +121,9 @@
     "barbarian-rage",
     "bard-inspiration",
     "cleric-channel-divinity",
+    "druid-natural-recovery-spell-slots",
+    "druid-wild-resurgence-spell-slot",
+    "druid-wild-shape",
     "fighter-action-surge",
     "fighter-second-wind",
     "monk-focus-points",
@@ -137,6 +149,7 @@
     "sorcerer-elemental-affinity-damage-type=poison"
   ],
   "attackNotes": [
-    "+1d8光/黯傷害"
+    "+1d8光/黯傷害",
+    "+1d8冷凍/火焰/閃電/雷鳴傷害"
   ]
 }
