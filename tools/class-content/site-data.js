@@ -10,6 +10,7 @@ const vm = require("vm");
 const { ROOT } = require("./legacy");
 const { ContentError } = require("./markdown");
 const { renderClass } = require("./render");
+const { classRules } = require("./rules-data");
 
 const OUTPUT_NAME = "class-content.generated.js";
 const OUTPUT_FILE = path.join(ROOT, OUTPUT_NAME);
@@ -24,11 +25,14 @@ const textMap = (map, indent) => {
 };
 
 function renderSiteData(classes) {
-  const rendered = [...classes.keys()].sort().map(id => [id, renderClass(classes.get(id))]);
+  const ids = [...classes.keys()].sort();
+  const rendered = ids.map(id => [id, renderClass(classes.get(id))]);
+  const rules = ids.map(id => [id, classRules(classes.get(id))]);
   const source = `// ${OUTPUT_NAME}：由 npm run build 從 content/srd 的職業內容檔產生，請勿手動修改。
 // classFeatures：各職業的職業頁 HTML（data-class-feature-panel="creation" 為創角頁籤，"class" 為各等級能力）。
 // classTabletopText：能力 ID → 行內 HTML。tabletop 取代該段落的跑團動作說明，summaries 取代跑團總覽的一句話；
 // 沒有寫的能力由 action-panel.js 改讀 classFeatures 的同一段落。
+// classRules：各職業的機制資料（內容檔去掉說明文字），character-rules.js 等以此計算資源、法術位、數值、選項與動作。
 const classFeatures = {
 ${rendered.map(([id, output]) => `  ${id}: ${template(output.html)}`).join(",\n")}
 };
@@ -36,10 +40,17 @@ ${rendered.map(([id, output]) => `  ${id}: ${template(output.html)}`).join(",\n"
 const classTabletopText = {
 ${rendered.map(([id, output]) => `  ${id}: {\n    tabletop: ${textMap(output.tabletop, "    ")},\n    summaries: ${textMap(output.summaries, "    ")}\n  }`).join(",\n")}
 };
+
+const classRules = {
+${rules.map(([id, data]) => `  ${id}: ${JSON.stringify(data)}`).join(",\n")}
+};
 `;
   // 確認樣板字串的跳脫正確：執行產生的程式，結果須與渲染結果完全相同。
   const context = {};
-  vm.runInNewContext(`${source}\nthis.result = { classFeatures, classTabletopText };`, context);
+  vm.runInNewContext(`${source}\nthis.result = { classFeatures, classTabletopText, classRules };`, context);
+  for (const [id, data] of rules) {
+    if (JSON.stringify(context.result.classRules[id]) !== JSON.stringify(data)) throw new ContentError(`${OUTPUT_NAME}：${id} 的機制資料輸出有誤`);
+  }
   for (const [id, output] of rendered) {
     const same = context.result.classFeatures[id] === output.html
       && JSON.stringify(context.result.classTabletopText[id]) === JSON.stringify({ tabletop: output.tabletop, summaries: output.summaries });

@@ -1,34 +1,4 @@
 (function attachCharacterRules(globalScope) {
-  const HIT_DICE_BY_CLASS = Object.freeze({
-    barbarian: Object.freeze({ Y: 12, Z: 7 }),
-    fighter: Object.freeze({ Y: 10, Z: 6 }),
-    paladin: Object.freeze({ Y: 10, Z: 6 }),
-    ranger: Object.freeze({ Y: 10, Z: 6 }),
-    bard: Object.freeze({ Y: 8, Z: 5 }),
-    cleric: Object.freeze({ Y: 8, Z: 5 }),
-    druid: Object.freeze({ Y: 8, Z: 5 }),
-    monk: Object.freeze({ Y: 8, Z: 5 }),
-    rogue: Object.freeze({ Y: 8, Z: 5 }),
-    warlock: Object.freeze({ Y: 8, Z: 5 }),
-    sorcerer: Object.freeze({ Y: 6, Z: 4 }),
-    wizard: Object.freeze({ Y: 6, Z: 4 })
-  });
-
-  const CLASS_SAVE_PROFICIENCIES = Object.freeze({
-    barbarian: Object.freeze(["str", "con"]),
-    bard: Object.freeze(["dex", "cha"]),
-    cleric: Object.freeze(["wis", "cha"]),
-    druid: Object.freeze(["int", "wis"]),
-    fighter: Object.freeze(["str", "con"]),
-    monk: Object.freeze(["str", "dex"]),
-    paladin: Object.freeze(["wis", "cha"]),
-    ranger: Object.freeze(["str", "dex"]),
-    rogue: Object.freeze(["dex", "int"]),
-    sorcerer: Object.freeze(["con", "cha"]),
-    warlock: Object.freeze(["wis", "cha"]),
-    wizard: Object.freeze(["int", "wis"])
-  });
-
   const FIXED_CHARACTER_SIZE_BY_RACE = Object.freeze({
     dragonborn: "中型",
     dwarf: "中型",
@@ -39,69 +9,241 @@
     orc: "中型"
   });
 
-  const NON_SPELLCASTER_CLASSES = new Set(["barbarian", "fighter", "monk", "rogue"]);
-  const SPELLCASTER_CLASSES = new Set(["bard", "cleric", "druid", "paladin", "ranger", "sorcerer", "warlock", "wizard"]);
   const NON_SPELLCASTER_BACKGROUNDS = new Set(["soldier", "criminal", "seeker", "fieldhand"]);
   const SPELLCASTER_BACKGROUNDS = new Set(["acolyte", "sage"]);
   const NON_SPELLCASTER_RACES = new Set(["dragonborn", "dwarf", "goliath", "halfling", "human", "orc"]);
   const SPELLCASTER_RACES = new Set(["elf", "gnome", "tiefling"]);
-  const CLASS_CANTRIP_CLASSES = new Set(["bard", "cleric", "druid", "sorcerer", "warlock", "wizard"]);
   const SHILLELAGH_WEAPON_NAMES = new Set(["短棒", "長棍"]);
-  // Prepared-spell columns of the class tables (content/srd/classes), for the supported levels 1–8.
-  const STANDARD_PREPARED_SPELLS = Object.freeze([4, 5, 6, 7, 9, 10, 11, 12]);
-  const HALF_CASTER_PREPARED_SPELLS = Object.freeze([2, 3, 4, 5, 6, 6, 7, 7]);
-  const PREPARED_SPELLS_BY_CLASS = Object.freeze({
-    bard: STANDARD_PREPARED_SPELLS, cleric: STANDARD_PREPARED_SPELLS,
-    druid: STANDARD_PREPARED_SPELLS, wizard: STANDARD_PREPARED_SPELLS,
-    paladin: HALF_CASTER_PREPARED_SPELLS, ranger: HALF_CASTER_PREPARED_SPELLS,
-    sorcerer: Object.freeze([2, 4, 6, 7, 9, 10, 11, 12]),
-    warlock: Object.freeze([2, 3, 4, 5, 6, 7, 8, 9])
+  const ABILITY_MODIFIER_TOKENS = Object.freeze({
+    strModifier: "str", dexModifier: "dex", conModifier: "con", intModifier: "int", wisModifier: "wis", chaModifier: "cha"
   });
+
+  // 職業機制資料：class-content.generated.js 由 content/ 的職業內容檔產生 classRules（特性表、數值、資源、選項與動作）。
+  function getClassRules(className) {
+    const rules = typeof classRules === "undefined" ? null : classRules;
+    return rules && Object.hasOwn(rules, className) ? rules[className] : null;
+  }
+
+  /** 特性表欄位在指定等級的數值（只寫有變化的等級）；沒有此欄位、未達最低等級或為「-」時回傳 null。 */
+  function getClassProgressionValue(className, name, level) {
+    const column = getClassRules(className)?.progression?.[name];
+    const numericLevel = Number(level);
+    if (!column || !Number.isFinite(numericLevel)) return null;
+    let value = null;
+    for (const [from, entry] of Object.entries(column.byLevel)) if (Number(from) <= numericLevel) value = entry;
+    return value ?? null;
+  }
+
+  /** 職業能力（含預設子職的能力）；每項加上 subclass（子職 ID，職業能力為 null），依等級排列。 */
+  function getClassFeatureRules(className, subclassId) {
+    const rules = getClassRules(className);
+    if (!rules) return [];
+    const subclass = rules.subclasses.find(item => item.id === (subclassId || rules.defaultSubclass));
+    return [
+      ...rules.features.map(feature => ({ ...feature, subclass: null })),
+      ...(subclass?.features || []).map(feature => ({ ...feature, subclass: subclass.id }))
+    ].sort((a, b) => a.level - b.level);
+  }
+
+  // 內容檔 values 公式：數字、NdM 骰子、四則運算、max()／min()／floor() 與 {數值}。
+  // 結果是數字，或骰子加常數（{ dice: [{ count, sides }], constant, hasConstant }），顯示為「1d8 + 3」。
+  function tokenizeClassFormula(formula) {
+    const tokens = [];
+    const pattern = /\s*(?:(\d+(?:\.\d+)?)|\{([A-Za-z][A-Za-z0-9]*)\}|(max|min|floor)\(|([-+*/(),d]))/gy;
+    let index = 0;
+    let match;
+    while (index < formula.length && (match = pattern.exec(formula))) {
+      if (match[1] !== undefined) tokens.push({ type: "number", value: Number(match[1]) });
+      else if (match[2] !== undefined) tokens.push({ type: "name", value: match[2] });
+      else if (match[3] !== undefined) tokens.push({ type: "function", value: match[3] });
+      else tokens.push({ type: "symbol", value: match[4] });
+      index = pattern.lastIndex;
+    }
+    if (formula.slice(index).trim()) throw new Error(`無法解析的公式：${formula}`);
+    return tokens;
+  }
+
+  const isDiceValue = value => typeof value === "object" && value !== null;
+  function addClassFormulaValues(left, right, sign) {
+    if (!isDiceValue(left) && !isDiceValue(right)) return left + sign * right;
+    if (isDiceValue(right) && sign < 0) throw new Error("骰子不可相減");
+    const base = isDiceValue(left) ? left : { dice: [], constant: left, hasConstant: true };
+    if (isDiceValue(right)) {
+      return { dice: [...base.dice, ...right.dice], constant: base.constant + right.constant, hasConstant: base.hasConstant || right.hasConstant };
+    }
+    return { dice: base.dice, constant: base.constant + sign * right, hasConstant: true };
+  }
+
+  function evaluateClassFormula(formula, resolveName) {
+    const tokens = tokenizeClassFormula(String(formula));
+    let position = 0;
+    const peek = value => tokens[position]?.type !== "number" && tokens[position]?.type !== "name" && tokens[position]?.value === value;
+    const take = value => {
+      const token = tokens[position];
+      if (!token || (value !== undefined && token.value !== value)) throw new Error(`公式缺少「${value}」：${formula}`);
+      position += 1;
+      return token;
+    };
+    const number = value => {
+      if (isDiceValue(value)) throw new Error(`骰子只能相加：${formula}`);
+      return value;
+    };
+    const parseExpression = () => {
+      let value = parseTerm();
+      while (peek("+") || peek("-")) {
+        const sign = take().value === "+" ? 1 : -1;
+        value = addClassFormulaValues(value, parseTerm(), sign);
+      }
+      return value;
+    };
+    const parseTerm = () => {
+      let value = parseDice();
+      while (peek("*") || peek("/")) {
+        const operator = take().value;
+        const right = number(parseDice());
+        value = operator === "*" ? number(value) * right : number(value) / right;
+      }
+      return value;
+    };
+    // d 的優先順序高於乘除：max(1, {wisModifier})d8、1d{martialArtsDie}、{rageDamage}d6。
+    const parseDice = () => {
+      const count = parseUnary();
+      if (!peek("d")) return count;
+      take("d");
+      return { dice: [{ count: number(count), sides: number(parseUnary()) }], constant: 0, hasConstant: false };
+    };
+    const parseUnary = () => {
+      if (!peek("-")) return parsePrimary();
+      take("-");
+      return -number(parseUnary());
+    };
+    const parsePrimary = () => {
+      const token = take();
+      if (token.type === "number") return token.value;
+      if (token.type === "name") return resolveName(token.value);
+      if (token.type === "function") {
+        const args = [number(parseExpression())];
+        while (peek(",")) {
+          take(",");
+          args.push(number(parseExpression()));
+        }
+        take(")");
+        return token.value === "floor" ? Math.floor(args[0]) : Math[token.value](...args);
+      }
+      if (token.value === "(") {
+        const value = parseExpression();
+        take(")");
+        return value;
+      }
+      throw new Error(`公式有多餘的「${token.value}」：${formula}`);
+    };
+    const value = parseExpression();
+    if (position < tokens.length) throw new Error(`公式有多餘的內容：${formula}`);
+    return value;
+  }
+
+  function formatClassFormulaValue(value) {
+    if (!isDiceValue(value)) return String(value);
+    const dice = value.dice.map(item => `${item.count}d${item.sides}`).join(" + ");
+    if (!value.hasConstant || !dice) return dice || String(value.constant);
+    return `${dice} ${value.constant < 0 ? "-" : "+"} ${Math.abs(value.constant)}`;
+  }
+
+  // context：{ level, levelBlank, abilityScores: { str: "14", … } }。
+  // 屬性值空白或無效時調整值視為 0、未填等級時視為 1，並記錄為 blank（values 的 blank 決定顯示）。
+  function createClassValueScope(className, context = {}) {
+    const rules = getClassRules(className);
+    const level = Number.parseInt(context.level, 10) || 1;
+    const state = { blank: false };
+    const resolving = new Set();
+    const resolveName = name => {
+      if (name === "level") {
+        if (context.levelBlank) state.blank = true;
+        return level;
+      }
+      if (name === "proficiencyBonus") return calculateProficiencyBonus(level);
+      if (Object.hasOwn(ABILITY_MODIFIER_TOKENS, name)) {
+        const raw = String(context.abilityScores?.[ABILITY_MODIFIER_TOKENS[name]] ?? "").trim();
+        if (!/^[+-]?\d+$/u.test(raw)) {
+          state.blank = true;
+          return 0;
+        }
+        return calculateAbilityModifier(raw);
+      }
+      if (Object.hasOwn(rules?.progression || {}, name)) return getClassProgressionValue(className, name, level) ?? 0;
+      const entry = rules?.values?.[name];
+      if (entry === undefined || entry.byLevel || resolving.has(name)) throw new Error(`${className}：無法計算 {${name}}`);
+      resolving.add(name);
+      try {
+        return evaluateClassFormula(entry.formula ?? entry, resolveName);
+      } finally {
+        resolving.delete(name);
+      }
+    };
+    return { rules, level, state, resolveName };
+  }
+
+  /** 計算職業 values 或特性表欄位的數值（數字，或骰子加常數的物件）；無法計算時回傳 null。 */
+  function evaluateClassValue(className, name, context = {}) {
+    try {
+      return createClassValueScope(className, context).resolveName(name);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  /**
+   * 跑團顯示的職業數值文字（職業內容檔文字中的 {名稱|…}）：特性表欄位套用欄位的 format；
+   * values 公式套用 format；byLevel 文字取目前等級。回傳 null 表示保留職業頁文字
+   * （未達等級、欄位為「-」，或屬性值／等級未填且 blank 為 keep）。
+   */
+  function getClassValueText(className, name, context = {}) {
+    const scope = createClassValueScope(className, context);
+    const { rules, level, state } = scope;
+    if (name === "level" || name === "proficiencyBonus") return String(scope.resolveName(name));
+    if (!rules) return null;
+    const column = rules.progression?.[name];
+    if (column) {
+      const value = getClassProgressionValue(className, name, level);
+      if (value === null) return null;
+      return column.format ? column.format.replace("{}", String(value)) : String(value);
+    }
+    const entry = rules.values?.[name];
+    if (entry === undefined) return null;
+    if (entry.byLevel) {
+      let text = null;
+      for (const [from, item] of Object.entries(entry.byLevel)) if (Number(from) <= level) text = item;
+      return text;
+    }
+    let value;
+    try {
+      value = scope.resolveName(name);
+    } catch (error) {
+      return null;
+    }
+    if (state.blank && entry.blank !== undefined) return entry.blank === "keep" ? null : entry.blank;
+    const text = formatClassFormulaValue(value);
+    return entry.format ? entry.format.replace("{}", text) : text;
+  }
+
+  /** 跑團數值名稱是否由職業資料提供（回歸檢查用）。 */
+  function hasClassValue(className, name) {
+    const rules = getClassRules(className);
+    return name === "level" || name === "proficiencyBonus"
+      || Object.hasOwn(rules?.progression || {}, name) || Object.hasOwn(rules?.values || {}, name);
+  }
 
   function getPreparedSpellLimit(className, level) {
-    return Number.isInteger(Number(level)) ? PREPARED_SPELLS_BY_CLASS[className]?.[Number(level) - 1] ?? null : null;
+    if (!Number.isInteger(Number(level)) || !Object.hasOwn(getClassRules(className)?.progression || {}, "preparedSpells")) return null;
+    return getClassProgressionValue(className, "preparedSpells", Number(level));
   }
-  const CLASS_CANTRIP_BASE = Object.freeze({ bard: 2, cleric: 3, druid: 2, sorcerer: 4, warlock: 2, wizard: 3 });
+
   function getClassCantripLimit(className, level) {
     const numericLevel = Number(level);
-    const base = CLASS_CANTRIP_BASE[className] || 0;
-    if (!Number.isInteger(numericLevel) || numericLevel < 1 || !base) return 0;
-    // Supported class growth tables cover levels 1–8; origin/ability cantrips
-    // are independent sources and do not enlarge the spellcasting allowance.
-    return base + (numericLevel >= 4 ? 1 : 0);
+    if (!Number.isInteger(numericLevel) || numericLevel < 1) return 0;
+    // Origin/ability cantrips are independent sources and do not enlarge the spellcasting allowance.
+    return getClassProgressionValue(className, "cantrips", numericLevel) || 0;
   }
-  const STANDARD_SPELL_SLOTS = Object.freeze({
-    1: Object.freeze([2, 0, 0, 0]),
-    2: Object.freeze([3, 0, 0, 0]),
-    3: Object.freeze([4, 2, 0, 0]),
-    4: Object.freeze([4, 3, 0, 0]),
-    5: Object.freeze([4, 3, 2, 0]),
-    6: Object.freeze([4, 3, 3, 0]),
-    7: Object.freeze([4, 3, 3, 1]),
-    8: Object.freeze([4, 3, 3, 2])
-  });
-
-  const HALF_CASTER_SPELL_SLOTS = Object.freeze({
-    1: Object.freeze([2, 0, 0, 0]),
-    2: Object.freeze([2, 0, 0, 0]),
-    3: Object.freeze([3, 0, 0, 0]),
-    4: Object.freeze([3, 0, 0, 0]),
-    5: Object.freeze([4, 2, 0, 0]),
-    6: Object.freeze([4, 2, 0, 0]),
-    7: Object.freeze([4, 3, 0, 0]),
-    8: Object.freeze([4, 3, 0, 0])
-  });
-
-  const WARLOCK_SPELL_SLOTS = Object.freeze({
-    1: Object.freeze([1, 0, 0, 0]),
-    2: Object.freeze([2, 0, 0, 0]),
-    3: Object.freeze([0, 2, 0, 0]),
-    4: Object.freeze([0, 2, 0, 0]),
-    5: Object.freeze([0, 0, 2, 0]),
-    6: Object.freeze([0, 0, 2, 0]),
-    7: Object.freeze([0, 0, 0, 2]),
-    8: Object.freeze([0, 0, 0, 2])
-  });
 
   /** 將屬性值換算成屬性調整值；無效輸入視為 0。 */
   function calculateAbilityModifier(score) {
@@ -112,7 +254,8 @@
 
   /** 取得職業生命骰資料：Y 為一級生命值，Z 為後續每級固定生命值。 */
   function getHitDiceValues(className) {
-    return HIT_DICE_BY_CLASS[className] || { Y: 0, Z: 0 };
+    const hitDie = getClassRules(className)?.hitDie;
+    return hitDie ? Object.freeze({ Y: hitDie, Z: hitDie / 2 + 1 }) : { Y: 0, Z: 0 };
   }
 
   /** 計算最大生命值，包含矮人與術士的專案既有加值規則。 */
@@ -168,6 +311,28 @@
     return Math.floor(calculateProficiencyBonus(level) / 2);
   }
 
+  // 另有說明或短休特殊恢復（restChoice）的職業資源；次數、等級與恢復方式取自職業內容檔。
+  const CLASS_RESOURCE_DETAILS = Object.freeze({
+    "druid-wild-resurgence-spell-slot": () => ({
+      note: "無需動作；消耗 1 次荒野形態，恢復 1 個 1 環法術位。每次長休前只能使用 1 次；完成長休後恢復。"
+    }),
+    "druid-natural-recovery-spell-slots": level => ({
+      note: `完成短休時，可恢復環階總和 ${Math.ceil(level / 2)} 的已消耗法術位（德魯伊等級一半，進位；每個法術位須低於 6 環）。每次長休前只能使用 1 次；完成長休後恢復。`,
+      restChoice: { when: "shortRest", effect: "spellSlots", budget: Math.ceil(level / 2), maximumSlotLevel: 5 }
+    }),
+    "sorcerer-sorcerous-restoration": level => ({
+      note: `完成短休時，恢復最多 ${Math.floor(level / 2)} 點已消耗的術法點（術士等級一半，捨去）。每次長休前只能使用 1 次；完成長休後恢復。`,
+      restChoice: { when: "shortRest", effect: "points", targetKey: "sorcerer-sorcery-points", budget: Math.floor(level / 2) }
+    }),
+    "warlock-magical-cunning": level => ({
+      note: `進行 1 分鐘儀式；恢復最多 ${Math.ceil(Math.max(...getSpellSlotCounts("warlock", level)) / 2)} 個已消耗的契約魔法法術位（法術位最大值一半，進位）。每次長休前只能使用 1 次；完成長休後恢復。`
+    }),
+    "wizard-arcane-recovery": level => ({
+      note: `完成短休時，恢復環階總和最多 ${Math.ceil(level / 2)} 的已消耗法術位（法師等級一半，進位；單一法術位最高 5 環）。每次長休前只能使用 1 次；完成長休後恢復。`,
+      restChoice: { when: "shortRest", effect: "spellSlots", budget: Math.ceil(level / 2), maximumSlotLevel: 5 }
+    })
+  });
+
   /** 依目前職業、種族、等級與屬性計算跑團模式應顯示的內建資源。 */
   function getCharacterResourceSpecs(options = {}) {
     const className = String(options.className || "").trim();
@@ -175,8 +340,6 @@
     const level = Number.parseInt(options.level, 10);
     if (!Number.isInteger(level) || level < 1) return [];
     const proficiency = calculateProficiencyBonus(level);
-    const wisdomModifier = Math.max(1, calculateAbilityModifier(options.wisdomScore ?? 10));
-    const charismaModifier = Math.max(1, calculateAbilityModifier(options.charismaScore ?? 10));
     const resources = [];
     const recovery = (shortRest = null) => Object.freeze({ shortRest, longRest: "all" });
     const addUses = (key, label, maximum, recoveryNote, shortRest = null, restChoice = null) => resources.push({
@@ -207,87 +370,23 @@
       addUses("orc-relentless-endurance", "堅韌不屈", 1, "長休後回復。");
     }
 
-    if (className === "barbarian") {
-      addUses("barbarian-rage", "狂暴", level >= 6 ? 4 : (level >= 3 ? 3 : 2), "短休回 1 次，長休全回。", 1);
-    }
-    if (className === "bard") {
-      addUses(
-        "bard-inspiration",
-        "吟遊詩人激勵",
-        charismaModifier,
-        level >= 5 ? "短休或長休後全回復。" : "長休後全回復。",
-        level >= 5 ? "all" : null
-      );
-    }
-    if (className === "cleric" && level >= 2) {
-      addUses("cleric-channel-divinity", "引導神力", level >= 6 ? 3 : 2, "短休回 1 次，長休全回。", 1);
-    }
-    if (className === "druid" && level >= 2) {
-      addUses("druid-wild-shape", "荒野形態", getDruidWildShapeRules(level).maximum, "短休回 1 次，長休全回。", 1);
-      if (level >= 5) {
-        addUses(
-          "druid-wild-resurgence-spell-slot",
-          "野性復甦（法術位）",
-          1,
-          "無需動作；消耗 1 次荒野形態，恢復 1 個 1 環法術位。每次長休前只能使用 1 次；完成長休後恢復。"
-        );
-      }
-      if (level >= 6) {
-        addUses(
-          "druid-natural-recovery-spell-slots",
-          "自然恢復（法術位）",
-          1,
-          `完成短休時，可恢復環階總和 ${Math.ceil(level / 2)} 的已消耗法術位（德魯伊等級一半，進位；每個法術位須低於 6 環）。每次長休前只能使用 1 次；完成長休後恢復。`,
-          null, { when: "shortRest", effect: "spellSlots", budget: Math.ceil(level / 2), maximumSlotLevel: 5 }
-        );
-      }
-    }
-    if (className === "fighter") {
-      addUses("fighter-second-wind", "回氣", level >= 4 ? 3 : 2, "短休回 1 次，長休全回。", 1);
-      if (level >= 2) addUses("fighter-action-surge", "動作如潮", 1, "短休或長休後回復。", "all");
-    }
-    if (className === "monk" && level >= 2) {
-      addPoints("monk-focus-points", "專注點", level, "短休或長休後全回復。", "all");
-      addUses("monk-uncanny-metabolism", "吐故納新", 1, "長休後回復。");
-      if (level >= 6) addUses("monk-wholeness", "混元體", wisdomModifier, "長休後全回復。");
-    }
-    if (className === "paladin") {
-      addPoints("paladin-lay-on-hands", "聖療", level * 5, "長休後全回復。");
-      if (level >= 3) addUses("paladin-channel-divinity", "引導神力", 2, "短休回 1 次，長休全回。", 1);
-    }
-    if (className === "sorcerer") {
-      addUses("sorcerer-innate-sorcery", "天生術法", 2, "長休後全回復。");
-      if (level >= 2) addPoints("sorcerer-sorcery-points", "術法點", level, "長休後全回復。");
-      if (level >= 5) {
-        addUses(
-          "sorcerer-sorcerous-restoration",
-          "術法復甦",
-          1,
-          `完成短休時，恢復最多 ${Math.floor(level / 2)} 點已消耗的術法點（術士等級一半，捨去）。每次長休前只能使用 1 次；完成長休後恢復。`,
-          null, { when: "shortRest", effect: "points", targetKey: "sorcerer-sorcery-points", budget: Math.floor(level / 2) }
-        );
-      }
-    }
-    if (className === "warlock") {
-      if (level >= 2) {
-        const pactSlotMaximum = Math.max(...getSpellSlotCounts("warlock", level));
-        addUses(
-          "warlock-magical-cunning",
-          "秘法回流",
-          1,
-          `進行 1 分鐘儀式；恢復最多 ${Math.ceil(pactSlotMaximum / 2)} 個已消耗的契約魔法法術位（法術位最大值一半，進位）。每次長休前只能使用 1 次；完成長休後恢復。`
-        );
-      }
-      if (level >= 6) addUses("warlock-dark-ones-own-luck", "黑暗強運", charismaModifier, "長休後全回復。");
-    }
-    if (className === "wizard") {
-      addUses(
-        "wizard-arcane-recovery",
-        "奧術回想",
-        1,
-        `完成短休時，恢復環階總和最多 ${Math.ceil(level / 2)} 的已消耗法術位（法師等級一半，進位；單一法術位最高 5 環）。每次長休前只能使用 1 次；完成長休後恢復。`,
-        null, { when: "shortRest", effect: "spellSlots", budget: Math.ceil(level / 2), maximumSlotLevel: 5 }
-      );
+    // 職業資源：職業內容檔各能力（含子職）的 resource，達到能力等級才出現。
+    const valueContext = { level, abilityScores: { wis: options.wisdomScore ?? 10, cha: options.charismaScore ?? 10 } };
+    for (const feature of getClassFeatureRules(className)) {
+      const resource = feature.resource;
+      if (!resource || level < feature.level) continue;
+      const maximum = typeof resource.uses === "number" ? resource.uses : evaluateClassValue(className, resource.uses, valueContext);
+      let recover = resource.recover;
+      for (const [from, entry] of Object.entries(resource.recoverByLevel || {})) if (Number(from) <= level) recover = entry;
+      const shortRest = recover.short ?? null;
+      const details = CLASS_RESOURCE_DETAILS[resource.key]?.(level) || {};
+      const fully = resource.uses === 1 ? "回復" : "全回復";
+      const recoveryNote = details.note || (shortRest === null
+        ? `長休後${fully}。`
+        : (shortRest === "all" ? `短休或長休後${fully}。` : `短休回 ${shortRest} 次，長休全回。`));
+      const label = resource.label || feature.name;
+      if (resource.kind === "points") addPoints(resource.key, label, maximum, recoveryNote, shortRest);
+      else addUses(resource.key, label, maximum, recoveryNote, shortRest, details.restChoice || null);
     }
     // Canonical controls are described here; callers only supply existing spell-source identities.
     const addControls = (key, label, ids, shortRest = null) => resources.push({
@@ -324,7 +423,7 @@
 
   /** 取得指定職業熟練的兩項豁免屬性代號。 */
   function getClassSaveProficiencies(classId) {
-    return CLASS_SAVE_PROFICIENCIES[classId] || [];
+    return getClassRules(classId)?.saves || [];
   }
 
   /** 判斷職業、背景、種族或魔法學徒專長是否提供施法能力。 */
@@ -332,14 +431,15 @@
     const className = String(options.className || "").trim();
     const background = String(options.background || "").trim();
     const race = String(options.race || "").trim();
+    const spellcasting = getClassRules(className)?.spellcasting;
 
-    if (SPELLCASTER_CLASSES.has(className)) return true;
+    if (spellcasting && spellcasting !== "none") return true;
     if (SPELLCASTER_BACKGROUNDS.has(background)) return true;
     if (SPELLCASTER_RACES.has(race)) return true;
     if (options.hasMagicInitiate) return true;
 
     return !(
-      NON_SPELLCASTER_CLASSES.has(className)
+      spellcasting === "none"
       && NON_SPELLCASTER_BACKGROUNDS.has(background)
       && NON_SPELLCASTER_RACES.has(race)
     );
@@ -354,15 +454,13 @@
   function calculateWarlockInvocationSelectionLimit(className, level) {
     if (className !== "warlock") return 0;
     const numericLevel = Number.parseInt(level, 10);
-    if (numericLevel <= 1 || !Number.isFinite(numericLevel)) return 1;
-    if (numericLevel <= 4) return 3;
-    if (numericLevel <= 6) return 5;
-    return 6;
+    return getClassProgressionValue(className, "invocations", Number.isFinite(numericLevel) && numericLevel > 1 ? numericLevel : 1) || 0;
   }
 
-  /** 依等級取得武僧武藝傷害骰。 */
+  /** 依等級取得武僧武藝傷害骰（特性表「武藝」欄）。 */
   function getMonkMartialArtsDieByLevel(level) {
-    return Number(level) >= 5 ? "1d8" : "1d6";
+    const numericLevel = Number(level);
+    return getClassValueText("monk", "martialArtsDie", { level: Number.isFinite(numericLevel) && numericLevel >= 1 ? numericLevel : 1 });
   }
 
   /** 套用橡棍術至短棒或長棍；5 級起傷害骰提升為 1d10。 */
@@ -395,25 +493,27 @@
     return null;
   }
 
-  /** 取得指定職業與等級的一至四環法術位數量。 */
+  /**
+   * 取得指定職業與等級的一至四環法術位數量，依特性表欄位：spellSlots1～spellSlots4（各環數量），
+   * 契約魔法（spellcasting: pact）為 spellSlots（數量）與 spellSlotLevel（環階）。
+   */
   function getSpellSlotCounts(className, level) {
     const numericLevel = Number(level);
-    if (!Number.isInteger(numericLevel)) return [0, 0, 0, 0];
-    if (["bard", "cleric", "druid", "sorcerer", "wizard"].includes(className)) {
-      return STANDARD_SPELL_SLOTS[numericLevel] || [0, 0, 0, 0];
+    const rules = getClassRules(className);
+    if (!Number.isInteger(numericLevel) || !rules || rules.spellcasting === "none") return [0, 0, 0, 0];
+    if (rules.spellcasting === "pact") {
+      const slotLevel = getClassProgressionValue(className, "spellSlotLevel", numericLevel);
+      const count = getClassProgressionValue(className, "spellSlots", numericLevel) || 0;
+      return [1, 2, 3, 4].map(spellLevel => (spellLevel === slotLevel ? count : 0));
     }
-    if (["paladin", "ranger"].includes(className)) {
-      return HALF_CASTER_SPELL_SLOTS[numericLevel] || [0, 0, 0, 0];
-    }
-    if (className === "warlock") return WARLOCK_SPELL_SLOTS[numericLevel] || [0, 0, 0, 0];
-    return [0, 0, 0, 0];
+    return [1, 2, 3, 4].map(spellLevel => getClassProgressionValue(className, `spellSlots${spellLevel}`, numericLevel) || 0);
   }
 
   /** 判斷職業在指定角色等級是否可使用某一法術環階。 */
   function classCanAccessSpellLevel(className, characterLevel, spellLevel) {
     const numericSpellLevel = Number(spellLevel);
     if (!Number.isInteger(numericSpellLevel) || numericSpellLevel < 0 || numericSpellLevel > 4) return false;
-    if (numericSpellLevel === 0) return CLASS_CANTRIP_CLASSES.has(className);
+    if (numericSpellLevel === 0) return Object.hasOwn(getClassRules(className)?.progression || {}, "cantrips");
 
     const slotCounts = getSpellSlotCounts(className, characterLevel);
     const highestSpellLevel = slotCounts.reduce(
@@ -507,21 +607,21 @@
       && !options.isWearingHeavyArmor;
 
     let classSpeedBonus = 0;
-    if (monkBonusApplies) classSpeedBonus = level >= 6 ? 15 : 10;
+    if (monkBonusApplies) classSpeedBonus = getClassProgressionValue("monk", "unarmoredMovement", level) || 0;
     else if (barbarianBonusApplies || rangerBonusApplies) classSpeedBonus = 10;
     const featSpeedBonus = options.hasSpeedyFeat ? 10 : 0;
     return String(baseSpeed + classSpeedBonus + featSpeedBonus);
   }
 
-  // 荒野形態進程以職業文本的 2／4／8 級表為準。
+  // 已知形態、最大 CR 與飛行以職業文本的 2／4／8 級野獸形態表為準；使用次數與時數取自德魯伊內容檔。
   function getDruidWildShapeRules(level) {
     const value = Number.parseInt(level, 10) || 0;
     return Object.freeze({
       known: value >= 8 ? 8 : value >= 4 ? 6 : value >= 2 ? 4 : 0,
       maxCr: value >= 8 ? 1 : value >= 4 ? 0.5 : 0.25,
       flight: value >= 8,
-      maximum: value >= 6 ? 3 : value >= 2 ? 2 : 0,
-      hours: Math.floor(value / 2),
+      maximum: getClassProgressionValue("druid", "wildShapeUses", value) || 0,
+      hours: value >= 1 ? evaluateClassValue("druid", "wildShapeHours", { level: value }) ?? 0 : 0,
       aidDice: value >= 14 ? "4d6" : value >= 10 ? "3d6" : "2d6"
     });
   }
@@ -565,6 +665,12 @@
     getCharacterSizeForRace,
     getCharacterResourceSpecs,
     getClassSaveProficiencies,
+    getClassRules,
+    getClassProgressionValue,
+    getClassFeatureRules,
+    evaluateClassValue,
+    getClassValueText,
+    hasClassValue,
     getHitDiceValues,
     getJackOfAllTradesBonus,
     getMetamagicSelectionLimit,

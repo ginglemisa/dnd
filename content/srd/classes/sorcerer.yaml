@@ -84,6 +84,7 @@ features:
     name: 魔力泉湧
     resource:
       key: sorcerer-sorcery-points
+      label: 術法點
       kind: points
       uses: sorceryPoints
       recover: {long: all}

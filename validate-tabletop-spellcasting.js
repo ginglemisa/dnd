@@ -185,7 +185,8 @@ assertSameValues(candidatesWithoutOutcome, [
 
 require("./tabletop-mode.js");
 const rulesSandbox = { window: {} };
-vm.runInNewContext(fs.readFileSync("character-rules.js", "utf8"), rulesSandbox);
+// character-rules.js reads class mechanics (spell slots) from the generated class content (npm run build).
+vm.runInNewContext(`${fs.readFileSync("class-content.generated.js", "utf8")}\n${fs.readFileSync("character-rules.js", "utf8")}`, rulesSandbox);
 globalThis.getSpellSlotCounts = rulesSandbox.window.getSpellSlotCounts;
 const vigorLevel = globalThis.TabletopMode.logic.getFiendishVigorCastLevel;
 for (let level = 2; level <= 8; level += 1) {

@@ -2,7 +2,7 @@
 
 每個職業、子職各一個 YAML 檔。說明文字和機制（特性表、選項、跑團按鈕、資源）寫在同一份檔案。
 
-> 十二個職業（野蠻人、遊俠、戰士、盜賊、聖騎士、吟遊詩人、武僧、牧師、法師、術士、契術師與德魯伊）的職業頁與跑團文字都由這裡產生：`npm run build` 輸出根目錄的 `class-content.generated.js`，網站直接載入這個檔案。部分機制（資源次數、選項清單、跑團數值計算等）仍寫在網站程式，之後逐步搬進內容檔。
+> 十二個職業（野蠻人、遊俠、戰士、盜賊、聖騎士、吟遊詩人、武僧、牧師、法師、術士、契術師與德魯伊）的職業頁、跑團文字與機制資料都由這裡產生：`npm run build` 輸出根目錄的 `class-content.generated.js`，網站直接載入這個檔案。機制資料（`classRules`）是內容檔去掉說明文字後的結構，網站以此計算生命骰、豁免、法術位、準備法術與戲法數量、資源次數等。
 
 ## 檔案位置
 
@@ -141,6 +141,8 @@ VS Code 安裝 Red Hat 的「YAML」擴充套件後，會依檔案第一行的 `
 - `primaryAbility`：`{ all: [敏捷, 感知] }` 顯示為「敏捷與感知」；`{ any: [力量, 敏捷] }` 顯示為「力量或敏捷」。
 - `spellcasting.progression`：`full`（全施法者）、`half`（半施法者）、`pact`（契約魔法）、`none`。
 - `progression.<欄位>.format`：特性表顯示格式，`{}` 代入數值，例如 `+{}`（+2）、`{}d6`（1d6）、`1d{}`（1d8，數值是骰面）。
+- 網站依欄位名稱讀取的特性表欄位：`cantrips`（戲法數量）、`preparedSpells`（準備法術數量）、`spellSlots1`～`spellSlots4`（各環法術位）；契約魔法（`pact`）為 `spellSlots`（法術位數量）與 `spellSlotLevel`（法術位環階）；契術師的 `invocations`（魔能祈喚數量）。改名會讓網站讀不到。
+- `hitDie`、`saves`、`spellcasting.progression` 也供網站計算生命值、豁免熟練與是否具施法能力。
 - `values`：公式只能用數字、`d`、四則運算、`max()`／`min()`／`floor()`（無條件捨去，例如 `floor({level} / 2)`）與 `{數值}`，例如 `"{rageDamage}d6"`、`"max(1, {chaModifier})"`。公式中另可引用屬性調整值 `{strModifier}`、`{dexModifier}`、`{conModifier}`、`{intModifier}`、`{wisModifier}`、`{chaModifier}`（沒有屬性值時視為 0；文字中不可直接引用）。
   要套用顯示格式時寫 `{ formula: "8 + {proficiencyBonus} + {wisModifier}", format: （DC {}） }`，`{}` 代入計算結果；公式只引用另一個特性表欄位或 `values` 時（例如 `{ formula: "{saveDc}", format: （DC {}） }`）可為同一數值另取帶格式的名稱；只引用內建的 `level`／`proficiencyBonus`（例如 `{ formula: "{level}", format: （目前 {} 點） }`）時是獨立的值。
   跑團顯示的是依等級變化的文字（不是數字）時寫 `{ byLevel: { 5: 短休或長休後全部恢復 } }`：從該等級起換成此文字，更低等級保留頁面文字；這種值只能用在文字，不可用於公式或次數。
@@ -157,7 +159,7 @@ npm run build -- --update-id-baseline
 
 ## 能力的資源
 
-`resource` 定義能力的使用次數：`uses` 是次數（固定數字，或特性表欄位／`values` 名稱），`recover` 是短休（`short`）、長休（`long`）恢復的次數，`all` 為全部；恢復方式隨等級改變時，另寫 `recoverByLevel: { 5: { short: all, long: all } }`，從該等級起整個取代 `recover`。點數池（例如聖療，每次可消耗任意點數）另寫 `kind: points`，此時 `uses` 是點數池總量。
+`resource` 定義能力的使用次數，跑團模式的資源區依此顯示與恢復（達到能力等級才出現）。`label` 是資源區顯示的名稱（例如聚氣凝神的「專注點」），省略時用能力名稱；恢復說明（例如「短休回 1 次，長休全回。」）由 `recover` 自動產生。`uses` 是次數（固定數字，或特性表欄位／`values` 名稱），`recover` 是短休（`short`）、長休（`long`）恢復的次數，`all` 為全部；恢復方式隨等級改變時，另寫 `recoverByLevel: { 5: { short: all, long: all } }`，從該等級起整個取代 `recover`。點數池（例如聖療，每次可消耗任意點數）另寫 `kind: points`，此時 `uses` 是點數池總量。
 
 ## 能力給予的法術
 

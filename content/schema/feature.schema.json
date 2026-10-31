@@ -234,6 +234,7 @@
       "description": "此能力的使用次數或點數池資源。",
       "properties": {
         "key": { "type": "string", "pattern": "^[a-z0-9-]+$", "description": "資源 key，跑團模式記錄剩餘次數用：不可改名。" },
+        "label": { "type": "string", "minLength": 1, "description": "跑團資源區顯示的名稱，例如「專注點」；省略時使用能力名稱。" },
         "kind": { "enum": ["uses", "points"], "default": "uses", "description": "uses：使用次數（預設）；points：點數池，可分次消耗任意點數（例如聖療）。" },
         "uses": {
           "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "string" }],

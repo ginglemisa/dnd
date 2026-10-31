@@ -42,6 +42,7 @@ features:
     name: 自然恢復
     resource:
       key: druid-natural-recovery-spell-slots
+      label: 自然恢復（法術位）
       uses: 1
       recover: {long: all}
     text: |

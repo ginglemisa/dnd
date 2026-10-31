@@ -809,7 +809,8 @@ function getClassAlwaysPreparedSpellSpecs() {
     return specs;
   }
   if (classValue !== "ranger") return [];
-  const freeUses = !level ? "" : level >= 5 ? 3 : 2;
+  // 宿敵免費施放次數：遊俠特性表「宿敵」欄（class-content.generated.js）。
+  const freeUses = !level ? "" : window.getClassProgressionValue?.("ranger", "favoredEnemy", level) ?? "";
   const specs = [{
     level: 1,
     ring: 1,

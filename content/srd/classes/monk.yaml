@@ -72,6 +72,7 @@ features:
     name: 聚氣凝神
     resource:
       key: monk-focus-points
+      label: 專注點
       kind: points
       uses: focusPoints
       recover: {short: all, long: all}

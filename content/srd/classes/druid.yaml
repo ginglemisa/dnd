@@ -193,6 +193,7 @@ features:
     name: 野性復甦
     resource:
       key: druid-wild-resurgence-spell-slot
+      label: 野性復甦（法術位）
       uses: 1
       recover: {long: all}
     text: |
