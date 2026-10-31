@@ -2,7 +2,7 @@
   "scripts": {
     "build": "node tools/build.js",
     "dev": "node tools/dev-server.js",
-    "test": "node tools/run-validations.js",
+    "test": "node tools/build.js && node tools/run-validations.js",
     "build:offline": "pwsh -NoProfile -File build-offline-nopdf.ps1",
     "classes:check": "node tools/class-content/compare.js",
     "classes:convert": "node tools/class-content/convert-legacy.js"

@@ -1,26 +1,27 @@
-# 網站建置、檢查與部署。
-# - 每次 push（任何分支）與 pull request：建置內容檔、跑全部回歸腳本、重建離線角色卡並確認與 repo 內的檔案相同。
-# - push 到 main 且全部通過時：以 GitHub Pages 原本使用的 Jekyll 建置 repo 內容並部署（與分支直接發布的結果相同）。
-# 任何一步失敗都不會部署，正式站維持上一個版本。
-name: 網站建置與部署
+# 網站上線：push 到 main（或手動執行）時，產生網站需要的檔案並部署 GitHub Pages。
+# 回歸測試在本機推送前完成，這裡不重複執行。
+# - class-content.generated.js（職業資料）與 twD20-offline.html（離線角色卡）是衍生產物，不在 repo 裡，由這裡產生。
+# - 內容檔有錯時 npm run build 會失敗，不會部署，正式站維持上一個版本。
+# - 發布內容為此 commit 的 repo 檔案加上產生的檔案，以 GitHub Pages 原本使用的 Jekyll 建置。
+name: 網站上線
 
 on:
   push:
-    branches: ["**"]
-  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
 jobs:
-  check:
-    name: 建置與檢查
+  build:
+    name: 產生網站檔案
     runs-on: ubuntu-latest
-    timeout-minutes: 90
-    env:
-      # 只有 main 分支的 push 或手動執行才發布；其他分支與 pull request 只做檢查。
-      PUBLISH: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
 
@@ -32,57 +33,31 @@ jobs:
       - name: 安裝套件
         run: npm ci
 
-      - name: 建置內容檔
-        run: npm run build
+      - name: 產生職業資料（並更新 index.html 的快取版本）
+        run: npm run build -- --stamp-version
 
-      - name: 確認 repo 內的網站職業資料是最新版本
-        run: |
-          if ! git diff --exit-code -- class-content.generated.js index.html; then
-            echo "::error::class-content.generated.js 或 index.html 的快取版本不是最新：請在本機執行 npm run build，並提交產生的檔案。"
-            exit 1
-          fi
-
-      - name: 安裝瀏覽器與中文字型
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y fonts-noto-cjk
-          npx --no-install playwright install --with-deps chromium
-
-      - name: 回歸測試
-        run: npm test
-
-      - name: 重建離線角色卡
+      - name: 產生離線角色卡
         shell: pwsh
         run: ./build-offline-nopdf.ps1
 
-      - name: 確認 repo 內的離線角色卡是最新版本
-        run: |
-          if ! git diff --quiet -- twD20-offline.html; then
-            echo "::error::twD20-offline.html 不是最新版本：請在本機執行 npm run build:offline，並提交產生的檔案。"
-            exit 1
-          fi
-
-      - name: 準備發布內容（此 commit 的 repo 檔案）
-        if: env.PUBLISH == 'true'
+      - name: 準備發布內容
         run: |
           mkdir -p _publish
           git archive HEAD | tar -x -C _publish
+          cp index.html class-content.generated.js twD20-offline.html _publish/
 
       - name: Jekyll 建置（與 GitHub Pages 分支發布相同）
-        if: env.PUBLISH == 'true'
         uses: actions/jekyll-build-pages@v1
         with:
           source: ./_publish
           destination: ./_site
 
       - name: 上傳發布內容
-        if: env.PUBLISH == 'true'
         uses: actions/upload-pages-artifact@v4
 
   deploy:
     name: 部署 GitHub Pages
-    needs: check
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: build
     runs-on: ubuntu-latest
     permissions:
       pages: write
@@ -90,9 +65,6 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    concurrency:
-      group: pages
-      cancel-in-progress: false
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4

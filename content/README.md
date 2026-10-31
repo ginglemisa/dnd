@@ -171,6 +171,6 @@ npm run build -- --update-id-baseline
 | `npm run build` | 檢查全部內容檔並產生 `class-content.generated.js`，有錯就列出檔案與位置 |
 | `npm run classes:check` | 轉換期工具：逐項列出和舊版 `class-features.js`（退役前最後一版的 git 紀錄）的差異 |
 
-改完內容檔要執行 `npm run build`，再把內容檔、`class-content.generated.js` 與 `index.html`（快取版本）一起提交；產生檔不可手改。只有公開內容包會寫進產生檔。
+改完內容檔只要提交內容檔本身。`class-content.generated.js` 是產生的檔案，不放進 repo、不可手改：本機用 `npm run dev` 或 `npm run build` 產生，上線時由 GitHub Actions 產生。只有公開內容包會寫進產生檔。
 
 轉換時刻意與舊版不同、已經確認過的地方，逐行列在 `tools/class-content/accepted-differences.json`（只供 `npm run classes:check` 使用）。

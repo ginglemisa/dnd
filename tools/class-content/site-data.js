@@ -1,6 +1,7 @@
-// 網站讀取的職業資料：npm run build 由公開內容包產生根目錄的 class-content.generated.js（提交進 repo），
-// 讓直接開 index.html、回歸腳本與離線建置不必先建置。私人內容包不寫進這個檔案。
-// index.html 載入此檔的快取版本（?v=）是檔案內容的雜湊，由建置一併更新，內容檔改了不必手動改版本。
+// 網站讀取的職業資料：npm run build 由公開內容包產生根目錄的 class-content.generated.js。
+// 這是衍生產物，不提交進 repo（.gitignore）：本機預覽、回歸腳本與離線建置前先 npm run build；上線時由 GitHub Actions 產生。
+// 私人內容包不寫進這個檔案。index.html 載入此檔的快取版本（?v=）是檔案內容的雜湊，
+// 只在上線建置（npm run build -- --stamp-version）時改寫，本機建置不動 index.html。
 "use strict";
 const crypto = require("crypto");
 const fs = require("fs");
@@ -47,8 +48,8 @@ ${rendered.map(([id, output]) => `  ${id}: {\n    tabletop: ${textMap(output.tab
   return source;
 }
 
-// 寫入產生檔並更新 index.html 的快取版本；內容沒變時不改檔案。回傳有變更的檔名。
-function writeSiteData(classes) {
+// 寫入產生檔；stampIndex 為 true 時一併更新 index.html 的快取版本。內容沒變時不改檔案。回傳有變更的檔名。
+function writeSiteData(classes, { stampIndex = false } = {}) {
   const source = renderSiteData(classes);
   const version = crypto.createHash("sha256").update(source).digest("hex").slice(0, 12);
   const changed = [];
@@ -61,7 +62,7 @@ function writeSiteData(classes) {
     changed.push(OUTPUT_NAME);
   }
   const updated = html.replace(SCRIPT_TAG, `$1${version}$3`);
-  if (updated !== html) {
+  if (stampIndex && updated !== html) {
     fs.writeFileSync(INDEX_FILE, updated);
     changed.push("index.html");
   }
