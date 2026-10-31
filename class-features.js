@@ -643,14 +643,12 @@ const classFeatures = {
 <table class="class-feature-table" style="border-collapse:collapse; width:100%; font-size:0.98em;">
   <thead>
         <tr>
-          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">等級</th>
-          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">熟練加值</th>
-          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">職業特性</th>
-          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">引導神力</th>
-          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">戲法</th>
-          <th rowspan="2" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">準備法術</th>
-        </tr>
-        <tr>
+          <th style="border:1px solid #aaa; padding:3px;">等級</th>
+          <th style="border:1px solid #aaa; padding:3px;">熟練加值</th>
+          <th style="border:1px solid #aaa; padding:3px;">職業特性</th>
+          <th style="border:1px solid #aaa; padding:3px;">引導神力</th>
+          <th style="border:1px solid #aaa; padding:3px;">戲法</th>
+          <th style="border:1px solid #aaa; padding:3px; white-space:nowrap;">準備法術</th>
           <th style="border:1px solid #aaa; padding:3px;">１環</th>
           <th style="border:1px solid #aaa; padding:3px;">２環</th>
           <th style="border:1px solid #aaa; padding:3px;">３環</th>
@@ -879,14 +877,12 @@ const classFeatures = {
 <table class="class-feature-table" style="border-collapse:collapse; width:100%; font-size:0.98em;">
 <thead>
         <tr>
-          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">等級</th>
-          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">熟練加值</th>
-          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">職業特性</th>
-          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">荒野形態</th>
-          <th rowspan="2" style="border:1px solid #aaa; padding:3px;">戲法</th>
-          <th rowspan="2" style="border:1px solid #aaa; padding:3px; white-space:nowrap;">準備法術</th>
-        </tr>
-        <tr>
+          <th style="border:1px solid #aaa; padding:3px;">等級</th>
+          <th style="border:1px solid #aaa; padding:3px;">熟練加值</th>
+          <th style="border:1px solid #aaa; padding:3px;">職業特性</th>
+          <th style="border:1px solid #aaa; padding:3px;">荒野形態</th>
+          <th style="border:1px solid #aaa; padding:3px;">戲法</th>
+          <th style="border:1px solid #aaa; padding:3px; white-space:nowrap;">準備法術</th>
           <th style="border:1px solid #aaa; padding:3px;">１環</th>
           <th style="border:1px solid #aaa; padding:3px;">２環</th>
           <th style="border:1px solid #aaa; padding:3px;">３環</th>
