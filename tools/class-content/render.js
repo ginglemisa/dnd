@@ -164,12 +164,10 @@ function renderOptions(feature, context, where) {
     // 選項自己的按鈕：說明段落為選項文字（不含勾選框與「：」），段落 ID 同為「職業-選項名」，取代整個選項的段落。
     if (option.actions && !suffix) throw new ContentError(`${at}：有 actions 的選項 ID 須以「${feature.id}-」開頭`);
     if (option.actions) addBlock(context, blockId, text);
-    const optionText = option.actions && !view ? `<span data-action-id="${blockId}">${text}</span>` : text;
-    const body = `${label}${separator}${optionText}`;
+    const body = `${label}${separator}${text}`;
     const inner = cards ? `<div class="druid-mission-option__heading">${body}</div>${details}` : body;
     if (inTabletop && !option.actions) addBlock(context, blockId, inner);
-    const actionId = inTabletop && !view ? ` data-action-id="${blockId}"` : "";
-    return cards ? `<div class="druid-mission-option"${actionId}>${inner}</div>` : `<li${actionId}>${inner}</li>`;
+    return cards ? `<div class="druid-mission-option">${inner}</div>` : `<li>${inner}</li>`;
   }).join("");
   return cards ? `<div class="druid-mission-options">${items}</div>` : `<ul class="class-rule-list">${items}</ul>`;
 }
@@ -184,9 +182,8 @@ function renderSelectCard(select, markdownOptions, where) {
 
 // 附錄：沒有等級的 section（例如術士的「超魔法選項」、契術師的「魔能祈喚選項」），接在所有能力之後；小節沿用舊版的通用 class。
 // 有 kind 的附錄由網站做成選擇卡片（class-features-ui.js 讀 classRules 各小節的 html），職業頁的 section 加上
-// data-class-appendix，職業能力頁籤據此略過。小節輸出成通用小節，帶 id 時加 data-action-id（跑團按鈕的說明段落），
-// 標題為「名稱（先決條件：…）」或「名稱＋detail」。超魔法（kind: metamagic）的小節照舊版換行排列
-// （跑團的瞬發法術說明依換行分段），其他附錄的小節之間與小節內不換行（同舊版魔能祈喚的寫法）。
+// data-class-appendix，職業能力頁籤據此略過。小節輸出成通用小節，標題為「名稱（先決條件：…）」或「名稱＋detail」。
+// 超魔法（kind: metamagic）的小節照舊版換行排列（跑團的瞬發法術說明依換行分段），其他附錄的小節之間與小節內不換行（同舊版魔能祈喚的寫法）。
 function appendixLines(item) {
   return item.kind === "metamagic";
 }
@@ -205,10 +202,9 @@ function renderAppendix(item, context) {
   const where = `${classDef.file} 附錄 ${item.name}`;
   const lines = appendixLines(item);
   const parts = (item.parts || []).map(part => {
-    const id = part.id ? ` data-action-id="${part.id}"` : "";
     const heading = `<h4>${escapeHtml(part.name)}${appendixPartHeadingSuffix(part)}</h4>`;
     const body = renderAppendixPartBody(item, part, context);
-    return lines ? `<div class="class-rule-subsection"${id}>\n${heading}\n${body}\n</div>` : `<div class="class-rule-subsection"${id}>${heading}${body}</div>`;
+    return lines ? `<div class="class-rule-subsection">\n${heading}\n${body}\n</div>` : `<div class="class-rule-subsection">${heading}${body}</div>`;
   }).join(lines ? "\n" : "");
   const text = item.text ? `${renderMarkdown(item.text, { ...context, blockNewlines: true }, where)}${parts ? "\n" : ""}` : "";
   const kind = item.kind ? ` data-class-appendix="${item.kind}"` : "";
@@ -228,7 +224,7 @@ function addAppendedPrefix(html, feature, where) {
   return html.replace(/^<p([^>]*)>/, `<p$1><strong>${escapeHtml(feature.name)}：</strong>`);
 }
 
-// 子能力：外層能力內帶 data-action-id 的小節。標題為「名稱（使用方式）」，按鈕消耗資源時跑團版加「，消耗 1 次［資源名稱］」。
+// 子能力：外層能力內的小節。標題為「名稱（使用方式）」，按鈕消耗資源時跑團版加「，消耗 1 次［資源名稱］」。
 function renderPart(part, feature, owner, context, where) {
   const { classDef } = context;
   const at = `${where} 子能力 ${part.name}`;
@@ -241,8 +237,7 @@ function renderPart(part, feature, owner, context, where) {
   const body = renderMarkdown(part.text, markdownOptions, at);
   addBlock(context, part.id, heading + (part.tabletop ? renderMarkdown(part.tabletop, markdownOptions, `${at} tabletop`) : body));
   if (part.summary && context.summaries) context.summaries[part.id] = renderInline(part.summary, context, `${at} summary`);
-  const actionId = context.view ? "" : ` data-action-id="${part.id}"`;
-  return `<div class="class-rule-subsection ${classDef.id}-rule-subsection"${actionId}>${heading}${body}</div>`;
+  return `<div class="class-rule-subsection ${classDef.id}-rule-subsection">${heading}${body}</div>`;
 }
 
 // 職業頁輸出能力的 <section>；跑團版（context.view）只記錄段落、回傳空字串。
@@ -253,7 +248,7 @@ function renderFeature({ feature, owner }, context) {
   const markdownOptions = { ...context, subsectionClass: `class-rule-subsection ${classDef.id}-rule-subsection` };
   const appended = context.appended.has(feature.id);
   // behavior：特殊機制模組（behaviors/<名稱>.js，load.js 已確認存在）。decorateText() 在 text 的 HTML 加上網站程式辨識的標記
-  // （第三個參數為 context.view），afterText() 回傳接在內文後的 HTML，sectionAttributes() 回傳加在能力 <section> 上的屬性；皆可省略。
+  // （第三個參數為 context.view），afterText() 回傳接在內文後的 HTML；皆可省略。
   const behavior = feature.behavior ? require(`./behaviors/${feature.behavior}`) : null;
   // 表格只出現在 text 與 tabletop，外框依出現順序取自 tables。
   const tableOptions = { ...markdownOptions, tables: feature.tables || [] };
@@ -276,13 +271,12 @@ function renderFeature({ feature, owner }, context) {
     addBlock(context, feature.id, tabletop === null ? body : appended ? addAppendedPrefix(tabletop, feature, `${where} tabletop`) : tabletop);
     return "";
   }
-  // 子職能力加上 data-subclass（子職 ID），網站只顯示目前選擇的子職。
+  // 子職能力加上 data-subclass（子職 ID），網站只顯示目前選擇的子職。data-feature-id（能力 ID）是網站在職業頁找能力段落的錨點。
   const attributes = [
     `class="${classDef.id}-feature class-feature-section"`,
     `data-feature-level="${feature.level}"`,
     owner === classDef ? "" : `data-subclass="${owner.id}"`,
-    behavior?.sectionAttributes ? behavior.sectionAttributes(feature, context) : "",
-    feature.id ? `data-action-id="${feature.id}"` : ""
+    feature.id ? `data-feature-id="${feature.id}"` : ""
   ].filter(Boolean).join(" ");
   const suffix = owner === classDef ? "" : `（${escapeHtml(owner.shortName)}子職）`;
   const heading = feature.name ? `<h3>等級 ${feature.level}：${escapeHtml(feature.name)}${suffix}</h3>` : "";

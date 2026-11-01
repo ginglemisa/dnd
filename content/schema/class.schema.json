@@ -180,7 +180,7 @@
       "additionalProperties": false,
       "required": ["name", "text"],
       "properties": {
-        "id": { "$ref": "feature.schema.json#/definitions/id", "description": "小節 ID（與能力 ID 共用、全職業唯一），有 actions 時必填；已有的 data-action-id 照抄。" },
+        "id": { "$ref": "feature.schema.json#/definitions/id", "description": "小節 ID（與能力 ID 共用、全職業唯一），有 actions 時必填；舊版已有的照抄。" },
         "name": { "type": "string", "minLength": 1, "description": "小節名稱，例如「刃之魔契」。超魔法與魔能祈喚的名稱會寫進存檔（已選清單）與跑團偏好，不可改字。" },
         "prerequisite": { "type": "string", "minLength": 1, "description": "先決條件，顯示為標題後的「（先決條件：…）」，例如「契術師等級 5+，刃之魔契祈喚」。" },
         "detail": { "type": "string", "minLength": 1, "description": "接在名稱後的標題文字（沒有先決條件時），例如超魔法的「－消耗：1 術法點」。" },

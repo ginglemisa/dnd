@@ -1830,7 +1830,7 @@ async function verifyClassFeatureChoicePrompt(browser, url) {
     await chooseAsPlayer("class", "druid");
     await modal.waitFor();
     assert.deepEqual(await modal.locator("section[data-feature-level]:visible h3").allTextContents(), ["等級 1：原初使命", "等級 3：大地結社法術（大地子職）", "等級 4：屬性值提升", "等級 7：元素狂怒"], "land terrain is chosen in its level 3 section between levels 1 and 4");
-    assert.equal(await modal.locator('section[data-druid-land-choice] [data-class-feature-additional="druid-land"]').getByLabel("大地結社地貌", { exact: true }).isVisible(), true);
+    assert.equal(await modal.locator('section[data-feature-id="druid-circle-of-the-land-spells"] [data-class-feature-additional="druid-land"]').getByLabel("大地結社地貌", { exact: true }).isVisible(), true);
     assert.notEqual(await modal.locator(".rule-table-shell--druid-terrain-spells").evaluate(el => getComputedStyle(el).borderTopStyle), "none", "rule tables keep their frame in the completion dialog");
     await modal.locator("#druid-sentinel").check();
     await modal.locator("#druid-elemental-fury-primal-strike").check();
@@ -2115,7 +2115,7 @@ async function verifyClassFeatureSupplementalChoices(browser, url) {
     await close();
     await page.evaluate(() => openCharacterFeatures("class"));
     const classModal = page.locator("#character-features-modal");
-    const classLand = classModal.locator('section[data-druid-land-choice] [data-class-feature-additional="druid-land"]').getByLabel("大地結社地貌", { exact: true });
+    const classLand = classModal.locator('section[data-feature-id="druid-circle-of-the-land-spells"] [data-class-feature-additional="druid-land"]').getByLabel("大地結社地貌", { exact: true });
     assert.equal(await classLand.inputValue(), "polar", "the class dialog shows the current terrain");
     await classLand.selectOption("arid");
     assert.equal(await page.inputValue("#druid-land"), "arid");
@@ -2273,7 +2273,7 @@ async function verifyFeatureReferences(browser, url) {
       if (!classFeatures.barbarian.includes("<strong>好處：</strong>")) failures.push("reckless attack label");
       const bard = document.createElement("template");
       bard.innerHTML = classFeatures.bard;
-      if (!bard.content.querySelector('[data-action-id="bard-countercharm"]').textContent.includes("使用：反應")) failures.push("countercharm label");
+      if (!bard.content.querySelector('[data-feature-id="bard-countercharm"]').textContent.includes("使用：反應")) failures.push("countercharm label");
       const cleric = document.createElement("template");
       cleric.innerHTML = highlightSpellNamesInClassFeature(classFeatures.cleric);
       const mission = cleric.content.querySelector("#cleric-trickster").closest(".druid-mission-option");
@@ -2962,7 +2962,7 @@ async function verifySubclassSelection(browser, url) {
     value: document.getElementById("subclass").value,
     options: Array.from(document.getElementById("subclass").options, option => option.value),
     visible: !document.getElementById("subclass-control").classList.contains("is-hidden"),
-    sections: Array.from(document.querySelectorAll("#classFeatures section[data-subclass]"), section => section.dataset.actionId),
+    sections: Array.from(document.querySelectorAll("#classFeatures section[data-subclass]"), section => section.dataset.featureId),
     spells: SpellManagement.getEntries().filter(entry => entry.spellSource === "subclass").map(entry => entry.sourceKey)
   }));
   const single = await newUiPage(browser);
