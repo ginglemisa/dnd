@@ -650,12 +650,10 @@
     return String(modifier);
   }
 
+  // Both PDF fonts carry proportional Latin widths, so dice and bonuses stay
+  // half-width; full-width forms would spread "1d12" across the field.
   function formatDamageTypeForPdf(value) {
-    return normalizeText(value)
-      .replace(/\s+/g, '')
-      .replace(/[!-~]/g, (character) =>
-        String.fromCharCode(character.charCodeAt(0) + 0xFEE0)
-      );
+    return normalizeText(value).replace(/\s+/g, ' ');
   }
 
   function getSelectedLevelNumber(level) {
@@ -1727,10 +1725,8 @@ function isWeaponRowEmpty(payload, slot) {
 
         payload[`sp-level-${xx}`] = String(row.level);
         const spellName = row.customSpell?.nameZh || getCanonicalSpell(row.spellId)?.nameZh || '';
-        // Official spell-name fields are single-line and fit by width instead.
-        payload[`sp-name-${xx}`] = official
-          ? spellName
-          : wrapTextForPdf(spellName, { maxUnitsPerLine: 14, maxLines: 2 });
+        // Spell-name fields on both sheets are single-line and fit by width.
+        payload[`sp-name-${xx}`] = normalizeText(spellName);
         payload[`sp-cast-time-${xx}`] = convertCastTimeText(castTimeRaw);
         payload[`sp-range-${xx}`] = row.spellId === 'spare-the-dying'
           ? getSpareTheDyingRangeForPdf(level)
