@@ -117,6 +117,26 @@
                 "additionalProperties": { "type": "string", "minLength": 1 }
               }
             }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["fromTable"],
+            "description": "由能力文字中的表格組出跑團文字，表格只寫一次。只能用在文字，不可用於公式或次數。",
+            "properties": {
+              "fromTable": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["feature", "row"],
+                "properties": {
+                  "feature": { "type": "string", "description": "表格所在的能力 ID（本職業或子職）。" },
+                  "table": { "type": "integer", "minimum": 1, "description": "該能力文字中的第幾個表格，預設 1。" },
+                  "row": { "type": "string", "minLength": 1, "description": "每一列的文字樣板，{1}、{2}… 代入該列第 1、2… 欄，例如「{1} 環消耗 {2} 點」。" },
+                  "join": { "type": "string", "description": "列與列之間的分隔文字，例如「；」。" },
+                  "end": { "type": "string", "description": "最後加上的文字，例如「。」。" }
+                }
+              }
+            }
           }
         ]
       }

@@ -3,7 +3,7 @@
   const STORAGE_KEY = "dnd.diceSystemEnabled.v1";
   const HISTORY_STORAGE_KEY = "dnd.diceRollHistory.v1";
   const getDiceAsset = () => document.documentElement.dataset.uiTheme === "warm"
-    ? "dice-warm-animated.webp" : "dice.webp";
+    ? "images/dice-warm-animated.webp" : "images/dice.webp";
   const ROLL_ANIMATION_MS = 1800;
   const ABILITY_ROLL_ANIMATION_MS = 1200;
   const REDUCED_MOTION_ROLL_MS = 100;

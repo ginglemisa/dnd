@@ -251,7 +251,7 @@ foreach ($match in $scriptTags) {
   $assetPath = Get-LocalAssetPath -Reference $reference
 
   # Read the JavaScript source so local binary assets referenced from JS
-  # (for example dice.webp) can also be embedded into the offline build.
+  # (for example images/dice.webp) can also be embedded into the offline build.
   $scriptContent = Read-SourceText $assetPath
 
   # Analytics belongs only to the live website. Keep the offline bundle free
@@ -328,7 +328,7 @@ function buildPdfPrecheckMessages() {
     if ($queryOrHash) {
       # Data URLs cannot use the original URL query in the same way.
       # Convert it to a fragment so cache-busting expressions such as:
-      # dice.webp?roll=${++rollSequence}
+      # images/dice.webp?roll=${++rollSequence}
       # remain unique without breaking the Data URL.
       if ($queryOrHash.StartsWith("?")) {
         $queryOrHash = "#" + $queryOrHash.Substring(1)

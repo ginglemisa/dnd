@@ -50,7 +50,7 @@ async function ensurePdfExportReady() {
       await loadScriptOnce("pdf-lib.custom.min.js");
       await loadScriptOnce("fontkit.custom.min.js");
       await loadScriptOnce("pdf-field-map.js?v=20261101-subclass-features");
-      await loadScriptOnce("pdf-export.js?v=20261028-custom-spells");
+      await loadScriptOnce("pdf-export.js?v=20261101-image-font-folders");
     })().catch((error) => {
       pdfExportLoaderPromise = null;
       throw error;

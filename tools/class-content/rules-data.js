@@ -1,7 +1,7 @@
 // 網站讀取的職業機制資料（class-content.generated.js 的 classRules）：內容檔去掉說明文字後的結構化資料，
 // 由 character-rules.js 等網站程式計算資源次數、法術位、特性表數值、跑團數值、選項與動作。
 "use strict";
-const { renderInline } = require("./markdown");
+const { renderInline, tableValueText } = require("./markdown");
 const { orderedSubclasses } = require("./render");
 
 const ABILITY_CODES = Object.freeze({ 力量: "str", 敏捷: "dex", 體質: "con", 智力: "int", 感知: "wis", 魅力: "cha" });
@@ -34,6 +34,14 @@ function namedFeatures(features) {
   return features.filter(feature => feature.name).map(featureRules);
 }
 
+// fromTable 在建置時由表格組成文字，網站收到的是與 byLevel 相同的 1 級起文字。
+function siteValues(classDef) {
+  const features = [classDef, ...classDef.subclasses].flatMap(owner => owner.features);
+  return Object.fromEntries(Object.entries(classDef.values || {}).map(([name, value]) => [name, value.fromTable
+    ? { byLevel: { 1: tableValueText(features, value.fromTable, `${classDef.file} values.${name}`) } }
+    : value]));
+}
+
 // appendixHtml：render.js 依附錄、小節順序產生的小節內文 HTML（選擇卡片與跑團說明使用）。
 function classRules(classDef, appendixHtml = []) {
   return {
@@ -51,7 +59,7 @@ function classRules(classDef, appendixHtml = []) {
       equipment: profileText(classDef.equipment.A, `${classDef.file} equipment.A`)
     },
     progression: classDef.progression || {},
-    values: classDef.values || {},
+    values: siteValues(classDef),
     features: namedFeatures(classDef.features),
     // 子職（預設子職在前）：網站的子職選單依此順序。
     subclasses: orderedSubclasses(classDef).map(subclass => ({

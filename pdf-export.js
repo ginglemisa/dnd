@@ -382,7 +382,7 @@
 
   const SHARED_PDF_SOURCE_PATH = '5e_char_sheet.pdf';
   const OFFICIAL_PDF_SOURCE_PATH = '5e_char_sheet_of.pdf';
-  const OFFICIAL_PDF_FONT_PATH = 'AdobeFanHeitiStd-Bold.otf';
+  const OFFICIAL_PDF_FONT_PATH = 'fonts/AdobeFanHeitiStd-Bold.otf';
   // The official template's own default appearance font. Keeping its alias
   // lets an editing reader use the template's resource for new input.
   const OFFICIAL_PDF_FONT_ALIAS = 'AdobeFanHeitiStd-Bold';
@@ -392,14 +392,14 @@
     'third-party': Object.freeze({
       editable: Object.freeze({
         sourcePdfPath: SHARED_PDF_SOURCE_PATH,
-        fontPath: 'NotoSansTC-Regular-IdentityCID.otf',
+        fontPath: 'fonts/NotoSansTC-Regular-IdentityCID.otf',
         subsetFont: false,
         flattenForm: false,
         layoutId: 'editable'
       }),
       compact: Object.freeze({
         sourcePdfPath: SHARED_PDF_SOURCE_PATH,
-        fontPath: 'SourceHanSerifTC-Bold.otf',
+        fontPath: 'fonts/SourceHanSerifTC-Bold.otf',
         subsetFont: true,
         flattenForm: true,
         layoutId: 'compact'

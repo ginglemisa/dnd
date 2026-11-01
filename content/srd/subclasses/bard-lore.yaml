@@ -15,7 +15,6 @@ features:
     actions:
       - mode: reaction
         key: dynamic-reaction-class-1y0uv3b
-        label: 等級 3：語出驚人
         resource: bard-inspiration
     text: |
       你 60 呎內看得到的生物在傷害擲骰、能力檢定或攻擊檢定成功時，你可以干擾它並降低結果。

@@ -10,7 +10,6 @@ features:
     actions:
       - mode: bonus
         key: dynamic-bonus-ranger-we5ttw
-        label: 等級 3：獵人學識
     text: |
       目標被你的「獵人印記」標記時，你會知道它的傷害免疫、[[抗性]]與易傷。
   - id: ranger-hunters-prey
@@ -21,7 +20,6 @@ features:
     actions:
       - mode: action
         key: dynamic-action-ranger-vdr4tc
-        label: 等級 3：狩獵目標
         selectedOptionOnly: true
     text: |
       從下列選項中選擇 1 項，**每次短休或長休後**可改選：
@@ -43,7 +41,6 @@ features:
     actions:
       - mode: action
         key: dynamic-action-ranger-p55ifk
-        label: 等級 7：防守戰術
     text: |
       從下列選項中選擇 1 項，**每次短休或長休後**可改選：
     options:
