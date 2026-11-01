@@ -314,12 +314,19 @@
     return Number.isFinite(score) ? Math.floor((score - 10) / 2) : 0;
   }
 
+  // 子職能力依目前子職判斷（character-rules.js 的 hasClassFeature，以內容檔的能力 ID）；
+  // 純 Node.js 驗證未載入職業資料時，視為預設子職：沿用職業與等級的判斷。
+  function hasSubclassFeature(className, featureId, level, defaultClass, minimumLevel) {
+    if (typeof globalScope.hasClassFeature === "function" && globalScope.getClassRules?.(className)) return globalScope.hasClassFeature(className, featureId, level);
+    return className === defaultClass && level >= minimumLevel;
+  }
+
   function buildLifeDiscipleModifier(spec = {}) {
     const className = String(spec.className || "");
     const characterLevel = Number.parseInt(spec.characterLevel, 10) || 0;
     const castMethod = String(spec.castMethod || "");
     const effectiveLevel = Number.parseInt(spec.effectiveLevel, 10) || 0;
-    if (className !== "cleric" || characterLevel < 3 || castMethod !== "slot" || effectiveLevel < 1) {
+    if (!hasSubclassFeature(className, "cleric-disciple-of-life", characterLevel, "cleric", 3) || castMethod !== "slot" || effectiveLevel < 1) {
       return null;
     }
     return Object.freeze({
@@ -338,8 +345,7 @@
     const castMethod = String(spec.castMethod || "");
     const effectiveLevel = Number.parseInt(spec.effectiveLevel, 10) || 0;
     if (
-      className !== "cleric"
-      || characterLevel < 6
+      !hasSubclassFeature(className, "cleric-blessed-healer", characterLevel, "cleric", 6)
       || castMethod !== "slot"
       || effectiveLevel < 1
       || spec.restoresOtherCreatureHitPoints !== true
@@ -392,7 +398,7 @@
     });
 
     const elementalType = document.getElementById("sorcerer-elemental-affinity-damage-type")?.value || "";
-    if (className === "sorcerer" && level >= 6 && elementalType && castDamageTypes.includes(elementalType)) {
+    if (hasSubclassFeature(className, "sorcerer-elemental-affinity", level, "sorcerer", 6) && elementalType && castDamageTypes.includes(elementalType)) {
       modifiers.push({
         id: "sorcerer-elemental-affinity",
         label: "元素親和",

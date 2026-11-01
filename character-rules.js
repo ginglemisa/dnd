@@ -304,7 +304,7 @@
       + laterLevelHp * (normalizedLevel - 1);
 
     if (options.race === "dwarf") maxHp += normalizedLevel;
-    if (className === "sorcerer" && normalizedLevel >= 3) maxHp += normalizedLevel;
+    if (hasClassFeature(className, "sorcerer-draconic-resilience", normalizedLevel, options.subclass)) maxHp += normalizedLevel;
     if (options.hasToughFeat) maxHp += normalizedLevel * 2;
     return maxHp;
   }
@@ -426,7 +426,7 @@
       Array.from({ length: proficiency }, (_, i) => `race-ab-check${i + 1}`));
     if (race === "goliath" && options.goliathAncestry) addControls("goliath-ancestry", "巨人血統異能",
       Array.from({ length: proficiency }, (_, i) => `goliath-giant-ancestry-check${i + 1}`));
-    if (className === "druid" && level >= 6 && options.druidLand) {
+    if (hasClassFeature(className, "druid-natural-recovery", level, options.subclass) && options.druidLand) {
       addControls("druid-natural-recovery-free", "自然恢復（免費施法）", ["druid-natural-recovery-used"]);
     }
     for (const group of options.spellSlotGroups || []) {
@@ -570,7 +570,7 @@
     if (options.hasArmor && !armor) return null;
 
     let armorClass;
-    if (!armor && className === "sorcerer" && level >= 3) {
+    if (!armor && hasClassFeature(className, "sorcerer-draconic-resilience", level, options.subclass)) {
       armorClass = 10 + charismaModifier + dexModifier;
     } else if (!armor && !options.hasAnyShield && className === "monk") {
       armorClass = 10 + dexModifier + wisdomModifier;

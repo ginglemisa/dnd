@@ -1528,7 +1528,7 @@
     const remaining = Math.max(0, rules.maximum - getBuiltInResourceSpent("druid-wild-shape"));
     return { level, rules, druid, slots, incapacitated, remaining,
       token: JSON.stringify([level, druid, slots, combatState.builtInResourceUsage, combatState.temporaryHp,
-        incapacitated, field("druid-land"), ["str", "dex", "con", "wis", "armor", "mainHand", "offHand"].map(field)]) };
+        incapacitated, field("subclass"), field("druid-land"), ["str", "dex", "con", "wis", "armor", "mainHand", "offHand"].map(field)]) };
   }
 
   function getDruidForm() {
@@ -2247,6 +2247,13 @@
     };
   }
 
+  // 子職能力依目前子職判斷（character-rules.js 的 hasClassFeature，以內容檔的能力 ID）；
+  // 純 Node.js 驗證未載入職業資料時，視為預設子職：沿用職業與等級的判斷。
+  function hasSubclassFeature(className, featureId, level, defaultClass, minimumLevel) {
+    if (typeof globalScope.hasClassFeature === "function" && globalScope.getClassRules?.(className)) return globalScope.hasClassFeature(className, featureId, level);
+    return className === defaultClass && level >= minimumLevel;
+  }
+
   function buildSorcererElementalAffinityEntry({ className, characterLevel, damageType }) {
     const level = Number.parseInt(characterLevel, 10) || 0;
     const damageTypeLabel = {
@@ -2256,7 +2263,7 @@
       lightning: "閃電",
       poison: "毒素"
     }[damageType] || "";
-    if (className !== "sorcerer" || level < 6 || !damageTypeLabel) return null;
+    if (!hasSubclassFeature(className, "sorcerer-elemental-affinity", level, "sorcerer", 6) || !damageTypeLabel) return null;
     return {
       label: "抗性",
       detail: `${damageTypeLabel}傷害減半。`
@@ -2375,7 +2382,7 @@
   function getSorcererElementalAffinitySpellEntry() {
     const selectedClass = document.getElementById("class")?.value || "";
     const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
-    if (selectedClass !== "sorcerer" || characterLevel < 6) return null;
+    if (!hasSubclassFeature(selectedClass, "sorcerer-elemental-affinity", characterLevel, "sorcerer", 6)) return null;
     const damageTypeSelect = document.getElementById("sorcerer-elemental-affinity-damage-type");
     if (!damageTypeSelect?.value) return null;
     const damageType = String(damageTypeSelect.selectedOptions?.[0]?.textContent || "").trim();

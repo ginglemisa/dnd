@@ -83,8 +83,9 @@ function getClassOptionRules() {
   const availability = new Map();
   const attackNotes = [];
   Object.values(source || {}).forEach(rules => {
-    [...rules.features, ...rules.subclasses.flatMap(subclass => subclass.features)].forEach(feature => {
-      const requirement = Object.freeze({ className: rules.id, minimumLevel: feature.level });
+    [...rules.features.map(feature => [feature, null]), ...rules.subclasses.flatMap(subclass => subclass.features.map(feature => [feature, subclass.id]))].forEach(([feature, subclass]) => {
+      // subclass：子職能力的選項只在選擇該子職時可用（職業能力為 null）。
+      const requirement = Object.freeze({ className: rules.id, minimumLevel: feature.level, subclass });
       const label = `${rules.name}${feature.choiceName || feature.name}`;
       if (feature.options) {
         const ids = Object.freeze(feature.options.map(option => option.id));
@@ -187,7 +188,12 @@ function isClassOptionControlAvailable(id) {
   if (!requirement) return true;
   const classValue = document.getElementById("class")?.value || "";
   const level = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
-  return classValue === requirement.className && level >= requirement.minimumLevel;
+  return isClassOptionRequirementMet(requirement, classValue, level);
+}
+
+function isClassOptionRequirementMet(requirement, classValue, level) {
+  return classValue === requirement.className && level >= requirement.minimumLevel
+    && (!requirement.subclass || window.getSelectedSubclassId?.(classValue) === requirement.subclass);
 }
 
 function removeManagedAttackNoteFragment(value, fragment) {
@@ -1399,11 +1405,18 @@ function renderClassFeaturePanels(html, output, creationOutput) {
   creationOutput.replaceChildren(creation || document.createTextNode("無資料"));
 }
 
-// 職業能力頁籤：只列到目前等級；做成選擇卡片的附錄（超魔法、魔能祈喚，data-class-appendix）另在專屬區塊顯示。
-function getClassFeatureHtmlBeforeLevel(raw, nextLevel) {
+// 職業能力頁籤：只列到目前等級與目前子職（data-subclass 為子職 ID，特性表的「子職特性」另有 data-subclass-except）；
+// 做成選擇卡片的附錄（超魔法、魔能祈喚，data-class-appendix）另在專屬區塊顯示。
+function getClassFeatureHtmlBeforeLevel(raw, nextLevel, subclassId) {
   const template = document.createElement("template");
   template.innerHTML = raw;
   template.content.querySelectorAll("[data-class-appendix]").forEach(section => section.remove());
+  template.content.querySelectorAll("[data-subclass]").forEach(element => {
+    if (!element.dataset.subclass.split(" ").includes(subclassId)) element.remove();
+  });
+  template.content.querySelectorAll("[data-subclass-except]").forEach(element => {
+    if (element.dataset.subclassExcept.split(" ").includes(subclassId)) element.remove();
+  });
   template.content.querySelectorAll("section[data-feature-level]").forEach(section => {
     if (Number(section.dataset.featureLevel) >= nextLevel) section.remove();
   });
@@ -1439,7 +1452,7 @@ function updateClassFeature() {
 
   const raw = classFeatures[selectedClass];
   const hasMetamagic = getClassAppendixOptions(selectedClass, "metamagic").length > 0;
-  const visibleHtml = getClassFeatureHtmlBeforeLevel(raw, level && !isNaN(level) ? parseInt(level) + 1 : Infinity);
+  const visibleHtml = getClassFeatureHtmlBeforeLevel(raw, level && !isNaN(level) ? parseInt(level) + 1 : Infinity, window.getSelectedSubclassId?.(selectedClass) || "");
   renderClassFeaturePanels(highlightSpellNamesInClassFeature(visibleHtml), output, creationOutput);
 
   renderBardMagicalDiscoveryControls();
@@ -1959,7 +1972,7 @@ function getClassFeatureChoiceIssues() {
   // 給予專長選擇的選項（featChoice，例如戰鬥風格類型）在自行管理專長時不提醒。
   const { groups: optionGroups, selects: optionSelects } = getClassOptionRules();
   optionGroups.forEach(group => {
-    if (group.className !== selectedClass || selectedLevel < group.minimumLevel) return;
+    if (!isClassOptionRequirementMet(group, selectedClass, selectedLevel)) return;
     if (isManualFeatManagementEnabled() && group.featChoice) return;
     if (group.ids.some(id => document.getElementById(id)?.checked)) return;
     pushGeneral({
@@ -1970,7 +1983,7 @@ function getClassFeatureChoiceIssues() {
     });
   });
 
-  if (selectedClass === "druid" && selectedLevel >= 3 && !(document.getElementById("druid-land")?.value || "").trim()) {
+  if (window.hasClassFeature?.(selectedClass, "druid-circle-of-the-land-spells", selectedLevel) && !(document.getElementById("druid-land")?.value || "").trim()) {
     pushGeneral({
       message: "大地結社地貌尚未選擇。",
       tab: "basic",
@@ -2001,7 +2014,7 @@ function getClassFeatureChoiceIssues() {
 
   }
 
-  if (!manualSpells && selectedClass === "bard" && selectedLevel >= 6) {
+  if (!manualSpells && window.hasClassFeature?.(selectedClass, "bard-magical-discoveries", selectedLevel)) {
     const magicalDiscoveryIncomplete = getBardMagicalDiscoverySelection().some(selection =>
       !selection.classValue || !selection.ring || !selection.spellId
     );

@@ -2,6 +2,7 @@
 // 由 character-rules.js 等網站程式計算資源次數、法術位、特性表數值、跑團數值、選項與動作。
 "use strict";
 const { renderInline } = require("./markdown");
+const { orderedSubclasses } = require("./render");
 
 const ABILITY_CODES = Object.freeze({ 力量: "str", 敏捷: "dex", 體質: "con", 智力: "int", 感知: "wis", 魅力: "cha" });
 // 只供職業頁與跑團說明使用的文字欄位：機制資料不含這些欄位。
@@ -52,7 +53,8 @@ function classRules(classDef, appendixHtml = []) {
     progression: classDef.progression || {},
     values: classDef.values || {},
     features: namedFeatures(classDef.features),
-    subclasses: classDef.subclasses.map(subclass => ({
+    // 子職（預設子職在前）：網站的子職選單依此順序。
+    subclasses: orderedSubclasses(classDef).map(subclass => ({
       id: subclass.id,
       name: subclass.name,
       shortName: subclass.shortName,

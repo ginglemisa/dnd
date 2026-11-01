@@ -152,8 +152,7 @@
   }
 
   function getSubclassLabel(classKey) {
-    const rules = getClassRules(classKey);
-    return rules?.subclasses.find((subclass) => subclass.id === rules.defaultSubclass)?.name || '';
+    return globalScope.getSelectedSubclass?.(classKey)?.name || '';
   }
 
   // A selected option is appended to its heading as "／選項"; nextLine specs
