@@ -1958,13 +1958,40 @@ details > summary::-webkit-details-marker,
   min-width: 0;
 }
 
+/* 窄螢幕人類的起源專長、「查看」與體型同列，收窄間距與內距讓專長選單保留最多空間。 */
 @media (width < 540px) {
+  .race-options:has(> .race-option-choices > #human-origin-row:not(.is-hidden)) {
+    gap: 0.35rem;
+  }
+
+  #human-origin-row {
+    container-type: inline-size;
+  }
+
   #human-origin-row .feat-choice-control {
-    grid-template-columns: minmax(0, 1fr);
+    gap: 0.35rem;
+  }
+
+  #human-origin-row select {
+    padding-inline: 0.7rem;
   }
 
   #human-origin-row .feat-choice-view {
-    justify-self: start;
+    padding-inline: 0.5rem;
+  }
+
+  .race-options:has(> .race-option-choices > #human-origin-row:not(.is-hidden)) > .race-size-select {
+    flex: 0 0 auto;
+    width: 4.5rem;
+    min-width: 0;
+    padding-inline: 0.55rem;
+  }
+
+  /* 專長選單只剩體型選單約 1.8 倍寬（8.1rem＋間距＋查看約 11.6rem）時隱藏「查看」，說明仍見專長區。 */
+  @container (width < 11.6rem) {
+    #human-origin-row .feat-choice-view {
+      display: none;
+    }
   }
 }
 
