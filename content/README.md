@@ -179,9 +179,9 @@ mount: { id: bard-magical-discoveries, label: 魔法發現法術選擇 }
 
 ## 特殊機制
 
-網站程式另外插入控制項或辨識標記的能力寫 `behavior: <名稱>`，對應 `tools/class-content/behaviors/<名稱>.js`：
+一般欄位表達不了的特殊排版寫 `behavior: <名稱>`，對應 `tools/class-content/behaviors/<名稱>.js`，並在 `text` 中把要特殊排版的小節標題寫成 `#### 標題 {#名稱}`（名稱同 `behavior`，只能有一個）。這個小節不照一般小節輸出，改由 behavior 依小節內的段落與清單產生；標記缺少、名稱不符或小節內容不符時建置失敗。網站程式只需要插入點或標記時，改用 `mount`（見「插入點」）或網站功能標記 `[文字]{標記名}`（見「文字寫法」）。
 
-- `wild-shape-known-forms`：把荒野形態的「#### 已知形態」小節（說明段落、推薦段落、規則清單三個區塊）輸出成已知形態區塊（推薦框等排版），並在區塊末端接上「查看其他動物」的野獸清單；緊接其後的小節（變形規則）加上分隔樣式。野獸清單是另外整理的參考資料，不寫進內容檔，讀取 `druid-wild-shape-beasts.js` 的 `DRUID_WILD_SHAPE_BEASTS`（跑團模式的 `DruidBeastForms` 也來自這份清單）。找不到這段結構時建置失敗。
+- `wild-shape-known-forms`：荒野形態的 `#### 已知形態 {#wild-shape-known-forms}` 小節（依序為說明段落、推薦段落、規則清單）輸出成已知形態區塊（推薦框等排版），並在區塊末端接上「查看其他動物」的野獸清單；緊接其後須有一個小節（變形規則），會加上分隔樣式。野獸清單是另外整理的參考資料，不寫進內容檔，讀取 `druid-wild-shape-beasts.js` 的 `DRUID_WILD_SHAPE_BEASTS`（跑團模式的 `DruidBeastForms` 也來自這份清單），每個 `key` 須存在於 `monster.js` 的 `BEAST_STATS`，否則建置失敗。
 
 ## 職業層級的欄位
 

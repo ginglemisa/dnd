@@ -84,7 +84,9 @@ function parseBlocks(source, where) {
     }
     if (/^#### /.test(line)) {
       close();
-      blocks.push({ type: "h4", text: line.slice(5).trim() });
+      // 標題結尾的「{#名稱}」：特殊排版的小節，交給能力 behavior 的 renderSubsection()（見 renderMarkdown）。
+      const special = line.slice(5).trim().match(/^(.*?)\s*\{#([a-z][a-z0-9-]*)\}$/);
+      blocks.push(special ? { type: "h4", text: special[1], special: special[2] } : { type: "h4", text: line.slice(5).trim() });
       return;
     }
     if (/^#/.test(line)) throw new ContentError(`${at}：只支援「#### 」小節標題`);
@@ -155,6 +157,9 @@ function renderTable(block, frame, options, where, attributes) {
 // options.plainHeadings：「#### 」只輸出 <h4>，不另包小節（文字本身已在小節內，例如附錄小節「書之魔契」的「戲法與儀式」）。
 // options.view（見 renderInline）：跑團版不輸出表格（跑團說明不顯示表格）。
 // 分隔線「---」輸出 <hr class="class-rule-divider">（樣式由 styles.css 設定，不輸出行內 style）。
+// options.behavior：{ name, renderSubsection, nextSubsectionClass }（能力的 behavior）。標題寫成「#### 標題 {#名稱}」的小節
+// （名稱須等於 behavior 名稱）不照一般小節輸出，改由 renderSubsection(blocks, helpers) 依小節內解析好的區塊產生 HTML；
+// nextSubsectionClass 加在緊接其後的小節上（後面沒有小節時報錯）。
 function renderMarkdown(source, options, where) {
   const blocks = parseBlocks(source, where);
   const outer = options.blockAttributes ? ` ${options.blockAttributes}` : "";
@@ -178,22 +183,46 @@ function renderMarkdown(source, options, where) {
     : block.type === "hr" ? `<hr class="class-rule-divider"${attributes}>`
     : block.type === "table" ? renderTableBlock(block, attributes)
     : `<ul class="class-rule-list"${attributes}>${newline}${block.items.map(item => `<li>${joinHardBreaks(item, options, where)}</li>`).join(newline)}${newline}</ul>`;
+  // 區塊的內部 HTML（段落：不含 <p>；清單：<li> 項目），供 behavior 的 renderSubsection() 使用。
+  const inner = block => block.type === "p" ? joinHardBreaks(block.lines, options, where)
+    : block.type === "ul" ? block.items.map(item => `<li>${joinHardBreaks(item, options, where)}</li>`).join("")
+    : (() => { throw new ContentError(`${where}：特殊小節只能有段落與清單`); })();
   const html = [];
   let subsection = null;
+  let special = null;
+  let extraClass = "";
   const closeSubsection = () => {
-    if (subsection !== null) html.push(`<div class="${options.subsectionClass || "class-rule-subsection"}"${outer}>${newline}${subsection.filter(Boolean).join(newline)}${newline}</div>`);
+    if (special) {
+      const output = options.behavior.renderSubsection(special.blocks, { heading: special.heading, inner, view: options.view, where });
+      html.push(output.html);
+      extraClass = output.nextSubsectionClass ? ` ${output.nextSubsectionClass}` : "";
+      special = null;
+      return;
+    }
+    if (subsection !== null) {
+      html.push(`<div class="${options.subsectionClass || "class-rule-subsection"}${extraClass}"${outer}>${newline}${subsection.filter(Boolean).join(newline)}${newline}</div>`);
+      extraClass = "";
+    }
     subsection = null;
   };
   for (const block of blocks) {
-    if (block.type === "h4" && options.plainHeadings) {
+    if (block.special) {
+      const behavior = options.behavior;
+      if (!behavior?.renderSubsection || behavior.name !== block.special) throw new ContentError(`${where}：「#### ${block.text} {#${block.special}}」的名稱須等於此能力的 behavior，且該 behavior 提供小節排版`);
+      if (options.plainHeadings) throw new ContentError(`${where}：這裡的「#### 」只輸出標題，不可寫 {#${block.special}}`);
+      closeSubsection();
+      special = { heading: block.text, blocks: [] };
+    } else if (block.type === "h4" && options.plainHeadings) {
       html.push(`<h4>${renderInline(block.text, options, where)}</h4>`);
     } else if (block.type === "h4") {
       closeSubsection();
       subsection = [`<h4>${renderInline(block.text, options, where)}</h4>`];
-    } else if (subsection !== null) subsection.push(renderBlock(block));
+    } else if (special) special.blocks.push(block);
+    else if (subsection !== null) subsection.push(renderBlock(block));
     else html.push(renderBlock(block, outer));
   }
   closeSubsection();
+  if (extraClass) throw new ContentError(`${where}：特殊小節之後須緊接一個「#### 」小節`);
   return html.filter(Boolean).join(newline);
 }
 

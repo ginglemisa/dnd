@@ -214,7 +214,11 @@ function checkClass(classDef, errors) {
         Object.keys(feature.resource.recoverByLevel || {}).map(Number).filter(level => level <= feature.level || level > classDef.maxLevel)
           .forEach(level => errors.push(`${where}：resource.recoverByLevel 的 ${level} 級須高於能力等級且不超過 maxLevel`));
       }
+      // behavior 排版 text 中標題寫成「#### 標題 {#名稱}」的小節：須有且只有一個（名稱不符或寫在其他欄位時由渲染報錯）。
       if (feature.behavior && !fs.existsSync(path.join(__dirname, "behaviors", `${feature.behavior}.js`))) errors.push(`${where}：找不到 tools/class-content/behaviors/${feature.behavior}.js`);
+      if (feature.behavior && (feature.text || "").split(/\r?\n/).filter(line => /^#### /.test(line) && line.trimEnd().endsWith(`{#${feature.behavior}}`)).length !== 1) {
+        errors.push(`${where}：behavior: ${feature.behavior} 的 text 須有一個「#### 標題 {#${feature.behavior}}」小節`);
+      }
       // spell-id-baseline.json 由 validate-tabletop-spellcasting.js 保證與 SpellCatalog 一致。
       const choiceSpells = (feature.spellsByChoice?.choices || []).flatMap(choice => choice.spells);
       for (const spell of [...(feature.spells || []), ...choiceSpells]) {
