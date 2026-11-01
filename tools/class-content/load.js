@@ -247,6 +247,8 @@ function checkClass(classDef, errors) {
         if (/^#/m.test(feature.select.text || "")) errors.push(`${where}：下拉選擇卡片的文字不可使用「#### 」小節`);
         if (feature.tabletop || feature.summary) errors.push(`${where}：有 select 的能力不可寫 tabletop／summary`);
       }
+      // 插入點：DOM ID 與選項、下拉選單 ID 同在職業頁上，不可重複。
+      if (feature.mount) claim(persistedIds, feature.mount.id, where, "插入點 ID");
       const partTexts = (feature.parts || []).flatMap(part => [part.text, part.tabletop, part.summary]);
       const collapsibleTexts = (feature.collapsible || []).map(item => item.text);
       for (const text of [feature.text, feature.tabletop, feature.summary, feature.afterFeatChoice, feature.select?.text, ...collapsibleTexts, ...partTexts, ...(feature.options || []).map(option => option.text)].filter(Boolean)) {

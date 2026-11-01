@@ -263,6 +263,8 @@ function renderFeature({ feature, owner }, context) {
   if (feature.select) body += renderSelectCard(feature.select, markdownOptions, `${where} 下拉選擇卡片`);
   // 專長選單插在此段落之前（feat-ui.js）；4 級額外戲法選單讀取它的粗體標籤（class-features-ui.js）。
   if (feature.afterFeatChoice) body += renderMarkdown(feature.afterFeatChoice, { ...markdownOptions, blockAttributes: context.view ? "" : "data-after-feat-choice" }, `${where} afterFeatChoice`);
+  // 插入點：網站程式插入控制項的空容器（例如 spell-sources.js 的魔法發現法術選單）。
+  if (feature.mount) body += `<div id="${feature.mount.id}" class="${feature.mount.id}" aria-label="${escapeHtml(feature.mount.label)}"></div>`;
   if (behavior?.afterText) body += behavior.afterText(feature, context);
   if (context.view) {
     if (!feature.id) return "";

@@ -24,7 +24,7 @@ features:
   - id: bard-magical-discoveries
     level: 6
     name: 魔法發現
-    behavior: magical-discoveries
+    mount: { id: bard-magical-discoveries, label: 魔法發現法術選擇 }
     text: |
       你從牧師、德魯伊或法師法術列表中選擇並學會 2 個法術，兩者可以來自不同列表。
 
