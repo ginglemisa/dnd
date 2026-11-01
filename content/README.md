@@ -185,7 +185,7 @@ summary: 你的敏捷豁免有優勢。
 
 ## 不可改名的 ID
 
-選項的 `id`、下拉選單的 `select.id` 與選項值、動作的 `key`／`legacyKeys`、`resource.key`、子職 `id` 會寫進存檔、分享網址或跑團偏好；選項的 `attackNote` 會寫進角色的攻擊備註。改顯示文字沒關係，這些 ID 不可改。
+選項的 `id`、下拉選單的 `select.id` 與選項值、動作的 `key`／`legacyKeys`、`resource.key`、子職 `id` 會寫進存檔、分享網址或跑團偏好；選項的 `attackNote` 會寫進角色的攻擊備註；子職法術的來源識別碼（見「能力給予的法術」）會寫進角色的法術清單。改顯示文字沒關係，這些 ID 不可改。
 
 這些 ID 都列在根目錄的 `class-id-baseline.json`（私人內容包另有 `content/private/class-id-baseline.json`）。ID 不見、改名或新增而基準檔沒更新時，建置會失敗。確定是刻意新增時執行：
 
@@ -220,7 +220,23 @@ resource:
 
 ## 能力給予的法術
 
-`spells` 列出能力給予的法術（例如始終準備），`id` 是法術 ID，須存在於 `spell-id-baseline.json`；`freeUses` 是免費施放次數，可寫數字或特性表欄位名稱。
+`spells` 列出能力給予的法術（例如始終準備），`id` 是法術 ID，須存在於 `spell-id-baseline.json`；`freeUses` 是免費施放次數，可寫數字或特性表欄位名稱；`level` 是取得該法術的職業等級（省略時同能力等級，例如子職法術的 5 級、7 級）。
+
+子職能力的 `spells` 由網站自動加入角色的法術清單（目前子職、達到法術的等級才加入），環階取自法術資料。依下拉選單給予不同法術時（例如大地結社依地貌）改寫 `spellsByChoice`：
+
+```yaml
+spellsByChoice:
+  control: druid-land          # index.html 的下拉選單 ID，選項值須存在於該選單
+  choices:
+    - value: arid
+      name: 旱地               # 法術來源顯示為「大地結社・旱地」
+      spells:
+        - id: fire-bolt
+        - id: fireball
+          level: 5
+```
+
+子職法術的來源識別碼「subclass-職業-名稱-…」會寫進角色的法術清單，名稱是子職名稱（依下拉選單時接「・選項名稱」），列在 ID 基準檔：子職名稱或選項名稱改字前須處理舊資料相容。舊版識別碼和子職名稱不同時寫 `spellSourceKey`（例如邪魔宗主沿用舊版的 `spellSourceKey: 邪魔`）。
 
 ## 檢查與預覽
 

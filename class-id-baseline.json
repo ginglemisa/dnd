@@ -156,5 +156,15 @@
   "attackNotes": [
     "+1d8光/黯傷害",
     "+1d8冷凍/火焰/閃電/雷鳴傷害"
+  ],
+  "spellSourceKeys": [
+    "subclass-cleric-生命領域",
+    "subclass-druid-大地結社・旱地",
+    "subclass-druid-大地結社・極地",
+    "subclass-druid-大地結社・溫帶",
+    "subclass-druid-大地結社・熱帶",
+    "subclass-paladin-奉獻之誓",
+    "subclass-sorcerer-龍族術法",
+    "subclass-warlock-邪魔"
   ]
 }

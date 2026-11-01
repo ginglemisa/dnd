@@ -21,6 +21,15 @@ function getSpellIds() {
   return spellIds;
 }
 
+// index.html 中下拉選單的選項值（spellsByChoice 的 control）；找不到選單時回傳 null。
+let indexHtml = null;
+function getIndexSelectValues(id) {
+  indexHtml ??= fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+  const start = indexHtml.indexOf(`<select id="${id}"`);
+  const select = start < 0 ? null : indexHtml.slice(start).match(/^[^>]*>([\s\S]*?)<\/select>/);
+  return select ? new Set([...select[1].matchAll(/<option value="([^"]*)"/g)].map(match => match[1]).filter(Boolean)) : null;
+}
+
 function createValidators() {
   const ajv = new Ajv({ allErrors: true, strict: true, strictRequired: false, allowUnionTypes: true });
   const kinds = { class: "class", subclass: "subclass", extension: "class-extension", multiclassRules: "multiclass-rules" };
@@ -202,9 +211,23 @@ function checkClass(classDef, errors) {
       }
       if (feature.behavior && !fs.existsSync(path.join(__dirname, "behaviors", `${feature.behavior}.js`))) errors.push(`${where}：找不到 tools/class-content/behaviors/${feature.behavior}.js`);
       // spell-id-baseline.json 由 validate-tabletop-spellcasting.js 保證與 SpellCatalog 一致。
-      for (const spell of feature.spells || []) {
+      const choiceSpells = (feature.spellsByChoice?.choices || []).flatMap(choice => choice.spells);
+      for (const spell of [...(feature.spells || []), ...choiceSpells]) {
         if (!getSpellIds().has(spell.id)) errors.push(`${where}：法術 ID「${spell.id}」不存在於 spell-id-baseline.json`);
         if (typeof spell.freeUses === "string" && (!valueNames.has(spell.freeUses) || textValues.has(spell.freeUses))) errors.push(`${where}：法術 ${spell.id} 的 freeUses「${spell.freeUses}」不是特性表欄位或數值公式`);
+        if (spell.level !== undefined && (spell.level < feature.level || spell.level > classDef.maxLevel)) errors.push(`${where}：法術 ${spell.id} 的 level 須介於能力等級與 maxLevel 之間`);
+      }
+      // 子職法術的來源識別碼（subclass-職業-名稱-…）會寫進存檔；依選項給予的法術讀取 index.html 的下拉選單。
+      if ((feature.spellsByChoice || feature.spellSourceKey) && owner === classDef) errors.push(`${where}：spellsByChoice／spellSourceKey 只用於子職能力`);
+      if (feature.spellSourceKey && !feature.spells && !feature.spellsByChoice) errors.push(`${where}：spellSourceKey 只用於有 spells／spellsByChoice 的能力`);
+      if (feature.spells && feature.spellsByChoice) errors.push(`${where}：spells 與 spellsByChoice 只能擇一`);
+      if (feature.spellsByChoice) {
+        const { control, choices } = feature.spellsByChoice;
+        const values = choices.map(choice => choice.value);
+        if (new Set(values).size !== values.length) errors.push(`${where}：spellsByChoice 的選項值重複`);
+        const options = getIndexSelectValues(control);
+        if (!options) errors.push(`${where}：index.html 找不到下拉選單 #${control}`);
+        else values.filter(value => !options.has(value)).forEach(value => errors.push(`${where}：下拉選單 #${control} 沒有選項值「${value}」`));
       }
       // 可收合小節：不可再有小節；跑團說明與總覽讀取整段，寫 tabletop／summary 會漏掉可收合小節。
       for (const item of feature.collapsible || []) {

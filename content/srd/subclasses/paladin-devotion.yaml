@@ -7,6 +7,13 @@ features:
   - id: paladin-oath-of-devotion-spells
     level: 3
     name: 奉獻之誓法術
+    spells:
+      - id: protection-from-evil-and-good
+      - id: shield-of-faith
+      - id: aid
+        level: 5
+      - id: zone-of-truth
+        level: 5
     text: |
       達到下列聖騎士等級後，你始終準備對應法術：
 
