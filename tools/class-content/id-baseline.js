@@ -19,7 +19,8 @@ const CATEGORIES = Object.freeze({
   resourceKeys: "資源 key",
   selects: "下拉選單 ID",
   selectValues: "下拉選單的選項值（下拉選單 ID=值）",
-  attackNotes: "選項的攻擊備註（存進角色攻擊備註欄，取消勾選時以相同字串移除）"
+  attackNotes: "選項的攻擊備註（存進角色攻擊備註欄，取消勾選時以相同字串移除）",
+  spellSourceKeys: "子職法術的來源識別碼（存進角色法術清單）"
 });
 
 function collectPersistedIds(classes) {
@@ -28,8 +29,12 @@ function collectPersistedIds(classes) {
     packs[pack] ||= Object.fromEntries(Object.keys(CATEGORIES).map(name => [name, new Set()]));
     packs[pack][category].add(id);
   };
-  const addFeatures = (pack, features) => {
+  const addFeatures = (pack, features, classId, subclass) => {
     for (const feature of features) {
+      // 網站的子職法術來源識別碼為「subclass-職業-名稱-環階-法術-序號」，名稱改字會讓舊存檔的法術清單對不上。
+      const sourceName = feature.spellSourceKey || subclass?.name;
+      if (subclass && feature.spells) add(pack, "spellSourceKeys", `subclass-${classId}-${sourceName}`);
+      (feature.spellsByChoice?.choices || []).forEach(choice => add(pack, "spellSourceKeys", `subclass-${classId}-${sourceName}・${choice.name}`));
       (feature.options || []).forEach(option => {
         add(pack, "options", option.id);
         if (option.attackNote) add(pack, "attackNotes", option.attackNote);
@@ -44,11 +49,11 @@ function collectPersistedIds(classes) {
   };
   for (const classDef of classes.values()) {
     add(classDef.pack, "classes", classDef.id);
-    addFeatures(classDef.pack, classDef.features);
+    addFeatures(classDef.pack, classDef.features, classDef.id, null);
     getAppendixActions(classDef).forEach(action => [action.key, ...(action.legacyKeys || [])].forEach(key => add(classDef.pack, "actionKeys", key)));
     for (const subclass of classDef.subclasses) {
       add(subclass.pack, "subclasses", `${classDef.id}/${subclass.id}`);
-      addFeatures(subclass.pack, subclass.features);
+      addFeatures(subclass.pack, subclass.features, classDef.id, subclass);
     }
   }
   return Object.fromEntries(Object.entries(packs).map(([pack, sets]) => [pack, Object.fromEntries(

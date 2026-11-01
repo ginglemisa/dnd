@@ -198,7 +198,7 @@ function getPickedSpellSourceTag(entry) {
 function hasDruidNaturalRecoverySpells() {
   const classValue = document.getElementById("class")?.value || "";
   const level = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
-  if (classValue !== "druid" || level < 6 || !document.getElementById("druid-land")?.value) return false;
+  if (!window.hasClassFeature?.(classValue, "druid-natural-recovery", level) || !document.getElementById("druid-land")?.value) return false;
   return getSubclassDerivedSpellSpecs().some(spec => typeof spec.ring === "number" && spec.ring >= 1);
 }
 

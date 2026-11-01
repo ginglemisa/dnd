@@ -23,12 +23,14 @@ function formatProgressionValue(column, level) {
 }
 
 // 合併職業與子職能力：選子職的入口後接子職當級能力；其他等級的子職能力排在當級具名能力之後、補充說明之前。
-function mergeFeatures(classDef, subclass) {
+// subclasses 可有多個（網站依目前選擇的子職只顯示其中一個），同一位置依子職順序排列。
+function mergeFeatures(classDef, subclasses) {
   const merged = [];
-  const levels = [...new Set([...classDef.features, ...(subclass?.features || [])].map(feature => feature.level))].sort((a, b) => a - b);
+  const subFeatures = subclasses.flatMap(subclass => subclass.features.map(feature => ({ feature, owner: subclass })));
+  const levels = [...new Set([...classDef.features, ...subFeatures.map(item => item.feature)].map(feature => feature.level))].sort((a, b) => a - b);
   for (const level of levels) {
     const own = classDef.features.filter(feature => feature.level === level).map(feature => ({ feature, owner: classDef }));
-    const sub = (subclass?.features || []).filter(feature => feature.level === level).map(feature => ({ feature, owner: subclass }));
+    const sub = subFeatures.filter(item => item.feature.level === level);
     const entryIndex = own.findIndex(item => item.feature.type === "subclass");
     const insertAt = entryIndex >= 0 ? entryIndex + 1 : own.filter(item => item.feature.name).length;
     merged.push(...own.slice(0, insertAt), ...sub, ...own.slice(insertAt));
@@ -36,9 +38,14 @@ function mergeFeatures(classDef, subclass) {
   return merged;
 }
 
-function createRenderContext(classDef, subclass) {
+// 子職順序：預設子職在前，其餘依載入順序（內容包、檔名）。
+function orderedSubclasses(classDef) {
+  return [...classDef.subclasses].sort((a, b) => (b.id === classDef.defaultSubclass) - (a.id === classDef.defaultSubclass));
+}
+
+function createRenderContext(classDef, subclasses) {
   const valueNames = new Set([...Object.keys(classDef.progression || {}), ...Object.keys(classDef.values || {}), ...Object.keys(BUILT_IN_VALUES)]);
-  const merged = mergeFeatures(classDef, subclass);
+  const merged = mergeFeatures(classDef, subclasses);
   const appended = new Set(merged.flatMap(({ feature }) => getActions(feature).flatMap(action => action.append || [])));
   // 子能力標題的消耗字樣：資源名稱是定義該資源的能力名稱。
   const resourceNames = new Map(merged.filter(({ feature }) => feature.resource).map(({ feature }) => [feature.resource.key, feature.name]));
@@ -50,7 +57,7 @@ function createRenderContext(classDef, subclass) {
   };
   return {
     classDef,
-    subclass,
+    subclasses,
     merged,
     appended,
     resourceNames,
@@ -82,17 +89,23 @@ function renderCreation(context) {
   ];
   const progression = Object.values(classDef.progression || {});
   // 有子職能力的等級：只有子職能力時顯示「子職特性」；另有職業能力、但不是選擇子職的等級，接在職業能力之後。
+  // 只有部分子職在該等級有能力時，「子職特性」包在 data-subclass（子職 ID 以空白分隔）裡，網站只留目前子職的文字。
   const featureNames = level => {
     const own = classDef.features.filter(feature => feature.level === level && feature.name);
-    const hasSubclassFeature = (context.subclass?.features || []).some(feature => feature.level === level);
-    const names = own.map(feature => feature.tableName || feature.name);
-    if (hasSubclassFeature && !own.some(feature => feature.type === "subclass")) names.push("子職特性");
-    return names.length ? names.join("，") : "-";
+    const withFeature = context.subclasses.filter(subclass => subclass.features.some(feature => feature.level === level));
+    const names = own.map(feature => escapeHtml(feature.tableName || feature.name));
+    if (!withFeature.length || own.some(feature => feature.type === "subclass")) return names.length ? names.join("，") : "-";
+    if (withFeature.length === context.subclasses.length) return [...names, "子職特性"].join("，");
+    const ids = withFeature.map(subclass => subclass.id).join(" ");
+    return names.length
+      ? `${names.join("，")}<span data-subclass="${ids}">，子職特性</span>`
+      : `<span data-subclass="${ids}">子職特性</span><span data-subclass-except="${ids}">-</span>`;
   };
   const tableRows = Array.from({ length: classDef.maxLevel }, (unused, index) => {
     const level = index + 1;
-    const cells = [String(level), `+${getProficiencyBonus(level)}`, featureNames(level), ...progression.map(column => formatProgressionValue(column, level))];
-    return `<tr>${cells.map(cell => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`;
+    const cells = [String(level), `+${getProficiencyBonus(level)}`, ...progression.map(column => formatProgressionValue(column, level))].map(escapeHtml);
+    cells.splice(2, 0, featureNames(level));
+    return `<tr>${cells.map(cell => `<td>${cell}</td>`).join("")}</tr>`;
   });
   const headers = ["等級", "熟練加值", "職業特性", ...progression.map(column => column.label)];
   return `<section class="class-creation-content" data-class-feature-panel="creation">
@@ -244,9 +257,11 @@ function renderFeature({ feature, owner }, context) {
   // 專長選單插在此段落之前（feat-ui.js）；4 級額外戲法選單讀取它的粗體標籤（class-features-ui.js）。
   if (feature.afterFeatChoice) body += renderMarkdown(feature.afterFeatChoice, { ...markdownOptions, blockAttributes: "data-after-feat-choice" }, `${where} afterFeatChoice`);
   if (behavior?.afterText) body += behavior.afterText(feature, context);
+  // 子職能力加上 data-subclass（子職 ID），網站只顯示目前選擇的子職。
   const attributes = [
     `class="${classDef.id}-feature class-feature-section"`,
     `data-feature-level="${feature.level}"`,
+    owner === classDef ? "" : `data-subclass="${owner.id}"`,
     feature.changeOn ? `data-rest-change="either"` : "",
     behavior?.sectionAttributes ? behavior.sectionAttributes(feature, context) : "",
     feature.id ? `data-action-id="${feature.id}"` : ""
@@ -256,9 +271,10 @@ function renderFeature({ feature, owner }, context) {
   return `<section ${attributes}>${heading}${body}</section>`;
 }
 
-// 回傳 html（與舊版 classFeatures[classId] 對應）、tabletop 與 summaries（能力 ID → 行內 HTML），以及附錄小節的內文 HTML。
-function renderClass(classDef, subclass = classDef.subclasses.find(item => item.id === classDef.defaultSubclass)) {
-  const context = { ...createRenderContext(classDef, subclass), tabletop: {}, summaries: {} };
+// 回傳 html（與舊版 classFeatures[classId] 對應，含全部子職的能力）、tabletop 與 summaries（能力 ID → 行內 HTML），
+// 以及附錄小節的內文 HTML。
+function renderClass(classDef) {
+  const context = { ...createRenderContext(classDef, orderedSubclasses(classDef)), tabletop: {}, summaries: {} };
   const features = [...context.merged.map(item => renderFeature(item, context)), ...(classDef.appendix || []).map(item => renderAppendix(item, context))].join("\n");
   const html = `${renderCreation(context)}
 <div class="class-feature-content" data-class-feature-panel="class">
@@ -270,4 +286,4 @@ ${features}
   return { html, tabletop: context.tabletop, summaries: context.summaries, appendix };
 }
 
-module.exports = { renderClass, mergeFeatures, getProgressionValue };
+module.exports = { renderClass, mergeFeatures, orderedSubclasses, getProgressionValue };

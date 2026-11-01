@@ -182,7 +182,7 @@ function getFeatChoiceSpecs() {
   }
   if (cls === "fighter" && level >= 1) {
     specs.push({ key: "fighting-style-fighter", source: "class", label: "戰鬥風格", type: "style", level: 1, active: true });
-    if (level >= 7) specs.push({ key: "fighting-style-fighter-2", source: "class", label: "戰鬥風格2", headingLabel: "額外戰鬥風格", type: "style", level: 7, active: true });
+    if (window.hasClassFeature?.("fighter", "fighter-additional-fighting-style", level)) specs.push({ key: "fighting-style-fighter-2", source: "class", label: "戰鬥風格2", headingLabel: "額外戰鬥風格", type: "style", level: 7, active: true });
   }
   if (["paladin", "ranger"].includes(cls) && level >= 2) {
     specs.push({ key: `fighting-style-${cls}`, source: "class", label: "戰鬥風格", type: "style", level: 2, active: Boolean(document.getElementById(`${cls}-fighting-style`)?.checked) });

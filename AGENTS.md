@@ -13,7 +13,7 @@
 ## 前端架構與相容性
 
 * 原生 HTML／CSS／JavaScript 靜態網站；`index.html` 以傳統 `<script defer>` 依序載入全域模組，不新增前端框架或 runtime dependency。驗證沿用 Node.js／Playwright，不新增測試框架或依賴。
-* 唯一的建置流程是職業內容檔：`npm run build` 讀取 `content/` 的 YAML 做 schema 與跨檔檢查（`yaml`、`ajv` 僅為開發依賴，不進網站）。寫法見 [content/README.md](content/README.md)。建置由公開內容包產生網站讀取的 `class-content.generated.js`（全域 `classFeatures` 職業頁 HTML、`classTabletopText` 跑團文字與 `classRules` 機制資料：特性表、數值、資源、選項、動作，網站以 `character-rules.js` 的 `getClassRules()` 等讀取），這是衍生產物，不提交（`.gitignore`），不可手改；本機預覽、回歸腳本與離線建置前先 `npm run build`（`npm run dev`、`npm test` 會自動執行）。`index.html` 載入它的 `?v=` 只在上線建置（`npm run build -- --stamp-version`）時改為內容雜湊，本機建置不改 `index.html`。私人內容包不寫進產生檔。內容檔的持久化 ID（職業、子職、選項、跑團動作 key、資源 key）以 `class-id-baseline.json` 把關，規則同 `spell-id-baseline.json`：只在確認刻意新增，或已處理舊資料相容的移除／改名後，才執行 `npm run build -- --update-id-baseline`；`spells` 的法術 ID 須存在於 `spell-id-baseline.json`。
+* 唯一的建置流程是職業內容檔：`npm run build` 讀取 `content/` 的 YAML 做 schema 與跨檔檢查（`yaml`、`ajv` 僅為開發依賴，不進網站）。寫法見 [content/README.md](content/README.md)。建置由公開內容包產生網站讀取的 `class-content.generated.js`（全域 `classFeatures` 職業頁 HTML、`classTabletopText` 跑團文字與 `classRules` 機制資料：特性表、數值、資源、選項、動作，網站以 `character-rules.js` 的 `getClassRules()` 等讀取），這是衍生產物，不提交（`.gitignore`），不可手改；本機預覽、回歸腳本與離線建置前先 `npm run build`（`npm run dev`、`npm test` 會自動執行）。`index.html` 載入它的 `?v=` 只在上線建置（`npm run build -- --stamp-version`）時改為內容雜湊，本機建置不改 `index.html`。私人內容包不寫進 `class-content.generated.js`：本機有 `content/private/` 時另寫進 `class-content.private.generated.js`（同樣不提交；網站在公開資料之後載入，以含私人子職等的完整資料取代該職業），沒有私人內容包、上線建置（`--stamp-version`）或 `--public-only` 時為空檔，離線角色卡一律不含。內容檔的持久化 ID（職業、子職、選項、跑團動作 key、資源 key）以 `class-id-baseline.json` 把關，規則同 `spell-id-baseline.json`：只在確認刻意新增，或已處理舊資料相容的移除／改名後，才執行 `npm run build -- --update-id-baseline`；`spells` 的法術 ID 須存在於 `spell-id-baseline.json`。
 * `content/private/` 是私人內容包（gitignore），可放有版權的子職、`class-extensions/`（補充既有職業，例如兼職）與 `rules/`；不得提交或複製到公開檔案。公開內容不得依賴私人內容包才能建置。
 * `index.html` 負責角色卡 DOM、初始化、表單串接、持久化與分享；僅依任務需要拆分，不因檔案大小／一致性重寫架構。樣式以 `styles.css` 為準，外觀／互動先查 [DESIGN.md](DESIGN.md)。
 * 自 `index.html` 搬出的角色卡程式（`sheet-utils.js`、`feat-ui.js`、`spell-sources.js`、`class-features-ui.js`、`sheet-spells.js`、`pdf-launcher.js`）以不加 defer／async 的本機 `<script src>` 同步載入（`sheet-spells.js`、`pdf-launcher.js` 在原區塊位置，其餘只含宣告者提前於第一段內嵌 script），維持全域名稱；除 `sheet-spells.js` 保留原有頂層初始化外只放函式與狀態宣告，頂層程式不得依賴後載入 script 的宣告；驗證腳本以此辨識並一併檢查，離線建置保留各標籤的 defer 與否。搬移與功能修改分開提交。
@@ -27,7 +27,7 @@
 * 修改正式部署載入的 CSS／JavaScript 時，依 `index.html` 既有查詢字串策略更新對應快取版本，只處理本次變動資源。
 * 分享流程入口為 `index.html` 的 `copyShareUrl()`，對話框沿用 `AppDialog`。短網址只在使用者明確選擇後建立，傳送當次編碼產生的區域變數 `hash`，不可改用可能過期的 `location.hash`；保留 `#s=`／`#s2=` 格式相容性與永久網址的複製 fallback。
 * 短網址僅供正式 Origin `https://twd20.com`、`#s2=` 且 hash 長度 ≤10000 使用，離線頁不得呼叫服務。90 天有效期由 Worker／KV 管理；建立失敗須明確提示並保留改選永久網址的操作，不可悄悄改複製長網址，也不可自動重試建立請求。
-* 分享模式不 autosave 角色修改、不得再次分享或匯入 JSON；成功載入時鎖定職業、等級、種族、背景，並關閉快速創角與兩種導覽入口（含程式入口），自訂背景僅供查看；解碼失敗的空白卡不鎖定。離開須確認、移除分享資料並重載本機存檔。角色／法術還原不得被本機其他角色記憶覆蓋；跑團動作偏好與頭像仍屬本機保存，不加入分享。主題與擲骰歷史同樣不隨角色傳送。
+* 分享模式不 autosave 角色修改、不得再次分享或匯入 JSON；成功載入時鎖定職業、子職、等級、種族、背景，並關閉快速創角與兩種導覽入口（含程式入口），自訂背景僅供查看；解碼失敗的空白卡不鎖定。離開須確認、移除分享資料並重載本機存檔。角色／法術還原不得被本機其他角色記憶覆蓋；跑團動作偏好與頭像仍屬本機保存，不加入分享。主題與擲骰歷史同樣不隨角色傳送。
 * GA4 啟用閘門在 `index.html`，事件入口在 `analytics.js`。只允許 HTTP(S) 且 hostname 精確為 `twd20.com`／`www.twd20.com`，owner 排除優先；除已識別的 `analytics=owner`／`analytics=user` 外，任何 query 或 fragment（含 `#s=`／`#s2=`）均不得載入 Google 追蹤腳本或送出事件。`analytics=user` 僅解除 owner 偏好，不能繞過網址限制；儲存失敗時當次 owner 仍生效並保留參數。
 * 追蹤不得傳送角色／日誌文字或分享資料；`page_location` 不含 query／fragment，`page_referrer` 僅保留 HTTP(S) origin，Google 腳本使用 `no-referrer`。測試流量與 GA4 模擬限制見下方「執行與停止條件」。
 
@@ -126,7 +126,7 @@
 
 `validate-ui.js` 分項：
 
-* `--data-only`：JSON／分享／autosave 的 XSS、分享身分下拉鎖定與解碼失敗不鎖、輸入／解壓／數量上限、拒絕資料保留、乾淨匯入與記憶體偏好隔離、暫存／套用／存檔失敗副本、復原與重試；職業選項記憶的換職業／等級還原、殘留清除、舊存檔搬移、分享隔離、毀損資料與清除。
+* `--data-only`：JSON／分享／autosave 的 XSS、分享身分下拉鎖定與解碼失敗不鎖、輸入／解壓／數量上限、拒絕資料保留、乾淨匯入與記憶體偏好隔離、暫存／套用／存檔失敗副本、復原與重試；職業選項記憶的換職業／等級還原、殘留清除、舊存檔搬移、分享隔離、毀損資料與清除；子職選單與存檔欄位（單一子職隱藏、預設／未知子職、職業頁／法術／提醒依子職、autosave、分享鎖定，以替身私人資料檔提供第二個子職）。
 * `--appearance-only`：四種外觀、停用下拉灰底與對比、保存／素材、工具選單／技能等共用版面、Legal／About 主題與焦點。
 * `--dialogs-only`：AppDialog／toast 層級／inert／倒數／滑鼠與觸控手勢／暫停／事件隔離；分享方式選項卡、短網址停用原因／失敗不重試／關閉取消；About 載入／重試／網址；角色能力頁籤與創角／表格顯示、子視窗／法術技能動物參考、焦點／選項保存、缺項補填／跳轉／高亮、各職業等級選項自動補選、專長／準備標示與還原；自訂背景編輯／取消／分享唯讀、專長／工具同步、PDF 名稱與還原。
 * `--pdf-only`：欄位與實際可編輯 PDF 匯出；`--pdf-fields-only` 僅驗欄位、不需 PDF／字型素材。涵蓋全部法術材料成分、新舊資料與描述隔離、職業工具、專長／魔法學徒子選項、手動法術模式、盾牌受訓與血統提示。

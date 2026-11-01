@@ -17,7 +17,18 @@
 
 `content/private/` 整個資料夾被 git 忽略，只存在你的電腦；公開網站不會出現兼職等私人內容。
 
+本機執行 `npm run build`（或 `npm run dev`）時，私人內容包的子職與 `class-extensions/` 會寫進根目錄的 `class-content.private.generated.js`（同樣被 git 忽略），網站在公開資料之後載入它，你的電腦上就看得到私人子職（例如子職選單出現兩個以上的選項）。沒有私人內容包、上線建置或執行 `npm run build -- --public-only` 時，這個檔案是空的，網站只有公開內容；離線角色卡一律只含公開內容。私人內容包的持久化 ID 另列在 `content/private/class-id-baseline.json`。
+
 VS Code 安裝 Red Hat 的「YAML」擴充套件後，會依檔案第一行的 `$schema` 自動補完欄位、標出錯誤，滑鼠停在欄位上可看說明。
+
+## 子職
+
+一個職業可以有多個子職檔，職業檔的 `defaultSubclass` 是預設子職，`subclassLevel` 是選擇子職的等級。
+
+- 角色卡依職業的 `subclassLevel` 顯示子職選單（只有一個子職時不顯示，直接使用預設子職）；選擇的子職存進角色資料的 `subclass` 欄位（子職 `id`）。舊存檔、JSON、分享網址沒有這個欄位時使用 `defaultSubclass`；無法辨識的子職改為預設子職並提示。
+- 職業頁、跑團動作與資源、跑團提示、選項與缺項提醒、衍生法術、PDF 的子職名稱與職業特性欄，都只使用目前選擇的子職。
+- 網站資料包含職業的全部子職：子職能力的段落帶 `data-subclass`（子職 ID），特性表的「子職特性」在只有部分子職於該等級有能力時也依子職顯示。子職選單依預設子職在前、其餘依檔名排列。
+- 同一職業各子職的能力 `id`、選項 `id`、動作 `key`、`resource.key` 不可重複（建置會檢查）。
 
 ## 文字寫法
 
@@ -176,7 +187,7 @@ summary: 你的敏捷豁免有優勢。
 
 ## 不可改名的 ID
 
-選項的 `id`、下拉選單的 `select.id` 與選項值、動作的 `key`／`legacyKeys`、`resource.key`、子職 `id` 會寫進存檔、分享網址或跑團偏好；選項的 `attackNote` 會寫進角色的攻擊備註。改顯示文字沒關係，這些 ID 不可改。
+選項的 `id`、下拉選單的 `select.id` 與選項值、動作的 `key`／`legacyKeys`、`resource.key`、子職 `id` 會寫進存檔、分享網址或跑團偏好；選項的 `attackNote` 會寫進角色的攻擊備註；子職法術的來源識別碼（見「能力給予的法術」）會寫進角色的法術清單。改顯示文字沒關係，這些 ID 不可改。
 
 這些 ID 都列在根目錄的 `class-id-baseline.json`（私人內容包另有 `content/private/class-id-baseline.json`）。ID 不見、改名或新增而基準檔沒更新時，建置會失敗。確定是刻意新增時執行：
 
@@ -211,7 +222,23 @@ resource:
 
 ## 能力給予的法術
 
-`spells` 列出能力給予的法術（例如始終準備），`id` 是法術 ID，須存在於 `spell-id-baseline.json`；`freeUses` 是免費施放次數，可寫數字或特性表欄位名稱。
+`spells` 列出能力給予的法術（例如始終準備），`id` 是法術 ID，須存在於 `spell-id-baseline.json`；`freeUses` 是免費施放次數，可寫數字或特性表欄位名稱；`level` 是取得該法術的職業等級（省略時同能力等級，例如子職法術的 5 級、7 級）。
+
+子職能力的 `spells` 由網站自動加入角色的法術清單（目前子職、達到法術的等級才加入），環階取自法術資料。依下拉選單給予不同法術時（例如大地結社依地貌）改寫 `spellsByChoice`：
+
+```yaml
+spellsByChoice:
+  control: druid-land          # index.html 的下拉選單 ID，選項值須存在於該選單
+  choices:
+    - value: arid
+      name: 旱地               # 法術來源顯示為「大地結社・旱地」
+      spells:
+        - id: fire-bolt
+        - id: fireball
+          level: 5
+```
+
+子職法術的來源識別碼「subclass-職業-名稱-…」會寫進角色的法術清單，名稱是子職名稱（依下拉選單時接「・選項名稱」），列在 ID 基準檔：子職名稱或選項名稱改字前須處理舊資料相容。舊版識別碼和子職名稱不同時寫 `spellSourceKey`（例如邪魔宗主沿用舊版的 `spellSourceKey: 邪魔`）。
 
 ## 檢查與預覽
 

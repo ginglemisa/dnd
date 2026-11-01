@@ -12,6 +12,20 @@ features:
   - id: warlock-fiend-spells
     level: 3
     name: 邪魔法術
+    spellSourceKey: 邪魔
+    spells:
+      - id: burning-hands
+      - id: command
+      - id: scorching-ray
+      - id: suggestion
+      - id: fireball
+        level: 5
+      - id: stinking-cloud
+        level: 5
+      - id: fire-shield
+        level: 7
+      - id: wall-of-fire
+        level: 7
     text: |
       達到下列契術師等級後，你始終準備對應法術：
 

@@ -7,6 +7,19 @@ features:
   - id: cleric-life-domain-spells
     level: 3
     name: 生命領域法術
+    spells:
+      - id: bless
+      - id: cure-wounds
+      - id: aid
+      - id: lesser-restoration
+      - id: mass-healing-word
+        level: 5
+      - id: revivify
+        level: 5
+      - id: aura-of-life
+        level: 7
+      - id: death-ward
+        level: 7
     text: |
       達到下列牧師等級後，你始終準備對應法術：
 

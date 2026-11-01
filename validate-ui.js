@@ -2932,6 +2932,93 @@ async function verifyClassOptionMemory(browser, url) {
   } finally { await page.close(); }
 }
 
+// Public content has one subclass per class; this fixture serves the private data file with a second cleric subclass.
+function createSubclassFixture() {
+  const { loadContent } = require("./tools/class-content/load");
+  const { renderPrivateData } = require("./tools/class-content/site-data");
+  const { classes } = loadContent({ packs: ["srd"] });
+  classes.get("cleric").subclasses.push({ id: "test", class: "cleric", name: "測試領域", shortName: "測試", pack: "test", file: "test", features: [
+    { id: "cleric-test-domain-spells", level: 3, name: "測試領域法術", spells: [{ id: "shield" }, { id: "misty-step", level: 5 }], text: "測試領域：始終準備護盾術。\n" },
+    { id: "cleric-test-choice", level: 3, name: "測試選擇", choose: 1, text: "選擇 1 項。\n",
+      options: [{ id: "cleric-test-choice-a", name: "甲", text: "甲。" }, { id: "cleric-test-choice-b", name: "乙", text: "乙。" }] }
+  ] });
+  return renderPrivateData(classes);
+}
+
+async function verifySubclassSelection(browser, url) {
+  const fixture = createSubclassFixture();
+  const withFixture = async page => page.route("**/class-content.private.generated.js*", route => route.fulfill({ contentType: "text/javascript; charset=utf-8", body: fixture }));
+  const blank = { __spellManagement: { version: 2, manual: false, entries: [] }, background: "soldier", race: "human" };
+  const open = async (page, target = url) => {
+    await page.addInitScript(() => { try { localStorage.setItem("dnd.classFeaturePromptDisabled.v1", "true"); } catch {} });
+    await page.goto(target);
+    await page.waitForFunction(() => window.SpellManagement && window.TabletopMode);
+    await page.evaluate(() => { document.getElementById("legal-close-btn")?.click(); window.onboardingTour?.finish?.(); });
+  };
+  const state = page => page.evaluate(() => ({
+    value: document.getElementById("subclass").value,
+    options: Array.from(document.getElementById("subclass").options, option => option.value),
+    visible: !document.getElementById("subclass-control").classList.contains("is-hidden"),
+    sections: Array.from(document.querySelectorAll("#classFeatures section[data-subclass]"), section => section.dataset.actionId),
+    spells: SpellManagement.getEntries().filter(entry => entry.spellSource === "subclass").map(entry => entry.sourceKey)
+  }));
+  const single = await newUiPage(browser);
+  try {
+    // One subclass: the select stays hidden and saves the class's default subclass.
+    await open(single);
+    await single.evaluate(blank => applyStateObject({ ...blank, class: "cleric", level: "3" }), blank);
+    const current = await state(single);
+    assert.deepEqual([current.value, current.options, current.visible], ["life", ["life"], false], "a single subclass is selected and hidden");
+    assert.equal((await single.evaluate(() => collectStateObject())).subclass, "life");
+    assert.ok(current.spells.includes("subclass-cleric-生命領域-1-bless-0"), "subclass spells keep their saved source keys");
+  } finally { await single.close(); }
+
+  const page = await newUiPage(browser, { viewport: { width: 1280, height: 900 } });
+  try {
+    await withFixture(page);
+    await open(page);
+    await page.evaluate(blank => applyStateObject({ ...blank, class: "cleric", level: "2" }), blank);
+    assert.equal((await state(page)).visible, false, "the select waits for the subclass level");
+    await page.evaluate(blank => applyStateObject({ ...blank, class: "cleric", level: "6" }), blank);
+    let current = await state(page);
+    assert.deepEqual([current.value, current.options, current.visible], ["life", ["life", "test"], true], "two subclasses show the select with the default first");
+    assert.ok(current.sections.includes("cleric-blessed-healer") && !current.sections.includes("cleric-test-choice"));
+    await page.locator("#subclass").selectOption("test");
+    current = await state(page);
+    assert.deepEqual(current.sections, ["cleric-test-domain-spells", "cleric-test-choice"], "the class page shows only the selected subclass");
+    assert.deepEqual(current.spells, ["subclass-cleric-測試領域-1-shield-0", "subclass-cleric-測試領域-2-misty-step-1"], "subclass spells follow the selected subclass");
+    assert.equal(await page.locator("#classCreationInfo .class-feature-table tbody tr:nth-child(6) td:nth-child(3)").textContent(), "-", "the table drops subclass features the subclass lacks");
+    assert.ok(await page.evaluate(() => getClassFeatureChoiceIssues().some(issue => issue.message === "牧師測試選擇尚未選擇。")), "the selected subclass's options are reminded");
+    assert.deepEqual(await page.evaluate(() => getClassFeatureRules("cleric").filter(feature => feature.subclass).map(feature => feature.id)),
+      ["cleric-test-domain-spells", "cleric-test-choice"], "tabletop and PDF features follow the selected subclass");
+    assert.equal(await page.evaluate(() => getSelectedSubclass("cleric").name), "測試領域");
+
+    // Autosave restores the subclass; old data without the field uses the default; an unknown subclass falls back with a warning.
+    await page.evaluate(() => saveAllFields());
+    await page.reload();
+    await page.waitForFunction(() => window.SpellManagement && window.TabletopMode);
+    assert.equal((await state(page)).value, "test", "autosave restores the subclass");
+    await page.evaluate(() => { const data = collectStateObject(); delete data.subclass; applyStateObject(data); });
+    assert.equal((await state(page)).value, "life", "data without a subclass uses the default subclass");
+    await page.evaluate(() => applyStateObject({ ...collectStateObject(), subclass: "missing" }));
+    assert.equal((await state(page)).value, "life");
+    await page.getByText("無法辨識存檔中的子職，已改為「生命領域」。").waitFor();
+    await page.evaluate(() => applyStateObject({ ...collectStateObject(), subclass: "test" }));
+    assert.equal((await state(page)).value, "test", "JSON data restores the subclass");
+
+    // Share data carries the subclass and locks it like the class.
+    const hash = await page.evaluate(async () => encodeStateToHash(collectShareState()));
+    const shared = await newUiPage(browser);
+    try {
+      await withFixture(shared);
+      const sharedUrl = new URL(url); sharedUrl.searchParams.set("analytics", "owner"); sharedUrl.hash = hash;
+      await open(shared, sharedUrl.href);
+      assert.deepEqual(await shared.evaluate(() => [window.SHARE_MODE, document.getElementById("subclass").value, document.getElementById("subclass").disabled]), [true, "test", true], "share restores and locks the subclass");
+    } finally { await shared.close(); }
+    console.log("Subclass selection: single-subclass default, select visibility, class page/spells/reminders/features, autosave, missing and unknown fields and share lock passed.");
+  } finally { await page.close(); }
+}
+
 async function verifyCharacterDataSafety(browser, url) {
   const page = await newUiPage(browser);
   const sourceTag = '<img src="data:image/png,invalid" onerror="window.__unsafeCharacterScript=true">';
@@ -3297,7 +3384,7 @@ async function main() {
   try {
     browser = await chromium.launch({ headless: true, ...(process.env.DND_BROWSER_CHANNEL ? { channel: process.env.DND_BROWSER_CHANNEL } : {}) });
     const url = `http://127.0.0.1:${server.address().port}/index.html?analytics=owner`;
-    if (all || sections.has("--data-only")) { await verifyJsonImportTransaction(browser, url); await verifyCharacterDataSafety(browser, url); await verifyClassOptionMemory(browser, url); }
+    if (all || sections.has("--data-only")) { await verifyJsonImportTransaction(browser, url); await verifyCharacterDataSafety(browser, url); await verifySubclassSelection(browser, url); await verifyClassOptionMemory(browser, url); }
     if (all || sections.has("--appearance-only")) {
       const page = await newUiPage(browser, { viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });
       try { await verifyAppearanceAndLayout(browser, page, url); }

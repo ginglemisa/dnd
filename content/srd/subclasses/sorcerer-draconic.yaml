@@ -15,6 +15,19 @@ features:
   - id: sorcerer-draconic-spells
     level: 3
     name: 龍族法術
+    spells:
+      - id: chromatic-orb
+      - id: command
+      - id: alter-self
+      - id: dragons-breath
+      - id: fear
+        level: 5
+      - id: fly
+        level: 5
+      - id: arcane-eye
+        level: 7
+      - id: charm-monster
+        level: 7
     text: |
       達到下列術士等級後，你始終準備對應法術：
 

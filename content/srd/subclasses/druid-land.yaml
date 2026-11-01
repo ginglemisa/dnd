@@ -7,6 +7,49 @@ features:
   - id: druid-circle-of-the-land-spells
     level: 3
     name: 大地結社法術
+    spellsByChoice:
+      control: druid-land
+      choices:
+        - value: arid
+          name: 旱地
+          spells:
+            - id: fire-bolt
+            - id: burning-hands
+            - id: blur
+            - id: fireball
+              level: 5
+            - id: blight
+              level: 7
+        - value: polar
+          name: 極地
+          spells:
+            - id: ray-of-frost
+            - id: fog-cloud
+            - id: hold-person
+            - id: sleet-storm
+              level: 5
+            - id: ice-storm
+              level: 7
+        - value: temperate
+          name: 溫帶
+          spells:
+            - id: shocking-grasp
+            - id: sleep
+            - id: misty-step
+            - id: lightning-bolt
+              level: 5
+            - id: freedom-of-movement
+              level: 7
+        - value: tropical
+          name: 熱帶
+          spells:
+            - id: acid-splash
+            - id: ray-of-sickness
+            - id: web
+            - id: stinking-cloud
+              level: 5
+            - id: polymorph
+              level: 7
     behavior: druid-land-choice
     text: |
       - **選擇地貌：**每次長休後，從旱地、極地、溫帶或熱帶中選擇 1 種地貌。

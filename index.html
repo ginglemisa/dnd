@@ -87,6 +87,7 @@
   <script src="monster.js?v=20261025-beast-perception" defer></script>
   <script src="druid-wild-shape-beasts.js?v=20261031-beast-file" defer></script>
   <script src="class-content.generated.js?v=a42b11179858" defer></script>
+  <script src="class-content.private.generated.js" defer></script>
   <script src="race.js?v=20261021-condition-plain" defer></script>
   <script src="backgrounds.js?v=20261003-background-flavor" defer></script>
   <script src="tool-data.js?v=20261031-class-content" defer></script>
@@ -95,16 +96,16 @@
   <script src="spell-list.js?v=20261026-wizard-spells" defer></script>
   <script src="condition.js?v=20261021-bonus-wording" defer></script>
   <script src="action-panel.js?v=20261031-class-actions" defer></script>
-  <script src="character-rules.js?v=20261101-rest-choice" defer></script>
+  <script src="character-rules.js?v=20261101-subclass-select" defer></script>
   <script src="app-dialog.js?v=20261028-custom-spells" defer></script>
   <script src="custom-background.js?v=20261023-feature-title" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
-  <script src="tabletop-mode.js?v=20261101-class-hints" defer></script>
+  <script src="tabletop-mode.js?v=20261101-subclass-features" defer></script>
   <script src="tabletop-druid.js?v=20261021-bonus-wording" defer></script>
   <script src="tabletop-resources.js?v=20261014-heroic-help" defer></script>
   <script src="tabletop-actions.js?v=20261101-class-hints" defer></script>
   <script src="tabletop-custom-spells.js?v=20261028-custom-spell-vsm-layout" defer></script>
-  <script src="tabletop-spells.js?v=20261028-custom-spells" defer></script>
+  <script src="tabletop-spells.js?v=20261101-subclass-features" defer></script>
   <script src="legal-modal.js?v=20261022-game-icons" defer></script>
   <script src="onboarding-tour.js?v=20261026-tour-point-buy" defer></script>
   <script src="quick-build.js?v=20261031-class-appendix" defer></script>
@@ -607,6 +608,9 @@
           <option value="7">7</option>
           <option value="8">8</option>
         </select>
+      </div>
+      <div id="subclass-control" class="class-feature-option is-hidden">
+        <select id="subclass" aria-label="子職"></select>
       </div>
       <div id="druid-land-control" class="class-feature-option is-hidden">
         <select id="druid-land" aria-label="大地結社地貌" data-rest-change="longRest">
@@ -1352,9 +1356,9 @@
   </div>
 
   <script src="sheet-utils.js?v=20261024-index-split"></script>
-  <script src="feat-ui.js?v=20261031-class-feats"></script>
-  <script src="spell-sources.js?v=20261031-class-rules"></script>
-  <script src="class-features-ui.js?v=20261031-class-actions"></script>
+  <script src="feat-ui.js?v=20261101-subclass-features"></script>
+  <script src="spell-sources.js?v=20261101-subclass-spells"></script>
+  <script src="class-features-ui.js?v=20261101-max-level"></script>
   <script>
 function openCarryCapacityRules(trigger) {
   return window.AppDialog.showMessage({
@@ -1543,9 +1547,11 @@ function bindCoreCharacterEvents() {
   bindEventById("cha", "input", updateACDisplay);
   ["str", "dex", "con", "int", "wis", "cha"].forEach(id => bindEventById(id, "change", syncDerivedFeatRows));
   bindEventById("armor", "change", updateArmorInfo);
-  bindEventById("class", "change", event => {beginClassOptionTransition(event);updateHitDieLabel();resetSpellSlotsAfterCharacterChange();refreshWeaponSelections();updateClassFeature();updateClassFeatureOptionVisibility();syncDerivedFeatRows();syncClassToolRows();updateACDisplay();updateSpeedDisplay();updateEldritchInvocationSectionVisibility();populateHandAttacks();syncOriginAndSubclassDerivedSpellRows();updateSpellsByClassLevel();updateExpertiseVisibility();updateExtraLanguageFields();finishClassOptionTransition();});
+  bindEventById("class", "change", event => {beginClassOptionTransition(event);syncLevelOptions();syncSubclassOptions();updateHitDieLabel();resetSpellSlotsAfterCharacterChange();refreshWeaponSelections();updateClassFeature();updateClassFeatureOptionVisibility();syncDerivedFeatRows();syncClassToolRows();updateACDisplay();updateSpeedDisplay();updateEldritchInvocationSectionVisibility();populateHandAttacks();syncOriginAndSubclassDerivedSpellRows();updateSpellsByClassLevel();updateExpertiseVisibility();updateExtraLanguageFields();finishClassOptionTransition();});
   bindEventById("level", "change", event => {beginClassOptionTransition(event);syncHitDiceCountToLevel();syncProficiencyUseChecks();updateAutomaticInitiative();resetSpellSlotsAfterCharacterChange();refreshWeaponSelections();updateClassFeature();updateClassFeatureOptionVisibility();syncDerivedFeatRows();updateACDisplay();updateSpeedDisplay();updateEldritchInvocationSectionVisibility();populateHandAttacks();syncOriginAndSubclassDerivedSpellRows();updateSpellsByClassLevel();updateExtraLanguageFields();finishClassOptionTransition();});
-  ["class", "level"].forEach(id => bindEventById(id, "change", scheduleClassFeatureChoicePrompt));
+  // 子職決定職業詳情、動作、資源、衍生法術與數值；與職業／等級同一套重算。
+  bindEventById("subclass", "change", applySubclassChange);
+  ["class", "level", "subclass"].forEach(id => bindEventById(id, "change", scheduleClassFeatureChoicePrompt));
   bindEventById("speed-input", "input", updateSpeedDisplay);
   bindEventById("elf-lineage", "change", () => { updateSpeedDisplay(); updateHighElfCantripVisibility(); });
   ["dragonborn-ancestry", "elf-lineage", "gnome-lineage", "goliath-ancestry", "tiefling-legacy"].forEach(id => {
@@ -2388,6 +2394,7 @@ document.addEventListener("DOMContentLoaded", () => withCharacterUpdateBatch(() 
   // 魔能祈喚與超魔法選項取自職業內容檔（class-content.generated.js 為 defer 載入，此時才可讀取）。
   loadEldritchInvocationOptions();
   loadMetamagicOptions();
+  syncLevelOptions();
   window.ClassOptionMemory?.configure({ isPersistenceBlocked: () => autosaveRestoreBlocked });
   window.SpellManagement?.configure({
     isRestoring: () => autosaveSuspended || autosaveClearing,
@@ -3227,7 +3234,7 @@ function fillSkills() {
   updateAutomaticInitiative();
 }
 </script>
-<script src="pdf-launcher.js?v=20261031-class-rules"></script>
+<script src="pdf-launcher.js?v=20261101-subclass-features"></script>
 
 <script>
 // ====== 裝備,武器,法術相關工具 ======
@@ -4125,7 +4132,7 @@ function updateArmorInfo() {
   updateEquipmentLoadoutSummary();
 }
 </script>
-<script src="sheet-spells.js?v=20261028-custom-spells"></script>
+<script src="sheet-spells.js?v=20261101-subclass-features"></script>
 <script>
 // ====== 德魯伊變身提示 =====
 // ✅ 四種動物（建議用「機制摘要」避免長篇敘述）
@@ -4972,7 +4979,8 @@ function isShareFieldRelevant(id, data) {
   const level = Number.parseInt(data.level || "0", 10) || 0;
   const raceValue = data.race || "";
 
-  if (id === "druid-land") return classValue === "druid" && level >= 3;
+  if (id === "subclass") return Boolean(classValue);
+  if (id === "druid-land") return Boolean(window.hasClassFeature?.(classValue, "druid-circle-of-the-land-spells", level, data.subclass));
   if (id === "dragonborn-ancestry") return raceValue === "dragonborn";
   if (id === "elf-lineage") return raceValue === "elf";
   if (id === "high-elf-cantrip") return raceValue === "elf" && data["elf-lineage"] === "high_elf";
@@ -5104,6 +5112,7 @@ function applyStateObjectNow(data) {
   const prevAutosaveSuspended = autosaveSuspended;
   autosaveSuspended = true;
   const resumeHpTracking = window.twAnalytics?.suspendHpTracking?.();
+  let subclassReplaced = false;
 
   try {
     window.SpellManagement?.beforeApplyState(data);
@@ -5156,6 +5165,7 @@ function applyStateObjectNow(data) {
       }
       el.dispatchEvent(new Event('change'));
     }
+    subclassReplaced = restoreSubclassSelection(data);
     syncCharacterSizeFromRace(data[CHARACTER_SIZE_STATE_KEY]);
     // Class/level can rebuild these controls before all saved fields have been
     // applied (especially on a fresh share page). Restore their choices once
@@ -5254,6 +5264,9 @@ function applyStateObjectNow(data) {
   updateACDisplay();
   updateSpeedDisplay();
   updateClassFeatureChoiceReminder();
+  if (subclassReplaced) {
+    window.AppDialog?.notify(`無法辨識存檔中的子職，已改為「${window.getSelectedSubclass?.(data.class)?.name || ""}」。`, { tone: "warning" });
+  }
   // 載入資料優先：不從職業選項記憶套用，只搬走舊存檔裡其他職業的殘留值。
   syncClassOptionOwner();
   if (migrateLegacyClassOptionResidue()) {
@@ -5314,11 +5327,12 @@ function closeShareModeGuideEntries() {
 
 // Only a successfully decoded share is locked; state collection ignores disabled.
 function lockShareModeIdentitySelects() {
-  ["class", "level", "race", "background"].forEach(id => {
+  ["class", "subclass", "level", "race", "background"].forEach(id => {
     const select = document.getElementById(id);
     if (!select) return;
     select.disabled = true;
-    select.title = "分享模式：職業、等級、種族、背景不可更改";
+    select.dataset.shareLocked = "true";
+    select.title = "分享模式：職業、子職、等級、種族、背景不可更改";
   });
   const customBackgroundEdit = document.getElementById("custom-background-edit");
   if (customBackgroundEdit) customBackgroundEdit.textContent = "查看背景";
@@ -6267,6 +6281,7 @@ window.addEventListener("DOMContentLoaded", async function() {
 }
   withCharacterUpdateBatch(() => {
   updateRaceOptionVisibility();
+  syncSubclassOptions();
   updateClassFeatureOptionVisibility();
   updateHitDieLabel();
   syncHitDiceCountToLevel({ preserveCurrent: true });

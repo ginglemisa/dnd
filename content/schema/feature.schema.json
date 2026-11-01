@@ -75,6 +75,12 @@
           "minItems": 1,
           "items": { "$ref": "#/definitions/grantedSpell" },
           "description": "此能力給予的法術（始終準備等）。法術 ID 須存在於 spell-id-baseline.json。"
+        },
+        "spellsByChoice": { "$ref": "#/definitions/spellsByChoice" },
+        "spellSourceKey": {
+          "type": "string",
+          "minLength": 1,
+          "description": "子職法術的來源名稱：網站的法術來源識別碼為「subclass-職業-名稱-…」，會寫進存檔，不可改字；省略時為子職名稱（例如邪魔宗主沿用舊版的「邪魔」）。只用於子職能力的 spells／spellsByChoice。"
         }
       },
       "if": { "not": { "required": ["name"] } },
@@ -83,7 +89,7 @@
           "anyOf": [
             { "required": ["id"] }, { "required": ["type"] }, { "required": ["tableName"] }, { "required": ["tabletop"] }, { "required": ["summary"] }, { "required": ["choose"] },
             { "required": ["changeOn"] }, { "required": ["choiceGroup"] }, { "required": ["optionStyle"] }, { "required": ["options"] },
-            { "required": ["actions"] }, { "required": ["resource"] }, { "required": ["spells"] }, { "required": ["afterFeatChoice"] }, { "required": ["behavior"] }, { "required": ["parts"] }, { "required": ["select"] }
+            { "required": ["actions"] }, { "required": ["resource"] }, { "required": ["spells"] }, { "required": ["spellsByChoice"] }, { "required": ["spellSourceKey"] }, { "required": ["afterFeatChoice"] }, { "required": ["behavior"] }, { "required": ["parts"] }, { "required": ["select"] }
           ]
         }
       },
@@ -247,9 +253,33 @@
       "required": ["id"],
       "properties": {
         "id": { "$ref": "#/definitions/id", "description": "法術 ID（spellId），例如 hunters-mark。" },
+        "level": { "$ref": "#/definitions/level", "description": "取得此法術的職業等級（例如子職法術的 5 級、7 級）；省略時同能力等級。" },
         "freeUses": {
           "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "string" }],
           "description": "不耗法術位的免費施放次數：固定數字，或特性表欄位／values 名稱。"
+        }
+      }
+    },
+    "spellsByChoice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["control", "choices"],
+      "description": "依下拉選單的值給予不同法術（例如大地結社依地貌）。只用於子職能力。",
+      "properties": {
+        "control": { "$ref": "#/definitions/id", "description": "index.html 中下拉選單的 ID（例如 druid-land），選項值須存在於該選單。" },
+        "choices": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["value", "name", "spells"],
+            "properties": {
+              "value": { "type": "string", "pattern": "^[a-z0-9_-]+$", "description": "下拉選單的選項值。" },
+              "name": { "type": "string", "minLength": 1, "description": "選項名稱，法術來源顯示為「子職名稱・選項名稱」（也是來源識別碼的一部分，不可改字）。" },
+              "spells": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/grantedSpell" } }
+            }
+          }
         }
       }
     },

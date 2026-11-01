@@ -12,7 +12,78 @@
 function updateClassFeatureOptionVisibility() {
   const classValue = document.getElementById("class")?.value || "";
   const level = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
-  document.getElementById("druid-land-control")?.classList.toggle("is-hidden", classValue !== "druid" || level < 3);
+  // 子職選單：達到子職等級且職業有兩個以上子職時顯示；只有一個子職時隱藏（仍存預設子職）。
+  const rules = window.getClassRules?.(classValue);
+  document.getElementById("subclass-control")?.classList.toggle("is-hidden", !rules || rules.subclasses.length < 2 || level < rules.subclassLevel);
+  document.getElementById("druid-land-control")?.classList.toggle("is-hidden", !window.hasClassFeature?.(classValue, "druid-circle-of-the-land-spells", level));
+}
+
+// 可選等級依職業內容檔的 maxLevel（未選職業時取各職業的最大值）；生命骰數量選單同步為 0～最高等級。
+// 目前等級超過新職業的上限時改為上限。index.html 的靜態選項只是腳本載入前的預設。
+function syncLevelOptions() {
+  const all = typeof classRules === "undefined" ? {} : classRules;
+  const classValue = document.getElementById("class")?.value || "";
+  const maxLevel = window.getClassRules?.(classValue)?.maxLevel || Math.max(0, ...Object.values(all).map(rules => rules.maxLevel || 0));
+  if (!maxLevel) return;
+  const rebuild = (select, from, placeholder) => {
+    if (!select) return;
+    const values = Array.from({ length: maxLevel - from + 1 }, (_, index) => String(from + index));
+    if (Array.from(select.options, option => option.value).filter(Boolean).join(" ") === values.filter(Boolean).join(" ")) return;
+    const previous = select.value;
+    select.replaceChildren(...(placeholder ? [new Option(placeholder, "")] : []), ...values.map(value => new Option(value, value, value === "0")));
+    select.value = !previous && placeholder ? "" : (values.includes(previous) ? previous : values[values.length - 1]);
+  };
+  rebuild(document.getElementById("level"), 1, "--");
+  rebuild(document.getElementById("lifedicen"), 0);
+}
+
+// 子職選單（#subclass，存進角色資料）：選項為目前職業內容檔的子職（預設子職在前）；目前值不屬於此職業時改為預設子職。
+// 只有一個子職時鎖定（選單也隱藏，見 updateClassFeatureOptionVisibility）；分享模式由 lockShareModeIdentitySelects() 鎖定（data-share-locked）。
+function syncSubclassOptions() {
+  const select = document.getElementById("subclass");
+  if (!select) return;
+  const rules = window.getClassRules?.(document.getElementById("class")?.value || "");
+  const subclasses = rules?.subclasses || [];
+  const ids = subclasses.map(subclass => subclass.id);
+  if (Array.from(select.options, option => option.value).join(" ") !== ids.join(" ")) {
+    const previous = select.value;
+    select.replaceChildren(...subclasses.map(subclass => new Option(subclass.name, subclass.id)));
+    select.value = previous;
+  }
+  if (!ids.includes(select.value)) select.value = rules?.defaultSubclass || "";
+  select.disabled = ids.length <= 1 || select.dataset.shareLocked === "true";
+}
+
+// 子職改變：重算職業詳情、選項可用性、數值、動作、資源與衍生法術（同職業／等級改變）。
+function applySubclassChange() {
+  syncSubclassOptions();
+  updateHPDisplay();
+  updateClassFeature();
+  updateClassFeatureOptionVisibility();
+  syncAdvancedClassFeatureControls();
+  syncDerivedFeatRows();
+  updateACDisplay();
+  updateSpeedDisplay();
+  populateHandAttacks();
+  syncOriginAndSubclassDerivedSpellRows();
+  updateSpellsByClassLevel();
+  updateClassFeatureChoiceReminder();
+}
+
+// 載入資料後確定子職（選單選項依職業建立，欄位順序不影響結果）。沒有子職欄位的舊資料為預設子職；
+// 無法辨識的子職改為預設子職，回傳 true 讓呼叫端提示。
+function restoreSubclassSelection(data) {
+  const select = document.getElementById("subclass");
+  if (!select) return false;
+  syncSubclassOptions();
+  const saved = typeof data.subclass === "string" ? data.subclass : "";
+  const known = Array.from(select.options).some(option => option.value === saved);
+  const next = known ? saved : window.getClassRules?.(document.getElementById("class")?.value || "")?.defaultSubclass || "";
+  if (select.value !== next) {
+    select.value = next;
+    select.dispatchEvent(new Event("change"));
+  }
+  return Boolean(saved) && !known && select.options.length > 0;
 }
 
 const MISSION_CANTRIP_CHOICES = Object.freeze([
@@ -31,8 +102,9 @@ function getClassOptionRules() {
   const availability = new Map();
   const attackNotes = [];
   Object.values(source || {}).forEach(rules => {
-    [...rules.features, ...rules.subclasses.flatMap(subclass => subclass.features)].forEach(feature => {
-      const requirement = Object.freeze({ className: rules.id, minimumLevel: feature.level });
+    [...rules.features.map(feature => [feature, null]), ...rules.subclasses.flatMap(subclass => subclass.features.map(feature => [feature, subclass.id]))].forEach(([feature, subclass]) => {
+      // subclass：子職能力的選項只在選擇該子職時可用（職業能力為 null）。
+      const requirement = Object.freeze({ className: rules.id, minimumLevel: feature.level, subclass });
       const label = `${rules.name}${feature.choiceName || feature.name}`;
       if (feature.options) {
         const ids = Object.freeze(feature.options.map(option => option.id));
@@ -135,7 +207,12 @@ function isClassOptionControlAvailable(id) {
   if (!requirement) return true;
   const classValue = document.getElementById("class")?.value || "";
   const level = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
-  return classValue === requirement.className && level >= requirement.minimumLevel;
+  return isClassOptionRequirementMet(requirement, classValue, level);
+}
+
+function isClassOptionRequirementMet(requirement, classValue, level) {
+  return classValue === requirement.className && level >= requirement.minimumLevel
+    && (!requirement.subclass || window.getSelectedSubclassId?.(classValue) === requirement.subclass);
 }
 
 function removeManagedAttackNoteFragment(value, fragment) {
@@ -1347,11 +1424,18 @@ function renderClassFeaturePanels(html, output, creationOutput) {
   creationOutput.replaceChildren(creation || document.createTextNode("無資料"));
 }
 
-// 職業能力頁籤：只列到目前等級；做成選擇卡片的附錄（超魔法、魔能祈喚，data-class-appendix）另在專屬區塊顯示。
-function getClassFeatureHtmlBeforeLevel(raw, nextLevel) {
+// 職業能力頁籤：只列到目前等級與目前子職（data-subclass 為子職 ID，特性表的「子職特性」另有 data-subclass-except）；
+// 做成選擇卡片的附錄（超魔法、魔能祈喚，data-class-appendix）另在專屬區塊顯示。
+function getClassFeatureHtmlBeforeLevel(raw, nextLevel, subclassId) {
   const template = document.createElement("template");
   template.innerHTML = raw;
   template.content.querySelectorAll("[data-class-appendix]").forEach(section => section.remove());
+  template.content.querySelectorAll("[data-subclass]").forEach(element => {
+    if (!element.dataset.subclass.split(" ").includes(subclassId)) element.remove();
+  });
+  template.content.querySelectorAll("[data-subclass-except]").forEach(element => {
+    if (element.dataset.subclassExcept.split(" ").includes(subclassId)) element.remove();
+  });
   template.content.querySelectorAll("section[data-feature-level]").forEach(section => {
     if (Number(section.dataset.featureLevel) >= nextLevel) section.remove();
   });
@@ -1387,7 +1471,7 @@ function updateClassFeature() {
 
   const raw = classFeatures[selectedClass];
   const hasMetamagic = getClassAppendixOptions(selectedClass, "metamagic").length > 0;
-  const visibleHtml = getClassFeatureHtmlBeforeLevel(raw, level && !isNaN(level) ? parseInt(level) + 1 : Infinity);
+  const visibleHtml = getClassFeatureHtmlBeforeLevel(raw, level && !isNaN(level) ? parseInt(level) + 1 : Infinity, window.getSelectedSubclassId?.(selectedClass) || "");
   renderClassFeaturePanels(highlightSpellNamesInClassFeature(visibleHtml), output, creationOutput);
 
   renderBardMagicalDiscoveryControls();
@@ -1628,6 +1712,7 @@ function collectClassOptionSnapshot(className, level) {
     document.querySelectorAll('#feats-area > [data-feat-source="class"] [data-magic-initiate-field], #feats-area > [data-feat-source="invocation"] [data-magic-initiate-field]')
       .forEach(select => put(select.id, select.value));
   }
+  put("subclass", document.getElementById("subclass")?.value || "");
   if (className === "druid") put("druid-land", document.getElementById("druid-land")?.value || "");
   const cantripPrefix = CLASS_FEATURE_CANTRIP_CLASSES[className];
   if (cantripPrefix) {
@@ -1720,6 +1805,10 @@ function restoreClassOptionMemory(className, record) {
   const has = id => Object.hasOwn(values, id) && isClassOptionFeatIdAllowed(id);
   const dispatchRestoreChange = control => control.dispatchEvent(new Event("change"));
 
+  // 子職決定職業詳情有哪些選項，最先還原。
+  const subclass = document.getElementById("subclass");
+  if (has("subclass") && subclass && subclass.value !== values.subclass && !subclass.disabled
+      && setClassOptionControlValue(subclass, values.subclass)) applySubclassChange();
   // 與載入存檔相同：先還原勾選，再還原會依勾選顯示的選單，最後建立衍生專長列。
   const featureControls = getClassOptionFeatureControls();
   featureControls.filter(control => control.type === "checkbox" && has(control.id)).forEach(control => {
@@ -1902,7 +1991,7 @@ function getClassFeatureChoiceIssues() {
   // 給予專長選擇的選項（featChoice，例如戰鬥風格類型）在自行管理專長時不提醒。
   const { groups: optionGroups, selects: optionSelects } = getClassOptionRules();
   optionGroups.forEach(group => {
-    if (group.className !== selectedClass || selectedLevel < group.minimumLevel) return;
+    if (!isClassOptionRequirementMet(group, selectedClass, selectedLevel)) return;
     if (isManualFeatManagementEnabled() && group.featChoice) return;
     if (group.ids.some(id => document.getElementById(id)?.checked)) return;
     pushGeneral({
@@ -1913,7 +2002,7 @@ function getClassFeatureChoiceIssues() {
     });
   });
 
-  if (selectedClass === "druid" && selectedLevel >= 3 && !(document.getElementById("druid-land")?.value || "").trim()) {
+  if (window.hasClassFeature?.(selectedClass, "druid-circle-of-the-land-spells", selectedLevel) && !(document.getElementById("druid-land")?.value || "").trim()) {
     pushGeneral({
       message: "大地結社地貌尚未選擇。",
       tab: "basic",
@@ -1944,7 +2033,7 @@ function getClassFeatureChoiceIssues() {
 
   }
 
-  if (!manualSpells && selectedClass === "bard" && selectedLevel >= 6) {
+  if (!manualSpells && window.hasClassFeature?.(selectedClass, "bard-magical-discoveries", selectedLevel)) {
     const magicalDiscoveryIncomplete = getBardMagicalDiscoverySelection().some(selection =>
       !selection.classValue || !selection.ring || !selection.spellId
     );

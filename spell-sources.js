@@ -612,62 +612,6 @@ const RACE_DERIVED_SPELLS = Object.freeze({
   })
 });
 
-const SUBCLASS_DERIVED_SPELLS = Object.freeze({
-  cleric: Object.freeze({ name: "生命領域", spells: Object.freeze([
-    { level: 3, ring: 1, spellId: "bless" }, { level: 3, ring: 1, spellId: "cure-wounds" },
-    { level: 3, ring: 2, spellId: "aid" }, { level: 3, ring: 2, spellId: "lesser-restoration" },
-    { level: 5, ring: 3, spellId: "mass-healing-word" }, { level: 5, ring: 3, spellId: "revivify" },
-    { level: 7, ring: 4, spellId: "aura-of-life" }, { level: 7, ring: 4, spellId: "death-ward" }
-  ]) }),
-  paladin: Object.freeze({ name: "奉獻之誓", spells: Object.freeze([
-    { level: 3, ring: 1, spellId: "protection-from-evil-and-good" }, { level: 3, ring: 1, spellId: "shield-of-faith" },
-    { level: 5, ring: 2, spellId: "aid" }, { level: 5, ring: 2, spellId: "zone-of-truth" }
-  ]) }),
-  sorcerer: Object.freeze({ name: "龍族術法", spells: Object.freeze([
-    { level: 3, ring: 1, spellId: "chromatic-orb" }, { level: 3, ring: 1, spellId: "command" },
-    { level: 3, ring: 2, spellId: "alter-self" }, { level: 3, ring: 2, spellId: "dragons-breath" },
-    { level: 5, ring: 3, spellId: "fear" }, { level: 5, ring: 3, spellId: "fly" },
-    { level: 7, ring: 4, spellId: "arcane-eye" }, { level: 7, ring: 4, spellId: "charm-monster" }
-  ]) }),
-  warlock: Object.freeze({ name: "邪魔", label: "邪魔宗主", spells: Object.freeze([
-    { level: 3, ring: 1, spellId: "burning-hands" }, { level: 3, ring: 1, spellId: "command" },
-    { level: 3, ring: 2, spellId: "scorching-ray" }, { level: 3, ring: 2, spellId: "suggestion" },
-    { level: 5, ring: 3, spellId: "fireball" }, { level: 5, ring: 3, spellId: "stinking-cloud" },
-    { level: 7, ring: 4, spellId: "fire-shield" }, { level: 7, ring: 4, spellId: "wall-of-fire" }
-  ]) })
-});
-
-const DRUID_LAND_SPELLS = Object.freeze({
-  arid: Object.freeze({ name: "旱地", spells: Object.freeze([
-    { level: 3, ring: "cantrips", spellId: "fire-bolt" },
-    { level: 3, ring: 1, spellId: "burning-hands" },
-    { level: 3, ring: 2, spellId: "blur" },
-    { level: 5, ring: 3, spellId: "fireball" },
-    { level: 7, ring: 4, spellId: "blight" }
-  ]) }),
-  polar: Object.freeze({ name: "極地", spells: Object.freeze([
-    { level: 3, ring: "cantrips", spellId: "ray-of-frost" },
-    { level: 3, ring: 1, spellId: "fog-cloud" },
-    { level: 3, ring: 2, spellId: "hold-person" },
-    { level: 5, ring: 3, spellId: "sleet-storm" },
-    { level: 7, ring: 4, spellId: "ice-storm" }
-  ]) }),
-  temperate: Object.freeze({ name: "溫帶", spells: Object.freeze([
-    { level: 3, ring: "cantrips", spellId: "shocking-grasp" },
-    { level: 3, ring: 1, spellId: "sleep" },
-    { level: 3, ring: 2, spellId: "misty-step" },
-    { level: 5, ring: 3, spellId: "lightning-bolt" },
-    { level: 7, ring: 4, spellId: "freedom-of-movement" }
-  ]) }),
-  tropical: Object.freeze({ name: "熱帶", spells: Object.freeze([
-    { level: 3, ring: "cantrips", spellId: "acid-splash" },
-    { level: 3, ring: 1, spellId: "ray-of-sickness" },
-    { level: 3, ring: 2, spellId: "web" },
-    { level: 5, ring: 3, spellId: "stinking-cloud" },
-    { level: 7, ring: 4, spellId: "polymorph" }
-  ]) })
-});
-
 function getAreaIdForSpellRing(ring) {
   return ring === "cantrips" ? "cantrips-area" : `level${ring}spells-area`;
 }
@@ -850,30 +794,45 @@ function getClassAlwaysPreparedSpellSpecs() {
   return specs;
 }
 
+// 子職法術：目前子職內容檔能力的 spells（或依下拉選單的 spellsByChoice，例如大地結社地貌），達到法術的等級才給予。
+// 來源識別碼「subclass-職業-名稱-環階-法術-序號」寫進角色法術清單，名稱為 spellSourceKey 或子職名稱
+// （依選項時接「・選項名稱」），序號為達到等級的法術中的位置；class-id-baseline.json 把關名稱。
 function getSubclassDerivedSpellSpecs() {
   const level = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
   const classValue = document.getElementById("class")?.value || "";
-  if (level < 3) return [];
-  let subclass = SUBCLASS_DERIVED_SPELLS[classValue];
-  if (classValue === "druid") {
-    const land = document.getElementById("druid-land")?.value || "";
-    const landData = DRUID_LAND_SPELLS[land];
-    if (!landData) return [];
-    subclass = { name: `大地結社・${landData.name}`, spells: landData.spells };
-  }
+  const subclass = window.getSelectedSubclass?.(classValue);
   if (!subclass) return [];
   const className = document.querySelector(`#class option[value="${classValue}"]`)?.textContent?.trim() || "職業";
-  return subclass.spells.filter(spell => level >= spell.level).map((spell, index) => ({
-    ...spell,
-    key: `subclass-${classValue}-${subclass.name}-${spell.ring}-${spell.spellId}-${index}`,
-    source: SUBCLASS_SPELL_SOURCE,
-    sourceName: className,
-    spellClass: classValue,
-    sourceLabel: `來源：${subclass.label || subclass.name}`,
-    sourcePriority: 30,
-    ritualAllowed: true,
-    areaId: getAreaIdForSpellRing(spell.ring)
-  }));
+  return subclass.features.filter(feature => level >= feature.level).flatMap(feature => {
+    let name = feature.spellSourceKey || subclass.name;
+    let spells = feature.spells || [];
+    if (feature.spellsByChoice) {
+      const value = document.getElementById(feature.spellsByChoice.control)?.value || "";
+      const choice = feature.spellsByChoice.choices.find(item => item.value === value);
+      if (!choice) return [];
+      name = `${name}・${choice.name}`;
+      spells = choice.spells;
+    }
+    const label = feature.spellsByChoice ? name : subclass.name;
+    return spells.filter(spell => level >= (spell.level ?? feature.level)).flatMap((spell, index) => {
+      const spellLevel = SpellCatalog.getSpell(spell.id)?.level;
+      if (!Number.isInteger(spellLevel)) return [];
+      const ring = spellLevel === 0 ? "cantrips" : spellLevel;
+      return [{
+        level: spell.level ?? feature.level,
+        ring,
+        spellId: spell.id,
+        key: `subclass-${classValue}-${name}-${ring}-${spell.id}-${index}`,
+        source: SUBCLASS_SPELL_SOURCE,
+        sourceName: className,
+        spellClass: classValue,
+        sourceLabel: `來源：${label}`,
+        sourcePriority: 30,
+        ritualAllowed: true,
+        areaId: getAreaIdForSpellRing(ring)
+      }];
+    });
+  });
 }
 
 function getEldritchInvocationDerivedSpellSpecs() {
