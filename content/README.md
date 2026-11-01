@@ -17,6 +17,8 @@
 
 `content/private/` 整個資料夾被 git 忽略，只存在你的電腦；公開網站不會出現兼職等私人內容。
 
+本機執行 `npm run build`（或 `npm run dev`）時，私人內容包的子職與 `class-extensions/` 會寫進根目錄的 `class-content.private.generated.js`（同樣被 git 忽略），網站在公開資料之後載入它，你的電腦上就看得到私人子職（例如子職選單出現兩個以上的選項）。沒有私人內容包、上線建置或執行 `npm run build -- --public-only` 時，這個檔案是空的，網站只有公開內容；離線角色卡一律只含公開內容。私人內容包的持久化 ID 另列在 `content/private/class-id-baseline.json`。
+
 VS Code 安裝 Red Hat 的「YAML」擴充套件後，會依檔案第一行的 `$schema` 自動補完欄位、標出錯誤，滑鼠停在欄位上可看說明。
 
 ## 子職
