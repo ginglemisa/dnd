@@ -12,7 +12,59 @@
 function updateClassFeatureOptionVisibility() {
   const classValue = document.getElementById("class")?.value || "";
   const level = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
-  document.getElementById("druid-land-control")?.classList.toggle("is-hidden", classValue !== "druid" || level < 3);
+  // 子職選單：達到子職等級且職業有兩個以上子職時顯示；只有一個子職時隱藏（仍存預設子職）。
+  const rules = window.getClassRules?.(classValue);
+  document.getElementById("subclass-control")?.classList.toggle("is-hidden", !rules || rules.subclasses.length < 2 || level < rules.subclassLevel);
+  document.getElementById("druid-land-control")?.classList.toggle("is-hidden", !window.hasClassFeature?.(classValue, "druid-circle-of-the-land-spells", level));
+}
+
+// 子職選單（#subclass，存進角色資料）：選項為目前職業內容檔的子職（預設子職在前）；目前值不屬於此職業時改為預設子職。
+// 只有一個子職時鎖定（選單也隱藏，見 updateClassFeatureOptionVisibility）；分享模式由 lockShareModeIdentitySelects() 鎖定（data-share-locked）。
+function syncSubclassOptions() {
+  const select = document.getElementById("subclass");
+  if (!select) return;
+  const rules = window.getClassRules?.(document.getElementById("class")?.value || "");
+  const subclasses = rules?.subclasses || [];
+  const ids = subclasses.map(subclass => subclass.id);
+  if (Array.from(select.options, option => option.value).join(" ") !== ids.join(" ")) {
+    const previous = select.value;
+    select.replaceChildren(...subclasses.map(subclass => new Option(subclass.name, subclass.id)));
+    select.value = previous;
+  }
+  if (!ids.includes(select.value)) select.value = rules?.defaultSubclass || "";
+  select.disabled = ids.length <= 1 || select.dataset.shareLocked === "true";
+}
+
+// 子職改變：重算職業詳情、選項可用性、數值、動作、資源與衍生法術（同職業／等級改變）。
+function applySubclassChange() {
+  syncSubclassOptions();
+  updateHPDisplay();
+  updateClassFeature();
+  updateClassFeatureOptionVisibility();
+  syncAdvancedClassFeatureControls();
+  syncDerivedFeatRows();
+  updateACDisplay();
+  updateSpeedDisplay();
+  populateHandAttacks();
+  syncOriginAndSubclassDerivedSpellRows();
+  updateSpellsByClassLevel();
+  updateClassFeatureChoiceReminder();
+}
+
+// 載入資料後確定子職（選單選項依職業建立，欄位順序不影響結果）。沒有子職欄位的舊資料為預設子職；
+// 無法辨識的子職改為預設子職，回傳 true 讓呼叫端提示。
+function restoreSubclassSelection(data) {
+  const select = document.getElementById("subclass");
+  if (!select) return false;
+  syncSubclassOptions();
+  const saved = typeof data.subclass === "string" ? data.subclass : "";
+  const known = Array.from(select.options).some(option => option.value === saved);
+  const next = known ? saved : window.getClassRules?.(document.getElementById("class")?.value || "")?.defaultSubclass || "";
+  if (select.value !== next) {
+    select.value = next;
+    select.dispatchEvent(new Event("change"));
+  }
+  return Boolean(saved) && !known && select.options.length > 0;
 }
 
 const MISSION_CANTRIP_CHOICES = Object.freeze([
@@ -1628,6 +1680,7 @@ function collectClassOptionSnapshot(className, level) {
     document.querySelectorAll('#feats-area > [data-feat-source="class"] [data-magic-initiate-field], #feats-area > [data-feat-source="invocation"] [data-magic-initiate-field]')
       .forEach(select => put(select.id, select.value));
   }
+  put("subclass", document.getElementById("subclass")?.value || "");
   if (className === "druid") put("druid-land", document.getElementById("druid-land")?.value || "");
   const cantripPrefix = CLASS_FEATURE_CANTRIP_CLASSES[className];
   if (cantripPrefix) {
@@ -1720,6 +1773,10 @@ function restoreClassOptionMemory(className, record) {
   const has = id => Object.hasOwn(values, id) && isClassOptionFeatIdAllowed(id);
   const dispatchRestoreChange = control => control.dispatchEvent(new Event("change"));
 
+  // 子職決定職業詳情有哪些選項，最先還原。
+  const subclass = document.getElementById("subclass");
+  if (has("subclass") && subclass && subclass.value !== values.subclass && !subclass.disabled
+      && setClassOptionControlValue(subclass, values.subclass)) applySubclassChange();
   // 與載入存檔相同：先還原勾選，再還原會依勾選顯示的選單，最後建立衍生專長列。
   const featureControls = getClassOptionFeatureControls();
   featureControls.filter(control => control.type === "checkbox" && has(control.id)).forEach(control => {

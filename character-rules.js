@@ -34,11 +34,30 @@
     return value ?? null;
   }
 
-  /** 職業能力（含預設子職的能力）；每項加上 subclass（子職 ID，職業能力為 null），依等級排列。 */
+  /**
+   * 目前選擇的子職 ID：角色卡的 #subclass（目前職業的有效子職）優先，否則為職業內容檔的 defaultSubclass。
+   * 沒有職業資料時回傳空字串；不在瀏覽器（純 Node.js 驗證）時為預設子職。
+   */
+  function getSelectedSubclassId(className) {
+    const rules = getClassRules(className);
+    if (!rules) return "";
+    const doc = globalScope.document;
+    const selected = doc?.getElementById?.("class")?.value === className ? doc.getElementById("subclass")?.value || "" : "";
+    return rules.subclasses.some(item => item.id === selected) ? selected : rules.defaultSubclass;
+  }
+
+  /** 目前選擇的子職資料（id、name、shortName、features）；沒有職業資料時回傳 null。 */
+  function getSelectedSubclass(className) {
+    const id = getSelectedSubclassId(className);
+    return getClassRules(className)?.subclasses.find(item => item.id === id) || null;
+  }
+
+  /** 職業能力（含指定子職的能力；未指定或無效時為目前子職）；每項加上 subclass（子職 ID，職業能力為 null），依等級排列。 */
   function getClassFeatureRules(className, subclassId) {
     const rules = getClassRules(className);
     if (!rules) return [];
-    const subclass = rules.subclasses.find(item => item.id === (subclassId || rules.defaultSubclass));
+    const wanted = rules.subclasses.some(item => item.id === subclassId) ? subclassId : getSelectedSubclassId(className);
+    const subclass = rules.subclasses.find(item => item.id === wanted);
     // 排列同職業頁：各等級的子職能力接在「選擇子職」能力之後，其他等級接在該級職業能力之後。
     const levels = [...new Set([...rules.features, ...(subclass?.features || [])].map(feature => feature.level))].sort((a, b) => a - b);
     return levels.flatMap(level => {
@@ -48,6 +67,12 @@
       const insertAt = entryIndex >= 0 ? entryIndex + 1 : own.length;
       return [...own.slice(0, insertAt), ...sub, ...own.slice(insertAt)];
     });
+  }
+
+  /** 角色在此等級是否具有職業能力（含目前子職或指定子職的能力，以內容檔的能力 ID 判斷）。 */
+  function hasClassFeature(className, featureId, level, subclassId) {
+    const numericLevel = Number.parseInt(level, 10) || 0;
+    return getClassFeatureRules(className, subclassId).some(feature => feature.id === featureId && numericLevel >= feature.level);
   }
 
   // 內容檔 values 公式：數字、NdM 骰子、四則運算、max()／min()／floor()／ceil() 與 {數值}。
@@ -671,6 +696,9 @@
     getClassRules,
     getClassProgressionValue,
     getClassFeatureRules,
+    getSelectedSubclassId,
+    getSelectedSubclass,
+    hasClassFeature,
     evaluateClassValue,
     getClassValueText,
     hasClassValue,
