@@ -362,31 +362,32 @@ async function verifyCoverage(page) {
     // class-content.generated.js (built from content/) is the single prose source: every referenced block and value slot must resolve.
     const descriptionIssues = ActionPanel.getClassDescriptionIssues();
     check(descriptionIssues.length === 0, `class description source issues:\n${descriptionIssues.join("\n")}`);
-    const rogueSource = classFeatures.rogue;
+    // Tabletop copy is built per block (tools/class-content): headings and class-page-only copy are dropped, tabletop-only copy is plain text.
+    const tabletopSource = Object.values(classTabletopText).flatMap(entry => [...Object.values(entry.tabletop), ...Object.values(entry.summaries)]).join("");
+    check(!/<h3|data-tabletop-(?:only|hide)|data-overview-hide|\shidden/.test(tabletopSource), "Built tabletop copy has no class headings or hide/only markers");
+    check(!/data-tabletop-|data-overview-hide/.test(Object.values(classFeatures).join("")), "Class details carry no tabletop-only copy or markers");
+    const rogueText = classTabletopText.rogue;
     try {
-      classFeatures.rogue = '<section data-action-id="rogue-cunning-action"><h3>等級 2：靈巧動作</h3>'
-        + '<p>加值 <span data-tabletop-value="proficiencyBonus">熟練加值</span>；未知 <span data-tabletop-value="unknown-test-value">保留通用文字</span>。</p>'
-        + '<p data-tabletop-hide>只在職業詳情</p><p data-tabletop-only>只在跑團</p><p data-tabletop-only hidden>跑團補充</p></section>'
-        + '<section data-action-id="rogue-test-upgrade"><p>五級補充</p></section>';
+      classTabletopText.rogue = {
+        tabletop: {
+          "rogue-cunning-action": '<p>加值 <span data-tabletop-value="proficiencyBonus">熟練加值</span>；未知 <span data-tabletop-value="unknown-test-value">保留通用文字</span>。</p><p>跑團補充</p>',
+          "rogue-test-upgrade": "<p>五級補充</p>"
+        },
+        summaries: {}
+      };
       const upgraded = ["rogue-cunning-action", { id: "rogue-test-upgrade", level: 5 }];
       setClass("rogue", 2);
       const marked = ActionPanel.getClassDescription("rogue", "rogue-cunning-action");
       check(marked.includes("加值 2；") && marked.includes("保留通用文字"), "Description value slots resolve or keep fallback copy");
-      check(marked.includes("只在跑團") && marked.includes("跑團補充") && !marked.includes("只在職業詳情") && !marked.includes("等級 2"), "Description hide/only markers and headings apply to tabletop copy");
       check(!ActionPanel.getClassDescription("rogue", upgraded).includes("五級補充"), "Level-gated description block waits for its level");
       check(ActionPanel.getClassDescription("rogue", ["rogue-cunning-action", "rogue-missing"]) === "", "Missing description block yields no partial description");
       setClass("rogue", 5);
       const joined = ActionPanel.getClassDescription("rogue", upgraded);
-      check(joined.includes("加值 3；") && joined.endsWith("只在跑團\n\n跑團補充\n\n五級補充"), "Level-gated description blocks join in order with current values");
+      check(joined.includes("加值 3；") && joined.endsWith("跑團補充\n\n五級補充"), "Level-gated description blocks join in order with current values");
       const fixtureIssues = ActionPanel.getClassDescriptionIssues();
       check(fixtureIssues.some(issue => issue.includes('"rogue-uncanny-dodge"')) && fixtureIssues.some(issue => issue.includes('"unknown-test-value"')), "Description issues report missing blocks and unknown value slots");
-      const probe = document.createElement("p");
-      probe.dataset.tabletopOnly = "";
-      el("classFeatures").append(probe);
-      check(getComputedStyle(probe).display === "none", "Tabletop-only copy stays hidden in class details");
-      probe.remove();
     } finally {
-      classFeatures.rogue = rogueSource;
+      classTabletopText.rogue = rogueText;
     }
     check(ActionPanel.getClassDescriptionIssues().length === 0, "Restored class descriptions resolve");
     const classOption = (mode, label) => options(mode, "職業").find(o => o.label.includes(label));
