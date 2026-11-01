@@ -145,8 +145,7 @@ function renderOptions(feature, context, where) {
     const details = more.length ? renderMarkdown(more.join("\n\n"), context, at) : "";
     const lines = lead ? lead.split("\n") : [];
     const text = lines.map((line, index) => renderInline(index < lines.length - 1 ? line.replace(/\\$/, "") : line, context, at)).join("<br>");
-    const group = feature.changeOn || feature.choiceGroup ? ` data-feature-choice-group="${feature.id}"` : "";
-    const label = `<label><input type="checkbox" id="${option.id}"${group}> ${escapeHtml(option.name)}</label>`;
+    const label = `<label><input type="checkbox" id="${option.id}"> ${escapeHtml(option.name)}</label>`;
     // 跑團說明略過勾選框，改在「：」前顯示選項名稱（跑團限定文字）；段落 ID 為「職業-選項名」。
     const suffix = option.id.startsWith(`${feature.id}-`) ? option.id.slice(feature.id.length + 1) : null;
     if (inTabletop && !suffix) throw new ContentError(`${at}：跑團動作的選項 ID 須以「${feature.id}-」開頭`);
@@ -262,7 +261,6 @@ function renderFeature({ feature, owner }, context) {
     `class="${classDef.id}-feature class-feature-section"`,
     `data-feature-level="${feature.level}"`,
     owner === classDef ? "" : `data-subclass="${owner.id}"`,
-    feature.changeOn ? `data-rest-change="either"` : "",
     behavior?.sectionAttributes ? behavior.sectionAttributes(feature, context) : "",
     feature.id ? `data-action-id="${feature.id}"` : ""
   ].filter(Boolean).join(" ");

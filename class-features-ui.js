@@ -114,7 +114,7 @@ function getClassOptionRules() {
           ...requirement,
           ids,
           label,
-          // choose: 1 的選項互斥；changeOn／choiceGroup 的選項是同一選擇組（data-feature-choice-group）。
+          // choose: 1 的選項互斥；changeOn／choiceGroup 的選項是同一選擇組（只保留一個勾選）。
           exclusive: feature.choose === 1,
           choiceGroup: Boolean(feature.changeOn || feature.choiceGroup),
           featChoice: feature.options.some(option => option.featChoice)
