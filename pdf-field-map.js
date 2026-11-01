@@ -1314,46 +1314,50 @@ function isWeaponRowEmpty(payload, slot) {
     return found?.label || '';
   }
 
-  // Languages a class grants once its feature heading is present: Thieves'
-  // Cant with the rogue's extra language, or the ranger's two languages.
+  // Class features that grant languages, by feature id: the ranger's two
+  // languages follow Deft Explorer; Thieves' Cant joins the rogue's extra language.
+  const CLASS_LANGUAGE_FEATURE_IDS = Object.freeze({
+    ranger: 'ranger-deft-explorer',
+    rogue: 'rogue-thieves-cant'
+  });
+
+  // The feature and its class-feature line, built the same way as getClassFeatureHeadings().
+  function getClassLanguageFeature(classKey) {
+    const feature = getClassFeatureRules(classKey).find((item) => item.id === CLASS_LANGUAGE_FEATURE_IDS[classKey]);
+    return feature ? { feature, heading: getClassFeatureHeading(feature, classKey) } : null;
+  }
+
+  // Languages a class grants once its feature line is present.
   function getClassLanguageLabels(classFeatureLines, classKey, state) {
-    if (classKey === 'ranger' && classFeatureLines.includes('等級 2：熟練探險家')) {
+    const granted = getClassLanguageFeature(classKey);
+    if (!granted || !classFeatureLines.includes(granted.heading)) return [];
+    if (classKey === 'ranger') {
       return [state['language-extra-1'], state['language-extra-2']]
         .map(getLanguageLabelByValue)
         .filter(Boolean);
     }
-    if (classKey === 'rogue' && classFeatureLines.includes('等級 1：盜賊黑話')) {
-      return ['盜賊黑話', getLanguageLabelByValue(state['language-extra-2'])].filter(Boolean);
-    }
-    return [];
+    return [granted.feature.name, getLanguageLabelByValue(state['language-extra-2'])].filter(Boolean);
   }
 
   function insertClassLanguageLines(classFeatureLines, classKey, state) {
     const lines = [...classFeatureLines];
-    let heading = '';
-    let languageText = '';
+    const granted = getClassLanguageFeature(classKey);
+    const headingIndex = granted ? lines.indexOf(granted.heading) : -1;
+    if (headingIndex < 0) return lines;
 
-    if (classKey === 'ranger') {
-      heading = '等級 2：熟練探險家';
-      languageText = [state['language-extra-1'], state['language-extra-2']]
-        .map(getLanguageLabelByValue)
+    if (classKey === 'rogue') {
+      // Thieves' Cant and the extra language share one line without a level.
+      lines[headingIndex] = [granted.feature.name, getLanguageLabelByValue(state['language-extra-2'])]
         .filter(Boolean)
         .join('、');
-    } else if (classKey === 'rogue') {
-      // Thieves' Cant and the extra language share one line without a level.
-      const headingIndex = lines.indexOf('等級 1：盜賊黑話');
-      if (headingIndex >= 0) {
-        lines[headingIndex] = ['盜賊黑話', getLanguageLabelByValue(state['language-extra-2'])]
-          .filter(Boolean)
-          .join('、');
-      }
       return lines;
     }
 
-    if (!languageText) return lines;
-    const headingIndex = lines.indexOf(heading);
-    if (headingIndex < 0) return lines;
-    lines.splice(headingIndex + 1, 0, languageText);
+    const languageText = [state['language-extra-1'], state['language-extra-2']]
+      .map(getLanguageLabelByValue)
+      .filter(Boolean)
+      .join('、');
+    if (languageText) lines.splice(headingIndex + 1, 0, languageText);
     return lines;
   }
 
