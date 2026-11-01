@@ -4,7 +4,7 @@
 "use strict";
 const fs = require("fs");
 const path = require("path");
-const { ROOT } = require("./legacy");
+const { ROOT } = require("./site-sources");
 const { CONTENT_DIR, getActions, getAppendixActions } = require("./load");
 
 const BASELINE_FILES = Object.freeze({

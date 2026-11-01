@@ -3,7 +3,7 @@
 // 內文出現「<」或其他不支援的寫法一律報錯，不靜默輸出。
 "use strict";
 
-const { loadTipTables } = require("./legacy");
+const { loadTipTables } = require("./site-sources");
 
 class ContentError extends Error {}
 

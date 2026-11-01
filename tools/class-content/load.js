@@ -4,7 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const YAML = require("yaml");
 const Ajv = require("ajv");
-const { ROOT } = require("./legacy");
+const { ROOT } = require("./site-sources");
 const { ContentError, tableValueText } = require("./markdown");
 
 const CONTENT_DIR = path.join(ROOT, "content");

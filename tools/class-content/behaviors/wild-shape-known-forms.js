@@ -6,7 +6,7 @@
 // druid-rule-subsection--transformation（與已知形態區塊之間的分隔樣式）。區塊不符時報錯。
 "use strict";
 const { ContentError, escapeHtml } = require("../markdown");
-const { loadWildShapeBeasts } = require("../legacy");
+const { loadWildShapeBeasts } = require("../site-sources");
 
 // 與舊版 class-features.js 的 DRUID_WILD_SHAPE_BEAST_LIST_HTML 相同的範本（含排版空白）。
 function beastListHtml() {
