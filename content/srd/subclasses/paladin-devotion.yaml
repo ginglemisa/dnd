@@ -26,7 +26,6 @@ features:
       - mode: action
         key: dynamic-action-paladin-curated-sacred-weapon
         legacyKeys: [dynamic-action-class-sacred-weapon]
-        label: 等級 3：祝聖武器
         resource: paladin-channel-divinity
     text: |
       執行**攻擊動作**時，可消耗 1 次引導神力，為手上一把近戰武器注入神聖力量，持續 10 分鐘，或直到你再次使用本特性。期間獲得以下效果：

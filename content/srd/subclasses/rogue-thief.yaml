@@ -11,7 +11,6 @@ features:
       - mode: bonus
         key: dynamic-bonus-rogue-curated-fast-hands
         legacyKeys: [dynamic-bonus-class-84ttm1]
-        label: 等級 3：快手
     text: |
       你可用**附贈**執行下列其中一項：
 

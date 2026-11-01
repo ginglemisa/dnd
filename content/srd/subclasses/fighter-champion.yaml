@@ -18,7 +18,6 @@ features:
     actions:
       - mode: movement
         key: dynamic-movement-fighter-1s26hvz
-        label: 等級 3：運動健將
     summary: 你的先攻和力量（[[運動]]）檢定具有**優勢**。造成重擊後，可立即移動至多等同於速度一半的距離，且不會引發[[藉機攻擊]]。
     text: |
       平日的訓練鍛打出堅實的體能，你獲得以下效果：

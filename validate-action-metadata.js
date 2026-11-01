@@ -24,7 +24,7 @@ const baseline = {
     ],
     "bard": [
       ["bonus",1,"等級 1：吟遊詩人激勵","dynamic-bonus-class-r7asqs"],
-      ["reaction",3,"等級 3：語出驚人","dynamic-reaction-class-1y0uv3b"],
+      ["reaction",3,"等級 3：語出驚人（逸聞子職）","dynamic-reaction-class-1y0uv3b"],
       ["reaction",7,"等級 7：反迷惑","dynamic-reaction-class-ul9dq"],
     ],
     "cleric": [
@@ -267,17 +267,17 @@ const personalizedClasses = {
     ["reaction",4,"等級 4：輕身墜","dynamic-reaction-monk-curated-slow-fall"],
     ["action",5,"等級 5：震懾擊","dynamic-action-monk-curated-stunning-strike"],
     ["action",5,"等級 5：額外攻擊","dynamic-action-monk-curated-extra-attack"],
-    ["bonus",6,"等級 6：混元體","dynamic-bonus-monk-curated-wholeness-of-body"]
+    ["bonus",6,"等級 6：混元體（散打子職）","dynamic-bonus-monk-curated-wholeness-of-body"]
   ],
   paladin: [
     ["bonus",1,"等級 1：聖療","dynamic-bonus-paladin-curated-lay-on-hands"],
     ["bonus",3,"等級 3：神聖感知","dynamic-bonus-paladin-curated-divine-sense"],
-    ["action",3,"等級 3：祝聖武器","dynamic-action-paladin-curated-sacred-weapon"],
+    ["action",3,"等級 3：祝聖武器（奉獻子職）","dynamic-action-paladin-curated-sacred-weapon"],
     ["action",5,"等級 5：額外攻擊","dynamic-action-paladin-curated-extra-attack"]
   ],
   rogue: [
     ["action",1,"等級 1：偷襲","dynamic-action-rogue-curated-sneak-attack"],
-    ["bonus",3,"等級 3：快手","dynamic-bonus-rogue-curated-fast-hands"],
+    ["bonus",3,"等級 3：快手（妙手子職）","dynamic-bonus-rogue-curated-fast-hands"],
     ["bonus",3,"等級 3：手穩就準","dynamic-bonus-rogue-curated-steady-aim"],
     ["bonus",2,"等級 2：靈巧動作","dynamic-bonus-class-1vms7ce"],
     ["reaction",5,"等級 5：直覺閃避","dynamic-reaction-class-5f9k5x"]
@@ -285,16 +285,16 @@ const personalizedClasses = {
   fighter: [
     ["bonus",1,"等級 1：回氣","dynamic-bonus-fighter-qmmfue"],
     ["action",2,"等級 2：動作如潮","dynamic-action-fighter-1870147"],
-    ["movement",3,"等級 3：運動健將","dynamic-movement-fighter-1s26hvz"],
+    ["movement",3,"等級 3：運動健將（勇士子職）","dynamic-movement-fighter-1s26hvz"],
     ["action",5,"等級 5：額外攻擊","dynamic-action-fighter-113ebtz"],
     ["movement",5,"等級 5：戰術轉移","dynamic-movement-fighter-1liysqo"]
   ],
   ranger: [
-    ["bonus",3,"等級 3：獵人學識","dynamic-bonus-ranger-we5ttw"],
-    ["action",3,"等級 3：狩獵目標","dynamic-action-ranger-vdr4tc"],
+    ["bonus",3,"等級 3：獵人學識（獵人子職）","dynamic-bonus-ranger-we5ttw"],
+    ["action",3,"等級 3：狩獵目標（獵人子職）","dynamic-action-ranger-vdr4tc"],
     ["action",5,"等級 5：額外攻擊","dynamic-action-ranger-113ebtz"],
     ["movement",6,"等級 6：越野","dynamic-movement-ranger-bulhou"],
-    ["action",7,"等級 7：防守戰術","dynamic-action-ranger-p55ifk"]
+    ["action",7,"等級 7：防守戰術（獵人子職）","dynamic-action-ranger-p55ifk"]
   ],
   warlock: [
     ["action",2,"等級 2：秘法回流","dynamic-action-warlock-curated-arcane-recovery"],

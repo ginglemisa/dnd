@@ -24,7 +24,6 @@ features:
       - mode: bonus
         key: dynamic-bonus-monk-curated-wholeness-of-body
         legacyKeys: [dynamic-bonus-class-3mzm48]
-        label: 等級 6：混元體
         resource: monk-wholeness
     text: |
       你可以用**附贈**擲武藝骰，恢復等同{wholenessHealing|「擲骰結果＋感知調整值」}的生命值（至少 1 點）。
