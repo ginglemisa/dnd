@@ -55,7 +55,9 @@
 
 ### Logo 與骰子
 
-- 經典主題使用 `logo.webp` 與 `dice.webp`；暖紙主題使用 `Light.webp`／`Dark.webp` 與 `dice-warm-animated.webp`。
+- 圖片放在 `images/`、字型放在 `fonts/`（`og-image.jpg` 例外，留在根目錄：短網址 Worker 以固定網址引用）。
+- 經典主題使用 `images/logo-classic-light.webp`／`images/logo-classic-dark.webp` 與 `images/dice.webp`；暖紙主題使用 `images/logo-warm-light.webp`／`images/logo-warm-dark.webp` 與 `images/dice-warm-animated.webp`。歡迎視窗與寬螢幕技能頁中間（四欄時）都顯示目前主題的 logo，依明暗切換。
+- 經典 Logo 為 1080×350 原尺寸，整張顯示不裁切。
 - 暖紙 Logo 保留完整圖面（等比縮為 1419px 寬），以 CSS 依比例裁切原 1774px 座標 x=350、y=45、寬 1080、高 350 的字樣與底線區域，依明暗切換並固定比例避免高度跳動。
 - 骰子素材由 `DiceRoller` 建立動畫時依目前主題選取；屬性擲骰開始前以 canvas 顯示靜態預覽。亂數、計時與歷史紀錄維持共用入口。
 - 從選單開關或導覽開啟擲骰時，左下角骰子按鈕發光脈動三次（減少動態效果時為靜態光暈），載入時還原已存設定不發光。

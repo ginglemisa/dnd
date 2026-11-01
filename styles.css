@@ -3991,40 +3991,10 @@ input[type="checkbox"] {
   border-radius: var(--radius-sm);
 }
 
-.skill-brand-wordmark {
-  position: relative;
-  display: flex;
-  align-items: baseline;
-  padding: 0.1em 0.16em 0.16em;
-  color: var(--text);
-  font-family: "Arial Black", "Segoe UI", sans-serif;
-  font-size: clamp(3rem, 8cqi, 4rem);
-  font-weight: 900;
-  font-style: italic;
-  letter-spacing: -0.075em;
-  line-height: 1;
-}
-
-.skill-brand-wordmark strong {
-  color: var(--accent);
-  font-weight: 900;
-}
-
-.skill-brand-wordmark::after {
-  content: "";
-  position: absolute;
-  inset: auto 0.08em 0 0.2em;
-  height: 3px;
-  background: linear-gradient(90deg, var(--text) 0 27%, var(--accent) 27% 100%);
-  transform: skewX(-18deg);
-}
-
-html[data-ui-theme="warm"] .skill-brand-art {
+/* 經典與暖紙主題各有一組 logo（各自分淺色／深色），只顯示目前主題的那組。 */
+html:not([data-ui-theme="warm"]) .skill-brand-art--classic,
+html[data-ui-theme="warm"] .skill-brand-art--warm {
   display: block;
-}
-
-html[data-ui-theme="warm"] .skill-brand-wordmark {
-  display: none;
 }
 
 @container skill-section (min-width: 18.75rem) {
@@ -11886,17 +11856,8 @@ button.feature-rule-tip:focus-visible {
   margin: 12px 0;
 }
 
-:where(html:not([data-ui-theme="warm"])) .legal-modal-logo {
-  display: block;
-  width: 7rem;
-  max-width: 42%;
-  height: auto;
-  margin: 0 auto 0.85rem;
-  border-radius: 1rem;
-  box-shadow: 0 10px 24px rgba(10, 16, 48, 0.22);
-}
-
-:where(html[data-ui-theme="warm"]) .legal-modal-logo {
+/* 經典與暖紙主題的 logo 都是 1080×350 的橫幅（暖紙由原圖裁出，經典為原尺寸）。 */
+:where(.legal-modal-logo) {
   position: relative;
   width: 100%;
   max-width: 18rem;
@@ -11918,12 +11879,22 @@ button.feature-rule-tip:focus-visible {
   display: block;
 }
 
+/* 經典主題的 logo 已是 1080×350，整張顯示，不裁切。 */
+.brand-logo-full img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 .brand-logo-crop .legal-modal-logo-dark,
-html[data-theme="dark"] .brand-logo-crop .legal-modal-logo-light {
+.brand-logo-full .legal-modal-logo-dark,
+html[data-theme="dark"] .brand-logo-crop .legal-modal-logo-light,
+html[data-theme="dark"] .brand-logo-full .legal-modal-logo-light {
   display: none;
 }
 
-html[data-theme="dark"] .brand-logo-crop .legal-modal-logo-dark {
+html[data-theme="dark"] .brand-logo-crop .legal-modal-logo-dark,
+html[data-theme="dark"] .brand-logo-full .legal-modal-logo-dark {
   display: block;
 }
 

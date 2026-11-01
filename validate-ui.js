@@ -160,10 +160,13 @@ async function verifyAppearanceAndLayout(browser, page, url) {
     assert.equal(await page.evaluate(() => JSON.stringify(collectStateObject())), stateBefore, "appearance controls must not change character JSON");
     await page.reload();
     assert.deepEqual(await page.evaluate(() => [document.documentElement.dataset.uiTheme, document.documentElement.dataset.theme]), [family, mode], "both settings survive reload");
-    const expectedLogo = family === "classic" ? ".legal-modal-logo-classic" : `.legal-modal-logo-${mode}`;
+    const expectedLogo = `.legal-modal-logo-${family} .legal-modal-logo-${mode}`;
     const legalModal = page.locator("#legal-modal");
     assert.equal(await legalModal.locator(expectedLogo).isVisible(), true);
-    assert.equal(await legalModal.locator(".legal-modal-logo-classic:visible, .legal-modal-logo-warm img:visible").count(), 1);
+    assert.equal(await legalModal.locator(".legal-modal-logo-classic img:visible, .legal-modal-logo-warm img:visible").count(), 1);
+    // 寬螢幕技能頁中間的 logo 也只顯示目前主題與模式的那一張。
+    assert.equal(await page.locator(`.skill-brand-art--${family} .legal-modal-logo-${mode}`).evaluate(el => getComputedStyle(el).display !== "none" && getComputedStyle(el.parentElement).display !== "none"), true);
+    assert.equal(await page.locator(".skill-brand-art img").evaluateAll(images => images.filter(img => getComputedStyle(img).display !== "none" && getComputedStyle(img.parentElement).display !== "none").length), 1);
     assert.equal(await legalModal.locator(expectedLogo).evaluate(el => el.complete && el.naturalWidth > 0), true);
     await screenshot(`${family}-${mode}-logo`);
     assert.equal(await page.locator('script[src*="legal-about.js"]').count(), 0, "About must load on demand");
@@ -301,7 +304,7 @@ async function verifyAppearanceAndLayout(browser, page, url) {
     await page.locator("#dice-roller-roll").click();
     const art = page.locator(".dice-roller-animation");
     await art.waitFor();
-    assert((await art.getAttribute("src")).startsWith(family === "warm" ? "dice-warm-animated.webp?" : "dice.webp?"));
+    assert((await art.getAttribute("src")).startsWith(family === "warm" ? "images/dice-warm-animated.webp?" : "images/dice.webp?"));
     await page.locator("#dice-roller-close").click();
     await page.emulateMedia({ reducedMotion: "reduce" });
     // Start each family/mode check with the same character data.
