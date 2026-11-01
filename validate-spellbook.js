@@ -854,7 +854,7 @@ async function verifyPreparedPicker(page) {
   await classTable.focus();
   await page.keyboard.press("Enter");
   const featureDialog = page.getByRole("dialog", { name: "角色能力", exact: true });
-  assert.equal(await featureDialog.getByRole("tab", { name: "表格", exact: true }).getAttribute("aria-selected"), "true");
+  assert.equal(await featureDialog.getByRole("tab", { name: "職業", exact: true }).getAttribute("aria-selected"), "true");
   assert.equal(await featureDialog.locator('[data-class-feature-table="druid"]').isVisible(), true);
   assert.equal(await featureDialog.evaluate(el => {
     const child = el.closest(".app-dialog"), parent = document.querySelector('.app-dialog[data-variant="spellbook"]');
