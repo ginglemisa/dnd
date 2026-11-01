@@ -20,7 +20,7 @@
       "additionalProperties": false,
       "required": ["level", "text"],
       "properties": {
-        "id": { "$ref": "#/definitions/id", "description": "能力 ID（全職業唯一）。已有的 data-action-id 照抄。" },
+        "id": { "$ref": "#/definitions/id", "description": "能力 ID（全職業唯一），輸出為能力段落的 data-feature-id。舊版已有的照抄。" },
         "level": { "$ref": "#/definitions/level", "description": "取得此能力的等級。" },
         "name": { "type": "string", "minLength": 1, "description": "能力名稱；標題「等級 N：名稱」由等級自動組成。" },
         "tableName": { "type": "string", "minLength": 1, "description": "特性表「職業特性」欄顯示的名稱，例如「動作如潮（一次使用）」；省略時使用 name。" },
@@ -32,7 +32,7 @@
         "feat": { "enum": ["level", "style"], "description": "此能力給予專長選擇，專長選單接在能力段落內：level 為屬性值提升（可選一般專長，存檔欄位為「職業-level-等級」），style 為戰鬥風格專長。" },
         "hint": { "$ref": "#/definitions/hint" },
         "pdfMerge": { "const": true, "description": "PDF 角色紙的職業特性欄：同等級標記 pdfMerge 的能力合併成一行，依職業頁順序以「、」連接（例如「等級 1：狂暴、無甲防禦」）。" },
-        "behavior": { "$ref": "#/definitions/id", "description": "特殊機制：tools/class-content/behaviors/<名稱>.js（例如 magical-discoveries 產生魔法發現的法術選擇區，wizard-spellbook-recommendations 標記法術書推薦，wild-shape-known-forms 產生已知形態區塊與野獸清單，druid-land-choice 標記大地結社地貌）。" },
+        "behavior": { "$ref": "#/definitions/id", "description": "特殊機制：tools/class-content/behaviors/<名稱>.js（例如 magical-discoveries 產生魔法發現的法術選擇區，wizard-spellbook-recommendations 標記法術書推薦，wild-shape-known-forms 產生已知形態區塊與野獸清單）。" },
         "choose": { "type": "integer", "minimum": 1, "description": "要從 options 選幾項；1 表示選項互斥（勾選一項時取消其他項）。" },
         "choiceName": { "type": "string", "minLength": 1, "description": "缺項提醒用的選擇名稱，顯示為「職業名＋choiceName尚未選擇。」（例如「聖騎士戰鬥風格類型」）；省略時用能力名稱。" },
         "changeOn": { "enum": ["rest"], "description": "rest：短休或長休後可改選。" },
@@ -186,11 +186,11 @@
     },
     "part": {
       "type": "object",
-      "description": "子能力：輸出成外層能力裡帶 data-action-id 的小節。等級同外層能力；資源寫在外層能力。",
+      "description": "子能力：輸出成外層能力裡的小節。等級同外層能力；資源寫在外層能力。",
       "additionalProperties": false,
       "required": ["id", "name", "text"],
       "properties": {
-        "id": { "$ref": "#/definitions/id", "description": "子能力 ID（與能力 ID 共用、全職業唯一）。已有的 data-action-id 照抄。" },
+        "id": { "$ref": "#/definitions/id", "description": "子能力 ID（與能力 ID 共用、全職業唯一）。舊版已有的照抄。" },
         "name": { "type": "string", "minLength": 1, "description": "小節標題名稱，例如「神聖火花」。" },
         "activation": { "type": "string", "minLength": 1, "description": "標題括弧內的使用方式，例如「魔法動作」、「附贈」。按鈕消耗資源時，跑團版標題自動加上「，消耗 1 次［資源名稱］」。" },
         "text": { "$ref": "#/definitions/text", "description": "職業頁全文（不可使用「#### 」小節）。" },

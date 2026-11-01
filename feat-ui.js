@@ -170,7 +170,7 @@ function getClassFeatChoiceSection(spec) {
   const feature = (window.getClassFeatureRules?.(cls) || []).find(item => item.level === spec.level && (spec.type === "level"
     ? item.feat === "level"
     : item.feat === "style" || (item.options || []).some(option => option.featChoice)));
-  return feature ? document.querySelector(`#classFeatures [data-action-id="${feature.id}"]`) : null;
+  return feature ? document.querySelector(`#classFeatures section[data-feature-id="${feature.id}"]`) : null;
 }
 
 function getFeatChoiceSpecs() {

@@ -50,7 +50,6 @@ features:
               level: 5
             - id: polymorph
               level: 7
-    behavior: druid-land-choice
     text: |
       - **選擇地貌：**每次長休後，從旱地、極地、溫帶或熱帶中選擇 1 種地貌。
       - **始終準備：**你始終準備所選地貌對應、且目前德魯伊等級可用的法術，詳見下表。

@@ -1168,6 +1168,8 @@ const CLASS_FEATURE_TABLE_STATE_KEY = "dndchar_class_feature_table_state_v1";
 const CLASS_CORE_CREATION_INFO_STATE_KEY = "dndchar_class_core_creation_info_state_v1";
 
 const CLASS_FEATURE_PROMPT_DISABLED_KEY = "dnd.classFeaturePromptDisabled.v1";
+// 大地結社地貌所屬的能力（等級 3 大地結社法術）在職業頁的段落。
+const DRUID_LAND_FEATURE_SECTION = '#classFeatures section[data-feature-id="druid-circle-of-the-land-spells"]';
 let classFeaturePromptDisabled = window.dndStorage.getItem(CLASS_FEATURE_PROMPT_DISABLED_KEY) === "true";
 let classFeaturePromptTimer = null;
 
@@ -1179,7 +1181,7 @@ function getMissingClassFeatureChoiceSections() {
     if (featRow) control = document.getElementById(getFeatChoiceId(featRow.dataset.sourceKey));
     let section = control?.closest("#classFeatures section[data-feature-level], #metamagic-options-section, #eldritch-invocations-section, #druid-land-control");
     // 地貌選單留在數值頁，提示改列出等級 3 大地結社法術區段並在其中連動選擇。
-    if (section?.id === "druid-land-control") section = document.querySelector("#classFeatures section[data-druid-land-choice]") || section;
+    if (section?.id === "druid-land-control") section = document.querySelector(DRUID_LAND_FEATURE_SECTION) || section;
     if (section) missingSections.add(section);
   });
   return missingSections;
@@ -1293,7 +1295,7 @@ function createClassFeatureAdditionalChoices(content) {
       });
     // 地貌不是法術選擇，手動管理法術時仍需選擇；選單本體留在數值頁職業欄。
     if (!document.getElementById("druid-land-control")?.classList.contains("is-hidden")) {
-      add("druid-land", content.querySelector("#classFeatures section[data-druid-land-choice]"), [{
+      add("druid-land", content.querySelector(DRUID_LAND_FEATURE_SECTION), [{
         label: "大地結社地貌", getSource: () => document.getElementById("druid-land"), showView: false
       }], false);
     }

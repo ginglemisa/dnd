@@ -117,7 +117,7 @@
 
   // 職業動作：職業內容檔各能力（含子職能力、子能力、選項與附錄小節）的 actions（class-content.generated.js 的 classRules）。
   // key／legacyKeys 是跑團偏好記住的按鈕識別（class-id-baseline.json 把關）。出現條件只看等級、勾選的選項與魔能祈喚；
-  // 說明段落以 data-action-id 選取，不解析職業頁標題或內文。附錄小節的 source: invocation 按鈕是魔能祈喚本身。
+  // 說明段落依段落 ID 讀 classTabletopText，不解析職業頁標題或內文。附錄小節的 source: invocation 按鈕是魔能祈喚本身。
   const classActionRuleCache = new Map();
 
   function getClassActionLabel(label, fallback) {
