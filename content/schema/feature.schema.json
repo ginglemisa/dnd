@@ -36,7 +36,7 @@
         "choose": { "type": "integer", "minimum": 1, "description": "要從 options 選幾項；1 表示選項互斥（勾選一項時取消其他項）。" },
         "choiceName": { "type": "string", "minLength": 1, "description": "缺項提醒用的選擇名稱，顯示為「職業名＋choiceName尚未選擇。」（例如「聖騎士戰鬥風格類型」）；省略時用能力名稱。" },
         "changeOn": { "enum": ["rest"], "description": "rest：短休或長休後可改選。" },
-        "choiceGroup": { "const": true, "description": "選項的勾選框標記為同一選擇組（data-feature-choice-group），例如神佑打擊；changeOn 時自動標記，不必另寫。" },
+        "choiceGroup": { "const": true, "description": "選項標記為同一選擇組（只保留一個勾選），例如神佑打擊；changeOn 時自動標記，不必另寫。" },
         "optionStyle": { "enum": ["list", "cards"], "default": "list", "description": "選項顯示方式：list 為清單，cards 為卡片。" },
         "tables": {
           "type": "array",

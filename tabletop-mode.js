@@ -1193,27 +1193,31 @@
     return true;
   }
 
+  // 休息後可改選的選項：index.html 帶 data-rest-change 的下拉選單，以及職業內容檔寫 changeOn 的能力（classRules）。
+  // 職業選項的勾選狀態讀取選項 ID 對應的勾選框；選項說明只供顯示，取自勾選框所在的職業頁段落文字。
   function getRestOptionGroups() {
+    const className = document.getElementById("class")?.value || "";
     const level = Number(document.getElementById("level")?.value || 0);
-    return Array.from(document.querySelectorAll("[data-rest-change]")).flatMap(source => {
+    const selects = Array.from(document.querySelectorAll("select[data-rest-change]")).flatMap(source => {
       const when = source.dataset.restChange;
       if (!["shortRest", "longRest", "either"].includes(when)) return [];
-      if (source instanceof HTMLSelectElement) {
-        if (source.disabled || source.classList.contains("is-hidden")
-          || source.closest(".class-feature-option.is-hidden, .race-option-row.is-hidden")) return [];
-        return [{ key: source.id, label: source.getAttribute("aria-label"), when, type: "select",
-          value: source.value, choices: Array.from(source.options).filter(option => !option.disabled && !option.hidden)
-            .map(option => ({ value: option.value, label: option.textContent })) }];
-      }
-      if (Number(source.dataset.featureLevel) > level) return [];
-      const inputs = Array.from(source.querySelectorAll('input[type="checkbox"][data-feature-choice-group]'));
-      if (!inputs.length || inputs.some(input => input.disabled)) return [];
-      return [{ key: inputs[0].dataset.featureChoiceGroup, when, type: "checkboxes",
-        label: source.querySelector("h3")?.textContent || "休息後選項",
-        choices: inputs.map(input => ({ id: input.id, checked: input.checked,
-          label: input.closest("label")?.textContent.trim() || input.id,
-          detail: input.closest("li, .druid-mission-option__heading")?.textContent.trim() || "" })) }];
+      if (source.disabled || source.classList.contains("is-hidden")
+        || source.closest(".class-feature-option.is-hidden, .race-option-row.is-hidden")) return [];
+      return [{ key: source.id, label: source.getAttribute("aria-label"), when, type: "select",
+        value: source.value, choices: Array.from(source.options).filter(option => !option.disabled && !option.hidden)
+          .map(option => ({ value: option.value, label: option.textContent })) }];
     });
+    const subclass = globalScope.getSelectedSubclass?.(className);
+    const features = (globalScope.getClassFeatureRules?.(className) || []).flatMap(feature => {
+      if (feature.changeOn !== "rest" || feature.level > level) return [];
+      const inputs = feature.options.map(option => document.getElementById(option.id));
+      if (inputs.some(input => !(input instanceof HTMLInputElement) || input.disabled)) return [];
+      return [{ key: feature.id, when: "either", type: "checkboxes",
+        label: `等級 ${feature.level}：${feature.name}${feature.subclass ? `（${subclass?.shortName || ""}子職）` : ""}`,
+        choices: feature.options.map((option, index) => ({ id: option.id, checked: inputs[index].checked, label: option.name,
+          detail: inputs[index].closest("li, .druid-mission-option__heading")?.textContent.trim() || "" })) }];
+    });
+    return [...selects, ...features];
   }
 
   function getRestContext() {
