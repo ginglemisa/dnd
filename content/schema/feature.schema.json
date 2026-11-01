@@ -32,7 +32,7 @@
         "feat": { "enum": ["level", "style"], "description": "此能力給予專長選擇，專長選單接在能力段落內：level 為屬性值提升（可選一般專長，存檔欄位為「職業-level-等級」），style 為戰鬥風格專長。" },
         "hint": { "$ref": "#/definitions/hint" },
         "pdfMerge": { "const": true, "description": "PDF 角色紙的職業特性欄：同等級標記 pdfMerge 的能力合併成一行，依職業頁順序以「、」連接（例如「等級 1：狂暴、無甲防禦」）。" },
-        "behavior": { "$ref": "#/definitions/id", "description": "特殊機制：tools/class-content/behaviors/<名稱>.js（例如 magical-discoveries 產生魔法發現的法術選擇區，wizard-spellbook-recommendations 標記法術書推薦，wild-shape-known-forms 產生已知形態區塊與野獸清單）。" },
+        "behavior": { "$ref": "#/definitions/id", "description": "特殊排版：tools/class-content/behaviors/<名稱>.js，排版 text 中標題寫成「#### 標題 {#名稱}」的小節（例如 wild-shape-known-forms 產生已知形態區塊與野獸清單）。" },
         "choose": { "type": "integer", "minimum": 1, "description": "要從 options 選幾項；1 表示選項互斥（勾選一項時取消其他項）。" },
         "choiceName": { "type": "string", "minLength": 1, "description": "缺項提醒用的選擇名稱，顯示為「職業名＋choiceName尚未選擇。」（例如「聖騎士戰鬥風格類型」）；省略時用能力名稱。" },
         "changeOn": { "enum": ["rest"], "description": "rest：短休或長休後可改選。" },
@@ -45,6 +45,16 @@
           "description": "text（與 tabletop）中 GFM 表格的外框，依出現順序一一對應；表格數量須相同。"
         },
         "select": { "$ref": "#/definitions/select" },
+        "mount": {
+          "type": "object",
+          "description": "插入點：網站程式在此插入控制項（例如魔法發現的法術選單）。接在 text、options 與 select 之後輸出空容器 <div id class aria-label>；不進 classRules。",
+          "additionalProperties": false,
+          "required": ["id", "label"],
+          "properties": {
+            "id": { "$ref": "#/definitions/id", "description": "容器的 DOM ID（同時作為 class），網站程式依此尋找；改名時須一併修改網站程式。" },
+            "label": { "type": "string", "minLength": 1, "description": "容器的 aria-label。" }
+          }
+        },
         "collapsible": {
           "type": "array",
           "minItems": 1,
@@ -89,7 +99,7 @@
           "anyOf": [
             { "required": ["id"] }, { "required": ["type"] }, { "required": ["tableName"] }, { "required": ["tabletop"] }, { "required": ["summary"] }, { "required": ["choose"] },
             { "required": ["changeOn"] }, { "required": ["choiceGroup"] }, { "required": ["optionStyle"] }, { "required": ["options"] },
-            { "required": ["actions"] }, { "required": ["resource"] }, { "required": ["spells"] }, { "required": ["spellsByChoice"] }, { "required": ["spellSourceKey"] }, { "required": ["afterFeatChoice"] }, { "required": ["behavior"] }, { "required": ["parts"] }, { "required": ["select"] }
+            { "required": ["actions"] }, { "required": ["resource"] }, { "required": ["spells"] }, { "required": ["spellsByChoice"] }, { "required": ["spellSourceKey"] }, { "required": ["afterFeatChoice"] }, { "required": ["behavior"] }, { "required": ["parts"] }, { "required": ["select"] }, { "required": ["mount"] }
           ]
         }
       },

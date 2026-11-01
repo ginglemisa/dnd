@@ -4,7 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const YAML = require("yaml");
 const Ajv = require("ajv");
-const { ROOT } = require("./legacy");
+const { ROOT } = require("./site-sources");
 const { ContentError, tableValueText } = require("./markdown");
 
 const CONTENT_DIR = path.join(ROOT, "content");
@@ -214,7 +214,11 @@ function checkClass(classDef, errors) {
         Object.keys(feature.resource.recoverByLevel || {}).map(Number).filter(level => level <= feature.level || level > classDef.maxLevel)
           .forEach(level => errors.push(`${where}：resource.recoverByLevel 的 ${level} 級須高於能力等級且不超過 maxLevel`));
       }
+      // behavior 排版 text 中標題寫成「#### 標題 {#名稱}」的小節：須有且只有一個（名稱不符或寫在其他欄位時由渲染報錯）。
       if (feature.behavior && !fs.existsSync(path.join(__dirname, "behaviors", `${feature.behavior}.js`))) errors.push(`${where}：找不到 tools/class-content/behaviors/${feature.behavior}.js`);
+      if (feature.behavior && (feature.text || "").split(/\r?\n/).filter(line => /^#### /.test(line) && line.trimEnd().endsWith(`{#${feature.behavior}}`)).length !== 1) {
+        errors.push(`${where}：behavior: ${feature.behavior} 的 text 須有一個「#### 標題 {#${feature.behavior}}」小節`);
+      }
       // spell-id-baseline.json 由 validate-tabletop-spellcasting.js 保證與 SpellCatalog 一致。
       const choiceSpells = (feature.spellsByChoice?.choices || []).flatMap(choice => choice.spells);
       for (const spell of [...(feature.spells || []), ...choiceSpells]) {
@@ -247,6 +251,8 @@ function checkClass(classDef, errors) {
         if (/^#/m.test(feature.select.text || "")) errors.push(`${where}：下拉選擇卡片的文字不可使用「#### 」小節`);
         if (feature.tabletop || feature.summary) errors.push(`${where}：有 select 的能力不可寫 tabletop／summary`);
       }
+      // 插入點：DOM ID 與選項、下拉選單 ID 同在職業頁上，不可重複。
+      if (feature.mount) claim(persistedIds, feature.mount.id, where, "插入點 ID");
       const partTexts = (feature.parts || []).flatMap(part => [part.text, part.tabletop, part.summary]);
       const collapsibleTexts = (feature.collapsible || []).map(item => item.text);
       for (const text of [feature.text, feature.tabletop, feature.summary, feature.afterFeatChoice, feature.select?.text, ...collapsibleTexts, ...partTexts, ...(feature.options || []).map(option => option.text)].filter(Boolean)) {

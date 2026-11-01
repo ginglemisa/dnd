@@ -1,11 +1,16 @@
-// 職業內容檔的文字格式：標準 Markdown 的小子集，加上 [[提示]] 與 {數值|頁面文字} 兩種標記。
+// 職業內容檔的文字格式：標準 Markdown 的小子集，加上 [[提示]]、{數值|頁面文字} 與 [文字]{網站功能標記} 三種標記。
 // 支援：段落、「- 」清單、行尾「\」強制換行、**粗體**、「#### 標題」小節（到下一個 #### 或文字結束）、GFM 表格、「---」分隔線。
 // 內文出現「<」或其他不支援的寫法一律報錯，不靜默輸出。
 "use strict";
 
-const { loadTipTables } = require("./legacy");
+const { loadTipTables } = require("./site-sources");
 
 class ContentError extends Error {}
+
+// [文字]{名稱} 可用的網站功能標記：輸出 <span data-名稱>文字</span>，職業頁與跑團版相同。只列網站程式會讀取的標記，
+// 不在清單內的名稱一律報錯。
+// - wizard-spellbook-recommendations：法師法術書的推薦法術，sheet-spells.js 只對其中的法術提供「寫入法術書」。
+const MARKS = new Set(["wizard-spellbook-recommendations"]);
 
 function escapeHtml(text) {
   return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -20,7 +25,7 @@ function renderInline(source, options, where) {
   const { skills, conditions, beasts } = loadTipTables();
   let html = "";
   let index = 0;
-  const pattern = /\*\*(.+?)\*\*|\[\[([^\]|]+)\]\]|\{([A-Za-z][A-Za-z0-9]*)\|([^{}]*)\}/g;
+  const pattern = /\*\*(.+?)\*\*|\[\[([^\]|]+)\]\]|\{([A-Za-z][A-Za-z0-9]*)\|([^{}]*)\}|\[([^[\]]+)\]\{([a-z][a-z0-9-]*)\}/g;
   for (const match of text.matchAll(pattern)) {
     html += escapeHtml(text.slice(index, match.index));
     index = match.index + match[0].length;
@@ -37,6 +42,9 @@ function renderInline(source, options, where) {
       else if (skills.has(name)) html += `<span class="skill-tip" data-skill="${escapeHtml(name)}">${escapeHtml(name)}</span>`;
       else if (beasts.has(name)) html += `<span class="beast-tip" data-beast="${beasts.get(name)}">${escapeHtml(name)}</span>`;
       else throw new ContentError(`${where}：[[${name}]] 不是已知的技能、規則、狀態或野獸名稱`);
+    } else if (match[5] !== undefined) {
+      if (!MARKS.has(match[6])) throw new ContentError(`${where}：[…]{${match[6]}} 不是網站功能標記（可用：${[...MARKS].join("、")}）`);
+      html += `<span data-${match[6]}>${renderInline(match[5], options, where)}</span>`;
     } else {
       // 頁面文字可含粗體（{名稱|**粗體**其他文字}）；不可再含數值標記（[^{}] 已排除）。
       const key = escapeHtml(options.resolveValue(match[3], where));
@@ -76,7 +84,9 @@ function parseBlocks(source, where) {
     }
     if (/^#### /.test(line)) {
       close();
-      blocks.push({ type: "h4", text: line.slice(5).trim() });
+      // 標題結尾的「{#名稱}」：特殊排版的小節，交給能力 behavior 的 renderSubsection()（見 renderMarkdown）。
+      const special = line.slice(5).trim().match(/^(.*?)\s*\{#([a-z][a-z0-9-]*)\}$/);
+      blocks.push(special ? { type: "h4", text: special[1], special: special[2] } : { type: "h4", text: line.slice(5).trim() });
       return;
     }
     if (/^#/.test(line)) throw new ContentError(`${at}：只支援「#### 」小節標題`);
@@ -147,6 +157,9 @@ function renderTable(block, frame, options, where, attributes) {
 // options.plainHeadings：「#### 」只輸出 <h4>，不另包小節（文字本身已在小節內，例如附錄小節「書之魔契」的「戲法與儀式」）。
 // options.view（見 renderInline）：跑團版不輸出表格（跑團說明不顯示表格）。
 // 分隔線「---」輸出 <hr class="class-rule-divider">（樣式由 styles.css 設定，不輸出行內 style）。
+// options.behavior：{ name, renderSubsection, nextSubsectionClass }（能力的 behavior）。標題寫成「#### 標題 {#名稱}」的小節
+// （名稱須等於 behavior 名稱）不照一般小節輸出，改由 renderSubsection(blocks, helpers) 依小節內解析好的區塊產生 HTML；
+// nextSubsectionClass 加在緊接其後的小節上（後面沒有小節時報錯）。
 function renderMarkdown(source, options, where) {
   const blocks = parseBlocks(source, where);
   const outer = options.blockAttributes ? ` ${options.blockAttributes}` : "";
@@ -170,22 +183,46 @@ function renderMarkdown(source, options, where) {
     : block.type === "hr" ? `<hr class="class-rule-divider"${attributes}>`
     : block.type === "table" ? renderTableBlock(block, attributes)
     : `<ul class="class-rule-list"${attributes}>${newline}${block.items.map(item => `<li>${joinHardBreaks(item, options, where)}</li>`).join(newline)}${newline}</ul>`;
+  // 區塊的內部 HTML（段落：不含 <p>；清單：<li> 項目），供 behavior 的 renderSubsection() 使用。
+  const inner = block => block.type === "p" ? joinHardBreaks(block.lines, options, where)
+    : block.type === "ul" ? block.items.map(item => `<li>${joinHardBreaks(item, options, where)}</li>`).join("")
+    : (() => { throw new ContentError(`${where}：特殊小節只能有段落與清單`); })();
   const html = [];
   let subsection = null;
+  let special = null;
+  let extraClass = "";
   const closeSubsection = () => {
-    if (subsection !== null) html.push(`<div class="${options.subsectionClass || "class-rule-subsection"}"${outer}>${newline}${subsection.filter(Boolean).join(newline)}${newline}</div>`);
+    if (special) {
+      const output = options.behavior.renderSubsection(special.blocks, { heading: special.heading, inner, view: options.view, where });
+      html.push(output.html);
+      extraClass = output.nextSubsectionClass ? ` ${output.nextSubsectionClass}` : "";
+      special = null;
+      return;
+    }
+    if (subsection !== null) {
+      html.push(`<div class="${options.subsectionClass || "class-rule-subsection"}${extraClass}"${outer}>${newline}${subsection.filter(Boolean).join(newline)}${newline}</div>`);
+      extraClass = "";
+    }
     subsection = null;
   };
   for (const block of blocks) {
-    if (block.type === "h4" && options.plainHeadings) {
+    if (block.special) {
+      const behavior = options.behavior;
+      if (!behavior?.renderSubsection || behavior.name !== block.special) throw new ContentError(`${where}：「#### ${block.text} {#${block.special}}」的名稱須等於此能力的 behavior，且該 behavior 提供小節排版`);
+      if (options.plainHeadings) throw new ContentError(`${where}：這裡的「#### 」只輸出標題，不可寫 {#${block.special}}`);
+      closeSubsection();
+      special = { heading: block.text, blocks: [] };
+    } else if (block.type === "h4" && options.plainHeadings) {
       html.push(`<h4>${renderInline(block.text, options, where)}</h4>`);
     } else if (block.type === "h4") {
       closeSubsection();
       subsection = [`<h4>${renderInline(block.text, options, where)}</h4>`];
-    } else if (subsection !== null) subsection.push(renderBlock(block));
+    } else if (special) special.blocks.push(block);
+    else if (subsection !== null) subsection.push(renderBlock(block));
     else html.push(renderBlock(block, outer));
   }
   closeSubsection();
+  if (extraClass) throw new ContentError(`${where}：特殊小節之後須緊接一個「#### 」小節`);
   return html.filter(Boolean).join(newline);
 }
 

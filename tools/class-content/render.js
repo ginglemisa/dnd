@@ -247,13 +247,12 @@ function renderFeature({ feature, owner }, context) {
   const where = `${owner.file}（${feature.name || `等級 ${feature.level} 補充`}）`;
   const markdownOptions = { ...context, subsectionClass: `class-rule-subsection ${classDef.id}-rule-subsection` };
   const appended = context.appended.has(feature.id);
-  // behavior：特殊機制模組（behaviors/<名稱>.js，load.js 已確認存在）。decorateText() 在 text 的 HTML 加上網站程式辨識的標記
-  // （第三個參數為 context.view），afterText() 回傳接在內文後的 HTML；皆可省略。
-  const behavior = feature.behavior ? require(`./behaviors/${feature.behavior}`) : null;
+  // behavior：特殊排版模組（behaviors/<名稱>.js，load.js 已確認存在，且 text 有一個「#### 標題 {#名稱}」小節），
+  // 由 renderMarkdown 把該小節交給它的 renderSubsection()。
+  const behavior = feature.behavior ? { name: feature.behavior, ...require(`./behaviors/${feature.behavior}`) } : null;
   // 表格只出現在 text 與 tabletop，外框依出現順序取自 tables。
-  const tableOptions = { ...markdownOptions, tables: feature.tables || [] };
+  const tableOptions = { ...markdownOptions, tables: feature.tables || [], behavior };
   let body = renderMarkdown(feature.text, tableOptions, where);
-  if (behavior?.decorateText) body = behavior.decorateText(body, where, context.view);
   if (context.view && appended && !feature.tabletop) body = addAppendedPrefix(body, feature, where);
   if (feature.summary && context.summaries) context.summaries[feature.id] = renderInline(feature.summary, context, `${where} summary`);
   // 可收合小節：預設收合，標題為粗體。
@@ -263,7 +262,8 @@ function renderFeature({ feature, owner }, context) {
   if (feature.select) body += renderSelectCard(feature.select, markdownOptions, `${where} 下拉選擇卡片`);
   // 專長選單插在此段落之前（feat-ui.js）；4 級額外戲法選單讀取它的粗體標籤（class-features-ui.js）。
   if (feature.afterFeatChoice) body += renderMarkdown(feature.afterFeatChoice, { ...markdownOptions, blockAttributes: context.view ? "" : "data-after-feat-choice" }, `${where} afterFeatChoice`);
-  if (behavior?.afterText) body += behavior.afterText(feature, context);
+  // 插入點：網站程式插入控制項的空容器（例如 spell-sources.js 的魔法發現法術選單）。
+  if (feature.mount) body += `<div id="${feature.mount.id}" class="${feature.mount.id}" aria-label="${escapeHtml(feature.mount.label)}"></div>`;
   if (context.view) {
     if (!feature.id) return "";
     // tabletop 可省略只在職業頁顯示的表格（例如荒野形態的野獸形態進程表）。

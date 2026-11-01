@@ -4,7 +4,7 @@
 const fs = require("fs");
 const http = require("http");
 const path = require("path");
-const { ROOT } = require("./class-content/legacy");
+const { ROOT } = require("./class-content/site-sources");
 const { ContentError } = require("./class-content/markdown");
 const { build } = require("./build");
 

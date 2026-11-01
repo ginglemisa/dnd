@@ -5,8 +5,8 @@ const { renderInline, tableValueText } = require("./markdown");
 const { orderedSubclasses } = require("./render");
 
 const ABILITY_CODES = Object.freeze({ 力量: "str", 敏捷: "dex", 體質: "con", 智力: "int", 感知: "wis", 魅力: "cha" });
-// 只供職業頁與跑團說明使用的文字欄位：機制資料不含這些欄位。
-const TEXT_FIELDS = new Set(["text", "tabletop", "summary", "afterFeatChoice", "collapsible", "tables"]);
+// 只供職業頁與跑團說明使用的文字與排版欄位：機制資料不含這些欄位。
+const TEXT_FIELDS = new Set(["text", "tabletop", "summary", "afterFeatChoice", "collapsible", "tables", "mount"]);
 
 function stripText(value) {
   if (Array.isArray(value)) return value.map(stripText);
