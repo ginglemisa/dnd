@@ -6,14 +6,13 @@
 // 找不到這段結構時報錯，避免內容改寫後靜默失去排版或野獸清單。
 "use strict";
 const { ContentError, escapeHtml } = require("../markdown");
-const { loadLegacyArray } = require("../legacy");
+const { loadWildShapeBeasts } = require("../legacy");
 
 const KNOWN_FORMS = /<div class="class-rule-subsection druid-rule-subsection"><h4>已知形態<\/h4><p>((?:(?!<\/p>).)*)<\/p><p>((?:(?!<\/p>).)*)<\/p><ul class="class-rule-list">((?:(?!<\/ul>).)*)<\/ul><\/div><div class="class-rule-subsection druid-rule-subsection">/s;
 
 // 與舊版 class-features.js 的 DRUID_WILD_SHAPE_BEAST_LIST_HTML 相同的範本（含排版空白）。
 function beastListHtml() {
-  const beasts = loadLegacyArray("druid-wild-shape-beasts.js", "DRUID_WILD_SHAPE_BEASTS");
-  const crOrder = loadLegacyArray("druid-wild-shape-beasts.js", "DRUID_WILD_SHAPE_CR_ORDER");
+  const { beasts, crOrder } = loadWildShapeBeasts();
   return `<details class="wild-shape-beast-disclosure">
   <summary>
     <span class="wild-shape-beast-disclosure__show">查看其他動物</span>
