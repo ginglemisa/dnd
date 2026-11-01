@@ -152,7 +152,7 @@ function checkClass(classDef, errors) {
       if ((!valueNames.has(token) && !ABILITY_MODIFIERS.includes(token)) || token === name || textValues.has(token)) errors.push(`${classDef.file}：values.${name} 引用了不存在的數值 {${token}}`);
       return "1";
     });
-    if (!/^[0-9d+\-*/(), ]+$/.test(stripped.replace(/\b(?:max|min|floor)\(/g, "("))) errors.push(`${classDef.file}：values.${name} 只能使用數字、d、四則運算、max()／min()／floor() 與 {數值}`);
+    if (!/^[0-9d+\-*/(), ]+$/.test(stripped.replace(/\b(?:max|min|floor|ceil)\(/g, "("))) errors.push(`${classDef.file}：values.${name} 只能使用數字、d、四則運算、max()／min()／floor()／ceil() 與 {數值}`);
   }
   const sources = [{ owner: classDef, features: classDef.features }, ...classDef.subclasses.map(subclass => ({ owner: subclass, features: subclass.features }))];
   for (const { owner, features } of sources) {
@@ -168,6 +168,7 @@ function checkClass(classDef, errors) {
       if (feature.options && !feature.choose) errors.push(`${where}：有 options 時須寫 choose`);
       if (feature.choose && (!feature.options || feature.choose > feature.options.length)) errors.push(`${where}：choose 超過選項數`);
       if ((feature.changeOn || feature.choiceGroup || feature.optionStyle) && !feature.options) errors.push(`${where}：changeOn／choiceGroup／optionStyle 只用於有 options 的能力`);
+      if (feature.choiceName && !feature.options && !feature.select) errors.push(`${where}：choiceName 只用於有 options 或 select 的能力`);
       if (feature.changeOn && feature.choiceGroup) errors.push(`${where}：changeOn 已自動標記選擇組，不必再寫 choiceGroup`);
       (feature.options || []).forEach(option => claim(persistedIds, option.id, where, "選項 ID"));
       if (feature.actions && (feature.options || []).some(option => option.actions)) errors.push(`${where}：能力層與選項層的 actions 只能擇一`);
@@ -177,6 +178,10 @@ function checkClass(classDef, errors) {
         if (new Set((part.actions || []).map(action => action.resource)).size > 1) errors.push(`${where} 子能力 ${part.name}：按鈕消耗的資源須相同（標題的消耗字樣只有一種）`);
       }
       getActions(feature).forEach(action => {
+        if (action.source) errors.push(`${where}：動作 ${action.key} 的 source 只用於魔能祈喚附錄的小節`);
+        if (action.selectedOptionOnly && !(feature.actions || []).includes(action)) errors.push(`${where}：selectedOptionOnly 只用於能力層的按鈕`);
+        if (action.selectedOptionOnly && !feature.options) errors.push(`${where}：selectedOptionOnly 的能力須有 options`);
+        if (action.tabletopAlso === action.mode) errors.push(`${where}：動作 ${action.key} 的 tabletopAlso 與 mode 相同`);
         claim(persistedIds, action.key, where, "動作 key");
         (action.legacyKeys || []).forEach(key => claim(persistedIds, key, where, "舊動作 key"));
         Object.keys(action.label?.byLevel || {}).map(Number).filter(level => level < (action.level ?? feature.level) || level > classDef.maxLevel)
@@ -185,6 +190,13 @@ function checkClass(classDef, errors) {
       if (feature.resource) {
         claim(persistedIds, feature.resource.key, where, "資源 key");
         if (typeof feature.resource.uses === "string" && (!valueNames.has(feature.resource.uses) || textValues.has(feature.resource.uses))) errors.push(`${where}：resource.uses「${feature.resource.uses}」不是特性表欄位或數值公式`);
+        for (const match of (feature.resource.note || "").matchAll(/\{([A-Za-z][A-Za-z0-9]*)\}/g)) {
+          if (!valueNames.has(match[1]) || textValues.has(match[1])) errors.push(`${where}：resource.note 引用了不存在的數值 {${match[1]}}`);
+        }
+        const restChoice = feature.resource.restChoice;
+        if (restChoice && (!valueNames.has(restChoice.budget) || textValues.has(restChoice.budget))) errors.push(`${where}：resource.restChoice.budget「${restChoice.budget}」不是特性表欄位或數值公式`);
+        if (restChoice && (restChoice.restores === "points") !== Boolean(restChoice.target)) errors.push(`${where}：resource.restChoice 恢復點數（restores: points）時須寫 target，恢復法術位時不寫`);
+        if (restChoice?.maxSlotLevel && restChoice.restores !== "spellSlots") errors.push(`${where}：resource.restChoice.maxSlotLevel 只用於恢復法術位`);
         Object.keys(feature.resource.recoverByLevel || {}).map(Number).filter(level => level <= feature.level || level > classDef.maxLevel)
           .forEach(level => errors.push(`${where}：resource.recoverByLevel 的 ${level} 級須高於能力等級且不超過 maxLevel`));
       }
@@ -219,13 +231,23 @@ function checkClass(classDef, errors) {
   // 附錄小節：ID 與能力共用命名空間；沒有能力等級可沿用，按鈕須寫 level。
   (classDef.appendix || []).forEach((item, index) => {
     const where = `${classDef.file} appendix[${index}]（${item.name}）`;
-    if (item.parts && /^#/m.test(item.text)) errors.push(`${where}：有 parts 時 text 不可使用「#### 」小節（小節寫在 parts）`);
+    if (item.parts && /^#/m.test(item.text || "")) errors.push(`${where}：有 parts 時 text 不可使用「#### 」小節（小節寫在 parts）`);
+    if (item.kind && !item.parts) errors.push(`${where}：kind 附錄的選項須寫成 parts`);
+    if (item.kind && classDef.appendix.filter(other => other.kind === item.kind).length > 1) errors.push(`${where}：kind「${item.kind}」重複`);
+    const partNames = new Set();
     for (const part of item.parts || []) {
       if (part.id) claim(featureIds, part.id, where, "附錄小節 ID");
+      if (partNames.has(part.name)) errors.push(`${where}：附錄小節名稱「${part.name}」重複`);
+      partNames.add(part.name);
+      if (part.detail && part.prerequisite) errors.push(`${where} 附錄小節 ${part.name}：detail 與 prerequisite 只能擇一`);
+      if (part.level > classDef.maxLevel) errors.push(`${where} 附錄小節 ${part.name}：level 超過 maxLevel`);
+      if (part.spell && !getSpellIds().has(part.spell.id)) errors.push(`${where} 附錄小節 ${part.name}：法術 ID「${part.spell.id}」不存在於 spell-id-baseline.json`);
       for (const match of part.text.matchAll(/\{([A-Za-z][A-Za-z0-9]*)\|/g)) {
         if (!valueNames.has(match[1])) errors.push(`${where} 附錄小節 ${part.name}：文字引用了不存在的數值 {${match[1]}|…}`);
       }
       for (const action of part.actions || []) {
+        if (action.source === "invocation" && item.kind !== "invocations") errors.push(`${where} 附錄小節 ${part.name}：source: invocation 只用於 kind: invocations 的附錄`);
+        if (action.selectedOptionOnly) errors.push(`${where} 附錄小節 ${part.name}：附錄小節的動作不支援 selectedOptionOnly`);
         claim(persistedIds, action.key, where, "動作 key");
         (action.legacyKeys || []).forEach(key => claim(persistedIds, key, where, "舊動作 key"));
         if (action.level === undefined) errors.push(`${where} 附錄小節 ${part.name}：動作 ${action.key} 須寫 level（附錄沒有等級）`);

@@ -2314,77 +2314,55 @@
     return Number.isFinite(proficiencyBonus) ? proficiencyBonus : null;
   }
 
-  function getFighterTacticalMindEntry() {
-    const isFighter = document.getElementById("class")?.value === "fighter";
-    const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
-    if (!isFighter || characterLevel < 2) return null;
-    return {
-      label: "戰術思維",
-      detail: "屬性檢定失敗時，可消耗 1 次回氣，在該檢定加上 1d10；若仍失敗，不消耗回氣。"
-    };
-  }
-
   // 與跑團動作按鈕重複的總覽提醒改讀職業描述（class-content.generated.js）同一段落；段落缺少時不顯示，並由回歸檢查回報。
   function getClassOverviewEntry(label, className, descriptionId, extra = {}) {
     const detail = globalScope.ActionPanel?.getClassOverviewDescription?.(className, descriptionId) || "";
     return detail ? { label, detail, ...extra } : null;
   }
 
-  function getMonkSlowFallOverviewEntry() {
+  // 職業能力的跑團提示：職業內容檔能力（與勾選中的選項）的 hint，panel 為 overview／skills／spells／weapons。
+  // 文字取自 summary（沒有時為職業頁段落），依職業頁順序；hideWhenIncapacitated 的提示在失能時隱藏。
+  function getClassHintEntries(panel) {
     const selectedClass = document.getElementById("class")?.value || "";
     const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
-    if (selectedClass !== "monk" || characterLevel < 4) return null;
-    return getClassOverviewEntry("輕身墜", "monk", "monk-slow-fall");
+    return (globalScope.getClassFeatureRules?.(selectedClass) || []).filter(feature => feature.level <= characterLevel).flatMap(feature => {
+      const hints = [];
+      if (feature.hint?.panels.includes(panel)) hints.push({ label: feature.name, descriptionId: feature.id, hint: feature.hint });
+      (feature.options || []).forEach(option => {
+        if (!option.hint?.panels.includes(panel) || !document.getElementById(option.id)?.checked) return;
+        hints.push({ label: option.name, descriptionId: `${selectedClass}-${option.id.slice(feature.id.length + 1)}`, hint: option.hint });
+      });
+      return hints.map(({ label, descriptionId, hint }) => getClassOverviewEntry(label, selectedClass, descriptionId,
+        hint.hideWhenIncapacitated ? { hiddenWhenIncapacitated: true } : {}));
+    }).filter(Boolean);
   }
 
-  function isDevotionPaladin() {
+  // 角色目前職業（含子職）在此等級已取得的能力，依職業內容檔的能力 ID 判斷，不讀職業頁標題。
+  function hasCurrentClassFeature(featureId) {
     const selectedClass = document.getElementById("class")?.value || "";
     const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
-    if (selectedClass !== "paladin" || characterLevel < 3) return false;
-    return Array.from(
-      document.querySelectorAll('#classFeatures .paladin-feature[data-feature-level="3"] h3')
-    ).some(heading => (
-      String(heading.textContent || "").trim() === "等級 3：祝聖武器（奉獻子職）"
-    ));
+    return (globalScope.getClassFeatureRules?.(selectedClass) || []).some(feature => feature.id === featureId && feature.level <= characterLevel);
   }
 
   function getPaladinAuraOverviewEntry() {
     const selectedClass = document.getElementById("class")?.value || "";
-    const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
-    if (selectedClass !== "paladin" || characterLevel < 6) return null;
+    if (selectedClass !== "paladin" || !hasCurrentClassFeature("paladin-aura-of-protection")) return null;
     const rawCharisma = String(document.getElementById("cha")?.value || "").trim();
     const charismaModifier = rawCharisma ? globalScope.calculateAbilityModifier?.(rawCharisma) : 0;
     const bonus = Math.max(1, Number.isFinite(charismaModifier) ? charismaModifier : 0);
     return {
       label: "守護靈氣",
-      detail: characterLevel >= 7 && isDevotionPaladin()
+      detail: hasCurrentClassFeature("paladin-aura-of-devotion")
         ? `你與 10 呎內盟友的豁免 +${bonus}，並免疫魅惑（已有的魅惑會暫停）。`
         : `你與 10 呎內盟友的豁免 +${bonus}。`,
       hiddenWhenIncapacitated: true
     };
   }
 
-  function getRogueUncannyDodgeOverviewEntry() {
-  const selectedClass = document.getElementById("class")?.value || "";
-  const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
-  if (selectedClass !== "rogue" || characterLevel < 5) return null;
-  return getClassOverviewEntry("直覺閃避", "rogue", "rogue-uncanny-dodge");
-}
-
-function getRogueReliableTalentEntry() {
-  const selectedClass = document.getElementById("class")?.value || "";
-  const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
-  if (selectedClass !== "rogue" || characterLevel < 7) return null;
-  return {
-    label: "可靠才能",
-    detail: "當你使用有熟練的技能或工具進行屬性檢定時，可以將d20骰中9或以下的結果視為10。"
-  };
-}
-
   function getWarlockDarkOnesBlessingOverviewEntry() {
     const selectedClass = document.getElementById("class")?.value || "";
     const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
-    if (selectedClass !== "warlock" || characterLevel < 3) return null;
+    if (selectedClass !== "warlock" || !hasCurrentClassFeature("warlock-dark-ones-blessing")) return null;
     const rawCharisma = String(document.getElementById("cha")?.value || "").trim();
     const charismaModifier = rawCharisma ? globalScope.calculateAbilityModifier?.(rawCharisma) : 0;
     const temporaryHp = Math.max(1, characterLevel + (Number.isFinite(charismaModifier) ? charismaModifier : 0));
@@ -2414,10 +2392,6 @@ function getRogueReliableTalentEntry() {
 
   function getCharacterDefenseEntries() {
     const race = getSelectedRace();
-    const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
-    const selectedClass = document.getElementById("class")?.value || "";
-    const isBarbarian = selectedClass === "barbarian";
-    const isFighter = selectedClass === "fighter";
     // 每個條目明確指定頁籤（總覽或技能），不依文字內容推斷。
     const inPanel = (entry, summaryPanel) => entry ? { ...entry, summaryPanel } : null;
     const entries = [
@@ -2438,27 +2412,7 @@ function getRogueReliableTalentEntry() {
       goliath: [{ label: "身強力壯", detail: "掙脫擒抱狀態的屬性檢定有優勢。", summaryPanel: "skills" }],
       orc: [{ label: "堅韌不屈", detail: "若 HP 被傷害至 0 且沒有即死，可強制 HP=1。", summaryPanel: "overview" }]
     };
-    const barbarianDefenses = [];
-    const fighterSummaries = [];
-    if (isBarbarian && characterLevel >= 2) {
-      barbarianDefenses.push({ label: "險境感知", detail: "你的敏捷豁免有優勢。", summaryPanel: "skills", hiddenWhenIncapacitated: true });
-    }
-    if (isBarbarian && characterLevel >= 3) {
-      barbarianDefenses.push({ label: "先祖學識", detail: "狂暴時你可用力量做以下技能檢定，體操,威嚇,察覺,隱匿,求生。", summaryPanel: "skills" });
-    }
-    if (isBarbarian && characterLevel >= 5) {
-      barbarianDefenses.push(getClassOverviewEntry("快速移動", "barbarian", "barbarian-fast-movement", { summaryPanel: "overview" }));
-    }
-    if (isBarbarian && characterLevel >= 6) {
-      barbarianDefenses.push({ label: "無我狂暴", detail: "狂暴期間，你免疫魅惑與恐慌狀態；進入狂暴時，若你正處於其中一種狀態，該狀態立即終止。", summaryPanel: "overview" });
-    }
-    if (isBarbarian && characterLevel >= 7) {
-      barbarianDefenses.push({ label: "野性直覺", detail: "你的先攻擲骰有優勢。", summaryPanel: "overview" });
-    }
-    if (isFighter && characterLevel >= 3) {
-      fighterSummaries.push(getClassOverviewEntry("運動健將", "fighter", "fighter-remarkable-athlete", { summaryPanel: "overview" }));
-    }
-    return entries.concat(racialDefenses[race] || [], barbarianDefenses.filter(Boolean), fighterSummaries.filter(Boolean));
+    return entries.concat(racialDefenses[race] || []);
   }
 
   // 失能（含麻痺、石化、震懾、昏迷帶入的失能）期間，失效的能力提醒直接隱藏。
@@ -2487,21 +2441,8 @@ function getRogueReliableTalentEntry() {
 
   function getDefenseEntries() {
     const entries = getCharacterDefenseEntries().filter(entry => entry.summaryPanel === "skills");
-    const tacticalMind = getFighterTacticalMindEntry();
-    if (tacticalMind) entries.push(tacticalMind);
-    const selectedClass = document.getElementById("class")?.value || "";
-    const characterLevel = Number.parseInt(document.getElementById("level")?.value || "", 10) || 0;
-    // 武僧與盜賊 7 級的反射閃避規則相同。
-    if ((selectedClass === "monk" || selectedClass === "rogue") && characterLevel >= 7) {
-      entries.push({
-        label: "反射閃避",
-        detail: "敏捷豁免原可使傷害減半時，成功則不受傷害，失敗則傷害減半。",
-        hiddenWhenIncapacitated: true
-      });
-    }
-    const rogueReliableTalent = getRogueReliableTalentEntry();
-    if (rogueReliableTalent) entries.push(rogueReliableTalent);
-    if (selectedClass === "paladin" && characterLevel >= 6) {
+    entries.push(...getClassHintEntries("skills"));
+    if (hasCurrentClassFeature("paladin-aura-of-protection")) {
       entries.push({ label: "守護靈氣", detail: "額外豁免加值已自動計算。", hiddenWhenIncapacitated: true });
     }
     if (hasSelectedFeat("臨陣施法")) {
@@ -2510,13 +2451,10 @@ function getRogueReliableTalentEntry() {
     return withoutIncapacitatedEntries(entries).concat(getConditionRuleEntries("skills"));
   }
 
+  // 公開 API 相容：神佑醫者的提示（同職業內容檔 hint 的文字）。
   function getBlessedHealerEntry() {
-    if (document.getElementById("class")?.value !== "cleric" || Number(document.getElementById("level")?.value) < 6) return null;
-    const source = document.createElement("div");
-    source.innerHTML = typeof classFeatures !== "undefined" ? classFeatures.cleric || "" : "";
-    const section = source.querySelector('.cleric-feature[data-feature-level="6"]');
-    const detail = section?.querySelector("p")?.textContent?.trim();
-    return detail ? { label: "神佑醫者", detail } : null;
+    if (document.getElementById("class")?.value !== "cleric" || !hasCurrentClassFeature("cleric-blessed-healer")) return null;
+    return getClassOverviewEntry("神佑醫者", "cleric", "cleric-blessed-healer");
   }
 
   function getClassChoiceAlerts() {
@@ -2530,16 +2468,7 @@ function getRogueReliableTalentEntry() {
   function getOverviewRuleEntries() {
     const entries = getCharacterDefenseEntries().filter(entry => entry.summaryPanel === "overview");
     entries.push(...getClassChoiceAlerts());
-    const healer = getBlessedHealerEntry();
-    if (healer) entries.push(healer);
-    if (document.getElementById("class")?.value === "ranger") {
-      const level = Number(document.getElementById("level")?.value);
-      if (level >= 6) entries.push(getClassOverviewEntry("越野", "ranger", "ranger-roving"));
-      if (level >= 7 && document.getElementById("ranger-defensive-tactics-escape-the-horde")?.checked) entries.push(getClassOverviewEntry("衝出重圍", "ranger", "ranger-escape-the-horde"));
-      if (level >= 7 && document.getElementById("ranger-defensive-tactics-multiattack-defense")?.checked) entries.push(getClassOverviewEntry("多重防禦", "ranger", "ranger-multiattack-defense"));
-    }
-    const tacticalMind = getFighterTacticalMindEntry();
-    if (tacticalMind) entries.unshift(tacticalMind);
+    entries.push(...getClassHintEntries("overview"));
     if (hasSelectedFeat("警覺")) {
       entries.push({ label: "警覺", detail: "擲先攻後，可與指定隊友互換順序。", hiddenWhenIncapacitated: true });
     }
@@ -2556,19 +2485,13 @@ function getRogueReliableTalentEntry() {
     }
     const warlockDarkOnesBlessing = getWarlockDarkOnesBlessingOverviewEntry();
     if (warlockDarkOnesBlessing) entries.push(warlockDarkOnesBlessing);
-    const rogueUncannyDodge = getRogueUncannyDodgeOverviewEntry();
-    if (rogueUncannyDodge) entries.push(rogueUncannyDodge);
-    const monkSlowFall = getMonkSlowFallOverviewEntry();
-    if (monkSlowFall) entries.push(monkSlowFall);
     const paladinAura = getPaladinAuraOverviewEntry();
     if (paladinAura) entries.push(paladinAura);
     return withoutIncapacitatedEntries(entries.filter(Boolean)).concat(getConditionRuleEntries("overview"));
   }
 
   function getSpellRuleEntries() {
-    const entries = [];
-    const healer = getBlessedHealerEntry();
-    if (healer) entries.push(healer);
+    const entries = getClassHintEntries("spells");
     const sorcererElementalAffinity = getSorcererElementalAffinitySpellEntry();
     if (sorcererElementalAffinity) entries.push(sorcererElementalAffinity);
     if (hasSelectedFeat("臨陣施法")) {
@@ -5463,6 +5386,7 @@ function getRogueReliableTalentEntry() {
     grantTemporaryHitPoints,
     getSpellCastOptions,
     getBlessedHealerEntry,
+    getClassHintEntries,
     getConditionRuleEntries,
     createRuleSummaryItem: createDefenseSummaryItem,
     getCanonicalSpellSlotGroups,

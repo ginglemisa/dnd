@@ -296,21 +296,11 @@
   }
 
   function getWeaponRuleEntries() {
-    const entries = [];
-    const healer = globalScope.TabletopMode?.getBlessedHealerEntry?.();
-    if (healer) entries.push([healer.label, healer.detail]);
+    // 職業能力的武器提示（職業內容檔的 hint，例如精通重擊、真力駐拳）。
+    const entries = (globalScope.TabletopMode?.getClassHintEntries?.("weapons") || []).map(entry => [entry.label, entry.detail]);
     const form = globalScope.TabletopMode?.getDruidForm?.();
     const equipment = globalScope.TabletopMode?.getDruidContext?.().druid.equipment;
     const equippedWeapons = ["main", "off"].filter(hand => !form || equipment?.[hand] === "wear").map(getEquippedWeapon).filter(Boolean);
-    const selectedClass = document.getElementById("class")?.value || "";
-    const characterLevel = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
-    if (selectedClass === "fighter" && characterLevel >= 3) {
-      entries.push(["精通重擊", "武器與徒手打擊的攻擊檢定擲出 19 或 20 時即可造成重擊。"]);
-    }
-    if (selectedClass === "monk" && characterLevel >= 6) {
-      const empoweredStrikes = globalScope.ActionPanel?.getClassOverviewDescription?.("monk", "monk-empowered-strikes");
-      if (empoweredStrikes) entries.push(["真力駐拳", empoweredStrikes]);
-    }
     if (hasSelectedFeat("兇蠻打手")) {
       entries.push(["受訓善戰", "每回合 1 次，武器命中時傷害骰擲 2 次，取其一。"]);
     }

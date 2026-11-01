@@ -49,8 +49,8 @@ values:
   spellSaveDc:
     formula: 8 + {proficiencyBonus} + {wisModifier}
     format: （DC {}）
-  searUndeadDice: max(1, {wisModifier})d8
-  preserveLifeTotal: "{level} * 5"
+  searUndeadDice: {formula: "max(1, {wisModifier})d8", format: " {}（感知調整值，至少 1d8）", blank: " Xd8（X＝感知調整值，至少 1d8）"}
+  preserveLifeTotal: {formula: "{level} * 5", format: "「{}」", blank: "keep"}
 features:
   - id: cleric-spellcasting
     level: 1
@@ -131,6 +131,7 @@ features:
   - id: cleric-ability-score-improvement-4
     level: 4
     name: 屬性值提升
+    feat: level
     text: |
       選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。
     afterFeatChoice: |
@@ -169,5 +170,6 @@ features:
   - id: cleric-ability-score-improvement-8
     level: 8
     name: 屬性值提升
+    feat: level
     text: |
       選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。

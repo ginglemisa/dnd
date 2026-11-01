@@ -88,7 +88,7 @@
     },
     "values": {
       "type": "object",
-      "description": "其他可在文字中以 {名稱|…} 引用的數值，例如 \"{rageDamage}d6\"。公式只能用數字、d、四則運算、max()／min()／floor()（無條件捨去）與 {數值}；另可引用屬性調整值 {strModifier}…{chaModifier}（沒有屬性值時視為 0）。要套用顯示格式時寫 { formula, format }。跑團顯示依等級變化的文字時寫 { byLevel: { 5: 文字 } }。",
+      "description": "其他可在文字中以 {名稱|…} 引用的數值，例如 \"{rageDamage}d6\"。公式只能用數字、d、四則運算、max()／min()／floor()（無條件捨去）／ceil()（無條件進位）與 {數值}；另可引用屬性調整值 {strModifier}…{chaModifier}（沒有屬性值時視為 0）。跑團顯示要加字樣時寫 { formula, format }（例如 { formula: \"{rageUses}\", format: \"{} 次\" }）。跑團顯示依等級變化的文字時寫 { byLevel: { 5: 文字 } }。",
       "propertyNames": { "pattern": "^[a-z][A-Za-z0-9]*$" },
       "additionalProperties": {
         "anyOf": [
@@ -97,10 +97,11 @@
             "type": "object",
             "additionalProperties": false,
             "required": ["formula", "format"],
-            "description": "帶顯示格式的公式：{} 代入計算結果，例如 { formula: \"8 + {proficiencyBonus} + {wisModifier}\", format: （DC {}） } 顯示為「（DC 13）」。",
+            "description": "帶跑團顯示格式的公式：{} 代入計算結果，例如 { formula: \"8 + {proficiencyBonus} + {wisModifier}\", format: （DC {}） } 顯示為「（DC 13）」。",
             "properties": {
               "formula": { "type": "string", "minLength": 1, "description": "數值公式，寫法同字串公式。" },
-              "format": { "type": "string", "pattern": "\\{\\}", "description": "顯示格式，{} 代入計算結果。" }
+              "format": { "type": "string", "pattern": "\\{\\}", "description": "跑團顯示格式，{} 代入計算結果；前後空白也保留（夾在中文之間時用來和數值區隔）。" },
+              "blank": { "type": "string", "minLength": 1, "description": "公式用到的屬性值或等級未填時改顯示的文字；keep 表示保留職業頁文字。省略時屬性調整值視為 0、等級視為 1。" }
             }
           },
           {
@@ -133,10 +134,15 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["name", "text"],
+        "required": ["name"],
+        "anyOf": [{ "required": ["text"] }, { "required": ["parts"] }],
         "properties": {
           "name": { "type": "string", "minLength": 1, "description": "標題，例如「超魔法選項」。" },
-          "text": { "$ref": "feature.schema.json#/definitions/text", "description": "內文，可用「#### 標題」小節（不可有表格）；有 parts 時寫在小節之前的說明，不可再用「#### 」。" },
+          "kind": {
+            "enum": ["metamagic", "invocations"],
+            "description": "網站以小節建立選擇卡片的附錄：metamagic 為術士超魔法（小節的 detail 是消耗），invocations 為契術師魔能祈喚（小節的 level、repeatable、spell）。卡片勾選框依小節順序編號並寫進存檔，只能在最後新增小節。"
+          },
+          "text": { "$ref": "feature.schema.json#/definitions/text", "description": "內文，可用「#### 標題」小節（不可有表格）；有 parts 時寫在小節之前的說明（可省略），不可再用「#### 」。" },
           "parts": {
             "type": "array",
             "minItems": 1,
@@ -155,8 +161,21 @@
       "required": ["name", "text"],
       "properties": {
         "id": { "$ref": "feature.schema.json#/definitions/id", "description": "小節 ID（與能力 ID 共用、全職業唯一），有 actions 時必填；已有的 data-action-id 照抄。" },
-        "name": { "type": "string", "minLength": 1, "description": "小節名稱，例如「刃之魔契」。網站以此名稱切割讀取，不可改字。" },
-        "prerequisite": { "type": "string", "minLength": 1, "description": "先決條件，顯示為標題後的「（先決條件：…）」，例如「契術師等級 5+,刃之魔契祈喚」。" },
+        "name": { "type": "string", "minLength": 1, "description": "小節名稱，例如「刃之魔契」。超魔法與魔能祈喚的名稱會寫進存檔（已選清單）與跑團偏好，不可改字。" },
+        "prerequisite": { "type": "string", "minLength": 1, "description": "先決條件，顯示為標題後的「（先決條件：…）」，例如「契術師等級 5+，刃之魔契祈喚」。" },
+        "detail": { "type": "string", "minLength": 1, "description": "接在名稱後的標題文字（沒有先決條件時），例如超魔法的「－消耗：1 術法點」。" },
+        "level": { "$ref": "feature.schema.json#/definitions/level", "description": "可選擇此小節的最低職業等級（例如魔能祈喚的「契術師等級 5+」）；省略為 1。" },
+        "repeatable": { "const": true, "description": "可重複選擇（例如苦痛魔爆）。" },
+        "spell": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "use"],
+          "description": "選擇後給予的法術，例如幽影護甲的法師護甲。法術 ID 須存在於 spell-id-baseline.json。",
+          "properties": {
+            "id": { "$ref": "feature.schema.json#/definitions/id", "description": "法術 ID（spellId）。" },
+            "use": { "enum": ["at-will", "once"], "description": "at-will：隨意施放，不耗法術位；once：每次長休可免費施放 1 次。" }
+          }
+        },
         "text": { "$ref": "feature.schema.json#/definitions/text", "description": "內文（不可有表格）；「#### 標題」只輸出標題，不另包小節。" },
         "actions": {
           "type": "array",

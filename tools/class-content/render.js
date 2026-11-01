@@ -5,7 +5,6 @@ const { ContentError, escapeHtml, renderInline, renderMarkdown } = require("./ma
 const { BUILT_IN_VALUES, getActions } = require("./load");
 
 const NUMBER_WORDS = Object.freeze({ 1: "一", 2: "兩", 3: "三", 4: "四" });
-const kebab = name => name.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`);
 
 function getProficiencyBonus(level) {
   return Math.ceil(level / 4) + 1;
@@ -38,25 +37,16 @@ function mergeFeatures(classDef, subclass) {
 }
 
 function createRenderContext(classDef, subclass) {
-  const valueNames = new Set([...Object.keys(classDef.progression || {}), ...Object.keys(classDef.values || {})]);
+  const valueNames = new Set([...Object.keys(classDef.progression || {}), ...Object.keys(classDef.values || {}), ...Object.keys(BUILT_IN_VALUES)]);
   const merged = mergeFeatures(classDef, subclass);
   const appended = new Set(merged.flatMap(({ feature }) => getActions(feature).flatMap(action => action.append || [])));
   // 子能力標題的消耗字樣：資源名稱是定義該資源的能力名稱。
   const resourceNames = new Map(merged.filter(({ feature }) => feature.resource).map(({ feature }) => [feature.resource.key, feature.name]));
-  // 只引用另一個特性表欄位或 values 並帶 format 的值（例如 stunningStrikeDc: { formula: "{saveDc}", format: （DC {}） }）。
-  // 引用內建數值（例如 { formula: "{level}", format: （目前 {} 點） }）視為獨立的值，沿用自己的 key。
-  const aliasOf = token => {
-    const value = classDef.values?.[token];
-    const target = value?.format ? value.formula.match(/^\{([A-Za-z][A-Za-z0-9]*)\}$/)?.[1] : undefined;
-    return target && !Object.hasOwn(BUILT_IN_VALUES, target) ? target : undefined;
-  };
-  // 轉換期沿用 action-panel.js 的 TABLETOP_VALUE_RESOLVERS key：內建數值另有固定 key，其餘為「職業-欄位名」。
-  // 帶 format 的值：舊版計算函式已含外框時用自己的 key；只引用另一個數值時用被引用值的 key，外框由 valueFrame 輸出。
+  // data-tabletop-value 是數值名稱（特性表欄位、values 或內建的 level／proficiencyBonus）；
+  // 跑團模式由 character-rules.js 的 getClassValueText() 依 classRules 計算並套用 format。
   const resolveValue = (token, where) => {
-    if (Object.hasOwn(BUILT_IN_VALUES, token)) return BUILT_IN_VALUES[token];
     if (!valueNames.has(token)) throw new ContentError(`${where}：{${token}|…} 不是特性表欄位或 values`);
-    if (aliasOf(token)) return resolveValue(aliasOf(token), where);
-    return `${classDef.id}-${kebab(token)}`;
+    return token;
   };
   return {
     classDef,
@@ -64,10 +54,7 @@ function createRenderContext(classDef, subclass) {
     merged,
     appended,
     resourceNames,
-    resolveValue,
-    valueFrame(token) {
-      return aliasOf(token) ? classDef.values[token].format.split("{}") : null;
-    }
+    resolveValue
   };
 }
 
@@ -147,12 +134,12 @@ function renderOptions(feature, context, where) {
     const text = lines.map((line, index) => renderInline(index < lines.length - 1 ? line.replace(/\\$/, "") : line, context, at)).join("<br>");
     const group = feature.changeOn || feature.choiceGroup ? ` data-feature-choice-group="${feature.id}"` : "";
     const label = `<label><input type="checkbox" id="${option.id}"${group}> ${escapeHtml(option.name)}</label>`;
-    // 轉換期：跑團說明的「名稱：」沿用 TABLETOP_VALUE_RESOLVERS 的 -name key，段落 ID 為「職業-選項名」。
+    // 跑團說明略過勾選框，改在「：」前顯示選項名稱（跑團限定文字）；段落 ID 為「職業-選項名」。
     const suffix = option.id.startsWith(`${feature.id}-`) ? option.id.slice(feature.id.length + 1) : null;
     if (inTabletop && !suffix) throw new ContentError(`${at}：跑團動作的選項 ID 須以「${feature.id}-」開頭`);
     const actionId = inTabletop ? ` data-action-id="${classDef.id}-${suffix}"` : "";
     const separator = inTabletop
-      ? `<span data-tabletop-value="${classDef.id}-${suffix}-name"${cards ? " data-overview-hide" : ""}>：</span>`
+      ? `<span${cards ? " data-overview-hide" : ""}><span data-tabletop-only hidden>${escapeHtml(option.name)}</span>：</span>`
       : (text ? "：" : "");
     // 選項自己的按鈕：說明段落為選項文字（不含勾選框與「：」），段落 ID 同為「職業-選項名」。
     if (option.actions && !suffix) throw new ContentError(`${at}：有 actions 的選項 ID 須以「${feature.id}-」開頭`);
@@ -173,21 +160,37 @@ function renderSelectCard(select, markdownOptions, where) {
   return `<article class="feature-choice-card"><select id="${select.id}">${choices}</select>${body}</article>`;
 }
 
-// 附錄：沒有等級的 section（例如術士的「超魔法選項」），接在所有能力之後；小節沿用舊版的通用 class。
-// class-features-ui.js 以字串切出各選項（fillMetamagicTextsFromClassFeatures），action-panel.js 再依換行分段，
-// 故標籤之間照舊版換行，讓切出的文字與舊版相同。
-// 附錄小節（parts）輸出成通用小節，帶 id 時加 data-action-id（跑團按鈕的說明段落）；標題為「名稱（先決條件：…）」。
-// class-features-ui.js／quick-build.js 以名稱切出各魔能祈喚的 HTML 字串，故小節之間與小節內不換行（同舊版同一行的寫法）。
+// 附錄：沒有等級的 section（例如術士的「超魔法選項」、契術師的「魔能祈喚選項」），接在所有能力之後；小節沿用舊版的通用 class。
+// 有 kind 的附錄由網站做成選擇卡片（class-features-ui.js 讀 classRules 各小節的 html），職業頁的 section 加上
+// data-class-appendix，職業能力頁籤據此略過。小節輸出成通用小節，帶 id 時加 data-action-id（跑團按鈕的說明段落），
+// 標題為「名稱（先決條件：…）」或「名稱＋detail」。超魔法（kind: metamagic）的小節照舊版換行排列
+// （跑團的瞬發法術說明依換行分段），其他附錄的小節之間與小節內不換行（同舊版魔能祈喚的寫法）。
+function appendixLines(item) {
+  return item.kind === "metamagic";
+}
+
+function appendixPartHeadingSuffix(part) {
+  return part.prerequisite ? `（先決條件：${escapeHtml(part.prerequisite)}）` : escapeHtml(part.detail || "");
+}
+
+function renderAppendixPartBody(item, part, context) {
+  const where = `${context.classDef.file} 附錄 ${item.name} 附錄小節 ${part.name}`;
+  return renderMarkdown(part.text, { ...context, plainHeadings: true, blockNewlines: appendixLines(item) }, where);
+}
+
 function renderAppendix(item, context) {
   const { classDef } = context;
   const where = `${classDef.file} 附錄 ${item.name}`;
+  const lines = appendixLines(item);
   const parts = (item.parts || []).map(part => {
     const id = part.id ? ` data-action-id="${part.id}"` : "";
-    const prerequisite = part.prerequisite ? `（先決條件：${escapeHtml(part.prerequisite)}）` : "";
-    const body = renderMarkdown(part.text, { ...context, plainHeadings: true }, `${where} 附錄小節 ${part.name}`);
-    return `<div class="class-rule-subsection"${id}><h4>${escapeHtml(part.name)}${prerequisite}</h4>${body}</div>`;
-  }).join("");
-  return `<section class="${classDef.id}-feature class-feature-section">\n<h3>${escapeHtml(item.name)}</h3>\n${renderMarkdown(item.text, { ...context, blockNewlines: true }, where)}${parts ? `\n${parts}` : ""}\n</section>`;
+    const heading = `<h4>${escapeHtml(part.name)}${appendixPartHeadingSuffix(part)}</h4>`;
+    const body = renderAppendixPartBody(item, part, context);
+    return lines ? `<div class="class-rule-subsection"${id}>\n${heading}\n${body}\n</div>` : `<div class="class-rule-subsection"${id}>${heading}${body}</div>`;
+  }).join(lines ? "\n" : "");
+  const text = item.text ? `${renderMarkdown(item.text, { ...context, blockNewlines: true }, where)}${parts ? "\n" : ""}` : "";
+  const kind = item.kind ? ` data-class-appendix="${item.kind}"` : "";
+  return `<section class="${classDef.id}-feature class-feature-section"${kind}>\n<h3>${escapeHtml(item.name)}</h3>\n${text}${parts}\n</section>`;
 }
 
 // 併入其他動作說明的能力：跑團說明前加「名稱：」，職業頁由 styles.css 隱藏。
@@ -253,7 +256,7 @@ function renderFeature({ feature, owner }, context) {
   return `<section ${attributes}>${heading}${body}</section>`;
 }
 
-// 回傳 html（與舊版 classFeatures[classId] 對應）、tabletop 與 summaries（能力 ID → 行內 HTML）。
+// 回傳 html（與舊版 classFeatures[classId] 對應）、tabletop 與 summaries（能力 ID → 行內 HTML），以及附錄小節的內文 HTML。
 function renderClass(classDef, subclass = classDef.subclasses.find(item => item.id === classDef.defaultSubclass)) {
   const context = { ...createRenderContext(classDef, subclass), tabletop: {}, summaries: {} };
   const features = [...context.merged.map(item => renderFeature(item, context)), ...(classDef.appendix || []).map(item => renderAppendix(item, context))].join("\n");
@@ -262,7 +265,9 @@ function renderClass(classDef, subclass = classDef.subclasses.find(item => item.
 ${features}
 </div>
 `;
-  return { html, tabletop: context.tabletop, summaries: context.summaries };
+  // 附錄小節的內文 HTML（依附錄、小節順序），由 rules-data.js 放進 classRules 供選擇卡片使用。
+  const appendix = (classDef.appendix || []).map(item => (item.parts || []).map(part => renderAppendixPartBody(item, part, context)));
+  return { html, tabletop: context.tabletop, summaries: context.summaries, appendix };
 }
 
 module.exports = { renderClass, mergeFeatures, getProgressionValue };

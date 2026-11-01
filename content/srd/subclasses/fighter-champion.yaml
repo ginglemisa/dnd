@@ -7,11 +7,14 @@ features:
   - id: fighter-improved-critical
     level: 3
     name: 精通重擊
+    hint: {panels: [weapons]}
+    summary: 武器與徒手打擊的攻擊檢定擲出 19 或 20 時即可造成重擊。
     text: |
       你使用武器和徒手打擊的攻擊檢定，擲出 **19 或 20** 時即可造成重擊。
   - id: fighter-remarkable-athlete
     level: 3
     name: 運動健將
+    hint: {panels: [overview]}
     actions:
       - mode: movement
         key: dynamic-movement-fighter-1s26hvz
@@ -25,5 +28,6 @@ features:
   - id: fighter-additional-fighting-style
     level: 7
     name: 額外戰鬥風格
+    feat: style
     text: |
       你再獲得 1 個自選的「戰鬥風格」專長。

@@ -18,6 +18,8 @@ features:
   - id: barbarian-mindless-rage
     level: 6
     name: 無我狂暴
+    hint: {panels: [overview]}
+    summary: 狂暴期間，你免疫魅惑與恐慌狀態；進入狂暴時，若你正處於其中一種狀態，該狀態立即終止。
     text: |
       狂暴期間，你**免疫**[[魅惑]]與[[恐慌]]狀態。
 

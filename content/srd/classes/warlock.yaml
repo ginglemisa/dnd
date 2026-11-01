@@ -39,11 +39,13 @@ progression:
     label: 法術位環階
     byLevel: {1: 1, 3: 2, 5: 3, 7: 4}
 values:
+  magicalCunningSlots: ceil({spellSlots} / 2)
   darkOnesOwnLuckUses: max(1, {chaModifier})
 features:
   - id: warlock-eldritch-invocations
     level: 1
     name: 魔能祈喚
+    pdfMerge: true
     text: |
       你從禁忌知識獲得超自然能力。起始選擇 1 個魔能祈喚，例如「書之魔契」。
 
@@ -55,6 +57,7 @@ features:
   - id: warlock-pact-magic
     level: 1
     name: 契約魔法
+    pdfMerge: true
     text: |
       你使用**魅力**施展「契術師法術列表」中的法術，並可用奧術法器作為施法法器。
 
@@ -74,6 +77,7 @@ features:
       key: warlock-magical-cunning
       uses: 1
       recover: {long: all}
+      note: 進行 1 分鐘儀式；恢復最多 {magicalCunningSlots} 個已消耗的契約魔法法術位（法術位最大值一半，進位）。每次長休前只能使用 1 次；完成長休後恢復。
     actions:
       - mode: action
         key: dynamic-action-warlock-curated-arcane-recovery
@@ -92,6 +96,7 @@ features:
   - id: warlock-ability-score-improvement-4
     level: 4
     name: 屬性值提升
+    feat: level
     text: |
       選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。
     afterFeatChoice: |
@@ -102,14 +107,19 @@ features:
   - id: warlock-ability-score-improvement-8
     level: 8
     name: 屬性值提升
+    feat: level
     text: |
       選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。
 appendix:
   - name: 魔能祈喚選項
+    kind: invocations
     text: |
       以下依先決條件與功能分組說明。
     parts:
-      - name: 刃之魔契
+      - id: warlock-pact-of-the-blade
+        name: 刃之魔契
+        actions:
+          - {mode: bonus, key: dynamic-bonus-invocation-olkvgk, level: 1, source: invocation}
         text: |
           你可用附贈：
 
@@ -134,7 +144,11 @@ appendix:
           - 你死亡。
 
           若是召喚武器，聯結結束時武器會一併消失。
-      - name: 鏈之魔契
+      - id: warlock-pact-of-the-chain
+        name: 鏈之魔契
+        spell: {id: find-familiar, use: at-will}
+        actions:
+          - {mode: action, key: dynamic-action-invocation-c4a0ir, level: 1, source: invocation}
         text: |
           你學會獲得魔寵，施法不耗法術位。
 
@@ -163,6 +177,7 @@ appendix:
 
           你可用這本書作為施法法器。
       - name: 幽影護甲
+        spell: {id: mage-armor, use: at-will}
         text: |
           你可隨意施展法師護甲，不耗法術位。
       - name: 魔能意志
@@ -170,28 +185,39 @@ appendix:
           你進行維持專注的體質豁免時具有優勢。
       - name: 邪魔活力
         prerequisite: 契術師等級 2+
+        level: 2
+        spell: {id: false-life, use: at-will}
         text: |
           你可隨意施展虛假生命且不耗法術位；
 
           不擲臨時生命骰，視為擲滿。
       - name: 千面之臉
         prerequisite: 契術師等級 2+
+        level: 2
+        spell: {id: disguise-self, use: at-will}
         text: |
           你可隨意施展易容術且不耗法術位。
       - name: 幻象迷蹤
         prerequisite: 契術師等級 2+
+        level: 2
+        spell: {id: silent-image, use: at-will}
         text: |
           你可隨意施展無聲幻影且不耗法術位。
       - name: 超凡跳躍
         prerequisite: 契術師等級 2+
+        level: 2
+        spell: {id: jump, use: at-will}
         text: |
           你可隨意施展跳躍術且不耗法術位。
       - name: 魔鬼視界
         prerequisite: 契術師等級 2+
+        level: 2
         text: |
           可在 120 呎內的魔法黑暗、非魔法黑暗與微光中正常視物。
       - name: 原初之一教習
         prerequisite: 契術師等級 2+
+        level: 2
+        repeatable: true
         text: |
           你獲得 1 個起源專長。
 
@@ -200,6 +226,8 @@ appendix:
           可重複：可多次選此祈喚，但每次必須選不同的起源專長。
       - name: 苦痛魔爆
         prerequisite: 契術師等級 2+，已知可造成傷害的契術師戲法
+        level: 2
+        repeatable: true
         text: |
           選 1 個你已知、可造成傷害的契術師戲法；你可將魅力調整值加到該戲法的傷害骰。
 
@@ -208,6 +236,8 @@ appendix:
           可重複：可多次選此祈喚，但每次要選不同戲法。
       - name: 魔能長槍
         prerequisite: 契術師等級 2+，已知可造成傷害的契術師戲法
+        level: 2
+        repeatable: true
         text: |
           選 1 個你已知、射程至少 10 呎且可造成傷害的契術師戲法。施放時，該法術射程額外增加「契術師等級 × 30 呎」。
 
@@ -216,6 +246,8 @@ appendix:
           可重複：可多次選此祈喚，但每次要選不同戲法。
       - name: 斥力魔爆
         prerequisite: 契術師等級 2+，已知通過攻擊檢定造成傷害的契術師戲法
+        level: 2
+        repeatable: true
         text: |
           選 1 個你已知、需要攻擊檢定的契術師戲法。當你用該戲法命中大型或更小生物時，可將其往遠離你的方向推開 10 呎。
 
@@ -224,24 +256,36 @@ appendix:
           可重複：可多次選此祈喚，但每次要選不同戲法。
       - name: 星移步法
         prerequisite: 契術師等級 5+
+        level: 5
+        spell: {id: levitate, use: at-will}
         text: |
           你可隨意對自己施展浮空術，且不耗法術位。
       - name: 萬形之主
         prerequisite: 契術師等級 5+
+        level: 5
+        spell: {id: alter-self, use: at-will}
         text: |
           你可隨意施展變造自身，且不耗法術位。
       - name: 融身入影
         prerequisite: 契術師等級 5+
+        level: 5
+        spell: {id: invisibility, use: at-will}
         text: |
           當你在微光或黑暗中時，可隨意對自己施展隱形術，且不耗法術位。
       - name: 深海饋贈
         prerequisite: 契術師等級 5+
+        level: 5
+        spell: {id: water-breathing, use: once}
         text: |
           你可在水中呼吸，並獲得等同自身速度的游泳速度。
 
           你也可不耗法術位施展 1 次水下呼吸，此用法在長休後恢復。
-      - name: 共視感官
+      - id: warlock-gaze-of-two-minds
+        name: 共視感官
         prerequisite: 契術師等級 5+
+        level: 5
+        actions:
+          - {mode: bonus, key: dynamic-bonus-invocation-1mgtzqp, level: 5, source: invocation}
         text: |
           你可用附贈觸碰 1 名自願生物，建立感官連結至你下回合結束。只要你們在同一位面，你可在後續回合再用附贈延長連結到下回合結束；未延長則連結終止。
 
@@ -249,6 +293,7 @@ appendix:
       - id: warlock-eldritch-smite
         name: 魔能斬擊
         prerequisite: 契術師等級 5+，刃之魔契祈喚
+        level: 5
         actions:
           - mode: action
             key: dynamic-action-warlock-curated-eldritch-smite
@@ -260,6 +305,7 @@ appendix:
       - id: warlock-thirsting-blade
         name: 饑渴魔刃
         prerequisite: 契術師等級 5+，刃之魔契祈喚
+        level: 5
         actions:
           - mode: action
             key: dynamic-action-warlock-curated-thirsting-blade
@@ -268,8 +314,13 @@ appendix:
             requiresInvocation: 刃之魔契
         text: |
           你在使用契約武器時獲得額外攻擊：在你回合以該武器執行攻擊動作時，可攻擊 2 次而非 1 次。
-      - name: 鏈主賦能
+      - id: warlock-investment-of-the-chain-master
+        name: 鏈主賦能
         prerequisite: 契術師等級 5+，鏈之魔契祈喚
+        level: 5
+        actions:
+          - {mode: bonus, key: dynamic-bonus-invocation-remlxd, level: 5, source: invocation, requiresInvocation: 鏈之魔契}
+          - {mode: reaction, key: dynamic-reaction-invocation-remlxd, level: 5, source: invocation, requiresInvocation: 鏈之魔契}
         text: |
           你施展獲得魔寵時，可對魔寵灌注魔能，獲得以下增益：
 
@@ -280,5 +331,7 @@ appendix:
           - 抗性：當魔寵受傷時，你可用反應讓該次傷害有[[抗性]]。
       - name: 墳墓低語
         prerequisite: 契術師等級 7+
+        level: 7
+        spell: {id: speak-with-dead, use: at-will}
         text: |
           你可以隨意施展死者交談，且不消耗法術位。

@@ -34,11 +34,14 @@ progression:
     label: 武器精通
     byLevel: {1: 2, 4: 3}
 values:
+  rageUsesText: {formula: "{rageUses}", format: "{} 次"}
+  rageDamageText: {formula: "{rageDamage}", format: "目前 +{}"}
   frenzyDice: "{rageDamage}d6"
 features:
   - id: barbarian-rage
     level: 1
     name: 狂暴
+    pdfMerge: true
     resource:
       key: barbarian-rage
       uses: rageUses
@@ -51,12 +54,12 @@ features:
     text: |
       你**未穿重甲**時，可以用**附贈**進入狂暴。
 
-      - **使用次數：**{rageUses|見「野蠻人特性」表的「狂暴次數」欄}。**短休後恢復 1 次**，**長休後全部恢復**。
+      - **使用次數：**{rageUsesText|見「野蠻人特性」表的「狂暴次數」欄}。**短休後恢復 1 次**，**長休後全部恢復**。
 
       #### 狂暴期間
 
       - **抗性：**你對鈍擊、穿刺、揮砍傷害具有[[抗性]]。
-      - **狂暴傷害：**你用力量造成的傷害可加上狂暴傷害，{rageDamage|數值見「野蠻人特性」表}。
+      - **狂暴傷害：**你用力量造成的傷害可加上狂暴傷害，{rageDamageText|數值見「野蠻人特性」表}。
       - **力量優勢：**你的力量檢定與力量豁免具有**優勢**。
       - **施法限制：**你不能施法，也不能維持專注。
 
@@ -72,6 +75,7 @@ features:
   - id: barbarian-unarmored-defense
     level: 1
     name: 無甲防禦
+    pdfMerge: true
     text: |
       你沒穿護甲時，AC = 10 + 敏捷調整值 + 體質調整值。
 
@@ -87,11 +91,15 @@ features:
   - id: barbarian-danger-sense
     level: 2
     name: 險境感知
+    hint: {panels: [skills], hideWhenIncapacitated: true}
+    summary: 你的敏捷豁免有優勢。
+    pdfMerge: true
     text: |
       只要你未陷入[[失能]]狀態，你的敏捷豁免就具有**優勢**。
   - id: barbarian-reckless-attack
     level: 2
     name: 魯莽攻擊
+    pdfMerge: true
     actions:
       - mode: action
         key: dynamic-action-class-8jjnkp
@@ -110,6 +118,8 @@ features:
   - id: barbarian-primal-knowledge
     level: 3
     name: 先祖學識
+    hint: {panels: [skills]}
+    summary: 狂暴時你可用力量做以下技能檢定，體操、威嚇、察覺、隱匿、求生。
     text: |
       你額外獲得 1 項技能熟練，並能在狂暴時以力量進行部分技能檢定。
 
@@ -121,6 +131,7 @@ features:
   - id: barbarian-ability-score-improvement-4
     level: 4
     name: 屬性值提升
+    feat: level
     text: |
       選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。
   - level: 4
@@ -129,6 +140,7 @@ features:
   - id: barbarian-extra-attack
     level: 5
     name: 額外攻擊
+    pdfMerge: true
     actions:
       - mode: action
         key: dynamic-action-barbarian-113ebtz
@@ -137,6 +149,8 @@ features:
   - id: barbarian-fast-movement
     level: 5
     name: 快速移動
+    hint: {panels: [overview]}
+    pdfMerge: true
     actions:
       - mode: movement
         key: dynamic-movement-barbarian-18h2p2v
@@ -148,20 +162,27 @@ features:
   - id: barbarian-feral-instinct
     level: 7
     name: 野性直覺
+    hint: {panels: [overview]}
+    summary: 你的先攻擲骰有優勢。
+    pdfMerge: true
     text: |
       你的先攻擲骰具有**優勢**。
   - id: barbarian-instinctive-pounce
     level: 7
     name: 本能飛撲
+    pdfMerge: true
     actions:
       - mode: movement
         key: dynamic-movement-barbarian-1iw4zkg
+        tabletopHidden: true
       - mode: bonus
         key: dynamic-bonus-barbarian-1iw4zkg
+        tabletopHidden: true
     text: |
       你以**附贈**進入狂暴時，可以同時移動，距離至多為你速度的一半。
   - id: barbarian-ability-score-improvement-8
     level: 8
     name: 屬性值提升
+    feat: level
     text: |
       選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。

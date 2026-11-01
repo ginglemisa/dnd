@@ -36,11 +36,13 @@ progression:
     label: ２環
     byLevel: {1: null, 5: 2, 7: 3}
 values:
-  layOnHandsPool: "{level} * 5"
+  layOnHandsPool: {formula: "{level} * 5", format: "「{}」點"}
+  channelDivinityUsesText: {formula: "{channelDivinityUses}", format: "{} 次"}
 features:
   - id: paladin-lay-on-hands
     level: 1
     name: 聖療
+    pdfMerge: true
     resource:
       key: paladin-lay-on-hands
       kind: points
@@ -58,6 +60,7 @@ features:
   - id: paladin-spellcasting
     level: 1
     name: 施法
+    pdfMerge: true
     text: |
       你使用**魅力**施展「聖騎士法術列表」中的法術，並可用聖徽作為施法法器。
 
@@ -71,6 +74,7 @@ features:
   - id: paladin-weapon-mastery
     level: 1
     name: 武器精通
+    pdfMerge: true
     text: |
       從你熟練的武器中選擇 2 種，取得其精通屬性，例如長劍、標槍。
 
@@ -78,12 +82,14 @@ features:
   - id: paladin-fighting-style
     level: 2
     name: 戰鬥風格
+    choiceName: 戰鬥風格類型
     choose: 1
     text: |
       從下列選項中選擇 1 項：
     options:
       - id: paladin-fighting-style
         name: 選 1 個「戰鬥風格」專長
+        featChoice: true
       - id: paladin-blessed-warrior
         name: 選「受祝福的勇士」
         text: |
@@ -109,7 +115,7 @@ features:
     text: |
       你可引導神力產生神聖效果，起始可使用「神聖感知」，之後可由其他特性追加新效果。每次使用時，從你已知的效果中選擇 1 個發動。
 
-      - **使用次數：**{channelDivinityUses|2 次}。**短休後恢復 1 次**，長休後全部恢復。
+      - **使用次數：**{channelDivinityUsesText|2 次}。**短休後恢復 1 次**，長休後全部恢復。
       - **豁免 DC：**效果需要豁免時，使用你的聖騎士法術豁免 DC。
     parts:
       - id: paladin-divine-sense
@@ -140,11 +146,13 @@ features:
   - id: paladin-ability-score-improvement-4
     level: 4
     name: 屬性值提升
+    feat: level
     text: |
       選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。
   - id: paladin-extra-attack
     level: 5
     name: 額外攻擊
+    pdfMerge: true
     actions:
       - mode: action
         key: dynamic-action-paladin-curated-extra-attack
@@ -153,6 +161,7 @@ features:
   - id: paladin-faithful-steed
     level: 5
     name: 忠誠坐騎
+    pdfMerge: true
     spells:
       - id: find-steed
         freeUses: 1
@@ -171,5 +180,6 @@ features:
   - id: paladin-ability-score-improvement-8
     level: 8
     name: 屬性值提升
+    feat: level
     text: |
       選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。

@@ -37,12 +37,8 @@ function renderInline(source, options, where) {
     } else {
       // 頁面文字可含粗體（{名稱|**粗體**其他文字}）；不可再含數值標記（[^{}] 已排除）。
       // 頁面文字留空（{名稱|}）＝只在跑團出現：輸出成跑團限定的數值 span。
-      // options.valueFrame(名稱) 回傳 [前綴, 後綴] 時（引用其他數值並帶 format），外框輸出成包住數值的跑團限定文字。
       const key = escapeHtml(options.resolveValue(match[3], where));
-      const frame = options.valueFrame?.(match[3]);
-      if (frame && match[4]) throw new ContentError(`${where}：{${match[3]}|…} 的 format 外框只在跑團顯示，頁面文字須留空`);
-      if (frame) html += `<span data-tabletop-only hidden>${escapeHtml(frame[0])}<span data-tabletop-value="${key}"></span>${escapeHtml(frame[1])}</span>`;
-      else if (!match[4]) html += `<span data-tabletop-only hidden data-tabletop-value="${key}"></span>`;
+      if (!match[4]) html += `<span data-tabletop-only hidden data-tabletop-value="${key}"></span>`;
       else html += `<span data-tabletop-value="${key}">${renderInline(match[4], options, where)}</span>`;
     }
   }
@@ -145,7 +141,7 @@ function renderTable(block, frame, options, where, attributes) {
 // blockAttributes 加在最外層區塊（段落、清單、表格、小節）的開頭標籤上。
 // options.tables：表格外框清單，依出現順序對應文字中的表格，數量須相同；沒有提供時文字不可有表格。
 // options.tablesOptional：文字可以完全沒有表格（tabletop 省略只在職業頁顯示的表格時）。
-// options.blockNewlines：區塊、清單項目與小節內的標籤之間換行（網站以字串切割讀取的附錄，換行會影響讀出的段落）。
+// options.blockNewlines：區塊、清單項目與小節內的標籤之間換行（超魔法附錄沿用舊版排版，跑團說明依換行分段）。
 // options.plainHeadings：「#### 」只輸出 <h4>，不另包小節（文字本身已在小節內，例如附錄小節「書之魔契」的「戲法與儀式」）。
 // 分隔線「---」輸出 <hr class="class-rule-divider">（樣式由 styles.css 設定，不輸出行內 style）。
 function renderMarkdown(source, options, where) {

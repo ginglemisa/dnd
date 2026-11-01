@@ -244,11 +244,11 @@
   const ELDRITCH_INVOCATION_OPTIONS = [
     { id: "armor-of-shadows", label: "幽影護甲", description: "你可隨意施展法師護甲，不耗法術位。" },
     { id: "eldritch-mind", label: "魔能意志", description: "你維持法術專注的體質豁免具有優勢。" },
-    { id: "fiendish-vigor", label: "邪魔活力", description: "你可隨意施展虛假生命且不耗法術位。", minWarlockLevel: 2 },
-    { id: "lessons-of-the-first-ones", label: "原初之一教習", description: "選 1 個你符合先決條件的起源專長。可重複選此祈喚，但每次必須選不同的起源專長。", minWarlockLevel: 2, extra: { type: "originFeat" } },
-    { id: "mask-of-many-faces", label: "千面之臉", description: "你可隨意施展易容術且不耗法術位。", minWarlockLevel: 2 },
-    { id: "misty-visions", label: "幻象迷蹤", description: "你可隨意施展無聲幻影且不耗法術位。", minWarlockLevel: 2 },
-    { id: "otherworldly-leap", label: "超凡跳躍", description: "你可隨意施展跳躍術且不耗法術位。", minWarlockLevel: 2 },
+    { id: "fiendish-vigor", label: "邪魔活力", description: "你可隨意施展虛假生命且不耗法術位。" },
+    { id: "lessons-of-the-first-ones", label: "原初之一教習", description: "選 1 個你符合先決條件的起源專長。可重複選此祈喚，但每次必須選不同的起源專長。", extra: { type: "originFeat" } },
+    { id: "mask-of-many-faces", label: "千面之臉", description: "你可隨意施展易容術且不耗法術位。" },
+    { id: "misty-visions", label: "幻象迷蹤", description: "你可隨意施展無聲幻影且不耗法術位。" },
+    { id: "otherworldly-leap", label: "超凡跳躍", description: "你可隨意施展跳躍術且不耗法術位。" },
     { id: "pact-of-the-blade", label: "刃之魔契", description: "你可召喚或綁定契約武器。" },
     { id: "pact-of-the-chain", label: "鏈之魔契", description: "你學會獲得魔寵，施法不耗法術位。" },
     { id: "pact-of-the-tome", label: "書之魔契", description: "持有魔契書時，選 3 個任一職業戲法與 2 個任一職業儀式一環法術。這些法術視為契術師法術。", extra: { type: "tomeSpells", cantrips: 3, rituals: 2 } }
@@ -1097,7 +1097,16 @@
   function allSpellOptions(level, predicate = null) {
     return SpellCatalog.getAllSpells().filter(spell => spell.level === (level === "cantrips" ? 0 : Number(level)) && SpellCatalog.getClassIds(spell.spellId).length && (!predicate || predicate(spell))).sort((a, b) => a.nameZh.localeCompare(b.nameZh, "zh-Hant"));
   }
-  function levelOneInvocationOptions() { return ELDRITCH_INVOCATION_OPTIONS.filter(option => !option.minWarlockLevel || option.minWarlockLevel <= 1); }
+  // 魔能祈喚的內文與可選等級取自契術師內容檔的附錄（class-features-ui.js 的 eldritchInvocations）。
+  function getEldritchInvocation(label) {
+    return (typeof eldritchInvocations === "undefined" ? [] : eldritchInvocations).find(item => item.name === label) || null;
+  }
+  function levelOneInvocationOptions() {
+    return ELDRITCH_INVOCATION_OPTIONS.filter(option => {
+      const invocation = getEldritchInvocation(option.label);
+      return Boolean(invocation) && !(invocation.minWarlockLevel > 1);
+    });
+  }
   function isRitualSpell(spell) { return Boolean(spell) && /儀式/u.test(spell.desc || ""); }
   function knownSpellSources(target, excludedFeature = "") {
     const map = new Map();
@@ -3843,20 +3852,8 @@
   }
 
   function invocationDetailFromClassFeatures(option) {
-    const label = option?.label || "";
-    const raw = typeof classFeatures === "object" ? classFeatures?.warlock || "" : "";
-    const optionIndex = raw.lastIndexOf("魔能祈喚選項");
-    if (!label || optionIndex === -1) return "";
-    const block = raw.slice(optionIndex);
-    const start = block.indexOf(label);
-    if (start === -1) return "";
-    const nextPositions = ELDRITCH_INVOCATION_OPTIONS
-      .map(item => item.label)
-      .filter(name => name && name !== label)
-      .map(name => block.indexOf(name, start + label.length))
-      .filter(index => index !== -1);
-    const end = nextPositions.length ? Math.min(...nextPositions) : block.length;
-    return classFeaturePlainText(`${label}\n${block.slice(start + label.length, end)}`);
+    const invocation = getEldritchInvocation(option?.label);
+    return invocation ? classFeaturePlainText(`${invocation.name}\n${invocation.text || ""}`) : "";
   }
 
   function openInvocationDetail(option, trigger) {

@@ -24,6 +24,7 @@ features:
   - id: sorcerer-elemental-affinity
     level: 6
     name: 元素親和
+    choiceName: 元素親和傷害類型
     text: |
       選擇一種傷害類型：強酸、冷凍、火焰、閃電或毒素。
     select:

@@ -115,107 +115,80 @@
     { feat: "迅捷步法", level: 4, modes: ["action", "movement"], label: "跨越險地", ruleNames: ["跨越險地"] }
   ]);
 
-  const INVOCATION_ACTION_RULES = Object.freeze([
-    { name: "刃之魔契", modes: ["bonus"], level: 1 },
-    { name: "鏈之魔契", modes: ["action"], level: 1 },
-    { name: "共視感官", modes: ["bonus"], level: 5 },
-    { name: "鏈主賦能", modes: ["bonus", "reaction"], level: 5, requires: "鏈之魔契" }
-  ]);
+  // 職業動作：職業內容檔各能力（含子職能力、子能力、選項與附錄小節）的 actions（class-content.generated.js 的 classRules）。
+  // key／legacyKeys 是跑團偏好記住的按鈕識別（class-id-baseline.json 把關）。出現條件只看等級、勾選的選項與魔能祈喚；
+  // 說明段落以 data-action-id 選取，不解析職業頁標題或內文。附錄小節的 source: invocation 按鈕是魔能祈喚本身。
+  const classActionRuleCache = new Map();
 
-  // Timing and requirements are explicit. Description IDs only select display copy
-  // from canonical class data; headings and prose never decide availability.
-  // Each class currently has one fixed SRD subclass, acquired at level 3.
-  // Existing keys are persisted player hide preferences: keep them when editing labels.
-  const CLASS_ACTION_RULES = Object.freeze({
-    barbarian: Object.freeze([
-      { id: "reckless-attack", mode: "action", level: 2, label: "魯莽", key: "dynamic-action-class-8jjnkp", descriptionId: "barbarian-reckless-attack" },
-      // 7 級起本能飛撲併入狂暴說明；獨立的本能飛撲按鈕只保留 key，跑團不顯示。
-      { id: "rage", mode: "bonus", level: 1, label: "等級 1：狂暴", key: "dynamic-bonus-barbarian-3te1cj", resourceKey: "barbarian-rage", descriptionIds: ["barbarian-rage", { id: "barbarian-instinctive-pounce", level: 7 }] },
-      { id: "frenzy", mode: "action", level: 3, label: "等級 3：狂怒（狂戰子職）", key: "dynamic-action-barbarian-ekb4kt", descriptionId: "barbarian-frenzy" },
-      { id: "extra-attack", mode: "action", level: 5, label: "等級 5：額外攻擊", key: "dynamic-action-barbarian-113ebtz", descriptionId: "barbarian-extra-attack" },
-      { id: "fast-movement", mode: "movement", level: 5, label: "等級 5：快速移動", key: "dynamic-movement-barbarian-18h2p2v", descriptionId: "barbarian-fast-movement" },
-      { id: "instinctive-pounce", mode: "movement", level: 7, label: "等級 7：本能飛撲", key: "dynamic-movement-barbarian-1iw4zkg", descriptionId: "barbarian-instinctive-pounce" },
-      { id: "instinctive-pounce", mode: "bonus", level: 7, label: "等級 7：本能飛撲", key: "dynamic-bonus-barbarian-1iw4zkg", descriptionId: "barbarian-instinctive-pounce" },
-    ]),
-    monk: Object.freeze([
-      { id: "martial-arts-action", mode: "action", level: 1, label: "等級 1：武藝", descriptionId: "monk-martial-arts", key: "dynamic-action-monk-curated-martial-arts-action" },
-      { id: "martial-arts-bonus", mode: "bonus", level: 1, label: "等級 1：武藝", descriptionId: "monk-martial-arts", key: "dynamic-bonus-monk-curated-martial-arts-bonus", legacyKeys: ["dynamic-bonus-class-muonvc"] },
-      // 3 級起散打技巧併入聚氣凝神說明。
-      { id: "focused-aim", mode: "bonus", level: 2, label: "等級 2：聚氣凝神", descriptionIds: ["monk-focus", { id: "monk-open-hand-technique", level: 3 }], key: "dynamic-bonus-monk-curated-focused-aim", legacyKeys: ["dynamic-bonus-class-ricpmu"] },
-      { id: "uncanny-metabolism", mode: "action", level: 2, label: "等級 2：吐故納新", descriptionId: "monk-uncanny-metabolism", key: "dynamic-action-monk-curated-uncanny-metabolism", resourceKey: "monk-uncanny-metabolism" },
-      { id: "deflect-attacks", mode: "reaction", level: 3, label: "等級 3：撥擋化勁", descriptionId: "monk-deflect-attacks", key: "dynamic-reaction-monk-curated-deflect-attacks", legacyKeys: ["dynamic-reaction-class-5l2yua"] },
-      { id: "slow-fall", mode: "reaction", level: 4, label: "等級 4：輕身墜", descriptionId: "monk-slow-fall", key: "dynamic-reaction-monk-curated-slow-fall", legacyKeys: ["dynamic-reaction-class-1l1lc9s"] },
-      { id: "stunning-strike", mode: "action", level: 5, label: "等級 5：震懾擊", descriptionId: "monk-stunning-strike", key: "dynamic-action-monk-curated-stunning-strike", legacyKeys: ["dynamic-action-class-1g9j8ui"] },
-      { id: "extra-attack", mode: "action", level: 5, label: "等級 5：額外攻擊", descriptionId: "monk-extra-attack", key: "dynamic-action-monk-curated-extra-attack" },
-      { id: "wholeness-of-body", mode: "bonus", level: 6, label: "等級 6：混元體", descriptionId: "monk-wholeness-of-body", key: "dynamic-bonus-monk-curated-wholeness-of-body", resourceKey: "monk-wholeness", legacyKeys: ["dynamic-bonus-class-3mzm48"] }
-    ]),
-    bard: Object.freeze([
-      { id: "inspiration", mode: "bonus", level: 1, label: "等級 1：吟遊詩人激勵", key: "dynamic-bonus-class-r7asqs", resourceKey: "bard-inspiration", descriptionIds: ["bard-inspiration", { id: "bard-font-of-inspiration", level: 5 }] },
-      { id: "cutting-words", mode: "reaction", level: 3, label: "等級 3：語出驚人", key: "dynamic-reaction-class-1y0uv3b", resourceKey: "bard-inspiration", descriptionId: "bard-cutting-words" },
-      { id: "countercharm", mode: "reaction", level: 7, label: "等級 7：反迷惑", key: "dynamic-reaction-class-ul9dq", descriptionId: "bard-countercharm" }
-    ]),
-    cleric: Object.freeze([
-      { id: "divine-spark", mode: "action", level: 2, label: "等級 2：神聖火花", key: "dynamic-action-cleric-1c18bru", resourceKey: "cleric-channel-divinity", descriptionId: "cleric-divine-spark" },
-      {
-        id: "turn-undead", mode: "action", level: 2, key: "dynamic-action-cleric-xonbxu",
-        label: () => getCharacterLevel() >= 5 ? "等級 5：焚燒不死生物" : "等級 2：驅散不死生物", resourceKey: "cleric-channel-divinity",
-        descriptionIds: ["cleric-turn-undead", { id: "cleric-sear-undead", level: 5 }]
-      },
-      { mode: "action", level: 3, label: "等級 3：生命門徒（生命子職）", descriptionId: "cleric-disciple-of-life", key: "dynamic-action-cleric-1ocjvx6", id: "disciple-of-life" },
-      { mode: "action", level: 3, label: "等級 3：維持生命（生命子職）", descriptionId: "cleric-preserve-life", key: "dynamic-action-cleric-aoatsu", id: "preserve-life", resourceKey: "cleric-channel-divinity", legacyKeys: ["dynamic-action-class-preserve-life"] },
-      { id: "divine-strike", mode: "action", level: 7, label: "等級 7：神聖打擊", descriptionId: "cleric-divine-strike", key: "dynamic-action-cleric-sxx32", checkedId: "cleric-blessed-strikes-divine-strike" }
-    ]),
-    druid: Object.freeze([
-      { id: "wild-shape", mode: "bonus", level: 2, label: "等級 2：荒野形態", key: "dynamic-bonus-class-3u4zp1", druidOperation: "shape", descriptionId: "druid-wild-shape" },
-      { id: "wild-companion", mode: "action", level: 2, label: "等級 2：荒野夥伴", descriptionId: "druid-wild-companion", druidOperation: "companion" },
-      { id: "lands-aid", mode: "action", level: 3, label: "等級 3：大地之援（大地子職）", descriptionId: "druid-lands-aid", druidOperation: "aid" }
-    ]),
-    fighter: Object.freeze([
-      // 5 級起戰術轉移併入回氣說明；移動頁仍保留獨立的戰術轉移按鈕。
-      { mode: "bonus", level: 1, label: "等級 1：回氣", resourceKey: "fighter-second-wind", descriptionIds: ["fighter-second-wind", { id: "fighter-tactical-shift", level: 5 }], key: "dynamic-bonus-fighter-qmmfue", id: "second-wind", legacyKeys: ["dynamic-bonus-class-fj2om2"] },
-      { mode: "action", level: 2, label: "等級 2：動作如潮", descriptionId: "fighter-action-surge", key: "dynamic-action-fighter-1870147", id: "action-surge", resourceKey: "fighter-action-surge", legacyKeys: ["dynamic-action-class-action-surge"] },
-      { mode: "movement", level: 3, label: "等級 3：運動健將", descriptionId: "fighter-remarkable-athlete", key: "dynamic-movement-fighter-1s26hvz", id: "remarkable-athlete" },
-      { mode: "action", level: 5, label: "等級 5：額外攻擊", descriptionId: "fighter-extra-attack", key: "dynamic-action-fighter-113ebtz", id: "extra-attack" },
-      { mode: "movement", level: 5, label: "等級 5：戰術轉移", descriptionId: "fighter-tactical-shift", key: "dynamic-movement-fighter-1liysqo", id: "tactical-shift" }
-    ]),
-    paladin: Object.freeze([
-      { id: "lay-on-hands", mode: "bonus", level: 1, label: "等級 1：聖療", descriptionId: "paladin-lay-on-hands", key: "dynamic-bonus-paladin-curated-lay-on-hands", legacyKeys: ["dynamic-bonus-class-1ol2xxh"] },
-      { id: "divine-sense", mode: "bonus", level: 3, label: "等級 3：神聖感知", descriptionId: "paladin-divine-sense", key: "dynamic-bonus-paladin-curated-divine-sense", resourceKey: "paladin-channel-divinity", legacyKeys: ["dynamic-bonus-class-1axs7np"] },
-      { id: "sacred-weapon", mode: "action", level: 3, label: "等級 3：祝聖武器", descriptionId: "paladin-sacred-weapon", key: "dynamic-action-paladin-curated-sacred-weapon", resourceKey: "paladin-channel-divinity", legacyKeys: ["dynamic-action-class-sacred-weapon"] },
-      { id: "extra-attack", mode: "action", level: 5, label: "等級 5：額外攻擊", descriptionId: "paladin-extra-attack", key: "dynamic-action-paladin-curated-extra-attack" }
-    ]),
-    rogue: Object.freeze([
-      // 5 級起靈巧打擊併入偷襲說明，不另設按鈕。
-      { id: "sneak-attack", mode: "action", level: 1, label: "等級 1：偷襲", descriptionIds: ["rogue-sneak-attack", { id: "rogue-cunning-strike", level: 5 }], key: "dynamic-action-rogue-curated-sneak-attack" },
-      { id: "fast-hands", mode: "bonus", level: 3, label: "等級 3：快手", descriptionId: "rogue-fast-hands", key: "dynamic-bonus-rogue-curated-fast-hands", legacyKeys: ["dynamic-bonus-class-84ttm1"] },
-      { id: "steady-aim", mode: "bonus", level: 3, label: "等級 3：手穩就準", descriptionId: "rogue-steady-aim", key: "dynamic-bonus-rogue-curated-steady-aim", legacyKeys: ["dynamic-bonus-class-kwgie8"] },
-      { id: "cunning-action", mode: "bonus", level: 2, label: "等級 2：靈巧動作", key: "dynamic-bonus-class-1vms7ce", descriptionId: "rogue-cunning-action" },
-      { id: "uncanny-dodge", mode: "reaction", level: 5, label: "等級 5：直覺閃避", key: "dynamic-reaction-class-5f9k5x", descriptionId: "rogue-uncanny-dodge" }
-    ]),
-    sorcerer: Object.freeze([
-      { id: "innate-sorcery", mode: "bonus", level: 1, label: "等級 1：天生術法", key: "dynamic-bonus-class-1lqwnvp", resourceKey: "sorcerer-innate-sorcery", descriptionId: "sorcerer-innate-sorcery" },
-      { id: "font-of-magic", mode: "bonus", level: 2, label: "魔力泉湧", key: "dynamic-bonus-class-i5lemn", descriptionId: "sorcerer-font-of-magic" },
-      { id: "sorcery-incarnate", mode: "bonus", level: 7, label: "等級 7：術法化身", key: "dynamic-bonus-class-1lfxnv8", descriptionId: "sorcerer-sorcery-incarnate" }
-    ]),
-    ranger: Object.freeze([
-      { mode: "bonus", level: 3, label: "等級 3：獵人學識", descriptionId: "ranger-hunters-lore", key: "dynamic-bonus-ranger-we5ttw", id: "hunters-lore" },
-      { mode: "action", level: 3, label: "等級 3：狩獵目標", descriptionId: "ranger-hunters-prey", key: "dynamic-action-ranger-vdr4tc", id: "hunters-prey" },
-      { mode: "action", level: 5, label: "等級 5：額外攻擊", descriptionId: "ranger-extra-attack", key: "dynamic-action-ranger-113ebtz", id: "extra-attack" },
-      { mode: "movement", level: 6, label: "等級 6：越野", descriptionId: "ranger-roving", key: "dynamic-movement-ranger-bulhou", id: "roving" },
-      { mode: "action", level: 7, label: "等級 7：防守戰術", descriptionId: "ranger-defensive-tactics", key: "dynamic-action-ranger-p55ifk", id: "defensive-tactics" }
-    ]),
-    warlock: Object.freeze([
-      { id: "arcane-recovery", mode: "action", level: 2, label: "等級 2：秘法回流", key: "dynamic-action-warlock-curated-arcane-recovery", resourceKey: "warlock-magical-cunning", descriptionId: "warlock-magical-cunning" },
-      { id: "thirsting-blade", mode: "action", level: 5, invocation: "饑渴魔刃", label: "饑渴魔刃", descriptionId: "warlock-thirsting-blade", key: "dynamic-action-warlock-curated-thirsting-blade", requiresInvocation: "刃之魔契" },
-      { id: "eldritch-smite", mode: "action", level: 5, invocation: "魔能斬擊", label: "魔能斬擊", descriptionId: "warlock-eldritch-smite", key: "dynamic-action-warlock-curated-eldritch-smite", requiresInvocation: "刃之魔契" },
-      { id: "dark-ones-own-luck", mode: "action", level: 6, label: "等級 6：黑暗強運（邪魔子職）", descriptionId: "warlock-dark-ones-own-luck", key: "dynamic-action-warlock-curated-dark-ones-own-luck", resourceKey: "warlock-dark-ones-own-luck" }
-    ]),
-    wizard: Object.freeze([
-      { id: "potent-cantrip", mode: "action", level: 3, label: "等級 3：強力戲法（塑能子職）", descriptionId: "wizard-potent-cantrip", key: "dynamic-action-wizard-curated-potent-cantrip" },
-      { id: "memorize-spell", mode: "action", level: 5, label: "等級 5：記憶法術", descriptionId: "wizard-memorize-spell", key: "dynamic-action-wizard-curated-memorize-spell" },
-      { id: "sculpt-spells", mode: "action", level: 6, label: "等級 6：法術塑形（塑能子職）", descriptionId: "wizard-sculpt-spells", key: "dynamic-action-wizard-curated-sculpt-spells" }
-    ])
-  });
+  function getClassActionLabel(label, fallback) {
+    if (typeof label === "string") return label;
+    if (!label?.byLevel) return fallback;
+    return () => {
+      let text = fallback;
+      for (const [from, entry] of Object.entries(label.byLevel)) if (getCharacterLevel() >= Number(from)) text = entry;
+      return text;
+    };
+  }
+
+  function getClassActionRules(className) {
+    const rules = globalScope.getClassRules?.(className);
+    if (!rules) return [];
+    const cached = classActionRuleCache.get(className);
+    if (cached?.rules === rules) return cached.list;
+    const features = globalScope.getClassFeatureRules(className);
+    const featureLevels = new Map(features.map(feature => [feature.id, feature.level]));
+    const subclassNames = new Map(rules.subclasses.map(subclass => [subclass.id, subclass.shortName]));
+    const list = [];
+    const add = (action, { name, level, subclass, descriptionId, extra = {}, plainLabel = false }) => {
+      const suffix = subclass ? `（${subclassNames.get(subclass)}子職）` : "";
+      list.push(Object.freeze({
+        mode: action.mode,
+        level: action.level ?? level,
+        key: action.key,
+        label: getClassActionLabel(action.label, plainLabel ? name : `等級 ${level}：${name}${suffix}`),
+        descriptionIds: Object.freeze([descriptionId, ...(action.append || []).map(id => Object.freeze({ id, level: featureLevels.get(id) }))]),
+        source: action.source === "invocation" ? "invocation" : "class",
+        ...(action.legacyKeys ? { legacyKeys: Object.freeze([...action.legacyKeys]) } : {}),
+        ...(action.resource ? { resourceKey: action.resource } : {}),
+        ...(action.druidOperation ? { druidOperation: action.druidOperation } : {}),
+        ...(action.invocation ? { invocation: action.invocation } : {}),
+        ...(action.requiresInvocation ? { requiresInvocation: action.requiresInvocation } : {}),
+        ...(action.tabletopHidden ? { tabletopHidden: true } : {}),
+        ...(action.tabletopAlso ? { tabletopAlso: action.tabletopAlso } : {}),
+        ...extra
+      }));
+    };
+    for (const feature of features) {
+      const context = { level: feature.level, subclass: feature.subclass };
+      // 只顯示勾選中的選項（selectedOptionOnly，例如狩獵目標）：記下選項勾選框與說明段落。
+      const optionBlocks = (feature.options || []).map(option => ({
+        inputId: option.id,
+        blockId: `${className}-${option.id.slice(feature.id.length + 1)}`
+      }));
+      (feature.actions || []).forEach(action => add(action, {
+        ...context,
+        name: feature.name,
+        descriptionId: feature.id,
+        extra: action.selectedOptionOnly ? { selectedOptionOnly: Object.freeze({ name: feature.name, options: Object.freeze(optionBlocks) }) } : {}
+      }));
+      (feature.parts || []).forEach(part => (part.actions || []).forEach(action => add(action, { ...context, name: part.name, descriptionId: part.id })));
+      (feature.options || []).forEach((option, index) => (option.actions || []).forEach(action => add(action, {
+        ...context,
+        name: option.name,
+        descriptionId: optionBlocks[index].blockId,
+        extra: { checkedId: option.id }
+      })));
+    }
+    (rules.appendix || []).forEach(item => (item.parts || []).forEach(part => (part.actions || []).forEach(action => add(action, {
+      level: action.level,
+      name: part.name,
+      descriptionId: part.id,
+      plainLabel: true,
+      extra: action.source === "invocation" ? { invocation: part.name } : {}
+    }))));
+    classActionRuleCache.set(className, { rules, list });
+    return list;
+  }
 
   const RACE_ACTION_RULES = Object.freeze([
     { id: "breath", race: "dragonborn", level: 1, mode: "action", label: "吐息元素", key: "dynamic-action-race-1loctyz", resourceKey: "dragonborn-breath-uses", description: getDragonbornBreathDescription },
@@ -276,17 +249,6 @@
 
   function getProficiencyBonus() {
     return globalScope.calculateProficiencyBonus?.(getCharacterLevel()) || 2;
-  }
-
-  function getBarbarianRageDamageBonus() {
-    const level = getCharacterLevel();
-    if (level >= 16) return 4;
-    if (level >= 9) return 3;
-    return 2;
-  }
-
-  function getBardInspirationDie() {
-    return getCharacterLevel() >= 5 ? 8 : 6;
   }
 
   function getSelectedFeatNames() {
@@ -410,25 +372,19 @@
     });
   }
 
+  // 魔能祈喚本身的按鈕（內容檔附錄小節的 source: invocation 動作）：說明為整段祈喚文字。
   function getSelectedInvocationEntries(mode) {
     if (typeof eldritchInvocations === "undefined" || document.getElementById("class")?.value !== "warlock") return [];
-    const selectedNames = new Set(Array.from(
-      document.querySelectorAll("#eldritch-invocations-output input[data-invocation-name]:checked"),
-      input => input.dataset.invocationName
-    ).filter(Boolean));
-
-    return INVOCATION_ACTION_RULES.flatMap(rule => {
-      if (!selectedNames.has(rule.name) || !rule.modes.includes(mode) || getCharacterLevel() < rule.level) return [];
-      if (rule.requires && !selectedNames.has(rule.requires)) return [];
-      const invocation = eldritchInvocations.find(entry => entry.name === rule.name);
+    return getClassActionRules("warlock").filter(rule => rule.source === "invocation" && rule.mode === mode).flatMap(rule => {
+      if (getCharacterLevel() < rule.level || !hasSelectedEldritchInvocation(rule.invocation)) return [];
+      if (rule.requiresInvocation && !hasSelectedEldritchInvocation(rule.requiresInvocation)) return [];
+      const invocation = eldritchInvocations.find(entry => entry.name === rule.invocation);
       if (!invocation) return [];
-      const invocationText = sourceToPlainText(invocation.text || "");
-
       return [{
-        key: `dynamic-${mode}-invocation-${stableKeyHash(invocation.name)}`,
+        key: rule.key,
         label: invocation.name,
         source: FEATURE_SOURCE_LABELS.invocation,
-        description: invocationText,
+        description: sourceToPlainText(invocation.text || ""),
         dynamic: true
       }];
     });
@@ -456,25 +412,6 @@
     });
   }
 
-  function getMonkAbilityModifier(abilityId) {
-    const field = document.getElementById(abilityId);
-    const rawScore = field && "value" in field ? String(field.value || "").trim() : "";
-    if (!rawScore) return 0;
-    const modifier = globalScope.calculateAbilityModifier?.(rawScore);
-    return Number.isFinite(modifier) ? modifier : 0;
-  }
-
-  function getMonkMartialArtsDie() {
-    return globalScope.getMonkMartialArtsDieByLevel(getCharacterLevel());
-  }
-
-  function getDoubleMonkMartialArtsDice() {
-    const martialArtsDie = getMonkMartialArtsDie();
-    if (String(martialArtsDie || "").startsWith("1d")) {
-      return `2d${String(martialArtsDie).slice(2)}`;
-    }
-    return `2 × ${martialArtsDie}`;
-  }
 
   function formatSignedModifier(value) {
     const modifier = Number(value);
@@ -497,111 +434,18 @@
 
   // 職業描述來自 class-content.generated.js（由 content/ 的職業內容檔建置）：classFeatures 為職業頁 HTML，
   // classTabletopText 為與職業頁不同的跑團說明（tabletop）與總覽一句話（summaries）。跑團擷取段落時只處理下列標記：
-  // - data-tabletop-value="key"：內文是職業詳情的通用文字，跑團改顯示 TABLETOP_VALUE_RESOLVERS[key]() 的結果；
-  //   無對應函式或無值時保留通用文字。
+  // - data-tabletop-value="名稱"：內文是職業詳情的通用文字，跑團改顯示該職業內容檔數值（特性表欄位、values）
+  //   依目前等級與屬性值算出的文字（character-rules.js 的 getClassValueText，套用 format）；無值時保留通用文字。
   // - data-tabletop-hide：只在職業詳情顯示，跑團擷取時移除。
   // - data-tabletop-only：只在跑團顯示，職業詳情由 styles.css 隱藏。
   // - data-overview-hide：跑團總覽的一句話提醒另外移除（引言、選項名稱）；動作按鈕仍顯示。
-  const TABLETOP_VALUE_RESOLVERS = Object.freeze({
-    "character-level": () => String(getCharacterLevel()),
-    "proficiency-bonus": () => String(getProficiencyBonus()),
-    "barbarian-rage-uses": () => {
-      const maximum = getClassResourceSpec("barbarian", "barbarian-rage")?.maximum;
-      return Number.isFinite(maximum) ? `${maximum} 次` : null;
-    },
-    "barbarian-rage-damage": () => `目前 +${getBarbarianRageDamageBonus()}`,
-    "barbarian-frenzy-dice": () => `${getBarbarianRageDamageBonus()}d6`,
-    "bard-inspiration-die": () => `目前為 d${getBardInspirationDie()}`,
-    // 恢復方式跟隨 CharacterRules 的資源設定，與休息實際恢復一致；未升級時保留通用文字。
-    "bard-inspiration-recovery": () => (getClassResourceSpec("bard", "bard-inspiration")?.recovery?.shortRest === "all"
-      ? "短休或長休後全部恢復"
-      : null),
-    // monk（插槽前後緊鄰中文時補空白，與數值區隔）
-    "monk-martial-arts-die": () => `目前為 ${getMonkMartialArtsDie()}`,
-    "monk-focus-points": () => {
-      const maximum = getClassResourceSpec("monk", "monk-focus-points")?.maximum;
-      return Number.isFinite(maximum) ? ` ${maximum} 點` : null;
-    },
-    "monk-save-dc": () => String(8 + getProficiencyBonus() + getMonkAbilityModifier("wis")),
-    "monk-uncanny-metabolism-healing": () => ` ${getMonkMartialArtsDie()} + ${getCharacterLevel()} `,
-    "monk-deflect-attacks-reduction": () => formatDiceWithModifier("1d10", getMonkAbilityModifier("dex") + getCharacterLevel()),
-    "monk-deflect-attacks-damage": () => `${formatDiceWithModifier(getDoubleMonkMartialArtsDice(), getMonkAbilityModifier("dex"))} `,
-    "monk-slow-fall-reduction": () => ` ${getCharacterLevel() * 5} `,
-    "monk-wholeness-healing": () => ` ${formatDiceWithModifier(getMonkMartialArtsDie(), getMonkAbilityModifier("wis"))} `,
-    // fighter
-    "fighter-second-wind-healing": () => `1d10 + ${getCharacterLevel()}`,
-    "fighter-second-wind-uses": () => {
-      const maximum = getClassResourceSpec("fighter", "fighter-second-wind")?.maximum;
-      return Number.isFinite(maximum) ? `${maximum} 次` : null;
-    },
-    // rogue
-    "rogue-sneak-attack-dice": () => `${Math.max(1, Math.ceil(getCharacterLevel() / 2))}d6`,
-    "rogue-cunning-strike-dc": () => String(8 + getProficiencyBonus() + (getAbilityModifier("dex") ?? 0)),
-    // druid
-    "druid-wild-shape-uses": () => {
-      const maximum = getClassResourceSpec("druid", "druid-wild-shape")?.maximum;
-      return Number.isFinite(maximum) ? `${maximum} 次` : null;
-    },
-    "druid-wild-shape-hours": () => {
-      const hours = globalScope.getDruidWildShapeRules?.(getCharacterLevel())?.hours;
-      return hours > 0 ? `（目前 ${hours} 小時）` : null;
-    },
-    "druid-wild-shape-temp-hp": () => {
-      const level = getCharacterLevel();
-      return level > 0 ? `（目前 ${level} 點）` : null;
-    },
-    // cleric
-    "cleric-divine-spark-roll": () => formatDiceWithModifier("1d8", getMonkAbilityModifier("wis")),
-    "cleric-spell-save-dc": () => `（DC ${8 + getProficiencyBonus() + getMonkAbilityModifier("wis")}）`,
-    // 職業詳情原文「擲」與骰數之間沒有空格，前置空格讓跑團顯示「擲 4d8」。
-    "cleric-sear-undead-dice": () => {
-      const wisdomModifier = getAbilityModifier("wis");
-      return wisdomModifier === null
-        ? " Xd8（X＝感知調整值，至少 1d8）"
-        : ` ${Math.max(1, wisdomModifier)}d8（感知調整值，至少 1d8）`;
-    },
-    // 未填等級時保留通用公式。
-    "cleric-preserve-life-total": () => (String(document.getElementById("level")?.value || "").trim()
-      ? `「${getCharacterLevel() * 5}」`
-      : null),
-    // paladin
-    "paladin-lay-on-hands-pool": () => {
-      const maximum = getClassResourceSpec("paladin", "paladin-lay-on-hands")?.maximum;
-      return Number.isFinite(maximum) ? `「${maximum}」點` : null;
-    },
-    "paladin-channel-divinity-uses": () => {
-      const maximum = getClassResourceSpec("paladin", "paladin-channel-divinity")?.maximum;
-      return Number.isFinite(maximum) ? `${maximum} 次` : null;
-    },
-    // sorcerer
-    "sorcerer-sorcery-points": () => {
-      const maximum = getClassResourceSpec("sorcerer", "sorcerer-sorcery-points")?.maximum;
-      return Number.isFinite(maximum) ? `目前上限 ${maximum} 點` : null;
-    },
-    // 跑團不顯示表格：在「生成法術位」小標題下，由同段落的表格組成一行。
-    "sorcerer-slot-creation-costs": () => {
-      const rows = getClassDescriptionSource("sorcerer").blocks.get("sorcerer-font-of-magic")?.querySelectorAll("table tbody tr") || [];
-      const costs = Array.from(rows, row => Array.from(row.cells, cell => cell.textContent.trim()))
-        .filter(cells => cells.length >= 3 && cells.every(Boolean))
-        .map(([slotLevel, points, minimumLevel]) => `${slotLevel} 環消耗 ${points} 點（術士等級 ${minimumLevel} 起）`);
-      return costs.length ? `${costs.join("；")}。` : null;
-    },
-    // ranger
-    // 選項名稱在職業詳情是勾選框標籤（跑團擷取時略過），跑團改顯示「名稱：」。
-    "ranger-colossus-slayer-name": () => getClassChoiceLabelPrefix("ranger", "ranger-hunters-prey-colossus-slayer"),
-    "ranger-horde-breaker-name": () => getClassChoiceLabelPrefix("ranger", "ranger-hunters-prey-horde-breaker"),
-    "ranger-escape-the-horde-name": () => getClassChoiceLabelPrefix("ranger", "ranger-defensive-tactics-escape-the-horde"),
-    "ranger-multiattack-defense-name": () => getClassChoiceLabelPrefix("ranger", "ranger-defensive-tactics-multiattack-defense")
-  });
-
-  function getClassChoiceLabelPrefix(className, inputId) {
-    const label = getClassDescriptionSource(className).holder.querySelector(`#${inputId}`)?.closest("label")?.textContent.trim();
-    return label ? `${label}：` : null;
-  }
-
-  function getClassResourceSpec(className, key) {
-    const specs = globalScope.getCharacterResourceSpecs?.({ className, level: getCharacterLevel() }) || [];
-    return specs.find(spec => spec.key === key) || null;
+  function getClassValueContext() {
+    const field = id => String(document.getElementById(id)?.value || "").trim();
+    return {
+      level: getCharacterLevel(),
+      levelBlank: !field("level"),
+      abilityScores: Object.fromEntries(["str", "dex", "con", "int", "wis", "cha"].map(id => [id, field(id)]))
+    };
   }
 
   // 職業描述段落轉為跑團純文字：忽略原始碼縮排，區塊之間空一行，清單項目以「- 」開頭並連續排列。
@@ -644,12 +488,6 @@
     }).join("");
   }
 
-  // 由說明函式或跑團總覽組合、未寫在 CLASS_ACTION_RULES 的段落，納入完整性檢查。
-  const HELPER_DESCRIPTION_IDS = Object.freeze({
-    monk: Object.freeze(["monk-empowered-strikes"]),
-    ranger: Object.freeze(["ranger-colossus-slayer", "ranger-horde-breaker", "ranger-escape-the-horde", "ranger-multiattack-defense"])
-  });
-
   const classDescriptionCache = new Map();
 
   function getClassDescriptionSource(className) {
@@ -684,27 +522,22 @@
     return ["tabletop", "summaries"].flatMap(kind => Object.keys(entries[kind] || {}).map(id => getClassTextBlock(className, kind, id)));
   }
 
-  function getTabletopValueResolver(key) {
-    return Object.hasOwn(TABLETOP_VALUE_RESOLVERS, key) ? TABLETOP_VALUE_RESOLVERS[key] : null;
-  }
-
-  function resolveTabletopValue(element) {
-    const resolver = getTabletopValueResolver(element.dataset.tabletopValue);
-    if (!resolver) return;
+  function resolveTabletopValue(element, className, context) {
     let value = null;
     try {
-      value = resolver();
+      value = globalScope.getClassValueText?.(className, element.dataset.tabletopValue, context) ?? null;
     } catch (error) {
       value = null;
     }
-    if (value !== null && value !== undefined && String(value).trim()) element.textContent = String(value);
+    if (value !== null && String(value).trim()) element.textContent = String(value);
   }
 
-  function getTabletopBlockText(block, removedSelector) {
+  function getTabletopBlockText(block, removedSelector, className) {
     const copy = block.cloneNode(true);
     copy.querySelectorAll(removedSelector).forEach(element => element.remove());
     copy.querySelectorAll("[data-tabletop-only][hidden]").forEach(element => element.removeAttribute("hidden"));
-    copy.querySelectorAll("[data-tabletop-value]").forEach(resolveTabletopValue);
+    const context = getClassValueContext();
+    copy.querySelectorAll("[data-tabletop-value]").forEach(element => resolveTabletopValue(element, className, context));
     return classDescriptionToPlainText(copy);
   }
 
@@ -720,7 +553,7 @@
       const id = isGated ? item.id : item;
       const block = getClassTextBlock(className, "tabletop", id) || blocks.get(id);
       if (!block) return "";
-      parts.push(getTabletopBlockText(block, "h3, [data-tabletop-hide]"));
+      parts.push(getTabletopBlockText(block, "h3, [data-tabletop-hide]", className));
     }
     return parts.filter(Boolean).join("\n\n");
   }
@@ -732,7 +565,7 @@
       || getClassTextBlock(className, "tabletop", descriptionId)
       || getClassDescriptionSource(className).blocks.get(descriptionId);
     if (!block) return "";
-    return getTabletopBlockText(block, "h3, [data-tabletop-hide], [data-overview-hide]")
+    return getTabletopBlockText(block, "h3, [data-tabletop-hide], [data-overview-hide]", className)
       .split("\n")
       .map(line => line.replace(/^- /u, "").trim())
       .filter(Boolean)
@@ -743,19 +576,23 @@
     const issues = [];
     const classNames = new Set([
       ...(typeof classFeatures === "undefined" ? [] : Object.keys(classFeatures)),
-      ...Object.keys(CLASS_ACTION_RULES)
+      ...(typeof classRules === "undefined" ? [] : Object.keys(classRules))
     ]);
     classNames.forEach(className => {
       const { holder, blocks } = getClassDescriptionSource(className);
+      // 動作說明段落、只顯示勾選選項的段落，以及內容檔每個能力與子能力的段落（跑團總覽依 ID 讀取）。
       const ids = [
-        ...(CLASS_ACTION_RULES[className] || []).flatMap(rule => [].concat(rule.descriptionIds || rule.descriptionId || [])),
-        ...(HELPER_DESCRIPTION_IDS[className] || [])
+        ...getClassActionRules(className).flatMap(rule => [
+          ...rule.descriptionIds,
+          ...(rule.selectedOptionOnly?.options || []).map(option => option.blockId)
+        ]),
+        ...(globalScope.getClassFeatureRules?.(className) || []).flatMap(feature => [feature.id, ...(feature.parts || []).map(part => part.id)])
       ].map(item => (item && typeof item === "object" ? item.id : item));
       new Set(ids).forEach(id => {
         if (!blocks.has(id)) issues.push(`${className}: 找不到 data-action-id="${id || ""}" 的職業描述段落`);
       });
       new Set([holder, ...getClassTextBlocks(className)].flatMap(root => Array.from(root.querySelectorAll("[data-tabletop-value]"), element => element.dataset.tabletopValue))).forEach(key => {
-        if (!getTabletopValueResolver(key)) issues.push(`${className}: data-tabletop-value="${key}" 沒有對應的計算函式`);
+        if (!globalScope.hasClassValue?.(className, key)) issues.push(`${className}: data-tabletop-value="${key}" 不是此職業內容檔的數值`);
       });
     });
     return issues;
@@ -799,8 +636,8 @@
 
   function getExplicitClassEntries(mode) {
     const className = document.getElementById("class")?.value || "";
-    return resolveFeatureRules(CLASS_ACTION_RULES[className] || [], mode, "class",
-      rule => getClassActionDescription(className, rule.descriptionIds || rule.descriptionId));
+    return resolveFeatureRules(getClassActionRules(className).filter(rule => rule.source === "class"), mode, "class",
+      rule => getClassActionDescription(className, rule.descriptionIds));
   }
 
   function getExplicitRaceEntries(mode) {
@@ -917,24 +754,36 @@ function getModeOptions(mode) {
     );
   }
 
+  function getCurrentClassActionRule(option) {
+    if (option.source !== FEATURE_SOURCE_LABELS.class) return null;
+    return getClassActionRules(document.getElementById("class")?.value || "").find(rule => rule.key === option.key) || null;
+  }
+
   function getTabletopDescription(option) {
     let description = option.description;
-    if (option.key === "dynamic-action-ranger-vdr4tc") {
-      // 跑團只顯示目前勾選的狩獵目標選項。
-      const choiceId = document.getElementById("ranger-hunters-prey-colossus-slayer")?.checked
-        ? "ranger-colossus-slayer"
-        : document.getElementById("ranger-hunters-prey-horde-breaker")?.checked ? "ranger-horde-breaker" : "";
-      description = (choiceId && getClassActionDescription("ranger", choiceId)) || "請在職業能力中選擇狩獵目標。";
+    const selectedOnly = getCurrentClassActionRule(option)?.selectedOptionOnly;
+    if (selectedOnly) {
+      // 跑團只顯示目前勾選的選項段落（例如狩獵目標）。
+      const className = document.getElementById("class")?.value || "";
+      const choice = selectedOnly.options.find(item => document.getElementById(item.inputId)?.checked);
+      description = (choice && getClassActionDescription(className, choice.blockId)) || `請在職業能力中選擇${selectedOnly.name}。`;
     }
     return { ...option, description };
   }
 
+  // 跑團分頁：內容檔的 tabletopAlso 讓按鈕另外列在其他分頁（例如吟遊詩人激勵也列在動作）；tabletopHidden 不顯示。
+  function getTabletopAlsoOptions(mode) {
+    const className = document.getElementById("class")?.value || "";
+    const rules = getClassActionRules(className).filter(rule => rule.tabletopAlso === mode);
+    return [...new Set(rules.map(rule => rule.mode))].flatMap(otherMode => getModeOptions(otherMode)
+      .filter(option => rules.some(rule => rule.mode === otherMode && rule.key === option.key)));
+  }
+
   function getPublicTabletopModeOptions(mode) {
     return Object.freeze(
-      [...(mode === "action" ? TABLETOP_ACTION_OPTIONS : []), ...(mode === "movement" ? TABLETOP_MOVEMENT_OPTIONS : []), ...getModeOptions(mode), ...(mode === "action" && document.getElementById("class")?.value === "bard"
-        ? getModeOptions("bonus").filter(option => option.key === "dynamic-bonus-class-r7asqs") : [])]
+      [...(mode === "action" ? TABLETOP_ACTION_OPTIONS : []), ...(mode === "movement" ? TABLETOP_MOVEMENT_OPTIONS : []), ...getModeOptions(mode), ...getTabletopAlsoOptions(mode)]
         .filter(option => {
-          if (["dynamic-bonus-barbarian-1iw4zkg", "dynamic-movement-barbarian-1iw4zkg"].includes(option.key)) return false;
+          if (getCurrentClassActionRule(option)?.tabletopHidden) return false;
           if (mode !== "movement") return true;
           if (option.key === "special-speeds" || option.key === "speed-changes") return false;
           return option.key !== "flying"

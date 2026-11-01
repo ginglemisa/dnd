@@ -15,16 +15,60 @@ function updateClassFeatureOptionVisibility() {
   document.getElementById("druid-land-control")?.classList.toggle("is-hidden", classValue !== "druid" || level < 3);
 }
 
-const CLERIC_MISSION_CHOICE_IDS = Object.freeze(["cleric-guardian", "cleric-trickster"]);
-const DRUID_MISSION_CHOICE_IDS = Object.freeze(["druid-shaman", "druid-sentinel"]);
 const MISSION_CANTRIP_CHOICES = Object.freeze([
   { checkboxId: "cleric-trickster", className: "cleric", label: "魔術使：額外牧師戲法", sourceLabel: "來源：魔術使" },
   { checkboxId: "druid-shaman", className: "druid", label: "巫祝：額外德魯伊戲法", sourceLabel: "來源：巫祝" }
 ]);
-const FIGHTING_STYLE_TYPE_CHOICE_GROUPS = Object.freeze([
-  Object.freeze(["paladin-fighting-style", "paladin-blessed-warrior"]),
-  Object.freeze(["ranger-fighting-style", "ranger-druidic-warrior"])
-]);
+
+// 職業選項（勾選框與下拉選單）的職業、可用等級與群組：由職業內容檔的 options／select、choose 與能力等級推得
+// （class-content.generated.js 的 classRules）。本檔同步載入、早於產生檔，故第一次使用時才建立。
+let classOptionRulesCache = null;
+function getClassOptionRules() {
+  const source = typeof classRules === "undefined" ? null : classRules;
+  if (classOptionRulesCache?.source === source) return classOptionRulesCache;
+  const groups = [];
+  const selects = [];
+  const availability = new Map();
+  const attackNotes = [];
+  Object.values(source || {}).forEach(rules => {
+    [...rules.features, ...rules.subclasses.flatMap(subclass => subclass.features)].forEach(feature => {
+      const requirement = Object.freeze({ className: rules.id, minimumLevel: feature.level });
+      const label = `${rules.name}${feature.choiceName || feature.name}`;
+      if (feature.options) {
+        const ids = Object.freeze(feature.options.map(option => option.id));
+        ids.forEach(id => availability.set(id, requirement));
+        feature.options.filter(option => option.attackNote).forEach(option => attackNotes.push(Object.freeze({ id: option.id, note: option.attackNote })));
+        groups.push(Object.freeze({
+          ...requirement,
+          ids,
+          label,
+          // choose: 1 的選項互斥；changeOn／choiceGroup 的選項是同一選擇組（data-feature-choice-group）。
+          exclusive: feature.choose === 1,
+          choiceGroup: Boolean(feature.changeOn || feature.choiceGroup),
+          featChoice: feature.options.some(option => option.featChoice)
+        }));
+      }
+      if (feature.select) {
+        availability.set(feature.select.id, requirement);
+        selects.push(Object.freeze({ ...requirement, id: feature.select.id, label }));
+      }
+    });
+  });
+  classOptionRulesCache = { source, groups, selects, availability, attackNotes };
+  return classOptionRulesCache;
+}
+
+function getClassOptionGroup(id) {
+  return getClassOptionRules().groups.find(group => group.ids.includes(id)) || null;
+}
+
+function isClassOptionControl(id) {
+  return Boolean(getClassOptionGroup(id));
+}
+
+function isClassOptionChoiceGroupControl(id) {
+  return Boolean(getClassOptionGroup(id)?.choiceGroup);
+}
 
 function enforceExclusiveCheckboxChoice(ids, changedId) {
   const changed = document.getElementById(changedId);
@@ -35,41 +79,12 @@ function enforceExclusiveCheckboxChoice(ids, changedId) {
   });
 }
 
-// 牧師神聖使命選項（守護者/奇術使）互斥
-function enforceClericMissionExclusivity(changedId) {
-  enforceExclusiveCheckboxChoice(CLERIC_MISSION_CHOICE_IDS, changedId);
+// 互斥選項（choose: 1，例如神聖使命、戰鬥風格類型、狩獵目標）：勾選一項時取消同組其他項。
+function enforceClassOptionExclusivity(changedId) {
+  const group = getClassOptionGroup(changedId);
+  if (group?.exclusive) enforceExclusiveCheckboxChoice(group.ids, changedId);
 }
 
-function enforceDruidMissionExclusivity(changedId) {
-  enforceExclusiveCheckboxChoice(DRUID_MISSION_CHOICE_IDS, changedId);
-}
-
-
-const ADVANCED_CLASS_FEATURE_CHOICE_GROUPS = Object.freeze([
-  Object.freeze(["ranger-hunters-prey-colossus-slayer", "ranger-hunters-prey-horde-breaker"]),
-  Object.freeze(["cleric-blessed-strikes-divine-strike", "cleric-blessed-strikes-potent-spellcasting"]),
-  Object.freeze(["druid-elemental-fury-primal-strike", "druid-elemental-fury-potent-spellcasting"]),
-  Object.freeze(["ranger-defensive-tactics-escape-the-horde", "ranger-defensive-tactics-multiattack-defense"])
-]);
-const ADVANCED_CLASS_FEATURE_AVAILABILITY = Object.freeze({
-  "ranger-hunters-prey-colossus-slayer": Object.freeze({ className: "ranger", minimumLevel: 3 }),
-  "ranger-hunters-prey-horde-breaker": Object.freeze({ className: "ranger", minimumLevel: 3 }),
-  "cleric-guardian": Object.freeze({ className: "cleric", minimumLevel: 1 }),
-  "cleric-trickster": Object.freeze({ className: "cleric", minimumLevel: 1 }),
-  "cleric-blessed-strikes-divine-strike": Object.freeze({ className: "cleric", minimumLevel: 7 }),
-  "cleric-blessed-strikes-potent-spellcasting": Object.freeze({ className: "cleric", minimumLevel: 7 }),
-  "druid-shaman": Object.freeze({ className: "druid", minimumLevel: 1 }),
-  "druid-sentinel": Object.freeze({ className: "druid", minimumLevel: 1 }),
-  "druid-elemental-fury-primal-strike": Object.freeze({ className: "druid", minimumLevel: 7 }),
-  "druid-elemental-fury-potent-spellcasting": Object.freeze({ className: "druid", minimumLevel: 7 }),
-  "paladin-fighting-style": Object.freeze({ className: "paladin", minimumLevel: 2 }),
-  "paladin-blessed-warrior": Object.freeze({ className: "paladin", minimumLevel: 2 }),
-  "ranger-fighting-style": Object.freeze({ className: "ranger", minimumLevel: 2 }),
-  "ranger-druidic-warrior": Object.freeze({ className: "ranger", minimumLevel: 2 }),
-  "ranger-defensive-tactics-escape-the-horde": Object.freeze({ className: "ranger", minimumLevel: 7 }),
-  "ranger-defensive-tactics-multiattack-defense": Object.freeze({ className: "ranger", minimumLevel: 7 }),
-  "sorcerer-elemental-affinity-damage-type": Object.freeze({ className: "sorcerer", minimumLevel: 6 })
-});
 let characterChoiceWarningsHidden = false;
 
 function isCharacterCoreSelectionComplete() {
@@ -115,26 +130,12 @@ function updateClassFeatureChoiceReminder() {
   reminder.hidden = characterChoiceWarningsHidden || issues.length === 0;
 }
 
-const CLERIC_DIVINE_STRIKE_ATTACK_NOTE = "+1d8光/黯傷害";
-// 寫入攻擊備註並隨角色保存；移除時以完全相同的字串比對，修改會使舊存檔殘留舊備註。
-const DRUID_PRIMAL_STRIKE_ATTACK_NOTE = "+1d8冷凍/火焰/閃電/雷鳴傷害";
-
-function isAdvancedClassFeatureControlAvailable(id) {
-  const requirement = ADVANCED_CLASS_FEATURE_AVAILABILITY[id];
+function isClassOptionControlAvailable(id) {
+  const requirement = getClassOptionRules().availability.get(id);
   if (!requirement) return true;
   const classValue = document.getElementById("class")?.value || "";
   const level = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
   return classValue === requirement.className && level >= requirement.minimumLevel;
-}
-
-function enforceAdvancedClassFeatureChoiceExclusivity(changedId) {
-  const group = ADVANCED_CLASS_FEATURE_CHOICE_GROUPS.find(ids => ids.includes(changedId));
-  const changed = document.getElementById(changedId);
-  if (!group || !changed?.checked) return;
-  group.filter(id => id !== changedId).forEach(id => {
-    const input = document.getElementById(id);
-    if (input) input.checked = false;
-  });
 }
 
 function removeManagedAttackNoteFragment(value, fragment) {
@@ -166,34 +167,35 @@ function isApplicableWeaponAttack(hand) {
   return Boolean(weaponName) && weaponName !== "盾牌";
 }
 
+// 選項的攻擊備註（內容檔 options[].attackNote，例如神聖打擊的「+1d8光/黯傷害」）：勾選且可用時加進武器攻擊備註。
+// 備註隨角色保存，移除時以完全相同的字串比對，故內容檔不可改字（class-id-baseline.json 把關）。
 function syncClassFeatureAttackNotes() {
-  const divineStrikeId = "cleric-blessed-strikes-divine-strike";
-  const primalStrikeId = "druid-elemental-fury-primal-strike";
-  const divineStrike = isAdvancedClassFeatureControlAvailable(divineStrikeId)
-    && Boolean(document.getElementById(divineStrikeId)?.checked);
-  const primalStrike = isAdvancedClassFeatureControlAvailable(primalStrikeId)
-    && Boolean(document.getElementById(primalStrikeId)?.checked);
+  const notes = getClassOptionRules().attackNotes.map(({ id, note }) => ({
+    note,
+    enabled: isClassOptionControlAvailable(id) && Boolean(document.getElementById(id)?.checked)
+  }));
   ["main", "off"].forEach(hand => {
     const noteInput = document.getElementById(`atk-${hand}-note`);
     const applicable = isApplicableWeaponAttack(hand);
-    setManagedAttackNoteFragment(noteInput, CLERIC_DIVINE_STRIKE_ATTACK_NOTE, divineStrike && applicable);
-    setManagedAttackNoteFragment(noteInput, DRUID_PRIMAL_STRIKE_ATTACK_NOTE, primalStrike && applicable);
+    notes.forEach(({ note, enabled }) => setManagedAttackNoteFragment(noteInput, note, enabled && applicable));
   });
 }
 
 function syncAdvancedClassFeatureControls() {
-  Object.entries(ADVANCED_CLASS_FEATURE_AVAILABILITY).forEach(([id]) => {
+  const { availability, groups } = getClassOptionRules();
+  availability.forEach((requirement, id) => {
     const control = document.getElementById(id);
     if (!control) return;
-    const available = isAdvancedClassFeatureControlAvailable(id);
+    const available = isClassOptionControlAvailable(id);
     control.disabled = !available;
     control.setAttribute("aria-disabled", String(!available));
     control.closest(".feature-choice-card, .class-feature-option")?.classList.toggle("is-unavailable", !available);
     if (!available && control.type === "checkbox") control.checked = false;
     if (!available && control instanceof HTMLSelectElement) control.value = "";
   });
-  ADVANCED_CLASS_FEATURE_CHOICE_GROUPS.forEach(group => {
-    const checked = group.map(id => document.getElementById(id)).filter(input => input?.checked);
+  // 同一選擇組（changeOn／choiceGroup）只保留第一個勾選，修正舊資料的重複勾選。
+  groups.filter(group => group.choiceGroup).forEach(group => {
+    const checked = group.ids.map(id => document.getElementById(id)).filter(input => input?.checked);
     checked.slice(1).forEach(input => { input.checked = false; });
   });
   const output = document.getElementById("classFeatures");
@@ -201,58 +203,30 @@ function syncAdvancedClassFeatureControls() {
   syncClassFeatureAttackNotes();
 }
 
-const eldritchInvocations = [
-  { name: "刃之魔契" },
-  { name: "鏈之魔契", spellId: "find-familiar", spellUse: "at-will" },
-  { name: "書之魔契" },
-  { name: "幽影護甲", spellId: "mage-armor", spellUse: "at-will" },
-  { name: "魔能意志" },
-  { name: "邪魔活力", spellId: "false-life", spellUse: "at-will", minWarlockLevel: 2 },
-  { name: "千面之臉", spellId: "disguise-self", spellUse: "at-will", minWarlockLevel: 2 },
-  { name: "幻象迷蹤", spellId: "silent-image", spellUse: "at-will", minWarlockLevel: 2 },
-  { name: "超凡跳躍", spellId: "jump", spellUse: "at-will", minWarlockLevel: 2 },
-  { name: "魔鬼視界", minWarlockLevel: 2 },
-  { name: "原初之一教習", repeatable: true, minWarlockLevel: 2 },
-  { name: "苦痛魔爆", repeatable: true, minWarlockLevel: 2 },
-  { name: "魔能長槍", repeatable: true, minWarlockLevel: 2 },
-  { name: "斥力魔爆", repeatable: true, minWarlockLevel: 2 },
-  { name: "星移步法", spellId: "levitate", spellUse: "at-will", minWarlockLevel: 5 },
-  { name: "萬形之主", spellId: "alter-self", spellUse: "at-will", minWarlockLevel: 5 },
-  { name: "融身入影", spellId: "invisibility", spellUse: "at-will", minWarlockLevel: 5 },
-  { name: "深海饋贈", spellId: "water-breathing", spellUse: "once", minWarlockLevel: 5 },
-  { name: "共視感官", minWarlockLevel: 5 },
-  { name: "魔能斬擊", minWarlockLevel: 5 },
-  { name: "饑渴魔刃", minWarlockLevel: 5 },
-  { name: "鏈主賦能", minWarlockLevel: 5 },
-  { name: "墳墓低語", spellId: "speak-with-dead", spellUse: "at-will", minWarlockLevel: 7 }
-];
+// 魔能祈喚與超魔法選項：契術師、術士內容檔的附錄小節（classRules 的 appendix，kind 為 invocations／metamagic）。
+// 勾選框 ID 依小節順序編號並寫進存檔，故內容檔只能在最後新增小節。本檔早於產生檔載入，
+// 由 index.html 初始化時呼叫 loadEldritchInvocationOptions()／loadMetamagicOptions() 填入同一個陣列。
+const eldritchInvocations = [];
+const metamagicOptions = [];
 
-function fillEldritchInvocationTextsFromClassFeatures() {
-  const warlockRaw = classFeatures?.warlock || "";
-  const optionIndex = findNthIndex(warlockRaw, "魔能祈喚選項", 2);
-  if (optionIndex === -1) return;
+// text 為「標題中名稱之後的文字</h4>小節內文 HTML」，由 splitFeatureChoiceText() 拆成標題補充與內文。
+function getClassAppendixOptions(className, kind) {
+  const rules = typeof classRules === "undefined" ? null : classRules[className];
+  const appendix = (rules?.appendix || []).find(item => item.kind === kind);
+  return (appendix?.parts || []).map(part => ({
+    part,
+    text: `${part.prerequisite ? `（先決條件：${escapeHtml(part.prerequisite)}）` : escapeHtml(part.detail || "")}</h4>${part.html || ""}`
+  }));
+}
 
-  const invocationBlock = warlockRaw.slice(optionIndex);
-
-  eldritchInvocations.forEach((invocation, index) => {
-    const start = invocationBlock.indexOf(invocation.name);
-    if (start === -1) {
-      invocation.text = invocation.text || "";
-      return;
-    }
-
-    const endCandidates = [];
-    for (let i = index + 1; i < eldritchInvocations.length; i++) {
-      const nextName = eldritchInvocations[i].name;
-      const nextPos = invocationBlock.indexOf(nextName, start + invocation.name.length);
-      if (nextPos !== -1) endCandidates.push(nextPos);
-    }
-
-    const end = endCandidates.length ? Math.min(...endCandidates) : invocationBlock.length;
-    invocation.text = getNormalizedInvocationText(
-      invocationBlock.slice(start + invocation.name.length, end)
-    );
-  });
+function loadEldritchInvocationOptions() {
+  eldritchInvocations.splice(0, eldritchInvocations.length, ...getClassAppendixOptions("warlock", "invocations").map(({ part, text }) => ({
+    name: part.name,
+    text,
+    ...(part.spell ? { spellId: part.spell.id, spellUse: part.spell.use } : {}),
+    ...(part.repeatable ? { repeatable: true } : {}),
+    ...(part.level > 1 ? { minWarlockLevel: part.level } : {})
+  })));
 }
 
 function getInvocationCheckboxId(index, slot = 1) {
@@ -566,49 +540,12 @@ function syncWarlockInvocationSelectionLimit() {
   return enforceCheckboxSelectionLimit(inputs, getWarlockInvocationSelectionLimit(), null, "魔能祈喚勾選數量超過目前等級上限。", false);
 }
 
-const metamagicOptions = [
-  { name: "謹慎法術" },
-  { name: "遠程法術" },
-  { name: "強效法術" },
-  { name: "延效法術" },
-  { name: "升階法術" },
-  { name: "瞬發法術" },
-  { name: "追蹤法術" },
-  { name: "精妙法術" },
-  { name: "轉化法術" },
-  { name: "孿生法術" }
-];
-
 function getMetamagicCheckboxId(index) {
   return `metamagic-option-${index + 1}`;
 }
 
-function fillMetamagicTextsFromClassFeatures() {
-  const sorcererRaw = classFeatures?.sorcerer || "";
-  const blockStart = sorcererRaw.lastIndexOf("超魔法選項");
-  if (blockStart === -1) return;
-
-  const metamagicBlock = sorcererRaw.slice(blockStart);
-
-  metamagicOptions.forEach((option, index) => {
-    const start = metamagicBlock.indexOf(option.name);
-    if (start === -1) {
-      option.text = option.text || "";
-      return;
-    }
-
-    const endCandidates = [];
-    for (let i = index + 1; i < metamagicOptions.length; i++) {
-      const nextName = metamagicOptions[i].name;
-      const nextPos = metamagicBlock.indexOf(nextName, start + option.name.length);
-      if (nextPos !== -1) endCandidates.push(nextPos);
-    }
-
-    const end = endCandidates.length ? Math.min(...endCandidates) : metamagicBlock.length;
-    option.text = getNormalizedInvocationText(
-      metamagicBlock.slice(start + option.name.length, end)
-    );
-  });
+function loadMetamagicOptions() {
+  metamagicOptions.splice(0, metamagicOptions.length, ...getClassAppendixOptions("sorcerer", "metamagic").map(({ part, text }) => ({ name: part.name, text })));
 }
 
 function getCheckedMetamagicNames() {
@@ -1410,9 +1347,11 @@ function renderClassFeaturePanels(html, output, creationOutput) {
   creationOutput.replaceChildren(creation || document.createTextNode("無資料"));
 }
 
+// 職業能力頁籤：只列到目前等級；做成選擇卡片的附錄（超魔法、魔能祈喚，data-class-appendix）另在專屬區塊顯示。
 function getClassFeatureHtmlBeforeLevel(raw, nextLevel) {
   const template = document.createElement("template");
   template.innerHTML = raw;
+  template.content.querySelectorAll("[data-class-appendix]").forEach(section => section.remove());
   template.content.querySelectorAll("section[data-feature-level]").forEach(section => {
     if (Number(section.dataset.featureLevel) >= nextLevel) section.remove();
   });
@@ -1446,24 +1385,9 @@ function updateClassFeature() {
     return;
   }
 
-  let raw = classFeatures[selectedClass];
-  let metamagicRaw = "";
-  if (selectedClass === "warlock") {
-    const optionIndex = findNthIndex(raw, "魔能祈喚選項", 2);
-    if (optionIndex !== -1) raw = raw.slice(0, optionIndex).trim();
-  }
-  if (selectedClass === "sorcerer") {
-    const metamagicTitle = "超魔法選項";
-    const metamagicStartIndex = raw.lastIndexOf(metamagicTitle);
-    if (metamagicStartIndex !== -1) {
-      metamagicRaw = raw.slice(metamagicStartIndex).trim();
-      raw = raw.slice(0, metamagicStartIndex).trim();
-    }
-  }
-
-  const visibleHtml = level && !isNaN(level)
-    ? getClassFeatureHtmlBeforeLevel(raw, parseInt(level) + 1)
-    : raw;
+  const raw = classFeatures[selectedClass];
+  const hasMetamagic = getClassAppendixOptions(selectedClass, "metamagic").length > 0;
+  const visibleHtml = getClassFeatureHtmlBeforeLevel(raw, level && !isNaN(level) ? parseInt(level) + 1 : Infinity);
   renderClassFeaturePanels(highlightSpellNamesInClassFeature(visibleHtml), output, creationOutput);
 
   renderBardMagicalDiscoveryControls();
@@ -1480,7 +1404,7 @@ function updateClassFeature() {
   syncLevelUpCantripChoice();
 
   // 等級 2 前仍列出超魔法供查閱，syncMetamagicSelectionLimit 會停用勾選。
-  if (selectedClass === "sorcerer" && metamagicRaw) {
+  if (hasMetamagic) {
     metamagicSection.style.display = "block";
     renderMetamagicOptions();
     syncMetamagicSelectionLimit();
@@ -1495,11 +1419,6 @@ function updateClassFeature() {
   updateClassFeatureChoiceReminder();
   // 職業詳情現在屬於這組職業與等級；下一次切換由此擷取記憶。
   syncClassOptionOwner();
-}
-
-function enforceFightingStyleChoiceExclusivity(changedId) {
-  const pair = FIGHTING_STYLE_TYPE_CHOICE_GROUPS.find(ids => ids.includes(changedId));
-  if (pair) enforceExclusiveCheckboxChoice(pair, changedId);
 }
 
 
@@ -1979,32 +1898,18 @@ function getClassFeatureChoiceIssues() {
   }
   if (!selectedClass || !Number.isInteger(selectedLevel)) return issues;
 
-  const checkboxGroupLabels = {
-    "cleric-guardian": "牧師神聖使命",
-    "druid-shaman": "德魯伊原初使命",
-    "paladin-fighting-style": "聖騎士戰鬥風格類型",
-    "ranger-fighting-style": "遊俠戰鬥風格類型",
-    "ranger-hunters-prey-colossus-slayer": "遊俠狩獵目標",
-    "cleric-blessed-strikes-divine-strike": "牧師神佑打擊",
-    "druid-elemental-fury-primal-strike": "德魯伊元素狂怒",
-    "ranger-defensive-tactics-escape-the-horde": "遊俠防守戰術"
-  };
-  const checkboxGroups = [
-    CLERIC_MISSION_CHOICE_IDS,
-    DRUID_MISSION_CHOICE_IDS,
-    ...FIGHTING_STYLE_TYPE_CHOICE_GROUPS,
-    ...ADVANCED_CLASS_FEATURE_CHOICE_GROUPS
-  ];
-  checkboxGroups.forEach(ids => {
-    const availability = ADVANCED_CLASS_FEATURE_AVAILABILITY[ids[0]];
-    if (!availability || availability.className !== selectedClass || selectedLevel < availability.minimumLevel) return;
-    if (isManualFeatManagementEnabled() && FIGHTING_STYLE_TYPE_CHOICE_GROUPS.includes(ids)) return;
-    if (ids.some(id => document.getElementById(id)?.checked)) return;
+  // 職業選項：內容檔每個有 options 的能力是一組，達到能力等級仍未勾選時提醒；
+  // 給予專長選擇的選項（featChoice，例如戰鬥風格類型）在自行管理專長時不提醒。
+  const { groups: optionGroups, selects: optionSelects } = getClassOptionRules();
+  optionGroups.forEach(group => {
+    if (group.className !== selectedClass || selectedLevel < group.minimumLevel) return;
+    if (isManualFeatManagementEnabled() && group.featChoice) return;
+    if (group.ids.some(id => document.getElementById(id)?.checked)) return;
     pushGeneral({
-      message: `${checkboxGroupLabels[ids[0]] || "職業選項"}尚未選擇。`,
+      message: `${group.label}尚未選擇。`,
       tab: "basic",
-      selector: ids.map(id => `#${id}`).join(", "),
-      focusSelector: `#${ids[0]}`
+      selector: group.ids.map(id => `#${id}`).join(", "),
+      focusSelector: `#${group.ids[0]}`
     });
   });
 
@@ -2017,15 +1922,15 @@ function getClassFeatureChoiceIssues() {
     });
   }
 
-  const affinityId = "sorcerer-elemental-affinity-damage-type";
-  if (isAdvancedClassFeatureControlAvailable(affinityId) && !(document.getElementById(affinityId)?.value || "").trim()) {
+  optionSelects.forEach(({ id, label }) => {
+    if (!isClassOptionControlAvailable(id) || (document.getElementById(id)?.value || "").trim()) return;
     pushGeneral({
-      message: "術士元素親和傷害類型尚未選擇。",
+      message: `${label}尚未選擇。`,
       tab: "basic",
-      selector: `#${affinityId}`,
-      focusSelector: `#${affinityId}`
+      selector: `#${id}`,
+      focusSelector: `#${id}`
     });
-  }
+  });
 
   if (!isManualFeatManagementEnabled()) {
     getFeatChoiceSpecs()

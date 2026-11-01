@@ -244,8 +244,3 @@ const FEAT_RULES = {
   "雙武器戰鬥": { type: "style" }
 };
 
-const CLASS_FEAT_LEVELS = {
-  barbarian: [4, 8], bard: [4, 8], cleric: [4, 8], druid: [4, 8],
-  fighter: [4, 6, 8], monk: [4, 8], paladin: [4, 8], ranger: [4, 8],
-  rogue: [4, 8], sorcerer: [4, 8], warlock: [4, 8], wizard: [4, 8]
-};

@@ -45,6 +45,8 @@ progression:
     label: ４環
     byLevel: {1: null, 7: 1, 8: 2}
 values:
+  naturalRecoveryBudget: ceil({level} / 2)
+  wildShapeUsesText: {formula: "{wildShapeUses}", format: "{} 次"}
   wildShapeHours:
     formula: floor({level} / 2)
     format: （目前 {} 小時）
@@ -55,6 +57,7 @@ features:
   - id: druid-druidic
     level: 1
     name: 德魯伊語
+    pdfMerge: true
     spells:
       - id: speak-with-animals
     text: |
@@ -83,6 +86,7 @@ features:
   - id: druid-spellcasting
     level: 1
     name: 施法
+    pdfMerge: true
     text: |
       你使用**感知**施展「德魯伊法術列表」中的法術，並可用德魯伊法器作為施法法器。
 
@@ -111,7 +115,7 @@ features:
 
       - **持續時間：**最多為德魯伊等級的一半（無條件捨去）小時{wildShapeHours|}。
       - **提前結束：**再次使用荒野形態、陷入[[失能]]或死亡時結束；也可用附贈主動解除。
-      - **使用次數：**{wildShapeUses|起始 2 次，之後依「德魯伊特性」表增加}。
+      - **使用次數：**{wildShapeUsesText|起始 2 次，之後依「德魯伊特性」表增加}。
       - **恢復時機：****短休後恢復 1 次，長休後全部恢復**。
 
       #### 變形規則
@@ -126,7 +130,7 @@ features:
 
       - **持續時間：**最多為德魯伊等級的一半（無條件捨去）小時{wildShapeHours|}。
       - **提前結束：**再次使用荒野形態、陷入[[失能]]或死亡時結束；也可用附贈主動解除。
-      - **使用次數：**{wildShapeUses|起始 2 次，之後依「德魯伊特性」表增加}。
+      - **使用次數：**{wildShapeUsesText|起始 2 次，之後依「德魯伊特性」表增加}。
       - **恢復時機：****短休後恢復 1 次，長休後全部恢復**。
 
       #### 野獸形態
@@ -184,6 +188,7 @@ features:
   - id: druid-ability-score-improvement-4
     level: 4
     name: 屬性值提升
+    feat: level
     text: |
       選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。
     afterFeatChoice: |
@@ -193,8 +198,10 @@ features:
     name: 野性復甦
     resource:
       key: druid-wild-resurgence-spell-slot
+      label: 野性復甦（法術位）
       uses: 1
       recover: {long: all}
+      note: 無需動作；消耗 1 次荒野形態，恢復 1 個 1 環法術位。每次長休前只能使用 1 次；完成長休後恢復。
     text: |
       你可在荒野形態與法術位之間轉換，以下兩種用法都**不需動作**。
 
@@ -221,5 +228,6 @@ features:
   - id: druid-ability-score-improvement-8
     level: 8
     name: 屬性值提升
+    feat: level
     text: |
       選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。

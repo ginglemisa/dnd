@@ -41,10 +41,13 @@ progression:
   spellSlots4:
     label: ４環
     byLevel: {1: null, 7: 1, 8: 2}
+values:
+  arcaneRecoveryBudget: ceil({level} / 2)
 features:
   - id: wizard-spellcasting
     level: 1
     name: 施法
+    pdfMerge: true
     behavior: wizard-spellbook-recommendations
     text: |
       你使用**智力**施展「法師法術列表」中的法術，並以奧術法器或法術書作為施法法器。
@@ -69,6 +72,8 @@ features:
   - id: wizard-ritual-adept
     level: 1
     name: 儀式精通
+    hint: {panels: [spells]}
+    pdfMerge: true
     text: |
       法術書中有「儀式」標籤的法術，**即使未準備，也能以儀式施放**，但施法時必須閱讀法術書。
   - id: wizard-arcane-recovery
@@ -78,6 +83,8 @@ features:
       key: wizard-arcane-recovery
       uses: 1
       recover: {long: all}
+      restChoice: {when: shortRest, restores: spellSlots, budget: arcaneRecoveryBudget, maxSlotLevel: 5}
+      note: 完成短休時，恢復環階總和最多 {arcaneRecoveryBudget} 的已消耗法術位（法師等級一半，進位；單一法術位最高 5 環）。每次長休前只能使用 1 次；完成長休後恢復。
     text: |
       完成短休時，可恢復部分已消耗的法術位。使用後，須完成長休才能再次使用。
 
@@ -99,6 +106,7 @@ features:
   - id: wizard-ability-score-improvement-4
     level: 4
     name: 屬性值提升
+    feat: level
     text: |
       選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。
     afterFeatChoice: |
@@ -114,5 +122,6 @@ features:
   - id: wizard-ability-score-improvement-8
     level: 8
     name: 屬性值提升
+    feat: level
     text: |
       選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。
