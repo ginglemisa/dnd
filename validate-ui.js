@@ -1506,7 +1506,7 @@ async function verifyCharacterFeatures(browser, url) {
     await page.keyboard.press("Enter");
     const modal = page.locator("#character-features-modal");
     const tabs = modal.locator('[role="tab"]:visible');
-    assert.deepEqual(await tabs.allTextContents(), ["表格", "職業", "背景", "種族"]);
+    assert.deepEqual(await tabs.allTextContents(), ["職業", "特性", "背景", "種族"]);
     assert.equal(await page.evaluate(() => scrollY), scroll, "opening details must not jump down the sheet");
     assert.equal(await modal.evaluate(el => {
       const body = el.querySelector(".app-dialog__body");
@@ -1600,7 +1600,7 @@ async function verifyCharacterFeatures(browser, url) {
     await page.locator("#class").selectOption("sorcerer");
     await page.locator("#level").selectOption("1");
     await opener.click();
-    assert.deepEqual(await tabs.allTextContents(), ["表格", "職業", "超魔", "背景", "種族"], "sorcerer metamagic tab is readable before level 2");
+    assert.deepEqual(await tabs.allTextContents(), ["職業", "特性", "超魔", "背景", "種族"], "sorcerer metamagic tab is readable before level 2");
     await modal.getByRole("tab", { name: "超魔", exact: true }).click();
     assert.equal(await modal.locator("#character-features-picker").isVisible(), false, "picker only accompanies class, table, background and race tabs");
     const earlyMetamagic = modal.locator("#metamagicOptions input[data-metamagic-name]");
@@ -1609,19 +1609,19 @@ async function verifyCharacterFeatures(browser, url) {
     await page.keyboard.press("Escape");
     await page.locator("#level").selectOption("");
     await opener.click();
-    assert.deepEqual(await tabs.allTextContents(), ["表格", "職業", "超魔", "背景", "種族"], "sorcerer metamagic tab is readable without a level");
+    assert.deepEqual(await tabs.allTextContents(), ["職業", "特性", "超魔", "背景", "種族"], "sorcerer metamagic tab is readable without a level");
     assert.equal(await earlyMetamagic.evaluateAll(inputs => inputs.length > 0 && inputs.every(input => input.disabled)), true);
     await page.keyboard.press("Escape");
     await page.locator("#class").selectOption("warlock");
     await opener.click();
-    assert.deepEqual(await tabs.allTextContents(), ["表格", "職業", "魔祈", "背景", "種族"], "warlock invocation tab is readable without a level");
+    assert.deepEqual(await tabs.allTextContents(), ["職業", "特性", "魔祈", "背景", "種族"], "warlock invocation tab is readable without a level");
     const earlyInvocations = modal.locator("#eldritch-invocations-output input[data-invocation-name]");
     assert.equal(await earlyInvocations.evaluateAll(inputs => inputs.length > 0 && inputs.every(input => input.disabled && !input.checked)), true, "invocations stay disabled before level 1");
     await page.keyboard.press("Escape");
     await page.locator("#class").selectOption("sorcerer");
     await page.locator("#level").selectOption("2");
     await opener.click();
-    assert.deepEqual(await tabs.allTextContents(), ["表格", "職業", "超魔", "背景", "種族"]);
+    assert.deepEqual(await tabs.allTextContents(), ["職業", "特性", "超魔", "背景", "種族"]);
     await modal.getByRole("tab", { name: "超魔", exact: true }).click();
     const metamagic = modal.locator("#metamagicOptions input[data-metamagic-name]").first();
     await metamagic.check();
@@ -1660,7 +1660,7 @@ async function verifyCharacterFeatures(browser, url) {
       .find(entry => entry.spellId === "eldritch-blast")?.spellClass), "warlock", "automatic preparation uses the character class");
     await page.evaluate(() => showTab("basic"));
     await opener.click();
-    assert.deepEqual(await tabs.allTextContents(), ["表格", "職業", "魔祈", "背景", "種族"]);
+    assert.deepEqual(await tabs.allTextContents(), ["職業", "特性", "魔祈", "背景", "種族"]);
     await modal.getByRole("tab", { name: "魔祈", exact: true }).click();
     assert.equal(await invocation("邪魔活力").isEnabled(), true, "level 2 invocation unlocks at level 2");
     assert.equal(await invocation("星移步法").isDisabled(), true, "level 5 invocation remains unavailable at level 2");
@@ -1691,7 +1691,7 @@ async function verifyCharacterFeatures(browser, url) {
     assert.equal(await modal.isVisible(), true, "canceling Tome selection keeps ability details open");
     for (const width of [1280, 320]) {
       await page.setViewportSize({ width, height: 900 });
-      for (const tab of ["表格", "職業", "魔祈", "背景", "種族"]) {
+      for (const tab of ["職業", "特性", "魔祈", "背景", "種族"]) {
         await modal.getByRole("tab", { name: tab, exact: true }).click();
         assert.equal(await modal.evaluate(el => {
           const surface = el.querySelector(".app-dialog__surface").getBoundingClientRect();
@@ -2364,11 +2364,11 @@ async function verifyFeatureReferences(browser, url) {
     for (const width of [1280, 320]) {
       await page.setViewportSize({ width, height: 900 });
       await opener.click();
-      await modal.getByRole("tab", { name: "表格", exact: true }).click();
+      await modal.getByRole("tab", { name: "職業", exact: true }).click();
       await modal.locator("#classCreationInfo .skill-tip").first().click();
       await assertOnTop(page.locator("#skillPopup"));
       await page.locator("#skillPopup .close").click();
-      await modal.getByRole("tab", { name: "職業", exact: true }).click();
+      await modal.getByRole("tab", { name: "特性", exact: true }).click();
       for (const [trigger, popup] of [[".skill-tip", "#skillPopup"], ['.beast-tip[data-beast="wolf"]', "#beastPopup"]]) {
         await modal.locator(`#classFeatures ${trigger}`).first().click();
         const reference = page.locator(popup);
@@ -2409,7 +2409,7 @@ async function verifyFeatureReferences(browser, url) {
       await page.setViewportSize({ width, height: 900 });
       await page.evaluate(() => applyStateObject({ class: "rogue", level: "3", race: "elf" }));
       await opener.click();
-      await modal.getByRole("tab", { name: "職業", exact: true }).click();
+      await modal.getByRole("tab", { name: "特性", exact: true }).click();
       for (const [term, expected] of [["優勢", "取較高的結果"], ["劣勢", "取較低的結果"], ["巧手", "扒竊"]]) {
         const trigger = modal.locator(`#classFeatures button[data-skill="${term}"]`).first();
         await trigger.focus();
@@ -2434,7 +2434,7 @@ async function verifyFeatureReferences(browser, url) {
       assert.equal(await page.locator("#skillPopup").isVisible(), false);
       await page.evaluate(() => applyStateObject({ class: "barbarian", level: "2", race: "dragonborn" }));
       await opener.click();
-      for (const [tab, container] of [["職業", "#classFeatures"], ["種族", "#raceFeatures"]]) {
+      for (const [tab, container] of [["特性", "#classFeatures"], ["種族", "#raceFeatures"]]) {
         await modal.getByRole("tab", { name: tab, exact: true }).click();
         const trigger = modal.locator(`${container} button[data-skill="抗性"]`).first();
         await trigger.focus();
@@ -2451,7 +2451,7 @@ async function verifyFeatureReferences(browser, url) {
       await page.setViewportSize({ width, height: 600 });
       await page.evaluate(() => applyStateObject({ class: "barbarian", level: "6", race: "halfling" }));
       await opener.click();
-      for (const [tab, key] of [["職業", "incapacitated"], ["職業", "charmed"], ["職業", "frightened"], ["種族", "frightened"]]) {
+      for (const [tab, key] of [["特性", "incapacitated"], ["特性", "charmed"], ["特性", "frightened"], ["種族", "frightened"]]) {
         await modal.getByRole("tab", { name: tab, exact: true }).click();
         const trigger = modal.locator(`button.condition-tip[data-condition="${key}"]:visible`).first();
         await trigger.focus();
@@ -2470,7 +2470,7 @@ async function verifyFeatureReferences(browser, url) {
         await popup.getByRole("button", { name: "關閉說明" }).click();
         assert.equal(await trigger.evaluate(el => el === document.activeElement), true);
       }
-      await modal.getByRole("tab", { name: "職業", exact: true }).click();
+      await modal.getByRole("tab", { name: "特性", exact: true }).click();
       await modal.locator("#feat-choice-barbarian-level-4").selectOption("擒抱者");
       const featView = modal.locator('[data-feat-choice="barbarian-level-4"] .feat-choice-view');
       await featView.click();
