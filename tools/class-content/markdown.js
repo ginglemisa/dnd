@@ -1,4 +1,4 @@
-// 職業內容檔的文字格式：標準 Markdown 的小子集，加上 [[提示]] 與 {數值|頁面文字} 兩種標記。
+// 職業內容檔的文字格式：標準 Markdown 的小子集，加上 [[提示]]、{數值|頁面文字} 與 [文字]{網站功能標記} 三種標記。
 // 支援：段落、「- 」清單、行尾「\」強制換行、**粗體**、「#### 標題」小節（到下一個 #### 或文字結束）、GFM 表格、「---」分隔線。
 // 內文出現「<」或其他不支援的寫法一律報錯，不靜默輸出。
 "use strict";
@@ -6,6 +6,11 @@
 const { loadTipTables } = require("./legacy");
 
 class ContentError extends Error {}
+
+// [文字]{名稱} 可用的網站功能標記：輸出 <span data-名稱>文字</span>，職業頁與跑團版相同。只列網站程式會讀取的標記，
+// 不在清單內的名稱一律報錯。
+// - wizard-spellbook-recommendations：法師法術書的推薦法術，sheet-spells.js 只對其中的法術提供「寫入法術書」。
+const MARKS = new Set(["wizard-spellbook-recommendations"]);
 
 function escapeHtml(text) {
   return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -20,7 +25,7 @@ function renderInline(source, options, where) {
   const { skills, conditions, beasts } = loadTipTables();
   let html = "";
   let index = 0;
-  const pattern = /\*\*(.+?)\*\*|\[\[([^\]|]+)\]\]|\{([A-Za-z][A-Za-z0-9]*)\|([^{}]*)\}/g;
+  const pattern = /\*\*(.+?)\*\*|\[\[([^\]|]+)\]\]|\{([A-Za-z][A-Za-z0-9]*)\|([^{}]*)\}|\[([^[\]]+)\]\{([a-z][a-z0-9-]*)\}/g;
   for (const match of text.matchAll(pattern)) {
     html += escapeHtml(text.slice(index, match.index));
     index = match.index + match[0].length;
@@ -37,6 +42,9 @@ function renderInline(source, options, where) {
       else if (skills.has(name)) html += `<span class="skill-tip" data-skill="${escapeHtml(name)}">${escapeHtml(name)}</span>`;
       else if (beasts.has(name)) html += `<span class="beast-tip" data-beast="${beasts.get(name)}">${escapeHtml(name)}</span>`;
       else throw new ContentError(`${where}：[[${name}]] 不是已知的技能、規則、狀態或野獸名稱`);
+    } else if (match[5] !== undefined) {
+      if (!MARKS.has(match[6])) throw new ContentError(`${where}：[…]{${match[6]}} 不是網站功能標記（可用：${[...MARKS].join("、")}）`);
+      html += `<span data-${match[6]}>${renderInline(match[5], options, where)}</span>`;
     } else {
       // 頁面文字可含粗體（{名稱|**粗體**其他文字}）；不可再含數值標記（[^{}] 已排除）。
       const key = escapeHtml(options.resolveValue(match[3], where));
