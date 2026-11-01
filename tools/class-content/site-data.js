@@ -58,8 +58,8 @@ function renderSiteData(classes) {
   const source = `// ${OUTPUT_NAME}：由 npm run build 從 content/srd 的職業內容檔產生，請勿手動修改。
 // classFeatures：各職業的職業頁 HTML（data-class-feature-panel="creation" 為創角頁籤，"class" 為各等級能力；
 // 子職能力帶 data-subclass，網站只顯示目前選擇的子職）。
-// classTabletopText：能力 ID → 行內 HTML。tabletop 取代該段落的跑團動作說明，summaries 取代跑團總覽的一句話；
-// 沒有寫的能力由 action-panel.js 改讀 classFeatures 的同一段落。
+// classTabletopText：段落 ID → 跑團版 HTML（action-panel.js 讀取，data-tabletop-value 由網站換成目前數值）。
+// tabletop 是每個段落的跑團動作說明，summaries 是跑團總覽與 tabletop 不同時的版本。
 // classRules：各職業的機制資料（內容檔去掉說明文字），character-rules.js 等以此計算資源、法術位、數值、選項與動作。
 const classFeatures = {
 ${entries.features}

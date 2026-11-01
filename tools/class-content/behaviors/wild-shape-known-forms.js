@@ -32,10 +32,11 @@ function beastListHtml() {
 }
 
 module.exports = {
-  // 能力 text 的 HTML → 已知形態區塊改回舊版標記並接上野獸清單。
-  decorateText(html, where) {
+  // 能力 text 的 HTML → 已知形態區塊改回舊版標記並接上野獸清單；跑團版（view）不含已知形態區塊。
+  decorateText(html, where, view) {
     if (!KNOWN_FORMS.test(html)) throw new ContentError(`${where}：behaviors/wild-shape-known-forms.js 找不到「#### 已知形態」小節（說明段落、推薦段落、規則清單）與緊接其後的小節`);
-    return html.replace(KNOWN_FORMS, (all, intro, recommendation, rules) => '<section class="wild-shape-known-forms" aria-labelledby="wild-shape-known-forms-heading" data-tabletop-hide>'
+    if (view) return html.replace(KNOWN_FORMS, '<div class="class-rule-subsection druid-rule-subsection">');
+    return html.replace(KNOWN_FORMS, (all, intro, recommendation, rules) => '<section class="wild-shape-known-forms" aria-labelledby="wild-shape-known-forms-heading">'
       + '<h4 id="wild-shape-known-forms-heading">已知形態</h4>'
       + `<p class="wild-shape-known-forms__intro">${intro}</p>`
       + `<p class="wild-shape-known-forms__recommendation">${recommendation}</p>`

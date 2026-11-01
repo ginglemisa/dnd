@@ -11,7 +11,9 @@ function escapeHtml(text) {
   return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-// options.resolveValue(token) 回傳 data-tabletop-value 的 key；查不到時丟出錯誤。
+// options.view：省略時輸出職業頁 HTML；"tabletop"（跑團動作說明）或 "overview"（跑團總覽）時輸出跑團版。
+// 數值標記 {名稱|頁面文字} 在職業頁只輸出頁面文字，跑團版包成 data-tabletop-value（網站依等級與屬性換成算出的數值）；
+// 頁面文字留空（{名稱|}）＝只在跑團出現。options.resolveValue(token) 回傳數值名稱；查不到時丟出錯誤。
 function renderInline(source, options, where) {
   const text = String(source);
   if (text.includes("<")) throw new ContentError(`${where}：內文不可使用 HTML（出現「<」）`);
@@ -25,7 +27,8 @@ function renderInline(source, options, where) {
     // 粗體內只有一個數值標記（**{名稱|文字}**）時，數值標記直接加在 <strong> 上。
     const boldValue = match[1]?.match(/^\{([A-Za-z][A-Za-z0-9]*)\|([^{}]*)\}$/);
     if (boldValue) {
-      html += `<strong data-tabletop-value="${escapeHtml(options.resolveValue(boldValue[1], where))}">${escapeHtml(boldValue[2])}</strong>`;
+      const key = escapeHtml(options.resolveValue(boldValue[1], where));
+      html += `<strong${options.view ? ` data-tabletop-value="${key}"` : ""}>${escapeHtml(boldValue[2])}</strong>`;
     } else if (match[1] !== undefined) {
       html += `<strong>${renderInline(match[1], options, where)}</strong>`;
     } else if (match[2] !== undefined) {
@@ -36,10 +39,9 @@ function renderInline(source, options, where) {
       else throw new ContentError(`${where}：[[${name}]] 不是已知的技能、規則、狀態或野獸名稱`);
     } else {
       // 頁面文字可含粗體（{名稱|**粗體**其他文字}）；不可再含數值標記（[^{}] 已排除）。
-      // 頁面文字留空（{名稱|}）＝只在跑團出現：輸出成跑團限定的數值 span。
       const key = escapeHtml(options.resolveValue(match[3], where));
-      if (!match[4]) html += `<span data-tabletop-only hidden data-tabletop-value="${key}"></span>`;
-      else html += `<span data-tabletop-value="${key}">${renderInline(match[4], options, where)}</span>`;
+      const text = match[4] ? renderInline(match[4], options, where) : "";
+      html += options.view ? `<span data-tabletop-value="${key}">${text}</span>` : text;
     }
   }
   const rest = text.slice(index);
@@ -143,6 +145,7 @@ function renderTable(block, frame, options, where, attributes) {
 // options.tablesOptional：文字可以完全沒有表格（tabletop 省略只在職業頁顯示的表格時）。
 // options.blockNewlines：區塊、清單項目與小節內的標籤之間換行（超魔法附錄沿用舊版排版，跑團說明依換行分段）。
 // options.plainHeadings：「#### 」只輸出 <h4>，不另包小節（文字本身已在小節內，例如附錄小節「書之魔契」的「戲法與儀式」）。
+// options.view（見 renderInline）：跑團版不輸出表格（跑團說明不顯示表格）。
 // 分隔線「---」輸出 <hr class="class-rule-divider">（樣式由 styles.css 設定，不輸出行內 style）。
 function renderMarkdown(source, options, where) {
   const blocks = parseBlocks(source, where);
@@ -153,16 +156,24 @@ function renderMarkdown(source, options, where) {
   if (options.tables && tableCount !== options.tables.length && !(options.tablesOptional && !tableCount)) throw new ContentError(`${where}：文字有 ${tableCount} 個表格，tables 列了 ${options.tables.length} 個`);
   let tableIndex = 0;
   // 段落只有一個跑團限定數值 {名稱|} 時，整段只在跑團顯示，職業頁不留空白段落。
-  const tabletopOnly = block => block.lines.length === 1 && /^\{[A-Za-z][A-Za-z0-9]*\|\}$/.test(block.lines[0]) ? " data-tabletop-only hidden" : "";
+  const tabletopOnly = block => block.lines.length === 1 && /^\{[A-Za-z][A-Za-z0-9]*\|\}$/.test(block.lines[0]);
+  const renderTableBlock = (block, attributes) => {
+    const html = renderTable(block, options.tables[tableIndex++], options, where, attributes);
+    return options.view ? "" : html;
+  };
+  const renderParagraph = (block, attributes) => {
+    const html = `<p${attributes}>${joinHardBreaks(block.lines, options, where)}</p>`;
+    return tabletopOnly(block) && !options.view ? "" : html;
+  };
   const renderBlock = (block, attributes = "") => block.type === "p"
-    ? `<p${attributes}${tabletopOnly(block)}>${joinHardBreaks(block.lines, options, where)}</p>`
+    ? renderParagraph(block, attributes)
     : block.type === "hr" ? `<hr class="class-rule-divider"${attributes}>`
-    : block.type === "table" ? renderTable(block, options.tables[tableIndex++], options, where, attributes)
+    : block.type === "table" ? renderTableBlock(block, attributes)
     : `<ul class="class-rule-list"${attributes}>${newline}${block.items.map(item => `<li>${joinHardBreaks(item, options, where)}</li>`).join(newline)}${newline}</ul>`;
   const html = [];
   let subsection = null;
   const closeSubsection = () => {
-    if (subsection !== null) html.push(`<div class="${options.subsectionClass || "class-rule-subsection"}"${outer}>${newline}${subsection.join(newline)}${newline}</div>`);
+    if (subsection !== null) html.push(`<div class="${options.subsectionClass || "class-rule-subsection"}"${outer}>${newline}${subsection.filter(Boolean).join(newline)}${newline}</div>`);
     subsection = null;
   };
   for (const block of blocks) {
@@ -175,7 +186,7 @@ function renderMarkdown(source, options, where) {
     else html.push(renderBlock(block, outer));
   }
   closeSubsection();
-  return html.join(newline);
+  return html.filter(Boolean).join(newline);
 }
 
 // values 的 fromTable：由能力文字中的表格組出跑團文字（例如術士生成法術位的換算），表格只寫一次。
