@@ -5,7 +5,7 @@ const path = require("path");
 const YAML = require("yaml");
 const Ajv = require("ajv");
 const { ROOT } = require("./legacy");
-const { ContentError } = require("./markdown");
+const { ContentError, tableValueText } = require("./markdown");
 
 const CONTENT_DIR = path.join(ROOT, "content");
 const SCHEMA_DIR = path.join(CONTENT_DIR, "schema");
@@ -149,8 +149,13 @@ function checkClass(classDef, errors) {
     levels.filter(level => level > classDef.maxLevel).forEach(level => errors.push(`${classDef.file}：特性表欄位 ${name} 的 ${level} 級超過 maxLevel`));
   }
   // 依等級的文字值（values 的 byLevel）只能用在文字的 {名稱|…}，不可用於公式、次數。
-  const textValues = new Set(Object.entries(classDef.values || {}).filter(([, value]) => value.byLevel).map(([name]) => name));
+  const textValues = new Set(Object.entries(classDef.values || {}).filter(([, value]) => value.byLevel || value.fromTable).map(([name]) => name));
+  const allFeatures = [classDef, ...classDef.subclasses].flatMap(owner => owner.features);
   for (const [name, value] of Object.entries(classDef.values || {})) {
+    if (value.fromTable) {
+      try { tableValueText(allFeatures, value.fromTable, `${classDef.file} values.${name}`); } catch (error) { errors.push(error.message); }
+      continue;
+    }
     if (textValues.has(name)) {
       Object.keys(value.byLevel).map(Number).filter(level => level > classDef.maxLevel).forEach(level => errors.push(`${classDef.file}：values.${name} 的 ${level} 級超過 maxLevel`));
       Object.values(value.byLevel).filter(text => /[<{}]|\*\*|\[\[/.test(text)).forEach(text => errors.push(`${classDef.file}：values.${name} 的文字不可含標記：${text}`));

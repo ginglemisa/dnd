@@ -152,8 +152,10 @@ function renderMarkdown(source, options, where) {
   if (tableCount && !options.tables) throw new ContentError(`${where}：表格只能寫在能力的 text／tabletop，並在 tables 列出外框`);
   if (options.tables && tableCount !== options.tables.length && !(options.tablesOptional && !tableCount)) throw new ContentError(`${where}：文字有 ${tableCount} 個表格，tables 列了 ${options.tables.length} 個`);
   let tableIndex = 0;
+  // 段落只有一個跑團限定數值 {名稱|} 時，整段只在跑團顯示，職業頁不留空白段落。
+  const tabletopOnly = block => block.lines.length === 1 && /^\{[A-Za-z][A-Za-z0-9]*\|\}$/.test(block.lines[0]) ? " data-tabletop-only hidden" : "";
   const renderBlock = (block, attributes = "") => block.type === "p"
-    ? `<p${attributes}>${joinHardBreaks(block.lines, options, where)}</p>`
+    ? `<p${attributes}${tabletopOnly(block)}>${joinHardBreaks(block.lines, options, where)}</p>`
     : block.type === "hr" ? `<hr class="class-rule-divider"${attributes}>`
     : block.type === "table" ? renderTable(block, options.tables[tableIndex++], options, where, attributes)
     : `<ul class="class-rule-list"${attributes}>${newline}${block.items.map(item => `<li>${joinHardBreaks(item, options, where)}</li>`).join(newline)}${newline}</ul>`;
@@ -176,4 +178,20 @@ function renderMarkdown(source, options, where) {
   return html.join(newline);
 }
 
-module.exports = { ContentError, escapeHtml, renderInline, renderMarkdown };
+// values 的 fromTable：由能力文字中的表格組出跑團文字（例如術士生成法術位的換算），表格只寫一次。
+// spec：{ feature: 能力 ID, table: 第幾個表格（預設 1）, row: 每列的樣板（{1}、{2}… 代入該列各欄）, join, end }。
+function tableValueText(features, spec, where) {
+  const feature = features.find(item => item.id === spec.feature);
+  if (!feature) throw new ContentError(`${where}：fromTable 的能力「${spec.feature}」不存在`);
+  const tables = parseBlocks(feature.text, `${where}（${spec.feature}）`).filter(block => block.type === "table");
+  const table = tables[(spec.table || 1) - 1];
+  if (!table) throw new ContentError(`${where}：能力「${spec.feature}」的文字沒有第 ${spec.table || 1} 個表格`);
+  const columns = [...spec.row.matchAll(/\{(\d+)\}/g)].map(match => Number(match[1]));
+  if (!columns.length || columns.some(column => column < 1 || column > table.header.length)) {
+    throw new ContentError(`${where}：fromTable 的 row 只能用 {1}～{${table.header.length}}`);
+  }
+  if (/[<{}]|\*\*|\[\[/.test(spec.row.replace(/\{\d+\}/g, ""))) throw new ContentError(`${where}：fromTable 的 row 不可含其他標記`);
+  return table.rows.map(cells => spec.row.replace(/\{(\d+)\}/g, (all, column) => cells[Number(column) - 1])).join(spec.join ?? "") + (spec.end ?? "");
+}
+
+module.exports = { ContentError, escapeHtml, renderInline, renderMarkdown, tableValueText };
