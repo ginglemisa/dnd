@@ -18,6 +18,25 @@ function updateClassFeatureOptionVisibility() {
   document.getElementById("druid-land-control")?.classList.toggle("is-hidden", !window.hasClassFeature?.(classValue, "druid-circle-of-the-land-spells", level));
 }
 
+// 可選等級依職業內容檔的 maxLevel（未選職業時取各職業的最大值）；生命骰數量選單同步為 0～最高等級。
+// 目前等級超過新職業的上限時改為上限。index.html 的靜態選項只是腳本載入前的預設。
+function syncLevelOptions() {
+  const all = typeof classRules === "undefined" ? {} : classRules;
+  const classValue = document.getElementById("class")?.value || "";
+  const maxLevel = window.getClassRules?.(classValue)?.maxLevel || Math.max(0, ...Object.values(all).map(rules => rules.maxLevel || 0));
+  if (!maxLevel) return;
+  const rebuild = (select, from, placeholder) => {
+    if (!select) return;
+    const values = Array.from({ length: maxLevel - from + 1 }, (_, index) => String(from + index));
+    if (Array.from(select.options, option => option.value).filter(Boolean).join(" ") === values.filter(Boolean).join(" ")) return;
+    const previous = select.value;
+    select.replaceChildren(...(placeholder ? [new Option(placeholder, "")] : []), ...values.map(value => new Option(value, value, value === "0")));
+    select.value = !previous && placeholder ? "" : (values.includes(previous) ? previous : values[values.length - 1]);
+  };
+  rebuild(document.getElementById("level"), 1, "--");
+  rebuild(document.getElementById("lifedicen"), 0);
+}
+
 // 子職選單（#subclass，存進角色資料）：選項為目前職業內容檔的子職（預設子職在前）；目前值不屬於此職業時改為預設子職。
 // 只有一個子職時鎖定（選單也隱藏，見 updateClassFeatureOptionVisibility）；分享模式由 lockShareModeIdentitySelects() 鎖定（data-share-locked）。
 function syncSubclassOptions() {

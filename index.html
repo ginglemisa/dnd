@@ -1357,7 +1357,7 @@
   <script src="sheet-utils.js?v=20261024-index-split"></script>
   <script src="feat-ui.js?v=20261101-subclass-features"></script>
   <script src="spell-sources.js?v=20261101-subclass-spells"></script>
-  <script src="class-features-ui.js?v=20261101-subclass-select"></script>
+  <script src="class-features-ui.js?v=20261101-max-level"></script>
   <script>
 function openCarryCapacityRules(trigger) {
   return window.AppDialog.showMessage({
@@ -1546,7 +1546,7 @@ function bindCoreCharacterEvents() {
   bindEventById("cha", "input", updateACDisplay);
   ["str", "dex", "con", "int", "wis", "cha"].forEach(id => bindEventById(id, "change", syncDerivedFeatRows));
   bindEventById("armor", "change", updateArmorInfo);
-  bindEventById("class", "change", event => {beginClassOptionTransition(event);syncSubclassOptions();updateHitDieLabel();resetSpellSlotsAfterCharacterChange();refreshWeaponSelections();updateClassFeature();updateClassFeatureOptionVisibility();syncDerivedFeatRows();syncClassToolRows();updateACDisplay();updateSpeedDisplay();updateEldritchInvocationSectionVisibility();populateHandAttacks();syncOriginAndSubclassDerivedSpellRows();updateSpellsByClassLevel();updateExpertiseVisibility();updateExtraLanguageFields();finishClassOptionTransition();});
+  bindEventById("class", "change", event => {beginClassOptionTransition(event);syncLevelOptions();syncSubclassOptions();updateHitDieLabel();resetSpellSlotsAfterCharacterChange();refreshWeaponSelections();updateClassFeature();updateClassFeatureOptionVisibility();syncDerivedFeatRows();syncClassToolRows();updateACDisplay();updateSpeedDisplay();updateEldritchInvocationSectionVisibility();populateHandAttacks();syncOriginAndSubclassDerivedSpellRows();updateSpellsByClassLevel();updateExpertiseVisibility();updateExtraLanguageFields();finishClassOptionTransition();});
   bindEventById("level", "change", event => {beginClassOptionTransition(event);syncHitDiceCountToLevel();syncProficiencyUseChecks();updateAutomaticInitiative();resetSpellSlotsAfterCharacterChange();refreshWeaponSelections();updateClassFeature();updateClassFeatureOptionVisibility();syncDerivedFeatRows();updateACDisplay();updateSpeedDisplay();updateEldritchInvocationSectionVisibility();populateHandAttacks();syncOriginAndSubclassDerivedSpellRows();updateSpellsByClassLevel();updateExtraLanguageFields();finishClassOptionTransition();});
   // 子職決定職業詳情、動作、資源、衍生法術與數值；與職業／等級同一套重算。
   bindEventById("subclass", "change", applySubclassChange);
@@ -2393,6 +2393,7 @@ document.addEventListener("DOMContentLoaded", () => withCharacterUpdateBatch(() 
   // 魔能祈喚與超魔法選項取自職業內容檔（class-content.generated.js 為 defer 載入，此時才可讀取）。
   loadEldritchInvocationOptions();
   loadMetamagicOptions();
+  syncLevelOptions();
   window.ClassOptionMemory?.configure({ isPersistenceBlocked: () => autosaveRestoreBlocked });
   window.SpellManagement?.configure({
     isRestoring: () => autosaveSuspended || autosaveClearing,
