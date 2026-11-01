@@ -18951,7 +18951,7 @@ html[data-theme="dark"] .feat-icon-btn--add {
 }
 
 /* Classic dark: navy canvas, slate surfaces and brass actions share one palette. */
-html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .mini-stat-label--features:not([data-character-features-tab="creation"]) {
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .mini-stat-label--features {
   color: var(--accent-strong);
 }
 

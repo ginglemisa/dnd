@@ -49,8 +49,8 @@ async function ensurePdfExportReady() {
     pdfExportLoaderPromise = (async () => {
       await loadScriptOnce("pdf-lib.custom.min.js");
       await loadScriptOnce("fontkit.custom.min.js");
-      await loadScriptOnce("pdf-field-map.js?v=20261101-subclass-features");
-      await loadScriptOnce("pdf-export.js?v=20261101-image-font-folders");
+      await loadScriptOnce("pdf-field-map.js?v=20261102-class-language-ids");
+      await loadScriptOnce("pdf-export.js?v=20261102-editable-da-sizes");
     })().catch((error) => {
       pdfExportLoaderPromise = null;
       throw error;

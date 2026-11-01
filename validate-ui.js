@@ -225,7 +225,7 @@ async function verifyAppearanceAndLayout(browser, page, url) {
         };
         return { canvas: getComputedStyle(document.documentElement).backgroundColor,
           primary: paint("#legal-onboarding-btn"), navigation: paint(".tab-button.active"),
-          identity: getComputedStyle(document.querySelector('[data-character-features-tab="class"]')).color };
+          identity: getComputedStyle(document.querySelector('.basic-pair-field--class .mini-stat-label--features')).color };
       });
       assert.deepEqual(colors, { canvas: "rgb(12, 23, 41)", primary: ["rgb(197, 164, 108)", "rgb(12, 23, 41)"],
         navigation: ["rgb(197, 164, 108)", "rgb(12, 23, 41)"], identity: "rgb(226, 201, 149)" },
@@ -562,6 +562,13 @@ async function verifyPdf(page, fieldsOnly) {
     if (buildPdfFieldPayload({ ...shieldState, "atk-off-note": "盾擊" }, { sheetTemplate: "official" })["attack-wp-name2"] !== "盾牌") throw new Error("Official PDF keeps a shield row with other notes");
     const shieldFirst = buildPdfFieldPayload({ "atk-main-name": "盾牌", "atk-off-name": "短劍", "atk-off-hit": "+4" }, { sheetTemplate: "official" });
     if (shieldFirst["attack-wp-name1"] !== "短劍" || shieldFirst.tohit1 !== "+4" || shieldFirst["attack-wp-name2"]) throw new Error("Official PDF moves the weapon after a dropped shield row up");
+    // Damage keeps half-width dice and one space between dice and type.
+    const damageState = { "atk-main-name": "長劍", "atk-main-dmg": " 1d12  冷凍 " };
+    if (buildPdfFieldPayload(damageState).dmg_type_1 !== "1d12 冷凍" || buildPdfFieldPayload(damageState, { sheetTemplate: "official" })["dmg-type1"] !== "1d12 冷凍") throw new Error("PDF damage keeps half-width text");
+    // A long custom spell name stays one unbroken line in the single-line field.
+    const longSpellName = "超長自創法術名稱測試用的完整名字";
+    const longSpellPayload = buildPdfFieldPayload({ class: "wizard", level: "1" }, { customSpells: [{ spellId: "custom-spell-long", level: 1, nameZh: longSpellName, desc: "學派：塑能" }] });
+    if (!Object.entries(longSpellPayload).some(([key, value]) => /^sp-name-\d+$/.test(key) && value === longSpellName)) throw new Error("PDF keeps a long spell name on one line");
   });
   console.log("PDF fields: 217 spell material flags (current/legacy), component field isolation, class tools/shields, lineage levels and official sheet field names passed.");
   if (fieldsOnly) return;
@@ -678,11 +685,44 @@ async function verifyPdf(page, fieldsOnly) {
             for (const name of ["equipment1", "extra1"]) {
               const field = form.getTextField(name);
               if (field.getText() !== payload[name] || drawn[name].value !== payload[name]) throw new Error(`Editable value keeps source breaks only: ${name}`);
-              if (!/\s9\s+Tf/.test(field.acroField.getDefaultAppearance())) throw new Error(`Editable editing font size restored: ${name}`);
+              if (Number(/([\d.]+)\s+Tf/.exec(field.acroField.getDefaultAppearance())[1]) !== drawn[name].fontSize) throw new Error(`Editable editing font size matches its appearance: ${name}`);
+            }
+            // A reader redraws an edited field from DA, so every text field's
+            // DA size must equal the size its appearance was drawn at.
+            for (const field of form.getFields()) {
+              if (!(field instanceof PDFLib.PDFTextField)) continue;
+              const normal = field.acroField.getWidgets()[0].getAppearances()?.normal;
+              if (!normal?.getContents) continue;
+              const drawnSize = /\/\S+\s+([\d.]+)\s+Tf/.exec(new TextDecoder("latin1").decode(PDFLib.decodePDFRawStream(normal).decode()))?.[1];
+              const editingSize = /([\d.]+)\s+Tf/.exec(field.acroField.getDefaultAppearance() || "")?.[1];
+              if (drawnSize !== undefined && Number(drawnSize) !== Number(editingSize)) throw new Error(`Editable DA size matches appearance: ${field.getName()} ${editingSize} vs ${drawnSize}`);
             }
           }
         }
       } finally { PDFLib.defaultTextFieldAppearanceProvider = provider; }
+
+      // Long free text stops at the readable minimum instead of shrinking
+      // further; the blank experience field is centered for the player.
+      const longNote = "多用途 (1d10)、精通：削弱，命中後目標下次攻擊檢定劣勢直到你的下回合開始";
+      await exportCharacterPdfFromState({ class: "fighter", level: "3", "atk-main-name": "長劍", "atk-main-note": longNote }, { outputMode: "editable", characterName: "UI regression" });
+      const floorForm = (await PDFLib.PDFDocument.load(await blob.arrayBuffer())).getForm();
+      const noteField = floorForm.getTextField("wp-note-1");
+      if (noteField.getText() !== longNote || !/\s7\s+Tf/.test(noteField.acroField.getDefaultAppearance())) throw new Error("Editable long note keeps full text at the 7 pt minimum");
+      const experienceField = floorForm.getTextField("Exp1");
+      if (experienceField.getAlignment() !== PDFLib.TextAlignment.Center || !/\s9\s+Tf/.test(experienceField.acroField.getDefaultAppearance())) throw new Error("Editable experience field centered at 9 pt");
+
+      // Compact widens a long damage field to fit it exactly at 10 pt; the
+      // fitted size must not round below 10 pt and truncate the text.
+      const longDamage = "1d4+3 穿刺 1d6 冷凍";
+      let compactDamage;
+      PDFLib.PDFForm.prototype.flatten = function (options) {
+        compactDamage = this.getTextField("dmg_type_2").getText();
+        return flatten.call(this, options);
+      };
+      try {
+        await exportCharacterPdfFromState({ class: "fighter", level: "1", "atk-main-name": "巨斧", "atk-off-name": "冰霜匕首", "atk-off-dmg": longDamage }, { outputMode: "compact", characterName: "UI regression" });
+      } finally { PDFLib.PDFForm.prototype.flatten = flatten; }
+      if (compactDamage !== longDamage) throw new Error(`Compact long damage keeps full text: ${compactDamage}`);
 
       // Official sheet: every payload value matches a template field of the
       // same kind, template checkbox drawings survive, and compact flattens.

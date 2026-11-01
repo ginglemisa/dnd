@@ -144,7 +144,8 @@
   // belongs here, with one independent block for each export mode.
   const PDF_LAYOUT_SETTINGS = Object.freeze({
     editable: createPdfLayoutSettings({
-      minFontSize: 6.5,
+      // The smallest CJK text that stays comfortable on a printed A4 sheet.
+      minFontSize: 7,
       fieldMinFontSizes: {
         Name1: 7,
         Class1: 7,
@@ -175,8 +176,6 @@
         classFeatures2: 9,
         specie_features1: 8.5,
         feats1: 8.5,
-        toolsProficiency1: 10,
-        weaponsProficiency1: 10,
         'spell-level-1': 14,
         'spell-level-2': 14,
         'spell-level-3': 14,
@@ -196,6 +195,8 @@
         { pattern: /^(?:sp-level-|sp-cast-time-|sp-range-)\d+$/, fontSize: 10 },
         { pattern: /^note\d+$/, fontSize: 8 }
       ],
+      // Exp1 is left for the player and has no exported value.
+      centeredFields: ['Exp1'],
       fieldAdjustments: {
         specie_features1: { dy: 3.5 },
         feats1: { dy: 3.5 }
@@ -939,7 +940,9 @@
     ), 0);
     const usableWidth = Math.max(1, rectangle.width - layoutSettings.horizontalPadding);
     const fittedSize = widestLine > 0 ? preferredSize * (usableWidth / widestLine) : preferredSize;
-    return Math.max(layoutSettings.minFontSize, Math.floor(Math.min(preferredSize, fittedSize) * 10) / 10);
+    // A field widened to fit its text exactly can compute 9.9999... for 10;
+    // tolerate that rounding error before flooring to 0.1 pt.
+    return Math.max(layoutSettings.minFontSize, Math.floor(Math.min(preferredSize, fittedSize) * 10 + 1e-6) / 10);
   }
 
   // Player-authored notes keep only their source line breaks in the field
@@ -1049,7 +1052,33 @@
     }
   }
 
-  function applyMeasuredWrapAppearances(form, cjkFont, layoutSettings, appearanceFontSizes = {}) {
+  // pdf-lib's appearance provider rewrites DA with the embedded font's name.
+  // Restore the editing font alias, optionally carrying over the size the
+  // appearance was drawn at so a reader redraws an edited field the same.
+  function captureDefaultAppearances(field, appearanceKey) {
+    return [field.acroField.dict, ...field.acroField.getWidgets().map(widget => widget.dict)]
+      .map(dict => ({ dict, value: dict.get(appearanceKey) }));
+  }
+
+  function restoreDefaultAppearances(defaults, appearanceKey, fontSize) {
+    const { PDFString } = globalScope.PDFLib;
+    defaults.forEach(({ dict, value }) => {
+      if (!value) {
+        dict.delete(appearanceKey);
+        return;
+      }
+      const text = decodeDefaultAppearance(value);
+      if (fontSize === undefined || !/Tf/.test(text)) {
+        dict.set(appearanceKey, value);
+        return;
+      }
+      dict.set(appearanceKey, PDFString.of(
+        text.replace(/(\/[^\s/]+\s+)(-?\d*\.?\d+)(\s+Tf)/, `$1${fontSize}$3`)
+      ));
+    });
+  }
+
+  function applyMeasuredWrapAppearances(form, cjkFont, layoutSettings, appearanceFontSizes = {}, keepAppearanceFontSize = false) {
     const PDFLib = globalScope.PDFLib;
     const appearanceKey = PDFLib.PDFName.of('DA');
     layoutSettings.measuredWrapFields.forEach((fieldName) => {
@@ -1062,8 +1091,7 @@
       const preferredSize = appearanceFontSizes[fieldName] || getPreferredFontSize(fieldName, field, layoutSettings);
       const { fontSize, lines } = layoutMeasuredWrapField(field, cjkFont, preferredSize, layoutSettings);
       const wrappedText = lines.join('\n');
-      const defaults = [field.acroField.dict, ...field.acroField.getWidgets().map(widget => widget.dict)]
-        .map(dict => ({ dict, value: dict.get(appearanceKey) }));
+      const defaults = captureDefaultAppearances(field, appearanceKey);
       try {
         // Draw the measured lines with pdf-lib's own text field appearance
         // while the stored value keeps only the player's line breaks.
@@ -1075,10 +1103,7 @@
           }), widget, font)
         ));
       } finally {
-        defaults.forEach(({ dict, value }) => {
-          if (value) dict.set(appearanceKey, value);
-          else dict.delete(appearanceKey);
-        });
+        restoreDefaultAppearances(defaults, appearanceKey, keepAppearanceFontSize ? fontSize : undefined);
       }
     });
   }
@@ -1350,11 +1375,15 @@
     speed1: 18,
     passivePerception1: 18,
     initiative1: 18,
+    Exp1: 9,
+    toolsProficiency1: 10,
+    weaponsProficiency1: 10,
     extra1: 10,
+    ...Object.fromEntries(['cp', 'sp', 'gp', 'pp'].map(coin => [`${coin}-coin1`, 12])),
     ...Object.fromEntries(['str', 'dex', 'con', 'int', 'wis', 'cha'].flatMap(ability => [
       [`${ability}1`, 10],
       [`${ability}Mod1`, 18],
-      [`${ability}SaveMod1`, 12]
+      [`${ability}SaveMod1`, 13]
     ])),
     ...Object.fromEntries(Array.from({ length: 7 }, (_, index) => index + 1).flatMap(row => [
       [`attack-weap-name-${row}`, 14],
@@ -1379,34 +1408,30 @@
       return getFittedFontSize(field, cjkFont, preferredSize, layoutSettings);
     }
     const text = (field.getText() || '').replace(/\r?\n/g, ' ');
+    const widget = field.acroField.getWidgets()[0];
     const rectangle = getTextFieldRectangle(field);
-    if (!text.trim() || !rectangle) return preferredSize;
+    if (!widget || !rectangle) return preferredSize;
 
-    const widthAtOnePoint = cjkFont.widthOfTextAtSize(text, 1);
-    const maxByWidth = Math.max(1, rectangle.width - layoutSettings.horizontalPadding)
-      / Math.max(0.001, widthAtOnePoint);
-    let heightAtOnePoint = cjkFont.heightAtSize(1);
-    const rawFont = cjkFont.embedder?.font;
-    if (rawFont?.layout && rawFont.unitsPerEm > 0) {
-      const boxes = rawFont.layout(text).glyphs.map(glyph => glyph.bbox)
-        .filter(box => Number.isFinite(box.minY) && Number.isFinite(box.maxY) && box.maxY > box.minY);
-      const os2 = rawFont['OS/2'];
-      const hasTypoMetrics = os2 && Number.isFinite(os2.typoAscender)
-        && Number.isFinite(os2.typoDescender) && os2.typoAscender > os2.typoDescender;
-      const ascent = hasTypoMetrics ? os2.typoAscender : rawFont.ascent;
-      const descent = hasTypoMetrics ? os2.typoDescender : rawFont.descent;
-      if (boxes.length && Number.isFinite(ascent) && Number.isFinite(descent)) {
-        // Match the existing appearance baseline; reserve room on both sides
-        // for the actual glyphs, including ascenders and descenders.
-        const baselineOffset = (ascent + descent) / (2 * rawFont.unitsPerEm);
-        const top = Math.max(...boxes.map(box => box.maxY)) / rawFont.unitsPerEm;
-        const bottom = Math.min(...boxes.map(box => box.minY)) / rawFont.unitsPerEm;
-        heightAtOnePoint = 2 * Math.max(top - baselineOffset, baselineOffset - bottom);
-      }
-    }
-    const maxByHeight = Math.max(1, rectangle.height - layoutSettings.verticalPadding)
-      / Math.max(0.001, heightAtOnePoint);
-    return Math.max(0.1, Math.floor(Math.min(preferredSize, maxByWidth, maxByHeight) * 10) / 10);
+    // A reader redraws an edited field from DA alone, so this size must also
+    // suit its redraw. Fit 70% of the font's line box inside the text area
+    // pdf-lib draws in, blank fields included: a single line's glyphs never
+    // fill the whole box, and Adobe Reader redraws edits at this ratio
+    // without clipping or shifting the text.
+    const EDITABLE_LINE_BOX_RATIO = 0.7;
+    const borderWidth = widget.getBorderStyle?.()?.getWidth?.() ?? 0;
+    const maxByHeight = Math.max(1, rectangle.height - 2 * (borderWidth + 1))
+      / Math.max(0.001, cjkFont.heightAtSize(1) * EDITABLE_LINE_BOX_RATIO);
+    const maxByWidth = text.trim()
+      ? Math.max(1, rectangle.width - layoutSettings.horizontalPadding)
+        / Math.max(0.001, cjkFont.widthOfTextAtSize(text, 1))
+      : preferredSize;
+    // Below the readable minimum, keep that size and let the text overflow;
+    // the field value still holds the full text.
+    const minimumFontSize = Math.min(
+      preferredSize,
+      layoutSettings.fieldMinFontSizes[field.getName()] || layoutSettings.minFontSize
+    );
+    return Math.max(minimumFontSize, Math.floor(Math.min(preferredSize, maxByWidth, maxByHeight) * 10) / 10);
   }
 
   function applyEditableAppearanceFontSizes(form, cjkFont, layoutSettings) {
@@ -1419,18 +1444,18 @@
       } catch (error) {
         continue;
       }
-      const defaults = [field.acroField.dict, ...field.acroField.getWidgets().map(widget => widget.dict)]
-        .map(dict => ({ dict, value: dict.get(appearanceKey) }));
+      const defaults = captureDefaultAppearances(field, appearanceKey);
+      let fontSize;
       try {
-        // Apply initial appearance sizes while retaining the editing defaults.
-        const fontSize = getEditableAppearanceFontSize(field, cjkFont, preferredSize, layoutSettings);
+        // DA keeps the size drawn here so an edited field looks unchanged.
+        fontSize = getEditableAppearanceFontSize(field, cjkFont, preferredSize, layoutSettings);
         field.setFontSize(fontSize);
+        if (layoutSettings.centeredFields.includes(fieldName)) {
+          field.setAlignment(globalScope.PDFLib.TextAlignment.Center);
+        }
         field.updateAppearances(cjkFont);
       } finally {
-        defaults.forEach(({ dict, value }) => {
-          if (value) dict.set(appearanceKey, value);
-          else dict.delete(appearanceKey);
-        });
+        restoreDefaultAppearances(defaults, appearanceKey, fontSize);
       }
     }
   }
@@ -1547,7 +1572,8 @@
       form,
       fontEmbedResult.font,
       layoutSettings,
-      profile.layoutId === 'editable' ? EDITABLE_APPEARANCE_FONT_SIZES : {}
+      profile.layoutId === 'editable' ? EDITABLE_APPEARANCE_FONT_SIZES : {},
+      profile.layoutId === 'editable'
     );
     const avatarPlaced = await placeAvatarImage(pdfDoc, form, layoutSettings, exportOptions.avatarDataUrl);
 

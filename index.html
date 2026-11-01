@@ -81,7 +81,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261102-tabletop-text">
+  <link rel="stylesheet" href="styles.css?v=20261102-level-info">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261101-image-font-folders" defer></script>
   <script src="monster.js?v=20261025-beast-perception" defer></script>
@@ -107,7 +107,7 @@
   <script src="tabletop-custom-spells.js?v=20261028-custom-spell-vsm-layout" defer></script>
   <script src="tabletop-spells.js?v=20261101-subclass-features" defer></script>
   <script src="legal-modal.js?v=20261022-game-icons" defer></script>
-  <script src="onboarding-tour.js?v=20261026-tour-point-buy" defer></script>
+  <script src="onboarding-tour.js?v=20261102-level-info" defer></script>
   <script src="quick-build.js?v=20261031-class-appendix" defer></script>
   <script src="spellbook.js?v=20261028-custom-spells" defer></script>
   <script src="spell-management.js?v=20261028-custom-spells" defer></script>
@@ -564,7 +564,7 @@
     <div class="basic-row basic-row--class-level">
     <div class="mini-stat-card basic-pair-card basic-pair-card--class-level">
       <div class="basic-pair-field basic-pair-field--class">
-        <button type="button" class="mini-stat-label mini-stat-label--features" data-character-features-tab="class" aria-haspopup="dialog" aria-controls="character-features-modal" aria-label="查看職業能力">職業 <span class="character-features-info-icon" aria-hidden="true">i</span></button>
+        <button type="button" class="mini-stat-label mini-stat-label--features" data-character-features-tab="creation" aria-haspopup="dialog" aria-controls="character-features-modal" aria-label="查看職業表格">職業 <span class="character-features-info-icon" aria-hidden="true">i</span></button>
         <select id="class">
           <option value="">待選</option>
           <option value="barbarian">野蠻人</option>
@@ -582,7 +582,7 @@
         </select>
       </div>
       <div class="basic-pair-field basic-pair-field--level">
-        <button type="button" class="mini-stat-label mini-stat-label--features" data-character-features-tab="creation" aria-haspopup="dialog" aria-controls="character-features-modal" aria-label="開啟創角與表格">等級</button>
+        <button type="button" class="mini-stat-label mini-stat-label--features" data-character-features-tab="class" aria-haspopup="dialog" aria-controls="character-features-modal" aria-label="查看職業能力">等級 <span class="character-features-info-icon" aria-hidden="true">i</span></button>
         <select id="level">
           <option value="">--</option>
           <option value="1">1</option>
@@ -3237,7 +3237,7 @@ function fillSkills() {
   updateAutomaticInitiative();
 }
 </script>
-<script src="pdf-launcher.js?v=20261101-image-font-folders"></script>
+<script src="pdf-launcher.js?v=20261102-class-language-ids"></script>
 
 <script>
 // ====== 裝備,武器,法術相關工具 ======

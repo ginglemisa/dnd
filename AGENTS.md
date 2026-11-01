@@ -17,7 +17,7 @@
 * `content/private/` 是私人內容包（gitignore），只在本機另產生 `class-content.private.generated.js`；不得提交或複製到公開檔案，公開建置不得依賴它。
 * 持久化 ID 以基準檔把關：職業／子職／選項／動作 key／資源 key 用 `class-id-baseline.json`，法術用 `spell-id-baseline.json`。只在確認刻意新增，或已處理舊資料相容的移除／改名後，才更新基準檔（`npm run build -- --update-id-baseline`）；不得用基準檔掩蓋意外遺失。`spellId` 不隨顯示名稱改動。
 * UI 模組讀取主要資料與公開 API，不複製平行規則、狀態、亂數或擲骰歷史。表單控制項可作為角色目前選擇的 canonical state；純顯示文字不作為規則資料來源。既有錯誤行為不是規格。
-* 職業機制以 `classRules` 為準，`classFeatures` HTML 只供顯示。既有程式從這份 HTML 的 `data-*` 標記反推規則或定位，屬於轉換期遺留，會逐步移除；新程式不得再增加這類依賴。
+* 職業機制以 `classRules` 為準，`classFeatures` HTML 與能力名稱、標題只供顯示：程式不得從中反推規則，判斷特定能力時用能力 id。職業頁上找能力的位置用 `data-feature-id`；建置工具不以正則解析產生後的 HTML 或網站原始碼。
 * 樣式以 `styles.css` 為準，外觀與互動先查 [DESIGN.md](DESIGN.md)。新 dialog／toast 用 `app-dialog.js`，不用原生 `alert`／`confirm`／`prompt`。圖片放 `images/`、字型放 `fonts/`；`og-image.jpg` 必須留在根目錄（短網址 Worker 固定引用）。
 * 修改正式部署載入的 CSS／JS 時，只更新該資源在 `index.html` 的 `?v=`；`class-content.generated.js` 的 `?v=` 由上線建置自動產生。
 
