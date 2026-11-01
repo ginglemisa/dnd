@@ -225,7 +225,7 @@ async function verifyAppearanceAndLayout(browser, page, url) {
         };
         return { canvas: getComputedStyle(document.documentElement).backgroundColor,
           primary: paint("#legal-onboarding-btn"), navigation: paint(".tab-button.active"),
-          identity: getComputedStyle(document.querySelector('[data-character-features-tab="class"]')).color };
+          identity: getComputedStyle(document.querySelector('.basic-pair-field--class .mini-stat-label--features')).color };
       });
       assert.deepEqual(colors, { canvas: "rgb(12, 23, 41)", primary: ["rgb(197, 164, 108)", "rgb(12, 23, 41)"],
         navigation: ["rgb(197, 164, 108)", "rgb(12, 23, 41)"], identity: "rgb(226, 201, 149)" },

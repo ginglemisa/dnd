@@ -111,7 +111,7 @@ async function identityDetailsReady(page) {
   assert.equal(await page.locator("#tour-prev-btn").isEnabled(), true);
   assert.equal(await page.evaluate(() => {
     const holes = onboardingTour.activeHoles;
-    const button = document.querySelector('.basic-row--class-level [data-character-features-tab="class"]').getBoundingClientRect();
+    const button = document.querySelector('.basic-pair-field--class .mini-stat-label--features').getBoundingClientRect();
     const tip = document.getElementById("tour-tooltip").getBoundingClientRect();
     return holes.length === 1 && Math.abs(holes[0].left - (button.left - 8)) < 1
       && Math.abs(holes[0].right - (button.right + 8)) < 1
@@ -781,7 +781,7 @@ async function verifyIdentityGuidance(browser, url) {
         assert.equal(animation.phase, 1);
       } else await activate("#tour-next-btn");
       await identityDetailsReady(page);
-      const infoSelector = '.basic-row--class-level [data-character-features-tab="class"]';
+      const infoSelector = '.basic-pair-field--class .mini-stat-label--features';
       for (const close of ["button", "Escape", "backdrop"]) {
         await activate(infoSelector);
         assert.equal(await page.locator("#character-features-modal").isVisible(), true);
@@ -799,7 +799,7 @@ async function verifyIdentityGuidance(browser, url) {
         await identityDetailsReady(page);
         assert.equal(await page.locator("#tour-overlay").isVisible(), true);
         assert.equal(await page.evaluate(() => autosaveSuspended), true, "tour previews suspend autosave again on resume");
-        assert.equal(await page.evaluate(() => document.activeElement.matches('.basic-row--class-level [data-character-features-tab="class"]')), true);
+        assert.equal(await page.evaluate(() => document.activeElement.matches('.basic-pair-field--class .mini-stat-label--features')), true);
       }
       if (process.env.DND_ONBOARDING_SCREENSHOT_DIR && reducedMotion === "no-preference") {
         await page.screenshot({ path: path.join(process.env.DND_ONBOARDING_SCREENSHOT_DIR, `identity-details-${viewport.width}.png`) });

@@ -554,7 +554,7 @@
           tooltipHoleIndex: 1,
           getHoles: () => {
             if (this.stepPhase === 1) return [
-              this.getHoleForSelector('.basic-row--class-level [data-character-features-tab="class"]', 8)
+              this.getHoleForSelector('.basic-pair-field--class .mini-stat-label--features', 8)
             ].filter(Boolean);
             return [
               this.getHoleForSelector(".basic-row--class-level", 8),
@@ -1598,7 +1598,7 @@
       }
       if (this.currentIndex === 0) {
         if (this.stepPhase === 1) return [
-          document.querySelector('.basic-row--class-level [data-character-features-tab="class"]')
+          document.querySelector('.basic-pair-field--class .mini-stat-label--features')
         ].filter(Boolean);
         return ["class", "level", "background", "race"]
           .map((id) => document.getElementById(id))
@@ -1869,7 +1869,7 @@
         return;
       }
 
-      if (this.currentIndex === 0 && this.stepPhase === 1 && target.closest('.basic-row--class-level [data-character-features-tab="class"]')) {
+      if (this.currentIndex === 0 && this.stepPhase === 1 && target.closest('.basic-pair-field--class .mini-stat-label--features')) {
         event.preventDefault();
         event.stopImmediatePropagation();
         this.openIdentityDetails(target.closest("[data-character-features-tab]"));
