@@ -1277,10 +1277,14 @@ async function verifyAutomaticFeatRows(browser, url) {
         assert.equal(await rows.count(), 1, "no new manual rows");
       }
     }
-    for (const [background, value] of [["acolyte", "魔法學徒"], ["sage", "魔法學徒"], ["criminal", "警覺"], ["seeker", "醫療兵"], ["fieldhand", "強韌體魄"], ["soldier", "兇蠻打手"]]) {
+    for (const [background, value, tool] of [["acolyte", "魔法學徒", "書法工具"], ["sage", "魔法學徒", "書法工具"], ["criminal", "警覺", "盜賊工具"], ["seeker", "醫療兵", "草藥工具"], ["fieldhand", "強韌體魄", "木匠工具"], ["soldier", "兇蠻打手", null]]) {
       await page.selectOption("#background", background);
       assert.equal(await page.inputValue("#derived-feat-background"), value);
       assert.equal(await page.locator("#derived-feat-background").isDisabled(), true);
+      // Background tool row: a fixed tool is locked; the soldier chooses one gaming set.
+      const toolOptions = await page.locator("#tool-proficiency-0 option").evaluateAll(options => options.map(option => option.value));
+      if (tool) assert.deepEqual([toolOptions, await page.inputValue("#tool-proficiency-0"), await page.locator("#tool-proficiency-0").isDisabled()], [[tool], tool, true], `${background}: fixed background tool`);
+      else assert.deepEqual([toolOptions.filter(Boolean), await page.locator("#tool-proficiency-0").isDisabled()], [["骰子", "龍棋", "紙牌", "三龍牌"], false], `${background}: gaming set choice`);
     }
     await page.selectOption("#class", "fighter");
     for (const race of ["human", "tiefling"]) {

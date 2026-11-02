@@ -15,6 +15,12 @@
     "「反應」要符合條件才能使用，\n可以在別人的回合宣告觸發。"
   ].join("\n\n");
 
+  // 導覽示範只開放非擴充的內建背景（依背景內容檔，不含自訂背景）。
+  function getStandardBackgroundValues() {
+    return Array.from(document.getElementById("background")?.options || [], option => option.value)
+      .filter(value => value !== "custom" && window.getBackgroundRules?.(value) && !window.isExpansionBackground(value));
+  }
+
   function isElementVisible(element) {
     if (!element) return false;
     const style = window.getComputedStyle(element);
@@ -1156,7 +1162,7 @@
       this.identityPreviewSnapshot = [
         this.captureRestrictedSelect(document.getElementById("class"), ["barbarian", "bard", "cleric"]),
         this.captureRestrictedSelect(document.getElementById("level"), ["1", "2", "3"]),
-        this.captureRestrictedSelect(document.getElementById("background"), ["acolyte", "criminal", "sage", "soldier"]),
+        this.captureRestrictedSelect(document.getElementById("background"), getStandardBackgroundValues()),
         this.captureRestrictedSelect(document.getElementById("race"), ["dwarf", "human", "halfling"])
       ].filter(Boolean);
     }

@@ -96,9 +96,9 @@
   <script src="spell-list.js?v=20261026-wizard-spells" defer></script>
   <script src="condition.js?v=20261021-bonus-wording" defer></script>
   <script src="action-panel.js?v=20261102-feature-anchors" defer></script>
-  <script src="character-rules.js?v=20261101-subclass-select" defer></script>
+  <script src="character-rules.js?v=20261102-background-content" defer></script>
   <script src="app-dialog.js?v=20261028-custom-spells" defer></script>
-  <script src="custom-background.js?v=20261023-feature-title" defer></script>
+  <script src="custom-background.js?v=20261102-background-content" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
   <script src="tabletop-mode.js?v=20261102-rest-options" defer></script>
   <script src="tabletop-druid.js?v=20261021-bonus-wording" defer></script>
@@ -107,7 +107,7 @@
   <script src="tabletop-custom-spells.js?v=20261028-custom-spell-vsm-layout" defer></script>
   <script src="tabletop-spells.js?v=20261101-subclass-features" defer></script>
   <script src="legal-modal.js?v=20261022-game-icons" defer></script>
-  <script src="onboarding-tour.js?v=20261102-level-info" defer></script>
+  <script src="onboarding-tour.js?v=20261102-background-content" defer></script>
   <script src="quick-build.js?v=20261031-class-appendix" defer></script>
   <script src="spellbook.js?v=20261028-custom-spells" defer></script>
   <script src="spell-management.js?v=20261028-custom-spells" defer></script>
@@ -1359,8 +1359,8 @@
   </div>
 
   <script src="sheet-utils.js?v=20261024-index-split"></script>
-  <script src="feat-ui.js?v=20261102-feature-anchors"></script>
-  <script src="spell-sources.js?v=20261101-subclass-spells"></script>
+  <script src="feat-ui.js?v=20261102-background-content"></script>
+  <script src="spell-sources.js?v=20261102-background-content"></script>
   <script src="class-features-ui.js?v=20261102-feature-anchors"></script>
   <script>
 function openCarryCapacityRules(trigger) {
@@ -1963,22 +1963,18 @@ function updateBackgroundToolRow(preferredValue = "") {
   const select = document.getElementById("tool-proficiency-0");
   if (!select) return;
   const background = document.getElementById("background")?.value || "";
-  const backgroundData = background === "custom" ? window.CustomBackground?.getState()
-    : (typeof detailedBackgroundFeatures !== "undefined" ? detailedBackgroundFeatures : globalThis.detailedBackgroundFeatures)?.[background];
-  const backgroundToolText = String(backgroundData?.工具熟練 || "").trim();
-  const fixedTool = backgroundToolText && !/[：:,，]/u.test(backgroundToolText) && !/(?:擇一|任選|自選)/u.test(backgroundToolText)
-    ? backgroundToolText
-    : "";
+  const backgroundTool = getBackgroundRules(background)?.tool;
+  const fixedTool = backgroundTool?.fixed || "";
   const currentValue = preferredValue || select.value;
 
   if (!background) {
     select.innerHTML = '<option value="">-- 請先選擇背景 --</option>';
     select.value = "";
     select.disabled = true;
-  } else if (background === "soldier") {
-    const gamingSets = getToolProficiencyCatalog().gamingSets;
-    select.innerHTML = createToolOptionsHtml(gamingSets);
-    select.value = gamingSets.includes(currentValue) ? currentValue : "";
+  } else if (backgroundTool?.chooseFrom) {
+    const choices = getToolProficiencyCatalog().groups.find(group => group.id === backgroundTool.chooseFrom)?.options || [];
+    select.innerHTML = createToolOptionsHtml(choices);
+    select.value = choices.includes(currentValue) ? currentValue : "";
     select.disabled = false;
   } else {
     select.innerHTML = fixedTool ? `<option value="${fixedTool}">${fixedTool}</option>` : '<option value="">-- 無背景工具 --</option>';
@@ -2352,7 +2348,6 @@ function updateRaceFeature() {
 
 function updateBackgroundFeature() {
   const value = document.getElementById("background").value;
-  const bg = detailedBackgroundFeatures[value];
 
   const el = document.getElementById("backgroundFeatures");
 
@@ -2362,32 +2357,35 @@ function updateBackgroundFeature() {
     return;
   }
 
-  if (!bg) {
+  const bg = getBackgroundRules(value);
+  const text = getBackgroundText(value);
+  if (!bg || !text) {
     el.innerText = "請先選擇背景";
     syncDerivedFeatRows();
     return;
   }
+  const expansion = isExpansionBackground(value);
 
   el.innerHTML =
 `<div id="background-ability-guide-target" class="background-guide-block">
-     <div hidden><strong>背景：</strong>${bg.名稱}${bg.擴充 ? "（擴充）" : ""}</div>
-     <div><strong>屬性：</strong>${bg.屬性}</div>
-     <div><strong>專長：</strong>${bg.專長}</div>
-     <div><strong>技能熟練：</strong>${bg.技能熟練}</div>
-     <div><strong>工具熟練：</strong>${bg.工具熟練}</div>
+     <div hidden><strong>背景：</strong>${bg.name}${expansion ? "（擴充）" : ""}</div>
+     <div><strong>屬性：</strong>${text.abilities}</div>
+     <div><strong>專長：</strong>${text.feat}</div>
+     <div><strong>技能熟練：</strong>${text.skills}</div>
+     <div><strong>工具熟練：</strong>${text.tool}</div>
    </div>
 
    <div class="background-guide-block background-guide-section">
-     <div><strong>裝備：</strong>${bg.裝備}</div>
-     <div><strong>(A) </strong>${bg.裝備A}</div>
-     <div><strong>(B) </strong>${bg.裝備B}</div>
+     <div><strong>裝備：</strong>A、B 二擇一</div>
+     <div><strong>(A) </strong>${text.equipmentA}</div>
+     <div><strong>(B) </strong>${text.equipmentB}</div>
    </div>
 
    <div class="background-guide-description">
-     ${bg.描述}
+     ${text.description}
    </div>
 
-   ${bg.擴充 ? `<div class="feat-expansion-notice">${EXPANSION_NOTICE}</div>` : ""}`;
+   ${expansion ? `<div class="feat-expansion-notice">${EXPANSION_NOTICE}</div>` : ""}`;
 
   syncDerivedFeatRows();
 }
@@ -2486,14 +2484,8 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
     wis: "感知",
     cha: "魅力"
   };
-  const backgroundAbilityMap = {
-    acolyte: ["int", "wis", "cha"],
-    criminal: ["dex", "con", "int"],
-    sage: ["con", "int", "wis"],
-    seeker: ["con", "wis", "cha"],
-    fieldhand: ["str", "con", "wis"],
-    soldier: ["str", "dex", "con"]
-  };
+  // 購點只用內建背景（選單不含自訂背景）；可加值的屬性取自背景內容檔。
+  const getPointBuyBackgroundAbilities = (background) => background === "custom" ? [] : getBackgroundRules(background)?.abilities || [];
   const pointCostTable = {
     8: 0,
     9: 1,
@@ -2643,7 +2635,7 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
 
   function getBackgroundBonusAbilities() {
     if (!pointBuyBackgroundSelect) return [];
-    return backgroundAbilityMap[pointBuyBackgroundSelect.value] || [];
+    return getPointBuyBackgroundAbilities(pointBuyBackgroundSelect.value);
   }
 
   function getSpentPoints() {
@@ -2743,7 +2735,7 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
   function isValidPointBuyRecord(record) {
     if (!record || typeof record !== "object" || !record.base || !record.bonus) return false;
     if (!pointBuyBackgroundSelect || !Array.from(pointBuyBackgroundSelect.options).some((option) => option.value === record.background)) return false;
-    const allowed = new Set(backgroundAbilityMap[record.background] || []);
+    const allowed = new Set(getPointBuyBackgroundAbilities(record.background));
     let bonusTotal = 0;
     let spentPoints = 0;
     for (const key of abilities) {
