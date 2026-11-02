@@ -28,8 +28,6 @@
   }
   // 快速創角背景卡片的顯示順序（與角色卡背景選單不同）；背景資料取自背景內容檔，回歸測試確認此清單涵蓋全部背景。
   const BACKGROUND_ORDER = ["acolyte", "criminal", "sage", "seeker", "fieldhand", "soldier"];
-  const RACE_ORDER = ["dragonborn", "dwarf", "elf", "gnome", "goliath", "halfling", "human", "orc", "tiefling"];
-  const RACE_LABELS = { dragonborn: "龍裔", dwarf: "矮人", elf: "精靈", gnome: "侏儒", goliath: "歌利亞", halfling: "半身人", human: "人類", orc: "獸人", tiefling: "提夫林" };
   const ALIGNMENT_OPTIONS = [
     ["LG", "守序善良"], ["NG", "中立善良"], ["CG", "混亂善良"],
     ["LN", "守序中立"], ["TN", "絕對中立"], ["CN", "混亂中立"],
@@ -116,7 +114,6 @@
   const QUICK_BUILD_LEVEL = 1;
   const SPELLCASTER_CLASS_IDS = new Set(["bard", "cleric", "druid", "paladin", "ranger", "sorcerer", "warlock", "wizard"]);
   const MAGIC_INITIATE_SPELL_CLASSES = new Set(["cleric", "druid", "wizard"]);
-  const SPELLCASTER_RACE_IDS = new Set(["elf", "gnome", "tiefling"]);
   const CLASS_LABELS = {
     barbarian: "野蠻人", bard: "吟遊詩人", cleric: "牧師", druid: "德魯伊",
     fighter: "戰士", monk: "武僧", paladin: "聖騎士", ranger: "遊俠",
@@ -252,6 +249,8 @@
     { id: "pact-of-the-tome", label: "書之魔契", description: "持有魔契書時，選 3 個任一職業戲法與 2 個任一職業儀式一環法術。這些法術視為契術師法術。", extra: { type: "tomeSpells", cantrips: 3, rituals: 2 } }
   ];
 
+  // 快速創角的種族卡片說明、血統短評與完成摘要（DRAGONBORN_SUMMARY、TIEFLING_SUMMARY、raceCompletionLines）是快速創角自己的介紹文字，
+  // 以種族 ID 與草稿的血統值為 key；種族的名稱、選項、法術與規則取自種族內容檔（見 raceRules）。回歸測試確認涵蓋全部種族與血統。
   const RACE_CARD_DESCRIPTIONS = {
     dragonborn: "中型；吐息；元素抗性；黑暗視覺；5級能短暫飛行",
     dwarf: "中型；黑暗視覺；耐毒；高HP；地震感知",
@@ -263,14 +262,6 @@
     orc: "中型；黑暗視覺；衝刺加速；瀕死不倒",
     tiefling: "中型或小型；黑暗視覺、邪魔血統、元素抗性、自帶魔法"
   };
-  const RACE_OPTION_DEFINITIONS = {
-    dragonborn: { ancestry: ["黑龍-酸", "藍龍-電", "黃銅龍-火", "青銅龍-電", "赤銅龍-酸", "金龍-火", "綠龍-毒", "紅龍-火", "銀龍-冰", "白龍-冰"] },
-    elf: { lineage: ["卓爾血統", "高等精靈血統", "木精靈血統"], skill: ["洞悉", "察覺", "求生"] },
-    gnome: { lineage: ["森林侏儒", "岩石侏儒"] },
-    goliath: { ancestry: ["雲遊四方（雲巨人）", "星火燎原（火巨人）", "凜若冰霜（霜巨人）", "地動山搖（山丘巨人）", "堅若磐石（石巨人）", "轟雷掣電（風暴巨人）"] },
-    human: { size: ["中型", "小型"] },
-    tiefling: { size: ["中型", "小型"], legacy: ["深淵血統", "冥界血統", "煉獄血統"] }
-  };
   const RACE_LINEAGE_DESCRIPTIONS = {
     "木精靈血統": "祖輩與古林有緣，身手矯健，熟悉自然環境。",
     "高等精靈血統": "給人優雅高貴的印象，天生具有奧術天賦。",
@@ -280,22 +271,6 @@
     "深淵血統": "源自混亂扭曲的異界，擅長毒素魔法。",
     "冥界血統": "與陰鬱的死亡之境相關，有削弱生命之能。",
     "煉獄血統": "重視秩序與契約的地獄勢力，天生能操縱火焰。"
-  };
-  const RACE_LINEAGE_SPELLS = {
-    elf: {
-      "卓爾血統": [["dancing-lights", "cantrip", 1], ["faerie-fire", 1, 3], ["darkness", 2, 5]],
-      "高等精靈血統": [["detect-magic", 1, 3], ["misty-step", 2, 5]],
-      "木精靈血統": [["druidcraft", "cantrip", 1], ["longstrider", 1, 3], ["pass-without-trace", 2, 5]]
-    },
-    gnome: {
-      "森林侏儒": [["minor-illusion", "cantrip", 1], ["speak-with-animals", 1, 1]],
-      "岩石侏儒": [["mending", "cantrip", 1], ["prestidigitation", "cantrip", 1]]
-    },
-    tiefling: {
-      "深淵血統": [["poison-spray", "cantrip", 1], ["ray-of-sickness", 1, 3], ["hold-person", 2, 5]],
-      "冥界血統": [["chill-touch", "cantrip", 1], ["false-life", 1, 3], ["ray-of-enfeeblement", 2, 5]],
-      "煉獄血統": [["fire-bolt", "cantrip", 1], ["hellish-rebuke", 1, 3], ["darkness", 2, 5]]
-    }
   };
   const DRAGONBORN_SUMMARY = {
     "黑龍-酸": { ancestry: "黑龍", damage: "酸蝕" },
@@ -308,14 +283,6 @@
     "紅龍-火": { ancestry: "紅龍", damage: "火焰" },
     "銀龍-冰": { ancestry: "銀龍", damage: "冷凍" },
     "白龍-冰": { ancestry: "白龍", damage: "冷凍" }
-  };
-  const GOLIATH_ANCESTRY_DETAILS = {
-    "雲遊四方（雲巨人）": "使用附贈，以魔法傳送到 30 呎內你能看見的未佔據空間。",
-    "星火燎原（火巨人）": "攻擊命中時，目標額外受到 1d10 火焰傷害。",
-    "凜若冰霜（霜巨人）": "攻擊命中時，目標額外受到 1d6 冷凍傷害，且直到你的下個回合開始前，目標速度降低 10 呎。",
-    "地動山搖（山丘巨人）": "攻擊命中大型或更小的生物時，可使其陷入倒地狀態。",
-    "堅若磐石（石巨人）": "受到傷害時，可使用反應擲 1d12＋體質調整值，從該次傷害中扣除。",
-    "轟雷掣電（風暴巨人）": "60 呎內的生物對你造成傷害時，可使用反應對其造成 1d8 雷鳴傷害。"
   };
   const TIEFLING_SUMMARY = {
     "深淵血統": { legacy: "深淵", resistance: "毒素", spells: ["奇術", "毒氣噴濺", "致病射線（3 級）", "人類定身術（5 級）"] },
@@ -564,8 +531,8 @@
     }
     const raceId = target.choices.race;
     const humanMagicInitiate = raceId === "human" && target.choices.raceOptions?.feat === "魔法學徒";
-    if (SPELLCASTER_RACE_IDS.has(raceId) || humanMagicInitiate) {
-      return { type: "race", id: raceId, label: RACE_LABELS[raceId], fixedAbility: null };
+    if (raceRules(raceId)?.spellcasting || humanMagicInitiate) {
+      return { type: "race", id: raceId, label: raceName(raceId), fixedAbility: null };
     }
     const backgroundId = target.choices.background;
     if (backgroundSpellList(backgroundId)) {
@@ -621,12 +588,32 @@
     return target;
   }
 
-  function raceData(key) {
-    return typeof raceFeatures === "object" ? raceFeatures[key] : null;
+  // 種族規則與顯示文字（race-content.generated.js，經 character-rules.js 讀取），順序同角色卡種族選單。
+  function raceRules(key) { return window.getRaceRules?.(key) || null; }
+  function raceName(key) { return raceRules(key)?.name; }
+  function raceIds() { return Object.keys(window.getAllRaceRules?.() || {}); }
+  function raceData(key) { return window.getRaceText?.(key)?.html || null; }
+  // 血統選項：草稿以 choice.draftField 欄位存 draftValue（例如 ancestry:「黑龍-酸」）。
+  function raceChoiceDraftValues(key) { return (raceRules(key)?.choice?.options || []).map(option => option.draftValue); }
+  function raceChoiceOption(key, options) {
+    const choice = raceRules(key)?.choice;
+    return choice ? choice.options.find(option => option.draftValue === options?.[choice.draftField]) || null : null;
+  }
+  // 選一項技能熟練的特質（例如精靈的敏銳感官；skillChoice 為 any 時是全部技能）。
+  function raceSkillTrait(key) { return raceRules(key)?.traits.find(trait => trait.skillChoice) || null; }
+  function raceSkillChoices(key) {
+    const choice = raceSkillTrait(key)?.skillChoice;
+    return choice === "any" ? SKILL_OPTIONS : choice || [];
+  }
+  // 草稿要記錄選項的種族：有血統、可選體型、技能或專長選擇。
+  function raceHasDraftOptions(key) {
+    const rules = raceRules(key);
+    return Boolean(rules && (rules.choice || rules.sizes.length > 1 || rules.traits.some(trait => trait.skillChoice || trait.feat)));
   }
 
+  // dataFile 隨草稿存檔（取得項目的 source），沿用舊檔名讓既有草稿內容不變；沒有程式讀取，也不參與綠背確認簽章。
   function raceSource(key) {
-    return { type: "race", id: key, label: RACE_LABELS[key], dataFile: "race.js" };
+    return { type: "race", id: key, label: raceName(key), dataFile: "race.js" };
   }
 
   function reconcileRaceDraft(target) {
@@ -641,13 +628,13 @@
     target.selections.raceSpells = [];
 
     const key = target.choices.race;
-    if (!RACE_ORDER.includes(key) || !raceData(key)) {
+    if (!raceIds().includes(key) || !raceData(key)) {
       target.choices.race = null;
       target.choices.raceOptions = {};
       return target;
     }
     let options = isPlainObject(target.choices.raceOptions) ? target.choices.raceOptions : {};
-    if (["dwarf", "halfling", "orc"].includes(key)) {
+    if (!raceHasDraftOptions(key)) {
       options = {};
       target.choices.raceOptions = options;
     }
@@ -663,19 +650,18 @@
       options = { ...options, featOptions };
       target.choices.raceOptions = options;
     }
-    if (key === "elf" && options.lineage === "高等精靈血統") {
-      const validCantrip = canonicalSpell(options.cantrip)?.level === 0 && SpellCatalog.getSpells("wizard", "cantrips").some(spell => spell.spellId === options.cantrip);
+    const lineageOption = raceChoiceOption(key, options);
+    const cantripChoice = lineageOption?.cantripChoice;
+    if (cantripChoice) {
+      const validCantrip = canonicalSpell(options.cantrip)?.level === 0 && SpellCatalog.getSpells(cantripChoice.spellList, "cantrips").some(spell => spell.spellId === options.cantrip);
       if (!validCantrip) options = { ...options, cantrip: "" };
       target.choices.raceOptions = options;
     }
     const source = raceSource(key);
-    target.selections.race = { id: key, label: RACE_LABELS[key], source, content: { text: raceData(key), options: structuredClone(options), pendingChoices: racePendingChoices(key, options, target) } };
+    target.selections.race = { id: key, label: raceName(key), source, content: { text: raceData(key), options: structuredClone(options), pendingChoices: racePendingChoices(key, options, target) } };
 
-    if (key === "elf" && RACE_OPTION_DEFINITIONS.elf.skill.includes(options.skill)) {
-      addDerivedAcquisition(target, "skills", { id: `race:elf:skill:${options.skill}`, name: options.skill, sourceType: "race", sourceId: key, source: { ...source, feature: "敏銳感官" }, content: { proficiency: "skill" } });
-    }
-    if (key === "human" && SKILL_OPTIONS.includes(options.skill)) {
-      addDerivedAcquisition(target, "skills", { id: `race:human:skill:${options.skill}`, name: options.skill, sourceType: "race", sourceId: key, source: { ...source, feature: "技藝嫻熟" }, content: { proficiency: "skill" } });
+    if (raceSkillChoices(key).includes(options.skill)) {
+      addDerivedAcquisition(target, "skills", { id: `race:${key}:skill:${options.skill}`, name: options.skill, sourceType: "race", sourceId: key, source: { ...source, feature: raceSkillTrait(key).name }, content: { proficiency: "skill" } });
     }
     if (key === "human" && humanOriginFeatValues().includes(options.feat)) {
       addDerivedAcquisition(target, "feats", { id: `race:human:feat:${options.feat}`, name: options.feat, sourceType: "race", sourceId: key, source: { ...source, feature: "靈活人才", dataFile: "feats.js" }, content: { type: "origin feat", description: typeof featsDesc === "object" ? featsDesc[options.feat] : null } });
@@ -695,10 +681,11 @@
         if (type === "tool" && allTools.includes(name)) addDerivedAcquisition(target, "tools", { id: `race:human:skilled:tool:${name}`, name, sourceType: "race", sourceId: key, source: { ...source, feature: "靈活人才：熟習", dataFile: "equipment-notes.js" }, content: { proficiency: "tool" } });
       });
     }
-    const lineage = options.lineage || options.legacy;
-    (RACE_LINEAGE_SPELLS[key]?.[lineage] || []).forEach(([name, level, gainedAt]) => addRaceSpell(target, key, name, level, gainedAt, lineage));
-    if (key === "elf" && options.lineage === "高等精靈血統" && options.cantrip) addRaceSpell(target, key, options.cantrip, "cantrip", 1, "高等精靈血統");
-    if (key === "tiefling") addRaceSpell(target, key, "thaumaturgy", "cantrip", 1, "異界姿態");
+    // 種族法術：血統法術、血統的自選戲法（來源記為血統的草稿值），再加種族特質的法術（來源記為特質名稱）。
+    const spellLevel = spell => spell.ring === "cantrips" ? "cantrip" : spell.ring;
+    (lineageOption?.spells || []).forEach(spell => addRaceSpell(target, key, spell.spellId, spellLevel(spell), spell.level, lineageOption.draftValue));
+    if (cantripChoice && options.cantrip) addRaceSpell(target, key, options.cantrip, "cantrip", 1, lineageOption.draftValue);
+    raceRules(key).spells.forEach(spell => addRaceSpell(target, key, spell.spellId, spellLevel(spell), spell.level, raceRules(key).traits.find(trait => trait.id === spell.trait).name));
     const spellConflicts = target.acquisitions.spells.filter(item => item.sourceType === "race" && acquisitionAppliesAtLevel(item)).flatMap(item =>
       acquisitionConflicts(target, "spells", item.spellId, "race")
         .filter(conflict => conflict.sourceType === "background")
@@ -1145,9 +1132,7 @@
       return LANGUAGE_OPTIONS.filter(option => option.value !== "thieves-cant");
     }
     const options = [...BASE_LANGUAGE_OPTIONS];
-    if (target.choices.race === "tiefling") {
-      options.push(RARE_LANGUAGE_OPTIONS.find(option => option.value === "infernal"));
-    }
+    (raceRules(target.choices.race)?.languageOptions || []).forEach(value => options.push(RARE_LANGUAGE_OPTIONS.find(option => option.value === value)));
     return options.filter(Boolean);
   }
 
@@ -1420,20 +1405,24 @@
   function racePendingChoices(key = draft.choices.race, options = draft.choices.raceOptions, target = draft) {
     if (!key) return ["種族"];
     const pending = [];
-    if (key === "dragonborn" && !RACE_OPTION_DEFINITIONS.dragonborn.ancestry.includes(options.ancestry)) pending.push("龍族血統");
+    const rules = raceRules(key);
+    const choice = rules?.choice;
+    const choiceMissing = choice && !raceChoiceDraftValues(key).includes(options[choice.draftField]);
+    if (key === "dragonborn" && choiceMissing) pending.push(choice.quickBuildLabel);
     if (key === "elf") {
-      if (!RACE_OPTION_DEFINITIONS.elf.lineage.includes(options.lineage)) pending.push("精靈傳承");
-      if (!RACE_OPTION_DEFINITIONS.elf.skill.includes(options.skill)) pending.push("敏銳感官技能");
-      if (options.lineage === "高等精靈血統" && !options.cantrip) pending.push("法師戲法");
+      if (choiceMissing) pending.push(choice.quickBuildLabel);
+      if (!raceSkillChoices(key).includes(options.skill)) pending.push(`${raceSkillTrait(key).name}技能`);
+      const cantripChoice = raceChoiceOption(key, options)?.cantripChoice;
+      if (cantripChoice && !options.cantrip) pending.push(`${CLASS_LABELS[cantripChoice.spellList]}戲法`);
     }
     if (key === "gnome") {
-      if (!RACE_OPTION_DEFINITIONS.gnome.lineage.includes(options.lineage)) pending.push("侏儒血統");
+      if (choiceMissing) pending.push(choice.quickBuildLabel);
     }
     if (key === "goliath") {
-      if (!RACE_OPTION_DEFINITIONS.goliath.ancestry.includes(options.ancestry)) pending.push("巨人血統恩賜");
+      if (choiceMissing) pending.push(choice.quickBuildLabel);
     }
     if (key === "human") {
-      if (!RACE_OPTION_DEFINITIONS.human.size.includes(options.size)) pending.push("體型");
+      if (!rules.sizes.includes(options.size)) pending.push("體型");
       if (!SKILL_OPTIONS.includes(options.skill)) pending.push("技能熟練");
       if (!humanOriginFeatValues().includes(options.feat)) pending.push("起源專長");
       if ((target.acquisitions.feats || []).some(item => item.sourceType === "background" && item.name === options.feat)) pending.push("起源專長已由背景取得");
@@ -1450,8 +1439,8 @@
       }
     }
     if (key === "tiefling") {
-      if (!RACE_OPTION_DEFINITIONS.tiefling.size.includes(options.size)) pending.push("體型");
-      if (!RACE_OPTION_DEFINITIONS.tiefling.legacy.includes(options.legacy)) pending.push("邪魔遺贈");
+      if (!rules.sizes.includes(options.size)) pending.push("體型");
+      if (choiceMissing) pending.push(choice.quickBuildLabel);
     }
     return pending;
   }
@@ -1726,7 +1715,7 @@
   }
 
   function renderRaceCards(body) {
-    body.innerHTML = `<h3>選擇種族</h3><p class="quick-build-lead">種族決定角色的外觀、體型、速度以及特殊能力。</p><div class="quick-build-background-grid">${RACE_ORDER.map(key => `<button type="button" class="quick-build-card" data-race="${key}"><h4>${RACE_LABELS[key]}</h4><p>${escapeHtml(RACE_CARD_DESCRIPTIONS[key])}</p></button>`).join("")}</div>`;
+    body.innerHTML = `<h3>選擇種族</h3><p class="quick-build-lead">種族決定角色的外觀、體型、速度以及特殊能力。</p><div class="quick-build-background-grid">${raceIds().map(key => `<button type="button" class="quick-build-card" data-race="${key}"><h4>${raceName(key)}</h4><p>${escapeHtml(RACE_CARD_DESCRIPTIONS[key])}</p></button>`).join("")}</div>`;
     body.querySelectorAll("[data-race]").forEach(card => card.addEventListener("click", () => handleChoiceCardSelection("race", card.dataset.race, chooseRace)));
   }
 
@@ -1750,7 +1739,7 @@
         const value = `skill:${name}`;
         const peerDuplicate = excluded.includes(value);
         const sources = duplicateSourceLabels("skills", name, "race");
-        if (acquiredSkills.has(name)) sources.push(RACE_LABELS[draft.choices.race] || "種族");
+        if (acquiredSkills.has(name)) sources.push(raceName(draft.choices.race) || "種族");
         return `<option value="skill:${escapeHtml(name)}"${selected === value ? " selected" : ""}${peerDuplicate ? " disabled" : ""}${sources.length && !peerDuplicate ? ' class="quick-build-known-option"' : ""}>技能：${escapeHtml(skillOptionLabel(name))}${peerDuplicate ? "（本頁已選）" : sources.length ? `（${escapeHtml(sources.join("、"))}已熟練）` : ""}</option>`;
       }))
       .concat(`<option disabled>--------- 工具 ---------</option>`)
@@ -1758,7 +1747,7 @@
         const value = `tool:${name}`;
         const peerDuplicate = excluded.includes(value);
         const sources = duplicateSourceLabels("tools", name, "race");
-        if (acquiredTools.has(name)) sources.push(RACE_LABELS[draft.choices.race] || "種族");
+        if (acquiredTools.has(name)) sources.push(raceName(draft.choices.race) || "種族");
         return `<option value="tool:${escapeHtml(name)}"${selected === value ? " selected" : ""}${peerDuplicate ? " disabled" : ""}${sources.length && !peerDuplicate ? ' class="quick-build-known-option"' : ""}>工具：${escapeHtml(name)}${peerDuplicate ? "（本頁已選）" : sources.length ? `（${escapeHtml(sources.join("、"))}已熟練）` : ""}</option>`;
       }))
       .concat(`<option disabled>--------- 賭具與樂器 ---------</option>`)
@@ -1766,7 +1755,7 @@
         const value = `tool:${name}`;
         const peerDuplicate = excluded.includes(value);
         const sources = duplicateSourceLabels("tools", name, "race");
-        if (acquiredTools.has(name)) sources.push(RACE_LABELS[draft.choices.race] || "種族");
+        if (acquiredTools.has(name)) sources.push(raceName(draft.choices.race) || "種族");
         return `<option value="tool:${escapeHtml(name)}"${selected === value ? " selected" : ""}${peerDuplicate ? " disabled" : ""}${sources.length && !peerDuplicate ? ' class="quick-build-known-option"' : ""}>工具：${escapeHtml(name)}${peerDuplicate ? "（本頁已選）" : sources.length ? `（${escapeHtml(sources.join("、"))}已熟練）` : ""}</option>`;
       }));
     const selectId = `quick-build-human-skilled-${index}`;
@@ -1791,30 +1780,37 @@
     const backgroundFeats = (draft.acquisitions.feats || []).filter(item => item.sourceType === "background").map(item => item.name);
     const originFeats = humanOriginFeatOptions();
     const fields = [];
-    if (key === "dragonborn") fields.push(raceSelect("ancestry", "龍族血統", RACE_OPTION_DEFINITIONS.dragonborn.ancestry));
+    const rules = raceRules(key);
+    const choice = rules?.choice;
+    const choiceSelect = (selectOptions = {}) => raceSelect(choice.draftField, choice.quickBuildLabel, raceChoiceDraftValues(key), selectOptions);
+    if (key === "dragonborn") fields.push(choiceSelect());
     if (key === "elf") {
-      fields.push(raceSelect("lineage", "精靈傳承", RACE_OPTION_DEFINITIONS.elf.lineage, { note: RACE_LINEAGE_DESCRIPTIONS[options.lineage] }));
-      fields.push(raceSelect("skill", "敏銳感官技能熟練", RACE_OPTION_DEFINITIONS.elf.skill, { disabled: backgroundSkills, note: "其他來源已熟練的技能會標示來源，但仍可選擇。" }));
-      if (options.lineage === "高等精靈血統") fields.push(raceSelectWithDetail("cantrip", "法師戲法", SpellCatalog.getSpells("wizard", "cantrips").map(spell => spell.spellId), { showSpellView: true, formatOption: spellNameZh }));
+      fields.push(choiceSelect({ note: RACE_LINEAGE_DESCRIPTIONS[options.lineage] }));
+      fields.push(raceSelect("skill", `${raceSkillTrait(key).name}技能熟練`, raceSkillChoices(key), { disabled: backgroundSkills, note: "其他來源已熟練的技能會標示來源，但仍可選擇。" }));
+      const cantripChoice = raceChoiceOption(key, options)?.cantripChoice;
+      if (cantripChoice) fields.push(raceSelectWithDetail("cantrip", `${CLASS_LABELS[cantripChoice.spellList]}戲法`, SpellCatalog.getSpells(cantripChoice.spellList, "cantrips").map(spell => spell.spellId), { showSpellView: true, formatOption: spellNameZh }));
     }
     if (key === "gnome") {
-      fields.push(raceSelect("lineage", "侏儒血統", RACE_OPTION_DEFINITIONS.gnome.lineage, { note: RACE_LINEAGE_DESCRIPTIONS[options.lineage] }));
+      fields.push(choiceSelect({ note: RACE_LINEAGE_DESCRIPTIONS[options.lineage] }));
     }
-    if (key === "goliath") fields.push(raceSelectWithDetail("ancestry", "巨人血統恩賜", RACE_OPTION_DEFINITIONS.goliath.ancestry));
+    if (key === "goliath") fields.push(raceSelectWithDetail(choice.draftField, choice.quickBuildLabel, raceChoiceDraftValues(key)));
     if (key === "human") {
-      fields.push(raceSelect("size", "體型", RACE_OPTION_DEFINITIONS.human.size));
-      fields.push(raceSelect("skill", "技藝嫻熟：技能熟練", SKILL_OPTIONS, { disabled: backgroundSkills, note: "其他來源已熟練的技能會標示來源，但仍可選擇。" }));
+      fields.push(raceSelect("size", "體型", rules.sizes));
+      fields.push(raceSelect("skill", `${raceSkillTrait(key).name}：技能熟練`, raceSkillChoices(key), { disabled: backgroundSkills, note: "其他來源已熟練的技能會標示來源，但仍可選擇。" }));
       fields.push(raceFeatSelect("靈活人才：起源專長", originFeats, { disabled: backgroundFeats, note: "已從背景取得的相同專長不可重複選擇。魔法學徒與熟習會繼續顯示專長選項。" }));
     }
     if (key === "tiefling") {
-      fields.push(raceSelect("size", "體型", RACE_OPTION_DEFINITIONS.tiefling.size));
-      fields.push(raceSelect("legacy", "邪魔遺贈", RACE_OPTION_DEFINITIONS.tiefling.legacy, { note: RACE_LINEAGE_DESCRIPTIONS[options.legacy] }));
+      fields.push(raceSelect("size", "體型", rules.sizes));
+      fields.push(choiceSelect({ note: RACE_LINEAGE_DESCRIPTIONS[options.legacy] }));
     }
     const humanFeatPanel = key === "human" && options.feat === "魔法學徒" ? renderHumanMagicFeatOptions() : key === "human" && options.feat === "熟習" ? renderHumanSkilledFeatOptions() : "";
-    const goliathDetail = key === "goliath" && GOLIATH_ANCESTRY_DETAILS[options.ancestry]
-      ? `<div class="quick-build-ancestry-detail"><strong>${escapeHtml(options.ancestry)}</strong>${escapeHtml(GOLIATH_ANCESTRY_DETAILS[options.ancestry])}</div>`
+    // 歌利亞的恩賜說明：所選血統選項的種族頁文字（純文字）。
+    const ancestryOption = key === "goliath" ? raceChoiceOption(key, options) : null;
+    const ancestryDetail = ancestryOption ? window.getRaceText?.(key)?.options?.[ancestryOption.value] : "";
+    const goliathDetail = ancestryDetail
+      ? `<div class="quick-build-ancestry-detail"><strong>${escapeHtml(options.ancestry)}</strong>${escapeHtml(ancestryDetail)}</div>`
       : "";
-    body.innerHTML = `<h3>${RACE_LABELS[key]}種族選項</h3><p class="quick-build-lead">請選擇下列種族細節</p><section class="quick-build-choice-panel quick-build-race-options">${fields.join("")}${goliathDetail}</section>${humanFeatPanel}`;
+    body.innerHTML = `<h3>${raceName(key)}種族選項</h3><p class="quick-build-lead">請選擇下列種族細節</p><section class="quick-build-choice-panel quick-build-race-options">${fields.join("")}${goliathDetail}</section>${humanFeatPanel}`;
     body.querySelectorAll("[data-race-option]").forEach(select => select.addEventListener("change", updateRaceOption));
     body.querySelectorAll("[data-race-spell-view]").forEach(button => button.addEventListener("click", () => showRaceSpellDescription(button.dataset.raceSpellView, button)));
     body.querySelector("[data-race-feat-view]")?.addEventListener("click", event => showHumanFeatDescription(event.currentTarget));
@@ -1836,14 +1832,14 @@
       return ["體型：中型", "速度：30 呎", `血統：${choice.ancestry || ""}`, `吐息元素與抗性：${choice.damage || ""}`, "黑暗視覺 60 呎", "５級後可飛行 10 分鐘"];
     }
     if (key === "dwarf") return ["體型：中型", "速度：30 呎", "黑暗視覺 120 呎", "中毒豁免優勢", "毒素傷害減半", "每級 HP 上限 +1", "站石地上可感知震動"];
-    if (key === "elf") return ["體型：中型", `速度：${options.lineage === "木精靈血統" ? "35" : "30"} 呎`, `血統：${String(options.lineage || "").replace("血統", "")}`, `黑暗視覺 ${options.lineage === "卓爾血統" ? "120" : "60"} 呎`, `種族法術：${elfSummarySpells(options)}`, "魅惑狀態豁免優勢", `技能熟練：${options.skill}`];
+    const option = raceChoiceOption(key, options);
+    if (key === "elf") return ["體型：中型", `速度：${option?.speed || raceRules(key).speed} 呎`, `血統：${option?.label || ""}`, `黑暗視覺 ${option?.darkvision || raceRules(key).darkvision} 呎`, `種族法術：${elfSummarySpells(options)}`, "魅惑狀態豁免優勢", `技能熟練：${options.skill}`];
     if (key === "gnome") {
       const forest = options.lineage === "森林侏儒";
-      return ["體型：小型", "速度：30 呎", `血統：${String(options.lineage || "").replace("侏儒", "")}侏儒`, "黑暗視覺 60 呎", "智感魅力屬性豁免優勢。", `種族法術：${forest ? "次級幻影（1 級）、動物交談（1 級）" : "修復術、魔法伎倆"}`];
+      return ["體型：小型", "速度：30 呎", `血統：${option?.name || "侏儒"}`, "黑暗視覺 60 呎", "智感魅力屬性豁免優勢。", `種族法術：${forest ? "次級幻影（1 級）、動物交談（1 級）" : "修復術、魔法伎倆"}`];
     }
     if (key === "goliath") {
-      const match = String(options.ancestry || "").match(/^(.+)（(.+)巨人）$/u);
-      return ["體型：中型", "速度：35 呎", `血統：${match?.[2] || ""}巨人`, `異能：${match?.[1] || ""}`, "５級後可變大", "（速度 +10、力量檢定優勢）"];
+      return ["體型：中型", "速度：35 呎", `血統：${option?.subtitle || "巨人"}`, `異能：${option?.name || ""}`, "５級後可變大", "（速度 +10、力量檢定優勢）"];
     }
     if (key === "halfling") return ["體型：小型", "速度：30 呎", "恐慌狀態豁免優勢", "檢定出 1 時可重擲一次", "移動時可穿越比你大的生物", "可躲藏比你大的生物後方"];
     if (key === "human") {
@@ -1888,7 +1884,7 @@
       return name ? text.replaceAll(name, annotatedDuplicateName(item.type, item.id, "race", item.verb)) : text;
     }, line));
     const pending = racePendingChoices().filter(item => item.includes("後續步驟選擇"));
-    body.innerHTML = `<h3>種族選擇完成</h3><div class="quick-build-complete"><strong>${RACE_LABELS[key]}</strong>${completionLines.map(line => `<br>${escapeHtml(line)}`).join("")}</div>${duplicateReviewWarning()}${pending.length ? `<div class="quick-build-pending"><strong>尚未完成的後續必要選擇</strong><br>${pending.map(escapeHtml).join("、")}。</div>` : ""}`;
+    body.innerHTML = `<h3>種族選擇完成</h3><div class="quick-build-complete"><strong>${raceName(key)}</strong>${completionLines.map(line => `<br>${escapeHtml(line)}`).join("")}</div>${duplicateReviewWarning()}${pending.length ? `<div class="quick-build-pending"><strong>尚未完成的後續必要選擇</strong><br>${pending.map(escapeHtml).join("、")}。</div>` : ""}`;
   }
 
   function classAbilitiesComplete(target = draft) {
@@ -2610,7 +2606,7 @@
       .map(name => `${name}（${CLASS_LABELS[draft.choices.class]}）`);
     const selectedLanguages = groupedSourceAcquisitions("languages", () => true, item => {
       if (item.sourceId === "rogue") return CLASS_LABELS.rogue;
-      if (draft.choices.race === "tiefling" && item.content?.value === "infernal") return RACE_LABELS.tiefling;
+      if ((raceRules(draft.choices.race)?.languageOptions || []).includes(item.content?.value)) return raceName(draft.choices.race);
       return "";
     });
     const languageSummary = [selectedLanguages === "無" ? "" : selectedLanguages, ...fixedSpecialLanguages].filter(Boolean).join("\n") || "無";
@@ -2657,29 +2653,6 @@
         ${shopItems().length ? summaryField("匯入後財產", formatCopperAmount(shopBalanceCopper())) : ""}
       </dl></section>`;
   }
-
-  const MOBILE_RACE_OPTION_VALUES = {
-    dragonborn: {
-      field: "dragonborn-ancestry",
-      values: {
-        "黑龍-酸": "black_acid", "藍龍-電": "blue_lightning", "黃銅龍-火": "brass_fire", "青銅龍-電": "bronze_lightning",
-        "赤銅龍-酸": "copper_acid", "金龍-火": "gold_fire", "綠龍-毒": "green_poison", "紅龍-火": "red_fire",
-        "銀龍-冰": "silver_cold", "白龍-冰": "white_cold"
-      },
-      choice: "ancestry"
-    },
-    elf: { field: "elf-lineage", values: { "卓爾血統": "drow", "高等精靈血統": "high_elf", "木精靈血統": "wood_elf" }, choice: "lineage" },
-    gnome: { field: "gnome-lineage", values: { "森林侏儒": "forest_gnome", "岩石侏儒": "rock_gnome" }, choice: "lineage" },
-    goliath: {
-      field: "goliath-ancestry",
-      values: {
-        "雲遊四方（雲巨人）": "cloud", "星火燎原（火巨人）": "fire", "凜若冰霜（霜巨人）": "frost",
-        "地動山搖（山丘巨人）": "hill", "堅若磐石（石巨人）": "stone", "轟雷掣電（風暴巨人）": "storm"
-      },
-      choice: "ancestry"
-    },
-    tiefling: { field: "tiefling-legacy", values: { "深淵血統": "abyssal", "冥界血統": "chthonic", "煉獄血統": "infernal" }, choice: "legacy" }
-  };
 
   function mobileImportWarning(message, warnings) {
     if (message && !warnings.includes(message)) warnings.push(message);
@@ -2857,19 +2830,20 @@
     }
   }
 
+  // 血統選項：草稿值（choice.draftField）換成角色卡血統選單的值；血統的自選戲法寫入對應選單。
   function importMobileRaceOptions(warnings) {
     const raceId = draft.choices.race;
-    const mapping = MOBILE_RACE_OPTION_VALUES[raceId];
-    if (mapping) {
-      const sourceValue = draft.choices.raceOptions?.[mapping.choice];
-      const value = mapping.values[sourceValue];
-      if (!value) mobileImportWarning(`${RACE_LABELS[raceId]}選項「${sourceValue || "未選擇"}」：無法對應角色卡`, warnings);
-      else setMobileField(mapping.field, value, warnings, `${RACE_LABELS[raceId]}選項`);
+    const choice = raceRules(raceId)?.choice;
+    const lineageOption = raceChoiceOption(raceId, draft.choices.raceOptions);
+    if (choice) {
+      const sourceValue = draft.choices.raceOptions?.[choice.draftField];
+      if (!lineageOption) mobileImportWarning(`${raceName(raceId)}選項「${sourceValue || "未選擇"}」：無法對應角色卡`, warnings);
+      else setMobileField(choice.id, lineageOption.value, warnings, `${raceName(raceId)}選項`);
     }
-    if (raceId === "elf" && draft.choices.raceOptions?.lineage === "高等精靈血統" && draft.choices.raceOptions?.cantrip) {
-      const select = document.getElementById("high-elf-cantrip");
+    if (lineageOption?.cantripChoice && draft.choices.raceOptions?.cantrip) {
+      const select = document.getElementById(lineageOption.cantripChoice.field);
       const option = [...(select?.options || [])].find(item => item.value === draft.choices.raceOptions.cantrip);
-      if (!select || !option) mobileImportWarning(`高等精靈戲法「${draft.choices.raceOptions.cantrip}」：找不到角色卡選項`, warnings);
+      if (!select || !option) mobileImportWarning(`${lineageOption.label}戲法「${draft.choices.raceOptions.cantrip}」：找不到角色卡選項`, warnings);
       else { select.value = option.value; dispatchMobileField(select); }
     }
   }
@@ -3168,7 +3142,7 @@
 
   function renderRaceEdit(body) {
     appendFlowSection(body, renderRaceCards, "race-choice");
-    if (!draft.choices.race || ["dwarf", "halfling", "orc"].includes(draft.choices.race)) return;
+    if (!draft.choices.race || !raceHasDraftOptions(draft.choices.race)) return;
     appendFlowSection(body, renderRaceOptions, "race-options");
   }
 
@@ -3543,7 +3517,7 @@
   }
 
   function chooseRace(key) {
-    if (!RACE_ORDER.includes(key) || !raceData(key)) return;
+    if (!raceIds().includes(key) || !raceData(key)) return;
     if (draft.choices.race === key) return;
     draft.choices.race = key;
     draft.choices.raceOptions = {};
@@ -3670,9 +3644,7 @@
     const value = event.currentTarget.value;
     const options = { ...draft.choices.raceOptions };
     if (value) options[field] = value; else delete options[field];
-    if (field === "lineage") {
-      if (value !== "高等精靈血統") delete options.cantrip;
-    }
+    if (field === raceRules(draft.choices.race)?.choice?.draftField && !raceChoiceOption(draft.choices.race, options)?.cantripChoice) delete options.cantrip;
     if (field === "feat") options.featOptions = {};
     draft.choices.raceOptions = options;
     clearFutureLevelChoices();

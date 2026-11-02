@@ -38,7 +38,7 @@ function createManualFeatGuidance() {
 function syncManualFeatGuidance() {
   const manual = isManualFeatManagementEnabled();
   document.querySelectorAll("[data-feat-choice]").forEach(wrap => {
-    const raceChoice = wrap.dataset.featChoice === "human-origin";
+    const raceChoice = getRaceFeatChoiceTraits().some(trait => trait.feat.key === wrap.dataset.featChoice);
     const styleClass = ["ranger", "paladin"].find(cls => wrap.dataset.featChoice === `fighting-style-${cls}`);
     const inactiveClassStyle = Boolean(styleClass) && !document.getElementById(`${styleClass}-fighting-style`)?.checked;
     wrap.hidden = (manual && Boolean(raceChoice)) || inactiveClassStyle;
@@ -177,9 +177,10 @@ function getFeatChoiceSpecs() {
   const cls = document.getElementById("class")?.value || "";
   const level = Number(document.getElementById("level")?.value || 0);
   const specs = [];
-  if (document.getElementById("race")?.value === "human") {
-    specs.push({ key: "human-origin", source: "race", label: "靈活人才：起源專長", type: "origin", active: true });
-  }
+  // 種族特質給予的起源專長（種族內容檔的 feat，例如人類的靈活人才）。
+  getRaceFeatChoiceTraits(document.getElementById("race")?.value || "").forEach(trait => {
+    specs.push({ key: trait.feat.key, source: "race", label: trait.feat.label, traitName: trait.name, type: "origin", active: true });
+  });
   if (cls === "fighter" && level >= 1) {
     specs.push({ key: "fighting-style-fighter", source: "class", label: "戰鬥風格", type: "style", level: 1, active: true });
     if (window.hasClassFeature?.("fighter", "fighter-additional-fighting-style", level)) specs.push({ key: "fighting-style-fighter-2", source: "class", label: "戰鬥風格2", headingLabel: "額外戰鬥風格", type: "style", level: 7, active: true });
@@ -250,12 +251,19 @@ function renderClassFeatChoices() {
   getFeatChoiceSpecs().filter(spec => spec.source === "class").forEach(spec => appendFeatChoice(getClassFeatChoiceSection(spec), spec));
 }
 
+// 給予起源專長的種族特質；省略 race 時為全部種族。
+function getRaceFeatChoiceTraits(race = null) {
+  const rules = race === null ? Object.values(window.getAllRaceRules?.() || {}) : [window.getRaceRules?.(race)].filter(Boolean);
+  return rules.flatMap(rule => rule.traits.filter(trait => trait.feat));
+}
+
+// 種族專長選單放在種族選項列的「<專長 key>-row」（例如 human-origin-row）；previousValue 為重繪前的選擇。
 function renderRaceFeatChoice(previousValue = "") {
-  const container = document.getElementById("human-origin-row");
-  container.replaceChildren();
-  const spec = getFeatChoiceSpecs().find(spec => spec.source === "race");
-  if (!spec) return;
-  appendFeatChoice(container, spec, previousValue);
+  getRaceFeatChoiceTraits().forEach(trait => document.getElementById(`${trait.feat.key}-row`)?.replaceChildren());
+  getFeatChoiceSpecs().filter(spec => spec.source === "race").forEach(spec => {
+    const container = document.getElementById(`${spec.key}-row`);
+    if (container) appendFeatChoice(container, spec, previousValue);
+  });
 }
 
 function renderInvocationFeatChoices(previousValues = new Map()) {
@@ -442,7 +450,7 @@ function setDerivedFeatRowValues(row, spec) {
   const sourceLabel = spec.label.replace(/[：:]/gu, "");
   label.dataset.featSourceLabel = sourceLabel;
   label.textContent = sourceLabel;
-  if (spec.key === "human-origin") label.textContent = "靈活人才";
+  if (spec.source === "race") label.textContent = spec.traitName;
   else if (/^lessons-\d+$/u.test(spec.key)) {
     const lessons = getFeatChoiceSpecs().filter(choice => choice.active && /^lessons-\d+$/u.test(choice.key));
     const index = lessons.findIndex(choice => choice.key === spec.key);

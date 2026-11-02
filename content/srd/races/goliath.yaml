@@ -1,0 +1,109 @@
+# yaml-language-server: $schema=../../schema/race.schema.json
+id: goliath
+name: 歌利亞
+source: srd
+creatureType: 類人生物
+sizes:
+  - { size: 中型, height: 約 7-8 呎高 }
+speed: 35
+description: |
+  歌利亞身形高大，如今多被視為遠古巨人的後裔。不過古老傳說對其起源說法不一，也有人認為他們與大地元素或石巨人有關，或是由登山者轉化而來。許多族群長居高山與荒野，嚴酷的環境使競技、力量與自我證明成為重要的文化。
+choice:
+  id: goliath-ancestry
+  label: 巨人裔祖源
+  draftField: ancestry
+  quickBuildLabel: 巨人血統恩賜
+  display: { type: sections }
+  options:
+    - value: cloud
+      name: 雲遊四方
+      subtitle: 雲巨人
+      label: 雲裔
+      pdfLabel: 雲巨人
+      text: 使用**附贈**，以魔法傳送到 30 呎內你能看見的未佔據空間。
+      actions:
+        - { id: cloud-jaunt, mode: bonus, label: 雲遊四方, key: dynamic-bonus-race-r7ggqg, resource: goliath-giant-ancestry-uses, tabletopSuffix: 使用次數＝熟練加值，長休後恢復。 }
+      pdf:
+        1: [附贈傳送30呎, 內可見無人空間]
+    - value: fire
+      name: 星火燎原
+      subtitle: 火巨人
+      label: 火裔
+      pdfLabel: 火巨人
+      text: 攻擊命中時，目標額外受到 1d10 火焰傷害。
+      actions:
+        - { id: fire-burn, mode: action, label: 星火燎原, key: dynamic-action-race-1vjg9hw, resource: goliath-giant-ancestry-uses, tabletop: 攻擊命中目標時增加 1d10 火焰傷害。 }
+      pdf:
+        1: [命中+1d10火傷]
+    - value: frost
+      name: 凜若冰霜
+      subtitle: 霜巨人
+      label: 霜裔
+      pdfLabel: 霜巨人
+      text: 攻擊命中時，目標額外受到 1d6 冷凍傷害，且直到你的下個回合開始前，目標速度降低 10 呎。
+      actions:
+        - { id: frost-chill, mode: action, label: 凜若冰霜, key: dynamic-action-race-cc167a, resource: goliath-giant-ancestry-uses }
+      pdf:
+        1: [命中+1d6冷凍, 目標速度-10呎]
+    - value: hill
+      name: 地動山搖
+      subtitle: 山丘巨人
+      label: 丘陵裔
+      pdfLabel: 丘陵巨人
+      text: 攻擊命中大型或更小的生物時，可使其陷入[[倒地]]狀態。
+      actions:
+        - { id: hill-tumble, mode: action, label: 地動山搖, key: dynamic-action-race-11249i9, resource: goliath-giant-ancestry-uses, tabletop: 攻擊命中大型以下的生物可令其陷入「倒地」狀態。 }
+      pdf:
+        1: [大型以下可擊倒]
+    - value: stone
+      name: 堅若磐石
+      subtitle: 石巨人
+      label: 石裔
+      pdfLabel: 石巨人
+      text: 受到傷害時，可使用**反應**擲 1d12＋體質調整值，從該次傷害中扣除。
+      actions:
+        - { id: stone-endurance, mode: reaction, label: 堅若磐石, key: dynamic-reaction-race-16nfphm, resource: goliath-giant-ancestry-uses, behavior: goliath-stone-endurance, tabletopSuffix: 使用次數＝熟練加值，長休後恢復。 }
+      pdf:
+        1: ["反應減1d12{conModifier}傷"]
+    - value: storm
+      name: 轟雷掣電
+      subtitle: 風暴巨人
+      label: 風暴裔
+      pdfLabel: 風暴巨人
+      text: 60 呎內的生物對你造成傷害時，可使用**反應**對其造成 1d8 雷鳴傷害。
+      actions:
+        - { id: storm-thunder, mode: reaction, label: 轟雷掣電, key: dynamic-reaction-race-4cc8u8, resource: goliath-giant-ancestry-uses, tabletopSuffix: 使用次數＝熟練加值，長休後恢復。 }
+      pdf:
+        1: [受傷可反應反擊, 60呎內1d8雷鳴]
+traits:
+  - id: giant-ancestry
+    name: 巨人血統
+    text: 你是巨人後裔，從下列先祖恩賜中選擇一項。使用次數＝熟練加值，長休後恢復。
+    choice: true
+    resource: { key: goliath-ancestry, kind: checkboxes, label: 巨人血統異能, uses: proficiencyBonus, container: goliath-giant-ancestry-uses, checkbox: goliath-giant-ancestry-check, requiresChoice: true }
+  - id: powerful-build
+    name: 身強力壯
+    text: 掙脫[[擒抱]]狀態的屬性檢定具有優勢。計算可攜重量時，你視為大型。
+    carryMultiplier: 2
+    hint: { panels: [skills], summary: 掙脫擒抱狀態的屬性檢定有優勢。 }
+  - id: large-form
+    name: 巨化形體
+    level: 5
+    text: |
+      5 級起，若空間足夠，可使用**附贈**變為大型（2×2 格），持續 10 分鐘或直到你結束（免動作）。
+      - 速度增加 10 呎
+      - 力量檢定具有優勢
+      - 長休後才能再次使用
+    resource: { key: goliath-large-form, uses: 1 }
+    actions:
+      - { id: large-form, mode: bonus, label: 等級 5：巨化形體, key: dynamic-bonus-race-1svsj4g, resource: goliath-large-form }
+pdf:
+  choiceFallback: 未選巨人
+  lines:
+    - 掙脫擒抱有優勢
+    - 攜帶重量×2
+    - "{choice}血統"
+    - "能力{proficiency}次/長休"
+    - { choice: 1, fallback: [血統能力未選] }
+    - minLevel: 5
+      lines: ["巨化形體(LV5)◇", 附贈巨化10分, 速度+10, 力量檢定優勢]

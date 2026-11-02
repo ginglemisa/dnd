@@ -1,0 +1,36 @@
+# yaml-language-server: $schema=../../schema/race.schema.json
+id: orc
+name: 獸人
+source: srd
+creatureType: 類人生物
+sizes:
+  - { size: 中型, height: 約 6-7 呎高 }
+speed: 30
+darkvision: 120
+description: |
+  獸人皮厚牙長，身心堅毅。古老傳說中，諸神瓜分世界時獸人之神一無所獲，於是以長矛擊地，宣告荒野與洞穴皆歸獸人所有；其歷史也長期受戰爭與神祇信仰塑造。如今獸人散居各地，發展出不同的部族、文化與生活方式，不再由古老的仇恨與憤怒定義自己。
+traits:
+  - id: adrenaline-rush
+    name: 熱血湧動
+    text: 使用**附贈**使速度加倍，並獲得臨時 HP，數值＝熟練加值。使用次數＝熟練加值，短休或長休後恢復。
+    resource: { key: orc-adrenaline-rush, uses: proficiencyBonus, recover: { short: all } }
+    actions:
+      - { id: adrenaline-rush, mode: bonus, label: 熱血湧動, key: dynamic-bonus-race-ydqmx5, resource: orc-adrenaline-rush, proficiencyValue: true }
+  - { id: darkvision, name: 黑暗視覺 }
+  - id: relentless-endurance
+    name: 堅韌不屈
+    text: HP 降至 0 但未立即死亡時，可改為降至 1 HP。長休後才能再次使用。
+    resource: { key: orc-relentless-endurance, uses: 1 }
+    hint: { panels: [overview], summary: 若 HP 被傷害至 0 且沒有即死，可強制 HP=1。 }
+pdf:
+  lines:
+    - 黑暗視覺120呎
+    - 獸人熱血湧動
+    - 附贈/速度×2
+    - 臨時HP={proficiency}
+    - 限{proficiency}次
+    - 短休/長休恢復
+    - 獸人堅韌不屈
+    - 非即死HP歸零時
+    - 強制HP=1
+    - 限1次/長休回

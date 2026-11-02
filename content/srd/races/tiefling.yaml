@@ -1,0 +1,83 @@
+# yaml-language-server: $schema=../../schema/race.schema.json
+id: tiefling
+name: 提夫林
+source: srd
+creatureType: 類人生物
+sizes:
+  - { size: 中型, height: 約 4-7 呎高 }
+  - { size: 小型, height: 約 3-4 呎高 }
+speed: 30
+darkvision: 60
+languageOptions: [infernal]
+description: |
+  提夫林是人類系的後裔，血統受異界存在影響，這份遺贈有時會隔代才顯現。過去不乏凡人父母因孩子生來帶有角、尾等邪魔特徵而將其遺棄。長期的恐懼與排斥，使許多提夫林流落城市邊緣與犯罪世界，也留下騙徒、盜賊與罪犯特別多的歷史印象，但血脈並不決定他們的本性。
+choice:
+  id: tiefling-legacy
+  label: 邪魔遺贈
+  draftField: legacy
+  display: { type: lineage-table, label: 提夫林邪魔遺贈等級能力 }
+  options:
+    - value: abyssal
+      name: 深淵血統
+      short: 深淵
+      description: 血統源自代表失序與扭曲的邪惡存在。
+      resistance: poison
+      spells:
+        - { spell: poison-spray, level: 1 }
+        - { spell: ray-of-sickness, level: 3, freeUses: 1 }
+        - { spell: hold-person, level: 5, freeUses: 1 }
+      pdf:
+        1: [毒素傷害抗性, 毒氣噴濺戲法]
+        3: [致病射線 ◇]
+        5: [人類定身術 ◇]
+    - value: chthonic
+      name: 冥界血統
+      short: 冥界
+      description: 血統與亡者國度或陰影之境相關。
+      resistance: necrotic
+      spells:
+        - { spell: chill-touch, level: 1 }
+        - { spell: false-life, level: 3, freeUses: 1 }
+        - { spell: ray-of-enfeeblement, level: 5, freeUses: 1 }
+      pdf:
+        1: [黯蝕傷害抗性, 凍寒之觸戲法]
+        3: [虛假生命 ◇]
+        5: [衰弱射線 ◇]
+    - value: infernal
+      name: 煉獄血統
+      short: 煉獄
+      description: 血統源自講求規則與交易的異界勢力。
+      resistance: fire
+      spells:
+        - { spell: fire-bolt, level: 1 }
+        - { spell: hellish-rebuke, level: 3, freeUses: 1 }
+        - { spell: darkness, level: 5, freeUses: 1 }
+      pdf:
+        1: [火焰傷害抗性, 火焰箭戲法]
+        3: [煉獄叱喝 ◇]
+        5: [黑暗術 ◇]
+traits:
+  - { id: darkvision, name: 黑暗視覺 }
+  - id: otherworldly-presence
+    name: 異界姿態
+    text: 你學會戲法**奇術**。
+    spells:
+      - { spell: thaumaturgy, level: 1 }
+  - id: fiendish-legacy
+    name: 邪魔遺贈
+    text: 血統賦予你超自然的能力，從下表選擇一種。
+    choice: true
+    afterChoice: 血統法術始終準備。3 級與 5 級取得的法術各可免費施展 1 次，之後須消耗法術位；免費次數長休後恢復。施法屬性在選擇血統時從智力、感知、魅力中選定。
+pdf:
+  choiceFallback: 未選血統
+  lines:
+    - 黑暗視覺60呎
+    - 異界姿態
+    - 奇術戲法
+    - "{choice}遺贈"
+    - { choice: 1, fallback: [傷害抗性未選, 血統戲法] }
+    - minLevel: 3
+      lines:
+        - { choice: 3, fallback: [血統一環] }
+        - { minLevel: 5, lines: [{ choice: 5, fallback: [血統二環] }] }
+        - 長休後環法恢復

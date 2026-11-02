@@ -1,0 +1,72 @@
+# yaml-language-server: $schema=../../schema/race.schema.json
+id: dragonborn
+name: 龍裔
+source: srd
+creatureType: 類人生物
+sizes:
+  - { size: 中型, height: 約 5-7 呎高 }
+speed: 30
+darkvision: 60
+description: |
+  龍裔與龍族同為龍神所創，兩者沒有高下之分，只是走上了不同的道路。許多龍裔的祖先曾在異世界受戰亂與強權擺布，最後流落至此，因此有些氏族世代對龍族心存戒備，甚至懷有仇恨。龍裔大多重視榮譽與承諾，血脈之力常在戰鬥中顯現。
+choice:
+  id: dragonborn-ancestry
+  label: 龍族血統
+  draftField: ancestry
+  display: { type: ancestry-table, label: 龍裔龍族血統選項, columns: 5 }
+  options:
+    - { value: black_acid, name: 黑龍, damage: 酸, resistance: acid, label: 黑龍－酸, pdfLabel: 黑龍-酸, draftValue: 黑龍-酸 }
+    - { value: blue_lightning, name: 藍龍, damage: 電, resistance: lightning, label: 藍龍－電, pdfLabel: 藍龍-電, draftValue: 藍龍-電 }
+    - { value: brass_fire, name: 黃銅龍, damage: 火, resistance: fire, label: 黃銅龍－火, pdfLabel: 黃銅龍-火, draftValue: 黃銅龍-火 }
+    - { value: bronze_lightning, name: 青銅龍, damage: 電, resistance: lightning, label: 青銅龍－電, pdfLabel: 青銅龍-電, draftValue: 青銅龍-電 }
+    - { value: copper_acid, name: 赤銅龍, damage: 酸, resistance: acid, label: 赤銅龍－酸, pdfLabel: 赤銅龍-酸, draftValue: 赤銅龍-酸 }
+    - { value: gold_fire, name: 金龍, damage: 火, resistance: fire, label: 金龍－火, pdfLabel: 金龍-火, draftValue: 金龍-火 }
+    - { value: green_poison, name: 綠龍, damage: 毒, resistance: poison, label: 綠龍－毒, pdfLabel: 綠龍-毒, draftValue: 綠龍-毒 }
+    - { value: red_fire, name: 紅龍, damage: 火, resistance: fire, label: 紅龍－火, pdfLabel: 紅龍-火, draftValue: 紅龍-火 }
+    - { value: silver_cold, name: 銀龍, damage: 冷凍, resistance: cold, label: 銀龍－冰, pdfLabel: 銀龍-冰, draftValue: 銀龍-冰 }
+    - { value: white_cold, name: 白龍, damage: 冷凍, resistance: cold, label: 白龍－冰, pdfLabel: 白龍-冰, draftValue: 白龍-冰 }
+traits:
+  - id: draconic-ancestry
+    name: 龍族血統
+    text: 你擁有巨龍血統。從下表選擇一種龍，決定你吐息與傷害抗性的傷害類型。
+    choice: true
+  - id: breath-weapon
+    name: 吐息元素
+    text: |
+      進行**攻擊**時，可將其中一次攻擊換成吐息。
+      - 每次吐息時選擇範圍，15 呎錐形或 5 呎寬、30 呎長的直線
+      - 範圍內的生物進行**敏捷豁免**（DC＝8＋熟練加值＋體質調整值）
+      - 失敗受到 1d10 點傷害，成功則減半；5 級起改為 2d10
+      - 使用次數＝熟練加值，長休後恢復
+    resource: { key: dragonborn-breath, kind: checkboxes, uses: proficiencyBonus, container: dragonborn-breath-uses, checkbox: race-ab-check }
+    actions:
+      - { id: breath, mode: action, label: 吐息元素, key: dynamic-action-race-1loctyz, resource: dragonborn-breath-uses, behavior: dragonborn-breath }
+  - id: damage-resistance
+    name: 傷害抗性
+    text: 你對龍族血統的傷害類型具有[[抗性]]，該類傷害減半。
+  - { id: darkvision, name: 黑暗視覺 }
+  - id: draconic-flight
+    name: 龍翔天際
+    level: 5
+    flight: true
+    text: |
+      5 級起，可使用**附贈**展開光譜龍翼，獲得飛行速度，持續 10 分鐘。
+      - 可隨時收起龍翼（免動作）
+      - 陷入[[失能]]狀態時龍翼消失
+      - 每次長休限用 1 次
+    resource: { key: dragonborn-dragon-flight, uses: 1 }
+    actions:
+      - { id: draconic-flight, mode: bonus, label: 等級 5：龍翔天際, key: dynamic-bonus-race-1h4jffx, resource: dragonborn-dragon-flight }
+pdf:
+  choiceFallback: 未選祖源（預備）
+  lines:
+    - 黑暗視覺：60呎
+    - "{choice}抗性"
+    - 使用攻擊動作時
+    - 單次攻擊可吐息
+    - 限用{proficiency}次,長休回
+    - 15呎錐/30呎直
+    - 目標敏豁DC{breathSaveDc}
+    - 傷害：{breathDice}d10
+    - ５等附贈可飛行
+    - 限10分長休恢復

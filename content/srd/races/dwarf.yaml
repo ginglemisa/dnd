@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=../../schema/race.schema.json
+id: dwarf
+name: 矮人
+source: srd
+creatureType: 類人生物
+sizes:
+  - { size: 中型, height: 約 4-5 呎高 }
+speed: 30
+darkvision: 120
+description: |
+  矮人身形矮壯、蓄長鬚，擅長採礦與冶金，性格勇敢，壽命約三百年。他們重視傳承與家族，對工藝與品質極為執著。矮人曾建立許多宏偉的地下王國，如今不少已成失落的廢墟，因此尋回祖先的故土、要塞與遺物，正是許多矮人踏上旅途的理由。
+traits:
+  - { id: darkvision, name: 黑暗視覺 }
+  - id: dwarven-resilience
+    name: 矮人體魄
+    text: 對抗[[中毒]]狀態的豁免具有優勢，受到的毒素傷害減半。
+    resistances: [poison]
+    hint: { panels: [skills], summary: 對中毒狀態的豁免有優勢。 }
+  - id: dwarven-toughness
+    name: 矮人剛毅
+    text: HP 上限 +1，之後每升 1 級再 +1。
+    hpPerLevel: 1
+  - id: stonecunning
+    name: 石中精妙
+    text: 使用**附贈**獲得 60 呎**震顫感知**，持續 10 分鐘；感知時須站在或接觸石質表面。使用次數＝熟練加值，長休後恢復。
+    resource: { key: dwarf-stonecunning, uses: proficiencyBonus }
+    actions:
+      - { id: stonecunning, mode: bonus, label: 石中精妙, key: dynamic-bonus-race-m9n3bt, resource: dwarf-stonecunning }
+pdf:
+  lines:
+    - 黑暗視覺120呎
+    - 毒素抗性
+    - 中毒豁免優勢
+    - 每等級額外+1HP
+    - 附贈開石之感應
+    - 10分內震動感知
+    - 範圍60呎
+    - 限用{proficiency}次
+    - 長休後恢復次數

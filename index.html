@@ -88,27 +88,27 @@
   <script src="druid-wild-shape-beasts.js?v=20261031-beast-file" defer></script>
   <script src="class-content.generated.js?v=a42b11179858" defer></script>
   <script src="class-content.private.generated.js" defer></script>
-  <script src="race.js?v=20261021-condition-plain" defer></script>
+  <script src="race-content.generated.js?v=1f805d54bcfe" defer></script>
   <script src="background-content.generated.js?v=c9f6c95f6ead" defer></script>
   <script src="tool-data.js?v=20261031-class-content" defer></script>
   <script src="feats.js?v=20261031-class-feats" defer></script>
   <script src="equipment-notes.js?v=20261026-gear-weight" defer></script>
   <script src="spell-list.js?v=20261026-wizard-spells" defer></script>
   <script src="condition.js?v=20261021-bonus-wording" defer></script>
-  <script src="action-panel.js?v=20261102-feature-anchors" defer></script>
-  <script src="character-rules.js?v=20261102-background-source" defer></script>
+  <script src="action-panel.js?v=20261102-race-content" defer></script>
+  <script src="character-rules.js?v=20261102-race-content" defer></script>
   <script src="app-dialog.js?v=20261028-custom-spells" defer></script>
   <script src="custom-background.js?v=20261102-background-source" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
-  <script src="tabletop-mode.js?v=20261102-rest-options" defer></script>
+  <script src="tabletop-mode.js?v=20261102-race-content" defer></script>
   <script src="tabletop-druid.js?v=20261021-bonus-wording" defer></script>
-  <script src="tabletop-resources.js?v=20261014-heroic-help" defer></script>
+  <script src="tabletop-resources.js?v=20261102-race-content" defer></script>
   <script src="tabletop-actions.js?v=20261101-class-hints" defer></script>
   <script src="tabletop-custom-spells.js?v=20261028-custom-spell-vsm-layout" defer></script>
   <script src="tabletop-spells.js?v=20261101-subclass-features" defer></script>
   <script src="legal-modal.js?v=20261022-game-icons" defer></script>
   <script src="onboarding-tour.js?v=20261102-background-source" defer></script>
-  <script src="quick-build.js?v=20261102-background-content" defer></script>
+  <script src="quick-build.js?v=20261102-race-content" defer></script>
   <script src="spellbook.js?v=20261028-custom-spells" defer></script>
   <script src="spell-management.js?v=20261028-custom-spells" defer></script>
   <script src="class-option-memory.js?v=20261024-class-split" defer></script>
@@ -980,7 +980,7 @@
             <option value="goblin">哥布林語</option>
             <option value="halfling">半身人語</option>
             <option value="orc">獸人語</option>
-            <option value="infernal" data-tiefling-language hidden disabled>煉獄語</option>
+            <option value="infernal" data-race-language hidden disabled>煉獄語</option>
           </select>
         </div>
 
@@ -997,7 +997,7 @@
             <option value="goblin">哥布林語</option>
             <option value="halfling">半身人語</option>
             <option value="orc">獸人語</option>
-            <option value="infernal" data-tiefling-language hidden disabled>煉獄語</option>
+            <option value="infernal" data-race-language hidden disabled>煉獄語</option>
           </select>
         </div>
       </div>
@@ -1359,8 +1359,8 @@
   </div>
 
   <script src="sheet-utils.js?v=20261024-index-split"></script>
-  <script src="feat-ui.js?v=20261102-background-content"></script>
-  <script src="spell-sources.js?v=20261102-background-content"></script>
+  <script src="feat-ui.js?v=20261102-race-content"></script>
+  <script src="spell-sources.js?v=20261102-race-content"></script>
   <script src="class-features-ui.js?v=20261102-feature-anchors"></script>
   <script>
 function openCarryCapacityRules(trigger) {
@@ -1519,7 +1519,7 @@ function setCharacterSize(value) {
 function syncCharacterSizeFromRace(savedSize = "") {
   const race = document.getElementById("race")?.value || "";
   const sizeSelect = document.getElementById("character-size-select");
-  const canChooseSize = race === "human" || race === "tiefling";
+  const canChooseSize = canChooseCharacterSize(race);
   const size = getCharacterSizeForRace(race, savedSize || (canChooseSize ? sizeSelect?.value : ""));
 
   sizeSelect?.classList.toggle("is-hidden", !canChooseSize);
@@ -1556,11 +1556,15 @@ function bindCoreCharacterEvents() {
   bindEventById("subclass", "change", applySubclassChange);
   ["class", "level", "subclass"].forEach(id => bindEventById(id, "change", scheduleClassFeatureChoicePrompt));
   bindEventById("speed-input", "input", updateSpeedDisplay);
-  bindEventById("elf-lineage", "change", () => { updateSpeedDisplay(); updateHighElfCantripVisibility(); });
-  ["dragonborn-ancestry", "elf-lineage", "gnome-lineage", "goliath-ancestry", "tiefling-legacy"].forEach(id => {
-    bindEventById(id, "change", updateRaceFeature);
+  // 血統選單（種族內容檔的 choice）：種族頁、速度、自選戲法與種族法術隨所選血統更新。
+  const raceChoices = Object.values(getAllRaceRules()).flatMap(rules => rules.choice ? [rules.choice] : []);
+  raceChoices.forEach(choice => {
+    bindEventById(choice.id, "change", () => { updateSpeedDisplay(); updateHighElfCantripVisibility(); });
+    bindEventById(choice.id, "change", updateRaceFeature);
   });
-  ["gnome-lineage", "elf-lineage", "tiefling-legacy", "high-elf-cantrip", "druid-land"].forEach(id => {
+  const raceSpellFields = raceChoices.flatMap(choice => choice.options.some(option => option.spells.length || option.cantripChoice)
+    ? [choice.id, ...choice.options.flatMap(option => option.cantripChoice ? [option.cantripChoice.field] : [])] : []);
+  [...raceSpellFields, "druid-land"].forEach(id => {
     bindEventById(id, "change", () => { syncOriginAndSubclassDerivedSpellRows(); updateSpellsByClassLevel(); });
   });
   bindEventById("class", "change", updateSpellCastingStatsVisibility);
@@ -1614,8 +1618,37 @@ function syncManualSpellSourceControls() {
   });
 }
 
-function populateHighElfCantripOptions() { const select=document.getElementById("high-elf-cantrip");if(!select||select.options.length>1)return;SpellCatalog.getSpells("wizard","cantrips").forEach(spell=>{const option=document.createElement("option");option.value=spell.spellId;option.textContent=SpellCatalog.getDisplayName(spell.spellId);select.appendChild(option);});if(select.querySelector('option[value="prestidigitation"]'))select.value="prestidigitation"; }
-function updateHighElfCantripVisibility() { const select=document.getElementById("high-elf-cantrip");if(!select)return;populateHighElfCantripOptions();const visible=document.getElementById("race")?.value==="elf"&&document.getElementById("elf-lineage")?.value==="high_elf";select.classList.toggle("is-hidden",!visible);document.getElementById("elf-lineage-row")?.classList.toggle("has-cantrip",visible);if(visible&&!select.value&&select.querySelector('option[value="prestidigitation"]'))select.value="prestidigitation"; }
+// 血統選項的自選戲法選單（種族內容檔的 cantripChoice，例如高等精靈）：選項取自該職業的戲法表，預設為內容檔的 default。
+function getRaceCantripChoices() {
+  return Object.entries(getAllRaceRules()).flatMap(([race, rules]) => (rules.choice?.options || [])
+    .flatMap(option => option.cantripChoice ? [{ race, choiceId: rules.choice.id, value: option.value, ...option.cantripChoice }] : []));
+}
+function populateHighElfCantripOptions() {
+  getRaceCantripChoices().forEach(choice => {
+    const select = document.getElementById(choice.field);
+    if (!select || select.options.length > 1) return;
+    SpellCatalog.getSpells(choice.spellList, "cantrips").forEach(spell => { const option = document.createElement("option"); option.value = spell.spellId; option.textContent = SpellCatalog.getDisplayName(spell.spellId); select.appendChild(option); });
+    if (select.querySelector(`option[value="${choice.default}"]`)) select.value = choice.default;
+  });
+}
+// 目前種族所選的血統選項值（種族內容檔 choice 的選單）；種族沒有血統選擇時為空字串。
+function getSelectedRaceChoiceValue(race = document.getElementById("race")?.value || "") {
+  const choiceId = getRaceRules(race)?.choice?.id;
+  return choiceId ? document.getElementById(choiceId)?.value || "" : "";
+}
+
+function updateHighElfCantripVisibility() {
+  populateHighElfCantripOptions();
+  const race = document.getElementById("race")?.value || "";
+  getRaceCantripChoices().forEach(choice => {
+    const select = document.getElementById(choice.field);
+    if (!select) return;
+    const visible = race === choice.race && document.getElementById(choice.choiceId)?.value === choice.value;
+    select.classList.toggle("is-hidden", !visible);
+    document.getElementById(`${choice.choiceId}-row`)?.classList.toggle("has-cantrip", visible);
+    if (visible && !select.value && select.querySelector(`option[value="${choice.default}"]`)) select.value = choice.default;
+  });
+}
 
 function updateHitDieLabel() {
   const classValue = document.getElementById("class")?.value || "";
@@ -1649,7 +1682,7 @@ function updateSpeedDisplay() {
   speedDisplay.value = window.calculateCharacterSpeed({
     baseSpeed: document.getElementById("speed-input")?.value,
     race: document.getElementById("race")?.value,
-    elfLineage: document.getElementById("elf-lineage")?.value,
+    raceChoice: getSelectedRaceChoiceValue(),
     className: document.getElementById("class")?.value,
     level: document.getElementById("level")?.value,
     isWearingArmor: Boolean(armorName) && !isShieldItem(armorName),
@@ -1693,17 +1726,20 @@ function createLanguageOptionsHtml(options) {
 }
 
 function updateBaseLanguageOptions() {
-  const tieflingSelected = document.getElementById("race")?.value === "tiefling";
+  // 只有種族內容檔 languageOptions 列出的語言（例如提夫林的煉獄語）才可選。
+  const raceLanguages = getRaceRules(document.getElementById("race")?.value || "")?.languageOptions || [];
   ["language1", "language2"].forEach(id => {
     const select = document.getElementById(id);
-    const infernalOption = select?.querySelector('[data-tiefling-language]');
-    if (!select || !infernalOption) return;
-    infernalOption.hidden = !tieflingSelected;
-    infernalOption.disabled = !tieflingSelected;
-    if (!tieflingSelected && select.value === "infernal") {
-      select.value = "";
-      select.dispatchEvent(new Event("change", { bubbles: true }));
-    }
+    if (!select) return;
+    select.querySelectorAll("[data-race-language]").forEach(option => {
+      const allowed = raceLanguages.includes(option.value);
+      option.hidden = !allowed;
+      option.disabled = !allowed;
+      if (!allowed && select.value === option.value) {
+        select.value = "";
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    });
   });
 }
 
@@ -2195,6 +2231,7 @@ function buildRaceLineageMobileView(table) {
     group.className = "race-lineage-mobile__group";
     heading.className = "race-lineage-mobile__heading";
     heading.textContent = headerCell.textContent.trim();
+    if (headerCell.dataset.raceChoiceOption) group.dataset.raceChoiceOption = headerCell.dataset.raceChoiceOption;
     list.className = "race-lineage-mobile__list";
 
     bodyRows.forEach((row) => {
@@ -2228,122 +2265,23 @@ function enhanceRaceFeatureTables(container) {
   });
 }
 
+// 選了血統選項後，種族頁只留下該選項（內容檔產生的種族頁在各選項的格子、欄、小節與說明加上 data-race-choice-option）。
 function hideUnselectedRaceOptions(container, race) {
-  const selectionId = {
-    dragonborn: "dragonborn-ancestry",
-    elf: "elf-lineage",
-    gnome: "gnome-lineage",
-    goliath: "goliath-ancestry",
-    tiefling: "tiefling-legacy"
-  }[race];
-  const selected = document.getElementById(selectionId)?.value || "";
+  const choiceId = getRaceRules(race)?.choice?.id;
+  const selected = choiceId ? document.getElementById(choiceId)?.value || "" : "";
   if (!selected) return;
-
-  if (race === "dragonborn") {
-    const selectedName = {
-      black_acid: "黑龍", blue_lightning: "藍龍", brass_fire: "黃銅龍", bronze_lightning: "青銅龍", copper_acid: "赤銅龍",
-      gold_fire: "金龍", green_poison: "綠龍", red_fire: "紅龍", silver_cold: "銀龍", white_cold: "白龍"
-    }[selected];
-    container.querySelectorAll(".dragon-ancestry-table td").forEach(cell => {
-      cell.hidden = cell.querySelector(".dragon-ancestry-name")?.textContent.trim() !== selectedName;
-    });
-    return;
-  }
-
-  if (race === "elf" || race === "tiefling") {
-    const selectedIndex = {
-      drow: 1, high_elf: 2, wood_elf: 3,
-      abyssal: 1, chthonic: 2, infernal: 3
-    }[selected];
-    container.querySelectorAll(".race-lineage-table tr").forEach(row => {
-      Array.from(row.cells).slice(1).forEach((cell, index) => { cell.hidden = index + 1 !== selectedIndex; });
-    });
-    container.querySelectorAll(".race-lineage-mobile__group").forEach((group, index) => { group.hidden = index + 1 !== selectedIndex; });
-
-    if (race === "tiefling") {
-      const selectedHeading = { abyssal: "深淵", chthonic: "冥界", infernal: "煉獄" }[selected];
-      const tagline = container.querySelector(".class-feature-tagline");
-      if (tagline) {
-        const parts = tagline.innerHTML.split(/<br\s*\/?>\s*<br\s*\/?>/i);
-        tagline.innerHTML = parts.filter(part => !/^(深淵|冥界|煉獄)：/.test(part.trim()) || part.trim().startsWith(`${selectedHeading}：`)).join("<br><br>");
-      }
-    }
-    return;
-  }
-
-  const selectedHeading = race === "gnome"
-    ? { forest_gnome: "森林侏儒", rock_gnome: "岩石侏儒" }[selected]
-    : { cloud: "雲遊四方（雲巨人）", fire: "星火燎原（火巨人）", frost: "凜若冰霜（霜巨人）", hill: "地動山搖（山丘巨人）", stone: "堅若磐石（石巨人）", storm: "轟雷掣電（風暴巨人）" }[selected];
-  const optionHeadings = race === "gnome"
-    ? new Set(["森林侏儒", "岩石侏儒"])
-    : new Set(["雲遊四方（雲巨人）", "星火燎原（火巨人）", "凜若冰霜（霜巨人）", "地動山搖（山丘巨人）", "堅若磐石（石巨人）", "轟雷掣電（風暴巨人）"]);
-  container.querySelectorAll(".class-feature-section").forEach(section => {
-    const heading = section.querySelector(":scope > h3")?.textContent.trim();
-    if (optionHeadings.has(heading)) section.hidden = heading !== selectedHeading;
-  });
+  container.querySelectorAll("[data-race-choice-option]").forEach(element => { element.hidden = element.dataset.raceChoiceOption !== selected; });
 }
 
 function updateRaceFeature() {
-  const previousHumanFeat = document.getElementById(getFeatChoiceId("human-origin"))?.value || "";
+  const previousRaceFeat = getRaceFeatChoiceTraits().map(trait => document.getElementById(getFeatChoiceId(trait.feat.key))?.value || "").find(Boolean) || "";
   const value = document.getElementById("race").value;
-  const raw = raceFeatures[value] || "請先選擇種族";
   const output = document.getElementById("raceFeatures");
-
-  const display = raceFeatureDisplay[value];
-  if (display) {
-    output.innerHTML = highlightSpellNamesInClassFeature(display, { skipClickableNames: ["黑暗視覺"] });
-    enhanceRaceFeatureTables(output);
-    hideUnselectedRaceOptions(output, value);
-    renderRaceFeatChoice(previousHumanFeat);
-    return;
-  }
-
-  const normalized = String(raw).replace(/\r\n/g, "\n").replace(/\r/g, "\n");
-  const tablePattern = /<table[\s\S]*?<\/table>/gi;
-  const chunks = [];
-  let lastIndex = 0;
-  let match;
-
-  while ((match = tablePattern.exec(normalized)) !== null) {
-    if (match.index > lastIndex) {
-      chunks.push({ type: "text", content: normalized.slice(lastIndex, match.index) });
-    }
-    chunks.push({ type: "table", content: match[0] });
-    lastIndex = match.index + match[0].length;
-  }
-
-  if (lastIndex < normalized.length) {
-    chunks.push({ type: "text", content: normalized.slice(lastIndex) });
-  }
-
-  const formatted = chunks.map(chunk => {
-    if (chunk.type === "table") {
-      return `<div class="race-feature-table-wrap">${highlightSpellNamesInClassFeature(chunk.content, { skipClickableNames: ["黑暗視覺"] })}</div>`;
-    }
-
-    const highlightedContent = highlightSpellNamesInClassFeature(chunk.content, { skipClickableNames: ["黑暗視覺"] });
-
-    return highlightedContent
-      .split("\n")
-      .map(line => {
-        const trimmed = line.trim();
-        if (!trimmed) return `<div class="race-feature-spacer"></div>`;
-
-        const idx = trimmed.indexOf("：");
-        if (idx > 0) {
-          const head = trimmed.slice(0, idx).trim();
-          const tail = trimmed.slice(idx + 1).trimStart();
-          return `<div class="race-feature-line"><strong class="feat-title">${head}</strong>：${tail}</div>`;
-        }
-
-        return `<div class="race-feature-line">${trimmed}</div>`;
-      })
-      .join("");
-  }).join("");
-
-  output.innerHTML = formatted || "無資料";
+  const html = getRaceText(value)?.html;
+  output.innerHTML = html ? highlightSpellNamesInClassFeature(html, { skipClickableNames: ["黑暗視覺"] }) : '<div class="race-feature-line">請先選擇種族</div>';
   enhanceRaceFeatureTables(output);
-  renderRaceFeatChoice(previousHumanFeat);
+  hideUnselectedRaceOptions(output, value);
+  renderRaceFeatChoice(previousRaceFeat);
 }
 
 function updateBackgroundFeature() {
@@ -3045,9 +2983,14 @@ function getProficiencyBonus() {
   return calculateProficiencyBonus(lvl);
 }
 
+// 種族的勾選框資源（種族內容檔 kind: checkboxes，例如吐息元素）：container 為包住勾選框的元素，checkbox 為勾選框 ID 前綴。
+function getRaceCheckboxResources() {
+  return Object.values(getAllRaceRules()).flatMap(rules => rules.traits.flatMap(trait => trait.resource?.kind === "checkboxes" ? [trait.resource] : []));
+}
+
 function syncProficiencyUseChecks() {
   const count = getProficiencyBonus();
-  ["dragonborn-breath-uses", "goliath-giant-ancestry-uses"].forEach(containerId => {
+  getRaceCheckboxResources().forEach(({ container: containerId }) => {
     document.querySelectorAll(`#${containerId} input[type='checkbox']`).forEach((checkbox, index) => {
       const isAvailable = index < count;
       checkbox.hidden = !isAvailable;
@@ -3230,7 +3173,7 @@ function fillSkills() {
   updateAutomaticInitiative();
 }
 </script>
-<script src="pdf-launcher.js?v=20261102-background-content"></script>
+<script src="pdf-launcher.js?v=20261102-race-content"></script>
 
 <script>
 // ====== 裝備,武器,法術相關工具 ======
@@ -4977,12 +4920,11 @@ function isShareFieldRelevant(id, data) {
 
   if (id === "subclass") return Boolean(classValue);
   if (id === "druid-land") return Boolean(window.hasClassFeature?.(classValue, "druid-circle-of-the-land-spells", level, data.subclass));
-  if (id === "dragonborn-ancestry") return raceValue === "dragonborn";
-  if (id === "elf-lineage") return raceValue === "elf";
-  if (id === "high-elf-cantrip") return raceValue === "elf" && data["elf-lineage"] === "high_elf";
-  if (id === "gnome-lineage") return raceValue === "gnome";
-  if (id === "goliath-ancestry") return raceValue === "goliath";
-  if (id === "tiefling-legacy") return raceValue === "tiefling";
+  // 血統選單只在該種族時分享；血統選項的自選戲法只在選了該選項時分享。
+  const raceChoice = Object.entries(getAllRaceRules()).find(([, rules]) => rules.choice?.id === id);
+  if (raceChoice) return raceValue === raceChoice[0];
+  const cantripChoice = getRaceCantripChoices().find(choice => choice.field === id);
+  if (cantripChoice) return raceValue === cantripChoice.race && data[cantripChoice.choiceId] === cantripChoice.value;
   if (id === "ranger-fighting-style" || id === "ranger-druidic-warrior") return classValue === "ranger" && level >= 2;
   if (id.startsWith("ranger-hunters-prey-")) return classValue === "ranger" && level >= 3;
   if (id.startsWith("ranger-defensive-tactics-")) return classValue === "ranger" && level >= 7;
@@ -5005,6 +4947,8 @@ function collectShareState() {
   if (data.class === "druid" && data.druid?.knownForms?.length) data.druid = { knownForms: [...data.druid.knownForms] };
   else delete data.druid;
   data.__shareStateVersion = SHARE_STATE_VERSION;
+  // 種族勾選框資源（吐息元素等）的使用狀態不進分享網址。
+  const raceCheckboxPrefixes = getRaceCheckboxResources().map(resource => resource.checkbox);
 
   Object.keys(data).forEach((id) => {
     if (SHARE_ALWAYS_INCLUDED_IDS.has(id)) return;
@@ -5012,7 +4956,7 @@ function collectShareState() {
       delete data[id];
       return;
     }
-    if (/^(?:race-ab-check|goliath-giant-ancestry-check|spellslot\d+-|free-spell-use-)/.test(id)) {
+    if (/^(?:spellslot\d+-|free-spell-use-)/.test(id) || raceCheckboxPrefixes.some(prefix => id.startsWith(prefix))) {
       delete data[id];
       return;
     }
@@ -5852,8 +5796,8 @@ function setupMoneyTracker() {
     if (details) details.hidden = !showDetails;
     const detailToggle = byId("money-count-weight");
     detailToggle?.setAttribute("aria-expanded", String(showDetails));
-    // 可攜負重：力量值 ×15，歌利亞 ×30。
-    const carryMultiplier = byId("race")?.value === "goliath" ? 30 : 15;
+    // 可攜負重：力量值 ×15，種族內容檔有 carryMultiplier 時再乘上（例如歌利亞 ×2）。
+    const carryMultiplier = 15 * (getRaceRules(byId("race")?.value || "")?.carryMultiplier || 1);
     const carryCapacity = toSafeInt(byId("str")?.value) * carryMultiplier;
     const coinWeight = byId("money-coin-weight");
     if (coinWeight) coinWeight.textContent = `共 ${coinCount} 枚硬幣・${weight} 磅`;

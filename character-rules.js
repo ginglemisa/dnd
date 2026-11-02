@@ -1,16 +1,4 @@
 (function attachCharacterRules(globalScope) {
-  const FIXED_CHARACTER_SIZE_BY_RACE = Object.freeze({
-    dragonborn: "中型",
-    dwarf: "中型",
-    elf: "中型",
-    gnome: "小型",
-    goliath: "中型",
-    halfling: "小型",
-    orc: "中型"
-  });
-
-  const NON_SPELLCASTER_RACES = new Set(["dragonborn", "dwarf", "goliath", "halfling", "human", "orc"]);
-  const SPELLCASTER_RACES = new Set(["elf", "gnome", "tiefling"]);
   const SHILLELAGH_WEAPON_NAMES = new Set(["短棒", "長棍"]);
   const ABILITY_MODIFIER_TOKENS = Object.freeze({
     strModifier: "str", dexModifier: "dex", conModifier: "con", intModifier: "int", wisModifier: "wis", chaModifier: "cha"
@@ -41,6 +29,42 @@
   /** 背景來源的顯示標籤（例如「擴充」，不含括號）；沒有標籤時為空字串。建置檢查背景選單文字時也讀這裡。 */
   function getBackgroundSourceLabel(source) {
     return BACKGROUND_SOURCE_LABELS[source] || "";
+  }
+
+  // 傷害類型（種族內容檔的 resistance 等）的顯示名稱。
+  const DAMAGE_TYPE_LABELS = Object.freeze({ acid: "強酸", cold: "冷凍", fire: "火焰", lightning: "閃電", necrotic: "黯蝕", poison: "毒素" });
+
+  /** 傷害類型 ID 的顯示名稱（例如 poison →「毒素」）；不認得時為空字串。建置產生種族表格文字時也讀這裡。 */
+  function getDamageTypeLabel(damageType) {
+    return DAMAGE_TYPE_LABELS[damageType] || "";
+  }
+
+  // 種族規則：race-content.generated.js 由 content/srd/races 產生 raceRules（體型、速度、黑暗視覺、抗性、血統選項、特質的資源與動作）；
+  // 沒有選擇或不認得的種族回傳 null。
+  function getRaceRules(race) {
+    const rules = typeof raceRules === "undefined" ? null : raceRules;
+    return rules && Object.hasOwn(rules, race) ? rules[race] : null;
+  }
+
+  /** 種族的顯示文字（raceText：種族頁 HTML、特質與血統選項的跑團純文字、動作說明、跑團提示、PDF 種族特質欄）。 */
+  function getRaceText(race) {
+    const text = typeof raceText === "undefined" ? null : raceText;
+    return text && Object.hasOwn(text, race) ? text[race] : null;
+  }
+
+  /** 全部種族的規則（種族 ID → raceRules），依種族選單順序。 */
+  function getAllRaceRules() {
+    return typeof raceRules === "undefined" ? {} : raceRules;
+  }
+
+  /** PDF 匯出選項中存放血統選擇的 key：選單 ID 的駝峰寫法（例如 elf-lineage → elfLineage）。 */
+  function getRaceChoiceOptionKey(choiceId) {
+    return String(choiceId).replace(/-([a-z])/g, (all, letter) => letter.toUpperCase());
+  }
+
+  /** 種族目前所選的血統選項（依種族 choice 的選單 ID 讀取 value；沒有選擇或不認得時為 null）。 */
+  function getRaceChoiceOption(race, value) {
+    return getRaceRules(race)?.choice?.options.find(option => option.value === value) || null;
   }
 
   // 職業機制資料：class-content.generated.js 由 content/ 的職業內容檔產生 classRules（特性表、數值、資源、選項與動作）。
@@ -328,7 +352,7 @@
       + constitutionModifier * normalizedLevel
       + laterLevelHp * (normalizedLevel - 1);
 
-    if (options.race === "dwarf") maxHp += normalizedLevel;
+    maxHp += (getRaceRules(options.race)?.hpPerLevel || 0) * normalizedLevel;
     if (hasClassFeature(className, "sorcerer-draconic-resilience", normalizedLevel, options.subclass)) maxHp += normalizedLevel;
     if (options.hasToughFeat) maxHp += normalizedLevel * 2;
     return maxHp;
@@ -348,9 +372,15 @@
     return value === "小型" || value === "中型" ? value : "";
   }
 
-  /** 優先使用種族固定體型；沒有固定體型時採用經驗證的備用值。 */
+  /** 種族可選體型超過一種時（例如人類、提夫林），角色卡顯示體型選單。 */
+  function canChooseCharacterSize(race) {
+    return (getRaceRules(race)?.sizes.length || 0) > 1;
+  }
+
+  /** 優先使用種族固定體型；可選體型或沒有種族時採用經驗證的備用值。 */
   function getCharacterSizeForRace(race, fallbackSize = "") {
-    return FIXED_CHARACTER_SIZE_BY_RACE[race] || normalizeCharacterSize(fallbackSize);
+    const sizes = getRaceRules(race)?.sizes || [];
+    return sizes.length === 1 ? sizes[0] : normalizeCharacterSize(fallbackSize);
   }
 
   /** 依角色等級計算 1～20 級的熟練加值。 */
@@ -416,13 +446,18 @@
       recovery: recovery(shortRest)
     });
 
-    if (race === "dragonborn" && level >= 5) addUses("dragonborn-dragon-flight", "龍翔天際", 1, "長休後回復。");
-    if (race === "dwarf") addUses("dwarf-stonecunning", "石中精妙", proficiency, "長休後全回復。");
-    if (race === "goliath" && level >= 5) addUses("goliath-large-form", "巨化形體", 1, "長休後回復。");
-    if (race === "orc") {
-      addUses("orc-adrenaline-rush", "熱血湧動", proficiency, "短休或長休後全回復。", "all");
-      addUses("orc-relentless-endurance", "堅韌不屈", 1, "長休後回復。");
-    }
+    const recoveryNoteFor = (uses, shortRest) => {
+      const fully = uses === 1 ? "回復" : "全回復";
+      return shortRest === null ? `長休後${fully}。` : (shortRest === "all" ? `短休或長休後${fully}。` : `短休回 ${shortRest} 次，長休全回。`);
+    };
+
+    // 種族資源：種族內容檔各特質的 resource，達到特質等級才出現（次數資源在職業資源之前，勾選框在職業資源之後）。
+    const raceResourceTraits = (getRaceRules(race)?.traits || []).filter(trait => trait.resource && level >= trait.level);
+    const raceUses = uses => uses === "proficiencyBonus" ? proficiency : uses;
+    raceResourceTraits.filter(trait => !trait.resource.kind).forEach(({ resource }) => {
+      const shortRest = resource.recover?.short ?? null;
+      addUses(resource.key, resource.label, raceUses(resource.uses), recoveryNoteFor(resource.uses, shortRest), shortRest);
+    });
 
     // 職業資源：職業內容檔各能力（含子職）的 resource，達到能力等級才出現。
     const valueContext = { level, abilityScores: { wis: options.wisdomScore ?? 10, cha: options.charismaScore ?? 10 } };
@@ -433,10 +468,7 @@
       let recover = resource.recover;
       for (const [from, entry] of Object.entries(resource.recoverByLevel || {})) if (Number(from) <= level) recover = entry;
       const shortRest = recover.short ?? null;
-      const fully = resource.uses === 1 ? "回復" : "全回復";
-      const recoveryNote = resource.note ? formatClassResourceNote(className, resource.note, valueContext) : (shortRest === null
-        ? `長休後${fully}。`
-        : (shortRest === "all" ? `短休或長休後${fully}。` : `短休回 ${shortRest} 次，長休全回。`));
+      const recoveryNote = resource.note ? formatClassResourceNote(className, resource.note, valueContext) : recoveryNoteFor(resource.uses, shortRest);
       const label = resource.label || feature.name;
       if (resource.kind === "points") addPoints(resource.key, label, maximum, recoveryNote, shortRest);
       else addUses(resource.key, label, maximum, recoveryNote, shortRest, getClassResourceRestChoice(className, resource.restChoice, valueContext));
@@ -447,10 +479,11 @@
       target: Object.freeze({ type: "checkboxes", ids: Object.freeze(ids) }),
       recovery: recovery(shortRest)
     });
-    if (race === "dragonborn") addControls("dragonborn-breath", "吐息元素",
-      Array.from({ length: proficiency }, (_, i) => `race-ab-check${i + 1}`));
-    if (race === "goliath" && options.goliathAncestry) addControls("goliath-ancestry", "巨人血統異能",
-      Array.from({ length: proficiency }, (_, i) => `goliath-giant-ancestry-check${i + 1}`));
+    // 種族的勾選框資源（例如吐息元素）；requiresChoice 的資源在選了血統選項（options.raceChoice）後才出現。
+    raceResourceTraits.filter(trait => trait.resource.kind === "checkboxes").forEach(({ resource }) => {
+      if (resource.requiresChoice && !options.raceChoice) return;
+      addControls(resource.key, resource.label, Array.from({ length: raceUses(resource.uses) }, (_, i) => `${resource.checkbox}${i + 1}`));
+    });
     if (hasClassFeature(className, "druid-natural-recovery", level, options.subclass) && options.druidLand) {
       addControls("druid-natural-recovery-free", "自然恢復（免費施法）", ["druid-natural-recovery-used"]);
     }
@@ -460,11 +493,11 @@
     for (const group of options.freeSpellUses || []) {
       addControls(`free-${group.key}`, group.label, [...group.ids]);
     }
-    if (race === "human") resources.push({
-      key: "human-inspiration", label: "英雄激勵", kind: "canonical",
+    raceResourceTraits.filter(trait => trait.resource.kind === "inspiration").forEach(({ resource }) => resources.push({
+      key: resource.key, label: resource.label, kind: "canonical",
       target: Object.freeze({ type: "checkbox", id: "heroic-inspiration" }),
       recovery: Object.freeze({ shortRest: null, longRest: "grant" })
-    });
+    }));
     if (options.hasTravelCompanion) resources.push({
       key: "travel-companion", label: "最佳旅伴", kind: "restChoice",
       target: Object.freeze({ type: "state", key: "temporaryHp" }),
@@ -483,20 +516,20 @@
   function hasSpellcastingCapabilityForSelections(options = {}) {
     const className = String(options.className || "").trim();
     const background = String(options.background || "").trim();
-    const race = String(options.race || "").trim();
+    const raceRule = getRaceRules(String(options.race || "").trim());
     const spellcasting = getClassRules(className)?.spellcasting;
     // 只看內建背景：給予魔法學徒（有法術列表）的背景提供施法；自訂背景與未選擇時不判定（魔法學徒另由 hasMagicInitiate 傳入）。
     const builtInBackground = background === "custom" ? null : getBackgroundRules(background);
 
     if (spellcasting && spellcasting !== "none") return true;
     if (builtInBackground?.feat.spellList) return true;
-    if (SPELLCASTER_RACES.has(race)) return true;
+    if (raceRule?.spellcasting) return true;
     if (options.hasMagicInitiate) return true;
 
     return !(
       spellcasting === "none"
       && builtInBackground
-      && NON_SPELLCASTER_RACES.has(race)
+      && raceRule
     );
   }
 
@@ -634,17 +667,18 @@
     return Number.isFinite(parsed) ? parsed : 0;
   }
 
-  /** 計算角色速度，包含種族覆寫及武僧、野蠻人、遊俠的職業加值條件。 */
+  // 角色卡的基礎速度欄（speed-input）預設 30，適用速度 30 呎的種族；種族或所選血統的速度不是 30 時以內容檔為準。
+  const DEFAULT_BASE_SPEED = 30;
+
+  /** 計算角色速度，包含種族（options.raceChoice 為所選血統）速度及武僧、野蠻人、遊俠的職業加值條件。 */
   function calculateCharacterSpeed(options = {}) {
     const baseSpeedValue = Number.parseFloat(options.baseSpeed);
     const race = String(options.race || "").trim();
-    const elfLineage = String(options.elfLineage || "").trim();
     const className = String(options.className || "").trim();
     const level = Number.parseInt(options.level, 10);
 
-    const hasRaceSpeedOverride = race === "goliath"
-      || (race === "elf" && elfLineage === "wood_elf");
-    const baseSpeed = hasRaceSpeedOverride ? 35 : baseSpeedValue;
+    const raceSpeed = getRaceChoiceOption(race, String(options.raceChoice || "").trim())?.speed ?? getRaceRules(race)?.speed;
+    const baseSpeed = raceSpeed && raceSpeed !== DEFAULT_BASE_SPEED ? raceSpeed : baseSpeedValue;
     if (!Number.isFinite(baseSpeed)) return "";
 
     const monkBonusApplies = className === "monk"
@@ -718,10 +752,17 @@
     clampHpValue,
     formatSignedValue,
     getCharacterSizeForRace,
+    canChooseCharacterSize,
+    getRaceRules,
+    getRaceText,
+    getAllRaceRules,
+    getRaceChoiceOption,
+    getRaceChoiceOptionKey,
     getBackgroundRules,
     getBackgroundText,
     getBackgroundSource,
     getBackgroundSourceLabel,
+    getDamageTypeLabel,
     getCharacterResourceSpecs,
     getClassSaveProficiencies,
     getClassRules,

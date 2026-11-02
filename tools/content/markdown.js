@@ -241,4 +241,4 @@ function tableValueText(features, spec, where) {
   return table.rows.map(cells => spec.row.replace(/\{(\d+)\}/g, (all, column) => cells[Number(column) - 1])).join(spec.join ?? "") + (spec.end ?? "");
 }
 
-module.exports = { escapeHtml, renderInline, renderMarkdown, tableValueText };
+module.exports = { escapeHtml, renderInline, renderMarkdown, parseBlocks, tableValueText };

@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=../../schema/race.schema.json
+id: human
+name: 人類
+source: srd
+creatureType: 類人生物
+sizes:
+  - { size: 中型, height: 約 4-7 呎高 }
+  - { size: 小型, height: 約 2-4 呎高 }
+speed: 30
+description: |
+  人類壽命較短，但適應力強、分布廣泛，文化與個體差異極大。他們常以城市、王國、組織與文字延續超越個人壽命的傳承，因此在各種領域與社會中都很常見。
+traits:
+  - id: resourceful
+    name: 足智多謀
+    text: 每次完成長休時，獲得英雄激勵。
+    resource: { key: human-inspiration, kind: inspiration, label: 英雄激勵 }
+  - id: skillful
+    name: 技藝嫻熟
+    text: 選擇一項技能，獲得熟練。
+    skillChoice: any
+  - id: versatile
+    name: 靈活人才
+    text: 選擇一項起源專長，推薦「熟習」。
+    feat: { key: human-origin, label: 靈活人才：起源專長 }
+pdf:
+  lines:
+    - 人類足智多謀
+    - 長休獲英雄激勵
+    - 人類技藝嫻熟
+    - 自選1技能熟練
+    - 人類靈活人才
+    - 自選1起源專長

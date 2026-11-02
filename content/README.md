@@ -1,6 +1,6 @@
 # 內容檔
 
-網站的職業、子職與背景資料寫在 `content/` 的 YAML 內容檔，每個職業、子職、背景各一個檔。`npm run build` 檢查格式與跨檔關係後，產生網站讀取的資料檔。本文件大部分在說明職業與子職的寫法；背景見下方「背景」。
+網站的職業、子職、背景與種族資料寫在 `content/` 的 YAML 內容檔，每個職業、子職、背景、種族各一個檔。`npm run build` 檢查格式與跨檔關係後，產生網站讀取的資料檔。本文件大部分在說明職業與子職的寫法；背景與種族見下方「背景」「種族」。
 
 職業與子職的說明文字和機制（特性表、選項、跑團按鈕、資源）寫在同一份檔案。
 
@@ -13,6 +13,7 @@
 | 公開職業 | `content/srd/classes/<職業 ID>.yaml` |
 | 公開子職 | `content/srd/subclasses/<職業 ID>-<子職 ID>.yaml` |
 | 公開背景 | `content/srd/backgrounds/<背景 ID>.yaml` |
+| 公開種族 | `content/srd/races/<種族 ID>.yaml` |
 | 私人內容包（不進公開 repo） | `content/private/classes/`、`content/private/subclasses/` |
 | 私人內容包補充既有職業（例如兼職） | `content/private/class-extensions/<職業 ID>.yaml` |
 | 私人內容包的兼職共用規則與法術位表 | `content/private/rules/multiclass.yaml` |
@@ -22,7 +23,7 @@
 
 本機執行 `npm run build`（或 `npm run dev`）時，私人內容包的子職與 `class-extensions/` 會寫進根目錄的 `class-content.private.generated.js`（同樣被 git 忽略），網站在公開資料之後載入它，你的電腦上就看得到私人子職（例如子職選單出現兩個以上的選項）。沒有私人內容包、上線建置或執行 `npm run build -- --public-only` 時，這個檔案是空的，網站只有公開內容；離線角色卡一律只含公開內容。私人內容包的持久化 ID 另列在 `content/private/class-id-baseline.json`。
 
-私人內容包目前不支援背景：背景選單是 `index.html` 的固定選項，沒有加入私人選項的方式。`content/private/backgrounds/` 存在時建置會失敗。
+私人內容包目前不支援背景與種族：選單是 `index.html` 的固定選項，沒有加入私人選項的方式。`content/private/backgrounds/`、`content/private/races/` 存在時建置會失敗。
 
 VS Code 安裝 Red Hat 的「YAML」擴充套件後，會依檔案第一行的 `$schema` 自動補完欄位、標出錯誤，滑鼠停在欄位上可看說明。
 
@@ -297,11 +298,105 @@ description: |
 - 自訂背景（`custom-background.js`）不是內容檔，存檔格式另訂；`getBackgroundRules("custom")` 會轉成同樣的規則結構，來源為 `custom`。
 - 快速創角的背景卡片有自己的順序（`quick-build.js` 的 `BACKGROUND_ORDER`），新增背景時要加進去（回歸測試會檢查）。
 
+## 種族
+
+每個種族一個檔：`content/srd/races/<種族 ID>.yaml`，格式定義是 `content/schema/race.schema.json`。種族頁、角色卡計算、跑團動作與提示、PDF 種族特質欄、快速創角的種族資料都由這裡產生。
+
+```yaml
+# yaml-language-server: $schema=../../schema/race.schema.json
+id: dwarf
+name: 矮人
+source: srd
+creatureType: 類人生物
+sizes:
+  - { size: 中型, height: 約 4-5 呎高 }
+speed: 30
+darkvision: 120
+description: |
+  矮人身形矮壯、蓄長鬚，……
+traits:
+  - { id: darkvision, name: 黑暗視覺 }
+  - id: dwarven-resilience
+    name: 矮人體魄
+    text: 對抗[[中毒]]狀態的豁免具有優勢，受到的毒素傷害減半。
+    resistances: [poison]
+    hint: { panels: [skills], summary: 對中毒狀態的豁免有優勢。 }
+  - id: stonecunning
+    name: 石中精妙
+    text: 使用**附贈**獲得 60 呎**震顫感知**，……使用次數＝熟練加值，長休後恢復。
+    resource: { key: dwarf-stonecunning, uses: proficiencyBonus }
+    actions:
+      - { id: stonecunning, mode: bonus, label: 石中精妙, key: dynamic-bonus-race-m9n3bt, resource: dwarf-stonecunning }
+pdf:
+  lines: [黑暗視覺120呎, 毒素抗性, ……, "限用{proficiency}次"]
+```
+
+### 種族欄位
+
+| 欄位 | 說明 |
+| --- | --- |
+| `id` | 種族 ID，須等於檔名。會寫進存檔、JSON 與分享網址，不可改名（列在 `race-id-baseline.json`）。 |
+| `name`、`source` | 種族名稱（最多四字）與內容來源（`srd`／`extended`，同背景）。 |
+| `creatureType`、`sizes`、`speed` | 種族頁開頭的三行。`sizes` 有兩項時（人類、提夫林）角色卡顯示體型選單，預設第一項；只有一項時體型固定。 |
+| `speed` | 速度（呎）。角色卡的基礎速度欄預設 30；種族或所選血統的速度不是 30 時（歌利亞、木精靈 35）以內容檔為準。 |
+| `darkvision` | 黑暗視覺（呎），跑團技能頁顯示。`id: darkvision` 且沒寫 `text` 的特質，文字自動產生「你擁有 N 呎黑暗視覺。」。 |
+| `languageOptions` | 額外開放選擇的語言（語言選單的 value，例如提夫林的 `infernal`）；選單中該選項須帶 `data-race-language`。 |
+| `description` | 種族介紹，純文字，段落之間空一行。 |
+| `choice` | 血統等下拉選擇（每個種族最多一個，見下方「血統選擇」）。 |
+| `traits` | 特質，依種族頁順序（見下方「特質」）。 |
+| `pdf` | PDF 種族特質欄（見下方「PDF」）。 |
+
+### 特質
+
+| 欄位 | 說明 |
+| --- | --- |
+| `id`、`name` | 特質 ID（種族內不可重複）與名稱（種族頁小節標題）。 |
+| `text` | 種族頁內文：單行段落與「- 」清單，可用 `**粗體**` 與 `[[提示]]`。跑團動作的說明預設也用這段文字（純文字，清單項目以「  - 」開頭）。 |
+| `level` | 達到此等級才有效（資源、動作、飛行），例如龍翔天際、巨化形體的 5。 |
+| `choice: true`、`afterChoice` | 在此特質的文字之後顯示血統選擇（表格或各選項小節）；`afterChoice` 是接在表格後的文字。 |
+| `resource` | 跑團資源。`key` 進存檔（列在基準檔）；`uses` 是數字或 `proficiencyBonus`；`recover: { short: all }` 表示短休也全部恢復。`kind: checkboxes` 是角色卡上的勾選框（`container` 為外框 ID，`checkbox` 為勾選框 ID 前綴，`requiresChoice` 表示選了血統才出現）；`kind: inspiration` 是長休獲得英雄激勵。 |
+| `actions` | 跑團按鈕：`key` 進跑團隱藏偏好（列在基準檔，不可改字）、`mode`、`label`、`resource`（資源 `key` 或勾選框的 `container`）、`level`、`className`、`tabletopOnly`、`proficiencyValue`。說明和特質文字不同時寫 `tabletop`；`tabletopSuffix` 空一行接在說明後；需依角色數值計算的說明寫 `behavior`（由 `action-panel.js` 的同名函式產生）。 |
+| `hint` | 跑團提示：`panels`（`overview`／`skills`）與 `summary`，標題為特質名稱。 |
+| `spells` | 種族特質給予的法術（例如提夫林的奇術）：`spell` 是法術 ID，`level` 是取得等級，`freeUses` 是免費施展次數；戲法或環階由法術目錄決定。 |
+| `resistances` | 固定的傷害抗性（傷害類型 ID，例如 `poison`），名稱由 `character-rules.js` 的 `getDamageTypeLabel` 決定。 |
+| `skillChoice` | 選一項技能熟練：技能 ID 清單，或 `any`。 |
+| `feat` | 起源專長選擇：`key`（專長欄位 `feat-choice-<key>` 進存檔）與 `label`。 |
+| `hpPerLevel`、`carryMultiplier`、`longRest`、`flight` | 每級 HP 上限加值、負重倍數、長休視窗開頭的文字（例如「傳思 4 小時」）、達到等級後跑團移動頁顯示飛行。 |
+
+### 血統選擇
+
+`choice` 的 `id` 是 `index.html` 的選單 ID，也是存檔欄位名；`label` 是選擇的名稱（選單、未選提醒、PDF 匯出標題）；`draftField` 是快速創角草稿存放此選擇的欄位名（`quickBuildLabel` 是快速創角上的名稱）。`display.type` 決定種族頁的呈現：`ancestry-table`（名稱＋傷害的格子表，寫 `columns`）、`lineage-table`（依等級列出法術的表）、`sections`（每個選項一個小節，選項寫 `text`）。
+
+每個選項：
+
+| 欄位 | 說明 |
+| --- | --- |
+| `value` | 選單值，進存檔，不可改字（列在基準檔）。 |
+| `name`、`subtitle` | 種族頁上的名稱（表格欄名、小節標題）；有 `subtitle` 時標題為「名稱（subtitle）」。 |
+| `label`、`pdfLabel`、`draftValue` | 角色卡選單文字（預設 `name`）、PDF 欄的名稱（預設 `label`）、快速創角草稿的值（預設小節標題；進草稿與綠背確認，不可改字，列在基準檔）。 |
+| `short`、`description` | 種族介紹中的血統說明，顯示為「簡稱：說明」。 |
+| `damage`、`resistance`、`speed`、`darkvision` | 吐息與表格的傷害文字、傷害抗性（傷害類型 ID）、速度、黑暗視覺（取代種族的值）。`lineage-table` 的 1 級格會自動列出速度、黑暗視覺與抗性。 |
+| `spells`、`cantripChoice` | 血統法術（表格依等級列出法術名稱）、1 級自選戲法（例如高等精靈：`field` 為選單 ID、`spellList`、`default`、表格小字 `detail`）。 |
+| `actions`、`pdf` | 選了此項才出現的跑團按鈕（只用於 `sections`）；PDF 依等級插入的行。 |
+
+- 種族選單與血統選單是 `index.html` 的固定選項：新增或改名時須一併修改（選項值、文字、「--請選擇○○--」與順序），對不上時建置會失敗。選了血統後，種族頁只顯示該選項（建置在相關格子與小節加上 `data-race-choice-option`）。
+- 私人內容包目前不支援種族：`content/private/races/` 存在時建置會失敗。
+
+### PDF
+
+`pdf.lines` 是 PDF 種族特質欄的各行。字串可用 `{proficiency}`（熟練加值，未填等級為 P）、`{choice}`（所選血統的 `pdfLabel`，未選時為 `choiceFallback`）、`{conModifier}`、`{breathSaveDc}`、`{breathDice}`。`{ choice: 等級, fallback: [...] }` 插入所選血統選項 `pdf` 中該等級的行（未選時用 `fallback`）；`{ minLevel: 等級, lines: [...] }` 只在等級達到或未填等級時出現。
+
+### 建置與讀取
+
+- 建置檢查技能、法術、自選戲法、語言、資源與動作的對應，以及 `race-id-baseline.json`（種族 ID、血統選單與選項值、草稿欄位與值、跑團動作 key、資源 key、勾選框前綴、種族法術來源識別碼）。
+- `npm run build` 產生根目錄的 `race-content.generated.js`：`raceRules` 是結構化規則，`raceText` 是組好的顯示文字（種族頁 HTML、跑團純文字、動作說明、提示、PDF 行）。網站經 `character-rules.js` 的 `getRaceRules`、`getRaceText`、`getAllRaceRules`、`getRaceChoiceOption` 讀取，不從顯示文字反推規則。
+- 快速創角的種族卡片說明、血統短評與完成摘要是快速創角自己的介紹文字，留在 `quick-build.js`（以種族 ID 與草稿值為 key）；新增種族或血統時要補上（回歸測試會檢查）。
+
 ## 檢查與預覽
 
 | 指令 | 用途 |
 | --- | --- |
 | `npm run dev` | 開本機預覽，存檔後自動重新建置，重新整理瀏覽器即可看到；畫面網址會顯示在終端機 |
-| `npm run build` | 檢查全部內容檔並產生 `class-content.generated.js` 與 `background-content.generated.js`，有錯就列出檔案與位置 |
+| `npm run build` | 檢查全部內容檔並產生 `class-content.generated.js`、`background-content.generated.js` 與 `race-content.generated.js`，有錯就列出檔案與位置 |
 
-改完內容檔只要提交內容檔本身。`class-content.generated.js`、`background-content.generated.js` 是產生的檔案，不放進 repo、不可手改：本機用 `npm run dev` 或 `npm run build` 產生，上線時由 GitHub Actions 產生。只有公開內容包會寫進產生檔。
+改完內容檔只要提交內容檔本身。`class-content.generated.js`、`background-content.generated.js`、`race-content.generated.js` 是產生的檔案，不放進 repo、不可手改：本機用 `npm run dev` 或 `npm run build` 產生，上線時由 GitHub Actions 產生。只有公開內容包會寫進產生檔。

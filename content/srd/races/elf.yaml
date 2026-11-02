@@ -1,0 +1,85 @@
+# yaml-language-server: $schema=../../schema/race.schema.json
+id: elf
+name: 精靈
+source: srd
+creatureType: 類人生物
+sizes:
+  - { size: 中型, height: 約 5-6 呎高 }
+speed: 30
+darkvision: 60
+description: |
+  精靈壽命可超過七百年，以長耳為特徵，據說在傳思冥想時能觸及前世記憶。精靈容易受長居的環境影響，逐漸形成不同的文化與特質。卓爾多居於地底，常見母系社會，部分信仰蜘蛛相關的神祇；高等精靈重視藝術、魔法與悠久傳承；木精靈多居於森林，重視自然與生命。
+choice:
+  id: elf-lineage
+  label: 精靈傳承
+  draftField: lineage
+  display: { type: lineage-table, label: 精靈傳承等級能力 }
+  options:
+    - value: drow
+      name: 卓爾血統
+      label: 卓爾
+      darkvision: 120
+      spells:
+        - { spell: dancing-lights, level: 1 }
+        - { spell: faerie-fire, level: 3, freeUses: 1 }
+        - { spell: darkness, level: 5, freeUses: 1 }
+      pdf:
+        1: [舞光術戲法, 二倍黑暗視覺]
+        3: [妖火 ◇]
+        5: [黑暗術 ◇]
+    - value: high_elf
+      name: 高等精靈血統
+      label: 高等精靈
+      cantripChoice: { field: high-elf-cantrip, spellList: wizard, default: prestidigitation, detail: [長休後可換成, 其他法師戲法] }
+      spells:
+        - { spell: detect-magic, level: 3, freeUses: 1 }
+        - { spell: misty-step, level: 5, freeUses: 1 }
+      pdf:
+        1: [魔法伎倆, 長休後可換戲法]
+        3: [偵測魔法 ◇]
+        5: [迷蹤步 ◇]
+    - value: wood_elf
+      name: 木精靈血統
+      label: 木精靈
+      speed: 35
+      spells:
+        - { spell: druidcraft, level: 1 }
+        - { spell: longstrider, level: 3, freeUses: 1 }
+        - { spell: pass-without-trace, level: 5, freeUses: 1 }
+      pdf:
+        1: [德魯伊伎倆戲法, 速度加５呎]
+        3: [大步奔行 ◇]
+        5: [行動無蹤 ◇]
+traits:
+  - { id: darkvision, name: 黑暗視覺 }
+  - id: elven-lineage
+    name: 精靈傳承
+    text: 血統賦予你超自然的能力，從下表選擇一種。
+    choice: true
+    afterChoice: 血統法術始終準備。3 級與 5 級取得的法術各可免費施展 1 次，之後須消耗法術位；免費次數長休後恢復。施法屬性在選擇血統時從智力、感知、魅力中選定。
+  - id: fey-ancestry
+    name: 精類血統
+    text: 對抗[[魅惑]]狀態的豁免具有優勢。
+    hint: { panels: [skills], summary: 對魅惑狀態的豁免有優勢。 }
+  - id: keen-senses
+    name: 敏銳感官
+    text: 從[[洞悉]]、[[察覺]]、[[求生]]中選擇一項獲得熟練。
+    skillChoice: [洞悉, 察覺, 求生]
+  - id: trance
+    name: 傳思
+    text: 你不需要睡眠，魔法也無法使你入睡。你的長休改為 4 小時的冥想靜修，期間保持清醒。
+    longRest: 傳思 4 小時
+pdf:
+  choiceFallback: 未選亞種（預備）
+  lines:
+    - 黑暗視覺60呎
+    - 抵抗魅惑優勢
+    - 敏銳感官
+    - 長休=冥想4小時
+    - "{choice}傳承"
+    - { choice: 1, fallback: [血統戲法, 血統特性] }
+    - minLevel: 3
+      lines:
+        - { choice: 3, fallback: [血統一環] }
+        - { minLevel: 5, lines: [{ choice: 5, fallback: [血統二環] }] }
+        - 長休後環法恢復

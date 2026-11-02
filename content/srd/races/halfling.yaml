@@ -1,0 +1,49 @@
+# yaml-language-server: $schema=../../schema/race.schema.json
+id: halfling
+name: 半身人
+source: srd
+creatureType: 類人生物
+sizes:
+  - { size: 小型, height: 約 2-3 呎高 }
+speed: 30
+description: |
+  半身人身形嬌小，重視家庭、家園與舒適的生活，並以不可思議的好運聞名，連聚落也常奇蹟般地避過戰亂。古老傳說稱他們融合了數個古老民族的長處，而守護他們的神祇也曾將自身陰暗的一面分離出去。
+traits:
+  - id: brave
+    name: 勇氣
+    text: 避免或終止[[恐慌]]狀態的豁免具有優勢。
+    hint: { panels: [skills], summary: 避免或終止恐慌狀態的豁免有優勢。 }
+  - id: halfling-nimbleness
+    name: 半身人靈巧
+    text: 移動時可穿過體型比你大的生物，但不能停留在其所在的格子。
+    actions:
+      - id: nimbleness
+        mode: movement
+        label: 半身人靈巧
+        key: dynamic-movement-race-hkw7d1
+        tabletopOnly: true
+        tabletop: |-
+          可穿過體型比你大的生物
+          不能停在同一格
+  - id: luck
+    name: 吉運
+    text: D20 檢定擲出 1 時，可以重擲一次。
+    hint: { panels: [skills], summary: D20 檢定中擲出 1 時，可以重擲一次。 }
+    actions:
+      - { id: lucky, mode: action, label: 吉運, key: dynamic-action-race-1migdkt, tabletopOnly: true, tabletop: 任何 D20 檢定中擲出 1 都可以重擲一次。 }
+  - id: naturally-stealthy
+    name: 天生善匿
+    text: 只被體型比你大的生物遮擋時，也能使用**躲藏動作**。
+    actions:
+      - { id: naturally-stealthy, mode: action, label: 天生善匿, key: dynamic-action-race-150qsdc, tabletopOnly: true, tabletop: 你可以在體型比你大的生物後方使用躲藏動作。 }
+      - { id: naturally-stealthy, mode: bonus, level: 2, className: rogue, label: 天生善匿, key: dynamic-bonus-race-150qsdc, tabletopOnly: true, tabletop: 你可以在體型比你大的生物後方使用躲藏動作。 }
+pdf:
+  lines:
+    - 半身人勇氣
+    - 抗恐慌豁免優勢
+    - 半身人靈巧
+    - 可穿越大型目標
+    - 但不可停留同格
+    - 可躲大型生物後
+    - 半身人吉運
+    - D20出1可重擲

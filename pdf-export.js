@@ -1490,20 +1490,15 @@
     if (profile.completeCheckboxAppearances) completeCheckboxOffAppearances(pdfDoc, form);
     const characterName = (exportOptions.characterName || '').trim();
     const englishName = (exportOptions.englishName || '').trim();
-    const goliathAncestry = exportOptions.goliathAncestry || '';
-    const dragonbornAncestry = exportOptions.dragonbornAncestry || '';
-    const elfLineage = exportOptions.elfLineage || '';
-    const gnomeLineage = exportOptions.gnomeLineage || '';
-    const tieflingLegacy = exportOptions.tieflingLegacy || '';
+    // 血統選擇（種族內容檔各 choice 的駝峰 key，例如 elfLineage）原樣傳給 PDF 欄位對照。
+    const raceChoiceOptions = Object.fromEntries(Object.values(globalScope.getAllRaceRules?.() || {})
+      .flatMap((rules) => rules.choice ? [globalScope.getRaceChoiceOptionKey(rules.choice.id)] : [])
+      .map((key) => [key, exportOptions[key] || '']));
     const includeDefaultEquipment = !!exportOptions.includeDefaultEquipment;
     const payload = globalScope.buildPdfFieldPayload(state, {
       characterName,
       englishName,
-      goliathAncestry,
-      dragonbornAncestry,
-      elfLineage,
-      gnomeLineage,
-      tieflingLegacy,
+      ...raceChoiceOptions,
       includeDefaultEquipment,
       includeSpellbook: exportOptions.includeSpellbook !== false,
       customSpells: exportOptions.customSpells || [],

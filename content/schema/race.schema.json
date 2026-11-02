@@ -1,0 +1,236 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "race.schema.json",
+  "title": "twD20 種族內容檔",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "source", "creatureType", "sizes", "speed", "description", "traits", "pdf"],
+  "definitions": {
+    "text": { "type": "string", "minLength": 1, "description": "寫法同職業 text 的子集：段落、「- 」清單、**粗體**、[[提示]]；不可有 HTML、數值標記、小節或表格。" },
+    "level": { "type": "integer", "minimum": 1, "maximum": 20 },
+    "uses": {
+      "description": "使用次數：數字，或 proficiencyBonus（等於熟練加值）。",
+      "oneOf": [{ "type": "integer", "minimum": 1 }, { "const": "proficiencyBonus" }]
+    },
+    "spell": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["spell", "level"],
+      "properties": {
+        "spell": { "type": "string", "pattern": "^[a-z0-9-]+$", "description": "法術 ID（spell-list.js 的 spellId）；戲法或環階由法術目錄決定。" },
+        "level": { "$ref": "#/definitions/level", "description": "取得的角色等級。" },
+        "freeUses": { "$ref": "#/definitions/uses", "description": "免費施展次數（長休恢復）；省略時只能以法術位施展（戲法不用寫）。" }
+      }
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "mode", "label", "key"],
+      "description": "跑團動作按鈕。說明預設為所屬特質（或血統選項）的文字。",
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+        "mode": { "enum": ["action", "bonus", "reaction", "movement"] },
+        "label": { "type": "string", "minLength": 1 },
+        "key": { "type": "string", "pattern": "^dynamic-(action|bonus|reaction|movement)-race-[a-z0-9-]+$", "description": "穩定 key：寫進跑團隱藏偏好與自訂動作，不可改字（列在 ID 基準檔）。" },
+        "level": { "$ref": "#/definitions/level", "description": "出現等級；省略時為特質等級（沒有時為 1）。" },
+        "className": { "type": "string", "pattern": "^[a-z]+$", "description": "只在此職業出現（職業 ID）。" },
+        "resource": { "type": "string", "minLength": 1, "description": "消耗的資源：此種族資源的 key，或勾選框資源的 container。" },
+        "tabletop": { "type": "string", "minLength": 1, "description": "跑團說明（純文字，可換行）；和特質文字不同時才寫。" },
+        "tabletopSuffix": { "type": "string", "minLength": 1, "description": "接在說明之後（空一行）的文字。" },
+        "behavior": { "enum": ["dragonborn-breath", "goliath-stone-endurance"], "description": "說明含依角色數值計算的部分，由 action-panel.js 的同名函式產生。" },
+        "proficiencyValue": { "const": true, "description": "說明中的「熟練加值」換成目前數值。" },
+        "tabletopOnly": { "const": true, "description": "只在跑團模式出現。" }
+      }
+    },
+    "resource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key"],
+      "description": "跑團資源。kind 省略：次數資源（label 預設為特質名稱）；checkboxes：角色卡上的勾選框；inspiration：長休獲得英雄激勵。",
+      "properties": {
+        "key": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "description": "資源 key：寫進跑團資源用量，不可改字（列在 ID 基準檔）。" },
+        "kind": { "enum": ["checkboxes", "inspiration"] },
+        "label": { "type": "string", "minLength": 1 },
+        "uses": { "$ref": "#/definitions/uses" },
+        "recover": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": { "short": { "const": "all", "description": "短休也全部恢復。" } }
+        },
+        "container": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "description": "checkboxes：index.html 中包住勾選框的元素 ID。" },
+        "checkbox": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "description": "checkboxes：勾選框 ID 的前綴（後接 1、2…）。勾選框 ID 進存檔。" },
+        "requiresChoice": { "const": true, "description": "checkboxes：選了血統選項才出現。" }
+      }
+    },
+    "pdfLine": {
+      "description": "PDF 種族特質欄的一行。字串可用 {proficiency}、{choice}、{conModifier}、{breathSaveDc}、{breathDice}；{ choice: 等級, fallback } 插入所選血統選項該等級的行；{ minLevel, lines } 只在等級達到（或未填等級）時出現。",
+      "oneOf": [
+        { "type": "string", "minLength": 1 },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["choice", "fallback"],
+          "properties": {
+            "choice": { "$ref": "#/definitions/level" },
+            "fallback": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["minLevel", "lines"],
+          "properties": {
+            "minLevel": { "$ref": "#/definitions/level" },
+            "lines": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/pdfLine" } }
+          }
+        }
+      ]
+    },
+    "optionPdf": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": { "^[0-9]+$": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } } },
+      "description": "PDF 依等級插入的行（{ choice: 等級 } 讀取）。"
+    },
+    "option": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "name"],
+      "properties": {
+        "value": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$", "description": "選單值：寫進存檔、JSON 與分享網址，不可改字（列在 ID 基準檔）。" },
+        "name": { "type": "string", "minLength": 1, "description": "種族頁上的名稱（表格欄名、小節標題）。" },
+        "subtitle": { "type": "string", "minLength": 1, "description": "小節標題括號內的文字，例如「雲遊四方（雲巨人）」的「雲巨人」。" },
+        "short": { "type": "string", "minLength": 1, "description": "簡稱（description 段落前的標題）。" },
+        "label": { "type": "string", "minLength": 1, "description": "角色卡選單與 PDF 匯出選項的文字；省略時為 name。" },
+        "pdfLabel": { "type": "string", "minLength": 1, "description": "PDF 種族特質欄的血統名稱；省略時為 label。" },
+        "draftValue": { "type": "string", "minLength": 1, "description": "快速創角草稿存的值（進草稿與綠背確認）：不可改字（列在 ID 基準檔）。省略時為小節標題（name，有 subtitle 時加括號）。" },
+        "description": { "type": "string", "minLength": 1, "description": "種族介紹中的血統說明（顯示為「簡稱：說明」）；須有 short。" },
+        "text": { "$ref": "#/definitions/text", "description": "display 為 sections 時的小節內文。" },
+        "damage": { "type": "string", "minLength": 1, "description": "ancestry-table 表格中的傷害類型文字，也用於吐息說明。" },
+        "resistance": { "$ref": "#/definitions/damageType", "description": "選擇此項時獲得的傷害抗性。" },
+        "speed": { "type": "integer", "minimum": 5, "description": "選擇此項時的速度（呎），取代種族速度。" },
+        "darkvision": { "type": "integer", "minimum": 5, "description": "選擇此項時的黑暗視覺（呎），取代種族黑暗視覺。" },
+        "spells": { "type": "array", "items": { "$ref": "#/definitions/spell" } },
+        "cantripChoice": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["field", "spellList", "default", "detail"],
+          "description": "1 級自選的戲法（例如高等精靈）。",
+          "properties": {
+            "field": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "description": "index.html 的選單 ID（進存檔）。" },
+            "spellList": { "type": "string", "pattern": "^[a-z]+$", "description": "可選戲法的職業法術表。" },
+            "default": { "type": "string", "pattern": "^[a-z0-9-]+$", "description": "預設戲法（法術 ID），也顯示在表格。" },
+            "detail": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 }, "description": "表格中預設戲法下方的小字（每項一行）。" }
+          }
+        },
+        "actions": { "type": "array", "items": { "$ref": "#/definitions/action" } },
+        "pdf": { "$ref": "#/definitions/optionPdf" }
+      }
+    },
+    "damageType": { "enum": ["acid", "cold", "fire", "lightning", "necrotic", "poison"] },
+    "trait": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "description": "特質 ID（種族內不可重複）。id 為 darkvision 且沒有 text 時，文字由種族的 darkvision 產生。" },
+        "name": { "type": "string", "minLength": 1 },
+        "level": { "$ref": "#/definitions/level", "description": "達到此等級才有效（資源、動作、飛行）。" },
+        "text": { "$ref": "#/definitions/text" },
+        "choice": { "const": true, "description": "在此特質文字之後顯示種族的 choice（表格或各選項小節）。" },
+        "afterChoice": { "$ref": "#/definitions/text", "description": "接在選項表格之後的文字。" },
+        "hint": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["panels", "summary"],
+          "description": "跑團提示：標題為特質名稱。",
+          "properties": {
+            "panels": { "type": "array", "minItems": 1, "items": { "enum": ["overview", "skills"] } },
+            "summary": { "type": "string", "minLength": 1 }
+          }
+        },
+        "resource": { "$ref": "#/definitions/resource" },
+        "actions": { "type": "array", "items": { "$ref": "#/definitions/action" } },
+        "spells": { "type": "array", "items": { "$ref": "#/definitions/spell" } },
+        "resistances": { "type": "array", "items": { "$ref": "#/definitions/damageType" } },
+        "skillChoice": {
+          "description": "選一項技能熟練：技能 ID 清單，或 any（任一技能）。",
+          "oneOf": [{ "const": "any" }, { "type": "array", "minItems": 2, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }]
+        },
+        "feat": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["key", "label"],
+          "description": "給予起源專長選擇。",
+          "properties": {
+            "key": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "description": "專長選擇 key（欄位 feat-choice-<key> 進存檔）。" },
+            "label": { "type": "string", "minLength": 1 }
+          }
+        },
+        "hpPerLevel": { "type": "integer", "minimum": 1, "description": "每個角色等級增加的 HP 上限。" },
+        "carryMultiplier": { "type": "integer", "minimum": 2, "description": "可攜重量倍數（一般為力量值 ×15）。" },
+        "longRest": { "type": "string", "minLength": 1, "description": "長休視窗開頭取代「休息至少 8 小時」的文字。" },
+        "flight": { "const": true, "description": "達到特質等級後，跑團移動頁顯示飛行。" }
+      }
+    }
+  },
+  "properties": {
+    "$schema": { "type": "string" },
+    "id": { "$ref": "feature.schema.json#/definitions/id", "description": "種族 key，與存檔、分享網址的 race 值相同：不可改名。須等於檔名。" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 4 },
+    "source": { "enum": ["srd", "extended"], "description": "內容來源。srd：出自 SRD 5.2.1；extended：本站另外撰寫。" },
+    "creatureType": { "type": "string", "minLength": 1 },
+    "sizes": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["size", "height"],
+        "properties": {
+          "size": { "enum": ["中型", "小型"] },
+          "height": { "type": "string", "minLength": 1 }
+        }
+      },
+      "description": "可選體型（兩項時角色卡顯示體型選單，預設第一項）。"
+    },
+    "speed": { "type": "integer", "minimum": 5 },
+    "darkvision": { "type": "integer", "minimum": 5 },
+    "languageOptions": { "type": "array", "items": { "type": "string", "pattern": "^[a-z-]+$" }, "description": "額外開放選擇的語言（語言選單的 value）。" },
+    "description": { "type": "string", "minLength": 1, "description": "種族介紹，可分段（段落間空一行）；純文字。" },
+    "choice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "draftField", "display", "options"],
+      "description": "血統等下拉選擇（每個種族最多一個）。",
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "description": "index.html 的選單 ID，也是存檔欄位名：不可改字。" },
+        "label": { "type": "string", "minLength": 1, "description": "選擇的名稱（選單 aria-label、未選提醒、PDF 匯出標題）。" },
+        "quickBuildLabel": { "type": "string", "minLength": 1, "description": "快速創角的欄位名稱；省略時為 label。" },
+        "draftField": { "type": "string", "pattern": "^[a-z]+$", "description": "快速創角草稿 raceOptions 中存放此選擇的欄位名（例如 ancestry）：進草稿，不可改字（列在 ID 基準檔）。" },
+        "display": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type"],
+          "properties": {
+            "type": { "enum": ["ancestry-table", "lineage-table", "sections"], "description": "ancestry-table：名稱＋傷害的格子表；lineage-table：依等級列出法術的表；sections：每個選項一個小節。" },
+            "label": { "type": "string", "minLength": 1, "description": "表格的無障礙名稱。" },
+            "columns": { "type": "integer", "minimum": 1, "description": "ancestry-table 每列的格數。" }
+          }
+        },
+        "options": { "type": "array", "minItems": 2, "items": { "$ref": "#/definitions/option" } }
+      }
+    },
+    "traits": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/trait" } },
+    "pdf": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lines"],
+      "properties": {
+        "choiceFallback": { "type": "string", "minLength": 1, "description": "{choice} 在未選擇時的文字。" },
+        "lines": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/pdfLine" } }
+      }
+    }
+  }
+}

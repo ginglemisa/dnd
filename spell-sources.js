@@ -584,45 +584,28 @@ function syncCurrentSpellSources() {
 
 function syncMagicInitiateDerivedSpellRows() { syncCurrentSpellSources(); }
 
-const RACE_DERIVED_SPELLS = Object.freeze({
-  elf: Object.freeze({
-    drow: Object.freeze([{ level: 1, ring: "cantrips", spellId: "dancing-lights" }, { level: 3, ring: 1, spellId: "faerie-fire", freeUses: 1 }, { level: 5, ring: 2, spellId: "darkness", freeUses: 1 }]),
-    high_elf: Object.freeze([{ level: 3, ring: 1, spellId: "detect-magic", freeUses: 1 }, { level: 5, ring: 2, spellId: "misty-step", freeUses: 1 }]),
-    wood_elf: Object.freeze([{ level: 1, ring: "cantrips", spellId: "druidcraft" }, { level: 3, ring: 1, spellId: "longstrider", freeUses: 1 }, { level: 5, ring: 2, spellId: "pass-without-trace", freeUses: 1 }])
-  }),
-  gnome: Object.freeze({
-    forest_gnome: Object.freeze([{ level: 1, ring: "cantrips", spellId: "minor-illusion" }, { level: 1, ring: 1, spellId: "speak-with-animals", freeUses: "proficiency" }]),
-    rock_gnome: Object.freeze([{ level: 1, ring: "cantrips", spellId: "mending" }, { level: 1, ring: "cantrips", spellId: "prestidigitation" }])
-  }),
-  tiefling: Object.freeze({
-    abyssal: Object.freeze([{ level: 1, ring: "cantrips", spellId: "poison-spray" }, { level: 3, ring: 1, spellId: "ray-of-sickness", freeUses: 1 }, { level: 5, ring: 2, spellId: "hold-person", freeUses: 1 }]),
-    chthonic: Object.freeze([{ level: 1, ring: "cantrips", spellId: "chill-touch" }, { level: 3, ring: 1, spellId: "false-life", freeUses: 1 }, { level: 5, ring: 2, spellId: "ray-of-enfeeblement", freeUses: 1 }]),
-    infernal: Object.freeze([{ level: 1, ring: "cantrips", spellId: "fire-bolt" }, { level: 3, ring: 1, spellId: "hellish-rebuke", freeUses: 1 }, { level: 5, ring: 2, spellId: "darkness", freeUses: 1 }])
-  })
-});
-
 function getAreaIdForSpellRing(ring) {
   return ring === "cantrips" ? "cantrips-area" : `level${ring}spells-area`;
 }
 
-function getRaceLineageSelection(race) {
-  const id = { elf: "elf-lineage", gnome: "gnome-lineage", tiefling: "tiefling-legacy" }[race];
-  return id ? document.getElementById(id)?.value || "" : "";
-}
-
+// 種族法術（種族內容檔）：選了血統選項後，依序為種族特質的法術、血統選項的自選戲法、血統法術；
+// 來源識別碼含順序編號，列在 race-id-baseline.json。
 function getRacialDerivedSpellSpecs() {
   const level = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
   const race = document.getElementById("race")?.value || "";
-  const lineage = getRaceLineageSelection(race);
-  if (!level || !lineage) return [];
-  const raceName = document.querySelector(`#race option[value="${race}"]`)?.textContent?.trim() || "種族";
-  const lineageName = document.querySelector(`#${{ elf: "elf-lineage", gnome: "gnome-lineage", tiefling: "tiefling-legacy" }[race]} option[value="${lineage}"]`)?.textContent?.trim() || "";
-  const spells = [...(RACE_DERIVED_SPELLS[race]?.[lineage] || [])];
-  if (race === "elf" && lineage === "high_elf") {
-    const cantrip = document.getElementById("high-elf-cantrip")?.value || "";
-    if (cantrip) spells.unshift({ level: 1, ring: "cantrips", spellId: cantrip });
-  }
-  if (race === "tiefling") spells.unshift({ level: 1, ring: "cantrips", spellId: "thaumaturgy" });
+  const rules = window.getRaceRules?.(race);
+  const lineage = rules?.choice ? document.getElementById(rules.choice.id)?.value || "" : "";
+  const option = window.getRaceChoiceOption?.(race, lineage);
+  if (!level || !lineage || !option) return [];
+  const raceName = rules.name;
+  const lineageName = option.label;
+  const toSpec = spell => ({ level: spell.level, ring: spell.ring, spellId: spell.spellId, ...(spell.freeUses ? { freeUses: spell.freeUses === "proficiencyBonus" ? "proficiency" : spell.freeUses } : {}) });
+  const cantrip = option.cantripChoice ? document.getElementById(option.cantripChoice.field)?.value || "" : "";
+  const spells = [
+    ...rules.spells.map(toSpec),
+    ...(cantrip ? [{ level: 1, ring: "cantrips", spellId: cantrip }] : []),
+    ...option.spells.map(toSpec)
+  ];
   return spells.filter(spell => level >= spell.level).map((spell, index) => ({
     ...spell,
     key: `race-${race}-${lineage}-${spell.ring}-${spell.spellId}-${index}`,

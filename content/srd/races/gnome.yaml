@@ -1,0 +1,59 @@
+# yaml-language-server: $schema=../../schema/race.schema.json
+id: gnome
+name: 侏儒
+source: srd
+creatureType: 類人生物
+sizes:
+  - { size: 小型, height: 約 3-4 呎高 }
+speed: 30
+darkvision: 60
+description: |
+  侏儒身形矮小而長壽。早期族群多隱居在森林、丘陵地洞與山下坑道，靠幻術、陷阱和曲折隧道躲避哥布林等外敵。長久的隱居生活讓他們重視巧思、技藝與安全；如今森林侏儒與岩石侏儒各自發展出不同的傳承。
+choice:
+  id: gnome-lineage
+  label: 侏儒血統
+  draftField: lineage
+  display: { type: sections }
+  options:
+    - value: forest_gnome
+      name: 森林侏儒
+      text: 你學會**次級幻影**，並始終準備**動物交談**。動物交談可免費施展，次數＝熟練加值，長休後恢復；也可用法術位施展。
+      spells:
+        - { spell: minor-illusion, level: 1 }
+        - { spell: speak-with-animals, level: 1, freeUses: proficiencyBonus }
+      pdf:
+        1: [次級幻影戲法, 動物交談法術, "可免費施展{proficiency}次", 長休後恢復]
+    - value: rock_gnome
+      name: 岩石侏儒
+      text: |
+        你學會**修復術**和**魔法伎倆**。
+        - 花 10 分鐘可製造一個**微型發條裝置**（AC 5，HP 1），例如玩具、打火機或音樂盒
+        - 裝置的效果取自魔法伎倆
+        - 任何生物都可使用**附贈**觸碰裝置使其啟動
+        - 最多同時存在 3 個，8 小時後解體，也可用**動作**拆除
+      spells:
+        - { spell: mending, level: 1 }
+        - { spell: prestidigitation, level: 1 }
+      actions:
+        - { id: clockwork-device, mode: bonus, label: 岩石侏儒, key: dynamic-bonus-race-1ljlrzt }
+        - { id: dismantle-device, mode: action, label: 拆除發條裝置, key: dynamic-action-race-dismantle-device }
+      pdf:
+        1: [修復術戲法, 魔法伎倆戲法, 花10分製作玩具, "AC=5,HP=1", 可附贈啟動, 效果同魔法伎倆]
+traits:
+  - { id: darkvision, name: 黑暗視覺 }
+  - id: gnomish-cunning
+    name: 侏儒狡黠
+    text: 智力、感知、魅力豁免具有優勢。
+    hint: { panels: [skills], summary: 智力、感知、魅力豁免有優勢。 }
+  - id: gnomish-lineage
+    name: 侏儒血統
+    text: 血統賦予你超自然的能力，從下列兩種選擇一種。施法屬性在選擇血統時從智力、感知、魅力中選定。
+    choice: true
+pdf:
+  choiceFallback: 未選
+  lines:
+    - 黑暗視覺60呎
+    - 智感魅豁免優勢
+    - "{choice}血統"
+    - 施法屬性：自選
+    - { choice: 1, fallback: [血統戲法：未選] }
