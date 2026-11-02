@@ -60,7 +60,7 @@
         "properties": {
           "mode": { "$ref": "#/definitions/mode", "description": "出現在哪一個分頁：action 動作、bonus 附贈、reaction 反應、movement 移動。" },
           "label": { "type": "string", "minLength": 1, "description": "按鈕名稱。" },
-          "key": { "type": "string", "pattern": "^dynamic-(action|bonus|reaction|movement)-feat-[a-z0-9-]+$", "description": "跑團偏好記住的按鈕識別（隱藏、自訂順序），不可改字（列在 feat-id-baseline.json）。中間的分頁須與 mode 相同。" },
+          "key": { "type": "string", "pattern": "^dynamic-(action|bonus|reaction|movement)-feat-[a-z0-9-]+$", "description": "跑團偏好記住的按鈕識別（隱藏的按鈕），不可改字（列在 feat-id-baseline.json）。中間的分頁須與 mode 相同。" },
           "level": { "type": "integer", "minimum": 1, "maximum": 20, "description": "角色等級達到此值才出現（省略為 1）。" },
           "effects": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 }, "description": "說明由哪些效果的內容組成（以空格連接）；省略時為與 label 同名的效果。" },
           "proficiencyValue": { "const": true, "description": "已選等級時，說明中的「熟練加值」換成數值。" },
