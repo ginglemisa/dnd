@@ -43,6 +43,14 @@
     return BACKGROUND_SOURCE_LABELS[source] || "";
   }
 
+  // 傷害類型（種族內容檔的 resistance 等）的顯示名稱。
+  const DAMAGE_TYPE_LABELS = Object.freeze({ acid: "強酸", cold: "冷凍", fire: "火焰", lightning: "閃電", necrotic: "黯蝕", poison: "毒素" });
+
+  /** 傷害類型 ID 的顯示名稱（例如 poison →「毒素」）；不認得時為空字串。建置產生種族表格文字時也讀這裡。 */
+  function getDamageTypeLabel(damageType) {
+    return DAMAGE_TYPE_LABELS[damageType] || "";
+  }
+
   // 職業機制資料：class-content.generated.js 由 content/ 的職業內容檔產生 classRules（特性表、數值、資源、選項與動作）。
   function getClassRules(className) {
     const rules = typeof classRules === "undefined" ? null : classRules;
@@ -722,6 +730,7 @@
     getBackgroundText,
     getBackgroundSource,
     getBackgroundSourceLabel,
+    getDamageTypeLabel,
     getCharacterResourceSpecs,
     getClassSaveProficiencies,
     getClassRules,

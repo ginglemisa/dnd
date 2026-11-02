@@ -62,6 +62,16 @@ const loadSkillAbilities = () => loadCharacterRules().CharacterSkillAbilities;
 // 背景來源的顯示標籤（character-rules.js 的 getBackgroundSourceLabel，例如 extended →「擴充」）。
 const backgroundSourceLabel = source => loadCharacterRules().getBackgroundSourceLabel(source);
 
+// 傷害類型的顯示名稱（character-rules.js 的 getDamageTypeLabel，例如 poison →「毒素」）。
+const damageTypeLabel = id => loadCharacterRules().getDamageTypeLabel(id);
+
+// 法術目錄（spell-list.js 的 SpellCatalog）：種族法術的 ID、環階與中文名。
+let spellCatalog = null;
+function loadSpellCatalog() {
+  spellCatalog ||= runSiteScript("spell-list.js").globals.SpellCatalog;
+  return spellCatalog;
+}
+
 // 工具目錄（tool-data.js 的 ToolProficiencyCatalog：工具名稱與工具組）。
 let toolCatalog = null;
 function loadToolCatalog() {
@@ -85,4 +95,4 @@ function readIndexSelectOptions(id) {
   return select ? [...select[1].matchAll(/<option value="([^"]*)"[^>]*>([^<]*)<\/option>/g)].map(match => ({ value: match[1], label: match[2] })) : null;
 }
 
-module.exports = { ROOT, loadTipTables, loadWildShapeBeasts, loadSkillAbilities, backgroundSourceLabel, loadToolCatalog, loadFeatData, readIndexSelectOptions };
+module.exports = { ROOT, loadTipTables, loadWildShapeBeasts, loadSkillAbilities, backgroundSourceLabel, damageTypeLabel, loadSpellCatalog, loadToolCatalog, loadFeatData, readIndexSelectOptions };
