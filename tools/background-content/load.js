@@ -49,7 +49,7 @@ function checkBackground(background, classes, feats, errors) {
   }
   if (!group && background.equipment.A.items.some(item => typeof item !== "string")) errors.push(`${where}：裝備的 toolChoice 只能用在 tool 為 chooseFrom 的背景`);
   const featId = typeof background.feat === "string" ? background.feat : background.feat.id;
-  if (!feats.has(featId)) errors.push(`${where}：專長「${featId}」沒有 content/srd/feats/${featId}.yaml`);
+  if (!feats.has(featId)) errors.push(`${where}：專長「${featId}」不是 content/srd/feats 任何專長的 id`);
   else if (feats.get(featId).type !== "origin") errors.push(`${where}：專長「${featId}」不是起源專長（type 須為 origin）`);
   if (background.feat.spellList && !classes.has(background.feat.spellList)) errors.push(`${where}：魔法學徒的法術列表「${background.feat.spellList}」不是職業 ID`);
   if (/\n./.test(background.description.replace(/\n+$/, ""))) errors.push(`${where}：description 只能有一段（不可換行）`);

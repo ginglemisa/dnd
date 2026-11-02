@@ -12,7 +12,7 @@
 | --- | --- |
 | 公開職業 | `content/srd/classes/<職業 ID>.yaml` |
 | 公開子職 | `content/srd/subclasses/<職業 ID>-<子職 ID>.yaml` |
-| 公開專長與選單順序 | `content/srd/feats/<專長 ID>.yaml`、`content/srd/feat-order.yaml` |
+| 公開專長與選單順序 | `content/srd/feats/<英文檔名>.yaml`、`content/srd/feat-order.yaml` |
 | 公開背景 | `content/srd/backgrounds/<背景 ID>.yaml` |
 | 公開種族 | `content/srd/races/<種族 ID>.yaml` |
 | 公開法術 | `content/srd/spells/<法術 ID>.yaml` |
@@ -261,7 +261,7 @@ spellsByChoice:
 
 ## 專長
 
-每個專長一個檔：`content/srd/feats/<專長 ID>.yaml`，格式定義是 `content/schema/feat.schema.json`。專長選單的順序寫在 `content/srd/feat-order.yaml`（須剛好列出全部專長）。角色卡的專長選單與說明、自訂背景與快速創角的起源專長、跑團動作、PDF 專長欄都由這裡產生。
+每個專長一個檔：`content/srd/feats/<英文檔名>.yaml`（例如 `grappler.yaml`），格式定義是 `content/schema/feat.schema.json`。專長選單的順序寫在 `content/srd/feat-order.yaml`（須剛好列出全部專長）。角色卡的專長選單與說明、自訂背景與快速創角的起源專長、跑團動作、PDF 專長欄都由這裡產生。
 
 ```yaml
 # yaml-language-server: $schema=../../schema/feat.schema.json
@@ -283,7 +283,7 @@ pdf: [擒抱者(通用), 力量or敏捷+1, 徒手命中可擒抱]
 
 | 欄位 | 說明 |
 | --- | --- |
-| `id` | 專長 ID，須等於檔名，也是畫面上的專長名稱。會寫進存檔、JSON、分享網址與快速創角草稿，不可改字（列在 `feat-id-baseline.json`）；網站程式判斷特定專長時也用 ID（例如 `hasSelectedFeat("警覺")`）。 |
+| `id` | 專長 ID（中文名），也是畫面上的專長名稱。檔名與 ID 無關：只用小寫英文、數字與連字號，SRD 專長用 SRD 5.2.1 的英文名（例如 `magic-initiate`），擴充專長依中文字義另取。會寫進存檔、JSON、分享網址與快速創角草稿，不可改字（列在 `feat-id-baseline.json`）；網站程式判斷特定專長時也用 ID（例如 `hasSelectedFeat("警覺")`）。 |
 | `source` | 內容來源（`srd`／`extended`，同背景）。`extended` 的選單文字與說明副標加上來源標籤，說明最後加上來源說明；字樣由 `character-rules.js` 的 `getContentSourceLabel`、`getContentSourceNotice` 決定；選單文字「醫療兵(起源・擴充)」由 `formatContentSourceName` 產生（半形括號，類別與來源以「・」連接）。 |
 | `type` | 類別：`origin` 起源專長、`general` 通用專長、`style` 戰鬥風格專長。決定哪些專長選擇列出它（背景與種族的起源專長、屬性值提升的等級專長、戰鬥風格），選單文字「擒抱者(通用)」與說明副標由此產生。 |
 | `prerequisite` | 通用專長的先決條件，擇一：`abilities`（其中一項屬性值達 13）、`heavyArmor: true`（具重甲訓練）、`spellcasting: true`（具施法能力）。不符合時專長列顯示警示；副標的條件文字（例如「4 級以上；力量或敏捷 13+」）由此產生。 |
