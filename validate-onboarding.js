@@ -533,6 +533,7 @@ async function main() {
     await page.waitForFunction(() => window.onboardingTour && window.quickBuild && window.TabletopMode);
     await page.locator("#legal-ack-btn").click();
     if (process.argv.includes("--imports-only")) {
+      await verifyQuickBuildBackgroundCards(browser, url);
       await verifyShareModeEntries(browser, url);
       await verifyImports(browser, url);
       await verifyImports(browser, url, { width: 390, height: 844 });
@@ -730,6 +731,7 @@ async function main() {
     await page.evaluate(() => quickBuild.open());
     assert.deepEqual(await page.evaluate(() => quickBuild.getDraft()), draft);
     await page.evaluate(() => quickBuild.close());
+    await verifyQuickBuildBackgroundCards(browser, url);
     await verifyShareModeEntries(browser, url);
     await verifyImports(browser, url);
     await verifyImports(browser, url, { width: 390, height: 844 });
@@ -1359,6 +1361,27 @@ async function verifyTouch(browser, url) {
 
 // Quick build and both tours rewrite the identity selects, so share mode closes
 // their entries rather than relying on the locked controls.
+// Quick build keeps its own card order; every background content file must still get a card.
+async function verifyQuickBuildBackgroundCards(browser, url) {
+  const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  const errors = [];
+  page.on("pageerror", error => errors.push(String(error)));
+  try {
+    await page.goto(url);
+    await page.waitForFunction(() => window.quickBuild && window.getBackgroundRules);
+    const { cards, expected } = await page.evaluate(() => {
+      quickBuild.open();
+      const cards = Array.from(document.querySelectorAll("#quick-build-wizard [data-background]"), card => [card.dataset.background, card.querySelector("h4").textContent]);
+      quickBuild.close(false);
+      const expected = Object.keys(backgroundRules).map(id => [id, backgroundRules[id].name + getBackgroundSourceLabel(getBackgroundSource(id))]);
+      return { cards, expected };
+    });
+    assert.deepEqual([...cards].sort(), [...expected].sort(), "quick build shows one card per background content file");
+    assert.deepEqual(errors, []);
+  } finally { await page.close(); }
+  console.log("Quick build background cards cover every background content file.");
+}
+
 async function verifyShareModeEntries(browser, url) {
   const entries = ["#help-quick-build-btn", "#restart-onboarding-btn", "#first-table-tour-btn"];
   const identity = page => page.evaluate(() => ["class", "level", "race", "background"].map(id => {

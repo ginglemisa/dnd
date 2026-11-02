@@ -41,6 +41,8 @@ function backgroundText(background, rules, classes) {
     feat: rules.feat.spellList ? `${rules.feat.id}（${classes.get(rules.feat.spellList).name}）` : rules.feat.id,
     skills: rules.skills.map(skill => inline(`[[${skill}]]`, where)).join(","),
     tool: group ? `擇一${group.label}：${group.options.join(",")}` : rules.tool.fixed,
+    ...(group ? { toolGroup: group.label } : {}),
+    equipmentAItems: items,
     equipmentA: [...items, ...(rules.equipment.A.gold ? [goldText(rules.equipment.A.gold)] : [])].join("、"),
     equipmentB: goldText(rules.equipment.B.gold),
     description: inline(background.description.replace(/\n+$/, ""), `${where} description`)
@@ -71,7 +73,7 @@ function renderBackgroundData(backgrounds, classes) {
   const entries = map => ids.map(id => `  ${id}: ${JSON.stringify(map[id])}`).join(",\n");
   const source = `// ${OUTPUT_NAME}：由 npm run build 從 content/srd/backgrounds 的背景內容檔產生，請勿手動修改。
 // backgroundRules：各背景的結構化規則（來源、屬性 ID、專長 ID 與魔法學徒法術列表、技能 ID、工具或工具組、裝備項目與金幣）。
-// backgroundText：建置組好的顯示文字（技能含提示框 HTML）。
+// backgroundText：建置組好的顯示文字（技能含提示框 HTML；toolGroup 為擇一工具組的名稱；equipmentAItems 為裝備 A 各項，與規則的 items 同序）。
 const backgroundRules = {
 ${entries(rules)}
 };

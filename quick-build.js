@@ -26,8 +26,8 @@
       .map(entry => ({ id: `level-up:${Number(entry.level)}`, title: `完成 ${Number(entry.level)} 級`, level: Number(entry.level), future: true }));
     return [...BASE_STEPS.slice(0, -1), ...futureLevelSteps, BASE_STEPS[BASE_STEPS.length - 1]];
   }
+  // 快速創角背景卡片的顯示順序（與角色卡背景選單不同）；背景資料取自背景內容檔，回歸測試確認此清單涵蓋全部背景。
   const BACKGROUND_ORDER = ["acolyte", "criminal", "sage", "seeker", "fieldhand", "soldier"];
-  const BACKGROUND_LABELS = { acolyte: "侍僧", criminal: "罪犯", sage: "賢者", seeker: "孤芳", fieldhand: "耕者", soldier: "士兵" };
   const RACE_ORDER = ["dragonborn", "dwarf", "elf", "gnome", "goliath", "halfling", "human", "orc", "tiefling"];
   const RACE_LABELS = { dragonborn: "龍裔", dwarf: "矮人", elf: "精靈", gnome: "侏儒", goliath: "歌利亞", halfling: "半身人", human: "人類", orc: "獸人", tiefling: "提夫林" };
   const ALIGNMENT_OPTIONS = [
@@ -117,8 +117,6 @@
   const SPELLCASTER_CLASS_IDS = new Set(["bard", "cleric", "druid", "paladin", "ranger", "sorcerer", "warlock", "wizard"]);
   const MAGIC_INITIATE_SPELL_CLASSES = new Set(["cleric", "druid", "wizard"]);
   const SPELLCASTER_RACE_IDS = new Set(["elf", "gnome", "tiefling"]);
-  const SPELLCASTER_BACKGROUND_IDS = new Set(["acolyte", "sage"]);
-  const HUMAN_MAGIC_INITIATE_BLOCKED_CLASS_BY_BACKGROUND = { acolyte: "cleric", sage: "wizard" };
   const CLASS_LABELS = {
     barbarian: "野蠻人", bard: "吟遊詩人", cleric: "牧師", druid: "德魯伊",
     fighter: "戰士", monk: "武僧", paladin: "聖騎士", ranger: "遊俠",
@@ -460,8 +458,20 @@
     })[character]);
   }
 
-  function backgroundData(key) {
-    return typeof detailedBackgroundFeatures === "object" ? detailedBackgroundFeatures[key] : null;
+  // 內建背景的規則與顯示文字（background-content.generated.js，經 character-rules.js 讀取）；快速創角不含自訂背景。
+  function presetBackground(key) {
+    const rules = key === "custom" ? null : window.getBackgroundRules?.(key);
+    return rules ? { rules, text: window.getBackgroundText(key) } : null;
+  }
+  function backgroundName(key) { return presetBackground(key)?.rules.name; }
+  function backgroundAbilityLabels(key) { return (presetBackground(key)?.rules.abilities || []).map(id => ABILITY_LABELS[id]); }
+  // 背景魔法學徒的法術列表（職業 ID）；沒有時為 undefined。
+  function backgroundSpellList(key) { return presetBackground(key)?.rules.feat.spellList; }
+  // 背景工具熟練為「從工具組擇一」時的可選工具；固定工具或沒有背景時為 null。
+  function backgroundToolChoices(key) {
+    const groupId = presetBackground(key)?.rules.tool.chooseFrom;
+    if (!groupId) return null;
+    return [...((TOOL_CATALOG_AVAILABLE && TOOL_CATALOG.groups?.find(group => group.id === groupId)?.options) || [])];
   }
 
   function plainText(value) {
@@ -512,11 +522,11 @@
 
     // 尚無專用配置的背景沿用同職業既有的合法 27 購點，再依可調整屬性與職業關鍵屬性安排 +2/+1。
     const fallback = buildPresets?.acolyte || Object.values(buildPresets || {})[0];
-    const data = backgroundData(backgroundKey);
-    if (!fallback || !data) return null;
+    const background = presetBackground(backgroundKey);
+    if (!fallback || !background) return null;
     const abilities = abilityMapFromArray(fallback[0]);
     const keyAbilities = new Set((CLASS_BUILD_DEFINITIONS[target.choices?.class]?.keyAbilities || []).map(label => ABILITY_KEYS_BY_LABEL[label]));
-    const allowed = displayList(data.屬性).split("、").map(label => ABILITY_KEYS_BY_LABEL[label]).filter(Boolean)
+    const allowed = [...background.rules.abilities]
       .sort((left, right) => Number(keyAbilities.has(right)) - Number(keyAbilities.has(left)) || abilities[right] - abilities[left] || ABILITY_ORDER.indexOf(left) - ABILITY_ORDER.indexOf(right));
     if (allowed.length < 2) return null;
     return { abilities, bonuses: { ...emptyAbilityMap(0), [allowed[0]]: 2, [allowed[1]]: 1 } };
@@ -558,8 +568,8 @@
       return { type: "race", id: raceId, label: RACE_LABELS[raceId], fixedAbility: null };
     }
     const backgroundId = target.choices.background;
-    if (SPELLCASTER_BACKGROUND_IDS.has(backgroundId)) {
-      return { type: "background", id: backgroundId, label: BACKGROUND_LABELS[backgroundId], fixedAbility: null };
+    if (backgroundSpellList(backgroundId)) {
+      return { type: "background", id: backgroundId, label: backgroundName(backgroundId), fixedAbility: null };
     }
     return null;
   }
@@ -643,7 +653,7 @@
     }
     if (key === "human" && options.feat === "魔法學徒") {
       const savedFeatOptions = isPlainObject(options.featOptions) ? options.featOptions : {};
-      const blockedSpellClass = HUMAN_MAGIC_INITIATE_BLOCKED_CLASS_BY_BACKGROUND[target.choices.background];
+      const blockedSpellClass = backgroundSpellList(target.choices.background);
       const spellClass = MAGIC_INITIATE_SPELL_CLASSES.has(savedFeatOptions.spellClass) && savedFeatOptions.spellClass !== blockedSpellClass
         ? savedFeatOptions.spellClass
         : "";
@@ -705,13 +715,18 @@
   }
 
   function backgroundEquipmentDetails(key, method, toolChoice = null) {
-    const data = backgroundData(key) || {}; const raw = method === "gold" ? data.裝備B : data.裝備A; const currency = { cp: 0, sp: 0, gp: 0, pp: 0 };
-    const items = String(raw || "").split(/[、,，]/u).map(item => item.trim()).filter(Boolean).map(item => key === "soldier" && method === "default" && item === "賭具擇一" && GAME_TOOL_OPTIONS.includes(toolChoice) ? toolChoice : item).filter(item => { const match = item.match(/^(\d+)\s*金幣$/u); if (!match) return true; currency.gp += Number(match[1]); return false; });
+    const background = presetBackground(key); const currency = { cp: 0, sp: 0, gp: 0, pp: 0 };
+    if (!background) return { items: [], currency };
+    const equipment = method === "gold" ? background.rules.equipment.B : background.rules.equipment.A;
+    currency.gp = equipment.gold;
+    // 「擇一工具」項目換成已選的工具；未選時保留顯示文字（例如「賭具擇一」）。
+    const items = method === "gold" ? [] : background.text.equipmentAItems.map((item, index) => equipment.items[index]?.toolChoice && backgroundToolChoices(key)?.includes(toolChoice) ? toolChoice : item);
     return { items, currency };
   }
   function displayList(value) { return plainText(value).replace(/[，,]/gu, "、"); }
-  function backgroundSource(key) { return { type: "background", id: key, label: BACKGROUND_LABELS[key], dataFile: "backgrounds.js" }; }
-  function spellSourceForBackground(key) { return key === "acolyte" ? "cleric" : "wizard"; }
+  // dataFile 隨草稿存檔（取得項目的 source），沿用舊檔名讓既有草稿內容不變；沒有程式讀取，也不參與綠背確認簽章。
+  function backgroundSource(key) { return { type: "background", id: key, label: backgroundName(key), dataFile: "backgrounds.js" }; }
+  function spellSourceForBackground(key) { return backgroundSpellList(key); }
 
   function canonicalSpell(spellId) {
     return typeof SpellCatalog === "object" ? SpellCatalog.getSpell(spellId) || null : null;
@@ -765,14 +780,13 @@
   }
 
   function duplicateWarningsForReview() {
-    const fixedToolOverlap = {
-      criminal: { class: "rogue", tool: "盜賊工具" },
-      seeker: { class: "druid", tool: "草藥工具" }
-    }[draft.choices.background];
+    // 背景固定工具與職業固定工具相同（例如罪犯與盜賊的盜賊工具）時，不列為重複。
+    const backgroundTool = presetBackground(draft.choices.background)?.rules.tool.fixed;
+    const fixedToolOverlap = backgroundTool && (CLASS_BUILD_DEFINITIONS[draft.choices.class]?.fixedTools || []).includes(backgroundTool);
     return crossSourceDuplicateGroups(draft, "skills")
       .concat(crossSourceDuplicateGroups(draft, "spells"))
       .concat(crossSourceDuplicateGroups(draft, "tools").filter(group => !(
-        fixedToolOverlap && draft.choices.class === fixedToolOverlap.class && group.name === fixedToolOverlap.tool &&
+        fixedToolOverlap && group.name === backgroundTool &&
         group.items.every(item =>
           (item.sourceType === "background" && item.sourceId === draft.choices.background) ||
           (item.sourceType === "class" && item.sourceId === draft.choices.class && item.content?.fixed)
@@ -824,8 +838,8 @@
     target.selections.backgroundSpells = [];
 
     const key = target.choices.background;
-    const data = BACKGROUND_ORDER.includes(key) ? backgroundData(key) : null;
-    if (!data) {
+    const background = BACKGROUND_ORDER.includes(key) ? presetBackground(key) : null;
+    if (!background) {
       target.choices.background = null;
       target.choices.backgroundAbilities = [];
       target.choices.backgroundWealth = null;
@@ -837,21 +851,24 @@
     }
 
     const source = backgroundSource(key);
-    const skills = displayList(data.技能熟練).split("、").filter(Boolean);
-    const abilities = displayList(data.屬性).split("、").filter(Boolean);
+    const skills = [...background.rules.skills];
+    const abilities = backgroundAbilityLabels(key);
     target.choices.backgroundAbilities = abilities;
     target.choices.backgroundAbilityBonuses = normalizeBackgroundBonuses(target.choices.backgroundAbilityBonuses, abilities);
-    if (key !== "soldier") target.choices.backgroundToolChoice = null;
-    const backgroundTool = key === "soldier" ? (GAME_TOOL_OPTIONS.includes(target.choices.backgroundToolChoice) ? target.choices.backgroundToolChoice : null) : displayList(data.工具熟練);
+    const toolChoices = backgroundToolChoices(key);
+    if (!toolChoices) target.choices.backgroundToolChoice = null;
+    const backgroundTool = toolChoices ? (toolChoices.includes(target.choices.backgroundToolChoice) ? target.choices.backgroundToolChoice : null) : background.rules.tool.fixed;
+    // 專長名稱（例如「魔法學徒（牧師）」）與裝備原文會存進草稿的取得項目，須與既有草稿逐字相同。
+    const featName = background.text.feat;
     target.selections.background = {
-      id: key, label: BACKGROUND_LABELS[key], source,
-      content: { skills, feat: data.專長, tool: backgroundTool, adjustableAbilities: abilities, abilityBonuses: structuredClone(target.choices.backgroundAbilityBonuses) }
+      id: key, label: background.rules.name, source,
+      content: { skills, feat: featName, tool: backgroundTool, adjustableAbilities: abilities, abilityBonuses: structuredClone(target.choices.backgroundAbilityBonuses) }
     };
     skills.forEach(name => addDerivedAcquisition(target, "skills", {
       id: `background:${key}:skill:${name}`, name, sourceType: "background", sourceId: key, source, content: { proficiency: "skill" }
     }));
-    if (data.專長) addDerivedAcquisition(target, "feats", {
-      id: `background:${key}:feat`, name: data.專長, sourceType: "background", sourceId: key, source, content: { type: "origin feat" }
+    addDerivedAcquisition(target, "feats", {
+      id: `background:${key}:feat`, name: featName, sourceType: "background", sourceId: key, source, content: { type: "origin feat" }
     });
     if (backgroundTool) addDerivedAcquisition(target, "tools", {
       id: `background:${key}:tool:${backgroundTool}`, name: backgroundTool, sourceType: "background", sourceId: key, source: { ...source, feature: "工具熟練" }, content: { proficiency: "tool" }
@@ -872,7 +889,7 @@
       target.choices.backgroundCurrency = currency;
       target.selections.backgroundEquipment = {
         id: `${key}:${method}`, label: method === "default" ? "預設裝備" : "50 金幣自購",
-        source, content: { method, items, currency, raw: method === "default" ? data.裝備A : data.裝備B }
+        source, content: { method, items, currency, raw: method === "default" ? background.text.equipmentA : background.text.equipmentB }
       };
       if (items.length) addDerivedAcquisition(target, "equipment", {
         id: `background:${key}:${method}`, name: items.join("、"), sourceType: "background", sourceId: key, source, content: { items, currency }
@@ -882,7 +899,7 @@
       target.choices.backgroundCurrency = { cp: 0, sp: 0, gp: 0, pp: 0 };
     }
 
-    if (!["acolyte", "sage"].includes(key)) {
+    if (!backgroundSpellList(key)) {
       target.choices.backgroundMagic = { cantrips: ["", ""], levelOneSpells: [] };
       return target;
     }
@@ -1395,8 +1412,9 @@
 
   function backgroundComplete() {
     if (!draft.choices.background) return false;
-    if (draft.choices.background === "soldier" && !GAME_TOOL_OPTIONS.includes(draft.choices.backgroundToolChoice)) return false;
-    return !["acolyte", "sage"].includes(draft.choices.background) || backgroundSpellsComplete();
+    const toolChoices = backgroundToolChoices(draft.choices.background);
+    if (toolChoices && !toolChoices.includes(draft.choices.backgroundToolChoice)) return false;
+    return !backgroundSpellList(draft.choices.background) || backgroundSpellsComplete();
   }
 
   function racePendingChoices(key = draft.choices.race, options = draft.choices.raceOptions, target = draft) {
@@ -1421,7 +1439,7 @@
       if ((target.acquisitions.feats || []).some(item => item.sourceType === "background" && item.name === options.feat)) pending.push("起源專長已由背景取得");
       const featOptions = isPlainObject(options.featOptions) ? options.featOptions : {};
       if (options.feat === "魔法學徒") {
-        const blockedSpellClass = HUMAN_MAGIC_INITIATE_BLOCKED_CLASS_BY_BACKGROUND[target.choices.background];
+        const blockedSpellClass = backgroundSpellList(target.choices.background);
         if (!MAGIC_INITIATE_SPELL_CLASSES.has(featOptions.spellClass) || featOptions.spellClass === blockedSpellClass) pending.push("魔法學徒職業法術表");
         if (!Array.isArray(featOptions.cantrips) || featOptions.cantrips.length !== 2 || featOptions.cantrips.some(name => !name) || new Set(featOptions.cantrips).size !== 2) pending.push("魔法學徒的 2 個不同戲法");
         if (!Array.isArray(featOptions.levelOneSpells) || featOptions.levelOneSpells.length !== 1 || !featOptions.levelOneSpells[0]) pending.push("魔法學徒的 1 個一環法術");
@@ -1443,7 +1461,7 @@
   }
 
   function spellSource() {
-    return draft.choices.background === "acolyte" ? "cleric" : "wizard";
+    return spellSourceForBackground(draft.choices.background);
   }
 
   function spellOptions(level) { return SpellCatalog.getSpells(spellSource(), level); }
@@ -1616,17 +1634,18 @@
 
   function renderBackgroundCards(body) {
     body.innerHTML = `<h3>選擇背景</h3><p class="quick-build-lead">背景是玩家角色成為冒險者之前的身分</p><div class="quick-build-background-grid">${BACKGROUND_ORDER.map(key => {
-      const data = backgroundData(key) || {};
-      const tool = key === "soldier" ? "賭具" : plainText(data.工具熟練);
-      return `<button type="button" class="quick-build-card" data-background="${key}"><h4>${BACKGROUND_LABELS[key]}${data.擴充 ? '<span class="quick-build-expansion-tag">擴充</span>' : ""}</h4><dl class="quick-build-summary"><dt>技能熟練</dt><dd>${escapeHtml(plainText(data.技能熟練))}</dd><dt>起源專長</dt><dd>${escapeHtml(data.專長)}</dd><dt>工具</dt><dd>${escapeHtml(tool)}</dd><dt>可調整屬性</dt><dd>${escapeHtml(data.屬性)}</dd></dl></button>`;
+      const { rules, text } = presetBackground(key);
+      const tool = text.toolGroup || rules.tool.fixed;
+      const sourceLabel = window.getBackgroundSourceLabel(window.getBackgroundSource(key));
+      return `<button type="button" class="quick-build-card" data-background="${key}"><h4>${rules.name}${sourceLabel ? `<span class="quick-build-expansion-tag">${escapeHtml(sourceLabel)}</span>` : ""}</h4><dl class="quick-build-summary"><dt>技能熟練</dt><dd>${escapeHtml(rules.skills.join(","))}</dd><dt>起源專長</dt><dd>${escapeHtml(text.feat)}</dd><dt>工具</dt><dd>${escapeHtml(tool)}</dd><dt>可調整屬性</dt><dd>${escapeHtml(text.abilities)}</dd></dl></button>`;
     }).join("")}</div>`;
     body.querySelectorAll("[data-background]").forEach(card => card.addEventListener("click", () => handleChoiceCardSelection("background", card.dataset.background, chooseBackground)));
   }
 
   function renderBackgroundEquipment(body) {
     const key = draft.choices.background;
-    const data = backgroundData(key) || {};
-    body.innerHTML = `<h3>${BACKGROUND_LABELS[key]}：背景裝備</h3><p class="quick-build-lead">是否取得背景提供的預設裝備？若選否，改為獲得 50 金幣。</p><section class="quick-build-choice-panel"><strong>預設裝備 A</strong><div class="quick-build-equipment-list">${escapeHtml(data.裝備A)}</div><div class="quick-build-choice-actions quick-build-equipment-actions"><button type="button" data-wealth="default">取得預設裝備</button><button type="button" data-wealth="gold">否，取得 50 金幣</button></div></section><p class="quick-build-equipment-help"><span class="skill-tip" data-skill="為什麼預設裝備要選兩次？ ℹ️" role="button" tabindex="0" aria-label="為什麼預設裝備要選兩次？開啟說明">為什麼預設裝備要選兩次？ ℹ️</span></p>`;
+    const text = presetBackground(key)?.text || {};
+    body.innerHTML = `<h3>${backgroundName(key)}：背景裝備</h3><p class="quick-build-lead">是否取得背景提供的預設裝備？若選否，改為獲得 50 金幣。</p><section class="quick-build-choice-panel"><strong>預設裝備 A</strong><div class="quick-build-equipment-list">${escapeHtml(text.equipmentA)}</div><div class="quick-build-choice-actions quick-build-equipment-actions"><button type="button" data-wealth="default">取得預設裝備</button><button type="button" data-wealth="gold">否，取得 50 金幣</button></div></section><p class="quick-build-equipment-help"><span class="skill-tip" data-skill="為什麼預設裝備要選兩次？ ℹ️" role="button" tabindex="0" aria-label="為什麼預設裝備要選兩次？開啟說明">為什麼預設裝備要選兩次？ ℹ️</span></p>`;
     body.querySelectorAll("[data-wealth]").forEach(button => button.addEventListener("click", () => chooseBackgroundWealth(button.dataset.wealth)));
     body.querySelector(".quick-build-equipment-help .skill-tip")?.addEventListener("keydown", event => {
       if (event.key !== "Enter" && event.key !== " ") return;
@@ -1637,7 +1656,9 @@
 
   function renderBackgroundToolChoice(body) {
     const selected = draft.choices.backgroundToolChoice || "";
-    body.innerHTML = `<h3>士兵：熟練賭具選擇</h3><p class="quick-build-lead">選擇士兵背景提供的賭具熟練項。</p><section class="quick-build-choice-panel"><div class="quick-build-field"><label for="quick-build-background-game-tool">熟練賭具</label><select id="quick-build-background-game-tool"><option value="">請選擇</option>${GAME_TOOL_OPTIONS.map(name => `<option value="${escapeHtml(name)}"${name === selected ? " selected" : ""}>${escapeHtml(name)}</option>`).join("")}</select></div></section>`;
+    const key = draft.choices.background;
+    const group = presetBackground(key)?.text.toolGroup || "";
+    body.innerHTML = `<h3>${backgroundName(key)}：熟練${group}選擇</h3><p class="quick-build-lead">選擇${backgroundName(key)}背景提供的${group}熟練項。</p><section class="quick-build-choice-panel"><div class="quick-build-field"><label for="quick-build-background-game-tool">熟練${group}</label><select id="quick-build-background-game-tool"><option value="">請選擇</option>${(backgroundToolChoices(key) || []).map(name => `<option value="${escapeHtml(name)}"${name === selected ? " selected" : ""}>${escapeHtml(name)}</option>`).join("")}</select></div></section>`;
     body.querySelector("#quick-build-background-game-tool").addEventListener("change", chooseBackgroundTool);
   }
 
@@ -1655,7 +1676,7 @@
     const magic = draft.choices.backgroundMagic;
     const cantrips = spellOptions("cantrips");
     const levelOne = spellOptions("1");
-    body.innerHTML = `<h3>${BACKGROUND_LABELS[draft.choices.background]}：選擇法術</h3><p class="quick-build-lead">選擇2個不同的戲法與1個一環法術；按「查看」可在法術詳情視窗中閱讀完整敘述。</p><div class="quick-build-spell-layout"><div class="quick-build-spell-fields">${spellSelect("quick-build-cantrip-1", "戲法 1", cantrips, magic.cantrips[0], magic.cantrips[1])}${spellSelect("quick-build-cantrip-2", "戲法 2", cantrips, magic.cantrips[1], magic.cantrips[0])}${spellSelect("quick-build-level-one", "一環法術", levelOne, magic.levelOneSpells[0])}</div></div>`;
+    body.innerHTML = `<h3>${backgroundName(draft.choices.background)}：選擇法術</h3><p class="quick-build-lead">選擇2個不同的戲法與1個一環法術；按「查看」可在法術詳情視窗中閱讀完整敘述。</p><div class="quick-build-spell-layout"><div class="quick-build-spell-fields">${spellSelect("quick-build-cantrip-1", "戲法 1", cantrips, magic.cantrips[0], magic.cantrips[1])}${spellSelect("quick-build-cantrip-2", "戲法 2", cantrips, magic.cantrips[1], magic.cantrips[0])}${spellSelect("quick-build-level-one", "一環法術", levelOne, magic.levelOneSpells[0])}</div></div>`;
     body.querySelectorAll("[data-spell-field]").forEach(select => {
       select.addEventListener("change", event => updateBackgroundSpells(event.currentTarget));
     });
@@ -1669,17 +1690,17 @@
   }
 
   function renderBackgroundComplete(body) {
-    const data = backgroundData(draft.choices.background) || {};
+    const { rules, text } = presetBackground(draft.choices.background);
     const spells = draft.choices.backgroundMagic.cantrips
       .concat(draft.choices.backgroundMagic.levelOneSpells)
       .filter(Boolean);
-    const skills = displayList(data.技能熟練).split("、").filter(Boolean)
+    const skills = rules.skills
       .map(name => annotatedDuplicateName("skills", name, "background", "已熟練"));
-    const toolName = draft.choices.background === "soldier" ? draft.choices.backgroundToolChoice : displayList(data.工具熟練);
+    const toolName = rules.tool.chooseFrom ? draft.choices.backgroundToolChoice : rules.tool.fixed;
     const tool = toolName ? annotatedDuplicateName("tools", toolName, "background", "已熟練") : "無";
     const annotatedSpells = spells.map(spellId => annotatedDuplicateName("spells", spellId, "background", "已學會"));
     const classBonusWarning = draft.choices.classOptions?.backgroundBonusInvalidated ? `<div class="quick-build-warning"><strong>改變背景需要重新設定屬性加值</strong><br>你的 27 點基礎屬性已保留，但背景加值已重設為 0/3；按下一步後會前往「職業：屬性與背景加值」重新分配。</div>` : "";
-    body.innerHTML = `<h3>背景選擇完成</h3><div class="quick-build-complete"><strong>${BACKGROUND_LABELS[draft.choices.background]}</strong><br>技能：${skills.map(escapeHtml).join("、")}<br>起源專長：${escapeHtml(data.專長)}<br>工具：${escapeHtml(tool)}<br>可調整屬性：${escapeHtml(displayList(data.屬性))}${annotatedSpells.length ? `<br>法術：${annotatedSpells.map(escapeHtml).join("、")}` : ""}</div>${classBonusWarning}${duplicateReviewWarning()}`;
+    body.innerHTML = `<h3>背景選擇完成</h3><div class="quick-build-complete"><strong>${rules.name}</strong><br>技能：${skills.map(escapeHtml).join("、")}<br>起源專長：${escapeHtml(text.feat)}<br>工具：${escapeHtml(tool)}<br>可調整屬性：${escapeHtml(backgroundAbilityLabels(draft.choices.background).join("、"))}${annotatedSpells.length ? `<br>法術：${annotatedSpells.map(escapeHtml).join("、")}` : ""}</div>${classBonusWarning}${duplicateReviewWarning()}`;
   }
 
   function raceSelect(field, label, values, { disabled = [], note = "" } = {}) {
@@ -1716,7 +1737,7 @@
   function renderHumanMagicFeatOptions() {
     const featOptions = isPlainObject(draft.choices.raceOptions.featOptions) ? draft.choices.raceOptions.featOptions : {};
     const spellClass = featOptions.spellClass || "";
-    const blockedSpellClass = HUMAN_MAGIC_INITIATE_BLOCKED_CLASS_BY_BACKGROUND[draft.choices.background];
+    const blockedSpellClass = backgroundSpellList(draft.choices.background);
     const cantrips = MAGIC_INITIATE_SPELL_CLASSES.has(spellClass) ? SpellCatalog.getSpells(spellClass, "cantrips") : [];
     const levelOne = MAGIC_INITIATE_SPELL_CLASSES.has(spellClass) ? SpellCatalog.getSpells(spellClass, "1") : [];
     const selectedCantrips = Array.isArray(featOptions.cantrips) ? featOptions.cantrips : ["", ""];
@@ -1909,7 +1930,7 @@
     const spent = abilityPointCost(draft.choices.abilities);
     const bonusTotal = backgroundBonusTotal(draft.choices.backgroundAbilityBonuses);
     const backgroundBonusWarning = draft.choices.classOptions?.backgroundBonusInvalidated ? `<div class="quick-build-warning"><strong>改變背景需要重新設定屬性加值</strong><br>已保留你上次的 27 點基礎屬性；請重新分配背景加值 3 點後再確認。</div>` : "";
-    body.innerHTML = `<div class="quick-build-ability-heading"><h3>${CLASS_LABELS[key]}${draft.choices.classOptions.classType ? `（${CLASS_TYPE_OPTIONS[key]?.find(option => option.id === draft.choices.classOptions.classType)?.label || ""}）` : ""}：屬性與背景加值</h3><div class="quick-build-ability-status"><span class="quick-build-status-pill${spent === 27 ? " is-complete" : ""}">購點 <strong>${spent}</strong> / 27</span><span class="quick-build-status-pill${bonusTotal === 3 ? " is-complete" : ""}">背景加值 <strong>${bonusTotal}</strong> / 3</span></div></div>${backgroundBonusWarning}<p class="quick-build-lead">使用 ▲／▼ 調整起始屬性與背景加值；起始屬性必須剛好分配 27 點，背景加值必須分配 3 點且單項最多 +2。</p><div class="quick-build-ability-help"><span>目前背景：<strong>${escapeHtml(BACKGROUND_LABELS[draft.choices.background] || "未選擇")}</strong></span><span>可加值：<strong>${escapeHtml((draft.choices.backgroundAbilities || []).join("、") || "無")}</strong></span></div><section class="quick-build-choice-panel quick-build-ability-grid"><div class="quick-build-ability-table-head"><span>屬性</span><span>基礎值</span><span>背景加值</span><span>總值</span></div>${ABILITY_ORDER.map(ability => {
+    body.innerHTML = `<div class="quick-build-ability-heading"><h3>${CLASS_LABELS[key]}${draft.choices.classOptions.classType ? `（${CLASS_TYPE_OPTIONS[key]?.find(option => option.id === draft.choices.classOptions.classType)?.label || ""}）` : ""}：屬性與背景加值</h3><div class="quick-build-ability-status"><span class="quick-build-status-pill${spent === 27 ? " is-complete" : ""}">購點 <strong>${spent}</strong> / 27</span><span class="quick-build-status-pill${bonusTotal === 3 ? " is-complete" : ""}">背景加值 <strong>${bonusTotal}</strong> / 3</span></div></div>${backgroundBonusWarning}<p class="quick-build-lead">使用 ▲／▼ 調整起始屬性與背景加值；起始屬性必須剛好分配 27 點，背景加值必須分配 3 點且單項最多 +2。</p><div class="quick-build-ability-help"><span>目前背景：<strong>${escapeHtml(backgroundName(draft.choices.background) || "未選擇")}</strong></span><span>可加值：<strong>${escapeHtml((draft.choices.backgroundAbilities || []).join("、") || "無")}</strong></span></div><section class="quick-build-choice-panel quick-build-ability-grid"><div class="quick-build-ability-table-head"><span>屬性</span><span>基礎值</span><span>背景加值</span><span>總值</span></div>${ABILITY_ORDER.map(ability => {
       const bonusEnabled = allowedBonuses.has(ability);
       const baseValue = draft.choices.abilities[ability];
       const bonusValue = draft.choices.backgroundAbilityBonuses[ability] || 0;
@@ -2914,7 +2935,7 @@
 
   function importMobileFeats(warnings) {
     const backgroundMagic = draft.choices.backgroundMagic || {};
-    if (["acolyte", "sage"].includes(draft.choices.background)) {
+    if (backgroundSpellList(draft.choices.background)) {
       const row = document.getElementById("derived-feat-background")?.closest(".form-row");
       setMobileMagicInitiate(row, spellSourceForBackground(draft.choices.background), backgroundMagic.cantrips, backgroundMagic.levelOneSpells, warnings, "背景魔法學徒");
     }
@@ -3141,8 +3162,8 @@
   function renderBackgroundEdit(body) {
     appendFlowSection(body, renderBackgroundCards, "background-choice");
     if (!draft.choices.background) return;
-    if (draft.choices.background === "soldier") appendFlowSection(body, renderBackgroundToolChoice, "background-tool");
-    if (["acolyte", "sage"].includes(draft.choices.background)) appendFlowSection(body, renderBackgroundSpells, "background-spells");
+    if (backgroundToolChoices(draft.choices.background)) appendFlowSection(body, renderBackgroundToolChoice, "background-tool");
+    if (backgroundSpellList(draft.choices.background)) appendFlowSection(body, renderBackgroundSpells, "background-spells");
   }
 
   function renderRaceEdit(body) {
@@ -3495,17 +3516,17 @@
   }
 
   function chooseBackground(key) {
-    if (!BACKGROUND_ORDER.includes(key) || !backgroundData(key)) return;
+    if (!BACKGROUND_ORDER.includes(key) || !presetBackground(key)) return;
     if (draft.choices.background === key) return;
     const backgroundChanged = Boolean(draft.choices.background && draft.choices.background !== key);
     const backgroundChangedAfterClassComplete = Boolean(backgroundChanged && classComplete(draft));
-    const nextBackgroundAbilities = displayList(backgroundData(key).屬性).split("、").filter(Boolean);
+    const nextBackgroundAbilities = backgroundAbilityLabels(key);
     const preservedBonuses = normalizeBackgroundBonuses(draft.choices.backgroundAbilityBonuses, nextBackgroundAbilities);
     const bonusesRemainComplete = backgroundBonusTotal(preservedBonuses) === 3;
     draft.choices.background = key;
     // 保留裝備取得方式與仍合法的下游選擇；後續由有效內容簽章判斷哪些綠背需要重看。
     draft.choices.backgroundAbilityBonuses = preservedBonuses;
-    const blockedSpellClass = HUMAN_MAGIC_INITIATE_BLOCKED_CLASS_BY_BACKGROUND[key];
+    const blockedSpellClass = backgroundSpellList(key);
     if (draft.choices.raceOptions?.feat === "魔法學徒" && draft.choices.raceOptions.featOptions?.spellClass === blockedSpellClass) {
       draft.choices.raceOptions = { ...draft.choices.raceOptions, featOptions: {} };
     }
@@ -3661,7 +3682,7 @@
 
   function showRaceSpellDescription(field, trigger) {
     const select = ensureWizard().querySelector(`#quick-build-race-${field}`);
-    const spell = select?.value ? selectedSpellForBackground("sage", select.value, "cantrips") : null;
+    const spell = select?.value ? SpellCatalog.getSpells("wizard", "cantrips").find(entry => entry.spellId === select.value) || null : null;
     openSpellDetail(spell, trigger);
   }
 
@@ -3714,7 +3735,7 @@
 
   function chooseBackgroundTool(event) {
     const value = event.currentTarget.value;
-    draft.choices.backgroundToolChoice = GAME_TOOL_OPTIONS.includes(value) ? value : null;
+    draft.choices.backgroundToolChoice = (backgroundToolChoices(draft.choices.background) || []).includes(value) ? value : null;
     clearFutureLevelChoices();
     saveDraft();
     render();
