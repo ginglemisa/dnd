@@ -19013,6 +19013,9 @@ html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .tabs-shell.utility-
 .druid-field { display: grid; gap: .4rem; font-weight: 600; }
 .druid-field select, .druid-field input { width: 100%; min-width: 0; min-height: 42px; box-sizing: border-box; }
 .druid-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .65rem; }
+.druid-dialog-title-group { display: grid; flex: 1 1 auto; min-width: 0; gap: 4px; }
+.druid-known-count { margin: 0; color: var(--text-body); font-size: var(--fs-sm); font-weight: 750; font-variant-numeric: tabular-nums; line-height: 1.5; }
+.druid-known-count.is-over-limit { color: var(--danger); }
 .druid-known-form { display: grid; grid-template-columns: 20px minmax(0, 1fr); align-items: center; column-gap: .5rem; }
 .druid-known-form > .druid-check { width: auto; margin: 0; }
 .druid-known-form > small { grid-column: 2; }

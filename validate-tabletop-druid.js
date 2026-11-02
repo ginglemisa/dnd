@@ -239,6 +239,9 @@ async function main() {
     await page.locator("#tabletop-druid-overview").getByRole("button", { name: "荒野形態", exact: true }).click();
     const dialog = page.getByRole("dialog");
     await dialog.getByRole("button", { name: "帶入推薦四種" }).click();
+    const knownCount = dialog.locator(".app-dialog__header .druid-known-count");
+    assert.match(await knownCount.innerText(), /^已選 4／\d+$/u, "known-form count sits in the fixed dialog header");
+    assert.equal(await dialog.locator(".app-dialog__body .druid-known-count").count(), 0);
     const wolfCheckbox = dialog.getByRole("checkbox", { name: "已知形態：狼", exact: true });
     assert.equal(await wolfCheckbox.isChecked(), true);
     await dialog.getByRole("button", { name: "狼", exact: true }).click();
@@ -346,6 +349,22 @@ async function main() {
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, "mobile overflow");
     if (process.env.DND_SCREENSHOT_DIR) await page.screenshot({ path: path.join(process.env.DND_SCREENSHOT_DIR, "druid-mobile.png") });
     await page.locator("#tabletop-druid-actions").getByRole("button", { name: "已知形態", exact: true }).click();
+    // The count stays visible while the list scrolls and turns red above the limit.
+    const mobileCount = dialog.locator(".app-dialog__header .druid-known-count");
+    const knownLimit = Number((await mobileCount.innerText()).match(/／(\d+)$/u)[1]);
+    while (await dialog.locator(".druid-known-form input:checked").count() <= knownLimit) {
+      await dialog.locator(".druid-known-form input:not(:checked)").first().check();
+    }
+    assert.equal(await mobileCount.evaluate(el => el.classList.contains("is-over-limit")), true);
+    assert.equal(await mobileCount.evaluate(el => {
+      const probe = document.createElement("span"); probe.style.color = "var(--danger)"; el.after(probe);
+      const danger = getComputedStyle(probe).color; probe.remove(); return getComputedStyle(el).color === danger;
+    }), true, "over-limit count uses the danger color");
+    assert.equal(await dialog.locator(".app-dialog__body").evaluate(body => { body.scrollTop = body.scrollHeight; return body.scrollTop > 0; }), true, "mobile list scrolls");
+    const countBounds = await mobileCount.boundingBox();
+    assert(countBounds.y >= 0 && countBounds.y + countBounds.height <= 844 && countBounds.x + countBounds.width <= 390, "count stays visible after scrolling");
+    await dialog.locator(".druid-known-form input:checked").first().uncheck();
+    assert.equal(await mobileCount.evaluate(el => el.classList.contains("is-over-limit")), false, "returning to the limit clears the warning");
     await dialog.getByRole("button", { name: "狼", exact: true }).click();
     const tooltip = dialog.locator(".druid-beast-tooltip");
     await tooltip.waitFor({ state: "visible" });

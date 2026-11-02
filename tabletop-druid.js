@@ -196,11 +196,15 @@
     error.setAttribute("role", "alert");
     let selection = () => ({});
     let closeTooltip = null;
+    let headerNote = null;
     let confirmLabel = "確認使用";
     if (operation === "known") {
       confirmLabel = "儲存已知形態";
       content.append(el("p", `目前可知 ${c.rules.known} 種形態；升級可增加，長休可替換 1 種。此處也可修正誤選。`));
-      const count = el("p");
+      // The count sits in the fixed dialog header so it stays visible while the list scrolls.
+      const count = el("p", "", "druid-known-count");
+      count.setAttribute("role", "status");
+      headerNote = count;
       const grid = el("div", "", "druid-form-grid");
       const showBeastTip = createKnownFormTooltip(content);
       closeTooltip = showBeastTip.close;
@@ -215,9 +219,13 @@
         grid.appendChild(row);
         return { key: item.key, input };
       });
-      const update = () => { count.textContent = `已選 ${checks.filter(item => item.input.checked).length}／${c.rules.known}`; };
+      const update = () => {
+        const selected = checks.filter(item => item.input.checked).length;
+        count.textContent = `已選 ${selected}／${c.rules.known}`;
+        count.classList.toggle("is-over-limit", selected > c.rules.known);
+      };
       checks.forEach(item => item.input.addEventListener("change", update));
-      content.append(button("帶入推薦四種", () => { checks.forEach(item => { item.input.checked = ["rat", "riding_horse", "spider", "wolf"].includes(item.key); }); update(); }), count, grid);
+      content.append(button("帶入推薦四種", () => { checks.forEach(item => { item.input.checked = ["rat", "riding_horse", "spider", "wolf"].includes(item.key); }); update(); }), grid);
       update();
       selection = () => ({ keys: checks.filter(item => item.input.checked).map(item => item.key) });
     } else if (operation === "shape") {
@@ -280,7 +288,7 @@
       content.append(el("p", "記錄荒野夥伴已消失；不退還已消耗的資源。"));
     }
     content.appendChild(error);
-    const result = await globalScope.AppDialog.showContent({ title: labels[operation], content, trigger, confirmLabel, cancelLabel: "取消", dismissOnBackdrop: false,
+    const decision = globalScope.AppDialog.showContent({ title: labels[operation], content, trigger, confirmLabel, cancelLabel: "取消", dismissOnBackdrop: false,
       resolveConfirm() {
         const values = selection();
         if (values.acOverride !== undefined && values.acOverride !== null && (!Number.isInteger(values.acOverride) || values.acOverride < 0 || values.acOverride > 99)) {
@@ -291,6 +299,13 @@
         return committed;
       }
     });
+    if (headerNote) {
+      const title = content.closest(".app-dialog")?.querySelector(".app-dialog__header h2");
+      const group = el("div", "", "druid-dialog-title-group");
+      title?.before(group);
+      group.append(...(title ? [title] : []), headerNote);
+    }
+    const result = await decision;
     closeTooltip?.();
     if (!result?.ok) return false;
     globalScope.AppDialog.notify(`${labels[operation]}已完成。`, { tone: "success" });
