@@ -1486,6 +1486,14 @@ function isWeaponRowEmpty(payload, slot) {
     return picks;
   }
 
+  // 種族所選的血統選項值：PDF 匯出選項以選單 ID 的駝峰寫法傳入（例如 elf-lineage → elfLineage），沒有時取角色資料。
+  function getPdfRaceChoiceValue(state, options = {}) {
+    const choiceId = globalScope.getRaceRules?.(normalizeText(state?.race))?.choice?.id;
+    if (!choiceId) return '';
+    const optionKey = choiceId.replace(/-([a-z])/g, (all, letter) => letter.toUpperCase());
+    return normalizeText(options[optionKey] || state[choiceId]);
+  }
+
   function resolveSpeedForPdf(state, options = {}) {
     if (state['auto-calculate-key-stats-toggle'] === false) {
       return normalizeText(state['speed-display']);
@@ -1502,7 +1510,7 @@ function isWeaponRowEmpty(payload, slot) {
     return globalScope.calculateCharacterSpeed({
       baseSpeed: state['speed-input'],
       race: state.race,
-      elfLineage: options.elfLineage || state['elf-lineage'],
+      raceChoice: getPdfRaceChoiceValue(state, options),
       className: state.class,
       level: state.level,
       isWearingArmor: Boolean(armorName) && !isShield(armorName),

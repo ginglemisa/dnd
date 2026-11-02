@@ -107,22 +107,25 @@ function raceRules(race) {
   };
 }
 
+// marks 為 true 時，各血統選項的格子、欄與小節加上 data-race-choice-option（網站依所選血統隱藏其他選項）。
+const mark = (option, marks) => marks ? ` data-race-choice-option="${escapeHtml(option.value)}"` : "";
+
 const indent = (lines, depth) => lines.map(line => `${"  ".repeat(depth)}${line}`);
 
 // 龍族血統這類「名稱＋傷害」的格子表。
-function ancestryTable(race) {
+function ancestryTable(race, marks) {
   const { display, options } = race.choice;
   const rows = [];
   for (let index = 0; index < options.length; index += display.columns) rows.push(options.slice(index, index + display.columns));
   return [
     `<table class="dragon-ancestry-table" aria-label="${escapeHtml(display.label)}">`,
-    ...indent(["<tbody>", ...indent(rows.flatMap(row => ["<tr>", ...indent(row.map(option => `<td><span class="dragon-ancestry-name">${escapeHtml(option.name)}</span><span class="dragon-ancestry-damage">${escapeHtml(option.damage)}</span></td>`), 1), "</tr>"]), 1), "</tbody>"], 1),
+    ...indent(["<tbody>", ...indent(rows.flatMap(row => ["<tr>", ...indent(row.map(option => `<td${mark(option, marks)}><span class="dragon-ancestry-name">${escapeHtml(option.name)}</span><span class="dragon-ancestry-damage">${escapeHtml(option.damage)}</span></td>`), 1), "</tr>"]), 1), "</tbody>"], 1),
     "</table>"
   ].join("\n");
 }
 
 // 依等級列出各血統能力的表：1 級格先列速度、黑暗視覺、抗性，再列當級取得的法術（粗體）與自選戲法。
-function lineageTable(race) {
+function lineageTable(race, marks) {
   const { display, options } = race.choice;
   const catalog = loadSpellCatalog();
   const cell = (option, level) => {
@@ -142,8 +145,8 @@ function lineageTable(race) {
   return [
     `<table class="race-lineage-table" aria-label="${escapeHtml(display.label)}">`,
     ...indent([
-      "<thead>", ...indent(["<tr>", ...indent(["<th scope=\"col\">等級</th>", ...options.map(option => `<th scope="col">${escapeHtml(option.name)}</th>`)], 1), "</tr>"], 1), "</thead>",
-      "<tbody>", ...indent(levels.flatMap(level => ["<tr>", ...indent([`<th scope="row">${level}</th>`, ...options.map(option => `<td>${cell(option, level)}</td>`)], 1), "</tr>"]), 1), "</tbody>"
+      "<thead>", ...indent(["<tr>", ...indent(["<th scope=\"col\">等級</th>", ...options.map(option => `<th scope="col"${mark(option, marks)}>${escapeHtml(option.name)}</th>`)], 1), "</tr>"], 1), "</thead>",
+      "<tbody>", ...indent(levels.flatMap(level => ["<tr>", ...indent([`<th scope="row">${level}</th>`, ...options.map(option => `<td${mark(option, marks)}>${cell(option, level)}</td>`)], 1), "</tr>"]), 1), "</tbody>"
     ], 1),
     "</table>"
   ].join("\n");
@@ -151,18 +154,18 @@ function lineageTable(race) {
 
 // 種族頁的段落：特質依序成為小節；choice 特質之後接表格（或每個血統選項一個小節）。
 // 回傳 [{ heading, blocks, table, afterChoice }]，舊版原始文字與新版 HTML 都由此產生。
-function raceSections(race) {
+function raceSections(race, marks = false) {
   const sections = [];
   const display = race.choice?.display.type;
   race.traits.forEach(trait => {
     const where = `${race.file} 特質「${trait.name}」`;
     const section = { heading: trait.name, blocks: textBlocks(traitText(race, trait), where) };
-    if (trait.choice && display === "ancestry-table") section.table = ancestryTable(race);
-    if (trait.choice && display === "lineage-table") section.table = lineageTable(race);
+    if (trait.choice && display === "ancestry-table") section.table = ancestryTable(race, marks);
+    if (trait.choice && display === "lineage-table") section.table = lineageTable(race, marks);
     if (trait.afterChoice) section.afterChoice = textBlocks(trait.afterChoice, `${where} afterChoice`);
     sections.push(section);
     if (trait.choice && display === "sections") {
-      race.choice.options.forEach(option => sections.push({ heading: optionHeading(option), blocks: textBlocks(option.text, `${race.file} 選項「${option.value}」`) }));
+      race.choice.options.forEach(option => sections.push({ heading: optionHeading(option), option, blocks: textBlocks(option.text, `${race.file} 選項「${option.value}」`) }));
     }
   });
   return sections;
@@ -172,29 +175,32 @@ function raceIntro(race) {
   const sizes = race.sizes.map(size => `${size.size}（${size.height}）`).join("或");
   return {
     profile: [`生物類型：${race.creatureType}`, `體型：${sizes}`, `速度：${race.speed} 呎`].map(line => escapeHtml(line)),
-    tagline: [
-      ...race.description.replace(/\n+$/, "").split(/\n\n/).map(paragraph => escapeHtml(paragraph)),
-      ...(race.choice?.options || []).filter(option => option.description).map(option => escapeHtml(`${option.short}：${option.description}`)),
-      escapeHtml(`作為${race.name}，你有以下特質。`)
-    ]
+    description: race.description.replace(/\n+$/, "").split(/\n\n/).map(paragraph => escapeHtml(paragraph)),
+    optionDescriptions: (race.choice?.options || []).filter(option => option.description).map(option => ({ option, html: escapeHtml(`${option.short}：${option.description}`) })),
+    traitIntro: escapeHtml(`作為${race.name}，你有以下特質。`)
   };
 }
 
-// 種族頁 HTML（#raceFeatures）。
-function raceHtml(race) {
-  const { profile, tagline } = raceIntro(race);
-  const sections = raceSections(race).map(section => {
+// 種族頁 HTML（#raceFeatures）。marks 為 true 時血統選項帶 data-race-choice-option；介紹中的血統說明包成 <span>，
+// 連同其後的空行一起隱藏。
+function raceHtml(race, { marks = false } = {}) {
+  const { profile, description, optionDescriptions, traitIntro } = raceIntro(race);
+  const tagline = marks
+    ? [...description, ""].join("<br><br>") + optionDescriptions.map(({ option, html }) => `<span${mark(option, true)}>${html}<br><br></span>`).join("") + traitIntro
+    : [...description, ...optionDescriptions.map(({ html }) => html), traitIntro].join("<br><br>");
+  const sections = raceSections(race, marks).map(section => {
     const body = blocksHtml(section.blocks)
       + (section.table ? `<div class="race-feature-table-wrap">${section.table}</div>` : "")
       + (section.afterChoice ? blocksHtml(section.afterChoice) : "");
-    return `<section class="class-feature-section"><h3>${escapeHtml(section.heading)}</h3>${body}</section>`;
+    return `<section class="class-feature-section"${section.option ? mark(section.option, marks) : ""}><h3>${escapeHtml(section.heading)}</h3>${body}</section>`;
   }).join("");
-  return `${profile.map(line => `<div class="race-feature-line">${line}</div>`).join("")}<div class="class-feature-tagline">${tagline.join("<br><br>")}</div><div class="class-feature-content">${sections}</div>`;
+  return `${profile.map(line => `<div class="race-feature-line">${line}</div>`).join("")}<div class="class-feature-tagline">${tagline}</div><div class="class-feature-content">${sections}</div>`;
 }
 
 // 過渡用：舊版 race.js 的 raceFeatures 原始文字，供尚未改讀結構化資料的程式使用。
 function raceLegacyText(race) {
-  const { profile, tagline } = raceIntro(race);
+  const { profile, description, optionDescriptions, traitIntro } = raceIntro(race);
+  const tagline = [...description, ...optionDescriptions.map(({ html }) => html), traitIntro];
   const sections = raceSections(race).map(section => [
     `${escapeHtml(section.heading)}：${blocksLegacy(section.blocks)}`,
     ...(section.table ? [section.table] : []),
@@ -214,7 +220,7 @@ function raceText(race) {
   const hints = Object.fromEntries(race.traits.filter(trait => trait.hint).map(trait => [trait.id, trait.hint.summary]));
   const pdfOptions = Object.fromEntries((race.choice?.options || []).filter(option => option.pdf).map(option => [option.value, option.pdf]));
   return {
-    html: raceHtml(race),
+    html: raceHtml(race, { marks: true }),
     traits,
     ...(Object.keys(options).length ? { options } : {}),
     actions,
@@ -228,7 +234,7 @@ function renderRaceData(races) {
   const rules = Object.fromEntries(ids.map(id => [id, raceRules(races.get(id))]));
   const text = Object.fromEntries(ids.map(id => [id, raceText(races.get(id))]));
   const legacy = Object.fromEntries(ids.map(id => [id, raceLegacyText(races.get(id))]));
-  const display = Object.fromEntries(ids.map(id => [id, text[id].html]));
+  const display = Object.fromEntries(ids.map(id => [id, raceHtml(races.get(id))]));
   const entries = map => ids.map(id => `  ${id}: ${JSON.stringify(map[id])}`).join(",\n");
   const source = `// ${OUTPUT_NAME}：由 npm run build 從 content/srd/races 的種族內容檔產生，請勿手動修改。
 // raceRules：各種族的結構化規則（來源、體型、速度、黑暗視覺、抗性、血統選項與其法術、特質的資源與提示、跑團動作）。

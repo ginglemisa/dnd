@@ -1234,7 +1234,7 @@
     const options = {
       className: value("class"), race: value("race"), level: value("level"),
       wisdomScore: value("wis"), charismaScore: value("cha"),
-      goliathAncestry: value("goliath-ancestry"), druidLand: value("druid-land"),
+      raceChoice: getSelectedRaceChoice(), druidLand: value("druid-land"),
       hasTravelCompanion: Boolean(globalScope.hasSelectedFeat?.("最佳旅伴")),
       spellSlotGroups: slots.map(group => ({ level: group.level, ids: group.controls.map(control => control.id) })),
       freeSpellUses
@@ -2205,24 +2205,24 @@
     return document.getElementById("race")?.value || "";
   }
 
+  // 目前種族所選的血統選項值（種族內容檔 choice 的選單）；沒有血統選擇時為空字串。
+  function getSelectedRaceChoice() {
+    const choiceId = globalScope.getRaceRules?.(getSelectedRace())?.choice?.id;
+    return choiceId ? document.getElementById(choiceId)?.value || "" : "";
+  }
+
   function getDarkvisionEntry() {
     const beast = getDruidForm();
     if (beast) return { label: "形態感官", detail: `${beast.senses}（被動察覺以總覽重算值為準）` };
+    // 種族黑暗視覺（種族內容檔；所選血統有 darkvision 時以血統為準，例如卓爾 120 呎）。
     const race = getSelectedRace();
-    const racialRange = {
-      dragonborn: 60,
-      dwarf: 120,
-      elf: 60,
-      gnome: 60,
-      orc: 120,
-      tiefling: 60
-    }[race] || 0;
-    const drowRange = race === "elf" && document.getElementById("elf-lineage")?.value === "drow" ? 120 : 0;
+    const racialRange = globalScope.getRaceChoiceOption?.(race, getSelectedRaceChoice())?.darkvision
+      ?? globalScope.getRaceRules?.(race)?.darkvision ?? 0;
     const characterLevel = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
     const hasDevilsSight = document.getElementById("class")?.value === "warlock"
       && characterLevel >= 2
       && Boolean(globalScope.hasWarlockInvocation?.("魔鬼視界"));
-    const range = Math.max(racialRange, drowRange, hasDevilsSight ? 120 : 0);
+    const range = Math.max(racialRange, hasDevilsSight ? 120 : 0);
     if (!range) return null;
 
     return {
@@ -2234,21 +2234,15 @@
     };
   }
 
-  function getDragonbornResistanceEntry() {
-    if (getSelectedRace() !== "dragonborn") return null;
-    const ancestry = document.getElementById("dragonborn-ancestry")?.value || "";
-    const damageType = {
-      acid: "強酸",
-      lightning: "閃電",
-      fire: "火焰",
-      poison: "毒素",
-      cold: "冷凍"
-    }[ancestry.split("_").pop()] || "";
-    if (!damageType) return null;
-    return {
+  // 種族的傷害抗性（種族內容檔：特質的 resistances 與所選血統的 resistance，例如龍族血統、邪魔遺贈）。
+  function getRaceResistanceEntries() {
+    const race = getSelectedRace();
+    const option = globalScope.getRaceChoiceOption?.(race, getSelectedRaceChoice());
+    const types = [...(globalScope.getRaceRules?.(race)?.resistances || []), ...(option?.resistance ? [option.resistance] : [])];
+    return types.map(type => globalScope.getDamageTypeLabel?.(type)).filter(Boolean).map(label => ({
       label: "抗性",
-      detail: `${damageType}傷害減半。`
-    };
+      detail: `${label}傷害減半。`
+    }));
   }
 
   // 子職能力依目前子職判斷（character-rules.js 的 hasClassFeature，以內容檔的能力 ID）；
@@ -2280,29 +2274,6 @@
       characterLevel: document.getElementById("level")?.value || "",
       damageType: document.getElementById("sorcerer-elemental-affinity-damage-type")?.value || ""
     });
-  }
-
-  function getTieflingResistanceEntry() {
-    if (getSelectedRace() !== "tiefling") return null;
-    const legacy = document.getElementById("tiefling-legacy")?.value || "";
-    const damageType = {
-      abyssal: "毒素",
-      chthonic: "黯蝕",
-      infernal: "火焰"
-    }[legacy];
-    if (!damageType) return null;
-    return {
-      label: "抗性",
-      detail: `${damageType}傷害減半。`
-    };
-  }
-
-  function getDwarfResistanceEntry() {
-    if (getSelectedRace() !== "dwarf") return null;
-    return {
-      label: "抗性",
-      detail: "毒素傷害減半。"
-    };
   }
 
   function hasSelectedFeat(featName) {
@@ -2407,23 +2378,16 @@
     const inPanel = (entry, summaryPanel) => entry ? { ...entry, summaryPanel } : null;
     const entries = [
       inPanel(getDarkvisionEntry(), "skills"),
-      inPanel(getDragonbornResistanceEntry(), "overview"),
-      inPanel(getTieflingResistanceEntry(), "overview"),
-      inPanel(getDwarfResistanceEntry(), "overview"),
+      ...getRaceResistanceEntries().map(entry => inPanel(entry, "overview")),
       inPanel(getSorcererElementalAffinityEntry(), "overview")
     ].filter(Boolean);
-    const racialDefenses = {
-      dwarf: [{ label: "矮人體魄", detail: "對中毒狀態的豁免有優勢。", summaryPanel: "skills" }],
-      elf: [{ label: "精類血統", detail: "對魅惑狀態的豁免有優勢。", summaryPanel: "skills" }],
-      gnome: [{ label: "侏儒狡黠", detail: "智力、感知、魅力豁免有優勢。", summaryPanel: "skills" }],
-      halfling: [
-        { label: "勇氣", detail: "避免或終止恐慌狀態的豁免有優勢。", summaryPanel: "skills" },
-        { label: "吉運", detail: "D20 檢定中擲出 1 時，可以重擲一次。", summaryPanel: "skills" }
-      ],
-      goliath: [{ label: "身強力壯", detail: "掙脫擒抱狀態的屬性檢定有優勢。", summaryPanel: "skills" }],
-      orc: [{ label: "堅韌不屈", detail: "若 HP 被傷害至 0 且沒有即死，可強制 HP=1。", summaryPanel: "overview" }]
-    };
-    return entries.concat(racialDefenses[race] || []);
+    // 種族特質的跑團提示（種族內容檔的 hint）：標題為特質名稱，文字為 raceText 的 hints，頁籤為 hint.panels。
+    const raceHints = globalScope.getRaceText?.(race)?.hints || {};
+    const level = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
+    const racialDefenses = (globalScope.getRaceRules?.(race)?.traits || [])
+      .filter(trait => trait.hint && Math.max(level, 1) >= trait.level)
+      .flatMap(trait => trait.hint.panels.map(summaryPanel => ({ label: trait.name, detail: raceHints[trait.id], summaryPanel })));
+    return entries.concat(racialDefenses);
   }
 
   // 失能（含麻痺、石化、震懾、昏迷帶入的失能）期間，失效的能力提醒直接隱藏。

@@ -237,11 +237,18 @@
     return column;
   }
 
+  // 種族特質（種族內容檔）中，資源 kind 為 inspiration（長休獲得英雄激勵）或寫了 longRest 的特質。
+  function getRaceTrait(race, test) {
+    return (globalScope.getRaceRules?.(race)?.traits || []).find(test) || null;
+  }
+  const grantsInspiration = race => Boolean(getRaceTrait(race, trait => trait.resource?.kind === "inspiration"));
+
   function createHeroicInspirationRow() {
     const canonical = document.getElementById("heroic-inspiration");
     if (!(canonical instanceof HTMLInputElement)) return null;
-    const recoveryNote = document.getElementById("race")?.value === "human"
-      ? "足智多謀：完成長休後，獲得 1 顆英雄激勵。"
+    const inspirationTrait = getRaceTrait(document.getElementById("race")?.value || "", trait => trait.resource?.kind === "inspiration");
+    const recoveryNote = inspirationTrait
+      ? `${inspirationTrait.name}：完成長休後，獲得 1 顆英雄激勵。`
       : "";
     const row = createCheckboxMirrors(
       "英雄激勵",
@@ -310,7 +317,7 @@
     try {
       const content = createElement("div", "tabletop-rest-dialog");
       content.appendChild(createElement("p", "", isLong
-        ? `${context.race === "elf" ? "傳思 4 小時" : "休息至少 8 小時"}。完成後至少等 16 小時再開始長休。`
+        ? `${getRaceTrait(context.race, trait => trait.longRest)?.longRest || "休息至少 8 小時"}。完成後至少等 16 小時再開始長休。`
         : "休息 1 小時。完成後可逐顆使用生命骰。"));
       const summary = createElement("ul", "tabletop-rest-summary");
       if (isLong) {
@@ -325,7 +332,7 @@
           `${spec.label}：${spec.recovery.shortRest === "all" ? "全回" : `恢復 ${spec.recovery.shortRest} 次`}。`));
         if (!recovered.length) summary.appendChild(createElement("li", "", "沒有自動恢復的短休資源。"));
       }
-      if (isLong && context.race === "human") summary.appendChild(createElement("li", "", "獲得英雄激勵。"));
+      if (isLong && grantsInspiration(context.race)) summary.appendChild(createElement("li", "", "獲得英雄激勵。"));
       content.appendChild(summary);
       const optionFields = context.optionGroups.filter(group => [kind, "either"].includes(group.when)).map(group => {
         const section = createElement("fieldset", "tabletop-rest-choice");
@@ -635,14 +642,18 @@
     return row;
   }
 
+  // 種族的勾選框資源（種族內容檔 kind: checkboxes，例如吐息元素）：id 為包住角色卡勾選框的 container。
   function getRaceUseGroups() {
     const race = document.getElementById("race")?.value || "";
     const level = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
-    const goliathAncestry = document.getElementById("goliath-ancestry")?.value || "";
-    const configs = [
-      { visible: level >= 1 && race === "dragonborn", id: "dragonborn-breath-uses", label: "吐息元素", note: "使用次數等同熟練加值；長休後全回復。" },
-      { visible: level >= 1 && race === "goliath" && Boolean(goliathAncestry), id: "goliath-giant-ancestry-uses", label: "巨人血統異能", note: "使用次數等同熟練加值；長休後全回復。" }
-    ];
+    const rules = globalScope.getRaceRules?.(race);
+    const choiceValue = rules?.choice ? document.getElementById(rules.choice.id)?.value || "" : "";
+    const configs = (rules?.traits || []).filter(trait => trait.resource?.kind === "checkboxes").map(({ level: traitLevel, resource }) => ({
+      visible: level >= traitLevel && (!resource.requiresChoice || Boolean(choiceValue)),
+      id: resource.container,
+      label: resource.label,
+      note: `使用次數等同${resource.uses === "proficiencyBonus" ? "熟練加值" : ` ${resource.uses} 次`}；長休後全回復。`
+    }));
 
     return configs.flatMap(config => {
       if (!config.visible) return [];
