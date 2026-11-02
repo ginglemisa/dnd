@@ -3,7 +3,7 @@
 "use strict";
 const fs = require("fs");
 const path = require("path");
-const { ROOT, loadSkillAbilities, backgroundSourceLabel, loadSpellCatalog, readIndexSelectOptions } = require("../content/site-sources");
+const { ROOT, loadSkillAbilities, contentSourceLabel, loadSpellCatalog, readIndexSelectOptions } = require("../content/site-sources");
 const { ContentError } = require("../content/errors");
 const { CONTENT_DIR, createSchemaValidators, schemaErrors, readYamlFile, listYaml } = require("../content/yaml");
 
@@ -170,7 +170,7 @@ function checkIndexSelects(races, errors) {
   listed.forEach(option => {
     const race = races.get(option.value);
     if (!race) { errors.push(`index.html 的種族選單有「${option.value}」，但沒有 content/srd/races/${option.value}.yaml`); return; }
-    const label = backgroundSourceLabel(race.source);
+    const label = contentSourceLabel(race.source);
     const expected = `${race.name}${label ? `(${label})` : ""}`;
     if (option.label !== expected) errors.push(`index.html 的種族選單「${option.value}」顯示為「${option.label}」，應為「${expected}」`);
   });

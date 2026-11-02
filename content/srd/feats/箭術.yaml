@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../schema/feat.schema.json
+id: 箭術
+source: srd
+type: style
+effects:
+  - name: 百步穿楊
+    text: 遠程武器的攻擊檢定 +2。
+pdf: [箭術(戰鬥風格), 遠程武器命中+2]

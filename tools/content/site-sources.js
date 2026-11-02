@@ -1,4 +1,4 @@
-// 建置讀取的既有網站資料：專案根目錄、提示框詞表（[[名稱]]）、德魯伊野獸清單，以及背景檢查用的技能、背景來源標籤、工具、專長與 index.html 選單。
+// 建置讀取的既有網站資料：專案根目錄、提示框詞表（[[名稱]]）、德魯伊野獸清單，以及背景檢查用的技能、內容來源標籤、工具與 index.html 選單。
 // 網站資料檔照網站載入方式整份執行（獨立的 vm 沙箱，沒有 document），再讀取頂層常數或檔案公開的全域；不截取原始碼。
 "use strict";
 const fs = require("fs");
@@ -59,8 +59,9 @@ function loadCharacterRules() {
 // 技能 ID（character-rules.js 的 CharacterSkillAbilities：中文名 → 屬性）。
 const loadSkillAbilities = () => loadCharacterRules().CharacterSkillAbilities;
 
-// 背景來源的顯示標籤（character-rules.js 的 getBackgroundSourceLabel，例如 extended →「擴充」）。
-const backgroundSourceLabel = source => loadCharacterRules().getBackgroundSourceLabel(source);
+// 內容來源的顯示標籤與說明（character-rules.js 的 getContentSourceLabel、getContentSourceNotice，例如 extended →「擴充」）。
+const contentSourceLabel = source => loadCharacterRules().getContentSourceLabel(source);
+const contentSourceNotice = source => loadCharacterRules().getContentSourceNotice(source);
 
 // 傷害類型的顯示名稱（character-rules.js 的 getDamageTypeLabel，例如 poison →「毒素」）。
 const damageTypeLabel = id => loadCharacterRules().getDamageTypeLabel(id);
@@ -79,13 +80,6 @@ function loadToolCatalog() {
   return toolCatalog;
 }
 
-// 專長清單與取得規則（feats.js 的 FEAT_OPTIONS、FEAT_RULES）。
-let featData = null;
-function loadFeatData() {
-  featData ||= runSiteScript("feats.js", ["FEAT_OPTIONS", "FEAT_RULES"]);
-  return featData;
-}
-
 // index.html 中 <select id="…"> 的選項（value 與顯示文字）；找不到選單時回傳 null。
 // 每次重讀（npm run dev 在同一個程序中重複建置）。
 function readIndexSelectOptions(id) {
@@ -95,4 +89,4 @@ function readIndexSelectOptions(id) {
   return select ? [...select[1].matchAll(/<option value="([^"]*)"[^>]*>([^<]*)<\/option>/g)].map(match => ({ value: match[1], label: match[2] })) : null;
 }
 
-module.exports = { ROOT, loadTipTables, loadWildShapeBeasts, loadSkillAbilities, backgroundSourceLabel, damageTypeLabel, loadSpellCatalog, loadToolCatalog, loadFeatData, readIndexSelectOptions };
+module.exports = { ROOT, loadTipTables, loadWildShapeBeasts, loadSkillAbilities, contentSourceLabel, contentSourceNotice, damageTypeLabel, loadSpellCatalog, loadToolCatalog, readIndexSelectOptions };

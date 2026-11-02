@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=../../schema/feat.schema.json
+id: 醫療兵
+source: extended
+type: origin
+effects:
+  - name: 急救處置
+    text: 以「動作」使用醫療包，使 5 呎內 1 個生物恢復 HP，數值＝擲 1 顆生命骰＋熟練加值。醫療包使用次數減 1，目標也消耗 1 顆生命骰。
+  - name: 穩定療效
+    text: 以法術或照護恢復 HP 時，恢復骰擲出 1 可重擲一次。
+actions:
+  - mode: action
+    label: 急救處置
+    key: dynamic-action-feat-curated-wg0piw
+    proficiencyValue: true
+  - mode: action
+    label: 穩定療效
+    key: dynamic-action-feat-curated-1g8q2rg
+pdf: [醫療兵(起源), 動作使用醫療包, "5呎內骰+熟練", 恢復骰1可重擲]

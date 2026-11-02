@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../schema/feat.schema.json
+id: 重甲減傷
+source: extended
+type: general
+prerequisite: { heavyArmor: true }
+effects:
+  - name: 屬性提升
+    text: 體質或力量擇一 +1（最高 20）。
+  - name: 裝甲吸收
+    text: 穿重甲被攻擊命中時，受到的揮砍、穿刺、鈍擊傷害減少，數值等同你的熟練加值。

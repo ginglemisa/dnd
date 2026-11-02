@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=../../schema/feat.schema.json
+id: 尋物好手
+source: extended
+type: general
+prerequisite: { abilities: [int, wis] }
+effects:
+  - name: 屬性提升
+    text: 智力或感知擇一 +1（最高 20）。
+  - name: 目光如鷹
+    text: 從[[洞悉]]、[[調查]]、[[察覺]]中選擇一項技能獲得熟練；若已熟練，則改為獲得專精。
+  - name: 信手拈來
+    text: 可用「附贈」執行「搜索」。
+actions:
+  - mode: bonus
+    label: 信手拈來
+    key: dynamic-bonus-feat-a4ncv1
+    level: 4

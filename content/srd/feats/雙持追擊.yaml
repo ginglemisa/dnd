@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=../../schema/feat.schema.json
+id: 雙持追擊
+source: extended
+type: general
+prerequisite: { abilities: [str, dex] }
+effects:
+  - name: 屬性提升
+    text: 力量或敏捷擇一 +1（最高 20）。
+  - name: 雙持追擊
+    text: 使用輕型武器攻擊後，可用「附贈」以另一把非雙手近戰武器再攻擊 1 次；可與「迅切」武器精通並用。
+  - name: 傷害調整
+    text: 若無「雙武器戰鬥」，這次額外攻擊的傷害不加正值屬性調整值。
+  - name: 快速換手
+    text: 原本可拔出或收起 1 把武器時，可改為拔出或收起 2 把非雙手武器。
+actions:
+  - mode: action
+    label: 雙持追擊
+    key: dynamic-action-feat-curated-1s2ain5
+    level: 4
+    tabletop: |-
+      使用輕型武器攻擊後，可用「附贈」以另一把非雙手近戰武器再攻擊 1 次；可與「迅切」武器精通並用；若無「雙武器戰鬥」，這次額外攻擊的傷害不加正值屬性調整值。
+  - mode: bonus
+    label: 雙持追擊
+    key: dynamic-bonus-feat-rklusa
+    level: 4
+    tabletop: |-
+      使用輕型武器攻擊後，可用「附贈」以另一把非雙手近戰武器再攻擊 1 次；可與「迅切」武器精通並用；若無「雙武器戰鬥」，這次額外攻擊的傷害不加正值屬性調整值。
+  - mode: action
+    label: 快速換手
+    key: dynamic-action-feat-curated-1y6ydu8
+    level: 4

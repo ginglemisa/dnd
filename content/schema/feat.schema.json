@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "feat.schema.json",
+  "title": "twD20 專長內容檔",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "source", "type", "effects"],
+  "definitions": {
+    "text": { "type": "string", "minLength": 1, "pattern": "^[^\\n]+$", "description": "一行文字，可用 [[提示]]（技能、規則或狀態名稱）；不可有 HTML、數值標記或換行。" },
+    "mode": { "enum": ["action", "bonus", "reaction", "movement"] }
+  },
+  "properties": {
+    "$schema": { "type": "string" },
+    "id": { "type": "string", "minLength": 1, "pattern": "^[^\\s/\\\\]+$", "description": "專長 ID，須等於檔名。也是專長名稱，會寫進存檔、分享網址與快速創角草稿（選單值），不可改字（列在 feat-id-baseline.json）。" },
+    "source": { "enum": ["srd", "extended"], "description": "內容來源。srd：出自 SRD 5.2.1；extended：本站另外撰寫（選單與副標加上來源標籤，說明最後顯示來源說明）。" },
+    "type": { "enum": ["origin", "general", "style"], "description": "專長類別：origin 起源專長、general 通用專長（4 級以上）、style 戰鬥風格專長。決定哪些專長選單列出此專長，選單與副標的類別字樣由此產生。" },
+    "prerequisite": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "maxProperties": 1,
+      "description": "通用專長的先決條件（擇一）；不符合時專長列顯示警示。副標的條件文字由此產生，例如「力量或敏捷 13+」。",
+      "properties": {
+        "abilities": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["str", "dex", "con", "int", "wis", "cha"] },
+          "description": "其中一項屬性值須達 13，例如 [str, dex]。"
+        },
+        "heavyArmor": { "const": true, "description": "須具重甲訓練。" },
+        "spellcasting": { "const": true, "description": "須具施法或契約魔法能力。" }
+      }
+    },
+    "repeatable": { "const": true, "description": "可多次選擇（省略時同一角色不可重複取得）。" },
+    "effects": {
+      "type": "array",
+      "minItems": 1,
+      "description": "效果，依說明順序。顯示為「名稱：內容」，之間空一行。",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "text"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "pattern": "^[^：:\\n]+$", "description": "效果名稱（粗體小標）。同一專長內不可重複。" },
+          "text": { "$ref": "#/definitions/text", "description": "效果內容（接在「名稱：」之後）。" },
+          "list": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/text" }, "description": "接在內容之後的清單，每項一行，顯示為「·項目」。" },
+          "after": { "$ref": "#/definitions/text", "description": "清單之後空一行的補充段落。" }
+        }
+      }
+    },
+    "actions": {
+      "type": "array",
+      "minItems": 1,
+      "description": "跑團動作按鈕（選了此專長才出現）。",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["mode", "label", "key"],
+        "properties": {
+          "mode": { "$ref": "#/definitions/mode", "description": "出現在哪一個分頁：action 動作、bonus 附贈、reaction 反應、movement 移動。" },
+          "label": { "type": "string", "minLength": 1, "description": "按鈕名稱。" },
+          "key": { "type": "string", "pattern": "^dynamic-(action|bonus|reaction|movement)-feat-[a-z0-9-]+$", "description": "跑團偏好記住的按鈕識別（隱藏、自訂順序），不可改字（列在 feat-id-baseline.json）。中間的分頁須與 mode 相同。" },
+          "level": { "type": "integer", "minimum": 1, "maximum": 20, "description": "角色等級達到此值才出現（省略為 1）。" },
+          "effects": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 }, "description": "說明由哪些效果的內容組成（以空格連接）；省略時為與 label 同名的效果。" },
+          "proficiencyValue": { "const": true, "description": "已選等級時，說明中的「熟練加值」換成數值。" },
+          "tabletop": { "type": "string", "minLength": 1, "description": "另寫的跑團說明（純文字，可換行），取代 effects 組成的說明。" }
+        }
+      }
+    },
+    "pdf": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 },
+      "description": "PDF 專長欄的各行（第一行是空間不夠時只列的標題）。省略時只有一行「名稱(類別)」，例如「衝鋒猛擊(通用)」。"
+    }
+  }
+}

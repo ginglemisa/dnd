@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=../../schema/feat.schema.json
+id: 擒抱者
+source: srd
+type: general
+prerequisite: { abilities: [str, dex] }
+effects:
+  - name: 屬性提升
+    text: 力量或敏捷擇一 +1（最高 20）。
+  - name: 重拳擒抱
+    text: 每回合 1 次，徒手攻擊命中時可同時造成傷害並[[擒抱]]目標。
+  - name: 攻擊優勢
+    text: 對被你[[擒抱]]的目標攻擊具有[[優勢]]。
+  - name: 迅捷摔技
+    text: 拖著被你[[擒抱]]、體型不大於你的目標移動時，不需消耗額外速度。
+actions:
+  - mode: action
+    label: 重拳擒抱
+    key: dynamic-action-feat-curated-1cls37s
+    level: 4
+  - mode: movement
+    label: 迅捷摔技
+    key: dynamic-movement-feat-curated-1sgt8ux
+    level: 4
+pdf: [擒抱者(通用), 力量or敏捷+1, 徒手命中可擒抱, 打擒抱目標優勢, 擒抱同型不減速]

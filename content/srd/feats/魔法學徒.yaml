@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=../../schema/feat.schema.json
+id: 魔法學徒
+source: srd
+type: origin
+repeatable: true
+effects:
+  - name: 兩個戲法
+    text: 從牧師／德魯伊／法師列表擇一，選 2 個戲法。
+  - name: 施法屬性
+    text: 智力／感知／魅力擇一，適用於此專長的所有法術。
+  - name: 一環法術
+    text: 從同一列表選 1 個一環法術。
+    list:
+      - 永遠視為已準備
+      - 可不耗法術位施放 1 次，長休後恢復
+      - 也可消耗你的法術位施放
+  - name: 升級更換
+    text: 每次升級，可更換上述 1 個法術；戲法換戲法，一環換一環，且須來自同一列表。
+  - name: 可重複
+    text: 可多次選擇，但每次須選不同法術列表。

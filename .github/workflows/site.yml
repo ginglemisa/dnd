@@ -1,6 +1,6 @@
 # 網站上線：push 到 main（或手動執行）時，產生網站需要的檔案並部署 GitHub Pages。
 # 回歸測試在本機推送前完成，這裡不重複執行。
-# - class-content.generated.js（職業資料）、background-content.generated.js（背景資料）、race-content.generated.js（種族資料）與 twD20-offline.html（離線角色卡）是衍生產物，不在 repo 裡，由這裡產生。
+# - class-content.generated.js（職業資料）、feat-content.generated.js（專長資料）、background-content.generated.js（背景資料）、race-content.generated.js（種族資料）與 twD20-offline.html（離線角色卡）是衍生產物，不在 repo 裡，由這裡產生。
 #   class-content.private.generated.js 在上線建置一律是空檔（網站固定會載入它；私人內容包只存在使用者電腦）。
 # - 內容檔有錯時 npm run build 會失敗，不會部署，正式站維持上一個版本。
 # - 發布內容為此 commit 的 repo 檔案加上產生的檔案，以 GitHub Pages 原本使用的 Jekyll 建置。
@@ -34,7 +34,7 @@ jobs:
       - name: 安裝套件
         run: npm ci
 
-      - name: 產生職業與背景資料（並更新 index.html 的快取版本）
+      - name: 產生職業、專長、背景與種族資料（並更新 index.html 的快取版本）
         run: npm run build -- --stamp-version
 
       - name: 產生離線角色卡
@@ -45,7 +45,7 @@ jobs:
         run: |
           mkdir -p _publish
           git archive HEAD | tar -x -C _publish
-          cp index.html class-content.generated.js class-content.private.generated.js background-content.generated.js race-content.generated.js twD20-offline.html _publish/
+          cp index.html class-content.generated.js class-content.private.generated.js feat-content.generated.js background-content.generated.js race-content.generated.js twD20-offline.html _publish/
 
       - name: Jekyll 建置（與 GitHub Pages 分支發布相同）
         uses: actions/jekyll-build-pages@v1

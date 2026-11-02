@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../schema/feat.schema.json
+id: 熟習
+source: srd
+type: origin
+repeatable: true
+effects:
+  - name: 多才多藝
+    text: 你獲得 3 項技能或工具熟練（任意組合）。
+  - name: 可重複
+    text: 你可以多次選擇此專長。
+pdf: [熟習(起源), 獲得 3 項熟練, 可選技能或工具]

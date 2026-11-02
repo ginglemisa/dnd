@@ -22,7 +22,7 @@
       "description": "可調整的三項屬性（ID），購點與快速創角依此限制加值；顯示為「智力,感知,魅力」。"
     },
     "feat": {
-      "description": "起源專長：專長 ID（feats.js 的 FEAT_OPTIONS value）。魔法學徒寫成 { id: 魔法學徒, spellList: 職業 ID }，顯示為「魔法學徒（牧師）」。",
+      "description": "起源專長：專長 ID（content/srd/feats 的起源專長）。魔法學徒寫成 { id: 魔法學徒, spellList: 職業 ID }，顯示為「魔法學徒（牧師）」。",
       "oneOf": [
         { "type": "string", "minLength": 1, "not": { "const": "魔法學徒" } },
         {

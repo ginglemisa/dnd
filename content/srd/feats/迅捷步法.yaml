@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=../../schema/feat.schema.json
+id: 迅捷步法
+source: extended
+type: general
+prerequisite: { abilities: [dex, con] }
+effects:
+  - name: 屬性提升
+    text: 敏捷或體質擇一 +1（最高 20）。
+  - name: 步速提升
+    text: 速度增加 10 呎。
+  - name: 跨越險地
+    text: 自身回合使用「衝刺」後，本回合移動可無視困難地形。
+  - name: 閃避反擊
+    text: 針對你的[[藉機攻擊]]具有[[劣勢]]。
+actions:
+  - mode: action
+    label: 跨越險地
+    key: dynamic-action-feat-curated-mvkxkp
+    level: 4
+  - mode: movement
+    label: 跨越險地
+    key: dynamic-movement-feat-curated-mvkxkp
+    level: 4

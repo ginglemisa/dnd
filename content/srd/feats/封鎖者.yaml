@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=../../schema/feat.schema.json
+id: 封鎖者
+source: extended
+type: general
+prerequisite: { abilities: [str, dex] }
+effects:
+  - name: 屬性提升
+    text: 力量或敏捷擇一 +1（最高 20）。
+  - name: 封鎖者
+    text: 你可以[[藉機攻擊]] 5 呎內做出以下任一行為的生物：
+    list:
+      - 進行「撤離」行動
+      - 攻擊命中他人
+    after: 命中後，目標的速度為 0，直到你的下個回合開始。
+actions:
+  - mode: reaction
+    label: 封鎖者
+    key: dynamic-reaction-feat-curated-2630aj
+    level: 4

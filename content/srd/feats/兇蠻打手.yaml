@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../schema/feat.schema.json
+id: 兇蠻打手
+source: srd
+type: origin
+effects:
+  - name: 受訓善戰
+    text: 每回合 1 次，以武器命中時，可擲兩次傷害骰並選用其一。
+pdf: [兇蠻打手(起源), 每回合 1 次, 武器傷擲二取高]
