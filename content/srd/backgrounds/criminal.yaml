@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../schema/background.schema.json
+id: criminal
+name: 罪犯
+abilities: [dex, con, int]
+feat: 警覺
+skills: [巧手, 隱匿]
+tool: 盜賊工具
+equipment:
+  A:
+    items: [匕首 ×2, 盜賊工具, 撬棍, 小包 ×2, 旅行者服裝]
+    gold: 16
+  B: { gold: 50 }
+description: |
+  你在灰色地帶討生活，扒竊、詐騙、闖空門，都可能是你的生存手段。長年與風險為伍，讓你養成敏銳的警覺與臨機應變。開鎖、拆陷阱只是基本功；真正讓你活下來的，是看懂局勢、搶先一步行動的本事。

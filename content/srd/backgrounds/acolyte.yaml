@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../schema/background.schema.json
+id: acolyte
+name: 侍僧
+abilities: [int, wis, cha]
+feat: { id: 魔法學徒, spellList: cleric }
+skills: [洞悉, 宗教]
+tool: 書法工具
+equipment:
+  A:
+    items: [書法工具, 書籍（禱文）, 聖徽, 羊皮紙 ×10, 祭祀長袍]
+    gold: 8
+  B: { gold: 50 }
+description: |
+  你曾在神殿、修院或其他宗教場所度日，抄寫經文、照料聖物，或是協助前來求助的人。長年耳濡目染，使你熟悉教義與儀式，也從告解者的表情與語氣裡，學會察言觀色。在那段歲月中，你掌握了引導微弱神力的方法。

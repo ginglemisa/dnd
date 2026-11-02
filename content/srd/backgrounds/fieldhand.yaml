@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../schema/background.schema.json
+id: fieldhand
+name: 耕者
+expansion: true
+abilities: [str, con, wis]
+feat: 強韌體魄
+skills: [自然, 馴獸]
+tool: 木匠工具
+equipment:
+  A:
+    items: [鐮刀, 木匠工具, 醫療包, 鐵鍋, 鏟子, 旅行者服裝]
+    gold: 30
+  B: { gold: 50 }
+description: |
+  含淚播種者，必歡呼收割。種田如此，畜牧亦然。耕田、除草、放養、修柵欄、維護農具，長年的農場生活讓你善於與自然和動物相處，也養成了強健的體魄。
