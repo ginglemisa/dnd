@@ -263,10 +263,43 @@ globalThis.SpellCatalog = (() => {
     return typeof exactName === "string" ? exactNameToSpellId.get(exactName) : undefined;
   }
 
+  const spellIdOf = spellOrId => typeof spellOrId === "string" ? spellOrId : spellOrId?.spellId;
+
+  // 標頭各項的顯示字串與規則旗標（學派、施法時間、射程、成分、材料、持續時間、專注、儀式），
+  // PDF、跑團與法術書讀取，不解析 desc。自創法術提供同形狀的 header（tabletop-custom-spells.js）。
+  const headersBySpellId = Object.freeze(Object.fromEntries(Object.keys(spellsById).map(spellId => {
+    const rules = spellRules[spellId];
+    return [spellId, Object.freeze({
+      ...spellText[spellId].header,
+      castingTimes: Object.freeze(rules.castingTime.map(time => typeof time === "string" ? time : Object.freeze({ ...time }))),
+      concentration: Boolean(rules.concentration),
+      ritual: Boolean(rules.ritual),
+      hasMaterial: rules.components.includes("M")
+    })];
+  })));
+
+  function getSpellHeader(spellOrId) {
+    const spellId = spellIdOf(spellOrId);
+    return typeof spellId === "string" && Object.hasOwn(headersBySpellId, spellId) ? headersBySpellId[spellId] : undefined;
+  }
+
+  // 施法時間（"action"、"bonus-action"、"reaction"、{ minutes }、{ hours }），可有多個。
+  function getCastingTimes(spellOrId) {
+    return [...(getSpellHeader(spellOrId)?.castingTimes || [])];
+  }
+
+  // 跑團版說明（內容檔的 site.tabletop，含標頭）；沒寫時用網站版說明。
+  function getTabletopText(spellOrId) {
+    const spellId = spellIdOf(spellOrId);
+    if (!getSpell(spellId)) return undefined;
+    return spellText[spellId].tabletop || spellsById[spellId].desc;
+  }
+
+  // 專注：目錄內的法術讀規則欄位；目錄外的法術物件（自創法術）讀其 concentration。
   function isConcentration(spellOrId) {
-    const spell = typeof spellOrId === "string" ? getSpell(spellOrId) : spellOrId;
-    if (!spell || typeof spell.desc !== "string") return false;
-    return /^持續時間\s*[：:]\s*[^\n]*專注/imu.test(spell.desc);
+    const header = getSpellHeader(spellOrId);
+    if (header) return header.concentration;
+    return typeof spellOrId === "object" && spellOrId !== null && spellOrId.concentration === true;
   }
 
   const compatSpellList = {};
@@ -291,6 +324,9 @@ globalThis.SpellCatalog = (() => {
     getClassIds,
     getDisplayName,
     resolveSpellId,
+    getSpellHeader,
+    getCastingTimes,
+    getTabletopText,
     isConcentration,
     getCastMetadata,
     canCastFromTabletop,

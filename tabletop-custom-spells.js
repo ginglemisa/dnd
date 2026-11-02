@@ -42,10 +42,15 @@
     const duration = record.duration === "custom" ? record.durationText : options.durations[record.duration];
     const components = [["verbal", "V"], ["somatic", "S"], ["material", "M"]]
       .filter(([key]) => record[key]).map(([, label]) => label).join("、") || "無";
+    // header 與 SpellCatalog.getSpellHeader 同形狀（PDF 讀取）；desc 只供顯示。
+    const header = { school: record.school, castingTime: getTimingLabels(record).join("／"), range, components,
+      ...(record.material ? { material: record.materials } : {}), duration: `${record.concentration ? "專注，" : ""}${duration}`,
+      concentration: Boolean(record.concentration), ritual: Boolean(record.ritual), hasMaterial: Boolean(record.material) };
     return { spellId, nameZh: record.nameZh, nameEn: "", level: record.level, customSpell: true,
-      desc: [`學派: ${record.school}`, `施法時間: ${getTimingLabels(record).join("／")}`, `射程: ${range}`,
+      concentration: header.concentration, header,
+      desc: [`學派: ${header.school}`, `施法時間: ${header.castingTime}`, `射程: ${range}`,
         `成分: ${components}`, ...(record.material ? [`材料: ${record.materials}`] : []),
-        `持續時間: ${record.concentration ? "專注，" : ""}${duration}`, "",
+        `持續時間: ${header.duration}`, "",
         ...record.description.split(/\r?\n/).filter(line => line.trim()).map(line => `- ${line}`)].join("\n") };
   }
 

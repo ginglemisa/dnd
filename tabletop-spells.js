@@ -192,12 +192,12 @@
     }
   }
 
+  const SPELL_TIMING_LABELS = Object.freeze({ action: "動作", "bonus-action": "附贈", reaction: "反應" });
+
+  // 按鈕上的施法時間小標讀法術目錄的結構化施法時間（可有多種），儀式另列。
   function getSpellTimingLabels(spell) {
-    // Casting time still lives in the catalog's rule text, as in ActionPanel.
-    // Limit parsing to that field so effect timings do not become casting tags.
-    const field = String(spell.desc || "").match(/施法時間\s*[:：]([\s\S]*?)(?=\r?\n(?:射程|距離)\s*[:：]|$)/u)?.[1] || "";
-    const labels = Array.from(field.matchAll(/附贈動作|反應動作|動作|\d+\s*(?:分鐘|小時)/gu), match => (
-      match[0].replace("附贈動作", "附贈").replace("反應動作", "反應").replace(/\s+/gu, "")
+    const labels = (globalScope.SpellCatalog?.getCastingTimes(spell) || []).map(time => (
+      typeof time === "string" ? SPELL_TIMING_LABELS[time] : time.minutes ? `${time.minutes}分鐘` : `${time.hours}小時`
     ));
     if (globalScope.SpellCatalog?.isRitual(spell)) labels.push("儀式");
     return [...new Set(labels)];
@@ -211,7 +211,7 @@
       content.appendChild(createElement("p", "tabletop-spell-detail__source", entry.sourceLabel));
     }
     const copy = createElement("div", "tabletop-spell-detail__copy");
-    const description = String(spell.desc || "");
+    const description = String(globalScope.SpellCatalog?.getTabletopText(spell) || spell.desc || "");
     if (typeof globalScope.appendSpellDescContent === "function") {
       globalScope.appendSpellDescContent(copy, description, (target, text) => appendDiceText(target, text, spell));
     } else {

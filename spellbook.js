@@ -275,7 +275,7 @@
     clear.type = "button";
     clear.hidden = true;
     clear.setAttribute("aria-label", "清除法術搜尋");
-    const schoolOf = spell => spell.desc?.match(/^學派\s*[：:]\s*([^\r\n]+)/mu)?.[1].trim() || "";
+    const schoolOf = spell => catalog().getSpellHeader(spell)?.school || "";
     const filter = node("select");
     filter.setAttribute("aria-label", prepared ? "篩選環階" : "篩選學派");
     filter.dataset.stateTransient = "true";

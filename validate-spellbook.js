@@ -1194,7 +1194,7 @@ async function verifyWizardBookPicker(page) {
   const expectedRings = await page.evaluate(() => SpellCatalog.getAllSpells().filter(spell => [1, 3].includes(spell.level) && SpellCatalog.getClassIds(spell.spellId).includes("wizard")).map(spell => spell.spellId).sort());
   assert.deepEqual((await visibleIds()).sort(), expectedRings, "one and three are shown together without other rings");
   await school.selectOption("防護");
-  const expectedSchool = await page.evaluate(() => SpellCatalog.getAllSpells().filter(spell => [1, 3].includes(spell.level) && SpellCatalog.getClassIds(spell.spellId).includes("wizard") && /^學派\s*[：:]\s*防護\s*$/mu.test(spell.desc)).map(spell => spell.spellId).sort());
+  const expectedSchool = await page.evaluate(() => SpellCatalog.getAllSpells().filter(spell => [1, 3].includes(spell.level) && SpellCatalog.getClassIds(spell.spellId).includes("wizard") && SpellCatalog.getSpellHeader(spell).school === "防護").map(spell => spell.spellId).sort());
   assert.deepEqual((await visibleIds()).sort(), expectedSchool, "school and multiple rings intersect");
   await search.fill("Dispel Magic");
   assert.deepEqual(await visibleIds(), ["dispel-magic"]);

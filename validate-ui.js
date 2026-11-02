@@ -477,25 +477,23 @@ async function verifyPdf(page, fieldsOnly) {
         if (materialFlag(spell, legacy) !== needsMaterial) throw new Error(`PDF material component: ${spell.spellId}/legacy=${legacy}`);
       }
     }
+    // PDF 的 M 欄讀結構化成分，說明文字怎麼寫都不影響。
     const originalCatalog = window.SpellCatalog;
     const guidance = originalCatalog.getSpell("guidance");
     try {
-      for (const [desc, expectedMaterial] of [
-        ["成分: V、S\n材料: null\n效果: 使用材料和 M 字樣。", false],
-        ["成分: V、S\n材料: 無", false],
-        ["成分: V、S、M\n材料: 一點磷", true],
-        ["成分：S, M", true],
-        ["成分: S\n效果: M", false],
-        ["成分: \nM", false],
-        ["效果: 材料成分: M", false],
-        ["成分: SOMATIC", false]
-      ]) {
+      for (const desc of ["成分: V、S、M\n材料: 一點磷", "成分：S, M", "效果: 材料成分: M"]) {
         window.SpellCatalog = { ...originalCatalog, getSpell: id => id === guidance.spellId ? { ...guidance, desc } : originalCatalog.getSpell(id) };
         for (const legacy of [false, true]) {
-          if (materialFlag(guidance, legacy) !== expectedMaterial) throw new Error(`PDF component field isolation: ${desc}/legacy=${legacy}`);
+          if (materialFlag(guidance, legacy) !== false) throw new Error(`PDF material flag must ignore description text: ${desc}/legacy=${legacy}`);
         }
       }
     } finally { window.SpellCatalog = originalCatalog; }
+    const customPayload = buildPdfFieldPayload({ class: "wizard", level: "1" }, { customSpells: [{ spellId: "custom-spell-pdf", level: 1, nameZh: "自創測試",
+      header: { school: "塑能", castingTime: "反應動作，當你被攻擊時／儀式", range: "30 呎", components: "V、M", material: "羽毛", duration: "專注，1 分鐘", concentration: true, ritual: true, hasMaterial: true } }] });
+    const customRow = Object.keys(customPayload).find(key => /^sp-name-\d+$/.test(key) && customPayload[key] === "自創測試")?.slice("sp-name-".length);
+    if (!customRow || customPayload[`sp-cast-time-${customRow}`] !== "反應" || customPayload[`sp-range-${customRow}`] !== "30 呎"
+      || !customPayload[`sp-c-${customRow}`] || !customPayload[`sp-r-${customRow}`] || !customPayload[`sp-m-${customRow}`]
+      || customPayload[`note${customRow}`] !== "學派:塑能 | 持續:1分鐘") throw new Error("PDF custom spell reads its structured header");
     const expected = new Set(["barbarian", "cleric", "druid", "fighter", "paladin", "ranger"]);
     for (const cls of Object.keys(ARMOR_TRAINING_BY_CLASS)) {
       if (buildPdfFieldPayload({ class: cls, level: "1" }).chk_shld1 !== expected.has(cls)) throw new Error(`Shield proficiency: ${cls}`);

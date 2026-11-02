@@ -1113,7 +1113,7 @@
       return Boolean(invocation) && !(invocation.minWarlockLevel > 1);
     });
   }
-  function isRitualSpell(spell) { return Boolean(spell) && /儀式/u.test(spell.desc || ""); }
+  function isRitualSpell(spell) { return Boolean(spell) && SpellCatalog.isRitual(spell); }
   function knownSpellSources(target, excludedFeature = "") {
     const map = new Map();
     (target.acquisitions.spells || []).forEach(item => {

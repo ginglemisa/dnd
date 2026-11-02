@@ -695,14 +695,24 @@
     }
   }
 
-  function findSpellDesc(spellId) {
-    return getCanonicalSpell(spellId)?.desc || '';
+  // 法術標頭（學派、施法時間、射程、持續時間、專注、儀式、材料）讀結構化資料：
+  // 目錄法術用 SpellCatalog.getSpellHeader，自創法術用其 header（同形狀），不解析說明文字。
+  function getSpellRowHeader(row) {
+    if (row.customSpell) return row.customSpell.header || {};
+    const catalog = getSpellCatalog();
+    try {
+      return catalog?.getSpellHeader?.(row.spellId) || {};
+    } catch (_) {
+      return {};
+    }
   }
 
-  function getSpellLine(desc, label) {
-    const pattern = new RegExp(`${label}\\s*[:：]\\s*([^\\n]+)`);
-    const matched = desc.match(pattern);
-    return matched ? matched[1].trim() : '';
+  const PDF_CAST_TIME_LABELS = Object.freeze({ action: '動作', 'bonus-action': '附贈', reaction: '反應' });
+
+  // 角色紙的施法時間欄：多種施法時間以「或」連接，附贈／反應用簡稱，不列儀式與觸發條件。
+  function formatPdfCastTimes(castingTimes) {
+    return castingTimes.map(time => (typeof time === 'string' ? PDF_CAST_TIME_LABELS[time]
+      : time.minutes ? `${time.minutes}分鐘` : `${time.hours}小時`)).join('或');
   }
 
 
@@ -713,6 +723,7 @@
     return englishIndex === -1 ? text : text.slice(0, englishIndex).trim();
   }
 
+  // 自創法術的施法時間文字（可為玩家自訂）轉成角色紙的簡短寫法。
   function convertCastTimeText(raw) {
     const text = normalizeText(raw);
     // Trigger conditions belong in the spell description and can overflow the
@@ -1356,31 +1367,28 @@ function isWeaponRowEmpty(payload, slot) {
     if (spellRows.length > 0) {
       spellRows.forEach((row, index) => {
         const xx = String(index + 1);
-        const desc = row.customSpell?.desc || findSpellDesc(row.spellId);
-        const school = getSpellLine(desc, '學派');
-        const castTimeRaw = getSpellLine(desc, '施法時間');
-        const durationRaw = getSpellLine(desc, '持續時間');
-        const rangeRaw = getSpellLine(desc, '射程');
+        const header = getSpellRowHeader(row);
 
         payload[`sp-level-${xx}`] = String(row.level);
         const spellName = row.customSpell?.nameZh || getCanonicalSpell(row.spellId)?.nameZh || '';
         // Spell-name fields on both sheets are single-line and fit by width.
         payload[`sp-name-${xx}`] = normalizeText(spellName);
-        payload[`sp-cast-time-${xx}`] = convertCastTimeText(castTimeRaw);
+        payload[`sp-cast-time-${xx}`] = header.castingTimes
+          ? formatPdfCastTimes(header.castingTimes)
+          : convertCastTimeText(header.castingTime || '');
         payload[`sp-range-${xx}`] = row.spellId === 'spare-the-dying'
           ? getSpareTheDyingRangeForPdf(level)
-          : rangeRaw;
-        payload[`sp-c-${xx}`] = /專注/.test(durationRaw);
-        payload[`sp-r-${xx}`] = /儀式/.test(castTimeRaw);
-        const components = desc.match(/^成分[ \t]*[:：][ \t]*([^\r\n]*)/mu)?.[1] || '';
-        payload[`sp-m-${xx}`] = /\bM\b/i.test(components);
+          : header.range || '';
+        payload[`sp-c-${xx}`] = Boolean(header.concentration);
+        payload[`sp-r-${xx}`] = Boolean(header.ritual);
+        payload[`sp-m-${xx}`] = Boolean(header.hasMaterial);
         // Keep spell notes unwrapped here. The two PDF modes use different
         // fonts and field heights, so pdf-export.js measures the real glyph
         // widths and chooses either the comfortable or smaller single-line
         // style for the selected template.
         payload[`note${xx}`] = [
-          convertSpellSchoolForNote(school),
-          convertDurationForNote(durationRaw)
+          convertSpellSchoolForNote(header.school),
+          convertDurationForNote(header.duration)
         ].filter(Boolean).join(' | ');
       });
     }
