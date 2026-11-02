@@ -455,17 +455,54 @@
       globalScope.AppDialog.notify("請先選好職業、等級、背景與種族，才能使用『準備法術』。");
       return false;
     }
-    const manual = isManual();
+    // The management mode is part of the draft: the dialog previews the other
+    // mode's list and only switches when saved.
+    const savedManual = isManual();
+    let manual = savedManual;
     const currentClass = document.getElementById("class").value;
     const currentLevel = document.getElementById("level").value;
-    let draft = playerEntries().map(entry => ({ ...entry }));
     const customEntries = api.getCustomEntries();
     const permanent = customEntries.filter(entry => !entry.countsAsPrepared);
     const counted = customEntries.filter(entry => entry.countsAsPrepared);
-    const sources = manual ? [] : (api.getSourceEntries?.() || api.getEntries().filter(entry => entry.spellSource));
-    const retained = manual ? draft.filter(entry => entry.spellSource) : [];
+    const modes = {};
+    function loadMode(mode) {
+      if (!modes[mode]) {
+        const preview = mode === savedManual ? { players: playerEntries(),
+          sources: mode ? [] : (api.getSourceEntries?.() || api.getEntries().filter(entry => entry.spellSource)) } : api.previewMode(mode);
+        const entries = preview.players.map(entry => ({ ...entry }));
+        modes[mode] = { draft: entries, sources: preview.sources, retained: mode ? entries.filter(entry => entry.spellSource) : [] };
+      }
+      return modes[mode];
+    }
+    let { draft, sources, retained } = loadMode(manual);
+    // Availability follows the draft mode, not the saved one.
+    const availability = () => manual === savedManual ? {}
+      : { state: { __spellManagement: { manual, entries: sources }, class: currentClass, level: currentLevel } };
     const limits = api.getLimits();
     const body = node("div", "spell-prepared-manager");
+    const manualToggle = node("label", "spell-prepared-manual-toggle");
+    const manualInput = node("input");
+    manualInput.type = "checkbox";
+    manualInput.id = "manual-spell-management";
+    manualInput.checked = manual;
+    manualInput.dataset.stateTransient = "true";
+    manualToggle.htmlFor = manualInput.id;
+    manualToggle.append(manualInput, "手動管理所有「已準備」法術。");
+    let confirming = false;
+    manualInput.addEventListener("change", async () => {
+      const next = manualInput.checked;
+      if (next) {
+        manualInput.checked = manual;
+        if (confirming) return;
+        confirming = true;
+        try { if (!await api.confirmManual({ trigger: manualInput })) return; } finally { confirming = false; }
+        manualInput.checked = true;
+      }
+      modes[manual].draft = draft;
+      manual = next;
+      ({ draft, sources, retained } = loadMode(manual));
+      refresh(true, true);
+    });
     const sourceList = node("div", "spell-prepared-sources spell-overview-card");
     sourceList.dataset.expanded = "true";
     let showSources = false;
@@ -478,7 +515,7 @@
     limitWarning.hidden = true;
     const clear = node("button", "spell-prepared-clear app-dialog__button app-dialog__button--secondary", "清空準備");
     clear.type = "button";
-    body.append(sourceList, countSummary, limitWarning);
+    body.append(sourceList, manualToggle, countSummary, limitWarning);
     let draftSnapshot;
     function refreshDraftSnapshot() {
       const editable = draft.filter(entry => !entry.spellSource);
@@ -498,7 +535,7 @@
     }
     function refreshAvailableCounts() {
       // Nested character choices can change availability without editing this draft.
-      const totals = api.getPreparationCounts(draftSnapshot.editable.filter(entry => !draftSnapshot.sourceLabels.has(entry.spellId)));
+      const totals = api.getPreparationCounts(draftSnapshot.editable.filter(entry => !draftSnapshot.sourceLabels.has(entry.spellId)), availability());
       draftSnapshot.cantrips = totals.cantrips;
       draftSnapshot.prepared = totals.prepared;
     }
@@ -506,7 +543,7 @@
     const countAt = cantrip => draftSnapshot[cantrip ? "cantrips" : "prepared"];
     refreshDraftSnapshot();
     const canClear = entry => Number(entry.level) >= 1 && Number(entry.level) <= 4
-      && (manual || (!entry.spellSource && api.isEntryAvailable(entry)));
+      && (manual || (!entry.spellSource && api.isEntryAvailable(entry, availability())));
     const limitAt = cantrip => Number.isFinite(cantrip ? limits.cantrips : limits.prepared)
       ? (cantrip ? limits.cantrips : limits.prepared) : Infinity;
     function drawSources() {
@@ -583,13 +620,13 @@
     }
     let candidateContext = "", baseCandidates = new Map();
     function candidateSpells() {
-      const context = `${isManual()}\u0000${document.getElementById("class").value}\u0000${document.getElementById("level").value}`;
+      const context = `${manual}\u0000${document.getElementById("class").value}\u0000${document.getElementById("level").value}`;
       if (context !== candidateContext) {
         candidateContext = context;
         baseCandidates = new Map();
         for (let level = 0; level <= 4; level += 1) {
           const ring = level === 0 ? "cantrips" : level;
-          (globalScope.getAvailableSpellSourceClasses?.(ring) || []).forEach(option => {
+          (globalScope.getAvailableSpellSourceClasses?.(ring, { manual }) || []).forEach(option => {
             globalScope.getClassSpells(option.value, ring).forEach(spell => baseCandidates.set(spell.spellId, spell));
           });
         }
@@ -615,9 +652,9 @@
         if (spell.customSpell) return { checked: true, disabled: true, note: "自創法術：占準備名額，請到自創法術編輯區更改。" };
         const selected = draftSnapshot.selected.has(spell.spellId);
         if (sourceLabels(spell.spellId)) return { checked: true, disabled: true };
-        const unavailable = !manual && !api.isEntryAvailable({ spellId: spell.spellId, spellClass: currentClass, level: spell.level });
+        const unavailable = !manual && !api.isEntryAvailable({ spellId: spell.spellId, spellClass: currentClass, level: spell.level }, availability());
         const full = !manual && !selected && countAt(spell.level === 0) >= limitAt(spell.level === 0);
-        const reason = unavailable && api.getAvailabilityReason?.({ spellId: spell.spellId, spellClass: currentClass, level: spell.level });
+        const reason = unavailable && api.getAvailabilityReason?.({ spellId: spell.spellId, spellClass: currentClass, level: spell.level }, availability());
         return { checked: selected, disabled: !selected && (unavailable || full), unavailable,
           note: reason === "目前等級尚未開放此法術環階。" ? `目前不可用：${reason}` : "" };
       },
@@ -626,7 +663,7 @@
         refreshAvailableCounts();
         if (!checked) draft = draft.filter(entry => entry.spellSource || entry.spellId !== spell.spellId);
         else if (!draftSnapshot.selected.has(spell.spellId) && !sourceLabels(spell.spellId)
-          && (manual || (api.isEntryAvailable({ spellId: spell.spellId, spellClass: currentClass, level: spell.level })
+          && (manual || (api.isEntryAvailable({ spellId: spell.spellId, spellClass: currentClass, level: spell.level }, availability())
             && countAt(spell.level === 0) < limitAt(spell.level === 0)))) {
           const classes = catalog().getClassIds(spell.spellId);
           draft.push({ spellId: spell.spellId, spellClass: manual ? (classes.includes(currentClass) ? currentClass : classes[0] || "") : currentClass,
@@ -639,7 +676,8 @@
       refreshDraftSnapshot();
       const cantripExcess = manual ? 0 : Math.max(0, countAt(true) - limitAt(true));
       const preparedExcess = manual ? 0 : Math.max(0, countAt(false) - limitAt(false));
-      counts.textContent = manual ? "手動管理：不限制法表、環階與準備數量。"
+      countSummary.hidden = manual;
+      counts.textContent = manual ? ""
         : `戲法 ${countAt(true)}／${limits.cantrips ?? 0}｜${preparedRingLabel(currentClass, currentLevel)} ${countAt(false)}／${limits.prepared ?? 0}`;
       counts.classList.toggle("is-over-limit", cantripExcess > 0 || preparedExcess > 0);
       limitWarning.hidden = !cantripExcess && !preparedExcess;
@@ -662,12 +700,13 @@
     try {
       const decision = globalScope.AppDialog.showContent({ title: "管理已準備法術", content: body,
         variant: "spellbook", confirmLabel: "儲存", cancelLabel: "取消", trigger, allowNested: true,
-        resolveConfirm() {
-          if (!api.canManage() || manual !== isManual() || currentClass !== document.getElementById("class").value
+        async resolveConfirm() {
+          if (!api.canManage() || savedManual !== isManual() || currentClass !== document.getElementById("class").value
             || currentLevel !== document.getElementById("level").value) {
             globalScope.AppDialog.notify("角色選項已變更，請取消後重新開啟準備法術。");
             return false;
           }
+          if (manual !== savedManual && !await api.setManual(manual, { confirm: false })) return false;
           api.setPlayerEntries(draft);
           return true;
         } });

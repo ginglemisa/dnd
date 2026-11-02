@@ -81,7 +81,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261102-level-info">
+  <link rel="stylesheet" href="styles.css?v=20261103-manual-toggle">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261101-image-font-folders" defer></script>
   <script src="monster.js?v=20261025-beast-perception" defer></script>
@@ -109,8 +109,8 @@
   <script src="legal-modal.js?v=20261022-game-icons" defer></script>
   <script src="onboarding-tour.js?v=20261102-background-source" defer></script>
   <script src="quick-build.js?v=20261103-feat-content" defer></script>
-  <script src="spellbook.js?v=20261028-custom-spells" defer></script>
-  <script src="spell-management.js?v=20261028-custom-spells" defer></script>
+  <script src="spellbook.js?v=20261103-manual-toggle" defer></script>
+  <script src="spell-management.js?v=20261103-manual-toggle" defer></script>
   <script src="class-option-memory.js?v=20261024-class-split" defer></script>
   <script src="deity-info.js" defer></script>
 
@@ -1344,9 +1344,6 @@
   <div class="spell-meta-row">
     <div id="spell-list-status-note" class="spell-note-muted" role="status" aria-live="polite">本頁僅提供 SRD 法術；部分 PHB 專屬內容未列入。</div>
   </div>
-  <div class="spell-manual-management">
-    <label for="manual-spell-management"><input type="checkbox" id="manual-spell-management">手動管理所有「已準備」法術。</label>
-  </div>
 </div>
 
 <details id="spellbook-card" class="section spell-level-section" open hidden>
@@ -2340,6 +2337,7 @@ document.addEventListener("DOMContentLoaded", () => withCharacterUpdateBatch(() 
     isPersistenceBlocked: () => autosaveRestoreBlocked,
     deferMigrationNotice: () => jsonImportInProgress,
     parseLegacyEntries: parseLegacySpellEntries,
+    getSourceEntries: getCurrentSpellSourceEntries,
     onChange: () => withCharacterUpdateBatch(() => {
       syncCurrentSpellSources();
       updateSpellCastingStatsVisibility();
@@ -4070,7 +4068,7 @@ function updateArmorInfo() {
   updateEquipmentLoadoutSummary();
 }
 </script>
-<script src="sheet-spells.js?v=20261101-subclass-features"></script>
+<script src="sheet-spells.js?v=20261103-manual-toggle"></script>
 <script>
 // ====== 德魯伊變身提示 =====
 // ✅ 四種動物（建議用「機制摘要」避免長篇敘述）
@@ -4833,6 +4831,8 @@ function collectStateObject(options = {}) {
   if (customBackground) data.__customBackground = customBackground;
   if (isManualFeatManagementEnabled()) data.__managedFeatRows = collectManagedFeatRows();
   data.__spellManagement = window.SpellManagement?.getState() || { version: 2, manual: false, entries: [] };
+  // 手動管理勾選框改在準備法術視窗內；舊欄位仍隨 JSON／分享輸出，維持既有格式。
+  data["manual-spell-management"] = data.__spellManagement.manual === true;
   getDynamicAreaConfigs().forEach(area => {
     if (isSpellAreaId(area.key)) return;
     data[`${area.key}-count`] = area.getCount();

@@ -147,8 +147,9 @@ const SPELL_AREA_CONFIGS = Object.freeze([
   }))
 ]);
 
-function getAvailableSpellSourceClasses(level) {
-  if (window.SpellManagement?.isManual()) return classOptions.filter(option => getClassSpells(option.value, level).length);
+// options.manual 供準備法術視窗依草稿模式列出候選。
+function getAvailableSpellSourceClasses(level, options = {}) {
+  if (options.manual ?? window.SpellManagement?.isManual()) return classOptions.filter(option => getClassSpells(option.value, level).length);
   const characterClass = document.getElementById("class")?.value || "";
   const characterLevel = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
   const spellLevel = level === "cantrips" ? 0 : Number(level);

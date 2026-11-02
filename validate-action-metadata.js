@@ -2285,8 +2285,12 @@ async function verifyMergedActionUi(browser, url) {
 
     // Timing examples span several class lists, so explicitly enable manual management.
     await page.evaluate(() => { TabletopMode.setMode("sheet"); showTab("spells"); });
-    await page.locator("#manual-spell-management").click();
+    // The toggle lives in the preparation dialog and applies when saved.
+    await page.locator("#spell-prepare").click();
+    const preparedDialog = page.getByRole("dialog", { name: "管理已準備法術", exact: true });
+    await preparedDialog.locator("#manual-spell-management").click();
     await page.getByRole("button", { name: "啟用手動管理", exact: true }).click();
+    await preparedDialog.getByRole("button", { name: "儲存", exact: true }).click();
     assert.equal(await page.evaluate(() => SpellManagement.isManual()), true);
     await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("actions"); });
     const spells = [
