@@ -15,12 +15,12 @@ const optionLabel = option => option.label || option.name;
 const optionPdfLabel = option => option.pdfLabel || optionLabel(option);
 const optionDraftValue = option => option.draftValue || optionHeading(option);
 
-// 種族的全部跑團動作（特質與血統選項），附上所屬的特質或選項。
+// 種族的全部跑團動作，依種族頁順序（血統選項的動作接在 choice 特質之後），附上所屬的特質或選項。
 function getRaceActions(race) {
-  return [
-    ...race.traits.flatMap(trait => (trait.actions || []).map(action => ({ action, trait }))),
-    ...(race.choice?.options || []).flatMap(option => (option.actions || []).map(action => ({ action, option })))
-  ];
+  return race.traits.flatMap(trait => [
+    ...(trait.actions || []).map(action => ({ action, trait })),
+    ...(trait.choice ? race.choice.options.flatMap(option => (option.actions || []).map(action => ({ action, option }))) : [])
+  ]);
 }
 
 // 回傳 Map（種族 ID → 內容，依檔名排序）。

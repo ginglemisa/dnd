@@ -190,30 +190,6 @@
     return list;
   }
 
-  const RACE_ACTION_RULES = Object.freeze([
-    { id: "breath", race: "dragonborn", level: 1, mode: "action", label: "吐息元素", key: "dynamic-action-race-1loctyz", resourceKey: "dragonborn-breath-uses", description: getDragonbornBreathDescription },
-    { id: "fire-burn", race: "goliath", level: 1, mode: "action", label: "星火燎原", key: "dynamic-action-race-1vjg9hw", resourceKey: "goliath-giant-ancestry-uses", choiceId: "goliath-ancestry", choiceValue: "fire", description: "攻擊命中目標時增加 1d10 火焰傷害。" },
-    { id: "frost-chill", race: "goliath", level: 1, mode: "action", label: "凜若冰霜", key: "dynamic-action-race-cc167a", resourceKey: "goliath-giant-ancestry-uses", choiceId: "goliath-ancestry", choiceValue: "frost", ruleName: "凜若冰霜（霜巨人）" },
-    { id: "hill-tumble", race: "goliath", level: 1, mode: "action", label: "地動山搖", key: "dynamic-action-race-11249i9", resourceKey: "goliath-giant-ancestry-uses", choiceId: "goliath-ancestry", choiceValue: "hill", description: "攻擊命中大型以下的生物可令其陷入「倒地」狀態。" },
-    { id: "stone-endurance", race: "goliath", level: 1, mode: "reaction", label: "堅若磐石", key: "dynamic-reaction-race-16nfphm", resourceKey: "goliath-giant-ancestry-uses", choiceId: "goliath-ancestry", choiceValue: "stone", description: () => {
-      const modifier = getAbilityModifier("con");
-      const dice = modifier === null ? "1d12 + 體質調整值" : formatDiceWithModifier("1d12", modifier);
-      return getGoliathAncestryDescription("堅若磐石（石巨人）", `受傷時可用反應扣除 ${dice} 傷害。`);
-    } },
-    { id: "nimbleness", race: "halfling", level: 1, mode: "movement", label: "半身人靈巧", key: "dynamic-movement-race-hkw7d1", description: "可穿過體型比你大的生物\n不能停在同一格", tabletopOnly: true },
-    { id: "lucky", race: "halfling", level: 1, mode: "action", label: "吉運", key: "dynamic-action-race-1migdkt", description: "任何 D20 檢定中擲出 1 都可以重擲一次。", tabletopOnly: true },
-    { id: "naturally-stealthy", race: "halfling", level: 1, mode: "action", label: "天生善匿", key: "dynamic-action-race-150qsdc", description: "你可以在體型比你大的生物後方使用躲藏動作。", tabletopOnly: true },
-    { id: "naturally-stealthy", race: "halfling", level: 2, mode: "bonus", label: "天生善匿", className: "rogue", description: "你可以在體型比你大的生物後方使用躲藏動作。", tabletopOnly: true, key: "dynamic-bonus-race-150qsdc" },
-    { id: "draconic-flight", race: "dragonborn", level: 5, mode: "bonus", label: "等級 5：龍翔天際", key: "dynamic-bonus-race-1h4jffx", resourceKey: "dragonborn-dragon-flight", ruleName: "龍翔天際" },
-    { id: "stonecunning", race: "dwarf", level: 1, mode: "bonus", label: "石中精妙", key: "dynamic-bonus-race-m9n3bt", resourceKey: "dwarf-stonecunning", ruleName: "石中精妙" },
-    { id: "clockwork-device", race: "gnome", level: 1, mode: "bonus", label: "岩石侏儒", key: "dynamic-bonus-race-1ljlrzt", ruleName: "岩石侏儒", choiceId: "gnome-lineage", choiceValue: "rock_gnome" },
-    { id: "dismantle-device", race: "gnome", level: 1, mode: "action", label: "拆除發條裝置", ruleName: "岩石侏儒", choiceId: "gnome-lineage", choiceValue: "rock_gnome" },
-    { id: "cloud-jaunt", race: "goliath", level: 1, mode: "bonus", label: "雲遊四方", key: "dynamic-bonus-race-r7ggqg", resourceKey: "goliath-giant-ancestry-uses", description: () => getGoliathAncestryDescription("雲遊四方（雲巨人）"), choiceId: "goliath-ancestry", choiceValue: "cloud" },
-    { id: "storm-thunder", race: "goliath", level: 1, mode: "reaction", label: "轟雷掣電", key: "dynamic-reaction-race-4cc8u8", resourceKey: "goliath-giant-ancestry-uses", description: () => getGoliathAncestryDescription("轟雷掣電（風暴巨人）"), choiceId: "goliath-ancestry", choiceValue: "storm" },
-    { id: "large-form", race: "goliath", level: 5, mode: "bonus", label: "等級 5：巨化形體", key: "dynamic-bonus-race-1svsj4g", resourceKey: "goliath-large-form", ruleName: "巨化形體" },
-    { id: "adrenaline-rush", race: "orc", level: 1, mode: "bonus", label: "熱血湧動", key: "dynamic-bonus-race-ydqmx5", resourceKey: "orc-adrenaline-rush", ruleName: "熱血湧動", proficiencyValue: true }
-  ]);
-
   let currentMode = "action";
   let selectedOptionKey = "";
   let scheduledRefresh = 0;
@@ -305,11 +281,6 @@
     return Number.isSafeInteger(score) ? Math.floor((score - 10) / 2) : null;
   }
 
-  function getGoliathAncestryDescription(ruleName, override = "") {
-    const description = override || getNamedRuleDescription(typeof raceFeatures === "undefined" ? "" : raceFeatures.goliath, ruleName);
-    return description ? `${description}\n\n使用次數＝熟練加值，長休後恢復。` : "";
-  }
-
   function getDragonbornBreathDamageDice(level) {
     if (level >= 17) return "4d10";
     if (level >= 11) return "3d10";
@@ -317,24 +288,49 @@
     return "1d10";
   }
 
-  function getDragonbornBreathDamageType() {
-    const ancestry = document.getElementById("dragonborn-ancestry")?.value || "";
-    const damageTypes = {
-      acid: "酸",
-      lightning: "電",
-      fire: "火",
-      poison: "毒",
-      cold: "冷凍"
-    };
-    return damageTypes[ancestry.split("_").at(-1)] || "";
-  }
-
-  function getDragonbornBreathDescription() {
+  // option：所選的血統選項（種族內容檔，damage 為吐息的傷害類型文字）。
+  function getDragonbornBreathDescription(option) {
     const constitutionModifier = getAbilityModifier("con");
     const saveDc = constitutionModifier === null
       ? "8+熟練+體質加值"
       : String(8 + getProficiencyBonus() + constitutionModifier);
-    return `將１次攻擊換為吐息\n15呎錐形 或 5呎寬、30呎長直線\n範圍內生物敏捷豁免 DC ${saveDc}\n失敗造成 ${getDragonbornBreathDamageDice(getCharacterLevel())} 點${getDragonbornBreathDamageType()}傷害，成功傷害減半。\n使用次數＝熟練加值，長休後恢復。`;
+    return `將１次攻擊換為吐息\n15呎錐形 或 5呎寬、30呎長直線\n範圍內生物敏捷豁免 DC ${saveDc}\n失敗造成 ${getDragonbornBreathDamageDice(getCharacterLevel())} 點${option?.damage || ""}傷害，成功傷害減半。\n使用次數＝熟練加值，長休後恢復。`;
+  }
+
+  // 種族動作說明中依角色數值計算的部分（種族內容檔動作的 behavior）；option 為所選的血統選項。
+  const RACE_ACTION_BEHAVIORS = Object.freeze({
+    "dragonborn-breath": option => getDragonbornBreathDescription(option),
+    "goliath-stone-endurance": () => {
+      const modifier = getAbilityModifier("con");
+      const dice = modifier === null ? "1d12 + 體質調整值" : formatDiceWithModifier("1d12", modifier);
+      return `受傷時可用反應扣除 ${dice} 傷害。`;
+    }
+  });
+
+  // 種族動作：定義（key、模式、等級、資源、血統與職業條件）取自種族內容檔的 raceRules.actions，
+  // 說明取自 raceText.actions（特質或血統選項的文字、另寫的跑團文字），tabletopSuffix 空一行接在後面。
+  function getRaceActionRules(race) {
+    const rules = globalScope.getRaceRules?.(race);
+    const text = globalScope.getRaceText?.(race);
+    if (!rules || !text) return [];
+    return rules.actions.map(action => ({
+      id: action.id,
+      mode: action.mode,
+      level: action.level,
+      label: action.label,
+      key: action.key,
+      ...(action.className ? { className: action.className } : {}),
+      ...(action.resource ? { resourceKey: action.resource } : {}),
+      ...(action.choiceValue ? { choiceId: rules.choice.id, choiceValue: action.choiceValue } : {}),
+      ...(action.proficiencyValue ? { proficiencyValue: true } : {}),
+      ...(action.tabletopOnly ? { tabletopOnly: true } : {}),
+      description: () => {
+        const { text: base, suffix } = text.actions[action.key];
+        const option = rules.choice ? globalScope.getRaceChoiceOption?.(race, document.getElementById(rules.choice.id)?.value || "") : null;
+        const description = action.behavior ? RACE_ACTION_BEHAVIORS[action.behavior](option) : base;
+        return description && suffix ? `${description}\n\n${suffix}` : description;
+      }
+    }));
   }
 
   function getSelectedSpellEntries(mode) {
@@ -624,8 +620,7 @@
 
   function getExplicitRaceEntries(mode) {
     const raceName = document.getElementById("race")?.value || "";
-    return resolveFeatureRules(RACE_ACTION_RULES.filter(rule => rule.race === raceName), mode, "race",
-      rule => getNamedRuleDescription(typeof raceFeatures === "undefined" ? "" : raceFeatures[raceName], rule.ruleName));
+    return resolveFeatureRules(getRaceActionRules(raceName), mode, "race", () => "");
   }
 
   function getDynamicOptions(mode) {
@@ -769,7 +764,7 @@ function getModeOptions(mode) {
           if (mode !== "movement") return true;
           if (option.key === "special-speeds" || option.key === "speed-changes") return false;
           return option.key !== "flying"
-            || (document.getElementById("race")?.value === "dragonborn" && getCharacterLevel() >= 5)
+            || (globalScope.getRaceRules?.(document.getElementById("race")?.value || "")?.traits || []).some(trait => trait.flight && getCharacterLevel() >= trait.level)
             || Boolean(globalScope.TabletopMode?.getDruidForm?.()?.speeds?.["飛行"] || globalScope.TabletopMode?.getDruidForm?.()?.speeds?.["游泳"])
             || (document.getElementById("class")?.value === "wizard" && globalScope.TabletopSpells?.isSpellCurrentlySelected?.("fly"));
         })
