@@ -10154,6 +10154,11 @@ html[data-theme="dark"] .dice-roller-roll::after {
   z-index: 12700;
 }
 
+/* 導覽的法術示範只看網站版：不顯示「網站版｜SRD 版」切換，標頭維持在原位置，下方留給說明。 */
+.app-dialog[data-tour-spell-preview] .spell-version__tabs {
+  display: none;
+}
+
 /* Some tour steps use the whole viewport for their highlighted content. */
 html.onboarding-app-bar-hidden .tabs-shell {
   visibility: hidden;
