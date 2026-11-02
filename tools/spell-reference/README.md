@@ -37,3 +37,9 @@ node tools/spell-reference/validate.js --srd <SRD 5.2.1 的 spells.md 路徑> --
 「疑點」只是提示（例如骰式次數與英文不同，需要人工確認），錯誤才會讓指令失敗；加 `--strict` 則疑點也算失敗。
 
 SRD 原文為 CC BY 4.0（Wizards of the Coast），授權與 Attribution 見 README。
+
+## 翻譯流程紀錄
+
+- 翻譯做法：由 Sonnet 直接從 SRD 英文逐句直譯（每批 8～12 個同環階法術，附術語表）。試點比較過「舊譯文換術語後只校對」，但草稿幾乎整段被重寫（41 段僅 1 段原樣保留），沒有比較省，因此不採用。
+- 網站已有的法術 `zh.name` 沿用網站 `nameZh`；網站沒有的法術名為提議譯名，待確認。
+- 逐項檢查用 `validate.js`；`疑點` 只是提示，需要人工確認。
