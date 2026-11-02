@@ -52,6 +52,13 @@ spells.forEach(spell => {
 });
 assert.deepEqual([...catalog.getClassIds("light")], ["bard", "cleric", "sorcerer", "wizard"], "多職業法術保留法表順序");
 assert.deepEqual([...catalog.getClassIds("eldritch-blast")], ["warlock"], "專屬法術僅屬於原職業");
+["elementalism", "hideous-laughter", "ice-knife", "ray-of-sickness", "dragons-breath", "mind-spike", "phantasmal-force", "tiny-hut"].forEach(spellId => {
+  assert.ok(catalog.getClassIds(spellId).includes("wizard"), `${spellId} 應在法師法表`);
+});
+[0, 1, 2, 3, 4].forEach(level => {
+  const ids = [...catalog.getSpellIds("wizard", level)];
+  assert.deepEqual(ids, [...ids].sort(), `法師 ${level} 環法表應依 spellId 字母排序`);
+});
 const mutatedClasses = catalog.getClassIds("light");
 mutatedClasses.splice(0, mutatedClasses.length, "invalid");
 assert.deepEqual([...catalog.getClassIds("light")], ["bard", "cleric", "sorcerer", "wizard"], "呼叫端改動結果不得污染法表索引");

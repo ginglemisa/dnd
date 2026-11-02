@@ -100,8 +100,8 @@
   // character state serialized by getState(), class memories or sharing.
   const getCustomEntries = () => globalScope.TabletopCustomSpells?.getSheetEntries() || [];
   const getSheetEntries = (options = {}) => [...getEntries(options), ...getCustomEntries()];
-  function getPreparationCounts(entries = players) {
-    const available = entries.filter(entry => !entry.spellSource && isEntryAvailable(entry));
+  function getPreparationCounts(entries = players, options = {}) {
+    const available = entries.filter(entry => !entry.spellSource && isEntryAvailable(entry, options));
     const counted = [...available, ...getCustomEntries().filter(entry => entry.countsAsPrepared)];
     return { cantrips: counted.filter(entry => Number(entry.level) === 0).length,
       prepared: counted.filter(entry => Number(entry.level) > 0).length };
@@ -204,16 +204,19 @@
     if (options.sync !== false) changed({ players: true });
     return clone(players);
   }
-  function replaceSources(entries, options = {}) {
-    if (manual) return;
-    syncFreeUsesFromControls();
+  function uniqueSources(entries) {
     const seen = new Set();
-    sources = normalizeEntries(entries).filter(entry => {
+    return normalizeEntries(entries).filter(entry => {
       if (!entry.spellSource) return false;
       const key = entryKey(entry);
       if (seen.has(key)) return false;
       seen.add(key); return true;
     });
+  }
+  function replaceSources(entries, options = {}) {
+    if (manual) return;
+    syncFreeUsesFromControls();
+    sources = uniqueSources(entries);
     if (options.sync !== false && !isRestoring()) globalScope.dispatchEvent(new CustomEvent("spellmanagementchange", { detail: { sources: true } }));
   }
   function addPlayerSpell(spellId, options = {}) {
@@ -271,41 +274,57 @@
     activeClass = nextClass; activeLevel = nextLevel; activeBackground = nextBackground; activeRace = nextRace;
     replayChange(input, event.isTrusted || event.dndCharacterSelectionCommitted === true); changed({ character: true });
   }
+  // 啟用手動管理的提醒視窗；準備法術視窗勾選時也使用，確認後仍待儲存才切換。
+  function confirmManual(options = {}) {
+    return globalScope.AppDialog.requestDecision({
+      title: "啟用手動法術管理",
+      variant: "manual-spell-management",
+      message: "啟用後，你可以自行決定角色擁有哪些法術，不限制法表、環階與準備數量。",
+      renderContent(body) {
+        const heading = document.createElement("p");
+        heading.className = "manual-spell-management__heading";
+        heading.textContent = "啟用後會有以下改變：";
+
+        const list = document.createElement("ul");
+        list.className = "manual-spell-management__changes";
+        [
+          ["✅", "可自由選擇網站支援的戲法及一至四環法術。"],
+          ["✅", "目前的法術會保留，不必重新輸入。"],
+          ["❗", "網站不再依職業、種族等條件自動管理法術。"],
+          ["❗", "免費施法次數與法術來源需要自行記錄。"]
+        ].forEach(([icon, message]) => {
+          const item = document.createElement("li");
+          const marker = document.createElement("span");
+          marker.className = "manual-spell-management__marker";
+          marker.textContent = icon;
+          marker.setAttribute("aria-hidden", "true");
+          item.append(marker, document.createTextNode(message));
+          list.appendChild(item);
+        });
+        body.append(heading, list);
+      },
+      confirmLabel: "啟用手動管理", cancelLabel: "取消", trigger: options.trigger
+    });
+  }
+  // 切換模式時載入的清單；previewMode 供準備法術視窗預覽，不改動目前狀態。
+  function modeTarget(next, initial = getEntries()) {
+    const memory = readMemories();
+    return next ? memory.manual?.entries || initial : currentClass() ? memory.classes[currentClass()]?.entries || [] : [];
+  }
+  function previewMode(next) {
+    next = next === true;
+    if (next === manual) return { players: clone(players), sources: manual ? [] : clone(sources) };
+    const target = modeTarget(next);
+    return { players: clone(next ? uniqueSpells(target) : normalizeEntries(target)),
+      sources: next ? [] : clone(uniqueSources(hooks.getSourceEntries?.() || [])) };
+  }
   async function setManual(next, options = {}) {
     next = next === true;
     if (switching || next === manual) { refreshVisibility(); return next === manual; }
     switching = true;
     try {
       if (options.confirm !== false) {
-        const confirmed = await globalScope.AppDialog.requestDecision(next ? {
-          title: "啟用手動法術管理",
-          variant: "manual-spell-management",
-          message: "啟用後，你可以自行決定角色擁有哪些法術，不再受到職業或準備數量的限制。",
-          renderContent(body) {
-            const heading = document.createElement("p");
-            heading.className = "manual-spell-management__heading";
-            heading.textContent = "啟用後會有以下改變：";
-
-            const list = document.createElement("ul");
-            list.className = "manual-spell-management__changes";
-            [
-              ["✅", "可自由選擇網站支援的戲法及一至四環法術。"],
-              ["✅", "目前的法術會保留，不必重新輸入。"],
-              ["❗", "網站不再依職業、種族等條件自動管理法術。"],
-              ["❗", "免費施法次數與法術來源需要自行記錄。"]
-            ].forEach(([icon, message]) => {
-              const item = document.createElement("li");
-              const marker = document.createElement("span");
-              marker.className = "manual-spell-management__marker";
-              marker.textContent = icon;
-              marker.setAttribute("aria-hidden", "true");
-              item.append(marker, document.createTextNode(message));
-              list.appendChild(item);
-            });
-            body.append(heading, list);
-          },
-          confirmLabel: "啟用手動管理", cancelLabel: "取消", trigger: options.trigger
-        } : {
+        const confirmed = next ? await confirmManual(options) : await globalScope.AppDialog.requestDecision({
           title: "恢復自動法術管理", message: "將載入目前職業自己的準備清單，並依角色選項重新計算來源法術。手動清單與法術書都會保留，之後可再切回手動管理。",
           confirmLabel: "恢復自動管理", cancelLabel: "繼續手動管理", trigger: options.trigger
         });
@@ -313,7 +332,7 @@
       }
       syncFreeUsesFromControls();
       const initial = getEntries(); rememberCurrent(); const memory = readMemories();
-      const target = next ? memory.manual?.entries || initial : currentClass() ? memory.classes[currentClass()]?.entries || [] : [];
+      const target = modeTarget(next, initial);
       manual = next; players = manual ? uniqueSpells(target) : normalizeEntries(target); ownerClass = CLASS_IDS.has(currentClass()) ? currentClass() : "";
       if (next && memory.manual?.freeUses) {
         freeUses = { ...freeUses, ...clone(memory.manual.freeUses) };
@@ -442,8 +461,6 @@
       freeUses: currentFreeUses(), classFeatureCantrips: collectClassFeatureCantrips() };
   }
   function refreshVisibility() {
-    const control = field("manual-spell-management");
-    if (control) control.checked = manual;
     globalScope.syncManualSpellSourceControls?.();
   }
   function clearMemories(options = {}) {
@@ -471,7 +488,7 @@
     normalizeEntry, normalizeEntries, entryKey, getEntries, getCustomEntries, getSheetEntries, getPreparationCounts,
     getPlayerEntries: () => clone(players), getSourceEntries: () => manual ? [] : clone(sources),
     setPlayerEntries, replaceSources, addPlayerSpell, removePlayerSpell, getAvailabilityReason, isEntryAvailable, getFreeUse, setFreeUse,
-    getState, beforeApplyState, restoreState, finishRestore, clearMemories, setManual, showMigrationNotice,
+    getState, beforeApplyState, restoreState, finishRestore, clearMemories, setManual, confirmManual, previewMode, showMigrationNotice,
     canPersistCurrentState: () => !migrationPending,
     beginRestoreBatch, endRestoreBatch, withRestoreBatch, collectClassFeatureCantrips, getClassFeatureCantripControl, refreshVisibility });
   document.addEventListener("change", changeCharacterSelection, true);
@@ -485,9 +502,6 @@
   });
   document.addEventListener("DOMContentLoaded", () => {
     syncActiveSelection(); if (!ownerClass && CLASS_IDS.has(activeClass)) ownerClass = activeClass;
-    field("manual-spell-management")?.addEventListener("change", event => {
-      const next = event.currentTarget.checked; event.currentTarget.checked = manual; void setManual(next, { trigger: event.currentTarget });
-    });
     refreshVisibility();
   });
 })(window);

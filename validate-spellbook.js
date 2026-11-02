@@ -9,7 +9,7 @@ const { chromium } = require("playwright");
 const MEMORY_KEY = "dnd.spellManagementMemories.v1";
 const NOTICE_KEY = "dnd.spellManagementClassNoticeDisabled.v1";
 const player = (spellId, spellClass, level) => ({ spellId, spellClass, ...(level === undefined ? {} : { level }) });
-const modern = (state, entries = []) => ({ background: "soldier", race: "human", ...state,
+const modern = (state, entries = []) => ({ background: "soldier", race: "human", "spellcasting-ability": "int", ...state,
   __spellManagement: { version: 2, manual: state["manual-spell-management"] === true, entries } });
 const pickerDialog = page => page.getByRole("dialog", { name: "管理已準備法術", exact: true });
 const activeIds = page => page.evaluate(() => SpellManagement.getEntries().map(entry => entry.spellId));
@@ -59,6 +59,18 @@ async function selectPicker(page, spellId, checked = true) {
     await option.click();
     if (await option.count()) assert.equal(await option.isChecked(), false, `${spellId} is canceled`);
   }
+}
+// The manual-management toggle lives in the preparation dialog and only applies on save.
+async function setManualInDialog(page, manual, { save = true } = {}) {
+  await page.locator("#spell-prepare").click();
+  const dialog = pickerDialog(page);
+  const toggle = dialog.locator("#manual-spell-management");
+  assert.equal(await toggle.isChecked(), !manual, "dialog toggle starts from the saved mode");
+  await toggle.click();
+  if (manual) await page.getByRole("alertdialog", { name: "啟用手動法術管理" }).getByRole("button", { name: "啟用手動管理", exact: true }).click();
+  assert.equal(await toggle.isChecked(), manual);
+  await dialog.getByRole("button", { name: save ? "儲存" : "取消", exact: true }).click();
+  await dialog.waitFor({ state: "detached" });
 }
 async function closeMigration(page) {
   const dialog = page.getByRole("dialog", { name: "舊版法術資料已轉為手動管理", exact: true });
@@ -439,7 +451,7 @@ async function verifySpellOverview(browser, url) {
     await page.waitForFunction(() => window.SpellManagement?.getEntries);
     await apply(page, fixture);
     assert.equal(await page.locator("#spell-list-status-note").textContent(), "本頁僅提供 SRD 法術；部分 PHB 專屬內容未列入。");
-    assert.equal(await page.locator('label[for="manual-spell-management"]').textContent(), "手動管理所有「已準備」法術。");
+    assert.equal(await page.locator("#manual-spell-management").count(), 0, "manual toggle moved into the preparation dialog");
     assert.equal(await page.locator("#no-spell-slots-message").isVisible(), false, "characters with slots hide the no-slot message");
     for (const ring of ["cantrips", "1", "2", "3", "4"]) {
       assert.equal(await card(ring).isVisible(), true);
@@ -627,22 +639,58 @@ async function verifySpellManagement(page) {
   await selectCharacter(page, "class", "wizard");
   assert.match(await page.locator("#spell-current-list").innerText(), /法術清單：法師/);
   assert.equal(await page.locator("#spell-prepared-empty").isVisible(), false);
-  const original = await activeIds(page), toggle = page.locator("#manual-spell-management");
-  await toggle.click(); await page.getByRole("button", { name: "取消", exact: true }).click();
-  assert.equal(await toggle.isChecked(), false); assert.deepEqual(await activeIds(page), original);
-  await toggle.click(); await page.keyboard.press("Escape"); assert.deepEqual(await activeIds(page), original);
-  await toggle.click(); await page.getByRole("button", { name: "啟用手動管理", exact: true }).click();
+  const original = await activeIds(page);
+  // The manual toggle is only inside the preparation dialog; the mode is a draft until saved.
+  assert.equal(await page.locator("#tab-spells #manual-spell-management").count(), 0, "spell page no longer shows the manual toggle");
+  await page.locator("#spell-prepare").click();
+  const dialog = pickerDialog(page), toggle = dialog.locator("#manual-spell-management");
+  const confirmDialog = page.getByRole("alertdialog", { name: "啟用手動法術管理" });
+  assert.equal(await dialog.locator('label[for="manual-spell-management"]').textContent(), "手動管理所有「已準備」法術。");
+  assert.equal(await dialog.getByText("手動管理：不限制法表、環階與準備數量。").count(), 0, "bold manual note is replaced by the toggle");
+  assert.equal(await dialog.locator(".spell-prepared-manual-toggle + .spell-prepared-count-summary").count(), 1, "toggle sits above the count summary");
+  await toggle.click(); await confirmDialog.getByRole("button", { name: "取消", exact: true }).click();
+  assert.equal(await toggle.isChecked(), false);
+  await toggle.click(); await page.keyboard.press("Escape");
+  assert.equal(await toggle.isChecked(), false); assert.equal(await dialog.isVisible(), true, "Escape only closes the reminder");
+  await selectPicker(page, "magic-missile");
+  await toggle.click();
+  assert.match(await confirmDialog.innerText(), /不限制法表、環階與準備數量/, "reminder carries the manual-mode note");
+  await confirmDialog.getByRole("button", { name: "啟用手動管理", exact: true }).click();
+  assert.equal(await toggle.isChecked(), true);
+  assert.equal(await dialog.locator(".spell-prepared-count-summary").isHidden(), true, "manual draft hides automatic counts");
+  await dialog.getByRole("searchbox", { name: "搜尋法術名稱" }).fill("Cure Wounds");
+  assert.equal(await dialog.locator('.spell-picker-option input[value="cure-wounds"]').isEnabled(), true, "manual draft lists every class spell");
+  assert.equal(await page.evaluate(() => SpellManagement.isManual()), false, "confirming the reminder does not switch yet");
+  await toggle.click();
+  assert.equal(await confirmDialog.count(), 0, "unchecking needs no reminder");
+  assert.equal(await dialog.locator(".spell-prepared-count-summary").isVisible(), true);
+  await dialog.getByRole("searchbox", { name: "搜尋法術名稱" }).fill("Magic Missile");
+  assert.equal(await dialog.locator('.spell-picker-option input[value="magic-missile"]').isChecked(), true, "automatic draft edits survive a mode round trip");
+  await dialog.getByRole("button", { name: "取消", exact: true }).click();
+  assert.equal(await page.evaluate(() => SpellManagement.isManual()), false); assert.deepEqual(await activeIds(page), original);
+  await setManualInDialog(page, true, { save: false });
+  assert.equal(await page.evaluate(() => SpellManagement.isManual()), false, "canceling the dialog discards the manual draft");
+  await setManualInDialog(page, true);
   assert.equal(await page.locator("#spell-current-list").innerText(), "法術清單：手動管理");
   assert.deepEqual(await activeIds(page), original); assert.equal(await page.locator("#spellbook-card").isVisible(), true, "manual wizard keeps its independent spellbook");
   await page.evaluate(() => { SpellManagement.addPlayerSpell("cure-wounds", { spellClass: "cleric" }); SpellManagement.addPlayerSpell("ice-storm", { spellClass: "wizard" }); });
   const manual = await activeIds(page);
-  await toggle.click(); await page.getByRole("button", { name: "繼續手動管理", exact: true }).click();
+  await setManualInDialog(page, false, { save: false });
   assert.deepEqual(await activeIds(page), manual);
-  await toggle.click(); await page.getByRole("button", { name: "恢復自動管理", exact: true }).click();
+  await setManualInDialog(page, false);
   assert.deepEqual(await activeIds(page), original, "automatic list is restored without destroying manual memory");
   assert.deepEqual(await page.evaluate(() => Spellbook.getState().spellIds), ["detect-magic", "mage-armor"]);
-  await toggle.click(); await page.getByRole("button", { name: "啟用手動管理", exact: true }).click();
-  assert.deepEqual(await activeIds(page), manual, "subsequent manual activation loads its own memory");
+  const automaticExports = await page.evaluate(() => [collectStateObject(), collectShareState()]);
+  assert.equal(automaticExports[0]["manual-spell-management"], false, "JSON keeps the legacy manual field");
+  assert.equal(Object.hasOwn(automaticExports[1], "manual-spell-management"), false, "share still omits a false manual field");
+  // Saving a manual draft with a new choice switches modes and keeps the choice.
+  await page.locator("#spell-prepare").click();
+  await toggle.click(); await confirmDialog.getByRole("button", { name: "啟用手動管理", exact: true }).click();
+  await selectPicker(page, "bless");
+  await dialog.getByRole("button", { name: "儲存", exact: true }).click();
+  assert.equal(await page.evaluate(() => SpellManagement.isManual()), true);
+  assert.deepEqual(await activeIds(page), [...manual, "bless"], "subsequent manual activation loads its own memory plus the saved draft");
+  await page.evaluate(() => SpellManagement.removePlayerSpell("bless"));
   const memories = await page.evaluate(key => JSON.parse(dndStorage.getItem(key)), MEMORY_KEY);
   assert.deepEqual(Object.keys(memories.classes).sort(), ["cleric", "druid", "ranger", "wizard"]);
   assert.equal(Object.hasOwn(memories.classes, ""), false);
@@ -650,6 +698,7 @@ async function verifySpellManagement(page) {
   const exports = await page.evaluate(() => [collectStateObject(), collectShareState()]);
   for (const data of exports) {
     assert.equal(data.__spellManagement.version, 2); assert.equal(data.__spellManagement.manual, true);
+    assert.equal(data["manual-spell-management"], true, "JSON and share keep the legacy manual field");
     assert.equal(JSON.stringify(data).includes("spellManagementMemories"), false);
     assert.equal(JSON.stringify(data).includes("ClassNoticeDisabled"), false);
   }
@@ -902,6 +951,118 @@ async function verifyPreparedPicker(page) {
   assert.equal(await dialog.locator(".spell-prepared-source-options").isVisible(), false);
   await page.keyboard.press("Escape"); assert.deepEqual(await playerIds(page), ["cure-wounds", "ice-storm"]);
   console.log("Prepared picker: toggle/search/ring filters, 1–4 columns, source collapse, draft counts, nested lookup and eligibility passed.");
+}
+
+async function verifyPreparedRingRange(page) {
+  const dialog = pickerDialog(page), ringFilter = dialog.getByRole("combobox", { name: "篩選環階", exact: true });
+  const rings = () => ringFilter.locator("option").evaluateAll(options => options.map(option => option.value));
+  const open = async state => {
+    await apply(page, modern({ "spellcasting-ability": "cha", ...state }));
+    await page.locator("#spell-prepare").click();
+    await dialog.waitFor();
+  };
+  const close = async () => { await page.keyboard.press("Escape"); await dialog.waitFor({ state: "detached" }); };
+  // Automatic management lists cantrips only with a cantrip allowance or a cantrip-granting
+  // option, and leveled rings only up to the highest spell slot.
+  for (const [state, expected, message] of [
+    [{ class: "wizard", level: "1" }, ["", "0", "1"], "wizard 1"],
+    [{ class: "wizard", level: "5" }, ["", "0", "1", "2", "3"], "wizard 5"],
+    [{ class: "cleric", level: "8" }, ["", "0", "1", "2", "3", "4"], "cleric 8"],
+    [{ class: "paladin", level: "2" }, ["", "1"], "paladin without Blessed Warrior"],
+    [{ class: "paladin", level: "2", "paladin-blessed-warrior": true }, ["", "0", "1"], "Blessed Warrior before choosing cantrips"],
+    [{ class: "paladin", level: "5", "paladin-blessed-warrior": true, __classFeatureCantrips: { "class-paladin-blessed-warrior-cantrip-1": "guidance" } },
+      ["", "0", "1", "2"], "Blessed Warrior with a chosen cantrip"],
+    [{ class: "ranger", level: "2" }, ["", "1"], "ranger without Druidic Warrior"],
+    [{ class: "ranger", level: "2", "ranger-druidic-warrior": true }, ["", "0", "1"], "Druidic Warrior"],
+    [{ class: "fighter", level: "5" }, [""], "non-caster"]
+  ]) {
+    await open(state);
+    assert.deepEqual(await rings(), expected, message);
+    await close();
+  }
+  // Retained higher-ring choices stay visible under all rings even though their ring is not listed.
+  await apply(page, modern({ class: "wizard", level: "1", "spellcasting-ability": "int" }, [player("fireball", "wizard")]));
+  await page.locator("#spell-prepare").click();
+  assert.deepEqual(await rings(), ["", "0", "1"]);
+  assert.equal(await dialog.locator('.spell-picker-option input[value="fireball"]').isChecked(), true);
+  assert.equal(await dialog.locator('.spell-picker-option input[value="ice-storm"]').count(), 0, "automatic candidates stop at the highest slot");
+  await close();
+  // Manual management never blocks a ring: every class lists and checks cantrips through 4th level.
+  await open({ class: "paladin", level: "1" });
+  assert.deepEqual(await rings(), ["", "1"]);
+  await dialog.locator("#manual-spell-management").click();
+  await page.getByRole("alertdialog", { name: "啟用手動法術管理" }).getByRole("button", { name: "啟用手動管理", exact: true }).click();
+  assert.deepEqual(await rings(), ["", "0", "1", "2", "3", "4"], "manual draft lists every ring");
+  await ringFilter.selectOption("4");
+  await dialog.locator("#manual-spell-management").click();
+  assert.deepEqual(await rings(), ["", "1"], "returning to the automatic draft restores its rings");
+  assert.equal(await ringFilter.inputValue(), "", "a removed ring falls back to all rings");
+  await close();
+  for (const cls of ["paladin", "ranger", "fighter"]) {
+    await apply(page, modern({ class: cls, level: "1", "spellcasting-ability": "cha", "manual-spell-management": true }));
+    await page.locator("#spell-prepare").click();
+    assert.deepEqual(await rings(), ["", "0", "1", "2", "3", "4"], `${cls} manual lists every ring`);
+    await selectPicker(page, "light"); await selectPicker(page, "ice-storm");
+    await dialog.getByRole("button", { name: "儲存", exact: true }).click();
+    assert.deepEqual(await playerIds(page), ["light", "ice-storm"], `${cls} manual keeps cantrips through 4th level`);
+  }
+  console.log("Prepared ring range: automatic cantrip/slot rings, class-option cantrips, retained high rings and unrestricted manual rings passed.");
+}
+
+// Every path into the preparation dialog goes through #spell-prepare / openPreparedManager;
+// the ability requirement follows the field's visibility so it can never become a dead end.
+async function verifyPreparedAbilityGate(browser, url) {
+  const page = await browser.newPage({ viewport: { width: 1100, height: 850 } });
+  try {
+    await page.addInitScript(() => {
+      localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true");
+      localStorage.setItem("dnd.classFeaturePromptDisabled.v1", "true");
+    });
+    await page.goto(url); await page.waitForFunction(() => window.SpellManagement?.getEntries && window.Spellbook);
+    const button = page.locator("#spell-prepare"), requirement = page.locator("#spell-prepared-requirements");
+    const ability = page.locator("#spellcasting-ability"), dialog = pickerDialog(page);
+    await apply(page, modern({ class: "wizard", level: "5", "spellcasting-ability": "" }));
+    assert.equal(await ability.isVisible(), true);
+    assert.equal(await button.isDisabled(), true, "a visible empty ability blocks preparation");
+    assert.equal(await requirement.innerText(), "請先選好施法屬性，才能使用『準備法術』。");
+    await page.evaluate(() => Spellbook.openPreparedManager(document.getElementById("spell-prepare")));
+    assert.equal(await dialog.count(), 0, "direct calls honor the ability requirement");
+    await ability.selectOption("int");
+    assert.equal(await button.isEnabled(), true); assert.equal(await requirement.isVisible(), false);
+    await apply(page, modern({ class: "wizard", level: "5", race: "", "spellcasting-ability": "" }));
+    assert.equal(await requirement.innerText(), "請先選好職業、等級、背景、種族與施法屬性，才能使用『準備法術』。");
+    await apply(page, modern({ class: "wizard", level: "5", race: "" }));
+    assert.equal(await requirement.innerText(), "請先選好職業、等級、背景與種族，才能使用『準備法術』。", "a chosen ability keeps the original wording");
+    await apply(page, modern({ class: "fighter", level: "5", background: "acolyte", "spellcasting-ability": "" }));
+    assert.equal(await ability.isVisible(), true); assert.equal(await button.isDisabled(), true, "background Magic Initiate requires the ability");
+    // Without any spellcasting source the field is hidden and not required, so manual management stays reachable.
+    await apply(page, modern({ class: "fighter", level: "5", "spellcasting-ability": "" }));
+    assert.equal(await ability.isVisible(), false); assert.equal(await button.isEnabled(), true);
+    await setManualInDialog(page, true);
+    assert.equal(await ability.isVisible(), true, "manual management shows the ability field");
+    assert.equal(await button.isDisabled(), true);
+    assert.deepEqual(await ability.locator("option").evaluateAll(options => options.filter(option => option.value && !option.disabled).map(option => option.value)),
+      ["int", "wis", "cha"], "the required field always has choices");
+    await ability.selectOption("wis"); assert.equal(await button.isEnabled(), true);
+    // A legacy manual save without an ability or a source is never a dead end.
+    await apply(page, modern({ class: "fighter", level: "5", "manual-spell-management": true, "spellcasting-ability": "" }));
+    assert.equal(await ability.isEnabled(), true); assert.equal(await button.isDisabled(), true);
+    await ability.selectOption("cha"); await setManualInDialog(page, false);
+    assert.equal(await ability.isVisible(), false); assert.equal(await button.isEnabled(), true, "returning to automatic hides the field again");
+    // Restoring a saved ability enables the button without a change event.
+    await page.evaluate(state => applyStateObject(state), modern({ class: "cleric", level: "3", "spellcasting-ability": "wis" }));
+    assert.equal(await button.isEnabled(), true);
+    // Share mode locks identity selections but not the ability field.
+    await apply(page, modern({ class: "wizard", level: "5", "spellcasting-ability": "" }));
+    const shared = new URL(url); shared.hash = await page.evaluate(() => encodeStateToHash(collectShareState()));
+    await page.goto(shared.href); await page.waitForFunction(() => window.SHARE_MODE === true && window.Spellbook);
+    await page.evaluate(() => { document.getElementById("legal-modal")?.style.setProperty("display", "none"); window.onboardingTour?.finish?.(); showTab("spells"); });
+    assert.equal(await page.locator("#class").isDisabled(), true);
+    assert.equal(await button.isDisabled(), true); assert.equal(await ability.isEnabled(), true);
+    await ability.selectOption("int"); assert.equal(await button.isEnabled(), true, "share viewers can choose the ability to prepare");
+    await button.click(); await dialog.waitFor(); await page.keyboard.press("Escape");
+    console.log("Prepared ability gate: visible-field requirement, wording, origin sources, hidden field for non-casters, legacy manual saves, restore and share mode passed.");
+  } finally { await page.close(); }
 }
 
 async function verifyLevelUpCantripChoice(page) {
@@ -1187,7 +1348,6 @@ async function verifyManualSpellbook(page) {
 async function verifySeparateModeBooks(page) {
   await apply(page, modern({ class: "wizard", level: "5",
     __wizardSpellbook: { version: 2, wizardSpellIds: ["detect-magic"], manualSpellIds: ["cure-wounds"] } }));
-  const toggle = page.locator("#manual-spell-management");
   const book = () => page.evaluate(() => Spellbook.getState());
   assert.deepEqual((await book()).spellIds, ["detect-magic"]);
   assert.equal(await page.locator('#spellbook-list [data-spell-id="cure-wounds"]').count(), 0);
@@ -1197,8 +1357,7 @@ async function verifySeparateModeBooks(page) {
   await selectCharacter(page, "class", "warlock");
   assert.equal(await page.locator("#spellbook-card").isVisible(), false, "warlock without Tome does not display either book");
   await selectCharacter(page, "class", "wizard");
-  await toggle.click();
-  await page.getByRole("button", { name: "啟用手動管理", exact: true }).click();
+  await setManualInDialog(page, true);
   assert.equal(await page.locator("#spellbook-card").isVisible(), true);
   assert.deepEqual((await book()).spellIds, ["cure-wounds"]);
   assert.equal(await page.locator('#spellbook-list [data-spell-id="detect-magic"]').count(), 0);
@@ -1211,19 +1370,17 @@ async function verifySeparateModeBooks(page) {
   const saved = await page.evaluate(() => collectStateObject());
   assert.deepEqual(saved.__wizardSpellbook.manualSpellIds, ["bless"]);
   assert.deepEqual(saved.__wizardSpellbook.wizardSpellIds, ["detect-magic"]);
-  await toggle.click();
-  await page.getByRole("button", { name: "恢復自動管理", exact: true }).click();
+  await setManualInDialog(page, false);
   assert.deepEqual((await book()).spellIds, ["detect-magic"]);
   await page.evaluate(state => applyStateObject(state), saved);
   assert.deepEqual((await book()).spellIds, ["bless"], "restoring character recovers the active manual book");
-  await toggle.click();
-  await page.getByRole("button", { name: "恢復自動管理", exact: true }).click();
+  await setManualInDialog(page, false);
   assert.deepEqual((await book()).spellIds, ["detect-magic"], "restored wizard book remains independent");
   await apply(page, modern({ class: "wizard", level: "5",
     __wizardSpellbook: { version: 1, spellIds: ["detect-magic", "cure-wounds"] } }));
   await closeMigration(page);
   assert.deepEqual((await book()).wizardSpellIds, [], "legacy mixed book does not enter automatic wizard archive");
-  assert.equal(await toggle.isChecked(), true);
+  assert.equal(await page.evaluate(() => SpellManagement.isManual()), true);
   assert.deepEqual((await book()).manualSpellIds, ["detect-magic", "cure-wounds"], "legacy mixed book belongs only to manual mode");
   const prior = await page.evaluate(() => collectStateObject());
   assert.equal(prior.__wizardSpellbook.version, 2);
@@ -1328,7 +1485,7 @@ async function verifyLevelChangesAndMigration(page, url) {
   await page.evaluate(() => SpellManagement.setManual(true, { confirm: false }));
   const manualBeforeLevelChange = await page.evaluate(() => SpellManagement.getPlayerEntries());
   await selectCharacter(page, "level", "1");
-  await page.locator("#manual-spell-management").click(); await page.getByRole("button", { name: "恢復自動管理", exact: true }).click();
+  await setManualInDialog(page, false);
   assert.equal(await removedDialog.count(), 0); assert.deepEqual(await playerIds(page), ["fireball", "mage-armor"], "manual-to-auto at a lower level preserves the class list");
   assert.deepEqual(await page.evaluate(key => JSON.parse(dndStorage.getItem(key)).manual.entries, MEMORY_KEY), manualBeforeLevelChange, "manual backup is independent of lower-level automatic availability");
   await apply(page, modern({ class: "wizard", level: "5" }, [player("fireball", "wizard"), player("mage-armor", "wizard")]));
@@ -1790,7 +1947,8 @@ async function verifyCustomSpellPreparation(browser, url) {
     assert.equal(await page.evaluate(() => SpellManagement.getPreparationCounts().prepared), 2, "higher-level custom spell counts regardless of class access");
     await page.evaluate(() => SpellManagement.setManual(true, { confirm: false }));
     await page.locator("#spell-prepare").click();
-    assert.match(await picker.locator(".spell-prepared-draft-counts").innerText(), /手動管理/);
+    assert.equal(await picker.locator("#manual-spell-management").isChecked(), true);
+    assert.equal(await picker.locator(".spell-prepared-count-summary").isHidden(), true, "manual mode hides automatic counts");
     await picker.getByRole("combobox", { name: "篩選環階" }).selectOption("4");
     assert.equal(await picker.locator(`input[value="${permanent.spellId}"]`).isDisabled(), true);
     await picker.getByRole("button", { name: "儲存", exact: true }).click();
@@ -1869,6 +2027,7 @@ async function main() {
     await verifyMigrationRules(browser, restoreUrl.href);
     await verifyManualSourceIsolation(browser, restoreUrl.href);
     await verifySynchronousRestore(browser, restoreUrl.href);
+    await verifyPreparedAbilityGate(browser, restoreUrl.href);
     const page = await browser.newPage({ viewport: { width: 1100, height: 850 } });
     await page.addInitScript(() => {
       if (!sessionStorage.getItem("spellbook-test-seeded")) {
@@ -1917,6 +2076,7 @@ async function main() {
     await verifyAutomaticSourceCleanup(page);
     await verifyUnavailableSpellRows(page);
     await verifyPreparedPicker(page);
+    await verifyPreparedRingRange(page);
     await verifyLevelUpCantripChoice(page);
     await verifyWizardBookPicker(page);
     await verifyManualSpellbook(page);
@@ -1935,10 +2095,8 @@ async function main() {
     await page.locator("#spell-prepare").click();
     assert.match(await pickerDialog(page).locator(".spell-prepared-draft-counts").innerText(), /^戲法 0／0｜一至二環 0／\d+$/u);
     const rangerRings = pickerDialog(page).getByRole("combobox", { name: "篩選環階" });
-    await rangerRings.selectOption("0");
-    assert.equal(await pickerDialog(page).locator(".spellbook-options").innerText(), "此職業沒有職業戲法。");
-    await rangerRings.selectOption("3");
-    assert.equal(await pickerDialog(page).locator(".spellbook-options").innerText(), "目前職業等級尚未開放三環法術。");
+    assert.deepEqual(await rangerRings.locator("option").evaluateAll(options => options.map(option => option.value)), ["", "1", "2"],
+      "automatic ranger lists neither cantrips nor rings above its highest slot");
     await page.keyboard.press("Escape");
     await pickerDialog(page).waitFor({ state: "detached" });
     await page.goto(restoreUrl.href);
@@ -1959,9 +2117,7 @@ async function main() {
     assert.equal(await pickerDialog(page).locator(".spell-prepared-draft-counts").innerText(), "戲法 0／3｜一環 1／4");
     assert.match(await pickerDialog(page).locator(".spell-picker-count").innerText(), /^\d+ 個法術，已顯示 \d+ 個 \| 1環 1 \| 2環 0 \| 3環 0 \| 4環 0 \|$/u);
     const ringFilter = pickerDialog(page).getByRole("combobox", { name: "篩選環階" });
-    await ringFilter.selectOption("3");
-    assert.equal(await pickerDialog(page).locator(".spellbook-options").innerText(), "目前職業等級尚未開放三環法術。");
-    await ringFilter.selectOption("");
+    assert.deepEqual(await ringFilter.locator("option").evaluateAll(options => options.map(option => option.value)), ["", "0", "1"]);
     await page.keyboard.press("Escape");
     await page.locator('#spellbook-list [data-spell-id="detect-magic"]').click();
     await page.locator(".quick-build-spell-prepare-confirm").click();
