@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: instant-summons
+source: srd
+level: 6
+school: conjuration
+classes: [ wizard ]
+ritual: true
+concentration: false
+castingTime:
+  - { unit: minute, amount: 1 }
+  - { unit: ritual }
+range: { type: touch }
+components: { v: true, s: true, m: true }
+duration: { type: until-dispelled }
+en:
+  name: Instant Summons
+  material: a sapphire worth 1,000+ GP
+  body: |-
+    You touch the sapphire used in the casting and an object weighing 10 pounds or less whose longest dimension is 6 feet or less. The spell leaves an Invisible mark on that object and invisibly inscribes the object's name on the sapphire. Each time you cast this spell, you must use a different sapphire.
+
+    Thereafter, you can take a Magic action to speak the object's name and crush the sapphire. The object instantly appears in your hand regardless of physical or planar distances, and the spell ends.
+
+    If another creature is holding or carrying the object, crushing the sapphire doesn't transport it, but instead you learn who that creature is and where that creature is currently located.
+zh:
+  name: 瞬間召喚術
+  material: 價值1,000+ GP的藍寶石
+  body: |-
+    你觸碰施法所用的藍寶石，以及一件重量不超過10磅、最長邊不超過6呎的物體。法術會在該物體上留下一個隱形的標記，並在藍寶石上隱形地刻下該物體的名稱。每次施放此法術時，你都必須使用不同的藍寶石。
+
+    此後，你可以用一個魔法動作說出該物體的名稱並捏碎藍寶石。無論實體距離或位面距離為何，該物體都會立即出現在你手中，法術隨即結束。
+
+    若有其他生物正持有或攜帶該物體，捏碎藍寶石並不會傳送該物體，但你會得知那個生物是誰，以及該生物目前所在的位置。

@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: storm-of-vengeance
+source: srd
+level: 9
+school: conjuration
+classes: [ druid ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 1, unit: mile }
+components: { v: true, s: true, m: false }
+duration: { type: time, amount: 1, unit: minute, upTo: true }
+en:
+  name: Storm of Vengeance
+  body: |-
+    A churning storm cloud forms for the duration, centered on a point within range and spreading to a radius of 300 feet. Each creature under the cloud when it appears must succeed on a Constitution saving throw or take 2d6 Thunder damage and have the Deafened condition for the duration.
+
+    At the start of each of your later turns, the storm produces different effects, as detailed below.
+
+    _Turn 2._ Acidic rain falls. Each creature and object under the cloud takes 4d6 Acid damage.
+
+    _Turn 3._ You call six bolts of lightning from the cloud to strike six different creatures or objects beneath it. Each target makes a Dexterity saving throw, taking 10d6 Lightning damage on a failed save or half as much damage on a successful one. _Turn 4._ Hailstones rain down. Each creature under the cloud takes 2d6 Bludgeoning damage.
+
+    _Turns 5–10._ Gusts and freezing rain assail the area under the cloud. Each creature there takes 1d6 Cold damage. Until the spell ends, the area is Difficult Terrain and Heavily Obscured, ranged attacks with weapons are impossible there, and strong wind blows through the area.
+zh:
+  name: 復仇風暴
+  body: |-
+    在持續時間內，一團翻滾的風暴雲在射程內的一點形成，並擴展至半徑300呎。雲層下方的每個生物在雲出現時，必須成功通過體質豁免，否則受到2d6雷鳴傷害，並在持續時間內陷入耳聾狀態。
+
+    在你之後每個回合開始時，風暴會產生不同的效果，詳述如下。
+
+    _第2回合。_ 酸雨降下。雲層下方的每個生物與物體受到4d6強酸傷害。
+
+    _第3回合。_ 你從雲中召喚六道閃電，打擊其下方六個不同的生物或物體。每個目標進行一次敏捷豁免，豁免失敗時受到10d6閃電傷害，成功則受到一半傷害。_第4回合。_ 冰雹落下。雲層下方的每個生物受到2d6鈍擊傷害。
+
+    _第5至10回合。_ 狂風與冰冷的雨襲向雲層下方的區域。該處的每個生物受到1d6冷凍傷害。在法術結束前，該區域為困難地形且為重度遮蔽，在該處無法使用武器進行遠程攻擊，並且有強風吹過該區域。

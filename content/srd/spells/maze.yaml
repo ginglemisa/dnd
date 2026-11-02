@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: maze
+source: srd
+level: 8
+school: conjuration
+classes: [ wizard ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 60, unit: feet }
+components: { v: true, s: true, m: false }
+duration: { type: time, amount: 10, unit: minute, upTo: true }
+en:
+  name: Maze
+  body: |-
+    You banish a creature that you can see within range into a labyrinthine demiplane. The target remains there for the duration or until it escapes the maze.
+
+    The target can take a Study action to try to escape. When it does so, it makes a DC 20 Intelligence (Investigation) check. If it succeeds, it escapes, and the spell ends.
+
+    When the spell ends, the target reappears in the space it left or, if that space is occupied, in the nearest unoccupied space.
+zh:
+  name: 迷宮術
+  body: |-
+    你將射程內一個你能看見的生物放逐到迷宮般的半位面空間。目標會在持續時間內，或直到逃出迷宮之前，一直待在那裡。
+
+    目標可以執行研究動作嘗試逃脫。當它這麼做時，它進行一次DC 20的智力（調查）檢定。若成功，它就逃脫了，法術結束。
+
+    法術結束時，目標會重新出現在它離開的空間；若該空間已被佔據，則出現在最近的未被佔據的空間。

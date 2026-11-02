@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: heal
+source: srd
+level: 6
+school: abjuration
+classes: [ cleric, druid ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 60, unit: feet }
+components: { v: true, s: true, m: false }
+duration: { type: instantaneous }
+en:
+  name: Heal
+  body: |-
+    Choose a creature that you can see within range. Positive energy washes through the target, restoring 70 Hit Points. This spell also ends the Blinded, Deafened, and Poisoned conditions on the target.
+
+    _Using a Higher-Level Spell Slot._ The healing increases by 10 for each spell slot level above 6.
+zh:
+  name: 醫療術
+  body: |-
+    選擇射程內一個你能看見的生物。正能量流過目標，恢復70點生命值。此法術同時會結束目標身上的失明、耳聾與中毒狀態。
+
+    _使用更高環階法術位。_ 每高於6環一環，治療量增加10。

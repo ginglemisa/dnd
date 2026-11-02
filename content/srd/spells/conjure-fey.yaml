@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: conjure-fey
+source: srd
+level: 6
+school: conjuration
+classes: [ druid ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 60, unit: feet }
+components: { v: true, s: true, m: false }
+duration: { type: time, amount: 10, unit: minute, upTo: true }
+en:
+  name: Conjure Fey
+  body: |-
+    You conjure a Medium spirit from the Feywild in an unoccupied space you can see within range. The spirit lasts for the duration, and it looks like a Fey creature of your choice. When the spirit appears, you can make one melee spell attack against a creature within 5 feet of it. On a hit, the target takes Psychic damage equal to 3d12 plus your spellcasting ability modifier, and the target has the Frightened condition until the start of your next turn, with both you and the spirit as the source of the fear.
+
+    As a Bonus Action on your later turns, you can teleport the spirit to an unoccupied space you can see within 30 feet of the space it left and make the attack against a creature within 5 feet of it.
+
+    _Using a Higher-Level Spell Slot._ The damage increases by 1d12 for each spell slot level above 6.
+zh:
+  name: 召喚精類
+  body: |-
+    你在射程內一處你能看見的未被占據的空間，召喚出一個來自妖精荒野的中型靈體。該靈體持續到持續時間結束，外觀看起來像是你選擇的一種精類生物。靈體出現時，你可以對其5呎內的一個生物進行一次近戰法術攻擊。命中時，目標受到等同於3d12加上你的施法屬性調整值的心靈傷害，且目標陷入恐慌狀態，持續到你的下個回合開始，恐懼的來源同時為你與該靈體。
+
+    在你之後的回合中，你可以用附贈動作將該靈體傳送到它離開的那個空間30呎內一處你能看見的未被占據的空間，並對其5呎內的一個生物進行該攻擊。
+
+    _使用更高環階法術位。_ 使用的法術位環階每比6環高一環，傷害增加1d12。

@@ -1,0 +1,47 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: prismatic-spray
+source: srd
+level: 7
+school: evocation
+classes: [ bard, sorcerer, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: self }
+components: { v: true, s: true, m: false }
+duration: { type: instantaneous }
+en:
+  name: Prismatic Spray
+  body: |-
+    Eight rays of light flash from you in a 60-foot Cone. Each creature in the Cone makes a Dexterity saving throw. For each target, roll 1d8 to determine which color ray affects it, consulting the Prismatic Rays table.
+
+    **Prismatic Rays**
+
+    | 1d8 | Ray |
+    | --- | --- |
+    | 1 | **Red.** *Failed Save:* 12d6 Fire damage. *Successful Save:* Half as much damage. |
+    | 2 | **Orange.** *Failed Save:* 12d6 Acid damage. *Successful Save:* Half as much damage. |
+    | 3 | **Yellow.** *Failed Save:* 12d6 Lightning damage. *Successful Save:* Half as much damage. |
+    | 4 | **Green.** *Failed Save:* 12d6 Poison damage. *Successful Save:* Half as much damage. |
+    | 5 | **Blue.** *Failed Save:* 12d6 Cold damage. *Successful Save:* Half as much damage. |
+    | 6 | **Indigo.** *Failed Save:* The target has the Restrained condition and makes a Constitution saving throw at the end of each of its turns. If it successfully saves three times, the condition ends. If it fails three times, it has the Petrified condition until it is freed by an effect like the *Greater Restoration* spell. The successes and failures needn't be consecutive; keep track of both until the target collects three of a kind. |
+    | 7 | **Violet.** *Failed Save:* The target has the Blinded condition and makes a Wisdom saving throw at the start of your next turn. On a successful save, the condition ends. On a failed save, the condition ends, and the creature teleports to another plane of existence (GM's choice). |
+    | 8 | **Special.** The target is struck by two rays. Roll twice, rerolling any 8. |
+zh:
+  name: 虹光噴射
+  body: |-
+    八道光線從你身上以60呎錐形區域閃出。錐形區域內的每個生物進行一次敏捷豁免。對每個目標，擲1d8來決定由哪種顏色的光線影響它，查閱虹光光線表。
+
+    **虹光光線**
+
+    | 1d8 | 光線 |
+    | --- | --- |
+    | 1 | **紅。** *豁免失敗：* 12d6火焰傷害。*豁免成功：* 傷害減半。 |
+    | 2 | **橙。** *豁免失敗：* 12d6強酸傷害。*豁免成功：* 傷害減半。 |
+    | 3 | **黃。** *豁免失敗：* 12d6閃電傷害。*豁免成功：* 傷害減半。 |
+    | 4 | **綠。** *豁免失敗：* 12d6毒素傷害。*豁免成功：* 傷害減半。 |
+    | 5 | **藍。** *豁免失敗：* 12d6冷凍傷害。*豁免成功：* 傷害減半。 |
+    | 6 | **靛。** *豁免失敗：* 目標陷入束縛狀態，並在其每個回合結束時進行一次體質豁免。若其豁免成功三次，該狀態結束。若其豁免失敗三次，它會陷入石化狀態，直到被如*高等復原術*法術之類的效果解放。成功與失敗不需要連續；同時記錄兩者，直到目標累積到其中一種達到三次。 |
+    | 7 | **紫。** *豁免失敗：* 目標陷入失明狀態，並在你的下一個回合開始時進行一次感知豁免。豁免成功時，該狀態結束。豁免失敗時，該狀態結束，且該生物被傳送到另一個位面（由DM選擇）。 |
+    | 8 | **特殊。** 目標被兩道光線擊中。擲兩次，遇到8則重擲。 |

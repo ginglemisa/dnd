@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: gate
+source: srd
+level: 9
+school: conjuration
+classes: [ cleric, sorcerer, warlock, wizard ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 60, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 1, unit: minute, upTo: true }
+en:
+  name: Gate
+  material: a diamond worth 5,000+ GP
+  body: |-
+    You conjure a portal linking an unoccupied space you can see within range to a precise location on a different plane of existence. The portal is a circular opening, which you can make 5 to 20 feet in diameter. You can orient the portal in any direction you choose. The portal lasts for the duration, and the portal's destination is visible through it.
+
+    The portal has a front and a back on each plane where it appears. Travel through the portal is possible only by moving through its front. Anything that does so is instantly transported to the other plane, appearing in the unoccupied space nearest to the portal.
+
+    Deities and other planar rulers can prevent portals created by this spell from opening in their presence or anywhere within their domains.
+
+    When you cast this spell, you can speak the name of a specific creature (a pseudonym, title, or nickname doesn't work). If that creature is on a plane other than the one you are on, the portal opens next to the named creature and transports it to the nearest unoccupied space on your side of the portal. You gain no special power over the creature, and it is free to act as the GM deems appropriate. It might leave, attack you, or help you.
+zh:
+  name: 異界之門
+  material: 一顆價值5,000 GP以上的鑽石
+  body: |-
+    你召喚出一道傳送門，將射程內一處你能看見的未被占據的空間，連結到另一個位面上的一個精確地點。傳送門是一個圓形開口，你可以使其直徑為5到20呎。你可以將傳送門朝向任何你選擇的方向。傳送門在持續時間內持續存在，並且可以透過它看見其目的地。
+
+    傳送門在其出現的每個位面上都有正面與背面。只有從正面穿過才能通過傳送門。任何這樣做的事物會立即被傳送到另一個位面，出現在最靠近傳送門的未被占據的空間。
+
+    神祇與其他位面統治者可以阻止此法術創造的傳送門在其面前或其領域內任何地方開啟。
+
+    施展此法術時，你可以說出一個特定生物的名字（假名、頭銜或綽號無效）。若該生物位於與你不同的位面，傳送門會在該指名生物旁邊開啟，並將它傳送到傳送門你這一側最近的未被占據的空間。你不會因此對該生物獲得任何特殊的支配力，它可以按DM認為適當的方式自由行動。它可能離開、攻擊你，或幫助你。

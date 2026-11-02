@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: befuddlement
+source: srd
+level: 8
+school: enchantment
+classes: [ bard, druid, warlock, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 150, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: instantaneous }
+en:
+  name: Befuddlement
+  material: a key ring with no keys
+  body: |-
+    You blast the mind of a creature that you can see within range. The target makes an Intelligence saving throw.
+
+    On a failed save, the target takes 10d12 Psychic damage and can't cast spells or take the Magic action. At the end of every 30 days, the target repeats the save, ending the effect on a success. The effect can also be ended by the _Greater Restoration_, _Heal_, or _Wish_ spell.
+
+    On a successful save, the target takes half as much damage only.
+zh:
+  name: 摧心術
+  material: 沒有鑰匙的鑰匙圈
+  body: |-
+    你衝擊一個你在射程內能看見的生物的心智。目標進行智力豁免。
+
+    豁免失敗時，目標受到10d12心靈傷害，且無法施放法術或進行魔法動作。每過30天結束時，目標重複進行豁免，成功則結束效應。效應也可以被_高等復原術_、_醫療術_或_祈願術_法術結束。
+
+    豁免成功時，目標只受到一半傷害。

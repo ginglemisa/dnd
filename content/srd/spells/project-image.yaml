@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: project-image
+source: srd
+level: 7
+school: illusion
+classes: [ bard, wizard ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 500, unit: mile }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 1, unit: day, upTo: true }
+en:
+  name: Project Image
+  material: a statuette of yourself worth 5+ GP
+  body: |-
+    You create an illusory copy of yourself that lasts for the duration. The copy can appear at any location within range that you have seen before, regardless of intervening obstacles. The illusion looks and sounds like you, but it is intangible. If the illusion takes any damage, it disappears, and the spell ends.
+
+    You can see through the illusion's eyes and hear through its ears as if you were in its space. As a Magic action, you can move it up to 60 feet and make it gesture, speak, and behave in whatever way you choose. It mimics your mannerisms perfectly.
+
+    Physical interaction with the image reveals it to be illusory, since things can pass through it. A creature that takes the Study action to examine the image can determine that it is an illusion with a successful Intelligence (Investigation) check against your spell save DC. If a creature discerns the illusion for what it is, the creature can see through the image, and any noise it makes sounds hollow to the creature.
+zh:
+  name: 投影術
+  material: 一尊價值5 GP以上的自身雕像
+  body: |-
+    你創造出一個自己的幻象複製體，在持續時間內存在。該複製體可以出現在射程內任何你曾見過的地點，無視中間的障礙物。這個幻象看起來和聽起來都與你一樣，但沒有實體。如果幻象受到任何傷害，它就會消失，法術結束。
+
+    你可以透過幻象的雙眼觀看、透過它的雙耳聆聽，就如同你身處它所在的空間。你可以用魔法動作讓它移動最多60呎，並讓它以你選擇的任何方式做出手勢、說話與行動。它會完美模仿你的舉止習慣。
+
+    與該影像進行實體互動會發現它是幻象，因為物體可以穿過它。生物若以研究動作檢視該影像，並通過對抗你法術豁免DC的成功智力（調查）檢定，就能判斷它是幻象。如果生物識破了這個幻象，該生物便能看穿該影像，且影像發出的任何聲音對該生物而言都聽起來空洞。

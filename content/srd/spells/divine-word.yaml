@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: divine-word
+source: srd
+level: 7
+school: evocation
+classes: [ cleric ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: bonus-action }
+range: { type: distance, amount: 30, unit: feet }
+components: { v: true, s: false, m: false }
+duration: { type: instantaneous }
+en:
+  name: Divine Word
+  body: |-
+    You utter a word imbued with power from the Upper Planes. Each creature of your choice in range makes a Charisma saving throw. On a failed save, a target that has 50 Hit Points or fewer suffers an effect based on its current Hit Points, as shown in the Divine Word Effects table. Regardless of its Hit Points, a Celestial, an Elemental, a Fey, or a Fiend target that fails its save is forced back to its plane of origin (if it isn't there already) and can't return to the current plane for 24 hours by any means short of a _Wish_ spell.
+
+    **Divine Word Effects**
+
+    | Hit Points | Effect |
+    | --- | --- |
+    | 0–20 | The target dies. |
+    | 21–30 | The target has the Blinded, Deafened, and Stunned conditions for 1 hour. |
+    | 31–40 | The target has the Blinded and Deafened conditions for 10 minutes. |
+    | 41–50 | The target has the Deafened condition for 1 minute. |
+zh:
+  name: 聖言術
+  body: |-
+    你說出一個灌注了上層位面之力的字詞。射程內你選擇的每個生物進行一次魅力豁免。豁免失敗時，生命值為50點或以下的目標會根據其當前生命值承受一種效果，如神聖言語效果表所示。無論其生命值為何，豁免失敗的天界生物、元素生物、精類或邪魔目標都會被迫返回其原生位面（若尚未身在該處），並且除了透過祈願術法術之外，無論以何種方式都無法在24小時內返回當前位面。
+
+    **神聖言語效果**
+
+    | 生命值 | 效果 |
+    | --- | --- |
+    | 0–20 | 目標死亡。 |
+    | 21–30 | 目標陷入失明、耳聾與震懾狀態，持續1小時。 |
+    | 31–40 | 目標陷入失明與耳聾狀態，持續10分鐘。 |
+    | 41–50 | 目標陷入耳聾狀態，持續1分鐘。 |

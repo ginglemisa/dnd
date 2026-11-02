@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: sunbeam
+source: srd
+level: 6
+school: evocation
+classes: [ cleric, druid, sorcerer, wizard ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: self }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 1, unit: minute, upTo: true }
+en:
+  name: Sunbeam
+  material: a magnifying glass
+  body: |-
+    You launch a sunbeam in a 5-foot-wide, 60-foot-long Line. Each creature in the Line makes a Constitution saving throw. On a failed save, a creature takes 6d8 Radiant damage and has the Blinded condition until the start of your next turn. On a successful save, it takes half as much damage only.
+
+    Until the spell ends, you can take a Magic action to create a new Line of radiance.
+
+    For the duration, a mote of brilliant radiance shines above you. It sheds Bright Light in a 30-foot radius and Dim Light for an additional 30 feet. This light is sunlight.
+zh:
+  name: 陽炎射線
+  material: 一面放大鏡
+  body: |-
+    你射出一道寬5呎、長60呎的直線日光束。直線內的每個生物都進行一次體質豁免。豁免失敗時，生物受到6d8光耀傷害，並陷入失明狀態，持續到你的下個回合開始。豁免成功時，則只受到一半傷害。
+
+    在法術結束前，你可以用魔法動作創造一道新的光輝直線。
+
+    在持續時間內，一粒璀璨光輝的微光在你上方閃耀。它在半徑30呎內散發明亮光照，並在額外30呎內散發微光光照。這道光是陽光。

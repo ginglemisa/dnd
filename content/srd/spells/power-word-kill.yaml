@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: power-word-kill
+source: srd
+level: 9
+school: enchantment
+classes: [ bard, sorcerer, warlock, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 60, unit: feet }
+components: { v: true, s: false, m: false }
+duration: { type: instantaneous }
+en:
+  name: Power Word Kill
+  body: You compel one creature you can see within range to die. If the target has 100 Hit Points or fewer, it dies. Otherwise, it takes 12d12 Psychic damage.
+zh:
+  name: 律令死亡
+  body: 你強令射程內一個你能看見的生物死亡。若目標的生命值為100點或更少，它就會死亡。否則，它受到12d12心靈傷害。

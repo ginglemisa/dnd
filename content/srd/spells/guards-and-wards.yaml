@@ -1,0 +1,55 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: guards-and-wards
+source: srd
+level: 6
+school: abjuration
+classes: [ bard, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: hour, amount: 1 }
+range: { type: touch }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 24, unit: hour }
+en:
+  name: Guards and Wards
+  material: a silver rod worth 10+ GP
+  body: |-
+    You create a ward that protects up to 2,500 square feet of floor space. The warded area can be up to 20 feet tall, and you shape it as one 50-foot square, one hundred 5-foot squares that are contiguous, or twenty-five 10-foot squares that are contiguous.
+
+    When you cast this spell, you can specify individuals that are unaffected by the spell's effects. You can also specify a password that, when spoken aloud within 5 feet of the warded area, makes the speaker immune to its effects. The spell creates the effects below within the warded area. _Dispel Magic_ has no effect on _Guards and Wards_ itself, but each of the following effects can be dispelled. If all four are dispelled, _Guards and Wards_ ends. If you cast the spell every day for 365 days on the same area, the spell thereafter lasts until all its effects are dispelled.
+
+    **Corridors.** Fog fills all the warded corridors, making them Heavily Obscured. In addition, at each intersection or branching passage offering a choice of direction, there is a 50 percent chance that a creature other than you believes it is going in the opposite direction from the one it chooses.
+
+    **Doors.** All doors in the warded area are magically locked, as if sealed by the _Arcane Lock_ spell. In addition, you can cover up to ten doors with an illusion to make them appear as plain sections of wall.
+
+    **Stairs.** Webs fill all stairs in the warded area from top to bottom, as in the _Web_ spell. These strands regrow in 10 minutes if they are destroyed while _Guards and Wards_ lasts.
+
+    **Other Spell Effect.** Place one of the following magical effects within the warded area:
+
+    - _Dancing Lights_ in four corridors, with a simple program that the lights repeat as long as _Guards and Wards_ lasts
+    - _Magic Mouth_ in two locations
+    - _Stinking Cloud_ in two locations (the vapors return within 10 minutes if dispersed while _Guards and Wards_ lasts)
+    - _Gust of Wind_ in one corridor or room (the wind blows continuously while the spell lasts)
+    - _Suggestion_ in one 5-foot square; any creature that enters that square receives the suggestion mentally
+zh:
+  name: 銅牆鐵壁
+  material: 價值10+ GP的銀棒
+  body: |-
+    你創造一道守護結界，保護最多2,500平方呎的地面空間。受守護的區域高度最多20呎，你可將其塑造為一個50呎見方的區域、一百個彼此相連的5呎見方方格，或二十五個彼此相連的10呎見方方格。
+
+    施放此法術時，你可以指定不受法術效果影響的個體。你也可以指定一組密語，任何人在受守護區域5呎內說出該密語，即對其效果免疫。法術會在受守護區域內產生下列效果。_解除魔法_對_銅牆鐵壁_本身無效，但下列每項效果都可以被解除。若四項效果全數被解除，_銅牆鐵壁_便會結束。若你在同一區域連續365天每天施放此法術，此後該法術會持續到其所有效果都被解除為止。
+
+    **走廊。** 濃霧充滿所有受守護的走廊，使其成為重度遮蔽。此外，在每個路口或需要選擇方向的岔路，除你以外的生物有50%的機率誤以為自己正朝著與所選方向相反的方向前進。
+
+    **門。** 受守護區域內的所有門都被魔法鎖住，如同被_秘法鎖_法術封住一般。此外，你可以用幻象覆蓋最多十扇門，使它們看起來像是普通的牆面。
+
+    **樓梯。** 蛛網從上到下充滿受守護區域內的所有樓梯，如同_蛛網術_法術一般。若在_銅牆鐵壁_持續期間這些蛛絲被摧毀，它們會在10分鐘後重新生長。
+
+    **其他法術效果。** 在受守護區域內放置下列其中一種魔法效果：
+
+    - 在四條走廊中施放_舞光術_，並設定一個簡單的程序，只要_銅牆鐵壁_持續，光點就會重複該程序
+    - 在兩處施放_魔嘴術_
+    - 在兩處施放_臭雲術_（若在_銅牆鐵壁_持續期間蒸氣被驅散，會在10分鐘內回來）
+    - 在一條走廊或一個房間內施放_造風術_（只要法術持續，風就會持續吹動）
+    - 在一個5呎見方的方格內施放_暗示術_；任何進入該方格的生物都會在心智中接收到該暗示

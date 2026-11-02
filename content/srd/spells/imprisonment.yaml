@@ -1,0 +1,55 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: imprisonment
+source: srd
+level: 9
+school: abjuration
+classes: [ warlock, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: minute, amount: 1 }
+range: { type: distance, amount: 30, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: until-dispelled }
+en:
+  name: Imprisonment
+  material: a statuette of the target worth 5,000+ GP
+  body: |-
+    You create a magical restraint to hold a creature that you can see within range. The target must make a Wisdom saving throw. On a successful save, the target is unaffected, and it is immune to this spell for the next 24 hours. On a failed save, the target is imprisoned. While imprisoned, the target doesn't need to breathe, eat, or drink, and it doesn't age. Divination spells can't locate or perceive the imprisoned target, and the target can't teleport.
+
+    Until the spell ends, the target is also affected by one of the following effects of your choice:
+
+    **Burial.** The target is entombed beneath the earth in a hollow globe of magical force that is just large enough to contain the target. Nothing can pass into or out of the globe.
+
+    **Chaining.** Chains firmly rooted in the ground hold the target in place. The target has the Restrained condition and can't be moved by any means.
+
+    **Hedged Prison.** The target is trapped in a demiplane that is warded against teleportation and planar travel. The demiplane is your choice of a labyrinth, a cage, a tower, or the like.
+
+    **Minimus Containment.** The target becomes 1 inch tall and is trapped inside an indestructible gemstone or a similar object. Light can pass through the gemstone (allowing the target to see out and other creatures to see in), but nothing else can pass through by any means.
+
+    **Slumber.** The target has the Unconscious condition and can't be awoken.
+
+    _Ending the Spell._ When you cast the spell, specify a trigger that will end it. The trigger can be as simple or as elaborate as you choose, but the GM must agree that it has a high likelihood of happening within the next decade. The trigger must be an observable action, such as someone making a particular offering at the temple of your god, saving your true love, or defeating a specific monster.
+
+    A _Dispel Magic_ spell can end the spell only if it is cast with a level 9 spell slot, targeting either the prison or the component used to create it.
+zh:
+  name: 禁錮術
+  material: 一尊價值5,000 GP以上的目標雕像
+  body: |-
+    你創造一道魔法束縛，困住射程內一個你能看見的生物。目標必須進行一次感知豁免。豁免成功時，目標不受影響，並且在接下來的24小時內免疫此法術。豁免失敗時，目標被禁錮。被禁錮期間，目標不需要呼吸、進食或飲水，也不會老化。預言法術無法定位或感知被禁錮的目標，且目標無法傳送。
+
+    直到法術結束，目標還會受到你選擇的下列其中一種效應影響：
+
+    **掩埋。**目標被埋入地下，困在一個剛好大到能容納目標的魔法力場空心球體中。任何東西都無法進出該球體。
+
+    **鎖鏈。**牢牢扎根於地面的鎖鏈將目標固定在原地。目標陷入束縛狀態，且無法被任何方式移動。
+
+    **圍籬囚牢。**目標被困在一個受到防護、無法傳送與跨位面旅行的半位面中。你可以選擇這個半位面是迷宮、牢籠、高塔或類似的形式。
+
+    **縮小拘禁。**目標縮小為1吋高，並被困在一顆堅不可摧的寶石或類似物體內。光線可以穿過寶石（讓目標能看見外面，其他生物也能看見裡面），但其他任何事物都無法以任何方式穿過。
+
+    **沉眠。**目標陷入昏迷狀態，且無法被喚醒。
+
+    _結束法術。_施展法術時，指定一個會使其結束的觸發條件。該條件可以隨你選擇簡單或複雜，但DM必須同意它在未來十年內極有可能發生。觸發條件必須是一個可觀察的行動，例如有人在你的神祇的神殿中獻上特定的供品、拯救你的真愛，或擊敗某隻特定的怪物。
+
+    只有以9環法術位施展，並以監牢或創造它所用的材料為目標時，_解除魔法_才能結束此法術。

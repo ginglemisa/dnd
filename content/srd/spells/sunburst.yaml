@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: sunburst
+source: srd
+level: 8
+school: evocation
+classes: [ cleric, druid, sorcerer, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 150, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: instantaneous }
+en:
+  name: Sunburst
+  material: a piece of sunstone
+  body: |-
+    Brilliant sunlight flashes in a 60-foot-radius Sphere centered on a point you choose within range. Each creature in the Sphere makes a Constitution saving throw. On a failed save, a creature takes 12d6 Radiant damage and has the Blinded condition for 1 minute. On a successful save, it takes half as much damage only.
+
+    A creature Blinded by this spell makes another Constitution saving throw at the end of each of its turns, ending the effect on itself on a success.
+
+    This spell dispels Darkness in its area that was created by any spell.
+zh:
+  name: 陽炎爆
+  material: 一塊日長石
+  body: |-
+    耀眼的陽光在以你於射程內選定的一點為中心、半徑60呎的球形區域中閃現。球形區域內的每個生物進行一次體質豁免。豁免失敗時，生物受到12d6光耀傷害，並陷入失明狀態，持續1分鐘。豁免成功時，則僅受到一半傷害。
+
+    因本法術陷入失明狀態的生物在它每個回合結束時再進行一次體質豁免，成功則結束自身的該效果。
+
+    本法術會驅散其範圍內由任何法術所創造的黑暗。

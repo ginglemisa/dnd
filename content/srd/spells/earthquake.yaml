@@ -1,0 +1,43 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: earthquake
+source: srd
+level: 8
+school: transmutation
+classes: [ cleric, druid, sorcerer ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 500, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 1, unit: minute, upTo: true }
+en:
+  name: Earthquake
+  material: a fractured rock
+  body: |-
+    Choose a point on the ground that you can see within range. For the duration, an intense tremor rips through the ground in a 100-foot-radius circle centered on that point. The ground there is Difficult Terrain.
+
+    When you cast this spell and at the end of each of your turns for the duration, each creature on the ground in the area makes a Dexterity saving throw. On a failed save, a creature has the Prone condition, and its Concentration is broken.
+
+    You can also cause the effects below.
+
+    _Fissures._ A total of 1d6 fissures open in the spell's area at the end of the turn you cast it. You choose the fissures' locations, which can't be under structures. Each fissure is 1d10 × 10 feet deep and 10 feet wide, and it extends from one edge of the spell's area to another edge. A creature in the same space as a fissure must succeed on a Dexterity saving throw or fall in. A creature that successfully saves moves with the fissure's edge as it opens.
+
+    _Structures._ The tremor deals 50 Bludgeoning damage to any structure in contact with the ground in the area when you cast the spell and at the end of each of your turns until the spell ends. If a structure drops to 0 Hit Points, it collapses.
+
+    A creature within a distance from a collapsing structure equal to half the structure's height makes a Dexterity saving throw. On a failed save, the creature takes 12d6 Bludgeoning damage, has the Prone condition, and is buried in the rubble, requiring a DC 20 Strength (Athletics) check as an action to escape. On a successful save, the creature takes half as much damage only.
+zh:
+  name: 地震術
+  material: 一塊碎裂的岩石
+  body: |-
+    選擇射程內一處你能看見的地面上的點。在持續時間內，一陣劇烈的震動會撕裂以該點為中心、半徑100呎的圓形範圍內的地面。該處的地面為困難地形。
+
+    施放此法術時，以及在持續時間內每次你的回合結束時，位於該區域地面上的每個生物都會進行敏捷豁免。豁免失敗時，生物陷入倒地狀態，且其專注中斷。
+
+    你還可以造成下列效應。
+
+    _裂縫。_ 在你施放法術的回合結束時，法術區域內會裂開總共1d6道裂縫。裂縫的位置由你選擇，但不能位於建築物之下。每道裂縫深1d10 × 10呎、寬10呎，並從法術區域的一側邊緣延伸到另一側邊緣。與裂縫位於同一空間的生物必須成功通過敏捷豁免，否則會掉入其中。成功豁免的生物會隨著裂縫裂開而移動到裂縫的邊緣。
+
+    _建築物。_ 施放法術時，以及在法術結束前每次你的回合結束時，震動會對區域內與地面接觸的任何建築物造成50鈍擊傷害。若建築物的生命值降為0，它就會倒塌。
+
+    位於倒塌建築物周圍、距離等同於該建築物高度一半之內的生物，會進行敏捷豁免。豁免失敗時，生物受到12d6鈍擊傷害、陷入倒地狀態，並被埋在瓦礫中，需要以動作進行DC 20力量（運動）檢定才能脫身。豁免成功時，生物只受到一半傷害。

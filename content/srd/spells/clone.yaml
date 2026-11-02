@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: clone
+source: srd
+level: 8
+school: necromancy
+classes: [ wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: hour, amount: 1 }
+range: { type: touch }
+components: { v: true, s: true, m: true }
+duration: { type: instantaneous }
+en:
+  name: Clone
+  material: a diamond worth 1,000+ GP, which the spell consumes, and a sealable vessel worth 2,000+ GP that is large enough to hold the creature being cloned
+  body: |-
+    You touch a creature or at least 1 cubic inch of its flesh. An inert duplicate of that creature forms inside the vessel used in the spell's casting and finishes growing after 120 days; you choose whether the finished clone is the same age as the creature or younger. The clone remains inert and endures indefinitely while its vessel remains undisturbed.
+
+    If the original creature dies after the clone finishes forming, the creature's soul transfers to the clone if the soul is free and willing to return. The clone is physically identical to the original and has the same personality, memories, and abilities, but none of the original's equipment. The creature's original remains, if any, become inert and can't be revived, since the creature's soul is elsewhere.
+zh:
+  name: 克隆術
+  material: 價值1,000+ GP且會被法術消耗的鑽石，以及價值2,000+ GP、大小足以容納被複製生物的可密封容器
+  body: |-
+    你觸碰一個生物，或至少1立方吋的其血肉。該生物的一具無生命複製體會在施法所用的容器內形成，並在120天後完成成長；你可以選擇完成的複製體與該生物同齡或更年輕。只要容器未受干擾，複製體就會維持無生命狀態並無限期存續。
+
+    若原本的生物在複製體完成形成後死亡，且其靈魂自由並願意返回，該生物的靈魂就會轉移到複製體內。複製體在外觀上與原本的生物完全相同，擁有相同的個性、記憶與能力，但沒有原本的任何裝備。該生物原本的遺體（若有）會變得無生命，且無法被復活，因為該生物的靈魂在他處。

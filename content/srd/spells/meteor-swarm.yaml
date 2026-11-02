@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: meteor-swarm
+source: srd
+level: 9
+school: evocation
+classes: [ sorcerer, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 1, unit: mile }
+components: { v: true, s: true, m: false }
+duration: { type: instantaneous }
+en:
+  name: Meteor Swarm
+  body: |-
+    Blazing orbs of fire plummet to the ground at four different points you can see within range. Each creature in a 40-foot-radius Sphere centered on each of those points makes a Dexterity saving throw. A creature takes 20d6 Fire damage and 20d6 Bludgeoning damage on a failed save or half as much damage on a successful one. A creature in the area of more than one fiery Sphere is affected only once.
+
+    A nonmagical object that isn't being worn or carried also takes the damage if it's in the spell's area, and the object starts burning if it's flammable.
+zh:
+  name: 流星爆
+  body: |-
+    燃燒的火球墜落到射程內四個你能看見的不同地點。以每個地點為中心、半徑40呎的球形區域內的每個生物進行一次敏捷豁免。豁免失敗的生物受到20d6火焰傷害和20d6鈍擊傷害，豁免成功則受到一半傷害。位於不只一個火焰球形區域內的生物只會受到一次影響。
+
+    法術區域內未被穿戴或攜帶的非魔法物體同樣會受到傷害，若它可燃，則會開始燃燒。

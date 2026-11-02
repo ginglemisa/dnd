@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: animal-shapes
+source: srd
+level: 8
+school: transmutation
+classes: [ druid ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 30, unit: feet }
+components: { v: true, s: true, m: false }
+duration: { type: time, amount: 24, unit: hour }
+en:
+  name: Animal Shapes
+  body: |-
+    Choose any number of willing creatures that you can see within range. Each target shape-shifts into a Large or smaller Beast of your choice that has a Challenge Rating of 4 or lower. You can choose a different form for each target. On later turns, you can take a Magic action to transform the targets again.
+
+    A target's game statistics are replaced by the chosen Beast's statistics, but the target retains its creature type; Hit Points; Hit Point Dice; alignment; ability to communicate; and Intelligence, Wisdom, and Charisma scores. The target's actions are limited by the Beast form's anatomy, and it can't cast spells. The target's equipment melds into the new form, and the target can't use any of that equipment while in that form.
+
+    The target gains a number of Temporary Hit Points equal to the Hit Points of the first form into which it shape-shifts. These Temporary Hit Points vanish if any remain when the spell ends. The transformation lasts for the duration or until the target ends it as a Bonus Action.
+zh:
+  name: 動物形態
+  body: |-
+    選擇任意數量你在射程內能看見的自願生物。每個目標都會變形為你所選、挑戰等級4或以下的大型或更小的野獸。你可以為每個目標選擇不同的形態。在之後的回合，你可以用魔法動作再次轉變這些目標。
+
+    目標的遊戲數值會被所選野獸的數值取代，但目標會保留其生物類型、生命值、生命骰、陣營、溝通能力，以及智力、感知與魅力分數。目標的動作受限於野獸形態的身體構造，且無法施放法術。目標的裝備會融入新的形態，目標在該形態下無法使用其中任何裝備。
+
+    目標會獲得臨時生命值，數量等同於它變形成的第一個形態的生命值。法術結束時，若還有任何臨時生命值剩餘，這些臨時生命值會消失。變形會持續到持續時間結束，或直到目標以附贈動作結束它為止。

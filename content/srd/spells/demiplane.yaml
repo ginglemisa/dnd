@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: demiplane
+source: srd
+level: 8
+school: conjuration
+classes: [ sorcerer, warlock, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 60, unit: feet }
+components: { v: false, s: true, m: false }
+duration: { type: time, amount: 1, unit: hour }
+en:
+  name: Demiplane
+  body: |-
+    You create a shadowy Medium door on a flat solid surface that you can see within range. This door can be opened and closed, and it leads to a demiplane that is an empty room 30 feet in each dimension, made of wood or stone (your choice).
+
+    When the spell ends, the door vanishes, and any objects inside the demiplane remain there. Any creatures inside also remain unless they opt to be shunted through the door as it vanishes, landing with the Prone condition in the unoccupied spaces closest to the door's former space.
+
+    Each time you cast this spell, you can create a new demiplane or connect the shadowy door to a demiplane you created with a previous casting of this spell. Additionally, if you know the nature and contents of a demiplane created by a casting of this spell by another creature, you can connect the shadowy door to that demiplane instead.
+zh:
+  name: 創造半位面
+  body: |-
+    你在射程內一處你能看見的平坦堅硬表面上創造一扇陰影籠罩的中型門。這扇門可以開啟與關閉，通往一個半位面，那是一間各邊長30呎、以木頭或石頭（由你選擇）建成的空房間。
+
+    法術結束時，門會消失，半位面內的任何物體仍留在其中。其中的任何生物也會留在原地，除非他們選擇在門消失時被推出門外，並以倒地狀態落在最靠近門原先所在空間的未被佔據空間中。
+
+    每次施放此法術時，你可以創造一個新的半位面，或將陰影之門連接到你以前施放此法術所創造的半位面。此外，若你知道另一個生物施放此法術所創造的半位面的性質與內容，你也可以改為將陰影之門連接到該半位面。

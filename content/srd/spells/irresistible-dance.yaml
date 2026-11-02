@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: irresistible-dance
+source: srd
+level: 6
+school: enchantment
+classes: [ bard, wizard ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 30, unit: feet }
+components: { v: true, s: false, m: false }
+duration: { type: time, amount: 1, unit: minute, upTo: true }
+en:
+  name: Irresistible Dance
+  body: |-
+    One creature that you can see within range must make a Wisdom saving throw. On a successful save, the target dances comically until the end of its next turn, during which it must spend all its movement to dance in place.
+
+    On a failed save, the target has the Charmed condition for the duration. While Charmed, the target dances comically, must use all its movement to dance in place, and has Disadvantage on Dexterity saving throws and attack rolls, and other creatures have Advantage on attack rolls against it. On each of its turns, the target can take an action to collect itself and repeat the save, ending the spell on itself on a success.
+zh:
+  name: 不可抗拒之舞
+  body: |-
+    射程內一個你能看見的生物必須進行一次感知豁免。豁免成功時，目標會滑稽地跳舞直到其下個回合結束，期間它必須用盡所有移動速度原地跳舞。
+
+    豁免失敗時，目標在持續時間內陷入魅惑狀態。處於魅惑狀態時，目標會滑稽地跳舞，必須用盡所有移動速度原地跳舞，且其敏捷豁免與攻擊檢定具有劣勢，其他生物對它的攻擊檢定具有優勢。在它的每個回合中，目標可以用一個動作使自己鎮定下來並重新進行豁免，成功則結束其身上的法術。

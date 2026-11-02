@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: move-earth
+source: srd
+level: 6
+school: transmutation
+classes: [ druid, sorcerer, wizard ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 120, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 2, unit: hour, upTo: true }
+en:
+  name: Move Earth
+  material: a miniature shovel
+  body: |-
+    Choose an area of terrain no larger than 40 feet on a side within range. You can reshape dirt, sand, or clay in the area in any manner you choose for the duration. You can raise or lower the area's elevation, create or fill in a trench, erect or flatten a wall, or form a pillar. The extent of any such changes can't exceed half the area's largest dimension. For example, if you affect a 40-foot square, you can create a pillar up to 20 feet high, raise or lower the square's elevation by up to 20 feet, dig a trench up to 20 feet deep, and so on. It takes 10 minutes for these changes to complete. Because the terrain's transformation occurs slowly, creatures in the area can't usually be trapped or injured by the ground's movement.
+
+    At the end of every 10 minutes you spend concentrating on the spell, you can choose a new area of terrain to affect within range.
+
+    This spell can't manipulate natural stone or stone construction. Rocks and structures shift to accommodate the new terrain. If the way you shape the terrain would make a structure unstable, it might collapse.
+
+    Similarly, this spell doesn't directly affect plant growth. The moved earth carries any plants along with it.
+zh:
+  name: 地動術
+  material: 一把迷你鏟子
+  body: |-
+    選擇射程內一塊每邊不超過40呎的地形區域。在持續時間內，你可以任意重塑該區域內的泥土、沙子或黏土。你可以升高或降低該區域的海拔、挖出或填平壕溝、建起或夷平一道牆，或形成一根柱子。任何此類改變的幅度都不能超過該區域最大尺寸的一半。例如，若你影響一塊40呎見方的區域，你可以創造一根最高20呎的柱子、將該區域的海拔升高或降低最多20呎、挖出最深20呎的壕溝，以此類推。這些改變需要10分鐘才能完成。由於地形的轉變是緩慢發生的，區域內的生物通常不會被地面的移動困住或傷害。
+
+    每當你專注於法術滿10分鐘時，你可以在射程內選擇一塊新的地形區域來影響。
+
+    此法術無法操控天然岩石或石造建築。岩石與結構會移動以配合新的地形。若你塑造地形的方式會使某個結構變得不穩定，它可能會倒塌。
+
+    同樣地，此法術不會直接影響植物的生長。被移動的泥土會帶著其上的任何植物一起移動。

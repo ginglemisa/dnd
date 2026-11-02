@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: programmed-illusion
+source: srd
+level: 6
+school: illusion
+classes: [ bard, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 120, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: until-dispelled }
+en:
+  name: Programmed Illusion
+  material: jade dust worth 25+ GP
+  body: |-
+    You create an illusion of an object, a creature, or some other visible phenomenon within range that activates when a specific trigger occurs. The illusion is imperceptible until then. It must be no larger than a 30-foot Cube, and you decide when you cast the spell how the illusion behaves and what sounds it makes. This scripted performance can last up to 5 minutes.
+
+    When the trigger you specify occurs, the illusion springs into existence and performs in the manner you described. Once the illusion finishes performing, it disappears and remains dormant for 10 minutes, after which the illusion can be activated again.
+
+    The trigger can be as general or as detailed as you like, though it must be based on visual or audible phenomena that occur within 30 feet of the area. For example, you could create an illusion of yourself to appear and warn off others who attempt to open a trapped door.
+
+    Physical interaction with the image reveals it to be illusory, since things can pass through it. A creature that takes the Study action to examine the image can determine that it is an illusion with a successful Intelligence (Investigation) check against your spell save DC. If a creature discerns the illusion for what it is, the creature can see through the image, and any noise it makes sounds hollow to the creature.
+zh:
+  name: 預置幻影
+  material: 價值25 GP以上的玉粉
+  body: |-
+    你在射程內創造一個物體、生物或其他可見現象的幻象，當特定觸發條件發生時才會啟動。在那之前，該幻象無法被感知。幻象不得大於30呎立方體，而你在施放法術時決定幻象的行為以及它發出的聲音。這段預先編排的表演最多可持續5分鐘。
+
+    當你指定的觸發條件發生時，幻象隨即憑空出現，並依你所描述的方式表演。幻象表演結束後會消失，並休眠10分鐘，之後幻象可以再次被啟動。
+
+    觸發條件可以隨你所願地籠統或詳細，但必須基於發生在該區域30呎內的視覺或聽覺現象。例如，你可以創造一個自己的幻象，在有人試圖打開被設下陷阱的門時出現並警告對方離開。
+
+    與影像進行實體互動會顯示它是幻象，因為物體可以穿過它。以研究動作檢視該影像的生物，可藉由對抗你的法術豁免DC的成功智力（調查）檢定，判定它是幻象。若生物識破該幻象的真面目，該生物便能看穿影像，且影像發出的任何聲音對該生物而言聽起來都是空洞的。

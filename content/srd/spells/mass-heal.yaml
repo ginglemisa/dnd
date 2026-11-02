@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: mass-heal
+source: srd
+level: 9
+school: abjuration
+classes: [ cleric ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 60, unit: feet }
+components: { v: true, s: true, m: false }
+duration: { type: instantaneous }
+en:
+  name: Mass Heal
+  body: A flood of healing energy flows from you into creatures around you. You restore up to 700 Hit Points, divided as you choose among any number of creatures that you can see within range. Creatures healed by this spell also have the Blinded, Deafened, and Poisoned conditions removed from them.
+zh:
+  name: 群體醫療術
+  body: 一股治療能量從你流向你周圍的生物。你恢復最多700點生命值，可隨你選擇分配給射程內任意數量你能看見的生物。受此法術治療的生物，同時會移除其身上的失明、耳聾與中毒狀態。

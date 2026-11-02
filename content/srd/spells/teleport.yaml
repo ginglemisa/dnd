@@ -1,0 +1,81 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: teleport
+source: srd
+level: 7
+school: conjuration
+classes: [ bard, sorcerer, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 10, unit: feet }
+components: { v: true, s: false, m: false }
+duration: { type: instantaneous }
+en:
+  name: Teleport
+  body: |-
+    This spell instantly transports you and up to eight willing creatures that you can see within range, or a single object that you can see within range, to a destination you select. If you target an object, it must be Large or smaller, and it can't be held or carried by an unwilling creature.
+
+    The destination you choose must be known to you, and it must be on the same plane of existence as you. Your familiarity with the destination determines whether you arrive there successfully. The GM rolls 1d100 and consults the Teleportation Outcome table and the explanations after it.
+
+    **Teleportation Outcome**
+
+    | Familiarity | Mishap | Similar Area | Off Target | On Target |
+    | --- | --- | --- | --- | --- |
+    | Permanent circle | — | — | — | 01–00 |
+    | Linked object | — | — | — | 01–00 |
+    | Very familiar | 01–05 | 06–13 | 14–24 | 25–00 |
+    | Seen casually | 01–33 | 34–43 | 44–53 | 54–00 |
+    | Viewed once or described | 01–43 | 44–53 | 54–73 | 74–00 |
+    | False destination | 01–50 | 51–00 | — | — |
+
+    _Familiarity._ Here are the meanings of the terms in the table's Familiarity column:
+
+    - "Permanent circle" means a permanent teleportation circle whose sigil sequence you know.
+    - "Linked object" means you possess an object taken from the desired destination within the last six months, such as a book from a wizard's library.
+    - "Very familiar" is a place you have visited often, a place you have carefully studied, or a place you can see when you cast the spell.
+    - "Seen casually" is a place you have seen more than once but with which you aren't very familiar.
+    - "Viewed once or described" is a place you have seen once, possibly using magic, or a place you know through someone else's description, perhaps from a map.
+    - "False destination" is a place that doesn't exist. Perhaps you tried to scry an enemy's sanctum but instead viewed an illusion, or you are attempting to teleport to a location that no longer exists.
+
+    _Mishap._ The spell's unpredictable magic results in a difficult journey. Each teleporting creature (or the target object) takes 3d10 Force damage, and the GM rerolls on the table to see where you wind up (multiple mishaps can occur, dealing damage each time).
+
+    _Similar Area._ You and your group (or the target object) appear in a different area that's visually or thematically similar to the target area. You appear in the closest similar place. If you are heading for your home laboratory, for example, you might appear in another person's laboratory in the same city.
+
+    _Off Target._ You and your group (or the target object) appear 2d12 miles away from the destination in a random direction. Roll 1d8 for the direction: 1, east; 2, southeast; 3, south; 4, southwest; 5, west; 6, northwest; 7, north; or 8, northeast.
+
+    _On Target._ You and your group (or the target object) appear where you intended.
+zh:
+  name: 傳送術
+  body: |-
+    此法術瞬間將你與射程內你能看見的最多八個自願生物，或射程內你能看見的單一物體，傳送到你選定的目的地。如果你以物體為目標，它必須是大型或更小，且不能被不自願的生物持握或攜帶。
+
+    你選擇的目的地必須是你所知悉的，且必須與你位於同一位面。你對目的地的熟悉程度決定你是否能成功抵達。DM擲1d100，並查閱傳送結果表及其後的說明。
+
+    **傳送結果**
+
+    | 熟悉程度 | 意外 | 相似區域 | 偏離目標 | 命中目標 |
+    | --- | --- | --- | --- | --- |
+    | 永久傳送法陣 | — | — | — | 01–00 |
+    | 連結物體 | — | — | — | 01–00 |
+    | 非常熟悉 | 01–05 | 06–13 | 14–24 | 25–00 |
+    | 曾隨意看過 | 01–33 | 34–43 | 44–53 | 54–00 |
+    | 看過一次或聽過描述 | 01–43 | 44–53 | 54–73 | 74–00 |
+    | 虛假目的地 | 01–50 | 51–00 | — | — |
+
+    _熟悉程度。_ 以下是表格中「熟悉程度」欄各用語的意義：
+
+    - 「永久傳送法陣」指你知道其符記序列的永久傳送法陣。
+    - 「連結物體」指你持有一件在過去六個月內取自目標目的地的物體，例如取自某位法師藏書室的一本書。
+    - 「非常熟悉」指你經常造訪的地點、你仔細研究過的地點，或你施展法術時能看見的地點。
+    - 「曾隨意看過」指你看過不只一次，但不太熟悉的地點。
+    - 「看過一次或聽過描述」指你曾看過一次（可能是藉由魔法）的地點，或你透過他人描述（可能來自一張地圖）而得知的地點。
+    - 「虛假目的地」指不存在的地點。也許你試圖窺視敵人的聖所，卻看到了幻象，或者你正試圖傳送到一個已不復存在的地點。
+
+    _意外。_ 法術難以預測的魔法導致一趟艱難的旅程。每個被傳送的生物（或目標物體）受到3d10力場傷害，且DM在表上重新擲骰，以決定你最終落在何處（可能發生多次意外，每次都造成傷害）。
+
+    _相似區域。_ 你與你的團體（或目標物體）出現在一個與目標區域在外觀或主題上相似的不同區域。你會出現在最近的相似地點。例如，如果你前往自己家中的實驗室，你可能會出現在同一城市中另一個人的實驗室。
+
+    _偏離目標。_ 你與你的團體（或目標物體）出現在距離目的地2d12英里的隨機方向。擲1d8決定方向：1，東；2，東南；3，南；4，西南；5，西；6，西北；7，北；8，東北。
+
+    _命中目標。_ 你與你的團體（或目標物體）出現在你預期的地點。

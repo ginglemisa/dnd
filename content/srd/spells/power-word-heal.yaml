@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: power-word-heal
+source: srd
+level: 9
+school: enchantment
+classes: [ bard, cleric ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 60, unit: feet }
+components: { v: true, s: false, m: false }
+duration: { type: instantaneous }
+en:
+  name: Power Word Heal
+  body: A wave of healing energy washes over one creature you can see within range. The target regains all its Hit Points. If the creature has the Charmed, Frightened, Paralyzed, Poisoned, or Stunned condition, the condition ends. If the creature has the Prone condition, it can use its Reaction to stand up.
+zh:
+  name: 律令醫療
+  body: 一波治療能量沖刷射程內一個你能看見的生物。目標恢復所有生命值。若該生物陷入魅惑、恐慌、麻痺、中毒或震懾狀態，該狀態結束。若該生物陷入倒地狀態，它可以用其反應動作起身。

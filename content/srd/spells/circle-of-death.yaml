@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: circle-of-death
+source: srd
+level: 6
+school: necromancy
+classes: [ sorcerer, warlock, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 150, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: instantaneous }
+en:
+  name: Circle of Death
+  material: the powder of a crushed black pearl worth 500+ GP
+  body: |-
+    Negative energy ripples out in a 60-foot-radius Sphere from a point you choose within range. Each creature in that area makes a Constitution saving throw, taking 8d8 Necrotic damage on a failed save or half as much damage on a successful one.
+
+    _Using a Higher-Level Spell Slot._ The damage increases by 2d8 for each spell slot level above 6.
+zh:
+  name: 死亡法陣
+  material: 一顆被壓碎的黑珍珠所磨成的粉末，價值500 GP以上
+  body: |-
+    負能量從你在射程內選擇的一點向外擴散成半徑60呎的球形區域。該區域內的每個生物都要進行體質豁免，豁免失敗時受到8d8黯蝕傷害，成功則傷害減半。
+
+    _使用更高環階法術位。_ 使用的法術位環階每比6環高一環，傷害增加2d8。

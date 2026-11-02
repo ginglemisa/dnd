@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: create-undead
+source: srd
+level: 6
+school: necromancy
+classes: [ cleric, warlock, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: minute, amount: 1 }
+range: { type: distance, amount: 10, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: instantaneous }
+en:
+  name: Create Undead
+  material: one 150+ GP black onyx stone for each corpse
+  body: |-
+    You can cast this spell only at night. Choose up to three corpses of Medium or Small Humanoids within range. Each one becomes a **Ghoul** under your control (see "Monsters" for its stat block).
+
+    As a Bonus Action on each of your turns, you can mentally command any creature you animated with this spell if the creature is within 120 feet of you (if you control multiple creatures, you can command any of them at the same time, issuing the same command to them). You decide what action the creature will take and where it will move on its next turn, or you can issue a general command, such as to guard a particular place. If you issue no commands, the creature takes the Dodge action and moves only to avoid harm. Once given an order, the creature continues to follow the order until its task is complete.
+
+    The creature is under your control for 24 hours, after which it stops obeying any command you've given it. To maintain control of the creature for another 24 hours, you must cast this spell on the creature before the current 24-hour period ends. This use of the spell reasserts your control over up to three creatures you have animated with this spell rather than animating new ones.
+
+    _Using a Higher-Level Spell Slot._ If you use a level 7 spell slot, you can animate or reassert control over four **Ghouls**. If you use a level 8 spell slot, you can animate or reassert control over five **Ghouls** or two **Ghasts** or **Wights**. If you use a level 9 spell slot, you can animate or reassert control over six **Ghouls**, three **Ghasts** or **Wights**, or two **Mummies**. See "Monsters" for these stat blocks.
+zh:
+  name: 喚起死靈
+  material: 每具屍體一顆價值150 GP以上的黑瑪瑙石
+  body: |-
+    你只能在夜晚施放此法術。在射程內選擇最多三具中型或小型人型生物的屍體。每具屍體都會變成受你控制的**食屍鬼**（其數據塊見「怪物」）。
+
+    你可以在你的每個回合以附贈動作，用意念命令任何由此法術所召起、且位於你120呎內的生物（若你控制多個生物，你可以同時命令其中任何數個，並向它們下達相同的命令）。你決定該生物在它下個回合採取什麼行動以及移動到哪裡，或是下達一個一般性的命令，例如守衛某個特定地點。如果你沒有下達命令，該生物會採取閃避動作，且只為了避開傷害而移動。命令一旦下達，該生物會持續遵從，直到任務完成。
+
+    該生物受你控制24小時，之後它就不再服從你給予的任何命令。若要再維持對該生物的控制24小時，你必須在目前的24小時期間結束前，對該生物施放此法術。此次施放會重新確立你對最多三個由此法術所召起之生物的控制，而不是召起新的生物。
+
+    _使用更高環階法術位。_ 若你使用7環法術位，你可以召起或重新確立對四隻**食屍鬼**的控制。若你使用8環法術位，你可以召起或重新確立對五隻**食屍鬼**，或兩隻**惡食屍鬼**或**屍妖**的控制。若你使用9環法術位，你可以召起或重新確立對六隻**食屍鬼**、三隻**惡食屍鬼**或**屍妖**，或兩隻**木乃伊**的控制。這些數據塊見「怪物」。

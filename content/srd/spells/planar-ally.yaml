@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: planar-ally
+source: srd
+level: 6
+school: conjuration
+classes: [ cleric ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: minute, amount: 10 }
+range: { type: distance, amount: 60, unit: feet }
+components: { v: true, s: true, m: false }
+duration: { type: instantaneous }
+en:
+  name: Planar Ally
+  body: |-
+    You beseech an otherworldly entity for aid. The being must be known to you: a god, a demon prince, or some other being of cosmic power. That entity sends a Celestial, an Elemental, or a Fiend loyal to it to aid you, making the creature appear in an unoccupied space within range. If you know a specific creature's name, you can speak that name when you cast this spell to request that creature, though you might get a different creature anyway (GM's choice).
+
+    When the creature appears, it is under no compulsion to behave a particular way. You can ask it to perform a service in exchange for payment, but it isn't obliged to do so. The requested task could range from simple (fly us across the chasm, or help us fight a battle) to complex (spy on our enemies, or protect us during our foray into the dungeon). You must be able to communicate with the creature to bargain for its services.
+
+    Payment can take a variety of forms. A Celestial might require a sizable donation of gold or magic items to an allied temple, while a Fiend might demand a living sacrifice or a gift of treasure. Some creatures might exchange their service for a quest undertaken by you.
+
+    A task that can be measured in minutes requires a payment worth 100 GP per minute. A task measured in hours requires 1,000 GP per hour. And a task measured in days (up to 10 days) requires 10,000 GP per day. The GM can adjust these payments based on the circumstances under which you cast the spell. If the task is aligned with the creature's ethos, the payment might be halved or even waived. Nonhazardous tasks typically require only half the suggested payment, while especially dangerous tasks might require a greater gift. Creatures rarely accept tasks that seem suicidal.
+
+    After the creature completes the task, or when the agreed-upon duration of service expires, the creature returns to its home plane after reporting back to you if possible. If you are unable to agree on a price for the creature's service, the creature immediately returns to its home plane.
+zh:
+  name: 異界誓盟
+  body: |-
+    你向一位異界存在懇求協助。你必須認識該存在：可以是一位神祇、一位惡魔王子，或某個擁有宇宙力量的其他存在。該存在會派遣一個效忠於它的天界生物、元素生物或邪魔來協助你，使該生物出現在射程內一個未被佔據的空間。若你知道某個特定生物的名字，你可以在施放此法術時說出該名字以請求那個生物，不過你仍可能得到不同的生物（由DM決定）。
+
+    該生物出現時，不受任何強制而必須以特定方式行事。你可以請它提供服務以換取報酬，但它沒有義務答應。所請求的任務可以從簡單（載我們飛越裂谷，或協助我們打一場仗）到複雜（偵察我們的敵人，或在我們深入地城的行動中保護我們）。你必須能與該生物溝通，才能就其服務進行協商。
+
+    報酬可以有多種形式。天界生物可能要求向友好的神殿捐贈大量黃金或魔法物品，而邪魔可能要求活人獻祭或贈送寶藏。有些生物可能會以你所承擔的一項任務來交換它的服務。
+
+    以分鐘計算的任務，需要每分鐘價值100 GP的報酬。以小時計算的任務，需要每小時1,000 GP。以天計算的任務（最多10天），需要每天10,000 GP。DM可以根據你施放此法術時的情況調整這些報酬。若任務符合該生物的信念，報酬可能減半，甚至免除。沒有危險的任務通常只需要建議報酬的一半，而特別危險的任務則可能需要更豐厚的贈禮。生物很少會接受看起來等同送死的任務。
+
+    該生物完成任務後，或當約定的服務期限屆滿時，若有可能，該生物會先向你回報，然後回到其家鄉位面。若你們無法就該生物的服務價碼達成協議，該生物會立即回到其家鄉位面。

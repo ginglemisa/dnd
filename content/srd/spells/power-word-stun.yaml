@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: power-word-stun
+source: srd
+level: 8
+school: enchantment
+classes: [ bard, sorcerer, warlock, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 60, unit: feet }
+components: { v: true, s: false, m: false }
+duration: { type: instantaneous }
+en:
+  name: Power Word Stun
+  body: |-
+    You overwhelm the mind of one creature you can see within range. If the target has 150 Hit Points or fewer, it has the Stunned condition. Otherwise, its Speed is 0 until the start of your next turn.
+
+    The Stunned target makes a Constitution saving throw at the end of each of its turns, ending the condition on itself on a success.
+zh:
+  name: 律令震懾
+  body: |-
+    你壓倒射程內一個你能看見的生物的心智。若目標的生命值為150點或更少，它陷入震懾狀態。否則，它的速度在你下個回合開始前為0。
+
+    陷入震懾狀態的目標在它每個回合結束時進行一次體質豁免，成功則結束自身的該狀態。

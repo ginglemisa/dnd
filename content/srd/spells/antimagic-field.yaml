@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: antimagic-field
+source: srd
+level: 8
+school: abjuration
+classes: [ cleric, wizard ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: self }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 1, unit: hour, upTo: true }
+en:
+  name: Antimagic Field
+  material: iron filings
+  body: |-
+    An aura of antimagic surrounds you in 10-foot Emanation. No one can cast spells, take Magic actions, or create other magical effects inside the aura, and those things can't target or otherwise affect anything inside it. Magical properties of magic items don't work inside the aura or on anything inside it.
+
+    Areas of effect created by spells or other magic can't extend into the aura, and no one can teleport into or out of it or use planar travel there. Portals close temporarily while in the aura.
+
+    Ongoing spells, except those cast by an Artifact or a deity, are suppressed in the area. While an effect is suppressed, it doesn't function, but the time it spends suppressed counts against its duration.
+
+    _Dispel Magic_ has no effect on the aura, and the auras created by different _Antimagic Field_ spells don't nullify each other.
+zh:
+  name: 反魔法力場
+  material: 鐵屑
+  body: |-
+    一道反魔法光環以10呎發散區域環繞著你。任何人都無法在光環內施放法術、進行魔法動作或創造其他魔法效應，而這些事物也無法以光環內的任何事物為目標或以其他方式影響之。魔法物品的魔法特性在光環內或對光環內的任何事物都不會生效。
+
+    由法術或其他魔法創造的效應區域無法延伸進入光環，也沒有人能傳送進入或離開光環，或在其中進行位面旅行。傳送門在光環內時會暫時關閉。
+
+    持續中的法術會在該區域內被壓制，但由神器或神祇施放者除外。效應被壓制時不會運作，但被壓制的時間仍會計入其持續時間。
+
+    _解除魔法_對光環無效，而不同的_反魔法力場_法術所創造的光環也不會互相抵消。
