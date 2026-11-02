@@ -251,7 +251,9 @@
         });
         tip.replaceWith(button);
       });
-      body.appendChild(description);
+      body.appendChild(typeof globalScope.createSpellVersionView === "function"
+        ? globalScope.createSpellVersionView(spellId, site => site.appendChild(description))
+        : description);
     } else {
       body.appendChild(node("p", "spell-note-muted", `找不到法術資料：${spellId || "未選擇法術"}。原法術編號仍會保留。`));
     }

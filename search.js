@@ -216,7 +216,9 @@
     detail.setAttribute("aria-live", "polite");
     const showDetail = () => {
       const spell = SpellCatalog.getSpell(nameSelect.value);
-      if (spell) detail.innerHTML = globalScope.renderSpellDescHtml(spell.desc);
+      if (spell && typeof globalScope.createSpellVersionView === "function") {
+        detail.replaceChildren(globalScope.createSpellVersionView(spell.spellId, site => { site.innerHTML = globalScope.renderSpellDescHtml(spell.desc); }));
+      } else if (spell) detail.innerHTML = globalScope.renderSpellDescHtml(spell.desc);
       else detail.textContent = "請選擇法術，查看完整描述。";
     };
     const refreshOptions = () => {

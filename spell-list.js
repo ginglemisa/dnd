@@ -295,6 +295,39 @@ globalThis.SpellCatalog = (() => {
     return spellText[spellId].tabletop || spellsById[spellId].desc;
   }
 
+  // SRD 版（法術詳情的「SRD 版」，SRD 5.2.1 繁中直譯）：spell-srd.generated.js 在第一次需要時才載入，離線版已內嵌。
+  function hasSrdText(spellOrId) {
+    const spellId = spellIdOf(spellOrId);
+    return typeof spellId === "string" && Object.hasOwn(spellRules, spellId) && spellRules[spellId].source === "srd";
+  }
+
+  let srdTextPromise = null;
+  function loadSrdTextData() {
+    if (globalThis.spellSrdText) return Promise.resolve(globalThis.spellSrdText);
+    srdTextPromise ||= new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = typeof spellSrdFile === "string" ? spellSrdFile : "spell-srd.generated.js";
+      script.onload = () => globalThis.spellSrdText ? resolve(globalThis.spellSrdText) : reject(new Error("SRD 版資料格式不符"));
+      script.onerror = () => {
+        script.remove();
+        reject(new Error("SRD 版資料載入失敗"));
+      };
+      document.head.appendChild(script);
+    }).catch(error => {
+      srdTextPromise = null;
+      throw error;
+    });
+    return srdTextPromise;
+  }
+
+  // 回傳 { header, html }（建置產生的 HTML）；沒有 SRD 版時為 null，載入失敗時 reject（之後可再試）。
+  async function loadSrdText(spellOrId) {
+    const spellId = spellIdOf(spellOrId);
+    if (!hasSrdText(spellId)) return null;
+    const data = await loadSrdTextData();
+    return Object.hasOwn(data, spellId) ? data[spellId] : null;
+  }
+
   // 專注：目錄內的法術讀規則欄位；目錄外的法術物件（自創法術）讀其 concentration。
   function isConcentration(spellOrId) {
     const header = getSpellHeader(spellOrId);
@@ -327,6 +360,8 @@ globalThis.SpellCatalog = (() => {
     getSpellHeader,
     getCastingTimes,
     getTabletopText,
+    hasSrdText,
+    loadSrdText,
     isConcentration,
     getCastMetadata,
     canCastFromTabletop,

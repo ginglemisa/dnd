@@ -69,6 +69,21 @@ async function main() {
       await dialog.locator("#spell-browse-ring").selectOption("4");
       await dialog.locator("#spell-browse-name").selectOption("ice-storm");
       assert.match(await dialog.locator(".spell-browser-detail").innerText(), /學派/);
+      // 網站版｜SRD 版：每次先開網站版；SRD 版第一次切換才載入，唯讀、沒有按鈕，頁尾註明出處。
+      const versionTabs = dialog.locator(".spell-browser-detail .spell-version__tab");
+      assert.deepEqual(await versionTabs.allInnerTexts(), ["網站版", "SRD 版"], "spell detail offers 網站版｜SRD 版");
+      assert.equal(await versionTabs.first().getAttribute("aria-pressed"), "true", "spell detail opens on 網站版");
+      if (width === 1100) assert.equal(await page.evaluate(() => typeof globalThis.spellSrdText), "undefined", "SRD text loads lazily");
+      await versionTabs.nth(1).click();
+      const srdView = dialog.locator(".spell-browser-detail .spell-version__srd");
+      await srdView.locator(".spell-version__attribution").waitFor();
+      assert.match(await srdView.innerText(), /^學派: 塑能\n施法時間: 動作\n射程: 300呎/u, "SRD 版 uses the shared header");
+      assert.match(await srdView.innerText(), /譯自 SRD 5\.2\.1（CC BY 4\.0）$/u);
+      assert.equal(await dialog.locator(".spell-browser-detail .spell-version__site").isVisible(), false, "SRD 版 replaces 網站版");
+      assert.equal(await srdView.locator("button").count(), 0, "SRD 版 has no dice buttons");
+      assert.equal(await versionTabs.nth(1).getAttribute("aria-pressed"), "true");
+      await versionTabs.first().click();
+      assert.equal(await dialog.locator(".spell-browser-detail .spell-version__site").isVisible(), true, "switching back shows 網站版");
       assert.equal(await page.evaluate(() => JSON.stringify(collectStateObject())), beforeBrowse, "reading higher spells does not change character data");
       assert.equal(await dialog.evaluate(el => el.scrollWidth <= el.clientWidth && el.getBoundingClientRect().right <= innerWidth), true);
       const ringValues = () => dialog.locator("#spell-browse-ring option").evaluateAll(options => options.map(option => option.value));

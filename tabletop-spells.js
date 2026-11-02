@@ -217,7 +217,9 @@
     } else {
       appendDiceText(copy, description, spell);
     }
-    content.appendChild(copy);
+    content.appendChild(typeof globalScope.createSpellVersionView === "function"
+      ? globalScope.createSpellVersionView(spell.spellId, site => site.appendChild(copy))
+      : copy);
     return content;
   }
 

@@ -3795,8 +3795,12 @@
     spellDetailTrigger = trigger || document.activeElement;
     const record = typeof spell === "string" ? canonicalSpell(spell) : spell;
     content.innerHTML = record ? `<strong>${escapeHtml(spellDisplayName(record.spellId))}</strong>` : "<span>你還沒有選擇法術喔！</span>";
-    if (record && typeof window.appendSpellDescContent === "function") window.appendSpellDescContent(content, record.desc);
-    else if (record) content.append(record.desc || "");
+    const renderSite = target => {
+      if (typeof window.appendSpellDescContent === "function") window.appendSpellDescContent(target, record.desc);
+      else target.append(record.desc || "");
+    };
+    if (record && typeof window.createSpellVersionView === "function") content.appendChild(window.createSpellVersionView(record.spellId, renderSite));
+    else if (record) renderSite(content);
     if (options.stateNote) {
       const note = document.createElement("p");
       note.textContent = options.stateNote;
