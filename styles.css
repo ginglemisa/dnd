@@ -15646,6 +15646,14 @@ button.share-dialog__option:disabled .share-dialog__detail {
   margin-bottom: 0.75em;
 }
 
+/* 法術詳情視窗（quick-build.js）把標題的 strong 設為區塊；SRD 版內文的粗體維持行內。 */
+#quick-build-spell-detail-content .spell-version strong {
+  display: inline;
+  margin: 0;
+  color: inherit;
+  font-size: inherit;
+}
+
 .spell-version__srd-body p {
   margin: 0 0 0.75em;
 }
