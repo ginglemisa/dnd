@@ -6,7 +6,7 @@
 const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
-const { ROOT, loadTipTables, contentSourceLabel, contentSourceNotice } = require("../content/site-sources");
+const { ROOT, contentSourceLabel, contentSourceNotice } = require("../content/site-sources");
 const { ContentError } = require("../content/errors");
 const { renderInline } = require("../content/markdown");
 const { writeIfChanged, contentVersion, stampScriptVersion } = require("../content/output");
@@ -83,35 +83,10 @@ function featText(feat) {
   };
 }
 
-// 過渡期：舊 feats.js 的全域（featsDesc、FEAT_OPTIONS 等），讀取端改讀 featRules／featText 之後移除。
-function legacyGlobals(feats, rules, text) {
-  const ids = [...feats.keys()];
-  const conditionKeys = loadTipTables().conditions;
-  const conditions = {};
-  const skills = {};
-  const tipTerms = ["優勢", "劣勢", "藉機攻擊"];
-  feats.forEach((feat, id) => feat.effects.forEach(effect => {
-    for (const [, name] of effect.text.matchAll(/\[\[([^\]]+)\]\]/g)) {
-      if (conditionKeys.has(name)) (conditions[id] ||= {})[effect.name] = { key: conditionKeys.get(name), label: name };
-      else if (!tipTerms.includes(name)) ((skills[id] ||= {})[effect.name] ||= []).push(name);
-    }
-  }));
-  return {
-    EXPANSION_NOTICE: contentSourceNotice("extended"),
-    featsDesc: Object.fromEntries(ids.map(id => [id, text[id].plain])),
-    FEAT_CONDITION_REFERENCES: conditions,
-    FEAT_SKILL_REFERENCES: skills,
-    FEAT_RULE_TERMS: tipTerms,
-    FEAT_OPTIONS: ids.map(id => ({ value: id, label: text[id].label })),
-    FEAT_RULES: Object.fromEntries(ids.map(id => [id, Object.fromEntries(Object.entries(rules[id]).filter(([key]) => !["source", "actions"].includes(key)))]))
-  };
-}
-
 function renderFeatData(feats) {
   const ids = [...feats.keys()];
   const rules = Object.fromEntries(ids.map(id => [id, featRules(feats.get(id))]));
   const text = Object.fromEntries(ids.map(id => [id, featText(feats.get(id))]));
-  const legacy = legacyGlobals(feats, rules, text);
   const entries = map => ids.map(id => `  ${JSON.stringify(id)}: ${JSON.stringify(map[id])}`).join(",\n");
   const source = `// ${OUTPUT_NAME}：由 npm run build 從 content/srd/feats 的專長內容檔產生，請勿手動修改。
 // featRules：各專長的結構化規則（類別、來源、可否重複、先決條件、跑團動作的 key／分頁／名稱／等級），依專長選單順序。
@@ -123,14 +98,11 @@ ${entries(rules)}
 const featText = {
 ${entries(text)}
 };
-
-// 過渡期的舊全域（與原 feats.js 相同），讀取端改讀 featRules／featText 之後移除。
-${Object.entries(legacy).map(([name, value]) => `const ${name} = ${JSON.stringify(value)};`).join("\n")}
 `;
   // 確認產生的程式執行結果與資料相同。
   const context = {};
-  vm.runInNewContext(`${source}\nthis.result = { featRules, featText, ${Object.keys(legacy).join(", ")} };`, context);
-  if (JSON.stringify(context.result) !== JSON.stringify({ featRules: rules, featText: text, ...legacy })) throw new ContentError(`${OUTPUT_NAME}：產生結果與資料不同`);
+  vm.runInNewContext(`${source}\nthis.result = { featRules, featText };`, context);
+  if (JSON.stringify(context.result) !== JSON.stringify({ featRules: rules, featText: text })) throw new ContentError(`${OUTPUT_NAME}：產生結果與資料不同`);
   return source;
 }
 
