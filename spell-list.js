@@ -295,6 +295,27 @@ globalThis.SpellCatalog = (() => {
     return spellText[spellId].tabletop || spellsById[spellId].desc;
   }
 
+  // 查閱用：全部法術（含只供查閱、沒有網站版的 SRD 法術）的名稱、環階與職業法表，依環階、spellId 排序。
+  // playable 為角色可用的法術；只供查閱的法術不在 getSpell 等其他 API，任何情況下都不能準備或加入角色。
+  const referenceSpellsById = Object.freeze(Object.fromEntries(Object.entries(spellRules).map(([spellId, rules]) => [spellId, Object.freeze({
+    spellId,
+    nameZh: rules.name,
+    nameEn: rules.nameEn,
+    level: rules.level,
+    playable: Boolean(rules.playable),
+    classIds: Object.freeze(CLASS_IDS.filter(classId => rules.classes.includes(classId)))
+  })])));
+  const allReferenceSpells = Object.freeze(Object.values(referenceSpellsById));
+
+  function getReferenceSpell(spellOrId) {
+    const spellId = spellIdOf(spellOrId);
+    return typeof spellId === "string" && Object.hasOwn(referenceSpellsById, spellId) ? referenceSpellsById[spellId] : undefined;
+  }
+
+  function getAllReferenceSpells() {
+    return [...allReferenceSpells];
+  }
+
   // SRD 版（法術詳情的「SRD 版」，SRD 5.2.1 繁中直譯）：spell-srd.generated.js 在第一次需要時才載入，離線版已內嵌。
   function hasSrdText(spellOrId) {
     const spellId = spellIdOf(spellOrId);
@@ -360,6 +381,8 @@ globalThis.SpellCatalog = (() => {
     getSpellHeader,
     getCastingTimes,
     getTabletopText,
+    getReferenceSpell,
+    getAllReferenceSpells,
     hasSrdText,
     loadSrdText,
     isConcentration,
