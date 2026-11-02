@@ -18,6 +18,13 @@ async function validatePointBuy(page) {
   await page.locator("#utility-menu-toggle").click();
   await page.locator("#set-default-abilities").click();
   await page.locator("#ability-choice-point-buy").click();
+  // Background bonus abilities come from the background content files.
+  const initialBackground = await page.inputValue("#point-buy-background");
+  for (const [background, open] of [["acolyte", "int,wis,cha"], ["criminal", "dex,con,int"], ["sage", "con,int,wis"], ["soldier", "str,dex,con"], ["fieldhand", "str,con,wis"], ["seeker", "con,wis,cha"], ["", ""]]) {
+    await page.selectOption("#point-buy-background", background);
+    assert.equal(await page.locator("#point-buy-rows .point-buy-row:not(.point-buy-row--bonus-locked)").evaluateAll(rows => rows.map(row => row.dataset.ability).join(",")), open, `${background || "no background"}: bonus abilities`);
+  }
+  await page.selectOption("#point-buy-background", initialBackground);
   assert.equal(await page.locator("#point-buy-apply").isEnabled(), true, "unused points do not disable apply");
   await page.locator("#point-buy-apply").click();
   assert.match(await page.locator("#point-buy-exit-message").textContent(), /還有 27 點未使用/);

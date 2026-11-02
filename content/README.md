@@ -1,6 +1,8 @@
-# 職業內容檔
+# 內容檔
 
-每個職業、子職各一個 YAML 檔。說明文字和機制（特性表、選項、跑團按鈕、資源）寫在同一份檔案。
+網站的職業、子職與背景資料寫在 `content/` 的 YAML 內容檔，每個職業、子職、背景各一個檔。`npm run build` 檢查格式與跨檔關係後，產生網站讀取的資料檔。本文件大部分在說明職業與子職的寫法；背景見下方「背景」。
+
+職業與子職的說明文字和機制（特性表、選項、跑團按鈕、資源）寫在同一份檔案。
 
 > 十二個職業（野蠻人、遊俠、戰士、盜賊、聖騎士、吟遊詩人、武僧、牧師、法師、術士、契術師與德魯伊）的職業頁、跑團文字與機制資料都由這裡產生：`npm run build` 輸出根目錄的 `class-content.generated.js`，網站直接載入這個檔案。機制資料（`classRules`）是內容檔去掉說明文字後的結構，網站以此計算生命骰、豁免、法術位、準備法術與戲法數量、資源次數等。
 
@@ -10,6 +12,7 @@
 | --- | --- |
 | 公開職業 | `content/srd/classes/<職業 ID>.yaml` |
 | 公開子職 | `content/srd/subclasses/<職業 ID>-<子職 ID>.yaml` |
+| 公開背景 | `content/srd/backgrounds/<背景 ID>.yaml` |
 | 私人內容包（不進公開 repo） | `content/private/classes/`、`content/private/subclasses/` |
 | 私人內容包補充既有職業（例如兼職） | `content/private/class-extensions/<職業 ID>.yaml` |
 | 私人內容包的兼職共用規則與法術位表 | `content/private/rules/multiclass.yaml` |
@@ -18,6 +21,8 @@
 `content/private/` 整個資料夾被 git 忽略，只存在你的電腦；公開網站不會出現兼職等私人內容。
 
 本機執行 `npm run build`（或 `npm run dev`）時，私人內容包的子職與 `class-extensions/` 會寫進根目錄的 `class-content.private.generated.js`（同樣被 git 忽略），網站在公開資料之後載入它，你的電腦上就看得到私人子職（例如子職選單出現兩個以上的選項）。沒有私人內容包、上線建置或執行 `npm run build -- --public-only` 時，這個檔案是空的，網站只有公開內容；離線角色卡一律只含公開內容。私人內容包的持久化 ID 另列在 `content/private/class-id-baseline.json`。
+
+私人內容包目前不支援背景：背景選單是 `index.html` 的固定選項，沒有加入私人選項的方式。`content/private/backgrounds/` 存在時建置會失敗。
 
 VS Code 安裝 Red Hat 的「YAML」擴充套件後，會依檔案第一行的 `$schema` 自動補完欄位、標出錯誤，滑鼠停在欄位上可看說明。
 
@@ -40,7 +45,7 @@ VS Code 安裝 Red Hat 的「YAML」擴充套件後，會依檔案第一行的 `
 - `#### 標題` 開始一個小節，直到下一個 `####` 或文字結束。只是排版分段時用它；小節有自己的跑團按鈕時改用子能力（見下方「子能力」），預設收合的小節改用 `collapsible`（見下方「可收合小節」）。
 - `[[運動]]`、`[[抗性]]`、`[[失能]]`、`[[小魔鬼]]`：提示框，名稱須存在於技能／規則提示表、狀態表或野獸表（`monster.js` 的 `BEAST_STATS`，取中文名）。
 - `{rageDamageText|數值見特性表}`：職業頁顯示 `|` 後的文字，跑團模式換成目前數值（網站依目前等級與屬性值計算）。名稱須是 `progression` 欄位、`values` 或內建的 `level`、`proficiencyBonus`；特性表欄位套用欄位的 `format`，要另加跑團字樣（例如「3 次」「目前 +2」）時在 `values` 另取名稱並寫 `format`（見下方「職業層級的欄位」）。整個數值標記要粗體時寫 `**{名稱|文字}**`；只有部分頁面文字粗體時寫在 `|` 後，例如 `{searUndeadDice|**等同感知調整值數量的 d8**（至少 1d8）}`。
-- `[偵測魔法、羽落術]{wizard-spellbook-recommendations}`：網站功能標記，把方括號內的文字標給網站程式使用，職業頁與跑團說明的顯示不變。**只供網站功能使用，一般文字不要用。** 標記名須是建置工具（`tools/class-content/markdown.js` 的 `MARKS`）列出的名稱，否則建置失敗；方括號內可有粗體，不可再有 `[`、`]`（也就不能放提示框）。目前可用：
+- `[偵測魔法、羽落術]{wizard-spellbook-recommendations}`：網站功能標記，把方括號內的文字標給網站程式使用，職業頁與跑團說明的顯示不變。**只供網站功能使用，一般文字不要用。** 標記名須是建置工具（`tools/content/markdown.js` 的 `MARKS`）列出的名稱，否則建置失敗；方括號內可有粗體，不可再有 `[`、`]`（也就不能放提示框）。目前可用：
   - `wizard-spellbook-recommendations`：法師法術書的推薦法術，網站對其中的法術提供「寫入法術書」。
 - `{spellSaveDc|}`：`|` 後留空＝只在跑團出現。職業頁不顯示，跑團模式顯示目前數值（`values` 有 `format` 時套用格式，例如「（DC 13）」）。
 - 規則表格用標準 GFM 表格，見下方「表格」。
@@ -200,7 +205,7 @@ mount: { id: bard-magical-discoveries, label: 魔法發現法術選擇 }
 
 選項的 `id`、下拉選單的 `select.id` 與選項值、動作的 `key`／`legacyKeys`、`resource.key`、子職 `id` 會寫進存檔、分享網址或跑團偏好；選項的 `attackNote` 會寫進角色的攻擊備註；子職法術的來源識別碼（見「能力給予的法術」）會寫進角色的法術清單。改顯示文字沒關係，這些 ID 不可改。
 
-這些 ID 都列在根目錄的 `class-id-baseline.json`（私人內容包另有 `content/private/class-id-baseline.json`）。ID 不見、改名或新增而基準檔沒更新時，建置會失敗。確定是刻意新增時執行：
+這些 ID 都列在根目錄的 `class-id-baseline.json`（私人內容包另有 `content/private/class-id-baseline.json`）；背景 ID 列在 `background-id-baseline.json`。ID 不見、改名或新增而基準檔沒更新時，建置會失敗。確定是刻意新增時執行：
 
 ```bash
 npm run build -- --update-id-baseline
@@ -251,11 +256,52 @@ spellsByChoice:
 
 子職法術的來源識別碼「subclass-職業-名稱-…」會寫進角色的法術清單，名稱是子職名稱（依下拉選單時接「・選項名稱」），列在 ID 基準檔：子職名稱或選項名稱改字前須處理舊資料相容。舊版識別碼和子職名稱不同時寫 `spellSourceKey`（例如邪魔宗主沿用舊版的 `spellSourceKey: 邪魔`）。
 
+## 背景
+
+每個背景一個檔：`content/srd/backgrounds/<背景 ID>.yaml`，格式定義是 `content/schema/background.schema.json`。
+
+```yaml
+# yaml-language-server: $schema=../../schema/background.schema.json
+id: acolyte
+name: 侍僧
+source: srd
+abilities: [int, wis, cha]
+feat: { id: 魔法學徒, spellList: cleric }
+skills: [洞悉, 宗教]
+tool: 書法工具
+equipment:
+  A:
+    items: [書法工具, 書籍（禱文）, 聖徽, 羊皮紙 ×10, 祭祀長袍]
+    gold: 8
+  B: { gold: 50 }
+description: |
+  你曾在神殿、修院或其他宗教場所度日，……
+```
+
+| 欄位 | 說明 |
+| --- | --- |
+| `id` | 背景 ID，須等於檔名。會寫進存檔、JSON、分享網址與購點紀錄，不可改名（列在 `background-id-baseline.json`）。 |
+| `name` | 背景名稱，最多四字。 |
+| `source` | 內容來源（必填）：`srd` 出自 SRD 5.2.1；`extended` 是本站另外撰寫的內容，選單名稱、背景頁與快速創角卡片會加上來源標籤，背景頁另顯示說明。標籤字樣由 `character-rules.js` 的 `getBackgroundSourceLabel` 決定。之後可再增加其他值。 |
+| `abilities` | 可調整的三項屬性 ID（`str`、`dex`、`con`、`int`、`wis`、`cha`），購點與快速創角依此限制背景加值。畫面顯示為「智力,感知,魅力」。 |
+| `feat` | 起源專長，寫專長 ID（`feats.js` 的 `FEAT_OPTIONS` value，目前是中文名）。魔法學徒寫成 `{ id: 魔法學徒, spellList: 職業 ID }`，`spellList` 是法術列表（`cleric`、`druid`、`wizard`），畫面顯示為「魔法學徒（牧師）」；給予魔法學徒的背景也讓角色具有施法能力。 |
+| `skills` | 兩項技能 ID（`character-rules.js` 的 `CharacterSkillAbilities`，目前是中文名），畫面自動加上提示框。 |
+| `tool` | 工具熟練：工具 ID（`tool-data.js` 的工具名稱），或 `{ chooseFrom: 工具組 ID }` 從該組擇一（例如士兵的 `gaming`，畫面顯示「擇一賭具：……」，依工具目錄順序）。 |
+| `equipment.A` | 預設裝備：`items` 是各項物品的純文字（例如「羊皮紙 ×10」），`gold` 是金幣數（顯示在最後，例如「8 金幣」）。擇一的工具寫 `{ toolChoice: true }`（只能用在 `tool` 為 `chooseFrom` 的背景），顯示為「賭具擇一」，快速創角換成玩家選的工具。 |
+| `equipment.B` | 只有 `gold`（目前都是 50 金幣）。 |
+| `description` | 背景描述，一段文字。可用 `**粗體**` 與 `[[提示]]`，不可有 HTML、數值標記或換行。 |
+
+- 背景選單是 `index.html` 的固定選項：新增或改名時須一併修改，選項文字為 `name`，有來源標籤時加「(標籤)」（例如「耕者(擴充)」）。選單與內容檔對不上時建置會失敗。
+- 建置檢查技能、工具與工具組、專長（須是起源專長）、法術列表的職業是否存在。
+- `npm run build` 產生根目錄的 `background-content.generated.js`：`backgroundRules` 是結構化規則（含 `source`），`backgroundText` 是組好的顯示文字。網站經 `character-rules.js` 的 `getBackgroundRules`、`getBackgroundText`、`getBackgroundSource` 讀取，不從顯示文字反推規則。
+- 自訂背景（`custom-background.js`）不是內容檔，存檔格式另訂；`getBackgroundRules("custom")` 會轉成同樣的規則結構，來源為 `custom`。
+- 快速創角的背景卡片有自己的順序（`quick-build.js` 的 `BACKGROUND_ORDER`），新增背景時要加進去（回歸測試會檢查）。
+
 ## 檢查與預覽
 
 | 指令 | 用途 |
 | --- | --- |
 | `npm run dev` | 開本機預覽，存檔後自動重新建置，重新整理瀏覽器即可看到；畫面網址會顯示在終端機 |
-| `npm run build` | 檢查全部內容檔並產生 `class-content.generated.js`，有錯就列出檔案與位置 |
+| `npm run build` | 檢查全部內容檔並產生 `class-content.generated.js` 與 `background-content.generated.js`，有錯就列出檔案與位置 |
 
-改完內容檔只要提交內容檔本身。`class-content.generated.js` 是產生的檔案，不放進 repo、不可手改：本機用 `npm run dev` 或 `npm run build` 產生，上線時由 GitHub Actions 產生。只有公開內容包會寫進產生檔。
+改完內容檔只要提交內容檔本身。`class-content.generated.js`、`background-content.generated.js` 是產生的檔案，不放進 repo、不可手改：本機用 `npm run dev` 或 `npm run build` 產生，上線時由 GitHub Actions 產生。只有公開內容包會寫進產生檔。

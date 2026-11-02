@@ -1,7 +1,7 @@
 // 網站讀取的職業機制資料（class-content.generated.js 的 classRules）：內容檔去掉說明文字後的結構化資料，
 // 由 character-rules.js 等網站程式計算資源次數、法術位、特性表數值、跑團數值、選項與動作。
 "use strict";
-const { renderInline, tableValueText } = require("./markdown");
+const { renderInline, tableValueText } = require("../content/markdown");
 const { orderedSubclasses } = require("./render");
 
 const ABILITY_CODES = Object.freeze({ 力量: "str", 敏捷: "dex", 體質: "con", 智力: "int", 感知: "wis", 魅力: "cha" });

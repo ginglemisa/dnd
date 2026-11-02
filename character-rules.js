@@ -9,14 +9,39 @@
     orc: "中型"
   });
 
-  const NON_SPELLCASTER_BACKGROUNDS = new Set(["soldier", "criminal", "seeker", "fieldhand"]);
-  const SPELLCASTER_BACKGROUNDS = new Set(["acolyte", "sage"]);
   const NON_SPELLCASTER_RACES = new Set(["dragonborn", "dwarf", "goliath", "halfling", "human", "orc"]);
   const SPELLCASTER_RACES = new Set(["elf", "gnome", "tiefling"]);
   const SHILLELAGH_WEAPON_NAMES = new Set(["短棒", "長棍"]);
   const ABILITY_MODIFIER_TOKENS = Object.freeze({
     strModifier: "str", dexModifier: "dex", conModifier: "con", intModifier: "int", wisModifier: "wis", chaModifier: "cha"
   });
+
+  // 背景規則：background-content.generated.js 由 content/srd/backgrounds 產生 backgroundRules（屬性、專長、技能、工具、裝備）。
+  // "custom" 為自訂背景（custom-background.js，存檔格式另訂），轉成同樣的結構；沒有選擇或不認得的背景回傳 null。
+  function getBackgroundRules(background) {
+    if (background === "custom") return globalScope.CustomBackground?.getRules() || null;
+    const rules = typeof backgroundRules === "undefined" ? null : backgroundRules;
+    return rules && Object.hasOwn(rules, background) ? rules[background] : null;
+  }
+
+  /** 內建背景的顯示文字（backgroundText：屬性、專長、技能提示框 HTML、工具、裝備 A／B、描述）；自訂背景由 custom-background.js 自行顯示。 */
+  function getBackgroundText(background) {
+    const text = typeof backgroundText === "undefined" ? null : backgroundText;
+    return text && Object.hasOwn(text, background) ? text[background] : null;
+  }
+
+  // 背景來源標籤：內容檔 source 為 extended（本站另外撰寫）與自訂背景顯示的字樣；srd 不加標籤。
+  const BACKGROUND_SOURCE_LABELS = Object.freeze({ extended: "擴充", custom: "擴充" });
+
+  /** 背景來源：內建背景為內容檔的 source（srd／extended），自訂背景為 custom；沒有選擇或不認得時為空字串。讀取來源只經過這裡。 */
+  function getBackgroundSource(background) {
+    return getBackgroundRules(background)?.source || "";
+  }
+
+  /** 背景來源的顯示標籤（例如「擴充」，不含括號）；沒有標籤時為空字串。建置檢查背景選單文字時也讀這裡。 */
+  function getBackgroundSourceLabel(source) {
+    return BACKGROUND_SOURCE_LABELS[source] || "";
+  }
 
   // 職業機制資料：class-content.generated.js 由 content/ 的職業內容檔產生 classRules（特性表、數值、資源、選項與動作）。
   function getClassRules(className) {
@@ -460,15 +485,17 @@
     const background = String(options.background || "").trim();
     const race = String(options.race || "").trim();
     const spellcasting = getClassRules(className)?.spellcasting;
+    // 只看內建背景：給予魔法學徒（有法術列表）的背景提供施法；自訂背景與未選擇時不判定（魔法學徒另由 hasMagicInitiate 傳入）。
+    const builtInBackground = background === "custom" ? null : getBackgroundRules(background);
 
     if (spellcasting && spellcasting !== "none") return true;
-    if (SPELLCASTER_BACKGROUNDS.has(background)) return true;
+    if (builtInBackground?.feat.spellList) return true;
     if (SPELLCASTER_RACES.has(race)) return true;
     if (options.hasMagicInitiate) return true;
 
     return !(
       spellcasting === "none"
-      && NON_SPELLCASTER_BACKGROUNDS.has(background)
+      && builtInBackground
       && NON_SPELLCASTER_RACES.has(race)
     );
   }
@@ -691,6 +718,10 @@
     clampHpValue,
     formatSignedValue,
     getCharacterSizeForRace,
+    getBackgroundRules,
+    getBackgroundText,
+    getBackgroundSource,
+    getBackgroundSourceLabel,
     getCharacterResourceSpecs,
     getClassSaveProficiencies,
     getClassRules,

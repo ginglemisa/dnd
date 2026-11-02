@@ -1,4 +1,4 @@
-// 建置讀取的既有網站資料：專案根目錄、提示框詞表（[[名稱]]）與德魯伊野獸清單。
+// 建置讀取的既有網站資料：專案根目錄、提示框詞表（[[名稱]]）、德魯伊野獸清單，以及背景檢查用的技能、背景來源標籤、工具、專長與 index.html 選單。
 // 網站資料檔照網站載入方式整份執行（獨立的 vm 沙箱，沒有 document），再讀取頂層常數或檔案公開的全域；不截取原始碼。
 "use strict";
 const fs = require("fs");
@@ -8,8 +8,10 @@ const vm = require("vm");
 const ROOT = path.resolve(__dirname, "../..");
 
 // 執行網站資料檔，回傳 names 列出的頂層常數，以及檔案指派到全域的值（globals）。
+// 以 IIFE 掛在 window 上的檔案（例如 character-rules.js）讓 window 指向沙箱本身。
 function runSiteScript(file, names = []) {
   const globals = {};
+  globals.window = globals;
   const values = vm.runInNewContext(`${fs.readFileSync(path.join(ROOT, file), "utf8")}\n;({ ${names.join(", ")} });`, globals, { filename: file });
   return { ...values, globals };
 }
@@ -47,4 +49,40 @@ function loadWildShapeBeasts() {
   return { beasts, crOrder };
 }
 
-module.exports = { ROOT, loadTipTables, loadWildShapeBeasts };
+// character-rules.js 公開的全域（沙箱內沒有其他網站資料，只用不依賴產生檔的部分）。
+let characterRules = null;
+function loadCharacterRules() {
+  characterRules ||= runSiteScript("character-rules.js").globals;
+  return characterRules;
+}
+
+// 技能 ID（character-rules.js 的 CharacterSkillAbilities：中文名 → 屬性）。
+const loadSkillAbilities = () => loadCharacterRules().CharacterSkillAbilities;
+
+// 背景來源的顯示標籤（character-rules.js 的 getBackgroundSourceLabel，例如 extended →「擴充」）。
+const backgroundSourceLabel = source => loadCharacterRules().getBackgroundSourceLabel(source);
+
+// 工具目錄（tool-data.js 的 ToolProficiencyCatalog：工具名稱與工具組）。
+let toolCatalog = null;
+function loadToolCatalog() {
+  toolCatalog ||= runSiteScript("tool-data.js").globals.ToolProficiencyCatalog;
+  return toolCatalog;
+}
+
+// 專長清單與取得規則（feats.js 的 FEAT_OPTIONS、FEAT_RULES）。
+let featData = null;
+function loadFeatData() {
+  featData ||= runSiteScript("feats.js", ["FEAT_OPTIONS", "FEAT_RULES"]);
+  return featData;
+}
+
+// index.html 中 <select id="…"> 的選項（value 與顯示文字）；找不到選單時回傳 null。
+// 每次重讀（npm run dev 在同一個程序中重複建置）。
+function readIndexSelectOptions(id) {
+  const indexHtml = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+  const start = indexHtml.indexOf(`<select id="${id}"`);
+  const select = start < 0 ? null : indexHtml.slice(start).match(/^[^>]*>([\s\S]*?)<\/select>/);
+  return select ? [...select[1].matchAll(/<option value="([^"]*)"[^>]*>([^<]*)<\/option>/g)].map(match => ({ value: match[1], label: match[2] })) : null;
+}
+
+module.exports = { ROOT, loadTipTables, loadWildShapeBeasts, loadSkillAbilities, backgroundSourceLabel, loadToolCatalog, loadFeatData, readIndexSelectOptions };

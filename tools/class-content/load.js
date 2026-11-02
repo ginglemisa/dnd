@@ -2,13 +2,11 @@
 "use strict";
 const fs = require("fs");
 const path = require("path");
-const YAML = require("yaml");
-const Ajv = require("ajv");
-const { ROOT } = require("./site-sources");
-const { ContentError, tableValueText } = require("./markdown");
+const { ROOT } = require("../content/site-sources");
+const { ContentError } = require("../content/errors");
+const { tableValueText } = require("../content/markdown");
+const { CONTENT_DIR, createSchemaValidators, schemaErrors, readYamlFile, listYaml } = require("../content/yaml");
 
-const CONTENT_DIR = path.join(ROOT, "content");
-const SCHEMA_DIR = path.join(CONTENT_DIR, "schema");
 // 公開內容包在前；私人內容包（gitignore）存在時一併載入。
 const PACKS = ["srd", "private"];
 const BUILT_IN_VALUES = Object.freeze({ level: "character-level", proficiencyBonus: "proficiency-bonus" });
@@ -31,21 +29,9 @@ function getIndexSelectValues(id) {
 }
 
 function createValidators() {
-  const ajv = new Ajv({ allErrors: true, strict: true, strictRequired: false, allowUnionTypes: true });
   const kinds = { class: "class", subclass: "subclass", extension: "class-extension", multiclassRules: "multiclass-rules" };
-  ajv.addSchema(JSON.parse(fs.readFileSync(path.join(SCHEMA_DIR, "feature.schema.json"), "utf8")));
-  Object.values(kinds).forEach(name => ajv.addSchema(JSON.parse(fs.readFileSync(path.join(SCHEMA_DIR, `${name}.schema.json`), "utf8"))));
-  return Object.fromEntries(Object.entries(kinds).map(([kind, name]) => [kind, ajv.getSchema(`${name}.schema.json`)]));
-}
-
-function readYamlFile(file) {
-  const document = YAML.parseDocument(fs.readFileSync(file, "utf8"), { uniqueKeys: true });
-  if (document.errors.length) throw new ContentError(`${path.relative(ROOT, file)}：YAML 格式錯誤\n${document.errors.map(error => error.message).join("\n")}`);
-  return document.toJS();
-}
-
-function listYaml(dir) {
-  return fs.existsSync(dir) ? fs.readdirSync(dir).filter(name => /\.ya?ml$/.test(name)).sort().map(name => path.join(dir, name)) : [];
+  const validators = createSchemaValidators(["feature", ...Object.values(kinds)]);
+  return Object.fromEntries(Object.entries(kinds).map(([kind, name]) => [kind, validators[name]]));
 }
 
 function loadContent({ packs = PACKS } = {}) {
@@ -60,8 +46,7 @@ function loadContent({ packs = PACKS } = {}) {
     let data;
     try { data = readYamlFile(file); } catch (error) { errors.push(error.message); return null; }
     if (!validators[kind](data)) {
-      // 「多出未知欄位」通常是打錯字，排在最前面；其餘為其連帶錯誤。
-      [...validators[kind].errors].sort((a, b) => (b.keyword === "additionalProperties") - (a.keyword === "additionalProperties")).forEach(error => errors.push(`${where}${error.instancePath || ""}：${error.message}${error.params?.additionalProperty ? `（${error.params.additionalProperty}）` : ""}`));
+      errors.push(...schemaErrors(validators[kind], where));
       return null;
     }
     const expected = { class: data.id, subclass: `${data.class}-${data.id}`, extension: data.class, multiclassRules: "multiclass" }[kind];
@@ -316,4 +301,4 @@ function checkClass(classDef, errors) {
   }
 }
 
-module.exports = { loadContent, getActions, getAppendixActions, BUILT_IN_VALUES, CONTENT_DIR };
+module.exports = { loadContent, getActions, getAppendixActions, BUILT_IN_VALUES };

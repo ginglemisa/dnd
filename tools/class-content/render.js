@@ -2,7 +2,8 @@
 // 讓 class-features-ui.js、pdf-field-map.js 等暫時照舊讀取；不輸出行內 style。
 // 同樣的內容另以跑團版（context.view 為 "tabletop"／"overview"）產生各段落的跑團說明，依段落 ID 輸出給 action-panel.js。
 "use strict";
-const { ContentError, escapeHtml, renderInline, renderMarkdown } = require("./markdown");
+const { ContentError } = require("../content/errors");
+const { escapeHtml, renderInline, renderMarkdown } = require("../content/markdown");
 const { BUILT_IN_VALUES, getActions } = require("./load");
 
 const NUMBER_WORDS = Object.freeze({ 1: "一", 2: "兩", 3: "三", 4: "四" });

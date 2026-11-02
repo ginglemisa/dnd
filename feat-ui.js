@@ -363,17 +363,16 @@ function getManualFeatRows() {
 }
 
 function getDerivedBackgroundFeatSpec() {
-  const background = document.getElementById("background")?.value || "";
-  const backgroundData = background === "custom" ? window.CustomBackground?.getState()
-    : (typeof detailedBackgroundFeatures !== "undefined" ? detailedBackgroundFeatures : globalThis.detailedBackgroundFeatures)?.[background];
-  const backgroundFeat = FEAT_OPTIONS.find(option => backgroundData?.專長?.startsWith(option.value));
+  const featRules = getBackgroundRules(document.getElementById("background")?.value || "")?.feat;
+  const backgroundFeat = FEAT_OPTIONS.find(option => option.value === featRules?.id);
   return backgroundFeat ? {
     key: "background",
     source: "background",
     label: "背景專長",
     value: backgroundFeat.value,
     fixed: true,
-    backgroundData
+    // 魔法學徒的法術列表（職業 ID）；自訂背景與其他專長為空字串。
+    spellList: featRules.spellList || ""
   } : null;
 }
 
@@ -458,7 +457,7 @@ function setDerivedFeatRowValues(row, spec) {
   updateMagicInitiateControlIds(row, select.id);
   updateMagicInitiateControlsForRow(row, { sync: false });
   // refreshFeatRows reconciles sources once all derived rows are ready.
-  if (spec.fixed && spec.backgroundData && !isManualFeatManagementEnabled()) applyMagicInitiateBackgroundDefault(select, spec.backgroundData, { sync: false });
+  if (spec.fixed && spec.key === "background" && !isManualFeatManagementEnabled()) applyMagicInitiateBackgroundDefault(select, spec.spellList, { sync: false });
 }
 
 function syncDerivedFeatRows() {
@@ -780,7 +779,7 @@ function updateFeatControlStates() {
     row.classList.toggle("feat-entry--derived", !enabled);
     const magicClass = getMagicInitiateSelect(row, "class");
     if (magicClass) magicClass.disabled = !enabled && row.dataset.featSource === "background"
-      && Boolean(getMagicInitiateClassFromBackgroundFeature(getDerivedBackgroundFeatSpec()?.backgroundData?.專長));
+      && Boolean(getDerivedBackgroundFeatSpec()?.spellList);
     const controls = row.querySelector(".feat-row-controls");
     if (controls) controls.hidden = !enabled;
     const delBtn = row.querySelector(".feat-icon-btn[data-feat-action='delete']");

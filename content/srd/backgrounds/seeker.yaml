@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../schema/background.schema.json
+id: seeker
+name: 孤芳
+source: extended
+abilities: [con, wis, cha]
+feat: 醫療兵
+skills: [醫藥, 宗教]
+tool: 草藥工具
+equipment:
+  A:
+    items: [長棍, 草藥工具, 睡袋, 書籍（哲學）, 油燈, 油瓶 ×3, 旅行者服裝]
+    gold: 16
+  B: { gold: 50 }
+description: |
+  你不太習慣依靠別人。獨自生活久了，受傷生病得自行處理，草藥與醫術也就逐漸無師自通。你可能有自己的信仰，也可能只是花了很多時間思考生死、處世之類的哲學。你不太在意別人怎麼過日子，也很習慣照自己的方式做事。

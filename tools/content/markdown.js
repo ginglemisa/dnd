@@ -1,11 +1,10 @@
-// 職業內容檔的文字格式：標準 Markdown 的小子集，加上 [[提示]]、{數值|頁面文字} 與 [文字]{網站功能標記} 三種標記。
+// 內容檔的文字格式：標準 Markdown 的小子集，加上 [[提示]]、{數值|頁面文字} 與 [文字]{網站功能標記} 三種標記。
 // 支援：段落、「- 」清單、行尾「\」強制換行、**粗體**、「#### 標題」小節（到下一個 #### 或文字結束）、GFM 表格、「---」分隔線。
 // 內文出現「<」或其他不支援的寫法一律報錯，不靜默輸出。
 "use strict";
 
 const { loadTipTables } = require("./site-sources");
-
-class ContentError extends Error {}
+const { ContentError } = require("./errors");
 
 // [文字]{名稱} 可用的網站功能標記：輸出 <span data-名稱>文字</span>，職業頁與跑團版相同。只列網站程式會讀取的標記，
 // 不在清單內的名稱一律報錯。
@@ -242,4 +241,4 @@ function tableValueText(features, spec, where) {
   return table.rows.map(cells => spec.row.replace(/\{(\d+)\}/g, (all, column) => cells[Number(column) - 1])).join(spec.join ?? "") + (spec.end ?? "");
 }
 
-module.exports = { ContentError, escapeHtml, renderInline, renderMarkdown, tableValueText };
+module.exports = { escapeHtml, renderInline, renderMarkdown, tableValueText };

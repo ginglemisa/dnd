@@ -3,6 +3,7 @@
 
   // Keep the definition separate from the preset catalog used by creation helpers.
   const abilities = ["力量", "敏捷", "體質", "智力", "感知", "魅力"];
+  const abilityIds = Object.freeze({ 力量: "str", 敏捷: "dex", 體質: "con", 智力: "int", 感知: "wis", 魅力: "cha" });
   let background = null;
   let previousSelection = "";
   let editing = false;
@@ -33,6 +34,18 @@
     };
   }
 
+  // 與內建背景（backgroundRules）相同結構的規則，供 getBackgroundRules("custom") 使用；存檔仍是上面的中文欄位。
+  // 自訂背景的裝備 A 是自由文字，沒有結構化裝備。
+  function toRules(value) {
+    return {
+      name: value.名稱, source: "custom",
+      abilities: value.屬性.split(",").map(label => abilityIds[label]),
+      feat: { id: value.專長 },
+      skills: value.技能熟練.split(","),
+      tool: { fixed: value.工具熟練 }
+    };
+  }
+
   function syncControls() {
     const select = document.getElementById("background");
     select.querySelector('option[value="custom"]').textContent = background?.名稱 || "自訂";
@@ -50,7 +63,7 @@
     const block = document.createElement("div");
     block.className = "background-guide-block";
     for (const [label, text] of [
-      ["背景", `${background.名稱}（擴充）`], ["屬性", background.屬性],
+      ["背景", `${background.名稱}（${globalScope.getBackgroundSourceLabel("custom")}）`], ["屬性", background.屬性],
       ["專長", background.專長], ["技能熟練", background.技能熟練],
       ["工具熟練", background.工具熟練]
     ]) {
@@ -205,6 +218,7 @@
 
   globalScope.CustomBackground = Object.freeze({
     getState: () => background ? { ...background } : null,
+    getRules: () => background ? toRules(background) : null,
     restore(value) { background = normalize(value); syncControls(); },
     open,
     render,

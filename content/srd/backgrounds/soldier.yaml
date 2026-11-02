@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../schema/background.schema.json
+id: soldier
+name: 士兵
+source: srd
+abilities: [str, dex, con]
+feat: 兇蠻打手
+skills: [運動, 威嚇]
+tool: { chooseFrom: gaming }
+equipment:
+  A:
+    items: [短矛, 短弓, 箭矢(20), { toolChoice: true }, 醫療包, 箭袋, 旅行者服裝]
+    gold: 14
+  B: { gold: 50 }
+description: |
+  你在操練與軍旅生活中長大，曾以血肉與意志效忠旗幟。你熟悉命令、陣形與戰場，也明白勝利背後的代價。那些日復一日鍛出的戰技與習慣，早已成為你身體的一部分。

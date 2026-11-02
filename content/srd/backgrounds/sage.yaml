@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../schema/background.schema.json
+id: sage
+name: 賢者
+source: srd
+abilities: [con, int, wis]
+feat: { id: 魔法學徒, spellList: wizard }
+skills: [奧秘, 歷史]
+tool: 書法工具
+equipment:
+  A:
+    items: [長棍, 書法工具, 書本（歷史）, 羊皮紙 ×8, 長袍]
+    gold: 8
+  B: { gold: 50 }
+description: |
+  你曾長時間埋首於書卷、古籍與各種學問，也可能為了某個問題四處查證、尋訪遺跡，或向不同領域的學者求教。這些日子讓你熟悉歷史與奧秘，也養成了追根究柢的習慣。對你而言，未知不是阻礙，追求答案本身就是你要的過程。

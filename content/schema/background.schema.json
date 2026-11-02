@@ -1,0 +1,98 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "background.schema.json",
+  "title": "twD20 背景內容檔",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "source", "abilities", "feat", "skills", "tool", "equipment", "description"],
+  "definitions": {
+    "gold": { "type": "integer", "minimum": 0, "description": "金幣數，顯示為「N 金幣」。" }
+  },
+  "properties": {
+    "$schema": { "type": "string" },
+    "id": { "$ref": "feature.schema.json#/definitions/id", "description": "背景 key，與存檔、分享網址的 background 值相同：不可改名。須等於檔名。" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 4, "description": "背景名稱（最多四字，同自訂背景）。" },
+    "source": { "enum": ["srd", "extended"], "description": "內容來源。srd：出自 SRD 5.2.1；extended：本站另外撰寫（選單名稱與背景頁加上來源標籤，背景頁顯示說明）。" },
+    "abilities": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "uniqueItems": true,
+      "items": { "enum": ["str", "dex", "con", "int", "wis", "cha"] },
+      "description": "可調整的三項屬性（ID），購點與快速創角依此限制加值；顯示為「智力,感知,魅力」。"
+    },
+    "feat": {
+      "description": "起源專長：專長 ID（feats.js 的 FEAT_OPTIONS value）。魔法學徒寫成 { id: 魔法學徒, spellList: 職業 ID }，顯示為「魔法學徒（牧師）」。",
+      "oneOf": [
+        { "type": "string", "minLength": 1, "not": { "const": "魔法學徒" } },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "spellList"],
+          "properties": {
+            "id": { "const": "魔法學徒" },
+            "spellList": { "enum": ["cleric", "druid", "wizard"], "description": "魔法學徒的法術列表（職業 ID）。" }
+          }
+        }
+      ]
+    },
+    "skills": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 },
+      "description": "技能熟練（技能 ID，即 character-rules.js CharacterSkillAbilities 的中文名）；顯示時自動加上提示框。"
+    },
+    "tool": {
+      "description": "工具熟練：工具 ID（tool-data.js 的工具名稱），或 { chooseFrom: 工具組 ID } 從該組擇一（顯示為「擇一賭具：骰子,龍棋,紙牌,三龍牌」）。",
+      "oneOf": [
+        { "type": "string", "minLength": 1 },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["chooseFrom"],
+          "properties": { "chooseFrom": { "type": "string", "minLength": 1, "description": "ToolProficiencyCatalog.groups 的 id，例如 gaming。" } }
+        }
+      ]
+    },
+    "equipment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["A", "B"],
+      "description": "起始裝備，A、B 二擇一。",
+      "properties": {
+        "A": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["items", "gold"],
+          "properties": {
+            "items": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "oneOf": [
+                  { "type": "string", "minLength": 1, "description": "物品（純文字，例如「羊皮紙 ×10」）。" },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["toolChoice"],
+                    "properties": { "toolChoice": { "const": true, "description": "工具熟練選擇的那項工具（tool 須為 chooseFrom），顯示為「賭具擇一」。" } }
+                  }
+                ]
+              }
+            },
+            "gold": { "$ref": "#/definitions/gold" }
+          }
+        },
+        "B": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["gold"],
+          "properties": { "gold": { "$ref": "#/definitions/gold" } }
+        }
+      }
+    },
+    "description": { "type": "string", "minLength": 1, "description": "背景描述，寫法同職業 text 的行內文字（**粗體**、[[提示]]），不可有 HTML、數值標記或分段。" }
+  }
+}

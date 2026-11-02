@@ -59,11 +59,6 @@ const MAGIC_INITIATE_CLASS_OPTIONS = [
   { value: "druid", text: "德魯伊" },
   { value: "wizard", text: "法師" }
 ];
-const MAGIC_INITIATE_CLASS_BY_LABEL = {
-  "牧師": "cleric",
-  "德魯伊": "druid",
-  "法師": "wizard"
-};
 const BARD_MAGICAL_DISCOVERY_SLOT_COUNT = 2;
 let bardMagicalDiscoverySelection = Array.from(
   { length: BARD_MAGICAL_DISCOVERY_SLOT_COUNT },
@@ -300,12 +295,6 @@ function hasMagicInitiateFeatSelected() {
   return hasSelectedFeat(MAGIC_INITIATE_FEAT_NAME);
 }
 
-function getMagicInitiateClassFromBackgroundFeature(featText = "") {
-  const matched = String(featText || "").match(/魔法學徒[（(]([^）)]+)[）)]/);
-  const label = matched?.[1]?.trim() || "";
-  return MAGIC_INITIATE_CLASS_BY_LABEL[label] || "";
-}
-
 function createMagicInitiateSelect(field, labelText) {
   const fieldWrap = document.createElement("div");
   fieldWrap.className = "magic-initiate-field";
@@ -490,12 +479,12 @@ function updateMagicInitiateControlsForRow(row, options = {}) {
   }
 }
 
-function applyMagicInitiateBackgroundDefault(featSelect, backgroundData, options = {}) {
+// defaultClass：背景魔法學徒的法術列表（職業 ID，背景內容檔的 feat.spellList）；空字串時不預設。
+function applyMagicInitiateBackgroundDefault(featSelect, defaultClass, options = {}) {
   const row = featSelect?.closest?.(".form-row");
   if (!row) return;
 
   updateMagicInitiateControlsForRow(row, { sync: false });
-  const defaultClass = getMagicInitiateClassFromBackgroundFeature(backgroundData?.專長);
   const classSelect = getMagicInitiateSelect(row, "class");
   if (isMagicInitiateFeatSelectedInRow(row) && classSelect && defaultClass) {
     classSelect.value = defaultClass;

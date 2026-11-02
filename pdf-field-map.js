@@ -14,9 +14,11 @@
     return globalScope.raceFeatures || {};
   }
 
-  function getBackgroundMap() {
-    if (typeof detailedBackgroundFeatures !== 'undefined') return detailedBackgroundFeatures;
-    return globalScope.detailedBackgroundFeatures || {};
+  // 內建背景的規則與顯示文字（background-content.generated.js）；自訂背景另讀 state.__customBackground。
+  function getBuiltInBackground(backgroundKey) {
+    const rules = typeof backgroundRules !== 'undefined' ? backgroundRules : (globalScope.backgroundRules || {});
+    const text = typeof backgroundText !== 'undefined' ? backgroundText : (globalScope.backgroundText || {});
+    return Object.hasOwn(rules, backgroundKey) ? { rules: rules[backgroundKey], text: text[backgroundKey] } : null;
   }
 
   function getSpellCatalog() {
@@ -212,15 +214,6 @@
     });
     return [...derived, ...(CLASS_FEATURE_CHOICE_SPECS[classKey] || [])];
   }
-
-  const BACKGROUND_LABELS = Object.freeze({
-    acolyte: '侍僧',
-    soldier: '士兵',
-    criminal: '罪犯',
-    sage: '賢者',
-    seeker: '孤芳',
-    fieldhand: '耕者'
-  });
 
   const RACE_LABELS = Object.freeze({
     dragonborn: '龍裔',
@@ -1290,9 +1283,9 @@ function isWeaponRowEmpty(payload, slot) {
   }
 
   function parseBackgroundDefaultEquipment(backgroundKey) {
-    const raw = getBackgroundMap()[backgroundKey];
-    if (!raw) return '';
-    return normalizeText(raw['裝備A']);
+    const background = getBuiltInBackground(backgroundKey);
+    if (!background) return '';
+    return normalizeText(background.text.equipmentA);
   }
 
   function hasQuickBuildInitialEquipment(state) {
@@ -1561,7 +1554,7 @@ function isWeaponRowEmpty(payload, slot) {
       : '';
     payload.Background2 = backgroundKey === 'custom'
       ? normalizeText(state.__customBackground?.名稱)
-      : (BACKGROUND_LABELS[backgroundKey] || payload.Background2);
+      : (getBuiltInBackground(backgroundKey)?.rules.name || payload.Background2);
     payload.Specie1 = RACE_LABELS[normalizeText(state.race)] || payload.Specie1;
     payload.alignment1 = ALIGNMENT_LABELS[normalizeText(state.alignment)] || payload.alignment1;
     payload.spell_cast_attri1 = SPELL_CAST_ABILITY_LABELS[normalizeText(state['spellcasting-ability'])] || payload.spell_cast_attri1;

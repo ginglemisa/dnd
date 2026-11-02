@@ -1,31 +1,39 @@
-// npm run build：讀取 content/ 的職業內容檔，做格式與跨檔檢查、持久化 ID 基準檔比對，
-// 再由公開內容包產生網站讀取的 class-content.generated.js（不提交進 repo）。
+// npm run build：讀取 content/ 的職業與背景內容檔，做格式與跨檔檢查、持久化 ID 基準檔比對，
+// 再由公開內容包產生網站讀取的 class-content.generated.js 與 background-content.generated.js（不提交進 repo）。
 // 本機有私人內容包（content/private）時另寫進 class-content.private.generated.js（同樣不提交），否則該檔為空檔。
-// npm run build -- --stamp-version：上線建置用，一併把 index.html 的快取版本改成產生檔的雜湊；私人資料檔一律為空檔。
+// npm run build -- --stamp-version：上線建置用，一併把 index.html 的快取版本改成各產生檔的雜湊；私人資料檔一律為空檔。
 // npm run build -- --public-only：本機只產生公開資料（私人資料檔為空檔），例如要確認公開網站的樣子。
 // npm run build -- --update-id-baseline：確認 ID 變動是刻意的之後，改寫基準檔。
 // 任何錯誤都讓建置失敗（結束碼 1）。
 "use strict";
 const fs = require("fs");
 const path = require("path");
-const { ContentError } = require("./class-content/markdown");
+const { ContentError } = require("./content/errors");
 const { loadContent } = require("./class-content/load");
 const { checkIdBaseline } = require("./class-content/id-baseline");
 const { writeSiteData } = require("./class-content/site-data");
+const { loadBackgrounds } = require("./background-content/load");
+const { checkBackgroundIdBaseline } = require("./background-content/id-baseline");
+const { writeBackgroundData } = require("./background-content/site-data");
 
 function build({ quiet = false, updateIdBaseline = false, stampVersion = false, publicOnly = stampVersion } = {}) {
   const log = quiet ? () => {} : console.log;
   const { classes, multiclassRules } = loadContent();
-  const idProblems = checkIdBaseline(classes, { update: updateIdBaseline });
+  const backgrounds = loadBackgrounds(classes);
+  const idProblems = [...checkIdBaseline(classes, { update: updateIdBaseline }), ...checkBackgroundIdBaseline(backgrounds, { update: updateIdBaseline })];
   if (idProblems.length) throw new ContentError(`持久化 ID 與基準檔不符：\n- ${idProblems.join("\n- ")}`);
   if (updateIdBaseline) log("已更新持久化 ID 基準檔。");
   // 公開資料只含公開內容包（另外載入一次）；私人內容包（子職、兼職補充）只寫進本機的私人資料檔，
   // 上線建置（--stamp-version）或 --public-only 時私人資料檔為空檔。
   const packs = ["srd", "private"].filter(pack => fs.existsSync(path.join(__dirname, "..", "content", pack)));
   const privateClasses = packs.includes("private") && !publicOnly ? classes : null;
-  const changed = writeSiteData(loadContent({ packs: ["srd"] }).classes, { privateClasses, stampIndex: stampVersion });
-  log(`內容檢查通過：${classes.size} 個職業、${[...classes.values()].reduce((sum, classDef) => sum + classDef.subclasses.length, 0)} 個子職（內容包：${packs.join("、")}${multiclassRules ? "，含兼職規則" : ""}）。`);
-  log(changed.length ? `已更新：${changed.join("、")}。` : "網站職業資料沒有變動。");
+  const publicClasses = loadContent({ packs: ["srd"] }).classes;
+  const changed = [
+    ...writeSiteData(publicClasses, { privateClasses, stampIndex: stampVersion }),
+    ...writeBackgroundData(backgrounds, publicClasses, { stampIndex: stampVersion })
+  ];
+  log(`內容檢查通過：${classes.size} 個職業、${[...classes.values()].reduce((sum, classDef) => sum + classDef.subclasses.length, 0)} 個子職、${backgrounds.size} 個背景（內容包：${packs.join("、")}${multiclassRules ? "，含兼職規則" : ""}）。`);
+  log(changed.length ? `已更新：${[...new Set(changed)].join("、")}。` : "網站資料沒有變動。");
   return changed;
 }
 
