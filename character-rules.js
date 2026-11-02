@@ -30,9 +30,17 @@
     return text && Object.hasOwn(text, background) ? text[background] : null;
   }
 
-  /** 是否為本站擴充背景（自訂背景一律是）。讀取「擴充」標記只經過這裡。 */
-  function isExpansionBackground(background) {
-    return getBackgroundRules(background)?.expansion === true;
+  // 背景來源標籤：內容檔 source 為 extended（本站另外撰寫）與自訂背景顯示的字樣；srd 不加標籤。
+  const BACKGROUND_SOURCE_LABELS = Object.freeze({ extended: "擴充", custom: "擴充" });
+
+  /** 背景來源：內建背景為內容檔的 source（srd／extended），自訂背景為 custom；沒有選擇或不認得時為空字串。讀取來源只經過這裡。 */
+  function getBackgroundSource(background) {
+    return getBackgroundRules(background)?.source || "";
+  }
+
+  /** 背景來源的顯示標籤（例如「擴充」，不含括號）；沒有標籤時為空字串。建置檢查背景選單文字時也讀這裡。 */
+  function getBackgroundSourceLabel(source) {
+    return BACKGROUND_SOURCE_LABELS[source] || "";
   }
 
   // 職業機制資料：class-content.generated.js 由 content/ 的職業內容檔產生 classRules（特性表、數值、資源、選項與動作）。
@@ -712,7 +720,8 @@
     getCharacterSizeForRace,
     getBackgroundRules,
     getBackgroundText,
-    isExpansionBackground,
+    getBackgroundSource,
+    getBackgroundSourceLabel,
     getCharacterResourceSpecs,
     getClassSaveProficiencies,
     getClassRules,

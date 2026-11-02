@@ -1,6 +1,7 @@
 # yaml-language-server: $schema=../../schema/background.schema.json
 id: soldier
 name: 士兵
+source: srd
 abilities: [str, dex, con]
 feat: 兇蠻打手
 skills: [運動, 威嚇]

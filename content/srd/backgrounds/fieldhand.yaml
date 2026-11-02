@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=../../schema/background.schema.json
 id: fieldhand
 name: 耕者
-expansion: true
+source: extended
 abilities: [str, con, wis]
 feat: 強韌體魄
 skills: [自然, 馴獸]

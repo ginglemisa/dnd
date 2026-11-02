@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=../../schema/background.schema.json
 id: seeker
 name: 孤芳
-expansion: true
+source: extended
 abilities: [con, wis, cha]
 feat: 醫療兵
 skills: [醫藥, 宗教]

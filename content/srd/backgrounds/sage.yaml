@@ -1,6 +1,7 @@
 # yaml-language-server: $schema=../../schema/background.schema.json
 id: sage
 name: 賢者
+source: srd
 abilities: [con, int, wis]
 feat: { id: 魔法學徒, spellList: wizard }
 skills: [奧秘, 歷史]

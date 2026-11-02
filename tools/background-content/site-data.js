@@ -20,7 +20,7 @@ function backgroundRules(background) {
   const tool = typeof background.tool === "string" ? { fixed: background.tool } : { chooseFrom: background.tool.chooseFrom };
   return {
     name: background.name,
-    expansion: background.expansion === true,
+    source: background.source,
     abilities: [...background.abilities],
     feat,
     skills: [...background.skills],
@@ -51,7 +51,7 @@ function backgroundText(background, rules, classes) {
 function legacyEntry(rules, text) {
   return {
     名稱: rules.name,
-    ...(rules.expansion ? { 擴充: true } : {}),
+    ...(rules.source === "extended" ? { 擴充: true } : {}),
     屬性: text.abilities,
     專長: text.feat,
     技能熟練: text.skills,
@@ -70,7 +70,7 @@ function renderBackgroundData(backgrounds, classes) {
   const legacy = Object.fromEntries(ids.map(id => [id, legacyEntry(rules[id], text[id])]));
   const entries = map => ids.map(id => `  ${id}: ${JSON.stringify(map[id])}`).join(",\n");
   const source = `// ${OUTPUT_NAME}：由 npm run build 從 content/srd/backgrounds 的背景內容檔產生，請勿手動修改。
-// backgroundRules：各背景的結構化規則（屬性 ID、專長 ID 與魔法學徒法術列表、技能 ID、工具或工具組、裝備項目與金幣）。
+// backgroundRules：各背景的結構化規則（來源、屬性 ID、專長 ID 與魔法學徒法術列表、技能 ID、工具或工具組、裝備項目與金幣）。
 // backgroundText：建置組好的顯示文字（技能含提示框 HTML）。
 const backgroundRules = {
 ${entries(rules)}

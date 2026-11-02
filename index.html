@@ -96,9 +96,9 @@
   <script src="spell-list.js?v=20261026-wizard-spells" defer></script>
   <script src="condition.js?v=20261021-bonus-wording" defer></script>
   <script src="action-panel.js?v=20261102-feature-anchors" defer></script>
-  <script src="character-rules.js?v=20261102-background-content" defer></script>
+  <script src="character-rules.js?v=20261102-background-source" defer></script>
   <script src="app-dialog.js?v=20261028-custom-spells" defer></script>
-  <script src="custom-background.js?v=20261102-background-content" defer></script>
+  <script src="custom-background.js?v=20261102-background-source" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
   <script src="tabletop-mode.js?v=20261102-rest-options" defer></script>
   <script src="tabletop-druid.js?v=20261021-bonus-wording" defer></script>
@@ -107,7 +107,7 @@
   <script src="tabletop-custom-spells.js?v=20261028-custom-spell-vsm-layout" defer></script>
   <script src="tabletop-spells.js?v=20261101-subclass-features" defer></script>
   <script src="legal-modal.js?v=20261022-game-icons" defer></script>
-  <script src="onboarding-tour.js?v=20261102-background-content" defer></script>
+  <script src="onboarding-tour.js?v=20261102-background-source" defer></script>
   <script src="quick-build.js?v=20261031-class-appendix" defer></script>
   <script src="spellbook.js?v=20261028-custom-spells" defer></script>
   <script src="spell-management.js?v=20261028-custom-spells" defer></script>
@@ -2364,11 +2364,12 @@ function updateBackgroundFeature() {
     syncDerivedFeatRows();
     return;
   }
-  const expansion = isExpansionBackground(value);
+  const source = getBackgroundSource(value);
+  const sourceLabel = getBackgroundSourceLabel(source);
 
   el.innerHTML =
 `<div id="background-ability-guide-target" class="background-guide-block">
-     <div hidden><strong>背景：</strong>${bg.name}${expansion ? "（擴充）" : ""}</div>
+     <div hidden><strong>背景：</strong>${bg.name}${sourceLabel ? `（${sourceLabel}）` : ""}</div>
      <div><strong>屬性：</strong>${text.abilities}</div>
      <div><strong>專長：</strong>${text.feat}</div>
      <div><strong>技能熟練：</strong>${text.skills}</div>
@@ -2385,7 +2386,7 @@ function updateBackgroundFeature() {
      ${text.description}
    </div>
 
-   ${expansion ? `<div class="feat-expansion-notice">${EXPANSION_NOTICE}</div>` : ""}`;
+   ${source === "extended" ? `<div class="feat-expansion-notice">${EXPANSION_NOTICE}</div>` : ""}`;
 
   syncDerivedFeatRows();
 }

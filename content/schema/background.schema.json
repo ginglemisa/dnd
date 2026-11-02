@@ -4,7 +4,7 @@
   "title": "twD20 背景內容檔",
   "type": "object",
   "additionalProperties": false,
-  "required": ["id", "name", "abilities", "feat", "skills", "tool", "equipment", "description"],
+  "required": ["id", "name", "source", "abilities", "feat", "skills", "tool", "equipment", "description"],
   "definitions": {
     "gold": { "type": "integer", "minimum": 0, "description": "金幣數，顯示為「N 金幣」。" }
   },
@@ -12,7 +12,7 @@
     "$schema": { "type": "string" },
     "id": { "$ref": "feature.schema.json#/definitions/id", "description": "背景 key，與存檔、分享網址的 background 值相同：不可改名。須等於檔名。" },
     "name": { "type": "string", "minLength": 1, "maxLength": 4, "description": "背景名稱（最多四字，同自訂背景）。" },
-    "expansion": { "type": "boolean", "description": "true：本站擴充背景（選單名稱後加「(擴充)」，背景頁顯示擴充說明）。省略為 false。" },
+    "source": { "enum": ["srd", "extended"], "description": "內容來源。srd：出自 SRD 5.2.1；extended：本站另外撰寫（選單名稱與背景頁加上來源標籤，背景頁顯示說明）。" },
     "abilities": {
       "type": "array",
       "minItems": 3,

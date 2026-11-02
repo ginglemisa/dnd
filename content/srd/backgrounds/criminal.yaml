@@ -1,6 +1,7 @@
 # yaml-language-server: $schema=../../schema/background.schema.json
 id: criminal
 name: 罪犯
+source: srd
 abilities: [dex, con, int]
 feat: 警覺
 skills: [巧手, 隱匿]

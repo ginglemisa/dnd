@@ -1,6 +1,7 @@
 # yaml-language-server: $schema=../../schema/background.schema.json
 id: acolyte
 name: 侍僧
+source: srd
 abilities: [int, wis, cha]
 feat: { id: 魔法學徒, spellList: cleric }
 skills: [洞悉, 宗教]

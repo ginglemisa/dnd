@@ -38,7 +38,7 @@
   // 自訂背景的裝備 A 是自由文字，沒有結構化裝備。
   function toRules(value) {
     return {
-      name: value.名稱, expansion: true,
+      name: value.名稱, source: "custom",
       abilities: value.屬性.split(",").map(label => abilityIds[label]),
       feat: { id: value.專長 },
       skills: value.技能熟練.split(","),
@@ -63,7 +63,7 @@
     const block = document.createElement("div");
     block.className = "background-guide-block";
     for (const [label, text] of [
-      ["背景", `${background.名稱}（擴充）`], ["屬性", background.屬性],
+      ["背景", `${background.名稱}（${globalScope.getBackgroundSourceLabel("custom")}）`], ["屬性", background.屬性],
       ["專長", background.專長], ["技能熟練", background.技能熟練],
       ["工具熟練", background.工具熟練]
     ]) {

@@ -1,4 +1,4 @@
-// 建置讀取的既有網站資料：專案根目錄、提示框詞表（[[名稱]]）、德魯伊野獸清單，以及背景檢查用的技能、工具、專長與 index.html 選單。
+// 建置讀取的既有網站資料：專案根目錄、提示框詞表（[[名稱]]）、德魯伊野獸清單，以及背景檢查用的技能、背景來源標籤、工具、專長與 index.html 選單。
 // 網站資料檔照網站載入方式整份執行（獨立的 vm 沙箱，沒有 document），再讀取頂層常數或檔案公開的全域；不截取原始碼。
 "use strict";
 const fs = require("fs");
@@ -49,12 +49,18 @@ function loadWildShapeBeasts() {
   return { beasts, crOrder };
 }
 
-// 技能 ID（character-rules.js 的 CharacterSkillAbilities：中文名 → 屬性）。
-let skillAbilities = null;
-function loadSkillAbilities() {
-  skillAbilities ||= runSiteScript("character-rules.js").globals.CharacterSkillAbilities;
-  return skillAbilities;
+// character-rules.js 公開的全域（沙箱內沒有其他網站資料，只用不依賴產生檔的部分）。
+let characterRules = null;
+function loadCharacterRules() {
+  characterRules ||= runSiteScript("character-rules.js").globals;
+  return characterRules;
 }
+
+// 技能 ID（character-rules.js 的 CharacterSkillAbilities：中文名 → 屬性）。
+const loadSkillAbilities = () => loadCharacterRules().CharacterSkillAbilities;
+
+// 背景來源的顯示標籤（character-rules.js 的 getBackgroundSourceLabel，例如 extended →「擴充」）。
+const backgroundSourceLabel = source => loadCharacterRules().getBackgroundSourceLabel(source);
 
 // 工具目錄（tool-data.js 的 ToolProficiencyCatalog：工具名稱與工具組）。
 let toolCatalog = null;
@@ -79,4 +85,4 @@ function readIndexSelectOptions(id) {
   return select ? [...select[1].matchAll(/<option value="([^"]*)"[^>]*>([^<]*)<\/option>/g)].map(match => ({ value: match[1], label: match[2] })) : null;
 }
 
-module.exports = { ROOT, loadTipTables, loadWildShapeBeasts, loadSkillAbilities, loadToolCatalog, loadFeatData, readIndexSelectOptions };
+module.exports = { ROOT, loadTipTables, loadWildShapeBeasts, loadSkillAbilities, backgroundSourceLabel, loadToolCatalog, loadFeatData, readIndexSelectOptions };
