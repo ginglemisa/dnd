@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=../../schema/feat.schema.json
+id: 衝鋒猛擊
+source: extended
+type: general
+prerequisite: { abilities: [str, dex] }
+effects:
+  - name: 屬性提升
+    text: 力量或敏捷擇一 +1（最高 20）。
+  - name: 加速疾走
+    text: 使用「衝刺」時，速度額外增加 10 呎。
+  - name: 直線衝擊
+    text: 朝目標直線移動 10 呎再以近戰攻擊命中，可擇一（每回合一次）： +1d8 傷害；或將體型至多大你一級的目標推開最多 10 呎。
+actions:
+  - mode: movement
+    label: 加速疾走
+    key: dynamic-movement-feat-curated-eyil2q
+    level: 4
+  - mode: action
+    label: 直線衝擊
+    key: dynamic-action-feat-curated-1wgp658
+    level: 4
+    tabletop: |-
+      朝目標直線移動 10 呎再以近戰攻擊命中，可擇一（每回合一次）：
+
+      1️⃣+1d8 傷害
+      2️⃣將體型至多大你一級的目標推開最多 10 呎。
+  - mode: movement
+    label: 直線衝擊
+    key: dynamic-movement-feat-curated-1wgp658
+    level: 4
+    tabletop: |-
+      朝目標直線移動 10 呎再以近戰攻擊命中，可擇一（每回合一次）：
+
+      1️⃣+1d8 傷害
+      2️⃣將體型至多大你一級的目標推開最多 10 呎。

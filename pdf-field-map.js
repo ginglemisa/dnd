@@ -277,63 +277,6 @@
     'detect-poison-and-disease': '偵測毒與病'
   });
 
-  const FEAT_PDF_LINES = Object.freeze({
-    警覺: Object.freeze([
-      '警覺(起源)',
-      '先攻可加熟練',
-      '可與盟友換先攻'
-    ]),
-    兇蠻打手: Object.freeze([
-      '兇蠻打手(起源)',
-      '每回合 1 次',
-      '武器傷擲二取高'
-    ]),
-    熟習: Object.freeze([
-      '熟習(起源)',
-      '獲得 3 項熟練',
-      '可選技能或工具'
-    ]),
-    醫療兵: Object.freeze([
-      '醫療兵(起源)',
-      '動作使用醫療包',
-      '5呎內骰+熟練',
-      '恢復骰1可重擲'
-    ]),
-    強韌體魄: Object.freeze([
-      '強韌體魄(起源)',
-      'HP上限+等級×2'
-    ]),
-    屬性值提升: Object.freeze([
-      '屬性提升(通用)',
-      '屬性+2或兩項+1'
-    ]),
-    擒抱者: Object.freeze([
-      '擒抱者(通用)',
-      '力量or敏捷+1',
-      '徒手命中可擒抱',
-      '打擒抱目標優勢',
-      '擒抱同型不減速'
-    ]),
-    箭術: Object.freeze([
-      '箭術(戰鬥風格)',
-      '遠程武器命中+2'
-    ]),
-    防禦: Object.freeze([
-      '防禦(戰鬥風格)',
-      '穿護甲時AC+1'
-    ]),
-    巨武器戰鬥: Object.freeze([
-      '巨武(戰鬥風格)',
-      '雙手(兩用)武器',
-      '傷害骰1/2可改3'
-    ]),
-    雙武器戰鬥: Object.freeze([
-      '雙武(戰鬥風格)',
-      '副手輕武器傷害',
-      '可加屬性調整值'
-    ])
-  });
-
   // PDF 種族特質欄：種族內容檔的 pdf 行（raceText.pdf）。{choice} 為所選血統選項的 pdfLabel（PDF 匯出選項傳入），
   // { choice: 等級 } 插入該選項該等級的行，{ minLevel } 的行在等級達到或未填等級時出現。
   function buildRaceTemplateText(state, options = {}) {
@@ -1080,7 +1023,7 @@ function isWeaponRowEmpty(payload, slot) {
   function getMagicInitiateFeatLines(state, featKey) {
     const manual = state.__spellManagement?.version === 2
       ? state.__spellManagement.manual === true : state['manual-spell-management'] === true;
-    if (manual) return ['魔法學徒(起源)'];
+    if (manual) return [getFeatPdfTitle({ name: '魔法學徒' })];
     const classValue = normalizeText(state[`${featKey}-magic-initiate-class`]);
     const cantrip1 = normalizeText(state[`${featKey}-magic-initiate-cantrip-1`]);
     const cantrip2 = normalizeText(state[`${featKey}-magic-initiate-cantrip-2`]);
@@ -1089,13 +1032,8 @@ function isWeaponRowEmpty(payload, slot) {
     const cantrip1Spell = getCanonicalSpell(resolveStateSpellId(cantrip1));
     const cantrip2Spell = getCanonicalSpell(resolveStateSpellId(cantrip2));
     const level1Spell = getCanonicalSpell(resolveStateSpellId(level1));
-    if (!classValue || !cantrip1Spell || !cantrip2Spell || !level1Spell) {
-      return [
-        '魔法學徒(起源)',
-        '選1職業法表',
-        '2戲法+1一環'
-      ];
-    }
+    // 還沒選完法表與法術時，列出內容檔的 PDF 行（選擇方式的提示）。
+    if (!classValue || !cantrip1Spell || !cantrip2Spell || !level1Spell) return getFeatPdfLines('魔法學徒');
 
     const classLabel = MAGIC_INITIATE_CLASS_LABELS[classValue] || extractChineseDisplayLabel(classValue);
     const level1Label = MAGIC_INITIATE_PDF_SPELL_LABELS[level1Spell.spellId] || level1Spell.nameZh;
@@ -1107,30 +1045,22 @@ function isWeaponRowEmpty(payload, slot) {
     ];
   }
 
-  function getFeatPdfDisplayLabel(featName) {
-    const normalizedName = normalizeText(featName);
-    const featOption = typeof FEAT_OPTIONS !== 'undefined'
-      ? FEAT_OPTIONS.find((option) => option.value === normalizedName)
-      : null;
-    return normalizeText(featOption?.label || normalizedName)
-      .replace(/[・·]\s*擴充/gu, '')
-      .replace(/擴充/gu, '')
-      .replace(/\(\s*\)/gu, '')
-      .trim();
+  // PDF 專長欄的各行：專長內容檔的 pdf（featText.pdf，第一行是標題）；不認得的專長只列名稱。
+  function getFeatPdfLines(featName) {
+    return [...(globalScope.getFeatText?.(featName)?.pdf || [normalizeText(featName)])];
   }
 
   function getFeatPdfLineGroup(state, entry) {
     if (entry.name === '魔法學徒') {
       return getMagicInitiateFeatLines(state, entry.key);
     }
-    return FEAT_PDF_LINES[entry.name] || [getFeatPdfDisplayLabel(entry.name)];
+    return getFeatPdfLines(entry.name);
   }
 
+  // Magic Initiate's detailed heading includes the selected class; the
+  // title-only fallback must omit choices as well as the chosen spells.
   function getFeatPdfTitle(entry) {
-    // Magic Initiate's detailed heading includes the selected class; the
-    // title-only fallback must omit choices as well as the chosen spells.
-    if (entry.name === '魔法學徒') return '魔法學徒(起源)';
-    return (FEAT_PDF_LINES[entry.name] || [getFeatPdfDisplayLabel(entry.name)])[0];
+    return getFeatPdfLines(entry.name)[0];
   }
 
   function buildFeatPdfText(state, options = {}) {

@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../schema/feat.schema.json
+id: 巨武器戰鬥
+source: srd
+type: style
+effects:
+  - name: 寸長寸強
+    text: 將「雙手」或「兩用」武器的傷害骰 1 或 2 視為 3。
+pdf: [巨武(戰鬥風格), 雙手(兩用)武器, 傷害骰1/2可改3]

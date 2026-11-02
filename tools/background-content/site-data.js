@@ -30,6 +30,9 @@ function backgroundRules(background) {
 }
 
 const goldText = gold => `${gold} 金幣`;
+
+// 背景專長的顯示名稱（例如「魔法學徒（牧師）」）；也是快速創角草稿的取得項目名稱（feat-id-baseline.json 把關）。
+const backgroundFeatName = (feat, classes) => feat.spellList ? `${feat.id}（${classes.get(feat.spellList).name}）` : feat.id;
 const inline = (text, where) => renderInline(text, { resolveValue: () => { throw new ContentError(`${where}：背景文字不可使用數值標記`); } }, where);
 
 function backgroundText(background, rules, classes) {
@@ -38,7 +41,7 @@ function backgroundText(background, rules, classes) {
   const items = rules.equipment.A.items.map(item => typeof item === "string" ? item : `${group.label}擇一`);
   return {
     abilities: rules.abilities.map(id => ABILITY_LABELS[id]).join(","),
-    feat: rules.feat.spellList ? `${rules.feat.id}（${classes.get(rules.feat.spellList).name}）` : rules.feat.id,
+    feat: backgroundFeatName(rules.feat, classes),
     skills: rules.skills.map(skill => inline(`[[${skill}]]`, where)).join(","),
     tool: group ? `擇一${group.label}：${group.options.join(",")}` : rules.tool.fixed,
     ...(group ? { toolGroup: group.label } : {}),
@@ -86,4 +89,4 @@ function writeBackgroundData(backgrounds, classes, { stampIndex = false } = {}) 
   return changed;
 }
 
-module.exports = { renderBackgroundData, writeBackgroundData };
+module.exports = { renderBackgroundData, writeBackgroundData, backgroundRules, backgroundFeatName };

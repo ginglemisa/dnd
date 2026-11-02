@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../schema/feat.schema.json
+id: 警覺
+source: srd
+type: origin
+effects:
+  - name: 先攻熟練
+    text: 先攻＝敏捷調整值＋熟練加值。
+  - name: 先攻互換
+    text: 擲先攻後，可與一名自願盟友互換順序；雙方不可處於[[失能]]狀態。
+pdf: [警覺(起源), 先攻可加熟練, 可與盟友換先攻]

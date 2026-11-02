@@ -1,6 +1,6 @@
 # 內容檔
 
-網站的職業、子職、背景與種族資料寫在 `content/` 的 YAML 內容檔，每個職業、子職、背景、種族各一個檔。`npm run build` 檢查格式與跨檔關係後，產生網站讀取的資料檔。本文件大部分在說明職業與子職的寫法；背景與種族見下方「背景」「種族」。
+網站的職業、子職、專長、背景與種族資料寫在 `content/` 的 YAML 內容檔，每個職業、子職、專長、背景、種族各一個檔。`npm run build` 檢查格式與跨檔關係後，產生網站讀取的資料檔。本文件大部分在說明職業與子職的寫法；專長、背景與種族見下方「專長」「背景」「種族」。
 
 職業與子職的說明文字和機制（特性表、選項、跑團按鈕、資源）寫在同一份檔案。
 
@@ -12,6 +12,7 @@
 | --- | --- |
 | 公開職業 | `content/srd/classes/<職業 ID>.yaml` |
 | 公開子職 | `content/srd/subclasses/<職業 ID>-<子職 ID>.yaml` |
+| 公開專長與選單順序 | `content/srd/feats/<專長 ID>.yaml`、`content/srd/feat-order.yaml` |
 | 公開背景 | `content/srd/backgrounds/<背景 ID>.yaml` |
 | 公開種族 | `content/srd/races/<種族 ID>.yaml` |
 | 私人內容包（不進公開 repo） | `content/private/classes/`、`content/private/subclasses/` |
@@ -23,7 +24,7 @@
 
 本機執行 `npm run build`（或 `npm run dev`）時，私人內容包的子職與 `class-extensions/` 會寫進根目錄的 `class-content.private.generated.js`（同樣被 git 忽略），網站在公開資料之後載入它，你的電腦上就看得到私人子職（例如子職選單出現兩個以上的選項）。沒有私人內容包、上線建置或執行 `npm run build -- --public-only` 時，這個檔案是空的，網站只有公開內容；離線角色卡一律只含公開內容。私人內容包的持久化 ID 另列在 `content/private/class-id-baseline.json`。
 
-私人內容包目前不支援背景與種族：選單是 `index.html` 的固定選項，沒有加入私人選項的方式。`content/private/backgrounds/`、`content/private/races/` 存在時建置會失敗。
+私人內容包目前不支援背景與種族：選單是 `index.html` 的固定選項，沒有加入私人選項的方式。也不支援專長：私人資料檔只放職業資料。`content/private/backgrounds/`、`content/private/races/`、`content/private/feats/` 存在時建置會失敗。
 
 VS Code 安裝 Red Hat 的「YAML」擴充套件後，會依檔案第一行的 `$schema` 自動補完欄位、標出錯誤，滑鼠停在欄位上可看說明。
 
@@ -206,7 +207,7 @@ mount: { id: bard-magical-discoveries, label: 魔法發現法術選擇 }
 
 選項的 `id`、下拉選單的 `select.id` 與選項值、動作的 `key`／`legacyKeys`、`resource.key`、子職 `id` 會寫進存檔、分享網址或跑團偏好；選項的 `attackNote` 會寫進角色的攻擊備註；子職法術的來源識別碼（見「能力給予的法術」）會寫進角色的法術清單。改顯示文字沒關係，這些 ID 不可改。
 
-這些 ID 都列在根目錄的 `class-id-baseline.json`（私人內容包另有 `content/private/class-id-baseline.json`）；背景 ID 列在 `background-id-baseline.json`。ID 不見、改名或新增而基準檔沒更新時，建置會失敗。確定是刻意新增時執行：
+這些 ID 都列在根目錄的 `class-id-baseline.json`（私人內容包另有 `content/private/class-id-baseline.json`）；專長列在 `feat-id-baseline.json`，背景 ID 列在 `background-id-baseline.json`。ID 不見、改名或新增而基準檔沒更新時，建置會失敗。確定是刻意新增時執行：
 
 ```bash
 npm run build -- --update-id-baseline
@@ -257,6 +258,44 @@ spellsByChoice:
 
 子職法術的來源識別碼「subclass-職業-名稱-…」會寫進角色的法術清單，名稱是子職名稱（依下拉選單時接「・選項名稱」），列在 ID 基準檔：子職名稱或選項名稱改字前須處理舊資料相容。舊版識別碼和子職名稱不同時寫 `spellSourceKey`（例如邪魔宗主沿用舊版的 `spellSourceKey: 邪魔`）。
 
+## 專長
+
+每個專長一個檔：`content/srd/feats/<專長 ID>.yaml`，格式定義是 `content/schema/feat.schema.json`。專長選單的順序寫在 `content/srd/feat-order.yaml`（須剛好列出全部專長）。角色卡的專長選單與說明、自訂背景與快速創角的起源專長、跑團動作、PDF 專長欄都由這裡產生。
+
+```yaml
+# yaml-language-server: $schema=../../schema/feat.schema.json
+id: 擒抱者
+source: srd
+type: general
+prerequisite: { abilities: [str, dex] }
+effects:
+  - name: 屬性提升
+    text: 力量或敏捷擇一 +1（最高 20）。
+  - name: 重拳擒抱
+    text: 每回合 1 次，徒手攻擊命中時可同時造成傷害並[[擒抱]]目標。
+  - name: 攻擊優勢
+    text: 對被你[[擒抱]]的目標攻擊具有[[優勢]]。
+actions:
+  - { mode: action, label: 重拳擒抱, key: dynamic-action-feat-curated-1cls37s, level: 4 }
+pdf: [擒抱者(通用), 力量or敏捷+1, 徒手命中可擒抱]
+```
+
+| 欄位 | 說明 |
+| --- | --- |
+| `id` | 專長 ID，須等於檔名，也是畫面上的專長名稱。會寫進存檔、JSON、分享網址與快速創角草稿，不可改字（列在 `feat-id-baseline.json`）；網站程式判斷特定專長時也用 ID（例如 `hasSelectedFeat("警覺")`）。 |
+| `source` | 內容來源（`srd`／`extended`，同背景）。`extended` 的選單文字與說明副標加上來源標籤，說明最後加上來源說明；字樣由 `character-rules.js` 的 `getContentSourceLabel`、`getContentSourceNotice` 決定；選單文字「醫療兵(起源・擴充)」由 `formatContentSourceName` 產生（半形括號，類別與來源以「・」連接）。 |
+| `type` | 類別：`origin` 起源專長、`general` 通用專長、`style` 戰鬥風格專長。決定哪些專長選擇列出它（背景與種族的起源專長、屬性值提升的等級專長、戰鬥風格），選單文字「擒抱者(通用)」與說明副標由此產生。 |
+| `prerequisite` | 通用專長的先決條件，擇一：`abilities`（其中一項屬性值達 13）、`heavyArmor: true`（具重甲訓練）、`spellcasting: true`（具施法能力）。不符合時專長列顯示警示；副標的條件文字（例如「4 級以上；力量或敏捷 13+」）由此產生。 |
+| `repeatable` | `true` 時可多次選擇。 |
+| `effects` | 效果，依說明順序，顯示為粗體「名稱：內容」。`text` 是一行文字，可用 `[[提示]]`（技能、規則或狀態名稱，例如 `[[優勢]]`、`[[擒抱]]`）；`list` 是接在後面的「·」清單；`after` 是清單之後空一行的補充段落。 |
+| `actions` | 跑團按鈕：`mode`（`action`／`bonus`／`reaction`／`movement`）、`label`、`key`（進跑團隱藏偏好，不可改字，列在基準檔）、`level`（達到才出現，省略為 1）。說明預設是與 `label` 同名的效果內容，`effects` 可改列多個效果；需要另寫時用 `tabletop`（純文字，可換行）。`proficiencyValue: true` 時，已選等級就把說明中的「熟練加值」換成數值。 |
+| `pdf` | PDF 專長欄的各行，第一行是空間不夠時只列的標題。省略時只有一行「名稱(類別)」。魔法學徒選完法表與法術後，PDF 改列所選法術，這裡的行是還沒選完時的提示。 |
+
+- 建置檢查檔名與 `feat-order.yaml`、只有通用專長可寫 `prerequisite`、效果名稱不重複、動作的效果存在、動作 key 的分頁與 `mode` 相同且不重複、`[[提示]]` 是已知名稱；背景的起源專長須是 `type: origin`。
+- `feat-id-baseline.json` 列出專長 ID、專長選擇的存檔欄位（`feat-choice-<來源>`、`derived-feat-<來源>`）、快速創角草稿的專長名稱（含背景的「魔法學徒（牧師）」）與跑團動作 key。
+- `npm run build` 產生根目錄的 `feat-content.generated.js`：`featRules` 是結構化規則（類別、來源、可否重複、先決條件、跑團動作），`featText` 是組好的顯示文字（選單文字、說明 HTML、純文字說明、PDF 行、跑團說明）。網站經 `character-rules.js` 的 `getFeatRules`、`getFeatText`、`getAllFeatRules` 讀取，不從顯示文字反推規則。
+- 跑團提示（例如警覺、醫療兵在總覽與法術頁的提醒）與依專長計算的數值（強韌體魄的 HP、迅捷步法的速度等）仍寫在網站程式，以專長 ID 判斷。
+
 ## 背景
 
 每個背景一個檔：`content/srd/backgrounds/<背景 ID>.yaml`，格式定義是 `content/schema/background.schema.json`。
@@ -283,9 +322,9 @@ description: |
 | --- | --- |
 | `id` | 背景 ID，須等於檔名。會寫進存檔、JSON、分享網址與購點紀錄，不可改名（列在 `background-id-baseline.json`）。 |
 | `name` | 背景名稱，最多四字。 |
-| `source` | 內容來源（必填）：`srd` 出自 SRD 5.2.1；`extended` 是本站另外撰寫的內容，選單名稱、背景頁與快速創角卡片會加上來源標籤，背景頁另顯示說明。標籤字樣由 `character-rules.js` 的 `getBackgroundSourceLabel` 決定。之後可再增加其他值。 |
+| `source` | 內容來源（必填）：`srd` 出自 SRD 5.2.1；`extended` 是本站另外撰寫的內容，選單名稱、背景頁與快速創角卡片會加上來源標籤，背景頁另顯示說明。標籤字樣由 `character-rules.js` 的 `getContentSourceLabel` 決定，名稱加標籤的寫法（例如「耕者(擴充)」）由 `formatContentSourceName` 產生。之後可再增加其他值。 |
 | `abilities` | 可調整的三項屬性 ID（`str`、`dex`、`con`、`int`、`wis`、`cha`），購點與快速創角依此限制背景加值。畫面顯示為「智力,感知,魅力」。 |
-| `feat` | 起源專長，寫專長 ID（`feats.js` 的 `FEAT_OPTIONS` value，目前是中文名）。魔法學徒寫成 `{ id: 魔法學徒, spellList: 職業 ID }`，`spellList` 是法術列表（`cleric`、`druid`、`wizard`），畫面顯示為「魔法學徒（牧師）」；給予魔法學徒的背景也讓角色具有施法能力。 |
+| `feat` | 起源專長，寫專長 ID（`content/srd/feats` 的起源專長，ID 是中文名）。魔法學徒寫成 `{ id: 魔法學徒, spellList: 職業 ID }`，`spellList` 是法術列表（`cleric`、`druid`、`wizard`），畫面顯示為「魔法學徒（牧師）」；給予魔法學徒的背景也讓角色具有施法能力。 |
 | `skills` | 兩項技能 ID（`character-rules.js` 的 `CharacterSkillAbilities`，目前是中文名），畫面自動加上提示框。 |
 | `tool` | 工具熟練：工具 ID（`tool-data.js` 的工具名稱），或 `{ chooseFrom: 工具組 ID }` 從該組擇一（例如士兵的 `gaming`，畫面顯示「擇一賭具：……」，依工具目錄順序）。 |
 | `equipment.A` | 預設裝備：`items` 是各項物品的純文字（例如「羊皮紙 ×10」），`gold` 是金幣數（顯示在最後，例如「8 金幣」）。擇一的工具寫 `{ toolChoice: true }`（只能用在 `tool` 為 `chooseFrom` 的背景），顯示為「賭具擇一」，快速創角換成玩家選的工具。 |
@@ -397,6 +436,6 @@ pdf:
 | 指令 | 用途 |
 | --- | --- |
 | `npm run dev` | 開本機預覽，存檔後自動重新建置，重新整理瀏覽器即可看到；畫面網址會顯示在終端機 |
-| `npm run build` | 檢查全部內容檔並產生 `class-content.generated.js`、`background-content.generated.js` 與 `race-content.generated.js`，有錯就列出檔案與位置 |
+| `npm run build` | 檢查全部內容檔並產生 `class-content.generated.js`、`feat-content.generated.js`、`background-content.generated.js` 與 `race-content.generated.js`，有錯就列出檔案與位置 |
 
-改完內容檔只要提交內容檔本身。`class-content.generated.js`、`background-content.generated.js`、`race-content.generated.js` 是產生的檔案，不放進 repo、不可手改：本機用 `npm run dev` 或 `npm run build` 產生，上線時由 GitHub Actions 產生。只有公開內容包會寫進產生檔。
+改完內容檔只要提交內容檔本身。`class-content.generated.js`、`feat-content.generated.js`、`background-content.generated.js`、`race-content.generated.js` 是產生的檔案，不放進 repo、不可手改：本機用 `npm run dev` 或 `npm run build` 產生，上線時由 GitHub Actions 產生。只有公開內容包會寫進產生檔。

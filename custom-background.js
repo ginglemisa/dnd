@@ -8,8 +8,10 @@
   let previousSelection = "";
   let editing = false;
 
+  // 起源專長（專長 ID 與選單文字），依專長選單順序。
   function originFeats() {
-    return FEAT_OPTIONS.filter(option => FEAT_RULES[option.value]?.type === "origin");
+    return Object.entries(globalScope.getAllFeatRules()).filter(([, rule]) => rule.type === "origin")
+      .map(([id]) => ({ value: id, label: globalScope.getFeatText(id).label }));
   }
 
   function normalize(value) {
@@ -63,7 +65,7 @@
     const block = document.createElement("div");
     block.className = "background-guide-block";
     for (const [label, text] of [
-      ["背景", `${background.名稱}（${globalScope.getBackgroundSourceLabel("custom")}）`], ["屬性", background.屬性],
+      ["背景", globalScope.formatContentSourceName(background.名稱, "custom")], ["屬性", background.屬性],
       ["專長", background.專長], ["技能熟練", background.技能熟練],
       ["工具熟練", background.工具熟練]
     ]) {

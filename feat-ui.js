@@ -1,15 +1,20 @@
 /**
  * 專長列 UI：選單、自動／自行管理、子選項、資格警示、收合記憶與衍生專長列
- * （傳統 script，不使用 defer）。專長資料仍以 feats.js 為準。
+ * （傳統 script，不使用 defer）。專長資料讀 feat-content.generated.js（character-rules.js 的 getFeatRules／getFeatText）。
  *
  * - 自 index.html 原封搬出，於第一段內嵌角色卡 script 之前同步載入，
  *   維持全域函式名稱供 index.html、quick-build.js、tabletop-mode.js 等呼叫。
  * - 魔法學徒子選項與衍生法術在 spell-sources.js。
  * - 只放函式與狀態宣告，不在頂層執行任何初始化。
  */
+// 專長選單的選項（專長 ID 與選單文字），依專長選單順序；filter 以專長規則篩選。
+function getFeatMenuOptions(filter = () => true) {
+  return Object.entries(window.getAllFeatRules?.() || {}).filter(([, rule]) => filter(rule)).map(([id]) => ({ value: id, label: window.getFeatText(id).label }));
+}
+
 function getFeatOptionsHtml() {
   return `<option value="">-- 請選擇 --</option>` +
-    FEAT_OPTIONS.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join("");
+    getFeatMenuOptions().map(opt => `<option value="${opt.value}">${opt.label}</option>`).join("");
 }
 
 function isManualFeatManagementEnabled() {
@@ -203,10 +208,7 @@ function getFeatChoiceSpecs() {
 function getFeatChoiceId(key) { return `feat-choice-${key}`; }
 
 function getFeatChoiceOptions(spec) {
-  return FEAT_OPTIONS.filter(option => {
-    const type = FEAT_RULES[option.value]?.type;
-    return spec.type === "level" ? type !== "style" : type === spec.type;
-  });
+  return getFeatMenuOptions(rule => spec.type === "level" ? rule.type !== "style" : rule.type === spec.type);
 }
 
 function appendFeatChoice(container, spec, previousValue = "") {
@@ -274,7 +276,7 @@ function renderInvocationFeatChoices(previousValues = new Map()) {
 }
 
 function isFeatChoiceEligible(value, spec) {
-  const rule = FEAT_RULES[value];
+  const rule = window.getFeatRules?.(value);
   if (!rule) return false;
   if (spec.type === "level") {
     if (rule.type === "style") return false;
@@ -328,7 +330,7 @@ function showFeatChoiceDetail(select, trigger) {
   if (!select.value) return;
   const content = document.createElement("div");
   content.className = "output feat-choice-detail";
-  content.innerHTML = formatFeatDescription(featsDesc[select.value] || "—");
+  content.innerHTML = getFeatDescriptionHtml(select.value);
   const popup = document.getElementById("skillPopup");
   const popupParent = popup.parentElement;
   window.AppDialog.showContent({
@@ -372,12 +374,12 @@ function getManualFeatRows() {
 
 function getDerivedBackgroundFeatSpec() {
   const featRules = getBackgroundRules(document.getElementById("background")?.value || "")?.feat;
-  const backgroundFeat = FEAT_OPTIONS.find(option => option.value === featRules?.id);
+  const backgroundFeat = featRules?.id && window.getFeatRules?.(featRules.id) ? featRules.id : "";
   return backgroundFeat ? {
     key: "background",
     source: "background",
     label: "背景專長",
-    value: backgroundFeat.value,
+    value: backgroundFeat,
     fixed: true,
     // 魔法學徒的法術列表（職業 ID）；自訂背景與其他專長為空字串。
     spellList: featRules.spellList || ""
@@ -513,7 +515,7 @@ function getFeatUsageEntries(changedSelect = null, overrideValue = "") {
   const entries = getFeatSelects().map(select => {
     const row = select.closest(".form-row");
     const spec = specs.find(spec => spec.key === row.dataset.sourceKey)
-      || { type: FEAT_RULES[select.value]?.type, active: !isDerivedFeatRow(row) || row.dataset.featSource === "background" };
+      || { type: window.getFeatRules?.(select.value)?.type, active: !isDerivedFeatRow(row) || row.dataset.featSource === "background" };
     return { select, row, spec, value: select === changedSelect ? overrideValue : select.value };
   });
   if (isManualFeatManagementEnabled()) return entries.map(entry => ({ ...entry, usable: Boolean(entry.value) }));
@@ -526,7 +528,7 @@ function getFeatUsageEntries(changedSelect = null, overrideValue = "") {
   let magicFeatCount = 0;
   entries.sort((a, b) => priority(a) - priority(b)).forEach(entry => {
     const { value, spec } = entry;
-    const duplicate = (!FEAT_RULES[value]?.repeatable && claimed.has(value))
+    const duplicate = (!window.getFeatRules?.(value)?.repeatable && claimed.has(value))
       || (spec.source === "invocation" && lessons.has(value))
       || (value === MAGIC_INITIATE_FEAT_NAME && magicFeatCount >= MAGIC_INITIATE_CLASS_OPTIONS.length);
     const eligible = Boolean(spec.active && isFeatChoiceEligible(value, spec));
@@ -676,8 +678,6 @@ function syncFeatRowDisclosure(row) {
 
 function updateFeatDesc(selectId, descId) {
   const select = document.getElementById(selectId);
-  const v = select.value;
-  const raw = featsDesc[v] || "—";
   const el = document.getElementById(descId);
 
   const unmet = getFeatUsageEntries().find(entry => entry.select === select && entry.value && !entry.usable);
@@ -686,82 +686,19 @@ function updateFeatDesc(selectId, descId) {
   else select.removeAttribute("aria-describedby");
   setCharacterHtml(el,
     (unmet ? getFeatEligibilityWarningHtml(warningId, unmet) : "") +
-    formatFeatDescription(raw));
+    getFeatDescriptionHtml(select.value));
   syncFeatRowDisclosure(select.closest("#feats-area .form-row"));
 }
 
-// 專長原文維持純文字，只在顯示時把狀態、指定技能與規則名詞換成說明按鈕；小標不連結。
-function formatFeatRuleText(text, featTitle, head) {
-  const tips = new Map();
-  const condition = head ? FEAT_CONDITION_REFERENCES[featTitle]?.[head] : null;
-  if (condition) tips.set(condition.label, () => createDndConditionTip(condition.key, condition.label));
-  const skills = head ? FEAT_SKILL_REFERENCES[featTitle]?.[head] || [] : [];
-  [...skills, ...FEAT_RULE_TERMS].forEach(label => {
-    if (!tips.has(label)) tips.set(label, () => createFeatureRuleTip(label));
-  });
-  const labels = [...tips.keys()].sort((a, b) => b.length - a.length).map(escapeRegExp);
-  return text.split(new RegExp(`(${labels.join("|")})`, "u"))
-    .map((part, index) => index % 2 ? tips.get(part)()?.outerHTML ?? escapeHtml(part) : escapeHtml(part))
-    .join("");
-}
-
-function formatFeatDescription(raw) {
-  // 共用角色卡與查看視窗的規則內容與排版。
-  if (typeof raw !== "string") {
-    return "—";
-  }
-
-  // 依行切開（保留空行）
-  const lines = raw.replace(/\r\n/g, "\n").split("\n");
-
-  // 找到第一個非空行當標題
-  let title = "";
-  let startIdx = 0;
-  for (let i = 0; i < lines.length; i++) {
-    const t = lines[i].trim();
-    if (t) {
-      title = t;
-      startIdx = i + 1;
-      break;
-    }
-  }
-
-  // 第二個非空行（常見：起源專長 / 戰鬥風格專長…）當副標
-  let subtitle = "";
-  for (let i = startIdx; i < lines.length; i++) {
-    const t = lines[i].trim();
-    if (t) {
-      subtitle = t;
-      startIdx = i + 1;
-      break;
-    }
-  }
-
-  // 其餘內容：把空行變段落，把「小標：內容」做成小標粗體
-  const bodyHtml = lines
-    .slice(startIdx)
-    .map(line => {
-      const t = line.trim();
-      if (!t) return `<div class="feat-desc-spacer"></div>`; // 空行 = 段落距離
-
-      if (t.startsWith("「擴充」為本站")) {
-        return `<div class="feat-expansion-notice">${escapeHtml(t)}</div>`;
-      }
-
-      const idx = line.indexOf("：");
-      if (idx > 0) {
-        const head = line.slice(0, idx).trim();
-        const tail = line.slice(idx + 1).trim();
-        return `<div><strong>${escapeHtml(head)}</strong>：${formatFeatRuleText(tail, title, head)}</div>`;
-      }
-
-      return `<div>${formatFeatRuleText(t, title, "")}</div>`;
-    })
-    .join("");
-
-  return `<div class="feat-desc-title">${escapeHtml(title || "—")}</div>` +
-    (subtitle ? `<div class="feat-desc-subtitle">${escapeHtml(subtitle)}</div>` : ``) +
-    `<div class="feat-desc-body">${bodyHtml}</div>`;
+// 專長說明：featText.html 是建置組好的標題、副標與效果；提示框（span）換成鍵盤可操作的說明按鈕，小標不連結。
+// 沒有選擇或不認得的專長（例如舊資料）只顯示「—」。
+function getFeatDescriptionHtml(featId) {
+  const html = window.getFeatText?.(featId)?.html;
+  if (!html) return `<div class="feat-desc-title">—</div><div class="feat-desc-body"></div>`;
+  const template = document.createElement("template");
+  template.innerHTML = html;
+  template.content.querySelectorAll("span.skill-tip").forEach(tip => tip.replaceWith(createFeatureRuleTip(tip.dataset.skill)));
+  return decorateDndConditionTips(template.innerHTML);
 }
 
 function updateFeatControlStates() {

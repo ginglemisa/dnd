@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=../../schema/feat.schema.json
+id: 臨陣施法
+source: extended
+type: general
+prerequisite: { spellcasting: true }
+effects:
+  - name: 屬性提升
+    text: 智力、感知或魅力擇一 +1（最高 20）。
+  - name: 穩住專注
+    text: 維持專注的體質豁免具有[[優勢]]。
+  - name: 迎擊法術
+    text: 生物離開你的觸及範圍而觸發[[藉機攻擊]]時，你可改用「反應」對其施放一個施法時間為「動作」、目標只有該生物的法術。
+  - name: 持械施法
+    text: 施放需要成分「S」的法術時，不必為了完成施法動作放開手中的武器或盾牌。
+actions:
+  - mode: reaction
+    label: 迎擊法術
+    key: dynamic-reaction-feat-dkui7n
+    level: 4

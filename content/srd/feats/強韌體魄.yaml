@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../schema/feat.schema.json
+id: 強韌體魄
+source: extended
+type: origin
+effects:
+  - name: 生命強化
+    text: 最大 HP 額外增加「角色等級 × 2」。
+pdf: [強韌體魄(起源), HP上限+等級×2]

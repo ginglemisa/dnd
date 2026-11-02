@@ -99,22 +99,6 @@
     metamagic: "超魔法"
   });
 
-  const TABLETOP_FEAT_ACTION_RULES = Object.freeze([
-    { feat: "臨陣施法", level: 4, modes: ["reaction"], label: "迎擊法術", ruleNames: ["迎擊法術"], legacyKeys: { reaction: "dynamic-reaction-feat-dkui7n" } },
-    { feat: "尋物好手", level: 4, modes: ["bonus"], label: "信手拈來", ruleNames: ["信手拈來"], legacyKeys: { bonus: "dynamic-bonus-feat-a4ncv1" } },
-    { feat: "醫療兵", modes: ["action"], label: "急救處置", ruleNames: ["急救處置"], proficiencyValue: true },
-    { feat: "醫療兵", modes: ["action"], label: "穩定療效", ruleNames: ["穩定療效"] },
-    { feat: "擒抱者", level: 4, modes: ["action"], label: "重拳擒抱", ruleNames: ["重拳擒抱"] },
-    { feat: "擒抱者", level: 4, modes: ["movement"], label: "迅捷摔技", ruleNames: ["迅捷摔技"] },
-    { feat: "衝鋒猛擊", level: 4, modes: ["movement"], label: "加速疾走", ruleNames: ["加速疾走"] },
-    { feat: "衝鋒猛擊", level: 4, modes: ["action", "movement"], label: "直線衝擊", ruleNames: ["直線衝擊"], numberedChoices: true },
-    { feat: "雙持追擊", level: 4, modes: ["action", "bonus"], legacyKeys: { bonus: "dynamic-bonus-feat-rklusa" }, label: "雙持追擊", ruleNames: ["雙持追擊", "傷害調整"], quickMasteryLabel: true },
-    { feat: "雙持追擊", level: 4, modes: ["action"], label: "快速換手", ruleNames: ["快速換手"] },
-    { feat: "最佳旅伴", level: 4, modes: ["action"], label: "妙語如珠", ruleNames: ["妙語如珠"] },
-    { feat: "封鎖者", level: 4, modes: ["reaction"], label: "封鎖者", ruleNames: ["封鎖者"], numberedTriggers: true },
-    { feat: "迅捷步法", level: 4, modes: ["action", "movement"], label: "跨越險地", ruleNames: ["跨越險地"] }
-  ]);
-
   // 職業動作：職業內容檔各能力（含子職能力、子能力、選項與附錄小節）的 actions（class-content.generated.js 的 classRules）。
   // key／legacyKeys 是跑團偏好記住的按鈕識別（class-id-baseline.json 把關）。出現條件只看等級、勾選的選項與魔能祈喚；
   // 說明段落依段落 ID 讀 classTabletopText，不解析職業頁標題或內文。附錄小節的 source: invocation 按鈕是魔能祈喚本身。
@@ -231,46 +215,20 @@
     return new Set(Array.from(document.querySelectorAll("#feats-area select"), select => select.value).filter(Boolean));
   }
 
-  function getFeatRuleText(featName, ruleName) {
-    return getNamedRuleDescription(typeof featsDesc === "undefined" ? "" : featsDesc[featName], ruleName);
-  }
-
-  function formatTabletopFeatRule(rule) {
-    let description = rule.ruleNames
-      .map(ruleName => getFeatRuleText(rule.feat, ruleName))
-      .filter(Boolean)
-      .join(" ");
-    if (!description) return "";
-    if (rule.proficiencyValue && document.getElementById("level")?.value) {
-      description = description.replace(/熟練加值/gu, String(getProficiencyBonus()));
-    }
-    if (rule.quickMasteryLabel) {
-      description = description
-        .replace(/；?\s*可與「迅切」並用。?/u, "；可與「迅切」武器精通並用。")
-        .replace(/。\s*若無/u, "；若無");
-    }
-    if (rule.numberedChoices) {
-      description = description.replace(/：\s*\+1d8 傷害；或將/u, "：\n\n1️⃣+1d8 傷害\n2️⃣將");
-    }
-    if (rule.numberedTriggers) {
-      description = description.replace(/：進行「撤離」行動；攻擊命中他人。?$/u, "：\n\n1️⃣進行「撤離」行動的目標\n2️⃣攻擊命中他人的目標。");
-    }
-    return description;
-  }
-
+  // 專長動作：專長內容檔的 actions（feat-content.generated.js 的 featRules.actions；key 是跑團偏好記住的按鈕識別，
+  // feat-id-baseline.json 把關），說明取自 featText.actions（效果的文字或另寫的跑團文字），依專長選單順序。
   function getTabletopFeatRuleEntries(mode) {
     const selectedFeats = getSelectedFeatNames();
-    return TABLETOP_FEAT_ACTION_RULES.flatMap(rule => {
-      if (!rule.modes.includes(mode) || !selectedFeats.has(rule.feat) || getCharacterLevel() < (rule.level || 1)) return [];
-      const description = formatTabletopFeatRule(rule);
-      if (!description) return [];
-      return [{
-        key: rule.legacyKeys?.[mode] || `dynamic-${mode}-feat-curated-${stableKeyHash(`${rule.feat}|${rule.label}`)}`,
-        label: rule.label,
-        source: rule.source || FEATURE_SOURCE_LABELS.feat,
-        description,
-        dynamic: true
-      }];
+    return Object.entries(globalScope.getAllFeatRules?.() || {}).flatMap(([feat, rules]) => {
+      if (!selectedFeats.has(feat)) return [];
+      return rules.actions.flatMap(action => {
+        if (action.mode !== mode || getCharacterLevel() < action.level) return [];
+        let description = globalScope.getFeatText(feat).actions[action.key];
+        if (action.proficiencyValue && document.getElementById("level")?.value) {
+          description = description.replace(/熟練加值/gu, String(getProficiencyBonus()));
+        }
+        return [{ key: action.key, label: action.label, source: FEATURE_SOURCE_LABELS.feat, description, dynamic: true }];
+      });
     });
   }
 
@@ -574,15 +532,6 @@
       });
     });
     return issues;
-  }
-
-  // Exact named-rule lookup is display-only; metadata supplies every mode and gate.
-  // Preserve continuation lines (including lists), unlike the old one-line feat copy.
-  function getNamedRuleDescription(raw, ruleName) {
-    const text = sourceToPlainText(raw);
-    const escaped = ruleName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const match = new RegExp('(?:^|\\n)' + escaped + '[：:]\\s*([\\s\\S]*?)(?=\\n[^\\n：:]+[：:]|\\n「擴充」|$)', 'u').exec(text);
-    return match ? match[1].trim() : "";
   }
 
   function resolveFeatureRules(rules, mode, source, describe) {

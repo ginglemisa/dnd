@@ -18,17 +18,49 @@
     return text && Object.hasOwn(text, background) ? text[background] : null;
   }
 
-  // 背景來源標籤：內容檔 source 為 extended（本站另外撰寫）與自訂背景顯示的字樣；srd 不加標籤。
-  const BACKGROUND_SOURCE_LABELS = Object.freeze({ extended: "擴充", custom: "擴充" });
+  // 內容來源標籤：內容檔（背景、專長等）source 為 extended（本站另外撰寫）與自訂背景顯示的字樣；srd 不加標籤。
+  const CONTENT_SOURCE_LABELS = Object.freeze({ extended: "擴充", custom: "擴充" });
 
   /** 背景來源：內建背景為內容檔的 source（srd／extended），自訂背景為 custom；沒有選擇或不認得時為空字串。讀取來源只經過這裡。 */
   function getBackgroundSource(background) {
     return getBackgroundRules(background)?.source || "";
   }
 
-  /** 背景來源的顯示標籤（例如「擴充」，不含括號）；沒有標籤時為空字串。建置檢查背景選單文字時也讀這裡。 */
-  function getBackgroundSourceLabel(source) {
-    return BACKGROUND_SOURCE_LABELS[source] || "";
+  /** 內容來源的顯示標籤（例如「擴充」，不含括號）；沒有標籤時為空字串。建置產生選單與說明文字時也讀這裡，標籤字樣只在這裡決定。 */
+  function getContentSourceLabel(source) {
+    return CONTENT_SOURCE_LABELS[source] || "";
+  }
+
+  /** 內容來源的說明（extended 為「「擴充」為本站以 SRD 為基底另行編寫。」）；其他來源為空字串。建置產生專長說明時也讀這裡。 */
+  function getContentSourceNotice(source) {
+    return source === "extended" ? `「${getContentSourceLabel(source)}」為本站以 SRD 為基底另行編寫。` : "";
+  }
+
+  /**
+   * 名稱加上類別與來源標籤，例如「醫療兵(起源・擴充)」「耕者(擴充)」「警覺(起源)」；沒有標籤時只有名稱。
+   * tags 是放在來源標籤前的其他標籤（例如專長類別）。選單、背景頁與快速創角的標籤寫法都由這裡產生（半形括號、以「・」連接）。
+   */
+  function formatContentSourceName(name, source, tags = []) {
+    const labels = [...tags, getContentSourceLabel(source)].filter(Boolean);
+    return labels.length ? `${name}(${labels.join("・")})` : String(name);
+  }
+
+  // 專長規則：feat-content.generated.js 由 content/srd/feats 產生 featRules（類別、來源、可否重複、先決條件、跑團動作）；
+  // 專長 ID 即存檔的專長值。不認得的專長回傳 null。
+  function getFeatRules(feat) {
+    const rules = typeof featRules === "undefined" ? null : featRules;
+    return rules && Object.hasOwn(rules, feat) ? rules[feat] : null;
+  }
+
+  /** 專長的顯示文字（featText：選單文字、說明 HTML、純文字說明、PDF 專長欄各行、跑團動作說明）。 */
+  function getFeatText(feat) {
+    const text = typeof featText === "undefined" ? null : featText;
+    return text && Object.hasOwn(text, feat) ? text[feat] : null;
+  }
+
+  /** 全部專長的規則（專長 ID → featRules），依專長選單順序。 */
+  function getAllFeatRules() {
+    return typeof featRules === "undefined" ? {} : featRules;
   }
 
   // 傷害類型（種族內容檔的 resistance 等）的顯示名稱。
@@ -761,7 +793,12 @@
     getBackgroundRules,
     getBackgroundText,
     getBackgroundSource,
-    getBackgroundSourceLabel,
+    getContentSourceLabel,
+    formatContentSourceName,
+    getContentSourceNotice,
+    getFeatRules,
+    getFeatText,
+    getAllFeatRules,
     getDamageTypeLabel,
     getCharacterResourceSpecs,
     getClassSaveProficiencies,

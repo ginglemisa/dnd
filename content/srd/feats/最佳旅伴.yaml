@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../schema/feat.schema.json
+id: 最佳旅伴
+source: extended
+type: general
+prerequisite: { abilities: [wis, cha] }
+effects:
+  - name: 屬性提升
+    text: 感知或魅力擇一 +1（最高 20）。
+  - name: 妙語如珠
+    text: 與你相處令人如沐春風。短休或長休結束時，你與最多五名一同休息的隊友因愉快的交談而神清氣爽，各獲得臨時生命值，數值＝你的等級＋此專長所提升屬性的調整值。
+actions:
+  - mode: action
+    label: 妙語如珠
+    key: dynamic-action-feat-curated-6sujmi
+    level: 4
