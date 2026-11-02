@@ -82,14 +82,19 @@
     return `<button type="button" class="quick-build-skill-info" data-weapon-rule-kind="mastery" data-weapon-rule="${escapeHtml(normalizedMastery)}"${normalizedMastery ? "" : " disabled"} aria-label="${escapeHtml(normalizedMastery ? `${normalizedMastery}精通：查看說明` : "請先選擇精通武器，再查看精通")}">查看精通</button>`;
   }
 
+  // 起源專長（專長內容檔 type: origin），依專長選單順序；有來源標籤的加上標籤。
   function humanOriginFeatOptions() {
-    const featOptions = typeof FEAT_OPTIONS === "object" && Array.isArray(FEAT_OPTIONS) ? FEAT_OPTIONS : [];
-    return featOptions
-      .filter(option => /[（(]起源(?:・擴充)?[）)]/u.test(option.label || ""))
-      .map(option => ({
-        value: option.value,
-        label: `${option.value}${/起源・擴充/u.test(option.label || "") ? "（擴充）" : ""}`
-      }));
+    return Object.entries(window.getAllFeatRules?.() || {})
+      .filter(([, rule]) => rule.type === "origin")
+      .map(([id, rule]) => {
+        const sourceLabel = window.getContentSourceLabel(rule.source);
+        return { value: id, label: `${id}${sourceLabel ? `（${sourceLabel}）` : ""}` };
+      });
+  }
+
+  // 戰鬥風格專長（專長內容檔 type: style）的專長 ID，依專長選單順序。
+  function fightingStyleFeatIds() {
+    return Object.entries(window.getAllFeatRules?.() || {}).filter(([, rule]) => rule.type === "style").map(([id]) => id);
   }
 
   function humanOriginFeatValues() {
@@ -664,7 +669,7 @@
       addDerivedAcquisition(target, "skills", { id: `race:${key}:skill:${options.skill}`, name: options.skill, sourceType: "race", sourceId: key, source: { ...source, feature: raceSkillTrait(key).name }, content: { proficiency: "skill" } });
     }
     if (key === "human" && humanOriginFeatValues().includes(options.feat)) {
-      addDerivedAcquisition(target, "feats", { id: `race:human:feat:${options.feat}`, name: options.feat, sourceType: "race", sourceId: key, source: { ...source, feature: "靈活人才", dataFile: "feats.js" }, content: { type: "origin feat", description: typeof featsDesc === "object" ? featsDesc[options.feat] : null } });
+      addDerivedAcquisition(target, "feats", { id: `race:human:feat:${options.feat}`, name: options.feat, sourceType: "race", sourceId: key, source: { ...source, feature: "靈活人才", dataFile: "feats.js" }, content: { type: "origin feat", description: window.getFeatText(options.feat).plain } });
     }
     const humanFeatOptions = isPlainObject(options.featOptions) ? options.featOptions : {};
     if (key === "human" && options.feat === "魔法學徒" && MAGIC_INITIATE_SPELL_CLASSES.has(humanFeatOptions.spellClass)) {
@@ -1211,7 +1216,7 @@
     if (!weaponMasterySlots.some(Boolean) && definition.prefillMasteryFromDefaultWeapon && target.choices.defaultWeapon && weaponOptions.includes(target.choices.defaultWeapon)) weaponMasterySlots = [target.choices.defaultWeapon];
     const weaponMasteries = weaponMasterySlots.filter(Boolean);
     if (weaponMasteries.length !== (definition.weaponMastery || 0)) pendingChoices.push(`武器精通 ${definition.weaponMastery} 種`);
-    const fightingStyles = (typeof FEAT_OPTIONS === "object" ? FEAT_OPTIONS : []).filter(option => /戰鬥風格/u.test(option.label || "")).map(option => option.value);
+    const fightingStyles = fightingStyleFeatIds();
     const fightingStyle = definition.fightingStyle && fightingStyles.includes(choices.fightingStyle) ? choices.fightingStyle : null;
     if (definition.fightingStyle && !fightingStyle) pendingChoices.push("戰鬥風格");
     const expertiseOptions = expertiseSkillOptions(target);
@@ -1511,8 +1516,7 @@
       :where(html[data-ui-theme="warm"]) #quick-build-spell-detail .quick-build-spell-detail-close {display:grid;flex:0 0 44px;place-items:center;width:44px;min-width:44px;height:44px;min-height:44px;margin:0;padding:0;border:1px solid transparent;border-radius:var(--radius-md);background:var(--qb-surface-elevated);color:var(--qb-text);font-size:1.5rem;line-height:1;cursor:pointer;touch-action:manipulation}:where(html:not([data-ui-theme="warm"])) #quick-build-spell-detail .quick-build-spell-detail-close:hover,
 :where(html:not([data-ui-theme="warm"])) #quick-build-spell-detail .quick-build-spell-detail-close:focus-visible {border-color:var(--qb-accent);background:var(--qb-accent-soft);outline:2px solid transparent}:where(html[data-ui-theme="warm"]) #quick-build-spell-detail .quick-build-spell-detail-close:hover,
 :where(html[data-ui-theme="warm"]) #quick-build-spell-detail .quick-build-spell-detail-close:focus-visible {border-color:var(--qb-accent);background:var(--qb-accent-soft);outline:2px solid var(--focus-ring);outline-offset:2px}
-      #quick-build-spell-detail-content {min-height:0;flex:1 1 auto;padding:20px;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;white-space:pre-wrap;color:var(--qb-text-body);line-height:1.65}#quick-build-spell-detail-content strong {display:block;margin-bottom:12px;color:var(--qb-accent-text);font-size:1.08rem}.quick-build-expansion-notice {margin-top:12px;padding-top:8px;border-top:1px solid var(--qb-border);color:var(--qb-text-muted);font-size:.78rem;line-height:1.45}
-      #quick-build-spell-detail .quick-build-spell-prepare {display:flex;flex:0 0 auto;align-items:center;justify-content:space-between;gap:16px;padding:16px 18px;border-top:1px solid var(--qb-border);background:var(--qb-surface-soft)}#quick-build-spell-detail .quick-build-spell-prepare[hidden] {display:none}#quick-build-spell-prepare-question {margin:0;color:var(--qb-text);font-weight:700;line-height:1.45}.quick-build-spell-prepare-actions {display:flex;flex:0 0 auto;gap:10px}:where(html:not([data-ui-theme="warm"])) .quick-build-spell-prepare-actions button {min-height:44px;margin:0;padding:8px 14px;border:1px solid var(--qb-border-strong);border-radius:8px;background:var(--qb-surface-elevated);color:var(--qb-text);font-weight:700;cursor:pointer}:where(html[data-ui-theme="warm"]) .quick-build-spell-prepare-actions button {min-height:44px;margin:0;padding:8px 14px;border:1px solid var(--qb-border-strong);border-radius:var(--radius-md);background:var(--qb-surface-elevated);color:var(--qb-text);font-weight:700;cursor:pointer}:where(html:not([data-ui-theme="warm"])) .quick-build-spell-prepare-actions button:hover,
+      #quick-build-spell-detail-content {min-height:0;flex:1 1 auto;padding:20px;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;white-space:pre-wrap;color:var(--qb-text-body);line-height:1.65}#quick-build-spell-detail-content strong {display:block;margin-bottom:12px;color:var(--qb-accent-text);font-size:1.08rem}      #quick-build-spell-detail .quick-build-spell-prepare {display:flex;flex:0 0 auto;align-items:center;justify-content:space-between;gap:16px;padding:16px 18px;border-top:1px solid var(--qb-border);background:var(--qb-surface-soft)}#quick-build-spell-detail .quick-build-spell-prepare[hidden] {display:none}#quick-build-spell-prepare-question {margin:0;color:var(--qb-text);font-weight:700;line-height:1.45}.quick-build-spell-prepare-actions {display:flex;flex:0 0 auto;gap:10px}:where(html:not([data-ui-theme="warm"])) .quick-build-spell-prepare-actions button {min-height:44px;margin:0;padding:8px 14px;border:1px solid var(--qb-border-strong);border-radius:8px;background:var(--qb-surface-elevated);color:var(--qb-text);font-weight:700;cursor:pointer}:where(html[data-ui-theme="warm"]) .quick-build-spell-prepare-actions button {min-height:44px;margin:0;padding:8px 14px;border:1px solid var(--qb-border-strong);border-radius:var(--radius-md);background:var(--qb-surface-elevated);color:var(--qb-text);font-weight:700;cursor:pointer}:where(html:not([data-ui-theme="warm"])) .quick-build-spell-prepare-actions button:hover,
 :where(html:not([data-ui-theme="warm"])) .quick-build-spell-prepare-actions button:focus-visible {border-color:var(--qb-accent);background:var(--qb-accent-soft);outline:2px solid transparent}:where(html[data-ui-theme="warm"]) .quick-build-spell-prepare-actions button:hover,
 :where(html[data-ui-theme="warm"]) .quick-build-spell-prepare-actions button:focus-visible {border-color:var(--qb-accent);background:var(--qb-accent-soft);outline:2px solid var(--focus-ring);outline-offset:2px}:where(html:not([data-ui-theme="warm"])) .quick-build-spell-prepare-actions button:active {box-shadow:inset 0 2px 5px color-mix(in srgb,var(--qb-text) 18%,transparent)}:where(html[data-ui-theme="warm"]) .quick-build-spell-prepare-actions button:active {box-shadow:none;translate:1px 1px}:where(html:not([data-ui-theme="warm"])) .quick-build-spell-prepare-actions .quick-build-spell-prepare-confirm {border-color:var(--qb-accent);background:var(--qb-accent-hover);color:var(--on-accent)}:where(html[data-ui-theme="warm"]) .quick-build-spell-prepare-actions .quick-build-spell-prepare-confirm {border-color:var(--qb-accent);background:var(--qb-accent-hover);color:var(--on-accent)}:where(html:not([data-ui-theme="warm"])) .quick-build-spell-prepare-actions .quick-build-spell-prepare-confirm:hover,
 :where(html:not([data-ui-theme="warm"])) .quick-build-spell-prepare-actions .quick-build-spell-prepare-confirm:focus-visible {background:var(--qb-accent);color:var(--on-accent)}:where(html[data-ui-theme="warm"]) .quick-build-spell-prepare-actions .quick-build-spell-prepare-confirm:hover,
@@ -2374,8 +2378,7 @@
     const skillBonuses = (draft.acquisitions.skillBonuses || []).filter(item => item.sourceType === "level-one" && item.sourceId === key);
     if (skillBonuses.length) panels.push(`<section class="quick-build-complete"><strong>技能額外加值：</strong>${escapeHtml(skillBonuses.map(item => item.name).join("、"))}</section>`);
     if (definition.fightingStyle) {
-      const styles = (typeof FEAT_OPTIONS === "object" ? FEAT_OPTIONS : []).filter(option => /戰鬥風格/u.test(option.label || ""));
-      panels.push(`<section class="quick-build-choice-panel"><h4>戰鬥風格</h4><div class="quick-build-field"><label for="quick-build-fighting-style">戰鬥風格</label><select id="quick-build-fighting-style" data-level-one-fighting-style><option value="">請選擇</option>${styles.map(option => `<option value="${escapeHtml(option.value)}"${choices.fightingStyle === option.value ? " selected" : ""}>${escapeHtml(option.value)}</option>`).join("")}</select></div></section>`);
+      panels.push(`<section class="quick-build-choice-panel"><h4>戰鬥風格</h4><div class="quick-build-field"><label for="quick-build-fighting-style">戰鬥風格</label><select id="quick-build-fighting-style" data-level-one-fighting-style><option value="">請選擇</option>${fightingStyleFeatIds().map(id => `<option value="${escapeHtml(id)}"${choices.fightingStyle === id ? " selected" : ""}>${escapeHtml(id)}</option>`).join("")}</select></div></section>`);
     }
     if (definition.invocations) {
       const selected = choices.invocations?.[0] || "";
@@ -3660,8 +3663,7 @@
 
   function showHumanFeatDescription(trigger) {
     const value = ensureWizard().querySelector("#quick-build-race-feat")?.value || "";
-    const description = value && typeof featsDesc === "object" ? featsDesc[value] : null;
-    openFeatDetail(description, trigger);
+    openFeatDetail(value && window.getFeatText?.(value) ? { feat: value } : null, trigger);
   }
 
   function updateHumanMagicFeat(event) {
@@ -3854,7 +3856,8 @@
     openFeatDetail(detail, trigger, "魔能祈喚詳情");
   }
 
-  function openFeatDetail(description, trigger, title = "專長詳情") {
+  // detail：{ feat: 專長 ID } 顯示專長說明（與角色卡相同）；文字（例如魔能祈喚說明）照原文顯示；空值為尚未選擇。
+  function openFeatDetail(detail, trigger, title = "專長詳情") {
     const modal = ensureSpellDetailModal();
     const wizardShell = ensureWizard().querySelector(".quick-build-shell");
     const content = modal.querySelector("#quick-build-spell-detail-content");
@@ -3862,18 +3865,10 @@
     modal.querySelector("#quick-build-spell-detail-title").textContent = title;
     modal.querySelector(".quick-build-spell-prepare").hidden = true;
     settleSpellPrepareDecision(false);
-    const featTitle = String(description || "").split(/\r?\n/)[0];
-    if (description && typeof featsDesc === "object" && featsDesc[featTitle] === description) {
-      content.innerHTML = formatFeatDescription(description);
-    } else if (description) {
-      const lines = String(description).replace(/\r\n/g, "\n").split("\n");
-      const noticeIndex = lines.findIndex(line => line.trim().startsWith("「擴充」為本站"));
-      if (noticeIndex >= 0) {
-        const notice = lines.splice(noticeIndex, 1)[0].trim();
-        content.innerHTML = `${escapeHtml(lines.join("\n").trimEnd())}<div class="quick-build-expansion-notice">${escapeHtml(notice)}</div>`;
-      } else {
-        content.textContent = description;
-      }
+    if (detail?.feat) {
+      content.innerHTML = getFeatDescriptionHtml(detail.feat);
+    } else if (detail) {
+      content.textContent = detail;
     } else {
       content.innerHTML = "<span>你還沒有選擇專長喔！</span>";
     }
