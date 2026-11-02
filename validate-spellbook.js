@@ -953,6 +953,62 @@ async function verifyPreparedPicker(page) {
   console.log("Prepared picker: toggle/search/ring filters, 1–4 columns, source collapse, draft counts, nested lookup and eligibility passed.");
 }
 
+async function verifyPreparedRingRange(page) {
+  const dialog = pickerDialog(page), ringFilter = dialog.getByRole("combobox", { name: "篩選環階", exact: true });
+  const rings = () => ringFilter.locator("option").evaluateAll(options => options.map(option => option.value));
+  const open = async state => {
+    await apply(page, modern({ "spellcasting-ability": "cha", ...state }));
+    await page.locator("#spell-prepare").click();
+    await dialog.waitFor();
+  };
+  const close = async () => { await page.keyboard.press("Escape"); await dialog.waitFor({ state: "detached" }); };
+  // Automatic management lists cantrips only with a cantrip allowance or a cantrip-granting
+  // option, and leveled rings only up to the highest spell slot.
+  for (const [state, expected, message] of [
+    [{ class: "wizard", level: "1" }, ["", "0", "1"], "wizard 1"],
+    [{ class: "wizard", level: "5" }, ["", "0", "1", "2", "3"], "wizard 5"],
+    [{ class: "cleric", level: "8" }, ["", "0", "1", "2", "3", "4"], "cleric 8"],
+    [{ class: "paladin", level: "2" }, ["", "1"], "paladin without Blessed Warrior"],
+    [{ class: "paladin", level: "2", "paladin-blessed-warrior": true }, ["", "0", "1"], "Blessed Warrior before choosing cantrips"],
+    [{ class: "paladin", level: "5", "paladin-blessed-warrior": true, __classFeatureCantrips: { "class-paladin-blessed-warrior-cantrip-1": "guidance" } },
+      ["", "0", "1", "2"], "Blessed Warrior with a chosen cantrip"],
+    [{ class: "ranger", level: "2" }, ["", "1"], "ranger without Druidic Warrior"],
+    [{ class: "ranger", level: "2", "ranger-druidic-warrior": true }, ["", "0", "1"], "Druidic Warrior"],
+    [{ class: "fighter", level: "5" }, [""], "non-caster"]
+  ]) {
+    await open(state);
+    assert.deepEqual(await rings(), expected, message);
+    await close();
+  }
+  // Retained higher-ring choices stay visible under all rings even though their ring is not listed.
+  await apply(page, modern({ class: "wizard", level: "1", "spellcasting-ability": "int" }, [player("fireball", "wizard")]));
+  await page.locator("#spell-prepare").click();
+  assert.deepEqual(await rings(), ["", "0", "1"]);
+  assert.equal(await dialog.locator('.spell-picker-option input[value="fireball"]').isChecked(), true);
+  assert.equal(await dialog.locator('.spell-picker-option input[value="ice-storm"]').count(), 0, "automatic candidates stop at the highest slot");
+  await close();
+  // Manual management never blocks a ring: every class lists and checks cantrips through 4th level.
+  await open({ class: "paladin", level: "1" });
+  assert.deepEqual(await rings(), ["", "1"]);
+  await dialog.locator("#manual-spell-management").click();
+  await page.getByRole("alertdialog", { name: "啟用手動法術管理" }).getByRole("button", { name: "啟用手動管理", exact: true }).click();
+  assert.deepEqual(await rings(), ["", "0", "1", "2", "3", "4"], "manual draft lists every ring");
+  await ringFilter.selectOption("4");
+  await dialog.locator("#manual-spell-management").click();
+  assert.deepEqual(await rings(), ["", "1"], "returning to the automatic draft restores its rings");
+  assert.equal(await ringFilter.inputValue(), "", "a removed ring falls back to all rings");
+  await close();
+  for (const cls of ["paladin", "ranger", "fighter"]) {
+    await apply(page, modern({ class: cls, level: "1", "spellcasting-ability": "cha", "manual-spell-management": true }));
+    await page.locator("#spell-prepare").click();
+    assert.deepEqual(await rings(), ["", "0", "1", "2", "3", "4"], `${cls} manual lists every ring`);
+    await selectPicker(page, "light"); await selectPicker(page, "ice-storm");
+    await dialog.getByRole("button", { name: "儲存", exact: true }).click();
+    assert.deepEqual(await playerIds(page), ["light", "ice-storm"], `${cls} manual keeps cantrips through 4th level`);
+  }
+  console.log("Prepared ring range: automatic cantrip/slot rings, class-option cantrips, retained high rings and unrestricted manual rings passed.");
+}
+
 async function verifyLevelUpCantripChoice(page) {
   const choice = () => page.evaluate(() => {
     const select = document.getElementById("class-level-up-cantrip");
@@ -1963,6 +2019,7 @@ async function main() {
     await verifyAutomaticSourceCleanup(page);
     await verifyUnavailableSpellRows(page);
     await verifyPreparedPicker(page);
+    await verifyPreparedRingRange(page);
     await verifyLevelUpCantripChoice(page);
     await verifyWizardBookPicker(page);
     await verifyManualSpellbook(page);
@@ -1981,10 +2038,8 @@ async function main() {
     await page.locator("#spell-prepare").click();
     assert.match(await pickerDialog(page).locator(".spell-prepared-draft-counts").innerText(), /^戲法 0／0｜一至二環 0／\d+$/u);
     const rangerRings = pickerDialog(page).getByRole("combobox", { name: "篩選環階" });
-    await rangerRings.selectOption("0");
-    assert.equal(await pickerDialog(page).locator(".spellbook-options").innerText(), "此職業沒有職業戲法。");
-    await rangerRings.selectOption("3");
-    assert.equal(await pickerDialog(page).locator(".spellbook-options").innerText(), "目前職業等級尚未開放三環法術。");
+    assert.deepEqual(await rangerRings.locator("option").evaluateAll(options => options.map(option => option.value)), ["", "1", "2"],
+      "automatic ranger lists neither cantrips nor rings above its highest slot");
     await page.keyboard.press("Escape");
     await pickerDialog(page).waitFor({ state: "detached" });
     await page.goto(restoreUrl.href);
@@ -2005,9 +2060,7 @@ async function main() {
     assert.equal(await pickerDialog(page).locator(".spell-prepared-draft-counts").innerText(), "戲法 0／3｜一環 1／4");
     assert.match(await pickerDialog(page).locator(".spell-picker-count").innerText(), /^\d+ 個法術，已顯示 \d+ 個 \| 1環 1 \| 2環 0 \| 3環 0 \| 4環 0 \|$/u);
     const ringFilter = pickerDialog(page).getByRole("combobox", { name: "篩選環階" });
-    await ringFilter.selectOption("3");
-    assert.equal(await pickerDialog(page).locator(".spellbook-options").innerText(), "目前職業等級尚未開放三環法術。");
-    await ringFilter.selectOption("");
+    assert.deepEqual(await ringFilter.locator("option").evaluateAll(options => options.map(option => option.value)), ["", "0", "1"]);
     await page.keyboard.press("Escape");
     await page.locator('#spellbook-list [data-spell-id="detect-magic"]').click();
     await page.locator(".quick-build-spell-prepare-confirm").click();

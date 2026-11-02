@@ -566,10 +566,18 @@ function spellEntryFromSourceSpec(spec) {
   };
 }
 
-function getCurrentSpellSourceEntries() {
+function getCurrentSpellSourceSpecs() {
   return [...getMagicInitiateDerivedSpellSpecs(), ...getRacialDerivedSpellSpecs(),
-    ...getClassAlwaysPreparedSpellSpecs(), ...getSubclassDerivedSpellSpecs(), ...getEldritchInvocationDerivedSpellSpecs()]
-    .map(spellEntryFromSourceSpec).filter(entry => entry.spellId);
+    ...getClassAlwaysPreparedSpellSpecs(), ...getSubclassDerivedSpellSpecs(), ...getEldritchInvocationDerivedSpellSpecs()];
+}
+
+function getCurrentSpellSourceEntries() {
+  return getCurrentSpellSourceSpecs().map(spellEntryFromSourceSpec).filter(entry => entry.spellId);
+}
+
+// 準備法術視窗的「戲法」篩選：來源能力（如受祝福的勇士）給予戲法即算，戲法尚未選定也算。
+function hasCurrentSpellSourceCantrips() {
+  return getCurrentSpellSourceSpecs().some(spec => spellEntryFromSourceSpec(spec).level === 0);
 }
 
 function syncCurrentSpellSources() {

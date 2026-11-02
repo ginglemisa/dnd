@@ -279,14 +279,27 @@
     const filter = node("select");
     filter.setAttribute("aria-label", prepared ? "篩選環階" : "篩選學派");
     filter.dataset.stateTransient = "true";
-    const filters = prepared ? [["", "所有環階"], ...levels.map((label, i) => [String(i), label])]
+    function setFilterOptions(filters) {
+      filter.replaceChildren(...filters.map(([value, label]) => {
+        const option = node("option", "", label);
+        option.value = value;
+        return option;
+      }));
+    }
+    setFilterOptions(prepared ? [["", "所有環階"], ...levels.map((label, i) => [String(i), label])]
       : [["", "所有學派"], ...[...new Set(options.getSpells().map(schoolOf).filter(Boolean))]
-        .sort((a, b) => a.localeCompare(b, "zh-Hant")).map(school => [school, school])];
-    filters.forEach(([value, label]) => {
-      const option = node("option", "", label);
-      option.value = value;
-      filter.appendChild(option);
-    });
+        .sort((a, b) => a.localeCompare(b, "zh-Hant")).map(school => [school, school])]);
+    // The ring menu follows options.getRings(); a ring that disappears falls back to all rings.
+    let ringSignature = null;
+    function syncRingOptions() {
+      if (!prepared || !options.getRings) return;
+      const rings = options.getRings();
+      if (rings.join() === ringSignature) return;
+      ringSignature = rings.join();
+      const value = filter.value;
+      setFilterOptions([["", "所有環階"], ...rings.map(ring => [String(ring), levels[ring]])]);
+      filter.value = value !== "" && rings.includes(Number(value)) ? value : "";
+    }
     const selectedOnly = node("button", "spell-picker-selected-toggle", "只看已選");
     selectedOnly.type = "button";
     selectedOnly.dataset.stateTransient = "true";
@@ -330,6 +343,7 @@
     let composing = false;
     function draw(reset = false) {
       options.beforeDraw?.();
+      syncRingOptions();
       if (reset) { visibleCount = batchSize; list.scrollTop = 0; }
       clear.hidden = !search.value;
       const selectedRings = ringInputs.filter(input => input.checked).map(input => Number(input.value));
@@ -640,6 +654,14 @@
     }
     const picker = createSpellPicker({ mode: "prepared", getSpells: candidateSpells,
       beforeDraw: refreshAvailableCounts,
+      // Automatic management lists only rings the character can prepare now;
+      // manual management keeps cantrips through 4th level for legacy saves.
+      getRings() {
+        if (manual) return [0, 1, 2, 3, 4];
+        const rings = limits.cantrips > 0 || globalScope.hasCurrentSpellSourceCantrips?.() ? [0] : [];
+        for (let ring = 1; ring <= limits.maxLevel; ring += 1) rings.push(ring);
+        return rings;
+      },
       getCountSuffix: () => ` | ${[1, 2, 3, 4].map(ring => `${ring}環 ${draftSnapshot.ringCounts[ring]}`).join(" | ")} |`,
       // Explain an empty ring filter that the class or level cannot use yet.
       getEmptyMessage(filterValue) {
