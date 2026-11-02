@@ -4855,8 +4855,12 @@ globalThis.SpellCatalog = (() => {
     return typeof spellId === "string" ? spellsById[spellId] : undefined;
   }
 
+  // 全部法術依環階、再依 spellId 排序（與職業法表相同規則）。
+  const allSpells = Object.freeze(Object.values(spellsById)
+    .sort((a, b) => a.level - b.level || (a.spellId < b.spellId ? -1 : a.spellId > b.spellId ? 1 : 0)));
+
   function getAllSpells() {
-    return Object.values(spellsById);
+    return [...allSpells];
   }
 
   function getSpellIds(classId, level) {
