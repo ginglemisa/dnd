@@ -275,11 +275,11 @@
     "煉獄血統": "重視秩序與契約的地獄勢力，天生能操縱火焰。"
   };
   const DRAGONBORN_SUMMARY = {
-    "黑龍-酸": { ancestry: "黑龍", damage: "酸蝕" },
+    "黑龍-酸": { ancestry: "黑龍", damage: "強酸" },
     "藍龍-電": { ancestry: "藍龍", damage: "雷電" },
     "黃銅龍-火": { ancestry: "黃銅龍", damage: "火焰" },
     "青銅龍-電": { ancestry: "青銅龍", damage: "雷電" },
-    "赤銅龍-酸": { ancestry: "赤銅龍", damage: "酸液" },
+    "赤銅龍-酸": { ancestry: "赤銅龍", damage: "強酸" },
     "金龍-火": { ancestry: "金龍", damage: "火焰" },
     "綠龍-毒": { ancestry: "綠龍", damage: "毒素" },
     "紅龍-火": { ancestry: "紅龍", damage: "火焰" },
@@ -1824,7 +1824,7 @@
   function elfSummarySpells(options) {
     if (options.lineage === "卓爾血統") return "舞光術、妖火（3 級）、黑暗術（5 級）";
     if (options.lineage === "高等精靈血統") return `${spellNameZh(options.cantrip)}、偵測魔法（3 級）、迷蹤步（5 級）`;
-    return "德魯伊伎倆、大步奔行（3 級）、行動無蹤跡（5 級）";
+    return "德魯伊伎倆、大步奔行（3 級）、行動無蹤（5 級）";
   }
 
   function raceCompletionLines(key, options) {

@@ -294,7 +294,7 @@
   function getSelectedSpellEntries(mode) {
     if (typeof SpellCatalog === "undefined") return [];
     const timingPattern = mode === "action"
-      ? /(?:施法時間\s*[：:]\s*動作(?:或儀式)?(?=[ \t]*(?:\r?\n|$))|施法時間\s*[：:][ \t]*(?:\r?\n)+[ \t]*-[ \t]*動作(?:（[^）]+）)?)/u
+      ? /施法時間[ \t]*[：:][ \t]*動作(?:或(?:儀式|\d+[ \t]*(?:分鐘|小時)))?(?=[ \t]*(?:\r?\n|$))/u
       : mode === "bonus"
         ? /施法時間\s*[：:]\s*附贈動作/u
         : /施法時間\s*[：:]\s*反應動作/u;
