@@ -55,9 +55,11 @@ assert.deepEqual([...catalog.getClassIds("eldritch-blast")], ["warlock"], "專�
 ["elementalism", "hideous-laughter", "ice-knife", "ray-of-sickness", "dragons-breath", "mind-spike", "phantasmal-force", "tiny-hut"].forEach(spellId => {
   assert.ok(catalog.getClassIds(spellId).includes("wizard"), `${spellId} 應在法師法表`);
 });
-[0, 1, 2, 3, 4].forEach(level => {
-  const ids = [...catalog.getSpellIds("wizard", level)];
-  assert.deepEqual(ids, [...ids].sort(), `法師 ${level} 環法表應依 spellId 字母排序`);
+spellClasses.forEach(classId => {
+  [0, 1, 2, 3, 4].forEach(level => {
+    const ids = [...catalog.getSpellIds(classId, level)];
+    assert.deepEqual(ids, [...ids].sort(), `${classId} ${level} 環法表應依 spellId 字母排序`);
+  });
 });
 const mutatedClasses = catalog.getClassIds("light");
 mutatedClasses.splice(0, mutatedClasses.length, "invalid");
