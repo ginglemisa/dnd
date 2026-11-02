@@ -1,0 +1,80 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "spell.schema.json",
+  "title": "SRD 法術參考資料（content/srd/spells/<spellId>.yaml）",
+  "description": "一個法術一個檔。結構化欄位來自 SRD 5.2.1 英文原文；en 是英文原文，zh 是逐句直譯的繁體中文。網站目前沒有讀取這個資料夾。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["spellId", "source", "level", "school", "classes", "ritual", "concentration", "castingTime", "range", "components", "duration", "en", "zh"],
+  "properties": {
+    "spellId": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "description": "法術 ID：網站已有的法術沿用網站的 spellId；其餘由 SRD 英文名轉 kebab-case。必須與檔名相同。" },
+    "source": { "const": "srd" },
+    "level": { "type": "integer", "minimum": 0, "maximum": 9, "description": "0 = 戲法" },
+    "school": { "enum": ["abjuration", "conjuration", "divination", "enchantment", "evocation", "illusion", "necromancy", "transmutation"] },
+    "classes": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "enum": ["bard", "cleric", "druid", "paladin", "ranger", "sorcerer", "warlock", "wizard"] } },
+    "ritual": { "type": "boolean", "description": "施法時間含儀式選項" },
+    "concentration": { "type": "boolean" },
+    "castingTime": {
+      "type": "array",
+      "minItems": 1,
+      "description": "可選的施法時間；「動作或儀式」是兩項。",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["unit"],
+        "properties": {
+          "unit": { "enum": ["action", "bonus-action", "reaction", "minute", "hour", "ritual"] },
+          "amount": { "type": "integer", "minimum": 1, "description": "unit 為 minute／hour 時必填" },
+          "note": { "$ref": "#/definitions/bilingual", "description": "反應或附贈動作的觸發條件，或同一法術不同施法時間的效果名稱（例如植物滋長）" }
+        }
+      }
+    },
+    "range": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": { "enum": ["self", "touch", "sight", "unlimited", "special", "distance"] },
+        "amount": { "type": "integer", "minimum": 1 },
+        "unit": { "enum": ["feet", "mile"] }
+      }
+    },
+    "components": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["v", "s", "m"],
+      "properties": { "v": { "type": "boolean" }, "s": { "type": "boolean" }, "m": { "type": "boolean" } }
+    },
+    "duration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": { "enum": ["instantaneous", "time", "until-dispelled", "until-dispelled-or-triggered", "special"] },
+        "amount": { "type": "integer", "minimum": 1 },
+        "unit": { "enum": ["round", "minute", "hour", "day"] },
+        "upTo": { "type": "boolean", "description": "「最長」" }
+      }
+    },
+    "en": { "$ref": "#/definitions/text" },
+    "zh": { "$ref": "#/definitions/text" }
+  },
+  "definitions": {
+    "bilingual": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["en", "zh"],
+      "properties": { "en": { "type": "string", "minLength": 1 }, "zh": { "type": "string", "minLength": 1 } }
+    },
+    "text": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "body"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "material": { "type": "string", "minLength": 1, "description": "材料成分的內容（不含括號）；components.m 為 true 時必填" },
+        "body": { "type": "string", "minLength": 1, "description": "法術說明（GFM Markdown）。段落以空行分隔；斜體小標如 _Using a Higher-Level Spell Slot._；表格為 GFM 表格。" }
+      }
+    }
+  }
+}
