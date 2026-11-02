@@ -1155,7 +1155,7 @@ async function verifyCustomBackground(browser, url) {
       feat: "強韌體魄", "skill-0": "運動", "skill-1": "隱匿", tool: "里拉琴"
     })) await page.locator(`#custom-background-${id}`).selectOption(value);
     assert.equal(await page.locator("#custom-background-tool option").count(), await page.evaluate(() => ToolProficiencyCatalog.allTools.length + 1));
-    assert.equal(await page.locator("#custom-background-feat option").count(), await page.evaluate(() => FEAT_OPTIONS.filter(option => FEAT_RULES[option.value]?.type === "origin").length + 1));
+    assert.equal(await page.locator("#custom-background-feat option").count(), await page.evaluate(() => Object.values(getAllFeatRules()).filter(rule => rule.type === "origin").length + 1));
     assert.equal(await page.locator(".custom-background-field-group").evaluateAll(groups => groups.every(group => {
       const boxes = Array.from(group.querySelectorAll("select"), el => el.getBoundingClientRect());
       return boxes.every(box => Math.abs(box.top - boxes[0].top) < 1);
@@ -2266,9 +2266,10 @@ async function verifyFeatureReferences(browser, url) {
           if (!condition || tip.textContent !== condition.zh) failures.push(`${name}: wrong condition key`);
         }
       }
-      for (const [name, raw] of Object.entries(featsDesc)) {
+      for (const name of Object.keys(getAllFeatRules())) {
+        const raw = getFeatText(name).plain;
         const template = document.createElement("template");
-        template.innerHTML = formatFeatDescription(raw);
+        template.innerHTML = getFeatDescriptionHtml(name);
         const expected = name === "警覺" ? 1 : name === "擒抱者" ? 3 : 0;
         if (template.content.querySelectorAll("button.condition-tip").length !== expected) failures.push(`${name}: feat condition coverage`);
         if (template.content.querySelector("strong .feature-rule-tip, .feat-desc-title .feature-rule-tip, .feat-desc-subtitle .feature-rule-tip")) failures.push(`${name}: linked feat heading`);
@@ -2284,7 +2285,7 @@ async function verifyFeatureReferences(browser, url) {
         }
       }
       const finder = document.createElement("template");
-      finder.innerHTML = formatFeatDescription(featsDesc["尋物好手"]);
+      finder.innerHTML = getFeatDescriptionHtml("尋物好手");
       const finderSkills = Array.from(finder.content.querySelectorAll("button.skill-tip"), tip => tip.dataset.skill);
       if (JSON.stringify(finderSkills) !== JSON.stringify(["洞悉", "調查", "察覺"])) failures.push(`尋物好手: skill links ${finderSkills}`);
       for (const [name, count] of [["fighter", 2], ["monk", 1], ["ranger", 1], ["rogue", 1]]) {

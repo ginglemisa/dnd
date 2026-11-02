@@ -8,8 +8,10 @@
   let previousSelection = "";
   let editing = false;
 
+  // 起源專長（專長 ID 與選單文字），依專長選單順序。
   function originFeats() {
-    return FEAT_OPTIONS.filter(option => FEAT_RULES[option.value]?.type === "origin");
+    return Object.entries(globalScope.getAllFeatRules()).filter(([, rule]) => rule.type === "origin")
+      .map(([id]) => ({ value: id, label: globalScope.getFeatText(id).label }));
   }
 
   function normalize(value) {

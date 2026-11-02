@@ -39,6 +39,24 @@
   /** 背景來源的顯示標籤（同 getContentSourceLabel）。 */
   const getBackgroundSourceLabel = getContentSourceLabel;
 
+  // 專長規則：feat-content.generated.js 由 content/srd/feats 產生 featRules（類別、來源、可否重複、先決條件、跑團動作）；
+  // 專長 ID 即存檔的專長值。不認得的專長回傳 null。
+  function getFeatRules(feat) {
+    const rules = typeof featRules === "undefined" ? null : featRules;
+    return rules && Object.hasOwn(rules, feat) ? rules[feat] : null;
+  }
+
+  /** 專長的顯示文字（featText：選單文字、說明 HTML、純文字說明、PDF 專長欄各行、跑團動作說明）。 */
+  function getFeatText(feat) {
+    const text = typeof featText === "undefined" ? null : featText;
+    return text && Object.hasOwn(text, feat) ? text[feat] : null;
+  }
+
+  /** 全部專長的規則（專長 ID → featRules），依專長選單順序。 */
+  function getAllFeatRules() {
+    return typeof featRules === "undefined" ? {} : featRules;
+  }
+
   // 傷害類型（種族內容檔的 resistance 等）的顯示名稱。
   const DAMAGE_TYPE_LABELS = Object.freeze({ acid: "強酸", cold: "冷凍", fire: "火焰", lightning: "閃電", necrotic: "黯蝕", poison: "毒素" });
 
@@ -772,6 +790,9 @@
     getBackgroundSourceLabel,
     getContentSourceLabel,
     getContentSourceNotice,
+    getFeatRules,
+    getFeatText,
+    getAllFeatRules,
     getDamageTypeLabel,
     getCharacterResourceSpecs,
     getClassSaveProficiencies,

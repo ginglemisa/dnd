@@ -98,7 +98,7 @@
   <script src="action-panel.js?v=20261102-race-content" defer></script>
   <script src="character-rules.js?v=20261102-feat-content" defer></script>
   <script src="app-dialog.js?v=20261028-custom-spells" defer></script>
-  <script src="custom-background.js?v=20261102-background-source" defer></script>
+  <script src="custom-background.js?v=20261102-feat-content" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
   <script src="tabletop-mode.js?v=20261102-race-content" defer></script>
   <script src="tabletop-druid.js?v=20261021-bonus-wording" defer></script>
@@ -1359,7 +1359,7 @@
   </div>
 
   <script src="sheet-utils.js?v=20261024-index-split"></script>
-  <script src="feat-ui.js?v=20261102-race-content"></script>
+  <script src="feat-ui.js?v=20261102-feat-content"></script>
   <script src="spell-sources.js?v=20261102-race-content"></script>
   <script src="class-features-ui.js?v=20261102-feature-anchors"></script>
   <script>
@@ -2324,7 +2324,7 @@ function updateBackgroundFeature() {
      ${text.description}
    </div>
 
-   ${source === "extended" ? `<div class="feat-expansion-notice">${EXPANSION_NOTICE}</div>` : ""}`;
+   ${getContentSourceNotice(source) ? `<div class="feat-expansion-notice">${getContentSourceNotice(source)}</div>` : ""}`;
 
   syncDerivedFeatRows();
 }
