@@ -6,7 +6,7 @@
 const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
-const { ROOT, contentSourceLabel, contentSourceNotice } = require("../content/site-sources");
+const { ROOT, contentSourceLabel, contentSourceName, contentSourceNotice } = require("../content/site-sources");
 const { ContentError } = require("../content/errors");
 const { renderInline } = require("../content/markdown");
 const { writeIfChanged, contentVersion, stampScriptVersion } = require("../content/output");
@@ -75,10 +75,11 @@ function featText(feat) {
   }).join("") + (notice ? spacer + `<div class="feat-expansion-notice">${escapeHtml(notice)}</div>` : "");
   const effects = new Map(feat.effects.map(effect => [effect.name, effect]));
   return {
-    label: `${feat.id}(${type.short}${sourceLabel ? `・${sourceLabel}` : ""})`,
+    label: contentSourceName(feat.id, feat.source, [type.short]),
     html: `<div class="feat-desc-title">${escapeHtml(feat.id)}</div><div class="feat-desc-subtitle">${escapeHtml(subtitle)}</div><div class="feat-desc-body">${body}</div>`,
     plain: [feat.id, subtitle, "", feat.effects.map(effect => `${effect.name}：${effectPlain(effect)}`).join("\n\n"), ...(notice ? ["", notice] : [])].join("\n"),
-    pdf: feat.pdf ? [...feat.pdf] : [`${feat.id}(${type.short})`],
+    // PDF 不列來源標籤。
+    pdf: feat.pdf ? [...feat.pdf] : [contentSourceName(feat.id, "", [type.short])],
     actions: Object.fromEntries((feat.actions || []).map(action => [action.key, action.tabletop || actionEffectNames(action).map(name => effectPlain(effects.get(name))).join(" ")]))
   };
 }

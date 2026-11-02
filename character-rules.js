@@ -36,8 +36,14 @@
     return source === "extended" ? `「${getContentSourceLabel(source)}」為本站以 SRD 為基底另行編寫。` : "";
   }
 
-  /** 背景來源的顯示標籤（同 getContentSourceLabel）。 */
-  const getBackgroundSourceLabel = getContentSourceLabel;
+  /**
+   * 名稱加上類別與來源標籤，例如「醫療兵(起源・擴充)」「耕者(擴充)」「警覺(起源)」；沒有標籤時只有名稱。
+   * tags 是放在來源標籤前的其他標籤（例如專長類別）。選單、背景頁與快速創角的標籤寫法都由這裡產生（半形括號、以「・」連接）。
+   */
+  function formatContentSourceName(name, source, tags = []) {
+    const labels = [...tags, getContentSourceLabel(source)].filter(Boolean);
+    return labels.length ? `${name}(${labels.join("・")})` : String(name);
+  }
 
   // 專長規則：feat-content.generated.js 由 content/srd/feats 產生 featRules（類別、來源、可否重複、先決條件、跑團動作）；
   // 專長 ID 即存檔的專長值。不認得的專長回傳 null。
@@ -787,8 +793,8 @@
     getBackgroundRules,
     getBackgroundText,
     getBackgroundSource,
-    getBackgroundSourceLabel,
     getContentSourceLabel,
+    formatContentSourceName,
     getContentSourceNotice,
     getFeatRules,
     getFeatText,

@@ -3,7 +3,7 @@
 "use strict";
 const fs = require("fs");
 const path = require("path");
-const { ROOT, loadSkillAbilities, contentSourceLabel, loadToolCatalog, readIndexSelectOptions } = require("../content/site-sources");
+const { ROOT, loadSkillAbilities, contentSourceName, loadToolCatalog, readIndexSelectOptions } = require("../content/site-sources");
 const { ContentError } = require("../content/errors");
 const { CONTENT_DIR, createSchemaValidators, schemaErrors, readYamlFile, listYaml } = require("../content/yaml");
 
@@ -55,7 +55,7 @@ function checkBackground(background, classes, feats, errors) {
   if (/\n./.test(background.description.replace(/\n+$/, ""))) errors.push(`${where}：description 只能有一段（不可換行）`);
 }
 
-// index.html 的背景選單（固定選項）須剛好列出全部背景內容檔，顯示文字為名稱，有來源標籤時加「(標籤)」（標籤取自 character-rules.js）。
+// index.html 的背景選單（固定選項）須剛好列出全部背景內容檔，顯示文字為名稱，有來源標籤時加「(標籤)」（character-rules.js 的 formatContentSourceName）。
 function checkIndexSelect(backgrounds, errors) {
   const options = readIndexSelectOptions("background");
   if (!options) { errors.push("index.html 找不到 <select id=\"background\">"); return; }
@@ -64,8 +64,7 @@ function checkIndexSelect(backgrounds, errors) {
     const background = backgrounds.get(option.value);
     if (!background) errors.push(`index.html 的背景選單有「${option.value}」，但沒有 content/srd/backgrounds/${option.value}.yaml`);
     else {
-      const label = contentSourceLabel(background.source);
-      const expected = `${background.name}${label ? `(${label})` : ""}`;
+      const expected = contentSourceName(background.name, background.source);
       if (option.label !== expected) errors.push(`index.html 的背景選單「${option.value}」顯示為「${option.label}」，應為「${expected}」`);
     }
   });

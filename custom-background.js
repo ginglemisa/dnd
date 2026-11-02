@@ -65,7 +65,7 @@
     const block = document.createElement("div");
     block.className = "background-guide-block";
     for (const [label, text] of [
-      ["背景", `${background.名稱}（${globalScope.getBackgroundSourceLabel("custom")}）`], ["屬性", background.屬性],
+      ["背景", globalScope.formatContentSourceName(background.名稱, "custom")], ["屬性", background.屬性],
       ["專長", background.專長], ["技能熟練", background.技能熟練],
       ["工具熟練", background.工具熟練]
     ]) {

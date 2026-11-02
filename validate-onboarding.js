@@ -1375,7 +1375,7 @@ async function verifyQuickBuildBackgroundCards(browser, url) {
       quickBuild.open();
       const cards = Array.from(document.querySelectorAll("#quick-build-wizard [data-background]"), card => [card.dataset.background, card.querySelector("h4").textContent]);
       quickBuild.close(false);
-      const expected = Object.keys(backgroundRules).map(id => [id, backgroundRules[id].name + getBackgroundSourceLabel(getBackgroundSource(id))]);
+      const expected = Object.keys(backgroundRules).map(id => [id, backgroundRules[id].name + getContentSourceLabel(getBackgroundSource(id))]);
       return { cards, expected };
     });
     assert.deepEqual([...cards].sort(), [...expected].sort(), "quick build shows one card per background content file");

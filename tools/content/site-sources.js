@@ -59,8 +59,10 @@ function loadCharacterRules() {
 // 技能 ID（character-rules.js 的 CharacterSkillAbilities：中文名 → 屬性）。
 const loadSkillAbilities = () => loadCharacterRules().CharacterSkillAbilities;
 
-// 內容來源的顯示標籤與說明（character-rules.js 的 getContentSourceLabel、getContentSourceNotice，例如 extended →「擴充」）。
+// 內容來源的顯示標籤與說明（character-rules.js 的 getContentSourceLabel、getContentSourceNotice，例如 extended →「擴充」），
+// 以及加上標籤的名稱（formatContentSourceName，例如「耕者(擴充)」）。
 const contentSourceLabel = source => loadCharacterRules().getContentSourceLabel(source);
+const contentSourceName = (name, source, tags) => loadCharacterRules().formatContentSourceName(name, source, tags);
 const contentSourceNotice = source => loadCharacterRules().getContentSourceNotice(source);
 
 // 傷害類型的顯示名稱（character-rules.js 的 getDamageTypeLabel，例如 poison →「毒素」）。
@@ -89,4 +91,4 @@ function readIndexSelectOptions(id) {
   return select ? [...select[1].matchAll(/<option value="([^"]*)"[^>]*>([^<]*)<\/option>/g)].map(match => ({ value: match[1], label: match[2] })) : null;
 }
 
-module.exports = { ROOT, loadTipTables, loadWildShapeBeasts, loadSkillAbilities, contentSourceLabel, contentSourceNotice, damageTypeLabel, loadSpellCatalog, loadToolCatalog, readIndexSelectOptions };
+module.exports = { ROOT, loadTipTables, loadWildShapeBeasts, loadSkillAbilities, contentSourceLabel, contentSourceName, contentSourceNotice, damageTypeLabel, loadSpellCatalog, loadToolCatalog, readIndexSelectOptions };

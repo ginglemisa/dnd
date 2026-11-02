@@ -283,7 +283,7 @@ pdf: [擒抱者(通用), 力量or敏捷+1, 徒手命中可擒抱]
 | 欄位 | 說明 |
 | --- | --- |
 | `id` | 專長 ID，須等於檔名，也是畫面上的專長名稱。會寫進存檔、JSON、分享網址與快速創角草稿，不可改字（列在 `feat-id-baseline.json`）；網站程式判斷特定專長時也用 ID（例如 `hasSelectedFeat("警覺")`）。 |
-| `source` | 內容來源（`srd`／`extended`，同背景）。`extended` 的選單文字與說明副標加上來源標籤，說明最後加上來源說明；字樣由 `character-rules.js` 的 `getContentSourceLabel`、`getContentSourceNotice` 決定。 |
+| `source` | 內容來源（`srd`／`extended`，同背景）。`extended` 的選單文字與說明副標加上來源標籤，說明最後加上來源說明；字樣由 `character-rules.js` 的 `getContentSourceLabel`、`getContentSourceNotice` 決定；選單文字「醫療兵(起源・擴充)」由 `formatContentSourceName` 產生（半形括號，類別與來源以「・」連接）。 |
 | `type` | 類別：`origin` 起源專長、`general` 通用專長、`style` 戰鬥風格專長。決定哪些專長選擇列出它（背景與種族的起源專長、屬性值提升的等級專長、戰鬥風格），選單文字「擒抱者(通用)」與說明副標由此產生。 |
 | `prerequisite` | 通用專長的先決條件，擇一：`abilities`（其中一項屬性值達 13）、`heavyArmor: true`（具重甲訓練）、`spellcasting: true`（具施法能力）。不符合時專長列顯示警示；副標的條件文字（例如「4 級以上；力量或敏捷 13+」）由此產生。 |
 | `repeatable` | `true` 時可多次選擇。 |
@@ -322,7 +322,7 @@ description: |
 | --- | --- |
 | `id` | 背景 ID，須等於檔名。會寫進存檔、JSON、分享網址與購點紀錄，不可改名（列在 `background-id-baseline.json`）。 |
 | `name` | 背景名稱，最多四字。 |
-| `source` | 內容來源（必填）：`srd` 出自 SRD 5.2.1；`extended` 是本站另外撰寫的內容，選單名稱、背景頁與快速創角卡片會加上來源標籤，背景頁另顯示說明。標籤字樣由 `character-rules.js` 的 `getBackgroundSourceLabel` 決定。之後可再增加其他值。 |
+| `source` | 內容來源（必填）：`srd` 出自 SRD 5.2.1；`extended` 是本站另外撰寫的內容，選單名稱、背景頁與快速創角卡片會加上來源標籤，背景頁另顯示說明。標籤字樣由 `character-rules.js` 的 `getContentSourceLabel` 決定，名稱加標籤的寫法（例如「耕者(擴充)」）由 `formatContentSourceName` 產生。之後可再增加其他值。 |
 | `abilities` | 可調整的三項屬性 ID（`str`、`dex`、`con`、`int`、`wis`、`cha`），購點與快速創角依此限制背景加值。畫面顯示為「智力,感知,魅力」。 |
 | `feat` | 起源專長，寫專長 ID（`content/srd/feats` 的起源專長，ID 是中文名）。魔法學徒寫成 `{ id: 魔法學徒, spellList: 職業 ID }`，`spellList` 是法術列表（`cleric`、`druid`、`wizard`），畫面顯示為「魔法學徒（牧師）」；給予魔法學徒的背景也讓角色具有施法能力。 |
 | `skills` | 兩項技能 ID（`character-rules.js` 的 `CharacterSkillAbilities`，目前是中文名），畫面自動加上提示框。 |

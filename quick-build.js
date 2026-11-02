@@ -82,14 +82,11 @@
     return `<button type="button" class="quick-build-skill-info" data-weapon-rule-kind="mastery" data-weapon-rule="${escapeHtml(normalizedMastery)}"${normalizedMastery ? "" : " disabled"} aria-label="${escapeHtml(normalizedMastery ? `${normalizedMastery}精通：查看說明` : "請先選擇精通武器，再查看精通")}">查看精通</button>`;
   }
 
-  // 起源專長（專長內容檔 type: origin），依專長選單順序；有來源標籤的加上標籤。
+  // 起源專長（專長內容檔 type: origin），依專長選單順序；有來源標籤的加上標籤（例如「醫療兵(擴充)」）。
   function humanOriginFeatOptions() {
     return Object.entries(window.getAllFeatRules?.() || {})
       .filter(([, rule]) => rule.type === "origin")
-      .map(([id, rule]) => {
-        const sourceLabel = window.getContentSourceLabel(rule.source);
-        return { value: id, label: `${id}${sourceLabel ? `（${sourceLabel}）` : ""}` };
-      });
+      .map(([id, rule]) => ({ value: id, label: window.formatContentSourceName(id, rule.source) }));
   }
 
   // 戰鬥風格專長（專長內容檔 type: style）的專長 ID，依專長選單順序。
@@ -1629,7 +1626,7 @@
     body.innerHTML = `<h3>選擇背景</h3><p class="quick-build-lead">背景是玩家角色成為冒險者之前的身分</p><div class="quick-build-background-grid">${BACKGROUND_ORDER.map(key => {
       const { rules, text } = presetBackground(key);
       const tool = text.toolGroup || rules.tool.fixed;
-      const sourceLabel = window.getBackgroundSourceLabel(window.getBackgroundSource(key));
+      const sourceLabel = window.getContentSourceLabel(window.getBackgroundSource(key));
       return `<button type="button" class="quick-build-card" data-background="${key}"><h4>${rules.name}${sourceLabel ? `<span class="quick-build-expansion-tag">${escapeHtml(sourceLabel)}</span>` : ""}</h4><dl class="quick-build-summary"><dt>技能熟練</dt><dd>${escapeHtml(rules.skills.join(","))}</dd><dt>起源專長</dt><dd>${escapeHtml(text.feat)}</dd><dt>工具</dt><dd>${escapeHtml(tool)}</dd><dt>可調整屬性</dt><dd>${escapeHtml(text.abilities)}</dd></dl></button>`;
     }).join("")}</div>`;
     body.querySelectorAll("[data-background]").forEach(card => card.addEventListener("click", () => handleChoiceCardSelection("background", card.dataset.background, chooseBackground)));
