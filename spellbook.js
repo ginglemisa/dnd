@@ -465,8 +465,9 @@
 
   async function openPreparedManager(trigger) {
     const api = management();
-    if (!api?.canManage()) {
-      globalScope.AppDialog.notify("請先選好職業、等級、背景與種族，才能使用『準備法術』。");
+    const requirement = globalScope.getPreparedSpellRequirement?.() || "";
+    if (!api?.canManage() || requirement) {
+      globalScope.AppDialog.notify(requirement || "請先選好職業、等級、背景與種族，才能使用『準備法術』。");
       return false;
     }
     // The management mode is part of the draft: the dialog previews the other

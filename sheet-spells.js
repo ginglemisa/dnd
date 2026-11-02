@@ -248,15 +248,29 @@ function updateSpellListStatusNote() {
 }
 
 document.getElementById("spell-prepare")?.addEventListener("click", event => window.Spellbook?.openPreparedManager(event.currentTarget));
+document.getElementById("spellcasting-ability")?.addEventListener("change", () => updatePreparedSpellCounts());
+
+// 施法屬性欄與其顯示條件相同：有施法來源（或手動管理）時顯示並須選好；欄位隱藏時不要求。
+function getPreparedSpellRequirement() {
+  const complete = hasCompletePrimaryCharacterSelections();
+  const abilityMissing = hasSpellcastingCapability() && !document.getElementById("spellcasting-ability")?.value;
+  if (complete && !abilityMissing) return "";
+  const items = !complete ? `職業、等級、背景${abilityMissing ? "、種族與施法屬性" : "與種族"}` : "施法屬性";
+  return `請先選好${items}，才能使用『準備法術』。`;
+}
 
 function updatePreparedSpellCounts() {
   const summary = document.getElementById("spell-prepared-summary");
   const button = document.getElementById("spell-prepare");
   const complete = hasCompletePrimaryCharacterSelections();
+  const requirement = getPreparedSpellRequirement();
   if (summary) summary.hidden = false;
-  if (button) button.disabled = !complete;
+  if (button) button.disabled = Boolean(requirement);
   const requirements = document.getElementById("spell-prepared-requirements");
-  if (requirements) requirements.hidden = complete;
+  if (requirements) {
+    requirements.hidden = !requirement;
+    if (requirement) requirements.textContent = requirement;
+  }
   const status = document.getElementById("spell-prepared-status");
   if (status) { status.hidden = true; status.textContent = ""; }
   const manual = window.SpellManagement?.isManual() === true;

@@ -9,7 +9,7 @@ const { chromium } = require("playwright");
 const MEMORY_KEY = "dnd.spellManagementMemories.v1";
 const NOTICE_KEY = "dnd.spellManagementClassNoticeDisabled.v1";
 const player = (spellId, spellClass, level) => ({ spellId, spellClass, ...(level === undefined ? {} : { level }) });
-const modern = (state, entries = []) => ({ background: "soldier", race: "human", ...state,
+const modern = (state, entries = []) => ({ background: "soldier", race: "human", "spellcasting-ability": "int", ...state,
   __spellManagement: { version: 2, manual: state["manual-spell-management"] === true, entries } });
 const pickerDialog = page => page.getByRole("dialog", { name: "管理已準備法術", exact: true });
 const activeIds = page => page.evaluate(() => SpellManagement.getEntries().map(entry => entry.spellId));
@@ -1009,6 +1009,62 @@ async function verifyPreparedRingRange(page) {
   console.log("Prepared ring range: automatic cantrip/slot rings, class-option cantrips, retained high rings and unrestricted manual rings passed.");
 }
 
+// Every path into the preparation dialog goes through #spell-prepare / openPreparedManager;
+// the ability requirement follows the field's visibility so it can never become a dead end.
+async function verifyPreparedAbilityGate(browser, url) {
+  const page = await browser.newPage({ viewport: { width: 1100, height: 850 } });
+  try {
+    await page.addInitScript(() => {
+      localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true");
+      localStorage.setItem("dnd.classFeaturePromptDisabled.v1", "true");
+    });
+    await page.goto(url); await page.waitForFunction(() => window.SpellManagement?.getEntries && window.Spellbook);
+    const button = page.locator("#spell-prepare"), requirement = page.locator("#spell-prepared-requirements");
+    const ability = page.locator("#spellcasting-ability"), dialog = pickerDialog(page);
+    await apply(page, modern({ class: "wizard", level: "5", "spellcasting-ability": "" }));
+    assert.equal(await ability.isVisible(), true);
+    assert.equal(await button.isDisabled(), true, "a visible empty ability blocks preparation");
+    assert.equal(await requirement.innerText(), "請先選好施法屬性，才能使用『準備法術』。");
+    await page.evaluate(() => Spellbook.openPreparedManager(document.getElementById("spell-prepare")));
+    assert.equal(await dialog.count(), 0, "direct calls honor the ability requirement");
+    await ability.selectOption("int");
+    assert.equal(await button.isEnabled(), true); assert.equal(await requirement.isVisible(), false);
+    await apply(page, modern({ class: "wizard", level: "5", race: "", "spellcasting-ability": "" }));
+    assert.equal(await requirement.innerText(), "請先選好職業、等級、背景、種族與施法屬性，才能使用『準備法術』。");
+    await apply(page, modern({ class: "wizard", level: "5", race: "" }));
+    assert.equal(await requirement.innerText(), "請先選好職業、等級、背景與種族，才能使用『準備法術』。", "a chosen ability keeps the original wording");
+    await apply(page, modern({ class: "fighter", level: "5", background: "acolyte", "spellcasting-ability": "" }));
+    assert.equal(await ability.isVisible(), true); assert.equal(await button.isDisabled(), true, "background Magic Initiate requires the ability");
+    // Without any spellcasting source the field is hidden and not required, so manual management stays reachable.
+    await apply(page, modern({ class: "fighter", level: "5", "spellcasting-ability": "" }));
+    assert.equal(await ability.isVisible(), false); assert.equal(await button.isEnabled(), true);
+    await setManualInDialog(page, true);
+    assert.equal(await ability.isVisible(), true, "manual management shows the ability field");
+    assert.equal(await button.isDisabled(), true);
+    assert.deepEqual(await ability.locator("option").evaluateAll(options => options.filter(option => option.value && !option.disabled).map(option => option.value)),
+      ["int", "wis", "cha"], "the required field always has choices");
+    await ability.selectOption("wis"); assert.equal(await button.isEnabled(), true);
+    // A legacy manual save without an ability or a source is never a dead end.
+    await apply(page, modern({ class: "fighter", level: "5", "manual-spell-management": true, "spellcasting-ability": "" }));
+    assert.equal(await ability.isEnabled(), true); assert.equal(await button.isDisabled(), true);
+    await ability.selectOption("cha"); await setManualInDialog(page, false);
+    assert.equal(await ability.isVisible(), false); assert.equal(await button.isEnabled(), true, "returning to automatic hides the field again");
+    // Restoring a saved ability enables the button without a change event.
+    await page.evaluate(state => applyStateObject(state), modern({ class: "cleric", level: "3", "spellcasting-ability": "wis" }));
+    assert.equal(await button.isEnabled(), true);
+    // Share mode locks identity selections but not the ability field.
+    await apply(page, modern({ class: "wizard", level: "5", "spellcasting-ability": "" }));
+    const shared = new URL(url); shared.hash = await page.evaluate(() => encodeStateToHash(collectShareState()));
+    await page.goto(shared.href); await page.waitForFunction(() => window.SHARE_MODE === true && window.Spellbook);
+    await page.evaluate(() => { document.getElementById("legal-modal")?.style.setProperty("display", "none"); window.onboardingTour?.finish?.(); showTab("spells"); });
+    assert.equal(await page.locator("#class").isDisabled(), true);
+    assert.equal(await button.isDisabled(), true); assert.equal(await ability.isEnabled(), true);
+    await ability.selectOption("int"); assert.equal(await button.isEnabled(), true, "share viewers can choose the ability to prepare");
+    await button.click(); await dialog.waitFor(); await page.keyboard.press("Escape");
+    console.log("Prepared ability gate: visible-field requirement, wording, origin sources, hidden field for non-casters, legacy manual saves, restore and share mode passed.");
+  } finally { await page.close(); }
+}
+
 async function verifyLevelUpCantripChoice(page) {
   const choice = () => page.evaluate(() => {
     const select = document.getElementById("class-level-up-cantrip");
@@ -1971,6 +2027,7 @@ async function main() {
     await verifyMigrationRules(browser, restoreUrl.href);
     await verifyManualSourceIsolation(browser, restoreUrl.href);
     await verifySynchronousRestore(browser, restoreUrl.href);
+    await verifyPreparedAbilityGate(browser, restoreUrl.href);
     const page = await browser.newPage({ viewport: { width: 1100, height: 850 } });
     await page.addInitScript(() => {
       if (!sessionStorage.getItem("spellbook-test-seeded")) {

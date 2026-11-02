@@ -2285,7 +2285,9 @@ async function verifyMergedActionUi(browser, url) {
 
     // Timing examples span several class lists, so explicitly enable manual management.
     await page.evaluate(() => { TabletopMode.setMode("sheet"); showTab("spells"); });
-    // The toggle lives in the preparation dialog and applies when saved.
+    // The toggle lives in the preparation dialog and applies when saved; a visible ability field must be chosen first.
+    assert.equal(await page.locator("#spell-prepare").isDisabled(), true, "empty spellcasting ability blocks preparation");
+    await page.locator("#spellcasting-ability").selectOption("int");
     await page.locator("#spell-prepare").click();
     const preparedDialog = page.getByRole("dialog", { name: "管理已準備法術", exact: true });
     await preparedDialog.locator("#manual-spell-management").click();

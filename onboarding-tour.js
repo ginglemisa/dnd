@@ -675,7 +675,7 @@
         {
           tab: "spells",
           title: "✨ 選擇與管理法術",
-          text: "選好職業、等級、背景與種族後，可按「準備法術」管理法術清單。",
+          text: "選好職業、等級、背景與種族（會施法時再選施法屬性）後，可按「準備法術」管理法術清單。",
           placement: "top",
           getHoles: () => [
             this.getHoleForSelector("#spells-tab-button", 6),
