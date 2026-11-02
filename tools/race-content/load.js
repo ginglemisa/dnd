@@ -105,7 +105,7 @@ function checkRace(race, errors) {
   [...race.traits.map(trait => [trait.spells, `特質「${trait.name}」`]), ...options.map(option => [option.spells, `選項「${option.value}」`])].forEach(([spells, at]) => {
     (spells || []).forEach(entry => {
       const spell = catalog.getSpell(entry.spell);
-      if (!spell) errors.push(`${where} ${at}：法術「${entry.spell}」不在 spell-list.js`);
+      if (!spell) errors.push(`${where} ${at}：法術「${entry.spell}」不是可用法術（content/srd/spells 中有 site 區塊的法術）`);
       else if (spell.level === 0 && entry.freeUses) errors.push(`${where} ${at}：戲法「${entry.spell}」不可寫 freeUses`);
     });
   });

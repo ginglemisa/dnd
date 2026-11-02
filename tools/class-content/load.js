@@ -204,7 +204,7 @@ function checkClass(classDef, errors) {
       if (feature.behavior && (feature.text || "").split(/\r?\n/).filter(line => /^#### /.test(line) && line.trimEnd().endsWith(`{#${feature.behavior}}`)).length !== 1) {
         errors.push(`${where}：behavior: ${feature.behavior} 的 text 須有一個「#### 標題 {#${feature.behavior}}」小節`);
       }
-      // spell-id-baseline.json 由 validate-tabletop-spellcasting.js 保證與 SpellCatalog 一致。
+      // spell-id-baseline.json 由建置與法術內容檔比對（只列角色可用、有網站版的法術）。
       const choiceSpells = (feature.spellsByChoice?.choices || []).flatMap(choice => choice.spells);
       for (const spell of [...(feature.spells || []), ...choiceSpells]) {
         if (!getSpellIds().has(spell.id)) errors.push(`${where}：法術 ID「${spell.id}」不存在於 spell-id-baseline.json`);

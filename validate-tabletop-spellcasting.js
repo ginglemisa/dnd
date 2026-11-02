@@ -24,7 +24,8 @@ function canParseDiceExpression(expression) {
   return /^\d+d(?:100|20|12|10|8|6|4)(?:[+-](?:\d+d(?:100|20|12|10|8|6|4)|\d+))*$/.test(compact);
 }
 
-const spellSource = fs.readFileSync("spell-list.js", "utf8");
+// 法術資料來自 npm run build 產生的 spell-content.generated.js（spell-list.js 只建立索引與 API）。
+const spellSource = `${fs.readFileSync("spell-content.generated.js", "utf8")}\n${fs.readFileSync("spell-list.js", "utf8")}`;
 const catalog = loadSpellCatalog(spellSource);
 for (let level = 1; level <= 9; level += 1) {
   const outcome = catalog.resolveCastOutcomes("false-life", { effectiveLevel: level })[0];
