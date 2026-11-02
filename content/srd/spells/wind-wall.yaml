@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: wind-wall
+source: srd
+level: 3
+school: evocation
+classes: [ druid, ranger ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 120, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 1, unit: minute, upTo: true }
+en:
+  name: Wind Wall
+  material: a fan and a feather
+  body: |-
+    A wall of strong wind rises from the ground at a point you choose within range. You can make the wall up to 50 feet long, 15 feet high, and 1 foot thick. You can shape the wall in any way you choose so long as it makes one continuous path along the ground. The wall lasts for the duration.
+
+    When the wall appears, each creature in its area makes a Strength saving throw, taking 4d8 Bludgeoning damage on a failed save or half as much damage on a successful one.
+
+    The strong wind keeps fog, smoke, and other gases at bay. Small or smaller flying creatures or objects can't pass through the wall. Loose, lightweight materials brought into the wall fly upward. Arrows, bolts, and other ordinary projectiles launched at targets behind the wall are deflected upward and miss automatically. Boulders hurled by Giants or siege engines, and similar projectiles, are unaffected. Creatures in gaseous form can't pass through it.
+zh:
+  name: 風牆術
+  material: 一把扇子和一根羽毛
+  body: |-
+    一道強風之牆從射程內你選擇的一點的地面升起。你可以讓這道牆最長達50呎長、15呎高、1呎厚。你可以隨意塑造這道牆的形狀，只要它沿著地面形成一條連續的路徑即可。這道牆在持續時間內持續存在。
+
+    當牆出現時，其區域內的每個生物都要進行一次力量豁免，豁免失敗時受到4d8鈍擊傷害，成功則傷害減半。
+
+    強風使霧、煙及其他氣體無法靠近。小型或更小的飛行生物或物體無法穿過這道牆。被帶入牆內的鬆散輕質材料會向上飛起。朝牆後目標發射的箭矢、弩矢及其他一般投射物會被向上偏轉，並自動未命中。由巨人投擲的巨石、攻城器械及類似的投射物則不受影響。處於氣態形體的生物無法穿過它。

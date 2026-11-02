@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: healing-word
+source: srd
+level: 1
+school: abjuration
+classes: [ bard, cleric, druid ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: bonus-action }
+range: { type: distance, amount: 60, unit: feet }
+components: { v: true, s: false, m: false }
+duration: { type: instantaneous }
+en:
+  name: Healing Word
+  body: |-
+    A creature of your choice that you can see within range regains Hit Points equal to 2d4 plus your spellcasting ability modifier.
+
+    _Using a Higher-Level Spell Slot._ The healing increases by 2d4 for each spell slot level above 1.
+zh:
+  name: 治癒真言
+  body: |-
+    你所選擇的、射程內你能看見的一個生物恢復等同於2d4加上你的施法屬性調整值的生命值。
+
+    _使用更高環階法術位。_ 法術位環階每比1環高一環，治療量增加2d4。

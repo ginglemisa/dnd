@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: contact-other-plane
+source: srd
+level: 5
+school: divination
+classes: [ warlock, wizard ]
+ritual: true
+concentration: false
+castingTime:
+  - { unit: minute, amount: 1 }
+  - { unit: ritual }
+range: { type: self }
+components: { v: true, s: false, m: false }
+duration: { type: time, amount: 1, unit: minute }
+en:
+  name: Contact Other Plane
+  body: |-
+    You mentally contact a demigod, the spirit of a long-dead sage, or some other knowledgeable entity from another plane. Contacting this otherworldly intelligence can break your mind. When you cast this spell, make a DC 15 Intelligence saving throw. On a successful save, you can ask the entity up to five questions. You must ask your questions before the spell ends. The GM answers each question with one word, such as "yes," "no," "maybe," "never," "irrelevant," or "unclear" (if the entity doesn't know the answer to the question). If a one-word answer would be misleading, the GM might instead offer a short phrase as an answer.
+
+    On a failed save, you take 6d6 Psychic damage and have the Incapacitated condition until you finish a Long Rest. A _Greater Restoration_ spell cast on you ends this effect.
+zh:
+  name: 異界探知
+  body: |-
+    你以心靈聯繫一位半神、一位逝世已久的賢者之靈，或來自另一個位面的其他博學存有。與這個異界的智慧接觸可能會摧毀你的心智。當你施放此法術時，進行一次DC 15的智力豁免。豁免成功時，你可以向該存有提出最多五個問題。你必須在法術結束前提出你的問題。DM以單一詞語回答每個問題，例如「是」、「否」、「也許」、「絕不」、「無關」或「不明」（若該存有不知道問題的答案）。如果單一詞語的答案會造成誤導，DM可能改以一句簡短的話作為答案。
+
+    豁免失敗時，你受到6d6心靈傷害，並陷入失能狀態，直到你完成一次長休。對你施放的_高等復原術_可以結束此效應。

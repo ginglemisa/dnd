@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: continual-flame
+source: srd
+level: 2
+school: evocation
+classes: [ cleric, druid, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: touch }
+components: { v: true, s: true, m: true }
+duration: { type: until-dispelled }
+en:
+  name: Continual Flame
+  material: ruby dust worth 50+ GP, which the spell consumes
+  body: A flame springs from an object that you touch. The effect casts Bright Light in a 20-foot radius and Dim Light for an additional 20 feet. It looks like a regular flame, but it creates no heat and consumes no fuel. The flame can be covered or hidden but not smothered or quenched.
+zh:
+  name: 不滅明焰
+  material: 價值50 GP以上的紅寶石粉，法術會消耗之
+  body: 你碰觸的物體上冒出一道火焰。此效果在半徑20呎內投射明亮光照，並在額外20呎內投射微光光照。它看起來像一般的火焰，但不產生熱，也不消耗燃料。火焰可以被遮蓋或隱藏，但無法被悶熄或撲滅。

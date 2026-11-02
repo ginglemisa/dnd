@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: tree-stride
+source: srd
+level: 5
+school: conjuration
+classes: [ druid, ranger ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: self }
+components: { v: true, s: true, m: false }
+duration: { type: time, amount: 1, unit: minute, upTo: true }
+en:
+  name: Tree Stride
+  body: |-
+    You gain the ability to enter a tree and move from inside it to inside another tree of the same kind within 500 feet. Both trees must be living and at least the same size as you. You must use 5 feet of movement to enter a tree. You instantly know the location of all other trees of the same kind within 500 feet and, as part of the move used to enter the tree, can either pass into one of those trees or step out of the tree you're in. You appear in a spot of your choice within 5 feet of the destination tree, using another 5 feet of movement. If you have no movement left, you appear within 5 feet of the tree you entered.
+
+    You can use this transportation ability only once on each of your turns. You must end each turn outside a tree.
+zh:
+  name: 樹行術
+  body: |-
+    你獲得進入一棵樹，並從其內部移動到500呎內另一棵同種類樹木內部的能力。兩棵樹都必須是活的，且體型至少與你相同。你必須花費5呎移動力來進入樹木。你會立即得知500呎內所有其他同種類樹木的位置，並且可以在進入樹木所用的移動中，進入其中一棵樹，或從你所在的樹中走出。你會出現在目的地樹木5呎內由你選擇的位置，這會再花費5呎移動力。如果你沒有剩餘的移動力，你會出現在你進入的那棵樹5呎內。
+
+    你在自己的每個回合只能使用一次這項傳送能力。你必須在每個回合結束時位於樹木之外。

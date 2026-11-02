@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: compulsion
+source: srd
+level: 4
+school: enchantment
+classes: [ bard ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 30, unit: feet }
+components: { v: true, s: true, m: false }
+duration: { type: time, amount: 1, unit: minute, upTo: true }
+en:
+  name: Compulsion
+  body: |-
+    Each creature of your choice that you can see within range must succeed on a Wisdom saving throw or have the Charmed condition until the spell ends.
+
+    For the duration, you can take a Bonus Action to designate a direction that is horizontal to you. Each Charmed target must use as much of its movement as possible to move in that direction on its next turn, taking the safest route. After moving in this way, a target repeats the save, ending the spell on itself on a success.
+zh:
+  name: 強迫術
+  body: |-
+    射程內每個你選擇且能看見的生物，必須成功通過感知豁免，否則陷入魅惑狀態，直到法術結束。
+
+    在持續時間內，你可以用附贈動作指定一個與你呈水平的方向。每個被魅惑的目標在其下一個回合，必須盡可能多地使用其移動朝該方向移動，並選擇最安全的路線。如此移動後，目標重複該豁免，成功則結束自身受到的法術效果。

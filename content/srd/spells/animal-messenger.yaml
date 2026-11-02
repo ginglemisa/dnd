@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: animal-messenger
+source: srd
+level: 2
+school: enchantment
+classes: [ bard, druid, ranger ]
+ritual: true
+concentration: false
+castingTime:
+  - { unit: action }
+  - { unit: ritual }
+range: { type: distance, amount: 30, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 24, unit: hour }
+en:
+  name: Animal Messenger
+  material: a morsel of food
+  body: |-
+    A Tiny Beast of your choice that you can see within range must succeed on a Charisma saving throw, or it attempts to deliver a message for you (if the target's Challenge Rating isn't 0, it automatically succeeds). You specify a location you have visited and a recipient who matches a general description, such as "a person dressed in the uniform of the town guard" or "a red-haired dwarf wearing a pointed hat." You also communicate a message of up to twenty-five words. The Beast travels for the duration toward the specified location, covering about 25 miles per 24 hours or 50 miles if the Beast can fly.
+
+    When the Beast arrives, it delivers your message to the creature that you described, mimicking your communication. If the Beast doesn't reach its destination before the spell ends, the message is lost, and the Beast returns to where you cast the spell.
+
+    _Using a Higher-Level Spell Slot._ The spell's duration increases by 48 hours for each spell slot level above 2.
+zh:
+  name: 動物信使
+  material: 一小塊食物
+  body: |-
+    你選擇射程內你能看見的一隻微型野獸，它必須通過魅力豁免，否則會嘗試為你傳遞訊息（如果目標的挑戰等級不是0，它會自動成功通過豁免）。你指定一個你曾去過的地點，以及一位符合概略描述的收件者，例如「穿著城鎮衛兵制服的人」或「戴著尖帽的紅髮矮人」。你還要傳達一段最多二十五個字詞的訊息。在持續時間內，該野獸朝指定地點前進，每24小時約行進25英里，若該野獸會飛行則為50英里。
+
+    當野獸抵達時，它會模仿你的傳達方式，把你的訊息傳遞給你所描述的生物。如果野獸在法術結束前未能抵達目的地，訊息就會遺失，野獸會回到你施放法術的地點。
+
+    _使用更高環階法術位。_ 每比2環高一環，法術的持續時間增加48小時。

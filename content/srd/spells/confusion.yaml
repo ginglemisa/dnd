@@ -1,0 +1,45 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: confusion
+source: srd
+level: 4
+school: enchantment
+classes: [ bard, druid, sorcerer, wizard ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 90, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 1, unit: minute, upTo: true }
+en:
+  name: Confusion
+  material: three nut shells
+  body: |-
+    Each creature in a 10-foot-radius Sphere centered on a point you choose within range must succeed on a Wisdom saving throw, or that target can't take Bonus Actions or Reactions and must roll 1d10 at the start of each of its turns to determine its behavior for that turn, consulting the table below.
+
+    | 1d10 | Behavior for the Turn |
+    | --- | --- |
+    | 1 | The target doesn't take an action, and it uses all its movement to move. Roll 1d4 for the direction: 1, north; 2, east; 3, south; or 4, west. |
+    | 2–6 | The target doesn't move or take actions. |
+    | 7–8 | The target doesn't move, and it takes the Attack action to make one melee attack against a random creature within reach. If none are within reach, the target takes no action. |
+    | 9–10 | The target chooses its behavior. |
+
+    At the end of each of its turns, an affected target repeats the save, ending the spell on itself on a success.
+
+    _Using a Higher-Level Spell Slot._ The Sphere's radius increases by 5 feet for each spell slot level above 4.
+zh:
+  name: 困惑術
+  material: 三個堅果殼
+  body: |-
+    以你在射程內選定的一點為中心、10呎半徑球形區域內的每個生物，必須成功通過感知豁免，否則該目標不能執行附贈動作或反應動作，並且必須在其每個回合開始時擲1d10來決定該回合的行為，參照下表。
+
+    | 1d10 | 該回合的行為 |
+    | --- | --- |
+    | 1 | 目標不採取動作，並用盡所有移動來移動。擲1d4決定方向：1，北；2，東；3，南；4，西。 |
+    | 2–6 | 目標不移動也不採取動作。 |
+    | 7–8 | 目標不移動，並採取攻擊動作，對觸及範圍內的一個隨機生物進行一次近戰攻擊。如果觸及範圍內沒有生物，目標不採取動作。 |
+    | 9–10 | 目標自行選擇其行為。 |
+
+    在其每個回合結束時，受影響的目標重複該豁免，成功則結束自身受到的法術效果。
+
+    _使用更高環階法術位。_ 法術位環階每比4高一環，球形區域的半徑增加5呎。

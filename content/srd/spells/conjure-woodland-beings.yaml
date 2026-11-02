@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: conjure-woodland-beings
+source: srd
+level: 4
+school: conjuration
+classes: [ druid, ranger ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: self }
+components: { v: true, s: true, m: false }
+duration: { type: time, amount: 10, unit: minute, upTo: true }
+en:
+  name: Conjure Woodland Beings
+  body: |-
+    You conjure nature spirits that flit around you in a 10-foot Emanation for the duration. Whenever the Emanation enters the space of a creature you can see and whenever a creature you can see enters the Emanation or ends its turn there, you can force that creature to make a Wisdom saving throw. The creature takes 5d8 Force damage on a failed save or half as much damage on a successful one. A creature makes this save only once per turn.
+
+    In addition, you can take the Disengage action as a Bonus Action for the spell's duration.
+
+    _Using a Higher-Level Spell Slot._ The damage increases by 1d8 for each spell slot level above 4.
+zh:
+  name: 林地之精
+  body: |-
+    你召喚自然靈體，在持續時間內於你周圍10呎發散區域內飛舞。每當該發散區域進入你能看見的生物的空間，以及每當你能看見的生物進入該發散區域或在其中結束回合時，你可以迫使該生物進行感知豁免。豁免失敗時，該生物受到5d8力場傷害，成功則受到一半傷害。每名生物每回合只需進行一次此豁免。
+
+    此外，在法術持續時間內，你可以用附贈動作執行撤離動作。
+
+    _使用更高環階法術位。_ 法術位環階每比4高一環，傷害增加1d8。

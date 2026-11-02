@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: hex
+source: srd
+level: 1
+school: enchantment
+classes: [ warlock ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: bonus-action }
+range: { type: distance, amount: 90, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 1, unit: hour, upTo: true }
+en:
+  name: Hex
+  material: the petrified eye of a newt
+  body: |-
+    You place a curse on a creature that you can see within range. Until the spell ends, you deal an extra 1d6 Necrotic damage to the target whenever you hit it with an attack roll. Also, choose one ability when you cast the spell. The target has Disadvantage on ability checks made with the chosen ability.
+
+    If the target drops to 0 Hit Points before this spell ends, you can take a Bonus Action on a later turn to curse a new creature.
+
+    _Using a Higher-Level Spell Slot._ Your Concentration can last longer with a spell slot of level 2 (up to 4 hours), 3–4 (up to 8 hours), or 5+ (24 hours).
+zh:
+  name: 脆弱詛咒
+  material: 一隻蠑螈已石化的眼睛
+  body: |-
+    你對射程內你能看見的一個生物施加詛咒。在法術結束前，每當你以攻擊檢定命中目標時，就對其額外造成1d6黯蝕傷害。此外，在施放法術時選擇一項屬性。目標在使用所選屬性進行的屬性檢定上具有劣勢。
+
+    若目標在此法術結束前生命值降至0，你可以在之後的回合用附贈動作詛咒一個新的生物。
+
+    _使用更高環階法術位。_ 使用2環法術位時，你的專注最多可持續4小時；使用3–4環法術位時，最多可持續8小時；使用5環以上法術位時，可持續24小時。

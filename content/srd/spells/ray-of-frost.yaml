@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: ray-of-frost
+source: srd
+level: 0
+school: evocation
+classes: [ sorcerer, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 60, unit: feet }
+components: { v: true, s: true, m: false }
+duration: { type: instantaneous }
+en:
+  name: Ray of Frost
+  body: |-
+    A frigid beam of blue-white light streaks toward a creature within range. Make a ranged spell attack against the target. On a hit, it takes 1d8 Cold damage, and its Speed is reduced by 10 feet until the start of your next turn.
+
+    _Cantrip Upgrade._ The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8).
+zh:
+  name: 冷凍射線
+  body: |-
+    一道藍白色的冰寒光束射向射程內的一個生物。對目標進行一次遠程法術攻擊。命中時，目標受到1d8冷凍傷害，且其速度降低10呎，直到你下個回合開始。
+
+    _戲法升級。_ 當你達到5級（2d8）、11級（3d8）與17級（4d8）時，傷害增加1d8。

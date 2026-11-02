@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: mislead
+source: srd
+level: 5
+school: illusion
+classes: [ bard, warlock, wizard ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: self }
+components: { v: false, s: true, m: false }
+duration: { type: time, amount: 1, unit: hour, upTo: true }
+en:
+  name: Mislead
+  body: |-
+    You gain the Invisible condition at the same time that an illusory double of you appears where you are standing. The double lasts for the duration, but the invisibility ends immediately after you make an attack roll, deal damage, or cast a spell.
+
+    As a Magic action, you can move the illusory double up to twice your Speed and make it gesture, speak, and behave in whatever way you choose. It is intangible and invulnerable.
+
+    You can see through its eyes and hear through its ears as if you were located where it is.
+zh:
+  name: 誤導假象
+  body: |-
+    你陷入隱形狀態，同時在你所站之處出現一個你的幻影分身。分身在持續時間內持續存在，但在你進行攻擊檢定、造成傷害或施放法術之後，隱形立即結束。
+
+    你可以用魔法動作使幻影分身移動至多你速度的兩倍，並使它做出手勢、說話，以及依你選擇的任何方式行動。它是無形的，且無法被傷害。
+
+    你可以透過它的眼睛看、透過它的耳朵聽，如同你身處它所在的位置一般。

@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: telepathic-bond
+source: srd
+level: 5
+school: divination
+classes: [ bard, wizard ]
+ritual: true
+concentration: false
+castingTime:
+  - { unit: action }
+  - { unit: ritual }
+range: { type: distance, amount: 30, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 1, unit: hour }
+en:
+  name: Telepathic Bond
+  material: two eggs
+  body: |-
+    You forge a telepathic link among up to eight willing creatures of your choice within range, psychically linking each creature to all the others for the duration. Creatures that can't communicate in any languages aren't affected by this spell.
+
+    Until the spell ends, the targets can communicate telepathically through the bond whether or not they share a language. The communication is possible over any distance, though it can't extend to other planes of existence.
+zh:
+  name: 心靈感應聯繫
+  material: 兩顆蛋
+  body: |-
+    你在射程內最多八個你所選的自願生物之間建立心靈感應連結，在持續時間內使每個生物與其他所有生物心靈相連。無法以任何語言溝通的生物不受此法術影響。
+
+    在法術結束前，目標們可以透過這個連結以心靈感應溝通，不論是否共享語言。這種溝通可跨越任何距離，但無法延伸到其他位面。

@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: water-breathing
+source: srd
+level: 3
+school: transmutation
+classes: [ druid, ranger, sorcerer, wizard ]
+ritual: true
+concentration: false
+castingTime:
+  - { unit: action }
+  - { unit: ritual }
+range: { type: distance, amount: 30, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 24, unit: hour }
+en:
+  name: Water Breathing
+  material: a short reed
+  body: This spell grants up to ten willing creatures of your choice within range the ability to breathe underwater until the spell ends. Affected creatures also retain their normal mode of respiration.
+zh:
+  name: 水下呼吸
+  material: 一根短蘆葦
+  body: 此法術使射程內最多十個由你選擇且自願的生物，在法術結束前能夠在水下呼吸。受影響的生物同時仍保有其正常的呼吸方式。

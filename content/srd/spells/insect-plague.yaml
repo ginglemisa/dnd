@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: insect-plague
+source: srd
+level: 5
+school: conjuration
+classes: [ cleric, druid, sorcerer ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 300, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 10, unit: minute, upTo: true }
+en:
+  name: Insect Plague
+  material: a locust
+  body: |-
+    Swarming locusts fill a 20-foot-radius Sphere centered on a point you choose within range. The Sphere remains for the duration, and its area is Lightly Obscured and Difficult Terrain.
+
+    When the swarm appears, each creature in it makes a Constitution saving throw, taking 4d10 Piercing damage on a failed save or half as much damage on a successful one. A creature also makes this save when it enters the spell's area for the first time on a turn or ends its turn there. A creature makes this save only once per turn.
+
+    _Using a Higher-Level Spell Slot._ The damage increases by 1d10 for each spell slot level above 5.
+zh:
+  name: 疫病蟲群
+  material: 一隻蝗蟲
+  body: |-
+    成群的蝗蟲充滿以你在射程內選定的一點為中心、半徑20呎的球形區域。該球形區域在持續時間內持續存在，其區域為輕度遮蔽並屬於困難地形。
+
+    蟲群出現時，其中的每個生物都要進行一次體質豁免；豁免失敗時，受到4d10穿刺傷害，豁免成功則受到一半傷害。生物在某回合第一次進入法術區域，或在該區域內結束其回合時，也要進行此豁免。生物每回合只需進行一次此豁免。
+
+    _使用更高環階法術位。_ 所用法術位的環階每比5環高一環，傷害增加1d10。

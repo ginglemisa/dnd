@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: prayer-of-healing
+source: srd
+level: 2
+school: abjuration
+classes: [ cleric, paladin ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: minute, amount: 10 }
+range: { type: distance, amount: 30, unit: feet }
+components: { v: true, s: false, m: false }
+duration: { type: instantaneous }
+en:
+  name: Prayer of Healing
+  body: |-
+    Up to five creatures of your choice who remain within range for the spell's entire casting gain the benefits of a Short Rest and also regain 2d8 Hit Points. A creature can't be affected by this spell again until that creature finishes a Long Rest.
+
+    _Using a Higher-Level Spell Slot._ The healing increases by 1d8 for each spell slot level above 2.
+zh:
+  name: 治療禱言
+  body: |-
+    在整個施法期間都停留在射程內、由你選擇的至多五個生物，獲得短休的益處，並且恢復2d8生命值。生物在完成一次長休之前，無法再次受到此法術影響。
+
+    _使用更高環階法術位。_ 法術位環階每比2環高一環，治療量增加1d8。

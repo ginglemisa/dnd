@@ -1,0 +1,69 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: hallow
+source: srd
+level: 5
+school: abjuration
+classes: [ cleric ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: hour, amount: 24 }
+range: { type: touch }
+components: { v: true, s: true, m: true }
+duration: { type: until-dispelled }
+en:
+  name: Hallow
+  material: incense worth 1,000+ GP, which the spell consumes
+  body: |-
+    You touch a point and infuse an area around it with holy or unholy power. The area can have a radius up to 60 feet, and the spell fails if the radius includes an area already under the effect of _Hallow_. The affected area has the following effects.
+
+    **Hallowed Ward.** Choose any of these creature types: Aberration, Celestial, Elemental, Fey, Fiend, or Undead. Creatures of the chosen types can't willingly enter the area, and any creature that is possessed by or that has the Charmed or Frightened condition from such creatures isn't possessed, Charmed, or Frightened by them while in the area.
+
+    **Extra Effect.** You bind an extra effect to the area from the list below:
+
+    **Courage.** Creatures of any types you choose can't gain the Frightened condition while in the area.
+
+    **Darkness.** Darkness fills the area. Normal light, as well as magical light created by spells of a level lower than this spell, can't illuminate the area.
+    **Daylight.** Bright light fills the area. Magical Darkness created by spells of a level lower than this spell can't extinguish the light.
+
+    **Peaceful Rest.** Dead bodies interred in the area can't be turned into Undead.
+
+    **Extradimensional Interference.** Creatures of any types you choose can't enter or exit the area using teleportation or interplanar travel.
+
+    **Fear.** Creatures of any types you choose have the Frightened condition while in the area.
+
+    **Resistance.** Creatures of any types you choose have Resistance to one damage type of your choice while in the area.
+
+    **Silence.** No sound can emanate from within the area, and no sound can reach into it.
+
+    **Tongues.** Creatures of any types you choose can communicate with any other creature in the area even if they don't share a common language.
+
+    **Vulnerability.** Creatures of any types you choose have Vulnerability to one damage type of your choice while in the area.
+zh:
+  name: 聖居
+  material: 價值1,000 GP以上的香，法術會將其耗盡
+  body: |-
+    你接觸一個點，並以神聖或邪惡的力量灌注其周圍的區域。該區域的半徑最大可達60呎；若該半徑涵蓋了已處於_聖居_效果下的區域，則法術失敗。受影響的區域具有以下效果。
+
+    **神聖結界。** 從這些生物類型中選擇任意幾種：異怪、天界生物、元素生物、精類、邪魔或不死生物。被選定類型的生物無法自願進入該區域；任何被這類生物附身，或因這類生物而陷入魅惑或恐慌狀態的生物，在該區域內不會被它們附身、魅惑或使其恐慌。
+
+    **額外效果。** 你從下列清單中選擇一項額外效果，綁定於該區域：
+
+    **勇氣。** 你選擇的任何類型的生物在該區域內無法陷入恐慌狀態。
+
+    **黑暗。** 黑暗充滿該區域。一般光線，以及由環階低於本法術的法術所產生的魔法光線，都無法照亮該區域。
+    **日光。** 明亮光照充滿該區域。由環階低於本法術的法術所產生的魔法黑暗，無法熄滅這些光線。
+
+    **安息。** 埋葬在該區域內的屍體無法被變成不死生物。
+
+    **次元干擾。** 你選擇的任何類型的生物無法透過傳送或跨位面旅行進出該區域。
+
+    **恐懼。** 你選擇的任何類型的生物在該區域內陷入恐慌狀態。
+
+    **抗性。** 你選擇的任何類型的生物在該區域內，對你所選的一種傷害類型具有抗性。
+
+    **寂靜。** 該區域內不會發出任何聲音，任何聲音也無法傳入其中。
+
+    **語言通達。** 你選擇的任何類型的生物，即使沒有共通語言，也能與該區域內的任何其他生物溝通。
+
+    **易傷。** 你選擇的任何類型的生物在該區域內，對你所選的一種傷害類型具有易傷。

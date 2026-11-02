@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: clairvoyance
+source: srd
+level: 3
+school: divination
+classes: [ bard, cleric, sorcerer, wizard ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: minute, amount: 10 }
+range: { type: distance, amount: 1, unit: mile }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 10, unit: minute, upTo: true }
+en:
+  name: Clairvoyance
+  material: a focus worth 100+ GP, either a jeweled horn for hearing or a glass eye for seeing
+  body: |-
+    You create an Invisible sensor within range in a location familiar to you (a place you have visited or seen before) or in an obvious location that is unfamiliar to you (such as behind a door, around a corner, or in a grove of trees). The intangible, invulnerable sensor remains in place for the duration.
+
+    When you cast the spell, choose seeing or hearing. You can use the chosen sense through the sensor as if you were in its space. As a Bonus Action, you can switch between seeing and hearing.
+
+    A creature that sees the sensor (such as a creature benefiting from _See Invisibility_ or Truesight) sees a luminous orb about the size of your fist.
+zh:
+  name: 鷹眼術
+  material: 價值100 GP以上的法器，可為用於聽覺的鑲寶號角，或用於視覺的玻璃眼珠
+  body: |-
+    你在射程內創造一個隱形的感應器，位置可以是你熟悉的地點（你曾去過或見過的地方），也可以是你不熟悉但顯而易見的地點（例如門後、轉角後或樹叢中）。這個無形且無敵的感應器會在持續時間內留在原處。
+
+    施放此法術時，選擇視覺或聽覺。你可以透過感應器使用所選的感官，如同你身處它的空間內。你可以用一個附贈動作在視覺與聽覺之間切換。
+
+    看見感應器的生物（例如受益於_識破隱形_或真實視覺的生物）會看見一顆約拳頭大小的發光球體。

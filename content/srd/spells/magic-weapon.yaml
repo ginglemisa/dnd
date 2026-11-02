@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: magic-weapon
+source: srd
+level: 2
+school: transmutation
+classes: [ paladin, ranger, sorcerer, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: bonus-action }
+range: { type: touch }
+components: { v: true, s: true, m: false }
+duration: { type: time, amount: 1, unit: hour }
+en:
+  name: Magic Weapon
+  body: |-
+    You touch a nonmagical weapon. Until the spell ends, that weapon becomes a magic weapon with a +1 bonus to attack rolls and damage rolls. The spell ends early if you cast it again.
+
+    _Using a Higher-Level Spell Slot._ The bonus increases to +2 with a level 3–5 spell slot. The bonus increases to +3 with a level 6+ spell slot.
+zh:
+  name: 魔化武器
+  body: |-
+    你接觸一件非魔法武器。在法術結束前，該武器成為魔法武器，攻擊檢定與傷害檢定獲得+1加值。如果你再次施放此法術，法術會提前結束。
+
+    _使用更高環階法術位。_ 使用3至5環法術位時，加值提升為+2。使用6環以上法術位時，加值提升為+3。

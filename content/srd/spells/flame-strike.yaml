@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: flame-strike
+source: srd
+level: 5
+school: evocation
+classes: [ cleric ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 60, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: instantaneous }
+en:
+  name: Flame Strike
+  material: a pinch of sulfur
+  body: |-
+    A vertical column of brilliant fire roars down from above. Each creature in a 10-foot-radius, 40-foot-high Cylinder centered on a point within range makes a Dexterity saving throw, taking 5d6 Fire damage and 5d6 Radiant damage on a failed save or half as much damage on a successful one.
+
+    _Using a Higher-Level Spell Slot._ The Fire damage and the Radiant damage increase by 1d6 for each spell slot level above 5.
+zh:
+  name: 焰擊術
+  material: 一小撮硫磺
+  body: |-
+    一道耀眼的火焰垂直光柱從上方轟然落下。以射程內一點為中心、半徑10呎、高40呎的圓柱形區域內的每個生物都要進行一次敏捷豁免；豁免失敗時，受到5d6火焰傷害與5d6光耀傷害，豁免成功則受到一半傷害。
+
+    _使用更高環階法術位。_ 所用法術位的環階每比5環高一環，火焰傷害與光耀傷害各增加1d6。

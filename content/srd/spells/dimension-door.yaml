@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: dimension-door
+source: srd
+level: 4
+school: conjuration
+classes: [ bard, sorcerer, warlock, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 500, unit: feet }
+components: { v: true, s: false, m: false }
+duration: { type: instantaneous }
+en:
+  name: Dimension Door
+  body: |-
+    You teleport to a location within range. You arrive at exactly the spot desired. It can be a place you can see, one you can visualize, or one you can describe by stating distance and direction, such as "200 feet straight downward" or "300 feet upward to the northwest at a 45-degree angle."
+
+    You can also teleport one willing creature. The creature must be within 5 feet of you when you teleport, and it teleports to a space within 5 feet of your destination space. If you, the other creature, or both would arrive in a space occupied by a creature or completely filled by one or more objects, you and any creature traveling with you each take 4d6 Force damage, and the teleportation fails.
+zh:
+  name: 任意門
+  body: |-
+    你傳送到射程內的一個地點。你會恰好抵達想要的位置。該地點可以是你能看見的地方、你能在腦中想像的地方，或是你以距離與方向描述的地方，例如「垂直向下200呎」或「向西北方以45度角往上300呎」。
+
+    你也可以傳送一名自願的生物。該生物在你傳送時必須位於你5呎內，並傳送到你目的地空間5呎內的一個空間。如果你、另一名生物，或你們兩者會抵達被某生物佔據，或被一個或多個物體完全填滿的空間，你與和你一同傳送的任何生物各受到4d6力場傷害，且傳送失敗。

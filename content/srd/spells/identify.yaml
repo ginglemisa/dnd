@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: identify
+source: srd
+level: 1
+school: divination
+classes: [ bard, wizard ]
+ritual: true
+concentration: false
+castingTime:
+  - { unit: minute, amount: 1 }
+  - { unit: ritual }
+range: { type: touch }
+components: { v: true, s: true, m: true }
+duration: { type: instantaneous }
+en:
+  name: Identify
+  material: a pearl worth 100+ GP
+  body: |-
+    You touch an object throughout the spell's casting. If the object is a magic item or some other magical object, you learn its properties and how to use them, whether it requires Attunement, and how many charges it has, if any. You learn whether any ongoing spells are affecting the item and what they are. If the item was created by a spell, you learn that spell's name.
+
+    If you instead touch a creature throughout the casting, you learn which ongoing spells, if any, are currently affecting it.
+zh:
+  name: 鑑定術
+  material: 一顆價值100+ GP的珍珠
+  body: |-
+    你在整個施法期間觸碰一個物體。若該物體是魔法物品或其他具魔法的物體，你會得知它的特性與使用方式、是否需要同調，以及它有多少次充能（若有的話）。你會得知是否有任何持續中的法術正影響該物品，以及那些法術是什麼。若該物品是由某個法術所創造，你會得知該法術的名稱。
+
+    若你改為在整個施法期間觸碰一隻生物，你會得知目前有哪些持續中的法術正影響著它（若有的話）。

@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: purify-food-and-drink
+source: srd
+level: 1
+school: transmutation
+classes: [ cleric, druid, paladin ]
+ritual: true
+concentration: false
+castingTime:
+  - { unit: action }
+  - { unit: ritual }
+range: { type: distance, amount: 10, unit: feet }
+components: { v: true, s: true, m: false }
+duration: { type: instantaneous }
+en:
+  name: Purify Food and Drink
+  body: You remove poison and rot from nonmagical food and drink in a 5-foot-radius Sphere centered on a point within range.
+zh:
+  name: 淨化食糧
+  body: 你移除以射程內一點為中心、半徑5呎的球形區域內非魔法食物與飲品中的毒素與腐壞。

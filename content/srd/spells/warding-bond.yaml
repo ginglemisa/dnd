@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: warding-bond
+source: srd
+level: 2
+school: abjuration
+classes: [ cleric, paladin ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: touch }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 1, unit: hour }
+en:
+  name: Warding Bond
+  material: a pair of platinum rings worth 50+ GP each, which you and the target must wear for the duration
+  body: |-
+    You touch another creature that is willing and create a mystic connection between you and the target until the spell ends. While the target is within 60 feet of you, it gains a +1 bonus to AC and saving throws, and it has Resistance to all damage. Also, each time it takes damage, you take the same amount of damage.
+
+    The spell ends if you drop to 0 Hit Points or if you and the target become separated by more than 60 feet. It also ends if the spell is cast again on either of the connected creatures.
+zh:
+  name: 守護之鏈
+  material: 一對價值各至少50 GP的白金戒指，你與目標在持續時間內必須各佩戴一枚
+  body: |-
+    你觸碰另一名自願的生物，在你與目標之間建立神祕的連結，直到法術結束。當目標位於你60呎內時，它的AC與豁免獲得+1加值，並且對所有傷害具有抗性。此外，每當它受到傷害時，你也受到等量的傷害。
+
+    若你的生命值降至0，或你與目標相隔超過60呎，法術即結束。若法術再度施放於任一名被連結的生物身上，法術同樣結束。

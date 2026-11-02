@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: druidcraft
+source: srd
+level: 0
+school: transmutation
+classes: [ druid ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 30, unit: feet }
+components: { v: true, s: true, m: false }
+duration: { type: instantaneous }
+en:
+  name: Druidcraft
+  body: |-
+    Whispering to the spirits of nature, you create one of the following effects within range.
+
+    _Weather Sensor._ You create a Tiny, harmless sensory effect that predicts what the weather will be at your location for the next 24 hours. The effect might manifest as a golden orb for clear skies, a cloud for rain, falling snowflakes for snow, and so on. This effect persists for 1 round.
+
+    _Bloom._ You instantly make a flower blossom, a seed pod open, or a leaf bud bloom.
+
+    _Sensory Effect._ You create a harmless sensory effect, such as falling leaves, spectral dancing fairies, a gentle breeze, the sound of an animal, or the faint odor of skunk. The effect must fit in a 5-foot Cube.
+
+    _Fire Play._ You light or snuff out a candle, a torch, or a campfire.
+zh:
+  name: 德魯伊伎倆
+  body: |-
+    你向自然的靈體低語，在射程內創造下列其中一種效果。
+
+    _天候感應。_ 你創造一個微型且無害的感官效果，預測你所在位置未來24小時的天氣。這個效果可能顯現為代表晴空的金色光球、代表下雨的雲朵、代表下雪的飄落雪花，依此類推。此效果持續1輪。
+
+    _綻放。_ 你瞬間讓一朵花綻放、一個種莢裂開，或一枚葉芽舒展。
+
+    _感官效果。_ 你創造一個無害的感官效果，例如飄落的樹葉、幽靈般跳舞的精靈、輕柔的微風、動物的聲音，或淡淡的臭鼬氣味。該效果必須能容納在5呎立方體內。
+
+    _玩火。_ 你點燃或熄滅一根蠟燭、一支火把或一堆營火。

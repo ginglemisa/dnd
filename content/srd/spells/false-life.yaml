@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: false-life
+source: srd
+level: 1
+school: necromancy
+classes: [ sorcerer, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: self }
+components: { v: true, s: true, m: true }
+duration: { type: instantaneous }
+en:
+  name: False Life
+  material: a drop of alcohol
+  body: |-
+    You gain 2d4 + 4 Temporary Hit Points.
+
+    _Using a Higher-Level Spell Slot._ You gain 5 additional Temporary Hit Points for each spell slot level above 1.
+zh:
+  name: 虛假生命
+  material: 一滴酒精
+  body: |-
+    你獲得2d4 + 4臨時生命值。
+
+    _使用更高環階法術位。_ 每比1環高一環，你額外獲得5點臨時生命值。

@@ -1,0 +1,103 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: find-steed
+source: srd
+level: 2
+school: conjuration
+classes: [ paladin ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 30, unit: feet }
+components: { v: true, s: true, m: false }
+duration: { type: instantaneous }
+en:
+  name: Find Steed
+  body: |-
+    You summon an otherworldly being that appears as a loyal steed in an unoccupied space of your choice within range. This creature uses the **Otherworldly Steed** stat block. If you already have a steed from this spell, the steed is replaced by the new one.
+
+    The steed resembles a Large, rideable animal of your choice, such as a horse, a camel, a dire wolf, or an elk. Whenever you cast the spell, choose the steed's creature type—Celestial, Fey, or Fiend—which determines certain traits in the stat block.
+
+    _Combat._ The steed is an ally to you and your allies. In combat, it shares your Initiative count, and it functions as a controlled mount while you ride it (as defined in the rules on mounted combat). If you have the Incapacitated condition, the steed takes its turn immediately after yours and acts independently, focusing on protecting you.
+
+    _Disappearance of the Steed._ The steed disappears if it drops to 0 Hit Points or if you die. When it disappears, it leaves behind anything it was wearing or carrying. If you cast this spell again, you decide whether you summon the steed that disappeared or a different one.
+
+    _Using a Higher-Level Spell Slot._ Use the spell slot's level for the spell's level in the stat block.
+
+    ## Otherworldly Steed
+
+    _Large Celestial, Fey, or Fiend (Your Choice), Neutral_
+
+    **AC** 10 + 1 per spell level
+    **HP** 5 + 10 per spell level (the steed has a number of Hit Dice [d10s] equal to the spell's level)
+    **Speed** 60 ft., Fly 60 ft. (requires level 4+ spell)
+
+    | MOD | SAVE |  | MOD | SAVE |  | MOD | SAVE |  |  |  |  |
+    | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+    | STR | 18 | +4 | +4 | DEX | 12 | +1 | +1 | CON | 14 | +2 | +2 |
+    | INT | 6 | −2 | −2 | WIS | 12 | +1 | +1 | CHA | 8 | −1 | −1 |
+
+    **Senses** Passive Perception 11
+    **Languages** Telepathy 1 mile (works only with you)
+    **CR** None (XP 0; PB equals your Proficiency Bonus)
+
+    #### Traits
+
+    **_Life Bond._** When you regain Hit Points from a level 1+ spell, the steed regains the same number of Hit Points if you're within 5 feet of it.
+
+    #### Actions
+
+    **_Otherworldly Slam._** _Melee Attack Roll:_ Bonus equals your spell attack modifier, reach 5 ft. _Hit:_ 1d8 plus the spell's level of Radiant (Celestial), Psychic (Fey), or Necrotic (Fiend) damage.
+
+    #### Bonus Actions
+
+    **_Fell Glare (Fiend Only; Recharges after a Long Rest)._** _Wisdom Saving Throw:_ DC equals your spell save DC, one creature within 60 feet the steed can see. _Failure:_ The target has the Frightened condition until the end of your next turn.
+
+    **_Fey Step (Fey Only; Recharges after a Long Rest)._** The steed teleports, along with its rider, to an unoccupied space of your choice up to 60 feet away from itself.
+
+    **_Healing Touch (Celestial Only; Recharges after a Long Rest)._** One creature within 5 feet of the steed regains a number of Hit Points equal to 2d8 plus the spell's level.
+zh:
+  name: 召喚坐騎
+  body: |-
+    你召喚一個異界存在，它以忠誠坐騎的樣貌出現在射程內你選擇的一個未被佔據的空間中。此生物使用**異界坐騎**數據塊。如果你已經擁有一匹來自此法術的坐騎，該坐騎會被新的坐騎取代。
+
+    坐騎的外觀類似一頭由你選擇、可供騎乘的大型動物，例如馬、駱駝、凶狼或麋鹿。每次你施展此法術時，選擇坐騎的生物類型——天界生物、精類或邪魔——這會決定數據塊中的某些特性。
+
+    _戰鬥。_ 坐騎是你與你的盟友的盟友。在戰鬥中，它與你共用先攻順位，而且在你騎乘它時，它作為受控坐騎運作（依騎乘戰鬥的規則所定義）。如果你陷入失能狀態，坐騎會在你的回合結束後立即進行它的回合，並獨立行動，專注於保護你。
+
+    _坐騎消失。_ 坐騎降到0生命值，或你死亡時，坐騎會消失。它消失時，會留下它所穿戴或攜帶的一切。如果你再次施展此法術，由你決定要召喚消失的那匹坐騎還是另一匹。
+
+    _使用更高環階法術位。_ 以法術位的環階作為數據塊中的法術環階。
+
+    ## 異界坐騎
+
+    _大型 天界生物、精類或邪魔（由你選擇），中立_
+
+    **AC** 10 + 每法術環階1
+    **HP** 5 + 每法術環階10（坐騎的生命骰 [d10] 數量等於法術環階）
+    **速度** 60呎，飛行60呎（需4環以上法術）
+
+    | 調整值 | 豁免 |  | 調整值 | 豁免 |  | 調整值 | 豁免 |  |  |  |  |
+    | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+    | 力量 | 18 | +4 | +4 | 敏捷 | 12 | +1 | +1 | 體質 | 14 | +2 | +2 |
+    | 智力 | 6 | −2 | −2 | 感知 | 12 | +1 | +1 | 魅力 | 8 | −1 | −1 |
+
+    **感官** 被動察覺11
+    **語言** 心靈感應1英里（僅對你有效）
+    **CR** 無（XP 0；PB 等於你的熟練加值）
+
+    #### 特性
+
+    **_生命連結。_** 當你因1環以上的法術回復生命值時，若你在坐騎5呎內，坐騎回復相同數量的生命值。
+
+    #### 動作
+
+    **_異界猛擊。_** _近戰攻擊檢定：_ 加值等於你的法術攻擊調整值，觸及5呎。_命中：_ 1d8加上法術環階的光耀（天界生物）、心靈（精類）或黯蝕（邪魔）傷害。
+
+    #### 附贈動作
+
+    **_凶惡凝視（僅限邪魔；長休後恢復）。_** _感知豁免：_ DC等於你的法術豁免DC，目標為坐騎看得見、60呎內的一個生物。_失敗：_ 目標陷入恐慌狀態，直到你下個回合結束。
+
+    **_精類步（僅限精類；長休後恢復）。_** 坐騎連同其騎乘者傳送到距離自己最遠60呎、由你選擇的一個未被佔據的空間。
+
+    **_治癒之觸（僅限天界生物；長休後恢復）。_** 坐騎5呎內的一個生物回復等同於2d8加上法術環階的生命值。

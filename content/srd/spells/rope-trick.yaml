@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: rope-trick
+source: srd
+level: 2
+school: transmutation
+classes: [ wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: touch }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 1, unit: hour }
+en:
+  name: Rope Trick
+  material: a segment of rope
+  body: |-
+    You touch a rope. One end of it hovers upward until the rope hangs perpendicular to the ground or the rope reaches a ceiling. At the rope's upper end, an Invisible 3-foot-by-5-foot portal opens to an extradimensional space that lasts until the spell ends. That space can be reached by climbing the rope, which can be pulled into or dropped out of it.
+
+    The space can hold up to eight Medium or smaller creatures. Attacks, spells, and other effects can't pass into or out of the space, but creatures inside it can see through the portal. Anything inside the space drops out when the spell ends.
+zh:
+  name: 魔繩術
+  material: 一段繩索
+  body: |-
+    你碰觸一條繩索。繩索的一端向上懸浮，直到繩索與地面垂直，或繩索抵達天花板為止。在繩索上端，會開啟一道隱形的3呎乘5呎傳送門，通往一個持續到法術結束的異次元空間。可以藉由攀爬繩索到達該空間，而繩索可以被拉入該空間，或從中垂落。
+
+    該空間最多可容納八個中型或更小的生物。攻擊、法術及其他效應無法進入或離開該空間，但其中的生物可以透過傳送門向外看。法術結束時，空間內的一切都會掉出來。

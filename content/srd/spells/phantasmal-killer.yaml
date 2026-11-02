@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: phantasmal-killer
+source: srd
+level: 4
+school: illusion
+classes: [ bard, wizard ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 120, unit: feet }
+components: { v: true, s: true, m: false }
+duration: { type: time, amount: 1, unit: minute, upTo: true }
+en:
+  name: Phantasmal Killer
+  body: |-
+    You tap into the nightmares of a creature you can see within range and create an illusion of its deepest fears, visible only to that creature. The target makes a Wisdom saving throw. On a failed save, the target takes 4d10 Psychic damage and has Disadvantage on ability checks and attack rolls for the duration. On a successful save, the target takes half as much damage, and the spell ends.
+
+    For the duration, the target makes a Wisdom saving throw at the end of each of its turns. On a failed save, it takes the Psychic damage again. On a successful save, the spell ends.
+
+    _Using a Higher-Level Spell Slot._ The damage increases by 1d10 for each spell slot level above 4.
+zh:
+  name: 魅影殺手
+  body: |-
+    你探入射程內一個你能看見的生物的夢魘，創造出它最深層恐懼的幻象，只有該生物看得見。目標進行一次感知豁免。豁免失敗時，目標受到4d10心靈傷害，並且在持續時間內進行屬性檢定與攻擊檢定時具有劣勢。豁免成功時，目標受到一半傷害，且法術結束。
+
+    在持續時間內，目標在它每個回合結束時進行一次感知豁免。豁免失敗時，它再次受到心靈傷害。豁免成功時，法術結束。
+
+    _使用更高環階法術位。_ 法術位的環階每比4高一環，傷害增加1d10。

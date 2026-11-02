@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: eldritch-blast
+source: srd
+level: 0
+school: evocation
+classes: [ warlock ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 120, unit: feet }
+components: { v: true, s: true, m: false }
+duration: { type: instantaneous }
+en:
+  name: Eldritch Blast
+  body: |-
+    You hurl a beam of crackling energy. Make a ranged spell attack against one creature or object in range. On a hit, the target takes 1d10 Force damage.
+
+    _Cantrip Upgrade._ The spell creates two beams at level 5, three beams at level 11, and four beams at level 17. You can direct the beams at the same target or at different ones. Make a separate attack roll for each beam.
+zh:
+  name: 魔能爆
+  body: |-
+    你射出一道劈啪作響的能量光束。對射程內的一個生物或物體進行遠程法術攻擊。命中時，目標受到1d10力場傷害。
+
+    _戲法升級。_ 此法術在5級時創造兩道光束，11級時創造三道光束，17級時創造四道光束。你可以將這些光束導向同一個目標或不同的目標。每道光束各自進行一次獨立的攻擊檢定。

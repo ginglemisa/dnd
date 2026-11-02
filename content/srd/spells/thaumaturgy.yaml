@@ -1,0 +1,45 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: thaumaturgy
+source: srd
+level: 0
+school: transmutation
+classes: [ cleric ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 30, unit: feet }
+components: { v: true, s: false, m: false }
+duration: { type: time, amount: 1, unit: minute, upTo: true }
+en:
+  name: Thaumaturgy
+  body: |-
+    You manifest a minor wonder within range. You create one of the effects below within range. If you cast this spell multiple times, you can have up to three of its 1-minute effects active at a time.
+
+    _Altered Eyes._ You alter the appearance of your eyes for 1 minute.
+
+    _Booming Voice._ Your voice booms up to three times as loud as normal for 1 minute. For the duration, you have Advantage on Charisma (Intimidation) checks.
+
+    _Fire Play._ You cause flames to flicker, brighten, dim, or change color for 1 minute.
+
+    _Invisible Hand._ You instantaneously cause an unlocked door or window to fly open or slam shut.
+
+    _Phantom Sound._ You create an instantaneous sound that originates from a point of your choice within range, such as a rumble of thunder, the cry of a raven, or ominous whispers.
+
+    _Tremors._ You cause harmless tremors in the ground for 1 minute.
+zh:
+  name: 奇術
+  body: |-
+    你在射程內展現一個微小的奇蹟。你在射程內創造下列效果之一。若你多次施放此法術，你最多可同時維持其三個持續1分鐘的效果。
+
+    _改變雙眼。_ 你改變自己雙眼的外觀，持續1分鐘。
+
+    _洪亮嗓音。_ 你的聲音變得洪亮，最多達正常音量的三倍，持續1分鐘。在持續時間內，你進行魅力（威嚇）檢定具有優勢。
+
+    _玩火。_ 你使火焰閃爍、變亮、變暗或改變顏色，持續1分鐘。
+
+    _隱形之手。_ 你瞬間使一扇未上鎖的門或窗猛然打開或砰然關上。
+
+    _幻影聲響。_ 你創造一個瞬間的聲音，其源自射程內你所選的一點，例如隆隆雷聲、烏鴉的啼叫或不祥的低語。
+
+    _震動。_ 你使地面產生無害的震動，持續1分鐘。

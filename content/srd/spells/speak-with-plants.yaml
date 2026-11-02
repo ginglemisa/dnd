@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: speak-with-plants
+source: srd
+level: 3
+school: transmutation
+classes: [ bard, druid, ranger ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: self }
+components: { v: true, s: true, m: false }
+duration: { type: time, amount: 10, unit: minute }
+en:
+  name: Speak with Plants
+  body: |-
+    You imbue plants in an immobile 30-foot Emanation with limited sentience and animation, giving them the ability to communicate with you and follow your simple commands. You can question plants about events in the spell's area within the past day, gaining information about creatures that have passed, weather, and other circumstances.
+
+    You can also turn Difficult Terrain caused by plant growth (such as thickets and undergrowth) into ordinary terrain that lasts for the duration. Or you can turn ordinary terrain where plants are present into Difficult Terrain that lasts for the duration.
+
+    The spell doesn't enable plants to uproot themselves and move about, but they can move their branches, tendrils, and stalks for you.
+
+    If a Plant creature is in the area, you can communicate with it as if you shared a common language.
+zh:
+  name: 植物交談
+  body: |-
+    你賦予一個不可移動的30呎發散區域內的植物有限的智能與活動能力，使它們能夠與你溝通並遵從你簡單的指令。你可以詢問植物過去一天內法術區域中發生的事件，從而得知經過的生物、天氣及其他狀況的資訊。
+
+    你也可以將由植物生長所造成的困難地形（例如灌木叢與矮樹叢）轉變為在持續時間內持續存在的普通地形。或者，你可以將有植物存在的普通地形轉變為在持續時間內持續存在的困難地形。
+
+    這個法術不會使植物能夠將自己連根拔起並四處移動，但它們可以為你移動自己的枝條、卷鬚與莖幹。
+
+    如果區域內有植物生物，你可以與它溝通，如同你們共用一種通用語言。

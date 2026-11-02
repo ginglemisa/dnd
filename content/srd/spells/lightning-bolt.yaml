@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: lightning-bolt
+source: srd
+level: 3
+school: evocation
+classes: [ sorcerer, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: self }
+components: { v: true, s: true, m: true }
+duration: { type: instantaneous }
+en:
+  name: Lightning Bolt
+  material: a bit of fur and a crystal rod
+  body: |-
+    A stroke of lightning forming a 100-foot-long, 5-foot-wide Line blasts out from you in a direction you choose. Each creature in the Line makes a Dexterity saving throw, taking 8d6 Lightning damage on a failed save or half as much damage on a successful one.
+
+    _Using a Higher-Level Spell Slot._ The damage increases by 1d6 for each spell slot level above 3.
+zh:
+  name: 閃電束
+  material: 一點毛皮與一根水晶棒
+  body: |-
+    一道長100呎、寬5呎的直線閃電，從你身上朝你選擇的方向轟出。直線內的每個生物都要進行一次敏捷豁免，豁免失敗時承受8d6閃電傷害，豁免成功則承受一半傷害。
+
+    _使用更高環階法術位。_ 每高於3環的法術位環階，傷害增加1d6。

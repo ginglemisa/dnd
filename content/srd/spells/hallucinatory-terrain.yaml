@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: hallucinatory-terrain
+source: srd
+level: 4
+school: illusion
+classes: [ bard, druid, warlock, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: minute, amount: 10 }
+range: { type: distance, amount: 300, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 24, unit: hour }
+en:
+  name: Hallucinatory Terrain
+  material: a mushroom
+  body: |-
+    You make natural terrain in a 150-foot Cube in range look, sound, and smell like another sort of natural terrain. Thus, open fields or a road can be made to resemble a swamp, hill, crevasse, or some other difficult or impassable terrain. A pond can be made to seem like a grassy meadow, a precipice like a gentle slope, or a rock-strewn gully like a wide and smooth road. Manufactured structures, equipment, and creatures within the area aren't changed.
+
+    The tactile characteristics of the terrain are unchanged, so creatures entering the area are likely to notice the illusion. If the difference isn't obvious by touch, a creature examining the illusion can take the Study action to make an Intelligence (Investigation) check against your spell save DC to disbelieve it. If a creature discerns that the terrain is illusory, the creature sees a vague image superimposed on the real terrain.
+zh:
+  name: 幻景
+  material: 一朵蘑菇
+  body: |-
+    你使射程內一個150呎立方體中的自然地形，在外觀、聲音與氣味上都像另一種自然地形。因此，開闊的田野或道路可以被變得像是沼澤、丘陵、裂隙，或其他困難或無法通行的地形。池塘可以被變得像是草地，懸崖像是緩坡，亂石遍布的溝壑像是寬闊平坦的道路。區域內的人造結構、裝備與生物不會被改變。
+
+    地形的觸感特性不變，因此進入該區域的生物很可能察覺到幻象。如果差異無法由觸摸看出，檢視幻象的生物可以採取研究動作，進行一次對抗你法術豁免DC的智力（調查）檢定來識破它。如果生物看穿該地形是幻象，該生物會看到一個疊加在真實地形上的模糊影像。

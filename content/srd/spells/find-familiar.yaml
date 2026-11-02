@@ -1,0 +1,44 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: find-familiar
+source: srd
+level: 1
+school: conjuration
+classes: [ wizard ]
+ritual: true
+concentration: false
+castingTime:
+  - { unit: hour, amount: 1 }
+  - { unit: ritual }
+range: { type: distance, amount: 10, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: instantaneous }
+en:
+  name: Find Familiar
+  material: burning incense worth 10+ GP, which the spell consumes
+  body: |-
+    You gain the service of a familiar, a spirit that takes an animal form you choose: **Bat, Cat, Frog, Hawk, Lizard, Octopus, Owl, Rat, Raven, Spider, Weasel**, or another Beast that has a Challenge Rating of 0. Appearing in an unoccupied space within range, the familiar has the statistics of the chosen form (see "Monsters"), though it is a Celestial, Fey, or Fiend (your choice) instead of a Beast. Your familiar acts independently of you, but it obeys your commands.
+
+    _Telepathic Connection._ While your familiar is within 100 feet of you, you can communicate with it telepathically. Additionally, as a Bonus Action, you can see through the familiar's eyes and hear what it hears until the start of your next turn, gaining the benefits of any special senses it has.
+
+    Finally, when you cast a spell with a range of touch, your familiar can deliver the touch. Your familiar must be within 100 feet of you, and it must take a Reaction to deliver the touch when you cast the spell.
+
+    _Combat._ The familiar is an ally to you and your allies. It rolls its own Initiative and acts on its own turn. A familiar can't attack, but it can take other actions as normal.
+
+    _Disappearance of the Familiar._ When the familiar drops to 0 Hit Points, it disappears. It reappears after you cast this spell again. As a Magic action, you can temporarily dismiss the familiar to a pocket dimension. Alternatively, you can dismiss it forever. As a Magic action while it is temporarily dismissed, you can cause it to reappear in an unoccupied space within 30 feet of you. Whenever the familiar drops to 0 Hit Points or disappears into the pocket dimension, it leaves behind in its space anything it was wearing or carrying.
+
+    _One Familiar Only._ You can't have more than one familiar at a time. If you cast this spell while you have a familiar, you instead cause it to adopt a new eligible form.
+zh:
+  name: 獲得魔寵
+  material: 價值10 GP以上的燃燒香料，法術會將其耗盡
+  body: |-
+    你獲得一隻魔寵的服務，這是一個以你所選動物形態出現的靈體：**蝙蝠、貓、青蛙、鷹、蜥蜴、章魚、貓頭鷹、老鼠、渡鴉、蜘蛛、鼬**，或其他挑戰等級為0的野獸。魔寵出現在射程內一個未被佔據的空間，具有所選形態的數值（見「怪物」），但它是天界生物、精類或邪魔（由你選擇），而非野獸。你的魔寵獨立行動，但會服從你的命令。
+
+    _心靈感應連結。_ 當你的魔寵在你周圍100呎內時，你可以與它進行心靈感應溝通。此外，你可以用附贈動作透過魔寵的眼睛觀看、並聽見它所聽到的，持續到你下個回合開始為止，並獲得它所具有的任何特殊感官的益處。
+
+    最後，當你施放射程為觸及的法術時，你的魔寵可以代為傳遞觸碰。你的魔寵必須在你周圍100呎內，且在你施放該法術時，它必須用反應動作來傳遞觸碰。
+
+    _戰鬥。_ 魔寵是你與你盟友的盟友。它自行擲先攻，並在自己的回合行動。魔寵不能進行攻擊，但可以如常採取其他動作。
+
+    _魔寵消失。_ 當魔寵的生命值降至0時，它會消失。在你再次施放此法術後，它會重新出現。你可以用魔法動作將魔寵暫時遣返至一個口袋次元。或者，你也可以永久遣返它。當它處於暫時遣返狀態時，你可以用魔法動作使它重新出現在你周圍30呎內一個未被佔據的空間。每當魔寵的生命值降至0或消失到口袋次元時，它所穿戴或攜帶的任何物品都會留在它所在的空間。
+
+    _僅限一隻魔寵。_ 你同一時間不能擁有超過一隻魔寵。若你在已有魔寵時施放此法術，則改為使它轉變為另一個符合資格的新形態。

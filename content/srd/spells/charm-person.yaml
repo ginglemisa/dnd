@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: charm-person
+source: srd
+level: 1
+school: enchantment
+classes: [ bard, druid, sorcerer, warlock, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 30, unit: feet }
+components: { v: true, s: true, m: false }
+duration: { type: time, amount: 1, unit: hour }
+en:
+  name: Charm Person
+  body: |-
+    One Humanoid you can see within range makes a Wisdom saving throw. It does so with Advantage if you or your allies are fighting it. On a failed save, the target has the Charmed condition until the spell ends or until you or your allies damage it. The Charmed creature is Friendly to you. When the spell ends, the target knows it was Charmed by you.
+
+    _Using a Higher-Level Spell Slot._ You can target one additional creature for each spell slot level above 1.
+zh:
+  name: 魅惑人類
+  body: |-
+    射程內一個你看得見的人型生物進行感知豁免。若你或你的盟友正在與其戰鬥，它的豁免具有優勢。豁免失敗時，該目標陷入魅惑狀態，直到法術結束，或直到你或你的盟友對它造成傷害為止。受魅惑的生物對你抱持友善態度。法術結束時，該目標會知道自己曾被你魅惑。
+
+    _使用更高環階法術位。_ 每比1環高一環，你可以多以一個生物為目標。

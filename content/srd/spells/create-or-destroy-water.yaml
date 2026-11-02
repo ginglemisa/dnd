@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: create-or-destroy-water
+source: srd
+level: 1
+school: transmutation
+classes: [ cleric, druid ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 30, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: instantaneous }
+en:
+  name: Create or Destroy Water
+  material: a mix of water and sand
+  body: |-
+    You do one of the following:
+
+    **Create Water.** You create up to 10 gallons of clean water within range in an open container. Alternatively, the water falls as rain in a 30-foot Cube within range, extinguishing exposed flames there.
+
+    **Destroy Water.** You destroy up to 10 gallons of water in an open container within range. Alternatively, you destroy fog in a 30-foot Cube within range.
+
+    _Using a Higher-Level Spell Slot._ You create or destroy 10 additional gallons of water, or the size of the Cube increases by 5 feet, for each spell slot level above 1.
+zh:
+  name: 造水術/枯水術
+  material: 水和沙子的混合物
+  body: |-
+    你執行以下其中一項：
+
+    **造水。** 你在射程內的開放容器中創造最多10加侖的潔淨水。或者，水在射程內的30呎立方體中如雨落下，熄滅該處裸露的火焰。
+
+    **枯水。** 你消除射程內開放容器中最多10加侖的水。或者，你消除射程內30呎立方體中的霧氣。
+
+    _使用更高環階法術位。_ 每比1環高一環，你多創造或消除10加侖的水，或使立方體的大小增加5呎。

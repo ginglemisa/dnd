@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: guidance
+source: srd
+level: 0
+school: divination
+classes: [ cleric, druid ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: touch }
+components: { v: true, s: true, m: false }
+duration: { type: time, amount: 1, unit: minute, upTo: true }
+en:
+  name: Guidance
+  body: You touch a willing creature and choose a skill. Until the spell ends, the creature adds 1d4 to any ability check using the chosen skill.
+zh:
+  name: 神導術
+  body: 你觸碰一個自願的生物並選擇一項技能。在法術結束前，該生物進行使用所選技能的任何屬性檢定時，加上1d4。

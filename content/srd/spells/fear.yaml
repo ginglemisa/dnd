@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: fear
+source: srd
+level: 3
+school: illusion
+classes: [ bard, sorcerer, warlock, wizard ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: self }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 1, unit: minute, upTo: true }
+en:
+  name: Fear
+  material: a white feather
+  body: |-
+    Each creature in a 30-foot Cone must succeed on a Wisdom saving throw or drop whatever it is holding and have the Frightened condition for the duration.
+
+    A Frightened creature takes the Dash action and moves away from you by the safest route on each of its turns unless there is nowhere to move. If the creature ends its turn in a space where it doesn't have line of sight to you, the creature makes a Wisdom saving throw. On a successful save, the spell ends on that creature.
+zh:
+  name: 恐懼術
+  material: 一根白色羽毛
+  body: |-
+    30呎錐形區域內的每個生物都必須成功通過感知豁免，否則會丟下手中所持之物，並在持續時間內陷入恐慌狀態。
+
+    恐慌的生物在其每個回合都會採取疾走動作，並循最安全的路線遠離你，除非無處可移動。若該生物在無法對你形成視線的空間結束其回合，該生物會進行一次感知豁免。豁免成功時，此法術對該生物結束。

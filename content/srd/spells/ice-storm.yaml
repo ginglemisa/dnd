@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: ice-storm
+source: srd
+level: 4
+school: evocation
+classes: [ druid, sorcerer, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 300, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: instantaneous }
+en:
+  name: Ice Storm
+  material: a mitten
+  body: |-
+    Hail falls in a 20-foot-radius, 40-foot-high Cylinder centered on a point within range. Each creature in the Cylinder makes a Dexterity saving throw. A creature takes 2d10 Bludgeoning damage and 4d6 Cold damage on a failed save or half as much damage on a successful one.
+
+    Hailstones turn ground in the Cylinder into Difficult Terrain until the end of your next turn. _Using a Higher-Level Spell Slot._ The Bludgeoning damage increases by 1d10 for each spell slot level above 4.
+zh:
+  name: 冰風暴
+  material: 一隻連指手套
+  body: |-
+    冰雹落在以射程內一點為中心、半徑20呎、高40呎的圓柱形區域中。圓柱形區域內的每個生物各進行一次敏捷豁免。豁免失敗的生物受到2d10鈍擊傷害與4d6冷凍傷害，成功則受到一半傷害。
+
+    冰雹使圓柱形區域內的地面變成困難地形，直到你下個回合結束。_使用更高環階法術位。_ 法術位環階每高於4環一環，鈍擊傷害增加1d10。

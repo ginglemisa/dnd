@@ -1,0 +1,49 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: private-sanctum
+source: srd
+level: 4
+school: abjuration
+classes: [ wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: minute, amount: 10 }
+range: { type: distance, amount: 120, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 24, unit: hour }
+en:
+  name: Private Sanctum
+  material: a thin sheet of lead
+  body: |-
+    You make an area within range magically secure. The area is a Cube that can be as small as 5 feet to as large as 100 feet on each side. The spell lasts for the duration.
+
+    When you cast the spell, you decide what sort of security the spell provides, choosing any of the following properties:
+
+    - Sound can't pass through the barrier at the edge of the warded area.
+    - The barrier of the warded area appears dark and foggy, preventing vision (including Darkvision) through it.
+    - Sensors created by Divination spells can't appear inside the protected area or pass through the barrier at its perimeter.
+    - Creatures in the area can't be targeted by Divination spells.
+    - Nothing can teleport into or out of the warded area.
+    - Planar travel is blocked within the warded area.
+
+    Casting this spell on the same spot every day for 365 days makes the spell last until dispelled.
+
+    _Using a Higher-Level Spell Slot._ You can increase the size of the Cube by 100 feet for each spell slot level above 4.
+zh:
+  name: 私人密室
+  material: 一片薄鉛板
+  body: |-
+    你使射程內的一處區域受到魔法保護。該區域是一個立方體，每邊最小可小至5呎，最大可大至100呎。法術持續到持續時間結束。
+
+    施放法術時，你決定法術提供何種保護，可選擇下列任意屬性：
+
+    - 聲音無法穿過受守護區域邊緣的屏障。
+    - 受守護區域的屏障看起來暗沉且起霧，阻擋視線（包括黑暗視覺）穿透。
+    - 由預言系法術創造的感應器無法出現在受保護區域內，也無法穿過其周界的屏障。
+    - 區域內的生物無法成為預言系法術的目標。
+    - 任何東西都無法傳送進入或離開受守護區域。
+    - 受守護區域內無法進行位面旅行。
+
+    連續365天每天在同一地點施放此法術，法術便會持續到被解除為止。
+
+    _使用更高環階法術位。_ 法術位的環階每比4高一環，你可以將立方體的大小增加100呎。

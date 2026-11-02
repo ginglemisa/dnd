@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: comprehend-languages
+source: srd
+level: 1
+school: divination
+classes: [ bard, sorcerer, warlock, wizard ]
+ritual: true
+concentration: false
+castingTime:
+  - { unit: action }
+  - { unit: ritual }
+range: { type: self }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 1, unit: hour }
+en:
+  name: Comprehend Languages
+  material: a pinch of soot and salt
+  body: For the duration, you understand the literal meaning of any language that you hear or see signed. You also understand any written language that you see, but you must be touching the surface on which the words are written. It takes about 1 minute to read one page of text. This spell doesn't decode symbols or secret messages.
+zh:
+  name: 通曉語言
+  material: 一撮煤灰和鹽
+  body: 在持續時間內，你理解你所聽到或看到以手語表達的任何語言的字面意思。你也理解你所看到的任何書面語言，但你必須接觸書寫文字的表面。閱讀一頁文字大約需要1分鐘。此法術無法破解符號或密文。

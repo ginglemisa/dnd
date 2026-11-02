@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: message
+source: srd
+level: 0
+school: transmutation
+classes: [ bard, druid, sorcerer, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 120, unit: feet }
+components: { v: false, s: true, m: true }
+duration: { type: time, amount: 1, unit: round }
+en:
+  name: Message
+  material: a copper wire
+  body: |-
+    You point toward a creature within range and whisper a message. The target (and only the target) hears the message and can reply in a whisper that only you can hear.
+
+    You can cast this spell through solid objects if you are familiar with the target and know it is beyond the barrier. Magical silence; 1 foot of stone, metal, or wood; or a thin sheet of lead blocks the spell.
+zh:
+  name: 傳訊術
+  material: 一段銅線
+  body: |-
+    你指向射程內的一個生物並低聲傳達一段訊息。只有目標能聽見這段訊息，並能以只有你聽得見的低語回覆。
+
+    若你熟悉目標，且知道它位於障礙物的另一側，你可以隔著固體物體施放此法術。魔法性的寂靜、1呎厚的石頭、金屬或木頭，或一片薄鉛板，都會阻擋此法術。

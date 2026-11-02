@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: ray-of-sickness
+source: srd
+level: 1
+school: necromancy
+classes: [ sorcerer, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 60, unit: feet }
+components: { v: true, s: true, m: false }
+duration: { type: instantaneous }
+en:
+  name: Ray of Sickness
+  body: |-
+    You shoot a greenish ray at a creature within range. Make a ranged spell attack against the target. On a hit, the target takes 2d8 Poison damage and has the Poisoned condition until the end of your next turn.
+
+    _Using a Higher-Level Spell Slot._ The damage increases by 1d8 for each spell slot level above 1.
+zh:
+  name: 致病射線
+  body: |-
+    你朝射程內的一隻生物射出一道淡綠色的射線。對該目標進行一次遠程法術攻擊。若命中，目標受到2d8毒素傷害，並陷入中毒狀態，持續到你下個回合結束。
+
+    _使用更高環階法術位。_ 法術位環階每比1環高一環，傷害就增加1d8。

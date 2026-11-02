@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: plant-growth
+source: srd
+level: 3
+school: transmutation
+classes: [ bard, druid, ranger ]
+ritual: false
+concentration: false
+castingTime:
+  - unit: action
+    note:
+      en: Overgrowth
+      zh: 過度生長
+  - unit: hour
+    amount: 8
+    note:
+      en: Enrichment
+      zh: 豐饒
+range: { type: distance, amount: 150, unit: feet }
+components: { v: true, s: true, m: false }
+duration: { type: instantaneous }
+en:
+  name: Plant Growth
+  body: |-
+    This spell channels vitality into plants. The casting time you use determines whether the spell has the Overgrowth or the Enrichment effect below.
+
+    _Overgrowth._ Choose a point within range. All normal plants in a 100-foot-radius Sphere centered on that point become thick and overgrown. A creature moving through that area must spend 4 feet of movement for every 1 foot it moves. You can exclude one or more areas of any size within the spell's area from being affected.
+
+    _Enrichment._ All plants in a half-mile radius centered on a point within range become enriched for 365 days. The plants yield twice the normal amount of food when harvested. They can benefit from only one _Plant Growth_ per year.
+zh:
+  name: 植物滋長
+  body: |-
+    這個法術將生命力灌注到植物之中。你所使用的施法時間，決定法術產生下述的過度生長或豐饒效果。
+
+    _過度生長。_ 選擇射程內的一個點。以該點為中心、半徑100呎的球形區域內，所有一般植物都會變得濃密而叢生。生物在該區域內移動時，每移動1呎必須消耗4呎的移動速度。你可以將法術區域內任何大小的一處或多處區域排除在影響之外。
+
+    _豐饒。_ 以射程內一個點為中心、半徑半英里內的所有植物，會在365天內變得豐饒。這些植物收成時的糧食產量為正常的兩倍。它們每年只能受益於一次_植物滋長_。

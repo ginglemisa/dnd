@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: gaseous-form
+source: srd
+level: 3
+school: transmutation
+classes: [ sorcerer, warlock, wizard ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: touch }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 1, unit: hour, upTo: true }
+en:
+  name: Gaseous Form
+  material: a bit of gauze
+  body: |-
+    A willing creature you touch shape-shifts, along with everything it's wearing and carrying, into a misty cloud for the duration. The spell ends on the target if it drops to 0 Hit Points or if it takes a Magic action to end the spell on itself.
+
+    While in this form, the target's only method of movement is a Fly Speed of 10 feet, and it can hover. The target can enter and occupy the space of another creature. The target has Resistance to Bludgeoning, Piercing, and Slashing damage; it has Immunity to the Prone condition; and it has Advantage on Strength, Dexterity, and Constitution saving throws. The target can pass through narrow openings, but it treats liquids as though they were solid surfaces.
+
+    The target can't talk or manipulate objects, and any objects it was carrying or holding can't be dropped, used, or otherwise interacted with. Finally, the target can't attack or cast spells.
+
+    _Using a Higher-Level Spell Slot._ You can target one additional creature for each spell slot level above 3.
+zh:
+  name: 氣化形體
+  material: 一小片薄紗
+  body: |-
+    你觸碰的一個自願生物，連同它身上穿戴與攜帶的一切，在持續時間內變形為一團霧狀雲氣。若目標的生命值降至0，或目標以魔法動作對自己終止此法術，法術對該目標結束。
+
+    處於此形態時，目標唯一的移動方式是10呎的飛行速度，並且可以懸停。目標可以進入並佔據另一個生物的空間。目標對鈍擊、穿刺與揮砍傷害具有抗性；對倒地狀態具有免疫；並且在力量、敏捷與體質豁免上具有優勢。目標可以穿過狹窄的縫隙，但會將液體視為固體表面。
+
+    目標不能說話或操作物體，且它原本攜帶或持握的任何物體都不能被丟下、使用或以其他方式互動。最後，目標不能進行攻擊或施放法術。
+
+    _使用更高環階法術位。_ 每高於3環的法術位環階，你可以多指定一個生物為目標。

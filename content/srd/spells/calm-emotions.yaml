@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: calm-emotions
+source: srd
+level: 2
+school: enchantment
+classes: [ bard, cleric ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 60, unit: feet }
+components: { v: true, s: true, m: false }
+duration: { type: time, amount: 1, unit: minute, upTo: true }
+en:
+  name: Calm Emotions
+  body: |-
+    Each Humanoid in a 20-foot-radius Sphere centered on a point you choose within range must succeed on a Charisma saving throw or be affected by one of the following effects (choose for each creature):
+
+    - The creature has Immunity to the Charmed and Frightened conditions until the spell ends. If the creature was already Charmed or Frightened, those conditions are suppressed for the duration.
+    - The creature becomes Indifferent about creatures of your choice that it's Hostile toward. This indifference ends if the target takes damage or witnesses its allies taking damage. When the spell ends, the creature's attitude returns to normal.
+zh:
+  name: 安定心神
+  body: |-
+    以射程內你選擇的一點為中心、半徑20呎的球形區域內，每個人型生物都必須通過魅力豁免，否則會受到以下其中一種效果影響（為每個生物分別選擇）：
+
+    - 該生物在法術結束前，對魅惑與恐慌狀態免疫。如果該生物原本已陷入魅惑或恐慌狀態，這些狀態在持續時間內受到抑制。
+    - 該生物對於由你選擇、且它原本抱持敵對態度的生物，變得態度冷漠。若目標受到傷害，或目睹盟友受到傷害，這種冷漠即告結束。法術結束時，該生物的態度恢復正常。

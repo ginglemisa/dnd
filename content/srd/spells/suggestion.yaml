@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: suggestion
+source: srd
+level: 2
+school: enchantment
+classes: [ bard, sorcerer, warlock, wizard ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 30, unit: feet }
+components: { v: true, s: false, m: true }
+duration: { type: time, amount: 8, unit: hour, upTo: true }
+en:
+  name: Suggestion
+  material: a drop of honey
+  body: |-
+    You suggest a course of activity—described in no more than 25 words—to one creature you can see within range that can hear and understand you. The suggestion must sound achievable and not involve anything that would obviously deal damage to the target or its allies. For example, you could say, "Fetch the key to the cult's treasure vault, and give the key to me." Or you could say, "Stop fighting, leave this library peacefully, and don't return."
+
+    The target must succeed on a Wisdom saving throw or have the Charmed condition for the duration or until you or your allies deal damage to the target. The Charmed target pursues the suggestion to the best of its ability. The suggested activity can continue for the entire duration, but if the suggested activity can be completed in a shorter time, the spell ends for the target upon completing it.
+zh:
+  name: 暗示術
+  material: 一滴蜂蜜
+  body: |-
+    你向射程內一名你能看見、且能聽見並理解你的生物提出一項行動方針的建議，建議內容不得超過25個字。該建議必須聽起來可以達成，且不得包含任何明顯會對目標或其盟友造成傷害的事項。例如，你可以說：「去拿邪教寶庫的鑰匙，然後把鑰匙交給我。」或者你可以說：「停止戰鬥，平靜地離開這座圖書館，不要再回來。」
+
+    目標必須成功通過一次感知豁免，否則在持續時間內，或直到你或你的盟友對目標造成傷害為止，陷入魅惑狀態。受魅惑的目標會盡其所能執行該建議。建議的行動可以持續整個持續時間，但若建議的行動能在較短時間內完成，則法術在目標完成該行動時對其結束。

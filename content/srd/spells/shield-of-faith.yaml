@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: shield-of-faith
+source: srd
+level: 1
+school: abjuration
+classes: [ cleric, paladin ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: bonus-action }
+range: { type: distance, amount: 60, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 10, unit: minute, upTo: true }
+en:
+  name: Shield of Faith
+  material: a prayer scroll
+  body: A shimmering field surrounds a creature of your choice within range, granting it a +2 bonus to AC for the duration.
+zh:
+  name: 虔誠護盾
+  material: 一卷祈禱經文
+  body: 一道閃爍的力場環繞著射程內你選擇的一個生物，在持續時間內使其AC獲得+2加值。

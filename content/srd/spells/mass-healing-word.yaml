@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: mass-healing-word
+source: srd
+level: 3
+school: abjuration
+classes: [ bard, cleric ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: bonus-action }
+range: { type: distance, amount: 60, unit: feet }
+components: { v: true, s: false, m: false }
+duration: { type: instantaneous }
+en:
+  name: Mass Healing Word
+  body: |-
+    Up to six creatures of your choice that you can see within range regain Hit Points equal to 2d4 plus your spellcasting ability modifier.
+
+    _Using a Higher-Level Spell Slot._ The healing increases by 1d4 for each spell slot level above 3.
+zh:
+  name: 群體治癒真言
+  body: |-
+    你選擇最多六個你在射程內可以看見的生物，它們恢復等同於2d4加上你的施法屬性調整值的生命值。
+
+    _使用更高環階法術位。_ 每高於3環的法術位環階，治療量增加1d4。

@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: charm-monster
+source: srd
+level: 4
+school: enchantment
+classes: [ bard, druid, sorcerer, warlock, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 30, unit: feet }
+components: { v: true, s: true, m: false }
+duration: { type: time, amount: 1, unit: hour }
+en:
+  name: Charm Monster
+  body: |-
+    One creature you can see within range makes a Wisdom saving throw. It does so with Advantage if you or your allies are fighting it. On a failed save, the target has the Charmed condition until the spell ends or until you or your allies damage it. The Charmed creature is Friendly to you. When the spell ends, the target knows it was Charmed by you.
+
+    _Using a Higher-Level Spell Slot._ You can target one additional creature for each spell slot level above 4.
+zh:
+  name: 魅惑怪物
+  body: |-
+    你能看見的射程內一個生物進行感知豁免。如果你或你的盟友正在與其戰鬥，它進行此豁免時具有優勢。豁免失敗時，目標陷入魅惑狀態，直到法術結束，或直到你或你的盟友對其造成傷害為止。被魅惑的生物對你保持友善。法術結束時，目標會知道自己曾被你魅惑。
+
+    _使用更高環階法術位。_ 法術位環階每比4高一環，你可以多指定一個生物為目標。

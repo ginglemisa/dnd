@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: darkvision
+source: srd
+level: 2
+school: transmutation
+classes: [ druid, ranger, sorcerer, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: touch }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 8, unit: hour }
+en:
+  name: Darkvision
+  material: a dried carrot
+  body: For the duration, a willing creature you touch has Darkvision with a range of 150 feet.
+zh:
+  name: 黑暗視覺
+  material: 一根乾燥的胡蘿蔔
+  body: 在持續時間內，你接觸的一名自願生物擁有射程150呎的黑暗視覺。

@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: awaken
+source: srd
+level: 5
+school: transmutation
+classes: [ bard, druid ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: hour, amount: 8 }
+range: { type: touch }
+components: { v: true, s: true, m: true }
+duration: { type: instantaneous }
+en:
+  name: Awaken
+  material: an agate worth 1,000+ GP, which the spell consumes
+  body: |-
+    You spend the casting time tracing magical pathways within a precious gemstone, and then touch the target. The target must be either a Beast or Plant creature with an Intelligence of 3 or less or a natural plant that isn't a creature. The target gains an Intelligence of 10 and the ability to speak one language you know. If the target is a natural plant, it becomes a Plant creature and gains the ability to move its limbs, roots, vines, creepers, and so forth, and it gains senses similar to a human's. The GM chooses statistics appropriate for the awakened Plant, such as the statistics for the **Awakened Shrub** or **Awakened Tree** in "Monsters."
+
+    The awakened target has the Charmed condition for 30 days or until you or your allies deal damage to it. When that condition ends, the awakened creature chooses its attitude toward you.
+zh:
+  name: 啟蒙術
+  material: 價值至少1,000 GP的瑪瑙，法術會消耗它
+  body: |-
+    你花費施法時間在一顆珍貴寶石內描繪魔法路徑，然後觸碰目標。目標必須是智力為3或更低的野獸或植物生物，或是一株不屬於生物的天然植物。目標的智力變為10，並獲得說出一種你所知語言的能力。如果目標是天然植物，它會變成植物生物，並獲得移動其肢體、根、藤蔓、攀爬枝條等部位的能力，同時獲得與人類相似的感官。DM會選擇適合被喚醒的植物的數據塊，例如「怪物」中的**覺醒灌木**或**覺醒樹木**的數據塊。
+
+    被喚醒的目標會陷入魅惑狀態，持續30天，或直到你或你的盟友對它造成傷害為止。該狀態結束時，被喚醒的生物會自行選擇對你的態度。

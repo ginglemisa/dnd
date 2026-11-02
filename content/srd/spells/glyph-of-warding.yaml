@@ -1,0 +1,55 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: glyph-of-warding
+source: srd
+level: 3
+school: abjuration
+classes: [ bard, cleric, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: hour, amount: 1 }
+range: { type: touch }
+components: { v: true, s: true, m: true }
+duration: { type: until-dispelled-or-triggered }
+en:
+  name: Glyph of Warding
+  material: powdered diamond worth 200+ GP, which the spell consumes
+  body: |-
+    You inscribe a glyph that later unleashes a magical effect. You inscribe it either on a surface (such as a table or a section of floor) or within an object that can be closed (such as a book or chest) to conceal the glyph. The glyph can cover an area no larger than 10 feet in diameter. If the surface or object is moved more than 10 feet from where you cast this spell, the glyph is broken, and the spell ends without being triggered.
+
+    The glyph is nearly imperceptible and requires a successful Wisdom (Perception) check against your spell save DC to notice.
+
+    When you inscribe the glyph, you set its trigger and choose whether it's an explosive rune or a spell glyph, as explained below.
+
+    _Set the Trigger._ You decide what triggers the glyph when you cast the spell. For glyphs inscribed on a surface, common triggers include touching or stepping on the glyph, removing another object covering it, or approaching within a certain distance of it. For glyphs inscribed within an object, common triggers include opening that object or seeing the glyph. Once a glyph is triggered, this spell ends.
+
+    You can refine the trigger so that only creatures of certain types activate it (for example, the glyph could be set to affect Aberrations). You can also set conditions for creatures that don't trigger the glyph, such as those who say a certain password.
+
+    _Explosive Rune._ When triggered, the glyph erupts with magical energy in a 20-foot-radius Sphere centered on the glyph. Each creature in the area makes a Dexterity saving throw. A creature takes 5d8 Acid, Cold, Fire, Lightning, or Thunder damage (your choice when you create the glyph) on a failed save or half as much damage on a successful one.
+
+    _Spell Glyph._ You can store a prepared spell of level 3 or lower in the glyph by casting it as part of creating the glyph. The spell must target a single creature or an area. The spell being stored has no immediate effect when cast in this way.
+
+    When the glyph is triggered, the stored spell takes effect. If the spell has a target, it targets the creature that triggered the glyph. If the spell affects an area, the area is centered on that creature. If the spell summons Hostile creatures or creates harmful objects or traps, they appear as close as possible to the intruder and attack it. If the spell requires Concentration, it lasts until the end of its full duration.
+
+    _Using a Higher-Level Spell Slot._ The damage of an explosive rune increases by 1d8 for each spell slot level above 3. If you create a spell glyph, you can store any spell of up to the same level as the spell slot you use for the _Glyph of Warding_.
+zh:
+  name: 守衛刻文
+  material: 價值200 GP以上的鑽石粉末，法術會將其消耗
+  body: |-
+    你刻下一個刻文，稍後會釋放出魔法效果。你可以將它刻在一個表面上（例如桌子或一段地板），或刻在可以闔上的物體之內（例如書本或箱子）以隱藏刻文。刻文所覆蓋的區域直徑不得超過10呎。若該表面或物體被移動到距離你施放此法術處超過10呎的地方，刻文就會破損，法術在未被觸發的情況下結束。
+
+    刻文幾乎無法察覺，需要針對你的法術豁免DC成功通過一次感知（察覺）檢定才能發現。
+
+    刻下刻文時，你要設定它的觸發條件，並選擇它是爆裂符文還是法術刻文，說明如下。
+
+    _設定觸發條件。_ 施放法術時，你決定什麼會觸發刻文。對於刻在表面上的刻文，常見的觸發條件包括觸碰或踩上刻文、移開覆蓋其上的其他物體，或在一定距離內接近它。對於刻在物體之內的刻文，常見的觸發條件包括打開該物體或看見刻文。刻文一旦被觸發，此法術即結束。
+
+    你可以細化觸發條件，使只有特定類型的生物才會啟動它（例如，可將刻文設定為對異怪生效）。你也可以為不會觸發刻文的生物設定條件，例如說出某個特定密語的生物。
+
+    _爆裂符文。_ 被觸發時，刻文會以刻文為中心，在20呎半徑的球形區域內爆發出魔法能量。區域內的每個生物都要進行一次敏捷豁免。生物在豁免失敗時承受5d8強酸、冷凍、火焰、閃電或雷鳴傷害（於你創造刻文時選擇），豁免成功則承受一半傷害。
+
+    _法術刻文。_ 你可以在創造刻文的過程中施放一道已準備的3環或以下法術，將其儲存在刻文中。該法術必須以單一生物或一個區域為目標。以這種方式施放而儲存的法術不會立即產生效果。
+
+    刻文被觸發時，儲存的法術生效。若該法術有目標，則以觸發刻文的生物為目標。若該法術影響一個區域，則該區域以該生物為中心。若該法術召喚敵對生物，或創造有害的物體或陷阱，它們會出現在盡可能靠近闖入者之處並攻擊它。若該法術需要專注，則它會持續到其完整持續時間結束。
+
+    _使用更高環階法術位。_ 每高於3環的法術位環階，爆裂符文的傷害增加1d8。若你創造的是法術刻文，你可以儲存環階不高於你為「守衛刻文」所用法術位環階的任何法術。

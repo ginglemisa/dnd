@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: detect-evil-and-good
+source: srd
+level: 1
+school: divination
+classes: [ cleric, paladin ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: self }
+components: { v: true, s: true, m: false }
+duration: { type: time, amount: 10, unit: minute, upTo: true }
+en:
+  name: Detect Evil and Good
+  body: |-
+    For the duration, you sense the location of any Aberration, Celestial, Elemental, Fey, Fiend, or Undead within 30 feet of yourself. You also sense whether the _Hallow_ spell is active there and, if so, where.
+
+    The spell is blocked by 1 foot of stone, dirt, or wood; 1 inch of metal; or a thin sheet of lead.
+zh:
+  name: 偵測善惡
+  body: |-
+    在持續時間內，你能感知到距離自己30呎內任何異怪、天界生物、元素生物、精類、邪魔或不死生物的位置。你也能感知該處是否有_聖居_法術生效，若有，則感知其所在位置。
+
+    此法術會被1呎厚的石頭、泥土或木頭，1吋厚的金屬，或一張薄鉛片阻擋。

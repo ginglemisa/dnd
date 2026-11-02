@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: longstrider
+source: srd
+level: 1
+school: transmutation
+classes: [ bard, druid, ranger, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: touch }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 1, unit: hour }
+en:
+  name: Longstrider
+  material: a pinch of dirt
+  body: |-
+    You touch a creature. The target's Speed increases by 10 feet until the spell ends.
+
+    _Using a Higher-Level Spell Slot._ You can target one additional creature for each spell slot level above 1.
+zh:
+  name: 大步奔行
+  material: 一撮泥土
+  body: |-
+    你觸碰一隻生物。在法術結束前，目標的速度增加10呎。
+
+    _使用更高環階法術位。_ 法術位環階每比1環高一環，你就可以多指定一隻生物為目標。

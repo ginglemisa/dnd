@@ -1,0 +1,51 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: arcane-hand
+source: srd
+level: 5
+school: evocation
+classes: [ sorcerer, wizard ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 120, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 1, unit: minute, upTo: true }
+en:
+  name: Arcane Hand
+  material: an eggshell and a glove
+  body: |-
+    You create a Large hand of shimmering magical energy in an unoccupied space that you can see within range. The hand lasts for the duration, and it moves at your command, mimicking the movements of your own hand.
+
+    The hand is an object that has AC 20 and Hit Points equal to your Hit Point maximum. If it drops to 0 Hit Points, the spell ends. The hand doesn't occupy its space.
+
+    When you cast the spell and as a Bonus Action on your later turns, you can move the hand up to 60 feet and then cause one of the following effects:
+
+    **Clenched Fist.** The hand strikes a target within 5 feet of it. Make a melee spell attack. On a hit, the target takes 5d8 Force damage.
+
+    **Forceful Hand.** The hand attempts to push a Huge or smaller creature within 5 feet of it. The target must succeed on a Strength saving throw, or the hand pushes the target up to 5 feet plus a number of feet equal to five times your spellcasting ability modifier. The hand moves with the target, remaining within 5 feet of it.
+
+    **Grasping Hand.** The hand attempts to grapple a Huge or smaller creature within 5 feet of it. The target must succeed on a Dexterity saving throw, or the target has the Grappled condition, with an escape DC equal to your spell save DC. While the hand grapples the target, you can take a Bonus Action to cause the hand to crush it, dealing Bludgeoning damage to the target equal to 4d6 plus your spellcasting ability modifier.
+
+    **Interposing Hand.** The hand grants you Half Cover against attacks and other effects that originate from its space or that pass through it. In addition, its space counts as Difficult Terrain for your enemies.
+
+    _Using a Higher-Level Spell Slot._ The damage of the Clenched Fist increases by 2d8 and the damage of the Grasping Hand increases by 2d6 for each spell slot level above 5.
+zh:
+  name: 奧術之手
+  material: 一片蛋殼與一隻手套
+  body: |-
+    你在射程內一個你能看見的未被佔據的空間中，創造出一隻由閃爍魔法能量構成的大型手掌。這隻手在持續時間內持續存在，並聽從你的指令移動，模仿你自己手部的動作。
+
+    這隻手是一個物體，AC為20，生命值等同於你的生命值上限。如果它的生命值降至0，法術即結束。這隻手不佔據它所在的空間。
+
+    當你施放法術時，以及在你之後的回合中以附贈動作，你可以讓這隻手移動最多60呎，然後使其產生下列其中一種效果：
+
+    **握拳。** 這隻手攻擊它5呎內的一個目標。進行一次近戰法術攻擊。命中時，目標受到5d8力場傷害。
+
+    **推擊之手。** 這隻手試圖推開它5呎內一個巨型或更小的生物。目標必須成功通過力量豁免，否則這隻手會將目標推開最多5呎，再加上等同於你施法屬性調整值的五倍的呎數。這隻手會隨目標移動，並保持在目標5呎內。
+
+    **擒抱之手。** 這隻手試圖擒抱它5呎內一個巨型或更小的生物。目標必須成功通過敏捷豁免，否則目標陷入擒抱狀態，脫離DC等同於你的法術豁免DC。當這隻手正擒抱目標時，你可以用附贈動作使這隻手擠壓目標，對目標造成等同4d6加上你施法屬性調整值的鈍擊傷害。
+
+    **阻隔之手。** 對於源自這隻手所在空間或穿過這隻手的攻擊與其他效應，這隻手使你獲得半掩蔽。此外，它所在的空間對你的敵人而言視為困難地形。
+
+    _使用更高環階法術位。_ 每高於5環一環，握拳的傷害增加2d8，擒抱之手的傷害增加2d6。

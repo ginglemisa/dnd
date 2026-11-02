@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: protection-from-poison
+source: srd
+level: 2
+school: abjuration
+classes: [ cleric, druid, paladin, ranger ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: touch }
+components: { v: true, s: true, m: false }
+duration: { type: time, amount: 1, unit: hour }
+en:
+  name: Protection from Poison
+  body: You touch a creature and end the Poisoned condition on it. For the duration, the target has Advantage on saving throws to avoid or end the Poisoned condition, and it has Resistance to Poison damage.
+zh:
+  name: 防護毒素
+  body: 你碰觸一個生物，並結束其身上的中毒狀態。在持續時間內，目標在為避免或結束中毒狀態而進行的豁免上具有優勢，並且對毒素傷害具有抗性。

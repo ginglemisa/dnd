@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: light
+source: srd
+level: 0
+school: evocation
+classes: [ bard, cleric, sorcerer, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: touch }
+components: { v: true, s: false, m: true }
+duration: { type: time, amount: 1, unit: hour }
+en:
+  name: Light
+  material: a firefly or phosphorescent moss
+  body: |-
+    You touch one Large or smaller object that isn't being worn or carried by someone else. Until the spell ends, the object sheds Bright Light in a 20-foot radius and Dim Light for an additional 20 feet. The light can be colored as you like.
+
+    Covering the object with something opaque blocks the light. The spell ends if you cast it again.
+zh:
+  name: 光亮術
+  material: 一隻螢火蟲或發磷光的苔蘚
+  body: |-
+    你觸碰一個大型或更小、且未被他人穿戴或攜帶的物體。在法術結束前，該物體會在半徑20呎內投射明亮光照，並在額外的20呎內投射微光光照。光的顏色可以隨你喜好決定。
+
+    以不透明的東西覆蓋該物體會遮住光線。若你再次施放此法術，此法術即結束。

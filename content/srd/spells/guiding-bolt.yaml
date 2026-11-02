@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: guiding-bolt
+source: srd
+level: 1
+school: evocation
+classes: [ cleric ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 120, unit: feet }
+components: { v: true, s: true, m: false }
+duration: { type: time, amount: 1, unit: round }
+en:
+  name: Guiding Bolt
+  body: |-
+    You hurl a bolt of light toward a creature within range. Make a ranged spell attack against the target. On a hit, it takes 4d6 Radiant damage, and the next attack roll made against it before the end of your next turn has Advantage.
+
+    _Using a Higher-Level Spell Slot._ The damage increases by 1d6 for each spell slot level above 1.
+zh:
+  name: 光導箭
+  body: |-
+    你朝射程內一個生物擲出一道光箭。對目標進行一次遠程法術攻擊。命中時，目標受到4d6光耀傷害，且在你下個回合結束前，對它進行的下一次攻擊檢定具有優勢。
+
+    _使用更高環階法術位。_ 法術位環階每比1環高一環，傷害增加1d6。

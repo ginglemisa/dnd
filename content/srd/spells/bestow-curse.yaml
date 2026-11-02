@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: bestow-curse
+source: srd
+level: 3
+school: necromancy
+classes: [ bard, cleric, wizard ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: touch }
+components: { v: true, s: true, m: false }
+duration: { type: time, amount: 1, unit: minute, upTo: true }
+en:
+  name: Bestow Curse
+  body: |-
+    You touch a creature, which must succeed on a Wisdom saving throw or become cursed for the duration. Until the curse ends, the target suffers one of the following effects of your choice:
+
+    - Choose one ability. The target has Disadvantage on ability checks and saving throws made with that ability.
+    - The target has Disadvantage on attack rolls against you.
+    - In combat, the target must succeed on a Wisdom saving throw at the start of each of its turns or be forced to take the Dodge action on that turn.   • If you deal damage to the target with an attack roll or a spell, the target takes an extra 1d8 Necrotic damage.
+
+    _Using a Higher-Level Spell Slot._ If you cast this spell using a level 4 spell slot, you can maintain Concentration on it for up to 10 minutes. If you use a level 5+ spell slot, the spell doesn't require Concentration, and the duration becomes 8 hours (level 5–6 slot) or 24 hours (level 7–8 slot). If you use a level 9 spell slot, the spell lasts until dispelled.
+zh:
+  name: 降咒
+  body: |-
+    你觸碰一個生物，該生物必須成功通過感知豁免，否則在持續時間內被詛咒。在詛咒結束前，目標會承受你選擇的下列其中一種效果：
+
+    - 選擇一項屬性。目標以該屬性進行的屬性檢定與豁免具有劣勢。
+    - 目標對你進行的攻擊檢定具有劣勢。
+    - 在戰鬥中，目標必須在其每個回合開始時成功通過感知豁免，否則該回合被迫採取閃避動作。   • 若你以攻擊檢定或法術對目標造成傷害，目標額外受到1d8黯蝕傷害。
+
+    _使用更高環階法術位。_ 若你以4環法術位施放此法術，你可以對其維持專注最長10分鐘。若你使用5環以上的法術位，此法術不需要專注，且持續時間變為8小時（5至6環法術位）或24小時（7至8環法術位）。若你使用9環法術位，此法術會持續到被解除為止。

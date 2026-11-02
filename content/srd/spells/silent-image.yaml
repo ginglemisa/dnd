@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: silent-image
+source: srd
+level: 1
+school: illusion
+classes: [ bard, sorcerer, wizard ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 60, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 10, unit: minute, upTo: true }
+en:
+  name: Silent Image
+  material: a bit of fleece
+  body: |-
+    You create the image of an object, a creature, or some other visible phenomenon that is no larger than a 15-foot Cube. The image appears at a spot within range and lasts for the duration. The image is purely visual; it isn't accompanied by sound, smell, or other sensory effects.
+
+    As a Magic action, you can cause the image to move to any spot within range. As the image changes location, you can alter its appearance so that its movements appear natural for the image. For example, if you create an image of a creature and move it, you can alter the image so that it appears to be walking.
+
+    Physical interaction with the image reveals it to be an illusion, since things can pass through it. A creature that takes a Study action to examine the image can determine that it is an illusion with a successful Intelligence (Investigation) check against your spell save DC. If a creature discerns the illusion for what it is, the creature can see through the image.
+zh:
+  name: 無聲幻影
+  material: 一小撮羊毛
+  body: |-
+    你創造出一個物體、生物或其他可見現象的影像，其大小不超過15呎立方體。該影像出現在射程內的一處，並在持續時間內存在。影像純為視覺效果，不伴隨聲音、氣味或其他感官效果。
+
+    你可以用魔法動作使影像移動到射程內的任何位置。影像改變位置時，你可以調整其外觀，使其動作看起來對該影像而言是自然的。例如，若你創造了一個生物的影像並移動它，你可以調整影像使其看起來像在行走。
+
+    與影像進行實體互動會揭露它是幻象，因為東西能穿過它。以研究動作檢視影像的生物，可藉由對抗你的法術豁免DC的成功智力（調查）檢定，判斷它是幻象。若生物識破該幻象的真面目，該生物便能看穿影像。

@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: teleportation-circle
+source: srd
+level: 5
+school: conjuration
+classes: [ bard, sorcerer, warlock, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: minute, amount: 1 }
+range: { type: distance, amount: 10, unit: feet }
+components: { v: true, s: false, m: true }
+duration: { type: time, amount: 1, unit: round }
+en:
+  name: Teleportation Circle
+  material: rare inks worth 50+ GP, which the spell consumes
+  body: |-
+    As you cast the spell, you draw a 5-foot-radius circle on the ground inscribed with sigils that link your location to a permanent teleportation circle of your choice whose sigil sequence you know and that is on the same plane of existence as you. A shimmering portal opens within the circle you drew and remains open until the end of your next turn. Any creature that enters the portal instantly appears within 5 feet of the destination circle or in the nearest unoccupied space if that space is occupied.
+
+    Many major temples, guildhalls, and other important places have permanent teleportation circles. Each circle includes a unique sigil sequence—a string of runes arranged in a particular pattern.
+
+    When you first gain the ability to cast this spell, you learn the sigil sequences for two destinations on the Material Plane, determined by the GM. You might learn additional sigil sequences during your adventures. You can commit a new sigil sequence to memory after studying it for 1 minute.
+
+    You can create a permanent teleportation circle by casting this spell in the same location every day for 365 days.
+zh:
+  name: 傳送法陣
+  material: 價值50+ GP的稀有墨水，法術會將其消耗
+  body: |-
+    施放法術時，你在地面上畫出一個半徑5呎、刻有符記的圓，將你所在的位置連結到你所選的一個永久傳送法陣；你必須知道其符記序列，且它與你位於同一位面。圓內會開啟一道閃爍的傳送門，並維持開啟直到你的下個回合結束。任何進入傳送門的生物會立即出現在目的地法陣5呎內；如果該空間已被佔據，則出現在最近的未被佔據空間。
+
+    許多大型神殿、公會會所及其他重要場所都有永久傳送法陣。每個法陣都有獨特的符記序列，也就是以特定圖案排列的一串符文。
+
+    當你首次獲得施放此法術的能力時，你會得知物質位面上兩個目的地的符記序列，由DM決定。你可能會在冒險過程中得知更多的符記序列。你研究一個新的符記序列1分鐘後，就能將其記在心中。
+
+    你可以每天在同一地點施放此法術，持續365天，以創造一個永久傳送法陣。

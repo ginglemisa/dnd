@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: ice-knife
+source: srd
+level: 1
+school: conjuration
+classes: [ druid, sorcerer, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 60, unit: feet }
+components: { v: false, s: true, m: true }
+duration: { type: instantaneous }
+en:
+  name: Ice Knife
+  material: a drop of water or a piece of ice
+  body: |-
+    You create a shard of ice and fling it at one creature within range. Make a ranged spell attack against the target. On a hit, the target takes 1d10 Piercing damage. Hit or miss, the shard then explodes. The target and each creature within 5 feet of it must succeed on a Dexterity saving throw or take 2d6 Cold damage.
+
+    _Using a Higher-Level Spell Slot._ The Cold damage increases by 1d6 for each spell slot level above 1.
+zh:
+  name: 寒冰破片
+  material: 一滴水或一塊冰
+  body: |-
+    你製造出一片冰晶碎片，並將它擲向射程內的一隻生物。對該目標進行一次遠程法術攻擊。若命中，目標受到1d10穿刺傷害。無論命中與否，碎片接著都會爆炸。目標以及其5呎內的每隻生物都必須成功通過敏捷豁免，否則受到2d6冷凍傷害。
+
+    _使用更高環階法術位。_ 法術位環階每比1環高一環，冷凍傷害就增加1d6。

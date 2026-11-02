@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: fire-shield
+source: srd
+level: 4
+school: evocation
+classes: [ druid, sorcerer, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: self }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 10, unit: minute }
+en:
+  name: Fire Shield
+  material: a bit of phosphorus or a firefly
+  body: |-
+    Wispy flames wreathe your body for the duration, shedding Bright Light in a 10-foot radius and Dim Light for an additional 10 feet.
+
+    The flames provide you with a warm shield or a chill shield, as you choose. The warm shield grants you Resistance to Cold damage, and the chill shield grants you Resistance to Fire damage.
+
+    In addition, whenever a creature within 5 feet of you hits you with a melee attack roll, the shield erupts with flame. The attacker takes 2d8 Fire damage from a warm shield or 2d8 Cold damage from a chill shield.
+zh:
+  name: 火焰護盾
+  material: 少許磷或一隻螢火蟲
+  body: |-
+    在持續時間內，縷縷火焰環繞你的身體，在半徑10呎內投射明亮光照，並在額外10呎內投射微光光照。
+
+    火焰依你的選擇，為你提供溫暖護盾或寒冷護盾。溫暖護盾使你對冷凍傷害具有抗性，寒冷護盾使你對火焰傷害具有抗性。
+
+    此外，每當你5呎內的生物以近戰攻擊檢定擊中你時，護盾會噴發火焰。攻擊者會受到來自溫暖護盾的2d8火焰傷害，或來自寒冷護盾的2d8冷凍傷害。

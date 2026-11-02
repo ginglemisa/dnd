@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: blur
+source: srd
+level: 2
+school: illusion
+classes: [ sorcerer, wizard ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: self }
+components: { v: true, s: false, m: false }
+duration: { type: time, amount: 1, unit: minute, upTo: true }
+en:
+  name: Blur
+  body: Your body becomes blurred. For the duration, any creature has Disadvantage on attack rolls against you. An attacker is immune to this effect if it perceives you with Blindsight or Truesight.
+zh:
+  name: 朦朧術
+  body: 你的身體變得模糊。在持續時間內，任何生物對你進行的攻擊檢定都具有劣勢。若攻擊者以盲視或真實視覺感知你，則對此效果免疫。

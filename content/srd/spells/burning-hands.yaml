@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: burning-hands
+source: srd
+level: 1
+school: evocation
+classes: [ sorcerer, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: self }
+components: { v: true, s: true, m: false }
+duration: { type: instantaneous }
+en:
+  name: Burning Hands
+  body: |-
+    A thin sheet of flames shoots forth from you. Each creature in a 15-foot Cone makes a Dexterity saving throw, taking 3d6 Fire damage on a failed save or half as much damage on a successful one.
+
+    Flammable objects in the Cone that aren't being worn or carried start burning.
+
+    _Using a Higher-Level Spell Slot._ The damage increases by 1d6 for each spell slot level above 1.
+zh:
+  name: 燃燒之手
+  body: |-
+    一道薄薄的火焰從你身上射出。15呎錐形區域內的每個生物都要進行敏捷豁免，豁免失敗時受到3d6火焰傷害，豁免成功時則受到一半傷害。
+
+    錐形區域內未被穿戴或攜帶的易燃物體會開始燃燒。
+
+    _使用更高環階法術位。_ 每比1環高一環，傷害增加1d6。

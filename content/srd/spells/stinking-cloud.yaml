@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: stinking-cloud
+source: srd
+level: 3
+school: conjuration
+classes: [ bard, sorcerer, wizard ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 90, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 1, unit: minute, upTo: true }
+en:
+  name: Stinking Cloud
+  material: a rotten egg
+  body: |-
+    You create a 20-foot-radius Sphere of yellow, nauseating gas centered on a point within range. The cloud is Heavily Obscured. The cloud lingers in the air for the duration or until a strong wind (such as the one created by _Gust of Wind_) disperses it.
+
+    Each creature that starts its turn in the Sphere must succeed on a Constitution saving throw or have the Poisoned condition until the end of the current turn. While Poisoned in this way, the creature can't take an action or a Bonus Action.
+zh:
+  name: 臭雲術
+  material: 一顆腐壞的蛋
+  body: |-
+    你在射程內一個點為中心，創造出半徑20呎、由黃色令人作嘔的氣體構成的球形區域。這片雲霧為重度遮蔽。雲霧會在持續時間內滯留在空氣中，或直到強風（例如由_造風術_所產生的風）將其吹散為止。
+
+    每個在球形區域內開始其回合的生物，必須成功通過體質豁免，否則陷入中毒狀態，直到當前回合結束。以此方式中毒期間，該生物不能採取動作或附贈動作。

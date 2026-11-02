@@ -1,0 +1,43 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: control-water
+source: srd
+level: 4
+school: transmutation
+classes: [ cleric, druid, wizard ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 300, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 10, unit: minute, upTo: true }
+en:
+  name: Control Water
+  material: a mixture of water and dust
+  body: |-
+    Until the spell ends, you control any water inside an area you choose that is a Cube up to 100 feet on a side, using one of the following effects. As a Magic action on your later turns, you can repeat the same effect or choose a different one.
+
+    _Flood._ You cause the water level of all standing water in the area to rise by as much as 20 feet. If you choose an area in a large body of water, you instead create a 20-foot tall wave that travels from one side of the area to the other and then crashes. Any Huge or smaller vehicles in the wave's path are carried with it to the other side. Any Huge or smaller vehicles struck by the wave have a 25 percent chance of capsizing.
+
+    The water level remains elevated until the spell ends or you choose a different effect. If this effect produced a wave, the wave repeats on the start of your next turn while the flood effect lasts.
+
+    _Part Water._ You part water in the area and create a trench. The trench extends across the spell's area, and the separated water forms a wall to either side. The trench remains until the spell ends or you choose a different effect. The water then slowly fills in the trench over the course of the next round until the normal water level is restored.
+
+    _Redirect Flow._ You cause flowing water in the area to move in a direction you choose, even if the water has to flow over obstacles, up walls, or in other unlikely directions. The water in the area moves as you direct it, but once it moves beyond the spell's area, it resumes its flow based on the terrain. The water continues to move in the direction you chose until the spell ends or you choose a different effect.
+
+    _Whirlpool._ You cause a whirlpool to form in the center of the area, which must be at least 50 feet square and 25 feet deep. The whirlpool lasts until you choose a different effect or the spell ends. The whirlpool is 5 feet wide at the base, up to 50 feet wide at the top, and 25 feet tall. Any creature in the water and within 25 feet of the whirlpool is pulled 10 feet toward it. When a creature enters the whirlpool for the first time on a turn or ends its turn there, it makes a Strength saving throw. On a failed save, the creature takes 2d8 Bludgeoning damage. On a successful save, the creature takes half as much damage. A creature can swim away from the whirlpool only if it first takes an action to pull away and succeeds on a Strength (Athletics) check against your spell save DC.
+zh:
+  name: 操控水體
+  material: 水與塵土的混合物
+  body: |-
+    在法術結束前，你控制你選定區域內的所有水，該區域是邊長最多100呎的立方體，並使用下列效果之一。在你之後的回合中，你可以用魔法動作重複相同效果或選擇不同效果。
+
+    _洪水。_ 你使區域內所有靜止水體的水位上升最多20呎。如果你選擇的區域位於大型水域中，則改為創造一道20呎高的巨浪，從區域一側行進到另一側，然後拍落。巨浪路徑上任何巨型或更小的載具都會被帶往另一側。被巨浪擊中的任何巨型或更小的載具有25%的機率傾覆。
+
+    水位會維持在升高的狀態，直到法術結束或你選擇不同的效果。如果此效果產生了巨浪，則只要洪水效果持續，巨浪會在你的下一個回合開始時重複出現。
+
+    _分水。_ 你分開區域內的水並形成一道溝渠。溝渠貫穿法術的整個區域，被分開的水在兩側形成水牆。溝渠會持續到法術結束或你選擇不同的效果。之後，水會在接下來的一輪中慢慢填回溝渠，直到恢復正常水位。
+
+    _改道。_ 你使區域內流動的水朝你選擇的方向移動，即使水必須越過障礙物、爬上牆壁或朝其他不太可能的方向流動。區域內的水依你的指示移動，但一旦移出法術區域，就會依地形恢復其流向。水會持續朝你選擇的方向移動，直到法術結束或你選擇不同的效果。
+
+    _漩渦。_ 你使區域中央形成一個漩渦，該區域必須至少50呎見方且25呎深。漩渦持續到你選擇不同的效果或法術結束。漩渦底部寬5呎，頂部最寬可達50呎，高25呎。水中且距離漩渦25呎內的任何生物會被拉向漩渦10呎。生物在一個回合中首次進入漩渦或在其中結束回合時，進行力量豁免。豁免失敗時，該生物受到2d8鈍擊傷害；豁免成功時，該生物受到一半傷害。生物只有先花費一個動作掙脫，並成功通過對抗你法術豁免DC的力量（運動）檢定，才能游離漩渦。

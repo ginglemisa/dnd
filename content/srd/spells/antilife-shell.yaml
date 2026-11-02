@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: antilife-shell
+source: srd
+level: 5
+school: abjuration
+classes: [ druid ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: self }
+components: { v: true, s: true, m: false }
+duration: { type: time, amount: 1, unit: hour, upTo: true }
+en:
+  name: Antilife Shell
+  body: |-
+    An aura extends from you in a 10-foot Emanation for the duration. The aura prevents creatures other than Constructs and Undead from passing or reaching through it. An affected creature can cast spells or make attacks with Ranged or Reach weapons through the barrier.
+
+    If you move so that an affected creature is forced to pass through the barrier, the spell ends.
+zh:
+  name: 防活物護罩
+  body: |-
+    在持續時間內，一層從你身上延伸出10呎發散區域的光環包覆你。這層光環會阻止構裝生物與不死生物以外的生物穿過或伸手越過它。受影響的生物可以隔著這道屏障施放法術，或使用遠距或長觸及武器進行攻擊。
+
+    如果你移動，導致受影響的生物被迫穿過這道屏障，法術即結束。

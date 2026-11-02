@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: water-walk
+source: srd
+level: 3
+school: transmutation
+classes: [ cleric, druid, ranger, sorcerer ]
+ritual: true
+concentration: false
+castingTime:
+  - { unit: action }
+  - { unit: ritual }
+range: { type: distance, amount: 30, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 1, unit: hour }
+en:
+  name: Water Walk
+  material: a piece of cork
+  body: |-
+    This spell grants the ability to move across any liquid surface—such as water, acid, mud, snow, quicksand, or lava—as if it were harmless solid ground (creatures crossing molten lava can still take damage from the heat). Up to ten willing creatures of your choice within range gain this ability for the duration.
+
+    An affected target must take a Bonus Action to pass from the liquid's surface into the liquid itself and vice versa, but if the target falls into the liquid, the target passes through the surface into the liquid below.
+zh:
+  name: 水上行走
+  material: 一塊軟木
+  body: |-
+    此法術賦予在任何液體表面上移動的能力，例如水、強酸、泥漿、雪、流沙或熔岩，彷彿那是無害的堅實地面（穿越熔融岩漿的生物仍可能因高溫而受到傷害）。射程內最多十個由你選擇且自願的生物，在持續時間內獲得此能力。
+
+    受影響的目標必須花費一個附贈動作，才能從液體表面進入液體之中，反之亦然；但若目標落入液體，則會穿過表面進入下方的液體。

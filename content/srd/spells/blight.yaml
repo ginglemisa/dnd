@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: blight
+source: srd
+level: 4
+school: necromancy
+classes: [ druid, sorcerer, warlock, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 30, unit: feet }
+components: { v: true, s: true, m: false }
+duration: { type: instantaneous }
+en:
+  name: Blight
+  body: |-
+    A creature that you can see within range makes a Constitution saving throw, taking 8d8 Necrotic damage on a failed save or half as much damage on a successful one. A Plant creature automatically fails the save.
+
+    Alternatively, target a nonmagical plant that isn't a creature, such as a tree or shrub. It doesn't make a save; it simply withers and dies.
+
+    _Using a Higher-Level Spell Slot._ The damage increases by 1d8 for each spell slot level above 4.
+zh:
+  name: 枯萎術
+  body: |-
+    你能看見的射程內一個生物進行體質豁免，豁免失敗時受到8d8黯蝕傷害，成功則受到一半傷害。植物生物自動豁免失敗。
+
+    或者，你可以以一株不是生物的非魔法植物為目標，例如樹木或灌木。它不進行豁免；它只會直接枯萎死亡。
+
+    _使用更高環階法術位。_ 法術位環階每比4高一環，傷害增加1d8。

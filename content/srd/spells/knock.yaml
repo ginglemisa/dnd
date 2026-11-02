@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: knock
+source: srd
+level: 2
+school: transmutation
+classes: [ bard, sorcerer, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 60, unit: feet }
+components: { v: true, s: false, m: false }
+duration: { type: instantaneous }
+en:
+  name: Knock
+  body: |-
+    Choose an object that you can see within range. The object can be a door, a box, a chest, a set of manacles, a padlock, or another object that contains a mundane or magical means that prevents access.
+
+    A target that is held shut by a mundane lock or that is stuck or barred becomes unlocked, unstuck, or unbarred. If the object has multiple locks, only one of them is unlocked.
+
+    If the target is held shut by _Arcane Lock_, that spell is suppressed for 10 minutes, during which time the target can be opened and closed.
+
+    When you cast the spell, a loud knock, audible up to 300 feet away, emanates from the target.
+zh:
+  name: 敲擊術
+  body: |-
+    選擇你在射程內能看見的一個物體。該物體可以是門、箱子、櫃子、一副手銬、掛鎖，或其他含有凡俗或魔法方式來阻止開啟的物體。
+
+    被凡俗鎖具鎖住，或被卡住、被門閂閂住的目標，會變為解鎖、鬆脫或解除門閂。如果該物體有多道鎖，只有其中一道會被解開。
+
+    如果目標被_秘法鎖_鎖住，該法術會被抑制10分鐘，在此期間目標可以被開啟與關閉。
+
+    當你施放法術時，目標會發出一聲巨大的敲擊聲，在300呎外都能聽見。

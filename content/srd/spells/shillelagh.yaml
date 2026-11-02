@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: shillelagh
+source: srd
+level: 0
+school: transmutation
+classes: [ druid ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: bonus-action }
+range: { type: self }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 1, unit: minute }
+en:
+  name: Shillelagh
+  material: mistletoe
+  body: |-
+    A Club or Quarterstaff you are holding is imbued with nature's power. For the duration, you can use your spellcasting ability instead of Strength for the attack and damage rolls of melee attacks using that weapon, and the weapon's damage die becomes a d8. If the attack deals damage, it can be Force damage or the weapon's normal damage type (your choice).
+
+    The spell ends early if you cast it again or if you let go of the weapon.
+
+    _Cantrip Upgrade._ The damage die changes when you reach levels 5 (d10), 11 (d12), and 17 (2d6).
+zh:
+  name: 橡棍術
+  material: 槲寄生
+  body: |-
+    你手持的一根棍棒或長棍被注入自然之力。在持續時間內，你可以用施法屬性取代力量，來進行使用該武器的近戰攻擊的攻擊檢定與傷害骰，且該武器的傷害骰變為d8。若該次攻擊造成傷害，傷害可以是力場傷害或該武器的一般傷害類型（由你選擇）。
+
+    若你再次施放此法術，或你放開該武器，法術提前結束。
+
+    _戲法升級。_ 當你達到5級（d10）、11級（d12）與17級（2d6）時，傷害骰改變。

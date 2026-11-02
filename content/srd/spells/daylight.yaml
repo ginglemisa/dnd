@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: daylight
+source: srd
+level: 3
+school: evocation
+classes: [ cleric, druid, paladin, ranger, sorcerer ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 60, unit: feet }
+components: { v: true, s: true, m: false }
+duration: { type: time, amount: 1, unit: hour }
+en:
+  name: Daylight
+  body: |-
+    For the duration, sunlight spreads from a point within range and fills a 60-foot-radius Sphere. The sunlight's area is Bright Light and sheds Dim Light for an additional 60 feet.
+
+    Alternatively, you cast the spell on an object that isn't being worn or carried, causing the sunlight to fill a 60-foot Emanation originating from that object. Covering that object with something opaque, such as a bowl or helm, blocks the sunlight.
+
+    If any of this spell's area overlaps with an area of Darkness created by a spell of level 3 or lower, that other spell is dispelled.
+zh:
+  name: 晝明術
+  body: |-
+    在持續時間內，陽光從射程內的一點散開，充滿半徑60呎的球形區域。陽光的範圍為明亮光照，並在額外60呎範圍內散發微光光照。
+
+    或者，你可以對一個未被穿戴或攜帶的物體施放此法術，使陽光充滿以該物體為源頭的60呎發散區域。用不透明的東西（例如碗或頭盔）覆蓋該物體，即可遮擋陽光。
+
+    若此法術的任何範圍與由3環或更低環階法術所創造的黑暗區域重疊，該另一個法術會被解除。

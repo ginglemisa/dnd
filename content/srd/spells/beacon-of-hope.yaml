@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: beacon-of-hope
+source: srd
+level: 3
+school: abjuration
+classes: [ cleric ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 30, unit: feet }
+components: { v: true, s: true, m: false }
+duration: { type: time, amount: 1, unit: minute, upTo: true }
+en:
+  name: Beacon of Hope
+  body: Choose any number of creatures within range. For the duration, each target has Advantage on Wisdom saving throws and Death Saving Throws and regains the maximum number of Hit Points possible from any healing.
+zh:
+  name: 希望信標
+  body: 選擇射程內任意數量的生物。在持續時間內，每個目標在感知豁免與死亡豁免上具有優勢，且從任何治療中恢復可能的最大生命值。

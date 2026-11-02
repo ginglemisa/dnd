@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: divine-favor
+source: srd
+level: 1
+school: transmutation
+classes: [ paladin ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: bonus-action }
+range: { type: self }
+components: { v: true, s: true, m: false }
+duration: { type: time, amount: 1, unit: minute }
+en:
+  name: Divine Favor
+  body: Until the spell ends, your attacks with weapons deal an extra 1d4 Radiant damage on a hit.
+zh:
+  name: 神恩
+  body: 直到法術結束前，你以武器進行的攻擊命中時，會額外造成1d4光耀傷害。

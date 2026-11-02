@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: disguise-self
+source: srd
+level: 1
+school: illusion
+classes: [ bard, sorcerer, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: self }
+components: { v: true, s: true, m: false }
+duration: { type: time, amount: 1, unit: hour }
+en:
+  name: Disguise Self
+  body: |-
+    You make yourself—including your clothing, armor, weapons, and other belongings on your person—look different until the spell ends. You can seem 1 foot shorter or taller and can appear heavier or lighter. You must adopt a form that has the same basic arrangement of limbs as you have. Otherwise, the extent of the illusion is up to you.
+
+    The changes wrought by this spell fail to hold up to physical inspection. For example, if you use this spell to add a hat to your outfit, objects pass through the hat, and anyone who touches it would feel nothing.
+
+    To discern that you are disguised, a creature must take the Study action to inspect your appearance and succeed on an Intelligence (Investigation) check against your spell save DC.
+zh:
+  name: 易容術
+  body: |-
+    你使自己——包括你身上的衣物、護甲、武器和其他隨身物品——看起來不同，直到法術結束。你可以顯得矮1呎或高1呎，也可以顯得更胖或更瘦。你採用的外形必須與你的四肢基本配置相同。除此之外，幻象的程度由你決定。
+
+    此法術所造成的改變經不起實體檢查。例如，若你使用此法術在服裝上添加一頂帽子，物體會穿過那頂帽子，任何觸碰它的人也什麼都感覺不到。
+
+    要識破你正在偽裝，生物必須採取研究動作檢視你的外貌，並對抗你的法術豁免DC，通過一次智力（調查）檢定。

@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: blindness-deafness
+source: srd
+level: 2
+school: transmutation
+classes: [ bard, cleric, sorcerer, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 120, unit: feet }
+components: { v: true, s: false, m: false }
+duration: { type: time, amount: 1, unit: minute }
+en:
+  name: Blindness/Deafness
+  body: |-
+    One creature that you can see within range must succeed on a Constitution saving throw, or it has the Blinded or Deafened condition (your choice) for the duration. At the end of each of its turns, the target repeats the save, ending the spell on itself on a success.
+
+    _Using a Higher-Level Spell Slot._ You can target one additional creature for each spell slot level above 2.
+zh:
+  name: 目盲術/耳聾術
+  body: |-
+    你能看見的射程內一個生物必須通過體質豁免，否則在持續時間內陷入失明狀態或耳聾狀態（由你選擇）。在其每個回合結束時，目標重複進行該豁免，成功則結束其身上的法術。
+
+    _使用更高環階法術位。_ 每比2環高一環，你可以多指定一個生物為目標。

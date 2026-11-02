@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: acid-arrow
+source: srd
+level: 2
+school: evocation
+classes: [ wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 90, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: instantaneous }
+en:
+  name: Acid Arrow
+  material: powdered rhubarb leaf
+  body: |-
+    A shimmering green arrow streaks toward a target within range and bursts in a spray of acid. Make a ranged spell attack against the target. On a hit, the target takes 4d4 Acid damage and 2d4 Acid damage at the end of its next turn. On a miss, the arrow splashes the target with acid for half as much of the initial damage only.
+
+    _Using a Higher-Level Spell Slot._ The damage (both initial and later) increases by 1d4 for each spell slot level above 2.
+zh:
+  name: 強酸箭
+  material: 大黃葉粉末
+  body: |-
+    一支閃爍的綠色箭矢飛向射程內的一個目標，並在酸液噴濺中爆開。對目標進行一次遠程法術攻擊。命中時，目標受到4d4強酸傷害，並在其下個回合結束時再受到2d4強酸傷害。未命中時，箭矢仍會用酸液濺到目標，但只造成初始傷害的一半。
+
+    _使用更高環階法術位。_ 每比2環高一環，傷害（初始與後續皆是）增加1d4。

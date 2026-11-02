@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: banishment
+source: srd
+level: 4
+school: abjuration
+classes: [ cleric, paladin, sorcerer, warlock, wizard ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 30, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 1, unit: minute, upTo: true }
+en:
+  name: Banishment
+  material: a pentacle
+  body: |-
+    One creature that you can see within range must succeed on a Charisma saving throw or be transported to a harmless demiplane for the duration. While there, the target has the Incapacitated condition. When the spell ends, the target reappears in the space it left or in the nearest unoccupied space if that space is occupied.
+
+    If the target is an Aberration, a Celestial, an Elemental, a Fey, or a Fiend, the target doesn't return if the spell lasts for 1 minute. The target is instead transported to a random location on a plane (GM's choice) associated with its creature type.
+
+    _Using a Higher-Level Spell Slot._ You can target one additional creature for each spell slot level above 4.
+zh:
+  name: 放逐術
+  material: 一個五芒星圖形
+  body: |-
+    你能看見的射程內一個生物必須成功通過魅力豁免，否則會在持續時間內被傳送到一個無害的半位面。身處其中時，目標陷入失能狀態。法術結束時，目標會重新出現在其離開的空間；若該空間已被佔據，則出現在最近的未被佔據空間。
+
+    如果目標是異怪、天界生物、元素生物、精類或邪魔，且法術持續了1分鐘，目標不會返回。目標改為被傳送到與其生物類型相關聯的某個位面上的隨機地點（由DM決定）。
+
+    _使用更高環階法術位。_ 法術位環階每比4高一環，你可以多指定一個生物為目標。

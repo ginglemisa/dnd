@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: divine-smite
+source: srd
+level: 1
+school: evocation
+classes: [ paladin ]
+ritual: false
+concentration: false
+castingTime:
+  - unit: bonus-action
+    note:
+      en: which you take immediately after hitting a target with a Melee weapon or an Unarmed Strike
+      zh: 你在以近戰武器或徒手打擊命中目標後立即採取
+range: { type: self }
+components: { v: true, s: false, m: false }
+duration: { type: instantaneous }
+en:
+  name: Divine Smite
+  body: |-
+    The target takes an extra 2d8 Radiant damage from the attack. The damage increases by 1d8 if the target is a Fiend or an Undead.
+
+    _Using a Higher-Level Spell Slot._ The damage increases by 1d8 for each spell slot level above 1.
+zh:
+  name: 至聖斬
+  body: |-
+    目標因該次攻擊額外受到2d8光耀傷害。若目標是邪魔或不死生物，傷害再增加1d8。
+
+    _使用更高環階法術位。_ 每比1環高一環，傷害增加1d8。

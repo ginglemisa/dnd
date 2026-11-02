@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: spiritual-weapon
+source: srd
+level: 2
+school: evocation
+classes: [ cleric ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: bonus-action }
+range: { type: distance, amount: 60, unit: feet }
+components: { v: true, s: true, m: false }
+duration: { type: time, amount: 1, unit: minute, upTo: true }
+en:
+  name: Spiritual Weapon
+  body: |-
+    You create a floating, spectral force that resembles a weapon of your choice and lasts for the duration. The force appears within range in a space of your choice, and you can immediately make one melee spell attack against one creature within 5 feet of the force. On a hit, the target takes Force damage equal to 1d8 plus your spellcasting ability modifier.
+
+    As a Bonus Action on your later turns, you can move the force up to 20 feet and repeat the attack against a creature within 5 feet of it.
+
+    _Using a Higher-Level Spell Slot._ The damage increases by 1d8 for every slot level above 2.
+zh:
+  name: 靈體武器
+  body: |-
+    你創造出一個漂浮的幽靈般力場，外形類似你所選擇的一種武器，並在持續時間內存在。該力場出現在射程內你所選擇的一個空間中，你可以立即對力場5呎內的一名生物進行一次近戰法術攻擊。若命中，目標受到等同於1d8加上你的施法屬性調整值的力場傷害。
+
+    在你之後的回合中，你可以用附贈動作使該力場移動最多20呎，並對其5呎內的一名生物重複進行攻擊。
+
+    _使用更高環階法術位。_ 法術位環階每比2環高一環，傷害增加1d8。

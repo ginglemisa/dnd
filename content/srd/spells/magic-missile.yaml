@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: magic-missile
+source: srd
+level: 1
+school: evocation
+classes: [ sorcerer, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 120, unit: feet }
+components: { v: true, s: true, m: false }
+duration: { type: instantaneous }
+en:
+  name: Magic Missile
+  body: |-
+    You create three glowing darts of magical force. Each dart strikes a creature of your choice that you can see within range. A dart deals 1d4 + 1 Force damage to its target. The darts all strike simultaneously, and you can direct them to hit one creature or several.
+
+    _Using a Higher-Level Spell Slot._ The spell creates one more dart for each spell slot level above 1.
+zh:
+  name: 魔法飛彈
+  body: |-
+    你創造出三枚閃耀的魔法力場飛鏢。每枚飛鏢擊中一隻你選擇的、你在射程內能看見的生物。一枚飛鏢對其目標造成1d4 + 1力場傷害。這些飛鏢同時命中，你可以指揮它們攻擊同一隻生物或多隻生物。
+
+    _使用更高環階法術位。_ 法術位環階每比1環高一環，法術就多創造出一枚飛鏢。

@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: dominate-beast
+source: srd
+level: 4
+school: enchantment
+classes: [ druid, ranger, sorcerer ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 60, unit: feet }
+components: { v: true, s: true, m: false }
+duration: { type: time, amount: 1, unit: minute, upTo: true }
+en:
+  name: Dominate Beast
+  body: |-
+    One Beast you can see within range must succeed on a Wisdom saving throw or have the Charmed condition for the duration. The target has Advantage on the save if you or your allies are fighting it. Whenever the target takes damage, it repeats the save, ending the spell on itself on a success.
+
+    You have a telepathic link with the Charmed target while the two of you are on the same plane of existence. On your turn, you can use this link to issue commands to the target (no action required), such as "Attack that creature," "Move over there," or "Fetch that object." The target does its best to obey on its turn. If it completes an order and doesn't receive further direction from you, it acts and moves as it likes, focusing on protecting itself.
+
+    You can command the target to take a Reaction but must take your own Reaction to do so.
+
+    _Using a Higher-Level Spell Slot._ Your Concentration can last longer with a spell slot of level 5 (up to 10 minutes), 6 (up to 1 hour), or 7+ (up to 8 hours).
+zh:
+  name: 支配野獸
+  body: |-
+    你能看見的射程內一隻野獸必須成功通過感知豁免，否則在持續時間內陷入魅惑狀態。若你或你的盟友正在與該目標戰鬥，它在此豁免上具有優勢。每當目標受到傷害時，它會重新進行豁免，成功則法術對其結束。
+
+    當你與被魅惑的目標位於同一位面時，你與它之間有心靈感應連結。在你的回合，你可以利用此連結向目標下達命令（不需要動作），例如「攻擊那個生物」、「移動到那邊」或「去把那個物體取來」。目標會在自己的回合盡力服從。如果它完成了命令且沒有收到你進一步的指示，它會依自己的意願行動與移動，並以保護自己為重。
+
+    你可以命令目標執行一個反應動作，但你必須使用你自己的反應動作才能這麼做。
+
+    _使用更高環階法術位。_ 若使用5環（最長10分鐘）、6環（最長1小時）或7環以上（最長8小時）的法術位，你的專注可以持續更久。

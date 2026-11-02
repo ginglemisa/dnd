@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: detect-poison-and-disease
+source: srd
+level: 1
+school: divination
+classes: [ cleric, druid, paladin, ranger ]
+ritual: true
+concentration: true
+castingTime:
+  - { unit: action }
+  - { unit: ritual }
+range: { type: self }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 10, unit: minute, upTo: true }
+en:
+  name: Detect Poison and Disease
+  material: a yew leaf
+  body: |-
+    For the duration, you sense the location of poisons, poisonous or venomous creatures, and magical contagions within 30 feet of yourself. You sense the kind of poison, creature, or contagion in each case.
+
+    The spell is blocked by 1 foot of stone, dirt, or wood; 1 inch of metal; or a thin sheet of lead.
+zh:
+  name: 偵測毒性和疾病
+  material: 一片紫杉葉
+  body: |-
+    在持續時間內，你能感知到距離自己30呎內毒素、有毒或帶毒的生物，以及魔法傳染病的位置。你能在每一種情況下感知到毒素、生物或傳染病的種類。
+
+    此法術會被1呎厚的石頭、泥土或木頭，1吋厚的金屬，或一張薄鉛片阻擋。

@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: darkness
+source: srd
+level: 2
+school: evocation
+classes: [ sorcerer, warlock, wizard ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 60, unit: feet }
+components: { v: true, s: false, m: true }
+duration: { type: time, amount: 10, unit: minute, upTo: true }
+en:
+  name: Darkness
+  material: bat fur and a piece of coal
+  body: |-
+    For the duration, magical Darkness spreads from a point within range and fills a 15-foot-radius Sphere. Darkvision can't see through it, and nonmagical light can't illuminate it.
+
+    Alternatively, you cast the spell on an object that isn't being worn or carried, causing the Darkness to fill a 15-foot Emanation originating from that object. Covering that object with something opaque, such as a bowl or helm, blocks the Darkness.
+
+    If any of this spell's area overlaps with an area of Bright Light or Dim Light created by a spell of level 2 or lower, that other spell is dispelled.
+zh:
+  name: 黑暗術
+  material: 蝙蝠毛與一塊煤炭
+  body: |-
+    在持續時間內，魔法黑暗從射程內的一點向外擴散，充滿一個半徑15呎的球形區域。黑暗視覺無法看穿這片黑暗，非魔法的光線也無法照亮它。
+
+    或者，你可以對一個未被穿戴或攜帶的物體施展此法術，使黑暗充滿以該物體為源頭的15呎發散區域。以不透明的東西（例如碗或頭盔）蓋住該物體，即可阻擋這片黑暗。
+
+    如果此法術的任何區域與某個2環或更低環階法術所創造的明亮光照或微光光照區域重疊，該另一個法術會被驅散。

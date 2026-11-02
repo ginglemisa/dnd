@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: unseen-servant
+source: srd
+level: 1
+school: conjuration
+classes: [ bard, warlock, wizard ]
+ritual: true
+concentration: false
+castingTime:
+  - { unit: action }
+  - { unit: ritual }
+range: { type: distance, amount: 60, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 1, unit: hour }
+en:
+  name: Unseen Servant
+  material: a bit of string and of wood
+  body: |-
+    This spell creates an Invisible, mindless, shapeless, Medium force that performs simple tasks at your command until the spell ends. The servant springs into existence in an unoccupied space on the ground within range. It has AC 10, 1 Hit Point, and a Strength of 2, and it can't attack. If it drops to 0 Hit Points, the spell ends.
+
+    Once on each of your turns as a Bonus Action, you can mentally command the servant to move up to 15 feet and interact with an object. The servant can perform simple tasks that a human could do, such as fetching things, cleaning, mending, folding clothes, lighting fires, serving food, and pouring drinks. Once you give the command, the servant performs the task to the best of its ability until it completes the task, then waits for your next command.
+
+    If you command the servant to perform a task that would move it more than 60 feet away from you, the spell ends.
+zh:
+  name: 隱形僕役
+  material: 一小段繩線與一小塊木頭
+  body: |-
+    此法術創造出一個隱形、無心智、無固定形體的中型力場，在法術結束前依你的命令執行簡單的任務。僕役會出現在射程內地面上一個未被佔據的空間。它的AC為10、生命值為1、力量為2，且無法攻擊。若它的生命值降至0，法術即結束。
+
+    在你的每個回合中，你可以用一次附贈動作以意念命令僕役移動最多15呎並與一件物體互動。僕役能執行人類能做的簡單任務，例如取物、清潔、縫補、摺衣服、生火、上菜與倒飲料。一旦你下達命令，僕役會盡其所能執行任務直到完成，然後等候你的下一道命令。
+
+    若你命令僕役執行會使其離你超過60呎的任務，法術即結束。

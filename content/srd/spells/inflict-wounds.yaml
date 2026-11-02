@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: inflict-wounds
+source: srd
+level: 1
+school: necromancy
+classes: [ cleric ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: touch }
+components: { v: true, s: true, m: false }
+duration: { type: instantaneous }
+en:
+  name: Inflict Wounds
+  body: |-
+    A creature you touch makes a Constitution saving throw, taking 2d10 Necrotic damage on a failed save or half as much damage on a successful one.
+
+    _Using a Higher-Level Spell Slot._ The damage increases by 1d10 for each spell slot level above 1.
+zh:
+  name: 致傷術
+  body: |-
+    你觸碰的一隻生物進行體質豁免，豁免失敗時受到2d10黯蝕傷害，成功時則受到一半傷害。
+
+    _使用更高環階法術位。_ 法術位環階每比1環高一環，傷害就增加1d10。

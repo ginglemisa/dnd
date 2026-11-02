@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: chill-touch
+source: srd
+level: 0
+school: necromancy
+classes: [ sorcerer, warlock, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: touch }
+components: { v: true, s: true, m: false }
+duration: { type: instantaneous }
+en:
+  name: Chill Touch
+  body: |-
+    Channeling the chill of the grave, make a melee spell attack against a target within reach. On a hit, the target takes 1d10 Necrotic damage, and it can't regain Hit Points until the end of your next turn.
+
+    _Cantrip Upgrade._ The damage increases by 1d10 when you reach levels 5 (2d10), 11 (3d10), and 17 (4d10).
+zh:
+  name: 凍寒之觸
+  body: |-
+    你引導墳墓的寒意，對觸及內的一個目標進行近戰法術攻擊。命中時，目標受到1d10黯蝕傷害，且在你的下個回合結束前無法恢復生命值。
+
+    _戲法升級。_ 當你達到5級（2d10）、11級（3d10）與17級（4d10）時，傷害增加1d10。

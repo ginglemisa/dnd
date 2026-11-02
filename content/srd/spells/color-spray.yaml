@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: color-spray
+source: srd
+level: 1
+school: illusion
+classes: [ bard, sorcerer, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: self }
+components: { v: true, s: true, m: true }
+duration: { type: instantaneous }
+en:
+  name: Color Spray
+  material: a pinch of colorful sand
+  body: You launch a dazzling array of flashing, colorful light. Each creature in a 15-foot Cone originating from you must succeed on a Constitution saving throw or have the Blinded condition until the end of your next turn.
+zh:
+  name: 七彩噴射
+  material: 一撮彩色沙子
+  body: 你射出一陣耀眼、閃爍的彩色光芒。從你出發的15呎錐形區域內的每個生物，都必須成功通過體質豁免，否則陷入失明狀態，直到你下個回合結束。

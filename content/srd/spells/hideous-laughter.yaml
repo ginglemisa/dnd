@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: hideous-laughter
+source: srd
+level: 1
+school: enchantment
+classes: [ bard, warlock, wizard ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 30, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 1, unit: minute, upTo: true }
+en:
+  name: Hideous Laughter
+  material: a tart and a feather
+  body: |-
+    One creature of your choice that you can see within range makes a Wisdom saving throw. On a failed save, it has the Prone and Incapacitated conditions for the duration. During that time, it laughs uncontrollably if it's capable of laughter, and it can't end the Prone condition on itself.
+
+    At the end of each of its turns and each time it takes damage, it makes another Wisdom saving throw. The target has Advantage on the save if the save is triggered by damage. On a successful save, the spell ends.
+
+    _Using a Higher-Level Spell Slot._ You can target one additional creature for each spell slot level above 1.
+zh:
+  name: 狂笑術
+  material: 一塊塔派和一根羽毛
+  body: |-
+    你所選擇的、射程內你能看見的一個生物進行一次感知豁免。豁免失敗時，它在持續時間內陷入倒地與失能狀態。在此期間，若它有能力發笑，就會無法控制地大笑，且它無法自行結束倒地狀態。
+
+    在它每個回合結束時，以及每次受到傷害時，它都會再進行一次感知豁免。若該豁免是由傷害觸發的，目標在該豁免上具有優勢。豁免成功時，法術結束。
+
+    _使用更高環階法術位。_ 法術位環階每比1環高一環，你可以多指定一個生物為目標。

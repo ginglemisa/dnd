@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: elementalism
+source: srd
+level: 0
+school: transmutation
+classes: [ druid, sorcerer, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 30, unit: feet }
+components: { v: true, s: true, m: false }
+duration: { type: instantaneous }
+en:
+  name: Elementalism
+  body: |-
+    You exert control over the elements, creating one of the following effects within range.
+
+    _Beckon Air._ You create a breeze strong enough to ripple cloth, stir dust, rustle leaves, and close open doors and shutters, all in a 5-foot Cube. Doors and shutters being held open by someone or something aren't affected.
+
+    _Beckon Earth._ You create a thin shroud of dust or sand that covers surfaces in a 5-foot-square area, or you cause a single word to appear in your handwriting in a patch of dirt or sand.
+
+    _Beckon Fire._ You create a thin cloud of harmless embers and colored, scented smoke in a 5-foot Cube. You choose the color and scent, and the embers can light candles, torches, or lamps in that area. The smoke's scent lingers for 1 minute.
+
+    _Beckon Water._ You create a spray of cool mist that lightly dampens creatures and objects in a 5-foot Cube. Alternatively, you create 1 cup of clean water either in an open container or on a surface, and the water evaporates in 1 minute.
+
+    _Sculpt Element._ You cause dirt, sand, fire, smoke, mist, or water that can fit in a 1-foot Cube to assume a crude shape (such as that of a creature) for 1 hour.
+zh:
+  name: 元素伎倆
+  body: |-
+    你操控元素，在射程內創造下列其中一種效果。
+
+    _召喚空氣。_ 你創造一陣足以使布料起伏、揚起灰塵、使樹葉沙沙作響，並能關上敞開的門與窗板的微風，作用範圍為一個5呎立方體。被某人或某物撐住而保持敞開的門與窗板不受影響。
+
+    _召喚大地。_ 你創造一層薄薄的塵土或沙子，覆蓋5呎見方區域內的表面；或者，你讓一個單字以你的筆跡出現在一小片泥土或沙地上。
+
+    _召喚火焰。_ 你在一個5呎立方體內創造一團稀薄的、無害的餘燼與帶有顏色和氣味的煙霧。顏色與氣味由你決定，餘燼可以點燃該區域內的蠟燭、火把或油燈。煙霧的氣味會持續1分鐘。
+
+    _召喚水。_ 你在一個5呎立方體內創造一陣清涼的水霧，輕微沾濕其中的生物與物體。或者，你在開放的容器內或某個表面上創造1杯潔淨的水，這些水會在1分鐘後蒸發。
+
+    _塑造元素。_ 你讓能容納在1呎立方體內的泥土、沙子、火焰、煙霧、水霧或水呈現一個粗略的形狀（例如生物的形狀），持續1小時。

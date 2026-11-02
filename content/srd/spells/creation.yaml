@@ -1,0 +1,51 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: creation
+source: srd
+level: 5
+school: illusion
+classes: [ sorcerer, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: minute, amount: 1 }
+range: { type: distance, amount: 30, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: special }
+en:
+  name: Creation
+  material: a paintbrush
+  body: |-
+    You pull wisps of shadow material from the Shadowfell to create an object within range. It is either an object of vegetable matter (soft goods, rope, wood, and the like) or mineral matter (stone, crystal, metal, and the like). The object must be no larger than a 5-foot Cube, and the object must be of a form and material that you have seen.
+
+    The spell's duration depends on the object's material, as shown in the Materials table. If the object is composed of multiple materials, use the shortest duration. Using any object created by this spell as another spell's Material component causes the other spell to fail.
+
+    **Materials**
+
+    | Material | Duration |
+    | --- | --- |
+    | Vegetable matter | 24 hours |
+    | Stone or crystal | 12 hours |
+    | Precious metals | 1 hour |
+    | Gems | 10 minutes |
+    | Adamantine or mithral | 1 minute |
+
+    _Using a Higher-Level Spell Slot._ The Cube increases by 5 feet for each spell slot level above 5.
+zh:
+  name: 造物術
+  material: 一支畫筆
+  body: |-
+    你從暗影界抽取出一縷縷暗影物質，在射程內創造一個物體。它可以是植物質的物體（軟質物品、繩索、木材等），也可以是礦物質的物體（石頭、水晶、金屬等）。該物體不得大於5呎的立方體，且其形狀與材質必須是你曾見過的。
+
+    法術的持續時間取決於物體的材質，如材料表所示。如果物體由多種材質構成，採用其中最短的持續時間。將此法術創造的任何物體用作另一個法術的材料成分，會導致另一個法術失敗。
+
+    **材料**
+
+    | 材質 | 持續時間 |
+    | --- | --- |
+    | 植物質 | 24小時 |
+    | 石頭或水晶 | 12小時 |
+    | 貴金屬 | 1小時 |
+    | 寶石 | 10分鐘 |
+    | 精金或秘銀 | 1分鐘 |
+
+    _使用更高環階法術位。_ 每高於5環一環，立方體的邊長增加5呎。

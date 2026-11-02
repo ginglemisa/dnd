@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: shocking-grasp
+source: srd
+level: 0
+school: evocation
+classes: [ sorcerer, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: touch }
+components: { v: true, s: true, m: false }
+duration: { type: instantaneous }
+en:
+  name: Shocking Grasp
+  body: |-
+    Lightning springs from you to a creature that you try to touch. Make a melee spell attack against the target. On a hit, the target takes 1d8 Lightning damage, and it can't make Opportunity Attacks until the start of its next turn.
+
+    _Cantrip Upgrade._ The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8).
+zh:
+  name: 電爪
+  body: |-
+    閃電從你身上竄向你嘗試觸碰的一個生物。對目標進行一次近戰法術攻擊。命中時，目標受到1d8閃電傷害，且在其下個回合開始前不能進行藉機攻擊。
+
+    _戲法升級。_ 當你達到5級（2d8）、11級（3d8）與17級（4d8）時，傷害增加1d8。

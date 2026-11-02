@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: mind-spike
+source: srd
+level: 2
+school: divination
+classes: [ sorcerer, warlock, wizard ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 120, unit: feet }
+components: { v: false, s: true, m: false }
+duration: { type: time, amount: 1, unit: hour, upTo: true }
+en:
+  name: Mind Spike
+  body: |-
+    You drive a spike of psionic energy into the mind of one creature you can see within range. The target makes a Wisdom saving throw, taking 3d8 Psychic damage on a failed save or half as much damage on a successful one. On a failed save, you also always know the target's location until the spell ends, but only while the two of you are on the same plane
+
+    of existence. While you have this knowledge, the target can't become hidden from you, and if it has the Invisible condition, it gains no benefit from that condition against you.
+
+    _Using a Higher-Level Spell Slot._ The damage increases by 1d8 for each spell slot level above 2.
+zh:
+  name: 心靈尖刺
+  body: |-
+    你將一道靈能尖刺刺入射程內你能看見的一個生物的心智。目標進行感知豁免，豁免失敗時受到3d8心靈傷害，成功時傷害減半。豁免失敗時，在法術結束前，你還會始終知道目標的所在位置，但僅限你與目標處於同一
+
+    位面時。在你擁有此項認知期間，目標無法對你隱藏，而且如果它陷入隱形狀態，它對你不會從該狀態獲得任何益處。
+
+    _使用更高環階法術位。_ 法術位環階每比2環高一環，傷害增加1d8。

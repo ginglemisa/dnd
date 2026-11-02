@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: barkskin
+source: srd
+level: 2
+school: transmutation
+classes: [ druid, ranger ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: bonus-action }
+range: { type: touch }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 1, unit: hour }
+en:
+  name: Barkskin
+  material: a handful of bark
+  body: You touch a willing creature. Until the spell ends, the target's skin assumes a bark-like appearance, and the target has an Armor Class of 17 if its AC is lower than that.
+zh:
+  name: 樹膚術
+  material: 一把樹皮
+  body: 你碰觸一個自願的生物。在法術結束前，目標的皮膚呈現類似樹皮的外觀，且若目標的AC低於17，則其護甲等級為17。

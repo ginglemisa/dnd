@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: geas
+source: srd
+level: 5
+school: enchantment
+classes: [ bard, cleric, druid, paladin, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: minute, amount: 1 }
+range: { type: distance, amount: 60, unit: feet }
+components: { v: true, s: false, m: false }
+duration: { type: time, amount: 30, unit: day }
+en:
+  name: Geas
+  body: |-
+    You give a verbal command to a creature that you can see within range, ordering it to carry out some service or refrain from an action or a course of activity as you decide. The target must succeed on a Wisdom saving throw or have the Charmed condition for the duration. The target automatically succeeds if it can't understand your command.
+
+    While Charmed, the creature takes 5d10 Psychic damage if it acts in a manner directly counter to your command. It takes this damage no more than once each day.
+
+    You can issue any command you choose, short of an activity that would result in certain death. Should you issue a suicidal command, the spell ends.
+
+    A _Remove Curse_, _Greater Restoration_, or _Wish_ spell ends this spell.
+
+    _Using a Higher-Level Spell Slot._ If you use a level 7 or 8 spell slot, the duration is 365 days. If you use a level 9 spell slot, the spell lasts until it is ended by one of the spells mentioned above.
+zh:
+  name: 指使術
+  body: |-
+    你對射程內一個你能看見的生物下達口頭命令，依你的決定命令它執行某項任務，或避免某個行動或某種行為。目標必須通過一次感知豁免，否則在持續時間內陷入魅惑狀態。若目標無法理解你的命令，則自動成功通過豁免。
+
+    處於魅惑狀態期間，若該生物的行動直接違背你的命令，就會受到5d10心靈傷害。它每天最多只會受到一次這種傷害。
+
+    你可以下達任何你選擇的命令，但不得是會導致必死無疑的行為。若你下達了自殺式的命令，法術即結束。
+
+    _移除詛咒_、_高等復原術_或_祈願術_可以結束此法術。
+
+    _使用更高環階法術位。_ 若使用7環或8環法術位，持續時間為365天。若使用9環法術位，法術會持續到被上述任一法術結束為止。

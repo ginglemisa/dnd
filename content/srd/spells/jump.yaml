@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: jump
+source: srd
+level: 1
+school: transmutation
+classes: [ druid, ranger, sorcerer, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: bonus-action }
+range: { type: touch }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 1, unit: minute }
+en:
+  name: Jump
+  material: a grasshopper's hind leg
+  body: |-
+    You touch a willing creature. Once on each of its turns until the spell ends, that creature can jump up to 30 feet by spending 10 feet of movement.
+
+    _Using a Higher-Level Spell Slot._ You can target one additional creature for each spell slot level above 1.
+zh:
+  name: 跳躍術
+  material: 一條蚱蜢的後腿
+  body: |-
+    你觸碰一隻自願的生物。在法術結束前，該生物在自己的每個回合中一次，可以花費10呎移動力跳躍最多30呎。
+
+    _使用更高環階法術位。_ 法術位環階每比1環高一環，你就可以多指定一隻生物為目標。

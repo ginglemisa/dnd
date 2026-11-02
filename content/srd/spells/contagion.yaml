@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: contagion
+source: srd
+level: 5
+school: necromancy
+classes: [ cleric, druid ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: touch }
+components: { v: true, s: true, m: false }
+duration: { type: time, amount: 7, unit: day }
+en:
+  name: Contagion
+  body: |-
+    Your touch inflicts a magical contagion. The target must succeed on a Constitution saving throw or take 11d8 Necrotic damage and have the Poisoned condition. Also, choose one ability when you cast the spell. While Poisoned, the target has Disadvantage on saving throws made with the chosen ability.
+
+    The target must repeat the saving throw at the end of each of its turns until it gets three successes or failures. If the target succeeds on three of these saves, the spell ends on the target. If the target fails three of the saves, the spell lasts for 7 days on it.
+
+    Whenever the Poisoned target receives an effect that would end the Poisoned condition, the target must succeed on a Constitution saving throw, or the Poisoned condition doesn't end on it.
+zh:
+  name: 疫病術
+  body: |-
+    你的觸碰會施加一種魔法傳染病。目標必須成功通過體質豁免，否則受到11d8黯蝕傷害並陷入中毒狀態。此外，施放法術時選擇一項屬性。在中毒期間，目標以所選屬性進行的豁免具有劣勢。
+
+    目標必須在其每個回合結束時重複進行該豁免，直到累積三次成功或三次失敗為止。如果目標成功通過其中三次豁免，法術對該目標結束。如果目標失敗其中三次豁免，法術對其持續7天。
+
+    每當中毒的目標受到會結束中毒狀態的效應時，該目標必須成功通過體質豁免，否則中毒狀態不會對其結束。

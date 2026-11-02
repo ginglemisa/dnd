@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: spider-climb
+source: srd
+level: 2
+school: transmutation
+classes: [ sorcerer, warlock, wizard ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: touch }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 1, unit: hour, upTo: true }
+en:
+  name: Spider Climb
+  material: a drop of bitumen and a spider
+  body: |-
+    Until the spell ends, one willing creature you touch gains the ability to move up, down, and across vertical surfaces and along ceilings, while leaving its hands free. The target also gains a Climb Speed equal to its Speed.
+
+    _Using a Higher-Level Spell Slot._ You can target one additional creature for each spell slot level above 2.
+zh:
+  name: 蛛行術
+  material: 一滴瀝青與一隻蜘蛛
+  body: |-
+    在法術結束前，你觸碰的一名自願生物獲得沿垂直表面向上、向下及橫向移動，並可沿天花板移動的能力，且雙手保持自由。目標同時獲得等同其速度的攀爬速度。
+
+    _使用更高環階法術位。_ 法術位環階每比2環高一環，你可以多指定一名生物為目標。

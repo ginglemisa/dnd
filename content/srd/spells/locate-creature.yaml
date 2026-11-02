@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: locate-creature
+source: srd
+level: 4
+school: divination
+classes: [ bard, cleric, druid, paladin, ranger, wizard ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: self }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 1, unit: hour, upTo: true }
+en:
+  name: Locate Creature
+  material: fur from a bloodhound
+  body: |-
+    Describe or name a creature that is familiar to you. You sense the direction to the creature's location if that creature is within 1,000 feet of you. If the creature is moving, you know the direction of its movement.
+
+    The spell can locate a specific creature known to you or the nearest creature of a specific kind (such as a human or a unicorn) if you have seen such a creature up close—within 30 feet—at least once. If the creature you described or named is in a different form, such as under the effects of a _Flesh to Stone_ or _Polymorph_ spell, this spell doesn't locate the creature.
+
+    This spell can't locate a creature if any thickness of lead blocks a direct path between you and the creature.
+zh:
+  name: 生物定位術
+  material: 一根尋血獵犬的毛
+  body: |-
+    描述或說出一個你熟悉的生物。如果該生物在你身周1,000呎內，你能感應到該生物所在的方向。如果該生物正在移動，你會知道它的移動方向。
+
+    此法術可以定位你所熟知的特定生物，或最近的某一特定種類的生物（例如人類或獨角獸），前提是你曾至少一次近距離（30呎內）見過這種生物。如果你所描述或說出的生物處於不同的形態，例如受到_石化術_或_變形術_的影響，此法術無法定位該生物。
+
+    如果你與該生物之間的直線路徑被任何厚度的鉛阻擋，此法術便無法定位該生物。

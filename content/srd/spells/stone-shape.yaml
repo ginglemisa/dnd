@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: stone-shape
+source: srd
+level: 4
+school: transmutation
+classes: [ cleric, druid, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: touch }
+components: { v: true, s: true, m: true }
+duration: { type: instantaneous }
+en:
+  name: Stone Shape
+  material: soft clay
+  body: You touch a stone object of Medium size or smaller or a section of stone no more than 5 feet in any dimension and form it into any shape you like. For example, you could shape a large rock into a weapon, statue, or coffer, or you could make a small passage through a wall that is 5 feet thick. You could also shape a stone door or its frame to seal the door shut. The object you create can have up to two hinges and a latch, but finer mechanical detail isn't possible.
+zh:
+  name: 塑石術
+  material: 軟黏土
+  body: 你接觸一個中型或更小的石製物體，或任一維度不超過5呎的一段石材，並將它塑造成你喜歡的任何形狀。例如，你可以把一塊大岩石塑成武器、雕像或小箱，或在5呎厚的牆壁上開出一條小通道。你也可以塑造石門或其門框，將門封死。你所創造的物體最多可以有兩個鉸鏈與一個門閂，但無法做出更精細的機械細節。

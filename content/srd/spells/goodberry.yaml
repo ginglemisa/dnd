@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: goodberry
+source: srd
+level: 1
+school: conjuration
+classes: [ druid, ranger ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: self }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 24, unit: hour }
+en:
+  name: Goodberry
+  material: a sprig of mistletoe
+  body: |-
+    Ten berries appear in your hand and are infused with magic for the duration. A creature can take a Bonus Action to eat one berry. Eating a berry restores 1 Hit Point, and the berry provides enough nourishment to sustain a creature for one day.
+
+    Uneaten berries disappear when the spell ends.
+zh:
+  name: 神莓術
+  material: 一小枝槲寄生
+  body: |-
+    十顆莓果出現在你手中，並在持續時間內被注入魔法。生物可以用附贈動作吃下一顆莓果。吃下一顆莓果恢復1點生命值，且莓果提供的養分足以讓生物維持一天。
+
+    未被吃掉的莓果會在法術結束時消失。

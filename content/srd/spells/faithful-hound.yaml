@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: faithful-hound
+source: srd
+level: 4
+school: conjuration
+classes: [ wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 30, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 8, unit: hour }
+en:
+  name: Faithful Hound
+  material: a silver whistle
+  body: |-
+    You conjure a phantom watchdog in an unoccupied space that you can see within range. The hound remains for the duration or until the two of you are more than 300 feet apart from each other.
+
+    No one but you can see the hound, and it is intangible and invulnerable. When a Small or larger creature comes within 30 feet of it without first speaking the password that you specify when you cast this spell, the hound starts barking loudly. The hound has Truesight with a range of 30 feet.
+
+    At the start of each of your turns, the hound attempts to bite one enemy within 5 feet of it. That enemy must succeed on a Dexterity saving throw or take 4d8 Force damage.
+
+    On your later turns, you can take a Magic action to move the hound up to 30 feet.
+zh:
+  name: 忠犬
+  material: 一支銀哨
+  body: |-
+    你在你能看見的射程內一個未被佔據的空間中召喚出一隻幻影看門犬。這隻犬會在持續時間內存在，或直到你們兩者相距超過300呎為止。
+
+    除了你以外，沒有人能看見這隻犬，且它無形體並且無法被傷害。當一個小型或更大的生物在未先說出你施放此法術時指定的密語的情況下進入它30呎內時，這隻犬會開始大聲吠叫。這隻犬具有射程30呎的真實視覺。
+
+    在你每個回合開始時，這隻犬會試圖咬它5呎內的一名敵人。該敵人必須成功通過敏捷豁免，否則受到4d8力場傷害。
+
+    在你之後的回合，你可以用一個魔法動作讓這隻犬移動最多30呎。

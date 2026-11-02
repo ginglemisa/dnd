@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: dancing-lights
+source: srd
+level: 0
+school: illusion
+classes: [ bard, sorcerer, wizard ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 120, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 1, unit: minute, upTo: true }
+en:
+  name: Dancing Lights
+  material: a bit of phosphorus
+  body: |-
+    You create up to four torch-size lights within range, making them appear as torches, lanterns, or glowing orbs that hover for the duration. Alternatively, you combine the four lights into one glowing Medium form that is vaguely humanlike. Whichever form you choose, each light sheds Dim Light in a 10-foot radius.
+
+    As a Bonus Action, you can move the lights up to 60 feet to a space within range. A light must be within 20 feet of another light created by this spell, and a light vanishes if it exceeds the spell's range.
+zh:
+  name: 舞光術
+  material: 一小撮磷
+  body: |-
+    你在射程內創造最多四個火把大小的光，使它們呈現為火把、提燈或發光球體，並在持續時間內懸浮。或者，你可以將這四個光合而為一個發光的中型形體，外形隱約似人。無論你選擇哪種形態，每個光都會在半徑10呎內投射微光光照。
+
+    你可以用附贈動作將這些光移動最多60呎，移至射程內的一個空間。每個光都必須位於此法術所創造的另一個光的20呎內，且光若超出法術射程就會消失。

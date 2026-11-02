@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: protection-from-energy
+source: srd
+level: 3
+school: abjuration
+classes: [ cleric, druid, ranger, sorcerer, wizard ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: touch }
+components: { v: true, s: true, m: false }
+duration: { type: time, amount: 1, unit: hour, upTo: true }
+en:
+  name: Protection from Energy
+  body: "For the duration, the willing creature you touch has Resistance to one damage type of your choice: Acid, Cold, Fire, Lightning, or Thunder."
+zh:
+  name: 防護能量傷害
+  body: 在持續時間內，你所觸碰的自願生物對你選擇的一種傷害類型具有抗性：強酸傷害、冷凍傷害、火焰傷害、閃電傷害或雷鳴傷害。

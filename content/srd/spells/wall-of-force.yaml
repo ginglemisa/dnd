@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: wall-of-force
+source: srd
+level: 5
+school: evocation
+classes: [ wizard ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 120, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 10, unit: minute, upTo: true }
+en:
+  name: Wall of Force
+  material: a shard of glass
+  body: |-
+    An Invisible wall of force springs into existence at a point you choose within range. The wall appears in any orientation you choose, as a horizontal or vertical barrier or at an angle. It can be free floating or resting on a solid surface. You can form it into a hemispherical dome or a globe with a radius of up to 10 feet, or you can shape a flat surface made up of ten 10-foot-by-10-foot panels. Each panel must be contiguous with another panel. In any form, the wall is 1/4 inch thick and lasts for the duration. If the wall cuts through a creature's space when it appears, the creature is pushed to one side of the wall (you choose which side).
+
+    Nothing can physically pass through the wall. It is immune to all damage and can't be dispelled by _Dispel Magic_. A _Disintegrate_ spell destroys the wall instantly, however. The wall also extends into the Ethereal Plane and blocks ethereal travel through the wall.
+zh:
+  name: 力場牆
+  material: 一片玻璃碎片
+  body: |-
+    在射程內你選擇的一點，一道隱形的力場牆憑空出現。這道牆可以依你的選擇以任意方向出現，成為水平或垂直的屏障，或呈某個角度。它可以懸浮在空中，也可以倚靠在堅固的表面上。你可以將它塑造成半徑最多10呎的半球形圓頂或球體，也可以塑造成由十片10呎乘10呎的面板組成的平面。每片面板都必須與另一片面板相連。無論是哪種形態，這道牆厚1/4吋，並在持續時間內持續存在。如果牆出現時切過某個生物的空間，該生物會被推到牆的一側（由你選擇哪一側）。
+
+    沒有任何東西能實體穿過這道牆。它對所有傷害免疫，也無法被_解除魔法_驅散。不過，_解離術_法術能立即摧毀這道牆。這道牆也延伸到以太位面，並阻擋穿越這道牆的以太移動。

@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: spare-the-dying
+source: srd
+level: 0
+school: necromancy
+classes: [ cleric, druid ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 15, unit: feet }
+components: { v: true, s: true, m: false }
+duration: { type: instantaneous }
+en:
+  name: Spare the Dying
+  body: |-
+    Choose a creature within range that has 0 Hit Points and isn't dead. The creature becomes Stable.
+
+    _Cantrip Upgrade._ The range doubles when you reach levels 5 (30 feet), 11 (60 feet), and 17 (120 feet).
+zh:
+  name: 維生術
+  body: |-
+    選擇射程內一個生命值為0且尚未死亡的生物。該生物陷入穩定狀態。
+
+    _戲法升級。_ 當你達到5級（30呎）、11級（60呎）與17級（120呎）時，射程加倍。

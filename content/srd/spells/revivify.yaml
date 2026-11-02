@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: revivify
+source: srd
+level: 3
+school: necromancy
+classes: [ cleric, druid, paladin, ranger ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: touch }
+components: { v: true, s: true, m: true }
+duration: { type: instantaneous }
+en:
+  name: Revivify
+  material: a diamond worth 300+ GP, which the spell consumes
+  body: You touch a creature that has died within the last minute. That creature revives with 1 Hit Point. This spell can't revive a creature that has died of old age, nor does it restore any missing body parts.
+zh:
+  name: 回生術
+  material: 價值300 GP以上的鑽石，法術會消耗它
+  body: 你觸碰一個在過去1分鐘內死亡的生物。該生物以1點生命值復活。這個法術無法復活死於老邁的生物，也不會恢復任何缺失的身體部位。

@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: detect-magic
+source: srd
+level: 1
+school: divination
+classes: [ bard, cleric, druid, paladin, ranger, sorcerer, warlock, wizard ]
+ritual: true
+concentration: true
+castingTime:
+  - { unit: action }
+  - { unit: ritual }
+range: { type: self }
+components: { v: true, s: true, m: false }
+duration: { type: time, amount: 10, unit: minute, upTo: true }
+en:
+  name: Detect Magic
+  body: |-
+    For the duration, you sense the presence of magical effects within 30 feet of yourself. If you sense such effects, you can take the Magic action to see a faint aura around any visible creature or object in the area that bears the magic, and if an effect was created by a spell, you learn the spell's school of magic.
+
+    The spell is blocked by 1 foot of stone, dirt, or wood; 1 inch of metal; or a thin sheet of lead.
+zh:
+  name: 偵測魔法
+  body: |-
+    在持續時間內，你能感知到距離自己30呎內存在魔法效應。若你感知到此類效應，你可以採取魔法動作，在該區域內任何可見、帶有該魔法的生物或物體周圍看見一圈微弱的光暈；若某個效應是由法術創造的，你會得知該法術所屬的魔法學派。
+
+    此法術會被1呎厚的石頭、泥土或木頭，1吋厚的金屬，或一張薄鉛片阻擋。

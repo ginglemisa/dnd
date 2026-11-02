@@ -73,6 +73,7 @@ function checkSpell(file, doc, validate) {
   for (const [field, text] of zhTexts) {
     if (!CHINESE.test(text)) fail(id, `zh.${field} 沒有中文`);
     for (const [pattern, why] of BANNED) {
+      if (field === 'name' && pattern.source === '物件') continue; // 網站既有的法術名（例：物件定位術）優先
       const match = text.match(pattern);
       if (match) fail(id, `zh.${field}：${why}（${match[0]}）`);
     }

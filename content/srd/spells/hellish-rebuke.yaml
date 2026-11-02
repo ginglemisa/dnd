@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: hellish-rebuke
+source: srd
+level: 1
+school: evocation
+classes: [ warlock ]
+ritual: false
+concentration: false
+castingTime:
+  - unit: reaction
+    note:
+      en: which you take in response to taking damage from a creature that you can see within 60 feet of yourself
+      zh: 當你受到你周圍60呎內你能看見的生物造成傷害時
+range: { type: distance, amount: 60, unit: feet }
+components: { v: true, s: true, m: false }
+duration: { type: instantaneous }
+en:
+  name: Hellish Rebuke
+  body: |-
+    The creature that damaged you is momentarily surrounded by green flames. It makes a Dexterity saving throw, taking 2d10 Fire damage on a failed save or half as much damage on a successful one.
+
+    _Using a Higher-Level Spell Slot._ The damage increases by 1d10 for each spell slot level above 1.
+zh:
+  name: 煉獄叱喝
+  body: |-
+    對你造成傷害的生物瞬間被綠色火焰包圍。它進行一次敏捷豁免，豁免失敗時受到2d10火焰傷害，成功時傷害減半。
+
+    _使用更高環階法術位。_ 法術位環階每比1環高一環，傷害增加1d10。

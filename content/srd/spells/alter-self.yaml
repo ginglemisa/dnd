@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: alter-self
+source: srd
+level: 2
+school: transmutation
+classes: [ sorcerer, wizard ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: self }
+components: { v: true, s: true, m: false }
+duration: { type: time, amount: 1, unit: hour, upTo: true }
+en:
+  name: Alter Self
+  body: |-
+    You alter your physical form. Choose one of the following options. Its effects last for the duration, during which you can take a Magic action to replace the option you chose with a different one.
+
+    _Aquatic Adaptation._ You sprout gills and grow webs between your fingers. You can breathe underwater and gain a Swim Speed equal to your Speed.
+
+    _Change Appearance._ You alter your appearance. You decide what you look like, including your height, weight, facial features, sound of your voice, hair length, coloration, and other distinguishing characteristics. You can make yourself appear as a member of another species, though none of your statistics change. You can't appear as a creature of a different size, and your basic shape stays the same; if you're bipedal, you can't use this spell to become quadrupedal, for instance. For the duration, you can take a Magic action to change your appearance in this way again.
+
+    _Natural Weapons._ You grow claws (Slashing), fangs (Piercing), horns (Piercing), or hooves (Bludgeoning). When you use your Unarmed Strike to deal damage with that new growth, it deals 1d6 damage of the type in parentheses instead of dealing the normal damage for your Unarmed Strike, and you use your spellcasting ability modifier for the attack and damage rolls rather than using Strength.
+zh:
+  name: 變造自身
+  body: |-
+    你改變自己的身體形態。從以下選項中選擇一項。其效果在持續時間內持續，期間你可以用一個魔法動作，將你所選的選項換成另一個。
+
+    _水生適應。_ 你長出鰓，手指之間長出蹼。你可以在水下呼吸，並獲得等同於你速度的游泳速度。
+
+    _改變外貌。_ 你改變自己的外貌。你決定自己的長相，包括身高、體重、臉部特徵、聲音、頭髮長度、膚色，以及其他辨識特徵。你可以讓自己看起來像另一個種族的成員，但你的任何數值都不會改變。你不能變成不同體型的生物，而且你的基本形體維持不變；例如，如果你是兩足，就不能用這個法術變成四足。在持續時間內，你可以用一個魔法動作再次以這種方式改變外貌。
+
+    _天然武器。_ 你長出爪（揮砍）、尖牙（穿刺）、角（穿刺）或蹄（鈍擊）。當你使用徒手打擊並以該新長出的部位造成傷害時，它造成1d6括號內類型的傷害，而不是徒手打擊的一般傷害，且你在攻擊與傷害擲骰中使用施法屬性調整值，而不是力量。

@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: arcane-eye
+source: srd
+level: 4
+school: divination
+classes: [ wizard ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 30, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 1, unit: hour, upTo: true }
+en:
+  name: Arcane Eye
+  material: a bit of bat fur
+  body: |-
+    You create an Invisible, invulnerable eye within range that hovers for the duration. You mentally receive visual information from the eye, which can see in every direction. It also has Darkvision with a range of 30 feet.
+
+    As a Bonus Action, you can move the eye up to 30 feet in any direction. A solid barrier blocks the eye's movement, but the eye can pass through an opening as small as 1 inch in diameter.
+zh:
+  name: 秘法眼
+  material: 一小撮蝙蝠毛
+  body: |-
+    你在射程內創造一隻隱形且無敵的眼睛，在持續時間內懸浮於該處。你能在腦中接收這隻眼睛的視覺資訊，這隻眼睛可以朝四面八方觀看。它同時具有射程30呎的黑暗視覺。
+
+    你可以用附贈動作將這隻眼睛朝任意方向移動最多30呎。堅固的屏障會阻擋眼睛的移動，但眼睛可以穿過直徑小至1吋的開口。

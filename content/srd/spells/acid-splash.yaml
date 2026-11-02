@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: acid-splash
+source: srd
+level: 0
+school: evocation
+classes: [ sorcerer, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 60, unit: feet }
+components: { v: true, s: true, m: false }
+duration: { type: instantaneous }
+en:
+  name: Acid Splash
+  body: |-
+    You create an acidic bubble at a point within range, where it explodes in a 5-foot-radius Sphere. Each creature in that Sphere must succeed on a Dexterity saving throw or take 1d6 Acid damage.
+
+    _Cantrip Upgrade._ The damage increases by 1d6 when you reach levels 5 (2d6), 11 (3d6), and 17 (4d6).
+zh:
+  name: 酸液飛濺
+  body: |-
+    你在射程內的一點創造一顆酸液氣泡，它會在該處爆裂，形成半徑5呎的球形區域。該球形區域內的每個生物都必須成功通過敏捷豁免，否則受到1d6強酸傷害。
+
+    _戲法升級。_ 當你達到5級（2d6）、11級（3d6）與17級（4d6）時，傷害增加1d6。

@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: mending
+source: srd
+level: 0
+school: transmutation
+classes: [ bard, cleric, druid, sorcerer, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: minute, amount: 1 }
+range: { type: touch }
+components: { v: true, s: true, m: true }
+duration: { type: instantaneous }
+en:
+  name: Mending
+  material: two lodestones
+  body: |-
+    This spell repairs a single break or tear in an object you touch, such as a broken chain link, two halves of a broken key, a torn cloak, or a leaking wineskin. As long as the break or tear is no larger than 1 foot in any dimension, you mend it, leaving no trace of the former damage.
+
+    This spell can physically repair a magic item, but it can't restore magic to such an object.
+zh:
+  name: 修復術
+  material: 兩塊磁石
+  body: |-
+    此法術能修復你所觸碰的物體上的單一處斷裂或撕裂，例如斷掉的鏈環、斷成兩半的鑰匙、撕破的斗篷，或漏水的皮水袋。只要該斷裂或撕裂在任何維度上都不超過1呎，你就能將它修補好，不留下先前損壞的任何痕跡。
+
+    此法術可以在物理上修復魔法物品，但無法恢復該物體的魔法。

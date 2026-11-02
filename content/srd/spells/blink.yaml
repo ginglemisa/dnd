@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: blink
+source: srd
+level: 3
+school: transmutation
+classes: [ sorcerer, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: self }
+components: { v: true, s: true, m: false }
+duration: { type: time, amount: 1, unit: minute }
+en:
+  name: Blink
+  body: |-
+    Roll 1d6 at the end of each of your turns for the duration. On a roll of 4–6, you vanish from your current plane of existence and appear in the Ethereal Plane (the spell ends instantly if you are already on that plane). While on the Ethereal Plane, you can perceive the plane you left, which is cast in shades of gray, but you can't see anything there more than 60 feet away. You can affect and be affected only by other creatures on the Ethereal Plane, and creatures on the other plane can't perceive you unless they have a special ability that lets them perceive things on the Ethereal Plane.
+
+    You return to the other plane at the start of your next turn and when the spell ends if you are on the Ethereal Plane. You return to an unoccupied space of your choice that you can see within 10 feet of the space you left. If no unoccupied space is available within that range, you appear in the nearest unoccupied space.
+zh:
+  name: 閃現術
+  body: |-
+    在持續時間內，於你的每個回合結束時擲1d6。若擲出4至6，你會從目前所在的位面消失，出現在乙太位面（若你已在該位面，此法術立即結束）。身在乙太位面時，你可以感知你離開的那個位面，它呈現灰階色調，但你無法看見該處60呎以外的任何東西。你只能影響乙太位面上的其他生物，也只會受其影響；另一個位面上的生物無法感知你，除非他們具有能感知乙太位面事物的特殊能力。
+
+    若你身在乙太位面，你會在下個回合開始時以及此法術結束時返回另一個位面。你會回到你所能看見、距離你離開的空間10呎內、由你選擇的一處未被佔據的空間。若該範圍內沒有未被佔據的空間，你會出現在最近的未被佔據的空間。

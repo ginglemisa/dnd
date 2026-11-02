@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: hold-monster
+source: srd
+level: 5
+school: enchantment
+classes: [ bard, sorcerer, warlock, wizard ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: distance, amount: 90, unit: feet }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 1, unit: minute, upTo: true }
+en:
+  name: Hold Monster
+  material: a straight piece of iron
+  body: |-
+    Choose a creature that you can see within range. The target must succeed on a Wisdom saving throw or have the Paralyzed condition for the duration. At the end of each of its turns, the target repeats the save, ending the spell on itself on a success.
+
+    _Using a Higher-Level Spell Slot._ You can target one additional creature for each spell slot level above 5.
+zh:
+  name: 怪物定身術
+  material: 一根筆直的鐵條
+  body: |-
+    選擇射程內一個你能看見的生物。目標必須通過一次感知豁免，否則在持續時間內陷入麻痺狀態。在它每個回合結束時，目標重複進行該豁免，成功則該法術對其結束。
+
+    _使用更高環階法術位。_ 所用法術位的環階每比5環高一環，你可以多指定一個生物為目標。

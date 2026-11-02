@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: gust-of-wind
+source: srd
+level: 2
+school: evocation
+classes: [ druid, ranger, sorcerer, wizard ]
+ritual: false
+concentration: true
+castingTime:
+  - { unit: action }
+range: { type: self }
+components: { v: true, s: true, m: true }
+duration: { type: time, amount: 1, unit: minute, upTo: true }
+en:
+  name: Gust of Wind
+  material: a legume seed
+  body: |-
+    A Line of strong wind 60 feet long and 10 feet wide blasts from you in a direction you choose for the duration. Each creature in the Line must succeed on a Strength saving throw or be pushed 15 feet away from you in a direction following the Line. A creature that ends its turn in the Line must make the same save.
+
+    Any creature in the Line must spend 2 feet of movement for every 1 foot it moves when moving closer to you.
+
+    The gust disperses gas or vapor, and it extinguishes candles and similar unprotected flames in the area. It causes protected flames, such as those of lanterns, to dance wildly and has a 50 percent chance to extinguish them.
+
+    As a Bonus Action on your later turns, you can change the direction in which the Line blasts from you.
+zh:
+  name: 造風術
+  material: 一顆豆類種子
+  body: |-
+    一道長60呎、寬10呎的強風直線區域，在持續時間內從你身上朝你選擇的方向吹出。直線區域內的每個生物必須成功通過力量豁免，否則會被沿著直線方向推離你15呎。在直線區域內結束自己回合的生物，必須進行相同的豁免。
+
+    直線區域內的任何生物在朝你靠近移動時，每移動1呎必須花費2呎移動速度。
+
+    這陣強風會吹散氣體或蒸氣，並熄滅該區域內蠟燭與類似的無遮護火焰。它會使有遮護的火焰（例如提燈中的火焰）劇烈搖曳，並有50%的機率將其熄滅。
+
+    在你之後的回合中，你可以用附贈動作改變這道直線區域從你身上吹出的方向。
