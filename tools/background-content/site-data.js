@@ -49,27 +49,10 @@ function backgroundText(background, rules, classes) {
   };
 }
 
-// 過渡期：舊的 backgrounds.js 格式（中文 key），網站讀取端改用 backgroundRules／backgroundText 後移除。
-function legacyEntry(rules, text) {
-  return {
-    名稱: rules.name,
-    ...(rules.source === "extended" ? { 擴充: true } : {}),
-    屬性: text.abilities,
-    專長: text.feat,
-    技能熟練: text.skills,
-    工具熟練: text.tool,
-    裝備: "A、B 二擇一",
-    裝備A: text.equipmentA,
-    裝備B: text.equipmentB,
-    描述: text.description
-  };
-}
-
 function renderBackgroundData(backgrounds, classes) {
   const ids = [...backgrounds.keys()];
   const rules = Object.fromEntries(ids.map(id => [id, backgroundRules(backgrounds.get(id))]));
   const text = Object.fromEntries(ids.map(id => [id, backgroundText(backgrounds.get(id), rules[id], classes)]));
-  const legacy = Object.fromEntries(ids.map(id => [id, legacyEntry(rules[id], text[id])]));
   const entries = map => ids.map(id => `  ${id}: ${JSON.stringify(map[id])}`).join(",\n");
   const source = `// ${OUTPUT_NAME}：由 npm run build 從 content/srd/backgrounds 的背景內容檔產生，請勿手動修改。
 // backgroundRules：各背景的結構化規則（來源、屬性 ID、專長 ID 與魔法學徒法術列表、技能 ID、工具或工具組、裝備項目與金幣）。
@@ -81,16 +64,11 @@ ${entries(rules)}
 const backgroundText = {
 ${entries(text)}
 };
-
-// 過渡期的舊格式（原 backgrounds.js），網站讀取端改用上面兩者後移除。
-const detailedBackgroundFeatures = {
-${entries(legacy)}
-};
 `;
   // 確認產生的程式執行結果與資料相同。
   const context = {};
-  vm.runInNewContext(`${source}\nthis.result = { backgroundRules, backgroundText, detailedBackgroundFeatures };`, context);
-  if (JSON.stringify(context.result) !== JSON.stringify({ backgroundRules: rules, backgroundText: text, detailedBackgroundFeatures: legacy })) throw new ContentError(`${OUTPUT_NAME}：產生結果與資料不同`);
+  vm.runInNewContext(`${source}\nthis.result = { backgroundRules, backgroundText };`, context);
+  if (JSON.stringify(context.result) !== JSON.stringify({ backgroundRules: rules, backgroundText: text })) throw new ContentError(`${OUTPUT_NAME}：產生結果與資料不同`);
   return source;
 }
 
