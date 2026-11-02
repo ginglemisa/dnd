@@ -1,0 +1,65 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: wish
+source: srd
+level: 9
+school: conjuration
+classes: [ sorcerer, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: self }
+components: { v: true, s: false, m: false }
+duration: { type: instantaneous }
+en:
+  name: Wish
+  body: |-
+    _Wish_ is the mightiest spell a mortal can cast. By simply speaking aloud, you can alter reality itself.
+
+    The basic use of this spell is to duplicate any other spell of level 8 or lower. If you use it this way, you don't need to meet any requirements to cast that spell, including costly components. The spell simply takes effect.
+
+    Alternatively, you can create one of the following effects of your choice:
+
+    **Object Creation.** You create one object of up to 25,000 GP in value that isn't a magic item. The object can be no more than 300 feet in any dimension, and it appears in an unoccupied space that you can see on the ground.
+
+    **Instant Health.** You allow yourself and up to twenty creatures that you can see to regain all Hit Points, and you end all effects on them listed in the _Greater Restoration_ spell.
+
+    **Resistance.** You grant up to ten creatures that you can see Resistance to one damage type that you choose. This Resistance is permanent.
+
+    **Spell Immunity.** You grant up to ten creatures you can see immunity to a single spell or other magical effect for 8 hours.
+
+    **Sudden Learning.** You replace one of your feats with another feat for which you are eligible. You lose all the benefits of the old feat and gain the benefits of the new one. You can't replace a feat that is a prerequisite for any of your other feats or features.
+
+    **Roll Redo.** You undo a single recent event by forcing a reroll of any die roll made within the last round (including your last turn). Reality reshapes itself to accommodate the new result. For example, a _Wish_ spell could undo an ally's failed saving throw or a foe's Critical Hit. You can force the reroll to be made with Advantage or Disadvantage, and you choose whether to use the reroll or the original roll.
+
+    **Reshape Reality.** You may wish for something not included in any of the other effects. To do so, state your wish to the GM as precisely as possible. The GM has great latitude in ruling what occurs in such an instance; the greater the wish, the greater the likelihood that something goes wrong. This spell might simply fail, the effect you desire might be achieved only in part, or you might suffer an unforeseen consequence as a result of how you worded the wish. For example, wishing that a villain were dead might propel you forward in time to a period when that villain is no longer alive, effectively removing you from the game.
+
+    Similarly, wishing for a Legendary magic item or an Artifact might instantly transport you to the presence of the item's current owner. If your wish is granted and its effects have consequences for a whole community, region, or world, you are likely to attract powerful foes. If your wish would affect a god, the god's divine servants might instantly intervene to prevent it or to encourage you to craft the wish in a particular way. If your wish would undo the multiverse itself, your wish fails.
+
+    The stress of casting _Wish_ to produce any effect other than duplicating another spell weakens you. After enduring that stress, each time you cast a spell until you finish a Long Rest, you take 1d10 Necrotic damage per level of that spell. This damage can't be reduced or prevented in any way. In addition, your Strength score becomes 3 for 2d4 days. For each of those days that you spend resting and doing nothing more than light activity, your remaining recovery time decreases by 2 days. Finally, there is a 33 percent chance that you are unable to cast _Wish_ ever again if you suffer this stress.
+zh:
+  name: 祈願術
+  body: |-
+    _祈願術_是凡人所能施展的最強大法術。只要大聲說出口，你就能改變現實本身。
+
+    此法術的基本用法是複製任何其他8環或更低環的法術。若你以此方式使用，你不需要滿足施展該法術的任何要求，包括昂貴的材料。該法術就這樣直接生效。
+
+    或者，你可以從下列效果中選擇創造其中一種：
+
+    **物體創造。** 你創造一個價值至多25,000 GP、且不是魔法物品的物體。該物體在任何維度上都不得超過300呎，並出現在你能看見的地面上一處未被佔據的空間。
+
+    **即時恢復健康。** 你讓自己與最多二十名你能看見的生物恢復所有生命值，並結束他們身上_高等復原術_法術所列出的所有效果。
+
+    **抗性。** 你賦予最多十名你能看見的生物對你選擇的一種傷害類型的抗性。此抗性是永久的。
+
+    **法術免疫。** 你賦予最多十名你能看見的生物對單一法術或其他魔法效果的免疫，持續8小時。
+
+    **突然領悟。** 你將自己的一項專長替換為另一項你符合資格的專長。你失去舊專長的所有益處，並獲得新專長的益處。你不能替換作為你其他任何專長或特性之先決條件的專長。
+
+    **擲骰重來。** 你強制重擲過去一輪內（包括你的上個回合）所進行的任何一次骰子擲骰，藉此撤銷一個近期發生的事件。現實會重塑自身以配合新的結果。例如，_祈願術_可以撤銷盟友失敗的豁免或敵人的重擊。你可以強制該次重擲具有優勢或劣勢，並由你選擇採用重擲結果或原本的結果。
+
+    **重塑現實。** 你可以許下不屬於其他任何效果的願望。要這麼做，請盡可能精確地向DM陳述你的願望。DM在裁定這種情況會發生什麼事時擁有很大的裁量空間；願望越大，出差錯的可能性就越高。此法術可能直接失敗、你期望的效果可能只達成一部分，或者你可能因為許願時的措辭而遭遇意料之外的後果。例如，許願希望某個反派死去，可能會把你送往未來該反派已不在世的時代，等於讓你退出遊戲。
+
+    同樣地，許願想要傳說魔法物品或神器，可能會立刻把你傳送到該物品現任擁有者面前。若你的願望實現，且其效果對整個社群、地區或世界造成後果，你很可能會招來強大的敵人。若你的願望會影響一位神祇，該神祇的神聖僕從可能立即介入阻止，或促使你以特定方式措辭許願。若你的願望會讓整個多元宇宙瓦解，你的願望就會失敗。
+
+    施展_祈願術_來產生複製其他法術以外的任何效果，所造成的壓力會削弱你。承受該壓力後，在你完成一次長休之前，每次你施展法術，都會受到等同該法術環階每環1d10的黯蝕傷害。此傷害無法以任何方式減免或防止。此外，你的力量屬性值會變為3，持續2d4天。在這些天數中，每有一天你都在休息並且只進行輕度活動，你剩餘的恢復時間就減少2天。最後，若你承受了這種壓力，有33%的機率你再也無法施展_祈願術_。

@@ -77,3 +77,20 @@ Blinded 失明、Charmed 魅惑、Deafened 耳聾、Exhaustion 力竭、Frighten
 - 「麻痺」不用「麻痹」。「穿戴」不用「着裝」。
 - 斜體小標（如 `_Using a Higher-Level Spell Slot._`）保留 Markdown 底線格式，譯文放在底線內。
 - 表格保留 GFM 管線表格；數據塊的欄位標籤（AC、HP、Speed、Senses、Languages、CR）：AC、HP、速度、感官、語言、CR。
+
+## 補充用語（試點後新增，依網站既有用法）
+
+| 英文 | 中文 | 不要用 |
+| --- | --- | --- |
+| have the X condition / has the X condition | 陷入X狀態（例：陷入麻痺狀態） | 具有X狀態 |
+| Passive Perception | 被動察覺 | 被動感知 |
+| attuned / attunement | 同調 | 調諧 |
+| alignment | 陣營 | |
+| Hit Point Dice | 生命骰 | |
+| Challenge Rating (CR) | 挑戰等級（CR） | |
+| reach | 觸及 | |
+| Advantage / Disadvantage | 優勢 / 劣勢 | |
+| Critical Hit | 重擊 | |
+| plane of existence | 位面 | |
+| stat block | 數據塊 | 屬性資料 |
+| game statistics | 遊戲數值 | |

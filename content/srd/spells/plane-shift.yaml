@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+spellId: plane-shift
+source: srd
+level: 7
+school: conjuration
+classes: [ cleric, druid, sorcerer, warlock, wizard ]
+ritual: false
+concentration: false
+castingTime:
+  - { unit: action }
+range: { type: touch }
+components: { v: true, s: true, m: true }
+duration: { type: instantaneous }
+en:
+  name: Plane Shift
+  material: a forked, metal rod worth 250+ GP and attuned to a plane of existence
+  body: |-
+    You and up to eight willing creatures who link hands in a circle are transported to a different plane of existence. You can specify a target destination in general terms, such as a specific city on the Elemental Plane of Fire or palace on the second level of the Nine Hells, and you appear in or near that destination, as determined by the GM.
+
+    Alternatively, if you know the sigil sequence of a teleportation circle on another plane of existence, this spell can take you to that circle. If the teleportation circle is too small to hold all the creatures you transported, they appear in the closest unoccupied spaces next to the circle.
+zh:
+  name: 異界傳送
+  material: 一根價值250 GP以上、與某個存在位面相同調的叉狀金屬棒
+  body: |-
+    你與最多八名手牽手圍成圓圈、自願的生物被傳送到另一個存在位面。你可以用概略的方式指定目標目的地，例如火元素位面的某座特定城市，或九層地獄第二層的宮殿；你會出現在該目的地之內或附近，確切位置由DM決定。
+
+    或者，若你知道另一個存在位面上某個傳送法陣的符印序列，此法術可以將你送往該法陣。若該傳送法陣太小，容納不下你所傳送的所有生物，他們會出現在法陣旁最近的未被佔據的空間。
