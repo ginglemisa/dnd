@@ -2217,7 +2217,7 @@ async function verifyFeatureReferences(browser, url) {
       const skills = ["體操", "馴獸", "奧秘", "運動", "欺瞞", "歷史", "洞悉", "威嚇", "調查",
         "醫藥", "自然", "察覺", "表演", "遊說", "宗教", "巧手", "隱匿", "生存", "求生", "醫學", "說服", "優勢", "劣勢", "抗性", "藉機攻擊"];
       const failures = [];
-      const sources = [...Object.entries(classFeatures), ...Object.entries(raceFeatureDisplay),
+      const sources = [...Object.entries(classFeatures), ...Object.entries(raceText).map(([race, text]) => [race, text.html]),
         ["all skill references", `<p>${skills.map(skillTip).join("、")}</p>`],
         ["plain prose", `<p>${skills.filter(term => !["優勢", "劣勢"].includes(term)).join("、")}</p>`]];
       for (const [name, html] of sources) {
@@ -2254,7 +2254,7 @@ async function verifyFeatureReferences(browser, url) {
         dragonborn: 1, dwarf: 1, elf: 1, gnome: 0, goliath: 2, halfling: 1, human: 0, orc: 0, tiefling: 0
       };
       for (const [name, expected] of Object.entries(conditionCounts)) {
-        const html = highlightSpellNamesInClassFeature(classFeatures[name] || raceFeatureDisplay[name]);
+        const html = highlightSpellNamesInClassFeature(classFeatures[name] || raceText[name]?.html);
         const template = document.createElement("template");
         template.innerHTML = html;
         const tips = template.content.querySelectorAll("button.condition-tip");
@@ -2304,7 +2304,7 @@ async function verifyFeatureReferences(browser, url) {
       for (const [name, html, count] of [
         ["barbarian", classFeatures.barbarian, 1], ["ranger", classFeatures.ranger, 1],
         ["sorcerer", classFeatures.sorcerer, 1], ["warlock", classFeatures.warlock, 1],
-        ["dragonborn", raceFeatureDisplay.dragonborn, 1], ["tiefling", raceFeatureDisplay.tiefling, 3]
+        ["dragonborn", raceText.dragonborn.html, 1], ["tiefling", raceText.tiefling.html, 3]
       ]) {
         const template = document.createElement("template");
         template.innerHTML = highlightSpellNamesInClassFeature(html);
@@ -2332,7 +2332,7 @@ async function verifyFeatureReferences(browser, url) {
       };
       for (const [name, examples] of Object.entries(proseExamples)) {
         const template = document.createElement("template");
-        template.innerHTML = highlightSpellNamesInClassFeature(classFeatures[name] || raceFeatureDisplay[name]);
+        template.innerHTML = highlightSpellNamesInClassFeature(classFeatures[name] || raceText[name]?.html);
         for (const phrase of examples) {
           const walker = document.createTreeWalker(template.content, NodeFilter.SHOW_TEXT);
           let found = false;
