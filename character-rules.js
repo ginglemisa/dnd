@@ -57,6 +57,11 @@
     return typeof raceRules === "undefined" ? {} : raceRules;
   }
 
+  /** PDF 匯出選項中存放血統選擇的 key：選單 ID 的駝峰寫法（例如 elf-lineage → elfLineage）。 */
+  function getRaceChoiceOptionKey(choiceId) {
+    return String(choiceId).replace(/-([a-z])/g, (all, letter) => letter.toUpperCase());
+  }
+
   /** 種族目前所選的血統選項（依種族 choice 的選單 ID 讀取 value；沒有選擇或不認得時為 null）。 */
   function getRaceChoiceOption(race, value) {
     return getRaceRules(race)?.choice?.options.find(option => option.value === value) || null;
@@ -752,6 +757,7 @@
     getRaceText,
     getAllRaceRules,
     getRaceChoiceOption,
+    getRaceChoiceOptionKey,
     getBackgroundRules,
     getBackgroundText,
     getBackgroundSource,

@@ -11,6 +11,7 @@ const CATEGORIES = Object.freeze({
   races: "種族 ID",
   selects: "血統選單 ID（存檔欄位）",
   selectValues: "血統選單的選項值（選單 ID=值）",
+  draftFields: "快速創角草稿存放血統的欄位（種族 ID=欄位）",
   draftValues: "快速創角草稿的血統值（種族 ID=值）",
   actionKeys: "跑團動作 key",
   resourceKeys: "資源 key",
@@ -35,6 +36,7 @@ function checkRaceIdBaseline(races, { update = false } = {}) {
     current.races.add(id);
     if (race.choice) {
       current.selects.add(race.choice.id);
+      current.draftFields.add(`${id}=${race.choice.draftField}`);
       race.choice.options.forEach(option => {
         current.selectValues.add(`${race.choice.id}=${option.value}`);
         current.draftValues.add(`${id}=${optionDraftValue(option)}`);

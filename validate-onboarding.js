@@ -534,6 +534,7 @@ async function main() {
     await page.locator("#legal-ack-btn").click();
     if (process.argv.includes("--imports-only")) {
       await verifyQuickBuildBackgroundCards(browser, url);
+      await verifyQuickBuildRaceCards(browser, url);
       await verifyShareModeEntries(browser, url);
       await verifyImports(browser, url);
       await verifyImports(browser, url, { width: 390, height: 844 });
@@ -732,6 +733,7 @@ async function main() {
     assert.deepEqual(await page.evaluate(() => quickBuild.getDraft()), draft);
     await page.evaluate(() => quickBuild.close());
     await verifyQuickBuildBackgroundCards(browser, url);
+    await verifyQuickBuildRaceCards(browser, url);
     await verifyShareModeEntries(browser, url);
     await verifyImports(browser, url);
     await verifyImports(browser, url, { width: 390, height: 844 });
@@ -1380,6 +1382,58 @@ async function verifyQuickBuildBackgroundCards(browser, url) {
     assert.deepEqual(errors, []);
   } finally { await page.close(); }
   console.log("Quick build background cards cover every background content file.");
+}
+
+// 快速創角的種族卡片說明、血統短評與完成摘要是 quick-build.js 自己的文字（以種族 ID 與草稿血統值為 key），
+// 種族與血統取自種族內容檔：每個種族都有卡片與說明，每個血統選項都有完整的完成摘要。
+async function verifyQuickBuildRaceCards(browser, url) {
+  const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  const errors = [];
+  page.on("pageerror", error => errors.push(String(error)));
+  try {
+    await page.goto(url);
+    await page.waitForFunction(() => window.quickBuild && window.getAllRaceRules);
+    const problems = await page.evaluate(async () => {
+      const found = [];
+      const wait = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(resolve, 0))));
+      const openAt = async (race, raceOptions) => {
+        const draft = quickBuild.createDraft();
+        Object.assign(draft.choices, { background: "soldier", race, raceOptions });
+        draft.ui.currentStepId = "race";
+        localStorage.setItem(quickBuild.storageKey, JSON.stringify(draft));
+        quickBuild.open();
+        await wait();
+        return document.getElementById("quick-build-wizard");
+      };
+      const wizard = await openAt(null, {});
+      const cards = Object.fromEntries(Array.from(wizard.querySelectorAll("[data-race]"), card => [card.dataset.race, card]));
+      quickBuild.close(false);
+      for (const [race, rules] of Object.entries(getAllRaceRules())) {
+        const card = cards[race];
+        if (!card || card.querySelector("h4")?.textContent !== rules.name || !card.querySelector("p")?.textContent.trim()) found.push(`${race}: card`);
+        const sizeChoice = rules.sizes.length > 1 ? { size: rules.sizes[0] } : {};
+        const skillChoice = rules.traits.find(trait => trait.skillChoice)?.skillChoice;
+        const skill = skillChoice === "any" ? "運動" : skillChoice?.[0];
+        const feat = rules.traits.some(trait => trait.feat) ? { feat: "熟習", featOptions: { proficiencies: ["skill:歷史", "tool:盜賊工具", "skill:醫藥"] } } : {};
+        for (const option of rules.choice?.options || [null]) {
+          const raceOptions = { ...sizeChoice, ...(skill ? { skill } : {}), ...feat, ...(option ? { [rules.choice.draftField]: option.draftValue } : {}), ...(option?.cantripChoice ? { cantrip: option.cantripChoice.default } : {}) };
+          const page = await openAt(race, raceOptions);
+          const note = page.querySelector(`[data-race-option="${rules.choice?.draftField}"]`)?.closest(".quick-build-field")?.querySelector(".quick-build-option-note");
+          if (option && ["elf", "gnome", "tiefling"].includes(race) && !note?.textContent.trim()) found.push(`${race}/${option.value}: lineage note`);
+          // 完成摘要在確認種族步驟後顯示。
+          page.querySelector(".quick-build-next").click();
+          await wait();
+          const complete = page.querySelector(".quick-build-complete")?.innerText || "";
+          if (!complete.includes(rules.name) || /undefined|：(?:\n|$)/u.test(complete)) found.push(`${race}/${option?.value || "-"}: completion「${complete}」`);
+          quickBuild.close(false);
+        }
+      }
+      return found;
+    });
+    assert.deepEqual(problems, [], "quick build race cards, lineage notes and summaries cover every race content option");
+    assert.deepEqual(errors, []);
+  } finally { await page.close(); }
+  console.log("Quick build race cards, lineage notes and summaries cover every race content option.");
 }
 
 async function verifyShareModeEntries(browser, url) {

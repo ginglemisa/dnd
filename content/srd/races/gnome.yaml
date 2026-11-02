@@ -12,6 +12,7 @@ description: |
 choice:
   id: gnome-lineage
   label: 侏儒血統
+  draftField: lineage
   display: { type: sections }
   options:
     - value: forest_gnome

@@ -45,6 +45,13 @@
     "tiefling-legacy=chthonic",
     "tiefling-legacy=infernal"
   ],
+  "draftFields": [
+    "dragonborn=ancestry",
+    "elf=lineage",
+    "gnome=lineage",
+    "goliath=ancestry",
+    "tiefling=legacy"
+  ],
   "draftValues": [
     "dragonborn=白龍-冰",
     "dragonborn=紅龍-火",

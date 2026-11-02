@@ -90,7 +90,7 @@ function raceRules(race) {
     ...(race.languageOptions ? { languageOptions: [...race.languageOptions] } : {}),
     ...(hpPerLevel ? { hpPerLevel } : {}),
     ...(carryMultiplier ? { carryMultiplier } : {}),
-    ...(choice ? { choice: { id: choice.id, label: choice.label, quickBuildLabel: choice.quickBuildLabel || choice.label, options } } : {}),
+    ...(choice ? { choice: { id: choice.id, label: choice.label, quickBuildLabel: choice.quickBuildLabel || choice.label, draftField: choice.draftField, options } } : {}),
     spells,
     traits: traits.map(trait => ({
       id: trait.id,

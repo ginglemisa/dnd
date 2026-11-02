@@ -9,11 +9,6 @@
     return globalScope.getClassFeatureRules?.(classKey) || [];
   }
 
-  function getRaceFeaturesMap() {
-    if (typeof raceFeatures !== 'undefined') return raceFeatures;
-    return globalScope.raceFeatures || {};
-  }
-
   // 內建背景的規則與顯示文字（background-content.generated.js）；自訂背景另讀 state.__customBackground。
   function getBuiltInBackground(backgroundKey) {
     const rules = typeof backgroundRules !== 'undefined' ? backgroundRules : (globalScope.backgroundRules || {});
@@ -215,18 +210,6 @@
     return [...derived, ...(CLASS_FEATURE_CHOICE_SPECS[classKey] || [])];
   }
 
-  const RACE_LABELS = Object.freeze({
-    dragonborn: '龍裔',
-    dwarf: '矮人',
-    elf: '精靈',
-    gnome: '侏儒',
-    goliath: '歌利亞',
-    halfling: '半身人',
-    human: '人類',
-    orc: '獸人',
-    tiefling: '提夫林'
-  });
-
   const ALIGNMENT_LABELS = Object.freeze({
     LG: '守序善良',
     NG: '中立善良',
@@ -282,54 +265,6 @@
     { name: '饑渴魔刃', max: 1 },
     { name: '鏈主賦能', max: 1 }
   ]);
-
-  const GOLIATH_ANCESTRY_LABELS = Object.freeze({
-    cloud: '雲巨人',
-    fire: '火巨人',
-    frost: '霜巨人',
-    hill: '丘陵巨人',
-    stone: '石巨人',
-    storm: '風暴巨人'
-  });
-
-  const GOLIATH_ANCESTRY_ABILITY_LINES = Object.freeze({
-    cloud: Object.freeze(['附贈傳送30呎', '內可見無人空間']),
-    fire: Object.freeze(['命中+1d10火傷']),
-    frost: Object.freeze(['命中+1d6冷凍', '目標速度-10呎']),
-    hill: Object.freeze(['大型以下可擊倒']),
-    stone: Object.freeze(['反應減1d12+C傷']),
-    storm: Object.freeze(['受傷可反應反擊', '60呎內1d8雷鳴'])
-  });
-
-  const DRAGONBORN_ANCESTRY_LABELS = Object.freeze({
-    black_acid: '黑龍-酸',
-    blue_lightning: '藍龍-電',
-    brass_fire: '黃銅龍-火',
-    bronze_lightning: '青銅龍-電',
-    copper_acid: '赤銅龍-酸',
-    gold_fire: '金龍-火',
-    green_poison: '綠龍-毒',
-    red_fire: '紅龍-火',
-    silver_cold: '銀龍-冰',
-    white_cold: '白龍-冰'
-  });
-
-  const ELF_LINEAGE_LABELS = Object.freeze({
-    drow: '卓爾',
-    high_elf: '高等精靈',
-    wood_elf: '木精靈'
-  });
-
-  const GNOME_LINEAGE_LABELS = Object.freeze({
-    forest_gnome: '森林侏儒',
-    rock_gnome: '岩石侏儒'
-  });
-
-  const TIEFLING_LEGACY_LABELS = Object.freeze({
-    abyssal: '深淵血統',
-    chthonic: '冥界血統',
-    infernal: '煉獄血統'
-  });
 
   const MAGIC_INITIATE_CLASS_LABELS = Object.freeze({
     cleric: '牧師',
@@ -399,231 +334,28 @@
     ])
   });
 
-  const RACE_PDF_TEMPLATES = Object.freeze({
-    dragonborn: Object.freeze((context = {}) => {
-      const ancestry = normalizeText(context.dragonbornAncestryLabel) || '未選祖源（預備）';
-      const proficiencyValue = context.proficiencyValue || 'P';
-      const breathSaveDc = getDragonbornBreathSaveDc(context.level, context.constitutionModifier);
-      const breathDamageDice = getDragonbornBreathDamageDice(context.level);
-      const lines = [
-        '黑暗視覺：60呎',
-        `${ancestry}抗性`,
-        '使用攻擊動作時',
-        '單次攻擊可吐息',
-        `限用${proficiencyValue}次,長休回`,
-        '15呎錐/30呎直',
-        `目標敏豁DC${breathSaveDc}`,
-        `傷害：${breathDamageDice}d10`,
-        '５等附贈可飛行',
-        '限10分長休恢復'
-      ];
-      return lines;
-    }),
-    dwarf: Object.freeze((context = {}) => {
-      const proficiencyValue = context.proficiencyValue || 'P';
-      return [
-      '黑暗視覺120呎',
-      '毒素抗性',
-      '中毒豁免優勢',
-      '每等級額外+1HP',
-      '附贈開石之感應',
-      '10分內震動感知',
-      '範圍60呎',
-      `限用${proficiencyValue}次`,
-      '長休後恢復次數'
-      ];
-    }),
-    elf: Object.freeze((context = {}) => {
-      const lineage = normalizeText(context.elfLineageLabel) || '未選亞種（預備）';
-      const lineageKey = normalizeText(context.elfLineageKey);
-      const firstLevelSpellLine = lineageKey === 'drow'
-        ? '舞光術戲法'
-        : (lineageKey === 'high_elf' ? '魔法伎倆' : (lineageKey === 'wood_elf' ? '德魯伊伎倆戲法' : '血統戲法'));
-      const firstLevelBonusLine = lineageKey === 'drow'
-        ? '二倍黑暗視覺'
-        : (lineageKey === 'high_elf' ? '長休後可換戲法' : (lineageKey === 'wood_elf' ? '速度加５呎' : '血統特性'));
-      const thirdLevelSpellLine = lineageKey === 'drow'
-        ? '妖火 ◇'
-        : (lineageKey === 'high_elf' ? '偵測魔法 ◇' : (lineageKey === 'wood_elf' ? '大步奔行 ◇' : '血統一環'));
-      const fifthLevelSpellLine = lineageKey === 'drow'
-        ? '黑暗術 ◇'
-        : (lineageKey === 'high_elf' ? '迷蹤步 ◇' : (lineageKey === 'wood_elf' ? '行動無蹤 ◇' : '血統二環'));
-      const lines = [
-        '黑暗視覺60呎',
-        '抵抗魅惑優勢',
-        '敏銳感官',
-        '長休=冥想4小時',
-        `${lineage}傳承`,
-        firstLevelSpellLine,
-        firstLevelBonusLine
-      ];
-      const leveledSpellLines = [];
-      if (shouldShowAtOrAboveSelectedLevel(context.level, 3)) {
-        leveledSpellLines.push(thirdLevelSpellLine);
-      }
-      if (shouldShowAtOrAboveSelectedLevel(context.level, 5)) {
-        leveledSpellLines.push(fifthLevelSpellLine);
-      }
-      if (leveledSpellLines.length) {
-        lines.push(...leveledSpellLines);
-        lines.push('長休後環法恢復');
-      }
-      return lines;
-    }),
-    gnome: Object.freeze((context = {}) => {
-      const lineage = normalizeText(context.gnomeLineageLabel) || '未選';
-      const lineageKey = normalizeText(context.gnomeLineageKey);
-      const proficiencyValue = context.proficiencyValue || 'P';
-      const lines = [
-        '黑暗視覺60呎',
-        '智感魅豁免優勢',
-        `${lineage}血統`,
-        '施法屬性：自選'
-      ];
-      if (lineageKey === 'forest_gnome') {
-        lines.push(
-          '次級幻影戲法',
-          '動物交談法術',
-          `可免費施展${proficiencyValue}次`,
-          '長休後恢復'
-        );
-      } else if (lineageKey === 'rock_gnome') {
-        lines.push(
-          '修復術戲法',
-          '魔法伎倆戲法',
-          '花10分製作玩具',
-          'AC=5,HP=1',
-          '可附贈啟動',
-          '效果同魔法伎倆'
-        );
-      } else {
-        lines.push('血統戲法：未選');
-      }
-      return lines;
-    }),
-    goliath: Object.freeze((context = {}) => {
-      const ancestry = normalizeText(context.goliathAncestryLabel) || '未選巨人';
-      const ancestryKey = normalizeText(context.goliathAncestryKey);
-      const ancestryAbilityLines = getGoliathAncestryAbilityLines(
-        ancestryKey,
-        context.constitutionModifier
-      );
-      const proficiencyValue = context.proficiencyValue || 'P';
-      const parsedLevel = getSelectedLevelNumber(context.level);
-      const lines = [
-        '掙脫擒抱有優勢',
-        '攜帶重量×2',
-        `${ancestry}血統`,
-        `能力${proficiencyValue}次/長休`,
-        ...ancestryAbilityLines
-      ];
-      if (parsedLevel === null || parsedLevel >= 5) {
-        lines.push(
-          '巨化形體(LV5)◇',
-          '附贈巨化10分',
-          '速度+10',
-          '力量檢定優勢'
-        );
-      }
-      return lines;
-    }),
-    halfling: Object.freeze(() => ([
-      '半身人勇氣',
-      '抗恐慌豁免優勢',
-      '半身人靈巧',
-      '可穿越大型目標',
-      '但不可停留同格',
-      '可躲大型生物後',
-      '半身人吉運',
-      'D20出1可重擲'
-    ])),
-    human: Object.freeze(() => ([
-      '人類足智多謀',
-      '長休獲英雄激勵',
-      '人類技藝嫻熟',
-      '自選1技能熟練',
-      '人類靈活人才',
-      '自選1起源專長'
-    ])),
-    orc: Object.freeze((context = {}) => {
-      const proficiencyValue = context.proficiencyValue || 'P';
-      return [
-        '黑暗視覺120呎',
-        '獸人熱血湧動',
-        '附贈/速度×2',
-        `臨時HP=${proficiencyValue}`,
-        `限${proficiencyValue}次`,
-        '短休/長休恢復',
-        '獸人堅韌不屈',
-        '非即死HP歸零時',
-        '強制HP=1',
-        '限1次/長休回'
-      ];
-    }),
-    tiefling: Object.freeze((context = {}) => {
-      const legacy = normalizeText(context.tieflingLegacyLabel) || '未選血統';
-      const legacyKey = normalizeText(context.tieflingLegacyKey);
-      const firstLevelLine1 = legacyKey === 'abyssal'
-        ? '毒素傷害抗性'
-        : (legacyKey === 'chthonic' ? '黯蝕傷害抗性' : (legacyKey === 'infernal' ? '火焰傷害抗性' : '傷害抗性未選'));
-      const firstLevelLine2 = legacyKey === 'abyssal'
-        ? '毒氣噴濺戲法'
-        : (legacyKey === 'chthonic' ? '凍寒之觸戲法' : (legacyKey === 'infernal' ? '火焰箭戲法' : '血統戲法'));
-      const thirdLevelLine = legacyKey === 'abyssal'
-        ? '致病射線 ◇'
-        : (legacyKey === 'chthonic' ? '虛假生命 ◇' : (legacyKey === 'infernal' ? '煉獄叱喝 ◇' : '血統一環'));
-      const fifthLevelLine = legacyKey === 'abyssal'
-        ? '人類定身術 ◇'
-        : (legacyKey === 'chthonic' ? '衰弱射線 ◇' : (legacyKey === 'infernal' ? '黑暗術 ◇' : '血統二環'));
-      const lines = [
-        '黑暗視覺60呎',
-        '異界姿態',
-        '奇術戲法',
-        `${legacy}遺贈`,
-        firstLevelLine1,
-        firstLevelLine2
-      ];
-      const leveledSpellLines = [];
-      if (shouldShowAtOrAboveSelectedLevel(context.level, 3)) {
-        leveledSpellLines.push(thirdLevelLine);
-      }
-      if (shouldShowAtOrAboveSelectedLevel(context.level, 5)) {
-        leveledSpellLines.push(fifthLevelLine);
-      }
-      if (leveledSpellLines.length) {
-        lines.push(...leveledSpellLines);
-        lines.push('長休後環法恢復');
-      }
-      return lines;
-    })
-  });
-
-  function buildFallbackRacePdfText() {
-    return [];
-  }
-
+  // PDF 種族特質欄：種族內容檔的 pdf 行（raceText.pdf）。{choice} 為所選血統選項的 pdfLabel（PDF 匯出選項傳入），
+  // { choice: 等級 } 插入該選項該等級的行，{ minLevel } 的行在等級達到或未填等級時出現。
   function buildRaceTemplateText(state, options = {}) {
     const raceKey = normalizeText(state?.race);
-    const templateBuilder = RACE_PDF_TEMPLATES[raceKey];
-    const pdfProficiencyValue = getPdfProficiencyValueByLevel(state?.level);
+    const pdf = globalScope.getRaceText?.(raceKey)?.pdf;
+    const choiceId = globalScope.getRaceRules?.(raceKey)?.choice?.id;
+    const option = choiceId ? globalScope.getRaceChoiceOption?.(raceKey, normalizeText(options[globalScope.getRaceChoiceOptionKey(choiceId)])) : null;
     const constitutionModifier = getAbilityModifierNumber(state?.con);
-    const context = {
-      level: state?.level,
-      proficiencyValue: pdfProficiencyValue,
-      constitutionModifier,
-      goliathAncestryLabel: getGoliathAncestryLabel(options.goliathAncestry, constitutionModifier),
-      goliathAncestryKey: options.goliathAncestry,
-      dragonbornAncestryLabel: DRAGONBORN_ANCESTRY_LABELS[options.dragonbornAncestry],
-      elfLineageLabel: ELF_LINEAGE_LABELS[options.elfLineage],
-      elfLineageKey: options.elfLineage,
-      gnomeLineageLabel: GNOME_LINEAGE_LABELS[options.gnomeLineage],
-      gnomeLineageKey: options.gnomeLineage,
-      tieflingLegacyLabel: TIEFLING_LEGACY_LABELS[options.tieflingLegacy],
-      tieflingLegacyKey: options.tieflingLegacy
+    const values = {
+      proficiency: getPdfProficiencyValueByLevel(state?.level),
+      choice: option?.pdfLabel || pdf?.choiceFallback || '',
+      conModifier: formatFormulaModifier(constitutionModifier),
+      breathSaveDc: getDragonbornBreathSaveDc(state?.level, constitutionModifier),
+      breathDice: getDragonbornBreathDamageDice(state?.level)
     };
-    const lines = typeof templateBuilder === 'function'
-      ? templateBuilder(context)
-      : buildFallbackRacePdfText();
+    const fill = (line) => line.replace(/\{([A-Za-z]+)\}/g, (all, name) => values[name] ?? all);
+    const expand = (lines) => lines.flatMap((line) => {
+      if (typeof line === 'string') return [fill(line)];
+      if (line.lines) return shouldShowAtOrAboveSelectedLevel(state?.level, line.minLevel) ? expand(line.lines) : [];
+      return (option ? (pdf.options?.[option.value]?.[line.choice] || []) : line.fallback).map(fill);
+    });
+    const lines = pdf ? expand(pdf.lines) : [];
     return wrapTextForPdf(lines.join('\n'), getPdfTextSpecs(options).specie_features1);
   }
 
@@ -721,19 +453,6 @@
   function formatFormulaModifier(modifier, fallback = '+C') {
     if (!Number.isFinite(modifier)) return fallback;
     return modifier >= 0 ? `+${modifier}` : String(modifier);
-  }
-
-  function getGoliathAncestryLabel(ancestryKey, constitutionModifier) {
-    return GOLIATH_ANCESTRY_LABELS[ancestryKey];
-  }
-
-  function getGoliathAncestryAbilityLines(ancestryKey, constitutionModifier) {
-    const lines = GOLIATH_ANCESTRY_ABILITY_LINES[ancestryKey];
-    if (!lines) return ['血統能力未選'];
-    if (ancestryKey !== 'stone') return [...lines];
-    return lines.map((line) => (
-      line.replace('1d12+C', `1d12${formatFormulaModifier(constitutionModifier)}`)
-    ));
   }
 
   function getHitDieByClass(classKey) {
@@ -1005,20 +724,6 @@
       });
     });
     return output;
-  }
-
-  function extractRaceFeatureHeadings(rawText) {
-    const target = rawText;
-    const clean = target.replace(/<[^>]+>/g, '\n');
-    const matches = clean.split(/\n+/).map((line) => line.trim()).filter(Boolean);
-    const seen = new Set();
-    return matches
-      .map((item) => item.replace(/：$/, '').trim())
-      .filter((title) => {
-        if (!title || seen.has(title) || title.length > 30) return false;
-        seen.add(title);
-        return true;
-      });
   }
 
   function getCanonicalSpell(spellId) {
@@ -1486,12 +1191,11 @@ function isWeaponRowEmpty(payload, slot) {
     return picks;
   }
 
-  // 種族所選的血統選項值：PDF 匯出選項以選單 ID 的駝峰寫法傳入（例如 elf-lineage → elfLineage），沒有時取角色資料。
+  // 種族所選的血統選項值：PDF 匯出選項（getRaceChoiceOptionKey，例如 elfLineage）優先，沒有時取角色資料。
   function getPdfRaceChoiceValue(state, options = {}) {
     const choiceId = globalScope.getRaceRules?.(normalizeText(state?.race))?.choice?.id;
     if (!choiceId) return '';
-    const optionKey = choiceId.replace(/-([a-z])/g, (all, letter) => letter.toUpperCase());
-    return normalizeText(options[optionKey] || state[choiceId]);
+    return normalizeText(options[globalScope.getRaceChoiceOptionKey(choiceId)] || state[choiceId]);
   }
 
   function resolveSpeedForPdf(state, options = {}) {
@@ -1563,7 +1267,7 @@ function isWeaponRowEmpty(payload, slot) {
     payload.Background2 = backgroundKey === 'custom'
       ? normalizeText(state.__customBackground?.名稱)
       : (getBuiltInBackground(backgroundKey)?.rules.name || payload.Background2);
-    payload.Specie1 = RACE_LABELS[normalizeText(state.race)] || payload.Specie1;
+    payload.Specie1 = globalScope.getRaceRules?.(normalizeText(state.race))?.name || payload.Specie1;
     payload.alignment1 = ALIGNMENT_LABELS[normalizeText(state.alignment)] || payload.alignment1;
     payload.spell_cast_attri1 = SPELL_CAST_ABILITY_LABELS[normalizeText(state['spellcasting-ability'])] || payload.spell_cast_attri1;
 

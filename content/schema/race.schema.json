@@ -202,12 +202,13 @@
     "choice": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "label", "display", "options"],
+      "required": ["id", "label", "draftField", "display", "options"],
       "description": "血統等下拉選擇（每個種族最多一個）。",
       "properties": {
         "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "description": "index.html 的選單 ID，也是存檔欄位名：不可改字。" },
         "label": { "type": "string", "minLength": 1, "description": "選擇的名稱（選單 aria-label、未選提醒、PDF 匯出標題）。" },
         "quickBuildLabel": { "type": "string", "minLength": 1, "description": "快速創角的欄位名稱；省略時為 label。" },
+        "draftField": { "type": "string", "pattern": "^[a-z]+$", "description": "快速創角草稿 raceOptions 中存放此選擇的欄位名（例如 ancestry）：進草稿，不可改字（列在 ID 基準檔）。" },
         "display": {
           "type": "object",
           "additionalProperties": false,

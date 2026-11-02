@@ -12,6 +12,7 @@ description: |
 choice:
   id: elf-lineage
   label: 精靈傳承
+  draftField: lineage
   display: { type: lineage-table, label: 精靈傳承等級能力 }
   options:
     - value: drow

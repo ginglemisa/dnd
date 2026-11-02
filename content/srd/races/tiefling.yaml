@@ -14,6 +14,7 @@ description: |
 choice:
   id: tiefling-legacy
   label: 邪魔遺贈
+  draftField: legacy
   display: { type: lineage-table, label: 提夫林邪魔遺贈等級能力 }
   options:
     - value: abyssal

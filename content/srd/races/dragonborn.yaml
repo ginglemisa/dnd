@@ -12,6 +12,7 @@ description: |
 choice:
   id: dragonborn-ancestry
   label: 龍族血統
+  draftField: ancestry
   display: { type: ancestry-table, label: 龍裔龍族血統選項, columns: 5 }
   options:
     - { value: black_acid, name: 黑龍, damage: 酸, resistance: acid, label: 黑龍－酸, pdfLabel: 黑龍-酸, draftValue: 黑龍-酸 }
