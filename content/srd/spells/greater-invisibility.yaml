@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: greater-invisibility
+name: 高等隱形術
+nameEn: Greater Invisibility
+source: srd
+level: 4
+school: illusion
+classes: [ bard, sorcerer, wizard ]
+castingTime: [ action ]
+range: touch
+components: [ V, S ]
+duration: { minutes: 1 }
+concentration: true
+site:
+  body: |-
+    - 你觸碰的一個生物陷入隱形狀態，直到法術結束
+srd:
+  body: |-
+    你接觸的一名生物陷入隱形狀態，直到法術結束。
+en:
+  body: |-
+    A creature you touch has the Invisible condition until the spell ends.

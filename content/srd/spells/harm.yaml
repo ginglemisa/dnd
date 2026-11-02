@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: harm
+name: 重傷術
+nameEn: Harm
+source: srd
+level: 6
+school: necromancy
+classes: [ cleric ]
+castingTime: [ action ]
+range: { feet: 60 }
+components: [ V, S ]
+duration: instantaneous
+srd:
+  body: |-
+    你對射程內一個你能看見的生物釋放惡毒的魔法。目標進行一次體質豁免。豁免失敗時，目標受到14d6黯蝕傷害，且其生命值上限減少的數值等於其受到的黯蝕傷害。豁免成功時，目標只受到一半傷害。此法術無法將目標的生命值上限降低到1以下。
+en:
+  body: |-
+    You unleash virulent magic on a creature you can see within range. The target makes a Constitution saving throw. On a failed save, it takes 14d6 Necrotic damage, and its Hit Point maximum is reduced by an amount equal to the Necrotic damage it took. On a successful save, it takes half as much damage only. This spell can't reduce a target's Hit Point maximum below 1.

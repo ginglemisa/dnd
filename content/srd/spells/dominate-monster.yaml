@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: dominate-monster
+name: 支配怪物
+nameEn: Dominate Monster
+source: srd
+level: 8
+school: enchantment
+classes: [ bard, sorcerer, warlock, wizard ]
+castingTime: [ action ]
+range: { feet: 60 }
+components: [ V, S ]
+duration: { hours: 1 }
+concentration: true
+srd:
+  body: |-
+    你在射程內能看見的一個生物必須成功通過感知豁免，否則在持續時間內陷入魅惑狀態。若你或你的盟友正在與目標戰鬥，目標在豁免上具有優勢。每當目標受到傷害時，它會重複進行豁免，成功則對自己結束此法術。只要你們兩者處於同一位面，你就與陷入魅惑的目標有心靈感應連結。在你的回合，你可以利用此連結對目標下達命令（不需要動作），例如「攻擊那個生物」、「移動到那邊」或「去拿那個物體」。目標會在自己的回合盡力服從。若它完成了一項命令，且沒有收到你進一步的指示，它會依自己的意願行動與移動，並專注於保護自己。
+
+    你可以命令目標採取反應動作，但你必須使用自己的反應動作才能這麼做。
+
+    _使用更高環階法術位。_ 使用9環法術位時，你的專注可以持續更久（最長8小時）。
+en:
+  body: |-
+    One creature you can see within range must succeed on a Wisdom saving throw or have the Charmed condition for the duration. The target has Advantage on the save if you or your allies are fighting it. Whenever the target takes damage, it repeats the save, ending the spell on itself on a success. You have a telepathic link with the Charmed target while the two of you are on the same plane of existence. On your turn, you can use this link to issue commands to the target (no action required), such as "Attack that creature," "Move over there," or "Fetch that object." The target does its best to obey on its turn. If it completes an order and doesn't receive further direction from you, it acts and moves as it likes, focusing on protecting itself.
+
+    You can command the target to take a Reaction but must take your own Reaction to do so.
+
+    _Using a Higher-Level Spell Slot._ Your Concentration can last longer with a level 9 spell slot (up to 8 hours).

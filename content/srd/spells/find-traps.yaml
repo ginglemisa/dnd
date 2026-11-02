@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: find-traps
+name: 尋找陷阱
+nameEn: Find Traps
+source: srd
+level: 2
+school: divination
+classes: [ cleric, druid, ranger ]
+castingTime: [ action ]
+range: { feet: 120 }
+components: [ V, S ]
+duration: instantaneous
+site:
+  body: |-
+    - 感知射程內且在你視線範圍中的任何陷阱
+    - 對此法術而言，陷阱包括任何為了造成傷害或其他危險而製作的物體或機關；因此此法術能感知警報術、守衛刻文或機械坑洞陷阱，但不會揭露地板的天然弱點、不穩定的天花板或隱藏的天然坑洞
+    - 此法術揭露陷阱存在，但不揭露其位置；你會得知所感知陷阱帶來之危險的大致性質
+srd:
+  body: |-
+    你感知到射程內位於視線範圍內的任何陷阱。就此法術而言，陷阱包括任何為造成傷害或其他危險而製作的物體或機關。因此，此法術會感知到_警報術_或_守衛刻文_法術，或機械式的陷坑陷阱，但不會揭露地板上的天然弱點、不穩固的天花板或隱藏的天坑。
+
+    此法術會揭露陷阱的存在，但不會揭露其位置。不過，你確實會得知你所感知到之陷阱所構成危險的大致性質。
+en:
+  body: |-
+    You sense any trap within range that is within line of sight. A trap, for the purpose of this spell, includes any object or mechanism that was created to cause damage or other danger. Thus, the spell would sense the _Alarm_ or _Glyph of Warding_ spell or a mechanical pit trap, but it wouldn't reveal a natural weakness in the floor, an unstable ceiling, or a hidden sinkhole.
+
+    This spell reveals that a trap is present but not its location. You do learn the general nature of the danger posed by a trap you sense.

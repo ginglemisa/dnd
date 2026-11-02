@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: conjure-elemental
+name: 元素召喚術
+nameEn: Conjure Elemental
+source: srd
+level: 5
+school: conjuration
+classes: [ druid, wizard ]
+castingTime: [ action ]
+range: { feet: 60 }
+components: [ V, S ]
+duration: { minutes: 10 }
+concentration: true
+srd:
+  body: |-
+    你召喚一個大型、無實體的靈體，它來自元素位面，出現在射程內一個未被佔據的空間。選擇該靈體的元素，這決定其傷害類型：空氣（閃電）、大地（雷鳴）、火焰（火焰）或水（冷凍）。該靈體在持續時間內存在。
+
+    每當你能看見的生物進入該靈體的空間，或在該靈體5呎內開始其回合時，若該靈體沒有任何生物處於束縛狀態，你可以強迫該生物進行一次敏捷豁免。豁免失敗時，目標受到8d8該靈體類型的傷害，且目標陷入束縛狀態，直到法術結束。在其每個回合開始時，陷入束縛狀態的目標會重複進行此豁免。
+
+    豁免失敗時，目標受到4d8該靈體類型的傷害。豁免成功時，目標不再被該靈體束縛。
+
+    _使用更高環階法術位。_ 每高於5環一環，傷害增加1d8。
+en:
+  body: |-
+    You conjure a Large, intangible spirit from the Elemental Planes that appears in an unoccupied space within range. Choose the spirit's element, which determines its damage type: air (Lightning), earth (Thunder), fire (Fire), or water (Cold). The spirit lasts for the duration.
+
+    Whenever a creature you can see enters the spirit's space or starts its turn within 5 feet of the spirit, you can force that creature to make a Dexterity saving throw if the spirit has no creature Restrained. On failed save, the target takes 8d8 damage of the spirit's type, and the target has the Restrained condition until the spell ends. At the start of each of its turns, the Restrained target repeats the save.
+
+    On a failed save, the target takes 4d8 damage of the spirit's type. On a successful save, the target isn't Restrained by the spirit.
+
+    _Using a Higher-Level Spell Slot._ The damage increases by 1d8 for each spell slot level above 5.

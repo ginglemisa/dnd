@@ -1,0 +1,95 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: control-weather
+name: 操控天氣
+nameEn: Control Weather
+source: srd
+level: 8
+school: transmutation
+classes: [ cleric, druid, wizard ]
+castingTime: [ { minutes: 10 } ]
+range: self
+components: [ V, S, M ]
+duration: { hours: 8 }
+concentration: true
+srd:
+  material: 燃燒的香
+  body: |-
+    在持續時間內，你掌控你周圍5英里內的天氣。你必須位於戶外才能施放此法術，若你進入室內，法術會提前結束。
+
+    施放法術時，你會改變目前的天氣狀況，目前狀況由DM決定。你可以改變降水、氣溫與風。新的
+
+    狀況需要1d4 × 10分鐘才會生效。一旦生效，你就可以再次改變狀況。法術結束時，天氣會逐漸恢復正常。
+
+    改變天氣狀況時，在下列表格中找出目前的狀況，並將其階段向上或向下調整一階。改變風時，你可以改變其方向。
+
+    **降水**
+
+    | 階段 | 狀況 |
+    | --- | --- |
+    | 1 | 晴朗 |
+    | 2 | 薄雲 |
+    | 3 | 陰天或地面霧 |
+    | 4 | 雨、冰雹或雪 |
+    | 5 | 傾盆大雨、猛烈冰雹或暴風雪 |
+
+    **氣溫**
+
+    | 階段 | 狀況 |
+    | --- | --- |
+    | 1 | 熱浪 |
+    | 2 | 炎熱 |
+    | 3 | 溫暖 |
+    | 4 | 涼爽 |
+    | 5 | 寒冷 |
+    | 6 | 冰凍 |
+
+    **風**
+
+    | 階段 | 狀況 |
+    | --- | --- |
+    | 1 | 無風 |
+    | 2 | 中等風 |
+    | 3 | 強風 |
+    | 4 | 烈風 |
+    | 5 | 暴風 |
+en:
+  material: burning incense
+  body: |-
+    You take control of the weather within 5 miles of you for the duration. You must be outdoors to cast this spell, and it ends early if you go indoors.
+
+    When you cast the spell, you change the current weather conditions, which are determined by the GM. You can change precipitation, temperature, and wind. It takes 1d4 × 10 minutes for the new
+
+    conditions to take effect. Once they do so, you can change the conditions again. When the spell ends, the weather gradually returns to normal.
+
+    When you change the weather conditions, find a current condition on the following tables and change its stage by one, up or down. When changing the wind, you can change its direction.
+
+    **Precipitation**
+
+    | Stage | Condition |
+    | --- | --- |
+    | 1 | Clear |
+    | 2 | Light clouds |
+    | 3 | Overcast or ground fog |
+    | 4 | Rain, hail, or snow |
+    | 5 | Torrential rain, driving hail, or blizzard |
+
+    **Temperature**
+
+    | Stage | Condition |
+    | --- | --- |
+    | 1 | Heat wave |
+    | 2 | Hot |
+    | 3 | Warm |
+    | 4 | Cool |
+    | 5 | Cold |
+    | 6 | Freezing |
+
+    **Wind**
+
+    | Stage | Condition |
+    | --- | --- |
+    | 1 | Calm |
+    | 2 | Moderate wind |
+    | 3 | Strong wind |
+    | 4 | Gale |
+    | 5 | Storm |

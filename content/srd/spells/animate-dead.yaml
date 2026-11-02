@@ -1,0 +1,43 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: animate-dead
+name: 操縱死屍
+nameEn: Animate Dead
+source: srd
+level: 3
+school: necromancy
+classes: [ cleric, wizard ]
+castingTime: [ { minutes: 1 } ]
+range: { feet: 10 }
+components: [ V, S, M ]
+duration: instantaneous
+upcast: true
+site:
+  material: 一滴血、一塊肉和一撮骨粉
+  body: |-
+    - 選擇射程內一堆骨頭，或一具中型或小型人型生物的屍體；目標成為不死生物：選擇骨頭時成為骷髏，選擇屍體時成為殭屍
+    - 在你的每個回合，可以用附贈動作以心靈命令你用此法術創造、且位於你60呎內的任何生物；控制多個生物時，可同時命令其中任意生物，並對每個生物下達相同命令
+    - 你可以決定生物在它下個回合採取的動作與移動位置，或下達一般命令，例如守衛某個房間或走廊；生物收到命令後會持續執行，直到任務完成
+    - 若你沒有下達命令，生物會執行閃避動作，且只為避開傷害而移動
+    - 生物受你控制24小時，之後不再服從你下達的任何命令
+    - 要再控制生物24小時，必須在當前24小時期限結束前再次對它施放此法術；以此方式施法時，可重新確立對至多四個你用此法術創造之生物的控制，而非創造新生物
+    - 使用更高環階法術位：每比3環高一環，可額外創造或重新控制兩個不死生物；每個生物都必須來自不同的屍體或骨堆
+srd:
+  material: 一滴血、一塊肉，以及一撮骨粉
+  body: |-
+    選擇射程內一堆骸骨，或一具中型或小型人型生物的屍體。目標會成為不死生物：若你選擇骸骨，就成為**骷髏**；若你選擇屍體，就成為**殭屍**（數據塊參見「怪物」）。
+
+    在你的每個回合，你可以用一個附贈動作在心中命令任何由此法術製造出的生物，只要該生物在你60呎內（若你控制多個生物，你可以同時命令其中任何一個，並對每一個下達相同的命令）。你決定該生物在其下個回合採取什麼動作與移動到哪裡，或者你可以下達一般性的命令，例如守衛某個房間或走廊。若你沒有下達任何命令，該生物會採取閃避動作，且只為了避開傷害而移動。一旦收到命令，該生物會持續遵從，直到完成其任務。
+
+    該生物受你控制24小時，之後它便不再服從你先前下達的任何命令。若要再維持對該生物的控制24小時，你必須在當前的24小時期間結束前，再對該生物施放此法術。這次施放會重新確立你對最多四個以此法術操縱的生物的控制，而不是操縱新的生物。
+
+    _使用更高環階法術位。_ 所用法術位的環階每比3環高一環，你就多操縱兩個不死生物，或多重新確立對兩個不死生物的控制。每個生物都必須來自不同的屍體或骸骨堆。
+en:
+  material: a drop of blood, a piece of flesh, and a pinch of bone dust
+  body: |-
+    Choose a pile of bones or a corpse of a Medium or Small Humanoid within range. The target becomes an Undead creature: a **Skeleton** if you chose bones or a **Zombie** if you chose a corpse (see "Monsters" for the stat blocks).
+
+    On each of your turns, you can take a Bonus Action to mentally command any creature you made with this spell if the creature is within 60 feet of you (if you control multiple creatures, you can command any of them at the same time, issuing the same command to each one). You decide what action the creature will take and where it will move on its next turn, or you can issue a general command, such as to guard a chamber or corridor. If you issue no commands, the creature takes the Dodge action and moves only to avoid harm. Once given an order, the creature continues to follow it until its task is complete.
+
+    The creature is under your control for 24 hours, after which it stops obeying any command you've given it. To maintain control of the creature for another 24 hours, you must cast this spell on the creature again before the current 24-hour period ends. This use of the spell reasserts your control over up to four creatures you have animated with this spell rather than animating a new creature.
+
+    _Using a Higher-Level Spell Slot._ You animate or reassert control over two additional Undead creatures for each spell slot level above 3. Each of the creatures must come from a different corpse or pile of bones.

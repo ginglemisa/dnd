@@ -1,0 +1,57 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: scrying
+name: 探知術
+nameEn: Scrying
+source: srd
+level: 5
+school: divination
+classes: [ bard, cleric, druid, warlock, wizard ]
+castingTime: [ { minutes: 10 } ]
+range: self
+components: [ V, S, M ]
+duration: { minutes: 10 }
+concentration: true
+srd:
+  material: 價值1,000+ GP的法器，例如水晶球、鏡子或盛水的水盆
+  body: |-
+    你可以看見並聽見你所選、與你位於同一位面的一個生物。目標進行一次感知豁免，該豁免會依你對目標的了解程度，以及你與它之間的實體連結類型而修正（見下表）。目標不知道自己在對抗什麼，只知道自己感到不安。
+
+    | 你對目標的了解程度為… | 豁免調整值 |
+    | --- | --- |
+    | 間接（聽說過目標） | +5 |
+    | 直接（見過目標） | +0 |
+    | 深入（十分了解目標） | −5 |
+
+    | 你持有目標的… | 豁免調整值 |
+    | --- | --- |
+    | 圖像或其他肖像 | −2 |
+    | 衣物或其他所有物 | −4 |
+    | 身體部位、一綹頭髮或一片指甲 | −10 |
+
+    豁免成功時，目標不受影響，且你在24小時內不能再對它使用此法術。
+
+    豁免失敗時，法術會在目標10呎內創造一個隱形且無實體的感應器。你可以透過該感應器看見並聽見，如同你身在那裡。感應器會隨目標移動，在持續時間內保持在目標10呎內。如果有東西能看見該感應器，它會呈現為一顆約拳頭大小的發光球體。
+
+    你也可以不以生物為目標，而是以你曾見過的某個地點為目標。這樣做時，感應器會出現在該地點，且不會移動。
+en:
+  material: a focus worth 1,000+ GP, such as a crystal ball, mirror, or water-filled font
+  body: |-
+    You can see and hear a creature you choose that is on the same plane of existence as you. The target makes a Wisdom saving throw, which is modified (see the tables below) by how well you know the target and the sort of physical connection you have to it. The target doesn't know what it is making the save against, only that it feels uneasy.
+
+    | Your Knowledge of the Target Is … | Save Modifier |
+    | --- | --- |
+    | Secondhand (heard of the target) | +5 |
+    | Firsthand (met the target) | +0 |
+    | Extensive (know the target well) | −5 |
+
+    | You Have the Target's … | Save Modifier |
+    | --- | --- |
+    | Picture or other likeness | −2 |
+    | Garment or other possession | −4 |
+    | Body part, lock of hair, or bit of nail | −10 |
+
+    On a successful save, the target isn't affected, and you can't use this spell on it again for 24 hours.
+
+    On a failed save, the spell creates an Invisible, intangible sensor within 10 feet of the target. You can see and hear through the sensor as if you were there. The sensor moves with the target, remaining within 10 feet of it for the duration. If something can see the sensor, it appears as a luminous orb about the size of your fist.
+
+    Instead of targeting a creature, you can target a location you have seen. When you do so, the sensor appears at that location and doesn't move.

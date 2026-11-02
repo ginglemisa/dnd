@@ -1,0 +1,121 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "spell.schema.json",
+  "title": "twD20 法術內容檔",
+  "description": "一個法術一個檔。頂層是規則欄位（只寫一次）；site 是網站版（有它才是角色可用的法術），srd 是 SRD 5.2.1 繁中直譯（唯讀查閱），en 是 SRD 英文原文（只供校對，不送到網站）。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "nameEn", "source", "level", "school", "classes", "castingTime", "range", "components", "duration"],
+  "definitions": {
+    "line": { "type": "string", "minLength": 1, "pattern": "^[^\\n]+$" },
+    "amount": { "type": "integer", "minimum": 1 },
+    "dice": { "type": "string", "pattern": "^\\d+d(?:4|6|8|10|12|20|100)(?:\\+\\d+)?$" },
+    "damageType": { "enum": ["acid", "bludgeoning", "cold", "fire", "force", "lightning", "necrotic", "piercing", "poison", "psychic", "radiant", "slashing", "thunder"] },
+    "textBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["body"],
+      "properties": {
+        "material": { "$ref": "#/definitions/line", "description": "材料成分的內容（components 有 M 時必填，沒有 M 時不可寫）。顯示為「材料: …」。" },
+        "trigger": { "$ref": "#/definitions/line", "description": "反應或附贈動作的觸發條件，接在施法時間後面（「反應動作，當你…」）。只有 castingTime 為 reaction 或 bonus-action 時可寫。" },
+        "body": { "type": "string", "minLength": 1, "description": "法術說明（不含開頭的學派、施法時間等標頭，標頭由規則欄位產生）。" }
+      }
+    },
+    "outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "autoOnCast"],
+      "description": "跑團施法的一項結果（擲骰或固定值）。",
+      "properties": {
+        "kind": { "enum": ["damage", "healing", "temporary-hp", "attack"], "description": "傷害、治療、臨時生命值，或攻擊檢定（attack：以施法屬性與熟練加值擲 d20）。" },
+        "attack": { "enum": ["spell", "weapon-spellcasting"], "description": "需要法術攻擊（spell），或以施法屬性進行的武器攻擊（weapon-spellcasting）。" },
+        "formula": { "$ref": "#/definitions/dice", "description": "基礎骰式，例如 2d8、1d4+1。" },
+        "fixed": { "type": "integer", "minimum": 1, "description": "固定數值（不擲骰）。" },
+        "maximizedFixed": { "type": "integer", "minimum": 1, "description": "擲滿時的固定值（邪魔活力）。" },
+        "cantripAt5": { "$ref": "#/definitions/dice", "description": "戲法：角色 5 級起改用的骰式。" },
+        "repeatAt5": { "type": "integer", "minimum": 2, "description": "戲法：角色 5 級起的次數（例如魔能爆的能量束）。" },
+        "upcastDice": { "$ref": "#/definitions/dice", "description": "每高一環增加的骰。" },
+        "upcastFixed": { "type": "integer", "minimum": 1, "description": "每高一環增加的固定值。" },
+        "abilityModifier": { "const": "spellcasting", "description": "加上施法屬性調整值。" },
+        "addSlotLevel": { "const": true, "description": "加上施法使用的環階。" },
+        "repeat": { "type": "integer", "minimum": 2, "description": "同一結果的次數（例如魔法飛彈 3 枚）。" },
+        "repeatPerSlot": { "type": "integer", "minimum": 1, "description": "每高一環增加的次數。" },
+        "repeatLabel": { "$ref": "#/definitions/line", "description": "多次結果的名稱（飛彈、射線）。" },
+        "damageType": { "$ref": "#/definitions/damageType" },
+        "damageTypes": { "type": "array", "minItems": 2, "uniqueItems": true, "items": { "$ref": "#/definitions/damageType" }, "description": "施法時選擇的傷害類型。" },
+        "modifierTags": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "enum": ["restores-hit-points", "can-restore-other-creature-hit-points"] }, "description": "供職業特性加值判斷的標記。" },
+        "autoOnCast": { "type": "boolean", "description": "施法時自動擲骰；false 表示之後才發生（只顯示資訊）。" },
+        "context": { "$ref": "#/definitions/line", "description": "擲骰結果旁的說明。" }
+      }
+    }
+  },
+  "properties": {
+    "$schema": { "type": "string" },
+    "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "description": "法術 ID（spellId），須等於檔名。會寫進存檔、分享網址與 JSON，不可改名（有 site 的公開法術列在 spell-id-baseline.json）。" },
+    "name": { "$ref": "#/definitions/line", "description": "中文名。網站已有的法術沿用網站名稱；舊存檔以名稱比對時也會用到，改名前須處理相容。" },
+    "nameEn": { "$ref": "#/definitions/line", "description": "英文名，顯示在中文名後面（「火焰箭 Fire Bolt」）。" },
+    "source": { "enum": ["srd", "extended", "private"], "description": "內容來源。srd：出自 SRD 5.2.1（須有 srd 區塊）；extended：本站另外撰寫；private：私人內容包（只放 content/private/spells/，目前尚未啟用）。" },
+    "level": { "type": "integer", "minimum": 0, "maximum": 9, "description": "環階；0 = 戲法。" },
+    "school": { "enum": ["abjuration", "conjuration", "divination", "enchantment", "evocation", "illusion", "necromancy", "transmutation"], "description": "學派：防護、咒法、預言、惑控、塑能、幻術、死靈、變化。" },
+    "classes": { "type": "array", "uniqueItems": true, "items": { "enum": ["bard", "cleric", "druid", "paladin", "ranger", "sorcerer", "warlock", "wizard"] }, "description": "哪些職業的法表有此法術（有 site 的法術以網站為準）。法表內依 ID 排序。" },
+    "castingTime": {
+      "type": "array",
+      "minItems": 1,
+      "description": "施法時間，可有多個（「動作或8小時」）：action 動作、bonus-action 附贈動作、reaction 反應動作、{ minutes: N }、{ hours: N }。儀式另寫 ritual: true。",
+      "items": {
+        "oneOf": [
+          { "enum": ["action", "bonus-action", "reaction"] },
+          { "type": "object", "additionalProperties": false, "required": ["minutes"], "properties": { "minutes": { "$ref": "#/definitions/amount" } } },
+          { "type": "object", "additionalProperties": false, "required": ["hours"], "properties": { "hours": { "$ref": "#/definitions/amount" } } }
+        ]
+      }
+    },
+    "ritual": { "const": true, "description": "可儀式施法（施法時間後加「或儀式」）。" },
+    "range": {
+      "description": "射程：self 自身、touch 觸及、sight 視線內、unlimited 無限、special 特殊、{ feet: N }、{ miles: N }。",
+      "oneOf": [
+        { "enum": ["self", "touch", "sight", "unlimited", "special"] },
+        { "type": "object", "additionalProperties": false, "required": ["feet"], "properties": { "feet": { "$ref": "#/definitions/amount" } } },
+        { "type": "object", "additionalProperties": false, "required": ["miles"], "properties": { "miles": { "$ref": "#/definitions/amount" } } }
+      ]
+    },
+    "components": { "type": "array", "uniqueItems": true, "items": { "enum": ["V", "S", "M"] }, "description": "成分，依 V、S、M 順序。有 M 時須寫 material。" },
+    "duration": {
+      "description": "持續時間：instantaneous 立即、until-dispelled 直到被解除、until-dispelled-or-triggered 直到被解除或觸發、special 特殊，或 { rounds | minutes | hours | days: N }（upTo: true 為「最長」；專注另寫 concentration）。",
+      "oneOf": [
+        { "enum": ["instantaneous", "until-dispelled", "until-dispelled-or-triggered", "special"] },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "rounds": { "$ref": "#/definitions/amount" },
+            "minutes": { "$ref": "#/definitions/amount" },
+            "hours": { "$ref": "#/definitions/amount" },
+            "days": { "$ref": "#/definitions/amount" },
+            "upTo": { "const": true }
+          }
+        }
+      ]
+    },
+    "concentration": { "const": true, "description": "需要專注（顯示為「專注，最長…」）。" },
+    "upcast": { "const": true, "description": "以更高環位施放有額外效果（跑團施法視窗可選更高環位）。" },
+    "site": {
+      "description": "網站版：玩家實際使用的版本。有這個區塊的法術才會出現在職業法表、準備法術、跑團與 PDF。",
+      "type": "object",
+      "required": ["body"],
+      "properties": {
+        "material": { "$ref": "#/definitions/textBlock/properties/material" },
+        "trigger": { "$ref": "#/definitions/textBlock/properties/trigger" },
+        "body": { "type": "string", "minLength": 1, "description": "網站版說明：以「- 」開頭的分行條列（前置兩個空白為巢狀）。不含標頭，標頭由規則欄位產生。" },
+        "tabletop": { "type": "string", "minLength": 1, "description": "跑團版說明（跑團動作分頁與跑團法術詳情）；省略時用 body。" },
+        "outcomes": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/outcome" }, "description": "跑團施法結果（擲骰按鈕）；省略時沒有自動擲骰。" }
+      },
+      "additionalProperties": false
+    },
+    "srd": { "$ref": "#/definitions/textBlock", "description": "SRD 5.2.1 繁中直譯（法術詳情的「SRD 版」，唯讀）。body 為段落（空行分隔）、_斜體小標_ 與 GFM 表格。" },
+    "en": { "$ref": "#/definitions/textBlock", "description": "SRD 英文原文，只供校對，建置不會送到網站。" },
+    "reference": { "$ref": "#/definitions/textBlock", "description": "私人法術的直譯參考（非 SRD 內容不可放在公開檔案）。目前尚未啟用。" },
+    "referenceEn": { "$ref": "#/definitions/textBlock", "description": "私人法術的英文原文，只供校對。目前尚未啟用。" }
+  }
+}

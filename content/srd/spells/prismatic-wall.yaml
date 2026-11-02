@@ -1,0 +1,54 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: prismatic-wall
+name: 虹光法牆
+nameEn: Prismatic Wall
+source: srd
+level: 9
+school: abjuration
+classes: [ bard, wizard ]
+castingTime: [ action ]
+range: { feet: 60 }
+components: [ V, S ]
+duration: { minutes: 10 }
+srd:
+  body: |-
+    一面閃耀的多彩光平面形成一道垂直的不透明牆壁（最長90呎、最高30呎、厚1吋），以射程內一點為中心。或者，你也可以將牆壁塑造成直徑最大30呎的球體，以射程內一點為中心。牆壁在持續時間內持續存在。若你將牆壁置於有生物占據的空間，法術立即結束且沒有效果。
+
+    牆壁在100呎內散發明亮光照，並在額外100呎內散發微光光照。你以及你在施展法術時指定的生物，可以無傷地穿過牆壁並靠近牆壁。若另一個能看見牆壁的生物移動到牆壁20呎內，或在該處開始其回合，該生物必須成功通過體質豁免，否則陷入失明狀態，持續1分鐘。
+
+    牆壁由七層組成，每層顏色各不相同。當生物伸手進入或穿過牆壁時，必須依序逐層穿過所有層。每一層都會迫使該生物進行一次敏捷豁免，否則會受到該層的特性影響，詳見虹光層表。
+
+    牆壁的AC為10，可以依紅到紫的順序，以各層特有的方式逐層摧毀。若某一層被摧毀，它在持續時間內都會消失。_反魔法力場_對牆壁沒有效果，_解除魔法_只能影響紫色層。
+
+    **虹光層**
+
+    | 順序 | 效果 |
+    | --- | --- |
+    | 1 | **紅色。***豁免失敗：*12d6火焰傷害。*豁免成功：*傷害減半。*額外效果：*非魔法遠程攻擊無法穿過此層，若此層受到至少25點冷凍傷害便會被摧毀。 |
+    | 2 | **橙色。***豁免失敗：*12d6強酸傷害。*豁免成功：*傷害減半。*額外效果：*魔法遠程攻擊無法穿過此層，強風（例如由*陣風術*產生的風）可摧毀此層。 |
+    | 3 | **黃色。***豁免失敗：*12d6閃電傷害。*豁免成功：*傷害減半。*額外效果：*若此層受到至少60點力場傷害便會被摧毀。 |
+    | 4 | **綠色。***豁免失敗：*12d6毒素傷害。*豁免成功：*傷害減半。*額外效果：*一個*穿牆術*法術，或另一個能在堅固表面上開啟傳送門、環階相等或更高的法術，會摧毀此層。 |
+    | 5 | **藍色。***豁免失敗：*12d6冷凍傷害。*豁免成功：*傷害減半。*額外效果：*若此層受到至少25點火焰傷害便會被摧毀。 |
+    | 6 | **靛色。***豁免失敗：*目標陷入束縛狀態，並在其每個回合結束時進行一次體質豁免。若它成功通過豁免三次，該狀態結束。若它失敗三次，它會陷入石化狀態，直到被類似*高等復原術*的效應解放。成功與失敗不必連續；持續記錄兩者，直到目標集滿三次同一種結果。*額外效果：*法術無法穿過此層施展，此層可被*日光術*法術散發的明亮光照摧毀。 |
+    | 7 | **紫色。***豁免失敗：*目標陷入失明狀態，並在你下一個回合開始時進行一次感知豁免。豁免成功時，該狀態結束。豁免失敗時，該狀態結束，且該生物被傳送到另一個位面（由DM決定）。*額外效果：*此層會被*解除魔法*摧毀。 |
+en:
+  body: |-
+    A shimmering, multicolored plane of light forms a vertical opaque wall—up to 90 feet long, 30 feet high, and 1 inch thick—centered on a point within range. Alternatively, you shape the wall into a globe up to 30 feet in diameter centered on a point within range. The wall lasts for the duration. If you position the wall in a space occupied by a creature, the spell ends instantly without effect.
+
+    The wall sheds Bright Light within 100 feet and Dim Light for an additional 100 feet. You and creatures you designate when you cast the spell can pass through and be near the wall without harm. If another creature that can see the wall moves within 20 feet of it or starts its turn there, the creature must succeed on a Constitution saving throw or have the Blinded condition for 1 minute.
+
+    The wall consists of seven layers, each with a different color. When a creature reaches into or passes through the wall, it does so one layer at a time through all the layers. Each layer forces the creature to make a Dexterity saving throw or be affected by that layer's properties as described in the Prismatic Layers table.
+
+    The wall, which has AC 10, can be destroyed one layer at a time, in order from red to violet, by means specific to each layer. If a layer is destroyed, it is gone for the duration. _Antimagic Field_ has no effect on the wall, and _Dispel Magic_ can affect only the violet layer.
+
+    **Prismatic Layers**
+
+    | Order | Effects |
+    | --- | --- |
+    | 1 | **Red.** *Failed Save:* 12d6 Fire damage. *Successful Save:* Half as much damage. *Additional Effects:* Nonmagical ranged attacks can't pass through this layer, which is destroyed if it takes at least 25 Cold damage. |
+    | 2 | **Orange.** *Failed Save:* 12d6 Acid damage. *Successful Save:* Half as much damage. *Additional Effects:* Magical ranged attacks can't pass through this layer, which is destroyed by a strong wind (such as the one created by *Gust of Wind*). |
+    | 3 | **Yellow.** *Failed Save:* 12d6 Lightning damage. *Successful Save:* Half as much damage. *Additional Effects:* The layer is destroyed if it takes at least 60 Force damage. |
+    | 4 | **Green.** *Failed Save:* 12d6 Poison damage. *Successful Save:* Half as much damage. *Additional Effects:* A *Passwall* spell, or another spell of equal or greater level that can open a portal on a solid surface, destroys this layer. |
+    | 5 | **Blue.** *Failed Save:* 12d6 Cold damage. *Successful Save:* Half as much damage. *Additional Effects:* The layer is destroyed if it takes at least 25 Fire damage. |
+    | 6 | **Indigo.** *Failed Save:* The target has the Restrained condition and makes a Constitution saving throw at the end of each of its turns. If it successfully saves three times, the condition ends. If it fails three times, it has the Petrified condition until it is freed by an effect like the *Greater Restoration* spell. The successes and failures needn't be consecutive; keep track of both until the target collects three of a kind. *Additional Effects:* Spells can't be cast through this layer, which is destroyed by Bright Light shed by the *Daylight* spell. |
+    | 7 | **Violet.** *Failed Save:* The target has the Blinded condition and makes a Wisdom saving throw at the start of your next turn. On a successful save, the condition ends. On a failed save, the condition ends, and the creature teleports to another plane of existence (GM's choice). *Additional Effects:* This layer is destroyed by *Dispel Magic*. |

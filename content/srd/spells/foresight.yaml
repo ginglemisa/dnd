@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: foresight
+name: 預警術
+nameEn: Foresight
+source: srd
+level: 9
+school: divination
+classes: [ bard, druid, warlock, wizard ]
+castingTime: [ { minutes: 1 } ]
+range: touch
+components: [ V, S, M ]
+duration: { hours: 8 }
+srd:
+  material: 一根蜂鳥羽毛
+  body: |-
+    你觸碰一個自願的生物，賜予其一種有限的預見近未來的能力。在持續時間內，目標在D20檢定上具有優勢，其他生物對它進行的攻擊檢定具有劣勢。若你再次施展此法術，法術提前結束。
+en:
+  material: a hummingbird feather
+  body: |-
+    You touch a willing creature and bestow a limited ability to see into the immediate future. For the duration, the target has Advantage on D20 Tests, and other creatures have Disadvantage on attack rolls against it. The spell ends early if you cast it again.

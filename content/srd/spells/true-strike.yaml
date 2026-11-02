@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: true-strike
+name: 克敵機先
+nameEn: True Strike
+source: srd
+level: 0
+school: divination
+classes: [ bard, sorcerer, warlock, wizard ]
+castingTime: [ action ]
+range: self
+components: [ S, M ]
+duration: instantaneous
+site:
+  material: 一把你具有熟練且價值至少1 CP的武器
+  outcomes:
+    - { kind: attack, attack: weapon-spellcasting, autoOnCast: true, context: 使用熟練武器，以施法屬性進行攻擊；武器額外命中加值及傷害依術文另行處理（5 級起額外 1d6 光耀傷害） }
+  body: |-
+    - 以施法時使用的武器進行一次攻擊
+    - 該攻擊的攻擊檢定與傷害擲骰使用你的施法屬性，而非力量或敏捷
+    - 若攻擊造成傷害，傷害類型可以是光耀或武器的一般傷害類型（由你選擇）
+    - 戲法升級：5級時，無論造成光耀傷害或武器的一般傷害類型，攻擊都額外造成1d6光耀傷害
+srd:
+  material: 你具有熟練的武器，且價值至少1 CP
+  body: |-
+    在一道魔法洞察的閃現引導下，你使用施放此法術時所用的武器進行一次攻擊。此攻擊的攻擊檢定與傷害骰使用你的施法屬性，而非力量或敏捷。若此攻擊造成傷害，可以是光耀傷害，或該武器的一般傷害類型（由你選擇）。
+
+    _戲法升級。_ 無論你造成的是光耀傷害或該武器的一般傷害類型，當你達到5級（1d6）、11級（2d6）與17級（3d6）時，此攻擊會額外造成光耀傷害。
+en:
+  material: a weapon with which you have proficiency and that is worth 1+ CP
+  body: |-
+    Guided by a flash of magical insight, you make one attack with the weapon used in the spell's casting. The attack uses your spellcasting ability for the attack and damage rolls instead of using Strength or Dexterity. If the attack deals damage, it can be Radiant damage or the weapon's normal damage type (your choice).
+
+    _Cantrip Upgrade._ Whether you deal Radiant damage or the weapon's normal damage type, the attack deals extra Radiant damage when you reach levels 5 (1d6), 11 (2d6), and 17 (3d6).

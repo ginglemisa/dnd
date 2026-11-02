@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: hunters-mark
+name: 獵人印記
+nameEn: Hunter’s Mark
+source: srd
+level: 1
+school: divination
+classes: [ ranger ]
+castingTime: [ bonus-action ]
+range: { feet: 90 }
+components: [ V ]
+duration: { hours: 1 }
+concentration: true
+upcast: true
+site:
+  outcomes:
+    - { kind: damage, formula: 1d6, damageType: force, autoOnCast: false, context: 之後攻擊命中標記目標時 }
+  body: |-
+    - 以魔法將射程內一個你能看見的生物標記為獵物
+    - 法術結束前，每當你以攻擊檢定命中目標時，額外對它造成1d6力場傷害
+    - 你為了找到目標而進行的任何感知（察覺或求生）檢定具有優勢
+    - 若目標在法術結束前生命值降為0，你可以用附贈動作將印記轉移到射程內另一個你能看見的生物
+    - 使用更高環階法術位：以3～4環法術位施放時專注最長8小時；以5環或更高法術位施放時專注最長24小時
+srd:
+  body: |-
+    你以魔法將射程內一隻你能看見的生物標記為你的獵物。在法術結束前，每當你以攻擊檢定擊中該目標時，就對其造成額外1d6力場傷害。你為了尋找它而進行的任何感知（察覺或求生）檢定也具有優勢。
+
+    若目標在此法術結束前生命值降至0，你可以用一個附贈動作將印記移到另一隻你在射程內能看見的新生物身上。
+
+    _使用更高環階法術位。_ 使用3–4環法術位時，你的專注最長可持續8小時；使用5環以上法術位時，最長可持續24小時。
+en:
+  body: |-
+    You magically mark one creature you can see within range as your quarry. Until the spell ends, you deal an extra 1d6 Force damage to the target whenever you hit it with an attack roll. You also have Advantage on any Wisdom (Perception or Survival) check you make to find it.
+
+    If the target drops to 0 Hit Points before this spell ends, you can take a Bonus Action to move the mark to a new creature you can see within range.
+
+    _Using a Higher-Level Spell Slot._ Your Concentration can last longer with a spell slot of level 3–4 (up to 8 hours) or 5+ (up to 24 hours).

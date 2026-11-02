@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: regenerate
+name: 再生術
+nameEn: Regenerate
+source: srd
+level: 7
+school: transmutation
+classes: [ bard, cleric, druid ]
+castingTime: [ { minutes: 1 } ]
+range: touch
+components: [ V, S, M ]
+duration: { hours: 1 }
+srd:
+  material: 一個轉經輪
+  body: |-
+    你接觸的生物恢復4d8 + 15點生命值。在持續時間內，目標在其每個回合開始時恢復1點生命值，且任何被切斷的身體部位會在2分鐘後重新長出。
+en:
+  material: a prayer wheel
+  body: |-
+    A creature you touch regains 4d8 + 15 Hit Points. For the duration, the target regains 1 Hit Point at the start of each of its turns, and any severed body parts regrow after 2 minutes.

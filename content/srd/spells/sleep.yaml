@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: sleep
+name: 睡眠術
+nameEn: Sleep
+source: srd
+level: 1
+school: enchantment
+classes: [ bard, sorcerer, wizard ]
+castingTime: [ action ]
+range: { feet: 60 }
+components: [ V, S, M ]
+duration: { minutes: 1 }
+concentration: true
+site:
+  material: 一撮沙子或玫瑰花瓣
+  body: |-
+    - 以射程內一點為中心、半徑5呎的球形區域內，每個你選擇的生物須進行感知豁免
+    - 豁免失敗時，目標陷入失能狀態，直到它下個回合結束；屆時它必須再進行一次感知豁免
+    - 第二次豁免也失敗時，目標在持續時間內陷入昏迷狀態
+    - 目標受到傷害，或其5呎內有人使用一個動作搖醒它時，法術對該目標結束
+    - 不需睡眠的生物（例如精靈），或免疫力竭狀態的生物，對此法術的豁免自動成功
+srd:
+  material: 一小撮沙子或玫瑰花瓣
+  body: |-
+    以射程內一點為中心、半徑5呎的球形區域內，你選擇的每個生物都必須通過一次感知豁免，否則陷入失能狀態，直到其下個回合結束，屆時它必須再次進行豁免。若目標第二次豁免失敗，則在持續時間內陷入昏迷狀態。若目標受到傷害，或其5呎內有人以一個動作將其搖醒而脫離法術效果，則法術對該目標結束。
+
+    不需睡眠的生物（例如精靈），或對力竭狀態具有免疫的生物，會自動通過對抗此法術的豁免。
+en:
+  material: a pinch of sand or rose petals
+  body: |-
+    Each creature of your choice in a 5-foot-radius Sphere centered on a point within range must succeed on a Wisdom saving throw or have the Incapacitated condition until the end of its next turn, at which point it must repeat the save. If the target fails the second save, the target has the Unconscious condition for the duration. The spell ends on a target if it takes damage or someone within 5 feet of it takes an action to shake it out of the spell's effect.
+
+    Creatures that don't sleep, such as elves, or that have Immunity to the Exhaustion condition automatically succeed on saves against this spell.

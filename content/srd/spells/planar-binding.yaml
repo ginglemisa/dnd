@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: planar-binding
+name: 異界束縛
+nameEn: Planar Binding
+source: srd
+level: 5
+school: abjuration
+classes: [ bard, cleric, druid, warlock, wizard ]
+castingTime: [ { hours: 1 } ]
+range: { feet: 60 }
+components: [ V, S, M ]
+duration: { hours: 24 }
+srd:
+  material: 價值1,000+ GP的珠寶，法術會將其消耗
+  body: |-
+    你嘗試束縛一個天界生物、元素生物、精類或邪魔為你效力。該生物必須在整個施法過程中位於射程內。（通常會先把該生物召喚到反向版本的_防護法陣_法術的中心以困住它，再施放此法術。）施法完成時，目標必須成功通過魅力豁免，否則會在持續時間內被束縛而為你效力。如果該生物是由另一個法術召喚或創造的，該法術的持續時間會延長至與此法術的持續時間相同。
+
+    被束縛的生物必須盡其所能遵從你的命令。你可以命令該生物陪你冒險、守衛某個地點，或傳遞訊息。如果該生物是敵對的，它會設法曲解你的命令以達成自己的目的。如果該生物在法術結束前完全執行了你的命令，且你與它在同一個位面，它會前來向你回報此事。如果你在不同的位面，它會回到你束縛它的地方，並停留在那裡直到法術結束。
+
+    _使用更高環階法術位。_ 使用6環（10天）、7環（30天）、8環（180天）及9環（366天）的法術位時，持續時間會增加。
+en:
+  material: a jewel worth 1,000+ GP, which the spell consumes
+  body: |-
+    You attempt to bind a Celestial, an Elemental, a Fey, or a Fiend to your service. The creature must be within range for the entire casting of the spell. (Typically, the creature is first summoned into the center of the inverted version of the _Magic Circle_ spell to trap it while this spell is cast.) At the completion of the casting, the target must succeed on a Charisma saving throw or be bound to serve you for the duration. If the creature was summoned or created by another spell, that spell's duration is extended to match the duration of this spell.
+
+    A bound creature must follow your commands to the best of its ability. You might command the creature to accompany you on an adventure, to guard a location, or to deliver a message. If the creature is Hostile, it strives to twist your commands to achieve its own objectives. If the creature carries out your commands completely before the spell ends, it travels to you to report this fact if you are on the same plane of existence. If you are on a different plane, it returns to the place where you bound it and remains there until the spell ends.
+
+    _Using a Higher-Level Spell Slot._ The duration increases with a spell slot of level 6 (10 days), 7 (30 days), 8 (180 days), and 9 (366 days).

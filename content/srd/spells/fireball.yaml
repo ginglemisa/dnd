@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: fireball
+name: 火球術
+nameEn: Fireball
+source: srd
+level: 3
+school: evocation
+classes: [ sorcerer, wizard ]
+castingTime: [ action ]
+range: { feet: 150 }
+components: [ V, S, M ]
+duration: instantaneous
+upcast: true
+site:
+  material: 一團蝙蝠糞與硫磺
+  outcomes:
+    - { kind: damage, formula: 8d6, upcastDice: 1d6, damageType: fire, autoOnCast: true, context: 區域傷害擲一次；豁免依規則處理 }
+  body: |-
+    - 一道亮光從你射向射程內你選擇的一點，隨後伴隨低沉轟鳴爆發成火焰爆炸
+    - 以該點為中心、半徑20呎的球形區域內，每個生物須進行敏捷豁免；失敗時受到8d6火焰傷害，成功時傷害減半
+    - 區域內未被穿戴或攜帶的易燃物體開始燃燒
+    - 使用更高環階法術位：每比3環高一環，傷害增加1d6
+srd:
+  material: 一小團蝙蝠糞與硫磺
+  body: |-
+    一道明亮的光束從你身上射向你在射程內選定的一點，隨後在低沉的轟鳴聲中綻放為火焰爆炸。以該點為中心、半徑20呎的球形區域內的每個生物都要進行一次敏捷豁免，豁免失敗者受到8d6火焰傷害，成功者受到一半傷害。
+
+    該區域內未被穿戴或攜帶的可燃物體會開始燃燒。
+
+    _使用更高環階法術位。_ 法術位環階每比3環高一環，傷害增加1d6。
+en:
+  material: a ball of bat guano and sulfur
+  body: |-
+    A bright streak flashes from you to a point you choose within range and then blossoms with a low roar into a fiery explosion. Each creature in a 20-foot-radius Sphere centered on that point makes a Dexterity saving throw, taking 8d6 Fire damage on a failed save or half as much damage on a successful one.
+
+    Flammable objects in the area that aren't being worn or carried start burning.
+
+    _Using a Higher-Level Spell Slot._ The damage increases by 1d6 for each spell slot level above 3.

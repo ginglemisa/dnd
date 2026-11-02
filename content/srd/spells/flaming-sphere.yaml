@@ -1,0 +1,46 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: flaming-sphere
+name: 熾焰法球
+nameEn: Flaming Sphere
+source: srd
+level: 2
+school: evocation
+classes: [ druid, sorcerer, wizard ]
+castingTime: [ action ]
+range: { feet: 60 }
+components: [ V, S, M ]
+duration: { minutes: 1 }
+concentration: true
+upcast: true
+site:
+  material: 一顆蠟球
+  outcomes:
+    - { kind: damage, formula: 2d6, upcastDice: 1d6, damageType: fire, autoOnCast: false, context: 生物回合結束或法球移入其空間時 }
+  body: |-
+    - 在射程內地面上一個未被佔據的空間創造直徑5呎的火焰球體，持續到法術結束
+    - 在球體5呎內結束回合的任何生物須進行敏捷豁免；失敗時受到2d6火焰傷害，成功時傷害減半
+    - 附贈動作：可讓球體沿地面滾動，移動至多30呎；若你將球體移入某生物的空間，該生物須對球體進行此豁免，且球體在該回合停止移動
+    - 移動球體時，可讓它越過至多5呎高的障礙，並跳過至多10呎寬的坑洞
+    - 被球體碰觸、未被穿戴或攜帶的易燃物體開始燃燒
+    - 球體發出半徑20呎的明亮光照，並在其外額外20呎發出微光光照
+    - 使用更高環階法術位：每比2環高一環，傷害增加1d6
+srd:
+  material: 一團蠟球
+  body: |-
+    你在射程內地面上一個未被佔據的空間中創造一顆直徑5呎的火球，它在持續時間內存在。任何在其回合結束時位於法球5呎內的生物，進行一次敏捷豁免，豁免失敗時受到2d6火焰傷害，豁免成功時傷害減半。
+
+    你可以用附贈動作移動法球最多30呎，讓它沿著地面滾動。如果你把法球移入某個生物的空間，該生物要針對法球進行豁免，且法球在本回合停止移動。
+
+    你移動法球時，可以引導它越過最高5呎的障礙，並讓它跳過最寬10呎的坑洞。未被穿戴或攜帶的易燃物體若被法球碰觸會開始燃燒，而法球會在半徑20呎內發出明亮光照，並在額外20呎內發出微光光照。
+
+    _使用更高環階法術位。_ 法術位環階每比2環高一環，傷害增加1d6。
+en:
+  material: a ball of wax
+  body: |-
+    You create a 5-foot-diameter sphere of fire in an unoccupied space on the ground within range. It lasts for the duration. Any creature that ends its turn within 5 feet of the sphere makes a Dexterity saving throw, taking 2d6 Fire damage on a failed save or half as much damage on a successful one.
+
+    As a Bonus Action, you can move the sphere up to 30 feet, rolling it along the ground. If you move the sphere into a creature's space, that creature makes the save against the sphere, and the sphere stops moving for the turn.
+
+    When you move the sphere, you can direct it over barriers up to 5 feet tall and jump it across pits up to 10 feet wide. Flammable objects that aren't being worn or carried start burning if touched by the sphere, and it sheds Bright Light in a 20-foot radius and Dim Light for an additional 20 feet.
+
+    _Using a Higher-Level Spell Slot._ The damage increases by 1d6 for each spell slot level above 2.

@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: feather-fall
+name: 羽落術
+nameEn: Feather Fall
+source: srd
+level: 1
+school: transmutation
+classes: [ bard, sorcerer, wizard ]
+castingTime: [ reaction ]
+range: { feet: 60 }
+components: [ V, M ]
+duration: { minutes: 1 }
+site:
+  material: 一根小羽毛或一片絨毛
+  trigger: 當你或你能看見且位於你60呎內的一個生物墜落時
+  body: |-
+    - 選擇射程內至多五個正在墜落的生物
+    - 法術結束前，墜落生物的下降速率減緩為每輪60呎
+    - 若生物在法術結束前落地，它不會受到墜落傷害，且法術對該生物結束
+srd:
+  material: 一根小羽毛或一小塊絨羽
+  trigger: 當你或你60呎內你能看見的生物墜落時
+  body: |-
+    在射程內選擇最多五個正在墜落的生物。在法術結束前，墜落生物的下降速度減緩為每輪60呎。若生物在法術結束前著地，該生物不會因墜落受到傷害，且法術對該生物結束。
+en:
+  material: a small feather or piece of down
+  trigger: which you take when you or a creature you can see within 60 feet of you falls
+  body: |-
+    Choose up to five falling creatures within range. A falling creature's rate of descent slows to 60 feet per round until the spell ends. If a creature lands before the spell ends, the creature takes no damage from the fall, and the spell ends for that creature.

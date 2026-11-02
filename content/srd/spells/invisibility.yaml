@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: invisibility
+name: 隱形術
+nameEn: Invisibility
+source: srd
+level: 2
+school: illusion
+classes: [ bard, sorcerer, warlock, wizard ]
+castingTime: [ action ]
+range: touch
+components: [ V, S, M ]
+duration: { hours: 1 }
+concentration: true
+upcast: true
+site:
+  material: 一根包在阿拉伯膠中的睫毛
+  body: |-
+    - 你觸碰的一個生物陷入隱形狀態，直到法術結束
+    - 目標進行攻擊檢定、造成傷害或施放法術後，法術立即提前結束
+    - 使用更高環階法術位：每比2環高一環，可額外以一個生物為目標
+srd:
+  material: 浸在阿拉伯膠中的一根睫毛
+  body: |-
+    你接觸的一個生物陷入隱形狀態，直到法術結束。目標進行攻擊檢定、造成傷害或施放法術後，法術立即提前結束。
+
+    _使用更高環階法術位。_ 法術位環階每比2環高一環，你可以多指定一個生物為目標。
+en:
+  material: an eyelash in gum arabic
+  body: |-
+    A creature you touch has the Invisible condition until the spell ends. The spell ends early immediately after the target makes an attack roll, deals damage, or casts a spell.
+
+    _Using a Higher-Level Spell Slot._ You can target one additional creature for each spell slot level above 2.

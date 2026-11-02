@@ -1,0 +1,44 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: magic-jar
+name: 魔魂壺
+nameEn: Magic Jar
+source: srd
+level: 6
+school: necromancy
+classes: [ wizard ]
+castingTime: [ { minutes: 1 } ]
+range: self
+components: [ V, S, M ]
+duration: until-dispelled
+srd:
+  material: 價值500+ GP的寶石、水晶或聖物匣
+  body: |-
+    你的身體陷入僵直狀態，而你的靈魂離開身體，進入你用作法術材料成分的容器。當你的靈魂居於容器中時，你能察覺周遭環境，彷彿身處於容器所在的空間。你無法移動，也無法採取反應動作。你唯一能採取的行動，是將靈魂投射到離容器最多100呎之處，或是回到你仍活著的身體（並結束法術），或是嘗試附身於一個人型生物的身體。
+
+    你可以嘗試附身於距你100呎內任何你能看見的人型生物（受到_防護善惡_或_防護法陣_法術守護的生物無法被附身）。目標進行一次魅力豁免。豁免失敗時，你的靈魂進入目標的身體，而目標的靈魂被困在容器中。豁免成功時，目標抵抗了你的附身企圖，且你在24小時內無法再次嘗試附身於它。
+
+    一旦你附身於某個生物的身體，便由你控制它。你的生命值、生命骰、力量、敏捷、體質、速度與感官會被該生物的取代。其餘部分你保留自己的遊戲數值。
+
+    同時，被附身的生物的靈魂可以用自己的感官從容器中感知，但它無法移動，且陷入失能狀態。
+
+    附身於身體期間，若容器在你100呎內，你可以用一個魔法動作從宿主身體返回容器，並使宿主生物的靈魂回到其身體。若宿主身體在你位於其中時死亡，該生物便會死亡，而你要針對自己的法術豁免DC進行一次魅力豁免。成功時，若容器在你100呎內，你便返回容器。否則，你死亡。
+
+    若容器被摧毀或法術結束，你的靈魂會回到你的身體。若你的身體距離你超過100呎，或你的身體已經死亡，你便會死亡。若容器被摧毀時有其他生物的靈魂在其中，且該生物的身體仍然活著並在100呎內，該生物的靈魂會回到其身體。否則，該生物死亡。
+
+    法術結束時，容器會被摧毀。
+en:
+  material: a gem, crystal, or reliquary worth 500+ GP
+  body: |-
+    Your body falls into a catatonic state as your soul leaves it and enters the container you used for the spell's Material component. While your soul inhabits the container, you are aware of your surroundings as if you were in the container's space. You can't move or take Reactions. The only action you can take is to project your soul up to 100 feet out of the container, either returning to your living body (and ending the spell) or attempting to possess a Humanoid's body.
+
+    You can attempt to possess any Humanoid within 100 feet of you that you can see (creatures warded by a _Protection from Evil and Good_ or _Magic Circle_ spell can't be possessed). The target makes a Charisma saving throw. On a failed save, your soul enters the target's body, and the target's soul becomes trapped in the container. On a successful save, the target resists your efforts to possess it, and you can't attempt to possess it again for 24 hours.
+
+    Once you possess a creature's body, you control it. Your Hit Points, Hit Point Dice, Strength, Dexterity, Constitution, Speed, and senses are replaced by the creature's. You otherwise keep your game statistics.
+
+    Meanwhile, the possessed creature's soul can perceive from the container using its own senses, but it can't move and it is Incapacitated.
+
+    While possessing a body, you can take a Magic action to return from the host body to the container if it is within 100 feet of you, returning the host creature's soul to its body. If the host body dies while you're in it, the creature dies, and you make a Charisma saving throw against your own spellcasting DC. On a success, you return to the container if it is within 100 feet of you. Otherwise, you die.
+
+    If the container is destroyed or the spell ends, your soul returns to your body. If your body is more than 100 feet away from you or if your body is dead, you die. If another creature's soul is in the container when it is destroyed, the creature's soul returns to its body if the body is alive and within 100 feet. Otherwise, that creature dies.
+
+    When the spell ends, the container is destroyed.

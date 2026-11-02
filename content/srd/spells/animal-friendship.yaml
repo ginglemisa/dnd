@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: animal-friendship
+name: 化獸為友
+nameEn: Animal Friendship
+source: srd
+level: 1
+school: enchantment
+classes: [ bard, druid, ranger ]
+castingTime: [ action ]
+range: { feet: 30 }
+components: [ V, S, M ]
+duration: { hours: 24 }
+upcast: true
+site:
+  material: 一小口食物
+  body: |-
+    - 以射程內一隻你能看見的野獸為目標
+    - 目標須進行感知豁免；失敗時在持續時間內陷入魅惑狀態
+    - 若你或你的任一盟友對目標造成傷害，法術結束
+    - 使用更高環階法術位：每比1環高一環，可額外以一隻野獸為目標
+srd:
+  material: 一小塊食物
+  body: |-
+    以射程內一隻你看得見的野獸為目標。該目標必須成功通過感知豁免，否則在持續時間內陷入魅惑狀態。若你或你的盟友對該目標造成傷害，法術結束。
+
+    _使用更高環階法術位。_ 每比1環高一環，你可以多以一隻野獸為目標。
+en:
+  material: a morsel of food
+  body: |-
+    Target a Beast that you can see within range. The target must succeed on a Wisdom saving throw or have the Charmed condition for the duration. If you or one of your allies deals damage to the target, the spells ends.
+
+    _Using a Higher-Level Spell Slot._ You can target one additional Beast for each spell slot level above 1.

@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: cone-of-cold
+name: 寒冰錐
+nameEn: Cone of Cold
+source: srd
+level: 5
+school: evocation
+classes: [ druid, sorcerer, wizard ]
+castingTime: [ action ]
+range: self
+components: [ V, S, M ]
+duration: instantaneous
+srd:
+  material: 一個小型水晶或玻璃錐
+  body: |-
+    你釋放出一波冷空氣。以你為起點的60呎錐形區域內的每個生物都要進行一次體質豁免，豁免失敗時受到8d8冷凍傷害，成功則受到一半傷害。被此法術殺死的生物會變成一座冰凍雕像，直到解凍為止。
+
+    _使用更高環階法術位。_ 每高於5環一環，傷害增加1d8。
+en:
+  material: a small crystal or glass cone
+  body: |-
+    You unleash a blast of cold air. Each creature in a 60-foot Cone originating from you makes a Constitution saving throw, taking 8d8 Cold damage on a failed save or half as much damage on a successful one. A creature killed by this spell becomes a frozen statue until it thaws.
+
+    _Using a Higher-Level Spell Slot._ The damage increases by 1d8 for each spell slot level above 5.

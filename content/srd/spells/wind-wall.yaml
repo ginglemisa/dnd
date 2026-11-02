@@ -1,0 +1,42 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: wind-wall
+name: 風牆術
+nameEn: Wind Wall
+source: srd
+level: 3
+school: evocation
+classes: [ druid ]
+castingTime: [ action ]
+range: { feet: 120 }
+components: [ V, S, M ]
+duration: { minutes: 1 }
+concentration: true
+site:
+  material: 一把扇子和一根羽毛
+  outcomes:
+    - { kind: damage, formula: 4d8, damageType: bludgeoning, autoOnCast: true, context: 風牆出現時的區域傷害擲一次；豁免依規則處理 }
+  body: |-
+    - 一道強風之牆從射程內你選擇的地面一點升起；牆至多長50呎、高15呎、厚1呎，形狀可任意決定，只要沿地面形成一條連續路徑；牆持續到法術結束
+    - 牆出現時，其區域內每個生物須進行力量豁免；失敗時受到4d8鈍擊傷害，成功時傷害減半
+    - 強風效果：
+      - 擋住霧、煙及其他氣體
+      - 小型或更小的飛行生物或物體無法穿過牆
+      - 被帶進牆中的鬆散輕質物品會向上飛起
+      - 射向牆後目標的箭、弩矢及其他一般投射物會被向上偏轉而自動未命中；巨人或攻城器械投擲的巨石及類似投射物不受影響
+      - 氣體形態的生物無法穿過牆
+srd:
+  material: 一把扇子和一根羽毛
+  body: |-
+    一道強風之牆從射程內你選擇的一點的地面升起。你可以讓這道牆最長達50呎長、15呎高、1呎厚。你可以隨意塑造這道牆的形狀，只要它沿著地面形成一條連續的路徑即可。這道牆在持續時間內持續存在。
+
+    當牆出現時，其區域內的每個生物都要進行一次力量豁免，豁免失敗時受到4d8鈍擊傷害，成功則傷害減半。
+
+    強風使霧、煙及其他氣體無法靠近。小型或更小的飛行生物或物體無法穿過這道牆。被帶入牆內的鬆散輕質材料會向上飛起。朝牆後目標發射的箭矢、弩矢及其他一般投射物會被向上偏轉，並自動未命中。由巨人投擲的巨石、攻城器械及類似的投射物則不受影響。處於氣態形體的生物無法穿過它。
+en:
+  material: a fan and a feather
+  body: |-
+    A wall of strong wind rises from the ground at a point you choose within range. You can make the wall up to 50 feet long, 15 feet high, and 1 foot thick. You can shape the wall in any way you choose so long as it makes one continuous path along the ground. The wall lasts for the duration.
+
+    When the wall appears, each creature in its area makes a Strength saving throw, taking 4d8 Bludgeoning damage on a failed save or half as much damage on a successful one.
+
+    The strong wind keeps fog, smoke, and other gases at bay. Small or smaller flying creatures or objects can't pass through the wall. Loose, lightweight materials brought into the wall fly upward. Arrows, bolts, and other ordinary projectiles launched at targets behind the wall are deflected upward and miss automatically. Boulders hurled by Giants or siege engines, and similar projectiles, are unaffected. Creatures in gaseous form can't pass through it.

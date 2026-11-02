@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: mage-hand
+name: 法師之手
+nameEn: Mage Hand
+source: srd
+level: 0
+school: conjuration
+classes: [ bard, sorcerer, warlock, wizard ]
+castingTime: [ action ]
+range: { feet: 30 }
+components: [ V, S ]
+duration: { minutes: 1 }
+site:
+  body: |-
+    - 在射程內你選擇的一點出現一隻漂浮的幽靈手掌，持續到法術結束
+    - 手掌距離你超過30呎，或你再次施放此法術時，手掌消失
+    - 施法時，可以用手掌操作物體、打開未上鎖的門或容器、從開啟的容器中收起或取出物品，或倒出小瓶中的內容物
+    - 在你之後的回合，可以用魔法動作再次如此操控手掌，並在該動作中將手掌移動至多30呎
+    - 手掌不能攻擊、啟動魔法物品，也不能攜帶超過10磅的物品
+srd:
+  body: |-
+    一隻幽靈般的漂浮之手出現在射程內你所選擇的一點。這隻手在持續時間內存在。若這隻手離你超過30呎，或你再次施放此法術，這隻手就會消失。
+
+    當你施放此法術時，你可以用這隻手操作一個物體、打開一扇未上鎖的門或容器、把物品放進開啟的容器內或從中取出，或把小瓶中的內容物倒出。
+
+    在你之後的回合中，你可以用魔法動作再次如此控制這隻手。作為該動作的一部分，你可以將這隻手移動最多30呎。
+
+    這隻手無法攻擊、無法啟動魔法物品，也無法攜帶超過10磅的重量。
+en:
+  body: |-
+    A spectral, floating hand appears at a point you choose within range. The hand lasts for the duration. The hand vanishes if it is ever more than 30 feet away from you or if you cast this spell again.
+
+    When you cast the spell, you can use the hand to manipulate an object, open an unlocked door or container, stow or retrieve an item from an open container, or pour the contents out of a vial.
+
+    As a Magic action on your later turns, you can control the hand thus again. As part of that action, you can move the hand up to 30 feet.
+
+    The hand can't attack, activate magic items, or carry more than 10 pounds.

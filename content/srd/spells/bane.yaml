@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: bane
+name: 災禍術
+nameEn: Bane
+source: srd
+level: 1
+school: enchantment
+classes: [ bard, cleric, warlock ]
+castingTime: [ action ]
+range: { feet: 30 }
+components: [ V, S, M ]
+duration: { minutes: 1 }
+concentration: true
+upcast: true
+site:
+  material: 一滴血
+  body: |-
+    - 射程內至多三個你選擇且你能看見的生物，各須進行魅力豁免
+    - 豁免失敗的目標在法術結束前每次進行攻擊檢定或豁免檢定時，必須從該檢定結果減去1d4
+    - 使用更高環階法術位：每比1環高一環，可額外以一個生物為目標
+srd:
+  material: 一滴血
+  body: |-
+    你選擇射程內最多三個你看得見的生物，各自必須進行魅力豁免。在法術結束前，每當豁免失敗的目標進行攻擊檢定或豁免時，該目標必須從該攻擊檢定或豁免中減去1d4。
+
+    _使用更高環階法術位。_ 每比1環高一環，你可以多以一個生物為目標。
+en:
+  material: a drop of blood
+  body: |-
+    Up to three creatures of your choice that you can see within range must each make a Charisma saving throw. Whenever a target that fails this save makes an attack roll or a saving throw before the spell ends, the target must subtract 1d4 from the attack roll or save.
+
+    _Using a Higher-Level Spell Slot._ You can target one additional creature for each spell slot level above 1.

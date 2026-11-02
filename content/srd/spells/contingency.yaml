@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: contingency
+name: 觸發術
+nameEn: Contingency
+source: srd
+level: 6
+school: abjuration
+classes: [ wizard ]
+castingTime: [ { minutes: 10 } ]
+range: self
+components: [ V, S, M ]
+duration: { days: 10 }
+srd:
+  material: 一尊鑲嵌寶石、形似你自己的小雕像，價值1,500 GP以上
+  body: |-
+    選擇一個你能施展、施法時間為動作、且能以你為目標的5環或更低環的法術。你在施放「觸發術」時一併施放該法術（稱為預備法術），並同時消耗兩者的法術位，但預備法術並不生效。相反地，它會在某個特定觸發條件發生時才生效。你在施放這兩個法術時描述該觸發條件。例如，搭配「水下呼吸」施放的「觸發術」，可以規定當你被水或類似液體淹沒時，「水下呼吸」開始生效。
+
+    預備法術會在觸發條件第一次發生後立即生效，無論你是否希望如此，隨後「觸發術」結束。
+
+    預備法術只對你自己生效，即使它通常可以指定其他人為目標。你同一時間只能使用一個「觸發術」法術。如果你再次施放此法術，你身上另一個「觸發術」的效果就會結束。此外，若其材料成分不在你身上，你身上的「觸發術」也會結束。
+en:
+  material: a gem-encrusted statuette of yourself worth 1,500+ GP
+  body: |-
+    Choose a spell of level 5 or lower that you can cast, that has a casting time of an action, and that can target you. You cast that spell—called the contingent spell—as part of casting _Contingency_, expending spell slots for both, but the contingent spell doesn't come into effect. Instead, it takes effect when a certain trigger occurs. You describe that trigger when you cast the two spells. For example, a _Contingency_ cast with _Water Breathing_ might stipulate that _Water Breathing_ comes into effect when you are engulfed in water or a similar liquid.
+
+    The contingent spell takes effect immediately after the trigger occurs for the first time, whether or not you want it to, and then _Contingency_ ends.
+
+    The contingent spell takes effect only on you, even if it can normally target others. You can use only one _Contingency_ spell at a time. If you cast this spell again, the effect of another _Contingency_ spell on you ends. Also, _Contingency_ ends on you if its material component is ever not on your person.

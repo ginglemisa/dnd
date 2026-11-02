@@ -1,0 +1,34 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: ice-knife
+name: 寒冰破片
+nameEn: Ice Knife
+source: srd
+level: 1
+school: conjuration
+classes: [ druid, sorcerer, wizard ]
+castingTime: [ action ]
+range: { feet: 60 }
+components: [ S, M ]
+duration: instantaneous
+upcast: true
+site:
+  material: 一滴水或一塊冰
+  outcomes:
+    - { kind: damage, attack: spell, formula: 1d10, damageType: piercing, autoOnCast: true, context: 命中時穿刺傷害 }
+    - { kind: damage, formula: 2d6, upcastDice: 1d6, damageType: cold, autoOnCast: true, context: 爆裂區域傷害擲一次；豁免依規則處理 }
+  body: |-
+    - 創造一片冰刃並擲向射程內一個生物，對目標進行一次遠程法術攻擊；命中時，目標受到1d10穿刺傷害
+    - 無論命中與否，冰刃隨後爆炸：目標及其5呎內每個生物須進行敏捷豁免；失敗時受到2d6冷凍傷害
+    - 使用更高環階法術位：每比1環高一環，冷凍傷害增加1d6
+srd:
+  material: 一滴水或一塊冰
+  body: |-
+    你製造出一片冰晶碎片，並將它擲向射程內的一隻生物。對該目標進行一次遠程法術攻擊。若命中，目標受到1d10穿刺傷害。無論命中與否，碎片接著都會爆炸。目標以及其5呎內的每隻生物都必須成功通過敏捷豁免，否則受到2d6冷凍傷害。
+
+    _使用更高環階法術位。_ 法術位環階每比1環高一環，冷凍傷害就增加1d6。
+en:
+  material: a drop of water or a piece of ice
+  body: |-
+    You create a shard of ice and fling it at one creature within range. Make a ranged spell attack against the target. On a hit, the target takes 1d10 Piercing damage. Hit or miss, the shard then explodes. The target and each creature within 5 feet of it must succeed on a Dexterity saving throw or take 2d6 Cold damage.
+
+    _Using a Higher-Level Spell Slot._ The Cold damage increases by 1d6 for each spell slot level above 1.

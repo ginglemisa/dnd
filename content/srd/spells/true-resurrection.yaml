@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: true-resurrection
+name: 完全復生術
+nameEn: True Resurrection
+source: srd
+level: 9
+school: necromancy
+classes: [ cleric, druid ]
+castingTime: [ { hours: 1 } ]
+range: touch
+components: [ V, S, M ]
+duration: instantaneous
+srd:
+  material: 價值25,000 GP以上的鑽石，法術會消耗它們
+  body: |-
+    你觸碰一個已死亡不超過200年，且死因不是年老的生物。該生物以全部生命值復活。
+
+    此法術會閉合所有傷口、中和任何毒素、治癒所有魔法傳染病，並解除該生物死亡時所受的任何詛咒。法術會替換受損或缺失的器官與肢體。如果該生物是不死生物，它會恢復為非不死生物的形態。
+
+    如果原本的身體已不存在，此法術可以提供一具新的身體，此時你必須說出該生物的名字。該生物隨後會出現在你選擇的、距離你10呎內的一個未被佔據的空間中。
+en:
+  material: diamonds worth 25,000+ GP, which the spell consumes
+  body: |-
+    You touch a creature that has been dead for no longer than 200 years and that died for any reason except old age. The creature is revived with all its Hit Points.
+
+    This spell closes all wounds, neutralizes any poison, cures all magical contagions, and lifts any curses affecting the creature when it died. The spell replaces damaged or missing organs and limbs. If the creature was Undead, it is restored to its non-Undead form.
+
+    The spell can provide a new body if the original no longer exists, in which case you must speak the creature's name. The creature then appears in an unoccupied space you choose within 10 feet of you.

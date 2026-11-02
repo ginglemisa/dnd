@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: remove-curse
+name: 移除詛咒
+nameEn: Remove Curse
+source: srd
+level: 3
+school: abjuration
+classes: [ cleric, warlock, wizard ]
+castingTime: [ action ]
+range: touch
+components: [ V, S ]
+duration: instantaneous
+site:
+  body: |-
+    - 你觸碰時，影響一個生物或物體的所有詛咒結束
+    - 若該物體是受詛咒的魔法物品，詛咒仍然存在，但此法術會解除持有者與該物品的同調，使其可以被移除或丟棄
+srd:
+  body: |-
+    經由你的觸碰，影響一個生物或物體的所有詛咒都會終止。如果該物體是受詛咒的魔法物品，其詛咒仍然存在，但法術會解除其擁有者與該物品的同調，使其可以被移除或丟棄。
+en:
+  body: |-
+    At your touch, all curses affecting one creature or object end. If the object is a cursed magic item, its curse remains, but the spell breaks its owner's Attunement to the object so it can be removed or discarded.

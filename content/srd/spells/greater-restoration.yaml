@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: greater-restoration
+name: 高等復原術
+nameEn: Greater Restoration
+source: srd
+level: 5
+school: abjuration
+classes: [ bard, cleric, druid, paladin, ranger ]
+castingTime: [ action ]
+range: touch
+components: [ V, S, M ]
+duration: instantaneous
+srd:
+  material: 價值100 GP以上的鑽石粉末，法術會將其耗盡
+  body: |-
+    你接觸一個生物，並以魔法移除其身上下列效果之一：
+
+    - 1級力竭
+    - 魅惑或石化狀態
+    - 一項詛咒，包括目標對受詛咒魔法物品的同調
+    - 目標任一屬性值的任何降低
+    - 目標生命值上限的任何降低
+en:
+  material: diamond dust worth 100+ GP, which the spell consumes
+  body: |-
+    You touch a creature and magically remove one of the following effects from it:
+
+    - 1 Exhaustion level
+    - The Charmed or Petrified condition
+    - A curse, including the target's Attunement to a cursed magic item
+    - Any reduction to one of the target's ability scores
+    - Any reduction to the target's Hit Point maximum

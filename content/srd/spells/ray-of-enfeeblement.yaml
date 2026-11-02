@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: ray-of-enfeeblement
+name: 衰弱射線
+nameEn: Ray of Enfeeblement
+source: srd
+level: 2
+school: necromancy
+classes: [ warlock, wizard ]
+castingTime: [ action ]
+range: { feet: 60 }
+components: [ V, S ]
+duration: { minutes: 1 }
+concentration: true
+site:
+  body: |-
+    - 一道削弱力量的能量光束從你射向射程內一個生物；目標須進行體質豁免
+    - 豁免成功時，目標在你下個回合開始前進行的下一次攻擊檢定具有劣勢
+    - 豁免失敗時，目標在持續時間內進行以力量為基礎的D20檢定具有劣勢，且期間它的所有傷害擲骰都減去1d8
+    - 目標在它每個回合結束時重複豁免；成功時法術結束
+srd:
+  body: |-
+    一道使人虛弱的能量光束從你射向射程內的一個生物。目標必須進行一次體質豁免。豁免成功時，目標在其下一次攻擊檢定上具有劣勢，持續到你的下個回合開始為止。
+
+    豁免失敗時，目標在持續時間內，於以力量為基礎的D20檢定上具有劣勢。在此期間，它也會從所有傷害骰中減去1d8。目標在其每個回合結束時重複進行該豁免，成功時法術結束。
+en:
+  body: |-
+    A beam of enervating energy shoots from you toward a creature within range. The target must make a Constitution saving throw. On a successful save, the target has Disadvantage on the next attack roll it makes until the start of your next turn.
+
+    On a failed save, the target has Disadvantage on Strength-based D20 Tests for the duration. During that time, it also subtracts 1d8 from all its damage rolls. The target repeats the save at the end of each of its turns, ending the spell on a success.

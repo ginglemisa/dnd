@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: stoneskin
+name: 石膚術
+nameEn: Stoneskin
+source: srd
+level: 4
+school: transmutation
+classes: [ druid, sorcerer, wizard ]
+castingTime: [ action ]
+range: touch
+components: [ V, S, M ]
+duration: { hours: 1 }
+concentration: true
+site:
+  material: 價值至少100 GP的鑽石粉末（施法時消耗）
+  body: |-
+    - 法術結束前，你觸碰的一個自願生物具有鈍擊、穿刺與揮砍傷害抗性
+srd:
+  material: 價值100+ GP的鑽石粉，法術會消耗它
+  body: |-
+    在法術結束前，你接觸的一個自願生物具有鈍擊、穿刺與揮砍傷害的抗性。
+en:
+  material: diamond dust worth 100+ GP, which the spell consumes
+  body: |-
+    Until the spell ends, one willing creature you touch has Resistance to Bludgeoning, Piercing, and Slashing damage.

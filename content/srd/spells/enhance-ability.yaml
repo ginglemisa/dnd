@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: enhance-ability
+name: 強化屬性
+nameEn: Enhance Ability
+source: srd
+level: 2
+school: transmutation
+classes: [ bard, cleric, druid, ranger, sorcerer, wizard ]
+castingTime: [ action ]
+range: touch
+components: [ V, S, M ]
+duration: { hours: 1 }
+concentration: true
+upcast: true
+site:
+  material: 毛皮或一根羽毛
+  body: |-
+    - 觸碰一個生物，並選擇力量、敏捷、智力、感知或魅力
+    - 持續時間內，目標進行所選屬性的屬性檢定具有優勢
+    - 使用更高環階法術位：每比2環高一環，可額外以一個生物為目標；每個目標可選擇不同屬性
+srd:
+  material: 毛皮或一根羽毛
+  body: |-
+    你接觸一個生物，並選擇力量、敏捷、智力、感知或魅力。在持續時間內，目標在使用所選屬性的屬性檢定上具有優勢。
+
+    _使用更高環階法術位。_ 法術位環階每比2環高一環，你可以多指定一個生物為目標。你可以為每個目標選擇不同的屬性。
+en:
+  material: fur or a feather
+  body: |-
+    You touch a creature and choose Strength, Dexterity, Intelligence, Wisdom, or Charisma. For the duration, the target has Advantage on ability checks using the chosen ability.
+
+    _Using a Higher-Level Spell Slot._ You can target one additional creature for each spell slot level above 2. You can choose a different ability for each target.

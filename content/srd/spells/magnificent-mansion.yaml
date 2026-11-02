@@ -1,0 +1,36 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: magnificent-mansion
+name: 豪宅術
+nameEn: Magnificent Mansion
+source: srd
+level: 7
+school: conjuration
+classes: [ bard, wizard ]
+castingTime: [ { minutes: 1 } ]
+range: { feet: 300 }
+components: [ V, S, M ]
+duration: { hours: 24 }
+srd:
+  material: 價值15+ GP的微型門
+  body: |-
+    你在射程內召喚一扇閃爍的門，它在持續時間內存在。這扇門通往一處異次元住所，寬5呎、高10呎。只要門保持開啟，你以及你施放法術時指定的任何生物都可以進入該異次元住所。若你在門30呎內，你可以開啟或關閉它（不需要動作）。關閉時，這扇門無法被察覺。
+
+    門後是一座華麗的門廳，其後連接著許多房間。住所內的空氣潔淨、清新且溫暖。
+
+    你可以為住所設計任何你喜歡的平面配置，但不得超過50個相連的10呎立方體。這個地方的家具與裝飾由你決定。其中備有足以供應最多100人享用九道菜宴席的食物。由此法術創造的家具與其他物品若被移出，會消散成煙。
+
+    一群由100名近乎透明的僕役組成的隨從，服侍所有進入的人。你決定這些僕役的外貌與服裝。他們不會受傷，並服從你的命令。每名僕役都能執行人類能執行的任務，但無法攻擊，也無法採取任何會直接傷害其他生物的行動。因此，僕役可以取物、打掃、縫補、摺衣服、生火、上菜、斟酒等等。僕役無法離開住所。
+
+    法術結束時，留在異次元空間內的任何生物或物體，都會被排出到離入口最近的未被佔據空間。
+en:
+  material: a miniature door worth 15+ GP
+  body: |-
+    You conjure a shimmering door in range that lasts for the duration. The door leads to an extradimensional dwelling and is 5 feet wide and 10 feet tall. You and any creature you designate when you cast the spell can enter the extradimensional dwelling as long as the door remains open. You can open or close it (no action required) if you are within 30 feet of it. While closed, the door is imperceptible.
+
+    Beyond the door is a magnificent foyer with numerous chambers beyond. The dwelling's atmosphere is clean, fresh, and warm.
+
+    You can create any floor plan you like for the dwelling, but it can't exceed 50 contiguous 10-foot Cubes. The place is furnished and decorated as you choose. It contains sufficient food to serve a nine-course banquet for up to 100 people. Furnishings and other objects created by this spell dissipate into smoke if removed from it.
+
+    A staff of 100 near-transparent servants attends all who enter. You determine the appearance of these servants and their attire. They are invulnerable and obey your commands. Each servant can perform tasks that a human could perform, but they can't attack or take any action that would directly harm another creature. Thus the servants can fetch things, clean, mend, fold clothes, light fires, serve food, pour wine, and so on. The servants can't leave the dwelling.
+
+    When the spell ends, any creatures or objects left inside the extradimensional space are expelled into the unoccupied spaces nearest to the entrance.

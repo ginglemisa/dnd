@@ -1,0 +1,58 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: augury
+name: 卜筮術
+nameEn: Augury
+source: srd
+level: 2
+school: divination
+classes: [ cleric, druid, wizard ]
+castingTime: [ { minutes: 1 } ]
+ritual: true
+range: self
+components: [ V, S, M ]
+duration: instantaneous
+site:
+  material: 價值至少25 GP的特殊標記木棍、骨頭、卡片或其他占卜用具
+  body: |-
+    - 從異界存在獲得一個預兆，得知你計畫在接下來30分鐘內採取的某項行動會有什麼結果
+    - DM從下列預兆中選擇一個：
+      - 吉：結果是好的
+      - 兇：結果是壞的
+      - 吉且兇：結果有好有壞
+      - 無所謂：結果無好無壞
+    - 此法術不考慮可能改變結果的情況，例如其他法術
+    - 若在完成長休前施放此法術超過一次，第一次之後的每次施放都有累積25%的機率得不到答案
+srd:
+  material: 價值25 GP以上、特別標記過的木籤、骨頭、卡牌或其他占卜用的信物
+  body: |-
+    你從異界存在處得到一個預兆，內容關於你打算在接下來30分鐘內採取的行動所會得到的結果。DM從預兆表中選擇預兆。
+
+    **預兆**
+
+    | 預兆 | 對於結果將會是… |
+    | --- | --- |
+    | 吉 | 好 |
+    | 兇 | 壞 |
+    | 吉且兇 | 有好有壞 |
+    | 無所謂 | 不好也不壞 |
+
+    此法術不會考量可能改變結果的情況，例如其他法術。
+
+    如果你在完成一次長休之前多次施放此法術，則第一次之後的每次施放，都有累計25%的機率讓你得不到答案。
+en:
+  material: specially marked sticks, bones, cards, or other divinatory tokens worth 25+ GP
+  body: |-
+    You receive an omen from an otherworldly entity about the results of a course of action that you plan to take within the next 30 minutes. The GM chooses the omen from the Omens table.
+
+    **Omens**
+
+    | Omen | For Results That Will Be … |
+    | --- | --- |
+    | Weal | Good |
+    | Woe | Bad |
+    | Weal and woe | Good and bad |
+    | Indifference | Neither good nor bad |
+
+    The spell doesn't account for circumstances, such as other spells, that might change the results.
+
+    If you cast the spell more than once before finishing a Long Rest, there is a cumulative 25 percent chance for each casting after the first that you get no answer.

@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: guardian-of-faith
+name: 信仰守衛
+nameEn: Guardian of Faith
+source: srd
+level: 4
+school: conjuration
+classes: [ cleric ]
+castingTime: [ action ]
+range: { feet: 30 }
+components: [ V ]
+duration: { hours: 8 }
+site:
+  outcomes:
+    - { kind: damage, fixed: 20, damageType: radiant, autoOnCast: false, context: 敵人之後進入守護者附近或開始回合時 }
+  body: |-
+    - 一個大型幽靈守護者出現在射程內一個你能看見的未被佔據空間，並在持續時間內懸浮於該處
+    - 守護者佔據該空間且無法被傷害，外形符合你的神祇或神系
+    - 任何敵人在一個回合中首次移動到守護者10呎內的空間，或在那裡開始回合時，須進行敏捷豁免；失敗時受到20點光耀傷害，成功時傷害減半
+    - 守護者累計造成60點傷害後消失
+srd:
+  body: |-
+    一個大型的幽靈守衛出現，並在持續時間內懸浮於你能看見的射程內一個未被佔據的空間。守衛佔據該空間且無法被傷害，並以符合你的神祇或眾神體系的形貌出現。
+
+    任何敵人在一個回合中首次移動到守衛10呎內的空間，或在該處開始其回合時，須進行敏捷豁免，豁免失敗則受到20點光耀傷害，成功則受到一半傷害。守衛在累計造成總共60點傷害後消失。
+en:
+  body: |-
+    A Large spectral guardian appears and hovers for the duration in an unoccupied space that you can see within range. The guardian occupies that space and is invulnerable, and it appears in a form appropriate for your deity or pantheon.
+
+    Any enemy that moves to a space within 10 feet of the guardian for the first time on a turn or starts its turn there makes a Dexterity saving throw, taking 20 Radiant damage on a failed save or half as much damage on a successful one. The guardian vanishes when it has dealt a total of 60 damage.

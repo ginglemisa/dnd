@@ -1,0 +1,44 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: flame-blade
+name: 火焰刀
+nameEn: Flame Blade
+source: srd
+level: 2
+school: evocation
+classes: [ druid, sorcerer ]
+castingTime: [ bonus-action ]
+range: self
+components: [ V, S, M ]
+duration: { minutes: 10 }
+concentration: true
+upcast: true
+site:
+  material: 一片漆樹葉
+  outcomes:
+    - { kind: damage, formula: 3d6, abilityModifier: spellcasting, upcastDice: 1d6, damageType: fire, autoOnCast: false, context: 之後以魔法動作命中時 }
+  body: |-
+    - 在你空著的手中召喚一把火焰刀刃，大小與形狀類似彎刀，持續到法術結束
+    - 若你放開刀刃，它會消失，但你可以用附贈動作再次召喚
+    - 魔法動作：以火焰刀刃進行一次近戰法術攻擊；命中時，目標受到3d6加上你施法屬性調整值的火焰傷害
+    - 火焰刀刃發出半徑10呎的明亮光照，並在其外額外10呎發出微光光照
+    - 使用更高環階法術位：每比2環高一環，傷害增加1d6
+srd:
+  material: 一片漆樹葉
+  body: |-
+    你在空著的手中喚出一把火焰之刃。這把刃的大小與形狀類似彎刀，並在持續時間內存在。如果你放開這把刃，它會消失，但你可以用附贈動作再次喚出它。
+
+    你可以用魔法動作以火焰之刃進行一次近戰法術攻擊。命中時，目標受到等於3d6加上你的施法屬性調整值的火焰傷害。
+
+    這把燃燒之刃在半徑10呎內發出明亮光照，並在額外10呎內發出微光光照。
+
+    _使用更高環階法術位。_ 法術位環階每比2環高一環，傷害增加1d6。
+en:
+  material: a sumac leaf
+  body: |-
+    You evoke a fiery blade in your free hand. The blade is similar in size and shape to a scimitar, and it lasts for the duration. If you let go of the blade, it disappears, but you can evoke it again as a Bonus Action.
+
+    As a Magic action, you can make a melee spell attack with the fiery blade. On a hit, the target takes Fire damage equal to 3d6 plus your spellcasting ability modifier.
+
+    The flaming blade sheds Bright Light in a 10-foot radius and Dim Light for an additional 10 feet.
+
+    _Using a Higher-Level Spell Slot._ The damage increases by 1d6 for each spell slot level above 2.

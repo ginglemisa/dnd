@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: hellish-rebuke
+name: 煉獄叱喝
+nameEn: Hellish Rebuke
+source: srd
+level: 1
+school: evocation
+classes: [ warlock ]
+castingTime: [ reaction ]
+range: { feet: 60 }
+components: [ V, S ]
+duration: instantaneous
+upcast: true
+site:
+  trigger: 在你受到你能看見且位於你60呎內的生物造成的傷害時
+  outcomes:
+    - { kind: damage, formula: 2d10, upcastDice: 1d10, damageType: fire, autoOnCast: true, context: 豁免依規則處理 }
+  body: |-
+    - 對你造成傷害的生物被綠色火焰短暫包圍
+    - 該生物須進行敏捷豁免；失敗時受到2d10火焰傷害，成功時傷害減半
+    - 使用更高環階法術位：每比1環高一環，傷害增加1d10
+srd:
+  trigger: 當你受到你周圍60呎內你能看見的生物造成傷害時
+  body: |-
+    對你造成傷害的生物瞬間被綠色火焰包圍。它進行一次敏捷豁免，豁免失敗時受到2d10火焰傷害，成功時傷害減半。
+
+    _使用更高環階法術位。_ 法術位環階每比1環高一環，傷害增加1d10。
+en:
+  trigger: which you take in response to taking damage from a creature that you can see within 60 feet of yourself
+  body: |-
+    The creature that damaged you is momentarily surrounded by green flames. It makes a Dexterity saving throw, taking 2d10 Fire damage on a failed save or half as much damage on a successful one.
+
+    _Using a Higher-Level Spell Slot._ The damage increases by 1d10 for each spell slot level above 1.

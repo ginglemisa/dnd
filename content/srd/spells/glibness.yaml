@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: glibness
+name: 花言巧語
+nameEn: Glibness
+source: srd
+level: 8
+school: enchantment
+classes: [ bard, warlock ]
+castingTime: [ action ]
+range: self
+components: [ V ]
+duration: { hours: 1 }
+srd:
+  body: |-
+    在法術結束前，當你進行魅力檢定時，你可以將擲出的數字替換為15。此外，無論你說什麼，用來判定你是否說實話的魔法都會顯示你說的是實話。
+en:
+  body: |-
+    Until the spell ends, when you make a Charisma check, you can replace the number you roll with a 15. Additionally, no matter what you say, magic that would determine if you are telling the truth indicates that you are being truthful.

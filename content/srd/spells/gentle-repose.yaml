@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: gentle-repose
+name: 遺體防腐
+nameEn: Gentle Repose
+source: srd
+level: 2
+school: necromancy
+classes: [ cleric, paladin, wizard ]
+castingTime: [ action ]
+ritual: true
+range: touch
+components: [ V, S, M ]
+duration: { days: 10 }
+site:
+  material: 2枚銅幣（施法時消耗）
+  body: |-
+    - 觸碰一具屍體或其他遺骸；持續時間內，目標不會腐壞，也不能變成不死生物
+    - 處於此法術影響下的天數，不計入死者復活（Raise Dead）等法術的時間限制，因此實際上延長了使目標復活的期限
+srd:
+  material: 2 CP，法術會消耗之
+  body: |-
+    你接觸一具屍體或其他遺骸。在持續時間內，目標不會腐敗，也不會變成不死生物。
+
+    此法術也實際上延長了讓目標死而復生的時限，因為處於此法術影響下度過的日子，不會計入_死者復活_等法術的時限。
+en:
+  material: 2 Copper Pieces, which the spell consumes
+  body: |-
+    You touch a corpse or other remains. For the duration, the target is protected from decay and can't become Undead.
+
+    The spell also effectively extends the time limit on raising the target from the dead, since days spent under the influence of this spell don't count against the time limit of spells such as _Raise Dead_.

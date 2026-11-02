@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: arcane-sword
+name: 秘法劍
+nameEn: Arcane Sword
+source: srd
+level: 7
+school: evocation
+classes: [ bard, wizard ]
+castingTime: [ action ]
+range: { feet: 90 }
+components: [ V, S, M ]
+duration: { minutes: 1 }
+concentration: true
+srd:
+  material: 價值250+ GP的微型劍
+  body: |-
+    你創造一把懸浮於射程內的幽靈之劍。它在持續時間內存在。
+
+    劍出現時，你對劍周圍5呎內的一個目標進行一次近戰法術攻擊。命中時，目標受到等同於4d12加上你施法屬性調整值的力場傷害。
+
+    在你之後的回合中，你可以用一個附贈動作將劍移動最多30呎到你能看見的位置，並對同一目標或不同目標重複該攻擊。
+en:
+  material: a miniature sword worth 250+ GP
+  body: |-
+    You create a spectral sword that hovers within range. It lasts for the duration.
+
+    When the sword appears, you make a melee spell attack against a target within 5 feet of the sword. On a hit, the target takes Force damage equal to 4d12 plus your spellcasting ability modifier.
+
+    On your later turns, you can take a Bonus Action to move the sword up to 30 feet to a spot you can see and repeat the attack against the same target or a different one.

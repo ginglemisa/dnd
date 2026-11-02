@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: counterspell
+name: 法術反制
+nameEn: Counterspell
+source: srd
+level: 3
+school: abjuration
+classes: [ sorcerer, warlock, wizard ]
+castingTime: [ reaction ]
+range: { feet: 60 }
+components: [ S ]
+duration: instantaneous
+site:
+  trigger: 當你看見你60呎內的生物正在施放具有言語、姿勢或材料成分的法術時
+  body: |-
+    - 嘗試打斷正在施法的生物；該生物須進行體質豁免
+    - 豁免失敗時，該法術消散且沒有效果，用來施放它的動作、附贈動作或反應動作被浪費
+    - 若該法術是以法術位施放，該法術位不會被消耗
+srd:
+  trigger: 當你看見自己60呎內有生物正在施放具有V、S或M成分的法術時
+  body: |-
+    你試圖打斷一個正在施放法術的生物。該生物進行一次體質豁免。豁免失敗時，法術消散而無效果，且用來施放它的動作、附贈動作或反應動作都白白浪費。若該法術是以法術位施放，該法術位不會被消耗。
+en:
+  trigger: which you take when you see a creature within 60 feet of yourself casting a spell with Verbal, Somatic, or Material components
+  body: |-
+    You attempt to interrupt a creature in the process of casting a spell. The creature makes a Constitution saving throw. On a failed save, the spell dissipates with no effect, and the action, Bonus Action, or Reaction used to cast it is wasted. If that spell was cast with a spell slot, the slot isn't expended.

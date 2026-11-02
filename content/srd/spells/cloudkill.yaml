@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: cloudkill
+name: 死雲術
+nameEn: Cloudkill
+source: srd
+level: 5
+school: conjuration
+classes: [ sorcerer, wizard ]
+castingTime: [ action ]
+range: { feet: 120 }
+components: [ V, S ]
+duration: { minutes: 10 }
+concentration: true
+srd:
+  body: |-
+    你在射程內一點為中心，創造出一團半徑20呎的黃綠色迷霧球形區域。迷霧在持續時間內存在，或直到強風（例如由_造風術_所產生的風）將其吹散，法術因此結束。其範圍為重度遮蔽。
+
+    球形區域內的每個生物都要進行一次體質豁免，豁免失敗時受到5d8毒素傷害，成功則受到一半傷害。當球形區域移動進入某生物的空間時，以及生物進入球形區域或在其中結束回合時，該生物也必須進行此豁免。生物每回合只需進行一次此豁免。
+
+    在你每個回合開始時，球形區域會遠離你移動10呎。
+
+    _使用更高環階法術位。_ 每高於5環一環，傷害增加1d8。
+en:
+  body: |-
+    You create a 20-foot-radius Sphere of yellow-green fog centered on a point within range. The fog lasts for the duration or until strong wind (such as the one created by _Gust of Wind_) disperses it, ending the spell. Its area is Heavily Obscured.
+
+    Each creature in the Sphere makes a Constitution saving throw, taking 5d8 Poison damage on a failed save or half as much damage on a successful one. A creature must also make this save when the Sphere moves into its space and when it enters the Sphere or ends its turn there. A creature makes this save only once per turn.
+
+    The Sphere moves 10 feet away from you at the start of each of your turns.
+
+    _Using a Higher-Level Spell Slot._ The damage increases by 1d8 for each spell slot level above 5.

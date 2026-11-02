@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: phantom-steed
+name: 魅影駒
+nameEn: Phantom Steed
+source: srd
+level: 3
+school: illusion
+classes: [ wizard ]
+castingTime: [ { minutes: 1 } ]
+ritual: true
+range: { feet: 30 }
+components: [ V, S ]
+duration: { hours: 1 }
+site:
+  body: |-
+    - 一個大型、半真實的類馬生物出現在射程內你選擇的地面上一個未被佔據空間
+    - 外觀由你決定，並配有馬鞍、馬銜與韁繩；任何由此法術創造的裝備若被帶離坐騎超過10呎，會化作一縷煙消失
+    - 持續時間內，你或你選擇的一個生物可以騎乘此坐騎
+    - 坐騎使用乘用馬的資料，但速度為100呎，每小時可移動13英里
+    - 法術結束時，坐騎逐漸消散，騎手有1分鐘時間下馬
+    - 若坐騎受到任何傷害，法術提前結束
+srd:
+  body: |-
+    一匹大型、半真實的馬狀生物出現在射程內你選擇的一處未被佔據的地面空間。你決定該生物的外觀，它配有馬鞍、嚼子與韁繩。法術創造的任何裝備，若被帶到離坐騎超過10呎遠，就會化為一縷煙消散。
+
+    在持續時間內，你或你選擇的一個生物可以騎乘這匹坐騎。坐騎使用「騎乘馬」數據塊（見「怪物」），但速度為100呎，且1小時內可以行進13英里。法術結束時，坐騎會逐漸消逝，讓騎乘者有1分鐘的時間下馬。若坐騎受到任何傷害，法術提前結束。
+en:
+  body: |-
+    A Large, quasi-real, horselike creature appears on the ground in an unoccupied space of your choice within range. You decide the creature's appearance, and it is equipped with a saddle, bit, and bridle. Any of the equipment created by the spell vanishes in a puff of smoke if it is carried more than 10 feet away from the steed.
+
+    For the duration, you or a creature you choose can ride the steed. The steed uses the Riding Horse stat block (see "Monsters"), except it has a Speed of 100 feet and can travel 13 miles in an hour. When the spell ends, the steed gradually fades, giving the rider 1 minute to dismount. The spell ends early if the steed takes any damage.

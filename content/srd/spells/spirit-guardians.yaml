@@ -1,0 +1,44 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: spirit-guardians
+name: 靈體衛士
+nameEn: Spirit Guardians
+source: srd
+level: 3
+school: conjuration
+classes: [ cleric ]
+castingTime: [ action ]
+range: self
+components: [ V, S, M ]
+duration: { minutes: 10 }
+concentration: true
+upcast: true
+site:
+  material: 一卷祈禱卷軸
+  outcomes:
+    - { kind: damage, formula: 3d8, upcastDice: 1d8, damageTypes: [ radiant, necrotic ], autoOnCast: true, context: 發散區域出現／進入空間時的傷害擲一次；豁免依規則處理 }
+  body: |-
+    - 持續時間內，守護靈體在你周圍的15呎發散區域中飛舞
+    - 若你是善良或中立陣營，靈體外形如天使或精類（由你選擇）；若你是邪惡陣營，靈體外形如邪魔
+    - 施法時，你可以指定不受此法術影響的生物
+    - 其他生物在發散區域內速度減半
+    - 每當發散區域進入生物的空間、生物進入發散區域，或生物在其中結束回合時，該生物須進行感知豁免：
+      - 豁免失敗時，受到3d8光耀傷害（你為善良或中立）或3d8黯蝕傷害（你為邪惡）
+      - 豁免成功時，傷害減半
+    - 每個生物每回合只進行一次此豁免
+    - 使用更高環階法術位：每比3環高一環，傷害增加1d8
+srd:
+  material: 一卷祈禱經文
+  body: |-
+    在持續時間內，守護靈體在你周圍15呎發散區域內飄動。如果你是善良或中立，它們的靈體形貌呈現為天使或精類（由你選擇）。如果你是邪惡，它們則呈現為邪魔的樣貌。
+
+    當你施放這個法術時，你可以指定生物不受其影響。其他任何生物在該發散區域內的速度減半；每當該發散區域進入某個生物的空間，以及每當生物進入該發散區域或在該處結束其回合時，該生物必須進行一次感知豁免。豁免失敗時，該生物受到3d8光耀傷害（若你是善良或中立）或3d8黯蝕傷害（若你是邪惡）。豁免成功時，該生物受到一半傷害。生物每回合只需進行一次此豁免。
+
+    _使用更高環階法術位。_ 每比3環高一環的法術位，傷害增加1d8。
+en:
+  material: a prayer scroll
+  body: |-
+    Protective spirits flit around you in a 15-foot Emanation for the duration. If you are good or neutral, their spectral form appears angelic or fey (your choice). If you are evil, they appear fiendish.
+
+    When you cast this spell, you can designate creatures to be unaffected by it. Any other creature's Speed is halved in the Emanation, and whenever the Emanation enters a creature's space and whenever a creature enters the Emanation or ends its turn there, the creature must make a Wisdom saving throw. On a failed save, the creature takes 3d8 Radiant damage (if you are good or neutral) or 3d8 Necrotic damage (if you are evil). On a successful save, the creature takes half as much damage. A creature makes this save only once per turn.
+
+    _Using a Higher-Level Spell Slot._ The damage increases by 1d8 for each spell slot level above 3.

@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: calm-emotions
+name: 安定心神
+nameEn: Calm Emotions
+source: srd
+level: 2
+school: enchantment
+classes: [ bard, cleric ]
+castingTime: [ action ]
+range: { feet: 60 }
+components: [ V, S ]
+duration: { minutes: 1 }
+concentration: true
+site:
+  body: |-
+    - 以射程內你選擇的一點為中心、半徑20呎的球形區域內，每個人型生物須進行魅力豁免
+    - 豁免失敗的生物受下列效果之一影響（為每個生物分別選擇）：
+      - 法術結束前免疫魅惑與恐慌狀態；若該生物已處於魅惑或恐慌狀態，這些狀態在持續時間內被壓制
+      - 對它所敵對、由你選擇的生物變得漠不關心；目標受到傷害或目睹其盟友受到傷害時，漠不關心結束；法術結束時，生物態度恢復正常
+srd:
+  body: |-
+    以射程內你選擇的一點為中心、半徑20呎的球形區域內，每個人型生物都必須通過魅力豁免，否則會受到以下其中一種效果影響（為每個生物分別選擇）：
+
+    - 該生物在法術結束前，對魅惑與恐慌狀態免疫。如果該生物原本已陷入魅惑或恐慌狀態，這些狀態在持續時間內受到抑制。
+    - 該生物對於由你選擇、且它原本抱持敵對態度的生物，變得態度冷漠。若目標受到傷害，或目睹盟友受到傷害，這種冷漠即告結束。法術結束時，該生物的態度恢復正常。
+en:
+  body: |-
+    Each Humanoid in a 20-foot-radius Sphere centered on a point you choose within range must succeed on a Charisma saving throw or be affected by one of the following effects (choose for each creature):
+
+    - The creature has Immunity to the Charmed and Frightened conditions until the spell ends. If the creature was already Charmed or Frightened, those conditions are suppressed for the duration.
+    - The creature becomes Indifferent about creatures of your choice that it's Hostile toward. This indifference ends if the target takes damage or witnesses its allies taking damage. When the spell ends, the creature's attitude returns to normal.

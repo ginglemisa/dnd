@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: wind-walk
+name: 御風而行
+nameEn: Wind Walk
+source: srd
+level: 6
+school: transmutation
+classes: [ druid ]
+castingTime: [ { minutes: 1 } ]
+range: { feet: 30 }
+components: [ V, S, M ]
+duration: { hours: 8 }
+srd:
+  material: 一根蠟燭
+  body: |-
+    你與射程內最多十個你選擇的自願生物，在持續時間內化為氣態，外觀如同縷縷雲霧。處於這種雲霧形態時，目標擁有300呎的飛行速度且能懸停；它對倒地狀態具有免疫；並對鈍擊、穿刺與揮砍傷害具有抗性。目標在此形態下能採取的動作只有疾走動作，或是以魔法動作開始恢復原本的形態。恢復需要1分鐘，期間目標陷入震懾狀態。在法術結束前，目標可以再變回雲霧形態，這同樣需要一個魔法動作，接著是1分鐘的轉變。
+
+    若目標在效果結束時處於雲霧形態並正在飛行，該目標會以每輪60呎的速度下降，持續1分鐘直到著陸，並且會安全著陸。若1分鐘後仍無法著陸，則會墜落剩餘的距離。
+en:
+  material: a candle
+  body: |-
+    You and up to ten willing creatures of your choice within range assume gaseous forms for the duration, appearing as wisps of cloud. While in this cloud form, a target has a Fly Speed of 300 feet and can hover; it has Immunity to the Prone condition; and it has Resistance to Bludgeoning, Piercing, and Slashing damage. The only actions a target can take in this form are the Dash action or a Magic action to begin reverting to its normal form. Reverting takes 1 minute, during which the target has the Stunned condition. Until the spell ends, the target can revert to cloud form, which also requires a Magic action followed by a 1-minute transformation.
+
+    If a target is in cloud form and flying when the effect ends, the target descends 60 feet per round for 1 minute until it lands, which it does safely. If it can't land after 1 minute, it falls the remaining distance.

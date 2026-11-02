@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: dancing-lights
+name: 舞光術
+nameEn: Dancing Lights
+source: srd
+level: 0
+school: illusion
+classes: [ bard, sorcerer, wizard ]
+castingTime: [ action ]
+range: { feet: 120 }
+components: [ V, S, M ]
+duration: { minutes: 1 }
+concentration: true
+site:
+  material: 一點磷
+  body: |-
+    - 在射程內創造至多四個火炬大小的光源，外觀可為火炬、燈籠或發光球體，在持續時間內懸浮
+    - 或者，將四個光源合併為一個略具人形的發光中型形體
+    - 無論選擇哪種形態，每個光源都發出半徑10呎的微光光照
+    - 附贈動作：可將光源移動至多60呎，移到射程內的一個空間
+    - 每個光源必須位於本法術另一個光源的20呎內；光源超出法術射程時會消失
+srd:
+  material: 一小撮磷
+  body: |-
+    你在射程內創造最多四個火把大小的光，使它們呈現為火把、提燈或發光球體，並在持續時間內懸浮。或者，你可以將這四個光合而為一個發光的中型形體，外形隱約似人。無論你選擇哪種形態，每個光都會在半徑10呎內投射微光光照。
+
+    你可以用附贈動作將這些光移動最多60呎，移至射程內的一個空間。每個光都必須位於此法術所創造的另一個光的20呎內，且光若超出法術射程就會消失。
+en:
+  material: a bit of phosphorus
+  body: |-
+    You create up to four torch-size lights within range, making them appear as torches, lanterns, or glowing orbs that hover for the duration. Alternatively, you combine the four lights into one glowing Medium form that is vaguely humanlike. Whichever form you choose, each light sheds Dim Light in a 10-foot radius.
+
+    As a Bonus Action, you can move the lights up to 60 feet to a space within range. A light must be within 20 feet of another light created by this spell, and a light vanishes if it exceeds the spell's range.

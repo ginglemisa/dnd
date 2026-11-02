@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: speak-with-dead
+name: 死者交談
+nameEn: Speak with Dead
+source: srd
+level: 3
+school: necromancy
+classes: [ bard, cleric, wizard ]
+castingTime: [ action ]
+range: { feet: 10 }
+components: [ V, S, M ]
+duration: { minutes: 10 }
+site:
+  material: 燃燒的焚香
+  body: |-
+    - 賦予射程內一具你選擇的屍體些許生命跡象，使它能回答你提出的問題
+    - 屍體必須有嘴巴；若死者死亡時是不死生物，或屍體在過去10天內曾是此法術的目標，法術失敗
+    - 法術結束前，你至多可以向屍體提出五個問題；屍體只知道生前所知的事，包括它懂得的語言
+    - 回答通常簡短、隱晦或重複；若你對它抱有敵意，或它認出你是敵人，它沒有義務給出真實答案
+    - 此法術不會讓生物的靈魂回到身體，只會喚回驅動身體的靈體；因此屍體無法學習新資訊、不理解死後發生的任何事，也無法推測未來事件
+srd:
+  material: 燃燒的薰香
+  body: |-
+    你賦予射程內你選擇的一具屍體生者的假象，使它能夠回答你提出的問題。屍體必須有嘴，且若該死者生前死亡時為不死生物，則這個法術失敗。如果該屍體在過去10天內曾是這個法術的目標，法術同樣失敗。
+
+    在法術結束前，你可以向屍體提出最多五個問題。屍體只知道它生前所知道的事物，包括它所懂的語言。回答通常簡短、晦澀或重複；若你對它抱持敵意，或它認出你是敵人，屍體並不受迫必須給出真實的答案。這個法術不會將該生物的靈魂送回其身體，只會喚回其賦予軀體活動的靈。因此，屍體無法學習新資訊，無法理解它死後發生的任何事情，也無法推測未來的事件。
+en:
+  material: burning incense
+  body: |-
+    You grant the semblance of life to a corpse of your choice within range, allowing it to answer questions you pose. The corpse must have a mouth, and this spell fails if the deceased creature was Undead when it died. The spell also fails if the corpse was the target of this spell within the past 10 days.
+
+    Until the spell ends, you can ask the corpse up to five questions. The corpse knows only what it knew in life, including the languages it knew. Answers are usually brief, cryptic, or repetitive, and the corpse is under no compulsion to offer a truthful answer if you are antagonistic toward it or it recognizes you as an enemy. This spell doesn't return the creature's soul to its body, only its animating spirit. Thus, the corpse can't learn new information, doesn't comprehend anything that has happened since it died, and can't speculate about future events.

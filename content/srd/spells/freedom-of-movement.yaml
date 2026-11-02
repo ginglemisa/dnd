@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: freedom-of-movement
+name: 行動自如
+nameEn: Freedom of Movement
+source: srd
+level: 4
+school: abjuration
+classes: [ bard, cleric, druid ]
+castingTime: [ action ]
+range: touch
+components: [ V, S, M ]
+duration: { hours: 1 }
+upcast: true
+site:
+  material: 一條皮帶
+  body: |-
+    - 觸碰一個自願的生物；持續時間內：
+      - 目標的移動不受困難地形影響
+      - 法術與其他魔法效果無法降低目標的速度，也無法使目標陷入麻痺或束縛狀態
+      - 目標具有等同於其速度的游泳速度
+    - 此外，目標可以消耗5呎移動力，自動逃脫非魔法束縛，例如鐐銬，或對它施加擒抱狀態的生物
+    - 使用更高環階法術位：每比4環高一環，可額外以一個生物為目標
+srd:
+  material: 一條皮帶
+  body: |-
+    你接觸一名自願的生物。在持續時間內，目標的移動不受困難地形影響，且法術與其他魔法效應既無法降低目標的速度，也無法使目標陷入麻痺或束縛狀態。目標同時具有等同其速度的游泳速度。
+
+    此外，目標可以花費5呎的移動力，自動掙脫非魔法的束縛，例如手銬，或對其施加擒抱狀態的生物。
+
+    _使用更高環階法術位。_ 法術位環階每高於4環一環，你可以多指定一名生物為目標。
+en:
+  material: a leather strap
+  body: |-
+    You touch a willing creature. For the duration, the target's movement is unaffected by Difficult Terrain, and spells and other magical effects can neither reduce the target's Speed nor cause the target to have the Paralyzed or Restrained conditions. The target also has a Swim Speed equal to its Speed.
+
+    In addition, the target can spend 5 feet of movement to automatically escape from nonmagical restraints, such as manacles or a creature imposing the Grappled condition on it.
+
+    _Using a Higher-Level Spell Slot._ You can target one additional creature for each spell slot level above 4.

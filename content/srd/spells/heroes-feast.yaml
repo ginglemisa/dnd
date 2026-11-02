@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: heroes-feast
+name: 英雄宴
+nameEn: Heroes' Feast
+source: srd
+level: 6
+school: conjuration
+classes: [ bard, cleric, druid ]
+castingTime: [ { minutes: 10 } ]
+range: self
+components: [ V, S, M ]
+duration: instantaneous
+srd:
+  material: 價值1,000+ GP、鑲嵌寶石的碗，法術會消耗它
+  body: |-
+    你變出一場盛宴，出現在你身旁一個未被佔據的10呎立方體區域內的某個表面上。這場盛宴需要1小時才能吃完，並會在該時間結束時消失，且有益效果要在這1小時結束後才會生效。最多十二個生物可以享用這場盛宴。
+
+    享用盛宴的生物會獲得數項益處，持續24小時。該生物具有毒素傷害抗性，並對恐慌與中毒狀態免疫。其生命值上限也會增加2d10，並獲得等量的生命值。
+en:
+  material: a gem-encrusted bowl worth 1,000+ GP, which the spell consumes
+  body: |-
+    You conjure a feast that appears on a surface in an unoccupied 10-foot Cube next to you. The feast takes 1 hour to consume and disappears at the end of that time, and the beneficial effects don't set in until this hour is over. Up to twelve creatures can partake of the feast.
+
+    A creature that partakes gains several benefits, which last for 24 hours. The creature has Resistance to Poison damage, and it has Immunity to the Frightened and Poisoned conditions. Its Hit Point maximum also increases by 2d10, and it gains the same number of Hit Points.

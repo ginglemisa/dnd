@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: forcecage
+name: 力場監牢
+nameEn: Forcecage
+source: srd
+level: 7
+school: evocation
+classes: [ bard, warlock, wizard ]
+castingTime: [ action ]
+range: { feet: 100 }
+components: [ V, S, M ]
+duration: { hours: 1 }
+concentration: true
+srd:
+  material: 價值1,500+ GP的紅寶石粉末，法術會消耗之
+  body: |-
+    一座由魔法力場構成、不可移動、隱形的立方體形監牢，在你於射程內選定的區域周圍憑空出現。監牢可以是籠子或實心箱體，由你選擇。
+
+    籠子形狀的監牢每邊長最多20呎，由直徑1/2吋、彼此間隔1/2吋的柵欄構成。箱體形狀的監牢每邊長最多10呎，形成一道實心屏障，阻止任何物質穿過，並阻擋任何施放進入或離開該區域的法術。
+
+    當你施放法術時，完全位於籠子區域內的任何生物都會被困住。僅部分位於該區域內的生物，或體型過大無法容納於其中的生物，會被推離區域中心，直到完全位於區域之外。
+
+    籠內的生物無法以非魔法的方式離開。如果該生物嘗試使用傳送或跨位面旅行離開，它必須先進行一次魅力豁免。豁免成功時，該生物可以使用該魔法離開籠子。豁免失敗時，該生物不會離開籠子，並浪費該法術或效果。籠子也延伸到以太位面，阻擋以太移動。
+
+    此法術無法被解除魔法驅散。
+en:
+  material: ruby dust worth 1,500+ GP, which the spell consumes
+  body: |-
+    An immobile, Invisible, Cube-shaped prison composed of magical force springs into existence around an area you choose within range. The prison can be a cage or a solid box, as you choose.
+
+    A prison in the shape of a cage can be up to 20 feet on a side and is made from 1/2-inch diameter bars spaced 1/2 inch apart. A prison in the shape of a box can be up to 10 feet on a side, creating a solid barrier that prevents any matter from passing through it and blocking any spells cast into or out from the area.
+
+    When you cast the spell, any creature that is completely inside the cage's area is trapped. Creatures only partially within the area, or those too large to fit inside it, are pushed away from the center of the area until they are completely outside it.
+
+    A creature inside the cage can't leave it by nonmagical means. If the creature tries to use teleportation or interplanar travel to leave, it must first make a Charisma saving throw. On a successful save, the creature can use that magic to exit the cage. On a failed save, the creature doesn't exit the cage and wastes the spell or effect. The cage also extends into the Ethereal Plane, blocking ethereal travel.
+
+    This spell can't be dispelled by _Dispel Magic_.

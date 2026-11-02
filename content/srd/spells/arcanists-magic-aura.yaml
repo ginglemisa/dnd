@@ -1,0 +1,36 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: arcanists-magic-aura
+name: 魔法靈光
+nameEn: Arcanist's Magic Aura
+source: srd
+level: 2
+school: illusion
+classes: [ wizard ]
+castingTime: [ action ]
+range: touch
+components: [ V, S, M ]
+duration: { hours: 24 }
+site:
+  material: 一小塊方形絲綢
+  body: |-
+    - 觸碰一個自願生物，或一個未被穿戴或攜帶的物體，在其上施加幻象，持續到法術結束
+    - 生物獲得下方的假面效果，物體獲得下方的虛假靈光效果
+    - 若你連續30天每天都對同一目標施放此法術，幻象會持續到被解除
+    - 假面（生物）：選擇一個並非目標實際生物類型的生物類型；法術及其他魔法效果會將目標視為所選類型的生物
+    - 虛假靈光（物體）：改變目標在偵測魔法靈光的法術與魔法效果（例如偵測魔法）中呈現的樣子；可讓非魔法物體看起來帶有魔法、讓魔法物品看起來不具魔法，或改變物體的靈光，使其看起來屬於你選擇的某個魔法學派
+srd:
+  material: 一小塊方形絲綢
+  body: |-
+    你以碰觸對一個自願的生物或一件未被穿戴或攜帶的物體施加幻術。生物會獲得下方的「假面」效果，物體則會獲得下方的「虛假靈光」效果。此效果在持續時間內持續。如果你連續30天每天都對同一目標施放此法術，該幻術會持續到被解除為止。
+
+    _假面（生物）。_ 選擇一種與目標實際類型不同的生物類型。法術與其他魔法效果會把目標視為所選類型的生物。
+
+    _虛假靈光（物體）。_ 你改變目標在偵測魔法靈光的法術與魔法效果（例如_偵測魔法_）眼中的樣子。你可以讓非魔法物體看起來有魔法，讓魔法物品看起來沒有魔法，或改變物體的靈光，使其看起來屬於你所選的某個魔法學派。
+en:
+  material: a small square of silk
+  body: |-
+    With a touch, you place an illusion on a willing creature or an object that isn't being worn or carried. A creature gains the Mask effect below, and an object gains the False Aura effect below. The effect lasts for the duration. If you cast the spell on the same target every day for 30 days, the illusion lasts until dispelled.
+
+    _Mask (Creature)._ Choose a creature type other than the target's actual type. Spells and other magical effects treat the target as if it were a creature of the chosen type.
+
+    _False Aura (Object)._ You change the way the target appears to spells and magical effects that detect magical auras, such as _Detect Magic_. You can make a nonmagical object appear magical, make a magic item appear nonmagical, or change the object's aura so that it appears to belong to a school of magic you choose.

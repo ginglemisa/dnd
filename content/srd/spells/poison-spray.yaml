@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: poison-spray
+name: 毒氣噴濺
+nameEn: Poison Spray
+source: srd
+level: 0
+school: necromancy
+classes: [ druid, sorcerer, warlock, wizard ]
+castingTime: [ action ]
+range: { feet: 30 }
+components: [ V, S ]
+duration: instantaneous
+site:
+  outcomes:
+    - { kind: damage, attack: spell, formula: 1d12, cantripAt5: 2d12, damageType: poison, autoOnCast: true, context: 命中時傷害 }
+  body: |-
+    - 向射程內一個生物噴出有毒霧氣，對目標進行一次遠程法術攻擊
+    - 命中時，目標受到1d12毒素傷害
+    - 戲法升級：5級時傷害提升為2d12
+srd:
+  body: |-
+    你向射程內的一個生物噴灑有毒的霧氣。對目標進行一次遠程法術攻擊。命中時，目標受到1d12毒素傷害。
+
+    _戲法升級。_ 當你達到5級（2d12）、11級（3d12）與17級（4d12）時，傷害增加1d12。
+en:
+  body: |-
+    You spray toxic mist at a creature within range. Make a ranged spell attack against the target. On a hit, the target takes 1d12 Poison damage.
+
+    _Cantrip Upgrade._ The damage increases by 1d12 when you reach levels 5 (2d12), 11 (3d12), and 17 (4d12).

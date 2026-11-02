@@ -1,0 +1,36 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: vitriolic-sphere
+name: 濃酸法球
+nameEn: Vitriolic Sphere
+source: srd
+level: 4
+school: evocation
+classes: [ sorcerer, wizard ]
+castingTime: [ action ]
+range: { feet: 150 }
+components: [ V, S, M ]
+duration: instantaneous
+upcast: true
+site:
+  material: 一滴膽汁
+  outcomes:
+    - { kind: damage, formula: 10d4, upcastDice: 2d4, damageType: acid, autoOnCast: true, context: 首次區域傷害擲一次；豁免依規則處理 }
+    - { kind: damage, formula: 5d4, damageType: acid, autoOnCast: false, context: 豁免失敗者下個回合結束時 }
+  body: |-
+    - 指向射程內一個位置，一顆直徑1呎的發光酸液球飛向該處，爆炸成半徑20呎的球形區域
+    - 區域內每個生物須進行敏捷豁免：
+      - 豁免失敗時，受到10d4強酸傷害，並在它下個回合結束時再受到5d4強酸傷害
+      - 豁免成功時，只受到初始傷害的一半
+    - 使用更高環階法術位：每比4環高一環，初始傷害增加2d4
+srd:
+  material: 一滴膽汁
+  body: |-
+    你指向射程內的一個位置，一顆發光、直徑1呎的強酸球飛射到該處並爆炸，形成半徑20呎的球形區域。該區域內的每個生物進行一次敏捷豁免。豁免失敗時，生物受到10d4強酸傷害，並在它下一個回合結束時再受到5d4強酸傷害。豁免成功時，生物只受到初始傷害的一半。
+
+    _使用更高環階法術位。_ 法術位的環階每比4高一環，初始傷害增加2d4。
+en:
+  material: a drop of bile
+  body: |-
+    You point at a location within range, and a glowing, 1-foot-diameter ball of acid streaks there and explodes in a 20-foot-radius Sphere. Each creature in that area makes a Dexterity saving throw. On a failed save, a creature takes 10d4 Acid damage and another 5d4 Acid damage at the end of its next turn. On a successful save, a creature takes half the initial damage only.
+
+    _Using a Higher-Level Spell Slot._ The initial damage increases by 2d4 for each spell slot level above 4.

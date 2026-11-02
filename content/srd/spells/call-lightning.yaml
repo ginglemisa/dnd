@@ -1,0 +1,45 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: call-lightning
+name: 召雷術
+nameEn: Call Lightning
+source: srd
+level: 3
+school: conjuration
+classes: [ druid ]
+castingTime: [ action ]
+range: { feet: 120 }
+components: [ V, S ]
+duration: { minutes: 10 }
+concentration: true
+upcast: true
+site:
+  outcomes:
+    - { kind: damage, formula: 3d10, upcastDice: 1d10, damageType: lightning, autoOnCast: true, context: 施法時召下的閃電；室外風暴額外 1d10 依術文手動處理 }
+  body: |-
+    - 在射程內一個你能看見、位於你上方的點出現一團風暴雲，形狀為高10呎、半徑60呎的圓柱
+    - 施法時，選擇雲下方一個你能看見的點，一道閃電從雲中劈向該點；該點5呎內每個生物須進行敏捷豁免，失敗時受到3d10閃電傷害，成功時傷害減半
+    - 法術結束前，你可以用魔法動作以相同方式再次召下閃電，目標可以是同一點或不同點
+    - 若施法時你身處室外的暴風雨中，此法術改為讓你控制該暴風雨，而不創造新的風暴雲；在此情況下，法術傷害增加1d10
+    - 使用更高環階法術位：每比3環高一環，傷害增加1d10
+srd:
+  body: |-
+    一朵風暴雲出現在射程內你能看見、位於你上方的一點。它呈高10呎、半徑60呎的圓柱形。
+
+    施放此法術時，選擇雲下你能看見的一點。一道閃電從雲中射向該點。距該點5呎內的每個生物進行一次敏捷豁免，豁免失敗時受到3d10閃電傷害，成功時傷害減半。
+
+    在法術結束前，你可以用一個魔法動作再次以該方式召下閃電，目標可以是同一點，也可以是不同的點。
+
+    若你施放此法術時身處戶外的風暴中，此法術會讓你控制該風暴，而不是創造新的風暴。在這種情況下，此法術的傷害增加1d10。
+
+    _使用更高環階法術位。_ 所用法術位的環階每比3環高一環，傷害增加1d10。
+en:
+  body: |-
+    A storm cloud appears at a point within range that you can see above yourself. It takes the shape of a Cylinder that is 10 feet tall with a 60-foot radius.
+
+    When you cast the spell, choose a point you can see under the cloud. A lightning bolt shoots from the cloud to that point. Each creature within 5 feet of that point makes a Dexterity saving throw, taking 3d10 Lightning damage on a failed save or half as much damage on a successful one.
+
+    Until the spell ends, you can take a Magic action to call down lightning in that way again, targeting the same point or a different one.
+
+    If you're outdoors in a storm when you cast this spell, the spell gives you control over that storm instead of creating a new one. Under such conditions, the spell's damage increases by 1d10.
+
+    _Using a Higher-Level Spell Slot._ The damage increases by 1d10 for each spell slot level above 3.

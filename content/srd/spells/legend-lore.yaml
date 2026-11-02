@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: legend-lore
+name: 通曉傳奇
+nameEn: Legend Lore
+source: srd
+level: 5
+school: divination
+classes: [ bard, cleric, wizard ]
+castingTime: [ { minutes: 10 } ]
+range: self
+components: [ V, S, M ]
+duration: instantaneous
+srd:
+  material: 價值250 GP以上的香，法術會將其耗盡，以及四片各價值50 GP以上的象牙條
+  body: |-
+    說出或描述一個著名的人物、地點或物體。法術會讓你腦中浮現關於該著名事物重要傳說的簡短摘要，內容由DM描述。
+
+    這些傳說可能包含重要的細節、有趣的揭露，甚至是從未廣為人知的秘辛。你對該事物原本已知的資訊越多，你得到的資訊就越精確詳細。這些資訊是準確的，但可能以比喻性的語言或詩歌來表達，由DM決定。
+
+    若你選擇的著名事物其實並不著名，你會聽到長號吹奏出悲傷的音符，且法術失敗。
+en:
+  material: incense worth 250+ GP, which the spell consumes, and four ivory strips worth 50+ GP each
+  body: |-
+    Name or describe a famous person, place, or object. The spell brings to your mind a brief summary of the significant lore about that famous thing, as described by the GM.
+
+    The lore might consist of important details, amusing revelations, or even secret lore that has never been widely known. The more information you already know about the thing, the more precise and detailed the information you receive is. That information is accurate but might be couched in figurative language or poetry, as determined by the GM.
+
+    If the famous thing you chose isn't actually famous, you hear sad musical notes played on a trombone, and the spell fails.

@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: healing-word
+name: 治癒真言
+nameEn: Healing Word
+source: srd
+level: 1
+school: abjuration
+classes: [ bard, cleric, druid ]
+castingTime: [ bonus-action ]
+range: { feet: 60 }
+components: [ V ]
+duration: instantaneous
+upcast: true
+site:
+  outcomes:
+    - { kind: healing, formula: 2d4, abilityModifier: spellcasting, upcastDice: 2d4, modifierTags: [ restores-hit-points, can-restore-other-creature-hit-points ], autoOnCast: true, context: 治療量；不直接修改角色 HP }
+  body: |-
+    - 射程內一個你選擇且你能看見的生物恢復生命值，數值等於2d4加上你的施法屬性調整值
+    - 使用更高環階法術位：每比1環高一環，治療量增加2d4
+srd:
+  body: |-
+    你所選擇的、射程內你能看見的一個生物恢復等同於2d4加上你的施法屬性調整值的生命值。
+
+    _使用更高環階法術位。_ 法術位環階每比1環高一環，治療量增加2d4。
+en:
+  body: |-
+    A creature of your choice that you can see within range regains Hit Points equal to 2d4 plus your spellcasting ability modifier.
+
+    _Using a Higher-Level Spell Slot._ The healing increases by 2d4 for each spell slot level above 1.

@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: mass-cure-wounds
+name: 群體療傷術
+nameEn: Mass Cure Wounds
+source: srd
+level: 5
+school: abjuration
+classes: [ bard, cleric, druid ]
+castingTime: [ action ]
+range: { feet: 60 }
+components: [ V, S ]
+duration: instantaneous
+srd:
+  body: |-
+    一波治癒能量從你在射程內可見的一點向外湧出。在以該點為中心、半徑30呎的球形區域內，最多選擇六個生物。每個目標恢復等同於5d8加上你的施法屬性調整值的生命值。
+
+    _使用更高環階法術位。_ 所用法術位的環階每比5環高一環，治療量增加1d8。
+en:
+  body: |-
+    A wave of healing energy washes out from a point you can see within range. Choose up to six creatures in a 30-foot-radius Sphere centered on that point. Each target regains Hit Points equal to 5d8 plus your spellcasting ability modifier.
+
+    _Using a Higher-Level Spell Slot._ The healing increases by 1d8 for each spell slot level above 5.

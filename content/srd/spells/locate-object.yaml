@@ -1,0 +1,36 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: locate-object
+name: 物件定位術
+nameEn: Locate Object
+source: srd
+level: 2
+school: divination
+classes: [ bard, cleric, druid, paladin, ranger, wizard ]
+castingTime: [ action ]
+range: self
+components: [ V, S, M ]
+duration: { minutes: 10 }
+concentration: true
+site:
+  material: 一根分叉的細枝
+  body: |-
+    - 描述或說出一個你熟悉的物體；若該物體位於你1,000呎內，你能感知它所在位置的方向；若物體正在移動，你也知道它的移動方向
+    - 此法術可定位你知道的特定物體，前提是你至少曾在30呎內近距離看過它一次
+    - 或者，此法術可定位特定種類中最近的一個物體，例如某種服飾、珠寶、家具、工具或武器
+    - 若你與物體之間的直線路徑被任何厚度的鉛阻擋，此法術無法定位該物體
+srd:
+  material: 一根分叉的細枝
+  body: |-
+    描述或指名一個你熟悉的物體。如果該物體在你1,000呎內，你會感知到該物體所在位置的方向。如果該物體正在移動，你會得知它的移動方向。
+
+    如果你曾近距離（30呎內）見過某個特定物體至少一次，法術可以定位你所知的該特定物體。或者，法術可以定位特定種類中最近的物體，例如某種衣物、珠寶、家具、工具或武器。
+
+    如果你與該物體之間的直線路徑被任何厚度的鉛阻擋，此法術無法定位該物體。
+en:
+  material: a forked twig
+  body: |-
+    Describe or name an object that is familiar to you. You sense the direction to the object's location if that object is within 1,000 feet of you. If the object is in motion, you know the direction of its movement.
+
+    The spell can locate a specific object known to you if you have seen it up close—within 30 feet—at least once. Alternatively, the spell can locate the nearest object of a particular kind, such as a certain kind of apparel, jewelry, furniture, tool, or weapon.
+
+    This spell can't locate an object if any thickness of lead blocks a direct path between you and the object.

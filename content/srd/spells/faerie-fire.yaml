@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: faerie-fire
+name: 妖火
+nameEn: Faerie Fire
+source: srd
+level: 1
+school: evocation
+classes: [ bard, druid ]
+castingTime: [ action ]
+range: { feet: 60 }
+components: [ V ]
+duration: { minutes: 1 }
+concentration: true
+site:
+  body: |-
+    - 射程內邊長20呎的立方體中，所有物體被你選擇的藍色、綠色或紫色光芒勾勒出輪廓
+    - 立方體內的每個生物須進行敏捷豁免；失敗時也被勾勒出輪廓
+    - 持續時間內，被勾勒的物體與受影響的生物發出半徑10呎的微光光照，且無法從隱形狀態獲益
+    - 對受影響生物或物體進行的攻擊檢定，若攻擊者能看見它，則具有優勢
+srd:
+  body: |-
+    射程內一個20呎立方體區域中的物體被藍色、綠色或紫色的光（由你選擇）勾勒出輪廓。立方體區域中的每個生物若敏捷豁免失敗，也會被勾勒出輪廓。在持續時間內，物體與受影響的生物會在半徑10呎內散發微光光照，且無法從隱形狀態獲益。
+
+    若攻擊者能看見受影響的生物或物體，對其進行的攻擊檢定具有優勢。
+en:
+  body: |-
+    Objects in a 20-foot Cube within range are outlined in blue, green, or violet light (your choice). Each creature in the Cube is also outlined if it fails a Dexterity saving throw. For the duration, objects and affected creatures shed Dim Light in a 10-foot radius and can't benefit from the Invisible condition.
+
+    Attack rolls against an affected creature or object have Advantage if the attacker can see it.

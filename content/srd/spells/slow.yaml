@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: slow
+name: 緩慢術
+nameEn: Slow
+source: srd
+level: 3
+school: transmutation
+classes: [ bard, sorcerer, wizard ]
+castingTime: [ action ]
+range: { feet: 120 }
+components: [ V, S, M ]
+duration: { minutes: 1 }
+concentration: true
+site:
+  material: 一滴糖蜜
+  body: |-
+    - 改變射程內邊長40呎立方體中，至多六個你選擇之生物周圍的時間；每個目標須進行感知豁免，失敗時在持續時間內受此法術影響
+    - 受影響的目標：
+      - 速度減半，AC與敏捷豁免承受-2減值，且無法執行反應動作
+      - 在它的回合中只能執行一個動作或一個附贈動作，不能兩者皆執行；若執行攻擊動作，只能進行一次攻擊
+      - 施放具有姿勢成分的法術時，有25%機率因手勢太慢而施法失敗
+    - 受影響的目標在它每個回合結束時重複豁免；成功時法術對它結束
+srd:
+  material: 一滴糖蜜
+  body: |-
+    你扭曲射程內一個40呎立方體區域中，最多六個你選擇的生物周圍的時間。每個目標都必須成功通過感知豁免，否則在持續時間內受到這個法術影響。
+
+    受影響的目標，其速度減半，AC與敏捷豁免承受−2減值，且不能進行反應動作。在它的回合中，它可以採取一個動作或一個附贈動作，但不能兩者皆採；若它採取攻擊動作，則只能進行一次攻擊。如果它施放具有S成分的法術，則有25%的機率因目標做出法術手勢太慢而使該法術失敗。
+
+    受影響的目標在每個自己回合結束時重新進行一次豁免，成功則法術對其自身結束。
+en:
+  material: a drop of molasses
+  body: |-
+    You alter time around up to six creatures of your choice in a 40-foot Cube within range. Each target must succeed on a Wisdom saving throw or be affected by this spell for the duration.
+
+    An affected target's Speed is halved, it takes a −2 penalty to AC and Dexterity saving throws, and it can't take Reactions. On its turns, it can take either an action or a Bonus Action, not both, and it can make only one attack if it takes the Attack action. If it casts a spell with a Somatic component, there is a 25 percent chance the spell fails as a result of the target making the spell's gestures too slowly.
+
+    An affected target repeats the save at the end of each of its turns, ending the spell on itself on a success.

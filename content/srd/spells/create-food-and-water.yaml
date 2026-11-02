@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: create-food-and-water
+name: 造糧術
+nameEn: Create Food and Water
+source: srd
+level: 3
+school: conjuration
+classes: [ cleric ]
+castingTime: [ action ]
+range: { feet: 30 }
+components: [ V, S ]
+duration: instantaneous
+site:
+  body: |-
+    - 在射程內的地面上或容器中，創造45磅食物與30加侖淡水，可用於抵禦營養不良與脫水的危害
+    - 食物味道平淡但營養充足，外觀為你選擇的食物；水很乾淨
+    - 食物若未食用，會在24小時後腐壞
+srd:
+  body: |-
+    你在射程內的地面上或容器中創造45磅食物與30加侖淡水——兩者都有助於抵禦營養不良與脫水的危害。食物味道平淡但營養充足，外觀像是你所選擇的某種食物，而水是乾淨的。食物若未被食用，會在24小時後腐壞。
+en:
+  body: |-
+    You create 45 pounds of food and 30 gallons of fresh water on the ground or in containers within range—both useful in fending off the hazards of malnutrition and dehydration. The food is bland but nourishing and looks like a food of your choice, and the water is clean. The food spoils after 24 hours if uneaten.

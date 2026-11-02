@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: lesser-restoration
+name: 次級復原術
+nameEn: Lesser Restoration
+source: srd
+level: 2
+school: abjuration
+classes: [ bard, cleric, druid, paladin, ranger ]
+castingTime: [ bonus-action ]
+range: touch
+components: [ V, S ]
+duration: instantaneous
+site:
+  body: |-
+    - 觸碰一個生物，結束它身上的一種狀態：失明、耳聾、麻痺或中毒
+srd:
+  body: |-
+    你接觸一個生物，並結束其身上的一種狀態：失明、耳聾、麻痺或中毒。
+en:
+  body: |-
+    You touch a creature and end one condition on it: Blinded, Deafened, Paralyzed, or Poisoned.

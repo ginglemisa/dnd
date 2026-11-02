@@ -1,0 +1,44 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: tiny-hut
+name: 小屋魔法
+nameEn: Tiny Hut
+source: srd
+level: 3
+school: evocation
+classes: [ bard, wizard ]
+castingTime: [ { minutes: 1 } ]
+ritual: true
+range: self
+components: [ V, S, M ]
+duration: { hours: 8 }
+site:
+  material: 一顆水晶珠
+  body: |-
+    - 你周圍出現10呎發散區域，並在持續時間內固定不動
+    - 施法時，若發散區域不足以完全包覆區域內的所有生物，法術失敗
+    - 施法時位於發散區域內的生物與物體可以自由穿過它；其他所有生物與物體都無法穿過
+    - 3環或更低的法術無法穿過它施放，這類法術的效果也無法延伸進入其中
+    - 無論外面天氣如何，發散區域內都舒適乾燥
+    - 法術結束前，你可以命令內部呈現微光光照或黑暗（不需動作）
+    - 發散區域從外面看不透明，顏色由你選擇；從內部看則是透明的
+    - 你離開發散區域或再次施放此法術時，法術提前結束
+srd:
+  material: 一顆水晶珠
+  body: |-
+    一個10呎發散區域在你周圍憑空出現，並在持續時間內保持固定不動。如果該發散區域不夠大，無法完全包覆其區域內的所有生物，則法術在你施放時失敗。
+
+    你施放法術時位於發散區域內的生物與物體，可以自由穿過它。所有其他生物與物體則被阻擋而無法通過。3環或以下的法術無法穿過它被施放，且這類法術的效應也無法延伸進入其中。
+
+    無論外面的天氣如何，發散區域內部的氣氛都舒適而乾燥。在法術結束前，你可以命令內部呈現微光光照或黑暗（無需動作）。該發散區域從外部看是不透明的，並可呈現你選擇的任何顏色，但從內部看則是透明的。
+
+    如果你離開該發散區域，或你再次施放這個法術，法術會提前結束。
+en:
+  material: a crystal bead
+  body: |-
+    A 10-foot Emanation springs into existence around you and remains stationary for the duration. The spell fails when you cast it if the Emanation isn't big enough to fully encapsulate all creatures in its area.
+
+    Creatures and objects within the Emanation when you cast the spell can move through it freely. All other creatures and objects are barred from passing through it. Spells of level 3 or lower can't be cast through it, and the effects of such spells can't extend into it.
+
+    The atmosphere inside the Emanation is comfortable and dry, regardless of the weather outside. Until the spell ends, you can command the interior to have Dim Light or Darkness (no action required). The Emanation is opaque from the outside and of any color you choose, but it's transparent from the inside.
+
+    The spell ends early if you leave the Emanation or if you cast it again.

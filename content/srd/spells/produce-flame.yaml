@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: produce-flame
+name: 燃火術
+nameEn: Produce Flame
+source: srd
+level: 0
+school: conjuration
+classes: [ druid ]
+castingTime: [ bonus-action ]
+range: self
+components: [ V, S ]
+duration: { minutes: 10 }
+site:
+  outcomes:
+    - { kind: damage, attack: spell, formula: 1d8, cantripAt5: 2d8, damageType: fire, autoOnCast: true, context: 投擲火焰命中時傷害 }
+  body: |-
+    - 一團閃爍的火焰出現在你手中，持續到法術結束
+    - 火焰在你手中時不散發熱量、不點燃任何東西，並發出半徑20呎的明亮光照，以及額外20呎的微光光照
+    - 再次施放此法術時，先前的法術結束
+    - 法術結束前，可以用魔法動作向距離你60呎內的一個生物或物體投擲火焰：進行一次遠程法術攻擊，命中時目標受到1d8火焰傷害
+    - 戲法升級：5級時傷害提升為2d8
+srd:
+  body: |-
+    一簇搖曳的火焰出現在你手中，並在持續時間內停留於該處。火焰停留期間不散發熱度，也不會點燃任何東西，並在20呎半徑內散發明亮光照，且在額外20呎內散發微光光照。若你再次施放此法術，此法術結束。
+
+    在法術結束前，你可以執行一個魔法動作，向距離你60呎內的一個生物或物體投擲火焰。進行一次遠程法術攻擊。命中時，目標受到1d8火焰傷害。
+
+    _戲法升級。_ 當你達到5級（2d8）、11級（3d8）與17級（4d8）時，傷害增加1d8。
+en:
+  body: |-
+    A flickering flame appears in your hand and remains there for the duration. While there, the flame emits no heat and ignites nothing, and it sheds Bright Light in a 20-foot radius and Dim Light for an additional 20 feet. The spell ends if you cast it again.
+
+    Until the spell ends, you can take a Magic action to hurl fire at a creature or an object within 60 feet of you. Make a ranged spell attack. On a hit, the target takes 1d8 Fire damage.
+
+    _Cantrip Upgrade._ The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8).

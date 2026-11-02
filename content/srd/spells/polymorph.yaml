@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: polymorph
+name: 變形術
+nameEn: Polymorph
+source: srd
+level: 4
+school: transmutation
+classes: [ bard, druid, sorcerer, wizard ]
+castingTime: [ action ]
+range: { feet: 60 }
+components: [ V, S, M ]
+duration: { hours: 1 }
+concentration: true
+site:
+  material: 一個毛毛蟲繭
+  body: |-
+    - 嘗試將射程內一個你能看見的生物變成野獸；目標須進行感知豁免，失敗時在持續時間內變形為野獸形態
+    - 該形態可以是你選擇的任何野獸，其挑戰等級須等於或低於目標的挑戰等級（目標沒有挑戰等級時，以其等級為準）
+    - 目標的遊戲數值由所選野獸的資料取代，但保留陣營、個性、生物類型、生命值與生命骰
+    - 目標獲得等同於野獸形態生命值的臨時生命值；法術結束時，剩餘的臨時生命值消失；若目標沒有剩餘臨時生命值，法術對它提前結束
+    - 目標能執行的動作受新形態的身體構造限制，且無法說話或施放法術
+    - 目標的裝備融入新形態；該生物無法使用這些裝備，也無法從中獲得任何益處
+srd:
+  material: 一個毛毛蟲的繭
+  body: |-
+    你嘗試將射程內一個你能看見的生物變形為野獸。目標必須成功通過一次感知豁免，否則在持續時間內變形為野獸形態。該形態可以是你選擇的任何挑戰等級等於或低於目標的野獸（若目標沒有挑戰等級，則以目標的等級計算）。目標的遊戲數值會被所選野獸的數據塊取代，但目標保留其陣營、個性、生物類型、生命值與生命骰。野獸的數據塊範例請見「怪物」中的「動物」一節。
+
+    目標獲得等同於野獸形態生命值的臨時生命值。若法術結束時仍有剩餘的臨時生命值，這些臨時生命值會消失。若目標的臨時生命值耗盡，該法術會在目標身上提前結束。
+
+    目標能執行的動作受其新形態的身體構造所限，且它無法說話或施展法術。目標的裝備會融入新形態。該生物無法使用這些裝備，也無法從中獲得任何益處。
+en:
+  material: a caterpillar cocoon
+  body: |-
+    You attempt to transform a creature that you can see within range into a Beast. The target must succeed on a Wisdom saving throw or shape-shift into a Beast form for the duration. That form can be any Beast you choose that has a Challenge Rating equal to or less than the target's (or the target's level if it doesn't have a Challenge Rating). The target's game statistics are replaced by the stat block of the chosen Beast, but the target retains its alignment, personality, creature type, Hit Points, and Hit Point Dice. See the "Animals" section of "Monsters" for a sample of Beast stat blocks.
+
+    The target gains a number of Temporary Hit Points equal to the Hit Points of the Beast form. These Temporary Hit Points vanish if any remain when the spell ends. The spell ends early on the target if it has no Temporary Hit Points left.
+
+    The target is limited in the actions it can perform by the anatomy of its new form, and it can't speak or cast spells. The target's gear melds into the new form. The creature can't use or otherwise benefit from any of that equipment.

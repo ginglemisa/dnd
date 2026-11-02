@@ -1,0 +1,44 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: major-image
+name: 高等幻影
+nameEn: Major Image
+source: srd
+level: 3
+school: illusion
+classes: [ bard, sorcerer, warlock, wizard ]
+castingTime: [ action ]
+range: { feet: 120 }
+components: [ V, S, M ]
+duration: { minutes: 10 }
+concentration: true
+upcast: true
+site:
+  material: 一點絨毛
+  body: |-
+    - 創造一個物體、生物或其他可見現象的影像，大小不超過邊長20呎的立方體
+    - 影像出現在射程內一個你能看見的位置，持續到法術結束；它看起來很真實，包含與所描繪事物相符的聲音、氣味與溫度，但無法造成傷害或引發狀態
+    - 若你位於幻象的射程內，可以用魔法動作使影像移動到射程內任何其他位置；移動時可以改變影像外觀，使其動作顯得自然，例如讓生物影像看起來在行走
+    - 你也可以讓幻象在不同時間發出不同聲音，甚至讓它與人交談
+    - 物體可以穿過影像，因此與影像的物理互動會揭露它是幻象
+    - 生物可以用研究動作檢視影像，並進行智力（調查）檢定對抗你的法術豁免DC；成功時識破幻象，能看穿影像，影像的其他感官特徵對它也變得微弱
+    - 使用更高環階法術位：以4環或更高法術位施放時，法術持續到被解除，且不需專注
+srd:
+  material: 一小片羊毛
+  body: |-
+    你創造一個物體、生物或其他可見現象的影像，其大小不超過20呎立方體。影像出現在你在射程內能看見的一處，並持續到持續時間結束。它看起來真實，包括與所描繪事物相符的聲音、氣味與溫度，但它不能造成傷害或造成狀態。
+
+    若你位於幻象的射程內，你可以用一個魔法動作讓影像移動到射程內的任何其他地點。影像改變位置時，你可以更改其外觀，使它的動作看起來對該影像而言很自然。例如，若你創造的是一個生物的影像並讓它移動，你可以更改影像，使它看起來像在行走。同樣地，你可以讓幻象在不同時間發出不同的聲音，例如甚至讓它進行對話。
+
+    與影像進行物理接觸會揭露它是幻象，因為物體可以穿過它。以研究動作檢視影像的生物，可以針對你的法術豁免DC成功通過一次智力（調查）檢定，判定它是幻象。若生物識破幻象的真面目，該生物就能看穿影像，且影像的其他感官特質對該生物而言會變得模糊。
+
+    _使用更高環階法術位。_ 若以4環或更高的法術位施放，法術會持續到被解除為止，且不需要專注。
+en:
+  material: a bit of fleece
+  body: |-
+    You create the image of an object, a creature, or some other visible phenomenon that is no larger than a 20-foot Cube. The image appears at a spot that you can see within range and lasts for the duration. It seems real, including sounds, smells, and temperature appropriate to the thing depicted, but it can't deal damage or cause conditions.
+
+    If you are within range of the illusion, you can take a Magic action to cause the image to move to any other spot within range. As the image changes location, you can alter its appearance so that its movements appear natural for the image. For example, if you create an image of a creature and move it, you can alter the image so that it appears to be walking. Similarly, you can cause the illusion to make different sounds at different times, even making it carry on a conversation, for example.
+
+    Physical interaction with the image reveals it to be an illusion, for things can pass through it. A creature that takes a Study action to examine the image can determine that it is an illusion with a successful Intelligence (Investigation) check against your spell save DC. If a creature discerns the illusion for what it is, the creature can see through the image, and its other sensory qualities become faint to the creature.
+
+    _Using a Higher-Level Spell Slot._ The spell lasts until dispelled, without requiring Concentration, if cast with a level 4+ spell slot.

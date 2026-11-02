@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: floating-disk
+name: 漂浮碟
+nameEn: Floating Disk
+source: srd
+level: 1
+school: conjuration
+classes: [ wizard ]
+castingTime: [ action ]
+ritual: true
+range: { feet: 30 }
+components: [ V, S, M ]
+duration: { hours: 1 }
+site:
+  material: 一滴水銀
+  body: |-
+    - 在射程內你能看見的一個未被佔據空間，創造一個直徑3呎、厚1吋的水平圓形力場平面，漂浮在離地3呎處，持續到法術結束
+    - 圓盤至多可承載500磅；放上更多重量時，法術結束，圓盤上的所有東西都會掉到地面
+    - 你位於圓盤20呎內時，圓盤保持不動；你移動到距離它超過20呎時，圓盤會跟隨你，保持在你20呎內
+    - 圓盤可以越過不平坦地形、上下樓梯與斜坡等，但無法跨越10呎或以上的高度落差；例如它無法越過10呎深的坑洞，若在坑底創造也無法離開該坑洞
+    - 你距離圓盤超過100呎時（通常是因為它無法繞過障礙物跟隨你），法術結束
+srd:
+  material: 一滴水銀
+  body: |-
+    此法術創造一個圓形的水平力場平面，直徑3呎、厚1吋，漂浮在地面上方3呎處，位於射程內你能看見的、由你選擇的一個未被佔據的空間。圓盤在持續時間內保持存在，最多可承載500磅。若放上更多重量，法術即結束，圓盤上的一切都會掉落到地面。
+
+    當你位於圓盤周圍20呎內時，圓盤不會移動。若你移動到距離圓盤超過20呎之處，圓盤會跟隨你，使其保持在你周圍20呎內。它可以越過不平整的地形、上下階梯、斜坡等，但無法越過10呎以上的高低落差。例如，圓盤無法越過10呎深的坑洞，若它是在這種坑洞底部被創造出來，也無法離開該坑洞。
+
+    若你移動到距離圓盤超過100呎之處（通常是因為它無法繞過障礙物來跟隨你），法術即結束。
+en:
+  material: a drop of mercury
+  body: |-
+    This spell creates a circular, horizontal plane of force, 3 feet in diameter and 1 inch thick, that floats 3 feet above the ground in an unoccupied space of your choice that you can see within range. The disk remains for the duration and can hold up to 500 pounds. If more weight is placed on it, the spell ends, and everything on the disk falls to the ground.
+
+    The disk is immobile while you are within 20 feet of it. If you move more than 20 feet away from it, the disk follows you so that it remains within 20 feet of you. It can move across uneven terrain, up or down stairs, slopes and the like, but it can't cross an elevation change of 10 feet or more. For example, the disk can't move across a 10-foot-deep pit, nor could it leave such a pit if it was created at the bottom.
+
+    If you move more than 100 feet from the disk (typically because it can't move around an obstacle to follow you), the spell ends.

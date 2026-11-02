@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: alarm
+name: 警報術
+nameEn: Alarm
+source: srd
+level: 1
+school: abjuration
+classes: [ ranger, wizard ]
+castingTime: [ { minutes: 1 } ]
+ritual: true
+range: { feet: 30 }
+components: [ V, S, M ]
+duration: { hours: 8 }
+site:
+  material: 一個鈴鐺和一段銀線
+  body: |-
+    - 設置防範入侵的警報：選擇射程內一扇門、一扇窗，或一個不大於邊長20呎立方體的區域
+    - 法術結束前，每當有生物觸碰或進入受守護區域時，警報會提醒你
+    - 施法時，你可以指定不會觸發警報的生物
+    - 施法時選擇警報形式：
+      - 聲音警報：在受守護區域60呎內發出手搖鈴聲，持續10秒
+      - 精神警報：若你位於受守護區域1英里內，會在心中收到提醒；若你正在睡覺，提醒會喚醒你
+srd:
+  material: 一個鈴鐺和銀線
+  body: |-
+    你針對入侵設下警報。選擇射程內的一扇門、一扇窗，或一個不大於20呎立方體的區域。在法術結束前，每當有生物接觸或進入受守護的區域，警報就會通知你。施放此法術時，你可以指定不會觸發警報的生物。你還要選擇警報是聽得見的還是心靈感應的：
+
+    **聲音警報。** 警報會在受守護區域60呎內發出手搖鈴的聲音，持續10秒。
+
+    **精神警報。** 若你在受守護區域1英里內，你會收到一個心靈提示。如果你正在睡覺，這個提示會使你醒來。
+en:
+  material: a bell and silver wire
+  body: |-
+    You set an alarm against intrusion. Choose a door, a window, or an area within range that is no larger than a 20-foot Cube. Until the spell ends, an alarm alerts you whenever a creature touches or enters the warded area. When you cast the spell, you can designate creatures that won't set off the alarm. You also choose whether the alarm is audible or mental:
+
+    **Audible Alarm.** The alarm produces the sound of a handbell for 10 seconds within 60 feet of the warded area.
+
+    **Mental Alarm.** You are alerted by a mental ping if you are within 1 mile of the warded area. This ping awakens you if you're asleep.

@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: spike-growth
+name: 荊棘叢生
+nameEn: Spike Growth
+source: srd
+level: 2
+school: transmutation
+classes: [ druid, ranger ]
+castingTime: [ action ]
+range: { feet: 150 }
+components: [ V, S, M ]
+duration: { minutes: 10 }
+concentration: true
+site:
+  material: 七根荊棘
+  outcomes:
+    - { kind: damage, formula: 2d4, damageType: piercing, autoOnCast: false, context: 之後每移動 5 呎時 }
+  body: |-
+    - 以射程內一點為中心、半徑20呎的球形區域中，地面長出堅硬的尖刺與荊棘；持續時間內，該區域成為困難地形
+    - 生物移入區域或在區域內移動時，每移動5呎受到2d4穿刺傷害
+    - 地面變化經過偽裝，看起來很自然；施法時看不見該區域的生物，必須在進入前執行搜索動作，並在感知（察覺或求生）檢定對抗你的法術豁免DC成功，才能辨識出這片地形有危險
+srd:
+  material: 七根荊棘
+  body: |-
+    以射程內一點為中心、半徑20呎的球形區域內的地面長出堅硬的尖刺與荊棘。在持續時間內，該區域成為困難地形。當生物移動進入該區域或在其中移動時，每移動5呎就受到2d4穿刺傷害。
+
+    地面的這種變化經過偽裝，看起來十分自然。施放法術時無法看見該區域的任何生物，必須在進入前執行搜尋動作，並以感知（察覺或求生）檢定對抗你的法術豁免DC且成功，才能辨認出該地形具有危險。
+en:
+  material: seven thorns
+  body: |-
+    The ground in a 20-foot-radius Sphere centered on a point within range sprouts hard spikes and thorns. The area becomes Difficult Terrain for the duration. When a creature moves into or within the area, it takes 2d4 Piercing damage for every 5 feet it travels.
+
+    The transformation of the ground is camouflaged to look natural. Any creature that can't see the area when the spell is cast must take a Search action and succeed on a Wisdom (Perception or Survival) check against your spell save DC to recognize the terrain as hazardous before entering it.

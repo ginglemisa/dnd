@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: dispel-magic
+name: 解除魔法
+nameEn: Dispel Magic
+source: srd
+level: 3
+school: abjuration
+classes: [ bard, cleric, druid, sorcerer, warlock, wizard ]
+castingTime: [ action ]
+range: { feet: 120 }
+components: [ V, S ]
+duration: instantaneous
+upcast: true
+site:
+  body: |-
+    - 選擇射程內一個生物、物體或魔法效果
+    - 目標身上任何3環或更低的持續中法術結束
+    - 目標身上每一個4環或更高的持續中法術，你都須以施法屬性進行一次屬性檢定（DC為10加上該法術環階）；成功時該法術結束
+    - 使用更高環階法術位：若目標身上的法術環階等於或低於你所使用的法術位環階，該法術自動結束
+srd:
+  body: |-
+    選擇射程內一個生物、物體或魔法效應。目標身上任何3環或更低環階的持續法術都會結束。對於目標身上每個4環或更高環階的持續法術，使用你的施法屬性進行一次屬性檢定（DC為10加上該法術的環階）。檢定成功時，該法術結束。
+
+    _使用更高環階法術位。_ 若目標身上的法術環階等於或低於你所用法術位的環階，你會自動結束該法術。
+en:
+  body: |-
+    Choose one creature, object, or magical effect within range. Any ongoing spell of level 3 or lower on the target ends. For each ongoing spell of level 4 or higher on the target, make an ability check using your spellcasting ability (DC 10 plus that spell's level). On a successful check, the spell ends.
+
+    _Using a Higher-Level Spell Slot._ You automatically end a spell on the target if the spell's level is equal to or less than the level of the spell slot you use.

@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: freezing-sphere
+name: 冰封法球
+nameEn: Freezing Sphere
+source: srd
+level: 6
+school: evocation
+classes: [ sorcerer, wizard ]
+castingTime: [ action ]
+range: { feet: 300 }
+components: [ V, S, M ]
+duration: instantaneous
+srd:
+  material: 一個微型水晶球
+  body: |-
+    一顆冰寒的球體從你射向射程內你所選擇的一點，並在該處爆炸成半徑60呎的球形區域。該區域內的每個生物都要進行體質豁免，豁免失敗時受到10d6冷凍傷害，成功則傷害減半。
+
+    若球體擊中一片水域，它會將該水域30呎見方的範圍凍結至6吋深。這層冰持續1分鐘。原本在凍結水面游泳的生物會被困在冰中，並陷入束縛狀態。被困的生物可以用動作對抗你的法術豁免DC進行力量（運動）檢定以掙脫。
+
+    完成施法後，你可以選擇不發射球體。若你這麼做，一顆約投石索彈丸大小、摸起來冰涼的球體會出現在你手中。你或你把球體交給的生物可以在任何時候投擲該球體（射程40呎），或用投石索將它擲出（射程為投石索的一般射程）。它會在撞擊時碎裂，效果與正常施放此法術相同。你也可以把球體放下而不使其碎裂。1分鐘後，若球體尚未碎裂，它就會爆炸。
+
+    _使用更高環階法術位。_ 使用的法術位環階每比6環高一環，傷害增加1d6。
+en:
+  material: a miniature crystal sphere
+  body: |-
+    A frigid globe streaks from you to a point of your choice within range, where it explodes in a 60-foot-radius Sphere. Each creature in that area makes a Constitution saving throw, taking 10d6 Cold damage on failed save or half as much damage on a successful one.
+
+    If the globe strikes a body of water, it freezes the water to a depth of 6 inches over an area 30 feet square. This ice lasts for 1 minute. Creatures that were swimming on the surface of frozen water are trapped in the ice and have the Restrained condition. A trapped creature can take an action to make a Strength (Athletics) check against your spell save DC to break free.
+
+    You can refrain from firing the globe after completing the spell's casting. If you do so, a globe about the size of a sling bullet, cool to the touch, appears in your hand. At any time, you or a creature you give the globe to can throw the globe (to a range of 40 feet) or hurl it with a sling (to the sling's normal range). It shatters on impact, with the same effect as a normal casting of the spell. You can also set the globe down without shattering it. After 1 minute, if the globe hasn't already shattered, it explodes.
+
+    _Using a Higher-Level Spell Slot._ The damage increases by 1d6 for each spell slot level above 6.

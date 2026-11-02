@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: locate-animals-or-plants
+name: 動植物定位術
+nameEn: Locate Animals or Plants
+source: srd
+level: 2
+school: divination
+classes: [ bard, druid, ranger ]
+castingTime: [ action ]
+ritual: true
+range: self
+components: [ V, S, M ]
+duration: instantaneous
+site:
+  material: 一點尋血獵犬的毛
+  body: |-
+    - 描述或說出一種特定的野獸、植物生物或非魔法植物
+    - 若5英里內存在該種類的生物或植物，你得知最近一個的方向與距離
+srd:
+  material: 一根獵血犬的毛
+  body: |-
+    描述或指名一種特定的野獸、植物生物或非魔法植物。如果5英里內存在該種類的生物或植物，你會得知最近者的方向與距離。
+en:
+  material: fur from a bloodhound
+  body: |-
+    Describe or name a specific kind of Beast, Plant creature, or nonmagical plant. You learn the direction and distance to the closest creature or plant of that kind within 5 miles, if any are present.

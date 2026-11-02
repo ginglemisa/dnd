@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: wall-of-ice
+name: 冰牆術
+nameEn: Wall of Ice
+source: srd
+level: 6
+school: evocation
+classes: [ wizard ]
+castingTime: [ action ]
+range: { feet: 120 }
+components: [ V, S, M ]
+duration: { minutes: 10 }
+concentration: true
+srd:
+  material: 一塊石英
+  body: |-
+    你在射程內的堅固表面上創造一道冰牆。你可以將它塑造成半徑最多10呎的半球形穹頂或球體，或是塑造成由十片10呎見方的面板組成的平面。每片面板都必須與另一片面板相連。無論哪種形態，牆壁都厚1呎，並在持續時間內持續存在。
+
+    若冰牆出現時切過某生物的空間，該生物會被推到牆壁的其中一側（由你選擇哪一側），並進行敏捷豁免，豁免失敗時受到10d6冷凍傷害，成功時受到一半傷害。
+
+    牆壁是可以受到傷害、因而可被突破的物體。它的AC為12，每10呎區段有30生命值，並對冷凍、毒素與心靈傷害具有免疫，且對火焰傷害具有易傷。將一段10呎的牆壁降至0生命值會將其摧毀，並在牆壁原本佔據的空間留下一片冰冷的空氣層。
+
+    生物在一個回合內第一次穿過冰冷的空氣層時，進行一次體質豁免，豁免失敗時受到5d6冷凍傷害，成功時受到一半傷害。_使用更高環階法術位。_ 每高於6環一個環階，牆壁出現時造成的傷害增加2d6，且穿過冰冷空氣層的傷害增加1d6。
+en:
+  material: a piece of quartz
+  body: |-
+    You create a wall of ice on a solid surface within range. You can form it into a hemispherical dome or a globe with a radius of up to 10 feet, or you can shape a flat surface made up of ten 10-foot-square panels. Each panel must be contiguous with another panel. In any form, the wall is 1 foot thick and lasts for the duration.
+
+    If the wall cuts through a creature's space when it appears, the creature is pushed to one side of the wall (you choose which side) and makes a Dexterity saving throw, taking 10d6 Cold damage on a failed save or half as much damage on a successful one.
+
+    The wall is an object that can be damaged and thus breached. It has AC 12 and 30 Hit Points per 10-foot section, and it has Immunity to Cold, Poison, and Psychic damage and Vulnerability to Fire damage. Reducing a 10-foot section of wall to 0 Hit Points destroys it and leaves behind a sheet of frigid air in the space the wall occupied.
+
+    A creature moving through the sheet of frigid air for the first time on a turn makes a Constitution saving throw, taking 5d6 Cold damage on a failed save or half as much damage on a successful one. _Using a Higher-Level Spell Slot._ The damage the wall deals when it appears increases by 2d6 and the damage from passing through the sheet of frigid air increases by 1d6 for each spell slot level above 6.

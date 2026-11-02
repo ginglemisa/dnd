@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: expeditious-retreat
+name: 腳底抹油
+nameEn: Expeditious Retreat
+source: srd
+level: 1
+school: transmutation
+classes: [ sorcerer, warlock, wizard ]
+castingTime: [ bonus-action ]
+range: self
+components: [ V, S ]
+duration: { minutes: 10 }
+concentration: true
+site:
+  body: |-
+    - 你執行衝刺動作；法術結束前，你可以用附贈動作再次執行衝刺動作
+srd:
+  body: |-
+    你採取疾走動作，並且在法術結束前，你可以用附贈動作再次採取該動作。
+en:
+  body: |-
+    You take the Dash action, and until the spell ends, you can take that action again as a Bonus Action.

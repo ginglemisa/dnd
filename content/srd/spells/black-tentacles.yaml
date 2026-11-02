@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: black-tentacles
+name: 黑觸手
+nameEn: Black Tentacles
+source: srd
+level: 4
+school: conjuration
+classes: [ wizard ]
+castingTime: [ action ]
+range: { feet: 90 }
+components: [ V, S, M ]
+duration: { minutes: 1 }
+concentration: true
+site:
+  material: 一截觸手
+  outcomes:
+    - { kind: damage, formula: 3d6, damageType: bludgeoning, autoOnCast: true, context: 區域出現時其中生物的傷害擲一次；豁免依規則處理 }
+  body: |-
+    - 扭動的漆黑觸手填滿射程內你能看見之地面上的一個20呎見方區域；持續時間內，觸手使該區域地面成為困難地形
+    - 區域內每個生物須進行力量豁免；失敗時受到3d6鈍擊傷害，並陷入束縛狀態直到法術結束
+    - 生物進入區域或在其中結束回合時，也須進行此豁免；每個生物每回合只進行一次此豁免
+    - 被束縛的生物可以用一個動作進行力量（運動）檢定對抗你的法術豁免DC；成功時結束自身的束縛狀態
+srd:
+  material: 一條觸手
+  body: |-
+    蠕動的黑檀色觸手充滿你能看見的射程內地面上一塊20呎見方的區域。在持續時間內，這些觸手將該區域的地面變為困難地形。
+
+    該區域內的每個生物進行一次力量豁免。豁免失敗時，該生物受到3d6鈍擊傷害，並陷入束縛狀態，直到法術結束。生物進入該區域或在該處結束其回合時，也要進行該豁免。每名生物每回合只需進行一次該豁免。
+
+    陷入束縛狀態的生物可以用一個動作進行一次對抗你法術豁免DC的力量（運動）檢定，成功則解除自身的該狀態。
+en:
+  material: a tentacle
+  body: |-
+    Squirming, ebony tentacles fill a 20-foot square on ground that you can see within range. For the duration, these tentacles turn the ground in that area into Difficult Terrain.
+
+    Each creature in that area makes a Strength saving throw. On a failed save, it takes 3d6 Bludgeoning damage, and it has the Restrained condition until the spell ends. A creature also makes that save if it enters the area or ends it turn there. A creature makes that save only once per turn.
+
+    A Restrained creature can take an action to make a Strength (Athletics) check against your spell save DC, ending the condition on itself on a success.

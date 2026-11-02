@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: antipathy-sympathy
+name: 嫌惡術/關懷術
+nameEn: Antipathy/Sympathy
+source: srd
+level: 8
+school: enchantment
+classes: [ bard, druid, wizard ]
+castingTime: [ { hours: 1 } ]
+range: { feet: 60 }
+components: [ V, S, M ]
+duration: { days: 10 }
+srd:
+  material: 醋與蜂蜜的混合物
+  body: |-
+    施放法術時，選擇它要創造嫌惡或關懷，並以一個巨型或更小的生物或物體為目標。然後指定一種生物種類，例如紅龍、地精或吸血鬼。所選種類的生物在進入目標120呎內時，會進行一次感知豁免。你選擇的嫌惡或關懷，決定該生物豁免失敗時會發生什麼事：
+
+    **嫌惡。** 該生物陷入恐慌狀態。陷入恐慌的生物必須在自己的回合使用移動力，沿最安全的路線盡可能遠離目標。
+
+    **關懷。** 該生物陷入魅惑狀態。陷入魅惑的生物必須在自己的回合使用移動力，沿最安全的路線盡可能靠近目標。若該生物位於目標5呎內，它就不能自願移開。若目標對陷入魅惑的生物造成傷害，該生物可以進行感知豁免來結束效應，如下所述。
+
+    _結束效應。_ 若陷入恐慌或魅惑的生物在回合結束時距離目標超過120呎，該生物會進行感知豁免。豁免成功時，該生物不再受目標影響。成功豁免此效應的生物，在1分鐘內對其免疫，之後才能再次受到影響。
+en:
+  material: a mix of vinegar and honey
+  body: |-
+    As you cast the spell, choose whether it creates antipathy or sympathy, and target one creature or object that is Huge or smaller. Then specify a kind of creature, such as red dragons, goblins, or vampires. A creature of the chosen kind makes a Wisdom saving throw when it comes within 120 feet of the target. Your choice of antipathy or sympathy determines what happens to a creature when it fails that save:
+
+    **Antipathy.** The creature has the Frightened condition. The Frightened creature must use its movement on its turns to get as far away as possible from the target, moving by the safest route.
+
+    **Sympathy.** The creature has the Charmed condition. The Charmed creature must use its movement on its turns to get as close as possible to the target, moving by the safest route. If the creature is within 5 feet of the target, the creature can't willingly move away. If the target damages the Charmed creature, that creature can make a
+    Wisdom saving throw to end the effect, as described below.
+
+    _Ending the Effect._ If the Frightened or Charmed creature ends its turn more than 120 feet away from the target, the creature makes a Wisdom saving throw. On a successful save, the creature is no longer affected by the target. A creature that successfully saves against this effect is immune to it for 1 minute, after which it can be affected again.

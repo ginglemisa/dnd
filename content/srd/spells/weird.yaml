@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: weird
+name: 怪影殺手
+nameEn: Weird
+source: srd
+level: 9
+school: illusion
+classes: [ warlock, wizard ]
+castingTime: [ action ]
+range: { feet: 120 }
+components: [ V, S ]
+duration: { minutes: 1 }
+concentration: true
+srd:
+  body: |-
+    你試圖在他人心中創造幻象般的恐懼。以射程內一點為中心、半徑30呎的球形區域內，你選擇的每個生物各進行一次感知豁免。豁免失敗時，目標受到10d10心靈傷害，並在持續時間內陷入恐慌狀態。豁免成功時，目標僅受到一半傷害。
+
+    陷入恐慌狀態的目標在其每個回合結束時進行一次感知豁免。豁免失敗時，它受到5d10心靈傷害。豁免成功時，法術對該目標結束。
+en:
+  body: |-
+    You try to create illusory terrors in others' minds. Each creature of your choice in a 30-foot-radius Sphere centered on a point within range makes a Wisdom saving throw. On a failed save, a target takes 10d10 Psychic damage and has the Frightened condition for the duration. On a successful save, a target takes half as much damage only.
+
+    A Frightened target makes a Wisdom saving throw at the end of each of its turns. On a failed save, it takes 5d10 Psychic damage. On a successful save, the spell ends on that target.

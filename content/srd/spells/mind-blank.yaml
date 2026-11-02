@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: mind-blank
+name: 心靈屏障
+nameEn: Mind Blank
+source: srd
+level: 8
+school: abjuration
+classes: [ bard, wizard ]
+castingTime: [ action ]
+range: touch
+components: [ V, S ]
+duration: { hours: 24 }
+srd:
+  body: |-
+    在法術結束前，你所觸碰的一名自願生物對心靈傷害與魅惑狀態具有免疫。該目標也不會受到任何能感知其情緒或陣營、讀取其思想或以魔法偵測其位置的事物影響，並且沒有任何法術──即使是_祈願術_──能蒐集關於該目標的資訊、遠端觀察它，或控制它的心智。
+en:
+  body: |-
+    Until the spell ends, one willing creature you touch has Immunity to Psychic damage and the Charmed condition. The target is also unaffected by anything that would sense its emotions or alignment, read its thoughts, or magically detect its location, and no spell—not even _Wish_—can gather information about the target, observe it remotely, or control its mind.

@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: scorching-ray
+name: 灼熱射線
+nameEn: Scorching Ray
+source: srd
+level: 2
+school: evocation
+classes: [ sorcerer, wizard ]
+castingTime: [ action ]
+range: { feet: 120 }
+components: [ V, S ]
+duration: instantaneous
+upcast: true
+site:
+  outcomes:
+    - { kind: damage, attack: spell, formula: 2d6, damageType: fire, repeat: 3, repeatPerSlot: 1, autoOnCast: true, context: 每道射線各自進行攻擊與傷害擲骰, repeatLabel: 射線 }
+  body: |-
+    - 擲出三道火焰射線，可擲向射程內同一個目標或多個目標
+    - 每道射線分別進行一次遠程法術攻擊；命中時，目標受到2d6火焰傷害
+    - 使用更高環階法術位：每比2環高一環，多創造一道射線
+srd:
+  body: |-
+    你擲出三道火焰射線。你可以將它們擲向射程內的同一個目標，或分別擲向數個目標。對每道射線各進行一次遠程法術攻擊。命中時，目標受到2d6火焰傷害。
+
+    _使用更高環階法術位。_ 法術位環階每比2環高一環，你多創造一道射線。
+en:
+  body: |-
+    You hurl three fiery rays. You can hurl them at one target within range or at several. Make a ranged spell attack for each ray. On a hit, the target takes 2d6 Fire damage.
+
+    _Using a Higher-Level Spell Slot._ You create one additional ray for each spell slot level above 2.

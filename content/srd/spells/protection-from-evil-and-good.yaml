@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: protection-from-evil-and-good
+name: 防護善惡
+nameEn: Protection from Evil and Good
+source: srd
+level: 1
+school: abjuration
+classes: [ cleric, druid, paladin, warlock, wizard ]
+castingTime: [ action ]
+range: touch
+components: [ V, S, M ]
+duration: { minutes: 10 }
+concentration: true
+site:
+  material: 一瓶價值至少25 GP的聖水（施法時消耗）
+  body: |-
+    - 法術結束前，你觸碰的一個自願生物受到保護，對抗異怪、天界生物、元素生物、精類、邪魔或不死生物
+    - 這些類型的生物對目標進行的攻擊檢定具有劣勢
+    - 目標無法被這些生物附身，也不會因牠們陷入魅惑或恐慌狀態
+    - 若目標已被此類生物附身、魅惑或使其恐慌，目標對相關效果進行的任何新豁免檢定具有優勢
+srd:
+  material: 一瓶價值25+ GP的聖水，法術會將其消耗
+  body: |-
+    在法術結束前，你觸碰的一隻自願生物受到保護，不受異怪、天界生物、元素生物、精類、邪魔或不死生物的侵擾。
+
+    此保護提供數種益處。這些類型的生物對目標進行攻擊檢定時具有劣勢。目標也不會被它們附身，也不會因它們而陷入魅惑或恐慌狀態。若目標已被這類生物附身，或已因其陷入魅惑或恐慌狀態，則目標對抗相關效應的任何新的豁免都具有優勢。
+en:
+  material: a flask of Holy Water worth 25+ GP, which the spell consumes
+  body: |-
+    Until the spell ends, one willing creature you touch is protected against creatures that are Aberrations, Celestials, Elementals, Fey, Fiends, or Undead.
+
+    The protection grants several benefits. Creatures of those types have Disadvantage on attack rolls against the target. The target also can't be possessed by or gain the Charmed or Frightened conditions from them. If the target is already possessed, Charmed, or Frightened by such a creature, the target has Advantage on any new saving throw against the relevant effect.

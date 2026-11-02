@@ -1,0 +1,34 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: haste
+name: 加速術
+nameEn: Haste
+source: srd
+level: 3
+school: transmutation
+classes: [ sorcerer, wizard ]
+castingTime: [ action ]
+range: { feet: 30 }
+components: [ V, S, M ]
+duration: { minutes: 1 }
+concentration: true
+site:
+  material: 一片甘草根薄片
+  body: |-
+    - 選擇射程內一個你能看見的自願生物；法術結束前：
+      - 目標的速度加倍
+      - AC獲得+2加值
+      - 進行敏捷豁免具有優勢
+      - 在它的每個回合獲得一個額外動作，該動作只能用於攻擊（僅限一次攻擊）、衝刺、撤離、躲藏或使用動作
+    - 法術結束時，一陣倦怠感襲來，目標陷入失能狀態且速度為0，直到它下個回合結束
+srd:
+  material: 一小片甘草根屑
+  body: |-
+    選擇一個你在射程內可以看見的自願生物。在法術結束前，目標的速度加倍，AC獲得+2加值，在敏捷豁免上具有優勢，並且在它的每個回合中獲得一個額外動作。該動作只能用來進行攻擊（僅限一次攻擊）、疾走、撤離、躲藏或使用物體動作。
+
+    法術結束時，目標會陷入失能狀態，且速度為0，直到其下個回合結束，彷彿一陣倦怠感席捲了它。
+en:
+  material: a shaving of licorice root
+  body: |-
+    Choose a willing creature that you can see within range. Until the spell ends, the target's Speed is doubled, it gains a +2 bonus to Armor Class, it has Advantage on Dexterity saving throws, and it gains an additional action on each of its turns. That action can be used to take only the Attack (one attack only), Dash, Disengage, Hide, or Utilize action.
+
+    When the spell ends, the target is Incapacitated and has a Speed of 0 until the end of its next turn, as a wave of lethargy washes over it.

@@ -1,0 +1,52 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: thaumaturgy
+name: 奇術
+nameEn: Thaumaturgy
+source: srd
+level: 0
+school: transmutation
+classes: [ cleric ]
+castingTime: [ action ]
+range: { feet: 30 }
+components: [ V ]
+duration: { minutes: 1, upTo: true }
+site:
+  body: |-
+    - 在射程內展現一個小奇蹟，從下列效果擇一：
+      - 變化眼眸：改變你雙眼的外觀，持續1分鐘
+      - 放大聲音：你的聲音變得至多比平常響亮三倍，持續1分鐘；期間你進行魅力（威嚇）檢定具有優勢
+      - 玩火：使火焰閃爍、變亮、變暗或改變顏色，持續1分鐘
+      - 隱形之手：瞬間使一扇未上鎖的門或窗猛然打開或關上
+      - 冥冥之音：瞬間從射程內你選擇的一點發出聲音，例如雷鳴、烏鴉啼叫或不祥的低語
+      - 地面震顫：使地面產生無害的震動，持續1分鐘
+    - 多次施放此法術時，至多可同時維持三個持續1分鐘的效果
+srd:
+  body: |-
+    你在射程內展現一個微小的奇蹟。你在射程內創造下列效果之一。若你多次施放此法術，你最多可同時維持其三個持續1分鐘的效果。
+
+    _變化眼眸。_ 你改變自己雙眼的外觀，持續1分鐘。
+
+    _放大聲音。_ 你的聲音變得洪亮，最多達正常音量的三倍，持續1分鐘。在持續時間內，你進行魅力（威嚇）檢定具有優勢。
+
+    _玩火。_ 你使火焰閃爍、變亮、變暗或改變顏色，持續1分鐘。
+
+    _隱形之手。_ 你瞬間使一扇未上鎖的門或窗猛然打開或砰然關上。
+
+    _冥冥之音。_ 你創造一個瞬間的聲音，其源自射程內你所選的一點，例如隆隆雷聲、烏鴉的啼叫或不祥的低語。
+
+    _地面震顫。_ 你使地面產生無害的震動，持續1分鐘。
+en:
+  body: |-
+    You manifest a minor wonder within range. You create one of the effects below within range. If you cast this spell multiple times, you can have up to three of its 1-minute effects active at a time.
+
+    _Altered Eyes._ You alter the appearance of your eyes for 1 minute.
+
+    _Booming Voice._ Your voice booms up to three times as loud as normal for 1 minute. For the duration, you have Advantage on Charisma (Intimidation) checks.
+
+    _Fire Play._ You cause flames to flicker, brighten, dim, or change color for 1 minute.
+
+    _Invisible Hand._ You instantaneously cause an unlocked door or window to fly open or slam shut.
+
+    _Phantom Sound._ You create an instantaneous sound that originates from a point of your choice within range, such as a rumble of thunder, the cry of a raven, or ominous whispers.
+
+    _Tremors._ You cause harmless tremors in the ground for 1 minute.
