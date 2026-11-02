@@ -59,7 +59,8 @@
 ## 部署與離線版
 
 * 回歸測試只在本機推送前執行。GitHub Actions（`.github/workflows/site.yml`）在 push 到 `main` 時建置、產生離線角色卡並部署 GitHub Pages，不跑回歸測試。
-* `twD20-offline.html` 是 Actions 產生的衍生產物，不提交、不手改。只有使用者要求時，才在本機執行 `npm run build:offline`；腳本內含自身驗證。離線版不含 PDF 與私人內容；分享只產生正式站的永久網址。
+* `twD20-offline.html` 是 Actions 產生的衍生產物，不提交、不手改。離線版除了停用 PDF 匯出，功能應與網頁版相同；不含私人內容，分享只產生正式站的永久網址。
+* 改動可能影響離線版（載入順序、內嵌的 script／CSS／圖片、新增產物檔、路徑或離線分享）時，自行在本機執行 `npm run build:offline`（先 `npm run build`；腳本內含自身驗證），測完刪除產物。
 
 ## 驗證
 
