@@ -8,7 +8,7 @@
 "use strict";
 const fs = require("fs");
 const path = require("path");
-const { ContentError } = require("./class-content/markdown");
+const { ContentError } = require("./content/errors");
 const { loadContent } = require("./class-content/load");
 const { checkIdBaseline } = require("./class-content/id-baseline");
 const { writeSiteData } = require("./class-content/site-data");

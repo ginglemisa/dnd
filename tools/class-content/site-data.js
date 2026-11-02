@@ -4,12 +4,12 @@
 // 私人內容包不寫進 class-content.generated.js。index.html 載入此檔的快取版本（?v=）是檔案內容的雜湊，
 // 只在上線建置（npm run build -- --stamp-version）時改寫，本機建置不動 index.html。
 "use strict";
-const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
-const { ROOT } = require("./site-sources");
-const { ContentError } = require("./markdown");
+const { ROOT } = require("../content/site-sources");
+const { ContentError } = require("../content/errors");
+const { template, writeIfChanged, contentVersion, stampScriptVersion } = require("../content/output");
 const { renderClass } = require("./render");
 const { classRules } = require("./rules-data");
 
@@ -18,10 +18,7 @@ const OUTPUT_FILE = path.join(ROOT, OUTPUT_NAME);
 const PRIVATE_OUTPUT_NAME = "class-content.private.generated.js";
 const PRIVATE_OUTPUT_FILE = path.join(ROOT, PRIVATE_OUTPUT_NAME);
 const INDEX_FILE = path.join(ROOT, "index.html");
-const SCRIPT_TAG = /(<script src="class-content\.generated\.js\?v=)([^"]*)(")/g;
 
-// 樣板字串：保留 HTML 換行，方便閱讀與比對差異。
-const template = text => `\`${text.replace(/[\\`]/g, "\\$&").replace(/\$\{/g, "\\${")}\``;
 const textMap = (map, indent) => {
   const entries = Object.keys(map).sort().map(id => `${indent}  ${JSON.stringify(id)}: ${template(map[id])}`);
   return entries.length ? `{\n${entries.join(",\n")}\n${indent}}` : "{}";
@@ -108,26 +105,16 @@ ${entries.rulesSource}
   return source;
 }
 
-function writeIfChanged(file, source, changed) {
-  const current = fs.existsSync(file) ? fs.readFileSync(file, "utf8").replace(/\r\n/g, "\n") : null;
-  if (current === source) return;
-  fs.writeFileSync(file, source);
-  changed.push(path.basename(file));
-}
-
 // 寫入產生檔：publicClasses 為公開內容包，privateClasses 為含私人內容包的全部內容（null 時私人資料檔為空檔）；
 // stampIndex 為 true 時一併更新 index.html 的快取版本。內容沒變時不改檔案。回傳有變更的檔名。
 function writeSiteData(publicClasses, { privateClasses = null, stampIndex = false } = {}) {
   const source = renderSiteData(publicClasses);
-  const version = crypto.createHash("sha256").update(source).digest("hex").slice(0, 12);
   const changed = [];
   const html = fs.readFileSync(INDEX_FILE, "utf8");
-  const tags = html.match(SCRIPT_TAG) || [];
-  if (tags.length !== 1) throw new ContentError(`index.html 應有一個 <script src="${OUTPUT_NAME}?v=…"> 標籤（目前 ${tags.length} 個）`);
+  const updated = stampScriptVersion(html, OUTPUT_NAME, contentVersion(source));
   if (!html.includes(`<script src="${PRIVATE_OUTPUT_NAME}" defer></script>`)) throw new ContentError(`index.html 應有 <script src="${PRIVATE_OUTPUT_NAME}" defer></script> 標籤`);
   writeIfChanged(OUTPUT_FILE, source, changed);
   writeIfChanged(PRIVATE_OUTPUT_FILE, privateClasses ? renderPrivateData(privateClasses) : PRIVATE_STUB, changed);
-  const updated = html.replace(SCRIPT_TAG, `$1${version}$3`);
   if (stampIndex && updated !== html) {
     fs.writeFileSync(INDEX_FILE, updated);
     changed.push("index.html");

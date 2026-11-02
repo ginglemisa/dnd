@@ -5,8 +5,9 @@
 // 這裡依解析好的區塊輸出舊版的 <section> 標記並接上野獸清單，緊接其後的小節（變形規則）加上
 // druid-rule-subsection--transformation（與已知形態區塊之間的分隔樣式）。區塊不符時報錯。
 "use strict";
-const { ContentError, escapeHtml } = require("../markdown");
-const { loadWildShapeBeasts } = require("../site-sources");
+const { ContentError } = require("../../content/errors");
+const { escapeHtml } = require("../../content/markdown");
+const { loadWildShapeBeasts } = require("../../content/site-sources");
 
 // 與舊版 class-features.js 的 DRUID_WILD_SHAPE_BEAST_LIST_HTML 相同的範本（含排版空白）。
 function beastListHtml() {

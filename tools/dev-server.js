@@ -4,8 +4,8 @@
 const fs = require("fs");
 const http = require("http");
 const path = require("path");
-const { ROOT } = require("./class-content/site-sources");
-const { ContentError } = require("./class-content/markdown");
+const { ROOT } = require("./content/site-sources");
+const { ContentError } = require("./content/errors");
 const { build } = require("./build");
 
 const port = Number(process.argv[2]) || 8080;
