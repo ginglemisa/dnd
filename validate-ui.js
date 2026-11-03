@@ -427,7 +427,7 @@ async function verifyPdf(page, fieldsOnly) {
       state["tool-proficiency-0"] = name;
       if (buildPdfFieldPayload(state).toolsProficiency1 !== name) throw new Error(`Class tool PDF deduplication: ${cls}`);
     }
-    for (const cls of Object.keys(ARMOR_TRAINING_BY_CLASS)) {
+    for (const cls of Object.keys(classRules)) {
       const payload = buildPdfFieldPayload({ class: cls, level: "20" });
       const features = `${payload.classFeatures1}\n${payload.classFeatures2}`.replace(/\n(?!等級|選擇|語言)/gu, "");
       if (/^等級 \d+：[^（(\n]*子職$/mu.test(features) || !/^等級 3：.+[（(].*[）)]$/mu.test(features)) throw new Error(`PDF omits bare subclass heading only: ${cls}`);
@@ -495,7 +495,7 @@ async function verifyPdf(page, fieldsOnly) {
       || !customPayload[`sp-c-${customRow}`] || !customPayload[`sp-r-${customRow}`] || !customPayload[`sp-m-${customRow}`]
       || customPayload[`note${customRow}`] !== "學派:塑能 | 持續:1分鐘") throw new Error("PDF custom spell reads its structured header");
     const expected = new Set(["barbarian", "cleric", "druid", "fighter", "paladin", "ranger"]);
-    for (const cls of Object.keys(ARMOR_TRAINING_BY_CLASS)) {
+    for (const cls of Object.keys(classRules)) {
       if (buildPdfFieldPayload({ class: cls, level: "1" }).chk_shld1 !== expected.has(cls)) throw new Error(`Shield proficiency: ${cls}`);
     }
     for (const race of ["elf", "tiefling"]) for (const level of [1, 2, 3, 5]) {

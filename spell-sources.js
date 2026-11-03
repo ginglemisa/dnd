@@ -657,7 +657,7 @@ function getClassAlwaysPreparedSpellSpecs() {
   const classValue = document.getElementById("class")?.value || "";
   const level = Number.parseInt(levelValue || "0", 10) || 0;
   if (!level) return [];
-  const missionCantrips = MISSION_CANTRIP_CHOICES.flatMap(({ checkboxId, className, label, sourceLabel }) => {
+  const missionCantrips = getMissionCantripChoices().flatMap(({ checkboxId, className, label, sourceLabel }) => {
     const spellId = document.getElementById(`${checkboxId}-cantrip`)?.value || "";
     if (classValue !== className || level < 1 || !document.getElementById(checkboxId)?.checked || !spellId) return [];
     return [{

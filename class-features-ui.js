@@ -86,10 +86,23 @@ function restoreSubclassSelection(data) {
   return Boolean(saved) && !known && select.options.length > 0;
 }
 
-const MISSION_CANTRIP_CHOICES = Object.freeze([
-  { checkboxId: "cleric-trickster", className: "cleric", label: "魔術使：額外牧師戲法", sourceLabel: "來源：魔術使" },
-  { checkboxId: "druid-shaman", className: "druid", label: "巫祝：額外德魯伊戲法", sourceLabel: "來源：巫祝" }
-]);
+// 勾選後額外學會 1 個戲法的選項（內容檔選項的 grants.cantrips，count 為 1，例如魔術使、巫祝）：選項下方出現戲法選單
+// 「選項 ID-cantrip」。學會 2 個戲法的選項（受祝福的勇士、德魯伊教戰士）另由職業能力戲法處理。
+let missionCantripChoicesCache = null;
+function getMissionCantripChoices() {
+  const source = typeof classRules === "undefined" ? null : classRules;
+  if (missionCantripChoicesCache?.source === source) return missionCantripChoicesCache.choices;
+  const choices = Object.values(source || {}).flatMap(rules => rules.features.flatMap(feature => (feature.options || [])
+    .filter(option => option.grants?.cantrips?.count === 1)
+    .map(option => Object.freeze({
+      checkboxId: option.id,
+      className: option.grants.cantrips.list,
+      label: `${option.name}：額外${source[option.grants.cantrips.list]?.name || ""}戲法`,
+      sourceLabel: `來源：${option.name}`
+    }))));
+  missionCantripChoicesCache = { source, choices: Object.freeze(choices) };
+  return missionCantripChoicesCache.choices;
+}
 
 // 職業選項（勾選框與下拉選單）的職業、可用等級與群組：由職業內容檔的 options／select、choose 與能力等級推得
 // （class-content.generated.js 的 classRules）。本檔同步載入、早於產生檔，故第一次使用時才建立。
@@ -1481,7 +1494,7 @@ function syncClassFeatureDerivedChoices() {
 }
 
 function renderMissionCantripChoices() {
-  MISSION_CANTRIP_CHOICES.forEach(({ checkboxId, className, label: labelText }) => {
+  getMissionCantripChoices().forEach(({ checkboxId, className, label: labelText }) => {
     const checkbox = document.getElementById(checkboxId);
     if (!checkbox) return;
     const field = document.createElement("div");
@@ -1518,7 +1531,7 @@ function renderMissionCantripChoices() {
 }
 
 function syncMissionCantripChoices() {
-  MISSION_CANTRIP_CHOICES.forEach(({ checkboxId }) => {
+  getMissionCantripChoices().forEach(({ checkboxId }) => {
     const select = document.getElementById(`${checkboxId}-cantrip`);
     const field = select?.closest(".class-feature-mission-cantrip");
     if (!field) return;
@@ -2019,7 +2032,7 @@ function getClassFeatureChoiceIssues() {
     }
   }
 
-  MISSION_CANTRIP_CHOICES.forEach(({ checkboxId, className, label }) => {
+  getMissionCantripChoices().forEach(({ checkboxId, className, label }) => {
     const id = `${checkboxId}-cantrip`;
     if (manualSpells || selectedClass !== className || !document.getElementById(checkboxId)?.checked || document.getElementById(id)?.value) return;
     pushGeneral({ message: `${label}尚未選擇。`, tab: "basic", selector: `#${id}`, focusSelector: `#${id}` });

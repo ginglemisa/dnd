@@ -78,13 +78,6 @@
     'prof-cha': 'chaSaveChk1'
   });
 
-  // Keep a standalone fallback for PDF exports that are invoked without the
-  // main page's armor-training table. When the page table is available, use it
-  // as the source of truth instead of duplicating its class entries here.
-  const PDF_SHIELD_PROFICIENT_CLASSES = Object.freeze([
-    'barbarian', 'cleric', 'druid', 'fighter', 'paladin', 'ranger'
-  ]);
-
   // Text specs recalibrated against the resized PDF fields using the
   // calibration overlay. Values are intentionally conservative so form
   // rendering has some headroom for punctuation and mixed-width text.
@@ -403,17 +396,13 @@
     return hitDie ? String(hitDie) : '';
   }
 
-  function hasShieldProficiencyForPdf(state) {
-    const classKey = normalizeText(state?.class);
-    const armorTrainingMap = typeof ARMOR_TRAINING_BY_CLASS !== 'undefined'
-      ? ARMOR_TRAINING_BY_CLASS
-      : globalScope.ARMOR_TRAINING_BY_CLASS;
+  // 職業的護甲訓練（內容檔 proficiencies.armor：light／medium／heavy／shield）。
+  function getClassArmorTrainingForPdf(classKey) {
+    return getClassRules(classKey)?.proficiencies?.armor || [];
+  }
 
-    if (armorTrainingMap && typeof armorTrainingMap === 'object') {
-      return Array.isArray(armorTrainingMap[classKey])
-        && armorTrainingMap[classKey].includes('盾牌');
-    }
-    return PDF_SHIELD_PROFICIENT_CLASSES.includes(classKey);
+  function hasShieldProficiencyForPdf(state) {
+    return getClassArmorTrainingForPdf(normalizeText(state?.class)).includes('shield');
   }
 
   function hasEffectiveShieldForPdf(state) {
@@ -1321,10 +1310,10 @@ function isWeaponRowEmpty(payload, slot) {
     payload.speed1 = resolveSpeedForPdf(state, options);
 
     payload.weaponsProficiency1 = getClassProfileText(classKey, 'weapons');
-    const armorTraining = getClassProfileText(classKey, 'armor');
-    payload.chk_light1 = /輕甲/.test(armorTraining);
-    payload.chk_medium1 = /中甲/.test(armorTraining);
-    payload.chk_heavy1 = /重甲/.test(armorTraining);
+    const armorTraining = getClassArmorTrainingForPdf(classKey);
+    payload.chk_light1 = armorTraining.includes('light');
+    payload.chk_medium1 = armorTraining.includes('medium');
+    payload.chk_heavy1 = armorTraining.includes('heavy');
 
 
     // The replacement character sheet supplies rows 1-19 only. Preserve any

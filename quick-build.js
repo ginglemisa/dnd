@@ -177,20 +177,58 @@
     bard: "D8，每級多一顆", cleric: "D8，每級多一顆", druid: "D8，每級多一顆", monk: "D8，每級多一顆", rogue: "D8，每級多一顆", warlock: "D8，每級多一顆",
     sorcerer: "D6，每級多一顆", wizard: "D6，每級多一顆"
   };
-  const CLASS_BUILD_DEFINITIONS = {
-    barbarian: { keyAbilities: ["力量"], saves: ["力量", "體質"], skillOptions: ["馴獸", "運動", "威嚇", "自然", "察覺", "求生"], skillCount: 2, weaponProficiencies: "簡易，軍用武器", armorTraining: "輕甲，中甲，盾牌" },
-    bard: { keyAbilities: ["魅力"], saves: ["敏捷", "魅力"], skillOptions: SKILL_OPTIONS, skillCount: 3, toolOptions: INSTRUMENT_TOOL_OPTIONS, toolCount: 3, toolLabel: "樂器", weaponProficiencies: "簡易武器", armorTraining: "輕甲", spellcastingAbility: "cha" },
-    cleric: { keyAbilities: ["感知"], saves: ["感知", "魅力"], skillOptions: ["歷史", "洞悉", "醫藥", "遊說", "宗教"], skillCount: 2, weaponProficiencies: "簡易武器", armorTraining: "輕甲、中甲和盾牌", spellcastingAbility: "wis" },
-    druid: { keyAbilities: ["感知"], saves: ["智力", "感知"], skillOptions: ["奧秘", "馴獸", "洞悉", "醫藥", "自然", "察覺", "宗教", "求生"], skillCount: 2, fixedTools: ["草藥工具"], weaponProficiencies: "簡易武器", armorTraining: "輕甲和盾牌", spellcastingAbility: "wis" },
-    fighter: { keyAbilities: ["力量", "敏捷"], saves: ["力量", "體質"], skillOptions: ["體操", "馴獸", "運動", "歷史", "洞悉", "威嚇", "遊說", "察覺", "求生"], skillCount: 2, weaponProficiencies: "簡易武器和軍用武器", armorTraining: "輕甲、中甲、重甲和盾牌" },
-    monk: { keyAbilities: ["敏捷", "感知"], saves: ["力量", "敏捷"], skillOptions: ["體操", "運動", "歷史", "洞悉", "宗教", "隱匿"], skillCount: 2, toolOptions: ARTISAN_TOOL_OPTIONS.concat(INSTRUMENT_TOOL_OPTIONS), toolCount: 1, toolLabel: "工匠工具或樂器", weaponProficiencies: "簡易武器和具有輕型屬性的軍用武器", armorTraining: "無" },
-    paladin: { keyAbilities: ["力量", "魅力"], saves: ["感知", "魅力"], skillOptions: ["運動", "洞悉", "威嚇", "醫藥", "遊說", "宗教"], skillCount: 2, weaponProficiencies: "簡易武器和軍用武器", armorTraining: "輕甲、中甲、重甲和盾牌", spellcastingAbility: "cha" },
-    ranger: { keyAbilities: ["敏捷", "感知"], saves: ["力量", "敏捷"], skillOptions: ["馴獸", "運動", "洞悉", "調查", "自然", "察覺", "隱匿", "求生"], skillCount: 3, weaponProficiencies: "簡易武器和軍用武器", armorTraining: "輕甲、中甲和盾牌", spellcastingAbility: "wis" },
-    rogue: { keyAbilities: ["敏捷"], saves: ["智力", "敏捷"], skillOptions: ["體操", "運動", "欺瞞", "洞悉", "威嚇", "調查", "察覺", "遊說", "巧手", "隱匿"], skillCount: 4, fixedTools: ["盜賊工具"], weaponProficiencies: "簡易武器和具有靈巧或輕型屬性的軍用武器", armorTraining: "輕甲" },
-    sorcerer: { keyAbilities: ["魅力"], saves: ["體質", "魅力"], skillOptions: ["奧秘", "欺瞞", "洞悉", "威嚇", "遊說", "宗教"], skillCount: 2, weaponProficiencies: "簡易武器", armorTraining: "無", spellcastingAbility: "cha" },
-    warlock: { keyAbilities: ["魅力"], saves: ["感知", "魅力"], skillOptions: ["奧秘", "欺瞞", "歷史", "威嚇", "調查", "自然", "宗教"], skillCount: 2, weaponProficiencies: "簡易武器", armorTraining: "輕甲", spellcastingAbility: "cha" },
-    wizard: { keyAbilities: ["智力"], saves: ["智力", "感知"], skillOptions: ["奧秘", "歷史", "洞悉", "調查", "醫藥", "自然", "宗教"], skillCount: 2, weaponProficiencies: "簡易武器", armorTraining: "無", spellcastingAbility: "int" }
-  };
+  // 職業的豁免、技能選擇與職業工具取自職業內容檔（classRules 的 saves、skills、proficiencies.tools）；
+  // 這裡只留快速創角自己的推薦屬性、施法屬性、工具標籤與摘要文字。
+  const CLASS_BUILD_DEFINITIONS = withClassBuildRules({
+    barbarian: { keyAbilities: ["力量"], weaponProficiencies: "簡易，軍用武器", armorTraining: "輕甲，中甲，盾牌" },
+    bard: { keyAbilities: ["魅力"], toolLabel: "樂器", weaponProficiencies: "簡易武器", armorTraining: "輕甲", spellcastingAbility: "cha" },
+    cleric: { keyAbilities: ["感知"], weaponProficiencies: "簡易武器", armorTraining: "輕甲、中甲和盾牌", spellcastingAbility: "wis" },
+    druid: { keyAbilities: ["感知"], weaponProficiencies: "簡易武器", armorTraining: "輕甲和盾牌", spellcastingAbility: "wis" },
+    fighter: { keyAbilities: ["力量", "敏捷"], weaponProficiencies: "簡易武器和軍用武器", armorTraining: "輕甲、中甲、重甲和盾牌" },
+    monk: { keyAbilities: ["敏捷", "感知"], toolLabel: "工匠工具或樂器", weaponProficiencies: "簡易武器和具有輕型屬性的軍用武器", armorTraining: "無" },
+    paladin: { keyAbilities: ["力量", "魅力"], weaponProficiencies: "簡易武器和軍用武器", armorTraining: "輕甲、中甲、重甲和盾牌", spellcastingAbility: "cha" },
+    ranger: { keyAbilities: ["敏捷", "感知"], weaponProficiencies: "簡易武器和軍用武器", armorTraining: "輕甲、中甲和盾牌", spellcastingAbility: "wis" },
+    rogue: { keyAbilities: ["敏捷"], weaponProficiencies: "簡易武器和具有靈巧或輕型屬性的軍用武器", armorTraining: "輕甲" },
+    sorcerer: { keyAbilities: ["魅力"], weaponProficiencies: "簡易武器", armorTraining: "無", spellcastingAbility: "cha" },
+    warlock: { keyAbilities: ["魅力"], weaponProficiencies: "簡易武器", armorTraining: "輕甲", spellcastingAbility: "cha" },
+    wizard: { keyAbilities: ["智力"], weaponProficiencies: "簡易武器", armorTraining: "無", spellcastingAbility: "int" }
+  });
+
+  function withClassBuildRules(definitions) {
+    return Object.fromEntries(Object.entries(definitions).map(([key, definition]) => {
+      const rules = window.getClassRules?.(key);
+      const tools = rules?.proficiencies?.tools;
+      const toolGroups = TOOL_CATALOG_AVAILABLE ? TOOL_CATALOG.groups : [];
+      return [key, {
+        ...definition,
+        saves: (rules?.saves || []).map(ability => ABILITY_LABELS[ability]),
+        skillOptions: rules?.skills.from === "any" ? SKILL_OPTIONS : [...(rules?.skills.from || [])],
+        skillCount: rules?.skills.choose || 0,
+        ...(tools?.fixed ? { fixedTools: [tools.fixed] } : {}),
+        ...(tools?.chooseFrom ? { toolOptions: tools.chooseFrom.flatMap(id => toolGroups.find(group => group.id === id)?.options || []), toolCount: tools.count } : {})
+      }];
+    }));
+  }
+
+  // 1 級的數量取自職業內容檔：戲法、準備法術與魔能祈喚讀特性表，武器精通、專精與職業額外語言讀 picks；
+  // 語言另有所有角色都有的 2 種初始語言。數量為 0 的欄位不列出（同沒有這項選擇）。
+  function withLevelOneRules(definitions) {
+    return Object.fromEntries(Object.entries(definitions).map(([key, definition]) => {
+      const pickCount = kind => (window.getClassPicks?.(key, QUICK_BUILD_LEVEL, { kind }) || []).reduce((sum, item) => sum + item.count, 0);
+      const counts = {
+        cantrips: window.getClassProgressionValue?.(key, "cantrips", QUICK_BUILD_LEVEL),
+        preparedSpells: window.getClassProgressionValue?.(key, "preparedSpells", QUICK_BUILD_LEVEL),
+        invocations: window.getClassProgressionValue?.(key, "invocations", QUICK_BUILD_LEVEL),
+        weaponMastery: pickCount("weaponMastery"),
+        expertise: pickCount("expertise")
+      };
+      return [key, {
+        ...definition,
+        languages: 2 + pickCount("language"),
+        ...Object.fromEntries(Object.entries(counts).filter(([, value]) => value))
+      }];
+    }));
+  }
   const CLASS_EQUIPMENT_DEFINITIONS = {
     barbarian: { gold: 75, defaults: [{ id: "default", label: "預設裝備", items: [["巨斧", 1], ["手斧", 4], ["探索套組", 1]], gp: 15, main: ["巨斧", "手斧"], off: { 巨斧: [], 手斧: ["手斧"] } }] },
     bard: { gold: 90, defaults: [{ id: "default", label: "預設裝備", items: [["皮甲", 1], ["匕首", 2], ["藝人套組", 1]], gp: 19, main: ["匕首"], off: { 匕首: [] }, armor: "皮甲", instrument: true }] },
@@ -220,24 +258,22 @@
     { value: "sylvan", label: "木族語" }, { value: "thieves-cant", label: "盜賊黑話" }, { value: "undercommon", label: "地底通用語" }
   ];
   const LANGUAGE_OPTIONS = BASE_LANGUAGE_OPTIONS.concat(RARE_LANGUAGE_OPTIONS);
-  const WEAPON_MASTERY_OPTIONS = {
-    simple: [["短棒", "緩速"], ["匕首", "迅切"], ["巨棒", "推離"], ["手斧", "侵擾"], ["標槍", "緩速"], ["輕錘", "迅切"], ["硬頭錘", "削弱"], ["長棍", "失衡"], ["鐮刀", "迅切"], ["短矛", "削弱"], ["輕弩", "緩速"], ["飛鏢", "侵擾"], ["短弓", "侵擾"], ["投石索", "緩速"]],
-    martial: [["戰斧", "失衡"], ["連枷", "削弱"], ["長柄刀", "劃傷"], ["巨斧", "順劈"], ["巨劍", "劃傷"], ["長戟", "順劈"], ["騎槍", "失衡"], ["長劍", "削弱"], ["巨錘", "失衡"], ["釘頭錘", "削弱"], ["長矛", "推離"], ["刺劍", "侵擾"], ["彎刀", "迅切"], ["短劍", "侵擾"], ["三叉戟", "失衡"], ["戰鎬", "削弱"], ["戰錘", "推離"], ["鞭", "緩速"], ["吹箭筒", "侵擾"], ["手弩", "侵擾"], ["重弩", "推離"], ["長弓", "緩速"], ["火繩槍", "緩速"], ["手槍", "侵擾"]]
-  };
-  const LEVEL_ONE_DEFINITIONS = {
-    barbarian: { fixed: ["狂暴", "無甲防禦"], summaryFixed: ["狂暴", "無甲防禦"], languages: 2, weaponMastery: 2, prefillMasteryFromDefaultWeapon: true },
-    bard: { fixed: ["吟遊詩人激勵"], summaryFixed: ["吟遊詩人激勵"], languages: 2, cantrips: 2, preparedSpells: 4, defaultCantrips: ["dancing-lights", "vicious-mockery"], defaultPreparedSpells: ["charm-person", "color-spray", "dissonant-whispers", "healing-word"] },
-    cleric: { summaryFixed: ["神聖使命"], languages: 2, cantrips: 3, preparedSpells: 4, extraCantripClassType: "thaumaturge", defaultCantrips: ["guidance", "sacred-flame", "thaumaturgy"], defaultPreparedSpells: ["bless", "cure-wounds", "guiding-bolt", "shield-of-faith"] },
-    druid: { fixed: ["德魯伊語", "動物交談（始終準備）"], summaryFixed: ["德魯伊語"], languages: 2, classOption: { key: "primalOrder", label: "原初使命", options: [{ id: "magician", label: "巫祝" }, { id: "warden", label: "哨衛" }] }, cantrips: 2, preparedSpells: 4, extraCantripOption: "magician", alwaysPrepared: ["speak-with-animals"], defaultCantrips: ["druidcraft", "produce-flame"], defaultPreparedSpells: ["animal-friendship", "cure-wounds", "faerie-fire", "thunderwave"] },
-    fighter: { fixed: ["回氣"], summaryFixed: ["回氣"], languages: 2, fightingStyle: true, weaponMastery: 3, prefillMasteryFromDefaultWeapon: true },
-    monk: { fixed: ["武藝", "無甲防禦"], summaryFixed: ["武藝", "無甲防禦"], languages: 2 },
-    paladin: { fixed: ["聖療"], summaryFixed: ["聖療"], languages: 2, preparedSpells: 2, weaponMastery: 2, defaultWeaponMasteries: ["長劍", "標槍"], defaultPreparedSpells: ["heroism", "searing-smite"] },
-    ranger: { fixed: ["宿敵：獵人印記始終準備，可免費施放 2 次"], summaryFixed: ["宿敵"], languages: 2, preparedSpells: 2, weaponMastery: 2, defaultWeaponMasteries: ["長弓", "短劍"], alwaysPrepared: ["hunters-mark"], alwaysPreparedFeature: "遊俠等級 1：宿敵", alwaysPreparedFreeUses: { 1: 2 }, defaultPreparedSpells: ["cure-wounds", "ensnaring-strike"] },
-    rogue: { fixed: ["偷襲", "盜賊黑話"], summaryFixed: ["偷襲", "盜賊黑話"], languages: 3, expertise: 2, weaponMastery: 2, defaultWeaponMasteries: ["匕首", "短弓"] },
-    sorcerer: { fixed: ["天生術法"], summaryFixed: ["天生術法"], languages: 2, cantrips: 4, preparedSpells: 2, defaultCantrips: ["light", "prestidigitation", "shocking-grasp", "sorcerous-burst"], defaultPreparedSpells: ["burning-hands", "detect-magic"] },
-    warlock: { summaryFixed: ["契約魔法"], languages: 2, cantrips: 2, preparedSpells: 2, invocations: 1, defaultInvocations: ["pact-of-the-tome"], defaultCantrips: ["eldritch-blast", "prestidigitation"], defaultPreparedSpells: ["charm-person", "hex"] },
-    wizard: { fixed: ["儀式精通", "奧術回想"], summaryFixed: ["儀式精通", "奧術回想"], languages: 2, cantrips: 3, spellbookSpells: 6, preparedSpells: 4, defaultCantrips: ["light", "mage-hand", "ray-of-frost"], defaultSpellbookSpells: ["detect-magic", "feather-fall", "mage-armor", "magic-missile", "sleep", "thunderwave"], defaultPreparedSpells: ["mage-armor", "feather-fall", "sleep", "magic-missile"] }
-  };
+  // 1 級的武器精通、專精數量與職業額外語言數取自職業內容檔的 picks（見 withLevelOneRules）；
+  // 這裡只留快速創角自己的固定能力摘要、預設選擇與職業選項。
+  const LEVEL_ONE_DEFINITIONS = withLevelOneRules({
+    barbarian: { fixed: ["狂暴", "無甲防禦"], summaryFixed: ["狂暴", "無甲防禦"], prefillMasteryFromDefaultWeapon: true },
+    bard: { fixed: ["吟遊詩人激勵"], summaryFixed: ["吟遊詩人激勵"], defaultCantrips: ["dancing-lights", "vicious-mockery"], defaultPreparedSpells: ["charm-person", "color-spray", "dissonant-whispers", "healing-word"] },
+    cleric: { summaryFixed: ["神聖使命"], extraCantripClassType: "thaumaturge", defaultCantrips: ["guidance", "sacred-flame", "thaumaturgy"], defaultPreparedSpells: ["bless", "cure-wounds", "guiding-bolt", "shield-of-faith"] },
+    druid: { fixed: ["德魯伊語", "動物交談（始終準備）"], summaryFixed: ["德魯伊語"], classOption: { key: "primalOrder", label: "原初使命", options: [{ id: "magician", label: "巫祝" }, { id: "warden", label: "哨衛" }] }, extraCantripOption: "magician", alwaysPrepared: ["speak-with-animals"], defaultCantrips: ["druidcraft", "produce-flame"], defaultPreparedSpells: ["animal-friendship", "cure-wounds", "faerie-fire", "thunderwave"] },
+    fighter: { fixed: ["回氣"], summaryFixed: ["回氣"], fightingStyle: true, prefillMasteryFromDefaultWeapon: true },
+    monk: { fixed: ["武藝", "無甲防禦"], summaryFixed: ["武藝", "無甲防禦"] },
+    paladin: { fixed: ["聖療"], summaryFixed: ["聖療"], defaultWeaponMasteries: ["長劍", "標槍"], defaultPreparedSpells: ["heroism", "searing-smite"] },
+    ranger: { fixed: ["宿敵：獵人印記始終準備，可免費施放 2 次"], summaryFixed: ["宿敵"], defaultWeaponMasteries: ["長弓", "短劍"], alwaysPrepared: ["hunters-mark"], alwaysPreparedFeature: "遊俠等級 1：宿敵", alwaysPreparedFreeUses: { 1: 2 }, defaultPreparedSpells: ["cure-wounds", "ensnaring-strike"] },
+    rogue: { fixed: ["偷襲", "盜賊黑話"], summaryFixed: ["偷襲", "盜賊黑話"], defaultWeaponMasteries: ["匕首", "短弓"] },
+    sorcerer: { fixed: ["天生術法"], summaryFixed: ["天生術法"], defaultCantrips: ["light", "prestidigitation", "shocking-grasp", "sorcerous-burst"], defaultPreparedSpells: ["burning-hands", "detect-magic"] },
+    warlock: { summaryFixed: ["契約魔法"], defaultInvocations: ["pact-of-the-tome"], defaultCantrips: ["eldritch-blast", "prestidigitation"], defaultPreparedSpells: ["charm-person", "hex"] },
+    wizard: { fixed: ["儀式精通", "奧術回想"], summaryFixed: ["儀式精通", "奧術回想"], spellbookSpells: 6, defaultCantrips: ["light", "mage-hand", "ray-of-frost"], defaultSpellbookSpells: ["detect-magic", "feather-fall", "mage-armor", "magic-missile", "sleep", "thunderwave"], defaultPreparedSpells: ["mage-armor", "feather-fall", "sleep", "magic-missile"] }
+  });
   const ELDRITCH_INVOCATION_OPTIONS = [
     { id: "armor-of-shadows", label: "幽影護甲", description: "你可隨意施展法師護甲，不耗法術位。" },
     { id: "eldritch-mind", label: "魔能意志", description: "你維持法術專注的體質豁免具有優勢。" },
@@ -1091,12 +1127,27 @@
     return { type: "level-one", id: key, label: CLASS_LABELS[key], level: 1, dataFile: "class-features.js" };
   }
 
+  // 武器資料（equipment-data.js）的 [武器名稱, 精通]；簡易與軍用武器分開。
+  function weaponMasteryCatalog() {
+    const list = name => (Array.isArray(globalThis[name]) ? globalThis[name] : []);
+    return {
+      simple: [...list("weapons_simple_melee"), ...list("weapons_simple_ranged")],
+      martial: [...list("weapons_martial_melee"), ...list("weapons_martial_ranged")]
+    };
+  }
+
+  // 職業可選精通的武器：有武器精通選擇（內容檔 picks）時，取職業熟練的武器（proficiencies.weapons）。
   function allWeaponMasteryOptionsForClass(key) {
-    const simple = WEAPON_MASTERY_OPTIONS.simple;
-    const martial = WEAPON_MASTERY_OPTIONS.martial;
-    if (["barbarian", "fighter", "paladin", "ranger"].includes(key)) return simple.concat(martial);
-    if (key === "rogue") return simple.concat(martial.filter(([name]) => ["刺劍", "彎刀", "短劍", "手弩"].includes(name)));
-    return [];
+    if (!LEVEL_ONE_DEFINITIONS[key]?.weaponMastery) return [];
+    const proficiencies = window.getClassProficiencies?.(key)?.weapons || {};
+    const categories = proficiencies.categories || [];
+    const { simple, martial } = weaponMasteryCatalog();
+    const hasProperty = weapon => (proficiencies.martialWithProperty || [])
+      .some(property => [weapon.屬性1, weapon.屬性2, weapon.屬性3, weapon.屬性4].some(value => value?.includes(property)));
+    return [
+      ...(categories.includes("simple") ? simple : []),
+      ...martial.filter(weapon => categories.includes("martial") || hasProperty(weapon))
+    ].map(weapon => [weapon.名稱, weapon.精通]);
   }
 
   function levelOneSpellOptions(classId, level) { return SpellCatalog.getSpells(classId, level); }
@@ -1129,17 +1180,25 @@
     return (Array.isArray(spellIds) ? spellIds : []).filter(spellId => valid.has(spellId) && !knownSpellIds.has(spellId));
   }
 
+  // 第 3 種起是職業額外語言（內容檔 picks 的 language，依序對應其存檔欄位，例如盜賊黑話的 language-extra-2）。
+  function classLanguageSlotForDraft(target, index) {
+    if (index < 2) return null;
+    const slots = (window.getClassPicks?.(target.choices.class, QUICK_BUILD_LEVEL, { kind: "language" }) || [])
+      .flatMap(({ feature, pick }) => pick.fields.map(field => ({ field, exclude: pick.exclude || [], featureName: feature.name })));
+    return slots[index - 2] || null;
+  }
+
   function languageOptionsForDraft(target, index = 0) {
-    if (target.choices.class === "rogue" && index >= 2) {
-      return LANGUAGE_OPTIONS.filter(option => option.value !== "thieves-cant");
-    }
+    const classSlot = classLanguageSlotForDraft(target, index);
+    if (classSlot) return LANGUAGE_OPTIONS.filter(option => !classSlot.exclude.includes(option.value));
     const options = [...BASE_LANGUAGE_OPTIONS];
     (raceRules(target.choices.race)?.languageOptions || []).forEach(value => options.push(RARE_LANGUAGE_OPTIONS.find(option => option.value === value)));
     return options.filter(Boolean);
   }
 
   function languageFieldIdForDraft(target, index) {
-    if (target.choices.class === "rogue" && index >= 2) return `language-extra-${index}`;
+    const classSlot = classLanguageSlotForDraft(target, index);
+    if (classSlot) return classSlot.field;
     return `language${index + 1}`;
   }
 
@@ -1271,7 +1330,7 @@
     if (fightingStyle) addDerivedAcquisition(target, "feats", { id: `level-one:${key}:fighting-style:${fightingStyle}`, name: fightingStyle, sourceType: "level-one", sourceId: key, source: { ...source, feature: "戰鬥風格", dataFile: "feats.js" }, content: { type: "fightingStyle" } });
     weaponMasteries.forEach(name => addDerivedAcquisition(target, "other", { id: `level-one:${key}:weapon-mastery:${name}`, name: `${name}精通`, sourceType: "level-one", sourceId: key, source: { ...source, feature: "武器精通" }, content: { type: "weaponMastery", weapon: name } }));
     expertise.forEach(name => addDerivedAcquisition(target, "expertise", { id: `level-one:${key}:expertise:${name}`, name, sourceType: "level-one", sourceId: key, source: { ...source, feature: key === "rogue" ? "盜賊 1 級專精" : "1 級專精" }, content: { type: "expertise", skill: name } }));
-    languageDetails.forEach(item => addDerivedAcquisition(target, "languages", { id: `level-one:${key}:language:${item.slot}:${item.value}`, name: item.label, sourceType: "level-one", sourceId: key, source: { ...source, feature: item.category === "class-extra" ? "盜賊黑話：額外語言" : "初始語言" }, content: { type: "language", value: item.value, category: item.category, fieldId: item.fieldId, slot: item.slot } }));
+    languageDetails.forEach(item => addDerivedAcquisition(target, "languages", { id: `level-one:${key}:language:${item.slot}:${item.value}`, name: item.label, sourceType: "level-one", sourceId: key, source: { ...source, feature: item.category === "class-extra" ? `${classLanguageSlotForDraft(target, item.slot)?.featureName || "職業"}：額外語言` : "初始語言" }, content: { type: "language", value: item.value, category: item.category, fieldId: item.fieldId, slot: item.slot } }));
     cantrips.forEach(name => addDerivedAcquisition(target, "spells", { id: `level-one:${key}:cantrip:${name}`, spellId: name, name: spellNameZh(name), sourceType: "level-one", sourceId: key, source: { ...source, feature: "1 級戲法" }, content: { spellId: name, name: spellNameZh(name), level: "cantrip", prepared: true } }));
     if (!definition.spellbookSpells) preparedSpells.forEach(name => addDerivedAcquisition(target, "spells", { id: `level-one:${key}:prepared:${name}`, spellId: name, name: spellNameZh(name), sourceType: "level-one", sourceId: key, source: { ...source, feature: "1 級準備法術" }, content: { spellId: name, name: spellNameZh(name), level: 1, prepared: true } }));
     spellbookSpells.forEach(name => addDerivedAcquisition(target, "spells", { id: `level-one:${key}:spellbook:${name}`, spellId: name, name: spellNameZh(name), sourceType: "level-one", sourceId: key, source: { ...source, feature: "法術書" }, content: { spellId: name, name: spellNameZh(name), level: 1, spellbook: true, prepared: preparedSpells.includes(name), ritual: isRitualSpell(canonicalSpell(name)) } }));
@@ -2396,7 +2455,7 @@
 
   function renderLevelOneLanguages(body) {
     const selected = draft.choices.levelOne?.languages || [];
-    const select = index => `<div class="quick-build-field"><label for="quick-build-language-${index}">${draft.choices.class === "rogue" && index >= 2 ? "額外語言" : `語言 ${index + 1}`}</label><select id="quick-build-language-${index}" data-level-one-language><option value="">-- 請選擇 --</option>${LANGUAGE_OPTIONS.map(option => {
+    const select = index => `<div class="quick-build-field"><label for="quick-build-language-${index}">${classLanguageSlotForDraft(draft, index) ? "額外語言" : `語言 ${index + 1}`}</label><select id="quick-build-language-${index}" data-level-one-language><option value="">-- 請選擇 --</option>${LANGUAGE_OPTIONS.map(option => {
       const availableOptions = languageOptionsForDraft(draft, index);
       if (!availableOptions.some(available => available.value === option.value)) return "";
       const peerDuplicate = selected.includes(option.value) && selected[index] !== option.value;
@@ -2613,7 +2672,8 @@
     const levelOneOptions = [classOption, ...invocations].filter(Boolean).join("、") || "無";
     const fightingStyle = levelOne.fightingStyle || "無";
     const weaponMasteries = (levelOne.weaponMasteries || []).map(name => {
-      const mastery = WEAPON_MASTERY_OPTIONS.simple.concat(WEAPON_MASTERY_OPTIONS.martial).find(([weapon]) => weapon === name)?.[1];
+      const { simple, martial } = weaponMasteryCatalog();
+      const mastery = [...simple, ...martial].find(weapon => weapon.名稱 === name)?.精通;
       return mastery ? `${name}（${mastery}）` : name;
     }).join("、") || "無";
     const duplicateWarning = duplicateReviewWarning();
