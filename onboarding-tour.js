@@ -656,7 +656,7 @@
         {
           tab: "equipment",
           title: "🛡️ 選擇武器與護甲",
-          text: "選擇武器或護甲時，下方會顯示傷害、防禦與相關特性。\n\n遇到不熟悉的規則名詞，可以直接點擊摘要中的名稱查看詳細說明。",
+          text: "選擇武器或護甲時，下方會顯示傷害、防禦與相關特性。選單只列出「攜帶物品」裡有的武器與護甲。\n\n遇到不熟悉的規則名詞，可以直接點擊摘要中的名稱查看詳細說明。",
           placement: "bottom",
           getHoles: () => [this.getHoleFromElements([
             document.querySelector("#tab-equipment .equipment-loadout-controls"),

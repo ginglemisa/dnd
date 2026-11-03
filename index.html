@@ -81,7 +81,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261104-spellbook-card">
+  <link rel="stylesheet" href="styles.css?v=20261104-inventory">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261103-roll-min" defer></script>
   <script src="monster.js?v=20261025-beast-perception" defer></script>
@@ -101,15 +101,15 @@
   <script src="app-dialog.js?v=20261028-custom-spells" defer></script>
   <script src="custom-background.js?v=20261102-source-label" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
-  <script src="tabletop-mode.js?v=20261104-class-html-cleanup" defer></script>
+  <script src="tabletop-mode.js?v=20261104-inventory" defer></script>
   <script src="tabletop-druid.js?v=20261103-known-count" defer></script>
   <script src="tabletop-resources.js?v=20261102-race-content" defer></script>
   <script src="tabletop-actions.js?v=20261103-wholeness-min" defer></script>
   <script src="tabletop-custom-spells.js?v=20261104-spell-fields" defer></script>
   <script src="tabletop-spells.js?v=20261104-familiar-references" defer></script>
   <script src="legal-modal.js?v=20261022-game-icons" defer></script>
-  <script src="onboarding-tour.js?v=20261103-choice-highlight" defer></script>
-  <script src="quick-build.js?v=20261104-familiar-references" defer></script>
+  <script src="onboarding-tour.js?v=20261104-inventory" defer></script>
+  <script src="quick-build.js?v=20261104-inventory" defer></script>
   <script src="spellbook.js?v=20261104-familiar-references" defer></script>
   <script src="spell-management.js?v=20261103-manual-toggle" defer></script>
   <script src="class-option-memory.js?v=20261024-class-split" defer></script>
@@ -1093,7 +1093,7 @@
   <div class="section">
     <div class="equipment-loadout-heading">
       <h3>裝備</h3>
-      <p class="equipment-loadout-intro">選擇目前持用的武器與護甲。</p>
+      <p class="equipment-loadout-intro">從攜帶物品中選擇目前持用的武器與護甲。</p>
     </div>
 
     <div class="equipment-loadout-controls">
@@ -1135,8 +1135,8 @@
 
   <div class="section">
     <h3>攜帶物品</h3>
-    <!-- 商店按鈕跟著攜帶物品文字框在角色卡與跑團模式之間搬移（tabletop-mode.js）。 -->
-    <div id="gear-notes-sheet-mount"><textarea id="gear-notes" rows="4" placeholder="請輸入角色攜帶的其他裝備,補給品,雜物等..."></textarea><button type="button" id="equipment-shop-open" class="equipment-shop-launch" data-equipment-shop-open aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M3 4h2.2l2.1 10.2a1.5 1.5 0 0 0 1.5 1.2h8.4a1.5 1.5 0 0 0 1.5-1.1L20.5 8H6.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="19.5" r="1.5" fill="currentColor"/><circle cx="17" cy="19.5" r="1.5" fill="currentColor"/></svg><span>開啟商店</span></button></div>
+    <!-- 物品欄與商店按鈕跟著攜帶物品文字框在角色卡與跑團模式之間搬移（tabletop-mode.js）；物品標籤由 inventory-ui.js 繪製。 -->
+    <div id="gear-notes-sheet-mount"><div id="inventory-panel" class="inventory-panel" aria-label="物品欄"><div class="inventory-toolbar"><p id="inventory-weight" class="inventory-weight" aria-live="polite"></p><div class="inventory-toolbar-actions"><button type="button" id="inventory-tidy" class="inventory-tidy" aria-haspopup="dialog" hidden>整理成標籤</button><button type="button" id="inventory-add" class="inventory-add" aria-haspopup="dialog">＋ 新增物品</button></div></div><ul id="inventory-tags" class="inventory-tags" aria-label="攜帶的物品"></ul><p class="inventory-empty">物品欄還是空的，可用「新增物品」或商店加入。</p></div><textarea id="gear-notes" rows="3" aria-label="其他攜帶物品（文字）" placeholder="其他攜帶物品或補充說明（自由文字）..."></textarea><button type="button" id="equipment-shop-open" class="equipment-shop-launch" data-equipment-shop-open aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M3 4h2.2l2.1 10.2a1.5 1.5 0 0 0 1.5 1.2h8.4a1.5 1.5 0 0 0 1.5-1.1L20.5 8H6.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="19.5" r="1.5" fill="currentColor"/><circle cx="17" cy="19.5" r="1.5" fill="currentColor"/></svg><span>開啟商店</span></button></div>
     <div class="money-section" aria-label="錢財管理">
       <div class="money-balance-header">
         <h4 class="money-title">總財產</h4>
@@ -2971,9 +2971,11 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
   globalThis.armors = globalThis.armors || [];
   globalThis.shield = globalThis.shield || [];
 </script>
-<script src="equipment-data.js?v=20261025-focus-names" defer></script>
+<script src="equipment-data.js?v=20261104-inventory" defer></script>
 <script src="search.js?v=20261104-familiar-references" defer></script>
 <script src="equipment-shop.js?v=20261027-shop-tool-order" defer></script>
+<script src="inventory.js?v=20261104-inventory" defer></script>
+<script src="inventory-ui.js?v=20261104-inventory" defer></script>
 
 <script>
 function getModifier(statId) {
@@ -3178,7 +3180,7 @@ function fillSkills() {
   updateAutomaticInitiative();
 }
 </script>
-<script src="pdf-launcher.js?v=20261104-spell-fields"></script>
+<script src="pdf-launcher.js?v=20261104-inventory"></script>
 
 <script>
 // ====== 裝備,武器,法術相關工具 ======
@@ -3239,14 +3241,43 @@ function populateSelect(selectEl, items) {
     selectEl.appendChild(option);
   });
 }
-function populateSelectWithSections(selectEl, sections) {
+// 裝備下拉（slot：mainHand／offHand／armor）只列物品欄有的武器、護甲與盾牌；武僧武藝不需要物品。
+// 同名武器主手、副手都拿時物品欄要有 2 件。目前選取或存檔中的值（keepValue）不在物品欄時保留並標示，不替玩家清掉。
+let pendingEquipmentValues = null;
+function filterEquipmentSectionsByInventory(sections, slot, keepValue) {
+  const counts = window.Inventory?.getEquippableCounts();
+  if (!counts) return sections;
+  const mainHand = document.getElementById("mainHand")?.value || "";
+  const owned = name => isShieldItem(name) ? counts.shields
+    : slot === "armor" ? counts.armors.get(name) || 0 : counts.weapons.get(name) || 0;
+  const needed = name => slot === "offHand" && !isShieldItem(name) && name === mainHand ? 2 : 1;
+  return sections.map(section => ({
+    ...section,
+    items: section.items.flatMap((item) => {
+      const name = item.名稱;
+      if (name === "武藝" || owned(name) >= needed(name)) return [item];
+      if (!keepValue || name !== keepValue) return [];
+      return [{ ...item, 選項文字: `${name}（${owned(name) ? `物品欄只有 ${owned(name)} 件` : "不在物品欄"}）` }];
+    })
+  })).filter(section => section.items.length > 0);
+}
+
+function populateSelectWithSections(selectEl, sections, { slot = "", keepValue = "" } = {}) {
+  const shownSections = slot ? filterEquipmentSectionsByInventory(sections, slot, keepValue) : sections;
   selectEl.innerHTML = "";
   const emptyOption = document.createElement("option");
   emptyOption.value = "";
   emptyOption.textContent = "-- 請選擇 --";
   selectEl.appendChild(emptyOption);
+  if (slot && !shownSections.length) {
+    const hintOption = document.createElement("option");
+    hintOption.value = "";
+    hintOption.textContent = slot === "armor" ? "（物品欄沒有護甲）" : "（物品欄沒有武器）";
+    hintOption.disabled = true;
+    selectEl.appendChild(hintOption);
+  }
 
-  sections.forEach(section => {
+  shownSections.forEach(section => {
     if (section.label) {
       const headingOption = document.createElement("option");
       headingOption.value = "";
@@ -3258,10 +3289,23 @@ function populateSelectWithSections(selectEl, sections) {
     section.items.forEach(item => {
       const option = document.createElement("option");
       option.value = item.名稱;
-      option.textContent = item.名稱;
+      option.textContent = item.選項文字 || item.名稱;
       selectEl.appendChild(option);
     });
   });
+}
+
+function getEquipmentKeepValue(select, slot) {
+  return pendingEquipmentValues?.[slot] || select?.value || "";
+}
+
+function refreshArmorSelection() {
+  const armorSelect = document.getElementById("armor");
+  if (!armorSelect) return;
+  const previous = armorSelect.value;
+  populateSelectWithSections(armorSelect, getArmorSections(false), { slot: "armor", keepValue: getEquipmentKeepValue(armorSelect, "armor") });
+  armorSelect.value = previous;
+  if (armorSelect.value !== previous) armorSelect.value = "";
 }
 
 function getWeaponSections(includeShield = false, excludeTwoHanded = false) {
@@ -3330,6 +3374,10 @@ function isEffectiveShieldEquippedForState(state, options = {}) {
 
 function isMain2ShieldEligible() {
   if (!isOffHandAlternateMain() || !isShieldProficient()) return false;
+  // 需要物品欄有盾牌；已勾選的舊資料保留，取消後要有盾牌才能再勾。
+  const shieldOwned = !window.Inventory || window.Inventory.getEquippableCounts().shields > 0
+    || document.getElementById("main2Shield")?.checked === true;
+  if (!shieldOwned) return false;
   return ["mainHand", "offHand"].every(id => {
     const name = document.getElementById(id)?.value || "";
     return !name || !hasTwoHandedProperty(getWeaponByName(name));
@@ -3375,13 +3423,14 @@ function updateOffHandRolePresentation() {
 function updateOffHandOptions(mainHandValue) {
   const mainWeapon = getAllWeaponsWithoutShield().find(w => w.名稱 === mainHandValue);
   const offHandSelect = document.getElementById("offHand");
+  const offHandPopulateOptions = { slot: "offHand", keepValue: getEquipmentKeepValue(offHandSelect, "offHand") };
   if (isOffHandAlternateMain()) {
-    populateSelectWithSections(offHandSelect, getWeaponSections(false, false));
+    populateSelectWithSections(offHandSelect, getWeaponSections(false, false), offHandPopulateOptions);
     offHandSelect.disabled = false;
     return;
   }
   if (!mainWeapon) {
-    populateSelectWithSections(offHandSelect, getWeaponSections(true, true));
+    populateSelectWithSections(offHandSelect, getWeaponSections(true, true), offHandPopulateOptions);
     offHandSelect.disabled = false;
     return;
   }
@@ -3394,7 +3443,7 @@ function updateOffHandOptions(mainHandValue) {
     offHandSelect.appendChild(opt);
     offHandSelect.disabled = true;
   } else {
-    populateSelectWithSections(offHandSelect, getWeaponSections(true, true));
+    populateSelectWithSections(offHandSelect, getWeaponSections(true, true), offHandPopulateOptions);
     offHandSelect.disabled = false;
   }
 }
@@ -4058,7 +4107,7 @@ function refreshWeaponSelections() {
 
   const previousMain = mainHandSelect.value;
   const previousOff = offHandSelect.value;
-  populateSelectWithSections(mainHandSelect, getWeaponSections(false, false));
+  populateSelectWithSections(mainHandSelect, getWeaponSections(false, false), { slot: "mainHand", keepValue: getEquipmentKeepValue(mainHandSelect, "mainHand") });
   mainHandSelect.value = previousMain;
   if (mainHandSelect.value !== previousMain) mainHandSelect.value = "";
 
@@ -4575,6 +4624,20 @@ function assertCharacterDataCount(value, maximum) {
   }
 }
 
+// 物品欄（inventory.js）的匯入預檢：版本 1、至多 300 筆，每筆只有約定欄位且型別正確；細部清理由 Inventory.restore() 負責。
+const INVENTORY_ENTRY_KEYS = new Set(["uid", "itemId", "name", "quantity", "in", "weight", "container", "source"]);
+function isValidInventoryState(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value) || value.version !== 1 || !Array.isArray(value.items)) return false;
+  if (value.items.length > 300) return false;
+  return value.items.every(entry => entry && typeof entry === "object" && !Array.isArray(entry)
+    && Object.keys(entry).every(key => INVENTORY_ENTRY_KEYS.has(key))
+    && ["uid", "itemId", "name", "in", "source"].every(key => entry[key] === undefined || (typeof entry[key] === "string" && entry[key].length <= 64))
+    && Number.isInteger(entry.quantity) && entry.quantity >= 1 && entry.quantity <= 9999
+    && (entry.weight === undefined || (typeof entry.weight === "number" && Number.isFinite(entry.weight) && entry.weight >= 0 && entry.weight <= 9999))
+    && (entry.container === undefined || typeof entry.container === "boolean")
+    && (typeof entry.itemId === "string" || typeof entry.name === "string"));
+}
+
 function validateCharacterState(data) {
   if (!data || typeof data !== "object" || Array.isArray(data) || data.kind === "twd20-adventure-journal") {
     throw new TypeError("角色資料格式不正確");
@@ -4603,6 +4666,7 @@ function validateCharacterState(data) {
         }
         if (depth === 0 && key === "__tabletopActionPreferences"
             && (!child || typeof child !== "object" || Array.isArray(child) || child.version !== 1)) throw new TypeError("跑團按鈕設定格式不正確");
+        if (depth === 0 && key === "__inventory" && !isValidInventoryState(child)) throw new TypeError("物品欄格式不正確或物品過多");
         if (key === "sourceTag" && (typeof child !== "string" || child.length > 256)) throw new TypeError("法術來源標籤格式不正確");
         if (key === "entries" && Array.isArray(child)) {
           if (child.length > CHARACTER_DATA_LIMITS.entries) throw new RangeError("角色清單項目過多");
@@ -4850,6 +4914,7 @@ function collectStateObject(options = {}) {
   data.__wizardSpellbook = window.Spellbook?.getState() || { version: 1, spellIds: [] };
   data.__bardMagicalDiscoverySelection = getBardMagicalDiscoverySelection();
   data.__classFeatureCantrips = window.SpellManagement?.collectClassFeatureCantrips() || {};
+  if (window.Inventory) data.__inventory = window.Inventory.getState();
 
   Object.assign(data, window.TabletopMode?.collectState?.() || {});
   return data;
@@ -5047,6 +5112,22 @@ function applyClassFeatureCantrips(choices) {
   });
 }
 
+// 物品欄先於裝備欄位還原，裝備下拉才有對應選項。舊資料（沒有 __inventory）把已裝備的武器、護甲與盾牌放進物品欄；
+// 存檔裡選了、物品欄卻沒有的裝備，在下拉保留並標示「不在物品欄」，不替玩家清掉。
+function restoreInventoryState(data) {
+  if (!window.Inventory) return;
+  pendingEquipmentValues = { mainHand: String(data.mainHand || ""), offHand: String(data.offHand || ""), armor: String(data.armor || "") };
+  if (Object.hasOwn(data, "__inventory")) window.Inventory.restore(data.__inventory);
+  else {
+    window.Inventory.seedFromEquipped({
+      mainHand: pendingEquipmentValues.mainHand,
+      offHand: pendingEquipmentValues.offHand,
+      armor: pendingEquipmentValues.armor,
+      shield: data.offHandAsMain === true && data.main2Shield === true
+    });
+  }
+}
+
 function applyStateObject(data) {
   if (!data || typeof data !== "object") return;
   validateCharacterState(data);
@@ -5080,6 +5161,7 @@ function applyStateObjectNow(data) {
     setPactTomeSpellSelection(data.__pactTomeSpellSelection, { sync: false });
     restorePactTomeInvocationSelection(data);
     setBardMagicalDiscoverySelection(data.__bardMagicalDiscoverySelection, { sync: false });
+    restoreInventoryState(data);
     const offHandAsMain = document.getElementById("offHandAsMain");
     if (offHandAsMain) offHandAsMain.checked = data.offHandAsMain === true;
     const main2Shield = document.getElementById("main2Shield");
@@ -5204,6 +5286,7 @@ function applyStateObjectNow(data) {
   } finally {
     resumeHpTracking?.();
     autosaveSuspended = prevAutosaveSuspended;
+    pendingEquipmentValues = null;
     window.SpellManagement?.finishRestore();
   }
   syncDerivedFeatRows();
@@ -5726,6 +5809,22 @@ function setupClosePageAutoSave() {
   });
 }
 
+function readNonNegativeInt(id) {
+  const parsed = Number.parseInt(String(document.getElementById(id)?.value ?? "0").trim(), 10);
+  return Number.isFinite(parsed) ? Math.max(parsed, 0) : 0;
+}
+
+// 可攜負重：力量值 ×15，種族內容檔有 carryMultiplier 時再乘上（例如歌利亞 ×2）。錢財區與物品欄負重共用。
+function getCarryCapacityPounds() {
+  const carryMultiplier = 15 * (getRaceRules(document.getElementById("race")?.value || "")?.carryMultiplier || 1);
+  return readNonNegativeInt("str") * carryMultiplier;
+}
+
+// 硬幣不分幣值，每 50 枚 1 磅（與錢財區「貨幣數量」相同的四種幣值）。
+function getCoinWeightPounds() {
+  return ["cp", "sp", "gp", "pp"].reduce((sum, id) => sum + readNonNegativeInt(`money-balance-${id}`), 0) / 50;
+}
+
 function setupMoneyTracker() {
   const ids = ["cp", "sp", "gp", "pp"];
   const rates = { cp: 1, sp: 10, gp: 100, pp: 1000 };
@@ -5803,13 +5902,11 @@ function setupMoneyTracker() {
     if (details) details.hidden = !showDetails;
     const detailToggle = byId("money-count-weight");
     detailToggle?.setAttribute("aria-expanded", String(showDetails));
-    // 可攜負重：力量值 ×15，種族內容檔有 carryMultiplier 時再乘上（例如歌利亞 ×2）。
-    const carryMultiplier = 15 * (getRaceRules(byId("race")?.value || "")?.carryMultiplier || 1);
-    const carryCapacity = toSafeInt(byId("str")?.value) * carryMultiplier;
     const coinWeight = byId("money-coin-weight");
     if (coinWeight) coinWeight.textContent = `共 ${coinCount} 枚硬幣・${weight} 磅`;
     const carryCapacityEl = byId("money-carry-capacity");
-    if (carryCapacityEl) carryCapacityEl.textContent = String(carryCapacity);
+    if (carryCapacityEl) carryCapacityEl.textContent = String(getCarryCapacityPounds());
+    window.InventoryUI?.renderWeight();
   };
   const renderLogList = () => {
     const list = byId("money-log-list");
@@ -6039,36 +6136,18 @@ function setupMoneyTracker() {
     document.querySelectorAll(".money-modal:not([hidden])").forEach(closeModal);
   });
 
-  // 商店結帳入口：整張購物清單記一筆交易，再把品項合併進攜帶物品的「購買物品：」行。
+  // 商店結帳入口：整張購物清單記一筆交易，再把品項加入物品欄。
   const purchaseCurrencyIds = { 銅幣: "cp", 銀幣: "sp", 金幣: "gp", 白金幣: "pp" };
-  const gearNameOverrides = {
-    "聖物匣（手持）": "聖物匣", "徽章（附於布料／盾牌）": "徽章", "護身符（佩戴／手持）": "護身符",
-    "木製法杖（長棍）": "法杖（長棍）", "箭矢": "箭矢(20)",
-    "弩矢": "弩矢(20)", "子彈，火器": "子彈(10)", "彈丸，投石索": "彈丸(20)", "針": "針(50)"
-  };
   const describePurchasedItems = (items) => items
     .map(({ label, quantity }) => (quantity === 1 ? label : `${label} ×${quantity}`))
     .join("、");
-  const mergePurchasedGear = (items) => {
-    const gearNotes = byId("gear-notes");
-    if (!gearNotes) return;
-    const lines = gearNotes.value.split("\n");
-    const existingItems = lines[0]?.startsWith("購買物品：") ? lines.shift().slice("購買物品：".length).split("、").filter(Boolean) : [];
-    const merged = items.reduce((entries, { gearName, quantity }) => {
-      let combinedQuantity = quantity;
-      const remaining = entries.filter((item) => {
-        const match = item.match(/^(.*?) ×(\d+)$/u);
-        if ((match ? match[1] : item) !== gearName) return true;
-        combinedQuantity += match ? Number(match[2]) : 1;
-        return false;
-      });
-      remaining.push(combinedQuantity === 1 ? gearName : `${gearName} ×${combinedQuantity}`);
-      return remaining;
-    }, existingItems);
-    lines.unshift(`購買物品：${merged.join("、")}`);
-    gearNotes.value = lines.join("\n");
-    gearNotes.dispatchEvent(new Event("input", { bubbles: true }));
-  };
+  // 彈藥依每份數量換成單發，套組由 Inventory 拆成容器與內容物，法術卷軸保留「法術名稱法術卷軸」當名稱。
+  const toInventoryRequests = (items) => items.map(({ label, gearName, quantity }) => {
+    const catalogItem = window.Inventory?.getCatalogItem(label);
+    if (catalogItem) return { itemId: label, quantity: quantity * (catalogItem.bundle || 1) };
+    const name = gearName || label;
+    return name.endsWith("法術卷軸") && window.Inventory?.getCatalogItem("法術卷軸") ? { itemId: "法術卷軸", name, quantity } : { name, quantity };
+  });
   const purchaseItems = async (requestedItems, { free = false } = {}) => {
     const items = (Array.isArray(requestedItems) ? requestedItems : []).map((item) => {
       const label = String(item?.name || "").trim();
@@ -6077,10 +6156,15 @@ function setupMoneyTracker() {
       const quantity = Number(item?.quantity);
       if (!label || !currencyId || !Number.isSafeInteger(amount) || amount < 1
         || !Number.isInteger(quantity) || quantity < 1 || quantity > 999) return null;
-      const gearName = String(item.gearName || gearNameOverrides[label] || label).trim();
+      const gearName = String(item.gearName || "").trim();
       return { label, gearName, quantity, currencyId, total: amount * quantity };
     });
-    if (!items.length || items.includes(null)) return false;
+    if (!items.length || items.includes(null) || !window.Inventory) return false;
+    const inventoryRequests = toInventoryRequests(items);
+    if (!window.Inventory.add(inventoryRequests, { dryRun: true })) {
+      window.AppDialog.notify(`物品欄最多 ${window.Inventory.LIMITS.items} 筆，請先整理物品欄再結帳。`, { tone: "warning" });
+      return false;
+    }
     const note = describePurchasedItems(items);
     if (free) {
       appendLog({ type: "adjustment", note: `免費取得${note}`, amountCopper: 0, balanceAfterCopper: readTotal(), createdAt: new Date().toISOString() });
@@ -6090,7 +6174,7 @@ function setupMoneyTracker() {
         .reduce((sum, item) => sum + item.total, 0)]));
       if (!(await recordTransaction({ type: "expense", note: `購買${note}`, amountCopper: toCopperValue(amountParts), amountParts }))) return false;
     }
-    mergePurchasedGear(items);
+    window.Inventory.add(inventoryRequests);
     scheduleSaveAllFields();
     return true;
   };
@@ -6112,9 +6196,18 @@ window.addEventListener("DOMContentLoaded", async function() {
   const main2ShieldToggle = document.getElementById("main2Shield");
   const armorSelect = document.getElementById("armor");
   refreshWeaponSelections();
-  populateSelectWithSections(armorSelect, getArmorSections(false));
+  refreshArmorSelection();
   let previousMainHand = mainHandSelect.value;
   let previousOffHand = offHandSelect.value;
+  // 物品欄變動時重建裝備下拉（保留目前選取），並排入自動儲存。
+  document.addEventListener("inventory:change", () => {
+    refreshWeaponSelections();
+    refreshArmorSelection();
+    previousMainHand = mainHandSelect.value;
+    previousOffHand = offHandSelect.value;
+    syncMain2ShieldControl({ legalize: false });
+    scheduleSaveAllFields();
+  });
   const refreshEquipmentEffects = () => {
     syncMain2ShieldControl();
     updateEquipmentLoadoutSummary();

@@ -951,7 +951,7 @@ function isWeaponRowEmpty(payload, slot) {
     const gearNotes = state?.['gear-notes'];
     try {
       if (typeof globalScope.quickBuild?.hasImportedInitialEquipment === 'function') {
-        return globalScope.quickBuild.hasImportedInitialEquipment(gearNotes);
+        return globalScope.quickBuild.hasImportedInitialEquipment(gearNotes, state?.__inventory);
       }
     } catch (error) {
       void error;
@@ -1442,6 +1442,11 @@ function isWeaponRowEmpty(payload, slot) {
     if (extraNotes.length) {
       payload.extra1 = normalizeUserTextForPdf(extraNotes.join('\n'));
     }
+
+    // 物品欄（標籤）排在攜帶物品自由文字之前。
+    const inventoryText = state.__inventory && typeof globalScope.Inventory?.formatText === 'function'
+      ? globalScope.Inventory.formatText(state.__inventory) : '';
+    if (inventoryText) payload.equipment1 = [inventoryText, payload.equipment1].filter(Boolean).join('\n');
 
     if (options.includeDefaultEquipment && !hasQuickBuildInitialEquipment(state)) {
       const classEq = parseClassDefaultEquipment(classKey);

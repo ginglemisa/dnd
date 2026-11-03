@@ -49,7 +49,7 @@ async function ensurePdfExportReady() {
     pdfExportLoaderPromise = (async () => {
       await loadScriptOnce("pdf-lib.custom.min.js");
       await loadScriptOnce("fontkit.custom.min.js");
-      await loadScriptOnce("pdf-field-map.js?v=20261104-spell-fields");
+      await loadScriptOnce("pdf-field-map.js?v=20261104-inventory");
       await loadScriptOnce("pdf-export.js?v=20261102-race-content");
     })().catch((error) => {
       pdfExportLoaderPromise = null;
@@ -243,7 +243,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
     const quickBuildEquipmentIncluded = (()=>{
       const gearNotes=state?.['gear-notes'];
       try {
-        if(typeof window.quickBuild?.hasImportedInitialEquipment==='function') return window.quickBuild.hasImportedInitialEquipment(gearNotes);
+        if(typeof window.quickBuild?.hasImportedInitialEquipment==='function') return window.quickBuild.hasImportedInitialEquipment(gearNotes,state?.__inventory);
       } catch(error) { void error; }
       return /^\s*初始裝備：\s*\S/um.test(String(gearNotes||''));
     })();

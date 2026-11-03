@@ -25,7 +25,7 @@ const SHEET_COPY = [
   ["🎲 選擇購點或擲骰", "27 點購點讓你自行分配屬性，角色能力較為穩定。\n\n屬性擲骰則具有較高的隨機性，通常在 DM 同意使用時採用。\n\n選擇適合目前遊戲的方式後，即可開始配置屬性。", 3, ["27 點購點", "屬性擲骰", "DM 同意"]],
   ["🎲 配置基礎屬性", "使用 27 點購點時，每項屬性可以設定在 8～15 之間。\n\n屬性越高，需要消耗的點數越多。調整數值時，可以從下方確認剩餘點數。\n\n完成配置前，總花費不得超過 27 點。", 4, ["27 點購點", "剩餘點數"]],
   ["🎲 套用背景加值", "選擇背景後，將提供的屬性加值分配至角色屬性。\n\n確認所有數值後，點擊套用完成屬性設定。", 5, ["背景", "套用"]],
-  ["🛡️ 選擇武器與護甲", "選擇武器或護甲時，下方會顯示傷害、防禦與相關特性。\n\n遇到不熟悉的規則名詞，可以直接點擊摘要中的名稱查看詳細說明。", 6, []],
+  ["🛡️ 選擇武器與護甲", "選擇武器或護甲時，下方會顯示傷害、防禦與相關特性。選單只列出「攜帶物品」裡有的武器與護甲。\n\n遇到不熟悉的規則名詞，可以直接點擊摘要中的名稱查看詳細說明。", 6, []],
   ["✨ 選擇與管理法術", "選好職業、等級、背景與種族（會施法時再選施法屬性）後，可按「準備法術」管理法術清單。", 7, []],
   ["🔎 搜尋規則資料", "法術與裝備頁面都提供搜尋功能。\n\n輸入名稱或關鍵字即可快速找到相關規則內容。", 8, []]
 ];
@@ -1529,9 +1529,48 @@ async function verifyImports(browser, url, viewport = { width: 1280, height: 800
         draft.ui.view = 'review';
         saveDraft();
       };
+      // Imports every default equipment package (each main-hand choice) into a reset card through the real importer.
+      window.probeInventoryImport = () => Object.entries(CLASS_EQUIPMENT_DEFINITIONS).flatMap(([classKey, definition], classIndex) =>
+        definition.defaults.flatMap(pkg => pkg.main.map(main => {
+          const backgrounds = Object.keys(backgroundRules);
+          const off = (pkg.off[main] || [])[0] || null;
+          draft = createDraft();
+          Object.assign(draft.choices, {
+            background: backgrounds[classIndex % backgrounds.length], race: 'dwarf', class: classKey, backgroundWealth: 'default',
+            classEquipmentMethod: pkg.id, classEquipmentOptions: { mainHand: main, offHand: off, instrument: pkg.instrument ? '風笛' : null },
+            classOptions: { tools: ['風笛', '鼓', '揚琴'] }
+          });
+          reconcileDraft(draft);
+          const warnings = [];
+          resetMobileCardForImport(warnings);
+          setMobileField('class', classKey, warnings, '職業');
+          importMobileEquipment(warnings);
+          return {
+            key: classKey + ':' + pkg.id + ':' + main + ':' + draft.choices.background,
+            warnings: warnings.filter(text => /主手|副手|護甲|初始裝備|攜帶物品/u.test(text)),
+            slots: [document.getElementById('mainHand').value, document.getElementById('offHand').disabled ? '' : document.getElementById('offHand').value, document.getElementById('armor').value],
+            expected: [main, off || '', pkg.armor || ''],
+            initial: Inventory.hasInitialEquipment(),
+            customs: Inventory.entries().filter(entry => !entry.itemId).map(entry => entry.name)
+          };
+        })));
       window.quickBuild = {`);
     await route.fulfill({ response, body: source });
   });
+  if (viewport.width >= 1024) {
+    // Every default equipment package lands in the inventory before the hands and armor are written,
+    // so the inventory-limited equipment selects accept the quick-build loadout.
+    await page.goto(url);
+    await page.waitForFunction(() => window.probeInventoryImport && window.Inventory);
+    const probes = await page.evaluate(() => window.probeInventoryImport());
+    assert(probes.length >= 12, "every class package is probed");
+    for (const probe of probes) {
+      assert.deepEqual(probe.warnings, [], `${probe.key} imports equipment without warnings`);
+      assert.deepEqual(probe.slots, probe.expected, `${probe.key} keeps the quick-build loadout`);
+      assert.equal(probe.initial, true, `${probe.key} marks initial equipment for the PDF`);
+      assert.deepEqual(probe.customs.filter(name => name !== "法術書" && !name.endsWith("擇一")), [], `${probe.key} maps starting equipment to catalog items`);
+    }
+  }
   for (const scenario of ["cancel", "complete", "warning", "failure", "pdf", "share", "close", "stored-manual-close", "stored-manual-escape"]) {
     await page.goto(url);
     await page.waitForFunction(() => window.prepareOnboardingImport && window.onboardingTour);
@@ -1594,8 +1633,9 @@ async function verifyImports(browser, url, viewport = { width: 1280, height: 800
       assert.deepEqual(await page.evaluate(() => ({
         money: ["pp", "gp", "sp", "cp"].map(id => document.getElementById(`money-balance-${id}`).value),
         log: JSON.parse(document.getElementById("money-log-data").value).map(entry => entry.note),
-        gear: document.getElementById("gear-notes").value.split(/\r?\n/u)[0]
-      })), { money: ["0", "122", "9", "9"], log: ["購買繩索 ×2、火把"], gear: "購買物品：繩索 ×2、火把" }, "quick-build shop purchases are applied on import");
+        gear: document.getElementById("gear-notes").value,
+        inventory: Inventory.formatText()
+      })), { money: ["0", "122", "9", "9"], log: ["購買繩索 ×2、火把"], gear: "", inventory: "繩索 ×2、火把" }, "quick-build shop purchases go into the inventory on import");
     }
     const firstTable = page.getByRole("button", { name: "初次遊玩", exact: true });
     assert.equal(await firstTable.count(), scenario === "failure" ? 0 : 1, await page.locator(".app-dialog__body").innerText());

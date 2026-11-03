@@ -3129,6 +3129,64 @@ async function verifySubclassSelection(browser, url) {
   } finally { await page.close(); }
 }
 
+// 物品欄（__inventory）經 autosave、JSON 與分享都能完整還原；舊資料把已裝備的物品補進物品欄，不清掉選擇。
+async function verifyInventoryPersistence(browser, url) {
+  const page = await newUiPage(browser);
+  const unsafeName = "<img src=x onerror=__inv=1>";
+  const state = { class: "fighter", level: "3", str: "15", mainHand: "長劍", offHand: "盾牌", armor: "鎖子甲", "gear-notes": "自由文字",
+    __inventory: { version: 1, items: [
+      { uid: "sword", itemId: "長劍", quantity: 1 }, { uid: "shield", itemId: "盾牌", quantity: 1 }, { uid: "mail", itemId: "鎖子甲", quantity: 1 },
+      { uid: "pack", itemId: "背包", quantity: 1 }, { uid: "pouch", itemId: "小包", quantity: 1, in: "pack" },
+      { uid: "gem", name: unsafeName, quantity: 3, weight: 0.5, in: "pouch" }, { uid: "rope", itemId: "繩索", quantity: 2, in: "pack" },
+      { uid: "kit", itemId: "醫療包", quantity: 1, source: "initial" }
+    ] } };
+  const snapshot = target => target.evaluate(() => ({
+    inventory: Inventory.formatText(), entries: Inventory.getState().items.length, weight: Inventory.getWeight().weight,
+    slots: ["mainHand", "offHand", "armor"].map(id => document.getElementById(id).value), notes: document.getElementById("gear-notes").value,
+    unsafe: Boolean(window.__inv) || Boolean(document.querySelector("#inventory-panel img"))
+  }));
+  try {
+    await page.goto(url);
+    await page.waitForFunction(() => window.Inventory && window.InventoryUI);
+    await page.evaluate(state => { applyStateObject(state); saveAllFields(); }, state);
+    const expected = await snapshot(page);
+    assert.equal(expected.inventory, `長劍、盾牌、鎖子甲、背包（小包（${unsafeName} ×3）、繩索 ×2）、醫療包`);
+    assert.deepEqual(expected.slots, ["長劍", "盾牌", "鎖子甲"]);
+    assert.equal(expected.unsafe, false, "custom item names render as text");
+    await page.goto(url);
+    assert.deepEqual(await snapshot(page), expected, "autosave restores the inventory and its equipped items");
+
+    const exported = await page.evaluate(() => collectStateObject());
+    assert.equal(exported.__inventory.items.length, 8, "JSON export carries the inventory");
+    const hash = await page.evaluate(async () => encodeStateToHash(collectShareState()));
+    const shared = await newUiPage(browser);
+    try {
+      const sharedUrl = new URL(url); sharedUrl.searchParams.set("analytics", "owner"); sharedUrl.hash = hash;
+      await shared.goto(sharedUrl.href);
+      await shared.waitForFunction(() => window.SHARE_MODE === true);
+      assert.deepEqual(await snapshot(shared), expected, "share restores the inventory");
+    } finally { await shared.close(); }
+
+    // An empty inventory is still shared, so it is not mistaken for legacy data.
+    const emptyShare = await page.evaluate(() => { applyStateObject({ class: "monk", level: "1", __inventory: { version: 1, items: [] } }); return collectShareState().__inventory; });
+    assert.deepEqual(emptyShare, { version: 1, items: [] });
+
+    // Legacy saves (no __inventory) put the equipped weapons, armor and shield into the inventory and keep the text.
+    await page.evaluate(() => dndStorage.setItem("dndchar_autosave_v1", JSON.stringify({ class: "fighter", level: "1", mainHand: "短劍", offHand: "短劍", armor: "皮甲", "gear-notes": "購買物品：繩索" })));
+    await page.goto(url);
+    assert.deepEqual(await snapshot(page).then(({ inventory, slots, notes }) => ({ inventory, slots, notes })),
+      { inventory: "短劍 ×2、皮甲", slots: ["短劍", "短劍", "皮甲"], notes: "購買物品：繩索" }, "legacy autosave seeds the equipped items");
+    await page.evaluate(() => applyStateObject({ class: "fighter", level: "1", offHandAsMain: true, main2Shield: true, mainHand: "長劍", offHand: "短劍", "shield-proficiency": true }));
+    assert.equal(await page.evaluate(() => Inventory.formatText()), "長劍、短劍、盾牌", "legacy alternate-main shield seeds when equipped");
+
+    // A saved choice that the inventory lacks stays selected and is labelled.
+    await page.evaluate(() => applyStateObject({ class: "fighter", level: "1", mainHand: "巨劍", __inventory: { version: 1, items: [] } }));
+    assert.deepEqual(await page.evaluate(() => [document.getElementById("mainHand").value, document.getElementById("mainHand").selectedOptions[0].textContent]),
+      ["巨劍", "巨劍（不在物品欄）"]);
+    console.log("Inventory persistence: autosave, JSON export, share (including empty inventories), legacy seeding, kept selections and safe custom names passed.");
+  } finally { await page.close(); }
+}
+
 async function verifyCharacterDataSafety(browser, url) {
   const page = await newUiPage(browser);
   const sourceTag = '<img src="data:image/png,invalid" onerror="window.__unsafeCharacterScript=true">';
@@ -3200,6 +3258,13 @@ async function verifyCharacterDataSafety(browser, url) {
         { __spellManagement: { entries: [{ spellId: "light", sourceKey: "__proto__" }] } },
         { __spellManagement: { freeUses: { probe: Array(65).fill(false) } } },
         { __spellManagement: { entries: [{ spellId: "light", sourceTag: {} }] } },
+        { __inventory: { version: 2, items: [] } }, { __inventory: { version: 1, items: {} } },
+        { __inventory: { version: 1, items: Array.from({ length: 301 }, () => ({ itemId: "匕首", quantity: 1 })) } },
+        { __inventory: { version: 1, items: [{ itemId: "匕首", quantity: 0 }] } },
+        { __inventory: { version: 1, items: [{ itemId: "匕首", quantity: 1.5 }] } },
+        { __inventory: { version: 1, items: [{ itemId: "匕首", quantity: 1, onclick: "x" }] } },
+        { __inventory: { version: 1, items: [{ quantity: 1 }] } },
+        { __inventory: { version: 1, items: [{ name: "x".repeat(65), quantity: 1 }] } },
         { note: "x".repeat(256 * 1024 + 1) }, [],
         JSON.parse('{"__proto__":{"polluted":true}}')
       ];
@@ -3494,7 +3559,7 @@ async function main() {
   try {
     browser = await chromium.launch({ headless: true, ...(process.env.DND_BROWSER_CHANNEL ? { channel: process.env.DND_BROWSER_CHANNEL } : {}) });
     const url = `http://127.0.0.1:${server.address().port}/index.html?analytics=owner`;
-    if (all || sections.has("--data-only")) { await verifyJsonImportTransaction(browser, url); await verifyCharacterDataSafety(browser, url); await verifySubclassSelection(browser, url); await verifyClassOptionMemory(browser, url); }
+    if (all || sections.has("--data-only")) { await verifyJsonImportTransaction(browser, url); await verifyCharacterDataSafety(browser, url); await verifySubclassSelection(browser, url); await verifyClassOptionMemory(browser, url); await verifyInventoryPersistence(browser, url); }
     if (all || sections.has("--appearance-only")) {
       const page = await newUiPage(browser, { viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });
       try { await verifyAppearanceAndLayout(browser, page, url); }

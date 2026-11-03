@@ -1042,6 +1042,8 @@ async function verifyEquipmentLoadout(browser, url) {
     await page.check("#legal-dismiss");
     await page.click("#legal-close-btn");
     await page.selectOption("#class", "fighter");
+    // 裝備下拉只列物品欄有的物品。
+    await page.evaluate(() => Inventory.add(["長劍", "標槍", "巨劍", "盾牌"].map(itemId => ({ itemId }))));
     await page.getByRole("tab", { name: "裝備", exact: true }).click();
     await page.selectOption("#mainHand", "長劍");
     // Only an interactive opt-in asks to replace manual attacks; state restoration
@@ -1089,6 +1091,8 @@ async function verifyEquipmentLoadout(browser, url) {
     await page.evaluate(() => applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] }, class: "fighter", mainHand: "巨劍", offHand: "標槍", offHandAsMain: true, main2Shield: true }));
     assert.equal(await page.isChecked("#main2Shield"), false);
 
+    // The legacy restore above seeded only its equipped items.
+    await page.evaluate(() => Inventory.add([{ itemId: "長劍" }]));
     await page.uncheck("#offHandAsMain");
     await page.selectOption("#mainHand", "長劍");
     await page.selectOption("#offHand", "盾牌");

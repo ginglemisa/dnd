@@ -4720,6 +4720,7 @@
 
   function moveSharedNotesToCurrentMode(mode) {
     [
+      [elements.inventoryPanel, elements.gearNotesSheetMount, elements.gearNotesTabletopMount],
       [elements.gearNotes, elements.gearNotesSheetMount, elements.gearNotesTabletopMount],
       [elements.equipmentShopOpen, elements.gearNotesSheetMount, elements.gearNotesTabletopMount],
       [elements.classExtra, elements.classExtraSheetMount, elements.classExtraTabletopMount],
@@ -4754,6 +4755,11 @@
         tabletopMode:
           document.getElementById(
             "tabletop-mode"
+          ),
+
+        inventoryPanel:
+          document.getElementById(
+            "inventory-panel"
           ),
 
         gearNotes:

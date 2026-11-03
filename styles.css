@@ -6317,6 +6317,329 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   flex: 0 0 auto;
 }
 
+/* Inventory tags sit above the free-text carried-items notes and move with them in tabletop mode. */
+.inventory-panel {
+  margin-bottom: 0.75rem;
+}
+
+.inventory-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 0.75rem;
+  margin-bottom: 0.6rem;
+}
+
+.inventory-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-left: auto;
+}
+
+.inventory-toolbar-actions button {
+  width: auto;
+  min-height: 2.4rem;
+  padding: 0.42rem 0.8rem;
+  font-size: var(--fs-sm);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.inventory-weight {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.1rem 0.6rem;
+  margin: 0;
+  color: var(--text-body);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+
+.inventory-weight__total {
+  color: var(--text);
+  font-weight: 800;
+}
+
+.inventory-weight__parts {
+  color: var(--text-muted);
+}
+
+.inventory-weight__warning {
+  flex-basis: 100%;
+  color: var(--warning);
+  font-weight: 800;
+}
+
+.inventory-weight.is-over .inventory-weight__total {
+  color: var(--warning);
+}
+
+.inventory-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.inventory-tag-item {
+  display: inline-flex;
+  max-width: 100%;
+  margin: 0;
+}
+
+.inventory-tag-item.is-expanded {
+  flex-wrap: wrap;
+  flex-basis: 100%;
+}
+
+.inventory-tag,
+.inventory-tag__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: auto;
+  min-width: 0;
+  min-height: 2.25rem;
+  margin: 0;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-soft);
+  color: var(--text);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  line-height: 1.3;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+:where(html:not([data-ui-theme="warm"])) .inventory-tag,
+:where(html:not([data-ui-theme="warm"])) .inventory-tag__toggle {
+  border-radius: 999px;
+  box-shadow: none;
+}
+
+:where(html[data-ui-theme="warm"]) .inventory-tag,
+:where(html[data-ui-theme="warm"]) .inventory-tag__toggle {
+  border-radius: var(--radius-sm);
+}
+
+.inventory-tag-item.is-container > .inventory-tag {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.inventory-tag__toggle {
+  margin-left: -1px;
+  padding-inline: 0.55rem;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.inventory-tag.is-equipped {
+  border-color: var(--accent);
+}
+
+.inventory-tag.is-custom {
+  border-style: dashed;
+}
+
+.inventory-tag__badge {
+  padding: 0 0.35rem;
+  border-radius: var(--radius-sm);
+  background: var(--action-fill);
+  color: var(--on-accent);
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.inventory-container-contents {
+  flex-basis: 100%;
+  margin: 0.4rem 0 0.15rem 0.6rem;
+  padding-left: 0.7rem;
+  border-left: 2px solid var(--border-decoration, var(--border));
+}
+
+.inventory-container-empty,
+.inventory-empty {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
+.inventory-tag--static {
+  display: inline-flex;
+  cursor: default;
+}
+
+.inventory-tags--preview {
+  margin-bottom: 0.75rem;
+}
+
+/* Inventory dialogs: item details, adding from the equipment catalog, and tidying legacy text. */
+.inventory-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.75rem;
+  color: var(--text-body);
+}
+
+.inventory-item-note,
+.inventory-add-status {
+  margin: 0 0 0.75rem;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+
+.inventory-add-status:empty {
+  display: none;
+}
+
+.inventory-field {
+  display: grid;
+  gap: 0.3rem;
+  margin-bottom: 0.75rem;
+  font-size: var(--fs-sm);
+}
+
+.inventory-field__label {
+  color: var(--text-muted);
+}
+
+.inventory-stepper {
+  display: inline-grid;
+  grid-template-columns: 2.6rem minmax(4rem, 6rem) 2.6rem;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+.inventory-stepper__button {
+  width: 2.6rem;
+  min-height: 2.6rem;
+  padding: 0;
+}
+
+.inventory-stepper__input {
+  text-align: center;
+  -moz-appearance: textfield;
+}
+
+.inventory-stepper__input::-webkit-inner-spin-button,
+.inventory-stepper__input::-webkit-outer-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
+.inventory-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+
+.inventory-check input {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+}
+
+button.inventory-detail-link {
+  width: auto;
+  min-height: 2.2rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent-strong);
+  box-shadow: none;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.app-dialog[data-variant="inventory-add"] .app-dialog__surface {
+  width: min(100%, 40rem);
+}
+
+.inventory-add-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 12rem);
+  gap: 0.5rem 0.75rem;
+  align-items: end;
+  margin-bottom: 0.5rem;
+}
+
+.inventory-add-toolbar .inventory-field {
+  margin-bottom: 0;
+}
+
+.inventory-add-search {
+  margin: 0;
+}
+
+.inventory-add-heading {
+  margin: 0.9rem 0 0.4rem;
+  color: var(--accent-strong);
+  font-size: var(--fs-md);
+}
+
+.inventory-add-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.inventory-add-name {
+  overflow-wrap: anywhere;
+}
+
+.inventory-add-weight {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  white-space: nowrap;
+}
+
+button.inventory-add-button {
+  width: auto;
+  min-height: 2.25rem;
+  padding: 0.3rem 0.75rem;
+  font-size: var(--fs-sm);
+}
+
+.inventory-add-empty {
+  color: var(--text-muted);
+}
+
+.inventory-custom {
+  margin-top: 1rem;
+  padding-top: 0.25rem;
+  border-top: 1px solid var(--border-strong);
+}
+
+@media (max-width: 559px) {
+  .inventory-add-toolbar {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .inventory-add-search {
+    grid-column: 1 / -1;
+  }
+}
+
 /* Shop and cart share one frame, so the cart reads as another page of the same window; 48.5rem fits all twelve categories on one row. */
 .app-dialog[data-variant="equipment-shop"] .app-dialog__surface,
 .app-dialog[data-variant="equipment-shop-cart"] .app-dialog__surface {
