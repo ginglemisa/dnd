@@ -55,6 +55,12 @@ function checkSpell(spell, where, errors) {
     if (spell.castingTime.includes("reaction") && !block.trigger) errors.push(`${where}：${name} 缺少反應動作的 trigger`);
   });
   if (spell.upcast && spell.level === 0) errors.push(`${where}：戲法不可寫 upcast（戲法升級寫在 outcomes 的 cantripAt5／repeatAt5）`);
+  if (spell.srd?.classes) {
+    // SRD 的職業清單只在網站法表刻意不同時才寫（只供查閱）；只有 SRD 版的法術直接以頂層 classes 為 SRD 清單。
+    if (!spell.site) errors.push(`${where}：srd.classes 只用於有 site 的法術（只有 SRD 版的法術直接寫在 classes）`);
+    const sameClasses = [...spell.srd.classes].sort().join() === [...spell.classes].sort().join();
+    if (sameClasses) errors.push(`${where}：srd.classes 與 classes 相同，不需另寫`);
+  }
   if (!spell.site) return;
   if (spell.level > 0 && Boolean(spell.upcast) !== UPCAST_TEXT.test(spell.site.body)) {
     errors.push(`${where}：${spell.upcast ? "upcast: true 但網站版說明沒有以更高環位施放的段落" : "網站版說明有以更高環位施放的段落，但沒有 upcast: true"}`);

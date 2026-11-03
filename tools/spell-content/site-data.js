@@ -58,6 +58,7 @@ function spellRules(spell) {
     level: spell.level,
     school: spell.school,
     classes: CLASS_ORDER.filter(classId => spell.classes.includes(classId)),
+    ...(spell.srd?.classes ? { srdClasses: CLASS_ORDER.filter(classId => spell.srd.classes.includes(classId)) } : {}),
     castingTime: spell.castingTime,
     ...(spell.ritual ? { ritual: true } : {}),
     range: spell.range,
@@ -115,7 +116,8 @@ function renderSpellData(spells, srdSource) {
   const text = Object.fromEntries(playableIds.map(id => [id, spellText(spells.get(id))]));
   const srdFile = `${SRD_OUTPUT_NAME}?v=${contentVersion(srdSource)}`;
   const source = `// ${OUTPUT_NAME}：由 npm run build 從 content/srd/spells 的法術內容檔產生，請勿手動修改。
-// spellRules：全部法術的結構化規則（依環階、spellId 排序）；playable 為角色可用的法術（有網站版），其餘只供查閱。
+// spellRules：全部法術的結構化規則（依環階、spellId 排序）；playable 為角色可用的法術（有網站版），其餘只供查閱；
+// srdClasses 是與網站法表（classes）不同的 SRD 職業清單，只用於查閱分類。
 // spellText：可用法術的網站版顯示文字（desc 標頭＋說明、tabletop 跑團版說明、header 標頭各項）。
 // spellSrdFile：SRD 版產物（spell-srd.generated.js）的網址與快取版本。
 const spellRules = {

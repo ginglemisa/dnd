@@ -2,7 +2,7 @@
 // 用法：node tools/spell-reference/validate.js [--srd <spells.md 路徑>] [--strict] [id ...]
 //   不帶參數：禁用字與用語、表格列數、段落與斜體小標數、骰式與數字比對（譯文 vs 英文），以及網站版標籤是否沿用。
 //   --srd：另外與 SRD 5.2.1 英文 Markdown 逐項比對（英文原文、材料、觸發條件與規則欄位是否被改動），並確認共 339 個（戲法 27）。
-//          有網站版（site）的法術，職業法表以網站為準，不比對 classes。
+//          職業清單比對 srd.classes；沒寫時比對 classes（表示網站法表與 SRD 相同）。
 //   --strict：「疑點」也算失敗（預設只列出供人工確認）。
 //   有帶 id 時只檢查那幾個。「疑點」是需要人工確認的提示，不一定是錯誤。
 'use strict';
@@ -126,7 +126,11 @@ function compareWithSrd(docs, markdown) {
     const id = spell.spellId;
     const expected = srdFields(spell);
     for (const [key, value] of Object.entries(expected)) {
-      if (key === 'classes' && doc.site) continue; // 網站版的職業法表以網站為準
+      if (key === 'classes') {
+        const srdClasses = doc.srd?.classes || doc.classes;
+        if ([...srdClasses].sort().join() !== [...value].sort().join()) fail(id, `${doc.srd?.classes ? 'srd.classes' : 'classes'} 與 SRD 不同（SRD：${value.join(', ')}）`);
+        continue;
+      }
       if (JSON.stringify(doc[key]) !== JSON.stringify(value)) fail(id, `${key} 與 SRD 不同`);
     }
     // 植物滋長的施法時間效果名稱（Overgrowth／Enrichment）寫在說明內，不另存；其餘 note 是反應或附贈動作的觸發條件。

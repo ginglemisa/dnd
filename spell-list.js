@@ -295,7 +295,8 @@ globalThis.SpellCatalog = (() => {
     return spellText[spellId].tabletop || spellsById[spellId].desc;
   }
 
-  // 查閱用：全部法術（含只供查閱、沒有網站版的 SRD 法術）的名稱、環階與職業法表，依環階、spellId 排序。
+  // 查閱用：全部法術（含只供查閱、沒有網站版的 SRD 法術）的名稱、環階與職業，依環階、spellId 排序。
+  // classIds 是網站法表與 SRD 職業清單（srdClasses）的聯集，只用於查閱分類；角色可準備的職業法表一律用 getClassIds 等 API。
   // playable 為角色可用的法術；只供查閱的法術不在 getSpell 等其他 API，任何情況下都不能準備或加入角色。
   const referenceSpellsById = Object.freeze(Object.fromEntries(Object.entries(spellRules).map(([spellId, rules]) => [spellId, Object.freeze({
     spellId,
@@ -303,7 +304,7 @@ globalThis.SpellCatalog = (() => {
     nameEn: rules.nameEn,
     level: rules.level,
     playable: Boolean(rules.playable),
-    classIds: Object.freeze(CLASS_IDS.filter(classId => rules.classes.includes(classId)))
+    classIds: Object.freeze(CLASS_IDS.filter(classId => rules.classes.includes(classId) || rules.srdClasses?.includes(classId)))
   })])));
   const allReferenceSpells = Object.freeze(Object.values(referenceSpellsById));
 

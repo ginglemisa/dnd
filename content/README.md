@@ -480,7 +480,7 @@ en:
 | `name`、`nameEn` | 中文名、英文名（畫面顯示「火焰箭 Fire Bolt」）。舊存檔以名稱記錄法術時用它們轉成 ID，改字前須處理相容；全部法術的名稱不可重複。網站已有的法術沿用網站名稱。 |
 | `source` | 內容來源：`srd`（須有 `srd` 區塊）、`extended`（本站撰寫）、`private`（私人內容包）。 |
 | `level`、`school` | 環階（0 為戲法）；學派：`abjuration` 防護、`conjuration` 咒法、`divination` 預言、`enchantment` 惑控、`evocation` 塑能、`illusion` 幻術、`necromancy` 死靈、`transmutation` 變化。 |
-| `classes` | 哪些職業的法表有此法術。法表內依環階、再依 ID 排序，不另寫順序。 |
+| `classes` | 哪些職業的法表有此法術。法表內依環階、再依 ID 排序，不另寫順序。有 `site` 的法術以網站法表為準；SRD 的職業清單不同時（例如網站法表刻意不列聖騎士、遊俠的三、四環法術），另寫在 `srd.classes`。 |
 | `castingTime` | 施法時間，可有多個：`action`、`bonus-action`、`reaction`、`{ minutes: N }`、`{ hours: N }`。例如植物滋長 `[ action, { hours: 8 } ]` 顯示「動作或8小時」。跑團的動作／附贈／反應分頁與法術按鈕上的小標依此決定。 |
 | `ritual` | `true`：可儀式施法（顯示「或儀式」）。 |
 | `range` | `self` 自身、`touch` 觸及、`sight` 視線內、`unlimited` 無限、`special` 特殊、`{ feet: N }`、`{ miles: N }`。 |
@@ -496,6 +496,7 @@ en:
 | `material` | 材料內容，顯示為「材料: …」。網站版與 SRD 版各寫各的。 |
 | `trigger` | 反應或附贈動作的觸發條件，顯示在施法時間後面（「反應動作，當你…」）。反應動作必填。 |
 | `body` | 說明。`site.body` 是「- 」開頭的分行條列（前置兩個空白為巢狀）；`srd.body` 是段落（空行分隔）、`_斜體小標_`、`**粗體**`、「- 」清單、`#### 小標` 與表格。開頭的學派、施法時間等標頭由規則欄位自動產生，不寫在 `body`。 |
+| `srd.classes` | SRD 的職業清單，只在有 `site`、且與 `classes` 不同時才寫。只用於查閱與搜尋的職業分類（兩者的聯集），不影響職業法表與準備法術。建置檢查職業 ID，`tools/spell-reference/validate.js --srd` 與 SRD 比對。 |
 | `site.tabletop` | 跑團版說明（跑團動作分頁與跑團法術詳情）；省略時用 `site.body`。目前沒有法術使用。 |
 | `site.outcomes` | 跑團施法結果（擲骰按鈕）：`kind`（`damage`／`healing`／`temporary-hp`／`attack`）、`formula` 或 `fixed`、`cantripAt5`、`upcastDice`、`damageType`（或可選的 `damageTypes`）、`autoOnCast`（施法時自動擲骰）、`context` 等，欄位說明見格式定義。 |
 
