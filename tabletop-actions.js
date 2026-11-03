@@ -559,7 +559,7 @@
       const expression = `${die}${wisdom >= 0 ? "+" : ""}${wisdom}`;
       if (globalScope.DiceRoller?.isEnabled?.()) {
         globalScope.DiceRoller.rollExpressionsInModal([
-          { expression, label: "混元體恢復生命值", detail: "最少恢復 1 點生命值。" }
+          { expression, label: "混元體恢復生命值", min: 1, detail: "結果已計入「最少恢復 1 點生命值」。" }
         ], { title: "混元體", trigger: document.getElementById("tabletop-action-tab-bonus") });
       } else {
         globalScope.AppDialog?.notify(`混元體：請手動擲 ${expression}，最少恢復 1 點生命值。`, { tone: "warning" });

@@ -364,6 +364,26 @@ async function main() {
     assert.equal(await page.locator(".dice-roller-controls").isVisible(), true);
     assert.equal(await page.locator(".dice-roller-automated-result").count(), 1);
     await page.locator("#dice-roller-close").click();
+    const minimumRolls = await page.evaluate(() => {
+      const raised = DiceRoller.rollExpressionsInModal([{ label: "最小值測試", expression: "1d4-9", min: 1 }]).results[0];
+      const stageText = document.querySelector("#dice-roller-stage").textContent;
+      const totalText = document.querySelector("#dice-roller-total-value")?.textContent || "";
+      const history = JSON.parse(dndStorage.getItem("dnd.diceRollHistory.v1"))[0];
+      document.getElementById("dice-roller-close").click();
+      const plain = DiceRoller.rollExpressionsInModal([{ label: "無最小值", expression: "1d4-9" }]).results[0];
+      const plainHistory = JSON.parse(dndStorage.getItem("dnd.diceRollHistory.v1"))[0];
+      document.getElementById("dice-roller-close").click();
+      const lucky = DiceRoller.rollExpression("1d6+10", { label: "高於最小值", min: 1 });
+      return { raised: { total: raised.total, rawTotal: raised.rawTotal, min: raised.min }, stageText, totalText, history, plain: plain.total, plainHistory, lucky: { total: lucky.total, rawTotal: lucky.rawTotal } };
+    });
+    assert.equal(minimumRolls.raised.total, 1, "min raises a low expression total to the minimum");
+    assert.ok(minimumRolls.raised.rawTotal <= -5 && minimumRolls.raised.min === 1, "raised roll keeps the original total");
+    assert.match(minimumRolls.stageText, /最少 1/, "modal shows the minimum rule");
+    assert.equal(minimumRolls.totalText.trim(), "1", "modal total shows the minimum");
+    assert.equal(minimumRolls.history.total, 1, "history stores the raised total");
+    assert.match(minimumRolls.history.note, /最少 1/, "history notes the original total");
+    assert.ok(minimumRolls.plain <= -5 && minimumRolls.plainHistory.total === minimumRolls.plain && !minimumRolls.plainHistory.note, "rolls without min are unchanged");
+    assert.ok(minimumRolls.lucky.total >= 11 && minimumRolls.lucky.rawTotal === undefined, "totals above min are not marked as raised");
     await page.setViewportSize({ width: 390, height: 844 });
     await page.evaluate(() => onboardingTour.start(2));
     await page.waitForFunction(() => onboardingTour.active && !onboardingTour.isTransitioning && onboardingTour.currentIndex === 2);
