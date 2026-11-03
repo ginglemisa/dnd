@@ -1030,7 +1030,39 @@ async function verifyPreparedRingRange(page) {
     assert.deepEqual(await candidateIds(), before, "looking up all SRD spells leaves the preparation list unchanged");
     await close();
   }
-  console.log("Prepared ring range: automatic cantrip/slot rings, class-option cantrips, retained high rings, unrestricted manual rings and lookup-only SRD spells kept out of preparation passed.");
+  // 查閱用 SRD 職業清單（聖騎士一至五環），準備視窗仍只用網站法表與法術位（聖騎士一、二環）。
+  await open({ class: "paladin", level: "8" });
+  assert.deepEqual(await rings(), ["", "1", "2"], "paladin preparation keeps first and second level");
+  const paladinCandidates = await candidateIds();
+  assert.equal(paladinCandidates.some(id => ["revivify", "dispel-magic", "aura-of-life", "banishment"].includes(id)), false, "SRD-only paladin lookup spells cannot be checked");
+  await dialog.locator(".spell-prepared-browse").first().click();
+  const paladinLookup = page.getByRole("dialog", { name: "查閱法術", exact: true });
+  await paladinLookup.locator("#spell-browse-class").selectOption("paladin");
+  assert.deepEqual(await paladinLookup.locator("#spell-browse-ring option").evaluateAll(options => options.map(option => option.value)),
+    ["", "1", "2", "3", "4", "5"], "paladin lookup lists first through fifth level");
+  await paladinLookup.locator("#spell-browse-ring").selectOption("3");
+  await paladinLookup.locator("#spell-browse-name").selectOption("revivify");
+  await paladinLookup.locator(".spell-version__tab").first().waitFor();
+  await page.keyboard.press("Escape");
+  await paladinLookup.waitFor({ state: "detached" });
+  assert.deepEqual(await rings(), ["", "1", "2"]);
+  assert.deepEqual(await candidateIds(), paladinCandidates, "paladin lookup leaves the preparation list unchanged");
+  await close();
+  // 放大鏡搜尋的「聖騎士三環」列出 SRD 法術，但網站法表外的法術不能因此準備。
+  const before = await playerIds(page);
+  await page.locator('[aria-controls="tab-spells"]').click();
+  await page.locator("#spell-search-fab").click();
+  await page.locator("#spell-search").fill("聖騎士三環");
+  await page.locator("#spell-search").press("Enter");
+  await page.locator("#spell-search-result-list button", { hasText: "回生術" }).click();
+  await page.locator(".quick-build-spell-prepare-confirm").click();
+  const mismatch = page.getByRole("dialog", { name: "職業不符", exact: true });
+  assert.match(await mismatch.innerText(), /不在聖騎士的職業法術清單中/u, "preparing follows the site class list, not the lookup list");
+  await mismatch.getByRole("button", { name: "關閉", exact: true }).click();
+  assert.deepEqual(await playerIds(page), before, "a paladin cannot prepare SRD-only lookup spells");
+  await page.locator("#spell-search").fill("");
+  await page.locator("#spell-search").press("Enter");
+  console.log("Prepared ring range: automatic cantrip/slot rings, class-option cantrips, retained high rings, unrestricted manual rings, lookup-only SRD spells and SRD-only paladin lookup spells kept out of preparation passed.");
 }
 
 // Every path into the preparation dialog goes through #spell-prepare / openPreparedManager;

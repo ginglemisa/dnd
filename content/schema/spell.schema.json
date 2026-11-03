@@ -10,6 +10,7 @@
     "line": { "type": "string", "minLength": 1, "pattern": "^[^\\n]+$" },
     "amount": { "type": "integer", "minimum": 1 },
     "dice": { "type": "string", "pattern": "^\\d+d(?:4|6|8|10|12|20|100)(?:\\+\\d+)?$" },
+    "classIds": { "type": "array", "uniqueItems": true, "items": { "enum": ["bard", "cleric", "druid", "paladin", "ranger", "sorcerer", "warlock", "wizard"] } },
     "damageType": { "enum": ["acid", "bludgeoning", "cold", "fire", "force", "lightning", "necrotic", "piercing", "poison", "psychic", "radiant", "slashing", "thunder"] },
     "textBlock": {
       "type": "object",
@@ -57,7 +58,7 @@
     "source": { "enum": ["srd", "extended", "private"], "description": "內容來源。srd：出自 SRD 5.2.1（須有 srd 區塊）；extended：本站另外撰寫；private：私人內容包（只放 content/private/spells/，目前尚未啟用）。" },
     "level": { "type": "integer", "minimum": 0, "maximum": 9, "description": "環階；0 = 戲法。" },
     "school": { "enum": ["abjuration", "conjuration", "divination", "enchantment", "evocation", "illusion", "necromancy", "transmutation"], "description": "學派：防護、咒法、預言、惑控、塑能、幻術、死靈、變化。" },
-    "classes": { "type": "array", "uniqueItems": true, "items": { "enum": ["bard", "cleric", "druid", "paladin", "ranger", "sorcerer", "warlock", "wizard"] }, "description": "哪些職業的法表有此法術（有 site 的法術以網站為準）。法表內依 ID 排序。" },
+    "classes": { "$ref": "#/definitions/classIds", "description": "哪些職業的法表有此法術（有 site 的法術以網站為準；與 SRD 不同時，SRD 的職業清單另寫在 srd.classes）。法表內依 ID 排序。" },
     "castingTime": {
       "type": "array",
       "minItems": 1,
@@ -113,7 +114,18 @@
       },
       "additionalProperties": false
     },
-    "srd": { "$ref": "#/definitions/textBlock", "description": "SRD 5.2.1 繁中直譯（法術詳情的「SRD 版」，唯讀）。body 為段落（空行分隔）、_斜體小標_ 與 GFM 表格。" },
+    "srd": {
+      "description": "SRD 5.2.1 繁中直譯（法術詳情的「SRD 版」，唯讀）。body 為段落（空行分隔）、_斜體小標_ 與 GFM 表格。",
+      "type": "object",
+      "required": ["body"],
+      "properties": {
+        "classes": { "$ref": "#/definitions/classIds", "description": "SRD 的職業清單，只在有 site、且與頂層 classes（網站法表）不同時才寫。只用於查閱（查閱法術、搜尋以兩者的聯集分類），不影響職業法表與準備法術。" },
+        "material": { "$ref": "#/definitions/textBlock/properties/material" },
+        "trigger": { "$ref": "#/definitions/textBlock/properties/trigger" },
+        "body": { "$ref": "#/definitions/textBlock/properties/body" }
+      },
+      "additionalProperties": false
+    },
     "en": { "$ref": "#/definitions/textBlock", "description": "SRD 英文原文，只供校對，建置不會送到網站。" },
     "reference": { "$ref": "#/definitions/textBlock", "description": "私人法術的直譯參考（非 SRD 內容不可放在公開檔案）。目前尚未啟用。" },
     "referenceEn": { "$ref": "#/definitions/textBlock", "description": "私人法術的英文原文，只供校對。目前尚未啟用。" }

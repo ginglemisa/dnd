@@ -87,17 +87,17 @@ async function main() {
       assert.equal(await page.evaluate(() => JSON.stringify(collectStateObject())), beforeBrowse, "reading higher spells does not change character data");
       assert.equal(await dialog.evaluate(el => el.scrollWidth <= el.clientWidth && el.getBoundingClientRect().right <= innerWidth), true);
       const ringValues = () => dialog.locator("#spell-browse-ring option").evaluateAll(options => options.map(option => option.value));
-      // 環位只列所選職業有法術的環位（全部 SRD 法術；網站已有的法術以網站法表為準）。
-      const classRings = classId => page.evaluate(id => ["", ...[...new Set(SpellCatalog.getAllReferenceSpells()
-        .filter(spell => spell.classIds.includes(id)).map(spell => String(spell.level)))]], classId);
+      // 環位只列所選職業有法術的環位（全部 SRD 法術；職業分類是網站法表與 SRD 職業清單的聯集）。
       await dialog.locator("#spell-browse-class").selectOption("paladin");
-      assert.deepEqual(await ringValues(), await classRings("paladin"), "paladin lists only its spell levels");
-      assert.equal((await ringValues()).includes("0"), false, "paladin has no cantrips");
-      assert.equal(await dialog.locator("#spell-browse-ring").inputValue(), "", "paladin clears an invalid fourth-level selection");
+      assert.deepEqual(await ringValues(), ["", "1", "2", "3", "4", "5"], "paladin lists every SRD paladin level");
+      assert.equal(await dialog.locator("#spell-browse-ring").inputValue(), "4", "valid fourth level survives switching to paladin");
+      await dialog.locator("#spell-browse-ring").selectOption("3");
+      const paladinThird = await dialog.locator("#spell-browse-name option").evaluateAll(options => options.map(option => option.value));
+      assert.ok(paladinThird.includes("revivify") && paladinThird.includes("dispel-magic"), "paladin lookup includes SRD spells left out of the site class list");
       assert.equal(await dialog.locator("#spell-browse-name").isDisabled(), false, "paladin spells remain selectable");
       await dialog.locator("#spell-browse-ring").selectOption("1");
       await dialog.locator("#spell-browse-class").selectOption("ranger");
-      assert.deepEqual(await ringValues(), await classRings("ranger"), "ranger lists only its spell levels");
+      assert.deepEqual(await ringValues(), ["", "1", "2", "3", "4", "5"], "ranger lists every SRD ranger level");
       assert.equal(await dialog.locator("#spell-browse-ring").inputValue(), "1", "valid first level survives switching classes");
       await dialog.locator("#spell-browse-ring").selectOption("2");
       await dialog.locator("#spell-browse-class").selectOption("paladin");
@@ -128,7 +128,7 @@ async function main() {
     const results = page.locator("#spell-search-results");
     const buttons = page.locator("#spell-search-result-list button");
     assert.equal(await input.getAttribute("placeholder"), '輸入"火球"或"牧師法術"、"詩人二環"');
-    // 搜尋涵蓋全部 SRD 法術（只供查閱的法術只比對名稱）；可用法術的職業法表與 getSpellIds 相同。
+    // 搜尋涵蓋全部 SRD 法術（只供查閱的法術只比對名稱）；職業分類是網站法表與 SRD 職業清單的聯集。
     const catalog = await page.evaluate(() => SpellCatalog.getAllReferenceSpells().map(spell => ({
       id: spell.spellId, level: spell.level, name: spell.nameEn, playable: spell.playable,
       display: `${spell.nameZh} ${spell.nameEn}`, classes: [...spell.classIds],
@@ -142,6 +142,13 @@ async function main() {
     );
     assert.deepEqual(await page.evaluate(() => [0, 1, 2, 3, 4].map(level => SpellCatalog.getSpellIds("wizard", level))),
       [0, 1, 2, 3, 4].map(level => classLists.wizard[level]), "playable class lists match the lookup data");
+    // 聖騎士、遊俠：查閱有一至五環（SRD），網站法表（可準備）照舊沒有三、四環。
+    for (const classId of ["paladin", "ranger"]) {
+      assert.deepEqual(classLists[classId].flatMap((ids, level) => ids.length ? [level] : []), [1, 2, 3, 4, 5], `${classId} lookup covers first through fifth level`);
+      assert.deepEqual(await page.evaluate(id => [3, 4].map(level => SpellCatalog.getSpellIds(id, level)), classId), [[], []], `${classId} site class list stays first and second level`);
+    }
+    assert.ok(classLists.paladin[3].includes("revivify") && classLists.ranger[3].includes("revivify"));
+    assert.equal(await page.evaluate(() => SpellCatalog.getClassIds("revivify").join()), "cleric,druid", "lookup classes never reach getClassIds");
     const submit = async (query, keyboard = false) => {
       await input.fill(query);
       if (keyboard) await input.press("Enter");

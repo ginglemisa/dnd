@@ -20,7 +20,7 @@ node tools/spell-reference/validate.js --srd <SRD 5.2.1 的 spells.md 路徑>
 
 - 譯文由 SRD 英文直接逐句直譯，用語見 `glossary.md`。網站已有的法術沿用網站的法術名稱與效果名稱。
 - 英文原文照 SRD 不改（含原文的排版殘留，例如 mind-spike 的段落斷句、bestow-curse 多出的「•」）。
-- 職業法表：網站已有的法術以網站為準（網站只做到 8 級，聖騎士、遊俠刻意沒列三環以上法術），`--srd` 不比對這些法術的 `classes`；只供查閱的法術依 SRD。
+- 職業清單：網站已有的法術，頂層 `classes` 是網站法表（網站只做到 8 級，聖騎士、遊俠刻意沒列三環以上法術）；與 SRD 不同時，SRD 的清單寫在 `srd.classes`。`--srd` 比對 `srd.classes`，沒寫時比對 `classes`。只供查閱的法術直接以 `classes` 寫 SRD 清單。
 - 植物滋長在 SRD 的施法時間附有效果名稱（Overgrowth／Enrichment），內容檔不另存，名稱寫在說明內。
 
 SRD 原文為 CC BY 4.0（Wizards of the Coast），授權與 Attribution 見 README。
