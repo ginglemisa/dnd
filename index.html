@@ -3178,7 +3178,7 @@ function fillSkills() {
   updateAutomaticInitiative();
 }
 </script>
-<script src="pdf-launcher.js?v=20261104-spell-fields"></script>
+<script src="pdf-launcher.js?v=20261104-option-training"></script>
 
 <script>
 // ====== 裝備,武器,法術相關工具 ======
@@ -3551,16 +3551,23 @@ const ARMOR_TRAINING_BY_CLASS = Object.freeze({
   wizard: Object.freeze([])
 });
 
+// 職業選項額外給予的護甲訓練與軍用武器熟練；isOptionChecked 由呼叫端讀頁面勾選或存檔狀態（PDF 匯出共用）。
+function getClassOptionTrainingGrants(cls, isOptionChecked) {
+  if (cls === "cleric" && isOptionChecked("cleric-guardian")) return { armor: ["重甲"], martialWeapons: true };
+  if (cls === "druid" && isOptionChecked("druid-sentinel")) return { armor: ["中甲"], martialWeapons: true };
+  return { armor: [], martialWeapons: false };
+}
+
+function isClassOptionChecked(id) {
+  return document.getElementById(id)?.checked === true;
+}
+
 function getArmorTrainingProficiencies() {
   const cls = document.getElementById("class")?.value || "";
-  const proficiencies = new Set(ARMOR_TRAINING_BY_CLASS[cls] || []);
-  if (cls === "cleric" && document.getElementById("cleric-guardian")?.checked) {
-    proficiencies.add("重甲");
-  }
-  if (cls === "druid" && document.getElementById("druid-sentinel")?.checked) {
-    proficiencies.add("中甲");
-  }
-  return proficiencies;
+  return new Set([
+    ...(ARMOR_TRAINING_BY_CLASS[cls] || []),
+    ...getClassOptionTrainingGrants(cls, isClassOptionChecked).armor
+  ]);
 }
 
 function isArmorProficient(armor) {
@@ -3599,14 +3606,8 @@ function isWeaponProficient(weapon) {
   const simpleOnly = ["bard", "sorcerer", "wizard"];
   if (simpleOnly.includes(cls)) return isSimple;
 
-  if (cls === "cleric") {
-    const guardian = document.getElementById("cleric-guardian")?.checked;
-    return isSimple || (guardian && isMartial);
-  }
-
-  if (cls === "druid") {
-    const sentinel = document.getElementById("druid-sentinel")?.checked;
-    return isSimple || (sentinel && isMartial);
+  if (cls === "cleric" || cls === "druid") {
+    return isSimple || (getClassOptionTrainingGrants(cls, isClassOptionChecked).martialWeapons && isMartial);
   }
 
   if (cls === "monk") {

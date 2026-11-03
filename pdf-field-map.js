@@ -937,6 +937,12 @@ function isWeaponRowEmpty(payload, slot) {
     return normalizeText(getClassRules(classKey)?.profile?.[field] || '');
   }
 
+  // 職業選項（例如守護者、哨衛）額外給予的訓練，與網頁的熟練判定共用同一份規則。
+  function getClassOptionTrainingGrantsForPdf(state, classKey) {
+    if (typeof globalScope.getClassOptionTrainingGrants !== 'function') return { armor: [], martialWeapons: false };
+    return globalScope.getClassOptionTrainingGrants(classKey, (id) => state?.[id] === true);
+  }
+
   function parseClassDefaultEquipment(classKey) {
     return getClassProfileText(classKey, 'equipment');
   }
@@ -1320,11 +1326,16 @@ function isWeaponRowEmpty(payload, slot) {
     payload.specie_features1 = buildRaceTemplateText(state, options);
     payload.speed1 = resolveSpeedForPdf(state, options);
 
-    payload.weaponsProficiency1 = getClassProfileText(classKey, 'weapons');
+    const optionTraining = getClassOptionTrainingGrantsForPdf(state, classKey);
+    const weaponTraining = getClassProfileText(classKey, 'weapons');
+    payload.weaponsProficiency1 = optionTraining.martialWeapons && !/軍用武器/.test(weaponTraining)
+      ? `${weaponTraining}和軍用武器`
+      : weaponTraining;
     const armorTraining = getClassProfileText(classKey, 'armor');
-    payload.chk_light1 = /輕甲/.test(armorTraining);
-    payload.chk_medium1 = /中甲/.test(armorTraining);
-    payload.chk_heavy1 = /重甲/.test(armorTraining);
+    const hasArmorTraining = (name) => armorTraining.includes(name) || optionTraining.armor.includes(name);
+    payload.chk_light1 = hasArmorTraining('輕甲');
+    payload.chk_medium1 = hasArmorTraining('中甲');
+    payload.chk_heavy1 = hasArmorTraining('重甲');
 
 
     // The replacement character sheet supplies rows 1-19 only. Preserve any

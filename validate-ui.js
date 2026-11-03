@@ -427,6 +427,16 @@ async function verifyPdf(page, fieldsOnly) {
       state["tool-proficiency-0"] = name;
       if (buildPdfFieldPayload(state).toolsProficiency1 !== name) throw new Error(`Class tool PDF deduplication: ${cls}`);
     }
+    for (const [cls, option, other, armor] of [
+      ["cleric", "cleric-guardian", "cleric-trickster", { light: true, medium: true, heavy: true }],
+      ["druid", "druid-sentinel", "druid-shaman", { light: true, medium: true, heavy: false }]
+    ]) {
+      const granted = buildPdfFieldPayload({ class: cls, level: "1", [option]: true, [other]: false });
+      const plain = buildPdfFieldPayload({ class: cls, level: "1", [option]: false, [other]: true });
+      const training = payload => ({ light: payload.chk_light1, medium: payload.chk_medium1, heavy: payload.chk_heavy1 });
+      if (JSON.stringify(training(granted)) !== JSON.stringify(armor) || granted.weaponsProficiency1 !== "簡易武器和軍用武器") throw new Error(`PDF class option training: ${option}`);
+      if (JSON.stringify(training(plain)) !== JSON.stringify({ ...armor, [cls === "cleric" ? "heavy" : "medium"]: false }) || plain.weaponsProficiency1 !== "簡易武器") throw new Error(`PDF class option training: ${other}`);
+    }
     for (const cls of Object.keys(ARMOR_TRAINING_BY_CLASS)) {
       const payload = buildPdfFieldPayload({ class: cls, level: "20" });
       const features = `${payload.classFeatures1}\n${payload.classFeatures2}`.replace(/\n(?!等級|選擇|語言)/gu, "");
