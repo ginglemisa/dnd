@@ -31,6 +31,7 @@ function featRules(feat) {
     ...(feat.prerequisite?.abilities ? { abilities: [...feat.prerequisite.abilities] } : {}),
     ...(feat.prerequisite?.heavyArmor ? { heavyArmor: true } : {}),
     ...(feat.prerequisite?.spellcasting ? { spellcasting: true } : {}),
+    ...(feat.grantsSpellcasting ? { grantsSpellcasting: true } : {}),
     actions: (feat.actions || []).map(action => ({
       key: action.key,
       mode: action.mode,

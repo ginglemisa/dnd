@@ -580,6 +580,29 @@ function hasCurrentSpellSourceCantrips() {
   return getCurrentSpellSourceSpecs().some(spec => spellEntryFromSourceSpec(spec).level === 0);
 }
 
+// 職業選項給予的自選戲法（受祝福的勇士、德魯伊教戰士）：勾選時例外開放該法表的戲法，
+// 名額為選項的戲法欄；選擇只存在這些欄位（classFeatureCantrips），不加入玩家準備清單。
+// 自動管理才適用；手動管理不限法表。
+function getClassFeatureCantripGrant() {
+  const specs = getClassAlwaysPreparedSpellSpecs().filter(spec => spec.ring === "cantrips" && spec.selectableSpellClass);
+  if (!specs.length) return null;
+  return { spellClass: specs[0].selectableSpellClass, label: specs[0].sourceLabel,
+    slots: specs.map(spec => ({ key: spec.key, spellId: spec.spellId || "" })) };
+}
+
+function isClassFeatureCantripGrantSpell(grant, spellId) {
+  return Boolean(grant) && SpellCatalog.getSpell(spellId)?.level === 0
+    && SpellCatalog.getClassIds(spellId).includes(grant.spellClass);
+}
+
+function setClassFeatureCantripChoice(key, spellId) {
+  const control = window.SpellManagement?.getClassFeatureCantripControl(key);
+  if (!control || control.value === spellId) return false;
+  control.value = spellId;
+  control.dispatchEvent(new Event("change", { bubbles: true }));
+  return true;
+}
+
 function syncCurrentSpellSources() {
   if (!window.SpellManagement || window.SpellManagement.isManual() || window.__originSpellSyncInProgress) return;
   window.__originSpellSyncInProgress = true;
