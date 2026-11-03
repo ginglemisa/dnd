@@ -688,19 +688,27 @@ async function validateInventory(page) {
   // Removing an equipped item asks to unequip first.
   await page.locator("#inventory-tags .inventory-tag", { hasText: "長劍" }).click();
   const item = page.locator('.app-dialog[data-variant="inventory-item"]');
-  assert.match(await item.locator(".inventory-item-meta").innerText(), /3 磅/u);
-  // The item description stacks above the item dialog, like the shop's details.
-  await item.getByRole("button", { name: "查看物品說明", exact: true }).click();
-  const itemDetail = page.locator('.app-dialog[data-variant="equipment-detail"]');
-  assert.equal(await itemDetail.locator(".app-dialog__header h2").textContent(), "長劍");
-  assert.equal(await itemDetail.evaluate((el) => {
+  // The item dialog shows the shop's description above the holding controls; no second dialog is needed.
+  assert.equal(await item.getByRole("button", { name: "查看物品說明" }).count(), 0, "the description is part of the item dialog");
+  assert.match(await item.locator(".equipment-detail-dialog__meta").innerText(), /Longsword/u, "the shop's description meta line is shown");
+  assert.match(await item.locator(".equipment-detail-dialog__content").innerText(), /3 磅/u, "the shop's description body is shown");
+  assert.equal(await item.locator(".equipment-detail-dialog__content + .inventory-holding.has-detail").count(), 1, "holding controls follow the description");
+  assert.equal(await item.locator(".inventory-item-meta").innerText().then(text => text.replace(/\s+/gu, "")), "持有裝備中", "a single described item does not repeat its weight");
+  assert.equal(await item.getByRole("button", { name: "完成", exact: true }).evaluate(el => el === document.activeElement), true, "focus starts on 完成, not a rule link");
+  assert.equal(await page.locator("#equipment-detail-modal").evaluate(el => el.classList.contains("open")), false, "the page-level detail modal stays closed");
+  // Rule links in the description stack above the item dialog.
+  const masteryLink = item.locator('.equipment-detail-dialog__content [data-equipment-rule-kind="mastery"]').first();
+  const masteryName = await masteryLink.getAttribute("data-equipment-rule");
+  await masteryLink.click();
+  const ruleDialog = page.locator(".app-dialog").last();
+  assert.equal(await ruleDialog.locator(".app-dialog__header h2").textContent(), `精通：${masteryName}`);
+  assert.equal(await ruleDialog.evaluate((el) => {
     const surface = el.querySelector(".app-dialog__surface").getBoundingClientRect();
     return el.contains(document.elementFromPoint(surface.left + surface.width / 2, surface.top + surface.height / 2));
-  }), true, "the item description is on top of the item dialog");
-  assert.equal(await page.locator("#equipment-detail-modal").evaluate(el => el.classList.contains("open")), false, "the page-level detail modal stays closed");
+  }), true, "rule details are on top of the item dialog");
   await page.keyboard.press("Escape");
-  await itemDetail.waitFor({ state: "detached" });
-  assert.equal(await item.isVisible(), true, "closing the description returns to the item dialog");
+  await page.waitForFunction(() => document.querySelectorAll(".app-dialog").length === 1, null, { timeout: 2000 });
+  assert.equal(await item.isVisible(), true, "closing the rule returns to the item dialog");
   await item.getByRole("button", { name: "刪除", exact: true }).click();
   const unequip = page.getByRole("alertdialog", { name: "同時卸下裝備？" });
   await unequip.getByRole("button", { name: "卸下並繼續", exact: true }).click();
@@ -710,6 +718,7 @@ async function validateInventory(page) {
 
   // Quantity changes and moving items out of a container.
   await page.locator(".inventory-container-contents .inventory-tag", { hasText: "口糧" }).click();
+  assert.match(await item.locator(".inventory-item-meta").innerText(), /每件 .+ 磅・共 .+ 磅/u, "several described items show their total weight");
   await item.locator(".inventory-stepper__input").fill("4");
   await item.locator(".inventory-location-select").selectOption("");
   await item.getByRole("button", { name: "完成", exact: true }).click();
@@ -735,6 +744,9 @@ async function validateInventory(page) {
     assert.equal(await page.locator(".section > .inventory-heading").evaluate(el => el.scrollWidth <= el.clientWidth + 1), true, `inventory heading fits at ${width}px`);
     await addButton.click();
     assert.equal(await add.locator(".app-dialog__surface").evaluate(el => el.scrollWidth <= el.clientWidth && el.getBoundingClientRect().right <= innerWidth), true, `custom item dialog fits at ${width}px`);
+    await page.keyboard.press("Escape");
+    await page.locator("#inventory-tags .inventory-tag", { hasText: "繩索" }).first().click();
+    assert.equal(await item.locator(".app-dialog__surface").evaluate(el => el.scrollWidth <= el.clientWidth && el.getBoundingClientRect().right <= innerWidth), true, `item dialog with description fits at ${width}px`);
     await page.keyboard.press("Escape");
   }
 }

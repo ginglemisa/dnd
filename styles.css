@@ -6618,7 +6618,59 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   margin-bottom: 0.75rem;
 }
 
-/* Inventory dialogs: item details, custom items, and tidying legacy text. */
+/* Inventory dialogs: item details, custom items, and tidying legacy text.
+   The item dialog shows the shop's description (search.js) above a "持有" section, at the same width. */
+.app-dialog[data-variant="inventory-item"] .app-dialog__surface {
+  width: min(100%, 40rem);
+}
+
+.inventory-holding.has-detail {
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border);
+}
+
+.inventory-holding__title {
+  color: var(--text);
+  font-weight: 850;
+}
+
+.inventory-holding__weight {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
+.inventory-holding__row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0 0.75rem;
+  align-items: end;
+}
+
+/* Containers have no quantity, so the location takes the whole row. */
+.inventory-holding__row > :only-child {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 479px) {
+  .inventory-holding__row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* On phones the shared description keeps two compact columns here (the shop stacks them),
+   so the holding controls stay near the top. */
+@media (max-width: 480px) {
+  .app-dialog[data-variant="inventory-item"] .equipment-detail-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  .app-dialog[data-variant="inventory-item"] .equipment-detail-stats > div {
+    padding: 0.5rem 0.6rem;
+  }
+}
+
 .inventory-item-meta {
   display: flex;
   flex-wrap: wrap;
@@ -6684,18 +6736,6 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   width: 20px;
   height: 20px;
   margin: 0;
-}
-
-button.inventory-detail-link {
-  width: auto;
-  min-height: 2.2rem;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--accent-strong);
-  box-shadow: none;
-  text-decoration: underline;
-  text-underline-offset: 3px;
 }
 
 .inventory-add-heading {

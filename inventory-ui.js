@@ -2,7 +2,8 @@
  * 物品欄介面（傳統 defer script，無額外 runtime dependency）。
  *
  * - 掛在攜帶物品區的 #inventory-panel 與標題列的 #inventory-heading-tools（跑團模式時隨攜帶物品文字框一起搬移，見 tabletop-mode.js）。
- * - 標籤：[匕首 ×2]；容器標籤可展開，內容物排在下一層。點標籤開啟 `inventory-item` 視窗調整數量、位置或刪除。
+ * - 標籤：[匕首 ×2]；容器標籤可展開，內容物排在下一層。點標籤開啟 `inventory-item` 視窗：目錄物品先顯示與商店相同的說明
+ *   （search.js 的 renderEquipmentDetailInto()），下方「持有」區調整數量、位置或刪除。
  *   目錄物品由商店（equipment-shop.js）購買或免費取得；這裡只建立自訂物品（`inventory-custom` 視窗）。資料一律經 window.Inventory。
  * - 標題列齒輪展開 #inventory-tools（負重與「自訂物品」），每次載入預設收起。
  * - 「整理成標籤」只在攜帶物品文字有「購買物品：」「初始裝備：」行時出現，預覽後由玩家確認才轉成標籤並移除那幾行。
@@ -242,19 +243,30 @@
       title: api().getLabel(entry),
       variant: "inventory-item",
       trigger,
-      // 刪除或卸下的確認視窗與物品說明疊在這個視窗上。
+      // 刪除或卸下的確認視窗、說明內的規則連結疊在這個視窗上。
       allowNested: true,
       renderContent(body) {
-        const meta = el("p", "inventory-item-meta", weightDescription(entry));
+        // 目錄物品先顯示與商店相同的說明（search.js），下方「持有」區調整數量與位置；自訂與通稱物品只有持有區。
+        const hasDetail = Boolean(item && !item.generic && globalScope.renderEquipmentDetailInto?.(body, entry.itemId));
+        const holding = el("section", "inventory-holding");
+        holding.classList.toggle("has-detail", hasDetail);
+        holding.setAttribute("aria-label", "持有");
+        const meta = el("p", "inventory-item-meta");
+        meta.appendChild(el("span", "inventory-holding__title", "持有"));
+        // 說明已列單件重量，只有一件時不重複。
+        if (!hasDetail || entry.quantity > 1) meta.appendChild(el("span", "inventory-holding__weight", weightDescription(entry)));
         if (isEntryEquipped(entry)) meta.append(el("span", "inventory-tag__badge", "裝備中"));
-        body.appendChild(meta);
+        holding.appendChild(meta);
         const contents = api().descendantsOf(uid).length;
-        if (api().isContainer(entry)) body.appendChild(el("p", "inventory-item-note", contents ? `內含 ${contents} 項物品；容器不會減輕內容物的重量。` : "可以放入其他物品；容器不會減輕內容物的重量。"));
+        if (api().isContainer(entry)) holding.appendChild(el("p", "inventory-item-note", contents ? `內含 ${contents} 項物品；容器不會減輕內容物的重量。` : "可以放入其他物品；容器不會減輕內容物的重量。"));
+        const row = el("div", "inventory-holding__row");
         const stepper = buildStepper(entry.quantity, "數量");
         if (api().isContainer(entry)) stepper.wrap.hidden = true;
-        else body.appendChild(labelled("數量", stepper.wrap));
+        else row.appendChild(labelled("數量", stepper.wrap));
         const location = buildLocationSelect(uid, entry.in);
-        body.appendChild(labelled("位置", location));
+        row.appendChild(labelled("位置", location));
+        holding.appendChild(row);
+        body.appendChild(holding);
         let nameInput = null;
         let weightInput = null;
         let containerToggle = null;
@@ -264,7 +276,7 @@
           nameInput.maxLength = api().LIMITS.name;
           nameInput.value = entry.name || "";
           nameInput.dataset.stateTransient = "true";
-          body.appendChild(labelled("名稱", nameInput));
+          holding.appendChild(labelled("名稱", nameInput));
           weightInput = el("input", "inventory-text-input");
           weightInput.type = "number";
           weightInput.min = "0";
@@ -273,20 +285,14 @@
           weightInput.placeholder = "未列重量";
           weightInput.value = Number.isFinite(entry.weight) ? String(entry.weight) : "";
           weightInput.dataset.stateTransient = "true";
-          body.appendChild(labelled("每件重量（磅，選填）", weightInput));
+          holding.appendChild(labelled("每件重量（磅，選填）", weightInput));
           const toggleLabel = el("label", "inventory-check");
           containerToggle = el("input");
           containerToggle.type = "checkbox";
           containerToggle.checked = entry.container === true;
           containerToggle.dataset.stateTransient = "true";
           toggleLabel.append(containerToggle, el("span", "", "可以放入其他物品（容器）"));
-          body.appendChild(toggleLabel);
-        }
-        // 說明比照商店，以可疊加的 AppDialog 疊在物品視窗上（頁面固定的裝備說明視窗會被蓋住）。
-        if (item && !item.generic && typeof globalScope.openEquipmentDetailDialog === "function") {
-          const detail = button("inventory-detail-link", "查看物品說明");
-          detail.addEventListener("click", () => globalScope.openEquipmentDetailDialog(entry.itemId, detail));
-          body.appendChild(detail);
+          holding.appendChild(toggleLabel);
         }
         controls = { stepper, location, nameInput, weightInput, containerToggle };
       },
@@ -313,7 +319,8 @@
           }
         }
       ],
-      initialFocus: "content",
+      // 說明在上方，焦點不落在說明內的規則連結。
+      initialFocus: "primary",
       // 調整後標籤會重繪，焦點改回同一件物品；刪除後回到「自訂物品」或齒輪。
       onClose: () => globalScope.setTimeout(() => {
         if (document.activeElement && document.activeElement !== document.body) return;
