@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: commune-with-nature
+name: 問道自然
+nameEn: Commune with Nature
+source: srd
+level: 5
+school: divination
+classes: [ druid, ranger ]
+castingTime: [ { minutes: 1 } ]
+ritual: true
+range: self
+components: [ V, S ]
+duration: instantaneous
+srd:
+  body: |-
+    你與自然靈體溝通，並獲得周遭區域的知識。在戶外時，此法術讓你得知你周圍3英里內區域的知識。在洞穴與其他天然地下環境中，半徑限制為300呎。在自然已被建築取代的地方，例如城堡與聚落，此法術不會生效。
+
+    從下列事實中選擇三項；你會得知這些事實中與法術範圍相關的內容：
+
+    • 聚落的位置 • 通往其他位面的傳送門位置 • 一隻挑戰等級10以上、屬於天界生物、元素生物、精類、邪魔或不死生物的生物之位置（由DM選擇） • 最常見的植物、礦物或野獸種類（由你選擇要得知哪一種） • 水域的位置
+
+    舉例來說，你可以確定該區域內一隻強大怪物的位置、水域的位置，以及所有城鎮的位置。
+en:
+  body: |-
+    You commune with nature spirits and gain knowledge of the surrounding area. In the outdoors, the spell gives you knowledge of the area within 3 miles of you. In caves and other natural underground settings, the radius is limited to 300 feet. The spell doesn't function where nature has been replaced by construction, such as in castles and settlements.
+
+    Choose three of the following facts; you learn those facts as they pertain to the spell's area:
+
+    • Locations of settlements • Locations of portals to other planes of existence • Location of one Challenge Rating 10+ creature (GM's choice) that is a Celestial, an Elemental, a Fey, a Fiend, or an Undead • The most prevalent kind of plant, mineral, or Beast (you choose which to learn) • Locations of bodies of water
+
+    For example, you could determine the location of a powerful monster in the area, the locations of bodies of water, and the locations of any towns.

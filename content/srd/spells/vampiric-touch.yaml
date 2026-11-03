@@ -1,0 +1,36 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: vampiric-touch
+name: 吸血鬼之觸
+nameEn: Vampiric Touch
+source: srd
+level: 3
+school: necromancy
+classes: [ sorcerer, warlock, wizard ]
+castingTime: [ action ]
+range: self
+components: [ V, S ]
+duration: { minutes: 1 }
+concentration: true
+upcast: true
+site:
+  outcomes:
+    - { kind: damage, attack: spell, formula: 3d6, upcastDice: 1d6, damageType: necrotic, autoOnCast: true, context: 施法時的攻擊命中傷害；恢復量為本次黯蝕傷害一半 }
+  body: |-
+    - 被陰影纏繞的手能汲取他人生命力來治療你的傷勢
+    - 對觸及範圍內一個生物進行一次近戰法術攻擊；命中時，目標受到3d6黯蝕傷害，你恢復等同於所造成黯蝕傷害一半的生命值
+    - 法術結束前，你可以在你的每個回合用魔法動作再次進行此攻擊，目標可以是同一個或不同的生物
+    - 使用更高環階法術位：每比3環高一環，傷害增加1d6
+srd:
+  body: |-
+    你被陰影纏繞的手觸碰，能從他人身上汲取生命力來治療你的傷勢。對觸及範圍內的一個生物進行一次近戰法術攻擊。命中時，目標受到3d6黯蝕傷害，而你恢復的生命值等於造成之黯蝕傷害的一半。
+
+    在法術結束前，你可以在你的每個回合以魔法動作再次進行此攻擊，目標可以是同一個生物或不同的生物。
+
+    _使用更高環階法術位。_ 每比3環高一環，傷害增加1d6。
+en:
+  body: |-
+    The touch of your shadow-wreathed hand can siphon life force from others to heal your wounds. Make a melee spell attack against one creature within reach. On a hit, the target takes 3d6 Necrotic damage, and you regain Hit Points equal to half the amount of Necrotic damage dealt.
+
+    Until the spell ends, you can make the attack again on each of your turns as a Magic action, targeting the same creature or a different one.
+
+    _Using a Higher-Level Spell Slot._ The damage increases by 1d6 for each spell slot level above 3.

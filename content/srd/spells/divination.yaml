@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: divination
+name: 預言術
+nameEn: Divination
+source: srd
+level: 4
+school: divination
+classes: [ cleric, druid, wizard ]
+castingTime: [ action ]
+ritual: true
+range: self
+components: [ V, S, M ]
+duration: instantaneous
+site:
+  material: 價值至少25 GP的焚香（施法時消耗）
+  body: |-
+    - 此法術讓你與一位神祇或神祇的僕從接觸；你詢問一個關於將在7天內發生之特定目標、事件或活動的問題
+    - DM給予真實的回答，可能是簡短的語句或隱晦的韻文
+    - 此法術不考慮可能改變答案的情況，例如施放其他法術
+    - 若在完成長休前施放此法術超過一次，第一次之後的每次施放都有累積25%的機率得不到答案
+srd:
+  material: 價值25 GP以上的薰香，法術會將其消耗
+  body: |-
+    此法術讓你與一位神祇或其僕從取得聯繫。你針對7天內將發生的某個特定目標、事件或活動提出一個問題。DM會給出真實的答覆，可能是一句簡短的話或一段晦澀的韻文。此法術不會考慮可能改變答案的情況，例如其他法術的施放。
+
+    如果你在完成一次長休之前不只施放一次此法術，則第一次之後的每次施放，你都有累計25%的機率得不到答案。
+en:
+  material: incense worth 25+ GP, which the spell consumes
+  body: |-
+    This spell puts you in contact with a god or a god's servants. You ask one question about a specific goal, event, or activity to occur within 7 days. The GM offers a truthful reply, which might be a short phrase or cryptic rhyme. The spell doesn't account for circumstances that might change the answer, such as the casting of other spells.
+
+    If you cast the spell more than once before finishing a Long Rest, there is a cumulative 25 percent chance for each casting after the first that you get no answer.

@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: flesh-to-stone
+name: 石化術
+nameEn: Flesh to Stone
+source: srd
+level: 6
+school: transmutation
+classes: [ druid, sorcerer, wizard ]
+castingTime: [ action ]
+range: { feet: 60 }
+components: [ V, S, M ]
+duration: { minutes: 1 }
+concentration: true
+srd:
+  material: 一根雞蛇獸的羽毛
+  body: |-
+    你試圖將射程內一個你能看見的生物變成石頭。目標進行體質豁免。豁免失敗時，它在持續時間內陷入束縛狀態。豁免成功時，它的速度為0，持續到你的下個回合開始。構裝生物自動通過該豁免。
+
+    陷入束縛狀態的目標在它每個回合結束時進行另一次體質豁免。若它對此法術成功通過豁免三次，法術結束。若它豁免失敗三次，它就會變成石頭，並在持續時間內陷入石化狀態。成功與失敗不必連續發生；記錄兩者的次數，直到目標累積到其中一種達三次為止。
+
+    若你在整段可能的持續時間內都維持對此法術的專注，目標會一直處於石化狀態，直到該狀態被「高等復原術」或類似魔法解除為止。
+en:
+  material: a cockatrice feather
+  body: |-
+    You attempt to turn one creature that you can see within range into stone. The target makes a Constitution saving throw. On a failed save, it has the Restrained condition for the duration. On a successful save, its Speed is 0 until the start of your next turn. Constructs automatically succeed on the save.
+
+    A Restrained target makes another Constitution saving throw at the end of each of its turns. If it successfully saves against this spell three times, the spell ends. If it fails its saves three times, it is turned to stone and has the Petrified condition for the duration. The successes and failures needn't be consecutive; keep track of both until the target collects three of a kind.
+
+    If you maintain your Concentration on this spell for the entire possible duration, the target is Petrified until the condition is ended by _Greater Restoration_ or similar magic.

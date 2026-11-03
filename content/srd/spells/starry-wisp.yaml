@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: starry-wisp
+name: 流光閃靈
+nameEn: Starry Wisp
+source: srd
+level: 0
+school: evocation
+classes: [ bard, druid ]
+castingTime: [ action ]
+range: { feet: 60 }
+components: [ V, S ]
+duration: instantaneous
+site:
+  outcomes:
+    - { kind: damage, attack: spell, formula: 1d8, cantripAt5: 2d8, damageType: radiant, autoOnCast: true, context: 命中時傷害 }
+  body: |-
+    - 向射程內一個生物或物體射出一點光芒，對目標進行一次遠程法術攻擊
+    - 命中時，目標受到1d8光耀傷害；直到你下個回合結束前，目標發出半徑10呎的微光光照，且無法從隱形狀態獲益
+    - 戲法升級：5級時傷害提升為2d8
+srd:
+  body: |-
+    你向射程內的一個生物或物體射出一小團光。對目標進行一次遠程法術攻擊。命中時，目標受到1d8光耀傷害，且直到你下個回合結束，其會在10呎半徑內散發微光光照，並且無法從隱形狀態獲益。
+
+    _戲法升級。_ 當你達到5級（2d8）、11級（3d8）與17級（4d8）時，傷害增加1d8。
+en:
+  body: |-
+    You launch a mote of light at one creature or object within range. Make a ranged spell attack against the target. On a hit, the target takes 1d8 Radiant damage, and until the end of your next turn, it emits Dim Light in a 10-foot radius and can't benefit from the Invisible condition.
+
+    _Cantrip Upgrade._ The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8).

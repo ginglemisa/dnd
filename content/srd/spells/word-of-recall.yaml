@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: word-of-recall
+name: 回返真言
+nameEn: Word of Recall
+source: srd
+level: 6
+school: conjuration
+classes: [ cleric ]
+castingTime: [ action ]
+range: { feet: 5 }
+components: [ V ]
+duration: instantaneous
+srd:
+  body: |-
+    你與你5呎內最多五個自願生物，瞬間傳送到先前指定的聖所。你與任何與你一同傳送的生物，會出現在最接近你準備聖所時所指定地點的未被佔據空間（見下文）。若你在未先準備聖所的情況下施放此法術，法術不會產生任何效果。
+
+    你必須在某處施放此法術，將該地點（例如神殿）指定為聖所。
+en:
+  body: |-
+    You and up to five willing creatures within 5 feet of you instantly teleport to a previously designated sanctuary. You and any creatures that teleport with you appear in the nearest unoccupied space to the spot you designated when you prepared your sanctuary (see below). If you cast this spell without first preparing a sanctuary, the spell has no effect.
+
+    You must designate a location, such as a temple, as a sanctuary by casting this spell there.

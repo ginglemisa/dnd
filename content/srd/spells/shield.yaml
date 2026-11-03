@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: shield
+name: 護盾術
+nameEn: Shield
+source: srd
+level: 1
+school: abjuration
+classes: [ sorcerer, wizard ]
+castingTime: [ reaction ]
+range: self
+components: [ V, S ]
+duration: { rounds: 1 }
+site:
+  trigger: 當你被攻擊檢定命中或成為魔法飛彈的目標時
+  body: |-
+    - 一道無形的魔法力場屏障保護你
+    - 直到你下個回合開始，你的AC獲得+5加值，包含對觸發此法術的攻擊；你也不會受到魔法飛彈的傷害
+srd:
+  trigger: 當你被攻擊檢定命中或成為_魔法飛彈_法術的目標時
+  body: |-
+    一道無形的魔法力場屏障保護著你。直到你下個回合開始前，你的AC獲得+5加值（包括對引發此法術的那次攻擊），且你不會受到_魔法飛彈_的傷害。
+en:
+  trigger: which you take when you are hit by an attack roll or targeted by the _Magic Missile_ spell
+  body: |-
+    An imperceptible barrier of magical force protects you. Until the start of your next turn, you have a +5 bonus to AC, including against the triggering attack, and you take no damage from _Magic Missile_.

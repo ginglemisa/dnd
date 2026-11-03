@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: cure-wounds
+name: 療傷術
+nameEn: Cure Wounds
+source: srd
+level: 1
+school: abjuration
+classes: [ bard, cleric, druid, paladin, ranger ]
+castingTime: [ action ]
+range: touch
+components: [ V, S ]
+duration: instantaneous
+upcast: true
+site:
+  outcomes:
+    - { kind: healing, formula: 2d8, abilityModifier: spellcasting, upcastDice: 2d8, modifierTags: [ restores-hit-points, can-restore-other-creature-hit-points ], autoOnCast: true, context: 治療量；不直接修改角色 HP }
+  body: |-
+    - 你觸碰的一個生物恢復生命值，數值等於2d8加上你的施法屬性調整值
+    - 使用更高環階法術位：每比1環高一環，治療量增加2d8
+srd:
+  body: |-
+    你所接觸的生物恢復等同2d8加上你的施法屬性調整值的生命值。
+
+    _使用更高環階法術位。_ 每比1環高一環，治療量增加2d8。
+en:
+  body: |-
+    A creature you touch regains a number of Hit Points equal to 2d8 plus your spellcasting ability modifier.
+
+    _Using a Higher-Level Spell Slot._ The healing increases by 2d8 for each spell slot level above 1.

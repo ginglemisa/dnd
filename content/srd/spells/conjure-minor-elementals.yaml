@@ -1,0 +1,36 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: conjure-minor-elementals
+name: 元素狂潮
+nameEn: Conjure Minor Elementals
+source: srd
+level: 4
+school: conjuration
+classes: [ druid, wizard ]
+castingTime: [ action ]
+range: self
+components: [ V, S ]
+duration: { minutes: 10 }
+concentration: true
+upcast: true
+site:
+  outcomes:
+    - { kind: damage, formula: 2d8, upcastDice: 1d8, damageTypes: [ acid, cold, fire, lightning ], autoOnCast: false, context: 之後攻擊命中發散區域內生物時 }
+  body: |-
+    - 召喚元素位面的靈體，在持續時間內於你周圍的15呎發散區域中飛舞
+    - 法術結束前，你進行的任何攻擊命中發散區域內的生物時，額外造成2d8傷害；傷害類型為強酸、冷凍、火焰或閃電（攻擊時由你選擇）
+    - 此外，發散區域內的地面對你的敵人而言是困難地形
+    - 使用更高環階法術位：每比4環高一環，傷害增加1d8
+srd:
+  body: |-
+    你召喚來自元素位面的靈體，在持續時間內於你周圍15呎發散區域內飛舞。法術結束前，你進行的任何攻擊命中發散區域內的生物時，額外造成2d8傷害。此傷害為強酸傷害、冷凍傷害、火焰傷害或閃電傷害（由你進行攻擊時選擇）。
+
+    此外，發散區域內的地面對你的敵人而言是困難地形。
+
+    _使用更高環階法術位。_ 法術位環階每比4高一環，傷害增加1d8。
+en:
+  body: |-
+    You conjure spirits from the Elemental Planes that flit around you in a 15-foot Emanation for the duration. Until the spell ends, any attack you make deals an extra 2d8 damage when you hit a creature in the Emanation. This damage is Acid, Cold, Fire, or Lightning (your choice when you make the attack).
+
+    In addition, the ground in the Emanation is Difficult Terrain for your enemies.
+
+    _Using a Higher-Level Spell Slot._ The damage increases by 1d8 for each spell slot level above 4.

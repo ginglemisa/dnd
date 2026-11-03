@@ -1006,7 +1006,31 @@ async function verifyPreparedRingRange(page) {
     await dialog.getByRole("button", { name: "儲存", exact: true }).click();
     assert.deepEqual(await playerIds(page), ["light", "ice-storm"], `${cls} manual keeps cantrips through 4th level`);
   }
-  console.log("Prepared ring range: automatic cantrip/slot rings, class-option cantrips, retained high rings and unrestricted manual rings passed.");
+  // 只供查閱的 SRD 法術（五至九環）不進準備清單：環階選單與勾選清單照舊，只在「全職業法術查詢」查得到。
+  const candidateIds = () => dialog.locator(".spell-picker-option input").evaluateAll(inputs => inputs.map(input => input.value));
+  for (const state of [{ class: "wizard", level: "8", "spellcasting-ability": "int" }, { class: "wizard", level: "8", "spellcasting-ability": "int", "manual-spell-management": true }]) {
+    await apply(page, modern(state));
+    await page.locator("#spell-prepare").click();
+    await dialog.waitFor();
+    assert.equal((await rings()).some(value => Number(value) > 4), false, "the preparation ring menu never lists fifth level or higher");
+    const ids = await candidateIds();
+    assert.ok(ids.length > 0);
+    assert.deepEqual(await page.evaluate(list => list.filter(id => !SpellCatalog.getSpell(id)), ids), [], "every preparation candidate is a playable spell");
+    assert.equal(ids.includes("wish") || ids.includes("cone-of-cold"), false, "lookup-only SRD spells cannot be checked");
+    const before = await candidateIds();
+    await dialog.locator(".spell-prepared-browse").first().click();
+    const lookup = page.getByRole("dialog", { name: "查閱法術", exact: true });
+    await lookup.locator("#spell-browse-class").selectOption("wizard");
+    await lookup.locator("#spell-browse-ring").selectOption("9");
+    await lookup.locator("#spell-browse-name").selectOption("wish");
+    await lookup.locator(".spell-version__attribution").waitFor();
+    assert.equal(await lookup.locator(".spell-version__tab").count(), 0, "lookup-only spells show only the SRD text");
+    await page.keyboard.press("Escape");
+    await lookup.waitFor({ state: "detached" });
+    assert.deepEqual(await candidateIds(), before, "looking up all SRD spells leaves the preparation list unchanged");
+    await close();
+  }
+  console.log("Prepared ring range: automatic cantrip/slot rings, class-option cantrips, retained high rings, unrestricted manual rings and lookup-only SRD spells kept out of preparation passed.");
 }
 
 // Every path into the preparation dialog goes through #spell-prepare / openPreparedManager;
@@ -1194,7 +1218,7 @@ async function verifyWizardBookPicker(page) {
   const expectedRings = await page.evaluate(() => SpellCatalog.getAllSpells().filter(spell => [1, 3].includes(spell.level) && SpellCatalog.getClassIds(spell.spellId).includes("wizard")).map(spell => spell.spellId).sort());
   assert.deepEqual((await visibleIds()).sort(), expectedRings, "one and three are shown together without other rings");
   await school.selectOption("防護");
-  const expectedSchool = await page.evaluate(() => SpellCatalog.getAllSpells().filter(spell => [1, 3].includes(spell.level) && SpellCatalog.getClassIds(spell.spellId).includes("wizard") && /^學派\s*[：:]\s*防護\s*$/mu.test(spell.desc)).map(spell => spell.spellId).sort());
+  const expectedSchool = await page.evaluate(() => SpellCatalog.getAllSpells().filter(spell => [1, 3].includes(spell.level) && SpellCatalog.getClassIds(spell.spellId).includes("wizard") && SpellCatalog.getSpellHeader(spell).school === "防護").map(spell => spell.spellId).sort());
   assert.deepEqual((await visibleIds()).sort(), expectedSchool, "school and multiple rings intersect");
   await search.fill("Dispel Magic");
   assert.deepEqual(await visibleIds(), ["dispel-magic"]);

@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: vicious-mockery
+name: 惡言相加
+nameEn: Vicious Mockery
+source: srd
+level: 0
+school: enchantment
+classes: [ bard ]
+castingTime: [ action ]
+range: { feet: 60 }
+components: [ V ]
+duration: instantaneous
+site:
+  outcomes:
+    - { kind: damage, formula: 1d6, cantripAt5: 2d6, damageType: psychic, autoOnCast: true, context: 豁免失敗時傷害 }
+  body: |-
+    - 對射程內一個你能看見或聽見的生物發出夾帶細微惑控魔法的辱罵
+    - 目標須進行感知豁免；失敗時受到1d6心靈傷害，且它在自己下個回合結束前進行的下一次攻擊檢定具有劣勢
+    - 戲法升級：5級時傷害提升為2d6
+srd:
+  body: |-
+    你對射程內一個你能看見或聽見的生物，傾瀉出一串夾帶著細微惑控魔力的辱罵。目標必須成功通過感知豁免，否則受到1d6心靈傷害，並且在其下個回合結束前，其進行的下一次攻擊檢定具有劣勢。
+
+    _戲法升級。_ 當你達到5級（2d6）、11級（3d6）與17級（4d6）時，傷害增加1d6。
+en:
+  body: |-
+    You unleash a string of insults laced with subtle enchantments at one creature you can see or hear within range. The target must succeed on a Wisdom saving throw or take 1d6 Psychic damage and have Disadvantage on the next attack roll it makes before the end of its next turn.
+
+    _Cantrip Upgrade._ The damage increases by 1d6 when you reach levels 5 (2d6), 11 (3d6), and 17 (4d6).

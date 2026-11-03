@@ -1,0 +1,52 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: prestidigitation
+name: 魔法伎倆
+nameEn: Prestidigitation
+source: srd
+level: 0
+school: transmutation
+classes: [ bard, sorcerer, warlock, wizard ]
+castingTime: [ action ]
+range: { feet: 10 }
+components: [ V, S ]
+duration: { hours: 1, upTo: true }
+site:
+  body: |-
+    - 在射程內創造一種魔法效果，從下列選項擇一：
+      - 感官效果：瞬間產生無害的感官效果，例如一陣火花、一陣風、微弱樂音或奇怪氣味
+      - 玩火：瞬間點燃或熄滅一根蠟燭、一支火把或一小堆營火
+      - 清潔或弄髒：瞬間清潔或弄髒一個不超過1立方呎的物體
+      - 感官微調：使至多1立方呎的非生物材料冷卻、加溫或調味，持續1小時
+      - 魔法印記：使顏色、小記號或符號出現在物體或表面上，持續1小時
+      - 小創造：創造一件可放在手中的非魔法小飾品或幻象影像，持續到你下個回合結束；小飾品不能造成傷害，也沒有金錢價值
+    - 多次施放此法術時，至多可同時維持三個非立即效果
+srd:
+  body: |-
+    你在射程內創造一個魔法效果。從下列選項中選擇效果。若你多次施放此法術，你最多可同時維持其三個非瞬間效果。
+
+    _感官效果。_ 你創造一個瞬間且無害的感官效果，例如一陣火花、一股微風、微弱的樂音或奇異的氣味。
+
+    _玩火。_ 你瞬間點燃或熄滅一根蠟燭、一支火把或一堆小型營火。
+
+    _清潔或弄髒。_ 你瞬間清潔或弄髒一個不大於1立方呎的物體。
+
+    _感官微調。_ 你使至多1立方呎的非生命材料變冷、變暖或增添風味，持續1小時。
+
+    _魔法印記。_ 你使一種顏色、一個小記號或一個符號出現在一個物體或一個表面上，持續1小時。
+
+    _小創造。_ 你創造一件能放進你手中的非魔法小飾品或幻象影像。其持續到你下個回合結束。小飾品不能造成傷害，也沒有金錢價值。
+en:
+  body: |-
+    You create a magical effect within range. Choose the effect from the options below. If you cast this spell multiple times, you can have up to three of its non-instantaneous effects active at a time.
+
+    _Sensory Effect._ You create an instantaneous, harmless sensory effect, such as a shower of sparks, a puff of wind, faint musical notes, or an odd odor.
+
+    _Fire Play._ You instantaneously light or snuff out a candle, a torch, or a small campfire.
+
+    _Clean or Soil._ You instantaneously clean or soil an object no larger than 1 cubic foot.
+
+    _Minor Sensation._ You chill, warm, or flavor up to 1 cubic foot of nonliving material for 1 hour.
+
+    _Magic Mark._ You make a color, a small mark, or a symbol appear on an object or a surface for 1 hour.
+
+    _Minor Creation._ You create a nonmagical trinket or an illusory image that can fit in your hand. It lasts until the end of your next turn. A trinket can deal no damage and has no monetary worth.

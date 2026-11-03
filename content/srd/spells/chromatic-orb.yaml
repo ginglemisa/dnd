@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: chromatic-orb
+name: 繁彩球
+nameEn: Chromatic Orb
+source: srd
+level: 1
+school: evocation
+classes: [ sorcerer, wizard ]
+castingTime: [ action ]
+range: { feet: 90 }
+components: [ V, S, M ]
+duration: instantaneous
+upcast: true
+site:
+  material: 一顆價值至少50 GP的鑽石
+  outcomes:
+    - { kind: damage, attack: spell, formula: 3d8, upcastDice: 1d8, damageTypes: [ acid, cold, fire, lightning, poison, thunder ], autoOnCast: true, context: 命中時傷害；跳轉後的額外攻擊依術文手動處理 }
+  body: |-
+    - 向射程內一個目標擲出能量球；先從強酸、冷凍、火焰、閃電、毒素或雷鳴中選擇能量球的類型，再對目標進行一次遠程法術攻擊
+    - 命中時，目標受到3d8所選類型的傷害
+    - 若傷害骰中有兩顆或更多d8擲出相同點數，能量球會跳向原目標30呎內另一個你選擇的目標；對新目標進行攻擊檢定，並重新擲傷害
+    - 除非以2環或更高的法術位施放，否則能量球不能再次跳躍
+    - 使用更高環階法術位：每比1環高一環，傷害增加1d8；能量球最多可跳躍的次數等於所消耗法術位的環階，且每次施法中同一生物只能被選為目標一次
+srd:
+  material: 一顆價值至少50 GP的鑽石
+  body: |-
+    你朝射程內的一個目標擲出一顆能量球。為你創造的能量球選擇強酸、冷凍、火焰、閃電、毒素或雷鳴作為類型，然後對該目標進行一次遠程法術攻擊。命中時，目標受到3d8所選類型的傷害。
+
+    若你在兩顆或更多顆d8上擲出相同的數字，能量球會彈跳到距離該目標30呎內、由你選擇的另一個目標。對新目標進行一次攻擊檢定，並重新擲傷害骰。除非你以2環以上的法術位施放此法術，否則能量球無法再次彈跳。
+
+    _使用更高環階法術位。_ 每比1環高一環，傷害增加1d8。能量球最多可彈跳的次數等於所消耗法術位的環階，且每次施放此法術時，同一生物只能被選為目標一次。
+en:
+  material: a diamond worth 50+ GP
+  body: |-
+    You hurl an orb of energy at a target within range. Choose Acid, Cold, Fire, Lightning, Poison, or Thunder for the type of orb you create, and then make a ranged spell attack against the target. On a hit, the target takes 3d8 damage of the chosen type.
+
+    If you roll the same number on two or more of the d8s, the orb leaps to a different target of your choice within 30 feet of the target. Make an attack roll against the new target, and make a new damage roll. The orb can't leap again unless you cast the spell with a level 2+ spell slot.
+
+    _Using a Higher-Level Spell Slot._ The damage increases by 1d8 for each spell slot level above 1. The orb can leap a maximum number of times equal to the level of the slot expended, and a creature can be targeted only once by each casting of this spell.

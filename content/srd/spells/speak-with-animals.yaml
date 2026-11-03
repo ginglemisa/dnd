@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: speak-with-animals
+name: 動物交談
+nameEn: Speak with Animals
+source: srd
+level: 1
+school: divination
+classes: [ bard, druid, ranger, warlock ]
+castingTime: [ action ]
+ritual: true
+range: self
+components: [ V, S ]
+duration: { minutes: 10 }
+site:
+  body: |-
+    - 持續時間內，你能理解野獸並與牠們口語交流，且可以對牠們使用影響動作的任何技能選項
+    - 大多數野獸對生存或同伴以外的話題沒什麼可說，但至少能告訴你附近地點與怪物的資訊，包括牠在過去一天內察覺到的任何事物
+srd:
+  body: |-
+    在持續時間內，你能理解野獸並以言語與其溝通，也能對它們使用影響動作的任何技能選項。
+
+    大多數野獸對與生存或陪伴無關的話題沒有太多可說，但至少，野獸能向你提供附近地點與怪物的資訊，包括它在過去一天內所感知到的一切。
+en:
+  body: |-
+    For the duration, you can comprehend and verbally communicate with Beasts, and you can use any of the Influence action's skill options with them.
+
+    Most Beasts have little to say about topics that don't pertain to survival or companionship, but at minimum, a Beast can give you information about nearby locations and monsters, including whatever it has perceived within the past day.

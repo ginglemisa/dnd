@@ -1,0 +1,36 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: sending
+name: 短訊術
+nameEn: Sending
+source: srd
+level: 3
+school: divination
+classes: [ bard, cleric, wizard ]
+castingTime: [ action ]
+range: unlimited
+components: [ V, S, M ]
+duration: instantaneous
+site:
+  material: 一段銅線
+  body: |-
+    - 向一個你見過的生物，或曾見過它的人向你描述過的生物，傳送一則不超過25個字的簡短訊息
+    - 目標在腦中聽到訊息；若它認識你，會認出你是發送者，並可以立即以相同方式回覆
+    - 此法術讓目標能理解你訊息的意思
+    - 訊息可傳送到任何距離，甚至其他存在位面；但若目標與你位於不同位面，訊息有5%機率無法送達；你會知道是否送達失敗
+    - 收到訊息的生物可以封鎖你在8小時內再以此法術聯絡它；若你在此期間嘗試傳送另一則訊息，你會得知自己被封鎖，且法術失敗
+srd:
+  material: 一段銅線
+  body: |-
+    你向一個你見過的生物，或是由見過該生物的人向你描述的生物，傳送一則25個字以內的短訊。目標會在腦海中聽見這則訊息；若目標認識你，便能得知你是發訊者，並且可以立即以同樣的方式回覆。法術使目標能夠理解你訊息的含義。
+
+    你可以將訊息傳送到任何距離，甚至傳送到其他位面，但如果目標與你位於不同的位面，訊息有5%的機率無法送達。你會知道傳送是否失敗。
+
+    收到你的訊息後，生物可以在8小時內阻止你再次以這個法術聯繫它。如果你在這段期間內試圖傳送另一則訊息，你會得知自己被阻擋，且法術失敗。
+en:
+  material: a copper wire
+  body: |-
+    You send a short message of 25 words or fewer to a creature you have met or a creature described to you by someone who has met it. The target hears the message in its mind, recognizes you as the sender if it knows you, and can answer in a like manner immediately. The spell enables targets to understand the meaning of your message.
+
+    You can send the message across any distance and even to other planes of existence, but if the target is on a different plane than you, there is a 5 percent chance that the message doesn't arrive. You know if the delivery fails.
+
+    Upon receiving your message, a creature can block your ability to reach it again with this spell for 8 hours. If you try to send another message during that time, you learn that you are blocked, and the spell fails.

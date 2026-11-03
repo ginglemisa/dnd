@@ -1,6 +1,6 @@
 # 內容檔
 
-網站的職業、子職、專長、背景與種族資料寫在 `content/` 的 YAML 內容檔，每個職業、子職、專長、背景、種族各一個檔。`npm run build` 檢查格式與跨檔關係後，產生網站讀取的資料檔。本文件大部分在說明職業與子職的寫法；專長、背景與種族見下方「專長」「背景」「種族」。
+網站的職業、子職、專長、背景、種族與法術資料寫在 `content/` 的 YAML 內容檔，每個職業、子職、專長、背景、種族、法術各一個檔。`npm run build` 檢查格式與跨檔關係後，產生網站讀取的資料檔。本文件大部分在說明職業與子職的寫法；專長、背景、種族與法術見下方「專長」「背景」「種族」「法術」。
 
 職業與子職的說明文字和機制（特性表、選項、跑團按鈕、資源）寫在同一份檔案。
 
@@ -15,6 +15,7 @@
 | 公開專長與選單順序 | `content/srd/feats/<專長 ID>.yaml`、`content/srd/feat-order.yaml` |
 | 公開背景 | `content/srd/backgrounds/<背景 ID>.yaml` |
 | 公開種族 | `content/srd/races/<種族 ID>.yaml` |
+| 公開法術 | `content/srd/spells/<法術 ID>.yaml` |
 | 私人內容包（不進公開 repo） | `content/private/classes/`、`content/private/subclasses/` |
 | 私人內容包補充既有職業（例如兼職） | `content/private/class-extensions/<職業 ID>.yaml` |
 | 私人內容包的兼職共用規則與法術位表 | `content/private/rules/multiclass.yaml` |
@@ -24,7 +25,7 @@
 
 本機執行 `npm run build`（或 `npm run dev`）時，私人內容包的子職與 `class-extensions/` 會寫進根目錄的 `class-content.private.generated.js`（同樣被 git 忽略），網站在公開資料之後載入它，你的電腦上就看得到私人子職（例如子職選單出現兩個以上的選項）。沒有私人內容包、上線建置或執行 `npm run build -- --public-only` 時，這個檔案是空的，網站只有公開內容；離線角色卡一律只含公開內容。私人內容包的持久化 ID 另列在 `content/private/class-id-baseline.json`。
 
-私人內容包目前不支援背景與種族：選單是 `index.html` 的固定選項，沒有加入私人選項的方式。也不支援專長：私人資料檔只放職業資料。`content/private/backgrounds/`、`content/private/races/`、`content/private/feats/` 存在時建置會失敗。
+私人內容包目前不支援背景與種族：選單是 `index.html` 的固定選項，沒有加入私人選項的方式。也不支援專長：私人資料檔只放職業資料。`content/private/backgrounds/`、`content/private/races/`、`content/private/feats/` 存在時建置會失敗。私人法術（`content/private/spells/`）的格式已訂好，但尚未啟用：建置不讀取這個資料夾（見下方「法術」）。
 
 VS Code 安裝 Red Hat 的「YAML」擴充套件後，會依檔案第一行的 `$schema` 自動補完欄位、標出錯誤，滑鼠停在欄位上可看說明。
 
@@ -431,11 +432,111 @@ pdf:
 - `npm run build` 產生根目錄的 `race-content.generated.js`：`raceRules` 是結構化規則，`raceText` 是組好的顯示文字（種族頁 HTML、跑團純文字、動作說明、提示、PDF 行）。網站經 `character-rules.js` 的 `getRaceRules`、`getRaceText`、`getAllRaceRules`、`getRaceChoiceOption` 讀取，不從顯示文字反推規則。
 - 快速創角的種族卡片說明、血統短評與完成摘要是快速創角自己的介紹文字，留在 `quick-build.js`（以種族 ID 與草稿值為 key）；新增種族或血統時要補上（回歸測試會檢查）。
 
+## 法術
+
+每個法術一個檔：`content/srd/spells/<法術 ID>.yaml`，格式定義是 `content/schema/spell.schema.json`。收錄 SRD 5.2.1 全部 339 個法術。上半部是規則欄位（只寫一次）；下半部是文字區塊：
+
+- `site`：網站版，玩家實際使用的版本（分行條列的說明、跑團擲骰）。**有 `site` 的法術才是角色可用的法術**：職業法表、準備法術、法術書、快速創角、跑團與 PDF 都只看得到它們。規則和 SRD 不同時（例如職業法表）以網站版為準。
+- `srd`：SRD 繁中直譯，法術詳情的「SRD 版」（唯讀、沒有擲骰按鈕，頁尾註明譯自 SRD 5.2.1）。
+- `en`：SRD 英文原文，只供校對，建置不會送到網站。
+
+只有 `srd`、`en`、沒有 `site` 的法術（目前是五至九環的 122 個）只供查閱，任何情況下都不能準備或加入角色。
+
+```yaml
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: fire-bolt
+name: 火焰箭
+nameEn: Fire Bolt
+source: srd
+level: 0
+school: evocation
+classes: [ sorcerer, wizard ]
+castingTime: [ action ]
+range: { feet: 120 }
+components: [ V, S ]
+duration: instantaneous
+site:
+  outcomes:
+    - { kind: damage, attack: spell, formula: 1d10, cantripAt5: 2d10, damageType: fire, autoOnCast: true, context: 命中時傷害 }
+  body: |-
+    - 向射程內一個生物或物體擲出火焰，對目標進行一次遠程法術攻擊
+    - 命中時，目標受到1d10火焰傷害
+    - ……
+srd:
+  body: |-
+    你朝射程內的一個生物或物體擲出一團火焰。……
+
+    _戲法升級。_ 當你達到5級（2d10）、11級（3d10）與17級（4d10）時，傷害增加1d10。
+en:
+  body: |-
+    You hurl a mote of fire at a creature or an object within range. …
+```
+
+### 規則欄位
+
+| 欄位 | 說明 |
+| --- | --- |
+| `id` | 法術 ID（spellId），須等於檔名。會寫進存檔、JSON 與分享網址，不可改名；有 `site` 的法術列在 `spell-id-baseline.json`。 |
+| `name`、`nameEn` | 中文名、英文名（畫面顯示「火焰箭 Fire Bolt」）。舊存檔以名稱記錄法術時用它們轉成 ID，改字前須處理相容；全部法術的名稱不可重複。網站已有的法術沿用網站名稱。 |
+| `source` | 內容來源：`srd`（須有 `srd` 區塊）、`extended`（本站撰寫）、`private`（私人內容包）。 |
+| `level`、`school` | 環階（0 為戲法）；學派：`abjuration` 防護、`conjuration` 咒法、`divination` 預言、`enchantment` 惑控、`evocation` 塑能、`illusion` 幻術、`necromancy` 死靈、`transmutation` 變化。 |
+| `classes` | 哪些職業的法表有此法術。法表內依環階、再依 ID 排序，不另寫順序。 |
+| `castingTime` | 施法時間，可有多個：`action`、`bonus-action`、`reaction`、`{ minutes: N }`、`{ hours: N }`。例如植物滋長 `[ action, { hours: 8 } ]` 顯示「動作或8小時」。跑團的動作／附贈／反應分頁與法術按鈕上的小標依此決定。 |
+| `ritual` | `true`：可儀式施法（顯示「或儀式」）。 |
+| `range` | `self` 自身、`touch` 觸及、`sight` 視線內、`unlimited` 無限、`special` 特殊、`{ feet: N }`、`{ miles: N }`。 |
+| `components` | `[ V, S, M ]`（依此順序）。有 `M` 時各文字區塊都要寫 `material`。 |
+| `duration` | `instantaneous` 立即、`until-dispelled` 直到被解除、`until-dispelled-or-triggered` 直到被解除或觸發、`special` 特殊，或 `{ rounds: N }`（輪；分鐘、小時、天為 `minutes`、`hours`、`days`）；`upTo: true` 顯示「最長」。 |
+| `concentration` | `true`：需要專注（顯示「專注，最長…」，跑團追蹤專注）。 |
+| `upcast` | `true`：以更高環位施放有額外效果（跑團施法視窗可選更高環位）。網站版說明須有「使用更高環階法術位」的段落，建置會核對。 |
+
+### 文字區塊
+
+| 欄位 | 說明 |
+| --- | --- |
+| `material` | 材料內容，顯示為「材料: …」。網站版與 SRD 版各寫各的。 |
+| `trigger` | 反應或附贈動作的觸發條件，顯示在施法時間後面（「反應動作，當你…」）。反應動作必填。 |
+| `body` | 說明。`site.body` 是「- 」開頭的分行條列（前置兩個空白為巢狀）；`srd.body` 是段落（空行分隔）、`_斜體小標_`、`**粗體**`、「- 」清單、`#### 小標` 與表格。開頭的學派、施法時間等標頭由規則欄位自動產生，不寫在 `body`。 |
+| `site.tabletop` | 跑團版說明（跑團動作分頁與跑團法術詳情）；省略時用 `site.body`。目前沒有法術使用。 |
+| `site.outcomes` | 跑團施法結果（擲骰按鈕）：`kind`（`damage`／`healing`／`temporary-hp`／`attack`）、`formula` 或 `fixed`、`cantripAt5`、`upcastDice`、`damageType`（或可選的 `damageTypes`）、`autoOnCast`（施法時自動擲骰）、`context` 等，欄位說明見格式定義。 |
+
+- 建置檢查：格式、檔名、名稱不重複、成分與材料、觸發條件、`upcast` 與網站版說明、`outcomes` 的骰式與升環欄位，以及 `spell-id-baseline.json`（只列有 `site` 的法術；新增可用法術或移除 `site` 都須確認後更新基準檔）。
+- `npm run build` 產生根目錄的 `spell-content.generated.js`：`spellRules`（全部法術的規則；`playable` 為角色可用）、`spellText`（網站版的 `desc` 標頭＋說明、`header` 標頭各項、`tabletop`）。網站經 `spell-list.js` 的 `SpellCatalog` 讀取，不從說明文字反推規則。`spell-srd.generated.js` 是 SRD 版的 HTML，網站第一次切到「SRD 版」時才載入，離線版內嵌。英文原文不寫進任何產生檔。
+- SRD 譯文的用語與檢查見 [tools/spell-reference/README.md](../tools/spell-reference/README.md)。
+
+### 私人法術（尚未啟用）
+
+私人法術放 `content/private/spells/<法術 ID>.yaml`，格式相同，`source: private`，只需要 `site` 區塊；非 SRD 的直譯與英文原文放 `reference`、`referenceEn`（只在你的電腦上）。**目前建置不讀取這個資料夾**，私人法術不會出現在網站上；啟用時另需私人 ID 基準檔與產生檔。下面是示意（虛構的法術）：
+
+```yaml
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: example-spark
+name: 示範火花
+nameEn: Example Spark
+source: private
+level: 1
+school: evocation
+classes: [ sorcerer, wizard ]
+castingTime: [ action ]
+range: { feet: 60 }
+components: [ V, S ]
+duration: instantaneous
+site:
+  body: |-
+    - （網站版的分行說明）
+reference:
+  body: |-
+    （中文直譯）
+referenceEn:
+  body: |-
+    (English original)
+```
+
 ## 檢查與預覽
 
 | 指令 | 用途 |
 | --- | --- |
 | `npm run dev` | 開本機預覽，存檔後自動重新建置，重新整理瀏覽器即可看到；畫面網址會顯示在終端機 |
-| `npm run build` | 檢查全部內容檔並產生 `class-content.generated.js`、`feat-content.generated.js`、`background-content.generated.js` 與 `race-content.generated.js`，有錯就列出檔案與位置 |
+| `npm run build` | 檢查全部內容檔並產生 `spell-content.generated.js`、`spell-srd.generated.js`、`class-content.generated.js`、`feat-content.generated.js`、`background-content.generated.js` 與 `race-content.generated.js`，有錯就列出檔案與位置 |
+| `node tools/spell-reference/validate.js` | 檢查法術的 SRD 譯文（見 [tools/spell-reference/README.md](../tools/spell-reference/README.md)） |
 
-改完內容檔只要提交內容檔本身。`class-content.generated.js`、`feat-content.generated.js`、`background-content.generated.js`、`race-content.generated.js` 是產生的檔案，不放進 repo、不可手改：本機用 `npm run dev` 或 `npm run build` 產生，上線時由 GitHub Actions 產生。只有公開內容包會寫進產生檔。
+改完內容檔只要提交內容檔本身。`spell-content.generated.js`、`spell-srd.generated.js`、`class-content.generated.js`、`feat-content.generated.js`、`background-content.generated.js`、`race-content.generated.js` 是產生的檔案，不放進 repo、不可手改：本機用 `npm run dev` 或 `npm run build` 產生，上線時由 GitHub Actions 產生。只有公開內容包會寫進產生檔。

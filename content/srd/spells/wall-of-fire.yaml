@@ -1,0 +1,46 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: wall-of-fire
+name: 火牆術
+nameEn: Wall of Fire
+source: srd
+level: 4
+school: evocation
+classes: [ druid, sorcerer, wizard ]
+castingTime: [ action ]
+range: { feet: 120 }
+components: [ V, S, M ]
+duration: { minutes: 1 }
+concentration: true
+upcast: true
+site:
+  material: 一塊木炭
+  outcomes:
+    - { kind: damage, formula: 5d8, upcastDice: 1d8, damageType: fire, autoOnCast: true, context: 火牆出現時的區域傷害擲一次；豁免依規則處理 }
+    - { kind: damage, formula: 5d8, upcastDice: 1d8, damageType: fire, autoOnCast: false, context: 之後進入火牆或在其中／附近結束回合時 }
+  body: |-
+    - 在射程內一個堅實表面上創造一道火牆：可為至多長60呎、高20呎、厚1呎的牆，或直徑至多20呎、高20呎、厚1呎的環形牆；火牆不透明，持續到法術結束
+    - 火牆出現時，其區域內每個生物須進行敏捷豁免；失敗時受到5d8火焰傷害，成功時傷害減半
+    - 施法時選擇火牆的一側；在該側10呎內或牆內結束回合的每個生物受到5d8火焰傷害
+    - 生物在一個回合中首次進入火牆，或在牆內結束回合時，也受到相同傷害
+    - 火牆的另一側不造成傷害
+    - 使用更高環階法術位：每比4環高一環，傷害增加1d8
+srd:
+  material: 一塊木炭
+  body: |-
+    你在射程內的堅固表面上創造一道火牆。你可以讓牆最長60呎、高20呎、厚1呎，或是創造一道直徑最大20呎、高20呎、厚1呎的環形牆。這道牆不透明，並持續到持續時間結束。
+
+    當牆出現時，其區域內的每個生物進行一次敏捷豁免，豁免失敗時受到5d8火焰傷害，豁免成功時受到一半傷害。
+
+    牆的一側（由你施放法術時選擇）會對在該側10呎內或牆內結束回合的每個生物造成5d8火焰傷害。生物在一個回合內首次進入牆內，或在牆內結束其回合時，同樣受到該傷害。牆的另一側不造成傷害。
+
+    _使用更高環階法術位。_ 法術位的環階每比4高一環，傷害增加1d8。
+en:
+  material: a piece of charcoal
+  body: |-
+    You create a wall of fire on a solid surface within range. You can make the wall up to 60 feet long, 20 feet high, and 1 foot thick, or a ringed wall up to 20 feet in diameter, 20 feet high, and 1 foot thick. The wall is opaque and lasts for the duration.
+
+    When the wall appears, each creature in its area makes a Dexterity saving throw, taking 5d8 Fire damage on a failed save or half as much damage on a successful one.
+
+    One side of the wall, selected by you when you cast this spell, deals 5d8 Fire damage to each creature that ends its turn within 10 feet of that side or inside the wall. A creature takes the same damage when it enters the wall for the first time on a turn or ends its turn there. The other side of the wall deals no damage.
+
+    _Using a Higher-Level Spell Slot._ The damage increases by 1d8 for each spell slot level above 4.

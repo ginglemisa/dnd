@@ -91,13 +91,17 @@
 
   function initializeSpellSearchIndex() {
     if (spellSearchIndex) return;
-    spellSearchIndex = SpellCatalog.getAllSpells().map(spell => ({
-      spellId: spell.spellId,
-      spell,
-      levelKey: spell.level === 0 ? "cantrips" : String(spell.level),
-      classKeys: SpellCatalog.getClassIds(spell.spellId),
-      searchText: `${spell.nameZh}\n${spell.nameEn}\n${SpellCatalog.getDisplayName(spell.spellId)}\n${spell.desc}`.toLowerCase()
-    }));
+    // 搜尋全部 SRD 法術：角色可用的法術也搜尋網站版說明；只供查閱的法術（五環以上）只搜尋名稱。
+    spellSearchIndex = SpellCatalog.getAllReferenceSpells().map(reference => {
+      const spell = SpellCatalog.getSpell(reference.spellId);
+      return {
+        spellId: reference.spellId,
+        spell: spell || reference,
+        levelKey: reference.level === 0 ? "cantrips" : String(reference.level),
+        classKeys: [...reference.classIds],
+        searchText: `${reference.nameZh}\n${reference.nameEn}\n${reference.nameZh} ${reference.nameEn}\n${spell?.desc || ""}`.toLowerCase()
+      };
+    });
   }
 
   function parseSpellClassSearch(keyword) {
@@ -157,9 +161,13 @@
       const button = document.createElement("button");
       button.type = "button";
       button.className = "spell-search-result-name";
-      button.textContent = SpellCatalog.getDisplayName(spellId) || "";
+      const reference = SpellCatalog.getReferenceSpell(spellId);
+      button.textContent = SpellCatalog.getDisplayName(spellId) || (reference ? `${reference.nameZh} ${reference.nameEn}` : "");
       button.setAttribute("aria-label", `查看${button.textContent}的法術詳情`);
-      button.addEventListener("click", () => globalScope.autoPrepareSpellFromFeature(spellId, button));
+      // 只供查閱的法術只開詳情（SRD 版），不詢問是否準備。
+      button.addEventListener("click", () => reference?.playable
+        ? globalScope.autoPrepareSpellFromFeature(spellId, button)
+        : globalScope.quickBuild?.openSpellDetail?.(reference, button));
       row.appendChild(button);
       fragment.appendChild(row);
     });
@@ -198,15 +206,17 @@
     const classSelect = createSelect("class", "職業");
     const ringSelect = createSelect("ring", "環位");
     const nameSelect = createSelect("name", "法術名稱");
-    const allSpells = SpellCatalog.getAllSpells().filter(spell => spell.level >= 0 && spell.level <= 4);
-    const classes = new Set(allSpells.flatMap(spell => SpellCatalog.getClassIds(spell.spellId)));
+    // 全部 SRD 法術（戲法至九環）；只供查閱的法術只有 SRD 版詳情。
+    const allSpells = SpellCatalog.getAllReferenceSpells();
+    const classes = new Set(allSpells.flatMap(spell => spell.classIds));
     classSelect.append(option("", "全部職業"), ...Object.entries(SPELL_SEARCH_CLASS_LABELS)
       .filter(([id]) => classes.has(id)).map(([id, label]) => option(id, label)));
+    // 環位選單只列所選職業有法術的環位（例如聖騎士沒有戲法）。
     const refreshRingOptions = () => {
       const previous = ringSelect.value;
-      const limitedToSecondLevel = ["paladin", "ranger"].includes(classSelect.value);
-      ringSelect.replaceChildren(option("", "所有環位"), ...[0, 1, 2, 3, 4]
-        .filter(level => !limitedToSecondLevel || (level >= 1 && level <= 2))
+      const levels = [...new Set(allSpells.filter(spell => !classSelect.value || spell.classIds.includes(classSelect.value))
+        .map(spell => spell.level))].sort((a, b) => a - b);
+      ringSelect.replaceChildren(option("", "所有環位"), ...levels
         .map(level => option(String(level), SPELL_SEARCH_LEVEL_LABELS[level === 0 ? "cantrips" : String(level)])));
       ringSelect.value = [...ringSelect.options].some(item => item.value === previous) ? previous : "";
     };
@@ -215,17 +225,21 @@
     detail.className = "spell-browser-detail output small-text";
     detail.setAttribute("aria-live", "polite");
     const showDetail = () => {
+      const reference = SpellCatalog.getReferenceSpell(nameSelect.value);
       const spell = SpellCatalog.getSpell(nameSelect.value);
-      if (spell) detail.innerHTML = globalScope.renderSpellDescHtml(spell.desc);
+      const renderSite = spell ? site => { site.innerHTML = globalScope.renderSpellDescHtml(spell.desc); } : null;
+      if (reference && typeof globalScope.createSpellVersionView === "function") {
+        detail.replaceChildren(globalScope.createSpellVersionView(reference.spellId, renderSite));
+      } else if (spell) detail.innerHTML = globalScope.renderSpellDescHtml(spell.desc);
       else detail.textContent = "請選擇法術，查看完整描述。";
     };
     const refreshOptions = () => {
       const previous = nameSelect.value;
-      const spells = allSpells.filter(spell => (!classSelect.value || SpellCatalog.getClassIds(spell.spellId).includes(classSelect.value))
+      const spells = allSpells.filter(spell => (!classSelect.value || spell.classIds.includes(classSelect.value))
         && (!ringSelect.value || spell.level === Number(ringSelect.value)))
         .sort((a, b) => a.level - b.level || a.nameZh.localeCompare(b.nameZh, "zh-Hant"));
       nameSelect.replaceChildren(option("", spells.length ? "請選擇法術" : "此職業沒有該環位法術"),
-        ...spells.map(spell => option(spell.spellId, SpellCatalog.getDisplayName(spell.spellId))));
+        ...spells.map(spell => option(spell.spellId, `${spell.nameZh} ${spell.nameEn}`)));
       nameSelect.disabled = spells.length === 0;
       nameSelect.value = spells.some(spell => spell.spellId === previous) ? previous : "";
       showDetail();

@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: resistance
+name: 提升抗性
+nameEn: Resistance
+source: srd
+level: 0
+school: abjuration
+classes: [ cleric, druid ]
+castingTime: [ action ]
+range: touch
+components: [ V, S ]
+duration: { minutes: 1 }
+concentration: true
+site:
+  body: |-
+    - 觸碰一個自願的生物，並選擇一種傷害類型：強酸、鈍擊、冷凍、火焰、閃電、黯蝕、穿刺、毒素、光耀、揮砍或雷鳴
+    - 法術結束前，該生物受到所選類型的傷害時，受到的總傷害減少1d4
+    - 每個生物每回合只能從此法術獲益一次
+srd:
+  body: |-
+    你觸碰一個自願的生物並選擇一種傷害類型：強酸、鈍擊、冷凍、火焰、閃電、黯蝕、穿刺、毒素、光耀、揮砍或雷鳴。在法術結束前，當該生物受到所選類型的傷害時，該生物將受到的總傷害減少1d4。一個生物每回合只能從此法術獲益一次。
+en:
+  body: |-
+    You touch a willing creature and choose a damage type: Acid, Bludgeoning, Cold, Fire, Lightning, Necrotic, Piercing, Poison, Radiant, Slashing, or Thunder. When the creature takes damage of the chosen type before the spell ends, the creature reduces the total damage taken by 1d4. A creature can benefit from this spell only once per turn.

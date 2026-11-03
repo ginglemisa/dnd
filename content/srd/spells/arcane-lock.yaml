@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: arcane-lock
+name: 秘法鎖
+nameEn: Arcane Lock
+source: srd
+level: 2
+school: abjuration
+classes: [ wizard ]
+castingTime: [ action ]
+range: touch
+components: [ V, S, M ]
+duration: until-dispelled
+site:
+  material: 價值至少25 GP的金粉（施法時消耗）
+  body: |-
+    - 觸碰一扇關閉的門、窗、大門、容器或艙口，在持續時間內以魔法將它鎖上
+    - 此鎖無法以任何非魔法手段打開
+    - 你與施法時你指定的任何生物，可以無視此鎖開啟與關閉該物體
+    - 你也可以設定一個通行密語；在物體5呎內說出時，可解鎖1分鐘
+srd:
+  material: 價值25 GP以上的金粉，法術會消耗之
+  body: |-
+    你碰觸一扇關閉的門、窗、柵門、容器或艙口，並以魔法在持續時間內將其鎖上。這個鎖無法以任何非魔法手段開啟。你以及你施放法術時指定的任何生物，都能無視這個鎖來開啟和關閉該物體。你也可以設定一個密語，當有人在該物體5呎內說出密語時，它會解鎖1分鐘。
+en:
+  material: gold dust worth 25+ GP, which the spell consumes
+  body: |-
+    You touch a closed door, window, gate, container, or hatch and magically lock it for the duration. This lock can't be unlocked by any nonmagical means. You and any creatures you designate when you cast the spell can open and close the object despite the lock. You can also set a password that, when spoken within 5 feet of the object, unlocks it for 1 minute.

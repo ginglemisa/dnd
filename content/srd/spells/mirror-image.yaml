@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: mirror-image
+name: 鏡影術
+nameEn: Mirror Image
+source: srd
+level: 2
+school: illusion
+classes: [ bard, sorcerer, warlock, wizard ]
+castingTime: [ action ]
+range: self
+components: [ V, S ]
+duration: { minutes: 1 }
+site:
+  body: |-
+    - 三個你的幻象分身出現在你的空間中；法術結束前，分身隨你移動並模仿你的動作，不斷變換位置，使人無法分辨哪一個是真身
+    - 持續時間內，每當生物以攻擊檢定命中你時，為每個剩餘的分身各擲一顆d6；若任一顆d6擲出3或更高，改由一個分身被命中並被摧毀
+    - 除此之外，分身無視所有其他傷害與效果
+    - 三個分身都被摧毀時，法術結束
+    - 處於失明狀態、具有盲視或真實視覺的生物不受此法術影響
+srd:
+  body: |-
+    你的三個幻影分身出現在你所在的空間。在法術結束前，這些分身會隨你移動並模仿你的動作，不斷變換位置，使人無法分辨哪個影像才是真身。
+
+    在法術持續時間內，每當有生物以攻擊檢定擊中你時，為你剩餘的每個分身各擲一顆d6。如果任何一顆d6擲出3或更高，則其中一個分身會代替你被擊中，該分身隨即被摧毀。除此之外，這些分身會忽略所有其他傷害與效應。當三個分身都被摧毀時，法術結束。
+
+    如果生物陷入失明狀態，或具有盲視或真實視覺，則不受此法術影響。
+en:
+  body: |-
+    Three illusory duplicates of yourself appear in your space. Until the spell ends, the duplicates move with you and mimic your actions, shifting position so it's impossible to track which image is real.
+
+    Each time a creature hits you with an attack roll during the spell's duration, roll a d6 for each of your remaining duplicates. If any of the d6s rolls a 3 or higher, one of the duplicates is hit instead of you, and the duplicate is destroyed. The duplicates otherwise ignore all other damage and effects. The spell ends when all three duplicates are destroyed.
+
+    A creature is unaffected by this spell if it has the Blinded condition, Blindsight, or Truesight.

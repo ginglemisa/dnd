@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: fabricate
+name: 鬼斧神工
+nameEn: Fabricate
+source: srd
+level: 4
+school: transmutation
+classes: [ wizard ]
+castingTime: [ { minutes: 10 } ]
+range: { feet: 120 }
+components: [ V, S ]
+duration: instantaneous
+site:
+  body: |-
+    - 將原料轉化為相同材料的製品，例如用一片樹林造出木橋、用一叢大麻造出繩索，或用亞麻或羊毛造出衣服
+    - 選擇射程內你能看見的原料；只要材料數量足夠，你可以製造一個大型或更小的物體（容納在邊長10呎的立方體內，或八個相連、邊長5呎的立方體內）
+    - 若使用金屬、石頭或其他礦物材料，製成的物體不能大於中型（容納在邊長5呎的立方體內）
+    - 製成物體的品質取決於原料的品質
+    - 此法術無法創造生物或魔法物品；除非你對製作該類物體所用的工匠工具具有熟練，否則也無法製造需要高度技巧的物品，例如武器與護甲
+srd:
+  body: |-
+    你將原料轉化為同種材質的製品。例如，你可以用一叢樹木製成一座木橋，用一片大麻製成一條繩索，或用亞麻或羊毛製成衣物。
+
+    選擇你能看見的射程內的原料。只要材料數量足夠，你可以製造一件大型或更小的物體（容納於一個10呎立方體或八個相連的5呎立方體內）。然而，如果你處理的是金屬、石頭或其他礦物物質，製成的物體不得大於中型（容納於一個5呎立方體內）。任何製成物體的品質取決於原料的品質。
+
+    此法術無法創造生物與魔法物品。你也不能用它來製作需要高超技藝的物品，例如武器與護甲，除非你熟練於製作這類物品所用的那種工匠工具。
+en:
+  body: |-
+    You convert raw materials into products of the same material. For example, you can fabricate a wooden bridge from a clump of trees, a rope from a patch of hemp, or clothes from flax or wool.
+
+    Choose raw materials that you can see within range. You can fabricate a Large or smaller object (contained within a 10-foot Cube or eight connected 5-foot Cubes) given a sufficient quantity of material. If you're working with metal, stone, or another mineral substance, however, the fabricated object can be no larger than Medium (contained within a 5-foot Cube). The quality of any fabricated objects is based on the quality of the raw materials.
+
+    Creatures and magic items can't be created by this spell. You also can't use it to create items that require a high degree of skill—such as weapons and armor—unless you have proficiency with the type of Artisan's Tools used to craft such objects.

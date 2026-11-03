@@ -1,0 +1,36 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: astral-projection
+name: 星界投影
+nameEn: Astral Projection
+source: srd
+level: 9
+school: necromancy
+classes: [ cleric, warlock, wizard ]
+castingTime: [ { hours: 1 } ]
+range: { feet: 10 }
+components: [ V, S, M ]
+duration: until-dispelled
+srd:
+  material: 每個法術目標各需一顆價值1,000 GP以上的風信子石與一條價值100 GP以上的銀條，法術會消耗這些材料
+  body: |-
+    你與射程內最多八個自願的生物將星體投射到星界（若你已在該位面，法術立即結束）。每個目標的肉身會留在原處，處於假死狀態；肉身陷入昏迷狀態，不需要食物或空氣，也不會老化。
+
+    目標的星體在幾乎所有方面都與其肉身相似，會複製其遊戲數值與所持物品。主要的差別是星體兩肩胛骨之間拖著一條銀色細繩。細繩在1呎外便隱沒不見。若細繩被切斷（只有在某個效應明確說明會切斷時才會發生），目標的肉身與星體都會死亡。
+
+    目標的星體可以在星界中移動。星體離開該位面的那一刻，目標的肉身與所持物品會沿著銀繩一同移動，使目標在新位面重新進入其肉身。
+
+    任何對星體造成的傷害或其他效應，對目標的肉身沒有影響，反之亦然。若目標的肉身或星體的生命值降到0，法術對該目標結束。若你用魔法動作解除法術，法術對所有目標結束。
+
+    當法術對一個未死亡的目標結束時，該目標會重新出現在其肉身中，並脫離假死狀態。
+en:
+  material: for each of the spell's targets, one jacinth worth 1,000+ GP and one silver bar worth 100+ GP, all of which the spell consumes
+  body: |-
+    You and up to eight willing creatures within range project your astral bodies into the Astral Plane (the spell ends instantly if you are already on that plane). Each target's body is left behind in a state of suspended animation; it has the Unconscious condition, doesn't need food or air, and doesn't age.
+
+    A target's astral form resembles its body in almost every way, replicating its game statistics and possessions. The principal difference is the addition of a silvery cord that trails from between the shoulder blades of the astral form. The cord fades from view after 1 foot. If the cord is cut—which happens only when an effect states that it does so—the target's body and astral form both die.
+
+    A target's astral form can travel through the Astral Plane. The moment an astral form leaves that plane, the target's body and possessions travel along the silver cord, causing the target to re-enter its body on the new plane.
+
+    Any damage or other effects that apply to an astral form have no effect on the target's body and vice versa. If a target's body or astral form drops to 0 Hit Points, the spell ends for that target. The spell ends for all the targets if you take a Magic action to dismiss it.
+
+    When the spell ends for a target who isn't dead, the target reappears in its body and exits the state of suspended animation.

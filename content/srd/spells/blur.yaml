@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: blur
+name: 朦朧術
+nameEn: Blur
+source: srd
+level: 2
+school: illusion
+classes: [ sorcerer, wizard ]
+castingTime: [ action ]
+range: self
+components: [ V ]
+duration: { minutes: 1 }
+concentration: true
+site:
+  body: |-
+    - 你的身體變得模糊；持續時間內，任何生物對你進行的攻擊檢定具有劣勢
+    - 以盲視或真實視覺察覺你的攻擊者免疫此效果
+srd:
+  body: |-
+    你的身體變得模糊。在持續時間內，任何生物對你進行的攻擊檢定都具有劣勢。若攻擊者以盲視或真實視覺感知你，則對此效果免疫。
+en:
+  body: |-
+    Your body becomes blurred. For the duration, any creature has Disadvantage on attack rolls against you. An attacker is immune to this effect if it perceives you with Blindsight or Truesight.

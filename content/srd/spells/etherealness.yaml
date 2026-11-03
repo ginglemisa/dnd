@@ -1,0 +1,34 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: etherealness
+name: 以太化
+nameEn: Etherealness
+source: srd
+level: 7
+school: conjuration
+classes: [ bard, cleric, sorcerer, warlock, wizard ]
+castingTime: [ action ]
+range: self
+components: [ V, S ]
+duration: { hours: 8, upTo: true }
+srd:
+  body: |-
+    你踏入以太位面的邊緣地帶，那裡與你目前所在的位面重疊。你在持續時間內停留於邊緣以太。在此期間，你可以向任何方向移動。如果你向上或向下移動，每移動1呎需額外耗費1呎的移動力。你能感知你離開的位面，它看起來呈灰色，且你無法看見該處超過60呎遠的任何事物。
+
+    身處以太位面時，你只能影響位於該位面的生物、物體與效果，也只會受到它們的影響。不在以太位面的生物無法感知你或與你互動，除非某項特性賦予它們這種能力。
+
+    法術結束時，你會回到你離開的位面，出現在與你在邊緣以太中所處空間相對應的位置。如果你出現在已被佔據的空間，你會被推到最近的未被佔據空間，並受到等同於你被移動呎數兩倍的力場傷害。
+
+    如果你在身處以太位面，或身處不與其相鄰的位面（例如外層位面之一）時施放此法術，此法術會立即結束。
+
+    _使用更高環階法術位。_ 每高於7環的法術位環階，你可以多選擇最多三名自願的生物（包括你自己）作為目標。施放法術時，這些生物必須在你10呎內。
+en:
+  body: |-
+    You step into the border regions of the Ethereal Plane, where it overlaps with your current plane. You remain in the Border Ethereal for the duration. During this time, you can move in any direction. If you move up or down, every foot of movement costs an extra foot. You can perceive the plane you left, which looks gray, and you can't see anything there more than 60 feet away.
+
+    While on the Ethereal Plane, you can affect and be affected only by creatures, objects, and effects on that plane. Creatures that aren't on the Ethereal Plane can't perceive or interact with you unless a feature gives them the ability to do so.
+
+    When the spell ends, you return to the plane you left in the spot that corresponds to your space in the Border Ethereal. If you appear in an occupied space, you are shunted to the nearest unoccupied space and take Force damage equal to twice the number of feet you are moved.
+
+    This spell ends instantly if you cast it while you are on the Ethereal Plane or a plane that doesn't border it, such as one of the Outer Planes.
+
+    _Using a Higher-Level Spell Slot._ You can target up to three willing creatures (including yourself) for each spell slot level above 7. The creatures must be within 10 feet of you when you cast the spell.

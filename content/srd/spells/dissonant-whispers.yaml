@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: dissonant-whispers
+name: 不諧低語
+nameEn: Dissonant Whispers
+source: srd
+level: 1
+school: enchantment
+classes: [ bard ]
+castingTime: [ action ]
+range: { feet: 60 }
+components: [ V ]
+duration: instantaneous
+upcast: true
+site:
+  outcomes:
+    - { kind: damage, formula: 3d6, upcastDice: 1d6, damageType: psychic, autoOnCast: true, context: 豁免依規則處理 }
+  body: |-
+    - 射程內一個你選擇且你能看見的生物在腦中聽見不和諧的旋律，須進行感知豁免
+    - 豁免失敗時，目標受到3d6心靈傷害，且若它的反應動作可用，必須立即使用反應動作，以最安全的路線盡可能遠離你
+    - 豁免成功時，目標只受到一半傷害
+    - 使用更高環階法術位：每比1環高一環，傷害增加1d6
+srd:
+  body: |-
+    你選擇射程內一個你能看見的生物，它會在腦海中聽見一段不和諧的旋律。目標進行一次感知豁免。豁免失敗時，它受到3d6心靈傷害，並且必須立即使用其反應動作（若可用），沿著最安全的路線盡可能遠離你。豁免成功時，目標只受到一半傷害。
+
+    _使用更高環階法術位。_ 每比1環高一環，傷害增加1d6。
+en:
+  body: |-
+    One creature of your choice that you can see within range hears a discordant melody in its mind. The target makes a Wisdom saving throw. On a failed save, it takes 3d6 Psychic damage and must immediately use its Reaction, if available, to move as far away from you as it can, using the safest route. On a successful save, the target takes half as much damage only.
+
+    _Using a Higher-Level Spell Slot._ The damage increases by 1d6 for each spell slot level above 1.

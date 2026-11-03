@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: illusory-script
+name: 迷幻手稿
+nameEn: Illusory Script
+source: srd
+level: 1
+school: illusion
+classes: [ bard, warlock, wizard ]
+castingTime: [ { minutes: 1 } ]
+ritual: true
+range: touch
+components: [ S, M ]
+duration: { days: 10 }
+site:
+  material: 價值至少10 GP的墨水（施法時消耗）
+  body: |-
+    - 在羊皮紙、紙張或其他合適材料上書寫，並為其注入持續到法術結束的幻象
+    - 對你與施法時你指定的任何生物，文字看起來正常、像是你的筆跡，並傳達你書寫時想表達的意思
+    - 對其他所有人，文字看起來像是以未知或魔法文字寫成，無法理解
+    - 或者，幻象可以改變文字的意思、筆跡與語言，但語言必須是你所知的語言
+    - 若此法術被解除，原本的文字與幻象都會消失
+    - 具有真實視覺的生物可以讀出隱藏的訊息
+srd:
+  material: 價值10+ GP的墨水，法術會將其消耗
+  body: |-
+    你在羊皮紙、紙張或其他適合的材料上書寫，並賦予其一個在持續時間內持續存在的幻象。對你以及你施放法術時指定的任何生物而言，這些文字看起來正常，似乎是以你的筆跡寫成，並傳達你書寫該文字時所意圖的任何含義。對所有其他人而言，這些文字看起來彷彿是以一種不明或魔法的文字寫成，無法辨讀。或者，該幻象也可以改變文字的含義、筆跡與語言，不過該語言必須是你所知的語言。
+
+    若法術被解除，原本的文字與幻象都會消失。
+
+    具有真實視覺的生物可以讀出隱藏的訊息。
+en:
+  material: ink worth 10+ GP, which the spell consumes
+  body: |-
+    You write on parchment, paper, or another suitable material and imbue it with an illusion that lasts for the duration. To you and any creatures you designate when you cast the spell, the writing appears normal, seems to be written in your hand, and conveys whatever meaning you intended when you wrote the text. To all others, the writing appears as if it were written in an unknown or magical script that is unintelligible. Alternatively, the illusion can alter the meaning, handwriting, and language of the text, though the language must be one you know.
+
+    If the spell is dispelled, the original script and the illusion both disappear.
+
+    A creature that has Truesight can read the hidden message.

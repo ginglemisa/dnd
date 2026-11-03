@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: hypnotic-pattern
+name: 催眠圖紋
+nameEn: Hypnotic Pattern
+source: srd
+level: 3
+school: illusion
+classes: [ bard, sorcerer, warlock, wizard ]
+castingTime: [ action ]
+range: { feet: 120 }
+components: [ S, M ]
+duration: { minutes: 1 }
+concentration: true
+site:
+  material: 一撮五彩紙屑
+  body: |-
+    - 在射程內邊長30呎的立方體中創造一個扭曲的彩色圖紋；圖紋出現片刻後消失
+    - 區域內每個能看見圖紋的生物須進行感知豁免；失敗時在持續時間內陷入魅惑狀態
+    - 處於魅惑狀態期間，該生物陷入失能狀態，且速度為0
+    - 受影響的生物受到任何傷害，或其他人用一個動作將它從恍惚中搖醒時，法術對它結束
+srd:
+  material: 一撮彩紙屑
+  body: |-
+    你在射程內創造一個30呎立方體的扭動彩色圖紋。圖紋短暫出現後隨即消失。區域內每個能看見該圖紋的生物都必須成功通過一次感知豁免，否則在持續時間內陷入魅惑狀態。處於魅惑狀態時，該生物陷入失能狀態，且速度為0。
+
+    若受影響的生物受到任何傷害，或其他人用一個動作將該生物從恍惚中搖醒，法術對該生物結束。
+en:
+  material: a pinch of confetti
+  body: |-
+    You create a twisting pattern of colors in a 30-foot Cube within range. The pattern appears for a moment and vanishes. Each creature in the area who can see the pattern must succeed on a Wisdom saving throw or have the Charmed condition for the duration. While Charmed, the creature has the Incapacitated condition and a Speed of 0.
+
+    The spell ends for an affected creature if it takes any damage or if someone else uses an action to shake the creature out of its stupor.

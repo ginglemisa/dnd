@@ -561,6 +561,79 @@ function appendSpellDescContent(container, raw, appendText = (target, text) => t
   return container;
 }
 
+// 法術詳情的「網站版｜SRD 版」切換：法術頁、法術書、跑團與搜尋的法術詳情共用。
+// renderSite(container) 畫出網站版（各處原本的內容），每次開啟都先顯示網站版；SRD 版唯讀、沒有擲骰按鈕，
+// 第一次切換時才載入譯文。法術沒有 SRD 版（例如自創法術）時只畫網站版；renderSite 為 null（只供查閱的法術）時只顯示 SRD 版。
+function createSpellVersionView(spellId, renderSite) {
+  const view = document.createElement("div");
+  view.className = "spell-version";
+  const site = document.createElement("div");
+  site.className = "spell-version__site";
+  if (renderSite) renderSite(site);
+  if (!window.SpellCatalog?.hasSrdText?.(spellId)) {
+    view.appendChild(site);
+    return view;
+  }
+  const srd = document.createElement("div");
+  srd.className = "spell-version__srd";
+  const note = text => Object.assign(document.createElement("p"), { className: "spell-note-muted", textContent: text });
+  let loaded = false;
+  const renderSrd = async () => {
+    if (loaded) return;
+    srd.replaceChildren(note("SRD 版載入中…"));
+    const text = await window.SpellCatalog.loadSrdText(spellId).catch(() => null);
+    if (!text) {
+      srd.replaceChildren(note("SRD 版載入失敗，請檢查網路連線後再切換一次。"));
+      return;
+    }
+    loaded = true;
+    const header = document.createElement("div");
+    header.className = "spell-version__srd-header";
+    header.innerHTML = text.header;
+    const body = document.createElement("div");
+    body.className = "spell-version__srd-body";
+    body.innerHTML = text.html;
+    srd.replaceChildren(header, body, Object.assign(document.createElement("p"), {
+      className: "spell-version__attribution", textContent: "譯自 SRD 5.2.1（CC BY 4.0）"
+    }));
+  };
+  if (!renderSite) {
+    view.appendChild(srd);
+    void renderSrd();
+    return view;
+  }
+  const tabs = document.createElement("div");
+  tabs.className = "spell-version__tabs";
+  tabs.setAttribute("role", "group");
+  tabs.setAttribute("aria-label", "說明版本");
+  const buttons = [["site", "網站版"], ["srd", "SRD 版"]].map(([version, label]) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "spell-version__tab";
+    button.dataset.spellVersion = version;
+    button.textContent = label;
+    return button;
+  });
+  const separator = document.createElement("span");
+  separator.setAttribute("aria-hidden", "true");
+  separator.textContent = "｜";
+  tabs.append(buttons[0], separator, buttons[1]);
+  const show = version => {
+    buttons.forEach(button => {
+      const active = button.dataset.spellVersion === version;
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
+    site.hidden = version !== "site";
+    srd.hidden = version !== "srd";
+    if (version === "srd") void renderSrd();
+  };
+  buttons.forEach(button => button.addEventListener("click", () => show(button.dataset.spellVersion)));
+  show("site");
+  view.append(tabs, site, srd);
+  return view;
+}
+
 function renderSpellDescHtml(raw) {
   const text = String(raw ?? "—");
   const withBeastTips = text.includes("召喚一隻魔寵");

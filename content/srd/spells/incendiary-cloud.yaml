@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: incendiary-cloud
+name: 焚雲術
+nameEn: Incendiary Cloud
+source: srd
+level: 8
+school: conjuration
+classes: [ druid, sorcerer, wizard ]
+castingTime: [ action ]
+range: { feet: 150 }
+components: [ V, S ]
+duration: { minutes: 1 }
+concentration: true
+srd:
+  body: |-
+    一團翻騰的餘燼與濃煙雲霧充滿以射程內一點為中心、半徑20呎的球形區域。雲霧所在的區域為重度遮蔽。它會持續到持續時間結束，或直到強風（如_造風術_所產生的風）將其吹散。
+
+    雲霧出現時，其中的每個生物都會進行敏捷豁免，豁免失敗時受到10d8火焰傷害，豁免成功則受到一半傷害。當球形區域移動到生物的空間時，以及生物進入球形區域或在其中結束回合時，該生物也必須進行此豁免。生物每回合只需進行一次此豁免。雲霧會在你的每個回合開始時，朝你選擇的方向遠離你移動10呎。
+en:
+  body: |-
+    A swirling cloud of embers and smoke fills a 20-foot-radius Sphere centered on a point within range. The cloud's area is Heavily Obscured. It lasts for the duration or until a strong wind (like that created by _Gust of Wind_) disperses it.
+
+    When the cloud appears, each creature in it makes a Dexterity saving throw, taking 10d8 Fire damage on a failed save or half as much damage on a successful one. A creature must also make this save when the Sphere moves into its space and when it enters the Sphere or ends its turn there. A creature makes this save only once per turn. The cloud moves 10 feet away from you in a direction you choose at the start of each of your turns.

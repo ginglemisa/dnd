@@ -1,0 +1,49 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: enlarge-reduce
+name: 變巨術/縮小術
+nameEn: Enlarge/Reduce
+source: srd
+level: 2
+school: transmutation
+classes: [ bard, druid, sorcerer, wizard ]
+castingTime: [ action ]
+range: { feet: 30 }
+components: [ V, S, M ]
+duration: { minutes: 1 }
+concentration: true
+site:
+  material: 一撮鐵粉
+  outcomes:
+    - { kind: damage, formula: 1d4, autoOnCast: false, context: 變巨後之後攻擊命中時；傷害類型依原攻擊 }
+  body: |-
+    - 持續時間內，使射程內一個你能看見的生物或物體變大或縮小（見下方所選效果）；作為目標的物體不能被穿戴或攜帶
+    - 若目標是非自願生物，它可以進行體質豁免；成功時法術無效
+    - 目標生物穿戴與攜帶的所有物品隨之改變大小；它放下的物品立即恢復正常大小；投擲武器或彈藥在命中或未命中目標後立即恢復正常大小
+    - 變巨：
+      - 目標的體型增加一級，例如從中型變為大型
+      - 目標進行力量檢定與力量豁免具有優勢
+      - 目標以變大的武器或徒手打擊進行的攻擊，命中時額外造成1d4傷害
+    - 縮小：
+      - 目標的體型減少一級，例如從中型變為小型
+      - 目標進行力量檢定與力量豁免具有劣勢
+      - 目標以縮小的武器或徒手打擊進行的攻擊，命中時傷害減少1d4（傷害不會因此低於1）
+srd:
+  material: 一撮鐵粉
+  body: |-
+    在持續時間內，此法術使你在射程內看得見的一個生物或物體變大或縮小（見下方所選效果）。被指定為目標的物體必須既未被穿戴也未被攜帶。如果目標是不願意的生物，它可以進行一次體質豁免。豁免成功時，法術無效。
+
+    被指定為目標之生物所穿戴與攜帶的一切物品會隨之改變大小。它掉落的任何物品會立即恢復原本大小。投擲出的武器或彈藥在命中或未命中目標後，立即恢復原本大小。
+
+    _變巨。_ 目標的體型增加一個等級，例如從中型變為大型。目標在力量檢定與力量豁免上也具有優勢。目標以其變大的武器或徒手打擊進行的攻擊，命中時額外造成1d4傷害。
+
+    _縮小。_ 目標的體型減少一個等級，例如從中型變為小型。目標在力量檢定與力量豁免上也具有劣勢。目標以其縮小的武器或徒手打擊進行的攻擊，命中時造成的傷害少1d4（此效果不會使傷害降到1以下）。
+en:
+  material: a pinch of powdered iron
+  body: |-
+    For the duration, the spell enlarges or reduces a creature or an object you can see within range (see the chosen effect below). A targeted object must be neither worn nor carried. If the target is an unwilling creature, it can make a Constitution saving throw. On a successful save, the spell has no effect.
+
+    Everything that a targeted creature is wearing and carrying changes size with it. Any item it drops returns to normal size at once. A thrown weapon or piece of ammunition returns to normal size immediately after it hits or misses a target.
+
+    _Enlarge._ The target's size increases by one category—from Medium to Large, for example. The target also has Advantage on Strength checks and Strength saving throws. The target's attacks with its enlarged weapons or Unarmed Strikes deal an extra 1d4 damage on a hit.
+
+    _Reduce._ The target's size decreases by one category—from Medium to Small, for example. The target also has Disadvantage on Strength checks and Strength saving throws. The target's attacks with its reduced weapons or Unarmed Strikes deal 1d4 less damage on a hit (this can't reduce the damage below 1).

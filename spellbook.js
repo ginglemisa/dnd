@@ -251,7 +251,9 @@
         });
         tip.replaceWith(button);
       });
-      body.appendChild(description);
+      body.appendChild(typeof globalScope.createSpellVersionView === "function"
+        ? globalScope.createSpellVersionView(spellId, site => site.appendChild(description))
+        : description);
     } else {
       body.appendChild(node("p", "spell-note-muted", `找不到法術資料：${spellId || "未選擇法術"}。原法術編號仍會保留。`));
     }
@@ -275,7 +277,7 @@
     clear.type = "button";
     clear.hidden = true;
     clear.setAttribute("aria-label", "清除法術搜尋");
-    const schoolOf = spell => spell.desc?.match(/^學派\s*[：:]\s*([^\r\n]+)/mu)?.[1].trim() || "";
+    const schoolOf = spell => catalog().getSpellHeader(spell)?.school || "";
     const filter = node("select");
     filter.setAttribute("aria-label", prepared ? "篩選環階" : "篩選學派");
     filter.dataset.stateTransient = "true";

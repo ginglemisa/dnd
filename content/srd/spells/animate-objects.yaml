@@ -1,0 +1,75 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: animate-objects
+name: 活化物體
+nameEn: Animate Objects
+source: srd
+level: 5
+school: transmutation
+classes: [ bard, sorcerer, wizard ]
+castingTime: [ action ]
+range: { feet: 120 }
+components: [ V, S ]
+duration: { minutes: 1 }
+concentration: true
+srd:
+  body: |-
+    物體會聽從你的命令活動起來。選擇射程內若干個非魔法、未被穿戴或攜帶、未固定於表面且不是超巨型的物體。物體的最大數量等於你的施法屬性調整值；計算此數量時，中型或更小的目標算作一個物體，大型目標算作兩個，巨型目標算作三個。
+
+    每個目標都會活動起來、長出雙腿，並成為使用**活化物體**數據塊的構裝生物；此生物在法術結束前或被降至0生命值前受你控制。你以此法術製造的每個生物，對你和你的盟友而言都是盟友。在戰鬥中，它與你共用同一個先攻順位，並在你之後立即進行其回合。
+
+    在法術結束前，只要以此法術製造的生物位於你500呎內，你就可以用附贈動作以意念指揮它（若你控制多個生物，可以同時指揮其中任何一個，並對每一個下達相同的命令）。若你不下達命令，該生物會採取閃避動作，並且只為了避開傷害而移動。當該生物降至0生命值時，它會恢復為物體形態，任何剩餘的傷害會延續到該形態上。
+
+    _使用更高環階法術位。_ 法術位環階每比5環高一環，該生物的猛擊傷害增加1d4（中型或更小）、1d6（大型）或1d12（巨型）。
+
+    #### 活化物體
+
+    _巨型或更小的構裝生物，無陣營_
+
+    **AC** 15
+    **HP** 10（中型或更小）、20（大型）、40（巨型）
+    **速度** 30呎
+
+    | 調整值 | 豁免 |  | 調整值 | 豁免 |  | 調整值 | 豁免 |  |  |  |  |
+    | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+    | 力量 | 16 | +3 | +3 | 敏捷 | 10 | +0 | +0 | 體質 | 10 | +0 | +0 |
+    | 智力 | 3 | −4 | −4 | 感知 | 3 | −4 | −4 | 魅力 | 1 | −5 | −5 |
+
+    **免疫** 毒素、心靈；魅惑、力竭、恐慌、麻痺、中毒
+    **感官** 盲視30呎；被動察覺6
+    **語言** 理解你所知的語言
+    **CR** 無（XP 0；PB等於你的熟練加值）
+
+    #### 動作
+
+    _猛擊。_ _近戰攻擊檢定：_ 加值等於你的法術攻擊調整值，觸及5呎。_命中：_ 力場傷害，等於1d4 + 3（中型或更小）、2d6 + 3 + 你的施法屬性調整值（大型）或2d12 + 3 + 你的施法屬性調整值（巨型）。
+en:
+  body: |-
+    Objects animate at your command. Choose a number of nonmagical objects within range that aren't being worn or carried, aren't fixed to a surface, and aren't Gargantuan. The maximum number of objects is equal to your spellcasting ability modifier; for this number, a Medium or smaller target counts as one object, a Large target counts as two, and a Huge target counts as three.
+
+    Each target animates, sprouts legs, and becomes a Construct that uses the **Animated Object** stat block; this creature is under your control until the spell ends or until it is reduced to 0 Hit Points. Each creature you make with this spell is an ally to you and your allies. In combat, it shares your Initiative count and takes its turn immediately after yours.
+
+    Until the spell ends, you can take a Bonus Action to mentally command any creature you made with this spell if the creature is within 500 feet of you (if you control multiple creatures, you can command any of them at the same time, issuing the same command to each one). If you issue no commands, the creature takes the Dodge action and moves only to avoid harm. When the creature drops to 0 Hit Points, it reverts to its object form, and any remaining damage carries over to that form.
+
+    _Using a Higher-Level Spell Slot._ The creature's Slam damage increases by 1d4 (Medium or smaller), 1d6 (Large), or 1d12 (Huge) for each spell slot level above 5.
+
+    #### Animated Object
+
+    _Huge or Smaller Construct, Unaligned_
+
+    **AC** 15
+    **HP** 10 (Medium or smaller), 20 (Large), 40 (Huge)
+    **Speed** 30 ft.
+
+    | MOD | SAVE |  | MOD | SAVE |  | MOD | SAVE |  |  |  |  |
+    | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+    | STR | 16 | +3 | +3 | DEX | 10 | +0 | +0 | CON | 10 | +0 | +0 |
+    | INT | 3 | −4 | −4 | WIS | 3 | −4 | −4 | CHA | 1 | −5 | −5 |
+
+    **Immunities** Poison, Psychic; Charmed, Exhaustion, Frightened, Paralyzed, Poisoned
+    **Senses** Blindsight 30 ft.; Passive Perception 6
+    **Languages** Understands the languages you know
+    **CR** None (XP 0; PB equals your Proficiency Bonus)
+
+    #### Actions
+
+    _Slam._ _Melee Attack Roll:_ Bonus equals your spell attack modifier, reach 5 ft. _Hit:_ Force damage equal to 1d4 + 3 (Medium or smaller), 2d6 + 3 + your spellcasting ability modifier (Large), or 2d12 + 3 + your spellcasting ability modifier (Huge).

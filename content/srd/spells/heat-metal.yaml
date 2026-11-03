@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: heat-metal
+name: 灼熱金屬
+nameEn: Heat Metal
+source: srd
+level: 2
+school: transmutation
+classes: [ bard, druid ]
+castingTime: [ action ]
+range: { feet: 60 }
+components: [ V, S, M ]
+duration: { minutes: 1 }
+concentration: true
+upcast: true
+site:
+  material: 一塊鐵和一團火焰
+  outcomes:
+    - { kind: damage, formula: 2d8, upcastDice: 1d8, damageType: fire, autoOnCast: true, context: 施法時接觸物品者的傷害；後續附贈動作傷害另擲 }
+  body: |-
+    - 選擇射程內一個你能看見的人造金屬物體，例如一把金屬武器或一套重型或中型金屬護甲，使其發出紅熱的光
+    - 施法時，與該物體有身體接觸的任何生物受到2d8火焰傷害
+    - 法術結束前，若物體仍在射程內，你可以在之後的每個回合用附贈動作再次造成此傷害
+    - 持握或穿戴該物體的生物受到其傷害時，須進行體質豁免；失敗時若能夠，必須放下該物體
+    - 若生物沒有放下該物體，它在你下個回合開始前進行攻擊檢定與屬性檢定具有劣勢
+    - 使用更高環階法術位：每比2環高一環，傷害增加1d8
+srd:
+  material: 一塊鐵與一團火焰
+  body: |-
+    選擇你在射程內能看見的一件人造金屬物體，例如金屬武器或一套重型或中型金屬護甲。你使該物體發出赤紅的熾熱光芒。與該物體有身體接觸的任何生物，在你施放法術時受到2d8火焰傷害。在法術結束前，只要該物體在射程內，你可以在之後每個回合用附贈動作再次造成這項傷害。
+
+    如果有生物正持握或穿戴該物體並受到它造成的傷害，該生物必須成功通過體質豁免，否則在能夠的情況下必須鬆手丟下該物體。如果它沒有丟下該物體，則在你下個回合開始前，它的攻擊檢定與屬性檢定具有劣勢。
+
+    _使用更高環階法術位。_ 法術位環階每比2環高一環，傷害增加1d8。
+en:
+  material: a piece of iron and a flame
+  body: |-
+    Choose a manufactured metal object, such as a metal weapon or a suit of Heavy or Medium metal armor, that you can see within range. You cause the object to glow red-hot. Any creature in physical contact with the object takes 2d8 Fire damage when you cast the spell. Until the spell ends, you can take a Bonus Action on each of your later turns to deal this damage again if the object is within range.
+
+    If a creature is holding or wearing the object and takes the damage from it, the creature must succeed on a Constitution saving throw or drop the object if it can. If it doesn't drop the object, it has Disadvantage on attack rolls and ability checks until the start of your next turn.
+
+    _Using a Higher-Level Spell Slot._ The damage increases by 1d8 for each spell slot level above 2.

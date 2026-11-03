@@ -1113,7 +1113,7 @@
       return Boolean(invocation) && !(invocation.minWarlockLevel > 1);
     });
   }
-  function isRitualSpell(spell) { return Boolean(spell) && /儀式/u.test(spell.desc || ""); }
+  function isRitualSpell(spell) { return Boolean(spell) && SpellCatalog.isRitual(spell); }
   function knownSpellSources(target, excludedFeature = "") {
     const map = new Map();
     (target.acquisitions.spells || []).forEach(item => {
@@ -3781,6 +3781,9 @@
     const content = modal.querySelector("#quick-build-spell-detail-content");
     const prepareFooter = modal.querySelector(".quick-build-spell-prepare");
     modal.querySelector("#quick-build-spell-detail-title").textContent = "法術詳情";
+    // 只供查閱的法術（沒有網站版）只顯示 SRD 版，不詢問是否準備。
+    const lookupOnly = Boolean(spell) && typeof spell === "object" && !canonicalSpell(spell.spellId);
+    if (lookupOnly) options = { ...options, askToPrepare: false };
     prepareFooter.hidden = !options.askToPrepare;
     modal.querySelector("#quick-build-spell-prepare-question").textContent = options.question || "是否準備這個法術？";
     modal.querySelector(".quick-build-spell-prepare-confirm").textContent = options.confirmLabel || "準備法術";
@@ -3794,9 +3797,14 @@
     prepareFooter.classList.toggle("has-spellbook-action", Boolean(spellbookWriteAction));
     spellDetailTrigger = trigger || document.activeElement;
     const record = typeof spell === "string" ? canonicalSpell(spell) : spell;
-    content.innerHTML = record ? `<strong>${escapeHtml(spellDisplayName(record.spellId))}</strong>` : "<span>你還沒有選擇法術喔！</span>";
-    if (record && typeof window.appendSpellDescContent === "function") window.appendSpellDescContent(content, record.desc);
-    else if (record) content.append(record.desc || "");
+    const displayName = record && (lookupOnly ? `${record.nameZh} ${record.nameEn}` : spellDisplayName(record.spellId));
+    content.innerHTML = record ? `<strong>${escapeHtml(displayName)}</strong>` : "<span>你還沒有選擇法術喔！</span>";
+    const renderSite = lookupOnly ? null : target => {
+      if (typeof window.appendSpellDescContent === "function") window.appendSpellDescContent(target, record.desc);
+      else target.append(record.desc || "");
+    };
+    if (record && typeof window.createSpellVersionView === "function") content.appendChild(window.createSpellVersionView(record.spellId, renderSite));
+    else if (record && renderSite) renderSite(content);
     if (options.stateNote) {
       const note = document.createElement("p");
       note.textContent = options.stateNote;

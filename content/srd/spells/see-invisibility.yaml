@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: see-invisibility
+name: 識破隱形
+nameEn: See Invisibility
+source: srd
+level: 2
+school: divination
+classes: [ bard, sorcerer, wizard ]
+castingTime: [ action ]
+range: self
+components: [ V, S, M ]
+duration: { hours: 1 }
+site:
+  material: 一撮滑石粉
+  body: |-
+    - 持續時間內，你能看見處於隱形狀態的生物與物體，如同它們可見
+    - 你也能看進以太位面；那裡的生物與物體看起來如幽魂般朦朧
+srd:
+  material: 一小撮滑石粉
+  body: |-
+    在持續時間內，你能看見陷入隱形狀態的生物與物體，就如同它們是可見的一般，並且你能看進以太位面。位於以太位面的生物與物體看起來如幽靈一般。
+en:
+  material: a pinch of talc
+  body: |-
+    For the duration, you see creatures and objects that have the Invisible condition as if they were visible, and you can see into the Ethereal Plane. Creatures and objects there appear ghostly.

@@ -293,17 +293,14 @@
 
   function getSelectedSpellEntries(mode) {
     if (typeof SpellCatalog === "undefined") return [];
-    const timingPattern = mode === "action"
-      ? /施法時間[ \t]*[：:][ \t]*動作(?:或(?:儀式|\d+[ \t]*(?:分鐘|小時)))?(?=[ \t]*(?:\r?\n|$))/u
-      : mode === "bonus"
-        ? /施法時間\s*[：:]\s*附贈動作/u
-        : /施法時間\s*[：:]\s*反應動作/u;
+    // 施法時間讀法術目錄的結構化欄位（可有多種，例如植物滋長的動作或 8 小時）。
+    const castingTime = mode === "action" ? "action" : mode === "bonus" ? "bonus-action" : "reaction";
     return (globalScope.SpellManagement?.getEntries({ availableOnly: true }) || []).flatMap(entry => {
       const spellId = entry.spellId || "";
       const spell = SpellCatalog.getSpell(spellId);
       // 燃火術以附贈動作施法，也能以魔法動作投擲現有火焰。
       const isProduceFlameAction = spellId === "produce-flame" && mode === "action";
-      if (!spell || (!isProduceFlameAction && !timingPattern.test(spell.desc || ""))) return [];
+      if (!spell || (!isProduceFlameAction && !SpellCatalog.getCastingTimes(spellId).includes(castingTime))) return [];
       const sourceTag = typeof globalScope.getPickedSpellSourceTag === "function"
         ? globalScope.getPickedSpellSourceTag(entry)
         : "";
@@ -320,7 +317,7 @@
         label: spell.nameZh,
         source: FEATURE_SOURCE_LABELS.spell,
         buttonTag: shortSourceLabel ? `${levelTag} · ${shortSourceLabel}` : levelTag,
-        description: spell.desc,
+        description: SpellCatalog.getTabletopText(spellId),
         dynamic: true
       }];
     });

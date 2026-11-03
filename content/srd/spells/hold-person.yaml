@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: hold-person
+name: 人類定身術
+nameEn: Hold Person
+source: srd
+level: 2
+school: enchantment
+classes: [ bard, cleric, druid, sorcerer, warlock, wizard ]
+castingTime: [ action ]
+range: { feet: 60 }
+components: [ V, S, M ]
+duration: { minutes: 1 }
+concentration: true
+upcast: true
+site:
+  material: 一根直鐵條
+  body: |-
+    - 選擇射程內一個你能看見的人型生物；目標須進行感知豁免，失敗時在持續時間內陷入麻痺狀態
+    - 目標在它每個回合結束時重複豁免；成功時法術對它結束
+    - 使用更高環階法術位：每比2環高一環，可額外以一個人型生物為目標
+srd:
+  material: 一根筆直的鐵片
+  body: |-
+    選擇射程內一個你能看見的人型生物。目標必須成功通過一次感知豁免，否則在持續時間內陷入麻痺狀態。在目標每個回合結束時，它重複進行該豁免，成功則結束其身上的此法術。
+
+    _使用更高環階法術位。_ 法術位環階每比2環高一環，你可以多指定一個人型生物為目標。
+en:
+  material: a straight piece of iron
+  body: |-
+    Choose a Humanoid that you can see within range. The target must succeed on a Wisdom saving throw or have the Paralyzed condition for the duration. At the end of each of its turns, the target repeats the save, ending the spell on itself on a success.
+
+    _Using a Higher-Level Spell Slot._ You can target one additional Humanoid for each spell slot level above 2.

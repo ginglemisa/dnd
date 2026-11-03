@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: thunderwave
+name: 雷鳴波
+nameEn: Thunderwave
+source: srd
+level: 1
+school: evocation
+classes: [ bard, druid, sorcerer, wizard ]
+castingTime: [ action ]
+range: self
+components: [ V, S ]
+duration: instantaneous
+upcast: true
+site:
+  outcomes:
+    - { kind: damage, formula: 2d8, upcastDice: 1d8, damageType: thunder, autoOnCast: true, context: 區域傷害擲一次；豁免依規則處理 }
+  body: |-
+    - 釋放一陣雷鳴能量波；從你身上發出、邊長15呎的立方體內，每個生物須進行體質豁免
+    - 豁免失敗時，生物受到2d8雷鳴傷害，並被推離你10呎；豁免成功時只受到一半傷害
+    - 此外，完全位於立方體內且未固定的物體會被推離你10呎，並發出300呎內都能聽見的雷鳴巨響
+    - 使用更高環階法術位：每比1環高一環，傷害增加1d8
+srd:
+  body: |-
+    你釋放出一道雷鳴能量波。以你為起點的15呎立方體內的每個生物都要進行一次體質豁免。豁免失敗時，生物受到2d8雷鳴傷害，並被推離你10呎。豁免成功時，生物只受到一半傷害。
+
+    此外，完全位於該立方體內、未被固定的物體會被推離你10呎，並且300呎內都能聽見雷鳴般的巨響。
+
+    _使用更高環階法術位。_ 法術位環階每高於1環一環，傷害增加1d8。
+en:
+  body: |-
+    You unleash a wave of thunderous energy. Each creature in a 15-foot Cube originating from you makes a Constitution saving throw. On a failed save, a creature takes 2d8 Thunder damage and is pushed 10 feet away from you. On a successful save, a creature takes half as much damage only.
+
+    In addition, unsecured objects that are entirely within the Cube are pushed 10 feet away from you, and a thunderous boom is audible within 300 feet.
+
+    _Using a Higher-Level Spell Slot._ The damage increases by 1d8 for each spell slot level above 1.

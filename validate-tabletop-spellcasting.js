@@ -24,7 +24,8 @@ function canParseDiceExpression(expression) {
   return /^\d+d(?:100|20|12|10|8|6|4)(?:[+-](?:\d+d(?:100|20|12|10|8|6|4)|\d+))*$/.test(compact);
 }
 
-const spellSource = fs.readFileSync("spell-list.js", "utf8");
+// 法術資料來自 npm run build 產生的 spell-content.generated.js（spell-list.js 只建立索引與 API）。
+const spellSource = `${fs.readFileSync("spell-content.generated.js", "utf8")}\n${fs.readFileSync("spell-list.js", "utf8")}`;
 const catalog = loadSpellCatalog(spellSource);
 for (let level = 1; level <= 9; level += 1) {
   const outcome = catalog.resolveCastOutcomes("false-life", { effectiveLevel: level })[0];
@@ -112,18 +113,23 @@ expectedCantripIds.forEach(spellId => {
 assert.equal(catalog.resolveCastOutcomes("produce-flame")[0].autoOnCast, true, "燃火術必須直接擲傷害");
 assert.equal(catalog.resolveCastOutcomes("sorcerous-burst", { characterLevel: 5 }).length, 1, "術法衝擊只產生基礎傷害結果");
 
-const ritualIdsFromText = spells
-  .filter(spell => /^施法時間\s*[:：][^\n]*儀式/im.test(spell.desc))
-  .map(spell => spell.spellId);
-const structuredRitualIds = spells.filter(spell => catalog.isRitual(spell)).map(spell => spell.spellId);
-assertSameValues(structuredRitualIds, ritualIdsFromText, "儀式結構化資料必須完整對應專案法術文字");
-
-const upcastTextPattern = /(?:更高環階|提升法術位|高階法術位|提升\s*[:：])/;
-const upcastIdsFromText = spells
-  .filter(spell => spell.level > 0 && upcastTextPattern.test(spell.desc))
-  .map(spell => spell.spellId);
-const structuredUpcastIds = spells.filter(spell => catalog.hasUpcastEffect(spell)).map(spell => spell.spellId);
-assertSameValues(structuredUpcastIds, upcastIdsFromText, "升環結構化資料必須完整對應專案法術文字");
+// 儀式、升環、專注與施法時間是內容檔的結構化欄位（建置核對升環與網站版說明）；網站讀欄位，不解析說明文字。
+assert.equal(spells.filter(spell => catalog.isRitual(spell)).length, 23, "儀式法術應為 23 個");
+assert.equal(spells.filter(spell => catalog.hasUpcastEffect(spell)).length, 79, "有升環效果的法術應為 79 個");
+assert.deepEqual([...catalog.getCastingTimes("plant-growth")].map(time => JSON.stringify(time)), ["\"action\"", "{\"hours\":8}"], "植物滋長有動作與 8 小時兩種施法時間");
+assert.deepEqual([...catalog.getCastingTimes("shield")], ["reaction"], "護盾術以反應動作施放");
+assert.equal(catalog.getSpellHeader("shield").castingTime, "反應動作，當你被攻擊檢定命中或成為魔法飛彈的目標時", "觸發條件接在施法時間後");
+const laughter = catalog.getSpellHeader("hideous-laughter");
+assert.deepEqual({ school: laughter.school, range: laughter.range, components: laughter.components, material: laughter.material, duration: laughter.duration, concentration: laughter.concentration, ritual: laughter.ritual, hasMaterial: laughter.hasMaterial },
+  { school: "惑控", range: "30呎", components: "V、S、M", material: "一個水果小餡餅和一片羽毛", duration: "專注，最長1分鐘", concentration: true, ritual: false, hasMaterial: true }, "法術標頭各項");
+assert.equal(catalog.getSpellHeader("detect-magic").castingTime, "動作或儀式", "儀式顯示在施法時間後");
+assert.equal(catalog.isConcentration({ spellId: "custom-spell-x", concentration: true }), true, "目錄外的法術物件讀其 concentration");
+assert.equal(catalog.isConcentration({ spellId: "custom-spell-x", desc: "持續時間: 專注，最長1分鐘" }), false, "專注不從說明文字判斷");
+assert.equal(catalog.getSpellHeader("wish"), undefined, "只供查閱的法術沒有可用法術的標頭");
+spells.forEach(spell => {
+  assert.equal(catalog.getTabletopText(spell.spellId), spell.desc, `${spell.spellId} 沒有跑團版說明時用網站版說明`);
+  assert(spell.desc.startsWith(`學派: ${catalog.getSpellHeader(spell.spellId).school}\n施法時間: `), `${spell.spellId} 說明開頭為規則欄位產生的標頭`);
+});
 
 const allowedDamageTypes = new Set(Object.keys(catalog.damageTypeLabels));
 let outcomeCount = 0;
@@ -533,8 +539,8 @@ console.log(JSON.stringify({
   uniqueSpellIds: new Set(spellIds).size,
   leveledCastable: spells.filter(spell => spell.level > 0 && catalog.canCastFromTabletop(spell.spellId)).length,
   castableCantrips: castableCantripIds.length,
-  rituals: structuredRitualIds.length,
-  upcastSpells: structuredUpcastIds.length,
+  rituals: spells.filter(spell => catalog.isRitual(spell)).length,
+  upcastSpells: spells.filter(spell => catalog.hasUpcastEffect(spell)).length,
   spellsWithOutcomes: spells.filter(spell => catalog.getCastMetadata(spell.spellId).outcomes.length).length,
   outcomes: outcomeCount,
   autoOnCastOutcomes: autoOutcomeCount,

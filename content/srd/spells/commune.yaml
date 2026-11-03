@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: commune
+name: 通神術
+nameEn: Commune
+source: srd
+level: 5
+school: divination
+classes: [ cleric ]
+castingTime: [ { minutes: 1 } ]
+ritual: true
+range: self
+components: [ V, S, M ]
+duration: { minutes: 1 }
+srd:
+  material: 香
+  body: |-
+    你聯繫一位神祇或神祇的代理者，並提出最多三個可用「是」或「否」回答的問題。你必須在法術結束前提出你的問題。每個問題你都會得到正確的答案。
+
+    神聖存有並不一定無所不知，因此如果問題涉及超出該神祇所知範圍的資訊，你可能會得到「不明」的答案。如果單一詞語的答案可能產生誤導，或違背該神祇的利益，DM可能會改以一句簡短的話作為答案。
+
+    如果你在完成一次長休之前不只一次施放此法術，則第一次之後的每次施放，都有累計25%的機率讓你得不到任何答案。
+en:
+  material: incense
+  body: |-
+    You contact a deity or a divine proxy and ask up to three questions that can be answered with yes or no. You must ask your questions before the spell ends. You receive a correct answer for each question.
+
+    Divine beings aren't necessarily omniscient, so you might receive "unclear" as an answer if a question pertains to information that lies beyond the deity's knowledge. In a case where a one-word answer could be misleading or contrary to the deity's interests, the GM might offer a short phrase as an answer instead.
+
+    If you cast the spell more than once before finishing a Long Rest, there is a cumulative 25 percent chance for each casting after the first that you get no answer.

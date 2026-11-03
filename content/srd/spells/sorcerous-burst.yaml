@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: sorcerous-burst
+name: 術法衝擊
+nameEn: Sorcerous Burst
+source: srd
+level: 0
+school: evocation
+classes: [ sorcerer ]
+castingTime: [ action ]
+range: { feet: 120 }
+components: [ V, S ]
+duration: instantaneous
+site:
+  outcomes:
+    - { kind: damage, attack: spell, formula: 1d8, cantripAt5: 2d8, damageTypes: [ acid, cold, fire, lightning, poison, psychic, thunder ], autoOnCast: true, context: 命中時基礎傷害；擲出 8 的額外骰依術文手動處理 }
+  body: |-
+    - 向射程內一個生物或物體投射術法能量，對目標進行一次遠程法術攻擊
+    - 命中時，目標受到1d8傷害，傷害類型由你從強酸、冷凍、火焰、閃電、毒素、心靈或雷鳴中選擇
+    - 此法術的任一顆d8擲出8時，可以再擲一顆d8並加入傷害
+    - 每次施放此法術，以此方式額外加入的d8數量上限等於你的施法屬性調整值
+    - 戲法升級：5級時傷害提升為2d8
+srd:
+  body: |-
+    你向射程內的一個生物或物體投射術法能量。對目標進行一次遠程法術攻擊。命中時，目標受到1d8你所選類型的傷害：強酸、冷凍、火焰、閃電、毒素、心靈或雷鳴。
+
+    若你為此法術擲出的d8擲出8，你可以再擲一顆d8並加入傷害。當你施放此法術時，你可以加入傷害的這類d8的最大數量等於你的施法屬性調整值。
+
+    _戲法升級。_ 當你達到5級（2d8）、11級（3d8）與17級（4d8）時，傷害增加1d8。
+en:
+  body: |-
+    You cast sorcerous energy at one creature or object within range. Make a ranged spell attack against the target. On a hit, the target takes 1d8 damage of a type you choose: Acid, Cold, Fire, Lightning, Poison, Psychic, or Thunder.
+
+    If you roll an 8 on a d8 for this spell, you can roll another d8, and add it to the damage. When you cast this spell, the maximum number of these d8s you can add to the spell's damage equals your spellcasting ability modifier.
+
+    _Cantrip Upgrade._ The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8).

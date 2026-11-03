@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: dream
+name: 託夢術
+nameEn: Dream
+source: srd
+level: 5
+school: illusion
+classes: [ bard, warlock, wizard ]
+castingTime: [ { minutes: 1 } ]
+range: special
+components: [ V, S, M ]
+duration: { hours: 8 }
+srd:
+  material: 一把沙子
+  body: |-
+    你選定同一位面中一個你認識的生物為目標。你或你接觸的一個自願生物進入恍惚狀態，充當夢境信使。處於恍惚期間，信使陷入失能狀態，且速度為0。
+
+    若目標正在睡眠，信使會出現在目標的夢中，並且只要目標持續沉睡，就能在法術的持續時間內與目標交談。信使也可以塑造夢境的環境，創造地貌、物體與其他影像。信使可以隨時脫離恍惚狀態，使法術結束。目標醒來後能完整記得這場夢。
+
+    若你施放法術時目標是清醒的，信使會知道這件事，並且可以選擇結束恍惚（同時結束法術），或等待目標入睡，屆時信使便進入其夢中。
+
+    你可以讓信使對目標而言顯得可怕。若你這麼做，信使可以傳達不超過十個字的訊息，然後目標進行一次感知豁免。豁免失敗時，目標無法從休息中獲得任何益處，且在醒來時受到3d6心靈傷害。
+en:
+  material: a handful of sand
+  body: |-
+    You target a creature you know on the same plane of existence. You or a willing creature you touch enters a trance state to act as a dream messenger. While in the trance, the messenger is Incapacitated and has a Speed of 0.
+
+    If the target is asleep, the messenger appears in the target's dreams and can converse with the target as long as it remains asleep, through the spell's duration. The messenger can also shape the dream's environment, creating landscapes, objects, and other images. The messenger can emerge from the trance at any time, ending the spell. The target recalls the dream perfectly upon waking.
+
+    If the target is awake when you cast the spell, the messenger knows it and can either end the trance (and the spell) or wait for the target to sleep, at which point the messenger enters its dreams.
+
+    You can make the messenger terrifying to the target. If you do so, the messenger can deliver a message of no more than ten words, and then the target makes a Wisdom saving throw. On a failed save, the target gains no benefit from its rest, and it takes 3d6 Psychic damage when it wakes up.

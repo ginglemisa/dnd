@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: modify-memory
+name: 篡改記憶
+nameEn: Modify Memory
+source: srd
+level: 5
+school: enchantment
+classes: [ bard, wizard ]
+castingTime: [ action ]
+range: { feet: 30 }
+components: [ V, S ]
+duration: { minutes: 1 }
+concentration: true
+srd:
+  body: |-
+    你試圖重塑另一個生物的記憶。你能看見的射程內一個生物進行一次感知豁免。若你正與該生物交戰，它在這次豁免上具有優勢。豁免失敗時，目標在持續時間內陷入魅惑狀態。以此方式被魅惑期間，目標同時陷入失能狀態，且對周遭環境毫無察覺，不過它仍能聽見你的聲音。若它受到任何傷害，或被另一個法術指定為目標，此法術即結束，且不會修改任何記憶。
+
+    在這種魅惑持續期間，你可以影響目標對某個事件的記憶，該事件須是它在過去24小時內經歷的，且持續不超過10分鐘。你可以永久抹除對該事件的所有記憶、讓目標極為清晰地回想起該事件、改變它對該事件細節的記憶，或創造出另一個事件的記憶。
+
+    你必須對目標說話，描述它的記憶要如何被影響，且它必須能聽懂你的語言，被修改的記憶才能生根。它的心智會自行填補你描述中的任何細節空缺。若法術在你描述完被修改的記憶之前就結束，該生物的記憶不會被改變。否則，被修改的記憶會在法術結束時定型。
+
+    被修改的記憶不一定會影響生物的行為，尤其是當該記憶與生物的天性、陣營或信念相抵觸時。不合邏輯的被修改記憶（例如一段虛假記憶，記得該生物多麼喜歡在強酸中游泳）會被當成一場噩夢而不予理會。DM可能認定某個被修改的記憶太過荒謬，不足以影響生物。
+
+    對目標施放_移除詛咒_或_高等復原術_，可以恢復該生物真正的記憶。
+
+    _使用更高環階法術位。_ 你可以更改目標對過去至多7天前發生之事件（6環法術位）、30天前（7環法術位）、365天前（8環法術位），或該生物過去任何時間（9環法術位）的記憶。
+en:
+  body: |-
+    You attempt to reshape another creature's memories. One creature that you can see within range makes a Wisdom saving throw. If you are fighting the creature, it has Advantage on the save. On a failed save, the target has the Charmed condition for the duration. While Charmed in this way, the target also has the Incapacitated condition and is unaware of its surroundings, though it can hear you. If it takes any damage or is targeted by another spell, this spell ends, and no memories are modified.
+
+    While this charm lasts, you can affect the target's memory of an event that it experienced within the last 24 hours and that lasted no more than 10 minutes. You can permanently eliminate all memory of the event, allow the target to recall the event with perfect clarity, change its memory of the event's details, or create a memory of some other event.
+
+    You must speak to the target to describe how its memories are affected, and it must be able to understand your language for the modified memories to take root. Its mind fills in any gaps in the details of your description. If the spell ends before you finish describing the modified memories, the creature's memory isn't altered. Otherwise, the modified memories take hold when the spell ends.
+
+    A modified memory doesn't necessarily affect how a creature behaves, particularly if the memory contradicts the creature's natural inclinations, alignment, or beliefs. An illogical modified memory, such as a false memory of how much the creature enjoyed swimming in acid, is dismissed as a bad dream. The GM might deem a modified memory too nonsensical to affect a creature.
+
+    A _Remove Curse_ or _Greater Restoration_ spell cast on the target restores the creature's true memory.
+
+    _Using a Higher-Level Spell Slot._ You can alter the target's memories of an event that took place up to 7 days ago (level 6 spell slot), 30 days ago (level 7 spell slot), 365 days ago (level 8 spell slot), or any time in the creature's past (level 9 spell slot).

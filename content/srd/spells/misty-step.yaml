@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: misty-step
+name: 迷蹤步
+nameEn: Misty Step
+source: srd
+level: 2
+school: conjuration
+classes: [ sorcerer, warlock, wizard ]
+castingTime: [ bonus-action ]
+range: self
+components: [ V ]
+duration: instantaneous
+site:
+  body: |-
+    - 銀色霧氣短暫圍繞你，你傳送至多30呎，到達一個你能看見的未被佔據空間
+srd:
+  body: |-
+    你被銀色薄霧短暫包圍，傳送至最遠30呎外、你能看見的一處未被佔據的空間。
+en:
+  body: |-
+    Briefly surrounded by silvery mist, you teleport up to 30 feet to an unoccupied space you can see.

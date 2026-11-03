@@ -1,0 +1,91 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: summon-dragon
+name: 龍族召喚術
+nameEn: Summon Dragon
+source: srd
+level: 5
+school: conjuration
+classes: [ wizard ]
+castingTime: [ action ]
+range: { feet: 60 }
+components: [ V, S, M ]
+duration: { hours: 1 }
+concentration: true
+srd:
+  material: 刻有龍的圖像、價值500+ GP的物品
+  body: |-
+    你召喚出一個龍類靈體。它會顯現在射程內你能看見的一個未被佔據空間，並使用龍族靈體數據塊。該生物在生命值降至0時或法術結束時消失。
+
+    該生物是你與你盟友的盟友。戰鬥中，該生物與你共用先攻順位，但在你之後立即行動。它服從你的口頭命令（你不需要消耗動作）。如果你沒有下達任何命令，它會採取閃避動作，並用其移動力避開危險。
+
+    _使用更高環階法術位。_ 數據塊中的法術環階使用法術位的環階。
+
+    ## 龍族靈體
+
+    _大型龍類，中立_
+
+    **AC** 14 + 法術環階
+    **HP** 50 + 每高於5環一環加10
+    **速度** 30呎，飛行60呎，游泳30呎
+
+    | 調整值 | 豁免 |  | 調整值 | 豁免 |  | 調整值 | 豁免 |  |  |  |  |
+    | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+    | 力量 | 19 | +4 | +4 | 敏捷 | 14 | +2 | +2 | 體質 | 17 | +3 | +3 |
+    | 智力 | 10 | +0 | +0 | 感知 | 14 | +2 | +2 | 魅力 | 14 | +2 | +2 |
+
+    **抗性** 強酸、冷凍、火焰、閃電、毒素
+    **免疫** 魅惑、恐慌、中毒
+    **感官** 盲視30呎，黑暗視覺60呎；被動察覺12
+    **語言** 龍語，理解你所知的語言
+    **CR** 無（XP 0；PB等於你的熟練加值）
+
+    #### 特性
+
+    _共享抗性。_ 召喚靈體時，選擇它的其中一種抗性。在法術結束前，你對所選的傷害類型具有抗性。
+
+    #### 動作
+
+    _多重攻擊。_ 靈體進行數量等於法術環階一半（無條件捨去）的撕裂攻擊，並使用吐息武器。
+
+    _撕裂。近戰攻擊檢定：_ 加值等於你的法術攻擊調整值，觸及10呎。_命中：_ 1d6 + 4 + 法術環階的穿刺傷害。
+
+    _吐息武器。敏捷豁免：_ DC等於你的法術豁免DC，30呎錐形區域內的每個生物。_失敗：_ 2d6點此靈體具有抗性的類型的傷害（施放法術時由你選擇）。_成功：_ 傷害減半。
+en:
+  material: an object with the image of a dragon engraved on it worth 500+ GP
+  body: |-
+    You call forth a Dragon spirit. It manifests in an unoccupied space that you can see within range and uses the Draconic Spirit stat block. The creature disappears when it drops to 0 Hit Points or when the spell ends.
+
+    The creature is an ally to you and your allies. In combat, the creature shares your Initiative count, but it takes its turn immediately after yours. It obeys your verbal commands (no action required by you). If you don't issue any, it takes the Dodge action and uses its movement to avoid danger.
+
+    _Using a Higher-Level Spell Slot._ Use the spell slot's level for the spell's level in the stat block.
+
+    ## Draconic Spirit
+
+    _Large Dragon, Neutral_
+
+    **AC** 14 + the spell's level
+    **HP** 50 + 10 for each spell level above 5
+    **Speed** 30 ft., Fly 60 ft., Swim 30 ft.
+
+    | MOD | SAVE |  | MOD | SAVE |  | MOD | SAVE |  |  |  |  |
+    | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+    | STR | 19 | +4 | +4 | DEX | 14 | +2 | +2 | CON | 17 | +3 | +3 |
+    | INT | 10 | +0 | +0 | WIS | 14 | +2 | +2 | CHA | 14 | +2 | +2 |
+
+    **Resistances** Acid, Cold, Fire, Lightning, Poison
+    **Immunities** Charmed, Frightened, Poisoned
+    **Senses** Blindsight 30 ft., Darkvision 60 ft.; Passive Perception 12
+    **Languages** Draconic, understands the languages you know
+    **CR** None (XP 0; PB equals your Proficiency Bonus)
+
+    #### Traits
+
+    _Shared Resistances._ When you summon the spirit, choose one of its Resistances. You have Resistance to the chosen damage type until the spell ends.
+
+    #### Actions
+
+    _Multiattack._ The spirit makes a number of Rend attacks equal to half the spell's level (round down), and it uses Breath Weapon.
+
+    _Rend. Melee Attack Roll:_ Bonus equals your spell attack modifier, reach 10 feet. _Hit:_ 1d6 + 4 + the spell's level Piercing damage.
+
+    _Breath Weapon. Dexterity Saving Throw:_ DC equals your spell save DC, each creature in a 30-foot Cone. _Failure:_ 2d6 damage of a type this spirit has Resistance to (your choice when you cast the spell). _Success:_ Half damage.

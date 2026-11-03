@@ -13,9 +13,9 @@
 
 * 原生 HTML／CSS／JavaScript 靜態網站，`index.html` 以傳統 `<script>` 依序載入全域模組。未經使用者同意，不新增前端框架、runtime dependency 或測試框架；開發依賴僅 `yaml`、`ajv`、Playwright。
 * 載入順序與每個標籤是否 `defer` 屬於契約：部分自 `index.html` 搬出的模組為同步載入，頂層只放宣告，驗證腳本與離線建置都依賴這個配置。變更全域 API、DOM ID、data attribute、檔名或載入順序時，搜尋並同步所有 JS、CSS、驗證腳本與 `build-offline-nopdf.ps1`。
-* 唯一的建置是內容檔：`npm run build` 驗證 `content/` 的 YAML，產生 `class-content.generated.js`（`classFeatures`、`classTabletopText`、`classRules`，網站經 `character-rules.js` 的 `getClassRules()` 等讀取）、`feat-content.generated.js`（`featRules`、`featText`，經 `getFeatRules()`、`getFeatText()`、`getAllFeatRules()` 讀取）、`background-content.generated.js`（`backgroundRules`、`backgroundText`，經 `getBackgroundRules()`、`getBackgroundText()`、`getBackgroundSource()` 讀取）與 `race-content.generated.js`（`raceRules`、`raceText`，經 `getRaceRules()`、`getRaceText()`、`getRaceChoiceOption()` 讀取）。寫法見 [content/README.md](content/README.md)。產物不提交、不手改。
+* 唯一的建置是內容檔：`npm run build` 驗證 `content/` 的 YAML，產生 `class-content.generated.js`（`classFeatures`、`classTabletopText`、`classRules`，網站經 `character-rules.js` 的 `getClassRules()` 等讀取）、`feat-content.generated.js`（`featRules`、`featText`，經 `getFeatRules()`、`getFeatText()`、`getAllFeatRules()` 讀取）、`background-content.generated.js`（`backgroundRules`、`backgroundText`，經 `getBackgroundRules()`、`getBackgroundText()`、`getBackgroundSource()` 讀取）、`race-content.generated.js`（`raceRules`、`raceText`，經 `getRaceRules()`、`getRaceText()`、`getRaceChoiceOption()` 讀取）、`spell-content.generated.js`（`spellRules`、`spellText`，經 `spell-list.js` 的 `SpellCatalog` 讀取；只有 `playable` 的法術能給角色使用）與 `spell-srd.generated.js`（法術詳情「SRD 版」，網站延遲載入、離線版內嵌；法術 YAML 的英文原文不進任何產物）。寫法見 [content/README.md](content/README.md)。產物不提交、不手改。
 * `content/private/` 是私人內容包（gitignore），只在本機另產生 `class-content.private.generated.js`；不得提交或複製到公開檔案，公開建置不得依賴它。
-* 持久化 ID 以基準檔把關：職業／子職／選項／動作 key／資源 key 用 `class-id-baseline.json`，專長（含專長選擇欄位、快速創角草稿的專長名稱、跑團動作 key）用 `feat-id-baseline.json`，背景用 `background-id-baseline.json`，種族（含血統選單值、快速創角草稿值、跑團動作與資源 key）用 `race-id-baseline.json`，法術用 `spell-id-baseline.json`。只在確認刻意新增，或已處理舊資料相容的移除／改名後，才更新基準檔（`npm run build -- --update-id-baseline`）；不得用基準檔掩蓋意外遺失。`spellId` 不隨顯示名稱改動。
+* 持久化 ID 以基準檔把關：職業／子職／選項／動作 key／資源 key 用 `class-id-baseline.json`，專長（含專長選擇欄位、快速創角草稿的專長名稱、跑團動作 key）用 `feat-id-baseline.json`，背景用 `background-id-baseline.json`，種族（含血統選單值、快速創角草稿值、跑團動作與資源 key）用 `race-id-baseline.json`，法術用 `spell-id-baseline.json`（只列有網站版、角色可用的法術）。只在確認刻意新增，或已處理舊資料相容的移除／改名後，才更新基準檔（`npm run build -- --update-id-baseline`）；不得用基準檔掩蓋意外遺失。`spellId` 不隨顯示名稱改動。
 * UI 模組讀取主要資料與公開 API，不複製平行規則、狀態、亂數或擲骰歷史。表單控制項可作為角色目前選擇的 canonical state；純顯示文字不作為規則資料來源。既有錯誤行為不是規格。
 * 職業機制以 `classRules` 為準，`classFeatures` HTML 與能力名稱、標題只供顯示：程式不得從中反推規則，判斷特定能力時用能力 id。職業頁上找能力的位置用 `data-feature-id`；建置工具不以正則解析產生後的 HTML 或網站原始碼。
 * 樣式以 `styles.css` 為準，外觀與互動先查 [DESIGN.md](DESIGN.md)。新 dialog／toast 用 `app-dialog.js`，不用原生 `alert`／`confirm`／`prompt`。圖片放 `images/`、字型放 `fonts/`；`og-image.jpg` 必須留在根目錄（短網址 Worker 固定引用）。
@@ -41,7 +41,8 @@
 | 種族 | `content/srd/races/`（建置產物見上） |
 | 專長 | `content/srd/feats/`（建置產物見上） |
 | 工具、怪物 | `tool-data.js`、`monster.js` |
-| 法術、狀態、神祇 | `spell-list.js`（`SpellCatalog`）、`condition.js`、`deity-info.js` |
+| 法術 | `content/srd/spells/`（建置產物見上），`spell-list.js`（`SpellCatalog`）建立索引與 API；SRD 譯文檢查 `tools/spell-reference/` |
+| 狀態、神祇 | `condition.js`、`deity-info.js` |
 | 裝備與商店 | `equipment-data.js`、`equipment-notes.js`、`equipment-shop.js` |
 | 角色卡 DOM、初始化、持久化、分享 | `index.html` |
 | 創角 | `quick-build.js`、`custom-background.js` |

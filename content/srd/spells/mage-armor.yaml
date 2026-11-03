@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: mage-armor
+name: 法師護甲
+nameEn: Mage Armor
+source: srd
+level: 1
+school: abjuration
+classes: [ sorcerer, wizard ]
+castingTime: [ action ]
+range: touch
+components: [ V, S, M ]
+duration: { hours: 8 }
+site:
+  material: 一塊熟化的皮革
+  body: |-
+    - 觸碰一個未穿著護甲的自願生物
+    - 法術結束前，目標的基礎AC變為13加上它的敏捷調整值
+    - 若目標穿上護甲，法術提前結束
+srd:
+  material: 一塊鞣製皮革
+  body: |-
+    你觸碰一隻未穿著護甲的自願生物。在法術結束前，目標的基礎AC變為13加上其敏捷調整值。若目標穿上護甲，法術會提前結束。
+en:
+  material: a piece of cured leather
+  body: |-
+    You touch a willing creature who isn't wearing armor. Until the spell ends, the target's base AC becomes 13 plus its Dexterity modifier. The spell ends early if the target dons armor.

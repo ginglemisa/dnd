@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: fly
+name: 飛行術
+nameEn: Fly
+source: srd
+level: 3
+school: transmutation
+classes: [ sorcerer, warlock, wizard ]
+castingTime: [ action ]
+range: touch
+components: [ V, S, M ]
+duration: { minutes: 10 }
+concentration: true
+upcast: true
+site:
+  material: 一根羽毛
+  body: |-
+    - 觸碰一個自願的生物；持續時間內，目標獲得60呎飛行速度，並且可以懸停
+    - 法術結束時，若目標仍在空中且無法阻止墜落，它會墜落
+    - 使用更高環階法術位：每比3環高一環，可額外以一個生物為目標
+srd:
+  material: 一根羽毛
+  body: |-
+    你觸碰一個自願的生物。在持續時間內，目標獲得60呎的飛行速度，並且可以懸停。法術結束時，若目標仍在空中，除非能阻止墜落，否則會墜落。
+
+    _使用更高環階法術位。_ 每高於3環的法術位環階，你可以多指定一個生物為目標。
+en:
+  material: a feather
+  body: |-
+    You touch a willing creature. For the duration, the target gains a Fly Speed of 60 feet and can hover. When the spell ends, the target falls if it is still aloft unless it can stop the fall.
+
+    _Using a Higher-Level Spell Slot._ You can target one additional creature for each spell slot level above 3.

@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: simulacrum
+name: 擬像術
+nameEn: Simulacrum
+source: srd
+level: 7
+school: illusion
+classes: [ wizard ]
+castingTime: [ { hours: 12 } ]
+range: touch
+components: [ V, S, M ]
+duration: until-dispelled
+srd:
+  material: 價值1,500 GP以上的紅寶石粉末，法術會將其消耗
+  body: |-
+    你創造一個野獸或人型生物的擬像，該生物在整個施法過程中必須位於你10呎內。你以同時觸碰該生物與一堆和該生物體型相同的冰或雪來完成施法，這堆冰雪會變成擬像，它是一個生物。它使用原生物在施法時的遊戲數值，但它是構裝生物，其生命值上限為一半，且它無法施展此法術。
+
+    擬像對你與你指定的生物友善。它服從你的命令，並在戰鬥中於你的回合行動。擬像無法獲得等級，也無法進行短休或長休。
+
+    如果擬像受到傷害，恢復其生命值的唯一方法是在你進行長休時修復它，期間你要消耗價值相當於每恢復1點生命值100 GP的材料。修復期間，擬像必須待在你5呎內。
+
+    擬像持續到其生命值降至0為止，屆時它會變回雪並融化消失。如果你再次施展此法術，你以此法術創造的任何擬像都會立即被摧毀。
+en:
+  material: powdered ruby worth 1,500+ GP, which the spell consumes
+  body: |-
+    You create a simulacrum of one Beast or Humanoid that is within 10 feet of you for the entire casting of the spell. You finish the casting by touching both the creature and a pile of ice or snow that is the same size as that creature, and the pile turns into the simulacrum, which is a creature. It uses the game statistics of the original creature at the time of casting, except it is a Construct, its Hit Point maximum is half as much, and it can't cast this spell.
+
+    The simulacrum is Friendly to you and creatures you designate. It obeys your commands and acts on your turn in combat. The simulacrum can't gain levels, and it can't take Short or Long Rests.
+
+    If the simulacrum takes damage, the only way to restore its Hit Points is to repair it as you take a Long Rest, during which you expend components worth 100 GP per Hit Point restored. The simulacrum must stay within 5 feet of you for the repair.
+
+    The simulacrum lasts until it drops to 0 Hit Points, at which point it reverts to snow and melts away. If you cast this spell again, any simulacrum you created with this spell is instantly destroyed.

@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: dimension-door
+name: 任意門
+nameEn: Dimension Door
+source: srd
+level: 4
+school: conjuration
+classes: [ bard, sorcerer, warlock, wizard ]
+castingTime: [ action ]
+range: { feet: 500 }
+components: [ V ]
+duration: instantaneous
+site:
+  outcomes:
+    - { kind: damage, formula: 4d6, damageType: force, autoOnCast: false, context: 目的地被佔據而傳送失敗時 }
+  body: |-
+    - 傳送到射程內一個地點，並準確抵達指定位置；地點可以是你能看見的地方、你能想像的地方，或以距離與方向描述的地方，例如「正下方200呎」或「往西北方以45度角向上300呎」
+    - 你也可以帶一個自願的生物一起傳送；該生物在你傳送時必須位於你5呎內，並傳送到你目的地空間5呎內的一個空間
+    - 若你、另一個生物或兩者將抵達被生物佔據，或被一個或多個物體完全填滿的空間，你與隨你傳送的任何生物各受到4d6力場傷害，且傳送失敗
+srd:
+  body: |-
+    你傳送到射程內的一個地點。你會恰好抵達想要的位置。該地點可以是你能看見的地方、你能在腦中想像的地方，或是你以距離與方向描述的地方，例如「垂直向下200呎」或「向西北方以45度角往上300呎」。
+
+    你也可以傳送一名自願的生物。該生物在你傳送時必須位於你5呎內，並傳送到你目的地空間5呎內的一個空間。如果你、另一名生物，或你們兩者會抵達被某生物佔據，或被一個或多個物體完全填滿的空間，你與和你一同傳送的任何生物各受到4d6力場傷害，且傳送失敗。
+en:
+  body: |-
+    You teleport to a location within range. You arrive at exactly the spot desired. It can be a place you can see, one you can visualize, or one you can describe by stating distance and direction, such as "200 feet straight downward" or "300 feet upward to the northwest at a 45-degree angle."
+
+    You can also teleport one willing creature. The creature must be within 5 feet of you when you teleport, and it teleports to a space within 5 feet of your destination space. If you, the other creature, or both would arrive in a space occupied by a creature or completely filled by one or more objects, you and any creature traveling with you each take 4d6 Force damage, and the teleportation fails.

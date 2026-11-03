@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: dispel-evil-and-good
+name: 反制善惡
+nameEn: Dispel Evil and Good
+source: srd
+level: 5
+school: abjuration
+classes: [ cleric, paladin ]
+castingTime: [ action ]
+range: self
+components: [ V, S, M ]
+duration: { minutes: 1 }
+concentration: true
+srd:
+  material: 銀粉與鐵粉
+  body: |-
+    在持續時間內，天界生物、元素生物、精類、邪魔與不死生物對你進行的攻擊檢定具有劣勢。你可以使用下列任一特殊功能提前結束法術。
+
+    _破除惑控。_ 你以魔法動作觸碰一個被上述類型的一個或多個生物附身，或因其而陷入魅惑或恐慌狀態的生物。目標不再被這類生物附身、魅惑或恐慌。
+
+    _遣返。_ 你以魔法動作指定你5呎內一個你能看見、屬於上述其中一種生物類型的生物。目標必須成功通過魅力豁免，否則若它不在其原生位面，就會被送回原生位面。如果它們不在原生位面，不死生物會被送往暗影界，精類會被送往精類荒野。
+en:
+  material: powdered silver and iron
+  body: |-
+    For the duration, Celestials, Elementals, Fey, Fiends, and Undead have Disadvantage on attack rolls against you. You can end the spell early by using either of the following special functions.
+
+    _Break Enchantment._ As a Magic action, you touch a creature that is possessed by or has the Charmed or Frightened condition from one or more creatures of the types above. The target is no longer possessed, Charmed, or Frightened by such creatures.
+
+    _Dismissal._ As a Magic action, you target one creature you can see within 5 feet of you that has one of the creature types above. The target must succeed on a Charisma saving throw or be sent back to its home plane if it isn't there already. If they aren't on their home plane, Undead are sent to the Shadowfell, and Fey are sent to the Feywild.

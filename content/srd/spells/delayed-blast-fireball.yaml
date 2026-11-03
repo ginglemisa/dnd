@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: delayed-blast-fireball
+name: 延遲爆裂火球
+nameEn: Delayed Blast Fireball
+source: srd
+level: 7
+school: evocation
+classes: [ sorcerer, wizard ]
+castingTime: [ action ]
+range: { feet: 150 }
+components: [ V, S, M ]
+duration: { minutes: 1 }
+concentration: true
+srd:
+  material: 一團蝙蝠糞與硫磺
+  body: |-
+    一道黃色光束從你身上閃出，隨後在射程內你選定的一點凝聚成發光的珠子，並在持續時間內維持。法術結束時，珠子爆炸，以該點為中心、半徑20呎球形區域內的每個生物進行一次敏捷豁免。豁免失敗的生物受到等同於累積總傷害的火焰傷害，豁免成功則傷害減半。
+
+    法術的基礎傷害為12d6，且每當你的回合結束而法術尚未結束時，傷害增加1d6。
+
+    如果有生物在法術結束前碰觸發光的珠子，該生物進行一次敏捷豁免。豁免失敗時，法術結束，珠子隨之爆炸。豁免成功時，該生物可以將珠子丟出最多40呎。如果被丟出的珠子進入某個生物的空間或撞上固體物體，法術結束，珠子爆炸。
+
+    珠子爆炸時，爆炸範圍內未被穿戴或攜帶的易燃物體開始燃燒。
+
+    _使用更高環階法術位。_ 每高於7環的法術位環階，基礎傷害增加1d6。
+en:
+  material: a ball of bat guano and sulfur
+  body: |-
+    A beam of yellow light flashes from you, then condenses at a chosen point within range as a glowing bead for the duration. When the spell ends, the bead explodes, and each creature in a 20-foot-radius Sphere centered on that point makes a Dexterity saving throw. A creature takes Fire damage equal to the total accumulated damage on a failed save or half as much damage on a successful one.
+
+    The spell's base damage is 12d6, and the damage increases by 1d6 whenever your turn ends and the spell hasn't ended.
+
+    If a creature touches the glowing bead before the spell ends, that creature makes a Dexterity saving throw. On a failed save, the spell ends, causing the bead to explode. On a successful save, the creature can throw the bead up to 40 feet. If the thrown bead enters a creature's space or collides with a solid object, the spell ends, and the bead explodes.
+
+    When the bead explodes, flammable objects in the explosion that aren't being worn or carried start burning.
+
+    _Using a Higher-Level Spell Slot._ The base damage increases by 1d6 for each spell slot level above 7.

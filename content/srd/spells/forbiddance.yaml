@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: forbiddance
+name: 禁制術
+nameEn: Forbiddance
+source: srd
+level: 6
+school: abjuration
+classes: [ cleric ]
+castingTime: [ { minutes: 10 } ]
+ritual: true
+range: touch
+components: [ V, S, M ]
+duration: { days: 1 }
+srd:
+  material: 價值1,000 GP以上的紅寶石粉末
+  body: |-
+    你創造一道防範魔法旅行的結界，保護最多40,000平方呎的地面空間，高度為地面以上30呎。在持續時間內，生物無法傳送進入該區域，也無法使用傳送門（例如由「異界之門」法術創造的傳送門）進入該區域。此法術使該區域免受位面旅行影響，因此會阻止生物經由星界、以太位面、精類荒野、暗影界或「異界傳送」法術進入該區域。
+
+    此外，此法術會傷害你在施放時所選擇的幾類生物。從下列類型中選擇一種或多種：異怪、天界生物、元素生物、精類、邪魔與不死生物。當所選類型的生物在一個回合中第一次進入此法術的區域，或在該處結束其回合時，該生物受到5d10光耀傷害或黯蝕傷害（由你施放此法術時選擇）。
+
+    你可以在施放此法術時指定一個通關密語。在進入該區域時說出通關密語的生物，不會受到此法術的傷害。
+
+    此法術的區域不能與另一個「禁制術」法術的區域重疊。若你在同一地點連續30天每天施放「禁制術」，此法術會持續到被解除為止，且材料成分會在最後一次施放時被消耗。
+en:
+  material: ruby dust worth 1,000+ GP
+  body: |-
+    You create a ward against magical travel that protects up to 40,000 square feet of floor space to a height of 30 feet above the floor. For the duration, creatures can't teleport into the area or use portals, such as those created by the _Gate_ spell, to enter the area. The spell proofs the area against planar travel, and therefore prevents creatures from accessing the area by way of the Astral Plane, the Ethereal Plane, the Feywild, the Shadowfell, or the _Plane Shift_ spell.
+
+    In addition, the spell damages types of creatures that you choose when you cast it. Choose one or more of the following: Aberrations, Celestials, Elementals, Fey, Fiends, and Undead. When a creature of a chosen type enters the spell's area for the first time on a turn or ends its turn there, the creature takes 5d10 Radiant or Necrotic damage (your choice when you cast this spell).
+
+    You can designate a password when you cast the spell. A creature that speaks the password as it enters the area takes no damage from the spell.
+
+    The spell's area can't overlap with the area of another _Forbiddance_ spell. If you cast _Forbiddance_ every day for 30 days in the same location, the spell lasts until it is dispelled, and the Material components are consumed on the last casting.

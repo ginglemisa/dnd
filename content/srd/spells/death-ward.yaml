@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: death-ward
+name: 防死結界
+nameEn: Death Ward
+source: srd
+level: 4
+school: abjuration
+classes: [ cleric ]
+castingTime: [ action ]
+range: touch
+components: [ V, S ]
+duration: { hours: 8 }
+site:
+  body: |-
+    - 觸碰一個生物，賦予它一定程度的死亡防護
+    - 法術結束前，目標首次將降到0生命值時，改為降到1生命值，然後法術結束
+    - 若法術仍生效時，目標遭受不造成傷害而會立即殺死它的效果，該效果對目標無效，然後法術結束
+srd:
+  body: |-
+    你觸碰一個生物，賜予其一定程度的免死保護。在法術結束前，目標第一次將降至0點生命值時，改為降至1點生命值，且法術結束。
+
+    如果法術仍在作用時，目標遭受一種不造成傷害便能立即殺死它的效果，該效果對目標無效，且法術結束。
+en:
+  body: |-
+    You touch a creature and grant it a measure of protection from death. The first time the target would drop to 0 Hit Points before the spell ends, the target instead drops to 1 Hit Point, and the spell ends.
+
+    If the spell is still in effect when the target is subjected to an effect that would kill it instantly without dealing damage, that effect is negated against the target, and the spell ends.

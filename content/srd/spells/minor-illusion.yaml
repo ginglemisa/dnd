@@ -1,0 +1,44 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: minor-illusion
+name: 次級幻影
+nameEn: Minor Illusion
+source: srd
+level: 0
+school: illusion
+classes: [ bard, sorcerer, warlock, wizard ]
+castingTime: [ action ]
+range: { feet: 30 }
+components: [ S, M ]
+duration: { minutes: 1 }
+site:
+  material: 一點絨毛
+  body: |-
+    - 在射程內創造一個聲音或一個物體的影像，持續到法術結束；再次施放此法術時，幻象結束
+    - 生物可以用研究動作檢視聲音或影像，進行智力（調查）檢定對抗你的法術豁免DC；成功時識破幻象，幻象對該生物變得模糊
+    - 聲音：
+      - 音量可從耳語到尖叫，可以是你的聲音、他人的聲音、獅吼、鼓聲或你選擇的任何聲音
+      - 聲音可在持續時間內持續不斷，或在法術結束前的不同時間發出斷續的聲音
+    - 影像：
+      - 物體影像（例如椅子、泥濘腳印或小箱子）不能大於邊長5呎的立方體
+      - 影像不能產生聲音、光線、氣味或其他感官效果
+      - 物體可以穿過影像，因此與影像的物理互動會揭露它是幻象
+srd:
+  material: 一小塊羊毛
+  body: |-
+    你在射程內創造一個聲音，或一個物體的影像，並在持續時間內存在。各種效果請見下方說明。若你再次施放此法術，該幻象即結束。
+
+    若有生物以研究動作檢視該聲音或影像，該生物可以藉由對抗你的法術豁免DC、成功通過智力（調查）檢定，判定它是幻象。若生物看穿該幻象的本質，該幻象對該生物而言會變得模糊。
+
+    _聲音。_ 若你創造聲音，其音量可以從耳語到尖叫不等。它可以是你的聲音、別人的聲音、獅子的吼叫、擊鼓聲，或任何你選擇的其他聲音。這個聲音在整個持續時間內不間斷地持續，或者你也可以在法術結束前的不同時間發出斷續的聲音。
+
+    _影像。_ 若你創造某個物體的影像——例如一張椅子、泥濘的腳印或一個小箱子——它不得大於一個5呎立方體。該影像無法產生聲音、光線、氣味或任何其他感官效果。與該影像進行物理互動會顯露它是幻象，因為東西可以穿過它。
+en:
+  material: a bit of fleece
+  body: |-
+    You create a sound or an image of an object within range that lasts for the duration. See the descriptions below for the effects of each. The illusion ends if you cast this spell again.
+
+    If a creature takes a Study action to examine the sound or image, the creature can determine that it is an illusion with a successful Intelligence (Investigation) check against your spell save DC. If a creature discerns the illusion for what it is, the illusion becomes faint to the creature.
+
+    _Sound._ If you create a sound, its volume can range from a whisper to a scream. It can be your voice, someone else's voice, a lion's roar, a beating of drums, or any other sound you choose. The sound continues unabated throughout the duration, or you can make discrete sounds at different times before the spell ends.
+
+    _Image._ If you create an image of an object—such as a chair, muddy footprints, or a small chest—it must be no larger than a 5-foot Cube. The image can't create sound, light, smell, or any other sensory effect. Physical interaction with the image reveals it to be an illusion, since things can pass through it.

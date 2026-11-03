@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: sanctuary
+name: 庇護術
+nameEn: Sanctuary
+source: srd
+level: 1
+school: abjuration
+classes: [ cleric ]
+castingTime: [ bonus-action ]
+range: { feet: 30 }
+components: [ V, S, M ]
+duration: { minutes: 1 }
+site:
+  material: 一片鏡子碎片
+  body: |-
+    - 守護射程內一個生物
+    - 法術結束前，任何以攻擊檢定或造成傷害的法術指定受守護生物為目標的生物，須進行感知豁免；失敗時必須選擇新目標，否則失去該次攻擊或法術
+    - 此法術無法保護受守護生物免受範圍效果影響
+    - 受守護生物進行攻擊檢定、施放法術或造成傷害時，法術結束
+srd:
+  material: 一片鏡子的玻璃碎片
+  body: |-
+    你庇護射程內的一個生物。在法術結束前，任何以攻擊檢定或造成傷害的法術指定受庇護生物為目標的生物，必須通過一次感知豁免，否則必須選擇新目標，或失去該次攻擊或法術。此法術無法保護受庇護生物免受範圍效果影響。若受庇護生物進行攻擊檢定、施放法術或造成傷害，法術即結束。
+en:
+  material: a shard of glass from a mirror
+  body: |-
+    You ward a creature within range. Until the spell ends, any creature who targets the warded creature with an attack roll or a damaging spell must succeed on a Wisdom saving throw or either choose a new target or lose the attack or spell. This spell doesn't protect the warded creature from areas of effect. The spell ends if the warded creature makes an attack roll, casts a spell, or deals damage.

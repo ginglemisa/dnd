@@ -1,0 +1,114 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: giant-insect
+name: 巨蟲術
+nameEn: Giant Insect
+source: srd
+level: 4
+school: conjuration
+classes: [ druid ]
+castingTime: [ action ]
+range: { feet: 60 }
+components: [ V, S ]
+duration: { minutes: 10 }
+concentration: true
+upcast: true
+site:
+  outcomes:
+    - { kind: damage, formula: 1d6+3, addSlotLevel: true, damageType: piercing, autoOnCast: false, context: 巨蟲之後以毒素戳刺命中時 }
+    - { kind: damage, formula: 1d4, damageType: poison, autoOnCast: false, context: 毒素戳刺的附加傷害 }
+    - { kind: damage, formula: 1d10+3, addSlotLevel: true, damageType: bludgeoning, autoOnCast: false, context: 蜘蛛之後以蛛網射擊命中時 }
+  body: |-
+    - 召喚一隻巨型蜈蚣、蜘蛛或黃蜂（施法時選擇），出現在射程內一個你能看見的未被佔據空間，使用下方巨蟲的資料；所選形態決定資料中的部分細節
+    - 巨蟲生命值降為0或法術結束時消失
+    - 巨蟲是你與你盟友的盟友；戰鬥中與你共用先攻順序，但在你的回合之後立即進行回合
+    - 巨蟲服從你的口頭命令（你不需動作）；若你沒有下達命令，牠會執行閃避動作，並用移動力避開危險
+    - 使用更高環階法術位：資料中的法術環階改用所消耗法術位的環階
+    - 巨蟲（大型野獸，無陣營）：
+      - AC：11+法術環階；生命值：30+比4環每高一環增加10
+      - 速度：40呎，攀爬40呎，飛行40呎（僅黃蜂）
+      - 力量17（+3，豁免+3）；敏捷13（+1，豁免+1）；體質15（+2，豁免+2）；智力4（-3，豁免-3）；感知14（+2，豁免+2）；魅力3（-4，豁免-4）
+      - 感官：黑暗視覺60呎，被動察覺12；語言：理解你懂的語言
+      - 挑戰等級：無（XP 0；熟練加值等於你的熟練加值）
+      - 特性－蛛行：可在難以攀爬的表面上攀爬，包括沿天花板移動，不需進行屬性檢定
+    - 巨蟲動作：
+      - 多重攻擊：進行次數等於法術環階一半（無條件捨去）的攻擊
+      - 毒素戳刺：近戰攻擊檢定，加值等於你的法術攻擊加值，觸及10呎；命中時造成1d6+3加上法術環階的穿刺傷害，外加1d4毒素傷害
+      - 蛛網射擊（僅蜘蛛）：遠程攻擊檢定，加值等於你的法術攻擊加值，射程60呎；命中時造成1d10+3加上法術環階的鈍擊傷害，且目標速度降為0，直到巨蟲下個回合開始
+    - 巨蟲附贈動作：
+      - 毒液噴吐（僅蜈蚣）：巨蟲10呎內一個牠能看見的生物須進行體質豁免（DC等於你的法術豁免DC）；失敗時陷入中毒狀態，直到巨蟲下個回合開始
+srd:
+  body: |-
+    你召喚一隻巨型蜈蚣、蜘蛛或黃蜂（施放法術時選擇）。它出現在你能看見的射程內一個未被佔據的空間，並使用巨蟲數據塊。你選擇的形態決定其數據塊中的某些細節。當該生物降到0生命值或法術結束時，它會消失。
+
+    該生物是你與你盟友的盟友。戰鬥中，該生物與你共用先攻順位，但在你之後立即進行自己的回合。它會服從你的口頭命令（你不需要動作）。如果你沒有下達任何命令，它會採取閃避動作，並利用其移動力來避開危險。_使用更高環階法術位。_ 在數據塊中以所用法術位的環階作為法術環階。
+
+    ## 巨蟲
+
+    _大型野獸，無陣營_
+
+    **AC** 11 + 法術環階
+    **HP** 30 + 法術環階每高於4環一環加10
+    **速度** 40呎，攀爬40呎，飛行40呎（僅黃蜂）
+
+    |  | 調整值 | 豁免 |  | 調整值 | 豁免 |  | 調整值 | 豁免 |  |  |  |
+    | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+    | 力量 | 17 | +3 | +3 | 敏捷 | 13 | +1 | +1 | 體質 | 15 | +2 | +2 |
+    | 智力 | 4 | −3 | −3 | 感知 | 14 | +2 | +2 | 魅力 | 3 | −4 | −4 |
+
+    **感官** 黑暗視覺60呎；被動察覺12
+    **語言** 能聽懂你所知的語言
+    **CR** 無（XP 0；PB等於你的熟練加值）
+
+    #### 特性
+
+    _蛛行。_ 這隻昆蟲可以攀爬困難的表面，包括沿著天花板移動，且不需要進行屬性檢定。
+
+    #### 動作
+
+    _多重攻擊。_ 這隻昆蟲進行的攻擊次數等於此法術環階的一半（無條件捨去）。
+
+    _毒素戳刺。近戰攻擊檢定：_ 加值等於你的法術攻擊調整值，觸及10呎。_命中：_ 1d6 + 3 加上法術環階的穿刺傷害，再加1d4毒素傷害。
+
+    _蛛網射擊（僅蜘蛛）。遠程攻擊檢定：_ 加值等於你的法術攻擊調整值，射程60呎。_命中：_ 1d10 + 3 加上法術環階的鈍擊傷害，且目標的速度降為0，直到這隻昆蟲下一個回合開始。
+
+    #### 附贈動作
+
+    _毒液噴吐（僅蜈蚣）。體質豁免：_ 你的法術豁免DC，這隻昆蟲能看見的10呎內一名生物。_失敗：_ 目標陷入中毒狀態，直到這隻昆蟲下一個回合開始。
+en:
+  body: |-
+    You summon a giant centipede, spider, or wasp (chosen when you cast the spell). It manifests in an unoccupied space you can see within range and uses the Giant Insect stat block. The form you choose determines certain details in its stat block. The creature disappears when it drops to 0 Hit Points or when the spell ends.
+
+    The creature is an ally to you and your allies. In combat, the creature shares your Initiative count, but it takes its turn immediately after yours. It obeys your verbal commands (no action required by you). If you don't issue any, it takes the Dodge action and uses its movement to avoid danger. _Using a Higher-Level Spell Slot._ Use the spell slot's level for the spell's level in the stat block.
+
+    ## Giant Insect
+
+    _Large Beast, Unaligned_
+
+    **AC** 11 + the spell's level
+    **HP** 30 + 10 for each spell level above 4
+    **Speed** 40 ft., Climb 40 ft., Fly 40 ft. (Wasp only)
+
+    |  | MOD | SAVE |  | MOD | SAVE |  | MOD | SAVE |  |  |  |
+    | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+    | STR | 17 | +3 | +3 | DEX | 13 | +1 | +1 | CON | 15 | +2 | +2 |
+    | INT | 4 | −3 | −3 | WIS | 14 | +2 | +2 | CHA | 3 | −4 | −4 |
+
+    **Senses** Darkvision 60 ft.; Passive Perception 12
+    **Languages** Understands the languages you know
+    **CR** None (XP 0; PB equals your Proficiency Bonus)
+
+    #### Traits
+
+    _Spider Climb._ The insect can climb difficult surfaces, including along ceilings, without needing to make an ability check.
+
+    #### Actions
+
+    _Multiattack._ The insect makes a number of attacks equal to half this spell's level (round down).
+
+    _Poison Jab. Melee Attack Roll:_ Bonus equals your spell attack modifier, reach 10 ft. _Hit:_ 1d6 + 3 plus the spell's level Piercing damage plus 1d4 Poison damage.
+
+    _Web Bolt (Spider Only). Ranged Attack Roll:_ Bonus equals your spell attack modifier, range 60 ft. _Hit:_ 1d10 + 3 plus the spell's level Bludgeoning damage, and the target's Speed is reduced to 0 until the start of the insect's next turn.
+
+    #### Bonus Actions
+
+    _Venomous Spew (Centipede Only). Constitution Saving Throw:_ Your spell save DC, one creature the insect can see within 10 feet. _Failure:_ The target has the Poisoned condition until the start of the insect's next turn.

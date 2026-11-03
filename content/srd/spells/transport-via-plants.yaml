@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: transport-via-plants
+name: 木遁術
+nameEn: Transport via Plants
+source: srd
+level: 6
+school: conjuration
+classes: [ druid ]
+castingTime: [ action ]
+range: { feet: 10 }
+components: [ V, S ]
+duration: { minutes: 1 }
+srd:
+  body: |-
+    此法術在射程內一株大型或更大的無生命植物，與同一位面上任意距離之外的另一株植物之間，創造一道魔法連結。你必須事先至少見過或碰觸過目的地植物一次。在持續時間內，任何生物都可以踏入目標植物，並以5呎移動力從目的地植物走出。
+en:
+  body: |-
+    This spell creates a magical link between a Large or larger inanimate plant within range and another plant, at any distance, on the same plane of existence. You must have seen or touched the destination plant at least once before. For the duration, any creature can step into the target plant and exit from the destination plant by using 5 feet of movement.

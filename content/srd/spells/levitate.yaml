@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: levitate
+name: 浮空術
+nameEn: Levitate
+source: srd
+level: 2
+school: transmutation
+classes: [ sorcerer, wizard ]
+castingTime: [ action ]
+range: { feet: 60 }
+components: [ V, S, M ]
+duration: { minutes: 10 }
+concentration: true
+site:
+  material: 一個金屬彈簧
+  body: |-
+    - 射程內一個你選擇且你能看見的生物或未固定物體，垂直升起至多20呎，並在持續時間內懸浮於該處
+    - 此法術可使重量至多500磅的物體浮空；非自願生物若在體質豁免成功，則不受影響
+    - 目標只能藉由推拉觸及範圍內的固定物體或表面（例如牆壁或天花板）移動，移動方式如同攀爬
+    - 你可以在你的回合中，將目標的高度朝任一方向改變至多20呎；若你是目標，可以在移動中上下移動；否則你須用魔法動作移動目標，且目標必須保持在法術射程內
+    - 法術結束時，若目標仍在空中，它會緩緩飄落到地面
+srd:
+  material: 一根金屬彈簧
+  body: |-
+    你選擇在射程內能看見的一個生物或未固定的物體，使其垂直上升至多20呎，並在持續時間內懸浮在該處。法術可使重量至多500磅的物體浮起。成功通過體質豁免的不願意生物不受影響。
+
+    目標只能藉由推動或拉動觸及範圍內的固定物體或表面（例如牆壁或天花板）來移動，這使它能如同攀爬般移動。在你的回合中，你可以將目標的高度向上或向下改變至多20呎。如果你是目標，你可以在移動時上升或下降。否則，你可以用魔法動作移動目標，目標必須維持在法術的射程內。
+
+    法術結束時，若目標仍在空中，會輕輕飄落至地面。
+en:
+  material: a metal spring
+  body: |-
+    One creature or loose object of your choice that you can see within range rises vertically up to 20 feet and remains suspended there for the duration. The spell can levitate an object that weighs up to 500 pounds. An unwilling creature that succeeds on a Constitution saving throw is unaffected.
+
+    The target can move only by pushing or pulling against a fixed object or surface within reach (such as a wall or a ceiling), which allows it to move as if it were climbing. You can change the target's altitude by up to 20 feet in either direction on your turn. If you are the target, you can move up or down as part of your move. Otherwise, you can take a Magic action to move the target, which must remain within the spell's range.
+
+    When the spell ends, the target floats gently to the ground if it is still aloft.

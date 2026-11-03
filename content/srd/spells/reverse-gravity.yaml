@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: reverse-gravity
+name: 反重力
+nameEn: Reverse Gravity
+source: srd
+level: 7
+school: transmutation
+classes: [ druid, sorcerer, wizard ]
+castingTime: [ action ]
+range: { feet: 100 }
+components: [ V, S, M ]
+duration: { minutes: 1 }
+concentration: true
+srd:
+  material: 一塊磁石與鐵屑
+  body: |-
+    此法術在射程內一點為中心、半徑50呎、高100呎的圓柱形區域中反轉重力。該區域內所有未固定在地面上的生物與物體都會向上墜落，並到達圓柱形區域的頂端。生物可以進行一次敏捷豁免，以抓住其搆得到的固定物體，從而避免向上墜落。
+
+    如果在這次向上墜落中遇到天花板或已固定的物體，生物與物體會像向下墜落時那樣撞擊它。如果受影響的生物或物體到達圓柱形區域頂端時沒有撞到任何東西，它會在持續時間內懸浮在那裡。法術結束時，受影響的物體與生物向下墜落。
+en:
+  material: a lodestone and iron filings
+  body: |-
+    This spell reverses gravity in a 50-foot-radius, 100-foot high Cylinder centered on a point within range. All creatures and objects in that area that aren't anchored to the ground fall upward and reach the top of the Cylinder. A creature can make a Dexterity saving throw to grab a fixed object it can reach, thus avoiding the fall upward.
+
+    If a ceiling or an anchored object is encountered in this upward fall, creatures and objects strike it just as they would during a downward fall. If an affected creature or object reaches the Cylinder's top without striking anything, it hovers there for the duration. When the spell ends, affected objects and creatures fall downward.

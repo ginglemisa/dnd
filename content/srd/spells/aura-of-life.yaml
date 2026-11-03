@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: aura-of-life
+name: 生命靈氣
+nameEn: Aura of Life
+source: srd
+level: 4
+school: abjuration
+classes: [ cleric ]
+castingTime: [ action ]
+range: self
+components: [ V ]
+duration: { minutes: 10 }
+concentration: true
+site:
+  outcomes:
+    - { kind: healing, fixed: 1, autoOnCast: false, context: 生命值為 0 的盟友之後在靈氣內開始回合時 }
+  body: |-
+    - 持續時間內，你散發出30呎發散區域的靈氣
+    - 位於靈氣中時，你與你的盟友具有黯蝕傷害抗性，且生命值上限無法被降低
+    - 生命值為0的盟友在靈氣中開始回合時，恢復1點生命值
+srd:
+  body: |-
+    在持續時間內，一道靈氣以你為中心，向外散發出30呎發散區域。位於靈氣中時，你和你的盟友對黯蝕傷害具有抗性，而且你們的生命值上限無法被降低。如果一名生命值為0的盟友在其回合開始時位於靈氣中，該盟友恢復1點生命值。
+en:
+  body: |-
+    An aura radiates from you in a 30-foot Emanation for the duration. While in the aura, you and your allies have Resistance to Necrotic damage, and your Hit Point maximums can't be reduced. If an ally with 0 Hit Points starts its turn in the aura, that ally regains 1 Hit Point.

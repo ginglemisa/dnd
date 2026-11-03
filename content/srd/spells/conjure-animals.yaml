@@ -1,0 +1,42 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: conjure-animals
+name: 群獸奔騰
+nameEn: Conjure Animals
+source: srd
+level: 3
+school: conjuration
+classes: [ druid ]
+castingTime: [ action ]
+range: { feet: 60 }
+components: [ V, S ]
+duration: { minutes: 10 }
+concentration: true
+upcast: true
+site:
+  outcomes:
+    - { kind: damage, formula: 3d10, upcastDice: 1d10, damageType: slashing, autoOnCast: false, context: 獸群之後移動至生物附近或生物進入／結束回合時 }
+  body: |-
+    - 召喚自然之靈，以大型、幽靈般無實體的動物群形態，出現在射程內一個你能看見的未被佔據空間；獸群持續到法術結束，外形由你選擇，例如狼、蛇或鳥
+    - 你位於獸群5呎內時，進行力量豁免具有優勢
+    - 你在自己的回合移動時，也可以將獸群移動至多30呎，到一個你能看見的未被佔據空間
+    - 每當獸群移動到你能看見的生物10呎內，或你能看見的生物進入獸群10呎內的空間或在那裡結束回合時，你可以迫使該生物進行敏捷豁免；失敗時受到3d10揮砍傷害
+    - 每個生物每回合只進行一次此豁免
+    - 使用更高環階法術位：每比3環高一環，傷害增加1d10
+srd:
+  body: |-
+    你召喚自然靈體，它們以一群大型的、幽靈般無形的動物之姿，出現在射程內你能看見的一處未被佔據的空間。這群動物在持續時間內存在，你選擇靈體的動物形態，例如狼、蛇或鳥。
+
+    當你位於這群動物5呎內時，你在力量豁免上具有優勢；在你的回合移動時，你也可以將這群動物移動最多30呎，到你能看見的一處未被佔據的空間。
+
+    每當這群動物移動到你能看見的生物10呎內，以及每當你能看見的生物進入這群動物10呎內的空間或在該處結束其回合時，你可以強迫該生物進行一次敏捷豁免。豁免失敗時，該生物受到3d10揮砍傷害。生物每回合只需進行一次這個豁免。
+
+    _使用更高環階法術位。_ 所用法術位的環階每比3環高一環，傷害增加1d10。
+en:
+  body: |-
+    You conjure nature spirits that appear as a Large pack of spectral, intangible animals in an unoccupied space you can see within range. The pack lasts for the duration, and you choose the spirits' animal form, such as wolves, serpents, or birds.
+
+    You have Advantage on Strength saving throws while you're within 5 feet of the pack, and when you move on your turn, you can also move the pack up to 30 feet to an unoccupied space you can see.
+
+    Whenever the pack moves within 10 feet of a creature you can see and whenever a creature you can see enters a space within 10 feet of the pack or ends its turn there, you can force that creature to make a Dexterity saving throw. On a failed save, the creature takes 3d10 Slashing damage. A creature makes this save only once per turn.
+
+    _Using a Higher-Level Spell Slot._ The damage increases by 1d10 for each spell slot level above 3.

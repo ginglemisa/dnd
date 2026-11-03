@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: mirage-arcane
+name: 海市蜃樓
+nameEn: Mirage Arcane
+source: srd
+level: 7
+school: illusion
+classes: [ bard, druid, wizard ]
+castingTime: [ { minutes: 10 } ]
+range: sight
+components: [ V, S ]
+duration: { days: 10 }
+srd:
+  body: |-
+    你使面積最多1英里見方的區域內的地形，看起來、聽起來、聞起來甚至摸起來都像另一種地形。空曠的田野或道路可以被變得像沼澤、丘陵、裂縫，或其他崎嶇或無法通行的地形。池塘可以被變得像長滿青草的草地，懸崖像平緩的斜坡，布滿碎石的溝壑像寬闊平坦的道路。
+
+    同樣地，你可以改變建築物的外觀，或在原本沒有建築物的地方添加建築物。此法術不會偽裝、隱藏或增添生物。
+
+    這個幻象包含聽覺、視覺、觸覺與嗅覺元素，因此它可以把平坦的地面變成困難地形（或反之），或以其他方式阻礙在該區域內的移動。幻象地形的任何部分（例如石頭或樹枝）若被移出法術區域，會立即消失。
+
+    擁有真實視覺的生物可以看穿幻象，看見地形的真實樣貌；然而，幻象的所有其他元素仍然存在，因此即使該生物知道幻象的存在，它仍然可以與幻象進行實體互動。
+en:
+  body: |-
+    You make terrain in an area up to 1 mile square look, sound, smell, and even feel like some other sort of terrain. Open fields or a road could be made to resemble a swamp, hill, crevasse, or some other rough or impassable terrain. A pond can be made to seem like a grassy meadow, a precipice like a gentle slope, or a rock-strewn gully like a wide and smooth road.
+
+    Similarly, you can alter the appearance of structures or add them where none are present. The spell doesn't disguise, conceal, or add creatures.
+
+    The illusion includes audible, visual, tactile, and olfactory elements, so it can turn clear ground into Difficult Terrain (or vice versa) or otherwise impede movement through the area. Any piece of the illusory terrain (such as a rock or stick) that is removed from the spell's area disappears immediately.
+
+    Creatures with Truesight can see through the illusion to the terrain's true form; however, all other elements of the illusion remain, so while the creature is aware of the illusion's presence, the creature can still physically interact with the illusion.

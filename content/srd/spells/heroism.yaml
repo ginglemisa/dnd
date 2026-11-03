@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: heroism
+name: 英雄氣概
+nameEn: Heroism
+source: srd
+level: 1
+school: enchantment
+classes: [ bard, paladin ]
+castingTime: [ action ]
+range: touch
+components: [ V, S ]
+duration: { minutes: 1 }
+concentration: true
+upcast: true
+site:
+  body: |-
+    - 你觸碰的一個自願生物充滿勇氣
+    - 法術結束前，該生物免疫恐慌狀態，並在它每個回合開始時獲得等同於你施法屬性調整值的臨時生命值
+    - 使用更高環階法術位：每比1環高一環，可額外以一個生物為目標
+srd:
+  body: |-
+    你觸碰的一個自願生物被注入勇氣。在法術結束前，該生物免疫恐慌狀態，並在其每個回合開始時獲得等同於你施法屬性調整值的臨時生命值。
+
+    _使用更高環階法術位。_ 法術位環階每比1環高一環，你可以多指定一個生物為目標。
+en:
+  body: |-
+    A willing creature you touch is imbued with bravery. Until the spell ends, the creature is immune to the Frightened condition and gains Temporary Hit Points equal to your spellcasting ability modifier at the start of each of its turns.
+
+    _Using a Higher-Level Spell Slot._ You can target one additional creature for each spell slot level above 1.

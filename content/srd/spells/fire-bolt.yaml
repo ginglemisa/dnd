@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: fire-bolt
+name: 火焰箭
+nameEn: Fire Bolt
+source: srd
+level: 0
+school: evocation
+classes: [ sorcerer, wizard ]
+castingTime: [ action ]
+range: { feet: 120 }
+components: [ V, S ]
+duration: instantaneous
+site:
+  outcomes:
+    - { kind: damage, attack: spell, formula: 1d10, cantripAt5: 2d10, damageType: fire, autoOnCast: true, context: 命中時傷害 }
+  body: |-
+    - 向射程內一個生物或物體擲出火焰，對目標進行一次遠程法術攻擊
+    - 命中時，目標受到1d10火焰傷害
+    - 被此法術擊中的易燃物體若未被穿戴或攜帶，會開始燃燒
+    - 戲法升級：5級時傷害提升為2d10
+srd:
+  body: |-
+    你朝射程內的一個生物或物體擲出一團火焰。對目標進行一次遠程法術攻擊。命中時，目標受到1d10火焰傷害。被此法術命中且未被穿戴或攜帶的可燃物體會開始燃燒。
+
+    _戲法升級。_ 當你達到5級（2d10）、11級（3d10）與17級（4d10）時，傷害增加1d10。
+en:
+  body: |-
+    You hurl a mote of fire at a creature or an object within range. Make a ranged spell attack against the target. On a hit, the target takes 1d10 Fire damage. A flammable object hit by this spell starts burning if it isn't being worn or carried.
+
+    _Cantrip Upgrade._ The damage increases by 1d10 when you reach levels 5 (2d10), 11 (3d10), and 17 (4d10).

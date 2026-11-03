@@ -216,6 +216,9 @@ $html = [System.Text.RegularExpressions.Regex]::Replace(
 # The online About module is lazy-loaded; the offline bundle must carry it locally.
 $html = $html.Replace('</head>', '<script src="legal-about.js" defer></script></head>')
 
+# The online site lazy-loads the SRD spell translations (the spell detail's "SRD 版"); the offline bundle carries them.
+$html = $html.Replace('</head>', '<script src="spell-srd.generated.js" defer></script></head>')
+
 # The offline bundle carries public class content only, even when a local build has a private content pack.
 $privateClassContentTag = '<script src="class-content.private.generated.js" defer></script>'
 if (-not $html.Contains($privateClassContentTag)) { throw "index.html is missing $privateClassContentTag" }

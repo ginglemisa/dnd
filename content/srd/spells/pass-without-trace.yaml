@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: pass-without-trace
+name: 行動無蹤
+nameEn: Pass without Trace
+source: srd
+level: 2
+school: abjuration
+classes: [ druid, ranger ]
+castingTime: [ action ]
+range: self
+components: [ V, S, M ]
+duration: { hours: 1 }
+concentration: true
+site:
+  material: 燒過的槲寄生灰燼
+  body: |-
+    - 持續時間內，你散發出30呎發散區域的隱蔽靈氣
+    - 位於靈氣中時，你與你選擇的每個生物進行敏捷（隱匿）檢定獲得+10加值，且不會留下蹤跡
+srd:
+  material: 燒過的槲寄生灰燼
+  body: |-
+    在持續時間內，你散發出一道30呎發散區域的掩蔽氣場。處於氣場內時，你與你選擇的每個生物在敏捷（隱匿）檢定上獲得+10加值，並且不會留下足跡。
+en:
+  material: ashes from burned mistletoe
+  body: |-
+    You radiate a concealing aura in a 30-foot Emanation for the duration. While in the aura, you and each creature you choose have a +10 bonus to Dexterity (Stealth) checks and leave no tracks.

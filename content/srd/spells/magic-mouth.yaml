@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: magic-mouth
+name: 魔嘴術
+nameEn: Magic Mouth
+source: srd
+level: 2
+school: illusion
+classes: [ bard, wizard ]
+castingTime: [ { minutes: 1 } ]
+ritual: true
+range: { feet: 30 }
+components: [ V, S, M ]
+duration: until-dispelled
+site:
+  material: 價值至少10 GP的玉石粉末（施法時消耗）
+  body: |-
+    - 在射程內一個物體中植入訊息，當觸發條件達成時說出訊息
+    - 選擇一個你能看見、且未被其他生物穿戴或攜帶的物體；接著說出訊息，訊息必須不超過25個字，但可以花至多10分鐘說完；最後決定觸發法術傳遞訊息的情況
+    - 觸發時，一張魔法嘴巴出現在物體上，以你的聲音和你說話時的音量複述訊息
+    - 若物體有嘴巴或看起來像嘴巴的部位（例如雕像的嘴），魔法嘴巴會出現在該處，使話語看起來像是從物體的嘴裡說出
+    - 施法時，你可以讓法術在傳遞一次訊息後結束，或讓它持續存在，每當觸發時重複訊息
+    - 觸發條件可以簡略或詳細，但必須以物體30呎內發生的視覺或聽覺情況為基準，例如任何生物移動到物體30呎內，或銀鈴在其30呎內響起
+srd:
+  material: 價值至少10 GP的玉粉，法術會將其消耗
+  body: |-
+    你在射程內的一個物體中植入一段訊息，當觸發條件滿足時會說出該訊息。選擇你能看見且未被其他生物穿戴或攜帶的一個物體。接著說出訊息，訊息必須在25個字以內，但可以長達10分鐘才傳達完畢。最後，決定觸發法術傳達你訊息的情況。
+
+    當該觸發條件發生時，物體上會出現一張魔法之口，以你的聲音與你說話時相同的音量複述訊息。如果你所選的物體有嘴巴或看起來像嘴巴的東西（例如雕像的嘴），魔法之口會出現在該處，使話語看起來像是從物體的嘴中發出。施放此法術時，你可以讓法術在傳達訊息後結束，或讓它持續存在，並在每次觸發條件發生時重複其訊息。
+
+    觸發條件可以隨你所願地籠統或詳細，但必須以發生在物體30呎內的視覺或聽覺條件為基礎。例如，你可以指示魔法之口在任何生物移動到物體30呎內時說話，或在物體30呎內有銀鈴響起時說話。
+en:
+  material: jade dust worth 10+ GP, which the spell consumes
+  body: |-
+    You implant a message within an object in range—a message that is uttered when a trigger condition is met. Choose an object that you can see and that isn't being worn or carried by another creature. Then speak the message, which must be 25 words or fewer, though it can be delivered over as long as 10 minutes. Finally, determine the circumstance that will trigger the spell to deliver your message.
+
+    When that trigger occurs, a magical mouth appears on the object and recites the message in your voice and at the same volume you spoke. If the object you chose has a mouth or something that looks like a mouth (for example, the mouth of a statue), the magical mouth appears there, so the words appear to come from the object's mouth. When you cast this spell, you can have the spell end after it delivers its message, or it can remain and repeat its message whenever the trigger occurs.
+
+    The trigger can be as general or as detailed as you like, though it must be based on visual or audible conditions that occur within 30 feet of the object. For example, you could instruct the mouth to speak when any creature moves within 30 feet of the object or when a silver bell rings within 30 feet of it.

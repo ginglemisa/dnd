@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: passwall
+name: 穿牆術
+nameEn: Passwall
+source: srd
+level: 5
+school: transmutation
+classes: [ wizard ]
+castingTime: [ action ]
+range: { feet: 30 }
+components: [ V, S, M ]
+duration: { hours: 1 }
+srd:
+  material: 一撮芝麻
+  body: |-
+    在射程內你能看見的木製、灰泥或石製表面（例如牆壁、天花板或地板）上的一點出現一條通道，並在持續時間內維持。你選擇開口的尺寸：最寬5呎、最高8呎、最深20呎。這條通道不會讓周圍的結構變得不穩定。
+
+    當開口消失時，任何仍在此法術所創造的通道中的生物或物體，會被安全地彈出到最靠近你施放此法術所在表面的未被佔據空間。
+en:
+  material: a pinch of sesame seeds
+  body: |-
+    A passage appears at a point that you can see on a wooden, plaster, or stone surface (such as a wall, ceiling, or floor) within range and lasts for the duration. You choose the opening's dimensions: up to 5 feet wide, 8 feet tall, and 20 feet deep. The passage creates no instability in a structure surrounding it.
+
+    When the opening disappears, any creatures or objects still in the passage created by the spell are safely ejected to an unoccupied space nearest to the surface on which you cast the spell.

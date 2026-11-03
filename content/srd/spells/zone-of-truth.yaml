@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: zone-of-truth
+name: 誠實之域
+nameEn: Zone of Truth
+source: srd
+level: 2
+school: enchantment
+classes: [ bard, cleric, paladin ]
+castingTime: [ action ]
+range: { feet: 60 }
+components: [ V, S ]
+duration: { minutes: 10 }
+site:
+  body: |-
+    - 以射程內一點為中心，創造半徑15呎、防範欺瞞的魔法球形區域
+    - 法術結束前，生物在一個回合中首次進入區域或在區域內開始回合時，須進行魅力豁免；失敗時，它在區域內無法故意說謊
+    - 你知道每個生物此豁免成功或失敗
+    - 受影響的生物知道此法術存在，可以避免回答原本會以謊言回應的問題；它可以閃爍其詞，但說出的話必須真實
+srd:
+  body: |-
+    你在以射程內一點為中心、半徑15呎的球形區域內創造出一個防範欺騙的魔法區域。在法術結束前，當生物在一個回合中首次進入該法術區域，或在其中開始其回合時，必須進行一次魅力豁免。豁免失敗的生物在半徑範圍內無法蓄意說謊。你會知道生物在這次豁免中是成功還是失敗。
+
+    受影響的生物知道此法術的存在，並且可以避免回答那些它通常會以謊言回應的問題。這樣的生物可以閃爍其詞，但必須誠實。
+en:
+  body: |-
+    You create a magical zone that guards against deception in a 15-foot-radius Sphere centered on a point within range. Until the spell ends, a creature that enters the spell's area for the first time on a turn or starts its turn there makes a Charisma saving throw. On a failed save, a creature can't speak a deliberate lie while in the radius. You know whether a creature succeeds or fails on this save.
+
+    An affected creature is aware of the spell and can avoid answering questions to which it would normally respond with a lie. Such a creature can be evasive yet must be truthful.

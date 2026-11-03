@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: time-stop
+name: 時間停止
+nameEn: Time Stop
+source: srd
+level: 9
+school: transmutation
+classes: [ sorcerer, wizard ]
+castingTime: [ action ]
+range: self
+components: [ V ]
+duration: instantaneous
+srd:
+  body: |-
+    你短暫地讓除了你自己以外所有人的時間流動停止。其他生物不會經過任何時間，而你連續進行1d4 + 1個回合，期間你可以如常使用動作與移動。
+
+    如果你在此期間使用的其中一個動作，或你在此期間創造的任何效應，影響到你以外的生物，或影響到由你以外的人穿戴或攜帶的物體，此法術即結束。此外，如果你移動到距離你施放法術處超過1,000呎的地方，此法術也會結束。
+en:
+  body: |-
+    You briefly stop the flow of time for everyone but yourself. No time passes for other creatures, while you take 1d4 + 1 turns in a row, during which you can use actions and move as normal.
+
+    This spell ends if one of the actions you use during this period, or any effects that you create during it, affects a creature other than you or an object being worn or carried by someone other than you. In addition, the spell ends if you move to a place more than 1,000 feet from the location where you cast it.

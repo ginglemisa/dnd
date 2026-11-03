@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: sleet-storm
+name: 雪雨暴
+nameEn: Sleet Storm
+source: srd
+level: 3
+school: conjuration
+classes: [ druid, sorcerer, wizard ]
+castingTime: [ action ]
+range: { feet: 150 }
+components: [ V, S, M ]
+duration: { minutes: 1 }
+concentration: true
+site:
+  material: 一把迷你雨傘
+  body: |-
+    - 法術結束前，以射程內你選擇的一點為中心、高40呎、半徑20呎的圓柱形區域中降下凍雨
+    - 該區域為重度遮蔽，區域內暴露在外的火焰會被澆熄
+    - 圓柱內的地面為困難地形
+    - 生物在一個回合中首次進入圓柱或在其中開始回合時，須進行敏捷豁免；失敗時陷入倒地狀態並失去專注
+srd:
+  material: 一把迷你雨傘
+  body: |-
+    在法術結束前，冰雨會落在以射程內你選擇的一個點為中心、高40呎、半徑20呎的圓柱形區域內。該區域為重度遮蔽，且區域內外露的火焰會被撲滅。
+
+    圓柱形區域內的地面為困難地形。當生物在一個回合中首次進入該圓柱形區域，或在該處開始其回合時，必須成功通過敏捷豁免，否則陷入倒地狀態並失去專注。
+en:
+  material: a miniature umbrella
+  body: |-
+    Until the spell ends, sleet falls in a 40-foot-tall, 20-foot-radius Cylinder centered on a point you choose within range. The area is Heavily Obscured, and exposed flames in the area are doused.
+
+    Ground in the Cylinder is Difficult Terrain. When a creature enters the Cylinder for the first time on a turn or starts its turn there, it must succeed on a Dexterity saving throw or have the Prone condition and lose Concentration.

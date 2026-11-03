@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: meld-into-stone
+name: 融身入石
+nameEn: Meld into Stone
+source: srd
+level: 3
+school: transmutation
+classes: [ cleric, druid ]
+castingTime: [ action ]
+ritual: true
+range: touch
+components: [ V, S ]
+duration: { hours: 8 }
+site:
+  outcomes:
+    - { kind: damage, formula: 6d6, damageType: force, autoOnCast: false, context: 石頭大部分被破壞或變形而被逐出時 }
+    - { kind: damage, fixed: 50, damageType: force, autoOnCast: false, context: 石頭完全被破壞或轉化時 }
+  body: |-
+    - 走進一個大到足以完全容納你身體的石質物體或表面，在持續時間內將自己與裝備融入石中；你必須觸碰該石頭才能這麼做
+    - 非魔法感官無法看見或以其他方式察覺你的存在
+    - 融入石中期間：
+      - 你看不見外面發生的事，為聽見外面聲音而進行的感知（察覺）檢定具有劣勢
+      - 你仍能察覺時間流逝，並可以對自己施放法術
+      - 你可以消耗5呎移動力從進入處離開石頭，這會結束法術；除此之外你無法移動
+    - 石頭輕微受損不會傷害你；但若石頭部分毀壞或形狀改變到你無法再容納其中，你會被逐出並受到6d6力場傷害
+    - 若石頭完全毀壞或被轉化為其他物質，你會被逐出並受到50點力場傷害
+    - 被逐出時，你移動到最接近你最初進入處的未被佔據空間，並陷入倒地狀態
+srd:
+  body: |-
+    你步入一個大到足以完全容納你身體的石質物體或表面，在持續時間內，將你自己與你的裝備融入石頭之中。你必須觸碰石頭才能這麼做。你存在的一切痕跡都不會顯現，也無法被非魔法感官偵測到。
+
+    與石頭融合時，你看不見石頭外發生的事，且你為聽取石頭外的聲音而進行的任何感知（察覺）檢定都具有劣勢。你仍能察覺時間的流逝，並且在融入石頭期間可以對自己施放法術。你可以花費5呎移動力從你進入之處離開石頭，這會結束法術。除此之外，你無法移動。
+
+    對石頭造成的輕微物理損傷不會傷害你，但若石頭被部分摧毀，或形狀改變（以致你無法再容身其中），你會被擠出並承受6d6力場傷害。若石頭被完全摧毀（或轉化為不同的物質），你會被擠出並承受50點力場傷害。若被擠出，你會移動到最靠近你最初進入處的未被佔據的空間，並陷入倒地狀態。
+en:
+  body: |-
+    You step into a stone object or surface large enough to fully contain your body, merging yourself and your equipment with the stone for the duration. You must touch the stone to do so. Nothing of your presence remains visible or otherwise detectable by nonmagical senses.
+
+    While merged with the stone, you can't see what occurs outside it, and any Wisdom (Perception) checks you make to hear sounds outside it are made with Disadvantage. You remain aware of the passage of time and can cast spells on yourself while merged in the stone. You can use 5 feet of movement to leave the stone where you entered it, which ends the spell. You otherwise can't move.
+
+    Minor physical damage to the stone doesn't harm you, but its partial destruction or a change in its shape (to the extent that you no longer fit within it) expels you and deals 6d6 Force damage to you. The stone's complete destruction (or transmutation into a different substance) expels you and deals 50 Force damage to you. If expelled, you move into an unoccupied space closest to where you first entered and have the Prone condition.

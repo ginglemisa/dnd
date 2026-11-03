@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: aid
+name: 援助術
+nameEn: Aid
+source: srd
+level: 2
+school: abjuration
+classes: [ bard, cleric, druid, paladin, ranger ]
+castingTime: [ action ]
+range: { feet: 30 }
+components: [ V, S, M ]
+duration: { hours: 8 }
+upcast: true
+site:
+  material: 一條白布
+  outcomes:
+    - { kind: healing, fixed: 5, upcastFixed: 5, autoOnCast: true, context: 每名目標的當前與最大生命值提高；不直接修改角色 HP }
+  body: |-
+    - 選擇射程內至多三個生物
+    - 持續時間內，每個目標的生命值上限與當前生命值各提高5點
+    - 使用更高環階法術位：每比2環高一環，每個目標的生命值提高量額外增加5點
+srd:
+  material: 一條白布條
+  body: |-
+    選擇射程內最多三個生物。在持續時間內，每個目標的生命值上限與目前生命值各增加5點。
+
+    _使用更高環階法術位。_ 每比2環高一環，每個目標的生命值增加5點。
+en:
+  material: a strip of white cloth
+  body: |-
+    Choose up to three creatures within range. Each target's Hit Point maximum and current Hit Points increase by 5 for the duration.
+
+    _Using a Higher-Level Spell Slot._ Each target's Hit Points increase by 5 for each spell slot level above 2.

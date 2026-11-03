@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: blade-barrier
+name: 劍刃護壁
+nameEn: Blade Barrier
+source: srd
+level: 6
+school: evocation
+classes: [ cleric ]
+castingTime: [ action ]
+range: { feet: 90 }
+components: [ V, S ]
+duration: { minutes: 10 }
+concentration: true
+srd:
+  body: |-
+    你創造一道由魔法能量構成、旋轉飛舞的刀刃之牆。這道牆出現在射程內，並持續到持續時間結束。你可以創造一道長達100呎、高20呎、厚5呎的直線牆，或是直徑最大60呎、高20呎、厚5呎的環狀牆。這道牆提供四分之三掩蔽，其所在空間為困難地形。
+
+    任何位於牆所在空間內的生物都要進行敏捷豁免，豁免失敗時受到6d10力場傷害，成功則傷害減半。生物進入牆所在空間或在該處結束其回合時，也要進行該豁免。生物每個回合只需進行一次該豁免。
+en:
+  body: |-
+    You create a wall of whirling blades made of magical energy. The wall appears within range and lasts for the duration. You make a straight wall up to 100 feet long, 20 feet high, and 5 feet thick, or a ringed wall up to 60 feet in diameter, 20 feet high, and 5 feet thick. The wall provides Three-Quarters Cover, and its space is Difficult Terrain.
+
+    Any creature in the wall's space makes a Dexterity saving throw, taking 6d10 Force damage on a failed save or half as much damage on a successful one. A creature also makes that save if it enters the wall's space or ends it turn there. A creature makes that save only once per turn.

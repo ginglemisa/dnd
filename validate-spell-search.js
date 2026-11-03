@@ -69,22 +69,50 @@ async function main() {
       await dialog.locator("#spell-browse-ring").selectOption("4");
       await dialog.locator("#spell-browse-name").selectOption("ice-storm");
       assert.match(await dialog.locator(".spell-browser-detail").innerText(), /學派/);
+      // 網站版｜SRD 版：每次先開網站版；SRD 版第一次切換才載入，唯讀、沒有按鈕，頁尾註明出處。
+      const versionTabs = dialog.locator(".spell-browser-detail .spell-version__tab");
+      assert.deepEqual(await versionTabs.allInnerTexts(), ["網站版", "SRD 版"], "spell detail offers 網站版｜SRD 版");
+      assert.equal(await versionTabs.first().getAttribute("aria-pressed"), "true", "spell detail opens on 網站版");
+      if (width === 1100) assert.equal(await page.evaluate(() => typeof globalThis.spellSrdText), "undefined", "SRD text loads lazily");
+      await versionTabs.nth(1).click();
+      const srdView = dialog.locator(".spell-browser-detail .spell-version__srd");
+      await srdView.locator(".spell-version__attribution").waitFor();
+      assert.match(await srdView.innerText(), /^學派: 塑能\n施法時間: 動作\n射程: 300呎/u, "SRD 版 uses the shared header");
+      assert.match(await srdView.innerText(), /譯自 SRD 5\.2\.1（CC BY 4\.0）$/u);
+      assert.equal(await dialog.locator(".spell-browser-detail .spell-version__site").isVisible(), false, "SRD 版 replaces 網站版");
+      assert.equal(await srdView.locator("button").count(), 0, "SRD 版 has no dice buttons");
+      assert.equal(await versionTabs.nth(1).getAttribute("aria-pressed"), "true");
+      await versionTabs.first().click();
+      assert.equal(await dialog.locator(".spell-browser-detail .spell-version__site").isVisible(), true, "switching back shows 網站版");
       assert.equal(await page.evaluate(() => JSON.stringify(collectStateObject())), beforeBrowse, "reading higher spells does not change character data");
       assert.equal(await dialog.evaluate(el => el.scrollWidth <= el.clientWidth && el.getBoundingClientRect().right <= innerWidth), true);
       const ringValues = () => dialog.locator("#spell-browse-ring option").evaluateAll(options => options.map(option => option.value));
+      // 環位只列所選職業有法術的環位（全部 SRD 法術；網站已有的法術以網站法表為準）。
+      const classRings = classId => page.evaluate(id => ["", ...[...new Set(SpellCatalog.getAllReferenceSpells()
+        .filter(spell => spell.classIds.includes(id)).map(spell => String(spell.level)))]], classId);
       await dialog.locator("#spell-browse-class").selectOption("paladin");
-      assert.deepEqual(await ringValues(), ["", "1", "2"], "paladin lists only first- and second-level spells");
+      assert.deepEqual(await ringValues(), await classRings("paladin"), "paladin lists only its spell levels");
+      assert.equal((await ringValues()).includes("0"), false, "paladin has no cantrips");
       assert.equal(await dialog.locator("#spell-browse-ring").inputValue(), "", "paladin clears an invalid fourth-level selection");
       assert.equal(await dialog.locator("#spell-browse-name").isDisabled(), false, "paladin spells remain selectable");
       await dialog.locator("#spell-browse-ring").selectOption("1");
       await dialog.locator("#spell-browse-class").selectOption("ranger");
-      assert.deepEqual(await ringValues(), ["", "1", "2"], "ranger lists only first- and second-level spells");
+      assert.deepEqual(await ringValues(), await classRings("ranger"), "ranger lists only its spell levels");
       assert.equal(await dialog.locator("#spell-browse-ring").inputValue(), "1", "valid first level survives switching classes");
       await dialog.locator("#spell-browse-ring").selectOption("2");
       await dialog.locator("#spell-browse-class").selectOption("paladin");
       assert.equal(await dialog.locator("#spell-browse-ring").inputValue(), "2", "valid second level survives switching classes");
       await dialog.locator("#spell-browse-class").selectOption("wizard");
-      assert.deepEqual(await ringValues(), ["", "0", "1", "2", "3", "4"], "other classes retain all spell levels");
+      assert.deepEqual(await ringValues(), ["", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"], "wizard lists cantrips through ninth level");
+      // 只供查閱的法術：只有 SRD 版、沒有頁籤與準備詢問，查閱不改角色資料。
+      await dialog.locator("#spell-browse-ring").selectOption("9");
+      await dialog.locator("#spell-browse-name").selectOption("wish");
+      const wishDetail = dialog.locator(".spell-browser-detail");
+      await wishDetail.locator(".spell-version__attribution").waitFor();
+      assert.equal(await wishDetail.locator(".spell-version__tab").count(), 0, "lookup-only spells show SRD 版 without tabs");
+      assert.match(await wishDetail.innerText(), /^學派: 咒法\n施法時間: 動作/u);
+      assert.equal(await page.evaluate(() => SpellCatalog.getSpell("wish")), undefined, "lookup-only spells are not playable");
+      assert.equal(await page.evaluate(() => JSON.stringify(collectStateObject())), beforeBrowse, "reading ninth-level spells does not change character data");
       await dialog.locator("#spell-browse-ring").selectOption("0");
       await dialog.locator("#spell-browse-class").selectOption("ranger");
       assert.equal(await dialog.locator("#spell-browse-ring").inputValue(), "", "invalid cantrip level clears on ranger switch");
@@ -100,15 +128,20 @@ async function main() {
     const results = page.locator("#spell-search-results");
     const buttons = page.locator("#spell-search-result-list button");
     assert.equal(await input.getAttribute("placeholder"), '輸入"火球"或"牧師法術"、"詩人二環"');
-    const catalog = await page.evaluate(() => SpellCatalog.getAllSpells().map(spell => ({
-      id: spell.spellId, level: spell.level, name: spell.nameEn,
-      display: SpellCatalog.getDisplayName(spell.spellId), classes: SpellCatalog.getClassIds(spell.spellId),
-      text: `${spell.nameZh}\n${spell.nameEn}\n${SpellCatalog.getDisplayName(spell.spellId)}\n${spell.desc}`.toLowerCase()
+    // 搜尋涵蓋全部 SRD 法術（只供查閱的法術只比對名稱）；可用法術的職業法表與 getSpellIds 相同。
+    const catalog = await page.evaluate(() => SpellCatalog.getAllReferenceSpells().map(spell => ({
+      id: spell.spellId, level: spell.level, name: spell.nameEn, playable: spell.playable,
+      display: `${spell.nameZh} ${spell.nameEn}`, classes: [...spell.classIds],
+      text: `${spell.nameZh}\n${spell.nameEn}\n${spell.nameZh} ${spell.nameEn}\n${SpellCatalog.getSpell(spell.spellId)?.desc || ""}`.toLowerCase()
     })));
-    const classLists = await page.evaluate(() => Object.fromEntries(
+    assert.equal(catalog.length, 339, "search covers all SRD spells");
+    assert.equal(catalog.filter(spell => spell.playable).length, 217);
+    const classLists = Object.fromEntries(
       ["artificer", "bard", "cleric", "druid", "paladin", "ranger", "sorcerer", "warlock", "wizard"].map(id =>
-        [id, Array.from({ length: 10 }, (_, level) => SpellCatalog.getSpellIds(id, level))])
-    ));
+        [id, Array.from({ length: 10 }, (_, level) => catalog.filter(spell => spell.level === level && spell.classes.includes(id)).map(spell => spell.id))])
+    );
+    assert.deepEqual(await page.evaluate(() => [0, 1, 2, 3, 4].map(level => SpellCatalog.getSpellIds("wizard", level))),
+      [0, 1, 2, 3, 4].map(level => classLists.wizard[level]), "playable class lists match the lookup data");
     const submit = async (query, keyboard = false) => {
       await input.fill(query);
       if (keyboard) await input.press("Enter");
@@ -146,6 +179,19 @@ async function main() {
     await checkClass("牧師1環", "cleric", 1);
     await checkClass("  牧師 一環  ", "cleric", 1);
     await checkClass("法師九環", "wizard", 9);
+    await checkClass("牧師五環", "cleric", 5);
+    // 只供查閱的法術：搜尋結果只開詳情（SRD 版），不詢問是否準備。
+    await submit("祈願術");
+    assert.deepEqual(await buttons.allTextContents(), ["祈願術 Wish"]);
+    const selectedBeforeLookup = await page.evaluate(() => SpellManagement.getEntries());
+    await buttons.first().click();
+    const lookupDetail = page.locator("#quick-build-spell-detail");
+    assert.equal(await lookupDetail.isVisible(), true);
+    await lookupDetail.locator(".spell-version__attribution").waitFor();
+    assert.equal(await lookupDetail.locator(".quick-build-spell-prepare").isVisible(), false, "lookup-only spells never ask to prepare");
+    assert.equal(await lookupDetail.locator(".spell-version__tab").count(), 0);
+    await page.locator(".quick-build-spell-detail-close").click();
+    assert.deepEqual(await page.evaluate(() => SpellManagement.getEntries()), selectedBeforeLookup, "viewing lookup-only spells does not prepare them");
     for (const query of ["火球", "fIrEbAlL", "專注", "法師", "牧師法術不存在"]) {
       await submit(query);
       assert.deepEqual(await buttons.allTextContents(), catalog.filter(spell => spell.text.includes(query.toLowerCase())).map(spell => spell.display), `${query}: original full-text search`);
@@ -206,8 +252,11 @@ async function validateArtificerCatalog(browser) {
         { spellId: "fixture-decoy", nameZh: "測試對照", nameEn: "Decoy", level: 1, desc: "奇械法術 奇械師法術 奇械一環", classes: ["wizard"] },
         { spellId: "fixture-a", nameZh: "測試甲", nameEn: "Alpha", level: 1, desc: "", classes: ["artificer"] }
       ];
+      const reference = spell => ({ spellId: spell.spellId, nameZh: spell.nameZh, nameEn: spell.nameEn, level: spell.level, playable: true, classIds: spell.classes });
       window.SpellCatalog = {
-        getAllSpells: () => spells,
+        getAllReferenceSpells: () => spells.map(reference),
+        getReferenceSpell: id => spells.filter(spell => spell.spellId === id).map(reference)[0],
+        getSpell: id => spells.find(spell => spell.spellId === id),
         getClassIds: id => spells.find(spell => spell.spellId === id).classes,
         getDisplayName: id => spells.find(spell => spell.spellId === id).nameZh
       };

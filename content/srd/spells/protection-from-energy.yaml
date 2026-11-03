@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: protection-from-energy
+name: 防護能量傷害
+nameEn: Protection from Energy
+source: srd
+level: 3
+school: abjuration
+classes: [ cleric, druid, sorcerer, wizard ]
+castingTime: [ action ]
+range: touch
+components: [ V, S ]
+duration: { hours: 1 }
+concentration: true
+site:
+  body: |-
+    - 持續時間內，你觸碰的自願生物獲得一種你選擇的傷害類型抗性：強酸、冷凍、火焰、閃電或雷鳴
+srd:
+  body: |-
+    在持續時間內，你所觸碰的自願生物對你選擇的一種傷害類型具有抗性：強酸傷害、冷凍傷害、火焰傷害、閃電傷害或雷鳴傷害。
+en:
+  body: |-
+    For the duration, the willing creature you touch has Resistance to one damage type of your choice: Acid, Cold, Fire, Lightning, or Thunder.

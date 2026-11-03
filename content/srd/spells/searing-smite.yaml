@@ -1,0 +1,34 @@
+# yaml-language-server: $schema=../../schema/spell.schema.json
+id: searing-smite
+name: 熾焰斬
+nameEn: Searing Smite
+source: srd
+level: 1
+school: evocation
+classes: [ paladin ]
+castingTime: [ bonus-action ]
+range: self
+components: [ V ]
+duration: { minutes: 1 }
+upcast: true
+site:
+  trigger: 在你以近戰武器或徒手打擊命中目標後立即施放
+  outcomes:
+    - { kind: damage, formula: 1d6, upcastDice: 1d6, damageType: fire, autoOnCast: true, context: 觸發本法術的命中額外傷害 }
+    - { kind: damage, formula: 1d6, upcastDice: 1d6, damageType: fire, autoOnCast: false, context: 目標後續回合開始時；不在初次施法重複擲骰 }
+  body: |-
+    - 命中時，目標從該次攻擊額外受到1d6火焰傷害
+    - 法術結束前，目標在它每個回合開始時受到1d6火焰傷害，然後進行體質豁免；失敗時法術持續，成功時法術結束
+    - 使用更高環階法術位：每比1環高一環，本法術的所有傷害各增加1d6
+srd:
+  trigger: 你在以近戰武器或徒手打擊命中目標後立即執行
+  body: |-
+    當你命中目標時，目標因該次攻擊額外受到1d6火焰傷害。在法術結束前，目標在其每個回合開始時受到1d6火焰傷害，然後進行一次體質豁免。豁免失敗，法術持續；豁免成功，法術結束。
+
+    _使用更高環階法術位。_ 法術位環階每高於1環一環，所有傷害增加1d6。
+en:
+  trigger: which you take immediately after hitting a target with a Melee weapon or an Unarmed Strike
+  body: |-
+    As you hit the target, it takes an extra 1d6 Fire damage from the attack. At the start of each of its turns until the spell ends, the target takes 1d6 Fire damage and then makes a Constitution saving throw. On a failed save, the spell continues. On a successful save, the spell ends.
+
+    _Using a Higher-Level Spell Slot._ All the damage increases by 1d6 for each spell slot level above 1.
