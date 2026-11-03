@@ -144,7 +144,8 @@ function addBlock(context, id, html) {
 
 function renderOptions(feature, context, where) {
   const { classDef, view } = context;
-  const inTabletop = Boolean(feature.actions);
+  // 有跑團按鈕、或短休／長休後可改選（休息對話框顯示選項說明）的能力，各選項都產生跑團說明段落。
+  const inTabletop = Boolean(feature.actions || feature.changeOn);
   const cards = feature.optionStyle === "cards";
   const items = feature.options.map(option => {
     const at = `${where} 選項 ${option.name}`;
@@ -293,7 +294,7 @@ function checkTabletopBlocks(context, tabletop) {
     ...(feature.parts || []).map(part => part.id),
     ...getActions(feature).flatMap(action => action.append || []),
     ...(feature.options || [])
-      .filter(option => option.actions || (feature.actions || []).some(action => action.selectedOptionOnly))
+      .filter(option => option.actions || feature.changeOn || (feature.actions || []).some(action => action.selectedOptionOnly))
       .map(option => `${classDef.id}-${option.id.slice(feature.id.length + 1)}`)
   ]).concat((classDef.appendix || []).flatMap(item => (item.parts || []).filter(part => part.actions).map(part => part.id)));
   const missing = [...new Set(ids.filter(Boolean))].filter(id => !Object.hasOwn(tabletop, id));
