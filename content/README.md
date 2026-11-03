@@ -17,6 +17,7 @@
 | 公開種族 | `content/srd/races/<種族 ID>.yaml` |
 | 公開法術 | `content/srd/spells/<法術 ID>.yaml` |
 | 私人內容包（不進公開 repo） | `content/private/classes/`、`content/private/subclasses/` |
+| 私人法術（格式已訂、尚未啟用） | `content/private/spells/<法術 ID>.yaml` |
 | 私人內容包補充既有職業（例如兼職） | `content/private/class-extensions/<職業 ID>.yaml` |
 | 私人內容包的兼職共用規則與法術位表 | `content/private/rules/multiclass.yaml` |
 | 格式定義（JSON Schema） | `content/schema/` |
@@ -208,7 +209,7 @@ mount: { id: bard-magical-discoveries, label: 魔法發現法術選擇 }
 
 選項的 `id`、下拉選單的 `select.id` 與選項值、動作的 `key`／`legacyKeys`、`resource.key`、子職 `id` 會寫進存檔、分享網址或跑團偏好；選項的 `attackNote` 會寫進角色的攻擊備註；子職法術的來源識別碼（見「能力給予的法術」）會寫進角色的法術清單。改顯示文字沒關係，這些 ID 不可改。
 
-這些 ID 都列在根目錄的 `class-id-baseline.json`（私人內容包另有 `content/private/class-id-baseline.json`）；專長列在 `feat-id-baseline.json`，背景 ID 列在 `background-id-baseline.json`。ID 不見、改名或新增而基準檔沒更新時，建置會失敗。確定是刻意新增時執行：
+這些 ID 都列在根目錄的 `class-id-baseline.json`（私人內容包另有 `content/private/class-id-baseline.json`）；專長、背景、種族與法術各有 `feat-id-baseline.json`、`background-id-baseline.json`、`race-id-baseline.json`、`spell-id-baseline.json`（見各節）。ID 不見、改名或新增而基準檔沒更新時，建置會失敗。確定是刻意新增時執行：
 
 ```bash
 npm run build -- --update-id-baseline
@@ -326,7 +327,7 @@ description: |
 | `name` | 背景名稱，最多四字。 |
 | `source` | 內容來源（必填）：`srd` 出自 SRD 5.2.1；`extended` 是本站另外撰寫的內容，選單名稱、背景頁與快速創角卡片會加上來源標籤，背景頁另顯示說明。標籤字樣由 `character-rules.js` 的 `getContentSourceLabel` 決定，名稱加標籤的寫法（例如「耕者(擴充)」）由 `formatContentSourceName` 產生。之後可再增加其他值。 |
 | `abilities` | 可調整的三項屬性 ID（`str`、`dex`、`con`、`int`、`wis`、`cha`），購點與快速創角依此限制背景加值。畫面顯示為「智力,感知,魅力」。 |
-| `feat` | 起源專長，寫專長 ID（`content/srd/feats` 的起源專長，ID 是中文名）。魔法學徒寫成 `{ id: 魔法學徒, spellList: 職業 ID }`，`spellList` 是法術列表（`cleric`、`druid`、`wizard`），畫面顯示為「魔法學徒（牧師）」；給予魔法學徒的背景也讓角色具有施法能力。 |
+| `feat` | 起源專長，寫專長 ID（`content/srd/feats` 的起源專長，ID 是中文名）。魔法學徒寫成 `{ id: 魔法學徒, spellList: 職業 ID }`，`spellList` 是法術列表（`cleric`、`druid`、`wizard`），畫面顯示為「魔法學徒（牧師）」。起源專長有 `grantsSpellcasting`（例如魔法學徒）時，背景也讓角色具有施法能力。 |
 | `skills` | 兩項技能 ID（`character-rules.js` 的 `CharacterSkillAbilities`，目前是中文名），畫面自動加上提示框。 |
 | `tool` | 工具熟練：工具 ID（`tool-data.js` 的工具名稱），或 `{ chooseFrom: 工具組 ID }` 從該組擇一（例如士兵的 `gaming`，畫面顯示「擇一賭具：……」，依工具目錄順序）。 |
 | `equipment.A` | 預設裝備：`items` 是各項物品的純文字（例如「羊皮紙 ×10」），`gold` 是金幣數（顯示在最後，例如「8 金幣」）。擇一的工具寫 `{ toolChoice: true }`（只能用在 `tool` 為 `chooseFrom` 的背景），顯示為「賭具擇一」，快速創角換成玩家選的工具。 |
@@ -538,7 +539,9 @@ referenceEn:
 | 指令 | 用途 |
 | --- | --- |
 | `npm run dev` | 開本機預覽，存檔後自動重新建置，重新整理瀏覽器即可看到；畫面網址會顯示在終端機 |
-| `npm run build` | 檢查全部內容檔並產生 `spell-content.generated.js`、`spell-srd.generated.js`、`class-content.generated.js`、`feat-content.generated.js`、`background-content.generated.js` 與 `race-content.generated.js`，有錯就列出檔案與位置 |
+| `npm run build` | 檢查全部內容檔並產生 `spell-content.generated.js`、`spell-srd.generated.js`、`class-content.generated.js`、`class-content.private.generated.js`、`feat-content.generated.js`、`background-content.generated.js` 與 `race-content.generated.js`，有錯就列出檔案與位置 |
+| `npm run build -- --public-only` | 同上，但私人資料檔為空檔（只看公開內容） |
+| `npm run build -- --update-id-baseline` | 確定是刻意新增 ID 時更新各基準檔（見「不可改名的 ID」） |
 | `node tools/spell-reference/validate.js` | 檢查法術的 SRD 譯文（見 [tools/spell-reference/README.md](../tools/spell-reference/README.md)） |
 
-改完內容檔只要提交內容檔本身。`spell-content.generated.js`、`spell-srd.generated.js`、`class-content.generated.js`、`feat-content.generated.js`、`background-content.generated.js`、`race-content.generated.js` 是產生的檔案，不放進 repo、不可手改：本機用 `npm run dev` 或 `npm run build` 產生，上線時由 GitHub Actions 產生。只有公開內容包會寫進產生檔。
+改完內容檔只要提交內容檔本身。`spell-content.generated.js`、`spell-srd.generated.js`、`class-content.generated.js`、`feat-content.generated.js`、`background-content.generated.js`、`race-content.generated.js` 是產生的檔案，不放進 repo、不可手改：本機用 `npm run dev` 或 `npm run build` 產生，上線時由 GitHub Actions 產生。這些檔案只含公開內容包；私人內容只寫進 `class-content.private.generated.js`（同樣不提交），上線建置與離線角色卡的這個檔一律是空檔。
