@@ -2254,13 +2254,7 @@
 
   function buildSorcererElementalAffinityEntry({ className, characterLevel, damageType }) {
     const level = Number.parseInt(characterLevel, 10) || 0;
-    const damageTypeLabel = {
-      acid: "強酸",
-      cold: "冷凍",
-      fire: "火焰",
-      lightning: "閃電",
-      poison: "毒素"
-    }[damageType] || "";
+    const damageTypeLabel = globalScope.getDamageTypeLabel?.(damageType) || "";
     if (!hasSubclassFeature(className, "sorcerer-elemental-affinity", level, "sorcerer", 6) || !damageTypeLabel) return null;
     return {
       label: "抗性",
