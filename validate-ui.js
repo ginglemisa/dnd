@@ -1712,15 +1712,19 @@ async function verifyCharacterFeatures(browser, url) {
     assert.equal(await modal.locator('[role="tab"][aria-selected="true"]').textContent(), "魔祈");
     assert.equal(await modal.locator('input[data-invocation-name="苦痛魔爆"]').first().evaluate(el => el === document.activeElement), true);
     await page.keyboard.press("Escape");
+    await page.waitForFunction(() => !document.querySelector(".onboarding-jump-target"));
+    // Lists light up their heading; a single choice lights up every option. Focus stays on the first open option.
     const choiceAlertCases = [
-      ["sorcerer", "5", "超魔法", "metamagic", 1280, "Enter"],
-      ["warlock", "5", "魔能祈喚", "invocations", 320, " "],
-      ["cleric", "8", "神聖使命", "class", 1280],
-      ["druid", "7", "原初使命", "class", 320],
-      ["paladin", "5", "戰鬥風格", "class", 1280],
-      ["ranger", "7", "防守戰術", "class", 320]
+      ["sorcerer", "5", "超魔法", "metamagic", 1280, "Enter", ["summary@metamagic-options-disclosure"]],
+      ["warlock", "5", "魔能祈喚", "invocations", 320, " ", ["summary@invocation-options-disclosure"]],
+      ["cleric", "8", "神聖使命", "class", 1280, undefined, ["cleric-guardian", "cleric-trickster"]],
+      ["druid", "7", "原初使命", "class", 320, undefined, ["druid-shaman", "druid-sentinel"]],
+      ["paladin", "5", "戰鬥風格", "class", 1280, undefined, ["paladin-fighting-style", "paladin-blessed-warrior"]],
+      ["ranger", "7", "防守戰術", "class", 320, undefined, ["ranger-defensive-tactics-escape-the-horde", "ranger-defensive-tactics-multiattack-defense"]]
     ];
-    for (const [cls, level, label, panel, width, key] of choiceAlertCases) {
+    const jumpHighlights = () => page.evaluate(() => Array.from(document.querySelectorAll(".onboarding-jump-target"),
+      el => el.id || `${el.localName}@${el.parentElement.id}`));
+    for (const [cls, level, label, panel, width, key, highlighted] of choiceAlertCases) {
       await page.setViewportSize({ width, height: 900 });
       await page.emulateMedia({ reducedMotion: cls === "sorcerer" ? "no-preference" : "reduce" });
       await page.locator("#class").selectOption(cls);
@@ -1732,6 +1736,9 @@ async function verifyCharacterFeatures(browser, url) {
       await page.waitForFunction(panel => document.activeElement?.closest("[data-feature-panel]")?.dataset.featurePanel === panel
         && document.querySelector(`[data-feature-panel="${panel}"] .onboarding-jump-target`), panel);
       assert.equal(await modal.locator('[role="tab"][aria-selected="true"]').getAttribute("data-feature-tab"), panel);
+      assert.deepEqual(await jumpHighlights(), highlighted, `${label} reminder highlights the whole choice`);
+      assert.equal(await page.evaluate(() => document.activeElement.matches('input[type="checkbox"]:not(:checked)')), true,
+        `${label} reminder focuses an open option`);
       assert.deepEqual(await page.evaluate(() => collectStateObject()), beforeJump, "sheet reminder navigation preserves character choices");
       await page.keyboard.press("Escape");
       await page.evaluate(() => {
@@ -1755,11 +1762,12 @@ async function verifyCharacterFeatures(browser, url) {
         && document.activeElement?.closest("[data-feature-panel]")?.dataset.featurePanel === panel
         && document.querySelector(`[data-feature-panel="${panel}"] .onboarding-jump-target`), panel);
       assert.equal(await modal.locator('[role="tab"][aria-selected="true"]').getAttribute("data-feature-tab"), panel);
-      assert.equal(await modal.locator(`[data-feature-panel="${panel}"] .onboarding-jump-target`).evaluate(el => {
+      assert.deepEqual(await jumpHighlights(), highlighted, `${label} alert highlights the whole choice`);
+      assert.equal(await modal.locator(`[data-feature-panel="${panel}"] .onboarding-jump-target`).evaluateAll(elements => elements.every(el => {
         const body = el.closest(".app-dialog__body").getBoundingClientRect();
         const rect = el.getBoundingClientRect();
         return rect.top >= body.top && rect.bottom <= body.bottom;
-      }), true, `${label} target is scrolled into view`);
+      })), true, `${label} targets are scrolled into view`);
       assert.deepEqual(await page.evaluate(() => collectStateObject()), beforeJump, "navigation preserves character choices");
       await page.waitForFunction(() => !document.querySelector(".onboarding-jump-target"));
       await page.keyboard.press("Escape");
@@ -1769,6 +1777,66 @@ async function verifyCharacterFeatures(browser, url) {
       await page.evaluate(() => TabletopMode.setMode("sheet"));
     }
     console.log("Character abilities: creation/table relocation for all classes, tab conditions, controls, nested settings, saved state, focus, reminders and responsive layout passed.");
+  } finally { await page.close(); }
+}
+
+// Reminders whose fields are rebuilt in the abilities dialog, span several selects, or are a single select.
+async function verifyChoiceReminderHighlights(browser, url) {
+  const page = await newUiPage(browser, { viewport: { width: 375, height: 812 }, reducedMotion: "reduce" });
+  await page.addInitScript(() => { try { localStorage.setItem("dnd.classFeaturePromptDisabled.v1", "true"); } catch {} });
+  try {
+    await page.goto(url);
+    await page.locator("#legal-close-btn").click();
+    await page.locator("#background").selectOption("acolyte");
+    await page.locator("#race").selectOption("dwarf");
+    const check = selector => page.evaluate(selector => {
+      const input = document.querySelector(selector);
+      input.checked = true;
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    }, selector);
+    const jump = async label => {
+      await page.locator("#class-feature-choice-reminder button").filter({ hasText: label }).click();
+      await page.waitForFunction(() => document.querySelector(".onboarding-jump-target"));
+      const result = await page.evaluate(() => ({
+        highlighted: Array.from(document.querySelectorAll(".onboarding-jump-target"), el => el.id),
+        focused: document.activeElement.id,
+        inView: Array.from(document.querySelectorAll(".onboarding-jump-target")).every(el => {
+          const rect = el.getBoundingClientRect();
+          const body = el.closest(".app-dialog__body")?.getBoundingClientRect() || { top: 0, bottom: innerHeight };
+          return rect.top >= body.top && rect.bottom <= body.bottom;
+        })
+      }));
+      assert.equal(result.inView, true, `${label} highlights are in view`);
+      await page.keyboard.press("Escape");
+      await page.waitForFunction(() => !document.querySelector(".app-dialog"));
+      await page.evaluate(() => document.querySelectorAll(".onboarding-jump-target").forEach(el => el.classList.remove("onboarding-jump-target")));
+      return result;
+    };
+
+    await page.locator("#class").selectOption("paladin");
+    await page.locator("#level").selectOption("2");
+    assert.deepEqual(await jump("魔法學徒"), {
+      highlighted: ["derived-feat-background-magic-initiate-cantrip-1", "derived-feat-background-magic-initiate-cantrip-2", "derived-feat-background-magic-initiate-level-1"],
+      focused: "derived-feat-background-magic-initiate-cantrip-1", inView: true
+    }, "Magic Initiate highlights its open spell selects, not the background's fixed list");
+    await check("#paladin-blessed-warrior");
+    assert.deepEqual(await jump("受祝福的勇士"), {
+      highlighted: ["class-feature-linked-class-paladin-blessed-warrior-0", "class-feature-linked-class-paladin-blessed-warrior-1"],
+      focused: "class-feature-linked-class-paladin-blessed-warrior-0", inView: true
+    }, "Blessed Warrior highlights both cantrip selects");
+
+    await page.locator("#class").selectOption("warlock");
+    await check('#eldritch-invocations-output input[data-invocation-name="苦痛魔爆"]');
+    const agonizing = await jump("苦痛魔爆");
+    assert.match(agonizing.highlighted.join(), /^class-feature-linked-eldritch-invocation-\d+-1-cantrip-0$/, "Agonizing Blast highlights the visible cantrip select");
+    assert.equal(agonizing.focused, agonizing.highlighted[0]);
+
+    await page.locator("#class").selectOption("druid");
+    await page.locator("#level").selectOption("3");
+    await check("#druid-sentinel");
+    assert.deepEqual(await jump("大地結社地貌"), { highlighted: ["druid-land"], focused: "druid-land", inView: true },
+      "a single select stays the only highlight");
+    console.log("Choice reminders: multi-select, rebuilt dialog selects and single-select highlights passed.");
   } finally { await page.close(); }
 }
 
@@ -3439,6 +3507,7 @@ async function main() {
       await verifyFeatureChoiceDisclosures(browser, url);
       await verifyCustomBackground(browser, url);
       await verifyCharacterFeatures(browser, url);
+      await verifyChoiceReminderHighlights(browser, url);
       await verifyClassFeatureChoicePrompt(browser, url);
       await verifyClassFeatureSupplementalChoices(browser, url);
       await verifyFeatureReferences(browser, url);
