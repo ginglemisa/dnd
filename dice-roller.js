@@ -618,10 +618,13 @@
           values: Object.freeze(Array.from({ length: term.count }, () => rollDie(term.sides)))
         });
       });
-      const total = rolledTerms.reduce((sum, term) => {
+      const rawTotal = rolledTerms.reduce((sum, term) => {
         if (term.type === "modifier") return sum + term.value;
         return sum + term.sign * term.values.reduce((termSum, value) => termSum + value, 0);
       }, 0);
+      const minimum = Number.isFinite(options.min) ? options.min : null;
+      const total = minimum !== null ? Math.max(rawTotal, minimum) : rawTotal;
+      const isRaised = total !== rawTotal;
       const expressionText = rolledTerms.map((term, index) => {
         const sign = index === 0 ? (term.sign < 0 ? "-" : "") : (term.sign < 0 || term.value < 0 ? "-" : "+");
         const value = term.type === "dice"
@@ -641,13 +644,17 @@
         });
       });
       const calculation = equationParts.join(" ");
-      const equation = equationParts.length > 1 ? `${calculation} = ${total}` : String(total);
+      const raisedNote = isRaised ? `原 ${rawTotal}，最少 ${minimum}` : "";
+      const equation = isRaised
+        ? `${equationParts.length > 1 ? `${calculation} = ${rawTotal}` : String(rawTotal)} → ${total}（最少 ${minimum}）`
+        : equationParts.length > 1 ? `${calculation} = ${total}` : String(total);
       const label = String(options.label || "擲骰").trim() || "擲骰";
 
       addHistoryEntry({
         expression: expressionText,
         total,
         label,
+        note: raisedNote,
         values: rolledTerms.flatMap(term => term.type === "dice"
           ? term.values.map(value => ({ value, sides: term.sides }))
           : [])
@@ -661,7 +668,8 @@
         values: Object.freeze(values),
         terms: Object.freeze(rolledTerms),
         equation,
-        total
+        total,
+        ...(isRaised ? { rawTotal, min: minimum } : {})
       });
       window.dispatchEvent?.(new CustomEvent("diceroll", { detail }));
       return detail;
@@ -679,6 +687,7 @@
       const rolls = entries.flatMap(entry => {
         const result = rollExpression(entry?.expression, {
           label: entry?.label,
+          min: entry?.min,
           notify: false
         });
         if (!result) return [];
@@ -750,6 +759,7 @@
         return Object.freeze({
           expression,
           fixed: hasFixed ? fixed : null,
+          min: entry?.min !== null && entry?.min !== undefined && Number.isFinite(Number(entry.min)) ? Number(entry.min) : null,
           label: String(entry?.label || `結果 ${index + 1}`).trim() || `結果 ${index + 1}`,
           detail: String(entry?.detail || "").trim()
         });
@@ -768,6 +778,7 @@
         if (entry.expression) {
           const result = performExpressionRoll(parseExpression(entry.expression), {
             label: entry.label,
+            min: entry.min,
             notify: false
           });
           return result ? { entry, result } : null;

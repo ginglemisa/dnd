@@ -203,6 +203,7 @@ const rulesSandbox = { window: {} };
 // character-rules.js reads class mechanics (spell slots) from the generated class content (npm run build).
 vm.runInNewContext(`${fs.readFileSync("class-content.generated.js", "utf8")}\n${fs.readFileSync("character-rules.js", "utf8")}`, rulesSandbox);
 globalThis.getSpellSlotCounts = rulesSandbox.window.getSpellSlotCounts;
+globalThis.getDamageTypeLabel = rulesSandbox.window.getDamageTypeLabel;
 const vigorLevel = globalThis.TabletopMode.logic.getFiendishVigorCastLevel;
 for (let level = 2; level <= 8; level += 1) {
   assert.equal(vigorLevel({ spellId: "false-life", className: "warlock", characterLevel: level, selected: true }), Math.ceil(level / 2));
