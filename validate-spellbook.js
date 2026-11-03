@@ -1228,6 +1228,10 @@ async function verifyFamiliarReferences(browser, url) {
       await page.evaluate(() => { void Spellbook.openReadOnly("mage-armor", document.getElementById("spell-prepare")); });
       assert.equal(await readOnly.locator("button.spell-readonly-reference").count(), 0, "other spells get no familiar references");
       await readOnly.locator(".app-dialog__button--primary").click();
+      await page.evaluate(() => { void Spellbook.openReadOnly("find-steed", document.getElementById("spell-prepare")); });
+      assert.equal(await readOnly.locator('button.spell-readonly-reference[data-beast="otherworldly_steed"]').textContent(), "異界坐騎", "find steed links the otherworldly steed");
+      assert.equal((await readOnly.locator(".spell-readonly-description").textContent()).includes("<span"), false, "find steed shows no raw markup");
+      await readOnly.locator(".app-dialog__button--primary").click();
 
       // 魔祈頁的「獲得魔寵」：角色能力視窗上的法術詳情（快速創角視窗）
       await page.evaluate(() => { openCharacterFeatures("invocations", document.getElementById("spell-prepare")); });
