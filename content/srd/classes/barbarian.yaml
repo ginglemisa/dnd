@@ -18,6 +18,9 @@ skills:
 weapons: 簡易、軍用武器
 tools: 無
 armor: 輕甲、中甲、盾牌
+proficiencies:
+  weapons: { categories: [simple, martial] }
+  armor: [light, medium, shield]
 equipment:
   A: 巨斧、手斧 ×4、探索套組、15 金幣
   B: 75 金幣
@@ -83,6 +86,8 @@ features:
   - id: barbarian-weapon-mastery
     level: 1
     name: 武器精通
+    picks:
+      - { kind: weaponMastery, count: weaponMastery, from: proficient, changeOn: longRest }
     text: |
       從你熟練的武器中選擇 2 種，取得其精通屬性，例如巨斧、手斧。
 
@@ -118,6 +123,8 @@ features:
   - id: barbarian-primal-knowledge
     level: 3
     name: 先祖學識
+    picks:
+      - { kind: skill, count: 1, from: class }
     hint: {panels: [skills]}
     summary: 狂暴時你可用力量做以下技能檢定，體操、威嚇、察覺、隱匿、求生。
     text: |

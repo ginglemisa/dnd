@@ -4,7 +4,7 @@
 "use strict";
 const { ContentError } = require("../content/errors");
 const { escapeHtml, renderInline, renderMarkdown } = require("../content/markdown");
-const { BUILT_IN_VALUES, getActions } = require("./load");
+const { BUILT_IN_VALUES, getActions, getPickFields } = require("./load");
 
 const NUMBER_WORDS = Object.freeze({ 1: "一", 2: "兩", 3: "三", 4: "四" });
 
@@ -182,6 +182,18 @@ function renderSelectCard(select, markdownOptions, where) {
   return `<article class="feature-choice-card"><select id="${select.id}">${choices}</select>${body}</article>`;
 }
 
+// 武器精通選單（picks 的 weaponMastery）：每個存檔欄位一個選單，選項（職業熟練的武器）由網站填入
+// （class-features-ui.js 的 renderClassPickChoices），超過目前等級數量的欄位由網站隱藏、保留選擇。
+function renderWeaponMasteryPicks(feature, classDef) {
+  return (feature.picks || []).filter(pick => pick.kind === "weaponMastery").map(pick => {
+    const slots = getPickFields(classDef, feature, pick).map((id, index) => `<div class="class-pick-slot" data-class-pick-slot="${index + 1}">`
+      + `<label for="${id}">${escapeHtml(feature.name)} ${index + 1}</label><div class="feat-choice-control">`
+      + `<select id="${id}" data-class-pick="${feature.id}"><option value="">-- 請選擇武器 --</option></select>`
+      + `<button type="button" class="feat-choice-view" data-weapon-rule-kind="mastery" data-weapon-rule="" disabled>查看</button></div></div>`).join("");
+    return `<div class="class-pick-slots" data-class-pick-kind="${pick.kind}">${slots}</div>`;
+  }).join("");
+}
+
 // 附錄：沒有等級的 section（例如術士的「超魔法選項」、契術師的「魔能祈喚選項」），接在所有能力之後；小節沿用舊版的通用 class。
 // 有 kind 的附錄由網站做成選擇卡片（class-features-ui.js 讀 classRules 各小節的 html），職業頁的 section 加上
 // data-class-appendix，職業能力頁籤據此略過。小節輸出成通用小節，標題為「名稱（先決條件：…）」或「名稱＋detail」。
@@ -273,6 +285,8 @@ function renderFeature({ feature, owner }, context) {
     addBlock(context, feature.id, tabletop === null ? body : appended ? addAppendedPrefix(tabletop, feature, `${where} tabletop`) : tabletop);
     return "";
   }
+  // 武器精通選單只在職業頁（跑團說明不含選單）。
+  body += renderWeaponMasteryPicks(feature, classDef);
   // 子職能力加上 data-subclass（子職 ID），網站只顯示目前選擇的子職。data-feature-id（能力 ID）是網站在職業頁找能力段落的錨點。
   const attributes = [
     `class="${classDef.id}-feature class-feature-section"`,

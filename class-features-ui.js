@@ -86,10 +86,160 @@ function restoreSubclassSelection(data) {
   return Boolean(saved) && !known && select.options.length > 0;
 }
 
-const MISSION_CANTRIP_CHOICES = Object.freeze([
-  { checkboxId: "cleric-trickster", className: "cleric", label: "魔術使：額外牧師戲法", sourceLabel: "來源：魔術使" },
-  { checkboxId: "druid-shaman", className: "druid", label: "巫祝：額外德魯伊戲法", sourceLabel: "來源：巫祝" }
-]);
+// 勾選後額外學會 1 個戲法的選項（內容檔選項的 grants.cantrips，count 為 1，例如魔術使、巫祝）：選項下方出現戲法選單
+// 「選項 ID-cantrip」。學會 2 個戲法的選項（受祝福的勇士、德魯伊教戰士）另由職業能力戲法處理。
+let missionCantripChoicesCache = null;
+function getMissionCantripChoices() {
+  const source = typeof classRules === "undefined" ? null : classRules;
+  if (missionCantripChoicesCache?.source === source) return missionCantripChoicesCache.choices;
+  const choices = Object.values(source || {}).flatMap(rules => rules.features.flatMap(feature => (feature.options || [])
+    .filter(option => option.grants?.cantrips?.count === 1)
+    .map(option => Object.freeze({
+      checkboxId: option.id,
+      className: option.grants.cantrips.list,
+      label: `${option.name}：額外${source[option.grants.cantrips.list]?.name || ""}戲法`,
+      sourceLabel: `來源：${option.name}`
+    }))));
+  missionCantripChoicesCache = { source, choices: Object.freeze(choices) };
+  return missionCantripChoicesCache.choices;
+}
+
+// 選項 grants.cantrips 數量 2 以上（受祝福的勇士、德魯伊教戰士）：勾選且達到能力等級後自選戲法，
+// 選擇存在 SpellManagement 的職業特性戲法，欄位鍵為 class-<選項 ID>-cantrip-<序號>。不帶職業時回傳全部。
+let classFeatureCantripChoicesCache = null;
+function getClassFeatureCantripChoices(className) {
+  const source = typeof classRules === "undefined" ? null : classRules;
+  if (classFeatureCantripChoicesCache?.source !== source) {
+    const choices = Object.values(source || {}).flatMap(rules => rules.features.flatMap(feature => (feature.options || [])
+      .filter(option => option.grants?.cantrips?.count > 1)
+      .map(option => {
+        const { count, list, label } = option.grants.cantrips;
+        const sourceKey = `class-${option.id}`;
+        return Object.freeze({
+          className: rules.id,
+          checkboxId: option.id,
+          level: feature.level,
+          spellClass: list,
+          spellClassName: source[list]?.name || "",
+          label: label || option.name,
+          sourceKey,
+          keys: Object.freeze(Array.from({ length: count }, (_, index) => `${sourceKey}-cantrip-${index + 1}`))
+        });
+      })));
+    classFeatureCantripChoicesCache = { source, choices: Object.freeze(choices) };
+  }
+  const { choices } = classFeatureCantripChoicesCache;
+  return className === undefined ? choices : choices.filter(choice => choice.className === className);
+}
+
+function isClassFeatureCantripKey(className, key) {
+  return getClassFeatureCantripChoices(className).some(choice => choice.keys.includes(key));
+}
+
+// 武器精通選單（內容檔 picks 的 weaponMastery；建置在職業頁「武器精通」段落輸出空選單，data-class-pick 為能力 ID）：
+// 選項為職業熟練、有精通屬性的武器，值為武器名稱；超過目前等級數量的選單隱藏但保留選擇。
+function getWeaponMasteryPickControls() {
+  return Array.from(document.querySelectorAll("#classFeatures select[data-class-pick]"));
+}
+
+function getActiveWeaponMasteryPicks() {
+  const className = document.getElementById("class")?.value || "";
+  const level = typeof getClassRulesLevel === "function" ? getClassRulesLevel() : 1;
+  return window.getClassPicks?.(className, level, { kind: "weaponMastery" }) || [];
+}
+
+function getWeaponMasteryWeapon(name) {
+  return (typeof getAllWeapons === "function" ? getAllWeapons() : []).find(weapon => weapon.名稱 === name) || null;
+}
+
+function renderClassPickChoices() {
+  // 武器與熟練判斷在 index.html 後段的 script 定義；早於它們的呼叫先略過，之後的重繪會補上。
+  if (typeof getAllWeapons !== "function" || typeof isWeaponProficient !== "function") return;
+  const weapons = getAllWeapons().filter(weapon => weapon.名稱 !== "武藝" && hasMeaningfulEquipmentValue(weapon.精通) && isWeaponProficient(weapon));
+  getWeaponMasteryPickControls().forEach(select => {
+    const current = select.value;
+    select.replaceChildren(new Option("-- 請選擇武器 --", ""), ...weapons.map(weapon => new Option(`${weapon.名稱}（${weapon.精通}）`, weapon.名稱)));
+    if (weapons.some(weapon => weapon.名稱 === current)) select.value = current;
+    if (select.dataset.classPickBound === "true") return;
+    select.dataset.classPickBound = "true";
+    select.addEventListener("change", () => {
+      syncClassPickChoices();
+      window.updateWeaponMasteryBadges?.();
+      updateClassFeatureChoiceReminder();
+      scheduleSaveAllFields();
+    });
+  });
+  syncClassPickChoices();
+}
+
+// 依目前等級顯示選單數量；同一能力的其他選單已選的武器不可重複選；「查看」顯示所選武器的精通說明。
+function syncClassPickChoices() {
+  const counts = new Map(getActiveWeaponMasteryPicks().map(({ feature, count }) => [feature.id, count]));
+  const controls = getWeaponMasteryPickControls();
+  controls.forEach(select => {
+    const slot = select.closest("[data-class-pick-slot]");
+    const visible = Number(slot?.dataset.classPickSlot || 0) <= (counts.get(select.dataset.classPick) || 0);
+    if (slot) slot.hidden = !visible;
+    const taken = new Set(controls.filter(other => other !== select && other.dataset.classPick === select.dataset.classPick && !isClassPickSlotHidden(other))
+      .map(other => other.value).filter(Boolean));
+    Array.from(select.options).forEach(option => { option.disabled = Boolean(option.value) && taken.has(option.value); });
+    const view = slot?.querySelector("[data-weapon-rule-kind]");
+    const mastery = getWeaponMasteryWeapon(select.value)?.精通 || "";
+    if (view) {
+      view.dataset.weaponRule = mastery;
+      view.disabled = !mastery;
+      view.setAttribute("aria-label", mastery ? `查看${mastery}精通說明` : "請先選擇武器");
+    }
+  });
+}
+
+// 目前等級已選的精通武器（顯示中的選單）；沒有武器精通選擇時為空集合。
+function getSelectedWeaponMasteries() {
+  return new Set(getWeaponMasteryPickControls().filter(select => !isClassPickSlotHidden(select)).map(select => select.value).filter(Boolean));
+}
+
+// 超過目前等級數量的選單（欄位本身 hidden；職業頁所在的視窗關閉時不算）。
+function isClassPickSlotHidden(select) {
+  return Boolean(select.closest("[data-class-pick-slot]")?.hidden);
+}
+
+// 職業選擇（內容檔 picks）的缺項：專精（技能列的專精勾選框總數）、職業額外語言、武器精通，達到能力等級仍未選滿時提醒。
+// 額外技能熟練（先祖學識、額外熟練項）與法術書法術（塑能學者）無法分辨來源，不提醒。
+function getClassPickIssues(className, level) {
+  const rules = window.getClassRules?.(className);
+  if (!rules) return [];
+  const picks = window.getClassPicks?.(className, level) || [];
+  const issues = [];
+  const expertiseRequired = picks.filter(({ pick }) => pick.kind === "expertise").reduce((sum, { count }) => sum + count, 0);
+  const expertiseChecked = document.querySelectorAll(".circle-checkbox:checked").length;
+  if (expertiseRequired && expertiseChecked < expertiseRequired) issues.push({
+    message: `${rules.name}專精尚未選完（${expertiseChecked}/${expertiseRequired}）。`,
+    tab: "skills",
+    selector: "#skill-bonus-section",
+    focusSelector: ".circle-checkbox:not(:checked):not(:disabled)"
+  });
+  const missingLanguage = picks.filter(({ pick }) => pick.kind === "language").flatMap(({ pick }) => pick.fields)
+    .find(id => document.getElementById(id) && !document.getElementById(id).value);
+  if (missingLanguage) issues.push({
+    message: `${rules.name}額外語言尚未選擇。`,
+    tab: "skills",
+    selector: `#${missingLanguage}`,
+    focusSelector: `#${missingLanguage}`,
+    highlightSelector: "#tab-skills .language-card"
+  });
+  picks.filter(({ pick }) => pick.kind === "weaponMastery").forEach(({ feature, pick, count }) => {
+    const fields = pick.fields.slice(0, count);
+    const chosen = new Set(fields.map(id => document.getElementById(id)?.value).filter(Boolean)).size;
+    const missing = fields.find(id => !document.getElementById(id)?.value);
+    if (chosen < count && missing && document.getElementById(missing)) issues.push({
+      message: `${rules.name}${feature.name}尚未選完（${chosen}/${count}）。`,
+      tab: "basic",
+      selector: `#${missing}`,
+      focusSelector: `#${missing}`
+    });
+  });
+  return issues;
+}
 
 // 職業選項（勾選框與下拉選單）的職業、可用等級與群組：由職業內容檔的 options／select、choose 與能力等級推得
 // （class-content.generated.js 的 classRules）。本檔同步載入、早於產生檔，故第一次使用時才建立。
@@ -717,6 +867,8 @@ async function handleEldritchInvocationChange(el, event, output) {
   updateWarlockInvocationSummary();
   updateACDisplay();
   populateHandAttacks();
+  // 刃之魔契決定裝備頁能否標記契約武器，摘要的熟練警告跟著更新。
+  if (typeof updateEquipmentLoadoutSummary === "function") updateEquipmentLoadoutSummary();
   syncOriginAndSubclassDerivedSpellRows();
   syncAgonizingBlastSelections();
   if (typeof scheduleSaveAllFields === "function") scheduleSaveAllFields();
@@ -1238,22 +1390,18 @@ function createClassFeatureAdditionalChoices(content) {
         getSource: () => document.getElementById(source.id)
       }]);
     });
-    [
-        ["paladin-blessed-warrior", "class-paladin-blessed-warrior", "cleric"],
-        ["ranger-druidic-warrior", "class-ranger-druidic-warrior", "druid"]
-      ].forEach(([id, key, spellClass]) => {
-        const checkbox = document.getElementById(id);
+    getClassFeatureCantripChoices().forEach(({ checkboxId, sourceKey, spellClass, keys }) => {
+        const checkbox = document.getElementById(checkboxId);
         if (!checkbox?.checked || !content.contains(checkbox)) return;
-        add(key, checkbox.closest("section[data-feature-level]"), [1, 2].map(slot => {
-          const sourceKey = `${key}-cantrip-${slot}`;
-          const getSource = () => window.SpellManagement?.getClassFeatureCantripControl(sourceKey);
+        add(sourceKey, checkbox.closest("section[data-feature-level]"), keys.map((key, index) => {
+          const getSource = () => window.SpellManagement?.getClassFeatureCantripControl(key);
           return {
-            label: `戲法 #${slot}`, getSource,
+            label: `戲法 #${index + 1}`, getSource,
             getOptions: () => {
-              const otherKey = `${key}-cantrip-${slot === 1 ? 2 : 1}`;
-              const other = window.SpellManagement.collectClassFeatureCantrips()[otherKey];
+              const chosen = window.SpellManagement.collectClassFeatureCantrips();
+              const others = new Set(keys.filter(other => other !== key).map(other => chosen[other]).filter(Boolean));
               return '<option value="">-- 請選擇戲法 --</option>' + getClassSpells(spellClass, "cantrips").map(spell =>
-                `<option value="${escapeHtml(spell.spellId)}"${spell.spellId === other ? " disabled" : ""}>${escapeHtml(SpellCatalog.getDisplayName(spell.spellId))}</option>`
+                `<option value="${escapeHtml(spell.spellId)}"${others.has(spell.spellId) ? " disabled" : ""}>${escapeHtml(SpellCatalog.getDisplayName(spell.spellId))}</option>`
               ).join("");
             }
           };
@@ -1446,6 +1594,7 @@ function updateClassFeature() {
   renderClassFeatChoices();
   renderMissionCantripChoices();
   renderLevelUpCantripChoice();
+  renderClassPickChoices();
   preservedControlStates.forEach((value, id) => {
     const control = document.getElementById(id);
     if (!control) return;
@@ -1453,6 +1602,8 @@ function updateClassFeature() {
     else if (Array.from(control.options || []).some(option => option.value === value)) control.value = value;
   });
   syncMissionCantripChoices();
+  syncClassPickChoices();
+  window.updateWeaponMasteryBadges?.();
   syncLevelUpCantripChoice();
 
   // 等級 2 前仍列出超魔法供查閱，syncMetamagicSelectionLimit 會停用勾選。
@@ -1481,7 +1632,7 @@ function syncClassFeatureDerivedChoices() {
 }
 
 function renderMissionCantripChoices() {
-  MISSION_CANTRIP_CHOICES.forEach(({ checkboxId, className, label: labelText }) => {
+  getMissionCantripChoices().forEach(({ checkboxId, className, label: labelText }) => {
     const checkbox = document.getElementById(checkboxId);
     if (!checkbox) return;
     const field = document.createElement("div");
@@ -1518,7 +1669,7 @@ function renderMissionCantripChoices() {
 }
 
 function syncMissionCantripChoices() {
-  MISSION_CANTRIP_CHOICES.forEach(({ checkboxId }) => {
+  getMissionCantripChoices().forEach(({ checkboxId }) => {
     const select = document.getElementById(`${checkboxId}-cantrip`);
     const field = select?.closest(".class-feature-mission-cantrip");
     if (!field) return;
@@ -1638,7 +1789,6 @@ let classOptionOwner = { className: "", level: 0 };
 let classOptionTransition = null;
 const CLASS_OPTION_FEAT_ID_PATTERN = /^(?:feat-choice-|derived-feat-)/u;
 const CLASS_OPTION_FEATURE_CONTROLS = "#classFeatures input[id], #classFeatures select[id], #classCreationInfo input[id], #classCreationInfo select[id]";
-const CLASS_FEATURE_CANTRIP_CLASSES = Object.freeze({ paladin: "class-paladin-blessed-warrior-cantrip-", ranger: "class-ranger-druidic-warrior-cantrip-" });
 
 function getCurrentClassOptionOwner() {
   return {
@@ -1685,11 +1835,8 @@ function collectClassOptionSnapshot(className, level) {
   }
   put("subclass", document.getElementById("subclass")?.value || "");
   if (className === "druid") put("druid-land", document.getElementById("druid-land")?.value || "");
-  const cantripPrefix = CLASS_FEATURE_CANTRIP_CLASSES[className];
-  if (cantripPrefix) {
-    Object.entries(window.SpellManagement?.collectClassFeatureCantrips?.() || {})
-      .filter(([key]) => key.startsWith(cantripPrefix)).forEach(([key, value]) => put(key, value));
-  }
+  Object.entries(window.SpellManagement?.collectClassFeatureCantrips?.() || {})
+    .filter(([key]) => isClassFeatureCantripKey(className, key)).forEach(([key, value]) => put(key, value));
   if (className === "bard") {
     captureBardMagicalDiscoverySelectionFromControls();
     Object.entries(getBardMagicalDiscoveryMemoryValues(getBardMagicalDiscoverySelection())).forEach(([id, value]) => put(id, value));
@@ -1716,13 +1863,10 @@ function clearLeftClassOptionResidue(className) {
     const land = document.getElementById("druid-land");
     if (land) land.value = "";
   }
-  const cantripPrefix = CLASS_FEATURE_CANTRIP_CLASSES[className];
-  if (cantripPrefix) {
-    Object.keys(window.SpellManagement?.collectClassFeatureCantrips?.() || {}).filter(key => key.startsWith(cantripPrefix)).forEach(key => {
-      const control = window.SpellManagement.getClassFeatureCantripControl(key);
-      if (control) control.value = "";
-    });
-  }
+  Object.keys(window.SpellManagement?.collectClassFeatureCantrips?.() || {}).filter(key => isClassFeatureCantripKey(className, key)).forEach(key => {
+    const control = window.SpellManagement.getClassFeatureCantripControl(key);
+    if (control) control.value = "";
+  });
   if (className === "bard") {
     // updateClassFeature 重繪前會再讀一次控制項，所以控制項也要一起清空。
     document.querySelectorAll("#bard-magical-discoveries select").forEach(select => { select.value = ""; });
@@ -1816,11 +1960,9 @@ function restoreClassOptionMemory(className, record) {
       const control = document.getElementById(id);
       if (setClassOptionControlValue(control, value)) dispatchRestoreChange(control);
     });
-  const cantripPrefix = CLASS_FEATURE_CANTRIP_CLASSES[className];
-  if (cantripPrefix) {
-    applyClassFeatureCantrips(Object.fromEntries(Object.entries(values)
-      .filter(([key, value]) => key.startsWith(cantripPrefix) && typeof value === "string")));
-  }
+  const cantrips = Object.fromEntries(Object.entries(values)
+    .filter(([key, value]) => isClassFeatureCantripKey(className, key) && typeof value === "string"));
+  if (Object.keys(cantrips).length) applyClassFeatureCantrips(cantrips);
   if (className === "bard") {
     setBardMagicalDiscoverySelection(Array.from({ length: BARD_MAGICAL_DISCOVERY_SLOT_COUNT }, (_, index) => ({
       classValue: values[`bard-magical-discovery-${index + 1}-class`] || "",
@@ -1881,6 +2023,8 @@ function finishClassOptionTransition() {
     withCharacterUpdateBatch(() => {
       restoreClassOptionMemory(className, record);
       syncMissionCantripChoices();
+      syncClassPickChoices();
+      window.updateWeaponMasteryBadges?.();
       syncDerivedFeatRows();
       syncOriginAndSubclassDerivedSpellRows();
       updateSpellsByClassLevel();
@@ -1907,10 +2051,10 @@ function migrateLegacyClassOptionResidue() {
   const moves = [];
   const land = document.getElementById("druid-land");
   if (currentClass !== "druid" && land?.value) moves.push(["druid", { values: { "druid-land": land.value } }]);
-  Object.entries(CLASS_FEATURE_CANTRIP_CLASSES).forEach(([className, prefix]) => {
+  new Set(getClassFeatureCantripChoices().map(choice => choice.className)).forEach(className => {
     if (className === currentClass) return;
     const cantrips = Object.fromEntries(Object.entries(window.SpellManagement?.collectClassFeatureCantrips?.() || {})
-      .filter(([key, value]) => key.startsWith(prefix) && value));
+      .filter(([key, value]) => isClassFeatureCantripKey(className, key) && value));
     if (Object.keys(cantrips).length) moves.push([className, { values: cantrips }]);
   });
   const discovery = getBardMagicalDiscoverySelection();
@@ -1974,6 +2118,8 @@ function getClassFeatureChoiceIssues() {
     });
   });
 
+  getClassPickIssues(selectedClass, selectedLevel).forEach(pushGeneral);
+
   if (window.hasClassFeature?.(selectedClass, "druid-circle-of-the-land-spells", selectedLevel) && !(document.getElementById("druid-land")?.value || "").trim()) {
     pushGeneral({
       message: "大地結社地貌尚未選擇。",
@@ -2019,7 +2165,7 @@ function getClassFeatureChoiceIssues() {
     }
   }
 
-  MISSION_CANTRIP_CHOICES.forEach(({ checkboxId, className, label }) => {
+  getMissionCantripChoices().forEach(({ checkboxId, className, label }) => {
     const id = `${checkboxId}-cantrip`;
     if (manualSpells || selectedClass !== className || !document.getElementById(checkboxId)?.checked || document.getElementById(id)?.value) return;
     pushGeneral({ message: `${label}尚未選擇。`, tab: "basic", selector: `#${id}`, focusSelector: `#${id}` });
@@ -2034,27 +2180,21 @@ function getClassFeatureChoiceIssues() {
     focusSelector: `#${LEVEL_UP_CANTRIP_SELECT_ID}`
   });
 
-  if (!manualSpells && ["paladin", "ranger"].includes(selectedClass) && selectedLevel >= 2) {
-    const magicId = selectedClass === "paladin" ? "paladin-blessed-warrior" : "ranger-druidic-warrior";
-    if (document.getElementById(magicId)?.checked) {
-      const sourceFragment = selectedClass === "paladin" ? "blessed-warrior" : "druidic-warrior";
-      const choices = window.SpellManagement?.collectClassFeatureCantrips() || {};
-      const sourceKey = `class-${selectedClass}-${sourceFragment}`;
-      const missingSlot = [1, 2].find(slot => !choices[`${sourceKey}-cantrip-${slot}`]);
-
-      if (missingSlot) {
-        // 戲法選單只在角色能力視窗開啟時建立（勾選框下方）；以勾選框定位頁籤，高亮兩個戲法選單。
-        pushGeneral({
-          message: `${selectedClass === "paladin" ? "受祝福的勇士" : "德魯伊教戰士"}戲法尚未選完。`,
-          tab: "basic",
-          choiceSelector: `#${magicId}`,
-          selector: `#${magicId}`,
-          highlightSelector: `[data-class-feature-additional="${sourceKey}"] select`,
-          focusSelector: `#class-feature-linked-${sourceKey}-${missingSlot - 1}`
-        });
-      }
-    }
-  }
+  if (!manualSpells) getClassFeatureCantripChoices(selectedClass).forEach(({ checkboxId, level, label, sourceKey, keys }) => {
+    if (selectedLevel < level || !document.getElementById(checkboxId)?.checked) return;
+    const choices = window.SpellManagement?.collectClassFeatureCantrips() || {};
+    const missingIndex = keys.findIndex(key => !choices[key]);
+    if (missingIndex < 0) return;
+    // 戲法選單只在角色能力視窗開啟時建立（勾選框下方）；以勾選框定位頁籤，高亮全部戲法選單。
+    pushGeneral({
+      message: `${label}戲法尚未選完。`,
+      tab: "basic",
+      choiceSelector: `#${checkboxId}`,
+      selector: `#${checkboxId}`,
+      highlightSelector: `[data-class-feature-additional="${sourceKey}"] select`,
+      focusSelector: `#class-feature-linked-${sourceKey}-${missingIndex}`
+    });
+  });
 
   if (!manualSpells && selectedClass === "warlock") {
     const missingAgonizingTarget = getAgonizingBlastSelects().find(select => {

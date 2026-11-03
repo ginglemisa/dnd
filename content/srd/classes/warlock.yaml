@@ -18,6 +18,9 @@ skills:
 weapons: 簡易武器
 tools: 無
 armor: 輕甲
+proficiencies:
+  weapons: { categories: [simple] }
+  armor: [light]
 equipment:
   A: 皮甲、鐮刀、匕首 ×2、奧術法器（寶珠）、書（玄秘學識）、學者套組、15 金幣
   B: 100 金幣

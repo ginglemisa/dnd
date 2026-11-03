@@ -22,16 +22,8 @@
   const allTools = Object.freeze(groups.flatMap(group => group.options));
   const allToolSet = new Set(allTools);
 
-  // 職業創角規則見 content/srd 職業內容檔；選項沿用同一份工具目錄。
-  const classProficiencies = Object.freeze({
-    bard: Object.freeze({ count: 3, options: instruments, idPrefix: "bard-instrument-" }),
-    monk: Object.freeze({ count: 1, options: Object.freeze([...artisanTools, ...instruments]), idPrefix: "monk-tool-proficiency-" }),
-    druid: Object.freeze({ count: 1, fixedTool: "草藥工具", idPrefix: "druid-fixed-tool-proficiency" }),
-    rogue: Object.freeze({ count: 1, fixedTool: "盜賊工具", idPrefix: "rogue-fixed-tool-proficiency" })
-  });
-
+  // 職業的工具熟練（固定工具、從哪些工具組選幾種）寫在職業內容檔的 proficiencies.tools，選項沿用這份工具目錄的工具組。
   globalThis.ToolProficiencyCatalog = Object.freeze({
-    classProficiencies,
     artisanTools,
     otherTools,
     instruments,

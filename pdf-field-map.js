@@ -78,13 +78,6 @@
     'prof-cha': 'chaSaveChk1'
   });
 
-  // Keep a standalone fallback for PDF exports that are invoked without the
-  // main page's armor-training table. When the page table is available, use it
-  // as the source of truth instead of duplicating its class entries here.
-  const PDF_SHIELD_PROFICIENT_CLASSES = Object.freeze([
-    'barbarian', 'cleric', 'druid', 'fighter', 'paladin', 'ranger'
-  ]);
-
   // Text specs recalibrated against the resized PDF fields using the
   // calibration overlay. Values are intentionally conservative so form
   // rendering has some headroom for punctuation and mixed-width text.
@@ -164,21 +157,17 @@
     paladin: Object.freeze([
       Object.freeze({
         heading: '等級 2：戰鬥風格',
+        featureId: 'paladin-fighting-style',
         styleStateKey: 'paladin-fighting-style',
-        featStateKey: 'derived-feat-fighting-style-paladin',
-        magicStateKey: 'paladin-blessed-warrior',
-        magicHeading: '等級 2：受祝福的勇士',
-        cantripKeyPrefix: 'class-paladin-blessed-warrior-cantrip-'
+        featStateKey: 'derived-feat-fighting-style-paladin'
       })
     ]),
     ranger: Object.freeze([
       Object.freeze({
         heading: '等級 2：戰鬥風格',
+        featureId: 'ranger-fighting-style',
         styleStateKey: 'ranger-fighting-style',
-        featStateKey: 'derived-feat-fighting-style-ranger',
-        magicStateKey: 'ranger-druidic-warrior',
-        magicHeading: '等級 2：德魯伊教戰士',
-        cantripKeyPrefix: 'class-ranger-druidic-warrior-cantrip-'
+        featStateKey: 'derived-feat-fighting-style-ranger'
       })
     ])
   });
@@ -207,7 +196,23 @@
       if (!feature.options || feature.changeOn || feature.options.some((option) => option.featChoice)) return [];
       return [{ heading, choices: feature.options.map((option) => ({ stateKey: option.id, label: option.name })) }];
     });
-    return [...derived, ...(CLASS_FEATURE_CHOICE_SPECS[classKey] || [])];
+    return [...derived, ...(CLASS_FEATURE_CHOICE_SPECS[classKey] || []).map((spec) => (
+      spec.featureId ? { ...spec, ...getClassFeatureCantripSpec(classKey, spec.featureId) } : spec
+    ))];
+  }
+
+  // 改選自選戲法的選項（內容檔選項 grants.cantrips 數量 2 以上，例如受祝福的勇士）：選了就以該選項取代戰鬥風格標題。
+  // 戲法欄位鍵與網站 getClassFeatureCantripChoices 相同：class-<選項 ID>-cantrip-<序號>。
+  function getClassFeatureCantripSpec(classKey, featureId) {
+    const feature = getClassRules(classKey)?.features.find((item) => item.id === featureId);
+    const option = feature?.options?.find((item) => item.grants?.cantrips?.count > 1);
+    if (!option) return {};
+    const { count, label } = option.grants.cantrips;
+    return {
+      magicStateKey: option.id,
+      magicHeading: `等級 ${feature.level}：${label || option.name}`,
+      cantripKeys: Array.from({ length: count }, (_, index) => `class-${option.id}-cantrip-${index + 1}`)
+    };
   }
 
   const ALIGNMENT_LABELS = Object.freeze({
@@ -403,17 +408,36 @@
     return hitDie ? String(hitDie) : '';
   }
 
-  function hasShieldProficiencyForPdf(state) {
+  // 目前職業此等級生效的 grants（能力層與勾選中的選項，例如守護者、哨衛），等級未填時同網站視為 1 級。
+  function getActiveClassGrantsForPdf(state) {
     const classKey = normalizeText(state?.class);
-    const armorTrainingMap = typeof ARMOR_TRAINING_BY_CLASS !== 'undefined'
-      ? ARMOR_TRAINING_BY_CLASS
-      : globalScope.ARMOR_TRAINING_BY_CLASS;
+    const level = getSelectedLevelNumber(state?.level) || 1;
+    return getClassGrants(classKey, level, (id) => state?.[id] === true);
+  }
 
-    if (armorTrainingMap && typeof armorTrainingMap === 'object') {
-      return Array.isArray(armorTrainingMap[classKey])
-        && armorTrainingMap[classKey].includes('盾牌');
-    }
-    return PDF_SHIELD_PROFICIENT_CLASSES.includes(classKey);
+  // 職業的護甲訓練（內容檔 proficiencies.armor 與選項 grants.armor：light／medium／heavy／shield）。
+  function getClassArmorTrainingForPdf(state) {
+    const classKey = normalizeText(state?.class);
+    return [
+      ...(getClassRules(classKey)?.proficiencies?.armor || []),
+      ...getActiveClassGrantsForPdf(state).flatMap((item) => item.grants.armor || [])
+    ];
+  }
+
+  // 武器熟練：職業內容檔的純文字，再接上選項 grants.weapons 給予、職業本身沒有的類別（例如守護者的軍用武器）。
+  const WEAPON_CATEGORY_LABELS = Object.freeze({ simple: '簡易武器', martial: '軍用武器' });
+
+  function getWeaponProficiencyTextForPdf(state) {
+    const classKey = normalizeText(state?.class);
+    const categories = getClassRules(classKey)?.proficiencies?.weapons?.categories || [];
+    const extra = [...new Set(getActiveClassGrantsForPdf(state).flatMap((item) => item.grants.weapons || []))]
+      .filter((category) => !categories.includes(category) && WEAPON_CATEGORY_LABELS[category])
+      .map((category) => WEAPON_CATEGORY_LABELS[category]);
+    return [getClassProfileText(classKey, 'weapons'), ...extra].filter(Boolean).join('和');
+  }
+
+  function hasShieldProficiencyForPdf(state) {
+    return getClassArmorTrainingForPdf(state).includes('shield');
   }
 
   function hasEffectiveShieldForPdf(state) {
@@ -615,10 +639,10 @@
     return spec.choices?.find((choice) => Boolean(state[choice.stateKey]))?.label || '';
   }
 
-  function getClassFeatureCantripNames(state, keyPrefix) {
+  function getClassFeatureCantripNames(state, keys) {
     const saved = state.__spellManagement?.classFeatureCantrips || state.__classFeatureCantrips || {};
-    return [1, 2]
-      .map((slot) => getCanonicalSpell(resolveStateSpellId(normalizeText(saved[`${keyPrefix}${slot}`])))?.nameZh)
+    return keys
+      .map((key) => getCanonicalSpell(resolveStateSpellId(normalizeText(saved[key])))?.nameZh)
       .filter(Boolean);
   }
 
@@ -626,7 +650,7 @@
     // Paladin/ranger level 2: the magic option replaces the fighting style
     // heading; the style feat is shown only while Fighting Style is chosen.
     if (spec.magicStateKey && state[spec.magicStateKey]) {
-      const cantrips = getClassFeatureCantripNames(state, spec.cantripKeyPrefix);
+      const cantrips = getClassFeatureCantripNames(state, spec.cantripKeys);
       return cantrips.length ? [spec.magicHeading, `選擇：${cantrips.join('、')}`] : [spec.magicHeading];
     }
     if (spec.styleStateKey && !state[spec.styleStateKey]) return [spec.heading];
@@ -1320,11 +1344,11 @@ function isWeaponRowEmpty(payload, slot) {
     payload.specie_features1 = buildRaceTemplateText(state, options);
     payload.speed1 = resolveSpeedForPdf(state, options);
 
-    payload.weaponsProficiency1 = getClassProfileText(classKey, 'weapons');
-    const armorTraining = getClassProfileText(classKey, 'armor');
-    payload.chk_light1 = /輕甲/.test(armorTraining);
-    payload.chk_medium1 = /中甲/.test(armorTraining);
-    payload.chk_heavy1 = /重甲/.test(armorTraining);
+    payload.weaponsProficiency1 = getWeaponProficiencyTextForPdf(state);
+    const armorTraining = getClassArmorTrainingForPdf(state);
+    payload.chk_light1 = armorTraining.includes('light');
+    payload.chk_medium1 = armorTraining.includes('medium');
+    payload.chk_heavy1 = armorTraining.includes('heavy');
 
 
     // The replacement character sheet supplies rows 1-19 only. Preserve any

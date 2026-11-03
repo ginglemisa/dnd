@@ -1127,8 +1127,48 @@ async function verifyEquipmentLoadout(browser, url) {
     await page.evaluate(() => applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] }, class: "wizard", mainHand: "長劍", offHand: "盾牌", offHandAsMain: false, armor: "" }));
     assert.equal(await page.inputValue("#ac-display"), "10");
     assert.equal(await page.locator("#equipment-untrained-consequence").isVisible(), false, "untrained shield alone has no armor consequence");
+
+    // 刃之魔契：不再熟練全部軍用武器，只有標記為契約武器的那一把熟練、可用魅力，傷害類型可改；同時只有一把。
+    const pactState = { __spellManagement: { version: 2, manual: false, entries: [] }, class: "warlock", level: "3", str: "10", dex: "12", cha: "16", mainHand: "長劍", offHand: "", offHandAsMain: false, armor: "",
+      __inventory: { version: 1, items: [{ uid: "longsword", itemId: "長劍", quantity: 1 }, { uid: "dagger", itemId: "匕首", quantity: 1 }] } };
+    await page.evaluate(state => applyStateObject(state), pactState);
+    const pact = () => page.evaluate(() => ({
+      controls: ["main", "off"].map(hand => !document.querySelector(`[data-pact-weapon-hand="${hand}"]`).hidden),
+      hit: document.getElementById("atk-main-hit").value,
+      damage: document.getElementById("atk-main-dmg").value,
+      warnings: Array.from(document.querySelectorAll("#equipment-loadout-summary-content .equipment-proficiency-warning"), tip => tip.dataset.skill)
+    }));
+    assert.deepEqual(await pact(), { controls: [false, false], hit: "+0", damage: "1d8揮砍", warnings: ["武器未熟練"] }, "warlock without Pact of the Blade");
+    await page.evaluate(() => {
+      const blade = document.querySelector('#eldritch-invocations-output input[data-invocation-name="刃之魔契"]');
+      blade.checked = true;
+      blade.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    assert.deepEqual(await pact(), { controls: [true, false], hit: "+0", damage: "1d8揮砍", warnings: ["武器未熟練"] }, "Pact of the Blade alone grants no martial proficiency");
+    assert.equal(await page.locator("#mainHandPactDamage option[value='']").textContent(), "揮砍", "unchanged damage type shows the weapon's own type");
+    assert.equal(await page.isDisabled("#mainHandPactDamage"), true);
+    await page.check("#mainHandPactWeapon");
+    await page.selectOption("#mainHandPactDamage", "黯蝕");
+    assert.deepEqual(await pact(), { controls: [true, false], hit: "+5", damage: "1d8+3黯蝕", warnings: [] }, "pact weapon is proficient and uses charisma and the chosen damage type");
+    const saved = await page.evaluate(() => collectStateObject());
+    assert.equal(saved.mainHandPactWeapon, true);
+    assert.equal(saved.mainHandPactDamage, "黯蝕");
+    assert.deepEqual(await page.evaluate(() => { const shared = collectShareState(); return [shared.mainHandPactWeapon, shared.mainHandPactDamage]; }), [true, "黯蝕"], "share keeps the pact weapon");
+    await page.check("#offHandAsMain");
+    await page.selectOption("#offHand", "匕首");
+    await page.check("#offHandPactWeapon");
+    assert.equal(await page.isChecked("#mainHandPactWeapon"), false, "only one pact weapon at a time");
+    assert.deepEqual(await pact(), { controls: [true, true], hit: "+0", damage: "1d8揮砍", warnings: ["武器未熟練"] }, "the main hand loses the pact once it moves");
+    await page.evaluate(state => applyStateObject(state), { ...pactState, ...saved });
+    assert.deepEqual([await page.isChecked("#mainHandPactWeapon"), await page.inputValue("#mainHandPactDamage")], [true, "黯蝕"], "JSON restores the pact weapon");
+    assert.equal((await pact()).damage, "1d8+3黯蝕");
+    assert.deepEqual(await page.evaluate(() => {
+      document.getElementById("class").value = "fighter";
+      const shared = collectShareState();
+      return [shared.mainHandPactWeapon, shared.mainHandPactDamage];
+    }), [undefined, undefined], "pact weapon fields are shared only for warlocks");
     assert.deepEqual(errors, [], "equipment browser errors");
-    console.log("Equipment loadout: main2/shield, two-handed cancel/confirm, AC, untrained shield/tooltips, click-only mastery, summary, restore and PDF mapping passed.");
+    console.log("Equipment loadout: main2/shield, two-handed cancel/confirm, AC, untrained shield/tooltips, click-only mastery, summary, restore, PDF mapping and pact weapon passed.");
   } finally { await page.close(); }
 }
 

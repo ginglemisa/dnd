@@ -1517,7 +1517,7 @@ async function verifyImports(browser, url, viewport = { width: 1280, height: 800
           background: 'soldier', race: 'dwarf', class: 'barbarian', alignment: 'TN',
           backgroundWealth: 'gold', classEquipmentMethod: 'gold',
           classOptions: { skills: ['察覺', '求生'] },
-          levelOne: { languages: ['矮人語', '精靈語'], weaponMastery: ['巨斧', '手斧'] }
+          levelOne: { languages: ['矮人語', '精靈語'], weaponMasteries: ['巨斧', '手斧'] }
         });
         reconcileDraft(draft);
         draft.choices.shop = { funding: shopFundingSignature(draft), items: [
@@ -1666,6 +1666,8 @@ async function verifyImports(browser, url, viewport = { width: 1280, height: 800
       }));
       assert(Number(hp.maximum) > 0);
       assert.equal(hp.current, hp.maximum, "quick-build import fills current HP with maximum HP");
+      assert.deepEqual(await page.evaluate(() => ["barbarian-weapon-mastery-pick-1", "barbarian-weapon-mastery-pick-2"].map(id => document.getElementById(id)?.value)),
+        ["巨斧", "手斧"], "quick-build weapon masteries fill the class page mastery selects");
     }
     if (scenario === "complete") {
       await firstTable.click();
