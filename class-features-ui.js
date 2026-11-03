@@ -1983,6 +1983,7 @@ function getClassFeatureChoiceIssues() {
       message: "魔法學徒法術尚未選完",
       tab: "basic",
       selector: "#feats-area",
+      highlightSelector: Array.from(incompleteMagicRow.querySelectorAll("select[data-magic-initiate-field]"), select => `#${select.id}`).join(", "),
       focusSelector: `#${missing.id}`,
       expandFeatSelector: `#${featSelect.id}`
     });
@@ -2069,15 +2070,18 @@ function getClassFeatureChoiceIssues() {
     if (document.getElementById(magicId)?.checked) {
       const sourceFragment = selectedClass === "paladin" ? "blessed-warrior" : "druidic-warrior";
       const choices = window.SpellManagement?.collectClassFeatureCantrips() || {};
-      const incomplete = [1, 2].some(slot => !choices[`class-${selectedClass}-${sourceFragment}-cantrip-${slot}`]);
+      const sourceKey = `class-${selectedClass}-${sourceFragment}`;
+      const missingSlot = [1, 2].find(slot => !choices[`${sourceKey}-cantrip-${slot}`]);
 
-      if (incomplete) {
+      if (missingSlot) {
+        // 戲法選單只在角色能力視窗開啟時建立（勾選框下方）；以勾選框定位頁籤，高亮兩個戲法選單。
         pushGeneral({
           message: `${selectedClass === "paladin" ? "受祝福的勇士" : "德魯伊教戰士"}戲法尚未選完。`,
           tab: "basic",
           choiceSelector: `#${magicId}`,
           selector: `#${magicId}`,
-          focusSelector: `#${magicId}`
+          highlightSelector: `[data-class-feature-additional="${sourceKey}"] select`,
+          focusSelector: `#class-feature-linked-${sourceKey}-${missingSlot - 1}`
         });
       }
     }
@@ -2089,11 +2093,15 @@ function getClassFeatureChoiceIssues() {
       return checkbox?.checked && !checkbox.disabled && !select.value;
     });
     if (missingAgonizingTarget) {
+      // 原始選單是隱藏的；畫面上操作的是角色能力視窗內同步的選單。
+      const linkedSelector = `[data-class-feature-additional="${missingAgonizingTarget.id}"] select`;
       pushGeneral({
         message: "苦痛魔爆套用的戲法尚未選擇。",
         tab: "basic",
+        choiceSelector: `#${missingAgonizingTarget.id}`,
         selector: `#${missingAgonizingTarget.id}`,
-        focusSelector: `#${missingAgonizingTarget.id}`
+        highlightSelector: linkedSelector,
+        focusSelector: linkedSelector
       });
     }
   }
@@ -2106,6 +2114,7 @@ function getClassFeatureChoiceIssues() {
       message: `術士超魔法尚未選完（${metamagicCount}/${metamagicLimit}）。`,
       tab: "basic",
       selector: "#metamagicOptions input[data-metamagic-name]:not(:checked)",
+      highlightSelector: "#metamagic-options-disclosure > summary",
       focusSelector: "#metamagicOptions input[data-metamagic-name]:not(:checked)"
     });
   }
@@ -2119,6 +2128,7 @@ function getClassFeatureChoiceIssues() {
       message: `契術師魔能祈喚尚未選完（${invocationCount}/${invocationLimit}）。`,
       tab: "basic",
       selector: "#eldritch-invocations-output input[data-invocation-name]:not(:checked)",
+      highlightSelector: "#invocation-options-disclosure > summary",
       focusSelector: "#eldritch-invocations-output input[data-invocation-name]:not(:checked)"
     });
   }
