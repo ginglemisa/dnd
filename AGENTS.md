@@ -13,13 +13,19 @@
 
 * 原生 HTML／CSS／JavaScript 靜態網站，`index.html` 以傳統 `<script>` 依序載入全域模組。未經使用者同意，不新增前端框架、runtime dependency 或測試框架；開發依賴僅 `yaml`、`ajv`、Playwright。
 * 載入順序與每個標籤是否 `defer` 屬於契約：部分自 `index.html` 搬出的模組為同步載入，頂層只放宣告，驗證腳本與離線建置都依賴這個配置。變更全域 API、DOM ID、data attribute、檔名或載入順序時，搜尋並同步所有 JS、CSS、驗證腳本與 `build-offline-nopdf.ps1`。
-* 唯一的建置是內容檔：`npm run build` 驗證 `content/` 的 YAML，產生 `class-content.generated.js`（`classFeatures`、`classTabletopText`、`classRules`，網站經 `character-rules.js` 的 `getClassRules()` 等讀取）、`feat-content.generated.js`（`featRules`、`featText`，經 `getFeatRules()`、`getFeatText()`、`getAllFeatRules()` 讀取）、`background-content.generated.js`（`backgroundRules`、`backgroundText`，經 `getBackgroundRules()`、`getBackgroundText()`、`getBackgroundSource()` 讀取）、`race-content.generated.js`（`raceRules`、`raceText`，經 `getRaceRules()`、`getRaceText()`、`getRaceChoiceOption()` 讀取）、`spell-content.generated.js`（`spellRules`、`spellText`，經 `spell-list.js` 的 `SpellCatalog` 讀取；只有 `playable` 的法術能給角色使用）與 `spell-srd.generated.js`（法術詳情「SRD 版」，網站延遲載入、離線版內嵌；法術 YAML 的英文原文不進任何產物）。寫法見 [content/README.md](content/README.md)。產物不提交、不手改。
-* `content/private/` 是私人內容包（gitignore），只在本機另產生 `class-content.private.generated.js`；不得提交或複製到公開檔案，公開建置不得依賴它。
+* 唯一的建置是內容檔：職業、子職、專長、背景、種族與法術都寫在 `content/` 的 YAML，`npm run build` 驗證後產生下列檔案。寫法見 [content/README.md](content/README.md)。產物不提交、不手改；網站只經讀取 API 使用，不從顯示文字反推規則。
+  * `class-content.generated.js`：`classFeatures`（職業頁 HTML）、`classTabletopText`、`classRules`，經 `character-rules.js` 的 `getClassRules()` 等讀取。
+  * `feat-content.generated.js`：`featRules`、`featText`，經 `getFeatRules()`、`getFeatText()`、`getAllFeatRules()` 讀取。
+  * `background-content.generated.js`：`backgroundRules`、`backgroundText`，經 `getBackgroundRules()`、`getBackgroundText()`、`getBackgroundSource()` 讀取。
+  * `race-content.generated.js`：`raceRules`、`raceText`，經 `getRaceRules()`、`getRaceText()`、`getRaceChoiceOption()` 讀取。
+  * `spell-content.generated.js`：`spellRules`、`spellText`，經 `spell-list.js` 的 `SpellCatalog` 讀取；只有 `playable`（有網站版）的法術能給角色使用，其餘 SRD 法術只供查閱。
+  * `spell-srd.generated.js`：法術詳情「SRD 版」的譯文，網頁版延遲載入、離線版內嵌。法術 YAML 的英文原文不進任何產物。
+* `content/private/` 是私人內容包（gitignore），目前只有職業類會被建置讀取（私人職業、子職、`class-extensions/`、`rules/multiclass.yaml`），寫進只在本機使用的 `class-content.private.generated.js`。私人法術只訂了格式、建置不讀；私人專長、背景、種族不支援（資料夾存在時建置失敗）。私人內容不得提交或複製到公開檔案，公開建置不得依賴它。
 * 持久化 ID 以基準檔把關：職業／子職／選項／動作 key／資源 key 用 `class-id-baseline.json`，專長（含專長選擇欄位、快速創角草稿的專長名稱、跑團動作 key）用 `feat-id-baseline.json`，背景用 `background-id-baseline.json`，種族（含血統選單值、快速創角草稿值、跑團動作與資源 key）用 `race-id-baseline.json`，法術用 `spell-id-baseline.json`（只列有網站版、角色可用的法術）。只在確認刻意新增，或已處理舊資料相容的移除／改名後，才更新基準檔（`npm run build -- --update-id-baseline`）；不得用基準檔掩蓋意外遺失。`spellId` 不隨顯示名稱改動。
 * UI 模組讀取主要資料與公開 API，不複製平行規則、狀態、亂數或擲骰歷史。表單控制項可作為角色目前選擇的 canonical state；純顯示文字不作為規則資料來源。既有錯誤行為不是規格。
 * 職業機制以 `classRules` 為準，`classFeatures` HTML 與能力名稱、標題只供顯示：程式不得從中反推規則，判斷特定能力時用能力 id。職業頁上找能力的位置用 `data-feature-id`；建置工具不以正則解析產生後的 HTML 或網站原始碼。
 * 樣式以 `styles.css` 為準，外觀與互動先查 [DESIGN.md](DESIGN.md)。新 dialog／toast 用 `app-dialog.js`，不用原生 `alert`／`confirm`／`prompt`。圖片放 `images/`、字型放 `fonts/`；`og-image.jpg` 必須留在根目錄（短網址 Worker 固定引用）。
-* 修改正式部署載入的 CSS／JS 時，只更新該資源在 `index.html` 的 `?v=`；`class-content.generated.js` 的 `?v=` 由上線建置自動產生。
+* 修改正式部署載入的 CSS／JS 時，只更新該資源在 `index.html` 的 `?v=`；各 `*.generated.js` 的 `?v=` 由上線建置（`npm run build -- --stamp-version`）自動產生，不手改。
 
 ## 資料相容（不可破壞）
 
@@ -75,9 +81,10 @@
 * 新增的回歸案例優先補進最接近的既有腳本；臨時腳本在收尾前刪除。不得削弱或跳過測試條件來讓測試通過。
 * 失敗時先縮小範圍，分清是本次造成、環境問題，還是原本就有的問題；無關問題只回報，不順帶修。
 
-| 腳本（先 `npm run build`；`npm test` 全跑） | 主要範圍 |
+| 腳本（先 `npm run build`；`npm test` 全跑，`npm test -- <腳本>` 只跑指定的） | 主要範圍 |
 | --- | --- |
 | `validate-tabletop-spellcasting.js`（純 Node） | 法術 ID／metadata、法術位、專注、自動擲骰 |
+| `tools/spell-reference/validate.js --srd <spells.md>`（純 Node，不在 `npm test`） | 法術 SRD 譯文與 SRD 職業清單；需要本機的 SRD 5.2.1 英文 `spells.md`，見 [tools/spell-reference/README.md](tools/spell-reference/README.md) |
 | `validate-action-metadata.js` | 動作定義與摘要、跑團操作與偏好、專長來源與資格、武器／AC、自創法術與自訂骰式 |
 | `validate-tabletop-druid.js` | 荒野形態、野獸攻擊、德魯伊資源；持續法術對 AC／速度的影響 |
 | `validate-spellbook.js` | 法術書、準備與來源、職業／手動記憶、舊資料遷移、法術頁版面 |

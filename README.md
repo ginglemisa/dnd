@@ -9,6 +9,7 @@ twD20 是 Reggie Tsai / 瑞基製作的手機角卡網站，協助新手快速�
 ## 主要功能
 
 - **創角與角色卡**：27 購點、屬性擲骰、快速創角與導覽，自動整理數值、技能、裝備、動作及法術。
+- **法術查閱**：法術詳情可切換「網站版」與「SRD 版」（SRD 5.2.1 直譯），並可查閱 SRD 全部法術（五至九環只供查閱）。
 - **跑團模式**：管理生命值、狀態、死亡豁免、專注、法術位與職業資源，操作武器攻擊、施法及擲骰。
 - **保存與輸出**：本機自動儲存、JSON 匯入／匯出、分享網址、QR Code 與 PDF 角色卡。
 - **冒險日誌**：記錄團錄與獎勵，支援書頁閱讀、全文搜尋及整本匯入／匯出。
@@ -36,7 +37,7 @@ twD20 是 Reggie Tsai / 瑞基製作的手機角卡網站，協助新手快速�
 
 本專案有權授權的原始程式碼採 [MIT License](LICENSE.txt)，使用與散布時須保留其著作權及授權聲明；第三方內容仍依各自原始條件處理。
 
-規則內容改編自 [SRD 5.2.1](https://www.dndbeyond.com/srd)，採 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/legalcode)，經翻譯、縮寫、改寫整理。
+規則內容改編自 [SRD 5.2.1](https://www.dndbeyond.com/srd)，採 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/legalcode)，經翻譯、縮寫、改寫整理；法術詳情的「SRD 版」則是逐句直譯。
 
 使用素材：
 
