@@ -657,8 +657,11 @@ function appendSpellDescTextWithBreaks(target, text) {
   });
 }
 
-// 法術說明裡可點開的野獸資料，依法術 ID 判斷，不從說明文字反推。目前只有獲得魔寵的一般形態。
+// 法術說明裡可點開的野獸資料，依法術 ID 判斷，不從說明文字反推。法術 YAML 只寫純文字，不內嵌 beast-tip。
 const SPELL_BEAST_REFERENCES = Object.freeze({
+  "find-steed": Object.freeze([
+    ["異界坐騎", "otherworldly_steed"]
+  ]),
   "find-familiar": Object.freeze([
     ["蝙蝠", "bat"],
     ["貓", "cat"],
