@@ -104,6 +104,105 @@ function getMissionCantripChoices() {
   return missionCantripChoicesCache.choices;
 }
 
+// 武器精通選單（內容檔 picks 的 weaponMastery；建置在職業頁「武器精通」段落輸出空選單，data-class-pick 為能力 ID）：
+// 選項為職業熟練、有精通屬性的武器，值為武器名稱；超過目前等級數量的選單隱藏但保留選擇。
+function getWeaponMasteryPickControls() {
+  return Array.from(document.querySelectorAll("#classFeatures select[data-class-pick]"));
+}
+
+function getActiveWeaponMasteryPicks() {
+  const className = document.getElementById("class")?.value || "";
+  const level = typeof getClassRulesLevel === "function" ? getClassRulesLevel() : 1;
+  return window.getClassPicks?.(className, level, { kind: "weaponMastery" }) || [];
+}
+
+function getWeaponMasteryWeapon(name) {
+  return (typeof getAllWeapons === "function" ? getAllWeapons() : []).find(weapon => weapon.名稱 === name) || null;
+}
+
+function renderClassPickChoices() {
+  // 武器與熟練判斷在 index.html 後段的 script 定義；早於它們的呼叫先略過，之後的重繪會補上。
+  if (typeof getAllWeapons !== "function" || typeof isWeaponProficient !== "function") return;
+  const weapons = getAllWeapons().filter(weapon => weapon.名稱 !== "武藝" && hasMeaningfulEquipmentValue(weapon.精通) && isWeaponProficient(weapon));
+  getWeaponMasteryPickControls().forEach(select => {
+    const current = select.value;
+    select.replaceChildren(new Option("-- 請選擇武器 --", ""), ...weapons.map(weapon => new Option(`${weapon.名稱}（${weapon.精通}）`, weapon.名稱)));
+    if (weapons.some(weapon => weapon.名稱 === current)) select.value = current;
+    if (select.dataset.classPickBound === "true") return;
+    select.dataset.classPickBound = "true";
+    select.addEventListener("change", () => {
+      syncClassPickChoices();
+      window.updateWeaponMasteryBadges?.();
+      updateClassFeatureChoiceReminder();
+      scheduleSaveAllFields();
+    });
+  });
+  syncClassPickChoices();
+}
+
+// 依目前等級顯示選單數量；同一能力的其他選單已選的武器不可重複選；「查看」顯示所選武器的精通說明。
+function syncClassPickChoices() {
+  const counts = new Map(getActiveWeaponMasteryPicks().map(({ feature, count }) => [feature.id, count]));
+  const controls = getWeaponMasteryPickControls();
+  controls.forEach(select => {
+    const slot = select.closest("[data-class-pick-slot]");
+    const visible = Number(slot?.dataset.classPickSlot || 0) <= (counts.get(select.dataset.classPick) || 0);
+    if (slot) slot.hidden = !visible;
+    const taken = new Set(controls.filter(other => other !== select && other.dataset.classPick === select.dataset.classPick && !isClassPickSlotHidden(other))
+      .map(other => other.value).filter(Boolean));
+    Array.from(select.options).forEach(option => { option.disabled = Boolean(option.value) && taken.has(option.value); });
+    const view = slot?.querySelector("[data-weapon-rule-kind]");
+    const mastery = getWeaponMasteryWeapon(select.value)?.精通 || "";
+    if (view) {
+      view.dataset.weaponRule = mastery;
+      view.disabled = !mastery;
+      view.setAttribute("aria-label", mastery ? `查看${mastery}精通說明` : "請先選擇武器");
+    }
+  });
+}
+
+// 目前等級已選的精通武器（顯示中的選單）；沒有武器精通選擇時為空集合。
+function getSelectedWeaponMasteries() {
+  return new Set(getWeaponMasteryPickControls().filter(select => !isClassPickSlotHidden(select)).map(select => select.value).filter(Boolean));
+}
+
+// 超過目前等級數量的選單（欄位本身 hidden；職業頁所在的視窗關閉時不算）。
+function isClassPickSlotHidden(select) {
+  return Boolean(select.closest("[data-class-pick-slot]")?.hidden);
+}
+
+// 職業選擇（內容檔 picks）的缺項：專精（技能列的專精勾選框總數）、職業額外語言、武器精通，達到能力等級仍未選滿時提醒。
+// 額外技能熟練（先祖學識、額外熟練項）與法術書法術（塑能學者）無法分辨來源，不提醒。
+function getClassPickIssues(className, level) {
+  const rules = window.getClassRules?.(className);
+  if (!rules) return [];
+  const picks = window.getClassPicks?.(className, level) || [];
+  const issues = [];
+  const expertiseRequired = picks.filter(({ pick }) => pick.kind === "expertise").reduce((sum, { count }) => sum + count, 0);
+  const expertiseChecked = document.querySelectorAll(".circle-checkbox:checked").length;
+  if (expertiseRequired && expertiseChecked < expertiseRequired) issues.push({
+    message: `${rules.name}專精尚未選完（${expertiseChecked}/${expertiseRequired}）。`,
+    tab: "basic",
+    selector: ".circle-checkbox:not(:checked):not(:disabled)",
+    focusSelector: ".circle-checkbox:not(:checked):not(:disabled)"
+  });
+  const missingLanguage = picks.filter(({ pick }) => pick.kind === "language").flatMap(({ pick }) => pick.fields)
+    .find(id => document.getElementById(id) && !document.getElementById(id).value);
+  if (missingLanguage) issues.push({ message: `${rules.name}額外語言尚未選擇。`, tab: "basic", selector: `#${missingLanguage}`, focusSelector: `#${missingLanguage}` });
+  picks.filter(({ pick }) => pick.kind === "weaponMastery").forEach(({ feature, pick, count }) => {
+    const fields = pick.fields.slice(0, count);
+    const chosen = new Set(fields.map(id => document.getElementById(id)?.value).filter(Boolean)).size;
+    const missing = fields.find(id => !document.getElementById(id)?.value);
+    if (chosen < count && missing && document.getElementById(missing)) issues.push({
+      message: `${rules.name}${feature.name}尚未選完（${chosen}/${count}）。`,
+      tab: "basic",
+      selector: `#${missing}`,
+      focusSelector: `#${missing}`
+    });
+  });
+  return issues;
+}
+
 // 職業選項（勾選框與下拉選單）的職業、可用等級與群組：由職業內容檔的 options／select、choose 與能力等級推得
 // （class-content.generated.js 的 classRules）。本檔同步載入、早於產生檔，故第一次使用時才建立。
 let classOptionRulesCache = null;
@@ -1459,6 +1558,7 @@ function updateClassFeature() {
   renderClassFeatChoices();
   renderMissionCantripChoices();
   renderLevelUpCantripChoice();
+  renderClassPickChoices();
   preservedControlStates.forEach((value, id) => {
     const control = document.getElementById(id);
     if (!control) return;
@@ -1466,6 +1566,8 @@ function updateClassFeature() {
     else if (Array.from(control.options || []).some(option => option.value === value)) control.value = value;
   });
   syncMissionCantripChoices();
+  syncClassPickChoices();
+  window.updateWeaponMasteryBadges?.();
   syncLevelUpCantripChoice();
 
   // 等級 2 前仍列出超魔法供查閱，syncMetamagicSelectionLimit 會停用勾選。
@@ -1894,6 +1996,8 @@ function finishClassOptionTransition() {
     withCharacterUpdateBatch(() => {
       restoreClassOptionMemory(className, record);
       syncMissionCantripChoices();
+      syncClassPickChoices();
+      window.updateWeaponMasteryBadges?.();
       syncDerivedFeatRows();
       syncOriginAndSubclassDerivedSpellRows();
       updateSpellsByClassLevel();
@@ -1986,6 +2090,8 @@ function getClassFeatureChoiceIssues() {
       focusSelector: `#${group.ids[0]}`
     });
   });
+
+  getClassPickIssues(selectedClass, selectedLevel).forEach(pushGeneral);
 
   if (window.hasClassFeature?.(selectedClass, "druid-circle-of-the-land-spells", selectedLevel) && !(document.getElementById("druid-land")?.value || "").trim()) {
     pushGeneral({

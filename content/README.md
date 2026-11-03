@@ -179,8 +179,9 @@ summary: 你的敏捷豁免有優勢。
 | `changeOn` | 可改選的時機（`longRest`、`levelUp`），說明用。 |
 | `school`、`maxLevel` | `spellbookSpell`：限定的法術學派與環階上限。 |
 
-- 武器精通的存檔欄位自動產生「能力 ID-pick-序號」（例如 `fighter-weapon-mastery-pick-1`），欄位數是 `count` 在 `maxLevel` 以內的最大值；網站只顯示目前等級的數量，其餘欄位保留值但隱藏。
-- 專精與技能沿用技能列的勾選框，法術書法術存在法術書，這些選擇沒有自己的欄位，只用於數量、等級與缺項提醒。
+- 武器精通：職業頁的能力段落輸出選單，存檔欄位自動產生「能力 ID-pick-序號」（例如 `fighter-weapon-mastery-pick-1`），欄位數是 `count` 在 `maxLevel` 以內的最大值；網站只顯示目前等級的數量，其餘欄位保留值但隱藏。選項是職業熟練（`proficiencies.weapons`）且有精通屬性的武器，值為武器名稱；選了精通武器後，攻擊列的精通標籤只顯示在所選武器上（一個都沒選時全部顯示）。
+- 專精沿用技能列的專精勾選框（職業有 `expertise` 選擇時才顯示勾選框）；語言使用 `fields` 的欄位，這兩種沒有新的存檔欄位。
+- 缺項提醒：武器精通、專精（專精勾選框總數少於本職業此等級的專精數量）與職業額外語言，達到能力等級仍未選滿時提醒。`skill`（先祖學識、額外熟練項）與 `spellbookSpell`（塑能學者）無法分辨技能或法術的來源，只有資料、網站不提醒。
 - `grants`（能力層）目前只支援 `languages`：`[{ id: 語言, field: 顯示此語言的欄位 ID }]`。
 - 選項的 `grants`：`weapons`（`[martial]` 等武器類別）、`armor`（`light`／`medium`／`heavy`／`shield`）、`cantrips`（`{ count, list: 職業 ID }`，額外戲法的數量與法表）、`checkBonus`（`{ skills, ability, min }`，這些技能檢定加上屬性調整值，至少 `min`）。勾選且達到能力等級才生效。
 - 欄位 ID（`fields`、語言的 `field`、自動產生的武器精通欄位、職業工具欄位）會寫進存檔與分享網址，列在 `class-id-baseline.json` 的 `fields`，不可改名。

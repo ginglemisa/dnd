@@ -2923,6 +2923,13 @@
       else { checkbox.checked = true; dispatchMobileField(checkbox); }
     }
     const levelOneContent = draft.selections.levelOne?.content || {};
+    // 武器精通寫進職業頁的武器精通選單（內容檔 picks 的存檔欄位，依序對應）。
+    const masteryFields = (window.getClassPicks?.(draft.choices.class, QUICK_BUILD_LEVEL, { kind: "weaponMastery" }) || []).flatMap(({ pick }) => pick.fields);
+    if ((levelOneContent.weaponMasteries || []).length) window.renderClassPickChoices?.();
+    (levelOneContent.weaponMasteries || []).forEach((name, index) => {
+      if (masteryFields[index]) setMobileField(masteryFields[index], name, warnings, `武器精通 ${index + 1}`);
+      else mobileImportWarning(`武器精通「${name}」：找不到角色卡欄位`, warnings);
+    });
     if ((levelOneContent.invocations || []).includes("pact-of-the-tome") && typeof window.setPactTomeSpellSelection === "function") {
       window.setPactTomeSpellSelection(levelOneContent.tome, { sync: false });
     }

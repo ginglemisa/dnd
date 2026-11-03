@@ -81,7 +81,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261104-spellbook-card">
+  <link rel="stylesheet" href="styles.css?v=20261104-class-picks">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261103-roll-min" defer></script>
   <script src="monster.js?v=20261025-beast-perception" defer></script>
@@ -3620,8 +3620,10 @@ function normalizeWeaponRuleName(value) {
   return String(value || "").trim().replace(/\s*[（(].*$/u, "");
 }
 
+// 精通標籤只顯示在職業頁武器精通選單選了的武器；一個都沒選（例如舊存檔）時，熟練的武器都顯示並由缺項提醒補選。
 function updateWeaponMasteryBadges() {
   const canUseMastery = hasWeaponMasteryFeature();
+  const selectedMasteries = window.getSelectedWeaponMasteries?.() || new Set();
   [
     { hand: "main", selectId: "mainHand", attackNameId: "atk-main-name" },
     { hand: "off", selectId: "offHand", attackNameId: "atk-off-name" }
@@ -3633,6 +3635,7 @@ function updateWeaponMasteryBadges() {
       : document.getElementById(attackNameId)?.value.trim() || "";
     const weapon = getAllWeaponsWithShield().find(item => item.名稱 === weaponName);
     const mastery = canUseMastery && weapon?.名稱 !== "盾牌" && hasMeaningfulEquipmentValue(weapon?.精通)
+      && (!selectedMasteries.size || selectedMasteries.has(weapon.名稱))
       ? String(weapon.精通).trim()
       : "";
     badge.hidden = !mastery;
@@ -4526,7 +4529,8 @@ document.addEventListener("change", (e) => {
 
   if (target.id === "manual-feat-management"
       || target.id === "druid-land"
-      || target.dataset.classCantripKey || target.closest("#classFeatures, #metamagicOptions, #eldritch-invocations-output, #feats-area")) {
+      || target.dataset.classCantripKey || target.classList.contains("circle-checkbox")
+      || target.closest("#classFeatures, #metamagicOptions, #eldritch-invocations-output, #feats-area, #extra-language-container")) {
     updateClassFeatureChoiceReminder();
   }
 });
@@ -5089,6 +5093,13 @@ function applyStateObjectNow(data) {
       el.dispatchEvent(new Event('change'));
     }
     subclassReplaced = restoreSubclassSelection(data);
+    // 武器精通選單依職業、等級重建；兩者還原後再補回選擇，不受 JSON 欄位順序影響。
+    renderClassPickChoices();
+    getWeaponMasteryPickControls().forEach(select => {
+      if (Object.hasOwn(data, select.id) && Array.from(select.options).some(option => option.value === data[select.id])) select.value = data[select.id];
+    });
+    syncClassPickChoices();
+    updateWeaponMasteryBadges();
     syncCharacterSizeFromRace(data[CHARACTER_SIZE_STATE_KEY]);
     // Class/level can rebuild these controls before all saved fields have been
     // applied (especially on a fresh share page). Restore their choices once
