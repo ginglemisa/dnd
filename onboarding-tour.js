@@ -2587,7 +2587,9 @@
       window.removeEventListener("touchmove", this.preventScrollEvent, { capture: true });
     }
 
-    async jumpToTarget({ tab = "basic", selector, focusSelector = selector } = {}) {
+    // highlightSelector: the visible, enabled elements to light up, found after the panel
+    // opens (e.g. both checkboxes of one choice, or a list's heading). Defaults to selector.
+    async jumpToTarget({ tab = "basic", selector, focusSelector = selector, highlightSelector = selector } = {}) {
       if (!selector) return false;
       if (this.active) this.stop({ resetView: false });
       this.showTab(tab);
@@ -2605,16 +2607,19 @@
         details.open = true;
         await waitForLayoutStability();
       }
-      if (featurePanel) target.scrollIntoView({ block: "center", inline: "nearest" });
-      else await this.scrollElementIntoView(target, 120);
+      const highlights = Array.from(document.querySelectorAll(highlightSelector))
+        .filter((element) => isElementVisible(element) && !element.disabled);
+      if (!highlights.length) highlights.push(target);
+      if (featurePanel) highlights[0].scrollIntoView({ block: "center", inline: "nearest" });
+      else await this.scrollElementIntoView(highlights[0], 120);
       const focusTarget = Array.from(document.querySelectorAll(focusSelector)).find((element) => {
         return isElementVisible(element) && !element.disabled;
       });
       focusTarget?.focus?.({ preventScroll: true });
-      target.classList.remove("onboarding-jump-target");
-      void target.offsetWidth;
-      target.classList.add("onboarding-jump-target");
-      window.setTimeout(() => target.classList.remove("onboarding-jump-target"), 1800);
+      highlights.forEach((element) => element.classList.remove("onboarding-jump-target"));
+      void highlights[0].offsetWidth;
+      highlights.forEach((element) => element.classList.add("onboarding-jump-target"));
+      window.setTimeout(() => highlights.forEach((element) => element.classList.remove("onboarding-jump-target")), 1800);
       return true;
     }
   }

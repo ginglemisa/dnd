@@ -11,7 +11,7 @@
   },
   "properties": {
     "$schema": { "type": "string" },
-    "id": { "type": "string", "minLength": 1, "pattern": "^[^\\s/\\\\]+$", "description": "專長 ID，須等於檔名。也是專長名稱，會寫進存檔、分享網址與快速創角草稿（選單值），不可改字（列在 feat-id-baseline.json）。" },
+    "id": { "type": "string", "minLength": 1, "pattern": "^[^\\s/\\\\]+$", "description": "專長 ID（中文名，與檔名無關；檔名是小寫英文）。也是專長名稱，會寫進存檔、分享網址與快速創角草稿（選單值），不可改字（列在 feat-id-baseline.json）。" },
     "source": { "enum": ["srd", "extended"], "description": "內容來源。srd：出自 SRD 5.2.1；extended：本站另外撰寫（選單與副標加上來源標籤，說明最後顯示來源說明）。" },
     "type": { "enum": ["origin", "general", "style"], "description": "專長類別：origin 起源專長、general 通用專長（4 級以上）、style 戰鬥風格專長。決定哪些專長選單列出此專長，選單與副標的類別字樣由此產生。" },
     "prerequisite": {

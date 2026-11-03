@@ -967,11 +967,16 @@ async function verifyClassTabletopUpdates(page) {
   await page.evaluate(() => {
     const toggle = document.getElementById("dice-system-toggle"); toggle.checked = true; toggle.dispatchEvent(new Event("change", {bubbles:true}));
   });
+  await page.evaluate(() => {
+    const wis = document.getElementById("wis"); wis.value = "1"; wis.dispatchEvent(new Event("input", {bubbles:true})); wis.dispatchEvent(new Event("change", {bubbles:true}));
+  });
   await choose("bonus", "dynamic-bonus-monk-curated-wholeness-of-body");
   await page.locator("#tabletop-action-panel-bonus .tabletop-action-resource-use").click();
   await page.getByRole("button", {name:"使用能力", exact:true}).last().click();
   await page.waitForFunction(() => TabletopMode.getBuiltInResourceSpent("monk-wholeness") === 1);
   await page.waitForFunction(() => document.querySelector("#dice-roller-stage")?.textContent.includes("混元體"));
+  // 感知調整值 −5 時 1d8−5 可能 ≤ 0，混元體的恢復量仍至少為 1。
+  assert.ok(Number(await page.locator("#dice-roller-total-value").innerText()) >= 1, "混元體恢復量最少為 1");
 }
 
 async function verifyManualWeaponVisibility(page, url) {

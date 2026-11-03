@@ -8,6 +8,8 @@ const { ContentError } = require("../content/errors");
 const { CONTENT_DIR, createSchemaValidators, schemaErrors, readYamlFile, listYaml } = require("../content/yaml");
 
 const ORDER_FILE = path.join(CONTENT_DIR, "srd", "feat-order.yaml");
+// 檔名：小寫英文、數字與連字號，與專長 ID 無關（ID 是中文名，寫在檔內的 id）。
+const FILE_NAME = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
 
 // 跑團動作說明由哪些效果組成：effects，省略時為與按鈕同名的效果。
 const actionEffectNames = action => action.effects || [action.label];
@@ -24,7 +26,7 @@ function loadFeats() {
     let data;
     try { data = readYamlFile(file); } catch (error) { errors.push(error.message); continue; }
     if (!validate(data)) { errors.push(...schemaErrors(validate, where)); continue; }
-    if (path.basename(file).replace(/\.ya?ml$/, "") !== data.id) errors.push(`${where}：檔名應為 ${data.id}.yaml`);
+    if (!FILE_NAME.test(path.basename(file).replace(/\.ya?ml$/, ""))) errors.push(`${where}：檔名只能用小寫英文、數字與連字號（例如 magic-initiate.yaml）`);
     if (byId.has(data.id)) errors.push(`${where}：專長 ID「${data.id}」重複（${byId.get(data.id).file}）`);
     else byId.set(data.id, { ...data, file: where });
   }
@@ -48,7 +50,7 @@ function readOrder(byId, errors) {
   const seen = new Set();
   order.forEach(id => {
     if (seen.has(id)) errors.push(`${where}：「${id}」重複`);
-    else if (!byId.has(id)) errors.push(`${where}：「${id}」沒有 content/srd/feats/${id}.yaml`);
+    else if (!byId.has(id)) errors.push(`${where}：「${id}」不是 content/srd/feats 任何專長的 id`);
     seen.add(id);
   });
   byId.forEach((feat, id) => { if (!seen.has(id)) errors.push(`${feat.file}：${where} 沒有列出「${id}」`); });
