@@ -3853,7 +3853,7 @@
 
   function invocationDetailFromClassFeatures(option) {
     const invocation = getEldritchInvocation(option?.label);
-    return invocation ? classFeaturePlainText(`${invocation.name}\n${invocation.text || ""}`) : "";
+    return invocation ? classFeaturePlainText(`${invocation.name}\n${getFeatureChoiceSourceHtml(invocation)}`) : "";
   }
 
   function openInvocationDetail(option, trigger) {

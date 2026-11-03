@@ -1756,7 +1756,7 @@ async function verifyLegacyPersistenceEdges(page, url) {
   console.log("Legacy persistence: autosave startup, retained source uses, numeric/unknown IDs, old s/s2 share isolation and failed-storage retry passed.");
 }
 
-async function verifyRecommendedSpellbookEntry(page) {
+async function verifyWizardSpellbookWrite(page) {
   const ids = ["detect-magic", "feather-fall", "mage-armor", "magic-missile", "sleep", "thunderwave"];
   await page.evaluate(() => {
     document.getElementById("legal-modal")?.style.setProperty("display", "none");
@@ -1769,12 +1769,11 @@ async function verifyRecommendedSpellbookEntry(page) {
   });
   await page.locator('[data-character-features-tab="class"]').click();
   const featureModal = page.locator("#character-features-modal");
-  const recommendations = featureModal.locator("#classFeatures [data-wizard-spellbook-recommendations] .spell-highlight-action");
-  assert.deepEqual(await recommendations.evaluateAll(elements => elements.map(el => el.dataset.spellId)), ids);
-  assert.equal(await recommendations.evaluateAll(elements => elements.every(el => getComputedStyle(el).textDecorationStyle === "solid")), true, "sheet feature links use solid underlines");
+  const recommendations = featureModal.locator("#classFeatures .spell-highlight-action");
+  assert.equal(await recommendations.evaluateAll(elements => elements.length > 0 && elements.every(el => getComputedStyle(el).textDecorationStyle === "solid")), true, "sheet feature links use solid underlines");
   const detail = page.locator("#quick-build-spell-detail");
   const writeButton = detail.getByRole("button", { name: "寫入法術書", exact: true });
-  const trigger = id => featureModal.locator(`#classFeatures [data-wizard-spellbook-recommendations] .spell-highlight-action[data-spell-id="${id}"]`);
+  const trigger = id => featureModal.locator(`#classFeatures .spell-highlight-action[data-spell-id="${id}"]`).first();
   const preparedIds = () => page.evaluate(() => SpellManagement.getPlayerEntries().filter(entry => entry.level === 1).map(entry => entry.spellId));
   const initialPrepared = await preparedIds();
 
@@ -1813,7 +1812,7 @@ async function verifyRecommendedSpellbookEntry(page) {
   await page.setViewportSize({ width: 1100, height: 850 });
   for (const id of ids) {
     await trigger(id).click();
-    assert.equal(await writeButton.isEnabled(), true, `${id} can be written from its recommendation`);
+    assert.equal(await writeButton.isEnabled(), true, `${id} can be written from its class page link`);
     await writeButton.focus();
     await page.keyboard.press("Enter");
     assert.equal(await detail.isVisible(), false);
@@ -1828,7 +1827,7 @@ async function verifyRecommendedSpellbookEntry(page) {
   await page.keyboard.press("Escape");
   await trigger(ids[0]).click();
   await detail.locator(".quick-build-spell-prepare-confirm").click();
-  assert((await preparedIds()).includes(ids[0]), "recommendation still supports preparing a spell");
+  assert((await preparedIds()).includes(ids[0]), "class page link still supports preparing a spell");
   assert.deepEqual(await page.evaluate(() => Spellbook.getState().spellIds), ids, "preparing does not duplicate book entries");
   await featureModal.locator('#classFeatures .spell-highlight-action[data-spell-id="light"]').first().click();
   assert.equal(await detail.locator(".quick-build-spellbook-write").isVisible(), false, "wizard cantrip uses the regular modal");
@@ -1836,10 +1835,10 @@ async function verifyRecommendedSpellbookEntry(page) {
   await page.keyboard.press("Escape");
   await page.evaluate(() => showTab("spells"));
   await page.locator('#spellbook-list [data-spell-id="detect-magic"]').click();
-  assert.equal(await detail.locator(".quick-build-spellbook-write").isVisible(), false, "book detail does not inherit recommendation action");
+  assert.equal(await detail.locator(".quick-build-spellbook-write").isVisible(), false, "book detail has no write action");
   await page.keyboard.press("Escape");
   await page.evaluate(() => { quickBuild.openSpellPrepareDetail("detect-magic", document.getElementById("spellbook-manage")); });
-  assert.equal(await detail.locator(".quick-build-spellbook-write").isVisible(), false, "same spell through a regular entry has no write action");
+  assert.equal(await detail.locator(".quick-build-spellbook-write").isVisible(), false, "opening prepare detail directly has no write action");
   await page.keyboard.press("Escape");
   assert.deepEqual(await page.evaluate(() => [Spellbook.addWizardSpell("detect-magic"), Spellbook.addWizardSpell("light"),
     Spellbook.addWizardSpell("cure-wounds"), Spellbook.addWizardSpell("invalid-spell")]), [false, false, false, false]);
@@ -1871,7 +1870,32 @@ async function verifyRecommendedSpellbookEntry(page) {
   assert.equal(await page.evaluate(() => Spellbook.addWizardSpell("feather-fall")), false, "write API rejects non-wizards");
   await page.keyboard.press("Escape");
   await page.keyboard.press("Escape");
-  console.log("Wizard recommendations: six exclusive entries, book-only writes, duplicate guard, keyboard/focus, responsive styling and JSON/share/autosave passed.");
+  // 手動管理法術的任何職業都有法術書，但仍只收法師法表的 1 環以上法術。
+  await page.evaluate(() => {
+    applyStateObject({ class: "fighter", level: "1", background: "soldier", race: "human",
+      "manual-spell-management": true, __spellManagement: { version: 2, manual: true, entries: [] } });
+    showTab("basic");
+  });
+  const openDetail = id => page.evaluate(spellId => { void autoPrepareSpellFromFeature(spellId, document.body); }, id);
+  await openDetail("burning-hands");
+  assert.equal(await detail.locator(".quick-build-spellbook-write").isVisible(), true, "manual mode shows the write action for wizard-list spells");
+  await page.keyboard.press("Escape");
+  await openDetail("cure-wounds");
+  assert.equal(await detail.locator(".quick-build-spellbook-write").isVisible(), false, "manual mode keeps the wizard list restriction");
+  await page.keyboard.press("Escape");
+  await openDetail("light");
+  assert.equal(await detail.locator(".quick-build-spellbook-write").isVisible(), false, "cantrips never offer the write action");
+  await page.keyboard.press("Escape");
+  assert.deepEqual(await page.evaluate(() => [Spellbook.addWizardSpell("cure-wounds"), Spellbook.addWizardSpell("light"), Spellbook.addWizardSpell("burning-hands")]), [false, false, true]);
+  await page.evaluate(() => {
+    applyStateObject({ class: "wizard", level: "1", background: "soldier", race: "human",
+      __spellManagement: { version: 2, manual: false, entries: [] } });
+  });
+  await openDetail("fireball");
+  assert.equal(await detail.locator(".quick-build-spellbook-write").isVisible(), true, "wizard sees the write action outside the class page");
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("Escape");
+  console.log("Wizard spellbook write: wizard/manual-only entries, wizard-list leveled spells only, duplicate guard, keyboard/focus, responsive styling and JSON/share/autosave passed.");
 }
 
 async function verifyPdfSpellbookOptions(page) {
@@ -2216,7 +2240,7 @@ async function main() {
     });
     await page.goto(`http://127.0.0.1:${server.address().port}/index.html?analytics=owner`);
     await page.waitForFunction(() => window.Spellbook && window.SpellManagement?.getEntries);
-    await verifyRecommendedSpellbookEntry(page);
+    await verifyWizardSpellbookWrite(page);
     await verifySpellOverview(browser, restoreUrl.href);
     await verifyClearPreparedSpells(page);
     await verifySpellManagement(page);

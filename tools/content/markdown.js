@@ -8,8 +8,8 @@ const { ContentError } = require("./errors");
 
 // [文字]{名稱} 可用的網站功能標記：輸出 <span data-名稱>文字</span>，職業頁與跑團版相同。只列網站程式會讀取的標記，
 // 不在清單內的名稱一律報錯。
-// - wizard-spellbook-recommendations：法師法術書的推薦法術，sheet-spells.js 只對其中的法術提供「寫入法術書」。
-const MARKS = new Set(["wizard-spellbook-recommendations"]);
+// 目前沒有網站程式讀取的標記，清單為空。
+const MARKS = new Set([]);
 
 function escapeHtml(text) {
   return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");

@@ -29,6 +29,7 @@
         "tabletop": { "$ref": "#/definitions/text", "description": "跑團動作按鈕說明的完整版本；只在和職業頁文字不同時才寫，省略時使用 text。" },
         "summary": { "type": "string", "minLength": 1, "description": "跑團總覽的一句話；省略時使用 text。" },
         "afterFeatChoice": { "$ref": "#/definitions/text", "description": "接在專長選單之後的文字（例如屬性值提升的「施法補充」）；4 級的額外戲法選單接在它後面。寫 tabletop／summary 時須一併包含。" },
+        "cantripChoiceLabel": { "type": "string", "minLength": 1, "description": "4 級額外戲法選單的標籤（例如「施法補充」，顯示為「施法補充：額外吟遊詩人戲法」）；只能與 afterFeatChoice 並用，且該段文字須以粗體寫出同樣的標籤。選單接在此能力 afterFeatChoice 之後，等級取自能力 level。" },
         "feat": { "enum": ["level", "style"], "description": "此能力給予專長選擇，專長選單接在能力段落內：level 為屬性值提升（可選一般專長，存檔欄位為「職業-level-等級」），style 為戰鬥風格專長。" },
         "hint": { "$ref": "#/definitions/hint" },
         "pdfMerge": { "const": true, "description": "PDF 角色紙的職業特性欄：同等級標記 pdfMerge 的能力合併成一行，依職業頁順序以「、」連接（例如「等級 1：狂暴、無甲防禦」）。" },
@@ -99,7 +100,7 @@
           "anyOf": [
             { "required": ["id"] }, { "required": ["type"] }, { "required": ["tableName"] }, { "required": ["tabletop"] }, { "required": ["summary"] }, { "required": ["choose"] },
             { "required": ["changeOn"] }, { "required": ["choiceGroup"] }, { "required": ["optionStyle"] }, { "required": ["options"] },
-            { "required": ["actions"] }, { "required": ["resource"] }, { "required": ["spells"] }, { "required": ["spellsByChoice"] }, { "required": ["spellSourceKey"] }, { "required": ["afterFeatChoice"] }, { "required": ["behavior"] }, { "required": ["parts"] }, { "required": ["select"] }, { "required": ["mount"] }
+            { "required": ["actions"] }, { "required": ["resource"] }, { "required": ["spells"] }, { "required": ["spellsByChoice"] }, { "required": ["spellSourceKey"] }, { "required": ["afterFeatChoice"] }, { "required": ["cantripChoiceLabel"] }, { "required": ["behavior"] }, { "required": ["parts"] }, { "required": ["select"] }, { "required": ["mount"] }
           ]
         }
       },

@@ -60,11 +60,15 @@
     if (options.sync !== false) changed();
   }
 
-  function addWizardSpell(spellId) {
+  // 法術書只收 1 環以上的法師法表法術；法師或手動管理法術時才有法術書。
+  function canWriteSpell(spellId) {
     const spell = catalog()?.getSpell(spellId);
+    return canManageBook() && Boolean(spell) && spell.level >= 1 && catalog().getClassIds(spellId).includes("wizard");
+  }
+
+  function addWizardSpell(spellId) {
     const ids = activeBookIds();
-    if (!isWizard() || !spell || spell.level < 1
-      || !catalog().getClassIds(spellId).includes("wizard") || ids.includes(spellId)) return false;
+    if (!canWriteSpell(spellId) || ids.includes(spellId)) return false;
     ids.push(spellId);
     changed();
     return true;
@@ -825,7 +829,7 @@
     render();
   }
 
-  globalScope.Spellbook = Object.freeze({ getState, setState, addWizardSpell, restoreState, render, getRitualEntries,
+  globalScope.Spellbook = Object.freeze({ getState, setState, addWizardSpell, canWriteSpell, restoreState, render, getRitualEntries,
     openTomeSelection, openReadOnly, openPreparedManager, getPreparedRingLabel: preparedRingLabel });
   document.addEventListener("DOMContentLoaded", init);
 })(window);

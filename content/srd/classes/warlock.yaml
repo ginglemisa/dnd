@@ -99,6 +99,7 @@ features:
     feat: level
     text: |
       選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。
+    cantripChoiceLabel: 契約魔法補充
     afterFeatChoice: |
       **契約魔法補充：**契術師達到 4 級時，你也會透過「契約魔法」特性額外學會 1 個契術師戲法。
   - level: 5
