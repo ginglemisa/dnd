@@ -643,42 +643,23 @@ function createSpellVersionView(spellId, renderSite) {
   return view;
 }
 
+// 純 HTML 版的法術說明（目前只有苦痛魔爆的戲法設定使用）；需要可點的野獸資料時改用 appendSpellDescription。
 function renderSpellDescHtml(raw) {
-  const text = String(raw ?? "—");
-  const withBeastTips = text.includes("召喚一隻魔寵");
   const container = document.createElement("div");
-  appendSpellDescContent(container, text, (target, segment) => {
-    target.insertAdjacentHTML("beforeend", renderSpellDescInlineHtml(segment, withBeastTips));
-  });
+  appendSpellDescContent(container, String(raw ?? "—"), appendSpellDescTextWithBreaks);
   return container.innerHTML;
 }
 
-function renderSpellDescInlineHtml(segment, withBeastTips) {
-  const desc = withBeastTips ? addFamiliarBeastTips(segment) : segment;
-  const tipRe = /<span class="beast-tip" data-beast="([a-z0-9_]+)">([^<]+)<\/span>/g;
-  let last = 0;
-  const parts = [];
-  let m;
-
-  while ((m = tipRe.exec(desc)) !== null) {
-    const [full, key, label] = m;
-    parts.push(escapeHtml(desc.slice(last, m.index)));
-
-    if (Object.prototype.hasOwnProperty.call(BEAST_STATS, key)) {
-      parts.push(`<span class="beast-tip" data-beast="${escapeHtml(key)}">${escapeHtml(label)}</span>`);
-    } else {
-      parts.push(escapeHtml(full));
-    }
-
-    last = m.index + full.length;
-  }
-
-  parts.push(escapeHtml(desc.slice(last)));
-  return parts.join("").replaceAll("\n", "<br>");
+function appendSpellDescTextWithBreaks(target, text) {
+  String(text).split("\n").forEach((line, index) => {
+    if (index) target.appendChild(document.createElement("br"));
+    if (line) target.append(line);
+  });
 }
 
-function addFamiliarBeastTips(desc) {
-  const familiarBeasts = [
+// 法術說明裡可點開的野獸資料，依法術 ID 判斷，不從說明文字反推。目前只有獲得魔寵的一般形態。
+const SPELL_BEAST_REFERENCES = Object.freeze({
+  "find-familiar": Object.freeze([
     ["蝙蝠", "bat"],
     ["貓", "cat"],
     ["青蛙", "frog"],
@@ -690,21 +671,52 @@ function addFamiliarBeastTips(desc) {
     ["渡鴉", "raven"],
     ["蜘蛛", "spider"],
     ["鼬", "weasel"]
-  ];
+  ])
+});
 
-  const beastMap = new Map(familiarBeasts);
-  const pattern = new RegExp(
-    familiarBeasts
-      .map(([label]) => escapeRegExp(label))
-      .sort((a, b) => b.length - a.length)
-      .join("|"),
-    "g"
-  );
+// 野獸資料以疊加的 AppDialog 顯示，在任何對話框或視窗裡都能操作，關閉後回到原本的畫面。
+function openBeastReference(beastKey, trigger, title = trigger?.textContent || "") {
+  const stats = window.BeastCatalog?.getStatBlock?.(beastKey);
+  if (!stats || typeof window.renderBeastPopupHtml !== "function" || !window.AppDialog) return null;
+  const content = document.createElement("div");
+  content.className = "spell-readonly-beast";
+  content.innerHTML = window.renderBeastPopupHtml(stats);
+  return window.AppDialog.showContent({ title, content, variant: "spell-readonly",
+    confirmLabel: "關閉", trigger, allowNested: true });
+}
 
-  return desc.replace(pattern, (label) => {
-    const key = beastMap.get(label);
-    return key
-      ? `<span class="beast-tip" data-beast="${key}">${label}</span>`
-      : label;
+function createBeastReferenceButton(label, beastKey) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "spell-readonly-reference";
+  button.dataset.beast = beastKey;
+  button.textContent = label;
+  button.setAttribute("aria-haspopup", "dialog");
+  button.addEventListener("click", event => {
+    event.stopPropagation();
+    openBeastReference(beastKey, button, label);
   });
+  return button;
+}
+
+// 法術說明的網站版：「- 」清單、野獸資料按鈕，其餘文字交給 appendText（預設保留換行；跑團另外加擲骰按鈕）。
+function appendSpellDescription(container, spellId, raw, appendText = appendSpellDescTextWithBreaks) {
+  const beasts = SPELL_BEAST_REFERENCES[spellId];
+  if (!beasts) {
+    appendSpellDescContent(container, raw, appendText);
+    return container;
+  }
+  const keys = new Map(beasts);
+  const pattern = new RegExp(beasts.map(([label]) => escapeRegExp(label))
+    .sort((a, b) => b.length - a.length).join("|"), "g");
+  appendSpellDescContent(container, raw, (target, text) => {
+    let cursor = 0;
+    for (const match of text.matchAll(pattern)) {
+      if (match.index > cursor) appendText(target, text.slice(cursor, match.index));
+      target.appendChild(createBeastReferenceButton(match[0], keys.get(match[0])));
+      cursor = match.index + match[0].length;
+    }
+    if (cursor < text.length) appendText(target, text.slice(cursor));
+  });
+  return container;
 }

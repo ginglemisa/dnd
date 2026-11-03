@@ -619,8 +619,8 @@
 
     const copy = document.createElement("div");
     copy.className = "action-description-copy";
-    if (option.spellId && typeof globalScope.appendSpellDescContent === "function") {
-      globalScope.appendSpellDescContent(copy, option.description);
+    if (option.spellId && typeof globalScope.appendSpellDescription === "function") {
+      globalScope.appendSpellDescription(copy, option.spellId, option.description, (node, text) => node.append(text));
     } else {
       copy.textContent = option.description;
     }

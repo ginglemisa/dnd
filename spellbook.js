@@ -286,24 +286,8 @@
     if (spell) {
       body.appendChild(node("h3", "spell-readonly-name", catalog().getDisplayName(spellId)));
       const description = node("div", "spell-readonly-description");
-      if (typeof globalScope.renderSpellDescHtml === "function") description.innerHTML = globalScope.renderSpellDescHtml(spell.desc || "—");
+      if (typeof globalScope.appendSpellDescription === "function") globalScope.appendSpellDescription(description, spellId, spell.desc || "—");
       else description.textContent = spell.desc || "—";
-      // A reference is a nested AppDialog so it remains keyboard accessible
-      // inside the reader's inert background, rather than using a page popup.
-      description.querySelectorAll(".beast-tip").forEach(tip => {
-        const button = node("button", "spell-readonly-reference", tip.textContent);
-        button.type = "button";
-        button.addEventListener("click", event => {
-          event.stopPropagation();
-          const stats = globalScope.BeastCatalog?.getStatBlock?.(tip.dataset.beast);
-          if (!stats || typeof globalScope.renderBeastPopupHtml !== "function") return;
-          const content = node("div", "spell-readonly-beast");
-          content.innerHTML = globalScope.renderBeastPopupHtml(stats);
-          globalScope.AppDialog.showContent({ title: tip.textContent, content, variant: "spell-readonly",
-            confirmLabel: "關閉", trigger: button, allowNested: true });
-        });
-        tip.replaceWith(button);
-      });
       body.appendChild(typeof globalScope.createSpellVersionView === "function"
         ? globalScope.createSpellVersionView(spellId, site => site.appendChild(description))
         : description);

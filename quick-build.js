@@ -3800,8 +3800,9 @@
     const displayName = record && (lookupOnly ? `${record.nameZh} ${record.nameEn}` : spellDisplayName(record.spellId));
     content.innerHTML = record ? `<strong>${escapeHtml(displayName)}</strong>` : "<span>你還沒有選擇法術喔！</span>";
     const renderSite = lookupOnly ? null : target => {
-      if (typeof window.appendSpellDescContent === "function") window.appendSpellDescContent(target, record.desc);
-      else target.append(record.desc || "");
+      if (typeof window.appendSpellDescription === "function") {
+        window.appendSpellDescription(target, record.spellId, record.desc, (node, text) => node.append(text));
+      } else target.append(record.desc || "");
     };
     if (record && typeof window.createSpellVersionView === "function") content.appendChild(window.createSpellVersionView(record.spellId, renderSite));
     else if (record && renderSite) renderSite(content);

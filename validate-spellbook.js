@@ -1182,6 +1182,87 @@ async function verifyClassOptionCantrips(page) {
 
 // Every path into the preparation dialog goes through #spell-prepare / openPreparedManager;
 // the ability requirement follows the field's visibility so it can never become a dead end.
+// 獲得魔寵的一般形態在每個法術詳情入口都能點開資料，疊在原視窗上、關閉後回到原視窗。
+async function verifyFamiliarReferences(browser, url) {
+  const context = await browser.newContext({ viewport: { width: 1100, height: 850 } });
+  const page = await context.newPage();
+  await page.addInitScript(() => localStorage.setItem("dnd.classFeaturePromptDisabled.v1", "true"));
+  const errors = [];
+  page.on("pageerror", error => errors.push(String(error)));
+  const reference = page.locator('.app-dialog[data-variant="spell-readonly"]').filter({ hasText: "獵鷹 (Hawk)" });
+  const isOnTop = locator => locator.evaluate(el => {
+    const rect = el.getBoundingClientRect();
+    const x = Math.min(innerWidth - 1, rect.left + rect.width / 2);
+    const y = Math.min(innerHeight - 1, rect.top + Math.min(rect.height / 2, 40));
+    return !el.closest("[inert]") && el.contains(document.elementFromPoint(x, y));
+  });
+  const checkHawk = async (container, label) => {
+    const names = container.locator("button.spell-readonly-reference[data-beast]");
+    assert.equal(await names.count(), 11, `${label}: every familiar form is a reference`);
+    assert.equal(await container.locator('button.spell-readonly-reference[data-beast="owl"]').textContent(), "貓頭鷹", `${label}: 貓頭鷹 is not split into 貓`);
+    const hawk = container.locator('button.spell-readonly-reference[data-beast="hawk"]').first();
+    await hawk.scrollIntoViewIfNeeded();
+    await hawk.click();
+    await reference.waitFor();
+    assert.equal(await isOnTop(reference.locator(".app-dialog__surface")), true, `${label}: familiar stats appear above the spell detail`);
+    await reference.locator(".app-dialog__button--primary").click();
+    await reference.waitFor({ state: "detached" });
+    assert.equal(await container.isVisible(), true, `${label}: closing the familiar keeps the spell detail open`);
+    assert.equal(await hawk.evaluate(el => el === document.activeElement), true, `${label}: focus returns to the familiar name`);
+  };
+  try {
+    await page.goto(url);
+    await page.waitForFunction(() => window.Spellbook && window.quickBuild && window.TabletopSpells);
+    for (const width of [1100, 360]) {
+      await page.setViewportSize({ width, height: 850 });
+      await apply(page, modern({ class: "warlock", level: "3", "spellcasting-ability": "cha" }));
+      const chain = await page.evaluate(() => document.querySelector('#eldritch-invocations-output input[data-invocation-name="鏈之魔契"]')?.id);
+      assert(chain, "chain pact invocation exists");
+      await apply(page, modern({ class: "warlock", level: "3", "spellcasting-ability": "cha", [chain]: true }));
+
+      // 法術書唯讀視窗
+      await page.evaluate(() => { void Spellbook.openReadOnly("find-familiar", document.getElementById("spell-prepare")); });
+      const readOnly = page.locator('.app-dialog[data-variant="spell-readonly"]').filter({ has: page.locator(".spell-readonly-detail") });
+      await checkHawk(readOnly, "read-only spellbook detail");
+      await readOnly.locator(".app-dialog__button--primary").click();
+      await page.evaluate(() => { void Spellbook.openReadOnly("mage-armor", document.getElementById("spell-prepare")); });
+      assert.equal(await readOnly.locator("button.spell-readonly-reference").count(), 0, "other spells get no familiar references");
+      await readOnly.locator(".app-dialog__button--primary").click();
+
+      // 魔祈頁的「獲得魔寵」：角色能力視窗上的法術詳情（快速創角視窗）
+      await page.evaluate(() => { openCharacterFeatures("invocations", document.getElementById("spell-prepare")); });
+      const abilities = page.locator("#character-features-modal");
+      await abilities.locator('.spell-highlight-action[data-spell-id="find-familiar"]').first().click();
+      const quickDetail = page.locator("#quick-build-spell-detail");
+      await quickDetail.locator(".quick-build-spell-detail-shell").waitFor();
+      await checkHawk(quickDetail, "invocation spell detail");
+      await page.keyboard.press("Escape");
+      assert.equal(await quickDetail.isVisible(), false, "Escape closes the spell detail after the familiar");
+      assert.equal(await abilities.isVisible(), true, "the abilities dialog stays open");
+      await abilities.locator(".app-dialog__close").click();
+
+      // 跑團法術詳情
+      await page.evaluate(() => { void TabletopSpells.showSpellDetail("find-familiar", document.getElementById("spell-prepare")); });
+      const tabletop = page.locator(".app-dialog").filter({ has: page.locator(".tabletop-spell-detail") });
+      await tabletop.waitFor();
+      await checkHawk(tabletop, "tabletop spell detail");
+      await tabletop.locator(".app-dialog__close").click();
+
+      // 查閱法術
+      await page.evaluate(() => { void openSpellBrowser(document.getElementById("spell-prepare")); });
+      const browserDialog = page.locator('.app-dialog[data-variant="spell-browser"]');
+      await browserDialog.locator("#spell-browse-name").selectOption("find-familiar");
+      await checkHawk(browserDialog, "spell browser");
+      await browserDialog.locator(".app-dialog__button--primary").click();
+      await browserDialog.waitFor({ state: "detached" });
+    }
+    assert.deepEqual(errors, [], "browser runtime errors");
+    console.log("Familiar references: read-only, invocation/quick-build, tabletop and spell browser details open stacked familiar stats at 1100/360 widths passed.");
+  } finally {
+    await context.close();
+  }
+}
+
 async function verifyPreparedAbilityGate(browser, url) {
   const page = await browser.newPage({ viewport: { width: 1100, height: 850 } });
   try {
@@ -2237,6 +2318,7 @@ async function main() {
     await verifyManualSourceIsolation(browser, restoreUrl.href);
     await verifySynchronousRestore(browser, restoreUrl.href);
     await verifyPreparedAbilityGate(browser, restoreUrl.href);
+    await verifyFamiliarReferences(browser, restoreUrl.href);
     const page = await browser.newPage({ viewport: { width: 1100, height: 850 } });
     await page.addInitScript(() => {
       if (!sessionStorage.getItem("spellbook-test-seeded")) {
