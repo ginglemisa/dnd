@@ -13300,6 +13300,25 @@ html[data-theme="dark"] .brand-logo-full .legal-modal-logo-dark {
   }
 }
 
+/* 勾選框與單選鈕緊貼選項文字：外框貼近控制項，不蓋到文字。 */
+input[type="checkbox"].onboarding-jump-target,
+input[type="radio"].onboarding-jump-target {
+  animation-name: onboarding-jump-highlight-compact;
+}
+
+@keyframes onboarding-jump-highlight-compact {
+  0%, 35% {
+    outline: 3px solid rgba(82, 111, 174, 0.88);
+    outline-offset: 1px;
+    box-shadow: 0 0 0 4px rgba(82, 111, 174, 0.16);
+  }
+  100% {
+    outline-color: transparent;
+    outline-offset: 3px;
+    box-shadow: 0 0 0 6px transparent;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   :where(html:not([data-ui-theme="warm"])) .onboarding-jump-target {
     animation-duration: 0.01ms;
@@ -13310,6 +13329,10 @@ html[data-theme="dark"] .brand-logo-full .legal-modal-logo-dark {
     animation-duration: 0.01ms;
     outline: 3px solid var(--focus-ring);
     outline-offset: 5px;
+  }
+  :where(html) input[type="checkbox"].onboarding-jump-target,
+  :where(html) input[type="radio"].onboarding-jump-target {
+    outline-offset: 1px;
   }
 }
 
