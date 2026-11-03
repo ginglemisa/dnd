@@ -3220,6 +3220,22 @@ async function verifyClassPicks(browser, url) {
     assert.ok(["匕首", "刺劍", "鞭", "手弩"].every(name => current[0].options.includes(name)) && !current[0].options.includes("長劍"), "rogue chooses among its proficient weapons");
     let messages = await issues(page);
     assert.ok(messages.includes("盜賊專精尚未選完（0/2）。") && messages.includes("盜賊額外語言尚未選擇。"), "rogue expertise and language are reminded");
+    // 「前往」切到技能頁並高亮整個框：專精是技能加值區，額外語言是語言區。
+    for (const [label, box] of [["盜賊專精", "#skill-bonus-section"], ["盜賊額外語言", "#tab-skills .language-card"]]) {
+      await page.evaluate(label => Array.from(document.querySelectorAll("#class-feature-choice-reminder button"))
+        .find(button => button.textContent.includes(label)).click(), label);
+      await page.waitForFunction(() => document.querySelector(".onboarding-jump-target"));
+      const jumped = await page.evaluate(box => {
+        const target = document.querySelector(".onboarding-jump-target");
+        const rect = target.getBoundingClientRect();
+        return { skillsTab: !document.getElementById("tab-skills").hidden, box: target === document.querySelector(box), inView: rect.top < innerHeight && rect.bottom > 0 };
+      }, box);
+      assert.deepEqual(jumped, { skillsTab: true, box: true, inView: true }, `${label} jumps to its box on the skills tab`);
+      await page.evaluate(() => {
+        document.querySelectorAll(".onboarding-jump-target").forEach(element => element.classList.remove("onboarding-jump-target"));
+        showTab("basic");
+      });
+    }
     await page.evaluate(() => ["隱匿", "巧手"].forEach(skill => {
       const checkbox = document.getElementById(`exp-${skill}`);
       checkbox.checked = true;

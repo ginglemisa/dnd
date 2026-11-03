@@ -923,7 +923,7 @@
 </div>
 
 
-<div class="section">
+<div class="section" id="skill-bonus-section">
   <button type="button" id="calculate-skills-button" onclick="fillSkills()">計算技能加值</button>
   <div class="skill-action-hint skill-legend"><span class="legend-badge"><span class="legend-box" role="img" aria-label="方框"></span>是熟練、<span class="legend-circle" data-expertise-legend role="img" aria-label="圓框"></span>為專精，</span><span>決定屬性後再按此鈕。</span></div>
   <div class="skill-action-hint">屬性、等級或勾選變動後，須重新計算。</div>
@@ -1098,11 +1098,23 @@
 
     <div class="equipment-loadout-controls">
     <div class="form-row equipment-loadout-field">
-      <label for="mainHand">主手</label>
+      <div class="equipment-loadout-field__head">
+        <label for="mainHand">主手</label>
+        <span class="pact-weapon-control" data-pact-weapon-hand="main" hidden>
+          <label class="pact-weapon-toggle" for="mainHandPactWeapon"><input type="checkbox" id="mainHandPactWeapon">契約武器</label>
+          <select id="mainHandPactDamage" aria-label="契約武器傷害類型"><option value="">原類型</option><option value="黯蝕">黯蝕</option><option value="心靈">心靈</option><option value="光耀">光耀</option></select>
+        </span>
+      </div>
 <select id="mainHand"><option value="">-- 請選擇 --</option><option value="短棒">短棒</option><option value="匕首">匕首</option><option value="巨棒">巨棒</option><option value="手斧">手斧</option><option value="標槍">標槍</option><option value="輕錘">輕錘</option><option value="硬頭錘">硬頭錘</option><option value="長棍">長棍</option><option value="鐮刀">鐮刀</option><option value="短矛">短矛</option><option value="飛鏢">飛鏢</option><option value="輕弩">輕弩</option><option value="短弓">短弓</option><option value="投石索">投石索</option><option value="戰斧">戰斧</option><option value="連枷">連枷</option><option value="長柄刀">長柄刀</option><option value="巨斧">巨斧</option><option value="巨劍">巨劍</option><option value="長戟">長戟</option><option value="騎槍">騎槍</option><option value="長劍">長劍</option><option value="巨錘">巨錘</option><option value="釘頭錘">釘頭錘</option><option value="長矛">長矛</option><option value="刺劍">刺劍</option><option value="彎刀">彎刀</option><option value="短劍">短劍</option><option value="三叉戟">三叉戟</option><option value="戰錘">戰錘</option><option value="戰鎬">戰鎬</option><option value="鞭">鞭</option><option value="吹箭筒">吹箭筒</option><option value="手弩">手弩</option><option value="重弩">重弩</option><option value="長弓">長弓</option><option value="火繩槍">火繩槍</option><option value="手槍">手槍</option></select>
     </div>
     <div class="form-row equipment-loadout-field">
-      <label id="offHandLabel" for="offHand">副手</label>
+      <div class="equipment-loadout-field__head">
+        <label id="offHandLabel" for="offHand">副手</label>
+        <span class="pact-weapon-control" data-pact-weapon-hand="off" hidden>
+          <label class="pact-weapon-toggle" for="offHandPactWeapon"><input type="checkbox" id="offHandPactWeapon">契約武器</label>
+          <select id="offHandPactDamage" aria-label="契約武器傷害類型"><option value="">原類型</option><option value="黯蝕">黯蝕</option><option value="心靈">心靈</option><option value="光耀">光耀</option></select>
+        </span>
+      </div>
       <select id="offHand" disabled=""><option disabled="">(雙手佔用)</option></select>
     </div>
     <div class="form-row equipment-loadout-field equipment-loadout-field--armor">
@@ -3583,17 +3595,57 @@ function isWeaponProficient(weapon) {
   ]).has(weapon.名稱);
 
   // 武器熟練讀職業內容檔的 proficiencies.weapons 與選項 grants（守護者、哨衛的軍用武器）；
-  // 武僧的武藝與契術師刃之魔契的軍用武器不在內容檔的熟練欄位，由此處補上。
+  // 武僧的武藝不在內容檔的熟練欄位，由此處補上。契術師刃之魔契只熟練標記為契約武器的那一把（isPactWeaponHand）。
   const proficiencies = window.getClassProficiencies?.(cls)?.weapons;
   if (!proficiencies) return false;
   if (cls === "monk" && weapon.名稱 === "武藝") return true;
   // 職業本身熟練全部武器類別（野蠻人、戰士等）時對任何武器都熟練。
   if (["simple", "martial"].every(category => (proficiencies.categories || []).includes(category))) return true;
   const categories = new Set([...(proficiencies.categories || []), ...getActiveClassGrants().flatMap(item => item.grants.weapons || [])]);
-  if (cls === "warlock" && hasWarlockInvocation("刃之魔契")) categories.add("martial");
   if (isSimple) return categories.has("simple");
   if (!isMartial) return false;
   return categories.has("martial") || (proficiencies.martialWithProperty || []).some(property => weaponHasProp(weapon, property));
+}
+
+// 刃之魔契：主手或副手可標記為契約武器（同時只有一把，兩把都勾時以主手為準）。
+// 契約武器熟練、可用魅力計算命中與傷害，傷害類型可改為黯蝕、心靈或光耀。
+const PACT_WEAPON_HANDS = Object.freeze({
+  main: Object.freeze({ selectId: "mainHand", checkboxId: "mainHandPactWeapon", damageId: "mainHandPactDamage" }),
+  off: Object.freeze({ selectId: "offHand", checkboxId: "offHandPactWeapon", damageId: "offHandPactDamage" })
+});
+
+function canUsePactWeapon() {
+  return document.getElementById("class")?.value === "warlock" && hasWarlockInvocation("刃之魔契");
+}
+
+function getPactWeaponHandWeapon(hand) {
+  const name = document.getElementById(PACT_WEAPON_HANDS[hand]?.selectId)?.value || "";
+  return name === "武藝" ? null : getWeaponByName(name) || null;
+}
+
+function isPactWeaponHand(hand) {
+  const config = PACT_WEAPON_HANDS[hand];
+  if (!config || !canUsePactWeapon() || !getPactWeaponHandWeapon(hand)) return false;
+  if (!document.getElementById(config.checkboxId)?.checked) return false;
+  return hand !== "off" || !isPactWeaponHand("main");
+}
+
+function getPactWeaponDamageType(hand) {
+  return isPactWeaponHand(hand) ? document.getElementById(PACT_WEAPON_HANDS[hand].damageId)?.value || "" : "";
+}
+
+function syncPactWeaponControls() {
+  const available = canUsePactWeapon();
+  Object.entries(PACT_WEAPON_HANDS).forEach(([hand, config]) => {
+    const weapon = available ? getPactWeaponHandWeapon(hand) : null;
+    const control = document.querySelector(`[data-pact-weapon-hand="${hand}"]`);
+    if (control) control.hidden = !weapon;
+    const damage = document.getElementById(config.damageId);
+    if (!damage) return;
+    damage.disabled = !document.getElementById(config.checkboxId)?.checked;
+    // 不改傷害類型時顯示武器原本的類型。
+    damage.options[0].textContent = weapon?.傷害.split(/\s+/u).slice(1).join("") || "原類型";
+  });
 }
 
 function hasTwoWeaponFightingStyleFeat() {
@@ -3748,13 +3800,13 @@ function updateEquipmentLoadoutSummary() {
     hasMeaningfulEquipmentValue(armor.力量需求) ? `力量需求 ${String(armor.力量需求).replace(/^力量\s*/u, "")}` : "",
     hasMeaningfulEquipmentValue(armor.隱匿懲罰) ? buildStealthPenaltyDetail(armor.隱匿懲罰) : ""
   ].filter(Boolean) : [];
-  const weaponWarning = weapon => {
+  const weaponWarning = (weapon, hand) => {
     if (!weapon) return "";
     if (weapon.名稱 === "盾牌") return isShieldProficient() ? "" : "盾牌未熟練";
-    return isWeaponProficient(weapon) ? "" : "武器未熟練";
+    return isWeaponProficient(weapon) || isPactWeaponHand(hand) ? "" : "武器未熟練";
   };
-  const mainWeaponWarning = weaponWarning(mainWeapon);
-  const offWeaponWarning = weaponWarning(offWeapon);
+  const mainWeaponWarning = weaponWarning(mainWeapon, "main");
+  const offWeaponWarning = weaponWarning(offWeapon, "off");
   const armorWarning = armor && !isArmorProficient(armor) ? "護甲未熟練" : "";
 
   const summaryRows = [
@@ -3795,7 +3847,10 @@ function calculateHandAttacks(options = {}) {
     const isRanged = isRangedWeapon(weapon);
     const isDexEligible = weaponHasProp(weapon, "靈巧");
     const pb = getProficiencyBonus();
-    const proficient = isMonkMartialArts ? true : isWeaponProficient(weapon);
+    const pactWeapon = isPactWeaponHand(hand.key);
+    const pactDamageType = getPactWeaponDamageType(hand.key);
+    const weaponDamage = pactDamageType ? `${weapon.傷害.split(/\s+/u)[0]} ${pactDamageType}` : weapon.傷害;
+    const proficient = isMonkMartialArts || pactWeapon ? true : isWeaponProficient(weapon);
     const useMonkProficientFormula = cls === "monk" && proficient && isMonkMartialArtsActive(weaponName) && isMonkWeapon(weapon);
     const shillelaghEffect = hand.key === shillelaghTargetHand
       ? getPreparedShillelaghEffect(weaponName, strMod)
@@ -3813,6 +3868,9 @@ function calculateHandAttacks(options = {}) {
     } else {
       attackAbilityMod = strMod;
     }
+    const charismaMod = getModifier("cha");
+    const usePactCharisma = pactWeapon && !shillelaghEffect && !useMonkProficientFormula && charismaMod > attackAbilityMod;
+    if (usePactCharisma) attackAbilityMod = charismaMod;
 
     let hitBonus = attackAbilityMod + (proficient ? pb : 0);
     // 箭術判斷放在命中計算最後：主手/副手只要是遠程武器都 +2
@@ -3837,10 +3895,12 @@ function calculateHandAttacks(options = {}) {
       const damageType = weapon.傷害.split(/\s+/).slice(1).join(" ");
       damage = formatWeaponDamage(`${selectedDie} ${damageType}`, attackAbilityMod);
     } else {
-      damage = formatWeaponDamage(weapon.傷害, shouldApplyDamageMod ? attackAbilityMod : null);
+      damage = formatWeaponDamage(weaponDamage, shouldApplyDamageMod ? attackAbilityMod : null);
     }
     const abilityLabel = shillelaghEffect
       ? shillelaghEffect.abilityLabel
+      : usePactCharisma
+      ? "魅力"
       : useMonkProficientFormula
       ? (dexMod > strMod ? "敏捷" : "力量")
       : (isRanged ? "敏捷" : (isDexEligible && dexMod > strMod ? "敏捷" : "力量"));
@@ -3861,7 +3921,7 @@ function calculateHandAttacks(options = {}) {
           : (useMonkProficientFormula ? damage.match(/^\d+d\d+/u)?.[0] || weapon.傷害.split(/\s+/u)[0] : weapon.傷害.split(/\s+/u)[0]),
         damageModifier: useMonkProficientFormula || shouldApplyDamageMod ? attackAbilityMod : null,
         omittedOffHandModifier: !useMonkProficientFormula && hand.key === "off" && !hand.usesMainHandRules && !hasTwoWeaponFighting && attackAbilityMod > 0,
-        damageType: shillelaghEffect?.damageType || weapon.傷害.split(/\s+/u).slice(1).join(" "),
+        damageType: shillelaghEffect?.damageType || weaponDamage.split(/\s+/u).slice(1).join(" "),
         hit,
         damage
       }
@@ -3887,6 +3947,7 @@ function populateHandAttacks(options = {}) {
 }
 
 function renderHandAttacks(options = {}) {
+  syncPactWeaponControls();
   updateWeaponMasteryBadges();
   if (isWeaponAttackAutomationEnabled() || options.force) {
     calculateHandAttacks().forEach(result => {
@@ -4921,6 +4982,7 @@ function isShareFieldRelevant(id, data) {
   if (id.startsWith("monk-tool-proficiency-")) return classValue === "monk";
   if (id === "rogue-fixed-tool-proficiency") return classValue === "rogue";
   if (id === "sorcerer-elemental-affinity-damage-type" || id.startsWith("metamagic-option-")) return classValue === "sorcerer";
+  if (Object.values(PACT_WEAPON_HANDS).some(config => id === config.checkboxId || id === config.damageId)) return classValue === "warlock";
   if (id.startsWith("eldritch-invocation-") || id.startsWith("bard-instrument-")) {
     return id.startsWith("eldritch-invocation-") ? classValue === "warlock" : classValue === "bard";
   }
@@ -6165,6 +6227,20 @@ window.addEventListener("DOMContentLoaded", async function() {
     refreshEquipmentEffects();
   });
   main2ShieldToggle?.addEventListener("change", refreshEquipmentEffects);
+  // 契約武器同時只有一把：勾選一手時取消另一手。
+  Object.values(PACT_WEAPON_HANDS).forEach(config => {
+    document.getElementById(config.checkboxId)?.addEventListener("change", event => {
+      if (event.target.checked) {
+        Object.values(PACT_WEAPON_HANDS).filter(other => other !== config).forEach(other => {
+          const input = document.getElementById(other.checkboxId);
+          if (input) input.checked = false;
+        });
+      }
+      syncPactWeaponControls();
+      refreshEquipmentEffects();
+    });
+    document.getElementById(config.damageId)?.addEventListener("change", refreshEquipmentEffects);
+  });
   updateOffHandRolePresentation();
   updateEquipmentLoadoutSummary();
   // Structured spell lists are initialized without building spell forms.

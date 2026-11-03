@@ -182,13 +182,19 @@ function getClassPickIssues(className, level) {
   const expertiseChecked = document.querySelectorAll(".circle-checkbox:checked").length;
   if (expertiseRequired && expertiseChecked < expertiseRequired) issues.push({
     message: `${rules.name}專精尚未選完（${expertiseChecked}/${expertiseRequired}）。`,
-    tab: "basic",
-    selector: ".circle-checkbox:not(:checked):not(:disabled)",
+    tab: "skills",
+    selector: "#skill-bonus-section",
     focusSelector: ".circle-checkbox:not(:checked):not(:disabled)"
   });
   const missingLanguage = picks.filter(({ pick }) => pick.kind === "language").flatMap(({ pick }) => pick.fields)
     .find(id => document.getElementById(id) && !document.getElementById(id).value);
-  if (missingLanguage) issues.push({ message: `${rules.name}額外語言尚未選擇。`, tab: "basic", selector: `#${missingLanguage}`, focusSelector: `#${missingLanguage}` });
+  if (missingLanguage) issues.push({
+    message: `${rules.name}額外語言尚未選擇。`,
+    tab: "skills",
+    selector: `#${missingLanguage}`,
+    focusSelector: `#${missingLanguage}`,
+    highlightSelector: "#tab-skills .language-card"
+  });
   picks.filter(({ pick }) => pick.kind === "weaponMastery").forEach(({ feature, pick, count }) => {
     const fields = pick.fields.slice(0, count);
     const chosen = new Set(fields.map(id => document.getElementById(id)?.value).filter(Boolean)).size;
@@ -829,6 +835,8 @@ async function handleEldritchInvocationChange(el, event, output) {
   updateWarlockInvocationSummary();
   updateACDisplay();
   populateHandAttacks();
+  // 刃之魔契決定裝備頁能否標記契約武器，摘要的熟練警告跟著更新。
+  if (typeof updateEquipmentLoadoutSummary === "function") updateEquipmentLoadoutSummary();
   syncOriginAndSubclassDerivedSpellRows();
   syncAgonizingBlastSelections();
   if (typeof scheduleSaveAllFields === "function") scheduleSaveAllFields();
