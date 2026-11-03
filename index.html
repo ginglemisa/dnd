@@ -81,7 +81,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261104-inventory-detail">
+  <link rel="stylesheet" href="styles.css?v=20261104-inventory-merge">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261103-roll-min" defer></script>
   <script src="monster.js?v=20261025-beast-perception" defer></script>
@@ -96,17 +96,17 @@
   <script src="spell-content.generated.js?v=0" defer></script>
   <script src="spell-list.js?v=20261104-spell-srd-classes" defer></script>
   <script src="condition.js?v=20261021-bonus-wording" defer></script>
-  <script src="action-panel.js?v=20261104-familiar-references" defer></script>
-  <script src="character-rules.js?v=20261104-class-picks" defer></script>
+  <script src="action-panel.js?v=20261104-weapon-damage-type" defer></script>
+  <script src="character-rules.js?v=20261104-weapon-damage-type" defer></script>
   <script src="app-dialog.js?v=20261028-custom-spells" defer></script>
   <script src="custom-background.js?v=20261102-source-label" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
-  <script src="tabletop-mode.js?v=20261104-inventory-ui" defer></script>
+  <script src="tabletop-mode.js?v=20261104-inventory-merge" defer></script>
   <script src="tabletop-druid.js?v=20261103-known-count" defer></script>
   <script src="tabletop-resources.js?v=20261102-race-content" defer></script>
-  <script src="tabletop-actions.js?v=20261103-wholeness-min" defer></script>
+  <script src="tabletop-actions.js?v=20261104-weapon-damage-type" defer></script>
   <script src="tabletop-custom-spells.js?v=20261104-spell-fields" defer></script>
-  <script src="tabletop-spells.js?v=20261104-familiar-references" defer></script>
+  <script src="tabletop-spells.js?v=20261104-weapon-damage-type" defer></script>
   <script src="legal-modal.js?v=20261022-game-icons" defer></script>
   <script src="onboarding-tour.js?v=20261104-inventory" defer></script>
   <script src="quick-build.js?v=20261104-inventory-sync" defer></script>
@@ -1100,20 +1100,16 @@
     <div class="form-row equipment-loadout-field">
       <div class="equipment-loadout-field__head">
         <label for="mainHand">主手</label>
-        <span class="pact-weapon-control" data-pact-weapon-hand="main" hidden>
-          <label class="pact-weapon-toggle" for="mainHandPactWeapon"><input type="checkbox" id="mainHandPactWeapon">契約武器</label>
-          <select id="mainHandPactDamage" aria-label="契約武器傷害類型"><option value="">原類型</option><option value="黯蝕">黯蝕</option><option value="心靈">心靈</option><option value="光耀">光耀</option></select>
-        </span>
+        <label class="weapon-hand-toggle" for="mainHandPactWeapon" data-pact-weapon-hand="main" hidden><input type="checkbox" id="mainHandPactWeapon" aria-label="主手為契約武器">契約</label>
+        <label class="weapon-hand-toggle" for="mainHandShillelagh" data-shillelagh-hand="main" hidden><input type="checkbox" id="mainHandShillelagh" data-state-transient="true" aria-label="主手以橡棍術計算">橡棍術</label>
       </div>
 <select id="mainHand"><option value="">-- 請選擇 --</option><option value="短棒">短棒</option><option value="匕首">匕首</option><option value="巨棒">巨棒</option><option value="手斧">手斧</option><option value="標槍">標槍</option><option value="輕錘">輕錘</option><option value="硬頭錘">硬頭錘</option><option value="長棍">長棍</option><option value="鐮刀">鐮刀</option><option value="短矛">短矛</option><option value="飛鏢">飛鏢</option><option value="輕弩">輕弩</option><option value="短弓">短弓</option><option value="投石索">投石索</option><option value="戰斧">戰斧</option><option value="連枷">連枷</option><option value="長柄刀">長柄刀</option><option value="巨斧">巨斧</option><option value="巨劍">巨劍</option><option value="長戟">長戟</option><option value="騎槍">騎槍</option><option value="長劍">長劍</option><option value="巨錘">巨錘</option><option value="釘頭錘">釘頭錘</option><option value="長矛">長矛</option><option value="刺劍">刺劍</option><option value="彎刀">彎刀</option><option value="短劍">短劍</option><option value="三叉戟">三叉戟</option><option value="戰錘">戰錘</option><option value="戰鎬">戰鎬</option><option value="鞭">鞭</option><option value="吹箭筒">吹箭筒</option><option value="手弩">手弩</option><option value="重弩">重弩</option><option value="長弓">長弓</option><option value="火繩槍">火繩槍</option><option value="手槍">手槍</option></select>
     </div>
     <div class="form-row equipment-loadout-field">
       <div class="equipment-loadout-field__head">
         <label id="offHandLabel" for="offHand">副手</label>
-        <span class="pact-weapon-control" data-pact-weapon-hand="off" hidden>
-          <label class="pact-weapon-toggle" for="offHandPactWeapon"><input type="checkbox" id="offHandPactWeapon">契約武器</label>
-          <select id="offHandPactDamage" aria-label="契約武器傷害類型"><option value="">原類型</option><option value="黯蝕">黯蝕</option><option value="心靈">心靈</option><option value="光耀">光耀</option></select>
-        </span>
+        <label class="weapon-hand-toggle" for="offHandPactWeapon" data-pact-weapon-hand="off" hidden><input type="checkbox" id="offHandPactWeapon" aria-label="副手為契約武器">契約</label>
+        <label class="weapon-hand-toggle" for="offHandShillelagh" data-shillelagh-hand="off" hidden><input type="checkbox" id="offHandShillelagh" data-state-transient="true" aria-label="副手以橡棍術計算">橡棍術</label>
       </div>
       <select id="offHand" disabled=""><option disabled="">(雙手佔用)</option></select>
     </div>
@@ -1131,6 +1127,11 @@
         <span>裝備盾牌</span>
       </label>
     </div>
+    <!-- 武器傷害類型選擇與角色卡的橡棍術開關（WEAPON_DAMAGE_TYPE_CHOICES、shillelaghWeaponHand）：各處下拉與勾選框都寫回這裡。 -->
+    <input type="text" id="pactWeaponDamageType" value="" hidden>
+    <input type="text" id="monkUnarmedDamageType" value="" hidden>
+    <input type="text" id="shillelaghDamageType" value="" hidden>
+    <input type="text" id="shillelaghWeaponHand" value="none" hidden>
     </div>
     <section class="equipment-loadout-summary" aria-labelledby="equipment-loadout-summary-title">
       <h4 id="equipment-loadout-summary-title">目前裝備摘要</h4>
@@ -3197,7 +3198,7 @@ function fillSkills() {
   updateAutomaticInitiative();
 }
 </script>
-<script src="pdf-launcher.js?v=20261104-inventory-sync"></script>
+<script src="pdf-launcher.js?v=20261104-inventory-merge"></script>
 
 <script>
 // ====== 裝備,武器,法術相關工具 ======
@@ -3228,11 +3229,11 @@ function getMonkMartialArtsDie() {
   const level = Number(document.getElementById("level")?.value || 1);
   return getMonkMartialArtsDieByLevel(level);
 }
+// 6 級真力駐拳可改為力場傷害，由武器傷害類型選擇（getHandDamageTypeChoiceKind）套用。
 function getMonkMartialArtsWeapon() {
-  const level = Number.parseInt(document.getElementById("level")?.value || "1", 10) || 1;
   return {
     名稱: "武藝",
-    傷害: `${getMonkMartialArtsDie()} ${level >= 6 ? "鈍擊／力場" : "鈍擊"}`,
+    傷害: `${getMonkMartialArtsDie()} 鈍擊`,
     精通: "無",
     重量: "無",
     價格: "無",
@@ -3551,22 +3552,15 @@ function hasPreparedSpell(spellId) {
   return (window.SpellManagement?.getEntries({ availableOnly: true }) || []).some(entry => entry.spellId === spellId);
 }
 
-function getPreparedShillelaghTargetHand() {
-  return getShillelaghTargetHand({
-    isPrepared: hasPreparedSpell("shillelagh"),
-    mainHandWeaponName: document.getElementById("mainHand")?.value || "",
-    offHandWeaponName: document.getElementById("offHand")?.value || ""
-  });
-}
-
-function getPreparedShillelaghEffect(weaponName, strengthModifier) {
+function getPreparedShillelaghEffect(weaponName, strengthModifier, damageType) {
   const spellcastingAbility = document.getElementById("spellcasting-ability")?.value || "";
   return getShillelaghWeaponEffect({
     weaponName,
     isPrepared: true,
     level: document.getElementById("level")?.value || "1",
     strengthModifier,
-    spellcastingModifier: spellcastingAbility ? getModifier(spellcastingAbility) : null
+    spellcastingModifier: spellcastingAbility ? getModifier(spellcastingAbility) : null,
+    damageType
   });
 }
 
@@ -3657,11 +3651,14 @@ function isWeaponProficient(weapon) {
 }
 
 // 刃之魔契：主手或副手可標記為契約武器（同時只有一把，兩把都勾時以主手為準）。
-// 契約武器熟練、可用魅力計算命中與傷害，傷害類型可改為黯蝕、心靈或光耀。
+// 契約武器熟練、可用魅力計算命中與傷害，傷害類型見下方的武器傷害類型選擇。
 const PACT_WEAPON_HANDS = Object.freeze({
-  main: Object.freeze({ selectId: "mainHand", checkboxId: "mainHandPactWeapon", damageId: "mainHandPactDamage" }),
-  off: Object.freeze({ selectId: "offHand", checkboxId: "offHandPactWeapon", damageId: "offHandPactDamage" })
+  main: Object.freeze({ selectId: "mainHand", checkboxId: "mainHandPactWeapon" }),
+  off: Object.freeze({ selectId: "offHand", checkboxId: "offHandPactWeapon" })
 });
+// 舊版每手各有一個契約武器傷害選單，存的是中文名稱；還原時轉成 pactWeaponDamageType（normalizeLegacyPactWeaponDamage）。
+const LEGACY_PACT_DAMAGE_IDS = Object.freeze({ main: "mainHandPactDamage", off: "offHandPactDamage" });
+const LEGACY_PACT_DAMAGE_VALUES = Object.freeze({ "": "normal", 黯蝕: "necrotic", 心靈: "psychic", 光耀: "radiant" });
 
 function canUsePactWeapon() {
   return document.getElementById("class")?.value === "warlock" && hasWarlockInvocation("刃之魔契");
@@ -3679,21 +3676,215 @@ function isPactWeaponHand(hand) {
   return hand !== "off" || !isPactWeaponHand("main");
 }
 
-function getPactWeaponDamageType(hand) {
-  return isPactWeaponHand(hand) ? document.getElementById(PACT_WEAPON_HANDS[hand].damageId)?.value || "" : "";
+function normalizeLegacyPactWeaponDamage(data) {
+  if (Object.hasOwn(data, "pactWeaponDamageType")) return data;
+  const hand = data.mainHandPactWeapon === true ? "main" : (data.offHandPactWeapon === true ? "off" : "");
+  const legacy = hand && Object.hasOwn(data, LEGACY_PACT_DAMAGE_IDS[hand]) ? data[LEGACY_PACT_DAMAGE_IDS[hand]] : undefined;
+  return typeof legacy === "string" && Object.hasOwn(LEGACY_PACT_DAMAGE_VALUES, legacy)
+    ? { ...data, pactWeaponDamageType: LEGACY_PACT_DAMAGE_VALUES[legacy] }
+    : data;
 }
 
-function syncPactWeaponControls() {
-  const available = canUsePactWeapon();
-  Object.entries(PACT_WEAPON_HANDS).forEach(([hand, config]) => {
-    const weapon = available ? getPactWeaponHandWeapon(hand) : null;
-    const control = document.querySelector(`[data-pact-weapon-hand="${hand}"]`);
-    if (control) control.hidden = !weapon;
-    const damage = document.getElementById(config.damageId);
-    if (!damage) return;
-    damage.disabled = !document.getElementById(config.checkboxId)?.checked;
-    // 不改傷害類型時顯示武器原本的類型。
-    damage.options[0].textContent = weapon?.傷害.split(/\s+/u).slice(1).join("") || "原類型";
+// 橡棍術：角色卡由「☐橡棍術」決定哪一手用橡棍術計算（shillelaghWeaponHand：none、main、off）。
+// 舊資料沒有這個欄位時記為 auto，維持舊版「準備了就自動套用」：短棒或長棍優先主手。
+// 跑團模式另以持續效果（TabletopMode 的 shillelaghActive）決定是否生效，不看這個欄位的開關。
+const SHILLELAGH_HAND_TOGGLES = Object.freeze({ main: "mainHandShillelagh", off: "offHandShillelagh" });
+
+function getHandWeaponName(hand) {
+  return document.getElementById(PACT_WEAPON_HANDS[hand]?.selectId)?.value || "";
+}
+
+// 指定一手時只看那一手是否拿著短棒或長棍；不指定時依 getShillelaghTargetHand 主手優先。
+function getShillelaghEligibleHand(preferredHand = "") {
+  if (preferredHand) {
+    const target = getShillelaghTargetHand({ isPrepared: true, [`${preferredHand}HandWeaponName`]: getHandWeaponName(preferredHand) });
+    return target === preferredHand ? preferredHand : null;
+  }
+  return getShillelaghTargetHand({
+    isPrepared: true,
+    mainHandWeaponName: getHandWeaponName("main"),
+    offHandWeaponName: getHandWeaponName("off")
+  });
+}
+
+function getSheetShillelaghHand() {
+  if (!hasPreparedSpell("shillelagh")) return null;
+  const value = document.getElementById("shillelaghWeaponHand")?.value || "none";
+  if (value === "auto") return getShillelaghEligibleHand();
+  return value === "main" || value === "off" ? getShillelaghEligibleHand(value) : null;
+}
+
+// 跑團的橡棍術持續效果：角色卡勾了哪一手就用那一手，否則短棒或長棍優先主手。
+function getActiveShillelaghHand() {
+  const value = document.getElementById("shillelaghWeaponHand")?.value || "";
+  return (value === "main" || value === "off" ? getShillelaghEligibleHand(value) : null) || getShillelaghEligibleHand();
+}
+
+function setSheetShillelaghHand(hand) {
+  const field = document.getElementById("shillelaghWeaponHand");
+  if (!field) return;
+  field.value = hand === "main" || hand === "off" ? hand : "none";
+  field.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+// 武器傷害類型選擇：契約武器（黯蝕、心靈、光耀）、武僧真力駐拳的徒手打擊與橡棍術（力場）。
+// 選擇只存在 fieldId 的隱藏欄位：空值是沒選過、套用 defaultType，normal 是武器原本的類型。
+// 裝備摘要視窗、刃之魔契卡片、真力駐拳段落、跑團動作與持續效果的下拉都是 createWeaponDamageTypeSelect 產生的鏡像，不存檔。
+const WEAPON_DAMAGE_TYPE_CHOICES = Object.freeze({
+  pact: Object.freeze({ fieldId: "pactWeaponDamageType", label: "契約武器", defaultType: "necrotic", types: Object.freeze(["necrotic", "psychic", "radiant"]) }),
+  monk: Object.freeze({ fieldId: "monkUnarmedDamageType", label: "真力駐拳", defaultType: "force", types: Object.freeze(["force"]) }),
+  shillelagh: Object.freeze({ fieldId: "shillelaghDamageType", label: "橡棍術", defaultType: "force", types: Object.freeze(["force"]) })
+});
+// PDF 備註的簡寫：武器原本的類型另有對照，其餘取第一個字（黯蝕→黯、力場→力）。
+const WEAPON_DAMAGE_TYPE_SHORT_LABELS = Object.freeze({ 揮砍: "砍", 穿刺: "刺", 鈍擊: "鈍" });
+
+function getWeaponDamageTypeChoice(kind) {
+  const config = WEAPON_DAMAGE_TYPE_CHOICES[kind];
+  if (!config) return "";
+  const value = document.getElementById(config.fieldId)?.value || "";
+  return value === "normal" || config.types.includes(value) ? value : config.defaultType;
+}
+
+function setWeaponDamageTypeChoice(kind, value) {
+  const config = WEAPON_DAMAGE_TYPE_CHOICES[kind];
+  const field = config && document.getElementById(config.fieldId);
+  if (!field || (value !== "normal" && !config.types.includes(value)) || field.value === value) return;
+  field.value = value;
+  populateHandAttacks();
+  // 隱藏欄位的 change 事件讓自動存檔與跑團頁跟著更新。
+  field.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+function isMonkUnarmedDamageChoiceAvailable() {
+  const cls = document.getElementById("class")?.value || "";
+  return cls === "monk" && Boolean(window.hasClassFeature?.(cls, "monk-empowered-strikes", getClassRulesLevel()));
+}
+
+function getWeaponOwnDamageType(weapon) {
+  return String(weapon?.傷害 || "").split(/\s+/u).slice(1).join(" ");
+}
+
+// 這一手的傷害類型由哪個能力決定：橡棍術優先（施放後才生效的主動效果），其次契約武器、武僧徒手打擊。
+function getHandDamageTypeChoiceKind(hand, options = {}) {
+  const shillelaghHand = Object.hasOwn(options, "shillelaghHand") ? options.shillelaghHand : getSheetShillelaghHand();
+  if (shillelaghHand === hand) return "shillelagh";
+  if (isPactWeaponHand(hand)) return "pact";
+  return getHandWeaponName(hand) === "武藝" && isMonkUnarmedDamageChoiceAvailable() ? "monk" : "";
+}
+
+// 原本的類型：契約武器依目前標記的武器，武藝與橡棍術的武器都是鈍擊。
+function getWeaponDamageTypeOriginalLabel(kind) {
+  if (kind === "pact") {
+    const hand = ["main", "off"].find(isPactWeaponHand);
+    return hand ? getWeaponOwnDamageType(getPactWeaponHandWeapon(hand)) : "";
+  }
+  return kind ? "鈍擊" : "";
+}
+
+function getWeaponDamageTypeLabel(kind, originalLabel = getWeaponDamageTypeOriginalLabel(kind)) {
+  const choice = getWeaponDamageTypeChoice(kind);
+  return choice === "normal" ? originalLabel : getDamageTypeLabel(choice);
+}
+
+// PDF 備註的可選類型，例如「可選砍/黯/心/光」。
+function getWeaponDamageTypeOptionsText(kind, originalLabel) {
+  const config = WEAPON_DAMAGE_TYPE_CHOICES[kind];
+  if (!config || !originalLabel) return "";
+  const labels = [originalLabel, ...config.types.map(getDamageTypeLabel)];
+  return `可選${labels.map(label => WEAPON_DAMAGE_TYPE_SHORT_LABELS[label] || label.slice(0, 1)).join("/")}`;
+}
+
+// 匯出 PDF 時加在武器備註最前面；關閉武器攻擊自動化時攻擊列是玩家自填，不加。
+function getWeaponDamageTypePdfNotes() {
+  if (!isWeaponAttackAutomationEnabled()) return {};
+  return Object.fromEntries(calculateHandAttacks()
+    .filter(result => result.details?.damageTypeChoice)
+    .map(result => [result.key, getWeaponDamageTypeOptionsText(result.details.damageTypeChoice, result.details.originalDamageType)]));
+}
+
+function createWeaponDamageTypeSelect(kind) {
+  const config = WEAPON_DAMAGE_TYPE_CHOICES[kind];
+  if (!config) return null;
+  const select = document.createElement("select");
+  select.className = "weapon-damage-type-select";
+  select.dataset.weaponDamageTypeChoice = kind;
+  select.dataset.stateTransient = "true";
+  select.setAttribute("aria-label", `${config.label}傷害類型`);
+  ["normal", ...config.types].forEach(value => select.appendChild(new Option(value, value)));
+  syncWeaponDamageTypeSelect(select);
+  select.addEventListener("change", () => setWeaponDamageTypeChoice(kind, select.value));
+  return select;
+}
+
+function syncWeaponDamageTypeSelect(select) {
+  const kind = select.dataset.weaponDamageTypeChoice;
+  const original = getWeaponDamageTypeOriginalLabel(kind);
+  Array.from(select.options).forEach(option => {
+    option.textContent = option.value === "normal"
+      ? (original ? `原類型（${original}）` : "原類型")
+      : getDamageTypeLabel(option.value);
+  });
+  select.value = getWeaponDamageTypeChoice(kind);
+}
+
+function createWeaponDamageTypePicker(kind, className = "weapon-damage-type-picker") {
+  const picker = document.createElement("label");
+  picker.className = className;
+  picker.dataset.weaponDamageTypePicker = kind;
+  const text = document.createElement("span");
+  text.textContent = "傷害類型";
+  picker.append(text, createWeaponDamageTypeSelect(kind));
+  return picker;
+}
+
+// 職業頁與魔能祈喚卡片的下拉：能力可用時才顯示（重繪時由 renderHandAttacks 補上）。
+function mountWeaponDamageTypePicker(container, kind, available) {
+  if (!container) return;
+  let picker = container.querySelector(`:scope > [data-weapon-damage-type-picker="${kind}"]`);
+  if (!picker) {
+    picker = createWeaponDamageTypePicker(kind);
+    container.appendChild(picker);
+  }
+  picker.hidden = !available;
+}
+
+// 跑團動作說明放傷害類型下拉的能力（能力 ID → 選擇種類）；能力目前可用才回傳種類。
+const WEAPON_DAMAGE_TYPE_FEATURES = Object.freeze({ "warlock-pact-of-the-blade": "pact", "monk-martial-arts": "monk" });
+
+function getFeatureWeaponDamageTypeChoice(featureId) {
+  const kind = WEAPON_DAMAGE_TYPE_FEATURES[featureId] || "";
+  if (kind === "pact") return canUsePactWeapon() ? kind : "";
+  return kind === "monk" && isMonkUnarmedDamageChoiceAvailable() ? kind : "";
+}
+
+function syncWeaponDamageTypeControls() {
+  const pactAvailable = canUsePactWeapon();
+  const shillelaghPrepared = hasPreparedSpell("shillelagh");
+  const sheetShillelaghHand = getSheetShillelaghHand();
+  Object.keys(PACT_WEAPON_HANDS).forEach(hand => {
+    const pactControl = document.querySelector(`[data-pact-weapon-hand="${hand}"]`);
+    if (pactControl) pactControl.hidden = !(pactAvailable && getPactWeaponHandWeapon(hand));
+    const shillelaghControl = document.querySelector(`[data-shillelagh-hand="${hand}"]`);
+    const shillelaghInput = document.getElementById(SHILLELAGH_HAND_TOGGLES[hand]);
+    if (shillelaghControl) shillelaghControl.hidden = !(shillelaghPrepared && getShillelaghEligibleHand(hand) === hand);
+    if (shillelaghInput) shillelaghInput.checked = sheetShillelaghHand === hand;
+  });
+  const blade = document.querySelector('#eldritch-invocations-output input[data-invocation-name="刃之魔契"]');
+  mountWeaponDamageTypePicker(blade?.closest(".feature-choice-card"), "pact", pactAvailable);
+  mountWeaponDamageTypePicker(document.querySelector('#classFeatures [data-feature-id="monk-empowered-strikes"]'), "monk", isMonkUnarmedDamageChoiceAvailable());
+  document.querySelectorAll("select[data-weapon-damage-type-choice]").forEach(syncWeaponDamageTypeSelect);
+}
+
+// 裝備摘要的傷害文字：可改類型時是按鈕，點了開啟選擇視窗。
+function openWeaponDamageTypeDialog(kind, trigger) {
+  const config = WEAPON_DAMAGE_TYPE_CHOICES[kind];
+  if (!config) return;
+  window.AppDialog.showContent({
+    title: `${config.label}傷害類型`,
+    content: createWeaponDamageTypePicker(kind, "weapon-damage-type-dialog"),
+    confirmLabel: "完成",
+    initialFocus: "content",
+    trigger
   });
 }
 
@@ -3823,12 +4014,30 @@ function updateEquipmentLoadoutSummary() {
   const offWeapon = getAllWeaponsWithShield().find(item => item.名稱 === offName);
   const armor = armors.find(item => item.名稱 === armorName);
 
-  const weaponDetails = weapon => {
+  // 可改傷害類型時（契約武器、真力駐拳、角色卡勾選的橡棍術）傷害是按鈕，點了開啟選擇視窗。
+  const weaponDamageDetail = (weapon, hand) => {
+    const kind = getHandDamageTypeChoiceKind(hand);
+    if (!kind) return weapon.傷害;
+    const die = kind === "shillelagh"
+      ? getPreparedShillelaghEffect(weapon.名稱, 0)?.damageDie
+      : weapon.傷害.split(/\s+/u)[0];
+    const text = `${die} ${getWeaponDamageTypeLabel(kind, getWeaponOwnDamageType(weapon))}`;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "weapon-damage-type-link";
+    button.textContent = text;
+    button.dataset.weaponDamageTypeHand = hand;
+    button.setAttribute("aria-haspopup", "dialog");
+    button.setAttribute("aria-label", `${text}，選擇${WEAPON_DAMAGE_TYPE_CHOICES[kind].label}傷害類型`);
+    button.addEventListener("click", () => openWeaponDamageTypeDialog(kind, button));
+    return button;
+  };
+  const weaponDetails = (weapon, hand) => {
     if (!weapon) return [];
     if (weapon.名稱 === "盾牌") return ["AC+2 (裝備/卸除需 1 個動作)"];
     const details = [
       getSummaryWeaponType(weapon),
-      weapon.傷害,
+      weaponDamageDetail(weapon, hand),
       ...getSummaryWeaponProperties(weapon).map(property => ({
         text: property,
         ruleKind: "property",
@@ -3859,12 +4068,15 @@ function updateEquipmentLoadoutSummary() {
   const armorWarning = armor && !isArmorProficient(armor) ? "護甲未熟練" : "";
 
   const summaryRows = [
-    mainName && buildEquipmentSummaryRow("主手", mainName, weaponDetails(mainWeapon), { warningKey: mainWeaponWarning }),
-    offName && buildEquipmentSummaryRow(isOffHandAlternateMain() ? "主手2" : "副手", offName, weaponDetails(offWeapon), { warningKey: offWeaponWarning }),
+    mainName && buildEquipmentSummaryRow("主手", mainName, weaponDetails(mainWeapon, "main"), { warningKey: mainWeaponWarning }),
+    offName && buildEquipmentSummaryRow(isOffHandAlternateMain() ? "主手2" : "副手", offName, weaponDetails(offWeapon, "off"), { warningKey: offWeaponWarning }),
     isOffHandAlternateMain() && isEffectiveEquippedShield() && buildEquipmentSummaryRow("盾牌", "盾牌", ["AC+2 (裝備/卸除需 1 個動作)"]),
     armorName && buildEquipmentSummaryRow("護甲", armorName, armorDetails, { warningKey: armorWarning })
   ].filter(Boolean);
+  // 摘要重建時保留傷害按鈕的焦點（選擇視窗關閉後回到同一手的按鈕）。
+  const focusedHand = content.contains(document.activeElement) ? document.activeElement.dataset.weaponDamageTypeHand : "";
   content.replaceChildren(...summaryRows);
+  if (focusedHand) content.querySelector(`[data-weapon-damage-type-hand="${focusedHand}"]`)?.focus();
   const acValue = document.getElementById("equipment-current-ac-value");
   if (acValue) acValue.textContent = document.getElementById("ac-display")?.value?.trim() || "—";
   const untrainedConsequence = document.getElementById("equipment-untrained-consequence");
@@ -3874,10 +4086,11 @@ function updateEquipmentLoadoutSummary() {
 
 
 // 動作命中傷害
+// options.shillelaghHand：跑團模式依橡棍術持續效果指定生效的一手（null 為不生效）；沒給時依角色卡的「☐橡棍術」。
 function calculateHandAttacks(options = {}) {
   const hasTwoWeaponFighting = hasTwoWeaponFightingStyleFeat();
   const hasArcheryFightingStyle = hasArcheryFightingStyleFeat();
-  const shillelaghTargetHand = getPreparedShillelaghTargetHand();
+  const shillelaghTargetHand = Object.hasOwn(options, "shillelaghHand") ? options.shillelaghHand : getSheetShillelaghHand();
   const offHandAsMain = isOffHandAlternateMain();
   const hands = [
     { key: "main", selectId: "mainHand", prefix: "atk-main", usesMainHandRules: true },
@@ -3897,12 +4110,14 @@ function calculateHandAttacks(options = {}) {
     const isDexEligible = weaponHasProp(weapon, "靈巧");
     const pb = getProficiencyBonus();
     const pactWeapon = isPactWeaponHand(hand.key);
-    const pactDamageType = getPactWeaponDamageType(hand.key);
-    const weaponDamage = pactDamageType ? `${weapon.傷害.split(/\s+/u)[0]} ${pactDamageType}` : weapon.傷害;
+    const originalDamageType = getWeaponOwnDamageType(weapon);
+    const damageTypeChoice = getHandDamageTypeChoiceKind(hand.key, { shillelaghHand: shillelaghTargetHand });
+    const damageType = damageTypeChoice ? getWeaponDamageTypeLabel(damageTypeChoice, originalDamageType) : originalDamageType;
+    const weaponDamage = `${weapon.傷害.split(/\s+/u)[0]} ${damageType}`;
     const proficient = isMonkMartialArts || pactWeapon ? true : isWeaponProficient(weapon);
     const useMonkProficientFormula = cls === "monk" && proficient && isMonkMartialArtsActive(weaponName) && isMonkWeapon(weapon);
     const shillelaghEffect = hand.key === shillelaghTargetHand
-      ? getPreparedShillelaghEffect(weaponName, strMod)
+      ? getPreparedShillelaghEffect(weaponName, strMod, damageType)
       : null;
 
     let attackAbilityMod;
@@ -3941,7 +4156,6 @@ function calculateHandAttacks(options = {}) {
         getWeaponBaseDamageDie(weapon),
         getWeaponVersatileDie(weapon)
       ]) || getMonkMartialArtsDie();
-      const damageType = weapon.傷害.split(/\s+/).slice(1).join(" ");
       damage = formatWeaponDamage(`${selectedDie} ${damageType}`, attackAbilityMod);
     } else {
       damage = formatWeaponDamage(weaponDamage, shouldApplyDamageMod ? attackAbilityMod : null);
@@ -3970,7 +4184,10 @@ function calculateHandAttacks(options = {}) {
           : (useMonkProficientFormula ? damage.match(/^\d+d\d+/u)?.[0] || weapon.傷害.split(/\s+/u)[0] : weapon.傷害.split(/\s+/u)[0]),
         damageModifier: useMonkProficientFormula || shouldApplyDamageMod ? attackAbilityMod : null,
         omittedOffHandModifier: !useMonkProficientFormula && hand.key === "off" && !hand.usesMainHandRules && !hasTwoWeaponFighting && attackAbilityMod > 0,
-        damageType: shillelaghEffect?.damageType || weaponDamage.split(/\s+/u).slice(1).join(" "),
+        damageType: shillelaghEffect?.damageType || damageType,
+        // 可改傷害類型的能力（WEAPON_DAMAGE_TYPE_CHOICES 的 key）與武器原本的類型，供裝備摘要與 PDF 備註使用。
+        damageTypeChoice,
+        originalDamageType,
         hit,
         damage
       }
@@ -3996,8 +4213,9 @@ function populateHandAttacks(options = {}) {
 }
 
 function renderHandAttacks(options = {}) {
-  syncPactWeaponControls();
-  updateWeaponMasteryBadges();
+  syncWeaponDamageTypeControls();
+  // 法術、職業或等級改變也會影響摘要的傷害（橡棍術、契約武器、真力駐拳）。
+  updateEquipmentLoadoutSummary();
   if (isWeaponAttackAutomationEnabled() || options.force) {
     calculateHandAttacks().forEach(result => {
       document.getElementById(`${result.prefix}-name`).value = result.name;
@@ -4998,6 +5216,7 @@ const SHARE_TABLETOP_STATE_KEYS = new Set([
   "mageArmorActive",
   "barkskinActive",
   "longstriderActive",
+  "shillelaghActive",
   "temporaryHp",
   "deathSaveSuccesses",
   "deathSaveFailures",
@@ -5047,7 +5266,8 @@ function isShareFieldRelevant(id, data) {
   if (id.startsWith("monk-tool-proficiency-")) return classValue === "monk";
   if (id === "rogue-fixed-tool-proficiency") return classValue === "rogue";
   if (id === "sorcerer-elemental-affinity-damage-type" || id.startsWith("metamagic-option-")) return classValue === "sorcerer";
-  if (Object.values(PACT_WEAPON_HANDS).some(config => id === config.checkboxId || id === config.damageId)) return classValue === "warlock";
+  if (id === "pactWeaponDamageType" || Object.values(PACT_WEAPON_HANDS).some(config => id === config.checkboxId)) return classValue === "warlock";
+  if (id === "monkUnarmedDamageType") return classValue === "monk";
   if (id.startsWith("eldritch-invocation-") || id.startsWith("bard-instrument-")) {
     return id.startsWith("eldritch-invocation-") ? classValue === "warlock" : classValue === "bard";
   }
@@ -5179,6 +5399,9 @@ function applyStateObject(data) {
 function applyStateObjectNow(data) {
   const legacyFeatManagement = !Object.hasOwn(data, "manual-feat-management") && Number(data["feats-area-count"]) >= 1;
   data = normalizeLegacyFeatState(data);
+  data = normalizeLegacyPactWeaponDamage(data);
+  // 舊資料沒有角色卡的橡棍術開關：維持舊版自動套用（auto）。
+  if (!Object.hasOwn(data, "shillelaghWeaponHand")) data = { ...data, shillelaghWeaponHand: "auto" };
   const prevAutosaveSuspended = autosaveSuspended;
   autosaveSuspended = true;
   const resumeHpTracking = window.twAnalytics?.suspendHpTracking?.();
@@ -6329,10 +6552,15 @@ window.addEventListener("DOMContentLoaded", async function() {
           if (input) input.checked = false;
         });
       }
-      syncPactWeaponControls();
       refreshEquipmentEffects();
     });
-    document.getElementById(config.damageId)?.addEventListener("change", refreshEquipmentEffects);
+  });
+  // 角色卡的橡棍術同樣只有一把：勾選寫回 shillelaghWeaponHand，另一手的勾選由 syncWeaponDamageTypeControls 取消。
+  Object.entries(SHILLELAGH_HAND_TOGGLES).forEach(([hand, id]) => {
+    document.getElementById(id)?.addEventListener("change", event => {
+      setSheetShillelaghHand(event.target.checked ? hand : "none");
+      refreshEquipmentEffects();
+    });
   });
   updateOffHandRolePresentation();
   updateEquipmentLoadoutSummary();

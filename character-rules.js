@@ -64,7 +64,10 @@
   }
 
   // 傷害類型（種族內容檔的 resistance 等）的顯示名稱。
-  const DAMAGE_TYPE_LABELS = Object.freeze({ acid: "強酸", cold: "冷凍", fire: "火焰", lightning: "閃電", necrotic: "黯蝕", poison: "毒素" });
+  const DAMAGE_TYPE_LABELS = Object.freeze({
+    acid: "強酸", cold: "冷凍", fire: "火焰", lightning: "閃電", necrotic: "黯蝕", poison: "毒素",
+    psychic: "心靈", radiant: "光耀", force: "力場"
+  });
 
   /** 傷害類型 ID 的顯示名稱（例如 poison →「毒素」）；不認得時為空字串。建置產生種族表格文字時也讀這裡。 */
   function getDamageTypeLabel(damageType) {
@@ -617,7 +620,7 @@
     return getClassValueText("monk", "martialArtsDie", { level: Number.isFinite(numericLevel) && numericLevel >= 1 ? numericLevel : 1 });
   }
 
-  /** 套用橡棍術至短棒或長棍；5 級起傷害骰提升為 1d10。 */
+  /** 套用橡棍術至短棒或長棍；5 級起傷害骰提升為 1d10。damageType 為選定的傷害類型（力場或武器原本的鈍擊），未給時為鈍擊。 */
   function getShillelaghWeaponEffect(options = {}) {
     const weaponName = String(options.weaponName || "").trim();
     if (!options.isPrepared || !SHILLELAGH_WEAPON_NAMES.has(weaponName)) return null;
@@ -635,7 +638,7 @@
       abilityLabel: Number.isFinite(spellcastingModifier) && spellcastingModifier > strengthModifier
         ? "施法"
         : (Number.isFinite(spellcastingModifier) && spellcastingModifier === strengthModifier ? "力量／施法" : "力量"),
-      damageType: "鈍擊/力場"
+      damageType: String(options.damageType || "").trim() || "鈍擊"
     });
   }
 

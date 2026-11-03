@@ -5646,7 +5646,7 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   line-height: 1.55;
 }
 
-/* 選單對齊底部：標題列多出契約武器控制項或換列時，三個選單仍在同一高度。 */
+/* 選單對齊底部：標題列多出契約、橡棍術勾選框或換列時，三個選單仍在同一高度。 */
 #tab-equipment .equipment-loadout-field {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -5672,13 +5672,12 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   font-size: var(--fs-sm);
 }
 
-/* 主手／副手標題列：刃之魔契的「契約武器」與傷害類型接在標題右側，欄寬不夠時換到下一列。 */
+/* 主手／副手標題列：「☐契約」「☐橡棍術」緊接在標題後面，字級與標題相同，欄寬不夠時換到下一列。 */
 .equipment-loadout-field__head {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.25rem 0.5rem;
+  gap: 0.25rem 0.6rem;
   min-width: 0;
 }
 
@@ -5686,33 +5685,21 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   width: auto;
 }
 
-.pact-weapon-control {
+#tab-equipment .equipment-loadout-field .weapon-hand-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  min-width: 0;
-}
-
-.pact-weapon-control[hidden] {
-  display: none;
-}
-
-#tab-equipment .equipment-loadout-field .pact-weapon-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  color: var(--text-body);
-  font-weight: 750;
+  gap: 0.25rem;
   cursor: pointer;
 }
 
-#tab-equipment .equipment-loadout-field .pact-weapon-control select {
-  flex: 0 0 auto;
+#tab-equipment .equipment-loadout-field .weapon-hand-toggle[hidden] {
+  display: none;
+}
+
+#tab-equipment .equipment-loadout-field .weapon-hand-toggle input {
   width: auto;
-  min-width: 4.75rem;
-  min-height: 2rem;
-  padding: 0.2rem 0.45rem;
-  font-size: var(--fs-xs);
+  min-height: 0;
+  margin: 0;
 }
 
 .equipment-alternate-main-option {
@@ -5818,6 +5805,56 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   background: transparent;
   color: var(--accent-strong);
   outline-offset: 2px;
+}
+
+/* 可改傷害類型的武器傷害（契約武器、真力駐拳、橡棍術）：警示色加底線，點了開啟選擇視窗。 */
+.weapon-damage-type-link {
+  display: inline;
+  width: auto;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--warning);
+  box-shadow: none;
+  font: inherit;
+  line-height: inherit;
+  text-decoration: underline solid currentColor;
+  text-underline-offset: 0.18em;
+  cursor: pointer;
+}
+
+.weapon-damage-type-link:hover,
+.weapon-damage-type-link:focus-visible {
+  background: transparent;
+  color: var(--warning);
+  text-decoration-thickness: 2px;
+  outline-offset: 2px;
+}
+
+/* 傷害類型下拉：選擇視窗、刃之魔契卡片、真力駐拳段落與跑團說明共用。 */
+.weapon-damage-type-picker,
+.weapon-damage-type-dialog {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.6rem;
+  margin: 0.5rem 0 0;
+  font-weight: 750;
+}
+
+.weapon-damage-type-picker[hidden] {
+  display: none;
+}
+
+.weapon-damage-type-picker select,
+.weapon-damage-type-dialog select {
+  width: auto;
+  min-width: 9rem;
+  max-width: 100%;
 }
 
 .equipment-summary-row small:empty {

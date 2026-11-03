@@ -1128,8 +1128,9 @@ async function verifyEquipmentLoadout(browser, url) {
     assert.equal(await page.inputValue("#ac-display"), "10");
     assert.equal(await page.locator("#equipment-untrained-consequence").isVisible(), false, "untrained shield alone has no armor consequence");
 
-    // 刃之魔契：不再熟練全部軍用武器，只有標記為契約武器的那一把熟練、可用魅力，傷害類型可改；同時只有一把。
-    const pactState = { __spellManagement: { version: 2, manual: false, entries: [] }, class: "warlock", level: "3", str: "10", dex: "12", cha: "16", mainHand: "長劍", offHand: "", offHandAsMain: false, armor: "",
+    // 刃之魔契：不再熟練全部軍用武器，只有標記為契約武器的那一把熟練、可用魅力；同時只有一把。
+    // 傷害類型（預設黯蝕）存在 pactWeaponDamageType，裝備摘要視窗、刃之魔契卡片與跑團動作的下拉都是它的鏡像。
+    const pactState = { __spellManagement: { version: 2, manual: false, entries: [] }, class: "warlock", level: "3", str: "10", dex: "12", cha: "16", mainHand: "長劍", offHand: "", offHandAsMain: false, armor: "", pactWeaponDamageType: "",
       __inventory: { version: 1, items: [{ uid: "longsword", itemId: "長劍", quantity: 1 }, { uid: "dagger", itemId: "匕首", quantity: 1 }] } };
     await page.evaluate(state => applyStateObject(state), pactState);
     const pact = () => page.evaluate(() => ({
@@ -1138,6 +1139,12 @@ async function verifyEquipmentLoadout(browser, url) {
       damage: document.getElementById("atk-main-dmg").value,
       warnings: Array.from(document.querySelectorAll("#equipment-loadout-summary-content .equipment-proficiency-warning"), tip => tip.dataset.skill)
     }));
+    const pickChoice = (selector, value) => page.evaluate(([selector, value]) => {
+      const select = document.querySelector(selector);
+      select.value = value;
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    }, [selector, value]);
+    const bladeCardSelect = '#eldritch-invocations-output select[data-weapon-damage-type-choice="pact"]';
     assert.deepEqual(await pact(), { controls: [false, false], hit: "+0", damage: "1d8揮砍", warnings: ["武器未熟練"] }, "warlock without Pact of the Blade");
     await page.evaluate(() => {
       const blade = document.querySelector('#eldritch-invocations-output input[data-invocation-name="刃之魔契"]');
@@ -1145,30 +1152,154 @@ async function verifyEquipmentLoadout(browser, url) {
       blade.dispatchEvent(new Event("change", { bubbles: true }));
     });
     assert.deepEqual(await pact(), { controls: [true, false], hit: "+0", damage: "1d8揮砍", warnings: ["武器未熟練"] }, "Pact of the Blade alone grants no martial proficiency");
-    assert.equal(await page.locator("#mainHandPactDamage option[value='']").textContent(), "揮砍", "unchanged damage type shows the weapon's own type");
-    assert.equal(await page.isDisabled("#mainHandPactDamage"), true);
+    assert.equal(await page.locator('label[data-pact-weapon-hand="main"]').textContent(), "契約");
+    assert.deepEqual(await page.evaluate(selector => {
+      const select = document.querySelector(selector);
+      return [!select.closest("[data-weapon-damage-type-picker]").hidden, select.value, Array.from(select.options, option => option.textContent)];
+    }, bladeCardSelect), [true, "necrotic", ["原類型", "黯蝕", "心靈", "光耀"]], "the Pact of the Blade card offers the damage types, defaulting to necrotic");
     await page.check("#mainHandPactWeapon");
-    await page.selectOption("#mainHandPactDamage", "黯蝕");
-    assert.deepEqual(await pact(), { controls: [true, false], hit: "+5", damage: "1d8+3黯蝕", warnings: [] }, "pact weapon is proficient and uses charisma and the chosen damage type");
+    assert.deepEqual(await pact(), { controls: [true, false], hit: "+5", damage: "1d8+3黯蝕", warnings: [] }, "pact weapon is proficient, uses charisma and defaults to necrotic");
+    const damageLink = page.locator("#equipment-loadout-summary-content .weapon-damage-type-link");
+    assert.equal(await damageLink.textContent(), "1d8 黯蝕", "the summary damage of the pact weapon is a link");
+    await damageLink.click();
+    const dialogSelect = page.locator('.app-dialog select[data-weapon-damage-type-choice="pact"]');
+    assert.equal(await dialogSelect.locator("option[value='normal']").textContent(), "原類型（揮砍）", "the original type names the pact weapon's own type");
+    await dialogSelect.selectOption("radiant");
+    assert.equal((await pact()).damage, "1d8+3光耀", "the dialog changes the pact damage type");
+    assert.equal(await page.inputValue(bladeCardSelect), "radiant", "the Pact of the Blade card follows the dialog");
+    await page.locator(".app-dialog").getByRole("button", { name: "完成" }).click();
+    await pickChoice(bladeCardSelect, "normal");
+    assert.deepEqual([(await pact()).damage, await damageLink.textContent()], ["1d8+3揮砍", "1d8 揮砍"], "the card picks the original type");
+    await pickChoice(bladeCardSelect, "psychic");
     const saved = await page.evaluate(() => collectStateObject());
-    assert.equal(saved.mainHandPactWeapon, true);
-    assert.equal(saved.mainHandPactDamage, "黯蝕");
-    assert.deepEqual(await page.evaluate(() => { const shared = collectShareState(); return [shared.mainHandPactWeapon, shared.mainHandPactDamage]; }), [true, "黯蝕"], "share keeps the pact weapon");
+    assert.deepEqual([saved.mainHandPactWeapon, saved.pactWeaponDamageType, Object.hasOwn(saved, "mainHandPactDamage")], [true, "psychic", false]);
+    assert.deepEqual(await page.evaluate(() => { const shared = collectShareState(); return [shared.mainHandPactWeapon, shared.pactWeaponDamageType]; }), [true, "psychic"], "share keeps the pact weapon");
+    assert.equal(await page.evaluate(() => buildPdfFieldPayload({ ...collectStateObject(), "atk-main-note": "魔法武器" }, { weaponDamageTypeNotes: getWeaponDamageTypePdfNotes() })["wp-note-1"]),
+      "可選砍/黯/心/光；魔法武器", "PDF lists the pact damage types first in the weapon note");
     await page.check("#offHandAsMain");
     await page.selectOption("#offHand", "匕首");
     await page.check("#offHandPactWeapon");
     assert.equal(await page.isChecked("#mainHandPactWeapon"), false, "only one pact weapon at a time");
     assert.deepEqual(await pact(), { controls: [true, true], hit: "+0", damage: "1d8揮砍", warnings: ["武器未熟練"] }, "the main hand loses the pact once it moves");
+    assert.equal(await page.inputValue("#atk-off-dmg"), "1d4+3心靈", "the chosen damage type moves with the pact weapon");
     await page.evaluate(state => applyStateObject(state), { ...pactState, ...saved });
-    assert.deepEqual([await page.isChecked("#mainHandPactWeapon"), await page.inputValue("#mainHandPactDamage")], [true, "黯蝕"], "JSON restores the pact weapon");
-    assert.equal((await pact()).damage, "1d8+3黯蝕");
+    assert.deepEqual([await page.isChecked("#mainHandPactWeapon"), (await pact()).damage], [true, "1d8+3心靈"], "JSON restores the pact weapon and damage type");
+    // 舊版每手各存一個中文傷害類型：取勾選的那一手；舊值「原類型」維持原類型，不改成預設的黯蝕。
+    const legacyPact = { ...pactState, "eldritch-invocation-0-1": true, mainHandPactWeapon: true, mainHandPactDamage: "心靈", offHandPactDamage: "光耀" };
+    delete legacyPact.pactWeaponDamageType;
+    await page.evaluate(state => applyStateObject(state), legacyPact);
+    assert.equal((await pact()).damage, "1d8+3心靈", "legacy pact damage of the checked hand is migrated");
+    await page.evaluate(state => applyStateObject(state), { ...legacyPact, mainHandPactDamage: "" });
+    assert.equal((await pact()).damage, "1d8+3揮砍", "legacy original damage type stays original");
     assert.deepEqual(await page.evaluate(() => {
       document.getElementById("class").value = "fighter";
       const shared = collectShareState();
-      return [shared.mainHandPactWeapon, shared.mainHandPactDamage];
+      return [shared.mainHandPactWeapon, shared.pactWeaponDamageType];
     }), [undefined, undefined], "pact weapon fields are shared only for warlocks");
+
+    // 武僧 6 級真力駐拳：武藝的傷害類型預設力場，職業頁「真力駐拳」段落的下拉可改回鈍擊。
+    const monkState = { __spellManagement: { version: 2, manual: false, entries: [] }, class: "monk", level: "6", str: "10", dex: "16", wis: "14", mainHand: "武藝", offHand: "", offHandAsMain: false, armor: "", monkUnarmedDamageType: "" };
+    const monkCardSelect = '#classFeatures [data-feature-id="monk-empowered-strikes"] select[data-weapon-damage-type-choice="monk"]';
+    await page.evaluate(state => applyStateObject(state), monkState);
+    assert.equal(await page.inputValue("#atk-main-dmg"), "1d8+3力場", "Empowered Strikes defaults the unarmed damage to force");
+    assert.equal(await damageLink.textContent(), "1d8 力場");
+    assert.equal(await page.evaluate(selector => document.querySelector(selector)?.closest("[data-weapon-damage-type-picker]").hidden === false, monkCardSelect), true, "Empowered Strikes shows its picker");
+    await pickChoice(monkCardSelect, "normal");
+    assert.equal(await page.inputValue("#atk-main-dmg"), "1d8+3鈍擊", "the monk picks bludgeoning");
+    assert.equal(await page.evaluate(() => getWeaponDamageTypePdfNotes().main), "可選鈍/力");
+    await page.evaluate(state => applyStateObject(state), { ...monkState, level: "5" });
+    assert.deepEqual([await page.inputValue("#atk-main-dmg"), await damageLink.count()], ["1d8+3鈍擊", 0], "before level 6 the unarmed strike stays bludgeoning");
+
+    // 橡棍術：角色卡由「☐橡棍術」決定是否以橡棍術計算（預設力場）；舊資料沒有開關時維持自動套用。
+    const shillelaghState = { __spellManagement: { version: 2, manual: false, entries: [{ spellId: "shillelagh", spellClass: "druid", level: 0 }] },
+      class: "druid", level: "3", str: "10", dex: "10", wis: "16", "spellcasting-ability": "wis", mainHand: "長棍", offHand: "", offHandAsMain: false, armor: "",
+      shillelaghWeaponHand: "none", shillelaghDamageType: "",
+      __inventory: { version: 1, items: [{ uid: "quarterstaff", itemId: "長棍", quantity: 1 }, { uid: "longsword", itemId: "長劍", quantity: 1 }] } };
+    await page.evaluate(state => applyStateObject(state), shillelaghState);
+    const shillelaghControls = () => page.evaluate(() => ["main", "off"].map(hand => !document.querySelector(`[data-shillelagh-hand="${hand}"]`).hidden));
+    assert.deepEqual(await shillelaghControls(), [true, false], "only the hand holding a club or quarterstaff offers Shillelagh");
+    assert.equal(await page.inputValue("#atk-main-dmg"), "1d6鈍擊", "Shillelagh is not applied until checked");
+    await page.check("#mainHandShillelagh");
+    assert.deepEqual([await page.inputValue("#atk-main-hit"), await page.inputValue("#atk-main-dmg"), await damageLink.textContent()], ["+5", "1d8+3力場", "1d8 力場"], "checked Shillelagh uses wisdom, d8 and force");
+    await damageLink.click();
+    await page.locator('.app-dialog select[data-weapon-damage-type-choice="shillelagh"]').selectOption("normal");
+    await page.locator(".app-dialog").getByRole("button", { name: "完成" }).click();
+    assert.equal(await page.inputValue("#atk-main-dmg"), "1d8+3鈍擊");
+    const shillelaghSaved = await page.evaluate(() => collectStateObject());
+    assert.deepEqual([shillelaghSaved.shillelaghWeaponHand, shillelaghSaved.shillelaghDamageType, Object.hasOwn(shillelaghSaved, "mainHandShillelagh")], ["main", "normal", false]);
+    assert.equal(await page.evaluate(() => collectShareState().shillelaghWeaponHand), "main", "share keeps the Shillelagh toggle");
+    await page.uncheck("#mainHandShillelagh");
+    assert.deepEqual([await page.inputValue("#shillelaghWeaponHand"), await page.inputValue("#atk-main-dmg")], ["none", "1d6鈍擊"]);
+    await page.evaluate(state => applyStateObject(state), shillelaghSaved);
+    assert.deepEqual([await page.isChecked("#mainHandShillelagh"), await page.inputValue("#atk-main-dmg")], [true, "1d8+3鈍擊"], "JSON restores the Shillelagh toggle and damage type");
+    const legacyShillelagh = { ...shillelaghState, shillelaghDamageType: "" };
+    delete legacyShillelagh.shillelaghWeaponHand;
+    await page.evaluate(state => applyStateObject(state), legacyShillelagh);
+    assert.deepEqual([await page.isChecked("#mainHandShillelagh"), await page.inputValue("#atk-main-dmg")], [true, "1d8+3力場"], "legacy characters keep Shillelagh applied automatically");
+    assert.equal(await page.evaluate(() => getWeaponDamageTypePdfNotes().main), "可選鈍/力");
+    // 跑團模式看持續效果，不看角色卡的開關；放開短棒或長棍時效果結束。
+    await page.evaluate(state => applyStateObject(state), shillelaghState);
+    assert.deepEqual(await page.evaluate(() => [
+      calculateHandAttacks({ shillelaghHand: TabletopMode.getActiveShillelaghHand() })[0].damage,
+      TabletopMode.setPersistentSpellEffect("shillelagh", true),
+      calculateHandAttacks({ shillelaghHand: TabletopMode.getActiveShillelaghHand() })[0].damage,
+      document.getElementById("atk-main-dmg").value
+    ]), ["1d6鈍擊", true, "1d8+3力場", "1d6鈍擊"], "the tabletop Shillelagh effect applies without changing the sheet");
+    await page.selectOption("#mainHand", "長劍");
+    assert.equal(await page.evaluate(() => TabletopMode.getPersistentSpellEffects().find(effect => effect.spellId === "shillelagh").active), false, "letting go of the quarterstaff ends Shillelagh");
+    // 跑團：橡棍術持續效果卡片的下拉與武器卡；刃之魔契附贈動作說明的下拉（選完焦點留在下拉）。
+    const tabletopDamageIs = text => page.waitForFunction(expected => (
+      document.querySelectorAll("#tabletop-weapon-summary .tabletop-weapon-attack-card dd")[2]?.textContent === expected
+    ), text, { timeout: 3000 });
+    // 從法術卡施放：沒有其他結果的戲法也要能施法，手上沒有短棒或長棍時留在視窗並提示。
+    const castShillelagh = async () => {
+      await page.locator('#tabletop-panel-spells .tabletop-spell-button[data-spell-id="shillelagh"]').click();
+      await page.locator(".app-dialog").last().getByRole("button", { name: "施法", exact: true }).click();
+      await page.locator(".app-dialog").last().getByRole("button", { name: "施法", exact: true }).click();
+    };
+    await page.evaluate(state => applyStateObject(state), { ...shillelaghState, mainHand: "長劍" });
+    await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("spells"); });
+    await castShillelagh();
+    assert.match(await page.locator(".app-dialog .tabletop-cast-form__error").innerText(), /手上沒有短棒或長棍/u, "casting Shillelagh without a club or quarterstaff is refused");
+    await page.locator(".app-dialog").last().getByRole("button", { name: "取消", exact: true }).click();
+    assert.equal(await page.evaluate(() => TabletopMode.getPersistentSpellEffects().find(effect => effect.spellId === "shillelagh").active), false);
+    await page.evaluate(state => applyStateObject(state), shillelaghState);
+    await castShillelagh();
+    assert.equal(await page.evaluate(() => TabletopMode.getPersistentSpellEffects().find(effect => effect.spellId === "shillelagh").active), true, "casting Shillelagh starts its effect");
+    await page.evaluate(() => TabletopMode.setPanel("actions"));
+    await tabletopDamageIs("1d8+3力場");
+    await page.evaluate(() => TabletopMode.setPanel("spells"));
+    const effectSelect = page.locator('section[aria-label="橡棍術持續效果"] select[data-weapon-damage-type-choice="shillelagh"]:visible').first();
+    await effectSelect.selectOption("normal");
+    await page.evaluate(() => TabletopMode.setPanel("actions"));
+    await tabletopDamageIs("1d8+3鈍擊");
+    assert.equal(await page.inputValue("#atk-main-dmg"), "1d6鈍擊", "the sheet keeps its own Shillelagh toggle");
+    // 昏迷時手上的東西掉落：橡棍術結束，昏迷期間也不能施放。
+    await page.evaluate(() => TabletopMode.setPanel("overview"));
+    await page.click("#tabletop-condition-manage");
+    await page.locator('input[data-condition-option="unconscious"]').check();
+    await page.locator("#tabletop-condition-form").getByRole("button", { name: "套用", exact: true }).click();
+    await page.locator(".app-toast__message").filter({ hasText: /^你手上的東西因昏迷掉落，橡棍術結束。$/u }).first().waitFor();
+    assert.equal(await page.evaluate(() => TabletopMode.getPersistentSpellEffects().find(effect => effect.spellId === "shillelagh").active), false, "falling unconscious ends Shillelagh");
+    await page.evaluate(() => TabletopMode.setPanel("actions"));
+    await tabletopDamageIs("1d6鈍擊");
+    await page.evaluate(() => TabletopMode.setPanel("spells"));
+    await castShillelagh();
+    assert.match(await page.locator(".app-dialog .tabletop-cast-form__error").innerText(), /昏迷/u, "an unconscious character cannot cast Shillelagh");
+    await page.locator(".app-dialog").last().getByRole("button", { name: "取消", exact: true }).click();
+    await page.evaluate(() => { TabletopMode.applyState({ activeConditions: [] }); TabletopMode.setPanel("actions"); });
+    await page.evaluate(state => applyStateObject(state), { ...pactState, "eldritch-invocation-0-1": true, mainHandPactWeapon: true });
+    await page.click("#tabletop-action-tab-bonus");
+    await page.locator('#tabletop-action-panel-bonus [data-action-option-key="dynamic-bonus-invocation-olkvgk"]').click();
+    const actionSelect = page.locator('#tabletop-action-panel-bonus .tabletop-action-description select[data-weapon-damage-type-choice="pact"]');
+    assert.equal(await actionSelect.inputValue(), "necrotic", "the Pact of the Blade action offers the damage types");
+    await actionSelect.focus();
+    await actionSelect.selectOption("psychic");
+    await tabletopDamageIs("1d8+3心靈");
+    assert.equal(await page.evaluate(() => document.activeElement?.dataset.weaponDamageTypeChoice), "pact", "the redrawn action keeps focus on the picker");
+    assert.equal(await page.inputValue("#atk-main-dmg"), "1d8+3心靈", "the tabletop picker changes the sheet choice");
     assert.deepEqual(errors, [], "equipment browser errors");
-    console.log("Equipment loadout: main2/shield, two-handed cancel/confirm, AC, untrained shield/tooltips, click-only mastery, summary, restore, PDF mapping and pact weapon passed.");
+    console.log("Equipment loadout: main2/shield, two-handed cancel/confirm, AC, untrained shield/tooltips, click-only mastery, summary, restore, PDF mapping, pact weapon, Empowered Strikes and Shillelagh damage types passed.");
   } finally { await page.close(); }
 }
 
