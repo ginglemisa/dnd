@@ -1065,6 +1065,78 @@ async function verifyPreparedRingRange(page) {
   console.log("Prepared ring range: automatic cantrip/slot rings, class-option cantrips, retained high rings, unrestricted manual rings, lookup-only SRD spells and SRD-only paladin lookup spells kept out of preparation passed.");
 }
 
+// 受祝福的勇士／德魯伊教戰士：勾選時例外開放牧師／德魯伊戲法；準備視窗、職業特性頁連結與放大鏡搜尋
+// 都寫入同一組選項戲法欄（名額 2），取消選項後例外消失。
+async function verifyClassOptionCantrips(page) {
+  const dialog = pickerDialog(page), ringFilter = dialog.getByRole("combobox", { name: "篩選環階", exact: true });
+  const option = id => dialog.locator(`.spell-picker-option input[value="${id}"]`);
+  const choices = () => page.evaluate(() => SpellManagement.collectClassFeatureCantrips());
+  const open = async () => { await page.locator("#spell-prepare").click(); await dialog.waitFor(); };
+  const save = async () => { await dialog.getByRole("button", { name: "儲存", exact: true }).click(); await dialog.waitFor({ state: "detached" }); };
+  const paladinKeys = ["class-paladin-blessed-warrior-cantrip-1", "class-paladin-blessed-warrior-cantrip-2"];
+  await apply(page, modern({ class: "paladin", level: "2", "spellcasting-ability": "cha", "paladin-blessed-warrior": true }, [player("bless", "paladin")]));
+  await open();
+  await ringFilter.selectOption("0");
+  assert.equal(await dialog.locator(".spell-picker-option").count() > 0, true, "cleric cantrips are listed");
+  assert.doesNotMatch(await dialog.innerText(), /此職業沒有職業戲法/u);
+  assert.equal(await option("druidcraft").count(), 0, "only the option's spell list is opened");
+  assert.match(await dialog.locator(".spell-prepared-draft-counts").innerText(), /^戲法 0／2｜/u);
+  await option("guidance").check(); await option("sacred-flame").check();
+  assert.match(await dialog.locator(".spell-prepared-draft-counts").innerText(), /^戲法 2／2｜/u);
+  assert.equal(await option("thaumaturgy").isDisabled(), true, "the option's two cantrip fields are the limit");
+  await page.keyboard.press("Escape"); await dialog.waitFor({ state: "detached" });
+  assert.deepEqual(Object.values(await choices()).filter(Boolean), [], "canceling keeps the cantrip fields");
+  await open(); await ringFilter.selectOption("0");
+  await option("guidance").check(); await option("sacred-flame").check();
+  await save();
+  assert.deepEqual(await choices(), Object.fromEntries(paladinKeys.map((key, index) => [key, ["guidance", "sacred-flame"][index]])));
+  assert.deepEqual((await activeIds(page)).sort(), ["bless", "divine-smite", "guidance", "sacred-flame"].sort(), "saved cantrips become source entries");
+  assert.deepEqual(await playerIds(page), ["bless"], "class option cantrips never join the player list");
+  await open();
+  assert.equal(await dialog.locator(`#spell-prepared-source-options [data-source-key^="class-paladin-blessed-warrior"]`).count(), 0,
+    "editable option cantrips are not repeated as permanent preparations");
+  assert.equal(await option("guidance").isEnabled(), true);
+  await option("guidance").uncheck(); await save();
+  assert.deepEqual(await choices(), { [paladinKeys[0]]: "", [paladinKeys[1]]: "sacred-flame" });
+  // 職業特性頁的紅色法術名稱與放大鏡搜尋填入空的戲法欄；欄位滿了提示上限。
+  await page.evaluate(() => { showTab("basic"); openCharacterFeatures("class"); });
+  const link = page.locator('#character-features-modal .spell-highlight-action[data-spell-id="guidance"]').first();
+  await link.click();
+  await page.locator(".quick-build-spell-prepare-confirm").click();
+  assert.equal((await choices())[paladinKeys[0]], "guidance", "the feature link fills the empty cantrip field");
+  await page.keyboard.press("Escape");
+  await page.evaluate(() => showTab("spells"));
+  await page.locator("#spell-search-fab").click();
+  await page.locator("#spell-search").fill("奇術");
+  await page.locator("#spell-search").press("Enter");
+  await page.locator("#spell-search-result-list button", { hasText: "奇術" }).first().click();
+  await page.locator(".quick-build-spell-prepare-confirm").click();
+  const full = page.getByRole("dialog", { name: "已達準備上限", exact: true });
+  assert.match(await full.innerText(), /最多可選 2 個牧師戲法/u, "search follows the same two-field limit");
+  await full.getByRole("button", { name: "關閉", exact: true }).click();
+  assert.deepEqual(Object.values(await choices()).sort(), ["guidance", "sacred-flame"]);
+  await page.locator("#spell-search").fill(""); await page.locator("#spell-search").press("Enter");
+  // 取消選項後例外消失：視窗沒有戲法，搜尋準備回到「職業不符」。
+  await apply(page, modern({ class: "paladin", level: "2", "spellcasting-ability": "cha", "paladin-blessed-warrior": false }));
+  await open();
+  assert.deepEqual(await ringFilter.locator("option").evaluateAll(options => options.map(item => item.value)), ["", "1"]);
+  assert.equal(await option("guidance").count(), 0);
+  await page.keyboard.press("Escape"); await dialog.waitFor({ state: "detached" });
+  await page.evaluate(() => { void autoPrepareSpellFromFeature("guidance", document.getElementById("spell-prepare")); });
+  await page.locator(".quick-build-spell-prepare-confirm").click();
+  const mismatch = page.getByRole("dialog", { name: "職業不符", exact: true });
+  await mismatch.getByRole("button", { name: "關閉", exact: true }).click();
+  assert.deepEqual(await activeIds(page), ["divine-smite"], "without the option a paladin cannot prepare cleric cantrips");
+  // 遊俠的德魯伊教戰士開放德魯伊戲法。
+  await apply(page, modern({ class: "ranger", level: "2", "spellcasting-ability": "wis", "ranger-druidic-warrior": true }));
+  await open(); await ringFilter.selectOption("0");
+  assert.equal(await option("sacred-flame").count(), 0);
+  await option("druidcraft").check(); await save();
+  assert.equal((await choices())["class-ranger-druidic-warrior-cantrip-1"], "druidcraft");
+  assert.deepEqual(await activeIds(page), ["hunters-mark", "druidcraft"]);
+  console.log("Class option cantrips: Blessed Warrior and Druidic Warrior open their cantrip lists in the dialog, feature links and search, share the two cantrip fields and disappear with the option passed.");
+}
+
 // Every path into the preparation dialog goes through #spell-prepare / openPreparedManager;
 // the ability requirement follows the field's visibility so it can never become a dead end.
 async function verifyPreparedAbilityGate(browser, url) {
@@ -2133,6 +2205,7 @@ async function main() {
     await verifyUnavailableSpellRows(page);
     await verifyPreparedPicker(page);
     await verifyPreparedRingRange(page);
+    await verifyClassOptionCantrips(page);
     await verifyLevelUpCantripChoice(page);
     await verifyWizardBookPicker(page);
     await verifyManualSpellbook(page);

@@ -83,6 +83,16 @@ async function autoPrepareSpellFromFeature(spellId, triggerEl) {
     return;
   }
   if (hasPreparedSpell(spellId)) return;
+  // 職業選項開放的他職業戲法填入選項的戲法欄（與職業特性頁、準備法術視窗同一份選擇）。
+  const grant = window.SpellManagement.isManual() ? null : getClassFeatureCantripGrant();
+  if (isClassFeatureCantripGrantSpell(grant, spellId)
+    && !window.SpellManagement.isEntryAvailable({ spellId, level: 0, spellClass: document.getElementById("class").value })) {
+    const slot = grant.slots.find(item => !item.spellId);
+    if (slot) setClassFeatureCantripChoice(slot.key, spellId);
+    else await window.AppDialog.showMessage({ title: "已達準備上限", confirmLabel: "關閉", trigger: triggerEl,
+      message: `最多可選 ${grant.slots.length} 個${classOptions.find(option => option.value === grant.spellClass)?.text || ""}戲法，請先取消其他戲法。` });
+    return;
+  }
   const result = window.SpellManagement.addPlayerSpell(spellId);
   if (!result) {
     const limits = window.SpellManagement.getLimits();

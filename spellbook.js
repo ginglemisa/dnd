@@ -482,12 +482,17 @@
     const permanent = customEntries.filter(entry => !entry.countsAsPrepared);
     const counted = customEntries.filter(entry => entry.countsAsPrepared);
     const modes = {};
+    // Class option cantrips (Blessed Warrior, Druidic Warrior) are edited in the
+    // picker below as drafts of the option's cantrip fields, saved with the list.
+    const grantKeys = new Set((globalScope.getClassFeatureCantripGrant?.()?.slots || []).map(slot => slot.key));
+    const grantDraft = new Map();
     function loadMode(mode) {
       if (!modes[mode]) {
         const preview = mode === savedManual ? { players: playerEntries(),
           sources: mode ? [] : (api.getSourceEntries?.() || api.getEntries().filter(entry => entry.spellSource)) } : api.previewMode(mode);
         const entries = preview.players.map(entry => ({ ...entry }));
-        modes[mode] = { draft: entries, sources: preview.sources, retained: mode ? entries.filter(entry => entry.spellSource) : [] };
+        modes[mode] = { draft: entries, sources: preview.sources.filter(entry => !grantKeys.has(entry.sourceKey)),
+          retained: mode ? entries.filter(entry => entry.spellSource) : [] };
       }
       return modes[mode];
     }
@@ -555,9 +560,16 @@
       const totals = api.getPreparationCounts(draftSnapshot.editable.filter(entry => !draftSnapshot.sourceLabels.has(entry.spellId)), availability());
       draftSnapshot.cantrips = totals.cantrips;
       draftSnapshot.prepared = totals.prepared;
+      draftSnapshot.grant = manual ? null : globalScope.getClassFeatureCantripGrant?.() || null;
+      draftSnapshot.grantSlots = (draftSnapshot.grant?.slots || []).map(slot => grantDraft.has(slot.key) ? { ...slot, spellId: grantDraft.get(slot.key) } : slot);
     }
     const sourceLabels = id => draftSnapshot.sourceLabels.get(id);
     const countAt = cantrip => draftSnapshot[cantrip ? "cantrips" : "prepared"];
+    const grantSlotOf = id => draftSnapshot.grantSlots.find(slot => slot.spellId === id);
+    const isGrantCantrip = spell => globalScope.isClassFeatureCantripGrantSpell?.(draftSnapshot.grant, spell.spellId) === true
+      && !api.isEntryAvailable({ spellId: spell.spellId, spellClass: currentClass, level: 0 }, availability());
+    const cantripTotals = () => ({ count: countAt(true) + draftSnapshot.grantSlots.filter(slot => slot.spellId).length,
+      limit: (limits.cantrips ?? 0) + draftSnapshot.grantSlots.length });
     refreshDraftSnapshot();
     const canClear = entry => Number(entry.level) >= 1 && Number(entry.level) <= 4
       && (manual || (!entry.spellSource && api.isEntryAvailable(entry, availability())));
@@ -649,6 +661,8 @@
         }
       }
       const candidates = new Map(baseCandidates);
+      if (draftSnapshot.grant) globalScope.getClassSpells(draftSnapshot.grant.spellClass, "cantrips")
+        .forEach(spell => candidates.set(spell.spellId, spell));
       // Preserve unknown imported IDs and selections that became unavailable.
       draftSnapshot.editable.forEach(entry => candidates.set(entry.spellId, catalog().getSpell(entry.spellId)
         || { spellId: entry.spellId, level: Number(entry.level), nameZh: "", nameEn: "" }));
@@ -670,13 +684,15 @@
       getEmptyMessage(filterValue) {
         if (manual || filterValue === "" || typeof globalScope.classCanAccessSpellLevel !== "function") return "";
         const ring = Number(filterValue);
-        if (globalScope.classCanAccessSpellLevel(currentClass, Number(currentLevel), ring)) return "";
+        if ((ring === 0 && draftSnapshot.grant) || globalScope.classCanAccessSpellLevel(currentClass, Number(currentLevel), ring)) return "";
         return ring === 0 ? "此職業沒有職業戲法。" : `目前職業等級尚未開放${levels[ring]}法術。`;
       },
       getState(spell) {
         if (spell.customSpell) return { checked: true, disabled: true, note: "自創法術：占準備名額，請到自創法術編輯區更改。" };
         const selected = draftSnapshot.selected.has(spell.spellId);
+        if (grantSlotOf(spell.spellId)) return { checked: true };
         if (sourceLabels(spell.spellId)) return { checked: true, disabled: true };
+        if (isGrantCantrip(spell)) return { checked: false, disabled: !grantSlotOf("") };
         const unavailable = !manual && !api.isEntryAvailable({ spellId: spell.spellId, spellClass: currentClass, level: spell.level }, availability());
         const full = !manual && !selected && countAt(spell.level === 0) >= limitAt(spell.level === 0);
         const reason = unavailable && api.getAvailabilityReason?.({ spellId: spell.spellId, spellClass: currentClass, level: spell.level }, availability());
@@ -686,6 +702,11 @@
       onToggle(spell, checked) {
         if (spell.customSpell) return;
         refreshAvailableCounts();
+        const grantSlot = grantSlotOf(checked ? "" : spell.spellId);
+        if (grantSlot && (!checked || (isGrantCantrip(spell) && !sourceLabels(spell.spellId)))) {
+          grantDraft.set(grantSlot.key, checked ? spell.spellId : "");
+          return;
+        }
         if (!checked) draft = draft.filter(entry => entry.spellSource || entry.spellId !== spell.spellId);
         else if (!draftSnapshot.selected.has(spell.spellId) && !sourceLabels(spell.spellId)
           && (manual || (api.isEntryAvailable({ spellId: spell.spellId, spellClass: currentClass, level: spell.level }, availability())
@@ -703,7 +724,7 @@
       const preparedExcess = manual ? 0 : Math.max(0, countAt(false) - limitAt(false));
       countSummary.hidden = manual;
       counts.textContent = manual ? ""
-        : `戲法 ${countAt(true)}／${limits.cantrips ?? 0}｜${preparedRingLabel(currentClass, currentLevel)} ${countAt(false)}／${limits.prepared ?? 0}`;
+        : `戲法 ${cantripTotals().count}／${cantripTotals().limit}｜${preparedRingLabel(currentClass, currentLevel)} ${countAt(false)}／${limits.prepared ?? 0}`;
       counts.classList.toggle("is-over-limit", cantripExcess > 0 || preparedExcess > 0);
       limitWarning.hidden = !cantripExcess && !preparedExcess;
       limitWarning.textContent = [cantripExcess ? `戲法超過上限 ${cantripExcess} 個` : "",
@@ -733,6 +754,9 @@
           }
           if (manual !== savedManual && !await api.setManual(manual, { confirm: false })) return false;
           api.setPlayerEntries(draft);
+          if (!manual) (globalScope.getClassFeatureCantripGrant?.()?.slots || []).forEach(slot => {
+            if (grantDraft.has(slot.key)) globalScope.setClassFeatureCantripChoice(slot.key, grantDraft.get(slot.key));
+          });
           return true;
         } });
       const dialog = body.closest(".app-dialog");
