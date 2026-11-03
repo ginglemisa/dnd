@@ -427,6 +427,19 @@ async function verifyPdf(page, fieldsOnly) {
       state["tool-proficiency-0"] = name;
       if (buildPdfFieldPayload(state).toolsProficiency1 !== name) throw new Error(`Class tool PDF deduplication: ${cls}`);
     }
+    // 守護者／哨衛的選項 grants 要進 PDF 的護甲勾選與武器熟練；等級未填時同網站視為 1 級。
+    for (const [cls, option, other, armor] of [
+      ["cleric", "cleric-guardian", "cleric-trickster", { light: true, medium: true, heavy: true }],
+      ["druid", "druid-sentinel", "druid-shaman", { light: true, medium: true, heavy: false }]
+    ]) {
+      const training = payload => JSON.stringify({ light: payload.chk_light1, medium: payload.chk_medium1, heavy: payload.chk_heavy1 });
+      for (const level of ["1", ""]) {
+        const granted = buildPdfFieldPayload({ class: cls, level, [option]: true, [other]: false });
+        const plain = buildPdfFieldPayload({ class: cls, level, [option]: false, [other]: true });
+        if (training(granted) !== JSON.stringify(armor) || granted.weaponsProficiency1 !== "簡易武器和軍用武器") throw new Error(`PDF class option training: ${option} level ${level || "blank"}`);
+        if (training(plain) !== JSON.stringify({ ...armor, [cls === "cleric" ? "heavy" : "medium"]: false }) || plain.weaponsProficiency1 !== "簡易武器") throw new Error(`PDF class option training: ${other} level ${level || "blank"}`);
+      }
+    }
     for (const cls of Object.keys(classRules)) {
       const payload = buildPdfFieldPayload({ class: cls, level: "20" });
       const features = `${payload.classFeatures1}\n${payload.classFeatures2}`.replace(/\n(?!等級|選擇|語言)/gu, "");
