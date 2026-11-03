@@ -79,6 +79,54 @@
       .filter(entry => (isManual() || entry.spellClass === "wizard") && (!id || entry.spellId === id));
   }
 
+  // The card mirrors the preparation dialog's 1st-4th count: sources and
+  // permanent custom spells do not use player slots.
+  function preparedTotals() {
+    const api = management();
+    const fixed = new Set([...(api.getSourceEntries?.() || []), ...api.getCustomEntries().filter(entry => !entry.countsAsPrepared)]
+      .map(entry => entry.spellId));
+    return { count: api.getPreparationCounts(playerEntries().filter(entry => !fixed.has(entry.spellId))).prepared,
+      limit: api.getLimits().prepared ?? 0 };
+  }
+
+  // Same scope as the dialog's automatic「清空準備」: available 1st-4th player choices.
+  const clearablePrepared = () => playerEntries().filter(entry => Number(entry.level) >= 1 && Number(entry.level) <= 4
+    && !entry.spellSource && management().isEntryAvailable(entry));
+  const showsPreparedStatus = () => !isTome() && !isManual() && isWizard() && management()?.canManage() === true;
+
+  function renderPreparedStatus() {
+    const status = document.getElementById("spellbook-prepared-status");
+    const warning = document.getElementById("spellbook-prepared-warning");
+    if (!status || !warning) return;
+    status.hidden = !showsPreparedStatus();
+    warning.hidden = true;
+    if (status.hidden) return;
+    const level = document.getElementById("level")?.value;
+    const { count, limit } = preparedTotals();
+    const excess = Math.max(0, count - limit);
+    const counts = document.getElementById("spellbook-prepared-count");
+    counts.textContent = `${preparedRingLabel("wizard", level)} ${count}／${limit}`;
+    counts.classList.toggle("is-over-limit", excess > 0);
+    warning.hidden = !excess;
+    warning.textContent = excess ? `${preparedRingLabel("wizard", level, true)}準備超過上限 ${excess} 個。請先取消準備其他法術，再準備新的法術。` : "";
+    document.getElementById("spellbook-clear-prepared").disabled = !clearablePrepared().length;
+  }
+
+  async function clearPrepared(trigger) {
+    const count = clearablePrepared().length;
+    if (!showsPreparedStatus() || !count) return;
+    const currentClass = document.getElementById("class")?.value;
+    const level = document.getElementById("level")?.value;
+    const confirmed = await globalScope.AppDialog.requestDecision({ title: "清空準備？",
+      message: `將取消 ${count} 個${preparedRingLabel("wizard", level)}已準備法術，法術書內容不變。`,
+      cancelLabel: "取消", confirmLabel: "清空準備", intent: "danger", trigger });
+    if (!confirmed || !showsPreparedStatus() || currentClass !== document.getElementById("class")?.value
+      || level !== document.getElementById("level")?.value) return;
+    const cleared = new Set(clearablePrepared().map(entry => management().entryKey(entry)));
+    management().setPlayerEntries(playerEntries().filter(entry => !cleared.has(management().entryKey(entry))));
+    changed();
+  }
+
   function restoreState(data) {
     // Missing legacy data can seed the book from existing wizard preparation;
     // an explicitly empty new book must stay empty.
@@ -106,6 +154,7 @@
     if (!card) return;
     card.hidden = !isManual() && !isWizard() && !isTome();
     if (card.hidden) return;
+    renderPreparedStatus();
     const tome = isTome();
     document.getElementById("spellbook-title").textContent = tome ? "影之書（書之魔契）" : "法術書";
     const manageButton = document.getElementById("spellbook-manage");
@@ -414,6 +463,29 @@
     return { body, toolbar, redraw: draw };
   }
 
+  // Shows only the current class table from the rendered class page, with the
+  // character's level row highlighted for comparing preparation counts.
+  function openClassTable(trigger) {
+    const source = document.querySelector("#classCreationInfo [data-class-feature-table]");
+    if (!source) {
+      globalScope.AppDialog.notify("請先選擇職業。");
+      return;
+    }
+    const content = source.cloneNode(true);
+    const title = content.querySelector("h3");
+    const heading = title?.textContent || "職業特性表格";
+    title?.remove();
+    content.querySelectorAll("[id]").forEach(element => element.removeAttribute("id"));
+    const level = Number(document.getElementById("level")?.value);
+    const row = Number.isInteger(level) && level > 0 ? content.querySelectorAll(".class-feature-table tbody tr")[level - 1] : null;
+    if (row) {
+      row.classList.add("is-current-level");
+      row.setAttribute("aria-current", "true");
+    }
+    return globalScope.AppDialog.showContent({ title: heading, content, variant: "class-table",
+      confirmLabel: "關閉", trigger, allowNested: true });
+  }
+
   function attachSpellBrowserHeader(body, includeClassTable = false) {
     const header = body.closest(".app-dialog").querySelector(".app-dialog__header");
     header.classList.add("spell-prepared-header");
@@ -430,8 +502,7 @@
       const classTable = node("button", "spell-prepared-browse spell-prepared-class-table", "職業特性表");
       classTable.type = "button";
       classTable.setAttribute("aria-haspopup", "dialog");
-      classTable.setAttribute("aria-controls", "character-features-modal");
-      classTable.addEventListener("click", () => globalScope.openCharacterFeatures("creation", classTable));
+      classTable.addEventListener("click", () => openClassTable(classTable));
       const space = node("span", "", "\u3000");
       space.setAttribute("aria-hidden", "true");
       browseHint.append(space, classTable);
@@ -541,7 +612,9 @@
     limitWarning.hidden = true;
     const clear = node("button", "spell-prepared-clear app-dialog__button app-dialog__button--secondary", "清空準備");
     clear.type = "button";
-    body.append(sourceList, manualToggle, countSummary, limitWarning);
+    const noPreparation = node("p", "spell-note-muted spell-prepared-none", "目前職業等級沒有可準備的法術。");
+    noPreparation.hidden = true;
+    body.append(manualToggle, sourceList, noPreparation);
     let draftSnapshot;
     function refreshDraftSnapshot() {
       const editable = draft.filter(entry => !entry.spellSource);
@@ -728,7 +801,7 @@
         }
       }, onChange: () => refresh(false) });
     body.appendChild(picker.body);
-    picker.toolbar.before(node("p", "spell-note-muted", "勾選要準備的法術，點法術名稱可閱讀。儲存後才會套用變更。"));
+    picker.toolbar.after(countSummary, limitWarning);
     function refresh(redraw = true, redrawSources = false) {
       refreshDraftSnapshot();
       const cantripExcess = manual ? 0 : Math.max(0, countAt(true) - limitAt(true));
@@ -743,6 +816,13 @@
         + (limitWarning.hidden ? "" : "。仍可取消選取或儲存目前清單；新增前請先減少選取。")
         + (counted.length && !limitWarning.hidden ? "自創法術的名額請到自創法術編輯區調整。" : "");
       clear.disabled = !draft.some(canClear);
+      // Non-casters only see their permanent list; leftover choices (such as after
+      // lowering a level) keep the picker so they can still be removed.
+      const pickable = manual || limits.cantrips > 0 || limits.prepared > 0 || draftSnapshot.grantSlots.length > 0
+        || counted.length > 0 || draftSnapshot.editable.length > 0;
+      picker.body.hidden = !pickable;
+      clear.hidden = !pickable;
+      noPreparation.hidden = pickable;
       if (redrawSources) drawSources();
       if (redraw) picker.redraw();
     }
@@ -826,6 +906,7 @@
         if (selection && isTome()) { globalScope.setPactTomeSpellSelection(selection); changed(); }
       } else if (canManageBook()) await manageWizard(event.currentTarget);
     });
+    document.getElementById("spellbook-clear-prepared")?.addEventListener("click", event => clearPrepared(event.currentTarget));
     render();
   }
 

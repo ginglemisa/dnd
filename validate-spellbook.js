@@ -647,7 +647,10 @@ async function verifySpellManagement(page) {
   const confirmDialog = page.getByRole("alertdialog", { name: "啟用手動法術管理" });
   assert.equal(await dialog.locator('label[for="manual-spell-management"]').textContent(), "手動管理所有「已準備」法術。");
   assert.equal(await dialog.getByText("手動管理：不限制法表、環階與準備數量。").count(), 0, "bold manual note is replaced by the toggle");
-  assert.equal(await dialog.locator(".spell-prepared-manual-toggle + .spell-prepared-count-summary").count(), 1, "toggle sits above the count summary");
+  assert.equal(await dialog.locator(".spell-prepared-manager > .spell-prepared-manual-toggle:first-child").count(), 1, "toggle is the first row of the dialog");
+  assert.equal(await dialog.locator(".spell-picker-toolbar + .spell-prepared-count-summary + .spell-prepared-limit-warning + .spell-picker-results-summary").count(), 1,
+    "counts and limit warning sit between the toolbar and the result count");
+  assert.equal(await dialog.getByText("勾選要準備的法術", { exact: false }).count(), 0, "no instruction line above the toolbar");
   await toggle.click(); await confirmDialog.getByRole("button", { name: "取消", exact: true }).click();
   assert.equal(await toggle.isChecked(), false);
   await toggle.click(); await page.keyboard.press("Escape");
@@ -673,6 +676,7 @@ async function verifySpellManagement(page) {
   await setManualInDialog(page, true);
   assert.equal(await page.locator("#spell-current-list").innerText(), "法術清單：手動管理");
   assert.deepEqual(await activeIds(page), original); assert.equal(await page.locator("#spellbook-card").isVisible(), true, "manual wizard keeps its independent spellbook");
+  assert.equal(await page.locator("#spellbook-prepared-status").isHidden(), true, "manual books show neither the count nor the card clear");
   await page.evaluate(() => { SpellManagement.addPlayerSpell("cure-wounds", { spellClass: "cleric" }); SpellManagement.addPlayerSpell("ice-storm", { spellClass: "wizard" }); });
   const manual = await activeIds(page);
   await setManualInDialog(page, false, { save: false });
@@ -902,9 +906,17 @@ async function verifyPreparedPicker(page) {
   const classTable = dialog.getByRole("button", { name: "職業特性表", exact: true });
   await classTable.focus();
   await page.keyboard.press("Enter");
-  const featureDialog = page.getByRole("dialog", { name: "角色能力", exact: true });
-  assert.equal(await featureDialog.getByRole("tab", { name: "職業", exact: true }).getAttribute("aria-selected"), "true");
-  assert.equal(await featureDialog.locator('[data-class-feature-table="druid"]').isVisible(), true);
+  const featureDialog = page.getByRole("dialog", { name: "德魯伊特性表格", exact: true });
+  assert.equal(await featureDialog.locator('[data-class-feature-table="druid"] .class-feature-table').isVisible(), true);
+  assert.equal(await featureDialog.locator("h3, .class-feature-tagline, .class-core-creation-info").count(), 0, "only the class table opens");
+  assert.equal(await page.locator("#character-features-modal").count(), 0, "the full class page stays closed");
+  const tableLevel = await page.evaluate(() => Number(document.getElementById("level").value));
+  assert.deepEqual(await featureDialog.locator(".class-feature-table tbody tr.is-current-level").evaluateAll(rows =>
+    rows.map(row => [row.rowIndex, row.getAttribute("aria-current"), row.cells[0].textContent.trim()])), [[tableLevel, "true", String(tableLevel)]],
+    "the character's level row is highlighted");
+  assert.notEqual(await featureDialog.locator("tr.is-current-level").evaluate(row => getComputedStyle(row).backgroundColor),
+    await featureDialog.locator(".class-feature-table tbody tr").nth(tableLevel === 1 ? 1 : 0).evaluate(row => getComputedStyle(row).backgroundColor),
+    "the highlighted row uses its own background");
   assert.equal(await featureDialog.evaluate(el => {
     const child = el.closest(".app-dialog"), parent = document.querySelector('.app-dialog[data-variant="spellbook"]');
     const childZ = Number(getComputedStyle(child).zIndex), parentZ = Number(getComputedStyle(parent).zIndex);
@@ -934,6 +946,27 @@ async function verifyPreparedPicker(page) {
   assert.equal(await dialog.locator('.spell-picker-option input[value="cure-wounds"]').count(), 0, "automatic class filter does not open another class's spell list");
   assert.equal(await dialog.locator(".spell-picker-option .spell-picker-name").evaluateAll(buttons => buttons.every(button => SpellCatalog.getClassIds(button.dataset.spellId).includes("wizard"))), true);
   await page.keyboard.press("Escape");
+  // Non-casters keep only the permanent list unless they switch to manual or must remove old choices.
+  await apply(page, modern({ class: "fighter", level: "1" }));
+  await page.locator("#spell-prepare").click();
+  const pickerArea = dialog.locator(".spellbook-manager"), noPreparation = dialog.locator(".spell-prepared-none");
+  const clearButton = dialog.locator(".spell-prepared-clear");
+  assert.equal(await pickerArea.isHidden(), true, "non-casters hide the search and candidate area");
+  assert.equal(await noPreparation.innerText(), "目前職業等級沒有可準備的法術。");
+  assert.equal(await clearButton.isHidden(), true, "non-casters hide the clear button");
+  await dialog.locator("#manual-spell-management").click();
+  await page.getByRole("alertdialog", { name: "啟用手動法術管理" }).getByRole("button", { name: "啟用手動管理", exact: true }).click();
+  assert.equal(await pickerArea.isVisible(), true, "manual drafts show the picker for non-casters");
+  assert.equal(await noPreparation.isHidden(), true);
+  assert.equal(await clearButton.isVisible(), true);
+  await page.keyboard.press("Escape");
+  await dialog.waitFor({ state: "detached" });
+  await apply(page, modern({ class: "fighter", level: "1" }, [player("mage-armor", "wizard")]));
+  await page.locator("#spell-prepare").click();
+  assert.equal(await pickerArea.isVisible(), true, "leftover automatic choices keep the picker so they can be removed");
+  assert.equal(await noPreparation.isHidden(), true);
+  await page.keyboard.press("Escape");
+  await dialog.waitFor({ state: "detached" });
   await apply(page, modern({ class: "wizard", level: "1", race: "elf", "elf-lineage": "high_elf", "high-elf-cantrip": "light" }, [player("cure-wounds", "cleric"), player("ice-storm", "wizard")]));
   await page.locator("#spell-prepare").click();
   assert.equal(await disclosure.getAttribute("aria-expanded"), "true");
@@ -979,14 +1012,16 @@ async function verifyPreparedRingRange(page) {
       ["", "0", "1", "2"], " | 戲法 1 | 1環 0 | 2環 0 |", "Blessed Warrior with a chosen cantrip"],
     [{ class: "ranger", level: "2" }, ["", "1"], " | 1環 0 |", "ranger without Druidic Warrior"],
     [{ class: "ranger", level: "8" }, ["", "1", "2"], " | 1環 0 | 2環 0 |", "ranger 8 never counts 3rd or 4th level"],
-    [{ class: "ranger", level: "2", "ranger-druidic-warrior": true }, ["", "0", "1"], " | 戲法 0 | 1環 0 |", "Druidic Warrior"],
-    [{ class: "fighter", level: "5" }, [""], "", "non-caster"]
+    [{ class: "ranger", level: "2", "ranger-druidic-warrior": true }, ["", "0", "1"], " | 戲法 0 | 1環 0 |", "Druidic Warrior"]
   ]) {
     await open(state);
     assert.deepEqual(await rings(), expected, message);
     assert.equal(await countSuffix(), suffix, `${message} count row`);
     await close();
   }
+  await open({ class: "fighter", level: "5" });
+  assert.equal(await dialog.locator(".spellbook-manager").isHidden(), true, "non-caster hides the ring filter with the picker");
+  await close();
   // Retained higher-ring choices stay visible under all rings even though their ring is not listed.
   await apply(page, modern({ class: "wizard", level: "1", "spellcasting-ability": "int" }, [player("fireball", "wizard")]));
   await page.locator("#spell-prepare").click();
@@ -1574,6 +1609,9 @@ async function verifyLevelChangesAndMigration(page, url) {
     .filter(([key]) => /^sp-name-/.test(key)).map(([, value]) => String(value).replace(/\n/g, "")).filter(Boolean)),
   await page.evaluate(() => SpellManagement.getEntries({ availableOnly: true }).map(entry => SpellCatalog.getSpell(entry.spellId)?.nameZh).filter(Boolean)),
   "PDF preparation rows exclude unavailable high rings while retaining over-limit usable spells");
+  assert.equal(await page.locator("#spellbook-prepared-count").innerText(), "一環 5／4", "the spellbook card shares the dialog's 1st-ring count");
+  assert.equal(await page.locator("#spellbook-prepared-count").evaluate(el => el.classList.contains("is-over-limit")), true);
+  assert.match(await page.locator("#spellbook-prepared-warning").innerText(), /^一環準備超過上限 1 個。/u, "the card explains the over-limit list");
   const prepare = page.locator("#spell-prepare"), manager = pickerDialog(page);
   await prepare.click();
   assert.equal(await manager.getByRole("button", { name: "儲存", exact: true }).isEnabled(), true, "over-limit lists can still be saved");
@@ -2285,6 +2323,23 @@ async function main() {
     assert.equal(await page.locator("#spellbook-list .spellbook-ring").count(), 1);
     assert.equal(await page.locator("#spellbook-list .is-prepared").count(), 1);
     assert.equal(await page.locator("#spell-prepared-counts").count(), 0);
+    const cardCount = page.locator("#spellbook-prepared-count"), cardClear = page.locator("#spellbook-clear-prepared");
+    assert.equal(await cardCount.innerText(), "一環 1／4", "the spellbook card shows the 1st-4th preparation count");
+    assert.equal(await page.locator("#spellbook-prepared-warning").isVisible(), false);
+    assert.equal(await cardClear.isEnabled(), true);
+    const clearDecision = page.getByRole("alertdialog", { name: "清空準備？", exact: true });
+    await cardClear.click();
+    assert.match(await clearDecision.innerText(), /將取消 1 個一環已準備法術，法術書內容不變。/u);
+    await clearDecision.getByRole("button", { name: "取消", exact: true }).click();
+    assert.equal(await page.locator("#spellbook-list .is-prepared").count(), 1, "canceling the card clear keeps preparation");
+    await cardClear.click();
+    await clearDecision.getByRole("button", { name: "清空準備", exact: true }).click();
+    assert.equal(await page.locator("#spellbook-list .is-prepared").count(), 0, "the card clear applies immediately");
+    assert.equal(await cardCount.innerText(), "一環 0／4");
+    assert.equal(await cardClear.isDisabled(), true, "nothing left to clear");
+    assert.deepEqual(await page.evaluate(() => Spellbook.getState().spellIds), ["detect-magic", "mage-armor", "sleep"], "clearing never edits the book");
+    await page.evaluate(() => SpellManagement.setPlayerEntries([{ spellId: "mage-armor", spellClass: "wizard", level: 1 }]));
+    assert.equal(await cardCount.innerText(), "一環 1／4");
     await page.locator("#spell-prepare").click();
     assert.equal(await pickerDialog(page).locator(".spell-prepared-draft-counts").innerText(), "戲法 0／3｜一環 1／4");
     assert.match(await pickerDialog(page).locator(".spell-picker-count").innerText(), /^\d+ 個法術，已顯示 \d+ 個 \| 戲法 0 \| 1環 1 \|$/u);

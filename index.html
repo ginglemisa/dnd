@@ -81,7 +81,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261104-class-html-cleanup">
+  <link rel="stylesheet" href="styles.css?v=20261104-spellbook-card">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261103-roll-min" defer></script>
   <script src="monster.js?v=20261025-beast-perception" defer></script>
@@ -110,7 +110,7 @@
   <script src="legal-modal.js?v=20261022-game-icons" defer></script>
   <script src="onboarding-tour.js?v=20261103-choice-highlight" defer></script>
   <script src="quick-build.js?v=20261104-class-html-cleanup" defer></script>
-  <script src="spellbook.js?v=20261104-class-html-cleanup" defer></script>
+  <script src="spellbook.js?v=20261104-spellbook-card" defer></script>
   <script src="spell-management.js?v=20261103-manual-toggle" defer></script>
   <script src="class-option-memory.js?v=20261024-class-split" defer></script>
   <script src="deity-info.js" defer></script>
@@ -1349,6 +1349,11 @@
 
 <details id="spellbook-card" class="section spell-level-section" open hidden>
   <summary><h3 id="spellbook-title" class="summary-title-inline">法術書</h3><button id="spellbook-manage" type="button">管理法術書</button></summary>
+  <div id="spellbook-prepared-status" class="spellbook-prepared-status" hidden>
+    <p id="spellbook-prepared-count" class="spellbook-prepared-count"></p>
+    <button id="spellbook-clear-prepared" type="button" aria-haspopup="dialog">清空準備</button>
+  </div>
+  <p id="spellbook-prepared-warning" class="spellbook-prepared-warning spell-capability-warning" role="status" hidden></p>
   <div id="spellbook-list" class="spellbook-grid"></div>
   <p class="spell-note-muted spellbook-legend">* 為儀式法術；紅字為已準備法術。</p>
 </details>
