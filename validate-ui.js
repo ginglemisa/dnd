@@ -427,7 +427,7 @@ async function verifyPdf(page, fieldsOnly) {
       state["tool-proficiency-0"] = name;
       if (buildPdfFieldPayload(state).toolsProficiency1 !== name) throw new Error(`Class tool PDF deduplication: ${cls}`);
     }
-    for (const cls of Object.keys(ARMOR_TRAINING_BY_CLASS)) {
+    for (const cls of Object.keys(classRules)) {
       const payload = buildPdfFieldPayload({ class: cls, level: "20" });
       const features = `${payload.classFeatures1}\n${payload.classFeatures2}`.replace(/\n(?!等級|選擇|語言)/gu, "");
       if (/^等級 \d+：[^（(\n]*子職$/mu.test(features) || !/^等級 3：.+[（(].*[）)]$/mu.test(features)) throw new Error(`PDF omits bare subclass heading only: ${cls}`);
@@ -495,7 +495,7 @@ async function verifyPdf(page, fieldsOnly) {
       || !customPayload[`sp-c-${customRow}`] || !customPayload[`sp-r-${customRow}`] || !customPayload[`sp-m-${customRow}`]
       || customPayload[`note${customRow}`] !== "學派:塑能 | 持續:1分鐘") throw new Error("PDF custom spell reads its structured header");
     const expected = new Set(["barbarian", "cleric", "druid", "fighter", "paladin", "ranger"]);
-    for (const cls of Object.keys(ARMOR_TRAINING_BY_CLASS)) {
+    for (const cls of Object.keys(classRules)) {
       if (buildPdfFieldPayload({ class: cls, level: "1" }).chk_shld1 !== expected.has(cls)) throw new Error(`Shield proficiency: ${cls}`);
     }
     for (const race of ["elf", "tiefling"]) for (const level of [1, 2, 3, 5]) {
@@ -1947,7 +1947,9 @@ async function verifyClassFeatureChoicePrompt(browser, url) {
 
     await chooseAsPlayer("class", "ranger");
     await modal.waitFor();
-    assert.deepEqual(await modal.locator("section[data-feature-level]:visible h3").allTextContents(), ["等級 2：戰鬥風格", "等級 3：狩獵目標（獵人子職）", "等級 4：屬性值提升", "等級 7：防守戰術（獵人子職）"]);
+    assert.deepEqual(await modal.locator("section[data-feature-level]:visible h3").allTextContents(), ["等級 1：武器精通", "等級 2：戰鬥風格", "等級 3：狩獵目標（獵人子職）", "等級 4：屬性值提升", "等級 7：防守戰術（獵人子職）"]);
+    await modal.locator("#ranger-weapon-mastery-pick-1").selectOption("長弓");
+    await modal.locator("#ranger-weapon-mastery-pick-2").selectOption("短劍");
     await modal.locator("#feat-choice-ranger-level-4").selectOption("屬性值提升");
     const styleRow = modal.locator('[data-feat-choice="fighting-style-ranger"]');
     assert.equal(await styleRow.isVisible(), false, "unchecked ranger style hides its label, selector and view button");
@@ -1989,6 +1991,8 @@ async function verifyClassFeatureChoicePrompt(browser, url) {
     await modal.locator("#paladin-fighting-style").check();
     assert.equal(await paladinStyleRow.isVisible(), true, "checking paladin style reveals the complete field");
     await modal.locator("#feat-choice-fighting-style-paladin").selectOption("防禦");
+    await modal.locator("#paladin-weapon-mastery-pick-1").selectOption("長劍");
+    await modal.locator("#paladin-weapon-mastery-pick-2").selectOption("標槍");
     await modal.locator("#class-feature-prompt-disabled").check();
     const selected = await page.evaluate(() => ({ state: collectStateObject(), share: collectShareState() }));
     assert.equal(Object.hasOwn(selected.state, "class-feature-prompt-disabled"), false, "preference stays out of character JSON");
@@ -2259,7 +2263,7 @@ async function verifyClassFeatureSupplementalChoices(browser, url) {
     const retainedChoices = { "class-paladin-blessed-warrior-cantrip-1": "guidance", "class-paladin-blessed-warrior-cantrip-2": "sacred-flame" };
     await page.evaluate(choices => {
       applyStateObject({ class: "paladin", level: "2", __spellManagement: { version: 2, manual: true, entries: [] },
-        "paladin-blessed-warrior": true, __classFeatureCantrips: choices });
+        "paladin-blessed-warrior": true, "paladin-weapon-mastery-pick-1": "長劍", "paladin-weapon-mastery-pick-2": "標槍", __classFeatureCantrips: choices });
       openClassFeatureChoicePrompt(getMissingClassFeatureChoiceSections(), document.getElementById("level"));
     }, retainedChoices);
     assert.equal(await modal.count(), 0, "manual spell management does not prompt for hidden cantrip choices");
@@ -3129,6 +3133,126 @@ async function verifySubclassSelection(browser, url) {
   } finally { await page.close(); }
 }
 
+// 職業選擇（內容檔 picks）：武器精通選單的數量、選項與不重複，精通標籤只顯示已選的武器，
+// 專精、職業額外語言與武器精通的缺項提醒，以及 autosave、JSON（欄位順序不同）、分享與職業選項記憶的還原。
+async function verifyClassPicks(browser, url) {
+  const blank = { __spellManagement: { version: 2, manual: false, entries: [] }, background: "soldier", race: "human", alignment: "TN" };
+  const open = async (page, target = url) => {
+    await page.addInitScript(() => { try { localStorage.setItem("dnd.classFeaturePromptDisabled.v1", "true"); } catch {} });
+    await page.goto(target);
+    await page.waitForFunction(() => window.SpellManagement && window.TabletopMode);
+    await page.evaluate(() => { document.getElementById("legal-close-btn")?.click(); window.onboardingTour?.finish?.(); });
+  };
+  const slots = page => page.evaluate(() => Array.from(document.querySelectorAll("#classFeatures select[data-class-pick]"), select => ({
+    id: select.id, value: select.value, hidden: Boolean(select.closest("[data-class-pick-slot]")?.hidden),
+    options: Array.from(select.options, option => option.value).filter(Boolean),
+    disabled: Array.from(select.options, option => option.disabled ? option.value : "").filter(Boolean)
+  })));
+  const issues = page => page.evaluate(() => getClassFeatureChoiceIssues().map(issue => issue.message));
+  // 職業頁在角色能力視窗內（未開啟時隱藏），以 change 事件選取，同玩家操作選單。
+  const choose = (page, id, value) => page.evaluate(([id, value]) => {
+    const select = document.getElementById(id);
+    if (!Array.from(select.options).some(option => option.value === value && !option.disabled)) throw new Error(`${id} cannot select ${value}`);
+    select.value = value;
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  }, [id, value]);
+  const badge = (page, weapon) => page.evaluate(weapon => {
+    const select = document.getElementById("mainHand");
+    select.value = weapon;
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+    updateWeaponMasteryBadges();
+    const element = document.getElementById("atk-main-mastery");
+    return element.hidden ? "" : element.textContent;
+  }, weapon);
+  const page = await newUiPage(browser, { viewport: { width: 1280, height: 900 } });
+  try {
+    await open(page);
+    await page.evaluate(blank => applyStateObject({ ...blank, class: "fighter", level: "1" }), blank);
+    let current = await slots(page);
+    assert.deepEqual(current.map(slot => [slot.id, slot.hidden]), [
+      ["fighter-weapon-mastery-pick-1", false], ["fighter-weapon-mastery-pick-2", false], ["fighter-weapon-mastery-pick-3", false], ["fighter-weapon-mastery-pick-4", true]
+    ], "fighter shows three mastery selects at level 1");
+    assert.ok(["長劍", "巨劍", "短弓", "鞭"].every(name => current[0].options.includes(name)) && !current[0].options.includes("武藝"), "fighter can choose proficient weapons with masteries");
+    assert.ok((await issues(page)).includes("戰士武器精通尚未選完（0/3）。"), "missing masteries are reminded");
+    assert.equal(await badge(page, "長劍"), "削弱", "without any chosen mastery every proficient weapon keeps its badge");
+    await choose(page, "fighter-weapon-mastery-pick-1", "長劍");
+    await choose(page, "fighter-weapon-mastery-pick-2", "巨劍");
+    current = await slots(page);
+    assert.ok(current[1].disabled.includes("長劍") && current[0].disabled.includes("巨劍"), "a weapon chosen in one select is disabled in the others");
+    assert.ok((await issues(page)).includes("戰士武器精通尚未選完（2/3）。"));
+    assert.equal(await badge(page, "長劍"), "削弱", "a chosen weapon shows its mastery badge");
+    assert.equal(await badge(page, "短劍"), "", "an unchosen weapon hides the badge once masteries are chosen");
+    await choose(page, "fighter-weapon-mastery-pick-3", "長弓");
+    assert.ok(!(await issues(page)).some(message => message.includes("武器精通")), "the reminder clears when every mastery is chosen");
+
+    // Level 4 opens the fourth select; going back hides it but keeps its value.
+    await page.locator("#level").selectOption("4");
+    await choose(page, "fighter-weapon-mastery-pick-4", "戰錘");
+    await page.locator("#level").selectOption("1");
+    current = await slots(page);
+    assert.deepEqual(current.map(slot => [slot.value, slot.hidden]), [["長劍", false], ["巨劍", false], ["長弓", false], ["戰錘", true]], "a higher-level mastery stays saved while hidden");
+
+    // Autosave, JSON with the class after the selects, and share restore the choices.
+    await page.evaluate(() => saveAllFields());
+    await page.reload();
+    await page.waitForFunction(() => window.SpellManagement && window.TabletopMode);
+    assert.deepEqual((await slots(page)).map(slot => slot.value), ["長劍", "巨劍", "長弓", "戰錘"], "autosave restores masteries");
+    await page.evaluate(blank => {
+      const data = collectStateObject();
+      const picks = Object.fromEntries(Object.entries(data).filter(([id]) => id.startsWith("fighter-weapon-mastery-pick-")));
+      applyStateObject({ ...blank, class: "wizard", level: "1" });
+      applyStateObject({ ...picks, ...blank, level: "4", class: "fighter" });
+    }, blank);
+    assert.deepEqual((await slots(page)).map(slot => [slot.value, slot.hidden]), [["長劍", false], ["巨劍", false], ["長弓", false], ["戰錘", false]], "JSON restores masteries regardless of field order");
+    const hash = await page.evaluate(async () => encodeStateToHash(collectShareState()));
+    const shared = await newUiPage(browser);
+    try {
+      const sharedUrl = new URL(url); sharedUrl.searchParams.set("analytics", "owner"); sharedUrl.hash = hash;
+      await open(shared, sharedUrl.href);
+      assert.deepEqual(await shared.evaluate(() => [window.SHARE_MODE, ...Array.from(document.querySelectorAll("#classFeatures select[data-class-pick]"), select => select.value)]),
+        [true, "長劍", "巨劍", "長弓", "戰錘"], "share restores masteries");
+    } finally { await shared.close(); }
+
+    // Rogue: finesse or light martial weapons, expertise and extra language reminders.
+    await page.evaluate(blank => applyStateObject({ ...blank, class: "rogue", level: "1" }), blank);
+    current = await slots(page);
+    assert.deepEqual(current.map(slot => slot.id), ["rogue-weapon-mastery-pick-1", "rogue-weapon-mastery-pick-2"]);
+    assert.ok(["匕首", "刺劍", "鞭", "手弩"].every(name => current[0].options.includes(name)) && !current[0].options.includes("長劍"), "rogue chooses among its proficient weapons");
+    let messages = await issues(page);
+    assert.ok(messages.includes("盜賊專精尚未選完（0/2）。") && messages.includes("盜賊額外語言尚未選擇。"), "rogue expertise and language are reminded");
+    // 「前往」切到技能頁並高亮整個框：專精是技能加值區，額外語言是語言區。
+    for (const [label, box] of [["盜賊專精", "#skill-bonus-section"], ["盜賊額外語言", "#tab-skills .language-card"]]) {
+      await page.evaluate(label => Array.from(document.querySelectorAll("#class-feature-choice-reminder button"))
+        .find(button => button.textContent.includes(label)).click(), label);
+      await page.waitForFunction(() => document.querySelector(".onboarding-jump-target"));
+      const jumped = await page.evaluate(box => {
+        const target = document.querySelector(".onboarding-jump-target");
+        const rect = target.getBoundingClientRect();
+        return { skillsTab: !document.getElementById("tab-skills").hidden, box: target === document.querySelector(box), inView: rect.top < innerHeight && rect.bottom > 0 };
+      }, box);
+      assert.deepEqual(jumped, { skillsTab: true, box: true, inView: true }, `${label} jumps to its box on the skills tab`);
+      await page.evaluate(() => {
+        document.querySelectorAll(".onboarding-jump-target").forEach(element => element.classList.remove("onboarding-jump-target"));
+        showTab("basic");
+      });
+    }
+    await page.evaluate(() => ["隱匿", "巧手"].forEach(skill => {
+      const checkbox = document.getElementById(`exp-${skill}`);
+      checkbox.checked = true;
+      checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+    }));
+    await choose(page, "language-extra-2", "elvish");
+    messages = await issues(page);
+    assert.ok(!messages.some(message => message.startsWith("盜賊專精") || message.startsWith("盜賊額外語言")), "the reminders clear once chosen");
+    await page.evaluate(blank => applyStateObject({ ...blank, "exp-隱匿": false, "exp-巧手": false, class: "ranger", level: "1" }), blank);
+    assert.ok(!(await issues(page)).some(message => message.startsWith("遊俠專精") || message.startsWith("遊俠額外語言")), "ranger expertise and languages wait for level 2");
+    await page.evaluate(blank => applyStateObject({ ...blank, "exp-隱匿": false, "exp-巧手": false, class: "ranger", level: "2" }), blank);
+    messages = await issues(page);
+    assert.ok(messages.includes("遊俠專精尚未選完（0/1）。") && messages.includes("遊俠額外語言尚未選擇。"), "ranger reminders start at level 2");
+    console.log("Class picks: weapon mastery selects/options/badges, level visibility, autosave/JSON/share, expertise and language reminders passed.");
+  } finally { await page.close(); }
+}
+
 async function verifyCharacterDataSafety(browser, url) {
   const page = await newUiPage(browser);
   const sourceTag = '<img src="data:image/png,invalid" onerror="window.__unsafeCharacterScript=true">';
@@ -3494,7 +3618,7 @@ async function main() {
   try {
     browser = await chromium.launch({ headless: true, ...(process.env.DND_BROWSER_CHANNEL ? { channel: process.env.DND_BROWSER_CHANNEL } : {}) });
     const url = `http://127.0.0.1:${server.address().port}/index.html?analytics=owner`;
-    if (all || sections.has("--data-only")) { await verifyJsonImportTransaction(browser, url); await verifyCharacterDataSafety(browser, url); await verifySubclassSelection(browser, url); await verifyClassOptionMemory(browser, url); }
+    if (all || sections.has("--data-only")) { await verifyJsonImportTransaction(browser, url); await verifyCharacterDataSafety(browser, url); await verifySubclassSelection(browser, url); await verifyClassPicks(browser, url); await verifyClassOptionMemory(browser, url); }
     if (all || sections.has("--appearance-only")) {
       const page = await newUiPage(browser, { viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });
       try { await verifyAppearanceAndLayout(browser, page, url); }

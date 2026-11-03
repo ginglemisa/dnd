@@ -18,6 +18,9 @@ skills:
 weapons: 簡易武器和軍用武器
 tools: 無
 armor: 輕甲、中甲、重甲和盾牌
+proficiencies:
+  weapons: { categories: [simple, martial] }
+  armor: [light, medium, heavy, shield]
 equipment:
   A: |-
     鎖子甲、巨劍、連枷、標槍 ×8、地城套組和 4 金幣\
@@ -65,6 +68,8 @@ features:
     level: 1
     name: 武器精通
     pdfMerge: true
+    picks:
+      - { kind: weaponMastery, count: weaponMastery, from: proficient, changeOn: longRest }
     text: |
       任選 3 種簡易或軍用武器，取得其精通屬性。
 

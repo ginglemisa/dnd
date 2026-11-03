@@ -88,6 +88,13 @@
           "description": "此能力給予的法術（始終準備等）。法術 ID 須存在於 spell-id-baseline.json。"
         },
         "spellsByChoice": { "$ref": "#/definitions/spellsByChoice" },
+        "picks": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/pick" },
+          "description": "此能力要玩家做的選擇（武器精通、專精、技能、語言、法術書法術）：選幾個、從哪裡選。網站依此決定欄位數、可選項目與缺項提醒。"
+        },
+        "grants": { "$ref": "#/definitions/grants", "description": "取得此能力就固定獲得的項目（例如盜賊黑話的語言）。" },
         "spellSourceKey": {
           "type": "string",
           "minLength": 1,
@@ -100,7 +107,7 @@
           "anyOf": [
             { "required": ["id"] }, { "required": ["type"] }, { "required": ["tableName"] }, { "required": ["tabletop"] }, { "required": ["summary"] }, { "required": ["choose"] },
             { "required": ["changeOn"] }, { "required": ["choiceGroup"] }, { "required": ["optionStyle"] }, { "required": ["options"] },
-            { "required": ["actions"] }, { "required": ["resource"] }, { "required": ["spells"] }, { "required": ["spellsByChoice"] }, { "required": ["spellSourceKey"] }, { "required": ["afterFeatChoice"] }, { "required": ["cantripChoiceLabel"] }, { "required": ["behavior"] }, { "required": ["parts"] }, { "required": ["select"] }, { "required": ["mount"] }
+            { "required": ["actions"] }, { "required": ["resource"] }, { "required": ["spells"] }, { "required": ["spellsByChoice"] }, { "required": ["spellSourceKey"] }, { "required": ["afterFeatChoice"] }, { "required": ["cantripChoiceLabel"] }, { "required": ["behavior"] }, { "required": ["parts"] }, { "required": ["select"] }, { "required": ["mount"] }, { "required": ["picks"] }, { "required": ["grants"] }
           ]
         }
       },
@@ -122,7 +129,91 @@
         },
         "hint": { "$ref": "#/definitions/hint", "description": "勾選此選項（且達到能力等級）時顯示的跑團提示，文字為選項段落（不含名稱）。" },
         "featChoice": { "const": true, "description": "勾選後給予專長選擇（例如「選 1 個戰鬥風格專長」）；玩家自行管理專長時不提醒此選擇。" },
-        "attackNote": { "type": "string", "minLength": 1, "description": "勾選後加進武器攻擊備註的文字，例如「+1d8光/黯傷害」。會存進角色資料、取消時靠相同字串移除：不可改字。" }
+        "attackNote": { "type": "string", "minLength": 1, "description": "勾選後加進武器攻擊備註的文字，例如「+1d8光/黯傷害」。會存進角色資料、取消時靠相同字串移除：不可改字。" },
+        "grants": { "$ref": "#/definitions/grants", "description": "勾選此選項（且達到能力等級）時獲得的項目，例如守護者的軍用武器與重甲。" }
+      }
+    },
+    "pick": {
+      "type": "object",
+      "description": "玩家要做的一項選擇。",
+      "additionalProperties": false,
+      "required": ["kind", "count", "from"],
+      "properties": {
+        "kind": {
+          "enum": ["weaponMastery", "expertise", "skill", "language", "spellbookSpell"],
+          "description": "weaponMastery：武器精通；expertise：技能專精；skill：技能熟練；language：語言；spellbookSpell：免費加入法術書的法術。"
+        },
+        "count": {
+          "anyOf": [
+            { "type": "integer", "minimum": 1 },
+            { "type": "string", "pattern": "^[a-z][A-Za-z0-9]*$", "description": "特性表欄位名稱，數量隨等級變化（例如 weaponMastery）。" }
+          ],
+          "description": "要選幾個。"
+        },
+        "from": {
+          "anyOf": [
+            { "enum": ["proficient", "class", "any"] },
+            { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }
+          ],
+          "description": "可選範圍。proficient：已熟練的武器或技能；class：職業初始技能清單；any：全部（語言為一般與稀有語言）；或列出可選的技能名稱。expertise 一律只能選已熟練的技能，列出清單時再限縮。"
+        },
+        "exclude": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 }, "description": "不能選的項目（例如盜賊額外語言不能再選盜賊黑話）。" },
+        "fields": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/definitions/id" },
+          "description": "沿用既有存檔欄位 ID（依序對應每一個選擇，例如語言的 language-extra-2）；會寫進存檔，不可改名。武器精通省略時自動產生「能力ID-pick-序號」。"
+        },
+        "changeOn": { "enum": ["longRest", "levelUp"], "description": "可改選的時機（說明用；網站不限制改選）。" },
+        "school": { "type": "string", "pattern": "^[a-z]+$", "description": "spellbookSpell：限定的法術學派（例如 evocation）。" },
+        "maxLevel": { "type": "integer", "minimum": 1, "maximum": 9, "description": "spellbookSpell：法術環階上限。" }
+      }
+    },
+    "grants": {
+      "type": "object",
+      "description": "固定獲得的項目。",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "weapons": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "enum": ["simple", "martial"] }, "description": "武器熟練：simple 簡易武器、martial 軍用武器。" },
+        "armor": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "enum": ["light", "medium", "heavy", "shield"] }, "description": "護甲訓練。" },
+        "languages": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "field"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z]+(-[a-z]+)*$", "description": "語言選單的 value，例如 thieves-cant。" },
+              "field": { "$ref": "#/definitions/id", "description": "顯示此語言的存檔欄位 ID（例如 language-extra-1）。" }
+            }
+          },
+          "description": "固定學會的語言。"
+        },
+        "cantrips": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["count", "list"],
+          "properties": {
+            "count": { "type": "integer", "minimum": 1 },
+            "list": { "$ref": "#/definitions/id", "description": "戲法所屬職業法術列表（職業 ID）。" },
+            "label": { "type": "string", "minLength": 1, "description": "法術來源、缺項提醒與 PDF 顯示的名稱；未寫時用選項名稱。" }
+          },
+          "description": "額外學會的戲法數量與法術列表（選哪些由玩家在網站選）。數量 1 存在 <選項 ID>-cantrip 選單；2 以上存在 class-<選項 ID>-cantrip-<序號>。"
+        },
+        "checkBonus": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["skills", "ability", "min"],
+          "properties": {
+            "skills": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+            "ability": { "enum": ["str", "dex", "con", "int", "wis", "cha"] },
+            "min": { "type": "integer", "minimum": 0 }
+          },
+          "description": "這些技能檢定額外加上屬性調整值（至少 min），例如魔術使的奧秘與宗教加感知。"
+        }
       }
     },
     "hint": {

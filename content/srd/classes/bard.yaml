@@ -18,6 +18,10 @@ skills:
 weapons: 簡易武器
 tools: 任選三種樂器
 armor: 輕甲
+proficiencies:
+  weapons: { categories: [simple] }
+  armor: [light]
+  tools: { chooseFrom: [instrument], count: 3, field: bard-instrument- }
 equipment:
   A: |-
     皮甲、匕首 ×2、藝人套組、19 金幣\
@@ -95,6 +99,8 @@ features:
     level: 2
     name: 專精
     pdfMerge: true
+    picks:
+      - { kind: expertise, count: 2, from: proficient }
     text: |
       選擇 2 項你已熟練的技能改為**專精**，這些技能的熟練加值加倍。
   - id: bard-jack-of-all-trades

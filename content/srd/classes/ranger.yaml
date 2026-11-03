@@ -18,6 +18,9 @@ skills:
 weapons: 簡易武器和軍用武器
 tools: 無
 armor: 輕甲、中甲和盾牌
+proficiencies:
+  weapons: { categories: [simple, martial] }
+  armor: [light, medium, shield]
 equipment:
   A: 鑲釘皮甲、彎刀、短劍、長弓、箭矢(20)、箭袋、德魯伊法器（槲寄生枝條）、探索套組、7 金幣
   B: 150 金幣
@@ -64,6 +67,8 @@ features:
     level: 1
     name: 武器精通
     pdfMerge: true
+    picks:
+      - { kind: weaponMastery, count: 2, from: proficient, changeOn: longRest }
     text: |
       從你熟練的武器中選擇 2 種，取得其精通屬性，例如長弓、短劍。
 
@@ -71,6 +76,9 @@ features:
   - id: ranger-deft-explorer
     level: 2
     name: 熟練探險家
+    picks:
+      - { kind: expertise, count: 1, from: proficient }
+      - { kind: language, count: 2, from: any, exclude: [thieves-cant, druidic], fields: [language-extra-1, language-extra-2] }
     text: |
       你的技能與語言能力更加精進，獲得以下能力：
 
@@ -89,6 +97,8 @@ features:
         featChoice: true
       - id: ranger-druidic-warrior
         name: 選「德魯伊教戰士」
+        grants:
+          cantrips: { count: 2, list: druid, label: 德魯伊教戰士 }
         text: |
           學會 2 個德魯伊戲法，這些戲法視為你的遊俠法術，施法屬性為**感知**。每提升 1 級遊俠，可替換其中 1 個戲法。\
           推薦：神導術、流光閃靈。

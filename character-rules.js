@@ -156,6 +156,40 @@
     return getClassFeatureRules(className, subclassId).some(feature => feature.id === featureId && numericLevel >= feature.level);
   }
 
+  /** 職業的熟練機制資料（proficiencies：武器類別、護甲訓練、職業工具）；沒有時回傳 null。 */
+  function getClassProficiencies(className) {
+    return getClassRules(className)?.proficiencies || null;
+  }
+
+  /** 選擇在指定等級的數量：數字，或特性表欄位在該等級的值（未達最低等級時為 0）。 */
+  function getClassPickCount(className, pick, level) {
+    return typeof pick.count === "number" ? pick.count : getClassProgressionValue(className, pick.count, level) ?? 0;
+  }
+
+  /**
+   * 角色在此等級已取得的選擇（內容檔能力的 picks，含目前子職）；kind 有值時只列該種類。
+   * 每項為 { feature, pick, count }，count 是目前等級的數量，pick.fields 是存檔欄位 ID（可能比 count 多）。
+   */
+  function getClassPicks(className, level, { kind, subclassId } = {}) {
+    const numericLevel = Number.parseInt(level, 10) || 0;
+    return getClassFeatureRules(className, subclassId)
+      .filter(feature => feature.picks && numericLevel >= feature.level)
+      .flatMap(feature => feature.picks.filter(pick => !kind || pick.kind === kind)
+        .map(pick => ({ feature, pick, count: getClassPickCount(className, pick, numericLevel) })));
+  }
+
+  /**
+   * 此等級生效的 grants：能力層（取得能力即生效）與勾選中的選項（isChecked(選項 ID) 為 true）。
+   * 每項為 { feature, option, grants }，能力層的 option 為 null。
+   */
+  function getClassGrants(className, level, isChecked = () => false, subclassId) {
+    const numericLevel = Number.parseInt(level, 10) || 0;
+    return getClassFeatureRules(className, subclassId).filter(feature => numericLevel >= feature.level).flatMap(feature => [
+      ...(feature.grants ? [{ feature, option: null, grants: feature.grants }] : []),
+      ...(feature.options || []).filter(option => option.grants && isChecked(option.id)).map(option => ({ feature, option, grants: option.grants }))
+    ]);
+  }
+
   // 內容檔 values 公式：數字、NdM 骰子、四則運算、max()／min()／floor()／ceil() 與 {數值}。
   // 結果是數字，或骰子加常數（{ dice: [{ count, sides }], constant, hasConstant }），顯示為「1d8 + 3」。
   function tokenizeClassFormula(formula) {
@@ -808,6 +842,10 @@
     getSelectedSubclassId,
     getSelectedSubclass,
     hasClassFeature,
+    getClassProficiencies,
+    getClassPickCount,
+    getClassPicks,
+    getClassGrants,
     evaluateClassValue,
     getClassValueText,
     hasClassValue,

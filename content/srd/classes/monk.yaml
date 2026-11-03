@@ -18,6 +18,10 @@ skills:
 weapons: 簡易武器和具有輕型屬性的軍用武器
 tools: 任選一種工匠工具或樂器
 armor: 無
+proficiencies:
+  weapons: { categories: [simple], martialWithProperty: [輕型] }
+  armor: []
+  tools: { chooseFrom: [artisan, instrument], count: 1, field: monk-tool-proficiency- }
 equipment:
   A: 短矛、匕首 ×5、所選熟練項對應的工匠工具或樂器、探索套組、11 金幣
   B: 50 金幣

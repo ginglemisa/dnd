@@ -657,7 +657,33 @@ function getClassAlwaysPreparedSpellSpecs() {
   const classValue = document.getElementById("class")?.value || "";
   const level = Number.parseInt(levelValue || "0", 10) || 0;
   if (!level) return [];
-  const missionCantrips = MISSION_CANTRIP_CHOICES.flatMap(({ checkboxId, className, label, sourceLabel }) => {
+  return [...getClassBaseSpellSpecs(classValue, level), ...getClassFeatureCantripSpecs(classValue, level)];
+}
+
+// 職業選項給予的自選戲法欄（getClassFeatureCantripChoices，例如受祝福的勇士 2 個牧師戲法）。
+function getClassFeatureCantripSpecs(classValue, level) {
+  const chosen = window.SpellManagement?.collectClassFeatureCantrips() || {};
+  return getClassFeatureCantripChoices(classValue).flatMap(choice => {
+    if (level < choice.level || !document.getElementById(choice.checkboxId)?.checked) return [];
+    return choice.keys.map(key => ({
+      level: choice.level,
+      ring: "cantrips",
+      spellId: chosen[key] || "",
+      key,
+      source: CLASS_SPELL_SOURCE,
+      sourceName: choice.spellClassName,
+      sourceLabel: choice.label,
+      sourcePriority: 25,
+      sourceTag: "職業",
+      selectableSpellClass: choice.spellClass,
+      spellClass: choice.spellClass,
+      areaId: "cantrips-area"
+    }));
+  });
+}
+
+function getClassBaseSpellSpecs(classValue, level) {
+  const missionCantrips = getMissionCantripChoices().flatMap(({ checkboxId, className, label, sourceLabel }) => {
     const spellId = document.getElementById(`${checkboxId}-cantrip`)?.value || "";
     if (classValue !== className || level < 1 || !document.getElementById(checkboxId)?.checked || !spellId) return [];
     return [{
@@ -733,26 +759,6 @@ function getClassAlwaysPreparedSpellSpecs() {
       ritualAllowed: true,
       areaId: "level2spells-area"
     });
-    if (level >= 2 && document.getElementById("paladin-blessed-warrior")?.checked) {
-      for (let slot = 1; slot <= 2; slot += 1) {
-        const key = `class-paladin-blessed-warrior-cantrip-${slot}`;
-        const choice = window.SpellManagement?.collectClassFeatureCantrips()[key] || "";
-        specs.push({
-          level: 2,
-          ring: "cantrips",
-          spellId: choice,
-          key,
-          source: CLASS_SPELL_SOURCE,
-          sourceName: "牧師",
-          sourceLabel: "受祝福的勇士",
-          sourcePriority: 25,
-          sourceTag: "職業",
-          selectableSpellClass: "cleric",
-          spellClass: "cleric",
-          areaId: "cantrips-area"
-        });
-      }
-    }
     return specs;
   }
   if (classValue !== "ranger") return [];
@@ -774,26 +780,6 @@ function getClassAlwaysPreparedSpellSpecs() {
     fixedCastLevel: 1,
     ritualAllowed: true
   }];
-  if (level >= 2 && document.getElementById("ranger-druidic-warrior")?.checked) {
-    for (let slot = 1; slot <= 2; slot += 1) {
-      const key = `class-ranger-druidic-warrior-cantrip-${slot}`;
-      const choice = window.SpellManagement?.collectClassFeatureCantrips()[key] || "";
-      specs.push({
-        level: 2,
-        ring: "cantrips",
-        spellId: choice,
-        key,
-        source: CLASS_SPELL_SOURCE,
-        sourceName: "德魯伊",
-        sourceLabel: "德魯伊教",
-        sourcePriority: 25,
-        sourceTag: "職業",
-        selectableSpellClass: "druid",
-        spellClass: "druid",
-        areaId: "cantrips-area"
-      });
-    }
-  }
   return specs;
 }
 

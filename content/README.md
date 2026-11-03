@@ -155,6 +155,37 @@ summary: 你的敏捷豁免有優勢。
 
 跑團說明與總覽照舊讀取整段（含卡片說明），所以有 `select` 的能力不可寫 `tabletop`／`summary`。
 
+## 選擇與固定獲得
+
+能力要玩家做的選擇（選幾個、從哪裡選）寫 `picks`；取得能力或勾選選項就固定獲得的項目寫 `grants`。網站依此決定欄位數、可選項目與缺項提醒，快速創角也讀同一份資料，不另寫規則。
+
+```yaml
+- id: rogue-thieves-cant
+  level: 1
+  name: 盜賊黑話
+  grants:
+    languages: [{ id: thieves-cant, field: language-extra-1 }]
+  picks:
+    - { kind: language, count: 1, from: any, exclude: [thieves-cant], fields: [language-extra-2] }
+```
+
+| `picks[]` 欄位 | 說明 |
+| --- | --- |
+| `kind` | `weaponMastery`（武器精通）、`expertise`（技能專精）、`skill`（技能熟練）、`language`（語言）、`spellbookSpell`（免費加入法術書的法術）。 |
+| `count` | 要選幾個：數字，或特性表欄位名稱（例如 `weaponMastery`，數量隨等級增加）。 |
+| `from` | 可選範圍：`proficient`（已熟練的武器或技能；武器精通、專精用）、`class`（職業初始技能清單）、`any`（全部；語言為一般與稀有語言），或列出技能名稱（專精時再限縮於已熟練的技能，例如法師的學者）。 |
+| `exclude` | 語言：不能選的語言（語言選單的 value）。 |
+| `fields` | 語言：沿用既有存檔欄位 ID（例如 `language-extra-2`），數量須等於 `count`。 |
+| `changeOn` | 可改選的時機（`longRest`、`levelUp`），說明用。 |
+| `school`、`maxLevel` | `spellbookSpell`：限定的法術學派與環階上限。 |
+
+- 武器精通：職業頁的能力段落輸出選單，存檔欄位自動產生「能力 ID-pick-序號」（例如 `fighter-weapon-mastery-pick-1`），欄位數是 `count` 在 `maxLevel` 以內的最大值；網站只顯示目前等級的數量，其餘欄位保留值但隱藏。選項是職業熟練（`proficiencies.weapons`）且有精通屬性的武器，值為武器名稱；選了精通武器後，攻擊列的精通標籤只顯示在所選武器上（一個都沒選時全部顯示）。
+- 專精沿用技能列的專精勾選框（職業有 `expertise` 選擇時才顯示勾選框）；語言使用 `fields` 的欄位，這兩種沒有新的存檔欄位。
+- 缺項提醒：武器精通、專精（專精勾選框總數少於本職業此等級的專精數量）與職業額外語言，達到能力等級仍未選滿時提醒。`skill`（先祖學識、額外熟練項）與 `spellbookSpell`（塑能學者）無法分辨技能或法術的來源，只有資料、網站不提醒。
+- `grants`（能力層）目前只支援 `languages`：`[{ id: 語言, field: 顯示此語言的欄位 ID }]`。
+- 選項的 `grants`：`weapons`（`[martial]` 等武器類別）、`armor`（`light`／`medium`／`heavy`／`shield`）、`cantrips`（`{ count, list: 職業 ID, label }`，額外戲法的數量與法表；`label` 是法術來源、缺項提醒與 PDF 顯示的名稱，未寫時用選項名稱。數量 1 是選項下方的戲法選單，欄位 `選項 ID-cantrip`，例如魔術使；2 以上在角色能力視窗與法術頁選，欄位 `class-選項 ID-cantrip-序號`，例如受祝福的勇士）、`checkBonus`（`{ skills, ability, min }`，這些技能檢定加上屬性調整值，至少 `min`）。勾選且達到能力等級才生效。
+- 欄位 ID（`fields`、語言的 `field`、自動產生的武器精通欄位、職業工具欄位）會寫進存檔與分享網址，列在 `class-id-baseline.json` 的 `fields`，不可改名。
+
 ## 插入點
 
 網站程式要在能力段落內插入自己的控制項（例如吟遊詩人逸聞子職「魔法發現」的法術選單）時寫 `mount`，在內文、選項與下拉選擇卡片之後輸出一個空容器 `<div id="ID" class="ID" aria-label="說明">`：
@@ -197,7 +228,12 @@ mount: { id: bard-magical-discoveries, label: 魔法發現法術選擇 }
 - `spellcasting.progression`：`full`（全施法者）、`half`（半施法者）、`pact`（契約魔法）、`none`。
 - `progression.<欄位>.format`：特性表顯示格式，`{}` 代入數值，例如 `+{}`（+2）、`{}d6`（1d6）、`1d{}`（1d8，數值是骰面）。
 - 網站依欄位名稱讀取的特性表欄位：`cantrips`（戲法數量）、`preparedSpells`（準備法術數量）、`spellSlots1`～`spellSlots4`（各環法術位）；契約魔法（`pact`）為 `spellSlots`（法術位數量）與 `spellSlotLevel`（法術位環階）；契術師的 `invocations`（魔能祈喚數量）。改名會讓網站讀不到。
-- `hitDie`、`saves`、`spellcasting.progression` 也供網站計算生命值、豁免熟練與是否具施法能力。
+- `hitDie`、`saves`、`spellcasting.progression` 也供網站計算生命值、豁免熟練與是否具施法能力；`skills` 供快速創角的技能選擇。
+- `weapons`、`armor`、`tools` 是創角頁的顯示文字；機制資料寫在 `proficiencies`，改其中一邊時另一邊要一併修改：
+  - `weapons`：`{ categories: [simple, martial], martialWithProperty: [靈巧, 輕型] }`，`martialWithProperty` 是另外熟練的軍用武器屬性（武器資料的屬性名稱）。
+  - `armor`：`[light, medium, heavy, shield]`，沒有時寫 `[]`。
+  - `tools`：`{ fixed: 盜賊工具, field: 欄位 ID }`，或 `{ chooseFrom: [instrument], count: 3, field: 欄位 ID 前綴 }`（工具組 ID 見 `tool-data.js`，欄位為前綴加序號）。
+  - 網站依此判斷武器與護甲熟練、武器精通可選的武器與職業工具欄位；守護者、哨衛等選項的額外熟練寫在選項的 `grants`。契術師刃之魔契的軍用武器與武僧的武藝仍由網站程式處理。
 - `values`：公式只能用數字、`d`、四則運算、`max()`／`min()`／`floor()`（無條件捨去，例如 `floor({level} / 2)`）／`ceil()`（無條件進位）與 `{數值}`，例如 `"{rageDamage}d6"`、`"max(1, {chaModifier})"`。公式中另可引用屬性調整值 `{strModifier}`、`{dexModifier}`、`{conModifier}`、`{intModifier}`、`{wisModifier}`、`{chaModifier}`（沒有屬性值時視為 0；文字中不可直接引用）。
   跑團顯示要加字樣時寫 `{ formula: "8 + {proficiencyBonus} + {wisModifier}", format: "（DC {}）" }`，`{}` 代入計算結果；`format` 的前後空白也會保留（夾在中文之間時用來和數值區隔，例如 `" {} 點"`）。同一個數值要在不同地方顯示不同字樣時另取名稱，例如 `rageUsesText: { formula: "{rageUses}", format: "{} 次" }`；只引用一個特性表欄位且該等級為「-」時保留頁面文字。骰子公式顯示為「1d8 + 3」（有常數項時一律顯示正負號，0 顯示「+ 0」）。
   屬性值或等級未填時，屬性調整值視為 0、等級視為 1；要改顯示其他文字時寫 `blank: "…"`，寫 `blank: keep` 則保留頁面文字。flow 寫法（`{ … }`）中含 `{}` 的字串須加引號。

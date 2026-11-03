@@ -18,6 +18,10 @@ skills:
 weapons: 簡易武器
 tools: 草藥工具
 armor: 輕甲和盾牌
+proficiencies:
+  weapons: { categories: [simple] }
+  armor: [light, shield]
+  tools: { fixed: 草藥工具, field: druid-fixed-tool-proficiency }
 equipment:
   A: 皮甲、盾牌、鐮刀、德魯伊法器（長棍）、探索套組、草藥工具、9 金幣
   B: 50 金幣
@@ -58,6 +62,8 @@ features:
     level: 1
     name: 德魯伊語
     pdfMerge: true
+    grants:
+      languages: [{ id: druidic, field: language-extra-1 }]
     spells:
       - id: speak-with-animals
     text: |
@@ -75,12 +81,16 @@ features:
     options:
       - id: druid-shaman
         name: 巫祝
+        grants:
+          cantrips: { count: 1, list: druid }
+          checkBonus: { skills: [奧秘, 自然], ability: wis, min: 1 }
         text: |
           額外學會 1 個德魯伊戲法。
 
           你的智力（[[奧秘]]／[[自然]]）檢定可額外加上**感知調整值**（至少 +1）。
       - id: druid-sentinel
         name: 哨衛
+        grants: { weapons: [martial], armor: [medium] }
         text: |
           獲得**軍用武器**熟練，並接受**中甲**訓練。
   - id: druid-spellcasting

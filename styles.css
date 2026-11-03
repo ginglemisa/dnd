@@ -4475,6 +4475,75 @@ html[data-ui-theme="warm"][data-theme="dark"] .circle-checkbox:checked {
   display: none;
 }
 
+/* 職業頁的武器精通選單（內容檔 picks）：版面同使命戲法選單，但手動管理法術時照常顯示。 */
+/* 武器精通選單依寬度排成多欄，窄螢幕固定兩欄；收窄內距讓武器名稱保留最多空間。 */
+.class-pick-slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 11.5rem), 1fr));
+  column-gap: 0.75rem;
+}
+
+.class-pick-slot {
+  min-width: 0;
+  margin-top: 0.65rem;
+}
+
+.class-pick-slot .feat-choice-control {
+  gap: 0.35rem;
+}
+
+.class-pick-slot select {
+  padding-inline: 0.6rem;
+}
+
+.class-pick-slot .feat-choice-view {
+  padding-inline: 0.5rem;
+}
+
+/* 窄螢幕：「查看」移到標籤右側，選單佔滿整欄。 */
+@media (width < 540px) {
+  .class-pick-slots {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 0.5rem;
+  }
+
+  .class-pick-slot:not([hidden]) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "label view" "select select";
+    align-items: end;
+    column-gap: 0.35rem;
+  }
+
+  .class-pick-slot .feat-choice-control {
+    display: contents;
+  }
+
+  .class-pick-slot > label {
+    grid-area: label;
+  }
+
+  .class-pick-slot select {
+    grid-area: select;
+  }
+
+  .class-pick-slot .feat-choice-view {
+    grid-area: view;
+    min-height: 2rem;
+    margin-bottom: 0.3rem;
+    padding: 0 0.5rem;
+  }
+}
+
+.class-pick-slot > label {
+  display: block;
+  margin-bottom: 0.3rem;
+}
+
+.class-pick-slot[hidden] {
+  display: none;
+}
+
 #class-feature-choices-modal :is(#metamagic-options-section, #eldritch-invocations-section) {
   margin: 0.85rem 0 0;
   min-width: 0;
@@ -5577,10 +5646,11 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   line-height: 1.55;
 }
 
+/* 選單對齊底部：標題列多出契約武器控制項或換列時，三個選單仍在同一高度。 */
 #tab-equipment .equipment-loadout-field {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  align-content: start;
+  align-content: end;
   gap: 0.35rem;
   min-width: 0;
   margin: 0;
@@ -5600,6 +5670,49 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   min-height: 3rem;
   padding: 0.65rem 0.75rem;
   font-size: var(--fs-sm);
+}
+
+/* 主手／副手標題列：刃之魔契的「契約武器」與傷害類型接在標題右側，欄寬不夠時換到下一列。 */
+.equipment-loadout-field__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem 0.5rem;
+  min-width: 0;
+}
+
+#tab-equipment .equipment-loadout-field__head > label {
+  width: auto;
+}
+
+.pact-weapon-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.pact-weapon-control[hidden] {
+  display: none;
+}
+
+#tab-equipment .equipment-loadout-field .pact-weapon-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--text-body);
+  font-weight: 750;
+  cursor: pointer;
+}
+
+#tab-equipment .equipment-loadout-field .pact-weapon-control select {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 4.75rem;
+  min-height: 2rem;
+  padding: 0.2rem 0.45rem;
+  font-size: var(--fs-xs);
 }
 
 .equipment-alternate-main-option {

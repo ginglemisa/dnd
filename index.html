@@ -81,7 +81,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261104-spellbook-card">
+  <link rel="stylesheet" href="styles.css?v=20261104-class-picks">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261103-roll-min" defer></script>
   <script src="monster.js?v=20261025-beast-perception" defer></script>
@@ -90,14 +90,14 @@
   <script src="class-content.private.generated.js" defer></script>
   <script src="race-content.generated.js?v=1f805d54bcfe" defer></script>
   <script src="background-content.generated.js?v=c9f6c95f6ead" defer></script>
-  <script src="tool-data.js?v=20261031-class-content" defer></script>
+  <script src="tool-data.js?v=20261104-class-picks" defer></script>
   <script src="feat-content.generated.js?v=472eb42de3f0" defer></script>
   <script src="equipment-notes.js?v=20261026-gear-weight" defer></script>
   <script src="spell-content.generated.js?v=0" defer></script>
   <script src="spell-list.js?v=20261104-spell-srd-classes" defer></script>
   <script src="condition.js?v=20261021-bonus-wording" defer></script>
   <script src="action-panel.js?v=20261104-familiar-references" defer></script>
-  <script src="character-rules.js?v=20261104-feat-spellcasting" defer></script>
+  <script src="character-rules.js?v=20261104-class-picks" defer></script>
   <script src="app-dialog.js?v=20261028-custom-spells" defer></script>
   <script src="custom-background.js?v=20261102-source-label" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
@@ -109,7 +109,7 @@
   <script src="tabletop-spells.js?v=20261104-familiar-references" defer></script>
   <script src="legal-modal.js?v=20261022-game-icons" defer></script>
   <script src="onboarding-tour.js?v=20261103-choice-highlight" defer></script>
-  <script src="quick-build.js?v=20261104-familiar-references" defer></script>
+  <script src="quick-build.js?v=20261104-class-picks" defer></script>
   <script src="spellbook.js?v=20261104-familiar-references" defer></script>
   <script src="spell-management.js?v=20261103-manual-toggle" defer></script>
   <script src="class-option-memory.js?v=20261024-class-split" defer></script>
@@ -923,7 +923,7 @@
 </div>
 
 
-<div class="section">
+<div class="section" id="skill-bonus-section">
   <button type="button" id="calculate-skills-button" onclick="fillSkills()">計算技能加值</button>
   <div class="skill-action-hint skill-legend"><span class="legend-badge"><span class="legend-box" role="img" aria-label="方框"></span>是熟練、<span class="legend-circle" data-expertise-legend role="img" aria-label="圓框"></span>為專精，</span><span>決定屬性後再按此鈕。</span></div>
   <div class="skill-action-hint">屬性、等級或勾選變動後，須重新計算。</div>
@@ -1098,11 +1098,23 @@
 
     <div class="equipment-loadout-controls">
     <div class="form-row equipment-loadout-field">
-      <label for="mainHand">主手</label>
+      <div class="equipment-loadout-field__head">
+        <label for="mainHand">主手</label>
+        <span class="pact-weapon-control" data-pact-weapon-hand="main" hidden>
+          <label class="pact-weapon-toggle" for="mainHandPactWeapon"><input type="checkbox" id="mainHandPactWeapon">契約武器</label>
+          <select id="mainHandPactDamage" aria-label="契約武器傷害類型"><option value="">原類型</option><option value="黯蝕">黯蝕</option><option value="心靈">心靈</option><option value="光耀">光耀</option></select>
+        </span>
+      </div>
 <select id="mainHand"><option value="">-- 請選擇 --</option><option value="短棒">短棒</option><option value="匕首">匕首</option><option value="巨棒">巨棒</option><option value="手斧">手斧</option><option value="標槍">標槍</option><option value="輕錘">輕錘</option><option value="硬頭錘">硬頭錘</option><option value="長棍">長棍</option><option value="鐮刀">鐮刀</option><option value="短矛">短矛</option><option value="飛鏢">飛鏢</option><option value="輕弩">輕弩</option><option value="短弓">短弓</option><option value="投石索">投石索</option><option value="戰斧">戰斧</option><option value="連枷">連枷</option><option value="長柄刀">長柄刀</option><option value="巨斧">巨斧</option><option value="巨劍">巨劍</option><option value="長戟">長戟</option><option value="騎槍">騎槍</option><option value="長劍">長劍</option><option value="巨錘">巨錘</option><option value="釘頭錘">釘頭錘</option><option value="長矛">長矛</option><option value="刺劍">刺劍</option><option value="彎刀">彎刀</option><option value="短劍">短劍</option><option value="三叉戟">三叉戟</option><option value="戰錘">戰錘</option><option value="戰鎬">戰鎬</option><option value="鞭">鞭</option><option value="吹箭筒">吹箭筒</option><option value="手弩">手弩</option><option value="重弩">重弩</option><option value="長弓">長弓</option><option value="火繩槍">火繩槍</option><option value="手槍">手槍</option></select>
     </div>
     <div class="form-row equipment-loadout-field">
-      <label id="offHandLabel" for="offHand">副手</label>
+      <div class="equipment-loadout-field__head">
+        <label id="offHandLabel" for="offHand">副手</label>
+        <span class="pact-weapon-control" data-pact-weapon-hand="off" hidden>
+          <label class="pact-weapon-toggle" for="offHandPactWeapon"><input type="checkbox" id="offHandPactWeapon">契約武器</label>
+          <select id="offHandPactDamage" aria-label="契約武器傷害類型"><option value="">原類型</option><option value="黯蝕">黯蝕</option><option value="心靈">心靈</option><option value="光耀">光耀</option></select>
+        </span>
+      </div>
       <select id="offHand" disabled=""><option disabled="">(雙手佔用)</option></select>
     </div>
     <div class="form-row equipment-loadout-field equipment-loadout-field--armor">
@@ -1363,8 +1375,8 @@
 
   <script src="sheet-utils.js?v=20261024-index-split"></script>
   <script src="feat-ui.js?v=20261102-feat-content"></script>
-  <script src="spell-sources.js?v=20261104-option-cantrips"></script>
-  <script src="class-features-ui.js?v=20261104-class-html-cleanup"></script>
+  <script src="spell-sources.js?v=20261104-class-picks"></script>
+  <script src="class-features-ui.js?v=20261104-class-picks"></script>
   <script>
 function openCarryCapacityRules(trigger) {
   return window.AppDialog.showMessage({
@@ -1695,7 +1707,6 @@ function updateSpeedDisplay() {
   }) || "--";
 }
 
-const EXPERTISE_VISIBLE_CLASSES = new Set(["", "bard", "ranger", "rogue", "wizard"]);
 const SEARCH_EXPERT_SKILLS = new Set(["洞悉", "調查", "察覺"]);
 const BASE_LANGUAGE_OPTIONS = [
   { value: "common-sign", label: "通用手語" },
@@ -1755,40 +1766,33 @@ function updateExtraLanguageFields() {
   const previousValues = container.dataset.languageClass === classValue
     ? new Map([...container.querySelectorAll("select")].map(select => [select.id, select.value])) : new Map();
   container.dataset.languageClass = classValue;
-  const levelValue = parseInt(document.getElementById("level")?.value || "", 10);
-  const rangerUnlocked = Number.isInteger(levelValue) && levelValue >= 2;
 
-  let fields = [];
-  if (classValue === "druid") {
-    fields = [{ id: "language-extra-1", fixedValue: "druidic", fixedLabel: "德魯伊語" }];
-  } else if (classValue === "rogue") {
-    fields = [
-      { id: "language-extra-1", fixedValue: "thieves-cant", fixedLabel: "盜賊黑話" },
-      { id: "language-extra-2", fixedValue: "", fixedLabel: "" }
-    ];
-  } else if (classValue === "ranger" && rangerUnlocked) {
-    fields = [
-      { id: "language-extra-1", fixedValue: "", fixedLabel: "" },
-      { id: "language-extra-2", fixedValue: "", fixedLabel: "" }
-    ];
-  }
+  // 欄位來自職業內容檔：能力的 grants.languages 是固定語言，picks 的 language 是自選語言（from: any 為一般與稀有語言，排除 exclude）。
+  const allLanguageOptions = [...BASE_LANGUAGE_OPTIONS, ...EXTRA_LANGUAGE_OPTIONS];
+  const fields = (window.getClassFeatureRules?.(classValue) || []).filter(feature => getClassRulesLevel() >= feature.level).flatMap(feature => [
+    ...(feature.grants?.languages || []).map(language => ({
+      id: language.field,
+      fixedValue: language.id,
+      fixedLabel: allLanguageOptions.find(option => option.value === language.id)?.label || language.id
+    })),
+    ...(feature.picks || []).filter(pick => pick.kind === "language").flatMap(pick => {
+      const excluded = new Set(pick.exclude || []);
+      const options = allLanguageOptions.filter(option => !excluded.has(option.value));
+      return pick.fields.map(id => ({ id, fixedValue: "", fixedLabel: "", options }));
+    })
+  ]);
 
   if (!fields.length) {
     container.innerHTML = "";
     return;
   }
 
-  const excludedRareLanguages = classValue === "ranger" ? new Set(["thieves-cant", "druidic"]) : new Set(["thieves-cant"]);
-  const selectableOptions = ["rogue", "ranger"].includes(classValue)
-    ? [...BASE_LANGUAGE_OPTIONS, ...EXTRA_LANGUAGE_OPTIONS.filter(option => !excludedRareLanguages.has(option.value))]
-    : BASE_LANGUAGE_OPTIONS;
-  const extendedOptionsHtml = createLanguageOptionsHtml(selectableOptions);
   const extraFieldsHtml = fields.map((field, idx) => {
     const label = `<label for="${field.id}" class="language-extra-label">額外語言 ${idx + 1}：</label>`;
     const disabledAttr = field.fixedValue ? "disabled" : "";
     const optionsHtml = field.fixedValue
       ? `<option value="${field.fixedValue}">${field.fixedLabel}</option>`
-      : `<option value="">-- 請選擇 --</option>${extendedOptionsHtml}`;
+      : `<option value="">-- 請選擇 --</option>${createLanguageOptionsHtml(field.options)}`;
     return `<div class="language-extra-row">${label}<select id="${field.id}" ${disabledAttr}>${optionsHtml}</select></div>`;
   }).join("");
 
@@ -1809,6 +1813,17 @@ function getToolProficiencyCatalog() {
     allTools: [],
     isTool: () => false
   };
+}
+
+// 職業工具欄位（內容檔的 proficiencies.tools）：固定工具（fixedTool，欄位 ID 為 idPrefix）
+// 或從工具組選 count 種（options，欄位 ID 為 idPrefix 加序號）。
+function getClassToolSpec(classValue) {
+  const tools = window.getClassProficiencies?.(classValue)?.tools;
+  if (!tools) return null;
+  if (tools.fixed) return { count: 1, fixedTool: tools.fixed, idPrefix: tools.field };
+  const groups = getToolProficiencyCatalog().groups;
+  const options = tools.chooseFrom.flatMap(id => groups.find(group => group.id === id)?.options || []);
+  return { count: tools.count, options, idPrefix: tools.field };
 }
 
 function createToolOptionsHtml(allowedValues = null) {
@@ -1935,7 +1950,7 @@ function syncClassToolRows() {
   const list = document.getElementById("tool-proficiency-list");
   if (!list) return;
   const classValue = document.getElementById("class")?.value || "";
-  const spec = getToolProficiencyCatalog().classProficiencies?.[classValue];
+  const spec = getClassToolSpec(classValue);
   // 固定工具若已由背景或手動列提供，沿用既有盜賊的去重行為。
   const fixedAlreadyPresent = spec?.fixedTool && getManualToolProficiencyRows()
     .some(row => row.querySelector("select")?.value === spec.fixedTool);
@@ -2030,7 +2045,7 @@ function replaceToolProficiencies(values, options = {}) {
   updateBackgroundToolRow(options.backgroundTool || "");
   syncClassToolRows();
   const backgroundValue = document.getElementById("tool-proficiency-0")?.value || "";
-  const spec = catalog.classProficiencies?.[document.getElementById("class")?.value];
+  const spec = getClassToolSpec(document.getElementById("class")?.value);
   const classToolValues = spec?.fixedTool ? [spec.fixedTool] : spec
     ? uniqueValues.filter(value => value !== backgroundValue && spec.options.includes(value)).slice(0, spec.count)
     : [];
@@ -2062,9 +2077,15 @@ function initializeToolProficiencyCard() {
 
 window.replaceToolProficiencies = replaceToolProficiencies;
 
+// 職業有專精選擇（內容檔 picks 的 expertise，不看等級）或尚未選職業時，技能列顯示專精勾選框。
+function classHasExpertisePick(classValue) {
+  if (!classValue) return true;
+  return (window.getClassFeatureRules?.(classValue) || []).some(feature => (feature.picks || []).some(pick => pick.kind === "expertise"));
+}
+
 function updateExpertiseVisibility() {
   const classValue = document.getElementById("class")?.value || "";
-  const classGrantsExpertise = EXPERTISE_VISIBLE_CLASSES.has(classValue);
+  const classGrantsExpertise = classHasExpertisePick(classValue);
   const hasSearchExpertFeat = hasSelectedFeat("尋物好手");
   let clearedUnavailableExpertise = false;
 
@@ -3145,17 +3166,13 @@ function fillSkills() {
   const selectedClass = document.getElementById("class")?.value || "";
   const level = parseInt(document.getElementById("level")?.value || "1", 10);
   const proficiencyBonus = getProficiencyBonus();
-  const wisdomCheckBonus = Math.max(1, getModifier("wis"));
-  const bonusSkills = new Set();
-
-  if (selectedClass === "cleric" && document.getElementById("cleric-trickster")?.checked) {
-    bonusSkills.add("奧秘");
-    bonusSkills.add("宗教");
-  }
-  if (selectedClass === "druid" && document.getElementById("druid-shaman")?.checked) {
-    bonusSkills.add("奧秘");
-    bonusSkills.add("自然");
-  }
+  // 選項的 grants.checkBonus（魔術使、巫祝）：這些技能檢定加上屬性調整值（至少 min）。
+  const skillCheckBonuses = new Map();
+  getActiveClassGrants().forEach(({ grants }) => {
+    if (!grants.checkBonus) return;
+    const bonus = Math.max(grants.checkBonus.min, getModifier(grants.checkBonus.ability));
+    grants.checkBonus.skills.forEach(skill => skillCheckBonuses.set(skill, (skillCheckBonuses.get(skill) || 0) + bonus));
+  });
 
   for (const skill in skillMap) {
     const ab = skillMap[skill];
@@ -3166,7 +3183,7 @@ function fillSkills() {
     if (!input || !profInput || !expInput) continue;
 
     const skillProficiencyBonus = expInput.checked ? proficiencyBonus * 2 : (profInput.checked ? proficiencyBonus : 0);
-    const featureBonus = bonusSkills.has(skill) ? wisdomCheckBonus : 0;
+    const featureBonus = skillCheckBonuses.get(skill) || 0;
     const jackOfAllTradesBonus = getJackOfAllTradesBonus(
       selectedClass, level, profInput.checked || expInput.checked
     );
@@ -3178,7 +3195,7 @@ function fillSkills() {
   updateAutomaticInitiative();
 }
 </script>
-<script src="pdf-launcher.js?v=20261104-spell-fields"></script>
+<script src="pdf-launcher.js?v=20261104-class-picks"></script>
 
 <script>
 // ====== 裝備,武器,法術相關工具 ======
@@ -3536,31 +3553,24 @@ function isMonkMartialArtsActive(weaponName = "") {
   return mainIsValid && offIsValid;
 }
 
-const ARMOR_TRAINING_BY_CLASS = Object.freeze({
-  barbarian: Object.freeze(["輕甲", "中甲", "盾牌"]),
-  bard: Object.freeze(["輕甲"]),
-  cleric: Object.freeze(["輕甲", "中甲", "盾牌"]),
-  druid: Object.freeze(["輕甲", "盾牌"]),
-  fighter: Object.freeze(["輕甲", "中甲", "重甲", "盾牌"]),
-  monk: Object.freeze([]),
-  paladin: Object.freeze(["輕甲", "中甲", "重甲", "盾牌"]),
-  ranger: Object.freeze(["輕甲", "中甲", "盾牌"]),
-  rogue: Object.freeze(["輕甲"]),
-  sorcerer: Object.freeze([]),
-  warlock: Object.freeze(["輕甲"]),
-  wizard: Object.freeze([])
-});
+// 護甲訓練的內容檔 ID → 護甲資料的分類名稱。
+const ARMOR_TRAINING_LABELS = Object.freeze({ light: "輕甲", medium: "中甲", heavy: "重甲", shield: "盾牌" });
+
+// 職業熟練與選擇依內容檔判斷時的等級：等級未填時視為 1 級（1 級能力與選項照常生效）。
+function getClassRulesLevel() {
+  return Number.parseInt(document.getElementById("level")?.value || "", 10) || 1;
+}
+
+// 目前職業此等級生效的 grants（能力層與勾選中的選項，例如守護者、哨衛）。
+function getActiveClassGrants() {
+  const cls = document.getElementById("class")?.value || "";
+  return window.getClassGrants?.(cls, getClassRulesLevel(), id => document.getElementById(id)?.checked === true) || [];
+}
 
 function getArmorTrainingProficiencies() {
   const cls = document.getElementById("class")?.value || "";
-  const proficiencies = new Set(ARMOR_TRAINING_BY_CLASS[cls] || []);
-  if (cls === "cleric" && document.getElementById("cleric-guardian")?.checked) {
-    proficiencies.add("重甲");
-  }
-  if (cls === "druid" && document.getElementById("druid-sentinel")?.checked) {
-    proficiencies.add("中甲");
-  }
-  return proficiencies;
+  const armor = [...(window.getClassProficiencies?.(cls)?.armor || []), ...getActiveClassGrants().flatMap(item => item.grants.armor || [])];
+  return new Set(armor.map(id => ARMOR_TRAINING_LABELS[id]));
 }
 
 function isArmorProficient(armor) {
@@ -3584,40 +3594,58 @@ function isWeaponProficient(weapon) {
     ...weapons_martial_ranged.map(w => w.名稱),
   ]).has(weapon.名稱);
 
-  const hasLight = weaponHasProp(weapon, "輕型");
-  const hasFinesse = weaponHasProp(weapon, "靈巧");
-  const isLightMartial = isMartial && hasLight;
+  // 武器熟練讀職業內容檔的 proficiencies.weapons 與選項 grants（守護者、哨衛的軍用武器）；
+  // 武僧的武藝不在內容檔的熟練欄位，由此處補上。契術師刃之魔契只熟練標記為契約武器的那一把（isPactWeaponHand）。
+  const proficiencies = window.getClassProficiencies?.(cls)?.weapons;
+  if (!proficiencies) return false;
+  if (cls === "monk" && weapon.名稱 === "武藝") return true;
+  // 職業本身熟練全部武器類別（野蠻人、戰士等）時對任何武器都熟練。
+  if (["simple", "martial"].every(category => (proficiencies.categories || []).includes(category))) return true;
+  const categories = new Set([...(proficiencies.categories || []), ...getActiveClassGrants().flatMap(item => item.grants.weapons || [])]);
+  if (isSimple) return categories.has("simple");
+  if (!isMartial) return false;
+  return categories.has("martial") || (proficiencies.martialWithProperty || []).some(property => weaponHasProp(weapon, property));
+}
 
-  const simpleAndMartial = ["barbarian", "fighter", "paladin", "ranger"];
-  if (simpleAndMartial.includes(cls)) return true;
+// 刃之魔契：主手或副手可標記為契約武器（同時只有一把，兩把都勾時以主手為準）。
+// 契約武器熟練、可用魅力計算命中與傷害，傷害類型可改為黯蝕、心靈或光耀。
+const PACT_WEAPON_HANDS = Object.freeze({
+  main: Object.freeze({ selectId: "mainHand", checkboxId: "mainHandPactWeapon", damageId: "mainHandPactDamage" }),
+  off: Object.freeze({ selectId: "offHand", checkboxId: "offHandPactWeapon", damageId: "offHandPactDamage" })
+});
 
-  if (cls === "warlock") {
-    const hasPactBlade = hasWarlockInvocation("刃之魔契");
-    return isSimple || (hasPactBlade && isMartial);
-  }
+function canUsePactWeapon() {
+  return document.getElementById("class")?.value === "warlock" && hasWarlockInvocation("刃之魔契");
+}
 
-  const simpleOnly = ["bard", "sorcerer", "wizard"];
-  if (simpleOnly.includes(cls)) return isSimple;
+function getPactWeaponHandWeapon(hand) {
+  const name = document.getElementById(PACT_WEAPON_HANDS[hand]?.selectId)?.value || "";
+  return name === "武藝" ? null : getWeaponByName(name) || null;
+}
 
-  if (cls === "cleric") {
-    const guardian = document.getElementById("cleric-guardian")?.checked;
-    return isSimple || (guardian && isMartial);
-  }
+function isPactWeaponHand(hand) {
+  const config = PACT_WEAPON_HANDS[hand];
+  if (!config || !canUsePactWeapon() || !getPactWeaponHandWeapon(hand)) return false;
+  if (!document.getElementById(config.checkboxId)?.checked) return false;
+  return hand !== "off" || !isPactWeaponHand("main");
+}
 
-  if (cls === "druid") {
-    const sentinel = document.getElementById("druid-sentinel")?.checked;
-    return isSimple || (sentinel && isMartial);
-  }
+function getPactWeaponDamageType(hand) {
+  return isPactWeaponHand(hand) ? document.getElementById(PACT_WEAPON_HANDS[hand].damageId)?.value || "" : "";
+}
 
-  if (cls === "monk") {
-    return weapon.名稱 === "武藝" || isSimple || isLightMartial;
-  }
-
-  if (cls === "rogue") {
-    return isSimple || (isMartial && (hasLight || hasFinesse));
-  }
-
-  return false;
+function syncPactWeaponControls() {
+  const available = canUsePactWeapon();
+  Object.entries(PACT_WEAPON_HANDS).forEach(([hand, config]) => {
+    const weapon = available ? getPactWeaponHandWeapon(hand) : null;
+    const control = document.querySelector(`[data-pact-weapon-hand="${hand}"]`);
+    if (control) control.hidden = !weapon;
+    const damage = document.getElementById(config.damageId);
+    if (!damage) return;
+    damage.disabled = !document.getElementById(config.checkboxId)?.checked;
+    // 不改傷害類型時顯示武器原本的類型。
+    damage.options[0].textContent = weapon?.傷害.split(/\s+/u).slice(1).join("") || "原類型";
+  });
 }
 
 function hasTwoWeaponFightingStyleFeat() {
@@ -3632,20 +3660,22 @@ function hasDefenseFightingStyleFeat() {
   return hasSelectedFeat("防禦");
 }
 
-const WEAPON_MASTERY_CLASSES = new Set(["barbarian", "fighter", "paladin", "ranger", "rogue"]);
 const attackCalculationDetails = { main: null, off: null };
 
+// 有武器精通選擇（內容檔 picks 的 weaponMastery）的職業才顯示武器的精通標籤。
 function hasWeaponMasteryFeature() {
   const cls = document.getElementById("class")?.value || "";
-  return WEAPON_MASTERY_CLASSES.has(cls);
+  return (window.getClassPicks?.(cls, getClassRulesLevel(), { kind: "weaponMastery" }) || []).length > 0;
 }
 
 function normalizeWeaponRuleName(value) {
   return String(value || "").trim().replace(/\s*[（(].*$/u, "");
 }
 
+// 精通標籤只顯示在職業頁武器精通選單選了的武器；一個都沒選（例如舊存檔）時，熟練的武器都顯示並由缺項提醒補選。
 function updateWeaponMasteryBadges() {
   const canUseMastery = hasWeaponMasteryFeature();
+  const selectedMasteries = window.getSelectedWeaponMasteries?.() || new Set();
   [
     { hand: "main", selectId: "mainHand", attackNameId: "atk-main-name" },
     { hand: "off", selectId: "offHand", attackNameId: "atk-off-name" }
@@ -3657,6 +3687,7 @@ function updateWeaponMasteryBadges() {
       : document.getElementById(attackNameId)?.value.trim() || "";
     const weapon = getAllWeaponsWithShield().find(item => item.名稱 === weaponName);
     const mastery = canUseMastery && weapon?.名稱 !== "盾牌" && hasMeaningfulEquipmentValue(weapon?.精通)
+      && (!selectedMasteries.size || selectedMasteries.has(weapon.名稱))
       ? String(weapon.精通).trim()
       : "";
     badge.hidden = !mastery;
@@ -3769,13 +3800,13 @@ function updateEquipmentLoadoutSummary() {
     hasMeaningfulEquipmentValue(armor.力量需求) ? `力量需求 ${String(armor.力量需求).replace(/^力量\s*/u, "")}` : "",
     hasMeaningfulEquipmentValue(armor.隱匿懲罰) ? buildStealthPenaltyDetail(armor.隱匿懲罰) : ""
   ].filter(Boolean) : [];
-  const weaponWarning = weapon => {
+  const weaponWarning = (weapon, hand) => {
     if (!weapon) return "";
     if (weapon.名稱 === "盾牌") return isShieldProficient() ? "" : "盾牌未熟練";
-    return isWeaponProficient(weapon) ? "" : "武器未熟練";
+    return isWeaponProficient(weapon) || isPactWeaponHand(hand) ? "" : "武器未熟練";
   };
-  const mainWeaponWarning = weaponWarning(mainWeapon);
-  const offWeaponWarning = weaponWarning(offWeapon);
+  const mainWeaponWarning = weaponWarning(mainWeapon, "main");
+  const offWeaponWarning = weaponWarning(offWeapon, "off");
   const armorWarning = armor && !isArmorProficient(armor) ? "護甲未熟練" : "";
 
   const summaryRows = [
@@ -3816,7 +3847,10 @@ function calculateHandAttacks(options = {}) {
     const isRanged = isRangedWeapon(weapon);
     const isDexEligible = weaponHasProp(weapon, "靈巧");
     const pb = getProficiencyBonus();
-    const proficient = isMonkMartialArts ? true : isWeaponProficient(weapon);
+    const pactWeapon = isPactWeaponHand(hand.key);
+    const pactDamageType = getPactWeaponDamageType(hand.key);
+    const weaponDamage = pactDamageType ? `${weapon.傷害.split(/\s+/u)[0]} ${pactDamageType}` : weapon.傷害;
+    const proficient = isMonkMartialArts || pactWeapon ? true : isWeaponProficient(weapon);
     const useMonkProficientFormula = cls === "monk" && proficient && isMonkMartialArtsActive(weaponName) && isMonkWeapon(weapon);
     const shillelaghEffect = hand.key === shillelaghTargetHand
       ? getPreparedShillelaghEffect(weaponName, strMod)
@@ -3834,6 +3868,9 @@ function calculateHandAttacks(options = {}) {
     } else {
       attackAbilityMod = strMod;
     }
+    const charismaMod = getModifier("cha");
+    const usePactCharisma = pactWeapon && !shillelaghEffect && !useMonkProficientFormula && charismaMod > attackAbilityMod;
+    if (usePactCharisma) attackAbilityMod = charismaMod;
 
     let hitBonus = attackAbilityMod + (proficient ? pb : 0);
     // 箭術判斷放在命中計算最後：主手/副手只要是遠程武器都 +2
@@ -3858,10 +3895,12 @@ function calculateHandAttacks(options = {}) {
       const damageType = weapon.傷害.split(/\s+/).slice(1).join(" ");
       damage = formatWeaponDamage(`${selectedDie} ${damageType}`, attackAbilityMod);
     } else {
-      damage = formatWeaponDamage(weapon.傷害, shouldApplyDamageMod ? attackAbilityMod : null);
+      damage = formatWeaponDamage(weaponDamage, shouldApplyDamageMod ? attackAbilityMod : null);
     }
     const abilityLabel = shillelaghEffect
       ? shillelaghEffect.abilityLabel
+      : usePactCharisma
+      ? "魅力"
       : useMonkProficientFormula
       ? (dexMod > strMod ? "敏捷" : "力量")
       : (isRanged ? "敏捷" : (isDexEligible && dexMod > strMod ? "敏捷" : "力量"));
@@ -3882,7 +3921,7 @@ function calculateHandAttacks(options = {}) {
           : (useMonkProficientFormula ? damage.match(/^\d+d\d+/u)?.[0] || weapon.傷害.split(/\s+/u)[0] : weapon.傷害.split(/\s+/u)[0]),
         damageModifier: useMonkProficientFormula || shouldApplyDamageMod ? attackAbilityMod : null,
         omittedOffHandModifier: !useMonkProficientFormula && hand.key === "off" && !hand.usesMainHandRules && !hasTwoWeaponFighting && attackAbilityMod > 0,
-        damageType: shillelaghEffect?.damageType || weapon.傷害.split(/\s+/u).slice(1).join(" "),
+        damageType: shillelaghEffect?.damageType || weaponDamage.split(/\s+/u).slice(1).join(" "),
         hit,
         damage
       }
@@ -3908,6 +3947,7 @@ function populateHandAttacks(options = {}) {
 }
 
 function renderHandAttacks(options = {}) {
+  syncPactWeaponControls();
   updateWeaponMasteryBadges();
   if (isWeaponAttackAutomationEnabled() || options.force) {
     calculateHandAttacks().forEach(result => {
@@ -4550,7 +4590,8 @@ document.addEventListener("change", (e) => {
 
   if (target.id === "manual-feat-management"
       || target.id === "druid-land"
-      || target.dataset.classCantripKey || target.closest("#classFeatures, #metamagicOptions, #eldritch-invocations-output, #feats-area")) {
+      || target.dataset.classCantripKey || target.classList.contains("circle-checkbox")
+      || target.closest("#classFeatures, #metamagicOptions, #eldritch-invocations-output, #feats-area, #extra-language-container")) {
     updateClassFeatureChoiceReminder();
   }
 });
@@ -4941,6 +4982,7 @@ function isShareFieldRelevant(id, data) {
   if (id.startsWith("monk-tool-proficiency-")) return classValue === "monk";
   if (id === "rogue-fixed-tool-proficiency") return classValue === "rogue";
   if (id === "sorcerer-elemental-affinity-damage-type" || id.startsWith("metamagic-option-")) return classValue === "sorcerer";
+  if (Object.values(PACT_WEAPON_HANDS).some(config => id === config.checkboxId || id === config.damageId)) return classValue === "warlock";
   if (id.startsWith("eldritch-invocation-") || id.startsWith("bard-instrument-")) {
     return id.startsWith("eldritch-invocation-") ? classValue === "warlock" : classValue === "bard";
   }
@@ -5113,13 +5155,20 @@ function applyStateObjectNow(data) {
       el.dispatchEvent(new Event('change'));
     }
     subclassReplaced = restoreSubclassSelection(data);
+    // 武器精通選單依職業、等級重建；兩者還原後再補回選擇，不受 JSON 欄位順序影響。
+    renderClassPickChoices();
+    getWeaponMasteryPickControls().forEach(select => {
+      if (Object.hasOwn(data, select.id) && Array.from(select.options).some(option => option.value === data[select.id])) select.value = data[select.id];
+    });
+    syncClassPickChoices();
+    updateWeaponMasteryBadges();
     syncCharacterSizeFromRace(data[CHARACTER_SIZE_STATE_KEY]);
     // Class/level can rebuild these controls before all saved fields have been
     // applied (especially on a fresh share page). Restore their choices once
     // the final class and level are in place.
     setBardMagicalDiscoverySelection(data.__bardMagicalDiscoverySelection, { sync: false });
     renderBardMagicalDiscoveryControls();
-    MISSION_CANTRIP_CHOICES.forEach(({ checkboxId }) => {
+    getMissionCantripChoices().forEach(({ checkboxId }) => {
       const checkbox = document.getElementById(checkboxId);
       const select = document.getElementById(`${checkboxId}-cantrip`);
       if (checkbox && Object.hasOwn(data, checkboxId)) checkbox.checked = data[checkboxId] === true;
@@ -6178,6 +6227,20 @@ window.addEventListener("DOMContentLoaded", async function() {
     refreshEquipmentEffects();
   });
   main2ShieldToggle?.addEventListener("change", refreshEquipmentEffects);
+  // 契約武器同時只有一把：勾選一手時取消另一手。
+  Object.values(PACT_WEAPON_HANDS).forEach(config => {
+    document.getElementById(config.checkboxId)?.addEventListener("change", event => {
+      if (event.target.checked) {
+        Object.values(PACT_WEAPON_HANDS).filter(other => other !== config).forEach(other => {
+          const input = document.getElementById(other.checkboxId);
+          if (input) input.checked = false;
+        });
+      }
+      syncPactWeaponControls();
+      refreshEquipmentEffects();
+    });
+    document.getElementById(config.damageId)?.addEventListener("change", refreshEquipmentEffects);
+  });
   updateOffHandRolePresentation();
   updateEquipmentLoadoutSummary();
   // Structured spell lists are initialized without building spell forms.

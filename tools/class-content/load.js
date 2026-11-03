@@ -2,7 +2,7 @@
 "use strict";
 const fs = require("fs");
 const path = require("path");
-const { ROOT } = require("../content/site-sources");
+const { ROOT, loadSkillAbilities, loadToolCatalog } = require("../content/site-sources");
 const { ContentError } = require("../content/errors");
 const { tableValueText } = require("../content/markdown");
 const { CONTENT_DIR, createSchemaValidators, schemaErrors, readYamlFile, listYaml } = require("../content/yaml");
@@ -94,6 +94,11 @@ function loadContent({ packs = PACKS } = {}) {
     else owner.subclasses.push(subclass);
   }
   if (!errors.length) classes.forEach(classDef => checkClass(classDef, errors));
+  // 選項給予的戲法須指向存在的職業法術列表。
+  if (!errors.length) classes.forEach(classDef => [classDef, ...classDef.subclasses].forEach(owner => owner.features.forEach(feature => {
+    (feature.options || []).filter(option => option.grants?.cantrips && !classes.has(option.grants.cantrips.list))
+      .forEach(option => errors.push(`${owner.file}（${feature.name}）：選項 ${option.id} 的 grants.cantrips.list「${option.grants.cantrips.list}」不是職業 ID`));
+  })));
   if (errors.length) throw new ContentError(`內容檢查失敗（${errors.length} 項）：\n- ${errors.join("\n- ")}`);
   return { classes, multiclassRules };
 }
@@ -101,6 +106,20 @@ function loadContent({ packs = PACKS } = {}) {
 // 文字中 {名稱|…} 的來源：特性表欄位、values 或內建數值。
 function getValueNames(classDef) {
   return new Set([...Object.keys(classDef.progression || {}), ...Object.keys(classDef.values || {}), ...Object.keys(BUILT_IN_VALUES)]);
+}
+
+// 選擇（picks）最多要幾個欄位：數字，或特性表欄位在 maxLevel 以內的最大值。
+function pickSlotCount(classDef, pick) {
+  if (typeof pick.count === "number") return pick.count;
+  return Math.max(0, ...Object.values(classDef.progression?.[pick.count]?.byLevel || {}).filter(Number.isInteger));
+}
+
+// 選擇寫進存檔的欄位 ID：fields 沿用既有欄位；武器精通自動產生「能力ID-pick-序號」；其他種類沒有自己的欄位
+// （專精、技能是既有的技能勾選框，法術書法術存在法術書）。
+function getPickFields(classDef, feature, pick) {
+  if (pick.fields) return pick.fields;
+  if (pick.kind !== "weaponMastery") return [];
+  return Array.from({ length: pickSlotCount(classDef, pick) }, (_, index) => `${feature.id}-pick-${index + 1}`);
 }
 
 // 能力的所有跑團按鈕：能力層、子能力（parts）與選項層。
@@ -111,6 +130,52 @@ function getActions(feature) {
 // 職業附錄小節的跑團按鈕（例如魔能祈喚的魔能斬擊）。
 function getAppendixActions(classDef) {
   return (classDef.appendix || []).flatMap(item => (item.parts || []).flatMap(part => part.actions || []));
+}
+
+const PICK_FROM = Object.freeze({
+  weaponMastery: ["proficient"],
+  expertise: ["proficient", "list"],
+  skill: ["class", "any", "list"],
+  language: ["any"],
+  spellbookSpell: ["any"]
+});
+
+function checkPicks(classDef, feature, where, errors, claimField) {
+  const skills = loadSkillAbilities();
+  const checkSkills = (names, label) => names.filter(name => !Object.hasOwn(skills, name))
+    .forEach(name => errors.push(`${where}：${label}的技能「${name}」不存在`));
+  (feature.picks || []).forEach((pick, index) => {
+    const label = `picks[${index}]（${pick.kind}）`;
+    const from = Array.isArray(pick.from) ? "list" : pick.from;
+    if (!PICK_FROM[pick.kind].includes(from)) errors.push(`${where}：${label}的 from 只能是 ${PICK_FROM[pick.kind].join("、")}`);
+    if (Array.isArray(pick.from)) checkSkills(pick.from, label);
+    if (typeof pick.count === "string" && !classDef.progression?.[pick.count]) errors.push(`${where}：${label}的 count「${pick.count}」不是特性表欄位`);
+    if ((pick.school || pick.maxLevel) && pick.kind !== "spellbookSpell") errors.push(`${where}：${label}的 school／maxLevel 只用於 spellbookSpell`);
+    if (pick.kind === "spellbookSpell" && !(pick.school && pick.maxLevel)) errors.push(`${where}：${label}須寫 school 與 maxLevel`);
+    if (pick.exclude && pick.kind !== "language") errors.push(`${where}：${label}的 exclude 只用於語言`);
+    if (pick.kind === "language" && !pick.fields) errors.push(`${where}：${label}須寫 fields（語言的存檔欄位）`);
+    if (pick.fields && pick.kind !== "language") errors.push(`${where}：${label}的 fields 只用於語言`);
+    if (pick.fields && pick.fields.length !== pickSlotCount(classDef, pick)) errors.push(`${where}：${label}的 fields 數量須等於 count`);
+    getPickFields(classDef, feature, pick).forEach(claimField);
+  });
+  const grantSources = [{ grants: feature.grants, label: "grants" }, ...(feature.options || []).map(option => ({ grants: option.grants, label: `選項 ${option.id} 的 grants` }))];
+  grantSources.filter(source => source.grants).forEach(({ grants, label }) => {
+    (grants.languages || []).forEach(language => claimField(language.field));
+    if (grants.checkBonus) checkSkills(grants.checkBonus.skills, `${label}.checkBonus `);
+  });
+  if (feature.grants && Object.keys(feature.grants).some(key => key !== "languages")) errors.push(`${where}：能力的 grants 目前只支援 languages（其他項目寫在選項）`);
+}
+
+// 職業層的熟練機制資料：工具須存在於 tool-data.js 的工具目錄。
+function checkProficiencies(classDef, errors, claimField) {
+  const tools = classDef.proficiencies?.tools;
+  if (!tools) return;
+  const catalog = loadToolCatalog();
+  const groupIds = new Set(catalog.groups.map(group => group.id));
+  if (tools.fixed && !catalog.isTool(tools.fixed)) errors.push(`${classDef.file}：proficiencies.tools.fixed「${tools.fixed}」不在工具目錄`);
+  (tools.chooseFrom || []).filter(id => !groupIds.has(id)).forEach(id => errors.push(`${classDef.file}：proficiencies.tools.chooseFrom 的工具組「${id}」不存在`));
+  if (tools.fixed) claimField(tools.field);
+  else Array.from({ length: tools.count }, (_, index) => claimField(`${tools.field}${index + 1}`));
 }
 
 function checkClass(classDef, errors) {
@@ -133,6 +198,7 @@ function checkClass(classDef, errors) {
     if (!levels.includes(1)) errors.push(`${classDef.file}：特性表欄位 ${name} 須包含 1 級`);
     levels.filter(level => level > classDef.maxLevel).forEach(level => errors.push(`${classDef.file}：特性表欄位 ${name} 的 ${level} 級超過 maxLevel`));
   }
+  checkProficiencies(classDef, errors, id => claim(persistedIds, id, classDef.file, "工具欄位 ID"));
   // 依等級的文字值（values 的 byLevel）只能用在文字的 {名稱|…}，不可用於公式、次數。
   const textValues = new Set(Object.entries(classDef.values || {}).filter(([, value]) => value.byLevel || value.fromTable).map(([name]) => name));
   const allFeatures = [classDef, ...classDef.subclasses].flatMap(owner => owner.features);
@@ -236,6 +302,8 @@ function checkClass(classDef, errors) {
         if (/^#/m.test(feature.select.text || "")) errors.push(`${where}：下拉選擇卡片的文字不可使用「#### 」小節`);
         if (feature.tabletop || feature.summary) errors.push(`${where}：有 select 的能力不可寫 tabletop／summary`);
       }
+      // 選擇（picks）與固定獲得（grants）：數量、範圍與存檔欄位。
+      checkPicks(classDef, feature, where, errors, id => claim(persistedIds, id, where, "選擇欄位 ID"));
       // 4 級額外戲法選單的標籤：網站由 classRules 取得，須和 afterFeatChoice 文字裡的粗體標籤一致。
       if (feature.cantripChoiceLabel && !feature.afterFeatChoice?.includes(`**${feature.cantripChoiceLabel}`)) errors.push(`${where}：afterFeatChoice 須以粗體寫出 cantripChoiceLabel「${feature.cantripChoiceLabel}」`);
       // 插入點：DOM ID 與選項、下拉選單 ID 同在職業頁上，不可重複。
@@ -303,4 +371,4 @@ function checkClass(classDef, errors) {
   }
 }
 
-module.exports = { loadContent, getActions, getAppendixActions, BUILT_IN_VALUES };
+module.exports = { loadContent, getActions, getAppendixActions, getPickFields, BUILT_IN_VALUES };

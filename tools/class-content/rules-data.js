@@ -3,6 +3,7 @@
 "use strict";
 const { renderInline, tableValueText } = require("../content/markdown");
 const { orderedSubclasses } = require("./render");
+const { getPickFields } = require("./load");
 
 const ABILITY_CODES = Object.freeze({ 力量: "str", 敏捷: "dex", 體質: "con", 智力: "int", 感知: "wis", 魅力: "cha" });
 // 只供職業頁與跑團說明使用的文字與排版欄位：機制資料不含這些欄位。
@@ -17,10 +18,12 @@ function stripText(value) {
 }
 
 // 選項的 text 是勾選框說明，網站程式不需要；select 只保留 ID 與選項（值、名稱）。
-function featureRules(feature) {
+// 選擇（picks）補上存檔欄位 ID 與最多欄位數，網站不必再推算。
+function featureRules(feature, classDef) {
   const rules = stripText(feature);
   if (rules.options) rules.options = rules.options.map(option => stripText(option));
   if (rules.select) rules.select = { id: feature.select.id, choices: feature.select.choices };
+  if (rules.picks) rules.picks = rules.picks.map(pick => ({ ...pick, fields: getPickFields(classDef, feature, pick) }));
   return rules;
 }
 
@@ -30,8 +33,8 @@ function profileText(text, where) {
 }
 
 // 只有文字的等級補充說明（沒有 name）沒有機制，不輸出。
-function namedFeatures(features) {
-  return features.filter(feature => feature.name).map(featureRules);
+function namedFeatures(features, classDef) {
+  return features.filter(feature => feature.name).map(feature => featureRules(feature, classDef));
 }
 
 // fromTable 在建置時由表格組成文字，網站收到的是與 byLevel 相同的 1 級起文字。
@@ -58,15 +61,18 @@ function classRules(classDef, appendixHtml = []) {
       armor: profileText(classDef.armor, `${classDef.file} armor`),
       equipment: profileText(classDef.equipment.A, `${classDef.file} equipment.A`)
     },
+    // 創角的技能選擇與熟練機制資料（快速創角、武器與護甲熟練、武器精通可選的武器、職業工具欄位）。
+    skills: classDef.skills,
+    ...(classDef.proficiencies ? { proficiencies: classDef.proficiencies } : {}),
     progression: classDef.progression || {},
     values: siteValues(classDef),
-    features: namedFeatures(classDef.features),
+    features: namedFeatures(classDef.features, classDef),
     // 子職（預設子職在前）：網站的子職選單依此順序。
     subclasses: orderedSubclasses(classDef).map(subclass => ({
       id: subclass.id,
       name: subclass.name,
       shortName: subclass.shortName,
-      features: namedFeatures(subclass.features)
+      features: namedFeatures(subclass.features, classDef)
     })),
     appendix: (classDef.appendix || []).map((item, index) => ({
       name: item.name,

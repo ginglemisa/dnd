@@ -7,6 +7,8 @@ features:
   - id: bard-bonus-proficiencies
     level: 3
     name: 額外熟練項
+    picks:
+      - { kind: skill, count: 3, from: any }
     text: |
       你獲得 3 項自選技能的熟練。
   - id: bard-cutting-words
