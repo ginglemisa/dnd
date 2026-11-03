@@ -18,6 +18,9 @@ skills:
 weapons: 簡易武器
 tools: 無
 armor: 無
+proficiencies:
+  weapons: { categories: [simple] }
+  armor: []
 equipment:
   A: 短矛、匕首 ×2、奧術法器（水晶）、地城套組、28 金幣
   B: 50 金幣

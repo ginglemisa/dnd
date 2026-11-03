@@ -6,7 +6,7 @@ const path = require("path");
 const { ROOT } = require("../content/site-sources");
 const { CONTENT_DIR } = require("../content/yaml");
 const { compareBaseline } = require("../content/baseline");
-const { getActions, getAppendixActions } = require("./load");
+const { getActions, getAppendixActions, getPickFields } = require("./load");
 
 const BASELINE_FILES = Object.freeze({
   srd: path.join(ROOT, "class-id-baseline.json"),
@@ -21,7 +21,8 @@ const CATEGORIES = Object.freeze({
   selects: "下拉選單 ID",
   selectValues: "下拉選單的選項值（下拉選單 ID=值）",
   attackNotes: "選項的攻擊備註（存進角色攻擊備註欄，取消勾選時以相同字串移除）",
-  spellSourceKeys: "子職法術的來源識別碼（存進角色法術清單）"
+  spellSourceKeys: "子職法術的來源識別碼（存進角色法術清單）",
+  fields: "職業選擇的存檔欄位 ID（武器精通、職業額外語言、職業工具）"
 });
 
 function collectPersistedIds(classes) {
@@ -30,8 +31,11 @@ function collectPersistedIds(classes) {
     packs[pack] ||= Object.fromEntries(Object.keys(CATEGORIES).map(name => [name, new Set()]));
     packs[pack][category].add(id);
   };
-  const addFeatures = (pack, features, classId, subclass) => {
+  const addFeatures = (pack, features, classDef, subclass) => {
+    const classId = classDef.id;
     for (const feature of features) {
+      (feature.picks || []).forEach(pick => getPickFields(classDef, feature, pick).forEach(id => add(pack, "fields", id)));
+      (feature.grants?.languages || []).forEach(language => add(pack, "fields", language.field));
       // 網站的子職法術來源識別碼為「subclass-職業-名稱-環階-法術-序號」，名稱改字會讓舊存檔的法術清單對不上。
       const sourceName = feature.spellSourceKey || subclass?.name;
       if (subclass && feature.spells) add(pack, "spellSourceKeys", `subclass-${classId}-${sourceName}`);
@@ -50,11 +54,14 @@ function collectPersistedIds(classes) {
   };
   for (const classDef of classes.values()) {
     add(classDef.pack, "classes", classDef.id);
-    addFeatures(classDef.pack, classDef.features, classDef.id, null);
+    const tools = classDef.proficiencies?.tools;
+    if (tools?.fixed) add(classDef.pack, "fields", tools.field);
+    else if (tools) Array.from({ length: tools.count }, (_, index) => add(classDef.pack, "fields", `${tools.field}${index + 1}`));
+    addFeatures(classDef.pack, classDef.features, classDef, null);
     getAppendixActions(classDef).forEach(action => [action.key, ...(action.legacyKeys || [])].forEach(key => add(classDef.pack, "actionKeys", key)));
     for (const subclass of classDef.subclasses) {
       add(subclass.pack, "subclasses", `${classDef.id}/${subclass.id}`);
-      addFeatures(subclass.pack, subclass.features, classDef.id, subclass);
+      addFeatures(subclass.pack, subclass.features, classDef, subclass);
     }
   }
   return Object.fromEntries(Object.entries(packs).map(([pack, sets]) => [pack, Object.fromEntries(

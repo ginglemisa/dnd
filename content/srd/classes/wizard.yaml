@@ -18,6 +18,9 @@ skills:
 weapons: 簡易武器
 tools: 無
 armor: 無
+proficiencies:
+  weapons: { categories: [simple] }
+  armor: []
 equipment:
   A: 匕首 ×2、奧術法器（長棍）、長袍、法術書、學者套組、5 金幣
   B: 55 金幣
@@ -94,6 +97,8 @@ features:
   - id: wizard-scholar
     level: 2
     name: 學者
+    picks:
+      - { kind: expertise, count: 1, from: [奧秘, 歷史, 調查, 醫藥, 自然, 宗教] }
     text: |
       從[[奧秘]]、[[歷史]]、[[調查]]、[[醫藥]]、[[自然]]、[[宗教]]中，選擇 1 個**已熟練**的技能，獲得專精。
   - id: wizard-subclass

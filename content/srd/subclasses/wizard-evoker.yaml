@@ -7,6 +7,8 @@ features:
   - id: wizard-evocation-savant
     level: 3
     name: 塑能學者
+    picks:
+      - { kind: spellbookSpell, count: 2, from: any, school: evocation, maxLevel: 2 }
     text: |
       選擇 2 個不高於 2 環的塑能系法師法術，免費加入法術書。
 

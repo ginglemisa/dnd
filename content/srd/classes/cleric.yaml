@@ -18,6 +18,9 @@ skills:
 weapons: 簡易武器
 tools: 無
 armor: 輕甲、中甲和盾牌
+proficiencies:
+  weapons: { categories: [simple] }
+  armor: [light, medium, shield]
 equipment:
   A: 半身鎖甲、盾牌、硬頭錘、聖徽、祭司套組、7 金幣
   B: 110 金幣
@@ -76,10 +79,14 @@ features:
     options:
       - id: cleric-guardian
         name: 守護者
+        grants: { weapons: [martial], armor: [heavy] }
         text: |
           獲得**軍用武器**熟練，並接受**重甲**訓練。
       - id: cleric-trickster
         name: 魔術使
+        grants:
+          cantrips: { count: 1, list: cleric }
+          checkBonus: { skills: [奧秘, 宗教], ability: wis, min: 1 }
         text: |
           額外學會 1 個牧師戲法；進行智力（[[奧秘]]）或智力（[[宗教]]）檢定時，額外加上感知調整值（至少 +1）。
   - id: cleric-channel-divinity

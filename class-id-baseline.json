@@ -166,5 +166,28 @@
     "subclass-paladin-奉獻之誓",
     "subclass-sorcerer-龍族術法",
     "subclass-warlock-邪魔"
+  ],
+  "fields": [
+    "barbarian-weapon-mastery-pick-1",
+    "barbarian-weapon-mastery-pick-2",
+    "barbarian-weapon-mastery-pick-3",
+    "bard-instrument-1",
+    "bard-instrument-2",
+    "bard-instrument-3",
+    "druid-fixed-tool-proficiency",
+    "fighter-weapon-mastery-pick-1",
+    "fighter-weapon-mastery-pick-2",
+    "fighter-weapon-mastery-pick-3",
+    "fighter-weapon-mastery-pick-4",
+    "language-extra-1",
+    "language-extra-2",
+    "monk-tool-proficiency-1",
+    "paladin-weapon-mastery-pick-1",
+    "paladin-weapon-mastery-pick-2",
+    "ranger-weapon-mastery-pick-1",
+    "ranger-weapon-mastery-pick-2",
+    "rogue-fixed-tool-proficiency",
+    "rogue-weapon-mastery-pick-1",
+    "rogue-weapon-mastery-pick-2"
   ]
 }

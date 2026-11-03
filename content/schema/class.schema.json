@@ -56,6 +56,40 @@
     "weapons": { "type": "string", "minLength": 1, "description": "武器熟練項（顯示與 PDF 文字）。" },
     "tools": { "type": "string", "minLength": 1, "description": "工具熟練項（顯示文字）。" },
     "armor": { "type": "string", "minLength": 1, "description": "護甲訓練（顯示與 PDF 文字）。" },
+    "proficiencies": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["weapons", "armor"],
+      "description": "武器、護甲與工具熟練的機制資料（weapons／armor／tools 文字只供顯示）。網站依此判斷武器與護甲是否熟練、武器精通可選的武器與職業工具欄位。",
+      "properties": {
+        "weapons": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "categories": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "enum": ["simple", "martial"] }, "description": "熟練的武器類別。" },
+            "martialWithProperty": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "enum": ["輕型", "靈巧"] }, "description": "另外熟練具有任一屬性的軍用武器（武器資料的屬性名稱）。" }
+          }
+        },
+        "armor": { "type": "array", "uniqueItems": true, "items": { "enum": ["light", "medium", "heavy", "shield"] }, "description": "護甲訓練；沒有時寫 []。" },
+        "tools": {
+          "description": "職業工具熟練。fixed：固定的工具；chooseFrom：從工具組（tool-data.js 的工具組 ID）選 count 種。field 是存檔欄位 ID（選擇時為前綴，後接序號）：不可改名。",
+          "oneOf": [
+            {
+              "type": "object", "additionalProperties": false, "required": ["fixed", "field"],
+              "properties": { "fixed": { "type": "string", "minLength": 1 }, "field": { "$ref": "feature.schema.json#/definitions/id" } }
+            },
+            {
+              "type": "object", "additionalProperties": false, "required": ["chooseFrom", "count", "field"],
+              "properties": {
+                "chooseFrom": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "feature.schema.json#/definitions/id" } },
+                "count": { "type": "integer", "minimum": 1 },
+                "field": { "type": "string", "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*-$" }
+              }
+            }
+          ]
+        }
+      }
+    },
     "equipment": {
       "type": "object",
       "additionalProperties": false,
