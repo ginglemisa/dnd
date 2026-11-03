@@ -1194,7 +1194,7 @@
   }
 
   // 休息後可改選的選項：index.html 帶 data-rest-change 的下拉選單，以及職業內容檔寫 changeOn 的能力（classRules）。
-  // 職業選項的勾選狀態讀取選項 ID 對應的勾選框；選項說明只供顯示，取自勾選框所在的職業頁段落文字。
+  // 職業選項的勾選狀態讀取選項 ID 對應的勾選框；選項說明只供顯示，取自該選項的跑團段落（段落 ID 規則同 action-panel.js）。
   function getRestOptionGroups() {
     const className = document.getElementById("class")?.value || "";
     const level = Number(document.getElementById("level")?.value || 0);
@@ -1215,7 +1215,7 @@
       return [{ key: feature.id, when: "either", type: "checkboxes",
         label: `等級 ${feature.level}：${feature.name}${feature.subclass ? `（${subclass?.shortName || ""}子職）` : ""}`,
         choices: feature.options.map((option, index) => ({ id: option.id, checked: inputs[index].checked, label: option.name,
-          detail: inputs[index].closest("li, .druid-mission-option__heading")?.textContent.trim() || "" })) }];
+          detail: globalScope.ActionPanel?.getClassDescription?.(className, `${className}-${option.id.slice(feature.id.length + 1)}`) || "" })) }];
     });
     return [...selects, ...features];
   }

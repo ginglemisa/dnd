@@ -286,20 +286,24 @@ function syncAdvancedClassFeatureControls() {
 const eldritchInvocations = [];
 const metamagicOptions = [];
 
-// text 為「標題中名稱之後的文字</h4>小節內文 HTML」，由 splitFeatureChoiceText() 拆成標題補充與內文。
+// 選擇卡片的資料：prerequisite／detail 為純文字（先決條件或消耗），body 為小節內文 HTML。
 function getClassAppendixOptions(className, kind) {
   const rules = typeof classRules === "undefined" ? null : classRules[className];
   const appendix = (rules?.appendix || []).find(item => item.kind === kind);
   return (appendix?.parts || []).map(part => ({
     part,
-    text: `${part.prerequisite ? `（先決條件：${escapeHtml(part.prerequisite)}）` : escapeHtml(part.detail || "")}</h4>${part.html || ""}`
+    prerequisite: part.prerequisite || "",
+    detail: part.detail || "",
+    body: part.html || ""
   }));
 }
 
 function loadEldritchInvocationOptions() {
-  eldritchInvocations.splice(0, eldritchInvocations.length, ...getClassAppendixOptions("warlock", "invocations").map(({ part, text }) => ({
+  eldritchInvocations.splice(0, eldritchInvocations.length, ...getClassAppendixOptions("warlock", "invocations").map(({ part, prerequisite, detail, body }) => ({
     name: part.name,
-    text,
+    prerequisite,
+    detail,
+    body,
     ...(part.spell ? { spellId: part.spell.id, spellUse: part.spell.use } : {}),
     ...(part.repeatable ? { repeatable: true } : {}),
     ...(part.level > 1 ? { minWarlockLevel: part.level } : {})
@@ -470,39 +474,22 @@ async function openAgonizingBlastModal(invocationIndex, trigger) {
   });
 }
 
-function getNormalizedInvocationText(text) {
-  return (text || "")
-    .replace(/\r\n/g, "\n")
-    .replace(/\r/g, "\n")
-    .replace(/[ \t]+\n/g, "\n")
-    .replace(/\n[ \t]+/g, "\n")
-    .replace(/\n(?:[ \t]*\n)+/g, "\n\n")
-    .trim();
+// 先決條件或消耗（純文字）；沒有則為空字串。
+function getFeatureChoiceDetail(option) {
+  return option.prerequisite ? `（先決條件：${option.prerequisite}）` : option.detail;
 }
 
-function splitFeatureChoiceText(text) {
-  let normalized = getNormalizedInvocationText(text)
-    // 每個選項是從前一個 <h4> 的名稱之後切出，且在下一個 <h4> 前截斷；
-    // 移除切片兩端遺留的容器，避免卡片內出現不完整的 HTML 結構。
-    .replace(/<\/div>\s*<div\b[^>]*>\s*<h4\b[^>]*>\s*$/, "")
-    .replace(/<\/div>\s*$/, "");
-
-  const headingDetail = normalized.match(/^([^<\n]+)<\/h4>\s*/);
-  if (headingDetail) {
-    return {
-      detail: headingDetail[1].trim(),
-      body: normalized.slice(headingDetail[0].length).trim()
-    };
-  }
-
-  normalized = normalized.replace(/^<\/h4>\s*/, "");
-  return { detail: "", body: normalized.trim() };
+// 說明的 HTML（先決條件或消耗一行＋內文），供跑團動作說明與快速創角轉成純文字。
+function getFeatureChoiceSourceHtml(option) {
+  const detail = option ? getFeatureChoiceDetail(option) : "";
+  return `${detail ? `<p>${escapeHtml(detail)}</p>` : ""}${option?.body || ""}`;
 }
 
-function formatFeatureChoiceText(text, formatDetail = detail => detail) {
-  const { detail, body } = splitFeatureChoiceText(text);
-  const detailHtml = detail ? `<div class="feature-choice-card__meta">${formatDetail(detail)}</div>` : "";
-  return `${detailHtml}${body ? highlightSpellNamesInClassFeature(body) : ""}`;
+function formatFeatureChoiceText(option) {
+  const detail = getFeatureChoiceDetail(option);
+  const detailHtml = !detail ? ""
+    : `<div class="feature-choice-card__meta">${option.prerequisite ? `<span class="invocation-prereq">先決條件：${escapeHtml(option.prerequisite)}</span>` : escapeHtml(detail)}</div>`;
+  return `${detailHtml}${option.body ? highlightSpellNamesInClassFeature(option.body) : ""}`;
 }
 
 function hasWarlockInvocation(invocationName) {
@@ -510,14 +497,7 @@ function hasWarlockInvocation(invocationName) {
   return Array.from(picks).some(input => input.dataset.invocationName === invocationName && input.checked);
 }
 
-function formatInvocationText(text) {
-  return formatFeatureChoiceText(text, detail => detail.replace(
-    /^（先決條件：([^）]+)）$/,
-    '<span class="invocation-prereq">先決條件：$1</span>'
-  ));
-}
-
-function renderSelectedFeatureSummary(summaryEl, items, emptyText, formatText = text => text) {
+function renderSelectedFeatureSummary(summaryEl, items, emptyText, formatOption) {
   if (!summaryEl) return;
   if (!items.length) {
     summaryEl.innerHTML = `<div class="selection-summary-empty">${escapeHtml(emptyText)}</div>`;
@@ -535,7 +515,7 @@ function renderSelectedFeatureSummary(summaryEl, items, emptyText, formatText = 
   });
 
   summaryEl.innerHTML = `<div class="selection-summary-list">${merged.map(item => {
-    const body = item.text ? formatText(item.text) : "";
+    const body = item.option ? formatOption(item.option) : "";
     return `<article class="selection-summary-card">
       <div class="selection-summary-head">
         <strong class="selection-summary-title">${escapeHtml(item.name)}</strong>
@@ -622,7 +602,7 @@ function getMetamagicCheckboxId(index) {
 }
 
 function loadMetamagicOptions() {
-  metamagicOptions.splice(0, metamagicOptions.length, ...getClassAppendixOptions("sorcerer", "metamagic").map(({ part, text }) => ({ name: part.name, text })));
+  metamagicOptions.splice(0, metamagicOptions.length, ...getClassAppendixOptions("sorcerer", "metamagic").map(({ part, prerequisite, detail, body }) => ({ name: part.name, prerequisite, detail, body })));
 }
 
 function getCheckedMetamagicNames() {
@@ -636,7 +616,7 @@ function renderMetamagicOptions() {
   if (!output) return;
 
   const previouslyChecked = new Set(getCheckedMetamagicNames());
-  const availableOptions = metamagicOptions.filter(option => option.text && option.text.trim());
+  const availableOptions = metamagicOptions;
 
   if (!availableOptions.length) {
     output.innerHTML = "無資料";
@@ -646,7 +626,7 @@ function renderMetamagicOptions() {
   output.innerHTML = availableOptions.map((option, index) => {
     const checkboxId = getMetamagicCheckboxId(index);
     const checked = previouslyChecked.has(option.name) ? " checked" : "";
-    const { detail, body } = splitFeatureChoiceText(option.text);
+    const detail = getFeatureChoiceDetail(option);
 
     return `<article class="feature-choice-card feature-choice-card--metamagic">
       <label class="feature-choice-card__heading" for="${checkboxId}">
@@ -654,7 +634,7 @@ function renderMetamagicOptions() {
         <strong>${escapeHtml(option.name)}</strong>
         ${detail ? `<span class="feature-choice-card__meta">${escapeHtml(detail)}</span>` : ""}
       </label>
-      ${body ? `<div class="feature-choice-card__body">${highlightSpellNamesInClassFeature(body)}</div>` : ""}
+      ${option.body ? `<div class="feature-choice-card__body">${highlightSpellNamesInClassFeature(option.body)}</div>` : ""}
     </article>`;
   }).join("");
 
@@ -684,24 +664,13 @@ function updateMetamagicSummary() {
   const summaryEl = document.getElementById("metamagic-summary");
   if (!summaryEl) return;
 
-  const availableOptions = metamagicOptions.filter(option => option.text && option.text.trim());
   const picks = [];
-  availableOptions.forEach((option, index) => {
+  metamagicOptions.forEach((option, index) => {
     const input = document.getElementById(getMetamagicCheckboxId(index));
-    if (input?.checked) {
-      picks.push({
-        name: option.name,
-        text: option.text
-      });
-    }
+    if (input?.checked) picks.push({ name: option.name, option });
   });
 
-  renderSelectedFeatureSummary(
-    summaryEl,
-    picks,
-    "尚未勾選超魔法",
-    text => formatFeatureChoiceText(text)
-  );
+  renderSelectedFeatureSummary(summaryEl, picks, "尚未勾選超魔法", formatFeatureChoiceText);
 }
 
 async function handleEldritchInvocationChange(el, event, output) {
@@ -767,12 +736,9 @@ function getRepeatableInvocationSlotCount(index, checkedIds) {
   return largestCheckedSlot + 1;
 }
 
-function insertRepeatableInvocationChecks(bodyHtml, checksHtml) {
-  if (!checksHtml) return bodyHtml;
-  const checks = `<span class="feature-choice-card__repeatable-checks">${checksHtml}</span>`;
-  return /<p[^>]*>\s*可重複：/.test(bodyHtml)
-    ? bodyHtml.replace(/(<p[^>]*>\s*)可重複：/, `$1${checks}可重複：`)
-    : `${bodyHtml}${checks}`;
+// 可重複祈喚的額外勾選框固定接在說明之後。
+function appendRepeatableInvocationChecks(bodyHtml, checksHtml) {
+  return checksHtml ? `${bodyHtml}<span class="feature-choice-card__repeatable-checks">${checksHtml}</span>` : bodyHtml;
 }
 
 function renderEldritchInvocations(options = {}) {
@@ -802,7 +768,7 @@ function renderEldritchInvocations(options = {}) {
     }).join("");
     const repeatableChecks = invocation.repeatable ? checks.split(/(?=<span class="feature-choice-card__invocation-pick">)/u) : [];
     const primaryCheck = invocation.repeatable ? repeatableChecks.shift() : checks;
-    const bodyHtml = insertRepeatableInvocationChecks(formatInvocationText(invocation.text), repeatableChecks.join(""));
+    const bodyHtml = appendRepeatableInvocationChecks(formatFeatureChoiceText(invocation), repeatableChecks.join(""));
     const agonizingTargets = invocation.name === AGONIZING_BLAST_INVOCATION_NAME
       ? Array.from({ length: checkCount }, (_, slotIndex) => {
         const checkboxId = getInvocationCheckboxId(index, slotIndex + 1);
@@ -821,7 +787,7 @@ function renderEldritchInvocations(options = {}) {
         <strong>${escapeHtml(invocation.name)}</strong>
         ${settingsButton}
       </div>
-      ${invocation.text ? `<div class="feature-choice-card__body">${bodyHtml}</div>` : ""}
+      ${bodyHtml ? `<div class="feature-choice-card__body">${bodyHtml}</div>` : ""}
       ${agonizingTargets}
     </article>`;
   }).join("");
@@ -858,7 +824,7 @@ function updateWarlockInvocationSummary() {
         const targetSpell = SpellCatalog.getSpell(targetSpellId);
         picks.push({
           name: targetSpell ? `${invocation.name}（${targetSpell.nameZh}）` : invocation.name,
-          text: invocation.text || ""
+          option: invocation
         });
       }
     });
@@ -868,7 +834,7 @@ function updateWarlockInvocationSummary() {
     summaryEl,
     picks,
     "尚未勾選魔能祈喚",
-    text => formatInvocationText(text)
+    formatFeatureChoiceText
   );
 }
 
@@ -1564,7 +1530,7 @@ function syncMissionCantripChoices() {
 // 4 級透過施法／契約魔法額外學會的職業戲法屬於職業戲法共用上限。
 // 選單只編輯自動管理的準備清單，並以標記辨識；舊資料戲法已選滿時視為已選。
 // 例外：只需職業與等級即可預選與查看，不等背景／種族開放「準備法術」；未選提示仍需四項都選好。
-const LEVEL_UP_CANTRIP_LEVEL = 4;
+// 哪個能力提供這個選單（等級、標籤）由 classRules 的 cantripChoiceLabel 決定。
 const LEVEL_UP_CANTRIP_TAG = "class-level-4";
 const LEVEL_UP_CANTRIP_SELECT_ID = "class-level-up-cantrip";
 
@@ -1573,20 +1539,21 @@ function getLevelUpCantripClass() {
   const className = document.getElementById("class")?.value || "";
   const level = Number.parseInt(document.getElementById("level")?.value || "0", 10) || 0;
   const classLabel = classOptions.find(option => option.value === className)?.text || "";
-  if (typeof cantripLimit !== "function" || !classLabel || level < LEVEL_UP_CANTRIP_LEVEL
-      || cantripLimit(className, LEVEL_UP_CANTRIP_LEVEL) <= cantripLimit(className, LEVEL_UP_CANTRIP_LEVEL - 1)) return null;
-  return { className, classLabel, limit: cantripLimit(className, level) };
+  const feature = window.getClassFeatureRules?.(className).find(item => item.cantripChoiceLabel);
+  if (typeof cantripLimit !== "function" || !classLabel || !feature || level < feature.level
+      || cantripLimit(className, feature.level) <= cantripLimit(className, feature.level - 1)) return null;
+  return { className, classLabel, feature, limit: cantripLimit(className, level) };
 }
 
 function getLevelUpCantripState() {
   const api = window.SpellManagement;
   const cantripClass = getLevelUpCantripClass();
   if (!api || api.isManual() || !cantripClass) return null;
-  const { className, classLabel, limit } = cantripClass;
+  const { className, classLabel, feature, limit } = cantripClass;
   const cantrips = api.getPlayerEntries().filter(entry => entry.level === 0 && api.isEntryAvailable(entry));
   const entry = cantrips.find(item => item.classFeatureCantrip === LEVEL_UP_CANTRIP_TAG)
     || (cantrips.length >= limit ? cantrips[cantrips.length - 1] : null);
-  return { className, classLabel, entry };
+  return { className, classLabel, feature, entry };
 }
 
 function setLevelUpCantrip(spellId) {
@@ -1606,10 +1573,12 @@ function setLevelUpCantrip(spellId) {
 }
 
 function renderLevelUpCantripChoice() {
-  const paragraph = document.querySelector(`#classFeatures section[data-feature-level="${LEVEL_UP_CANTRIP_LEVEL}"] > [data-after-feat-choice]`);
   const cantripClass = getLevelUpCantripClass();
-  if (!paragraph || !cantripClass) return;
-  const labelText = `${paragraph.querySelector("strong")?.textContent.replace(/[：:]\s*$/, "") || "施法補充"}：額外${cantripClass.classLabel}戲法`;
+  if (!cantripClass) return;
+  const { feature } = cantripClass;
+  const paragraph = document.querySelector(`#classFeatures section[data-feature-id="${feature.id}"] > [data-after-feat-choice]`);
+  if (!paragraph) return;
+  const labelText = `${feature.cantripChoiceLabel}：額外${cantripClass.classLabel}戲法`;
   const field = document.createElement("div");
   field.className = "class-feature-mission-cantrip class-feature-level-up-cantrip";
   const label = document.createElement("label");
@@ -2059,7 +2028,7 @@ function getClassFeatureChoiceIssues() {
   // 下拉選單只需職業與等級即可預選；未選提示仍等四項角色選擇都完成才出現。
   const levelUpCantrip = manualSpells ? null : getLevelUpCantripState();
   if (levelUpCantrip && !levelUpCantrip.entry && isCharacterCoreSelectionComplete()) pushGeneral({
-    message: `${levelUpCantrip.classLabel} ${LEVEL_UP_CANTRIP_LEVEL} 級額外戲法尚未選擇。`,
+    message: `${levelUpCantrip.classLabel} ${levelUpCantrip.feature.level} 級額外戲法尚未選擇。`,
     tab: "basic",
     selector: `#${LEVEL_UP_CANTRIP_SELECT_ID}`,
     focusSelector: `#${LEVEL_UP_CANTRIP_SELECT_ID}`

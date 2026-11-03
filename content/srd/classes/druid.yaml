@@ -191,6 +191,7 @@ features:
     feat: level
     text: |
       選擇 1 個符合條件的專長，也可以選擇「屬性值提升」。
+    cantripChoiceLabel: 施法補充
     afterFeatChoice: |
       **施法補充：**德魯伊達到 4 級時，你也會透過「施法」特性額外學會 1 個德魯伊戲法。
   - id: druid-wild-resurgence

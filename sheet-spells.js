@@ -65,9 +65,8 @@ function getSpellClassSearchOrderWithPrimary(primaryClassId, selectedAbility) {
 async function autoPrepareSpellFromFeature(spellId, triggerEl) {
   const spell = SpellCatalog.getSpell(spellId);
   if (!spell) return;
-  const canWriteSpellbook = document.getElementById("class")?.value === "wizard"
-    && triggerEl?.closest?.("#classFeatures [data-wizard-spellbook-recommendations]")
-    && spell.level === 1 && SpellCatalog.getClassIds(spellId).includes("wizard");
+  // 有法術書時（法師或手動管理法術），法師法表的 1 環以上法術詳情多一個「寫入法術書」。
+  const canWriteSpellbook = window.Spellbook?.canWriteSpell(spellId) === true;
   const alreadyRecorded = canWriteSpellbook && window.Spellbook?.getState().spellIds.includes(spellId);
   const detailOptions = canWriteSpellbook ? {
     spellbookAlreadyRecorded: alreadyRecorded, stateNote: alreadyRecorded ? "此法術已在法術書中。" : "",

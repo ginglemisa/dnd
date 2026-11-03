@@ -8880,6 +8880,10 @@ label.feature-choice-card__heading {
   white-space: nowrap;
 }
 
+.feature-choice-card__body > .feature-choice-card__repeatable-checks {
+  margin-top: 0.35rem;
+}
+
 .feature-choice-card__repeatable-checks .inline-check-label {
   margin: 0;
 }

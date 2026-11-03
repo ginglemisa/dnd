@@ -236,6 +236,10 @@ function checkClass(classDef, errors) {
         if (/^#/m.test(feature.select.text || "")) errors.push(`${where}：下拉選擇卡片的文字不可使用「#### 」小節`);
         if (feature.tabletop || feature.summary) errors.push(`${where}：有 select 的能力不可寫 tabletop／summary`);
       }
+      // 休息後可改選的選項，說明取自各選項的跑團段落；段落只在能力有 actions（且選項沒有自己的 actions）時產生。
+      if (feature.changeOn && !feature.actions && !(feature.options || []).every(option => option.actions)) errors.push(`${where}：有 changeOn 的能力須寫 actions（或每個選項都寫 actions），休息後改選的選項說明取自跑團段落`);
+      // 4 級額外戲法選單的標籤：網站由 classRules 取得，須和 afterFeatChoice 文字裡的粗體標籤一致。
+      if (feature.cantripChoiceLabel && !feature.afterFeatChoice?.includes(`**${feature.cantripChoiceLabel}`)) errors.push(`${where}：afterFeatChoice 須以粗體寫出 cantripChoiceLabel「${feature.cantripChoiceLabel}」`);
       // 插入點：DOM ID 與選項、下拉選單 ID 同在職業頁上，不可重複。
       if (feature.mount) claim(persistedIds, feature.mount.id, where, "插入點 ID");
       const partTexts = (feature.parts || []).flatMap(part => [part.text, part.tabletop, part.summary]);

@@ -335,7 +335,7 @@
         key: rule.key,
         label: invocation.name,
         source: FEATURE_SOURCE_LABELS.invocation,
-        description: sourceToPlainText(invocation.text || ""),
+        description: sourceToPlainText(getFeatureChoiceSourceHtml(invocation)),
         dynamic: true
       }];
     });
@@ -349,7 +349,7 @@
     ).flatMap(input => {
       if (input.dataset.metamagicName !== "瞬發法術") return [];
       const option = typeof metamagicOptions === "undefined" ? null : metamagicOptions.find(entry => entry.name === "瞬發法術");
-      const description = sourceToPlainText(option?.text || "");
+      const description = option ? sourceToPlainText(getFeatureChoiceSourceHtml(option)) : "";
       if (!description) return [];
 
       const label = input.dataset.metamagicName || "超魔法";

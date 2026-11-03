@@ -1,5 +1,5 @@
-// 由職業與子職內容產生職業頁 HTML。轉換期輸出與舊版 classFeatures 相同的結構與 data-* 標記，
-// 讓 class-features-ui.js、pdf-field-map.js 等暫時照舊讀取；不輸出行內 style。
+// 由職業與子職內容產生職業頁 HTML（只供顯示）。輸出 data-* 標記供網站定位與過濾顯示（等級、子職、能力 ID 等），
+// 規則一律讀 classRules，不從 HTML 反推；不輸出行內 style。
 // 同樣的內容另以跑團版（context.view 為 "tabletop"／"overview"）產生各段落的跑團說明，依段落 ID 輸出給 action-panel.js。
 "use strict";
 const { ContentError } = require("../content/errors");
