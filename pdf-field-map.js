@@ -408,13 +408,36 @@
     return hitDie ? String(hitDie) : '';
   }
 
-  // 職業的護甲訓練（內容檔 proficiencies.armor：light／medium／heavy／shield）。
-  function getClassArmorTrainingForPdf(classKey) {
-    return getClassRules(classKey)?.proficiencies?.armor || [];
+  // 目前職業此等級生效的 grants（能力層與勾選中的選項，例如守護者、哨衛），等級未填時同網站視為 1 級。
+  function getActiveClassGrantsForPdf(state) {
+    const classKey = normalizeText(state?.class);
+    const level = getSelectedLevelNumber(state?.level) || 1;
+    return getClassGrants(classKey, level, (id) => state?.[id] === true);
+  }
+
+  // 職業的護甲訓練（內容檔 proficiencies.armor 與選項 grants.armor：light／medium／heavy／shield）。
+  function getClassArmorTrainingForPdf(state) {
+    const classKey = normalizeText(state?.class);
+    return [
+      ...(getClassRules(classKey)?.proficiencies?.armor || []),
+      ...getActiveClassGrantsForPdf(state).flatMap((item) => item.grants.armor || [])
+    ];
+  }
+
+  // 武器熟練：職業內容檔的純文字，再接上選項 grants.weapons 給予、職業本身沒有的類別（例如守護者的軍用武器）。
+  const WEAPON_CATEGORY_LABELS = Object.freeze({ simple: '簡易武器', martial: '軍用武器' });
+
+  function getWeaponProficiencyTextForPdf(state) {
+    const classKey = normalizeText(state?.class);
+    const categories = getClassRules(classKey)?.proficiencies?.weapons?.categories || [];
+    const extra = [...new Set(getActiveClassGrantsForPdf(state).flatMap((item) => item.grants.weapons || []))]
+      .filter((category) => !categories.includes(category) && WEAPON_CATEGORY_LABELS[category])
+      .map((category) => WEAPON_CATEGORY_LABELS[category]);
+    return [getClassProfileText(classKey, 'weapons'), ...extra].filter(Boolean).join('和');
   }
 
   function hasShieldProficiencyForPdf(state) {
-    return getClassArmorTrainingForPdf(normalizeText(state?.class)).includes('shield');
+    return getClassArmorTrainingForPdf(state).includes('shield');
   }
 
   function hasEffectiveShieldForPdf(state) {
@@ -1321,8 +1344,8 @@ function isWeaponRowEmpty(payload, slot) {
     payload.specie_features1 = buildRaceTemplateText(state, options);
     payload.speed1 = resolveSpeedForPdf(state, options);
 
-    payload.weaponsProficiency1 = getClassProfileText(classKey, 'weapons');
-    const armorTraining = getClassArmorTrainingForPdf(classKey);
+    payload.weaponsProficiency1 = getWeaponProficiencyTextForPdf(state);
+    const armorTraining = getClassArmorTrainingForPdf(state);
     payload.chk_light1 = armorTraining.includes('light');
     payload.chk_medium1 = armorTraining.includes('medium');
     payload.chk_heavy1 = armorTraining.includes('heavy');
