@@ -33,6 +33,7 @@
       }
     },
     "repeatable": { "const": true, "description": "可多次選擇（省略時同一角色不可重複取得）。" },
+    "grantsSpellcasting": { "const": true, "description": "此專長提供施法來源（例如魔法學徒）；自訂背景以此判斷角色是否有施法來源。" },
     "effects": {
       "type": "array",
       "minItems": 1,

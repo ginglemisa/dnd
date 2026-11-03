@@ -3,6 +3,7 @@ id: 魔法學徒
 source: srd
 type: origin
 repeatable: true
+grantsSpellcasting: true
 effects:
   - name: 兩個戲法
     text: 從牧師／德魯伊／法師列表擇一，選 2 個戲法。

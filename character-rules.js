@@ -550,17 +550,17 @@
     const background = String(options.background || "").trim();
     const raceRule = getRaceRules(String(options.race || "").trim());
     const spellcasting = getClassRules(className)?.spellcasting;
-    // 只看內建背景：給予魔法學徒（有法術列表）的背景提供施法；自訂背景與未選擇時不判定（魔法學徒另由 hasMagicInitiate 傳入）。
-    const builtInBackground = background === "custom" ? null : getBackgroundRules(background);
+    // 內建與自訂背景都看起源專長的 grantsSpellcasting（例如魔法學徒）；未選擇或自訂背景尚未設定時不判定。
+    const backgroundRule = getBackgroundRules(background);
 
     if (spellcasting && spellcasting !== "none") return true;
-    if (builtInBackground?.feat.spellList) return true;
+    if (getFeatRules(backgroundRule?.feat.id)?.grantsSpellcasting) return true;
     if (raceRule?.spellcasting) return true;
     if (options.hasMagicInitiate) return true;
 
     return !(
       spellcasting === "none"
-      && builtInBackground
+      && backgroundRule
       && raceRule
     );
   }

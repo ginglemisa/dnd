@@ -1171,6 +1171,17 @@ async function verifyPreparedAbilityGate(browser, url) {
     assert.equal(await requirement.innerText(), "請先選好職業、等級、背景與種族，才能使用『準備法術』。", "a chosen ability keeps the original wording");
     await apply(page, modern({ class: "fighter", level: "5", background: "acolyte", "spellcasting-ability": "" }));
     assert.equal(await ability.isVisible(), true); assert.equal(await button.isDisabled(), true, "background Magic Initiate requires the ability");
+    // 自訂背景依起源專長內容檔的 grantsSpellcasting 判斷施法來源：魔法學徒有，其他起源專長沒有。
+    const custom = feat => ({ 名稱: "自訂冒險", 屬性: "力量,敏捷,體質", 專長: feat, 技能熟練: "運動,隱匿", 工具熟練: "里拉琴", 裝備A: "長劍", 描述: "" });
+    await apply(page, modern({ class: "fighter", level: "5", background: "custom", __customBackground: custom("強韌體魄"), "spellcasting-ability": "" }));
+    assert.equal(await ability.isVisible(), false, "a custom background without a spellcasting origin feat is not a source");
+    assert.equal(await button.isEnabled(), true);
+    assert.equal(await page.evaluate(() => hasSpellcastingCapability()), false);
+    await apply(page, modern({ class: "fighter", level: "5", background: "custom", __customBackground: custom("魔法學徒"), "spellcasting-ability": "" }));
+    assert.equal(await ability.isVisible(), true, "a custom background with Magic Initiate is a spellcasting source");
+    assert.equal(await button.isDisabled(), true);
+    assert.equal(await page.evaluate(() => hasSpellcastingCapabilityForSelections({ className: "fighter", background: "custom", race: "human" })), true,
+      "the origin feat rule decides without the selected-feat shortcut");
     // Without any spellcasting source the field is hidden and not required, so manual management stays reachable.
     await apply(page, modern({ class: "fighter", level: "5", "spellcasting-ability": "" }));
     assert.equal(await ability.isVisible(), false); assert.equal(await button.isEnabled(), true);
