@@ -1176,6 +1176,13 @@ function isWeaponRowEmpty(payload, slot) {
     Object.entries(DIRECT_FIELD_MAP).forEach(([stateKey, pdfFieldName]) => {
       payload[pdfFieldName] = normalizeText(state[stateKey]);
     });
+    // 可改傷害類型的武器（契約武器、真力駐拳、橡棍術）：匯出當下由頁面算好可選類型（getWeaponDamageTypePdfNotes），
+    // 加在武器備註最前面，例如「可選砍/黯/心/光」；備註太長被截斷時保留這段。
+    const weaponDamageTypeNotes = options.weaponDamageTypeNotes || {};
+    [['main', 'wp-note-1'], ['off', 'wp-note-2']].forEach(([hand, fieldName]) => {
+      const note = normalizeText(weaponDamageTypeNotes[hand]);
+      if (note) payload[fieldName] = [note, payload[fieldName]].filter(Boolean).join('；');
+    });
 
     if (!official && options.outputMode === 'compact') {
       ['str', 'dex', 'con', 'int', 'wis', 'cha'].forEach((ability) => {

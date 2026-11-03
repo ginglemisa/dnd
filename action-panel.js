@@ -333,6 +333,7 @@
       if (!invocation) return [];
       return [{
         key: rule.key,
+        featureId: rule.descriptionIds[0],
         label: invocation.name,
         source: FEATURE_SOURCE_LABELS.invocation,
         description: sourceToPlainText(getFeatureChoiceSourceHtml(invocation)),
@@ -552,6 +553,7 @@
         ...(rule.legacyKeys ? { legacyKeys: rule.legacyKeys } : {}),
         ...(rule.resourceKey ? { resourceKey: rule.resourceKey } : {}),
         ...(rule.druidOperation ? { druidOperation: rule.druidOperation } : {}),
+        ...(typeof rule.descriptionIds?.[0] === "string" ? { featureId: rule.descriptionIds[0] } : {}),
         ...(rule.tabletopOnly ? { tabletopOnly: true } : {}),
         dynamic: true
       }];

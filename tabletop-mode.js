@@ -34,6 +34,7 @@
     mageArmorActive: false,
     barkskinActive: false,
     longstriderActive: false,
+    shillelaghActive: false,
     endedConcentrations: Object.freeze([]),
     builtInResourceUsage: Object.freeze({}),
     customResources: Object.freeze([])
@@ -620,6 +621,7 @@
     mageArmorActive: DEFAULT_COMBAT_STATE.mageArmorActive,
     barkskinActive: DEFAULT_COMBAT_STATE.barkskinActive,
     longstriderActive: DEFAULT_COMBAT_STATE.longstriderActive,
+    shillelaghActive: DEFAULT_COMBAT_STATE.shillelaghActive,
     endedConcentrations: [],
     builtInResourceUsage: {},
     customResources: [],
@@ -965,6 +967,7 @@
       mageArmorActive: data.mageArmorActive === true,
       barkskinActive: data.barkskinActive === true,
       longstriderActive: data.longstriderActive === true,
+      shillelaghActive: data.shillelaghActive === true,
       endedConcentrations: normalizeEndedConcentrations(data.endedConcentrations),
       builtInResourceUsage: normalizeBuiltInResourceUsage(data.builtInResourceUsage),
       customResources: normalizeCustomResources(data.customResources),
@@ -977,6 +980,7 @@
       mageArmorActive: combatState.mageArmorActive,
       barkskinActive: combatState.barkskinActive,
       longstriderActive: combatState.longstriderActive,
+      shillelaghActive: combatState.shillelaghActive,
       characterName: combatState.characterName,
       druid: normalizeDruidState(combatState.druid),
       temporaryHp: combatState.temporaryHp,
@@ -1153,8 +1157,21 @@
   const PERSISTENT_SPELL_EFFECTS = Object.freeze([
     { spellId: "mage-armor", stateKey: "mageArmorActive", name: "法師護甲", stat: "AC", summary: "AC＝13＋敏捷調整值；持續 8 小時，請手動解除；穿上護甲會結束。" },
     { spellId: "barkskin", stateKey: "barkskinActive", name: "樹膚術", stat: "AC", summary: "AC 不足 17 時視為 17；持續 1 小時，請手動解除。" },
-    { spellId: "longstrider", stateKey: "longstriderActive", name: "大步奔行", stat: "速度", summary: "速度增加 10 呎；持續 1 小時，請手動解除。" }
+    { spellId: "longstrider", stateKey: "longstriderActive", name: "大步奔行", stat: "速度", summary: "速度增加 10 呎；持續 1 小時，請手動解除。" },
+    // 橡棍術只作用於自己手上的短棒或長棍（selfOnly）：生效時跑團武器卡改用橡棍術計算，角色卡維持原數值。
+    { spellId: "shillelagh", stateKey: "shillelaghActive", name: "橡棍術", stat: "武器", selfOnly: true, weaponDamageTypeChoice: "shillelagh", summary: "短棒或長棍改用施法屬性與 d8 傷害骰（5 級起 d10）；持續 1 分鐘，請手動解除；放開武器或再次施放會結束。" }
   ].map(Object.freeze));
+
+  // 橡棍術生效的一手（index.html 的 getActiveShillelaghHand）；未生效或手上沒有短棒、長棍時為 null。
+  function getActiveShillelaghHand() {
+    return combatState.shillelaghActive ? globalScope.getActiveShillelaghHand?.() || null : null;
+  }
+
+  // 施放橡棍術的條件：手上有短棒或長棍，且沒有昏迷（昏迷時手上的東西會掉落）。回傳不能施放的原因，可以時為空字串。
+  function getShillelaghCastBlocker() {
+    if (combatState.activeConditions.includes("unconscious")) return "昏迷時手上的東西會掉落，不能套用橡棍術。";
+    return globalScope.getActiveShillelaghHand?.() ? "" : "手上沒有短棒或長棍，不能套用橡棍術。請先在裝備頁持用短棒或長棍。";
+  }
 
   function getPersistentSpellEffects() {
     return PERSISTENT_SPELL_EFFECTS.map(effect => ({ ...effect, active: combatState[effect.stateKey] }));
@@ -1476,10 +1493,13 @@
     const changed = JSON.stringify(previous) !== JSON.stringify(next);
     combatState.activeConditions = next;
     interruptIncapacitatedConcentration();
+    // 昏迷時手上的東西掉落，橡棍術隨之結束（放開武器即結束）。
+    const droppedShillelagh = next.includes("unconscious") && combatState.shillelaghActive;
+    if (droppedShillelagh) combatState.shillelaghActive = false;
     if (next.includes("unconscious") && !previous.includes("unconscious")) {
-      globalScope.AppDialog?.notify("你手上的東西因昏迷掉落。", { tone: "warning" });
+      globalScope.AppDialog?.notify(droppedShillelagh ? "你手上的東西因昏迷掉落，橡棍術結束。" : "你手上的東西因昏迷掉落。", { tone: "warning" });
     }
-    return changed;
+    return changed || droppedShillelagh;
   }
 
   function addActiveCondition(conditionKey) {
@@ -3039,6 +3059,12 @@
       combatState.mageArmorActive = false;
       scheduleCharacterSave();
       announce("已穿著護甲，法師護甲結束。");
+      emitStateChange();
+    }
+    if (combatState.shillelaghActive && !globalScope.getActiveShillelaghHand?.()) {
+      combatState.shillelaghActive = false;
+      scheduleCharacterSave();
+      announce("手上沒有短棒或長棍，橡棍術結束。");
       emitStateChange();
     }
   }
@@ -5366,6 +5392,8 @@
     canApplyMageArmor,
     getMageArmorEffect,
     getPersistentSpellEffects,
+    getActiveShillelaghHand,
+    getShillelaghCastBlocker,
     setPersistentSpellEffect,
     setMageArmorActive,
     commitDruidOperation,
