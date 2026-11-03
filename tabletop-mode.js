@@ -4720,6 +4720,7 @@
 
   function moveSharedNotesToCurrentMode(mode) {
     [
+      [elements.inventoryHeadingTools, elements.inventoryHeadingSheetMount, elements.inventoryHeadingTabletopMount],
       [elements.inventoryPanel, elements.gearNotesSheetMount, elements.gearNotesTabletopMount],
       [elements.gearNotes, elements.gearNotesSheetMount, elements.gearNotesTabletopMount],
       [elements.equipmentShopOpen, elements.gearNotesSheetMount, elements.gearNotesTabletopMount],
@@ -4755,6 +4756,21 @@
         tabletopMode:
           document.getElementById(
             "tabletop-mode"
+          ),
+
+        inventoryHeadingTools:
+          document.getElementById(
+            "inventory-heading-tools"
+          ),
+
+        inventoryHeadingSheetMount:
+          document.getElementById(
+            "inventory-heading-sheet-mount"
+          ),
+
+        inventoryHeadingTabletopMount:
+          document.getElementById(
+            "inventory-heading-tabletop-mount"
           ),
 
         inventoryPanel:

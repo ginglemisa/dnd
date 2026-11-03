@@ -81,7 +81,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261104-inventory-sync">
+  <link rel="stylesheet" href="styles.css?v=20261104-inventory-ui">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261103-roll-min" defer></script>
   <script src="monster.js?v=20261025-beast-perception" defer></script>
@@ -101,7 +101,7 @@
   <script src="app-dialog.js?v=20261028-custom-spells" defer></script>
   <script src="custom-background.js?v=20261102-source-label" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
-  <script src="tabletop-mode.js?v=20261104-inventory" defer></script>
+  <script src="tabletop-mode.js?v=20261104-inventory-ui" defer></script>
   <script src="tabletop-druid.js?v=20261103-known-count" defer></script>
   <script src="tabletop-resources.js?v=20261102-race-content" defer></script>
   <script src="tabletop-actions.js?v=20261103-wholeness-min" defer></script>
@@ -552,7 +552,7 @@
         <p id="tabletop-resource-status" class="sr-only" role="status" aria-live="polite"></p>
       </section>
       <section class="tabletop-section tabletop-gear-notes" aria-labelledby="tabletop-gear-notes-title">
-        <div class="tabletop-section-heading"><h3 id="tabletop-gear-notes-title">攜帶物品</h3></div>
+        <div class="tabletop-section-heading"><h3 id="tabletop-gear-notes-title">攜帶物品</h3><div id="inventory-heading-tabletop-mount" class="inventory-heading-mount"></div></div>
         <div id="tabletop-gear-notes-mount"></div>
       </section>
     </section>
@@ -1146,9 +1146,9 @@
   </div> <!-- END OF section -->
 
   <div class="section">
-    <h3>攜帶物品</h3>
-    <!-- 物品欄與商店按鈕跟著攜帶物品文字框在角色卡與跑團模式之間搬移（tabletop-mode.js）；物品標籤由 inventory-ui.js 繪製。 -->
-    <div id="gear-notes-sheet-mount"><div id="inventory-panel" class="inventory-panel" aria-label="物品欄"><div class="inventory-toolbar"><p id="inventory-weight" class="inventory-weight" aria-live="polite"></p><div class="inventory-toolbar-actions"><button type="button" id="inventory-tidy" class="inventory-tidy" aria-haspopup="dialog" hidden>整理成標籤</button><button type="button" id="inventory-add" class="inventory-add" aria-haspopup="dialog">＋ 新增物品</button></div></div><ul id="inventory-tags" class="inventory-tags" aria-label="攜帶的物品"></ul><p class="inventory-empty">物品欄還是空的，可用「新增物品」或商店加入。</p></div><textarea id="gear-notes" rows="3" aria-label="其他攜帶物品（文字）" placeholder="其他攜帶物品或補充說明（自由文字）..."></textarea><button type="button" id="equipment-shop-open" class="equipment-shop-launch" data-equipment-shop-open aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M3 4h2.2l2.1 10.2a1.5 1.5 0 0 0 1.5 1.2h8.4a1.5 1.5 0 0 0 1.5-1.1L20.5 8H6.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="19.5" r="1.5" fill="currentColor"/><circle cx="17" cy="19.5" r="1.5" fill="currentColor"/></svg><span>開啟商店</span></button></div>
+    <!-- 標題列工具（整理成標籤、齒輪）、物品欄與商店按鈕跟著攜帶物品文字框在角色卡與跑團模式之間搬移（tabletop-mode.js）；物品標籤由 inventory-ui.js 繪製。 -->
+    <div class="inventory-heading"><h3>攜帶物品</h3><div id="inventory-heading-sheet-mount" class="inventory-heading-mount"><div id="inventory-heading-tools" class="inventory-heading-tools"><button type="button" id="inventory-tidy" class="inventory-tidy" aria-haspopup="dialog" hidden>整理成標籤</button><button type="button" id="inventory-gear" class="inventory-gear" aria-expanded="false" aria-controls="inventory-tools" aria-label="顯示物品欄選項"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></div></div></div>
+    <div id="gear-notes-sheet-mount"><div id="inventory-panel" class="inventory-panel" aria-label="物品欄"><div id="inventory-tools" class="inventory-tools" hidden><p id="inventory-weight" class="inventory-weight" aria-live="polite"></p><button type="button" id="inventory-add" class="inventory-add" aria-haspopup="dialog">＋ 自訂物品</button></div><p id="inventory-over" class="inventory-over" role="status" hidden>負重已超過攜帶上限，請依負重規則處理。</p><ul id="inventory-tags" class="inventory-tags" aria-label="攜帶的物品"></ul><p class="inventory-empty">物品欄還是空的，可以從商店購買或免費取得，或用齒輪裡的「自訂物品」。</p></div><textarea id="gear-notes" rows="3" aria-label="其他攜帶物品（文字）" placeholder="其他攜帶物品或補充說明（自由文字）..."></textarea><button type="button" id="equipment-shop-open" class="equipment-shop-launch" data-equipment-shop-open aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M3 4h2.2l2.1 10.2a1.5 1.5 0 0 0 1.5 1.2h8.4a1.5 1.5 0 0 0 1.5-1.1L20.5 8H6.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="19.5" r="1.5" fill="currentColor"/><circle cx="17" cy="19.5" r="1.5" fill="currentColor"/></svg><span>開啟商店</span></button></div>
     <div class="money-section" aria-label="錢財管理">
       <div class="money-balance-header">
         <h4 class="money-title">總財產</h4>
@@ -2996,7 +2996,7 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
 <script src="search.js?v=20261104-familiar-references" defer></script>
 <script src="equipment-shop.js?v=20261027-shop-tool-order" defer></script>
 <script src="inventory.js?v=20261104-inventory" defer></script>
-<script src="inventory-ui.js?v=20261104-inventory" defer></script>
+<script src="inventory-ui.js?v=20261104-inventory-ui" defer></script>
 
 <script>
 function getModifier(statId) {

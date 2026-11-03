@@ -1,21 +1,18 @@
 /**
  * 物品欄介面（傳統 defer script，無額外 runtime dependency）。
  *
- * - 掛在攜帶物品區的 #inventory-panel（跑團模式時隨攜帶物品文字框一起搬移，見 tabletop-mode.js）。
- * - 標籤：[匕首 ×2]；容器標籤可展開，內容物排在下一層。點標籤開啟 `inventory-item` 視窗調整數量、位置或刪除；
- *   「新增物品」開啟 `inventory-add` 視窗，可搜尋裝備目錄或建立自訂物品。資料一律經 window.Inventory。
+ * - 掛在攜帶物品區的 #inventory-panel 與標題列的 #inventory-heading-tools（跑團模式時隨攜帶物品文字框一起搬移，見 tabletop-mode.js）。
+ * - 標籤：[匕首 ×2]；容器標籤可展開，內容物排在下一層。點標籤開啟 `inventory-item` 視窗調整數量、位置或刪除。
+ *   目錄物品由商店（equipment-shop.js）購買或免費取得；這裡只建立自訂物品（`inventory-custom` 視窗）。資料一律經 window.Inventory。
+ * - 標題列齒輪展開 #inventory-tools（負重與「自訂物品」），每次載入預設收起。
  * - 「整理成標籤」只在攜帶物品文字有「購買物品：」「初始裝備：」行時出現，預覽後由玩家確認才轉成標籤並移除那幾行。
- * - 負重：物品＋硬幣重量對照 index.html 的 getCarryCapacityPounds()，超過時只提示，不改速度。
- * - 展開狀態與搜尋文字只留在記憶體；視窗內的輸入框不設 id，不會進角色 JSON、分享或 autosave。
+ * - 負重：物品＋硬幣重量對照 index.html 的 getCarryCapacityPounds()，超過時只提示，不改速度；提示不受齒輪收合影響。
+ * - 展開狀態只留在記憶體；視窗內的輸入框不設 id，不會進角色 JSON、分享或 autosave。
  */
 (function (globalScope) {
   "use strict";
 
   const LEGACY_PREFIXES = Object.freeze([["購買物品：", ""], ["初始裝備：", "initial"]]);
-  const CATEGORY_LABELS = Object.freeze({
-    weapon: "武器", armor: "護甲", tool: "工具", gear: "冒險用品", ammo: "彈藥", focus: "法器", scroll: "魔法", pack: "套組"
-  });
-  const CATEGORY_ORDER = Object.freeze(["weapon", "armor", "tool", "gear", "ammo", "focus", "pack", "scroll"]);
   const expanded = new Set();
   let rendering = false;
 
@@ -40,6 +37,13 @@
 
   function entryText(entry) {
     return `${api().getLabel(entry)}${entry.quantity > 1 ? ` ×${entry.quantity}` : ""}`;
+  }
+
+  // 齒輪收起時「自訂物品」看不到，焦點改回齒輪。
+  function fallbackFocusTarget() {
+    return document.getElementById("inventory-tools")?.hidden === false
+      ? document.getElementById("inventory-add")
+      : document.getElementById("inventory-gear");
   }
 
   function fieldValue(id) {
@@ -278,9 +282,10 @@
           toggleLabel.append(containerToggle, el("span", "", "可以放入其他物品（容器）"));
           body.appendChild(toggleLabel);
         }
-        if (item && !item.generic && typeof globalScope.openEquipmentDetailByName === "function") {
+        // 說明比照商店，以可疊加的 AppDialog 疊在物品視窗上（頁面固定的裝備說明視窗會被蓋住）。
+        if (item && !item.generic && typeof globalScope.openEquipmentDetailDialog === "function") {
           const detail = button("inventory-detail-link", "查看物品說明");
-          detail.addEventListener("click", () => globalScope.openEquipmentDetailByName(entry.itemId, detail));
+          detail.addEventListener("click", () => globalScope.openEquipmentDetailDialog(entry.itemId, detail));
           body.appendChild(detail);
         }
         controls = { stepper, location, nameInput, weightInput, containerToggle };
@@ -309,120 +314,65 @@
         }
       ],
       initialFocus: "content",
-      // 調整後標籤會重繪，焦點改回同一件物品；刪除後回到「新增物品」。
+      // 調整後標籤會重繪，焦點改回同一件物品；刪除後回到「自訂物品」或齒輪。
       onClose: () => globalScope.setTimeout(() => {
         if (document.activeElement && document.activeElement !== document.body) return;
-        (document.querySelector(`[data-inventory-uid="${uid}"]`) || document.getElementById("inventory-add"))?.focus();
+        (document.querySelector(`[data-inventory-uid="${uid}"]`) || fallbackFocusTarget())?.focus();
       }, 0)
     });
   }
 
-  function catalogSearchText(item) {
-    return `${item.id} ${item.label} ${globalScope.EQUIPMENT_ENGLISH_NAMES?.[item.id] || ""}`.toLowerCase();
-  }
-
-  function openAddDialog(trigger) {
+  function openCustomDialog(trigger) {
     if (!globalScope.AppDialog) return;
+    let controls = null;
     globalScope.AppDialog.showContent({
-      title: "新增物品",
-      variant: "inventory-add",
+      title: "自訂物品",
+      variant: "inventory-custom",
       trigger,
       renderContent(body) {
-        const toolbar = el("div", "inventory-add-toolbar");
-        const search = el("input", "inventory-add-search");
-        search.type = "text";
-        search.inputMode = "search";
-        search.enterKeyHint = "search";
-        search.placeholder = "搜尋物品，例如「繩索」";
-        search.setAttribute("aria-label", "搜尋物品");
-        search.dataset.stateTransient = "true";
-        const stepper = buildStepper(1, "加入數量");
-        const placeSelect = buildLocationSelect("", "");
-        toolbar.append(search, labelled("數量", stepper.wrap), labelled("位置", placeSelect));
-        const list = el("div", "inventory-add-results");
-        list.setAttribute("role", "list");
-        const status = el("p", "inventory-add-status");
-        status.setAttribute("aria-live", "polite");
-
-        const announce = (text) => { status.textContent = text; };
-        const addItems = (requests, labelText) => {
-          const quantity = stepper.read();
-          if (!api().add(requests.map(request => ({ ...request, quantity })), { into: placeSelect.value })) {
-            announce(`物品欄最多 ${api().LIMITS.items} 筆，請先整理後再加入。`);
-            return;
-          }
-          announce(`已加入${labelText}${quantity > 1 ? ` ×${quantity}` : ""}`);
-          // 新加入的容器（例如背包）立刻可以選為放入位置。
-          fillLocationSelect(placeSelect, "", placeSelect.value);
-        };
-
-        const renderResults = () => {
-          const keyword = search.value.trim().toLowerCase();
-          const items = api().getCatalog().filter(item => !keyword || catalogSearchText(item).includes(keyword));
-          list.replaceChildren();
-          if (!items.length) {
-            list.appendChild(el("p", "inventory-add-empty", "找不到符合的物品，可以在下方建立自訂物品。"));
-            return;
-          }
-          CATEGORY_ORDER.forEach((category) => {
-            const group = items.filter(item => item.category === category);
-            if (!group.length) return;
-            list.appendChild(el("h3", "inventory-add-heading", CATEGORY_LABELS[category]));
-            group.forEach((item) => {
-              const row = el("div", "inventory-add-row");
-              row.setAttribute("role", "listitem");
-              const name = el("span", "inventory-add-name", item.label);
-              const weightText = item.pack ? "拆成容器與內容物" : Number.isFinite(item.weight) ? `${formatPounds(item.weight)} 磅` : "未列重量";
-              const weight = el("span", "inventory-add-weight", item.bundle > 1 ? `${weightText}／發` : weightText);
-              const addButton = button("inventory-add-button", "加入");
-              addButton.setAttribute("aria-label", `加入${item.label}`);
-              addButton.addEventListener("click", () => addItems([{ itemId: item.id }], item.label));
-              row.append(name, weight, addButton);
-              list.appendChild(row);
-            });
-          });
-        };
-        search.addEventListener("input", renderResults);
-
-        const customSection = el("section", "inventory-custom");
-        customSection.appendChild(el("h3", "inventory-add-heading", "自訂物品"));
-        customSection.appendChild(el("p", "inventory-item-note", "數量與位置沿用上方的設定。"));
-        const customName = el("input", "inventory-text-input");
-        customName.type = "text";
-        customName.maxLength = api().LIMITS.name;
-        customName.placeholder = "例如：任務信件";
-        customName.dataset.stateTransient = "true";
-        const customWeight = el("input", "inventory-text-input");
-        customWeight.type = "number";
-        customWeight.min = "0";
-        customWeight.step = "0.1";
-        customWeight.inputMode = "decimal";
-        customWeight.placeholder = "未列重量";
-        customWeight.dataset.stateTransient = "true";
-        const containerLabel = el("label", "inventory-check");
+        body.appendChild(el("p", "inventory-item-note", "目錄裡的物品請從商店購買或免費取得；這裡加入商店沒有的物品。"));
+        const nameInput = el("input", "inventory-text-input");
+        nameInput.type = "text";
+        nameInput.maxLength = api().LIMITS.name;
+        nameInput.placeholder = "例如：任務信件";
+        nameInput.dataset.stateTransient = "true";
+        const weightInput = el("input", "inventory-text-input");
+        weightInput.type = "number";
+        weightInput.min = "0";
+        weightInput.step = "0.1";
+        weightInput.inputMode = "decimal";
+        weightInput.placeholder = "未列重量";
+        weightInput.dataset.stateTransient = "true";
+        const stepper = buildStepper(1, "數量");
+        const location = buildLocationSelect("", "");
+        const toggleLabel = el("label", "inventory-check");
         const containerToggle = el("input");
         containerToggle.type = "checkbox";
         containerToggle.dataset.stateTransient = "true";
-        containerLabel.append(containerToggle, el("span", "", "可以放入其他物品（容器）"));
-        const customAdd = button("inventory-custom-add", "加入自訂物品");
-        customAdd.addEventListener("click", () => {
-          const name = customName.value.trim();
-          if (!name) {
-            customName.focus();
-            announce("請先輸入物品名稱。");
-            return;
-          }
-          addItems([{ name, weight: customWeight.value, container: containerToggle.checked }], name);
-          customName.value = "";
-          customWeight.value = "";
-          containerToggle.checked = false;
-        });
-        customSection.append(labelled("名稱", customName), labelled("每件重量（磅，選填）", customWeight), containerLabel, customAdd);
-
-        body.append(toolbar, status, list, customSection);
-        renderResults();
+        toggleLabel.append(containerToggle, el("span", "", "可以放入其他物品（容器）"));
+        body.append(labelled("名稱", nameInput), labelled("每件重量（磅，選填）", weightInput), labelled("數量", stepper.wrap), labelled("位置", location), toggleLabel);
+        controls = { nameInput, weightInput, stepper, location, containerToggle };
       },
-      confirmLabel: "完成",
+      actions: [
+        { label: "取消", value: false },
+        {
+          label: "加入",
+          intent: "primary",
+          resolve: () => {
+            const name = controls.nameInput.value.trim();
+            if (!name) {
+              controls.nameInput.focus();
+              return false;
+            }
+            const request = { name, weight: controls.weightInput.value, container: controls.containerToggle.checked, quantity: controls.stepper.read() };
+            if (!api().add([request], { into: controls.location.value })) {
+              globalScope.AppDialog.notify?.(`物品欄最多 ${api().LIMITS.items} 筆，請先整理後再加入。`);
+              return false;
+            }
+            return "added";
+          }
+        }
+      ]
     });
   }
 
@@ -478,9 +428,9 @@
           }
         }
       ],
-      // 轉換後「整理成標籤」會隱藏，焦點改到「新增物品」。
+      // 轉換後「整理成標籤」會隱藏，焦點改到「自訂物品」或齒輪。
       onClose: result => {
-        if (result === "tidied") globalScope.setTimeout(() => document.getElementById("inventory-add")?.focus(), 0);
+        if (result === "tidied") globalScope.setTimeout(() => fallbackFocusTarget()?.focus(), 0);
       }
     });
   }
@@ -531,23 +481,21 @@
   function renderWeight() {
     const summary = document.getElementById("inventory-weight");
     if (!summary || !api()) return;
-    const { weight, unknown } = api().getWeight();
+    const { weight } = api().getWeight();
     const coins = typeof globalScope.getCoinWeightPounds === "function" ? globalScope.getCoinWeightPounds() : 0;
     const capacity = typeof globalScope.getCarryCapacityPounds === "function" ? globalScope.getCarryCapacityPounds() : 0;
     const total = Math.round((weight + coins) * 100) / 100;
     const over = capacity > 0 && total > capacity;
     summary.classList.toggle("is-over", over);
+    const warning = document.getElementById("inventory-over");
+    if (warning) warning.hidden = !over;
     const totalText = el("span", "inventory-weight__total");
     const rules = button("weapon-rule-link", "負重");
     rules.setAttribute("aria-haspopup", "dialog");
     rules.setAttribute("aria-label", "負重規則");
     rules.addEventListener("click", () => globalScope.openCarryCapacityRules?.(rules));
     totalText.append(rules, capacity > 0 ? ` ${formatPounds(total)}／${capacity} 磅` : ` ${formatPounds(total)} 磅（填入力量值後顯示上限）`);
-    summary.replaceChildren(
-      totalText,
-      el("span", "inventory-weight__parts", `物品 ${formatPounds(weight)} 磅＋硬幣 ${formatPounds(coins)} 磅${unknown ? `，${unknown} 項未列重量` : ""}`)
-    );
-    if (over) summary.append(el("span", "inventory-weight__warning", "已超過攜帶上限，請依負重規則處理。"));
+    summary.replaceChildren(totalText);
   }
 
   function render() {
@@ -562,7 +510,7 @@
       list.replaceChildren();
       renderEntries("", list, all, equippedUsage());
       panel.querySelector(".inventory-empty").hidden = all.length > 0;
-      const tidy = panel.querySelector("#inventory-tidy");
+      const tidy = document.getElementById("inventory-tidy");
       if (tidy) tidy.hidden = legacyLines().length === 0;
       renderWeight();
     } finally {
@@ -574,8 +522,18 @@
     const panel = document.getElementById("inventory-panel");
     if (!panel || panel.dataset.inventoryReady === "true") return;
     panel.dataset.inventoryReady = "true";
-    panel.querySelector("#inventory-add")?.addEventListener("click", event => openAddDialog(event.currentTarget));
-    panel.querySelector("#inventory-tidy")?.addEventListener("click", event => openTidyDialog(event.currentTarget));
+    panel.querySelector("#inventory-add")?.addEventListener("click", event => openCustomDialog(event.currentTarget));
+    const tidyButton = document.getElementById("inventory-tidy");
+    tidyButton?.addEventListener("click", event => openTidyDialog(event.currentTarget));
+    // 齒輪比照跑團自創法術：只切換 #inventory-tools，每次載入預設收起。
+    const gear = document.getElementById("inventory-gear");
+    const tools = document.getElementById("inventory-tools");
+    gear?.addEventListener("click", () => {
+      const open = gear.getAttribute("aria-expanded") !== "true";
+      gear.setAttribute("aria-expanded", String(open));
+      gear.setAttribute("aria-label", open ? "隱藏物品欄選項" : "顯示物品欄選項");
+      if (tools) tools.hidden = !open;
+    });
     document.addEventListener("inventory:change", render);
     ["mainHand", "offHand", "armor", "main2Shield", "offHandAsMain", "str", "race"].forEach((id) => {
       document.getElementById(id)?.addEventListener("change", render);
@@ -584,15 +542,14 @@
       document.getElementById(id)?.addEventListener("change", renderWeight);
     });
     const syncTidy = () => {
-      const tidy = panel.querySelector("#inventory-tidy");
-      if (tidy) tidy.hidden = legacyLines().length === 0;
+      if (tidyButton) tidyButton.hidden = legacyLines().length === 0;
     };
     // 存檔還原只觸發 change，手動輸入觸發 input。
     ["input", "change"].forEach(eventName => document.getElementById("gear-notes")?.addEventListener(eventName, syncTidy));
     render();
   }
 
-  globalScope.InventoryUI = Object.freeze({ render, renderWeight, openAddDialog, openItemDialog });
+  globalScope.InventoryUI = Object.freeze({ render, renderWeight, openCustomDialog, openItemDialog });
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
 })(typeof window !== "undefined" ? window : globalThis);
