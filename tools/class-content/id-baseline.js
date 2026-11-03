@@ -22,7 +22,7 @@ const CATEGORIES = Object.freeze({
   selectValues: "下拉選單的選項值（下拉選單 ID=值）",
   attackNotes: "選項的攻擊備註（存進角色攻擊備註欄，取消勾選時以相同字串移除）",
   spellSourceKeys: "子職法術的來源識別碼（存進角色法術清單）",
-  fields: "職業選擇的存檔欄位 ID（武器精通、職業額外語言、職業工具）"
+  fields: "職業選擇的存檔欄位 ID（武器精通、職業額外語言、職業工具、選項戲法）"
 });
 
 function collectPersistedIds(classes) {
@@ -42,6 +42,10 @@ function collectPersistedIds(classes) {
       (feature.spellsByChoice?.choices || []).forEach(choice => add(pack, "spellSourceKeys", `subclass-${classId}-${sourceName}・${choice.name}`));
       (feature.options || []).forEach(option => {
         add(pack, "options", option.id);
+        // 選項給的自選戲法欄位（網站 getMissionCantripChoices／getClassFeatureCantripChoices 依相同規則命名）。
+        const cantrips = option.grants?.cantrips;
+        if (cantrips?.count === 1) add(pack, "fields", `${option.id}-cantrip`);
+        else if (cantrips) for (let slot = 1; slot <= cantrips.count; slot += 1) add(pack, "fields", `class-${option.id}-cantrip-${slot}`);
         if (option.attackNote) add(pack, "attackNotes", option.attackNote);
       });
       getActions(feature).forEach(action => [action.key, ...(action.legacyKeys || [])].forEach(key => add(pack, "actionKeys", key)));

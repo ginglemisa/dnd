@@ -157,21 +157,17 @@
     paladin: Object.freeze([
       Object.freeze({
         heading: '等級 2：戰鬥風格',
+        featureId: 'paladin-fighting-style',
         styleStateKey: 'paladin-fighting-style',
-        featStateKey: 'derived-feat-fighting-style-paladin',
-        magicStateKey: 'paladin-blessed-warrior',
-        magicHeading: '等級 2：受祝福的勇士',
-        cantripKeyPrefix: 'class-paladin-blessed-warrior-cantrip-'
+        featStateKey: 'derived-feat-fighting-style-paladin'
       })
     ]),
     ranger: Object.freeze([
       Object.freeze({
         heading: '等級 2：戰鬥風格',
+        featureId: 'ranger-fighting-style',
         styleStateKey: 'ranger-fighting-style',
-        featStateKey: 'derived-feat-fighting-style-ranger',
-        magicStateKey: 'ranger-druidic-warrior',
-        magicHeading: '等級 2：德魯伊教戰士',
-        cantripKeyPrefix: 'class-ranger-druidic-warrior-cantrip-'
+        featStateKey: 'derived-feat-fighting-style-ranger'
       })
     ])
   });
@@ -200,7 +196,23 @@
       if (!feature.options || feature.changeOn || feature.options.some((option) => option.featChoice)) return [];
       return [{ heading, choices: feature.options.map((option) => ({ stateKey: option.id, label: option.name })) }];
     });
-    return [...derived, ...(CLASS_FEATURE_CHOICE_SPECS[classKey] || [])];
+    return [...derived, ...(CLASS_FEATURE_CHOICE_SPECS[classKey] || []).map((spec) => (
+      spec.featureId ? { ...spec, ...getClassFeatureCantripSpec(classKey, spec.featureId) } : spec
+    ))];
+  }
+
+  // 改選自選戲法的選項（內容檔選項 grants.cantrips 數量 2 以上，例如受祝福的勇士）：選了就以該選項取代戰鬥風格標題。
+  // 戲法欄位鍵與網站 getClassFeatureCantripChoices 相同：class-<選項 ID>-cantrip-<序號>。
+  function getClassFeatureCantripSpec(classKey, featureId) {
+    const feature = getClassRules(classKey)?.features.find((item) => item.id === featureId);
+    const option = feature?.options?.find((item) => item.grants?.cantrips?.count > 1);
+    if (!option) return {};
+    const { count, label } = option.grants.cantrips;
+    return {
+      magicStateKey: option.id,
+      magicHeading: `等級 ${feature.level}：${label || option.name}`,
+      cantripKeys: Array.from({ length: count }, (_, index) => `class-${option.id}-cantrip-${index + 1}`)
+    };
   }
 
   const ALIGNMENT_LABELS = Object.freeze({
@@ -604,10 +616,10 @@
     return spec.choices?.find((choice) => Boolean(state[choice.stateKey]))?.label || '';
   }
 
-  function getClassFeatureCantripNames(state, keyPrefix) {
+  function getClassFeatureCantripNames(state, keys) {
     const saved = state.__spellManagement?.classFeatureCantrips || state.__classFeatureCantrips || {};
-    return [1, 2]
-      .map((slot) => getCanonicalSpell(resolveStateSpellId(normalizeText(saved[`${keyPrefix}${slot}`])))?.nameZh)
+    return keys
+      .map((key) => getCanonicalSpell(resolveStateSpellId(normalizeText(saved[key])))?.nameZh)
       .filter(Boolean);
   }
 
@@ -615,7 +627,7 @@
     // Paladin/ranger level 2: the magic option replaces the fighting style
     // heading; the style feat is shown only while Fighting Style is chosen.
     if (spec.magicStateKey && state[spec.magicStateKey]) {
-      const cantrips = getClassFeatureCantripNames(state, spec.cantripKeyPrefix);
+      const cantrips = getClassFeatureCantripNames(state, spec.cantripKeys);
       return cantrips.length ? [spec.magicHeading, `選擇：${cantrips.join('、')}`] : [spec.magicHeading];
     }
     if (spec.styleStateKey && !state[spec.styleStateKey]) return [spec.heading];

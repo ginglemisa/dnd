@@ -98,7 +98,7 @@ features:
       - id: ranger-druidic-warrior
         name: 選「德魯伊教戰士」
         grants:
-          cantrips: { count: 2, list: druid }
+          cantrips: { count: 2, list: druid, label: 德魯伊教戰士 }
         text: |
           學會 2 個德魯伊戲法，這些戲法視為你的遊俠法術，施法屬性為**感知**。每提升 1 級遊俠，可替換其中 1 個戲法。\
           推薦：神導術、流光閃靈。

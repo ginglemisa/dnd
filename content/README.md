@@ -183,7 +183,7 @@ summary: 你的敏捷豁免有優勢。
 - 專精沿用技能列的專精勾選框（職業有 `expertise` 選擇時才顯示勾選框）；語言使用 `fields` 的欄位，這兩種沒有新的存檔欄位。
 - 缺項提醒：武器精通、專精（專精勾選框總數少於本職業此等級的專精數量）與職業額外語言，達到能力等級仍未選滿時提醒。`skill`（先祖學識、額外熟練項）與 `spellbookSpell`（塑能學者）無法分辨技能或法術的來源，只有資料、網站不提醒。
 - `grants`（能力層）目前只支援 `languages`：`[{ id: 語言, field: 顯示此語言的欄位 ID }]`。
-- 選項的 `grants`：`weapons`（`[martial]` 等武器類別）、`armor`（`light`／`medium`／`heavy`／`shield`）、`cantrips`（`{ count, list: 職業 ID }`，額外戲法的數量與法表）、`checkBonus`（`{ skills, ability, min }`，這些技能檢定加上屬性調整值，至少 `min`）。勾選且達到能力等級才生效。
+- 選項的 `grants`：`weapons`（`[martial]` 等武器類別）、`armor`（`light`／`medium`／`heavy`／`shield`）、`cantrips`（`{ count, list: 職業 ID, label }`，額外戲法的數量與法表；`label` 是法術來源、缺項提醒與 PDF 顯示的名稱，未寫時用選項名稱。數量 1 是選項下方的戲法選單，欄位 `選項 ID-cantrip`，例如魔術使；2 以上在角色能力視窗與法術頁選，欄位 `class-選項 ID-cantrip-序號`，例如受祝福的勇士）、`checkBonus`（`{ skills, ability, min }`，這些技能檢定加上屬性調整值，至少 `min`）。勾選且達到能力等級才生效。
 - 欄位 ID（`fields`、語言的 `field`、自動產生的武器精通欄位、職業工具欄位）會寫進存檔與分享網址，列在 `class-id-baseline.json` 的 `fields`，不可改名。
 
 ## 插入點

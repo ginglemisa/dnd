@@ -198,9 +198,10 @@
           "required": ["count", "list"],
           "properties": {
             "count": { "type": "integer", "minimum": 1 },
-            "list": { "$ref": "#/definitions/id", "description": "戲法所屬職業法術列表（職業 ID）。" }
+            "list": { "$ref": "#/definitions/id", "description": "戲法所屬職業法術列表（職業 ID）。" },
+            "label": { "type": "string", "minLength": 1, "description": "法術來源、缺項提醒與 PDF 顯示的名稱；未寫時用選項名稱。" }
           },
-          "description": "額外學會的戲法數量與法術列表（選哪些由玩家在網站選）。"
+          "description": "額外學會的戲法數量與法術列表（選哪些由玩家在網站選）。數量 1 存在 <選項 ID>-cantrip 選單；2 以上存在 class-<選項 ID>-cantrip-<序號>。"
         },
         "checkBonus": {
           "type": "object",

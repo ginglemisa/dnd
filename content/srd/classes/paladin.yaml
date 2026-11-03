@@ -98,7 +98,7 @@ features:
       - id: paladin-blessed-warrior
         name: 選「受祝福的勇士」
         grants:
-          cantrips: { count: 2, list: cleric }
+          cantrips: { count: 2, list: cleric, label: 受祝福的勇士 }
         text: |
           學會 2 個牧師戲法，這些戲法視為你的聖騎士法術，施法屬性為**魅力**。每提升 1 級聖騎士，可替換其中 1 個戲法。\
           推薦：神導術、聖火術。
