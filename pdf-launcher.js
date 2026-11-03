@@ -49,8 +49,8 @@ async function ensurePdfExportReady() {
     pdfExportLoaderPromise = (async () => {
       await loadScriptOnce("pdf-lib.custom.min.js");
       await loadScriptOnce("fontkit.custom.min.js");
-      await loadScriptOnce("pdf-field-map.js?v=20261104-option-grants");
-      await loadScriptOnce("pdf-export.js?v=20261102-race-content");
+      await loadScriptOnce("pdf-field-map.js?v=20261104-weapon-damage-type");
+      await loadScriptOnce("pdf-export.js?v=20261104-weapon-damage-type");
     })().catch((error) => {
       pdfExportLoaderPromise = null;
       throw error;
@@ -268,7 +268,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
       try {
         await ensurePdfExportReady();
         const {includeAvatar,...chosen}=result;
-        const exportOptions={...chosen,outputMode,avatarDataUrl:result.sheetTemplate==='official'&&includeAvatar?savedAvatar:'',customSpells:window.TabletopCustomSpells?.getPdfSpells() || []};
+        const exportOptions={...chosen,outputMode,avatarDataUrl:result.sheetTemplate==='official'&&includeAvatar?savedAvatar:'',customSpells:window.TabletopCustomSpells?.getPdfSpells() || [],weaponDamageTypeNotes:window.getWeaponDamageTypePdfNotes?.() || {}};
         await window.preloadPdfExportAssets?.(exportOptions);
         render('progress',nameMeasurement?.shrinks
           ? `角色名稱將以 ${nameMeasurement.fontSize.toFixed(1)} pt 輸出，製作中…`
@@ -631,6 +631,7 @@ async function downloadQuickBuildCompactPdf() {
       includeDefaultEquipment: false,
       includeSpellbook: true,
       customSpells: window.TabletopCustomSpells?.getPdfSpells() || [],
+      weaponDamageTypeNotes: window.getWeaponDamageTypePdfNotes?.() || {},
       ...getPdfRaceChoiceOptions(state),
       outputMode: "compact",
       sheetTemplate: "official"

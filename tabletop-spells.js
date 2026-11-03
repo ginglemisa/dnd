@@ -592,7 +592,7 @@
         content.appendChild(targetField);
       }
 
-      if (persistentEffect) {
+      if (persistentEffect && !persistentEffect.selfOnly) {
         const targets = createElement("fieldset", "tabletop-cast-form__methods");
         targets.appendChild(createElement("legend", "", `${persistentEffect.name}目標`));
         [{ value: true, label: `自己（套用跑團模式${persistentEffect.stat}）` }, { value: false, label: "其他生物（不包含自己）" }].forEach(option => {
@@ -704,6 +704,12 @@
           render();
           return false;
         }
+        const shillelaghBlocker = entry.spellId === "shillelagh" ? globalScope.TabletopMode?.getShillelaghCastBlocker?.() : "";
+        if (shillelaghBlocker) {
+          errorMessage = shillelaghBlocker;
+          render();
+          return false;
+        }
         if (globalScope.TabletopMode?.getDruidForm?.()) {
           errorMessage = "荒野形態期間不能施法；未消耗資源。";
           render();
@@ -714,6 +720,7 @@
           method: "cantrip",
           effectiveLevel: 0,
           resourceLabel: "不消耗資源",
+          effectSelf: Boolean(persistentEffect) && effectSelf,
           damageType,
           restoresOtherCreatureHitPoints: false
         });
@@ -914,6 +921,12 @@
     }
   }
 
+  // 沒有擲骰結果的戲法原本不能在跑團施放；有持續效果的（橡棍術）例外，施放時啟用效果。
+  function canCastSpellFromTabletop(spellId) {
+    return globalScope.SpellCatalog.canCastFromTabletop(spellId)
+      || Boolean(globalScope.TabletopMode?.getPersistentSpellEffects?.().some(effect => effect.spellId === spellId));
+  }
+
   async function castSpell(entry, trigger) {
     if (globalScope.TabletopMode?.getDruidForm?.()) {
       globalScope.AppDialog?.notify("荒野形態期間不能施法；既有專注仍保留。");
@@ -923,10 +936,12 @@
       await globalScope.TabletopDruid?.openOperation("companion", trigger);
       return;
     }
-    if (!entry?.spell || !globalScope.SpellCatalog.canCastFromTabletop(entry.spellId)) return;
+    if (!entry?.spell || !canCastSpellFromTabletop(entry.spellId)) return;
     const selectableTypes = globalScope.SpellCatalog.getSelectableCastDamageTypes(entry.spellId);
-    const needsCantripChoice = entry.spell.level === 0 && selectableTypes.length > 1;
-    const castResult = entry.spell.level === 0 && !needsCantripChoice
+    // 要選傷害類型或會啟用持續效果的戲法才開施法視窗。
+    const needsCantripDialog = entry.spell.level === 0 && (selectableTypes.length > 1
+      || globalScope.TabletopMode?.getPersistentSpellEffects?.().some(effect => effect.spellId === entry.spellId));
+    const castResult = entry.spell.level === 0 && !needsCantripDialog
       ? Object.freeze({ ok: true, method: "cantrip", effectiveLevel: 0, resourceLabel: "不消耗資源", damageType: "" })
       : await requestCastConfiguration(entry, trigger, entry.spell.level === 0);
     if (!castResult?.ok) {
@@ -957,7 +972,7 @@
       value: "stop-concentration",
       intent: "secondary"
     });
-    if (entry && globalScope.SpellCatalog.canCastFromTabletop(spellId) && !globalScope.TabletopMode?.getDruidForm?.()) actions.push({
+    if (entry && canCastSpellFromTabletop(spellId) && !globalScope.TabletopMode?.getDruidForm?.()) actions.push({
       label: "施法",
       value: "cast",
       intent: "primary"
@@ -1100,6 +1115,10 @@
     detail.appendChild(createElement("span", "", effect.name));
     detail.addEventListener("click", () => showSpellDetail(effect.spellId, detail));
     copy.append(detail, createElement("p", "", effect.summary));
+    // 橡棍術的傷害類型下拉與角色卡的選擇是同一個欄位。
+    if (effect.weaponDamageTypeChoice && globalScope.createWeaponDamageTypePicker) {
+      copy.appendChild(globalScope.createWeaponDamageTypePicker(effect.weaponDamageTypeChoice, "weapon-damage-type-picker tabletop-weapon-damage-type"));
+    }
     const stop = createElement("button", "tabletop-concentration__stop", "解除");
     stop.type = "button";
     stop.setAttribute("aria-label", `解除${effect.name}`);

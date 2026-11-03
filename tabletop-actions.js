@@ -142,8 +142,12 @@
     const mastery = document.getElementById(`${prefix}-mastery`);
     const isAlternateMain = hand === "off" && document.getElementById("offHandAsMain")?.checked === true;
     const beast = globalScope.TabletopMode?.getDruidForm?.();
-    const projected = beast && globalScope.isWeaponAttackAutomationEnabled?.()
-      ? globalScope.calculateHandAttacks?.({ strModifier: globalScope.calculateAbilityModifier(beast.abilities.str), dexModifier: globalScope.calculateAbilityModifier(beast.abilities.dex) })?.find(item => item.key === hand)
+    // 自動計算時依跑團狀態重算：野獸形態的力量與敏捷，以及橡棍術持續效果（不看角色卡的「☐橡棍術」）。
+    const projected = globalScope.isWeaponAttackAutomationEnabled?.()
+      ? globalScope.calculateHandAttacks?.({
+        shillelaghHand: globalScope.TabletopMode?.getActiveShillelaghHand?.() ?? null,
+        ...(beast ? { strModifier: globalScope.calculateAbilityModifier(beast.abilities.str), dexModifier: globalScope.calculateAbilityModifier(beast.abilities.dex) } : {})
+      })?.find(item => item.key === hand)
       : null;
     return {
       hand,
@@ -373,6 +377,11 @@
       copy.textContent = option.description;
     }
     description.append(heading, copy);
+    // 刃之魔契、武藝（真力駐拳）：傷害類型下拉與角色卡的選擇是同一個欄位。
+    const damageTypeChoice = globalScope.getFeatureWeaponDamageTypeChoice?.(option.featureId);
+    if (damageTypeChoice) {
+      description.appendChild(globalScope.createWeaponDamageTypePicker(damageTypeChoice, "weapon-damage-type-picker tabletop-weapon-damage-type"));
+    }
     if (option.druidOperation || option.beastActionId) {
       globalScope.TabletopDruid?.appendActionControl?.(description, option);
       return description;
@@ -940,6 +949,8 @@
     const before = animate ? captureDisclosureLayout(panel) : null;
     const focused = panel.contains(document.activeElement) ? document.activeElement : null;
     const focusKey = focused?.dataset.actionOptionKey;
+    // 選了傷害類型會重繪說明；焦點留在重建後的同一種下拉。
+    const focusChoice = focused?.dataset.weaponDamageTypeChoice;
     const restoreToggle = focusToggle || focused?.classList.contains("tabletop-basic-toggle");
     finishDisclosureMotion?.();
     const meta = mode === "action" ? {
@@ -1023,6 +1034,7 @@
     if (restoreToggle) panel.querySelector(".tabletop-basic-toggle")?.focus({ preventScroll: true });
     else if (focusKey) Array.from(optionList.querySelectorAll("[data-action-option-key]"))
       .find(button => button.dataset.actionOptionKey === focusKey)?.focus({ preventScroll: true });
+    else if (focusChoice) panel.querySelector(`select[data-weapon-damage-type-choice="${focusChoice}"]`)?.focus({ preventScroll: true });
     if (animate) animateDisclosure(optionList, before);
   }
 
