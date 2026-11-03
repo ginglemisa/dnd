@@ -939,11 +939,13 @@ async function verifyPreparedPicker(page) {
   assert.equal(await disclosure.getAttribute("aria-expanded"), "true");
   assert.equal(await dialog.getByRole("button", { name: "永久準備", exact: true }).count(), 1);
   assert.equal(await showSources.isChecked(), false, "reopening resets the transient visibility setting");
-  assert.match(await dialog.locator(".spell-picker-count").innerText(), /\| 1環 1 \| 2環 0 \| 3環 0 \| 4環 1 \|$/u, "unavailable selected rings remain in the draft counts");
+  // The count row lists only the rings a 1st-level wizard can prepare; the unavailable
+  // cleric selection still counts on its ring, the retained 4th-level one stays out of it.
+  assert.match(await dialog.locator(".spell-picker-count").innerText(), /個 \| 戲法 0 \| 1環 1 \|$/u, "unavailable selections on preparable rings remain in the draft counts");
   await dialog.getByRole("searchbox", { name: "搜尋法術名稱" }).fill("Ice Storm");
   assert.equal(await dialog.locator(".spell-picker-note").innerText(), "目前不可用：目前等級尚未開放此法術環階。");
   await dialog.locator('input[value="ice-storm"]').click();
-  assert.match(await dialog.locator(".spell-picker-count").innerText(), /\| 4環 0 \|$/u);
+  assert.match(await dialog.locator(".spell-picker-count").innerText(), /個 \| 戲法 0 \| 1環 1 \|$/u);
   await disclosure.click();
   await dialog.getByRole("searchbox", { name: "搜尋法術名稱" }).fill("Cure Wounds");
   await dialog.locator('input[value="cure-wounds"]').click();
@@ -962,22 +964,27 @@ async function verifyPreparedRingRange(page) {
     await dialog.waitFor();
   };
   const close = async () => { await page.keyboard.press("Escape"); await dialog.waitFor({ state: "detached" }); };
+  const countSuffix = async () => (await dialog.locator(".spell-picker-count").innerText()).replace(/^\d+ 個法術，已顯示 \d+ 個/u, "");
   // Automatic management lists cantrips only with a cantrip allowance or a cantrip-granting
-  // option, and leveled rings only up to the highest spell slot.
-  for (const [state, expected, message] of [
-    [{ class: "wizard", level: "1" }, ["", "0", "1"], "wizard 1"],
-    [{ class: "wizard", level: "5" }, ["", "0", "1", "2", "3"], "wizard 5"],
-    [{ class: "cleric", level: "8" }, ["", "0", "1", "2", "3", "4"], "cleric 8"],
-    [{ class: "paladin", level: "2" }, ["", "1"], "paladin without Blessed Warrior"],
-    [{ class: "paladin", level: "2", "paladin-blessed-warrior": true }, ["", "0", "1"], "Blessed Warrior before choosing cantrips"],
+  // option, and leveled rings only up to the highest spell slot. The count row lists the
+  // rings the class can prepare: cantrips only with an allowance (including class-option cantrips).
+  for (const [state, expected, suffix, message] of [
+    [{ class: "wizard", level: "1" }, ["", "0", "1"], " | 戲法 0 | 1環 0 |", "wizard 1"],
+    [{ class: "wizard", level: "5" }, ["", "0", "1", "2", "3"], " | 戲法 0 | 1環 0 | 2環 0 | 3環 0 |", "wizard 5"],
+    [{ class: "cleric", level: "8" }, ["", "0", "1", "2", "3", "4"], " | 戲法 0 | 1環 0 | 2環 0 | 3環 0 | 4環 0 |", "cleric 8"],
+    [{ class: "paladin", level: "2" }, ["", "1"], " | 1環 0 |", "paladin without Blessed Warrior"],
+    [{ class: "paladin", level: "8" }, ["", "1", "2"], " | 1環 0 | 2環 0 |", "paladin 8 never counts 3rd or 4th level"],
+    [{ class: "paladin", level: "2", "paladin-blessed-warrior": true }, ["", "0", "1"], " | 戲法 0 | 1環 0 |", "Blessed Warrior before choosing cantrips"],
     [{ class: "paladin", level: "5", "paladin-blessed-warrior": true, __classFeatureCantrips: { "class-paladin-blessed-warrior-cantrip-1": "guidance" } },
-      ["", "0", "1", "2"], "Blessed Warrior with a chosen cantrip"],
-    [{ class: "ranger", level: "2" }, ["", "1"], "ranger without Druidic Warrior"],
-    [{ class: "ranger", level: "2", "ranger-druidic-warrior": true }, ["", "0", "1"], "Druidic Warrior"],
-    [{ class: "fighter", level: "5" }, [""], "non-caster"]
+      ["", "0", "1", "2"], " | 戲法 1 | 1環 0 | 2環 0 |", "Blessed Warrior with a chosen cantrip"],
+    [{ class: "ranger", level: "2" }, ["", "1"], " | 1環 0 |", "ranger without Druidic Warrior"],
+    [{ class: "ranger", level: "8" }, ["", "1", "2"], " | 1環 0 | 2環 0 |", "ranger 8 never counts 3rd or 4th level"],
+    [{ class: "ranger", level: "2", "ranger-druidic-warrior": true }, ["", "0", "1"], " | 戲法 0 | 1環 0 |", "Druidic Warrior"],
+    [{ class: "fighter", level: "5" }, [""], "", "non-caster"]
   ]) {
     await open(state);
     assert.deepEqual(await rings(), expected, message);
+    assert.equal(await countSuffix(), suffix, `${message} count row`);
     await close();
   }
   // Retained higher-ring choices stay visible under all rings even though their ring is not listed.
@@ -993,6 +1000,7 @@ async function verifyPreparedRingRange(page) {
   await dialog.locator("#manual-spell-management").click();
   await page.getByRole("alertdialog", { name: "啟用手動法術管理" }).getByRole("button", { name: "啟用手動管理", exact: true }).click();
   assert.deepEqual(await rings(), ["", "0", "1", "2", "3", "4"], "manual draft lists every ring");
+  assert.match(await countSuffix(), /^ \| 1環 \d+ \| 2環 \d+ \| 3環 \d+ \| 4環 \d+ \|$/u, "manual count row keeps 1st through 4th level");
   await ringFilter.selectOption("4");
   await dialog.locator("#manual-spell-management").click();
   assert.deepEqual(await rings(), ["", "1"], "returning to the automatic draft restores its rings");
@@ -2244,7 +2252,7 @@ async function main() {
     assert.equal(await page.locator("#spell-prepared-counts").count(), 0);
     await page.locator("#spell-prepare").click();
     assert.equal(await pickerDialog(page).locator(".spell-prepared-draft-counts").innerText(), "戲法 0／3｜一環 1／4");
-    assert.match(await pickerDialog(page).locator(".spell-picker-count").innerText(), /^\d+ 個法術，已顯示 \d+ 個 \| 1環 1 \| 2環 0 \| 3環 0 \| 4環 0 \|$/u);
+    assert.match(await pickerDialog(page).locator(".spell-picker-count").innerText(), /^\d+ 個法術，已顯示 \d+ 個 \| 戲法 0 \| 1環 1 \|$/u);
     const ringFilter = pickerDialog(page).getByRole("combobox", { name: "篩選環階" });
     assert.deepEqual(await ringFilter.locator("option").evaluateAll(options => options.map(option => option.value)), ["", "0", "1"]);
     await page.keyboard.press("Escape");

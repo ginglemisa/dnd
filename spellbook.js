@@ -679,7 +679,14 @@
         for (let ring = 1; ring <= limits.maxLevel; ring += 1) rings.push(ring);
         return rings;
       },
-      getCountSuffix: () => ` | ${[1, 2, 3, 4].map(ring => `${ring}環 ${draftSnapshot.ringCounts[ring]}`).join(" | ")} |`,
+      // Automatic management counts only the rings the class can prepare now (cantrips
+      // only with a cantrip allowance); manual management keeps 1st through 4th level.
+      getCountSuffix() {
+        const { limit } = cantripTotals();
+        const rings = manual ? [1, 2, 3, 4] : [...(limit > 0 ? [0] : []), ...Array.from({ length: limits.maxLevel }, (_, index) => index + 1)];
+        const cantrips = draftSnapshot.ringCounts[0] + draftSnapshot.grantSlots.filter(slot => slot.spellId).length;
+        return rings.length ? ` | ${rings.map(ring => ring ? `${ring}環 ${draftSnapshot.ringCounts[ring]}` : `戲法 ${cantrips}`).join(" | ")} |` : "";
+      },
       // Explain an empty ring filter that the class or level cannot use yet.
       getEmptyMessage(filterValue) {
         if (manual || filterValue === "" || typeof globalScope.classCanAccessSpellLevel !== "function") return "";
