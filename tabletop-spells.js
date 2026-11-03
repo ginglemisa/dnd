@@ -212,8 +212,8 @@
     }
     const copy = createElement("div", "tabletop-spell-detail__copy");
     const description = String(globalScope.SpellCatalog?.getTabletopText(spell) || spell.desc || "");
-    if (typeof globalScope.appendSpellDescContent === "function") {
-      globalScope.appendSpellDescContent(copy, description, (target, text) => appendDiceText(target, text, spell));
+    if (typeof globalScope.appendSpellDescription === "function") {
+      globalScope.appendSpellDescription(copy, spell.spellId, description, (target, text) => appendDiceText(target, text, spell));
     } else {
       appendDiceText(copy, description, spell);
     }
@@ -967,7 +967,8 @@
       title: spell.nameZh,
       content: createSpellDetailContent(spell, entry),
       actions,
-      trigger
+      trigger,
+      allowNested: true
     });
     if (result === "stop-concentration") {
       globalScope.TabletopMode?.stopConcentration(`已停止專注於${spell.nameZh}。`);

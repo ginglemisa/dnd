@@ -227,10 +227,13 @@
     const showDetail = () => {
       const reference = SpellCatalog.getReferenceSpell(nameSelect.value);
       const spell = SpellCatalog.getSpell(nameSelect.value);
-      const renderSite = spell ? site => { site.innerHTML = globalScope.renderSpellDescHtml(spell.desc); } : null;
+      const renderSite = spell ? site => { globalScope.appendSpellDescription(site, spell.spellId, spell.desc || "—"); } : null;
       if (reference && typeof globalScope.createSpellVersionView === "function") {
         detail.replaceChildren(globalScope.createSpellVersionView(reference.spellId, renderSite));
-      } else if (spell) detail.innerHTML = globalScope.renderSpellDescHtml(spell.desc);
+      } else if (spell) {
+        detail.replaceChildren();
+        renderSite(detail);
+      }
       else detail.textContent = "請選擇法術，查看完整描述。";
     };
     const refreshOptions = () => {
@@ -253,7 +256,7 @@
     body.append(fields, detail);
     refreshOptions();
     return globalScope.AppDialog.showContent({ title: "查閱法術", content: body, variant: "spell-browser",
-      confirmLabel: "關閉", trigger });
+      confirmLabel: "關閉", trigger, allowNested: true });
   }
 
   document.getElementById("spell-browse-button")?.addEventListener("click", event => openSpellBrowser(event.currentTarget));
