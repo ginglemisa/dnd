@@ -730,6 +730,35 @@
     return true;
   }
 
+  // AppDialog 內的詳情內容（分類／英文名一行與說明本文），規則連結點了以 AppDialog 開啟。
+  function buildEquipmentDetailDialogParts(entry) {
+    const meta = document.createElement("p");
+    meta.className = "equipment-detail-dialog__meta";
+    meta.textContent = entry.subtype || entry.category;
+    const english = getEquipmentEnglishName(entry.name);
+    if (english) {
+      const label = document.createElement("span");
+      label.className = "equipment-detail-english";
+      label.lang = "en";
+      label.textContent = english;
+      meta.append("｜", label);
+    }
+    const content = document.createElement("div");
+    content.className = "equipment-detail-dialog__content";
+    renderEquipmentDetailContent(content, entry);
+    content.addEventListener("click", (event) => {
+      const ruleTrigger = event.target.closest?.("[data-equipment-rule-kind][data-equipment-rule]");
+      if (!ruleTrigger) return;
+      const kind = ruleTrigger.dataset.equipmentRuleKind;
+      const name = ruleTrigger.dataset.equipmentRule;
+      const description = globalThis.WEAPON_RULE_DESCRIPTIONS?.[kind]?.[name];
+      if (!description) return;
+      const category = kind === "mastery" ? "精通" : kind === "armor" ? "防具規則" : "武器屬性";
+      window.AppDialog.showMessage({ title: `${category}：${name}`, message: description, trigger: ruleTrigger });
+    });
+    return [meta, content];
+  }
+
   // 商店視窗內的詳情：以可疊加的 AppDialog 呈現同一份內容，關閉後回到商店。
   function openEquipmentDetailDialog(value, trigger) {
     const resultEntry = findEquipmentEntryByName(value);
@@ -742,31 +771,7 @@
       trigger,
       confirmLabel: "關閉",
       renderContent(body) {
-        const meta = document.createElement("p");
-        meta.className = "equipment-detail-dialog__meta";
-        meta.textContent = entry.subtype || entry.category;
-        const english = getEquipmentEnglishName(entry.name);
-        if (english) {
-          const label = document.createElement("span");
-          label.className = "equipment-detail-english";
-          label.lang = "en";
-          label.textContent = english;
-          meta.append("｜", label);
-        }
-        const content = document.createElement("div");
-        content.className = "equipment-detail-dialog__content";
-        renderEquipmentDetailContent(content, entry);
-        content.addEventListener("click", (event) => {
-          const ruleTrigger = event.target.closest?.("[data-equipment-rule-kind][data-equipment-rule]");
-          if (!ruleTrigger) return;
-          const kind = ruleTrigger.dataset.equipmentRuleKind;
-          const name = ruleTrigger.dataset.equipmentRule;
-          const description = globalThis.WEAPON_RULE_DESCRIPTIONS?.[kind]?.[name];
-          if (!description) return;
-          const category = kind === "mastery" ? "精通" : kind === "armor" ? "防具規則" : "武器屬性";
-          window.AppDialog.showMessage({ title: `${category}：${name}`, message: description, trigger: ruleTrigger });
-        });
-        body.append(meta, content);
+        body.append(...buildEquipmentDetailDialogParts(entry));
       }
     });
     return true;
