@@ -649,6 +649,64 @@ async function validateInventory(page) {
     return { unresolved, pack: renderSkillPopupHtml("學者套組").includes("背包、書籍、墨水、墨水筆、油燈、油 ×10、羊皮紙 ×10、火絨盒") };
   });
   assert.deepEqual(startingEquipment, { unresolved: [], pack: true }, "starting equipment names resolve to catalog items and packs show their contents");
+  // 職業頁、背景頁的（A）（B）：選組合與擇一物品後放進物品欄（不裝備）、金幣記收入；純文字管理寫「初始裝備：」行；分享模式不能取得。
+  const takeStartingEquipment = await page.evaluate(async () => {
+    const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+    const select = async (id, value) => { const field = document.getElementById(id); field.value = value; field.dispatchEvent(new Event("change", { bubbles: true })); await wait(50); };
+    const dialog = () => document.querySelector('.app-dialog[data-variant="starting-equipment"]');
+    const confirm = async () => { (dialog() || [...document.querySelectorAll(".app-dialog")].at(-1)).querySelector(".app-dialog__button--primary").click(); await wait(100); };
+    applyStateObject({ class: "fighter", level: "1", "money-balance-pp": "0", "money-balance-gp": "0", "money-balance-sp": "0", "money-balance-cp": "0", __inventory: { version: 1, items: [] }, "gear-notes": "" });
+    await wait(50);
+    document.querySelector('#classCreationInfo [data-starting-equipment="A"]').click();
+    await wait(50);
+    await confirm();
+    const needsOption = dialog()?.querySelector(".starting-equipment-error")?.textContent;
+    dialog().querySelector('input[value="dexterity-default"]').click();
+    await confirm();
+    const fighter = { closed: !dialog(), gp: document.getElementById("money-balance-gp").value, mainHand: document.getElementById("mainHand").value,
+      items: Inventory.entries().filter(entry => !entry.in).map(entry => `${entry.itemId}×${entry.quantity}:${entry.source}`) };
+    await select("class", "cleric");
+    document.querySelector('#classCreationInfo [data-starting-equipment="A"]').click();
+    await wait(50);
+    await confirm();
+    const needsChoice = dialog()?.querySelector(".starting-equipment-error")?.textContent;
+    dialog().querySelector("[data-starting-choice]").value = "聖物匣";
+    await confirm();
+    const holySymbol = Inventory.entries().some(entry => entry.itemId === "聖物匣（手持）");
+    await select("class", "wizard");
+    document.querySelector('#classCreationInfo [data-starting-equipment="A"]').click();
+    await wait(50);
+    await confirm();
+    const spellbook = Inventory.entries().find(entry => entry.name === "法術書")?.weight;
+    document.querySelector('#classCreationInfo [data-starting-equipment="B"]').click();
+    await wait(50);
+    await confirm();
+    const gpAfterB = document.getElementById("money-balance-gp").value;
+    await select("background", "soldier");
+    Inventory.setTextOnly(true);
+    document.querySelector('#backgroundFeatures [data-starting-equipment="A"]').click();
+    await wait(50);
+    dialog().querySelector("[data-starting-choice]").value = "紙牌";
+    await confirm();
+    const textLine = document.getElementById("gear-notes").value.split("\n").at(-1);
+    Inventory.setTextOnly(false);
+    window.SHARE_MODE = true;
+    document.querySelector('#backgroundFeatures [data-starting-equipment="B"]').click();
+    await wait(50);
+    const shareBlocked = !document.querySelector(".app-dialog");
+    window.SHARE_MODE = false;
+    return { needsOption, fighter, needsChoice, holySymbol, spellbook, gpAfterB, textLine, shareBlocked };
+  });
+  assert.deepEqual(takeStartingEquipment, {
+    needsOption: "請先選擇一組裝備。",
+    fighter: { closed: true, gp: "11", mainHand: "", items: ["鑲釘皮甲×1:initial", "彎刀×1:initial", "短劍×1:initial", "長弓×1:initial", "箭矢×20:initial", "箭袋×1:initial", "背包×1:initial"] },
+    needsChoice: "請選擇擇一的物品。",
+    holySymbol: true,
+    spellbook: 3,
+    gpAfterB: "78",
+    textLine: "初始裝備：短矛、短弓、箭矢 ×20、紙牌、醫療包、箭袋、旅行者服裝",
+    shareBlocked: true
+  }, "starting equipment (A)/(B) buttons grant items and gold");
 
   await page.evaluate(() => {
     applyStateObject({ class: "fighter", level: "1", str: "10", "money-balance-pp": "0", "money-balance-gp": "100", "money-balance-sp": "0", "money-balance-cp": "0", __inventory: { version: 1, items: [] },

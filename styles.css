@@ -11678,6 +11678,51 @@ html.is-share-mode .starting-equipment-hint {
   display: none;
 }
 
+/* 起始裝備視窗：組合單選、物品預覽、擇一下拉與錯誤提示。 */
+.starting-equipment-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  border: 0;
+}
+
+.starting-equipment-options legend {
+  width: 100%;
+  margin: 0 0 0.35rem;
+  padding: 0;
+  font-weight: 700;
+}
+
+.starting-equipment-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+}
+
+.starting-equipment-option input {
+  width: auto;
+  min-height: 0;
+  margin: 0;
+}
+
+.starting-equipment-contents {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.starting-equipment-error {
+  margin: 0.5rem 0 0;
+  color: var(--warning);
+  font-weight: 700;
+}
+
+.starting-equipment-error:empty {
+  display: none;
+}
+
 button.feature-rule-tip:hover,
 button.feature-rule-tip:active {
   background: transparent;

@@ -1388,6 +1388,10 @@
       if (more?.getAttribute("aria-expanded") === "true" && !tools?.contains(event.target)) setMoreOpen(false);
     });
     document.addEventListener("inventory:change", render);
+    document.addEventListener("click", (event) => {
+      const trigger = event.target.closest?.("[data-starting-equipment]");
+      if (trigger) openStartingEquipmentDialog(trigger);
+    });
     ["mainHand", "offHand", "armor", "main2Shield", "offHandAsMain", "str", "race"].forEach((id) => {
       document.getElementById(id)?.addEventListener("change", render);
     });
@@ -1397,6 +1401,168 @@
     // 存檔還原只觸發 change，手動輸入觸發 input。
     ["input", "change"].forEach(eventName => document.getElementById("gear-notes")?.addEventListener(eventName, syncTidy));
     render();
+  }
+
+  // ===== 起始裝備（職業頁、背景頁的（A）（B）按鈕，data-starting-equipment）=====
+  // 物品與金幣取自 classRules／backgroundRules 的 equipment；擇一物品在視窗當場選。物品以 source "initial" 放進物品欄、不自動裝備，
+  // 只以文字管理物品時接在攜帶物品的「初始裝備：」行；金幣經 MoneyTracker.receiveGold() 記一筆收入。分享模式不能取得。
+  function toolGroupItem(choose, groupIds) {
+    const groups = globalScope.ToolProficiencyCatalog?.groups || [];
+    return { choose, from: groupIds.flatMap(id => groups.find(group => group.id === id)?.options || []) };
+  }
+
+  function startingEquipmentFor(trigger) {
+    if (trigger.closest("#backgroundFeatures")) {
+      const id = fieldValue("background");
+      const rules = globalScope.getBackgroundRules?.(id);
+      if (!rules?.equipment) return null;
+      const group = typeof rules.tool === "object" ? (globalScope.ToolProficiencyCatalog?.groups || []).find(item => item.id === rules.tool.chooseFrom) : null;
+      const items = rules.equipment.A.items.map(item => typeof item === "string" ? item : toolGroupItem(`${group?.label || "工具"}擇一`, [rules.tool.chooseFrom]));
+      return { title: `${rules.name}背景裝備`, A: [{ id: "default", label: "", items, gold: rules.equipment.A.gold }], B: rules.equipment.B };
+    }
+    const id = fieldValue("class");
+    const rules = globalScope.getClassRules?.(id);
+    if (!rules?.equipment) return null;
+    const A = rules.equipment.A.map(option => ({ ...option, items: option.items.map(item => item.tools ? toolGroupItem(item.choose, item.tools) : item) }));
+    return { title: `${rules.name}初始裝備`, A, B: rules.equipment.B };
+  }
+
+  function startingItemLabel(item) {
+    if (typeof item === "string") return item;
+    return item.name || item.choose;
+  }
+
+  // 選好的組合 → 物品欄加入請求與文字（「初始裝備：」行）；擇一物品的選擇依序取自 choices。
+  function startingEquipmentRequests(option, choices) {
+    let choiceIndex = 0;
+    return option.items.map((item) => {
+      if (typeof item === "string") return { text: item };
+      if (item.name) return { text: item.name, weight: item.weight };
+      return { text: choices[choiceIndex++] };
+    });
+  }
+
+  async function grantStartingEquipment(source, option, requests, label) {
+    const inventory = api();
+    const texts = requests.map(request => request.text);
+    if (texts.length) {
+      if (inventory.isTextOnly()) {
+        const notes = document.getElementById("gear-notes");
+        if (notes) {
+          notes.value = [notes.value.replace(/\n+$/u, ""), `初始裝備：${texts.join("、")}`].filter(Boolean).join("\n");
+          notes.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+      } else if (!inventory.add(requests, { source: "initial" })) {
+        globalScope.AppDialog.notify(`物品欄最多 ${inventory.LIMITS.items} 筆，請先整理物品欄再取得。`, { tone: "warning" });
+        return false;
+      }
+    }
+    if (option.gold && !(await globalScope.MoneyTracker?.receiveGold(option.gold, `${source.title}（${label}）`))) {
+      globalScope.AppDialog.notify("金幣沒有記入錢袋，請到錢財區手動調整。", { tone: "warning" });
+    }
+    const gained = [texts.length ? (inventory.isTextOnly() ? "物品寫進攜帶物品" : "物品放進物品欄") : "", option.gold ? `金幣 +${option.gold}` : ""].filter(Boolean).join("，");
+    globalScope.AppDialog.notify(`已取得${source.title}（${label}）：${gained}。`, { tone: "success" });
+    return true;
+  }
+
+  function openStartingEquipmentDialog(trigger) {
+    if (globalScope.SHARE_MODE || !globalScope.AppDialog || !api()) return;
+    const source = startingEquipmentFor(trigger);
+    const key = trigger.dataset.startingEquipment;
+    if (!source || !["A", "B"].includes(key)) return;
+    const label = key;
+    if (key === "B") {
+      globalScope.AppDialog.requestDecision({
+        title: `取得${source.title}（B）`,
+        message: `取得 ${source.B.gold} 金幣，在錢財區記一筆收入。`,
+        cancelLabel: "取消",
+        confirmLabel: "取得",
+        trigger
+      }).then(confirmed => confirmed && grantStartingEquipment(source, { gold: source.B.gold }, [], label));
+      return;
+    }
+    const textOnly = api().isTextOnly();
+    let selected = source.A.length === 1 ? source.A[0] : null;
+    let error = null;
+    let choiceBox = null;
+    const renderChoices = () => {
+      choiceBox.replaceChildren();
+      if (!selected) return;
+      const tags = el("ul", "inventory-tags inventory-tags--preview");
+      selected.items.forEach((item) => {
+        if (item.from) return;
+        const text = startingItemLabel(item);
+        const pack = api().getCatalogItem(api().parseItemText(text).itemId)?.pack;
+        tags.appendChild(el("li", "inventory-tag inventory-tag--static", `${text}${pack ? "（拆成容器與內容物）" : ""}`));
+      });
+      if (selected.gold) tags.appendChild(el("li", "inventory-tag inventory-tag--static", `${selected.gold} 金幣`));
+      choiceBox.appendChild(tags);
+      selected.items.filter(item => item.from).forEach((item, index) => {
+        const select = el("select", "starting-equipment-choice");
+        select.dataset.startingChoice = String(index);
+        select.append(new Option("請選擇", ""), ...item.from.map(name => new Option(name, name)));
+        select.addEventListener("change", () => { if (error) error.textContent = ""; });
+        choiceBox.appendChild(labelled(item.choose.replace(/擇一$/u, ""), select));
+      });
+    };
+    globalScope.AppDialog.showContent({
+      title: `取得${source.title}（A）`,
+      variant: "starting-equipment",
+      trigger,
+      initialFocus: "content",
+      renderContent(body) {
+        body.appendChild(el("p", "inventory-item-note", textOnly
+          ? "物品會寫進攜帶物品的「初始裝備：」行，金幣在錢財區記一筆收入。"
+          : "物品會放進物品欄（不會自動裝備，請到裝備頁選擇），金幣在錢財區記一筆收入。"));
+        if (source.A.length > 1) {
+          const fieldset = el("fieldset", "starting-equipment-options");
+          fieldset.appendChild(el("legend", "", "選擇一組裝備"));
+          source.A.forEach((option) => {
+            const radio = el("input");
+            radio.type = "radio";
+            radio.name = "starting-equipment-option";
+            radio.value = option.id;
+            radio.addEventListener("change", () => {
+              selected = option;
+              if (error) error.textContent = "";
+              renderChoices();
+            });
+            const wrapper = el("label", "starting-equipment-option");
+            wrapper.append(radio, document.createTextNode(option.label));
+            fieldset.appendChild(wrapper);
+          });
+          body.appendChild(fieldset);
+        }
+        choiceBox = el("div", "starting-equipment-contents");
+        body.appendChild(choiceBox);
+        error = el("p", "starting-equipment-error");
+        error.setAttribute("aria-live", "polite");
+        body.appendChild(error);
+        renderChoices();
+      },
+      actions: [
+        { label: "取消", value: false },
+        {
+          label: "取得",
+          intent: "primary",
+          resolve: async () => {
+            if (!selected) {
+              error.textContent = "請先選擇一組裝備。";
+              return false;
+            }
+            const selects = [...choiceBox.querySelectorAll("[data-starting-choice]")];
+            const missing = selects.find(select => !select.value);
+            if (missing) {
+              error.textContent = "請選擇擇一的物品。";
+              missing.focus();
+              return false;
+            }
+            const requests = startingEquipmentRequests(selected, selects.map(select => select.value));
+            return (await grantStartingEquipment(source, selected, requests, label)) ? "granted" : false;
+          }
+        }
+      ]
+    });
   }
 
   globalScope.InventoryUI = Object.freeze({ render, renderWeight, openCustomDialog, openItemDialog });
