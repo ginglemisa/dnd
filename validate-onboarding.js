@@ -1530,7 +1530,7 @@ async function verifyImports(browser, url, viewport = { width: 1280, height: 800
         saveDraft();
       };
       // Imports every default equipment package (each main-hand choice) into a reset card through the real importer.
-      window.probeInventoryImport = () => Object.entries(CLASS_EQUIPMENT_DEFINITIONS).flatMap(([classKey, definition], classIndex) =>
+      window.probeInventoryImport = () => Object.keys(CLASS_EQUIPMENT_LOADOUTS).map(key => [key, classEquipmentDefinition(key)]).flatMap(([classKey, definition], classIndex) =>
         definition.defaults.flatMap(pkg => pkg.main.map(main => {
           const backgrounds = Object.keys(backgroundRules);
           const off = (pkg.off[main] || [])[0] || null;
@@ -1551,7 +1551,9 @@ async function verifyImports(browser, url, viewport = { width: 1280, height: 800
             slots: [document.getElementById('mainHand').value, document.getElementById('offHand').disabled ? '' : document.getElementById('offHand').value, document.getElementById('armor').value],
             expected: [main, off || '', pkg.armor || ''],
             initial: Inventory.hasInitialEquipment(),
-            customs: Inventory.entries().filter(entry => !entry.itemId).map(entry => entry.name)
+            customs: Inventory.entries().filter(entry => !entry.itemId).map(entry => entry.name),
+            weights: Inventory.entries().filter(entry => !entry.itemId).map(entry => [entry.name, entry.weight ?? null]),
+            holySymbol: Inventory.entries().some(entry => entry.itemId === "徽章（附於布料／盾牌）")
           };
         })));
       window.quickBuild = {`);
@@ -1569,6 +1571,8 @@ async function verifyImports(browser, url, viewport = { width: 1280, height: 800
       assert.deepEqual(probe.slots, probe.expected, `${probe.key} keeps the quick-build loadout`);
       assert.equal(probe.initial, true, `${probe.key} marks initial equipment for the PDF`);
       assert.deepEqual(probe.customs.filter(name => name !== "法術書" && !name.endsWith("擇一")), [], `${probe.key} maps starting equipment to catalog items`);
+      if (probe.key.startsWith("wizard:")) assert.deepEqual(probe.weights.filter(([name]) => name === "法術書"), [["法術書", 3]], `${probe.key} gives the 3 lb spellbook`);
+      if (/^(cleric|paladin):/u.test(probe.key)) assert.equal(probe.holySymbol, true, `${probe.key} gives the emblem holy symbol`);
     }
   }
   for (const scenario of ["cancel", "complete", "warning", "failure", "pdf", "share", "close", "stored-manual-close", "stored-manual-escape"]) {
