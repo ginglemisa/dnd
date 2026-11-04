@@ -1101,7 +1101,7 @@
       <div class="equipment-loadout-field__head">
         <label for="mainHand">主手</label>
         <label class="weapon-hand-toggle" for="mainHandPactWeapon" data-pact-weapon-hand="main" hidden><input type="checkbox" id="mainHandPactWeapon" aria-label="主手為契約武器">契約</label>
-        <label class="weapon-hand-toggle" for="mainHandShillelagh" data-shillelagh-hand="main" hidden><input type="checkbox" id="mainHandShillelagh" data-state-transient="true" aria-label="主手以橡棍術計算">橡棍術</label>
+        <label class="weapon-hand-toggle" for="mainHandShillelagh" data-shillelagh-hand="main" hidden><input type="checkbox" id="mainHandShillelagh" data-state-transient="true" aria-label="主手以橡棍術計算">橡棍</label>
       </div>
 <select id="mainHand"><option value="">-- 請選擇 --</option><option value="短棒">短棒</option><option value="匕首">匕首</option><option value="巨棒">巨棒</option><option value="手斧">手斧</option><option value="標槍">標槍</option><option value="輕錘">輕錘</option><option value="硬頭錘">硬頭錘</option><option value="長棍">長棍</option><option value="鐮刀">鐮刀</option><option value="短矛">短矛</option><option value="飛鏢">飛鏢</option><option value="輕弩">輕弩</option><option value="短弓">短弓</option><option value="投石索">投石索</option><option value="戰斧">戰斧</option><option value="連枷">連枷</option><option value="長柄刀">長柄刀</option><option value="巨斧">巨斧</option><option value="巨劍">巨劍</option><option value="長戟">長戟</option><option value="騎槍">騎槍</option><option value="長劍">長劍</option><option value="巨錘">巨錘</option><option value="釘頭錘">釘頭錘</option><option value="長矛">長矛</option><option value="刺劍">刺劍</option><option value="彎刀">彎刀</option><option value="短劍">短劍</option><option value="三叉戟">三叉戟</option><option value="戰錘">戰錘</option><option value="戰鎬">戰鎬</option><option value="鞭">鞭</option><option value="吹箭筒">吹箭筒</option><option value="手弩">手弩</option><option value="重弩">重弩</option><option value="長弓">長弓</option><option value="火繩槍">火繩槍</option><option value="手槍">手槍</option></select>
     </div>
@@ -1109,7 +1109,7 @@
       <div class="equipment-loadout-field__head">
         <label id="offHandLabel" for="offHand">副手</label>
         <label class="weapon-hand-toggle" for="offHandPactWeapon" data-pact-weapon-hand="off" hidden><input type="checkbox" id="offHandPactWeapon" aria-label="副手為契約武器">契約</label>
-        <label class="weapon-hand-toggle" for="offHandShillelagh" data-shillelagh-hand="off" hidden><input type="checkbox" id="offHandShillelagh" data-state-transient="true" aria-label="副手以橡棍術計算">橡棍術</label>
+        <label class="weapon-hand-toggle" for="offHandShillelagh" data-shillelagh-hand="off" hidden><input type="checkbox" id="offHandShillelagh" data-state-transient="true" aria-label="副手以橡棍術計算">橡棍</label>
       </div>
       <select id="offHand" disabled=""><option disabled="">(雙手佔用)</option></select>
     </div>
@@ -2997,7 +2997,7 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
 <script src="search.js?v=20261104-inventory-detail" defer></script>
 <script src="equipment-shop.js?v=20261027-shop-tool-order" defer></script>
 <script src="inventory.js?v=20261105-inventory-text" defer></script>
-<script src="inventory-ui.js?v=20261105-inventory-text" defer></script>
+<script src="inventory-ui.js?v=20261106-pact-weapon" defer></script>
 
 <script>
 function getModifier(statId) {
@@ -3261,8 +3261,11 @@ function populateSelect(selectEl, items) {
 }
 // 裝備下拉（slot：mainHand／offHand／armor）只列物品欄有的武器、護甲與盾牌；武僧武藝不需要物品。
 // 同名武器主手、副手都拿時物品欄要有 2 件。目前選取或存檔中的值（keepValue）不在物品欄時保留並標示，不替玩家清掉。
+// 勾選「契約」的那一手（isPactWeaponListHand）改列全部近戰武器、不看物品欄（filterPactWeaponSections）。
 let pendingEquipmentValues = null;
 function filterEquipmentSectionsByInventory(sections, slot, keepValue) {
+  const pactHand = slot === "mainHand" ? "main" : (slot === "offHand" ? "off" : "");
+  if (pactHand && isPactWeaponListHand(pactHand)) return filterPactWeaponSections(sections, keepValue);
   // 只以文字管理物品時列出全部裝備。
   if (window.Inventory?.isTextOnly()) return sections;
   const counts = window.Inventory?.getEquippableCounts();
@@ -3270,7 +3273,8 @@ function filterEquipmentSectionsByInventory(sections, slot, keepValue) {
   const mainHand = document.getElementById("mainHand")?.value || "";
   const owned = name => isShieldItem(name) ? counts.shields
     : slot === "armor" ? counts.armors.get(name) || 0 : counts.weapons.get(name) || 0;
-  const needed = name => slot === "offHand" && !isShieldItem(name) && name === mainHand ? 2 : 1;
+  // 主手的契約武器不從物品欄拿，副手同名只要 1 件。
+  const needed = name => slot === "offHand" && !isShieldItem(name) && name === mainHand && !isPactWeaponListHand("main") ? 2 : 1;
   return sections.map(section => ({
     ...section,
     items: section.items.flatMap((item) => {
@@ -3278,6 +3282,18 @@ function filterEquipmentSectionsByInventory(sections, slot, keepValue) {
       if (name === "武藝" || owned(name) >= needed(name)) return [item];
       if (!keepValue || name !== keepValue) return [];
       return [{ ...item, 選項文字: `${name}（${owned(name) ? `物品欄只有 ${owned(name)} 件` : "不在物品欄"}）` }];
+    })
+  })).filter(section => section.items.length > 0);
+}
+
+// 契約武器由玩家召喚：只留近戰武器（武藝跟著職業顯示）。目前選取的遠程武器或盾牌保留並標示，不替玩家清掉。
+function filterPactWeaponSections(sections, keepValue) {
+  const isMelee = name => name === "武藝" || (Boolean(getWeaponByName(name)) && !isRangedWeapon(getWeaponByName(name)));
+  return sections.map(section => ({
+    ...section,
+    items: section.items.flatMap(item => {
+      if (isMelee(item.名稱)) return [item];
+      return keepValue && item.名稱 === keepValue ? [{ ...item, 選項文字: `${item.名稱}（不是近戰武器）` }] : [];
     })
   })).filter(section => section.items.length > 0);
 }
@@ -3653,6 +3669,7 @@ function isWeaponProficient(weapon) {
 }
 
 // 刃之魔契：主手或副手可標記為契約武器（同時只有一把，兩把都勾時以主手為準）。
+// 「契約」開關在選了刃之魔契後一律顯示；勾選的那一手由玩家自選近戰武器，不需要物品欄有這把武器。
 // 契約武器熟練、可用魅力計算命中與傷害，傷害類型見下方的武器傷害類型選擇。
 const PACT_WEAPON_HANDS = Object.freeze({
   main: Object.freeze({ selectId: "mainHand", checkboxId: "mainHandPactWeapon" }),
@@ -3671,11 +3688,21 @@ function getPactWeaponHandWeapon(hand) {
   return name === "武藝" ? null : getWeaponByName(name) || null;
 }
 
-function isPactWeaponHand(hand) {
+// 勾選「契約」的那一手：裝備下拉列全部近戰武器，物品欄不為它補上武器，也不把它算成用掉的物品（inventory-ui.js）。
+function isPactWeaponListHand(hand) {
   const config = PACT_WEAPON_HANDS[hand];
-  if (!config || !canUsePactWeapon() || !getPactWeaponHandWeapon(hand)) return false;
-  if (!document.getElementById(config.checkboxId)?.checked) return false;
-  return hand !== "off" || !isPactWeaponHand("main");
+  if (!config || !canUsePactWeapon() || !document.getElementById(config.checkboxId)?.checked) return false;
+  return hand !== "off" || !isPactWeaponListHand("main");
+}
+
+function isPactWeaponHand(hand) {
+  return isPactWeaponListHand(hand) && Boolean(getPactWeaponHandWeapon(hand));
+}
+
+// 哪幾手的下拉是契約武器清單；改變時（勾選、職業或祈喚變動、還原存檔）由 syncWeaponDamageTypeControls 重建裝備下拉。
+let pactWeaponListKey = null;
+function getPactWeaponListKey() {
+  return Object.keys(PACT_WEAPON_HANDS).filter(isPactWeaponListHand).join(",");
 }
 
 function normalizeLegacyPactWeaponDamage(data) {
@@ -3863,9 +3890,13 @@ function syncWeaponDamageTypeControls() {
   const pactAvailable = canUsePactWeapon();
   const shillelaghPrepared = hasPreparedSpell("shillelagh");
   const sheetShillelaghHand = getSheetShillelaghHand();
-  Object.keys(PACT_WEAPON_HANDS).forEach(hand => {
+  if (getPactWeaponListKey() !== pactWeaponListKey) refreshWeaponSelections();
+  Object.entries(PACT_WEAPON_HANDS).forEach(([hand, config]) => {
     const pactControl = document.querySelector(`[data-pact-weapon-hand="${hand}"]`);
-    if (pactControl) pactControl.hidden = !(pactAvailable && getPactWeaponHandWeapon(hand));
+    if (pactControl) pactControl.hidden = !pactAvailable;
+    // 主手拿雙手武器時副手被佔用，副手不能當契約武器。
+    const pactInput = document.getElementById(config.checkboxId);
+    if (pactInput) pactInput.disabled = Boolean(document.getElementById(config.selectId)?.disabled);
     const shillelaghControl = document.querySelector(`[data-shillelagh-hand="${hand}"]`);
     const shillelaghInput = document.getElementById(SHILLELAGH_HAND_TOGGLES[hand]);
     if (shillelaghControl) shillelaghControl.hidden = !(shillelaghPrepared && getShillelaghEligibleHand(hand) === hand);
@@ -4367,6 +4398,7 @@ function refreshWeaponSelections() {
 
   const previousMain = mainHandSelect.value;
   const previousOff = offHandSelect.value;
+  pactWeaponListKey = getPactWeaponListKey();
   populateSelectWithSections(mainHandSelect, getWeaponSections(false, false), { slot: "mainHand", keepValue: getEquipmentKeepValue(mainHandSelect, "mainHand") });
   mainHandSelect.value = previousMain;
   if (mainHandSelect.value !== previousMain) mainHandSelect.value = "";
@@ -5385,14 +5417,16 @@ function applyClassFeatureCantrips(choices) {
 
 // 物品欄先於裝備欄位還原，裝備下拉才有對應選項。已裝備的武器、護甲與盾牌不在物品欄時補進物品欄（舊資料沒有 __inventory 時從空的開始）；
 // 仍對不上的選擇（例如不在目錄的名稱）在下拉保留並標示「不在物品欄」，不替玩家清掉。
+// 契術師勾選「契約」的那一手是召喚的契約武器，不補進物品欄（祈喚此時還沒還原，只看職業與勾選）。
 function restoreInventoryState(data) {
   if (!window.Inventory) return;
   pendingEquipmentValues = { mainHand: String(data.mainHand || ""), offHand: String(data.offHand || ""), armor: String(data.armor || "") };
+  const pactHand = data.class !== "warlock" ? "" : (data.mainHandPactWeapon === true ? "main" : (data.offHandPactWeapon === true ? "off" : ""));
   const hasInventory = Object.hasOwn(data, "__inventory");
   if (hasInventory) window.Inventory.restore(data.__inventory);
   window.Inventory.ensureEquipped({
-    mainHand: pendingEquipmentValues.mainHand,
-    offHand: pendingEquipmentValues.offHand,
+    mainHand: pactHand === "main" ? "" : pendingEquipmentValues.mainHand,
+    offHand: pactHand === "off" ? "" : pendingEquipmentValues.offHand,
     armor: pendingEquipmentValues.armor,
     shield: data.offHandAsMain === true && data.main2Shield === true
   }, { reset: !hasInventory });

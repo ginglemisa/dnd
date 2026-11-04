@@ -59,13 +59,19 @@
     return document.getElementById(id)?.value || "";
   }
 
+  // 主手／副手目前從物品欄拿的武器：副手被雙手武器佔用時是空的；契術師的契約武器是召喚的，不算物品欄的物品。
+  function handFromInventory(hand) {
+    const select = document.getElementById(`${hand}Hand`);
+    if (!select || select.disabled || globalScope.isPactWeaponListHand?.(hand)) return "";
+    return select.value;
+  }
+
   // 目前裝備用到的物品：weapon:<武器名稱>、armor:<護甲名稱>、shield。
   function equippedUsage() {
     const usage = new Map();
     const bump = key => usage.set(key, (usage.get(key) || 0) + 1);
-    const offHandSelect = document.getElementById("offHand");
-    const mainHand = fieldValue("mainHand");
-    const offHand = offHandSelect && !offHandSelect.disabled ? offHandSelect.value : "";
+    const mainHand = handFromInventory("main");
+    const offHand = handFromInventory("off");
     if (mainHand && mainHand !== "武藝") bump(`weapon:${mainHand}`);
     if (offHand === "盾牌") bump("shield");
     else if (offHand && offHand !== "武藝") bump(`weapon:${offHand}`);
@@ -574,10 +580,9 @@
       notes.dispatchEvent(new Event("input", { bubbles: true }));
     }
     if (!turningOn) {
-      const offHand = document.getElementById("offHand");
       api().ensureEquipped({
-        mainHand: fieldValue("mainHand"),
-        offHand: offHand && !offHand.disabled ? offHand.value : "",
+        mainHand: handFromInventory("main"),
+        offHand: handFromInventory("off"),
         armor: fieldValue("armor"),
         shield: document.getElementById("offHandAsMain")?.checked === true && document.getElementById("main2Shield")?.checked === true
       });

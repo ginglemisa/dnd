@@ -5672,7 +5672,7 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   font-size: var(--fs-sm);
 }
 
-/* 主手／副手標題列：「☐契約」「☐橡棍術」緊接在標題後面，字級與標題相同，欄寬不夠時換到下一列。 */
+/* 主手／副手標題列：「☐契約」「☐橡棍」緊接在標題後面，字級與標題相同，欄寬不夠時換到下一列。 */
 .equipment-loadout-field__head {
   display: flex;
   flex-wrap: wrap;

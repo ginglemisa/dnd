@@ -1157,14 +1157,24 @@ async function verifyEquipmentLoadout(browser, url) {
       blade.checked = true;
       blade.dispatchEvent(new Event("change", { bubbles: true }));
     });
-    assert.deepEqual(await pact(), { controls: [true, false], hit: "+0", damage: "1d8揮砍", warnings: ["武器未熟練"] }, "Pact of the Blade alone grants no martial proficiency");
+    assert.deepEqual(await pact(), { controls: [true, true], hit: "+0", damage: "1d8揮砍", warnings: ["武器未熟練"] }, "Pact of the Blade alone grants no martial proficiency; both pact toggles show even with an empty hand");
     assert.equal(await page.locator('label[data-pact-weapon-hand="main"]').textContent(), "契約");
     assert.deepEqual(await page.evaluate(selector => {
       const select = document.querySelector(selector);
       return [!select.closest("[data-weapon-damage-type-picker]").hidden, select.value, Array.from(select.options, option => option.textContent)];
     }, bladeCardSelect), [true, "necrotic", ["原類型", "黯蝕", "心靈", "光耀"]], "the Pact of the Blade card offers the damage types, defaulting to necrotic");
+    const handOptions = hand => page.locator(`#${hand}Hand option:not([disabled])`).allTextContents();
+    assert.deepEqual(await handOptions("main"), ["-- 請選擇 --", "匕首", "長劍"], "without the pact the main hand lists the inventory");
     await page.check("#mainHandPactWeapon");
-    assert.deepEqual(await pact(), { controls: [true, false], hit: "+5", damage: "1d8+3黯蝕", warnings: [] }, "pact weapon is proficient, uses charisma and defaults to necrotic");
+    assert.deepEqual(await pact(), { controls: [true, true], hit: "+5", damage: "1d8+3黯蝕", warnings: [] }, "pact weapon is proficient, uses charisma and defaults to necrotic");
+    // 勾選「契約」的那一手列全部近戰武器、不看物品欄；遠程武器不列。
+    const pactMainOptions = await handOptions("main");
+    assert.deepEqual([["巨劍", "刺劍", "短棒", "長劍"].every(name => pactMainOptions.includes(name)), ["長弓", "輕弩", "手弩", "武藝"].some(name => pactMainOptions.includes(name)),
+      pactMainOptions.some(text => text.includes("物品欄"))], [true, false, false], "the pact hand lists every melee weapon regardless of the inventory");
+    await page.selectOption("#mainHand", "巨劍");
+    assert.deepEqual([(await pact()).damage, await page.isDisabled("#offHand"), await page.isDisabled("#offHandPactWeapon"), await page.evaluate(() => Inventory.entries().map(entry => entry.itemId))],
+      ["2d6+3黯蝕", true, true, ["長劍", "匕首"]], "a two-handed pact weapon occupies the off hand and is not taken from the inventory");
+    await page.selectOption("#mainHand", "長劍");
     const damageLink = page.locator("#equipment-loadout-summary-content .weapon-damage-type-link");
     assert.equal(await damageLink.textContent(), "1d8 黯蝕", "the summary damage of the pact weapon is a link");
     await damageLink.click();
@@ -1197,6 +1207,16 @@ async function verifyEquipmentLoadout(browser, url) {
     assert.equal((await pact()).damage, "1d8+3心靈", "legacy pact damage of the checked hand is migrated");
     await page.evaluate(state => applyStateObject(state), { ...legacyPact, mainHandPactDamage: "" });
     assert.equal((await pact()).damage, "1d8+3揮砍", "legacy original damage type stays original");
+    // 存檔的契約武器不在物品欄：還原時不補進物品欄、下拉照常可選；取消契約後回到物品欄清單並標示。
+    await page.evaluate(state => applyStateObject(state), { ...pactState, "eldritch-invocation-0-1": true, mainHandPactWeapon: true, mainHand: "巨劍", pactWeaponDamageType: "radiant" });
+    assert.deepEqual([await page.inputValue("#mainHand"), (await pact()).damage, await page.evaluate(() => Inventory.entries().map(entry => entry.itemId)), (await handOptions("main")).includes("巨劍")],
+      ["巨劍", "2d6+3光耀", ["長劍", "匕首"], true], "a saved pact weapon outside the inventory is restored without adding it to the inventory");
+    await page.uncheck("#mainHandPactWeapon");
+    assert.deepEqual([await page.inputValue("#mainHand"), (await handOptions("main")).includes("巨劍（不在物品欄）"), (await handOptions("main")).includes("刺劍")],
+      ["巨劍", true, false], "unchecking the pact keeps the weapon, marked as not in the inventory");
+    await page.evaluate(state => applyStateObject(state), { ...pactState, __inventory: { version: 1, items: [{ uid: "longbow", itemId: "長弓", quantity: 1 }] }, "eldritch-invocation-0-1": true, mainHand: "長弓" });
+    await page.check("#mainHandPactWeapon");
+    assert.deepEqual([await page.inputValue("#mainHand"), (await handOptions("main")).includes("長弓（不是近戰武器）")], ["長弓", true], "a ranged weapon already held stays selected and is marked");
     assert.deepEqual(await page.evaluate(() => {
       document.getElementById("class").value = "fighter";
       const shared = collectShareState();
