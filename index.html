@@ -81,7 +81,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261104-inventory-merge">
+  <link rel="stylesheet" href="styles.css?v=20261105-inventory-text">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261103-roll-min" defer></script>
   <script src="monster.js?v=20261025-beast-perception" defer></script>
@@ -109,7 +109,7 @@
   <script src="tabletop-spells.js?v=20261104-weapon-damage-type" defer></script>
   <script src="legal-modal.js?v=20261022-game-icons" defer></script>
   <script src="onboarding-tour.js?v=20261104-inventory" defer></script>
-  <script src="quick-build.js?v=20261104-inventory-sync" defer></script>
+  <script src="quick-build.js?v=20261105-inventory-text" defer></script>
   <script src="spellbook.js?v=20261104-familiar-references" defer></script>
   <script src="spell-management.js?v=20261103-manual-toggle" defer></script>
   <script src="class-option-memory.js?v=20261024-class-split" defer></script>
@@ -1149,7 +1149,7 @@
   <div class="section">
     <!-- 標題列工具（整理成標籤、齒輪）、物品欄與商店按鈕跟著攜帶物品文字框在角色卡與跑團模式之間搬移（tabletop-mode.js）；物品標籤由 inventory-ui.js 繪製。 -->
     <div class="inventory-heading"><h3>攜帶物品</h3><div id="inventory-heading-sheet-mount" class="inventory-heading-mount"><div id="inventory-heading-tools" class="inventory-heading-tools"><button type="button" id="inventory-tidy" class="inventory-tidy" aria-haspopup="dialog" hidden>整理成標籤</button><button type="button" id="inventory-gear" class="inventory-gear" aria-expanded="false" aria-controls="inventory-tools" aria-label="顯示物品欄選項"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></div></div></div>
-    <div id="gear-notes-sheet-mount"><div id="inventory-panel" class="inventory-panel" aria-label="物品欄"><div id="inventory-tools" class="inventory-tools" hidden><p id="inventory-weight" class="inventory-weight" aria-live="polite"></p><button type="button" id="inventory-add" class="inventory-add" aria-haspopup="dialog">＋ 自訂物品</button></div><p id="inventory-over" class="inventory-over" role="status" hidden>負重已超過攜帶上限，請依負重規則處理。</p><ul id="inventory-tags" class="inventory-tags" aria-label="攜帶的物品"></ul><p class="inventory-empty">物品欄還是空的，可以從商店購買或免費取得，或用齒輪裡的「自訂物品」。</p></div><textarea id="gear-notes" rows="3" aria-label="其他攜帶物品（文字）" placeholder="其他攜帶物品或補充說明（自由文字）..."></textarea><button type="button" id="equipment-shop-open" class="equipment-shop-launch" data-equipment-shop-open aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M3 4h2.2l2.1 10.2a1.5 1.5 0 0 0 1.5 1.2h8.4a1.5 1.5 0 0 0 1.5-1.1L20.5 8H6.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="19.5" r="1.5" fill="currentColor"/><circle cx="17" cy="19.5" r="1.5" fill="currentColor"/></svg><span>開啟商店</span></button></div>
+    <div id="gear-notes-sheet-mount"><div id="inventory-panel" class="inventory-panel" aria-label="物品欄"><div id="inventory-tools" class="inventory-tools" hidden><p id="inventory-weight" class="inventory-weight" aria-live="polite"></p><div class="inventory-tools__actions"><button type="button" id="inventory-add" class="inventory-add" aria-haspopup="dialog">＋ 自訂物品</button><button type="button" id="inventory-text-only" class="inventory-text-only" aria-pressed="false">只以文字管理物品</button></div></div><p id="inventory-over" class="inventory-over" role="status" hidden>負重超過攜帶上限 <button type="button" id="inventory-over-hide" class="inventory-over__hide">隱藏</button></p><ul id="inventory-tags" class="inventory-tags" aria-label="攜帶的物品"></ul><p class="inventory-empty">物品欄還是空的，可以從商店購買或免費取得，或用齒輪裡的「自訂物品」。</p></div><textarea id="gear-notes" rows="3" aria-label="其他攜帶物品（文字）" placeholder="其他攜帶物品或補充說明（自由文字）..."></textarea><button type="button" id="equipment-shop-open" class="equipment-shop-launch" data-equipment-shop-open aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M3 4h2.2l2.1 10.2a1.5 1.5 0 0 0 1.5 1.2h8.4a1.5 1.5 0 0 0 1.5-1.1L20.5 8H6.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="19.5" r="1.5" fill="currentColor"/><circle cx="17" cy="19.5" r="1.5" fill="currentColor"/></svg><span>開啟商店</span></button></div>
     <div class="money-section" aria-label="錢財管理">
       <div class="money-balance-header">
         <h4 class="money-title">總財產</h4>
@@ -2996,8 +2996,8 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
 <script src="equipment-data.js?v=20261104-inventory" defer></script>
 <script src="search.js?v=20261104-inventory-detail" defer></script>
 <script src="equipment-shop.js?v=20261027-shop-tool-order" defer></script>
-<script src="inventory.js?v=20261104-inventory" defer></script>
-<script src="inventory-ui.js?v=20261104-inventory-detail" defer></script>
+<script src="inventory.js?v=20261105-inventory-text" defer></script>
+<script src="inventory-ui.js?v=20261105-inventory-text" defer></script>
 
 <script>
 function getModifier(statId) {
@@ -3198,7 +3198,7 @@ function fillSkills() {
   updateAutomaticInitiative();
 }
 </script>
-<script src="pdf-launcher.js?v=20261104-inventory-merge"></script>
+<script src="pdf-launcher.js?v=20261105-inventory-text"></script>
 
 <script>
 // ====== 裝備,武器,法術相關工具 ======
@@ -3263,6 +3263,8 @@ function populateSelect(selectEl, items) {
 // 同名武器主手、副手都拿時物品欄要有 2 件。目前選取或存檔中的值（keepValue）不在物品欄時保留並標示，不替玩家清掉。
 let pendingEquipmentValues = null;
 function filterEquipmentSectionsByInventory(sections, slot, keepValue) {
+  // 只以文字管理物品時列出全部裝備。
+  if (window.Inventory?.isTextOnly()) return sections;
   const counts = window.Inventory?.getEquippableCounts();
   if (!counts) return sections;
   const mainHand = document.getElementById("mainHand")?.value || "";
@@ -3393,7 +3395,7 @@ function isEffectiveShieldEquippedForState(state, options = {}) {
 function isMain2ShieldEligible() {
   if (!isOffHandAlternateMain() || !isShieldProficient()) return false;
   // 需要物品欄有盾牌；已勾選的舊資料保留，取消後要有盾牌才能再勾。
-  const shieldOwned = !window.Inventory || window.Inventory.getEquippableCounts().shields > 0
+  const shieldOwned = !window.Inventory || window.Inventory.isTextOnly() || window.Inventory.getEquippableCounts().shields > 0
     || document.getElementById("main2Shield")?.checked === true;
   if (!shieldOwned) return false;
   return ["mainHand", "offHand"].every(id => {
@@ -4884,9 +4886,11 @@ function assertCharacterDataCount(value, maximum) {
 }
 
 // 物品欄（inventory.js）的匯入預檢：版本 1、至多 300 筆，每筆只有約定欄位且型別正確；細部清理由 Inventory.restore() 負責。
-const INVENTORY_ENTRY_KEYS = new Set(["uid", "itemId", "name", "quantity", "in", "weight", "container", "source"]);
+const INVENTORY_KEYS = new Set(["version", "textOnly", "items"]);
+const INVENTORY_ENTRY_KEYS = new Set(["uid", "itemId", "name", "quantity", "in", "weight", "container", "desc", "source"]);
 function isValidInventoryState(value) {
   if (!value || typeof value !== "object" || Array.isArray(value) || value.version !== 1 || !Array.isArray(value.items)) return false;
+  if (!Object.keys(value).every(key => INVENTORY_KEYS.has(key)) || (value.textOnly !== undefined && typeof value.textOnly !== "boolean")) return false;
   if (value.items.length > 300) return false;
   return value.items.every(entry => entry && typeof entry === "object" && !Array.isArray(entry)
     && Object.keys(entry).every(key => INVENTORY_ENTRY_KEYS.has(key))
@@ -4894,6 +4898,7 @@ function isValidInventoryState(value) {
     && Number.isInteger(entry.quantity) && entry.quantity >= 1 && entry.quantity <= 9999
     && (entry.weight === undefined || (typeof entry.weight === "number" && Number.isFinite(entry.weight) && entry.weight >= 0 && entry.weight <= 9999))
     && (entry.container === undefined || typeof entry.container === "boolean")
+    && (entry.desc === undefined || (typeof entry.desc === "string" && entry.desc.length <= 400))
     && (typeof entry.itemId === "string" || typeof entry.name === "string"));
 }
 
@@ -5374,20 +5379,19 @@ function applyClassFeatureCantrips(choices) {
   });
 }
 
-// 物品欄先於裝備欄位還原，裝備下拉才有對應選項。舊資料（沒有 __inventory）把已裝備的武器、護甲與盾牌放進物品欄；
-// 存檔裡選了、物品欄卻沒有的裝備，在下拉保留並標示「不在物品欄」，不替玩家清掉。
+// 物品欄先於裝備欄位還原，裝備下拉才有對應選項。已裝備的武器、護甲與盾牌不在物品欄時補進物品欄（舊資料沒有 __inventory 時從空的開始）；
+// 仍對不上的選擇（例如不在目錄的名稱）在下拉保留並標示「不在物品欄」，不替玩家清掉。
 function restoreInventoryState(data) {
   if (!window.Inventory) return;
   pendingEquipmentValues = { mainHand: String(data.mainHand || ""), offHand: String(data.offHand || ""), armor: String(data.armor || "") };
-  if (Object.hasOwn(data, "__inventory")) window.Inventory.restore(data.__inventory);
-  else {
-    window.Inventory.seedFromEquipped({
-      mainHand: pendingEquipmentValues.mainHand,
-      offHand: pendingEquipmentValues.offHand,
-      armor: pendingEquipmentValues.armor,
-      shield: data.offHandAsMain === true && data.main2Shield === true
-    });
-  }
+  const hasInventory = Object.hasOwn(data, "__inventory");
+  if (hasInventory) window.Inventory.restore(data.__inventory);
+  window.Inventory.ensureEquipped({
+    mainHand: pendingEquipmentValues.mainHand,
+    offHand: pendingEquipmentValues.offHand,
+    armor: pendingEquipmentValues.armor,
+    shield: data.offHandAsMain === true && data.main2Shield === true
+  }, { reset: !hasInventory });
 }
 
 function applyStateObject(data) {
@@ -6408,8 +6412,34 @@ function setupMoneyTracker() {
     document.querySelectorAll(".money-modal:not([hidden])").forEach(closeModal);
   });
 
-  // 商店結帳入口：整張購物清單記一筆交易，再把品項加入物品欄。
+  // 商店結帳入口：整張購物清單記一筆交易，再把品項加入物品欄；只以文字管理物品時合併進攜帶物品的「購買物品：」行。
   const purchaseCurrencyIds = { 銅幣: "cp", 銀幣: "sp", 金幣: "gp", 白金幣: "pp" };
+  const gearNameOverrides = {
+    "聖物匣（手持）": "聖物匣", "徽章（附於布料／盾牌）": "徽章", "護身符（佩戴／手持）": "護身符",
+    "木製法杖（長棍）": "法杖（長棍）", "箭矢": "箭矢(20)",
+    "弩矢": "弩矢(20)", "子彈，火器": "子彈(10)", "彈丸，投石索": "彈丸(20)", "針": "針(50)"
+  };
+  const mergePurchasedGear = (items) => {
+    const gearNotes = byId("gear-notes");
+    if (!gearNotes) return;
+    const lines = gearNotes.value.split("\n");
+    const existingItems = lines[0]?.startsWith("購買物品：") ? lines.shift().slice("購買物品：".length).split("、").filter(Boolean) : [];
+    const merged = items.reduce((entries, { label, gearName, quantity }) => {
+      const name = gearName || gearNameOverrides[label] || label;
+      let combinedQuantity = quantity;
+      const remaining = entries.filter((item) => {
+        const match = item.match(/^(.*?) ×(\d+)$/u);
+        if ((match ? match[1] : item) !== name) return true;
+        combinedQuantity += match ? Number(match[2]) : 1;
+        return false;
+      });
+      remaining.push(combinedQuantity === 1 ? name : `${name} ×${combinedQuantity}`);
+      return remaining;
+    }, existingItems);
+    lines.unshift(`購買物品：${merged.join("、")}`);
+    gearNotes.value = lines.join("\n");
+    gearNotes.dispatchEvent(new Event("input", { bubbles: true }));
+  };
   const describePurchasedItems = (items) => items
     .map(({ label, quantity }) => (quantity === 1 ? label : `${label} ×${quantity}`))
     .join("、");
@@ -6432,8 +6462,9 @@ function setupMoneyTracker() {
       return { label, gearName, quantity, currencyId, total: amount * quantity };
     });
     if (!items.length || items.includes(null) || !window.Inventory) return false;
-    const inventoryRequests = toInventoryRequests(items);
-    if (!window.Inventory.add(inventoryRequests, { dryRun: true })) {
+    const textOnly = window.Inventory.isTextOnly();
+    const inventoryRequests = textOnly ? [] : toInventoryRequests(items);
+    if (!textOnly && !window.Inventory.add(inventoryRequests, { dryRun: true })) {
       window.AppDialog.notify(`物品欄最多 ${window.Inventory.LIMITS.items} 筆，請先整理物品欄再結帳。`, { tone: "warning" });
       return false;
     }
@@ -6446,7 +6477,8 @@ function setupMoneyTracker() {
         .reduce((sum, item) => sum + item.total, 0)]));
       if (!(await recordTransaction({ type: "expense", note: `購買${note}`, amountCopper: toCopperValue(amountParts), amountParts }))) return false;
     }
-    window.Inventory.add(inventoryRequests);
+    if (textOnly) mergePurchasedGear(items);
+    else window.Inventory.add(inventoryRequests);
     scheduleSaveAllFields();
     return true;
   };

@@ -1,10 +1,11 @@
 /**
  * 物品欄資料（傳統 defer script，無額外 runtime dependency）。
  *
- * - 角色資料頂層 `__inventory`：{ version: 1, items: [{ uid, itemId?, name?, quantity, in?, weight?, container?, source? }] }。
+ * - 角色資料頂層 `__inventory`：{ version: 1, textOnly?, items: [{ uid, itemId?, name?, quantity, in?, weight?, container?, desc?, source? }] }。
  *   itemId 是裝備說明的品名（與 mainHand／商店相同的中文名稱）；name 是顯示名稱，自訂物品必填，目錄品項只在寫法不同時保留
- *   （例如「書籍（禱文）」）。weight（每件磅數）與 container 只用於自訂物品；in 是所在容器的 uid；
- *   source "initial" 標記快速創角匯入的初始裝備（PDF 判斷是否另補職業／背景裝備）。
+ *   （例如「書籍（禱文）」）。weight（每件磅數）、container 與 desc（描述）只用於自訂物品；in 是所在容器的 uid；
+ *   source "initial" 標記快速創角匯入的初始裝備，"equipped" 標記因主手／副手／護甲已裝備而補上的物品（整理成標籤時先抵掉，不重複）。
+ *   textOnly 為 true 時玩家選擇只以文字管理物品：物品欄是空的，裝備下拉、商店與快速創角回到攜帶物品文字的做法。
  * - 目錄：重量與分類取自 equipment-notes.js 整理的 EQUIPMENT_SHOP_ITEMS，武器／護甲取自 equipment-data.js，
  *   套組內容物、容器與可持用的法器取自 equipment-data.js 的結構化清單；這裡不另存重量。彈藥以單發計數。
  * - 只整理資料、不碰畫面；變更時在 document 發出 `inventory:change`，存檔、裝備下拉與負重由 index.html 與 inventory-ui.js 處理。
@@ -14,8 +15,8 @@
   "use strict";
 
   const VERSION = 1;
-  const LIMITS = Object.freeze({ items: 300, quantity: 9999, name: 40, weight: 9999, depth: 3 });
-  const SOURCES = new Set(["initial"]);
+  const LIMITS = Object.freeze({ items: 300, quantity: 9999, name: 40, desc: 200, weight: 9999, depth: 3 });
+  const SOURCES = new Set(["initial", "equipped"]);
   const UID_PATTERN = /^[A-Za-z0-9_-]{1,24}$/u;
   // 品名附註較長的聖徽在物品欄顯示短名，與攜帶物品舊寫法相同。
   const SHORT_NAMES = Object.freeze({ "聖物匣（手持）": "聖物匣", "徽章（附於布料／盾牌）": "徽章", "護身符（佩戴／手持）": "護身符" });
@@ -31,6 +32,7 @@
   const GROUP_EXCLUDED = new Set(["彈藥"]);
 
   let entries = [];
+  let textOnly = false;
   let catalogCache = null;
   let uidSeed = Date.now() % 1679616;
 
@@ -109,6 +111,13 @@
     return typeof value === "string" ? value.replace(/\s+/gu, " ").trim().slice(0, LIMITS.name) : "";
   }
 
+  // 描述保留換行，其餘空白收斂。
+  function cleanDesc(value) {
+    return typeof value === "string"
+      ? value.replace(/\r\n?/gu, "\n").replace(/[^\S\n]+/gu, " ").replace(/ *\n */gu, "\n").replace(/\n{3,}/gu, "\n\n").trim().slice(0, LIMITS.desc)
+      : "";
+  }
+
   function nextUid(taken) {
     let uid;
     do {
@@ -133,6 +142,8 @@
         entry.weight = Math.min(Math.round(weight * 1000) / 1000, LIMITS.weight);
       }
       if (raw.container === true) entry.container = true;
+      const desc = cleanDesc(raw.desc);
+      if (desc) entry.desc = desc;
     }
     if (typeof raw.in === "string" && UID_PATTERN.test(raw.in)) entry.in = raw.in;
     if (SOURCES.has(raw.source)) entry.source = raw.source;
@@ -236,11 +247,46 @@
     return { name };
   }
 
+  // 以「、」分開最外層的品項，括號內的「、」不分（容器內容物）。
+  function splitList(text) {
+    const items = [];
+    let depth = 0;
+    let current = "";
+    for (const char of String(text ?? "")) {
+      if (char === "（" || char === "(") depth += 1;
+      if ((char === "）" || char === ")") && depth > 0) depth -= 1;
+      if (char === "、" && depth === 0) {
+        items.push(current);
+        current = "";
+      } else current += char;
+    }
+    items.push(current);
+    return items.map(item => item.trim()).filter(Boolean);
+  }
+
+  /**
+   * 解析物品清單文字（formatText() 的寫法）：[{ text, children? }]。「背包（睡袋、油 ×2）」這類括號，前面是目錄容器時視為容器內容物；
+   * customContainers 時（formatText() 產生的「物品欄：」行），目錄外的名稱括號內有多項也視為自訂容器。
+   * 「箭矢(20)」「書籍（禱文）」等照單一品項處理。
+   */
+  function parseListText(text, { customContainers = false } = {}, depth = 0) {
+    return splitList(text).map((item) => {
+      const match = depth < LIMITS.depth ? item.match(/^(.*?)[（(](.*)[）)]$/u) : null;
+      if (!match || /^\d+$/u.test(match[2].trim())) return { text: item };
+      const base = match[1].trim();
+      const resolved = resolveName(base);
+      const isContainer = getCatalogItem(resolved.itemId)?.container
+        || (customContainers && !resolved.itemId && splitList(match[2]).length > 1);
+      return isContainer ? { text: base, children: parseListText(match[2], { customContainers }, depth + 1) } : { text: item };
+    });
+  }
+
   function sameStack(entry, request) {
     return (entry.itemId || "") === (request.itemId || "")
       && (entry.name || "") === (request.name || "")
       && (entry.in || "") === (request.in || "")
       && entry.weight === request.weight
+      && (entry.desc || "") === (request.desc || "")
       && !isContainerEntry(entry);
   }
 
@@ -249,6 +295,16 @@
     const expanded = [];
     requests.forEach((request) => {
       const resolved = request.text ? parseItemText(request.text) : { itemId: cleanText(request.itemId), name: cleanText(request.name) };
+      // 文字清單的容器（parseListText 的 children）：目錄容器或標成容器的自訂物品，內容物放進去。
+      if (request.text && Array.isArray(request.children) && request.children.length) {
+        const base = { itemId: resolved.itemId || "", name: resolved.name && resolved.name !== resolved.itemId ? resolved.name : "" };
+        if (!base.itemId && !base.name) return;
+        const container = base.itemId ? (getCatalogItem(base.itemId)?.container ? {} : null) : { container: true };
+        if (container) {
+          expanded.push({ ...base, ...container, quantity: 1, into, source, contents: expandRequests(request.children, "", source) });
+          return;
+        }
+      }
       const quantity = clampQuantity(request.quantity ?? resolved.quantity ?? 1) * (request.text && request.quantity ? resolved.quantity : 1);
       const base = { itemId: resolved.itemId || "", name: resolved.name && resolved.name !== resolved.itemId ? resolved.name : "" };
       if (!base.itemId && !base.name) return;
@@ -263,7 +319,8 @@
       const custom = base.itemId ? {} : {
         ...(request.weight !== undefined && request.weight !== null && request.weight !== "" && Number.isFinite(Number(request.weight)) && Number(request.weight) >= 0
           ? { weight: Math.min(Math.round(Number(request.weight) * 1000) / 1000, LIMITS.weight) } : {}),
-        ...(request.container === true ? { container: true } : {})
+        ...(request.container === true ? { container: true } : {}),
+        ...(cleanDesc(request.desc) ? { desc: cleanDesc(request.desc) } : {})
       };
       expanded.push({ ...base, ...custom, quantity, into, source });
     });
@@ -271,11 +328,13 @@
   }
 
   function placeRequest(next, request, taken) {
+    if (!(request.quantity > 0)) return [];
     const entry = { uid: "", quantity: clampQuantity(request.quantity) };
     if (request.itemId) entry.itemId = request.itemId;
     if (request.name) entry.name = request.name;
     if (Number.isFinite(request.weight)) entry.weight = request.weight;
     if (request.container) entry.container = true;
+    if (request.desc) entry.desc = request.desc;
     if (request.into) entry.in = request.into;
     if (request.source) entry.source = request.source;
     const containerUnits = isContainerEntry(entry) ? entry.quantity : 0;
@@ -283,7 +342,8 @@
       const stack = next.find(item => sameStack(item, entry));
       if (stack) {
         stack.quantity = Math.min(stack.quantity + entry.quantity, LIMITS.quantity);
-        if (entry.source && !stack.source) stack.source = entry.source;
+        // 併入玩家原有的物品時不標成「因裝備而補上」，整理成標籤才不會多抵。
+        if (entry.source && !stack.source && entry.source !== "equipped") stack.source = entry.source;
         return [stack];
       }
       entry.uid = nextUid(taken);
@@ -302,7 +362,8 @@
 
   /**
    * 加入物品。requests：[{ itemId?, name?, text?, quantity?, weight?, container? }]；text 可用「名稱 ×n」「箭矢(20)」寫法。
-   * options.into 是放入的容器 uid；options.source "initial" 標記初始裝備；options.dryRun 只檢查是否放得下。
+   * options.into 是放入的容器 uid；options.source "initial" 標記初始裝備；options.dryRun 只檢查是否放得下；
+   * options.absorbEquipped 時，同名的「因裝備而補上」物品先抵掉數量（整理成標籤用，避免已補上的裝備再加一次）。
    * 超過上限時不加入任何物品並回傳 false。
    */
   function add(requests, options = {}) {
@@ -311,11 +372,30 @@
     const source = SOURCES.has(options.source) ? options.source : "";
     const next = entries.map(copyEntry);
     const taken = new Set(next.map(entry => entry.uid));
-    expandRequests(list, into, source).forEach(request => placeRequest(next, request, taken));
+    const expanded = expandRequests(list, into, source);
+    if (options.absorbEquipped) absorbEquipped(next, expanded);
+    expanded.filter(request => request.quantity > 0).forEach(request => placeRequest(next, request, taken));
     if (next.length > LIMITS.items) return false;
     if (options.dryRun) return true;
     if (next.length === entries.length && next.every((entry, index) => entry.quantity === entries[index].quantity)) return true;
     return commit(next, "add");
+  }
+
+  function absorbEquipped(next, requests, remaining = new Map(next.filter(entry => entry.source === "equipped").map(entry => [entry, entry.quantity]))) {
+    requests.forEach((request) => {
+      if (request.contents) absorbEquipped(next, request.contents, remaining);
+      if (!request.itemId || request.name || request.contents) return;
+      remaining.forEach((left, entry) => {
+        if (!request.quantity || !left || entry.itemId !== request.itemId) return;
+        const taken = Math.min(left, request.quantity);
+        request.quantity -= taken;
+        remaining.set(entry, left - taken);
+        if (left - taken === 0) {
+          if (request.source) entry.source = request.source;
+          else delete entry.source;
+        }
+      });
+    });
   }
 
   function descendantsOf(uid, list = entries) {
@@ -376,6 +456,11 @@
       if (changes.weight === null || changes.weight === "" || !Number.isFinite(weight) || weight < 0) delete entry.weight;
       else entry.weight = Math.min(Math.round(weight * 1000) / 1000, LIMITS.weight);
     }
+    if (!entry.itemId && changes.desc !== undefined) {
+      const desc = cleanDesc(changes.desc);
+      if (desc) entry.desc = desc;
+      else delete entry.desc;
+    }
     if (!entry.itemId && changes.container !== undefined) {
       if (changes.container === true) entry.container = true;
       else {
@@ -388,7 +473,7 @@
     const stack = next.find(item => item !== entry && sameStack(item, entry));
     if (stack && !isContainerEntry(entry)) {
       stack.quantity = Math.min(stack.quantity + entry.quantity, LIMITS.quantity);
-      if (entry.source && !stack.source) stack.source = entry.source;
+      if (entry.source && !stack.source && entry.source !== "equipped") stack.source = entry.source;
       return commit(next.filter(item => item !== entry), "update");
     }
     return commit(next, "update");
@@ -409,7 +494,8 @@
   }
 
   function restore(state) {
-    entries = normalizeState(state);
+    textOnly = state?.textOnly === true;
+    entries = textOnly ? [] : normalizeState(state);
     emit("restore");
   }
 
@@ -419,7 +505,7 @@
   }
 
   function getState() {
-    return { version: VERSION, items: entries.map(copyEntry) };
+    return textOnly ? { version: VERSION, textOnly: true, items: [] } : { version: VERSION, items: entries.map(copyEntry) };
   }
 
   /** 物品欄可供裝備的數量：weapons／armors 以武器或護甲名稱計數，shields 為盾牌數量。 */
@@ -439,25 +525,36 @@
     return { weapons, armors, shields };
   }
 
-  /** 舊資料沒有物品欄時，把已裝備的武器、護甲與盾牌各放進物品欄（主副手同名時放 2 件）。 */
-  function seedFromEquipped({ mainHand = "", offHand = "", armor = "", shield = false } = {}) {
+  /**
+   * 已裝備的武器、護甲與盾牌不在物品欄（或件數不夠，例如主副手同名要 2 件）時，補上缺的數量並標記 "equipped"。
+   * reset 時先清空（舊資料沒有物品欄）；只以文字管理物品時不動。
+   */
+  function ensureEquipped({ mainHand = "", offHand = "", armor = "", shield = false } = {}, { reset = false } = {}) {
+    if (textOnly) return;
+    if (reset) entries = [];
     const kinds = staticKinds();
-    const counts = new Map();
-    const bump = (name) => { if (name) counts.set(name, (counts.get(name) || 0) + 1); };
+    const needed = new Map();
+    const bump = (name) => { if (name) needed.set(name, (needed.get(name) || 0) + 1); };
     [mainHand, offHand].forEach((name) => {
-      if (kinds.weapons.has(name)) bump(name);
-      else if (kinds.shields.has(name)) bump(name);
+      if (kinds.weapons.has(name) || kinds.shields.has(name)) bump(name);
     });
     if (kinds.armors.has(armor)) bump(armor);
-    if (shield && !counts.has("盾牌") && kinds.shields.has("盾牌")) bump("盾牌");
-    const requests = [...counts].map(([itemId, quantity]) => ({ itemId, quantity }));
-    if (!requests.length) {
-      if (entries.length) commit([], "restore");
-      else emit("restore");
-      return;
-    }
+    if (shield && !needed.has("盾牌") && kinds.shields.has("盾牌")) bump("盾牌");
+    const counts = getEquippableCounts();
+    const owned = name => kinds.shields.has(name) ? counts.shields : kinds.armors.has(name) ? counts.armors.get(name) || 0 : counts.weapons.get(name) || 0;
+    const requests = [...needed].map(([itemId, quantity]) => ({ itemId, quantity: quantity - owned(itemId) })).filter(request => request.quantity > 0);
+    if (!requests.length || !add(requests, { source: "equipped" })) emit("restore");
+  }
+
+  /** 切換「只以文字管理物品」。開啟時回傳原物品欄的文字寫法並清空物品欄；關閉時物品欄從空的開始。 */
+  function setTextOnly(on) {
+    const next = on === true;
+    if (next === textOnly) return "";
+    const text = next ? formatText() : "";
+    textOnly = next;
     entries = [];
-    add(requests);
+    emit("mode");
+    return text;
   }
 
   function getWeight(state = null) {
@@ -497,7 +594,9 @@
     restore,
     clear,
     getState,
-    seedFromEquipped,
+    ensureEquipped,
+    setTextOnly,
+    isTextOnly: () => textOnly,
     getEquippableCounts,
     getContainerTargets,
     getWeight,
@@ -506,6 +605,7 @@
     formatText,
     hasInitialEquipment,
     parseItemText,
+    parseListText,
     getCatalogItem,
     getCatalog: () => [...catalog().values()],
     isContainer: entry => isContainerEntry(entry),

@@ -49,8 +49,8 @@ async function ensurePdfExportReady() {
     pdfExportLoaderPromise = (async () => {
       await loadScriptOnce("pdf-lib.custom.min.js");
       await loadScriptOnce("fontkit.custom.min.js");
-      await loadScriptOnce("pdf-field-map.js?v=20261104-inventory-merge");
-      await loadScriptOnce("pdf-export.js?v=20261104-weapon-damage-type");
+      await loadScriptOnce("pdf-field-map.js?v=20261105-inventory-text");
+      await loadScriptOnce("pdf-export.js?v=20261105-inventory-text");
     })().catch((error) => {
       pdfExportLoaderPromise = null;
       throw error;
@@ -221,7 +221,7 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
     const raceChoiceDefinitions = Object.fromEntries(Object.entries(window.getAllRaceRules?.() || {}).flatMap(([raceId, rules]) => rules.choice
       ? [[raceId, { key: window.getRaceChoiceOptionKey(rules.choice.id), title: `請選擇${rules.choice.label}`, options: rules.choice.options.map(option => [option.value, option.label]) }]]
       : []));
-    const steps=["precheck","sheet","name","equipment"];
+    const steps=["precheck","sheet","name"];
     const manualBook = state?.__spellManagement?.version === 2
       ? state.__spellManagement.manual === true : state?.["manual-spell-management"] === true;
     const savedBook = state?.__wizardSpellbook;
@@ -235,18 +235,10 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
       englishName:"",
       sheetTemplate:"third-party",
       includeAvatar:false,
-      includeDefaultEquipment:false,
       includeSpellbook:true,
       ...getPdfRaceChoiceOptions(state)
     };
     const raceChoice = raceChoiceDefinitions[race];
-    const quickBuildEquipmentIncluded = (()=>{
-      const gearNotes=state?.['gear-notes'];
-      try {
-        if(typeof window.quickBuild?.hasImportedInitialEquipment==='function') return window.quickBuild.hasImportedInitialEquipment(gearNotes,state?.__inventory);
-      } catch(error) { void error; }
-      return /^\s*初始裝備：\s*\S/um.test(String(gearNotes||''));
-    })();
     // The avatar is a local, per-device picture; a shared character is not the
     // character it was set for.
     const savedAvatar = window.SHARE_MODE ? "" : getSavedAvatarForPdf();
@@ -292,9 +284,6 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
         name:result.sheetTemplate==='official'
           ? ['角色名稱','名稱會寫入角色卡；可以留空。']
           : ['角色名稱','中文與英文名稱會寫入角色卡；兩個欄位都可以留空。'],
-        equipment:quickBuildEquipmentIncluded
-          ? ['預設裝備已加入','快速創角已將實際選擇寫入「攜帶物品」。']
-          : ['加入預設裝備','決定是否把職業與背景提供的起始裝備一併寫入。'],
         race:[raceChoice?.title || '選擇種族特性','這項選擇會影響角色能力與 PDF 內容。'],
         spellbook:['是否將法術書寫入法術 notes？','選擇是否附上書內法術清單。原有法術筆記會照常輸出。'],
         format:['選擇 PDF 格式','最後一步：依照是否需要後續編輯來選擇。']
@@ -417,22 +406,6 @@ function showPdfExportModal(state, reminders, exportPdfBtn) {
         const invalidInput=invalidNameField==='englishName' ? (englishInput||nameInput) : invalidNameField==='characterName' ? nameInput : null;
         invalidInput?.setAttribute('aria-invalid','true');
         (invalidInput||nameInput).focus();
-      }
-      else if(step==='equipment'){
-        if(quickBuildEquipmentIncluded){
-          const success=document.createElement('div'); success.className='pdf-export-check-success';
-          const icon=document.createElement('span'); icon.setAttribute('aria-hidden','true'); icon.textContent='✓';
-          const copy=document.createElement('div'); const strong=document.createElement('strong'); strong.textContent='已從快速創角匯入初始裝備'; const hint=document.createElement('p'); hint.textContent='「攜帶物品」已包含快速創角選擇的裝備，PDF 不會再次加入，以免內容重複。'; copy.append(strong,hint); success.append(icon,copy); d.appendChild(success);
-          const n=document.createElement('button'); n.type='button'; n.className='pdf-export-flow-modal__button pdf-export-flow-modal__button--primary'; n.textContent='使用目前裝備繼續'; n.onclick=()=>{result.includeDefaultEquipment=false;idx++;render();}; a.append(n); n.focus();
-          return;
-        }
-        const choices=document.createElement('div'); choices.className='pdf-export-choice-options';
-        const createChoice=(title,description,value)=>{const button=document.createElement('button');button.type='button';button.className='pdf-export-choice-option';const strong=document.createElement('strong');strong.textContent=title;const detail=document.createElement('span');detail.textContent=description;button.append(strong,detail);button.onclick=()=>{result.includeDefaultEquipment=value;idx++;render();};return button;};
-        choices.append(
-          createChoice('只使用目前裝備','不加入職業與背景提供的預設裝備。',false),
-          createChoice('包含預設裝備','一併加入職業與背景提供的起始裝備。',true)
-        );
-        d.appendChild(choices); choices.querySelector('button')?.focus(); a.hidden=true;
       }
       else if(step==='spellbook'){
         const choices=document.createElement('div'); choices.className='pdf-export-choice-options';
@@ -628,7 +601,6 @@ async function downloadQuickBuildCompactPdf() {
     const exportOptions = {
       characterName,
       englishName: "",
-      includeDefaultEquipment: false,
       includeSpellbook: true,
       customSpells: window.TabletopCustomSpells?.getPdfSpells() || [],
       weaponDamageTypeNotes: window.getWeaponDamageTypePdfNotes?.() || {},

@@ -32,7 +32,7 @@
 * **儲存**：LocalStorage 一律經 `window.dndStorage`。變更持久化欄位或意義時，須確認 LocalStorage／autosave、JSON 匯入匯出與分享網址都能還原舊資料。
 * **匯入**：安全預檢與上限集中在 `index.html`，須完整驗證後才套用；拒絕或損壞的資料不得覆寫原存檔。清理範圍以 `APP_STORAGE_KEYS` 為準，不得清掉日誌、主題與擲骰歷史。匯入的暫存、套用與失敗復原流程照現有實作，修改時一併核對。
 * **匯出**：內容為目前角色（含物品欄 `__inventory`）、兩份法術書、跑團動作偏好與頭像，不是完整備份。動作偏好與頭像不進 autosave 與分享。
-* **物品欄**：`__inventory` 經 `window.Inventory` 讀寫，autosave、JSON 與分享都帶（空物品欄也帶）。沒有這個欄位的舊資料，載入時把已裝備的武器、護甲、盾牌補進物品欄；舊的攜帶物品文字只在玩家按「整理成標籤」後才轉換。裝備下拉只列物品欄有的物品，存檔中不在物品欄的選擇保留並標示，不自動清掉。
+* **物品欄**：`__inventory` 經 `window.Inventory` 讀寫，autosave、JSON 與分享都帶（空物品欄也帶）。載入存檔或匯入時，已裝備但不在物品欄的武器、護甲、盾牌只補上缺的數量（標記 `source: "equipped"`，沒有這個欄位的舊資料從空的開始補）；舊的攜帶物品文字只在玩家按「整理成標籤」後才轉換，轉換時先抵掉這些補上的物品。裝備下拉只列物品欄有的物品，仍對不上的選擇保留並標示，不自動清掉。`textOnly: true`（「只以文字管理物品」）時物品欄是空的，裝備下拉、商店與快速創角回到攜帶物品文字的做法。
 * **分享**：入口為 `copyShareUrl()`，保留 `#s=`／`#s2=` 格式與永久網址的複製 fallback。分享模式不 autosave、不可再分享或匯入，並鎖定角色身分欄位；分享資料不得被本機記憶覆蓋。
 * **短網址**：只在使用者明確選擇後建立，送出當次編碼的區域變數 `hash`。僅限 `https://twd20.com`、`#s2=` 且長度 ≤10000；離線頁不呼叫。建立失敗時明確提示，不自動重試，也不悄悄改成複製長網址。Worker 程式在 `cloudflare/twd20-url/`（見其 [README](cloudflare/twd20-url/README.md)），與網站分開部署，不自行部署；不寫入 secret 值、不猜測資源 ID、不更換 `HMAC_SECRET`。
 * **日誌**：`adventure-journal.js` 獨立使用 IndexedDB `twd20-adventure-journal`，對外 JSON 維持版本 1。寫入時核對 revision，失敗保留原資料。日誌不進角色 JSON、分享或 autosave。

@@ -672,15 +672,19 @@ async function validateInventory(page) {
   await addButton.click();
   const add = page.locator('.app-dialog[data-variant="inventory-custom"]');
   assert.equal(await add.locator(".inventory-add-search").count(), 0, "the custom item dialog has no catalog search");
+  assert.equal(await add.locator(".app-dialog__header .inventory-dialog-subtitle").textContent(), "目錄裡的物品請從商店購買或免費取得；這裡加入商店沒有的物品。", "the shop hint sits under the title, above the header rule");
+  assert.deepEqual(await add.locator(".inventory-field__label").allTextContents(), ["名稱", "磅數 | 選填", "數量", "位置", "描述"]);
   await add.getByRole("button", { name: "加入", exact: true }).click();
   assert.equal(await add.isVisible(), true, "a custom item needs a name");
   await add.locator(".inventory-text-input").first().fill("家書");
   await add.locator(".inventory-text-input").nth(1).fill("0.5");
+  await add.locator(".inventory-desc-input").fill("寫給家人的信，\n回城後寄出");
   await add.getByRole("button", { name: "增加數量" }).click();
   await add.locator(".inventory-location-select").selectOption({ label: "放在背包" });
   await add.getByRole("button", { name: "加入", exact: true }).click();
   await add.waitFor({ state: "detached" });
   assert.match(await page.evaluate(() => Inventory.formatText()), /背包（.*水袋、匕首 ×2、家書 ×2）$/u, "custom items keep the chosen quantity and container");
+  assert.equal(await page.evaluate(() => Inventory.entries().find(entry => entry.name === "家書").desc), "寫給家人的信，\n回城後寄出", "custom items keep their description");
   assert.equal(await page.locator("#offHand option").allTextContents().then(options => options.includes("匕首")), true);
   assert.equal(await page.locator(".inventory-tag.is-custom", { hasText: "家書" }).count(), 1, "custom items are marked");
   assert.equal(await addButton.evaluate(el => el === document.activeElement), true, "focus returns to the custom item button");
@@ -725,18 +729,76 @@ async function validateInventory(page) {
   assert.match(await page.evaluate(() => Inventory.formatText()), /、口糧 ×4$/u, "rations moved out of the backpack with the new quantity");
   await page.waitForFunction(() => document.activeElement?.textContent === "口糧 ×4", null, { timeout: 2000 });
 
-  // Overweight only warns.
+  // Editing a custom item keeps the same layout and updates its description.
+  await page.locator(".inventory-container-contents .inventory-tag", { hasText: "家書" }).click();
+  assert.deepEqual(await item.locator(".inventory-field__label").allTextContents(), ["名稱", "磅數 | 選填", "數量", "位置", "描述"]);
+  await item.locator(".inventory-desc-input").fill("");
+  await item.getByRole("button", { name: "完成", exact: true }).click();
+  assert.equal(await page.evaluate(() => "desc" in Inventory.entries().find(entry => entry.name === "家書")), false, "clearing the description removes it");
+
+  // Overweight only warns; 隱藏 hides the line until the page reloads.
   await page.evaluate(() => { const str = document.getElementById("str"); str.value = "3"; str.dispatchEvent(new Event("change")); });
   assert.equal(await weight.evaluate(el => el.classList.contains("is-over")), true);
   await gear.click();
   assert.deepEqual([await gear.getAttribute("aria-expanded"), await weight.isVisible()], ["false", false]);
-  assert.match(await page.locator("#inventory-over").innerText(), /已超過攜帶上限/u, "the overweight warning shows even with the gear collapsed");
+  const over = page.locator("#inventory-over");
+  assert.equal(await over.innerText(), "負重超過攜帶上限 隱藏", "the overweight warning shows even with the gear collapsed");
+  await over.getByRole("button", { name: "隱藏", exact: true }).click();
+  assert.equal(await over.isHidden(), true);
+  await page.evaluate(() => { const str = document.getElementById("str"); str.value = "2"; str.dispatchEvent(new Event("change")); });
+  assert.equal(await over.isHidden(), true, "a hidden warning stays hidden while the page is open");
   await gear.click();
 
   // Dialog inputs stay out of the character state; the inventory is saved as one structured field.
   const state = await page.evaluate(() => collectStateObject());
   assert.equal(Object.keys(state).some(key => /inventory-(?!$)/u.test(key)), false);
   assert.equal(state.__inventory.version, 1);
+
+  // Custom item dialog rows stay side by side on a phone: name and pounds 3.5:1, quantity and location.
+  await page.setViewportSize({ width: 360, height: 800 });
+  await addButton.click();
+  const rows = await add.evaluate((dialog) => {
+    const box = label => Array.from(dialog.querySelectorAll(".inventory-field")).find(field => field.querySelector(".inventory-field__label").textContent === label).getBoundingClientRect();
+    const [name, pounds, quantity, location, desc] = ["名稱", "磅數 | 選填", "數量", "位置", "描述"].map(box);
+    // 同列欄位底端對齊（align-items: end）。
+    return { nameRow: Math.abs(name.bottom - pounds.bottom) < 1, ratio: Math.round(name.width / pounds.width * 10) / 10, holdingRow: Math.abs(quantity.bottom - location.bottom) < 1, descBelow: desc.top >= location.bottom };
+  });
+  assert.deepEqual([rows.nameRow, rows.holdingRow, rows.descBelow], [true, true, true], "custom item rows at 360px");
+  assert.ok(rows.ratio >= 3 && rows.ratio <= 4, `name and pounds keep about 3.5:1 (${rows.ratio})`);
+  await page.keyboard.press("Escape");
+  await page.setViewportSize({ width: 1100, height: 850 });
+
+  // 只以文字管理物品: tags turn into one text line, the selects list everything, and the shop writes text again.
+  await page.locator("#mainHand").selectOption("匕首");
+  const textOnly = page.locator("#inventory-text-only");
+  assert.deepEqual([await textOnly.textContent(), await textOnly.getAttribute("aria-pressed")], ["只以文字管理物品", "false"]);
+  const tagsText = await page.evaluate(() => Inventory.formatText());
+  await textOnly.click();
+  await page.getByRole("alertdialog", { name: "只以文字管理物品？" }).getByRole("button", { name: "轉成文字", exact: true }).click();
+  await page.waitForFunction(() => Inventory.isTextOnly());
+  assert.equal(await page.locator("#gear-notes").inputValue(), `物品欄：${tagsText}\n自由備註`, "the tags become one text line above the free text");
+  assert.deepEqual([await textOnly.getAttribute("aria-pressed"), await page.locator("#inventory-tags").isHidden(), await weight.isHidden(), await addButton.isHidden(), await tidyButton.isHidden(), await page.locator("#inventory-panel .inventory-empty").isHidden()],
+    ["true", true, true, true, true, true], "text mode hides tags, weight, custom items and tidying");
+  assert.equal(await page.locator("#mainHand option").allTextContents().then(options => options.includes("巨劍") && options.includes("長弓")), true, "text mode lists every weapon");
+  assert.equal(await page.locator("#mainHand").inputValue(), "匕首");
+  assert.deepEqual(await page.evaluate(() => collectStateObject().__inventory), { version: 1, textOnly: true, items: [] }, "text mode is saved with the character");
+  await page.evaluate(() => MoneyTracker.purchaseItems([{ name: "箭矢", currency: "銅幣", amount: 1, quantity: 1 }], { free: true }));
+  assert.match(await page.locator("#gear-notes").inputValue(), /^購買物品：箭矢\(20\)\n物品欄：/u, "the shop writes a text line in text mode");
+
+  // Turning it off starts from the equipped items; tidying converts the text back without doubling them.
+  await textOnly.click();
+  await page.waitForFunction(() => !Inventory.isTextOnly());
+  assert.deepEqual(await page.evaluate(() => Inventory.entries().map(entry => [entry.itemId, entry.quantity, entry.source || ""])), [["匕首", 1, "equipped"]], "tag mode restarts from the equipped weapon");
+  assert.equal(await tidyButton.isVisible(), true);
+  await tidyButton.click();
+  assert.equal(await tidy.locator(".inventory-tag").first().textContent(), "箭矢 ×20");
+  assert.equal(await tidy.locator(".inventory-tag", { hasText: "背包" }).textContent(), "背包（內含 8 項）", "containers come back with their contents");
+  await tidy.getByRole("button", { name: "轉成標籤", exact: true }).click();
+  await tidy.waitFor({ state: "detached" });
+  const restored = await page.evaluate(() => Inventory.formatText());
+  assert.ok(restored.startsWith("匕首、箭矢 ×40、") && restored.includes("背包（睡袋、") && restored.includes("、匕首、家書 ×2）"), `tidying the text line restores the tags and containers: ${restored}`);
+  assert.equal(await page.locator("#gear-notes").inputValue(), "自由備註");
+  assert.equal(await page.evaluate(() => Inventory.entries().filter(entry => entry.itemId === "匕首").reduce((sum, entry) => sum + entry.quantity, 0)), 2, "the equipped dagger is not doubled");
 
   for (const width of [360, 1100]) {
     await page.setViewportSize({ width, height: 800 });

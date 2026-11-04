@@ -2767,7 +2767,8 @@
       else blankState[element.id] = element.defaultValue;
     });
     blankState.__spellManagement = { version: 2, manual: false, entries: [] };
-    blankState.__inventory = { version: 1, items: [] };
+    // 沿用目前角色「只以文字管理物品」的選擇。
+    blankState.__inventory = window.Inventory?.isTextOnly() ? { version: 1, textOnly: true, items: [] } : { version: 1, items: [] };
     // 重置角色卡時一併清掉各職業的法術與職業選項記憶；舊版遷移備份與提醒偏好保留。
     window.SpellManagement?.clearMemories?.({ memoriesOnly: true });
     window.ClassOptionMemory?.clearMemories?.();
@@ -2846,21 +2847,12 @@
     return (selection?.content?.items || []).map(item => typeof item === "string" ? item : `${item.name}${Number(item.quantity) > 1 ? ` ×${item.quantity}` : ""}`);
   }
 
-  // 初始裝備寫在物品欄（source "initial"）；舊存檔是攜帶物品文字的「初始裝備：」行，仍視為已匯入。
-  function hasImportedInitialEquipment(value, inventoryState = null) {
-    if (inventoryState && window.Inventory?.hasInitialEquipment(inventoryState)) return true;
-    return String(value || "").split(/\r?\n/u).some(line => {
-      const text = line.trimStart();
-      return text.startsWith(MOBILE_INITIAL_EQUIPMENT_PREFIX)
-        && text.slice(MOBILE_INITIAL_EQUIPMENT_PREFIX.length).trim().length > 0;
-    });
-  }
-
   function importMobileEquipment(warnings) {
     const equipmentSelections = [draft.selections.backgroundEquipment, draft.selections.classEquipment].filter(Boolean);
     const items = equipmentSelections.flatMap(mobileEquipmentItems);
-    // 初始裝備放進物品欄（套組拆成容器與內容物），要在寫入主手／副手／護甲之前，裝備下拉才有選項。
-    if (window.Inventory) {
+    // 初始裝備放進物品欄（套組拆成容器與內容物），要在寫入主手／副手／護甲之前，裝備下拉才有選項；
+    // 只以文字管理物品時寫成攜帶物品的「初始裝備：」行。
+    if (window.Inventory && !window.Inventory.isTextOnly()) {
       window.Inventory.clear();
       if (items.length && !window.Inventory.add(items.map(text => ({ text })), { source: "initial" })) mobileImportWarning("初始裝備：物品欄放不下", warnings);
       setMobileField("gear-notes", "", warnings, "攜帶物品", "input");
@@ -4243,7 +4235,6 @@
     open: openWizard, close: closeWizard, createDraft,
     openSpellDetail, openSpellPrepareDetail, openPactTomeModal,
     getDraft: () => structuredClone(draft), saveDraft,
-    hasImportedInitialEquipment,
     storageKey: STORAGE_KEY
   };
 })();

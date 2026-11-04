@@ -1494,12 +1494,10 @@
     const raceChoiceOptions = Object.fromEntries(Object.values(globalScope.getAllRaceRules?.() || {})
       .flatMap((rules) => rules.choice ? [globalScope.getRaceChoiceOptionKey(rules.choice.id)] : [])
       .map((key) => [key, exportOptions[key] || '']));
-    const includeDefaultEquipment = !!exportOptions.includeDefaultEquipment;
     const payload = globalScope.buildPdfFieldPayload(state, {
       characterName,
       englishName,
       ...raceChoiceOptions,
-      includeDefaultEquipment,
       includeSpellbook: exportOptions.includeSpellbook !== false,
       customSpells: exportOptions.customSpells || [],
       weaponDamageTypeNotes: exportOptions.weaponDamageTypeNotes || {},

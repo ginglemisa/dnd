@@ -6496,7 +6496,8 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
 }
 
 .inventory-heading-tools button.inventory-tidy,
-.inventory-tools button.inventory-add {
+.inventory-tools button.inventory-add,
+.inventory-tools button.inventory-text-only {
   width: auto;
   min-height: 2.4rem;
   margin: 0;
@@ -6519,8 +6520,19 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   margin-bottom: 0.6rem;
 }
 
-.inventory-tools button.inventory-add {
+/* 「自訂物品」與「只以文字管理物品」一組靠右，窄螢幕換行時仍靠右；按下狀態同法術選擇的已選切換。 */
+.inventory-tools__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.35rem;
   margin-left: auto;
+}
+
+.inventory-tools button.inventory-text-only[aria-pressed="true"] {
+  border-color: var(--accent-strong);
+  background: var(--accent-strong);
+  color: var(--on-accent);
 }
 
 .inventory-weight {
@@ -6540,6 +6552,29 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   margin: 0 0 0.6rem;
   font-size: var(--fs-sm);
   font-weight: 800;
+}
+
+button.inventory-over__hide {
+  width: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent-strong);
+  box-shadow: none;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+button.inventory-over__hide:is(:hover, :active) {
+  background: transparent;
+  color: var(--accent);
+  box-shadow: none;
+  transform: none;
+  translate: none;
 }
 
 .inventory-tags {
@@ -6689,10 +6724,44 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   grid-column: 1 / -1;
 }
 
-@media (max-width: 479px) {
+/* 數量與位置維持同一列，只有極窄時才上下排。 */
+@media (max-width: 339px) {
   .inventory-holding__row {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* 自訂物品：名稱與磅數 3.5：1 同一列；描述自成一列。 */
+.inventory-custom-row--name {
+  display: grid;
+  grid-template-columns: minmax(0, 3.5fr) minmax(0, 1fr);
+  gap: 0 0.75rem;
+  align-items: end;
+}
+
+@media (max-width: 299px) {
+  .inventory-custom-row--name {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.inventory-desc-input {
+  min-height: 4.5rem;
+  resize: vertical;
+}
+
+/* 視窗標題下方的說明（標題列分隔線上方），同商店標題下的財產。 */
+.inventory-dialog-heading {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.app-dialog__header .inventory-dialog-subtitle {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
 }
 
 /* On phones the shared description keeps two compact columns here (the shop stacks them),

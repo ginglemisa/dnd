@@ -3154,11 +3154,12 @@ async function verifyInventoryPersistence(browser, url) {
     __inventory: { version: 1, items: [
       { uid: "sword", itemId: "長劍", quantity: 1 }, { uid: "shield", itemId: "盾牌", quantity: 1 }, { uid: "mail", itemId: "鎖子甲", quantity: 1 },
       { uid: "pack", itemId: "背包", quantity: 1 }, { uid: "pouch", itemId: "小包", quantity: 1, in: "pack" },
-      { uid: "gem", name: unsafeName, quantity: 3, weight: 0.5, in: "pouch" }, { uid: "rope", itemId: "繩索", quantity: 2, in: "pack" },
+      { uid: "gem", name: unsafeName, quantity: 3, weight: 0.5, desc: "<b>藍寶石</b>\n很亮", in: "pouch" }, { uid: "rope", itemId: "繩索", quantity: 2, in: "pack" },
       { uid: "kit", itemId: "醫療包", quantity: 1, source: "initial" }
     ] } };
   const snapshot = target => target.evaluate(() => ({
     inventory: Inventory.formatText(), entries: Inventory.getState().items.length, weight: Inventory.getWeight().weight,
+    desc: Inventory.entries().find(entry => entry.uid === "gem")?.desc,
     slots: ["mainHand", "offHand", "armor"].map(id => document.getElementById(id).value), notes: document.getElementById("gear-notes").value,
     unsafe: Boolean(window.__inv) || Boolean(document.querySelector("#inventory-panel img"))
   }));
@@ -3169,6 +3170,7 @@ async function verifyInventoryPersistence(browser, url) {
     const expected = await snapshot(page);
     assert.equal(expected.inventory, `長劍、盾牌、鎖子甲、背包（小包（${unsafeName} ×3）、繩索 ×2）、醫療包`);
     assert.deepEqual(expected.slots, ["長劍", "盾牌", "鎖子甲"]);
+    assert.equal(expected.desc, "<b>藍寶石</b>\n很亮", "custom item descriptions are kept as text");
     assert.equal(expected.unsafe, false, "custom item names render as text");
     await page.goto(url);
     assert.deepEqual(await snapshot(page), expected, "autosave restores the inventory and its equipped items");
@@ -3196,11 +3198,30 @@ async function verifyInventoryPersistence(browser, url) {
     await page.evaluate(() => applyStateObject({ class: "fighter", level: "1", offHandAsMain: true, main2Shield: true, mainHand: "長劍", offHand: "短劍", "shield-proficiency": true }));
     assert.equal(await page.evaluate(() => Inventory.formatText()), "長劍、短劍、盾牌", "legacy alternate-main shield seeds when equipped");
 
-    // A saved choice that the inventory lacks stays selected and is labelled.
-    await page.evaluate(() => applyStateObject({ class: "fighter", level: "1", mainHand: "巨劍", __inventory: { version: 1, items: [] } }));
-    assert.deepEqual(await page.evaluate(() => [document.getElementById("mainHand").value, document.getElementById("mainHand").selectedOptions[0].textContent]),
-      ["巨劍", "巨劍（不在物品欄）"]);
-    console.log("Inventory persistence: autosave, JSON export, share (including empty inventories), legacy seeding, kept selections and safe custom names passed.");
+    // Saves that have an inventory but lack an equipped item get only the missing count; the player's own stack keeps its source.
+    await page.evaluate(() => applyStateObject({ class: "fighter", level: "1", mainHand: "短劍", offHand: "短劍", armor: "皮甲", __inventory: { version: 1, items: [{ uid: "own", itemId: "短劍", quantity: 1 }] } }));
+    assert.deepEqual(await page.evaluate(() => [Inventory.entries().map(entry => [entry.itemId, entry.quantity, entry.source || ""]),
+      ["mainHand", "offHand", "armor"].map(id => document.getElementById(id).selectedOptions[0].textContent)]),
+    [[["短劍", 2, ""], ["皮甲", 1, "equipped"]], ["短劍", "短劍", "皮甲"]], "missing equipped items are added on load");
+
+    // Text mode is saved with the character: autosave, JSON and share keep it, and nothing is added to the inventory.
+    const textState = { class: "fighter", level: "1", mainHand: "巨劍", "gear-notes": "物品欄：巨劍", __inventory: { version: 1, textOnly: true, items: [] } };
+    await page.evaluate(textState => { applyStateObject(textState); saveAllFields(); }, textState);
+    await page.goto(url);
+    const textSnapshot = target => target.evaluate(() => [Inventory.isTextOnly(), Inventory.entries().length, document.getElementById("mainHand").value,
+      document.getElementById("inventory-text-only").getAttribute("aria-pressed"), document.getElementById("inventory-tags").hidden]);
+    assert.deepEqual(await textSnapshot(page), [true, 0, "巨劍", "true", true], "autosave keeps text mode without adding the equipped weapon");
+    assert.deepEqual(await page.evaluate(() => [collectStateObject().__inventory, collectShareState().__inventory]),
+      [{ version: 1, textOnly: true, items: [] }, { version: 1, textOnly: true, items: [] }], "JSON export and share carry text mode");
+    const textHash = await page.evaluate(async () => encodeStateToHash(collectShareState()));
+    const textShared = await newUiPage(browser);
+    try {
+      const sharedUrl = new URL(url); sharedUrl.searchParams.set("analytics", "owner"); sharedUrl.hash = textHash;
+      await textShared.goto(sharedUrl.href);
+      await textShared.waitForFunction(() => window.SHARE_MODE === true);
+      assert.deepEqual(await textSnapshot(textShared), [true, 0, "巨劍", "true", true], "share restores text mode");
+    } finally { await textShared.close(); }
+    console.log("Inventory persistence: autosave, JSON export, share (including empty inventories and text mode), legacy seeding, missing equipped items, descriptions and safe custom names passed.");
   } finally { await page.close(); }
 }
 
@@ -3404,6 +3425,8 @@ async function verifyCharacterDataSafety(browser, url) {
         { __inventory: { version: 1, items: [{ itemId: "匕首", quantity: 1, onclick: "x" }] } },
         { __inventory: { version: 1, items: [{ quantity: 1 }] } },
         { __inventory: { version: 1, items: [{ name: "x".repeat(65), quantity: 1 }] } },
+        { __inventory: { version: 1, textOnly: "yes", items: [] } }, { __inventory: { version: 1, extra: true, items: [] } },
+        { __inventory: { version: 1, items: [{ name: "信", desc: "x".repeat(401), quantity: 1 }] } },
         { note: "x".repeat(256 * 1024 + 1) }, [],
         JSON.parse('{"__proto__":{"polluted":true}}')
       ];

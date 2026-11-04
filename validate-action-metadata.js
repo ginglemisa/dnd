@@ -1842,7 +1842,6 @@ async function verifyFeatEligibilityWarnings(browser, url) {
     await dialog.locator(".pdf-export-choice-option").filter({ hasText: "第三方角色卡" }).click();
     await page.fill("#pdf-export-character-name", "專長警示驗證");
     await dialog.getByRole("button", { name: "下一步", exact: true }).click();
-    await dialog.getByRole("button", { name: "只使用目前裝備" }).click();
     await dialog.getByRole("button", { name: "可編輯表單版", exact: false }).click();
     await page.waitForFunction(() => !!window.__featWarningPdfExport);
     assert.equal(await page.evaluate(() => window.__featWarningPdfExport["speed-display"]), "30", "forced PDF uses gated numeric values");
