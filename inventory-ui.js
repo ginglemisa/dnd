@@ -404,7 +404,7 @@
       ]
     });
     // 標題列在 showContent() 建好視窗後才接上，說明在這之後加。
-    if (dialogBody) addDialogSubtitle(dialogBody, "目錄裡的物品請從商店購買或免費取得；這裡加入商店沒有的物品。");
+    if (dialogBody) addDialogSubtitle(dialogBody, "商店找不到的物品，可在此自訂。");
   }
 
   function legacyLines() {

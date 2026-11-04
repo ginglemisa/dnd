@@ -1112,7 +1112,7 @@ async function verifyEquipmentLoadout(browser, url) {
       await summary.locator(".equipment-proficiency-warning").evaluateAll(tips => tips.map(tip => [tip.dataset.skill, tip.textContent])),
       [["武器未熟練", "警告：未熟練"], ["盾牌未熟練", "警告：未熟練"], ["護甲未熟練", "警告：未熟練"]]
     );
-    assert.equal(await page.locator("#equipment-untrained-consequence").isVisible(), true);
+    assert.equal(await summary.locator("[data-weapon-rule-kind='mastery']").count(), 0, "a class without weapon mastery lists no mastery");
     await summary.locator(".equipment-proficiency-warning[data-skill='盾牌未熟練']").click();
     assert.match(await page.locator("#skillPopup").innerText(), /盾牌未熟練[\s\S]*無法獲得盾牌提供的 AC 加值/);
     await summary.locator(".feature-rule-tip[data-skill='隱匿']").click();
@@ -1121,6 +1121,7 @@ async function verifyEquipmentLoadout(browser, url) {
     await page.keyboard.press("Escape");
 
     // 精通與武器屬性一致，只在點擊時開啟說明。
+    await page.evaluate(() => applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] }, class: "fighter", mainHand: "長劍", offHand: "盾牌", offHandAsMain: false, armor: "環甲" }));
     const mastery = summary.locator("[data-weapon-rule-kind='mastery']").first();
     await mastery.hover();
     assert.equal(await page.locator("#weaponRulePopup").isVisible(), false, "mastery hover does not open popup");
@@ -1132,7 +1133,6 @@ async function verifyEquipmentLoadout(browser, url) {
 
     await page.evaluate(() => applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] }, class: "wizard", mainHand: "長劍", offHand: "盾牌", offHandAsMain: false, armor: "" }));
     assert.equal(await page.inputValue("#ac-display"), "10");
-    assert.equal(await page.locator("#equipment-untrained-consequence").isVisible(), false, "untrained shield alone has no armor consequence");
 
     // 刃之魔契：不再熟練全部軍用武器，只有標記為契約武器的那一把熟練、可用魅力；同時只有一把。
     // 傷害類型（預設黯蝕）存在 pactWeaponDamageType，裝備摘要視窗、刃之魔契卡片與跑團動作的下拉都是它的鏡像。
