@@ -479,6 +479,35 @@
     return commit(next, "update");
   }
 
+  /**
+   * 調整物品的排列順序與所在處（物品欄介面的整理模式）：into 是容器 uid（空字串為身上），before 是同一處要排在它前面的物品 uid（空為最後）。
+   * 放不進的容器回傳 false 且不變動；移到已有同名物品的位置時合併成一筆，同 update()。
+   */
+  function move(uid, { into = "", before = "" } = {}) {
+    const index = entries.findIndex(entry => entry.uid === uid);
+    if (index < 0) return false;
+    if (into && !getContainerTargets(uid).some(item => item.uid === into)) return false;
+    const next = entries.map(copyEntry);
+    const [entry] = next.splice(index, 1);
+    if (into) entry.in = into;
+    else delete entry.in;
+    const stack = isContainerEntry(entry) ? null : next.find(item => sameStack(item, entry));
+    if (stack) {
+      stack.quantity = Math.min(stack.quantity + entry.quantity, LIMITS.quantity);
+      if (entry.source && !stack.source && entry.source !== "equipped") stack.source = entry.source;
+      return commit(next, "move");
+    }
+    const target = before && before !== uid ? next.findIndex(item => item.uid === before && (item.in || "") === into) : -1;
+    let position = target;
+    if (position < 0) {
+      position = next.length;
+      next.forEach((item, itemIndex) => { if ((item.in || "") === into) position = itemIndex + 1; });
+    }
+    next.splice(position, 0, entry);
+    if (next.every((item, itemIndex) => item.uid === entries[itemIndex].uid) && (entries[index].in || "") === into) return true;
+    return commit(next, "move");
+  }
+
   /** 移除一筆物品；容器的內容物在 keepContents 時移到容器原本所在處，否則一併移除。 */
   function remove(uid, { keepContents = true } = {}) {
     const target = entries.find(entry => entry.uid === uid);
@@ -590,6 +619,7 @@
     LIMITS,
     add,
     update,
+    move,
     remove,
     restore,
     clear,

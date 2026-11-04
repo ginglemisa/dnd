@@ -749,6 +749,44 @@ async function validateInventory(page) {
   assert.equal(await over.isHidden(), true, "a hidden warning stays hidden while the page is open");
   await gear.click();
 
+  // 🤚 整理：齒輪左側、與齒輪同大小，只在齒輪展開時出現；標籤抖動、點了不開視窗，拖曳調整順序或放進容器，方向鍵前後移，Esc 結束。
+  const arrange = page.locator("#inventory-arrange");
+  const [arrangeBox, gearBox] = [await arrange.boundingBox(), await gear.boundingBox()];
+  assert.deepEqual([arrangeBox.width, arrangeBox.height, await arrange.evaluate(el => el.nextElementSibling?.id), Math.round(arrangeBox.y)], [gearBox.width, gearBox.height, "inventory-gear", Math.round(gearBox.y)], "🤚 sits left of the gear at the gear's size");
+  await gear.click();
+  assert.equal(await arrange.isHidden(), true, "🤚 hides with the gear collapsed");
+  await gear.click();
+  const savedInventory = await page.evaluate(() => Inventory.getState());
+  await arrange.click();
+  assert.deepEqual([await arrange.getAttribute("aria-pressed"), await page.locator("#inventory-arrange-hint").isVisible(), await page.locator("#inventory-tags .inventory-tag").first().evaluate(el => getComputedStyle(el).animationName)],
+    ["true", true, "inventory-jiggle"], "arranging jiggles the tags and shows the hint");
+  const topLabels = () => page.evaluate(() => Inventory.childrenOf("").map(entry => Inventory.getLabel(entry)));
+  const topTag = text => page.locator("#inventory-tags > li > .inventory-tag", { hasText: text }).first();
+  const dragTo = async (source, target, offset) => {
+    const from = await source.boundingBox();
+    const to = await target.boundingBox();
+    await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(to.x + to.width * offset, to.y + to.height / 2, { steps: 12 });
+    await page.mouse.up();
+  };
+  await topTag("繩索").click({ force: true });
+  assert.equal(await page.locator(".app-dialog").count(), 0, "tags do not open the item dialog while arranging");
+  const arrangeStart = await topLabels();
+  await dragTo(topTag(arrangeStart.at(-1)), topTag(arrangeStart[0]), 0.1);
+  assert.deepEqual(await topLabels(), [arrangeStart.at(-1), ...arrangeStart.slice(0, -1)], "dragging to the left half of a tag puts the item before it");
+  await dragTo(topTag("神祕卷宗"), topTag("背包"), 0.5);
+  assert.equal(await page.evaluate(() => Inventory.entries().find(entry => entry.name === "神祕卷宗").in === Inventory.entries().find(entry => entry.itemId === "背包").uid), true, "dropping on a container tag puts the item inside");
+  await dragTo(page.locator(".inventory-container-contents .inventory-tag", { hasText: "神祕卷宗" }), topTag(arrangeStart.at(-1)), 0.1);
+  assert.deepEqual([(await topLabels())[0], await page.locator(".app-dialog").count()], ["神祕卷宗", 0], "contents drag back out of an open container");
+  await topTag("神祕卷宗").focus();
+  await page.keyboard.press("ArrowRight");
+  assert.equal((await topLabels())[1], "神祕卷宗", "arrow keys move the focused tag");
+  await page.keyboard.press("Escape");
+  assert.deepEqual([await arrange.getAttribute("aria-pressed"), await arrange.evaluate(el => el === document.activeElement), await page.locator("#inventory-tags .inventory-tag").first().evaluate(el => getComputedStyle(el).animationName)],
+    ["false", true, "none"], "Esc ends arranging and returns focus to the button");
+  await page.evaluate(state => Inventory.restore(state), savedInventory);
+
   // Dialog inputs stay out of the character state; the inventory is saved as one structured field.
   const state = await page.evaluate(() => collectStateObject());
   assert.equal(Object.keys(state).some(key => /inventory-(?!$)/u.test(key)), false);
@@ -777,8 +815,8 @@ async function validateInventory(page) {
   await page.getByRole("alertdialog", { name: "只以文字管理物品？" }).getByRole("button", { name: "轉成文字", exact: true }).click();
   await page.waitForFunction(() => Inventory.isTextOnly());
   assert.equal(await page.locator("#gear-notes").inputValue(), `物品欄：${tagsText}\n自由備註`, "the tags become one text line above the free text");
-  assert.deepEqual([await textOnly.getAttribute("aria-pressed"), await page.locator("#inventory-tags").isHidden(), await weight.isHidden(), await addButton.isHidden(), await tidyButton.isHidden(), await page.locator("#inventory-panel .inventory-empty").isHidden()],
-    ["true", true, true, true, true, true], "text mode hides tags, weight, custom items and tidying");
+  assert.deepEqual([await textOnly.getAttribute("aria-pressed"), await page.locator("#inventory-tags").isHidden(), await weight.isHidden(), await addButton.isHidden(), await tidyButton.isHidden(), await page.locator("#inventory-panel .inventory-empty").isHidden(), await page.locator("#inventory-arrange").isHidden()],
+    ["true", true, true, true, true, true, true], "text mode hides tags, weight, custom items, tidying and 🤚");
   assert.equal(await page.locator("#mainHand option").allTextContents().then(options => options.includes("巨劍") && options.includes("長弓")), true, "text mode lists every weapon");
   assert.equal(await page.locator("#mainHand").inputValue(), "匕首");
   assert.deepEqual(await page.evaluate(() => collectStateObject().__inventory), { version: 1, textOnly: true, items: [] }, "text mode is saved with the character");

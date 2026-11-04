@@ -6,7 +6,10 @@
  *   （search.js 的 renderEquipmentDetailInto()），下方「持有」區調整數量、位置或刪除。
  *   目錄物品由商店（equipment-shop.js）購買或免費取得；這裡只建立自訂物品（`inventory-custom` 視窗，名稱、磅數、數量、位置、描述）。
  *   資料一律經 window.Inventory。
- * - 標題列齒輪展開 #inventory-tools（負重、「自訂物品」與「只以文字管理物品」），每次載入預設收起。
+ * - 標題列齒輪展開 #inventory-tools（負重、「自訂物品」與「只以文字管理物品」）並在齒輪左側顯示 🤚（整理），每次載入預設收起。
+ * - 🤚 整理模式：標籤輕微抖動，點標籤不開視窗；拖曳（Pointer Events，滑鼠與觸控相同）調整順序，拖到容器標籤上放進去，
+ *   展開容器後可在內容物之間排列或拖出。鍵盤用左右方向鍵在同一處前後移動。順序就是物品欄的資料順序（Inventory.move()）。
+ *   再按 🤚、Esc、收起齒輪或切到純文字管理時結束。
  * - 「只以文字管理物品」按下時標籤轉成攜帶物品文字的「物品欄：」行並清空物品欄，標籤、負重與整理功能都隱藏；
  *   再按一次回到標籤，物品欄從已裝備的物品開始，其餘由「整理成標籤」轉回。
  * - 「整理成標籤」只在攜帶物品文字有「物品欄：」「購買物品：」「初始裝備：」行時出現，預覽後由玩家確認才轉成標籤並移除那幾行；
@@ -23,6 +26,8 @@
   const expanded = new Set();
   let rendering = false;
   let overDismissed = false;
+  let arranging = false;
+  let drag = null;
 
   const api = () => globalScope.Inventory;
 
@@ -469,19 +474,25 @@
   }
 
   function renderEntries(parentUid, listEl, all, usage) {
-    all.filter(entry => (entry.in || "") === parentUid).forEach((entry) => {
+    all.filter(entry => (entry.in || "") === parentUid).forEach((entry, index) => {
       const item = el("li", "inventory-tag-item");
+      item.dataset.inventoryItem = entry.uid;
+      // 抖動錯開相位，看起來不會整排同步。
+      item.style.setProperty("--inventory-jiggle-delay", `${-((index * 7) % 5) * 0.05}s`);
       const tag = button("inventory-tag", entryText(entry));
       tag.dataset.inventoryUid = entry.uid;
-      tag.setAttribute("aria-haspopup", "dialog");
-      tag.title = "調整數量、位置或刪除";
+      if (arranging) tag.title = "拖曳或用方向鍵調整順序";
+      else {
+        tag.setAttribute("aria-haspopup", "dialog");
+        tag.title = "調整數量、位置或刪除";
+      }
       const key = usageKey(entry);
       if (key && usage.get(key)) {
         tag.classList.add("is-equipped");
         tag.append(el("span", "inventory-tag__badge", "裝備中"));
       }
       if (!entry.itemId) tag.classList.add("is-custom");
-      tag.addEventListener("click", () => openItemDialog(entry.uid, tag));
+      tag.addEventListener("click", () => { if (!arranging) openItemDialog(entry.uid, tag); });
       item.appendChild(tag);
       if (api().isContainer(entry)) {
         const children = all.filter(child => child.in === entry.uid);
@@ -533,7 +544,8 @@
 
   function render() {
     const panel = document.getElementById("inventory-panel");
-    if (!panel || !api() || rendering) return;
+    // 拖曳中不重繪（拖曳的標籤就在清單裡），放開後再畫。
+    if (!panel || !api() || rendering || drag?.started) return;
     rendering = true;
     try {
       const list = panel.querySelector("#inventory-tags");
@@ -541,6 +553,11 @@
       const uids = new Set(all.map(entry => entry.uid));
       [...expanded].forEach((uid) => { if (!uids.has(uid)) expanded.delete(uid); });
       const textOnly = api().isTextOnly();
+      if (textOnly) arranging = false;
+      panel.classList.toggle("is-arranging", arranging);
+      syncArrangeButton();
+      const hint = document.getElementById("inventory-arrange-hint");
+      if (hint) hint.hidden = !arranging;
       list.replaceChildren();
       if (!textOnly) renderEntries("", list, all, equippedUsage());
       list.hidden = textOnly;
@@ -558,6 +575,251 @@
     } finally {
       rendering = false;
     }
+  }
+
+  function reducedMotion() {
+    return globalScope.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
+  }
+
+  // 🤚 在標題列齒輪左側，齒輪展開且不是純文字管理時才出現。
+  function syncArrangeButton() {
+    const arrangeButton = document.getElementById("inventory-arrange");
+    if (!arrangeButton) return;
+    arrangeButton.hidden = api().isTextOnly() || document.getElementById("inventory-gear")?.getAttribute("aria-expanded") !== "true";
+    arrangeButton.setAttribute("aria-pressed", String(arranging));
+  }
+
+  function setArranging(on) {
+    const next = on === true && !api().isTextOnly();
+    if (next === arranging) return;
+    cancelDrag();
+    arranging = next;
+    render();
+  }
+
+  function itemUid(node) {
+    return node?.dataset?.inventoryItem || "";
+  }
+
+  // 清單所在的容器 uid；最外層是空字串。
+  function listOwner(list) {
+    return itemUid(list.parentElement?.closest("[data-inventory-item]"));
+  }
+
+  function pillParts(item) {
+    return [...item.children].filter(child => child.matches(".inventory-tag, .inventory-tag__toggle"));
+  }
+
+  // 標籤（容器連同展開鈕）的外框，判斷排在前後或放進容器用；展開的容器不含下一層內容物。
+  function pillRect(item) {
+    const rects = pillParts(item).map(part => part.getBoundingClientRect());
+    const left = Math.min(...rects.map(rect => rect.left));
+    const right = Math.max(...rects.map(rect => rect.right));
+    return { left, right, width: right - left, top: Math.min(...rects.map(rect => rect.top)), bottom: Math.max(...rects.map(rect => rect.bottom)) };
+  }
+
+  // 拖曳中的標籤直接移到新位置，其他標籤從原位平滑移過去（FLIP）；巢狀標籤只補自己相對於上一層的位移。
+  function moveSource(list, reference) {
+    const items = [...document.querySelectorAll("#inventory-tags [data-inventory-item]")];
+    const from = new Map(items.map(item => [item, item.getBoundingClientRect()]));
+    items.forEach(item => item.getAnimations?.().forEach(animation => animation.cancel()));
+    list.insertBefore(drag.item, reference);
+    list.querySelector(":scope > .inventory-container-empty")?.setAttribute("hidden", "");
+    if (reducedMotion()) return;
+    const deltas = new Map(items.map((item) => {
+      const to = item.getBoundingClientRect();
+      return [item, [from.get(item).left - to.left, from.get(item).top - to.top]];
+    }));
+    items.forEach((item) => {
+      const [dx, dy] = deltas.get(item);
+      const [px, py] = deltas.get(item.parentElement.closest("[data-inventory-item]")) || [0, 0];
+      if (Math.abs(dx - px) < 0.5 && Math.abs(dy - py) < 0.5) return;
+      item.animate?.([{ transform: `translate(${dx - px}px, ${dy - py}px)` }, { transform: "none" }], { duration: 160, easing: "ease-out" });
+    });
+  }
+
+  function placeSource(list, reference) {
+    if (reference === drag.item || (drag.item.parentElement === list && drag.item.nextElementSibling === reference)) return;
+    const owner = listOwner(list);
+    if (owner && !drag.targets.has(owner)) return;
+    moveSource(list, reference);
+  }
+
+  function setDropInto(uid) {
+    if (drag.into === uid) return;
+    document.querySelector(`#inventory-tags [data-inventory-item="${drag.into}"]`)?.classList.remove("is-drop-target");
+    drag.into = uid;
+    if (uid) document.querySelector(`#inventory-tags [data-inventory-item="${uid}"]`)?.classList.add("is-drop-target");
+  }
+
+  // 容器標籤除了最左一小段與展開鈕的右半，都算放進去；放不進去（層數上限）時照一般標籤排前後。
+  function overContainerMiddle(item, x) {
+    const [tag, toggle] = pillParts(item).map(part => part.getBoundingClientRect());
+    if (!tag || !toggle || !drag.targets.has(itemUid(item))) return false;
+    return x > tag.left + Math.max(8, tag.width / 4) && x < toggle.left + toggle.width / 2;
+  }
+
+  // 指到標籤：容器中間放進去，其他位置看在標籤前半或後半排在前或後；指到清單空白處且在最後一項之後就排到最後。
+  function updateDropTarget() {
+    const { x, y } = drag;
+    const root = document.getElementById("inventory-tags");
+    const hit = document.elementFromPoint(x, y);
+    if (!hit || !root?.contains(hit) || drag.item.contains(hit)) {
+      setDropInto("");
+      return;
+    }
+    const item = hit.closest(".inventory-tag, .inventory-tag__toggle")?.parentElement;
+    if (item?.dataset.inventoryItem) {
+      if (item.classList.contains("is-container") && overContainerMiddle(item, x)) {
+        setDropInto(itemUid(item));
+        return;
+      }
+      setDropInto("");
+      const rect = pillRect(item);
+      const after = y > rect.bottom || (y >= rect.top && x > rect.left + rect.width / 2);
+      placeSource(item.parentElement, after ? item.nextElementSibling : item);
+      return;
+    }
+    setDropInto("");
+    const list = hit.closest(".inventory-tags");
+    if (hit !== list && !hit.matches(".inventory-container-empty")) return;
+    const last = [...list.children].filter(child => child.dataset.inventoryItem).pop();
+    const rect = last?.getBoundingClientRect();
+    if (!last || y > rect.bottom || (y >= rect.top && x > rect.right)) placeSource(list, null);
+  }
+
+  function scrollParent(node) {
+    for (let current = node?.parentElement; current && current !== document.body; current = current.parentElement) {
+      if (/(auto|scroll)/u.test(getComputedStyle(current).overflowY) && current.scrollHeight > current.clientHeight) return current;
+    }
+    return null;
+  }
+
+  // 拖到畫面（或捲動容器）上下邊緣時跟著捲動。
+  function autoScroll() {
+    if (!drag?.started) return;
+    const box = drag.scroller?.getBoundingClientRect() || { top: 0, bottom: globalScope.innerHeight };
+    const top = Math.max(box.top, 0) + 48;
+    const bottom = Math.min(box.bottom, globalScope.innerHeight) - 48;
+    const step = drag.y < top ? -Math.min(12, Math.ceil((top - drag.y) / 4)) : drag.y > bottom ? Math.min(12, Math.ceil((drag.y - bottom) / 4)) : 0;
+    if (step) {
+      (drag.scroller || globalScope).scrollBy(0, step);
+      updateDropTarget();
+    }
+    drag.frame = globalScope.requestAnimationFrame(autoScroll);
+  }
+
+  function positionGhost() {
+    drag.ghost.style.transform = `translate(${drag.x - drag.offsetX}px, ${drag.y - drag.offsetY}px) scale(1.06)`;
+  }
+
+  function startDrag() {
+    const rect = pillRect(drag.item);
+    const ghost = el("div", `inventory-tag-item inventory-drag-ghost${drag.item.classList.contains("is-container") ? " is-container" : ""}`);
+    ghost.setAttribute("aria-hidden", "true");
+    ghost.inert = true;
+    ghost.style.width = `${rect.width}px`;
+    pillParts(drag.item).forEach((part) => {
+      const copy = part.cloneNode(true);
+      copy.removeAttribute("data-inventory-uid");
+      copy.removeAttribute("data-inventory-toggle");
+      ghost.appendChild(copy);
+    });
+    Object.assign(drag, {
+      started: true,
+      ghost,
+      offsetX: drag.startX - rect.left,
+      offsetY: drag.startY - rect.top,
+      targets: new Set(api().getContainerTargets(drag.uid).map(entry => entry.uid)),
+      scroller: scrollParent(drag.item)
+    });
+    document.body.appendChild(ghost);
+    drag.item.classList.add("is-drag-source");
+    document.getElementById("inventory-panel")?.classList.add("is-dragging");
+    positionGhost();
+    drag.frame = globalScope.requestAnimationFrame(autoScroll);
+  }
+
+  function onArrangePointerMove(event) {
+    if (event.pointerId !== drag?.pointerId) return;
+    drag.x = event.clientX;
+    drag.y = event.clientY;
+    if (!drag.started) {
+      if (Math.hypot(drag.x - drag.startX, drag.y - drag.startY) < 6) return;
+      startDrag();
+    }
+    event.preventDefault();
+    positionGhost();
+    updateDropTarget();
+  }
+
+  function stopDrag() {
+    if (!drag) return false;
+    document.removeEventListener("pointermove", onArrangePointerMove);
+    document.removeEventListener("pointerup", onArrangePointerUp);
+    document.removeEventListener("pointercancel", cancelDrag);
+    globalScope.cancelAnimationFrame(drag.frame);
+    drag.ghost?.remove();
+    drag.item.classList.remove("is-drag-source");
+    document.querySelectorAll("#inventory-tags .is-drop-target").forEach(item => item.classList.remove("is-drop-target"));
+    document.getElementById("inventory-panel")?.classList.remove("is-dragging");
+    const { started } = drag;
+    drag = null;
+    return started;
+  }
+
+  function cancelDrag(event) {
+    if (event?.pointerId !== undefined && event.pointerId !== drag?.pointerId) return;
+    if (stopDrag()) render();
+  }
+
+  function onArrangePointerUp(event) {
+    if (event.pointerId !== drag?.pointerId) return;
+    const { started, uid, item, into } = drag;
+    let next = item.nextElementSibling;
+    while (next && !itemUid(next)) next = next.nextElementSibling;
+    const target = into ? { into } : { into: listOwner(item.parentElement), before: itemUid(next) };
+    stopDrag();
+    if (!started) return;
+    api().move(uid, target);
+    render();
+    document.querySelector(`[data-inventory-uid="${uid}"]`)?.focus({ preventScroll: true });
+  }
+
+  function onArrangePointerDown(event) {
+    if (!arranging || drag || event.button !== 0 || !event.isPrimary) return;
+    const tag = event.target.closest?.(".inventory-tag");
+    const item = tag?.parentElement;
+    if (!itemUid(item)) return;
+    drag = { uid: itemUid(item), item, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, x: event.clientX, y: event.clientY, started: false, into: "", frame: 0 };
+    document.addEventListener("pointermove", onArrangePointerMove);
+    document.addEventListener("pointerup", onArrangePointerUp);
+    document.addEventListener("pointercancel", cancelDrag);
+  }
+
+  // 鍵盤：左右（上下）方向鍵在同一處前後移動，Esc 結束整理（拖曳中則取消這次拖曳）。
+  function onArrangeKeydown(event) {
+    if (!arranging) return;
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      if (drag?.started) cancelDrag();
+      else {
+        setArranging(false);
+        document.getElementById("inventory-arrange")?.focus();
+      }
+      return;
+    }
+    const uid = event.target.closest?.(".inventory-tag")?.dataset.inventoryUid;
+    const step = { ArrowLeft: -1, ArrowUp: -1, ArrowRight: 1, ArrowDown: 1 }[event.key];
+    if (!uid || !step || drag) return;
+    event.preventDefault();
+    const entry = api().getEntry(uid);
+    const siblings = api().childrenOf(entry?.in);
+    const index = siblings.findIndex(sibling => sibling.uid === uid) + step;
+    if (index < 0 || index >= siblings.length) return;
+    api().move(uid, { into: entry.in || "", before: step < 0 ? siblings[index].uid : siblings[index + 1]?.uid || "" });
+    document.querySelector(`[data-inventory-uid="${uid}"]`)?.focus();
   }
 
   // 只以文字管理物品：開啟時標籤轉成「物品欄：」行放進攜帶物品文字最上方；關閉時物品欄從已裝備的物品開始。
@@ -595,6 +857,9 @@
     if (!panel || panel.dataset.inventoryReady === "true") return;
     panel.dataset.inventoryReady = "true";
     panel.querySelector("#inventory-add")?.addEventListener("click", event => openCustomDialog(event.currentTarget));
+    document.getElementById("inventory-arrange")?.addEventListener("click", () => setArranging(!arranging));
+    document.getElementById("inventory-tags")?.addEventListener("pointerdown", onArrangePointerDown);
+    panel.addEventListener("keydown", onArrangeKeydown);
     const tidyButton = document.getElementById("inventory-tidy");
     tidyButton?.addEventListener("click", event => openTidyDialog(event.currentTarget));
     document.getElementById("inventory-text-only")?.addEventListener("click", event => toggleTextOnly(event.currentTarget));
@@ -611,6 +876,8 @@
       gear.setAttribute("aria-expanded", String(open));
       gear.setAttribute("aria-label", open ? "隱藏物品欄選項" : "顯示物品欄選項");
       if (tools) tools.hidden = !open;
+      if (!open) setArranging(false);
+      syncArrangeButton();
     });
     document.addEventListener("inventory:change", render);
     ["mainHand", "offHand", "armor", "main2Shield", "offHandAsMain", "str", "race"].forEach((id) => {

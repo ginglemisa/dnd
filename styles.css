@@ -6509,6 +6509,52 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   margin-left: auto;
 }
 
+/* 🤚 整理：齒輪左側的無框圖示，與齒輪同大小；整理中不透明並跟著擺動。 */
+button.inventory-arrange {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  min-height: 40px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: none;
+  font-size: 22px;
+  line-height: 1;
+  opacity: 0.72;
+  transition: opacity 150ms ease;
+}
+
+button.inventory-arrange[hidden] {
+  display: none;
+}
+
+button.inventory-arrange:is(:hover, :focus-visible, :active, [aria-pressed="true"]) {
+  background: transparent;
+  box-shadow: none;
+  opacity: 1;
+  transform: none;
+  translate: none;
+}
+
+button.inventory-arrange:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+button.inventory-arrange > span {
+  display: inline-block;
+}
+
+button.inventory-arrange[aria-pressed="true"] > span {
+  animation: inventory-jiggle 0.26s ease-in-out infinite;
+}
+
 .inventory-tools button.inventory-text-only[aria-pressed="true"] {
   border-color: var(--accent-strong);
   background: var(--accent-strong);
@@ -6664,6 +6710,99 @@ button.inventory-over__hide:is(:hover, :active) {
 .inventory-tag--static {
   display: inline-flex;
   cursor: default;
+}
+
+/* 整理模式（inventory-ui.js）：標籤輕微抖動，拖曳中的標籤跟著指標（.inventory-drag-ghost），原位留半透明佔位。
+   容器標籤與展開鈕以接縫為軸一起轉；減少動態效果時不抖動，改以虛線外框提示。 */
+.inventory-arrange-hint {
+  margin: 0 0 0.6rem;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
+.inventory-panel.is-arranging #inventory-tags {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.inventory-panel.is-arranging .inventory-tag {
+  cursor: grab;
+  touch-action: none;
+}
+
+.inventory-panel.is-dragging,
+.inventory-panel.is-dragging .inventory-tag {
+  cursor: grabbing;
+}
+
+.inventory-panel.is-arranging .inventory-tag,
+.inventory-panel.is-arranging .inventory-tag__toggle {
+  animation: inventory-jiggle 0.26s ease-in-out var(--inventory-jiggle-delay, 0s) infinite;
+}
+
+.inventory-panel.is-arranging .inventory-tag-item:nth-child(2n) > :is(.inventory-tag, .inventory-tag__toggle) {
+  animation-name: inventory-jiggle-alt;
+}
+
+.inventory-panel.is-arranging .inventory-tag-item.is-container > .inventory-tag {
+  transform-origin: 100% 50%;
+}
+
+.inventory-panel.is-arranging .inventory-tag-item.is-container > .inventory-tag__toggle {
+  transform-origin: 0 50%;
+}
+
+.inventory-panel.is-arranging .inventory-tag-item.is-drag-source > :is(.inventory-tag, .inventory-tag__toggle) {
+  opacity: 0.35;
+  animation: none;
+}
+
+.inventory-panel.is-arranging .inventory-tag-item.is-drop-target > :is(.inventory-tag, .inventory-tag__toggle) {
+  border-color: var(--accent-strong);
+  background: var(--surface-soft);
+  box-shadow: 0 0 0 2px var(--accent);
+  animation: none;
+}
+
+.inventory-drag-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 10000;
+  pointer-events: none;
+  transform-origin: 0 0;
+  border-radius: 999px;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
+  opacity: 0.95;
+}
+
+.inventory-drag-ghost > :is(.inventory-tag, .inventory-tag__toggle) {
+  background: var(--surface);
+}
+
+@keyframes inventory-jiggle {
+  0%, 100% { transform: rotate(-1.1deg); }
+  50% { transform: rotate(1.1deg) translateY(-0.5px); }
+}
+
+@keyframes inventory-jiggle-alt {
+  0%, 100% { transform: rotate(1.1deg) translateY(-0.5px); }
+  50% { transform: rotate(-1.1deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inventory-panel.is-arranging .inventory-tag,
+  .inventory-panel.is-arranging .inventory-tag__toggle {
+    animation: none;
+    border-style: dashed;
+  }
+
+  button.inventory-arrange,
+  button.inventory-arrange[aria-pressed="true"] > span {
+    transition: none;
+    animation: none;
+  }
 }
 
 .inventory-tags--preview {
