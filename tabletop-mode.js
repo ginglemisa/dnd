@@ -4749,7 +4749,7 @@
       [elements.inventoryHeadingTools, elements.inventoryHeadingSheetMount, elements.inventoryHeadingTabletopMount],
       [elements.inventoryPanel, elements.gearNotesSheetMount, elements.gearNotesTabletopMount],
       [elements.gearNotes, elements.gearNotesSheetMount, elements.gearNotesTabletopMount],
-      [elements.equipmentShopOpen, elements.gearNotesSheetMount, elements.gearNotesTabletopMount],
+      [elements.inventoryActions, elements.gearNotesSheetMount, elements.gearNotesTabletopMount],
       [elements.classExtra, elements.classExtraSheetMount, elements.classExtraTabletopMount],
       [elements.skillExtra, elements.skillExtraSheetMount, elements.skillExtraTabletopMount],
       [elements.spellNotes, elements.spellNotesSheetMount, elements.spellNotesTabletopMount]
@@ -4819,9 +4819,9 @@
             "tabletop-gear-notes-mount"
           ),
 
-        equipmentShopOpen:
+        inventoryActions:
           document.getElementById(
-            "equipment-shop-open"
+            "inventory-actions"
           ),
 
         classExtra:
