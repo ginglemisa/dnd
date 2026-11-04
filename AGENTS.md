@@ -21,7 +21,7 @@
   * `spell-content.generated.js`：`spellRules`、`spellText`，經 `spell-list.js` 的 `SpellCatalog` 讀取；只有 `playable`（有網站版）的法術能給角色使用，其餘 SRD 法術只供查閱。
   * `spell-srd.generated.js`：法術詳情「SRD 版」的譯文，網頁版延遲載入、離線版內嵌。法術 YAML 的英文原文不進任何產物。
 * `content/private/` 是私人內容包（gitignore），目前只有職業類會被建置讀取（私人職業、子職、`class-extensions/`、`rules/multiclass.yaml`），寫進只在本機使用的 `class-content.private.generated.js`。私人法術只訂了格式、建置不讀；私人專長、背景、種族不支援（資料夾存在時建置失敗）。私人內容不得提交或複製到公開檔案，公開建置不得依賴它。
-* 持久化 ID 以基準檔把關：職業／子職／選項／動作 key／資源 key 用 `class-id-baseline.json`，專長（含專長選擇欄位、快速創角草稿的專長名稱、跑團動作 key）用 `feat-id-baseline.json`，背景用 `background-id-baseline.json`，種族（含血統選單值、快速創角草稿值、跑團動作與資源 key）用 `race-id-baseline.json`，法術用 `spell-id-baseline.json`（只列有網站版、角色可用的法術）。只在確認刻意新增，或已處理舊資料相容的移除／改名後，才更新基準檔（`npm run build -- --update-id-baseline`）；不得用基準檔掩蓋意外遺失。`spellId` 不隨顯示名稱改動。
+* 持久化 ID 以基準檔把關：職業／子職／選項／動作 key／資源 key 用 `class-id-baseline.json`，專長（含專長選擇欄位、快速創角草稿的專長名稱、跑團動作 key）用 `feat-id-baseline.json`，背景用 `background-id-baseline.json`，種族（含血統選單值、快速創角草稿值、跑團動作與資源 key）用 `race-id-baseline.json`，法術用 `spell-id-baseline.json`（只列有網站版、角色可用的法術），物品欄品項（裝備說明的中文品名）用 `equipment-id-baseline.json`（不在建置內，由 `validate-spell-search.js --equipment-only` 比對，需手動更新）。只在確認刻意新增，或已處理舊資料相容的移除／改名後，才更新基準檔（`npm run build -- --update-id-baseline`）；不得用基準檔掩蓋意外遺失。`spellId` 不隨顯示名稱改動。
 * UI 模組讀取主要資料與公開 API，不複製平行規則、狀態、亂數或擲骰歷史。表單控制項可作為角色目前選擇的 canonical state；純顯示文字不作為規則資料來源。既有錯誤行為不是規格。
 * 職業機制以 `classRules` 為準，`classFeatures` HTML 與能力名稱、標題只供顯示：程式不得從中反推規則，判斷特定能力時用能力 id。職業頁上找能力的位置用 `data-feature-id`；建置工具不以正則解析產生後的 HTML 或網站原始碼。
 * 樣式以 `styles.css` 為準，外觀與互動先查 [DESIGN.md](DESIGN.md)。新 dialog／toast 用 `app-dialog.js`，不用原生 `alert`／`confirm`／`prompt`。圖片放 `images/`、字型放 `fonts/`；`og-image.jpg` 必須留在根目錄（短網址 Worker 固定引用）。
@@ -31,7 +31,8 @@
 
 * **儲存**：LocalStorage 一律經 `window.dndStorage`。變更持久化欄位或意義時，須確認 LocalStorage／autosave、JSON 匯入匯出與分享網址都能還原舊資料。
 * **匯入**：安全預檢與上限集中在 `index.html`，須完整驗證後才套用；拒絕或損壞的資料不得覆寫原存檔。清理範圍以 `APP_STORAGE_KEYS` 為準，不得清掉日誌、主題與擲骰歷史。匯入的暫存、套用與失敗復原流程照現有實作，修改時一併核對。
-* **匯出**：內容為目前角色、兩份法術書、跑團動作偏好與頭像，不是完整備份。動作偏好與頭像不進 autosave 與分享。
+* **匯出**：內容為目前角色（含物品欄 `__inventory`）、兩份法術書、跑團動作偏好與頭像，不是完整備份。動作偏好與頭像不進 autosave 與分享。
+* **物品欄**：`__inventory` 經 `window.Inventory` 讀寫，autosave、JSON 與分享都帶（空物品欄也帶）。載入存檔或匯入時，已裝備但不在物品欄的武器、護甲、盾牌只補上缺的數量（標記 `source: "equipped"`，沒有這個欄位的舊資料從空的開始補）；舊的攜帶物品文字只在玩家按「整理成標籤」後才轉換，轉換時先抵掉這些補上的物品。裝備下拉只列物品欄有的物品，仍對不上的選擇保留並標示，不自動清掉。`textOnly: true`（「只以文字管理物品」）時物品欄是空的，裝備下拉、商店與快速創角回到攜帶物品文字的做法。
 * **分享**：入口為 `copyShareUrl()`，保留 `#s=`／`#s2=` 格式與永久網址的複製 fallback。分享模式不 autosave、不可再分享或匯入，並鎖定角色身分欄位；分享資料不得被本機記憶覆蓋。
 * **短網址**：只在使用者明確選擇後建立，送出當次編碼的區域變數 `hash`。僅限 `https://twd20.com`、`#s2=` 且長度 ≤10000；離線頁不呼叫。建立失敗時明確提示，不自動重試，也不悄悄改成複製長網址。Worker 程式在 `cloudflare/twd20-url/`（見其 [README](cloudflare/twd20-url/README.md)），與網站分開部署，不自行部署；不寫入 secret 值、不猜測資源 ID、不更換 `HMAC_SECRET`。
 * **日誌**：`adventure-journal.js` 獨立使用 IndexedDB `twd20-adventure-journal`，對外 JSON 維持版本 1。寫入時核對 revision，失敗保留原資料。日誌不進角色 JSON、分享或 autosave。
@@ -49,7 +50,7 @@
 | 工具、怪物 | `tool-data.js`、`monster.js` |
 | 法術 | `content/srd/spells/`（建置產物見上），`spell-list.js`（`SpellCatalog`）建立索引與 API；SRD 譯文檢查 `tools/spell-reference/` |
 | 狀態、神祇 | `condition.js`、`deity-info.js` |
-| 裝備與商店 | `equipment-data.js`、`equipment-notes.js`、`equipment-shop.js` |
+| 裝備與商店 | `equipment-data.js`、`equipment-notes.js`、`equipment-shop.js`；物品欄資料 `inventory.js`（`Inventory`）、標籤介面 `inventory-ui.js` |
 | 角色卡 DOM、初始化、持久化、分享 | `index.html` |
 | 創角 | `quick-build.js`、`custom-background.js` |
 | 職業能力 UI 與選項記憶 | `class-features-ui.js`、`class-option-memory.js` |
@@ -88,11 +89,11 @@
 | `validate-action-metadata.js` | 動作定義與摘要、跑團操作與偏好、專長來源與資格、武器／AC、自創法術與自訂骰式 |
 | `validate-tabletop-druid.js` | 荒野形態、野獸攻擊、德魯伊資源；持續法術對 AC／速度的影響 |
 | `validate-spellbook.js` | 法術書、準備與來源、職業／手動記憶、舊資料遷移、法術頁版面 |
-| `validate-spell-search.js` | 法術／裝備搜尋、商店、工具（`--equipment-only`） |
+| `validate-spell-search.js` | 法術／裝備搜尋、商店、工具、物品欄與裝備下拉（`--equipment-only`） |
 | `validate-ability-roll.js` | 屬性產生、購點、擲骰（`--point-buy-only`／`--dice-only`） |
 | `validate-onboarding.js` | 導覽、創角匯入、PDF 載入取消（`--touch-only`／`--imports-only`） |
 | `validate-tabletop-rest.js` | 短休／長休、資源恢復、休息後選項 |
-| `validate-ui.js` | `--data-only` 存檔／分享／匯入安全、職業選項記憶、子職；`--dialogs-only` 對話框、角色能力視窗、缺項提示；`--appearance-only` 主題外觀；`--pdf-only`／`--pdf-fields-only` PDF；`--journal-only` 日誌；不帶參數另含 GA4 隔離模擬 |
+| `validate-ui.js` | `--data-only` 存檔／分享／匯入安全、職業選項記憶、子職、物品欄；`--dialogs-only` 對話框、角色能力視窗、缺項提示；`--appearance-only` 主題外觀；`--pdf-only`／`--pdf-fields-only` PDF；`--journal-only` 日誌；不帶參數另含 GA4 隔離模擬 |
 
 * 環境為 Node.js 20 以上，在專案根目錄執行。Playwright 腳本會自行啟動伺服器與 Chromium（`DND_BROWSER_CHANNEL=msedge` 可改用 Edge）。新環境先執行 `npm ci` 與 `npx --no-install playwright install chromium`。新的 worktree 沒有 `content/private/`，建置結果只含公開內容。
 * **測試流量**：任何方式載入本站（本機、正式站、`file://`、新分頁、新 context、分享網址），網址都必須帶 `analytics=owner`，並放在 `#` 之前；禁止向真實 GA4 送測試事件。

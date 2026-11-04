@@ -1042,6 +1042,8 @@ async function verifyEquipmentLoadout(browser, url) {
     await page.check("#legal-dismiss");
     await page.click("#legal-close-btn");
     await page.selectOption("#class", "fighter");
+    // 裝備下拉只列物品欄有的物品。
+    await page.evaluate(() => Inventory.add(["長劍", "標槍", "巨劍", "盾牌"].map(itemId => ({ itemId }))));
     await page.getByRole("tab", { name: "裝備", exact: true }).click();
     await page.selectOption("#mainHand", "長劍");
     // Only an interactive opt-in asks to replace manual attacks; state restoration
@@ -1089,6 +1091,8 @@ async function verifyEquipmentLoadout(browser, url) {
     await page.evaluate(() => applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] }, class: "fighter", mainHand: "巨劍", offHand: "標槍", offHandAsMain: true, main2Shield: true }));
     assert.equal(await page.isChecked("#main2Shield"), false);
 
+    // The legacy restore above seeded only its equipped items.
+    await page.evaluate(() => Inventory.add([{ itemId: "長劍" }]));
     await page.uncheck("#offHandAsMain");
     await page.selectOption("#mainHand", "長劍");
     await page.selectOption("#offHand", "盾牌");
@@ -1126,7 +1130,8 @@ async function verifyEquipmentLoadout(browser, url) {
 
     // 刃之魔契：不再熟練全部軍用武器，只有標記為契約武器的那一把熟練、可用魅力；同時只有一把。
     // 傷害類型（預設黯蝕）存在 pactWeaponDamageType，裝備摘要視窗、刃之魔契卡片與跑團動作的下拉都是它的鏡像。
-    const pactState = { __spellManagement: { version: 2, manual: false, entries: [] }, class: "warlock", level: "3", str: "10", dex: "12", cha: "16", mainHand: "長劍", offHand: "", offHandAsMain: false, armor: "", pactWeaponDamageType: "" };
+    const pactState = { __spellManagement: { version: 2, manual: false, entries: [] }, class: "warlock", level: "3", str: "10", dex: "12", cha: "16", mainHand: "長劍", offHand: "", offHandAsMain: false, armor: "", pactWeaponDamageType: "",
+      __inventory: { version: 1, items: [{ uid: "longsword", itemId: "長劍", quantity: 1 }, { uid: "dagger", itemId: "匕首", quantity: 1 }] } };
     await page.evaluate(state => applyStateObject(state), pactState);
     const pact = () => page.evaluate(() => ({
       controls: ["main", "off"].map(hand => !document.querySelector(`[data-pact-weapon-hand="${hand}"]`).hidden),
@@ -1208,7 +1213,8 @@ async function verifyEquipmentLoadout(browser, url) {
     // 橡棍術：角色卡由「☐橡棍術」決定是否以橡棍術計算（預設力場）；舊資料沒有開關時維持自動套用。
     const shillelaghState = { __spellManagement: { version: 2, manual: false, entries: [{ spellId: "shillelagh", spellClass: "druid", level: 0 }] },
       class: "druid", level: "3", str: "10", dex: "10", wis: "16", "spellcasting-ability": "wis", mainHand: "長棍", offHand: "", offHandAsMain: false, armor: "",
-      shillelaghWeaponHand: "none", shillelaghDamageType: "" };
+      shillelaghWeaponHand: "none", shillelaghDamageType: "",
+      __inventory: { version: 1, items: [{ uid: "quarterstaff", itemId: "長棍", quantity: 1 }, { uid: "longsword", itemId: "長劍", quantity: 1 }] } };
     await page.evaluate(state => applyStateObject(state), shillelaghState);
     const shillelaghControls = () => page.evaluate(() => ["main", "off"].map(hand => !document.querySelector(`[data-shillelagh-hand="${hand}"]`).hidden));
     assert.deepEqual(await shillelaghControls(), [true, false], "only the hand holding a club or quarterstaff offers Shillelagh");
@@ -1836,7 +1842,6 @@ async function verifyFeatEligibilityWarnings(browser, url) {
     await dialog.locator(".pdf-export-choice-option").filter({ hasText: "第三方角色卡" }).click();
     await page.fill("#pdf-export-character-name", "專長警示驗證");
     await dialog.getByRole("button", { name: "下一步", exact: true }).click();
-    await dialog.getByRole("button", { name: "只使用目前裝備" }).click();
     await dialog.getByRole("button", { name: "可編輯表單版", exact: false }).click();
     await page.waitForFunction(() => !!window.__featWarningPdfExport);
     assert.equal(await page.evaluate(() => window.__featWarningPdfExport["speed-display"]), "30", "forced PDF uses gated numeric values");

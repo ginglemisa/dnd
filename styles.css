@@ -6467,6 +6467,389 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   flex: 0 0 auto;
 }
 
+/* Inventory tags sit above the free-text carried-items notes and move with them in tabletop mode;
+   the heading tools (tidy + gear) move between the sheet and tabletop headings. */
+.inventory-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.section > .inventory-heading h3 {
+  font-size: var(--fs-lg);
+  font-weight: 850;
+}
+
+.inventory-heading-mount {
+  margin-left: auto;
+}
+
+.inventory-heading-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+}
+
+.inventory-heading-tools button.inventory-tidy,
+.inventory-tools button.inventory-add,
+.inventory-tools button.inventory-text-only {
+  width: auto;
+  min-height: 2.4rem;
+  margin: 0;
+  padding: 0.42rem 0.8rem;
+  font-size: var(--fs-sm);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.inventory-panel {
+  margin-bottom: 0.75rem;
+}
+
+.inventory-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 0.75rem;
+  margin-bottom: 0.6rem;
+}
+
+/* 「自訂物品」與「只以文字管理物品」一組靠右，窄螢幕換行時仍靠右；按下狀態同法術選擇的已選切換。 */
+.inventory-tools__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  margin-left: auto;
+}
+
+.inventory-tools button.inventory-text-only[aria-pressed="true"] {
+  border-color: var(--accent-strong);
+  background: var(--accent-strong);
+  color: var(--on-accent);
+}
+
+.inventory-weight {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--fs-sm);
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.inventory-weight.is-over,
+.inventory-over {
+  color: var(--warning);
+}
+
+.inventory-over {
+  margin: 0 0 0.6rem;
+  font-size: var(--fs-sm);
+  font-weight: 800;
+}
+
+button.inventory-over__hide {
+  width: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent-strong);
+  box-shadow: none;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+button.inventory-over__hide:is(:hover, :active) {
+  background: transparent;
+  color: var(--accent);
+  box-shadow: none;
+  transform: none;
+  translate: none;
+}
+
+.inventory-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.inventory-tag-item {
+  display: inline-flex;
+  max-width: 100%;
+  margin: 0;
+}
+
+.inventory-tag-item.is-expanded {
+  flex-wrap: wrap;
+  flex-basis: 100%;
+}
+
+.inventory-tag,
+.inventory-tag__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  width: auto;
+  min-width: 0;
+  min-height: 2rem;
+  margin: 0;
+  padding: 0.2rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: none;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.inventory-tag:is(:hover, :focus-visible),
+.inventory-tag__toggle:is(:hover, :focus-visible) {
+  border-color: var(--border-strong);
+  background: var(--surface-soft);
+  box-shadow: none;
+  transform: none;
+  translate: none;
+}
+
+.inventory-tag-item.is-container > .inventory-tag {
+  padding-right: 0.55rem;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.inventory-tag__toggle {
+  margin-left: -1px;
+  padding-inline: 0.5rem 0.65rem;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.inventory-tag.is-equipped {
+  border-color: var(--accent);
+}
+
+.inventory-tag.is-custom {
+  border-style: dashed;
+}
+
+.inventory-tag__badge {
+  color: var(--accent-strong);
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.inventory-tag__badge::before {
+  content: "· ";
+  color: var(--text-muted);
+}
+
+.inventory-item-meta .inventory-tag__badge::before {
+  content: none;
+}
+
+.inventory-container-contents {
+  flex-basis: 100%;
+  margin: 0.35rem 0 0.1rem 0.9rem;
+  padding-left: 0.7rem;
+  border-left: 1px dashed var(--border-strong);
+}
+
+.inventory-container-empty,
+.inventory-empty {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
+.inventory-tag--static {
+  display: inline-flex;
+  cursor: default;
+}
+
+.inventory-tags--preview {
+  margin-bottom: 0.75rem;
+}
+
+/* Inventory dialogs: item details, custom items, and tidying legacy text.
+   The item dialog shows the shop's description (search.js) above a "持有" section, at the same width. */
+.app-dialog[data-variant="inventory-item"] .app-dialog__surface {
+  width: min(100%, 40rem);
+}
+
+.inventory-holding.has-detail {
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border);
+}
+
+.inventory-holding__title {
+  color: var(--text);
+  font-weight: 850;
+}
+
+.inventory-holding__weight {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
+.inventory-holding__row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0 0.75rem;
+  align-items: end;
+}
+
+/* Containers have no quantity, so the location takes the whole row. */
+.inventory-holding__row > :only-child {
+  grid-column: 1 / -1;
+}
+
+/* 數量與位置維持同一列，只有極窄時才上下排。 */
+@media (max-width: 339px) {
+  .inventory-holding__row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* 自訂物品：名稱與磅數 3.5：1 同一列；描述自成一列。 */
+.inventory-custom-row--name {
+  display: grid;
+  grid-template-columns: minmax(0, 3.5fr) minmax(0, 1fr);
+  gap: 0 0.75rem;
+  align-items: end;
+}
+
+@media (max-width: 299px) {
+  .inventory-custom-row--name {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.inventory-desc-input {
+  min-height: 4.5rem;
+  resize: vertical;
+}
+
+/* 視窗標題下方的說明（標題列分隔線上方），同商店標題下的財產。 */
+.inventory-dialog-heading {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.app-dialog__header .inventory-dialog-subtitle {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+
+/* On phones the shared description keeps two compact columns here (the shop stacks them),
+   so the holding controls stay near the top. */
+@media (max-width: 480px) {
+  .app-dialog[data-variant="inventory-item"] .equipment-detail-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  .app-dialog[data-variant="inventory-item"] .equipment-detail-stats > div {
+    padding: 0.5rem 0.6rem;
+  }
+}
+
+.inventory-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.75rem;
+  color: var(--text-body);
+}
+
+.inventory-item-note {
+  margin: 0 0 0.75rem;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+
+.inventory-field {
+  display: grid;
+  gap: 0.3rem;
+  margin-bottom: 0.75rem;
+  font-size: var(--fs-sm);
+}
+
+.inventory-field__label {
+  color: var(--text-muted);
+}
+
+.inventory-stepper {
+  display: inline-grid;
+  grid-template-columns: 2.6rem minmax(4rem, 6rem) 2.6rem;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+.inventory-stepper__button {
+  width: 2.6rem;
+  min-height: 2.6rem;
+  padding: 0;
+}
+
+.inventory-stepper__input {
+  text-align: center;
+  -moz-appearance: textfield;
+}
+
+.inventory-stepper__input::-webkit-inner-spin-button,
+.inventory-stepper__input::-webkit-outer-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
+.inventory-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+
+.inventory-check input {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+}
+
+.inventory-add-heading {
+  margin: 0.9rem 0 0.4rem;
+  color: var(--accent-strong);
+  font-size: var(--fs-md);
+}
+
 /* Shop and cart share one frame, so the cart reads as another page of the same window; 48.5rem fits all twelve categories on one row. */
 .app-dialog[data-variant="equipment-shop"] .app-dialog__surface,
 .app-dialog[data-variant="equipment-shop-cart"] .app-dialog__surface {
@@ -17176,8 +17559,9 @@ html[data-theme="dark"] .tabletop-skill-value[data-skill-rank="expertise"] .tabl
   margin-left: auto;
 }
 
-/* Borderless gear: muted per theme, accent only on interaction. */
-button.tabletop-custom-spell-gear {
+/* Borderless gear: muted per theme, accent only on interaction (also the carried-items gear). */
+button.tabletop-custom-spell-gear,
+button.inventory-gear {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -17196,13 +17580,15 @@ button.tabletop-custom-spell-gear {
   transition: color 150ms ease, opacity 150ms ease;
 }
 
-button.tabletop-custom-spell-gear svg {
+button.tabletop-custom-spell-gear svg,
+button.inventory-gear svg {
   width: 22px;
   height: 22px;
   transition: transform 200ms ease;
 }
 
-button.tabletop-custom-spell-gear:is(:hover, :focus-visible, :active, [aria-expanded="true"]) {
+button.tabletop-custom-spell-gear:is(:hover, :focus-visible, :active, [aria-expanded="true"]),
+button.inventory-gear:is(:hover, :focus-visible, :active, [aria-expanded="true"]) {
   background: transparent;
   color: var(--accent-strong);
   box-shadow: none;
@@ -17211,18 +17597,22 @@ button.tabletop-custom-spell-gear:is(:hover, :focus-visible, :active, [aria-expa
   translate: none;
 }
 
-button.tabletop-custom-spell-gear:focus-visible {
+button.tabletop-custom-spell-gear:focus-visible,
+button.inventory-gear:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
-button.tabletop-custom-spell-gear[aria-expanded="true"] svg {
+button.tabletop-custom-spell-gear[aria-expanded="true"] svg,
+button.inventory-gear[aria-expanded="true"] svg {
   transform: rotate(60deg);
 }
 
 @media (prefers-reduced-motion: reduce) {
   button.tabletop-custom-spell-gear,
-  button.tabletop-custom-spell-gear svg { transition: none; }
+  button.tabletop-custom-spell-gear svg,
+  button.inventory-gear,
+  button.inventory-gear svg { transition: none; }
 }
 
 .tabletop-custom-spell-editor {

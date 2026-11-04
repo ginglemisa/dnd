@@ -2097,7 +2097,6 @@ async function verifyPdfSpellbookOptions(page) {
       assert.equal(await modal.locator('.pdf-export-name-field__optional').count(), 2, "both names are marked optional");
       await modal.locator('#pdf-export-english-name').fill("Enix Zakarum");
       await modal.getByRole('button', { name: '下一步', exact: true }).click();
-      await modal.locator('.pdf-export-choice-option').first().click();
       assert.equal(await modal.locator('#pdf-export-title').innerText(), "是否將法術書寫入法術 notes？");
       await modal.locator('.pdf-export-choice-option').nth(include ? 0 : 1).click();
       await modal.locator('.pdf-export-format-option').filter({ has: page.getByText(title, { exact: true }) }).click();
@@ -2127,7 +2126,6 @@ async function verifyPdfSpellbookOptions(page) {
     }
     await officialModal.locator('#pdf-export-character-name').fill("官方角色");
     await officialModal.locator('#pdf-export-character-name').press('Enter');
-    await officialModal.locator('.pdf-export-choice-option').first().click();
     assert.deepEqual(await officialModal.locator('.pdf-export-format-option__heading strong').allInnerTexts(), ["可編輯版", "不可編輯版"]);
     assert.equal(await officialModal.locator('.pdf-export-format-note a').getAttribute('href'), "https://drive.google.com/file/d/1g_t-5WBbZPvCWXFo4gM0s6ZoDQR7Djf1/view?usp=sharing");
     await officialModal.locator('.pdf-export-format-option').filter({ has: page.getByText("不可編輯版", { exact: true }) }).click();
@@ -2144,7 +2142,6 @@ async function verifyPdfSpellbookOptions(page) {
     await modal.getByRole('button', {name: '繼續', exact: true}).click();
     await modal.locator('.pdf-export-choice-option').filter({ hasText: '第三方角色卡' }).click();
     await modal.getByRole('button', {name: '下一步', exact: true}).click();
-    await modal.locator('.pdf-export-choice-option').first().click();
     assert.equal(await modal.locator('#pdf-export-title').innerText(), "選擇 PDF 格式", `${classId} skips the wizard-only question`);
     await modal.getByRole('button', {name: '關閉 PDF 匯出', exact: true}).click();
     await page.evaluate(() => __pdfTestDone);
@@ -2156,7 +2153,6 @@ async function verifyPdfSpellbookOptions(page) {
     await modal.getByRole('button', { name: '繼續', exact: true }).click();
     await modal.locator('.pdf-export-choice-option').filter({ hasText: '第三方角色卡' }).click();
     await modal.getByRole('button', { name: '下一步', exact: true }).click();
-    await modal.locator('.pdf-export-choice-option').first().click();
     assert.equal(await modal.locator('#pdf-export-title').innerText(), "是否將法術書寫入法術 notes？", `${classId} manual mode with an existing book keeps the book export choice`);
     await modal.locator('.pdf-export-choice-option').first().click();
     assert.equal(await modal.locator('#pdf-export-title').innerText(), "選擇 PDF 格式");
@@ -2168,7 +2164,6 @@ async function verifyPdfSpellbookOptions(page) {
   await emptyBookModal.getByRole('button', { name: '繼續', exact: true }).click();
   await emptyBookModal.locator('.pdf-export-choice-option').filter({ hasText: '第三方角色卡' }).click();
   await emptyBookModal.getByRole('button', { name: '下一步', exact: true }).click();
-  await emptyBookModal.locator('.pdf-export-choice-option').first().click();
   assert.equal(await emptyBookModal.locator('#pdf-export-title').innerText(), "選擇 PDF 格式", "manual non-wizard without a book skips the irrelevant book question");
   await emptyBookModal.getByRole('button', { name: '關閉 PDF 匯出', exact: true }).click(); await page.evaluate(() => __pdfTestDone);
   await page.evaluate(() => { window.__pdfTestOptions = null; window.__pdfTestDone = downloadQuickBuildCompactPdf(); });

@@ -12,7 +12,8 @@
  *   索引於首次搜尋建立；務必等資料與說明 DOM 就緒再開放操作。
  * - 詳情的「加入購物清單」讀取 equipment-notes.js 的 EQUIPMENT_SHOP_ITEMS，
  *   交給 equipment-shop.js 的 window.EquipmentShop；商店內改用
- *   openEquipmentDetailDialog() 以 AppDialog 疊在商店視窗上。
+ *   openEquipmentDetailDialog() 以 AppDialog 疊在商店視窗上；物品欄的物品視窗以
+ *   renderEquipmentDetailInto() 把同一份內容畫進自己的視窗。
  * - 此檔放在 equipment-data.js 之後，以帶版本的 <script defer src> 載入。
  *   HTML 與 CSS 不由此檔產生；搜尋開關／切頁由 scroll-to-top.js 負責。
  * - 保留 window.searchAllSpells、clearSpellSearchResults、applyEquipmentFilter，
@@ -730,6 +731,43 @@
     return true;
   }
 
+  // AppDialog 內的詳情內容（分類／英文名一行與說明本文），規則連結點了以 AppDialog 開啟。
+  function buildEquipmentDetailDialogParts(entry) {
+    const meta = document.createElement("p");
+    meta.className = "equipment-detail-dialog__meta";
+    meta.textContent = entry.subtype || entry.category;
+    const english = getEquipmentEnglishName(entry.name);
+    if (english) {
+      const label = document.createElement("span");
+      label.className = "equipment-detail-english";
+      label.lang = "en";
+      label.textContent = english;
+      meta.append("｜", label);
+    }
+    const content = document.createElement("div");
+    content.className = "equipment-detail-dialog__content";
+    renderEquipmentDetailContent(content, entry);
+    content.addEventListener("click", (event) => {
+      const ruleTrigger = event.target.closest?.("[data-equipment-rule-kind][data-equipment-rule]");
+      if (!ruleTrigger) return;
+      const kind = ruleTrigger.dataset.equipmentRuleKind;
+      const name = ruleTrigger.dataset.equipmentRule;
+      const description = globalThis.WEAPON_RULE_DESCRIPTIONS?.[kind]?.[name];
+      if (!description) return;
+      const category = kind === "mastery" ? "精通" : kind === "armor" ? "防具規則" : "武器屬性";
+      window.AppDialog.showMessage({ title: `${category}：${name}`, message: description, trigger: ruleTrigger });
+    });
+    return [meta, content];
+  }
+
+  // 物品欄的物品視窗把同一份詳情畫在自己的視窗裡；找不到物品時回傳 false。
+  function renderEquipmentDetailInto(container, value) {
+    const resultEntry = findEquipmentEntryByName(value);
+    if (!resultEntry) return false;
+    container.append(...buildEquipmentDetailDialogParts(resultEntry.parent || resultEntry));
+    return true;
+  }
+
   // 商店視窗內的詳情：以可疊加的 AppDialog 呈現同一份內容，關閉後回到商店。
   function openEquipmentDetailDialog(value, trigger) {
     const resultEntry = findEquipmentEntryByName(value);
@@ -742,31 +780,7 @@
       trigger,
       confirmLabel: "關閉",
       renderContent(body) {
-        const meta = document.createElement("p");
-        meta.className = "equipment-detail-dialog__meta";
-        meta.textContent = entry.subtype || entry.category;
-        const english = getEquipmentEnglishName(entry.name);
-        if (english) {
-          const label = document.createElement("span");
-          label.className = "equipment-detail-english";
-          label.lang = "en";
-          label.textContent = english;
-          meta.append("｜", label);
-        }
-        const content = document.createElement("div");
-        content.className = "equipment-detail-dialog__content";
-        renderEquipmentDetailContent(content, entry);
-        content.addEventListener("click", (event) => {
-          const ruleTrigger = event.target.closest?.("[data-equipment-rule-kind][data-equipment-rule]");
-          if (!ruleTrigger) return;
-          const kind = ruleTrigger.dataset.equipmentRuleKind;
-          const name = ruleTrigger.dataset.equipmentRule;
-          const description = globalThis.WEAPON_RULE_DESCRIPTIONS?.[kind]?.[name];
-          if (!description) return;
-          const category = kind === "mastery" ? "精通" : kind === "armor" ? "防具規則" : "武器屬性";
-          window.AppDialog.showMessage({ title: `${category}：${name}`, message: description, trigger: ruleTrigger });
-        });
-        body.append(meta, content);
+        body.append(...buildEquipmentDetailDialogParts(entry));
       }
     });
     return true;
@@ -855,7 +869,7 @@
   });
 
   // 公開相容入口；索引與其餘輔助函式保留於模組內。
-  Object.assign(globalScope, { searchAllSpells, clearSpellSearchResults, openSpellBrowser, applyEquipmentFilter, openEquipmentDetailByName, openEquipmentDetailDialog });
+  Object.assign(globalScope, { searchAllSpells, clearSpellSearchResults, openSpellBrowser, applyEquipmentFilter, openEquipmentDetailByName, openEquipmentDetailDialog, renderEquipmentDetailInto });
 
   // 保留法術索引的載入時預建；裝備說明在 DOMContentLoaded 產生，仍延後到搜尋時建立。
   if (document.readyState === "complete") {

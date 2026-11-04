@@ -956,31 +956,9 @@ function isWeaponRowEmpty(payload, slot) {
     };
   }
 
-  // 武器熟練項、護甲訓練與起始裝備（A）：職業內容檔的純文字（換行改為「,」）。
+  // 武器熟練項與護甲訓練：職業內容檔的純文字（換行改為「,」）。
   function getClassProfileText(classKey, field) {
     return normalizeText(getClassRules(classKey)?.profile?.[field] || '');
-  }
-
-  function parseClassDefaultEquipment(classKey) {
-    return getClassProfileText(classKey, 'equipment');
-  }
-
-  function parseBackgroundDefaultEquipment(backgroundKey) {
-    const background = getBuiltInBackground(backgroundKey);
-    if (!background) return '';
-    return normalizeText(background.text.equipmentA);
-  }
-
-  function hasQuickBuildInitialEquipment(state) {
-    const gearNotes = state?.['gear-notes'];
-    try {
-      if (typeof globalScope.quickBuild?.hasImportedInitialEquipment === 'function') {
-        return globalScope.quickBuild.hasImportedInitialEquipment(gearNotes);
-      }
-    } catch (error) {
-      void error;
-    }
-    return /^\s*初始裝備：\s*\S/um.test(String(gearNotes || ''));
   }
 
   function getLanguageLabelByValue(value) {
@@ -1474,15 +1452,11 @@ function isWeaponRowEmpty(payload, slot) {
       payload.extra1 = normalizeUserTextForPdf(extraNotes.join('\n'));
     }
 
-    if (options.includeDefaultEquipment && !hasQuickBuildInitialEquipment(state)) {
-      const classEq = parseClassDefaultEquipment(classKey);
-      const bgEq = parseBackgroundDefaultEquipment(backgroundKey);
-      payload.equipment1 = normalizeEquipmentListForPdf(
-        [classEq, bgEq, payload.equipment1].filter(Boolean).join('\n')
-      );
-    } else {
-      payload.equipment1 = normalizeEquipmentListForPdf(payload.equipment1);
-    }
+    // 物品欄（標籤）排在攜帶物品自由文字之前。
+    const inventoryText = state.__inventory && typeof globalScope.Inventory?.formatText === 'function'
+      ? globalScope.Inventory.formatText(state.__inventory) : '';
+    if (inventoryText) payload.equipment1 = [inventoryText, payload.equipment1].filter(Boolean).join('\n');
+    payload.equipment1 = normalizeEquipmentListForPdf(payload.equipment1);
 
     for (let slot = 1; slot <= 7; slot++) {
       const fieldName = `dmg_type_${slot}`;
