@@ -22,9 +22,10 @@ proficiencies:
   weapons: { categories: [simple] }
   armor: []
 equipment:
-  A: 短矛、匕首 ×2、奧術法器（水晶）、地城套組、28 金幣
-  B: 50 金幣
-  note: "**地城套組：**背包、鐵蒺藜、撬棍、油瓶 ×2、單日口糧 ×10、繩索、火絨盒、火把 ×10，水袋"
+  A:
+    items: [短矛, 匕首 ×2, 奧術法器（水晶）, 地城套組]
+    gold: 28
+  B: { gold: 50 }
 progression:
   sorceryPoints:
     label: 術法點

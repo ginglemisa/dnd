@@ -43,6 +43,12 @@ function normalizeSkillKey(skillName) {
   return SKILL_NAME_ALIASES[skillName] || skillName;
 }
 
+// 套組提示框的內容物文字（職業起始裝備的套組名稱）：取自 equipment-data.js 的 EQUIPMENT_PACK_CONTENTS，與物品欄拆開的品項相同。
+function packTipText(packName) {
+  const contents = globalThis.EQUIPMENT_PACK_CONTENTS?.[packName];
+  return contents ? contents.map(([name, count]) => count > 1 ? `${name} ×${count}` : name).join("、") : "";
+}
+
 function skillTip(skillName) {
   const safeLabel = String(skillName ?? "");
   return `<span class="skill-tip" data-skill="${safeLabel}">${safeLabel}</span>`;

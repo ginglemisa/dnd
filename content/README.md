@@ -45,7 +45,7 @@ VS Code 安裝 Red Hat 的「YAML」擴充套件後，會依檔案第一行的 `
 `text` 一律用 `|` 開頭，下一行起縮排書寫。
 
 - 段落之間空一行；清單用 `- `；粗體用 `**粗體**`。
-- 同一段內要換行，在行尾加 `\`（清單項目的下一行再縮排兩格）。創角資訊的單行欄位（例如 `equipment.A`）也可用同樣寫法換行。
+- 同一段內要換行，在行尾加 `\`（清單項目的下一行再縮排兩格）。創角資訊的單行欄位（例如 `weapons`）也可用同樣寫法換行。
 - `#### 標題` 開始一個小節，直到下一個 `####` 或文字結束。只是排版分段時用它；小節有自己的跑團按鈕時改用子能力（見下方「子能力」），預設收合的小節改用 `collapsible`（見下方「可收合小節」）。
 - `[[運動]]`、`[[抗性]]`、`[[失能]]`、`[[小魔鬼]]`：提示框，名稱須存在於技能／規則提示表、狀態表或野獸表（`monster.js` 的 `BEAST_STATS`，取中文名）。
 - `{rageDamageText|數值見特性表}`：職業頁顯示 `|` 後的文字，跑團模式換成目前數值（網站依目前等級與屬性值計算）。名稱須是 `progression` 欄位、`values` 或內建的 `level`、`proficiencyBonus`；特性表欄位套用欄位的 `format`，要另加跑團字樣（例如「3 次」「目前 +2」）時在 `values` 另取名稱並寫 `format`（見下方「職業層級的欄位」）。整個數值標記要粗體時寫 `**{名稱|文字}**`；只有部分頁面文字粗體時寫在 `|` 後，例如 `{searUndeadDice|**等同感知調整值數量的 d8**（至少 1d8）}`。
@@ -234,6 +234,11 @@ mount: { id: bard-magical-discoveries, label: 魔法發現法術選擇 }
   - `armor`：`[light, medium, heavy, shield]`，沒有時寫 `[]`。
   - `tools`：`{ fixed: 盜賊工具, field: 欄位 ID }`，或 `{ chooseFrom: [instrument], count: 3, field: 欄位 ID 前綴 }`（工具組 ID 見 `tool-data.js`，欄位為前綴加序號）。
   - 網站依此判斷武器與護甲熟練、武器精通可選的武器與職業工具欄位；守護者、哨衛等選項的額外熟練寫在選項的 `grants`。契術師刃之魔契的軍用武器與武僧的武藝仍由網站程式處理。
+- `equipment`：起始裝備，A、B 二擇一。職業頁的（A）列由建置依 `items` 組成（以「、」連接，最後接「N 金幣」），套組名稱自動加上內容物提示框（內容物取自 `equipment-data.js` 的 `EQUIPMENT_PACK_CONTENTS`）；職業頁點（A）（B）與快速創角都依此把物品加進物品欄。
+  - `A`：`{ items: [...], gold: 15 }`；有兩種以上組合時寫 `options: [{ id, label, items, gold }]`（例如戰士的力量型、敏捷型；`id` 會寫進快速創角草稿，不可改名，列在 `class-id-baseline.json` 的 `equipmentOptions`）。
+  - `items` 的每一項：裝備說明的品名，數量寫成「名稱 ×n」（例如「箭矢 ×20」）；裝備說明沒有的物品寫 `{ name: 法術書, weight: 3 }`（每件磅數）；擇一的物品寫 `{ choose: 樂器擇一, tools: [instrument] }`（從工具組選，工具組 ID 見 `tool-data.js`）或 `{ choose: 聖徽, from: [聖物匣, 徽章, 護身符] }`（從列出的品名選），`choose` 是顯示文字。
+  - `B`：`{ gold: 75 }`。
+  - 品名須對得到物品欄的目錄（裝備說明的品名或 `inventory.js` 的別名），`validate-spell-search.js` 會在網頁中逐項檢查。
 - `values`：公式只能用數字、`d`、四則運算、`max()`／`min()`／`floor()`（無條件捨去，例如 `floor({level} / 2)`）／`ceil()`（無條件進位）與 `{數值}`，例如 `"{rageDamage}d6"`、`"max(1, {chaModifier})"`。公式中另可引用屬性調整值 `{strModifier}`、`{dexModifier}`、`{conModifier}`、`{intModifier}`、`{wisModifier}`、`{chaModifier}`（沒有屬性值時視為 0；文字中不可直接引用）。
   跑團顯示要加字樣時寫 `{ formula: "8 + {proficiencyBonus} + {wisModifier}", format: "（DC {}）" }`，`{}` 代入計算結果；`format` 的前後空白也會保留（夾在中文之間時用來和數值區隔，例如 `" {} 點"`）。同一個數值要在不同地方顯示不同字樣時另取名稱，例如 `rageUsesText: { formula: "{rageUses}", format: "{} 次" }`；只引用一個特性表欄位且該等級為「-」時保留頁面文字。骰子公式顯示為「1d8 + 3」（有常數項時一律顯示正負號，0 顯示「+ 0」）。
   屬性值或等級未填時，屬性調整值視為 0、等級視為 1；要改顯示其他文字時寫 `blank: "…"`，寫 `blank: keep` 則保留頁面文字。flow 寫法（`{ … }`）中含 `{}` 的字串須加引號。
@@ -242,7 +247,7 @@ mount: { id: bard-magical-discoveries, label: 魔法發現法術選擇 }
 
 ## 不可改名的 ID
 
-選項的 `id`、下拉選單的 `select.id` 與選項值、動作的 `key`／`legacyKeys`、`resource.key`、子職 `id` 會寫進存檔、分享網址或跑團偏好；選項的 `attackNote` 會寫進角色的攻擊備註；子職法術的來源識別碼（見「能力給予的法術」）會寫進角色的法術清單。改顯示文字沒關係，這些 ID 不可改。
+選項的 `id`、起始裝備組合的 `id`、下拉選單的 `select.id` 與選項值、動作的 `key`／`legacyKeys`、`resource.key`、子職 `id` 會寫進存檔、分享網址或跑團偏好；選項的 `attackNote` 會寫進角色的攻擊備註；子職法術的來源識別碼（見「能力給予的法術」）會寫進角色的法術清單。改顯示文字沒關係，這些 ID 不可改。
 
 這些 ID 都列在根目錄的 `class-id-baseline.json`（私人內容包另有 `content/private/class-id-baseline.json`）；專長、背景、種族與法術各有 `feat-id-baseline.json`、`background-id-baseline.json`、`race-id-baseline.json`、`spell-id-baseline.json`（見各節）。ID 不見、改名或新增而基準檔沒更新時，建置會失敗。確定是刻意新增時執行：
 
@@ -252,7 +257,7 @@ npm run build -- --update-id-baseline
 
 ## PDF 角色紙
 
-PDF 匯出讀取內容檔：職業與子職名稱、生命骰、`weapons`、`armor`（勾選輕甲／中甲／重甲）、`equipment.A`（預設起始裝備，行尾「\」換行改為「,」），以及職業特性欄的「等級 N：能力名稱」（子職能力加「（簡稱）」，不列「選擇子職」的能力）。
+PDF 匯出讀取內容檔：職業與子職名稱、生命骰、`weapons`、`armor`（勾選輕甲／中甲／重甲），以及職業特性欄的「等級 N：能力名稱」（子職能力加「（簡稱）」，不列「選擇子職」的能力）。
 
 - 同等級要寫在同一行的能力各加 `pdfMerge: true`，依職業頁順序以「、」連接，例如「等級 1：狂暴、無甲防禦」。
 - 有 `options`（不含 `changeOn` 與 `featChoice` 的選項）或 `select` 的能力，勾選或選擇的項目接在標題後，例如「等級 1：神聖使命／守護者」。

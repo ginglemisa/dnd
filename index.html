@@ -2333,8 +2333,9 @@ function updateBackgroundFeature() {
 
    <div class="background-guide-block background-guide-section">
      <div><strong>裝備：</strong>A、B 二擇一</div>
-     <div><strong>(A) </strong>${text.equipmentA}</div>
-     <div><strong>(B) </strong>${text.equipmentB}</div>
+     <div><strong><button type="button" class="starting-equipment-take" data-starting-equipment="A">(A)</button> </strong>${text.equipmentA}</div>
+     <div><strong><button type="button" class="starting-equipment-take" data-starting-equipment="B">(B)</button> </strong>${text.equipmentB}</div>
+     <div class="starting-equipment-hint">＊點按 (A) 或 (B) 取得初始裝備或金錢</div>
    </div>
 
    <div class="background-guide-description">
@@ -4530,7 +4531,7 @@ function renderSkillPopupHtml(skillLabel, conditionKey) {
         `<p class="skill-popup-paragraph">${escapeHtml(effect)}</p>`).join("")}</div>`;
   }
   const normalizedKey = normalizeSkillKey(skillLabel);
-  const text = skills_example_uses[normalizedKey];
+  const text = skills_example_uses[normalizedKey] || packTipText(normalizedKey);
   if (!text) return "";
 
   const description = text.includes("\n\n")
@@ -6616,6 +6617,7 @@ window.addEventListener("DOMContentLoaded", async function() {
   if (sharedData) {
   SHARE_MODE = true;
   window.SHARE_MODE = true;
+  document.documentElement.classList.add("is-share-mode");
   const exitShareLink = document.getElementById("exit-share-mode");
   const exitShareUrl = new URL(location.href);
   exitShareUrl.hash = "";
@@ -6640,6 +6642,7 @@ window.addEventListener("DOMContentLoaded", async function() {
   if (hasShareHash) {
     SHARE_MODE = true;
     window.SHARE_MODE = true;
+    document.documentElement.classList.add("is-share-mode");
     closeShareModeGuideEntries();
     await window.AppDialog.showMessage({
       title: "分享連結讀取失敗",

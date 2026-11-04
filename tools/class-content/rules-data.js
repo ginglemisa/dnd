@@ -4,6 +4,7 @@
 const { renderInline, tableValueText } = require("../content/markdown");
 const { orderedSubclasses } = require("./render");
 const { getPickFields } = require("./load");
+const { equipmentRules } = require("./equipment");
 
 const ABILITY_CODES = Object.freeze({ 力量: "str", 敏捷: "dex", 體質: "con", 智力: "int", 感知: "wis", 魅力: "cha" });
 // 只供職業頁與跑團說明使用的文字與排版欄位：機制資料不含這些欄位。
@@ -58,9 +59,10 @@ function classRules(classDef, appendixHtml = []) {
     spellcasting: classDef.spellcasting.progression,
     profile: {
       weapons: profileText(classDef.weapons, `${classDef.file} weapons`),
-      armor: profileText(classDef.armor, `${classDef.file} armor`),
-      equipment: profileText(classDef.equipment.A, `${classDef.file} equipment.A`)
+      armor: profileText(classDef.armor, `${classDef.file} armor`)
     },
+    // 起始裝備（職業頁的（A）（B）與快速創角加入物品欄）。
+    equipment: equipmentRules(classDef),
     // 創角的技能選擇與熟練機制資料（快速創角、武器與護甲熟練、武器精通可選的武器、職業工具欄位）。
     skills: classDef.skills,
     ...(classDef.proficiencies ? { proficiencies: classDef.proficiencies } : {}),

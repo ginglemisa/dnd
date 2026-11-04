@@ -22,9 +22,10 @@ proficiencies:
   weapons: { categories: [simple] }
   armor: [light, medium, shield]
 equipment:
-  A: 半身鎖甲、盾牌、硬頭錘、聖徽、祭司套組、7 金幣
-  B: 110 金幣
-  note: "**祭司套組：**背包、毯子、聖水、油燈、單日口糧 ×7、長袍、火絨盒。"
+  A:
+    items: [半身鎖甲, 盾牌, 硬頭錘, { choose: 聖徽, from: [聖物匣, 徽章, 護身符] }, 祭司套組]
+    gold: 7
+  B: { gold: 110 }
 progression:
   channelDivinityUses:
     label: 引導神力

@@ -635,6 +635,20 @@ async function validateInventory(page) {
     entries: [["祭袍", "", 1], ["槲寄生枝條", "", 1], ["祭袍", "", 2]],
     text: [["祭袍", ""], ["祭袍", ""], ["槲寄生枝條", ""], ["槲寄生枝條", ""], ["書籍", "書籍（玄秘學識）"], ["書籍", "書（玄秘學識）"]]
   }, "renamed items load from old saves and old text");
+  // 職業與背景的起始裝備：每個品名都對得到目錄（自訂物品須有重量），擇一的選項也是；套組提示框列出內容物。
+  const startingEquipment = await page.evaluate(() => {
+    const unresolved = [];
+    const check = (where, text) => { if (!Inventory.parseItemText(text).itemId) unresolved.push(`${where}:${text}`); };
+    Object.entries(classRules).forEach(([classId, rules]) => rules.equipment.A.forEach(option => option.items.forEach(item => {
+      if (typeof item === "string") check(classId, item);
+      else if (item.name && !(item.weight >= 0)) unresolved.push(`${classId}:${item.name}`);
+      else if (item.from) item.from.forEach(name => check(classId, name));
+      else if (item.tools) item.tools.forEach(id => ToolProficiencyCatalog.groups.find(group => group.id === id).options.forEach(name => check(classId, name)));
+    })));
+    Object.entries(backgroundRules).forEach(([id, rules]) => rules.equipment.A.items.forEach(item => typeof item === "string" && check(id, item)));
+    return { unresolved, pack: renderSkillPopupHtml("學者套組").includes("背包、書籍、墨水、墨水筆、油燈、油 ×10、羊皮紙 ×10、火絨盒") };
+  });
+  assert.deepEqual(startingEquipment, { unresolved: [], pack: true }, "starting equipment names resolve to catalog items and packs show their contents");
 
   await page.evaluate(() => {
     applyStateObject({ class: "fighter", level: "1", str: "10", "money-balance-pp": "0", "money-balance-gp": "100", "money-balance-sp": "0", "money-balance-cp": "0", __inventory: { version: 1, items: [] },
