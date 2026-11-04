@@ -622,6 +622,19 @@ async function validateInventory(page) {
   assert.deepEqual(catalog.ids.filter(id => !baseline.includes(id)), [], "new catalog items are added to equipment-id-baseline.json on purpose");
   for (const [pack, listed, sum] of catalog.packs) assert.equal(Math.round(sum * 100) / 100, listed, `${pack} contents weigh what the pack lists`);
   assert.deepEqual([catalog.containers, catalog.wielded], [[], []], "containers and wieldable focuses exist in the catalog");
+  // 改名的品項（長袍→祭袍、槲寄生樹枝→槲寄生枝條）：舊存檔的 itemId 與舊文字寫法都對到新品名。
+  const renamed = await page.evaluate(() => {
+    applyStateObject({ class: "druid", level: "1", __inventory: { version: 1, items: [
+      { uid: "robe", itemId: "長袍", name: "祭祀長袍", quantity: 1 }, { uid: "sprig", itemId: "槲寄生樹枝", quantity: 1 }, { uid: "plain", itemId: "長袍", quantity: 2 }] } });
+    return {
+      entries: Inventory.entries().map(({ itemId, name, quantity }) => [itemId, name || "", quantity]),
+      text: ["長袍", "祭祀長袍", "槲寄生樹枝", "德魯伊法器（槲寄生枝條）", "書籍（玄秘學識）", "書（玄秘學識）"].map(text => [Inventory.parseItemText(text).itemId, Inventory.parseItemText(text).name || ""])
+    };
+  });
+  assert.deepEqual(renamed, {
+    entries: [["祭袍", "", 1], ["槲寄生枝條", "", 1], ["祭袍", "", 2]],
+    text: [["祭袍", ""], ["祭袍", ""], ["槲寄生枝條", ""], ["槲寄生枝條", ""], ["書籍", "書籍（玄秘學識）"], ["書籍", "書（玄秘學識）"]]
+  }, "renamed items load from old saves and old text");
 
   await page.evaluate(() => {
     applyStateObject({ class: "fighter", level: "1", str: "10", "money-balance-pp": "0", "money-balance-gp": "100", "money-balance-sp": "0", "money-balance-cp": "0", __inventory: { version: 1, items: [] },
@@ -1239,7 +1252,7 @@ async function validateEquipmentShop(page) {
   for (const [category, names] of [
     ["照明", ["火把", "蠟燭", "油燈", "附蓋提燈", "牛眼提燈", "油", "火絨盒"]],
     ["容器", ["背包", "小包", "麻袋", "籃子", "箱子", "木桶", "手提桶", "鐵鍋", "壺", "水袋", "玻璃瓶", "扁瓶", "藥瓶", "地圖或捲軸盒"]],
-    ["服裝", ["旅行者服裝", "高檔服裝", "戲服", "長袍"]],
+    ["服裝", ["旅行者服裝", "高檔服裝", "戲服", "祭袍"]],
     ["彈藥", ["箭矢 (20)", "箭袋", "弩矢 (20)", "弩矢匣", "子彈，火器 (10)", "彈丸，投石索 (20)", "針 (50)", "小包"]],
     ["魔法", ["法術卷軸", "治療藥水", "材料包"]]
   ]) {
