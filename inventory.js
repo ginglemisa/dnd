@@ -1,10 +1,11 @@
 /**
  * 物品欄資料（傳統 defer script，無額外 runtime dependency）。
  *
- * - 角色資料頂層 `__inventory`：{ version: 1, textOnly?, items: [{ uid, itemId?, name?, quantity, in?, weight?, container?, desc?, source? }] }。
+ * - 角色資料頂層 `__inventory`：{ version: 1, textOnly?, items: [{ uid, itemId?, name?, quantity, in?, weight?, container?, desc?, source?, uses? }] }。
  *   itemId 是裝備說明的品名（與 mainHand／商店相同的中文名稱）；name 是顯示名稱，自訂物品必填，目錄品項只在寫法不同時保留
  *   （例如「書籍（禱文）」）。weight（每件磅數）、container 與 desc（描述）只用於自訂物品；in 是所在容器的 uid；
  *   source "initial" 標記快速創角匯入的初始裝備，"equipped" 標記因主手／副手／護甲已裝備而補上的物品（整理成標籤時先抵掉，不重複）。
+ *   uses 是有使用次數的目錄物品（EQUIPMENT_ITEM_ACTIONS 的 uses，例如醫療包）目前這件的剩餘次數；沒有這個欄位表示全新，同一筆的其餘件數都是全新的。
  *   textOnly 為 true 時玩家選擇只以文字管理物品：物品欄是空的，裝備下拉、商店與快速創角回到攜帶物品文字的做法。
  * - 目錄：重量與分類取自 equipment-notes.js 整理的 EQUIPMENT_SHOP_ITEMS，武器／護甲取自 equipment-data.js，
  *   套組內容物、容器與可持用的法器取自 equipment-data.js 的結構化清單；這裡不另存重量。彈藥以單發計數。
@@ -101,6 +102,18 @@
     return itemId ? catalog().get(itemId) || null : null;
   }
 
+  /** 目錄物品每件的使用次數（醫療包 10 次）；沒有使用次數的物品回傳 0。 */
+  function getMaxUses(itemId) {
+    const uses = itemId ? globalScope.EQUIPMENT_ITEM_ACTIONS?.[itemId]?.uses : 0;
+    return Number.isInteger(uses) && uses > 1 ? uses : 0;
+  }
+
+  // 剩餘次數只記 1～上限減 1；全新（或不合法的值）不記。
+  function cleanUses(itemId, value) {
+    const max = getMaxUses(itemId);
+    return max && Number.isInteger(value) && value >= 1 && value < max ? value : 0;
+  }
+
   function clampQuantity(value) {
     const number = Math.floor(Number(value));
     if (!Number.isFinite(number) || number < 1) return 1;
@@ -147,6 +160,8 @@
     }
     if (typeof raw.in === "string" && UID_PATTERN.test(raw.in)) entry.in = raw.in;
     if (SOURCES.has(raw.source)) entry.source = raw.source;
+    const uses = cleanUses(itemId, raw.uses);
+    if (uses) entry.uses = uses;
     return entry;
   }
 
@@ -474,6 +489,7 @@
     if (stack && !isContainerEntry(entry)) {
       stack.quantity = Math.min(stack.quantity + entry.quantity, LIMITS.quantity);
       if (entry.source && !stack.source && entry.source !== "equipped") stack.source = entry.source;
+      mergeUses(stack, entry);
       return commit(next.filter(item => item !== entry), "update");
     }
     return commit(next, "update");
@@ -495,6 +511,7 @@
     if (stack) {
       stack.quantity = Math.min(stack.quantity + entry.quantity, LIMITS.quantity);
       if (entry.source && !stack.source && entry.source !== "equipped") stack.source = entry.source;
+      mergeUses(stack, entry);
       return commit(next, "move");
     }
     const target = before && before !== uid ? next.findIndex(item => item.uid === before && (item.in || "") === into) : -1;
@@ -506,6 +523,48 @@
     next.splice(position, 0, entry);
     if (next.every((item, itemIndex) => item.uid === entries[itemIndex].uid) && (entries[index].in || "") === into) return true;
     return commit(next, "move");
+  }
+
+  // 合併成一筆時只保留一件用過的剩餘次數（取較少的），其餘視為全新。
+  function mergeUses(stack, entry) {
+    if (entry.uses && (!stack.uses || entry.uses < stack.uses)) stack.uses = entry.uses;
+  }
+
+  /** 物品剩餘次數：{ left, max }（left 是目前這件的剩餘次數）；沒有使用次數的物品回傳 null。 */
+  function getUses(entry) {
+    const max = getMaxUses(entry?.itemId);
+    return max ? { left: entry.uses || max, max } : null;
+  }
+
+  /**
+   * 用掉一筆物品：預設數量減 amount；charge 時改用掉目前這件的 1 次使用次數，用完才數量減 1（下一件從全新開始）。
+   * 數量減到 0 時移除這一筆。回傳 { removed, quantity, uses, emptied }：uses 是目前這件的剩餘次數，emptied 表示 charge 用完了一件；
+   * 找不到物品或沒有使用次數卻要 charge 時回傳 null。
+   */
+  function consume(uid, { amount = 1, charge = false } = {}) {
+    const index = entries.findIndex(entry => entry.uid === uid);
+    if (index < 0) return null;
+    const next = entries.map(copyEntry);
+    const entry = next[index];
+    let used = Math.max(1, Math.floor(Number(amount)) || 1);
+    if (charge) {
+      const uses = getUses(entry);
+      if (!uses) return null;
+      if (uses.left > 1) {
+        entry.uses = uses.left - 1;
+        commit(next, "consume");
+        return { removed: false, quantity: entry.quantity, uses: entry.uses, emptied: false };
+      }
+      delete entry.uses;
+      used = 1;
+    }
+    if (entry.quantity <= used) {
+      remove(uid);
+      return { removed: true, quantity: 0, uses: 0, emptied: charge };
+    }
+    entry.quantity -= used;
+    commit(next, "consume");
+    return { removed: false, quantity: entry.quantity, uses: getUses(entry)?.left || 0, emptied: charge };
   }
 
   /** 移除一筆物品；容器的內容物在 keepContents 時移到容器原本所在處，否則一併移除。 */
@@ -621,9 +680,11 @@
     update,
     move,
     remove,
+    consume,
     restore,
     clear,
     getState,
+    getUses,
     ensureEquipped,
     setTextOnly,
     isTextOnly: () => textOnly,

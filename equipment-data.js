@@ -93,3 +93,27 @@ globalThis.EQUIPMENT_CONTAINER_ITEMS = Object.freeze(["背包", "小包", "麻�
 
 // 品名標明可當武器持用的法器，對應的武器名稱（裝備下拉用）。
 globalThis.EQUIPMENT_WIELDED_AS = Object.freeze({ "法杖（長棍）": "長棍", "木製法杖（長棍）": "長棍" });
+
+// 物品欄物品視窗的互動（inventory-ui.js），依裝備說明整理；鍵是品名，「多種」的品項（賭具、樂器）也適用於其下的具體品項。
+// check：檢定按鈕，ability 取自各工具說明的「屬性：」行；advantage 只在按鈕旁標示「有優勢」，由玩家自行處理。
+// uses：每件的使用次數（物品欄記在 uses 欄位）。heal：飲用後恢復的生命值骰式。
+// thrown：攻擊動作中投擲，目標進行敏捷豁免（DC = 8 + 敏捷調整值 + 熟練加值），damage 為豁免失敗的傷害，note 為額外條件。
+// coating：塗在武器上，damage 為命中時的額外傷害。
+globalThis.EQUIPMENT_ITEM_ACTIONS = Object.freeze(Object.fromEntries(Object.entries({
+  "煉金師工具": { check: { ability: "int" } }, "釀酒師工具": { check: { ability: "int" } }, "書法工具": { check: { ability: "dex" } },
+  "木匠工具": { check: { ability: "str" } }, "製圖師工具": { check: { ability: "wis" } }, "鞋匠工具": { check: { ability: "dex" } },
+  "廚師工具": { check: { ability: "wis" } }, "玻璃匠工具": { check: { ability: "int" } }, "珠寶匠工具": { check: { ability: "int" } },
+  "皮匠工具": { check: { ability: "dex" } }, "石匠工具": { check: { ability: "str" } }, "畫家工具": { check: { ability: "wis" } },
+  "陶匠工具": { check: { ability: "wis" } }, "鐵匠工具": { check: { ability: "str" } }, "修補匠工具": { check: { ability: "dex" } },
+  "裁縫工具": { check: { ability: "dex" } }, "木雕師工具": { check: { ability: "dex" } },
+  "易容工具": { check: { ability: "cha" } }, "文書偽造工具": { check: { ability: "dex" } }, "賭具": { check: { ability: "wis" } },
+  "草藥工具": { check: { ability: "wis" } }, "樂器": { check: { ability: "cha" } }, "領航員工具": { check: { ability: "wis" } },
+  "製毒師工具": { check: { ability: "int" } }, "盜賊工具": { check: { ability: "dex" } },
+  "撬棍": { check: { ability: "str", advantage: true } },
+  "醫療包": { uses: 10 },
+  "治療藥水": { heal: "2d4+2" },
+  "強酸": { thrown: { damage: "2d6", damageType: "強酸" } },
+  "煉金火焰": { thrown: { damage: "1d4", damageType: "火焰", note: "並開始燃燒" } },
+  "聖水": { thrown: { damage: "2d8", damageType: "光耀", note: "只對邪魔或不死生物" } },
+  "基礎毒藥": { coating: { damage: "1d4", damageType: "毒素" } }
+}).map(([name, actions]) => [name, Object.freeze(Object.fromEntries(Object.entries(actions).map(([key, value]) => [key, typeof value === "object" ? Object.freeze(value) : value])))])));

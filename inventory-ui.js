@@ -4,6 +4,8 @@
  * - 掛在攜帶物品區的 #inventory-panel 與標題列的 #inventory-heading-tools（跑團模式時隨攜帶物品文字框一起搬移，見 tabletop-mode.js）。
  * - 標籤：[匕首 ×2]；容器標籤可展開，內容物排在下一層。點標籤開啟 `inventory-item` 視窗：目錄物品先顯示與商店相同的說明
  *   （search.js 的 renderEquipmentDetailInto()），下方「持有」區調整數量、位置或刪除。
+ *   持有區標題行下方是互動列（buildItemActions()，資料取自 equipment-data.js 的 EQUIPMENT_ITEM_ACTIONS）：武器／護甲／盾牌的裝備與卸除
+ *   （寫回裝備頁下拉）、工具與撬棍的檢定、醫療包的使用次數、治療藥水飲用回復生命值、投擲物與毒藥；檢定與傷害骰只在擲骰功能開啟時顯示。
  *   目錄物品由商店（equipment-shop.js）購買或免費取得；這裡只建立自訂物品（`inventory-custom` 視窗，名稱、磅數、數量、位置、描述）。
  *   資料一律經 window.Inventory。
  * - 標題列齒輪展開 #inventory-tools（負重、「自訂物品」與「只以文字管理物品」）並在齒輪左側顯示 🤚（整理），每次載入預設收起。
@@ -164,6 +166,327 @@
     return Boolean(confirmed);
   }
 
+  // ===== 物品互動（持有區的按鈕；資料取自 equipment-data.js 的 EQUIPMENT_ITEM_ACTIONS）=====
+  const ABILITY_LABELS = Object.freeze({ str: "力量", dex: "敏捷", con: "體質", int: "智力", wis: "感知", cha: "魅力" });
+
+  // 「多種」底下的具體品項（例如魯特琴）沿用通稱（樂器）的互動。
+  function itemActions(entry) {
+    const item = api().getCatalogItem(entry?.itemId);
+    const all = globalScope.EQUIPMENT_ITEM_ACTIONS || {};
+    return item ? all[item.id] || (item.group && all[item.group]) || null : null;
+  }
+
+  function diceEnabled() {
+    return globalScope.DiceRoller?.isEnabled?.() === true;
+  }
+
+  function signed(value) {
+    return value >= 0 ? `+${value}` : `${value}`;
+  }
+
+  // 屬性調整值與熟練加值沿用角色卡的 getModifier()／getProficiencyBonus()（index.html）。
+  function abilityModifier(ability) {
+    return Number(globalScope.getModifier?.(ability)) || 0;
+  }
+
+  function proficiencyBonus() {
+    return Number(globalScope.getProficiencyBonus?.()) || 2;
+  }
+
+  // 工具熟練：裝備頁工具熟練欄（背景、職業與手動各列）的選擇；通稱（樂器、賭具）熟練同組任一種就算。
+  function isToolProficient(entry) {
+    const chosen = new Set([...document.querySelectorAll("#tool-proficiency-list .tool-proficiency-row select")]
+      .map(select => select.value).filter(Boolean));
+    const item = api().getCatalogItem(entry.itemId);
+    if (!item?.generic) return chosen.has(entry.itemId);
+    const group = (globalScope.ToolProficiencyCatalog?.groups || []).find(candidate => candidate.label === item.id);
+    return Boolean(group?.options.some(name => chosen.has(name)));
+  }
+
+  function readHp(id) {
+    const value = String(document.getElementById(id)?.value ?? "").trim();
+    return /^\d+$/u.test(value) ? Number(value) : null;
+  }
+
+  function quantityText(entry, quantity) {
+    return `${api().getLabel(entry)}剩 ${quantity} 件`;
+  }
+
+  // 裝備下拉的目前選擇；停用時（雙手佔用）顯示下拉上的說明。
+  function handState(id) {
+    const select = document.getElementById(id);
+    if (!select) return "—";
+    const text = select.selectedOptions[0]?.textContent.trim() || "";
+    if (select.disabled) return text || "—";
+    return select.value ? text || select.value : "空手";
+  }
+
+  // 寫回裝備頁下拉並觸發 change，雙手武器卸下盾牌等確認與重算照裝備頁的流程；選項不存在時還原並回傳 false。
+  function setSlot(id, value) {
+    const select = document.getElementById(id);
+    if (!select || select.disabled) return false;
+    const previous = select.value;
+    select.value = value;
+    if (select.value !== value) {
+      select.value = previous;
+      return false;
+    }
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+    return true;
+  }
+
+  function isTwoHanded(name) {
+    return Boolean(globalScope.hasTwoHandedProperty?.(globalScope.getWeaponByName?.(name)));
+  }
+
+  // 武器只有一件且在另一手時先從另一手卸下（換手）；勾選「契約」的那一手不從物品欄拿，不算。
+  function equipWeapon(name, handId) {
+    const otherId = handId === "mainHand" ? "offHand" : "mainHand";
+    const otherHand = otherId === "mainHand" ? "main" : "off";
+    const owned = api().getEquippableCounts().weapons.get(name) || 0;
+    if (fieldValue(otherId) === name && !globalScope.isPactWeaponListHand?.(otherHand) && owned < 2) setSlot(otherId, "");
+    return setSlot(handId, name);
+  }
+
+  async function openEquipWeaponDialog(entry, trigger) {
+    const name = api().getCatalogItem(entry.itemId)?.wieldedAs;
+    if (!name) return;
+    const offLabel = document.getElementById("offHandLabel")?.textContent.trim() || "副手";
+    const alternateMain = globalScope.isOffHandAlternateMain?.() === true;
+    const twoHanded = isTwoHanded(name);
+    const notes = [];
+    const blocked = (id, hand, label) => {
+      const select = document.getElementById(id);
+      if (!select) return true;
+      if (select.value === name && !select.disabled) {
+        notes.push(`已裝備在${label}。`);
+        return true;
+      }
+      if (globalScope.isPactWeaponListHand?.(hand)) {
+        notes.push(`${label}是契約武器，請在裝備頁更換。`);
+        return true;
+      }
+      return false;
+    };
+    const mainBlocked = blocked("mainHand", "main", "主手");
+    let offBlocked = blocked("offHand", "off", offLabel);
+    if (!offBlocked && twoHanded && !alternateMain) {
+      notes.push(`雙手武器只能裝備在主手${fieldValue("offHand") ? `，${offLabel}的${handState("offHand")}會一併卸下` : ""}。`);
+      offBlocked = true;
+    } else if (!offBlocked && document.getElementById("offHand")?.disabled && fieldValue("mainHand") !== name) {
+      notes.push(`主手的${handState("mainHand")}佔用雙手，裝備在${offLabel}前請先更換主手。`);
+      offBlocked = true;
+    }
+    const result = await globalScope.AppDialog.showContent({
+      title: `裝備${api().getLabel(entry)}`,
+      variant: "inventory-equip",
+      trigger,
+      allowNested: true,
+      initialFocus: mainBlocked ? undefined : "primary",
+      renderContent(body) {
+        const status = el("dl", "inventory-hand-status");
+        [["主手", "mainHand"], [offLabel, "offHand"]].forEach(([label, id]) => {
+          const row = el("div", "inventory-hand-status__row");
+          row.append(el("dt", "", label), el("dd", "", handState(id)));
+          status.appendChild(row);
+        });
+        body.appendChild(status);
+        notes.forEach(text => body.appendChild(el("p", "inventory-item-note", text)));
+      },
+      actions: [
+        { label: "取消", value: false },
+        { label: offLabel, value: "offHand", disabled: offBlocked },
+        { label: "主手", intent: "primary", value: "mainHand", disabled: mainBlocked }
+      ]
+    });
+    if (result !== "mainHand" && result !== "offHand") return;
+    if (!equipWeapon(name, result)) {
+      globalScope.AppDialog.notify(`無法把${name}裝備在${result === "mainHand" ? "主手" : offLabel}，請到裝備頁調整。`, { tone: "warning" });
+    }
+  }
+
+  async function equipArmor(name, trigger) {
+    const current = fieldValue("armor");
+    if (current && current !== name) {
+      const confirmed = await globalScope.AppDialog.requestDecision({
+        title: "更換護甲？",
+        message: `目前穿著${current}，要換成${name}嗎？`,
+        cancelLabel: "取消",
+        confirmLabel: "更換",
+        trigger
+      });
+      if (!confirmed) return;
+    }
+    if (!setSlot("armor", name)) globalScope.AppDialog.notify(`無法穿上${name}，請到裝備頁調整。`, { tone: "warning" });
+  }
+
+  async function equipShield(trigger) {
+    if (globalScope.isOffHandAlternateMain?.()) {
+      const toggle = document.getElementById("main2Shield");
+      if (!toggle || !globalScope.isMain2ShieldEligible?.()) {
+        globalScope.AppDialog.notify("副手設為另一把主手武器時，需要盾牌熟練且兩手都不是雙手武器，才能裝備盾牌。", { tone: "warning" });
+        return;
+      }
+      toggle.checked = true;
+      toggle.dispatchEvent(new Event("change", { bubbles: true }));
+      return;
+    }
+    const offHand = document.getElementById("offHand");
+    if (!offHand || offHand.disabled) {
+      globalScope.AppDialog.notify(`主手的${handState("mainHand")}佔用雙手，無法裝備盾牌。`, { tone: "warning" });
+      return;
+    }
+    if (offHand.value && offHand.value !== "盾牌") {
+      const confirmed = await globalScope.AppDialog.requestDecision({
+        title: "更換副手？",
+        message: `副手目前是${handState("offHand")}，要換成盾牌嗎？`,
+        cancelLabel: "取消",
+        confirmLabel: "更換",
+        trigger
+      });
+      if (!confirmed) return;
+    }
+    if (!setSlot("offHand", "盾牌")) globalScope.AppDialog.notify("無法裝備盾牌，請到裝備頁調整。", { tone: "warning" });
+  }
+
+  // 治療藥水：生命值未填寫或已滿時不擲骰、不減數量；否則擲骰（擲骰功能關閉時照樣擲）、回復生命值，數量減 1。
+  function drinkPotion(entry, heal) {
+    const label = api().getLabel(entry);
+    const current = readHp("hp");
+    const maximum = readHp("hp-display");
+    if (current === null || !maximum || current >= maximum) {
+      globalScope.AppDialog.notify("生命值全滿（或未填寫），藥水數量未減少。", { tone: "warning" });
+      return null;
+    }
+    const roll = globalScope.DiceRoller?.rollExpression?.(heal, { label: `${label}回復生命值`, force: true, notify: false });
+    const recovery = roll ? globalScope.TabletopMode?.restoreHitPoints?.(Math.max(1, roll.total), { sourceLabel: `${label}：` }) : null;
+    if (!recovery?.ok || !(recovery.restoredHp > 0)) {
+      globalScope.AppDialog.notify("目前無法自動回復生命值，藥水數量未減少。", { tone: "warning" });
+      return null;
+    }
+    const used = api().consume(entry.uid);
+    globalScope.AppDialog.notify(`${label}：${roll.equation}，回復 ${recovery.restoredHp} 點生命值（HP ${recovery.currentHp}/${maximum}）。`, {
+      tone: "success", variant: "dice-roll", duration: 7000
+    });
+    return used;
+  }
+
+  // 投擲物：數量減 1；擲骰功能開啟時一併擲豁免失敗的傷害。
+  function throwItem(entry, thrown, dc) {
+    const label = api().getLabel(entry);
+    const used = api().consume(entry.uid);
+    if (!used) return null;
+    const left = used.removed ? `${label}已用完` : quantityText(entry, used.quantity);
+    const roll = diceEnabled()
+      ? globalScope.DiceRoller.rollExpression(thrown.damage, { label: `${label}${thrown.damageType}傷害`, notify: false })
+      : null;
+    const damage = roll ? `豁免失敗受到 ${roll.equation} ${thrown.damageType}傷害` : `豁免失敗受到 ${thrown.damage} ${thrown.damageType}傷害`;
+    globalScope.AppDialog.notify(`投擲${label}：目標 DC ${dc} 敏捷豁免，${damage}${thrown.note ? `（${thrown.note}）` : ""}。${left}。`, {
+      tone: "info", variant: roll ? "dice-roll" : "default", duration: 7000
+    });
+    return used;
+  }
+
+  function actionButton(text, onClick, ariaLabel = "") {
+    const control = button("inventory-action-button", text);
+    if (ariaLabel) control.setAttribute("aria-label", ariaLabel);
+    control.addEventListener("click", () => onClick(control));
+    return control;
+  }
+
+  function actionRow(text, ...controls) {
+    const row = el("div", "inventory-action-row");
+    if (text) row.appendChild(el("p", "inventory-action-row__text", text));
+    const buttons = controls.filter(Boolean);
+    if (buttons.length) {
+      const group = el("div", "inventory-action-row__buttons");
+      group.append(...buttons);
+      row.appendChild(group);
+    }
+    return row;
+  }
+
+  /**
+   * 持有區的互動列：裝備／卸除、檢定、使用次數、飲用、投擲與塗抹。ctx.afterUse(result) 在數量或次數改變後同步視窗。
+   * 檢定與傷害骰只在擲骰功能開啟時顯示。回傳 null 表示這件物品沒有互動。
+   */
+  function buildItemActions(entry, ctx) {
+    const item = api().getCatalogItem(entry.itemId);
+    if (!item) return null;
+    const actions = itemActions(entry) || {};
+    const label = api().getLabel(entry);
+    const rows = [];
+    const key = usageKey(entry);
+    if (key) {
+      const equipped = isEntryEquipped(entry);
+      const equip = actionButton("裝備", (control) => {
+        if (key === "shield") equipShield(control);
+        else if (key.startsWith("armor:")) equipArmor(item.id, control);
+        else openEquipWeaponDialog(entry, control);
+      }, `裝備${label}`);
+      // 武器已裝備時仍可換手或拿第二把，盾牌與護甲裝備中只留卸除。
+      const showEquip = !equipped || key.startsWith("weapon:");
+      const remove = equipped ? actionButton("卸除", () => unequip([key]), `卸除${label}`) : null;
+      rows.push(actionRow("", showEquip ? equip : null, remove));
+    }
+    if (actions.check && diceEnabled()) {
+      const proficient = isToolProficient(entry);
+      const modifier = abilityModifier(actions.check.ability) + (proficient ? proficiencyBonus() : 0);
+      const abilityLabel = ABILITY_LABELS[actions.check.ability] || "";
+      const roll = actionButton(`${abilityLabel}檢定 ${signed(modifier)}`, () => {
+        globalScope.DiceRoller?.roll?.({ count: 1, sides: 20, modifier, includeModifier: true, label: `${label}（${abilityLabel}檢定）` });
+      }, `擲${label}的${abilityLabel}檢定`);
+      const tags = [proficient ? "含熟練加值" : "未熟練", actions.check.advantage ? "有優勢" : ""].filter(Boolean).join("・");
+      const row = actionRow("", roll);
+      row.querySelector(".inventory-action-row__buttons").appendChild(el("span", "inventory-action-tag", tags));
+      rows.push(row);
+    }
+    const uses = api().getUses(entry);
+    if (uses) {
+      const spare = entry.quantity - 1;
+      rows.push(actionRow(`這件剩 ${uses.left}/${uses.max} 次${spare > 0 ? `，另有 ${spare} 件全新` : ""}。`,
+        actionButton("使用 1 次", () => {
+          const used = api().consume(entry.uid, { charge: true });
+          if (!used) return;
+          globalScope.AppDialog.notify(used.removed ? `${label}用完了，已從物品欄移除。`
+            : used.emptied ? `${label}這件用完了，換下一件（剩 ${used.quantity} 件）。` : `${label}這件剩 ${used.uses}/${uses.max} 次。`, { tone: "info" });
+          ctx.afterUse(used);
+        }, `使用 1 次${label}`)));
+    }
+    if (actions.heal) {
+      rows.push(actionRow(`飲用後回復 ${actions.heal} 生命值。`, actionButton("飲用", () => {
+        const used = drinkPotion(entry, actions.heal);
+        if (used) ctx.afterUse(used);
+      }, `飲用${label}`)));
+    }
+    if (actions.thrown) {
+      const dc = 8 + abilityModifier("dex") + proficiencyBonus();
+      rows.push(actionRow(`目標 DC ${dc} 敏捷豁免，失敗受到 ${actions.thrown.damage} ${actions.thrown.damageType}傷害${actions.thrown.note ? `（${actions.thrown.note}）` : ""}。`,
+        actionButton("投擲", () => {
+          const used = throwItem(entry, actions.thrown, dc);
+          if (used) ctx.afterUse(used);
+        }, `投擲${label}`)));
+    }
+    if (actions.coating) {
+      const coat = actionButton("塗抹", () => {
+        const used = api().consume(entry.uid);
+        if (!used) return;
+        globalScope.AppDialog.notify(`已塗抹${label}，${used.removed ? `${label}已用完` : quantityText(entry, used.quantity)}。`, { tone: "info" });
+        ctx.afterUse(used);
+      }, `塗抹${label}`);
+      const damage = diceEnabled()
+        ? actionButton(`${actions.coating.damageType}傷害 ${actions.coating.damage}`, () => {
+          globalScope.DiceRoller?.rollExpression?.(actions.coating.damage, { label: `${label}${actions.coating.damageType}傷害` });
+        }, `擲${label}的${actions.coating.damageType}傷害`)
+        : null;
+      rows.push(actionRow(`命中時額外 ${actions.coating.damage} ${actions.coating.damageType}傷害。`, coat, damage));
+    }
+    if (!rows.length) return null;
+    const section = el("div", "inventory-item-actions");
+    section.append(...rows);
+    return section;
+  }
+
   function containerLabel(entry, all) {
     const label = api().getLabel(entry);
     const same = all.filter(item => api().isContainer(item) && api().getLabel(item) === label);
@@ -306,13 +629,14 @@
     const custom = !entry.itemId;
     const item = api().getCatalogItem(entry.itemId);
     let controls = null;
+    let stopWatching = () => {};
     globalScope.AppDialog.showContent({
       title: api().getLabel(entry),
       variant: "inventory-item",
       trigger,
-      // 刪除或卸下的確認視窗、說明內的規則連結疊在這個視窗上。
+      // 刪除或卸下的確認視窗、說明內的規則連結、裝備的選手視窗疊在這個視窗上。
       allowNested: true,
-      renderContent(body) {
+      renderContent(body, dialog) {
         // 目錄物品先顯示與商店相同的說明（search.js），下方「持有」區調整數量與位置；自訂與通稱物品只有持有區。
         const hasDetail = Boolean(item && !item.generic && globalScope.renderEquipmentDetailInto?.(body, entry.itemId));
         const holding = el("section", "inventory-holding");
@@ -321,9 +645,51 @@
         const meta = el("p", "inventory-item-meta");
         meta.appendChild(el("span", "inventory-holding__title", "持有"));
         // 說明已列單件重量，只有一件時不重複。
-        if (!hasDetail || entry.quantity > 1) meta.appendChild(el("span", "inventory-holding__weight", weightDescription(entry)));
-        if (isEntryEquipped(entry)) meta.append(el("span", "inventory-tag__badge", "裝備中"));
+        const weight = el("span", "inventory-holding__weight", weightDescription(entry));
+        if (!hasDetail || entry.quantity > 1) meta.appendChild(weight);
+        const badge = el("span", "inventory-tag__badge", "裝備中");
+        badge.hidden = !isEntryEquipped(entry);
+        meta.append(badge);
         holding.appendChild(meta);
+        // 互動列：裝備變動（含疊在上面的確認視窗之後）或用掉物品時重建；數量同步到下方的數量欄，用完時關閉視窗。
+        let actionsSection = null;
+        const refreshActions = () => {
+          const current = api().getEntry(uid);
+          if (!current) return;
+          badge.hidden = !isEntryEquipped(current);
+          const next = buildItemActions(current, {
+            afterUse(used) {
+              if (used.removed) {
+                dialog.close("removed");
+                return;
+              }
+              if (controls?.stepper) controls.stepper.input.value = String(used.quantity);
+              const latest = api().getEntry(uid);
+              if (latest) {
+                weight.textContent = weightDescription(latest);
+                if (latest.quantity > 1 && !weight.isConnected) badge.before(weight);
+              }
+              refreshActions();
+            }
+          });
+          // 重建前焦點在互動列時，改到新互動列的同一顆按鈕（不在了就是第一顆）。
+          const focused = actionsSection?.contains(document.activeElement) ? document.activeElement.getAttribute("aria-label") : null;
+          if (next) {
+            if (actionsSection) actionsSection.replaceWith(next);
+            else meta.after(next);
+          } else actionsSection?.remove();
+          actionsSection = next;
+          if (focused !== null) {
+            const buttons = [...(next?.querySelectorAll("button") || [])];
+            (buttons.find(item => item.getAttribute("aria-label") === focused) || buttons[0])?.focus();
+          }
+        };
+        refreshActions();
+        const onSlotChange = (event) => {
+          if (["mainHand", "offHand", "armor", "main2Shield", "offHandAsMain"].includes(event.target?.id)) refreshActions();
+        };
+        document.addEventListener("change", onSlotChange);
+        stopWatching = () => document.removeEventListener("change", onSlotChange);
         const contents = api().descendantsOf(uid).length;
         if (api().isContainer(entry)) holding.appendChild(el("p", "inventory-item-note", contents ? `內含 ${contents} 項物品；容器不會減輕內容物的重量。` : "可以放入其他物品；容器不會減輕內容物的重量。"));
         // 自訂物品：名稱與磅數一列，數量與位置一列，描述自成一列。
@@ -379,10 +745,13 @@
       // 說明在上方，焦點不落在說明內的規則連結。
       initialFocus: "primary",
       // 調整後標籤會重繪，焦點改回同一件物品；刪除後回到「自訂物品」或齒輪。
-      onClose: () => globalScope.setTimeout(() => {
-        if (document.activeElement && document.activeElement !== document.body) return;
-        (document.querySelector(`[data-inventory-uid="${uid}"]`) || fallbackFocusTarget())?.focus();
-      }, 0)
+      onClose: () => {
+        stopWatching();
+        globalScope.setTimeout(() => {
+          if (document.activeElement && document.activeElement !== document.body) return;
+          (document.querySelector(`[data-inventory-uid="${uid}"]`) || fallbackFocusTarget())?.focus();
+        }, 0);
+      }
     });
   }
 

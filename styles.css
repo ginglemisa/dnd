@@ -6912,6 +6912,65 @@ button.inventory-over__hide:is(:hover, :active) {
   line-height: 1.5;
 }
 
+/* 持有區的互動列（裝備、檢定、使用次數、飲用、投擲）：說明文字在上，按鈕一列靠左，放不下才換行。 */
+.inventory-item-actions {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0 0 0.85rem;
+}
+
+.inventory-action-row {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.inventory-action-row__text {
+  margin: 0;
+  color: var(--text-body);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+
+.inventory-action-row__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.inventory-action-button {
+  min-height: 2.6rem;
+  padding: 0.35rem 0.9rem;
+}
+
+.inventory-action-tag {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
+/* 裝備武器時的選手視窗：目前主手、副手。 */
+.inventory-hand-status {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0 0 0.75rem;
+}
+
+.inventory-hand-status__row {
+  display: grid;
+  grid-template-columns: 4rem minmax(0, 1fr);
+  gap: 0.5rem;
+}
+
+.inventory-hand-status dt {
+  color: var(--text-muted);
+}
+
+.inventory-hand-status dd {
+  margin: 0;
+  color: var(--text);
+  font-weight: 700;
+}
+
 .inventory-field {
   display: grid;
   gap: 0.3rem;
