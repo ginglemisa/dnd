@@ -642,6 +642,12 @@ async function importCharacterJson(page, name, data) {
   await page.evaluate(() => { document.getElementById("legal-modal")?.style.setProperty("display", "none"); window.onboardingTour?.finish?.(); });
 }
 
+// 自行管理的「專長N」先選分類（專長本身的類別），再選專長。
+async function selectManualFeat(page, id, value) {
+  await page.selectOption(`#${id}-category`, await page.evaluate(value => getFeatRules(value).type, value));
+  await page.selectOption(`#${id}`, value);
+}
+
 async function verifyUiAndPersistence(page, url) {
   await page.goto(url);
   await page.waitForFunction(() => !!window.TabletopMode);
@@ -1357,10 +1363,10 @@ async function verifyFeatDisclosureMemory(browser, url) {
     assert.equal(await page.locator("#feats-area > .form-row").count(), 0, "first manual set starts empty instead of copying automation");
     await page.locator("#feat-add-empty").click();
     assert.equal(await toggleFor("feat-0").getAttribute("aria-expanded"), "true", "new manual feat starts expanded");
-    await page.selectOption("#feat-0", "醫療兵");
+    await selectManualFeat(page, "feat-0", "醫療兵");
     await page.locator("#feat-0").locator("xpath=../..").locator('[data-feat-action="add"]').click();
     assert.equal(await toggleFor("feat-1").getAttribute("aria-expanded"), "true", "newly inserted feat does not inherit another row's state");
-    await page.selectOption("#feat-1", "警覺");
+    await selectManualFeat(page, "feat-1", "警覺");
     await toggleFor("feat-1").click();
     await page.locator("#feat-0").locator("xpath=../..").locator('[data-feat-action="delete"]').click();
     assert.equal(await page.inputValue("#feat-0"), "警覺", "manual rows reindex when deleted");
@@ -1394,6 +1400,9 @@ async function verifyAutomaticFeatRows(browser, url) {
   const chooseFeat = async (selector, value) => {
     const toggle = page.locator(selector).locator("xpath=../..").locator(".feat-disclosure-toggle");
     if (await toggle.getAttribute("aria-expanded") === "false") await toggle.click();
+    // 自行管理列先選分類。
+    const category = page.locator(`${selector}-category`);
+    if (await category.count()) await category.selectOption(await page.evaluate(value => getFeatRules(value).type, value));
     await page.selectOption(selector, value);
   };
   const selectFeatWithoutScrolling = async (id, value) => {
@@ -1578,7 +1587,7 @@ async function verifyAutomaticFeatRows(browser, url) {
     assert.equal(await page.inputValue("#feat-1"), "防禦", "self-management removes automatic option restrictions");
     await rows.last().locator('[data-feat-action="add"]').click();
     await chooseFeat("#feat-2", "強韌體魄");
-    await page.locator("#feat-1").locator("..").locator('[data-feat-action="delete"]').click();
+    await page.locator("#feat-1").locator("xpath=../..").locator('[data-feat-action="delete"]').click();
     assert.equal(await page.inputValue("#feat-1"), "強韌體魄", "manual rows reindex after deletion");
     await rows.last().locator('[data-feat-action="add"]').click();
     await chooseFeat("#feat-2", "箭術");
@@ -1819,9 +1828,9 @@ async function verifyFeatEligibilityWarnings(browser, url) {
     assert.equal(await page.inputValue("#speed-display"), "30", "losing prerequisites removes speed");
     await page.check("#manual-feat-management");
     await page.locator("#feat-add-empty").click();
-    await page.selectOption("#feat-0", "迅捷步法");
-    await page.locator("#feat-0").locator("..").locator('[data-feat-action="add"]').click();
-    await page.selectOption("#feat-1", "臨陣施法");
+    await selectManualFeat(page, "feat-0", "迅捷步法");
+    await page.locator("#feat-0").locator("xpath=../..").locator('[data-feat-action="add"]').click();
+    await selectManualFeat(page, "feat-1", "臨陣施法");
     assert.equal(await page.locator(".feat-eligibility-warning").count(), 0, "manual mode has no eligibility warning");
     assert.equal(await page.inputValue("#speed-display"), "40", "manual mode applies ineligible feat bonus");
     assert.equal(await page.evaluate(() => hasSelectedFeat("臨陣施法")), true, "manual mode enables caster feat");
@@ -2037,8 +2046,9 @@ async function verifyLegacyEmptyFeatRows(browser, url) {
     await page.locator("#feat-add-empty").click();
     assert.equal(await page.locator("#feats-area > .form-row").count(), 1);
     assert.equal(await page.locator("#feat-add-empty").isVisible(), false);
-    assert.equal(await page.locator("#feat-0").evaluate(el => document.activeElement === el), true);
-    await page.locator("#feat-0").selectOption("醫療兵"); assert.equal(await page.inputValue("#feat-0"), "醫療兵");
+    assert.equal(await page.locator("#feat-0-category").evaluate(el => document.activeElement === el), true, "new row focuses its category first");
+    assert.equal(await page.locator("#feat-0").isDisabled(), true, "feat waits for a category");
+    await selectManualFeat(page, "feat-0", "醫療兵"); assert.equal(await page.inputValue("#feat-0"), "醫療兵");
     const version2 = { ...emptyLegacy, "feats-area-count": 1, "feat-0": "", __managedFeatRows: [blank],
       __spellManagement: { version: 2, manual: true, entries: [] } };
     await page.evaluate(data => applyStateObject(data), version2);
@@ -2048,6 +2058,116 @@ async function verifyLegacyEmptyFeatRows(browser, url) {
     assert.equal(await page.locator("#feats-area > .form-row").count(), 1, "new JSON does not repeat legacy placeholder cleanup");
     assert.deepEqual(errors, []);
     console.log("Legacy empty feats: raw-only cleanup, JSON/autosave, source placeholders, unknown selections/properties, magic choices, reindexing and zero-row add entry passed.");
+  } finally { await context.close(); }
+}
+
+async function verifyManualFeatCategories(browser, url) {
+  const context = await browser.newContext();
+  await context.addInitScript(() => {
+    localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true");
+    localStorage.setItem("dnd.classFeaturePromptDisabled.v1", "true");
+  });
+  const page = await context.newPage(), errors = [];
+  page.on("pageerror", error => errors.push(String(error)));
+  const magicFields = ["class", "cantrip-1", "cantrip-2", "level-1"];
+  const readMagic = () => page.evaluate(fields => fields.map(field => document.getElementById(`feat-0-magic-initiate-${field}`).value), magicFields);
+  const options = id => page.locator(`#${id} option`).evaluateAll(options => options.map(option => [option.value, option.textContent]));
+  const toggleManagement = checked => page.evaluate(checked => {
+    const toggle = document.getElementById("manual-feat-management");
+    toggle.checked = checked;
+    toggle.dispatchEvent(new Event("change"));
+  }, checked);
+  try {
+    await page.goto(url);
+    await page.waitForFunction(() => !!window.TabletopMode && !!window.SpellManagement?.getEntries);
+    await page.evaluate(() => { document.getElementById("legal-modal")?.style.setProperty("display", "none"); window.onboardingTour?.finish?.(); showTab("basic"); });
+    await page.evaluate(() => applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] },
+      class: "fighter", level: "4", race: "human", background: "soldier", "manual-feat-management": true, __managedFeatRows: [] }));
+    await page.locator("#feat-add-empty").click();
+    assert.deepEqual(await options("feat-0-category"), [["", "-- 請選擇分類 --"], ["origin", "起源"], ["general", "通用"], ["style", "戰鬥風格"]],
+      "categories come from feat types; 其他 is not offered for new rows");
+    assert.deepEqual([await page.locator("#feat-0").isDisabled(), await options("feat-0")], [true, [["", "請先選擇分類"]]], "feat waits for a category");
+    await page.selectOption("#feat-0-category", "origin");
+    const originOptions = await options("feat-0");
+    assert.deepEqual(originOptions.map(([value]) => value).slice(1).sort(), await page.evaluate(() =>
+      Object.entries(getAllFeatRules()).filter(([, rule]) => rule.type === "origin").map(([id]) => id).sort()), "only the category's feats are listed");
+    assert.deepEqual([originOptions.find(([value]) => value === "熟習")[1], originOptions.find(([value]) => value === "醫療兵")[1]], ["熟習", "醫療兵(擴充)"],
+      "manual options drop the category tag but keep the source tag");
+    assert.equal(await page.evaluate(() => getFeatText("警覺").label), "警覺(起源)", "automatic menus keep the category tag");
+
+    // 換專長或換分類前的選擇只記在頁面上：換回來時專長與魔法學徒子選項一併帶回。
+    await page.selectOption("#feat-0", "魔法學徒");
+    const magic = await page.evaluate(fields => {
+      const pick = (field, skip = []) => {
+        const select = document.getElementById(`feat-0-magic-initiate-${field}`);
+        const option = Array.from(select.options).find(option => option.value && !option.disabled && !skip.includes(option.value));
+        select.value = option.value;
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+        return option.value;
+      };
+      const values = [pick("class")];
+      values.push(pick("cantrip-1"));
+      values.push(pick("cantrip-2", [values[1]]));
+      values.push(pick("level-1"));
+      return values;
+    }, magicFields);
+    await page.selectOption("#feat-0", "熟習");
+    assert.deepEqual(await readMagic(), ["", "", "", ""], "another feat clears the visible Magic Initiate choices");
+    await page.selectOption("#feat-0", "魔法學徒");
+    assert.deepEqual(await readMagic(), magic, "returning to the feat restores its Magic Initiate choices");
+    await page.selectOption("#feat-0-category", "general");
+    assert.deepEqual([await page.inputValue("#feat-0"), await page.locator("#feat-0-magic-initiate-class").isVisible()], ["", false], "new category starts without a feat");
+    await page.selectOption("#feat-0", "屬性值提升");
+    await page.selectOption("#feat-0-category", "origin");
+    assert.deepEqual([await page.inputValue("#feat-0"), await readMagic()], ["魔法學徒", magic], "returning to the category restores the feat and its choices");
+    assert.equal(await page.evaluate(() => getMagicInitiateConfigs().length), 1, "restored Magic Initiate grants its spells again");
+    const saved = await page.evaluate(() => collectStateObject());
+    assert.deepEqual(saved.__managedFeatRows.map(row => [row.type, row.value]), [["origin", "魔法學徒"]], "saves keep only the current choice");
+    assert.equal(JSON.stringify(saved).includes("屬性值提升") || JSON.stringify(await page.evaluate(() => collectShareState())).includes("屬性值提升"), false,
+      "remembered choices stay out of JSON and shares");
+    assert.equal(Object.hasOwn(saved, "feat-0-category"), false, "the category is stored only with the row");
+    await toggleManagement(false);
+    await toggleManagement(true);
+    await page.selectOption("#feat-0-category", "general");
+    assert.equal(await page.inputValue("#feat-0"), "屬性值提升", "row memory survives switching modes");
+    await page.selectOption("#feat-0-category", "origin");
+    await page.evaluate(state => applyStateObject(state), saved);
+    await page.selectOption("#feat-0-category", "general");
+    assert.equal(await page.inputValue("#feat-0"), "", "loading a character clears row memory");
+
+    // 未選專長的分類也存；不認得的舊專長名稱放在「其他」，換掉後在記憶期間仍可換回。
+    await page.evaluate(() => applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] },
+      class: "fighter", level: "4", "manual-feat-management": true,
+      __managedFeatRows: [{ value: "legacy-feat" }, { type: "style", value: "" }, { type: "bogus", value: "" }] }));
+    assert.deepEqual(await page.evaluate(() => collectManagedFeatRows().map(row => [row.type, row.value])),
+      [["other", "legacy-feat"], ["style", ""], ["", ""]], "saved categories and legacy names restore");
+    assert.deepEqual([await page.inputValue("#feat-0-category"), (await options("feat-0-category")).at(-1), await page.inputValue("#feat-0")],
+      ["other", ["other", "其他"], "legacy-feat"], "unknown legacy names sit under 其他");
+    assert.equal(await page.locator('#feat-1-category option[value="other"]').count(), 0, "其他 appears only on legacy rows");
+    assert.deepEqual([await page.locator("#feat-1").isDisabled(), await page.locator("#feat-2").isDisabled()], [false, true]);
+    await page.selectOption("#feat-0-category", "general");
+    await page.selectOption("#feat-0", "屬性值提升");
+    assert.equal(await page.locator('#feat-0-category option[value="other"]').count(), 1, "其他 stays available while remembered");
+    await page.selectOption("#feat-0-category", "other");
+    assert.equal(await page.inputValue("#feat-0"), "legacy-feat", "the legacy name can be restored");
+    await page.selectOption("#feat-0-category", "general");
+    await page.evaluate(state => applyStateObject(state), await page.evaluate(() => collectStateObject()));
+    assert.equal(await page.locator('#feat-0-category option[value="other"]').count(), 0, "after saving a replacement the legacy name is gone");
+    assert.equal(await page.inputValue("#feat-0"), "屬性值提升");
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    const narrow = await page.evaluate(() => {
+      const [category, feat] = ["feat-0-category", "feat-0"].map(id => document.getElementById(id).getBoundingClientRect());
+      return { stacked: feat.top >= category.bottom, overflow: document.documentElement.scrollWidth > innerWidth };
+    });
+    await page.setViewportSize({ width: 1280, height: 900 });
+    const wide = await page.evaluate(() => {
+      const [category, feat] = ["feat-0-category", "feat-0"].map(id => document.getElementById(id).getBoundingClientRect());
+      return { sideBySide: Math.abs(feat.top - category.top) < 1 && feat.left > category.right, wider: feat.width > category.width };
+    });
+    assert.deepEqual([narrow, wide], [{ stacked: true, overflow: false }, { sideBySide: true, wider: true }], "category and feat stack on narrow rows and sit side by side when wide");
+    assert.deepEqual(errors, []);
+    console.log("Manual feat categories: type-based menus, legacy 其他, page-only memory of feats and Magic Initiate choices, saved categories and responsive layout passed.");
   } finally { await context.close(); }
 }
 
@@ -2099,9 +2219,9 @@ async function verifyFeatSetSeparation(browser, url) {
     })), [["警覺", true, true, true], ["防禦", true, true, true], ["魔法學徒", true, true, true]],
     "source menus stay visible and disabled with their automatic values beside manual guidance");
     await page.locator("#feat-add-empty").click();
-    await page.selectOption("#feat-0", "醫療兵");
-    await page.locator("#feat-0").locator("..").locator('[data-feat-action="add"]').click();
-    await page.selectOption("#feat-1", "熟習");
+    await selectManualFeat(page, "feat-0", "醫療兵");
+    await page.locator("#feat-0").locator("xpath=../..").locator('[data-feat-action="add"]').click();
+    await selectManualFeat(page, "feat-1", "熟習");
     assert.deepEqual(await page.evaluate(() => [hasSelectedFeat("醫療兵"), hasSelectedFeat("警覺")]), [true, false], "only the manual set applies");
     const firstManualState = await page.evaluate(() => collectStateObject());
     assert.deepEqual(magicIds.map(id => firstManualState[id]), automaticMagic, "manual saves keep the automatic Magic Initiate choices");
@@ -2115,7 +2235,7 @@ async function verifyFeatSetSeparation(browser, url) {
       Object.keys(automaticState).some(id => /^feat-\d+/u.test(id))], [false, 2, ["醫療兵", "熟習"], false], "automatic saves still carry the manual set");
     await toggleManagement(true);
     assert.deepEqual(await values(), ["醫療兵", "熟習"], "manual set returns unchanged");
-    await page.selectOption("#feat-1", "強韌體魄");
+    await selectManualFeat(page, "feat-1", "強韌體魄");
     await toggleManagement(false);
     assert.deepEqual(await values(), automatic, "manual edits never reach the automatic set");
 
@@ -2985,6 +3105,7 @@ async function main() {
     await verifyLegacyShareFeatCompatibility(browser, url);
     await verifyLegacyEmptyFeatRows(browser, url);
     await verifyFeatSetSeparation(browser, url);
+    await verifyManualFeatCategories(browser, url);
     console.log("Class tabletop descriptions, alerts, choices, resource conversion and recovery passed.");
     assert.deepEqual(errors, [], "browser runtime errors");
     console.log("Tabletop + legacy UI, custom/hidden actions, JSON/share/autosave round trips passed.");

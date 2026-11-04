@@ -284,7 +284,7 @@ function getBardMagicalDiscoveryDerivedSpellSpecs() {
 }
 
 function getFeatSelectFromRow(row) {
-  return row?.querySelector?.("select:not([id*='magic-initiate'])") || null;
+  return row?.querySelector?.("select:not([id*='magic-initiate']):not([data-feat-category])") || null;
 }
 
 function isMagicInitiateFeatSelectedInRow(row) {

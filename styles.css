@@ -8829,13 +8829,28 @@ html:not([data-view-mode="tabletop"]) .free-spell-use-checks {
 
 #feats-area .feat-entry--collapsed .feat-row-head > select,
 #feats-area .feat-entry--collapsed .feat-row-head > .feat-row-controls,
+#feats-area .feat-entry--collapsed > .feat-row-selects,
 #feats-area .feat-entry--collapsed > .output,
 #feats-area .feat-entry--collapsed > .magic-initiate-controls {
   display: none !important;
 }
 
 .feat-row-head > select { flex: 1 1 0; min-width: 0; width: 0; margin: 0; }
-.feat-row-head > .feat-row-controls { width: auto; margin: 0; gap: 4px; }
+.feat-row-head > .feat-row-controls { width: auto; margin: 0 0 0 auto; gap: 4px; }
+
+/* 自行管理列：分類與專長選單在標題列下方，列寬足夠時左分類（只佔文字寬度）、右專長，不足時上下排列。 */
+#feats-area > .form-row:has(> .feat-row-selects) { container-type: inline-size; }
+.feat-row-selects {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px 8px;
+  width: 100%;
+  margin-bottom: 6px;
+}
+.feat-row-selects > select { width: 100%; min-width: 0; margin: 0; }
+@container (width >= 26rem) {
+  .feat-row-selects { grid-template-columns: auto minmax(0, 1fr); }
+}
 @media (max-width: 400px) {
   .feat-row-head { gap: 5px; }
   .feat-row-head label { max-width: 5em; font-size: var(--fs-base); }

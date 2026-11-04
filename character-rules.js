@@ -63,6 +63,24 @@
     return typeof featRules === "undefined" ? {} : featRules;
   }
 
+  // 專長類別（專長內容檔的 type）的顯示名稱，依自行管理專長分類選單的順序：short 為選單與 PDF 的簡稱，full 為說明副標的全名。
+  // 建置產生專長文字時也讀這裡，類別字樣只在這裡決定。
+  const FEAT_TYPE_LABELS = Object.freeze({
+    origin: Object.freeze({ short: "起源", full: "起源專長" }),
+    general: Object.freeze({ short: "通用", full: "通用專長" }),
+    style: Object.freeze({ short: "戰鬥風格", full: "戰鬥風格專長" })
+  });
+
+  /** 專長類別的顯示名稱（{ short, full }）；不認得時為 null。 */
+  function getFeatTypeLabel(type) {
+    return Object.hasOwn(FEAT_TYPE_LABELS, type) ? FEAT_TYPE_LABELS[type] : null;
+  }
+
+  /** 全部專長類別，依分類選單順序。 */
+  function getFeatTypes() {
+    return Object.keys(FEAT_TYPE_LABELS);
+  }
+
   // 傷害類型（種族內容檔的 resistance 等）的顯示名稱。
   const DAMAGE_TYPE_LABELS = Object.freeze({
     acid: "強酸", cold: "冷凍", fire: "火焰", lightning: "閃電", necrotic: "黯蝕", poison: "毒素",
@@ -836,6 +854,8 @@
     getFeatRules,
     getFeatText,
     getAllFeatRules,
+    getFeatTypeLabel,
+    getFeatTypes,
     getDamageTypeLabel,
     getCharacterResourceSpecs,
     getClassSaveProficiencies,

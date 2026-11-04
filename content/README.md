@@ -321,7 +321,7 @@ pdf: [擒抱者(通用), 力量or敏捷+1, 徒手命中可擒抱]
 | --- | --- |
 | `id` | 專長 ID（中文名），也是畫面上的專長名稱。檔名與 ID 無關：只用小寫英文、數字與連字號，SRD 專長用 SRD 5.2.1 的英文名（例如 `magic-initiate`），擴充專長依中文字義另取。會寫進存檔、JSON、分享網址與快速創角草稿，不可改字（列在 `feat-id-baseline.json`）；網站程式判斷特定專長時也用 ID（例如 `hasSelectedFeat("警覺")`）。 |
 | `source` | 內容來源（`srd`／`extended`，同背景）。`extended` 的選單文字與說明副標加上來源標籤，說明最後加上來源說明；字樣由 `character-rules.js` 的 `getContentSourceLabel`、`getContentSourceNotice` 決定；選單文字「醫療兵(起源・擴充)」由 `formatContentSourceName` 產生（半形括號，類別與來源以「・」連接）。 |
-| `type` | 類別：`origin` 起源專長、`general` 通用專長、`style` 戰鬥風格專長。決定哪些專長選擇列出它（背景與種族的起源專長、屬性值提升的等級專長、戰鬥風格），選單文字「擒抱者(通用)」與說明副標由此產生。 |
+| `type` | 類別：`origin` 起源專長、`general` 通用專長、`style` 戰鬥風格專長。決定哪些專長選擇列出它（背景與種族的起源專長、屬性值提升的等級專長、戰鬥風格，以及自行管理專長的分類選單），選單文字「擒抱者(通用)」與說明副標由此產生；類別字樣由 `character-rules.js` 的 `getFeatTypeLabel` 決定，新增類別時須一併加上字樣，否則建置失敗。 |
 | `prerequisite` | 通用專長的先決條件，擇一：`abilities`（其中一項屬性值達 13）、`heavyArmor: true`（具重甲訓練）、`spellcasting: true`（具施法能力）。不符合時專長列顯示警示；副標的條件文字（例如「4 級以上；力量或敏捷 13+」）由此產生。 |
 | `repeatable` | `true` 時可多次選擇。 |
 | `grantsSpellcasting` | `true`：此專長提供施法來源（例如魔法學徒）。自訂背景選了這個起源專長時，角色視為有施法來源（顯示施法屬性欄、可選須具施法能力的專長）。 |

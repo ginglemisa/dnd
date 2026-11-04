@@ -1,12 +1,12 @@
 // 網站讀取的專長資料：npm run build 由 content/srd/feats 產生根目錄的 feat-content.generated.js（衍生產物，不提交）。
 // featRules 是結構化規則（網站以此判斷類別、資格、可否重複與跑團動作），featText 是建置組好的顯示文字。
-// 選單的類別與來源字樣、副標的先決條件文字都由規則產生；來源標籤與說明取自 character-rules.js。
+// 選單的類別與來源字樣、副標的先決條件文字都由規則產生；類別字樣、來源標籤與說明取自 character-rules.js。
 // index.html 載入此檔的快取版本（?v=）是檔案內容的雜湊，只在上線建置（--stamp-version）時改寫。
 "use strict";
 const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
-const { ROOT, contentSourceLabel, contentSourceName, contentSourceNotice } = require("../content/site-sources");
+const { ROOT, contentSourceLabel, contentSourceName, contentSourceNotice, featTypeLabel } = require("../content/site-sources");
 const { ContentError } = require("../content/errors");
 const { renderInline } = require("../content/markdown");
 const { writeIfChanged, contentVersion, stampScriptVersion } = require("../content/output");
@@ -16,12 +16,6 @@ const OUTPUT_NAME = "feat-content.generated.js";
 const OUTPUT_FILE = path.join(ROOT, OUTPUT_NAME);
 const INDEX_FILE = path.join(ROOT, "index.html");
 const ABILITY_LABELS = Object.freeze({ str: "力量", dex: "敏捷", con: "體質", int: "智力", wis: "感知", cha: "魅力" });
-// 類別：選單與 PDF 的簡稱、說明副標的全名。
-const TYPE_LABELS = Object.freeze({
-  origin: { short: "起源", full: "起源專長" },
-  general: { short: "通用", full: "通用專長" },
-  style: { short: "戰鬥風格", full: "戰鬥風格專長" }
-});
 
 function featRules(feat) {
   return {
@@ -61,7 +55,9 @@ const effectPlain = effect => plain(`${effect.text}${(effect.list || []).map(ite
 
 function featText(feat) {
   const where = feat.file;
-  const type = TYPE_LABELS[feat.type];
+  // 類別：選單與 PDF 的簡稱、說明副標的全名。
+  const type = featTypeLabel(feat.type);
+  if (!type) throw new ContentError(`${where}：專長類別「${feat.type}」沒有 character-rules.js 的顯示名稱`);
   const sourceLabel = contentSourceLabel(feat.source);
   const notice = contentSourceNotice(feat.source);
   const prerequisite = prerequisiteText(feat);

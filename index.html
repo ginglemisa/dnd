@@ -81,7 +81,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261105-inventory-text">
+  <link rel="stylesheet" href="styles.css?v=20261105-feat-categories">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261103-roll-min" defer></script>
   <script src="monster.js?v=20261025-beast-perception" defer></script>
@@ -97,7 +97,7 @@
   <script src="spell-list.js?v=20261104-spell-srd-classes" defer></script>
   <script src="condition.js?v=20261021-bonus-wording" defer></script>
   <script src="action-panel.js?v=20261104-weapon-damage-type" defer></script>
-  <script src="character-rules.js?v=20261104-weapon-damage-type" defer></script>
+  <script src="character-rules.js?v=20261105-feat-categories" defer></script>
   <script src="app-dialog.js?v=20261028-custom-spells" defer></script>
   <script src="custom-background.js?v=20261102-source-label" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
@@ -1375,8 +1375,8 @@
   </div>
 
   <script src="sheet-utils.js?v=20261024-index-split"></script>
-  <script src="feat-ui.js?v=20261104-feat-sets"></script>
-  <script src="spell-sources.js?v=20261104-class-picks"></script>
+  <script src="feat-ui.js?v=20261105-feat-categories"></script>
+  <script src="spell-sources.js?v=20261105-feat-categories"></script>
   <script src="class-features-ui.js?v=20261104-feat-sets"></script>
   <script>
 function openCarryCapacityRules(trigger) {
@@ -1555,7 +1555,7 @@ function bindCoreCharacterEvents() {
   bindEventById("feat-add-empty", "click", () => {
     if (!isManualFeatManagementEnabled()) return;
     const row = createSingleFeatRow(null, { freshDisclosure: true });
-    getFeatSelectFromRow(row)?.focus();
+    getManualFeatCategorySelect(row)?.focus();
     scheduleStructuralSaveAllFields();
   });
   bindEventById("armor", "change", () => { updateACDisplay(); updateSpeedDisplay(); populateHandAttacks(); });

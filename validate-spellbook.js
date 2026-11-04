@@ -207,6 +207,7 @@ async function verifyManualSourceIsolation(browser, url) {
     }
     await page.locator("#manual-feat-management").check();
     await page.locator("#feat-add-empty").click();
+    await page.selectOption("#feat-0-category", "origin");
     await page.selectOption("#feat-0", "魔法學徒");
     assert.equal(await page.locator("#feats-area .magic-initiate-controls:visible").count(), 0);
     assert(await page.locator('#feats-area select:not([id*="magic-initiate"]):enabled').count() > 0, "manual feats remain editable");

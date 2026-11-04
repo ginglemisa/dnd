@@ -68,6 +68,9 @@ const contentSourceNotice = source => loadCharacterRules().getContentSourceNotic
 // 傷害類型的顯示名稱（character-rules.js 的 getDamageTypeLabel，例如 poison →「毒素」）。
 const damageTypeLabel = id => loadCharacterRules().getDamageTypeLabel(id);
 
+// 專長類別的顯示名稱（character-rules.js 的 getFeatTypeLabel，例如 origin →「起源」／「起源專長」）。
+const featTypeLabel = type => loadCharacterRules().getFeatTypeLabel(type);
+
 // 法術目錄（spell-list.js 的 SpellCatalog）：種族法術的 ID、環階與中文名。
 // 資料來自建置中的法術內容檔：建置先以 useSpellContent 指定 spell-content.generated.js 的原始碼（不必先寫檔）。
 let spellContentSource = null;
@@ -102,4 +105,4 @@ function readIndexSelectOptions(id) {
   return select ? [...select[1].matchAll(/<option value="([^"]*)"[^>]*>([^<]*)<\/option>/g)].map(match => ({ value: match[1], label: match[2] })) : null;
 }
 
-module.exports = { ROOT, loadTipTables, loadWildShapeBeasts, loadSkillAbilities, contentSourceLabel, contentSourceName, contentSourceNotice, damageTypeLabel, useSpellContent, loadSpellCatalog, loadToolCatalog, readIndexSelectOptions };
+module.exports = { ROOT, loadTipTables, loadWildShapeBeasts, loadSkillAbilities, contentSourceLabel, contentSourceName, contentSourceNotice, damageTypeLabel, featTypeLabel, useSpellContent, loadSpellCatalog, loadToolCatalog, readIndexSelectOptions };

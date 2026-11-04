@@ -72,14 +72,54 @@ let manualFeatRowEntries = [];
 // 自動那套來源列的魔法學徒子選項（不在畫面上時）：控制項 ID → 值。來源列的專長本身以 feat-choice-* 為準。
 let automaticFeatMagicValues = {};
 const DERIVED_FEAT_MAGIC_ID_PATTERN = /^derived-feat-(.+)-magic-initiate-(?:class|cantrip-1|cantrip-2|level-1)$/u;
+const MAGIC_INITIATE_FIELDS = ["class", "cantrip1", "cantrip2", "level1"];
+// 自行管理列的分類：專長類別（character-rules.js 的 getFeatTypes），另有只放存檔裡不認得的舊專長名稱的「其他」。
+const OTHER_FEAT_CATEGORY = "other";
+// 自行管理列換分類或換專長前的選擇（{ categories：分類 → 專長, magic：專長 → 魔法學徒子選項, otherValue：舊專長名稱 }），
+// 只在頁面開著時記住，不寫入 autosave、JSON 或分享；載入角色時清空，切換自動／自行管理時跟著列保留。
+const manualFeatRowMemory = new WeakMap();
+let manualFeatRowMemories = [];
+
+function readMagicInitiateValues(row) {
+  return Object.fromEntries(MAGIC_INITIATE_FIELDS.map(field => [field, getMagicInitiateSelect(row, field)?.value || ""]));
+}
+
+function getManualFeatCategorySelect(row) {
+  return row?.querySelector?.("select[data-feat-category]") || null;
+}
+
+function getManualFeatRowMemory(row) {
+  if (!manualFeatRowMemory.has(row)) manualFeatRowMemory.set(row, { categories: {}, magic: {}, otherValue: "" });
+  return manualFeatRowMemory.get(row);
+}
+
+// 存檔列的分類：已選的專長以專長本身的類別為準（不認得的舊名稱為「其他」），未選專長時沿用存檔的分類。
+function getManualFeatCategory(value, savedType) {
+  if (value) return window.getFeatRules?.(value)?.type || OTHER_FEAT_CATEGORY;
+  return window.getFeatTypes?.().includes(savedType) ? savedType : "";
+}
+
+function getManualFeatCategoryOptionsHtml(includeOther) {
+  return '<option value="">-- 請選擇分類 --</option>'
+    + (window.getFeatTypes?.() || []).map(type => `<option value="${escapeHtml(type)}">${escapeHtml(window.getFeatTypeLabel(type).short)}</option>`).join("")
+    + (includeOther ? `<option value="${OTHER_FEAT_CATEGORY}">其他</option>` : "");
+}
+
+// 自行管理的專長選單只列該分類的專長，選項不加類別字樣；「其他」只有列上的舊專長名稱（由 restoreFeatSelectValue 加入）。
+function getManualFeatOptionsHtml(category) {
+  if (!category) return '<option value="">請先選擇分類</option>';
+  return '<option value="">-- 請選擇 --</option>' + Object.entries(window.getAllFeatRules?.() || {}).filter(([, rule]) => rule.type === category)
+    .map(([id, rule]) => `<option value="${escapeHtml(id)}">${escapeHtml(window.formatContentSourceName(id, rule.source))}</option>`).join("");
+}
 
 function collectFeatRowEntries(rows) {
   return rows.map(row => ({
     source: row.dataset.featSource || "",
     key: row.dataset.sourceKey || "",
     label: row.querySelector(".feat-row-head label")?.dataset.featSourceLabel || row.querySelector(".feat-row-head label")?.textContent || "",
+    type: getManualFeatCategorySelect(row)?.value || "",
     value: getFeatSelectFromRow(row)?.value || "",
-    magic: Object.fromEntries(["class", "cantrip1", "cantrip2", "level1"].map(field => [field, getMagicInitiateSelect(row, field)?.value || ""]))
+    magic: readMagicInitiateValues(row)
   }));
 }
 
@@ -91,11 +131,15 @@ function collectManagedFeatRows() {
 
 // 存檔的列一律成為「專長N」，依原本順序保留選擇與魔法學徒子選項（舊存檔的來源列也一樣）。
 function normalizeManagedFeatEntries(entries) {
-  return entries.filter(entry => entry && typeof entry === "object").map(entry => ({
-    source: "", key: "", label: "",
-    value: entry.value == null ? "" : String(entry.value),
-    magic: Object.fromEntries(["class", "cantrip1", "cantrip2", "level1"].map(field => [field, entry.magic?.[field] == null ? "" : String(entry.magic[field])]))
-  }));
+  return entries.filter(entry => entry && typeof entry === "object").map(entry => {
+    const value = entry.value == null ? "" : String(entry.value);
+    return {
+      source: "", key: "", label: "",
+      type: getManualFeatCategory(value, entry.type),
+      value,
+      magic: Object.fromEntries(MAGIC_INITIATE_FIELDS.map(field => [field, entry.magic?.[field] == null ? "" : String(entry.magic[field])]))
+    };
+  });
 }
 
 // 沒有 __managedFeatRows 的舊存檔：feat-N 欄位組成的列。
@@ -181,21 +225,67 @@ function normalizeLegacyFeatState(data) {
   return result;
 }
 
-function restoreManagedFeatRows(entries) {
+// memories：各列的暫時記憶（切換自動／自行管理時保留），依列順序；載入存檔時為空。
+function restoreManagedFeatRows(entries, memories = []) {
   document.getElementById("feats-area").replaceChildren();
-  normalizeManagedFeatEntries(entries).forEach(entry => {
+  normalizeManagedFeatEntries(entries).forEach((entry, index) => {
     const row = createSingleFeatRow();
+    const memory = memories[index] || getManualFeatRowMemory(row);
+    if (entry.type === OTHER_FEAT_CATEGORY && !memory.otherValue) memory.otherValue = entry.value;
+    manualFeatRowMemory.set(row, memory);
+    const category = getManualFeatCategorySelect(row);
+    category.innerHTML = getManualFeatCategoryOptionsHtml(Boolean(memory.otherValue));
+    category.value = entry.type;
+    category.dataset.previousCategory = category.value;
     const select = getFeatSelectFromRow(row);
+    setCharacterHtml(select, getManualFeatOptionsHtml(category.value));
     restoreFeatSelectValue(select, entry.value);
     select.dataset.previousValue = select.value;
     updateMagicInitiateControlsForRow(row, { sync: false });
-    ["class", "cantrip1", "cantrip2", "level1"].forEach(field => {
+    MAGIC_INITIATE_FIELDS.forEach(field => {
       const control = getMagicInitiateSelect(row, field);
       restoreFeatSelectValue(control, entry.magic[field]);
       if (field === "class") updateMagicInitiateSpellOptions(row);
     });
   });
   refreshFeatRows();
+}
+
+// 自行管理列換了專長（含換分類帶出的專長）：先記住原專長的魔法學徒子選項，再帶回新專長先前的子選項。
+function applyManualFeatSelection(row, previousValue) {
+  const select = getFeatSelectFromRow(row);
+  const memory = getManualFeatRowMemory(row);
+  if (previousValue) memory.magic[previousValue] = readMagicInitiateValues(row);
+  const magic = (select.value && memory.magic[select.value]) || {};
+  updateFeatDesc(select.id, row.querySelector(":scope > .output").id);
+  updateMagicInitiateControlsForRow(row, { sync: false });
+  MAGIC_INITIATE_FIELDS.forEach(field => {
+    const control = getMagicInitiateSelect(row, field);
+    if (control) control.value = Array.from(control.options).some(option => option.value === magic[field]) ? magic[field] : "";
+    if (field === "class") updateMagicInitiateSpellOptions(row);
+  });
+  updateMagicInitiateControlsForRow(row);
+  if (typeof updateACDisplay === "function") updateACDisplay();
+  if (typeof populateHandAttacks === "function") populateHandAttacks();
+  syncInitiativeAfterFeatSelectionChange(select, previousValue);
+  refreshFeatDerivedEffects();
+  scheduleSaveAllFields();
+}
+
+// 自行管理列換分類：記住原分類選的專長，帶回新分類先前選的專長（「其他」為舊專長名稱）。
+function applyManualFeatCategory(row) {
+  const category = getManualFeatCategorySelect(row);
+  const select = getFeatSelectFromRow(row);
+  const memory = getManualFeatRowMemory(row);
+  const previousValue = select.dataset.previousValue || "";
+  if (category.dataset.previousCategory) memory.categories[category.dataset.previousCategory] = select.value;
+  category.dataset.previousCategory = category.value;
+  setCharacterHtml(select, getManualFeatOptionsHtml(category.value));
+  const next = category.value === OTHER_FEAT_CATEGORY ? memory.otherValue : memory.categories[category.value] || "";
+  if (category.value === OTHER_FEAT_CATEGORY) restoreFeatSelectValue(select, next);
+  else select.value = Array.from(select.options).some(option => option.value === next) ? next : "";
+  select.disabled = !category.value;
+  applyManualFeatSelection(row, previousValue);
 }
 
 // 切換模式只換掉畫面上那一套，不轉換、不合併；離開的那套留在記憶中，也照常存檔。
@@ -206,8 +296,9 @@ function updateFeatManagementMode() {
     if (manual) {
       automaticFeatMagicValues = collectDerivedFeatMagicValues();
       manualFeatSetDisplayed = true;
-      restoreManagedFeatRows(manualFeatRowEntries);
+      restoreManagedFeatRows(manualFeatRowEntries, manualFeatRowMemories);
     } else {
+      manualFeatRowMemories = getManualFeatRows().map(row => manualFeatRowMemory.get(row) || null);
       manualFeatRowEntries = collectManagedFeatRows();
       manualFeatSetDisplayed = false;
       area.replaceChildren();
@@ -224,6 +315,7 @@ function resetFeatManagementState() {
   document.getElementById("manual-feat-management").checked = false;
   manualFeatSetDisplayed = false;
   manualFeatRowEntries = [];
+  manualFeatRowMemories = [];
   automaticFeatMagicValues = {};
   document.getElementById("feats-area").replaceChildren();
 }
@@ -794,10 +886,12 @@ function updateFeatControlStates() {
     if (select) {
       const choice = isDerivedFeatRow(row) ? document.getElementById(getFeatChoiceId(row.dataset.sourceKey)) : null;
       select.disabled = !enabled && (!choice || choice.disabled);
+      const category = getManualFeatCategorySelect(row)?.value || "";
       if (enabled) {
         const value = select.value;
-        setCharacterHtml(select, getFeatOptionsHtml());
+        setCharacterHtml(select, getManualFeatOptionsHtml(category));
         restoreFeatSelectValue(select, value);
+        select.disabled = !category;
       }
     }
     row.classList.toggle("feat-entry--derived", !enabled);
@@ -831,6 +925,11 @@ function refreshFeatRows() {
     label.htmlFor = baseId;
     if (!isDerivedFeatRow(row)) label.textContent = `專長${manualIndex + 1}`;
     select.id = baseId;
+    const category = getManualFeatCategorySelect(row);
+    if (category) {
+      category.id = `${baseId}-category`;
+      category.setAttribute("aria-label", `專長${manualIndex + 1}分類`);
+    }
     desc.id = `${baseId}-desc`;
     updateFeatDesc(select.id, desc.id);
     updateMagicInitiateControlIds(row, isDerivedFeatRow(row) ? baseId : manualIndex);
@@ -901,13 +1000,24 @@ function createSingleFeatRow(afterRow = null, { freshDisclosure = false } = {}) 
   const label = document.createElement("label");
   label.htmlFor = `feat-${idx}`;
   label.textContent = `專長${idx + 1}`;
-  rowHead.appendChild(label);
+  rowHead.append(label, createFeatRowControls(rowDiv));
 
+  // 標題列下方是分類與專長選單；分類只存在 __managedFeatRows 的 type，不另存欄位。
+  const selects = document.createElement("div");
+  selects.className = "feat-row-selects";
+  const categorySel = document.createElement("select");
+  categorySel.id = `feat-${idx}-category`;
+  categorySel.dataset.featCategory = "true";
+  categorySel.dataset.stateTransient = "true";
+  categorySel.setAttribute("aria-label", `專長${idx + 1}分類`);
+  categorySel.innerHTML = getManualFeatCategoryOptionsHtml(false);
+  categorySel.dataset.previousCategory = "";
   const featSel = document.createElement("select");
   featSel.id = `feat-${idx}`;
-  featSel.innerHTML = getFeatOptionsHtml();
+  featSel.innerHTML = getManualFeatOptionsHtml("");
+  featSel.disabled = true;
   featSel.dataset.previousValue = featSel.value || "";
-  rowHead.append(featSel, createFeatRowControls(rowDiv));
+  selects.append(categorySel, featSel);
 
   const descDiv = document.createElement("div");
   descDiv.className = "output";
@@ -916,18 +1026,11 @@ function createSingleFeatRow(afterRow = null, { freshDisclosure = false } = {}) 
 
   const magicInitiateControls = createMagicInitiateControls(rowDiv);
 
-  featSel.addEventListener("change", () => {
-    const previousFeatValue = featSel.dataset.previousValue || "";
-    updateFeatDesc(featSel.id, descDiv.id);
-    updateMagicInitiateControlsForRow(rowDiv);
-    if (typeof updateACDisplay === "function") updateACDisplay();
-    if (typeof populateHandAttacks === "function") populateHandAttacks();
-    syncInitiativeAfterFeatSelectionChange(featSel, previousFeatValue);
-    refreshFeatDerivedEffects();
-    scheduleSaveAllFields();
-  });
+  categorySel.addEventListener("change", () => applyManualFeatCategory(rowDiv));
+  featSel.addEventListener("change", () => applyManualFeatSelection(rowDiv, featSel.dataset.previousValue || ""));
 
   rowDiv.appendChild(rowHead);
+  rowDiv.appendChild(selects);
   rowDiv.appendChild(descDiv);
   rowDiv.appendChild(magicInitiateControls);
 
