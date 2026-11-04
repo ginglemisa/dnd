@@ -736,6 +736,21 @@ async function validateInventory(page) {
   await item.getByRole("button", { name: "完成", exact: true }).click();
   assert.equal(await page.evaluate(() => "desc" in Inventory.entries().find(entry => entry.name === "家書")), false, "clearing the description removes it");
 
+  // 數量 1 時仍可按「−」到 0；按「完成」先確認，取消留在視窗，確認後刪除。
+  await page.evaluate(() => Inventory.add([{ name: "臨時紙條", quantity: 1 }]));
+  await page.locator("#inventory-tags .inventory-tag", { hasText: "臨時紙條" }).click();
+  await item.getByRole("button", { name: "減少數量", exact: true }).click();
+  assert.equal(await item.locator(".inventory-stepper__input").inputValue(), "0", "quantity 1 can step down to 0");
+  await item.getByRole("button", { name: "完成", exact: true }).click();
+  const zeroConfirm = page.getByRole("alertdialog", { name: "刪除臨時紙條？" });
+  await zeroConfirm.getByRole("button", { name: "取消", exact: true }).click();
+  await zeroConfirm.waitFor({ state: "detached" });
+  assert.deepEqual([await item.isVisible(), await page.evaluate(() => Inventory.entries().some(entry => entry.name === "臨時紙條"))], [true, true], "cancelling keeps the item dialog and the item");
+  await item.getByRole("button", { name: "完成", exact: true }).click();
+  await zeroConfirm.getByRole("button", { name: "刪除", exact: true }).click();
+  await item.waitFor({ state: "detached" });
+  assert.equal(await page.evaluate(() => Inventory.entries().some(entry => entry.name === "臨時紙條")), false, "confirming quantity 0 deletes the item");
+
   // Overweight only warns; 隱藏 hides the line until the page reloads.
   await page.evaluate(() => { const str = document.getElementById("str"); str.value = "3"; str.dispatchEvent(new Event("change")); });
   assert.equal(await weight.evaluate(el => el.classList.contains("is-over")), true);

@@ -191,13 +191,14 @@
     return select;
   }
 
-  function buildStepper(value, label) {
+  // min 為 0 時（持有物品的視窗）數量可以減到 0，按「完成」時再確認是否刪除。
+  function buildStepper(value, label, { min = 1 } = {}) {
     const wrap = el("div", "inventory-stepper");
     const minus = button("inventory-stepper__button", "−");
     minus.setAttribute("aria-label", `減少${label}`);
     const input = el("input", "inventory-stepper__input");
     input.type = "number";
-    input.min = "1";
+    input.min = String(min);
     input.max = String(api().LIMITS.quantity);
     input.step = "1";
     input.inputMode = "numeric";
@@ -206,8 +207,11 @@
     input.setAttribute("aria-label", label);
     const plus = button("inventory-stepper__button", "＋");
     plus.setAttribute("aria-label", `增加${label}`);
-    const read = () => Math.min(api().LIMITS.quantity, Math.max(1, Math.floor(Number(input.value)) || 1));
-    minus.addEventListener("click", () => { input.value = String(Math.max(1, read() - 1)); });
+    const read = () => {
+      const parsed = Math.floor(Number(input.value));
+      return Math.min(api().LIMITS.quantity, Math.max(min, Number.isFinite(parsed) && input.value.trim() !== "" ? parsed : 1));
+    };
+    minus.addEventListener("click", () => { input.value = String(Math.max(min, read() - 1)); });
     plus.addEventListener("click", () => { input.value = String(Math.min(api().LIMITS.quantity, read() + 1)); });
     wrap.append(minus, input, plus);
     return { wrap, input, read };
@@ -326,7 +330,7 @@
         const fields = custom ? buildCustomFields(entry) : null;
         if (fields) holding.appendChild(fields.nameRow);
         const row = el("div", "inventory-holding__row");
-        const stepper = buildStepper(entry.quantity, "數量");
+        const stepper = buildStepper(entry.quantity, "數量", { min: 0 });
         if (api().isContainer(entry)) stepper.wrap.hidden = true;
         else row.appendChild(labelled("數量", stepper.wrap));
         const location = buildLocationSelect(uid, entry.in);
@@ -344,6 +348,19 @@
           intent: "primary",
           resolve: async () => {
             const quantity = api().isContainer(entry) ? entry.quantity : controls.stepper.read();
+            if (quantity === 0) {
+              const choice = await globalScope.AppDialog.requestDecision({
+                title: `刪除${api().getLabel(entry)}？`,
+                message: "數量為 0，確認後會從物品欄刪除這項物品。",
+                trigger,
+                actions: [
+                  { label: "取消", value: "cancel" },
+                  { label: "刪除", intent: "danger", value: "delete" }
+                ]
+              });
+              if (choice !== "delete") return false;
+              return (await removeEntry(entry, trigger)) ? "removed" : false;
+            }
             const key = usageKey(entry);
             if (key && quantity < entry.quantity && !(await confirmUnequip(slotsLosingItems(new Map([[key, entry.quantity - quantity]])), trigger))) return false;
             const changes = { quantity, in: controls.location.value };

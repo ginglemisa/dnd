@@ -192,45 +192,24 @@
     return normalized.match(/^\d+\s*d\s*\d+(?:\s*[+-]\s*(?:\d+\s*d\s*\d+|\d+))*/iu)?.[0] || "";
   }
 
-  function appendDefinition(list, term, value, rollType = "", label = "", weapon = null) {
+  function appendDefinition(list, term, value, rollType = "", label = "") {
     const item = createElement("div", "tabletop-weapon-field");
     const description = createElement("dd");
     const displayValue = value || "—";
     if (rollType) {
       const button = createElement("button", "tabletop-inline-roll", displayValue);
       button.type = "button";
-      const modifier = rollType === "hit"
-        ? parseModifier(value)
-        : rollType === "attack"
-          ? parseModifier(weapon?.hit)
-          : null;
-      const damageExpression = getDamageRollExpression(
-        rollType === "attack" ? weapon?.damage : value
-      );
+      const modifier = rollType === "hit" ? parseModifier(value) : null;
+      const damageExpression = getDamageRollExpression(value);
       const canRoll = rollType === "hit"
         ? modifier !== null
-        : rollType === "attack"
-          ? Boolean(
-              weapon?.name
-              && modifier !== null
-              && globalScope.DiceRoller?.canRollExpression?.(damageExpression)
-            )
-          : Boolean(globalScope.DiceRoller?.canRollExpression?.(damageExpression));
+        : Boolean(globalScope.DiceRoller?.canRollExpression?.(damageExpression));
       button.disabled = !canRoll || !globalScope.DiceRoller?.isEnabled?.();
       button.setAttribute(
         "aria-label",
         button.disabled ? `${label}${term}；請先開啟擲骰系統` : `擲${label}${term}`
       );
       button.addEventListener("click", () => {
-        if (rollType === "attack") {
-          const hitExpression = `1d20${modifier < 0 ? "" : "+"}${modifier}`;
-          const weaponLabel = `${weapon.label}${weapon.name || ""}`;
-          globalScope.DiceRoller?.rollExpressions?.([
-            { expression: hitExpression, label: `${weaponLabel} 命中` },
-            { expression: damageExpression, label: `${weaponLabel} 傷害`, toastLabel: "傷害" }
-          ]);
-          return;
-        }
         if (rollType === "hit") {
           globalScope.DiceRoller?.roll?.({
             count: 1,
@@ -252,19 +231,94 @@
     return item;
   }
 
+  // 更換武器視窗：主手／副手下拉複製裝備頁的 #mainHand／#offHand（選項依物品欄、雙手佔用等規則由 index.html 產生），
+  // 選擇後寫回原下拉並觸發 change，裝備頁的確認與重算照常執行；之後再從原下拉重新複製選項。
+  function openWeaponSwitchDialog(trigger) {
+    if (!globalScope.AppDialog) return;
+    const hands = [
+      { id: "mainHand", label: () => "主手" },
+      { id: "offHand", label: () => document.getElementById("offHandLabel")?.textContent.trim() || "副手" }
+    ];
+    const content = createElement("div", "tabletop-cast-form tabletop-weapon-switch");
+    const fields = hands.map(hand => {
+      const field = createElement("label", "tabletop-cast-form__field");
+      const caption = createElement("span");
+      const select = createElement("select");
+      select.dataset.stateTransient = "true";
+      select.addEventListener("change", () => {
+        const source = document.getElementById(hand.id);
+        if (!source || source.disabled) return;
+        source.value = select.value;
+        source.dispatchEvent(new Event("change", { bubbles: true }));
+        sync();
+      });
+      field.append(caption, select);
+      content.appendChild(field);
+      return { hand, caption, select };
+    });
+    const note = createElement("p", "tabletop-panel-intro");
+    content.appendChild(note);
+    function sync() {
+      fields.forEach(field => {
+        const { hand, caption, select } = field;
+        const source = document.getElementById(hand.id);
+        caption.textContent = hand.label();
+        const options = Array.from(source?.options || []);
+        // 內容沒變時不重建，避免打斷正在操作的下拉。
+        const signature = JSON.stringify([source?.disabled, source?.selectedIndex, options.map(option => [option.value, option.textContent, option.disabled])]);
+        if (field.signature === signature) return;
+        field.signature = signature;
+        select.replaceChildren(...options.map(option => {
+          const copy = createElement("option", "", option.textContent);
+          copy.value = option.value;
+          copy.disabled = option.disabled;
+          return copy;
+        }));
+        select.selectedIndex = source ? source.selectedIndex : -1;
+        select.disabled = !source || source.disabled;
+      });
+      note.textContent = globalScope.isWeaponAttackAutomationEnabled?.() === false
+        ? "武器攻擊自動化已關閉，更換裝備不會更新攻擊欄位。"
+        : "更換後立即套用，與裝備頁的主手、副手相同。";
+    }
+    sync();
+    // 疊在上面的確認視窗（例如雙手武器卸下盾牌）關閉後焦點回到下拉，這時重新複製結果。
+    content.addEventListener("focusin", sync);
+    globalScope.AppDialog.showContent({
+      title: "更換武器",
+      content,
+      trigger,
+      allowNested: true,
+      initialFocus: "content",
+      actions: [{ label: "完成", intent: "primary", value: "done" }],
+      // 武器卡片會重繪，焦點改回新的第一張卡片名稱。
+      onClose: () => globalScope.setTimeout(() => {
+        if (document.activeElement && document.activeElement !== document.body) return;
+        elements.weaponSummary?.querySelector("[data-weapon-switch]")?.focus();
+      }, 0)
+    });
+  }
+
+  function appendWeaponNameField(list, weapon) {
+    const item = createElement("div", "tabletop-weapon-field");
+    const description = createElement("dd");
+    const button = createElement("button", "tabletop-inline-roll", weapon.name || "未裝備");
+    button.type = "button";
+    button.dataset.weaponSwitch = weapon.hand;
+    button.setAttribute("aria-haspopup", "dialog");
+    button.setAttribute("aria-label", `${weapon.label}${weapon.name ? ` ${weapon.name}` : "未裝備"}，更換武器`);
+    button.addEventListener("click", () => openWeaponSwitchDialog(button));
+    description.appendChild(button);
+    item.append(createElement("dt", "", "名稱"), description);
+    list.appendChild(item);
+  }
+
   function createWeaponSummary(weapon) {
     const section = createElement("section", "weapon-attack-card tabletop-weapon-attack-card");
     section.setAttribute("aria-label", `${weapon.label}武器攻擊`);
 
     const list = createElement("dl", "weapon-attack-fields tabletop-weapon-fields");
-    appendDefinition(
-      list,
-      "名稱",
-      weapon.name || "未裝備",
-      "attack",
-      `${weapon.label}${weapon.name ? ` ${weapon.name}` : ""}命中與傷害`,
-      weapon
-    );
+    appendWeaponNameField(list, weapon);
     appendDefinition(list, "命中", weapon.hit, "hit", `${weapon.label}${weapon.name ? ` ${weapon.name}` : ""}`);
     appendDefinition(list, "傷害", weapon.damage, "damage", `${weapon.label}${weapon.name ? ` ${weapon.name}` : ""}`);
     const noteField = appendDefinition(list, "備註", weapon.note);
@@ -293,7 +347,12 @@
     if (!weapons.some(hasWeaponData)) {
       const empty = createElement("div", "tabletop-empty-state");
       empty.textContent = "尚未裝備武器，若下拉選單不符需求，可關閉武器攻擊自動化自行填寫。";
-      elements.weaponSummary.replaceChildren(empty);
+      const choose = createElement("button", "tabletop-compact-button", "選擇武器");
+      choose.type = "button";
+      choose.dataset.weaponSwitch = "none";
+      choose.setAttribute("aria-haspopup", "dialog");
+      choose.addEventListener("click", () => openWeaponSwitchDialog(choose));
+      elements.weaponSummary.replaceChildren(empty, choose);
       return;
     }
     elements.weaponSummary.replaceChildren(...weapons.filter(hasWeaponData).map(createWeaponSummary));

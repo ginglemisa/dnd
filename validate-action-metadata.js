@@ -1034,6 +1034,37 @@ async function verifyManualWeaponVisibility(page, url) {
     });
     await secondary.waitFor({ state: "detached" });
   }
+  // 武器名稱開啟更換武器視窗（複製裝備頁的下拉，選擇後寫回 #mainHand），不再擲骰。
+  await page.evaluate(() => {
+    document.getElementById("weapon-attack-automation").checked = true;
+    applyStateObject({ __spellManagement: { version: 2, manual: false, entries: [] }, class: "fighter", level: "1", str: "16", mainHand: "長劍", offHand: "", offHandAsMain: false, main2Shield: false, "weapon-attack-automation": true });
+    Inventory.add([{ itemId: "巨劍" }]);
+    TabletopMode.setMode("tabletop");
+    TabletopMode.setPanel("actions");
+  });
+  const mainName = page.locator('#tabletop-weapon-summary section[aria-label="主手武器攻擊"] [data-weapon-switch]');
+  await page.waitForFunction(() => document.querySelector('#tabletop-weapon-summary section[aria-label="主手武器攻擊"] [data-weapon-switch]')?.textContent === "長劍", null, { timeout: 5000 });
+  await mainName.click();
+  const switchDialog = page.getByRole("dialog", { name: "更換武器", exact: true });
+  const [mainSelect, offSelect] = [switchDialog.locator("select").nth(0), switchDialog.locator("select").nth(1)];
+  assert.deepEqual([await mainSelect.inputValue(), await offSelect.isDisabled()], ["長劍", false]);
+  assert.equal(await page.evaluate(() => document.querySelectorAll(".app-dialog").length), 1, "the weapon name no longer rolls; it opens one dialog");
+  await mainSelect.selectOption("巨劍");
+  assert.deepEqual([await page.inputValue("#mainHand"), await offSelect.isDisabled()], ["巨劍", true], "the dialog writes back to the equipment select; two-handed weapons occupy the off hand");
+  await switchDialog.getByRole("button", { name: "完成", exact: true }).click();
+  await page.waitForFunction(() => document.querySelector('#tabletop-weapon-summary section[aria-label="主手武器攻擊"] [data-weapon-switch]')?.textContent === "巨劍", null, { timeout: 3000 });
+  await page.waitForFunction(() => document.activeElement?.matches?.("#tabletop-weapon-summary [data-weapon-switch]"), null, { timeout: 2000 });
+  // 卸下主手後沒有武器卡，改由「選擇武器」開啟同一個視窗。
+  await mainName.click();
+  await mainSelect.selectOption("");
+  await switchDialog.getByRole("button", { name: "完成", exact: true }).click();
+  const chooseWeapon = page.locator("#tabletop-weapon-summary").getByRole("button", { name: "選擇武器", exact: true });
+  await chooseWeapon.waitFor({ timeout: 3000 });
+  assert.equal(await page.inputValue("#mainHand"), "");
+  await chooseWeapon.click();
+  await switchDialog.waitFor();
+  await page.keyboard.press("Escape");
+  await switchDialog.waitFor({ state: "detached" });
   console.log("Manual secondary weapons: empty equipment, shield, two-handed, main2, partial fields and clearing passed.");
 }
 
@@ -2400,6 +2431,13 @@ async function verifyConditionEffects(browser, url) {
     await option("unconscious").check();
     assert.equal((await state()).concentrationSpellId, "fly");
     assert.deepEqual((await state()).activeConditions, []);
+    // 按下說明時捲到視窗底部的「狀態／危害說明」。
+    await page.evaluate(() => { document.querySelector(".tabletop-condition-modal__body").scrollTop = 0; });
+    await page.locator('#tabletop-condition-options button[data-condition-info="stunned"]').click();
+    await page.waitForFunction(() => {
+      const body = document.querySelector(".tabletop-condition-modal__body");
+      return body.scrollHeight > body.clientHeight && body.scrollTop + body.clientHeight >= body.scrollHeight - 2;
+    }, null, { timeout: 3000 });
     await page.click("#tabletop-condition-cancel");
     assert.equal((await state()).concentrationSpellId, "fly");
     assert.deepEqual((await state()).activeConditions, []);

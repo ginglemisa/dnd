@@ -5271,6 +5271,23 @@
               button.dataset
                 .conditionInfo
             );
+
+            // 說明在視窗底部，按下後捲到底方便閱讀。
+            const body =
+              elements.conditionModal
+                ?.querySelector(
+                  ".tabletop-condition-modal__body"
+                );
+
+            body?.scrollTo({
+              top: body.scrollHeight,
+              behavior:
+                globalScope.matchMedia?.(
+                  "(prefers-reduced-motion: reduce)"
+                )?.matches
+                  ? "auto"
+                  : "smooth"
+            });
           }
         }
       );
