@@ -2028,6 +2028,8 @@ async function verifyClassFeatureChoicePrompt(browser, url) {
     await chooseAsPlayer("class", "paladin");
     await page.waitForTimeout(200);
     assert.equal(await modal.count(), 0, "manual feat management retains its existing behavior");
+    assert.deepEqual(await page.evaluate(() => [document.getElementById("feat-choice-fighting-style-paladin").value, document.getElementById("feat-choice-fighting-style-paladin").disabled]),
+      ["防禦", true], "manual mode still restores the remembered automatic fighting style, disabled");
     await chooseAsPlayer("level", "8");
     await page.waitForTimeout(200);
     assert.equal(await modal.count(), 0, "manual feat management also skips missing improvements");
@@ -2037,7 +2039,8 @@ async function verifyClassFeatureChoicePrompt(browser, url) {
       const before = await page.evaluate(() => collectStateObject());
       await page.locator(`[data-character-features-tab="${tab}"]`).click();
       const panel = details.locator(`[data-feature-panel="${tab}"]`);
-      assert.equal(await panel.locator("[data-feat-choice] select:visible").count(), 0, "manual mode hides source feat/style/improvement selectors");
+      assert.equal(await panel.locator("[data-feat-choice] select:visible:enabled").count(), 0, "manual mode disables source feat/style/improvement selectors");
+      if (tab === "class") assert(await panel.locator("[data-feat-choice] select:visible:disabled").count() > 0, "manual mode keeps the disabled source selectors visible");
       const guidance = panel.locator(".manual-feat-guidance:visible").first();
       assert.match(await guidance.innerText(), /請至首頁最下方自行管理專長。/);
       if (tab !== "class") assert.equal(await panel.evaluate(el => el.lastElementChild.classList.contains("manual-feat-guidance")), true);
@@ -2060,8 +2063,10 @@ async function verifyClassFeatureChoicePrompt(browser, url) {
     await page.evaluate(() => { document.getElementById("manual-feat-management").checked = false; updateFeatManagementMode(); });
     await page.locator('[data-character-features-tab="class"]').click();
     assert.equal(await details.locator("[data-feature-panel='class'] .manual-feat-guidance:visible").count(), 0, "automatic mode removes manual guidance");
-    assert(await details.locator("[data-feature-panel='class'] [data-feat-choice] select:visible").count() > 0, "automatic mode restores source selectors");
+    assert(await details.locator("[data-feature-panel='class'] [data-feat-choice] select:visible:enabled").count() > 0, "automatic mode re-enables source selectors");
     await page.keyboard.press("Escape");
+    // 清掉記憶還原的戰鬥風格，讓後續等級變更照常提示。
+    await page.evaluate(() => { document.getElementById("feat-choice-fighting-style-paladin").value = ""; syncDerivedFeatRows(); });
     await page.locator("#level").selectOption("2");
     await page.setViewportSize({ width: 390, height: 844 });
     await chooseAsPlayer("level", "3");
@@ -3013,11 +3018,23 @@ async function verifyClassOptionMemory(browser, url) {
     await chooseAsPlayer("class", "rogue");
     assert.equal(await value("language-extra-2"), "elvish");
 
-    // Manual feat management neither remembers nor restores feat choices.
+    // Manual feat management keeps remembering the automatic set: feat choices and source Magic Initiate sub-options.
     await page.evaluate(() => ClassOptionMemory.clearMemories());
-    await apply({ class: "fighter", level: "4", "manual-feat-management": true, __managedFeatRows: [], "feat-choice-fighter-level-4": "警覺" });
+    const magicState = Object.fromEntries([["class", magic.class], ["cantrip-1", magic.cantrip1], ["cantrip-2", magic.cantrip2], ["level-1", magic.level1]]
+      .map(([field, choice]) => [`derived-feat-cleric-level-4-magic-initiate-${field}`, choice]));
+    await apply({ class: "cleric", level: "4", "manual-feat-management": true, __managedFeatRows: [{ value: "醫療兵" }],
+      "feat-choice-cleric-level-4": "魔法學徒", ...magicState });
     await chooseAsPlayer("class", "wizard");
-    assert.equal(Object.keys((await memory()).classes.fighter.values).some(id => /^(?:feat-choice-|derived-feat-)/u.test(id)), false);
+    const manualClericMemory = (await memory()).classes.cleric.values;
+    assert.deepEqual([manualClericMemory["feat-choice-cleric-level-4"], ...Object.keys(magicState).map(id => manualClericMemory[id])],
+      ["魔法學徒", ...Object.values(magicState)], "manual mode remembers the automatic feat choice and its Magic Initiate sub-options");
+    await chooseAsPlayer("class", "cleric");
+    await chooseAsPlayer("level", "3");
+    await chooseAsPlayer("level", "4");
+    assert.equal(await value("feat-choice-cleric-level-4"), "魔法學徒", "manual mode restores the automatic feat choice");
+    assert.deepEqual(await page.evaluate(() => collectManagedFeatRows().map(row => row.value)), ["醫療兵"], "class memory leaves the manual set alone");
+    await set("manual-feat-management", false);
+    assert.deepEqual(await Promise.all(Object.keys(magicState).map(value)), Object.values(magicState), "automatic Magic Initiate sub-options survive class and level changes");
 
     // Loading never applies memory; legacy residue from another class moves into memory instead.
     await page.evaluate(key => localStorage.removeItem(key), MEMORY);

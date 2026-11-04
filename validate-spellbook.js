@@ -206,6 +206,8 @@ async function verifyManualSourceIsolation(browser, url) {
       assert.equal(await page.evaluate(() => buildPdfPrecheckMessages().some(i => /魔法學徒.*法術/.test(i.message))), false);
     }
     await page.locator("#manual-feat-management").check();
+    await page.locator("#feat-add-empty").click();
+    await page.selectOption("#feat-0", "魔法學徒");
     assert.equal(await page.locator("#feats-area .magic-initiate-controls:visible").count(), 0);
     assert(await page.locator('#feats-area select:not([id*="magic-initiate"]):enabled').count() > 0, "manual feats remain editable");
     for (const [race, option, lineage] of [["elf", "elf-lineage", "wood_elf"], ["tiefling", "tiefling-legacy", "infernal"], ["gnome", "gnome-lineage", "forest_gnome"], ["human", null, null]]) {
@@ -259,7 +261,8 @@ async function verifyManualSourceIsolation(browser, url) {
       await page.keyboard.press("Escape");
       assert.deepEqual(await activeIds(page), ["detect-magic"]);
     }
-    await apply(page, modern(base, [player("detect-magic", "wizard")]));
+    // 背景魔法學徒屬於自動那套專長；自行管理那套沒有來源列。
+    await apply(page, modern({ ...base, "manual-feat-management": false }, [player("detect-magic", "wizard")]));
     const saved = await page.evaluate(() => { saveAllFields(); return collectStateObject(); });
     await page.goto(url); await page.waitForFunction(() => SpellManagement.isManual()); await closeMigration(page);
     assert.equal(await page.locator("#high-elf-cantrip").isDisabled(), true);

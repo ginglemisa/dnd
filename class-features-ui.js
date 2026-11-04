@@ -1787,7 +1787,6 @@ window.addEventListener("spellmanagementchange", syncLevelUpCantripChoice);
 // 換回時靜默還原。畫面與角色資料仍只含目前職業；還原、匯入、快速創角與分享模式不讀寫記憶。
 let classOptionOwner = { className: "", level: 0 };
 let classOptionTransition = null;
-const CLASS_OPTION_FEAT_ID_PATTERN = /^(?:feat-choice-|derived-feat-)/u;
 const CLASS_OPTION_FEATURE_CONTROLS = "#classFeatures input[id], #classFeatures select[id], #classCreationInfo input[id], #classCreationInfo select[id]";
 
 function getCurrentClassOptionOwner() {
@@ -1798,10 +1797,6 @@ function getCurrentClassOptionOwner() {
 }
 
 function syncClassOptionOwner() { classOptionOwner = getCurrentClassOptionOwner(); }
-
-function isClassOptionFeatIdAllowed(id) {
-  return !(isManualFeatManagementEnabled() && CLASS_OPTION_FEAT_ID_PATTERN.test(id));
-}
 
 function getClassOptionFeatureControls() {
   return Array.from(document.querySelectorAll(CLASS_OPTION_FEATURE_CONTROLS)).filter(control =>
@@ -1827,12 +1822,10 @@ function getBardMagicalDiscoveryMemoryValues(selection) {
 function collectClassOptionSnapshot(className, level) {
   const values = {};
   const lists = {};
-  const put = (id, value) => { if (id && isClassOptionFeatIdAllowed(id)) values[id] = value; };
+  const put = (id, value) => { if (id) values[id] = value; };
   getClassOptionFeatureControls().forEach(control => put(control.id, control.type === "checkbox" ? control.checked : control.value));
-  if (!isManualFeatManagementEnabled()) {
-    document.querySelectorAll('#feats-area > [data-feat-source="class"] [data-magic-initiate-field], #feats-area > [data-feat-source="invocation"] [data-magic-initiate-field]')
-      .forEach(select => put(select.id, select.value));
-  }
+  // 自動那套的來源專長以 feat-choice-* 為準；自行管理時仍照常記住，連同不在畫面上的來源列魔法學徒子選項。
+  Object.entries(collectDerivedFeatMagicValues(["class", "invocation"])).forEach(([id, value]) => put(id, value));
   put("subclass", document.getElementById("subclass")?.value || "");
   if (className === "druid") put("druid-land", document.getElementById("druid-land")?.value || "");
   Object.entries(window.SpellManagement?.collectClassFeatureCantrips?.() || {})
@@ -1917,7 +1910,7 @@ function setClassOptionControlValue(control, value) {
 function restoreClassOptionMemory(className, record) {
   const values = record.values || {};
   const lists = record.lists || {};
-  const has = id => Object.hasOwn(values, id) && isClassOptionFeatIdAllowed(id);
+  const has = id => Object.hasOwn(values, id);
   const dispatchRestoreChange = control => control.dispatchEvent(new Event("change"));
 
   // 子職決定職業詳情有哪些選項，最先還原。
@@ -1954,12 +1947,7 @@ function restoreClassOptionMemory(className, record) {
     setClassOptionControlValue(control, values[control.id]);
   });
   syncDerivedFeatRows();
-  Object.entries(values).filter(([id]) => /^derived-feat-.*-magic-initiate-/u.test(id) && has(id))
-    .sort(([a], [b]) => Number(!a.endsWith("-class")) - Number(!b.endsWith("-class")))
-    .forEach(([id, value]) => {
-      const control = document.getElementById(id);
-      if (setClassOptionControlValue(control, value)) dispatchRestoreChange(control);
-    });
+  restoreDerivedFeatMagicValues(values, setClassOptionControlValue);
   const cantrips = Object.fromEntries(Object.entries(values)
     .filter(([key, value]) => isClassFeatureCantripKey(className, key) && typeof value === "string"));
   if (Object.keys(cantrips).length) applyClassFeatureCantrips(cantrips);

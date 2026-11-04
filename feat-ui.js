@@ -40,18 +40,14 @@ function createManualFeatGuidance() {
   return guidance;
 }
 
+// 自行管理時來源選單照常顯示（停用、保留自動那套的值），旁邊加上前往自行管理的提示。
 function syncManualFeatGuidance() {
   const manual = isManualFeatManagementEnabled();
   document.querySelectorAll("[data-feat-choice]").forEach(wrap => {
-    const raceChoice = getRaceFeatChoiceTraits().some(trait => trait.feat.key === wrap.dataset.featChoice);
     const styleClass = ["ranger", "paladin"].find(cls => wrap.dataset.featChoice === `fighting-style-${cls}`);
-    const inactiveClassStyle = Boolean(styleClass) && !document.getElementById(`${styleClass}-fighting-style`)?.checked;
-    wrap.hidden = (manual && Boolean(raceChoice)) || inactiveClassStyle;
-    wrap.querySelector(".feat-choice-control").hidden = manual;
-    const label = wrap.querySelector(":scope > label");
-    if (label) label.hidden = manual;
+    wrap.hidden = Boolean(styleClass) && !document.getElementById(`${styleClass}-fighting-style`)?.checked;
     let guidance = wrap.querySelector(":scope > .manual-feat-guidance");
-    if (!guidance && !raceChoice) {
+    if (!guidance && manual) {
       guidance = createManualFeatGuidance();
       wrap.appendChild(guidance);
     }
@@ -69,14 +65,83 @@ function syncManualFeatGuidance() {
   });
 }
 
-function collectManagedFeatRows() {
-  return Array.from(document.querySelectorAll("#feats-area > .form-row"), row => ({
+// 自動與自行管理是兩套各自保存的專長：#feats-area 只放目前模式那一套，另一套留在這裡。
+let manualFeatSetDisplayed = false;
+// 自行管理那套（不在畫面上時）：collectManagedFeatRows 的格式。
+let manualFeatRowEntries = [];
+// 自動那套來源列的魔法學徒子選項（不在畫面上時）：控制項 ID → 值。來源列的專長本身以 feat-choice-* 為準。
+let automaticFeatMagicValues = {};
+const DERIVED_FEAT_MAGIC_ID_PATTERN = /^derived-feat-(.+)-magic-initiate-(?:class|cantrip-1|cantrip-2|level-1)$/u;
+
+function collectFeatRowEntries(rows) {
+  return rows.map(row => ({
     source: row.dataset.featSource || "",
     key: row.dataset.sourceKey || "",
     label: row.querySelector(".feat-row-head label")?.dataset.featSourceLabel || row.querySelector(".feat-row-head label")?.textContent || "",
     value: getFeatSelectFromRow(row)?.value || "",
     magic: Object.fromEntries(["class", "cantrip1", "cantrip2", "level1"].map(field => [field, getMagicInitiateSelect(row, field)?.value || ""]))
   }));
+}
+
+// 自行管理那套的列，不論目前是哪個模式。
+function collectManagedFeatRows() {
+  if (!manualFeatSetDisplayed) return manualFeatRowEntries.map(entry => ({ ...entry, magic: { ...entry.magic } }));
+  return collectFeatRowEntries(Array.from(document.querySelectorAll("#feats-area > .form-row")));
+}
+
+// 存檔的列一律成為「專長N」，依原本順序保留選擇與魔法學徒子選項（舊存檔的來源列也一樣）。
+function normalizeManagedFeatEntries(entries) {
+  return entries.filter(entry => entry && typeof entry === "object").map(entry => ({
+    source: "", key: "", label: "",
+    value: entry.value == null ? "" : String(entry.value),
+    magic: Object.fromEntries(["class", "cantrip1", "cantrip2", "level1"].map(field => [field, entry.magic?.[field] == null ? "" : String(entry.magic[field])]))
+  }));
+}
+
+// 沒有 __managedFeatRows 的舊存檔：feat-N 欄位組成的列。
+function getFlatFeatRowEntries(data) {
+  const indices = new Set(Object.keys(data).flatMap(key => /^feat-(\d+)(?:-|$)/u.exec(key)?.slice(1).map(Number) || []));
+  const count = Number.parseInt(data["feats-area-count"], 10) || 0;
+  for (let index = 0; index < count; index += 1) indices.add(index);
+  return Array.from(indices).sort((a, b) => a - b).map(index => ({
+    value: data[`feat-${index}`],
+    magic: { class: data[`feat-${index}-magic-initiate-class`], cantrip1: data[`feat-${index}-magic-initiate-cantrip-1`],
+      cantrip2: data[`feat-${index}-magic-initiate-cantrip-2`], level1: data[`feat-${index}-magic-initiate-level-1`] }
+  }));
+}
+
+// 自動那套來源列的魔法學徒子選項；sources 省略時為全部來源。
+function collectDerivedFeatMagicValues(sources = null) {
+  if (manualFeatSetDisplayed) {
+    const raceKeys = new Set(getRaceFeatChoiceTraits().map(trait => trait.feat.key));
+    const sourceOf = key => key === "background" ? "background" : raceKeys.has(key) ? "race" : /^lessons-\d+$/u.test(key) ? "invocation" : "class";
+    return Object.fromEntries(Object.entries(automaticFeatMagicValues)
+      .filter(([id]) => !sources || sources.includes(sourceOf(DERIVED_FEAT_MAGIC_ID_PATTERN.exec(id)[1]))));
+  }
+  return Object.fromEntries(Array.from(document.querySelectorAll("#feats-area > [data-feat-source] [data-magic-initiate-field]"))
+    .filter(select => select.id && (!sources || sources.includes(select.closest("[data-feat-source]").dataset.featSource)))
+    .map(select => [select.id, select.value]));
+}
+
+// 還原自動那套來源列的魔法學徒子選項（先職業再法術）；自行管理時存回自動那套，切回自動時再套用。
+function restoreDerivedFeatMagicValues(values, setValue = (control, value) => { control.value = value; return true; }) {
+  const entries = Object.entries(values || {}).filter(([id, value]) => DERIVED_FEAT_MAGIC_ID_PATTERN.test(id) && typeof value === "string")
+    .sort(([a], [b]) => Number(!a.endsWith("-class")) - Number(!b.endsWith("-class")));
+  if (manualFeatSetDisplayed) {
+    entries.forEach(([id, value]) => { automaticFeatMagicValues[id] = value; });
+    return;
+  }
+  entries.forEach(([id, value]) => {
+    const control = document.getElementById(id);
+    if (control && setValue(control, value)) control.dispatchEvent(new Event("change"));
+  });
+}
+
+// 存檔用：自行管理時，只留目前仍有來源列的自動那套子選項。
+function getStoredAutomaticFeatMagicValues() {
+  if (!manualFeatSetDisplayed) return {};
+  const keys = new Set(getDerivedFeatSpecs().map(spec => spec.key));
+  return Object.fromEntries(Object.entries(automaticFeatMagicValues).filter(([id]) => keys.has(DERIVED_FEAT_MAGIC_ID_PATTERN.exec(id)[1])));
 }
 
 function restoreFeatSelectValue(select, value) {
@@ -117,52 +182,68 @@ function normalizeLegacyFeatState(data) {
 }
 
 function restoreManagedFeatRows(entries) {
-  if (!Array.isArray(entries)) return;
   document.getElementById("feats-area").replaceChildren();
-  const restoredKeys = new Set();
-  entries.forEach(entry => {
-    if (!entry || typeof entry !== "object") return;
-    let row;
-    if (["background", "race", "class", "invocation"].includes(entry.source) && /^[a-z0-9-]+$/u.test(entry.key || "") && !restoredKeys.has(entry.key)) {
-      const spec = { source: String(entry.source), key: String(entry.key), label: String(entry.label || "專長："), fixed: false, optionsHtml: getFeatOptionsHtml() };
-      row = createDerivedFeatRow(spec);
-      setDerivedFeatRowValues(row, spec);
-      restoredKeys.add(entry.key);
-    } else row = createSingleFeatRow();
+  normalizeManagedFeatEntries(entries).forEach(entry => {
+    const row = createSingleFeatRow();
     const select = getFeatSelectFromRow(row);
     restoreFeatSelectValue(select, entry.value);
     select.dataset.previousValue = select.value;
     updateMagicInitiateControlsForRow(row, { sync: false });
     ["class", "cantrip1", "cantrip2", "level1"].forEach(field => {
       const control = getMagicInitiateSelect(row, field);
-      restoreFeatSelectValue(control, entry.magic?.[field]);
+      restoreFeatSelectValue(control, entry.magic[field]);
       if (field === "class") updateMagicInitiateSpellOptions(row);
     });
-    document.getElementById("feats-area").appendChild(row);
   });
   refreshFeatRows();
 }
 
+// 切換模式只換掉畫面上那一套，不轉換、不合併；離開的那套留在記憶中，也照常存檔。
 function updateFeatManagementMode() {
-  if (!isManualFeatManagementEnabled()) {
-    // 回到自動模式時，將手動改寫的來源列保留為自訂列。
-    const specs = new Map(getDerivedFeatSpecs().map(spec => [spec.key, spec]));
-    document.querySelectorAll("#feats-area > [data-feat-source]").forEach(row => {
-      const value = getFeatSelectFromRow(row)?.value || "";
-      if (!value || specs.get(row.dataset.sourceKey)?.value === value) return;
-      const entry = collectManagedFeatRows().find(entry => entry.key === row.dataset.sourceKey);
-      const manual = createSingleFeatRow(null, { freshDisclosure: !autosaveSuspended });
-      getFeatSelectFromRow(manual).value = value;
-      updateMagicInitiateControlsForRow(manual, { sync: false });
-      ["class", "cantrip1", "cantrip2", "level1"].forEach(field => {
-        const control = getMagicInitiateSelect(manual, field);
-        if (control) control.value = entry.magic[field];
-        if (field === "class") updateMagicInitiateSpellOptions(manual);
-      });
-    });
+  const manual = isManualFeatManagementEnabled();
+  if (manual !== manualFeatSetDisplayed) {
+    const area = document.getElementById("feats-area");
+    if (manual) {
+      automaticFeatMagicValues = collectDerivedFeatMagicValues();
+      manualFeatSetDisplayed = true;
+      restoreManagedFeatRows(manualFeatRowEntries);
+    } else {
+      manualFeatRowEntries = collectManagedFeatRows();
+      manualFeatSetDisplayed = false;
+      area.replaceChildren();
+      syncDerivedFeatRows();
+      restoreDerivedFeatMagicValues(automaticFeatMagicValues);
+    }
   }
   syncDerivedFeatRows();
   scheduleStructuralSaveAllFields();
+}
+
+// 載入完整存檔前回到自動那套並清空兩套的記憶；自動那套還原後再由 restoreFeatManagementState 決定模式。
+function resetFeatManagementState() {
+  document.getElementById("manual-feat-management").checked = false;
+  manualFeatSetDisplayed = false;
+  manualFeatRowEntries = [];
+  automaticFeatMagicValues = {};
+  document.getElementById("feats-area").replaceChildren();
+}
+
+// 自動那套已依 feat-choice-*／derived-feat-* 還原在畫面上時呼叫。
+// 沒有 __managedFeatRows 的舊存檔：手動模式，或自動模式卻有選了值的「專長N」殘留列時，
+// 自行管理那套為原本畫面上的來源列加上這些列（依原本順序），並切成自行管理，讓數值維持不變。
+function restoreFeatManagementState(data, requestedManual) {
+  let entries = Array.isArray(data.__managedFeatRows) ? data.__managedFeatRows : [];
+  let manual = requestedManual;
+  if (!Array.isArray(data.__managedFeatRows)) {
+    const flatRows = getFlatFeatRowEntries(data).filter(entry => requestedManual || (entry.value != null && entry.value !== ""));
+    if (requestedManual || flatRows.length) {
+      entries = [...collectFeatRowEntries(Array.from(document.querySelectorAll("#feats-area > [data-feat-source]"))), ...flatRows];
+      manual = true;
+    }
+  }
+  manualFeatRowEntries = normalizeManagedFeatEntries(entries);
+  document.getElementById("manual-feat-management").checked = manual;
+  updateFeatManagementMode();
 }
 
 function getClassFeatGrantLevels(cls) {
@@ -474,16 +555,16 @@ function syncDerivedFeatRows() {
   const area = document.getElementById("feats-area");
   if (!area) return;
   syncFeatChoiceOptions();
-  if (isManualFeatManagementEnabled()) {
-    refreshFeatRows();
-    refreshFeatDerivedEffects();
-    return;
-  }
   const specs = getDerivedFeatSpecs();
   const desiredKeys = new Set(specs.map(spec => spec.key));
   document.querySelectorAll("#eldritch-invocations-output [data-feat-choice]").forEach(control => {
     if (!desiredKeys.has(control.dataset.featChoice)) control.remove();
   });
+  if (manualFeatSetDisplayed) {
+    refreshFeatRows();
+    refreshFeatDerivedEffects();
+    return;
+  }
   Array.from(area.querySelectorAll(":scope > [data-feat-source]")).forEach(row => {
     if (!desiredKeys.has(row.dataset.sourceKey)) row.remove();
   });
@@ -619,7 +700,7 @@ function saveFeatDisclosurePreferences() {
       preferences.derived[row.dataset.sourceKey] = row.dataset.featExpanded !== "false";
     }
   });
-  preferences.manual = getManualFeatRows().map(row => row.dataset.featExpanded !== "false");
+  if (manualFeatSetDisplayed) preferences.manual = getManualFeatRows().map(row => row.dataset.featExpanded !== "false");
   window.dndStorage.setItem(FEAT_DISCLOSURE_STATE_KEY, JSON.stringify(preferences));
 }
 
@@ -709,11 +790,9 @@ function updateFeatControlStates() {
   const lastRow = rows[rows.length - 1] || null;
 
   rows.forEach((row) => {
-    const manual = !isDerivedFeatRow(row);
-    row.hidden = manual && !enabled && !getFeatSelectFromRow(row)?.value;
     const select = getFeatSelectFromRow(row);
     if (select) {
-      const choice = !manual ? document.getElementById(getFeatChoiceId(row.dataset.sourceKey)) : null;
+      const choice = isDerivedFeatRow(row) ? document.getElementById(getFeatChoiceId(row.dataset.sourceKey)) : null;
       select.disabled = !enabled && (!choice || choice.disabled);
       if (enabled) {
         const value = select.value;

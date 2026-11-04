@@ -1375,9 +1375,9 @@
   </div>
 
   <script src="sheet-utils.js?v=20261024-index-split"></script>
-  <script src="feat-ui.js?v=20261102-feat-content"></script>
+  <script src="feat-ui.js?v=20261104-feat-sets"></script>
   <script src="spell-sources.js?v=20261104-class-picks"></script>
-  <script src="class-features-ui.js?v=20261104-class-picks"></script>
+  <script src="class-features-ui.js?v=20261104-feat-sets"></script>
   <script>
 function openCarryCapacityRules(trigger) {
   return window.AppDialog.showMessage({
@@ -5119,7 +5119,8 @@ function setFeatRowCount(requestedCount) {
   const area = document.getElementById("feats-area");
   const parsedCount = Number.parseInt(requestedCount, 10);
   const count = Number.isFinite(parsedCount) && parsedCount >= 0 ? parsedCount : 1;
-  if (!area) return;
+  // 「專長N」列只屬於自行管理那套。
+  if (!area || !isManualFeatManagementEnabled()) return;
 
   let rows = getManualFeatRows();
   while (rows.length < count) {
@@ -5137,7 +5138,8 @@ function getDynamicAreaConfigs() {
   return [
     {
       key: "feats-area",
-      getCount: () => getManualFeatRows().length,
+      // 自行管理那套的列數（不論目前模式）；載入時改由 __managedFeatRows 或舊欄位還原。
+      getCount: () => collectManagedFeatRows().length,
       ensureCount: setFeatRowCount
     },
     {
@@ -5165,7 +5167,9 @@ function collectStateObject(options = {}) {
   data[CHARACTER_SIZE_STATE_KEY] = characterSize;
   const customBackground = window.CustomBackground?.getState();
   if (customBackground) data.__customBackground = customBackground;
-  if (isManualFeatManagementEnabled()) data.__managedFeatRows = collectManagedFeatRows();
+  // 自動與自行管理兩套專長都存：自行管理那套不論模式都寫入；自行管理時另存自動那套來源列的魔法學徒子選項。
+  data.__managedFeatRows = collectManagedFeatRows();
+  Object.assign(data, getStoredAutomaticFeatMagicValues());
   data.__spellManagement = window.SpellManagement?.getState() || { version: 2, manual: false, entries: [] };
   // 手動管理勾選框改在準備法術視窗內；舊欄位仍隨 JSON／分享輸出，維持既有格式。
   data["manual-spell-management"] = data.__spellManagement.manual === true;
@@ -5420,12 +5424,11 @@ function applyStateObjectNow(data) {
       window.CustomBackground?.restore(data.__customBackground);
     }
     if (data.background === "custom" && !window.CustomBackground?.getState()) data = { ...data, background: "" };
-    const managementControl = document.getElementById("manual-feat-management");
     const hasManagementState = Object.hasOwn(data, "manual-feat-management");
-    const legacyFeatState = legacyFeatManagement;
-    const restoringManagement = hasManagementState || legacyFeatState;
-    const requestedManualMode = hasManagementState ? data["manual-feat-management"] === true : legacyFeatState;
-    if (restoringManagement) managementControl.checked = requestedManualMode && Array.isArray(data.__managedFeatRows);
+    const restoringManagement = hasManagementState || legacyFeatManagement;
+    const requestedManualMode = hasManagementState ? data["manual-feat-management"] === true : legacyFeatManagement;
+    // 完整的專長狀態先以自動那套還原，最後由 restoreFeatManagementState 決定模式與自行管理那套。
+    if (restoringManagement) resetFeatManagementState();
     removeMagicInitiateDerivedSpellRows();
     setPactTomeSpellSelection(data.__pactTomeSpellSelection, { sync: false });
     restorePactTomeInvocationSelection(data);
@@ -5437,16 +5440,15 @@ function applyStateObjectNow(data) {
     if (main2Shield) main2Shield.checked = false;
 
     getDynamicAreaConfigs().forEach(area => {
-      if (area.key === "feats-area" && !Object.hasOwn(data, "feats-area-count")) return;
+      if (area.key === "feats-area") return;
       const n = parseInt(data[`${area.key}-count`] || "0", 10);
       area.ensureCount(n);
     });
-    if (restoringManagement && requestedManualMode && Array.isArray(data.__managedFeatRows)) restoreManagedFeatRows(data.__managedFeatRows);
 
 
     for (const id in data) {
       if (id === "manual-feat-management" || id === "manual-spell-management") continue;
-      if (requestedManualMode && Array.isArray(data.__managedFeatRows) && /^(?:feat-\d+|derived-feat-).*$/u.test(id)) continue;
+      if (restoringManagement && /^(?:feat-\d+|derived-feat-).*$/u.test(id)) continue;
       if (/^feat-\d+-magic-initiate-/u.test(id)) continue;
       if (id === "__deletedSpellRowCache" || id === "__pactTomeSpellSelection" || id === "__bardMagicalDiscoverySelection" || id === "__classFeatureCantrips") continue;
       if (isSpellRowStateKey(id)) continue;
@@ -5510,14 +5512,7 @@ function applyStateObjectNow(data) {
       select.value = value;
     });
     syncDerivedFeatRows();
-    Object.entries(data).filter(([id]) => !(requestedManualMode && Array.isArray(data.__managedFeatRows)) && /^derived-feat-.*-magic-initiate-/u.test(id))
-      .sort(([a], [b]) => Number(!a.endsWith("-class")) - Number(!b.endsWith("-class")))
-      .forEach(([id, value]) => {
-      const control = document.getElementById(id);
-      if (!control) return;
-      control.value = value;
-      control.dispatchEvent(new Event("change"));
-    });
+    restoreDerivedFeatMagicValues(data);
     updateClassFeatureOptionVisibility();
     updateHighElfCantripVisibility();
     updateBaseLanguageOptions();
@@ -5528,19 +5523,8 @@ function applyStateObjectNow(data) {
     updatePickedSpellBoxes();
     syncHitDiceCountToLevel({ preserveCurrent: true });
     syncAdvancedClassFeatureControls();
-    if (restoringManagement) managementControl.checked = requestedManualMode;
-    // Restore the feat before its optional spell choices, regardless of JSON
-    // field order. Structured rows already restored these values together.
-    if (!(requestedManualMode && Array.isArray(data.__managedFeatRows))) {
-      Object.entries(data).filter(([id]) => /^feat-\d+-magic-initiate-/u.test(id))
-        .sort(([a], [b]) => Number(!a.endsWith("-class")) - Number(!b.endsWith("-class")))
-        .forEach(([id, value]) => {
-          const control = document.getElementById(id);
-          restoreFeatSelectValue(control, value);
-          if (control?.dataset.magicInitiateField === "class") updateMagicInitiateSpellOptions(control.closest(".form-row"));
-        });
-      syncMagicInitiateDerivedSpellRows();
-    }
+    // 「專長N」列與其魔法學徒子選項一起從 __managedFeatRows（或舊的 feat-N 欄位）還原，不受 JSON 欄位順序影響。
+    if (restoringManagement) restoreFeatManagementState(data, requestedManualMode);
     refreshFeatDerivedEffects();
     syncAutomaticKeyStatsMode();
     updateOffHandRolePresentation();
@@ -6597,7 +6581,6 @@ window.addEventListener("DOMContentLoaded", async function() {
   updateOffHandRolePresentation();
   updateEquipmentLoadoutSummary();
   // Structured spell lists are initialized without building spell forms.
-  if (!getManualFeatRows().length) createSingleFeatRow();
   // 3. 還原所有欄位狀態
   });
   const { data: sharedData, error: sharedError } = await decodeStateFromHash();
