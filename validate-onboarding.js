@@ -535,6 +535,7 @@ async function main() {
     if (process.argv.includes("--imports-only")) {
       await verifyQuickBuildBackgroundCards(browser, url);
       await verifyQuickBuildRaceCards(browser, url);
+      await verifyQuickBuildGuidanceCopy(browser, url);
       await verifyShareModeEntries(browser, url);
       await verifyImports(browser, url);
       await verifyImports(browser, url, { width: 390, height: 844 });
@@ -734,6 +735,7 @@ async function main() {
     await page.evaluate(() => quickBuild.close());
     await verifyQuickBuildBackgroundCards(browser, url);
     await verifyQuickBuildRaceCards(browser, url);
+    await verifyQuickBuildGuidanceCopy(browser, url);
     await verifyShareModeEntries(browser, url);
     await verifyImports(browser, url);
     await verifyImports(browser, url, { width: 390, height: 844 });
@@ -1384,6 +1386,149 @@ async function verifyQuickBuildBackgroundCards(browser, url) {
     assert.deepEqual(errors, []);
   } finally { await page.close(); }
   console.log("Quick build background cards cover every background content file.");
+}
+
+// 快速創角給新手的說明文字（quick-build.js 的常數）要涵蓋內容檔的每個選項，選項說明與詳情視窗也要實際顯示在創角視窗之上。
+async function verifyQuickBuildGuidanceCopy(browser, url) {
+  const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  const errors = [];
+  page.on("pageerror", error => errors.push(String(error)));
+  await page.route("**/quick-build.js?*", async route => {
+    const response = await route.fetch();
+    const source = (await response.text()).replace("  window.quickBuild = {", `
+      window.__quickBuildCopy = { ORIGIN_FEAT_BLURBS, FIGHTING_STYLE_INTROS, WEAPON_MASTERY_SUMMARIES, ALIGNMENT_DESCRIPTIONS, ALIGNMENT_OPTIONS, MAIN_HAND_NOTES, LEVEL_ONE_FEATURE_INTROS, RACE_SIZE_HEIGHTS, CLASS_ORDER, BACKGROUND_ORDER, CLASS_TYPE_COPY, CLASS_TYPE_OPTIONS, humanOriginFeatValues, fightingStyleFeatIds, weaponMasteryCatalog, classEquipmentDefinition, classFeatureSectionHtml, equipmentItemNames, equipmentLinks, mainHandNote, presetBackground };
+      window.quickBuild = {`);
+    await route.fulfill({ response, body: source });
+  });
+  const openAt = async (choices, stepId) => {
+    await page.evaluate(([nextChoices, step]) => {
+      quickBuild.close(false);
+      const draft = quickBuild.createDraft();
+      Object.assign(draft.choices, { background: "soldier", race: "dwarf", backgroundWealth: "gold", classEquipmentMethod: "gold", ...nextChoices });
+      draft.ui.currentStepId = step;
+      localStorage.setItem(quickBuild.storageKey, JSON.stringify(draft));
+      quickBuild.open();
+    }, [choices, stepId]);
+    await page.waitForTimeout(50);
+  };
+  const wizard = page.locator("#quick-build-wizard");
+  const coveredAt = locator => locator.evaluate(element => {
+    const rect = element.getBoundingClientRect();
+    return element.contains(document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2));
+  });
+  try {
+    await page.goto(url);
+    await page.waitForFunction(() => window.quickBuild && window.__quickBuildCopy && window.renderEquipmentDetailInto);
+    const problems = await page.evaluate(() => {
+      const copy = window.__quickBuildCopy;
+      const found = [];
+      for (const id of copy.humanOriginFeatValues()) if (!copy.ORIGIN_FEAT_BLURBS[id]) found.push(`origin feat ${id}`);
+      for (const id of copy.fightingStyleFeatIds()) if (!copy.FIGHTING_STYLE_INTROS[id]) found.push(`fighting style ${id}`);
+      const { simple, martial } = copy.weaponMasteryCatalog();
+      for (const { 精通: mastery } of [...simple, ...martial]) if (mastery && !copy.WEAPON_MASTERY_SUMMARIES[mastery]) found.push(`mastery ${mastery}`);
+      for (const [value] of copy.ALIGNMENT_OPTIONS) if (!copy.ALIGNMENT_DESCRIPTIONS[value]) found.push(`alignment ${value}`);
+      for (const key of Object.keys(copy.CLASS_TYPE_OPTIONS)) if (!copy.CLASS_TYPE_COPY[key]) found.push(`class type copy ${key}`);
+      const detailTargets = html => {
+        const template = document.createElement("template");
+        template.innerHTML = html;
+        return [...template.content.querySelectorAll("[data-equipment-detail]")].map(button => button.dataset.equipmentDetail);
+      };
+      const checkTargets = (owner, html, names) => {
+        const targets = detailTargets(html);
+        for (const name of targets) if (!renderEquipmentDetailInto(document.createElement("div"), name)) found.push(`${owner}: no detail for ${name}`);
+        // 套組與武器護甲是新手最需要看內容的物品，一定要能點開。
+        for (const name of names) if (/套組|甲$/u.test(name) && !targets.includes(name)) found.push(`${owner}: ${name} is not linked`);
+      };
+      for (const key of copy.CLASS_ORDER) {
+        const features = getClassRules(key).features;
+        const intros = copy.LEVEL_ONE_FEATURE_INTROS[key] || [];
+        if (!intros.length) found.push(`${key}: no level 1 feature intro`);
+        for (const { id } of intros) {
+          if (!features.some(feature => feature.id === id && feature.level === 1)) found.push(`${key}: unknown feature ${id}`);
+          if (!copy.classFeatureSectionHtml(key, id).trim()) found.push(`${key}: no feature section ${id}`);
+        }
+        for (const option of copy.classEquipmentDefinition(key)?.defaults || []) {
+          checkTargets(key, copy.equipmentLinks(copy.equipmentItemNames(option)), copy.equipmentItemNames(option));
+          if (option.main.length > 1) for (const name of option.main) if (!copy.mainHandNote(key, name)) found.push(`${key}: main hand ${name}`);
+        }
+      }
+      for (const key of copy.BACKGROUND_ORDER) {
+        const names = String(copy.presetBackground(key).text.equipmentA).split("、");
+        checkTargets(key, copy.equipmentLinks(names), names);
+      }
+      for (const [race, heights] of Object.entries(copy.RACE_SIZE_HEIGHTS)) for (const size of getRaceRules(race).sizes) if (!heights[size]) found.push(`${race}: height ${size}`);
+      for (const race of Object.keys(getAllRaceRules())) if (getRaceRules(race).sizes.length > 1 && !copy.RACE_SIZE_HEIGHTS[race]) found.push(`${race}: size heights`);
+      return found;
+    });
+    assert.deepEqual(problems, [], "quick build guidance copy covers every content option and every equipment link opens a detail");
+
+    // 名詞與角色卡一致：歌利亞用祖源名稱，龍裔的傷害類型用閃電，裝備沿用「初始裝備」。
+    await openAt({ race: "goliath", raceOptions: { ancestry: await page.evaluate(() => getRaceRules("goliath").choice.options[0].draftValue) } }, "race");
+    assert.equal(await wizard.locator('label[for="quick-build-race-ancestry"]').textContent(), await page.evaluate(() => getRaceRules("goliath").choice.label));
+    assert.match(await wizard.locator("#quick-build-race-ancestry").innerText(), /雲裔（雲遊四方）/u);
+    await openAt({ race: "dragonborn", raceOptions: {} }, "race");
+    assert.match(await wizard.locator("#quick-build-race-ancestry").innerText(), /藍龍（閃電）/u);
+    await openAt({ class: "barbarian", classEquipmentMethod: null }, "equipment");
+    const equipmentText = await wizard.locator(".quick-build-body").innerText();
+    assert.match(equipmentText, /取得初始裝備/u);
+    assert.doesNotMatch(equipmentText, /預設裝備/u);
+
+    // 德魯伊：只留一個標題，選項說明寫出實際效果，額外戲法標示來源。
+    await openAt({ class: "druid", levelOne: { classOption: "magician" } }, "level-one");
+    assert.equal(await wizard.locator('label[for="quick-build-level-one-class-option"]').evaluate(label => label.classList.contains("sr-only")), true);
+    const druidOption = wizard.locator('[data-flow-section="level-one-options"]');
+    assert.match(await druidOption.innerText(), /額外學會 1 個德魯伊戲法\n奧秘和自然技能檢定額外 \+\d/u);
+    assert.doesNotMatch(await druidOption.innerText(), /技能額外加值/u);
+    await wizard.locator("#quick-build-level-one-class-option").selectOption("warden");
+    assert.match(await druidOption.innerText(), /獲得軍用武器熟練與中甲訓練/u);
+    await wizard.locator("#quick-build-level-one-class-option").selectOption("magician");
+    await wizard.locator("#quick-build-language-0").selectOption("draconic");
+    await wizard.locator("#quick-build-language-1").selectOption("elvish");
+    assert.equal(await wizard.locator('label[for="quick-build-cantrip-2"]').textContent(), "戲法 3（巫祝額外）");
+    assert.match(await wizard.locator('[data-flow-section="level-one-spells"]').innerText(), /動物交談/u, "always-prepared spells are listed");
+
+    // 戰士：戰鬥風格有說明與查看，查看視窗在創角視窗之上；敏捷型不會被建議力量型裝備。
+    await openAt({ class: "fighter", classOptions: { classType: "dexterity" }, classEquipmentMethod: null }, "equipment");
+    const notice = await wizard.locator('[data-flow-section="equipment-method"]').innerText();
+    assert.match(notice, /建議選敏捷型裝備/u);
+    assert.doesNotMatch(notice, /建議選力量型裝備/u);
+    await wizard.locator('[data-equipment-detail="地城套組"]').first().click();
+    const detailDialog = page.locator(".app-dialog").last();
+    await detailDialog.waitFor();
+    assert.equal(await coveredAt(detailDialog.locator(".app-dialog__surface")), true, "equipment detail sits above the wizard");
+    assert.match(await detailDialog.innerText(), /背包/u);
+    await detailDialog.locator(".app-dialog__close").click();
+
+    await openAt({ class: "fighter", classOptions: { classType: "strength" } }, "level-one");
+    await wizard.locator("#quick-build-fighting-style").selectOption("防禦");
+    assert.match(await wizard.locator('[data-flow-section="level-one-options"]').innerText(), /AC（護甲等級）\+1/u);
+    await wizard.locator("[data-fighting-style-view]").click();
+    assert.equal(await page.locator("#quick-build-spell-detail").isVisible(), true);
+    await page.locator(".quick-build-spell-detail-close").click();
+
+    // 1 級能力的查看顯示職業頁段落，且不把一般粗體撐成區塊。
+    await wizard.locator('[data-level-one-feature-view="fighter-second-wind"]').click();
+    assert.match(await page.locator("#quick-build-spell-detail-content").innerText(), /回氣/u);
+    await page.locator(".quick-build-spell-detail-close").click();
+
+    // 法師的準備法術不再帶「已學會」後綴，法術書標示儀式。
+    await openAt({ class: "wizard", levelOne: { languages: ["draconic", "elvish"] } }, "level-one");
+    assert.doesNotMatch(await wizard.locator("#quick-build-prepared-0").innerText(), /法師已學會/u);
+    assert.match(await wizard.locator("#quick-build-spellbook-0").innerText(), /（儀式）/u);
+
+    // 提示框能蓋在創角視窗上，鍵盤也能開啟。
+    await openAt({ class: "barbarian" }, "class");
+    await page.locator('[data-class-ability-base="str"]').first().waitFor();
+    const tip = wizard.locator('.quick-build-ability-name .skill-tip[data-skill="力量"]');
+    await tip.focus();
+    await page.keyboard.press("Enter");
+    await page.locator("#skillPopup").waitFor();
+    assert.match(await page.locator("#skillPopup").innerText(), /近戰武器/u);
+    assert.equal(await coveredAt(page.locator("#skillPopup")), true, "tips sit above the wizard");
+    await page.evaluate(() => { quickBuild.close(false); localStorage.removeItem(quickBuild.storageKey); });
+    assert.deepEqual(errors, []);
+  } finally { await page.close(); }
+  console.log("Quick build guidance copy covers every option; details and tips open above the wizard.");
 }
 
 // 快速創角的種族卡片說明、血統短評與完成摘要是 quick-build.js 自己的文字（以種族 ID 與草稿血統值為 key），

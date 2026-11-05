@@ -12,7 +12,6 @@ choice:
   id: goliath-ancestry
   label: 巨人裔祖源
   draftField: ancestry
-  quickBuildLabel: 巨人血統恩賜
   display: { type: sections }
   options:
     - value: cloud
