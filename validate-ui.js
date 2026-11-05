@@ -788,6 +788,25 @@ async function verifyPdf(page, fieldsOnly) {
       for (const name of ["hero insp", "light", "ds1s", "chk-c1"]) {
         if (checkedAppearance(officialForm, name) !== checkedAppearance(officialTemplate, name)) throw new Error(`Official checkbox keeps template drawing: ${name}`);
       }
+      // A reader redraws an edited field from DA, so a shrunken field must
+      // record the reduced size it was drawn at, not its preferred size.
+      const numberedLines = count => Array.from({ length: count }, (_, index) => `第${index + 1}行`).join("\n");
+      for (const [sheetTemplate, name, notes, expected] of [
+        ["official", "Equip", { "gear-notes": "長劍" }, 9],
+        ["official", "Equip", { "gear-notes": numberedLines(18) }, 8.4],
+        ["official", "Equip", { "gear-notes": numberedLines(30) }, 7],
+        ["official", "class-a-2", { "class-extra": numberedLines(22) }, 8.3],
+        ["official", "class-a-2", { "class-extra": numberedLines(30) }, 7],
+        ["third-party", "extra1", { "gear-extra": "長".repeat(160) }, 9.9],
+        ["third-party", "extra1", { "gear-extra": numberedLines(9) }, 9]
+      ]) {
+        await exportCharacterPdfFromState({ class: "fighter", level: "1", ...notes }, { outputMode: "editable", sheetTemplate, characterName: "UI regression" });
+        const field = (await PDFLib.PDFDocument.load(await blob.arrayBuffer())).getForm().getTextField(name);
+        const appearance = new TextDecoder("latin1").decode(PDFLib.decodePDFRawStream(field.acroField.getWidgets()[0].getAppearances().normal).decode());
+        const drawnSize = Number(/\/\S+\s+([\d.]+)\s+Tf/.exec(appearance)?.[1]);
+        const editingSize = Number(/([\d.]+)\s+Tf/.exec(field.acroField.getDefaultAppearance() || "")?.[1]);
+        if (drawnSize !== expected || editingSize !== expected) throw new Error(`Shrunken field keeps its editing size: ${sheetTemplate}/${name} expected ${expected}, drawn ${drawnSize}, editing ${editingSize}`);
+      }
       const avatarImageDrawn = form => {
         const normal = form.getFields().find(field => field.getName().endsWith("_af_image")).acroField.getWidgets()[0].getAppearances()?.normal;
         return Boolean(normal?.dict?.lookup(PDFLib.PDFName.of("Resources"))?.lookup(PDFLib.PDFName.of("XObject")));
