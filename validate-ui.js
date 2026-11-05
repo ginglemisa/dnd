@@ -182,7 +182,7 @@ async function verifyAppearanceAndLayout(browser, page, url) {
     });
     assert.deepEqual(aboutColors, {
       background: { "classic-light": "rgba(255, 255, 255, 0.96)", "classic-dark": "rgb(32, 40, 51)", "warm-light": "rgb(255, 249, 239)", "warm-dark": "rgb(38, 33, 29)" }[`${family}-${mode}`],
-      text: { "classic-light": "rgb(51, 65, 93)", "classic-dark": "rgb(205, 208, 213)", "warm-light": "rgb(61, 48, 39)", "warm-dark": "rgb(204, 189, 165)" }[`${family}-${mode}`]
+      text: { "classic-light": "rgb(51, 65, 93)", "classic-dark": "rgb(223, 226, 231)", "warm-light": "rgb(61, 48, 39)", "warm-dark": "rgb(226, 214, 194)" }[`${family}-${mode}`]
     });
     assert.equal(await about.locator(".app-dialog__body").evaluate(el => el.scrollWidth <= el.clientWidth), true);
     await page.keyboard.press("Shift+Tab");
@@ -213,6 +213,38 @@ async function verifyAppearanceAndLayout(browser, page, url) {
     assert.equal(lockedSelect.opacity, "1", `${family}-${mode} disabled select is not faded`);
     assert(lockedSelect.contrast >= 4.5, `${family}-${mode} disabled select contrast ${lockedSelect.contrast.toFixed(2)}`);
 
+    // Buttons with their own fill must keep a readable label at rest and on hover; the generic button hover must not replace that fill.
+    await page.evaluate(() => {
+      const host = document.createElement("div");
+      host.id = "contrast-fill-fixture";
+      host.style.cssText = "position:fixed;top:0;left:0;z-index:2147483647;display:grid;gap:4px;width:200px;background:var(--surface-soft)";
+      host.innerHTML = '<button class="app-dialog__button app-dialog__button--danger">a</button><button class="app-dialog__button app-dialog__button--primary">b</button><button class="spell-picker-selected-toggle" aria-pressed="true">c</button><div class="adventure-journal" style="position:static;display:block;width:auto;height:auto;min-height:0;padding:0;background:none"><button class="journal-primary">d</button></div><button class="dice-roller-roll">e</button><button class="money-submit-btn">f</button><button class="tabletop-condition-modal__apply">g</button><button class="tabletop-primary-button">h</button><button id="tour-next-btn">i</button><button class="weapon-mastery-badge" style="position:static;transform:none">j</button>';
+      document.body.append(host);
+      host.querySelectorAll("button").forEach(button => { button.style.transition = "none"; });
+    });
+    const fillButtons = page.locator("#contrast-fill-fixture button");
+    for (let index = 0; index < await fillButtons.count(); index += 1) {
+      for (const hovered of [false, true]) {
+        await (hovered ? fillButtons.nth(index).hover() : page.mouse.move(380, 800));
+        const fill = await fillButtons.nth(index).evaluate(button => {
+          const context = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
+          const rgba = color => { context.clearRect(0, 0, 1, 1); context.fillStyle = "rgba(0,0,0,0)"; context.fillStyle = color; context.fillRect(0, 0, 1, 1); const data = context.getImageData(0, 0, 1, 1).data; return [data[0], data[1], data[2], data[3] / 255]; };
+          const over = (front, back) => [0, 1, 2].map(i => front[i] * front[3] + back[i] * (1 - front[3]));
+          const luminance = rgb => { const [r, g, b] = rgb.map(value => { value /= 255; return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+          const ratio = (a, b) => { const [light, dark] = [luminance(a), luminance(b)].sort((x, y) => y - x); return (light + 0.05) / (dark + 0.05); };
+          const style = getComputedStyle(button);
+          const surface = over(rgba(getComputedStyle(document.getElementById("contrast-fill-fixture")).backgroundColor), [255, 255, 255]);
+          const stops = style.backgroundImage === "none" ? [] : style.backgroundImage.match(/rgba?\([^)]*\)|color\([^)]*\)/g) || [];
+          const fills = (stops.length ? stops : [style.backgroundColor]).map(color => over(rgba(color), surface));
+          const text = rgba(style.color);
+          return { label: button.className || button.id, contrast: Math.min(...fills.map(back => ratio(over(text, back), back))) };
+        });
+        assert(fill.contrast >= 4.5, `${family}-${mode} ${fill.label} ${hovered ? "hover" : "rest"} contrast ${fill.contrast.toFixed(2)}`);
+      }
+    }
+    await page.evaluate(() => document.getElementById("contrast-fill-fixture").remove());
+    await page.mouse.move(0, 0);
+
     const bg = await page.locator("html").evaluate(el => getComputedStyle(el).backgroundImage);
     assert.equal(bg.includes("url("), false, "page backgrounds must not load image assets");
     if (family === "warm" && mode === "light") assert.equal(bg, "none", "warm light uses a solid page background");
@@ -228,7 +260,7 @@ async function verifyAppearanceAndLayout(browser, page, url) {
           identity: getComputedStyle(document.querySelector('.basic-pair-field--class .mini-stat-label--features')).color };
       });
       assert.deepEqual(colors, { canvas: "rgb(12, 23, 41)", primary: ["rgb(197, 164, 108)", "rgb(12, 23, 41)"],
-        navigation: ["rgb(197, 164, 108)", "rgb(12, 23, 41)"], identity: "rgb(226, 201, 149)" },
+        navigation: ["rgb(197, 164, 108)", "rgb(12, 23, 41)"], identity: "rgb(234, 211, 164)" },
       "classic dark uses brass actions with dark ink and pale gold identity labels");
     }
     await page.locator("#utility-menu-toggle").click();

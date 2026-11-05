@@ -17,7 +17,7 @@ html:where(:not([data-ui-theme="warm"]))[data-theme="light"] {
 
   --text: #16213d;
   --text-body: #33415d;
-  --text-muted: #62728e;
+  --text-muted: #536280;
   --detail-text: #33415d;
   --class-tagline: #6f3f1e;
   --accent: #2852d6;
@@ -136,7 +136,7 @@ html:where([data-ui-theme="warm"])[data-theme="light"] {
 
   --text: #191919;
   --text-body: #3D3027;
-  --text-muted: #71604F;
+  --text-muted: #5F4F40;
   --detail-text: var(--text-body);
   --class-tagline: #6E4932;
   --accent: #A82F28;
@@ -255,13 +255,13 @@ html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] {
   --surface-strong: #202833;
   --surface-soft: #252d38;
   --surface-muted: #303946;
-  --text: #eeeef0;
-  --text-body: #cdd0d5;
-  --text-muted: #a2a9b4;
+  --text: #f4f5f7;
+  --text-body: #dfe2e7;
+  --text-muted: #bbc1cb;
   --detail-text: var(--text-body);
   --class-tagline: var(--accent-strong);
-  --accent: #d4b780;
-  --accent-strong: #e2c995;
+  --accent: #dfc48f;
+  --accent-strong: #ead3a4;
   --accent-soft: rgba(197, 164, 108, 0.14);
   --page-background: var(--bg);
   --nav-surface: #151e2b;
@@ -347,13 +347,13 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] {
   --surface-strong: var(--surface);
   --surface-soft: #181513;
   --surface-muted: #2C241E;
-  --text: #E2D3BA;
-  --text-body: #CCBDA5;
-  --text-muted: #A99A86;
+  --text: #F0E6D4;
+  --text-body: #E2D6C2;
+  --text-muted: #C4B6A2;
   --detail-text: var(--text-body);
-  --class-tagline: #C3A17F;
-  --accent: #D08F79;
-  --accent-strong: #D9A08A;
+  --class-tagline: #D6B797;
+  --accent: #E3A793;
+  --accent-strong: #EBB8A5;
   --accent-soft: #3D2721;
   --page-background: var(--bg);
   --nav-surface: var(--surface-strong);
@@ -381,13 +381,13 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] {
   --overlay-strong: rgba(20,17,14,.86);
   --disabled-bg: #29241E;
   --disabled-text: #958673;
-  --danger: #D39987;
+  --danger: #E5AE9D;
   --danger-border: #8F5345;
   --danger-soft: #39231E;
-  --warning: #CEB47C;
+  --warning: #E0C78F;
   --warning-border: #887142;
   --warning-soft: #332B1D;
-  --success: #A9BB8E;
+  --success: #BDCFA3;
   --success-soft: #283024;
   --scrollbar-track: var(--surface-soft);
   --scrollbar-thumb: #766450;
@@ -1380,7 +1380,8 @@ html.journal-open { overflow: hidden; }
 .journal-navigation { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; gap: 10px; }
 .journal-edit-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-column: 1 / -1; gap: 10px; }
 .adventure-journal .journal-primary { background: var(--qb-accent-hover); color: var(--on-accent); border-color: var(--qb-accent); }
-.adventure-journal .journal-primary:hover { background: var(--qb-accent); }
+.adventure-journal .journal-primary:hover:not(:disabled) { background: var(--qb-accent); }
+html:where([data-ui-theme="warm"])[data-theme="dark"] .adventure-journal .journal-primary:hover:not(:disabled) { background: var(--action-hover); }
 .journal-empty { text-align: center; padding: 32px 0; }
 .journal-empty p { line-height: 1.75; }
 :where(html[data-ui-theme="warm"]) .journal-prose { border-left: 2px solid var(--qb-border); padding-left: 16px; }
@@ -3124,8 +3125,14 @@ input[type="checkbox"] {
 /* Primary actions share the same press depth; dense/secondary controls stay flat. */
 @media (hover: hover) and (pointer: fine) {
   :where(html[data-ui-theme="warm"]) :is(#legal-onboarding-btn, .utility-menu__button--primary,
-      .app-dialog__button--primary, .pdf-export-flow-modal__button--primary):not(:disabled):hover {
+      .app-dialog__button--primary, .pdf-export-flow-modal__button--primary, .dice-roller-roll,
+      .money-submit-btn, .tabletop-condition-modal__apply, .tabletop-primary-button):not(:disabled):hover {
     background: var(--action-hover);
+  }
+
+  :where(html:not([data-ui-theme="warm"])) :is(.app-dialog__button--primary, .dice-roller-roll,
+      .tabletop-condition-modal__apply, .tabletop-primary-button):not(:disabled):hover {
+    background: var(--accent-strong);
   }
 }
 
@@ -5470,7 +5477,7 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   border: 1px solid rgba(255, 128, 42, 0.58);
   border-radius: 999px;
   background: rgba(255, 128, 42, 0.12);
-  color: #b84f08;
+  color: #a44505;
   box-shadow: none;
   font-size: var(--fs-xs);
   font-weight: 900;
@@ -5499,6 +5506,10 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   line-height: 1.15;
   letter-spacing: 0;
   cursor: pointer;
+}
+
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] .weapon-mastery-badge {
+  color: #ffb27a;
 }
 
 .weapon-mastery-badge[hidden] {
@@ -8748,6 +8759,10 @@ button.spell-prepared-browse:focus-visible { outline: 2px solid var(--focus-ring
 .spell-picker-toolbar .spell-picker-selected-toggle { width: auto; white-space: nowrap; }
 .spell-picker-toolbar .spell-picker-import { grid-column: 1 / -1; justify-self: start; }
 .spell-picker-selected-toggle[aria-pressed="true"] { border-color: var(--accent-strong); background: var(--accent-strong); color: var(--on-accent); }
+html:where([data-ui-theme="warm"])[data-theme="dark"] .spell-picker-selected-toggle[aria-pressed="true"] { background: var(--action-fill); }
+@media (hover: hover) and (pointer: fine) {
+  :where(html[data-ui-theme="warm"]) .spell-picker-selected-toggle[aria-pressed="true"]:not(:disabled):hover { border-color: var(--accent-strong); background: var(--action-hover); }
+}
 .spellbook-manager .spellbook-options { grid-template-columns: minmax(0, 1fr); }
 .spellbook-manager .spell-picker-option { grid-template-columns: 32px minmax(0, 1fr); grid-template-rows: auto 1fr; align-items: start; gap: 0 7px; padding: 7px 0; }
 .spellbook-manager .spell-picker-ring { grid-column: 1; grid-row: 1; text-align: center; line-height: 1.4; }
@@ -11486,7 +11501,7 @@ html.onboarding-app-bar-hidden .tabs-shell {
 }
 
 :where(html:not([data-ui-theme="warm"])) #tour-next-btn {
-  background: linear-gradient(180deg, #6d89ff 0%, #5675f2 100%);
+  background: var(--accent-gradient);
   color: #fff;
 }
 
@@ -15897,6 +15912,22 @@ button.share-dialog__option:disabled .share-dialog__detail {
   color: var(--on-accent);
 }
 
+html:where([data-ui-theme="warm"])[data-theme="dark"] .app-dialog__button--danger {
+  background: var(--action-fill);
+}
+
+/* The generic button hover would swap the fill for a pale control colour and hide the label. */
+@media (hover: hover) and (pointer: fine) {
+  .app-dialog__button--danger:not(:disabled):hover {
+    border-color: var(--danger);
+    background: color-mix(in srgb, var(--danger) 88%, #000);
+  }
+
+  html:where([data-ui-theme="warm"])[data-theme="dark"] .app-dialog__button--danger:not(:disabled):hover {
+    background: var(--action-hover);
+  }
+}
+
 .app-toast-stack {
   position: fixed;
   bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
@@ -19550,9 +19581,13 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] #tabletop-panel-resources 
   border: 1px solid rgba(255, 128, 42, 0.58);
   border-radius: 999px;
   background: rgba(255, 128, 42, 0.12);
-  color: #b84f08;
+  color: #a44505;
   font-size: var(--fs-xs);
   font-weight: 900;
+}
+
+html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] #tabletop-panel-actions .tabletop-weapon-field .tabletop-source-tag {
+  color: #ffb27a;
 }
 
 :where(html[data-ui-theme="warm"]) #tabletop-panel-actions .tabletop-weapon-field .tabletop-source-tag {
