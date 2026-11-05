@@ -37,6 +37,20 @@ async function main() {
         input.value = String(value);
         input.dispatchEvent(new Event(input.tagName === "SELECT" ? "change" : "input", { bubbles: true }));
       };
+      // 專長N rows only exist in the manual feat set; automatic feats come from class, background and race.
+      const manualFeat = (feat, magic = {}) => {
+        const toggle = document.getElementById("manual-feat-management");
+        if (!toggle.checked) { toggle.checked = true; toggle.dispatchEvent(new Event("change", { bubbles: true })); }
+        if (!document.getElementById("feat-0")) document.getElementById("feat-add-empty").click();
+        field("feat-0-category", getManualFeatCategory(feat));
+        field("feat-0", feat);
+        Object.entries(magic).forEach(([key, value]) => field(`feat-0-magic-initiate-${key}`, value));
+      };
+      const automaticFeats = () => {
+        const toggle = document.getElementById("manual-feat-management");
+        toggle.checked = false;
+        toggle.dispatchEvent(new Event("change", { bubbles: true }));
+      };
       const state = () => TabletopMode.collectState();
       const context = () => TabletopMode.getRestContext();
       const rest = (kind, choices = {}) => TabletopMode.commitRest(kind, choices, context().token);
@@ -165,16 +179,14 @@ async function main() {
           control.checked = true; control.dispatchEvent(new Event("change", { bubbles: true }));
         }
         if (className === "fighter") {
-          field("feat-0", "魔法學徒");
-          field("feat-0-magic-initiate-class", "wizard");
-          field("feat-0-magic-initiate-level-1", "magic-missile");
+          manualFeat("魔法學徒", { class: "wizard", "level-1": "magic-missile" });
         }
         const ids = context().specs.filter(spec => spec.key.startsWith("free-")).flatMap(spec => spec.target.ids);
         check(ids.length === expected, `${className}: free cast source controls found`);
         ids.forEach(id => { document.getElementById(id).checked = true; });
         check(rest("shortRest").ok && ids.every(id => document.getElementById(id).checked), `${className}: free casts retained after short rest`);
         check(rest("longRest").ok && ids.every(id => !document.getElementById(id).checked), `${className}: free casts restored after long rest`);
-        if (className === "fighter") field("feat-0", "警覺");
+        if (className === "fighter") automaticFeats();
       }
       for (const [className, key] of [["wizard", "wizard-arcane-recovery"], ["druid", "druid-natural-recovery-spell-slots"]]) {
         prepare(className); if (className === "druid") field("druid-land", "arid");
@@ -221,14 +233,14 @@ async function main() {
       applyStateObject(savedRest);
       check(state().temporaryHp === 0 && state().exhaustionLevel === 2 && !state().druid.companion && !state().concentrationSpellId, "JSON restores rested state");
 
-      prepare("fighter", 8, "orc"); field("feat-0", "最佳旅伴");
+      prepare("fighter", 8, "orc"); manualFeat("最佳旅伴");
       TabletopMode.applyState({ temporaryHp: 20 });
       check(rest("shortRest").ok && state().temporaryHp === 20, "unselected companion keeps short-rest temporary HP");
       check(rest("shortRest", { companion: { ability: "wis", amount: 11 } }).ok && state().temporaryHp === 11, "companion replaces instead of stacking");
       check(rest("longRest", { companion: { ability: "cha", amount: 12 } }).ok && state().temporaryHp === 12, "companion applies after long-rest clear");
       const captured = JSON.stringify(collectStateObject());
       check(!rest("longRest", { companion: { ability: "str", amount: 9 } }).ok && JSON.stringify(collectStateObject()) === captured, "invalid companion is atomic");
-      field("feat-0", "警覺");
+      manualFeat("警覺");
       check(!rest("shortRest", { companion: { ability: "wis", amount: 11 } }).ok, "companion requires selected feat");
       field("hp", 0); field("lifedicen", 2);
       const first = TabletopMode.spendHitDice({ manualHealing: 1 });
@@ -252,6 +264,7 @@ async function main() {
       check(TabletopMode.spendHitDice({ count: 8, forceRoll: true }).spent === 2
         && context().hitDice === 0, "forced batch stops at remaining dice");
       window.restTestField = field;
+      window.restTestManualFeat = manualFeat;
       return checks;
     });
     console.log(`Rest mechanics: ${count} assertions passed.`);
@@ -326,7 +339,7 @@ async function main() {
     assert.equal(await page.evaluate(() => restCompletionNotices[2].dialogOpen), false, "header close shows completion only after closing");
     await page.evaluate(() => SpellManagement.withRestoreBatch(() => {
       restTestField("class", "wizard"); restTestField("level", 8); restTestField("race", "elf"); restTestField("elf-lineage", "high_elf");
-      restTestField("feat-0", "最佳旅伴"); restTestField("hp", 2); restTestField("lifedicen", 3);
+      restTestManualFeat("最佳旅伴"); restTestField("hp", 2); restTestField("lifedicen", 3);
       TabletopMode.applyState({ exhaustionLevel: 2, temporaryHp: 9, concentrationSpellId: "entangle" });
       TabletopMode.setMode("tabletop"); TabletopMode.setPanel("resources");
       TabletopMode.getCanonicalSpellSlotGroups().forEach(group => group.controls.forEach(control => { document.getElementById(control.id).checked = true; }));
