@@ -2841,7 +2841,7 @@
       tags.push({
         key: "exhaustion",
         label:
-          `力竭${exhaustion.level},骰-${exhaustion.d20Penalty},速-${exhaustion.speedPenaltyFeet}`
+          `力竭${exhaustion.level}、骰-${exhaustion.d20Penalty}、速-${exhaustion.speedPenaltyFeet}`
       });
     }
 
@@ -4439,7 +4439,7 @@
 
     if (exhaustion.level > 0) {
       markStateChanged(
-        `目前狀態／危害已更新，共標記 ${total} 項。力竭${exhaustion.level},骰-${exhaustion.d20Penalty},速-${exhaustion.speedPenaltyFeet}。`
+        `目前狀態／危害已更新，共標記 ${total} 項。力竭${exhaustion.level}、骰-${exhaustion.d20Penalty}、速-${exhaustion.speedPenaltyFeet}。`
       );
 
       return;

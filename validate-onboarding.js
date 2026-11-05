@@ -1371,14 +1371,16 @@ async function verifyQuickBuildBackgroundCards(browser, url) {
   try {
     await page.goto(url);
     await page.waitForFunction(() => window.quickBuild && window.getBackgroundRules);
-    const { cards, expected } = await page.evaluate(() => {
+    const { cards, expected, summaries } = await page.evaluate(() => {
       quickBuild.open();
       const cards = Array.from(document.querySelectorAll("#quick-build-wizard [data-background]"), card => [card.dataset.background, card.querySelector("h4").textContent]);
+      const summaries = Array.from(document.querySelectorAll("#quick-build-wizard [data-background] .quick-build-summary"), summary => summary.textContent);
       quickBuild.close(false);
       const expected = Object.keys(backgroundRules).map(id => [id, backgroundRules[id].name + getContentSourceLabel(getBackgroundSource(id))]);
-      return { cards, expected };
+      return { cards, expected, summaries };
     });
     assert.deepEqual([...cards].sort(), [...expected].sort(), "quick build shows one card per background content file");
+    for (const summary of summaries) assert.match(summary, /^技能熟練[^,]+、[^,]+起源專長[^,]+可調整屬性[^,、]+、[^,、]+、[^,、]+$/, "background card lists use 、");
     assert.deepEqual(errors, []);
   } finally { await page.close(); }
   console.log("Quick build background cards cover every background content file.");

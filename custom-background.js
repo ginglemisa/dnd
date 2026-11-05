@@ -48,6 +48,9 @@
     };
   }
 
+  // 存檔的屬性與技能維持半形逗號（舊存檔、JSON 與分享都是這個格式），只有顯示時改用頓號。
+  const displayList = text => text.split(",").join("、");
+
   function syncControls() {
     const select = document.getElementById("background");
     select.querySelector('option[value="custom"]').textContent = background?.名稱 || "自訂";
@@ -65,8 +68,8 @@
     const block = document.createElement("div");
     block.className = "background-guide-block";
     for (const [label, text] of [
-      ["背景", globalScope.formatContentSourceName(background.名稱, "custom")], ["屬性", background.屬性],
-      ["專長", background.專長], ["技能熟練", background.技能熟練],
+      ["背景", globalScope.formatContentSourceName(background.名稱, "custom")], ["屬性", displayList(background.屬性)],
+      ["專長", background.專長], ["技能熟練", displayList(background.技能熟練)],
       ["工具熟練", background.工具熟練]
     ]) {
       const row = document.createElement("div");

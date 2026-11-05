@@ -1257,6 +1257,7 @@ async function verifyCustomBackground(browser, url) {
     assert.equal(await editButton.isVisible(), true);
     assert.equal(await page.locator('#background option[value="custom"]').textContent(), "自訂冒險");
     assert.match(await page.locator("#backgroundFeatures").textContent(), /背景：自訂冒險/);
+    assert.match(await page.locator("#backgroundFeatures").textContent(), /屬性：力量、敏捷、體質.*技能熟練：運動、隱匿/, "custom background lists use 、 while the saved format keeps commas");
     assert.equal(await page.locator('[data-feature-title="background"]').textContent(), "自訂冒險自訂背景", "custom background title uses its name and a fixed subtitle");
     assert.equal(await page.locator(".custom-background-equipment").textContent(), `裝備：A、B 二擇一(A) ${equipmentA}(B) 50 金幣`);
     assert.equal(await page.locator("#background").evaluate(select => {
@@ -1635,6 +1636,7 @@ async function verifyCharacterFeatures(browser, url) {
     await picker.locator('[data-feature-picker="background"] [data-picker-value="seeker"]').click();
     assert.equal(await modal.locator('[data-feature-title="background"]').textContent(), "孤芳Seeker", "background panel title follows the picked background");
     assert.equal(await modal.locator("#backgroundFeatures strong", { hasText: "背景：" }).isHidden(), true, "title replaces the background name row");
+    assert.match(await modal.locator("#backgroundFeatures").textContent(), /屬性：體質、感知、魅力[\s\S]*技能熟練：醫藥、宗教/, "background detail lists use 、");
     if (previousBackground) await picker.locator(`[data-feature-picker="background"] [data-picker-value="${previousBackground}"]`).click();
     else await page.locator("#background").selectOption("");
     assert.equal(await pickerOptions("class").first().isVisible(), false);

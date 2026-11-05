@@ -19,7 +19,7 @@
       "maxItems": 3,
       "uniqueItems": true,
       "items": { "enum": ["str", "dex", "con", "int", "wis", "cha"] },
-      "description": "可調整的三項屬性（ID），購點與快速創角依此限制加值；顯示為「智力,感知,魅力」。"
+      "description": "可調整的三項屬性（ID），購點與快速創角依此限制加值；顯示為「智力、感知、魅力」。"
     },
     "feat": {
       "description": "起源專長：專長 ID（content/srd/feats 的起源專長）。魔法學徒寫成 { id: 魔法學徒, spellList: 職業 ID }，顯示為「魔法學徒（牧師）」。",
@@ -45,7 +45,7 @@
       "description": "技能熟練（技能 ID，即 character-rules.js CharacterSkillAbilities 的中文名）；顯示時自動加上提示框。"
     },
     "tool": {
-      "description": "工具熟練：工具 ID（tool-data.js 的工具名稱），或 { chooseFrom: 工具組 ID } 從該組擇一（顯示為「擇一賭具：骰子,龍棋,紙牌,三龍牌」）。",
+      "description": "工具熟練：工具 ID（tool-data.js 的工具名稱），或 { chooseFrom: 工具組 ID } 從該組擇一（顯示為「擇一賭具：骰子、龍棋、紙牌、三龍牌」）。",
       "oneOf": [
         { "type": "string", "minLength": 1 },
         {
