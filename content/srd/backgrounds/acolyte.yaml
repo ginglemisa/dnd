@@ -8,7 +8,7 @@ skills: [洞悉, 宗教]
 tool: 書法工具
 equipment:
   A:
-    items: [書法工具, 書籍（禱文）, 聖徽, 羊皮紙 ×10, 祭祀長袍]
+    items: [書法工具, 書籍（禱文）, 聖徽, 羊皮紙 ×10, 祭袍]
     gold: 8
   B: { gold: 50 }
 description: |

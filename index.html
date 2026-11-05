@@ -81,10 +81,10 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261104-item-actions">
+  <link rel="stylesheet" href="styles.css?v=20261105-starting-equipment">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261103-roll-min" defer></script>
-  <script src="monster.js?v=20261025-beast-perception" defer></script>
+  <script src="monster.js?v=20261105-starting-equipment" defer></script>
   <script src="druid-wild-shape-beasts.js?v=20261031-beast-file" defer></script>
   <script src="class-content.generated.js?v=a42b11179858" defer></script>
   <script src="class-content.private.generated.js" defer></script>
@@ -92,7 +92,7 @@
   <script src="background-content.generated.js?v=c9f6c95f6ead" defer></script>
   <script src="tool-data.js?v=20261104-class-picks" defer></script>
   <script src="feat-content.generated.js?v=472eb42de3f0" defer></script>
-  <script src="equipment-notes.js?v=20261104-oil-detail" defer></script>
+  <script src="equipment-notes.js?v=20261105-starting-equipment" defer></script>
   <script src="spell-content.generated.js?v=0" defer></script>
   <script src="spell-list.js?v=20261104-spell-srd-classes" defer></script>
   <script src="condition.js?v=20261021-bonus-wording" defer></script>
@@ -101,7 +101,7 @@
   <script src="app-dialog.js?v=20261028-custom-spells" defer></script>
   <script src="custom-background.js?v=20261102-source-label" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
-  <script src="tabletop-mode.js?v=20261104-condition-help-scroll" defer></script>
+  <script src="tabletop-mode.js?v=20261105-inventory-redesign" defer></script>
   <script src="tabletop-druid.js?v=20261103-known-count" defer></script>
   <script src="tabletop-resources.js?v=20261102-race-content" defer></script>
   <script src="tabletop-actions.js?v=20261104-weapon-switch" defer></script>
@@ -109,7 +109,7 @@
   <script src="tabletop-spells.js?v=20261104-weapon-damage-type" defer></script>
   <script src="legal-modal.js?v=20261022-game-icons" defer></script>
   <script src="onboarding-tour.js?v=20261104-inventory" defer></script>
-  <script src="quick-build.js?v=20261105-inventory-text" defer></script>
+  <script src="quick-build.js?v=20261105-starting-equipment" defer></script>
   <script src="spellbook.js?v=20261104-familiar-references" defer></script>
   <script src="spell-management.js?v=20261103-manual-toggle" defer></script>
   <script src="class-option-memory.js?v=20261024-class-split" defer></script>
@@ -1144,28 +1144,23 @@
   </div> <!-- END OF section -->
 
   <div class="section">
-    <!-- 標題列工具（整理成標籤、齒輪）、物品欄與商店按鈕跟著攜帶物品文字框在角色卡與跑團模式之間搬移（tabletop-mode.js）；物品標籤由 inventory-ui.js 繪製。 -->
-    <div class="inventory-heading"><h3>攜帶物品</h3><div id="inventory-heading-sheet-mount" class="inventory-heading-mount"><div id="inventory-heading-tools" class="inventory-heading-tools"><button type="button" id="inventory-tidy" class="inventory-tidy" aria-haspopup="dialog" hidden>整理成標籤</button><button type="button" id="inventory-arrange" class="inventory-arrange" aria-pressed="false" hidden aria-label="整理物品排列" title="整理物品排列"><span aria-hidden="true">🤚</span></button><button type="button" id="inventory-gear" class="inventory-gear" aria-expanded="false" aria-controls="inventory-tools" aria-label="顯示物品欄選項"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></div></div></div>
-    <div id="gear-notes-sheet-mount"><div id="inventory-panel" class="inventory-panel" aria-label="物品欄"><div id="inventory-tools" class="inventory-tools" hidden><p id="inventory-weight" class="inventory-weight" aria-live="polite"></p><div class="inventory-tools__actions"><button type="button" id="inventory-add" class="inventory-add" aria-haspopup="dialog">自訂物品</button><button type="button" id="inventory-text-only" class="inventory-text-only" aria-pressed="false">純文字管理</button></div></div><p id="inventory-over" class="inventory-over" role="status" hidden>負重超過攜帶上限 <button type="button" id="inventory-over-hide" class="inventory-over__hide">隱藏</button></p><p id="inventory-arrange-hint" class="inventory-arrange-hint" hidden>拖曳標籤調整順序，再按 🤚 結束。</p><ul id="inventory-tags" class="inventory-tags" aria-label="攜帶的物品"></ul><p class="inventory-empty">物品欄還是空的，可以從商店購買或免費取得，或用齒輪裡的「自訂物品」。</p></div><textarea id="gear-notes" rows="3" aria-label="其他攜帶物品（文字）" placeholder="其他攜帶物品或補充說明（自由文字）..."></textarea><button type="button" id="equipment-shop-open" class="equipment-shop-launch" data-equipment-shop-open aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M3 4h2.2l2.1 10.2a1.5 1.5 0 0 0 1.5 1.2h8.4a1.5 1.5 0 0 0 1.5-1.1L20.5 8H6.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="19.5" r="1.5" fill="currentColor"/><circle cx="17" cy="19.5" r="1.5" fill="currentColor"/></svg><span>開啟商店／新增物品</span></button></div>
+    <!-- 標題列「⋯ 更多」選單、物品欄、攜帶物品文字框與底部按鈕列跟著在角色卡與跑團模式之間搬移（tabletop-mode.js）；物品標籤由 inventory-ui.js 繪製。
+         錢財列只在角色卡；選單裡標 data-inventory-sheet-only 的錢財項目在跑團模式隱藏。 -->
+    <div class="inventory-heading"><h3>攜帶物品</h3><div id="inventory-heading-sheet-mount" class="inventory-heading-mount"><div id="inventory-heading-tools" class="inventory-heading-tools"><button type="button" id="inventory-more" class="inventory-more" aria-expanded="false" aria-controls="inventory-more-panel" aria-label="更多物品欄選項" title="更多"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><circle cx="5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="19" cy="12" r="1.9"/></svg><span class="inventory-more__dot" hidden></span></button><div id="inventory-more-panel" class="inventory-more-panel" hidden><button type="button" id="inventory-tidy" class="inventory-more-item" aria-haspopup="dialog" data-more-close hidden>整理成標籤</button><button type="button" id="inventory-arrange" class="inventory-more-item" aria-pressed="false" data-more-close>整理排列</button><button type="button" id="money-adjust-toggle" class="inventory-more-item" aria-haspopup="dialog" data-more-close data-inventory-sheet-only>調整餘額</button><button type="button" id="inventory-coins-toggle" class="inventory-more-item inventory-more-switch" aria-pressed="false" data-inventory-sheet-only><span>顯示各幣值</span><span class="inventory-switch" aria-hidden="true"></span></button><button type="button" id="inventory-weight-toggle" class="inventory-more-item inventory-more-switch" aria-pressed="true"><span>顯示負重</span><span class="inventory-switch" aria-hidden="true"></span></button><div class="inventory-more-separator" role="separator"></div><button type="button" id="inventory-text-only" class="inventory-more-item inventory-more-switch" aria-pressed="false" data-more-close><span>純文字管理</span><span class="inventory-switch" aria-hidden="true"></span></button></div></div></div></div>
     <div class="money-section" aria-label="錢財管理">
-      <div class="money-balance-header">
-        <h4 class="money-title">總財產</h4>
-        <div class="money-header-actions">
-          <button type="button" id="money-adjust-toggle" class="money-secondary-btn">調整餘額</button>
-          <button type="button" id="money-log-toggle" class="money-secondary-btn">最近交易</button>
-        </div>
-      </div>
-      <p id="money-summary" class="money-summary" aria-live="polite">0 銅幣</p>
-      <div class="money-quick-actions">
+      <div class="money-overview">
+        <h4 class="money-title sr-only">總財產</h4>
+        <div class="money-overview__total"><svg class="money-overview__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><ellipse cx="9" cy="7" rx="6" ry="2.6"/><path d="M3 7v4c0 1.4 2.7 2.6 6 2.6s6-1.2 6-2.6V7"/><path d="M9 16.2c-3.3 0-6-1.2-6-2.6"/><ellipse cx="15" cy="15" rx="6" ry="2.6"/><path d="M9 15v2.4c0 1.4 2.7 2.6 6 2.6s6-1.2 6-2.6V15"/></svg><p id="money-summary" class="money-summary" aria-live="polite">0 銅幣</p></div>
         <div class="money-type-toggle" aria-label="新增交易">
           <button type="button" id="money-type-expense">支出</button>
-          <button type="button" id="money-type-income" class="primary">收入</button>
+          <button type="button" id="money-type-income">收入</button>
+          <button type="button" id="money-log-toggle" class="money-icon-btn" aria-label="最近交易" title="最近交易"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3 4v4.5h4.5"/><path d="M12 7.5V12l3 2"/></svg></button>
         </div>
-        <label class="money-detail-toggle">
-          <span>貨幣數量</span>
-          <input type="checkbox" id="money-count-weight" role="switch" aria-controls="money-balance-details" aria-expanded="false">
-        </label>
       </div>
+      <label class="money-detail-toggle" hidden>
+        <span>貨幣數量</span>
+        <input type="checkbox" id="money-count-weight" role="switch" aria-controls="money-balance-details" aria-expanded="false">
+      </label>
       <div id="money-balance-details" class="money-balance-details is-hidden" hidden>
         <div id="money-balance-grid" class="money-balance-grid">
           <div><span>白金幣</span><strong id="money-display-pp">0</strong></div>
@@ -1234,6 +1229,7 @@
       <input type="hidden" id="money-log-data" value="[]">
       <input type="hidden" id="money-history-data" value="[]">
     </div>
+    <div id="gear-notes-sheet-mount"><div id="inventory-panel" class="inventory-panel" aria-label="物品欄"><div id="inventory-weight" class="inventory-weight" aria-live="polite"></div><p id="inventory-over" class="inventory-over" role="status" hidden>負重超過攜帶上限 <button type="button" id="inventory-over-hide" class="inventory-over__hide">隱藏</button></p><p id="inventory-arrange-hint" class="inventory-arrange-hint" hidden><span>拖曳標籤調整順序，或用方向鍵前後移動。</span><button type="button" id="inventory-arrange-done" class="inventory-arrange-done">完成</button></p><ul id="inventory-tags" class="inventory-tags" aria-label="攜帶的物品"></ul><p class="inventory-empty">物品欄還是空的：可以從下方商店購買或免費取得，或建立自訂物品。</p></div><textarea id="gear-notes" rows="3" aria-label="其他攜帶物品（文字）" placeholder="其他物品或備註（自由文字）"></textarea><div id="inventory-actions" class="inventory-actions"><button type="button" id="equipment-shop-open" class="equipment-shop-launch" data-equipment-shop-open aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M3 4h2.2l2.1 10.2a1.5 1.5 0 0 0 1.5 1.2h8.4a1.5 1.5 0 0 0 1.5-1.1L20.5 8H6.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="19.5" r="1.5" fill="currentColor"/><circle cx="17" cy="19.5" r="1.5" fill="currentColor"/></svg><span>商店</span></button><button type="button" id="inventory-add" class="inventory-add" aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg><span>自訂物品</span></button></div></div>
   </div>
 
   <div class="section">
@@ -2337,8 +2333,9 @@ function updateBackgroundFeature() {
 
    <div class="background-guide-block background-guide-section">
      <div><strong>裝備：</strong>A、B 二擇一</div>
-     <div><strong>(A) </strong>${text.equipmentA}</div>
-     <div><strong>(B) </strong>${text.equipmentB}</div>
+     <div><strong><button type="button" class="starting-equipment-take" data-starting-equipment="A">(A)</button> </strong>${text.equipmentA}</div>
+     <div><strong><button type="button" class="starting-equipment-take" data-starting-equipment="B">(B)</button> </strong>${text.equipmentB}</div>
+     <div class="starting-equipment-hint">＊點按 (A) 或 (B) 取得初始裝備或金錢</div>
    </div>
 
    <div class="background-guide-description">
@@ -2990,11 +2987,11 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
   globalThis.armors = globalThis.armors || [];
   globalThis.shield = globalThis.shield || [];
 </script>
-<script src="equipment-data.js?v=20261104-item-actions" defer></script>
+<script src="equipment-data.js?v=20261105-starting-equipment" defer></script>
 <script src="search.js?v=20261104-inventory-detail" defer></script>
-<script src="equipment-shop.js?v=20261027-shop-tool-order" defer></script>
-<script src="inventory.js?v=20261104-item-actions" defer></script>
-<script src="inventory-ui.js?v=20261104-item-actions" defer></script>
+<script src="equipment-shop.js?v=20261105-starting-equipment" defer></script>
+<script src="inventory.js?v=20261105-starting-equipment" defer></script>
+<script src="inventory-ui.js?v=20261105-starting-equipment" defer></script>
 
 <script>
 function getModifier(statId) {
@@ -4534,7 +4531,7 @@ function renderSkillPopupHtml(skillLabel, conditionKey) {
         `<p class="skill-popup-paragraph">${escapeHtml(effect)}</p>`).join("")}</div>`;
   }
   const normalizedKey = normalizeSkillKey(skillLabel);
-  const text = skills_example_uses[normalizedKey];
+  const text = skills_example_uses[normalizedKey] || packTipText(normalizedKey);
   if (!text) return "";
 
   const description = text.includes("\n\n")
@@ -5028,6 +5025,7 @@ const APP_STORAGE_KEYS = Object.freeze([
   FEAT_DISCLOSURE_STATE_KEY,
   SPELL_OVERVIEW_DISCLOSURE_STATE_KEY,
   CLASS_FEATURE_PROMPT_DISABLED_KEY,
+  "dnd.inventoryWeightHidden.v1",
   "dnd.quickBuildDraft.v1",
   POINT_BUY_LAST_APPLIED_KEY,
   TABLETOP_ACTION_PREFERENCES_STORAGE_KEY,
@@ -6498,7 +6496,15 @@ function setupMoneyTracker() {
     scheduleSaveAllFields();
     return true;
   };
-  window.MoneyTracker = Object.freeze({ readTotal, formatAmount, purchaseItems });
+  // 起始裝備的金幣（職業頁、背景頁的（A）（B），inventory-ui.js）記一筆收入。
+  const receiveGold = async (gold, note) => {
+    const amount = toSafeInt(gold);
+    if (amount < 1) return true;
+    if (!(await recordTransaction({ type: "income", note, amountCopper: amount * 100, amountParts: { cp: 0, sp: 0, gp: amount, pp: 0 } }))) return false;
+    scheduleSaveAllFields();
+    return true;
+  };
+  window.MoneyTracker = Object.freeze({ readTotal, formatAmount, purchaseItems, receiveGold });
 
   renderLogList();
   updateSummary();
@@ -6619,6 +6625,7 @@ window.addEventListener("DOMContentLoaded", async function() {
   if (sharedData) {
   SHARE_MODE = true;
   window.SHARE_MODE = true;
+  document.documentElement.classList.add("is-share-mode");
   const exitShareLink = document.getElementById("exit-share-mode");
   const exitShareUrl = new URL(location.href);
   exitShareUrl.hash = "";
@@ -6643,6 +6650,7 @@ window.addEventListener("DOMContentLoaded", async function() {
   if (hasShareHash) {
     SHARE_MODE = true;
     window.SHARE_MODE = true;
+    document.documentElement.classList.add("is-share-mode");
     closeShareModeGuideEntries();
     await window.AppDialog.showMessage({
       title: "分享連結讀取失敗",

@@ -8,16 +8,22 @@
  *   （寫回裝備頁下拉）、工具與撬棍的檢定、醫療包的使用次數、治療藥水飲用回復生命值、投擲物與毒藥；檢定與傷害骰只在擲骰功能開啟時顯示。
  *   目錄物品由商店（equipment-shop.js）購買或免費取得；這裡只建立自訂物品（`inventory-custom` 視窗，名稱、磅數、數量、位置、描述）。
  *   資料一律經 window.Inventory。
- * - 標題列齒輪展開 #inventory-tools（負重、「自訂物品」與「只以文字管理物品」）並在齒輪左側顯示 🤚（整理），每次載入預設收起。
- * - 🤚 整理模式：標籤輕微抖動，點標籤不開視窗；拖曳（Pointer Events，滑鼠與觸控相同）調整順序，拖到容器標籤上放進去，
- *   展開容器後可在內容物之間排列或拖出。鍵盤用左右方向鍵在同一處前後移動。順序就是物品欄的資料順序（Inventory.move()）。
- *   再按 🤚、Esc、收起齒輪或切到純文字管理時結束。
+ * - 標題列只有「⋯ 更多」（#inventory-more）：展開 #inventory-more-panel，內有整理成標籤（文字有可轉換的行才出現，⋯ 上同時亮一個小點）、
+ *   整理排列、調整餘額、顯示各幣值、顯示負重與純文字管理。會開視窗或改變模式的項目（data-more-close）按下時先收起選單、焦點回到 ⋯，
+ *   開關類項目保留選單。錢財項目（data-inventory-sheet-only）在跑團模式隱藏（錢財列只在角色卡）。點外面、Esc 或 Tab 離開時收起。
+ *   「顯示各幣值」代按錢財區隱藏的 #money-count-weight（角色欄位）；「顯示負重」是這台裝置的偏好（dndStorage `dnd.inventoryWeightHidden.v1`）。
+ * - 物品分組顯示（只影響畫面，不改資料順序）：依序是「裝備中」「身上」「容器」，有兩組以上才加分組標題。
+ *   容器是標籤加「N ▸」展開鈕（空容器只寫「0」、不能展開）；最外層容器展開時變成滿版框，內容物排在框內，巢狀容器展開時換行縮排。
+ *   最外層裝備中的物品靠分組辨認，只有容器內的才加「裝備中」小字。
+ * - 整理模式（選單「整理排列」）：標籤輕微抖動，點標籤不開視窗；拖曳（Pointer Events，滑鼠與觸控相同）調整順序，拖到容器標籤或容器框上放進去，
+ *   展開容器後可在內容物之間排列或拖出。鍵盤用方向鍵在同一組前後移動。順序就是物品欄的資料順序（Inventory.move()）。
+ *   標籤上方提示列的「完成」、Esc 或切到純文字管理時結束。
  * - 「只以文字管理物品」按下時標籤轉成攜帶物品文字的「物品欄：」行並清空物品欄，標籤、負重與整理功能都隱藏；
  *   再按一次回到標籤，物品欄從已裝備的物品開始，其餘由「整理成標籤」轉回。
- * - 「整理成標籤」只在攜帶物品文字有「物品欄：」「購買物品：」「初始裝備：」行時出現，預覽後由玩家確認才轉成標籤並移除那幾行；
- *   因裝備而補上的物品先抵掉同名數量，不重複加入。
- * - 負重：物品＋硬幣重量對照 index.html 的 getCarryCapacityPounds()，超過時只提示，不改速度；提示不受齒輪收合影響，
- *   按「隱藏」後到重新整理前不再顯示。
+ * - 「整理成標籤」只在攜帶物品文字有「物品欄：」「購買物品：」「初始裝備：」行時出現在選單裡，這時不顯示「物品欄還是空的」；
+ *   預覽後由玩家確認才轉成標籤並移除那幾行；因裝備而補上的物品先抵掉同名數量，不重複加入。
+ * - 負重條：物品＋硬幣重量對照 index.html 的 getCarryCapacityPounds()，超過時改警示色並寫「超過上限」，只提示不改速度；
+ *   負重條關掉時，超過上限改在標籤上方顯示一行提示，按「隱藏」後到重新整理前不再顯示。
  * - 展開與隱藏狀態只留在記憶體；視窗內的輸入框不設 id，不會進角色 JSON、分享或 autosave。
  */
 (function (globalScope) {
@@ -25,6 +31,7 @@
 
   const TEXT_PREFIX = "物品欄：";
   const LEGACY_PREFIXES = Object.freeze([[TEXT_PREFIX, ""], ["購買物品：", ""], ["初始裝備：", "initial"]]);
+  const WEIGHT_HIDDEN_KEY = "dnd.inventoryWeightHidden.v1";
   const expanded = new Set();
   let rendering = false;
   let overDismissed = false;
@@ -54,12 +61,35 @@
     return `${api().getLabel(entry)}${entry.quantity > 1 ? ` ×${entry.quantity}` : ""}`;
   }
 
-  // 齒輪收起或只以文字管理時「自訂物品」看不到，焦點改回齒輪。
+  // 只以文字管理時「自訂物品」看不到，焦點改回「⋯ 更多」。
   function fallbackFocusTarget() {
     const add = document.getElementById("inventory-add");
-    return document.getElementById("inventory-tools")?.hidden === false && add && !add.hidden
-      ? add
-      : document.getElementById("inventory-gear");
+    return add && !add.hidden ? add : document.getElementById("inventory-more");
+  }
+
+  function moreButton() {
+    return document.getElementById("inventory-more");
+  }
+
+  function weightHidden() {
+    try { return globalScope.dndStorage?.getItem(WEIGHT_HIDDEN_KEY) === "true"; } catch { return false; }
+  }
+
+  function setWeightHidden(hidden) {
+    try {
+      if (hidden) globalScope.dndStorage?.setItem(WEIGHT_HIDDEN_KEY, "true");
+      else globalScope.dndStorage?.removeItem(WEIGHT_HIDDEN_KEY);
+    } catch { /* 存不了時只影響這次畫面。 */ }
+    renderWeight();
+  }
+
+  function setMoreOpen(open, focusButton = false) {
+    const more = moreButton();
+    const panel = document.getElementById("inventory-more-panel");
+    if (!more || !panel) return;
+    more.setAttribute("aria-expanded", String(open));
+    panel.hidden = !open;
+    if (!open && focusButton) more.focus();
   }
 
   function fieldValue(id) {
@@ -852,40 +882,46 @@
           }
         }
       ],
-      // 轉換後「整理成標籤」會隱藏，焦點改到「自訂物品」或齒輪。
+      // 轉換後「整理成標籤」提示會隱藏，焦點改到「自訂物品」或齒輪。
       onClose: result => {
         if (result === "tidied") globalScope.setTimeout(() => fallbackFocusTarget()?.focus(), 0);
       }
     });
   }
 
-  function renderEntries(parentUid, listEl, all, usage) {
-    all.filter(entry => (entry.in || "") === parentUid).forEach((entry, index) => {
-      const item = el("li", "inventory-tag-item");
-      item.dataset.inventoryItem = entry.uid;
-      // 抖動錯開相位，看起來不會整排同步。
-      item.style.setProperty("--inventory-jiggle-delay", `${-((index * 7) % 5) * 0.05}s`);
-      const tag = button("inventory-tag", entryText(entry));
-      tag.dataset.inventoryUid = entry.uid;
-      if (arranging) tag.title = "拖曳或用方向鍵調整順序";
-      else {
-        tag.setAttribute("aria-haspopup", "dialog");
-        tag.title = "調整數量、位置或刪除";
-      }
-      const key = usageKey(entry);
-      if (key && usage.get(key)) {
-        tag.classList.add("is-equipped");
-        tag.append(el("span", "inventory-tag__badge", "裝備中"));
-      }
-      if (!entry.itemId) tag.classList.add("is-custom");
-      tag.addEventListener("click", () => { if (!arranging) openItemDialog(entry.uid, tag); });
-      item.appendChild(tag);
-      if (api().isContainer(entry)) {
-        const children = all.filter(child => child.in === entry.uid);
-        const isOpen = expanded.has(entry.uid);
-        item.classList.add("is-container");
-        item.classList.toggle("is-expanded", isOpen);
-        const toggle = button("inventory-tag__toggle", `${isOpen ? "▾" : "▸"} ${children.length}`);
+  function renderEntry(entry, index, listEl, all, usage, group = "") {
+    const item = el("li", "inventory-tag-item");
+    item.dataset.inventoryItem = entry.uid;
+    if (group) item.dataset.inventoryGroup = group;
+    // 抖動錯開相位，看起來不會整排同步。
+    item.style.setProperty("--inventory-jiggle-delay", `${-((index * 7) % 5) * 0.05}s`);
+    const tag = button("inventory-tag", entryText(entry));
+    tag.dataset.inventoryUid = entry.uid;
+    if (arranging) tag.title = "拖曳或用方向鍵調整順序";
+    else {
+      tag.setAttribute("aria-haspopup", "dialog");
+      tag.title = "調整數量、位置或刪除";
+    }
+    const key = usageKey(entry);
+    if (key && usage.get(key)) {
+      tag.classList.add("is-equipped");
+      // 最外層靠「裝備中」分組辨認，容器裡的才加小字。
+      if (!group) tag.append(el("span", "inventory-tag__badge", "裝備中"));
+    }
+    if (!entry.itemId) tag.classList.add("is-custom");
+    tag.addEventListener("click", () => { if (!arranging) openItemDialog(entry.uid, tag); });
+    item.appendChild(tag);
+    if (api().isContainer(entry)) {
+      const children = all.filter(child => child.in === entry.uid);
+      // 空容器沒有東西可看：不展開，計數只寫「0」、沒有箭頭。
+      const isOpen = children.length > 0 && expanded.has(entry.uid);
+      // 最外層容器收合時是小標籤，展開時才變成滿版框，內容物排在框內。
+      const isBox = group === "container" && isOpen;
+      item.classList.add("is-container");
+      item.classList.toggle("is-box", isBox);
+      item.classList.toggle("is-expanded", isOpen);
+      if (children.length) {
+        const toggle = button("inventory-tag__toggle", isBox ? `${children.length} 項 ▾` : `${children.length} ${isOpen ? "▾" : "▸"}`);
         toggle.setAttribute("aria-expanded", String(isOpen));
         toggle.setAttribute("aria-label", `${isOpen ? "收合" : "展開"}${api().getLabel(entry)}的內容物（${children.length} 項）`);
         toggle.dataset.inventoryToggle = entry.uid;
@@ -896,36 +932,101 @@
           document.querySelector(`[data-inventory-toggle="${entry.uid}"]`)?.focus();
         });
         item.appendChild(toggle);
-        if (isOpen) {
-          const nested = el("ul", "inventory-tags inventory-container-contents");
-          nested.setAttribute("aria-label", `${api().getLabel(entry)}的內容物`);
-          if (children.length) renderEntries(entry.uid, nested, all, usage);
-          else nested.appendChild(el("li", "inventory-container-empty", "空的"));
-          item.appendChild(nested);
-        }
+      } else {
+        const count = el("span", "inventory-tag__toggle is-empty", "0");
+        count.title = "空的";
+        item.appendChild(count);
       }
-      listEl.appendChild(item);
+      if (isOpen) {
+        const nested = el("ul", "inventory-tags inventory-container-contents");
+        nested.setAttribute("aria-label", `${api().getLabel(entry)}的內容物`);
+        renderEntries(entry.uid, nested, all, usage);
+        item.appendChild(nested);
+      }
+    }
+    listEl.appendChild(item);
+  }
+
+  function renderEntries(parentUid, listEl, all, usage) {
+    all.filter(entry => (entry.in || "") === parentUid).forEach((entry, index) => renderEntry(entry, index, listEl, all, usage));
+  }
+
+  // 最外層分組：裝備中、身上、容器；有兩組以上時才加分組標題。
+  function renderTopLevel(listEl, all, usage) {
+    const top = all.filter(entry => !entry.in);
+    const isEquipped = (entry) => {
+      const key = usageKey(entry);
+      return Boolean(key && usage.get(key));
+    };
+    const containers = top.filter(entry => api().isContainer(entry));
+    const equipped = top.filter(entry => !api().isContainer(entry) && isEquipped(entry));
+    const carried = top.filter(entry => !api().isContainer(entry) && !isEquipped(entry));
+    const groups = [["equipped", "裝備中", equipped], ["carried", "身上", carried], ["container", "容器", containers]].filter(([, , entries]) => entries.length);
+    let index = 0;
+    groups.forEach(([group, title, entries]) => {
+      if (groups.length > 1) listEl.appendChild(el("li", "inventory-group-label", title));
+      entries.forEach(entry => renderEntry(entry, index++, listEl, all, usage, group));
     });
   }
 
   function renderWeight() {
     const summary = document.getElementById("inventory-weight");
     if (!summary || !api()) return;
+    const textOnly = api().isTextOnly();
+    const hidden = weightHidden();
     const { weight } = api().getWeight();
     const coins = typeof globalScope.getCoinWeightPounds === "function" ? globalScope.getCoinWeightPounds() : 0;
     const capacity = typeof globalScope.getCarryCapacityPounds === "function" ? globalScope.getCarryCapacityPounds() : 0;
     const total = Math.round((weight + coins) * 100) / 100;
-    const over = capacity > 0 && total > capacity && !api().isTextOnly();
+    const over = capacity > 0 && total > capacity && !textOnly;
+    summary.hidden = textOnly || hidden;
     summary.classList.toggle("is-over", over);
+    // 負重條自己會變色；關掉負重條時才另外顯示一行超重提示。
     const warning = document.getElementById("inventory-over");
-    if (warning) warning.hidden = !over || overDismissed;
+    if (warning) warning.hidden = !over || overDismissed || !hidden;
+    const weightToggle = document.getElementById("inventory-weight-toggle");
+    weightToggle?.setAttribute("aria-pressed", String(!hidden));
+    if (weightToggle) weightToggle.hidden = textOnly;
+    const coinsToggle = document.getElementById("inventory-coins-toggle");
+    coinsToggle?.setAttribute("aria-pressed", String(document.getElementById("money-count-weight")?.checked === true));
+    const row = el("span", "inventory-weight__row");
     const totalText = el("span", "inventory-weight__total");
     const rules = button("weapon-rule-link", "負重");
     rules.setAttribute("aria-haspopup", "dialog");
     rules.setAttribute("aria-label", "負重規則");
     rules.addEventListener("click", () => globalScope.openCarryCapacityRules?.(rules));
-    totalText.append(rules, capacity > 0 ? ` ${formatPounds(total)}／${capacity} 磅` : ` ${formatPounds(total)} 磅（填入力量值後顯示上限）`);
-    summary.replaceChildren(totalText);
+    totalText.append(rules, capacity > 0 ? ` ${formatPounds(total)}／${capacity} 磅` : ` ${formatPounds(total)} 磅`);
+    if (capacity <= 0) totalText.title = "填入力量值後顯示上限";
+    row.appendChild(totalText);
+    if (over) row.appendChild(el("span", "inventory-weight__over", "超過上限"));
+    const parts = [row];
+    if (capacity > 0) {
+      const bar = el("span", "inventory-weight__bar");
+      bar.setAttribute("aria-hidden", "true");
+      const fill = el("span", "inventory-weight__fill");
+      fill.style.width = `${Math.min(100, Math.round(total / capacity * 1000) / 10)}%`;
+      bar.appendChild(fill);
+      parts.push(bar);
+    }
+    summary.replaceChildren(...parts);
+  }
+
+  // 「整理成標籤」只在選單裡（⋯ 上亮小點）；這時不顯示「物品欄還是空的」，避免跟下方文字矛盾。
+  function syncTidy() {
+    const panel = document.getElementById("inventory-panel");
+    if (!panel || !api()) return;
+    const textOnly = api().isTextOnly();
+    const lines = textOnly ? [] : legacyLines();
+    const canTidy = lines.length > 0;
+    const tidy = document.getElementById("inventory-tidy");
+    if (tidy) {
+      tidy.hidden = !canTidy;
+      tidy.textContent = canTidy ? `整理成標籤（${lines.reduce((sum, line) => sum + line.items.length, 0)} 項）` : "整理成標籤";
+    }
+    const dot = moreButton()?.querySelector(".inventory-more__dot");
+    if (dot) dot.hidden = !canTidy;
+    const empty = panel.querySelector(".inventory-empty");
+    if (empty) empty.hidden = textOnly || canTidy || api().entries().length > 0;
   }
 
   function render() {
@@ -939,24 +1040,19 @@
       const uids = new Set(all.map(entry => entry.uid));
       [...expanded].forEach((uid) => { if (!uids.has(uid)) expanded.delete(uid); });
       const textOnly = api().isTextOnly();
-      if (textOnly) arranging = false;
+      if (textOnly || !all.length) arranging = false;
       panel.classList.toggle("is-arranging", arranging);
       syncArrangeButton();
       const hint = document.getElementById("inventory-arrange-hint");
       if (hint) hint.hidden = !arranging;
       list.replaceChildren();
-      if (!textOnly) renderEntries("", list, all, equippedUsage());
+      if (!textOnly) renderTopLevel(list, all, equippedUsage());
       list.hidden = textOnly;
-      panel.querySelector(".inventory-empty").hidden = textOnly || all.length > 0;
-      const tidy = document.getElementById("inventory-tidy");
-      if (tidy) tidy.hidden = textOnly || legacyLines().length === 0;
-      ["inventory-weight", "inventory-add"].forEach((id) => {
-        const element = document.getElementById(id);
-        if (element) element.hidden = textOnly;
-      });
+      syncTidy();
+      const add = document.getElementById("inventory-add");
+      if (add) add.hidden = textOnly;
       const textOnlyButton = document.getElementById("inventory-text-only");
       textOnlyButton?.setAttribute("aria-pressed", String(textOnly));
-      textOnlyButton?.classList.toggle("is-pressed", textOnly);
       renderWeight();
     } finally {
       rendering = false;
@@ -967,20 +1063,24 @@
     return globalScope.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
   }
 
-  // 🤚 在標題列齒輪左側，齒輪展開且不是純文字管理時才出現。
+  // 選單的「整理排列」在純文字管理或物品欄是空的時隱藏。
   function syncArrangeButton() {
     const arrangeButton = document.getElementById("inventory-arrange");
     if (!arrangeButton) return;
-    arrangeButton.hidden = api().isTextOnly() || document.getElementById("inventory-gear")?.getAttribute("aria-expanded") !== "true";
+    arrangeButton.hidden = api().isTextOnly() || api().entries().length === 0;
     arrangeButton.setAttribute("aria-pressed", String(arranging));
   }
 
-  function setArranging(on) {
-    const next = on === true && !api().isTextOnly();
+  // 開始整理時焦點到提示列的「完成」；結束時回到「⋯ 更多」。
+  function setArranging(on, { focus = false } = {}) {
+    const next = on === true && !api().isTextOnly() && api().entries().length > 0;
     if (next === arranging) return;
     cancelDrag();
     arranging = next;
     render();
+    if (!focus) return;
+    if (arranging) document.getElementById("inventory-arrange-done")?.focus();
+    else moreButton()?.focus();
   }
 
   function itemUid(node) {
@@ -1064,6 +1164,11 @@
       const rect = pillRect(item);
       const after = y > rect.bottom || (y >= rect.top && x > rect.left + rect.width / 2);
       placeSource(item.parentElement, after ? item.nextElementSibling : item);
+      return;
+    }
+    // 容器框的空白處（標籤以外）也算放進去。
+    if (hit.matches(".inventory-tag-item.is-box") && drag.targets.has(itemUid(hit))) {
+      setDropInto(itemUid(hit));
       return;
     }
     setDropInto("");
@@ -1183,17 +1288,14 @@
     document.addEventListener("pointercancel", cancelDrag);
   }
 
-  // 鍵盤：左右（上下）方向鍵在同一處前後移動，Esc 結束整理（拖曳中則取消這次拖曳）。
+  // 鍵盤：左右（上下）方向鍵在畫面上的同一組前後移動，Esc 結束整理（拖曳中則取消這次拖曳）。
   function onArrangeKeydown(event) {
     if (!arranging) return;
     if (event.key === "Escape") {
       event.preventDefault();
       event.stopPropagation();
       if (drag?.started) cancelDrag();
-      else {
-        setArranging(false);
-        document.getElementById("inventory-arrange")?.focus();
-      }
+      else setArranging(false, { focus: true });
       return;
     }
     const uid = event.target.closest?.(".inventory-tag")?.dataset.inventoryUid;
@@ -1201,10 +1303,12 @@
     if (!uid || !step || drag) return;
     event.preventDefault();
     const entry = api().getEntry(uid);
-    const siblings = api().childrenOf(entry?.in);
-    const index = siblings.findIndex(sibling => sibling.uid === uid) + step;
+    const itemEl = event.target.closest("[data-inventory-item]");
+    const group = itemEl.dataset.inventoryGroup || "";
+    const siblings = [...itemEl.parentElement.children].filter(child => itemUid(child) && (child.dataset.inventoryGroup || "") === group);
+    const index = siblings.indexOf(itemEl) + step;
     if (index < 0 || index >= siblings.length) return;
-    api().move(uid, { into: entry.in || "", before: step < 0 ? siblings[index].uid : siblings[index + 1]?.uid || "" });
+    api().move(uid, { into: entry.in || "", before: step < 0 ? itemUid(siblings[index]) : itemUid(siblings[index + 1]) });
     document.querySelector(`[data-inventory-uid="${uid}"]`)?.focus();
   }
 
@@ -1242,42 +1346,223 @@
     const panel = document.getElementById("inventory-panel");
     if (!panel || panel.dataset.inventoryReady === "true") return;
     panel.dataset.inventoryReady = "true";
-    panel.querySelector("#inventory-add")?.addEventListener("click", event => openCustomDialog(event.currentTarget));
-    document.getElementById("inventory-arrange")?.addEventListener("click", () => setArranging(!arranging));
+    document.getElementById("inventory-add")?.addEventListener("click", event => openCustomDialog(event.currentTarget));
+    document.getElementById("inventory-arrange")?.addEventListener("click", () => setArranging(!arranging, { focus: true }));
+    document.getElementById("inventory-arrange-done")?.addEventListener("click", () => setArranging(false, { focus: true }));
     document.getElementById("inventory-tags")?.addEventListener("pointerdown", onArrangePointerDown);
     panel.addEventListener("keydown", onArrangeKeydown);
-    const tidyButton = document.getElementById("inventory-tidy");
-    tidyButton?.addEventListener("click", event => openTidyDialog(event.currentTarget));
-    document.getElementById("inventory-text-only")?.addEventListener("click", event => toggleTextOnly(event.currentTarget));
+    // 選單收起後項目看不到，視窗關閉時焦點回到「⋯ 更多」。
+    document.getElementById("inventory-tidy")?.addEventListener("click", () => openTidyDialog(moreButton()));
+    document.getElementById("inventory-text-only")?.addEventListener("click", () => toggleTextOnly(moreButton()));
+    document.getElementById("inventory-weight-toggle")?.addEventListener("click", () => setWeightHidden(!weightHidden()));
+    const coins = document.getElementById("money-count-weight");
+    document.getElementById("inventory-coins-toggle")?.addEventListener("click", () => {
+      if (!coins) return;
+      coins.checked = !coins.checked;
+      coins.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    coins?.addEventListener("change", renderWeight);
     document.getElementById("inventory-over-hide")?.addEventListener("click", () => {
       overDismissed = true;
       renderWeight();
-      document.getElementById("inventory-gear")?.focus();
+      moreButton()?.focus();
     });
-    // 齒輪比照跑團自創法術：只切換 #inventory-tools，每次載入預設收起。
-    const gear = document.getElementById("inventory-gear");
-    const tools = document.getElementById("inventory-tools");
-    gear?.addEventListener("click", () => {
-      const open = gear.getAttribute("aria-expanded") !== "true";
-      gear.setAttribute("aria-expanded", String(open));
-      gear.setAttribute("aria-label", open ? "隱藏物品欄選項" : "顯示物品欄選項");
-      if (tools) tools.hidden = !open;
-      if (!open) setArranging(false);
-      syncArrangeButton();
+    // 「⋯ 更多」：每次載入預設收起；會開視窗或改變模式的項目先收起選單、焦點回到 ⋯（capture 階段，早於項目自己的處理）。
+    const more = moreButton();
+    const tools = document.getElementById("inventory-heading-tools");
+    const morePanel = document.getElementById("inventory-more-panel");
+    more?.addEventListener("click", () => setMoreOpen(more.getAttribute("aria-expanded") !== "true"));
+    morePanel?.addEventListener("click", (event) => {
+      if (event.target.closest?.("[data-more-close]")) setMoreOpen(false, true);
+    }, true);
+    tools?.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape" || more?.getAttribute("aria-expanded") !== "true") return;
+      event.preventDefault();
+      event.stopPropagation();
+      setMoreOpen(false, true);
+    });
+    tools?.addEventListener("focusout", (event) => {
+      if (event.relatedTarget && !tools.contains(event.relatedTarget)) setMoreOpen(false);
+    });
+    document.addEventListener("pointerdown", (event) => {
+      if (more?.getAttribute("aria-expanded") === "true" && !tools?.contains(event.target)) setMoreOpen(false);
     });
     document.addEventListener("inventory:change", render);
+    document.addEventListener("click", (event) => {
+      const trigger = event.target.closest?.("[data-starting-equipment]");
+      if (trigger) openStartingEquipmentDialog(trigger);
+    });
     ["mainHand", "offHand", "armor", "main2Shield", "offHandAsMain", "str", "race"].forEach((id) => {
       document.getElementById(id)?.addEventListener("change", render);
     });
     ["money-balance-cp", "money-balance-sp", "money-balance-gp", "money-balance-pp", "money-balance-ep"].forEach((id) => {
       document.getElementById(id)?.addEventListener("change", renderWeight);
     });
-    const syncTidy = () => {
-      if (tidyButton) tidyButton.hidden = api().isTextOnly() || legacyLines().length === 0;
-    };
     // 存檔還原只觸發 change，手動輸入觸發 input。
     ["input", "change"].forEach(eventName => document.getElementById("gear-notes")?.addEventListener(eventName, syncTidy));
     render();
+  }
+
+  // ===== 起始裝備（職業頁、背景頁的（A）（B）按鈕，data-starting-equipment）=====
+  // 物品與金幣取自 classRules／backgroundRules 的 equipment；擇一物品在視窗當場選。物品以 source "initial" 放進物品欄、不自動裝備，
+  // 只以文字管理物品時接在攜帶物品的「初始裝備：」行；金幣經 MoneyTracker.receiveGold() 記一筆收入。分享模式不能取得。
+  function toolGroupItem(choose, groupIds) {
+    const groups = globalScope.ToolProficiencyCatalog?.groups || [];
+    return { choose, from: groupIds.flatMap(id => groups.find(group => group.id === id)?.options || []) };
+  }
+
+  function startingEquipmentFor(trigger) {
+    if (trigger.closest("#backgroundFeatures")) {
+      const id = fieldValue("background");
+      const rules = globalScope.getBackgroundRules?.(id);
+      if (!rules?.equipment) return null;
+      const group = typeof rules.tool === "object" ? (globalScope.ToolProficiencyCatalog?.groups || []).find(item => item.id === rules.tool.chooseFrom) : null;
+      const items = rules.equipment.A.items.map(item => typeof item === "string" ? item : toolGroupItem(`${group?.label || "工具"}擇一`, [rules.tool.chooseFrom]));
+      return { title: `${rules.name}背景裝備`, A: [{ id: "default", label: "", items, gold: rules.equipment.A.gold }], B: rules.equipment.B };
+    }
+    const id = fieldValue("class");
+    const rules = globalScope.getClassRules?.(id);
+    if (!rules?.equipment) return null;
+    const A = rules.equipment.A.map(option => ({ ...option, items: option.items.map(item => item.tools ? toolGroupItem(item.choose, item.tools) : item) }));
+    return { title: `${rules.name}初始裝備`, A, B: rules.equipment.B };
+  }
+
+  function startingItemLabel(item) {
+    if (typeof item === "string") return item;
+    return item.name || item.choose;
+  }
+
+  // 選好的組合 → 物品欄加入請求與文字（「初始裝備：」行）；擇一物品的選擇依序取自 choices。
+  function startingEquipmentRequests(option, choices) {
+    let choiceIndex = 0;
+    return option.items.map((item) => {
+      if (typeof item === "string") return { text: item };
+      if (item.name) return { text: item.name, weight: item.weight };
+      return { text: choices[choiceIndex++] };
+    });
+  }
+
+  async function grantStartingEquipment(source, option, requests, label) {
+    const inventory = api();
+    const texts = requests.map(request => request.text);
+    if (texts.length) {
+      if (inventory.isTextOnly()) {
+        const notes = document.getElementById("gear-notes");
+        if (notes) {
+          notes.value = [notes.value.replace(/\n+$/u, ""), `初始裝備：${texts.join("、")}`].filter(Boolean).join("\n");
+          notes.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+      } else if (!inventory.add(requests, { source: "initial" })) {
+        globalScope.AppDialog.notify(`物品欄最多 ${inventory.LIMITS.items} 筆，請先整理物品欄再取得。`, { tone: "warning" });
+        return false;
+      }
+    }
+    if (option.gold && !(await globalScope.MoneyTracker?.receiveGold(option.gold, `${source.title}（${label}）`))) {
+      globalScope.AppDialog.notify("金幣沒有記入錢袋，請到錢財區手動調整。", { tone: "warning" });
+    }
+    const gained = [texts.length ? (inventory.isTextOnly() ? "物品寫進攜帶物品" : "物品放進物品欄") : "", option.gold ? `金幣 +${option.gold}` : ""].filter(Boolean).join("，");
+    globalScope.AppDialog.notify(`已取得${source.title}（${label}）：${gained}。`, { tone: "success" });
+    return true;
+  }
+
+  function openStartingEquipmentDialog(trigger) {
+    if (globalScope.SHARE_MODE || !globalScope.AppDialog || !api()) return;
+    const source = startingEquipmentFor(trigger);
+    const key = trigger.dataset.startingEquipment;
+    if (!source || !["A", "B"].includes(key)) return;
+    const label = key;
+    if (key === "B") {
+      globalScope.AppDialog.requestDecision({
+        title: `取得${source.title}（B）`,
+        message: `取得 ${source.B.gold} 金幣，在錢財區記一筆收入。`,
+        cancelLabel: "取消",
+        confirmLabel: "取得",
+        trigger
+      }).then(confirmed => confirmed && grantStartingEquipment(source, { gold: source.B.gold }, [], label));
+      return;
+    }
+    const textOnly = api().isTextOnly();
+    let selected = source.A.length === 1 ? source.A[0] : null;
+    let error = null;
+    let choiceBox = null;
+    const renderChoices = () => {
+      choiceBox.replaceChildren();
+      if (!selected) return;
+      const tags = el("ul", "inventory-tags inventory-tags--preview");
+      selected.items.forEach((item) => {
+        if (item.from) return;
+        const text = startingItemLabel(item);
+        const pack = api().getCatalogItem(api().parseItemText(text).itemId)?.pack;
+        tags.appendChild(el("li", "inventory-tag inventory-tag--static", `${text}${pack ? "（拆成容器與內容物）" : ""}`));
+      });
+      if (selected.gold) tags.appendChild(el("li", "inventory-tag inventory-tag--static", `${selected.gold} 金幣`));
+      choiceBox.appendChild(tags);
+      selected.items.filter(item => item.from).forEach((item, index) => {
+        const select = el("select", "starting-equipment-choice");
+        select.dataset.startingChoice = String(index);
+        select.append(new Option("請選擇", ""), ...item.from.map(name => new Option(name, name)));
+        select.addEventListener("change", () => { if (error) error.textContent = ""; });
+        choiceBox.appendChild(labelled(item.choose.replace(/擇一$/u, ""), select));
+      });
+    };
+    globalScope.AppDialog.showContent({
+      title: `取得${source.title}（A）`,
+      variant: "starting-equipment",
+      trigger,
+      initialFocus: "content",
+      renderContent(body) {
+        body.appendChild(el("p", "inventory-item-note", textOnly
+          ? "物品會寫進攜帶物品的「初始裝備：」行，金幣在錢財區記一筆收入。"
+          : "物品會放進物品欄（不會自動裝備，請到裝備頁選擇），金幣在錢財區記一筆收入。"));
+        if (source.A.length > 1) {
+          const fieldset = el("fieldset", "starting-equipment-options");
+          fieldset.appendChild(el("legend", "", "選擇一組裝備"));
+          source.A.forEach((option) => {
+            const radio = el("input");
+            radio.type = "radio";
+            radio.name = "starting-equipment-option";
+            radio.value = option.id;
+            radio.addEventListener("change", () => {
+              selected = option;
+              if (error) error.textContent = "";
+              renderChoices();
+            });
+            const wrapper = el("label", "starting-equipment-option");
+            wrapper.append(radio, document.createTextNode(option.label));
+            fieldset.appendChild(wrapper);
+          });
+          body.appendChild(fieldset);
+        }
+        choiceBox = el("div", "starting-equipment-contents");
+        body.appendChild(choiceBox);
+        error = el("p", "starting-equipment-error");
+        error.setAttribute("aria-live", "polite");
+        body.appendChild(error);
+        renderChoices();
+      },
+      actions: [
+        { label: "取消", value: false },
+        {
+          label: "取得",
+          intent: "primary",
+          resolve: async () => {
+            if (!selected) {
+              error.textContent = "請先選擇一組裝備。";
+              return false;
+            }
+            const selects = [...choiceBox.querySelectorAll("[data-starting-choice]")];
+            const missing = selects.find(select => !select.value);
+            if (missing) {
+              error.textContent = "請選擇擇一的物品。";
+              missing.focus();
+              return false;
+            }
+            const requests = startingEquipmentRequests(selected, selects.map(select => select.value));
+            return (await grantStartingEquipment(source, selected, requests, label)) ? "granted" : false;
+          }
+        }
+      ]
+    });
   }
 
   globalScope.InventoryUI = Object.freeze({ render, renderWeight, openCustomDialog, openItemDialog });

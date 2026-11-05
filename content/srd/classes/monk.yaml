@@ -23,9 +23,10 @@ proficiencies:
   armor: []
   tools: { chooseFrom: [artisan, instrument], count: 1, field: monk-tool-proficiency- }
 equipment:
-  A: 短矛、匕首 ×5、所選熟練項對應的工匠工具或樂器、探索套組、11 金幣
-  B: 50 金幣
-  note: "**探索套組：**背包、睡袋、油瓶 ×2、單日口糧 ×10、繩索、火絨盒、10 根火把、水袋"
+  A:
+    items: [短矛, 匕首 ×5, { choose: 工匠工具或樂器擇一, tools: [artisan, instrument] }, 探索套組]
+    gold: 11
+  B: { gold: 50 }
 progression:
   martialArtsDie:
     label: 武藝

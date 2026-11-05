@@ -195,5 +195,9 @@
     "rogue-fixed-tool-proficiency",
     "rogue-weapon-mastery-pick-1",
     "rogue-weapon-mastery-pick-2"
+  ],
+  "equipmentOptions": [
+    "fighter/dexterity-default",
+    "fighter/strength-default"
   ]
 }

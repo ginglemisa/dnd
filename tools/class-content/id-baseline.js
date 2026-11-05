@@ -22,7 +22,8 @@ const CATEGORIES = Object.freeze({
   selectValues: "下拉選單的選項值（下拉選單 ID=值）",
   attackNotes: "選項的攻擊備註（存進角色攻擊備註欄，取消勾選時以相同字串移除）",
   spellSourceKeys: "子職法術的來源識別碼（存進角色法術清單）",
-  fields: "職業選擇的存檔欄位 ID（武器精通、職業額外語言、職業工具、選項戲法）"
+  fields: "職業選擇的存檔欄位 ID（武器精通、職業額外語言、職業工具、選項戲法）",
+  equipmentOptions: "起始裝備組合 ID（職業/組合，快速創角草稿記錄所選組合）"
 });
 
 function collectPersistedIds(classes) {
@@ -58,6 +59,7 @@ function collectPersistedIds(classes) {
   };
   for (const classDef of classes.values()) {
     add(classDef.pack, "classes", classDef.id);
+    (classDef.equipment.A.options || []).forEach(option => add(classDef.pack, "equipmentOptions", `${classDef.id}/${option.id}`));
     const tools = classDef.proficiencies?.tools;
     if (tools?.fixed) add(classDef.pack, "fields", tools.field);
     else if (tools) Array.from({ length: tools.count }, (_, index) => add(classDef.pack, "fields", `${tools.field}${index + 1}`));

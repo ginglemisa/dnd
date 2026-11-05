@@ -622,6 +622,91 @@ async function validateInventory(page) {
   assert.deepEqual(catalog.ids.filter(id => !baseline.includes(id)), [], "new catalog items are added to equipment-id-baseline.json on purpose");
   for (const [pack, listed, sum] of catalog.packs) assert.equal(Math.round(sum * 100) / 100, listed, `${pack} contents weigh what the pack lists`);
   assert.deepEqual([catalog.containers, catalog.wielded], [[], []], "containers and wieldable focuses exist in the catalog");
+  // 改名的品項（長袍→祭袍、槲寄生樹枝→槲寄生枝條）：舊存檔的 itemId 與舊文字寫法都對到新品名。
+  const renamed = await page.evaluate(() => {
+    applyStateObject({ class: "druid", level: "1", __inventory: { version: 1, items: [
+      { uid: "robe", itemId: "長袍", name: "祭祀長袍", quantity: 1 }, { uid: "sprig", itemId: "槲寄生樹枝", quantity: 1 }, { uid: "plain", itemId: "長袍", quantity: 2 }] } });
+    return {
+      entries: Inventory.entries().map(({ itemId, name, quantity }) => [itemId, name || "", quantity]),
+      text: ["長袍", "祭祀長袍", "槲寄生樹枝", "德魯伊法器（槲寄生枝條）", "書籍（玄秘學識）", "書（玄秘學識）"].map(text => [Inventory.parseItemText(text).itemId, Inventory.parseItemText(text).name || ""])
+    };
+  });
+  assert.deepEqual(renamed, {
+    entries: [["祭袍", "", 1], ["槲寄生枝條", "", 1], ["祭袍", "", 2]],
+    text: [["祭袍", ""], ["祭袍", ""], ["槲寄生枝條", ""], ["槲寄生枝條", ""], ["書籍", "書籍（玄秘學識）"], ["書籍", "書（玄秘學識）"]]
+  }, "renamed items load from old saves and old text");
+  // 職業與背景的起始裝備：每個品名都對得到目錄（自訂物品須有重量），擇一的選項也是；套組提示框列出內容物。
+  const startingEquipment = await page.evaluate(() => {
+    const unresolved = [];
+    const check = (where, text) => { if (!Inventory.parseItemText(text).itemId) unresolved.push(`${where}:${text}`); };
+    Object.entries(classRules).forEach(([classId, rules]) => rules.equipment.A.forEach(option => option.items.forEach(item => {
+      if (typeof item === "string") check(classId, item);
+      else if (item.name && !(item.weight >= 0)) unresolved.push(`${classId}:${item.name}`);
+      else if (item.from) item.from.forEach(name => check(classId, name));
+      else if (item.tools) item.tools.forEach(id => ToolProficiencyCatalog.groups.find(group => group.id === id).options.forEach(name => check(classId, name)));
+    })));
+    Object.entries(backgroundRules).forEach(([id, rules]) => rules.equipment.A.items.forEach(item => typeof item === "string" && check(id, item)));
+    return { unresolved, pack: renderSkillPopupHtml("學者套組").includes("背包、書籍、墨水、墨水筆、油燈、油 ×10、羊皮紙 ×10、火絨盒") };
+  });
+  assert.deepEqual(startingEquipment, { unresolved: [], pack: true }, "starting equipment names resolve to catalog items and packs show their contents");
+  // 職業頁、背景頁的（A）（B）：選組合與擇一物品後放進物品欄（不裝備）、金幣記收入；純文字管理寫「初始裝備：」行；分享模式不能取得。
+  const takeStartingEquipment = await page.evaluate(async () => {
+    const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+    const select = async (id, value) => { const field = document.getElementById(id); field.value = value; field.dispatchEvent(new Event("change", { bubbles: true })); await wait(50); };
+    const dialog = () => document.querySelector('.app-dialog[data-variant="starting-equipment"]');
+    const confirm = async () => { (dialog() || [...document.querySelectorAll(".app-dialog")].at(-1)).querySelector(".app-dialog__button--primary").click(); await wait(100); };
+    applyStateObject({ class: "fighter", level: "1", "money-balance-pp": "0", "money-balance-gp": "0", "money-balance-sp": "0", "money-balance-cp": "0", __inventory: { version: 1, items: [] }, "gear-notes": "" });
+    await wait(50);
+    document.querySelector('#classCreationInfo [data-starting-equipment="A"]').click();
+    await wait(50);
+    await confirm();
+    const needsOption = dialog()?.querySelector(".starting-equipment-error")?.textContent;
+    dialog().querySelector('input[value="dexterity-default"]').click();
+    await confirm();
+    const fighter = { closed: !dialog(), gp: document.getElementById("money-balance-gp").value, mainHand: document.getElementById("mainHand").value,
+      items: Inventory.entries().filter(entry => !entry.in).map(entry => `${entry.itemId}×${entry.quantity}:${entry.source}`) };
+    await select("class", "cleric");
+    document.querySelector('#classCreationInfo [data-starting-equipment="A"]').click();
+    await wait(50);
+    await confirm();
+    const needsChoice = dialog()?.querySelector(".starting-equipment-error")?.textContent;
+    dialog().querySelector("[data-starting-choice]").value = "聖物匣";
+    await confirm();
+    const holySymbol = Inventory.entries().some(entry => entry.itemId === "聖物匣（手持）");
+    await select("class", "wizard");
+    document.querySelector('#classCreationInfo [data-starting-equipment="A"]').click();
+    await wait(50);
+    await confirm();
+    const spellbook = Inventory.entries().find(entry => entry.name === "法術書")?.weight;
+    document.querySelector('#classCreationInfo [data-starting-equipment="B"]').click();
+    await wait(50);
+    await confirm();
+    const gpAfterB = document.getElementById("money-balance-gp").value;
+    await select("background", "soldier");
+    Inventory.setTextOnly(true);
+    document.querySelector('#backgroundFeatures [data-starting-equipment="A"]').click();
+    await wait(50);
+    dialog().querySelector("[data-starting-choice]").value = "紙牌";
+    await confirm();
+    const textLine = document.getElementById("gear-notes").value.split("\n").at(-1);
+    Inventory.setTextOnly(false);
+    window.SHARE_MODE = true;
+    document.querySelector('#backgroundFeatures [data-starting-equipment="B"]').click();
+    await wait(50);
+    const shareBlocked = !document.querySelector(".app-dialog");
+    window.SHARE_MODE = false;
+    return { needsOption, fighter, needsChoice, holySymbol, spellbook, gpAfterB, textLine, shareBlocked };
+  });
+  assert.deepEqual(takeStartingEquipment, {
+    needsOption: "請先選擇一組裝備。",
+    fighter: { closed: true, gp: "11", mainHand: "", items: ["鑲釘皮甲×1:initial", "彎刀×1:initial", "短劍×1:initial", "長弓×1:initial", "箭矢×20:initial", "箭袋×1:initial", "背包×1:initial"] },
+    needsChoice: "請選擇擇一的物品。",
+    holySymbol: true,
+    spellbook: 3,
+    gpAfterB: "78",
+    textLine: "初始裝備：短矛、短弓、箭矢 ×20、紙牌、醫療包、箭袋、旅行者服裝",
+    shareBlocked: true
+  }, "starting equipment (A)/(B) buttons grant items and gold");
 
   await page.evaluate(() => {
     applyStateObject({ class: "fighter", level: "1", str: "10", "money-balance-pp": "0", "money-balance-gp": "100", "money-balance-sp": "0", "money-balance-cp": "0", __inventory: { version: 1, items: [] },
@@ -629,29 +714,46 @@ async function validateInventory(page) {
   });
   await page.locator('[aria-controls="tab-equipment"]').click();
   assert.deepEqual(await page.locator("#mainHand option").allTextContents(), ["-- 請選擇 --", "（物品欄沒有武器）"], "an empty inventory offers no weapons");
-  assert.equal(await page.locator("#inventory-panel .inventory-empty").isVisible(), true);
+  // With convertible text lines, 整理成標籤 waits in the ⋯ menu (a dot marks it) and the contradictory "empty" note stays hidden.
+  const more = page.locator("#inventory-more");
+  const tidyButton = page.locator("#inventory-tidy");
+  const dot = more.locator(".inventory-more__dot");
+  assert.deepEqual([await page.locator(".section > .inventory-heading #inventory-heading-tools #inventory-more").count(), await page.locator("#inventory-panel .inventory-empty").isVisible(), await dot.isVisible(), await tidyButton.isVisible()],
+    [1, false, true, false], "tidying waits in the heading menu; a dot marks it and the empty note stays hidden");
+  await more.click();
+  assert.deepEqual([await more.getAttribute("aria-expanded"), await tidyButton.textContent()], ["true", "整理成標籤（5 項）"]);
 
   // Legacy text lines become tags only after the player confirms; other text stays.
-  const tidyButton = page.locator("#inventory-tidy");
   await tidyButton.click();
+  assert.equal(await more.getAttribute("aria-expanded"), "false", "menu actions close the menu");
   const tidy = page.locator('.app-dialog[data-variant="inventory-tidy"]');
   assert.deepEqual(await tidy.locator(".inventory-tag").allTextContents(), ["繩索 ×2", "箭矢 ×20", "神祕卷宗", "長劍", "探索套組（拆成容器與內容物）"]);
   await tidy.getByRole("button", { name: "轉成標籤", exact: true }).click();
   await tidy.waitFor({ state: "detached" });
   assert.equal(await page.locator("#gear-notes").inputValue(), "自由備註", "tidying removes only the converted lines");
-  assert.equal(await tidyButton.isHidden(), true);
+  assert.deepEqual([await tidyButton.isHidden(), await dot.isHidden(), await page.locator("#inventory-panel .inventory-empty").isHidden()], [true, true, true]);
   assert.deepEqual(await page.evaluate(() => [Inventory.formatText(), Inventory.hasInitialEquipment()]),
     ["繩索 ×2、箭矢 ×20、神祕卷宗、長劍、背包（睡袋、油 ×2、口糧 ×10、繩索、火絨盒、火把 ×10、水袋）", true], "packs expand into their container");
-  // The gear in the heading reveals the carried weight and custom items; both start hidden.
-  const gear = page.locator("#inventory-gear");
+
+  // The carried-items notes stay open even when empty: older saves keep their items there.
+  await page.evaluate(() => {
+    const field = document.getElementById("gear-notes");
+    field.value = "";
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  assert.equal(await page.locator("#gear-notes").isVisible(), true, "empty notes stay open");
+  await page.evaluate(() => {
+    const field = document.getElementById("gear-notes");
+    field.value = "自由備註";
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+
+  // The weight bar and 自訂物品 are always shown; the bar fills toward the carrying capacity.
   const weight = page.locator("#inventory-weight");
   const addButton = page.locator("#inventory-add");
-  assert.equal(await page.locator(".section > .inventory-heading #inventory-heading-tools #inventory-gear").count(), 1, "the gear sits on the carried-items heading row");
-  assert.deepEqual([await gear.getAttribute("aria-expanded"), await weight.isVisible(), await addButton.isVisible()], ["false", false, false], "weight and custom items start collapsed");
-  await gear.click();
-  assert.deepEqual([await gear.getAttribute("aria-expanded"), await gear.getAttribute("aria-label"), await addButton.textContent()], ["true", "隱藏物品欄選項", "自訂物品"]);
-  assert.equal(await gear.evaluate(el => getComputedStyle(el.querySelector("svg")).transform !== "none"), true, "the expanded gear turns like the tabletop spell gear");
-  assert.equal(await weight.innerText(), "負重 71／150 磅", "items and coins count toward the carried weight, without the item/coin breakdown");
+  assert.deepEqual([await weight.isVisible(), await addButton.isVisible(), await addButton.textContent()], [true, true, "自訂物品"]);
+  assert.equal(await weight.locator(".inventory-weight__fill").evaluate(el => el.style.width), "47.3%", "the bar fills by carried weight over capacity");
+  assert.equal(await weight.locator(".inventory-weight__total").innerText(), "負重 71／150 磅", "items and coins count toward the carried weight, without the item/coin breakdown");
   assert.equal(await weight.evaluate(el => el.classList.contains("is-over")), false);
   assert.equal(await page.locator("#inventory-over").isHidden(), true);
 
@@ -660,7 +762,10 @@ async function validateInventory(page) {
   assert.deepEqual(await page.locator("#armor option").allTextContents(), ["-- 請選擇 --", "（物品欄沒有護甲）"]);
   await page.locator("#mainHand").selectOption("長劍");
   assert.equal(await page.locator("#offHand option").allTextContents().then(options => options.includes("長劍")), false, "one longsword cannot fill both hands");
-  assert.equal(await page.locator("#inventory-tags .inventory-tag", { hasText: "長劍" }).textContent(), "長劍裝備中", "equipped items are badged");
+  assert.deepEqual(await page.evaluate(() => [...document.querySelectorAll("#inventory-tags > li")]
+    .map(li => (li.classList.contains("inventory-group-label") ? `#${li.textContent}` : `${li.querySelector(".inventory-tag").textContent}${li.classList.contains("is-box") ? "[框]" : ""}`))),
+  ["#裝備中", "長劍", "#身上", "繩索 ×2", "箭矢 ×20", "神祕卷宗", "#容器", "背包"], "groups: equipped, carried, then containers as small tags while collapsed");
+  assert.equal(await page.locator("#inventory-tags .inventory-tag.is-equipped").textContent(), "長劍", "top-level equipped items rely on the group label instead of a badge");
 
   // Containers expand in place.
   const toggle = page.locator("[data-inventory-toggle]").first();
@@ -668,6 +773,13 @@ async function validateInventory(page) {
   await toggle.click();
   assert.equal(await page.locator("[data-inventory-toggle]").first().getAttribute("aria-expanded"), "true");
   assert.equal(await page.locator(".inventory-container-contents > li").count(), 7);
+  assert.equal(await page.locator("#inventory-tags > li.is-box [data-inventory-toggle]").textContent(), "7 項 ▾", "an open top-level container becomes a full-width box");
+  // Empty containers show 0 without an arrow and cannot open.
+  await page.evaluate(() => Inventory.add([{ itemId: "麻袋", quantity: 1 }]));
+  const emptySack = page.locator("#inventory-tags > li", { has: page.locator(".inventory-tag", { hasText: "麻袋" }) });
+  assert.deepEqual([await emptySack.locator(".inventory-tag__toggle").textContent(), await emptySack.locator("[data-inventory-toggle]").count(), await emptySack.evaluate(el => el.classList.contains("is-box"))],
+    ["0", 0, false], "empty containers stay small with a plain 0");
+  await page.evaluate(() => Inventory.remove(Inventory.entries().find(entry => entry.itemId === "麻袋").uid));
 
   // Catalog items come from the shop; the gear only adds custom items, with quantity and container.
   // Held weapons inside containers still count for the selects.
@@ -754,30 +866,37 @@ async function validateInventory(page) {
   await item.waitFor({ state: "detached" });
   assert.equal(await page.evaluate(() => Inventory.entries().some(entry => entry.name === "臨時紙條")), false, "confirming quantity 0 deletes the item");
 
-  // Overweight only warns; 隱藏 hides the line until the page reloads.
+  // Overweight only warns: the bar turns to the warning colour. With the bar off (a per-device menu switch), a line warns instead; 隱藏 hides it until reload.
   await page.evaluate(() => { const str = document.getElementById("str"); str.value = "3"; str.dispatchEvent(new Event("change")); });
-  assert.equal(await weight.evaluate(el => el.classList.contains("is-over")), true);
-  await gear.click();
-  assert.deepEqual([await gear.getAttribute("aria-expanded"), await weight.isVisible()], ["false", false]);
   const over = page.locator("#inventory-over");
-  assert.equal(await over.innerText(), "負重超過攜帶上限 隱藏", "the overweight warning shows even with the gear collapsed");
+  assert.deepEqual([await weight.evaluate(el => el.classList.contains("is-over")), await weight.locator(".inventory-weight__over").textContent(), await over.isHidden()],
+    [true, "超過上限", true], "the bar itself shows overweight");
+  const weightToggle = page.locator("#inventory-weight-toggle");
+  await more.click();
+  assert.equal(await weightToggle.getAttribute("aria-pressed"), "true");
+  await weightToggle.click();
+  assert.deepEqual([await weightToggle.getAttribute("aria-pressed"), await weight.isHidden(), await more.getAttribute("aria-expanded"), await page.evaluate(() => dndStorage.getItem("dnd.inventoryWeightHidden.v1"))],
+    ["false", true, "true", "true"], "the weight switch hides the bar, keeps the menu open and is remembered on this device");
+  await page.keyboard.press("Escape");
+  assert.deepEqual([await more.getAttribute("aria-expanded"), await more.evaluate(el => el === document.activeElement)], ["false", true], "Esc closes the menu back to ⋯");
+  assert.equal(await over.innerText(), "負重超過攜帶上限 隱藏", "with the bar off, overweight shows as a line");
   await over.getByRole("button", { name: "隱藏", exact: true }).click();
   assert.equal(await over.isHidden(), true);
   await page.evaluate(() => { const str = document.getElementById("str"); str.value = "2"; str.dispatchEvent(new Event("change")); });
   assert.equal(await over.isHidden(), true, "a hidden warning stays hidden while the page is open");
-  await gear.click();
+  await more.click();
+  await weightToggle.click();
+  await page.mouse.click(5, 5);
+  assert.deepEqual([await weight.isVisible(), await more.getAttribute("aria-expanded"), await page.evaluate(() => dndStorage.getItem("dnd.inventoryWeightHidden.v1"))], [true, "false", null], "clicking outside closes the menu");
 
-  // 🤚 整理：齒輪左側、與齒輪同大小，只在齒輪展開時出現；標籤抖動、點了不開視窗，拖曳調整順序或放進容器，方向鍵前後移，Esc 結束。
+  // 整理排列 (⋯ menu): tags jiggle and do not open dialogs; drag to reorder or into a container, arrow keys move within a group, 完成 or Esc ends it.
   const arrange = page.locator("#inventory-arrange");
-  const [arrangeBox, gearBox] = [await arrange.boundingBox(), await gear.boundingBox()];
-  assert.deepEqual([arrangeBox.width, arrangeBox.height, await arrange.evaluate(el => el.nextElementSibling?.id), Math.round(arrangeBox.y)], [gearBox.width, gearBox.height, "inventory-gear", Math.round(gearBox.y)], "🤚 sits left of the gear at the gear's size");
-  await gear.click();
-  assert.equal(await arrange.isHidden(), true, "🤚 hides with the gear collapsed");
-  await gear.click();
   const savedInventory = await page.evaluate(() => Inventory.getState());
+  await more.click();
   await arrange.click();
-  assert.deepEqual([await arrange.getAttribute("aria-pressed"), await page.locator("#inventory-arrange-hint").isVisible(), await page.locator("#inventory-tags .inventory-tag").first().evaluate(el => getComputedStyle(el).animationName)],
-    ["true", true, "inventory-jiggle"], "arranging jiggles the tags and shows the hint");
+  assert.deepEqual([await more.getAttribute("aria-expanded"), await arrange.getAttribute("aria-pressed"), await page.locator("#inventory-arrange-hint").isVisible(),
+    await page.locator("#inventory-tags .inventory-tag").first().evaluate(el => getComputedStyle(el).animationName.startsWith("inventory-jiggle")), await page.locator("#inventory-arrange-done").evaluate(el => el === document.activeElement)],
+  ["false", "true", true, true, true], "arranging closes the menu, jiggles the tags and focuses 完成");
   const topLabels = () => page.evaluate(() => Inventory.childrenOf("").map(entry => Inventory.getLabel(entry)));
   const topTag = text => page.locator("#inventory-tags > li > .inventory-tag", { hasText: text }).first();
   const dragTo = async (source, target, offset) => {
@@ -801,8 +920,12 @@ async function validateInventory(page) {
   await page.keyboard.press("ArrowRight");
   assert.equal((await topLabels())[1], "神祕卷宗", "arrow keys move the focused tag");
   await page.keyboard.press("Escape");
-  assert.deepEqual([await arrange.getAttribute("aria-pressed"), await arrange.evaluate(el => el === document.activeElement), await page.locator("#inventory-tags .inventory-tag").first().evaluate(el => getComputedStyle(el).animationName)],
-    ["false", true, "none"], "Esc ends arranging and returns focus to the button");
+  assert.deepEqual([await arrange.getAttribute("aria-pressed"), await more.evaluate(el => el === document.activeElement), await page.locator("#inventory-tags .inventory-tag").first().evaluate(el => getComputedStyle(el).animationName)],
+    ["false", true, "none"], "Esc ends arranging and returns focus to ⋯");
+  await more.click();
+  await arrange.click();
+  await page.locator("#inventory-arrange-done").click();
+  assert.deepEqual([await arrange.getAttribute("aria-pressed"), await page.locator("#inventory-arrange-hint").isHidden()], ["false", true], "完成 ends arranging");
   await page.evaluate(state => Inventory.restore(state), savedInventory);
 
   // Dialog inputs stay out of the character state; the inventory is saved as one structured field.
@@ -829,12 +952,13 @@ async function validateInventory(page) {
   const textOnly = page.locator("#inventory-text-only");
   assert.deepEqual([await textOnly.textContent(), await textOnly.getAttribute("aria-pressed")], ["純文字管理", "false"]);
   const tagsText = await page.evaluate(() => Inventory.formatText());
+  await more.click();
   await textOnly.click();
   await page.getByRole("alertdialog", { name: "只以文字管理物品？" }).getByRole("button", { name: "轉成文字", exact: true }).click();
   await page.waitForFunction(() => Inventory.isTextOnly());
   assert.equal(await page.locator("#gear-notes").inputValue(), `物品欄：${tagsText}\n自由備註`, "the tags become one text line above the free text");
   assert.deepEqual([await textOnly.getAttribute("aria-pressed"), await page.locator("#inventory-tags").isHidden(), await weight.isHidden(), await addButton.isHidden(), await tidyButton.isHidden(), await page.locator("#inventory-panel .inventory-empty").isHidden(), await page.locator("#inventory-arrange").isHidden()],
-    ["true", true, true, true, true, true, true], "text mode hides tags, weight, custom items, tidying and 🤚");
+    ["true", true, true, true, true, true, true], "text mode hides tags, weight, custom items, tidying and the arrange button");
   assert.equal(await page.locator("#mainHand option").allTextContents().then(options => options.includes("巨劍") && options.includes("長弓")), true, "text mode lists every weapon");
   assert.equal(await page.locator("#mainHand").inputValue(), "匕首");
   assert.deepEqual(await page.evaluate(() => collectStateObject().__inventory), { version: 1, textOnly: true, items: [] }, "text mode is saved with the character");
@@ -842,9 +966,11 @@ async function validateInventory(page) {
   assert.match(await page.locator("#gear-notes").inputValue(), /^購買物品：箭矢\(20\)\n物品欄：/u, "the shop writes a text line in text mode");
 
   // Turning it off starts from the equipped items; tidying converts the text back without doubling them.
+  await more.click();
   await textOnly.click();
   await page.waitForFunction(() => !Inventory.isTextOnly());
   assert.deepEqual(await page.evaluate(() => Inventory.entries().map(entry => [entry.itemId, entry.quantity, entry.source || ""])), [["匕首", 1, "equipped"]], "tag mode restarts from the equipped weapon");
+  await more.click();
   assert.equal(await tidyButton.isVisible(), true);
   await tidyButton.click();
   assert.equal(await tidy.locator(".inventory-tag").first().textContent(), "箭矢 ×20");
@@ -1135,21 +1261,24 @@ async function validateEquipmentShop(page) {
     Inventory.restore({ version: 1, items: [{ uid: "rope", itemId: "繩索", quantity: 1 }] });
   });
   const shopButton = page.locator("#equipment-shop-open");
-  // The full-width shop entry sits right under the carried-items notes, outside the money card.
+  // 商店 and 自訂物品 share the row under the carried-items notes; the money row sits above the items.
   assert.deepEqual(await page.evaluate(() => {
     const button = document.getElementById("equipment-shop-open");
+    const add = document.getElementById("inventory-add");
+    const actions = document.getElementById("inventory-actions");
     const notes = document.getElementById("gear-notes");
     const money = document.querySelector(".money-section");
-    const box = button.getBoundingClientRect();
+    const [shopBox, addBox] = [button, add].map(node => node.getBoundingClientRect());
     return {
       text: button.textContent.trim(),
       icon: Boolean(button.querySelector("svg")),
-      afterNotes: notes.nextElementSibling === button && box.top >= notes.getBoundingClientRect().bottom,
-      beforeMoney: box.bottom <= money.getBoundingClientRect().top && !money.contains(button),
-      fullWidth: Math.abs(box.width - notes.getBoundingClientRect().width) < 1,
+      afterNotes: notes.nextElementSibling === actions && actions.firstElementChild === button && actions.lastElementChild === add,
+      sideBySide: Math.abs(shopBox.top - addBox.top) < 1 && Math.abs(shopBox.width - addBox.width) < 2,
+      primary: getComputedStyle(button).backgroundColor !== getComputedStyle(add).backgroundColor,
+      moneyAbove: money.getBoundingClientRect().bottom <= document.getElementById("inventory-panel").getBoundingClientRect().top && !money.contains(button),
       oldEntries: document.querySelectorAll(".money-section [data-equipment-shop-open], #equipment-notes-section [data-equipment-shop-open]").length
     };
-  }), { text: "開啟商店／新增物品", icon: true, afterNotes: true, beforeMoney: true, fullWidth: true, oldEntries: 0 }, "shop entry under carried items");
+  }), { text: "商店", icon: true, afterNotes: true, sideBySide: true, primary: true, moneyAbove: true, oldEntries: 0 }, "shop and custom item buttons under carried items");
   assert.equal(await page.locator("#equipment-notes-section").innerText().then(text => text.includes("購買請使用商店")), false, "reference list hint removed");
   const shop = page.locator('.app-dialog[data-variant="equipment-shop"]');
   const cartDialog = page.locator('.app-dialog[data-variant="equipment-shop-cart"]');
@@ -1195,7 +1324,7 @@ async function validateEquipmentShop(page) {
   for (const [category, names] of [
     ["照明", ["火把", "蠟燭", "油燈", "附蓋提燈", "牛眼提燈", "油", "火絨盒"]],
     ["容器", ["背包", "小包", "麻袋", "籃子", "箱子", "木桶", "手提桶", "鐵鍋", "壺", "水袋", "玻璃瓶", "扁瓶", "藥瓶", "地圖或捲軸盒"]],
-    ["服裝", ["旅行者服裝", "高檔服裝", "戲服", "長袍"]],
+    ["服裝", ["旅行者服裝", "高檔服裝", "戲服", "祭袍"]],
     ["彈藥", ["箭矢 (20)", "箭袋", "弩矢 (20)", "弩矢匣", "子彈，火器 (10)", "彈丸，投石索 (20)", "針 (50)", "小包"]],
     ["魔法", ["法術卷軸", "治療藥水", "材料包"]]
   ]) {
@@ -1404,36 +1533,54 @@ async function validateEquipmentShop(page) {
   await page.keyboard.press("Escape");
   assert.equal(await shop.count(), 0);
 
-  // Narrow money cards put the actions above the title, aligned left.
-  await page.setViewportSize({ width: 320, height: 760 });
-  const header = await page.evaluate(() => {
-    const title = document.querySelector(".money-title").getBoundingClientRect();
-    const actions = document.querySelector(".money-header-actions").getBoundingClientRect();
-    const card = document.querySelector(".money-section").getBoundingClientRect();
-    return { actionsAbove: actions.bottom <= title.top, leftAligned: Math.abs(actions.left - title.left) < 2, inside: actions.right <= card.right };
+  // Money row: the total sits beside 支出／收入 and the 最近交易 icon; 調整餘額 and 顯示各幣值 live in the ⋯ menu.
+  const moneyLayout = () => page.evaluate(() => {
+    const box = selector => document.querySelector(selector).getBoundingClientRect();
+    const middle = rect => (rect.top + rect.bottom) / 2;
+    const section = document.querySelector(".money-section");
+    const [total, toggle] = [".money-overview__total", ".money-type-toggle"].map(box);
+    return {
+      totalBesideButtons: Math.abs(middle(total) - middle(toggle)) < 4 && toggle.left > total.right,
+      logInRow: document.querySelector(".money-type-toggle").contains(document.getElementById("money-log-toggle")),
+      inside: [total, toggle].every(rect => rect.right <= section.getBoundingClientRect().right + 1),
+      fits: section.scrollWidth <= section.clientWidth + 1
+    };
   });
-  assert.deepEqual(header, { actionsAbove: true, leftAligned: true, inside: true }, "narrow money header stacks actions above the title");
+  await page.setViewportSize({ width: 320, height: 760 });
+  const narrowMoney = await moneyLayout();
+  assert.deepEqual([narrowMoney.inside, narrowMoney.fits], [true, true], "narrow money row fits");
   await page.setViewportSize({ width: 1100, height: 850 });
-  assert.equal(await page.evaluate(() => {
-    const title = document.querySelector(".money-title").getBoundingClientRect();
-    const actions = document.querySelector(".money-header-actions").getBoundingClientRect();
-    return Math.abs((title.top + title.bottom) / 2 - (actions.top + actions.bottom) / 2) < 4;
-  }), true, "wide money header keeps one row");
+  assert.deepEqual(await moneyLayout(), { totalBesideButtons: true, logInRow: true, inside: true, fits: true }, "wide money row keeps one line");
+  const moneyMenu = page.locator("#inventory-more");
+  await moneyMenu.click();
+  await page.locator("#inventory-coins-toggle").click();
+  assert.deepEqual(await page.evaluate(() => [document.getElementById("money-count-weight").checked, document.getElementById("money-balance-details").hidden, document.getElementById("inventory-coins-toggle").getAttribute("aria-pressed")]),
+    [true, false, "true"], "顯示各幣值 drives the saved coin switch");
+  await page.locator("#inventory-coins-toggle").click();
+  await page.locator("#money-adjust-toggle").click();
+  const adjustModal = page.locator("#money-adjust-modal");
+  assert.deepEqual([await adjustModal.isVisible(), await page.evaluate(() => document.getElementById("money-count-weight").checked)], [true, false], "調整餘額 opens from the menu");
+  await adjustModal.locator(".money-modal-close").click();
+  assert.equal(await moneyMenu.evaluate(el => el === document.activeElement), true, "closing 調整餘額 returns focus to ⋯");
 
   // In tabletop mode the shop entry travels with the carried-items notes.
   await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("resources"); });
   assert.equal(await page.evaluate(() => {
     const mount = document.getElementById("tabletop-gear-notes-mount");
     return [...mount.children].map(child => child.id).join();
-  }), "inventory-panel,gear-notes,equipment-shop-open", "tabletop mount holds the notes then the shop entry");
+  }), "inventory-panel,gear-notes,inventory-actions", "tabletop mount holds the notes then the shop row");
   assert.equal(await page.evaluate(() => document.getElementById("inventory-heading-tools").parentElement.id), "inventory-heading-tabletop-mount", "the heading tools move to the tabletop heading");
+  await moneyMenu.click();
+  assert.deepEqual([await page.locator("#money-adjust-toggle").isHidden(), await page.locator("#inventory-coins-toggle").isHidden(), await page.locator("#inventory-weight-toggle").isVisible()],
+    [true, true, true], "money items leave the menu in tabletop mode");
+  await page.keyboard.press("Escape");
   await shopButton.click();
   assert.equal(await shop.isVisible(), true, "tabletop shop entry opens the shop");
   await page.keyboard.press("Escape");
   assert.equal(await shopButton.evaluate(el => el === document.activeElement), true);
   await page.evaluate(() => TabletopMode.setMode("sheet"));
   assert.equal(await page.evaluate(() => [...document.getElementById("gear-notes-sheet-mount").children].map(child => child.id).join()),
-    "inventory-panel,gear-notes,equipment-shop-open", "sheet mode restores the notes and shop entry in order");
+    "inventory-panel,gear-notes,inventory-actions", "sheet mode restores the notes and shop row in order");
   assert.equal(await page.evaluate(() => document.getElementById("inventory-heading-tools").parentElement.id), "inventory-heading-sheet-mount", "the heading tools return to the sheet heading");
 
   // Shortened focus names stay linked to their English names and compact carried-item names.

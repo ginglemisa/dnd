@@ -22,9 +22,10 @@ proficiencies:
   weapons: { categories: [simple] }
   armor: []
 equipment:
-  A: 匕首 ×2、奧術法器（長棍）、長袍、法術書、學者套組、5 金幣
-  B: 55 金幣
-  note: "**學者套組：**背包、書籍、墨水、墨水筆、油燈、油瓶 ×10、羊皮紙 ×10、火絨盒"
+  A:
+    items: [匕首 ×2, 奧術法器（長棍）, 祭袍, { name: 法術書, weight: 3 }, 學者套組]
+    gold: 5
+  B: { gold: 55 }
 progression:
   cantrips:
     label: 戲法
