@@ -5,8 +5,13 @@
 const { ContentError } = require("../content/errors");
 const { escapeHtml, renderInline, renderMarkdown } = require("../content/markdown");
 const { BUILT_IN_VALUES, getActions, getPickFields } = require("./load");
+const { equipmentHtml } = require("./equipment");
 
 const NUMBER_WORDS = Object.freeze({ 1: "一", 2: "兩", 3: "三", 4: "四" });
+
+// 起始裝備（A）（B）：網站（inventory-ui.js）依 data-starting-equipment 加入物品欄；分享模式不能點。
+const EQUIPMENT_TAKE = option => `<button type="button" class="starting-equipment-take" data-starting-equipment="${option}">（${option}）</button>`;
+const EQUIPMENT_HINT = "<p class=\"class-core-equipment-note starting-equipment-hint\">＊點按 (A) 或 (B) 取得初始裝備或金錢</p>";
 
 function getProficiencyBonus(level) {
   return Math.ceil(level / 4) + 1;
@@ -73,6 +78,7 @@ function renderCreation(context) {
   // 行尾「\」換行輸出為 <br>（例如裝備的兩種組合）。
   const inline = text => text.split("\\\n").map(line => renderInline(line, context, where)).join("<br>");
   const { skills } = classDef;
+  const equipment = equipmentHtml(classDef);
   const skillTips = skills.from === "any" ? null : skills.from.map(name => `[[${name}]]`);
   const skillText = skillTips
     ? `從${skillTips.slice(0, -1).join("、")}${skillTips.length > 1 ? "和" : ""}${skillTips[skillTips.length - 1]}中選擇${NUMBER_WORDS[skills.choose]}項`
@@ -86,8 +92,8 @@ function renderCreation(context) {
     ["工具熟練項", inline(classDef.tools)],
     ["護甲訓練", inline(classDef.armor)],
     ["初始裝備", "(A)、(B) 二選一"],
-    ["（A）", inline(classDef.equipment.A)],
-    ["（B）", inline(classDef.equipment.B)]
+    [EQUIPMENT_TAKE("A"), equipment.A],
+    [EQUIPMENT_TAKE("B"), equipment.B]
   ];
   const progression = Object.values(classDef.progression || {});
   // 有子職能力的等級：只有子職能力時顯示「子職特性」；另有職業能力、但不是選擇子職的等級，接在職業能力之後。
@@ -119,7 +125,7 @@ function renderCreation(context) {
 <tbody>
 ${rows.map(([label, value]) => `<tr><td>${label}</td><td>${value}</td></tr>`).join("\n")}
 </tbody>
-</table>${classDef.equipment.note ? `<p class="class-core-equipment-note">${inline(classDef.equipment.note)}</p>` : ""}
+</table>${EQUIPMENT_HINT}
 </section>
 <section class="class-feature-table-details" data-class-feature-table="${classDef.id}">
 <h3>${escapeHtml(classDef.name)}特性表格</h3>

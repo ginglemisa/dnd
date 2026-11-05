@@ -622,6 +622,91 @@ async function validateInventory(page) {
   assert.deepEqual(catalog.ids.filter(id => !baseline.includes(id)), [], "new catalog items are added to equipment-id-baseline.json on purpose");
   for (const [pack, listed, sum] of catalog.packs) assert.equal(Math.round(sum * 100) / 100, listed, `${pack} contents weigh what the pack lists`);
   assert.deepEqual([catalog.containers, catalog.wielded], [[], []], "containers and wieldable focuses exist in the catalog");
+  // 改名的品項（長袍→祭袍、槲寄生樹枝→槲寄生枝條）：舊存檔的 itemId 與舊文字寫法都對到新品名。
+  const renamed = await page.evaluate(() => {
+    applyStateObject({ class: "druid", level: "1", __inventory: { version: 1, items: [
+      { uid: "robe", itemId: "長袍", name: "祭祀長袍", quantity: 1 }, { uid: "sprig", itemId: "槲寄生樹枝", quantity: 1 }, { uid: "plain", itemId: "長袍", quantity: 2 }] } });
+    return {
+      entries: Inventory.entries().map(({ itemId, name, quantity }) => [itemId, name || "", quantity]),
+      text: ["長袍", "祭祀長袍", "槲寄生樹枝", "德魯伊法器（槲寄生枝條）", "書籍（玄秘學識）", "書（玄秘學識）"].map(text => [Inventory.parseItemText(text).itemId, Inventory.parseItemText(text).name || ""])
+    };
+  });
+  assert.deepEqual(renamed, {
+    entries: [["祭袍", "", 1], ["槲寄生枝條", "", 1], ["祭袍", "", 2]],
+    text: [["祭袍", ""], ["祭袍", ""], ["槲寄生枝條", ""], ["槲寄生枝條", ""], ["書籍", "書籍（玄秘學識）"], ["書籍", "書（玄秘學識）"]]
+  }, "renamed items load from old saves and old text");
+  // 職業與背景的起始裝備：每個品名都對得到目錄（自訂物品須有重量），擇一的選項也是；套組提示框列出內容物。
+  const startingEquipment = await page.evaluate(() => {
+    const unresolved = [];
+    const check = (where, text) => { if (!Inventory.parseItemText(text).itemId) unresolved.push(`${where}:${text}`); };
+    Object.entries(classRules).forEach(([classId, rules]) => rules.equipment.A.forEach(option => option.items.forEach(item => {
+      if (typeof item === "string") check(classId, item);
+      else if (item.name && !(item.weight >= 0)) unresolved.push(`${classId}:${item.name}`);
+      else if (item.from) item.from.forEach(name => check(classId, name));
+      else if (item.tools) item.tools.forEach(id => ToolProficiencyCatalog.groups.find(group => group.id === id).options.forEach(name => check(classId, name)));
+    })));
+    Object.entries(backgroundRules).forEach(([id, rules]) => rules.equipment.A.items.forEach(item => typeof item === "string" && check(id, item)));
+    return { unresolved, pack: renderSkillPopupHtml("學者套組").includes("背包、書籍、墨水、墨水筆、油燈、油 ×10、羊皮紙 ×10、火絨盒") };
+  });
+  assert.deepEqual(startingEquipment, { unresolved: [], pack: true }, "starting equipment names resolve to catalog items and packs show their contents");
+  // 職業頁、背景頁的（A）（B）：選組合與擇一物品後放進物品欄（不裝備）、金幣記收入；純文字管理寫「初始裝備：」行；分享模式不能取得。
+  const takeStartingEquipment = await page.evaluate(async () => {
+    const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+    const select = async (id, value) => { const field = document.getElementById(id); field.value = value; field.dispatchEvent(new Event("change", { bubbles: true })); await wait(50); };
+    const dialog = () => document.querySelector('.app-dialog[data-variant="starting-equipment"]');
+    const confirm = async () => { (dialog() || [...document.querySelectorAll(".app-dialog")].at(-1)).querySelector(".app-dialog__button--primary").click(); await wait(100); };
+    applyStateObject({ class: "fighter", level: "1", "money-balance-pp": "0", "money-balance-gp": "0", "money-balance-sp": "0", "money-balance-cp": "0", __inventory: { version: 1, items: [] }, "gear-notes": "" });
+    await wait(50);
+    document.querySelector('#classCreationInfo [data-starting-equipment="A"]').click();
+    await wait(50);
+    await confirm();
+    const needsOption = dialog()?.querySelector(".starting-equipment-error")?.textContent;
+    dialog().querySelector('input[value="dexterity-default"]').click();
+    await confirm();
+    const fighter = { closed: !dialog(), gp: document.getElementById("money-balance-gp").value, mainHand: document.getElementById("mainHand").value,
+      items: Inventory.entries().filter(entry => !entry.in).map(entry => `${entry.itemId}×${entry.quantity}:${entry.source}`) };
+    await select("class", "cleric");
+    document.querySelector('#classCreationInfo [data-starting-equipment="A"]').click();
+    await wait(50);
+    await confirm();
+    const needsChoice = dialog()?.querySelector(".starting-equipment-error")?.textContent;
+    dialog().querySelector("[data-starting-choice]").value = "聖物匣";
+    await confirm();
+    const holySymbol = Inventory.entries().some(entry => entry.itemId === "聖物匣（手持）");
+    await select("class", "wizard");
+    document.querySelector('#classCreationInfo [data-starting-equipment="A"]').click();
+    await wait(50);
+    await confirm();
+    const spellbook = Inventory.entries().find(entry => entry.name === "法術書")?.weight;
+    document.querySelector('#classCreationInfo [data-starting-equipment="B"]').click();
+    await wait(50);
+    await confirm();
+    const gpAfterB = document.getElementById("money-balance-gp").value;
+    await select("background", "soldier");
+    Inventory.setTextOnly(true);
+    document.querySelector('#backgroundFeatures [data-starting-equipment="A"]').click();
+    await wait(50);
+    dialog().querySelector("[data-starting-choice]").value = "紙牌";
+    await confirm();
+    const textLine = document.getElementById("gear-notes").value.split("\n").at(-1);
+    Inventory.setTextOnly(false);
+    window.SHARE_MODE = true;
+    document.querySelector('#backgroundFeatures [data-starting-equipment="B"]').click();
+    await wait(50);
+    const shareBlocked = !document.querySelector(".app-dialog");
+    window.SHARE_MODE = false;
+    return { needsOption, fighter, needsChoice, holySymbol, spellbook, gpAfterB, textLine, shareBlocked };
+  });
+  assert.deepEqual(takeStartingEquipment, {
+    needsOption: "請先選擇一組裝備。",
+    fighter: { closed: true, gp: "11", mainHand: "", items: ["鑲釘皮甲×1:initial", "彎刀×1:initial", "短劍×1:initial", "長弓×1:initial", "箭矢×20:initial", "箭袋×1:initial", "背包×1:initial"] },
+    needsChoice: "請選擇擇一的物品。",
+    holySymbol: true,
+    spellbook: 3,
+    gpAfterB: "78",
+    textLine: "初始裝備：短矛、短弓、箭矢 ×20、紙牌、醫療包、箭袋、旅行者服裝",
+    shareBlocked: true
+  }, "starting equipment (A)/(B) buttons grant items and gold");
 
   await page.evaluate(() => {
     applyStateObject({ class: "fighter", level: "1", str: "10", "money-balance-pp": "0", "money-balance-gp": "100", "money-balance-sp": "0", "money-balance-cp": "0", __inventory: { version: 1, items: [] },
@@ -1239,7 +1324,7 @@ async function validateEquipmentShop(page) {
   for (const [category, names] of [
     ["照明", ["火把", "蠟燭", "油燈", "附蓋提燈", "牛眼提燈", "油", "火絨盒"]],
     ["容器", ["背包", "小包", "麻袋", "籃子", "箱子", "木桶", "手提桶", "鐵鍋", "壺", "水袋", "玻璃瓶", "扁瓶", "藥瓶", "地圖或捲軸盒"]],
-    ["服裝", ["旅行者服裝", "高檔服裝", "戲服", "長袍"]],
+    ["服裝", ["旅行者服裝", "高檔服裝", "戲服", "祭袍"]],
     ["彈藥", ["箭矢 (20)", "箭袋", "弩矢 (20)", "弩矢匣", "子彈，火器 (10)", "彈丸，投石索 (20)", "針 (50)", "小包"]],
     ["魔法", ["法術卷軸", "治療藥水", "材料包"]]
   ]) {

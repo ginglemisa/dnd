@@ -94,10 +94,35 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["A", "B"],
+      "description": "起始裝備，A、B 二擇一。職業頁的（A）列由建置依 items 組成，套組名稱自動加上內容物提示框；職業頁與快速創角依此加入物品欄。",
       "properties": {
-        "A": { "type": "string", "minLength": 1, "description": "起始裝備（A）。PDF 取用此項。可用行尾「\\」換行。" },
-        "B": { "type": "string", "minLength": 1, "description": "起始裝備（B）。可用行尾「\\」換行。" },
-        "note": { "type": "string", "minLength": 1, "description": "裝備下方的套組內容說明。" }
+        "A": {
+          "description": "裝備組合：items 與 gold；有兩種以上組合時寫 options（例如戰士的力量型、敏捷型）。",
+          "oneOf": [
+            { "$ref": "#/definitions/equipmentSet" },
+            {
+              "type": "object", "additionalProperties": false, "required": ["options"],
+              "properties": {
+                "options": {
+                  "type": "array", "minItems": 2,
+                  "items": {
+                    "type": "object", "additionalProperties": false, "required": ["id", "label", "items", "gold"],
+                    "properties": {
+                      "id": { "$ref": "feature.schema.json#/definitions/id", "description": "組合 ID，快速創角的草稿以此記錄選擇：不可改名。" },
+                      "label": { "type": "string", "minLength": 1, "description": "組合名稱（例如「力量型」），顯示在（A）列與選擇視窗。" },
+                      "items": { "$ref": "#/definitions/equipmentItems" },
+                      "gold": { "$ref": "#/definitions/gold" }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "B": {
+          "type": "object", "additionalProperties": false, "required": ["gold"],
+          "properties": { "gold": { "$ref": "#/definitions/gold" } }
+        }
       }
     },
     "progression": {
@@ -208,6 +233,35 @@
     }
   },
   "definitions": {
+    "gold": { "type": "integer", "minimum": 0, "description": "金幣數，顯示為「N 金幣」。" },
+    "equipmentSet": {
+      "type": "object", "additionalProperties": false, "required": ["items", "gold"],
+      "properties": { "items": { "$ref": "#/definitions/equipmentItems" }, "gold": { "$ref": "#/definitions/gold" } }
+    },
+    "equipmentItems": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "oneOf": [
+          { "type": "string", "minLength": 1, "description": "物品：裝備說明的品名，數量寫成「名稱 ×n」（例如「箭矢 ×20」）。" },
+          {
+            "type": "object", "additionalProperties": false, "required": ["name", "weight"],
+            "description": "裝備說明沒有的物品（例如法術書），加入物品欄時當自訂物品。",
+            "properties": { "name": { "type": "string", "minLength": 1 }, "weight": { "type": "number", "minimum": 0, "description": "每件磅數。" } }
+          },
+          {
+            "type": "object", "additionalProperties": false, "required": ["choose"],
+            "description": "擇一的物品：tools 從工具組（tool-data.js 的工具組 ID）選，from 從列出的品名選；兩者擇一寫。",
+            "properties": {
+              "choose": { "type": "string", "minLength": 1, "description": "顯示文字，例如「樂器擇一」「聖徽」。" },
+              "tools": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "feature.schema.json#/definitions/id" } },
+              "from": { "type": "array", "minItems": 2, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }
+            },
+            "oneOf": [{ "required": ["tools"] }, { "required": ["from"] }]
+          }
+        ]
+      }
+    },
     "appendixPart": {
       "type": "object",
       "description": "附錄小節：輸出成通用小節，標題為「名稱（先決條件：…）」。沒有等級；按鈕須寫 level。",

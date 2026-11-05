@@ -178,6 +178,19 @@ function checkProficiencies(classDef, errors, claimField) {
   else Array.from({ length: tools.count }, (_, index) => claimField(`${tools.field}${index + 1}`));
 }
 
+// 起始裝備：擇一的工具組須存在；組合 ID 不重複。品名是否對得到物品目錄由 validate-spell-search.js 在網頁中檢查（目錄由裝備說明產生）。
+function checkEquipment(classDef, errors) {
+  const where = `${classDef.file} equipment.A`;
+  const groupIds = new Set(loadToolCatalog().groups.map(group => group.id));
+  const options = classDef.equipment.A.options || [classDef.equipment.A];
+  const ids = options.map(option => option.id).filter(Boolean);
+  if (new Set(ids).size !== ids.length) errors.push(`${where}：options 的 id 重複`);
+  if (ids.includes("default") || ids.includes("gold")) errors.push(`${where}：options 的 id 不可用 default 或 gold（快速創角保留）`);
+  options.flatMap(option => option.items).forEach(item => {
+    (item.tools || []).filter(id => !groupIds.has(id)).forEach(id => errors.push(`${where}：choose 的工具組「${id}」不存在`));
+  });
+}
+
 function checkClass(classDef, errors) {
   const featureIds = new Map();
   const persistedIds = new Map();
@@ -199,6 +212,7 @@ function checkClass(classDef, errors) {
     levels.filter(level => level > classDef.maxLevel).forEach(level => errors.push(`${classDef.file}：特性表欄位 ${name} 的 ${level} 級超過 maxLevel`));
   }
   checkProficiencies(classDef, errors, id => claim(persistedIds, id, classDef.file, "工具欄位 ID"));
+  checkEquipment(classDef, errors);
   // 依等級的文字值（values 的 byLevel）只能用在文字的 {名稱|…}，不可用於公式、次數。
   const textValues = new Set(Object.entries(classDef.values || {}).filter(([, value]) => value.byLevel || value.fromTable).map(([name]) => name));
   const allFeatures = [classDef, ...classDef.subclasses].flatMap(owner => owner.features);

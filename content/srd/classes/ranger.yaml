@@ -22,9 +22,10 @@ proficiencies:
   weapons: { categories: [simple, martial] }
   armor: [light, medium, shield]
 equipment:
-  A: 鑲釘皮甲、彎刀、短劍、長弓、箭矢(20)、箭袋、德魯伊法器（槲寄生枝條）、探索套組、7 金幣
-  B: 150 金幣
-  note: "**探索套組：**背包、睡袋、油瓶 ×2、單日口糧 ×10、繩索、火絨盒、火把 ×10、水袋"
+  A:
+    items: [鑲釘皮甲, 彎刀, 短劍, 長弓, 箭矢 ×20, 箭袋, 德魯伊法器（槲寄生枝條）, 探索套組]
+    gold: 7
+  B: { gold: 150 }
 progression:
   favoredEnemy:
     label: 宿敵

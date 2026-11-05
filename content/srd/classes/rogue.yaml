@@ -23,9 +23,10 @@ proficiencies:
   armor: [light]
   tools: { fixed: 盜賊工具, field: rogue-fixed-tool-proficiency }
 equipment:
-  A: 皮甲、匕首 ×2、短劍、短弓、箭矢(20)、箭袋、盜賊工具、竊賊套組、8 金幣
-  B: 100 金幣
-  note: "**竊賊套組：**背包、滾珠、鈴鐺、蠟燭 ×10、撬棍、附蓋提燈、油瓶 ×7、單日口糧 ×5、繩索、火絨盒、水袋"
+  A:
+    items: [皮甲, 匕首 ×2, 短劍, 短弓, 箭矢 ×20, 箭袋, 盜賊工具, 竊賊套組]
+    gold: 8
+  B: { gold: 100 }
 progression:
   sneakAttackDice:
     label: 偷襲

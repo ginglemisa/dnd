@@ -23,9 +23,10 @@ proficiencies:
   armor: [light, shield]
   tools: { fixed: 草藥工具, field: druid-fixed-tool-proficiency }
 equipment:
-  A: 皮甲、盾牌、鐮刀、德魯伊法器（長棍）、探索套組、草藥工具、9 金幣
-  B: 50 金幣
-  note: "**探索套組：**背包、睡袋、油瓶 ×2、單日口糧 ×10、繩索、火絨盒、火把 ×10、水袋。"
+  A:
+    items: [皮甲, 盾牌, 鐮刀, 德魯伊法器（長棍）, 探索套組, 草藥工具]
+    gold: 9
+  B: { gold: 50 }
 progression:
   wildShapeUses:
     label: 荒野形態

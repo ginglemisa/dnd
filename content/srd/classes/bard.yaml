@@ -23,11 +23,10 @@ proficiencies:
   armor: [light]
   tools: { chooseFrom: [instrument], count: 3, field: bard-instrument- }
 equipment:
-  A: |-
-    皮甲、匕首 ×2、藝人套組、19 金幣\
-    自選一個樂器（風笛、鼓、揚琴、長笛、角號、魯特琴、里拉琴、排簫、蘆笛、提琴）
-  B: 90 金幣
-  note: "**藝人套組：**背包、睡袋、鈴鐺、牛眼提燈、戲服 ×3、鏡子、油瓶 ×8、單日口糧 ×9、火絨盒、水袋。"
+  A:
+    items: [皮甲, 匕首 ×2, 藝人套組, { choose: 樂器擇一, tools: [instrument] }]
+    gold: 19
+  B: { gold: 90 }
 progression:
   inspirationDie:
     label: 激勵骰

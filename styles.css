@@ -11626,6 +11626,103 @@ button.feature-rule-tip {
   text-decoration: underline solid;
 }
 
+/* 起始裝備（A）（B）：行內底線按鈕，點按把該組裝備或金幣加進物品欄；分享模式只顯示文字。 */
+button.starting-equipment-take {
+  display: inline;
+  width: auto;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--accent);
+  font: inherit;
+  letter-spacing: inherit;
+  vertical-align: baseline;
+  text-decoration: underline solid;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+button.starting-equipment-take:hover,
+button.starting-equipment-take:active {
+  background: transparent;
+  color: var(--accent-strong);
+  box-shadow: none;
+  transform: none;
+}
+
+button.starting-equipment-take:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+}
+
+:is(#tab-basic, #character-features) .output .starting-equipment-hint,
+.starting-equipment-hint {
+  margin: 0.35rem 0 0.35rem;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
+html.is-share-mode button.starting-equipment-take {
+  color: inherit;
+  text-decoration: none;
+  cursor: default;
+  pointer-events: none;
+}
+
+html.is-share-mode .starting-equipment-hint {
+  display: none;
+}
+
+/* 起始裝備視窗：組合單選、物品預覽、擇一下拉與錯誤提示。 */
+.starting-equipment-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  border: 0;
+}
+
+.starting-equipment-options legend {
+  width: 100%;
+  margin: 0 0 0.35rem;
+  padding: 0;
+  font-weight: 700;
+}
+
+.starting-equipment-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+}
+
+.starting-equipment-option input {
+  width: auto;
+  min-height: 0;
+  margin: 0;
+}
+
+.starting-equipment-contents {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.starting-equipment-error {
+  margin: 0.5rem 0 0;
+  color: var(--warning);
+  font-weight: 700;
+}
+
+.starting-equipment-error:empty {
+  display: none;
+}
+
 button.feature-rule-tip:hover,
 button.feature-rule-tip:active {
   background: transparent;

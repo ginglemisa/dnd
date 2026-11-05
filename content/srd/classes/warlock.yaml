@@ -22,9 +22,10 @@ proficiencies:
   weapons: { categories: [simple] }
   armor: [light]
 equipment:
-  A: 皮甲、鐮刀、匕首 ×2、奧術法器（寶珠）、書（玄秘學識）、學者套組、15 金幣
-  B: 100 金幣
-  note: "**學者套組：**背包、書籍、墨水、墨水筆、油燈、油瓶 ×10、羊皮紙 ×10、火絨盒"
+  A:
+    items: [皮甲, 鐮刀, 匕首 ×2, 奧術法器（寶珠）, 書籍（玄秘學識）, 學者套組]
+    gold: 15
+  B: { gold: 100 }
 progression:
   invocations:
     label: 魔能祈喚

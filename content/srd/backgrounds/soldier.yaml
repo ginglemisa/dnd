@@ -8,7 +8,7 @@ skills: [運動, 威嚇]
 tool: { chooseFrom: gaming }
 equipment:
   A:
-    items: [短矛, 短弓, 箭矢(20), { toolChoice: true }, 醫療包, 箭袋, 旅行者服裝]
+    items: [短矛, 短弓, 箭矢 ×20, { toolChoice: true }, 醫療包, 箭袋, 旅行者服裝]
     gold: 14
   B: { gold: 50 }
 description: |

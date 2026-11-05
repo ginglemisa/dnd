@@ -60,13 +60,13 @@ globalThis.EQUIPMENT_ENGLISH_NAMES = Object.freeze({
   "油": "Oil", "紙": "Paper", "羊皮紙": "Parchment", "香水": "Perfume", "基礎毒藥": "Poison, Basic",
   "長桿": "Pole", "鐵鍋": "Pot, Iron", "治療藥水": "Potion of Healing", "小包": "Pouch",
   "祭司套組": "Priest's Pack", "箭袋": "Quiver", "便攜式攻城錘": "Ram, Portable", "口糧": "Rations",
-  "長袍": "Robe", "繩索": "Rope", "麻袋": "Sack", "學者套組": "Scholar's Pack", "鏟子": "Shovel",
+  "祭袍": "Robe", "繩索": "Rope", "麻袋": "Sack", "學者套組": "Scholar's Pack", "鏟子": "Shovel",
   "信號笛": "Signal Whistle", "法術卷軸": "Spell Scroll", "長鐵釘": "Spikes, Iron", "望遠鏡": "Spyglass",
   "弦線": "String", "帳篷": "Tent", "火絨盒": "Tinderbox", "火把": "Torch", "藥瓶": "Vial", "水袋": "Waterskin",
   // 冒險用品表格內的品項
   "箭矢": "Arrows", "弩矢": "Bolts", "子彈，火器": "Bullets, Firearm", "彈丸，投石索": "Bullets, Sling",
   "針": "Needles", "水晶": "Crystal", "寶珠": "Orb", "權杖": "Rod", "法杖（長棍）": "Staff",
-  "魔杖": "Wand", "槲寄生樹枝": "Sprig of Mistletoe", "木製法杖（長棍）": "Wooden Staff",
+  "魔杖": "Wand", "槲寄生枝條": "Sprig of Mistletoe", "木製法杖（長棍）": "Wooden Staff",
   "紫杉魔杖": "Yew Wand", "護身符（佩戴／手持）": "Amulet", "徽章（附於布料／盾牌）": "Emblem",
   "聖物匣（手持）": "Reliquary"
 });
@@ -84,7 +84,7 @@ globalThis.EQUIPMENT_PACK_CONTENTS = Object.freeze({
   "地城套組": Object.freeze([["背包", 1], ["鐵蒺藜", 1], ["撬棍", 1], ["油", 2], ["口糧", 10], ["繩索", 1], ["火絨盒", 1], ["火把", 10], ["水袋", 1]]),
   "藝人套組": Object.freeze([["背包", 1], ["睡袋", 1], ["鈴鐺", 1], ["牛眼提燈", 1], ["戲服", 3], ["鏡子", 1], ["油", 8], ["口糧", 9], ["火絨盒", 1], ["水袋", 1]]),
   "探索套組": Object.freeze([["背包", 1], ["睡袋", 1], ["油", 2], ["口糧", 10], ["繩索", 1], ["火絨盒", 1], ["火把", 10], ["水袋", 1]]),
-  "祭司套組": Object.freeze([["背包", 1], ["毯子", 1], ["聖水", 1], ["油燈", 1], ["口糧", 7], ["長袍", 1], ["火絨盒", 1]]),
+  "祭司套組": Object.freeze([["背包", 1], ["毯子", 1], ["聖水", 1], ["油燈", 1], ["口糧", 7], ["祭袍", 1], ["火絨盒", 1]]),
   "學者套組": Object.freeze([["背包", 1], ["書籍", 1], ["墨水", 1], ["墨水筆", 1], ["油燈", 1], ["油", 10], ["羊皮紙", 10], ["火絨盒", 1]])
 });
 

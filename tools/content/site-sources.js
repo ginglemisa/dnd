@@ -89,6 +89,13 @@ function loadSpellCatalog() {
   return spellCatalog;
 }
 
+// 套組名稱（equipment-data.js 的 EQUIPMENT_PACK_CONTENTS）：職業起始裝備的套組加上內容物提示框。
+let packNames = null;
+function loadPackNames() {
+  packNames ||= new Set(Object.keys(runSiteScript("equipment-data.js").globals.EQUIPMENT_PACK_CONTENTS));
+  return packNames;
+}
+
 // 工具目錄（tool-data.js 的 ToolProficiencyCatalog：工具名稱與工具組）。
 let toolCatalog = null;
 function loadToolCatalog() {
@@ -105,4 +112,4 @@ function readIndexSelectOptions(id) {
   return select ? [...select[1].matchAll(/<option value="([^"]*)"[^>]*>([^<]*)<\/option>/g)].map(match => ({ value: match[1], label: match[2] })) : null;
 }
 
-module.exports = { ROOT, loadTipTables, loadWildShapeBeasts, loadSkillAbilities, contentSourceLabel, contentSourceName, contentSourceNotice, damageTypeLabel, featTypeLabel, useSpellContent, loadSpellCatalog, loadToolCatalog, readIndexSelectOptions };
+module.exports = { ROOT, loadTipTables, loadWildShapeBeasts, loadSkillAbilities, contentSourceLabel, contentSourceName, contentSourceNotice, damageTypeLabel, featTypeLabel, useSpellContent, loadSpellCatalog, loadToolCatalog, loadPackNames, readIndexSelectOptions };

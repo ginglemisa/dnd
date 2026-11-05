@@ -229,23 +229,59 @@
       }];
     }));
   }
-  const CLASS_EQUIPMENT_DEFINITIONS = {
-    barbarian: { gold: 75, defaults: [{ id: "default", label: "預設裝備", items: [["巨斧", 1], ["手斧", 4], ["探索套組", 1]], gp: 15, main: ["巨斧", "手斧"], off: { 巨斧: [], 手斧: ["手斧"] } }] },
-    bard: { gold: 90, defaults: [{ id: "default", label: "預設裝備", items: [["皮甲", 1], ["匕首", 2], ["藝人套組", 1]], gp: 19, main: ["匕首"], off: { 匕首: [] }, armor: "皮甲", instrument: true }] },
-    cleric: { gold: 110, defaults: [{ id: "default", label: "預設裝備", items: [["半身鎖甲", 1], ["盾牌", 1], ["硬頭錘", 1], ["聖徽", 1], ["祭司套組", 1]], gp: 7, main: ["硬頭錘"], off: { 硬頭錘: ["盾牌"] }, armor: "半身鎖甲", specialWrites: [{ field: "offHandAttackNote", note: "盾面繪有聖徽" }] }] },
-    druid: { gold: 50, defaults: [{ id: "default", label: "預設裝備", items: [["皮甲", 1], ["盾牌", 1], ["鐮刀", 1], ["德魯伊法器（長棍）", 1], ["探索套組", 1], ["草藥工具", 1]], gp: 9, main: ["鐮刀"], off: { 鐮刀: ["盾牌"] }, armor: "皮甲" }] },
-    fighter: { gold: 155, defaults: [
-      { id: "strength-default", label: "力量型預設裝備", items: [["鎖子甲", 1], ["巨劍", 1], ["連枷", 1], ["標槍", 8], ["地城套組", 1]], gp: 4, main: ["巨劍"], off: { 巨劍: [] }, armor: "鎖子甲" },
-      { id: "dexterity-default", label: "敏捷型預設裝備", items: [["鑲釘皮甲", 1], ["彎刀", 1], ["短劍", 1], ["長弓", 1], ["箭矢", 20], ["箭袋", 1], ["地城套組", 1]], gp: 11, main: ["長弓", "彎刀", "短劍"], off: { 長弓: [], 彎刀: ["短劍"], 短劍: ["彎刀"] }, armor: "鑲釘皮甲" }
-    ] },
-    monk: { gold: 50, defaults: [{ id: "default", label: "預設裝備", items: [["短矛", 1], ["匕首", 5], ["所選熟練項對應的工匠工具或樂器", 1], ["探索套組", 1]], gp: 11, main: ["短矛", "匕首"], off: { 短矛: ["武藝"], 匕首: ["武藝"] } }] },
-    paladin: { gold: 150, defaults: [{ id: "default", label: "預設裝備", items: [["鎖子甲", 1], ["盾牌", 1], ["長劍", 1], ["標槍", 6], ["聖徽", 1], ["祭司套組", 1]], gp: 9, main: ["長劍", "標槍"], off: { 長劍: ["盾牌"], 標槍: ["盾牌"] }, armor: "鎖子甲", specialWrites: [{ field: "offHandAttackNote", note: "盾面繪有聖徽" }] }] },
-    ranger: { gold: 150, defaults: [{ id: "default", label: "預設裝備", items: [["鑲釘皮甲", 1], ["彎刀", 1], ["短劍", 1], ["長弓", 1], ["箭矢", 20], ["箭袋", 1], ["德魯伊法器（槲寄生枝條）", 1], ["探索套組", 1]], gp: 7, main: ["長弓", "彎刀", "短劍"], off: { 長弓: [], 彎刀: ["短劍"], 短劍: ["彎刀"] }, armor: "鑲釘皮甲" }] },
-    rogue: { gold: 100, defaults: [{ id: "default", label: "預設裝備", items: [["皮甲", 1], ["匕首", 2], ["短劍", 1], ["短弓", 1], ["箭矢", 20], ["箭袋", 1], ["盜賊工具", 1], ["竊賊套組", 1]], gp: 8, main: ["短弓", "短劍", "匕首"], off: { 短弓: [], 短劍: [], 匕首: [] }, armor: "皮甲" }] },
-    sorcerer: { gold: 50, defaults: [{ id: "default", label: "預設裝備", items: [["短矛", 1], ["匕首", 2], ["奧術法器（水晶）", 1], ["地城套組", 1]], gp: 28, main: ["匕首"], off: { 匕首: [] } }] },
-    warlock: { gold: 100, defaults: [{ id: "default", label: "預設裝備", items: [["皮甲", 1], ["鐮刀", 1], ["匕首", 2], ["奧術法器（寶珠）", 1], ["書（玄秘學識）", 1], ["學者套組", 1]], gp: 15, main: ["匕首"], off: { 匕首: [] }, armor: "皮甲" }] },
-    wizard: { gold: 55, defaults: [{ id: "default", label: "預設裝備", items: [["匕首", 2], ["奧術法器（長棍）", 1], ["長袍", 1], ["法術書", 1], ["學者套組", 1]], gp: 5, main: ["匕首"], off: { 匕首: ["長棍"] }, specialWrites: [{ field: "offHandAttackNote", note: "奧術法器，施法用。" }] }] }
+  // 職業預設裝備的物品與金幣取自職業內容檔（classRules.equipment）；這裡只放快速創角給新手的配置：
+  // 主手候選與對應的副手、身著護甲、寫入攻擊備註的提示（specialWrites），以及擇一物品直接給的品項（pick，鍵為內容檔 choose 文字）。
+  // 鍵為內容檔的組合 ID（只有一組時為 default）。
+  const CLASS_EQUIPMENT_LOADOUTS = {
+    barbarian: { default: { main: ["巨斧", "手斧"], off: { 巨斧: [], 手斧: ["手斧"] } } },
+    bard: { default: { main: ["匕首"], off: { 匕首: [] }, armor: "皮甲" } },
+    cleric: { default: { main: ["硬頭錘"], off: { 硬頭錘: ["盾牌"] }, armor: "半身鎖甲", pick: { 聖徽: "徽章" }, specialWrites: [{ field: "offHandAttackNote", note: "盾面繪有聖徽" }] } },
+    druid: { default: { main: ["鐮刀"], off: { 鐮刀: ["盾牌"] }, armor: "皮甲" } },
+    fighter: {
+      "strength-default": { main: ["巨劍"], off: { 巨劍: [] }, armor: "鎖子甲" },
+      "dexterity-default": { main: ["長弓", "彎刀", "短劍"], off: { 長弓: [], 彎刀: ["短劍"], 短劍: ["彎刀"] }, armor: "鑲釘皮甲" }
+    },
+    monk: { default: { main: ["短矛", "匕首"], off: { 短矛: ["武藝"], 匕首: ["武藝"] } } },
+    paladin: { default: { main: ["長劍", "標槍"], off: { 長劍: ["盾牌"], 標槍: ["盾牌"] }, armor: "鎖子甲", pick: { 聖徽: "徽章" }, specialWrites: [{ field: "offHandAttackNote", note: "盾面繪有聖徽" }] } },
+    ranger: { default: { main: ["長弓", "彎刀", "短劍"], off: { 長弓: [], 彎刀: ["短劍"], 短劍: ["彎刀"] }, armor: "鑲釘皮甲" } },
+    rogue: { default: { main: ["短弓", "短劍", "匕首"], off: { 短弓: [], 短劍: [], 匕首: [] }, armor: "皮甲" } },
+    sorcerer: { default: { main: ["匕首"], off: { 匕首: [] } } },
+    warlock: { default: { main: ["匕首"], off: { 匕首: [] }, armor: "皮甲" } },
+    wizard: { default: { main: ["匕首"], off: { 匕首: ["長棍"] }, specialWrites: [{ field: "offHandAttackNote", note: "奧術法器，施法用。" }] } }
   };
+
+  // 內容檔物品寫法「名稱 ×n」拆成 [名稱, 數量]。
+  function splitEquipmentQuantity(text) {
+    const match = String(text).match(/^(.*?)\s*×\s*(\d+)$/u);
+    return match ? [match[1].trim(), Number(match[2])] : [String(text), 1];
+  }
+
+  // 預設裝備組合：items 為 [名稱, 數量, 附註]，附註 weight 是自訂物品的磅數、proficiencyTool 是從工具熟練帶入的擇一物品。
+  // 工具熟練只選一種（武僧）時直接給那一項；選多種（吟遊詩人的樂器）時改由 instrument 下拉選擇。
+  function classEquipmentDefinition(key) {
+    const rules = window.getClassRules?.(key);
+    const loadouts = CLASS_EQUIPMENT_LOADOUTS[key];
+    if (!rules?.equipment || !loadouts) return null;
+    const toolCount = rules.proficiencies?.tools?.count || 0;
+    const defaults = rules.equipment.A.map(option => {
+      const loadout = loadouts[option.id];
+      if (!loadout) return null;
+      let instrument = false;
+      const items = option.items.flatMap(item => {
+        if (typeof item === "string") return [splitEquipmentQuantity(item)];
+        if (item.name) return [[item.name, 1, { weight: item.weight }]];
+        if (item.from) return [[loadout.pick?.[item.choose] || item.from[0], 1]];
+        if (toolCount > 1) {
+          instrument = true;
+          return [];
+        }
+        return [[item.choose, 1, { proficiencyTool: true }]];
+      });
+      const { pick, ...rest } = loadout;
+      return { id: option.id, label: option.label ? `${option.label}預設裝備` : "預設裝備", items, gp: option.gold, ...rest, ...(instrument ? { instrument: true } : {}) };
+    }).filter(Boolean);
+    return defaults.length ? { gold: rules.equipment.B.gold, defaults } : null;
+  }
 
   const BASE_LANGUAGE_OPTIONS = [
     { value: "common-sign", label: "通用手語" }, { value: "draconic", label: "龍語" }, { value: "dwarvish", label: "矮人語" },
@@ -1346,13 +1382,13 @@
   }
 
   function selectedClassEquipmentPackage(target) {
-    const definition = CLASS_EQUIPMENT_DEFINITIONS[target.choices.class];
+    const definition = classEquipmentDefinition(target.choices.class);
     if (!definition) return null;
     return definition.defaults.find(option => option.id === target.choices.classEquipmentMethod) || null;
   }
 
   function classEquipmentInstrumentOptions(target) {
-    if (target.choices.class !== "bard") return [];
+    if (!classEquipmentDefinition(target.choices.class)?.defaults.some(option => option.instrument)) return [];
     return (Array.isArray(target.choices.classOptions?.tools) ? target.choices.classOptions.tools : [])
       .filter(name => INSTRUMENT_TOOL_OPTIONS.includes(name));
   }
@@ -1369,7 +1405,7 @@
     target.selections.classEquipment = null;
 
     const key = target.choices.class;
-    const definition = CLASS_EQUIPMENT_DEFINITIONS[key];
+    const definition = classEquipmentDefinition(key);
     if (!definition) {
       target.choices.classEquipmentMethod = null;
       target.choices.classEquipment = [];
@@ -1419,10 +1455,11 @@
       { order: 1, action: "writeEquipmentFields", mainHand, offHand, armor: equipmentPackage.armor || null },
       ...specialWrites.map((operation, index) => ({ order: index + 2, action: "writeSpecialAttackField", ...operation }))
     ];
-    const monkTool = key === "monk" ? target.choices.classOptions?.tools?.[0] : null;
-    const items = equipmentPackage.items.map(([name, quantity]) => ({
-      name: name === "自選樂器" && instrument ? instrument : name === "所選熟練項對應的工匠工具或樂器" && monkTool ? monkTool : name,
-      quantity
+    const proficiencyTool = target.choices.classOptions?.tools?.[0] || null;
+    const items = equipmentPackage.items.map(([name, quantity, extra]) => ({
+      name: extra?.proficiencyTool && proficiencyTool ? proficiencyTool : name,
+      quantity,
+      ...(Number.isFinite(extra?.weight) ? { weight: extra.weight } : {})
     }));
     if (instrument) items.push({ name: instrument, quantity: 1 });
     target.choices.classEquipment = items.map(item => ({ ...item }));
@@ -2208,7 +2245,7 @@
 
   function renderEquipmentMethod(body) {
     const key = draft.choices.class;
-    const definition = CLASS_EQUIPMENT_DEFINITIONS[key];
+    const definition = classEquipmentDefinition(key);
     if (!definition) {
       body.innerHTML = '<div class="quick-build-warning">目前職業沒有可用的裝備資料，請返回職業步驟。</div>';
       return;
@@ -2847,6 +2884,12 @@
     return (selection?.content?.items || []).map(item => typeof item === "string" ? item : `${item.name}${Number(item.quantity) > 1 ? ` ×${item.quantity}` : ""}`);
   }
 
+  // 物品欄的加入請求；裝備說明沒有的物品（例如法術書）帶內容檔給的重量。
+  function mobileEquipmentRequests(selection) {
+    const texts = mobileEquipmentItems(selection);
+    return (selection?.content?.items || []).map((item, index) => ({ text: texts[index], ...(Number.isFinite(item?.weight) ? { weight: item.weight } : {}) }));
+  }
+
   function importMobileEquipment(warnings) {
     const equipmentSelections = [draft.selections.backgroundEquipment, draft.selections.classEquipment].filter(Boolean);
     const items = equipmentSelections.flatMap(mobileEquipmentItems);
@@ -2854,7 +2897,7 @@
     // 只以文字管理物品時寫成攜帶物品的「初始裝備：」行。
     if (window.Inventory && !window.Inventory.isTextOnly()) {
       window.Inventory.clear();
-      if (items.length && !window.Inventory.add(items.map(text => ({ text })), { source: "initial" })) mobileImportWarning("初始裝備：物品欄放不下", warnings);
+      if (items.length && !window.Inventory.add(equipmentSelections.flatMap(mobileEquipmentRequests), { source: "initial" })) mobileImportWarning("初始裝備：物品欄放不下", warnings);
       setMobileField("gear-notes", "", warnings, "攜帶物品", "input");
     } else {
       setMobileField("gear-notes", items.length ? `${MOBILE_INITIAL_EQUIPMENT_PREFIX}${items.join("、")}` : "", warnings, "攜帶物品", "input");
@@ -3682,7 +3725,7 @@
   }
 
   function chooseClassEquipmentMethod(method) {
-    const definition = CLASS_EQUIPMENT_DEFINITIONS[draft.choices.class];
+    const definition = classEquipmentDefinition(draft.choices.class);
     if (!definition || !definition.defaults.map(option => option.id).concat("gold").includes(method)) return;
     if (draft.choices.classEquipmentMethod === method) return;
     draft.choices.classEquipmentMethod = method;
