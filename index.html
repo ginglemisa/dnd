@@ -81,7 +81,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261105-inventory-menu">
+  <link rel="stylesheet" href="styles.css?v=20261105-field-info-hint">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261103-roll-min" defer></script>
   <script src="monster.js?v=20261105-starting-equipment" defer></script>
@@ -562,6 +562,10 @@
 <div id="tab-basic" class="tab-content active" role="tabpanel" aria-label="數值頁">
 <div class="basic-overview">
   <div class="section basic-overview-group">
+    <p id="field-info-hint" class="field-info-hint" hidden>
+      <span>想了解特性內容？點選各欄位旁的<span class="character-features-info-icon character-features-info-icon--hint">i</span>即可查看。</span>
+      <button type="button" class="field-info-hint__dismiss">我知道了</button>
+    </p>
     <div class="basic-row basic-row--class-level">
     <div class="mini-stat-card basic-pair-card basic-pair-card--class-level">
       <div class="basic-pair-field basic-pair-field--class">
@@ -5016,6 +5020,7 @@ const LEGACY_LEGAL_DISMISS_KEYS = Object.freeze([
   "dndchar_legal_dismiss_v1",
   "dndchar_legal_dismiss_v2"
 ]);
+const FIELD_INFO_HINT_DISMISSED_KEY = "dnd.fieldInfoHintDismissed.v1";
 const APP_STORAGE_KEYS = Object.freeze([
   AUTO_SAVE_KEY,
   ACTIVE_TAB_KEY,
@@ -5033,6 +5038,7 @@ const APP_STORAGE_KEYS = Object.freeze([
   "dnd.tabletopActionMode.v1",
   TABLETOP_AVATAR_STORAGE_KEY,
   "dnd.tabletopIntroSeen.v1",
+  FIELD_INFO_HINT_DISMISSED_KEY,
   "dnd.spellManagementBackup.v1",
   "dnd.spellManagementMemories.v1",
   "dnd.spellManagementClassNoticeDisabled.v1",
@@ -5066,6 +5072,18 @@ function clearAppStateAndReload() {
   window.ClassOptionMemory?.clearMemories();
   APP_STORAGE_KEYS.forEach((key) => window.dndStorage.removeItem(key));
   location.replace(`${location.pathname}${location.search}`);
+}
+
+// One-time teaching hint: dismissal lasts until APP_STORAGE_KEYS is cleared; share viewers never see it.
+function initFieldInfoHint() {
+  const hint = document.getElementById("field-info-hint");
+  if (!hint || SHARE_MODE || window.dndStorage.getItem(FIELD_INFO_HINT_DISMISSED_KEY)) return;
+  hint.hidden = false;
+  hint.querySelector("button").addEventListener("click", () => {
+    window.dndStorage.setItem(FIELD_INFO_HINT_DISMISSED_KEY, "1");
+    hint.hidden = true;
+    document.querySelector("#tab-basic .mini-stat-label--features")?.focus({ preventScroll: true });
+  });
 }
 
 function bytesToBase64Url(bytes) {
@@ -6665,6 +6683,7 @@ window.addEventListener("DOMContentLoaded", async function() {
     restoreAllFields();
   }
 }
+  initFieldInfoHint();
   withCharacterUpdateBatch(() => {
   updateRaceOptionVisibility();
   syncSubclassOptions();

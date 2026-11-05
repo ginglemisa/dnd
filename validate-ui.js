@@ -3415,6 +3415,62 @@ async function verifyClassPicks(browser, url) {
   } finally { await page.close(); }
 }
 
+async function verifyFieldInfoHint(browser, url) {
+  const KEY = "dnd.fieldInfoHintDismissed.v1";
+  const page = await newUiPage(browser, { viewport: { width: 1280, height: 900 } });
+  try {
+    await page.goto(url);
+    const hint = page.locator("#field-info-hint");
+    const dismiss = hint.getByRole("button", { name: "我知道了" });
+    await hint.waitFor();
+    assert.match(await hint.innerText(), /想了解特性內容？點選各欄位旁的\s*i\s*即可查看。/);
+    assert.equal(await page.evaluate(key => APP_STORAGE_KEYS.includes(key), KEY), true, "clear records includes the hint dismissal");
+
+    const measure = () => page.evaluate(() => {
+      const button = document.querySelector(".field-info-hint__dismiss").getBoundingClientRect();
+      const text = document.querySelector("#field-info-hint > span").getBoundingClientRect();
+      const box = document.querySelector("#field-info-hint").getBoundingClientRect();
+      return { sameLine: button.top < text.bottom && button.bottom > text.top, rightAligned: Math.abs(button.right - (box.right - parseFloat(getComputedStyle(document.querySelector("#field-info-hint")).paddingRight))) < 1,
+        overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth };
+    });
+    let layout = await measure();
+    assert.deepEqual(layout, { sameLine: true, rightAligned: true, overflow: false }, "desktop keeps the dismiss link on the same line at the right");
+    for (const [width, height] of [[375, 812], [320, 568]]) {
+      await page.setViewportSize({ width, height });
+      layout = await measure();
+      assert.deepEqual([layout.rightAligned, layout.overflow], [true, false], `${width}px keeps the dismiss link right aligned without page overflow`);
+    }
+    await page.setViewportSize({ width: 1280, height: 900 });
+
+    await dismiss.focus();
+    await page.keyboard.press("Enter");
+    assert.equal(await hint.isHidden(), true, "dismissing hides the hint");
+    assert.equal(await page.evaluate(key => localStorage.getItem(key), KEY), "1");
+    assert.equal(await page.evaluate(() => document.activeElement?.dataset.characterFeaturesTab), "creation", "focus moves to the class info button");
+    assert.equal(JSON.stringify(await page.evaluate(() => collectStateObject())).includes("fieldInfoHint"), false, "dismissal stays out of character data");
+
+    await page.evaluate(() => { document.getElementById("class").value = "wizard"; saveAllFields(); });
+    await page.goto(url);
+    await page.waitForFunction(() => document.getElementById("class").value === "wizard");
+    await page.waitForLoadState("networkidle");
+    assert.equal(await hint.isHidden(), true, "dismissal survives a reload");
+
+    await Promise.all([page.waitForEvent("load"), page.evaluate(() => clearAppStateAndReload())]);
+    await hint.waitFor();
+    assert.equal(await page.evaluate(key => localStorage.getItem(key), KEY), null, "clear records resets the dismissal");
+
+    const hash = await page.evaluate(() => encodeStateToHash({ class: "wizard", level: "1", race: "human", background: "soldier" }));
+    const shared = await newUiPage(browser);
+    try {
+      const sharedUrl = new URL(url); sharedUrl.hash = hash;
+      await shared.goto(sharedUrl.href);
+      await shared.locator("#share-mode-tip").waitFor();
+      await shared.waitForLoadState("networkidle");
+      assert.equal(await shared.locator("#field-info-hint").isHidden(), true, "share viewers never see the hint");
+    } finally { await shared.close(); }
+  } finally { await page.close(); }
+}
+
 async function verifyCharacterDataSafety(browser, url) {
   const page = await newUiPage(browser);
   const sourceTag = '<img src="data:image/png,invalid" onerror="window.__unsafeCharacterScript=true">';
@@ -3789,7 +3845,7 @@ async function main() {
   try {
     browser = await chromium.launch({ headless: true, ...(process.env.DND_BROWSER_CHANNEL ? { channel: process.env.DND_BROWSER_CHANNEL } : {}) });
     const url = `http://127.0.0.1:${server.address().port}/index.html?analytics=owner`;
-    if (all || sections.has("--data-only")) { await verifyJsonImportTransaction(browser, url); await verifyCharacterDataSafety(browser, url); await verifySubclassSelection(browser, url); await verifyClassPicks(browser, url); await verifyClassOptionMemory(browser, url); await verifyInventoryPersistence(browser, url); }
+    if (all || sections.has("--data-only")) { await verifyJsonImportTransaction(browser, url); await verifyCharacterDataSafety(browser, url); await verifyFieldInfoHint(browser, url); await verifySubclassSelection(browser, url); await verifyClassPicks(browser, url); await verifyClassOptionMemory(browser, url); await verifyInventoryPersistence(browser, url); }
     if (all || sections.has("--appearance-only")) {
       const page = await newUiPage(browser, { viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });
       try { await verifyAppearanceAndLayout(browser, page, url); }
