@@ -1602,6 +1602,12 @@ async function validateEquipmentShop(page) {
   await moneyMenu.click();
   assert.deepEqual([await page.locator("#money-adjust-toggle").isHidden(), await page.locator("#inventory-coins-toggle").isHidden(), await page.locator("#inventory-weight-toggle").isVisible()],
     [true, true, true], "money items leave the menu in tabletop mode");
+  assert.equal(await page.evaluate(() => {
+    const panel = document.getElementById("inventory-more-panel");
+    const box = panel.getBoundingClientRect();
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+    return box.width >= 13.5 * rem && [...panel.querySelectorAll(".inventory-switch")].filter(item => item.offsetParent).every(item => item.getBoundingClientRect().right <= box.right);
+  }), true, "the tabletop menu keeps its width and holds its switches");
   await page.keyboard.press("Escape");
   await shopButton.click();
   assert.equal(await shop.isVisible(), true, "tabletop shop entry opens the shop");

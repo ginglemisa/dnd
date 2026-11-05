@@ -6584,7 +6584,8 @@ button.inventory-more:focus-visible {
   display: none;
 }
 
-.inventory-more-panel {
+/* 加上 div 提高權重：跑團模式的 .tabletop-mode * { min-width: 0 } 寫在後面，權重相同時會蓋掉 min-width，選單就縮成 ⋯ 的寬度。 */
+div.inventory-more-panel {
   position: absolute;
   top: calc(100% + 0.25rem);
   right: 0;
