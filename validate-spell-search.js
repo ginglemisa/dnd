@@ -1023,6 +1023,252 @@ async function validateInventory(page) {
     await page.keyboard.press("Escape");
   }
   await validateInventoryItemActions(page);
+  await validateInventoryStacks(page);
+}
+
+// 同名物品分堆：拆分、拖曳合併（醫療包總次數不變）、商店新標籤、裝備從物品欄拿 1 件、卸除成為獨立標籤與舊資料轉換。
+async function validateInventoryStacks(page) {
+  await page.setViewportSize({ width: 1100, height: 850 });
+  const blank = { class: "fighter", level: "5", str: "16", dex: "14", con: "10", mainHand: "", offHand: "", armor: "", offHandAsMain: false, main2Shield: false };
+  const reset = items => page.evaluate(([base, list]) => applyStateObject({ ...base, __inventory: { version: 1, items: list } }), [blank, items]);
+  const stacks = () => page.evaluate(() => Inventory.entries().map(entry => [entry.itemId || entry.name, entry.quantity, entry.slot || entry.in || ""]));
+  await page.locator('[aria-controls="tab-equipment"]').click();
+
+  // 醫療包合併：總次數不變，不能靠拆分再合併變多。
+  const merged = await page.evaluate(async ([base]) => {
+    const run = (first, second) => {
+      applyStateObject({ ...base, __inventory: { version: 1, items: [{ uid: "a", itemId: "醫療包", ...first }, { uid: "b", itemId: "醫療包", ...second }] } });
+      const ok = Inventory.merge("a", "b");
+      const kit = Inventory.getEntry("b");
+      return [ok, Inventory.entries().length, kit.quantity, kit.uses || 0];
+    };
+    const example = run({ quantity: 2, uses: 7 }, { quantity: 3, uses: 6 });
+    const fits = run({ quantity: 1, uses: 3 }, { quantity: 1, uses: 4 });
+    const exact = run({ quantity: 1, uses: 3 }, { quantity: 1, uses: 7 });
+    const fresh = run({ quantity: 2 }, { quantity: 1 });
+    applyStateObject({ ...base, __inventory: { version: 1, items: [{ uid: "a", itemId: "醫療包", quantity: 2, uses: 7 }] } });
+    const part = Inventory.split("a", 1);
+    const afterSplit = [Inventory.getEntry("a"), Inventory.getEntry(part)].map(entry => [entry.quantity, entry.uses || 0]);
+    Inventory.merge(part, "a");
+    const roundTrip = [Inventory.getEntry("a").quantity, Inventory.getEntry("a").uses];
+    return { example, fits, exact, fresh, afterSplit, roundTrip };
+  }, [blank]);
+  assert.deepEqual(merged, {
+    example: [true, 1, 5, 3], fits: [true, 1, 1, 7], exact: [true, 1, 1, 0], fresh: [true, 1, 3, 0],
+    afterSplit: [[1, 7], [1, 0]], roundTrip: [2, 7]
+  }, "kit merges keep the total charges and splitting then merging gains nothing");
+
+  // 合併與分堆的邊界：自訂物品與裝備中的物品不合併；改數量、排順序、換位置都不會自動合併；數量上限與 300 筆上限不變動資料。
+  const boundaries = await page.evaluate(([base]) => {
+    applyStateObject({ ...base, __inventory: { version: 1, items: [
+      { uid: "bag", itemId: "背包", quantity: 1 }, { uid: "r1", itemId: "繩索", quantity: 2 }, { uid: "r2", itemId: "繩索", quantity: 3 }, { uid: "r3", itemId: "繩索", quantity: 4, in: "bag" },
+      { uid: "c1", name: "家書", quantity: 1 }, { uid: "c2", name: "家書", quantity: 1 }, { uid: "big", itemId: "火把", quantity: 9999 }, { uid: "big2", itemId: "火把", quantity: 1 }
+    ] } });
+    const count = () => Inventory.entries().length;
+    const customTargets = Inventory.getMergeTargets("c1").length;
+    const customMerge = Inventory.merge("c1", "c2");
+    Inventory.add([{ name: "家書", quantity: 1 }]);
+    const customAdd = Inventory.entries().filter(entry => entry.name === "家書").length;
+    const before = count();
+    Inventory.update("r1", { quantity: 5 });
+    Inventory.move("r1", { into: "", before: "" });
+    Inventory.update("r1", { in: "bag" });
+    Inventory.move("r3", { into: "" });
+    const separate = before === count();
+    const targets = Inventory.getMergeTargets("r2").map(entry => entry.uid).sort();
+    const capped = Inventory.merge("big", "big2");
+    const single = Inventory.split("c1", 0);
+    const tooMany = Inventory.split("r2", 3);
+    Inventory.add([{ itemId: "繩索", quantity: 1 }], { into: "bag" });
+    return { customTargets, customMerge, customAdd, separate, targets, capped, single, tooMany, joined: Inventory.getEntry("r1").quantity };
+  }, [blank]);
+  assert.deepEqual(boundaries, { customTargets: 0, customMerge: false, customAdd: 3, separate: true, targets: ["r1", "r3"], capped: false, single: false, tooMany: false, joined: 6 },
+    "only explicit merges combine stacks and limits leave the data unchanged");
+
+  // 「拆分」：有按鈕的物品排在同一行右邊，沒按鈕的自成一行，只有 1 件時沒有；輸入一堆另一堆跟著變。
+  await reset([{ uid: "kit", itemId: "醫療包", quantity: 3, uses: 6 }, { uid: "rope", itemId: "繩索", quantity: 5 }, { uid: "torch", itemId: "火把", quantity: 1 }, { uid: "letter", name: "家書", quantity: 4 }]);
+  const item = page.locator('.app-dialog[data-variant="inventory-item"]');
+  const splitDialog = page.locator('.app-dialog[data-variant="inventory-split"]');
+  const tag = uid => page.locator(`[data-inventory-uid="${uid}"]`);
+  await tag("kit").click();
+  const sameRow = await item.evaluate((dialog) => {
+    const [use, split] = ["使用 1 次醫療包", "拆分醫療包"].map(name => dialog.querySelector(`[aria-label="${name}"]`));
+    return use.parentElement === split.parentElement && Math.abs(use.getBoundingClientRect().top - split.getBoundingClientRect().top) < 1 && split.getBoundingClientRect().left > use.getBoundingClientRect().left;
+  });
+  assert.equal(sameRow, true, "拆分 sits to the right of the existing button");
+  await item.getByRole("button", { name: "拆分醫療包" }).click();
+  await splitDialog.waitFor();
+  const splitInputs = splitDialog.locator(".inventory-split-input");
+  assert.deepEqual([await splitInputs.nth(0).inputValue(), await splitInputs.nth(1).inputValue()], ["2", "1"]);
+  assert.match(await splitDialog.locator(".inventory-item-note").textContent(), /共 3 件.*剩 6\/10 次）留在第一堆/u);
+  await splitInputs.nth(1).fill("2");
+  assert.equal(await splitInputs.nth(0).inputValue(), "1", "editing one field updates the other");
+  await splitInputs.nth(1).fill("9");
+  await splitInputs.nth(1).blur();
+  assert.deepEqual([await splitInputs.nth(0).inputValue(), await splitInputs.nth(1).inputValue()], ["1", "2"], "out-of-range numbers are pulled back");
+  await splitDialog.getByRole("button", { name: "拆分", exact: true }).click();
+  await item.waitFor({ state: "detached" });
+  assert.deepEqual(await page.evaluate(() => Inventory.entries().filter(entry => entry.itemId === "醫療包").map(entry => [entry.quantity, entry.uses || 0])), [[1, 6], [2, 0]], "the used kit stays in the first stack");
+  await page.waitForFunction(() => document.activeElement?.dataset?.inventoryUid === "kit", null, { timeout: 2000 });
+  await tag("rope").click();
+  assert.deepEqual(await item.locator(".inventory-item-actions button").allTextContents(), ["拆分"], "items without buttons get 拆分 in that place");
+  await page.keyboard.press("Escape");
+  await item.waitFor({ state: "detached" });
+  await tag("torch").click();
+  assert.equal(await item.locator(".inventory-item-actions").count(), 0, "a single item has nothing to split");
+  await page.keyboard.press("Escape");
+  await item.waitFor({ state: "detached" });
+  await tag("letter").click();
+  assert.equal(await item.getByRole("button", { name: "拆分家書" }).count(), 1, "custom items can be split");
+  await page.keyboard.press("Escape");
+  await item.waitFor({ state: "detached" });
+
+  // 拖曳：同名標籤中段合併，兩側只排順序；自訂物品拖到中段不合併；裝備中的標籤拖不動。
+  await reset([{ uid: "r1", itemId: "繩索", quantity: 2 }, { uid: "t1", itemId: "火把", quantity: 1 }, { uid: "r2", itemId: "繩索", quantity: 3 }, { uid: "c1", name: "家書", quantity: 1 }, { uid: "c2", name: "家書", quantity: 1 }, { uid: "sword", itemId: "長劍", quantity: 1 }]);
+  await page.locator("#mainHand").selectOption("長劍");
+  await page.locator("#inventory-more").click();
+  await page.locator("#inventory-arrange").click();
+  const dragTo = async (from, to, offset) => {
+    // 捲到畫面中央，拖曳時才不會碰到邊緣的自動捲動。
+    await tag(from).evaluate(el => el.scrollIntoView({ block: "center" }));
+    const start = await tag(from).boundingBox();
+    const end = await tag(to).boundingBox();
+    await page.mouse.move(start.x + start.width / 2, start.y + start.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(end.x + end.width * offset, end.y + end.height / 2, { steps: 12 });
+    await page.mouse.up();
+  };
+  await dragTo("r1", "r2", 0.08);
+  assert.equal(await page.evaluate(() => Inventory.entries().filter(entry => entry.itemId === "繩索").length), 2, "dropping on the edge of a same-name tag only reorders");
+  await dragTo("c1", "c2", 0.5);
+  assert.equal(await page.evaluate(() => Inventory.entries().filter(entry => entry.name === "家書").length), 2, "custom items do not merge");
+  await dragTo("r1", "r2", 0.5);
+  assert.deepEqual(await page.evaluate(() => [Inventory.getEntry("r1"), Inventory.getEntry("r2")?.quantity]), [null, 5], "dropping on the middle of a same-name tag adds the quantities");
+  assert.equal(await tag("r2").evaluate(el => el === document.activeElement), true, "focus lands on the merged tag");
+  const beforeFixed = await stacks();
+  await dragTo("sword", "t1", 0.1);
+  assert.deepEqual([await stacks(), await tag("sword").evaluate(el => getComputedStyle(el).animationName)], [beforeFixed, "none"], "equipped tags stay put and do not jiggle");
+  await page.locator("#inventory-arrange-done").click();
+
+  // 商店：每次購買都新增標籤；初始裝備等其他來源仍併入同一處最多的那堆。
+  await reset([{ uid: "r1", itemId: "繩索", quantity: 2 }, { uid: "r2", itemId: "繩索", quantity: 5 }]);
+  await page.evaluate(() => MoneyTracker.purchaseItems([{ name: "繩索", currency: "銅幣", amount: 1, quantity: 3 }], { free: true }));
+  assert.deepEqual((await stacks()).map(row => row[1]), [2, 5, 3], "a purchase is its own tag");
+  await page.evaluate(() => Inventory.add([{ itemId: "繩索", quantity: 1 }]));
+  assert.deepEqual((await stacks()).map(row => row[1]), [2, 6, 3], "other sources join the largest stack");
+
+  // 下拉裝備：身上數量最少的 -1，身上沒有才找第一個裝有的容器；卸除成為身上的獨立 ×1 標籤。
+  await reset([{ uid: "d5", itemId: "匕首", quantity: 5 }, { uid: "d3", itemId: "匕首", quantity: 3 }]);
+  await page.locator("#mainHand").selectOption("匕首");
+  assert.deepEqual(await stacks(), [["匕首", 5, ""], ["匕首", 2, ""], ["匕首", 1, "mainHand"]], "the dropdown takes one from the smallest carried stack");
+  assert.deepEqual(await page.evaluate(() => [Inventory.getEquippableCounts().weapons.get("匕首"), Inventory.getWeight().weight]), [8, 8], "totals and weight still count the equipped item");
+  const labels = () => page.locator("#inventory-tags > li").evaluateAll(items => items.map(li => (li.classList.contains("inventory-group-label") ? `#${li.textContent}` : li.querySelector(".inventory-tag").textContent)));
+  assert.deepEqual(await labels(), ["#裝備中", "匕首", "#身上", "匕首 ×5", "匕首 ×2"]);
+  await page.locator("#offHand").selectOption("匕首");
+  assert.deepEqual(await labels(), ["#裝備中", "匕首", "匕首", "#身上", "匕首 ×5", "匕首"], "each hand holds one");
+  await page.locator("#offHand").selectOption("");
+  await page.locator("#mainHand").selectOption("");
+  assert.deepEqual((await stacks()).map(row => [row[1], row[2]]), [[5, ""], [1, ""], [1, ""], [1, ""]], "unequipping leaves separate ×1 tags on the body");
+  await page.locator("#mainHand").selectOption("匕首");
+  await page.locator("#mainHand").selectOption("");
+  assert.equal((await stacks()).length, 4, "swapping back and forth does not add tags");
+
+  // 容器：身上沒有時從第一個裝有的容器拿，數量 1 時那個標籤直接變成裝備；卸除後留在身上。
+  await reset([{ uid: "b1", itemId: "背包", quantity: 1 }, { uid: "b2", itemId: "背包", quantity: 1 }, { uid: "d2", itemId: "匕首", quantity: 1, in: "b2" }, { uid: "d1", itemId: "匕首", quantity: 2, in: "b1" }]);
+  await page.locator("#mainHand").selectOption("匕首");
+  assert.deepEqual([await page.evaluate(() => Inventory.getEntry("d1").quantity), await page.evaluate(() => Inventory.getEntry("d2").in)], [1, "b2"], "the first container holding the item gives it up");
+  await page.locator("#mainHand").selectOption("");
+  assert.deepEqual((await stacks()).filter(row => row[0] === "匕首").map(row => [row[1], row[2]]).sort(), [[1, ""], [1, "b1"], [1, "b2"]], "the unequipped dagger lands on the body");
+
+  // 從標籤裝備：裝備點的那一堆；數量跟著更新，全部拿完的標籤視窗變成裝備中。
+  await reset([{ uid: "d5", itemId: "匕首", quantity: 5 }, { uid: "d3", itemId: "匕首", quantity: 3 }, { uid: "d1", itemId: "匕首", quantity: 1 }]);
+  const equipDialog = page.locator('.app-dialog[data-variant="inventory-equip"]');
+  await tag("d5").click();
+  await item.getByRole("button", { name: "裝備匕首" }).click();
+  await equipDialog.getByRole("button", { name: "主手", exact: true }).click();
+  await equipDialog.waitFor({ state: "detached" });
+  assert.equal(await item.locator(".inventory-stepper__input").inputValue(), "4", "the open dialog shows the new quantity");
+  assert.deepEqual((await stacks()).map(row => row[1]), [4, 1, 3, 1], "the clicked stack gives up one");
+  await page.keyboard.press("Escape");
+  await item.waitFor({ state: "detached" });
+  await tag("d1").click();
+  await item.getByRole("button", { name: "裝備匕首" }).click();
+  await equipDialog.getByRole("button", { name: "副手", exact: true }).click();
+  await equipDialog.waitFor({ state: "detached" });
+  assert.deepEqual([await item.locator(".inventory-holding__row").isHidden(), await item.locator(".inventory-item-meta .inventory-tag__badge").isVisible(), await item.getByRole("button", { name: "拆分匕首" }).count(), await item.getByRole("button", { name: "卸除匕首" }).count()],
+    [true, true, 0, 1], "a fully taken tag becomes the equipped tag: no quantity, location or split");
+  await item.getByRole("button", { name: "卸除匕首" }).click();
+  assert.deepEqual([await item.locator(".inventory-holding__row").isVisible(), await page.locator("#offHand").inputValue()], [true, ""], "unequipping brings the quantity row back");
+  await page.keyboard.press("Escape");
+  await item.waitFor({ state: "detached" });
+
+  // 護甲與盾牌：同名的另一堆在穿戴時不再顯示「裝備」；刪除裝備中的物品先確認。
+  await reset([{ uid: "a2", itemId: "皮甲", quantity: 2 }, { uid: "s1", itemId: "盾牌", quantity: 1 }]);
+  await page.locator("#armor").selectOption("皮甲");
+  assert.deepEqual(await stacks(), [["皮甲", 1, ""], ["皮甲", 1, "armor"], ["盾牌", 1, ""]]);
+  await tag("a2").click();
+  assert.equal(await item.getByRole("button", { name: "裝備皮甲" }).count(), 0, "a second suit of the worn armor offers no equip");
+  await page.keyboard.press("Escape");
+  await item.waitFor({ state: "detached" });
+  await page.locator("#armor").selectOption("");
+  await page.locator("#offHand").selectOption("盾牌");
+  assert.equal(await page.evaluate(() => Inventory.getEntry("s1").slot), "offHand", "a shield in the off hand is marked as the off hand");
+  await page.locator("#offHand").selectOption("");
+
+  // 舊資料：照下拉規則拿出來，總數不變；沒有物品欄時補上一件；不夠時補足。裝備位置不進存檔與分享，載入後由裝備欄位重新對應。
+  const legacy = await page.evaluate(([base]) => {
+    const load = (extra) => {
+      applyStateObject({ ...base, ...extra });
+      return Inventory.entries().map(entry => [entry.quantity, entry.slot || ""]);
+    };
+    const enough = load({ mainHand: "匕首", __inventory: { version: 1, items: [{ itemId: "匕首", quantity: 2 }] } });
+    const none = load({ mainHand: "匕首" });
+    const short = load({ mainHand: "匕首", offHand: "匕首", __inventory: { version: 1, items: [{ itemId: "匕首", quantity: 1 }] } });
+    const saved = collectStateObject();
+    const fieldsInFiles = [...saved.__inventory.items, ...collectShareState().__inventory.items].filter(entry => "slot" in entry).length;
+    const accepted = isValidInventoryState(saved.__inventory);
+    const labels = () => Inventory.entries().map(entry => JSON.stringify([entry.itemId, entry.quantity, entry.slot || ""])).sort();
+    const before = labels();
+    applyStateObject(saved);
+    const stable = JSON.stringify(before) === JSON.stringify(labels());
+    const rejected = isValidInventoryState({ version: 1, items: [{ itemId: "匕首", quantity: 1, slot: "mainHand" }] });
+    Inventory.restore({ version: 1, items: [{ itemId: "匕首", quantity: 1, slot: "mainHand" }] });
+    const ignored = "slot" in Inventory.entries()[0];
+    // 分堆後存檔再載入：裝備的那件拿回同樣的 ×1，其他標籤的數字不變。
+    const split = load({ mainHand: "匕首", __inventory: { version: 1, items: [{ itemId: "匕首", quantity: 5 }, { itemId: "匕首", quantity: 3 }] } });
+    const reloaded = (applyStateObject(collectStateObject()), Inventory.entries().map(entry => [entry.quantity, entry.slot || ""]));
+    return { enough, none, short, fieldsInFiles, accepted, stable, rejected, ignored, split, reloaded };
+  }, [blank]);
+  assert.deepEqual(legacy, {
+    enough: [[1, ""], [1, "mainHand"]], none: [[1, "mainHand"]], short: [[1, "offHand"], [1, "mainHand"]],
+    fieldsInFiles: 0, accepted: true, stable: true, rejected: false, ignored: false,
+    split: [[5, ""], [2, ""], [1, "mainHand"]], reloaded: [[5, ""], [2, ""], [1, "mainHand"]]
+  }, "old data is converted without changing totals; slots stay out of save and share files and come back from the equipment fields");
+
+  // 物品欄滿 300 筆又要多開一筆時裝備失敗：下拉改回原本的選擇並提示；×1 的標籤不用多開一筆，照常裝備。
+  const fullItems = [{ uid: "d2", itemId: "匕首", quantity: 2 }, ...Array.from({ length: 299 }, (_, index) => ({ name: `雜物${index}`, quantity: 1 }))];
+  await reset(fullItems);
+  await page.locator("#mainHand").selectOption("匕首");
+  await page.waitForFunction(() => document.getElementById("mainHand").value === "", null, { timeout: 2000 });
+  assert.deepEqual([await page.evaluate(() => Inventory.entries().length), await page.evaluate(() => Inventory.getEntry("d2").quantity)], [300, 2], "a full inventory refuses the equip and keeps the data");
+  assert.match(await page.locator("#app-toast > .app-toast:last-child .app-toast__message").textContent(), /物品欄最多 300 筆，無法裝備/u);
+  await reset([{ uid: "d1", itemId: "匕首", quantity: 1 }, ...fullItems.slice(1)]);
+  await page.locator("#mainHand").selectOption("匕首");
+  assert.equal(await page.evaluate(() => Inventory.getEntry("d1").slot), "mainHand", "a single item needs no new entry");
+
+  // 窄螢幕：拆分視窗與按鈕不超出畫面。
+  await reset([{ uid: "kit", itemId: "醫療包", quantity: 3 }]);
+  await page.setViewportSize({ width: 360, height: 800 });
+  await tag("kit").click();
+  await item.getByRole("button", { name: "拆分醫療包" }).click();
+  await splitDialog.waitFor();
+  assert.equal(await splitDialog.locator(".app-dialog__surface").evaluate(el => el.scrollWidth <= el.clientWidth && el.getBoundingClientRect().right <= innerWidth), true, "split dialog fits at 360px");
+  await page.keyboard.press("Escape");
+  await splitDialog.waitFor({ state: "detached" });
+  await page.keyboard.press("Escape");
+  await item.waitFor({ state: "detached" });
+  await page.setViewportSize({ width: 1100, height: 850 });
+  await reset([]);
 }
 
 // 物品視窗的互動列：裝備／卸除（武器選手視窗、換護甲與盾牌確認）、工具檢定、醫療包次數、治療藥水、投擲物。
@@ -1498,7 +1744,7 @@ async function validateEquipmentShop(page) {
   await cartDialog.getByRole("button", { name: "免費取得", exact: true }).click();
   await shop.waitFor({ state: "detached" });
   assert.equal(await cartDialog.count(), 0, "checkout from the cart closes both windows");
-  assert.equal(await page.evaluate(() => Inventory.formatText()), "繩索 ×3、命令術法術卷軸", "checkout merges purchases into the inventory once");
+  assert.equal(await page.evaluate(() => Inventory.formatText()), "繩索、繩索 ×2、命令術法術卷軸", "each checkout line becomes its own tag instead of joining the same item");
   assert.equal(await page.locator("#gear-notes").inputValue(), "自由備註", "checkout leaves the free-text notes alone");
   assert.equal(await page.evaluate(() => JSON.parse(document.getElementById("money-log-data").value)[0].note), "免費取得繩索 ×2、命令術法術卷軸");
   assert.equal(await page.locator("#money-balance-gp").inputValue(), "10");
@@ -1522,7 +1768,7 @@ async function validateEquipmentShop(page) {
   await shop.waitFor({ state: "detached" });
   assert.equal(await page.locator("#money-summary").textContent(), "8 金幣 9 銀幣 9 銅幣", "one payment across currencies");
   assert.equal(await page.evaluate(() => JSON.parse(document.getElementById("money-log-data").value)[0].note), "購買箭矢、火把");
-  assert.equal(await page.evaluate(() => Inventory.formatText()), "繩索 ×3、命令術法術卷軸、箭矢 ×20、火把", "ammunition bundles become single pieces in the inventory");
+  assert.equal(await page.evaluate(() => Inventory.formatText()), "繩索、繩索 ×2、命令術法術卷軸、箭矢 ×20、火把", "ammunition bundles become single pieces in the inventory");
   assert.equal(await page.evaluate(() => Object.keys(collectStateObject()).some(key => /shop/u.test(key))), false, "shop controls stay out of character data");
 
   // The cart close button closes the shop too.

@@ -81,7 +81,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261105-field-info-hint">
+  <link rel="stylesheet" href="styles.css?v=20261105-inventory-stacks">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261103-roll-min" defer></script>
   <script src="monster.js?v=20261105-quick-build-guidance" defer></script>
@@ -1233,7 +1233,7 @@
       <input type="hidden" id="money-log-data" value="[]">
       <input type="hidden" id="money-history-data" value="[]">
     </div>
-    <div id="gear-notes-sheet-mount"><div id="inventory-panel" class="inventory-panel" aria-label="物品欄"><div id="inventory-weight" class="inventory-weight" aria-live="polite"></div><p id="inventory-over" class="inventory-over" role="status" hidden>負重超過攜帶上限 <button type="button" id="inventory-over-hide" class="inventory-over__hide">隱藏</button></p><p id="inventory-arrange-hint" class="inventory-arrange-hint" hidden><span>拖曳標籤調整順序，或用方向鍵前後移動。</span><button type="button" id="inventory-arrange-done" class="inventory-arrange-done">完成</button></p><ul id="inventory-tags" class="inventory-tags" aria-label="攜帶的物品"></ul><p class="inventory-empty">物品欄還是空的：可以從下方商店購買或免費取得，或建立自訂物品。</p></div><textarea id="gear-notes" rows="3" aria-label="其他攜帶物品（文字）" placeholder="其他物品或備註（自由文字）"></textarea><div id="inventory-actions" class="inventory-actions"><button type="button" id="equipment-shop-open" class="equipment-shop-launch" data-equipment-shop-open aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M3 4h2.2l2.1 10.2a1.5 1.5 0 0 0 1.5 1.2h8.4a1.5 1.5 0 0 0 1.5-1.1L20.5 8H6.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="19.5" r="1.5" fill="currentColor"/><circle cx="17" cy="19.5" r="1.5" fill="currentColor"/></svg><span>商店</span></button><button type="button" id="inventory-add" class="inventory-add" aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg><span>自訂物品</span></button></div></div>
+    <div id="gear-notes-sheet-mount"><div id="inventory-panel" class="inventory-panel" aria-label="物品欄"><div id="inventory-weight" class="inventory-weight" aria-live="polite"></div><p id="inventory-over" class="inventory-over" role="status" hidden>負重超過攜帶上限 <button type="button" id="inventory-over-hide" class="inventory-over__hide">隱藏</button></p><p id="inventory-arrange-hint" class="inventory-arrange-hint" hidden><span>拖曳標籤調整順序，拖到同名標籤上可合併，或用方向鍵前後移動。</span><button type="button" id="inventory-arrange-done" class="inventory-arrange-done">完成</button></p><ul id="inventory-tags" class="inventory-tags" aria-label="攜帶的物品"></ul><p class="inventory-empty">物品欄還是空的：可以從下方商店購買或免費取得，或建立自訂物品。</p></div><textarea id="gear-notes" rows="3" aria-label="其他攜帶物品（文字）" placeholder="其他物品或備註（自由文字）"></textarea><div id="inventory-actions" class="inventory-actions"><button type="button" id="equipment-shop-open" class="equipment-shop-launch" data-equipment-shop-open aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M3 4h2.2l2.1 10.2a1.5 1.5 0 0 0 1.5 1.2h8.4a1.5 1.5 0 0 0 1.5-1.1L20.5 8H6.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="19.5" r="1.5" fill="currentColor"/><circle cx="17" cy="19.5" r="1.5" fill="currentColor"/></svg><span>商店</span></button><button type="button" id="inventory-add" class="inventory-add" aria-haspopup="dialog"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg><span>自訂物品</span></button></div></div>
   </div>
 
   <div class="section">
@@ -2994,8 +2994,8 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
 <script src="equipment-data.js?v=20261105-starting-equipment" defer></script>
 <script src="search.js?v=20261104-inventory-detail" defer></script>
 <script src="equipment-shop.js?v=20261105-starting-equipment" defer></script>
-<script src="inventory.js?v=20261105-starting-equipment" defer></script>
-<script src="inventory-ui.js?v=20261105-holy-symbol-detail" defer></script>
+<script src="inventory.js?v=20261105-inventory-stacks" defer></script>
+<script src="inventory-ui.js?v=20261105-inventory-stacks" defer></script>
 
 <script>
 function getModifier(statId) {
@@ -5599,6 +5599,8 @@ function applyStateObjectNow(data) {
   }
   syncDerivedFeatRows();
   syncMain2ShieldControl({ legalize: true });
+  // 物品的裝備位置不進存檔：裝備欄位都還原後才重新對應（舊資料也從這裡把已裝備的物品拿出來）。
+  window.InventoryUI?.syncEquippedSlots({ restoring: true });
   updateACDisplay();
   updateSpeedDisplay();
   updateClassFeatureChoiceReminder();
@@ -6496,7 +6498,8 @@ function setupMoneyTracker() {
     if (!items.length || items.includes(null) || !window.Inventory) return false;
     const textOnly = window.Inventory.isTextOnly();
     const inventoryRequests = textOnly ? [] : toInventoryRequests(items);
-    if (!textOnly && !window.Inventory.add(inventoryRequests, { dryRun: true })) {
+    // 買的東西各自成一個標籤，不併入同名物品；玩家要合併時自己拖曳。
+    if (!textOnly && !window.Inventory.add(inventoryRequests, { dryRun: true, newStack: true })) {
       window.AppDialog.notify(`物品欄最多 ${window.Inventory.LIMITS.items} 筆，請先整理物品欄再結帳。`, { tone: "warning" });
       return false;
     }
@@ -6510,7 +6513,7 @@ function setupMoneyTracker() {
       if (!(await recordTransaction({ type: "expense", note: `購買${note}`, amountCopper: toCopperValue(amountParts), amountParts }))) return false;
     }
     if (textOnly) mergePurchasedGear(items);
-    else window.Inventory.add(inventoryRequests);
+    else window.Inventory.add(inventoryRequests, { newStack: true });
     scheduleSaveAllFields();
     return true;
   };
@@ -6552,12 +6555,17 @@ window.addEventListener("DOMContentLoaded", async function() {
     syncMain2ShieldControl({ legalize: false });
     scheduleSaveAllFields();
   });
+  // 裝備選擇改變時，物品跟著從物品欄拿出或放回；還原存檔時由 applyStateObjectNow 最後核對一次。
+  const syncInventorySlots = () => {
+    if (!autosaveSuspended) window.InventoryUI?.syncEquippedSlots();
+  };
   const refreshEquipmentEffects = () => {
     syncMain2ShieldControl();
     updateEquipmentLoadoutSummary();
     if (typeof updateACDisplay === "function") updateACDisplay();
     if (typeof updateSpeedDisplay === "function") updateSpeedDisplay();
     if (typeof populateHandAttacks === "function") populateHandAttacks();
+    syncInventorySlots();
   };
   const confirmTwoHandedSelection = (select, previousValue, accept) => {
     const requestedValue = select.value;
@@ -6615,6 +6623,7 @@ window.addEventListener("DOMContentLoaded", async function() {
     refreshEquipmentEffects();
   });
   main2ShieldToggle?.addEventListener("change", refreshEquipmentEffects);
+  armorSelect?.addEventListener("change", syncInventorySlots);
   // 契約武器同時只有一把：勾選一手時取消另一手。
   Object.values(PACT_WEAPON_HANDS).forEach(config => {
     document.getElementById(config.checkboxId)?.addEventListener("change", event => {
