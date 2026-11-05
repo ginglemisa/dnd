@@ -81,10 +81,10 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261105-inventory-redesign">
+  <link rel="stylesheet" href="styles.css?v=20261105-starting-equipment">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261103-roll-min" defer></script>
-  <script src="monster.js?v=20261025-beast-perception" defer></script>
+  <script src="monster.js?v=20261105-starting-equipment" defer></script>
   <script src="druid-wild-shape-beasts.js?v=20261031-beast-file" defer></script>
   <script src="class-content.generated.js?v=a42b11179858" defer></script>
   <script src="class-content.private.generated.js" defer></script>
@@ -109,7 +109,7 @@
   <script src="tabletop-spells.js?v=20261104-weapon-damage-type" defer></script>
   <script src="legal-modal.js?v=20261022-game-icons" defer></script>
   <script src="onboarding-tour.js?v=20261104-inventory" defer></script>
-  <script src="quick-build.js?v=20261105-inventory-text" defer></script>
+  <script src="quick-build.js?v=20261105-starting-equipment" defer></script>
   <script src="spellbook.js?v=20261104-familiar-references" defer></script>
   <script src="spell-management.js?v=20261103-manual-toggle" defer></script>
   <script src="class-option-memory.js?v=20261024-class-split" defer></script>
@@ -2333,8 +2333,9 @@ function updateBackgroundFeature() {
 
    <div class="background-guide-block background-guide-section">
      <div><strong>裝備：</strong>A、B 二擇一</div>
-     <div><strong>(A) </strong>${text.equipmentA}</div>
-     <div><strong>(B) </strong>${text.equipmentB}</div>
+     <div><strong><button type="button" class="starting-equipment-take" data-starting-equipment="A">(A)</button> </strong>${text.equipmentA}</div>
+     <div><strong><button type="button" class="starting-equipment-take" data-starting-equipment="B">(B)</button> </strong>${text.equipmentB}</div>
+     <div class="starting-equipment-hint">＊點按 (A) 或 (B) 取得初始裝備或金錢</div>
    </div>
 
    <div class="background-guide-description">
@@ -2986,11 +2987,11 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
   globalThis.armors = globalThis.armors || [];
   globalThis.shield = globalThis.shield || [];
 </script>
-<script src="equipment-data.js?v=20261104-item-actions" defer></script>
+<script src="equipment-data.js?v=20261105-starting-equipment" defer></script>
 <script src="search.js?v=20261104-inventory-detail" defer></script>
-<script src="equipment-shop.js?v=20261027-shop-tool-order" defer></script>
-<script src="inventory.js?v=20261104-item-actions" defer></script>
-<script src="inventory-ui.js?v=20261105-inventory-redesign" defer></script>
+<script src="equipment-shop.js?v=20261105-starting-equipment" defer></script>
+<script src="inventory.js?v=20261105-starting-equipment" defer></script>
+<script src="inventory-ui.js?v=20261105-starting-equipment" defer></script>
 
 <script>
 function getModifier(statId) {
@@ -4530,7 +4531,7 @@ function renderSkillPopupHtml(skillLabel, conditionKey) {
         `<p class="skill-popup-paragraph">${escapeHtml(effect)}</p>`).join("")}</div>`;
   }
   const normalizedKey = normalizeSkillKey(skillLabel);
-  const text = skills_example_uses[normalizedKey];
+  const text = skills_example_uses[normalizedKey] || packTipText(normalizedKey);
   if (!text) return "";
 
   const description = text.includes("\n\n")
@@ -6495,7 +6496,15 @@ function setupMoneyTracker() {
     scheduleSaveAllFields();
     return true;
   };
-  window.MoneyTracker = Object.freeze({ readTotal, formatAmount, purchaseItems });
+  // 起始裝備的金幣（職業頁、背景頁的（A）（B），inventory-ui.js）記一筆收入。
+  const receiveGold = async (gold, note) => {
+    const amount = toSafeInt(gold);
+    if (amount < 1) return true;
+    if (!(await recordTransaction({ type: "income", note, amountCopper: amount * 100, amountParts: { cp: 0, sp: 0, gp: amount, pp: 0 } }))) return false;
+    scheduleSaveAllFields();
+    return true;
+  };
+  window.MoneyTracker = Object.freeze({ readTotal, formatAmount, purchaseItems, receiveGold });
 
   renderLogList();
   updateSummary();
@@ -6616,6 +6625,7 @@ window.addEventListener("DOMContentLoaded", async function() {
   if (sharedData) {
   SHARE_MODE = true;
   window.SHARE_MODE = true;
+  document.documentElement.classList.add("is-share-mode");
   const exitShareLink = document.getElementById("exit-share-mode");
   const exitShareUrl = new URL(location.href);
   exitShareUrl.hash = "";
@@ -6640,6 +6650,7 @@ window.addEventListener("DOMContentLoaded", async function() {
   if (hasShareHash) {
     SHARE_MODE = true;
     window.SHARE_MODE = true;
+    document.documentElement.classList.add("is-share-mode");
     closeShareModeGuideEntries();
     await window.AppDialog.showMessage({
       title: "分享連結讀取失敗",
