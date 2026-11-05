@@ -26,6 +26,9 @@
       }),
       spellNotePattern: settings.spellNotePattern === undefined ? /^note\d+$/ : settings.spellNotePattern,
       measuredWrapFields: Object.freeze([...(settings.measuredWrapFields || ['equipment1', 'extra1'])]),
+      // Measured fields whose DA keeps the size they were drawn at, so a reader
+      // redraws an edited field at that size instead of the preferred size.
+      keepDrawnSizeFields: Object.freeze([...(settings.keepDrawnSizeFields || [])]),
       editableFixedMultilineFields: Object.freeze([
         ...(settings.editableFixedMultilineFields || ['classFeatures1', 'specie_features1', 'feats1'])
       ]),
@@ -202,7 +205,8 @@
         feats1: { dy: 3.5 }
       },
       spellRows: { count: 19, fontSize: 10, alignment: 'right' },
-      spellNotes: { fontSizes: [9, 7.5, 6.5], truncateAtMinimum: false }
+      spellNotes: { fontSizes: [9, 7.5, 6.5], truncateAtMinimum: false },
+      keepDrawnSizeFields: ['equipment1', 'extra1']
     }),
     compact: createPdfLayoutSettings({
       minFontSize: 4,
@@ -377,7 +381,7 @@
       spellRows: { count: 19, fontSize: 11, alignment: 'right' },
       spellNotes: { fontSizes: [16, 13, 10], truncateAtMinimum: true }
     }),
-    'official-editable': createOfficialPdfLayoutSettings(),
+    'official-editable': createOfficialPdfLayoutSettings({ keepDrawnSizeFields: ['class-a-2', 'Equip'] }),
     'official-compact': createOfficialPdfLayoutSettings()
   });
 
@@ -1078,7 +1082,7 @@
     });
   }
 
-  function applyMeasuredWrapAppearances(form, cjkFont, layoutSettings, appearanceFontSizes = {}, keepAppearanceFontSize = false) {
+  function applyMeasuredWrapAppearances(form, cjkFont, layoutSettings, appearanceFontSizes = {}) {
     const PDFLib = globalScope.PDFLib;
     const appearanceKey = PDFLib.PDFName.of('DA');
     layoutSettings.measuredWrapFields.forEach((fieldName) => {
@@ -1103,7 +1107,11 @@
           }), widget, font)
         ));
       } finally {
-        restoreDefaultAppearances(defaults, appearanceKey, keepAppearanceFontSize ? fontSize : undefined);
+        restoreDefaultAppearances(
+          defaults,
+          appearanceKey,
+          layoutSettings.keepDrawnSizeFields.includes(fieldName) ? fontSize : undefined
+        );
       }
     });
   }
@@ -1566,8 +1574,7 @@
       form,
       fontEmbedResult.font,
       layoutSettings,
-      profile.layoutId === 'editable' ? EDITABLE_APPEARANCE_FONT_SIZES : {},
-      profile.layoutId === 'editable'
+      profile.layoutId === 'editable' ? EDITABLE_APPEARANCE_FONT_SIZES : {}
     );
     const avatarPlaced = await placeAvatarImage(pdfDoc, form, layoutSettings, exportOptions.avatarDataUrl);
 
