@@ -1215,7 +1215,7 @@ async function validateInventoryStacks(page) {
   assert.equal(await page.evaluate(() => Inventory.getEntry("s1").slot), "offHand", "a shield in the off hand is marked as the off hand");
   await page.locator("#offHand").selectOption("");
 
-  // 舊資料：沒有 slot 時照下拉規則拿出來，總數不變；沒有物品欄時補上一件；不夠時補足。存檔、分享與匯入都保留裝備位置。
+  // 舊資料：照下拉規則拿出來，總數不變；沒有物品欄時補上一件；不夠時補足。裝備位置不進存檔與分享，載入後由裝備欄位重新對應。
   const legacy = await page.evaluate(([base]) => {
     const load = (extra) => {
       applyStateObject({ ...base, ...extra });
@@ -1225,19 +1225,25 @@ async function validateInventoryStacks(page) {
     const none = load({ mainHand: "匕首" });
     const short = load({ mainHand: "匕首", offHand: "匕首", __inventory: { version: 1, items: [{ itemId: "匕首", quantity: 1 }] } });
     const saved = collectStateObject();
-    const shared = collectShareState().__inventory.items.map(entry => entry.slot || "");
+    const fieldsInFiles = [...saved.__inventory.items, ...collectShareState().__inventory.items].filter(entry => "slot" in entry).length;
     const accepted = isValidInventoryState(saved.__inventory);
-    const before = Inventory.entries();
+    const labels = () => Inventory.entries().map(entry => JSON.stringify([entry.itemId, entry.quantity, entry.slot || ""])).sort();
+    const before = labels();
     applyStateObject(saved);
-    const stable = JSON.stringify(before) === JSON.stringify(Inventory.entries());
-    const rejected = isValidInventoryState({ version: 1, items: [{ itemId: "匕首", quantity: 1, slot: 3 }] });
-    const stale = load({ mainHand: "", __inventory: { version: 1, items: [{ itemId: "匕首", quantity: 1, slot: "mainHand" }, { itemId: "匕首", quantity: 2, slot: "offHand" }] } });
-    return { enough, none, short, shared, accepted, stable, rejected, stale };
+    const stable = JSON.stringify(before) === JSON.stringify(labels());
+    const rejected = isValidInventoryState({ version: 1, items: [{ itemId: "匕首", quantity: 1, slot: "mainHand" }] });
+    Inventory.restore({ version: 1, items: [{ itemId: "匕首", quantity: 1, slot: "mainHand" }] });
+    const ignored = "slot" in Inventory.entries()[0];
+    // 分堆後存檔再載入：裝備的那件拿回同樣的 ×1，其他標籤的數字不變。
+    const split = load({ mainHand: "匕首", __inventory: { version: 1, items: [{ itemId: "匕首", quantity: 5 }, { itemId: "匕首", quantity: 3 }] } });
+    const reloaded = (applyStateObject(collectStateObject()), Inventory.entries().map(entry => [entry.quantity, entry.slot || ""]));
+    return { enough, none, short, fieldsInFiles, accepted, stable, rejected, ignored, split, reloaded };
   }, [blank]);
   assert.deepEqual(legacy, {
     enough: [[1, ""], [1, "mainHand"]], none: [[1, "mainHand"]], short: [[1, "offHand"], [1, "mainHand"]],
-    shared: ["offHand", "mainHand"], accepted: true, stable: true, rejected: false, stale: [[1, ""], [2, ""]]
-  }, "old data is converted without changing totals, and slots survive save, share and import");
+    fieldsInFiles: 0, accepted: true, stable: true, rejected: false, ignored: false,
+    split: [[5, ""], [2, ""], [1, "mainHand"]], reloaded: [[5, ""], [2, ""], [1, "mainHand"]]
+  }, "old data is converted without changing totals; slots stay out of save and share files and come back from the equipment fields");
 
   // 物品欄滿 300 筆又要多開一筆時裝備失敗：下拉改回原本的選擇並提示；×1 的標籤不用多開一筆，照常裝備。
   const fullItems = [{ uid: "d2", itemId: "匕首", quantity: 2 }, ...Array.from({ length: 299 }, (_, index) => ({ name: `雜物${index}`, quantity: 1 }))];

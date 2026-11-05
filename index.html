@@ -4917,14 +4917,14 @@ function assertCharacterDataCount(value, maximum) {
 
 // 物品欄（inventory.js）的匯入預檢：版本 1、至多 300 筆，每筆只有約定欄位且型別正確；細部清理由 Inventory.restore() 負責。
 const INVENTORY_KEYS = new Set(["version", "textOnly", "items"]);
-const INVENTORY_ENTRY_KEYS = new Set(["uid", "itemId", "name", "quantity", "in", "weight", "container", "desc", "source", "uses", "slot"]);
+const INVENTORY_ENTRY_KEYS = new Set(["uid", "itemId", "name", "quantity", "in", "weight", "container", "desc", "source", "uses"]);
 function isValidInventoryState(value) {
   if (!value || typeof value !== "object" || Array.isArray(value) || value.version !== 1 || !Array.isArray(value.items)) return false;
   if (!Object.keys(value).every(key => INVENTORY_KEYS.has(key)) || (value.textOnly !== undefined && typeof value.textOnly !== "boolean")) return false;
   if (value.items.length > 300) return false;
   return value.items.every(entry => entry && typeof entry === "object" && !Array.isArray(entry)
     && Object.keys(entry).every(key => INVENTORY_ENTRY_KEYS.has(key))
-    && ["uid", "itemId", "name", "in", "source", "slot"].every(key => entry[key] === undefined || (typeof entry[key] === "string" && entry[key].length <= 64))
+    && ["uid", "itemId", "name", "in", "source"].every(key => entry[key] === undefined || (typeof entry[key] === "string" && entry[key].length <= 64))
     && Number.isInteger(entry.quantity) && entry.quantity >= 1 && entry.quantity <= 9999
     && (entry.weight === undefined || (typeof entry.weight === "number" && Number.isFinite(entry.weight) && entry.weight >= 0 && entry.weight <= 9999))
     && (entry.container === undefined || typeof entry.container === "boolean")
@@ -5599,7 +5599,7 @@ function applyStateObjectNow(data) {
   }
   syncDerivedFeatRows();
   syncMain2ShieldControl({ legalize: true });
-  // 裝備欄位都還原後才核對物品的裝備位置（舊資料從這裡把已裝備的物品拿出來）。
+  // 物品的裝備位置不進存檔：裝備欄位都還原後才重新對應（舊資料也從這裡把已裝備的物品拿出來）。
   window.InventoryUI?.syncEquippedSlots({ restoring: true });
   updateACDisplay();
   updateSpeedDisplay();

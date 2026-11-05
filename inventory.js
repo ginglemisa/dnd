@@ -1,12 +1,13 @@
 /**
  * 物品欄資料（傳統 defer script，無額外 runtime dependency）。
  *
- * - 角色資料頂層 `__inventory`：{ version: 1, textOnly?, items: [{ uid, itemId?, name?, quantity, in?, weight?, container?, desc?, source?, uses?, slot? }] }。
+ * - 角色資料頂層 `__inventory`：{ version: 1, textOnly?, items: [{ uid, itemId?, name?, quantity, in?, weight?, container?, desc?, source?, uses? }] }。
  *   itemId 是裝備說明的品名（與 mainHand／商店相同的中文名稱）；name 是顯示名稱，自訂物品必填，目錄品項只在寫法不同時保留
  *   （例如「書籍（禱文）」）。weight（每件磅數）、container 與 desc（描述）只用於自訂物品；in 是所在容器的 uid；
  *   source "initial" 標記快速創角匯入的初始裝備，"equipped" 標記因主手／副手／護甲已裝備而補上的物品（整理成標籤時先抵掉，不重複）。
  *   uses 是有使用次數的目錄物品（EQUIPMENT_ITEM_ACTIONS 的 uses，例如醫療包）目前這件的剩餘次數；沒有這個欄位表示全新，同一筆的其餘件數都是全新的。
- *   slot 是這件物品正裝備在哪個位置（mainHand、offHand、armor、shield）：固定 1 件、在最外層；syncEquipped() 依角色卡的裝備選擇維護，舊資料沒有這個欄位，載入時才拿出來。
+ * - 執行時的 slot 是這件物品正裝備在哪個位置（mainHand、offHand、armor、shield）：固定 1 件、在最外層，由 syncEquipped() 依角色卡的裝備選擇維護。
+ *   裝備選擇已經存在角色欄位，slot 不寫進存檔（getState() 拿掉、restore() 不讀），載入後重新對應：裝備中那件存檔時是身上的 1 件，下拉規則會再拿回同樣的物品。
  *   同名物品可以有很多筆（拆分、商店購買、卸除都會新增一筆），各自獨立；只有玩家拖曳合併（merge()）才合成一筆，自訂物品不能合併。
  *   textOnly 為 true 時玩家選擇只以文字管理物品：物品欄是空的，裝備下拉、商店與快速創角回到攜帶物品文字的做法。
  * - 目錄：重量與分類取自 equipment-notes.js 整理的 EQUIPMENT_SHOP_ITEMS，武器／護甲取自 equipment-data.js，
@@ -170,10 +171,6 @@
     if (SOURCES.has(raw.source)) entry.source = raw.source;
     const uses = cleanUses(itemId, raw.uses);
     if (uses) entry.uses = uses;
-    if (itemId && SLOTS.includes(raw.slot) && entry.quantity === 1) {
-      entry.slot = raw.slot;
-      delete entry.in;
-    }
     return entry;
   }
 
@@ -214,8 +211,6 @@
       if (!entry) return;
       if (!entry.uid || taken.has(entry.uid)) entry.uid = "";
       else taken.add(entry.uid);
-      // 同一個裝備位置只留第一筆，其餘視為一般物品。
-      if (entry.slot && normalized.some(item => item.slot === entry.slot)) delete entry.slot;
       normalized.push(entry);
     });
     normalized.forEach((entry) => { if (!entry.uid) entry.uid = nextUid(taken); });
@@ -224,6 +219,12 @@
 
   function copyEntry(entry) {
     return { ...entry };
+  }
+
+  // 存檔的寫法：slot 只在執行時使用。
+  function savedEntry(entry) {
+    const { slot, ...saved } = entry;
+    return saved;
   }
 
   function emit(reason) {
@@ -653,7 +654,7 @@
   }
 
   function getState() {
-    return textOnly ? { version: VERSION, textOnly: true, items: [] } : { version: VERSION, items: entries.map(copyEntry) };
+    return textOnly ? { version: VERSION, textOnly: true, items: [] } : { version: VERSION, items: entries.map(savedEntry) };
   }
 
   /** 物品欄可供裝備的數量：weapons／armors 以武器或護甲名稱計數，shields 為盾牌數量。 */
