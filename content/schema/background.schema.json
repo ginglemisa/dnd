@@ -78,6 +78,16 @@
                     "additionalProperties": false,
                     "required": ["toolChoice"],
                     "properties": { "toolChoice": { "const": true, "description": "工具熟練選擇的那項工具（tool 須為 chooseFrom），顯示為「賭具擇一」。" } }
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["choose", "from"],
+                    "description": "擇一的物品，取得裝備時在視窗當場選；快速創角給 choose 這個通稱品項。",
+                    "properties": {
+                      "choose": { "type": "string", "minLength": 1, "description": "顯示文字，須是裝備說明的品名，例如「聖徽」。" },
+                      "from": { "type": "array", "minItems": 2, "uniqueItems": true, "items": { "type": "string", "minLength": 1 }, "description": "可選的品名。" }
+                    }
                   }
                 ]
               }

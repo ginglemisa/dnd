@@ -645,7 +645,10 @@ async function validateInventory(page) {
       else if (item.from) item.from.forEach(name => check(classId, name));
       else if (item.tools) item.tools.forEach(id => ToolProficiencyCatalog.groups.find(group => group.id === id).options.forEach(name => check(classId, name)));
     })));
-    Object.entries(backgroundRules).forEach(([id, rules]) => rules.equipment.A.items.forEach(item => typeof item === "string" && check(id, item)));
+    Object.entries(backgroundRules).forEach(([id, rules]) => rules.equipment.A.items.forEach(item => {
+      if (typeof item === "string") check(id, item);
+      else if (item.from) [item.choose, ...item.from].forEach(name => check(id, name));
+    }));
     return { unresolved, pack: renderSkillPopupHtml("學者套組").includes("背包、書籍、墨水、墨水筆、油燈、油 ×10、羊皮紙 ×10、火絨盒") };
   });
   assert.deepEqual(startingEquipment, { unresolved: [], pack: true }, "starting equipment names resolve to catalog items and packs show their contents");
@@ -682,10 +685,31 @@ async function validateInventory(page) {
     await wait(50);
     await confirm();
     const gpAfterB = document.getElementById("money-balance-gp").value;
+    // 侍僧的聖徽和牧師一樣當場選；「說明」疊在視窗上，關閉後選擇還在。其他擇一物品（士兵的賭具）沒有說明按鈕。
+    await select("background", "acolyte");
+    document.querySelector('#backgroundFeatures [data-starting-equipment="A"]').click();
+    await wait(50);
+    const acolyteOptions = [...dialog().querySelectorAll("[data-starting-choice] option")].map(option => option.value).filter(Boolean);
+    dialog().querySelector("[data-starting-choice]").value = "徽章";
+    dialog().querySelector(".starting-equipment-detail").click();
+    await wait(50);
+    const detail = document.querySelector('.app-dialog[data-variant="equipment-detail"]');
+    const holySymbolDetail = {
+      parentOpen: Boolean(dialog()),
+      title: detail?.querySelector("h2")?.textContent,
+      description: detail?.querySelector(".equipment-detail-description")?.textContent.trim().split("\n")[0],
+      rows: detail?.querySelectorAll(".equipment-detail-table tbody tr").length
+    };
+    detail.querySelector(".app-dialog__button--primary").click();
+    await wait(50);
+    const keptChoice = dialog()?.querySelector("[data-starting-choice]").value;
+    await confirm();
+    const acolyteSymbol = Inventory.entries().filter(entry => /徽/u.test(entry.itemId)).map(entry => `${entry.itemId}:${entry.source}`);
     await select("background", "soldier");
     Inventory.setTextOnly(true);
     document.querySelector('#backgroundFeatures [data-starting-equipment="A"]').click();
     await wait(50);
+    const otherChoiceDetail = Boolean(dialog().querySelector(".starting-equipment-detail"));
     dialog().querySelector("[data-starting-choice]").value = "紙牌";
     await confirm();
     const textLine = document.getElementById("gear-notes").value.split("\n").at(-1);
@@ -695,7 +719,7 @@ async function validateInventory(page) {
     await wait(50);
     const shareBlocked = !document.querySelector(".app-dialog");
     window.SHARE_MODE = false;
-    return { needsOption, fighter, needsChoice, holySymbol, spellbook, gpAfterB, textLine, shareBlocked };
+    return { needsOption, fighter, needsChoice, holySymbol, spellbook, gpAfterB, acolyteOptions, holySymbolDetail, keptChoice, acolyteSymbol, otherChoiceDetail, textLine, shareBlocked };
   });
   assert.deepEqual(takeStartingEquipment, {
     needsOption: "請先選擇一組裝備。",
@@ -704,7 +728,12 @@ async function validateInventory(page) {
     holySymbol: true,
     spellbook: 3,
     gpAfterB: "78",
-    textLine: "初始裝備：短矛、短弓、箭矢 ×20、紙牌、醫療包、箭袋、旅行者服裝",
+    acolyteOptions: ["聖物匣", "徽章", "護身符"],
+    holySymbolDetail: { parentOpen: true, title: "聖徽", description: "聖徽可以是聖徽表中的任一形式，通常鑲嵌寶石或繪有宗教圖案，用於匯聚神聖魔法。", rows: 3 },
+    keptChoice: "徽章",
+    acolyteSymbol: ["徽章（附於布料／盾牌）:initial"],
+    otherChoiceDetail: false,
+    textLine:"初始裝備：短矛、短弓、箭矢 ×20、紙牌、醫療包、箭袋、旅行者服裝",
     shareBlocked: true
   }, "starting equipment (A)/(B) buttons grant items and gold");
 

@@ -47,7 +47,7 @@ function checkBackground(background, classes, feats, errors) {
   } else if (!group) {
     errors.push(`${where}：工具組「${background.tool.chooseFrom}」不在 tool-data.js（可用：${catalog.groups.map(item => item.id).join("、")}）`);
   }
-  if (!group && background.equipment.A.items.some(item => typeof item !== "string")) errors.push(`${where}：裝備的 toolChoice 只能用在 tool 為 chooseFrom 的背景`);
+  if (!group && background.equipment.A.items.some(item => item.toolChoice)) errors.push(`${where}：裝備的 toolChoice 只能用在 tool 為 chooseFrom 的背景`);
   const featId = typeof background.feat === "string" ? background.feat : background.feat.id;
   if (!feats.has(featId)) errors.push(`${where}：專長「${featId}」不是 content/srd/feats 任何專長的 id`);
   else if (feats.get(featId).type !== "origin") errors.push(`${where}：專長「${featId}」不是起源專長（type 須為 origin）`);

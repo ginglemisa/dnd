@@ -354,7 +354,7 @@ skills: [洞悉, 宗教]
 tool: 書法工具
 equipment:
   A:
-    items: [書法工具, 書籍（禱文）, 聖徽, 羊皮紙 ×10, 祭袍]
+    items: [書法工具, 書籍（禱文）, { choose: 聖徽, from: [聖物匣, 徽章, 護身符] }, 羊皮紙 ×10, 祭袍]
     gold: 8
   B: { gold: 50 }
 description: |
@@ -370,7 +370,7 @@ description: |
 | `feat` | 起源專長，寫專長 ID（`content/srd/feats` 的起源專長，ID 是中文名）。魔法學徒寫成 `{ id: 魔法學徒, spellList: 職業 ID }`，`spellList` 是法術列表（`cleric`、`druid`、`wizard`），畫面顯示為「魔法學徒（牧師）」。起源專長有 `grantsSpellcasting`（例如魔法學徒）時，背景也讓角色具有施法能力。 |
 | `skills` | 兩項技能 ID（`character-rules.js` 的 `CharacterSkillAbilities`，目前是中文名），畫面自動加上提示框。 |
 | `tool` | 工具熟練：工具 ID（`tool-data.js` 的工具名稱），或 `{ chooseFrom: 工具組 ID }` 從該組擇一（例如士兵的 `gaming`，畫面顯示「擇一賭具：……」，依工具目錄順序）。 |
-| `equipment.A` | 預設裝備：`items` 是各項物品的純文字（例如「羊皮紙 ×10」），`gold` 是金幣數（顯示在最後，例如「8 金幣」）。擇一的工具寫 `{ toolChoice: true }`（只能用在 `tool` 為 `chooseFrom` 的背景），顯示為「賭具擇一」，快速創角換成玩家選的工具。 |
+| `equipment.A` | 預設裝備：`items` 是各項物品的純文字（例如「羊皮紙 ×10」），`gold` 是金幣數（顯示在最後，例如「8 金幣」）。擇一的工具寫 `{ toolChoice: true }`（只能用在 `tool` 為 `chooseFrom` 的背景），顯示為「賭具擇一」，快速創角換成玩家選的工具。擇一的物品寫 `{ choose: 聖徽, from: [聖物匣, 徽章, 護身符] }`，顯示為 `choose` 的文字，點按（A）時在視窗選；快速創角直接給 `choose` 這個通稱品項。 |
 | `equipment.B` | 只有 `gold`（目前都是 50 金幣）。 |
 | `description` | 背景描述，一段文字。可用 `**粗體**` 與 `[[提示]]`，不可有 HTML、數值標記或換行。 |
 

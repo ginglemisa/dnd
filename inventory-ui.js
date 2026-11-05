@@ -1406,6 +1406,21 @@
   // ===== 起始裝備（職業頁、背景頁的（A）（B）按鈕，data-starting-equipment）=====
   // 物品與金幣取自 classRules／backgroundRules 的 equipment；擇一物品在視窗當場選。物品以 source "initial" 放進物品欄、不自動裝備，
   // 只以文字管理物品時接在攜帶物品的「初始裝備：」行；金幣經 MoneyTracker.receiveGold() 記一筆收入。分享模式不能取得。
+  // 聖徽的形式決定要不要手持，下拉右邊附整組說明；其他擇一物品不需要。
+  const STARTING_CHOICES_WITH_DETAIL = new Set(["聖徽"]);
+
+  function startingChoiceDetailButton(name) {
+    const help = button("starting-equipment-detail", "說明");
+    help.setAttribute("aria-haspopup", "dialog");
+    help.setAttribute("aria-label", `查看${name}的說明`);
+    help.addEventListener("click", () => {
+      if (!globalScope.openEquipmentDetailDialog?.(name, help)) {
+        globalScope.AppDialog.showMessage({ title: "物品詳情", message: "暫時無法讀取此物品的說明，請重新載入頁面後再試。", trigger: help });
+      }
+    });
+    return help;
+  }
+
   function toolGroupItem(choose, groupIds) {
     const groups = globalScope.ToolProficiencyCatalog?.groups || [];
     return { choose, from: groupIds.flatMap(id => groups.find(group => group.id === id)?.options || []) };
@@ -1417,7 +1432,7 @@
       const rules = globalScope.getBackgroundRules?.(id);
       if (!rules?.equipment) return null;
       const group = typeof rules.tool === "object" ? (globalScope.ToolProficiencyCatalog?.groups || []).find(item => item.id === rules.tool.chooseFrom) : null;
-      const items = rules.equipment.A.items.map(item => typeof item === "string" ? item : toolGroupItem(`${group?.label || "工具"}擇一`, [rules.tool.chooseFrom]));
+      const items = rules.equipment.A.items.map(item => item.toolChoice ? toolGroupItem(`${group?.label || "工具"}擇一`, [rules.tool.chooseFrom]) : item);
       return { title: `${rules.name}背景裝備`, A: [{ id: "default", label: "", items, gold: rules.equipment.A.gold }], B: rules.equipment.B };
     }
     const id = fieldValue("class");
@@ -1502,7 +1517,14 @@
         select.dataset.startingChoice = String(index);
         select.append(new Option("請選擇", ""), ...item.from.map(name => new Option(name, name)));
         select.addEventListener("change", () => { if (error) error.textContent = ""; });
-        choiceBox.appendChild(labelled(item.choose.replace(/擇一$/u, ""), select));
+        const field = labelled(item.choose.replace(/擇一$/u, ""), select);
+        if (STARTING_CHOICES_WITH_DETAIL.has(item.choose)) {
+          const row = el("div", "starting-equipment-choice-row");
+          row.append(field, startingChoiceDetailButton(item.choose));
+          choiceBox.appendChild(row);
+        } else {
+          choiceBox.appendChild(field);
+        }
       });
     };
     globalScope.AppDialog.showContent({
@@ -1510,6 +1532,8 @@
       variant: "starting-equipment",
       trigger,
       initialFocus: "content",
+      // 聖徽的說明視窗疊在這個視窗上，關閉後已選的項目還在。
+      allowNested: true,
       renderContent(body) {
         body.appendChild(el("p", "inventory-item-note", textOnly
           ? "物品會寫進攜帶物品的「初始裝備：」行，金幣在錢財區記一筆收入。"

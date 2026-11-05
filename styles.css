@@ -11713,6 +11713,31 @@ html.is-share-mode .starting-equipment-hint {
   gap: 0.75rem;
 }
 
+/* 標籤占第一列，下拉與「說明」同在第二列、等高；窄螢幕也不換行。 */
+.starting-equipment-choice-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.3rem 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: var(--fs-sm);
+}
+
+.starting-equipment-choice-row .inventory-field {
+  display: contents;
+}
+
+.starting-equipment-choice-row .inventory-field__label {
+  grid-column: 1 / -1;
+}
+
+button.starting-equipment-detail {
+  width: auto;
+  min-height: 0;
+  margin: 0;
+  padding-inline: 0.7rem;
+  white-space: nowrap;
+}
+
 .starting-equipment-error {
   margin: 0.5rem 0 0;
   color: var(--warning);

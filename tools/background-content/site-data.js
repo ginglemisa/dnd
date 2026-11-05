@@ -25,7 +25,7 @@ function backgroundRules(background) {
     feat,
     skills: [...background.skills],
     tool,
-    equipment: { A: { items: background.equipment.A.items.map(item => typeof item === "string" ? item : { toolChoice: true }), gold: background.equipment.A.gold }, B: { gold: background.equipment.B.gold } }
+    equipment: { A: { items: background.equipment.A.items, gold: background.equipment.A.gold }, B: { gold: background.equipment.B.gold } }
   };
 }
 
@@ -38,7 +38,7 @@ const inline = (text, where) => renderInline(text, { resolveValue: () => { throw
 function backgroundText(background, rules, classes) {
   const where = background.file;
   const group = rules.tool.chooseFrom ? loadToolCatalog().groups.find(item => item.id === rules.tool.chooseFrom) : null;
-  const items = rules.equipment.A.items.map(item => typeof item === "string" ? item : `${group.label}擇一`);
+  const items = rules.equipment.A.items.map(item => typeof item === "string" ? item : item.choose || `${group.label}擇一`);
   return {
     abilities: rules.abilities.map(id => ABILITY_LABELS[id]).join(","),
     feat: backgroundFeatName(rules.feat, classes),
