@@ -1,11 +1,13 @@
 /**
  * 物品欄資料（傳統 defer script，無額外 runtime dependency）。
  *
- * - 角色資料頂層 `__inventory`：{ version: 1, textOnly?, items: [{ uid, itemId?, name?, quantity, in?, weight?, container?, desc?, source?, uses? }] }。
+ * - 角色資料頂層 `__inventory`：{ version: 1, textOnly?, items: [{ uid, itemId?, name?, quantity, in?, weight?, container?, desc?, source?, uses?, slot? }] }。
  *   itemId 是裝備說明的品名（與 mainHand／商店相同的中文名稱）；name 是顯示名稱，自訂物品必填，目錄品項只在寫法不同時保留
  *   （例如「書籍（禱文）」）。weight（每件磅數）、container 與 desc（描述）只用於自訂物品；in 是所在容器的 uid；
  *   source "initial" 標記快速創角匯入的初始裝備，"equipped" 標記因主手／副手／護甲已裝備而補上的物品（整理成標籤時先抵掉，不重複）。
  *   uses 是有使用次數的目錄物品（EQUIPMENT_ITEM_ACTIONS 的 uses，例如醫療包）目前這件的剩餘次數；沒有這個欄位表示全新，同一筆的其餘件數都是全新的。
+ *   slot 是這件物品正裝備在哪個位置（mainHand、offHand、armor、shield）：固定 1 件、在最外層；syncEquipped() 依角色卡的裝備選擇維護，舊資料沒有這個欄位，載入時才拿出來。
+ *   同名物品可以有很多筆（拆分、商店購買、卸除都會新增一筆），各自獨立；只有玩家拖曳合併（merge()）才合成一筆，自訂物品不能合併。
  *   textOnly 為 true 時玩家選擇只以文字管理物品：物品欄是空的，裝備下拉、商店與快速創角回到攜帶物品文字的做法。
  * - 目錄：重量與分類取自 equipment-notes.js 整理的 EQUIPMENT_SHOP_ITEMS，武器／護甲取自 equipment-data.js，
  *   套組內容物、容器與可持用的法器取自 equipment-data.js 的結構化清單；這裡不另存重量。彈藥以單發計數。
@@ -18,6 +20,7 @@
   const VERSION = 1;
   const LIMITS = Object.freeze({ items: 300, quantity: 9999, name: 40, desc: 200, weight: 9999, depth: 3 });
   const SOURCES = new Set(["initial", "equipped"]);
+  const SLOTS = Object.freeze(["mainHand", "offHand", "armor", "shield"]);
   const UID_PATTERN = /^[A-Za-z0-9_-]{1,24}$/u;
   // 品名附註較長的聖徽在物品欄顯示短名，與攜帶物品舊寫法相同。
   const SHORT_NAMES = Object.freeze({ "聖物匣（手持）": "聖物匣", "徽章（附於布料／盾牌）": "徽章", "護身符（佩戴／手持）": "護身符" });
@@ -167,6 +170,10 @@
     if (SOURCES.has(raw.source)) entry.source = raw.source;
     const uses = cleanUses(itemId, raw.uses);
     if (uses) entry.uses = uses;
+    if (itemId && SLOTS.includes(raw.slot) && entry.quantity === 1) {
+      entry.slot = raw.slot;
+      delete entry.in;
+    }
     return entry;
   }
 
@@ -207,6 +214,8 @@
       if (!entry) return;
       if (!entry.uid || taken.has(entry.uid)) entry.uid = "";
       else taken.add(entry.uid);
+      // 同一個裝備位置只留第一筆，其餘視為一般物品。
+      if (entry.slot && normalized.some(item => item.slot === entry.slot)) delete entry.slot;
       normalized.push(entry);
     });
     normalized.forEach((entry) => { if (!entry.uid) entry.uid = nextUid(taken); });
@@ -301,13 +310,20 @@
     });
   }
 
+  // 可以合成一筆：同一個目錄品項且顯示名稱相同；自訂物品、容器與裝備中的物品不合併。
+  function canStack(entry, other) {
+    return Boolean(entry.itemId) && entry.itemId === other.itemId
+      && (entry.name || "") === (other.name || "")
+      && !entry.slot && !other.slot
+      && !isContainerEntry(entry) && !isContainerEntry(other);
+  }
+
   function sameStack(entry, request) {
-    return (entry.itemId || "") === (request.itemId || "")
-      && (entry.name || "") === (request.name || "")
-      && (entry.in || "") === (request.in || "")
-      && entry.weight === request.weight
-      && (entry.desc || "") === (request.desc || "")
-      && !isContainerEntry(entry);
+    return canStack(entry, request) && (entry.in || "") === (request.in || "");
+  }
+
+  function largestOf(list) {
+    return list.reduce((best, entry) => (!best || entry.quantity > best.quantity ? entry : best), null);
   }
 
   // 套組拆成第一項容器＋其餘內容物；容器每件各自一筆（內容物才分得清楚），其他品項同名同處就合併數量。
@@ -347,7 +363,7 @@
     return expanded;
   }
 
-  function placeRequest(next, request, taken) {
+  function placeRequest(next, request, taken, newStack = false) {
     if (!(request.quantity > 0)) return [];
     const entry = { uid: "", quantity: clampQuantity(request.quantity) };
     if (request.itemId) entry.itemId = request.itemId;
@@ -359,7 +375,7 @@
     if (request.source) entry.source = request.source;
     const containerUnits = isContainerEntry(entry) ? entry.quantity : 0;
     if (!containerUnits) {
-      const stack = next.find(item => sameStack(item, entry));
+      const stack = newStack ? null : largestOf(next.filter(item => sameStack(item, entry)));
       if (stack) {
         stack.quantity = Math.min(stack.quantity + entry.quantity, LIMITS.quantity);
         // 併入玩家原有的物品時不標成「因裝備而補上」，整理成標籤才不會多抵。
@@ -383,7 +399,8 @@
   /**
    * 加入物品。requests：[{ itemId?, name?, text?, quantity?, weight?, container? }]；text 可用「名稱 ×n」「箭矢(20)」寫法。
    * options.into 是放入的容器 uid；options.source "initial" 標記初始裝備；options.dryRun 只檢查是否放得下；
-   * options.absorbEquipped 時，同名的「因裝備而補上」物品先抵掉數量（整理成標籤用，避免已補上的裝備再加一次）。
+   * options.absorbEquipped 時，同名的「因裝備而補上」物品先抵掉數量（整理成標籤用，避免已補上的裝備再加一次）；
+   * options.newStack 時一律新增一筆、不併入同名物品（商店購買）。其他情況併入同一處數量最多的同名物品。
    * 超過上限時不加入任何物品並回傳 false。
    */
   function add(requests, options = {}) {
@@ -394,7 +411,7 @@
     const taken = new Set(next.map(entry => entry.uid));
     const expanded = expandRequests(list, into, source);
     if (options.absorbEquipped) absorbEquipped(next, expanded);
-    expanded.filter(request => request.quantity > 0).forEach(request => placeRequest(next, request, taken));
+    expanded.filter(request => request.quantity > 0).forEach(request => placeRequest(next, request, taken, options.newStack === true));
     if (next.length > LIMITS.items) return false;
     if (options.dryRun) return true;
     if (next.length === entries.length && next.every((entry, index) => entry.quantity === entries[index].quantity)) return true;
@@ -402,8 +419,8 @@
   }
 
   function absorbEquipped(next, requests, remaining = new Map(next.filter(entry => entry.source === "equipped").map(entry => [entry, entry.quantity]))) {
+    // 裝備中的物品在文字裡排在最外層，先抵最外層，容器裡的同名物品才留在容器裡。
     requests.forEach((request) => {
-      if (request.contents) absorbEquipped(next, request.contents, remaining);
       if (!request.itemId || request.name || request.contents) return;
       remaining.forEach((left, entry) => {
         if (!request.quantity || !left || entry.itemId !== request.itemId) return;
@@ -415,6 +432,9 @@
           else delete entry.source;
         }
       });
+    });
+    requests.forEach((request) => {
+      if (request.contents) absorbEquipped(next, request.contents, remaining);
     });
   }
 
@@ -456,13 +476,13 @@
       && depthOf(entry.uid) + 1 + ownDepth <= LIMITS.depth);
   }
 
-  /** 更新一筆物品：{ quantity?, in?, name?, weight?, container? }；name／weight／container 只套用於自訂物品。 */
+  /** 更新一筆物品：{ quantity?, in?, name?, weight?, container? }；name／weight／container 只套用於自訂物品；裝備中的物品固定 1 件、在最外層。不會合併同名物品。 */
   function update(uid, changes = {}) {
     const next = entries.map(copyEntry);
     const entry = next.find(item => item.uid === uid);
     if (!entry) return false;
-    if (changes.quantity !== undefined) entry.quantity = clampQuantity(changes.quantity);
-    if (changes.in !== undefined) {
+    if (changes.quantity !== undefined && !entry.slot) entry.quantity = clampQuantity(changes.quantity);
+    if (changes.in !== undefined && !entry.slot) {
       const target = changes.in ? getContainerTargets(uid).find(item => item.uid === changes.in) : null;
       if (target) entry.in = target.uid;
       else if (!changes.in) delete entry.in;
@@ -489,36 +509,21 @@
       }
     }
     next.forEach((item) => { if (!item.in) delete item.in; });
-    // 移到已有同名物品的位置時合併成一筆。
-    const stack = next.find(item => item !== entry && sameStack(item, entry));
-    if (stack && !isContainerEntry(entry)) {
-      stack.quantity = Math.min(stack.quantity + entry.quantity, LIMITS.quantity);
-      if (entry.source && !stack.source && entry.source !== "equipped") stack.source = entry.source;
-      mergeUses(stack, entry);
-      return commit(next.filter(item => item !== entry), "update");
-    }
     return commit(next, "update");
   }
 
   /**
    * 調整物品的排列順序與所在處（物品欄介面的整理模式）：into 是容器 uid（空字串為身上），before 是同一處要排在它前面的物品 uid（空為最後）。
-   * 放不進的容器回傳 false 且不變動；移到已有同名物品的位置時合併成一筆，同 update()。
+   * 放不進的容器或裝備中的物品回傳 false 且不變動。不會合併同名物品，要合併用 merge()。
    */
   function move(uid, { into = "", before = "" } = {}) {
     const index = entries.findIndex(entry => entry.uid === uid);
-    if (index < 0) return false;
+    if (index < 0 || entries[index].slot) return false;
     if (into && !getContainerTargets(uid).some(item => item.uid === into)) return false;
     const next = entries.map(copyEntry);
     const [entry] = next.splice(index, 1);
     if (into) entry.in = into;
     else delete entry.in;
-    const stack = isContainerEntry(entry) ? null : next.find(item => sameStack(item, entry));
-    if (stack) {
-      stack.quantity = Math.min(stack.quantity + entry.quantity, LIMITS.quantity);
-      if (entry.source && !stack.source && entry.source !== "equipped") stack.source = entry.source;
-      mergeUses(stack, entry);
-      return commit(next, "move");
-    }
     const target = before && before !== uid ? next.findIndex(item => item.uid === before && (item.in || "") === into) : -1;
     let position = target;
     if (position < 0) {
@@ -530,9 +535,59 @@
     return commit(next, "move");
   }
 
-  // 合併成一筆時只保留一件用過的剩餘次數（取較少的），其餘視為全新。
-  function mergeUses(stack, entry) {
-    if (entry.uses && (!stack.uses || entry.uses < stack.uses)) stack.uses = entry.uses;
+  /** 可以合併 uid 的物品（同名、同寫法的目錄品項，不限位置）。 */
+  function getMergeTargets(uid) {
+    const entry = entries.find(item => item.uid === uid);
+    return entry ? entries.filter(item => item.uid !== uid && canStack(entry, item)).map(copyEntry) : [];
+  }
+
+  // 一筆的總使用次數：其餘件數全新，目前這件剩 uses 次。
+  function totalCharges(entry, max) {
+    return (entry.quantity - 1) * max + (entry.uses || max);
+  }
+
+  /**
+   * 把 uid 合併進 targetUid（位置以 targetUid 為準）。有使用次數的物品總次數不變，重新裝成全新的與一件用過的：
+   * x2 7/10（17 次）＋ x3 6/10（26 次）＝ 43 次 ＝ x5 3/10。不能合併或超過數量上限時回傳 false 且不變動。
+   */
+  function merge(uid, targetUid) {
+    const next = entries.map(copyEntry);
+    const entry = next.find(item => item.uid === uid);
+    const stack = next.find(item => item.uid === targetUid);
+    if (!entry || !stack || entry === stack || !canStack(entry, stack)) return false;
+    const max = getMaxUses(stack.itemId);
+    const charges = max ? totalCharges(stack, max) + totalCharges(entry, max) : 0;
+    const quantity = max ? Math.ceil(charges / max) : stack.quantity + entry.quantity;
+    if (quantity > LIMITS.quantity) return false;
+    stack.quantity = quantity;
+    if (max && charges % max) stack.uses = charges % max;
+    else delete stack.uses;
+    if (entry.source && !stack.source && entry.source !== "equipped") stack.source = entry.source;
+    return commit(next.filter(item => item !== entry), "merge");
+  }
+
+  /** 可以拆分：至少 2 件，容器與裝備中的物品不拆。 */
+  function canSplit(entry) {
+    return Boolean(entry) && entry.quantity >= 2 && !entry.slot && !isContainerEntry(entry);
+  }
+
+  /**
+   * 拆成兩筆：原本這筆留 keep 件（用過的次數留在這筆），其餘成為緊接在後的新一筆（全新）。
+   * 不能拆或物品欄已滿時回傳 false 且不變動；成功時回傳新一筆的 uid。
+   */
+  function split(uid, keep) {
+    const index = entries.findIndex(item => item.uid === uid);
+    if (index < 0 || !canSplit(entries[index]) || entries.length >= LIMITS.items) return false;
+    const kept = Number(keep);
+    if (!Number.isInteger(kept) || kept < 1 || kept >= entries[index].quantity) return false;
+    const next = entries.map(copyEntry);
+    const entry = next[index];
+    const part = { ...entry, quantity: entry.quantity - kept, uid: nextUid(new Set(next.map(item => item.uid))) };
+    delete part.uses;
+    entry.quantity = kept;
+    next.splice(index + 1, 0, part);
+    commit(next, "split");
+    return part.uid;
   }
 
   /** 物品剩餘次數：{ left, max }（left 是目前這件的剩餘次數）；沒有使用次數的物品回傳 null。 */
@@ -639,6 +694,78 @@
     if (!requests.length || !add(requests, { source: "equipped" })) emit("restore");
   }
 
+  function matchesEquipment(entry, name, kinds) {
+    if (!entry.itemId || !name) return false;
+    if (kinds.shields.has(name)) return kinds.shields.has(entry.itemId);
+    if (kinds.armors.has(name)) return entry.itemId === name;
+    return kindOf(entry.itemId, kinds) === "weapon" ? entry.itemId === name : kinds.wieldedAs[entry.itemId] === name;
+  }
+
+  // 容器依畫面順序：最外層的容器由前到後，內層緊接在它的容器後面。
+  function containerOrder(list, kinds, parent = "") {
+    return list.filter(entry => (entry.in || "") === parent && isContainerEntry(entry, kinds))
+      .flatMap(entry => [entry.uid, ...containerOrder(list, kinds, entry.uid)]);
+  }
+
+  // 同一處拿數量最少的標籤（一樣少時拿排在前面的）；反覆換裝時會拿回剛卸下的 ×1，標籤才不會越來越多。
+  function pickFrom(list) {
+    return list.reduce((best, entry) => (!best || entry.quantity < best.quantity ? entry : best), null);
+  }
+
+  // 裝備時拿哪一筆：玩家點的那筆、身上的，身上沒有才找容器（第一個裝有這件物品的容器）。
+  function pickEquipmentSource(list, name, kinds, prefer) {
+    const candidates = list.filter(entry => !entry.slot && !isContainerEntry(entry, kinds) && matchesEquipment(entry, name, kinds));
+    const preferred = candidates.find(entry => entry.uid === prefer);
+    if (preferred) return preferred;
+    const carried = candidates.filter(entry => !entry.in);
+    if (carried.length) return pickFrom(carried);
+    const container = containerOrder(list, kinds).find(uid => candidates.some(entry => entry.in === uid));
+    return container ? pickFrom(candidates.filter(entry => entry.in === container)) : null;
+  }
+
+  /**
+   * 讓物品的裝備位置符合角色卡的選擇（{ mainHand, offHand, armor, shield }；shield 是副手當主手時的盾牌勾選）。
+   * 選擇變了的位置先放回身上（成為獨立的一筆），新的選擇再從物品欄拿 1 件（options.prefer 是玩家點的那筆 uid）。
+   * 物品欄沒有這件物品時留空；物品欄已滿、又要從多件的標籤多開一筆時放不下，回傳這些位置，其餘位置照常更新。
+   */
+  function syncEquipped({ mainHand = "", offHand = "", armor = "", shield = false } = {}, { prefer = "" } = {}) {
+    if (textOnly) return [];
+    const kinds = staticKinds();
+    const wanted = { mainHand, offHand, armor, shield: shield ? [...kinds.shields][0] || "" : "" };
+    const next = entries.map(copyEntry);
+    let changed = false;
+    next.forEach((entry) => {
+      if (entry.slot && !matchesEquipment(entry, wanted[entry.slot], kinds)) {
+        delete entry.slot;
+        changed = true;
+      }
+    });
+    const full = [];
+    const taken = new Set(next.map(entry => entry.uid));
+    SLOTS.forEach((slot) => {
+      const name = wanted[slot];
+      if (!name || next.some(entry => entry.slot === slot)) return;
+      const source = pickEquipmentSource(next, name, kinds, prefer);
+      if (!source) return;
+      if (source.quantity === 1) {
+        source.slot = slot;
+        delete source.in;
+      } else if (next.length >= LIMITS.items) {
+        full.push(slot);
+        return;
+      } else {
+        source.quantity -= 1;
+        const unit = { ...source, quantity: 1, slot, uid: nextUid(taken) };
+        delete unit.in;
+        delete unit.uses;
+        next.splice(next.indexOf(source) + 1, 0, unit);
+      }
+      changed = true;
+    });
+    if (changed) commit(next, "equip");
+    return full;
+  }
+
   /** 切換「只以文字管理物品」。開啟時回傳原物品欄的文字寫法並清空物品欄；關閉時物品欄從空的開始。 */
   function setTextOnly(on) {
     const next = on === true;
@@ -684,6 +811,11 @@
     add,
     update,
     move,
+    merge,
+    split,
+    canSplit,
+    getMergeTargets,
+    syncEquipped,
     remove,
     consume,
     restore,

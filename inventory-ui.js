@@ -6,6 +6,9 @@
  *   （search.js 的 renderEquipmentDetailInto()），下方「持有」區調整數量、位置或刪除。
  *   持有區標題行下方是互動列（buildItemActions()，資料取自 equipment-data.js 的 EQUIPMENT_ITEM_ACTIONS）：武器／護甲／盾牌的裝備與卸除
  *   （寫回裝備頁下拉）、工具與撬棍的檢定、醫療包的使用次數、治療藥水飲用回復生命值、投擲物與毒藥；檢定與傷害骰只在擲骰功能開啟時顯示。
+ *   至少 2 件的物品在互動列最後一行多一顆「拆分」（沒有互動列時自成一行），開 `inventory-split` 視窗輸入兩堆的數量；拆開後是兩個獨立標籤。
+ * - 裝備：物品經 Inventory.syncEquipped() 從物品欄拿 1 件出來，成為固定 ×1、排在「裝備中」的標籤（entry.slot）；角色卡的裝備選擇是唯一依據，
+ *   index.html 在選擇改變與還原存檔後呼叫 syncEquippedSlots()。從標籤的「裝備」按鈕拿那個標籤，從下拉則由 Inventory 依規則找。卸除後在身上成為獨立的 ×1 標籤。
  *   目錄物品由商店（equipment-shop.js）購買或免費取得；這裡只建立自訂物品（`inventory-custom` 視窗，名稱、磅數、數量、位置、描述）。
  *   資料一律經 window.Inventory。
  * - 標題列只有「⋯ 更多」（#inventory-more）：展開 #inventory-more-panel，內有整理成標籤（文字有可轉換的行才出現，⋯ 上同時亮一個小點）、
@@ -14,9 +17,9 @@
  *   「顯示各幣值」代按錢財區隱藏的 #money-count-weight（角色欄位）；「顯示負重」是這台裝置的偏好（dndStorage `dnd.inventoryWeightHidden.v1`）。
  * - 物品分組顯示（只影響畫面，不改資料順序）：依序是「裝備中」「身上」「容器」，有兩組以上才加分組標題。
  *   容器是標籤加「N ▸」展開鈕（空容器只寫「0」、不能展開）；最外層容器展開時變成滿版框，內容物排在框內，巢狀容器展開時換行縮排。
- *   最外層裝備中的物品靠分組辨認，只有容器內的才加「裝備中」小字。
  * - 整理模式（選單「整理排列」）：標籤輕微抖動，點標籤不開視窗；拖曳（Pointer Events，滑鼠與觸控相同）調整順序，拖到容器標籤或容器框上放進去，
- *   展開容器後可在內容物之間排列或拖出。鍵盤用方向鍵在同一組前後移動。順序就是物品欄的資料順序（Inventory.move()）。
+ *   展開容器後可在內容物之間排列或拖出。拖到同名標籤的中段會合併（Inventory.merge()，自訂物品不能合併）；裝備中的標籤不能拖曳。
+ *   鍵盤用方向鍵在同一組前後移動。順序就是物品欄的資料順序（Inventory.move()）。
  *   標籤上方提示列的「完成」、Esc 或切到純文字管理時結束。
  * - 「只以文字管理物品」按下時標籤轉成攜帶物品文字的「物品欄：」行並清空物品欄，標籤、負重與整理功能都隱藏；
  *   再按一次回到標籤，物品欄從已裝備的物品開始，其餘由「整理成標籤」轉回。
@@ -32,11 +35,15 @@
   const TEXT_PREFIX = "物品欄：";
   const LEGACY_PREFIXES = Object.freeze([[TEXT_PREFIX, ""], ["購買物品：", ""], ["初始裝備：", "initial"]]);
   const WEIGHT_HIDDEN_KEY = "dnd.inventoryWeightHidden.v1";
+  const SLOT_ORDER = Object.freeze(["mainHand", "offHand", "armor", "shield"]);
   const expanded = new Set();
   let rendering = false;
   let overDismissed = false;
   let arranging = false;
   let drag = null;
+  // 從標籤的「裝備」按鈕裝備時，下一次同步優先拿這個標籤。
+  let preferUid = "";
+  let lastEquipment = null;
 
   const api = () => globalScope.Inventory;
 
@@ -125,74 +132,56 @@
     return item.wieldedAs ? `weapon:${item.wieldedAs}` : "";
   }
 
-  function availableCounts() {
-    const counts = new Map();
-    const { weapons, armors, shields } = api().getEquippableCounts();
-    weapons.forEach((count, name) => counts.set(`weapon:${name}`, count));
-    armors.forEach((count, name) => counts.set(`armor:${name}`, count));
-    if (shields) counts.set("shield", shields);
-    return counts;
-  }
-
-  function isEntryEquipped(entry) {
-    const key = usageKey(entry);
-    return Boolean(key) && (equippedUsage().get(key) || 0) > 0;
-  }
-
-  // 減少或移除物品後，數量不足的裝備欄位；loss 是每個 usage key 會少掉的件數。
-  function slotsLosingItems(loss) {
-    const usage = equippedUsage();
-    const counts = availableCounts();
-    const affected = [];
-    loss.forEach((amount, key) => {
-      if (!amount || !usage.has(key)) return;
-      if ((counts.get(key) || 0) - amount < usage.get(key)) affected.push(key);
-    });
-    return affected;
-  }
-
-  function unequip(keys) {
-    const offHandAsMain = document.getElementById("offHandAsMain")?.checked;
-    const clear = (id) => {
-      const select = document.getElementById(id);
-      if (!select || select.disabled || !select.value) return;
-      select.value = "";
-      select.dispatchEvent(new Event("change", { bubbles: true }));
+  function currentEquipment() {
+    return {
+      mainHand: handFromInventory("main"),
+      offHand: handFromInventory("off"),
+      armor: fieldValue("armor"),
+      shield: document.getElementById("offHandAsMain")?.checked === true && document.getElementById("main2Shield")?.checked === true
     };
-    keys.forEach((key) => {
-      if (key === "shield") {
-        const shieldToggle = document.getElementById("main2Shield");
-        if (offHandAsMain && shieldToggle?.checked) {
-          shieldToggle.checked = false;
-          shieldToggle.dispatchEvent(new Event("change", { bubbles: true }));
-        }
-        if (fieldValue("offHand") === "盾牌") clear("offHand");
-        return;
-      }
-      const [kind, name] = [key.slice(0, key.indexOf(":")), key.slice(key.indexOf(":") + 1)];
-      if (kind === "armor" && fieldValue("armor") === name) clear("armor");
-      if (kind === "weapon") {
-        if (fieldValue("offHand") === name) clear("offHand");
-        else if (fieldValue("mainHand") === name) clear("mainHand");
-      }
+  }
+
+  // 讓物品的裝備位置符合角色卡的選擇。物品欄滿到放不下時改回原本的選擇並提示；還原存檔時不動欄位，只是這件先不拿出來。
+  function syncEquippedSlots({ restoring = false } = {}) {
+    if (!api() || api().isTextOnly()) return;
+    const prefer = preferUid;
+    preferUid = "";
+    const equipment = currentEquipment();
+    const full = api().syncEquipped(equipment, { prefer });
+    if (!full.length || restoring) {
+      lastEquipment = equipment;
+      return;
+    }
+    full.forEach((slot) => {
+      if (slot === "shield") unequipSlot(slot);
+      else if (!setSlot(slot, lastEquipment?.[slot] || "")) setSlot(slot, "");
     });
+    globalScope.AppDialog?.notify(`物品欄最多 ${api().LIMITS.items} 筆，無法裝備，請先整理物品欄。`, { tone: "warning" });
   }
 
-  function slotLabel(key) {
-    if (key === "shield") return "盾牌";
-    return key.slice(key.indexOf(":") + 1);
+  function unequipSlot(slot) {
+    if (slot === "shield") {
+      const shieldToggle = document.getElementById("main2Shield");
+      if (!shieldToggle?.checked) return;
+      shieldToggle.checked = false;
+      shieldToggle.dispatchEvent(new Event("change", { bubbles: true }));
+      return;
+    }
+    const select = document.getElementById(slot);
+    if (!select || select.disabled || !select.value) return;
+    select.value = "";
+    select.dispatchEvent(new Event("change", { bubbles: true }));
   }
 
-  async function confirmUnequip(keys, trigger) {
-    if (!keys.length) return true;
+  async function confirmUnequip(entry, trigger) {
     const confirmed = await globalScope.AppDialog.requestDecision({
       title: "同時卸下裝備？",
-      message: `${keys.map(slotLabel).join("、")}正在裝備中，數量不足後會一併卸下。`,
+      message: `${api().getLabel(entry)}正在裝備中，刪除後會一併卸下。`,
       cancelLabel: "取消",
       confirmLabel: "卸下並繼續",
       trigger
     });
-    if (confirmed) unequip(keys);
+    if (confirmed) unequipSlot(entry.slot);
     return Boolean(confirmed);
   }
 
@@ -270,11 +259,12 @@
   }
 
   // 武器只有一件且在另一手時先從另一手卸下（換手）；勾選「契約」的那一手不從物品欄拿，不算。
-  function equipWeapon(name, handId) {
+  function equipWeapon(name, handId, uid) {
     const otherId = handId === "mainHand" ? "offHand" : "mainHand";
     const otherHand = otherId === "mainHand" ? "main" : "off";
     const owned = api().getEquippableCounts().weapons.get(name) || 0;
     if (fieldValue(otherId) === name && !globalScope.isPactWeaponListHand?.(otherHand) && owned < 2) setSlot(otherId, "");
+    preferUid = uid;
     return setSlot(handId, name);
   }
 
@@ -330,12 +320,12 @@
       ]
     });
     if (result !== "mainHand" && result !== "offHand") return;
-    if (!equipWeapon(name, result)) {
+    if (!equipWeapon(name, result, entry.uid)) {
       globalScope.AppDialog.notify(`無法把${name}裝備在${result === "mainHand" ? "主手" : offLabel}，請到裝備頁調整。`, { tone: "warning" });
     }
   }
 
-  async function equipArmor(name, trigger) {
+  async function equipArmor(name, trigger, uid) {
     const current = fieldValue("armor");
     if (current && current !== name) {
       const confirmed = await globalScope.AppDialog.requestDecision({
@@ -347,10 +337,11 @@
       });
       if (!confirmed) return;
     }
+    preferUid = uid;
     if (!setSlot("armor", name)) globalScope.AppDialog.notify(`無法穿上${name}，請到裝備頁調整。`, { tone: "warning" });
   }
 
-  async function equipShield(trigger) {
+  async function equipShield(trigger, uid) {
     if (globalScope.isOffHandAlternateMain?.()) {
       const toggle = document.getElementById("main2Shield");
       if (!toggle || !globalScope.isMain2ShieldEligible?.()) {
@@ -358,6 +349,7 @@
         return;
       }
       toggle.checked = true;
+      preferUid = uid;
       toggle.dispatchEvent(new Event("change", { bubbles: true }));
       return;
     }
@@ -376,6 +368,7 @@
       });
       if (!confirmed) return;
     }
+    preferUid = uid;
     if (!setSlot("offHand", "盾牌")) globalScope.AppDialog.notify("無法裝備盾牌，請到裝備頁調整。", { tone: "warning" });
   }
 
@@ -448,16 +441,15 @@
     const rows = [];
     const key = usageKey(entry);
     if (key) {
-      const equipped = isEntryEquipped(entry);
       const equip = actionButton("裝備", (control) => {
-        if (key === "shield") equipShield(control);
-        else if (key.startsWith("armor:")) equipArmor(item.id, control);
+        if (key === "shield") equipShield(control, entry.uid);
+        else if (key.startsWith("armor:")) equipArmor(item.id, control, entry.uid);
         else openEquipWeaponDialog(entry, control);
       }, `裝備${label}`);
-      // 武器已裝備時仍可換手或拿第二把，盾牌與護甲裝備中只留卸除。
-      const showEquip = !equipped || key.startsWith("weapon:");
-      const remove = equipped ? actionButton("卸除", () => unequip([key]), `卸除${label}`) : null;
-      rows.push(actionRow("", showEquip ? equip : null, remove));
+      // 武器已裝備時仍可換手或拿第二把；同一件護甲或盾牌已穿戴時不再裝備。
+      const showEquip = key.startsWith("weapon:") || !equippedUsage().get(key);
+      const remove = entry.slot ? actionButton("卸除", () => unequipSlot(entry.slot), `卸除${label}`) : null;
+      if (showEquip || remove) rows.push(actionRow("", showEquip ? equip : null, remove));
     }
     if (actions.check && diceEnabled()) {
       const proficient = isToolProficient(entry);
@@ -515,6 +507,100 @@
     const section = el("div", "inventory-item-actions");
     section.append(...rows);
     return section;
+  }
+
+  // 「拆分」放在互動列最後一行的右邊，沒有互動列時自成一行。
+  function withSplitAction(section, entry, onSplit) {
+    if (!api().canSplit(entry)) return section;
+    const label = api().getLabel(entry);
+    const control = actionButton("拆分", trigger => openSplitDialog(entry.uid, trigger, onSplit), `拆分${label}`);
+    control.classList.add("inventory-action-split");
+    const result = section || el("div", "inventory-item-actions");
+    const buttons = [...result.querySelectorAll(".inventory-action-row__buttons")].pop();
+    if (buttons) buttons.appendChild(control);
+    else result.appendChild(actionRow("", control));
+    return result;
+  }
+
+  async function openSplitDialog(uid, trigger, onSplit) {
+    const entry = api().getEntry(uid);
+    if (!api().canSplit(entry)) return;
+    const total = entry.quantity;
+    const uses = api().getUses(entry);
+    const clamp = value => Math.min(total - 1, Math.max(1, value));
+    const readValue = (input) => {
+      const value = Number(input.value);
+      return input.value.trim() !== "" && Number.isInteger(value) ? value : null;
+    };
+    let inputs = [];
+    let error = null;
+    const result = await globalScope.AppDialog.showContent({
+      title: `拆分${api().getLabel(entry)}`,
+      variant: "inventory-split",
+      trigger,
+      initialFocus: "content",
+      renderContent(body) {
+        body.appendChild(el("p", "inventory-item-note", `共 ${total} 件，拆成兩個標籤。${uses && uses.left < uses.max ? `用過的那件（剩 ${uses.left}/${uses.max} 次）留在第一堆。` : ""}`));
+        const fields = el("div", "inventory-split-fields");
+        inputs = [Math.ceil(total / 2), Math.floor(total / 2)].map((value, index) => {
+          const input = el("input", "inventory-text-input inventory-split-input");
+          input.type = "number";
+          input.min = "1";
+          input.max = String(total - 1);
+          input.step = "1";
+          input.inputMode = "numeric";
+          input.value = String(value);
+          input.dataset.stateTransient = "true";
+          fields.appendChild(labelled(index ? "第二堆" : "第一堆", input));
+          return input;
+        });
+        inputs.forEach((input, index) => {
+          const other = inputs[1 - index];
+          // 輸入時另一堆跟著變；離開欄位時把超出範圍的數字拉回來。
+          input.addEventListener("input", () => {
+            error.textContent = "";
+            const value = readValue(input);
+            if (value !== null && value >= 1 && value < total) other.value = String(total - value);
+          });
+          input.addEventListener("change", () => {
+            const value = readValue(input);
+            const fixed = clamp(value === null ? Number(total - Number(other.value)) || 1 : value);
+            input.value = String(fixed);
+            other.value = String(total - fixed);
+          });
+          input.addEventListener("focus", () => input.select());
+          input.addEventListener("keydown", (event) => {
+            if (event.key !== "Enter") return;
+            event.preventDefault();
+            input.dispatchEvent(new Event("change", { bubbles: true }));
+            input.closest(".app-dialog")?.querySelector(".app-dialog__button--primary")?.click();
+          });
+        });
+        body.appendChild(fields);
+        error = el("p", "starting-equipment-error");
+        error.setAttribute("aria-live", "polite");
+        body.appendChild(error);
+      },
+      actions: [
+        { label: "取消", value: false },
+        {
+          label: "拆分",
+          intent: "primary",
+          resolve: () => {
+            const [first, second] = inputs.map(readValue);
+            if (first === null || second === null || first < 1 || second < 1 || first + second !== total) {
+              error.textContent = `兩堆加起來要等於 ${total}，每堆至少 1 件。`;
+              inputs[0].focus();
+              return false;
+            }
+            if (api().split(uid, first)) return "split";
+            error.textContent = `物品欄最多 ${api().LIMITS.items} 筆，請先整理物品欄再拆分。`;
+            return false;
+          }
+        }
+      ]
+    });
+    if (result === "split") onSplit?.();
   }
 
   function containerLabel(entry, all) {
@@ -643,13 +729,7 @@
       if (choice !== "all" && choice !== "keep") return false;
       keepContents = choice === "keep";
     }
-    const removed = [entry, ...(keepContents ? [] : contents.map(uid => api().getEntry(uid)).filter(Boolean))];
-    const loss = new Map();
-    removed.forEach((item) => {
-      const key = usageKey(item);
-      if (key) loss.set(key, (loss.get(key) || 0) + item.quantity);
-    });
-    if (!(await confirmUnequip(slotsLosingItems(loss), trigger))) return false;
+    if (entry.slot && !(await confirmUnequip(entry, trigger))) return false;
     return api().remove(entry.uid, { keepContents });
   }
 
@@ -675,33 +755,38 @@
         const meta = el("p", "inventory-item-meta");
         meta.appendChild(el("span", "inventory-holding__title", "持有"));
         // 說明已列單件重量，只有一件時不重複。
-        const weight = el("span", "inventory-holding__weight", weightDescription(entry));
-        if (!hasDetail || entry.quantity > 1) meta.appendChild(weight);
+        const weight = el("span", "inventory-holding__weight");
         const badge = el("span", "inventory-tag__badge", "裝備中");
-        badge.hidden = !isEntryEquipped(entry);
+        badge.hidden = !entry.slot;
         meta.append(badge);
         holding.appendChild(meta);
+        const syncWeight = (current) => {
+          weight.textContent = weightDescription(current);
+          if (hasDetail && current.quantity <= 1) weight.remove();
+          else if (!weight.parentNode) badge.before(weight);
+        };
+        syncWeight(entry);
+        let shownQuantity = entry.quantity;
         // 互動列：裝備變動（含疊在上面的確認視窗之後）或用掉物品時重建；數量同步到下方的數量欄，用完時關閉視窗。
         let actionsSection = null;
         const refreshActions = () => {
           const current = api().getEntry(uid);
           if (!current) return;
-          badge.hidden = !isEntryEquipped(current);
-          const next = buildItemActions(current, {
+          badge.hidden = !current.slot;
+          syncWeight(current);
+          // 裝備中的物品固定 1 件，沒有數量與位置；其他時候數量真的變了才改輸入框，保留玩家還沒按「完成」的輸入。
+          if (controls) controls.row.hidden = Boolean(current.slot);
+          if (controls && current.quantity !== shownQuantity) controls.stepper.input.value = String(current.quantity);
+          shownQuantity = current.quantity;
+          const next = withSplitAction(buildItemActions(current, {
             afterUse(used) {
               if (used.removed) {
                 dialog.close("removed");
                 return;
               }
-              if (controls?.stepper) controls.stepper.input.value = String(used.quantity);
-              const latest = api().getEntry(uid);
-              if (latest) {
-                weight.textContent = weightDescription(latest);
-                if (latest.quantity > 1 && !weight.isConnected) badge.before(weight);
-              }
               refreshActions();
             }
-          });
+          }), current, () => dialog.close("split"));
           // 重建前焦點在互動列時，改到新互動列的同一顆按鈕（不在了就是第一顆）。
           const focused = actionsSection?.contains(document.activeElement) ? document.activeElement.getAttribute("aria-label") : null;
           if (next) {
@@ -719,7 +804,12 @@
           if (["mainHand", "offHand", "armor", "main2Shield", "offHandAsMain"].includes(event.target?.id)) refreshActions();
         };
         document.addEventListener("change", onSlotChange);
-        stopWatching = () => document.removeEventListener("change", onSlotChange);
+        // 裝備或卸除會改變這一筆的數量與裝備位置。
+        document.addEventListener("inventory:change", refreshActions);
+        stopWatching = () => {
+          document.removeEventListener("change", onSlotChange);
+          document.removeEventListener("inventory:change", refreshActions);
+        };
         const contents = api().descendantsOf(uid).length;
         if (api().isContainer(entry)) holding.appendChild(el("p", "inventory-item-note", contents ? `內含 ${contents} 項物品；容器不會減輕內容物的重量。` : "可以放入其他物品；容器不會減輕內容物的重量。"));
         // 自訂物品：名稱與磅數一列，數量與位置一列，描述自成一列。
@@ -732,18 +822,21 @@
         const location = buildLocationSelect(uid, entry.in);
         row.appendChild(labelled("位置", location));
         holding.appendChild(row);
+        row.hidden = Boolean(entry.slot);
         if (fields) holding.append(fields.desc, fields.toggleLabel);
         body.appendChild(holding);
-        controls = { stepper, location, ...fields };
+        controls = { stepper, location, row, ...fields };
       },
       actions: [
-        { label: "刪除", intent: "danger", resolve: async () => (await removeEntry(entry, trigger)) ? "removed" : false },
+        { label: "刪除", intent: "danger", resolve: async () => (await removeEntry(api().getEntry(uid) || entry, trigger)) ? "removed" : false },
         { label: "取消", value: false },
         {
           label: "完成",
           intent: "primary",
           resolve: async () => {
-            const quantity = api().isContainer(entry) ? entry.quantity : controls.stepper.read();
+            const current = api().getEntry(uid) || entry;
+            if (current.slot) return "saved";
+            const quantity = api().isContainer(current) ? current.quantity : controls.stepper.read();
             if (quantity === 0) {
               const choice = await globalScope.AppDialog.requestDecision({
                 title: `刪除${api().getLabel(entry)}？`,
@@ -755,10 +848,8 @@
                 ]
               });
               if (choice !== "delete") return false;
-              return (await removeEntry(entry, trigger)) ? "removed" : false;
+              return (await removeEntry(current, trigger)) ? "removed" : false;
             }
-            const key = usageKey(entry);
-            if (key && quantity < entry.quantity && !(await confirmUnequip(slotsLosingItems(new Map([[key, entry.quantity - quantity]])), trigger))) return false;
             const changes = { quantity, in: controls.location.value };
             if (custom) {
               if (!controls.nameInput.value.trim()) {
@@ -889,7 +980,7 @@
     });
   }
 
-  function renderEntry(entry, index, listEl, all, usage, group = "") {
+  function renderEntry(entry, index, listEl, all, group = "") {
     const item = el("li", "inventory-tag-item");
     item.dataset.inventoryItem = entry.uid;
     if (group) item.dataset.inventoryGroup = group;
@@ -897,16 +988,14 @@
     item.style.setProperty("--inventory-jiggle-delay", `${-((index * 7) % 5) * 0.05}s`);
     const tag = button("inventory-tag", entryText(entry));
     tag.dataset.inventoryUid = entry.uid;
-    if (arranging) tag.title = "拖曳或用方向鍵調整順序";
+    if (arranging) tag.title = entry.slot ? "裝備中的物品要先卸除才能移動" : "拖曳或用方向鍵調整順序，拖到同名標籤上可合併";
     else {
       tag.setAttribute("aria-haspopup", "dialog");
       tag.title = "調整數量、位置或刪除";
     }
-    const key = usageKey(entry);
-    if (key && usage.get(key)) {
+    if (entry.slot) {
       tag.classList.add("is-equipped");
-      // 最外層靠「裝備中」分組辨認，容器裡的才加小字。
-      if (!group) tag.append(el("span", "inventory-tag__badge", "裝備中"));
+      item.classList.add("is-fixed");
     }
     if (!entry.itemId) tag.classList.add("is-custom");
     tag.addEventListener("click", () => { if (!arranging) openItemDialog(entry.uid, tag); });
@@ -940,32 +1029,29 @@
       if (isOpen) {
         const nested = el("ul", "inventory-tags inventory-container-contents");
         nested.setAttribute("aria-label", `${api().getLabel(entry)}的內容物`);
-        renderEntries(entry.uid, nested, all, usage);
+        renderEntries(entry.uid, nested, all);
         item.appendChild(nested);
       }
     }
     listEl.appendChild(item);
   }
 
-  function renderEntries(parentUid, listEl, all, usage) {
-    all.filter(entry => (entry.in || "") === parentUid).forEach((entry, index) => renderEntry(entry, index, listEl, all, usage));
+  function renderEntries(parentUid, listEl, all) {
+    all.filter(entry => (entry.in || "") === parentUid).forEach((entry, index) => renderEntry(entry, index, listEl, all));
   }
 
   // 最外層分組：裝備中、身上、容器；有兩組以上時才加分組標題。
-  function renderTopLevel(listEl, all, usage) {
+  function renderTopLevel(listEl, all) {
     const top = all.filter(entry => !entry.in);
-    const isEquipped = (entry) => {
-      const key = usageKey(entry);
-      return Boolean(key && usage.get(key));
-    };
     const containers = top.filter(entry => api().isContainer(entry));
-    const equipped = top.filter(entry => !api().isContainer(entry) && isEquipped(entry));
-    const carried = top.filter(entry => !api().isContainer(entry) && !isEquipped(entry));
+    // 裝備中固定依主手、副手、護甲、盾牌排列。
+    const equipped = top.filter(entry => entry.slot).sort((a, b) => SLOT_ORDER.indexOf(a.slot) - SLOT_ORDER.indexOf(b.slot));
+    const carried = top.filter(entry => !api().isContainer(entry) && !entry.slot);
     const groups = [["equipped", "裝備中", equipped], ["carried", "身上", carried], ["container", "容器", containers]].filter(([, , entries]) => entries.length);
     let index = 0;
     groups.forEach(([group, title, entries]) => {
       if (groups.length > 1) listEl.appendChild(el("li", "inventory-group-label", title));
-      entries.forEach(entry => renderEntry(entry, index++, listEl, all, usage, group));
+      entries.forEach(entry => renderEntry(entry, index++, listEl, all, group));
     });
   }
 
@@ -1046,7 +1132,7 @@
       const hint = document.getElementById("inventory-arrange-hint");
       if (hint) hint.hidden = !arranging;
       list.replaceChildren();
-      if (!textOnly) renderTopLevel(list, all, equippedUsage());
+      if (!textOnly) renderTopLevel(list, all);
       list.hidden = textOnly;
       syncTidy();
       const add = document.getElementById("inventory-add");
@@ -1145,7 +1231,14 @@
     return x > tag.left + Math.max(8, tag.width / 4) && x < toggle.left + toggle.width / 2;
   }
 
-  // 指到標籤：容器中間放進去，其他位置看在標籤前半或後半排在前或後；指到清單空白處且在最後一項之後就排到最後。
+  // 同名標籤的中段是合併，兩側才是排順序。
+  function overTagMiddle(item, x) {
+    const rect = pillParts(item)[0].getBoundingClientRect();
+    const margin = Math.max(8, rect.width / 4);
+    return x > rect.left + margin && x < rect.right - margin;
+  }
+
+  // 指到標籤：容器中間放進去，同名標籤中段合併，其他位置看在標籤前半或後半排在前或後；指到清單空白處且在最後一項之後就排到最後。
   function updateDropTarget() {
     const { x, y } = drag;
     const root = document.getElementById("inventory-tags");
@@ -1157,6 +1250,10 @@
     const item = hit.closest(".inventory-tag, .inventory-tag__toggle")?.parentElement;
     if (item?.dataset.inventoryItem) {
       if (item.classList.contains("is-container") && overContainerMiddle(item, x)) {
+        setDropInto(itemUid(item));
+        return;
+      }
+      if (drag.merges.has(itemUid(item)) && overTagMiddle(item, x)) {
         setDropInto(itemUid(item));
         return;
       }
@@ -1222,6 +1319,7 @@
       offsetX: drag.startX - rect.left,
       offsetY: drag.startY - rect.top,
       targets: new Set(api().getContainerTargets(drag.uid).map(entry => entry.uid)),
+      merges: new Set(api().getMergeTargets(drag.uid).map(entry => entry.uid)),
       scroller: scrollParent(drag.item)
     });
     document.body.appendChild(ghost);
@@ -1266,22 +1364,26 @@
 
   function onArrangePointerUp(event) {
     if (event.pointerId !== drag?.pointerId) return;
-    const { started, uid, item, into } = drag;
+    const { started, uid, item, into, merges } = drag;
     let next = item.nextElementSibling;
     while (next && !itemUid(next)) next = next.nextElementSibling;
     const target = into ? { into } : { into: listOwner(item.parentElement), before: itemUid(next) };
     stopDrag();
     if (!started) return;
-    api().move(uid, target);
+    const merging = Boolean(into) && merges.has(into);
+    if (merging && !api().merge(uid, into)) {
+      globalScope.AppDialog?.notify(`一個標籤最多 ${api().LIMITS.quantity} 件，無法合併。`, { tone: "warning" });
+    }
+    if (!merging) api().move(uid, target);
     render();
-    document.querySelector(`[data-inventory-uid="${uid}"]`)?.focus({ preventScroll: true });
+    document.querySelector(`[data-inventory-uid="${merging && !api().getEntry(uid) ? into : uid}"]`)?.focus({ preventScroll: true });
   }
 
   function onArrangePointerDown(event) {
     if (!arranging || drag || event.button !== 0 || !event.isPrimary) return;
     const tag = event.target.closest?.(".inventory-tag");
     const item = tag?.parentElement;
-    if (!itemUid(item)) return;
+    if (!itemUid(item) || api().getEntry(itemUid(item))?.slot) return;
     drag = { uid: itemUid(item), item, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, x: event.clientX, y: event.clientY, started: false, into: "", frame: 0 };
     document.addEventListener("pointermove", onArrangePointerMove);
     document.addEventListener("pointerup", onArrangePointerUp);
@@ -1303,6 +1405,7 @@
     if (!uid || !step || drag) return;
     event.preventDefault();
     const entry = api().getEntry(uid);
+    if (entry?.slot) return;
     const itemEl = event.target.closest("[data-inventory-item]");
     const group = itemEl.dataset.inventoryGroup || "";
     const siblings = [...itemEl.parentElement.children].filter(child => itemUid(child) && (child.dataset.inventoryGroup || "") === group);
@@ -1338,6 +1441,7 @@
         armor: fieldValue("armor"),
         shield: document.getElementById("offHandAsMain")?.checked === true && document.getElementById("main2Shield")?.checked === true
       });
+      syncEquippedSlots({ restoring: true });
     }
     trigger?.focus();
   }
@@ -1589,7 +1693,7 @@
     });
   }
 
-  globalScope.InventoryUI = Object.freeze({ render, renderWeight, openCustomDialog, openItemDialog });
+  globalScope.InventoryUI = Object.freeze({ render, renderWeight, openCustomDialog, openItemDialog, syncEquippedSlots });
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
 })(typeof window !== "undefined" ? window : globalThis);

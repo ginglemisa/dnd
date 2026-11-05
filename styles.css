@@ -7049,6 +7049,11 @@ button.inventory-arrange-done {
   transform-origin: 0 50%;
 }
 
+/* 裝備中的標籤不能拖曳，不抖動。 */
+.inventory-panel.is-arranging .inventory-tag-item.is-fixed > .inventory-tag {
+  animation: none;
+}
+
 .inventory-panel.is-arranging .inventory-tag-item.is-drag-source > :is(.inventory-tag, .inventory-tag__toggle) {
   opacity: 0.35;
   animation: none;
@@ -7146,6 +7151,21 @@ button.inventory-arrange-done {
   grid-template-columns: auto minmax(0, 1fr);
   gap: 0 0.75rem;
   align-items: end;
+}
+
+.inventory-holding__row[hidden] {
+  display: none;
+}
+
+/* 拆分視窗：兩堆的數量並排。 */
+.inventory-split-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 0.75rem;
+}
+
+.inventory-split-input {
+  text-align: center;
 }
 
 /* Containers have no quantity, so the location takes the whole row. */
@@ -7249,8 +7269,15 @@ button.inventory-arrange-done {
 }
 
 .inventory-action-button {
+  flex: 1 1 auto;
+  width: auto;
   min-height: 2.6rem;
   padding: 0.35rem 0.9rem;
+}
+
+/* 「拆分」排在同一行右邊，其他按鈕佔滿剩下的寬度；只有它一顆時才佔滿整行。 */
+.inventory-action-split:not(:only-child) {
+  flex: 0 0 auto;
 }
 
 .inventory-action-tag {
