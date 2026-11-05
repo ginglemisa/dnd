@@ -40,10 +40,10 @@ function backgroundText(background, rules, classes) {
   const group = rules.tool.chooseFrom ? loadToolCatalog().groups.find(item => item.id === rules.tool.chooseFrom) : null;
   const items = rules.equipment.A.items.map(item => typeof item === "string" ? item : item.choose || `${group.label}擇一`);
   return {
-    abilities: rules.abilities.map(id => ABILITY_LABELS[id]).join(","),
+    abilities: rules.abilities.map(id => ABILITY_LABELS[id]).join("、"),
     feat: backgroundFeatName(rules.feat, classes),
-    skills: rules.skills.map(skill => inline(`[[${skill}]]`, where)).join(","),
-    tool: group ? `擇一${group.label}：${group.options.join(",")}` : rules.tool.fixed,
+    skills: rules.skills.map(skill => inline(`[[${skill}]]`, where)).join("、"),
+    tool: group ? `擇一${group.label}：${group.options.join("、")}` : rules.tool.fixed,
     ...(group ? { toolGroup: group.label } : {}),
     equipmentAItems: items,
     equipmentA: [...items, ...(rules.equipment.A.gold ? [goldText(rules.equipment.A.gold)] : [])].join("、"),

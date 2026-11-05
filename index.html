@@ -84,7 +84,7 @@
   <link rel="stylesheet" href="styles.css?v=20261105-field-info-hint">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261103-roll-min" defer></script>
-  <script src="monster.js?v=20261105-starting-equipment" defer></script>
+  <script src="monster.js?v=20261105-list-separator" defer></script>
   <script src="druid-wild-shape-beasts.js?v=20261031-beast-file" defer></script>
   <script src="class-content.generated.js?v=a42b11179858" defer></script>
   <script src="class-content.private.generated.js" defer></script>
@@ -99,9 +99,9 @@
   <script src="action-panel.js?v=20261104-weapon-damage-type" defer></script>
   <script src="character-rules.js?v=20261105-feat-categories" defer></script>
   <script src="app-dialog.js?v=20261028-custom-spells" defer></script>
-  <script src="custom-background.js?v=20261102-source-label" defer></script>
+  <script src="custom-background.js?v=20261105-list-separator" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
-  <script src="tabletop-mode.js?v=20261105-inventory-redesign" defer></script>
+  <script src="tabletop-mode.js?v=20261105-list-separator" defer></script>
   <script src="tabletop-druid.js?v=20261103-known-count" defer></script>
   <script src="tabletop-resources.js?v=20261102-race-content" defer></script>
   <script src="tabletop-actions.js?v=20261104-weapon-switch" defer></script>
@@ -109,7 +109,7 @@
   <script src="tabletop-spells.js?v=20261104-weapon-damage-type" defer></script>
   <script src="legal-modal.js?v=20261022-game-icons" defer></script>
   <script src="onboarding-tour.js?v=20261104-inventory" defer></script>
-  <script src="quick-build.js?v=20261105-starting-equipment" defer></script>
+  <script src="quick-build.js?v=20261105-list-separator" defer></script>
   <script src="spellbook.js?v=20261104-familiar-references" defer></script>
   <script src="spell-management.js?v=20261103-manual-toggle" defer></script>
   <script src="class-option-memory.js?v=20261024-class-split" defer></script>
@@ -854,7 +854,7 @@
 
 <div class="section" id="class-features-section">
       <h3>職業筆記區</h3>
-<div id="class-extra-sheet-mount"><textarea id="class-extra" rows="4" placeholder="職業選項,能力使用次數等等......"></textarea></div>
+<div id="class-extra-sheet-mount"><textarea id="class-extra" rows="4" placeholder="職業選項、能力使用次數等等......"></textarea></div>
   </div>
 
 <!-- Keep the original controls mounted while the details dialog is closed. -->
@@ -1238,7 +1238,7 @@
 
   <div class="section">
     <h3>備註 / 其他說明</h3>
-<textarea id="gear-extra" rows="4" placeholder="任何額外想記下的內容，例如任務道具,魔法物品等..."></textarea>
+<textarea id="gear-extra" rows="4" placeholder="任何額外想記下的內容，例如任務道具、魔法物品等..."></textarea>
   </div>
 
   <!-- 屬性,精通,工具,冒險用品 -->
@@ -1349,7 +1349,7 @@
   </div>
 </div>
   <div id="spell-notes-sheet-mount" class="form-row">
-    <textarea id="spell-notes" rows="2" placeholder="筆記：可記錄每日準備,消耗情形,額外內容等"></textarea>
+    <textarea id="spell-notes" rows="2" placeholder="筆記：可記錄每日準備、消耗情形、額外內容等"></textarea>
   </div>
 
   <div class="spell-meta-row">
@@ -2635,7 +2635,7 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
     const allowed = getBackgroundBonusAbilities();
     const hasBackground = allowed.length === 3;
     pointBuyHint.textContent = hasBackground
-      ? `背景加值可分配在：${allowed.map((key) => abilityLabels[key]).join(",")}（共 3 點，單項上限 +2）`
+      ? `背景加值可分配在：${allowed.map((key) => abilityLabels[key]).join("、")}（共 3 點，單項上限 +2）`
       : "尚未選擇背景：背景加值欄位已鎖定";
   }
 
