@@ -364,6 +364,10 @@ async function verifyAppearanceAndLayout(browser, page, url) {
     await page.locator("#prof-運動").focus();
     await page.keyboard.press("Space");
     assert.deepEqual(await rankState(), [true, false, "●"], "keyboard reaches the real checkbox");
+    assert.deepEqual(await page.evaluate(() => {
+      const box = document.getElementById("prof-運動");
+      return [getComputedStyle(box.closest(".skill-rank-controls")).outlineStyle, getComputedStyle(box).outlineStyle];
+    }), ["solid", "none"], "the focus ring is drawn once, on the toggle area");
     await page.keyboard.press("Space");
     await page.evaluate(() => showTab("basic"));
     await page.locator("#class").selectOption("fighter");
@@ -3749,16 +3753,16 @@ async function verifyClassPicks(browser, url) {
     let messages = await issues(page);
     assert.ok(messages.includes("盜賊專精尚未選完（0/2）。") && messages.includes("盜賊額外語言尚未選擇。"), "rogue expertise and language are reminded");
     // 「前往」切到技能頁並高亮整個框：專精是技能加值區，額外語言是語言區。
-    for (const [label, box] of [["盜賊專精", "#skill-bonus-section"], ["盜賊額外語言", "#tab-skills .language-card"]]) {
+    for (const [label, box, focus] of [["盜賊專精", "#skill-bonus-section", ".circle-checkbox:not(:checked)"], ["盜賊額外語言", "#tab-skills .language-card", "#language-extra-2"]]) {
       await page.evaluate(label => Array.from(document.querySelectorAll("#class-feature-choice-reminder button"))
         .find(button => button.textContent.includes(label)).click(), label);
       await page.waitForFunction(() => document.querySelector(".onboarding-jump-target"));
-      const jumped = await page.evaluate(box => {
+      const jumped = await page.evaluate(([box, focus]) => {
         const target = document.querySelector(".onboarding-jump-target");
         const rect = target.getBoundingClientRect();
-        return { skillsTab: !document.getElementById("tab-skills").hidden, box: target === document.querySelector(box), inView: rect.top < innerHeight && rect.bottom > 0 };
-      }, box);
-      assert.deepEqual(jumped, { skillsTab: true, box: true, inView: true }, `${label} jumps to its box on the skills tab`);
+        return { skillsTab: !document.getElementById("tab-skills").hidden, box: target === document.querySelector(box), inView: rect.top < innerHeight && rect.bottom > 0, focused: document.activeElement.matches(focus) };
+      }, [box, focus]);
+      assert.deepEqual(jumped, { skillsTab: true, box: true, inView: true, focused: true }, `${label} jumps to its box on the skills tab and focuses the open choice`);
       await page.evaluate(() => {
         document.querySelectorAll(".onboarding-jump-target").forEach(element => element.classList.remove("onboarding-jump-target"));
         showTab("basic");
