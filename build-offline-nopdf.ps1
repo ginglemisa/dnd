@@ -470,8 +470,10 @@ $html = $html.Replace(
 )
 
 if (-not $html.Contains('async function exitShareMode(event) {') -or
+    -not $html.Contains('function closeShareModeGuideEntries() {') -or
+    -not $html.Contains('function lockShareModeIdentitySelects() {') -or
     $html.Contains('twd20-url.ginglemisa.workers.dev/api/create')) {
-  throw "build-offline-nopdf.ps1: offline sharing must retain exitShareMode and exclude the short URL API."
+  throw "build-offline-nopdf.ps1: offline sharing must retain the share mode lifecycle functions and exclude the short URL API."
 }
 
 if ($html.Contains('const SPELL_QR_IMAGE_SRC = "./qr.png";')) {

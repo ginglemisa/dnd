@@ -5872,6 +5872,30 @@ function applyStateObjectNow(data) {
   }
 }
 
+// Quick build and guided tours rewrite the identity selects, so share mode
+// closes their entries instead of relying on the locked controls.
+function closeShareModeGuideEntries() {
+  ["help-quick-build-btn", "legal-onboarding-btn", "restart-onboarding-btn", "first-table-tour-btn"].forEach(id => {
+    const control = document.getElementById(id);
+    if (!control) return;
+    control.disabled = true;
+    control.title = "分享模式不提供此功能";
+  });
+}
+
+// Only a successfully decoded share is locked; state collection ignores disabled.
+function lockShareModeIdentitySelects() {
+  ["class", "subclass", "level", "race", "background"].forEach(id => {
+    const select = document.getElementById(id);
+    if (!select) return;
+    select.disabled = true;
+    select.dataset.shareLocked = "true";
+    select.title = "分享模式：職業、子職、等級、種族、背景不可更改";
+  });
+  const customBackgroundEdit = document.getElementById("custom-background-edit");
+  if (customBackgroundEdit) customBackgroundEdit.textContent = "查看背景";
+}
+
 function getShortShareUnavailableReason(hash) {
   if (location.origin !== "https://twd20.com" || /\/TWD20-offline\.html$/i.test(location.pathname)) {
     return "短網址僅能在正式網站使用；此環境請使用永久網址。";
@@ -5908,30 +5932,6 @@ async function createShortShareUrl(hash, signal) {
     clearTimeout(timeout);
     signal.removeEventListener("abort", abort);
   }
-}
-
-// Quick build and guided tours rewrite the identity selects, so share mode
-// closes their entries instead of relying on the locked controls.
-function closeShareModeGuideEntries() {
-  ["help-quick-build-btn", "legal-onboarding-btn", "restart-onboarding-btn", "first-table-tour-btn"].forEach(id => {
-    const control = document.getElementById(id);
-    if (!control) return;
-    control.disabled = true;
-    control.title = "分享模式不提供此功能";
-  });
-}
-
-// Only a successfully decoded share is locked; state collection ignores disabled.
-function lockShareModeIdentitySelects() {
-  ["class", "subclass", "level", "race", "background"].forEach(id => {
-    const select = document.getElementById(id);
-    if (!select) return;
-    select.disabled = true;
-    select.dataset.shareLocked = "true";
-    select.title = "分享模式：職業、子職、等級、種族、背景不可更改";
-  });
-  const customBackgroundEdit = document.getElementById("custom-background-edit");
-  if (customBackgroundEdit) customBackgroundEdit.textContent = "查看背景";
 }
 
 let shareDialogPending = false;
