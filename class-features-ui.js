@@ -2048,7 +2048,57 @@ const BACKGROUND_FEAT_KEY_PREFIX = "derived-feat-background-";
 let backgroundChoiceOwner = "";
 let backgroundChoiceTransition = null;
 
-function syncBackgroundChoiceOwner() { backgroundChoiceOwner = document.getElementById("background")?.value || ""; }
+// 背景技能自動勾選：玩家親自改背景時勾上新背景的技能，只收回這個機制親手勾上、仍是熟練的項目。
+// tracking 的 granted 是「這次由背景勾上的」，只在頁面記憶體；載入後是空的，切走時什麼都不移除（寧可多勾，也不刪玩家資料）。
+// id 是目前算數的背景：選回空白不算離開，id 仍是前一個背景。各背景的「玩家不要」清單放在背景選擇記憶的 skillsDeclined。
+let backgroundSkillTracking = { id: "", skills: [], granted: [] };
+let backgroundSkillChangeCommitted = false;
+
+function getBackgroundSkills(backgroundId) { return [...(getBackgroundRules(backgroundId)?.skills || [])]; }
+
+function resetBackgroundSkillTracking() {
+  backgroundSkillTracking = { id: backgroundChoiceOwner, skills: getBackgroundSkills(backgroundChoiceOwner), granted: [] };
+}
+
+function isSkillRanked(skill) {
+  return document.getElementById(`prof-${skill}`)?.checked === true || document.getElementById(`exp-${skill}`)?.checked === true;
+}
+
+// 回傳勾選是否可能改變。自訂背景原地編輯時 id 不變但技能可能變了：兩邊都有的技能不動。
+function applyBackgroundSkills(nextId) {
+  if (!nextId) return false;
+  const { id: fromId, skills: fromSkills, granted } = backgroundSkillTracking;
+  const nextSkills = getBackgroundSkills(nextId);
+  if (fromId === nextId && fromSkills.length === nextSkills.length && fromSkills.every(skill => nextSkills.includes(skill))) return false;
+  if (fromId) window.ClassOptionMemory.rememberBackgroundChoices(fromId, { skillsDeclined: fromSkills.filter(skill => !isSkillRanked(skill)) });
+  const keeps = skill => fromId === nextId && nextSkills.includes(skill);
+  // 先移除再勾新的，兩個背景共有的技能才會正確。專精的熟練框本來就沒勾，不會被動到。
+  granted.filter(skill => !keeps(skill)).forEach(skill => {
+    const proficiency = document.getElementById(`prof-${skill}`);
+    if (proficiency) proficiency.checked = false;
+  });
+  const nextGranted = granted.filter(keeps);
+  const declined = window.ClassOptionMemory.getBackgroundChoices(nextId)?.skillsDeclined || [];
+  nextSkills.forEach(skill => {
+    const proficiency = document.getElementById(`prof-${skill}`);
+    if (!proficiency || isSkillRanked(skill) || declined.includes(skill)) return;
+    proficiency.checked = true;
+    nextGranted.push(skill);
+  });
+  backgroundSkillTracking = { id: nextId, skills: nextSkills, granted: nextGranted };
+  return true;
+}
+
+// 玩家親手勾上熟練後，這個勾選就是玩家的，切走背景時不收回。升成專精不算（熟練框是被互斥取消的）。
+function releaseBackgroundSkillGrant(skill) {
+  backgroundSkillTracking.granted = backgroundSkillTracking.granted.filter(item => item !== skill);
+}
+
+// 載入角色與初始化時呼叫：之後切走不移除任何技能。
+function syncBackgroundChoiceOwner() {
+  backgroundChoiceOwner = document.getElementById("background")?.value || "";
+  resetBackgroundSkillTracking();
+}
 
 function collectBackgroundChoices(backgroundId) {
   const rules = getBackgroundRules(backgroundId);
@@ -2095,7 +2145,9 @@ function restoreBackgroundFreeUses(previous, next) {
 // 在背景 handler 重建控制項之前呼叫；此時工具列與專長列仍屬於前一個背景。
 function beginBackgroundChoiceTransition(event) {
   backgroundChoiceTransition = null;
+  backgroundSkillChangeCommitted = false;
   if (!isCommittedCharacterSelectionChange(event) || !canUseClassOptionMemory()) return;
+  backgroundSkillChangeCommitted = true;
   const from = backgroundChoiceOwner;
   if (from === (document.getElementById("background")?.value || "")) return;
   backgroundChoiceTransition = { from, choices: from ? collectBackgroundChoices(from) : null };
@@ -2104,11 +2156,28 @@ function beginBackgroundChoiceTransition(event) {
 // 在背景 handler 的最後呼叫。CustomBackground.handleSelection 可能已把選單改回原值（先開對話框），這時擁有者沒變，什麼都不做。
 function finishBackgroundChoiceTransition() {
   const transition = backgroundChoiceTransition;
+  const committed = backgroundSkillChangeCommitted;
   backgroundChoiceTransition = null;
+  backgroundSkillChangeCommitted = false;
   // 導覽預覽與還原存檔暫停 autosave：導覽結束會靜默還原選單，還原存檔則在最後同步擁有者，這裡不跟著改。
   if (autosaveSuspended) return;
-  syncBackgroundChoiceOwner();
-  if (!transition || transition.from === backgroundChoiceOwner || !canUseClassOptionMemory()) return;
+  const previousOwner = backgroundChoiceOwner;
+  backgroundChoiceOwner = document.getElementById("background")?.value || "";
+  if (!committed || !canUseClassOptionMemory()) {
+    // 不是玩家親自改的（合成事件、匯入途中等）：勾選不動，比照載入，之後切走也不移除。
+    if (backgroundChoiceOwner !== previousOwner) resetBackgroundSkillTracking();
+    return;
+  }
+  const skillsChanged = applyBackgroundSkills(backgroundChoiceOwner);
+  // 背景沒換（取消對話框、自訂背景原地編輯）：只有技能可能要處理，背景選擇記憶不動。
+  if (!transition || transition.from === backgroundChoiceOwner) {
+    if (skillsChanged) {
+      refreshDerivedChecks();
+      updateClassFeatureChoiceReminder();
+      scheduleStructuralSaveAllFields();
+    }
+    return;
+  }
   if (transition.from) window.ClassOptionMemory.rememberBackgroundChoices(transition.from, transition.choices);
   const record = backgroundChoiceOwner ? window.ClassOptionMemory.getBackgroundChoices(backgroundChoiceOwner) : null;
   autosaveSuspended = true;

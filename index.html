@@ -1393,7 +1393,7 @@
   <script src="sheet-utils.js?v=20261024-index-split"></script>
   <script src="feat-ui.js?v=20261105-feat-categories"></script>
   <script src="spell-sources.js?v=20261105-feat-categories"></script>
-  <script src="class-features-ui.js?v=20261106-background-memory"></script>
+  <script src="class-features-ui.js?v=20261106-background-skills"></script>
   <script>
 function openCarryCapacityRules(trigger) {
   return window.AppDialog.showMessage({
@@ -3231,8 +3231,9 @@ function enforceSkillRankExclusivity(changedInput) {
 
 function bindSkillRankExclusiveEvents() {
   document.querySelectorAll("input[data-skill-rank]").forEach(el => {
-    el.addEventListener("change", () => {
+    el.addEventListener("change", event => {
       enforceSkillRankExclusivity(el);
+      if (event.isTrusted && el.checked && el.id.startsWith("prof-")) releaseBackgroundSkillGrant(el.dataset.skillRank);
       if (el.dataset.skillRank === "察覺") updatePassivePerceptionDisplay();
     });
   });
