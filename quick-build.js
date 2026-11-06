@@ -3366,11 +3366,12 @@
   }
 
   function finishMobileImport(warnings) {
-    if (typeof fillSaves === "function") fillSaves();
-    else mobileImportWarning("無法執行「計算屬性豁免」", warnings);
-    const calculateSkillsButton = document.getElementById("calculate-skills-button");
-    if (calculateSkillsButton) calculateSkillsButton.click();
-    else mobileImportWarning("找不到「計算技能加值」按鈕", warnings);
+    if (typeof fillSaves === "function") {
+      window.applyClassSaveProficiencies?.();
+      fillSaves();
+    } else mobileImportWarning("無法計算屬性豁免", warnings);
+    if (typeof fillSkills === "function") fillSkills();
+    else mobileImportWarning("無法計算技能加值", warnings);
     const automation = document.getElementById("weapon-attack-automation");
     if (automation) {
       automation.checked = true;

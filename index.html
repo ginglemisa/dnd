@@ -81,7 +81,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261105-inventory-stacks">
+  <link rel="stylesheet" href="styles.css?v=20261106-skills-auto">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261103-roll-min" defer></script>
   <script src="monster.js?v=20261105-quick-build-guidance" defer></script>
@@ -97,7 +97,7 @@
   <script src="spell-list.js?v=20261104-spell-srd-classes" defer></script>
   <script src="condition.js?v=20261021-bonus-wording" defer></script>
   <script src="action-panel.js?v=20261104-weapon-damage-type" defer></script>
-  <script src="character-rules.js?v=20261105-feat-categories" defer></script>
+  <script src="character-rules.js?v=20261106-skills-auto" defer></script>
   <script src="app-dialog.js?v=20261028-custom-spells" defer></script>
   <script src="custom-background.js?v=20261105-list-separator" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
@@ -109,10 +109,10 @@
   <script src="tabletop-spells.js?v=20261104-weapon-damage-type" defer></script>
   <script src="legal-modal.js?v=20261022-game-icons" defer></script>
   <script src="onboarding-tour.js?v=20261104-inventory" defer></script>
-  <script src="quick-build.js?v=20261105-quick-build-guidance" defer></script>
+  <script src="quick-build.js?v=20261106-skills-auto" defer></script>
   <script src="spellbook.js?v=20261104-familiar-references" defer></script>
   <script src="spell-management.js?v=20261103-manual-toggle" defer></script>
-  <script src="class-option-memory.js?v=20261024-class-split" defer></script>
+  <script src="class-option-memory.js?v=20261106-skills-auto" defer></script>
   <script src="deity-info.js" defer></script>
 
 </head>
@@ -152,8 +152,8 @@
       <div class="utility-menu__divider" role="separator"></div>
       <fieldset class="utility-menu__settings" aria-label="操作設定">
         <div class="utility-menu__settings-row">
-          <label class="utility-menu__setting" title="開啟時自動計算最大 HP、AC、先攻、速度與被動察覺；關閉後可自行輸入。">
-            <span>自動計算HP/AC/先攻</span>
+          <label class="utility-menu__setting" title="開啟時自動計算最大 HP、AC、先攻、速度、被動察覺、技能與豁免；關閉後可自行輸入。">
+            <span>自動計算數值</span>
             <input id="auto-calculate-key-stats-toggle" type="checkbox" role="switch" checked>
             <span class="utility-menu__switch" aria-hidden="true"></span>
           </label>
@@ -912,121 +912,140 @@
 
 
 <div id="tab-skills" class="tab-content" role="tabpanel" aria-label="技能頁" hidden>
-  <div class="section">
-  <button onclick="fillSaves()">計算屬性豁免</button>
-  <div class="skill-action-hint">決定屬性後，選好職業/等級，再按此鈕。</div>
-  <div class="skill-action-hint">升級或屬性變動後，須重新計算。</div>
+  <div class="section" id="save-section">
+    <div class="skill-section-heading"><h3>屬性豁免</h3><button type="button" id="calculate-saves-button" class="skill-calc-button" onclick="fillSaves()" hidden>填入計算值</button></div>
   <div class="save-grid">
     <div class="save-pair"><label class="save-name" for="prof-str"><input type="checkbox" id="prof-str"><span class="save-stack"><span class="save-abbr">STR</span><span class="save-full">力量</span></span></label><input type="text" inputmode="numeric" id="save-str"></div>
-    <div class="save-pair"><label class="save-name" for="prof-int"><input type="checkbox" id="prof-int"><span class="save-stack"><span class="save-abbr">INT</span><span class="save-full">智力</span></span></label><input type="text" inputmode="numeric" id="save-int"></div>
     <div class="save-pair"><label class="save-name" for="prof-dex"><input type="checkbox" id="prof-dex"><span class="save-stack"><span class="save-abbr">DEX</span><span class="save-full">敏捷</span></span></label><input type="text" inputmode="numeric" id="save-dex"></div>
-    <div class="save-pair"><label class="save-name" for="prof-wis"><input type="checkbox" id="prof-wis"><span class="save-stack"><span class="save-abbr">WIS</span><span class="save-full">感知</span></span></label><input type="text" inputmode="numeric" id="save-wis"></div>
     <div class="save-pair"><label class="save-name" for="prof-con"><input type="checkbox" id="prof-con"><span class="save-stack"><span class="save-abbr">CON</span><span class="save-full">體質</span></span></label><input type="text" inputmode="numeric" id="save-con"></div>
+    <div class="save-pair"><label class="save-name" for="prof-int"><input type="checkbox" id="prof-int"><span class="save-stack"><span class="save-abbr">INT</span><span class="save-full">智力</span></span></label><input type="text" inputmode="numeric" id="save-int"></div>
+    <div class="save-pair"><label class="save-name" for="prof-wis"><input type="checkbox" id="prof-wis"><span class="save-stack"><span class="save-abbr">WIS</span><span class="save-full">感知</span></span></label><input type="text" inputmode="numeric" id="save-wis"></div>
     <div class="save-pair"><label class="save-name" for="prof-cha"><input type="checkbox" id="prof-cha"><span class="save-stack"><span class="save-abbr">CHA</span><span class="save-full">魅力</span></span></label><input type="text" inputmode="numeric" id="save-cha"></div>
   </div>
 </div>
 
 
 <div class="section" id="skill-bonus-section">
-  <button type="button" id="calculate-skills-button" onclick="fillSkills()">計算技能加值</button>
-  <div class="skill-action-hint skill-legend"><span class="legend-badge"><span class="legend-box" role="img" aria-label="方框"></span>是熟練、<span class="legend-circle" data-expertise-legend role="img" aria-label="圓框"></span>為專精，</span><span>決定屬性後再按此鈕。</span></div>
-  <div class="skill-action-hint">屬性、等級或勾選變動後，須重新計算。</div>
+  <div class="skill-section-heading">
+    <h3>技能</h3>
+    <p class="skill-legend" aria-label="技能熟練圖例"><span>○ 未熟練</span><span>● 熟練</span><span data-expertise-legend>◆ 專精</span></p>
+    <button type="button" id="calculate-skills-button" class="skill-calc-button" onclick="fillSkills()" hidden>填入計算值</button>
+  </div>
   <div class="skill-grid">
-    <div class="skill-cell"><div class="skill-name"><span class="skill-tip" data-skill="運動">運動</span><span class="skill-ability">(力量)</span></div><div class="skill-control-row"><div class="skill-rank-controls"><label class="skill-rank-target"><input type="checkbox" id="prof-運動" data-skill-rank="運動" aria-label="運動 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-運動" class="circle-checkbox" data-skill-rank="運動" aria-label="運動 專精"></label></div><input type="text" inputmode="numeric" id="skill-運動"></div></div>
-    <div class="skill-cell"><div class="skill-name"><span class="skill-tip" data-skill="體操">體操</span><span class="skill-ability">(敏捷)</span></div><div class="skill-control-row"><div class="skill-rank-controls"><label class="skill-rank-target"><input type="checkbox" id="prof-體操" data-skill-rank="體操" aria-label="體操 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-體操" class="circle-checkbox" data-skill-rank="體操" aria-label="體操 專精"></label></div><input type="text" inputmode="numeric" id="skill-體操"></div></div>
-    <div class="skill-cell"><div class="skill-name"><span class="skill-tip" data-skill="巧手">巧手</span><span class="skill-ability">(敏捷)</span></div><div class="skill-control-row"><div class="skill-rank-controls"><label class="skill-rank-target"><input type="checkbox" id="prof-巧手" data-skill-rank="巧手" aria-label="巧手 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-巧手" class="circle-checkbox" data-skill-rank="巧手" aria-label="巧手 專精"></label></div><input type="text" inputmode="numeric" id="skill-巧手"></div></div>
-    <div class="skill-cell"><div class="skill-name"><span class="skill-tip" data-skill="隱匿">隱匿</span><span class="skill-ability">(敏捷)</span></div><div class="skill-control-row"><div class="skill-rank-controls"><label class="skill-rank-target"><input type="checkbox" id="prof-隱匿" data-skill-rank="隱匿" aria-label="隱匿 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-隱匿" class="circle-checkbox" data-skill-rank="隱匿" aria-label="隱匿 專精"></label></div><input type="text" inputmode="numeric" id="skill-隱匿"></div></div>
-    <div class="skill-cell"><div class="skill-name"><span class="skill-tip" data-skill="奧秘">奧秘</span><span class="skill-ability">(智力)</span></div><div class="skill-control-row"><div class="skill-rank-controls"><label class="skill-rank-target"><input type="checkbox" id="prof-奧秘" data-skill-rank="奧秘" aria-label="奧秘 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-奧秘" class="circle-checkbox" data-skill-rank="奧秘" aria-label="奧秘 專精"></label></div><input type="text" inputmode="numeric" id="skill-奧秘"></div></div>
-    <div class="skill-cell"><div class="skill-name"><span class="skill-tip" data-skill="歷史">歷史</span><span class="skill-ability">(智力)</span></div><div class="skill-control-row"><div class="skill-rank-controls"><label class="skill-rank-target"><input type="checkbox" id="prof-歷史" data-skill-rank="歷史" aria-label="歷史 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-歷史" class="circle-checkbox" data-skill-rank="歷史" aria-label="歷史 專精"></label></div><input type="text" inputmode="numeric" id="skill-歷史"></div></div>
-    <div class="skill-cell"><div class="skill-name"><span class="skill-tip" data-skill="調查">調查</span><span class="skill-ability">(智力)</span></div><div class="skill-control-row"><div class="skill-rank-controls"><label class="skill-rank-target"><input type="checkbox" id="prof-調查" data-skill-rank="調查" aria-label="調查 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-調查" class="circle-checkbox" data-skill-rank="調查" aria-label="調查 專精"></label></div><input type="text" inputmode="numeric" id="skill-調查"></div></div>
-    <div class="skill-cell"><div class="skill-name"><span class="skill-tip" data-skill="自然">自然</span><span class="skill-ability">(智力)</span></div><div class="skill-control-row"><div class="skill-rank-controls"><label class="skill-rank-target"><input type="checkbox" id="prof-自然" data-skill-rank="自然" aria-label="自然 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-自然" class="circle-checkbox" data-skill-rank="自然" aria-label="自然 專精"></label></div><input type="text" inputmode="numeric" id="skill-自然"></div></div>
-    <div class="skill-cell"><div class="skill-name"><span class="skill-tip" data-skill="宗教">宗教</span><span class="skill-ability">(智力)</span></div><div class="skill-control-row"><div class="skill-rank-controls"><label class="skill-rank-target"><input type="checkbox" id="prof-宗教" data-skill-rank="宗教" aria-label="宗教 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-宗教" class="circle-checkbox" data-skill-rank="宗教" aria-label="宗教 專精"></label></div><input type="text" inputmode="numeric" id="skill-宗教"></div></div>
-    <div class="skill-brand" aria-hidden="true">
-      <div class="skill-brand-art skill-brand-art--classic brand-logo-full">
-        <img class="legal-modal-logo-light" src="images/logo-classic-light.webp" alt="" width="1080" height="350">
-        <img class="legal-modal-logo-dark" src="images/logo-classic-dark.webp" alt="" width="1080" height="350">
-      </div>
-      <div class="skill-brand-art skill-brand-art--warm brand-logo-crop">
-        <img class="legal-modal-logo-light" src="images/logo-warm-light.webp" alt="" width="1419" height="352">
-        <img class="legal-modal-logo-dark" src="images/logo-warm-dark.webp" alt="" width="1419" height="355">
-      </div>
-    </div>
-    <div class="skill-cell"><div class="skill-name"><span class="skill-tip" data-skill="馴獸">馴獸</span><span class="skill-ability">(感知)</span></div><div class="skill-control-row"><div class="skill-rank-controls"><label class="skill-rank-target"><input type="checkbox" id="prof-馴獸" data-skill-rank="馴獸" aria-label="馴獸 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-馴獸" class="circle-checkbox" data-skill-rank="馴獸" aria-label="馴獸 專精"></label></div><input type="text" inputmode="numeric" id="skill-馴獸"></div></div>
-    <div class="skill-cell"><div class="skill-name"><span class="skill-tip" data-skill="洞悉">洞悉</span><span class="skill-ability">(感知)</span></div><div class="skill-control-row"><div class="skill-rank-controls"><label class="skill-rank-target"><input type="checkbox" id="prof-洞悉" data-skill-rank="洞悉" aria-label="洞悉 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-洞悉" class="circle-checkbox" data-skill-rank="洞悉" aria-label="洞悉 專精"></label></div><input type="text" inputmode="numeric" id="skill-洞悉"></div></div>
-    <div class="skill-cell"><div class="skill-name"><span class="skill-tip" data-skill="醫藥">醫藥</span><span class="skill-ability">(感知)</span></div><div class="skill-control-row"><div class="skill-rank-controls"><label class="skill-rank-target"><input type="checkbox" id="prof-醫藥" data-skill-rank="醫藥" aria-label="醫藥 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-醫藥" class="circle-checkbox" data-skill-rank="醫藥" aria-label="醫藥 專精"></label></div><input type="text" inputmode="numeric" id="skill-醫藥"></div></div>
-    <div class="skill-cell"><div class="skill-name"><span class="skill-tip" data-skill="察覺">察覺</span><span class="skill-ability">(感知)</span></div><div class="skill-control-row"><div class="skill-rank-controls"><label class="skill-rank-target"><input type="checkbox" id="prof-察覺" data-skill-rank="察覺" aria-label="察覺 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-察覺" class="circle-checkbox" data-skill-rank="察覺" aria-label="察覺 專精"></label></div><input type="text" inputmode="numeric" id="skill-察覺"></div></div>
-    <div class="skill-cell"><div class="skill-name"><span class="skill-tip" data-skill="求生">求生</span><span class="skill-ability">(感知)</span></div><div class="skill-control-row"><div class="skill-rank-controls"><label class="skill-rank-target"><input type="checkbox" id="prof-求生" data-skill-rank="求生" aria-label="求生 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-求生" class="circle-checkbox" data-skill-rank="求生" aria-label="求生 專精"></label></div><input type="text" inputmode="numeric" id="skill-求生"></div></div>
-    <div class="skill-cell"><div class="skill-name"><span class="skill-tip" data-skill="欺瞞">欺瞞</span><span class="skill-ability">(魅力)</span></div><div class="skill-control-row"><div class="skill-rank-controls"><label class="skill-rank-target"><input type="checkbox" id="prof-欺瞞" data-skill-rank="欺瞞" aria-label="欺瞞 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-欺瞞" class="circle-checkbox" data-skill-rank="欺瞞" aria-label="欺瞞 專精"></label></div><input type="text" inputmode="numeric" id="skill-欺瞞"></div></div>
-    <div class="skill-cell"><div class="skill-name"><span class="skill-tip" data-skill="威嚇">威嚇</span><span class="skill-ability">(魅力)</span></div><div class="skill-control-row"><div class="skill-rank-controls"><label class="skill-rank-target"><input type="checkbox" id="prof-威嚇" data-skill-rank="威嚇" aria-label="威嚇 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-威嚇" class="circle-checkbox" data-skill-rank="威嚇" aria-label="威嚇 專精"></label></div><input type="text" inputmode="numeric" id="skill-威嚇"></div></div>
-    <div class="skill-cell"><div class="skill-name"><span class="skill-tip" data-skill="表演">表演</span><span class="skill-ability">(魅力)</span></div><div class="skill-control-row"><div class="skill-rank-controls"><label class="skill-rank-target"><input type="checkbox" id="prof-表演" data-skill-rank="表演" aria-label="表演 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-表演" class="circle-checkbox" data-skill-rank="表演" aria-label="表演 專精"></label></div><input type="text" inputmode="numeric" id="skill-表演"></div></div>
-    <div class="skill-cell"><div class="skill-name"><span class="skill-tip" data-skill="遊說">遊說</span><span class="skill-ability">(魅力)</span></div><div class="skill-control-row"><div class="skill-rank-controls"><label class="skill-rank-target"><input type="checkbox" id="prof-遊說" data-skill-rank="遊說" aria-label="遊說 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-遊說" class="circle-checkbox" data-skill-rank="遊說" aria-label="遊說 專精"></label></div><input type="text" inputmode="numeric" id="skill-遊說"></div></div>
-  </div>
-
-  </div>
-
-  <div class="section">
-      <h3>技能/工具筆記區</h3>
-<div id="skill-extra-sheet-mount"><textarea id="skill-extra" rows="4" placeholder="如果技能有其他規則，記在這裡。"></textarea></div>
-  </div>
-
-  <div class="section language-card">
-    <div class="language-section">
-      <div class="language-base-grid">
-        <div class="language-field">
-          <label for="language1">語言 1：</label>
-          <select id="language1" class="language-select">
-            <option value="">-- 請選擇 --</option>
-            <option value="common-sign">通用手語</option>
-            <option value="draconic">龍語</option>
-            <option value="dwarvish">矮人語</option>
-            <option value="elvish">精靈語</option>
-            <option value="giant">巨人語</option>
-            <option value="gnomish">侏儒語</option>
-            <option value="goblin">哥布林語</option>
-            <option value="halfling">半身人語</option>
-            <option value="orc">獸人語</option>
-            <option value="infernal" data-race-language hidden disabled>煉獄語</option>
-          </select>
+    <div class="skill-stack skill-stack--outer">
+      <div class="skill-stack">
+        <div class="skill-group">
+          <h4 class="skill-group-heading"><span>力量</span><span class="skill-group-mod" data-ability="str"></span></h4>
+          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-運動" data-skill-rank="運動" aria-label="運動 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-運動" class="circle-checkbox" data-skill-rank="運動" aria-label="運動 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="運動">運動</span><span class="skill-ability">(力量)</span></div><input type="text" inputmode="numeric" id="skill-運動"></div>
         </div>
-
-        <div class="language-field">
-          <label for="language2">語言 2：</label>
-          <select id="language2" class="language-select">
-            <option value="">-- 請選擇 --</option>
-            <option value="common-sign">通用手語</option>
-            <option value="draconic">龍語</option>
-            <option value="dwarvish">矮人語</option>
-            <option value="elvish">精靈語</option>
-            <option value="giant">巨人語</option>
-            <option value="gnomish">侏儒語</option>
-            <option value="goblin">哥布林語</option>
-            <option value="halfling">半身人語</option>
-            <option value="orc">獸人語</option>
-            <option value="infernal" data-race-language hidden disabled>煉獄語</option>
-          </select>
+        <div class="skill-group">
+          <h4 class="skill-group-heading"><span>敏捷</span><span class="skill-group-mod" data-ability="dex"></span></h4>
+          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-體操" data-skill-rank="體操" aria-label="體操 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-體操" class="circle-checkbox" data-skill-rank="體操" aria-label="體操 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="體操">體操</span><span class="skill-ability">(敏捷)</span></div><input type="text" inputmode="numeric" id="skill-體操"></div>
+          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-巧手" data-skill-rank="巧手" aria-label="巧手 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-巧手" class="circle-checkbox" data-skill-rank="巧手" aria-label="巧手 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="巧手">巧手</span><span class="skill-ability">(敏捷)</span></div><input type="text" inputmode="numeric" id="skill-巧手"></div>
+          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-隱匿" data-skill-rank="隱匿" aria-label="隱匿 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-隱匿" class="circle-checkbox" data-skill-rank="隱匿" aria-label="隱匿 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="隱匿">隱匿</span><span class="skill-ability">(敏捷)</span></div><input type="text" inputmode="numeric" id="skill-隱匿"></div>
         </div>
       </div>
-
-      <div id="extra-language-container" class="language-extra-container"></div>
-      <p class="character-features-hint">你會說通用語和以上語言。</p>
+      <div class="skill-stack">
+        <div class="skill-group">
+          <h4 class="skill-group-heading"><span>智力</span><span class="skill-group-mod" data-ability="int"></span></h4>
+          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-奧秘" data-skill-rank="奧秘" aria-label="奧秘 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-奧秘" class="circle-checkbox" data-skill-rank="奧秘" aria-label="奧秘 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="奧秘">奧秘</span><span class="skill-ability">(智力)</span></div><input type="text" inputmode="numeric" id="skill-奧秘"></div>
+          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-歷史" data-skill-rank="歷史" aria-label="歷史 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-歷史" class="circle-checkbox" data-skill-rank="歷史" aria-label="歷史 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="歷史">歷史</span><span class="skill-ability">(智力)</span></div><input type="text" inputmode="numeric" id="skill-歷史"></div>
+          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-調查" data-skill-rank="調查" aria-label="調查 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-調查" class="circle-checkbox" data-skill-rank="調查" aria-label="調查 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="調查">調查</span><span class="skill-ability">(智力)</span></div><input type="text" inputmode="numeric" id="skill-調查"></div>
+          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-自然" data-skill-rank="自然" aria-label="自然 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-自然" class="circle-checkbox" data-skill-rank="自然" aria-label="自然 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="自然">自然</span><span class="skill-ability">(智力)</span></div><input type="text" inputmode="numeric" id="skill-自然"></div>
+          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-宗教" data-skill-rank="宗教" aria-label="宗教 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-宗教" class="circle-checkbox" data-skill-rank="宗教" aria-label="宗教 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="宗教">宗教</span><span class="skill-ability">(智力)</span></div><input type="text" inputmode="numeric" id="skill-宗教"></div>
+        </div>
+      </div>
+    </div>
+    <div class="skill-stack skill-stack--outer">
+      <div class="skill-stack">
+        <div class="skill-group">
+          <h4 class="skill-group-heading"><span>感知</span><span class="skill-group-mod" data-ability="wis"></span></h4>
+          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-馴獸" data-skill-rank="馴獸" aria-label="馴獸 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-馴獸" class="circle-checkbox" data-skill-rank="馴獸" aria-label="馴獸 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="馴獸">馴獸</span><span class="skill-ability">(感知)</span></div><input type="text" inputmode="numeric" id="skill-馴獸"></div>
+          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-洞悉" data-skill-rank="洞悉" aria-label="洞悉 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-洞悉" class="circle-checkbox" data-skill-rank="洞悉" aria-label="洞悉 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="洞悉">洞悉</span><span class="skill-ability">(感知)</span></div><input type="text" inputmode="numeric" id="skill-洞悉"></div>
+          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-醫藥" data-skill-rank="醫藥" aria-label="醫藥 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-醫藥" class="circle-checkbox" data-skill-rank="醫藥" aria-label="醫藥 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="醫藥">醫藥</span><span class="skill-ability">(感知)</span></div><input type="text" inputmode="numeric" id="skill-醫藥"></div>
+          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-察覺" data-skill-rank="察覺" aria-label="察覺 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-察覺" class="circle-checkbox" data-skill-rank="察覺" aria-label="察覺 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="察覺">察覺</span><span class="skill-ability">(感知)</span></div><input type="text" inputmode="numeric" id="skill-察覺"></div>
+          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-求生" data-skill-rank="求生" aria-label="求生 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-求生" class="circle-checkbox" data-skill-rank="求生" aria-label="求生 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="求生">求生</span><span class="skill-ability">(感知)</span></div><input type="text" inputmode="numeric" id="skill-求生"></div>
+        </div>
+      </div>
+      <div class="skill-stack">
+        <div class="skill-group">
+          <h4 class="skill-group-heading"><span>魅力</span><span class="skill-group-mod" data-ability="cha"></span></h4>
+          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-欺瞞" data-skill-rank="欺瞞" aria-label="欺瞞 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-欺瞞" class="circle-checkbox" data-skill-rank="欺瞞" aria-label="欺瞞 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="欺瞞">欺瞞</span><span class="skill-ability">(魅力)</span></div><input type="text" inputmode="numeric" id="skill-欺瞞"></div>
+          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-威嚇" data-skill-rank="威嚇" aria-label="威嚇 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-威嚇" class="circle-checkbox" data-skill-rank="威嚇" aria-label="威嚇 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="威嚇">威嚇</span><span class="skill-ability">(魅力)</span></div><input type="text" inputmode="numeric" id="skill-威嚇"></div>
+          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-表演" data-skill-rank="表演" aria-label="表演 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-表演" class="circle-checkbox" data-skill-rank="表演" aria-label="表演 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="表演">表演</span><span class="skill-ability">(魅力)</span></div><input type="text" inputmode="numeric" id="skill-表演"></div>
+          <div class="skill-cell"><div class="skill-rank-controls"><span class="skill-rank-mark" aria-hidden="true"></span><label class="skill-rank-target"><input type="checkbox" id="prof-遊說" data-skill-rank="遊說" aria-label="遊說 熟練"></label><label class="skill-rank-target"><input type="checkbox" id="exp-遊說" class="circle-checkbox" data-skill-rank="遊說" aria-label="遊說 專精"></label></div><div class="skill-name"><span class="skill-tip" data-skill="遊說">遊說</span><span class="skill-ability">(魅力)</span></div><input type="text" inputmode="numeric" id="skill-遊說"></div>
+        </div>
+      </div>
     </div>
   </div>
+</div>
 
-  <div class="section tool-card">
-    <div class="tool-section">
-      <div id="tool-proficiency-list" class="tool-proficiency-list">
-        <div class="tool-proficiency-row tool-proficiency-row--background">
-          <label for="tool-proficiency-0">背景提供</label>
-          <div class="tool-proficiency-control">
-            <select id="tool-proficiency-0" class="tool-proficiency-select" disabled>
-              <option value="">-- 請先選擇背景 --</option>
+  <div class="skill-detail-row">
+    <div class="section language-card">
+      <div class="skill-section-heading"><h3>語言</h3><p class="character-features-hint">你會說通用語和以下語言。</p></div>
+      <div class="language-section">
+        <div class="language-base-grid">
+          <div class="language-field">
+            <label for="language1">語言 1</label>
+            <select id="language1" class="language-select">
+              <option value="">-- 請選擇 --</option>
+              <option value="common-sign">通用手語</option>
+              <option value="draconic">龍語</option>
+              <option value="dwarvish">矮人語</option>
+              <option value="elvish">精靈語</option>
+              <option value="giant">巨人語</option>
+              <option value="gnomish">侏儒語</option>
+              <option value="goblin">哥布林語</option>
+              <option value="halfling">半身人語</option>
+              <option value="orc">獸人語</option>
+              <option value="infernal" data-race-language hidden disabled>煉獄語</option>
+            </select>
+          </div>
+  
+          <div class="language-field">
+            <label for="language2">語言 2</label>
+            <select id="language2" class="language-select">
+              <option value="">-- 請選擇 --</option>
+              <option value="common-sign">通用手語</option>
+              <option value="draconic">龍語</option>
+              <option value="dwarvish">矮人語</option>
+              <option value="elvish">精靈語</option>
+              <option value="giant">巨人語</option>
+              <option value="gnomish">侏儒語</option>
+              <option value="goblin">哥布林語</option>
+              <option value="halfling">半身人語</option>
+              <option value="orc">獸人語</option>
+              <option value="infernal" data-race-language hidden disabled>煉獄語</option>
             </select>
           </div>
         </div>
+  
+        <div id="extra-language-container" class="language-extra-container"></div>
       </div>
-      <button type="button" id="add-tool-proficiency" class="tool-proficiency-add">＋ 新增工具</button>
-      <p class="tool-proficiency-hint">新增角色熟練的工匠工具、其他工具、樂器或賭具。</p>
     </div>
+
+    <div class="section tool-card">
+      <div class="skill-section-heading"><h3>工具</h3></div>
+      <div class="tool-section">
+        <div id="tool-proficiency-list" class="tool-proficiency-list">
+          <div class="tool-proficiency-row tool-proficiency-row--background">
+            <label for="tool-proficiency-0">背景提供</label>
+            <div class="tool-proficiency-control">
+              <select id="tool-proficiency-0" class="tool-proficiency-select" disabled>
+                <option value="">-- 請先選擇背景 --</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <button type="button" id="add-tool-proficiency" class="tool-proficiency-add">＋ 新增工具</button>
+        <p class="tool-proficiency-hint">新增角色熟練的工匠工具、其他工具、樂器或賭具。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="skill-section-heading"><h3>技能/工具筆記區</h3></div>
+<div id="skill-extra-sheet-mount"><textarea id="skill-extra" rows="4" placeholder="如果技能有其他規則，記在這裡。"></textarea></div>
   </div>
 
 </div>
@@ -1374,7 +1393,7 @@
   <script src="sheet-utils.js?v=20261024-index-split"></script>
   <script src="feat-ui.js?v=20261105-feat-categories"></script>
   <script src="spell-sources.js?v=20261105-feat-categories"></script>
-  <script src="class-features-ui.js?v=20261104-feat-sets"></script>
+  <script src="class-features-ui.js?v=20261106-skills-auto"></script>
   <script>
 function openCarryCapacityRules(trigger) {
   return window.AppDialog.showMessage({
@@ -1481,15 +1500,50 @@ function syncAutomaticKeyStatsMode({ refresh = true } = {}) {
     input.readOnly = automatic;
     input.setAttribute("aria-readonly", String(automatic));
   });
+  document.querySelectorAll(DERIVED_CHECK_INPUT_SELECTOR).forEach((input) => {
+    input.readOnly = automatic;
+    input.setAttribute("aria-readonly", String(automatic));
+    if (automatic) input.tabIndex = -1;
+    else input.removeAttribute("tabindex");
+  });
+  document.querySelectorAll("#tab-skills .skill-calc-button").forEach((button) => { button.hidden = automatic; });
   document.getElementById("tab-basic")?.classList.toggle("manual-key-stats", !automatic);
+  document.getElementById("tab-skills")?.classList.toggle("manual-key-stats", !automatic);
   if (automatic && refresh) refreshAutomaticKeyStats();
+}
+
+// 由關轉開：只有會改到不同的數字才確認；取消就維持關閉。
+async function handleAutomaticKeyStatsToggle(event) {
+  const toggle = event.currentTarget;
+  if (toggle.checked) {
+    const changes = countDerivedCheckChanges();
+    if (changes) {
+      toggle.checked = false;
+      const confirmed = await window.AppDialog.requestDecision({
+        title: "開啟自動計算",
+        message: `有 ${changes} 項技能或豁免的數字和計算結果不同，開啟後會改成計算結果。`,
+        confirmLabel: "開啟並更新", cancelLabel: "繼續手動", trigger: toggle
+      });
+      if (!confirmed) return;
+      toggle.checked = true;
+      scheduleSaveAllFields();
+    }
+    writeDerivedChecks();
+  }
+  syncAutomaticKeyStatsMode();
+  if (toggle.checked) window.TabletopMode?.refresh?.();
 }
 
 function setupAutomaticKeyStats() {
   const toggle = document.getElementById("auto-calculate-key-stats-toggle");
   if (!toggle) return;
+  derivedChecksReady = true;
+  finishDerivedChecksLoad(pendingDerivedChecksLoad);
+  pendingDerivedChecksLoad = null;
   syncAutomaticKeyStatsMode();
-  toggle.addEventListener("change", () => syncAutomaticKeyStatsMode());
+  toggle.addEventListener("change", handleAutomaticKeyStatsToggle);
+  document.addEventListener("input", handleDerivedCheckSourceEvent);
+  document.addEventListener("change", handleDerivedCheckSourceEvent);
   bindEventById("ac-display", "input", () => {
     if (!isAutomaticKeyStatsEnabled()) updateEquipmentLoadoutSummary();
   });
@@ -1563,7 +1617,7 @@ function bindCoreCharacterEvents() {
   bindEventById("cha", "input", updateACDisplay);
   ["str", "dex", "con", "int", "wis", "cha"].forEach(id => bindEventById(id, "change", syncDerivedFeatRows));
   bindEventById("armor", "change", updateArmorInfo);
-  bindEventById("class", "change", event => {beginClassOptionTransition(event);syncLevelOptions();syncSubclassOptions();updateHitDieLabel();resetSpellSlotsAfterCharacterChange();refreshWeaponSelections();updateClassFeature();updateClassFeatureOptionVisibility();syncDerivedFeatRows();syncClassToolRows();updateACDisplay();updateSpeedDisplay();updateEldritchInvocationSectionVisibility();populateHandAttacks();syncOriginAndSubclassDerivedSpellRows();updateSpellsByClassLevel();updateExpertiseVisibility();updateExtraLanguageFields();finishClassOptionTransition();});
+  bindEventById("class", "change", event => {beginClassOptionTransition(event);syncLevelOptions();syncSubclassOptions();updateHitDieLabel();resetSpellSlotsAfterCharacterChange();refreshWeaponSelections();updateClassFeature();updateClassFeatureOptionVisibility();syncDerivedFeatRows();syncClassToolRows();updateACDisplay();updateSpeedDisplay();updateEldritchInvocationSectionVisibility();populateHandAttacks();syncOriginAndSubclassDerivedSpellRows();updateSpellsByClassLevel();updateExpertiseVisibility();updateExtraLanguageFields();syncClassSaveProficiencies();finishClassOptionTransition();});
   bindEventById("level", "change", event => {beginClassOptionTransition(event);syncHitDiceCountToLevel();syncProficiencyUseChecks();updateAutomaticInitiative();resetSpellSlotsAfterCharacterChange();refreshWeaponSelections();updateClassFeature();updateClassFeatureOptionVisibility();syncDerivedFeatRows();updateACDisplay();updateSpeedDisplay();updateEldritchInvocationSectionVisibility();populateHandAttacks();syncOriginAndSubclassDerivedSpellRows();updateSpellsByClassLevel();updateExtraLanguageFields();finishClassOptionTransition();});
   // 子職決定職業詳情、動作、資源、衍生法術與數值；與職業／等級同一套重算。
   bindEventById("subclass", "change", applySubclassChange);
@@ -1786,7 +1840,7 @@ function updateExtraLanguageFields() {
   }
 
   const extraFieldsHtml = fields.map((field, idx) => {
-    const label = `<label for="${field.id}" class="language-extra-label">額外語言 ${idx + 1}：</label>`;
+    const label = `<label for="${field.id}" class="language-extra-label">額外語言 ${idx + 1}</label>`;
     const disabledAttr = field.fixedValue ? "disabled" : "";
     const optionsHtml = field.fixedValue
       ? `<option value="${field.fixedValue}">${field.fixedLabel}</option>`
@@ -1794,7 +1848,7 @@ function updateExtraLanguageFields() {
     return `<div class="language-extra-row">${label}<select id="${field.id}" ${disabledAttr}>${optionsHtml}</select></div>`;
   }).join("");
 
-  container.innerHTML = `<div><label>職業額外語言：</label>${extraFieldsHtml}</div>`;
+  container.innerHTML = `<div>${extraFieldsHtml}</div>`;
   container.querySelectorAll("select:not(:disabled)").forEach(select => {
     const previousValue = previousValues.get(select.id);
     if (previousValue && [...select.options].some(option => option.value === previousValue && !option.disabled)) {
@@ -1860,7 +1914,7 @@ function refreshToolProficiencyRows() {
       label.textContent = `職業提供 #${classIndex}`;
     } else {
       select.id = `tool-proficiency-${manualIndex}`;
-      label.textContent = manualIndex === 0 ? "背景提供" : `工具 ${manualIndex + 1}：`;
+      label.textContent = manualIndex === 0 ? "背景提供" : `工具 ${manualIndex + 1}`;
       manualIndex += 1;
     }
     label.htmlFor = select.id;
@@ -1975,7 +2029,7 @@ function createToolProficiencyRow(value = "") {
   if (!list) return null;
   const row = document.createElement("div");
   row.className = "tool-proficiency-row";
-  row.innerHTML = `<label></label><div class="tool-proficiency-control"><select class="tool-proficiency-select">${createToolOptionsHtml()}</select><button type="button" class="tool-proficiency-remove" aria-label="刪除此工具">刪除</button></div>`;
+  row.innerHTML = `<label></label><div class="tool-proficiency-control"><select class="tool-proficiency-select">${createToolOptionsHtml()}</select><button type="button" class="tool-proficiency-remove" aria-label="刪除此工具" title="刪除此工具">×</button></div>`;
   const select = row.querySelector("select");
   if (getToolProficiencyCatalog().isTool(value)) select.value = value;
   select.addEventListener("change", () => {
@@ -2081,7 +2135,8 @@ function classHasExpertisePick(classValue) {
   return (window.getClassFeatureRules?.(classValue) || []).some(feature => (feature.picks || []).some(pick => pick.kind === "expertise"));
 }
 
-function updateExpertiseVisibility() {
+// 專精失效（換職業、移除專長）時退回熟練，不會變成未熟練。載入途中不改勾選，還原完成後才判斷一次。
+function updateExpertiseVisibility({ refresh = true } = {}) {
   const classValue = document.getElementById("class")?.value || "";
   const classGrantsExpertise = classHasExpertisePick(classValue);
   const hasSearchExpertFeat = hasSelectedFeat("尋物好手");
@@ -2090,8 +2145,10 @@ function updateExpertiseVisibility() {
   document.querySelectorAll(".circle-checkbox").forEach(checkbox => {
     const canUseExpertise = classGrantsExpertise
       || (hasSearchExpertFeat && SEARCH_EXPERT_SKILLS.has(checkbox.dataset.skillRank));
-    if (!canUseExpertise && checkbox.checked) {
+    if (!canUseExpertise && checkbox.checked && !characterStateLoadDepth) {
       checkbox.checked = false;
+      const proficiency = document.getElementById(`prof-${checkbox.dataset.skillRank}`);
+      if (proficiency) proficiency.checked = true;
       clearedUnavailableExpertise = true;
     }
     checkbox.disabled = !canUseExpertise;
@@ -2100,7 +2157,7 @@ function updateExpertiseVisibility() {
     if (rankTarget) rankTarget.hidden = !canUseExpertise;
   });
 
-  if (clearedUnavailableExpertise && typeof fillSkills === "function") fillSkills();
+  if (clearedUnavailableExpertise && refresh) refreshDerivedChecks();
 }
 
 
@@ -2181,6 +2238,15 @@ let spellDisplayPending = false;
 let pickedSpellsPending = false;
 let handAttacksPending = false;
 let handAttacksForcePending = false;
+// 技能與豁免的自動計算：角色資料還原中或初始化完成前都不重算，批次內延後到 flush。
+const DERIVED_CHECK_INPUT_SELECTOR = '#tab-skills .save-pair input[type="text"], #tab-skills .skill-cell input[type="text"]';
+const DERIVED_CHECKS_STATE_KEY = "__autoCalculatedChecks";
+let characterStateLoadDepth = 0;
+let derivedChecksReady = false;
+let derivedChecksPending = false;
+let derivedChecksStateKnown = false;
+let pendingDerivedChecksLoad = null;
+let saveProficiencyClass = "";
 function flushCharacterUpdates() {
   const previousDepth = characterUpdateDepth;
   try {
@@ -2200,6 +2266,10 @@ function flushCharacterUpdates() {
       const force = handAttacksForcePending;
       handAttacksPending = handAttacksForcePending = false;
       renderHandAttacks({ force });
+    }
+    if (derivedChecksPending) {
+      derivedChecksPending = false;
+      refreshDerivedChecks();
     }
   } finally {
     characterUpdateDepth = previousDepth;
@@ -2972,7 +3042,11 @@ const POINT_BUY_LAST_APPLIED_KEY = "dnd.pointBuyLastApplied.v1";
     abilities.forEach(ability => {
       const input = document.getElementById(ability);
       const modDisplay = document.getElementById(`${ability}-mod`);
-      const update = () => updateAbilityScore(input, modDisplay);
+      const groupMod = document.querySelector(`.skill-group-mod[data-ability="${ability}"]`);
+      const update = () => {
+        updateAbilityScore(input, modDisplay);
+        if (groupMod) groupMod.textContent = calculateModifier(input.valueAsNumber);
+      };
       input.addEventListener("input", update);
       input.addEventListener("change", update);
 
@@ -3084,21 +3158,60 @@ function updateSpellCastingStatsVisibility() {
   window.TabletopMode?.syncSpellPanelAvailability?.();
 }
 
+const SAVE_ABILITY_IDS = Object.freeze(["str", "dex", "con", "int", "wis", "cha"]);
+
+function isAbilityScoreBlank(ability) {
+  return !String(document.getElementById(ability)?.value ?? "").trim();
+}
+
+function writeDerivedCheckValue(input, value) {
+  if (input && input.value !== value) input.value = value;
+}
+
+// 守護靈氣的豁免加值只在跑團模式顯示（失能時移除），角色卡保留一般數值。
+function getSaveTotal(ability, proficient) {
+  return getModifier(ability) + (proficient ? getProficiencyBonus() : 0);
+}
+
+function getNextSaveText(ability) {
+  if (isAbilityScoreBlank(ability)) return "";
+  return formatSignedValue(getSaveTotal(ability, document.getElementById("prof-" + ability)?.checked === true));
+}
+
+function writeSaveValues() {
+  SAVE_ABILITY_IDS.forEach(ability => writeDerivedCheckValue(document.getElementById("save-" + ability), getNextSaveText(ability)));
+}
+
 function fillSaves() {
-  const pb = getProficiencyBonus();
-  const abilities = ["str", "dex", "con", "int", "wis", "cha"];
+  writeSaveValues();
+}
+
+// 目前職業的豁免熟練：快速創角與從未計算過的舊存檔用，只勾這個職業的項目。
+function applyClassSaveProficiencies() {
   const selectedClass = document.getElementById("class")?.value || "";
-  const profSaves = new Set(getClassSaveProficiencies(selectedClass));
-
-  // 守護靈氣的豁免加值只在跑團模式顯示（失能時移除），角色卡保留一般數值。
-  abilities.forEach(ab => {
-    const profCheckbox = document.getElementById("prof-" + ab);
-    if (profCheckbox) profCheckbox.checked = profSaves.has(ab);
-
-    const mod = getModifier(ab);
-    const total = mod + (profSaves.has(ab) ? pb : 0);
-    document.getElementById("save-" + ab).value = formatSignedValue(total);
+  if (!selectedClass) return;
+  const proficient = new Set(getClassSaveProficiencies(selectedClass));
+  SAVE_ABILITY_IDS.forEach(ability => {
+    const checkbox = document.getElementById("prof-" + ability);
+    if (checkbox) checkbox.checked = proficient.has(ability);
   });
+  saveProficiencyClass = selectedClass;
+}
+
+// 換職業：移除舊職業給的豁免熟練、勾上新職業的，玩家另外勾的保留；選回空白職業時不動。
+function syncClassSaveProficiencies() {
+  if (!derivedChecksReady || characterStateLoadDepth) return;
+  const selectedClass = document.getElementById("class")?.value || "";
+  if (!selectedClass || selectedClass === saveProficiencyClass) return;
+  getClassSaveProficiencies(saveProficiencyClass).forEach(ability => {
+    const checkbox = document.getElementById("prof-" + ability);
+    if (checkbox) checkbox.checked = false;
+  });
+  getClassSaveProficiencies(selectedClass).forEach(ability => {
+    const checkbox = document.getElementById("prof-" + ability);
+    if (checkbox) checkbox.checked = true;
+  });
+  saveProficiencyClass = selectedClass;
 }
 
 function enforceSkillRankExclusivity(changedInput) {
@@ -3161,8 +3274,9 @@ function updateAutomaticInitiative() {
   initiative.value = formatSignedValue(dexMod + (hasAlertFeat ? getProficiencyBonus() : jackOfAllTradesBonus));
 }
 
-function fillSkills() {
+function getSkillTotals() {
   const skillMap = CharacterSkillAbilities;
+  const totals = new Map();
 
   const selectedClass = document.getElementById("class")?.value || "";
   const level = parseInt(document.getElementById("level")?.value || "1", 10);
@@ -3188,15 +3302,119 @@ function fillSkills() {
     const jackOfAllTradesBonus = getJackOfAllTradesBonus(
       selectedClass, level, profInput.checked || expInput.checked
     );
-    const total = mod + skillProficiencyBonus + featureBonus + jackOfAllTradesBonus;
-    input.value = formatSignedValue(total);
+    totals.set(skill, mod + skillProficiencyBonus + featureBonus + jackOfAllTradesBonus);
   }
+  return totals;
+}
 
+function getNextSkillTexts() {
+  return Array.from(getSkillTotals(), ([skill, total]) => [
+    skill,
+    isAbilityScoreBlank(CharacterSkillAbilities[skill]) ? "" : formatSignedValue(total)
+  ]);
+}
+
+function writeSkillValues() {
+  getNextSkillTexts().forEach(([skill, text]) => writeDerivedCheckValue(document.getElementById("skill-" + skill), text));
+}
+
+function fillSkills() {
+  writeSkillValues();
   updatePassivePerceptionDisplay();
   updateAutomaticInitiative();
 }
+
+function writeDerivedChecks() {
+  writeSaveValues();
+  writeSkillValues();
+  updatePassivePerceptionDisplay();
+}
+
+// 自動計算的單一入口：只寫值、不派送事件，值沒變就不寫。
+function refreshDerivedChecks() {
+  if (!derivedChecksReady || characterStateLoadDepth || !isAutomaticKeyStatsEnabled()) return;
+  if (characterUpdateDepth) {
+    derivedChecksPending = true;
+    return;
+  }
+  writeDerivedChecks();
+}
+
+// 玩家或程式改動任何角色欄位都重算一次；數值框本身只在手動輸入完成時轉成半形。
+function handleDerivedCheckSourceEvent(event) {
+  const field = event.target;
+  if (!field?.matches?.("input[id], select[id]") || field.type === "file") return;
+  if (field.matches(DERIVED_CHECK_INPUT_SELECTOR)) {
+    if (event.type === "change") normalizeDerivedCheckInput(field);
+    return;
+  }
+  // 開關本身由 handleAutomaticKeyStatsToggle 處理：先確認才能覆寫手動數字。
+  if (field.id === "auto-calculate-key-stats-toggle" || field.dataset.stateTransient === "true"
+    || field.closest('form[role="search"], .money-section, .money-modal')) return;
+  refreshDerivedChecks();
+}
+
+function normalizeDerivedCheckInput(input) {
+  const normalized = normalizeSignedValueText(input.value);
+  if (input.value !== normalized) input.value = normalized;
+}
+
+// 由關轉開時會改到幾個數字：空白補上不算改動，非數字內容算不同。
+function countDerivedCheckChanges() {
+  const nextTexts = [
+    ...SAVE_ABILITY_IDS.map(ability => ["save-" + ability, getNextSaveText(ability)]),
+    ...getNextSkillTexts().map(([skill, text]) => ["skill-" + skill, text])
+  ];
+  return nextTexts.filter(([id, text]) => {
+    const current = String(document.getElementById(id)?.value ?? "").trim();
+    return current && parseExactSignedValue(current) !== (text ? parseExactSignedValue(text) : null);
+  }).length;
+}
+
+function matchesDerivedCheck(input, acceptedTotals) {
+  const current = String(input?.value ?? "").trim();
+  return !current || acceptedTotals.includes(parseExactSignedValue(current));
+}
+
+// 舊資料的數字是否都算得出來：空白、新算法或舊算法（空白屬性視為 10、豁免熟練由職業決定）都算正確。
+function isLegacyDerivedChecksCurrent() {
+  const classSaves = new Set(getClassSaveProficiencies(document.getElementById("class")?.value || ""));
+  const savesMatch = SAVE_ABILITY_IDS.every(ability => matchesDerivedCheck(document.getElementById("save-" + ability), [
+    getSaveTotal(ability, document.getElementById("prof-" + ability)?.checked === true),
+    getSaveTotal(ability, classSaves.has(ability))
+  ]));
+  if (!savesMatch) return false;
+  return Array.from(getSkillTotals()).every(([skill, total]) => matchesDerivedCheck(document.getElementById("skill-" + skill), [total]));
+}
+
+function hasNeverCalculatedSaves() {
+  return SAVE_ABILITY_IDS.every(ability => !String(document.getElementById("save-" + ability)?.value ?? "").trim()
+    && document.getElementById("prof-" + ability)?.checked !== true);
+}
+
+// 所有載入路徑在資料完全還原後判斷一次：
+// 開關關閉不動；有標記就重算；舊資料的數字都正確就保持自動，只要有一項不同就保留所有數字並關閉開關。
+function finishDerivedChecksLoad(data) {
+  updateExpertiseVisibility({ refresh: false });
+  document.querySelectorAll(DERIVED_CHECK_INPUT_SELECTOR).forEach(normalizeDerivedCheckInput);
+  saveProficiencyClass = document.getElementById("class")?.value || "";
+  if (isAutomaticKeyStatsEnabled()) {
+    if (data?.[DERIVED_CHECKS_STATE_KEY] === true) {
+      writeDerivedChecks();
+    } else if (isLegacyDerivedChecksCurrent()) {
+      if (hasNeverCalculatedSaves()) applyClassSaveProficiencies();
+      writeDerivedChecks();
+    } else {
+      // 舊分享連結可能沒帶 HP、AC 等欄位：關閉前先算好，避免留空。
+      refreshAutomaticKeyStats();
+      document.getElementById("auto-calculate-key-stats-toggle").checked = false;
+    }
+  }
+  derivedChecksStateKnown = true;
+  syncAutomaticKeyStatsMode({ refresh: false });
+}
 </script>
-<script src="pdf-launcher.js?v=20261105-pdf-edit-size"></script>
+<script src="pdf-launcher.js?v=20261106-skills-auto"></script>
 
 <script>
 // ====== 裝備,武器,法術相關工具 ======
@@ -5211,6 +5429,8 @@ function collectStateObject(options = {}) {
     data[el.id] = el.type === "checkbox" ? el.checked : el.value;
   });
   data[CHARACTER_SIZE_STATE_KEY] = characterSize;
+  // 標記存在代表這份資料已經過自動計算判斷；判斷前（例如匯入途中先存檔）不寫，留給下次載入判斷。
+  if (derivedChecksStateKnown) data[DERIVED_CHECKS_STATE_KEY] = true;
   const customBackground = window.CustomBackground?.getState();
   if (customBackground) data.__customBackground = customBackground;
   // 自動與自行管理兩套專長都存：自行管理那套不論模式都寫入；自行管理時另存自動那套來源列的魔法學徒子選項。
@@ -5236,6 +5456,7 @@ function collectStateObject(options = {}) {
 
 const SHARE_STATE_VERSION = 1;
 const SHARE_ALWAYS_INCLUDED_IDS = new Set([
+  DERIVED_CHECKS_STATE_KEY,
   "__pactTomeInvocationSelected",
   "auto-calculate-key-stats-toggle",
   "manual-feat-management",
@@ -5449,7 +5670,19 @@ function restoreInventoryState(data) {
 function applyStateObject(data) {
   if (!data || typeof data !== "object") return;
   validateCharacterState(data);
-  return withCharacterUpdateBatch(() => applyStateObjectNow(data));
+  let result;
+  characterStateLoadDepth += 1;
+  try {
+    result = withCharacterUpdateBatch(() => applyStateObjectNow(data));
+  } finally {
+    characterStateLoadDepth -= 1;
+  }
+  if (derivedChecksReady) finishDerivedChecksLoad(data);
+  else {
+    pendingDerivedChecksLoad = data;
+    if (data[DERIVED_CHECKS_STATE_KEY] === true) derivedChecksStateKnown = true;
+  }
+  return result;
 }
 
 function applyStateObjectNow(data) {
@@ -5462,6 +5695,7 @@ function applyStateObjectNow(data) {
   autosaveSuspended = true;
   const resumeHpTracking = window.twAnalytics?.suspendHpTracking?.();
   let subclassReplaced = false;
+  window.ClassOptionMemory?.clearExpertise?.();
 
   try {
     window.SpellManagement?.beforeApplyState(data);

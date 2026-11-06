@@ -2402,7 +2402,7 @@ async function verifyConditionEffects(browser, url) {
     await page.click("#legal-close-btn");
     await page.selectOption("#class", "wizard");
     await page.selectOption("#level", "5");
-    for (const [id, value] of [["str", "12"], ["dex", "18"], ["con", "14"], ["hp", "20"]]) {
+    for (const [id, value] of [["str", "12"], ["dex", "18"], ["con", "14"], ["int", "10"], ["wis", "10"], ["hp", "20"]]) {
       await page.fill(`#${id}`, value);
     }
     await page.evaluate(() => {

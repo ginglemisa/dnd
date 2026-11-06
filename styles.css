@@ -47,6 +47,8 @@ html:where(:not([data-ui-theme="warm"]))[data-theme="light"] {
   --scrollbar-thumb: rgba(76, 104, 168, 0.5);
   --scrollbar-thumb-hover: rgba(40, 82, 214, 0.68);
   --disabled-bg: #eef3fb;
+  --locked-surface: #E7EBF1;
+  --locked-border: #C3CBD8;
   --disabled-text: #667085;
   --danger: #9b2929;
   --danger-border: #e7aaaa;
@@ -164,6 +166,8 @@ html:where([data-ui-theme="warm"])[data-theme="light"] {
   --scrollbar-thumb: #9B8268;
   --scrollbar-thumb-hover: #6E4932;
   --disabled-bg: #E6DCC9;
+  --locked-surface: #E8DDC8;
+  --locked-border: #CBB38F;
   --disabled-text: #786C5D;
   --danger: #9F2924;
   --danger-border: #B56552;
@@ -296,6 +300,8 @@ html:where(:not([data-ui-theme="warm"]))[data-theme="dark"] {
   --overlay: rgba(2, 7, 16, 0.7);
   --overlay-strong: rgba(2, 6, 15, 0.84);
   --disabled-bg: #242b35;
+  --locked-surface: #1C2531;
+  --locked-border: #3A4553;
   --disabled-text: #89919d;
   --danger: #ff9ba5;
   --danger-border: #8e3d49;
@@ -380,6 +386,8 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] {
   --overlay: rgba(20,17,14,.72);
   --overlay-strong: rgba(20,17,14,.86);
   --disabled-bg: #29241E;
+  --locked-surface: #1D1916;
+  --locked-border: #584737;
   --disabled-text: #958673;
   --danger: #E5AE9D;
   --danger-border: #8F5345;
@@ -537,7 +545,9 @@ html {
 .save-grid > *,
 .skill-grid > *,
 .save-pair > *,
-.skill-control-row > *,
+.skill-cell > *,
+.skill-stack > *,
+.skill-group > *,
 .condition-display-grid > *,
 .action-grid-pretty > *,
 #tab-equipment .form-row.small-text > *,
@@ -595,7 +605,6 @@ label {
 }
 
 .small-text,
-.skill-action-hint,
 .site-footer,
 .site-hero p,
 .quo-text {
@@ -1901,7 +1910,6 @@ details > summary::-webkit-details-marker,
 #warlock-invocation-summary,
 .condition-display-card,
 .save-pair,
-.skill-cell,
 .spell-slot-column,
 .hp-card,
 .mini-stat-card,
@@ -3249,105 +3257,76 @@ input[type="checkbox"] {
   display: none;
 }
 
-.language-card > h3,
-.tool-card > h3 {
-  margin-bottom: 0.8rem;
-}
-
 .language-section,
 .language-base-grid,
-.language-field,
 .language-extra-container,
-.language-extra-container > div {
+.language-extra-container > div,
+.tool-section,
+.tool-proficiency-list {
   display: grid;
-  gap: 0.75rem;
+  gap: 0.35rem;
 }
 
-.language-section {
-  margin-top: 0;
-}
-
-.language-section > label,
-.language-field > label,
-.language-extra-container > div > label,
-.language-extra-label {
-  margin-bottom: 0;
-}
-
-.language-select {
-  width: 100%;
-  margin-left: 0;
-}
-
-.language-extra-container {
-  margin-top: 0;
+.tool-section {
+  gap: 0.6rem;
 }
 
 .language-extra-container:empty {
   display: none;
 }
 
-.language-extra-row {
-  display: grid;
-  gap: 0.45rem;
-  margin-top: 0;
-}
-
-.language-extra-label {
-  margin-right: 0;
-}
-
-.tool-section,
-.tool-proficiency-list {
-  display: grid;
-  gap: 0.75rem;
-}
-
+/* 語言與工具每項一行：來源標籤固定寬度對齊，選單占剩餘空間。 */
+.language-field,
+.language-extra-row,
 .tool-proficiency-row {
   display: grid;
-  gap: 0.45rem;
+  grid-template-columns: 4.9rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm, 4px);
 }
 
+.language-field > label,
+.language-extra-row > label,
 .tool-proficiency-row > label {
-  margin-bottom: 0;
+  margin: 0;
+  font-size: var(--fs-sm);
+  line-height: 1.3;
 }
 
-:where(html:not([data-ui-theme="warm"])) .tool-proficiency-row--background {
-  padding: 0.75rem;
-  border: 1px solid rgba(151, 168, 201, 0.28);
-  border-radius: 0.85rem;
-  background: rgba(151, 168, 201, 0.12);
+.language-select,
+.language-extra-row > select,
+.tool-proficiency-select {
+  width: 100%;
+  height: 2.75rem;
+  min-height: 2.75rem;
+  margin: 0;
+  padding-block: 0.25rem;
+  padding-inline-start: 0.4rem;
 }
 
-:where(html[data-ui-theme="warm"]) .tool-proficiency-row--background {
-  padding: 0.75rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--accent-soft);
+/* 鎖住：內容由背景或職業決定、玩家不能改。只看選單是否 disabled，可選的衍生列維持一般外觀。 */
+.language-field:has(select:disabled),
+.language-extra-row:has(select:disabled),
+.tool-proficiency-row:has(select:disabled) {
+  border-color: var(--locked-border);
+  background: var(--locked-surface);
 }
 
-:where(html:not([data-ui-theme="warm"])) .tool-proficiency-row--derived,
 :where(html:not([data-ui-theme="warm"])) .feat-entry--derived {
   padding: 0.75rem;
-  border: 1px solid rgba(151, 168, 201, 0.28);
+  border: 1px solid var(--locked-border);
   border-radius: 0.85rem;
-  background: rgba(151, 168, 201, 0.12);
+  background: var(--locked-surface);
 }
 
-:where(html[data-ui-theme="warm"]) .tool-proficiency-row--derived,
 :where(html[data-ui-theme="warm"]) .feat-entry--derived {
   padding: 0.75rem;
-  border: 1px solid var(--border);
+  border: 1px solid var(--locked-border);
   border-radius: var(--radius-sm);
-  background: var(--accent-soft);
-}
-
-:where(html[data-ui-theme="warm"]:not([data-theme="dark"])) .feat-entry--derived {
-  background: #E8DDC8;
-}
-
-.tool-proficiency-row--derived .tool-proficiency-control {
-  grid-template-columns: minmax(0, 1fr) auto;
+  background: var(--locked-surface);
 }
 
 :where(html:not([data-ui-theme="warm"])) .feat-entry--derived > select:disabled {
@@ -3365,17 +3344,13 @@ input[type="checkbox"] {
 .tool-proficiency-control {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
-  gap: 0.55rem;
+  gap: 0.25rem;
   align-items: center;
 }
 
-.tool-proficiency-row--background .tool-proficiency-control {
+.tool-proficiency-row--background .tool-proficiency-control,
+.tool-proficiency-row--derived .tool-proficiency-control {
   grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.tool-proficiency-select {
-  width: 100%;
-  margin-left: 0;
 }
 
 .tool-proficiency-add,
@@ -3386,6 +3361,10 @@ input[type="checkbox"] {
 
 .tool-proficiency-view,
 .tool-proficiency-remove {
+  min-width: 0;
+  min-height: 2.75rem;
+  padding-block: 0.25rem;
+  padding-inline: 0.35rem;
   white-space: nowrap;
 }
 
@@ -3395,18 +3374,22 @@ input[type="checkbox"] {
 }
 
 .tool-proficiency-hint {
-  margin: -0.2rem 0 0;
+  margin: 0;
   color: var(--text-muted);
   font-size: var(--fs-xs);
 }
 
-@media (width < 320px) {
-  .tool-proficiency-row:not(.tool-proficiency-row--background) .tool-proficiency-control {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+/* 太窄時標籤自成一行，選單與按鈕仍在同一行。工具列多了按鈕，較早換行。 */
+@container skill-section (max-width: 18.5rem) {
+  .tool-proficiency-row {
+    grid-template-columns: minmax(0, 1fr);
   }
+}
 
-  .tool-proficiency-row:not(.tool-proficiency-row--background) .tool-proficiency-control > .tool-proficiency-select {
-    grid-column: 1 / -1;
+@container skill-section (max-width: 15rem) {
+  .language-field,
+  .language-extra-row {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -4013,101 +3996,107 @@ button.field-info-hint__dismiss:focus-visible {
 }
 
 /* ===== Skills ===== */
-.save-grid,
-.skill-grid {
-  display: grid;
-  gap: 0.9rem;
-  margin-top: 1rem;
+#tab-skills {
+  container: skill-tab / inline-size;
 }
 
-.save-grid {
-  grid-template-columns: 1fr;
-}
-
-.skill-grid {
-  grid-template-columns: minmax(0, 1fr);
-  gap: 0.75rem;
-}
-
-#tab-skills > .section {
+#tab-skills > .section,
+.skill-detail-row > .section {
   container: skill-section / inline-size;
 }
 
-/* The decorative wordmark occupies the two spare cells only in four columns. */
-.skill-brand {
+/* 每區一致的標題列：標題、圖例或說明靠左，操作靠右，窄時換行。 */
+.skill-section-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.75rem;
+  margin-bottom: 0.6rem;
+}
+
+.skill-section-heading h3 {
+  margin: 0;
+  font-size: var(--fs-lg);
+  font-weight: 850;
+}
+
+.skill-section-heading .character-features-hint {
+  margin: 0;
+}
+
+.skill-calc-button[hidden] {
   display: none;
+}
+
+/* 自動計算時數值唯讀，看起來是結果而不是輸入欄；關閉開關（.manual-key-stats）才回到輸入框外觀。 */
+#tab-skills:not(.manual-key-stats) .save-pair input[readonly],
+#tab-skills:not(.manual-key-stats) .skill-cell input[readonly] {
+  border-color: var(--border);
+  background: transparent;
+  box-shadow: none;
+  caret-color: transparent;
+  cursor: default;
+}
+
+.skill-calc-button {
+  width: auto;
   min-width: 0;
+  margin: 0 0 0 auto;
+  padding: 0.35rem 0.7rem;
+  font-size: var(--fs-sm);
+  white-space: nowrap;
 }
 
-.skill-brand-art {
+.skill-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.65rem;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  order: 3;
+  flex-basis: 100%;
+}
+
+/* 職業與專長都沒有可專精的技能時，圖例不列專精。 */
+.skill-legend [data-expertise-legend] {
   display: none;
-  position: relative;
-  width: min(100%, 18rem);
-  aspect-ratio: 1080 / 350;
-  overflow: hidden;
-  border-radius: var(--radius-sm);
 }
 
-/* 經典與暖紙主題各有一組 logo（各自分淺色／深色），只顯示目前主題的那組。 */
-html:not([data-ui-theme="warm"]) .skill-brand-art--classic,
-html[data-ui-theme="warm"] .skill-brand-art--warm {
-  display: block;
+#skill-bonus-section:has(.circle-checkbox:not(:disabled)) .skill-legend [data-expertise-legend] {
+  display: inline;
 }
 
-@container skill-section (min-width: 18.75rem) {
-  .skill-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+.save-grid,
+.skill-grid {
+  display: grid;
+  margin-top: 0.6rem;
 }
 
-@container skill-section (min-width: 28.5rem) {
-  .skill-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .language-base-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@container skill-section (min-width: 38.25rem) {
-  .skill-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .skill-brand {
-    display: grid;
-    grid-column: span 2;
-    place-items: center;
-  }
-}
-
-.save-pair,
-.skill-cell {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+/* 六項豁免：物理（STR DEX CON）與心智（INT WIS CHA）各一排，寬時排成一列。 */
+.save-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
 }
 
 .save-pair {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 4rem;
-  align-items: stretch;
-  padding: 0.8rem 0.9rem;
+  gap: 0.3rem;
+  padding: 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
 }
 
 .save-pair label {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 5px;
   min-width: 0;
   margin: 0;
 }
 
 .save-name {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  margin: 0;
   font-weight: 800;
   color: var(--text);
 }
@@ -4128,87 +4117,155 @@ html[data-ui-theme="warm"] .skill-brand-art--warm {
   color: var(--text-body);
 }
 
-.save-pair input[type="text"],
-.save-pair input[type="number"] {
+.save-pair input[type="text"] {
   width: 100%;
   min-width: 0;
+  height: 2.5rem;
+  min-height: 2.5rem;
   margin: 0;
+  padding: 0.25rem;
   text-align: center;
   font-size: var(--fs-xl);
   font-weight: 800;
 }
 
-.save-pair input[type="number"] {
-  min-height: 3rem;
+/* 18 項技能依屬性分組。窄時兩欄（力量＋敏捷＋智力／感知＋魅力）；
+   寬時外層 stack 攤平成四欄（力量＋敏捷／智力／感知／魅力）。DOM 順序即跑團模式的技能順序。 */
+.skill-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem 0.75rem;
+}
+
+.skill-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.skill-group-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0 0.1rem 0.15rem;
+  border-bottom: 2px solid var(--border-strong, var(--border));
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.skill-group-mod {
+  font-variant-numeric: tabular-nums;
 }
 
 .skill-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 0.375rem;
-  padding: 0.5rem;
-  box-shadow: none;
-}
-
-.skill-control-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 3.5rem;
+  grid-template-columns: 2.25rem minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.15rem;
+  min-height: 2.75rem;
+  border-bottom: 1px solid var(--border);
 }
 
-.skill-control-row input[type="text"] {
-  height: 2.75rem;
-  min-height: 2.75rem;
-  padding: 0.25rem;
+.skill-cell input[type="text"] {
+  width: 2.75rem;
+  height: 2.25rem;
+  min-height: 2.25rem;
   min-width: 0;
   margin: 0;
+  padding: 0.15rem;
   text-align: center;
-  font-size: var(--fs-xl);
+  font-size: var(--fs-base);
   font-weight: 800;
   background: var(--surface-strong);
 }
 
 .skill-name {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0 0.25rem;
   margin: 0;
-  font-size: var(--fs-md);
-  font-weight: 800;
+  font-size: var(--fs-base);
+  font-weight: 500;
   line-height: 1.4;
 }
 
-.skill-ability {
-  color: var(--text-muted);
-  font-size: var(--fs-sm);
-  font-weight: 400;
+.skill-cell:has(input[data-skill-rank]:checked) .skill-name {
+  font-weight: 800;
 }
 
+/* 分組標題已列屬性；這段文字留給跑團模式讀取，不重複顯示。 */
+.skill-ability {
+  display: none;
+}
+
+/* 熟練與專精是兩個真實勾選框（存檔、PDF、提醒的唯一狀態），重疊成一個切換區。
+   未熟練時點到熟練；已熟練或專精時點到專精，互斥邏輯讓點擊依序成為 ○→●→◆→○。
+   不能專精的技能，專精 label 隱藏，只在 ○ 與 ● 之間切換。 */
 .skill-rank-controls {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  min-height: 2.75rem;
+  border-radius: var(--radius-sm);
+}
+
+.skill-rank-controls:hover {
+  background: var(--accent-soft);
+}
+
+.skill-rank-controls:has(input:focus-visible) {
+  outline: 2px solid var(--focus-ring, var(--accent));
+  outline-offset: -2px;
+}
+
+.skill-rank-mark {
+  color: var(--text-muted);
+  font-size: var(--fs-base);
+  line-height: 1;
+}
+
+.skill-rank-mark::before {
+  content: "○";
+}
+
+.skill-rank-controls:has(input[id^="prof-"]:checked) .skill-rank-mark,
+.skill-rank-controls:has(.circle-checkbox:checked) .skill-rank-mark {
+  color: var(--accent);
+}
+
+.skill-rank-controls:has(input[id^="prof-"]:checked) .skill-rank-mark::before {
+  content: "●";
+}
+
+.skill-rank-controls:has(.circle-checkbox:checked) .skill-rank-mark::before {
+  content: "◆";
 }
 
 .skill-rank-target {
-  display: inline-flex;
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 1.75rem;
-  min-height: 2.75rem;
   margin: 0;
   cursor: pointer;
+  touch-action: manipulation;
   border-radius: var(--radius-sm);
+}
+
+.skill-rank-target:has(.circle-checkbox) {
+  z-index: 1;
+}
+
+.skill-rank-controls:has(input:checked) .skill-rank-target:has(.circle-checkbox) {
+  z-index: 3;
 }
 
 .skill-rank-target[hidden] {
   display: none;
-}
-
-.skill-rank-target:hover {
-  background: var(--accent-soft);
 }
 
 .skill-rank-controls input[type="checkbox"] {
@@ -4216,119 +4273,45 @@ html[data-ui-theme="warm"] .skill-brand-art--warm {
   width: 20px;
   min-width: 20px;
   height: 20px;
+  margin: 0;
+  opacity: 0;
   cursor: pointer;
 }
 
-.skill-legend {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  column-gap: 0.25em;
+/* 語言與工具左右並排、等高；放不下就上下堆疊。工具增加時整列跟著變高。 */
+.skill-detail-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.95rem;
 }
 
-.skill-legend :is(.legend-box, .legend-circle) { box-sizing: border-box; flex: 0 0 20px; }
-
-.skill-action-hint {
-  margin: 0.6rem 0 0;
-  font-size: var(--fs-sm);
-  line-height: 1.45;
-  text-align: left;
+@container skill-tab (min-width: 40rem) {
+  .skill-detail-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
-.legend-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  vertical-align: middle;
+@container skill-section (min-width: 22rem) {
+  .skill-legend {
+    order: 0;
+    flex-basis: auto;
+  }
 }
 
-:where(html:not([data-ui-theme="warm"])) .legend-box,
-:where(html:not([data-ui-theme="warm"])) .legend-circle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border: 2px solid #667085;
-  background: #fff;
+@container skill-section (min-width: 30rem) {
+  .save-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
 }
 
-:where(html[data-ui-theme="warm"]) .legend-box,
-:where(html[data-ui-theme="warm"]) .legend-circle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border: 2px solid var(--border);
-  background: var(--surface-strong);
-}
+@container skill-section (min-width: 36rem) {
+  .skill-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 
-.legend-circle {
-  border-radius: 999px;
-}
-
-#tab-skills > .section:nth-of-type(2) > div[style*="font-size: 0.92em"] {
-  padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface-soft);
-  color: var(--text-muted);
-  font-size: var(--fs-base);
-  font-weight: 700;
-  line-height: 1.45;
-}
-
-:where(html:not([data-ui-theme="warm"])) .circle-checkbox {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 20px;
-  height: 20px;
-  margin-left: 0;
-  border: 2px solid #7a8697;
-  border-radius: 50%;
-  background: #fff;
-  vertical-align: middle;
-  cursor: pointer;
-  position: relative;
-  flex: 0 0 auto;
-}
-
-:where(html[data-ui-theme="warm"]) .circle-checkbox {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 20px;
-  height: 20px;
-  margin-left: 0;
-  border: 2px solid var(--border);
-  border-radius: 50%;
-  background: var(--surface-strong);
-  vertical-align: middle;
-  cursor: pointer;
-  position: relative;
-  flex: 0 0 auto;
-}
-
-:where(html:not([data-ui-theme="warm"])) .circle-checkbox:checked {
-  border-color: #4a6cf7;
-  background: #4a6cf7;
-  box-shadow: inset 0 0 0 4px #fff;
-}
-
-:where(html[data-ui-theme="warm"]) .circle-checkbox:checked {
-  border-color: var(--accent);
-  background: var(--action-fill);
-  box-shadow: none;
-}
-
-html[data-ui-theme="warm"][data-theme="dark"] .circle-checkbox {
-  border-color: var(--border-strong);
-}
-
-html[data-ui-theme="warm"][data-theme="dark"] .circle-checkbox:checked {
-  border-color: var(--accent);
-  background: var(--accent);
-  box-shadow: inset 0 0 0 4px var(--surface-strong);
+  .skill-stack--outer {
+    display: contents;
+  }
 }
 
 /* ===== Actions / Conditions / Equipment ===== */
@@ -5377,7 +5360,6 @@ html[data-theme="dark"] #hazard-button-grid .active-condition {
   }
 }
 
-#tab-skills > .section > button,
 #tab-actions > .section > button {
   margin-bottom: 0.75rem;
 }
@@ -13438,32 +13420,12 @@ html[data-theme="dark"] .brand-logo-full .legal-modal-logo-dark {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  #tab-skills .save-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .action-grid-pretty {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   #tab-basic .ability-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-/* 360–399px：豁免卡維持雙欄，但為名稱保留足夠空間，避免 input 蓋住文字。 */
-@media (min-width: 360px) and (max-width: 399px) {
-  #tab-skills .save-pair {
-    grid-template-columns: minmax(0, 1fr) 3.5rem;
-    padding-inline: 0.75rem;
-  }
-
-  #tab-skills .save-name {
-    gap: 4px;
-  }
-
-  #tab-skills .save-pair input[type="text"] {
-    padding-inline: 0.4rem;
   }
 }
 
@@ -13624,10 +13586,6 @@ html[data-theme="dark"] .brand-logo-full .legal-modal-logo-dark {
   #tab-basic .ability-score {
     padding-inline: 0.25rem;
     font-size: 1rem;
-  }
-
-  #tab-skills .save-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .spell-picked-grid {
@@ -20002,8 +19960,6 @@ html[data-theme="dark"] .weapon-attack-fields input.is-automated,
 html[data-theme="dark"] .equipment-summary-row,
 html[data-theme="dark"] .money-balance-grid > div,
 html[data-theme="dark"] .spell-entry--derived,
-html[data-theme="dark"] .feat-entry--derived,
-html[data-theme="dark"] .tool-proficiency-row--derived,
 html[data-theme="dark"] .spell-slot-column,
 html[data-theme="dark"] .invocation-prereq {
   border-color: var(--border);
@@ -20022,9 +19978,7 @@ html:where([data-ui-theme="warm"])[data-theme="dark"] .equipment-summary-row .eq
 
 html[data-theme="dark"] .selection-summary-card,
 html[data-theme="dark"] .ability-score,
-html[data-theme="dark"] .skill-control-row input[type="text"],
-html[data-theme="dark"] .legend-circle,
-html[data-theme="dark"] .circle-checkbox,
+html[data-theme="dark"] .skill-cell input[type="text"],
 html[data-theme="dark"] .weapon-attack-fields input,
 html[data-theme="dark"] .weapon-attack-fields .weapon-attack-free-note,
 html[data-theme="dark"] #attack-calculation-popup,

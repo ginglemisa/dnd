@@ -746,9 +746,25 @@
     return String(value);
   }
 
+  /** 全形數字、全形正負號與常見減號變體轉成半形；其他文字不動，帶符號整數順便去掉中間的空白。 */
+  function normalizeSignedValueText(value) {
+    const normalized = String(value ?? "")
+      .replace(/[\uFF10-\uFF19]/g, digit => String.fromCharCode(digit.charCodeAt(0) - 0xFEE0))
+      .replace(/[\uFF0B\uFE62]/g, "+")
+      .replace(/[\uFF0D\uFE63\u2212\u2010\u2011\u2012\u2013\u2014]/g, "-")
+      .trim();
+    return /^[+-]\s+\d+$/.test(normalized) ? normalized.replace(/\s+/g, "") : normalized;
+  }
+
+  /** 完全符合帶正負號整數才回傳數字，否則回傳 null（比對數字是否相同時用，不把「abc」當成 0）。 */
+  function parseExactSignedValue(value) {
+    const normalized = normalizeSignedValueText(value);
+    return /^[+-]?\d+$/.test(normalized) ? Number(normalized) : null;
+  }
+
   /** 將可能帶正負號的文字轉成整數；空值或無效值視為 0。 */
   function parseSignedValue(value) {
-    const normalized = String(value ?? "").trim();
+    const normalized = normalizeSignedValueText(value);
     if (!normalized) return 0;
     const parsed = Number.parseInt(normalized, 10);
     return Number.isFinite(parsed) ? parsed : 0;
@@ -884,6 +900,8 @@
     getClassCantripLimit,
     hasSpellcastingCapabilityForSelections,
     normalizeCharacterSize,
+    normalizeSignedValueText,
+    parseExactSignedValue,
     parseSignedValue
   });
 })(window);
