@@ -272,9 +272,15 @@
 <main id="main-content">
 <a id="exit-share-mode" hidden>離開分享模式</a>
 <div id="share-mode-tip" class="share-mode-tip is-hidden" role="status">
-  <strong>分享模式｜修改不會自動儲存</strong>
-  <span>可修改後輸出 PDF，或匯出 JSON 保存。此模式不提供再次分享與匯入 JSON。</span>
-  <span>分享模式：職業、等級、種族、背景不可更改。</span>
+  <div class="share-mode-tip__heading">
+    <strong>分享模式：這是別人分享給你的角色</strong>
+    <button type="button" id="share-mode-tip-toggle" class="share-mode-tip__toggle" aria-expanded="true" aria-controls="share-mode-tip-details" aria-label="收合分享模式說明"><span class="share-mode-tip__arrow" aria-hidden="true">▾</span></button>
+  </div>
+  <div id="share-mode-tip-details" class="share-mode-tip__details">
+    <span>✓ 你裝置上的角色卡完全不會被覆蓋</span>
+    <span>✓ 可以操作 HP、法術位、物品裝備、跑團模式</span>
+    <span>⚠︎ 重新整理或離開頁面後，這裡的變更就會消失。要保留請「匯出 JSON」</span>
+  </div>
 </div>
 
 <section id="tabletop-mode" class="tabletop-mode" aria-labelledby="tabletop-title" hidden>
