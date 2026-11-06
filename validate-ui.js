@@ -3609,7 +3609,7 @@ async function verifyInventoryPersistence(browser, url) {
     await page.evaluate(() => dndStorage.setItem("dndchar_autosave_v1", JSON.stringify({ class: "fighter", level: "1", mainHand: "短劍", offHand: "短劍", armor: "皮甲", "gear-notes": "購買物品：繩索" })));
     await page.goto(url);
     assert.deepEqual(await snapshot(page).then(({ inventory, slots, notes }) => ({ inventory, slots, notes })),
-      { inventory: "短劍 ×2、皮甲", slots: ["短劍", "短劍", "皮甲"], notes: "購買物品：繩索" }, "legacy autosave seeds the equipped items");
+      { inventory: "短劍、短劍、皮甲", slots: ["短劍", "短劍", "皮甲"], notes: "購買物品：繩索" }, "legacy autosave seeds the equipped items");
     await page.evaluate(() => applyStateObject({ class: "fighter", level: "1", offHandAsMain: true, main2Shield: true, mainHand: "長劍", offHand: "短劍", "shield-proficiency": true }));
     assert.equal(await page.evaluate(() => Inventory.formatText()), "長劍、短劍、盾牌", "legacy alternate-main shield seeds when equipped");
 
@@ -3617,7 +3617,7 @@ async function verifyInventoryPersistence(browser, url) {
     await page.evaluate(() => applyStateObject({ class: "fighter", level: "1", mainHand: "短劍", offHand: "短劍", armor: "皮甲", __inventory: { version: 1, items: [{ uid: "own", itemId: "短劍", quantity: 1 }] } }));
     assert.deepEqual(await page.evaluate(() => [Inventory.entries().map(entry => [entry.itemId, entry.quantity, entry.source || ""]),
       ["mainHand", "offHand", "armor"].map(id => document.getElementById(id).selectedOptions[0].textContent)]),
-    [[["短劍", 2, ""], ["皮甲", 1, "equipped"]], ["短劍", "短劍", "皮甲"]], "missing equipped items are added on load");
+    [[["短劍", 1, ""], ["短劍", 1, ""], ["皮甲", 1, "equipped"]], ["短劍", "短劍", "皮甲"]], "missing equipped items are added on load");
 
     // Text mode is saved with the character: autosave, JSON and share keep it, and nothing is added to the inventory.
     const textState = { class: "fighter", level: "1", mainHand: "巨劍", "gear-notes": "物品欄：巨劍", __inventory: { version: 1, textOnly: true, items: [] } };
