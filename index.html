@@ -3,7 +3,7 @@
 	<script>
 	  (function () {
 	    const themeKey = "dnd.theme.v1";
-	    const storage = Object.freeze({
+	    const local = Object.freeze({
 	      getItem(key) {
 	        try { return localStorage.getItem(key); } catch (_error) { return null; }
 	      },
@@ -12,6 +12,25 @@
 	      },
 	      removeItem(key) {
 	        try { localStorage.removeItem(key); return true; } catch (_error) { return false; }
+	      }
+	    });
+	    // 分享連結（含讀取失敗的）開的頁面不讀也不寫看的人裝置上的資料，這頁的設定只留在頁面記憶體。
+	    // 例外照常用本機：主題與亮暗（跟看的人）、GA 角色閘門、冒險日誌（獨立於角色）的舊資料搬遷。
+	    // 開頁狀態：擲骰開啟、負重不顯示（dnd.inventoryWeightHidden.v1）、其他都用預設值。
+	    const isSharePage = location.hash.startsWith("#s=") || location.hash.startsWith("#s2=");
+	    const deviceKeys = new Set([themeKey, "dnd.uiTheme.v1", "twd20.analyticsRole.v1", "dnd.adventureJournal.v1"]);
+	    const pageOnly = new Map([["dnd.diceSystemEnabled.v1", "true"], ["dnd.inventoryWeightHidden.v1", "true"]]);
+	    const storage = !isSharePage ? local : Object.freeze({
+	      getItem(key) { return deviceKeys.has(key) ? local.getItem(key) : pageOnly.get(key) ?? null; },
+	      setItem(key, value) {
+	        if (deviceKeys.has(key)) return local.setItem(key, value);
+	        pageOnly.set(key, String(value));
+	        return true;
+	      },
+	      removeItem(key) {
+	        if (deviceKeys.has(key)) return local.removeItem(key);
+	        pageOnly.delete(key);
+	        return true;
 	      }
 	    });
 	    window.dndStorage = storage;
@@ -81,7 +100,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261106-skill-rank-focus">
+  <link rel="stylesheet" href="styles.css?v=20261107-share-readonly">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261103-roll-min" defer></script>
   <script src="monster.js?v=20261105-quick-build-guidance" defer></script>
@@ -101,17 +120,18 @@
   <script src="app-dialog.js?v=20261028-custom-spells" defer></script>
   <script src="custom-background.js?v=20261106-background-memory" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
-  <script src="tabletop-mode.js?v=20261105-list-separator" defer></script>
+  <script src="tabletop-mode.js?v=20261107-share-readonly" defer></script>
   <script src="tabletop-druid.js?v=20261103-known-count" defer></script>
   <script src="tabletop-resources.js?v=20261102-race-content" defer></script>
   <script src="tabletop-actions.js?v=20261104-weapon-switch" defer></script>
-  <script src="tabletop-custom-spells.js?v=20261104-spell-fields" defer></script>
+  <script src="tabletop-custom-spells.js?v=20261107-share-readonly" defer></script>
   <script src="tabletop-spells.js?v=20261104-weapon-damage-type" defer></script>
   <script src="legal-modal.js?v=20261022-game-icons" defer></script>
   <script src="onboarding-tour.js?v=20261104-inventory" defer></script>
   <script src="quick-build.js?v=20261106-skills-auto" defer></script>
-  <script src="spellbook.js?v=20261104-familiar-references" defer></script>
-  <script src="spell-management.js?v=20261103-manual-toggle" defer></script>
+  <script src="spellbook.js?v=20261107-share-readonly" defer></script>
+  <script src="spell-management.js?v=20261107-share-readonly" defer></script>
+  <script src="share-readonly.js?v=20261107-share-readonly" defer></script>
   <script src="class-option-memory.js?v=20261106-background-memory" defer></script>
   <script src="deity-info.js" defer></script>
 
@@ -152,7 +172,7 @@
       <div class="utility-menu__divider" role="separator"></div>
       <fieldset class="utility-menu__settings" aria-label="操作設定">
         <div class="utility-menu__settings-row">
-          <label class="utility-menu__setting" title="開啟時自動計算最大 HP、AC、先攻、速度、被動察覺、技能與豁免；關閉後可自行輸入。">
+          <label class="utility-menu__setting utility-menu__setting--auto-calc" title="開啟時自動計算最大 HP、AC、先攻、速度、被動察覺、技能與豁免；關閉後可自行輸入。">
             <span>自動計算數值</span>
             <input id="auto-calculate-key-stats-toggle" type="checkbox" role="switch" checked>
             <span class="utility-menu__switch" aria-hidden="true"></span>
@@ -252,9 +272,15 @@
 <main id="main-content">
 <a id="exit-share-mode" hidden>離開分享模式</a>
 <div id="share-mode-tip" class="share-mode-tip is-hidden" role="status">
-  <strong>分享模式｜修改不會自動儲存</strong>
-  <span>可修改後輸出 PDF，或匯出 JSON 保存。此模式不提供再次分享與匯入 JSON。</span>
-  <span>分享模式：職業、等級、種族、背景不可更改。</span>
+  <div class="share-mode-tip__heading">
+    <strong>分享模式：這是別人分享給你的角色</strong>
+    <button type="button" id="share-mode-tip-toggle" class="share-mode-tip__toggle" aria-expanded="true" aria-controls="share-mode-tip-details" aria-label="收合分享模式說明"><span class="share-mode-tip__arrow" aria-hidden="true">▾</span></button>
+  </div>
+  <div id="share-mode-tip-details" class="share-mode-tip__details">
+    <span>✓ 你裝置上的角色卡完全不會被覆蓋</span>
+    <span>✓ 可以操作 HP、法術位、物品裝備、跑團模式</span>
+    <span>⚠︎ 重新整理或離開頁面後，這裡的變更就會消失。要保留請「匯出 JSON」</span>
+  </div>
 </div>
 
 <section id="tabletop-mode" class="tabletop-mode" aria-labelledby="tabletop-title" hidden>
@@ -1509,6 +1535,8 @@ function syncAutomaticKeyStatsMode({ refresh = true } = {}) {
   document.querySelectorAll("#tab-skills .skill-calc-button").forEach((button) => { button.hidden = automatic; });
   document.getElementById("tab-basic")?.classList.toggle("manual-key-stats", !automatic);
   document.getElementById("tab-skills")?.classList.toggle("manual-key-stats", !automatic);
+  // 上面的迴圈會解開唯讀；分享模式只留 AC 可改。
+  window.ShareReadonly?.apply();
   if (automatic && refresh) refreshAutomaticKeyStats();
 }
 
@@ -4333,6 +4361,7 @@ function updateEquipmentLoadoutSummary() {
   const acValue = document.getElementById("equipment-current-ac-value");
   if (acValue) acValue.textContent = document.getElementById("ac-display")?.value?.trim() || "—";
   updateWeaponMasteryBadges();
+  window.ShareReadonly?.onEquipmentChanged();
 }
 
 
@@ -4635,7 +4664,7 @@ function updateArmorInfo() {
   updateEquipmentLoadoutSummary();
 }
 </script>
-<script src="sheet-spells.js?v=20261104-find-steed-reference"></script>
+<script src="sheet-spells.js?v=20261107-share-readonly"></script>
 <script>
 // ====== 德魯伊變身提示 =====
 // ✅ 四種動物（建議用「機制摘要」避免長篇敘述）
@@ -5559,6 +5588,10 @@ function collectShareState() {
   if (data.class === "druid" && data.druid?.knownForms?.length) data.druid = { knownForms: [...data.druid.knownForms] };
   else delete data.druid;
   data.__shareStateVersion = SHARE_STATE_VERSION;
+  // 跑團自訂動作、隱藏按鈕、戰鬥筆記與自創法術隨連結分享；全空時省略，不讓網址變長。頭像不分享。
+  const actionPreferences = window.TabletopMode?.getTabletopActionPreferences?.();
+  const hasActionPreferences = Boolean(actionPreferences && (actionPreferences.customActions.length || actionPreferences.customSpells?.length
+    || actionPreferences.hiddenKeys.length || actionPreferences.notes));
   // 種族勾選框資源（吐息元素等）的使用狀態不進分享網址。
   const raceCheckboxPrefixes = getRaceCheckboxResources().map(resource => resource.checkbox);
 
@@ -5589,6 +5622,7 @@ function collectShareState() {
     }
   });
 
+  if (hasActionPreferences) data.__tabletopActionPreferences = actionPreferences;
   if (data.__spellManagement) delete data.__spellManagement.freeUses;
   if (data.__pactTomeSpellSelection?.cantrips?.length === 0 && data.__pactTomeSpellSelection?.rituals?.length === 0) {
     delete data.__pactTomeSpellSelection;
@@ -5854,6 +5888,30 @@ function applyStateObjectNow(data) {
   }
 }
 
+// Quick build and guided tours rewrite the identity selects, so share mode
+// closes their entries instead of relying on the locked controls.
+function closeShareModeGuideEntries() {
+  ["help-quick-build-btn", "legal-onboarding-btn", "restart-onboarding-btn", "first-table-tour-btn"].forEach(id => {
+    const control = document.getElementById(id);
+    if (!control) return;
+    control.disabled = true;
+    control.title = "分享模式不提供此功能";
+  });
+}
+
+// Only a successfully decoded share is locked; state collection ignores disabled.
+function lockShareModeIdentitySelects() {
+  ["class", "subclass", "level", "race", "background"].forEach(id => {
+    const select = document.getElementById(id);
+    if (!select) return;
+    select.disabled = true;
+    select.dataset.shareLocked = "true";
+    select.title = "分享模式：職業、子職、等級、種族、背景不可更改";
+  });
+  const customBackgroundEdit = document.getElementById("custom-background-edit");
+  if (customBackgroundEdit) customBackgroundEdit.textContent = "查看背景";
+}
+
 function getShortShareUnavailableReason(hash) {
   if (location.origin !== "https://twd20.com" || /\/TWD20-offline\.html$/i.test(location.pathname)) {
     return "短網址僅能在正式網站使用；此環境請使用永久網址。";
@@ -5890,30 +5948,6 @@ async function createShortShareUrl(hash, signal) {
     clearTimeout(timeout);
     signal.removeEventListener("abort", abort);
   }
-}
-
-// Quick build and guided tours rewrite the identity selects, so share mode
-// closes their entries instead of relying on the locked controls.
-function closeShareModeGuideEntries() {
-  ["help-quick-build-btn", "legal-onboarding-btn", "restart-onboarding-btn", "first-table-tour-btn"].forEach(id => {
-    const control = document.getElementById(id);
-    if (!control) return;
-    control.disabled = true;
-    control.title = "分享模式不提供此功能";
-  });
-}
-
-// Only a successfully decoded share is locked; state collection ignores disabled.
-function lockShareModeIdentitySelects() {
-  ["class", "subclass", "level", "race", "background"].forEach(id => {
-    const select = document.getElementById(id);
-    if (!select) return;
-    select.disabled = true;
-    select.dataset.shareLocked = "true";
-    select.title = "分享模式：職業、子職、等級、種族、背景不可更改";
-  });
-  const customBackgroundEdit = document.getElementById("custom-background-edit");
-  if (customBackgroundEdit) customBackgroundEdit.textContent = "查看背景";
 }
 
 let shareDialogPending = false;
@@ -5955,7 +5989,6 @@ async function copyShareUrl() {
     const shareUrl = await window.AppDialog.showContent({
       title: "分享角色卡",
       variant: "share-character",
-      message: "分享角色卡無法分享跑團模式的自訂按鈕和自創法術，請注意。",
       trigger: document.getElementById("utility-menu-toggle"),
       // Closing while a short URL is pending cancels that single request.
       onClose: () => shortUrlController?.abort(),
@@ -6105,10 +6138,10 @@ async function copyResolvedShareUrl(shareUrl) {
 
 function collectJsonExportText() {
   const data = collectStateObject();
-  // Share mode only holds the viewer's own local avatar/action preferences, not the shared character's.
+  // 分享模式帶當頁的跑團資料（連結帶來的加上看的人的修改），這是把分享角色留下來的唯一辦法；頭像不分享，所以不帶。
+  const actionPreferences = window.TabletopMode?.getTabletopActionPreferences?.();
+  if (actionPreferences) data.__tabletopActionPreferences = actionPreferences;
   if (!SHARE_MODE) {
-    const actionPreferences = window.TabletopMode?.getTabletopActionPreferences?.();
-    if (actionPreferences) data.__tabletopActionPreferences = actionPreferences;
     const avatar = window.dndStorage.getItem(TABLETOP_AVATAR_STORAGE_KEY);
     if (isValidTabletopAvatar(avatar)) data.__tabletopAvatar = avatar;
   }
@@ -6147,7 +6180,7 @@ function downloadStateAsJson() {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  if (SHARE_MODE) window.AppDialog.notify("分享模式匯出的檔案不含角色圖片、跑團按鈕與自創法術設定。", { tone: "info" });
+  if (SHARE_MODE) window.AppDialog.notify("分享模式匯出的檔案不含角色圖片。", { tone: "info" });
   else if (avatarOmitted) window.AppDialog.notify("角色資料加上角色圖片會超過 2 MiB，這次匯出未包含角色圖片。", { tone: "warning" });
   window.twAnalytics?.track?.("character_json_export");
 }
@@ -6897,11 +6930,13 @@ window.addEventListener("DOMContentLoaded", async function() {
   exitShareLink.href = exitShareUrl.href;
   exitShareLink.hidden = false;
   exitShareLink.addEventListener("click", exitShareMode);
-  document.querySelectorAll('.share-url-btn, #import-json-btn, #import-json-file').forEach(control => {
+  document.querySelectorAll('.share-url-btn, #import-json-btn, #import-json-file, #set-default-abilities').forEach(control => {
     control.disabled = true;
     control.title = "分享模式不提供此功能";
   });
   closeShareModeGuideEntries();
+  // 自創法術會進法術清單，要在還原角色前就緒；沒帶這些資料的舊連結從空白開始。
+  window.TabletopMode?.restoreSharedActionPreferences?.(sharedData.__tabletopActionPreferences);
   applyStateObject(sharedData);
   lockShareModeIdentitySelects();
   window.twAnalytics?.track?.("shared_character_opened");
@@ -6957,6 +6992,8 @@ window.addEventListener("DOMContentLoaded", async function() {
   setupAutomaticKeyStats();
   });
   window.TabletopMode?.refresh?.();
+  // 分享角色的畫面都就緒後才鎖定；讀取失敗的連結是空白頁，沒有東西要鎖。
+  if (sharedData) window.ShareReadonly?.activate();
   window.twAnalytics?.observeHp?.(document.getElementById("hp"));
   // 4. 啟用自動儲存
   setupVisibilityAutoSave();
@@ -7286,7 +7323,7 @@ window.addEventListener("DOMContentLoaded", async function() {
     <div class="legal-share-copy" hidden>
       <h3 class="legal-modal-title">你正在查看分享的角色卡</h3>
       <p>你原本的角色存檔仍然保留，<strong>不會被這份分享角色卡覆蓋</strong>。</p>
-      <p>你可以修改這份角色卡的其他內容，也可以將目前內容輸出為 PDF；<strong>職業、等級、種族、背景不可更改</strong>。</p>
+      <p>你可以操作 HP、法術位、物品裝備與跑團模式，也可以將目前內容輸出為 PDF；<strong>屬性、技能、職業選項等角色能力不可更改</strong>。</p>
       <p><strong>修改不會自動儲存，關閉或重新整理頁面後就會消失。</strong><br>若要保存修改後的角色資料，供日後匯入並繼續編輯，請使用<strong>「匯出 JSON」</strong>。</p>
       <p>注意：分享模式下，<strong>「分享角卡」、「匯入 JSON」、快速創角與導覽將停用</strong>。</p>
       <a href="#legal-about-modal" class="legal-about-trigger">Legal &amp; About</a>

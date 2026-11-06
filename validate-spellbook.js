@@ -1801,7 +1801,7 @@ async function verifyLevelChangesAndMigration(page, url) {
   const sharedUrl = new URL(url); sharedUrl.searchParams.set("analytics", "owner"); sharedUrl.hash = hash;
   await page.goto(sharedUrl.href); await page.waitForFunction(() => window.SpellManagement?.isManual());
   assert.deepEqual(await activeIds(page), migrated);
-  assert.equal(await page.evaluate(key => dndStorage.getItem(key), MEMORY_KEY), memoryBefore, "share reads/writes no local memories");
+  assert.equal(await page.evaluate(key => localStorage.getItem(key), MEMORY_KEY), memoryBefore, "share reads/writes no local memories");
   await page.goto(url); await page.waitForFunction(() => window.SpellManagement?.getEntries);
   await page.evaluate(() => {
     document.getElementById("legal-modal")?.style.setProperty("display", "none");
@@ -1858,7 +1858,7 @@ async function verifyLegacyPersistenceEdges(page, url) {
     const share = new URL(owner); share.hash = hash;
     await page.goto(share.href); await page.waitForFunction(() => window.SHARE_MODE && window.SpellManagement?.isManual());
     await closeMigration(page); assert((await activeIds(page)).includes("712345"));
-    assert.deepEqual(await page.evaluate(keys => keys.map(([key]) => [key, dndStorage.getItem(key)]), storageBefore), storageBefore,
+    assert.deepEqual(await page.evaluate(keys => keys.map(([key]) => [key, localStorage.getItem(key)]), storageBefore), storageBefore,
       "old shares migrate only in memory");
   }
   await page.goto(owner.href); await page.waitForFunction(() => window.SpellManagement?.getEntries);
@@ -2280,15 +2280,18 @@ async function verifyCustomSpellPreparation(browser, url) {
     })]);
     await page.waitForFunction(() => !autosaveClearing && !sessionStorage.getItem("dnd.pendingJsonImport.v1"));
     assert.equal(await page.evaluate(() => SpellManagement.getPreparationCounts().prepared), 2);
+    const localView = await page.evaluate(() => ({ counts: SpellManagement.getPreparationCounts(), pdf: TabletopCustomSpells.getPdfSpells().length,
+      sheet: document.querySelectorAll('[data-spell-read^="custom-spell-"]').length }));
     const hash = await page.evaluate(() => encodeStateToHash(collectShareState()));
     await page.goto(`${url}${hash}`);
     await page.waitForFunction(() => window.SHARE_MODE === true && !autosaveSuspended);
-    assert.equal(await page.locator('[data-spell-read^="custom-spell-"]').count(), 0);
-    assert.deepEqual(await page.evaluate(() => SpellManagement.getPreparationCounts()), { cantrips: 2, prepared: 0 });
-    assert.deepEqual(await page.evaluate(() => TabletopCustomSpells.getPdfSpells()), []);
+    // 自創法術隨分享連結帶入：看的人能看能用，但不能新增、修改或刪除。
+    assert.equal(await page.locator('[data-spell-read^="custom-spell-"]').count(), localView.sheet, "shared custom spells show on the sheet");
+    assert.deepEqual(await page.evaluate(() => SpellManagement.getPreparationCounts()), localView.counts);
+    assert.equal(await page.evaluate(() => TabletopCustomSpells.getPdfSpells().length), localView.pdf);
     await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("spells"); });
     assert.equal(await page.locator("#tabletop-custom-spells-add").isVisible(), false);
-    assert.equal(await page.locator('#tabletop-selected-spells [data-spell-id^="custom-spell-"]').count(), 0);
+    assert.notEqual(await page.locator('#tabletop-selected-spells [data-spell-id^="custom-spell-"]').count(), 0, "shared custom spells can be used in tabletop mode");
     assert.equal(await page.evaluate(() => TabletopCustomSpells.openEditor()), false);
     assert.equal(await page.evaluate(id => TabletopMode.removeCustomTabletopSpell(id).ok, prepared.spellId), false);
     await page.goto(url);

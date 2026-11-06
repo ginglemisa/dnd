@@ -456,11 +456,8 @@ $html = [System.Text.RegularExpressions.Regex]::Replace(
 
 # Match the offline feature set while keeping the website source copy intact.
 $html = $html.Replace(
-  '可修改後輸出 PDF，或匯出 JSON 保存。此模式不提供再次分享與匯入 JSON。',
-  '可修改後匯出 JSON 保存。此模式不提供再次分享與匯入 JSON。'
-).Replace(
-  '你可以修改這份角色卡的其他內容，也可以將目前內容輸出為 PDF；',
-  '你可以修改這份角色卡的其他內容，並使用「匯出 JSON」保存（此離線版不提供 PDF 匯出）；'
+  '你可以操作 HP、法術位、物品裝備與跑團模式，也可以將目前內容輸出為 PDF；',
+  '你可以操作 HP、法術位、物品裝備與跑團模式，並使用「匯出 JSON」保存（此離線版不提供 PDF 匯出）；'
 ).Replace(
   'window.AppDialog.notify("分享網址已複製。", { tone: "success" });',
   'window.AppDialog.notify("分享網址已複製，接收者需連網開啟 twd20.com；完全離線交換請使用 JSON。", { tone: "success" });'
@@ -470,8 +467,10 @@ $html = $html.Replace(
 )
 
 if (-not $html.Contains('async function exitShareMode(event) {') -or
+    -not $html.Contains('function closeShareModeGuideEntries() {') -or
+    -not $html.Contains('function lockShareModeIdentitySelects() {') -or
     $html.Contains('twd20-url.ginglemisa.workers.dev/api/create')) {
-  throw "build-offline-nopdf.ps1: offline sharing must retain exitShareMode and exclude the short URL API."
+  throw "build-offline-nopdf.ps1: offline sharing must retain the share mode lifecycle functions and exclude the short URL API."
 }
 
 if ($html.Contains('const SPELL_QR_IMAGE_SRC = "./qr.png";')) {
@@ -526,7 +525,7 @@ const html = fs.readFileSync(process.argv[2], "utf8");
 
 assert(!html.includes("twd20-url.ginglemisa.workers.dev/api/create"));
 assert(!html.includes("async function createShortShareUrl("));
-assert(!html.includes("可修改後輸出 PDF，或匯出 JSON 保存。"));
+assert(!html.includes("也可以將目前內容輸出為 PDF"));
 for (const match of html.matchAll(/<script\b(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)) {
   new vm.Script(match[1]);
 }

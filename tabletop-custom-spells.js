@@ -2,7 +2,7 @@
   "use strict";
 
   const LEVELS = ["戲法", "一環", "二環", "三環", "四環"];
-  const getSpells = () => globalScope.SHARE_MODE ? [] : globalScope.TabletopMode.getTabletopActionPreferences().customSpells || [];
+  const getSpells = () => globalScope.TabletopMode.getTabletopActionPreferences().customSpells || [];
   const element = (tag, className = "", text = "") => {
     const node = document.createElement(tag);
     node.className = className;

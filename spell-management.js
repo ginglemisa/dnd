@@ -198,7 +198,10 @@
     hooks.onChange?.(detail);
     globalScope.dispatchEvent(new CustomEvent("spellmanagementchange", { detail }));
   }
+  // 分享模式的角色能力鎖定：載入中照常還原，之後換法術依 ShareReadonly 的職業表。
+  const shareBlocksSpellChange = level => inShareMode() && !isRestoring() && globalScope.ShareReadonly?.canChangeSpell(level) !== true;
   function setPlayerEntries(entries, options = {}) {
+    if (shareBlocksSpellChange(1)) return clone(players);
     players = manual ? uniqueSpells(entries) : normalizeEntries(entries).filter(entry => !entry.spellSource);
     if (!manual && !ownerClass && CLASS_IDS.has(currentClass())) ownerClass = currentClass();
     if (options.sync !== false) changed({ players: true });
@@ -221,6 +224,7 @@
   }
   function addPlayerSpell(spellId, options = {}) {
     if (!canManage()) return false;
+    if (inShareMode() && !isRestoring() && globalScope.ShareReadonly?.canPrepareSpell(spellId) !== true) return false;
     const entry = normalizeEntry({ ...options, spellId, spellClass: options.spellClass || currentClass() });
     if (!entry || !catalog()?.getSpell(entry.spellId) || getEntries().some(item => item.spellId === entry.spellId)) return false;
     if (!manual) {
@@ -234,7 +238,7 @@
   function removePlayerSpell(value) {
     const index = typeof value === "string" ? players.findIndex(entry => entry.spellId === value)
       : players.findIndex(entry => entryKey(entry) === entryKey(normalizeEntry(value)));
-    if (index < 0) return false;
+    if (index < 0 || shareBlocksSpellChange(players[index].level)) return false;
     players.splice(index, 1); changed({ players: true }); return true;
   }
 
@@ -495,7 +499,7 @@
   let customSignature = "";
   globalScope.addEventListener("tabletopactionpreferenceschange", event => {
     const signature = JSON.stringify(event.detail?.customSpells || []);
-    if (signature === customSignature || inShareMode()) return;
+    if (signature === customSignature) return;
     customSignature = signature;
     hooks.onChange?.({ customSpells: true });
     globalScope.dispatchEvent(new CustomEvent("spellmanagementchange", { detail: { customSpells: true } }));

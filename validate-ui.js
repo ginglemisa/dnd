@@ -961,7 +961,7 @@ async function verifyShareDialog(browser, url) {
     const cards = dialog.locator("button.share-dialog__option");
     const open = async () => { await page.evaluate(() => { copyShareUrl(); }); await dialog.waitFor(); };
     await open();
-    await dialog.getByText("分享角色卡無法分享跑團模式的自訂按鈕和自創法術，請注意。", { exact: true }).waitFor();
+    assert.equal(await dialog.getByText("無法分享跑團模式").count(), 0, "tabletop data is shared now, so the old warning is gone");
     assert.deepEqual(await dialog.locator(".app-dialog__actions button").allInnerTexts(), ["取消"]);
     assert.equal(await cards.count(), 2);
     assert.equal(await cards.first().isDisabled(), true, "local origin disables short URL");
@@ -1437,7 +1437,7 @@ async function verifyCustomBackground(browser, url) {
       assert.deepEqual(await shared.evaluate(() => CustomBackground.getState()), state.__customBackground, "closing the view keeps the definition");
       assert.equal(await shared.inputValue("#background"), "custom");
       await shared.evaluate(() => saveAllFields());
-      assert.equal(await shared.evaluate(() => dndStorage.getItem("dndchar_autosave_v1")), localSave, "share viewing never overwrites the local custom background");
+      assert.equal(await shared.evaluate(() => localStorage.getItem("dndchar_autosave_v1")), localSave, "share viewing never overwrites the local custom background");
     } finally { await shared.close(); }
     await page.setViewportSize({ width: 320, height: 568 });
     await reopen();
@@ -3171,7 +3171,8 @@ async function verifyAutoCalculatedChecks(browser, url) {
         const stat = await stats();
         const label = `${path}: ${name}`;
         assert.equal(stat.auto, expected.auto, `${label} switch`);
-        assert.equal(stat.readOnly, expected.auto, `${label} read-only`);
+        // 分享模式不論自動計算開關，技能與豁免的數字都鎖定。
+        assert.equal(stat.readOnly, path === "share" ? true : expected.auto, `${label} read-only`);
         assert.deepEqual(stat.buttons, [expected.auto, expected.auto], `${label} fill buttons`);
         assert.equal(stat.keyStats.every(Boolean), true, `${label} key stats are not left blank`);
         for (const [id, text] of Object.entries(expected.values)) assert.equal(await value(id), text, `${label} ${id}`);
@@ -4464,7 +4465,7 @@ async function verifyCharacterDataSafety(browser, url) {
         }), [[true, "wizard"], [true, "soldier"], [true, "human"]], "share locks the ability dialog picker too");
         const collected = await shared.evaluate(() => collectStateObject());
         assert.deepEqual([collected.class, collected.level, collected.race, collected.background], ["wizard", "1", "human", "soldier"], "disabled selects stay in state collection");
-        assert.match(await shared.locator("#share-mode-tip").innerText(), /分享模式：職業、等級、種族、背景不可更改/);
+        assert.match(await shared.locator("#share-mode-tip").innerText(), /分享模式：這是別人分享給你的角色/);
         assert.equal(await shared.locator("#share-mode-tip").isVisible(), true);
         assert.equal(await shared.evaluate(() => saveAllFields()), false);
         assert.equal(await shared.evaluate(() => dndStorage.getItem("dndchar_autosave_v1")), null, "share restoration never autosaves");
@@ -4566,8 +4567,317 @@ async function verifyCharacterDataSafety(browser, url) {
     assert.equal(await page.locator("#class, #level, #race, #background").evaluateAll(selects => selects.some(select => select.disabled)), false, "failed share leaves the blank card unlocked");
     assert.equal(await page.locator("#share-mode-tip").isVisible(), false);
     assert.equal(await page.evaluate(() => saveAllFields()), false);
-    assert.equal(await page.evaluate(() => dndStorage.getItem("dndchar_autosave_v1")), beforeBadShare);
+    // 分享頁的 dndStorage 只有頁面記憶體，直接核對本機存檔沒被覆蓋。
+    assert.equal(await page.evaluate(() => localStorage.getItem("dndchar_autosave_v1")), beforeBadShare);
     console.log("Character input safety: XSS text rendering, JSON/share/autosave, preflight limits, gzip bomb cancellation and rejected-data preservation passed.");
+  } finally { await page.close(); }
+}
+
+// 分享模式是唯讀角色卡：鎖定與白名單、選單、自動計算與 AC 提示、跑團資料、裝置偏好、換法術與提醒框。
+async function verifyShareReadonlyMode(browser, url) {
+  const page = await newUiPage(browser, { viewport: { width: 1100, height: 900 }, reducedMotion: "reduce" });
+  const abilities = { str: "14", dex: "14", con: "14", int: "14", wis: "14", cha: "14" };
+  const items = names => ({ version: 1, items: names.map(itemId => ({ itemId, quantity: 1 })) });
+  const character = (cls, level, extra = {}) => ({ class: cls, level: String(level), race: "human", background: "sage", alignment: "LG",
+    ...abilities, "spellcasting-ability": "int", __inventory: items(["皮甲", "鎖子甲", "盾牌", "長劍", "短劍"]), __shareStateVersion: 1, ...extra });
+  const hashOf = async state => {
+    await page.goto(url);
+    await page.waitForFunction(() => window.TabletopMode && window.Spellbook);
+    return page.evaluate(state => encodeStateToHash(state), state);
+  };
+  const openHash = async hash => {
+    await page.goto("about:blank");
+    await page.goto(url + hash);
+    await page.waitForFunction(() => document.getElementById("auto-calculate-key-stats-toggle")?.dataset.shareLocked === "true");
+    await page.locator("#legal-ack-btn").click();
+  };
+  const openShare = async state => openHash(await hashOf(state));
+  const localSnapshot = () => page.evaluate(() => JSON.stringify(Object.keys(localStorage).sort().map(key => [key, localStorage.getItem(key)])));
+  const props = (id, read) => page.evaluate(([id, read]) => { const el = document.getElementById(id); return read.map(key => el[key]); }, [id, read]);
+  const isLocked = id => page.evaluate(id => { const el = document.getElementById(id); return el.inert === true || el.readOnly === true || el.disabled === true; }, id);
+  const manual = extra => ({ "auto-calculate-key-stats-toggle": false, [await_mark]: true, ...extra });
+  const await_mark = await (async () => { await page.goto(url); return page.evaluate(() => DERIVED_CHECKS_STATE_KEY); })();
+  try {
+    // 鎖定與白名單。
+    await openShare(character("ranger", 8, { race: "elf", "elf-lineage": "wood_elf", language1: "elvish", "ranger-weapon-mastery-pick-1": "輕錘" }));
+    await page.evaluate(() => { const box = document.getElementById("spell-prepare"); box?.scrollIntoView(); });
+    for (const id of ["str", "cha", "hp-display", "speed-input", "speed-display", "initiative-input", "passive-perception", "save-str", "skill-運動",
+      "spell-save-dc", "spell-attack-bonus", "alignment", "prof-str", "prof-運動", "exp-運動", "language1", "elf-lineage", "character-size-select",
+      "manual-feat-management", "ranger-fighting-style", "derived-feat-background", "class", "level", "race", "background"]) {
+      assert.equal(await isLocked(id), true, `${id} is locked in share mode`);
+    }
+    for (const id of ["hp", "lifedicen", "spellcasting-ability", "spell-adjustment", "spellslot1-1", "mainHand", "armor", "offHandAsMain",
+      "weapon-attack-automation", "atk-main-note", "class-extra", "skill-extra", "gear-notes", "gear-extra", "spell-notes",
+      "ranger-hunters-prey-colossus-slayer", "ranger-defensive-tactics-escape-the-horde", "ranger-weapon-mastery-pick-1"]) {
+      assert.equal(await isLocked(id), false, `${id} stays editable in share mode`);
+    }
+    // 鎖定不用 disabled（程式把它當未生效），值仍隨匯出保留；label 與直接點擊都改不動，也無法取得焦點。
+    assert.deepEqual(await props("prof-int", ["inert", "disabled", "checked"]), [true, false, false]);
+    assert.deepEqual(await page.evaluate(() => {
+      document.querySelector(`label[for="prof-int"]`).click();
+      document.getElementById("prof-int").click();
+      document.querySelector('label.skill-rank-target input[id="prof-運動"]').closest("label").click();
+      document.getElementById("alignment").focus();
+      return [document.getElementById("prof-int").checked, document.getElementById("prof-運動").checked, document.activeElement?.id === "alignment"];
+    }), [false, false, false], "locked controls ignore label clicks and focus");
+    assert.equal((await page.evaluate(() => JSON.parse(collectJsonExportText().text))).alignment, "LG", "locked values stay in the export");
+    // 動態新增的列也會鎖；白名單勾選仍可操作。
+    assert.equal(await page.evaluate(async () => {
+      const row = createToolProficiencyRow();
+      await Promise.resolve(); await Promise.resolve();
+      const locked = row.querySelector("select").inert;
+      row.remove();
+      return locked;
+    }), true, "rows added later are locked too");
+    await page.evaluate(() => showTab("spells", document.getElementById("spells-tab-button")));
+    assert.equal(await page.evaluate(() => { const box = document.getElementById("spellslot1-1"); box.click(); return box.checked; }), true, "spell slots can be ticked");
+    await page.evaluate(() => showTab("skills", document.querySelector('[aria-controls="tab-skills"]')));
+    for (const selector of ["#add-tool-proficiency", "#calculate-saves-button", "#calculate-skills-button"]) {
+      assert.equal(await page.locator(selector).isVisible(), false, `${selector} is hidden`);
+    }
+
+    // 跑團模式內的休息改選不受鎖定影響。
+    await page.evaluate(() => { TabletopMode.setMode("tabletop"); });
+    assert.equal(await page.locator("#share-mode-tip").isVisible(), true, "the tip stays visible in tabletop mode");
+    assert.deepEqual(await page.evaluate(() => {
+      const context = TabletopMode.getRestContext();
+      const result = TabletopMode.commitRest("shortRest", { options: { "ranger-hunters-prey": ["ranger-hunters-prey-colossus-slayer"] } }, context.token);
+      return [context.optionGroups.length, result.ok, document.getElementById("ranger-hunters-prey-colossus-slayer").checked];
+    }), [2, true, true], "rest choices still work");
+    await page.evaluate(() => { TabletopMode.setMode("sheet"); });
+
+    // 選單：隱藏的項目、保留現狀的項目與沒有空洞的版面。
+    for (const [width, height] of [[1100, 900], [390, 844]]) {
+      await page.setViewportSize({ width, height });
+      await page.waitForTimeout(100);
+      await page.locator("#utility-menu-toggle").click();
+      await page.locator("#tabletop-mode-toggle").waitFor();
+      for (const selector of ["#help-quick-build-btn", "#set-default-abilities", ".utility-menu__setting--auto-calc", "#import-json-btn", ".share-url-btn", "#open-qr-btn"]) {
+        assert.equal(await page.locator(selector).isVisible(), false, `${selector} is hidden at ${width}`);
+      }
+      for (const selector of ["#tabletop-mode-toggle", "#adventure-journal-btn", "#export-json-btn", "#export-pdf-btn", "#open-sheet-download-btn"]) {
+        assert.equal(await page.locator(selector).isVisible(), true, `${selector} stays at ${width}`);
+      }
+      assert.deepEqual([await page.locator("#restart-onboarding-btn").isDisabled(), await page.locator("#first-table-tour-btn").isDisabled()], [true, true]);
+      assert.equal(await page.evaluate(() => {
+        const button = document.getElementById("export-json-btn").getBoundingClientRect();
+        const row = document.querySelector(".utility-menu__row--icon").getBoundingClientRect();
+        const pdf = document.getElementById("export-pdf-btn").getBoundingClientRect();
+        const sheet = document.getElementById("open-sheet-download-btn").getBoundingClientRect();
+        const footer = document.querySelector(".utility-menu__row--footer").getBoundingClientRect();
+        return Math.abs(button.width - row.width) < 1 && Math.abs(pdf.left - footer.left) < 1 && Math.abs(sheet.right - footer.right) < 1;
+      }), true, `menu rows leave no holes at ${width}`);
+      await page.locator("#utility-menu-toggle").click();
+    }
+    await page.setViewportSize({ width: 1100, height: 900 });
+
+    // 提醒框：定稿文案、收合只留第一行、狀態只留當次畫面。
+    const tip = page.locator("#share-mode-tip");
+    const tipToggle = page.locator("#share-mode-tip-toggle");
+    assert.equal((await tip.innerText()).replace(/\s+/g, ""), "分享模式：這是別人分享給你的角色▾✓你裝置上的角色卡完全不會被覆蓋✓可以操作HP、法術位、物品裝備、跑團模式⚠︎重新整理或離開頁面後，這裡的變更就會消失。要保留請「匯出JSON」");
+    assert.equal(await tipToggle.getAttribute("aria-expanded"), "true");
+    assert.equal(await tipToggle.getAttribute("aria-label"), "收合分享模式說明");
+    await tipToggle.focus();
+    await page.keyboard.press("Enter");
+    assert.equal(await tipToggle.getAttribute("aria-expanded"), "false");
+    assert.equal(await tipToggle.getAttribute("aria-label"), "展開分享模式說明");
+    assert.equal(await page.locator("#share-mode-tip-details").isVisible(), false);
+    assert.equal(await tip.getByText("分享模式：這是別人分享給你的角色").isVisible(), true);
+    await page.evaluate(() => TabletopMode.setMode("tabletop"));
+    assert.equal(await tipToggle.getAttribute("aria-expanded"), "false", "collapse carries into tabletop mode");
+    await page.evaluate(() => TabletopMode.setMode("sheet"));
+    await page.reload();
+    await page.waitForFunction(() => document.getElementById("auto-calculate-key-stats-toggle")?.dataset.shareLocked === "true");
+    assert.equal(await page.locator("#share-mode-tip-details").isVisible(), true, "each page load starts expanded");
+    await page.locator("#legal-ack-btn").click();
+
+    // 自動計算開著：跟著分享者，開關鎖死，AC 自動重算不能手改，也不需要提示。
+    await page.evaluate(() => showTab("equipment", document.querySelector('[aria-controls="tab-equipment"]')));
+    await openShare(character("paladin", 5));
+    await page.evaluate(() => showTab("equipment", document.querySelector('[aria-controls="tab-equipment"]')));
+    assert.deepEqual(await props("auto-calculate-key-stats-toggle", ["checked", "inert"]), [true, true]);
+    assert.deepEqual(await props("ac-display", ["value", "readOnly"]), ["12", true]);
+    await page.locator("#armor").selectOption("鎖子甲");
+    assert.equal(await page.locator("#ac-display").inputValue(), "16", "automatic AC follows the armor");
+    assert.equal(await page.locator("#share-ac-warning").isVisible(), false, "no AC warning while calculation is automatic");
+
+    // 自動計算關著：保留分享者的數字，只開放 AC；換護甲、換下盾牌與有熟練時換上盾牌才提示。
+    const stats = { "hp-display": "99", "ac-display": "21", "speed-display": "45", "initiative-input": "+7", "passive-perception": "19" };
+    const warning = page.locator("#share-ac-warning");
+    const manualPaladin = character("paladin", 5, manual({ ...stats, armor: "皮甲", mainHand: "短劍", offHand: "盾牌" }));
+    await openShare(manualPaladin);
+    await page.evaluate(() => showTab("equipment", document.querySelector('[aria-controls="tab-equipment"]')));
+    for (const [id, value] of Object.entries(stats)) assert.equal(await page.locator(`#${id}`).inputValue(), value, `${id} keeps the sharer's number`);
+    assert.deepEqual(await props("auto-calculate-key-stats-toggle", ["checked", "inert"]), [false, true]);
+    assert.deepEqual([await isLocked("ac-display"), await isLocked("hp-display"), await isLocked("speed-display"), await isLocked("initiative-input"), await isLocked("passive-perception"), await isLocked("skill-運動")],
+      [false, true, true, true, true, true], "only AC stays editable");
+    assert.equal(await warning.isVisible(), false, "loading never shows the AC warning");
+    await page.locator("#armor").selectOption("鎖子甲");
+    assert.equal(await page.locator("#ac-display").inputValue(), "21", "manual AC does not recalculate");
+    await warning.waitFor();
+    assert.equal((await warning.innerText()).replace(/\s+/g, " ").trim().startsWith("⚠︎ 更換護甲後 AC 不會自動重算，請自行修改數值"), true);
+    await warning.getByRole("button", { name: "更換護甲後 AC 不會自動重算，請自行修改數值，前往修改" }).click();
+    await page.waitForFunction(() => document.getElementById("tab-basic").classList.contains("active") && document.activeElement?.id === "ac-display");
+    await page.locator("#ac-display").fill("18");
+    await page.evaluate(() => showTab("equipment", document.querySelector('[aria-controls="tab-equipment"]')));
+    assert.equal(await page.locator("#equipment-current-ac-value").textContent(), "18", "the equipment tab shows the edited AC");
+    await warning.getByRole("button", { name: "隱藏 AC 提醒" }).click();
+    assert.equal(await warning.isVisible(), false);
+    await page.locator("#armor").selectOption("皮甲");
+    assert.equal(await warning.isVisible(), false, "hiding lasts for this page load");
+
+    await openShare(manualPaladin);
+    await page.evaluate(() => showTab("equipment", document.querySelector('[aria-controls="tab-equipment"]')));
+    await page.locator("#mainHand").selectOption("長劍");
+    assert.equal(await warning.isVisible(), false, "changing only a weapon does not warn");
+    await page.locator("#offHand").selectOption("短劍");
+    await warning.waitFor();
+
+    await openShare(character("paladin", 5, manual({ ...stats, mainHand: "短劍" })));
+    await page.evaluate(() => showTab("equipment", document.querySelector('[aria-controls="tab-equipment"]')));
+    await page.locator("#offHand").selectOption("盾牌");
+    await warning.waitFor();
+
+    // 另一把主手的「裝備盾牌」勾選也算。
+    await openShare(character("paladin", 5, manual({ ...stats, mainHand: "短劍", offHand: "長劍", offHandAsMain: true })));
+    await page.evaluate(() => showTab("equipment", document.querySelector('[aria-controls="tab-equipment"]')));
+    assert.equal(await warning.isVisible(), false);
+    await page.locator("#main2Shield").check();
+    await warning.waitFor();
+
+    // 沒有盾牌熟練：換上不提示，換下仍提示。
+    await openShare(character("wizard", 5, manual({ ...stats, mainHand: "短劍" })));
+    await page.evaluate(() => showTab("equipment", document.querySelector('[aria-controls="tab-equipment"]')));
+    assert.equal(await page.evaluate(() => isShieldProficient()), false);
+    await page.locator("#offHand").selectOption("盾牌");
+    assert.equal(await warning.isVisible(), false, "equipping a shield without proficiency does not warn");
+    await page.locator("#offHand").selectOption("長劍");
+    await warning.waitFor();
+
+    // 裝置偏好：看的人的本機設定不讀不寫，切換只留當頁；跑團資料隨連結帶入。
+    await page.goto(url);
+    await page.waitForFunction(() => window.TabletopMode && window.Spellbook);
+    const sharerSpell = { nameZh: "分享自創", level: 1, school: "塑能", castingTime: "action", castingTimeText: "", ritual: false, rangeType: "60", rangeFeet: 10, rangeText: "",
+      verbal: true, somatic: true, material: false, materials: "", duration: "minute", durationText: "", concentration: false, description: "造成 2d6 傷害", hidden: false, showOnSheet: true };
+    const shared = await page.evaluate(async ({ state, sharerSpell }) => {
+      localStorage.clear();
+      applyStateObject(state);
+      const emptyState = collectShareState();
+      const action = TabletopMode.addCustomTabletopAction({ label: "分享者動作", mode: "action", description: "分享者說明" });
+      TabletopMode.setTabletopActionNotes("分享者筆記");
+      const spell = TabletopMode.saveCustomTabletopSpell("", sharerSpell).spell;
+      const shareState = collectShareState();
+      return { hasEmpty: Object.hasOwn(emptyState, "__tabletopActionPreferences"), action: action.ok, spellId: spell.spellId, hash: await encodeStateToHash(shareState) };
+    }, { state: character("wizard", 5), sharerSpell });
+    assert.equal(shared.hasEmpty, false, "empty tabletop data is omitted from the link");
+    await page.evaluate(() => {
+      localStorage.clear();
+      localStorage.setItem("dnd.tabletopActionPreferences.v1", JSON.stringify({ version: 1, customActions: [{ id: "viewer", label: "看的人動作", mode: "action", description: "本機" }], hiddenKeys: [], notes: "看的人筆記" }));
+      localStorage.setItem("dnd.diceSystemEnabled.v1", "false");
+      localStorage.setItem("dnd.scrollButtonsVisible.v1", "true");
+      localStorage.setItem("dnd.theme.v1", "dark");
+      localStorage.setItem("dndchar_autosave_v1", JSON.stringify({ class: "fighter", level: "2", characterName: "看的人角色" }));
+      localStorage.setItem("dnd.spellManagementClassNoticeDisabled.v1", "true");
+    });
+    await openHash(shared.hash);
+    const before = await localSnapshot();
+    assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), "dark", "the viewer's theme still applies");
+    assert.equal(await page.evaluate(() => document.getElementById("dice-system-toggle").checked), true, "dice start on");
+    assert.equal(await page.evaluate(() => document.getElementById("scroll-buttons-toggle").checked), false, "scroll buttons start off");
+    assert.equal(await page.locator("#inventory-weight-toggle").getAttribute("aria-pressed"), "false", "weight starts hidden");
+    assert.deepEqual(await page.evaluate(() => { const prefs = TabletopMode.getTabletopActionPreferences();
+      return [prefs.customActions.map(action => action.label), prefs.notes, prefs.customSpells.map(spell => spell.nameZh)]; }), [["分享者動作"], "分享者筆記", ["分享自創"]], "the link's tabletop data replaces local data on this page");
+    assert.equal(await page.locator(`[data-spell-read="${shared.spellId}"]`).count() > 0, true, "shared custom spells show on the sheet");
+    // 自創法術能用不能改；自訂動作與筆記可改，但只留當頁。
+    assert.deepEqual(await page.evaluate(id => [TabletopMode.saveCustomTabletopSpell("", {}).reason, TabletopMode.removeCustomTabletopSpell(id).reason], shared.spellId), ["share", "share"]);
+    assert.equal(await page.evaluate(() => TabletopCustomSpells.openEditor()), false);
+    await page.evaluate(() => {
+      TabletopMode.setTabletopActionNotes("看的人改的筆記");
+      TabletopMode.addCustomTabletopAction({ label: "看的人新增", mode: "action", description: "當頁" });
+      document.getElementById("dice-system-toggle").click();
+      document.getElementById("scroll-buttons-toggle").click();
+      document.getElementById("hp").value = "3";
+      document.getElementById("hp").dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await page.locator("#inventory-more").evaluate(button => button.click());
+    await page.locator("#inventory-weight-toggle").evaluate(button => button.click());
+    assert.equal(await page.evaluate(() => saveAllFields()), false, "share mode never autosaves");
+    assert.equal(await localSnapshot(), before, "nothing reaches the viewer's localStorage");
+    assert.deepEqual(await page.evaluate(() => [dndStorage.getItem("dnd.diceSystemEnabled.v1"), dndStorage.getItem("dnd.scrollButtonsVisible.v1"), dndStorage.getItem("dnd.inventoryWeightHidden.v1")]), ["false", "true", null], "toggles stay on this page");
+    // 匯出帶當頁的跑團資料，不帶頭像。
+    const sharedExport = await page.evaluate(() => JSON.parse(collectJsonExportText().text));
+    assert.deepEqual([sharedExport.__tabletopActionPreferences.notes, sharedExport.__tabletopActionPreferences.customActions.map(action => action.label), sharedExport.__tabletopActionPreferences.customSpells.length, Object.hasOwn(sharedExport, "__tabletopAvatar")],
+      ["看的人改的筆記", ["分享者動作", "看的人新增"], 1, false], "export keeps this page's tabletop data");
+    await page.goto(url);
+    await page.waitForFunction(() => window.TabletopMode && !autosaveRestoreBlocked);
+    assert.deepEqual(await page.evaluate(() => { const prefs = TabletopMode.getTabletopActionPreferences();
+      return [prefs.notes, prefs.customActions[0].label, document.getElementById("dice-system-toggle").checked, document.getElementById("scroll-buttons-toggle").checked]; }),
+      ["看的人筆記", "看的人動作", false, true], "leaving the share restores the viewer's own settings");
+
+    // 舊連結沒帶跑團資料：從空白開始，也不顯示本機的自訂動作。
+    await openShare(character("fighter", 3));
+    assert.deepEqual(await page.evaluate(() => { const prefs = TabletopMode.getTabletopActionPreferences(); return [prefs.customActions.length, prefs.notes, prefs.hiddenKeys.length]; }), [0, "", 0]);
+
+    // 換法術：不能換的職業沒有按鈕，只留一行說明；寫入 API 也擋住。
+    await openShare(character("bard", 3, { "spellcasting-ability": "cha", __spellManagement: { version: 2, manual: false, entries: [{ spellId: "cure-wounds", spellClass: "bard", level: 1 }] } }));
+    await page.evaluate(() => showTab("spells", document.getElementById("spells-tab-button")));
+    assert.equal(await page.locator("#spell-prepare").isVisible(), false);
+    assert.equal(await page.locator("#spell-prepared-status").innerText(), "吟遊詩人只有升級時能換法術，分享模式不可更改。");
+    assert.deepEqual(await page.evaluate(async () => {
+      const opened = await Spellbook.openPreparedManager(document.body);
+      const added = SpellManagement.addPlayerSpell("healing-word");
+      const removed = SpellManagement.removePlayerSpell("cure-wounds");
+      SpellManagement.setPlayerEntries([]);
+      return [opened, added, removed, SpellManagement.getPlayerEntries().map(entry => entry.spellId)];
+    }), [false, false, false, ["cure-wounds"]], "locked classes reject every spell write");
+    await openShare(character("fighter", 3, { background: "soldier", "spellcasting-ability": "" }));
+    await page.evaluate(() => showTab("spells", document.getElementById("spells-tab-button")));
+    assert.deepEqual([await page.locator("#spell-prepare").isVisible(), await page.locator("#spell-prepared-status").isVisible()], [false, false], "non-casters get no note");
+
+    // 可換的職業：有規則提示、沒有手動管理開關；只有法師能換戲法。
+    await openShare(character("cleric", 3, { "spellcasting-ability": "wis", __spellManagement: { version: 2, manual: false, entries: [{ spellId: "guidance", spellClass: "cleric", level: 0 }, { spellId: "command", spellClass: "cleric", level: 1 }] } }));
+    await page.evaluate(() => { showTab("spells", document.getElementById("spells-tab-button")); document.getElementById("spell-prepare").click(); });
+    const dialog = page.getByRole("dialog", { name: "管理已準備法術", exact: true });
+    await dialog.waitFor();
+    assert.equal(await dialog.locator(".spell-prepared-share-rule").innerText(), "牧師規則：每次長休後，可全部更換已準備法術。");
+    assert.equal(await dialog.locator("#manual-spell-management").count(), 0, "the manual toggle is not offered");
+    assert.equal(await dialog.locator('input[value="guidance"]').isDisabled(), true, "the cleric's cantrip is locked");
+    assert.equal(await dialog.locator('input[value="light"]').count(), 0, "other cantrips are not candidates");
+    await dialog.locator(`input[value="command"]`).uncheck();
+    await dialog.locator(`input[value="guiding-bolt"]`).check();
+    await dialog.getByRole("button", { name: "儲存", exact: true }).click();
+    await dialog.waitFor({ state: "detached" });
+    assert.deepEqual((await page.evaluate(() => SpellManagement.getPlayerEntries().map(entry => entry.spellId))).sort(), ["guidance", "guiding-bolt"]);
+
+    await openShare(character("wizard", 3, { __wizardSpellbook: { version: 2, spellIds: ["magic-missile", "shield"], wizardSpellIds: ["magic-missile", "shield"], manualSpellIds: [] },
+      __spellManagement: { version: 2, manual: false, entries: [{ spellId: "light", spellClass: "wizard", level: 0 }, { spellId: "magic-missile", spellClass: "wizard", level: 1 }] } }));
+    await page.evaluate(() => { showTab("spells", document.getElementById("spells-tab-button")); });
+    assert.equal(await page.locator("#spellbook-manage").isVisible(), false, "the spellbook cannot be managed");
+    assert.deepEqual(await page.evaluate(() => [Spellbook.canWriteSpell("shield"), Spellbook.addWizardSpell("burning-hands"), Spellbook.getState().spellIds]), [false, false, ["magic-missile", "shield"]]);
+    await page.evaluate(() => document.getElementById("spell-prepare").click());
+    await dialog.waitFor();
+    assert.equal(await dialog.locator(".spell-prepared-share-rule").innerText(), "法師規則：每次長休後，可全部更換法術書內的已準備法術，並替換 1 個戲法。");
+    assert.equal(await dialog.locator('input[value="burning-hands"]').count(), 0, "wizards only prepare from the book");
+    assert.equal(await dialog.locator('input[value="shield"]').count(), 1);
+    assert.equal(await dialog.locator('input[value="light"]').isDisabled(), false, "wizards can swap a cantrip");
+    await dialog.getByRole("button", { name: "取消", exact: true }).click();
+    await dialog.waitFor({ state: "detached" });
+    // 搜尋結果與法術詳情的入口：書外法術只能閱讀。
+    assert.deepEqual(await page.evaluate(() => [SpellManagement.addPlayerSpell("burning-hands"), ShareReadonly.canPrepareSpell("shield"), ShareReadonly.canPrepareSpell("burning-hands")]), [false, true, false]);
+    await page.evaluate(() => { autoPrepareSpellFromFeature("burning-hands", document.body); });
+    await page.getByText("分享模式不可將此法術加入準備清單。").waitFor();
+    await page.getByRole("dialog", { name: "法術詳情", exact: true }).getByRole("button", { name: "關閉", exact: true }).first().click();
+
+    // 一般模式不受影響：沒有規則提示、手動管理開關與按鈕都在。
+    await page.goto(url);
+    await page.waitForFunction(() => window.TabletopMode && !autosaveRestoreBlocked);
+    await page.evaluate(state => applyStateObject(state), character("cleric", 3, { "spellcasting-ability": "wis" }));
+    await page.evaluate(() => { showTab("spells", document.getElementById("spells-tab-button")); document.getElementById("spell-prepare").click(); });
+    await dialog.waitFor();
+    assert.deepEqual([await dialog.locator(".spell-prepared-share-rule").count(), await dialog.locator("#manual-spell-management").count()], [0, 1]);
+    await dialog.getByRole("button", { name: "取消", exact: true }).click();
+    assert.equal(await page.locator("#share-ac-warning").count(), 0, "the AC warning only exists in share mode");
+    console.log("Share read-only mode: locks and whitelist, menu, tip, automatic and manual AC warning, device preferences, tabletop data, legacy links and spell changes passed.");
   } finally { await page.close(); }
 }
 
@@ -4731,17 +5041,17 @@ async function verifyJsonImportTransaction(browser, url) {
     assert.equal(exportedData.characterName, "匯出角色");
     for (const key of ["__tabletopAvatar", "__tabletopActionPreferences"]) {
       assert.equal(Object.hasOwn(JSON.parse(exported.autosave), key), false, `${key} stays out of autosave`);
-      assert.equal(Object.hasOwn(exported.share, key), false, `${key} stays out of share data`);
     }
+    assert.equal(Object.hasOwn(exported.share, "__tabletopAvatar"), false, "the avatar stays out of share data");
+    assert.deepEqual(JSON.parse(JSON.stringify(exported.share.__tabletopActionPreferences)), preferences, "tabletop preferences travel with the share link");
     const shareHash = await page.evaluate(() => encodeStateToHash(collectShareState()));
     await page.goto(`${url}${shareHash}`);
     await page.waitForFunction(() => window.SHARE_MODE === true && TabletopMode.getCharacterName() === "匯出角色");
     const sharedExport = await page.evaluate(() => { const result = collectJsonExportText(); downloadStateAsJson(); return JSON.parse(result.text); });
-    for (const key of ["__tabletopAvatar", "__tabletopActionPreferences"]) {
-      assert.equal(Object.hasOwn(sharedExport, key), false, `share-mode JSON export omits the viewer's local ${key}`);
-    }
+    assert.equal(Object.hasOwn(sharedExport, "__tabletopAvatar"), false, "share-mode JSON export omits the viewer's local avatar");
+    assert.deepEqual(sharedExport.__tabletopActionPreferences, preferences, "share-mode JSON export keeps the shared tabletop preferences");
     assert.equal(sharedExport.characterName, "匯出角色", "share-mode JSON export keeps the shared character");
-    await page.getByText("分享模式匯出的檔案不含角色圖片、跑團按鈕與自創法術設定。").waitFor();
+    await page.getByText("分享模式匯出的檔案不含角色圖片。").waitFor();
     await seed();
     await Promise.all([page.waitForEvent("load"), uploadText("tabletop-settings.json", exported.text)]);
     await page.waitForFunction(() => document.getElementById("gear-extra").value === "Exported" && !autosaveRestoreBlocked && !autosaveClearing);
@@ -4765,7 +5075,7 @@ async function verifyJsonImportTransaction(browser, url) {
 
 async function main() {
   const sections = new Set(process.argv.slice(2));
-  for (const flag of sections) assert(["--appearance-only", "--dialogs-only", "--journal-only", "--pdf-only", "--pdf-fields-only", "--data-only"].includes(flag), `Unknown option: ${flag}`);
+  for (const flag of sections) assert(["--appearance-only", "--dialogs-only", "--journal-only", "--pdf-only", "--pdf-fields-only", "--data-only", "--share-only"].includes(flag), `Unknown option: ${flag}`);
   assert(sections.size <= 1, "Choose at most one UI section");
   const all = sections.size === 0;
   const html = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
@@ -4791,7 +5101,8 @@ async function main() {
   try {
     browser = await chromium.launch({ headless: true, ...(process.env.DND_BROWSER_CHANNEL ? { channel: process.env.DND_BROWSER_CHANNEL } : {}) });
     const url = `http://127.0.0.1:${server.address().port}/index.html?analytics=owner`;
-    if (all || sections.has("--data-only")) { await verifyJsonImportTransaction(browser, url); await verifyCharacterDataSafety(browser, url); await verifyFieldInfoHint(browser, url); await verifySubclassSelection(browser, url); await verifyClassPicks(browser, url); await verifyClassOptionMemory(browser, url); await verifyBackgroundChoiceMemory(browser, url); await verifyBackgroundSkillAutoTick(browser, url); await verifyAutoCalculatedChecks(browser, url); await verifyInventoryPersistence(browser, url); }
+    if (all || sections.has("--data-only")) { await verifyJsonImportTransaction(browser, url); await verifyCharacterDataSafety(browser, url); await verifyFieldInfoHint(browser, url); await verifySubclassSelection(browser, url); await verifyClassPicks(browser, url); await verifyClassOptionMemory(browser, url); await verifyBackgroundChoiceMemory(browser, url); await verifyAutoCalculatedChecks(browser, url); await verifyInventoryPersistence(browser, url); }
+    if (all || sections.has("--data-only") || sections.has("--share-only")) await verifyShareReadonlyMode(browser, url);
     if (all || sections.has("--appearance-only")) {
       const page = await newUiPage(browser, { viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });
       try { await verifyAppearanceAndLayout(browser, page, url); }

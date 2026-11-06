@@ -65,6 +65,11 @@ function getSpellClassSearchOrderWithPrimary(primaryClassId, selectedAbility) {
 async function autoPrepareSpellFromFeature(spellId, triggerEl) {
   const spell = SpellCatalog.getSpell(spellId);
   if (!spell) return;
+  // 分享模式：職業表不開放的法術只能閱讀（法師另限法術書內）。
+  if (window.SHARE_MODE === true && !window.ShareReadonly?.canPrepareSpell(spellId)) {
+    window.Spellbook?.openReadOnly(spellId, triggerEl, { stateNote: "分享模式不可將此法術加入準備清單。" });
+    return;
+  }
   // 有法術書時（法師或手動管理法術），法師法表的 1 環以上法術詳情多一個「寫入法術書」。
   const canWriteSpellbook = window.Spellbook?.canWriteSpell(spellId) === true;
   const alreadyRecorded = canWriteSpellbook && window.Spellbook?.getState().spellIds.includes(spellId);
@@ -288,6 +293,16 @@ function updatePreparedSpellCounts() {
   const currentList = document.getElementById("spell-current-list");
   if (currentList) currentList.textContent = manual ? "法術清單：手動管理" : classValue ? `法術清單：${label}` : "法術清單：請先選擇職業";
   const empty = document.getElementById("spell-prepared-empty");
+  // 分享模式不能換法術的職業沒有準備法術按鈕，只留一行說明。
+  const shareLocked = window.SHARE_MODE === true && !window.ShareReadonly?.getSpellChangeRule();
+  if (button) button.hidden = shareLocked;
+  if (shareLocked) {
+    if (requirements) requirements.hidden = true;
+    if (empty) empty.hidden = true;
+    const note = window.ShareReadonly?.getPreparedNote() || "";
+    if (status) { status.textContent = note; status.hidden = !note; }
+    return;
+  }
   if (empty) {
     const entries = window.SpellManagement?.getSheetEntries() || [];
     const limits = window.SpellManagement?.getLimits();
