@@ -2173,6 +2173,7 @@ function finishBackgroundChoiceTransition() {
   if (!transition || transition.from === backgroundChoiceOwner) {
     if (skillsChanged) {
       refreshDerivedChecks();
+      updateClassFeatureChoiceReminder();
       scheduleStructuralSaveAllFields();
     }
     return;

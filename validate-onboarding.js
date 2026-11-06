@@ -1790,6 +1790,16 @@ async function verifyImports(browser, url, viewport = { width: 1280, height: 800
           auto: document.getElementById("auto-calculate-key-stats-toggle").checked
         };
       }), { ticks: true, saves: true, skills: true, auto: true }, "quick build leaves correct automatic saves and skills");
+      // The sheet's skill ticks are exactly what the quick-build draft acquired; the background's automatic ticking stays out of it.
+      const quickBuildSkills = await page.evaluate(() => {
+        const { skills = [], expertise = [] } = quickBuild.getDraft().acquisitions;
+        return {
+          acquired: [...new Set([...skills, ...expertise].map(item => item.name))].sort(),
+          ticked: Object.keys(CharacterSkillAbilities).filter(skill => document.getElementById(`prof-${skill}`).checked || document.getElementById(`exp-${skill}`).checked).sort()
+        };
+      });
+      assert.ok(quickBuildSkills.acquired.length, "quick build acquired skills");
+      assert.deepEqual(quickBuildSkills.ticked, quickBuildSkills.acquired, "quick build ticks only the draft's skills");
       // Temporary quick-build purchases are paid from the starting gold only during the import.
       assert.deepEqual(await page.evaluate(() => ({
         money: ["pp", "gp", "sp", "cp"].map(id => document.getElementById(`money-balance-${id}`).value),

@@ -3497,6 +3497,21 @@ async function verifyClassOptionMemory(browser, url) {
   } finally { await page.close(); }
 }
 
+// Native keyboard selection is a trusted player change, which is what the background and class memories listen to.
+async function chooseSelectAsPlayer(page, id, next) {
+  await page.evaluate(() => showTab("basic"));
+  const key = await page.evaluate(({ id, next }) => {
+    const select = document.getElementById(id);
+    const index = Array.from(select.options).findIndex(option => option.value === next);
+    if (index < 0) throw new Error(`Missing option ${id}: ${next}`);
+    select.selectedIndex = index === 0 ? 1 : index - 1;
+    return index === 0 ? "ArrowUp" : "ArrowDown";
+  }, { id, next });
+  await page.locator(`#${id}`).focus();
+  await page.keyboard.press(key);
+  return key;
+}
+
 // Each background remembers its own tool, Magic Initiate spells and free-use checks, in page memory only.
 async function verifyBackgroundChoiceMemory(browser, url) {
   const page = await newUiPage(browser, { viewport: { width: 1280, height: 900 } });
@@ -3506,19 +3521,7 @@ async function verifyBackgroundChoiceMemory(browser, url) {
   const apply = state => page.evaluate(state => applyStateObject(state), { ...blank, ...state });
   const value = id => page.evaluate(id => document.getElementById(id)?.value ?? null, id);
   const record = id => page.evaluate(id => ClassOptionMemory.getBackgroundChoices(id), id);
-  const chooseAsPlayer = async next => {
-    await page.evaluate(() => showTab("basic"));
-    const key = await page.evaluate(next => {
-      const select = document.getElementById("background");
-      const index = Array.from(select.options).findIndex(option => option.value === next);
-      if (index < 0) throw new Error(`Missing background: ${next}`);
-      select.selectedIndex = index === 0 ? 1 : index - 1;
-      return index === 0 ? "ArrowUp" : "ArrowDown";
-    }, next);
-    await page.locator("#background").focus();
-    await page.keyboard.press(key);
-    return key;
-  };
+  const chooseAsPlayer = next => chooseSelectAsPlayer(page, "background", next);
   const synthetic = next => page.evaluate(next => {
     const select = document.getElementById("background");
     select.value = next;
@@ -3738,6 +3741,325 @@ async function verifyBackgroundChoiceMemory(browser, url) {
     assert.equal(await value("background"), "custom", "cancelling an edit stays on the custom background");
     assert.deepEqual(await magic(), { class: "wizard", ...sageSpells }, "cancelling an edit keeps the spells");
     console.log("Background choice memory: tools and conflicts, Magic Initiate spells, free uses, unchanged numbers and saved data, gates, clearing, manual spell and feat modes and custom background flows passed.");
+  } finally { await page.close(); }
+}
+
+// A player's background change ticks that background's skills, and only ever takes back what it ticked itself.
+async function verifyBackgroundSkillAutoTick(browser, url) {
+  const page = await newUiPage(browser, { viewport: { width: 1280, height: 900 } });
+  const TOGGLE = "auto-calculate-key-stats-toggle";
+  const base = { __spellManagement: { version: 2, manual: false, entries: [] }, __autoCalculatedChecks: true, [TOGGLE]: true,
+    class: "fighter", level: "3", race: "human", background: "", str: "16", dex: "14", con: "14", int: "10", wis: "12", cha: "10" };
+  const load = async (state = {}) => page.evaluate(({ base, state }) => {
+    const cleared = Object.fromEntries(Object.keys(CharacterSkillAbilities).flatMap(skill => [[`prof-${skill}`, false], [`exp-${skill}`, false]]));
+    applyStateObject({ ...base, ...cleared, ...state });
+  }, { base, state });
+  const choose = next => chooseSelectAsPlayer(page, "background", next);
+  const synthetic = next => page.evaluate(next => {
+    const select = document.getElementById("background");
+    select.value = next;
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  }, next);
+  // Only the marked skills: { 運動: "●", 隱匿: "◆" }; a skill with both boxes ticked would show as "both".
+  const ranks = () => page.evaluate(() => Object.fromEntries(Object.keys(CharacterSkillAbilities).map(skill => {
+    const proficient = document.getElementById(`prof-${skill}`).checked, expert = document.getElementById(`exp-${skill}`).checked;
+    return [skill, proficient && expert ? "both" : expert ? "◆" : proficient ? "●" : ""];
+  }).filter(([, rank]) => rank)));
+  // Every tick and number on the skills tab, plus what is derived from them elsewhere.
+  const sheet = () => page.evaluate(() => ({
+    fields: Array.from(document.querySelectorAll("#tab-skills input"), input => input.type === "checkbox" ? input.checked : input.value),
+    passive: document.getElementById("passive-perception").value, initiative: document.getElementById("initiative-input").value
+  }));
+  const number = skill => page.evaluate(skill => document.getElementById(`skill-${skill}`).value, skill);
+  // The toggle area cycles ○ → ● → ◆ → ○ with real clicks, as a player would.
+  const cycle = async skill => {
+    await page.evaluate(() => showTab("skills"));
+    await page.locator(`.skill-rank-controls:has(#prof-${skill})`).click();
+  };
+  const record = id => page.evaluate(id => ClassOptionMemory.getBackgroundChoices(id), id);
+  const dialog = page.locator('.app-dialog[data-variant="custom-background"]');
+  const setCustomSkills = async skills => {
+    for (const [index, skill] of skills.entries()) await page.locator(`#custom-background-skill-${index}`).selectOption(skill);
+  };
+  const saveCustomDialog = async () => {
+    await dialog.getByRole("button", { name: "儲存背景" }).click();
+    await dialog.waitFor({ state: "detached" });
+  };
+  const createCustom = async skills => {
+    await choose("custom");
+    await dialog.waitFor();
+    await page.locator("#custom-background-name").fill("學徒");
+    await page.locator("#custom-background-equipment-a").fill("長棍");
+    for (const [id, option] of Object.entries({ "ability-0": "力量", "ability-1": "敏捷", "ability-2": "體質", feat: "警覺", tool: "里拉琴" })) {
+      await page.locator(`#custom-background-${id}`).selectOption(option);
+    }
+    await setCustomSkills(skills);
+    await saveCustomDialog();
+  };
+  const editCustom = async skills => {
+    await page.evaluate(() => showTab("basic"));
+    await page.locator("#custom-background-edit").click();
+    await dialog.waitFor();
+    await setCustomSkills(skills);
+    await saveCustomDialog();
+  };
+  const dismissStartup = () => page.evaluate(() => { document.getElementById("legal-close-btn")?.click(); window.onboardingTour?.finish?.(); });
+  try {
+    await page.addInitScript(() => { try { localStorage.setItem("dnd.classFeaturePromptDisabled.v1", "true"); } catch {} });
+    await page.goto(url);
+    await page.waitForFunction(() => window.ClassOptionMemory && window.TabletopMode);
+    await dismissStartup();
+
+    // No background to soldier: ticks, numbers, bold names, autosave and tabletop all follow.
+    await load();
+    assert.deepEqual(await ranks(), {});
+    assert.equal(await number("運動"), "+3");
+    await choose("soldier");
+    assert.deepEqual(await ranks(), { 運動: "●", 威嚇: "●" }, "soldier's skills are ticked");
+    assert.equal(await number("運動"), "+5", "the skill number includes the proficiency bonus");
+    assert.equal(await number("威嚇"), "+2");
+    assert.notEqual(...await page.evaluate(() => ["運動", "察覺"].map(skill => getComputedStyle(document.querySelector(`.skill-cell:has(#prof-${skill}) .skill-name`)).fontWeight)), "a ticked skill's name turns bold");
+    await page.waitForFunction(() => JSON.parse(localStorage.getItem("dndchar_autosave_v1") || "{}")["prof-威嚇"] === true);
+    await page.evaluate(() => { TabletopMode.setMode("tabletop"); TabletopMode.setPanel("skills"); });
+    await page.waitForFunction(() => document.querySelectorAll('#tabletop-skill-values [data-skill-rank="proficient"]').length === 2);
+    assert.deepEqual(await page.evaluate(() => Array.from(document.querySelectorAll('#tabletop-skill-values [data-skill-rank="proficient"] .tabletop-skill-value__label'), label => label.textContent.trim()).sort()), ["威嚇", "運動"].sort(), "tabletop mode shows the new ranks");
+    await page.evaluate(() => TabletopMode.setMode("sheet"));
+    await choose("");
+    assert.deepEqual(await ranks(), { 運動: "●", 威嚇: "●" }, "choosing no background does not touch anything");
+
+    // Soldier to criminal and back ends exactly where it started.
+    await load();
+    await choose("soldier");
+    const soldierSheet = await sheet();
+    await choose("criminal");
+    assert.deepEqual(await ranks(), { 巧手: "●", 隱匿: "●" }, "leaving takes soldier's ticks back and criminal's are added");
+    assert.equal(await number("運動"), "+3");
+    await choose("soldier");
+    assert.deepEqual(await sheet(), soldierSheet, "a round trip restores every tick and number");
+
+    // Shared skills: acolyte and seeker both grant religion.
+    await load();
+    await choose("acolyte");
+    assert.deepEqual(await ranks(), { 洞悉: "●", 宗教: "●" });
+    const acolyteSheet = await sheet();
+    await choose("seeker");
+    assert.deepEqual(await ranks(), { 宗教: "●", 醫藥: "●" }, "the shared skill stays ticked by the new background");
+    await choose("criminal");
+    assert.deepEqual(await ranks(), { 巧手: "●", 隱匿: "●" }, "and is taken back when seeker is left too");
+    await choose("acolyte");
+    assert.deepEqual(await sheet(), acolyteSheet);
+    await load({ "prof-宗教": true });
+    await choose("acolyte");
+    await choose("seeker");
+    await choose("criminal");
+    assert.deepEqual(await ranks(), { 巧手: "●", 隱匿: "●", 宗教: "●" }, "a shared skill the player ticked first is never taken back");
+
+    // A skill ticked beforehand (say, for the class) belongs to the player.
+    await load({ "prof-運動": true });
+    await choose("soldier");
+    assert.deepEqual(await ranks(), { 運動: "●", 威嚇: "●" });
+    await choose("criminal");
+    assert.deepEqual(await ranks(), { 運動: "●", 巧手: "●", 隱匿: "●" }, "athletics stays, intimidation goes");
+
+    // Unticking a background skill sticks across round trips.
+    await load();
+    await choose("soldier");
+    await cycle("威嚇");
+    assert.deepEqual(await ranks(), { 運動: "●" }, "a fighter's skill only toggles ○ and ●");
+    const untickedSheet = await sheet();
+    await choose("criminal");
+    assert.deepEqual(await record("soldier").then(item => item.skillsDeclined), ["威嚇"], "leaving records what the player does not want");
+    await choose("soldier");
+    assert.deepEqual(await sheet(), untickedSheet, "the unticked skill is not ticked again");
+    // Ticking it again makes it the player's own, and the refusal is forgotten on leaving.
+    await cycle("威嚇");
+    await choose("criminal");
+    assert.deepEqual(await ranks(), { 威嚇: "●", 巧手: "●", 隱匿: "●" }, "a skill the player ticks by hand is not taken back");
+    assert.deepEqual(await record("soldier").then(item => item.skillsDeclined), []);
+    await load();
+    await choose("soldier");
+    await cycle("運動");
+    await cycle("運動");
+    await choose("criminal");
+    assert.deepEqual(await ranks(), { 運動: "●", 巧手: "●", 隱匿: "●" }, "unticking and re-ticking a granted skill hands it over to the player");
+
+    // Old saves: loading changes nothing and leaving removes nothing.
+    await load({ background: "soldier" });
+    assert.deepEqual(await ranks(), {}, "loading an old save does not tick");
+    const legacySheet = await sheet();
+    await choose("criminal");
+    assert.deepEqual(await ranks(), { 巧手: "●", 隱匿: "●" });
+    await choose("soldier");
+    assert.deepEqual(await sheet(), legacySheet, "an old save without the ticks is unchanged after a round trip");
+    await load({ background: "soldier", "prof-運動": true, "prof-威嚇": true, "prof-察覺": true });
+    await choose("criminal");
+    assert.deepEqual(await ranks(), { 運動: "●", 威嚇: "●", 察覺: "●", 巧手: "●", 隱匿: "●" }, "leaving a loaded background removes nothing");
+
+    // Expertise is never touched and never sits next to proficiency.
+    await load({ class: "rogue", "exp-隱匿": true });
+    await choose("criminal");
+    assert.deepEqual(await ranks(), { 隱匿: "◆", 巧手: "●" }, "an expert skill is skipped");
+    await cycle("巧手");
+    assert.deepEqual(await ranks(), { 隱匿: "◆", 巧手: "◆" }, "a granted skill can be raised to expertise");
+    const expertSheet = await sheet();
+    await choose("soldier");
+    assert.deepEqual(await ranks(), { 隱匿: "◆", 巧手: "◆", 運動: "●", 威嚇: "●" }, "leaving does not touch expertise");
+    await choose("criminal");
+    assert.deepEqual(await sheet(), expertSheet, "and returning does not add a second mark");
+
+    // Accepted limitation, measured: four steps can leave an expertise with no proficiency source.
+    await load({ class: "rogue" });
+    await choose("criminal");
+    await cycle("巧手");
+    await chooseSelectAsPlayer(page, "class", "fighter");
+    assert.equal((await ranks()).巧手, "●", "losing the class's expertise falls back to proficiency");
+    await choose("soldier");
+    assert.equal((await ranks()).巧手, undefined, "the fallen-back skill is still the background's, so it is taken back");
+    await chooseSelectAsPlayer(page, "class", "rogue");
+    assert.equal((await ranks()).巧手, "◆", "known limitation: the class's expertise memory brings it back");
+
+    // No background in between: not a departure until a real background is chosen.
+    await load();
+    await choose("soldier");
+    const beforeBlank = await sheet();
+    await choose("");
+    assert.deepEqual(await sheet(), beforeBlank);
+    await choose("soldier");
+    assert.deepEqual(await sheet(), beforeBlank, "soldier, none, soldier changes nothing");
+    await choose("");
+    await choose("criminal");
+    assert.deepEqual(await ranks(), { 巧手: "●", 隱匿: "●" }, "soldier, none, criminal takes soldier's ticks back");
+
+    // Reloading forgets the list, so leaving removes nothing; the ticks came from the save.
+    await load();
+    await choose("soldier");
+    await page.evaluate(() => saveAllFields());
+    await page.reload();
+    await page.waitForFunction(() => window.ClassOptionMemory && window.TabletopMode);
+    await dismissStartup();
+    assert.deepEqual(await ranks(), { 運動: "●", 威嚇: "●" }, "autosave restores the ticks");
+    await choose("criminal");
+    assert.deepEqual(await ranks(), { 運動: "●", 威嚇: "●", 巧手: "●", 隱匿: "●" }, "after a reload the old background's skills stay");
+
+    // Loading another character clears the list and the refusals.
+    await load();
+    await choose("soldier");
+    await cycle("威嚇");
+    await choose("criminal");
+    assert.deepEqual(await record("soldier").then(item => item.skillsDeclined), ["威嚇"]);
+    await load({ background: "criminal", "prof-巧手": true });
+    assert.equal(await record("soldier"), null, "loading a character clears the memory");
+    await choose("soldier");
+    assert.deepEqual(await ranks(), { 巧手: "●", 運動: "●", 威嚇: "●" }, "the previous character's refusal and list are gone");
+
+    // Custom background: creating, editing in place, cancelling and a round trip.
+    await load({ background: "soldier", "prof-歷史": true });
+    await choose("custom");
+    await dialog.waitFor();
+    await page.keyboard.press("Escape");
+    await dialog.waitFor({ state: "detached" });
+    assert.deepEqual(await ranks(), { 歷史: "●" }, "cancelling the dialog changes nothing");
+    assert.equal(await record("soldier"), null);
+    await createCustom(["運動", "歷史"]);
+    assert.deepEqual(await ranks(), { 運動: "●", 歷史: "●" }, "saving the dialog is a player change");
+    await editCustom(["運動", "察覺"]);
+    assert.deepEqual(await ranks(), { 運動: "●", 歷史: "●", 察覺: "●" }, "an in-place edit keeps the player's skill and adds the new one");
+    assert.equal(await page.evaluate(() => document.getElementById("passive-perception").value), "13", "passive perception follows");
+    await editCustom(["隱匿", "察覺"]);
+    assert.deepEqual(await ranks(), { 歷史: "●", 察覺: "●", 隱匿: "●" }, "an in-place edit takes back the skill it no longer grants");
+    assert.equal(await number("運動"), "+3");
+    await page.evaluate(() => showTab("basic"));
+    const customSheet = await sheet();
+    await page.locator("#custom-background-edit").click();
+    await dialog.waitFor();
+    await setCustomSkills(["運動", "威嚇"]);
+    await page.keyboard.press("Escape");
+    await dialog.waitFor({ state: "detached" });
+    assert.deepEqual(await sheet(), customSheet, "cancelling an edit changes nothing");
+    await editCustom(["隱匿", "察覺"]);
+    assert.deepEqual(await sheet(), customSheet, "saving an edit with the same skills changes nothing");
+    await choose("soldier");
+    assert.deepEqual(await ranks(), { 歷史: "●" }, "the save never had soldier's skills, so returning to it does not add them");
+    await choose("custom");
+    assert.deepEqual(await sheet(), customSheet, "a round trip through soldier restores the custom background's ticks");
+    await cycle("察覺");
+    await editCustom(["察覺", "威嚇"]);
+    assert.deepEqual(await ranks(), { 歷史: "●", 威嚇: "●" }, "a skill unticked by the player stays unticked through an edit");
+
+    // Automatic calculation off: the ticks move, the typed numbers do not.
+    await load();
+    await page.evaluate(TOGGLE => document.getElementById(TOGGLE).click(), TOGGLE);
+    assert.equal(await page.evaluate(TOGGLE => document.getElementById(TOGGLE).checked, TOGGLE), false);
+    await page.evaluate(() => { const input = document.getElementById("skill-運動"); input.value = "+9"; input.dispatchEvent(new Event("change", { bubbles: true })); });
+    await choose("soldier");
+    assert.deepEqual(await ranks(), { 運動: "●", 威嚇: "●" }, "ticks update with automatic calculation off");
+    assert.equal(await number("運動"), "+9", "typed numbers stay");
+    await choose("criminal");
+    assert.deepEqual(await ranks(), { 巧手: "●", 隱匿: "●" });
+    assert.equal(await number("運動"), "+9");
+    await page.evaluate(TOGGLE => document.getElementById(TOGGLE).click(), TOGGLE);
+    await page.locator(".app-dialog").getByRole("button", { name: "開啟並更新" }).click();
+
+    // Nothing but a player's change moves a tick.
+    await load();
+    await synthetic("soldier");
+    assert.deepEqual(await ranks(), {}, "a synthetic change does not tick");
+    await load();
+    await choose("acolyte");
+    await synthetic("soldier");
+    assert.deepEqual(await ranks(), { 洞悉: "●", 宗教: "●" }, "a synthetic change does not take back");
+    await choose("criminal");
+    assert.deepEqual(await ranks(), { 洞悉: "●", 宗教: "●", 巧手: "●", 隱匿: "●" }, "a synthetic change counts like a load: nothing is taken back afterwards");
+    await page.evaluate(() => { window.playerBackgroundChanges = 0; document.getElementById("background").addEventListener("change", event => { if (isCommittedCharacterSelectionChange(event)) window.playerBackgroundChanges += 1; }); });
+    for (const [gate, open, close] of [
+      ["share mode", () => { SHARE_MODE = true; window.SHARE_MODE = true; }, () => { SHARE_MODE = false; window.SHARE_MODE = false; }],
+      ["JSON import", () => { jsonImportInProgress = true; }, () => { jsonImportInProgress = false; }],
+      ["tour preview", () => { autosaveSuspended = true; }, () => { autosaveSuspended = false; }],
+      ["clearing", () => { autosaveClearing = true; }, () => { autosaveClearing = false; }]
+    ]) {
+      // The browser only fires a keyboard change when the choice differs from its last keyboard choice.
+      await choose("fieldhand");
+      await load({ "prof-歷史": true });
+      const changes = await page.evaluate(() => window.playerBackgroundChanges);
+      await page.evaluate(open);
+      await choose("soldier");
+      await page.evaluate(close);
+      assert.equal(await page.evaluate(() => window.playerBackgroundChanges), changes + 1, `${gate}: the player's change did fire`);
+      assert.deepEqual(await ranks(), { 歷史: "●" }, `${gate} does not tick`);
+    }
+
+    // The character features dialog's picker is a player change too.
+    await load();
+    await page.evaluate(() => openCharacterFeatures("background"));
+    await page.locator('#character-features-picker [data-feature-picker="background"] [data-picker-value="soldier"]').click();
+    assert.deepEqual(await ranks(), { 運動: "●", 威嚇: "●" }, "the picker ticks");
+    assert.equal(await number("運動"), "+5");
+    await page.locator('#character-features-picker [data-feature-picker="background"] [data-picker-value="criminal"]').click();
+    assert.deepEqual(await ranks(), { 巧手: "●", 隱匿: "●" }, "and takes back");
+    await page.keyboard.press("Escape");
+
+    // No new saved fields: only prof-* values change, and the lists stay in page memory.
+    await load({ background: "soldier", "prof-歷史": true });
+    const stateKeys = await page.evaluate(() => Object.keys(collectStateObject()).sort());
+    const shareKeys = await page.evaluate(() => Object.keys(collectShareState()).filter(key => !key.startsWith("prof-")).sort());
+    const storageKeys = await page.evaluate(() => { showTab("basic"); saveAllFields(); return Object.keys(localStorage).sort(); });
+    await choose("criminal");
+    await cycle("巧手");
+    await choose("soldier");
+    await cycle("威嚇");
+    assert.deepEqual(await ranks(), { 歷史: "●", 威嚇: "●" });
+    assert.deepEqual(await page.evaluate(() => Object.keys(collectStateObject()).sort()), stateKeys, "autosave and JSON have no new fields");
+    assert.deepEqual(await page.evaluate(() => Object.keys(collectShareState()).filter(key => !key.startsWith("prof-")).sort()), shareKeys, "share has no new fields");
+    assert.deepEqual(await page.evaluate(() => { showTab("basic"); saveAllFields(); return Object.keys(localStorage).sort(); }), storageKeys, "no new storage key");
+    const saved = await page.evaluate(() => ({ state: JSON.stringify(collectStateObject()), share: JSON.stringify(collectShareState()), storage: JSON.stringify(localStorage) }));
+    assert.ok(!Object.values(saved).some(text => text.includes("skillsDeclined") || text.includes("granted")), "the lists are not saved anywhere");
+    for (const [name, restored] of Object.entries({ JSON: JSON.parse(saved.state), share: JSON.parse(saved.share), autosave: JSON.parse(JSON.parse(saved.storage).dndchar_autosave_v1) })) {
+      const before = await ranks();
+      await load();
+      await page.evaluate(state => applyStateObject(state), restored);
+      assert.deepEqual(await ranks(), before, `${name} restores the ranks`);
+    }
+    console.log("Background skill auto-tick: player changes, round trips, shared skills, player ticks, refusals, old saves, expertise and its known limit, no background, reload, loading, custom background, automatic calculation off, gates, picker and saved fields passed.");
   } finally { await page.close(); }
 }
 
@@ -4459,7 +4781,7 @@ async function main() {
   try {
     browser = await chromium.launch({ headless: true, ...(process.env.DND_BROWSER_CHANNEL ? { channel: process.env.DND_BROWSER_CHANNEL } : {}) });
     const url = `http://127.0.0.1:${server.address().port}/index.html?analytics=owner`;
-    if (all || sections.has("--data-only")) { await verifyJsonImportTransaction(browser, url); await verifyCharacterDataSafety(browser, url); await verifyFieldInfoHint(browser, url); await verifySubclassSelection(browser, url); await verifyClassPicks(browser, url); await verifyClassOptionMemory(browser, url); await verifyBackgroundChoiceMemory(browser, url); await verifyAutoCalculatedChecks(browser, url); await verifyInventoryPersistence(browser, url); }
+    if (all || sections.has("--data-only")) { await verifyJsonImportTransaction(browser, url); await verifyCharacterDataSafety(browser, url); await verifyFieldInfoHint(browser, url); await verifySubclassSelection(browser, url); await verifyClassPicks(browser, url); await verifyClassOptionMemory(browser, url); await verifyBackgroundChoiceMemory(browser, url); await verifyBackgroundSkillAutoTick(browser, url); await verifyAutoCalculatedChecks(browser, url); await verifyInventoryPersistence(browser, url); }
     if (all || sections.has("--appearance-only")) {
       const page = await newUiPage(browser, { viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });
       try { await verifyAppearanceAndLayout(browser, page, url); }
