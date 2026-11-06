@@ -647,7 +647,7 @@ label {
   font-variant-numeric: tabular-nums;
 }
 
-:where(html[data-ui-theme="warm"]) select:disabled,
+:where(html[data-ui-theme="warm"]) select:is(:disabled, [data-share-locked="true"]),
 :where(html[data-ui-theme="warm"]) input:disabled,
 :where(html[data-ui-theme="warm"]) textarea:disabled {
   background: var(--disabled-bg);
@@ -2987,18 +2987,18 @@ details > summary::-webkit-details-marker,
   transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
 }
 
-/* 停用下拉（含分享模式鎖定的職業、等級、種族、背景）：四種外觀皆以灰底區分，值維持 4.5:1 以上可讀；暗色見檔尾。 */
-select:disabled {
+/* 停用下拉（含分享模式鎖定的項目）：四種外觀皆以灰底區分，值維持 4.5:1 以上可讀；暗色見檔尾。 */
+select:is(:disabled, [data-share-locked="true"]) {
   opacity: 1;
   cursor: not-allowed;
 }
 
-:where(html:not([data-ui-theme="warm"]):not([data-theme="dark"])) select:disabled {
+:where(html:not([data-ui-theme="warm"]):not([data-theme="dark"])) select:is(:disabled, [data-share-locked="true"]) {
   background: #dfe4ec;
   color: var(--text-body);
 }
 
-:where(html[data-ui-theme="warm"]:not([data-theme="dark"])) select:disabled {
+:where(html[data-ui-theme="warm"]:not([data-theme="dark"])) select:is(:disabled, [data-share-locked="true"]) {
   color: var(--text-body);
 }
 
@@ -9890,14 +9890,162 @@ button.spell-picked-jump:active {
   line-height: 1.6;
 }
 
-.share-mode-tip strong,
-.share-mode-tip span {
-  display: block;
+.share-mode-tip__heading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.share-mode-tip span {
+.share-mode-tip__heading strong {
+  flex: 1;
+  min-width: 0;
+}
+
+button.share-mode-tip__toggle {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  margin: -4px -6px -4px 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+button.share-mode-tip__toggle:is(:hover, :focus-visible) {
+  background: transparent;
+  color: inherit;
+  box-shadow: none;
+  transform: none;
+}
+
+button.share-mode-tip__toggle:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+
+.share-mode-tip__arrow {
+  transition: transform 120ms ease;
+}
+
+.share-mode-tip__toggle[aria-expanded="false"] .share-mode-tip__arrow {
+  transform: rotate(-90deg);
+}
+
+.share-mode-tip__details span {
+  display: block;
   margin-top: 4px;
   font-weight: 400;
+}
+
+/* 分享模式少掉的選單項目；其他列維持原本的欄位比例。 */
+html.is-share-mode :is(#help-quick-build-btn, #set-default-abilities, #import-json-btn, #open-qr-btn, .share-url-btn, .utility-menu__setting--auto-calc) {
+  display: none;
+}
+
+html.is-share-mode .utility-menu__row--icon {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+html.is-share-mode .utility-menu__row--footer {
+  grid-template-columns: minmax(0, 1fr) 44px;
+}
+
+/* 分享模式鎖定的角色能力：沒有對應操作的按鈕與提示直接不顯示。缺項提示也不顯示，因為看的人無法補填。 */
+html.is-share-mode :is(#feat-add-empty, .feat-icon-btn, #add-tool-proficiency, .tool-proficiency-hint, .tool-proficiency-remove,
+  .skill-calc-button, .feature-choice-card__settings-button, #spellbook-manage, #class-feature-choice-reminder, #character-choice-warning-toggle,
+  button.tabletop-class-choice-alert) {
+  display: none !important;
+}
+
+html.is-share-mode input[data-share-locked="true"] {
+  cursor: not-allowed;
+}
+
+/* 灰底是鎖定，白底是可以改；自動計算開著時 AC 也不能手改。 */
+html.is-share-mode input:not([type="checkbox"], [type="radio"])[data-share-locked="true"],
+html.is-share-mode #tab-basic #ac-display[readonly] {
+  border-color: var(--locked-border) !important;
+  background: var(--disabled-bg) !important;
+  cursor: not-allowed;
+}
+
+html.is-share-mode input:is([type="checkbox"], [type="radio"])[data-share-locked="true"] {
+  opacity: 0.55;
+}
+
+html.is-share-mode :is(.language-field, .language-extra-row, .tool-proficiency-row):has(select[data-share-locked="true"]) {
+  border-color: var(--locked-border);
+  background: var(--locked-surface);
+}
+
+/* 換護甲或盾牌後的 AC 提示：放在「目前 AC」左邊，放不下時自動換到上方一行。 */
+html.is-share-mode .equipment-current-ac {
+  flex-wrap: wrap;
+}
+
+.share-ac-warning[hidden] {
+  display: none;
+}
+
+.share-ac-warning {
+  flex: 1 1 18rem;
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  border: 1px solid var(--warning-border);
+  border-radius: var(--radius-sm);
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+button.class-feature-choice-link.share-ac-warning__jump {
+  flex: 1 1 0;
+  width: auto;
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+}
+
+button.class-feature-choice-link.share-ac-warning__jump > span:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+button.share-ac-warning__hide {
+  flex: none;
+  width: auto;
+  min-height: 44px;
+  margin: 0;
+  padding: 0.5rem 0.65rem;
+  border: 0;
+  border-inline-start: 1px solid var(--warning-border);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+  font-size: var(--fs-sm);
+}
+
+button.share-ac-warning__hide:is(:hover, :focus-visible) {
+  background: transparent;
+  color: inherit;
+  box-shadow: none;
+  transform: none;
+  text-decoration: underline;
+}
+
+.spell-prepared-share-rule {
+  margin: 0 0 0.5rem;
 }
 
 .utility-menu__button:disabled {
@@ -20284,7 +20432,7 @@ html[data-theme="dark"] button:disabled {
   color: var(--disabled-text);
 }
 
-html[data-theme="dark"] select:disabled {
+html[data-theme="dark"] select:is(:disabled, [data-share-locked="true"]) {
   background: var(--disabled-bg);
   color: var(--text-muted);
 }

@@ -100,7 +100,7 @@
   <title>twD20 | 5.5版手機角卡</title>
   <link rel="canonical" href="https://twD20.com/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E🗡️%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css?v=20261106-skill-rank-focus">
+  <link rel="stylesheet" href="styles.css?v=20261107-share-readonly">
   <script src="scroll-to-top.js?v=20261011-search-focus" defer></script>
   <script src="dice-roller.js?v=20261103-roll-min" defer></script>
   <script src="monster.js?v=20261105-quick-build-guidance" defer></script>
@@ -120,17 +120,18 @@
   <script src="app-dialog.js?v=20261028-custom-spells" defer></script>
   <script src="custom-background.js?v=20261106-background-memory" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
-  <script src="tabletop-mode.js?v=20261105-list-separator" defer></script>
+  <script src="tabletop-mode.js?v=20261107-share-readonly" defer></script>
   <script src="tabletop-druid.js?v=20261103-known-count" defer></script>
   <script src="tabletop-resources.js?v=20261102-race-content" defer></script>
   <script src="tabletop-actions.js?v=20261104-weapon-switch" defer></script>
-  <script src="tabletop-custom-spells.js?v=20261104-spell-fields" defer></script>
+  <script src="tabletop-custom-spells.js?v=20261107-share-readonly" defer></script>
   <script src="tabletop-spells.js?v=20261104-weapon-damage-type" defer></script>
   <script src="legal-modal.js?v=20261022-game-icons" defer></script>
   <script src="onboarding-tour.js?v=20261104-inventory" defer></script>
   <script src="quick-build.js?v=20261106-skills-auto" defer></script>
-  <script src="spellbook.js?v=20261104-familiar-references" defer></script>
-  <script src="spell-management.js?v=20261103-manual-toggle" defer></script>
+  <script src="spellbook.js?v=20261107-share-readonly" defer></script>
+  <script src="spell-management.js?v=20261107-share-readonly" defer></script>
+  <script src="share-readonly.js?v=20261107-share-readonly" defer></script>
   <script src="class-option-memory.js?v=20261106-background-memory" defer></script>
   <script src="deity-info.js" defer></script>
 
@@ -171,7 +172,7 @@
       <div class="utility-menu__divider" role="separator"></div>
       <fieldset class="utility-menu__settings" aria-label="操作設定">
         <div class="utility-menu__settings-row">
-          <label class="utility-menu__setting" title="開啟時自動計算最大 HP、AC、先攻、速度、被動察覺、技能與豁免；關閉後可自行輸入。">
+          <label class="utility-menu__setting utility-menu__setting--auto-calc" title="開啟時自動計算最大 HP、AC、先攻、速度、被動察覺、技能與豁免；關閉後可自行輸入。">
             <span>自動計算數值</span>
             <input id="auto-calculate-key-stats-toggle" type="checkbox" role="switch" checked>
             <span class="utility-menu__switch" aria-hidden="true"></span>
@@ -1528,6 +1529,8 @@ function syncAutomaticKeyStatsMode({ refresh = true } = {}) {
   document.querySelectorAll("#tab-skills .skill-calc-button").forEach((button) => { button.hidden = automatic; });
   document.getElementById("tab-basic")?.classList.toggle("manual-key-stats", !automatic);
   document.getElementById("tab-skills")?.classList.toggle("manual-key-stats", !automatic);
+  // 上面的迴圈會解開唯讀；分享模式只留 AC 可改。
+  window.ShareReadonly?.apply();
   if (automatic && refresh) refreshAutomaticKeyStats();
 }
 
@@ -4653,7 +4656,7 @@ function updateArmorInfo() {
   updateEquipmentLoadoutSummary();
 }
 </script>
-<script src="sheet-spells.js?v=20261104-find-steed-reference"></script>
+<script src="sheet-spells.js?v=20261107-share-readonly"></script>
 <script>
 // ====== 德魯伊變身提示 =====
 // ✅ 四種動物（建議用「機制摘要」避免長篇敘述）
@@ -6915,7 +6918,7 @@ window.addEventListener("DOMContentLoaded", async function() {
   exitShareLink.href = exitShareUrl.href;
   exitShareLink.hidden = false;
   exitShareLink.addEventListener("click", exitShareMode);
-  document.querySelectorAll('.share-url-btn, #import-json-btn, #import-json-file').forEach(control => {
+  document.querySelectorAll('.share-url-btn, #import-json-btn, #import-json-file, #set-default-abilities').forEach(control => {
     control.disabled = true;
     control.title = "分享模式不提供此功能";
   });
@@ -6975,6 +6978,8 @@ window.addEventListener("DOMContentLoaded", async function() {
   setupAutomaticKeyStats();
   });
   window.TabletopMode?.refresh?.();
+  // 分享角色的畫面都就緒後才鎖定；讀取失敗的連結是空白頁，沒有東西要鎖。
+  if (sharedData) window.ShareReadonly?.activate();
   window.twAnalytics?.observeHp?.(document.getElementById("hp"));
   // 4. 啟用自動儲存
   setupVisibilityAutoSave();
@@ -7304,7 +7309,7 @@ window.addEventListener("DOMContentLoaded", async function() {
     <div class="legal-share-copy" hidden>
       <h3 class="legal-modal-title">你正在查看分享的角色卡</h3>
       <p>你原本的角色存檔仍然保留，<strong>不會被這份分享角色卡覆蓋</strong>。</p>
-      <p>你可以修改這份角色卡的其他內容，也可以將目前內容輸出為 PDF；<strong>職業、等級、種族、背景不可更改</strong>。</p>
+      <p>你可以操作 HP、法術位、物品裝備與跑團模式，也可以將目前內容輸出為 PDF；<strong>屬性、技能、職業選項等角色能力不可更改</strong>。</p>
       <p><strong>修改不會自動儲存，關閉或重新整理頁面後就會消失。</strong><br>若要保存修改後的角色資料，供日後匯入並繼續編輯，請使用<strong>「匯出 JSON」</strong>。</p>
       <p>注意：分享模式下，<strong>「分享角卡」、「匯入 JSON」、快速創角與導覽將停用</strong>。</p>
       <a href="#legal-about-modal" class="legal-about-trigger">Legal &amp; About</a>

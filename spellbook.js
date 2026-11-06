@@ -14,6 +14,7 @@
   const playerEntries = () => management()?.getPlayerEntries() || [];
   const activeBookIds = () => isManual() ? books.manual : books.wizard;
   const canManageBook = () => isWizard() || isManual();
+  const inShareMode = () => globalScope.SHARE_MODE === true;
 
   function supportedSpells(minLevel = 0) {
     const classes = new Set();
@@ -63,7 +64,7 @@
   // 法術書只收 1 環以上的法師法表法術；法師或手動管理法術時才有法術書。
   function canWriteSpell(spellId) {
     const spell = catalog()?.getSpell(spellId);
-    return canManageBook() && Boolean(spell) && spell.level >= 1 && catalog().getClassIds(spellId).includes("wizard");
+    return !inShareMode() && canManageBook() && Boolean(spell) && spell.level >= 1 && catalog().getClassIds(spellId).includes("wizard");
   }
 
   function addWizardSpell(spellId) {
@@ -159,6 +160,8 @@
     document.getElementById("spellbook-title").textContent = tome ? "影之書（書之魔契）" : "法術書";
     const manageButton = document.getElementById("spellbook-manage");
     if (manageButton) {
+      // 分享模式鎖定法術書內容（含影之書）。
+      manageButton.hidden = inShareMode();
       manageButton.disabled = !tome && !canManageBook();
       manageButton.title = manageButton.disabled ? "手動管理或法師職業可編輯保留的法術書。" : "";
     }
@@ -199,7 +202,7 @@
       });
       grid.appendChild(group);
     }
-    if (!ids.length) grid.appendChild(node("p", "spell-note-muted", "尚無書內法術，請使用「管理法術書」加入。"));
+    if (!ids.length) grid.appendChild(node("p", "spell-note-muted", inShareMode() ? "尚無書內法術。" : "尚無書內法術，請使用「管理法術書」加入。"));
   }
 
   async function openDetail(spell, trigger) {
@@ -496,7 +499,7 @@
   }
 
   async function manageWizard(trigger) {
-    if (!canManageBook()) return;
+    if (inShareMode() || !canManageBook()) return;
     const manual = isManual();
     const currentClass = document.getElementById("class")?.value;
     const selected = new Set(activeBookIds());
@@ -526,6 +529,12 @@
 
   async function openPreparedManager(trigger) {
     const api = management();
+    const share = inShareMode();
+    const shareRule = share ? globalScope.ShareReadonly?.getSpellChangeRule() : null;
+    if (share && !shareRule) {
+      globalScope.AppDialog.notify(globalScope.ShareReadonly?.getPreparedNote() || "分享模式不可更改這個職業的法術。");
+      return false;
+    }
     const requirement = globalScope.getPreparedSpellRequirement?.() || "";
     if (!api?.canManage() || requirement) {
       globalScope.AppDialog.notify(requirement || "請先選好職業、等級、背景與種族，才能使用『準備法術』。");
@@ -598,7 +607,8 @@
     clear.type = "button";
     const noPreparation = node("p", "spell-note-muted spell-prepared-none", "目前職業等級沒有可準備的法術。");
     noPreparation.hidden = true;
-    body.append(manualToggle, sourceList, noPreparation);
+    // 分享模式不開放切換手動管理，改放一行職業規則提示。
+    body.append(share ? node("p", "spell-prepared-share-rule spell-note-muted", shareRule.hint) : manualToggle, sourceList, noPreparation);
     let draftSnapshot;
     function refreshDraftSnapshot() {
       const editable = draft.filter(entry => !entry.spellSource);
@@ -633,7 +643,7 @@
       limit: (limits.cantrips ?? 0) + draftSnapshot.grantSlots.length });
     refreshDraftSnapshot();
     const canClear = entry => Number(entry.level) >= 1 && Number(entry.level) <= 4
-      && (manual || (!entry.spellSource && api.isEntryAvailable(entry, availability())));
+      && (manual ? !(share && entry.spellSource) : (!entry.spellSource && api.isEntryAvailable(entry, availability())));
     const limitAt = cantrip => Number.isFinite(cantrip ? limits.cantrips : limits.prepared)
       ? (cantrip ? limits.cantrips : limits.prepared) : Infinity;
     function drawSources() {
@@ -681,7 +691,7 @@
         const input = node("input");
         input.type = "checkbox";
         input.checked = entry.customSpell || !manual || draft.includes(entry);
-        input.disabled = entry.customSpell || !manual;
+        input.disabled = entry.customSpell || !manual || share;
         input.dataset.stateTransient = "true";
         input.dataset.sourceKey = entry.sourceKey || entry.key || "";
         input.dataset.sourceIndex = String(index);
@@ -721,8 +731,13 @@
           });
         }
       }
-      const candidates = new Map(baseCandidates);
-      if (draftSnapshot.grant) globalScope.getClassSpells(draftSnapshot.grant.spellClass, "cantrips")
+      // 分享模式依職業表：法師只列法術書內法術、不能換戲法的職業不列戲法候選；職業選項開放的戲法維持鎖定。
+      const candidates = new Map(share ? [...baseCandidates].filter(([spellId]) => globalScope.ShareReadonly?.canPrepareSpell(spellId)) : baseCandidates);
+      if (share) draftSnapshot.grantSlots.filter(slot => slot.spellId).forEach(slot => {
+        const spell = catalog().getSpell(slot.spellId);
+        if (spell) candidates.set(spell.spellId, spell);
+      });
+      else if (draftSnapshot.grant) globalScope.getClassSpells(draftSnapshot.grant.spellClass, "cantrips")
         .forEach(spell => candidates.set(spell.spellId, spell));
       // Preserve unknown imported IDs and selections that became unavailable.
       draftSnapshot.editable.forEach(entry => candidates.set(entry.spellId, catalog().getSpell(entry.spellId)
@@ -758,8 +773,9 @@
       getState(spell) {
         if (spell.customSpell) return { checked: true, disabled: true, note: "自創法術：占準備名額，請到自創法術編輯區更改。" };
         const selected = draftSnapshot.selected.has(spell.spellId);
-        if (grantSlotOf(spell.spellId)) return { checked: true };
+        if (grantSlotOf(spell.spellId)) return { checked: true, disabled: share };
         if (sourceLabels(spell.spellId)) return { checked: true, disabled: true };
+        if (share && spell.level === 0 && !shareRule.cantrips) return { checked: selected, disabled: true };
         if (isGrantCantrip(spell)) return { checked: false, disabled: !grantSlotOf("") };
         const unavailable = !manual && !api.isEntryAvailable({ spellId: spell.spellId, spellClass: currentClass, level: spell.level }, availability());
         const full = !manual && !selected && countAt(spell.level === 0) >= limitAt(spell.level === 0);
