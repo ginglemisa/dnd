@@ -4059,6 +4059,16 @@ async function verifyBackgroundSkillAutoTick(browser, url) {
       await page.evaluate(state => applyStateObject(state), restored);
       assert.deepEqual(await ranks(), before, `${name} restores the ranks`);
     }
+    // A real share link restores the ranks, locks the select and adds nothing.
+    await load({ background: "soldier", "prof-歷史": true });
+    const shareHash = await page.evaluate(() => encodeStateToHash(collectShareState()));
+    const shared = await newUiPage(browser, { viewport: { width: 1280, height: 900 } });
+    try {
+      await shared.goto(url + shareHash);
+      await shared.locator("#legal-close-btn").click();
+      assert.equal(await shared.locator("#background").isDisabled(), true, "share mode locks the background");
+      assert.equal(await shared.evaluate(() => document.getElementById("prof-歷史").checked && !document.getElementById("prof-運動").checked && !document.getElementById("prof-威嚇").checked), true, "share mode keeps the shared ranks");
+    } finally { await shared.close(); }
     console.log("Background skill auto-tick: player changes, round trips, shared skills, player ticks, refusals, old saves, expertise and its known limit, no background, reload, loading, custom background, automatic calculation off, gates, picker and saved fields passed.");
   } finally { await page.close(); }
 }
