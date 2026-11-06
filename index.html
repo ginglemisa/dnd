@@ -3,7 +3,7 @@
 	<script>
 	  (function () {
 	    const themeKey = "dnd.theme.v1";
-	    const storage = Object.freeze({
+	    const local = Object.freeze({
 	      getItem(key) {
 	        try { return localStorage.getItem(key); } catch (_error) { return null; }
 	      },
@@ -12,6 +12,25 @@
 	      },
 	      removeItem(key) {
 	        try { localStorage.removeItem(key); return true; } catch (_error) { return false; }
+	      }
+	    });
+	    // 分享連結（含讀取失敗的）開的頁面不讀也不寫看的人裝置上的資料，這頁的設定只留在頁面記憶體。
+	    // 例外照常用本機：主題與亮暗（跟看的人）、GA 角色閘門、冒險日誌（獨立於角色）的舊資料搬遷。
+	    // 開頁狀態：擲骰開啟、負重不顯示（dnd.inventoryWeightHidden.v1）、其他都用預設值。
+	    const isSharePage = location.hash.startsWith("#s=") || location.hash.startsWith("#s2=");
+	    const deviceKeys = new Set([themeKey, "dnd.uiTheme.v1", "twd20.analyticsRole.v1", "dnd.adventureJournal.v1"]);
+	    const pageOnly = new Map([["dnd.diceSystemEnabled.v1", "true"], ["dnd.inventoryWeightHidden.v1", "true"]]);
+	    const storage = !isSharePage ? local : Object.freeze({
+	      getItem(key) { return deviceKeys.has(key) ? local.getItem(key) : pageOnly.get(key) ?? null; },
+	      setItem(key, value) {
+	        if (deviceKeys.has(key)) return local.setItem(key, value);
+	        pageOnly.set(key, String(value));
+	        return true;
+	      },
+	      removeItem(key) {
+	        if (deviceKeys.has(key)) return local.removeItem(key);
+	        pageOnly.delete(key);
+	        return true;
 	      }
 	    });
 	    window.dndStorage = storage;
