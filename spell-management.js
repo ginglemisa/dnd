@@ -499,7 +499,7 @@
   let customSignature = "";
   globalScope.addEventListener("tabletopactionpreferenceschange", event => {
     const signature = JSON.stringify(event.detail?.customSpells || []);
-    if (signature === customSignature || inShareMode()) return;
+    if (signature === customSignature) return;
     customSignature = signature;
     hooks.onChange?.({ customSpells: true });
     globalScope.dispatchEvent(new CustomEvent("spellmanagementchange", { detail: { customSpells: true } }));

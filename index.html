@@ -5581,6 +5581,10 @@ function collectShareState() {
   if (data.class === "druid" && data.druid?.knownForms?.length) data.druid = { knownForms: [...data.druid.knownForms] };
   else delete data.druid;
   data.__shareStateVersion = SHARE_STATE_VERSION;
+  // 跑團自訂動作、隱藏按鈕、戰鬥筆記與自創法術隨連結分享；全空時省略，不讓網址變長。頭像不分享。
+  const actionPreferences = window.TabletopMode?.getTabletopActionPreferences?.();
+  const hasActionPreferences = Boolean(actionPreferences && (actionPreferences.customActions.length || actionPreferences.customSpells?.length
+    || actionPreferences.hiddenKeys.length || actionPreferences.notes));
   // 種族勾選框資源（吐息元素等）的使用狀態不進分享網址。
   const raceCheckboxPrefixes = getRaceCheckboxResources().map(resource => resource.checkbox);
 
@@ -5611,6 +5615,7 @@ function collectShareState() {
     }
   });
 
+  if (hasActionPreferences) data.__tabletopActionPreferences = actionPreferences;
   if (data.__spellManagement) delete data.__spellManagement.freeUses;
   if (data.__pactTomeSpellSelection?.cantrips?.length === 0 && data.__pactTomeSpellSelection?.rituals?.length === 0) {
     delete data.__pactTomeSpellSelection;
@@ -5977,7 +5982,6 @@ async function copyShareUrl() {
     const shareUrl = await window.AppDialog.showContent({
       title: "分享角色卡",
       variant: "share-character",
-      message: "分享角色卡無法分享跑團模式的自訂按鈕和自創法術，請注意。",
       trigger: document.getElementById("utility-menu-toggle"),
       // Closing while a short URL is pending cancels that single request.
       onClose: () => shortUrlController?.abort(),
@@ -6127,10 +6131,10 @@ async function copyResolvedShareUrl(shareUrl) {
 
 function collectJsonExportText() {
   const data = collectStateObject();
-  // Share mode only holds the viewer's own local avatar/action preferences, not the shared character's.
+  // 分享模式帶當頁的跑團資料（連結帶來的加上看的人的修改），這是把分享角色留下來的唯一辦法；頭像不分享，所以不帶。
+  const actionPreferences = window.TabletopMode?.getTabletopActionPreferences?.();
+  if (actionPreferences) data.__tabletopActionPreferences = actionPreferences;
   if (!SHARE_MODE) {
-    const actionPreferences = window.TabletopMode?.getTabletopActionPreferences?.();
-    if (actionPreferences) data.__tabletopActionPreferences = actionPreferences;
     const avatar = window.dndStorage.getItem(TABLETOP_AVATAR_STORAGE_KEY);
     if (isValidTabletopAvatar(avatar)) data.__tabletopAvatar = avatar;
   }
@@ -6169,7 +6173,7 @@ function downloadStateAsJson() {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  if (SHARE_MODE) window.AppDialog.notify("分享模式匯出的檔案不含角色圖片、跑團按鈕與自創法術設定。", { tone: "info" });
+  if (SHARE_MODE) window.AppDialog.notify("分享模式匯出的檔案不含角色圖片。", { tone: "info" });
   else if (avatarOmitted) window.AppDialog.notify("角色資料加上角色圖片會超過 2 MiB，這次匯出未包含角色圖片。", { tone: "warning" });
   window.twAnalytics?.track?.("character_json_export");
 }
@@ -6924,6 +6928,8 @@ window.addEventListener("DOMContentLoaded", async function() {
     control.title = "分享模式不提供此功能";
   });
   closeShareModeGuideEntries();
+  // 自創法術會進法術清單，要在還原角色前就緒；沒帶這些資料的舊連結從空白開始。
+  window.TabletopMode?.restoreSharedActionPreferences?.(sharedData.__tabletopActionPreferences);
   applyStateObject(sharedData);
   lockShareModeIdentitySelects();
   window.twAnalytics?.track?.("shared_character_opened");

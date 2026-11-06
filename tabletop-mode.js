@@ -707,6 +707,12 @@
     return true;
   }
 
+  // 分享連結帶來的跑團資料：dndStorage 在分享頁只寫頁面記憶體，不碰看的人的本機資料。
+  function restoreSharedActionPreferences(value) {
+    if (globalScope.SHARE_MODE !== true) return false;
+    return persistTabletopActionPreferences(value);
+  }
+
   function getTabletopActionPreferences() {
     const preferences = getTabletopActionPreferencesState();
     return Object.freeze({
@@ -5404,6 +5410,7 @@
     setPanel: setActivePanel,
     getPanel: () => currentPanel,
     getTabletopActionPreferences,
+    restoreSharedActionPreferences,
     setTabletopActionNotes,
     addCustomTabletopAction,
     customSpellOptions: CUSTOM_SPELL_OPTIONS,
