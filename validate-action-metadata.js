@@ -699,7 +699,7 @@ async function verifyUiAndPersistence(page, url) {
     return decoded.data;
   });
   assert.equal(shareState.class, "bard"); assert.equal(shareState["goliath-ancestry"], "cloud");
-  assert.equal(Object.hasOwn(shareState, "__tabletopActionPreferences"), false);
+  assert.deepEqual(shareState.__tabletopActionPreferences, preferences, "tabletop preferences travel with the share link");
   await page.evaluate(() => saveAllFields());
   await page.goto(url);
   await page.waitForFunction(() => document.getElementById("class").value === "bard");
@@ -2001,7 +2001,9 @@ async function verifyLegacyShareFeatCompatibility(browser, url) {
             if (await page.locator("#legal-close-btn").isVisible()) {
               await page.click("#legal-close-btn");
             }
-            await page.uncheck("#manual-feat-management");
+            // 分享模式鎖定這個開關，看的人點不到；資料相容仍要驗，所以直接改欄位並觸發 change。
+            assert.equal(await page.evaluate(() => document.getElementById("manual-feat-management").inert), true, "share mode locks the manual feat switch");
+            await page.evaluate(() => { const toggle = document.getElementById("manual-feat-management"); toggle.checked = false; toggle.dispatchEvent(new Event("change", { bubbles: true })); });
             const automatic = await page.evaluate(() => collectShareState());
             assert.equal(automatic["manual-feat-management"], false, "migrated share can explicitly return to automation");
             const automaticHash = await page.evaluate(data => encodeStateToHash(data), automatic);
@@ -2018,7 +2020,8 @@ async function verifyLegacyShareFeatCompatibility(browser, url) {
             if (await page.locator("#legal-close-btn").isVisible()) await page.click("#legal-close-btn");
             const restoredStyleToggle = page.locator("#derived-feat-fighting-style-fighter").locator("xpath=../..").locator(".feat-disclosure-toggle");
             if (await restoredStyleToggle.getAttribute("aria-expanded") === "false") await restoredStyleToggle.click();
-            await page.selectOption("#derived-feat-fighting-style-fighter", "巨武器戰鬥");
+            assert.equal(await page.evaluate(() => document.getElementById("derived-feat-fighting-style-fighter").inert), true, "share mode locks feat rows");
+            await page.evaluate(() => { const select = document.getElementById("derived-feat-fighting-style-fighter"); select.value = "巨武器戰鬥"; select.dispatchEvent(new Event("change", { bubbles: true })); });
             assert.equal(await page.inputValue("#feat-choice-fighting-style-fighter"), "巨武器戰鬥", "migrated share main style updates source");
           }
           await page.evaluate(() => { saveAllFields(); flushPendingAutosave(); });
@@ -3089,7 +3092,7 @@ async function verifyCustomSpellUi(browser, url) {
     const saved = exported.__tabletopActionPreferences.customSpells[0];
     assert.equal(saved.spellId, spell.spellId, "editing preserves stable ID");
     assert.equal(saved.nameZh, "自創霜火改名");
-    assert.equal(await page.evaluate(() => JSON.stringify(collectShareState()).includes("custom-spell-")), false);
+    assert.equal(await page.evaluate(() => JSON.stringify(collectShareState()).includes("custom-spell-")), true, "custom spells travel with the share link");
     assert.equal(await page.evaluate(() => JSON.stringify(collectStateObject()).includes("custom-spell-")), false);
     assert.equal(await page.evaluate(() => TabletopSpells.getSelectedSpellEntries().some(entry => entry.spellId.startsWith("custom-spell-"))), false, "no automatic casting or spellbook entry");
     // Invalid imports are rejected before changing local records.
