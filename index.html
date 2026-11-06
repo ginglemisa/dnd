@@ -99,7 +99,7 @@
   <script src="action-panel.js?v=20261104-weapon-damage-type" defer></script>
   <script src="character-rules.js?v=20261106-skills-auto" defer></script>
   <script src="app-dialog.js?v=20261028-custom-spells" defer></script>
-  <script src="custom-background.js?v=20261105-list-separator" defer></script>
+  <script src="custom-background.js?v=20261106-background-memory" defer></script>
   <script src="adventure-journal.js?v=20261006-usage-analytics" defer></script>
   <script src="tabletop-mode.js?v=20261105-list-separator" defer></script>
   <script src="tabletop-druid.js?v=20261103-known-count" defer></script>
@@ -112,7 +112,7 @@
   <script src="quick-build.js?v=20261106-skills-auto" defer></script>
   <script src="spellbook.js?v=20261104-familiar-references" defer></script>
   <script src="spell-management.js?v=20261103-manual-toggle" defer></script>
-  <script src="class-option-memory.js?v=20261106-skills-auto" defer></script>
+  <script src="class-option-memory.js?v=20261106-background-memory" defer></script>
   <script src="deity-info.js" defer></script>
 
 </head>
@@ -1393,7 +1393,7 @@
   <script src="sheet-utils.js?v=20261024-index-split"></script>
   <script src="feat-ui.js?v=20261105-feat-categories"></script>
   <script src="spell-sources.js?v=20261105-feat-categories"></script>
-  <script src="class-features-ui.js?v=20261106-skills-auto"></script>
+  <script src="class-features-ui.js?v=20261106-background-memory"></script>
   <script>
 function openCarryCapacityRules(trigger) {
   return window.AppDialog.showMessage({
@@ -1600,7 +1600,7 @@ function bindCoreCharacterEvents() {
   bindEventById("class", "change", updateAutomaticInitiative);
   bindEventById("race", "change", () => { syncCharacterSizeFromRace(); updateRaceFeature(); syncDerivedFeatRows(); updateRaceOptionVisibility(); updateSpeedDisplay(); syncOriginAndSubclassDerivedSpellRows(); updateSpellsByClassLevel(); updateBaseLanguageOptions(); });
   bindEventById("character-size-select", "change", event => setCharacterSize(event.target.value));
-  bindEventById("background", "change", () => { window.CustomBackground?.handleSelection(autosaveSuspended); updateBackgroundFeature(); updateSpellsByClassLevel(); updateBackgroundToolRow(); });
+  bindEventById("background", "change", event => { beginBackgroundChoiceTransition(event); window.CustomBackground?.handleSelection(autosaveSuspended); updateBackgroundFeature(); updateSpellsByClassLevel(); updateBackgroundToolRow(); finishBackgroundChoiceTransition(); });
   bindEventById("custom-background-edit", "click", event => { void window.CustomBackground?.open(event.currentTarget); });
   bindEventById("manual-feat-management", "change", updateFeatManagementMode);
   bindEventById("feat-add-empty", "click", () => {
@@ -2450,6 +2450,7 @@ document.addEventListener("DOMContentLoaded", () => withCharacterUpdateBatch(() 
   // 初始化顯示
   updateRaceFeature();
   updateBackgroundFeature();
+  syncBackgroundChoiceOwner();
   updateHPDisplay(); // ← HP加這行
   updateHitDieLabel();
   updateACDisplay(); // AC顯示
@@ -5696,6 +5697,7 @@ function applyStateObjectNow(data) {
   const resumeHpTracking = window.twAnalytics?.suspendHpTracking?.();
   let subclassReplaced = false;
   window.ClassOptionMemory?.clearExpertise?.();
+  window.ClassOptionMemory?.clearBackgroundChoices?.();
 
   try {
     window.SpellManagement?.beforeApplyState(data);
@@ -5843,6 +5845,7 @@ function applyStateObjectNow(data) {
   }
   // 載入資料優先：不從職業選項記憶套用，只搬走舊存檔裡其他職業的殘留值。
   syncClassOptionOwner();
+  syncBackgroundChoiceOwner();
   if (migrateLegacyClassOptionResidue()) {
     syncOriginAndSubclassDerivedSpellRows();
     updateSpellsByClassLevel();
