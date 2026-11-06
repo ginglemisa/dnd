@@ -217,7 +217,10 @@
     }
     previousSelection = select.value;
     // Keep editing set while notifying existing rendering and autosave handlers.
-    select.dispatchEvent(new Event("change", { bubbles: true }));
+    // 與玩家直接操作選單相同，背景選擇記憶才會處理這次切換；取消時選單回到原值，記憶不動。
+    const change = new Event("change", { bubbles: true });
+    change.dndCharacterSelectionCommitted = true;
+    select.dispatchEvent(change);
     editing = false;
   }
 

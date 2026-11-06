@@ -2042,6 +2042,95 @@ function finishClassOptionTransition() {
   scheduleStructuralSaveAllFields();
 }
 
+// 背景選擇記憶：玩家親自切換背景時，各背景記住自選工具、魔法學徒法術與免費施放勾選，換回時靜默還原。
+// 紀錄只在頁面記憶體（ClassOptionMemory 的 *BackgroundChoices），不進 autosave、JSON 或分享；載入角色與清除紀錄時清空。
+const BACKGROUND_FEAT_KEY_PREFIX = "derived-feat-background-";
+let backgroundChoiceOwner = "";
+let backgroundChoiceTransition = null;
+
+function syncBackgroundChoiceOwner() { backgroundChoiceOwner = document.getElementById("background")?.value || ""; }
+
+function collectBackgroundChoices(backgroundId) {
+  const rules = getBackgroundRules(backgroundId);
+  // 非魔法學徒背景的隱藏欄位可能留著前一個背景的值，不算這個背景的選擇。
+  const choices = { magic: rules?.feat?.id === MAGIC_INITIATE_FEAT_NAME ? collectDerivedFeatMagicValues(["background"]) : {} };
+  if (rules?.tool?.chooseFrom) choices.tool = document.getElementById("tool-proficiency-0")?.value || "";
+  if (window.SpellManagement && !window.SpellManagement.isManual()) {
+    choices.freeUses = Object.fromEntries(Object.entries(window.SpellManagement.getState().freeUses)
+      .filter(([key]) => key.startsWith(BACKGROUND_FEAT_KEY_PREFIX)));
+  }
+  return choices;
+}
+
+// 背景專長列沿用同一組控制項 ID：沒有紀錄的背景從自己的預設開始，不繼承前一個背景選的法術。
+function getBackgroundMagicDefaults(backgroundId) {
+  const prefix = `${BACKGROUND_FEAT_KEY_PREFIX}magic-initiate-`;
+  return { [`${prefix}class`]: getBackgroundRules(backgroundId)?.feat?.spellList || "",
+    [`${prefix}cantrip-1`]: "", [`${prefix}cantrip-2`]: "", [`${prefix}level-1`]: "" };
+}
+
+function setBackgroundMagicControlValue(control, value) {
+  // 被其他魔法學徒來源佔用（已停用）的職業不還原，也不搶走對方的選擇。
+  if (Array.from(control.options || []).some(option => option.value === value && option.disabled)) return false;
+  return setClassOptionControlValue(control, value);
+}
+
+// 工具已在別列時不還原：removeDuplicateToolProficiencies 會偏袒第 0 列，還原會清掉玩家在別列的選擇。
+function restoreBackgroundToolChoice(value) {
+  const select = document.getElementById("tool-proficiency-0");
+  if (!value || !select || select.disabled) return;
+  if (getToolProficiencyRows().some(row => row.querySelector("select") !== select && row.querySelector("select")?.value === value)) return;
+  updateBackgroundToolRow(value);
+}
+
+// 背景專長的來源識別碼各背景相同：先歸零前一個背景的勾選，再套用這個背景的紀錄。
+function restoreBackgroundFreeUses(previous, next) {
+  const apply = (uses, checked) => Object.entries(uses || {}).forEach(([key, list]) => list.forEach((use, index) => {
+    window.SpellManagement?.setFreeUse(key, index, checked(use), { silent: true });
+  }));
+  apply(previous, () => false);
+  apply(next, use => use === true);
+}
+
+// 在背景 handler 重建控制項之前呼叫；此時工具列與專長列仍屬於前一個背景。
+function beginBackgroundChoiceTransition(event) {
+  backgroundChoiceTransition = null;
+  if (!isCommittedCharacterSelectionChange(event) || !canUseClassOptionMemory()) return;
+  const from = backgroundChoiceOwner;
+  if (from === (document.getElementById("background")?.value || "")) return;
+  backgroundChoiceTransition = { from, choices: from ? collectBackgroundChoices(from) : null };
+}
+
+// 在背景 handler 的最後呼叫。CustomBackground.handleSelection 可能已把選單改回原值（先開對話框），這時擁有者沒變，什麼都不做。
+function finishBackgroundChoiceTransition() {
+  const transition = backgroundChoiceTransition;
+  backgroundChoiceTransition = null;
+  // 導覽預覽與還原存檔暫停 autosave：導覽結束會靜默還原選單，還原存檔則在最後同步擁有者，這裡不跟著改。
+  if (autosaveSuspended) return;
+  syncBackgroundChoiceOwner();
+  if (!transition || transition.from === backgroundChoiceOwner || !canUseClassOptionMemory()) return;
+  if (transition.from) window.ClassOptionMemory.rememberBackgroundChoices(transition.from, transition.choices);
+  const record = backgroundChoiceOwner ? window.ClassOptionMemory.getBackgroundChoices(backgroundChoiceOwner) : null;
+  autosaveSuspended = true;
+  try {
+    withCharacterUpdateBatch(() => {
+      restoreBackgroundToolChoice(record?.tool);
+      restoreDerivedFeatMagicValues({ ...getBackgroundMagicDefaults(backgroundChoiceOwner), ...record?.magic }, setBackgroundMagicControlValue);
+      syncOriginAndSubclassDerivedSpellRows();
+      updateSpellsByClassLevel();
+    });
+    // 免費施放的勾選框要等法術列畫好才存在。
+    restoreBackgroundFreeUses(transition.choices?.freeUses, record?.freeUses);
+  } finally {
+    autosaveSuspended = false;
+  }
+  // 恢復後再同步一次：讓跑團模式等 spellmanagementchange 的訂閱者看到還原後的法術。
+  syncOriginAndSubclassDerivedSpellRows();
+  refreshDerivedChecks();
+  updateClassFeatureChoiceReminder();
+  scheduleStructuralSaveAllFields();
+}
+
 // 舊存檔可能留有非目前職業的殘留值；載入後靜默搬進該職業的記憶（不覆蓋既有記憶）並清空。
 function migrateLegacyClassOptionResidue() {
   if (!window.ClassOptionMemory || SHARE_MODE) return false;

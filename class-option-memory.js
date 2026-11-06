@@ -10,6 +10,8 @@
   const LIMITS = Object.freeze({ values: 128, lists: 8, listItems: 32, text: 200 });
   let memories = null, hooks = {}, writeWarningShown = false;
   const expertiseByClass = new Map();
+  // 各背景的選擇（背景 ID → 紀錄）同樣只在頁面記憶體；class-features-ui.js 負責擷取與還原。
+  const choicesByBackground = new Map();
   const clone = value => JSON.parse(JSON.stringify(value));
   const inShareMode = () => globalScope.SHARE_MODE === true;
   const empty = () => ({ version: VERSION, classes: {} });
@@ -94,8 +96,24 @@
     expertiseByClass.clear();
   }
 
+  // 合併式保存：只覆蓋 patch 帶到的欄位（例如 tool、magic、freeUses），其他欄位保留。
+  function rememberBackgroundChoices(backgroundId, patch) {
+    if (inShareMode() || !backgroundId) return;
+    choicesByBackground.set(backgroundId, { ...choicesByBackground.get(backgroundId), ...clone(patch) });
+  }
+
+  function getBackgroundChoices(backgroundId) {
+    const record = inShareMode() ? null : choicesByBackground.get(backgroundId);
+    return record ? clone(record) : null;
+  }
+
+  function clearBackgroundChoices() {
+    choicesByBackground.clear();
+  }
+
   function clearMemories() {
     clearExpertise();
+    clearBackgroundChoices();
     memories = empty();
     writeWarningShown = false;
     if (inShareMode()) return;
@@ -105,6 +123,7 @@
   globalScope.ClassOptionMemory = Object.freeze({
     version: VERSION, storageKey: MEMORY_KEY,
     configure(options = {}) { hooks = { ...hooks, ...options }; },
-    get, remember, clearMemories, rememberExpertise, getExpertise, clearExpertise
+    get, remember, clearMemories, rememberExpertise, getExpertise, clearExpertise,
+    rememberBackgroundChoices, getBackgroundChoices, clearBackgroundChoices
   });
 })(window);

@@ -53,7 +53,7 @@
 | 裝備與商店 | `equipment-data.js`、`equipment-notes.js`、`equipment-shop.js`；物品欄資料 `inventory.js`（`Inventory`）、標籤介面 `inventory-ui.js` |
 | 角色卡 DOM、初始化、持久化、分享 | `index.html` |
 | 創角 | `quick-build.js`、`custom-background.js` |
-| 職業能力 UI 與選項記憶 | `class-features-ui.js`、`class-option-memory.js` |
+| 職業能力 UI 與選項記憶（含背景選擇記憶） | `class-features-ui.js`、`class-option-memory.js` |
 | 專長列 | `feat-ui.js` |
 | 法術頁、衍生法術、法術管理、法術書 | `sheet-spells.js`、`spell-sources.js`、`spell-management.js`、`spellbook.js` |
 | 搜尋 | `search.js` |

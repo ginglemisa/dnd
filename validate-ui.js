@@ -3497,6 +3497,250 @@ async function verifyClassOptionMemory(browser, url) {
   } finally { await page.close(); }
 }
 
+// Each background remembers its own tool, Magic Initiate spells and free-use checks, in page memory only.
+async function verifyBackgroundChoiceMemory(browser, url) {
+  const page = await newUiPage(browser, { viewport: { width: 1280, height: 900 } });
+  const MAGIC = "derived-feat-background-magic-initiate-";
+  const FREE = "free-spell-use-derived-feat-background-level-1-1";
+  const blank = { __spellManagement: { version: 2, manual: false, entries: [] }, class: "fighter", level: "3", race: "human", dex: "14", con: "14" };
+  const apply = state => page.evaluate(state => applyStateObject(state), { ...blank, ...state });
+  const value = id => page.evaluate(id => document.getElementById(id)?.value ?? null, id);
+  const record = id => page.evaluate(id => ClassOptionMemory.getBackgroundChoices(id), id);
+  const chooseAsPlayer = async next => {
+    await page.evaluate(() => showTab("basic"));
+    const key = await page.evaluate(next => {
+      const select = document.getElementById("background");
+      const index = Array.from(select.options).findIndex(option => option.value === next);
+      if (index < 0) throw new Error(`Missing background: ${next}`);
+      select.selectedIndex = index === 0 ? 1 : index - 1;
+      return index === 0 ? "ArrowUp" : "ArrowDown";
+    }, next);
+    await page.locator("#background").focus();
+    await page.keyboard.press(key);
+    return key;
+  };
+  const synthetic = next => page.evaluate(next => {
+    const select = document.getElementById("background");
+    select.value = next;
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  }, next);
+  const pick = spells => page.evaluate(({ spells, MAGIC }) => Object.entries(spells).forEach(([field, spell]) => {
+    const select = document.getElementById(`${MAGIC}${field}`);
+    select.value = spell;
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  }), { spells, MAGIC });
+  const magic = () => page.evaluate(MAGIC => Object.fromEntries(["class", "cantrip-1", "cantrip-2", "level-1"]
+    .map(field => [field, document.getElementById(`${MAGIC}${field}`)?.value ?? null])), MAGIC);
+  const sourced = () => page.evaluate(() => SpellManagement.getEntries().filter(entry => entry.sourceKey?.startsWith("derived-feat-background-")).map(entry => entry.spellId));
+  const free = () => page.evaluate(FREE => document.getElementById(FREE)?.checked ?? null, FREE);
+  const setFree = checked => page.evaluate(({ FREE, checked }) => {
+    const box = document.getElementById(FREE);
+    box.checked = checked;
+    box.dispatchEvent(new Event("change"));
+  }, { FREE, checked });
+  // Everything derived from the sheet stays put across a round trip: proficiency marks, save and skill numbers, initiative, HP.
+  const numbers = () => page.evaluate(() => ({
+    checks: Array.from(document.querySelectorAll("#tab-skills input"), input => input.type === "checkbox" ? input.checked : input.value),
+    initiative: document.getElementById("initiative-input").value, hp: document.getElementById("hp-display").value
+  }));
+  const storedKeys = () => page.evaluate(() => { showTab("basic"); saveAllFields(); return Object.keys(localStorage).sort(); });
+  const acolyteSpells = { "cantrip-1": "light", "cantrip-2": "guidance", "level-1": "bless" };
+  const sageSpells = { "cantrip-1": "acid-splash", "cantrip-2": "chill-touch", "level-1": "alarm" };
+  try {
+    await page.addInitScript(() => { try { localStorage.setItem("dnd.classFeaturePromptDisabled.v1", "true"); } catch {} });
+    await page.goto(url);
+    await page.locator("#legal-close-btn").click();
+    await page.evaluate(() => window.onboardingTour?.finish?.());
+
+    // Soldier's own tool comes back after visiting other backgrounds, and nothing else moves.
+    await apply({ background: "soldier", "prof-運動": true });
+    await page.evaluate(() => { const select = document.getElementById("tool-proficiency-0"); select.value = "紙牌"; select.dispatchEvent(new Event("change", { bubbles: true })); });
+    const soldierNumbers = await numbers();
+    const soldierState = await page.evaluate(() => collectStateObject());
+    const soldierShare = await page.evaluate(() => collectShareState());
+    const keysBefore = await storedKeys();
+    await chooseAsPlayer("criminal");
+    assert.equal(await value("tool-proficiency-0"), "盜賊工具");
+    await chooseAsPlayer("soldier");
+    assert.equal(await value("tool-proficiency-0"), "紙牌", "soldier's tool is restored");
+    assert.deepEqual(await numbers(), soldierNumbers, "proficiency, saves, skills, initiative and HP stay the same");
+
+    // Nothing is persisted: autosave/JSON state and share payload are unchanged, and no new storage key appears.
+    assert.deepEqual(await page.evaluate(() => collectStateObject()), soldierState, "autosave and JSON content are unchanged after a round trip");
+    assert.deepEqual(await page.evaluate(() => collectShareState()), soldierShare, "share content is unchanged after a round trip");
+    assert.deepEqual(await storedKeys(), keysBefore, "background memory stays out of LocalStorage");
+    assert.ok(!JSON.stringify(soldierState).includes("backgroundChoice"));
+
+    // A tool already taken by another row is not restored and that row keeps it.
+    await chooseAsPlayer("criminal");
+    await page.evaluate(() => {
+      document.getElementById("add-tool-proficiency").click();
+      const select = getManualToolProficiencyRows().at(-1).querySelector("select");
+      select.value = "紙牌";
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    await chooseAsPlayer("soldier");
+    assert.deepEqual(await page.evaluate(() => [document.getElementById("tool-proficiency-0").value, getManualToolProficiencyRows().at(-1).querySelector("select").value]),
+      ["", "紙牌"], "a conflicting tool keeps the player's current row");
+
+    // Acolyte and sage share control IDs but keep separate spells and free-use checks.
+    await apply({ background: "acolyte" });
+    await pick(acolyteSpells);
+    await setFree(true);
+    assert.deepEqual(await sourced(), ["light", "guidance", "bless"]);
+    const acolyteNumbers = await numbers();
+    await chooseAsPlayer("sage");
+    assert.deepEqual(await magic(), { class: "wizard", "cantrip-1": "", "cantrip-2": "", "level-1": "" }, "a first visit does not inherit acolyte's shared spells");
+    assert.deepEqual(await sourced(), []);
+    await pick(sageSpells);
+    assert.equal(await free(), false, "sage's free use starts unused");
+    await chooseAsPlayer("acolyte");
+    assert.deepEqual(await magic(), { class: "cleric", ...acolyteSpells }, "acolyte's spells are restored");
+    assert.deepEqual(await sourced(), ["light", "guidance", "bless"], "spell management has acolyte's three spells");
+    assert.equal(await free(), true, "acolyte's free use is restored");
+    assert.deepEqual(await numbers(), acolyteNumbers);
+    await chooseAsPlayer("sage");
+    assert.deepEqual(await magic(), { class: "wizard", ...sageSpells }, "sage's spells are restored");
+    assert.deepEqual(await sourced(), ["acid-splash", "chill-touch", "alarm"]);
+    assert.equal(await free(), false, "acolyte's free use does not leak into sage");
+    await setFree(true);
+    await chooseAsPlayer("soldier");
+    assert.deepEqual(await sourced(), [], "a background without Magic Initiate grants no spells");
+    assert.ok(!Object.keys(await page.evaluate(() => collectStateObject())).some(key => key.startsWith("free-spell-use-")), "no free-use field remains");
+    await chooseAsPlayer("");
+    assert.deepEqual(await record("soldier"), { magic: {}, tool: "", freeUses: {} }, "a record is written on leaving, without another background's hidden spells");
+    assert.equal(await value(`${MAGIC}class`), null, "no background has no feat row");
+    await chooseAsPlayer("sage");
+    assert.deepEqual(await magic(), { class: "wizard", ...sageSpells }, "the row rebuilt after no background is restored too");
+    assert.equal(await free(), true);
+
+    // Synthetic changes neither write nor read the memory.
+    await setFree(false);
+    await synthetic("criminal");
+    assert.equal((await record("sage")).freeUses["derived-feat-background-level-1"][0], true, "a synthetic change does not write");
+    await synthetic("acolyte");
+    assert.deepEqual(await magic(), { class: "cleric", "cantrip-1": "", "cantrip-2": "", "level-1": "" }, "a synthetic change does not read");
+
+    // Import, quick-build batches and share mode neither read nor write.
+    await apply({ background: "acolyte" });
+    await pick(acolyteSpells);
+    await chooseAsPlayer("sage");
+    const beforeGates = await record("acolyte");
+    for (const [gate, open, close] of [
+      ["share mode", () => { SHARE_MODE = true; window.SHARE_MODE = true; }, () => { SHARE_MODE = false; window.SHARE_MODE = false; }],
+      ["JSON import", () => { jsonImportInProgress = true; }, () => { jsonImportInProgress = false; }],
+      ["autosave pause", () => { autosaveSuspended = true; }, () => { autosaveSuspended = false; }],
+      ["clearing", () => { autosaveClearing = true; }, () => { autosaveClearing = false; }],
+      ["quick-build batch", () => SpellManagement.beginRestoreBatch(), () => SpellManagement.endRestoreBatch()]
+    ]) {
+      await pick(sageSpells);
+      await page.evaluate(open);
+      if (gate === "quick-build batch") await synthetic("acolyte");
+      else await chooseAsPlayer("acolyte");
+      assert.deepEqual((await magic())["cantrip-2"], "", `${gate} does not read the memory`);
+      await page.evaluate(close);
+      assert.deepEqual(await record("acolyte"), beforeGates, `${gate} does not write the memory`);
+      await apply({ background: "acolyte" });
+      await pick(acolyteSpells);
+      await chooseAsPlayer("sage");
+    }
+
+    // Loading another character or reloading empties the memory; memory never overrides loaded data.
+    assert.ok(await record("acolyte"));
+    await apply({ background: "soldier", "tool-proficiency-0": "骰子" });
+    assert.equal(await record("acolyte"), null, "loading a character clears the memory");
+    assert.equal(await record("sage"), null);
+    await chooseAsPlayer("acolyte");
+    assert.deepEqual(await magic(), { class: "cleric", "cantrip-1": "", "cantrip-2": "", "level-1": "" }, "the previous character's spells do not come back");
+    await chooseAsPlayer("soldier");
+    assert.equal(await value("tool-proficiency-0"), "骰子", "the loaded character's own tool is remembered");
+    assert.ok(await record("acolyte"));
+    await page.evaluate(() => ClassOptionMemory.clearMemories());
+    assert.equal(await record("acolyte"), null, "clearing records clears the memory");
+    await chooseAsPlayer("acolyte");
+    assert.ok(await record("soldier"));
+    await page.reload();
+    await page.waitForFunction(() => window.ClassOptionMemory);
+    assert.equal(await record("soldier"), null, "reloading clears the memory");
+    await page.evaluate(() => { document.getElementById("legal-close-btn")?.click(); window.onboardingTour?.finish?.(); });
+
+    // Manual spell management: the controls round trip and the player's spell list is untouched.
+    await apply({ background: "acolyte", __spellManagement: { version: 2, manual: true, entries: [{ spellId: "fire-bolt", spellClass: "wizard" }] } });
+    await pick(acolyteSpells);
+    await chooseAsPlayer("sage");
+    await chooseAsPlayer("acolyte");
+    assert.deepEqual(await magic(), { class: "cleric", ...acolyteSpells }, "manual spell mode restores the controls");
+    assert.deepEqual(await page.evaluate(() => SpellManagement.getEntries().map(entry => entry.spellId)), ["fire-bolt"], "manual spell mode keeps the player's list");
+    assert.equal(await free(), null);
+    assert.equal(Object.hasOwn(await record("acolyte"), "freeUses"), false, "manual spell mode has no free-use record");
+
+    // Manual feat management: the automatic set is kept off screen, per background, and comes back on leaving the mode.
+    await apply({ background: "acolyte", "manual-feat-management": true, __managedFeatRows: [{ value: "醫療兵" }],
+      ...Object.fromEntries(Object.entries({ class: "cleric", ...acolyteSpells }).map(([field, spell]) => [`${MAGIC}${field}`, spell])) });
+    const automatic = () => page.evaluate(() => collectDerivedFeatMagicValues(["background"]));
+    assert.equal((await automatic())[`${MAGIC}level-1`], "bless");
+    await chooseAsPlayer("sage");
+    assert.equal((await automatic())[`${MAGIC}level-1`], "", "the off-screen set does not carry acolyte's spells into sage");
+    assert.deepEqual(await page.evaluate(() => collectManagedFeatRows().map(row => row.value)), ["醫療兵"], "the manual set is left alone");
+    await chooseAsPlayer("acolyte");
+    assert.equal((await automatic())[`${MAGIC}level-1`], "bless", "the off-screen set is restored");
+    await page.evaluate(() => { const box = document.getElementById("manual-feat-management"); box.checked = false; box.dispatchEvent(new Event("change", { bubbles: true })); });
+    assert.deepEqual(await magic(), { class: "cleric", ...acolyteSpells }, "leaving manual feats shows the restored spells");
+    assert.deepEqual(await sourced(), ["light", "guidance", "bless"]);
+
+    // Custom background: cancelling changes nothing; saving is a player change; editing keeps the choices.
+    await apply({ background: "soldier", "tool-proficiency-0": "紙牌" });
+    const dialog = page.locator('.app-dialog[data-variant="custom-background"]');
+    const fillCustomForm = async () => {
+      await page.locator("#custom-background-name").fill("學徒");
+      await page.locator("#custom-background-equipment-a").fill("長棍");
+      for (const [id, option] of Object.entries({ "ability-0": "力量", "ability-1": "敏捷", "ability-2": "體質", feat: "魔法學徒", "skill-0": "運動", "skill-1": "隱匿", tool: "里拉琴" })) {
+        await page.locator(`#custom-background-${id}`).selectOption(option);
+      }
+    };
+    await chooseAsPlayer("custom");
+    await dialog.waitFor();
+    assert.equal(await value("background"), "soldier", "the select waits for the dialog");
+    assert.equal(await record("soldier"), null, "opening the dialog does not count as leaving");
+    await page.keyboard.press("Escape");
+    await dialog.waitFor({ state: "detached" });
+    assert.equal(await value("background"), "soldier", "cancelling returns to soldier");
+    assert.equal(await value("tool-proficiency-0"), "紙牌", "cancelling keeps the tool");
+    assert.equal(await record("soldier"), null, "cancelling does not write the memory");
+    await chooseAsPlayer("custom");
+    await dialog.waitFor();
+    await fillCustomForm();
+    await dialog.getByRole("button", { name: "儲存背景" }).click();
+    await dialog.waitFor({ state: "detached" });
+    assert.equal(await value("background"), "custom");
+    assert.equal((await record("soldier")).tool, "紙牌", "saving the dialog leaves soldier as a player change");
+    assert.equal(await value("tool-proficiency-0"), "里拉琴");
+    await pick({ class: "wizard" });
+    await pick(sageSpells);
+    await setFree(true);
+    await page.locator("#custom-background-edit").click();
+    await dialog.waitFor();
+    await dialog.getByRole("button", { name: "儲存背景" }).click();
+    await dialog.waitFor({ state: "detached" });
+    assert.deepEqual(await magic(), { class: "wizard", ...sageSpells }, "editing in place keeps the custom background's spells");
+    assert.equal(await free(), true);
+    await chooseAsPlayer("soldier");
+    assert.equal(await value("tool-proficiency-0"), "紙牌", "soldier's tool comes back after the custom background");
+    assert.deepEqual((await record("custom")).magic[`${MAGIC}class`], "wizard");
+    await chooseAsPlayer("custom");
+    assert.equal(await page.locator('.app-dialog[data-variant="custom-background"]').count(), 0, "a saved custom background opens no dialog");
+    assert.deepEqual(await magic(), { class: "wizard", ...sageSpells }, "the custom background's class and spells are restored");
+    assert.equal(await free(), true);
+    await page.locator("#custom-background-edit").click();
+    await dialog.waitFor();
+    await page.keyboard.press("Escape");
+    await dialog.waitFor({ state: "detached" });
+    assert.equal(await value("background"), "custom", "cancelling an edit stays on the custom background");
+    assert.deepEqual(await magic(), { class: "wizard", ...sageSpells }, "cancelling an edit keeps the spells");
+    console.log("Background choice memory: tools and conflicts, Magic Initiate spells, free uses, unchanged numbers and saved data, gates, clearing, manual spell and feat modes and custom background flows passed.");
+  } finally { await page.close(); }
+}
+
 // Public content has one subclass per class; this fixture serves the private data file with a second cleric subclass.
 function createSubclassFixture() {
   const { loadContent } = require("./tools/class-content/load");
@@ -4215,7 +4459,7 @@ async function main() {
   try {
     browser = await chromium.launch({ headless: true, ...(process.env.DND_BROWSER_CHANNEL ? { channel: process.env.DND_BROWSER_CHANNEL } : {}) });
     const url = `http://127.0.0.1:${server.address().port}/index.html?analytics=owner`;
-    if (all || sections.has("--data-only")) { await verifyJsonImportTransaction(browser, url); await verifyCharacterDataSafety(browser, url); await verifyFieldInfoHint(browser, url); await verifySubclassSelection(browser, url); await verifyClassPicks(browser, url); await verifyClassOptionMemory(browser, url); await verifyAutoCalculatedChecks(browser, url); await verifyInventoryPersistence(browser, url); }
+    if (all || sections.has("--data-only")) { await verifyJsonImportTransaction(browser, url); await verifyCharacterDataSafety(browser, url); await verifyFieldInfoHint(browser, url); await verifySubclassSelection(browser, url); await verifyClassPicks(browser, url); await verifyClassOptionMemory(browser, url); await verifyBackgroundChoiceMemory(browser, url); await verifyAutoCalculatedChecks(browser, url); await verifyInventoryPersistence(browser, url); }
     if (all || sections.has("--appearance-only")) {
       const page = await newUiPage(browser, { viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });
       try { await verifyAppearanceAndLayout(browser, page, url); }
