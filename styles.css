@@ -4293,14 +4293,21 @@ button.field-info-hint__dismiss:focus-visible {
   display: none;
 }
 
+/* 用 appearance 而不是 opacity 隱藏：缺項提示的跳轉不會聚焦 opacity 為 0 的控制項。焦點框畫在切換區。 */
 .skill-rank-controls input[type="checkbox"] {
   flex: 0 0 20px;
   width: 20px;
   min-width: 20px;
   height: 20px;
   margin: 0;
-  opacity: 0;
+  border: 0;
+  background: none;
+  appearance: none;
   cursor: pointer;
+}
+
+.skill-rank-controls input[type="checkbox"]:focus-visible {
+  outline: none;
 }
 
 /* 語言與工具左右並排、等高；放不下就上下堆疊。工具增加時整列跟著變高。 */
